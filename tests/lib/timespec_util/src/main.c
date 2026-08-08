@@ -113,136 +113,143 @@ static const struct ts_test_spec ts_tests[] = {
 	DECL_INVALID_TS_TEST(SYS_TIME_T_MAX - 1, 2 * (int64_t)NSEC_PER_SEC, 0, 0, UNCORRECTABLE),
 };
 
-ZTEST(timeutil_api, test_timespec_is_valid)
-{
-	ARRAY_FOR_EACH(ts_tests, i) {
-		const struct ts_test_spec *const tspec = &ts_tests[i];
-		bool valid = timespec_is_valid(&tspec->invalid_ts);
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(ts_vals, ts_tests);
 
-		zexpect_equal(valid, tspec->expect_valid,
-			      "%zu: timespec_is_valid({%lld, %lld}) = %s, expected true", i,
-			      (long long)tspec->valid_ts.tv_sec, (long long)tspec->valid_ts.tv_nsec,
-			      tspec->expect_valid ? "false" : "true");
-	}
+ZTEST_P(timeutil_api, test_timespec_is_valid)
+{
+	size_t i = ztest_get_current_param_index();
+	const struct ts_test_spec *const tspec = ZTEST_GET_PARAM_PTR(struct ts_test_spec);
+	bool valid = timespec_is_valid(&tspec->invalid_ts);
+
+	zexpect_equal(valid, tspec->expect_valid,
+		      "%zu: timespec_is_valid({%lld, %lld}) = %s, expected true", i,
+		      (long long)tspec->valid_ts.tv_sec, (long long)tspec->valid_ts.tv_nsec,
+		      tspec->expect_valid ? "false" : "true");
 }
+ZTEST_INSTANTIATE_TEST_SUITE_P(ts, timeutil_api, test_timespec_is_valid, ts_vals);
 
-ZTEST(timeutil_api, test_timespec_normalize)
+ZTEST_P(timeutil_api, test_timespec_normalize)
 {
-	ARRAY_FOR_EACH(ts_tests, i) {
-		bool different, corrected;
-		bool overflow;
-		const struct ts_test_spec *const tspec = &ts_tests[i];
-		struct timespec norm = tspec->invalid_ts;
-
-		TC_PRINT("%zu: timespec_normalize({%lld, %lld})\n", i,
-			 (long long)tspec->invalid_ts.tv_sec, (long long)tspec->invalid_ts.tv_nsec);
-
-		overflow = !timespec_normalize(&norm);
-		zexpect_not_equal(tspec->expect_valid || tspec->correctable, overflow,
-				  "%zu: timespec_normalize({%lld, %lld}) %s, unexpectedly", i,
-				  (long long)tspec->invalid_ts.tv_sec,
-				  (long long)tspec->invalid_ts.tv_nsec,
-				  tspec->correctable ? "failed" : "succeeded");
-
-		if (!tspec->expect_valid && tspec->correctable) {
-			different = !timespec_equal(&tspec->invalid_ts, &norm);
-			corrected = timespec_equal(&tspec->valid_ts, &norm);
-			zexpect_true(different && corrected,
-				     "%zu: {%lld, %lld} is not properly corrected:"
-				     "{%lld, %lld} != {%lld, %lld}", i,
-				     (long long)tspec->invalid_ts.tv_sec,
-				     (long long)tspec->invalid_ts.tv_nsec,
-				     (long long)tspec->valid_ts.tv_sec,
-				     (long long)tspec->valid_ts.tv_nsec,
-				     (long long)norm.tv_sec,
-				     (long long)norm.tv_nsec);
-		}
-	}
-}
-
-ZTEST(timeutil_api, test_timespec_add)
-{
+	size_t i = ztest_get_current_param_index();
+	bool different, corrected;
 	bool overflow;
-	struct timespec actual;
-	const struct atspec {
-		struct timespec a;
-		struct timespec b;
-		struct timespec result;
-		bool expect;
-	} tspecs[] = {
-		/* non-overflow cases */
-		{.a = {0, 0}, .b = {0, 0}, .result = {0, 0}, .expect = false},
-		{.a = {1, 1}, .b = {1, 1}, .result = {2, 2}, .expect = false},
-		{.a = {-1, 1}, .b = {-1, 1}, .result = {-2, 2}, .expect = false},
-		{.a = {-1, NSEC_PER_SEC - 1}, .b = {0, 1}, .result = {0, 0}, .expect = false},
-		/* overflow cases */
-		{.a = {SYS_TIME_T_MAX, 0}, .b = {1, 0}, .result = {0}, .expect = true},
-		{.a = {SYS_TIME_T_MIN, 0}, .b = {-1, 0}, .result = {0}, .expect = true},
-		{.a = {SYS_TIME_T_MAX, NSEC_PER_SEC - 1}, .b = {1, 1}, .result = {0},
-		 .expect = true},
-		{.a = {SYS_TIME_T_MIN, NSEC_PER_SEC - 1}, .b = {-1, 0}, .result = {0},
-		 .expect = true},
-	};
+	const struct ts_test_spec *const tspec = ZTEST_GET_PARAM_PTR(struct ts_test_spec);
+	struct timespec norm = tspec->invalid_ts;
 
-	ARRAY_FOR_EACH(tspecs, i) {
-		const struct atspec *const tspec = &tspecs[i];
+	TC_PRINT("%zu: timespec_normalize({%lld, %lld})\n", i,
+		 (long long)tspec->invalid_ts.tv_sec, (long long)tspec->invalid_ts.tv_nsec);
 
-		actual = tspec->a;
-		overflow = !timespec_add(&actual, &tspec->b);
+	overflow = !timespec_normalize(&norm);
+	zexpect_not_equal(tspec->expect_valid || tspec->correctable, overflow,
+			  "%zu: timespec_normalize({%lld, %lld}) %s, unexpectedly", i,
+			  (long long)tspec->invalid_ts.tv_sec,
+			  (long long)tspec->invalid_ts.tv_nsec,
+			  tspec->correctable ? "failed" : "succeeded");
 
-		zexpect_equal(overflow, tspec->expect,
-			      "%zu: timespec_add({%lld, %lld}, {%lld, %lld}) %s, unexpectedly", i,
-			      (long long)tspec->a.tv_sec, (long long)tspec->a.tv_nsec,
-			      (long long)tspec->b.tv_sec, (long long)tspec->b.tv_nsec,
-			      tspec->expect ? "succeeded" : "failed");
-
-		if (!tspec->expect) {
-			zexpect_equal(
-				timespec_equal(&actual, &tspec->result), true,
-				"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
-				(long long)actual.tv_sec, (long long)actual.tv_nsec,
-				(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
-		}
+	if (!tspec->expect_valid && tspec->correctable) {
+		different = !timespec_equal(&tspec->invalid_ts, &norm);
+		corrected = timespec_equal(&tspec->valid_ts, &norm);
+		zexpect_true(different && corrected,
+			     "%zu: {%lld, %lld} is not properly corrected:"
+			     "{%lld, %lld} != {%lld, %lld}", i,
+			     (long long)tspec->invalid_ts.tv_sec,
+			     (long long)tspec->invalid_ts.tv_nsec,
+			     (long long)tspec->valid_ts.tv_sec,
+			     (long long)tspec->valid_ts.tv_nsec,
+			     (long long)norm.tv_sec,
+			     (long long)norm.tv_nsec);
 	}
 }
+ZTEST_INSTANTIATE_TEST_SUITE_P(ts, timeutil_api, test_timespec_normalize, ts_vals);
 
-ZTEST(timeutil_api, test_timespec_negate)
+struct atspec {
+	struct timespec a;
+	struct timespec b;
+	struct timespec result;
+	bool expect;
+};
+
+static const struct atspec add_tspecs[] = {
+	/* non-overflow cases */
+	{.a = {0, 0}, .b = {0, 0}, .result = {0, 0}, .expect = false},
+	{.a = {1, 1}, .b = {1, 1}, .result = {2, 2}, .expect = false},
+	{.a = {-1, 1}, .b = {-1, 1}, .result = {-2, 2}, .expect = false},
+	{.a = {-1, NSEC_PER_SEC - 1}, .b = {0, 1}, .result = {0, 0}, .expect = false},
+	/* overflow cases */
+	{.a = {SYS_TIME_T_MAX, 0}, .b = {1, 0}, .result = {0}, .expect = true},
+	{.a = {SYS_TIME_T_MIN, 0}, .b = {-1, 0}, .result = {0}, .expect = true},
+	{.a = {SYS_TIME_T_MAX, NSEC_PER_SEC - 1}, .b = {1, 1}, .result = {0}, .expect = true},
+	{.a = {SYS_TIME_T_MIN, NSEC_PER_SEC - 1}, .b = {-1, 0}, .result = {0}, .expect = true},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(add_vals, add_tspecs);
+
+ZTEST_P(timeutil_api, test_timespec_add)
 {
-	struct ntspec {
-		struct timespec ts;
-		struct timespec result;
-		bool expect_failure;
-	} tspecs[] = {
-		/* non-overflow cases */
-		{.ts = {0, 0}, .result = {0, 0}, .expect_failure = false},
-		{.ts = {1, 1}, .result = {-2, NSEC_PER_SEC - 1}, .expect_failure = false},
-		{.ts = {-1, 1}, .result = {0, NSEC_PER_SEC - 1}, .expect_failure = false},
-		{.ts = {SYS_TIME_T_MAX, 0}, .result = {SYS_TIME_T_MIN + 1, 0},
-		 .expect_failure = false},
-		/* overflow cases */
-		{.ts = {SYS_TIME_T_MIN, 0}, .result = {0}, .expect_failure = true},
-	};
+	size_t i = ztest_get_current_param_index();
+	const struct atspec *const tspec = ZTEST_GET_PARAM_PTR(struct atspec);
+	struct timespec actual;
+	bool overflow;
 
-	ARRAY_FOR_EACH(tspecs, i) {
-		bool overflow;
-		const struct ntspec *const tspec = &tspecs[i];
-		struct timespec actual = tspec->ts;
+	actual = tspec->a;
+	overflow = !timespec_add(&actual, &tspec->b);
 
-		overflow = !timespec_negate(&actual);
-		zexpect_equal(overflow, tspec->expect_failure,
-			      "%zu: timespec_negate({%lld, %lld}) %s, unexpectedly", i,
-			      (long long)tspec->ts.tv_sec, (long long)tspec->ts.tv_nsec,
-			      tspec->expect_failure ? "did not overflow" : "overflowed");
+	zexpect_equal(overflow, tspec->expect,
+		      "%zu: timespec_add({%lld, %lld}, {%lld, %lld}) %s, unexpectedly", i,
+		      (long long)tspec->a.tv_sec, (long long)tspec->a.tv_nsec,
+		      (long long)tspec->b.tv_sec, (long long)tspec->b.tv_nsec,
+		      tspec->expect ? "succeeded" : "failed");
 
-		if (!tspec->expect_failure) {
-			zexpect_true(
-				timespec_equal(&actual, &tspec->result),
-				"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
-				(long long)actual.tv_sec, (long long)actual.tv_nsec,
-				(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
-		}
+	if (!tspec->expect) {
+		zexpect_equal(
+			timespec_equal(&actual, &tspec->result), true,
+			"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+			(long long)actual.tv_sec, (long long)actual.tv_nsec,
+			(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
 	}
 }
+ZTEST_INSTANTIATE_TEST_SUITE_P(add, timeutil_api, test_timespec_add, add_vals);
+
+struct ntspec {
+	struct timespec ts;
+	struct timespec result;
+	bool expect_failure;
+};
+
+static const struct ntspec negate_tspecs[] = {
+	/* non-overflow cases */
+	{.ts = {0, 0}, .result = {0, 0}, .expect_failure = false},
+	{.ts = {1, 1}, .result = {-2, NSEC_PER_SEC - 1}, .expect_failure = false},
+	{.ts = {-1, 1}, .result = {0, NSEC_PER_SEC - 1}, .expect_failure = false},
+	{.ts = {SYS_TIME_T_MAX, 0}, .result = {SYS_TIME_T_MIN + 1, 0}, .expect_failure = false},
+	/* overflow cases */
+	{.ts = {SYS_TIME_T_MIN, 0}, .result = {0}, .expect_failure = true},
+};
+
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(negate_vals, negate_tspecs);
+
+ZTEST_P(timeutil_api, test_timespec_negate)
+{
+	size_t i = ztest_get_current_param_index();
+	const struct ntspec *const tspec = ZTEST_GET_PARAM_PTR(struct ntspec);
+	struct timespec actual = tspec->ts;
+	bool overflow;
+
+	overflow = !timespec_negate(&actual);
+	zexpect_equal(overflow, tspec->expect_failure,
+		      "%zu: timespec_negate({%lld, %lld}) %s, unexpectedly", i,
+		      (long long)tspec->ts.tv_sec, (long long)tspec->ts.tv_nsec,
+		      tspec->expect_failure ? "did not overflow" : "overflowed");
+
+	if (!tspec->expect_failure) {
+		zexpect_true(
+			timespec_equal(&actual, &tspec->result),
+			"%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+			(long long)actual.tv_sec, (long long)actual.tv_nsec,
+			(long long)tspec->result.tv_sec, (long long)tspec->result.tv_nsec);
+	}
+}
+ZTEST_INSTANTIATE_TEST_SUITE_P(negate, timeutil_api, test_timespec_negate, negate_vals);
 
 ZTEST(timeutil_api, test_timespec_sub)
 {
@@ -431,124 +438,124 @@ static const struct tospec {
 			 false),
 };
 
-ZTEST(timeutil_api, test_timespec_from_timeout)
+ZTEST_DEFINE_PARAM_VALUES_ARRAY(tospec_vals, tospecs);
+
+ZTEST_P(timeutil_api, test_timespec_from_timeout)
 {
-	ARRAY_FOR_EACH(tospecs, i) {
-		const struct tospec *const tspec = &tospecs[i];
-		struct timespec actual;
+	size_t i = ztest_get_current_param_index();
+	const struct tospec *const tspec = ZTEST_GET_PARAM_PTR(struct tospec);
+	struct timespec actual;
 
-		/*
-		 * In this test we only check exact conversions, so skip negative timespecs that
-		 * saturate up to K_NO_WAIT and skip values under SYS_TIMESPEC_MIN and over
-		 * SYS_TIMESPEC_MAX. Also, skip "normal" conversions that just round up to the next
-		 * tick boundary.
-		 */
-		if (tspec->negative || (tspec->saturation != 0) || tspec->roundup) {
-			continue;
-		}
-
-		TC_PRINT("%zu: ticks: {%lld}, timespec: {%lld, %lld}\n", i,
-			 (long long)tspec->timeout.ticks, (long long)tspec->tspec.tv_sec,
-			 (long long)tspec->tspec.tv_nsec);
-
-		timespec_from_timeout(tspec->timeout, &actual);
-		zexpect_true(timespec_equal(&actual, &tspec->tspec),
-			     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
-			     (long long)actual.tv_sec, (long long)actual.tv_nsec,
-			     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
+	/*
+	 * In this test we only check exact conversions, so skip negative timespecs that
+	 * saturate up to K_NO_WAIT and skip values under SYS_TIMESPEC_MIN and over
+	 * SYS_TIMESPEC_MAX. Also, skip "normal" conversions that just round up to the next
+	 * tick boundary.
+	 */
+	if (tspec->negative || (tspec->saturation != 0) || tspec->roundup) {
+		ztest_test_skip();
 	}
+
+	TC_PRINT("%zu: ticks: {%lld}, timespec: {%lld, %lld}\n", i,
+		 (long long)tspec->timeout.ticks, (long long)tspec->tspec.tv_sec,
+		 (long long)tspec->tspec.tv_nsec);
+
+	timespec_from_timeout(tspec->timeout, &actual);
+	zexpect_true(timespec_equal(&actual, &tspec->tspec),
+		     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+		     (long long)actual.tv_sec, (long long)actual.tv_nsec,
+		     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
 }
+ZTEST_INSTANTIATE_TEST_SUITE_P(tospec, timeutil_api, test_timespec_from_timeout, tospec_vals);
 
-ZTEST(timeutil_api, test_timespec_to_timeout)
+ZTEST_P(timeutil_api, test_timespec_to_timeout)
 {
-	ARRAY_FOR_EACH(tospecs, i) {
-		const struct tospec *const tspec = &tospecs[i];
-		k_timeout_t actual;
-		struct timespec tick_ts;
-		struct timespec rem = {};
+	size_t i = ztest_get_current_param_index();
+	const struct tospec *const tspec = ZTEST_GET_PARAM_PTR(struct tospec);
+	k_timeout_t actual;
+	struct timespec tick_ts;
+	struct timespec rem = {};
 
-		TC_PRINT("%zu: ticks: {%lld}, timespec: {%lld, %lld}\n", i,
-			 (long long)tspec->timeout.ticks, (long long)tspec->tspec.tv_sec,
-			 (long long)tspec->tspec.tv_nsec);
+	TC_PRINT("%zu: ticks: {%lld}, timespec: {%lld, %lld}\n", i,
+		 (long long)tspec->timeout.ticks, (long long)tspec->tspec.tv_sec,
+		 (long long)tspec->tspec.tv_nsec);
 
-		actual = timespec_to_timeout(&tspec->tspec, &rem);
-		if (tspec->saturation == 0) {
-			/* exact match or rounding up */
-			if (!tspec->negative &&
-			    (timespec_compare(&tspec->tspec, &SYS_TIMESPEC_NO_WAIT) != 0) &&
-			    (timespec_compare(&tspec->tspec, &SYS_TIMESPEC_FOREVER) != 0)) {
-				__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MIN) >= 0,
-					 "%zu: timespec: {%lld, %lld} is not greater than "
-					 "SYS_TIMESPEC_MIN",
-					 i, (long long)tspec->tspec.tv_sec,
-					 (long long)tspec->tspec.tv_nsec);
-				__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MAX) <= 0,
-					 "%zu: timespec: {%lld, %lld} is not less than "
-					 "SYS_TIMESPEC_MAX",
-					 i, (long long)tspec->tspec.tv_sec,
-					 (long long)tspec->tspec.tv_nsec);
-			}
-			zexpect_equal(actual.ticks, tspec->timeout.ticks,
-				      "%zu: {%" PRId64 "} and {%" PRId64
-				      "} are unexpectedly different",
-				      i, (int64_t)actual.ticks, (int64_t)tspec->timeout.ticks);
-		} else if (tspec->saturation < 0) {
-			/* K_TICK_MIN saturation */
-			__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MIN) <= 0,
-				 "timespec: {%lld, %lld} is not less than or equal to "
-				 "SYS_TIMESPEC_MIN "
-				 "{%lld, %lld}",
-				 (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec,
-				 (long long)SYS_TIMESPEC_MIN.tv_sec,
-				 (long long)SYS_TIMESPEC_MIN.tv_nsec);
-			zexpect_equal(actual.ticks, K_TICK_MIN,
-				      "%zu: {%" PRId64 "} and {%" PRId64
-				      "} are unexpectedly different",
-				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MIN);
-		} else if (tspec->saturation > 0) {
-			/* K_TICK_MAX saturation */
-			__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MAX) >= 0,
-				 "timespec: {%lld, %lld} is not greater than or equal to "
-				 "SYS_TIMESPEC_MAX "
-				 "{%lld, %lld}",
-				 (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec,
-				 (long long)SYS_TIMESPEC_MAX.tv_sec,
-				 (long long)SYS_TIMESPEC_MAX.tv_nsec);
-			zexpect_equal(actual.ticks, K_TICK_MAX,
-				      "%zu: {%" PRId64 "} and {%" PRId64
-				      "} are unexpectedly different",
-				      i, (int64_t)actual.ticks, (int64_t)K_TICK_MAX);
+	actual = timespec_to_timeout(&tspec->tspec, &rem);
+	if (tspec->saturation == 0) {
+		/* exact match or rounding up */
+		if (!tspec->negative &&
+		    (timespec_compare(&tspec->tspec, &SYS_TIMESPEC_NO_WAIT) != 0) &&
+		    (timespec_compare(&tspec->tspec, &SYS_TIMESPEC_FOREVER) != 0)) {
+			__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MIN) >= 0,
+				 "%zu: timespec: {%lld, %lld} is not greater than "
+				 "SYS_TIMESPEC_MIN",
+				 i, (long long)tspec->tspec.tv_sec,
+				 (long long)tspec->tspec.tv_nsec);
+			__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MAX) <= 0,
+				 "%zu: timespec: {%lld, %lld} is not less than "
+				 "SYS_TIMESPEC_MAX",
+				 i, (long long)tspec->tspec.tv_sec,
+				 (long long)tspec->tspec.tv_nsec);
 		}
-
-		timespec_from_timeout(tspec->timeout, &tick_ts);
-		timespec_add(&tick_ts, &rem);
-		zexpect_true(timespec_equal(&tick_ts, &tspec->tspec),
-			     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
-			     (long long)tick_ts.tv_sec, (long long)tick_ts.tv_nsec,
-			     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
+		zexpect_equal(actual.ticks, tspec->timeout.ticks,
+			      "%zu: {%" PRId64 "} and {%" PRId64 "} are unexpectedly different",
+			      i, (int64_t)actual.ticks, (int64_t)tspec->timeout.ticks);
+	} else if (tspec->saturation < 0) {
+		/* K_TICK_MIN saturation */
+		__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MIN) <= 0,
+			 "timespec: {%lld, %lld} is not less than or equal to "
+			 "SYS_TIMESPEC_MIN "
+			 "{%lld, %lld}",
+			 (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec,
+			 (long long)SYS_TIMESPEC_MIN.tv_sec,
+			 (long long)SYS_TIMESPEC_MIN.tv_nsec);
+		zexpect_equal(actual.ticks, K_TICK_MIN,
+			      "%zu: {%" PRId64 "} and {%" PRId64 "} are unexpectedly different",
+			      i, (int64_t)actual.ticks, (int64_t)K_TICK_MIN);
+	} else if (tspec->saturation > 0) {
+		/* K_TICK_MAX saturation */
+		__ASSERT(timespec_compare(&tspec->tspec, &SYS_TIMESPEC_MAX) >= 0,
+			 "timespec: {%lld, %lld} is not greater than or equal to "
+			 "SYS_TIMESPEC_MAX "
+			 "{%lld, %lld}",
+			 (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec,
+			 (long long)SYS_TIMESPEC_MAX.tv_sec,
+			 (long long)SYS_TIMESPEC_MAX.tv_nsec);
+		zexpect_equal(actual.ticks, K_TICK_MAX,
+			      "%zu: {%" PRId64 "} and {%" PRId64 "} are unexpectedly different",
+			      i, (int64_t)actual.ticks, (int64_t)K_TICK_MAX);
 	}
+
+	timespec_from_timeout(tspec->timeout, &tick_ts);
+	timespec_add(&tick_ts, &rem);
+	zexpect_true(timespec_equal(&tick_ts, &tspec->tspec),
+		     "%zu: {%lld, %lld} and {%lld, %lld} are unexpectedly different", i,
+		     (long long)tick_ts.tv_sec, (long long)tick_ts.tv_nsec,
+		     (long long)tspec->tspec.tv_sec, (long long)tspec->tspec.tv_nsec);
+}
+ZTEST_INSTANTIATE_TEST_SUITE_P(tospec, timeutil_api, test_timespec_to_timeout, tospec_vals);
 
 #if defined(CONFIG_TIMEOUT_64BIT) && (CONFIG_SYS_CLOCK_TICKS_PER_SEC == 100)
-	{
-		struct timespec rem = {};
-		k_timeout_t to = K_TICKS(K_TICK_MAX);
-		/* SYS_TIMESPEC_MAX corresponding K_TICK_MAX with a tick rate of 100 Hz */
-		struct timespec ts = SYS_TIMESPEC(92233720368547758LL, 70000000L);
+ZTEST(timeutil_api, test_timespec_to_timeout_max)
+{
+	struct timespec rem = {};
+	k_timeout_t to = K_TICKS(K_TICK_MAX);
+	/* SYS_TIMESPEC_MAX corresponding K_TICK_MAX with a tick rate of 100 Hz */
+	struct timespec ts = SYS_TIMESPEC(92233720368547758LL, 70000000L);
 
-		zexpect_true(K_TIMEOUT_EQ(timespec_to_timeout(&ts, &rem), to),
-			     "timespec_to_timeout(%lld, %lld) != %lld", (long long)ts.tv_sec,
-			     (long long)ts.tv_nsec, (long long)to.ticks);
-		zexpect_true(timespec_equal(&rem, &SYS_TIMESPEC_NO_WAIT),
-			     "non-zero remainder {%lld, %lld}", (long long)rem.tv_sec,
-			     (long long)rem.tv_nsec);
+	zexpect_true(K_TIMEOUT_EQ(timespec_to_timeout(&ts, &rem), to),
+		     "timespec_to_timeout(%lld, %lld) != %lld", (long long)ts.tv_sec,
+		     (long long)ts.tv_nsec, (long long)to.ticks);
+	zexpect_true(timespec_equal(&rem, &SYS_TIMESPEC_NO_WAIT),
+		     "non-zero remainder {%lld, %lld}", (long long)rem.tv_sec,
+		     (long long)rem.tv_nsec);
 
-		TC_PRINT("timespec_to_timeout():\nts: {%lld, %lld} => to: {%lld}, rem: {%lld, "
-			 "%lld}\n",
-			 (long long)ts.tv_sec, (long long)ts.tv_nsec, (long long)to.ticks,
-			 (long long)rem.tv_sec, (long long)rem.tv_nsec);
-	}
-#endif
+	TC_PRINT("timespec_to_timeout():\nts: {%lld, %lld} => to: {%lld}, rem: {%lld, "
+		 "%lld}\n",
+		 (long long)ts.tv_sec, (long long)ts.tv_nsec, (long long)to.ticks,
+		 (long long)rem.tv_sec, (long long)rem.tv_nsec);
 }
+#endif
 
 static void *setup(void)
 {
