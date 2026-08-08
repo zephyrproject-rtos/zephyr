@@ -773,6 +773,34 @@ struct bt_aics *bt_aics_client_free_instance_get(void)
 	return NULL;
 }
 
+int bt_aics_client_free_instance(struct bt_aics *aics)
+{
+	ARRAY_FOR_EACH_PTR(aics_insts, inst) {
+		if (aics == inst) {
+			if (!atomic_test_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_ACTIVE)) {
+				return -EALREADY;
+			}
+
+			/* Test and set the BT_AICS_CLIENT_FLAG_BUSY flag here to reduce, but not
+			 * eliminate, chance of any operations happening while we are free'ing this
+			 * instance.
+			 */
+			if (atomic_test_and_set_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY)) {
+				return -EBUSY;
+			}
+
+			aics_client_reset(inst);
+
+			atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_BUSY);
+			atomic_clear_bit(inst->cli.flags, BT_AICS_CLIENT_FLAG_ACTIVE);
+
+			return 0;
+		}
+	}
+
+	return -EINVAL;
+}
+
 int bt_aics_client_conn_get(const struct bt_aics *aics, struct bt_conn **conn)
 {
 	if (aics == NULL) {

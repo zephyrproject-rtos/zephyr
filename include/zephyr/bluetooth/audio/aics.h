@@ -539,6 +539,18 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description);
 struct bt_aics *bt_aics_client_free_instance_get(void);
 
 /**
+ * @brief Free an instance received from bt_aics_client_free_instance_get()
+ *
+ * @param inst The instance to free
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p inst is NULL or not a client instance.
+ * @retval -EALREADY @p inst is already free.
+ * @retval -EBUSY @p inst is busy.
+ */
+int bt_aics_client_free_instance(struct bt_aics *inst);
+
+/**
  * @brief Registers the callbacks for the Audio Input Control Service client.
  *
  * @param inst      The instance pointer.
