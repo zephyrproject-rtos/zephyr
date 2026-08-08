@@ -367,6 +367,10 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	ret = whd_network_send_ethernet_data(airoc_if, (void *)buf);
 	if (ret != CY_RSLT_SUCCESS) {
 		LOG_ERR("whd_network_send_ethernet_data failed");
+		/* WHD does not consume the buffer on a synchronous failure, so
+		 * release it here to avoid leaking it from the TX pool.
+		 */
+		airoc_wifi_buffer_release((whd_buffer_t)buf, WHD_NETWORK_TX);
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 		data->stats.errors.tx++;
 #endif
@@ -637,7 +641,6 @@ static int airoc_mgmt_disconnect(const struct device *dev)
 	}
 
 	if (whd_wifi_leave(airoc_sta_if) != WHD_SUCCESS) {
-		k_sem_give(&data->sema_common);
 		ret = -EAGAIN;
 	} else {
 		data->is_sta_connected = false;
