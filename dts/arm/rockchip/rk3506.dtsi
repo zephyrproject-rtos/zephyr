@@ -1,0 +1,67 @@
+/*
+ * Copyright 2026 Hiyajomaho Num9
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+
+#include <arm/armv7-a.dtsi>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+/ {
+	interrupt-parent = <&gic>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	compatible = "rockchip,rk3506";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@f00 {
+			compatible = "arm,cortex-a7";
+			device_type = "cpu";
+			reg = <0xf00>;
+		};
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv7-timer";
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		status = "okay";
+	};
+
+	soc {
+		compatible = "rockchip,rk3506", "simple-bus";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gic: interrupt-controller@ff581000 {
+			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
+			status = "okay";
+			reg = <0xff581000 0x1000>,
+			      <0xff582000 0x2000>,
+			      <0xff584000 0x2000>,
+			      <0xff586000 0x2000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <0>;
+		};
+
+		uart0: serial@ff0a0000 {
+			compatible = "rockchip,rk3506-uart", "ns16550";
+			reg = <0xff0a0000 0x100>;
+			reg-shift = <2>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+	};
+};

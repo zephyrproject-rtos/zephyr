@@ -1,0 +1,6 @@
+board:
+  name: ok3506b_s12
+  full_name: OK3506B-S12
+  vendor: forlinx
+  socs:
+  - name: rk3506

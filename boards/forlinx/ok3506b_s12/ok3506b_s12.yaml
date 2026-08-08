@@ -1,0 +1,12 @@
+identifier: ok3506b_s12
+name: Forlinx OK3506B-S12
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 262144
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
