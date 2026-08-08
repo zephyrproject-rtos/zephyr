@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the embedded controller (EC) host command APIs.
+ * @ingroup ec_host_cmd_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
 #define ZEPHYR_INCLUDE_MGMT_EC_HOST_CMD_EC_HOST_CMD_H_
 
@@ -69,7 +75,9 @@ enum ec_host_cmd_status {
 	/** Can't resend response. */
 	EC_HOST_CMD_DUP_UNAVAILABLE = 20,
 
-	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits. */
+	/** @cond INTERNAL_HIDDEN */
+	EC_HOST_CMD_MAX = UINT16_MAX /* Force enum to be 16 bits */
+	/** @endcond */
 } __packed;
 
 /**
@@ -121,8 +129,11 @@ typedef enum ec_host_cmd_status (*ec_host_cmd_in_progress_cb_t)(void *user_data)
  * Host command context structure
  */
 struct ec_host_cmd {
+	/** Context used to pass data received from the host. */
 	struct ec_host_cmd_rx_ctx rx_ctx;
+	/** Buffer used to send a response to the host. */
 	struct ec_host_cmd_tx_buf tx;
+	/** Backend used for communication with the host. */
 	struct ec_host_cmd_backend *backend;
 	/**
 	 * The backend gives rx_ready (by calling the ec_host_cmd_send_receive function),
@@ -136,7 +147,9 @@ struct ec_host_cmd {
 	 * function.
 	 */
 	ec_host_cmd_user_cb_t user_cb;
+	/** User data passed to @a user_cb. */
 	void *user_data;
+	/** Current state of the host command handler. */
 	enum ec_host_cmd_state state;
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 	struct k_thread thread;
