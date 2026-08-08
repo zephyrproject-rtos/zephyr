@@ -89,6 +89,7 @@ struct dirent *readdir(DIR *dirp)
 {
 	int rc;
 	struct fs_dir_t *ptr = dirp;
+	size_t copy_len;
 
 	if (dirp == NULL) {
 		errno = EBADF;
@@ -106,12 +107,14 @@ struct dirent *readdir(DIR *dirp)
 		return NULL;
 	}
 
-	rc = strlen(fdirent.name);
-	rc = (rc < MAX_FILE_NAME) ? rc : (MAX_FILE_NAME - 1);
-	(void)memcpy(pdirent.d_name, fdirent.name, rc);
+	copy_len = strlen(fdirent.name);
+	if (copy_len >= sizeof(pdirent.d_name)) {
+		copy_len = sizeof(pdirent.d_name) - 1;
+	}
+	(void)memcpy(pdirent.d_name, fdirent.name, copy_len);
 
 	/* Make sure the name is NULL terminated */
-	pdirent.d_name[rc] = '\0';
+	pdirent.d_name[copy_len] = '\0';
 	return &pdirent;
 }
 
