@@ -761,7 +761,7 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
 
     if extra_modules is None:
         extra_modules = []
-        for var in ['EXTRA_ZEPHYR_MODULES', 'ZEPHYR_EXTRA_MODULES']:
+        for var in ['EXTRA_ZEPHYR_MODULES']:
             extra_module = os.environ.get(var, None)
             if not extra_module:
                 continue
@@ -788,7 +788,7 @@ def parse_modules(zephyr_base, manifest=None, west_projs=None, modules=None,
             all_modules_by_name[meta['name']] = Module(project, meta, depends)
 
         elif project in extra_modules:
-            sys.exit(f'{project}, given in ZEPHYR_EXTRA_MODULES, '
+            sys.exit(f'{project}, given in EXTRA_ZEPHYR_MODULES, '
                      'is not a valid zephyr module')
 
     for module in all_modules_by_name.values():
@@ -885,7 +885,7 @@ def main():
 #
 # This file contains build system settings derived from your modules.
 #
-# Modules may be set via ZEPHYR_MODULES, ZEPHYR_EXTRA_MODULES,
+# Modules may be set via ZEPHYR_MODULES, EXTRA_ZEPHYR_MODULES,
 # and/or the west manifest file.
 #
 # See the Modules guide for more information.
