@@ -1,0 +1,16 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+description: Shakti GPIO
+
+compatible: "shakti,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+gpio-cells:
+  - pin
+  - flags
