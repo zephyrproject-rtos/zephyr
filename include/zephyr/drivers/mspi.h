@@ -481,50 +481,96 @@ typedef void (*mspi_callback_handler_t)(struct mspi_callback_context *mspi_cb_ct
 /** @} */
 
 /**
- * MSPI driver API definition and system call entry points
+ * @def_driverbackendgroup{MSPI,mspi_interface}
+ * @{
+ */
+
+/**
+ * @brief Configure a MSPI controller.
+ * See mspi_config() for argument description.
  */
 typedef int (*mspi_api_config)(const struct mspi_dt_spec *spec);
 
+/**
+ * @brief Configure a MSPI controller with device specific parameters.
+ * See mspi_dev_config() for argument description.
+ */
 typedef int (*mspi_api_dev_config)(const struct device *controller,
 				   const struct mspi_dev_id *dev_id,
 				   const enum mspi_dev_cfg_mask param_mask,
 				   const struct mspi_dev_cfg *cfg);
 
+/**
+ * @brief Query to see if it a channel is ready.
+ * See mspi_get_channel_status() for argument description.
+ */
 typedef int (*mspi_api_get_channel_status)(const struct device *controller, uint8_t ch);
 
+/**
+ * @brief Transfer request over MSPI.
+ * See mspi_transceive() for argument description.
+ */
 typedef int (*mspi_api_transceive)(const struct device *controller,
 				   const struct mspi_dev_id *dev_id,
 				   const struct mspi_xfer *req);
 
+/**
+ * @brief Register the mspi callback functions.
+ * See mspi_register_callback() for argument description.
+ */
 typedef int (*mspi_api_register_callback)(const struct device *controller,
 					  const struct mspi_dev_id *dev_id,
 					  const enum mspi_bus_event evt_type,
 					  mspi_callback_handler_t cb,
 					  struct mspi_callback_context *ctx);
 
-/** @brief Callback API for memory map configuration @see mspi_memmap_config() */
+/**
+ * @brief Configure a MSPI memory map settings.
+ * See mspi_memmap_config() for argument description.
+ */
 typedef int (*mspi_api_memmap_config)(const struct device *controller,
 				      const struct mspi_dev_id *dev_id,
 				      const struct mspi_memmap_cfg *memmap_cfg);
 
+/**
+ * @brief Configure a MSPI scrambling settings.
+ * See mspi_scramble_config() for argument description.
+ */
 typedef int (*mspi_api_scramble_config)(const struct device *controller,
 					const struct mspi_dev_id *dev_id,
 					const struct mspi_scramble_cfg *scramble_cfg);
 
+/**
+ * @brief Configure a MSPI timing settings.
+ * See mspi_timing_config() for argument description.
+ */
 typedef int (*mspi_api_timing_config)(const struct device *controller,
 				      const struct mspi_dev_id *dev_id, const uint32_t param_mask,
 				      void *timing_cfg);
 
+/**
+ * @driver_ops{MSPI}
+ */
 __subsystem struct mspi_driver_api {
+	/** @driver_ops_mandatory @copybrief mspi_config */
 	mspi_api_config                config;
+	/** @driver_ops_mandatory @copybrief mspi_dev_config */
 	mspi_api_dev_config            dev_config;
+	/** @driver_ops_mandatory @copybrief mspi_get_channel_status */
 	mspi_api_get_channel_status    get_channel_status;
+	/** @driver_ops_optional @copybrief mspi_transceive */
 	mspi_api_transceive            transceive;
+	/** @driver_ops_optional @copybrief mspi_register_callback */
 	mspi_api_register_callback     register_callback;
-	mspi_api_memmap_config         memmap_config; /**< @see mspi_memmap_config() */
+	/** @driver_ops_optional @copybrief mspi_memmap_config */
+	mspi_api_memmap_config         memmap_config;
+	/** @driver_ops_optional @copybrief mspi_scramble_config */
 	mspi_api_scramble_config       scramble_config;
+	/** @driver_ops_optional @copybrief mspi_timing_config */
 	mspi_api_timing_config         timing_config;
 };
+
+/** @} */
 
 /**
  * @addtogroup mspi_configure_api
