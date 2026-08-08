@@ -1,0 +1,26 @@
+description: RP2040 PIO-based PDM microphone DMIC driver
+
+compatible: "raspberrypi,rp2040-pdm"
+
+include: base.yaml
+
+properties:
+  clk-pin:
+    type: int
+    required: true
+    description: RP2040 GPIO number for PDM clock output
+
+  din-pin:
+    type: int
+    required: true
+    description: RP2040 GPIO number for PDM data input
+
+  pio-num:
+    type: int
+    default: 0
+    description: PIO block to use (0 or 1)
+
+  gain:
+    type: int
+    default: 16
+    description: Initial OpenPDM filter gain
