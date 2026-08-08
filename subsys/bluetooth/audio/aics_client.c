@@ -689,6 +689,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	for (size_t i = 0U; i < ARRAY_SIZE(aics_insts); i++) {
 		if (aics_insts[i].cli.conn == conn) {
 			aics_client_reset(&aics_insts[i]);

@@ -1230,6 +1230,10 @@ int bt_ascs_disable_ase(struct bt_bap_ep *ep)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	for (size_t i = 0U; i < ARRAY_SIZE(ascs.ase_pool); i++) {
 		struct bt_ascs_ase *ase = &ascs.ase_pool[i];
 

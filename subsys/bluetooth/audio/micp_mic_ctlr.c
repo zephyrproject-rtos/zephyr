@@ -509,10 +509,15 @@ static void micp_mic_ctlr_reset(struct bt_micp_mic_ctlr *mic_ctlr)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	struct bt_micp_mic_ctlr *mic_ctlr = mic_ctlr_get_by_conn(conn);
+	struct bt_micp_mic_ctlr *mic_ctlr;
 
 	ARG_UNUSED(reason);
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
+	mic_ctlr = mic_ctlr_get_by_conn(conn);
 	if (mic_ctlr->conn == conn) {
 		micp_mic_ctlr_reset(mic_ctlr);
 	}
