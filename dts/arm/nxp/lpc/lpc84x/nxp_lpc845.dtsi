@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/lpc/nxp_lpc84x.dtsi>
+#include <nxp/lpc/lpc84x/nxp_lpc84x.dtsi>
 
 /* LPC845 have 16KB SRAM */
 &sram0 {
