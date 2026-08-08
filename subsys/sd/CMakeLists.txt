@@ -10,3 +10,9 @@ if(CONFIG_SD_STACK)
   zephyr_library_sources_ifdef(CONFIG_MMC_STACK mmc.c)
 
 endif()
+
+if(CONFIG_SDIO_DEVICE)
+  zephyr_library_named(sdio_device)
+  zephyr_library_sources(sdio_device.c)
+  zephyr_library_sources_ifdef(CONFIG_SDIO_DEVICE_STREAM sdio_stream.c)
+endif()
