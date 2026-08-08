@@ -1,0 +1,15 @@
+# Copyright (C) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_XCLK_WIZ
+	bool "Xilinx Clock Wizard driver"
+	default y
+	depends on DT_HAS_XLNX_CLKX5_WIZ_1_0_ENABLED
+	help
+	  Enable the Xilinx Clocking Wizard (clkx5-wiz-1.0) clock
+	  control driver for AMD Versal2 platforms.
+
+	  Supports:
+	    - Clock output rate set (dynamic MMCM reconfiguration)
+	    - Clock output rate get (read current M/D/O divisors)
+	    - Clock output enable/disable (per-output clock gating)
