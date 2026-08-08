@@ -23,6 +23,12 @@
 
 LOG_MODULE_REGISTER(sdhc_renesas_ra, CONFIG_SDHC_LOG_LEVEL);
 
+#define SDHC_RA_SDIO_INFO1_TRANSFER_COMPLETE_MASK (0xC000)
+#define SDHC_RA_SDIO_INFO1_IRQ_CLEAR              (0xFFFF3FFEU)
+#define SDHC_RA_IO_READ_EXT_SINGLE_BLOCK          (0x1c35U)
+#define SDHC_RA_IO_EXT_MULTI_BLOCK                (0x6000U)
+#define SDHC_RA_IO_WRITE_EXT_SINGLE_BLOCK         (0x0c35U)
+
 /*
  * The extern functions below are implemented in the r_sdhi.c source file.
  * For more information, please refer to r_sdhi.c in HAL Renesas
@@ -46,6 +52,7 @@ extern void r_sdhi_read_write_common(sdhi_instance_ctrl_t *const p_ctrl, uint32_
 struct sdhc_ra_config {
 	const struct pinctrl_dev_config *pcfg;
 	void *const regs;
+	uint32_t sdio_irq_n;
 };
 
 struct sdhc_ra_priv {
@@ -68,6 +75,9 @@ struct sdhc_ra_priv {
 	struct st_transfer_info transfer_info DTC_TRANSFER_INFO_ALIGNMENT;
 	struct st_transfer_cfg transfer_cfg;
 	struct st_dtc_extended_cfg transfer_cfg_extend;
+	sdhc_interrupt_cb_t cb;
+	int cb_sources;
+	void *user_cb_data;
 };
 
 void sdhimmc_accs_isr(void);
@@ -90,6 +100,38 @@ static void ra_sdmmc_dma_req_isr(const void *parameter)
 {
 	ARG_UNUSED(parameter);
 	sdhimmc_dma_req_isr();
+}
+
+void ra_sdio_int_isr(const void *parameter)
+{
+	const struct device *dev = (const struct device *)parameter;
+	struct sdhc_ra_priv *priv = dev->data;
+	const struct sdhc_ra_config *cfg = dev->config;
+
+	uint32_t info1 = priv->sdmmc_ctrl.p_reg->SDIO_INFO1;
+
+	/* Clear peripheral flags first */
+	priv->sdmmc_ctrl.p_reg->SDIO_INFO1 = SDHC_RA_SDIO_INFO1_IRQ_CLEAR;
+
+	if (info1 & BIT(15)) { /* EXWT: CMD53 transfer complete */
+		priv->sdmmc_event.transfer_completed = true;
+		k_sem_give(&priv->sdmmc_event.transfer_sem);
+	}
+
+	if (info1 & BIT(0)) {
+		/*
+		 * Mask IOIRQ before clearing the ICU: if the card interrupt line
+		 * is still asserted the peripheral re-sets BIT(0) immediately,
+		 * which would re-latch the ICU and storm the ISR.  The upper layer
+		 * re-enables via sdhc_enable_interrupt() after servicing the card.
+		 */
+		priv->sdmmc_ctrl.p_reg->SDIO_INFO1_MASK |= BIT(0);
+		if (priv->cb) {
+			priv->cb(dev, SDHC_INT_SDIO, priv->user_cb_data);
+		}
+	}
+
+	R_BSP_IrqStatusClear(cfg->sdio_irq_n);
 }
 
 static int sdhc_ra_get_card_present(const struct device *dev)
@@ -201,7 +243,6 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 	case SD_GO_IDLE_STATE:
 	case SD_ALL_SEND_CID:
 	case SD_SEND_RELATIVE_ADDR:
-	case SD_SELECT_CARD:
 	case SD_SEND_IF_COND:
 	case SD_SET_BLOCK_SIZE:
 	case SD_ERASE_BLOCK_START:
@@ -209,12 +250,25 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 	case SD_ERASE_BLOCK_OPERATION:
 	case SD_APP_CMD:
 	case SD_SEND_STATUS:
-		/* Send command with argument */
+	case SDIO_RW_DIRECT:
+	case SDIO_SEND_OP_COND:
 		ret = sdhc_ra_send_cmd(priv, &ra_cmd, retries);
 		if (ret < 0) {
+			LOG_DBG("<< CMD%d FAILED: %d", cmd->opcode, ret);
 			goto end;
 		}
 		break;
+
+	case SD_SELECT_CARD:
+		ret = sdhc_ra_send_cmd(priv, &ra_cmd, retries);
+		if (ret < 0) {
+			LOG_DBG("<< CMD%d FAILED: %d", cmd->opcode, ret);
+			goto end;
+		}
+
+		priv->sdmmc_ctrl.initialized = true;
+		break;
+
 	case SD_SEND_CSD:
 		/* Read card specific data register */
 		ret = sdhc_ra_send_cmd(priv, &ra_cmd, retries);
@@ -295,7 +349,6 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 				(response.r3.card_capacity_status > 0U);
 			priv->sdmmc_ctrl.device.card_type = SDMMC_CARD_TYPE_SD;
 		}
-		priv->sdmmc_ctrl.initialized = true;
 		break;
 	case SD_SWITCH:
 		/* Check app cmd */
@@ -316,7 +369,6 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 			}
 			memcpy(ra_cmd.data, priv->sdmmc_ctrl.aligned_buff, ra_cmd.sector_size);
 			priv->sdmmc_event.transfer_completed = false;
-			break;
 		}
 		break;
 
@@ -389,6 +441,65 @@ static int sdhc_ra_request(const struct device *dev, struct sdhc_command *cmd,
 		priv->sdmmc_event.transfer_completed = false;
 		break;
 
+	case SDIO_RW_EXTENDED: {
+		if (data == NULL || data->data == NULL) {
+			ret = -EINVAL;
+			goto end;
+		}
+
+		bool is_write = (cmd->arg >> SDIO_CMD_ARG_RW_SHIFT) & 0x1U;
+		bool is_block_mode = (cmd->arg >> 27) & 0x1U;
+		uint32_t cmd53_count = cmd->arg & 0x1FFU;
+		uint32_t block_count;
+		uint32_t byte_count;
+		uint32_t sdhi_cmd;
+
+		if (is_block_mode) {
+			block_count = (cmd53_count == 0U) ? 512U : cmd53_count;
+			byte_count = data->block_size;
+		} else {
+			block_count = 1U;
+			byte_count = (cmd53_count == 0U) ? 512U : cmd53_count;
+		}
+
+		if (is_write) {
+			sdhi_cmd = SDHC_RA_IO_WRITE_EXT_SINGLE_BLOCK; /* 0x0c35 */
+			fsp_err = r_sdhi_transfer_write(&priv->sdmmc_ctrl, block_count, byte_count,
+							ra_cmd.data);
+		} else {
+			sdhi_cmd = SDHC_RA_IO_READ_EXT_SINGLE_BLOCK; /* 0x1c35 */
+			fsp_err = r_sdhi_transfer_read(&priv->sdmmc_ctrl, block_count, byte_count,
+						       ra_cmd.data);
+		}
+
+		ret = err_fsp2zep(fsp_err);
+		if (ret < 0) {
+			goto end;
+		}
+
+		if (is_block_mode && block_count > 1U) {
+			sdhi_cmd |= SDHC_RA_IO_EXT_MULTI_BLOCK;
+		}
+
+		k_sem_reset(&priv->sdmmc_event.transfer_sem);
+		priv->sdmmc_event.transfer_completed = false;
+
+		r_sdhi_read_write_common(&priv->sdmmc_ctrl, block_count, byte_count, sdhi_cmd,
+					 cmd->arg);
+
+		ret = k_sem_take(&priv->sdmmc_event.transfer_sem, K_MSEC(ra_cmd.timeout_ms));
+		if (ret < 0) {
+			LOG_ERR("Can not take sem!");
+			goto end;
+		}
+		if (!priv->sdmmc_event.transfer_completed) {
+			ret = -EIO;
+			goto end;
+		}
+		priv->sdmmc_event.transfer_completed = false;
+		break;
+	}
+
 	default:
 		LOG_INF("SDHC driver: command %u not supported", cmd->opcode);
 		ret = -ENOTSUP;
@@ -421,6 +532,59 @@ end:
 	k_sem_give(&priv->thread_lock);
 
 	return ret;
+}
+
+static int sdhc_ra_enable_interrupt(const struct device *dev, sdhc_interrupt_cb_t cb, int sources,
+				    void *user_data)
+{
+	struct sdhc_ra_priv *priv = dev->data;
+
+	priv->cb = cb;
+	priv->cb_sources = sources;
+	priv->user_cb_data = user_data;
+
+	if (sources & SDHC_INT_SDIO) {
+		priv->sdmmc_ctrl.p_reg->SDIO_MODE_b.INTEN = 1U;
+		priv->sdmmc_ctrl.p_reg->SDIO_INFO1_MASK = 0x6;
+	}
+
+	if (sources & SDHC_INT_INSERTED) {
+		priv->sdmmc_ctrl.p_reg->SD_INFO1 = ~BIT(9);
+		priv->sdmmc_ctrl.p_reg->SD_INFO1_MASK &= ~BIT(9);
+	}
+
+	if (sources & SDHC_INT_REMOVED) {
+		priv->sdmmc_ctrl.p_reg->SD_INFO1 = ~BIT(8);
+		priv->sdmmc_ctrl.p_reg->SD_INFO1_MASK &= ~BIT(8);
+	}
+
+	return 0;
+}
+
+static int sdhc_ra_disable_interrupt(const struct device *dev, int sources)
+{
+	struct sdhc_ra_priv *priv = dev->data;
+
+	priv->cb_sources &= ~sources;
+
+	if (priv->cb_sources == 0) {
+		priv->cb = NULL;
+		priv->user_cb_data = NULL;
+	}
+
+	if (sources & SDHC_INT_SDIO) {
+		priv->sdmmc_ctrl.p_reg->SDIO_INFO1_MASK |= BIT(0);
+	}
+
+	if (sources & SDHC_INT_INSERTED) {
+		priv->sdmmc_ctrl.p_reg->SD_INFO1_MASK |= BIT(9);
+	}
+
+	if (sources & SDHC_INT_REMOVED) {
+		priv->sdmmc_ctrl.p_reg->SD_INFO1_MASK |= BIT(8);
+	}
+
+	return 0;
 }
 
 static int sdhc_ra_reset(const struct device *dev)
@@ -588,11 +752,14 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	.get_card_present = sdhc_ra_get_card_present,
 	.card_busy = sdhc_ra_card_busy,
 	.get_host_props = sdhc_ra_get_host_props,
+	.enable_interrupt = sdhc_ra_enable_interrupt,
+	.disable_interrupt = sdhc_ra_disable_interrupt,
 };
 
 #define EVENT_SDMMC_ACCS(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _ACCS))
 #define EVENT_SDMMC_CARD(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _CARD))
 #define EVENT_SDMMC_DMA_REQ(channel) BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _DMA_REQ))
+#define EVENT_SDMMC_SDIO(channel)    BSP_PRV_IELS_ENUM(CONCAT(EVENT_SDHIMMC, channel, _SDIO))
 
 #define RA_SDMMC_IRQ_CONFIG_INIT(index)                                                            \
 	do {                                                                                       \
@@ -604,11 +771,14 @@ static DEVICE_API(sdhc, sdhc_api) = {
 			EVENT_SDMMC_CARD(DT_INST_PROP(index, channel));                            \
 		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, dma_req, irq)] =                           \
 			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel));                         \
+		R_ICU->IELSR[DT_INST_IRQ_BY_NAME(index, sdio_int, irq)] =                          \
+			EVENT_SDMMC_SDIO(DT_INST_PROP(index, channel));                            \
                                                                                                    \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_ACCS(DT_INST_PROP(index, channel)));  \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_CARD(DT_INST_PROP(index, channel)));  \
 		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(                                                  \
 			EVENT_SDMMC_DMA_REQ(DT_INST_PROP(index, channel)));                        \
+		BSP_ASSIGN_EVENT_TO_CURRENT_CORE(EVENT_SDMMC_SDIO(DT_INST_PROP(index, channel)));  \
                                                                                                    \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, accs, irq),                                 \
 			    DT_INST_IRQ_BY_NAME(index, accs, priority), ra_sdmmc_accs_isr,         \
@@ -619,10 +789,14 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, dma_req, irq),                              \
 			    DT_INST_IRQ_BY_NAME(index, dma_req, priority), ra_sdmmc_dma_req_isr,   \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
+		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(index, sdio_int, irq),                             \
+			    DT_INST_IRQ_BY_NAME(index, sdio_int, priority), ra_sdio_int_isr,       \
+			    DEVICE_DT_INST_GET(index), 0);                                         \
                                                                                                    \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, accs, irq));                                 \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, card, irq));                                 \
 		irq_enable(DT_INST_IRQ_BY_NAME(index, dma_req, irq));                              \
+		irq_enable(DT_INST_IRQ_BY_NAME(index, sdio_int, irq));                             \
 	} while (0)
 
 #define RA_SDHI_EN(index) .sdhi_en = GPIO_DT_SPEC_INST_GET_OR(index, enable_gpios, {0})
@@ -664,6 +838,7 @@ static DEVICE_API(sdhc, sdhc_api) = {
 	static const struct sdhc_ra_config sdhc_ra_config_##index = {                              \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \
 		.regs = (R_SDHI0_Type *)DT_INST_REG_ADDR(index),                                   \
+		.sdio_irq_n = DT_INST_IRQ_BY_NAME(index, sdio_int, irq),                           \
 	};                                                                                         \
 	void r_sdhi_callback_##index(sdmmc_callback_args_t *p_args)                                \
 	{                                                                                          \
@@ -675,6 +850,14 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		} else if (p_args->event == SDMMC_EVENT_TRANSFER_ERROR) {                          \
 			priv->sdmmc_event.transfer_completed = false;                              \
 			k_sem_give(&priv->sdmmc_event.transfer_sem);                               \
+		} else if (p_args->event == SDMMC_EVENT_CARD_INSERTED) {                           \
+			if (priv->cb && (priv->cb_sources & SDHC_INT_INSERTED)) {                  \
+				priv->cb(dev, SDHC_INT_INSERTED, priv->user_cb_data);              \
+			}                                                                          \
+		} else if (p_args->event == SDMMC_EVENT_CARD_REMOVED) {                            \
+			if (priv->cb && (priv->cb_sources & SDHC_INT_REMOVED)) {                   \
+				priv->cb(dev, SDHC_INT_REMOVED, priv->user_cb_data);               \
+			}                                                                          \
 		}                                                                                  \
 	}                                                                                          \
                                                                                                    \
