@@ -8,10 +8,10 @@
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(hwinfo_pmc, CONFIG_HWINFO_LOG_LEVEL);
+LOG_MODULE_REGISTER(hwinfo_nxp_pmc, CONFIG_HWINFO_LOG_LEVEL);
 
 /* PMC peripheral base address, taken from devicetree. */
-#define MCUX_PMC ((PMC_Type *)DT_INST_REG_ADDR(0))
+#define NXP_PMC ((PMC_Type *)DT_INST_REG_ADDR(0))
 
 /*
  * On LPC55xx the last reset cause is latched by hardware into the always-on
@@ -22,14 +22,14 @@ LOG_MODULE_REGISTER(hwinfo_pmc, CONFIG_HWINFO_LOG_LEVEL);
  * Code Watchdog (CDOGRESET), which only exists on some LPC55xx parts.
  */
 #ifdef PMC_AOREG1_CDOGRESET_MASK
-#define MCUX_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK | PMC_AOREG1_CDOGRESET_MASK)
+#define NXP_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK | PMC_AOREG1_CDOGRESET_MASK)
 #else
-#define MCUX_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK)
+#define NXP_PMC_WATCHDOG_MASK (PMC_AOREG1_WDTRESET_MASK)
 #endif
 
-#define MCUX_PMC_RESET_CAUSE_MASK                                                          \
+#define NXP_PMC_RESET_CAUSE_MASK                                                          \
 	(PMC_AOREG1_POR_MASK | PMC_AOREG1_PADRESET_MASK | PMC_AOREG1_BODRESET_MASK |        \
-	 PMC_AOREG1_SYSTEMRESET_MASK | PMC_AOREG1_SWRRESET_MASK | MCUX_PMC_WATCHDOG_MASK |  \
+	 PMC_AOREG1_SYSTEMRESET_MASK | PMC_AOREG1_SWRRESET_MASK | NXP_PMC_WATCHDOG_MASK |  \
 	 PMC_AOREG1_DPDRESET_WAKEUPIO_MASK | PMC_AOREG1_DPDRESET_RTC_MASK |                 \
 	 PMC_AOREG1_DPDRESET_OSTIMER_MASK)
 
@@ -39,7 +39,7 @@ LOG_MODULE_REGISTER(hwinfo_pmc, CONFIG_HWINFO_LOG_LEVEL);
  * @param sources NXP PMC AOREG1 reset source mask.
  * @retval Zephyr hwinfo reset source mask.
  */
-static uint32_t hwinfo_mcux_pmc_xlate_reset_sources(uint32_t sources)
+static uint32_t hwinfo_nxp_pmc_xlate_reset_sources(uint32_t sources)
 {
 	uint32_t mask = 0;
 
@@ -59,7 +59,7 @@ static uint32_t hwinfo_mcux_pmc_xlate_reset_sources(uint32_t sources)
 		mask |= RESET_SOFTWARE;
 	}
 
-	if (sources & MCUX_PMC_WATCHDOG_MASK) {
+	if (sources & NXP_PMC_WATCHDOG_MASK) {
 		mask |= RESET_WATCHDOG;
 	}
 
@@ -73,9 +73,9 @@ static uint32_t hwinfo_mcux_pmc_xlate_reset_sources(uint32_t sources)
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	uint32_t sources = MCUX_PMC->AOREG1 & MCUX_PMC_RESET_CAUSE_MASK;
+	uint32_t sources = NXP_PMC->AOREG1 & NXP_PMC_RESET_CAUSE_MASK;
 
-	*cause = hwinfo_mcux_pmc_xlate_reset_sources(sources);
+	*cause = hwinfo_nxp_pmc_xlate_reset_sources(sources);
 
 	LOG_DBG("sources = 0x%08x, cause = 0x%08x", sources, *cause);
 
@@ -84,14 +84,14 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 
 int z_impl_hwinfo_clear_reset_cause(void)
 {
-	MCUX_PMC->AOREG1 &= ~(uint32_t)MCUX_PMC_RESET_CAUSE_MASK;
+	NXP_PMC->AOREG1 &= ~(uint32_t)NXP_PMC_RESET_CAUSE_MASK;
 
 	return 0;
 }
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = hwinfo_mcux_pmc_xlate_reset_sources(MCUX_PMC_RESET_CAUSE_MASK);
+	*supported = hwinfo_nxp_pmc_xlate_reset_sources(NXP_PMC_RESET_CAUSE_MASK);
 
 	return 0;
 }

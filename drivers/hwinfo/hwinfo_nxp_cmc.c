@@ -11,7 +11,7 @@
 #include <zephyr/logging/log.h>
 #include <fsl_cmc.h>
 
-LOG_MODULE_REGISTER(hwinfo_cmc, CONFIG_HWINFO_LOG_LEVEL);
+LOG_MODULE_REGISTER(hwinfo_nxp_cmc, CONFIG_HWINFO_LOG_LEVEL);
 
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 	     "No nxp,cmc compatible device found");
@@ -47,13 +47,13 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
 /**
  * @brief Translate from CMC reset source mask to Zephyr hwinfo sources mask.
  *
- * Translate bitmask from MCUX CMC reset source bitmask to Zephyr
+ * Translate bitmask from NXP CMC reset source bitmask to Zephyr
  * hwinfo reset source bitmask.
  *
- * @param NXP MCUX CMC reset source mask.
+ * @param NXP CMC reset source mask.
  * @retval Zephyr hwinfo reset source mask.
  */
-static uint32_t hwinfo_mcux_cmc_xlate_reset_sources(uint32_t sources)
+static uint32_t hwinfo_nxp_cmc_xlate_reset_sources(uint32_t sources)
 {
 	uint32_t mask = 0;
 
@@ -120,7 +120,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	CMC_Type *base = (CMC_Type *)DT_INST_REG_ADDR(0);
 	const uint32_t sources = CMC_GetStickySystemResetStatus(base);
 
-	*cause = hwinfo_mcux_cmc_xlate_reset_sources(sources);
+	*cause = hwinfo_nxp_cmc_xlate_reset_sources(sources);
 
 	LOG_DBG("sources = 0x%08x, cause = 0x%08x", sources, *cause);
 
@@ -141,7 +141,7 @@ int z_impl_hwinfo_clear_reset_cause(void)
 
 int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 {
-	*supported = hwinfo_mcux_cmc_xlate_reset_sources(UINT32_MAX);
+	*supported = hwinfo_nxp_cmc_xlate_reset_sources(UINT32_MAX);
 
 	LOG_DBG("supported = 0x%08x", *supported);
 
