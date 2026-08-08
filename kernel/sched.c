@@ -25,6 +25,8 @@
 #include <run_q.h>
 #include <timeslicing.h>
 
+/* Trigger CI twister run 01 */
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* pending_current is owned by timeslicing.c; sleep.c also accesses it */
