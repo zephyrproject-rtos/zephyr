@@ -1850,6 +1850,13 @@ class Node:
         if prop_min_len is not None or prop_max_len is not None:
             if isinstance(val, (list, bytes)):
                 val_len = len(val)
+
+                # "interrupts" is specific since it's a int array of phandle arguments implicitly
+                # related to a common controller. We need to consider the controller cells size.
+                if name == "interrupts":
+                    interrupt_cells = _interrupt_cells(_interrupt_parent(self._node))
+                    val_len = val_len // interrupt_cells
+
                 if prop_min_len is not None and val_len < prop_min_len:
                     _err(f"value of property '{name}' on {self.path} in "
                          f"{self.edt.dts_path} has length {val_len}, which is less than the "
@@ -1928,7 +1935,14 @@ class Node:
                 _LOG.warning(msg)
 
         if not prop:
-            if required and self.status == "okay":
+            if (
+                required and self.status == "okay"
+                # "interrupts" may be implemented as "interrupts-extended"
+                and (
+                    name != "interrupts"
+                    or not node.props.get("interrupts-extended")
+                )
+            ):
                 _err(
                     f"'{name}' is marked as required in 'properties:' in "
                     f"'{binding_path}', but does not appear in {node!r}"
