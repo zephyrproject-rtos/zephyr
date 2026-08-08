@@ -6,6 +6,7 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ESPI_EMUL espi_emul.c)
+zephyr_library_sources_ifdef(CONFIG_ESPI_ENE_KB106X espi_ene_kb106x.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_IT8XXX2 espi_it8xxx2.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_NPCX espi_npcx.c)
 zephyr_library_sources_ifdef(CONFIG_ESPI_NPCX host_subs_npcx.c)

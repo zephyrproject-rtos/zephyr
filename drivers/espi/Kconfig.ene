@@ -1,0 +1,60 @@
+# Copyright (c) 2026 ENE Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPI_ENE_KB106X
+	bool "ENE KB106X ESPI Driver"
+	default y
+	depends on DT_HAS_ENE_KB106X_ESPI_ENABLED
+	select PINCTRL
+	help
+	  Enable support for the KB106X ESPI controllers.
+
+if ESPI_ENE_KB106X
+
+config ESPI_VWIRE_CHANNEL
+	default y
+
+config ESPI_OOB_CHANNEL
+	default y
+
+config ESPI_PERIPHERAL_8042_KBC
+	default y
+
+config ESPI_PERIPHERAL_HOST_IO
+	default y
+
+config ESPI_PERIPHERAL_DEBUG_PORT_80
+	default y
+
+config ESPI_PERIPHERAL_KB106X_HOST_TO_RAM
+	bool "Host I/O peripheral ENE Private Channel (host to ram)"
+	select ESPI_PERIPHERAL_HOST_IO_PVT
+
+config ESPI_PERIPHERAL_KB106X_LEGACY_IO
+	bool "Host I/O peripheral ENE Private Channel (legacy io)"
+	select ESPI_PERIPHERAL_CUSTOM_OPCODE
+	select ESPI_PERIPHERAL_HOST_IO_PVT
+
+config ESPI_PERIPHERAL_KB106X_MAILBOX
+	bool "Host I/O peripheral ENE Private Channel (mailbox)"
+	select ESPI_PERIPHERAL_HOST_IO_PVT
+
+config ESPI_KB106X_LEGI_CLR_IBF_AFTER_OUTPUT_DATA_READY
+	default y
+	bool "Clear IBF after output data ready"
+
+config ESPI_KB106X_VWIRE_ENABLE_SEND_CHECK
+	bool "Check the value was read by host after wire bits changed"
+	default y
+	help
+	  This option enables checking whether the host has read the value after the
+	  virtual wire data changes
+
+config ESPI_KB106X_WIRE_SEND_TIMEOUT_US
+	int "eSPI virtual wire send timeout period"
+	default 1000
+	help
+	  The times to check status after sending the eSPI virtual wire signal. The unit
+	  is microseconds (µs).
+
+endif # ESPI_ENE_KB106X
