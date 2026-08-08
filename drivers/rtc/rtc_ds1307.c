@@ -80,9 +80,9 @@ static int ds1307_set_time(const struct device *dev, const struct rtc_time *tm)
 	regs[1] = bin2bcd(tm->tm_sec) & SECONDS_BITS;
 	regs[2] = bin2bcd(tm->tm_min);
 	regs[3] = bin2bcd(tm->tm_hour);
-	regs[4] = bin2bcd(tm->tm_wday);
+	regs[4] = bin2bcd(tm->tm_wday + 1);
 	regs[5] = bin2bcd(tm->tm_mday);
-	regs[6] = bin2bcd(tm->tm_mon);
+	regs[6] = bin2bcd(tm->tm_mon + 1);
 	regs[7] = bin2bcd((tm->tm_year % 100));
 
 	err = i2c_write_dt(&config->i2c_bus, regs, sizeof(regs));
@@ -110,9 +110,9 @@ static int ds1307_get_time(const struct device *dev, struct rtc_time *timeptr)
 	timeptr->tm_sec = bcd2bin(regs[0] & SECONDS_BITS);
 	timeptr->tm_min = bcd2bin(regs[1] & MINUTES_BITS);
 	timeptr->tm_hour = bcd2bin(regs[2] & HOURS_BITS); /* 24hr mode */
-	timeptr->tm_wday = bcd2bin(regs[3] & WEEKDAY_BITS);
+	timeptr->tm_wday = bcd2bin(regs[3] & WEEKDAY_BITS) - 1;
 	timeptr->tm_mday = bcd2bin(regs[4] & DATE_BITS);
-	timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS);
+	timeptr->tm_mon = bcd2bin(regs[5] & MONTHS_BITS) - 1;
 	timeptr->tm_year = bcd2bin(regs[6] & YEAR_BITS);
 	timeptr->tm_year = timeptr->tm_year + 100;
 
