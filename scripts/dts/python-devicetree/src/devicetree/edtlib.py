@@ -1230,6 +1230,7 @@ class Node:
         self.dep_ordinal: int = -1
         self.compats: list[str] = compats
         self.ranges: list[Range] = []
+        self.dma_ranges: list[Range] = []
         self.regs: list[Register] = []
         self.props: dict[str, Property] = {}
         self.interrupts: list[ControllerAndData] = []
@@ -1240,6 +1241,7 @@ class Node:
         self._init_binding()
         self._init_regs()
         self._init_ranges()
+        self._init_dma_ranges()
 
     @property
     def name(self) -> str:
@@ -2075,6 +2077,67 @@ class Node:
                     raw_range[(4*child_address_cells + 4*parent_address_cells):])
 
             self.ranges.append(Range(self, child_bus_cells, child_bus_addr,
+                                     parent_bus_cells, parent_bus_addr,
+                                     length_cells, length))
+
+    def _init_dma_ranges(self) -> None:
+        # Initializes self.dma_ranges
+        node = self._node
+
+        self.dma_ranges = []
+
+        if "dma-ranges" not in node.props:
+            return
+
+        raw_child_address_cells = node.props.get("#address-cells")
+        parent_address_cells = _address_cells(node)
+        if raw_child_address_cells is None:
+            child_address_cells = 2  # Default value per DT spec.
+        else:
+            child_address_cells = raw_child_address_cells.to_num()
+        raw_child_size_cells = node.props.get("#size-cells")
+        if raw_child_size_cells is None:
+            child_size_cells = 1  # Default value per DT spec.
+        else:
+            child_size_cells = raw_child_size_cells.to_num()
+
+        entry_cells = child_address_cells + parent_address_cells + child_size_cells
+
+        if entry_cells == 0:
+            if len(node.props["dma-ranges"].value) == 0:
+                return
+            else:
+                _err(f"'dma-ranges' should be empty in {self._node.path} since "
+                     f"<#address-cells> = {child_address_cells}, "
+                     f"<#address-cells for parent> = {parent_address_cells} and "
+                     f"<#size-cells> = {child_size_cells}")
+
+        for raw_range in _slice(node, "dma-ranges", 4*entry_cells,
+                                f"4*(<#address-cells> (= {child_address_cells}) + "
+                                "<#address-cells for parent> "
+                                f"(= {parent_address_cells}) + "
+                                f"<#size-cells> (= {child_size_cells}))"):
+
+            child_bus_cells = child_address_cells
+            if child_address_cells == 0:
+                child_bus_addr = None
+            else:
+                child_bus_addr = to_num(raw_range[:4*child_address_cells])
+            parent_bus_cells = parent_address_cells
+            if parent_address_cells == 0:
+                parent_bus_addr = None
+            else:
+                parent_bus_addr = to_num(
+                    raw_range[(4*child_address_cells):
+                              (4*child_address_cells + 4*parent_address_cells)])
+            length_cells = child_size_cells
+            if child_size_cells == 0:
+                length = None
+            else:
+                length = to_num(
+                    raw_range[(4*child_address_cells + 4*parent_address_cells):])
+
+            self.dma_ranges.append(Range(self, child_bus_cells, child_bus_addr,
                                      parent_bus_cells, parent_bus_addr,
                                      length_cells, length))
 
