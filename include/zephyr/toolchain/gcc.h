@@ -680,6 +680,7 @@ do {                                                                    \
 #define TOOLCHAIN_WARNING_ARRAY_BOUNDS             "-Warray-bounds"
 #define TOOLCHAIN_WARNING_ATTRIBUTES               "-Wattributes"
 #define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR  "-Wdelete-non-virtual-dtor"
+#define TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS  "-Wdeprecated-declarations"
 #define TOOLCHAIN_WARNING_EXTRA                    "-Wextra"
 #define TOOLCHAIN_WARNING_NONNULL                  "-Wnonnull"
 #define TOOLCHAIN_WARNING_SHADOW                   "-Wshadow"
