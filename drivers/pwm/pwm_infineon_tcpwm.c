@@ -17,7 +17,12 @@
 #include <infineon_kconfig.h>
 #include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#else
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
+#endif
+#include <zephyr/drivers/clock_control.h>
 
 #include <cy_tcpwm_pwm.h>
 #include <cy_gpio.h>
@@ -44,10 +49,18 @@ struct ifx_tcpwm_pwm_config {
 	uint32_t tcpwm_index;
 	uint32_t index;
 	uint32_t clk_dst;
+#if CONFIG_SOC_FAMILY_INFINEON_TRAVEO
+	uint32_t frequency;
+	const struct device *clk_dev;
+#endif
 };
 
 struct ifx_tcpwm_pwm_data {
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	struct ifx_clk_peri clock;
+#else
 	struct ifx_cat1_clock clock;
+#endif
 #ifdef CONFIG_PWM_EVENT
 	sys_slist_t event_callbacks;
 	struct k_spinlock lock;
@@ -79,12 +92,19 @@ static int ifx_tcpwm_pwm_init(const struct device *dev)
 		return ret;
 	}
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	status = clock_control_set_rate(config->clk_dev, &data->clock,
+				      (uint32_t *)&config->frequency);
+	if (status != 0) {
+		return status;
+	}
+#else
 	/* Connect this TCPWM to the peripheral clock */
 	status = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
 	if (status != CY_RSLT_SUCCESS) {
 		return -EIO;
 	}
-
+#endif
 	/* Configure the TCPWM to be a PWM */
 	status = IFX_TCPWM_PWM_Init(config->reg_base, &pwm_config);
 	if (status != CY_TCPWM_SUCCESS) {
@@ -174,9 +194,18 @@ static int ifx_tcpwm_pwm_get_cycles_per_sec(const struct device *dev, uint32_t c
 
 	struct ifx_tcpwm_pwm_data *const data = dev->data;
 	const struct ifx_tcpwm_pwm_config *config = dev->config;
-
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+	uint32_t freq;
+	cy_rslt_t status;
+	status = clock_control_get_rate(config->clk_dev, (void *)&data->clock,
+					&freq);
+	if (status != 0) {
+		return -EINVAL;
+	}
+	*cycles = freq;
+#else
 	*cycles = ifx_cat1_utils_peri_pclk_get_frequency(config->clk_dst, &data->clock);
-
+#endif
 	return 0;
 }
 
@@ -265,6 +294,14 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	}
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define PWM_PERI_CLOCK_INIT(n)                                                                     \
+	.clock = {                                                                      	   \
+		.rootclk_id = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, rootclk_id),                        \
+		.divider_type = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_type),                    \
+		.divider_inst = DT_INST_CLOCKS_CELL_BY_IDX(n, 0, divider_inst),                    \
+	},
+
 #else
 #define PWM_PERI_CLOCK_INIT(n)                                                                     \
 	.clock = {                                                                                 \
@@ -273,6 +310,14 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
 		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
 	}
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#define CLOCK_GET(n)  \
+	.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),\
+	.frequency = DT_PROP(DT_INST_PARENT(n), frequency),
+#else
+#define CLOCK_GET(n)
 #endif
 
 /*
@@ -328,6 +373,7 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 			  DT_REG_ADDR(DT_PARENT(DT_INST_PARENT(n)))) /                             \
 			 DT_REG_SIZE(DT_INST_PARENT(n)),                                           \
 		.clk_dst = DT_PROP(DT_INST_PARENT(n), clk_dst),                                    \
+		CLOCK_GET(n)                                    	   			   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(                                                                     \
