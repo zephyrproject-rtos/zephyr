@@ -7,6 +7,8 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_DAC_SHELL dac_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE dac_handlers.c)
 
+zephyr_library_include_directories_ifdef(CONFIG_DAC_INFINEON_HPPASS_CSG ${ZEPHYR_BASE}/drivers/mfd)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_DAC_AD5529R dac_ad5529r.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_AD559X dac_ad559x.c)
@@ -22,6 +24,7 @@ zephyr_library_sources_ifdef(CONFIG_DAC_EMUL dac_emul.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_ESP32 dac_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_GD32 dac_gd32.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_INFINEON_AUTANALOG dac_infineon_autanalog_ctdac.c)
+zephyr_library_sources_ifdef(CONFIG_DAC_INFINEON_HPPASS_CSG dac_infineon_hppass_csg.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_LTC166X dac_ltc166x.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_MAX22017 dac_max22017.c)
 zephyr_library_sources_ifdef(CONFIG_DAC_MCHP_G1 dac_mchp_g1.c)
