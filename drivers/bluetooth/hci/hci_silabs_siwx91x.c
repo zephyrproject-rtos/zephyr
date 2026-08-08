@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
 #include "rsi_ble.h"
 #include "rsi_ble_common_config.h"
 #include "siwx91x_nwp.h"
+#include "sl_si91x_power_manager.h"
 
 #define BLE_RF_POWER_INDEX     0x0006
 #define BT_OP_VS_RF_POWER_MODE BT_OP(BT_OGF_VS, BLE_RF_POWER_INDEX)
@@ -91,6 +92,9 @@ static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_
 	if (err < 0) {
 		LOG_ERR("Failed to set power profile: %d", err);
 		return err;
+	}
+	if (IS_ENABLED(CONFIG_PM)) {
+		sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
 	}
 
 	return 0;

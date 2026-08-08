@@ -461,11 +461,6 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev,
 	};
 	int ret;
 
-	if (!IS_ENABLED(CONFIG_PM)) {
-		/* no_op if PM is not enabled*/
-		return 0;
-	}
-
 	/* WiseConnect zeros the BT half of its cached coex profile on every
 	 * sl_wifi_disconnect(). Re-seed it so the combined profile doesn't
 	 * resolve to HIGH_PERFORMANCE and silently drop the PS request.
@@ -486,9 +481,6 @@ int siwx91x_nwp_apply_power_profile(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Remove the previously added PS4 power state requirement */
-	sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
-
 	return 0;
 }
 
@@ -507,8 +499,8 @@ static int siwx91x_nwp_init(const struct device *dev)
 		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
 	}
 
-	if (IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) || IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
-		data->power_profile = ASSOCIATED_POWER_SAVE;
+	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X) && !IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X)) {
+		data->power_profile = DEEP_SLEEP_WITH_RAM_RETENTION;
 	}
 
 	siwx91x_get_nwp_config(dev, &network_config, WIFI_STA_MODE, false, 0);
@@ -549,6 +541,9 @@ static int siwx91x_nwp_init(const struct device *dev)
 		if (ret) {
 			return -EINVAL;
 		}
+		if (IS_ENABLED(CONFIG_PM)) {
+			sl_si91x_power_manager_remove_ps_requirement(SL_SI91X_POWER_MANAGER_PS4);
+		}
 	}
 
 	config->config_irq(dev);
@@ -572,7 +567,7 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	};                                                                                         \
                                                                                                    \
 	static struct siwx91x_nwp_data siwx91x_nwp_data_##inst = {                                 \
-		.power_profile = DEEP_SLEEP_WITH_RAM_RETENTION,                                    \
+		.power_profile = HIGH_PERFORMANCE,                                                 \
 	};                                                                                         \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
