@@ -22,3 +22,5 @@ zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_SUSPEND suspend.c)
 zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_RESUME resume.c)
 
 zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_KILL kill.c)
+
+zephyr_sources_ifdef(CONFIG_KERNEL_THREAD_SHELL_SET_PRIORITY set_priority.c)
