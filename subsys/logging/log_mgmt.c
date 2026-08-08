@@ -428,7 +428,12 @@ static void set_runtime_filter(uint8_t backend_id, uint8_t domain_id,
 
 static uint32_t filter_get(uint8_t id, uint32_t domain_id, int16_t source_id, bool runtime)
 {
-	__ASSERT_NO_MSG(source_id < log_src_cnt_get(domain_id));
+	/* source_id can originate from another domain over IPC, so the bound
+	 * must hold without CONFIG_ASSERT.
+	 */
+	if (source_id >= (int16_t)log_src_cnt_get(domain_id)) {
+		return LOG_LEVEL_NONE;
+	}
 
 	if (IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) && runtime) {
 		if (source_id < 0) {
@@ -448,8 +453,12 @@ uint32_t filter_set(int id, uint32_t domain_id, int16_t source_id, uint32_t leve
 		return log_compiled_level_get(domain_id, source_id);
 	}
 
-	__ASSERT_NO_MSG(source_id < log_src_cnt_get(domain_id));
-
+	/* As in filter_get(): an out-of-range source would index the dynamic
+	 * filter table out of bounds.
+	 */
+	if (source_id >= (int16_t)log_src_cnt_get(domain_id)) {
+		return LOG_LEVEL_NONE;
+	}
 
 	if (id < 0) {
 		uint32_t max = 0U;
