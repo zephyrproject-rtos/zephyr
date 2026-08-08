@@ -90,8 +90,9 @@ The mandatory files are:
    the Kconfig ``SOC`` setting.
    If the ``soc.yml`` describes a SoC family and series, then those must also
    be defined in this file. Kconfig settings outside of the SoC tree must not be
-   selected. To select general Zephyr Kconfig settings the :file:`Kconfig` file
-   must be used.
+   selected, unless the SoC tree they belong to has been declared with the
+   ``requires`` property, see :ref:`soc_porting_requires`. To select general
+   Zephyr Kconfig settings the :file:`Kconfig` file must be used.
 
 #. :file:`CMakeLists.txt`: CMake file loaded by the Zephyr build system. This
    CMake file can define additional include paths and/or source files to be used
@@ -140,6 +141,38 @@ Multiple SoCs and SoC series in a common folder can be described in the
              - name: <soc2>
          - name: <series-2-name>
            ...
+
+.. _soc_porting_requires:
+
+SoCs requiring other SoC trees
+==============================
+
+A build only loads the Kconfig and CMake trees of the SoC it targets, so the Kconfig symbols and
+CMake variables of every other SoC are invisible to it. This keeps SoC namespaces isolated from
+each other and keeps the configuration step fast, as the SoC trees of unrelated vendors are never
+parsed.
+
+Some SoC definitions are, however, written in terms of another SoC that lives in a different
+:file:`soc.yml` tree. The typical case is a System-in-Package (SiP), which Zephyr currently models
+as a SoC: the SiP is the part the user sees on the board, while the die inside it is a SoC
+maintained in another vendor's tree. Such a SoC must declare the SoCs it needs with the
+``requires`` property:
+
+.. code-block:: yaml
+
+   socs:
+     - name: <sip>
+       requires:
+         - <die>
+
+The build system then loads the trees of ``<sip>`` and ``<die>``, and of anything ``<die>`` itself
+requires, but still nothing else. ``requires`` refers to SoC names as written in a
+:file:`soc.yml` file, not to Kconfig symbols, and the referenced SoC may live in any SoC root. It
+is an error to reference a SoC that cannot be found.
+
+Only declare a ``requires`` entry when the SoC definition genuinely cannot stand on its own. A SoC
+selecting a symbol from a SoC in the *same* :file:`soc.yml` tree, which is how SoC variants within
+a vendor tree are normally described, does not need it.
 
 
 Write your SoC devicetree
