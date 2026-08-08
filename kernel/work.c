@@ -16,6 +16,7 @@
 #include <errno.h>
 #include <ksched.h>
 #include <scheduler.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 
@@ -456,13 +457,16 @@ bool k_work_flush(struct k_work *work,
 {
 	__ASSERT_NO_MSG(work != NULL);
 	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
-	__ASSERT_NO_MSG(!k_is_in_isr());
 	__ASSERT_NO_MSG(sync != NULL);
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush, work);
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	struct z_work_flusher *flusher = &sync->flusher;
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
@@ -569,12 +573,15 @@ bool k_work_cancel_sync(struct k_work *work,
 	__ASSERT_NO_MSG(work != NULL);
 	__ASSERT_NO_MSG(sync != NULL);
 	__ASSERT_NO_MSG(!flag_test(&work->flags, K_WORK_DELAYABLE_BIT));
-	__ASSERT_NO_MSG(!k_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_sync, work, sync);
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	struct z_work_canceller *canceller = &sync->canceller;
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
@@ -903,10 +910,16 @@ void k_work_queue_start(struct k_work_q *queue,
 int k_work_queue_drain(struct k_work_q *queue,
 		       bool plug)
 {
-	__ASSERT_NO_MSG(queue);
-	__ASSERT_NO_MSG(!k_is_in_isr());
-
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work_queue, drain, queue);
+
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
+	CHECKIF(!queue) {
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_work_queue, drain, queue, -EINVAL);
+		return -EINVAL;
+	}
 
 	int ret = 0;
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
@@ -1246,12 +1259,16 @@ bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 {
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(sync != NULL);
-	__ASSERT_NO_MSG(!k_is_in_isr());
+
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, cancel_delayable_sync, dwork, sync);
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	struct z_work_canceller *canceller = &sync->canceller;
 	k_spinlock_key_t key = k_spin_lock(&work_lock);
@@ -1278,12 +1295,15 @@ bool k_work_flush_delayable(struct k_work_delayable *dwork,
 {
 	__ASSERT_NO_MSG(dwork != NULL);
 	__ASSERT_NO_MSG(sync != NULL);
-	__ASSERT_NO_MSG(!k_is_in_isr());
 #ifdef CONFIG_KERNEL_COHERENCE
 	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(sync));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_work, flush_delayable, dwork, sync);
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	struct k_work *work = &dwork->work;
 	struct z_work_flusher *flusher = &sync->flusher;

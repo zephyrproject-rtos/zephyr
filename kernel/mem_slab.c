@@ -219,6 +219,11 @@ static bool slab_ptr_is_good(struct k_mem_slab *slab, const void *ptr)
 
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, k_timeout_t timeout)
 {
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
+
 	k_spinlock_key_t key = k_spin_lock(&slab->lock);
 	int result;
 

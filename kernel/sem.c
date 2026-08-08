@@ -128,8 +128,10 @@ int z_impl_k_sem_take(struct k_sem *sem, k_timeout_t timeout)
 {
 	int ret;
 
-	__ASSERT(((arch_is_in_isr() == false) ||
-		  K_TIMEOUT_EQ(timeout, K_NO_WAIT)), "");
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	k_spinlock_key_t key = k_spin_lock(&sem_lock);
 

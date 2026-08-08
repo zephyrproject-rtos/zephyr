@@ -15,6 +15,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 #include <ksched.h>
 #include <kthread.h>
 #include <kswap.h>
@@ -49,7 +50,10 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 {
 	uint32_t expected_wakeup_ticks;
 
-	__ASSERT(!arch_is_in_isr(), "");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	/* K_NO_WAIT is treated as a 'yield' */
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -91,8 +95,6 @@ static int32_t z_tick_sleep(k_timeout_t timeout)
 int32_t z_impl_k_sleep(k_timeout_t timeout)
 {
 	k_ticks_t ticks;
-
-	__ASSERT(!arch_is_in_isr(), "");
 
 	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
 

@@ -161,7 +161,10 @@ int k_timer_cleanup(struct k_timer *timer)
 	 * spin waiting for an in-flight handler, and an ISR spinning here
 	 * could starve the very CPU the handler needs to make progress.
 	 */
-	__ASSERT(!arch_is_in_isr(), "");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, cleanup, timer);
 
@@ -351,8 +354,11 @@ static inline uint32_t z_vrfy_k_timer_status_get(struct k_timer *timer)
 
 uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 {
-	__ASSERT(!arch_is_in_isr(), "");
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, status_sync, timer);
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
 		uint32_t result;

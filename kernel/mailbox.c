@@ -14,6 +14,7 @@
 #include <zephyr/linker/sections.h>
 #include <string.h>
 #include <zephyr/sys/dlist.h>
+#include <zephyr/sys/check.h>
 /* private kernel APIs */
 #include <ksched.h>
 #include <kthread.h>
@@ -297,6 +298,11 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	       k_timeout_t timeout)
 {
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
+
 	/* configure things for a synchronous send, then send the message */
 	tx_msg->_syncing_thread = _current;
 
@@ -388,6 +394,11 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	struct k_mbox_msg *tx_msg;
 	k_spinlock_key_t key;
 	int result;
+
+	CHECKIF(k_is_in_isr() && !K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	/* save receiver id so it can be used during message matching */
 	rx_msg->tx_target_thread = _current;

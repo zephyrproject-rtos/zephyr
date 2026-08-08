@@ -113,7 +113,10 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	int new_prio;
 #endif
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
@@ -232,7 +235,10 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	CHECKIF(k_is_in_isr()) {
+		/* calling a pending function from an ISR is not allowed. */
+		k_panic();
+	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
 
