@@ -89,6 +89,16 @@ def test_closure_of_unknown_required_soc_errors_out():
     assert "required by SoC 'sip_b'" in str(exc.value)
 
 
+def test_closure_accepts_several_starting_socs():
+    systems = load(('vendor_a', VENDOR_A), ('vendor_b', VENDOR_B))
+    assert names(systems.get_soc_closure(['soc_a2', 'sip_b'])) == ['soc_a2', 'sip_b', 'soc_a']
+
+
+def test_closure_deduplicates_across_starting_socs():
+    systems = load(('vendor_a', VENDOR_A), ('vendor_b', VENDOR_B))
+    assert names(systems.get_soc_closure(['sip_b', 'soc_a'])) == ['sip_b', 'soc_a']
+
+
 def test_requires_can_be_added_by_extending_a_soc():
     extension = 'socs:\n  - extend: soc_a\n    requires:\n      - soc_a2\n'
     systems = load(('vendor_a', VENDOR_A), ('vendor_ext', extension))
