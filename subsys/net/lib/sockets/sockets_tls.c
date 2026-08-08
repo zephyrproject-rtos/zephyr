@@ -245,6 +245,13 @@ __net_socket struct tls_context {
 		/** DTLS role, client by default. */
 		int8_t role;
 
+		/** Per-socket MFL override for ZSOCK_TLS_MAX_FRAGMENT_LENGTH.
+		 *  -1: use global Kconfig-derived value (default).
+		 *   0: disable MFL extension (ZSOCK_TLS_MFL_DISABLED).
+		 *  1-4: ZSOCK_TLS_MFL_512 through ZSOCK_TLS_MFL_4096.
+		 */
+		int8_t mfl_code;
+
 		/** NULL-terminated list of allowed application layer
 		 * protocols.
 		 */
@@ -588,8 +595,7 @@ static inline bool is_handshake_complete(struct tls_session_context *session_ctx
 	)
 
 #if defined(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH) &&	\
-	defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH) &&		\
-	(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN < 16384)
+	defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
 
 BUILD_ASSERT(MBEDTLS_TLS_EXT_ADV_CONTENT_LEN >= 512,
 	     "Too small content length!");
@@ -609,10 +615,25 @@ static inline unsigned char tls_mfl_code_from_content_len(size_t len)
 	}
 }
 
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type)
+static inline void tls_set_max_frag_len(struct tls_context *context, enum net_sock_type type)
 {
 	unsigned char mfl_code;
-	size_t len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
+	size_t len;
+
+	if (context->options.mfl_code > ZSOCK_TLS_MFL_DISABLED) {
+		/* Per-socket override: codes 1-4 map directly to mbedTLS codes. */
+		mbedtls_ssl_conf_max_frag_len(&context->config,
+					      (unsigned char)context->options.mfl_code);
+		return;
+	} else if (context->options.mfl_code == ZSOCK_TLS_MFL_DISABLED) {
+		/* Explicitly disabled: leave conf->mfl_code at its default NONE,
+		 * which suppresses the extension in ClientHello.
+		 */
+		return;
+	}
+
+	/* mfl_code == -1: fall back to global Kconfig-derived value. */
+	len = MBEDTLS_TLS_EXT_ADV_CONTENT_LEN;
 
 #if defined(CONFIG_NET_SOCKETS_ENABLE_DTLS)
 	if (type == NET_SOCK_DGRAM && len > CONFIG_NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH) {
@@ -621,10 +642,10 @@ static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_soc
 #endif
 	mfl_code = tls_mfl_code_from_content_len(len);
 
-	mbedtls_ssl_conf_max_frag_len(config, mfl_code);
+	mbedtls_ssl_conf_max_frag_len(&context->config, mfl_code);
 }
 #else
-static inline void tls_set_max_frag_len(mbedtls_ssl_config *config, enum net_sock_type type) {}
+static inline void tls_set_max_frag_len(struct tls_context *context, enum net_sock_type type) {}
 #endif
 
 static struct tls_session_context *tls_session_alloc(void)
@@ -673,6 +694,7 @@ static struct tls_context *tls_alloc(void)
 
 			tls->is_used = true;
 			tls->options.verify_level = -1;
+			tls->options.mfl_code = -1;
 			tls->options.timeout_tx = K_FOREVER;
 			tls->options.timeout_rx = K_FOREVER;
 			tls->sock = -1;
@@ -1988,7 +2010,7 @@ static int tls_mbedtls_init(struct tls_context *context, bool is_server)
 		 */
 		return -ENOMEM;
 	}
-	tls_set_max_frag_len(&context->config, context->type);
+	tls_set_max_frag_len(context, context->type);
 
 	switch (context->tls_version) {
 	case NET_IPPROTO_TLS_1_3:
@@ -2923,6 +2945,31 @@ static int tls_opt_cert_nocopy_set(struct tls_context *context,
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH)
+static int tls_opt_mfl_set(struct tls_context *context,
+			   const void *optval, net_socklen_t optlen)
+{
+	const int *mfl;
+
+	if (optval == NULL) {
+		return -EINVAL;
+	}
+
+	if (optlen != sizeof(int)) {
+		return -EINVAL;
+	}
+
+	mfl = (const int *)optval;
+	if (*mfl < ZSOCK_TLS_MFL_DEFAULT || *mfl > ZSOCK_TLS_MFL_4096) {
+		return -EINVAL;
+	}
+
+	context->options.mfl_code = (int8_t)*mfl;
+
+	return 0;
+}
+#endif /* CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH */
 
 static int tls_opt_dtls_role_set(struct tls_context *context,
 				 const void *optval, net_socklen_t optlen)
@@ -4797,6 +4844,12 @@ int ztls_setsockopt_ctx(struct tls_context *ctx, int level, int optname,
 		/* Option handled at the socket dispatcher level. */
 		err = 0;
 		break;
+
+#if defined(CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH)
+	case ZSOCK_TLS_MAX_FRAGMENT_LENGTH:
+		err = tls_opt_mfl_set(ctx, optval, optlen);
+		break;
+#endif
 
 	default:
 		/* Unknown or read-only option. */
