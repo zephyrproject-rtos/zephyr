@@ -249,6 +249,7 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.released = unicast_stream_released,
 	.sent = bap_stream_tx_sent_cb,
 	.recv = bap_stream_rx_recv_cb,
+	.disconnected = bap_unicast_stream_disconnected_cb,
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -845,6 +846,14 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
 	LOG_INF("Stopping without releasing");
+
+	/* Mark streams as stopping to not treat lost SDUs as a failure condition */
+	for (size_t i = 0U; i < non_idle_streams_cnt; i++) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_cap_stream(non_idle_streams[i]);
+
+		SET_FLAG(test_stream->stopping);
+	}
 
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {

@@ -547,6 +547,7 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.stopped = unicast_stream_stopped,
 	.sent = bap_stream_tx_sent_cb,
 	.recv = bap_stream_rx_recv_cb,
+	.disconnected = bap_unicast_stream_disconnected_cb,
 };
 
 static void pa_sync_create(void)
@@ -838,15 +839,21 @@ static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t m
 
 static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Disable: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
 
 static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Stop: stream %p", stream);
@@ -856,9 +863,14 @@ static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_
 
 static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Release: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
