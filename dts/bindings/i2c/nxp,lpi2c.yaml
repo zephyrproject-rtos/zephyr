@@ -15,6 +15,12 @@ properties:
     type: int
     description: Bus idle timeout in nanoseconds
 
+  pin-low-timeout:
+    type: int
+    description: |
+      Pin low timeout in nanoseconds. Aborts the transfer with an error if
+      SCL or SDA is held longer than this timeout.
+
   scl-gpios:
     type: phandle-array
     description: |
