@@ -12,12 +12,6 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-config ROM_START_OFFSET
-	default 0x400 if BOOTLOADER_MCUBOOT
-
-config STM32_INT_FLASH_SECURE_BASE_ADDRESS
-	default 0x0c000000
-
 config BUILD_OUTPUT_UF2_FAMILY_ID
 	default "0x04240bdf"
 
