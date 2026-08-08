@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding declares nothing on its own, and inherits the child
+# bindings which override a "default:" with "required: true".
+# Nothing is declared locally here, so nothing is reported.
+
+include: default_override.yaml

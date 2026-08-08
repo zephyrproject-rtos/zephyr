@@ -6,5 +6,4 @@ include: nxp,pca_series.yaml
 
 properties:
   ngpios:
-    required: true
     const: 8
