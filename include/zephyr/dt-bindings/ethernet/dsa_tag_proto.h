@@ -10,5 +10,7 @@
 #define DSA_TAG_PROTO_NOTAG	0
 /* NXP NETC switch tag protocol */
 #define DSA_TAG_PROTO_NETC	1
+/* Microchip KSZ8463 tag protocol */
+#define DSA_TAG_PROTO_KSZ8463   2
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ETHERNET_DSA_TAG_PROTO_H_ */
