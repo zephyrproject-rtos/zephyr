@@ -16,15 +16,29 @@
 #if defined(CONFIG_RISCV_IMSIC)
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
 #endif
+#include "smp_boot.h"
 
-volatile struct {
+volatile struct riscv_cpu_boot_slot {
+	uintptr_t wake_flag;
+	uintptr_t hartid;
+	void *sp;
 	arch_cpustart_t fn;
 	void *arg;
-} riscv_cpu_init[CONFIG_MP_MAX_NUM_CPUS];
+} riscv_cpu_boot_slots[CONFIG_MP_MAX_NUM_CPUS];
 
-volatile uintptr_t __noinit riscv_cpu_wake_flag;
+BUILD_ASSERT(offsetof(struct riscv_cpu_boot_slot, wake_flag) == RISCV_CPU_BOOT_SLOT_WAKE_FLAG_OFF);
+BUILD_ASSERT(offsetof(struct riscv_cpu_boot_slot, hartid) == RISCV_CPU_BOOT_SLOT_HARTID_OFF);
+BUILD_ASSERT(offsetof(struct riscv_cpu_boot_slot, sp) == RISCV_CPU_BOOT_SLOT_SP_OFF);
+BUILD_ASSERT(offsetof(struct riscv_cpu_boot_slot, fn) == RISCV_CPU_BOOT_SLOT_FN_OFF);
+BUILD_ASSERT(offsetof(struct riscv_cpu_boot_slot, arg) == RISCV_CPU_BOOT_SLOT_ARG_OFF);
+BUILD_ASSERT(sizeof(struct riscv_cpu_boot_slot) == RISCV_CPU_BOOT_SLOT_SIZE);
+
+#if !defined(CONFIG_PM_CPU_OPS) && (CONFIG_MP_MAX_NUM_CPUS > 1)
+/* reset.S tracks "wake flag seen clear" in one bit per slot of a register */
+BUILD_ASSERT(CONFIG_MP_MAX_NUM_CPUS <= 8 * sizeof(uintptr_t));
+#endif
+
 volatile uintptr_t riscv_cpu_boot_flag;
-volatile void *riscv_cpu_sp;
 
 extern void __start(void);
 
@@ -35,24 +49,26 @@ void soc_interrupt_init(void);
 void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
 {
-	riscv_cpu_init[cpu_num].fn = fn;
-	riscv_cpu_init[cpu_num].arg = arg;
-
-	riscv_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
+	riscv_cpu_boot_slots[cpu_num].wake_flag = 0U;
+	riscv_cpu_boot_slots[cpu_num].hartid = _kernel.cpus[cpu_num].arch.hartid;
+	riscv_cpu_boot_slots[cpu_num].sp = K_KERNEL_STACK_BUFFER(stack) + sz;
+	riscv_cpu_boot_slots[cpu_num].fn = fn;
+	riscv_cpu_boot_slots[cpu_num].arg = arg;
 	riscv_cpu_boot_flag = 0U;
 
-	/* Release fence: publish the handshake stores before the wake flag */
+	/* Release fence: publish the slot stores before the wake flag */
 	barrier_dsync_fence_full();
+	riscv_cpu_boot_slots[cpu_num].wake_flag = 1U;
 
 #ifdef CONFIG_PM_CPU_OPS
 	if (pm_cpu_on(cpu_num, (uintptr_t)&__start)) {
+		riscv_cpu_boot_slots[cpu_num].wake_flag = 0U;
 		printk("Failed to boot secondary CPU %d\n", cpu_num);
 		return;
 	}
 #endif
 
 	while (riscv_cpu_boot_flag == 0U) {
-		riscv_cpu_wake_flag = _kernel.cpus[cpu_num].arch.hartid;
 	}
 }
 
@@ -94,5 +110,5 @@ void arch_secondary_cpu_init(int hartid)
 	z_riscv_imsic_secondary_init();
 #endif /* CONFIG_RISCV_IMSIC && CONFIG_SMP */
 	soc_per_core_init_hook();
-	riscv_cpu_init[cpu_num].fn(riscv_cpu_init[cpu_num].arg);
+	riscv_cpu_boot_slots[cpu_num].fn(riscv_cpu_boot_slots[cpu_num].arg);
 }
