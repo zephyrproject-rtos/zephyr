@@ -255,7 +255,7 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 	struct sip_svc_request request;
 	int trans_id;
 	uint32_t cmd_size = 0;
-	struct private_data priv;
+	static struct private_data priv;
 	char *cmd_addr;
 	char *resp_addr, *endptr;
 	int err;
@@ -328,6 +328,10 @@ static int cmd_send(const struct shell *sh, size_t argc, char **argv)
 		} else {
 			shell_error(sh, "Mailbox send timeout: trans_id %d", trans_id);
 			cmd_close(sh, 0, NULL);
+			/* The service no longer frees the response buffer of a
+			 * closed channel; the client owns it.
+			 */
+			k_free(resp_addr);
 			err = -ETIMEDOUT;
 		}
 	}
