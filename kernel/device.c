@@ -226,7 +226,7 @@ int z_impl_device_deinit(const struct device *dev)
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_device_deinit(const struct device *dev)
 {
-	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_ANY));
+	K_OOPS(K_SYSCALL_OBJ_INIT(dev, K_OBJ_DRIVER_ANY));
 
 	return z_impl_device_deinit(dev);
 }
