@@ -1,0 +1,6 @@
+board:
+  name: skystar_stm32f407vet6
+  full_name: SkyStar STM32F407VET6
+  vendor: jlc
+  socs:
+    - name: stm32f407xx
