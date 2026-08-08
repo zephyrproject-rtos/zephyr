@@ -42,7 +42,7 @@
 		pwm-led2 = &green_pwm_led_2;
 		pwm-led3 = &green_pwm_led_3;
 		rtc = &rtc;
-		spi-flash0 = &mt25ql01g;
+		spi-flash0 = &is25lp01gj;
 		sw0 = &btn0;
 		sw1 = &btn1;
 		sw2 = &btn2;
@@ -352,7 +352,7 @@ zephyr_udc0: &usbotg_fs {
 	flash-id = <1>;
 	status = "okay";
 
-	mt25ql01g: qspi-nor-flash@0 {
+	is25lp01gj: qspi-nor-flash@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
 		size = <DT_SIZE_M(1024)>; /* 1Gb = 128MB */
