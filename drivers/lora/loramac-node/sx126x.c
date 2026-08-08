@@ -471,6 +471,7 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.recv = sx12xx_lora_recv,
 	.recv_async = sx12xx_lora_recv_async,
 	.test_cw = sx12xx_lora_test_cw,
+	.energy_detect = sx12xx_lora_energy_detect,
 };
 
 DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data,

@@ -40,6 +40,9 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 			int8_t tx_power,
 			uint16_t duration);
 
+int sx12xx_lora_energy_detect(const struct device *dev, uint32_t bandwidth, int16_t rssi_threshold,
+			      k_timeout_t duration);
+
 int sx12xx_init(const struct device *dev);
 
 #endif /* ZEPHYR_DRIVERS_SX12XX_COMMON_H_ */
