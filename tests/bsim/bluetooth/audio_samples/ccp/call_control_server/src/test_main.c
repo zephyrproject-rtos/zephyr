@@ -1,10 +1,13 @@
 /*
- * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2024-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stddef.h>
+#include <stdint.h>
+
+#include <zephyr/bluetooth/conn.h>
 #include <zephyr/toolchain.h>
 
 #include "bs_types.h"
@@ -43,6 +46,18 @@ static void test_ccp_call_control_server_sample_tick(bs_time_t HW_device_time)
 	/* TODO: Once the sample is more complete we can expand the pass criteria */
 	PASS("CCP Call Control Server sample PASSED\n");
 }
+
+static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(conn);
+	ARG_UNUSED(reason);
+
+	FAIL("CCP Call Control Server sample FAILED\n");
+}
+
+BT_CONN_CB_DEFINE(conn_callbacks) = {
+	.disconnected = disconnected_cb,
+};
 
 static const struct bst_test_instance test_sample[] = {
 	{
