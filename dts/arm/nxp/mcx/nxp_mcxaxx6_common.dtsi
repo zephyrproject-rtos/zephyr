@@ -786,6 +786,7 @@
 			reg = <0x40001000 0x1000>;
 			#mux-control-cells = <1>;
 			#mux-state-cells = <2>;
+			#inputmux-cells = <2>;
 		};
 
 		eqdc0: eqdc@400a7000 {

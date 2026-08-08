@@ -18,6 +18,10 @@ properties:
   "#mux-state-cells":
     const: 2
 
+  "#inputmux-cells":
+    type: int
+    const: 2
+
 mux-control-cells:
   # Serial number of the destination register inside its group. For
   # example, "index = 2" selects PINT_SEL2 within the PINTSEL group.
@@ -29,4 +33,12 @@ mux-state-cells:
   # inputmux connection value. Encodes BOTH the
   # destination register-group offset (high bits, PMUX_SHIFT and above)
   # AND the source / function ID (low bits).
+  - connection
+
+inputmux-cells:
+  # INPUTMUX channel selected on the target peripheral.
+  - channel
+  # inputmux connection value. Encodes BOTH the destination
+  # register-group offset (high bits) AND the source / function ID
+  # (low bits).
   - connection
