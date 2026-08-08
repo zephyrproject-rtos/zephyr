@@ -38,8 +38,11 @@ struct nxp_irtc_data {
 /* The IRTC Offset is 2112 instead of 1900 [2112 - 1900] -> [212] */
 #define RTC_NXP_IRTC_YEAR_OFFSET 212
 
+#define RTC_NXP_GET_REG_FIELD_FROM_VALUE(_value, _name, _field)                                    \
+	(((_value) & RTC_##_name##_##_field##_MASK) >> RTC_##_name##_##_field##_SHIFT)
+
 #define RTC_NXP_GET_REG_FIELD(_reg, _name, _field)                                                 \
-	((_reg->_name & RTC_##_name##_##_field##_MASK) >> RTC_##_name##_##_field##_SHIFT)
+	RTC_NXP_GET_REG_FIELD_FROM_VALUE(_reg->_name, _name, _field)
 
 /*
  * The runtime where this is accessed is unknown so we force a lock on the registers then force an
@@ -112,22 +115,57 @@ static int nxp_irtc_set_time(const struct device *dev, const struct rtc_time *ti
 	return 0;
 }
 
+#define IRTC_READ_RETRY_MAX 3
+
 static int nxp_irtc_get_time(const struct device *dev, struct rtc_time *timeptr)
 {
 	const struct nxp_irtc_config *config = dev->config;
 	struct nxp_irtc_data *data = dev->data;
 	RTC_Type *irtc_reg = config->base;
+	uint16_t seconds, hourmin, days, yearmon;
+	int retry;
 
 	__ASSERT(timeptr != 0, "timeptr has not been set");
 
-	timeptr->tm_sec = RTC_NXP_GET_REG_FIELD(irtc_reg, SECONDS, SEC_CNT);
-	timeptr->tm_min = RTC_NXP_GET_REG_FIELD(irtc_reg, HOURMIN, MIN_CNT);
-	timeptr->tm_hour = RTC_NXP_GET_REG_FIELD(irtc_reg, HOURMIN, HOUR_CNT);
-	timeptr->tm_wday = RTC_NXP_GET_REG_FIELD(irtc_reg, DAYS, DOW);
-	timeptr->tm_mday = RTC_NXP_GET_REG_FIELD(irtc_reg, DAYS, DAY_CNT);
-	timeptr->tm_mon = RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, MON_CNT) - 1;
+	for (retry = 0; retry < IRTC_READ_RETRY_MAX; retry++) {
+		unsigned int key = irq_lock();
+
+		/* RTC value would not be valid too close to the 1Hz clock edge */
+		if (RTC_NXP_GET_REG_FIELD(irtc_reg, STATUS, INVAL_BIT) != 0) {
+			irq_unlock(key);
+			k_usleep(1);
+			continue;
+		}
+
+		seconds = irtc_reg->SECONDS;
+		hourmin = irtc_reg->HOURMIN;
+		days    = irtc_reg->DAYS;
+		yearmon = irtc_reg->YEARMON;
+
+		/* RTC value would not be valid too close to the 1Hz clock edge */
+		if (RTC_NXP_GET_REG_FIELD(irtc_reg, STATUS, INVAL_BIT) != 0) {
+			irq_unlock(key);
+			k_usleep(1);
+			continue;
+		}
+
+		irq_unlock(key);
+		break;
+	}
+
+	if (retry >= IRTC_READ_RETRY_MAX) {
+		return -EAGAIN;
+	}
+
+	timeptr->tm_sec = RTC_NXP_GET_REG_FIELD_FROM_VALUE(seconds, SECONDS, SEC_CNT);
+	timeptr->tm_min = RTC_NXP_GET_REG_FIELD_FROM_VALUE(hourmin, HOURMIN, MIN_CNT);
+	timeptr->tm_hour = RTC_NXP_GET_REG_FIELD_FROM_VALUE(hourmin, HOURMIN, HOUR_CNT);
+	timeptr->tm_wday = RTC_NXP_GET_REG_FIELD_FROM_VALUE(days, DAYS, DOW);
+	timeptr->tm_mday = RTC_NXP_GET_REG_FIELD_FROM_VALUE(days, DAYS, DAY_CNT);
+	timeptr->tm_mon = RTC_NXP_GET_REG_FIELD_FROM_VALUE(yearmon, YEARMON, MON_CNT) - 1;
 	timeptr->tm_year =
-		(int8_t)RTC_NXP_GET_REG_FIELD(irtc_reg, YEARMON, YROFST) + RTC_NXP_IRTC_YEAR_OFFSET;
+		(int8_t)RTC_NXP_GET_REG_FIELD_FROM_VALUE(yearmon, YEARMON, YROFST)
+		+ RTC_NXP_IRTC_YEAR_OFFSET;
 	if (data->is_dst_enabled) {
 		timeptr->tm_isdst =
 			((irtc_reg->CTRL & RTC_CTRL_DST_EN_MASK) >> RTC_CTRL_DST_EN_SHIFT);
