@@ -54,6 +54,35 @@ config FLASH_MCUX_FLEXSPI_NOR
 	select MEMC
 	select MEMC_MCUX_FLEXSPI
 
+config FLASH_MCUX_FLEXSPI_NOR_TIMEOUT_RETRIES
+	int "Retry count for FlexSPI NOR busy-wait polling"
+	default 500000
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	help
+	  Maximum number of status-register reads while waiting
+	  for the NOR flash to become ready after a page program
+	  or sector/block erase.
+	  Each iteration does one SPI status read; at 1-1-1 50 MHz
+	  with an 8-bit read, one iteration takes roughly 10 us.
+	  The default of 500000 therefore gives approximately a
+	  5-second timeout, sufficient for sector erase (typical
+	  45-400 ms) and page program (typical 0.2-3 ms).
+	  Used inside irq_lock() on XIP platforms where kernel
+	  timing APIs are unavailable.
+
+config FLASH_MCUX_FLEXSPI_NOR_CHIP_ERASE_TIMEOUT_RETRIES
+	int "Retry count for FlexSPI NOR chip erase polling"
+	default 20000000
+	depends on FLASH_MCUX_FLEXSPI_NOR
+	help
+	  Like FLASH_MCUX_FLEXSPI_NOR_TIMEOUT_RETRIES but used
+	  only for full-chip erase, which takes far longer than
+	  sector or block erase.
+	  At ~10 us per iteration the default of 20000000 gives
+	  approximately a 200-second timeout.  Typical full-chip
+	  erase times range from 40 s (W25Q128JW) to 120 s; the
+	  JEDEC maximum can be up to 200 s.
+
 config FLASH_MCUX_FLEXSPI_MX25UM51345G
 	bool "MCUX FlexSPI MX25UM51345G driver"
 	default y
