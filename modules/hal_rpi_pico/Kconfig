@@ -64,3 +64,9 @@ config PICOSDK_USE_RAND
 	bool
 	help
 	  Use the "rand" driver from pico-sdk
+
+config PICOSDK_USE_POWMAN
+	bool
+	select PICOSDK_USE_GPIO
+	help
+	  Use the POWMAN (power manager) driver from pico-sdk
