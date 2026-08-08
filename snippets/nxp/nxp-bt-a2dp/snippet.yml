@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-bt-a2dp
+description: |
+  NXP Bluetooth A2DP streaming performance tuning.
+  Increases L2CAP TX buffers, heap, and stack sizes for
+  high-throughput audio streaming over A2DP.
+  Use together with prj-ble.conf or prj-ble-classic.conf.
+append:
+  FORCED_CONF_FILE: nxp-bt-a2dp.conf

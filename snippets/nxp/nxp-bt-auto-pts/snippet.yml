@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-bt-auto-pts
+description: |
+  NXP Auto-PTS Bluetooth certification testing configurations.
+  Enables privacy and MITM enforcement required for PTS test cases.
+  Use together with prj-ble.conf.
+append:
+  FORCED_CONF_FILE: nxp-bt-auto-pts.conf
