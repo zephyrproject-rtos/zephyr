@@ -77,7 +77,7 @@ static void ti_rti_timer_isr(void *param)
 	sys_clock_announce(1);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 	ARG_UNUSED(ticks);
@@ -89,7 +89,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return (uint32_t)sys_read32(RTI_REG(RTIFRC0));
 }
 
-unsigned int sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	/* This driver doesn't support tickless kernel, return 0 for tickful kernel */
 	return 0;

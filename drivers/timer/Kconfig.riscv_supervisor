@@ -10,6 +10,11 @@ config RISCV_SUPERVISOR_TIMER
 		   DT_HAS_NUCLEI_SYSTIMER_ENABLED
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	# On RV64 the time CSR / SBI timer and the driver's cycle-domain math
+	# (cycle_diff_t == unsigned long) are 64-bit, so a full SYS_CLOCK_MAX_WAIT
+	# is overflow-safe. On RV32 cycle_diff_t is 32-bit, so do not offer the
+	# long-wait capability there.
+	select SYSTEM_CLOCK_LONG_WAIT_CAPABLE if 64BIT
 	help
 	  This module implements a kernel device driver for the RISC-V supervisor
 	  mode timer. It uses the SBI timer extension to set timer deadlines and

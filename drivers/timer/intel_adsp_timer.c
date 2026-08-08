@@ -127,7 +127,7 @@ static void compare_isr(const void *arg)
 	sys_clock_announce_locked(dticks, key);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -158,7 +158,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 

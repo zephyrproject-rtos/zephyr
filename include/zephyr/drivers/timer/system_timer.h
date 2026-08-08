@@ -23,6 +23,22 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Tick type used by the system timer driver interface.
+ *
+ * The width of the tick counts exchanged between the kernel and the timer
+ * driver (sys_clock_set_timeout(), sys_clock_announce(), sys_clock_elapsed()).
+ * It is widened to 64 bits when @kconfig{CONFIG_SYSTEM_CLOCK_LONG_WAIT} is set,
+ * so that a capable driver can honour a single wait longer than the 32-bit
+ * tick range instead of being forced into periodic intermediate announcements.
+ * Otherwise it is 32 bits and this interface behaves exactly as before.
+ */
+#ifdef CONFIG_SYSTEM_CLOCK_LONG_WAIT
+typedef uint64_t sys_clock_ticks_t;
+#else
+typedef uint32_t sys_clock_ticks_t;
+#endif
+
 /*
  * Maximum number of ticks the kernel will ever ask a timer driver to wait
  * before the next sys_clock_announce(). It is half of the unsigned tick
@@ -34,7 +50,11 @@ extern "C" {
  * sys_clock_set_timeout() to this, so a driver need not clamp against the
  * announce range and only has to honour its own cycle-count limits.
  */
+#ifdef CONFIG_SYSTEM_CLOCK_LONG_WAIT
+#define SYS_CLOCK_MAX_WAIT (UINT64_MAX / 2)
+#else
 #define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
+#endif
 
 /**
  * @brief System Clock APIs
@@ -177,7 +197,7 @@ bool sys_clock_is_locked(void);
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(uint32_t ticks, bool idle);
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -213,7 +233,7 @@ void sys_clock_idle_exit(void);
  * @param ticks Elapsed time, in ticks
  * @param key Lock key obtained from sys_clock_lock().
  */
-void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
+void sys_clock_announce_locked(sys_clock_ticks_t ticks, k_spinlock_key_t key);
 
 /**
  * @brief Announce time progress to the kernel (legacy wrapper)
@@ -225,7 +245,7 @@ void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
  *
  * @param ticks Elapsed time, in ticks
  */
-static inline void sys_clock_announce(uint32_t ticks)
+static inline void sys_clock_announce(sys_clock_ticks_t ticks)
 {
 	sys_clock_announce_locked(ticks, sys_clock_lock());
 }
@@ -241,7 +261,7 @@ static inline void sys_clock_announce(uint32_t ticks)
  * @note This function is called by the kernel with the system clock
  * lock held.
  */
-uint32_t sys_clock_elapsed(void);
+sys_clock_ticks_t sys_clock_elapsed(void);
 
 /**
  * @brief Disable system timer.

@@ -135,7 +135,7 @@ uint64_t sys_clock_cycle_get_64(void)
 	return (((uint64_t)h0) << 32) | l;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	/* Compute desired expiration time */
 	uint64_t now = sys_clock_cycle_get_64();
@@ -165,7 +165,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 #endif
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	uint32_t ret;
