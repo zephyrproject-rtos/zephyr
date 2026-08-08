@@ -31,6 +31,20 @@ exceptions and clarifications:
   clarity, avoid emojis in any case.
 * Use proper capitalization of nouns in code comments (e.g. ``UART`` and not
   ``uart``, ``CMake`` and not ``cmake``).
+* All header file shall have a header guard using ``#ifndef <GUARD_NAME>``,
+  followed ``#define <GUARD_NAME>`` at file entry and ``#endif`` (preferrably
+  ``#endif /* <GUARD_NAME> */`` at file end.
+  * For header files located ``include/zephyr/`` the guard macro name shall
+    reflects the path of the header file in the Zephyr source tree but
+    unsing ``ZEPHYR_INCLUDE_`` prefix (instead of ``INCLUDE_ZEPHYR_``).
+    Expection can be tolerated (e.g. leads to > 100 char/line) in which case
+    guard ``#ifndef <GUARD_MACRO>`` shall be preceeded by an inline comment
+    ``/* CUSTOM_GUARD_NAME: <brief reason> */`` including a brief explanation.
+  * For header files located ``drivers/``, the header guard name should
+    reflects the path of the header file in the Zephyr source tree but
+     using ``ZEPHYR_DRIVERS_`` prefix (instead of plain ``DRIVERS_``).
+* Be strict in using ``#include <>`` to include a non-local header file
+  and ``#include ""`` only for local header files.
 
 .. _Linux kernel coding style:
    https://kernel.org/doc/html/latest/process/coding-style.html
