@@ -16,6 +16,8 @@ struct lpspi_driver_data {
 	size_t words_clocked;
 	uint8_t word_size_bytes;
 	uint8_t lpspi_op_mode;
+	bool tx_only;
+	bool tx_completion_requested;
 };
 
 /* Reads a word from the RX fifo and handles writing it into the RX spi buf */
@@ -243,6 +245,7 @@ static void lpspi_isr(const struct device *dev)
 	uint8_t word_size_bytes = lpspi_data->word_size_bytes;
 	struct spi_context *ctx = &data->ctx;
 	uint32_t status_flags = base->SR;
+	bool rx_done;
 
 	if (status_flags & LPSPI_SR_RDF_MASK && base->IER & LPSPI_IER_RDIE_MASK) {
 		lpspi_handle_rx_irq(dev);
@@ -252,12 +255,34 @@ static void lpspi_isr(const struct device *dev)
 		lpspi_handle_tx_irq(dev);
 	}
 
-	if (spi_context_rx_len_left(ctx, word_size_bytes) == 0) {
+	rx_done = (spi_context_rx_len_left(ctx, word_size_bytes) == 0);
+	if (rx_done) {
 		base->IER &= ~LPSPI_IER_RDIE_MASK;
 		base->CR |= LPSPI_CR_RRF_MASK; /* flush rx fifo */
 	}
 
 	if (spi_context_tx_on(ctx)) {
+		return;
+	}
+
+	if (lpspi_data->tx_only && rx_done) {
+		base->IER &= ~(LPSPI_IER_TDIE_MASK | LPSPI_IER_RDIE_MASK);
+
+		if (!lpspi_data->tx_completion_requested) {
+			if (!(ctx->config->operation & SPI_HOLD_ON_CS)) {
+				base->TCR &= ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
+			}
+			lpspi_data->tx_completion_requested = true;
+		}
+
+		if (base->SR & LPSPI_SR_TCF_MASK) {
+			base->SR = LPSPI_SR_TCF_MASK;
+			base->IER &= ~LPSPI_IER_TCIE_MASK;
+			lpspi_end_xfer(dev);
+			return;
+		}
+
+		base->IER |= LPSPI_IER_TCIE_MASK;
 		return;
 	}
 
@@ -374,6 +399,8 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, lpspi_data->word_size_bytes);
 	lpspi_data->lpspi_op_mode = op_mode;
+	lpspi_data->tx_only = (spi_context_total_rx_len(ctx) == 0);
+	lpspi_data->tx_completion_requested = false;
 
 	ret = lpspi_configure(dev, spi_cfg);
 	if (ret) {
