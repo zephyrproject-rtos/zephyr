@@ -15,7 +15,8 @@ properties:
     required: true
   bank2-flash-size:
     type: int
+    deprecated: true
     description: |
-      Embedded flash memory bank 2 size in KBytes.
-      Used by CM4 CPU because it cannot access flash controller register to read size.
-      Provides a way to configure this size when the flash controller driver runs on CM4 CPU.
+      Deprecated. This property was used to obtain the sizes of flash banks on the Cortex-M4 of
+      dual core MCUs.  Said sizes are now derived from the size cell. It's safe to simply remove
+      this property.

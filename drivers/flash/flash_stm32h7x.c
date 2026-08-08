@@ -26,6 +26,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
+BUILD_ASSERT(DT_NODE_EXISTS(DT_INST(0, st_stm32_nv_flash)), "st,stm32-nv-flash node missing");
+
 /* Let's wait for double the max erase time to be sure that the operation is
  * completed.
  */
@@ -33,20 +35,13 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* No information in documentation about that. */
 #define STM32H7_FLASH_OPT_TIMEOUT_MS 800
 
-#if DT_NODE_HAS_PROP(DT_INST(0, st_stm32_nv_flash), bank2_flash_size)
-#define STM32H7_M4_FLASH_SIZE DT_PROP_OR(DT_INST(0, st_stm32_nv_flash), bank2_flash_size, 0)
-#ifdef CONFIG_CPU_CORTEX_M4
-#if STM32H7_M4_FLASH_SIZE == 0
-#error Flash driver on M4 requires the DT property bank2-flash-size
-#else
-#define REAL_FLASH_SIZE_KB (KB(STM32H7_M4_FLASH_SIZE * 2))
-#endif
-#else
+#if defined(CONFIG_STM32H7_DUAL_CORE)
+/* Dual core STM32H7x products feature two banks of the same size */
 #define REAL_FLASH_SIZE_KB (DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash)) * 2)
-#endif
 #else
 #define REAL_FLASH_SIZE_KB DT_REG_SIZE(DT_INST(0, st_stm32_nv_flash))
-#endif
+#endif /* CONFIG_STM32H7_DUAL_CORE */
+
 #define SECTOR_PER_BANK ((REAL_FLASH_SIZE_KB / FLASH_SECTOR_SIZE) / 2)
 #if defined(DUAL_BANK)
 #define STM32H7_SERIES_MAX_FLASH_KB KB(2048)
