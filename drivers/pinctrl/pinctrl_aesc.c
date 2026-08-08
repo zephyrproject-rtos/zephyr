@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(aesc_pinctrl, CONFIG_PINCTRL_LOG_LEVEL);
 struct pinctrl_aesc_data {
 	DEVICE_MMIO_RAM;
 	uintptr_t reg_base;
+	uint32_t max_pins;
 };
 
 struct pinctrl_aesc_config {
@@ -40,7 +41,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 	struct pinctrl_aesc_data *data = DEV_DATA(dev);
 
 	for (uint8_t i = 0; i < pin_cnt; i++) {
-		if (pins[i].pin >= AESC_PINCTRL_MAX_PINS) {
+		if (pins[i].pin >= data->max_pins) {
 			LOG_ERR("Pin index %u out of range", pins[i].pin);
 			return -EINVAL;
 		}
@@ -63,6 +64,9 @@ static int pinctrl_aesc_init(const struct device *dev)
 	);
 	data->reg_base = ip_id_relocate_driver(base_addr);
 	LOG_DBG("Relocate registers to address 0x%lx.", data->reg_base);
+
+	data->max_pins = sys_read32(data->reg_base + PINCTRL_AESC_INFO) & 0xFF;
+
 	return 0;
 }
 
