@@ -16,3 +16,15 @@ config DSA_MICROCHIP_KSZ8463
 	help
 	  Add support for the KSZ8463 3-port Ethernet switch family. Both MII and RMII models
 	  are supported.
+
+config DSA_TAG_PROTOCOL_KSZ8463
+	bool "Tag protocol - KSZ8463"
+	default y
+	depends on $(dt_compat_any_has_prop,$(DSA_PORT_COMPAT),dsa-tag-protocol,2)
+	help
+	  Enable support for the Microchip KSZ8463 tag protocol.
+
+	  The KSZ8463 Ethernet switch tag protocol uses a single byte just after the payload of
+	  each Ethernet frame sent to or from the CPU port to associate a packet with a user port.
+	  This option is automatically enabled by setting the dsa-tag-protocol property of the
+	  CPU port node to DSA_TAG_PROTO_KSZ8463.

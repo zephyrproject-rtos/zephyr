@@ -21,6 +21,7 @@ include:
         - ethernet
         - port
         - reg
+        - dsa-tag-protocol
   - name: pinctrl-device.yaml
   - name: spi-device.yaml
 
@@ -93,6 +94,14 @@ child-binding:
       description: |
         A phandle referring to the Ethernet node to which the CPU port, i.e. physical port 3, is
         connected. Should be set for only the node with reg value 2.
+
+    dsa-tag-protocol:
+      description: |
+        An integer identifying which DSA tag protocol to use. Must be either DSA_TAG_PROTO_NOTAG or
+        DSA_TAG_PROTO_KSZ8463. The former disables packet tagging, the latter uses the
+        KSZ8463-specific tagging scheme.
+
+        The property should be set for the CPU port. The default is DSA_TAG_PROTO_NOTAG.
 
     microchip,disable-eee:
       type: boolean
@@ -243,6 +252,9 @@ examples: |
         phy-connection-type = "mii";
 
         /* No PHY node required on the CPU port */
+
+        /* Use KSZ8463 tag protocol */
+        dsa-tag-protocol = <DSA_TAG_PROTO_KSZ8463>;
 
         status = "okay";
       };

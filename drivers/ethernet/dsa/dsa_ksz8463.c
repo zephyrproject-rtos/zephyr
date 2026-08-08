@@ -14,6 +14,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -1562,11 +1563,37 @@ static enum ethernet_hw_caps ksz8463_get_capabilities(const struct device *portd
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
+static inline int ksz8463_enable_tail_tagging(const struct device *dev)
+{
+	const struct ksz8463_config *cfg = dev->config;
+
+	return ksz8463_spi_update_bits8(&cfg->spi, KSZ8463_REG_SGCR8_HI,
+					KSZ8463_SGCR8_HI_TAIL_TAG_EN, KSZ8463_SGCR8_HI_TAIL_TAG_EN);
+}
+
+static int ksz8463_connect_tag_protocol(struct dsa_switch_context *dsa_switch_ctx, int tag_proto)
+{
+	const struct device *dev = ksz8463_switch_ctx_to_switch_dev(dsa_switch_ctx);
+
+	switch (tag_proto) {
+	case DSA_TAG_PROTO_NOTAG:
+		/* Tail-tagging disabled by default, nothing to do */
+		return 0;
+	case DSA_TAG_PROTO_KSZ8463:
+		break;
+	default:
+		LOG_ERR("Unsupported tag protocol 0x%x", (unsigned int)tag_proto);
+		return -ENOTSUP;
+	}
+
+	return ksz8463_enable_tail_tagging(dev);
+}
+
 struct dsa_api ksz8463_dsa_api = {
 	.port_init = ksz8463_port_init,
 	.switch_setup = ksz8463_switch_setup,
-	.get_capabilies = ksz8463_get_capabilities,
 	.get_capabilities = ksz8463_get_capabilities,
+	.connect_tag_protocol = ksz8463_connect_tag_protocol,
 };
 
 static int ksz8463_hard_reset(const struct device *dev)
@@ -1712,6 +1739,17 @@ static int ksz8463_init(const struct device *dev)
 				"Non-CPU ports should have 1 child"))                              \
 	)
 
+#define KSZ8463_PORT_VERIFY_TAG_PROTO(port_id)                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(port_id, ethernet),                                           \
+		(BUILD_ASSERT(                                                                     \
+			DT_PROP_OR(port_id, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG) ==              \
+				DSA_TAG_PROTO_NOTAG ||                                             \
+			DT_PROP_OR(port_id, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG) ==              \
+				DSA_TAG_PROTO_KSZ8463, "Unsupported tag protocol")),               \
+		(BUILD_ASSERT(!DT_NODE_HAS_PROP(port_id, dsa_tag_protocol),                        \
+			"dsa-tag-protocol is meaningless for non-CPU ports"))                      \
+	)
+
 #define KSZ8463_PORT_GET_PHY_OR_NULL(port_id)                                                      \
 	COND_CODE_0(DT_NODE_HAS_PROP(port_id, ethernet),                                           \
 		(DEVICE_DT_GET(DT_CHILD(port_id, phy))),                                           \
@@ -1729,11 +1767,14 @@ static int ksz8463_init(const struct device *dev)
 		.dev = DEVICE_DT_INST_GET(inst),                                                   \
 	};                                                                                         \
                                                                                                    \
+	KSZ8463_PORT_VERIFY_TAG_PROTO(port_id);                                                    \
+                                                                                                   \
 	static const struct dsa_port_config ksz8463_port_config##inst##port_id = {                 \
 		.mcfg = NET_ETH_MAC_DT_CONFIG_INIT(port_id),                                       \
 		.port_idx = DT_REG_ADDR(port_id),                                                  \
 		.phy_dev = KSZ8463_PORT_GET_PHY_OR_NULL(port_id),                                  \
 		.phy_mode = DT_PROP_OR(port_id, phy_connection_type, "internal"),                  \
+		.tag_proto = DT_PROP_OR(port_id, dsa_tag_protocol, DSA_TAG_PROTO_NOTAG),           \
 		.ethernet_connection = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port_id, ethernet)),       \
 		.prv_config = &ksz8463_##inst##port_id,                                            \
 	};                                                                                         \
