@@ -69,7 +69,8 @@ def test_check_build_or_run(
             enable_slow=slow,
             fixtures=fixture,
             filter="",
-            sim_name=platform_sim
+            sim_name=platform_sim,
+            device_rtt=False,
         ),
         hwm=mock.Mock(duts=[])
     )
@@ -526,7 +527,8 @@ def test_testinstance_check_runnable(
             enable_slow=enable_slow,
             fixtures=fixtures,
             filter=filter,
-            sim_name=platform_sim
+            sim_name=platform_sim,
+            device_rtt=False,
         ),
         hwm=hardware_map or mock.Mock(duts=[])
     )
