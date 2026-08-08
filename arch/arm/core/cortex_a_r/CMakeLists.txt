@@ -2,20 +2,23 @@
 
 zephyr_library()
 
+zephyr_library_sources_ifndef(CONFIG_ARMV5
+  fault.c
+  smp.c
+  tcm.c
+  )
+
 zephyr_library_sources(
   exc.S
-  fault.c
   irq_init.c
   reboot.c
   reset.S
   stacks.c
-  tcm.c
   vector_table.S
   irq_manage.c
   prep_c.c
   thread.c
   cpu_idle.c
-  smp.c
   )
 
 zephyr_library_sources_ifdef(CONFIG_GEN_SW_ISR_TABLE isr_wrapper.S)

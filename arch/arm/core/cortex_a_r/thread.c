@@ -19,7 +19,9 @@
 #include <zephyr/llext/symbol.h>
 #include <zephyr/sys/barrier.h>
 #include <stdbool.h>
+#ifndef CONFIG_ARMV5
 #include <cmsis_core.h>
+#endif
 
 #if (MPU_GUARD_ALIGN_AND_SIZE_FLOAT > MPU_GUARD_ALIGN_AND_SIZE)
 #define FP_GUARD_EXTRA_SIZE	(MPU_GUARD_ALIGN_AND_SIZE_FLOAT - \

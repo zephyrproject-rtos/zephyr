@@ -6,7 +6,46 @@
 #ifndef _MACRO_PRIV_INC_
 #define _MACRO_PRIV_INC_
 
+#ifndef CONFIG_ARMV5
 #include <zephyr/arch/arm/cortex_a_r/tpidruro.h>
+#endif
+
+.macro change_processor_state mode scratch_reg
+#ifdef CONFIG_ARMV5
+	mrs \scratch_reg, cpsr
+	bic \scratch_reg, \scratch_reg, #MODE_MASK
+	orr \scratch_reg, \scratch_reg, \mode
+	msr cpsr, \scratch_reg
+#else
+	cps \mode
+#endif
+.endm
+
+.macro z_arm_cpsid_i
+#ifdef CONFIG_ARMV5
+	/* Use r0 as a temp */
+	push {r0}
+	mrs r0, cpsr
+	orr r0, r0, #I_BIT
+	msr cpsr, r0
+	pop {r0}
+#else
+	cpsid i
+#endif
+.endm
+
+.macro z_arm_cpsie_i
+#ifdef CONFIG_ARMV5
+	/* Use r0 as a temp */
+	push {r0}
+	mrs r0, cpsr
+	bic r0, r0, #I_BIT
+	msr cpsr, r0
+	pop {r0}
+#else
+	cpsie i
+#endif
+.endm
 
 /*
  * Get CPU id
@@ -40,14 +79,28 @@
 .endm
 
 .macro get_cpu rreg0
+#ifdef CONFIG_ARMV5
+	ldr \rreg0, =_kernel
+#else
 	/*
          * Get CPU pointer.
 	 */
 	mrc p15, 0, \rreg0, c13, c0, 3
         and \rreg0, #TPIDRURO_CURR_CPU
+#endif
 .endm
 
 .macro z_arm_cortex_ar_enter_exc
+#ifdef CONFIG_ARMV5
+	stm sp, {r0-r3}
+	mov r1, lr
+	mrs r2, spsr
+	mov r3, sp
+	change_processor_state #MODE_SYS, r0
+	push {r1, r2}
+	ldm r3, {r0-r3}
+	push {r0-r3, r12, lr}
+#else
 	/*
 	 * Store r0-r3, r12, lr into the stack to construct an exception
 	 * stack frame.
@@ -58,6 +111,7 @@
 
 	/* TODO: EXTRA_EXCEPTION_INFO */
 	mov r0, sp
+#endif
 
 	/* increment exception depth */
 	get_cpu r2

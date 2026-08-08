@@ -1,0 +1,14 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_MICROCHIP_SAM9
+	bool
+	help
+	  Enable support for Microchip SAM9 ARM926EJ-S Microprocessors.
+
+config SOC_FAMILY
+	default "microchip_sam9" if SOC_FAMILY_MICROCHIP_SAM9
+
+rsource "*/Kconfig.soc"

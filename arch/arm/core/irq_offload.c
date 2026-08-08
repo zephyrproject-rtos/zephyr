@@ -11,7 +11,9 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq_offload.h>
+#ifndef CONFIG_CPU_ARM9
 #include <cmsis_core.h>
+#endif
 
 volatile irq_offload_routine_t offload_routine;
 static const void *offload_param;
