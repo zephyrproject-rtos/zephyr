@@ -78,6 +78,7 @@ struct modem_ubx {
 	struct modem_pipe *pipe;
 	struct k_work process_work;
 	struct k_sem script_stopped_sem;
+	struct k_sem script_sent_sem;
 	struct k_sem script_running_sem;
 	struct {
 		const struct modem_ubx_match *array;
