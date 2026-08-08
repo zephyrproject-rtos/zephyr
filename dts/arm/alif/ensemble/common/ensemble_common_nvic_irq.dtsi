@@ -161,3 +161,19 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <133 0>;
 };
+
+/*
+ * The LPTIMER interrupts reach the RTSS NVICs twice: directly on inputs
+ * 60 and 61, and through the IRQRTR on inputs 346 and 347. The direct
+ * inputs are used here as they are the ones wired to the EWIC, so they
+ * can wake the core from a low-power state.
+ */
+&lptimer0 {
+	interrupt-parent = <&nvic>;
+	interrupts = <60 0>;
+};
+
+&lptimer1 {
+	interrupt-parent = <&nvic>;
+	interrupts = <61 0>;
+};

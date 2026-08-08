@@ -164,3 +164,13 @@
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 122 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&lptimer0 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&lptimer1 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 336 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
