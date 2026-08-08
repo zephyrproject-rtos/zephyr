@@ -128,3 +128,53 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
  */
 int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint32_t seq_idx,
 			    const uint32_t *lut_ptr, uint8_t lut_count);
+
+/**
+ * @brief Check whether a flash byte range lies within an IPED-protected region
+ *
+ * IPED (Inline Prince Encryption/Decryption) is a FlexSPI feature on some chips
+ * (e.g. RW612). Regions are provisioned by BootROM/blhost and discovered by the
+ * memc driver at init. A read of an IPED region must go through the AHB
+ * memory-mapped path so IPED decrypts inline; an IP-command read returns
+ * ciphertext. The FlexSPI NOR flash driver calls this to decide the read path.
+ *
+ * @param dev: FlexSPI device
+ * @param port: FlexSPI port the flash device is on
+ * @param offset: byte offset from start of the device
+ * @param len: length of the access in bytes
+ * @param gcm: out (optional) — set to the region's GCM-mode flag when it returns true
+ * @param region_idx: out (optional) — set to the IPED region index when it returns true
+ * @return true if the whole [offset, offset+len) range is contained in a single
+ *         IPED region on @p port; false otherwise (including on chips without IPED)
+ */
+bool memc_flexspi_offset_in_iped_region(const struct device *dev, flexspi_port_t port, off_t offset,
+					size_t len, bool *gcm, size_t *region_idx);
+
+/**
+ * @brief Check whether a flash byte range overlaps any IPED region at all
+ *
+ * Unlike memc_flexspi_offset_in_iped_region() which requires the range to fit
+ * entirely within one region, this returns true for ANY overlap — including
+ * partial overlap where the range crosses a region boundary.  The flash driver
+ * uses this to reject reads that would mix decrypted and ciphertext data.
+ *
+ * @param dev: FlexSPI device
+ * @param port: FlexSPI port
+ * @param offset: byte offset from start of the device
+ * @param len: length of the access in bytes
+ * @return true if [offset, offset+len) overlaps any IPED region
+ */
+bool memc_flexspi_iped_any_overlap(const struct device *dev, flexspi_port_t port, off_t offset,
+				   size_t len);
+
+/**
+ * @brief Check whether IPED IP-command write encryption is enabled
+ *
+ * When IPWR_EN is set in IPEDCTRL, IP-command writes to IPED regions are
+ * encrypted by hardware before being stored in flash.  The flash driver can
+ * use this to decide whether writes to IPED regions are supported at runtime.
+ *
+ * @param dev: FlexSPI device
+ * @return true if IPED is enabled and IPWR_EN is set
+ */
+bool memc_flexspi_iped_ipwr_enabled(const struct device *dev);
