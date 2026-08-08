@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ameba UART
+compatible: "realtek,ameba-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+bus: uart
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
