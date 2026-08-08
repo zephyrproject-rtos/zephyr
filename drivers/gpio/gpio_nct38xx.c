@@ -129,6 +129,3 @@ static int nct38xx_gpio_init(const struct device *dev)
 			      CONFIG_GPIO_NCT38XX_INIT_PRIORITY, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_NCT38XX_DEVICE_INSTANCE)
-
-/* The nct38xx MFD parent must be initialized before this driver */
-BUILD_ASSERT(CONFIG_GPIO_NCT38XX_INIT_PRIORITY > CONFIG_MFD_INIT_PRIORITY);

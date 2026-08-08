@@ -14,7 +14,7 @@ if GPIO_MAX22017
 
 config GPIO_MAX22017_INIT_PRIORITY
 	int "Init priority"
-	default 81
+	default MFD_INIT_PRIORITY
 	help
 	  Analog Devices MAX22017 gpio device driver initialization priority.
 

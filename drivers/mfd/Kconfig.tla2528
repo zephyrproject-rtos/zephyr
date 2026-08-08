@@ -8,10 +8,3 @@ config MFD_TLA2528
 	select I2C
 	help
 	  Enable the mfd driver implementation for the TLA2528
-
-config MFD_TLA2528_INIT_PRIO
-	int "Init priority"
-	default 65
-	depends on MFD_TLA2528
-	help
-	  Device driver initialization priority.

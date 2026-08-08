@@ -12,7 +12,6 @@ config GPIO_NPM10XX
 config GPIO_NPM10XX_INIT_PRIORITY
 	int "nPM10xx GPIO driver initialization priority"
 	depends on GPIO_NPM10XX
-	default 85
+	default MFD_INIT_PRIORITY
 	help
-	  Initialization priority for the nPM10xx GPIO driver. It must be
-	  greater than the I2C controller init priority.
+	  Initialization priority for the nPM10xx GPIO driver.
