@@ -39,7 +39,7 @@ ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
 struct k_futex no_access_futex;
 ZTEST_BMEM atomic_t not_a_futex;
-ZTEST_BMEM struct sys_mutex also_not_a_futex;
+ZTEST_BMEM struct k_mutex also_not_a_futex;
 
 struct k_thread futex_tid;
 struct k_thread futex_wake_tid;
