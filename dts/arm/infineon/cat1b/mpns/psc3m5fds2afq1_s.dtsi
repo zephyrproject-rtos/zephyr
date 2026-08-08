@@ -1,17 +1,17 @@
 /*
- * copyright (c) (2016-2025), Cypress Semiconductor Corporation
- * (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
- *
  */
 
 #include "../psc3/psc3.e-lqfp-80_s.dtsi"
 
 / {
-	flash-controller@52150000 {
+	flash_controller: flash-controller@52150000 {
 		compatible = "infineon,flash-controller";
 		reg = <0x52150000 0x10000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		status = "disabled";
@@ -19,6 +19,9 @@
 		flash0: flash@12000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x12000000 DT_SIZE_K(256)>;
+			ranges = <0x0 0x12000000 DT_SIZE_K(256)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			write-block-size = <512>;
 			erase-block-size = <512>;
 		};
