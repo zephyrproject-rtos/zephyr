@@ -2,15 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-choice BFLB_WIFI_BL61X_MACSW_VARIANT
+choice WIFI_BFLB_WIFI6_MACSW_VARIANT
 	prompt "MACSW firmware variant"
-	default BFLB_WIFI_BL61X_MACSW_DEFAULT
+	default WIFI_BFLB_WIFI6_MACSW_DEFAULT
 	help
 	  Selects the MACSW lower-MAC firmware blob variant. All variants
 	  share the same host API; they differ only in compile-time tuning
 	  (TX/RX queue depth, AMSDU size, coex hooks).
 
-config BFLB_WIFI_BL61X_MACSW_DEFAULT
+config WIFI_BFLB_WIFI6_MACSW_DEFAULT
 	bool "default"
 	help
 	  Balanced configuration suitable for STA and light AP use.
@@ -18,14 +18,14 @@ config BFLB_WIFI_BL61X_MACSW_DEFAULT
 	  which handles BLE/BT coexistence at the hardware level and works
 	  with the default BLE controller blob out of the box.
 
-config BFLB_WIFI_BL61X_MACSW_BRIDGE
+config WIFI_BFLB_WIFI6_MACSW_BRIDGE
 	bool "bridge"
 	help
 	  High-throughput tuning for simultaneous STA+AP bridging:
 	  64 TX1 descriptors (vs 32), 8K AMSDU (vs 4K), 12-window block ack
 	  and reorder buffer. Adds ~14 KB to RAM usage over default.
 
-config BFLB_WIFI_BL61X_MACSW_ACK
+config WIFI_BFLB_WIFI6_MACSW_ACK
 	bool "ack"
 	help
 	  Enhanced Block Ack and A-MPDU aggregation variant. Increases
@@ -33,7 +33,7 @@ config BFLB_WIFI_BL61X_MACSW_ACK
 	  improving throughput on links with high frame aggregation.
 	  Uses more RAM than default but less than bridge.
 
-config BFLB_WIFI_BL61X_MACSW_COEX
+config WIFI_BFLB_WIFI6_MACSW_COEX
 	bool "coex"
 	help
 	  Adds the legacy coex_init/coex_event/coexist_event_* hook API
@@ -45,9 +45,9 @@ config BFLB_WIFI_BL61X_MACSW_COEX
 
 endchoice
 
-config BFLB_WIFI_BL61X_BA_RX
+config WIFI_BFLB_WIFI6_BA_RX
 	int "Number of RX Block Ack agreements"
-	default 4 if BFLB_WIFI_BL61X_MACSW_ACK
+	default 4 if WIFI_BFLB_WIFI6_MACSW_ACK
 	default 2
 	range 1 8
 	help
@@ -55,10 +55,10 @@ config BFLB_WIFI_BL61X_BA_RX
 	  with the AP. Higher values allow parallel aggregated streams
 	  at the cost of additional reorder buffer memory.
 
-config BFLB_WIFI_BL61X_BA_REORDER_BUF
+config WIFI_BFLB_WIFI6_BA_REORDER_BUF
 	int "Block Ack reorder buffer depth per agreement"
-	default 16 if BFLB_WIFI_BL61X_MACSW_ACK
-	default 12 if BFLB_WIFI_BL61X_MACSW_BRIDGE
+	default 16 if WIFI_BFLB_WIFI6_MACSW_ACK
+	default 12 if WIFI_BFLB_WIFI6_MACSW_BRIDGE
 	default 4
 	range 4 64
 	help
@@ -67,19 +67,19 @@ config BFLB_WIFI_BL61X_BA_REORDER_BUF
 	  flushing but consume more WRAM (each slot holds one
 	  RX descriptor plus the AMSDU subframe).
 
-config BFLB_WIFI_BL61X_TASK_STACK_SIZE
+config WIFI_BFLB_WIFI6_TASK_STACK_SIZE
 	int "WiFi task stack size"
 	default 4096
 	help
 	  Stack size for the WiFi MACSW task thread.
 
-config BFLB_WIFI_BL61X_TASK_PRIORITY
+config WIFI_BFLB_WIFI6_TASK_PRIORITY
 	int "WiFi task priority"
 	default 2
 	help
 	  Thread priority of the WiFi MACSW event loop.
 
-config BFLB_WIFI_BL61X_TX_MAX_PENDING
+config WIFI_BFLB_WIFI6_TX_MAX_PENDING
 	int "Maximum in-flight TX packets"
 	default 4
 	range 1 64
@@ -89,7 +89,7 @@ config BFLB_WIFI_BL61X_TX_MAX_PENDING
 	  is reached, providing backpressure to the TCP stack and
 	  preventing WRAM heap exhaustion during bulk transfers.
 
-config BFLB_WIFI_BL61X_WRAM_HEAP_SIZE
+config WIFI_BFLB_WIFI6_WRAM_HEAP_SIZE
 	int "Size of the WRAM TX heap (bytes)"
 	default 4096
 	help
@@ -97,7 +97,7 @@ config BFLB_WIFI_BL61X_WRAM_HEAP_SIZE
 	  non-cached WRAM for DMA coherency. 4 KB holds two concurrent
 	  in-flight TX buffers; minimum ~2 KB for a single full-MTU frame.
 
-config BFLB_WIFI_BL61X_DEFAULT_COUNTRY
+config WIFI_BFLB_WIFI6_DEFAULT_COUNTRY
 	string "Default regulatory country code"
 	default "US"
 	help
