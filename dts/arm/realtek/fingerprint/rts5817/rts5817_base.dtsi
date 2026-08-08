@@ -83,6 +83,8 @@
 		watchdog: watchdog@40100048 {
 			compatible = "realtek,rts5817-watchdog";
 			reg = <0x40100048 0x4>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_WATCHDOG 0>;
 			status = "disabled";
 		};
 
