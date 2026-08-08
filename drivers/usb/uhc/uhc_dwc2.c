@@ -288,8 +288,9 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 	uint32_t ghwcfg4 = sys_read32((mem_addr_t)&base->ghwcfg4);
 	const k_timepoint_t timepoint = sys_timepoint_calc(K_MSEC(100));
 
-	/* Enable Host mode */
-	sys_set_bits((mem_addr_t)&base->gusbcfg, USB_DWC2_GUSBCFG_FORCEHSTMODE);
+	/* Force host mode as we do not support mode changes yet */
+	gusbcfg |= USB_DWC2_GUSBCFG_FORCEHSTMODE;
+	sys_write32(gusbcfg, (mem_addr_t)&base->gusbcfg);
 
 	/* Wait until core is in host mode */
 	while ((sys_read32((mem_addr_t)&base->gintsts) & USB_DWC2_GINTSTS_CURMOD) == 0) {
@@ -340,6 +341,7 @@ static inline int dwc2_core_init_host_gusbcfg(const struct device *dev)
 				gusbcfg &= ~USB_DWC2_GUSBCFG_PHYIF_16_BIT;
 			}
 		}
+
 		sys_write32(gusbcfg, (mem_addr_t)&base->gusbcfg);
 	}
 
