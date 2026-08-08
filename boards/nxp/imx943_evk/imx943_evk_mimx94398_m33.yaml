@@ -21,6 +21,7 @@ supported:
   - pwm
   - uart
   - watchdog
+  - flash
 testing:
   binaries:
     - flash.bin
