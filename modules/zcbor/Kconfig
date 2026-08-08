@@ -48,4 +48,13 @@ config ZCBOR_MAX_STR_LEN
 	  This can be manually used if no other value is readily available, but
 	  using this is discouraged.
 
+config ZCBOR_MAP_SMART_SEARCH
+	bool "Use smart search of unordered maps"
+	help
+	  Applies to decoding of unordered maps.
+	  When enabled, a flag is kept for each element in an array,
+	  ensuring it is not processed twice. If disabled, a count is kept for map as a whole.
+	  Enabling increases code size and memory usage,
+	  and requires the state variable to possess the memory necessary for the flags.
+
 endif # ZCBOR
