@@ -203,6 +203,27 @@ config RISCV_SOC_HAS_CUSTOM_SYS_IO
 	  the RISC-V SoC needs to do something different and more than reading and
 	  writing the registers.
 
+config RISCV_SOC_HAS_SYSCALL_INTMASK
+	bool
+	depends on USERSPACE && PMP_KERNEL_MODE_DYNAMIC
+	depends on RISCV_SOC_CONTEXT_SAVE
+	help
+	  Hidden option for SoCs where an interrupt taken in the syscall body must
+	  be held off without clearing mstatus.MIE. On such SoCs an interrupt (or
+	  other trap) taken while the ECALL exception is still being handled cannot
+	  be delivered safely, yet the kernel requires syscalls to run with
+	  interrupts unlocked (arch_irq_unlocked() true, i.e. mstatus.MIE set) so
+	  the thread stays scheduler-preemptible.
+
+	  Enable this hidden option and provide a soc_syscall.h header defining the
+	  SOC_SYSCALL_INTMASK macro (guarded by _ASMLANGUAGE). The IRQ wrapper
+	  invokes it on syscall entry to mask the body the SoC's own way (for
+	  example by raising a hardware interrupt-level threshold) while leaving
+	  mstatus.MIE set. The macro runs where the caller-saved temporaries are
+	  free, so it may clobber them. Any per-context state it changes must be
+	  restored on syscall exit by the SoC context save/restore hooks
+	  (RISCV_SOC_CONTEXT_SAVE).
+
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool
 	help
@@ -516,6 +537,23 @@ config NULL_POINTER_EXCEPTION_REGION_SIZE
 	  Minimum is 4 bytes.
 
 endif # NULL_POINTER_EXCEPTION_DETECTION_PMP
+
+config RISCV_USER_STRING_NLEN_VALIDATE
+	bool "Pre-validate the pointer in arch_user_string_nlen()"
+	depends on USERSPACE
+	help
+	  arch_user_string_nlen() dereferences a user pointer and recovers from a
+	  bad address through a fault fixup that matches the faulting mepc against
+	  the load instruction's address range. On some RISC-V SoCs the load access
+	  fault is imprecise: the reported mepc lands a variable distance past the
+	  faulting load (sometimes in a different function), so the fixup does not
+	  recognise the fault and it escalates to a fatal reset instead of the
+	  intended recoverable error.
+
+	  Enable this to pre-check the pointer with arch_buffer_validate() before
+	  the dereference, so an invalid address is rejected without issuing the
+	  load that would otherwise fault. Leave disabled on SoCs with precise load
+	  faults, where the fixup works unaided.
 
 config RISCV_IMPRECISE_FPU_STATE_TRACKING
 	bool "Imprecise implementation of FPU state tracking"
