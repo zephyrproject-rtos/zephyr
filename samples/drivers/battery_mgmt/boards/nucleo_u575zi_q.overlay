@@ -54,3 +54,12 @@ dev: &i2c1 {
 		};
 	};
 };
+
+/ {
+	aliases {
+		charger = &charger;
+		fuelgauge = &fuelgauge;
+		buck = &buck;
+		buckboost = &buckboost;
+	};
+};
