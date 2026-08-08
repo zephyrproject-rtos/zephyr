@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_I2C_RTIO_H_
-#define ZEPHYR_DRIVERS_I2C_RTIO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_RTIO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I2C_RTIO_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
@@ -148,4 +148,4 @@ static inline bool i2c_rtio_run_sync_start_async(const struct device *dev, struc
 }
 #endif
 
-#endif /* ZEPHYR_DRVIERS_I2C_RTIO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_RTIO_H_ */

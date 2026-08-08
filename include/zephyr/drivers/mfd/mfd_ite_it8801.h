@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_ITE_IT8801_H_
-#define ZEPHYR_INCLUDE_DRIVERS_MFD_ITE_IT8801_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_ITE_IT8801_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_ITE_IT8801_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -134,4 +134,4 @@ void mfd_it8801_register_interrupt_callback(const struct device *mfd,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_ITE_IT8801_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MFD_MFD_ITE_IT8801_H_ */

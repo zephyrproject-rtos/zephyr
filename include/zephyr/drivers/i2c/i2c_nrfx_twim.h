@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_NRFX_TWIM_H
-#define ZEPHYR_INCLUDE_DRIVERS_I2C_NRFX_TWIM_H
+#ifndef ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_NRFX_TWIM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_NRFX_TWIM_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/i2c.h>
@@ -31,4 +31,4 @@ int i2c_nrfx_twim_exclusive_access_acquire(const struct device *dev, k_timeout_t
  */
 void i2c_nrfx_twim_exclusive_access_release(const struct device *dev);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_NRFX_TWIM_H */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_I2C_I2C_NRFX_TWIM_H_ */

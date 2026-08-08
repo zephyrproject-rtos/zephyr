@@ -14,8 +14,8 @@
  * https://docs.oasis-open.org/virtio/virtio/v1.3/csd01/virtio-v1.3-csd01.pdf
  */
 
-#ifndef ZEPHYR_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_
-#define ZEPHYR_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_
 
 /**
  * @name Virtio device status bits
@@ -221,4 +221,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_VIRTIO_VIRTIO_CONFIG_H_ */

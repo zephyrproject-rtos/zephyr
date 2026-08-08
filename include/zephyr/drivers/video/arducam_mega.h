@@ -10,8 +10,8 @@
  * @brief Arducam Mega vendor-specific controls.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_CAMERA_ARDUCAM_MEGA_H_
-#define ZEPHYR_INCLUDE_DRIVERS_CAMERA_ARDUCAM_MEGA_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_VIDEO_ARDUCAM_MEGA_H_
+#define ZEPHYR_INCLUDE_DRIVERS_VIDEO_ARDUCAM_MEGA_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,4 +27,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_CAMERA_ARDUCAM_MEGA_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_VIDEO_ARDUCAM_MEGA_H_ */

@@ -12,8 +12,8 @@
  * Declare API implemented by system timer driver and used by kernel components.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_H_
 
 #include <stdbool.h>
 #include <zephyr/types.h>
@@ -333,4 +333,4 @@ void z_sys_clock_hw_cycles_per_sec_update(uint32_t new_hz);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSTEM_TIMER_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_H_ */

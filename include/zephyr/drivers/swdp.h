@@ -10,8 +10,8 @@
  * @brief Main header file for SWDP (Serial Wire Debug Port) driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_SWDP_H_
-#define ZEPHYR_INCLUDE_SWDP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SWDP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SWDP_H_
 
 #include <zephyr/device.h>
 
@@ -388,4 +388,4 @@ static inline int z_impl_swdp_configure(const struct device *dev,
 
 #include <zephyr/syscalls/swdp.h>
 
-#endif /* ZEPHYR_INCLUDE_SWDP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SWDP_H_ */

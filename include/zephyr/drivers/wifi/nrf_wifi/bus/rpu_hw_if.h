@@ -9,8 +9,8 @@
  * using QSPI and SPI that can be invoked by shell or the driver.
  */
 
-#ifndef __RPU_HW_IF_H_
-#define __RPU_HW_IF_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_RPU_HW_IF_H_
+#define ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_RPU_HW_IF_H_
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,4 +83,4 @@ int sr_ant_switch(unsigned int ant_switch);
 int sr_gpio_remove(void);
 int sr_gpio_config(void);
 #endif /* CONFIG_NRF70_SR_COEX_RF_SWITCH */
-#endif /* __RPU_HW_IF_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_RPU_HW_IF_H_ */

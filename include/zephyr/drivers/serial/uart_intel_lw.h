@@ -8,8 +8,8 @@
  * Header file for the INTEL LW UART
  */
 
-#ifndef ZEPHYR_DRIVERS_SERIAL_UART_INTEL_LW_H_
-#define ZEPHYR_DRIVERS_SERIAL_UART_INTEL_LW_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_INTEL_LW_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_INTEL_LW_H_
 
 /* End of packet feature.
  * Driver will trigger interrupt upon receiving end of package character.
@@ -42,4 +42,4 @@
 #define CMD_POLL_ASSERT_RTS     0x05
 #define CMD_POLL_DEASSERT_RTS   0x06
 
-#endif /* ZEPHYR_DRIVERS_SERIAL_UART_INTEL_LW_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_INTEL_LW_H_ */
