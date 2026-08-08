@@ -265,7 +265,7 @@ static int port_announce_msg_transmit(struct ptp_port *port)
 	msg->header.flags[1]	      = tpds->flags;
 	msg->header.src_port_id	      = port->port_ds.id;
 	msg->header.sequence_id	      = port->seq_id.announce++;
-	msg->header.log_msg_interval  = port->port_ds.log_sync_interval;
+	msg->header.log_msg_interval  = port->port_ds.log_announce_interval;
 
 	msg->announce.current_utc_offset = tpds->current_utc_offset;
 	msg->announce.gm_priority1	 = pds->gm_priority1;
