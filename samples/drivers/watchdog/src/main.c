@@ -54,6 +54,11 @@
 #define WDT_OPT            0
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
 #define WDT_MAX_WINDOW 500U
+#elif DT_HAS_COMPAT_STATUS_OKAY(ti_mspm0_watchdog)
+/* MSPM0 WWDT: window-watchdog violations route to the ESM safety block,
+ * not the NVIC. A pre-reset callback is architecturally impossible.
+ */
+#define WDT_ALLOW_CALLBACK 0
 #endif
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gswdt)
 #if !defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)

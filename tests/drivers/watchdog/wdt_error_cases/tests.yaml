@@ -27,11 +27,14 @@ tests:
       - numaker_pfm_m487
       - pic32cm_jh01_cpro
       - raytac_an54lv_db_15/nrf54l15/cpuapp
+      - lp_mspm0g3507/mspm0g3507
+      - lp_mspm0l2228/mspm0l2228
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - raytac_an54lq_db_15/nrf54l15/cpuapp
       - raytac_an54lv_db_15/nrf54l15/cpuapp
+      - lp_mspm0l2228/mspm0l2228
   drivers.watchdog.wdt_error_cases_pm:
     platform_allow:
       - xg24_rb4187c
