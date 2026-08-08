@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_RTS5817
-	bool "RTS5817 Reset Controller Driver"
+	bool "RTS5817 reset driver"
 	default y
 	depends on DT_HAS_REALTEK_RTS5817_RESET_ENABLED
 	help
