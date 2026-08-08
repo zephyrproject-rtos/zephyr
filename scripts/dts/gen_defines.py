@@ -1132,6 +1132,17 @@ def write_global_macros(edt: edtlib.EDT):
     n_okay_macros = {}
     for_each_macros = {}
     compat2buses = defaultdict(list)  # just for "okay" nodes
+    bus2nodes = defaultdict(list)
+    bus2okay_nodes = defaultdict(list)
+    for node in edt.nodes:
+        for bus in node.buses:
+            if bus is None:
+                continue
+            if node not in bus2nodes[bus]:
+                bus2nodes[bus].append(node)
+            if node.status == "okay" and node not in bus2okay_nodes[bus]:
+                bus2okay_nodes[bus].append(node)
+
     for compat, okay_nodes in edt.compat2okay.items():
         for node in okay_nodes:
             buses = node.on_buses
@@ -1246,6 +1257,35 @@ def write_global_macros(edt: edtlib.EDT):
             out_comment("Includes descendants on this bus, excludes devices behind child buses")
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}", count)
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}_STATUS_OKAY", count_ok)
+
+    out_comment('Macros for iterating over bus controller nodes\n')
+    for bus, nodes in bus2nodes.items():
+        bus_ident = str2ident(bus)
+
+        out_define(f"DT_HAS_BUS_{bus_ident}", 1)
+        out_define(f"DT_N_BUS_{bus_ident}_NUM", len(nodes))
+        out_define(
+            f"DT_FOREACH_BUS_{bus_ident}(fn)",
+            " ".join(f"fn(DT_{node.z_path_id})" for node in nodes),
+        )
+        out_define(
+            f"DT_FOREACH_BUS_VARGS_{bus_ident}(fn, ...)",
+            " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in nodes),
+        )
+
+    for bus, okay_nodes in bus2okay_nodes.items():
+        bus_ident = str2ident(bus)
+
+        out_define(f"DT_HAS_OKAY_BUS_{bus_ident}", 1)
+        out_define(f"DT_N_OKAY_BUS_{bus_ident}_NUM", len(okay_nodes))
+        out_define(
+            f"DT_FOREACH_OKAY_BUS_{bus_ident}(fn)",
+            " ".join(f"fn(DT_{node.z_path_id})" for node in okay_nodes),
+        )
+        out_define(
+            f"DT_FOREACH_OKAY_BUS_VARGS_{bus_ident}(fn, ...)",
+            " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in okay_nodes),
+        )
 
 
 def str2ident(s: str) -> str:
