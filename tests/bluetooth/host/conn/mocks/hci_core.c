@@ -26,6 +26,7 @@ DEFINE_FAKE_VALUE_FUNC(int, bt_le_create_conn_synced, const struct bt_conn *,
 		       const struct bt_le_ext_adv *, uint8_t);
 DEFINE_FAKE_VALUE_FUNC(const bt_addr_le_t *, bt_lookup_id_addr, uint8_t, const bt_addr_le_t *);
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_set_phy, struct bt_conn *, uint8_t, uint8_t, uint8_t, uint8_t);
+DEFINE_FAKE_VALUE_FUNC(int, bt_work_submit, struct k_work *);
 
 struct bt_dev bt_dev = {
 	.manufacturer = 0x1234,
