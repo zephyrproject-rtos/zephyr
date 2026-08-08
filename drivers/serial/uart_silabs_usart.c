@@ -356,11 +356,11 @@ static inline void async_evt_tx_abort(struct uart_silabs_data *data)
 static inline void async_evt_rx_err(struct uart_silabs_data *data, int err_code)
 {
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = err_code,
-		.data.rx_stop.data.len = data->dma_rx.counter,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.buf = data->dma_rx.buffer
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = err_code,
+		.data.rx_error.data.len = data->dma_rx.counter,
+		.data.rx_error.data.offset = 0,
+		.data.rx_error.data.buf = data->dma_rx.buffer
 	};
 
 	async_user_callback(data, &event);

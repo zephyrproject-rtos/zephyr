@@ -268,7 +268,7 @@ static void uart_emul_callback(const struct device *dev, struct uart_event *evt,
 	case UART_TX_ABORTED:
 	case UART_RX_BUF_REQUEST:
 	case UART_RX_DISABLED:
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		break;
 	}
 }

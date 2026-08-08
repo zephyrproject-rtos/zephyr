@@ -226,7 +226,7 @@ static int uart_altera_init(const struct device *dev)
 
 /**
  * @brief Check if an error was received
- * If error is received, it will be mapped to uart_rx_stop_reason.
+ * If error is received, it will be mapped to uart_rx_error_reason.
  * This function should be called after irq_update.
  * If interrupt driven API is not enabled,
  * this function will read and clear the status register.

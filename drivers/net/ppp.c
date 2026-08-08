@@ -237,12 +237,9 @@ static void uart_callback(const struct device *dev,
 		}
 		break;
 
-	case UART_RX_STOPPED:
-		LOG_DBG("UART_RX_STOPPED: stop reason %d", evt->data.rx_stop.reason);
-
-		if (evt->data.rx_stop.reason != 0) {
-			rx_retry_pending = true;
-		}
+	case UART_RX_ERROR:
+		LOG_DBG("UART_RX_ERROR: error reason %d", evt->data.rx_error.reason);
+		rx_retry_pending = true;
 		break;
 	}
 }

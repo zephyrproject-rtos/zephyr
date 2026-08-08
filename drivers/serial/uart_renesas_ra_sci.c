@@ -795,17 +795,16 @@ unlock:
 	return err;
 }
 
-static inline void async_evt_rx_err(const struct device *dev, enum uart_rx_stop_reason reason)
+static inline void async_evt_rx_err(const struct device *dev, enum uart_rx_error_reason reason)
 {
 	struct uart_ra_sci_data *data = dev->data;
 
-	k_work_cancel_delayable(&data->rx_timeout_work);
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = reason,
-		.data.rx_stop.data.buf = (uint8_t *)data->sci.p_rx_dest,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.len =
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = reason,
+		.data.rx_error.data.buf = (uint8_t *)data->sci.p_rx_dest,
+		.data.rx_error.data.offset = 0,
+		.data.rx_error.data.len =
 			data->rx_buf_cap - data->rx_buf_offset - data->sci.rx_dest_bytes,
 	};
 	async_user_callback(dev, &event);

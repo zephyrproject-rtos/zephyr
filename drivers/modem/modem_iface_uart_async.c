@@ -61,7 +61,7 @@ static void iface_uart_async_callback(const struct device *dev,
 		/* Notify upper layer that new data has arrived */
 		k_sem_give(&data->rx_sem);
 		break;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		break;
 	case UART_RX_DISABLED:
 		/* RX stopped (likely due to line error), re-enable it */

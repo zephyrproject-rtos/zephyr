@@ -474,7 +474,7 @@ static void uart_cb_async_handler(const struct device *dev, struct uart_event *e
 		break;
 	case UART_TX_ABORTED:
 		__fallthrough;
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		__fallthrough;
 	case UART_RX_BUF_REQUEST:
 		__fallthrough;

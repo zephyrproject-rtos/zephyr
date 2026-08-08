@@ -109,7 +109,7 @@ static int usart_wch_err_check(const struct device *dev)
 	const struct usart_wch_config *config = dev->config;
 	USART_TypeDef *regs = config->regs;
 	uint32_t statr = regs->STATR;
-	enum uart_rx_stop_reason errors = 0;
+	enum uart_rx_error_reason errors = 0;
 
 	if ((statr & USART_STATR_PE) != 0) {
 		errors |= UART_ERROR_PARITY;

@@ -384,11 +384,11 @@ static void eusart_async_evt_tx_abort(struct eusart_data *data)
 static void eusart_async_evt_rx_err(struct eusart_data *data, int err_code)
 {
 	struct uart_event event = {
-		.type = UART_RX_STOPPED,
-		.data.rx_stop.reason = err_code,
-		.data.rx_stop.data.len = data->dma_rx.counter,
-		.data.rx_stop.data.offset = 0,
-		.data.rx_stop.data.buf = data->dma_rx.buffer
+		.type = UART_RX_ERROR,
+		.data.rx_error.reason = err_code,
+		.data.rx_error.data.len = data->dma_rx.counter,
+		.data.rx_error.data.offset = 0,
+		.data.rx_error.data.buf = data->dma_rx.buffer
 	};
 
 	eusart_async_user_callback(data, &event);

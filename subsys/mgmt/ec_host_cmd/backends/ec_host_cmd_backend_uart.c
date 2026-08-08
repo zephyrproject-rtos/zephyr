@@ -209,8 +209,8 @@ static void uart_callback(const struct device *dev, struct uart_event *evt, void
 		/* Receiving is already enabled in the send function. */
 		hc_uart->state = UART_HOST_CMD_READY_TO_RX;
 		break;
-	case UART_RX_STOPPED:
-		LOG_ERR("Receiving data stopped");
+	case UART_RX_ERROR:
+		LOG_ERR("Receiving error");
 		break;
 	default:
 		break;
