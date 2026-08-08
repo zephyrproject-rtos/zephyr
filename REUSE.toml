@@ -28,3 +28,369 @@ SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
 path = "**/*.rst"
 SPDX-License-Identifier = "CC-BY-4.0"
 SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
+
+# -----------------------------------------------------------------------------
+# Licensing exceptions
+# -----------------------------------------------------------------------------
+#
+# Zephyr as a whole is Apache-2.0 licensed, but it imports or reuses a few
+# components that use other licenses. Each such component is described below as
+# a single REUSE annotation and is rendered on the licensing documentation page
+# (see doc/LICENSING.rst) by the "zephyr.licensing" Sphinx extension.
+#
+# The license metadata is standard REUSE/SPDX and the standard SPDX-FileComment
+# holds the free-text rationale ("Impact"). SPDX has no non-deprecated file-level
+# field for an upstream URL (the ArtifactOf* file tags were deprecated in favour
+# of relationships, which REUSE.toml cannot express, and Package* fields are not
+# valid on files), so three Zephyr-specific keys are used (the `reuse` tool
+# ignores keys it does not know about):
+#
+#   Zephyr-Description       Short human description of the component, used as
+#                            its title on the page. Its presence promotes a
+#                            plain REUSE annotation to a documented exception.
+#   Zephyr-Origin            URL of the upstream project the files come from.
+#   Zephyr-Kconfig-Condition Kconfig option(s) gating whether the files end up in
+#                            a build, rendered as :kconfig:option: references.
+
+[[annotations]]
+path = [
+    "scripts/dashboard/static/css/bootstrap-chop.css",
+    "scripts/dashboard/static/js/bootstrap-chop.js",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Used by the dashboard tool only and never linked into a Zephyr firmware image."
+Zephyr-Description = "Bootstrap JavaScript and CSS Files"
+Zephyr-Origin = "https://getbootstrap.com/"
+
+[[annotations]]
+path = "drivers/sensor/bosch/bmi08x/bmi08x_config_file.h"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Sensor configuration data compiled into the firmware only when the BMI08x driver is enabled."
+Zephyr-Description = "Bosch BMI08x Sensor Configuration File"
+Zephyr-Origin = "https://github.com/BoschSensortec/BMI08x-Sensor-API"
+Zephyr-Kconfig-Condition = "CONFIG_BMI08X"
+
+[[annotations]]
+path = [
+    "scripts/coccicheck",
+    "scripts/coccinelle/array_size.cocci",
+    "scripts/coccinelle/deref_null.cocci",
+    "scripts/coccinelle/mini_lock.cocci",
+    "scripts/coccinelle/noderef.cocci",
+    "scripts/coccinelle/returnvar.cocci",
+    "scripts/coccinelle/semicolon.cocci",
+    "scripts/coccinelle/unsigned_lesser_than_zero.cocci",
+]
+SPDX-License-Identifier = "GPL-2.0"
+SPDX-FileComment = "Used by Coccinelle, a tool for transforming C code, and never linked into the firmware."
+Zephyr-Description = "Coccinelle Scripts"
+Zephyr-Origin = "https://coccinelle.gitlabpages.inria.fr/website/"
+
+[[annotations]]
+path = [
+    "scripts/checkpatch.pl",
+    "scripts/checkstack.pl",
+    "scripts/spelling.txt",
+]
+SPDX-License-Identifier = "GPL-2.0"
+SPDX-FileComment = "Used in Continuous Integration (CI) and never linked into the firmware."
+Zephyr-Description = "Continuous Integration Scripts"
+Zephyr-Origin = "https://www.kernel.org/"
+
+[[annotations]]
+path = [
+    "doc/_doxygen/doxygen-awesome-darkmode-toggle.js",
+    "doc/_doxygen/doxygen-awesome-sidebar-only-darkmode-toggle.css",
+    "doc/_doxygen/doxygen-awesome-sidebar-only.css",
+    "doc/_doxygen/doxygen-awesome.css",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Style the Doxygen API documentation and are never linked into a firmware."
+Zephyr-Description = "Doxygen Awesome CSS Theme Files"
+Zephyr-Origin = "https://github.com/jothepro/doxygen-awesome-css"
+
+[[annotations]]
+path = "boards/ene/kb1200_evb/support/openocd.cfg"
+SPDX-License-Identifier = "GPL-2.0-or-later"
+SPDX-FileComment = "Used by OpenOCD when programming and debugging the kb1200_evb board. Never linked into the firmware."
+Zephyr-Description = "ENE KB1200_EVB Board OpenOCD Configuration"
+Zephyr-Origin = "https://openocd.org/"
+
+[[annotations]]
+path = "subsys/fs/fuse_client/fuse_abi.h"
+SPDX-License-Identifier = "((GPL-2.0 WITH Linux-syscall-note) OR BSD-2-Clause)"
+SPDX-FileComment = "Used under the BSD-2-Clause option of its dual license. Only built when the gating option is enabled."
+Zephyr-Description = "FUSE Interface Definition Header File"
+Zephyr-Kconfig-Condition = "CONFIG_FUSE_CLIENT"
+
+[[annotations]]
+path = "subsys/testsuite/coverage/coverage.h"
+SPDX-License-Identifier = "GPL-3.0-or-later WITH GCC-exception-3.1"
+SPDX-FileComment = "Linked into the firmware only when GCOV coverage is enabled; covered by the GCC Runtime Library Exception."
+Zephyr-Description = "GCOV Coverage Header File"
+Zephyr-Origin = "https://gcc.gnu.org/"
+Zephyr-Kconfig-Condition = "CONFIG_COVERAGE_GCOV"
+
+[[annotations]]
+path = [
+    "lib/utils/getopt/README",
+    "lib/utils/getopt/getopt.c",
+    "lib/utils/getopt/getopt_long.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when getopt() support is enabled."
+Zephyr-Description = "getopt Command-line Parsing Files"
+Zephyr-Origin = "https://www.netbsd.org/"
+Zephyr-Kconfig-Condition = "CONFIG_GETOPT"
+
+[[annotations]]
+path = [
+    "doc/_static/css/custom.css",
+    "doc/_static/css/dark.css",
+    "doc/_static/css/light.css",
+    "doc/_static/js/custom.js",
+]
+SPDX-License-Identifier = "CC-BY-3.0"
+SPDX-FileComment = "Customize the Sphinx theme used to render the documentation and are never linked into a firmware."
+Zephyr-Description = "Godot Documentation Theme Files"
+Zephyr-Origin = "https://github.com/godotengine/godot-docs"
+
+[[annotations]]
+path = [
+    "include/zephyr/net/http/parser.h",
+    "include/zephyr/net/http/parser_state.h",
+    "include/zephyr/net/http/parser_url.h",
+    "subsys/net/lib/http/http_parser.c",
+    "subsys/net/lib/http/http_parser_url.c",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the HTTP parser is enabled."
+Zephyr-Description = "HTTP Parser Files"
+Zephyr-Origin = "https://github.com/nodejs/http-parser"
+Zephyr-Kconfig-Condition = "CONFIG_HTTP_PARSER"
+
+[[annotations]]
+path = [
+    "scripts/kconfig/guiconfig.py",
+    "scripts/kconfig/kconfig.py",
+    "scripts/kconfig/kconfiglib.py",
+    "scripts/kconfig/menuconfig.py",
+]
+SPDX-License-Identifier = "ISC"
+SPDX-FileComment = "Used to process Kconfig files at build time and never linked into the firmware."
+Zephyr-Description = "Kconfiglib Configuration Library"
+Zephyr-Origin = "https://github.com/ulfalizer/Kconfiglib"
+
+[[annotations]]
+path = [
+    "modules/littlefs/zephyr_lfs_config.h",
+    "modules/littlefs/zephyr_lfs_crc.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the littlefs file system is enabled."
+Zephyr-Description = "littlefs Configuration Files"
+Zephyr-Origin = "https://github.com/littlefs-project/littlefs"
+Zephyr-Kconfig-Condition = "CONFIG_FILE_SYSTEM_LITTLEFS"
+
+[[annotations]]
+path = "lib/libc/minimal/source/stdlib/atoi.c"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the minimal C library is selected."
+Zephyr-Description = "Minimal libc atoi File"
+Zephyr-Origin = "https://musl.libc.org/"
+Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
+
+[[annotations]]
+path = [
+    "lib/libc/minimal/source/stdlib/strtol.c",
+    "lib/libc/minimal/source/stdlib/strtoll.c",
+    "lib/libc/minimal/source/stdlib/strtoul.c",
+    "lib/libc/minimal/source/stdlib/strtoull.c",
+    "lib/libc/minimal/source/string/strstr.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the minimal C library is selected."
+Zephyr-Description = "Minimal libc BSD String and Conversion Files"
+Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
+
+[[annotations]]
+path = [
+    "doc/_extensions/zephyr/domain/static/css/nouislider.min.css",
+    "doc/_extensions/zephyr/domain/static/js/nouislider.min.js",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Provides the flash/RAM range sliders in the board catalog and is never linked into a firmware."
+Zephyr-Description = "noUiSlider Library"
+Zephyr-Origin = "https://refreshless.com/nouislider/"
+
+[[annotations]]
+path = [
+    "drivers/tee/optee/optee_msg.h",
+    "drivers/tee/optee/optee_rpc_cmd.h",
+    "drivers/tee/optee/optee_smc.h",
+]
+SPDX-License-Identifier = "BSD-2-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the OP-TEE driver is enabled."
+Zephyr-Description = "OP-TEE Message Interface Headers"
+Zephyr-Origin = "https://www.op-tee.org/"
+Zephyr-Kconfig-Condition = "CONFIG_OPTEE"
+
+[[annotations]]
+path = [
+    "modules/openthread/platform/hdlc_interface.cpp",
+    "modules/openthread/platform/hdlc_interface.hpp",
+    "modules/openthread/platform/radio_spinel.cpp",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Linked into the firmware only when the Spinel HDLC RCP host interface is enabled."
+Zephyr-Description = "OpenThread Spinel HDLC RCP Host Interface Files"
+Zephyr-Origin = "https://openthread.io/"
+Zephyr-Kconfig-Condition = "CONFIG_HDLC_RCP_IF"
+
+[[annotations]]
+path = "doc/_extensions/zephyr/doxytooltip/static/tippy/popper.min.js"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Used by Tippy.js to position the documentation's Doxygen tooltips and is never linked into a firmware."
+Zephyr-Description = "Popper.js Library"
+Zephyr-Origin = "https://popper.js.org/"
+
+[[annotations]]
+path = [
+    "include/zephyr/posix/fnmatch.h",
+    "subsys/portability/posix/c_lib_ext/fnmatch.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when the POSIX C library extensions are enabled."
+Zephyr-Description = "POSIX fnmatch Files"
+Zephyr-Kconfig-Condition = "CONFIG_POSIX_C_LIB_EXT"
+
+[[annotations]]
+path = "include/zephyr/posix/sys/stat.h"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Provides the POSIX file-status definitions; compiled into the firmware wherever it is included."
+Zephyr-Description = "POSIX sys/stat.h Header"
+
+[[annotations]]
+path = [
+    "scripts/dts/gen_defines.py",
+    "scripts/dts/python-devicetree/src/devicetree/_private.py",
+    "scripts/dts/python-devicetree/src/devicetree/dtlib.py",
+    "scripts/dts/python-devicetree/src/devicetree/edtlib.py",
+    "scripts/dts/python-devicetree/tests/test-multidir.dts",
+    "scripts/dts/python-devicetree/tests/test.dts",
+    "scripts/dts/python-devicetree/tests/test_dtlib.py",
+    "scripts/dts/python-devicetree/tests/test_edtlib.py",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Parse devicetree sources at build time and are never linked into the firmware."
+Zephyr-Description = "Python Devicetree Library Files"
+Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
+
+[[annotations]]
+path = "scripts/dts/python-devicetree/tests/**/*.yaml"
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used only when testing the python-devicetree library and never linked into the firmware."
+Zephyr-Description = "Python Devicetree Library Test Files"
+Zephyr-Origin = "https://github.com/zephyrproject-rtos/python-devicetree"
+
+[[annotations]]
+path = "include/zephyr/arch/riscv/csr.h"
+SPDX-License-Identifier = "SHL-0.51"
+SPDX-FileComment = "RISC-V control and status register access helpers, also available under Apache-2.0; compiled into the firmware only on RISC-V targets."
+Zephyr-Description = "RISC-V Control and Status Register Header"
+Zephyr-Kconfig-Condition = "CONFIG_RISCV"
+
+[[annotations]]
+path = [
+    "boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg",
+    "boards/openisa/rv32m1_vega/support/openocd_rv32m1_vega_zero_riscy.cfg",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used by OpenOCD when programming and debugging the rv32m1_vega board. Never linked into the firmware."
+Zephyr-Description = "RV32M1 VEGA Board OpenOCD Configuration"
+
+[[annotations]]
+path = [
+    "samples/tfm_integration/tfm_secure_partition/dummy_partition/tfm_dummy_partition.yaml.in",
+    "samples/tfm_integration/tfm_secure_partition/dummy_partition/tfm_manifest_list.yaml.in",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Used only when building the TF-M secure partition integration sample."
+Zephyr-Description = "TF-M Secure Partition Sample Files"
+Zephyr-Origin = "https://www.trustedfirmware.org/projects/tf-m/"
+
+[[annotations]]
+path = [
+    "tests/benchmarks/thread_metric/src/*.c",
+    "tests/benchmarks/thread_metric/src/*.h",
+    "tests/benchmarks/thread_metric/thread_metric_readme.txt",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Linked only into the Thread-Metric RTOS Test Suite test firmware."
+Zephyr-Description = "Thread-Metric RTOS Test Suite Source Files"
+Zephyr-Origin = "https://github.com/eclipse-threadx/threadx"
+
+[[annotations]]
+path = "doc/_extensions/zephyr/doxytooltip/static/tippy/tippy-bundle.umd.min.js"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Renders the tooltips of the documentation's Doxygen tooltip extension and is never linked into a firmware."
+Zephyr-Description = "Tippy.js Library"
+Zephyr-Origin = "https://atomiks.github.io/tippyjs/"
+
+[[annotations]]
+path = "scripts/build/uf2conv.py"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Converts firmware images to UF2 at build time and is never linked into the firmware."
+Zephyr-Description = "UF2 Conversion Script"
+Zephyr-Origin = "https://github.com/microsoft/uf2"
+
+[[annotations]]
+path = [
+    "include/zephyr/usb/class/usb_dfu.h",
+    "include/zephyr/usb/usb_device.h",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Part of the legacy USB device stack, compiled into the firmware only when it is enabled."
+Zephyr-Description = "USB Device Stack Headers"
+Zephyr-Kconfig-Condition = "CONFIG_USB_DEVICE_STACK"
+
+[[annotations]]
+path = [
+    "subsys/net/lib/wireguard/crypto/**/*.c",
+    "subsys/net/lib/wireguard/crypto/**/*.h",
+    "subsys/net/lib/wireguard/wg_crypto.c",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Compiled into the firmware only when WireGuard is enabled."
+Zephyr-Description = "WireGuard VPN Files"
+Zephyr-Origin = "https://github.com/smartalock/wireguard-lwip"
+Zephyr-Kconfig-Condition = "CONFIG_WIREGUARD"
+
+[[annotations]]
+path = [
+    "drivers/xen/gnttab.c",
+    "include/zephyr/xen/public/**/*.h",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when Xen guest support is enabled."
+Zephyr-Description = "Xen Hypervisor Interface Files"
+Zephyr-Origin = "https://xenproject.org/"
+Zephyr-Kconfig-Condition = "CONFIG_XEN"
+
+[[annotations]]
+path = "subsys/random/random_xoshiro128.c"
+SPDX-License-Identifier = "CC0-1.0"
+SPDX-FileComment = "Compiled into the firmware only when the xoshiro128++ PRNG is selected."
+Zephyr-Description = "xoshiro128++ PRNG"
+Zephyr-Origin = "https://prng.di.unimi.it/"
+Zephyr-Kconfig-Condition = "CONFIG_XOSHIRO_RANDOM_GENERATOR"
+
+[[annotations]]
+path = [
+    "arch/xtensa/core/startup/memctl_default.S",
+    "arch/xtensa/core/startup/memerror_vector.S",
+]
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "Compiled into the firmware only when the Xtensa reset vector is enabled."
+Zephyr-Description = "Xtensa Startup Assembly Files"
+Zephyr-Kconfig-Condition = "CONFIG_XTENSA_RESET_VECTOR"
