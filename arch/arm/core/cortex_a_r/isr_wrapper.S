@@ -183,6 +183,10 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
+#if CONFIG_GIC_VER == 2 && defined(CONFIG_SMP)
+	bic	r0, r0, #0x1c00		/* r0 must contain only INTID; mask GICv2 SGI source CPU ID [12:10]. */
+#endif
+
 #if CONFIG_GIC_VER >= 3
 	/*
 	 * Ignore GIC special INTIDs (1020-1023), which do not represent
@@ -313,6 +317,10 @@ _idle_state_cleared:
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
+
+#if CONFIG_GIC_VER == 2 && defined(CONFIG_SMP)
+	bic	r0, r0, #0x1c00		/* r0 must contain only INTID; mask GICv2 SGI source CPU ID [12:10]. */
+#endif
 
 #if CONFIG_GIC_VER >= 3
 	/*

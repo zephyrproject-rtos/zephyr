@@ -38,6 +38,18 @@ typedef void (*irq_offload_routine_t)(const void *parameter);
  */
 void irq_offload(irq_offload_routine_t routine, const void *parameter);
 
+#ifndef CONFIG_IRQ_OFFLOAD_NESTED
+/**
+ * @brief Release the calling CPU's irq_offload serialization semaphore.
+ *
+ * Use this when an irq_offload() invocation cannot return normally to
+ * release its serialization semaphore.
+ */
+void irq_offload_sem_give(void);
+#else
+static inline void irq_offload_sem_give(void) {}
+#endif
+
 #ifdef __cplusplus
 }
 #endif

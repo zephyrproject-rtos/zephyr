@@ -8,7 +8,11 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PM_CPU_OPS_PSCI_H_
 
 #include <zephyr/types.h>
+#if defined(CONFIG_ARM64)
 #include <zephyr/arch/arm64/arm-smccc.h>
+#elif defined(CONFIG_ARM)
+#include <zephyr/arch/arm/arm-smccc.h>
+#endif
 #include <stddef.h>
 #include <zephyr/device.h>
 
