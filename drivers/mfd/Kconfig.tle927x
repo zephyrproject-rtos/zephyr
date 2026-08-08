@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Deere & Company
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_TLE927X
+	bool "Infineon TLE927x System Basis Chip"
+	default y
+	depends on DT_HAS_INFINEON_TLE927X_ENABLED
+	depends on SPI
+	help
+	  Enable driver for the Infineon TLE927x high-end System Basis Chip
+	  family. The driver takes the SBC from Init to Normal mode. The SBC
+	  watchdog runs from then on and must be serviced through the TLE927x
+	  watchdog child driver.
+
+if MFD_TLE927X
+
+config MFD_TLE927X_INIT_PRIORITY
+	int "TLE927x MFD driver init priority"
+	default 75
+	help
+	  Init priority for the TLE927x MFD driver. It must be greater than
+	  SPI_INIT_PRIORITY and lower than the init priority of the TLE927x
+	  child drivers.
+
+endif # MFD_TLE927X
