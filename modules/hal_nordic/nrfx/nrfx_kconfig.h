@@ -26,6 +26,16 @@
 #define NRF_FLPR
 #endif
 
+#if defined(CONFIG_SOC_COMPATIBLE_NRF7120E_ENGA) && !defined(NRF7120E_ENGA_XXAA)
+#define NRF7120E_ENGA_XXAA
+#endif
+#if defined(CONFIG_SOC_COMPATIBLE_NRF7120E_ENGA_CPUAPP) && !defined(NRF_APPLICATION)
+#define NRF_APPLICATION
+#endif
+#if defined(CONFIG_SOC_NRF7120E_ENGA_CPUFLPR) && !defined(NRF_FLPR)
+#define NRF_FLPR
+#endif
+
 #ifdef CONFIG_NRFX_ADC
 #define NRFX_ADC_ENABLED 1
 #endif

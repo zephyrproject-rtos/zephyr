@@ -10,6 +10,6 @@
 #include "nrf7120_e_cpuflpr_common.dtsi"
 
 / {
-	model = "Nordic nRF7120 DK nRF7120 FLPR MCU";
-	compatible = "nordic,nrf7120dk_nrf7120-cpuflpr";
+	model = "Nordic nRF7120 DK nRF7120E FLPR MCU";
+	compatible = "nordic,nrf7120dk_nrf7120e-cpuflpr";
 };
