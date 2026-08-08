@@ -16,10 +16,9 @@ import subprocess
 import tempfile
 import textwrap
 import tqdm
-import zcmake
 from pathlib import Path
 
-from build_helpers import forward_logging_to_west
+from build_helpers import find_installed_sdks, forward_logging_to_west
 from west.commands import WestCommand
 
 
@@ -554,57 +553,14 @@ class Sdk(WestCommand):
         self.run_setup(args, sdk_dir, version)
 
     def fetch_sdk_info(self):
-        sdk_lines = []
         try:
-            cmds = [
-                "-P",
-                str(Path(__file__).parent / "sdk" / "listsdk.cmake"),
-            ]
-
-            output = zcmake.run_cmake(cmds, capture_output=True)
-            if output:
-                # remove '-- Zephyr-sdk,' leader
-                sdk_lines = [l[15:] for l in output if l.startswith("-- Zephyr-sdk,")]
-            else:
-                sdk_lines = []
-
+            sdks = find_installed_sdks()
         except Exception as e:
             self.die(e)
 
-        zephyr_sdk_install_dir = os.environ.get("ZEPHYR_SDK_INSTALL_DIR", None)
-        if zephyr_sdk_install_dir:
-            sdk_lines += [f'dir={zephyr_sdk_install_dir}']
-
-        def parse_sdk_entry(line):
-            class SdkEntry:
-                def __init__(self):
-                    self.version = None
-                    self.path = None
-
-            info = SdkEntry()
-            for ent in line.split(","):
-                kv = ent.split("=")
-                if kv[0].strip() == "ver":
-                    info.version = kv[1].strip()
-                elif kv[0].strip() == "dir":
-                    info.path = kv[1].strip()
-
-            return info
-
         sdk_info = {}
-        for sdk_ent in [parse_sdk_entry(l) for l in reversed(sdk_lines)]:
-            entry = {}
-
-            ver = None
-            sdk_path = Path(sdk_ent.path)
-            sdk_version_path = sdk_path / "sdk_version"
-            if sdk_version_path.exists():
-                with open(str(sdk_version_path)) as f:
-                    ver = f.readline().strip()
-            else:
-                continue
-
-            entry["path"] = sdk_path
+        for ver, sdk_path in sdks:
+            entry = {"path": sdk_path}
 
             # SDK 1.0.0 and above place host tools under the 'hosttools' directory.
             if (sdk_path / "hosttools").exists() or (sdk_path / "sysroots").exists():
@@ -634,8 +590,7 @@ class Sdk(WestCommand):
             if len(gnu_toolchains) > 0:
                 entry["gnu_toolchains"] = gnu_toolchains
 
-            if ver:
-                sdk_info[ver] = entry
+            sdk_info[ver] = entry
 
         return sdk_info
 
