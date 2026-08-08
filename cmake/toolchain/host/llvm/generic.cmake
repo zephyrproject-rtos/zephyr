@@ -4,11 +4,48 @@ set_ifndef(LLVM_TOOLCHAIN_PATH "$ENV{CLANG_ROOT_DIR}")
 set(TOOLCHAIN_VARIANT_COMPILER llvm CACHE STRING "Variant compiler being used")
 zephyr_get(LLVM_TOOLCHAIN_PATH)
 
+if(NOT LLVM_TOOLCHAIN_PATH)
+  # Generate search paths dynamically to support LLVM versions 15 through 25
+  set(LLVM_SEARCH_PATHS
+    /opt/llvm/bin
+    /usr/bin
+    /usr/local/bin
+    /bin
+    /opt/homebrew/bin
+    /opt/homebrew/opt/llvm/bin
+    /usr/local/opt/llvm/bin
+    /usr/lib/llvm/bin
+  )
+  foreach(ver RANGE 25 15 -1)
+    list(APPEND LLVM_SEARCH_PATHS "/opt/homebrew/opt/llvm@${ver}/bin")
+    list(APPEND LLVM_SEARCH_PATHS "/usr/lib/llvm-${ver}/bin")
+  endforeach()
+
+  # Find the host LLVM toolchain directory containing clang / llvm-config
+  find_path(LLVM_BINARY_DIR
+    NAMES
+    clang
+    llvm-config
+
+    PATHS
+    ${LLVM_SEARCH_PATHS}
+
+    HINTS
+    $ENV{LLVM_TOOLCHAIN_PATH}/bin
+    $ENV{LLVM_TOOLCHAIN_PATH}
+    $ENV{LLVM_ROOT}/bin
+    $ENV{LLVM_ROOT}
+  )
+  if(LLVM_BINARY_DIR)
+    get_filename_component(LLVM_TOOLCHAIN_PATH "${LLVM_BINARY_DIR}" DIRECTORY)
+  endif()
+endif()
+
 if(LLVM_TOOLCHAIN_PATH)
   set(TOOLCHAIN_HOME ${LLVM_TOOLCHAIN_PATH}/bin/)
 endif()
 
-set(LLVM_TOOLCHAIN_PATH ${CLANG_ROOT_DIR} CACHE PATH "clang install directory")
+set(LLVM_TOOLCHAIN_PATH ${LLVM_TOOLCHAIN_PATH} CACHE PATH "clang install directory")
 
 set(COMPILER clang)
 set(BINTOOLS llvm)
@@ -25,18 +62,28 @@ set(BINTOOLS llvm)
 
 # Support for newlib is indicated by the presence of '_newlib_version.h' in the toolchain path.
 if(NOT LLVM_TOOLCHAIN_PATH STREQUAL "")
-  file(GLOB_RECURSE newlib_header ${LLVM_TOOLCHAIN_PATH}/_newlib_version.h)
+  # Use find_file() instead of GLOB_RECURSE to avoid a slow recursive scan
+  # of the entire LLVM toolchain directory tree at configure time.
+  find_file(newlib_header _newlib_version.h
+    PATHS ${LLVM_TOOLCHAIN_PATH}
+    PATH_SUFFIXES include
+    NO_DEFAULT_PATH
+    NO_CACHE
+  )
   if(newlib_header)
     set(TOOLCHAIN_HAS_NEWLIB ON CACHE BOOL "True if toolchain supports newlib")
   endif()
 
-  # Support for picolibc is indicated by the presence of 'picolibc.h' in the toolchain path.
-  file(GLOB_RECURSE picolibc_header ${LLVM_TOOLCHAIN_PATH}/picolibc.h)
-  if(picolibc_header)
+  find_file(picolibc_header picolibc.h
+    PATHS ${LLVM_TOOLCHAIN_PATH}
+    PATH_SUFFIXES include include/picolibc
+    NO_DEFAULT_PATH
+    NO_CACHE
+  )
+  if(picolibc_header OR NOT "${ARCH}" STREQUAL "posix")
     set(TOOLCHAIN_HAS_PICOLIBC ON CACHE BOOL "True if toolchain supports picolibc")
   endif()
 endif()
-
 set(TOOLCHAIN_HAS_LIBCXX ON CACHE BOOL "True if toolchain supports libc++")
 
 message(STATUS "Found toolchain: llvm (clang/ld)")

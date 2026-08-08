@@ -36,6 +36,8 @@ if(NOT "${ARCH}" STREQUAL "posix")
     include(${ZEPHYR_BASE}/cmake/compiler/clang/target_arm64.cmake)
   elseif("${ARCH}" STREQUAL "riscv")
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_riscv.cmake)
+  elseif("${ARCH}" STREQUAL "xtensa")
+    include(${ZEPHYR_BASE}/cmake/compiler/clang/target_xtensa.cmake)
   endif()
 
   foreach(file_name include/stddef.h)
@@ -104,6 +106,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
 endif()
 
 # Override the default implementation in target_template.cmake.
+if(NOT COMPILER_SET_LINKER_PROPERTIES_DEFINED)
 function(compiler_set_linker_properties)
 
   compiler_simple_options(simple_options)
@@ -138,3 +141,4 @@ function(compiler_set_linker_properties)
 
   set_linker_property(PROPERTY rt_library "-l${library_name}")
 endfunction()
+endif()
