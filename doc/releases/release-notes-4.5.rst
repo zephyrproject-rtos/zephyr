@@ -270,6 +270,13 @@ New APIs and options
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
 
+* Management
+
+  * MCUmgr
+
+    * Added support for SPI MCUmgr SMP transport, which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SPI`.
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
