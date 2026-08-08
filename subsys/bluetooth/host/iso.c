@@ -97,6 +97,21 @@ struct bt_iso_big bigs[CONFIG_BT_ISO_MAX_BIG];
 static struct bt_iso_big *lookup_big_by_handle(uint8_t big_handle);
 #endif /* CONFIG_BT_ISO_BROADCAST */
 
+struct bt_iso_chan *bt_iso_get_chan_by_conn(const struct bt_conn *iso)
+{
+	if (!IS_ARRAY_ELEMENT(iso_conns, iso)) {
+		LOG_DBG("Invalid iso %p pointer", iso);
+		return NULL;
+	}
+
+	if (iso->type != BT_CONN_TYPE_ISO) {
+		LOG_DBG("iso %p not initialized", iso);
+		return NULL;
+	}
+
+	return iso->iso.chan;
+}
+
 static void bt_iso_sent_cb(struct bt_conn *iso, void *user_data, int err)
 {
 #if defined(CONFIG_BT_ISO_TX)
@@ -544,8 +559,7 @@ void bt_iso_disconnected(struct bt_conn *iso)
 	bt_iso_chan_disconnected(chan, iso->err);
 }
 
-#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
-const char *bt_iso_chan_state_str(uint8_t state)
+const char *bt_iso_chan_state_str(enum bt_iso_state state)
 {
 	switch (state) {
 	case BT_ISO_STATE_DISCONNECTED:
@@ -560,6 +574,8 @@ const char *bt_iso_chan_state_str(uint8_t state)
 		return "unknown";
 	}
 }
+
+#if defined(CONFIG_BT_ISO_LOG_LEVEL_DBG)
 
 void bt_iso_chan_set_state_debug(struct bt_iso_chan *chan, enum bt_iso_state state,
 				 const char *func, int line)
