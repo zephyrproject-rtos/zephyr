@@ -1009,29 +1009,39 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
  *
  * See IEEE 1003.1
  */
+static K_MUTEX_DEFINE(pthread_once_lock);
+static K_CONDVAR_DEFINE(pthread_once_cv);
+
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	int ret = EINVAL;
-	bool run_init_func = false;
 	struct pthread_once *const _once = (struct pthread_once *)once;
 
 	if (init_func == NULL) {
 		return EINVAL;
 	}
 
-	SYS_SEM_LOCK(&pthread_pool_lock) {
-		if (!_once->flag) {
-			run_init_func = true;
-			_once->flag = true;
-		}
-		ret = 0;
+	k_mutex_lock(&pthread_once_lock, K_FOREVER);
+
+	while (_once->state == 1 /* INITIALIZING */) {
+		k_condvar_wait(&pthread_once_cv, &pthread_once_lock, K_FOREVER);
 	}
 
-	if (ret == 0 && run_init_func) {
-		init_func();
+	if (_once->state == 2 /* INITIALIZED */) {
+		k_mutex_unlock(&pthread_once_lock);
+		return 0;
 	}
 
-	return ret;
+	_once->state = 1; /* INITIALIZING */
+	k_mutex_unlock(&pthread_once_lock);
+
+	init_func();
+
+	k_mutex_lock(&pthread_once_lock, K_FOREVER);
+	_once->state = 2; /* INITIALIZED */
+	k_condvar_broadcast(&pthread_once_cv);
+	k_mutex_unlock(&pthread_once_lock);
+
+	return 0;
 }
 
 /**
