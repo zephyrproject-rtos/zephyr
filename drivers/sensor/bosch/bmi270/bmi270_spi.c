@@ -16,7 +16,11 @@ LOG_MODULE_DECLARE(bmi270, CONFIG_SENSOR_LOG_LEVEL);
 
 static int bmi270_bus_check_spi(const union bmi270_bus *bus)
 {
-	return spi_is_ready_dt(&bus->spi) ? 0 : -ENODEV;
+	if (!spi_is_ready_dt(&bus->spi)) {
+		LOG_ERR("SPI device not ready");
+		return -ENODEV;
+	}
+	return 0;
 }
 
 static int bmi270_reg_read_spi(const union bmi270_bus *bus,
@@ -98,3 +102,62 @@ const struct bmi270_bus_io bmi270_bus_io_spi = {
 	.write = bmi270_reg_write_spi,
 	.init = bmi270_bus_init_spi,
 };
+
+#if defined(CONFIG_BMI270_STREAM)
+int bmi270_spi_prep_reg_read_async(const struct device *dev, uint8_t reg, uint8_t *buf,
+				   size_t len, uint8_t flags)
+{
+	struct bmi270_data *data = dev->data;
+	struct rtio_sqe *sqes[3];
+	struct rtio_sqe *write_reg_sqe;
+	struct rtio_sqe *dummy_sqe;
+	struct rtio_sqe *read_buf_sqe;
+	uint8_t addr = reg | 0x80;
+
+	if (rtio_sqe_acquire_array(data->rtio_ctx, ARRAY_SIZE(sqes), sqes) != 0) {
+		return -ENOMEM;
+	}
+
+	write_reg_sqe = sqes[0];
+	dummy_sqe = sqes[1];
+	read_buf_sqe = sqes[2];
+
+	rtio_sqe_prep_tiny_write(write_reg_sqe, data->iodev, RTIO_PRIO_HIGH, &addr, 1, NULL);
+	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	rtio_sqe_prep_read(dummy_sqe, data->iodev, RTIO_PRIO_HIGH, &data->spi_dummy_byte, 1,
+			   NULL);
+	/* Keep the dummy byte in the same SPI transaction; the payload read carries chaining. */
+	dummy_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	rtio_sqe_prep_read(read_buf_sqe, data->iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	read_buf_sqe->flags |= flags;
+
+	return 3;
+}
+
+int bmi270_spi_prep_reg_write_async(const struct device *dev, uint8_t reg, const uint8_t *buf,
+				    size_t len, uint8_t flags)
+{
+	struct bmi270_data *data = dev->data;
+	struct rtio_sqe *sqes[2];
+	struct rtio_sqe *write_reg_sqe;
+	struct rtio_sqe *write_buf_sqe;
+	uint8_t addr = reg & BMI270_REG_MASK;
+
+	if (rtio_sqe_acquire_array(data->rtio_ctx, ARRAY_SIZE(sqes), sqes) != 0) {
+		return -ENOMEM;
+	}
+
+	write_reg_sqe = sqes[0];
+	write_buf_sqe = sqes[1];
+
+	rtio_sqe_prep_tiny_write(write_reg_sqe, data->iodev, RTIO_PRIO_HIGH, &addr, 1, NULL);
+	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
+
+	rtio_sqe_prep_write(write_buf_sqe, data->iodev, RTIO_PRIO_HIGH, buf, len, NULL);
+	write_buf_sqe->flags |= flags;
+
+	return 2;
+}
+#endif
