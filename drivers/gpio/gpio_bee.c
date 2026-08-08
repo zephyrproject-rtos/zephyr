@@ -192,9 +192,16 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 
 	__ASSERT(pad_pin < TOTAL_PIN_NUM, "gpio port or pin error");
 
-	if (flags & GPIO_OPEN_SOURCE) {
+	if ((flags & GPIO_SINGLE_ENDED) != 0 && (flags & GPIO_LINE_OPEN_DRAIN) == 0) {
 		return -ENOTSUP;
 	}
+
+#if defined(CONFIG_SOC_SERIES_RTL8752H)
+	if ((flags & GPIO_OPEN_DRAIN) == GPIO_OPEN_DRAIN) {
+		/* RTL8752H does not provides a hardware open-drain output mode. */
+		return -ENOTSUP;
+	}
+#endif
 
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
 		return -ENOTSUP;
