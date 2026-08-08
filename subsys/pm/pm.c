@@ -34,6 +34,29 @@ static const struct pm_state_info *z_cpus_pm_forced_state[CONFIG_MP_MAX_NUM_CPUS
 
 static struct k_spinlock pm_forced_state_lock;
 static struct k_spinlock pm_notifier_lock;
+#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+/*
+ * Protects the device suspend/resume decision. It is held across the device
+ * transitions so that a CPU waking up spins until devices are fully resumed
+ * before it proceeds.
+ */
+static struct k_spinlock pm_dev_lock;
+
+/*
+ * Number of sleeping CPUs whose selected power state does not allow devices to
+ * be suspended. Devices are only suspended when this counter is zero, that is
+ * when every sleeping CPU allows it. Protected by pm_dev_lock.
+ */
+static uint8_t pm_device_suspend_blockers;
+
+/* Whether devices were suspended on system suspend. Protected by pm_dev_lock. */
+static bool pm_devices_suspended;
+
+static bool pm_state_allows_device_suspend(const struct pm_state_info *info)
+{
+	return (info->state != PM_STATE_RUNTIME_IDLE) && !info->pm_device_disabled;
+}
+#endif /* CONFIG_PM_DEVICE_SYSTEM_MANAGED */
 
 /*
  * Function called to notify when the system is entering / exiting a
@@ -104,13 +127,28 @@ void pm_system_resume(void)
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
 #ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
-		if (atomic_add(&_cpus_active, 1) == 0) {
-			if ((z_cpus_pm_state[id]->state != PM_STATE_RUNTIME_IDLE) &&
-					!z_cpus_pm_state[id]->pm_device_disabled) {
-				pm_resume_devices();
-			}
+		k_spinlock_key_t key = k_spin_lock(&pm_dev_lock);
+
+		/*
+		 * z_cpus_pm_state[id] is only reset to NULL below, so it still
+		 * holds the state accounted on the suspend path.
+		 */
+		if (!pm_state_allows_device_suspend(z_cpus_pm_state[id])) {
+			pm_device_suspend_blockers--;
 		}
-#endif
+
+		/*
+		 * The first CPU to wake up resumes devices if they were
+		 * suspended, regardless of which CPU suspended them. CPUs
+		 * waking up concurrently spin on pm_dev_lock until the resume
+		 * completes, so no CPU runs while devices are still suspended.
+		 */
+		if ((atomic_add(&_cpus_active, 1) == 0) && pm_devices_suspended) {
+			pm_resume_devices();
+			pm_devices_suspended = false;
+		}
+		k_spin_unlock(&pm_dev_lock, key);
+#endif /* CONFIG_PM_DEVICE_SYSTEM_MANAGED */
 		pm_state_exit_post_ops(z_cpus_pm_state[id]->state,
 				       z_cpus_pm_state[id]->substate_id);
 		pm_state_notify(false);
@@ -185,20 +223,31 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	}
 
 #ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
-	if (atomic_sub(&_cpus_active, 1) == 1) {
-		if ((z_cpus_pm_state[id]->state != PM_STATE_RUNTIME_IDLE) &&
-		    !z_cpus_pm_state[id]->pm_device_disabled) {
-			if (!pm_suspend_devices()) {
-				pm_resume_devices();
-				z_cpus_pm_state[id] = NULL;
-				(void)atomic_add(&_cpus_active, 1);
-				SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks,
-							   PM_STATE_ACTIVE);
-				return false;
-			}
-		}
+	key = k_spin_lock(&pm_dev_lock);
+
+	if (!pm_state_allows_device_suspend(z_cpus_pm_state[id])) {
+		pm_device_suspend_blockers++;
 	}
-#endif
+
+	/*
+	 * Suspend devices when the last CPU goes to sleep, and only if every
+	 * sleeping CPU entered a state that allows it. The blocker count is
+	 * updated together with _cpus_active under pm_dev_lock, so the last
+	 * CPU sees the state selected by every other sleeping CPU.
+	 */
+	if ((atomic_sub(&_cpus_active, 1) == 1) && (pm_device_suspend_blockers == 0U)) {
+		if (!pm_suspend_devices()) {
+			pm_resume_devices();
+			z_cpus_pm_state[id] = NULL;
+			(void)atomic_add(&_cpus_active, 1);
+			k_spin_unlock(&pm_dev_lock, key);
+			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, PM_STATE_ACTIVE);
+			return false;
+		}
+		pm_devices_suspended = true;
+	}
+	k_spin_unlock(&pm_dev_lock, key);
+#endif /* CONFIG_PM_DEVICE_SYSTEM_MANAGED */
 
 	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id]->exit_latency_us);
 	if ((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) {

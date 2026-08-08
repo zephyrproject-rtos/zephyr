@@ -1,0 +1,37 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		power-states {
+			state0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
+
+			state1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			state2: state2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+				zephyr,pm-device-disabled;
+			};
+		};
+	};
+
+	test_dev: test_dev {
+		compatible = "test-device-pm";
+	};
+};
+
+&cpu {
+	cpu-power-states = <&state0 &state1 &state2>;
+};
+
+&{/cpus/cpu@1} {
+	cpu-power-states = <&state0 &state1 &state2>;
+};

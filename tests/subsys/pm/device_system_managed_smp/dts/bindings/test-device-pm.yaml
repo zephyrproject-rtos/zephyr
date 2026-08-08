@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    This binding provides resources required to build and run the
+    tests/subsys/pm/device_system_managed_smp test in Zephyr.
+
+compatible: "test-device-pm"
