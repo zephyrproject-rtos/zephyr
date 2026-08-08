@@ -269,24 +269,29 @@ struct k_thread {
 	/** threads waiting in k_thread_join() */
 	_wait_q_t join_queue;
 
+#if defined(CONFIG_USERSPACE)
+	/** The futex this thread is waiting on */
+	void *futex_pointer;
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_POLL)
 	struct z_poller poller;
 #endif /* CONFIG_POLL */
 
-#if defined(CONFIG_EVENTS)
-#if defined(CONFIG_WAITQ_SCALABLE)
-	/*
-	 * Used to build a list of threads that are
-	 * pending on a k_event and should be woken
-	 * up due to a k_event_post/set() call.
-	 *
-	 * Needed only when red-black tree is used for
-	 * wait queues because it is forbidden to mutate
-	 * an rbtree waitq while walking it.
+#if (defined(CONFIG_EVENTS) && defined(CONFIG_WAITQ_SCALABLE)) || defined(CONFIG_USERSPACE)
+	/**
+	 * Some operations which satisfy wait conditions need to build a list of
+	 * threads that should be woken up. This field serves as a link to place
+	 * any thread in such a list when necessary:
+	 * - k_event_post/set() when rbtree waitqs are used (because these waitqs
+	 *   are not mutable during walk)
+	 * - k_futex_wake() when rbtree waitqs are used and to find the highest
+	 *   priority waiter
 	 */
-	struct k_thread *next_event_link;
-#endif /* CONFIG_WAITQ_SCALABLE */
+	struct k_thread *next_wake_link;
+#endif /* (CONFIG_EVENTS && CONFIG_WAITQ_SCALABLE) || CONFIG_USERSPACE */
 
+#if defined(CONFIG_EVENTS)
 	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
 #endif /* CONFIG_EVENTS */

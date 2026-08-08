@@ -174,9 +174,9 @@ Futex API Reference
 
 k_futex is a lightweight mutual exclusion primitive designed to minimize
 kernel involvement. Uncontended operation relies only on atomic access
-to shared memory. k_futex are tracked as kernel objects and can live in
-user memory so that any access bypasses the kernel object permission
-management mechanism.
+to shared memory. k_futex are not kernel objects and do not use the
+kernel object permission management. They live in user memory and can be
+used by any thread which has read-write access to this memory.
 
 .. doxygengroup:: futex_apis
 
