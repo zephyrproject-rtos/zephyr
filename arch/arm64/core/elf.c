@@ -206,6 +206,7 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 {
 	int64_t x;
 	uint32_t imm;
+	int64_t shifted;
 	int lsb = 0; /* LSB of X to be used */
 	bool is_movnz = false;
 	enum aarch64_reloc_type type = AARCH64_RELOC_TYPE_ABS;
@@ -267,7 +268,8 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 	}
 
 	x = reloc(type, loc, sym_base_addr, rel->r_addend);
-	imm = x >> lsb;
+	shifted = x >> lsb;
+	imm = (uint32_t)shifted;
 
 	/* Manipulate opcode for signed relocations. Result depends on sign of immediate value. */
 	if (is_movnz) {
@@ -287,7 +289,17 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 
 	*(uint32_t *)loc = sys_cpu_to_le32(opcode);
 
-	if (imm > UINT16_MAX) {
+	/*
+	 * Range check on the untruncated value: the MOVW field is 16 bits,
+	 * unsigned for UABS relocations. MOVN-encoded (SABS/PREL)
+	 * relocations store the bitwise inverse of the immediate, so they
+	 * additionally cover negatives down to -(UINT16_MAX + 1).
+	 */
+	if (is_movnz) {
+		if (shifted < -((int64_t)UINT16_MAX + 1) || shifted > UINT16_MAX) {
+			return -ERANGE;
+		}
+	} else if (shifted < 0 || shifted > UINT16_MAX) {
 		return -ERANGE;
 	}
 
@@ -413,10 +425,11 @@ static int imm_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t loc
 	/* Mask X sign bit and upper bits. */
 	x = (int64_t)(x & ~BIT_MASK(len - 1)) >> (len - 1);
 
-	/* Incrementing X will either overflow and set it to 0 or
-	 * set it 1. Any other case indicates that there was an overflow in relocation.
+	/* A value that fits a signed len-bit field leaves either all-zero
+	 * (positive) or all-one (negative) bits above the field, so the
+	 * check value is exactly 0 or -1. Anything else is an overflow.
 	 */
-	if ((int64_t)x++ > 1) {
+	if (x < -1 || x > 0) {
 		return -ERANGE;
 	}
 
