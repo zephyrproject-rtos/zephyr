@@ -33,6 +33,7 @@ from twisterlib import ZEPHYR_BASE
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
+from twisterlib.runmonitor import console_ui_active
 from twisterlib.statuses import TwisterStatus
 
 if TYPE_CHECKING:
@@ -406,8 +407,12 @@ class BinaryHandler(Handler):
             return
 
         stderr_log = f"{self.instance.build_dir}/handler_stderr.log"
+        # Keep the binary away from the terminal's stdin while the
+        # --console-monitor UI owns it, so it cannot steal or re-mode it.
+        stdin = subprocess.DEVNULL if console_ui_active() else None
         with open(stderr_log, "w+") as stderr_log_fp, subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=stderr_log_fp, cwd=self.build_dir, env=env
+            command, stdin=stdin, stdout=subprocess.PIPE, stderr=stderr_log_fp,
+            cwd=self.build_dir, env=env
         ) as proc:
             logger.debug(f"Spawning BinaryHandler Thread for {self.name}")
             t = threading.Thread(target=self._output_handler, args=(proc, harness,), daemon=True)
@@ -427,7 +432,10 @@ class BinaryHandler(Handler):
 
         # FIXME: This is needed when killing the simulator, the console is
         # garbled and needs to be reset. Did not find a better way to do that.
-        if sys.stdout.isatty():
+        # Must not run while the --console-monitor curses UI owns the
+        # terminal: stty sane would knock it out of cbreak/noecho mode and
+        # kill its keyboard handling.
+        if sys.stdout.isatty() and not console_ui_active():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         self._update_instance_info(harness)
@@ -1211,7 +1219,9 @@ class QEMUHandler(QEMUHandlerBase):
         logger.debug(f"Spawning QEMUHandler Thread for {self.name}")
         self.thread.start()
         thread_max_time = time.time() + self.get_test_timeout()
-        if sys.stdout.isatty():
+        # See BinaryHandler._handle: never reset the terminal while the
+        # --console-monitor curses UI owns it.
+        if sys.stdout.isatty() and not console_ui_active():
             subprocess.call(["stty", "sane"], stdin=sys.stdout)
 
         logger.debug(f"Running {self.name} ({self.type_str})")
@@ -1219,9 +1229,13 @@ class QEMUHandler(QEMUHandlerBase):
         failure_type = self.FailureType.NONE
         qemu_pid = None
 
+        # As in BinaryHandler._handle: no terminal stdin for QEMU while the
+        # --console-monitor UI owns the terminal.
+        stdin = subprocess.DEVNULL if console_ui_active() else None
         with open(self.stdout_fn, "w") as stdout_fp, \
             open(self.stderr_fn, "w") as stderr_fp, subprocess.Popen(
             command,
+            stdin=stdin,
             stdout=stdout_fp,
             stderr=stderr_fp,
             cwd=self.build_dir
