@@ -647,6 +647,46 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 	sys_clock_announce_locked(timer_core_ticks_clamp(dticks), key);
 }
 
+/* Announce a span of cycles the driver worked out for itself, rather than one
+ * read from the counter, with the clock lock already held. @p key is the key
+ * returned by the driver's sys_clock_lock() and is consumed here.
+ *
+ * For a driver recovering elapsed time from somewhere other than its counter,
+ * a low-power companion that kept time while the counter was stopped, where the
+ * span can outrun what the counter's width can express.
+ *
+ * The arithmetic here is 64-bit whatever the counter's width, since that span is
+ * exactly the case the width cannot cover. That is why this is separate from
+ * timer_core_announce_from(), which stays in the counter's own width: only the
+ * recovery path pays for the wider math.
+ *
+ * Only whole ticks are announced. The sub-tick remainder is left where the
+ * driver's own counter still holds it, for the next delta to pick up.
+ *
+ * inline so the drivers with no such recovery path do not trip
+ * -Wunused-function.
+ */
+static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint64_t cycles)
+{
+	uint64_t dticks = cycles / TIMER_CORE_CYC_PER_TICK;
+
+	timer_core_last_cycle += dticks * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_tick += dticks;
+	timer_core_last_elapsed = 0;
+#if defined(TIMER_CORE_BACKEND_RELOAD)
+	timer_core_armed_deadline = UINT64_MAX;
+	timer_core_catchup = false;
+#endif
+
+	/*
+	 * Not timer_core_ticks_clamp(): its argument is timer_core_ticks_t, the
+	 * very width this span is allowed to outrun, so the value would be
+	 * truncated on the way in rather than clamped. Clamp against the
+	 * announce interface itself.
+	 */
+	sys_clock_announce_locked((uint32_t)MIN(dticks, (uint64_t)UINT32_MAX), key);
+}
+
 /* Read the counter, account the whole ticks elapsed since the last announce,
  * rearm and announce. The driver ISR body reduces to a hardware acknowledge
  * followed by this call. inline so a driver that instead uses
