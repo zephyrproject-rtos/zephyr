@@ -43,6 +43,7 @@ config USBH_INIT_PRIO
 
 config USBH_STACK_SIZE
 	int "USB host stack thread stack size"
+	default 3072 if SOC_BCM2711
 	default 1024
 	help
 	  USB host stack thread stack size in bytes.

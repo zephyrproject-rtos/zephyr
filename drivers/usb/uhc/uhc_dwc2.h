@@ -17,6 +17,8 @@
 #define DEV_CFG(_dev)	((const struct uhc_dwc2_config *)(_dev)->config)
 #define DEV_DATA(_dev)	((struct uhc_dwc2_data *)(uhc_get_private(_dev)))
 
+#define MAX_CHANNELS	16
+
 struct usb_dwc2_reg *uhc_dwc2_get_base(const struct device *dev);
 
 /* Vendor quirks per driver instance */
@@ -37,6 +39,57 @@ struct uhc_dwc2_vendor_quirks {
 	int (*irq_clear)(const struct device *dev);
 	/* Called while waiting for bits that require PHY to be clocked */
 	int (*is_phy_clk_off)(const struct device *dev);
+	/* Called to translate a CPU-side address into the bus/DMA address expected by HCDMA*/
+	int (*dma_addr_xlate)(const struct device *dev);
+};
+
+/* TODO: rename to pipe_data and expand with udev */
+struct uhc_dwc2_channel_data {
+	uint8_t next_pid;
+};
+
+struct uhc_dwc2_channel {
+	/* Index of the channel */
+	uint8_t index;
+	/* Accessed in ISR. Number of error to track errors for transactions. */
+	uint8_t error_count;
+	/* Set while a halt was initiated to cancel the transfer. */
+	bool halt_cancel;
+	/* Used to save pending completion bits, while waiting channel to be halted. */
+	uint32_t hcint_cplt_pending;
+	/* Cached pointer to channel registers */
+	const struct usb_dwc2_host_chan *regs;
+	/* Pointer to the transfer */
+	struct uhc_transfer *xfer;
+	/* Channel events */
+	atomic_t events;
+	/* Channel transfer helpers */
+	uint32_t length;
+	/* Channel transfer data helpers */
+	struct uhc_dwc2_channel_data *data;
+};
+
+struct uhc_dwc2_data {
+	DEVICE_MMIO_NAMED_RAM(core);
+	struct k_thread thread;
+	/* Event bitmask the driver thread waits for */
+	struct k_event events;
+	/* Semaphore used to indicate that port is enabled */
+	struct k_sem sem_port_enabled;
+	/* Port channels */
+	struct uhc_dwc2_channel ch[MAX_CHANNELS];
+	/* Channels specific transfer related parameters */
+	struct uhc_dwc2_channel_data ch_data[2][MAX_CHANNELS];
+	/* Number of channels, available on the hardware */
+	uint32_t numhstchnl;
+	/* Number of channels currently not claimed */
+	uint32_t free_chs;
+	/* Root port does the debounce of connection/disconnection */
+	bool debouncing;
+	/* Root port has an attached device */
+	bool has_device;
+	/* DMA address for translation */
+	uint32_t dma_addr;
 };
 
 /* Driver configuration per instance */
@@ -61,6 +114,10 @@ struct uhc_dwc2_config {
 
 #define UHC_DWC2_QUIRK_DATA(dev)						\
 	(((const struct uhc_dwc2_config *)dev->config)->quirk_data)
+
+#if DT_HAS_COMPAT_STATUS_OKAY(brcm_bcm2835_usb)
+#include "uhc_dwc2_bcm2835_usb.h"
+#endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg_fs)
 #include "uhc_dwc2_esp32_usb_otg_fs.h"
@@ -95,5 +152,6 @@ DWC2_QUIRK_FUNC_DEFINE(disable)
 DWC2_QUIRK_FUNC_DEFINE(shutdown)
 DWC2_QUIRK_FUNC_DEFINE(irq_clear)
 DWC2_QUIRK_FUNC_DEFINE(is_phy_clk_off)
+DWC2_QUIRK_FUNC_DEFINE(dma_addr_xlate)
 
 #endif /* ZEPHYR_DRIVERS_USB_UHC_DWC2_H */

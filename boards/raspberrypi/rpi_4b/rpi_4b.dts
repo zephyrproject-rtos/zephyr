@@ -143,3 +143,8 @@
 		reg = <1>;
 	};
 };
+
+zephyr_uhc0: &usb0 {
+	status = "okay";
+	power-domains = <&usb_hcd>;
+};
