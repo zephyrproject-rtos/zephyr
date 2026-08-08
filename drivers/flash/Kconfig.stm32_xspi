@@ -33,4 +33,16 @@ config FLASH_STM32_XSPI_DMA
 	help
 	  Enable the DMA mode for XSPI flash driver instance
 
+config FLASH_STM32_XSPI_XIP_RELOCATE
+	bool "Relocate STM32 XSPI driver code for external Flash XIP"
+	default y
+	select CODE_DATA_RELOCATION
+	depends on XIP && STM32_APP_IN_EXT_FLASH
+	depends on SOC_SERIES_STM32N6X
+	help
+	  Relocate STM32 XSPI driver code out of external flash so erase/write
+	  operations remain possible while executing from external Flash.
+	  When enabled, the driver also locks interrupts during the critical
+	  window where memory-mapped mode is disabled.
+
 endif # FLASH_STM32_XSPI
