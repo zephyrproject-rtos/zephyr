@@ -257,6 +257,26 @@
 			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		};
 
+		pit64b1: timer@e1804000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1804000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 67>, <&pmc PMC_TYPE_GCK 67>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b2: timer@e1808000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe1808000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 68>, <&pmc PMC_TYPE_GCK 68>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		flx0: flexcom@e1820000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1820000 0x200>;
@@ -375,6 +395,36 @@
 				interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
+		};
+
+		pit64b3: timer@e2004000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2004000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 69>, <&pmc PMC_TYPE_GCK 69>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b4: timer@e2008000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe2008000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 70>, <&pmc PMC_TYPE_GCK 70>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		pit64b5: timer@e200c000 {
+			compatible = "microchip,sam-pit64b-counter";
+			reg = <0xe200c000 0x4000>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 71>, <&pmc PMC_TYPE_GCK 71>;
+			clock-names = "pclk", "gclk";
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
 		};
 
 		flx4: flexcom@e2018000 {

@@ -3,7 +3,21 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-description: Microchip SAM PIT64B Counter
+description: |
+  Microchip SAM PIT64B Counter
+
+  SAM PIT64B includes the following hardware peripheral:
+    - module name="PIT64B" id="44117" version="103"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &pit64b1 {
+        top-alarm;
+        prescaler-period = <15>;
+        status = "okay";
+      };
 
 compatible: "microchip,sam-pit64b-counter"
 
@@ -23,13 +37,13 @@ properties:
 
   clock-selection:
     type: string
-    default: "SGCLK_PERIPHERAL_CLOCK"
+    default: "peripheral-clock"
     description: |
       Refer to PIT64B_MR.SGCLK in datasheet.
-      Peripheral clock (MCK1) is used by default.
+      Peripheral clock is used by default.
     enum:
-      - "SGCLK_PERIPHERAL_CLOCK"
-      - "SGCLK_GENERIC_CLOCK"
+      - "peripheral-clock"
+      - "generic-clock"
 
   prescaler-period:
     type: int
