@@ -79,6 +79,63 @@ config XTENSA_EXCEPTION_ENTER_GDB
 	  When an exception like invalid address access or division by zero is
 	  hit, enter the GDB stub.
 
+config XTENSA_FATAL_BREADCRUMB
+	bool "Record fatal exception breadcrumbs in a SoC-specific location"
+	help
+	  When a fatal exception is taken, record the faulting PC, exception
+	  cause and faulting virtual address in an SoC-specific location, so
+	  that crash information remains visible even when no console or
+	  mtrace output is available. The SoC provides the actual storage and
+	  reporting mechanism; enabling this option only opts a fatal exception
+	  into calling it.
+
+	  For example, on Intel ADSP SoCs this records the breadcrumb into
+	  HP-SRAM window0 via its uncached alias: the host SOF driver prints
+	  window0[0] as "Firmware state" and window0[1] as "status/error code"
+	  on an IPC timeout. Only the first fatal exception is latched so the
+	  original fault is preserved across a crash loop. This is a debug aid
+	  and should be left disabled in production builds.
+
+if XTENSA_FATAL_BREADCRUMB
+
+choice XTENSA_FATAL_BREADCRUMB_DATA
+	prompt "Fatal breadcrumb data selection"
+	default XTENSA_FATAL_BREADCRUMB_DATA_CAUSE
+	help
+	  Select which exception diagnostic data an SoC's breadcrumb handler
+	  should treat as the primary "status/error code" value. Not all SoCs
+	  make use of this selection.
+
+config XTENSA_FATAL_BREADCRUMB_DATA_CAUSE
+	bool "Exception cause"
+	help
+	  Record the exception cause as the status/error code.
+
+config XTENSA_FATAL_BREADCRUMB_DATA_VADDR
+	bool "Faulting virtual address (excvaddr)"
+	help
+	  Record the faulting virtual address (excvaddr) as the status/error code.
+
+config XTENSA_FATAL_BREADCRUMB_DATA_A0
+	bool "Caller return address (a0)"
+	help
+	  Record the calling function's return address (a0) as the status/error code.
+
+endchoice
+
+endif # XTENSA_FATAL_BREADCRUMB
+
+config XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB
+	bool "Record triple fault breadcrumbs in HP-SRAM window0"
+	depends on SOC_FAMILY_INTEL_ADSP
+	default y
+	help
+	  When a double exception escalates to a triple fault (escaping the
+	  CPU), record the EPC1, double-exception EXCCAUSE, and DEPC into
+	  HP-SRAM window0 via its uncached alias. This is a lightweight
+	  tracing aid that can be enabled in production builds to diagnose
+	  fatal CPU locks and double faults.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI

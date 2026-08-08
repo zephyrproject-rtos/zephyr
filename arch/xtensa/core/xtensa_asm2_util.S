@@ -12,6 +12,19 @@
 #endif
 
 /*
+ * adsp_triple_fault_breadcrumb - record triple fault state for host diagnosis.
+ *
+ * Weak default is a no-op. SoC families that support it (see
+ * soc/intel/intel_adsp/<family>/asm_breadcrumb.S) link in a strong
+ * override, so the shared vector code stays free of per-SoC #ifdefs.
+ * Called via CALL0; may clobber a2/a3/a4.
+ */
+.weak adsp_triple_fault_breadcrumb
+.align 4
+adsp_triple_fault_breadcrumb:
+	ret
+
+/*
  * xtensa_spill_reg_windows
  *
  * Spill all register windows.  Not a C function, enter this via CALL0
@@ -603,6 +616,7 @@ _TripleFault:
 	movi a2, SYS_exit
 	simcall
 #endif
+	call0 adsp_triple_fault_breadcrumb
 1:
 	j	1b
 

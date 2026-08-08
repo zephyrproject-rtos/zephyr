@@ -30,6 +30,7 @@ zephyr_library_sources_ifdef(
   CONFIG_SOC_SERIES_INTEL_ADSP_ACE_CUSTOM_MORE_SPIN_RELAX_NOPS
   spin_relax.c
 )
+zephyr_library_sources_ifdef(CONFIG_XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB asm_breadcrumb.S)
 
 if(CONFIG_XTENSA_MMU)
   zephyr_library_sources_ifdef(CONFIG_SOC_ACE30 mmu_ace30.c)
