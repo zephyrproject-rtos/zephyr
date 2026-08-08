@@ -50,9 +50,7 @@ void riscv_aia_irq_enable(uint32_t irq)
 	const struct device *aplic = riscv_aplic_get_dev();
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
-	if (!riscv_aia_src_is_valid(aplic, src)) {
-		return;
-	}
+	__ASSERT_NO_MSG(riscv_aia_src_is_valid(aplic, src));
 
 #ifdef CONFIG_RISCV_IMSIC
 	riscv_imsic_enable_eiid(src);
@@ -69,9 +67,7 @@ void riscv_aia_irq_disable(uint32_t irq)
 	const struct device *aplic = riscv_aplic_get_dev();
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
-	if (!riscv_aia_src_is_valid(aplic, src)) {
-		return;
-	}
+	__ASSERT_NO_MSG(riscv_aia_src_is_valid(aplic, src));
 
 	riscv_aplic_enable_src(aplic, src, false);
 
@@ -82,12 +78,9 @@ void riscv_aia_irq_disable(uint32_t irq)
 
 int riscv_aia_irq_is_enabled(uint32_t irq)
 {
-	const struct device *aplic = riscv_aplic_get_dev();
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
-	if (!riscv_aia_src_is_valid(aplic, src)) {
-		return 0;
-	}
+	__ASSERT_NO_MSG(riscv_aia_src_is_valid(riscv_aplic_get_dev(), src));
 
 #ifdef CONFIG_RISCV_IMSIC
 	return riscv_imsic_is_enabled(src);
@@ -121,9 +114,7 @@ void riscv_aia_config_source(uint32_t irq, uint32_t mode)
 	const struct device *aplic = riscv_aplic_get_dev();
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
-	if (!riscv_aia_src_is_valid(aplic, src)) {
-		return;
-	}
+	__ASSERT_NO_MSG(riscv_aia_src_is_valid(aplic, src));
 
 	riscv_aplic_config_src(aplic, src, mode);
 }
@@ -134,9 +125,7 @@ void riscv_aia_route_to_hart(uint32_t irq, uint32_t hart, uint32_t eiid)
 	const struct device *aplic = riscv_aplic_get_dev();
 	uint32_t src = riscv_aia_irq_to_src(irq);
 
-	if (!riscv_aia_src_is_valid(aplic, src)) {
-		return;
-	}
+	__ASSERT_NO_MSG(riscv_aia_src_is_valid(aplic, src));
 
 	riscv_aplic_msi_route(aplic, src, hart, eiid);
 }
