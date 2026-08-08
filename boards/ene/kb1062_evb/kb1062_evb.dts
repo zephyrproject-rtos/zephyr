@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 ENE Technology Inc.
+ * Copyright (c) 2025-2026 ENE Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <ene/kb106x/kb1062.dtsi>
 #include <ene/kb106x/kb1062-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <common/mem.h>
 
 / {
 	model = "KB1062 board";
@@ -72,4 +73,32 @@
 
 &gpio6x7x {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image";
+			reg = <0x00000000 0x0003c000>;
+			read-only;
+		};
+
+		slot1_partition: partition@3c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "slot1";
+			reg = <0x0003c000 0x00002000>;
+			read-only;
+		};
+
+		storage_partition: partition@3e000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0003e000 0x00002000>;
+		};
+	};
 };
