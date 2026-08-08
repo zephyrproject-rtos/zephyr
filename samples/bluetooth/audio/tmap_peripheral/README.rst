@@ -36,4 +36,33 @@ it sends a "play media" request and pauses after 2 seconds.
 Use the :zephyr:code-sample:`ble_peripheral_tmap_central` sample on another
 board to act as the TMAP Central (CG and UMS roles).
 
+Playback to an audio codec
+**************************
+
+The sample can decode LC3 audio and play it out to a hardware codec over I2S.
+Playback is optional: when the required devicetree nodes or Kconfig symbols
+are absent, ``le_audio_playback.c`` compiles to a stub and the sample still
+runs as a UMR that acknowledges the stream but discards the audio.
+
+To enable playback on a new board, provide the following in a board overlay
+(or board :file:`.dts`):
+
+* an ``i2s-codec-tx`` DT alias pointing at the I2S peripheral wired to the codec
+* a devicetree node labelled ``audio_codec`` implementing the Zephyr
+  :ref:`audio_codec_api`
+
+and add a matching board :file:`.conf` under :file:`boards/` enabling:
+
+.. code-block:: cfg
+
+   CONFIG_LIBLC3=y
+   CONFIG_I2S=y
+   CONFIG_AUDIO=y
+   CONFIG_AUDIO_CODEC=y
+
+For interoperability with commercial smartphone LE Audio sources, the sample
+also sets ``TMAP_PERIPHERAL_STEREO=y`` (advertise stereo location) and
+``TMAP_PERIPHERAL_AUTO_CTRL=n`` (behave as a passive sink). Refer to the
+existing entries under :file:`boards/` for concrete examples.
+
 See :zephyr:code-sample-category:`bluetooth` samples for details.

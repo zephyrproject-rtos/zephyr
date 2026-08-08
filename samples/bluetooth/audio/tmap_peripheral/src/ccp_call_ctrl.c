@@ -155,6 +155,21 @@ struct bt_tbs_client_cb tbs_client_cb = {
 	.terminate_call = terminate_call_cb,
 };
 
+static void ccp_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	if (conn != default_conn) {
+		return;
+	}
+
+	bt_conn_drop(&default_conn);
+}
+
+BT_CONN_CB_DEFINE(ccp_conn_callbacks) = {
+	.disconnected = ccp_disconnected,
+};
+
 int ccp_call_ctrl_init(struct bt_conn *conn)
 {
 	int err;

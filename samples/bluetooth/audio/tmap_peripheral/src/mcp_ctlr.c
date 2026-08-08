@@ -54,6 +54,21 @@ static struct bt_mcc_cb mcc_cb = {
 	.send_cmd = mcc_send_command_cb,
 };
 
+static void mcp_disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+
+	if (conn != default_conn) {
+		return;
+	}
+
+	bt_conn_drop(&default_conn);
+}
+
+BT_CONN_CB_DEFINE(mcp_conn_callbacks) = {
+	.disconnected = mcp_disconnected,
+};
+
 int mcp_ctlr_init(struct bt_conn *conn)
 {
 	int err;

@@ -36,7 +36,54 @@
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
+#include "le_audio_playback.h"
 #include "tmap_peripheral.h"
+
+/* Track the currently-configured sink stream so we can route stream_recv()
+ * SDUs into the LC3 decoder / I2S playback pipeline.
+ */
+static struct bt_bap_stream *sink_stream;
+static struct le_audio_pcm_cfg sink_pcm_cfg;
+
+static int extract_sink_pcm_cfg(const struct bt_audio_codec_cfg *codec_cfg,
+				struct le_audio_pcm_cfg *out)
+{
+	enum bt_audio_location alloc = 0;
+	int ret;
+
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->freq_hz = (uint32_t)bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->frame_duration_us =
+		(uint32_t)bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->octets_per_frame = (uint16_t)ret;
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+	if (ret <= 0) {
+		return ret < 0 ? ret : -EBADMSG;
+	}
+	out->frame_blocks_per_sdu = (uint8_t)ret;
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &alloc, false);
+	if (ret == 0 && alloc != 0) {
+		out->chan_cnt = (uint8_t)__builtin_popcount((uint32_t)alloc);
+	} else {
+		out->chan_cnt = 1U;
+	}
+	return 0;
+}
 
 static const struct bt_audio_codec_cap lc3_codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_16KHZ | BT_AUDIO_CODEC_CAP_FREQ_32KHZ |
@@ -157,6 +204,18 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 
 	printk("ASE Codec Config stream %p\n", *stream);
 
+	if (dir == BT_AUDIO_DIR_SINK) {
+		int ext = extract_sink_pcm_cfg(codec_cfg, &sink_pcm_cfg);
+
+		if (ext != 0) {
+			printk("Failed to extract PCM cfg from codec_cfg (err %d)\n", ext);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
+					       BT_BAP_ASCS_REASON_CODEC_DATA);
+			return ext;
+		}
+		sink_stream = *stream;
+	}
+
 	if (dir == BT_AUDIO_DIR_SOURCE) {
 		source_streams[configured_source_stream_count].stream = *stream;
 		configured_source_stream_count++;
@@ -235,17 +294,16 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 	}
 
 	if (data->type == BT_AUDIO_METADATA_TYPE_CCID_LIST) {
+		/* Log unknown CCIDs but do not reject: rejecting causes Pixel's
+		 * Update Metadata (which advertises its own MCS CCID) to fail
+		 * mid-stream. The ASCS layer already warns about unknown CCIDs.
+		 */
 		for (uint8_t j = 0U; j < data->data_len; j++) {
 			const uint8_t ccid = data->data[j];
 
 			if (!(IS_ENABLED(CONFIG_BT_TBS_CLIENT_CCID) &&
 			      bt_tbs_client_get_by_ccid(default_conn, ccid) != NULL)) {
-				printk("CCID %u is unknown", ccid);
-				*func_param->rsp =
-					BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED,
-							BT_BAP_ASCS_REASON_NONE);
-
-				return false;
+				printk("CCID %u is unknown (ignored)\n", ccid);
 			}
 		}
 	}
@@ -286,6 +344,10 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 	printk("Disable: stream %p\n", stream);
 
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+	}
+
 	return 0;
 }
 
@@ -295,6 +357,10 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 	printk("Stop: stream %p\n", stream);
 
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+	}
+
 	return 0;
 }
 
@@ -303,6 +369,11 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	ARG_UNUSED(rsp);
 
 	printk("Release: stream %p\n", stream);
+
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+		sink_stream = NULL;
+	}
 
 	return 0;
 }
@@ -329,10 +400,13 @@ static void stream_recv(struct bt_bap_stream *stream, const struct bt_iso_recv_i
 {
 	ARG_UNUSED(info);
 
-	if (buf->len != 0) {
-		printk("Incoming audio on stream %p len %u\n", stream, buf->len);
+	if (buf->len == 0U) {
+		return;
 	}
-	/* TODO: decode data (if applicable) */
+
+	if (stream == sink_stream) {
+		le_audio_playback_stream_recv(buf);
+	}
 }
 
 static void stream_enabled(struct bt_bap_stream *stream)
@@ -348,18 +422,57 @@ static void stream_enabled(struct bt_bap_stream *stream)
 
 	/* The unicast server is responsible for starting the sink streams */
 	if (ep_info.dir == BT_AUDIO_DIR_SINK) {
-		/* Automatically do the receiver start ready operation */
+		/* Defer codec/I2S bring-up to stream_ops.started so we don't
+		 * block the BAP callback with WM8962 I2C traffic.
+		 */
 		err = bt_bap_stream_start(stream);
 
 		if (err != 0) {
-			printk("Failed to start stream %p: %d", stream, err);
+			printk("Failed to start stream %p: %d\n", stream, err);
 		}
 	}
 }
 
+static void stream_started(struct bt_bap_stream *stream)
+{
+	if (stream == sink_stream) {
+		int pret = le_audio_playback_stream_start(&sink_pcm_cfg);
+
+		if (pret != 0 && pret != -EALREADY) {
+			printk("le_audio_playback_stream_start submit failed: %d\n", pret);
+		}
+	}
+}
+
+static void stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
+{
+	ARG_UNUSED(reason);
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+	}
+}
+
+static void stream_disabled(struct bt_bap_stream *stream)
+{
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+	}
+}
+
+static void stream_released(struct bt_bap_stream *stream)
+{
+	if (stream == sink_stream) {
+		le_audio_playback_stream_stop();
+	}
+}
+
 static struct bt_bap_stream_ops stream_ops = {
-	.recv = stream_recv,
-	.enabled = stream_enabled
+	.enabled    = stream_enabled,
+	.started    = stream_started,
+	.stopped    = stream_stopped,
+	.disabled   = stream_disabled,
+	.released   = stream_released,
+	.recv       = stream_recv,
 };
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -378,6 +491,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	}
 
 	bt_conn_drop(&default_conn);
+
+	if (sink_stream != NULL) {
+		le_audio_playback_stream_stop();
+		sink_stream = NULL;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SRC)) {
 		/* reset data */
@@ -432,7 +550,11 @@ int bap_unicast_sr_init(void)
 			return err;
 		}
 
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_STEREO)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
+						   BT_AUDIO_LOCATION_FRONT_LEFT |
+						   BT_AUDIO_LOCATION_FRONT_RIGHT);
+		} else if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
 			err = bt_pacs_set_location(BT_AUDIO_DIR_SINK,
 						       BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
@@ -467,7 +589,11 @@ int bap_unicast_sr_init(void)
 			return err;
 		}
 
-		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
+		if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_STEREO)) {
+			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
+						   BT_AUDIO_LOCATION_FRONT_LEFT |
+						   BT_AUDIO_LOCATION_FRONT_RIGHT);
+		} else if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_LEFT)) {
 			err = bt_pacs_set_location(BT_AUDIO_DIR_SOURCE,
 						       BT_AUDIO_LOCATION_FRONT_LEFT);
 		} else {
