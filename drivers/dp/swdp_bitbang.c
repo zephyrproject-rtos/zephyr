@@ -468,10 +468,20 @@ static int sw_set_pins(const struct device *dev,
 
 	if (config->reset.port) {
 		if (pins & BIT(SWDP_nRESET_PIN)) {
+			/*
+			 * CMSIS-DAP DAP_SWJ_Pins uses the raw electrical level
+			 * for the nRESET pin: bit=0 means drive low (asserted),
+			 * bit=1 means drive high (deasserted). Zephyr GPIO
+			 * polarity (GPIO_ACTIVE_LOW) requires us to translate
+			 * the raw level into the logical level — bit=0 maps to
+			 * logical-active (asserted), bit=1 to logical-inactive
+			 * (deasserted). Without this inversion, GPIO_ACTIVE_LOW
+			 * overlays double-invert the runtime assert/deassert.
+			 */
 			if (value & BIT(SWDP_nRESET_PIN)) {
-				gpio_pin_set_dt(&config->reset, 1);
-			} else {
 				gpio_pin_set_dt(&config->reset, 0);
+			} else {
+				gpio_pin_set_dt(&config->reset, 1);
 			}
 		}
 	}
@@ -485,8 +495,15 @@ static int sw_get_pins(const struct device *dev, uint8_t *const state)
 	uint32_t val;
 
 	if (config->reset.port) {
+		/*
+		 * Symmetric to sw_set_pins(): the CMSIS-DAP nRESET bit
+		 * reports the raw electrical level. gpio_pin_get_dt()
+		 * returns the polarity-aware logical level — invert so
+		 * logical-active (asserted) reports bit=0 and
+		 * logical-inactive (deasserted) reports bit=1.
+		 */
 		val = gpio_pin_get_dt(&config->reset);
-		*state = val ? BIT(SWDP_nRESET_PIN) : 0;
+		*state = val ? 0 : BIT(SWDP_nRESET_PIN);
 	}
 
 	val = gpio_pin_get_dt(&config->dio);
