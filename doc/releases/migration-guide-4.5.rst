@@ -594,6 +594,36 @@ NXP
     /* After */
     #include <nxp/imxrt/rt118x/nxp_rt1189_cm33.dtsi>
 
+* The NXP Kinetis DTSI files were reorganized from the flat directory
+  ``dts/arm/nxp/kinetis/`` into per-series subdirectories. Out-of-tree
+  boards that include these files directly must update their includes.
+
+  The new subdirectory layout is:
+
+  ========================  =============================================
+  Kinetis series            New location
+  ========================  =============================================
+  K2X                       ``dts/arm/nxp/kinetis/k2x/``
+  K32Lx                     ``dts/arm/nxp/kinetis/k32lx/``
+  K6X                       ``dts/arm/nxp/kinetis/k6x/``
+  K8X                       ``dts/arm/nxp/kinetis/k8x/``
+  KE1xF                     ``dts/arm/nxp/kinetis/ke1xf/``
+  KE1xZ                     ``dts/arm/nxp/kinetis/ke1xz/``
+  KL2X                      ``dts/arm/nxp/kinetis/kl2x/``
+  KV5X                      ``dts/arm/nxp/kinetis/kv5x/``
+  KWX                       ``dts/arm/nxp/kinetis/kwx/``
+  ========================  =============================================
+
+  Example:
+
+  .. code-block:: dts
+
+    /* Before */
+    #include <nxp/kinetis/nxp_mk64f12.dtsi>
+
+    /* After */
+    #include <nxp/kinetis/k6x/nxp_mk64f12.dtsi>
+
 PWM
 ===
 

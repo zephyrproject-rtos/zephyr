@@ -4328,8 +4328,9 @@ NXP Platforms (MCU):
         - mmahadevan108
       files:
         - boards/nxp/frdm_k*/
+        - boards/nxp/twr_kv*/
         - soc/nxp/kinetis/
-        - dts/arm/nxp/kinetis/nxp_k*
+        - dts/arm/nxp/kinetis/
     - name: NXP LPC
       collaborators:
         - mmahadevan108
@@ -4403,6 +4404,7 @@ NXP Platforms (MCU):
         - henrikbrixandersen
       files:
         - boards/nxp/twr_ke18f/
+        - dts/arm/nxp/kinetis/ke1xf/
         - soc/nxp/kinetis/ke1xf/
       files-regex:
         - .*ke1*f.*
@@ -4411,7 +4413,7 @@ NXP Platforms (MCU):
         - iia
       files:
         - boards/nxp/frdm_k32l2b3/
-        - dts/arm/nxp/kinetis/nxp_k32l2b3.dtsi
+        - dts/arm/nxp/kinetis/k32lx/
         - soc/nxp/kinetis/k32lx/
   labels:
     - "platform: NXP MCU"
