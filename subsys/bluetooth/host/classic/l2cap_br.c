@@ -26,8 +26,6 @@
 #include "host/conn_internal.h"
 #include "host/keys.h"
 #include "l2cap_br_internal.h"
-#include "avdtp_internal.h"
-#include "a2dp_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
@@ -6390,19 +6388,11 @@ void bt_l2cap_br_init(void)
 		bt_rfcomm_init();
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AVDTP)) {
-		bt_avdtp_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_AVCTP)) {
 		bt_avctp_init();
 	}
 
 	bt_sdp_init();
-
-	if (IS_ENABLED(CONFIG_BT_A2DP)) {
-		bt_a2dp_init();
-	}
 
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();

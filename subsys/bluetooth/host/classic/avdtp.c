@@ -2239,6 +2239,13 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 /* Application will register its callback */
 int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 {
+	int err;
+	static struct bt_l2cap_server avdtp_l2cap = {
+		.psm = BT_L2CAP_PSM_AVDTP,
+		.sec_level = BT_SECURITY_L2,
+		.accept = bt_avdtp_l2cap_accept,
+	};
+
 	LOG_DBG("");
 
 	if (event_cb == cb) {
@@ -2250,6 +2257,14 @@ int bt_avdtp_register(struct bt_avdtp_event_cb *cb)
 	}
 
 	event_cb = cb;
+
+	/* Register AVDTP PSM with L2CAP */
+	err = bt_l2cap_br_server_register(&avdtp_l2cap);
+	if ((err < 0) && (err != -EEXIST)) {
+		event_cb = NULL;
+		LOG_ERR("AVDTP L2CAP Registration failed %d", err);
+		return err;
+	}
 
 	return 0;
 }
@@ -2289,34 +2304,6 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	k_sem_give(&avdtp_sem_lock);
 
 	return 0;
-}
-
-/* init function */
-void bt_avdtp_init(void)
-{
-	int err;
-
-	static bool initialized;
-	static struct bt_l2cap_server avdtp_l2cap = {
-		.psm = BT_L2CAP_PSM_AVDTP,
-		.sec_level = BT_SECURITY_L2,
-		.accept = bt_avdtp_l2cap_accept,
-	};
-
-	LOG_DBG("");
-
-	if (initialized) {
-		return;
-	}
-
-	/* Register AVDTP PSM with L2CAP */
-	err = bt_l2cap_br_server_register(&avdtp_l2cap);
-	if ((err < 0) && (err != -EEXIST)) {
-		LOG_ERR("AVDTP L2CAP Registration failed %d", err);
-		return;
-	}
-
-	initialized = true;
 }
 
 /* AVDTP Discover Request */
