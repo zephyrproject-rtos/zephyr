@@ -4,3 +4,4 @@
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
 zephyr_library_sources_ifdef(CONFIG_CAN_TRANSCEIVER_GPIO can_transceiver_gpio.c)
+zephyr_library_sources_ifdef(CONFIG_CAN_TRANSCEIVER_TLE927X can_transceiver_tle927x.c)
