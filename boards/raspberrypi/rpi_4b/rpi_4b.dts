@@ -9,6 +9,8 @@
 
 #include <broadcom/bcm2711.dtsi>
 #include <broadcom/bcm2711-pinctrl.dtsi>
+
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
 #include <zephyr/dt-bindings/power/rpi_bcm283x_power.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -77,6 +79,7 @@
 
 		fb0: framebuffer {
 			compatible = "raspberrypi,bcm2711-framebuffer";
+			pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
 			width = <640>;
 			height = <480>;
 		};
