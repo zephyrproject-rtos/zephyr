@@ -1,22 +1,22 @@
-# Copyright (c) 2024, Jan Fäh
+# Copyright (c) 2026, Sensirion AG
 # SPDX-License-Identifier: Apache-2.0
-
-description: Sensirion STS4x temperature sensor
 
 compatible: "sensirion,sts4x"
 
 include: [sensor-device.yaml, i2c-device.yaml]
 
+description: |
+  The STS4x is a 4th generation, high-accuracy, ultra-low-power, fully digital
+  temperature sensor platform with a 16-bit I2C interface.
+  Learn more: https://sensirion.com/products/product-categories/
+  Supported I2C addresses: 0x44(default), 0x45, 0x46
+
 properties:
   repeatability:
     type: int
-    required: true
+    default: 0
     description: |
-      Repeatability of the T Measurement
-      0 = low -> 1.6 ms
-      1 = med -> 4.5 ms
-      2 = high -> 8.3 ms
-    enum:
-      - 0
-      - 1
-      - 2
+      Set the repeatability. Default is 0.
+      - 0 -> low repeatability
+      - 1 -> medium repeatability
+      - 2 -> high repeatability

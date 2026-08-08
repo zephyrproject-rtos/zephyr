@@ -1,13 +1,13 @@
-# Drivers configuration options for Sensirion STS4x
+# STS4X sensor configuration options.
 
-# Copyright (c) 2024 Jan Fäh
+# Copyright (c) 2026, Sensirion AG
 # SPDX-License-Identifier: Apache-2.0
 
 config STS4X
-	bool "STS4x Temperature Sensor"
+	bool "STS4X Sensor"
 	default y
 	depends on DT_HAS_SENSIRION_STS4X_ENABLED
 	select I2C
 	select CRC
 	help
-	  Enable driver for the Sensirion STS4x temperature sensors.
+	  Enable driver for STS4X Sensor
