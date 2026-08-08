@@ -208,6 +208,20 @@ config NET_LOOPBACK_MTU
 	help
 	  This option sets the MTU for loopback interface.
 
+config NET_LOOPBACK_SKIP_CHECKSUM
+	bool "Skip IP/UDP/TCP checksums for loopback traffic"
+	default y if !NET_TEST
+	help
+	  Loopback traffic never leaves the device, so computing the
+	  IPv4/ICMP/UDP/TCP checksums on transmit and verifying them
+	  again on receive only burns CPU cycles: the data cannot get
+	  corrupted in transit. Enabling this option skips the checksum
+	  calculation and verification for packets that are sent to and
+	  received from a loopback interface, which removes two full
+	  passes over the payload for every packet. Disable this if the
+	  checksums are needed, for example in protocol tests that
+	  inject deliberately corrupted packets.
+
 module = NET_LOOPBACK
 module-dep = LOG
 module-str = Log level for network loopback driver
