@@ -12,7 +12,7 @@ Hardware
 
 * Processors
 
-  * TI Sitara AM6252 SoC
+  * TI Sitara AM6254 SoC
 
     * 4x ARM Cortex-A53
     * ARM Cortex-R5
@@ -165,7 +165,7 @@ The testing requires the binary to be copied to the SD card to allow the A53 cor
 To test the M4F core, we build the :zephyr:code-sample:`hello_world` sample with the following command.
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6254/m4
+   :board: beagleplay/am6254/m4
    :zephyr-app: samples/hello_world
    :goals: build
 
@@ -211,7 +211,7 @@ superuser privilege, OpenOCD needs to be launched separately for now:
 Start debugging
 
 .. zephyr-app-commands::
-   :board: pocketbeagle_2/am6254/m4
+   :board: beagleplay/am6254/m4
    :goals: debug
 
 References
