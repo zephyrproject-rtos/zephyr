@@ -3495,6 +3495,23 @@ struct net_if *net_if_get_wifi_sta(void);
 struct net_if *net_if_get_wifi_sap(void);
 
 /**
+ * @brief Get Wi-Fi P2P (Wi-Fi Direct) network interface.
+ *
+ * Returns the iface registered as WIFI_TYPE_P2P, or falls back to
+ * the STA iface for drivers that run P2P on the STA interface.
+ *
+ * @return Pointer to network interface, NULL if not found.
+ */
+#if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P) || defined(__DOXYGEN__)
+struct net_if *net_if_get_wifi_p2p(void);
+#else
+static inline struct net_if *net_if_get_wifi_p2p(void)
+{
+	return NULL;
+}
+#endif
+
+/**
  * @brief Get network interface name.
  *
  * @details If interface name support is not enabled, empty string is returned.
