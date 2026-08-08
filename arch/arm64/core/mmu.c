@@ -1211,24 +1211,27 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	return add_map(ptables, "generic", phys, (uintptr_t)virt, size, entry_flags);
 }
 
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
 	if (ret) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
-		k_panic();
 	} else {
 		sync_domains((uintptr_t)virt, size, "mem_map");
 		invalidate_tlb_all();
 	}
+
+	return ret;
 }
 
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
 	sync_domains((uintptr_t)addr, size, "mem_unmap");
 	invalidate_tlb_all();
+
+	return 0;
 }
 
 int arch_page_phys_get(void *virt, uintptr_t *phys)
