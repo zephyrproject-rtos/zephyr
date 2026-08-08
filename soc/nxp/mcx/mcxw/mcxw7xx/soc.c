@@ -98,6 +98,13 @@ void soc_early_init_hook(void)
 	/* disable interrupts */
 	oldLevel = irq_lock();
 
+#if defined(CONFIG_SOC_MCXW727C)
+	/* Open TRDC access to the peripherals this SoC uses before any of the
+	 * register accesses below. MCXW72-only (per-NPI MBC layout differs).
+	 */
+	nxp_mcxw72_trdc_init();
+#endif
+
 #ifdef CONFIG_SOC_MCXW70AC
 	/* This is temporarily placed in the SoC layer.
 	 * Once TSTMR support is available, this logic should be moved to the

@@ -4,6 +4,7 @@
 
 zephyr_sources(soc.c)
 zephyr_sources(soc_dcdc.c)
+zephyr_sources_ifdef(CONFIG_SOC_MCXW727C soc_trdc.c)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW70AC mcxw70_platform_init.S)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW716C mcxw71_platform_init.S)
 zephyr_sources_ifdef(CONFIG_SOC_MCXW727C mcxw72_platform_init.S)
