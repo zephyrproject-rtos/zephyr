@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Måns Ansgariusson <mansgariusson@gmail.com>
+# Assertion module level configuration template.
+#
+# Sourced by a Kconfig file to generate the CONFIG_ASSERT_MODULE_<module>_LEVEL
+# symbol consumed by ZASSERT_MODULE(<module>) (see <zephyr/sys/zassert.h>).
+# The module name must be an UPPERCASE identifier: the C preprocessor pastes it
+# verbatim into CONFIG_ASSERT_MODULE_<module>_LEVEL, so it has to match this symbol
+# exactly.
+# Use it as:
+#	module = MYMODULE
+#	module-str = my module
+#	source "lib/os/zassert/Kconfig.template.assert"
+#
+# This produces a user-facing choice (Off / On / Verbose) and the derived,
+# non-assignable CONFIG_ASSERT_MODULE_$(module)_LEVEL integer symbol. The
+# choice defaults to Off, unless the module opts into an On-by-default by giving
+# CONFIG_ASSERT_MODULE_$(module)_DEFAULTS_ON a "default y [if ...]" (e.g.
+# from a debug master switch). The level stays overridable from prj.conf.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Assertion level for $(module-str)"
+	default ASSERT_MODULE_$(module)_LEVEL_ON if ASSERT_MODULE_$(module)_DEFAULTS_ON
+	default ASSERT_MODULE_$(module)_LEVEL_OFF
+	depends on ASSERT
+
+config ASSERT_MODULE_$(module)_LEVEL_OFF
+	bool "Off"
+	help
+	  ZASSERT_OFF: assertions for this module are compiled out.
+
+config ASSERT_MODULE_$(module)_LEVEL_ON
+	bool "On (no message)"
+	help
+	  ZASSERT_ON: assertions are checked, but the message and its arguments
+	  are not compiled in.
+
+config ASSERT_MODULE_$(module)_LEVEL_VERBOSE
+	bool "Verbose (with message)"
+	help
+	  ZASSERT_VERBOSE: assertions are checked and the message and its
+	  arguments are compiled in.
+
+endchoice
+
+config ASSERT_MODULE_$(module)_DEFAULTS_ON
+	bool
+
+config ASSERT_MODULE_$(module)_LEVEL
+	int
+	default 0 if !ASSERT
+	default 0 if ASSERT_MODULE_$(module)_LEVEL_OFF
+	default 1 if ASSERT_MODULE_$(module)_LEVEL_ON
+	default 2 if ASSERT_MODULE_$(module)_LEVEL_VERBOSE

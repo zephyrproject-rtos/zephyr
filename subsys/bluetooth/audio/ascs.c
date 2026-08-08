@@ -565,7 +565,7 @@ static void execute_post_state_transition(struct bt_ascs_ase *ase, enum bt_bap_e
 		ase_enter_state_releasing(ase);
 		break;
 	default:
-		__ASSERT_PRINT("Invalid state %d", new_state);
+		LOG_ERR("Invalid state %d", new_state);
 	}
 }
 

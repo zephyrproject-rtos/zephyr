@@ -523,18 +523,15 @@ void sys_clock_disable(void)
 	err = onoff_release(mgr);
 
 	__ASSERT_NO_MSG(err >= 0);
-#if !IS_ENABLED(__ASSERT_ON)
-	(void)err;
-#endif
+	ARG_UNUSED(err);
+
 	nrfx_coredep_delay_us(1000);
 #elif defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                                  \
 	!(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
 	int err = nrf_clock_control_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
 
 	__ASSERT_NO_MSG(err >= 0);
-#if !IS_ENABLED(__ASSERT_ON)
-	(void)err;
-#endif
+	ARG_UNUSED(err);
 	nrfx_coredep_delay_us(1000);
 #endif
 }
