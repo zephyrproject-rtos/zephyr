@@ -27,6 +27,13 @@ static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
 		DIVC((sizeof(TL_PacketHeader_t) + TL_BLE_EVENT_FRAME_SIZE), 4))
 
+#if defined(CONFIG_BT_STM32_IPM_FW_INFO_CHECK)
+/* Note: this is the version of the STM32CubeWB package in hal_stm32. */
+#define FW_EXPECTED_VERSION_MAJOR	1
+#define FW_EXPECTED_VERSION_MINOR	24
+#define FW_EXPECTED_VERSION_SUB		0
+#endif
+
 /* Private variables ---------------------------------------------------------*/
 PLACE_IN_SECTION("MB_MEM1") ALIGN(4) static TL_CmdPacket_t BleCmdBuffer;
 PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t EvtPool[POOL_SIZE];
@@ -85,6 +92,80 @@ static K_KERNEL_STACK_DEFINE(ipm_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread ipm_rx_thread_data;
 
 static bool c2_started_flag;
+
+#if defined(CONFIG_BT_STM32_IPM_FW_INFO_CHECK)
+static const char *stm32wb_stack_type_str(uint8_t stack_type)
+{
+	switch (stack_type) {
+	case INFO_STACK_TYPE_BLE_HCI:
+		return "INFO_STACK_TYPE_BLE_HCI";
+	case INFO_STACK_TYPE_BLE_HCI_EXT_ADV:
+		return "INFO_STACK_TYPE_BLE_HCI_EXT_ADV";
+	default:
+		return "INFO_STACK_TYPE_UNKNOWN";
+	}
+}
+
+static bool stm32wb_stack_type_is_compatible(uint8_t stack_type)
+{
+#if defined(CONFIG_BT_EXT_ADV)
+	return stack_type == INFO_STACK_TYPE_BLE_HCI_EXT_ADV;
+#else
+	return (stack_type == INFO_STACK_TYPE_BLE_HCI) ||
+	       (stack_type == INFO_STACK_TYPE_BLE_HCI_EXT_ADV);
+#endif
+}
+
+static int stm32wb_check_wireless_fw(void)
+{
+	WirelessFwInfo_t fw_info;
+	SHCI_CmdStatus_t status;
+	bool version_match;
+	bool stack_match;
+
+	status = SHCI_GetWirelessFwInfo(&fw_info);
+	if (status != SHCI_Success) {
+		LOG_ERR("Cannot read CPU2 wireless FW info (status: 0x%02x)", status);
+		return -EIO;
+	}
+
+	version_match = (fw_info.VersionMajor == FW_EXPECTED_VERSION_MAJOR) &&
+			(fw_info.VersionMinor == FW_EXPECTED_VERSION_MINOR) &&
+			(fw_info.VersionSub == FW_EXPECTED_VERSION_SUB);
+	stack_match = stm32wb_stack_type_is_compatible(fw_info.StackType);
+
+	if (!version_match) {
+		LOG_ERR("CPU2 wireless FW mismatch: found v%u.%u.%u,expected v%d.%d.%d",
+			fw_info.VersionMajor, fw_info.VersionMinor, fw_info.VersionSub,
+			FW_EXPECTED_VERSION_MAJOR,
+			FW_EXPECTED_VERSION_MINOR,
+			FW_EXPECTED_VERSION_SUB);
+		return -EINVAL;
+	}
+
+	if (!stack_match) {
+		LOG_ERR("CPU2 wireless FW build mismatch: found stack=%s,expected %s",
+			stm32wb_stack_type_str(fw_info.StackType),
+#if defined(CONFIG_BT_EXT_ADV)
+			"INFO_STACK_TYPE_BLE_HCI_EXT_ADV");
+#else
+			"INFO_STACK_TYPE_BLE_HCI or INFO_STACK_TYPE_BLE_HCI_EXT_ADV");
+#endif
+		return -EINVAL;
+	}
+
+	LOG_INF("CPU2 wireless FW: v%u.%u.%u",
+		fw_info.VersionMajor, fw_info.VersionMinor,
+		fw_info.VersionSub);
+	LOG_INF("CPU2 wireless FW build: %s (0x%02x)",
+		stm32wb_stack_type_str(fw_info.StackType), fw_info.StackType);
+	LOG_INF("FUS version %d.%d.%d",
+		fw_info.FusVersionMajor, fw_info.FusVersionMinor,
+		fw_info.FusVersionSub);
+
+	return 0;
+}
+#endif
 
 static void stm32wb_set_stack_options(SHCI_C2_Ble_Init_Cmd_Packet_t *ble_init_cmd_packet)
 {
@@ -609,6 +690,17 @@ static int c2_reset(void)
 		return -ETIMEDOUT;
 	}
 	LOG_DBG("C2 unlocked");
+
+#if defined(CONFIG_BT_STM32_IPM_FW_INFO_CHECK)
+	err = stm32wb_check_wireless_fw();
+	if (err) {
+#if defined(CONFIG_BT_STM32_IPM_FW_CHECK_STRICT)
+		return err;
+#else
+		LOG_WRN("Continuing with mismatched CPU2 wireless FW");
+#endif
+	}
+#endif
 
 	stm32wb_start_ble(clk_cfg[1].bus);
 
