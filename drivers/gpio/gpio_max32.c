@@ -189,6 +189,9 @@ static int api_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 	}
 
 	cfg->irq_func();
+	if (mode == GPIO_INT_MODE_EDGE) {
+		MXC_GPIO_ClearFlags(cfg->regs, (MXC_GPIO_GetFlags(cfg->regs) & gpio_cfg.mask));
+	}
 	MXC_GPIO_EnableInt(cfg->regs, gpio_cfg.mask);
 
 	return 0;
