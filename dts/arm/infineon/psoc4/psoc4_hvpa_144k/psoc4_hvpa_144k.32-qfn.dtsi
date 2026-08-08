@@ -1,0 +1,55 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+#include "psoc4_hvpa_144k.dtsi"
+
+/ {
+	soc {
+		pinctrl: pinctrl@40020000 {
+			/* scb0_uart */
+			/omit-if-no-ref/ p0_0_scb0_uart_rx: p0_0_scb0_uart_rx {
+				pinmux = <DT_CAT1_PINMUX(0, 0, HSIOM_SEL_ACT_2)>;
+			};
+
+			/omit-if-no-ref/ p0_1_scb0_uart_tx: p0_1_scb0_uart_tx {
+				pinmux = <DT_CAT1_PINMUX(0, 1, HSIOM_SEL_ACT_2)>;
+			};
+
+			/* scb0_i2c_scl */
+			/omit-if-no-ref/ p0_0_scb0_i2c_scl: p0_0_scb0_i2c_scl {
+				pinmux = <DT_CAT1_PINMUX(0, 0, HSIOM_SEL_DS_2)>;
+			};
+
+			/* scb0_i2c_sda */
+			/omit-if-no-ref/ p0_1_scb0_i2c_sda: p0_1_scb0_i2c_sda {
+				pinmux = <DT_CAT1_PINMUX(0, 1, HSIOM_SEL_DS_2)>;
+			};
+
+			/* scb0_spi_m_clk */
+			/omit-if-no-ref/ p0_0_scb0_spi_m_clk: p0_0_scb0_spi_m_clk {
+				pinmux = <DT_CAT1_PINMUX(0, 0, HSIOM_SEL_DS_0)>;
+			};
+
+			/* scb0_spi_m_mosi */
+			/omit-if-no-ref/ p0_1_scb0_spi_m_mosi: p0_1_scb0_spi_m_mosi {
+				pinmux = <DT_CAT1_PINMUX(0, 1, HSIOM_SEL_DS_0)>;
+			};
+
+			/* scb0_spi_m_miso */
+			/omit-if-no-ref/ p0_2_scb0_spi_m_miso: p0_2_scb0_spi_m_miso {
+				pinmux = <DT_CAT1_PINMUX(0, 2, HSIOM_SEL_DS_0)>;
+			};
+
+			/* scb0_spi_m_select0 */
+			/omit-if-no-ref/ p0_3_scb0_spi_m_select0: p0_3_scb0_spi_m_select0 {
+				pinmux = <DT_CAT1_PINMUX(0, 3, HSIOM_SEL_DS_0)>;
+			};
+		};
+	};
+};

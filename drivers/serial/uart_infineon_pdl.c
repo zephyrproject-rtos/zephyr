@@ -201,7 +201,13 @@ static inline uint32_t ifx_uart_divider(uint32_t freq, uint32_t baud, uint32_t o
 
 static inline uint32_t ifx_uart_mem_width(uint32_t data_width)
 {
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#if defined(CY_IP_M0S8SCB)
+	/* The M0S8SCB (SCB v2) IP block has no MEM_WIDTH field; it always
+	 * operates in byte-width mode.
+	 */
+	ARG_UNUSED(data_width);
+	return 0U;
+#elif defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	return (data_width <= CY_SCB_BYTE_WIDTH) ? CY_SCB_CTRL_MEM_WIDTH_BYTE
 						 : CY_SCB_CTRL_MEM_WIDTH_HALFWORD;
 #else

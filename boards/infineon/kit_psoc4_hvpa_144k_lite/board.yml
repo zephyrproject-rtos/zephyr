@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: kit_psoc4_hvpa_144k_lite
+  full_name: KIT_PSoC4_HVPA_144K_LITE Development Board
+  vendor: infineon
+  socs:
+  - name: cy8c4147lce_hv423
