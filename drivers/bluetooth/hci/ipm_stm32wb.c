@@ -22,6 +22,14 @@
 #include "shci.h"
 #include "shci_tl.h"
 
+#define STM32_IPCC_RX_IRQ	DT_INST_IRQ_BY_NAME(0, rx, irq)
+#define STM32_IPCC_RX_IRQ_PRIO	DT_INST_IRQ_BY_NAME(0, rx, priority)
+#define STM32_IPCC_TX_IRQ	DT_INST_IRQ_BY_NAME(0, tx, irq)
+#define STM32_IPCC_TX_IRQ_PRIO	DT_INST_IRQ_BY_NAME(0, tx, priority)
+
+BUILD_ASSERT(STM32_IPCC_RX_IRQ == IPCC_C1_RX_IRQn, "Unexpected IRQ number for IPCC Rx");
+BUILD_ASSERT(STM32_IPCC_TX_IRQ == IPCC_C1_TX_IRQn, "Unexpected IRQ number for IPCC Tx");
+
 static const struct stm32_pclken clk_cfg[] = STM32_DT_CLOCKS(DT_DRV_INST(0));
 
 #define POOL_SIZE (CFG_TLBLE_EVT_QUEUE_LENGTH * 4 * \
@@ -396,8 +404,8 @@ void ipcc_reset(void)
 		LL_IPCC_CHANNEL_4 | LL_IPCC_CHANNEL_5 | LL_IPCC_CHANNEL_6);
 
 	/* Set IPCC default IRQ handlers */
-	IRQ_CONNECT(IPCC_C1_RX_IRQn, 0, HW_IPCC_Rx_Handler, NULL, 0);
-	IRQ_CONNECT(IPCC_C1_TX_IRQn, 0, HW_IPCC_Tx_Handler, NULL, 0);
+	IRQ_CONNECT(STM32_IPCC_RX_IRQ, STM32_IPCC_RX_IRQ_PRIO, HW_IPCC_Rx_Handler, NULL, 0);
+	IRQ_CONNECT(STM32_IPCC_TX_IRQ, STM32_IPCC_TX_IRQ_PRIO, HW_IPCC_Tx_Handler, NULL, 0);
 }
 
 void transport_init(void)
