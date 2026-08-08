@@ -336,6 +336,8 @@ static void tx_notify_process(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_CONN_TX */
 
+
+
 void bt_conn_tx_notify(struct bt_conn *conn, bool wait_for_completion)
 {
 #if defined(CONFIG_BT_CONN_TX)
@@ -1068,9 +1070,27 @@ void bt_conn_tx_processor(void)
 	int err = send_buf(conn, buf, buf_len, cb, ud);
 
 	if (err) {
+		int submit_err;
+
 		LOG_ERR("Fatal error (%d). Disconnecting %p", err, conn);
-		bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-		goto exit;
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTING);
+		atomic_set_bit(conn->flags, BT_CONN_TX_DISCONNECT_PENDING);
+		bt_conn_ref(conn);
+		submit_err = k_work_submit(&conn->tx_complete_work);
+		__ASSERT(submit_err >= 0, "Failed to submit disconnect work (err %d)",
+			 submit_err);
+		if (submit_err < 0) {
+			LOG_ERR("Failed to submit disconnect work for %p (err %d)", conn,
+				submit_err);
+			atomic_clear_bit(conn->flags, BT_CONN_TX_DISCONNECT_PENDING);
+			bt_conn_set_state(conn, BT_CONN_CONNECTED);
+			bt_conn_unref(conn);
+		} else if (submit_err == 0) {
+			bt_conn_unref(conn);
+		} else {
+			/* Work successfully submitted, handler will drop the reference */
+		}
+		goto raise_and_exit;
 	}
 
 raise_and_exit:
@@ -1637,7 +1657,21 @@ static void tx_complete_work(struct k_work *work)
 {
 	struct bt_conn *conn = CONTAINER_OF(work, struct bt_conn, tx_complete_work);
 
-	tx_notify_process(conn);
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_TX_DISCONNECT_PENDING)) {
+		/* Handle deferred disconnect from TX processor */
+		int err;
+
+		err = bt_hci_disconnect(conn->handle, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+		if (err) {
+			LOG_ERR("Failed to disconnect %p (err %d)", conn, err);
+			bt_conn_set_state(conn, BT_CONN_CONNECTED);
+		}
+
+		bt_conn_drop(&conn);
+	} else {
+		/* Normal TX completion processing */
+		tx_notify_process(conn);
+	}
 }
 #endif /* CONFIG_BT_CONN_TX */
 
