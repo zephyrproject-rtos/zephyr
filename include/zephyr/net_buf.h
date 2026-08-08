@@ -950,6 +950,39 @@ static inline uint16_t net_buf_simple_max_len(const struct net_buf_simple *buf)
 }
 
 /**
+ * @brief Check that a buffer's length and pointers are self-consistent.
+ *
+ * Validates the invariant that must always hold for a well-formed buffer:
+ * @c data points within the backing storage and @c len does not extend past
+ * the end of that storage. A buffer whose #net_buf_simple::len has been
+ * corrupted (for example wrapped to a large value) or whose #net_buf_simple::data
+ * has been moved outside @c __buf..__buf+size fails this check.
+ *
+ * This does not (and cannot) detect a @c len that was changed to a different
+ * but still in-bounds value; it detects only out-of-bounds corruption, which is
+ * what turns into an out-of-bounds read or write when the buffer is used.
+ *
+ * @param buf Buffer to validate.
+ *
+ * @return true if the buffer is self-consistent, false otherwise.
+ */
+static inline bool net_buf_simple_is_valid(const struct net_buf_simple *buf)
+{
+	size_t headroom;
+
+	if (buf == NULL || buf->__buf == NULL || buf->data < buf->__buf) {
+		return false;
+	}
+
+	headroom = (size_t)(buf->data - buf->__buf);
+	if (headroom > buf->size) {
+		return false;
+	}
+
+	return (size_t)buf->len <= (size_t)(buf->size - headroom);
+}
+
+/**
  * @brief Parsing state of a buffer.
  *
  * This is used for temporarily storing the parsing state of a buffer
@@ -2665,6 +2698,23 @@ static inline size_t net_buf_headroom(const struct net_buf *buf)
 static inline uint16_t net_buf_max_len(const struct net_buf *buf)
 {
 	return net_buf_simple_max_len(&buf->b);
+}
+
+/**
+ * @brief Check that a buffer's length and pointers are self-consistent.
+ *
+ * Equivalent to net_buf_simple_is_valid() applied to the buffer's underlying
+ * net_buf_simple. Useful as a guard at "use" boundaries (e.g. before
+ * transmitting or copying out @c len bytes) to drop a buffer whose metadata
+ * has been corrupted instead of accessing memory out of bounds.
+ *
+ * @param buf Buffer to validate.
+ *
+ * @return true if the buffer is self-consistent, false otherwise.
+ */
+static inline bool net_buf_is_valid(const struct net_buf *buf)
+{
+	return buf != NULL && net_buf_simple_is_valid(&buf->b);
 }
 
 /**
