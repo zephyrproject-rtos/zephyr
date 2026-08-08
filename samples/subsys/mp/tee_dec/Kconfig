@@ -1,0 +1,36 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MJPEG tee pipeline (decode + filesink)"
+
+menu "Pipeline configuration"
+
+config FILE_INPUT_PATH
+	string "Input MJPEG file path"
+	default "/SD:/test.mjpeg"
+	help
+	  Absolute path to the MJPEG input file.
+
+config FILE_OUTPUT_PATH
+	string "Output raw file path (filesink branch)"
+	default "/SD:/tee_out.mjpeg"
+	help
+	  Absolute path where the tee filesink branch writes raw JPEG frames.
+
+config JPEG_IMAGE_WIDTH
+	int "Width of the JPEG image"
+	default 320
+
+config JPEG_IMAGE_HEIGHT
+	int "Height of the JPEG image"
+	default 240
+
+config MJPEG_NUM_FRAMES
+	int "Number of frames in the generated test MJPEG file"
+	default 150
+	help
+	  Number of video frames to generate in the test MJPEG file.
+
+endmenu
+
+source "Kconfig.zephyr"
