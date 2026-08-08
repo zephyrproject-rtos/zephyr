@@ -1,6 +1,9 @@
 include: [uart-controller.yaml, pinctrl-device.yaml, nordic-clockpin.yaml]
 
 properties:
+  framing-error-reporting:
+    default: "STICKY_SINGLE"
+
   reg:
     required: true
 
