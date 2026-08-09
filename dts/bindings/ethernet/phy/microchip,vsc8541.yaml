@@ -47,6 +47,18 @@ properties:
       Used to configure the TX clock delay for RGMII interface. The value can be
       0 to 7. Refer to the datasheet for more details on the delay settings.
 
+  microchip,pad-edge-rate:
+    type: int
+    default: 7
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Edge-rate setting for the PHY's MAC-interface output pins, including
+      RXD, RX_CLK/CRS_DV/RX_CTL, and MDIO read data. Zero selects the slowest
+      edge rate and 7 selects the fastest edge rate and power-on default.
+      Slower settings can reduce MAC-interface power consumption, EMI, and
+      signal overshoot or ringing. Refer to the datasheet for the recommended
+      setting at a given VDDMAC voltage.
+
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]
