@@ -265,6 +265,11 @@ Display
   controller. The ``CONFIG_ST7567_DEFAULT_CONTRAST`` Kconfig option has been updated to reflect the
   new range. (:github:`112528`)
 
+* :dtcompatible:`raspberrypi,bcm2711-framebuffer` now requires a ``pixel-format``
+  property and gains an optional ``red-blue-swap`` boolean to indicate the panel expects
+  BGR channel order. Boards relying on firmware-negotiated pixel order to correct swapped
+  channels must also set ``red-blue-swap``. (:github:`115633`)
+
 DMA
 ===
 
