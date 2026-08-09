@@ -242,6 +242,15 @@
 			};
 		};
 
+		rtc_timer: rtc_timer@50112000 {
+			compatible = "espressif,esp32-rtc-timer";
+			reg = <0x50112000 DT_SIZE_K(1)>;
+			clocks = <&clock ESP32_MODULE_MAX>;
+			interrupts = <LP_TIMER_REG0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
 		trng0: trng@50126000 {
 			compatible = "espressif,esp32-trng";
 			reg = <0x50126000 0x4>;
