@@ -30,11 +30,11 @@ LOG_MODULE_REGISTER(RTC_DS3231, CONFIG_RTC_LOG_LEVEL);
  * registration built on top of it, be optimized out entirely when no
  * instance can ever use them.
  */
-#define DS3231_ISW_GPIOS_REQUIRED (DT_INST_FOREACH_STATUS_OKAY(DS3231_ISW_GPIOS_PRESENT) 0)
+#define DS3231_DT_HAS_ISW_GPIOS (DT_INST_FOREACH_STATUS_OKAY(DS3231_ISW_GPIOS_PRESENT) 0)
 
-#define DS3231_ALARM_CB_REQUIRED (IS_ENABLED(CONFIG_RTC_ALARM) && DS3231_ISW_GPIOS_REQUIRED)
-#define DS3231_UPDATE_CB_REQUIRED (IS_ENABLED(CONFIG_RTC_UPDATE) && DS3231_ISW_GPIOS_REQUIRED)
-#define DS3231_ISW_REQUIRED (DS3231_ALARM_CB_REQUIRED || DS3231_UPDATE_CB_REQUIRED)
+#define DS3231_ALARM_CB_REQUIRED (IS_ENABLED(CONFIG_RTC_ALARM) && DS3231_DT_HAS_ISW_GPIOS)
+#define DS3231_UPDATE_CB_REQUIRED (IS_ENABLED(CONFIG_RTC_UPDATE) && DS3231_DT_HAS_ISW_GPIOS)
+#define DS3231_ISW_ISR_REQUIRED (DS3231_ALARM_CB_REQUIRED || DS3231_UPDATE_CB_REQUIRED)
 
 #ifdef CONFIG_RTC_ALARM
 #define ALARM_COUNT 2
@@ -63,7 +63,7 @@ struct rtc_ds3231_data {
 	struct rtc_ds3231_update update;
 #endif
 	struct k_sem lock;
-#if DS3231_ISW_REQUIRED
+#if DS3231_ISW_ISR_REQUIRED
 	struct gpio_callback isw_cb_data;
 	struct k_work work;
 	const struct device *dev;
@@ -705,7 +705,7 @@ static void rtc_ds3231_update_callback(const struct device *dev)
 #endif /* DS3231_UPDATE_CB_REQUIRED */
 #endif /* CONFIG_RTC_UPDATE */
 
-#if DS3231_ISW_REQUIRED
+#if DS3231_ISW_ISR_REQUIRED
 static void rtc_ds3231_isw_h(struct k_work *work)
 {
 	struct rtc_ds3231_data *data = CONTAINER_OF(work, struct rtc_ds3231_data, work);
@@ -760,7 +760,7 @@ static int rtc_ds3231_init_isw(const struct rtc_ds3231_conf *config, struct rtc_
 
 	return 0;
 }
-#endif /* DS3231_ISW_REQUIRED */
+#endif /* DS3231_ISW_ISR_REQUIRED */
 
 static DEVICE_API(rtc, driver_api) = {
 	.set_time = rtc_ds3231_set_time,
@@ -880,14 +880,14 @@ static int rtc_ds3231_init(const struct device *dev)
 		return err;
 	}
 
-#if DS3231_ISW_REQUIRED
+#if DS3231_ISW_ISR_REQUIRED
 	data->dev = dev;
 	err = rtc_ds3231_init_isw(config, data);
 	if (err != 0) {
 		LOG_ERR("Initing ISW interrupt failed!");
 		return err;
 	}
-#endif /* DS3231_ISW_REQUIRED */
+#endif /* DS3231_ISW_ISR_REQUIRED */
 
 	return 0;
 }
