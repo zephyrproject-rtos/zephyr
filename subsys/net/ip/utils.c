@@ -329,7 +329,7 @@ char *z_vrfy_net_addr_ntop(net_sa_family_t family, const void *src,
 		return 0;
 	}
 
-	out = z_impl_net_addr_ntop(family, addr, str, sizeof(str));
+	out = z_impl_net_addr_ntop(family, addr, str, MIN(size, sizeof(str)));
 	if (!out) {
 		return 0;
 	}
