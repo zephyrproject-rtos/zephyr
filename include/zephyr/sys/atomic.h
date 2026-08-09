@@ -269,6 +269,15 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 	}
 }
 
+/*
+ * The declarations below exist only so that Doxygen has a single place to
+ * document the low-level atomic API.  Every backend selected above already
+ * declares these functions, and does so with internal linkage when they are
+ * static inline, so repeating them here unqualified would violate MISRA
+ * C:2012 Rule 8.8.
+ */
+#ifdef __DOXYGEN__
+
 /**
  * @brief Atomic compare-and-set.
  *
@@ -501,6 +510,8 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
  * @return Previous value of @a target.
  */
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
+
+#endif /* __DOXYGEN__ */
 
 /**
  * @}
