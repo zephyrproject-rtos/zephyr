@@ -100,9 +100,10 @@ static inline int z_vrfy_i2s_buf_write(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ret = k_mem_slab_alloc(tx_cfg->mem_slab, &mem_block, K_FOREVER);
+	ret = k_mem_slab_alloc(tx_cfg->mem_slab, &mem_block,
+			       SYS_TIMEOUT_MS(tx_cfg->timeout));
 	if (ret < 0) {
-		return -ENOMEM;
+		return ret;
 	}
 
 	ret = k_usermode_from_copy(mem_block, buf, size);
