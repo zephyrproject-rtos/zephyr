@@ -321,6 +321,7 @@ ALIASES               += "posix_func{1}=\see \htmlonly<a href=\"https://pubs.ope
 ALIASES               += "posix_header{1}=\see \htmlonly<a href=\"https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/\1.html\">\1</a>\endhtmlonly in The Open Group Base Specifications Issue 7, 2018 edition."
 ALIASES               += "opengroup{3}=\see \htmlonly<a href=\"https://pubs.opengroup.org/onlinepubs/\1/\2\">\3</a>\endhtmlonly in The Open Group Base Specifications."
 ALIASES               += "compat_api{1}=\note \1 is a compatibility interface, not a POSIX API."
+ALIASES               += "posix_api{2}=\ingroup \1 ^^ \posix_func{\2}"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -1041,6 +1042,7 @@ WARN_LOGFILE           =
 
 INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/doc/_doxygen/groups.dox \
+                         @ZEPHYR_BASE@/doc/_doxygen/posix_groups.dox \
                          @ZEPHYR_BASE@/kernel/include/kernel_arch_interface.h \
                          @ZEPHYR_BASE@/include/zephyr/sys/atomic.h \
                          @ZEPHYR_BASE@/include/ \
