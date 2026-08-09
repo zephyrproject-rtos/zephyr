@@ -211,10 +211,14 @@ New APIs and options
 
 * ADC
 
-  * Optional :c:member:`adc_driver_api.ref_internal_get` callback so
-    :c:func:`adc_ref_internal` can return a driver-owned runtime millivolt
-    scale (static :c:member:`adc_driver_api.ref_internal` remains the
-    fallback when the callback is NULL)
+  * Optional :c:member:`adc_driver_api.ref_get` callback and
+    :c:func:`adc_ref_get` so applications and
+    :c:func:`adc_raw_to_millivolts_dt` can use a driver-owned runtime
+    millivolt scale for any :c:enum:`adc_reference`. Static
+    :c:member:`adc_driver_api.ref_internal` remains the fallback for
+    :c:enumerator:`ADC_REF_INTERNAL` when the callback is NULL.
+    :c:func:`adc_raw_to_millivolts_dt` falls back to channel DT
+    ``zephyr,vref-mv`` when :c:func:`adc_ref_get` fails.
 
 * Architectures
 
