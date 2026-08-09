@@ -38,10 +38,20 @@ endchoice
 config I3C_CONTROLLER
 	bool
 	default y if I3C_DUAL_ROLE || I3C_CONTROLLER_ROLE_ONLY
+	help
+	  Indicates that support for acting as an I3C controller is enabled.
+	  This internal option is derived automatically from the I3C mode
+	  selection (I3C_CONTROLLER_ROLE_ONLY or I3C_DUAL_ROLE) and is not
+	  meant to be set directly.
 
 config I3C_TARGET
 	bool
 	default y if I3C_DUAL_ROLE || I3C_TARGET_ROLE_ONLY
+	help
+	  Indicates that support for acting as an I3C target is enabled.
+	  This internal option is derived automatically from the I3C mode
+	  selection (I3C_TARGET_ROLE_ONLY or I3C_DUAL_ROLE) and is not meant
+	  to be set directly.
 
 config I3C_SHELL
 	bool "I3C Shell"
