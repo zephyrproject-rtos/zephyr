@@ -107,7 +107,7 @@ extern "C" {
 /**
  * @brief Close the connection to the system logger.
  *
- * @posix_func{closelog}
+ * @posix_api{XSI_SYSTEM_LOGGING,closelog}
  */
 void closelog(void);
 
@@ -118,7 +118,7 @@ void closelog(void);
  * @param logopt   Bitwise OR of logging options (@c LOG_PID, @c LOG_CONS, etc.).
  * @param facility Default facility code (@c LOG_USER, @c LOG_DAEMON, etc.).
  *
- * @posix_func{openlog}
+ * @posix_api{XSI_SYSTEM_LOGGING,openlog}
  */
 void openlog(const char *ident, int logopt, int facility);
 
@@ -129,7 +129,7 @@ void openlog(const char *ident, int logopt, int facility);
  *
  * @return The previous log priority mask.
  *
- * @posix_func{setlogmask}
+ * @posix_api{XSI_SYSTEM_LOGGING,setlogmask}
  */
 int setlogmask(int maskpri);
 
@@ -140,7 +140,7 @@ int setlogmask(int maskpri);
  * @param message  printf()-style format string.
  * @param ...      Format arguments.
  *
- * @posix_func{syslog}
+ * @posix_api{XSI_SYSTEM_LOGGING,syslog}
  */
 void syslog(int priority, const char *message, ...);
 

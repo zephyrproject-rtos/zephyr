@@ -51,7 +51,7 @@ struct tms {
  * @return Elapsed real time in clock ticks since an arbitrary epoch, or
  *         (clock_t)-1 with errno set on failure.
  *
- * @posix_func{times}
+ * @posix_api{POSIX_MULTI_PROCESS,times}
  */
 clock_t times(struct tms *buf);
 

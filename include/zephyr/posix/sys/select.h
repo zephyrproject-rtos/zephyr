@@ -44,7 +44,7 @@ struct timeval;
  * @return Number of ready file descriptors on success, 0 on timeout,
  *         or -1 with errno set on failure.
  *
- * @posix_func{pselect}
+ * @posix_api{POSIX_DEVICE_IO,pselect}
  */
 int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
 	    const struct timespec *timeout, const void *sigmask);
@@ -61,7 +61,7 @@ int pselect(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
  * @return Number of ready file descriptors on success, 0 on timeout,
  *         or -1 with errno set on failure.
  *
- * @posix_func{select}
+ * @posix_api{POSIX_DEVICE_IO,select}
  */
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
 
@@ -71,7 +71,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
  * @param fd    File descriptor to clear.
  * @param fdset File descriptor set to modify.
  *
- * @posix_func{FD_CLR}
+ * @posix_api{POSIX_DEVICE_IO,FD_CLR}
  */
 void FD_CLR(int fd, fd_set *fdset);
 
@@ -83,7 +83,7 @@ void FD_CLR(int fd, fd_set *fdset);
  *
  * @return Non-zero if @p fd is set, 0 otherwise.
  *
- * @posix_func{FD_ISSET}
+ * @posix_api{POSIX_DEVICE_IO,FD_ISSET}
  */
 int FD_ISSET(int fd, fd_set *fdset);
 
@@ -93,7 +93,7 @@ int FD_ISSET(int fd, fd_set *fdset);
  * @param fd    File descriptor to add.
  * @param fdset File descriptor set to modify.
  *
- * @posix_func{FD_SET}
+ * @posix_api{POSIX_DEVICE_IO,FD_SET}
  */
 void FD_SET(int fd, fd_set *fdset);
 
@@ -102,7 +102,7 @@ void FD_SET(int fd, fd_set *fdset);
  *
  * @param fdset File descriptor set to clear.
  *
- * @posix_func{FD_ZERO}
+ * @posix_api{POSIX_DEVICE_IO,FD_ZERO}
  */
 void FD_ZERO(fd_set *fdset);
 

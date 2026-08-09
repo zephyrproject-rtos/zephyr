@@ -56,7 +56,7 @@ struct utsname {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{uname}
+ * @posix_api{POSIX_SINGLE_PROCESS,uname}
  */
 int uname(struct utsname *name);
 

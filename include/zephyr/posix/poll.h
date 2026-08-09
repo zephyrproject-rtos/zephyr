@@ -80,7 +80,7 @@ typedef	unsigned int nfds_t;
  * @return Number of file descriptors with non-zero @c revents on success,
  *         0 on timeout, or -1 with errno set on failure.
  *
- * @posix_func{poll}
+ * @posix_api{POSIX_DEVICE_IO,poll}
  */
 int poll(struct pollfd *fds, int nfds, int timeout);
 

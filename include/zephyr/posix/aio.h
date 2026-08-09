@@ -57,7 +57,7 @@ struct aiocb {
  * @retval AIO_NOTCANCELED At least one operation could not be canceled.
  * @retval AIO_ALLDONE     All operations had already completed before the call.
  *
- * @posix_func{aio_cancel}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_cancel}
  */
 int aio_cancel(int fildes, struct aiocb *aiocbp);
 
@@ -69,7 +69,7 @@ int aio_cancel(int fildes, struct aiocb *aiocbp);
  * @return 0 on success, or a positive error number on failure.
  * @retval EINPROGRESS Operation is still running.
  *
- * @posix_func{aio_error}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_error}
  */
 int aio_error(const struct aiocb *aiocbp);
 
@@ -82,7 +82,7 @@ int aio_error(const struct aiocb *aiocbp);
  *
  * @return 0 if the request was successfully queued, or -1 with errno set on failure.
  *
- * @posix_func{aio_fsync}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_fsync}
  */
 int aio_fsync(int op, struct aiocb *aiocbp);
 
@@ -93,7 +93,7 @@ int aio_fsync(int op, struct aiocb *aiocbp);
  *
  * @return 0 if the request was successfully queued, or -1 with errno set on failure.
  *
- * @posix_func{aio_read}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_read}
  */
 int aio_read(struct aiocb *aiocbp);
 
@@ -107,7 +107,7 @@ int aio_read(struct aiocb *aiocbp);
  *
  * @return Number of bytes transferred on success, or -1 with errno set on failure.
  *
- * @posix_func{aio_return}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_return}
  */
 ssize_t aio_return(struct aiocb *aiocbp);
 
@@ -120,7 +120,7 @@ ssize_t aio_return(struct aiocb *aiocbp);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{aio_suspend}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_suspend}
  */
 int aio_suspend(const struct aiocb *const list[], int nent, const struct timespec *timeout);
 
@@ -131,7 +131,7 @@ int aio_suspend(const struct aiocb *const list[], int nent, const struct timespe
  *
  * @return 0 if the request was successfully queued, or -1 with errno set on failure.
  *
- * @posix_func{aio_write}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,aio_write}
  */
 int aio_write(struct aiocb *aiocbp);
 
@@ -145,7 +145,7 @@ int aio_write(struct aiocb *aiocbp);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{lio_listio}
+ * @posix_api{POSIX_ASYNCHRONOUS_IO,lio_listio}
  */
 int lio_listio(int mode, struct aiocb *const ZRESTRICT list[], int nent,
 	       struct sigevent *ZRESTRICT sig);

@@ -62,7 +62,7 @@ extern "C" {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mlock}
+ * @posix_api{POSIX_MEMLOCK_RANGE,mlock}
  */
 int mlock(const void *addr, size_t len);
 
@@ -73,7 +73,7 @@ int mlock(const void *addr, size_t len);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mlockall}
+ * @posix_api{POSIX_MEMLOCK,mlockall}
  */
 int mlockall(int flags);
 
@@ -90,7 +90,7 @@ int mlockall(int flags);
  * @return Base address of the mapping on success.
  * @retval MAP_FAILED An error occurred; errno is set.
  *
- * @posix_func{mmap}
+ * @posix_api{POSIX_MAPPED_FILES,mmap}
  */
 void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
 
@@ -103,7 +103,7 @@ void *mmap(void *addr, size_t len, int prot, int flags, int fildes, off_t off);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{msync}
+ * @posix_api{POSIX_MAPPED_FILES,msync}
  */
 int msync(void *addr, size_t length, int flags);
 
@@ -115,7 +115,7 @@ int msync(void *addr, size_t length, int flags);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{munlock}
+ * @posix_api{POSIX_MEMLOCK_RANGE,munlock}
  */
 int munlock(const void *addr, size_t len);
 
@@ -124,7 +124,7 @@ int munlock(const void *addr, size_t len);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{munlockall}
+ * @posix_api{POSIX_MEMLOCK,munlockall}
  */
 int munlockall(void);
 
@@ -136,7 +136,7 @@ int munlockall(void);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{munmap}
+ * @posix_api{POSIX_MAPPED_FILES,munmap}
  */
 int munmap(void *addr, size_t len);
 
@@ -149,7 +149,7 @@ int munmap(void *addr, size_t len);
  *
  * @return File descriptor for the shared memory object, or -1 with errno set on failure.
  *
- * @posix_func{shm_open}
+ * @posix_api{POSIX_SHARED_MEMORY_OBJECTS,shm_open}
  */
 int shm_open(const char *name, int oflag, mode_t mode);
 
@@ -160,7 +160,7 @@ int shm_open(const char *name, int oflag, mode_t mode);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{shm_unlink}
+ * @posix_api{POSIX_SHARED_MEMORY_OBJECTS,shm_unlink}
  */
 int shm_unlink(const char *name);
 

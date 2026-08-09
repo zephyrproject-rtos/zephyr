@@ -42,7 +42,7 @@ typedef uint32_t in_addr_t;
  *
  * @deprecated Use inet_pton() for new code.
  *
- * @posix_func{inet_addr}
+ * @posix_api{POSIX_NETWORKING,inet_addr}
  */
 in_addr_t inet_addr(const char *cp);
 
@@ -58,7 +58,7 @@ in_addr_t inet_addr(const char *cp);
  *
  * @deprecated Use inet_ntop() for new code.
  *
- * @posix_func{inet_ntoa}
+ * @posix_api{POSIX_NETWORKING,inet_ntoa}
  */
 char *inet_ntoa(struct in_addr in);
 
@@ -72,7 +72,7 @@ char *inet_ntoa(struct in_addr in);
  *
  * @return @p dst on success, or NULL with errno set on failure.
  *
- * @posix_func{inet_ntop}
+ * @posix_api{POSIX_NETWORKING,inet_ntop}
  */
 char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size);
 
@@ -85,7 +85,7 @@ char *inet_ntop(sa_family_t family, const void *src, char *dst, size_t size);
  *
  * @return 1 on success, 0 if @p src is not a valid address, -1 on error.
  *
- * @posix_func{inet_pton}
+ * @posix_api{POSIX_NETWORKING,inet_pton}
  */
 int inet_pton(sa_family_t family, const char *src, void *dst);
 

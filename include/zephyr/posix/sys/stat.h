@@ -493,7 +493,7 @@ int fchmod(int __fd, mode_t __mode);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{fstat}
+ * @posix_api{POSIX_FILE_SYSTEM,fstat}
  */
 int fstat(int __fd, struct stat *__sbuf);
 
@@ -505,7 +505,7 @@ int fstat(int __fd, struct stat *__sbuf);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mkdir}
+ * @posix_api{POSIX_FILE_SYSTEM,mkdir}
  */
 int mkdir(const char *_path, mode_t __mode);
 
@@ -529,7 +529,7 @@ int mkfifo(const char *__path, mode_t __mode);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{stat}
+ * @posix_api{POSIX_FILE_SYSTEM,stat}
  */
 int stat(const char *__restrict __path, struct stat *__restrict __sbuf);
 

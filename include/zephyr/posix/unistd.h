@@ -45,7 +45,7 @@ extern "C" {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{close}
+ * @posix_api{POSIX_DEVICE_IO,close}
  */
 int close(int file);
 
@@ -58,7 +58,7 @@ int close(int file);
  *
  * @return Number of bytes written on success, or -1 with errno set on failure.
  *
- * @posix_func{write}
+ * @posix_api{POSIX_DEVICE_IO,write}
  */
 ssize_t write(int file, const void *buffer, size_t count);
 
@@ -71,7 +71,7 @@ ssize_t write(int file, const void *buffer, size_t count);
  *
  * @return Number of bytes read on success, 0 at end-of-file, or -1 with errno set on failure.
  *
- * @posix_func{read}
+ * @posix_api{POSIX_DEVICE_IO,read}
  */
 ssize_t read(int file, void *buffer, size_t count);
 
@@ -85,7 +85,7 @@ ssize_t read(int file, void *buffer, size_t count);
  * @return Resulting offset, in bytes from the beginning of the file, or -1 with errno set on
  *         failure.
  *
- * @posix_func{lseek}
+ * @posix_api{POSIX_FD_MGMT,lseek}
  */
 off_t lseek(int file, off_t offset, int whence);
 
@@ -96,7 +96,7 @@ off_t lseek(int file, off_t offset, int whence);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{fsync}
+ * @posix_api{POSIX_FSYNC,fsync}
  */
 int fsync(int fd);
 
@@ -108,7 +108,7 @@ int fsync(int fd);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{ftruncate}
+ * @posix_api{POSIX_FD_MGMT,ftruncate}
  */
 int ftruncate(int fd, off_t length);
 
@@ -120,7 +120,7 @@ int ftruncate(int fd, off_t length);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{fdatasync}
+ * @posix_api{POSIX_SYNCHRONIZED_IO,fdatasync}
  */
 int fdatasync(int fd);
 #endif /* CONFIG_POSIX_SYNCHRONIZED_IO */
@@ -135,7 +135,7 @@ int fdatasync(int fd);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{rename}
+ * @posix_api{POSIX_FILE_SYSTEM,rename}
  */
 int rename(const char *old, const char *newp);
 
@@ -146,7 +146,7 @@ int rename(const char *old, const char *newp);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{unlink}
+ * @posix_api{POSIX_FILE_SYSTEM,unlink}
  */
 int unlink(const char *path);
 
@@ -163,7 +163,7 @@ int mkdir(const char *path, mode_t mode);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{rmdir}
+ * @posix_api{POSIX_FILE_SYSTEM,rmdir}
  */
 int rmdir(const char *path);
 
@@ -174,7 +174,7 @@ int rmdir(const char *path);
  *
  * @param status Exit status of the process.
  *
- * @posix_func{_exit}
+ * @posix_api{POSIX_MULTI_PROCESS,_exit}
  */
 FUNC_NORETURN void _exit(int status);
 
@@ -186,7 +186,7 @@ FUNC_NORETURN void _exit(int status);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{gethostname}
+ * @posix_api{POSIX_NETWORKING,gethostname}
  */
 int gethostname(char *buf, size_t len);
 
@@ -203,7 +203,7 @@ int gethostname(char *buf, size_t len);
  *
  * @return The next option character, '?' or ':' on error, or -1 when option parsing is complete.
  *
- * @posix_func{getopt}
+ * @posix_api{POSIX_C_LIB_EXT,getopt}
  */
 int getopt(int argc, char *const argv[], const char *optstring);
 
@@ -234,7 +234,7 @@ int getentropy(void *buffer, size_t length);
  *
  * @return Process ID of the calling process. This function is always successful.
  *
- * @posix_func{getpid}
+ * @posix_api{POSIX_MULTI_PROCESS,getpid}
  */
 pid_t getpid(void);
 
@@ -246,7 +246,7 @@ pid_t getpid(void);
  * @return 0 if the requested time has elapsed, or the number of unslept seconds if
  *         interrupted by a signal.
  *
- * @posix_func{sleep}
+ * @posix_api{POSIX_MULTI_PROCESS,sleep}
  */
 unsigned sleep(unsigned int seconds);
 
@@ -273,7 +273,7 @@ int usleep(useconds_t useconds);
  * @return Size of the buffer needed to hold the entire value (including the terminating
  *         null byte), or 0 if @p name is invalid or has no configuration-defined value.
  *
- * @posix_func{confstr}
+ * @posix_api{POSIX_SINGLE_PROCESS,confstr}
  */
 size_t confstr(int name, char *buf, size_t len);
 #endif
@@ -290,7 +290,7 @@ size_t confstr(int name, char *buf, size_t len);
  * @return Value of the system variable, or -1 if @p opt is invalid or the value is
  *         indeterminate.
  *
- * @posix_func{sysconf}
+ * @posix_api{POSIX_SINGLE_PROCESS,sysconf}
  */
 long sysconf(int opt);
 #endif /* CONFIG_POSIX_SYSCONF_IMPL_FULL */
@@ -301,7 +301,7 @@ long sysconf(int opt);
  *
  * @return 32-bit identifier for the current host.
  *
- * @posix_func{gethostid}
+ * @posix_api{XSI_SINGLE_PROCESS,gethostid}
  */
 long gethostid(void);
 #endif

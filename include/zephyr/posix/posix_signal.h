@@ -337,7 +337,7 @@ typedef void (*sighandler_t)(int sig);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{kill}
+ * @posix_api{POSIX_SIGNALS,kill}
  */
 int kill(pid_t pid, int sig);
 #if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
@@ -382,7 +382,7 @@ void psignal(int sig, const char *message);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_kill}
+ * @posix_api{POSIX_THREADS_BASE,pthread_kill}
  */
 int pthread_kill(pthread_t thread, int sig);
 
@@ -395,7 +395,7 @@ int pthread_kill(pthread_t thread, int sig);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_sigmask}
+ * @posix_api{POSIX_THREADS_BASE,pthread_sigmask}
  */
 int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 #endif
@@ -409,7 +409,7 @@ int pthread_sigmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT 
  *
  * @return 0 on success, or non-zero on failure.
  *
- * @posix_func{raise}
+ * @posix_api{POSIX_SIGNALS,raise}
  */
 int raise(int sig);
 #endif
@@ -427,7 +427,7 @@ TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_SHADOW);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigaction}
+ * @posix_api{POSIX_SIGNALS,sigaction}
  */
 int sigaction(int sig, const struct sigaction *ZRESTRICT act, struct sigaction *ZRESTRICT oact);
 /** @cond INTERNAL_HIDDEN */
@@ -443,7 +443,7 @@ TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_SHADOW);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigaddset}
+ * @posix_api{POSIX_SIGNALS,sigaddset}
  */
 int sigaddset(sigset_t *set, int sig);
 #if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
@@ -468,7 +468,7 @@ int sigaltstack(const stack_t *ZRESTRICT ss, stack_t *ZRESTRICT oss);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigdelset}
+ * @posix_api{POSIX_SIGNALS,sigdelset}
  */
 int sigdelset(sigset_t *set, int sig);
 
@@ -479,7 +479,7 @@ int sigdelset(sigset_t *set, int sig);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigemptyset}
+ * @posix_api{POSIX_SIGNALS,sigemptyset}
  */
 int sigemptyset(sigset_t *set);
 
@@ -490,7 +490,7 @@ int sigemptyset(sigset_t *set);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigfillset}
+ * @posix_api{POSIX_SIGNALS,sigfillset}
  */
 int sigfillset(sigset_t *set);
 #if defined(_XOPEN_SOURCE) || defined(__DOXYGEN__)
@@ -543,7 +543,7 @@ int siginterrupt(int sig, int flag);
  *
  * @return 1 if the signal is a member, 0 if not, or -1 with errno set on failure.
  *
- * @posix_func{sigismember}
+ * @posix_api{POSIX_SIGNALS,sigismember}
  */
 int sigismember(const sigset_t *set, int sig);
 
@@ -558,7 +558,7 @@ int sigismember(const sigset_t *set, int sig);
  * @return Previous signal handler.
  * @retval SIG_ERR An error occurred.
  *
- * @posix_func{signal}
+ * @posix_api{POSIX_SIGNALS,signal}
  */
 sighandler_t signal(int sig, sighandler_t func);
 #endif
@@ -584,7 +584,7 @@ int sigpause(int sig);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigpending}
+ * @posix_api{POSIX_SIGNALS,sigpending}
  */
 int sigpending(sigset_t *set);
 
@@ -597,7 +597,7 @@ int sigpending(sigset_t *set);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigprocmask}
+ * @posix_api{POSIX_SIGNALS,sigprocmask}
  */
 int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset);
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
@@ -610,7 +610,7 @@ int sigprocmask(int how, const sigset_t *ZRESTRICT set, sigset_t *ZRESTRICT oset
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sigqueue}
+ * @posix_api{POSIX_REALTIME_SIGNALS,sigqueue}
  */
 int sigqueue(pid_t pid, int sig, union sigval value);
 #endif
@@ -651,7 +651,7 @@ sighandler_t sigset(int sig, sighandler_t disp);
  *
  * @return Always returns -1 with @c errno set to @c EINTR.
  *
- * @posix_func{sigsuspend}
+ * @posix_api{POSIX_SIGNALS,sigsuspend}
  */
 int sigsuspend(const sigset_t *set);
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
@@ -664,7 +664,7 @@ int sigsuspend(const sigset_t *set);
  *
  * @return Signal number on success, or -1 with errno set on failure.
  *
- * @posix_func{sigtimedwait}
+ * @posix_api{POSIX_REALTIME_SIGNALS,sigtimedwait}
  */
 int sigtimedwait(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info,
 		 const struct timespec *ZRESTRICT timeout);
@@ -678,7 +678,7 @@ int sigtimedwait(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{sigwait}
+ * @posix_api{POSIX_SIGNALS,sigwait}
  */
 int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT sig);
 #if defined(_POSIX_REALTIME_SIGNALS) || defined(__DOXYGEN__)
@@ -690,7 +690,7 @@ int sigwait(const sigset_t *ZRESTRICT set, int *ZRESTRICT sig);
  *
  * @return Signal number on success, or -1 with errno set on failure.
  *
- * @posix_func{sigwaitinfo}
+ * @posix_api{POSIX_REALTIME_SIGNALS,sigwaitinfo}
  */
 int sigwaitinfo(const sigset_t *ZRESTRICT set, siginfo_t *ZRESTRICT info);
 #endif

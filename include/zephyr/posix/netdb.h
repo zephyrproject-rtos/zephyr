@@ -97,28 +97,28 @@ struct servent {
 /**
  * @brief Close the hosts database (no-op on Zephyr).
  *
- * @posix_func{endhostent}
+ * @posix_api{POSIX_NETWORKING,endhostent}
  */
 void endhostent(void);
 
 /**
  * @brief Close the networks database (no-op on Zephyr).
  *
- * @posix_func{endnetent}
+ * @posix_api{POSIX_NETWORKING,endnetent}
  */
 void endnetent(void);
 
 /**
  * @brief Close the protocols database (no-op on Zephyr).
  *
- * @posix_func{endprotoent}
+ * @posix_api{POSIX_NETWORKING,endprotoent}
  */
 void endprotoent(void);
 
 /**
  * @brief Close the services database (no-op on Zephyr).
  *
- * @posix_func{endservent}
+ * @posix_api{POSIX_NETWORKING,endservent}
  */
 void endservent(void);
 
@@ -127,7 +127,7 @@ void endservent(void);
  *
  * @param ai Linked list of address information structures to free.
  *
- * @posix_func{freeaddrinfo}
+ * @posix_api{POSIX_NETWORKING,freeaddrinfo}
  */
 void freeaddrinfo(struct addrinfo *ai);
 
@@ -138,7 +138,7 @@ void freeaddrinfo(struct addrinfo *ai);
  *
  * @return Pointer to a string describing the error.
  *
- * @posix_func{gai_strerror}
+ * @posix_api{POSIX_NETWORKING,gai_strerror}
  */
 const char *gai_strerror(int errcode);
 
@@ -152,7 +152,7 @@ const char *gai_strerror(int errcode);
  *
  * @return 0 on success, or a non-zero @c EAI_* error code on failure.
  *
- * @posix_func{getaddrinfo}
+ * @posix_api{POSIX_NETWORKING,getaddrinfo}
  */
 int getaddrinfo(const char *host, const char *service, const struct addrinfo *hints,
 		struct addrinfo **res);
@@ -162,7 +162,7 @@ int getaddrinfo(const char *host, const char *service, const struct addrinfo *hi
  *
  * @return Pointer to a static hostent on success, or NULL at end of database or on error.
  *
- * @posix_func{gethostent}
+ * @posix_api{POSIX_NETWORKING,gethostent}
  */
 struct hostent *gethostent(void);
 
@@ -179,7 +179,7 @@ struct hostent *gethostent(void);
  *
  * @return 0 on success, or a non-zero @c EAI_* error code on failure.
  *
- * @posix_func{getnameinfo}
+ * @posix_api{POSIX_NETWORKING,getnameinfo}
  */
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen, int flags);
@@ -192,7 +192,7 @@ int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, sock
  *
  * @return Pointer to a static netent on success, or NULL on failure.
  *
- * @posix_func{getnetbyaddr}
+ * @posix_api{POSIX_NETWORKING,getnetbyaddr}
  */
 struct netent *getnetbyaddr(uint32_t net, int type);
 
@@ -203,7 +203,7 @@ struct netent *getnetbyaddr(uint32_t net, int type);
  *
  * @return Pointer to a static netent on success, or NULL on failure.
  *
- * @posix_func{getnetbyname}
+ * @posix_api{POSIX_NETWORKING,getnetbyname}
  */
 struct netent *getnetbyname(const char *name);
 
@@ -212,7 +212,7 @@ struct netent *getnetbyname(const char *name);
  *
  * @return Pointer to a static netent on success, or NULL at end of database or on error.
  *
- * @posix_func{getnetent}
+ * @posix_api{POSIX_NETWORKING,getnetent}
  */
 struct netent *getnetent(void);
 
@@ -223,7 +223,7 @@ struct netent *getnetent(void);
  *
  * @return Pointer to a static protoent on success, or NULL on failure.
  *
- * @posix_func{getprotobyname}
+ * @posix_api{POSIX_NETWORKING,getprotobyname}
  */
 struct protoent *getprotobyname(const char *name);
 
@@ -234,7 +234,7 @@ struct protoent *getprotobyname(const char *name);
  *
  * @return Pointer to a static protoent on success, or NULL on failure.
  *
- * @posix_func{getprotobynumber}
+ * @posix_api{POSIX_NETWORKING,getprotobynumber}
  */
 struct protoent *getprotobynumber(int proto);
 
@@ -243,7 +243,7 @@ struct protoent *getprotobynumber(int proto);
  *
  * @return Pointer to a static protoent on success, or NULL at end of database or on error.
  *
- * @posix_func{getprotoent}
+ * @posix_api{POSIX_NETWORKING,getprotoent}
  */
 struct protoent *getprotoent(void);
 
@@ -255,7 +255,7 @@ struct protoent *getprotoent(void);
  *
  * @return Pointer to a static servent on success, or NULL on failure.
  *
- * @posix_func{getservbyname}
+ * @posix_api{POSIX_NETWORKING,getservbyname}
  */
 struct servent *getservbyname(const char *name, const char *proto);
 
@@ -267,7 +267,7 @@ struct servent *getservbyname(const char *name, const char *proto);
  *
  * @return Pointer to a static servent on success, or NULL on failure.
  *
- * @posix_func{getservbyport}
+ * @posix_api{POSIX_NETWORKING,getservbyport}
  */
 struct servent *getservbyport(int port, const char *proto);
 
@@ -276,7 +276,7 @@ struct servent *getservbyport(int port, const char *proto);
  *
  * @return Pointer to a static servent on success, or NULL at end of database or on error.
  *
- * @posix_func{getservent}
+ * @posix_api{POSIX_NETWORKING,getservent}
  */
 struct servent *getservent(void);
 
@@ -285,7 +285,7 @@ struct servent *getservent(void);
  *
  * @param stayopen Non-zero to keep the database open between queries.
  *
- * @posix_func{sethostent}
+ * @posix_api{POSIX_NETWORKING,sethostent}
  */
 void sethostent(int stayopen);
 
@@ -294,7 +294,7 @@ void sethostent(int stayopen);
  *
  * @param stayopen Non-zero to keep the database open between queries.
  *
- * @posix_func{setnetent}
+ * @posix_api{POSIX_NETWORKING,setnetent}
  */
 void setnetent(int stayopen);
 
@@ -303,7 +303,7 @@ void setnetent(int stayopen);
  *
  * @param stayopen Non-zero to keep the database open between queries.
  *
- * @posix_func{setprotoent}
+ * @posix_api{POSIX_NETWORKING,setprotoent}
  */
 void setprotoent(int stayopen);
 
@@ -312,7 +312,7 @@ void setprotoent(int stayopen);
  *
  * @param stayopen Non-zero to keep the database open between queries.
  *
- * @posix_func{setservent}
+ * @posix_api{POSIX_NETWORKING,setservent}
  */
 void setservent(int stayopen);
 

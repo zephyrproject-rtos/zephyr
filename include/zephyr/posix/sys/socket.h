@@ -68,7 +68,7 @@ struct sockaddr;
  *
  * @return New socket file descriptor on success, or -1 with errno set on failure.
  *
- * @posix_func{accept}
+ * @posix_api{POSIX_NETWORKING,accept}
  */
 int accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -81,7 +81,7 @@ int accept(int sock, struct sockaddr *addr, socklen_t *addrlen);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{bind}
+ * @posix_api{POSIX_NETWORKING,bind}
  */
 int bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
 
@@ -94,7 +94,7 @@ int bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{connect}
+ * @posix_api{POSIX_NETWORKING,connect}
  */
 int connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
 
@@ -107,7 +107,7 @@ int connect(int sock, const struct sockaddr *addr, socklen_t addrlen);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{getpeername}
+ * @posix_api{POSIX_NETWORKING,getpeername}
  */
 int getpeername(int sock, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -120,7 +120,7 @@ int getpeername(int sock, struct sockaddr *addr, socklen_t *addrlen);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{getsockname}
+ * @posix_api{POSIX_NETWORKING,getsockname}
  */
 int getsockname(int sock, struct sockaddr *addr, socklen_t *addrlen);
 
@@ -135,7 +135,7 @@ int getsockname(int sock, struct sockaddr *addr, socklen_t *addrlen);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{getsockopt}
+ * @posix_api{POSIX_NETWORKING,getsockopt}
  */
 int getsockopt(int sock, int level, int optname, void *optval, socklen_t *optlen);
 
@@ -147,7 +147,7 @@ int getsockopt(int sock, int level, int optname, void *optval, socklen_t *optlen
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{listen}
+ * @posix_api{POSIX_NETWORKING,listen}
  */
 int listen(int sock, int backlog);
 
@@ -162,7 +162,7 @@ int listen(int sock, int backlog);
  * @return Number of bytes received, 0 when the peer has closed the connection,
  *         or -1 with errno set on failure.
  *
- * @posix_func{recv}
+ * @posix_api{POSIX_NETWORKING,recv}
  */
 ssize_t recv(int sock, void *buf, size_t max_len, int flags);
 
@@ -178,7 +178,7 @@ ssize_t recv(int sock, void *buf, size_t max_len, int flags);
  *
  * @return Number of bytes received on success, or -1 with errno set on failure.
  *
- * @posix_func{recvfrom}
+ * @posix_api{POSIX_NETWORKING,recvfrom}
  */
 ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct sockaddr *src_addr,
 		 socklen_t *addrlen);
@@ -192,7 +192,7 @@ ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags, struct sockaddr
  *
  * @return Number of bytes received on success, or -1 with errno set on failure.
  *
- * @posix_func{recvmsg}
+ * @posix_api{POSIX_NETWORKING,recvmsg}
  */
 ssize_t recvmsg(int sock, struct msghdr *msg, int flags);
 
@@ -206,7 +206,7 @@ ssize_t recvmsg(int sock, struct msghdr *msg, int flags);
  *
  * @return Number of bytes sent on success, or -1 with errno set on failure.
  *
- * @posix_func{send}
+ * @posix_api{POSIX_NETWORKING,send}
  */
 ssize_t send(int sock, const void *buf, size_t len, int flags);
 
@@ -219,7 +219,7 @@ ssize_t send(int sock, const void *buf, size_t len, int flags);
  *
  * @return Number of bytes sent on success, or -1 with errno set on failure.
  *
- * @posix_func{sendmsg}
+ * @posix_api{POSIX_NETWORKING,sendmsg}
  */
 ssize_t sendmsg(int sock, const struct msghdr *message, int flags);
 
@@ -235,7 +235,7 @@ ssize_t sendmsg(int sock, const struct msghdr *message, int flags);
  *
  * @return Number of bytes sent on success, or -1 with errno set on failure.
  *
- * @posix_func{sendto}
+ * @posix_api{POSIX_NETWORKING,sendto}
  */
 ssize_t sendto(int sock, const void *buf, size_t len, int flags, const struct sockaddr *dest_addr,
 	       socklen_t addrlen);
@@ -251,7 +251,7 @@ ssize_t sendto(int sock, const void *buf, size_t len, int flags, const struct so
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{setsockopt}
+ * @posix_api{POSIX_NETWORKING,setsockopt}
  */
 int setsockopt(int sock, int level, int optname, const void *optval, socklen_t optlen);
 
@@ -263,7 +263,7 @@ int setsockopt(int sock, int level, int optname, const void *optval, socklen_t o
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{shutdown}
+ * @posix_api{POSIX_NETWORKING,shutdown}
  */
 int shutdown(int sock, int how);
 
@@ -274,7 +274,7 @@ int shutdown(int sock, int how);
  *
  * @return 1 if at the mark, 0 if not, or -1 with errno set on failure.
  *
- * @posix_func{sockatmark}
+ * @posix_api{POSIX_NETWORKING,sockatmark}
  */
 int sockatmark(int s);
 
@@ -287,7 +287,7 @@ int sockatmark(int s);
  *
  * @return New socket file descriptor on success, or -1 with errno set on failure.
  *
- * @posix_func{socket}
+ * @posix_api{POSIX_NETWORKING,socket}
  */
 int socket(int family, int type, int proto);
 
@@ -301,7 +301,7 @@ int socket(int family, int type, int proto);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{socketpair}
+ * @posix_api{POSIX_NETWORKING,socketpair}
  */
 int socketpair(int family, int type, int proto, int sv[2]);
 

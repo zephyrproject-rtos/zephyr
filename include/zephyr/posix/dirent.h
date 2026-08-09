@@ -47,7 +47,7 @@ int alphasort(const struct dirent **d1, const struct dirent **d2);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{closedir}
+ * @posix_api{POSIX_FILE_SYSTEM,closedir}
  */
 int closedir(DIR *dirp);
 
@@ -82,7 +82,7 @@ DIR *fdopendir(int fd);
  *
  * @return Directory stream on success, or NULL with errno set on failure.
  *
- * @posix_func{opendir}
+ * @posix_api{POSIX_FILE_SYSTEM,opendir}
  */
 DIR *opendir(const char *dirname);
 
@@ -93,7 +93,7 @@ DIR *opendir(const char *dirname);
  *
  * @return Pointer to a @c struct dirent on success, or NULL at end-of-directory or on error.
  *
- * @posix_func{readdir}
+ * @posix_api{POSIX_FILE_SYSTEM,readdir}
  */
 struct dirent *readdir(DIR *dirp);
 
@@ -107,7 +107,7 @@ struct dirent *readdir(DIR *dirp);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{readdir_r}
+ * @posix_api{POSIX_FILE_SYSTEM_R,readdir_r}
  */
 int readdir_r(DIR *ZRESTRICT dirp, struct dirent *ZRESTRICT entry,
 	      struct dirent **ZRESTRICT result);
@@ -118,7 +118,7 @@ int readdir_r(DIR *ZRESTRICT dirp, struct dirent *ZRESTRICT entry,
  *
  * @param dirp Directory stream to rewind.
  *
- * @posix_func{rewinddir}
+ * @posix_api{POSIX_FILE_SYSTEM,rewinddir}
  */
 void rewinddir(DIR *dirp);
 

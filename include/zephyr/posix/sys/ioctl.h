@@ -39,7 +39,7 @@ extern "C" {
  *
  * @return Request-specific non-negative value on success, or -1 with errno set on failure.
  *
- * @posix_func{ioctl}
+ * @posix_api{XOPEN_STREAMS,ioctl}
  */
 int ioctl(int fd, unsigned long request, ...);
 

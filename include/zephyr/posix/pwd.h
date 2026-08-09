@@ -46,7 +46,7 @@ struct passwd {
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{getpwnam_r}
+ * @posix_api{POSIX_THREAD_SAFE_FUNCTIONS,getpwnam_r}
  */
 int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize,
 	       struct passwd **result);
@@ -62,7 +62,7 @@ int getpwnam_r(const char *nam, struct passwd *pwd, char *buffer, size_t bufsize
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{getpwuid_r}
+ * @posix_api{POSIX_THREAD_SAFE_FUNCTIONS,getpwuid_r}
  */
 int getpwuid_r(uid_t uid, struct passwd *pwd, char *buffer, size_t bufsize, struct passwd **result);
 

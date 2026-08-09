@@ -65,7 +65,7 @@ struct sched_param {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_yield}
+ * @posix_api{POSIX_THREADS_BASE,sched_yield}
  */
 int sched_yield(void);
 
@@ -76,7 +76,7 @@ int sched_yield(void);
  *
  * @return Minimum priority on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_get_priority_min}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_get_priority_min}
  */
 int sched_get_priority_min(int policy);
 
@@ -87,7 +87,7 @@ int sched_get_priority_min(int policy);
  *
  * @return Maximum priority on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_get_priority_max}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_get_priority_max}
  */
 int sched_get_priority_max(int policy);
 
@@ -99,7 +99,7 @@ int sched_get_priority_max(int policy);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_getparam}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_getparam}
  */
 int sched_getparam(pid_t pid, struct sched_param *param);
 
@@ -111,7 +111,7 @@ int sched_getparam(pid_t pid, struct sched_param *param);
  * @return Scheduling policy (@c SCHED_FIFO, @c SCHED_RR, @c SCHED_OTHER),
  *         or -1 with errno set on failure.
  *
- * @posix_func{sched_getscheduler}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_getscheduler}
  */
 int sched_getscheduler(pid_t pid);
 
@@ -123,7 +123,7 @@ int sched_getscheduler(pid_t pid);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_setparam}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_setparam}
  */
 int sched_setparam(pid_t pid, const struct sched_param *param);
 
@@ -136,7 +136,7 @@ int sched_setparam(pid_t pid, const struct sched_param *param);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_setscheduler}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_setscheduler}
  */
 int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);
 
@@ -148,7 +148,7 @@ int sched_setscheduler(pid_t pid, int policy, const struct sched_param *param);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sched_rr_get_interval}
+ * @posix_api{POSIX_PRIORITY_SCHEDULING,sched_rr_get_interval}
  */
 int sched_rr_get_interval(pid_t pid, struct timespec *interval);
 

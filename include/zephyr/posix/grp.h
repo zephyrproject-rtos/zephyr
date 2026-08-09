@@ -43,7 +43,7 @@ struct group {
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{getgrnam_r}
+ * @posix_api{POSIX_THREAD_SAFE_FUNCTIONS,getgrnam_r}
  */
 int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize,
 	       struct group **result);
@@ -59,7 +59,7 @@ int getgrnam_r(const char *name, struct group *grp, char *buffer, size_t bufsize
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{getgrgid_r}
+ * @posix_api{POSIX_THREAD_SAFE_FUNCTIONS,getgrgid_r}
  */
 int getgrgid_r(gid_t gid, struct group *grp, char *buffer, size_t bufsize, struct group **result);
 

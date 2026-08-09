@@ -58,7 +58,7 @@ extern "C" {
  *
  * @return New file descriptor on success, or -1 with errno set on failure.
  *
- * @posix_func{open}
+ * @posix_api{POSIX_DEVICE_IO,open}
  */
 int open(const char *name, int flags, ...);
 
@@ -71,7 +71,7 @@ int open(const char *name, int flags, ...);
  *
  * @return Command-specific value on success, or -1 with errno set on failure.
  *
- * @posix_func{fcntl}
+ * @posix_api{POSIX_FD_MGMT,fcntl}
  */
 int fcntl(int fildes, int cmd, ...);
 

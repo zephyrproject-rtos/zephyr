@@ -46,7 +46,7 @@ struct strbuf {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{putmsg}
+ * @posix_api{XOPEN_STREAMS,putmsg}
  */
 int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr, int flags);
 
@@ -57,7 +57,7 @@ int putmsg(int fildes, const struct strbuf *ctlptr, const struct strbuf *dataptr
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{fdetach}
+ * @posix_api{XOPEN_STREAMS,fdetach}
  */
 int fdetach(const char *path);
 
@@ -69,7 +69,7 @@ int fdetach(const char *path);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{fattach}
+ * @posix_api{XOPEN_STREAMS,fattach}
  */
 int fattach(int fildes, const char *path);
 
@@ -84,7 +84,7 @@ int fattach(int fildes, const char *path);
  * @return 0 if a complete message was received, a positive value if more of the message
  *         remains, or -1 with errno set on failure.
  *
- * @posix_func{getmsg}
+ * @posix_api{XOPEN_STREAMS,getmsg}
  */
 int getmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *flagsp);
 
@@ -100,7 +100,7 @@ int getmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *flags
  * @return 0 if a complete message was received, a positive value if more of the message
  *         remains, or -1 with errno set on failure.
  *
- * @posix_func{getpmsg}
+ * @posix_api{XOPEN_STREAMS,getpmsg}
  */
 int getpmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *bandp, int *flagsp);
 
@@ -111,7 +111,7 @@ int getpmsg(int fildes, struct strbuf *ctlptr, struct strbuf *dataptr, int *band
  *
  * @return 1 if @p fildes is a STREAMS file, 0 if not, or -1 with errno set on error.
  *
- * @posix_func{isastream}
+ * @posix_api{XOPEN_STREAMS,isastream}
  */
 int isastream(int fildes);
 

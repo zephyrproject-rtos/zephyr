@@ -35,7 +35,7 @@ extern "C" {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_destroy}
+ * @posix_api{POSIX_SEMAPHORES,sem_destroy}
  */
 int sem_destroy(sem_t *semaphore);
 
@@ -48,7 +48,7 @@ int sem_destroy(sem_t *semaphore);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_getvalue}
+ * @posix_api{POSIX_SEMAPHORES,sem_getvalue}
  */
 int sem_getvalue(sem_t *ZRESTRICT semaphore, int *ZRESTRICT value);
 
@@ -61,7 +61,7 @@ int sem_getvalue(sem_t *ZRESTRICT semaphore, int *ZRESTRICT value);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_init}
+ * @posix_api{POSIX_SEMAPHORES,sem_init}
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value);
 
@@ -72,7 +72,7 @@ int sem_init(sem_t *semaphore, int pshared, unsigned int value);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_post}
+ * @posix_api{POSIX_SEMAPHORES,sem_post}
  */
 int sem_post(sem_t *semaphore);
 
@@ -85,7 +85,7 @@ int sem_post(sem_t *semaphore);
  * @return 0 on success, or -1 with errno set to @c ETIMEDOUT on timeout,
  *         or -1 with errno set on another failure.
  *
- * @posix_func{sem_timedwait}
+ * @posix_api{POSIX_TIMEOUTS,sem_timedwait}
  */
 int sem_timedwait(sem_t *ZRESTRICT semaphore, struct timespec *ZRESTRICT abstime);
 
@@ -97,7 +97,7 @@ int sem_timedwait(sem_t *ZRESTRICT semaphore, struct timespec *ZRESTRICT abstime
  * @return 0 on success, or -1 with errno set to @c EAGAIN if the count is zero,
  *         or -1 with errno set on another failure.
  *
- * @posix_func{sem_trywait}
+ * @posix_api{POSIX_SEMAPHORES,sem_trywait}
  */
 int sem_trywait(sem_t *semaphore);
 
@@ -108,7 +108,7 @@ int sem_trywait(sem_t *semaphore);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_wait}
+ * @posix_api{POSIX_SEMAPHORES,sem_wait}
  */
 int sem_wait(sem_t *semaphore);
 
@@ -122,7 +122,7 @@ int sem_wait(sem_t *semaphore);
  * @return Pointer to the semaphore on success.
  * @retval SEM_FAILED An error occurred; errno is set.
  *
- * @posix_func{sem_open}
+ * @posix_api{POSIX_SEMAPHORES,sem_open}
  */
 sem_t *sem_open(const char *name, int oflags, ...);
 
@@ -133,7 +133,7 @@ sem_t *sem_open(const char *name, int oflags, ...);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_unlink}
+ * @posix_api{POSIX_SEMAPHORES,sem_unlink}
  */
 int sem_unlink(const char *name);
 
@@ -144,7 +144,7 @@ int sem_unlink(const char *name);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{sem_close}
+ * @posix_api{POSIX_SEMAPHORES,sem_close}
  */
 int sem_close(sem_t *sem);
 

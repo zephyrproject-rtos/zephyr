@@ -57,7 +57,7 @@ struct if_nameindex {
  *
  * @return @p ifname on success, or NULL with errno set on failure.
  *
- * @posix_func{if_indextoname}
+ * @posix_api{POSIX_NETWORKING,if_indextoname}
  */
 char *if_indextoname(unsigned int ifindex, char *ifname);
 
@@ -66,7 +66,7 @@ char *if_indextoname(unsigned int ifindex, char *ifname);
  *
  * @param ptr List to free (must have been returned by if_nameindex()).
  *
- * @posix_func{if_freenameindex}
+ * @posix_api{POSIX_NETWORKING,if_freenameindex}
  */
 void if_freenameindex(struct if_nameindex *ptr);
 
@@ -78,7 +78,7 @@ void if_freenameindex(struct if_nameindex *ptr);
  *
  * @return Allocated array on success, or NULL with errno set on failure.
  *
- * @posix_func{if_nameindex}
+ * @posix_api{POSIX_NETWORKING,if_nameindex}
  */
 struct if_nameindex *if_nameindex(void);
 
@@ -89,7 +89,7 @@ struct if_nameindex *if_nameindex(void);
  *
  * @return Interface index on success, or 0 with errno set on failure.
  *
- * @posix_func{if_nametoindex}
+ * @posix_api{POSIX_NETWORKING,if_nametoindex}
  */
 unsigned int if_nametoindex(const char *ifname);
 

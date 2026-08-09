@@ -141,7 +141,7 @@ extern "C" {
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cond_init}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_init}
  */
 int pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *att);
 
@@ -152,7 +152,7 @@ int pthread_cond_init(pthread_cond_t *cv, const pthread_condattr_t *att);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cond_destroy}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_destroy}
  */
 int pthread_cond_destroy(pthread_cond_t *cv);
 
@@ -163,7 +163,7 @@ int pthread_cond_destroy(pthread_cond_t *cv);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cond_signal}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_signal}
  */
 int pthread_cond_signal(pthread_cond_t *cv);
 
@@ -174,7 +174,7 @@ int pthread_cond_signal(pthread_cond_t *cv);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cond_broadcast}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_broadcast}
  */
 int pthread_cond_broadcast(pthread_cond_t *cv);
 
@@ -186,7 +186,7 @@ int pthread_cond_broadcast(pthread_cond_t *cv);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cond_wait}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_wait}
  */
 int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut);
 
@@ -200,7 +200,7 @@ int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut);
  * @return 0 on success, or a positive error number on failure.
  * @retval ETIMEDOUT The timeout expired before the operation completed.
  *
- * @posix_func{pthread_cond_timedwait}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cond_timedwait}
  */
 int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
 			   const struct timespec *abstime);
@@ -212,7 +212,7 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_condattr_init}
+ * @posix_api{POSIX_THREADS_BASE,pthread_condattr_init}
  */
 int pthread_condattr_init(pthread_condattr_t *att);
 
@@ -223,7 +223,7 @@ int pthread_condattr_init(pthread_condattr_t *att);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_condattr_destroy}
+ * @posix_api{POSIX_THREADS_BASE,pthread_condattr_destroy}
  */
 int pthread_condattr_destroy(pthread_condattr_t *att);
 
@@ -235,7 +235,7 @@ int pthread_condattr_destroy(pthread_condattr_t *att);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_condattr_getclock}
+ * @posix_api{POSIX_CLOCK_SELECTION,pthread_condattr_getclock}
  */
 int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
 		clockid_t *ZRESTRICT clock_id);
@@ -248,7 +248,7 @@ int pthread_condattr_getclock(const pthread_condattr_t *ZRESTRICT att,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_condattr_setclock}
+ * @posix_api{POSIX_CLOCK_SELECTION,pthread_condattr_setclock}
  */
 int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
 
@@ -332,7 +332,7 @@ int pthread_condattr_setclock(pthread_condattr_t *att, clockid_t clock_id);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_destroy}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutex_destroy}
  */
 int pthread_mutex_destroy(pthread_mutex_t *m);
 
@@ -343,7 +343,7 @@ int pthread_mutex_destroy(pthread_mutex_t *m);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_lock}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutex_lock}
  */
 int pthread_mutex_lock(pthread_mutex_t *m);
 
@@ -354,7 +354,7 @@ int pthread_mutex_lock(pthread_mutex_t *m);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_unlock}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutex_unlock}
  */
 int pthread_mutex_unlock(pthread_mutex_t *m);
 
@@ -367,7 +367,7 @@ int pthread_mutex_unlock(pthread_mutex_t *m);
  * @return 0 on success, or a positive error number on failure.
  * @retval ETIMEDOUT The timeout expired before the operation completed.
  *
- * @posix_func{pthread_mutex_timedlock}
+ * @posix_api{POSIX_TIMEOUTS,pthread_mutex_timedlock}
  */
 int pthread_mutex_timedlock(pthread_mutex_t *m,
 			    const struct timespec *abstime);
@@ -380,7 +380,7 @@ int pthread_mutex_timedlock(pthread_mutex_t *m,
  * @return 0 if the lock was acquired, or a positive error number on failure.
  * @retval EBUSY The lock is already held.
  *
- * @posix_func{pthread_mutex_trylock}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutex_trylock}
  */
 int pthread_mutex_trylock(pthread_mutex_t *m);
 
@@ -392,7 +392,7 @@ int pthread_mutex_trylock(pthread_mutex_t *m);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_init}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutex_init}
  */
 int pthread_mutex_init(pthread_mutex_t *m,
 				     const pthread_mutexattr_t *att);
@@ -405,7 +405,7 @@ int pthread_mutex_init(pthread_mutex_t *m,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_setprotocol}
+ * @posix_api{POSIX_THREAD_PRIO_INHERIT,pthread_mutexattr_setprotocol}
  */
 int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol);
 
@@ -418,7 +418,7 @@ int pthread_mutexattr_setprotocol(pthread_mutexattr_t *attr, int protocol);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_settype}
+ * @posix_api{POSIX_THREADS_EXT,pthread_mutexattr_settype}
  */
 int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 
@@ -431,7 +431,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_getprotocol}
+ * @posix_api{POSIX_THREAD_PRIO_INHERIT,pthread_mutexattr_getprotocol}
  */
 int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
 				  int *protocol);
@@ -445,7 +445,7 @@ int pthread_mutexattr_getprotocol(const pthread_mutexattr_t *attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_gettype}
+ * @posix_api{POSIX_THREADS_EXT,pthread_mutexattr_gettype}
  */
 int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
 
@@ -458,7 +458,7 @@ int pthread_mutexattr_gettype(const pthread_mutexattr_t *attr, int *type);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_init}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutexattr_init}
  */
 int pthread_mutexattr_init(pthread_mutexattr_t *attr);
 
@@ -471,7 +471,7 @@ int pthread_mutexattr_init(pthread_mutexattr_t *attr);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_destroy}
+ * @posix_api{POSIX_THREADS_BASE,pthread_mutexattr_destroy}
  */
 int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
 
@@ -500,7 +500,7 @@ int pthread_mutexattr_destroy(pthread_mutexattr_t *attr);
  * @return 0 for all but one thread, or a positive error number on failure.
  * @retval PTHREAD_BARRIER_SERIAL_THREAD Returned to a single, arbitrary thread upon completion.
  *
- * @posix_func{pthread_barrier_wait}
+ * @posix_api{POSIX_BARRIERS,pthread_barrier_wait}
  */
 int pthread_barrier_wait(pthread_barrier_t *b);
 
@@ -513,7 +513,7 @@ int pthread_barrier_wait(pthread_barrier_t *b);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrier_init}
+ * @posix_api{POSIX_BARRIERS,pthread_barrier_init}
  */
 int pthread_barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr,
 			 unsigned int count);
@@ -525,7 +525,7 @@ int pthread_barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrier_destroy}
+ * @posix_api{POSIX_BARRIERS,pthread_barrier_destroy}
  */
 int pthread_barrier_destroy(pthread_barrier_t *b);
 
@@ -536,7 +536,7 @@ int pthread_barrier_destroy(pthread_barrier_t *b);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrierattr_init}
+ * @posix_api{POSIX_BARRIERS,pthread_barrierattr_init}
  */
 int pthread_barrierattr_init(pthread_barrierattr_t *b);
 
@@ -547,7 +547,7 @@ int pthread_barrierattr_init(pthread_barrierattr_t *b);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrierattr_destroy}
+ * @posix_api{POSIX_BARRIERS,pthread_barrierattr_destroy}
  */
 int pthread_barrierattr_destroy(pthread_barrierattr_t *b);
 
@@ -559,7 +559,7 @@ int pthread_barrierattr_destroy(pthread_barrierattr_t *b);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrierattr_setpshared}
+ * @posix_api{POSIX_THREADS_BASE,pthread_barrierattr_setpshared}
  */
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
 
@@ -571,7 +571,7 @@ int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_barrierattr_getpshared}
+ * @posix_api{POSIX_THREADS_BASE,pthread_barrierattr_getpshared}
  */
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *ZRESTRICT attr,
 				   int *ZRESTRICT pshared);
@@ -604,7 +604,7 @@ int pthread_mutexattr_setrobust(pthread_mutexattr_t *, int);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_getprioceiling}
+ * @posix_api{POSIX_THREAD_PRIO_PROTECT,pthread_mutex_getprioceiling}
  */
 int pthread_mutex_getprioceiling(const pthread_mutex_t *ZRESTRICT mutex,
 				 int *ZRESTRICT prioceiling);
@@ -618,7 +618,7 @@ int pthread_mutex_getprioceiling(const pthread_mutex_t *ZRESTRICT mutex,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutex_setprioceiling}
+ * @posix_api{POSIX_THREAD_PRIO_PROTECT,pthread_mutex_setprioceiling}
  */
 int pthread_mutex_setprioceiling(pthread_mutex_t *ZRESTRICT mutex, int prioceiling,
 				 int *ZRESTRICT old_ceiling);
@@ -631,7 +631,7 @@ int pthread_mutex_setprioceiling(pthread_mutex_t *ZRESTRICT mutex, int prioceili
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_getprioceiling}
+ * @posix_api{POSIX_THREAD_PRIO_PROTECT,pthread_mutexattr_getprioceiling}
  */
 int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *ZRESTRICT attr,
 				     int *ZRESTRICT prioceiling);
@@ -644,7 +644,7 @@ int pthread_mutexattr_getprioceiling(const pthread_mutexattr_t *ZRESTRICT attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_mutexattr_setprioceiling}
+ * @posix_api{POSIX_THREAD_PRIO_PROTECT,pthread_mutexattr_setprioceiling}
  */
 int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling);
 #endif /* CONFIG_POSIX_THREAD_PRIO_PROTECT */
@@ -659,7 +659,7 @@ int pthread_mutexattr_setprioceiling(pthread_mutexattr_t *attr, int prioceiling)
  *
  * @return Thread ID of the calling thread.
  *
- * @posix_func{pthread_self}
+ * @posix_api{POSIX_THREADS_BASE,pthread_self}
  */
 pthread_t pthread_self(void);
 
@@ -671,7 +671,7 @@ pthread_t pthread_self(void);
  *
  * @return Non-zero if @p pt1 and @p pt2 refer to the same thread, 0 otherwise.
  *
- * @posix_func{pthread_equal}
+ * @posix_api{POSIX_THREADS_BASE,pthread_equal}
  */
 int pthread_equal(pthread_t pt1, pthread_t pt2);
 
@@ -682,7 +682,7 @@ int pthread_equal(pthread_t pt1, pthread_t pt2);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlockattr_destroy}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlockattr_destroy}
  */
 int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
 
@@ -693,7 +693,7 @@ int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlockattr_init}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlockattr_init}
  */
 int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
 
@@ -705,7 +705,7 @@ int pthread_rwlockattr_init(pthread_rwlockattr_t *attr);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlockattr_getpshared}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlockattr_getpshared}
  */
 int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
 				  int *ZRESTRICT pshared);
@@ -718,7 +718,7 @@ int pthread_rwlockattr_getpshared(const pthread_rwlockattr_t *ZRESTRICT attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlockattr_setpshared}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlockattr_setpshared}
  */
 int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
 
@@ -730,7 +730,7 @@ int pthread_rwlockattr_setpshared(pthread_rwlockattr_t *attr, int pshared);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getguardsize}
+ * @posix_api{POSIX_THREADS_EXT,pthread_attr_getguardsize}
  */
 int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRESTRICT guardsize);
 
@@ -742,7 +742,7 @@ int pthread_attr_getguardsize(const pthread_attr_t *ZRESTRICT attr, size_t *ZRES
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getstacksize}
+ * @posix_api{POSIX_THREAD_ATTR_STACKSIZE,pthread_attr_getstacksize}
  */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 
@@ -754,7 +754,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setguardsize}
+ * @posix_api{POSIX_THREADS_EXT,pthread_attr_setguardsize}
  */
 int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
 
@@ -766,7 +766,7 @@ int pthread_attr_setguardsize(pthread_attr_t *attr, size_t guardsize);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setstacksize}
+ * @posix_api{POSIX_THREAD_ATTR_STACKSIZE,pthread_attr_setstacksize}
  */
 int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
 
@@ -778,7 +778,7 @@ int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setschedpolicy}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_setschedpolicy}
  */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
 
@@ -790,7 +790,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getschedpolicy}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_getschedpolicy}
  */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
 
@@ -802,7 +802,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setdetachstate}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_setdetachstate}
  */
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
 
@@ -814,7 +814,7 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getdetachstate}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_getdetachstate}
  */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
 
@@ -825,7 +825,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_init}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_init}
  */
 int pthread_attr_init(pthread_attr_t *attr);
 
@@ -836,7 +836,7 @@ int pthread_attr_init(pthread_attr_t *attr);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_destroy}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_destroy}
  */
 int pthread_attr_destroy(pthread_attr_t *attr);
 
@@ -848,7 +848,7 @@ int pthread_attr_destroy(pthread_attr_t *attr);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getschedparam}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_getschedparam}
  */
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
 			       struct sched_param *schedparam);
@@ -862,7 +862,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_getschedparam}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_getschedparam}
  */
 int pthread_getschedparam(pthread_t pthread, int *policy,
 			  struct sched_param *param);
@@ -876,7 +876,7 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getstack}
+ * @posix_api{XSI_THREADS_EXT,pthread_attr_getstack}
  */
 int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
@@ -890,7 +890,7 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setstack}
+ * @posix_api{XSI_THREADS_EXT,pthread_attr_setstack}
  */
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
@@ -903,7 +903,7 @@ int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getscope}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_getscope}
  */
 int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
 
@@ -915,7 +915,7 @@ int pthread_attr_getscope(const pthread_attr_t *attr, int *contentionscope);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setscope}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_setscope}
  */
 int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
 
@@ -927,7 +927,7 @@ int pthread_attr_setscope(pthread_attr_t *attr, int contentionscope);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_getinheritsched}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_getinheritsched}
  */
 int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
 
@@ -939,7 +939,7 @@ int pthread_attr_getinheritsched(const pthread_attr_t *attr, int *inheritsched);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setinheritsched}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_attr_setinheritsched}
  */
 int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
 #if defined(CONFIG_POSIX_THREADS) || defined(__DOXYGEN__)
@@ -951,7 +951,7 @@ int pthread_attr_setinheritsched(pthread_attr_t *attr, int inheritsched);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_once}
+ * @posix_api{POSIX_THREADS_BASE,pthread_once}
  */
 int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 #endif
@@ -961,7 +961,7 @@ int pthread_once(pthread_once_t *once, void (*initFunc)(void));
  *
  * @param retval Value made available to pthread_join().
  *
- * @posix_func{pthread_exit}
+ * @posix_api{POSIX_THREADS_BASE,pthread_exit}
  */
 FUNC_NORETURN void pthread_exit(void *retval);
 
@@ -1002,7 +1002,7 @@ int pthread_tryjoin_np(pthread_t thread, void **status);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_join}
+ * @posix_api{POSIX_THREADS_BASE,pthread_join}
  */
 int pthread_join(pthread_t thread, void **status);
 
@@ -1013,7 +1013,7 @@ int pthread_join(pthread_t thread, void **status);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_cancel}
+ * @posix_api{POSIX_THREADS_BASE,pthread_cancel}
  */
 int pthread_cancel(pthread_t pthread);
 
@@ -1024,7 +1024,7 @@ int pthread_cancel(pthread_t pthread);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_detach}
+ * @posix_api{POSIX_THREADS_BASE,pthread_detach}
  */
 int pthread_detach(pthread_t thread);
 
@@ -1038,7 +1038,7 @@ int pthread_detach(pthread_t thread);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_create}
+ * @posix_api{POSIX_THREADS_BASE,pthread_create}
  */
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		   void *(*threadroutine)(void *), void *arg);
@@ -1051,7 +1051,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setcancelstate}
+ * @posix_api{POSIX_THREADS_BASE,pthread_setcancelstate}
  */
 int pthread_setcancelstate(int state, int *oldstate);
 
@@ -1063,7 +1063,7 @@ int pthread_setcancelstate(int state, int *oldstate);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setcanceltype}
+ * @posix_api{POSIX_THREADS_BASE,pthread_setcanceltype}
  */
 int pthread_setcanceltype(int type, int *oldtype);
 
@@ -1072,7 +1072,7 @@ int pthread_setcanceltype(int type, int *oldtype);
  *
  * If cancellation is pending and enabled, this function does not return.
  *
- * @posix_func{pthread_testcancel}
+ * @posix_api{POSIX_THREADS_BASE,pthread_testcancel}
  */
 void pthread_testcancel(void);
 
@@ -1084,7 +1084,7 @@ void pthread_testcancel(void);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_attr_setschedparam}
+ * @posix_api{POSIX_THREADS_BASE,pthread_attr_setschedparam}
  */
 int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
@@ -1098,7 +1098,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setschedparam}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_setschedparam}
  */
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
@@ -1111,7 +1111,7 @@ int pthread_setschedparam(pthread_t pthread, int policy,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setschedprio}
+ * @posix_api{POSIX_THREAD_PRIORITY_SCHEDULING,pthread_setschedprio}
  */
 int pthread_setschedprio(pthread_t thread, int prio);
 
@@ -1122,7 +1122,7 @@ int pthread_setschedprio(pthread_t thread, int prio);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlock_destroy}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_destroy}
  */
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
 
@@ -1134,7 +1134,7 @@ int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlock_init}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_init}
  */
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 			const pthread_rwlockattr_t *attr);
@@ -1146,7 +1146,7 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlock_rdlock}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_rdlock}
  */
 int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
 
@@ -1159,7 +1159,7 @@ int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
  * @return 0 on success, or a positive error number on failure.
  * @retval ETIMEDOUT The timeout expired before the operation completed.
  *
- * @posix_func{pthread_rwlock_timedrdlock}
+ * @posix_api{POSIX_TIMEOUTS,pthread_rwlock_timedrdlock}
  */
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime);
@@ -1173,7 +1173,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
  * @return 0 on success, or a positive error number on failure.
  * @retval ETIMEDOUT The timeout expired before the operation completed.
  *
- * @posix_func{pthread_rwlock_timedwrlock}
+ * @posix_api{POSIX_TIMEOUTS,pthread_rwlock_timedwrlock}
  */
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 			       const struct timespec *abstime);
@@ -1186,7 +1186,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
  * @return 0 on success, or a positive error number on failure.
  * @retval EBUSY The lock is already held.
  *
- * @posix_func{pthread_rwlock_tryrdlock}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_tryrdlock}
  */
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
 
@@ -1198,7 +1198,7 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
  * @return 0 on success, or a positive error number on failure.
  * @retval EBUSY The lock is already held.
  *
- * @posix_func{pthread_rwlock_trywrlock}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_trywrlock}
  */
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
 
@@ -1209,7 +1209,7 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlock_unlock}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_unlock}
  */
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
 
@@ -1220,7 +1220,7 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_rwlock_wrlock}
+ * @posix_api{POSIX_RW_LOCKS,pthread_rwlock_wrlock}
  */
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
 
@@ -1232,7 +1232,7 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_key_create}
+ * @posix_api{POSIX_THREADS_BASE,pthread_key_create}
  */
 int pthread_key_create(pthread_key_t *key,
 		void (*destructor)(void *));
@@ -1244,7 +1244,7 @@ int pthread_key_create(pthread_key_t *key,
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_key_delete}
+ * @posix_api{POSIX_THREADS_BASE,pthread_key_delete}
  */
 int pthread_key_delete(pthread_key_t key);
 
@@ -1256,7 +1256,7 @@ int pthread_key_delete(pthread_key_t key);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setspecific}
+ * @posix_api{POSIX_THREADS_BASE,pthread_setspecific}
  */
 int pthread_setspecific(pthread_key_t key, const void *value);
 
@@ -1267,7 +1267,7 @@ int pthread_setspecific(pthread_key_t key, const void *value);
  *
  * @return Value associated with @p key for the calling thread, or NULL if none.
  *
- * @posix_func{pthread_getspecific}
+ * @posix_api{POSIX_THREADS_BASE,pthread_getspecific}
  */
 void *pthread_getspecific(pthread_key_t key);
 
@@ -1280,7 +1280,7 @@ void *pthread_getspecific(pthread_key_t key);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_atfork}
+ * @posix_api{POSIX_THREADS_BASE,pthread_atfork}
  */
 int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(void));
 
@@ -1289,7 +1289,7 @@ int pthread_atfork(void (*prepare)(void), void (*parent)(void), void (*child)(vo
  *
  * @return Current concurrency level. This function always succeeds.
  *
- * @posix_func{pthread_getconcurrency}
+ * @posix_api{XSI_THREADS_EXT,pthread_getconcurrency}
  */
 int pthread_getconcurrency(void);
 
@@ -1300,7 +1300,7 @@ int pthread_getconcurrency(void);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_setconcurrency}
+ * @posix_api{XSI_THREADS_EXT,pthread_setconcurrency}
  */
 int pthread_setconcurrency(int new_level);
 /** @cond INTERNAL_HIDDEN */
@@ -1382,7 +1382,7 @@ int pthread_getname_np(pthread_t thread, char *name, size_t len);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_spin_destroy}
+ * @posix_api{POSIX_SPIN_LOCKS,pthread_spin_destroy}
  */
 int pthread_spin_destroy(pthread_spinlock_t *lock);
 
@@ -1394,7 +1394,7 @@ int pthread_spin_destroy(pthread_spinlock_t *lock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_spin_init}
+ * @posix_api{POSIX_SPIN_LOCKS,pthread_spin_init}
  */
 int pthread_spin_init(pthread_spinlock_t *lock, int pshared);
 
@@ -1405,7 +1405,7 @@ int pthread_spin_init(pthread_spinlock_t *lock, int pshared);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_spin_lock}
+ * @posix_api{POSIX_SPIN_LOCKS,pthread_spin_lock}
  */
 int pthread_spin_lock(pthread_spinlock_t *lock);
 
@@ -1417,7 +1417,7 @@ int pthread_spin_lock(pthread_spinlock_t *lock);
  * @return 0 on success, or a positive error number on failure.
  * @retval EBUSY The mutex is already locked.
  *
- * @posix_func{pthread_spin_trylock}
+ * @posix_api{POSIX_SPIN_LOCKS,pthread_spin_trylock}
  */
 int pthread_spin_trylock(pthread_spinlock_t *lock);
 
@@ -1428,7 +1428,7 @@ int pthread_spin_trylock(pthread_spinlock_t *lock);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{pthread_spin_unlock}
+ * @posix_api{POSIX_SPIN_LOCKS,pthread_spin_unlock}
  */
 int pthread_spin_unlock(pthread_spinlock_t *lock);
 

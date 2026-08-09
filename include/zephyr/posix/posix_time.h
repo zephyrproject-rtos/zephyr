@@ -196,7 +196,7 @@ char *asctime(const struct tm *timeptr);
  *
  * @return @p buf on success, or NULL on failure.
  *
- * @posix_func{asctime_r}
+ * @posix_api{POSIX_C_LANG_SUPPORT_R,asctime_r}
  */
 char *asctime_r(const struct tm *ZRESTRICT tm, char *ZRESTRICT buf);
 #endif
@@ -208,7 +208,7 @@ char *asctime_r(const struct tm *ZRESTRICT tm, char *ZRESTRICT buf);
  *
  * @return Processor time used by the process, or @c (clock_t)-1 if unavailable.
  *
- * @posix_func{clock}
+ * @posix_api{POSIX_MULTI_PROCESS,clock}
  */
 clock_t clock(void);
 #endif
@@ -234,7 +234,7 @@ int clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{clock_getres}
+ * @posix_api{POSIX_TIMERS,clock_getres}
  */
 int clock_getres(clockid_t clock_id, struct timespec *ts);
 
@@ -246,7 +246,7 @@ int clock_getres(clockid_t clock_id, struct timespec *ts);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{clock_gettime}
+ * @posix_api{POSIX_TIMERS,clock_gettime}
  */
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
 #endif
@@ -261,7 +261,7 @@ int clock_gettime(clockid_t clock_id, struct timespec *ts);
  *
  * @return 0 on success, or a positive error number on failure.
  *
- * @posix_func{clock_nanosleep}
+ * @posix_api{POSIX_CLOCK_SELECTION,clock_nanosleep}
  */
 int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
 		    struct timespec *rmtp);
@@ -275,7 +275,7 @@ int clock_nanosleep(clockid_t clock_id, int flags, const struct timespec *rqtp,
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{clock_settime}
+ * @posix_api{POSIX_TIMERS,clock_settime}
  */
 int clock_settime(clockid_t clock_id, const struct timespec *ts);
 #endif
@@ -302,7 +302,7 @@ char *ctime(const time_t *clock);
  *
  * @return @p buf on success, or NULL on failure.
  *
- * @posix_func{ctime_r}
+ * @posix_api{POSIX_C_LANG_SUPPORT_R,ctime_r}
  */
 char *ctime_r(const time_t *clock, char *buf);
 #endif
@@ -359,7 +359,7 @@ struct tm *gmtime(const time_t *timer);
  *
  * @return @p result on success, or NULL on failure.
  *
- * @posix_func{gmtime_r}
+ * @posix_api{POSIX_C_LANG_SUPPORT_R,gmtime_r}
  */
 struct tm *gmtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
 #endif
@@ -391,7 +391,7 @@ struct tm *localtime(const time_t *timer);
  *
  * @return @p result on success, or NULL on failure.
  *
- * @posix_func{localtime_r}
+ * @posix_api{POSIX_C_LANG_SUPPORT_R,localtime_r}
  */
 struct tm *localtime_r(const time_t *ZRESTRICT timer, struct tm *ZRESTRICT result);
 #endif
@@ -419,7 +419,7 @@ time_t mktime(struct tm *timeptr);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{nanosleep}
+ * @posix_api{POSIX_TIMERS,nanosleep}
  */
 int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 #endif
@@ -495,7 +495,7 @@ time_t time(time_t *tloc);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{timer_create}
+ * @posix_api{POSIX_TIMERS,timer_create}
  */
 int timer_create(clockid_t clockId, struct sigevent *ZRESTRICT evp, timer_t *ZRESTRICT timerid);
 
@@ -506,7 +506,7 @@ int timer_create(clockid_t clockId, struct sigevent *ZRESTRICT evp, timer_t *ZRE
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{timer_delete}
+ * @posix_api{POSIX_TIMERS,timer_delete}
  */
 int timer_delete(timer_t timerid);
 
@@ -517,7 +517,7 @@ int timer_delete(timer_t timerid);
  *
  * @return Overrun count on success, or -1 with errno set on failure.
  *
- * @posix_func{timer_getoverrun}
+ * @posix_api{POSIX_TIMERS,timer_getoverrun}
  */
 int timer_getoverrun(timer_t timerid);
 
@@ -529,7 +529,7 @@ int timer_getoverrun(timer_t timerid);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{timer_gettime}
+ * @posix_api{POSIX_TIMERS,timer_gettime}
  */
 int timer_gettime(timer_t timerid, struct itimerspec *its);
 
@@ -543,7 +543,7 @@ int timer_gettime(timer_t timerid, struct itimerspec *its);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{timer_settime}
+ * @posix_api{POSIX_TIMERS,timer_settime}
  */
 int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 		  struct itimerspec *ovalue);

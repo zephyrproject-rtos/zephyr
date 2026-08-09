@@ -100,7 +100,7 @@ extern "C" {
  * @return 0 if the string matches the pattern, or another non-zero value on error.
  * @retval FNM_NOMATCH The string does not match the pattern.
  *
- * @posix_func{fnmatch}
+ * @posix_api{POSIX_C_LIB_EXT,fnmatch}
  */
 int fnmatch(const char *pattern, const char *string, int flags);
 

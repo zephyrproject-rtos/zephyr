@@ -54,7 +54,7 @@ extern "C" {
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{gettimeofday}
+ * @posix_api{XSI_SINGLE_PROCESS,gettimeofday}
  */
 int gettimeofday(struct timeval *tv, void *tz);
 

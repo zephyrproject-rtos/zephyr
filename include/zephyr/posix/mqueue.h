@@ -59,7 +59,7 @@ struct mq_attr {
  *
  * @return Message queue descriptor on success, or @c (mqd_t)-1 with errno set on failure.
  *
- * @posix_func{mq_open}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_open}
  */
 mqd_t mq_open(const char *name, int oflags, ...);
 
@@ -70,7 +70,7 @@ mqd_t mq_open(const char *name, int oflags, ...);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_close}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_close}
  */
 int mq_close(mqd_t mqdes);
 
@@ -81,7 +81,7 @@ int mq_close(mqd_t mqdes);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_unlink}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_unlink}
  */
 int mq_unlink(const char *name);
 
@@ -93,7 +93,7 @@ int mq_unlink(const char *name);
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_getattr}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_getattr}
  */
 int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat);
 
@@ -107,7 +107,7 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat);
  *
  * @return Number of bytes in the received message on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_receive}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_receive}
  */
 int mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 		   unsigned int *msg_prio);
@@ -122,7 +122,7 @@ int mq_receive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_send}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_send}
  */
 int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 	    unsigned int msg_prio);
@@ -136,7 +136,7 @@ int mq_send(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_setattr}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_setattr}
  */
 int mq_setattr(mqd_t mqdes, const struct mq_attr *mqstat,
 	       struct mq_attr *omqstat);
@@ -152,7 +152,7 @@ int mq_setattr(mqd_t mqdes, const struct mq_attr *mqstat,
  *
  * @return Number of bytes in the message on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_timedreceive}
+ * @posix_api{POSIX_TIMEOUTS,mq_timedreceive}
  */
 int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 			unsigned int *msg_prio, const struct timespec *abstime);
@@ -168,7 +168,7 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_timedsend}
+ * @posix_api{POSIX_TIMEOUTS,mq_timedsend}
  */
 int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
 		 unsigned int msg_prio, const struct timespec *abstime);
@@ -181,7 +181,7 @@ int mq_timedsend(mqd_t mqdes, const char *msg_ptr, size_t msg_len,
  *
  * @return 0 on success, or -1 with errno set on failure.
  *
- * @posix_func{mq_notify}
+ * @posix_api{POSIX_MESSAGE_PASSING,mq_notify}
  */
 int mq_notify(mqd_t mqdes, const struct sigevent *notification);
 
