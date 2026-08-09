@@ -23,4 +23,5 @@ supported:
   - pwm
   - i2s
   - spi
+  - netif:eth
 vendor: nxp
