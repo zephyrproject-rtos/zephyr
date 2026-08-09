@@ -5,6 +5,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/sem.h>
+#include <wait_q.h>
 
 int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 		 unsigned int limit)
@@ -36,4 +37,9 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout)
 unsigned int sys_sem_count_get(struct sys_sem *sem)
 {
 	return k_sem_count_get(&sem->kernel_sem);
+}
+
+bool sys_sem_has_waiters(struct sys_sem *sem)
+{
+	return z_waitq_head(&sem->kernel_sem.wait_q) != NULL;
 }

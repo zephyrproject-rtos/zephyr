@@ -41,6 +41,7 @@ int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 		if (!z_sched_wake(&futex_data->wait_q, 0, NULL)) {
 			break;
 		}
+		(void)atomic_dec(&futex->waiters);
 		woken++;
 	} while (wake_all);
 
@@ -77,7 +78,11 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 
 	key = k_spin_lock(&futex_data->lock);
 
+	/* counted before the compare, so a waker that sees zero knows the value check follows */
+	(void)atomic_inc(&futex->waiters);
+
 	if (atomic_get(&futex->val) != (atomic_val_t)expected) {
+		(void)atomic_dec(&futex->waiters);
 		k_spin_unlock(&futex_data->lock, key);
 		return -EAGAIN;
 	}
@@ -85,6 +90,8 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 	ret = z_pend_curr(&futex_data->lock,
 			key, &futex_data->wait_q, timeout);
 	if (ret == -EAGAIN) {
+		/* timed out: nobody unpended us, so nobody decremented for us */
+		(void)atomic_dec(&futex->waiters);
 		ret = -ETIMEDOUT;
 	}
 

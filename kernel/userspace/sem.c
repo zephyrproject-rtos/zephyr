@@ -53,6 +53,7 @@ int sys_sem_init(struct sys_sem *sem, unsigned int initial_count,
 
 	(void)atomic_set(&sem->futex.val, initial_count);
 	sem->limit = limit;
+	(void)atomic_clear(&sem->futex.waiters);
 
 	return 0;
 }
@@ -102,4 +103,9 @@ unsigned int sys_sem_count_get(struct sys_sem *sem)
 	int value = atomic_get(&sem->futex.val);
 
 	return (value > SYS_SEM_MINIMUM) ? value : SYS_SEM_MINIMUM;
+}
+
+bool sys_sem_has_waiters(struct sys_sem *sem)
+{
+	return atomic_get(&sem->futex.waiters) > 0;
 }

@@ -2741,6 +2741,14 @@ struct k_futex {
 	 * k_futex_wait().
 	 */
 	atomic_t val;
+	/**
+	 * Threads currently blocked on the futex: incremented before a thread
+	 * blocks and decremented by whoever unblocks it (a waker, or the thread
+	 * itself on timeout), so a woken thread never touches the futex again.
+	 * Callers zero-initialize it and may read it as a hint, e.g. to skip a
+	 * wake-up when nobody is waiting.
+	 */
+	atomic_t waiters;
 };
 
 /**

@@ -140,6 +140,19 @@ int sys_sem_take(struct sys_sem *sem, k_timeout_t timeout);
 unsigned int sys_sem_count_get(struct sys_sem *sem);
 
 /**
+ * @brief Check whether any thread is blocked taking @a sem.
+ *
+ * The answer is a snapshot: it may already be stale by the time the caller
+ * acts on it, so it is a hint (e.g. for POSIX `sem_destroy()` `EBUSY`
+ * detection) rather than a synchronization primitive.
+ *
+ * @param sem Address of the sys_sem.
+ *
+ * @return true if at least one thread was blocked taking @a sem.
+ */
+bool sys_sem_has_waiters(struct sys_sem *sem);
+
+/**
  * @cond INTERNAL_HIDDEN
  */
 
