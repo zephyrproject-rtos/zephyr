@@ -5186,6 +5186,34 @@ QNX Hypervisor Platforms:
   labels:
     - "platform: Quicklogic"
 
+RISCV Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - kgugala
+    - tgorochowik
+    - katsuster
+    - mgielda
+    - npitre
+    - VynDragon
+    - ycsin
+    - maass-hamburg
+    - lstnl
+    - meijemac
+    - AFOliveira
+  files:
+    - boards/enjoydigital/litex_vexriscv/
+    - boards/lowrisc/opentitan_earlgrey/
+    - boards/qemu/riscv*/
+    - boards/sifive/
+    - boards/sparkfun/red_v_things_plus/
+    - boards/starfive/
+    - dts/bindings/riscv/
+    - dts/riscv/
+  labels:
+    - "platforms: RISCV"
+
 RISCV arch:
   status: maintained
   maintainers:
@@ -5205,12 +5233,6 @@ RISCV arch:
     - AFOliveira
   files:
     - arch/riscv/
-    - boards/enjoydigital/litex_vexriscv/
-    - boards/lowrisc/opentitan_earlgrey/
-    - boards/qemu/riscv*/
-    - boards/sifive/
-    - boards/sparkfun/red_v_things_plus/
-    - boards/starfive/
     - cmake/compiler/*/target_riscv.cmake
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/Kconfig.riscv_*
@@ -5218,14 +5240,9 @@ RISCV arch:
     - drivers/interrupt_controller/intc_riscv_*
     - dts/bindings/interrupt-controller/riscv,*
     - dts/bindings/riscv/
-    - dts/riscv/
     - include/zephyr/arch/riscv/
     - include/zephyr/drivers/interrupt_controller/riscv_*
     - samples/drivers/interrupt_controller/intc_riscv_aia*/
-    - soc/common/riscv-privileged/
-    - soc/qemu/virt_riscv/
-    - soc/sifive/
-    - soc/starfive/
     - tests/arch/riscv/
   labels:
     - "area: RISCV"
