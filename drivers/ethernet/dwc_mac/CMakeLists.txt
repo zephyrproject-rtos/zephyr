@@ -16,6 +16,7 @@ zephyr_library_sources_ifdef(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_PERFECT eth_d
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ETH_DWMAC_MMU eth_dwmac_mmu.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_ESP32_DWC_ETHER_1000 eth_esp32_dwc_ether_1000.c)
+zephyr_library_sources_ifdef(CONFIG_ETH_NXP_DWC_ETHER_QOS eth_nxp_dwc_ether_qos.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_DWC_ETHER_1000 eth_stm32_dwc_ether_1000.c)
 zephyr_library_sources_ifdef(CONFIG_ETH_STM32_DWC_ETHER_QOS eth_stm32_dwc_ether_qos.c)
 # zephyr-keep-sorted-stop
