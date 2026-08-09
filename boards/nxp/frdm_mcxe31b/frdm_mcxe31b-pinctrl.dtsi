@@ -135,6 +135,46 @@
 		};
 	};
 
+	pinmux_emac: pinmux_emac {
+		group1 {
+			/* RMII outputs. The slowest slew rate matches NXP's
+			 * reference pin configuration for this board.
+			 */
+			pinmux = <PTC2_EMAC_MII_RMII_TXD0>,
+				 <PTD7_EMAC_MII_RMII_TXD1>,
+				 <PTD12_EMAC_MII_RMII_TX_EN>;
+			output-enable;
+			slew-rate = "slowest";
+		};
+
+		group2 {
+			pinmux = <PTC1_EMAC_MII_RMII_RXD0>,
+				 <PTC0_EMAC_MII_RMII_RXD1>,
+				 <PTC17_EMAC_MII_RMII_RX_DV>;
+			input-enable;
+		};
+
+		group3 {
+			/* 50 MHz RMII reference clock supplied by the PHY */
+			pinmux = <PTD11_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+			slew-rate = "slowest";
+		};
+	};
+
+	pinmux_emac_mdio: pinmux_emac_mdio {
+		group1 {
+			pinmux = <(PTB4_EMAC_MII_RMII_MDIO_O | PTB4_EMAC_MII_RMII_MDIO_I)>;
+			input-enable;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_MDC>;
+			output-enable;
+		};
+	};
+
 	pinmux_sai_0: pinmux_sai_0 {
 		group1 {
 			/* Each entry combines the pad's output mux with its
