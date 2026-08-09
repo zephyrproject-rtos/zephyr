@@ -4,13 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* These assertions are very useful when debugging the tree code
- * itself, but produce significant performance degradation as they are
- * checked many times per operation.  Leave them off unless you're
- * working on the rbtree code itself
+/* Internal consistency assertions are very useful when debugging the tree
+ * code itself, but produce significant performance degradation as they are
+ * checked many times per operation.  They are therefore compiled out: define
+ * CHECK() as __ASSERT_NO_MSG() instead when working on the rbtree code itself.
  */
 #define CHECK(n) /**/
-/* #define CHECK(n) __ASSERT_NO_MSG(n) */
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/rb.h>
