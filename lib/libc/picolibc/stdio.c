@@ -56,7 +56,7 @@ FILE *const stdin = &__stdin;
 FILE *const stdout = &__stdout;
 STDIO_ALIAS(stderr);
 
-void __stdout_hook_install(int (*hook)(int))
+void __stdout_hook_install(int (*hook)(int c))
 {
 	_stdout_hook = hook;
 	__stdout.flags |= _FDEV_SETUP_WRITE;
