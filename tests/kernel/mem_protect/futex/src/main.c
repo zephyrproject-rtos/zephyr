@@ -620,17 +620,21 @@ ZTEST_USER(futex, test_futex_bad_inputs)
 	ret = k_futex_wake(&no_access_futex, false);
 	zassert_equal(ret, -EACCES, "shouldn't have been able to access");
 
-	/* Access to memory, but not a kernel object */
+	/*
+	 * Any user-accessible address is a valid futex, even when it is not a
+	 * statically-defined kernel object: such futexes share address-hashed
+	 * wait queues. A matching value pends (timing out with K_NO_WAIT) and
+	 * a wake with no waiters wakes nobody.
+	 */
 	ret = k_futex_wait((struct k_futex *)&not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	zassert_equal(ret, -ETIMEDOUT, "didn't pend on unregistered futex");
 	ret = k_futex_wake((struct k_futex *)&not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
+	zassert_equal(ret, 0, "woke nonexistent waiter");
 
-	/* Access to memory, but wrong object type */
 	ret = k_futex_wait((struct k_futex *)&also_not_a_futex, 0, K_NO_WAIT);
-	zassert_equal(ret, -EINVAL, "waited on non-futex");
+	zassert_equal(ret, -ETIMEDOUT, "didn't pend on unregistered futex");
 	ret = k_futex_wake((struct k_futex *)&also_not_a_futex, false);
-	zassert_equal(ret, -EINVAL, "woke non-futex");
+	zassert_equal(ret, 0, "woke nonexistent waiter");
 
 	/* Wait with unexpected value */
 	atomic_set(&simple_futex.val, 100);

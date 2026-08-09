@@ -5,45 +5,72 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/kernel_structs.h>
 #include <zephyr/spinlock.h>
 #include <kswap.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
 #include <ksched.h>
-#include <scheduler.h>
+#include <wait_q.h>
+
+#define FUTEX_HASH_BUCKETS 16
+BUILD_ASSERT(IS_POWER_OF_TWO(FUTEX_HASH_BUCKETS));
+
+/*
+ * Futexes at addresses the kernel object scanner cannot see (stack, heap, or
+ * any other user-accessible memory) share this fixed set of address-hashed
+ * wait queues. Waiters record which futex they wait on, and wake-ups unpend
+ * only matching waiters, so sharing a bucket costs lock contention but never
+ * a lost or spurious wakeup.
+ */
+#define FUTEX_HASH_BUCKET_INIT(i, _) Z_FUTEX_DATA_INITIALIZER(futex_hash_buckets[i])
+static struct z_futex_data futex_hash_buckets[FUTEX_HASH_BUCKETS] = {
+	LISTIFY(FUTEX_HASH_BUCKETS, FUTEX_HASH_BUCKET_INIT, (,))
+};
 
 static struct z_futex_data *k_futex_find_data(struct k_futex *futex)
 {
 	struct k_object *obj;
+	uintptr_t addr = (uintptr_t)futex;
 
 	obj = k_object_find(futex);
-	if ((obj == NULL) || (obj->type != K_OBJ_FUTEX)) {
-		return NULL;
+	if ((obj != NULL) && (obj->type == K_OBJ_FUTEX)) {
+		return obj->data.futex_data;
 	}
 
-	return obj->data.futex_data;
+	return &futex_hash_buckets[(addr / sizeof(struct k_futex)) % FUTEX_HASH_BUCKETS];
 }
 
 int z_impl_k_futex_wake(struct k_futex *futex, bool wake_all)
 {
 	k_spinlock_key_t key;
 	unsigned int woken = 0U;
+	struct k_thread *thread;
+	struct k_thread *iter;
 	struct z_futex_data *futex_data;
 
 	futex_data = k_futex_find_data(futex);
-	if (futex_data == NULL) {
-		return -EINVAL;
-	}
 
 	key = k_spin_lock(&futex_data->lock);
 
 	do {
-		if (!z_sched_wake(&futex_data->wait_q, 0, NULL)) {
-			break;
+		/* wake in priority order, skipping waiters that hashed to the same bucket */
+		thread = NULL;
+		_WAIT_Q_FOR_EACH(&futex_data->wait_q, iter) {
+			if (iter->base.swap_data == (void *)futex) {
+				thread = iter;
+				break;
+			}
 		}
-		(void)atomic_dec(&futex->waiters);
-		woken++;
-	} while (wake_all);
+
+		if (thread != NULL) {
+			z_unpend_thread(thread);
+			(void)atomic_dec(&futex->waiters);
+			woken++;
+			arch_thread_return_value_set(thread, 0);
+			z_ready_thread(thread);
+		}
+	} while (thread && wake_all);
 
 	if (woken == 0) {
 		k_spin_unlock(&futex_data->lock, key);
@@ -72,9 +99,6 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 	struct z_futex_data *futex_data;
 
 	futex_data = k_futex_find_data(futex);
-	if (futex_data == NULL) {
-		return -EINVAL;
-	}
 
 	key = k_spin_lock(&futex_data->lock);
 
@@ -86,6 +110,9 @@ int z_impl_k_futex_wait(struct k_futex *futex, int expected,
 		k_spin_unlock(&futex_data->lock, key);
 		return -EAGAIN;
 	}
+
+	/* record which futex we wait on, so that wake-ups skip bucket-mates */
+	_current->base.swap_data = futex;
 
 	ret = z_pend_curr(&futex_data->lock,
 			key, &futex_data->wait_q, timeout);
