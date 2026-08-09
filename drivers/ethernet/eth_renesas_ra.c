@@ -295,12 +295,17 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	fsp_err_t err;
 	int ret;
 
+	if (k_sem_take(&ctx->tx_sem, K_NO_WAIT) != 0) {
+		return -ENOBUFS;
+	}
+
 	tx_buf = ctx->txb_header[ctx->txb_idx].buf;
 	ctx->txb_idx = (ctx->txb_idx + 1) % (ctx->txb_num);
 
 	ret = net_pkt_read(pkt, tx_buf, len);
 	if (ret < 0) {
 		LOG_DBG("Failed to copy packet to tx buffer");
+		k_sem_give(&ctx->tx_sem);
 		return ret;
 	}
 	/* Pad short packets */
@@ -313,15 +318,6 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	err = R_ETHER_Write(&ctx->ctrl, tx_buf, len);
 	if (err != FSP_SUCCESS) {
 		LOG_DBG("R_ETHER_Write failed (%d)", err);
-		return -EIO;
-	}
-
-	if (k_sem_take(&ctx->tx_sem, K_NO_WAIT) != 0) {
-		return -ENOBUFS;
-	}
-
-	err = R_ETHER_Write(&ctx->ctrl, tx_buf, len);
-	if (err != FSP_SUCCESS) {
 		k_sem_give(&ctx->tx_sem);
 		return -EIO;
 	}
