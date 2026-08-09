@@ -12,7 +12,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define DALI_NODE DT_NODELABEL(dali0)
+#define DALI_NODE DT_ALIAS(dali)
 
 int main(void)
 {
