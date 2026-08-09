@@ -360,7 +360,11 @@ static struct net_pkt *renesas_ra_eth_rx(const struct device *dev)
 
 	err = R_ETHER_Read(&ctx->ctrl, (void *)&rx_buf, &len);
 
-	if ((err != FSP_SUCCESS) && (err != FSP_ERR_ETHER_ERROR_NO_DATA)) {
+	if (err == FSP_ERR_ETHER_ERROR_NO_DATA) {
+		return NULL;
+	}
+
+	if (err != FSP_SUCCESS) {
 		LOG_DBG("Failed to read packets");
 		goto out;
 	}
@@ -402,9 +406,7 @@ static void renesas_ra_eth_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		res = k_sem_take(&ctx->rx_sem, K_MSEC(CONFIG_PHY_MONITOR_PERIOD));
 		if (res == 0) {
-			pkt = renesas_ra_eth_rx(dev);
-
-			if (pkt != NULL) {
+			while ((pkt = renesas_ra_eth_rx(dev)) != NULL) {
 				iface = net_pkt_iface(pkt);
 				res = net_recv_data(iface, pkt);
 				if (res < 0) {
