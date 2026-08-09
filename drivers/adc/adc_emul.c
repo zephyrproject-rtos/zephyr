@@ -279,11 +279,55 @@ static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data,
 	return voltage;
 }
 
-static uint16_t adc_emul_ref_internal_get(const struct device *dev)
+static int adc_emul_ref_get(const struct device *dev, enum adc_reference ref,
+			    uint16_t *vref_mv)
 {
 	struct adc_emul_data *data = dev->data;
+	uint16_t voltage;
+	bool supported = true;
 
-	return adc_emul_get_ref_voltage(data, ADC_REF_INTERNAL);
+	k_mutex_lock(&data->cfg_mtx, K_FOREVER);
+
+	switch (ref) {
+	case ADC_REF_VDD_1:
+		voltage = data->ref_vdd;
+		break;
+	case ADC_REF_VDD_1_2:
+		voltage = data->ref_vdd / 2;
+		break;
+	case ADC_REF_VDD_1_3:
+		voltage = data->ref_vdd / 3;
+		break;
+	case ADC_REF_VDD_1_4:
+		voltage = data->ref_vdd / 4;
+		break;
+	case ADC_REF_INTERNAL:
+		voltage = data->ref_int;
+		break;
+	case ADC_REF_EXTERNAL0:
+		voltage = data->ref_ext0;
+		break;
+	case ADC_REF_EXTERNAL1:
+		voltage = data->ref_ext1;
+		break;
+	default:
+		supported = false;
+		voltage = 0;
+		break;
+	}
+
+	k_mutex_unlock(&data->cfg_mtx);
+
+	if (!supported) {
+		return -ENOTSUP;
+	}
+
+	if (voltage == 0U) {
+		return -ENODATA;
+	}
+
+	*vref_mv = voltage;
+	return 0;
 }
 
 static int adc_emul_channel_setup(const struct device *dev,
@@ -630,7 +674,7 @@ static int adc_emul_init(const struct device *dev)
 		.channel_setup = adc_emul_channel_setup,		\
 		.read = adc_emul_read,					\
 		.ref_internal = DT_INST_PROP(_num, ref_internal_mv),	\
-		.ref_internal_get = adc_emul_ref_internal_get,		\
+		.ref_get = adc_emul_ref_get,				\
 		IF_ENABLED(CONFIG_ADC_ASYNC,				\
 			(.read_async = adc_emul_read_async,))		\
 	};								\
