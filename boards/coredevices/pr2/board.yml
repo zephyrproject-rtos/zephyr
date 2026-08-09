@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: pr2
+  full_name: Pebble Round 2
+  vendor: coredevices
+  socs:
+    - name: sf32lb52jud6
