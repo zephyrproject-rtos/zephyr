@@ -36,6 +36,23 @@ config ETH_ESP32_DWC_ETHER_1000
 	help
 	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
 
+config ETH_NXP_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based NXP"
+	depends on SOC_SERIES_MCXE31X
+	depends on DT_HAS_NXP_ENET_QOS_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	# The DMA descriptor rings must not be cached, and on this Cortex-M7 an
+	# uncached region can only be carved out by the MPU.
+	select ARM_MPU if DCACHE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select PINCTRL
+	select HWINFO
+	select CRC
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on NXP MCXE series
+	  SoCs, where the IP is named EMAC.
+
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
