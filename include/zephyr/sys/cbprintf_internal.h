@@ -717,23 +717,29 @@ do { \
 	uint8_t _loc = (uint8_t)(_idx / sizeof(int)); \
 	if (arg_idx < 1 + _fros_cnt) { \
 		if (_ros_pos_en) { \
-			_ros_pos_buf[_ros_pos_idx++] = _loc; \
+			_ros_pos_buf[_ros_pos_idx] = _loc; \
+			_ros_pos_idx++; \
 		} \
 	} else if (Z_CBPRINTF_IS_PCHAR(_arg, 0)) { \
 		if (_cros_en) { \
 			if (Z_CBPRINTF_IS_X_PCHAR(arg_idx, _arg, _flags)) { \
 				if (_rws_pos_en) { \
-					_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-					_rws_buffer[_rws_pos_idx++] = _loc; \
+					_rws_buffer[_rws_pos_idx] = arg_idx - 1; \
+					_rws_pos_idx++; \
+					_rws_buffer[_rws_pos_idx] = _loc; \
+					_rws_pos_idx++; \
 				} \
 			} else { \
 				if (_ros_pos_en) { \
-					_ros_pos_buf[_ros_pos_idx++] = _loc; \
+					_ros_pos_buf[_ros_pos_idx] = _loc; \
+					_ros_pos_idx++; \
 				} \
 			} \
 		} else if (_rws_pos_en) { \
-			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
-			_rws_buffer[_rws_pos_idx++] = (uint8_t)(_idx / sizeof(int)); \
+			_rws_buffer[_rws_pos_idx] = arg_idx - 1; \
+			_rws_pos_idx++; \
+			_rws_buffer[_rws_pos_idx] = (uint8_t)(_idx / sizeof(int)); \
+			_rws_pos_idx++; \
 		} else { \
 			/* Neither position buffer is enabled, nothing to record. */ \
 		} \
@@ -866,10 +872,12 @@ do { \
 		/* Append string locations. */ \
 		uint8_t *_pbuf_loc = &_pbuf[_pkg_len]; \
 		for (size_t _ros_idx = 0; _ros_idx < _ros_cnt; _ros_idx++) { \
-			*_pbuf_loc++ = _ros_pos_buf[_ros_idx]; \
+			*_pbuf_loc = _ros_pos_buf[_ros_idx]; \
+			_pbuf_loc++; \
 		} \
 		for (size_t _rws_idx = 0; _rws_idx < (2 * _rws_cnt); _rws_idx++) { \
-			*_pbuf_loc++ = _rws_buffer[_rws_idx]; \
+			*_pbuf_loc = _rws_buffer[_rws_idx]; \
+			_pbuf_loc++; \
 		} \
 	} \
 	/* Store length */ \
