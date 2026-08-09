@@ -4,6 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Time types.
+ * @ingroup posix
+ *
+ * Provides the timeval structure and the gettimeofday() function for obtaining
+ * the current time with microsecond resolution.
+ *
+ * @posix_header{sys_time.h}
+ */
+
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_TIME_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_TIME_H_
 
@@ -15,9 +26,13 @@
 #include <sys/_timeval.h>
 #else
 #include <sys/types.h>
+
+/**
+ * @brief Time interval in seconds and microseconds.
+ */
 struct timeval {
-	time_t tv_sec;
-	suseconds_t tv_usec;
+	time_t tv_sec;       /**< Seconds component. */
+	suseconds_t tv_usec; /**< Microseconds component. */
 };
 #endif
 
@@ -30,6 +45,17 @@ struct timeval {
 extern "C" {
 #endif
 
+/**
+ * @brief Get the date and time.
+ *
+ * @param[out] tv Current time; @c tv_sec is seconds and @c tv_usec is microseconds
+ *                since the Epoch.
+ * @param tz      Unused historical argument; must be NULL.
+ *
+ * @return 0 on success, or -1 with errno set on failure.
+ *
+ * @posix_func{gettimeofday}
+ */
 int gettimeofday(struct timeval *tv, void *tz);
 
 #ifdef __cplusplus
