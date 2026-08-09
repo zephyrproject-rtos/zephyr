@@ -159,7 +159,10 @@ static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int di
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
-	lvgl_set_mono_conversion_buffer(mono_vtile_buf_p[disp_idx], disp_buf_size[disp_idx]);
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
+
+	data->mono_conv_buf = mono_vtile_buf_p[disp_idx];
+	data->mono_conv_buf_size = disp_buf_size[disp_idx];
 #endif
 }
 
@@ -228,7 +231,8 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		LOG_ERR("Failed to allocate memory for vtile buffer");
 		return -ENOMEM;
 	}
-	lvgl_set_mono_conversion_buffer(vtile_buf, buf_size);
+	data->mono_conv_buf = vtile_buf;
+	data->mono_conv_buf_size = buf_size;
 #endif /* ALLOC_MONOCHROME_CONV_BUFFER */
 
 	lv_display_set_buffers(display, buf0, buf1, buf_size, RENDER_MODE);
