@@ -1178,11 +1178,11 @@ static char *encode_float(double value,
 	}
 
 	/* Round the value to the last digit being printed. */
-	uint64_t round = BIT64(59); /* 0.5 */
+	uint64_t rounding = BIT64(59); /* 0.5 */
 	while (decimals-- != 0) {
-		_ldiv10(&round);
+		_ldiv10(&rounding);
 	}
-	fract += round;
+	fract += rounding;
 	/* Make sure rounding didn't make fract >= 1.0 */
 	if (fract >= BIT64(60)) {
 		_ldiv10(&fract);
