@@ -80,5 +80,11 @@ examples:
           status = "okay";
         };
 
+        rv3028_counter: rv3028_counter {
+          compatible = "microcrystal,rv3028-counter";
+          frequency = <64>;
+          repeat-mode;
+          status = "okay";
+        };
       };
     };
