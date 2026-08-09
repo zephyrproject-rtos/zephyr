@@ -295,7 +295,11 @@ static int renesas_ra_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	fsp_err_t err;
 	int ret;
 
-	if (k_sem_take(&ctx->tx_sem, K_NO_WAIT) != 0) {
+	/*
+	 * Instead of immediately dropping the packet,
+	 * wait briefly for a free tx descriptor to become available.
+	 */
+	if (k_sem_take(&ctx->tx_sem, K_MSEC(ETHER_TX_TIMEOUT_MS)) != 0) {
 		return -ENOBUFS;
 	}
 
