@@ -577,6 +577,9 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	struct i2s_esp32_data *dev_data = dev->data;
+
+	k_timer_stop(&dev_data->tx_deferred_transfer_timer);
 
 #if SOC_GDMA_SUPPORTED
 	dma_stop(stream->conf->dma_dev, stream->conf->dma_channel);
