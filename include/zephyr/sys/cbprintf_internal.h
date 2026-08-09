@@ -734,7 +734,11 @@ do { \
 		} else if (_rws_pos_en) { \
 			_rws_buffer[_rws_pos_idx++] = arg_idx - 1; \
 			_rws_buffer[_rws_pos_idx++] = (uint8_t)(_idx / sizeof(int)); \
+		} else { \
+			/* Neither position buffer is enabled, nothing to record. */ \
 		} \
+	} else { \
+		/* Not a read-only string argument, nothing to record. */ \
 	} \
 	if ((_buf) && (_idx) < (int)(_max)) { \
 		Z_CBPRINTF_STORE_ARG(&(_buf)[(_idx)], _arg); \
