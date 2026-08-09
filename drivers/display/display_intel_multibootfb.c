@@ -9,24 +9,15 @@
 
 #define DT_DRV_COMPAT intel_multiboot_framebuffer
 
+#include <string.h>
 #include <errno.h>
 
+#include "display_framebuffer.h"
 #include <zephyr/arch/x86/multiboot.h>
-#include <zephyr/devicetree.h>
-#include <zephyr/drivers/display.h>
-#include <string.h>
 
-struct framebuf_dev_config {
-	uint16_t width;
-	uint16_t height;
-};
+#define INTEL_MULTIBOOT_FB_BPP 4
 
-struct framebuf_dev_data {
-	void *buffer;
-	uint32_t pitch;
-};
-
-static int framebuf_set_pixel_format(const struct device *dev,
+static int intel_multiboot_fb_set_pixel_format(const struct device *dev,
 				     const enum display_pixel_format format)
 {
 	switch (format) {
@@ -37,7 +28,7 @@ static int framebuf_set_pixel_format(const struct device *dev,
 	}
 }
 
-static int framebuf_set_orientation(const struct device *dev,
+static int intel_multiboot_fb_set_orientation(const struct device *dev,
 				    const enum display_orientation orientation)
 {
 	switch (orientation) {
@@ -48,10 +39,10 @@ static int framebuf_set_orientation(const struct device *dev,
 	}
 }
 
-static void framebuf_get_capabilities(const struct device *dev,
+static void intel_multiboot_fb_get_capabilities(const struct device *dev,
 				      struct display_capabilities *caps)
 {
-	const struct framebuf_dev_config *config = dev->config;
+	const struct display_framebuffer_common_config *config = dev->config;
 
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
@@ -61,63 +52,23 @@ static void framebuf_get_capabilities(const struct device *dev,
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static int framebuf_write(const struct device *dev, const uint16_t x,
-			  const uint16_t y,
-			  const struct display_buffer_descriptor *desc,
-			  const void *buf)
-{
-	struct framebuf_dev_data *data = dev->data;
-	uint32_t *dst = data->buffer;
-	const uint32_t *src = buf;
-	uint32_t row;
-
-	dst += x;
-	dst += (y * data->pitch);
-
-	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
-		dst += data->pitch;
-		src += desc->pitch;
-	}
-
-	return 0;
-}
-
-static int framebuf_read(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 void *buf)
-{
-	struct framebuf_dev_data *data = dev->data;
-	uint32_t *src = data->buffer;
-	uint32_t *dst = buf;
-	uint32_t row;
-
-	src += x;
-	src += (y * data->pitch);
-
-	for (row = 0; row < desc->height; ++row) {
-		(void) memcpy(dst, src, desc->width * sizeof(uint32_t));
-		src += data->pitch;
-		dst += desc->pitch;
-	}
-
-	return 0;
-}
-
-DEVICE_API(display, framebuf_display_api) = {
-	.write = framebuf_write,
-	.read = framebuf_read,
-	.get_capabilities = framebuf_get_capabilities,
-	.set_pixel_format = framebuf_set_pixel_format,
-	.set_orientation = framebuf_set_orientation
+DEVICE_API(display, intel_multiboot_fb_display_api) = {
+	.read = display_framebuffer_read,
+	.write = display_framebuffer_write,
+	.get_capabilities = intel_multiboot_fb_get_capabilities,
+	.set_pixel_format = intel_multiboot_fb_set_pixel_format,
+	.set_orientation = intel_multiboot_fb_set_orientation
 };
 
-static int multiboot_framebuf_init(const struct device *dev)
+static int intel_multiboot_fb_init(const struct device *dev)
 {
-	const struct framebuf_dev_config *config = dev->config;
-	struct framebuf_dev_data *data = dev->data;
+	const struct display_framebuffer_common_config *config = dev->config;
+	struct display_framebuffer_common_data *data = dev->data;
 	struct multiboot_info *info = &multiboot_info;
+
+	if (info == NULL) {
+		return -EINVAL;
+	}
 
 	if ((info->flags & MULTIBOOT_INFO_FLAGS_FB) &&
 	    (info->fb_width >= config->width) &&
@@ -135,26 +86,25 @@ static int multiboot_framebuf_init(const struct device *dev)
 
 		adj_x = info->fb_width - config->width;
 		adj_y = info->fb_height - config->height;
-		data->pitch = (info->fb_pitch / 4) + adj_x;
+		data->pitch = (info->fb_pitch / INTEL_MULTIBOOT_FB_BPP) + adj_x;
 		adj_x /= 2U;
 		adj_y /= 2U;
 		buffer = (uint32_t *) (uintptr_t) info->fb_addr_lo;
 		buffer += adj_x;
 		buffer += adj_y * data->pitch;
-		data->buffer = buffer;
+		data->fb_addr = (mem_addr_t)buffer;
 		return 0;
 	} else {
 		return -ENOTSUP;
 	}
 }
 
-static const struct framebuf_dev_config config = {
-	.width = DT_INST_PROP(0, width),
-	.height = DT_INST_PROP(0, height),
-};
+static const struct display_framebuffer_common_config config =
+	DISPLAY_FRAMEBUFFER_COMMON_CONFIG_FROM_DT_INST(0);
 
-static struct framebuf_dev_data data;
+static struct display_framebuffer_common_data data =
+	DISPLAY_FRAMEBUFFER_BYTES_PER_PIXEL(INTEL_MULTIBOOT_FB_BPP);
 
-DEVICE_DT_INST_DEFINE(0, multiboot_framebuf_init, NULL, &data, &config,
+DEVICE_DT_INST_DEFINE(0, intel_multiboot_fb_init, NULL, &data, &config,
 		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		      &framebuf_display_api);
+		      &intel_multiboot_fb_display_api);
