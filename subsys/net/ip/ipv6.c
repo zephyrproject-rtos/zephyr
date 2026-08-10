@@ -914,7 +914,14 @@ static int gen_stable_iid(uint8_t if_index,
 	}
 
 	if (!once) {
-		sys_rand_get(&secret_key, sizeof(secret_key));
+		/* The secret key must not be guessable, otherwise the
+		 * generated IIDs could be predicted. RFC 7217 ch 5
+		 */
+		if (sys_csrand_get(secret_key, sizeof(secret_key)) != 0) {
+			NET_ERR("Cannot generate secret key for stable IID");
+			return -EIO;
+		}
+
 		once = true;
 	}
 
