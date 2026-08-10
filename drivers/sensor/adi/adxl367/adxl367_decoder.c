@@ -469,7 +469,7 @@ static int adxl367_decode_12b_stream(const uint8_t *buffer, struct sensor_chan_s
 		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
 			struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
-			memset(data, 0, sizeof(struct sensor_three_axis_data));
+			memset(data, 0, sizeof(struct sensor_q31_data));
 			data->header.base_timestamp_ns = base_ts;
 			data->header.reading_count = 1;
 			data->shift = 8;
@@ -558,7 +558,7 @@ static int adxl367_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 			if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
 				struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
-				memset(data, 0, sizeof(struct sensor_three_axis_data));
+				memset(data, 0, sizeof(struct sensor_q31_data));
 				data->header.base_timestamp_ns = base_ts;
 				data->header.reading_count = 1;
 				data->shift = 8;
