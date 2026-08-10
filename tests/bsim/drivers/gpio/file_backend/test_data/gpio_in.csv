@@ -1,0 +1,4 @@
+time(microsecond),port,pin,level
+50000,0,0,1
+100000,0,0,0
+150000,0,0,1
