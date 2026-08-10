@@ -167,6 +167,7 @@ config NET_IPV6_RA_RDNSS
 
 config NET_IPV6_PE
 	bool "Privacy extension (RFC 8981) support [EXPERIMENTAL]"
+	depends on CSPRNG_ENABLED
 	select MBEDTLS
 	select MBEDTLS_MD
 	select EXPERIMENTAL
