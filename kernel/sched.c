@@ -315,7 +315,7 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 			thread_halt_spin(thread, key);
 		} else  {
 			add_to_waitq_locked(_current, wq);
-			z_swap(&_sched_spinlock, key);
+			z_swap_locked(key);
 		}
 		/* The target's next_up self-halt path passed NULL to
 		 * halt_thread() and could not retry on -EAGAIN; an
@@ -339,7 +339,7 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 				k_panic();
 				key = z_sched_spinlock_lock();
 			}
-			z_swap(&_sched_spinlock, key);
+			z_swap_locked(key);
 			__ASSERT(!terminate, "aborted _current back from dead");
 		} else {
 			z_sched_spinlock_unlock(key);
@@ -396,11 +396,11 @@ void z_sched_lock_reschedule(k_spinlock_key_t key)
 
 void z_sched_yield(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 
 	runq_yield();
 	update_cache(1);
-	z_swap(&_sched_spinlock, key);
+	z_swap_locked(key);
 }
 
 /* _sched_spinlock must be held */
@@ -519,7 +519,7 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	(void) z_sched_spinlock_lock();
 	pend_locked(_current, wait_q, timeout);
 	k_spin_release(lock);
-	return z_swap(&_sched_spinlock, key);
+	return z_swap_locked(key);
 }
 
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
@@ -941,11 +941,11 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 
 void z_thread_suspend_current(struct k_thread *thread)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 
 	z_mark_thread_as_suspended(thread);
 	z_metairq_preempted_clear(thread);
 	dequeue_thread(thread);
 	update_cache(1);
-	z_swap(&_sched_spinlock, key);
+	z_swap_locked(key);
 }

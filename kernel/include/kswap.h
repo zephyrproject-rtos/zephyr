@@ -227,6 +227,14 @@ static inline void z_swap_unlocked(void)
 #endif /* !CONFIG_USE_SWITCH */
 
 /**
+ * @brief - Like z_swap() but it is known that _sched_spinlock is already held.
+ */
+static inline int z_swap_locked(k_spinlock_key_t key)
+{
+	return z_swap(&_sched_spinlock, key);
+}
+
+/**
  * Set up a "dummy" thread, used at early initialization to launch the
  * first thread on a CPU.
  *

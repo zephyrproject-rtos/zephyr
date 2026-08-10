@@ -1754,7 +1754,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 
 int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 	int ret;
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_thread, join, thread, timeout);
@@ -1773,7 +1773,7 @@ int z_impl_k_thread_join(struct k_thread *thread, k_timeout_t timeout)
 		z_add_thread_timeout(_current, timeout);
 
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_thread, join, thread, timeout);
-		ret = z_swap(&_sched_spinlock, key);
+		ret = z_swap_locked(key);
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_thread, join, thread, timeout, ret);
 
 		return ret;
