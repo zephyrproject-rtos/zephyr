@@ -96,6 +96,11 @@ int mctp_i2c_gpio_target_read_requested(struct i2c_target_config *config, uint8_
 		*val = pkt_len;
 		break;
 	case MCTP_I2C_GPIO_TX_MSG_ADDR:
+		if (b->tx_pkt == NULL || b->tx_pkt->start >= b->tx_pkt->end) {
+			LOG_WRN("No packet to send");
+			ret = -EIO;
+			break;
+		}
 		b->rxtx = true;
 		*val = b->tx_pkt->data[b->tx_pkt->start];
 		b->tx_idx = b->tx_pkt->start;
@@ -115,6 +120,11 @@ int mctp_i2c_gpio_target_read_processed(struct i2c_target_config *config, uint8_
 
 	if (b->reg_addr != MCTP_I2C_GPIO_TX_MSG_ADDR) {
 		goto out;
+	}
+
+	if (b->tx_pkt == NULL)  {
+		LOG_WRN("No packet to process");
+		return -EIO;
 	}
 
 	if (b->tx_idx + 1 >= b->tx_pkt->end) {
