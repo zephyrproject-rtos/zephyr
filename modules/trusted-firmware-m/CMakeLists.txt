@@ -1,6 +1,6 @@
 # Copyright (c) 2019 - 2023 Linaro
 # Copyright (c) 2020 - 2023 Nordic Semiconductor ASA
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024,2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -515,9 +515,9 @@ if(CONFIG_BUILD_WITH_TFM)
   add_dependencies(zephyr_interface tfm)
 
   if(CONFIG_TFM_BL2)
-    set(PREPROCESSED_FILE_S "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s.o")
-    set(PREPROCESSED_FILE_S_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_s.dir/signing_layout_s_ns.o")
-    set(PREPROCESSED_FILE_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/CMakeFiles/signing_layout_ns.dir/signing_layout_ns.o")
+    set(PREPROCESSED_FILE_S    "${TFM_BINARY_DIR}/bl2/ext/mcuboot/signing_layout_objects/signing_layout_s.o")
+    set(PREPROCESSED_FILE_S_NS "${TFM_BINARY_DIR}/bl2/ext/mcuboot/signing_layout_objects/signing_layout_s_ns.o")
+    set(PREPROCESSED_FILE_NS   "${TFM_BINARY_DIR}/bl2/ext/mcuboot/signing_layout_objects/signing_layout_ns.o")
     set(TFM_MCUBOOT_DIR "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/bl2/ext/mcuboot")
   endif()
 
