@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_UWB_DEVICE
+	bool "NXP UWB Device"
+	default n
+    select SPI
+    select GPIO
+	select SPI_ASYNC
+	help
+	  Enables NXP UWB driver
+
+config NXP_UWB_DEVICE_TX_BUFFER_MAX
+	int "NXP SR250 UWB Driver maximum Tx size"
+	depends on SHIELD_NXP_SR250
+	default 4096
+
+config UWB_NXP_LOG_LEVEL
+	int
+	default 4 if UWB_NXP_LOG_LEVEL_DBG
+	default 3 if UWB_NXP_LOG_LEVEL_INF
+	default 2 if UWB_NXP_LOG_LEVEL_WRN
+	default 1 if UWB_NXP_LOG_LEVEL_ERR
+	default 3
+	range 0 4
