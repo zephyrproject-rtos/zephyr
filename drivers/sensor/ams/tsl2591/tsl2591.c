@@ -405,8 +405,12 @@ static int tsl2591_attr_set(const struct device *dev, enum sensor_channel chan,
 
 exit:
 	if (data->powered_on) {
-		ret = tsl2591_reg_update(dev, TSL2591_REG_ENABLE, TSL2591_POWER_MASK,
-					 TSL2591_POWER_ON);
+		int pon_ret = tsl2591_reg_update(dev, TSL2591_REG_ENABLE, TSL2591_POWER_MASK,
+						 TSL2591_POWER_ON);
+
+		if (ret == 0) {
+			ret = pon_ret;
+		}
 	}
 
 	return ret;
