@@ -20,6 +20,11 @@
 			   (MMU_REGION_FLAT_ENTRY("mcan"#n, MCAN##n##_BASE_ADDRESS, 0x4000,	\
 						  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
 
+#define CONFIGURE_GCLK(idx, div, src)								\
+		PMC_REGS->PMC_PCR = PMC_PCR_CMD(1) | PMC_PCR_GCLKEN(1) | PMC_PCR_EN(1) |	\
+				    PMC_PCR_GCLKDIV((div) - 1) | (src) |			\
+				    PMC_PCR_PID(idx);
+
 static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("vectors", CONFIG_KERNEL_VM_BASE, 0x1000,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_X),
@@ -55,6 +60,15 @@ static const struct arm_mmu_region mmu_regions[] = {
 	MMU_REGION_FLAT_ENTRY("sckc", SCKC_BASE_ADDRESS, 0x4,
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 
+	MMU_REGION_FLAT_ENTRY("sdmmc0", SDMMC0_BASE_ADDRESS, 0x400,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("sdmmc1", SDMMC1_BASE_ADDRESS, 0x400,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
+	MMU_REGION_FLAT_ENTRY("sdmmc2", SDMMC2_BASE_ADDRESS, 0x400,
+			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
+
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(microchip_sha_g1_crypto),
 		   (MMU_REGION_FLAT_ENTRY("sha", SHA_BASE_ADDRESS, 0x100,
 					  MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),))
@@ -87,6 +101,11 @@ void soc_early_init_hook(void)
 
 	/* Enable generic clock for MCANx, frequency MCK1 / (4 + 1) = 40MHz */
 	FOR_EACH_IDX(MCAN_CLK_INIT_DEFN, (), 0, 1, 2, 3, 4)
+
+	/* Enable Generic clock for SDMMC 0~2, frequency is 200MHz */
+	CONFIGURE_GCLK(ID_SDMMC0, 1, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_SDMMC1, 1, PMC_PCR_GCLKCSS_BAUDPLL);
+	CONFIGURE_GCLK(ID_SDMMC2, 1, PMC_PCR_GCLKCSS_BAUDPLL);
 
 	/* config ETHPLL to 625 MHz, 24 * (0x19 + 1 + 0x2aaab / 2^22) = 625 */
 	if (DT_HAS_COMPAT_STATUS_OKAY(atmel_sam_gmac)) {
