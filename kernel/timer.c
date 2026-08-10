@@ -179,18 +179,22 @@ void k_timer_init(struct k_timer *timer,
 	z_timer_observer_on_init(timer);
 }
 
-int k_timer_cleanup(struct k_timer *timer)
+static int timer_cleanup(struct k_timer *timer, __maybe_unused bool locked)
 {
+	int ret = 0;
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, cleanup, timer);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	CHECKIF(z_waitq_head(&timer->wait_q) != NULL) {
-		k_spin_unlock(&lock, key);
+	CHECKIF(locked && (z_waitq_head_locked(&timer->wait_q) != NULL)) {
+		ret = -EAGAIN;
+		goto exit;
+	}
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, -EAGAIN);
-
-		return -EAGAIN;
+	CHECKIF(!locked && (z_waitq_head(&timer->wait_q) != NULL)) {
+		ret = -EAGAIN;
+		goto exit;
 	}
 
 	/* Need to abort the timer so it will not trigger anymore.
@@ -214,11 +218,22 @@ int k_timer_cleanup(struct k_timer *timer)
 		key = k_spin_lock(&lock);
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, 0);
+exit:
+	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, ret);
 
 	k_spin_unlock(&lock, key);
 
-	return 0;
+	return ret;
+}
+
+int k_timer_cleanup(struct k_timer *timer)
+{
+	return timer_cleanup(timer, false);
+}
+
+int z_timer_cleanup_sched_locked(struct k_timer *timer)
+{
+	return timer_cleanup(timer, true);
 }
 
 void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,

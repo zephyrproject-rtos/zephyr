@@ -705,7 +705,11 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool sched_locked)
 			/* k_timer_cleanup() does not check if timer has been
 			 * initialized. So we need to do it here before calling.
 			 */
-			k_timer_cleanup((struct k_timer *)ko->name);
+			if (sched_locked) {
+				z_timer_cleanup_sched_locked((struct k_timer *)ko->name);
+			} else {
+				k_timer_cleanup((struct k_timer *)ko->name);
+			}
 		}
 		break;
 	default:
