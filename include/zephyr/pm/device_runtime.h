@@ -228,6 +228,20 @@ static inline int pm_device_runtime_usage(const struct device *dev)
 #endif
 
 /**
+ * @brief Suspend a device based on usage count (asynchronously if enabled).
+ *
+ * @details Call @ref pm_device_runtime_put_async() if @kconfig{CONFIG_PM_DEVICE_RUNTIME_ASYNC}
+ * is enabled. Otherwise, fall back to @ref pm_device_runtime_put().
+ *
+ * @param dev Device instance.
+ * @param delay Minimum amount of time before triggering the action.
+ */
+#define PM_DEVICE_RUNTIME_PUT_ASYNC_IF_ENABLED(dev, delay) \
+	COND_CODE_1(IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME_ASYNC), \
+		    (pm_device_runtime_put_async(dev, delay)), \
+		    (pm_device_runtime_put(dev)))
+
+/**
  * @brief Writes a "failed to resume" debug message to the log.
  *
  * @details Writes a "failed to resume" debug message to the log using the
