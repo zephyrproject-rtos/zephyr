@@ -110,6 +110,8 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 int k_msgq_cleanup(struct k_msgq *msgq)
 {
 	int ret = 0;
+	k_spinlock_key_t key = k_spin_lock(&msgq->lock);
+
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
 	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
@@ -123,6 +125,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 	}
 
 out:
+	k_spin_unlock(&msgq->lock, key);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
 }
