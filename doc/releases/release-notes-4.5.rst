@@ -299,6 +299,7 @@ New APIs and options
   * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
   * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`PM_DEVICE_RUNTIME_PUT_ASYNC_IF_ENABLED`
 
 * Ring buffer
 
