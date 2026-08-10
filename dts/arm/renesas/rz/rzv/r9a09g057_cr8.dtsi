@@ -34,6 +34,10 @@
 		compatible = "renesas,rzv-pinctrl";
 	};
 
+	chosen {
+		zephyr,romstart = &itcm;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

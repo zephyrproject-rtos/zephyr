@@ -302,22 +302,17 @@ need to put "m4_reserved" in the list of memory-region property of the cm7 node.
 
 Extra Zephyr Kernel configure item for DDR Image:
 
-If use remotepoc to boot DDR board (imx8mp_evk/mimx8ml8/m7/ddr), also need to enable
-"CONFIG_ROMSTART_RELOCATION_ROM" in order to put romstart memory section into ITCM because
-M7 Core will get the first instruction from zero address of ITCM, but romstart relocation
-will make the storage size of zephyr.bin too large, so we don't enable it by default in
-board defconfig.
+If you use remotepoc to boot the DDR board (imx8mp_evk/mimx8ml8/m7/ddr), you
+need to set the ITCM memory as ROMSTART region to hold the vectors. This can be
+done as board overlay with the following devicetree code. It isn't enabled by
+default since otherwise the gap between ITCM and RAM are filled, creating a
+binary file that is too large.
 
-.. code-block:: console
+.. code-block:: dts
 
-   diff --git a/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig b/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
-   index 17542cb4eec..8c30c5b6fa3 100644
-   --- a/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
-   +++ b/boards/nxp/imx8mp_evk/imx8mp_evk_mimx8ml8_m7_ddr_defconfig
-   @@ -12,3 +12,4 @@ CONFIG_CONSOLE=y
-   CONFIG_XIP=y
-   CONFIG_CODE_DDR=y
-   +CONFIG_ROMSTART_RELOCATION_ROM=y
+   chosen {
+      zephyr,romstart = &itcm;
+   };
 
 Then use the following steps to boot Zephyr kernel:
 

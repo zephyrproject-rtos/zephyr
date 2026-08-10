@@ -544,6 +544,13 @@ device.
    * - zephyr,ram-console
      - Selects the :dtcompatible:`RAM section <zephyr,memory-region>` in which
        the console subsystem's RAM backend should place its buffer.
+   * - zephyr,romstart
+     - Specify another memory region into which the vector(s) (usually
+       boot/exception/irq vectors) should be linked. This is usually needed when
+       there is something like a small TCM region into which the exception
+       vector must live while the code can be in another section. The
+       referrenced memory region needs to have a ``zephyr,memory-region``
+       attribute
    * - zephyr,rtc
      - Sets the default RTC device (used for example by the :ref:`SNTP library <sntp_interface>` to
        set the system time when :kconfig:option:`CONFIG_NET_CONFIG_CLOCK_SNTP_SET_RTC` is enabled)

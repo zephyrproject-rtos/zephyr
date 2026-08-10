@@ -23,6 +23,13 @@
 		};
 	};
 
+	/*
+	 * If the chosen "zephyr,flash" node isn't OCRAM_S_CODE memory, it is
+	 * necessary to add the chosen node "zephyr,romstart" with a phandle to
+	 * "ocram_s_code".  This isn't done by default since it enlarges the
+	 * compiled .bin file due to filling missing memory between sections
+	 */
+
 	soc {
 		ddr_code: code@10000000 {
 			compatible = "nxp,imx-code-bus";
@@ -58,8 +65,9 @@
 
 		/* OCRAM_S 0x20180000 is aliased at 0 */
 		ocram_s_code: code@0 {
-			compatible = "nxp,imx-code-bus";
+			compatible = "zephyr,memory-region", "nxp,imx-code-bus";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			zephyr,memory-region = "OCRAM_S_CODE";
 		};
 
 		ocram_s_sys: memory@180000 {
