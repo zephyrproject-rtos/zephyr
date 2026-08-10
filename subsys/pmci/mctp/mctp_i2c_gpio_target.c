@@ -175,6 +175,10 @@ int mctp_i2c_gpio_target_stop(struct i2c_target_config *config)
 		}
 	}
 
+	/* After stop, a new register must be selected */
+	b->reg_addr = MCTP_I2C_GPIO_INVALID_ADDR;
+	b->rxtx = false;
+
 	return 0;
 }
 
