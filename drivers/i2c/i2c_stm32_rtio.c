@@ -27,58 +27,6 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_rtio);
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
-
-int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t i2c_clock = 0U;
-	int ret;
-
-	if (cfg->pclk_len > 1) {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
-			return -EIO;
-		}
-	} else {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-			return -EIO;
-		}
-	}
-
-	data->dev_config = config;
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("Failed enabling I2C clock");
-		return ret;
-	}
-#endif
-
-	LL_I2C_Disable(i2c);
-	ret = i2c_stm32_configure_timing(dev, i2c_clock);
-	if (ret < 0) {
-		LOG_ERR("Failed configuring I2C timing");
-		return ret;
-	}
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("Failed disabling I2C clock");
-		return ret;
-	}
-#endif
-
-	return ret;
-}
-
 static bool i2c_stm32_start(const struct device *dev, int *status)
 {
 	struct i2c_stm32_data *data = dev->data;

@@ -17,6 +17,7 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
 #include <stm32_cache.h>
+#include <stm32_ll_i2c.h>
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -187,6 +188,69 @@ void i2c_stm32_pm_put(const struct device *dev)
 		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 	}
 	(void)pm_device_runtime_put(dev);
+}
+
+int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
+	I2C_TypeDef *i2c = cfg->i2c;
+	uint32_t i2c_clock = 0U;
+	int ret;
+
+	if (cfg->pclk_len > 1) {
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
+					   &i2c_clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
+			return -EIO;
+		}
+	} else {
+		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
+					   &i2c_clock) < 0) {
+			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
+			return -EIO;
+		}
+	}
+
+	data->dev_config = config;
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
+	if (ret < 0) {
+		LOG_ERR("failure Enabling I2C clock");
+		return ret;
+	}
+#endif
+
+	LL_I2C_Disable(i2c);
+
+#ifndef CONFIG_I2C_RTIO
+#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
+	i2c_stm32_set_smbus_mode(dev, data->mode);
+#endif
+#endif /* CONFIG_I2C_RTIO */
+
+	ret = i2c_stm32_configure_timing(dev, i2c_clock);
+	if (ret < 0) {
+		return ret;
+	}
+
+#ifndef CONFIG_I2C_RTIO
+	if (data->smbalert_active) {
+		LL_I2C_Enable(i2c);
+	}
+#endif /* CONFIG_I2C_RTIO */
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
+	if (ret < 0) {
+		LOG_ERR("failure disabling I2C clock");
+		return ret;
+	}
+#endif
+
+	return 0;
 }
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
