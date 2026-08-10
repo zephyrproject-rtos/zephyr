@@ -859,7 +859,7 @@ static int bmi160_sample_fetch(const struct device *dev,
 		if (data->pmu_sts.raw == 0U) {
 			return -EINVAL;
 		}
-		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->sample.temperature);
+		return bmi160_word_read(dev, BMI160_REG_TEMPERATURE0, &data->temperature);
 	}
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
@@ -962,7 +962,7 @@ static int bmi160_temp_channel_get(const struct device *dev,
 	struct bmi160_data *data = dev->data;
 
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
-	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000 + (int16_t)data->sample.temperature * 1953;
+	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000 + (int16_t)data->temperature * 1953;
 
 	val->val1 = temp_micro / 1000000;
 	val->val2 = temp_micro % 1000000;
