@@ -1248,7 +1248,7 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
-	struct bt_rfcomm_rpn default_rpn;
+	struct bt_rfcomm_rpn rsp;
 	uint8_t dlci;
 	uint8_t data_bits, stop_bits, parity_bits;
 
@@ -1265,9 +1265,10 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 
 		LOG_DBG("Set RPN setting: dlci %d", dlci);
 
+		rsp = *rpn;
 		/* Accept all the values proposed by the sender */
-		rpn->param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
-		rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, rpn);
+		rsp.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
+		rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
 		return;
 	}
 
@@ -1283,20 +1284,18 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 	/* If only one value byte then current port settings has to be returned
 	 * We will send default values
 	 */
-	default_rpn.dlci = BT_RFCOMM_SET_ADDR(dlci, 1);
-	default_rpn.baud_rate = BT_RFCOMM_RPN_BAUD_RATE_9600;
-	default_rpn.flow_control = BT_RFCOMM_RPN_FLOW_NONE;
-	default_rpn.xoff_char = BT_RFCOMM_RPN_XOFF_CHAR;
-	default_rpn.xon_char = BT_RFCOMM_RPN_XON_CHAR;
+	rsp.dlci = BT_RFCOMM_SET_ADDR(dlci, 1);
+	rsp.baud_rate = BT_RFCOMM_RPN_BAUD_RATE_9600;
+	rsp.flow_control = BT_RFCOMM_RPN_FLOW_NONE;
+	rsp.xoff_char = BT_RFCOMM_RPN_XOFF_CHAR;
+	rsp.xon_char = BT_RFCOMM_RPN_XON_CHAR;
 	data_bits = BT_RFCOMM_RPN_DATA_BITS_8;
 	stop_bits = BT_RFCOMM_RPN_STOP_BITS_1;
 	parity_bits = BT_RFCOMM_RPN_PARITY_NONE;
-	default_rpn.line_settings = BT_RFCOMM_SET_LINE_SETTINGS(data_bits,
-								stop_bits,
-								parity_bits);
-	default_rpn.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
+	rsp.line_settings = BT_RFCOMM_SET_LINE_SETTINGS(data_bits, stop_bits, parity_bits);
+	rsp.param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
 
-	rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &default_rpn);
+	rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, &rsp);
 }
 
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
