@@ -182,7 +182,7 @@ static int mfd_npm13xx_init(const struct device *dev)
 			return ret;
 		}
 
-		mfd_data->work.handler = work_callback;
+		k_work_init(&mfd_data->work, work_callback);
 
 		ret = gpio_pin_interrupt_configure_dt(&config->host_int_gpios,
 						      GPIO_INT_EDGE_TO_ACTIVE);
@@ -300,15 +300,39 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms)
 	return mfd_npm13xx_reg_write(dev, NPM13XX_SHIP_BASE, SHIP_OFFSET_HIBERNATE, 1U);
 }
 
+/* Union of the event masks of every registered callback, optionally excluding one. */
+static npm13xx_event_t covered_events(struct mfd_npm13xx_data *data,
+				      const struct mfd_npm13xx_event_callback *except)
+{
+	struct mfd_npm13xx_event_callback *cb;
+	npm13xx_event_t covered = 0U;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&data->user_callbacks, cb, node) {
+		if (cb != except) {
+			covered |= cb->event_mask;
+		}
+	}
+
+	return covered;
+}
+
 int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback)
 {
+	const struct mfd_npm13xx_config *config = dev->config;
 	struct mfd_npm13xx_data *data = dev->data;
+	npm13xx_event_t new_events;
+	npm13xx_event_t enabled = 0U;
 	int ret = 0;
 
 	/* The gpio_callback helpers asserted these; nothing else does now. */
 	if ((callback == NULL) || (callback->handler == NULL) || (callback->event_mask == 0U) ||
 	    ((callback->event_mask & ~BIT_MASK(NPM13XX_EVENT_MAX)) != 0U)) {
 		return -EINVAL;
+	}
+
+	/* host-int-gpios is optional, and without it nothing dispatches an event. */
+	if (config->host_int_gpios.port == NULL) {
+		return -ENOTSUP;
 	}
 
 	k_mutex_lock(&data->event_lock, K_FOREVER);
@@ -318,27 +342,57 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_
 		goto unlock;
 	}
 
-	/* Enable interrupts for specified events */
-	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
-		if ((callback->event_mask & BIT(i)) != 0U) {
-			/* Clear pending interrupt */
-			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
-						    event_reg[i].offset + MAIN_OFFSET_CLR,
-						    event_reg[i].mask);
-			if (ret < 0) {
-				goto unlock;
-			}
+	/*
+	 * Only the events nobody has subscribed to yet. The status register is
+	 * write-one-to-clear, so clearing a bit another callback is already waiting on
+	 * would discard an event the work handler has not read.
+	 */
+	new_events = callback->event_mask & ~covered_events(data, NULL);
 
-			ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
-						    event_reg[i].offset + MAIN_OFFSET_INTENSET,
-						    event_reg[i].mask);
-			if (ret < 0) {
-				goto unlock;
-			}
+	/* Linked before its interrupts are enabled, so an event cannot arrive unhandled. */
+	sys_slist_prepend(&data->user_callbacks, &callback->node);
+
+	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
+		if ((new_events & BIT(i)) == 0U) {
+			continue;
+		}
+
+		/* Discard a stale event while this source is still disabled */
+		ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
+					    event_reg[i].offset + MAIN_OFFSET_CLR,
+					    event_reg[i].mask);
+		if (ret < 0) {
+			goto rollback;
+		}
+
+		/* Recorded before the write, for the same reason the event path records
+		 * before its clear: a write that reports an error may still have landed.
+		 */
+		enabled |= BIT(i);
+
+		ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
+					    event_reg[i].offset + MAIN_OFFSET_INTENSET,
+					    event_reg[i].mask);
+		if (ret < 0) {
+			goto rollback;
 		}
 	}
 
-	sys_slist_prepend(&data->user_callbacks, &callback->node);
+	goto unlock;
+
+rollback:
+	/*
+	 * A caller that gets an error may free the callback, so nothing this call
+	 * enabled may outlive it. Best effort: the bus is already misbehaving.
+	 */
+	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
+		if ((enabled & BIT(i)) != 0U) {
+			(void)mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
+						    event_reg[i].offset + MAIN_OFFSET_INTENCLR,
+						    event_reg[i].mask);
+		}
+	}
+	sys_slist_find_and_remove(&data->user_callbacks, &callback->node);
 
 unlock:
 	k_mutex_unlock(&data->event_lock);
@@ -349,6 +403,8 @@ int mfd_npm13xx_remove_callback(const struct device *dev,
 				struct mfd_npm13xx_event_callback *callback)
 {
 	struct mfd_npm13xx_data *data = dev->data;
+	npm13xx_event_t orphaned;
+	sys_snode_t *prev;
 	int ret = 0;
 
 	if (callback == NULL) {
@@ -357,10 +413,32 @@ int mfd_npm13xx_remove_callback(const struct device *dev,
 
 	k_mutex_lock(&data->event_lock, K_FOREVER);
 
-	if (!sys_slist_find_and_remove(&data->user_callbacks, &callback->node)) {
+	if (!sys_slist_find(&data->user_callbacks, &callback->node, &prev)) {
 		ret = -EINVAL;
+		goto unlock;
 	}
 
+	/* The events this callback was the last subscriber to */
+	orphaned = callback->event_mask & ~covered_events(data, callback);
+
+	for (int i = 0; i < NPM13XX_EVENT_MAX; i++) {
+		if ((orphaned & BIT(i)) == 0U) {
+			continue;
+		}
+
+		ret = mfd_npm13xx_reg_write(data->dev, NPM13XX_MAIN_BASE,
+					    event_reg[i].offset + MAIN_OFFSET_INTENCLR,
+					    event_reg[i].mask);
+		if (ret < 0) {
+			/* Still registered is safer than enabled with no handler. */
+			goto unlock;
+		}
+	}
+
+	/* Unlinked only once its interrupts are off, for the same reason as above. */
+	sys_slist_remove(&data->user_callbacks, prev, &callback->node);
+
+unlock:
 	k_mutex_unlock(&data->event_lock);
 	return ret;
 }

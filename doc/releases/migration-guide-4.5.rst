@@ -538,6 +538,17 @@ MFD
   also returns ``-EINVAL``, where ``gpio_manage_callback()`` removed the node, re-inserted it
   and returned success. (:github:`110454`)
 
+* :c:func:`mfd_npm13xx_add_callback` and :c:func:`mfd_npm13xx_remove_callback` now change the
+  hardware subscription transactionally, which alters three observable behaviours. Registration
+  on a device whose devicetree node has no ``host-int-gpios`` returns ``-ENOTSUP``, because
+  nothing would dispatch the events; it previously returned success and enabled interrupts that
+  could never be delivered. Registration clears and enables only the event bits that no other
+  registered callback already covers, so adding a second subscriber for an event no longer
+  discards a pending occurrence the first one has not received. And removal disables the
+  interrupts left with no remaining subscriber before unlinking the callback, keeping it
+  registered if that write fails, rather than leaving an enabled event source with no handler.
+  (:github:`110454`)
+
 MSPI
 ====
 
