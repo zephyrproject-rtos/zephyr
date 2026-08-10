@@ -50,11 +50,9 @@ static void adxl355_gpio_callback(const struct device *dev, struct gpio_callback
 		LOG_ERR("Failed to disable interrupt: %d", ret);
 		return;
 	}
-#ifdef CONFIG_ADXL355_TRIGGER_OWN_THREAD
 #ifdef CONFIG_ADXL355_STREAM
 	adxl355_stream_irq_handler(data->dev);
 #endif /* CONFIG_ADXL355_STREAM */
-#endif /* !CONFIG_ADXL355_TRIGGER_OWN_THREAD */
 
 #if defined(CONFIG_ADXL355_TRIGGER_OWN_THREAD)
 	k_sem_give(&data->gpio_sem);
