@@ -83,6 +83,18 @@ zephyr_compile_definitions(SIGNAL_ACTION_DB_SIZE=${sigaction_min_size})
 zephyr_sources_ifdef(CONFIG_SIGNAL signal.c)
 zephyr_sources_ifdef(CONFIG_SYSCALL_RETURN_HOOK return_hook.c)
 zephyr_sources_ifdef(CONFIG_THREAD_RESULT thread_exit.c)
+zephyr_sources_ifdef(CONFIG_PROCESS process.c)
+
+if(CONFIG_PROCESS)
+  # Assemble the static process topology (K_SESSION_DEFINE /
+  # K_PROCESS_GROUP_DEFINE / K_PROCESS_DEFINE_EXT membership lists) directly
+  # into the ELF. Mandatory for static topology, like gen_kobject_list for
+  # user-mode kernel objects: there is no boot-time fallback.
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/gen_process_topology.py
+            ${PROJECT_BINARY_DIR}/${KERNEL_ELF_NAME}
+  )
+endif()
 zephyr_sources_ifdef(CONFIG_THREAD_CLEANUP cleanup.c)
 zephyr_sources_ifdef(CONFIG_THREAD_SPECIFIC_STORAGE tss.c)
 

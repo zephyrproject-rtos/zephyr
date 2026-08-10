@@ -97,6 +97,7 @@ kobjects = OrderedDict(
         ("k_pipe", (None, False, True)),
         ("k_queue", (None, False, True)),
         ("k_poll_signal", (None, False, True)),
+        ("k_process", ("CONFIG_PROCESS", False, True)),
         ("k_sem", (None, False, True)),
         ("k_stack", (None, False, True)),
         ("k_thread", (None, False, True)),  # But see #

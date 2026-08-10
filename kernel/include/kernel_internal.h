@@ -14,6 +14,8 @@
 #ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 #define ZEPHYR_KERNEL_INCLUDE_KERNEL_INTERNAL_H_
 
+#include <errno.h>
+
 #include <zephyr/kernel.h>
 #include <kernel_arch_interface.h>
 #include <kthread.h>
@@ -150,6 +152,22 @@ extern int z_stack_adjust_initialized;
 extern struct k_thread z_main_thread;
 #endif /* CONFIG_MULTITHREADING */
 
+#ifdef CONFIG_PROCESS
+/* the three kernel-reserved processes: idle, init, and the kthread process */
+extern struct k_process z_proc_idle;
+extern struct k_process z_proc_init;
+extern struct k_process z_proc_kth;
+
+/* initialize a record and place it in the process tree (under the process lock) */
+void z_kernel_process_init_one(struct k_process *proc, struct k_process *parent);
+
+/* Add a new thread to its creator's process (thread group) */
+void z_process_init_thread(struct k_thread *thread);
+
+/* Remove a dying thread from its process; zombifies the process on last exit */
+void z_process_exit_thread(struct k_thread *thread);
+
+#endif /* CONFIG_PROCESS */
 #ifdef CONFIG_USERSPACE
 /* thread and stack objects under the kernel-object collector (kernel/userspace.c) */
 /* an OWNED object is about to be disposed: its pool drops the bookkeeping (weak in

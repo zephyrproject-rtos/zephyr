@@ -580,6 +580,16 @@ void k_object_free(void *obj)
 	dyn = dyn_object_find_locked(obj);
 
 	if (dyn != NULL) {
+#ifdef CONFIG_PROCESS
+		if ((dyn->kobj.type == K_OBJ_PROCESS) &&
+		    (((struct k_process *)obj)->state != K_PROCESS_UNUSED)) {
+			/* a live or unreaped process record must not be freed;
+			 * its memory is reclaimed at reap
+			 */
+			k_spin_unlock(&lists_lock, key);
+			return;
+		}
+#endif /* CONFIG_PROCESS */
 		k_spinlock_key_t okey = k_spin_lock(&obj_lock);
 		bool live = kobj_live(&dyn->kobj);
 

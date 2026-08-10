@@ -8239,6 +8239,219 @@ static inline bool k_thread_cancel_may_be_pending(void)
 FUNC_NORETURN void k_thread_exit(void *result);
 #endif
 
+#include <zephyr/kernel/process.h>
+
+#if defined(CONFIG_PROCESS) || defined(__DOXYGEN__)
+/**
+ * @addtogroup k_process_apis
+ * @{
+ */
+
+/**
+ * @brief Obtain the process ID of the calling thread's process
+ *
+ * Every thread belongs to a process (thread group); this returns the handle
+ * identifying that group: its thread group leader's handle.
+ *
+ * @return the calling thread's process handle
+ */
+__syscall k_pid_t k_getpid(void);
+
+/**
+ * @brief Obtain the parent of the calling thread's process
+ *
+ * @return the parent process handle; the idle process for init
+ */
+__syscall k_pid_t k_getppid(void);
+
+/**
+ * @brief Obtain the process group of a process
+ *
+ * @param pid process handle, or NULL for the calling thread's process
+ * @return the process-group handle, or NULL if @a pid is invalid
+ */
+__syscall k_pgrp_t k_getpgid(k_pid_t pid);
+
+/**
+ * @brief Obtain the session of a process
+ *
+ * @param pid process handle, or NULL for the calling thread's process
+ * @return the session handle, or NULL if @a pid is invalid
+ */
+__syscall k_session_t k_getsid(k_pid_t pid);
+
+/**
+ * @brief Set the process group of a process
+ *
+ * Moves the process named by @a pid into the live process group @a pgrp. The
+ * target must be the calling process or one of its children in the same
+ * session, and must not be a session leader. Creating a new group takes
+ * caller-provided memory: see k_process_group_init().
+ *
+ * @param pid process to move, or NULL for the calling process
+ * @param pgrp process group to join
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a pid names no process
+ * @retval -EPERM if the target is a session leader
+ * @retval -EINVAL if @a pgrp is NULL or not a live group in the target's session
+ */
+__syscall int k_setpgid(k_pid_t pid, k_pgrp_t pgrp);
+
+/**
+ * @brief Queue a signal to every process in a process group
+ *
+ * Delivers kernel signal @a signo to one eligible thread of each member
+ * process of @a pgrp.
+ *
+ * @param pgrp target process group, or NULL for the calling process's group
+ * @param signo kernel signal number
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if the process group has no members
+ * @retval -EINVAL if @a signo is invalid or @a pgrp is not a process group
+ */
+__syscall int k_kill_pgrp(k_pgrp_t pgrp, int signo);
+
+/**
+ * @brief Send a signal to a process
+ *
+ * Delivers kernel signal @a signo to one thread of the process named by
+ * @a pid that has the signal unblocked (process-directed delivery). Numeric
+ * POSIX kill() encodings (0, -1, negative group IDs) are a system/POSIX layer
+ * concern and are decoded above the kernel; group delivery is k_kill_pgrp().
+ *
+ * @param pid process handle
+ * @param signo kernel signal number, or 0 to check for existence only
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a pid names no process
+ * @retval -EINVAL if @a signo is invalid
+ */
+__syscall int k_kill(k_pid_t pid, int signo);
+
+/**
+ * @brief Terminate the calling thread's process
+ *
+ * Terminates every thread in the calling thread's process (thread group) and
+ * latches @a code as the process's exit status for collection via k_waitpid().
+ * No user callbacks run; C library exit handling happens above this call.
+ *
+ * @param code exit code; the low 8 bits are preserved in the wait status
+ *
+ * @note Does not return. Not declared FUNC_NORETURN because system call
+ *       stub generation cannot marshal a noreturn return type.
+ */
+__syscall void k_exit(int code);
+
+/**
+ * @brief Wait for a child process to terminate
+ *
+ * Waits for a state change in a child of the calling thread's process:
+ * the child named by @a pid, or any child when @a pid is NULL.
+ *
+ * Reaping retires the child's handle: the leader thread object may be reused
+ * as a new process leader only after this call returns it.
+ *
+ * @param pid child process handle, or NULL for any child
+ * @param[out] reaped on success, the handle of the reaped child; may be NULL
+ * @param[out] wstatus on success, the child's wait status (K_WSTATUS_*); may be NULL
+ * @param options K_PROCESS_W* option flags
+ * @param timeout maximum time to wait for a state change
+ *
+ * @retval 0 on success
+ * @retval -ECHILD if the calling process has no matching children
+ * @retval -EAGAIN if K_PROCESS_WNOHANG was given and no child has changed state,
+ *         or the @a timeout expired
+ * @retval -ENOTSUP if an unsupported option was given
+ */
+__syscall int k_waitpid(k_pid_t pid, k_pid_t *reaped, int *wstatus, uint32_t options,
+			k_timeout_t timeout);
+
+/**
+ * @brief Wait for a child process in a process group to terminate
+ *
+ * As k_waitpid(), with matching confined to children of the calling process
+ * that are members of @a pgrp (POSIX waitpid(-pgid): the group a child
+ * belongs to, not a group it leads).
+ *
+ * @param pgrp process group to match, or NULL for the calling process's group
+ * @param[out] reaped on success, the handle of the reaped child; may be NULL
+ * @param[out] wstatus on success, the child's wait status (K_WSTATUS_*); may be NULL
+ * @param options K_PROCESS_W* option flags
+ * @param timeout maximum time to wait for a state change
+ *
+ * @retval 0 on success
+ * @retval -ECHILD if the calling process has no matching children
+ * @retval -EAGAIN if K_PROCESS_WNOHANG was given and no child has changed state,
+ *         or the @a timeout expired
+ * @retval -ENOTSUP if an unsupported option was given
+ */
+__syscall int k_waitpid_pgrp(k_pgrp_t pgrp, k_pid_t *reaped, int *wstatus, uint32_t options,
+			     k_timeout_t timeout);
+
+/**
+ * @brief Initialize a process from caller-provided memory
+ *
+ * Initializes the non-initialized process record @a proc (zeroed memory, or a
+ * record already reaped via k_waitpid()) and adopts the listed threads as its
+ * members; @a threads[0] becomes the thread group leader and its handle the
+ * process handle. The threads must have been created but not yet started
+ * (k_thread_create() with a delay of K_FOREVER). The new process is a child
+ * of the calling thread's process and joins its process group.
+ *
+ * The kernel never allocates: callers provide the record, statically or
+ * from memory they manage themselves, and may reuse it once reaped.
+ *
+ * From user mode, @a proc must be a process record the caller has been
+ * granted access to - statically defined, or allocated with
+ * k_object_alloc() - and the caller must hold permission on every listed
+ * thread object.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an argument is invalid
+ * @retval -EBUSY if @a proc is already initialized (in use, or an unreaped
+ *         zombie) or a listed thread still leads an unreaped process
+ */
+__syscall int k_process_init(struct k_process *proc, const k_tid_t *threads,
+			     size_t num_threads);
+
+/**
+ * @brief Initialize a process group from caller-provided memory
+ *
+ * Initializes the non-initialized group cell @a grp (zeroed, or retired) as a
+ * new process group led by process @a pid (NULL for the calling process) in
+ * that process's session, and moves the process into it.
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a pid names no process, or names one that is neither the
+ *         caller nor a child of the caller
+ * @retval -EPERM if the process is a session leader
+ * @retval -EALREADY if the process already leads its own group (@a grp unused)
+ * @retval -EBUSY if @a grp is already an active process group
+ */
+int k_process_group_init(struct k_process_group *grp, k_pid_t pid);
+
+/**
+ * @brief Initialize a session from caller-provided memory
+ *
+ * Initializes the non-initialized cells @a session and @a grp (zeroed, or
+ * retired) as a new session containing a new process group, both led by the
+ * calling process, and moves the calling process into them.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an argument is NULL
+ * @retval -EPERM if the calling process is a process-group leader
+ * @retval -EBUSY if @a session or @a grp is already active
+ */
+int k_session_init(struct k_session *session, struct k_process_group *grp);
+
+
+/**
+ * @}
+ */
+#endif /* defined(CONFIG_PROCESS) || defined(__DOXYGEN__) */
+
 /**
  * @addtogroup k_thread_cleanup_apis
  * @{

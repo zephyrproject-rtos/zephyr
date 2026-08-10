@@ -1,0 +1,76 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Process support"
+
+config PROCESS
+	bool "Process (thread group) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Select 'y' to enable kernel process (thread group) support: every
+	  thread belongs to a process, processes form a parent/child tree
+	  rooted in the three kernel-reserved processes (swapper, init,
+	  kthreadd), and process termination can be observed with k_waitpid().
+
+	  Process support does not require CONFIG_USERSPACE: without it,
+	  processes provide identity, lifetime, and wait semantics for
+	  supervisor-mode threads; memory isolation between processes
+	  additionally requires CONFIG_USERSPACE.
+
+if PROCESS
+
+config PROCESS_INIT
+	bool "Start the init process with an initial thread"
+	help
+	  Give the reserved init process a running initial thread at boot,
+	  independent of the image main(). The thread runs
+	  z_process_init_entry(), a weak function the application overrides to
+	  act as the system's init process; the default implementation sleeps
+	  forever. Without this option, the init process exists but has no
+	  thread of its own until one is created in it.
+
+config PROCESS_INIT_STACK_SIZE
+	int "init process initial thread stack size"
+	depends on PROCESS_INIT
+	default 1024
+	help
+	  Stack size of the init process's initial thread.
+
+config PROCESS_INIT_PRIORITY
+	int "init process initial thread priority"
+	depends on PROCESS_INIT
+	default 0
+	help
+	  Scheduling priority of the init process's initial thread.
+
+config PROCESS_SIGCHLD_NOTIFIER_STACK_SIZE
+	int "SIGCHLD notifier thread stack size"
+	depends on SIGNAL
+	default 1024
+	help
+	  Stack size of the thread that emits K_SIG_CHLD to a parent process
+	  when one of its children becomes a zombie. Signal generation cannot
+	  run in the scheduler's thread-halt path, so it is deferred to this
+	  thread.+
+config SIGNAL_SET_SIZE_MIN_PROCESS
+	int
+	depends on SIGNAL
+	default 18
+	help
+	  Child-status notification uses K_SIG_CHLD (17), which must be
+	  representable in the kernel signal set: processes require a set of
+	  at least 18 signals.
+
+config SIGNAL_QUEUE_SIZE_ADD_PROCESS
+	int
+	depends on SIGNAL
+	default 4
+	help
+	  Queue headroom for child-status signals: each zombie child may hold
+	  one pending K_SIG_CHLD element alongside ordinary signal traffic,
+	  so a queue sized only for the latter can drop signals or leave
+	  sigtimedwait() callers hung.
+
+endif # PROCESS
+
+endmenu

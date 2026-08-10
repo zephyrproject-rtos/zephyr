@@ -1316,6 +1316,7 @@ config HW_SHADOW_STACK_ALLOW_REUSE
 endmenu
 
 rsource "userspace/Kconfig"
+rsource "Kconfig.process"
 
 config USE_SWITCH
 	bool "Use new-style _arch_switch instead of arch_swap"

@@ -86,6 +86,13 @@ if(CONFIG_ARM_SCMI)
   zephyr_iterable_section(NAME scmi_protocol GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 endif()
 
+if(CONFIG_PROCESS)
+  zephyr_iterable_section(NAME k_process GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
+  zephyr_iterable_section(NAME k_process_group GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
+  zephyr_iterable_section(NAME k_session GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
+  zephyr_iterable_section(NAME k_process_thread_preset GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
+endif()
+
 if(CONFIG_SENSING)
   zephyr_iterable_section(NAME sensing_sensor GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 endif()

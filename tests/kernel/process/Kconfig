@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Sane suite defaults for ad-hoc CONFIG_SIGNAL=y builds: the signal-enabled
+# tests need headroom for per-member group kills and per-zombie SIGCHLD
+# elements, and test_kill installs one signal handler.
+
+if SIGNAL
+
+config SIGNAL_SET_SIZE
+	default 40
+
+config SIGNAL_QUEUE_SIZE
+	default 8
+
+config SIGNAL_ACTION_DB_SIZE
+	default 2
+
+endif # SIGNAL
+
+source "Kconfig.zephyr"
