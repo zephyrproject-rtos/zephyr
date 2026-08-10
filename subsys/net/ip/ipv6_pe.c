@@ -253,7 +253,16 @@ static int gen_temporary_iid(struct net_if *iface,
 	       MIN(sizeof(buf.mac), net_if_get_link_addr(iface)->len));
 
 	if (!once) {
-		sys_rand_get(&secret_key, sizeof(secret_key));
+		/* The secret key must not be guessable, otherwise the
+		 * generated temporary IIDs could be predicted and the
+		 * privacy extension would not provide any protection.
+		 * RFC 8981 ch 3.3.2
+		 */
+		if (sys_csrand_get(secret_key, sizeof(secret_key)) != 0) {
+			NET_ERR("Cannot generate secret key for temporary IID");
+			return -EIO;
+		}
+
 		once = true;
 	}
 
