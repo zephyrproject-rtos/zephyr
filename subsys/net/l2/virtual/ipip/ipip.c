@@ -471,13 +471,14 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 				 net_if_get_link_addr(iface));
 			if (ret < 0) {
 				NET_WARN("IPv6 IID generation issue (%d)", ret);
-			}
-
-			ifaddr = net_if_ipv6_addr_add(iface, &iid, NET_ADDR_AUTOCONF, 0);
-			if (!ifaddr) {
-				NET_ERR("Cannot add %s address to interface %p",
-					net_sprint_ipv6_addr(&iid),
-					iface);
+			} else {
+				ifaddr = net_if_ipv6_addr_add(iface, &iid,
+							      NET_ADDR_AUTOCONF, 0);
+				if (!ifaddr) {
+					NET_ERR("Cannot add %s address to interface %p",
+						net_sprint_ipv6_addr(&iid),
+						iface);
+				}
 			}
 		}
 	}

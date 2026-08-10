@@ -2389,6 +2389,7 @@ static inline void handle_prefix_autonomous(struct net_pkt *pkt,
 			 net_if_get_link_addr(iface));
 	if (ret < 0) {
 		NET_WARN("IPv6 IID generation issue (%d)", ret);
+		return;
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup(&addr, NULL);
