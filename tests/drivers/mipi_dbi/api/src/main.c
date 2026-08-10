@@ -9,9 +9,15 @@
 
 static const uint8_t modes[] = {
 	MIPI_DBI_MODE_8080_BUS_8_BIT,
+/*
+ * A bit-banged controller drives exactly as many data lines as its
+ * data-gpios property lists, so only the matching mode belongs here.
+ */
+#if !DT_NODE_HAS_COMPAT(DT_NODELABEL(mipi_dbi), zephyr_mipi_dbi_bitbang)
 #ifndef MULTIPLE_INSTANCES
 	MIPI_DBI_MODE_8080_BUS_9_BIT,
 	MIPI_DBI_MODE_8080_BUS_16_BIT,
+#endif
 #endif
 };
 
