@@ -252,13 +252,22 @@ extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERV
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
+struct cap_unicast_ac_cis_param {
+	bool has_snk;
+	bool has_src;
+	enum bt_audio_location snk_loc;
+	enum bt_audio_location src_loc;
+};
+
+struct cap_unicast_ac_conn_param {
+	size_t cis_cnt;
+	struct cap_unicast_ac_cis_param cis_param[BAP_UNICAST_AC_MAX_PAIR];
+};
+
 struct cap_unicast_ac_param {
 	char *name;
 	size_t conn_cnt;
-	size_t snk_cnt[BAP_UNICAST_AC_MAX_CONN];
-	size_t src_cnt[BAP_UNICAST_AC_MAX_CONN];
-	size_t snk_chan_cnt;
-	size_t src_chan_cnt;
+	struct cap_unicast_ac_conn_param conn_param[BAP_UNICAST_AC_MAX_CONN];
 };
 
 extern struct unicast_group default_unicast_group;
