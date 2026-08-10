@@ -11,5 +11,33 @@ properties:
   "#clock-cells":
     const: 1
 
+  sysctl:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the SYSCTL syscon region backing this clock tree.
+
+  cpuss:
+    type: phandle
+    description: |
+      Phandle to the CPUSS syscon region, needed to gate the flash
+      instruction cache while loading factory PLL trim values.
+
+  factoryregion:
+    type: phandle
+    description: |
+      Phandle to the read-only factory calibration syscon region. Only
+      needed when a System PLL is present on the clock tree.
+
+  fri:
+    type: phandle
+    description: |
+      Phandle to the FRI syscon region, used for flash wait states.
+
+  memcfg:
+    type: phandle
+    description: |
+      Phandle to the MEMCFG syscon region, used for RAM/ROM wait states.
+
 clock-cells:
   - clk
