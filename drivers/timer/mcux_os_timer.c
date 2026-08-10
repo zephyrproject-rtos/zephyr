@@ -351,8 +351,9 @@ static void mcux_os_timer_set_lp_counter_timeout(void)
 		timeout -= OSTIMER_GetCurrentTimerValue(base);
 		/* Round up to the next tick boundary */
 		timeout += (CYC_PER_TICK - 1);
+		timeout = (timeout / CYC_PER_TICK) * CYC_PER_TICK;
 		/* Convert to microseconds and round up to the next value */
-		timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
+		timeout = k_cyc_to_us_ceil64(timeout);
 	}
 
 	mcux_lpc_ostick_set_counter_timeout(timeout);
