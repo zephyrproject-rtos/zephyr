@@ -58,6 +58,10 @@
 			interrupts = <52 0>;
 		};
 
+		pka: pka@420c2000 {
+			interrupts = <56 0>;
+		};
+
 		rng: rng@420c0800 {
 			interrupts = <53 0>;
 		};
