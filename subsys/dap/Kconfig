@@ -47,6 +47,25 @@ config DAP_BACKEND_USB
 	help
 	  DAP USB backend using bulk endpoints.
 
+config DAP_SWO
+	bool "SWO trace capture (UART mode)"
+	select RING_BUFFER
+	help
+	  Support the DAP_SWO_* command set for Serial Wire Output trace
+	  capture. The application provides the capture backend (typically
+	  a UART receiver on the SWO pin) via dap_swo_backend_register()
+	  and pushes captured bytes with dap_swo_rx(). Trace data reaches
+	  the host either through DAP_SWO_Data responses or, with the USB
+	  backend, through a dedicated bulk IN trace endpoint.
+
+config DAP_SWO_BUFFER_SIZE
+	int "SWO trace buffer size in bytes"
+	depends on DAP_SWO
+	default 2048
+	help
+	  Size of the trace buffer between the capture backend and the
+	  host transport. Reported to the host via DAP_ID_SWO_BUFFER_SIZE.
+
 module = DAP
 module-str = dap
 source "subsys/logging/Kconfig.template.log_config"

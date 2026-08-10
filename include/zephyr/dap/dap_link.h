@@ -17,6 +17,10 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/swdp.h>
 
+#ifdef CONFIG_DAP_SWO
+#include <zephyr/dap/dap_swo.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -54,6 +58,10 @@ struct dap_link_context {
 		/* Match Mask */
 		uint32_t match_mask;
 	} transfer;
+#ifdef CONFIG_DAP_SWO
+	/* SWO trace capture state */
+	struct dap_swo_context swo;
+#endif
 	/** @endcond */
 };
 
