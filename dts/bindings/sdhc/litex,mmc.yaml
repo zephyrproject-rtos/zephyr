@@ -9,11 +9,6 @@ include: [sdhc.yaml]
 
 properties:
   bus-width:
-    type: int
-    enum:
-      - 1
-      - 4
-      - 8
     default: 4
 
   interrupts:
