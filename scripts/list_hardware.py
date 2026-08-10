@@ -6,7 +6,7 @@
 import argparse
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 
 import jsonschema
@@ -62,7 +62,8 @@ class Systems:
                 series = Series(s['name'], [folder], f['name'], [])
                 socs = [(Soc(soc['name'],
                              [c['name'] for c in soc.get('cpuclusters', [])],
-                             [folder], s['name'], f['name']))
+                             [folder], s['name'], f['name'],
+                             list(soc.get('requires', []))))
                         for soc in s.get('socs', [])]
                 series.socs.extend(socs)
                 self._series.append(series)
@@ -71,7 +72,8 @@ class Systems:
                 family.socs.extend(socs)
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], None, f['name']))
+                         [folder], None, f['name'],
+                         list(soc.get('requires', []))))
                     for soc in f.get('socs', [])]
             self._socs.extend(socs)
             self._families.append(family)
@@ -80,7 +82,8 @@ class Systems:
             series = Series(s['name'], [folder], '', [])
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], s['name'], ''))
+                         [folder], s['name'], '',
+                         list(soc.get('requires', []))))
                     for soc in s.get('socs', [])]
             series.socs.extend(socs)
             self._series.append(series)
@@ -89,11 +92,11 @@ class Systems:
         for soc in data.get('socs', []):
             if soc.get('name') is not None:
                 self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
-                                  [folder], '', ''))
+                                  [folder], '', '', list(soc.get('requires', []))))
             elif soc.get('extend') is not None:
                 self._extended_socs.append(Soc(soc['extend'],
                                            [c['name'] for c in soc.get('cpuclusters', [])],
-                                           [folder], '', ''))
+                                           [folder], '', '', list(soc.get('requires', []))))
             else:
                 # This should not happen if schema validation passed
                 sys.exit(f'ERROR: Malformed "socs" section in SoC file: {soc_yaml}\n'
@@ -198,11 +201,15 @@ class Soc:
     folder: list[str]
     series: str = ''
     family: str = ''
+    # Names of other SoCs whose Kconfig and CMake trees must be loaded together with this SoC,
+    # for example when a SiP is described as a SoC wrapping a die maintained in another SoC tree.
+    requires: list[str] = field(default_factory=list)
 
     def extend(self, soc):
         if self.name == soc.name:
             self.cpuclusters.extend(soc.cpuclusters)
             self.folder.extend(soc.folder)
+            self.requires.extend(r for r in soc.requires if r not in self.requires)
 
 
 @dataclass
