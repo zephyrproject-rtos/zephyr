@@ -174,6 +174,14 @@ class Patch(WestCommand):
             action="store_true",
             default=False,
         )
+        apply_arg_parser.add_argument(
+            "--all",
+            help="""
+                Apply patches from all modules in the west workspace
+                (cannot be combined with -sm/--src-module)""",
+            action="store_true",
+            default=False,
+        )
 
         subparsers.add_parser(
             "clean",
@@ -319,6 +327,10 @@ class Patch(WestCommand):
             self.die(f"ERROR: Malformed yaml {args.patch_yml}: {e}")
 
     def do_run(self, args, _):
+        if args.subcommand == "apply" and args.all:
+            self.apply_all(args)
+            return
+
         self.filter_args(args)
 
         west_config = Path(args.west_workspace) / ".west" / "config"
@@ -345,6 +357,25 @@ class Patch(WestCommand):
         patches = yml.get("patches", [])
         if not patches:
             return
+
+        patch_count, failed_patch, patched_mods = self.apply_patches(args, yml, dst_mods)
+
+        if not failed_patch:
+            self.inf(f"{patch_count} patches applied successfully \\o/")
+            return
+
+        if args.roll_back:
+            self.clean(args, yml, patched_mods)
+
+        self.die(f"failed to apply patch {failed_patch}")
+
+    def apply_patches(self, args, yml, dst_mods=None):
+        """Apply the patches of a single patches.yml.
+
+        Returns a (patch_count, failed_patch, patched_mods) tuple, where failed_patch is None if
+        all patches were applied successfully.
+        """
+        patches = yml.get("patches", [])
 
         patch_count = 0
         failed_patch = None
@@ -401,14 +432,74 @@ class Patch(WestCommand):
                 break
             self.dbg("OK")
 
-        if not failed_patch:
+        return patch_count, failed_patch, patched_mods
+
+    def apply_all(self, args):
+        if args.src_module is not None:
+            self.die("-sm/--src-module cannot be combined with 'apply --all'")
+
+        self.resolve_west_workspace(args)
+
+        # Apply the patches from the modules in reverse order, so manifest repository's own patches
+        # are applied last.
+        projects = [p for p in self.manifest.projects if p.abspath and Path(p.abspath).is_dir()]
+
+        # Everything applied so far, as (args, yml, patched modules) tuples, so that the whole
+        # 'apply --all' operation can be rolled back as a single transaction.
+        applied = []
+
+        for project in reversed(projects):
+            mod_args, yml = self.load_module_yml(args, project)
+            if yml is None:
+                continue
+
+            self.inf(f"Applying patches for {project.name}")
+            patch_count, failed_patch, patched_mods = self.apply_patches(
+                mod_args, yml, mod_args.dst_modules
+            )
+            applied.append((mod_args, yml, patched_mods))
+
+            if failed_patch:
+                if args.roll_back:
+                    self.clean_all(applied)
+                self.die(f"failed to apply patch {failed_patch}")
+
             self.inf(f"{patch_count} patches applied successfully \\o/")
-            return
 
-        if args.roll_back:
-            self.clean(args, yml, patched_mods)
+    def resolve_west_workspace(self, args):
+        if args.west_workspace is None:
+            args.west_workspace = Path(self.topdir)
+        elif not args.west_workspace.is_absolute():
+            args.west_workspace = Path(self.topdir) / args.west_workspace
 
-        self.die(f"failed to apply patch {failed_patch}")
+        west_config = Path(args.west_workspace) / ".west" / "config"
+        if not west_config.is_file():
+            self.die(f"{args.west_workspace} is not a valid west workspace")
+
+    def load_module_yml(self, args, project):
+        """Load the patches.yml of a single west project.
+
+        Returns a (module args, yml) tuple, with yml set to None if the project has no patches
+        to apply.
+        """
+        mod_args = argparse.Namespace(**vars(args))
+        mod_args.src_module = project.abspath
+
+        self.filter_args(mod_args)
+
+        if not mod_args.patch_yml.is_file():
+            return mod_args, None
+
+        yml = self.load_yml(mod_args, False)
+        if yml is None or not yml.get("patches", []):
+            return mod_args, None
+
+        return mod_args, yml
+
+    def clean_all(self, applied):
+        """Revert every module patched so far, in reverse order of application."""
+        for mod_args, yml, patched_mods in reversed(applied):
+            self.clean(mod_args, yml, patched_mods)
 
     def clean(self, args, yml, dst_mods=None):
         clean_cmd = yml["clean-command"]
