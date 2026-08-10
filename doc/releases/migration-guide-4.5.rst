@@ -1090,8 +1090,10 @@ MFD
   ``BIT(NPM13XX_EVENT_*)``) and ``handler`` directly instead of calling ``gpio_init_callback()``.
   The handler signature is now ``void handler(const struct device *dev,
   struct mfd_npm13xx_event_callback *cb, npm13xx_event_t events)``. A handler is invoked once
-  per dispatch with the fired events it subscribed to rather than once per event bit.
-  (:github:`101800`)
+  per dispatch with the fired events it subscribed to rather than once per event bit, and after
+  the driver has attempted to acknowledge them in the PMIC rather than before. An event whose
+  clear write reports an error is still delivered, and a later retry can deliver it again.
+  (:github:`110454`)
 
 MSPI
 ====
