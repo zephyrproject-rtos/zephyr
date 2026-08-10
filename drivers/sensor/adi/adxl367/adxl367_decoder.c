@@ -634,6 +634,7 @@ static int adxl367_decoder_get_frame_count(const uint8_t *buffer,
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
 		case SENSOR_CHAN_ACCEL_XYZ:
+		case SENSOR_CHAN_DIE_TEMP:
 			*frame_count = 1;
 			ret = 0;
 			break;
