@@ -223,14 +223,16 @@ void i2c_stm32_error_isr(void *arg);
 #endif /* CONFIG_I2C_STM32_COMBINED_INTERRUPT */
 
 #define I2C_STM32_IRQ_HANDLER_DECL(index)							\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)
+	static void i2c_stm32_irq_config_func_##index(const struct device *dev)
+
 #define I2C_STM32_IRQ_HANDLER_FUNCTION(index)							\
 	.irq_config_func = i2c_stm32_irq_config_func_##index,
+
 #define I2C_STM32_IRQ_HANDLER(index)								\
-static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
-{												\
-	I2C_STM32_IRQ_CONNECT_AND_ENABLE(index);						\
-}
+	static void i2c_stm32_irq_config_func_##index(const struct device *dev __unused)	\
+	{											\
+		I2C_STM32_IRQ_CONNECT_AND_ENABLE(index);					\
+	}
 
 #else /* CONFIG_I2C_STM32_INTERRUPT */
 #define I2C_STM32_IRQ_HANDLER_DECL(index)
@@ -238,4 +240,4 @@ static void i2c_stm32_irq_config_func_##index(const struct device *dev)				\
 #define I2C_STM32_IRQ_HANDLER(index)
 #endif /* CONFIG_I2C_STM32_INTERRUPT */
 
-#endif	/* ZEPHYR_DRIVERS_I2C_I2C_STM32_H_ */
+#endif /* ZEPHYR_DRIVERS_I2C_I2C_STM32_H_ */
