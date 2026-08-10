@@ -196,7 +196,7 @@ static int bmi08x_gyr_range_set(const struct device *dev, uint16_t range)
 		return ret;
 	}
 
-	bmi08x->scale = BMI08X_GYR_SCALE(range);
+	bmi08x->scale = BMI08X_GYR_SCALE(bmi08x_gyr_reg_val_to_range((uint8_t)reg_val));
 	bmi08x->range = reg_val;
 
 	return ret;
