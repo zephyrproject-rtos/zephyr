@@ -368,6 +368,31 @@ _primary_core:
     msr CPSR_c, #(MODE_SYS | I_BIT | F_BIT)
     mov sp, r10
 
+#ifdef CONFIG_INIT_STACKS
+    /*
+     * Fill this core's SYS mode stack with a known pattern so its high
+     * water mark can be determined later. This must happen here, before
+     * the stack is used, rather than later in C code (e.g.
+     * z_arm_init_stacks()): by the time C code runs on the primary core
+     * it is already executing on this very stack, so filling the whole
+     * slice at that point would clobber live call-stack contents,
+     * including its own return address. Here sp has just been set and
+     * nothing has been pushed yet, so the entire slice can be filled
+     * safely. This also correctly covers every core, since this code
+     * path is shared by both the primary and secondary core boot
+     * sequences above.
+     */
+    ldr r0, =CONFIG_ARMV7_SYS_STACK_SIZE
+    sub r0, r10, r0
+    ldr r1, =0xaaaaaaaa
+stack_init_loop:
+    cmp r0, r10
+    bhs stack_init_done
+    str r1, [r0], #4
+    b stack_init_loop
+stack_init_done:
+#endif
+
 #if defined(CONFIG_SOC_RESET_HOOK)
     /* Execute platform-specific initialisation if applicable */
     bl soc_reset_hook
