@@ -207,6 +207,39 @@
 			status = "disabled";
 		};
 
+		sdmmc0: mmc@e1204000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1204000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 75>, <&pmc PMC_TYPE_GCK 75>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
+		sdmmc1: mmc@e1208000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe1208000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 76>, <&pmc PMC_TYPE_GCK 76>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
+		sdmmc2: mmc@e120c000 {
+			compatible = "microchip,sama7g5-sdmmc";
+			reg = <0xe120c000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 77>, <&pmc PMC_TYPE_GCK 77>;
+			clock-names = "hclock", "multclk";
+			assigned-clock-rates = <200000000>;
+			status = "disabled";
+		};
+
 		aes: aes@e1600000 {
 			compatible = "microchip,aes-g1";
 			reg = <0xe1600000 0x100>;
