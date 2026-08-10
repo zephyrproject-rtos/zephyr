@@ -529,7 +529,10 @@ static void eth_nxp_enet_isr(const struct device *dev)
 	struct nxp_enet_mac_data *data = dev->data;
 	unsigned int irq_lock_key = irq_lock();
 
-	uint32_t eir = ENET_GetInterruptStatus(data->base);
+	/* EIR reflects each source even where EIMR masks it off, so branching
+	 * on it alone re-enters branches for events the driver has disabled
+	 */
+	uint32_t eir = ENET_GetInterruptStatus(data->base) & data->base->EIMR;
 
 	if (eir & (kENET_RxFrameInterrupt | kENET_RxBufferInterrupt)) {
 		ENET_ReceiveIRQHandler(ENET_IRQ_HANDLER_ARGS(data->base, &data->enet_handle));
