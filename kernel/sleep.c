@@ -62,7 +62,7 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 		return 0;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
@@ -71,7 +71,7 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	expected_wakeup_ticks = (uint32_t)z_add_thread_timeout(_current, timeout);
 	z_mark_thread_as_sleeping(_current);
 
-	(void)z_swap(&_sched_spinlock, key);
+	(void)z_swap_locked(key);
 
 	/* There is no meaningful remainder to report for K_FOREVER: reaching
 	 * this point at all means a k_wakeup() cut the sleep short.
