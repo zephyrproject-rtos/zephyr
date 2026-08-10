@@ -31,3 +31,15 @@ config SOC_SERIES_PSC3
 	select NOINIT_SNIPPET_FIRST
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
+	select HAS_PM_S2RAM_CUSTOM_MARKING if PM_S2RAM
+	select HAS_POWEROFF
+	select DEVICE_DEPS if PM_DEVICE
+
+config SOC_PSC3_LPM_TIMER
+	bool
+	default y if SYSTEM_TIMER_LPM_COMPANION_HOOKS
+	select USE_INFINEON_LPTIMER
+	help
+	  Enable the MCWDT as a low-power companion timer for the SysTick.
+	  The MCWDT runs from the WCO (32 kHz) and provides timekeeping
+	  during deepsleep when the HF clocks (and thus SysTick) are stopped.

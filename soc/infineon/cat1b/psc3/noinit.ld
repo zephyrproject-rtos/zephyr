@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,3 +13,13 @@
  * been added to the Kconfig file.
  */
 . = MAX(ABSOLUTE(.), 0x34002000);
+
+/*
+ * PDL references these symbols from its DeepSleep-RAM warm-boot path, which
+ * is never taken when using plain CY_SYSPM_MODE_DEEPSLEEP. Zephyr's linker
+ * does not define them, so provide dummy values to satisfy the linker.
+ */
+PROVIDE(__Vectors = __rom_region_start);
+PROVIDE(__s_vector_table_rw = _image_ram_start);
+PROVIDE(__ns_vector_table_rw = _image_ram_start);
+PROVIDE(__StackLimit = _image_ram_start);
