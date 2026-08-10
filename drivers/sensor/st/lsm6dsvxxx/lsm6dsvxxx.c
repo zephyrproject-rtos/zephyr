@@ -323,7 +323,7 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 		}
 	}
 
-	if (edata->has_accel == 0) {
+	if (edata->has_accel == 0 && edata->has_gyro == 0 && edata->has_temp == 0) {
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
 	}
 }
