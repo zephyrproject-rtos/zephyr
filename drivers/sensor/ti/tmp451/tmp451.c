@@ -302,6 +302,10 @@ static int tmp451_attr_set(const struct device *dev, enum sensor_channel chan,
 
 		return i2c_reg_write_byte_dt(&cfg->i2c, TMP451_REG_HYS, val->val1);
 	case SENSOR_ATTR_OFFSET:
+		if (chan != SENSOR_CHAN_DIE_TEMP && chan != SENSOR_CHAN_ALL) {
+			return -ENOTSUP;
+		}
+
 		return tmp451_set_remote_offset(cfg, val);
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
 		return tmp451_set_conversion_rate(cfg, val);
