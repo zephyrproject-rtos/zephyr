@@ -297,5 +297,12 @@ config ICACHE_LINE_SIZE
 
 endif # CPU_AARCH32_CORTEX_R
 
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
+
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
