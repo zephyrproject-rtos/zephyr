@@ -227,6 +227,11 @@ static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
 		return EC_HOST_CMD_INVALID_HEADER;
 	}
 
+	/* Prevent header claim from exceeding max buffer capacity */
+	if (rx_header->data_len > (rx->len_max - RX_HEADER_SIZE)) {
+		return EC_HOST_CMD_REQUEST_TRUNCATED;
+	}
+
 	const uint16_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
 	/*
 	 * Ensure we received at least as much data as is expected.
