@@ -175,6 +175,17 @@ Only declare a ``requires`` entry when the SoC definition cannot stand on its ow
 needed by a SoC that selects a symbol from a SoC in the *same* :file:`soc.yml` tree, which is how
 SoC variants within a vendor tree are normally described.
 
+When the pairing is a property of a single board rather than of the SoC, declare it in that
+board's :file:`board.yml` instead, see :ref:`board_porting_requires`.
+
+.. note::
+
+   As a last resort, setting the CMake variable ``HWM_LOAD_ALL_SOCS`` loads every SoC from every
+   SoC root, for example ``west build -b <board> -- -DHWM_LOAD_ALL_SOCS=y``. This restores the
+   legacy behaviour where all SoC trees are visible to each other, at the cost of a slower and
+   more memory hungry configuration step. It exists for out-of-tree users who cannot express their
+   dependencies with ``requires`` yet and should not be relied on by in-tree SoCs.
+
 
 Write your SoC devicetree
 *************************
