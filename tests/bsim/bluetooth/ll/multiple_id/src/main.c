@@ -151,7 +151,10 @@ static void test_peripheral_multilink_main(void)
 		goto exit;
 	}
 
-	k_sleep(K_SECONDS(3));
+	/* Symmetric to Central waiting to ensure there is no connection failed to be established
+	 * before we complete the test.
+	 */
+	k_sleep(K_SECONDS(1));
 
 	PASS("Peripheral tests passed\n");
 
@@ -164,7 +167,7 @@ exit:
 
 static void test_multiple_init(void)
 {
-	bst_ticker_set_next_tick_absolute(2400e6);
+	bst_ticker_set_next_tick_absolute(2040e6);
 	bst_result = In_progress;
 }
 
