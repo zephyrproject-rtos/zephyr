@@ -79,11 +79,11 @@ struct flash_stm32_priv {
 					 *  secured or non-secured mode
 					 */
 #define FLASH_STM32_SR		SR
-#if defined(CONFIG_SOC_SERIES_STM32C5X)
+#if defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32G5X)
 #define FLASH_STM32_CCR		CCR
-#else /* CONFIG_SOC_SERIES_STM32C5X */
+#else /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32G5X */
 #define FLASH_STM32_CCR		FLASH_STM32_SR
-#endif /* CONFIG_SOC_SERIES_STM32C5X */
+#endif /* CONFIG_SOC_SERIES_STM32C5X || CONFIG_SOC_SERIES_STM32G5X */
 #endif
 
 #define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->data))
