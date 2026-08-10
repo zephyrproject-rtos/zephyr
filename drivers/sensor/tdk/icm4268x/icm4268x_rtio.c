@@ -39,7 +39,7 @@ static int icm4268x_rtio_sample_fetch(const struct device *dev, int16_t readings
 	}
 
 	for (int i = 0; i < 7; i++) {
-		readings[i] = sys_le16_to_cpu((buffer[i * 2] << 8) | buffer[i * 2 + 1]);
+		readings[i] = (int16_t)sys_get_be16(&buffer[i * 2]);
 	}
 
 	return 0;
