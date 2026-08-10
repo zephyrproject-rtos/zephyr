@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,17 @@ LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 
 #define _IFX_CAT1_RTC_INIT_CENTURY 2000
 #define _IFX_CAT1_RTC_TM_YEAR_BASE 1900
+
+#define _IFX_CAT1_RTC_ALARMS_COUNT 2
+
+/* Bitmask of alarm time fields supported by the hardware.
+ *
+ * Note: Weekday alarms won't work for years <2000 due to the PDL assuming century = 20xx
+ * when calculating day-of-week
+ */
+#define _IFX_CAT1_RTC_ALARM_SUPPORTED_FIELDS                                                       \
+	(RTC_ALARM_TIME_MASK_SECOND | RTC_ALARM_TIME_MASK_MINUTE | RTC_ALARM_TIME_MASK_HOUR |      \
+	 RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_MONTH | RTC_ALARM_TIME_MASK_WEEKDAY)
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
 #if defined(SRSS_BACKUP_NUM_BREG3) && (SRSS_BACKUP_NUM_BREG3 > 0)
@@ -59,8 +70,6 @@ LOG_MODULE_REGISTER(ifx_cat1_rtc, CONFIG_RTC_LOG_LEVEL);
 static const uint32_t _IFX_CAT1_RTC_MAX_RETRY = 10;
 static const uint32_t _IFX_CAT1_RTC_RETRY_DELAY_MS = 1;
 
-static cy_stc_rtc_dst_t *_ifx_cat1_rtc_dst;
-
 #ifdef CONFIG_PM
 static cy_en_syspm_status_t _ifx_cat1_rtc_syspm_callback(cy_stc_syspm_callback_params_t *params,
 							 cy_en_syspm_callback_mode_t mode)
@@ -76,7 +85,7 @@ static cy_stc_syspm_callback_t _ifx_cat1_rtc_pm_cb = {
 };
 #endif /* CONFIG_PM */
 
-#define _IFX_CAT1_RTC_WAIT_ONE_MS() Cy_SysLib_Delay(_IFX_CAT1_RTC_RETRY_DELAY_MS);
+#define _IFX_CAT1_RTC_WAIT_ONE_MS() Cy_SysLib_Delay(_IFX_CAT1_RTC_RETRY_DELAY_MS)
 
 /* Internal macro to validate RTC year parameter falls within 21st century */
 #define IFX_CAT1_RTC_VALID_CENTURY(year) ((year) >= _IFX_CAT1_RTC_INIT_CENTURY)
@@ -103,6 +112,14 @@ static cy_stc_syspm_callback_t _ifx_cat1_rtc_pm_cb = {
 
 struct ifx_cat1_rtc_data {
 	struct k_spinlock lock;
+#ifdef CONFIG_RTC_ALARM
+	struct {
+		rtc_alarm_callback cb;
+		void *user_data;
+		bool pending;
+		uint16_t mask;
+	} alarm[_IFX_CAT1_RTC_ALARMS_COUNT];
+#endif
 };
 
 static inline uint16_t _ifx_cat1_rtc_get_state(void)
@@ -155,11 +172,6 @@ static void _ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int 
 	z_time->tm_nsec = 0;
 }
 
-static void _ifx_cat1_rtc_isr_handler(void)
-{
-	Cy_RTC_Interrupt(_ifx_cat1_rtc_dst, NULL != _ifx_cat1_rtc_dst);
-}
-
 void _ifx_cat1_rtc_century_interrupt(void)
 {
 	/* The century is stored in its own register so when a "century interrupt"
@@ -168,6 +180,41 @@ void _ifx_cat1_rtc_century_interrupt(void)
 	 * i.e. 1999->2000
 	 */
 	_ifx_cat1_rtc_set_century(_ifx_cat1_rtc_get_century() + 100);
+}
+
+static void _ifx_cat1_rtc_isr_handler(const void *arg)
+{
+	const struct device *dev = arg;
+	uint32_t status = Cy_RTC_GetInterruptStatusMasked();
+
+	Cy_RTC_ClearInterrupt(status);
+
+	if (status & CY_RTC_INTR_CENTURY) {
+		_ifx_cat1_rtc_century_interrupt();
+	}
+
+#ifdef CONFIG_RTC_ALARM
+	{
+		struct ifx_cat1_rtc_data *data = dev->data;
+
+		if (status & CY_RTC_INTR_ALARM1) {
+			if (data->alarm[0].cb != NULL) {
+				data->alarm[0].cb(dev, 0, data->alarm[0].user_data);
+			} else {
+				data->alarm[0].pending = true;
+			}
+		}
+		if (status & CY_RTC_INTR_ALARM2) {
+			if (data->alarm[1].cb != NULL) {
+				data->alarm[1].cb(dev, 1, data->alarm[1].user_data);
+			} else {
+				data->alarm[1].pending = true;
+			}
+		}
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
 }
 
 static int ifx_cat1_rtc_init(const struct device *dev)
@@ -199,10 +246,9 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		}
 	}
 
-	Cy_RTC_ClearInterrupt(CY_RTC_INTR_CENTURY);
+	Cy_RTC_ClearInterrupt(CY_RTC_INTR_CENTURY | CY_RTC_INTR_ALARM1 | CY_RTC_INTR_ALARM2);
 	Cy_RTC_SetInterruptMask(CY_RTC_INTR_CENTURY);
 
-	_ifx_cat1_rtc_dst = NULL;
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), _ifx_cat1_rtc_isr_handler,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
@@ -337,9 +383,224 @@ static int ifx_cat1_get_calibration(const struct device *dev, int32_t *calibrati
 }
 #endif /* CONFIG_RTC_CALIBRATION */
 
+#ifdef CONFIG_RTC_ALARM
+static int ifx_cat1_alarm_get_supported_fields(const struct device *dev, uint16_t id,
+					       uint16_t *mask)
+{
+	ARG_UNUSED(dev);
+
+	if (id >= _IFX_CAT1_RTC_ALARMS_COUNT) {
+		return -EINVAL;
+	}
+
+	*mask = _IFX_CAT1_RTC_ALARM_SUPPORTED_FIELDS;
+	return 0;
+}
+
+static int ifx_cat1_alarm_validate_fields(uint16_t mask, const struct rtc_time *timeptr)
+{
+	if ((mask & RTC_ALARM_TIME_MASK_SECOND) && timeptr->tm_sec > 59) {
+		return -EINVAL;
+	}
+	if ((mask & RTC_ALARM_TIME_MASK_MINUTE) && timeptr->tm_min > 59) {
+		return -EINVAL;
+	}
+	if ((mask & RTC_ALARM_TIME_MASK_HOUR) && timeptr->tm_hour > 23) {
+		return -EINVAL;
+	}
+	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) &&
+	    (timeptr->tm_mday < 1 || timeptr->tm_mday > 31)) {
+		return -EINVAL;
+	}
+	if ((mask & RTC_ALARM_TIME_MASK_MONTH) &&
+	    (timeptr->tm_mon < 0 || timeptr->tm_mon > 11)) {
+		return -EINVAL;
+	}
+	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) &&
+	    (timeptr->tm_wday < 0 || timeptr->tm_wday > 6)) {
+		return -EINVAL;
+	}
+	return 0;
+}
+
+static void ifx_cat1_alarm_populate_cfg(cy_stc_rtc_alarm_t *alarm_cfg, uint16_t mask,
+					const struct rtc_time *timeptr)
+{
+	alarm_cfg->almEn = CY_RTC_ALARM_ENABLE;
+
+	alarm_cfg->sec = (mask & RTC_ALARM_TIME_MASK_SECOND) ? timeptr->tm_sec : 0;
+	alarm_cfg->secEn = (mask & RTC_ALARM_TIME_MASK_SECOND) ? CY_RTC_ALARM_ENABLE
+							       : CY_RTC_ALARM_DISABLE;
+
+	alarm_cfg->min = (mask & RTC_ALARM_TIME_MASK_MINUTE) ? timeptr->tm_min : 0;
+	alarm_cfg->minEn = (mask & RTC_ALARM_TIME_MASK_MINUTE) ? CY_RTC_ALARM_ENABLE
+							       : CY_RTC_ALARM_DISABLE;
+
+	alarm_cfg->hour = (mask & RTC_ALARM_TIME_MASK_HOUR) ? timeptr->tm_hour : 0;
+	alarm_cfg->hourEn = (mask & RTC_ALARM_TIME_MASK_HOUR) ? CY_RTC_ALARM_ENABLE
+							      : CY_RTC_ALARM_DISABLE;
+
+	alarm_cfg->date = (mask & RTC_ALARM_TIME_MASK_MONTHDAY) ? timeptr->tm_mday : 1;
+	alarm_cfg->dateEn = (mask & RTC_ALARM_TIME_MASK_MONTHDAY) ? CY_RTC_ALARM_ENABLE
+								  : CY_RTC_ALARM_DISABLE;
+
+	alarm_cfg->month = (mask & RTC_ALARM_TIME_MASK_MONTH) ? timeptr->tm_mon + 1 : 1;
+	alarm_cfg->monthEn = (mask & RTC_ALARM_TIME_MASK_MONTH) ? CY_RTC_ALARM_ENABLE
+								 : CY_RTC_ALARM_DISABLE;
+
+	alarm_cfg->dayOfWeek =
+		(mask & RTC_ALARM_TIME_MASK_WEEKDAY) ? timeptr->tm_wday + 1 : 1;
+	alarm_cfg->dayOfWeekEn = (mask & RTC_ALARM_TIME_MASK_WEEKDAY) ? CY_RTC_ALARM_ENABLE
+								      : CY_RTC_ALARM_DISABLE;
+}
+
+static int ifx_cat1_alarm_set_time(const struct device *dev, uint16_t id, uint16_t mask,
+				   const struct rtc_time *timeptr)
+{
+	struct ifx_cat1_rtc_data *data = dev->data;
+	cy_en_rtc_alarm_t alarm_idx;
+	cy_stc_rtc_alarm_t alarm_cfg = {0};
+	cy_en_rtc_status_t rslt;
+	uint32_t retry = 0;
+
+	if ((id >= _IFX_CAT1_RTC_ALARMS_COUNT) || (mask & ~_IFX_CAT1_RTC_ALARM_SUPPORTED_FIELDS)) {
+		return -EINVAL;
+	}
+
+	alarm_idx = (id == 0) ? CY_RTC_ALARM_1 : CY_RTC_ALARM_2;
+
+	if (mask == 0) {
+		/* Disable alarm - set fields to valid defaults for PDL assertions */
+		alarm_cfg.almEn = CY_RTC_ALARM_DISABLE;
+		alarm_cfg.dayOfWeek = CY_RTC_SUNDAY;
+		alarm_cfg.date = 1;
+		alarm_cfg.month = 1;
+	} else {
+		if (timeptr == NULL) {
+			return -EINVAL;
+		}
+
+		int ret = ifx_cat1_alarm_validate_fields(mask, timeptr);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		ifx_cat1_alarm_populate_cfg(&alarm_cfg, mask, timeptr);
+	}
+
+	do {
+		if (retry != 0) {
+			_IFX_CAT1_RTC_WAIT_ONE_MS();
+		}
+		rslt = Cy_RTC_SetAlarmDateAndTime(&alarm_cfg, alarm_idx);
+		++retry;
+	} while (rslt == CY_RTC_INVALID_STATE && retry < _IFX_CAT1_RTC_MAX_RETRY);
+
+	if (rslt == CY_RTC_SUCCESS) {
+		k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		data->alarm[id].mask = mask;
+
+		k_spin_unlock(&data->lock, key);
+
+		/* Enable/disable the alarm interrupt mask bit after configuring */
+		uint32_t alarm_bit = (id == 0) ? CY_RTC_INTR_ALARM1 : CY_RTC_INTR_ALARM2;
+
+		if (mask != 0) {
+			Cy_RTC_SetInterruptMask(Cy_RTC_GetInterruptMask() | alarm_bit);
+		} else {
+			Cy_RTC_SetInterruptMask(Cy_RTC_GetInterruptMask() & ~alarm_bit);
+		}
+	}
+
+	return (rslt == CY_RTC_SUCCESS) ? 0 : -EIO;
+}
+
+static int ifx_cat1_alarm_get_time(const struct device *dev, uint16_t id, uint16_t *mask,
+				   struct rtc_time *timeptr)
+{
+	struct ifx_cat1_rtc_data *data = dev->data;
+	cy_en_rtc_alarm_t alarm_idx;
+	cy_stc_rtc_alarm_t alarm_cfg;
+
+	if (id >= _IFX_CAT1_RTC_ALARMS_COUNT) {
+		return -EINVAL;
+	}
+
+	alarm_idx = (id == 0) ? CY_RTC_ALARM_1 : CY_RTC_ALARM_2;
+
+	Cy_RTC_GetAlarmDateAndTime(&alarm_cfg, alarm_idx);
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	*mask = data->alarm[id].mask;
+
+	k_spin_unlock(&data->lock, key);
+
+	memset(timeptr, 0, sizeof(*timeptr));
+	timeptr->tm_sec = alarm_cfg.sec;
+	timeptr->tm_min = alarm_cfg.min;
+	timeptr->tm_hour = alarm_cfg.hour;
+	timeptr->tm_mday = alarm_cfg.date;
+	timeptr->tm_mon = alarm_cfg.month - 1;
+	timeptr->tm_wday = alarm_cfg.dayOfWeek - 1;
+	timeptr->tm_yday = -1;
+	timeptr->tm_isdst = -1;
+	timeptr->tm_nsec = 0;
+
+	return 0;
+}
+
+static int ifx_cat1_alarm_is_pending(const struct device *dev, uint16_t id)
+{
+	struct ifx_cat1_rtc_data *data = dev->data;
+	int ret;
+
+	if (id >= _IFX_CAT1_RTC_ALARMS_COUNT) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	ret = data->alarm[id].pending ? 1 : 0;
+	data->alarm[id].pending = false;
+
+	k_spin_unlock(&data->lock, key);
+
+	return ret;
+}
+
+static int ifx_cat1_alarm_set_callback(const struct device *dev, uint16_t id,
+				       rtc_alarm_callback callback, void *user_data)
+{
+	struct ifx_cat1_rtc_data *data = dev->data;
+
+	if (id >= _IFX_CAT1_RTC_ALARMS_COUNT) {
+		return -EINVAL;
+	}
+
+	k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+	data->alarm[id].cb = callback;
+	data->alarm[id].user_data = user_data;
+
+	k_spin_unlock(&data->lock, key);
+
+	return 0;
+}
+#endif /* CONFIG_RTC_ALARM */
+
 static DEVICE_API(rtc, ifx_cat1_rtc_driver_api) = {
 	.set_time = ifx_cat1_rtc_set_time,
 	.get_time = ifx_cat1_rtc_get_time,
+#ifdef CONFIG_RTC_ALARM
+	.alarm_get_supported_fields = ifx_cat1_alarm_get_supported_fields,
+	.alarm_set_time = ifx_cat1_alarm_set_time,
+	.alarm_get_time = ifx_cat1_alarm_get_time,
+	.alarm_is_pending = ifx_cat1_alarm_is_pending,
+	.alarm_set_callback = ifx_cat1_alarm_set_callback,
+#endif
 #ifdef CONFIG_RTC_CALIBRATION
 	.set_calibration = ifx_cat1_set_calibration,
 	.get_calibration = ifx_cat1_get_calibration,
