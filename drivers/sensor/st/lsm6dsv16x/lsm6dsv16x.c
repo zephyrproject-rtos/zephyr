@@ -981,7 +981,7 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline void lsm6dsv16x_accel_convert(struct sensor_value *val, int raw_val,
