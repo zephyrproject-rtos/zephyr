@@ -160,7 +160,7 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 
 	/* Recover the time spent in low power from the companion counter. */
 	slept_time_us = z_sys_clock_lpm_exit();
-	cyc_sys_compensated += (uint64_t)CYC_PER_US * slept_time_us;
+	cyc_sys_compensated += k_us_to_cyc_floor64(slept_time_us);
 
 	/* The OS Timer lost its state in the handoff-power-state; reset it to a
 	 * known state and reinitialize it.
@@ -264,7 +264,7 @@ static uint32_t mcux_lpc_ostick_compensate_system_timer(void)
 	slept_time_us = counter_ticks_to_us(counter_dev, slept_time_ticks);
 	/* Compensate for PM3 exit overhead not tracked by the counter */
 	slept_time_us += pm_state_next_get(0)->exit_latency_us;
-	cyc_sys_compensated += CYC_PER_US * slept_time_us;
+	cyc_sys_compensated += k_us_to_cyc_floor64(slept_time_us);
 
 	if (IS_ENABLED(CONFIG_MCUX_OS_TIMER_PM_POWERED_OFF)) {
 		/* Reset the OS Timer to a known state */
@@ -351,8 +351,9 @@ static void mcux_os_timer_set_lp_counter_timeout(void)
 		timeout -= OSTIMER_GetCurrentTimerValue(base);
 		/* Round up to the next tick boundary */
 		timeout += (CYC_PER_TICK - 1);
+		timeout = (timeout / CYC_PER_TICK) * CYC_PER_TICK;
 		/* Convert to microseconds and round up to the next value */
-		timeout = (((timeout / CYC_PER_TICK) * CYC_PER_TICK) * CYC_PER_US);
+		timeout = k_cyc_to_us_ceil64(timeout);
 	}
 
 	mcux_lpc_ostick_set_counter_timeout(timeout);
