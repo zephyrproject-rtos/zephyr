@@ -76,14 +76,19 @@ static int crc_stm32_get_poly_size(struct crc_ctx *ctx, uint32_t *size)
 		*size = STM32_CRC_POLY_SIZE_7B;
 		break;
 	case CRC8:
+	case CRC8_CCITT:
+	case CRC8_ROHC:
 		*size = STM32_CRC_POLY_SIZE_8B;
 		break;
 	case CRC16:
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
+	case CRC16_ANSI:
 		*size = STM32_CRC_POLY_SIZE_16B;
 		break;
 	case CRC32_C:
 	case CRC32_IEEE:
+	case CRC32_MPEG2:
 		*size = STM32_CRC_POLY_SIZE_32B;
 		break;
 	default:
