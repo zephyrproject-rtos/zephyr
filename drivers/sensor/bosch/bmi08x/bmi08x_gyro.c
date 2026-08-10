@@ -156,17 +156,28 @@ int32_t bmi08x_gyr_reg_val_to_range(uint8_t reg_val)
 
 static int bmi08x_gyr_odr_set(const struct device *dev, uint16_t freq_int, uint16_t freq_milli)
 {
-	int odr = bmi08x_freq_to_odr_val(freq_int, freq_milli);
+	static const struct {
+		uint16_t freq;
+		uint8_t reg_val;
+	} bmi08x_gyr_odr_map[] = {
+		{100, BMI08X_GYRO_BW_12_ODR_100_HZ},	{200, BMI08X_GYRO_BW_23_ODR_200_HZ},
+		{400, BMI08X_GYRO_BW_47_ODR_400_HZ},	{1000, BMI08X_GYRO_BW_116_ODR_1000_HZ},
+		{2000, BMI08X_GYRO_BW_532_ODR_2000_HZ},
+	};
+	size_t i;
 
-	if (odr < 0) {
-		return odr;
-	}
-
-	if (odr < BMI08X_GYRO_BW_532_ODR_2000_HZ || odr > BMI08X_GYRO_BW_32_ODR_100_HZ) {
+	if (freq_milli != 0U) {
 		return -ENOTSUP;
 	}
 
-	return bmi08x_gyro_byte_write(dev, BMI08X_REG_GYRO_BANDWIDTH, (uint8_t)odr);
+	for (i = 0; i < ARRAY_SIZE(bmi08x_gyr_odr_map); i++) {
+		if (freq_int == bmi08x_gyr_odr_map[i].freq) {
+			return bmi08x_gyro_byte_write(dev, BMI08X_REG_GYRO_BANDWIDTH,
+						      bmi08x_gyr_odr_map[i].reg_val);
+		}
+	}
+
+	return -ENOTSUP;
 }
 
 static int bmi08x_gyr_range_set(const struct device *dev, uint16_t range)
