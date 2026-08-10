@@ -375,6 +375,7 @@ static int max30009_set_bioz_config1(const struct device *dev)
 {
 	int ret;
 	const struct max30009_dev_config *cfg = dev->config;
+	struct max30009_data *data = dev->data;
 	/*
 	 * I/Q channel enables are deliberately left off here. Per the datasheet
 	 * ("Enabling and Disabling the PLL"), BIOZ_I_EN/BIOZ_Q_EN must be set
@@ -392,6 +393,7 @@ static int max30009_set_bioz_config1(const struct device *dev)
 		LOG_ERR("Failed to write BioZ Configuration 1: %d", ret);
 		return ret;
 	}
+	data->bioz_adc_osr_code = cfg->bioz_cfg.cfg_1.bioz_adc_osr;
 	return 0;
 }
 
@@ -1135,6 +1137,10 @@ static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 	if (ret != 0) {
 		LOG_ERR("Failed to write attr %d: %d", attr, ret);
+	} else if ((uint16_t)attr == SENSOR_ATTR_MAX30009_ADC_OSR) {
+		struct max30009_data *data = dev->data;
+
+		data->bioz_adc_osr_code = reg_val;
 	}
 
 	/* Re-enable the PLL if it was stopped, even when the write failed. */
