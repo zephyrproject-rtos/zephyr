@@ -286,24 +286,25 @@ static int tsl2591_set_persist(const struct device *dev, int32_t persist_filter)
 static int tsl2591_set_gain(const struct device *dev, enum sensor_gain_tsl2591 gain)
 {
 	struct tsl2591_data *data = dev->data;
+	uint16_t again_scale;
 	uint8_t gain_mode;
 	int ret;
 
 	switch (gain) {
 	case TSL2591_SENSOR_GAIN_LOW:
-		data->again = TSL2591_GAIN_SCALE_LOW;
+		again_scale = TSL2591_GAIN_SCALE_LOW;
 		gain_mode = TSL2591_GAIN_MODE_LOW;
 		break;
 	case TSL2591_SENSOR_GAIN_MED:
-		data->again = TSL2591_GAIN_SCALE_MED;
+		again_scale = TSL2591_GAIN_SCALE_MED;
 		gain_mode = TSL2591_GAIN_MODE_MED;
 		break;
 	case TSL2591_SENSOR_GAIN_HIGH:
-		data->again = TSL2591_GAIN_SCALE_HIGH;
+		again_scale = TSL2591_GAIN_SCALE_HIGH;
 		gain_mode = TSL2591_GAIN_MODE_HIGH;
 		break;
 	case TSL2591_SENSOR_GAIN_MAX:
-		data->again = TSL2591_GAIN_SCALE_MAX;
+		again_scale = TSL2591_GAIN_SCALE_MAX;
 		gain_mode = TSL2591_GAIN_MODE_MAX;
 		break;
 	default:
@@ -314,9 +315,12 @@ static int tsl2591_set_gain(const struct device *dev, enum sensor_gain_tsl2591 g
 	ret = tsl2591_reg_update(dev, TSL2591_REG_CONFIG, TSL2591_AGAIN_MASK, gain_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set gain mode");
+		return ret;
 	}
 
-	return ret;
+	data->again = again_scale;
+
+	return 0;
 }
 
 static int tsl2591_set_integration(const struct device *dev, int32_t integration_time)
