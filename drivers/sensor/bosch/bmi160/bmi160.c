@@ -962,10 +962,10 @@ static int bmi160_temp_channel_get(const struct device *dev,
 	struct bmi160_data *data = dev->data;
 
 	/* the scale is 1/2^9/LSB = 1953 micro degrees */
-	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000ULL + data->sample.temperature * 1953ULL;
+	int32_t temp_micro = BMI160_TEMP_OFFSET * 1000000 + (int16_t)data->sample.temperature * 1953;
 
-	val->val1 = temp_micro / 1000000ULL;
-	val->val2 = temp_micro % 1000000ULL;
+	val->val1 = temp_micro / 1000000;
+	val->val2 = temp_micro % 1000000;
 
 	return 0;
 }
