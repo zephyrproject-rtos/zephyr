@@ -66,6 +66,13 @@ __start:
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, z_arm_reset)
 SECTION_SUBSEC_FUNC(TEXT, _reset_section, __start)
 #endif
+
+#ifdef CONFIG_WAIT_AT_RESET_VECTOR
+resetwait:
+    wfe
+    b resetwait
+#endif
+
 #if defined(CONFIG_AARCH32_ARMV8_A_MONITOR_INIT)
     /*
      * ARMv8-A AArch32 Monitor mode (EL3 AArch32) initialization.
