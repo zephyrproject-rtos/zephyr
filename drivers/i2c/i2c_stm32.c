@@ -60,8 +60,6 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 	return 0;
 }
 
-#define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
-
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t target)
 {
@@ -90,7 +88,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			 * Restart condition between messages
 			 * of different directions is required
 			 */
-			if (OPERATION(current) != OPERATION(next)) {
+			if ((current->flags & I2C_MSG_RW_MASK) != (next->flags & I2C_MSG_RW_MASK)) {
 				if (!(next->flags & I2C_MSG_RESTART)) {
 					ret = -EINVAL;
 					break;
