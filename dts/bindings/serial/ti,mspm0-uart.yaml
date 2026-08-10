@@ -53,3 +53,8 @@ properties:
       2 - MSPM0_UART_TX_FIFO_LEVEL_1_2_EMPTY
       3 - MSPM0_UART_TX_FIFO_LEVEL_3_4_EMPTY
       4 - MSPM0_UART_TX_FIFO_LEVEL_EMPTY
+
+  is-unicomm-uart:
+    type: boolean
+    description: |
+      Enables UNICOMMUART support.
