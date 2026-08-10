@@ -1,0 +1,38 @@
+# STMicroelectronics STM32G5 MCU line
+
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32G5X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32g5x" if SOC_SERIES_STM32G5X
+
+config SOC_STM32G534XX
+	bool
+	select SOC_SERIES_STM32G5X
+
+config SOC_STM32G544XX
+	bool
+	select SOC_SERIES_STM32G5X
+
+config SOC_STM32G553XX
+	bool
+	select SOC_SERIES_STM32G5X
+
+config SOC_STM32G554XX
+	bool
+	select SOC_SERIES_STM32G5X
+
+config SOC_STM32G564XX
+	bool
+	select SOC_SERIES_STM32G5X
+
+config SOC
+	default "stm32g534xx" if SOC_STM32G534XX
+	default "stm32g544xx" if SOC_STM32G544XX
+	default "stm32g553xx" if SOC_STM32G553XX
+	default "stm32g554xx" if SOC_STM32G554XX
+	default "stm32g564xx" if SOC_STM32G564XX
