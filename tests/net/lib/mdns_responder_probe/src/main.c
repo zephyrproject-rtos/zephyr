@@ -461,4 +461,73 @@ ZTEST(test_mdns_responder_probe, test_dhcp_bound_race_does_not_block_listener)
 		     "init_listener() from ever running");
 }
 
+/* Same scenario as tests/net/lib/mdns_responder/'s
+ * test_multi_question_compressed_dns_sd_query, but through a listener
+ * brought up via the real probe sequence instead of that suite's
+ * CONFIG_MDNS_RESPONDER_PROBE=n path. PTR wire-format correctness is
+ * already covered there, so this only checks both questions get answered.
+ */
+ZTEST(test_mdns_responder_probe, test_multi_question_compressed_query_after_probe)
+{
+	static const uint8_t multi_question_query[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,
+		0x5f, 0x66, 0x6f, 0x6f, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c, 0x6f, 0x63,
+		0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01, 0x07, 0x5f, 0x7a, 0x65, 0x70, 0x68,
+		0x79, 0x72, 0x04, 0x5f, 0x74, 0x63, 0x70, 0xc0, 0x16, 0x00, 0x0c, 0x00, 0x01};
+	static const uint16_t svc_port = sys_cpu_to_be16(5353);
+	static const char instance[] = "zephyr";
+	static const char foo_service[] = "_foo";
+	static const char foo_proto[] = "_udp";
+	static const char zephyr_service[] = "_zephyr";
+	static const char zephyr_proto[] = "_tcp";
+	static const char domain[] = "local";
+	static const struct dns_sd_rec records[2] = {
+		{
+			.instance = instance,
+			.service = foo_service,
+			.proto = foo_proto,
+			.domain = domain,
+			.text = DNS_SD_EMPTY_TXT,
+			.text_size = sizeof(dns_sd_empty_txt),
+			.port = &svc_port,
+		},
+		{
+			.instance = instance,
+			.service = zephyr_service,
+			.proto = zephyr_proto,
+			.domain = domain,
+			.text = DNS_SD_EMPTY_TXT,
+			.text_size = sizeof(dns_sd_empty_txt),
+			.port = &svc_port,
+		},
+	};
+	int res;
+
+	zassert_true(responder_answers_query(),
+		     "Responder never became reachable via the probe sequence");
+
+	zassert_ok(mdns_responder_set_ext_records(records, ARRAY_SIZE(records)),
+		   "Failed to register the external DNS-SD records");
+
+	/* responder_answers_query() above leaves its own AAAA reply captured. */
+	responses_count = 0;
+	while (k_sem_take(&wait_data, K_NO_WAIT) == 0) {
+		/* NOP */
+	}
+
+	send_msg(multi_question_query, sizeof(multi_question_query));
+
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 1");
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 2 (the compressed one)");
+
+	zassert_equal(responses_count, 2, "Expected exactly 2 responses, got %zu", responses_count);
+
+	zassert_true(packet_has_ptr_answer(response_pkts[0], "_foo", "_udp", "local"),
+		     "Response to Question 1 was not the expected PTR answer");
+	zassert_true(packet_has_ptr_answer(response_pkts[1], "_zephyr", "_tcp", "local"),
+		     "Response to Question 2 was not the expected PTR answer");
+}
+
 ZTEST_SUITE(test_mdns_responder_probe, NULL, test_setup, before, cleanup, NULL);
