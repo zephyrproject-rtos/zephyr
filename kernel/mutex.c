@@ -154,7 +154,7 @@ static int32_t held_mutexes_highest_waiter_prio(struct k_thread *thread,
 		SYS_SLIST_FOR_EACH_NODE(&thread->held_mutexes, node) {
 			struct k_mutex *m =
 				CONTAINER_OF(node, struct k_mutex, held_node);
-			struct k_thread *waiter = z_waitq_head(&m->wait_q);
+			struct k_thread *waiter = z_waitq_head_locked(&m->wait_q);
 
 			if (waiter != NULL) {
 				int32_t wprio = z_get_new_prio_with_ceiling(waiter->base.prio);
