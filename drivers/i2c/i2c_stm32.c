@@ -61,65 +61,6 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 	return 0;
 }
 
-int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t i2c_clock = 0U;
-	int ret;
-
-	__ASSERT(k_sem_count_get(&data->bus_mutex) == 0, "Bus is not locked");
-
-	if (cfg->pclk_len > 1) {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
-			return -EIO;
-		}
-	} else {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-			return -EIO;
-		}
-	}
-
-	data->dev_config = config;
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure Enabling I2C clock");
-		return ret;
-	}
-#endif
-
-	LL_I2C_Disable(i2c);
-#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
-	i2c_stm32_set_smbus_mode(dev, data->mode);
-#endif
-	ret = i2c_stm32_configure_timing(dev, i2c_clock);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (data->smbalert_active) {
-		LL_I2C_Enable(i2c);
-	}
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
-		return ret;
-	}
-#endif
-
-	return 0;
-}
-
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
 
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
