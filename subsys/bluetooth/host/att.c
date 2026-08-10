@@ -2274,7 +2274,7 @@ append:
 }
 
 static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
-			       uint16_t offset, const void *value, uint8_t len)
+			       uint16_t offset, const void *value, uint16_t len)
 {
 	struct prep_data data;
 	struct bt_att_prepare_write_rsp *rsp;
