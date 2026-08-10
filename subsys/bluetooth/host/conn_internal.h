@@ -183,6 +183,9 @@ struct bt_conn_iso {
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
+	/* Expected SDU size of current parsing data `conn->rx` */
+	uint16_t sdu_len;
+
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 
@@ -235,8 +238,7 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
-	bt_conn_state_t		state;
-	uint16_t rx_len;
+	bt_conn_state_t state;
 	struct net_buf		*rx;
 
 	/* Pending TX that are awaiting the NCP event. len(tx_pending) == in_ll */
