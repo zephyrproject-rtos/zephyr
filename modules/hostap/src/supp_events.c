@@ -9,7 +9,10 @@
 #include "includes.h"
 #include "common.h"
 #include "common/ieee802_11_defs.h"
+#include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+#include "supp_main.h"
+#include "supp_pmksa.h"
 
 #ifdef CONFIG_AP
 #include "ap/sta_info.h"
@@ -271,6 +274,9 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 		event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 	} else {
 		event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
+		supplicant_pmksa_connection_result(wpa_s, status.conn_status);
+#endif
 	}
 
 	if (event == NET_EVENT_WIFI_CMD_CONNECT_RESULT &&
@@ -340,6 +346,9 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 		} else {
 			event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
+			supplicant_pmksa_connection_result(wpa_s, status.conn_status);
+#endif
 			supplicant_fill_reject(wpa_s, &status);
 		}
 	}
@@ -733,6 +742,37 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 				*(int *)supplicant_status);
 		}
 		break;
+#if defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT) && defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_PMKSA_CACHE)
+	case NET_EVENT_WIFI_CMD_PMKSA_CACHE_ADDED:
+	case NET_EVENT_WIFI_CMD_PMKSA_CACHE_REMOVED: {
+		struct wifi_pmksa_cache_event pmksa_event = {0};
+		struct wpa_supplicant *wpa_s;
+		struct wpa_ssid *ssid;
+		int network_id;
+		uint64_t mgmt_event = event == NET_EVENT_WIFI_CMD_PMKSA_CACHE_ADDED
+					      ? NET_EVENT_WIFI_PMKSA_CACHE_ADDED
+					      : NET_EVENT_WIFI_PMKSA_CACHE_REMOVED;
+
+		if (supplicant_status == NULL ||
+		    supplicant_pmksa_parse_event((const char *)supplicant_status, &pmksa_event,
+						 &network_id) != 0) {
+			break;
+		}
+
+		wpa_s = zephyr_get_handle_by_ifname(ifname);
+		if (wpa_s != NULL && wpa_s->conf != NULL) {
+			ssid = wpa_config_get_network(wpa_s->conf, network_id);
+			if (ssid != NULL && ssid->ssid != NULL &&
+			    ssid->ssid_len <= WIFI_SSID_MAX_LEN) {
+				memcpy(pmksa_event.ssid, ssid->ssid, ssid->ssid_len);
+				pmksa_event.ssid_length = ssid->ssid_len;
+			}
+		}
+
+		/* The event has no AKM; GET applies per-entry export policy. */
+		wifi_mgmt_raise_pmksa_cache_event(iface, mgmt_event, &pmksa_event);
+	} break;
+#endif
 	case NET_EVENT_WIFI_CMD_DISCONNECT_RESULT:
 		if (len == sizeof(struct wifi_status)) {
 			wifi_mgmt_raise_disconnect_result_status_event(
