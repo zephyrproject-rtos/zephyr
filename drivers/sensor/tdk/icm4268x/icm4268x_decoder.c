@@ -293,7 +293,7 @@ static int icm4268x_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int 
 			return -ENODATA;
 		}
 	} else {
-		signed_value = unsigned_value | (0 - (unsigned_value & BIT(16)));
+		signed_value = unsigned_value | (0 - (unsigned_value & BIT(15)));
 	}
 
 	*out = (q31_t)(signed_value * scale[is_accel][is_hires]);
