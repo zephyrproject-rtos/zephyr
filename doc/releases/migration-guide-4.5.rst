@@ -527,7 +527,9 @@ MFD
   npm13xx_event_t events)``. Event callbacks are now invoked once per dispatch with a
   combined event mask (the handler receives ``cb->event_mask & fired_events``), rather than
   once per individual event bit as in the previous ``gpio_fire_callbacks`` based
-  implementation. (:github:`101800`)
+  implementation. Handlers also run after the event has been acknowledged in the PMIC rather
+  than before it, so a clear that fails ambiguously may deliver an event a second time
+  instead of dropping it. (:github:`110454`)
 
 MSPI
 ====
