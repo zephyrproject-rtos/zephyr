@@ -288,19 +288,22 @@ static const struct bmi08x_range bmi088_acc_range_map[] = {
 static int bmi08x_acc_range_set(const struct device *dev, int32_t range)
 {
 	struct bmi08x_accel_data *data = dev->data;
-	int32_t reg_val = -1;
+	const struct bmi08x_range *range_map;
+	uint16_t range_map_size;
+	int32_t reg_val;
 	int ret;
 
 	if (data->accel_chip_id == BMI085_ACCEL_CHIP_ID) {
-		reg_val = bmi08x_range_to_reg_val(range, bmi085_acc_range_map,
-						  BMI085_ACC_RANGE_MAP_SIZE);
+		range_map = bmi085_acc_range_map;
+		range_map_size = BMI085_ACC_RANGE_MAP_SIZE;
 	} else if (data->accel_chip_id == BMI088_ACCEL_CHIP_ID) {
-		reg_val = bmi08x_range_to_reg_val(range, bmi088_acc_range_map,
-						  BMI088_ACC_RANGE_MAP_SIZE);
+		range_map = bmi088_acc_range_map;
+		range_map_size = BMI088_ACC_RANGE_MAP_SIZE;
 	} else {
 		return -ENODEV;
 	}
 
+	reg_val = bmi08x_range_to_reg_val(range, range_map, range_map_size);
 	if (reg_val < 0) {
 		return reg_val;
 	}
@@ -310,7 +313,8 @@ static int bmi08x_acc_range_set(const struct device *dev, int32_t range)
 		return ret;
 	}
 
-	data->scale = BMI08X_ACC_SCALE(range);
+	data->scale = BMI08X_ACC_SCALE(bmi08x_reg_val_to_range(reg_val, range_map,
+							       range_map_size));
 	data->range = reg_val;
 
 	return ret;
