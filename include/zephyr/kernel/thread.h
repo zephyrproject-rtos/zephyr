@@ -365,6 +365,13 @@ struct k_thread {
 	struct _thread_stack_info stack_info;
 #endif /* CONFIG_THREAD_STACK_INFO */
 
+#if defined(CONFIG_PROCESS)
+	/** process (thread group) this thread belongs to */
+	struct k_process *process;
+	/** node in the process's member-thread list */
+	sys_dnode_t process_node;
+#endif /* CONFIG_PROCESS */
+
 #if defined(CONFIG_USERSPACE)
 	/** memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;

@@ -17,11 +17,77 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_SYS_THREAD) || defined(__DOXYGEN__)
-
 struct k_condvar;
 struct k_mutex;
 struct k_thread;
+
+/**
+ * @brief Create the child stopped
+ *
+ * The child is fully constructed but its initial thread is not started; the
+ * caller completes setup (process group, signal state, priority) and starts
+ * it with k_thread_start() on the returned child handle.
+ */
+#define SYS_CLONE_PAUSED BIT64(1)
+
+/**
+ * @brief Create a thread in the calling process, not a new process
+ *
+ * The new thread joins the caller's thread group instead of leading a new
+ * process; without @kconfig{CONFIG_PROCESS} it is simply a new thread. The
+ * handle returned through @a child is the thread handle.
+ * sys_thread_create() is a convenience wrapper over this tier.
+ */
+#define SYS_CLONE_THREAD BIT64(2)
+
+/**
+ * @brief Arguments for sys_clone()
+ *
+ * Without @ref SYS_CLONE_THREAD the initial thread becomes the new process's
+ * thread group leader: its handle is the new process's @ref k_pid_t.
+ */
+struct sys_clone_args {
+	/** SYS_CLONE_* flags; zero clones nothing from the caller */
+	uint64_t flags;
+	/** Entry point of the initial thread */
+	k_thread_entry_t entry;
+	/** Entry parameters */
+	void *p1, *p2, *p3;
+	/** Initial thread object, or NULL to draw one from the system pool */
+	struct k_thread *thread;
+	/** Initial thread stack (pool-drawn threads may pass NULL for a pool stack) */
+	k_thread_stack_t *stack;
+	/** Initial thread stack size, in bytes */
+	size_t stack_size;
+	/** Stack guard size for pool-drawn stacks, in bytes */
+	size_t guard_size;
+	/** Initial thread priority */
+	int prio;
+	/** Initial thread options (e.g. K_USER) */
+	uint32_t options;
+};
+
+/**
+ * @brief The creation primitive: a new process, or a thread in this one
+ *
+ * Without @ref SYS_CLONE_THREAD, allocates a process record from the system
+ * pool, creates the initial thread from @a args, and starts it as the leader
+ * of the new process - a child of the caller, joining the caller's process
+ * group. @a args->flags selects what the child clones from the caller; zero
+ * clones nothing (a fresh process). With @ref SYS_CLONE_THREAD, creates a
+ * thread in the calling process instead. Higher-level thread and process
+ * creation APIs are library constructs over this call.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @a args is invalid (including unsupported flags)
+ * @retval -EAGAIN if no process record is available
+ * @retval -EBUSY if @a args->thread still leads an unreaped process
+ * @retval -ENOTSUP for a process-tier clone without @kconfig{CONFIG_SYS_PROCESS}
+ */
+__syscall int sys_clone(const struct sys_clone_args *args, k_pid_t *child);
+
+
+#if defined(CONFIG_SYS_THREAD) || defined(__DOXYGEN__)
 
 /**
  * @defgroup sys_thread_apis System Thread Pool APIs
@@ -159,12 +225,12 @@ __syscall int sys_thread_destroy(struct k_thread *th);
 
 /** @} */
 
+#endif /* defined(CONFIG_SYS_THREAD) || defined(__DOXYGEN__) */
+
 #ifdef __cplusplus
 }
 #endif
 
 #include <zephyr/syscalls/thread.h>
-
-#endif /* defined(CONFIG_SYS_THREAD) || defined(__DOXYGEN__) */
 
 #endif /* ZEPHYR_INCLUDE_ZEPHYR_SYS_THREAD_H_ */

@@ -167,6 +167,51 @@ void z_process_init_thread(struct k_thread *thread);
 /* Remove a dying thread from its process; zombifies the process on last exit */
 void z_process_exit_thread(struct k_thread *thread);
 
+/* Terminate the calling thread's process with a "killed by signal" wait status */
+FUNC_NORETURN void z_process_exit_signaled(int sig);
+
+/*
+ * Release-side providers and the number query, implemented by lib/os. The
+ * kernel never calls an allocator: it hands memory back to the provider that
+ * owns it (the sys_thread_destroy() precedent), and -EINVAL identifies
+ * memory the provider does not own (static or caller-provided; reusable
+ * where it lives). Called
+ * under the process lock; may also run under the scheduler lock and must
+ * defer heap reclamation.
+ */
+#ifdef CONFIG_SYS_PROCESS
+int z_process_record_free(struct k_process *proc);
+int z_pgrp_cell_free(struct k_process_group *grp);
+int z_session_cell_free(struct k_session *session);
+#else
+static inline int z_process_record_free(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+	return -EINVAL;
+}
+
+static inline int z_pgrp_cell_free(struct k_process_group *grp)
+{
+	ARG_UNUSED(grp);
+	return -EINVAL;
+}
+
+static inline int z_session_cell_free(struct k_session *session)
+{
+	ARG_UNUSED(session);
+	return -EINVAL;
+}
+#endif /* CONFIG_SYS_PROCESS */
+
+/* validate a user-supplied group handle and every member record (under lock) */
+int z_pgrp_validate(k_pgrp_t pgrp);
+#else
+static inline FUNC_NORETURN void z_process_exit_signaled(int sig)
+{
+	ARG_UNUSED(sig);
+	k_thread_abort(k_current_get());
+	CODE_UNREACHABLE;
+}
 #endif /* CONFIG_PROCESS */
 #ifdef CONFIG_USERSPACE
 /* thread and stack objects under the kernel-object collector (kernel/userspace.c) */
@@ -476,6 +521,11 @@ void z_sig_purge_timer(struct k_timer *timer);
 void z_timer_sig_delivered(struct k_timer *timer);
 void z_timer_sig_discarded(struct k_timer *timer);
 #endif /* CONFIG_TIMER_SIGNAL */
+
+#if defined(CONFIG_PROCESS) && defined(CONFIG_SIGNAL)
+/* generation-side plumbing between kernel/process.c and kernel/signal.c (internal) */
+int z_sig_queue_chld(k_tid_t tid, k_pid_t child_pid, int child_status, bool exited);
+#endif /* CONFIG_PROCESS && CONFIG_SIGNAL */
 
 #ifdef __cplusplus
 }

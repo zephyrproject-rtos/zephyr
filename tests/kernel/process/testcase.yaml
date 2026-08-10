@@ -1,0 +1,60 @@
+common:
+  tags:
+    - kernel
+    - process
+tests:
+  kernel.process:
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+  kernel.process.sigchld:
+    filter: not CONFIG_USERSPACE
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_SIGNAL=y
+      - CONFIG_SIGNAL_SET_SIZE=40
+      # k_kill_pgrp queues one signal per group member simultaneously, and each
+      # spawned child that exits leaves a best-effort SIGCHLD queued to the
+      # (kernel) test process, which keeps it masked; size the queue with
+      # headroom for both. test_kill installs one signal handler.
+      - CONFIG_SIGNAL_QUEUE_SIZE=8
+      - CONFIG_SIGNAL_ACTION_DB_SIZE=2
+  kernel.process.init:
+    filter: not CONFIG_USERSPACE
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_PROCESS_INIT=y
+  kernel.process.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+  kernel.process.heap:
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_SYS_PROCESS_MAX=4
+      - CONFIG_HEAP_MEM_POOL_SIZE=8192
+  kernel.process.heap.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    tags: userspace
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+      - CONFIG_USERSPACE=y
+      - CONFIG_SYS_PROCESS_MAX=4
+      - CONFIG_HEAP_MEM_POOL_SIZE=8192
+      # 6 heap-growth children + the suite's other thread objects exceed the
+      # 16-thread kobject permission bitmap
+      - CONFIG_MAX_THREAD_BYTES=4

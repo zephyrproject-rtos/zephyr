@@ -51,6 +51,8 @@ static void z_sig_unset(struct k_sig_set *result, const struct k_sig_set *set);
 static void z_sig_orset(struct k_sig_set *result, const struct k_sig_set *set2);
 static void z_sig_fifo_dump(void);
 static k_sig_handler_t z_sig_resolve(int sig);
+static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext);
+static void z_sig_handler_core(int sig, struct k_sig_info *info, void *ucontext);
 static int z_sig_action(int sig, const struct k_sig_action *act, struct k_sig_action *oact,
 			k_tid_t tid);
 static void z_sig_set_dump(const struct k_sig_set *set, const char *label);
@@ -916,6 +918,12 @@ int z_sig_claim(struct k_thread *tid)
 
 	z_sig_orset(&ctx->mask, &ctx->action.mask);
 
+	if ((ctx->action.handler == z_sig_handler_term) ||
+	    (ctx->action.handler == z_sig_handler_core)) {
+		/* ends the process here: the default actions are not user-mode code */
+		ctx->action.handler(ctx->info.signo, &ctx->info, NULL);
+	}
+
 	return 1;
 }
 static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
@@ -923,7 +931,7 @@ static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
 	ARG_UNUSED(info);
 	ARG_UNUSED(ucontext);
 
-	k_thread_abort(k_current_get());
+	z_process_exit_signaled(sig);
 }
 
 /**

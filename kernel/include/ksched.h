@@ -290,6 +290,28 @@ static ALWAYS_INLINE struct k_thread *z_unpend_first_thread_locked(_wait_q_t *wa
  * @retval true If a thread was woken up
  * @retval false If the wait_q was empty
  */
+/**
+ * Wakes the specified thread.
+ *
+ * Given a specific thread, wake it up. This routine assumes that the given
+ * thread is not on the timeout queue.
+ *
+ * @warning Caller must hold _sched_spinlock when calling this function!
+ *
+ * @param thread Given thread to wake up.
+ *
+ */
+void z_sched_wake_thread_locked(struct k_thread *thread);
+
+/*
+ * Pend the current thread on @a wait_q under the scheduler lock alone, unless
+ * *gen no longer equals @a expected (returns 1: the condition may have changed,
+ * rescan). For waiters whose wakers run in the thread-halt path and thus
+ * already hold the scheduler lock when taking the condition lock.
+ */
+int z_sched_waitq_pend_if(_wait_q_t *wait_q, k_timeout_t timeout, atomic_t *gen,
+			  atomic_val_t expected);
+
 static ALWAYS_INLINE bool z_sched_wake(_wait_q_t *wait_q, int swap_retval, void *swap_data)
 {
 	struct k_thread *thread;

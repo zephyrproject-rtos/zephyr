@@ -528,7 +528,7 @@ static int thread_pool_draw(struct k_thread **th)
 	return 0;
 }
 
-static int sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
+int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
 				    uint32_t stack_size, uint32_t guard_size,
 				    k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio,
 				    uint32_t options, k_timeout_t delay)
@@ -579,12 +579,43 @@ static int sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stac
 	return 0;
 }
 
+static int thread_create_clone(struct k_thread **th, k_thread_stack_t *stack,
+			       uint32_t stack_size, uint32_t guard_size, k_thread_entry_t entry,
+			       void *p1, void *p2, void *p3, int prio, uint32_t options,
+			       uint64_t clone_flags)
+{
+	int ret;
+	k_pid_t child = NULL;
+	struct sys_clone_args args;
+
+	/* field by field: a whole-struct initializer becomes a memset call on every create */
+	args.flags = SYS_CLONE_THREAD | clone_flags;
+	args.entry = entry;
+	args.p1 = p1;
+	args.p2 = p2;
+	args.p3 = p3;
+	args.thread = NULL;
+	args.stack = stack;
+	args.stack_size = stack_size;
+	args.guard_size = guard_size;
+	args.prio = prio;
+	args.options = options;
+	args.sigmask = NULL;
+
+	ret = z_impl_sys_clone(&args, &child);
+	if (ret == 0) {
+		*th = child;
+	}
+
+	return ret;
+}
+
 int z_impl_sys_thread_create(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
 			     uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
 			     void *p3, int prio, uint32_t options)
 {
-	return sys_thread_create_common(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
-					options, K_NO_WAIT);
+	return thread_create_clone(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
+				   options, 0);
 }
 
 int sys_thread_create_paused(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
@@ -592,8 +623,8 @@ int sys_thread_create_paused(struct k_thread **th, k_thread_stack_t *stack, uint
 			     void *p3, int prio, uint32_t options)
 {
 	/* kernel-mode only: there is no system call for deferred-start creation */
-	return sys_thread_create_common(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
-					options, K_FOREVER);
+	return thread_create_clone(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
+				   options, SYS_CLONE_PAUSED);
 }
 
 #ifdef CONFIG_USERSPACE

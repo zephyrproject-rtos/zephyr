@@ -34,6 +34,49 @@ typedef struct k_process_group *k_pgrp_t;
 /** @brief Session handle */
 typedef struct k_session *k_session_t;
 
+struct k_thread;
+
+/**
+ * @brief Create the new thread in the calling process, not a new process
+ *
+ * The thread joins the caller's thread group; @a process must be NULL.
+ */
+#define K_CLONE_THREAD BIT64(0)
+
+/**
+ * @brief Create the thread stopped
+ *
+ * The caller completes setup and starts it with k_thread_start().
+ */
+#define K_CLONE_PAUSED BIT64(1)
+
+/**
+ * @brief Arguments for k_clone()
+ *
+ * The caller provides every object: the thread, its stack, and - for a new
+ * process - the process record. The kernel never allocates.
+ */
+struct k_clone_args {
+	/** K_CLONE_* flags */
+	uint64_t flags;
+	/** Entry point of the new thread */
+	k_thread_entry_t entry;
+	/** Entry parameters */
+	void *p1, *p2, *p3;
+	/** Thread object */
+	struct k_thread *thread;
+	/** Thread stack */
+	k_thread_stack_t *stack;
+	/** Thread stack size, in bytes */
+	size_t stack_size;
+	/** Thread priority */
+	int prio;
+	/** Thread options (e.g. K_USER) */
+	uint32_t options;
+	/** Process record led by the new thread; NULL with @ref K_CLONE_THREAD */
+	struct k_process *process;
+};
+
 #if defined(CONFIG_PROCESS) || defined(__DOXYGEN__)
 
 /**
@@ -79,6 +122,8 @@ struct k_thread;
 /** @cond INTERNAL_HIDDEN */
 /** A K_SIG_CHLD notification for this zombie has not yet been emitted */
 #define K_PROCESS_FLAG_SIGCHLD BIT(0)
+/** Reparented to init while still running: init reaps it when it exits */
+#define K_PROCESS_FLAG_ADOPTED BIT(1)
 /** @endcond */
 
 /**
@@ -112,6 +157,7 @@ struct k_thread;
 #define K_PROCESS_WNOHANG BIT(0)
 /** @brief Report status without reaping the child */
 #define K_PROCESS_WNOWAIT BIT(24)
+
 /** @brief Report stopped children (reserved; stop/continue is unsupported) */
 #define K_PROCESS_WUNTRACED BIT(1)
 /** @brief Report continued children (reserved; stop/continue is unsupported) */
@@ -119,8 +165,6 @@ struct k_thread;
 /** @brief Report exited children (the default; accepted for waitid() compatibility) */
 #define K_PROCESS_WEXITED BIT(2)
 /** @} */
-
-
 /**
  * @brief Session
  *

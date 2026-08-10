@@ -8417,6 +8417,28 @@ __syscall int k_process_init(struct k_process *proc, const k_tid_t *threads,
 			     size_t num_threads);
 
 /**
+ * @brief The kernel clone primitive: a new process, or a thread in this one
+ *
+ * Creates @a args->thread on @a args->stack, stopped. Without
+ * @ref K_CLONE_THREAD the thread becomes the leader of a new process
+ * initialized into the caller-provided record @a args->process, as
+ * k_process_init(); with @ref K_CLONE_THREAD it joins the calling process
+ * instead. The thread is started unless @ref K_CLONE_PAUSED is given. The
+ * kernel never allocates: every object is the caller's. sys_clone() layers
+ * pooled resources and numbering over this primitive.
+ *
+ * @param args creation arguments
+ * @param child filled with the new thread's handle (the process handle for a
+ *              new process), or NULL
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if an argument is invalid
+ * @retval -EBUSY if @a args->process is already initialized or @a
+ *         args->thread still leads an unreaped process
+ */
+__syscall int k_clone(const struct k_clone_args *args, k_tid_t *child);
+
+/**
  * @brief Initialize a process group from caller-provided memory
  *
  * Initializes the non-initialized group cell @a grp (zeroed, or retired) as a

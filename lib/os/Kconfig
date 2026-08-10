@@ -218,6 +218,8 @@ config BOOT_FDT
 
 rsource "Kconfig.atomics"
 rsource "Kconfig.cbprintf"
+rsource "Kconfig.sys_process"
+
 rsource "Kconfig.sys_thread"
 rsource "Kconfig.sys_mutex"
 

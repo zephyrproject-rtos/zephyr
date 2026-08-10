@@ -29,7 +29,7 @@ config SYS_TIMER_DISPATCH_PRIO
 config SYS_TIMER_DISPATCH_STACK_SIZE
 	int "Stack size of the function-notification dispatcher thread"
 	depends on TIMER_SIGNAL && SYS_THREAD && THREAD_DETACH
-	default 1024
+	default 2048
 	help
 	  Stack size of the system timer dispatcher, the kernel service thread
 	  that accepts function-notification timer expiries and spawns one

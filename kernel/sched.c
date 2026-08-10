@@ -553,6 +553,22 @@ int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	return z_swap_locked(key);
 }
 
+int z_sched_waitq_pend_if(_wait_q_t *wait_q, k_timeout_t timeout, atomic_t *gen,
+			  atomic_val_t expected)
+{
+#if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
+	pending_current = _current;
+#endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
+	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+
+	if (atomic_get(gen) != expected) {
+		k_spin_unlock(&_sched_spinlock, key);
+		return 1;
+	}
+	pend_locked(_current, wait_q, timeout);
+	return z_swap(&_sched_spinlock, key);
+}
+
 struct k_thread *z_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = NULL;
@@ -959,6 +975,9 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 		k_thread_perms_all_clear(thread);
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_PROCESS
+		z_process_exit_thread(thread);
+#endif /* CONFIG_PROCESS */
 
 		/* Do this "set _current to dummy" step last so that
 		 * subsystems above can rely on _current being

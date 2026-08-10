@@ -717,9 +717,11 @@ static inline void init_thread_userspace(struct k_thread *thread,
 	k_object_init(stack);
 	thread->syscall_frame = NULL;
 
+#ifndef CONFIG_PROCESS
 	/* Any given thread has access to itself and to its stack */
 	k_object_access_grant(thread, thread);
 	k_object_access_grant(stack, thread);
+#endif /* !CONFIG_PROCESS */
 #else
 	ARG_UNUSED(thread);
 	ARG_UNUSED(stack);
@@ -958,6 +960,14 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 	new_thread->resource_pool = _current->resource_pool;
 	init_thread_halt_queue(new_thread);
 	init_thread_usage(new_thread);
+
+#ifdef CONFIG_PROCESS
+	z_process_init_thread(new_thread);
+#if defined(CONFIG_USERSPACE)
+	/* grants resolve through the thread's process, assigned just now */
+	k_object_access_grant(new_thread, new_thread);
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_PROCESS */
 
 #ifdef CONFIG_SIGNAL
 #ifdef CONFIG_USERSPACE
@@ -1838,6 +1848,9 @@ void z_dummy_thread_init(struct k_thread *dummy_thread)
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = &k_mem_domain_default;
 #endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_PROCESS
+	dummy_thread->process = NULL;
+#endif /* CONFIG_PROCESS */
 #if (K_HEAP_MEM_POOL_SIZE > 0)
 	k_thread_system_pool_assign(dummy_thread);
 #else

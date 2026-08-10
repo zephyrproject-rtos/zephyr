@@ -1,0 +1,57 @@
+# Copyright (c) 2026, Friedt Professional Engineering Services, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SYS_PROCESS
+	bool "System-layer process services"
+	depends on PROCESS
+	select SYS_ELASTIPOOL
+	imply SYS_HASH_MAP
+	imply SYS_HASH_FUNC32
+	help
+	  Everything allocation-adjacent that kernel process support
+	  deliberately does not own: integer process/group/session numbering
+	  (sys_process_id() and friends), dynamic process records beyond the
+	  kernel's static minimum, and the group/session cell pools backing
+	  runtime k_setsid()/k_setpgid(). Without this option the kernel serves
+	  statically defined processes only: records up to the built-in
+	  minimum, build-time topology, no runtime group or session creation,
+	  and no numeric IDs.
+
+if SYS_PROCESS
+
+config SYS_PROCESS_MIN
+	int "Minimum size of the process record pool"
+	default 4
+	help
+	  Minimum number of process records guaranteed to be allocatable for
+	  k_spawn() children (including zombies not yet reaped), provided to
+	  the kernel from a static pool in the system layer. Applications and
+	  libraries contribute additional guaranteed records by defining int
+	  symbols named CONFIG_SYS_PROCESS_MIN_ADD_<NAME>; the build system
+	  sums this option with all such contributions and, for technical
+	  reasons, provides the result to code as the un-prefixed
+	  SYS_PROCESS_MIN compile definition.
+
+config SYS_PROCESS_MAX
+	int "Maximum number of heap-provided process records"
+	default 0
+	help
+	  Number of process records that may be provided to the kernel from the
+	  heap, in addition to the statically guaranteed minimum (the sum of
+	  CONFIG_SYS_PROCESS_MIN and all CONFIG_SYS_PROCESS_MIN_ADD_*
+	  contributions).
+	  The kernel itself never allocates: records beyond the minimum come
+	  from the system layer (lib/os), without guarantees, and require a
+	  system heap. The default (0) disables dynamic process records
+	  entirely.
+
+config SYS_PROCESS_IDS
+	int "Maximum number of simultaneously numbered processes"
+	default 16
+	help
+	  Size of the system-layer numbering tables behind sys_process_id(),
+	  sys_pgrp_id(), and sys_session_id(). Must cover the three reserved
+	  processes plus every statically defined and runtime process that can
+	  exist at once (including zombies not yet reaped).
+
+endif # SYS_PROCESS

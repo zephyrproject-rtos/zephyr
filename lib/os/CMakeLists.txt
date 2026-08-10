@@ -126,7 +126,25 @@ zephyr_syscall_header_ifdef(
 zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C atomic_c.c)
 
 zephyr_sources_ifdef(CONFIG_SYS_THREAD thread.c)
-zephyr_syscall_header_ifdef(CONFIG_SYS_THREAD ${ZEPHYR_BASE}/include/zephyr/sys/thread.h)
+zephyr_sources_ifdef(CONFIG_SYS_PROCESS process.c)
+zephyr_syscall_header_ifdef(CONFIG_SYS_PROCESS ${ZEPHYR_BASE}/include/zephyr/sys/process.h)
+if(CONFIG_SYS_PROCESS)
+  # Sum CONFIG_SYS_PROCESS_MIN with any CONFIG_SYS_PROCESS_MIN_ADD_* additions:
+  # the accumulated minimum is the statically guaranteed record count.
+  import_kconfig(CONFIG_SYS_PROCESS_MIN_ADD_ ${DOTCONFIG} _sys_process_min_add_keys)
+  set(_sys_process_min ${CONFIG_SYS_PROCESS_MIN})
+  foreach(_add ${_sys_process_min_add_keys})
+    math(EXPR _sys_process_min "${_sys_process_min} + ${${_add}}")
+  endforeach()
+  zephyr_compile_definitions(SYS_PROCESS_MIN=${_sys_process_min})
+endif()
+if(CONFIG_SYS_THREAD OR CONFIG_SYS_PROCESS)
+  # the clone dispatch: thread tier here, process tiers from process.c
+  zephyr_sources(clone.c)
+endif()
+if(CONFIG_SYS_THREAD OR CONFIG_SYS_PROCESS)
+  zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/sys/thread.h)
+endif()
 
 if(CONFIG_SYS_THREAD)
   foreach(_pool STACK THREAD)
