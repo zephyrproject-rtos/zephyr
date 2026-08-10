@@ -14,9 +14,8 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/spinlock.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
@@ -28,10 +27,10 @@ LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
 
 #define CLK_FREQ         DT_INST_PROP(0, clock_frequency)
 #define LPTIMER_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1 | CY_MCWDT_CTR2)
-#define CYCLES_PER_TICK  (CLK_FREQ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define MAX_DELAY UINT32_MAX
-#define MAX_TICKS (MAX_DELAY / CYCLES_PER_TICK)
+/* Counter 2 is reported to the kernel as it reads, so the two rates are one. */
+BUILD_ASSERT(CLK_FREQ == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	     "lp-timer clock-frequency must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC");
 
 static MCWDT_STRUCT_Type *lptimer = (MCWDT_STRUCT_Type *)DT_INST_REG_ADDR(0);
 
@@ -47,10 +46,6 @@ static const cy_stc_mcwdt_config_t lptimer_default_cfg = {.c0Match = 0xFFFF,
 							  .c1ClearOnMatch = false,
 							  .c0c1Cascade = true,
 							  .c1c2Cascade = false};
-
-static uint32_t announced_cycles;
-
-static struct k_spinlock lock;
 
 /*
  * Since we do not have a 32bit counter and compare we use counter0/counter1 as a
@@ -92,67 +87,39 @@ static void lptimer_delay(uint32_t cycles)
 	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	uint32_t delay_cycles;
+/*
+ * Counter 2 free-runs at the low-frequency clock and is the cycle domain, while
+ * counters 0 and 1, cascaded, are armed as a one-shot relative delay: a RELOAD
+ * backend whose alarm is a separate timer from the counter. Arming resets that
+ * pair before setting the match, so the delay always runs from zero and cannot
+ * be programmed into the past.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
 
-	ARG_UNUSED(idle);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	if (ticks == K_TICKS_FOREVER || ticks > MAX_TICKS) {
-		delay_cycles = MAX_DELAY;
-	} else {
-		delay_cycles = MAX(ticks * CYCLES_PER_TICK, 1);
-	}
-
-	lptimer_delay(delay_cycles);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	BUILD_ASSERT(CYCLES_PER_TICK > 0);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	uint32_t current_cycles = MCWDT_CNTHIGH(lptimer);
-	uint32_t delta_cycles = current_cycles - announced_cycles;
-
-	k_spin_unlock(&lock, key);
-
-	return delta_cycles / CYCLES_PER_TICK;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
+static inline uint32_t timer_driver_cycle_get(void)
 {
 	return MCWDT_CNTHIGH(lptimer);
 }
 
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	lptimer_delay(cycles);
+}
+
+#include "system_timer_generic.h"
+
 static void lptimer_isr(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	Cy_MCWDT_ClearInterrupt(lptimer, LPTIMER_COUNTERS);
 
-	uint32_t cycle_count = MCWDT_CNTHIGH(lptimer);
-	uint32_t delta_cycles = cycle_count - announced_cycles;
-	uint32_t delta_ticks = (delta_cycles / CYCLES_PER_TICK);
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The alarm is one-shot, so a ticked kernel re-arms it here:
+		 * the core leaves the period of a reload backend to the driver.
+		 */
+		lptimer_delay(TIMER_CORE_CYC_PER_TICK);
+	}
 
-	announced_cycles += delta_ticks * CYCLES_PER_TICK;
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(delta_ticks);
+	timer_core_announce();
 }
 
 static int lptimer_init(void)
@@ -180,7 +147,12 @@ static int lptimer_init(void)
 	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR2, 0);
 	WAIT_FOR(MCWDT_CNTHIGH(lptimer) > 0, 10000, NULL);
 
-	lptimer_delay(MAX_DELAY);
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		lptimer_delay(TIMER_CORE_CYC_PER_TICK);
+	}
 
 	return 0;
 }
