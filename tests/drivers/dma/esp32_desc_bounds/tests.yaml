@@ -1,0 +1,9 @@
+tests:
+  drivers.dma.esp32_desc_bounds:
+    depends_on:
+      - dma
+    tags:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0")
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
