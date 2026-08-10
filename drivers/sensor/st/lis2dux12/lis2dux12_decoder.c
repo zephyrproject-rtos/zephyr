@@ -282,6 +282,15 @@ static int lis2dux12_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec 
 				continue;
 			}
 
+			if (count + 1 >= max_count) {
+				/*
+				 * Not enough room for both samples of this 2X frame.
+				 * Since *fit is not advanced, the frame is decoded on
+				 * the next call.
+				 */
+				return count;
+			}
+
 			out->shift = accel_range[header->range];
 
 			out->readings[count].timestamp_delta =
