@@ -37,6 +37,8 @@
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32C5X)
 #include <zephyr/dt-bindings/clock/stm32c5_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32G5X)
+#include <zephyr/dt-bindings/clock/stm32g5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <zephyr/dt-bindings/clock/stm32f0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F1X)
@@ -210,7 +212,8 @@
 #define STM32_CK48_ENABLED	1
 #endif
 
-#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32c5_rcc, okay)
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32c5_rcc, okay) || \
+	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(rcc), st_stm32g5_rcc, okay)
 #define STM32_PSI_FREQ_MHZ_ENABLED	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), st_psi_frequency)
 #if STM32_PSI_FREQ_MHZ_ENABLED
 #define STM32_PSI_FREQ_MHZ		DT_PROP(DT_NODELABEL(rcc), st_psi_frequency)
@@ -223,7 +226,7 @@
 #else
 #define STM32_PSI_SOURCE		HSIDIV18 /* Dummy value used for macro construction */
 #endif /* STM32_PSI_SOURCE_ENABLED */
-#endif /* compat st_stm32c5_rcc */
+#endif /* compat st_stm32c5_rcc or st_stm32g5_rcc */
 
 /** PLL node related symbols */
 
