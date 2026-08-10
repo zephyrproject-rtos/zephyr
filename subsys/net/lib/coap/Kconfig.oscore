@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config COAP_OSCORE
-	bool "OSCORE support for CoAP (RFC 8613)"
+	bool "OSCORE support for CoAP (RFC 8613) [EXPERIMENTAL]"
 	depends on UOSCORE
 	depends on PSA_CRYPTO
+	select EXPERIMENTAL
 	help
 	  Enable Object Security for Constrained RESTful Environments (OSCORE)
 	  support for CoAP server. OSCORE provides end-to-end protection of
