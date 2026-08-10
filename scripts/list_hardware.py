@@ -167,6 +167,17 @@ class Systems:
     def get_extended_socs(self):
         return self._extended_socs
 
+    def get_loaded_trees(self, names):
+        '''Return the SoCs, series and families described by the soc.yml trees holding the given
+        SoCs.
+        '''
+        folders = {f for name in names for f in self.get_soc(name).folder}
+        return (
+            [s for s in self._socs if folders.intersection(s.folder)],
+            [s for s in self._series if folders.intersection(s.folder)],
+            [f for f in self._families if folders.intersection(f.folder)],
+        )
+
     def get_soc(self, name):
         try:
             return next(s for s in self._socs if s.name == name)
@@ -313,9 +324,6 @@ def dump_v2_archs(args):
 
 
 def dump_v2_system(args, type, system):
-    if args.soc is not None and system.name != args.soc:
-        return
-
     if args.soc_family is not None and (type != "soc" or system.family is None or \
        system.family != args.soc_family):
         return
@@ -359,13 +367,20 @@ def dump_v2_system(args, type, system):
 def dump_v2_systems(args):
     systems = find_v2_systems(args)
 
-    for f in systems.get_families():
+    if args.soc is not None:
+        socs, series, families = systems.get_loaded_trees([args.soc])
+    else:
+        socs = systems.get_socs()
+        families = systems.get_families()
+        series = systems.get_series()
+
+    for f in families:
         dump_v2_system(args, 'family', f)
 
-    for s in systems.get_series():
+    for s in series:
         dump_v2_system(args, 'series', s)
 
-    for s in systems.get_socs():
+    for s in socs:
         dump_v2_system(args, 'soc', s)
 
 
