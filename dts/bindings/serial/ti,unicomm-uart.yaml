@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI UNICOMM UART
+
+compatible: "ti,unicomm-uart"
+
+include: "ti,mspm0-uart.yaml"

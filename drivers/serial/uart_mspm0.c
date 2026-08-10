@@ -6,7 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT ti_mspm0_uart
+/*
+ * AM13E's UNICOMMUART_REGS has no leading GPRCM block; every functional
+ * register (CLKDIV, CLKSEL, CTL0, ...) sits 0x1000 lower than the same
+ * register on mspm0/mspm33c. ti,unicomm-uart already forces skip_power_on,
+ * so the GPRCM fields this shift underflows past are never dereferenced.
+ */
+#if defined(CONFIG_SOC_SERIES_AM13E)
+#define MSPM0_UART_REGS_OFFSET 0x1000U
+#else
+#define MSPM0_UART_REGS_OFFSET 0U
+#endif
 
 /* Zephyr includes */
 #include <zephyr/kernel.h>
@@ -81,19 +91,20 @@
 /*
  * IFLS Interrupt FIFO Level Select Register
  */
+/* The "one entry" level is encoded differently on UART and UNICOMMUART */
 #define UART_IFLS_TXIFLSEL_MASK      GENMASK(2, 0)
 #define UART_IFLS_TXIFLSEL_LVL_3_4   FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 1)
 #define UART_IFLS_TXIFLSEL_LVL_1_2   FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 2)
 #define UART_IFLS_TXIFLSEL_LVL_1_4   FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 3)
 #define UART_IFLS_TXIFLSEL_LVL_EMPTY FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 5)
-#define UART_IFLS_TXIFLSEL_LVL_1     FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 7)
+#define UART_IFLS_TXIFLSEL_LVL_1_ENTRY FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 7)
 
 #define UART_IFLS_RXIFLSEL_MASK     GENMASK(6, 4)
 #define UART_IFLS_RXIFLSEL_LVL_1_4  FIELD_PREP(UART_IFLS_RXIFLSEL_MASK, 1)
 #define UART_IFLS_RXIFLSEL_LVL_1_2  FIELD_PREP(UART_IFLS_RXIFLSEL_MASK, 2)
 #define UART_IFLS_RXIFLSEL_LVL_3_4  FIELD_PREP(UART_IFLS_RXIFLSEL_MASK, 3)
 #define UART_IFLS_RXIFLSEL_LVL_FULL FIELD_PREP(UART_IFLS_RXIFLSEL_MASK, 5)
-#define UART_IFLS_RXIFLSEL_LVL_1    FIELD_PREP(UART_IFLS_RXIFLSEL_MASK, 7)
+#define UART_IFLS_RXIFLSEL_LVL_1_ENTRY UART_IFLS_TXIFLSEL_LVL_1_ENTRY
 
 #define UART_IFLS_RXTOSEL_MASK GENMASK(11, 8)
 
@@ -206,6 +217,10 @@ struct uart_mspm0_config {
 	uint32_t clk_sel;
 	uint32_t clk_div;
 	bool disable_rx;
+	/* Values/actions that are handled differently for standalone and UNICOMM UARTs */
+	uint32_t stat_txff_mask;
+	uint32_t stat_txfe_mask;
+	bool skip_power_on;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
 	/* UART FIFO thresholds */
@@ -248,16 +263,22 @@ struct uart_mspm0_data {
 #define UART_MSPM0_ENABLE(regs)  ((regs)->ctl0 |= UART_CTL0_ENABLE_ENABLE)
 #define UART_MSPM0_DISABLE(regs) ((regs)->ctl0 &= ~UART_CTL0_ENABLE_MASK)
 
+/*
+ * Definitions for UNICOMM UART
+ */
+#define UART_STAT_UNICOMM_TXFF_MASK GENMASK(6, 6)
+#define UART_STAT_UNICOMM_TXFE_MASK GENMASK(5, 5)
+
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static const uint32_t uart_mspm0_rx_fifo_level[] = {
-	[MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY] = UART_IFLS_RXIFLSEL_LVL_1,
+	[MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY] = UART_IFLS_RXIFLSEL_LVL_1_ENTRY,
 	[MSPM0_UART_RX_FIFO_LEVEL_1_4_FULL] = UART_IFLS_RXIFLSEL_LVL_1_4,
 	[MSPM0_UART_RX_FIFO_LEVEL_1_2_FULL] = UART_IFLS_RXIFLSEL_LVL_1_2,
 	[MSPM0_UART_RX_FIFO_LEVEL_3_4_FULL] = UART_IFLS_RXIFLSEL_LVL_3_4,
 	[MSPM0_UART_RX_FIFO_LEVEL_FULL] = UART_IFLS_RXIFLSEL_LVL_FULL,
 };
 static const uint32_t uart_mspm0_tx_fifo_level[] = {
-	[MSPM0_UART_TX_FIFO_LEVEL_ONE_ENTRY] = UART_IFLS_TXIFLSEL_LVL_1,
+	[MSPM0_UART_TX_FIFO_LEVEL_ONE_ENTRY] = UART_IFLS_TXIFLSEL_LVL_1_ENTRY,
 	[MSPM0_UART_TX_FIFO_LEVEL_1_4_EMPTY] = UART_IFLS_TXIFLSEL_LVL_1_4,
 	[MSPM0_UART_TX_FIFO_LEVEL_1_2_EMPTY] = UART_IFLS_TXIFLSEL_LVL_1_2,
 	[MSPM0_UART_TX_FIFO_LEVEL_3_4_EMPTY] = UART_IFLS_TXIFLSEL_LVL_3_4,
@@ -354,7 +375,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 
 	/* Skip the irq_lock()s below when in ISR context. */
 	if (k_is_in_isr()) {
-		while ((regs->stat & UART_STAT_TXFF_MASK) != 0U) {
+		while ((regs->stat & config->stat_txff_mask) != 0U) {
 		}
 		regs->txdata = (uint32_t)c;
 		return;
@@ -369,7 +390,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 	 */
 	do {
 		key = irq_lock();
-		if ((regs->stat & UART_STAT_TXFF_MASK) == 0U) {
+		if ((regs->stat & config->stat_txff_mask) == 0U) {
 			regs->txdata = (uint32_t)c;
 			irq_unlock(key);
 			return;
@@ -383,6 +404,11 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uint32_t rx_level;
+	uint32_t tx_level;
+	const bool unicommuart = config->skip_power_on;
+#endif
 	uint32_t clock_rate;
 	uint32_t uart_clk;
 	int ret;
@@ -413,16 +439,21 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	/* Restore FIFO interrupt level select thresholds. These are also wiped
 	 * when the peripheral is reset/re-initialised, so restore them here in
 	 * addition to the init() path.
-	 *
-	 * RX threshold: use LVL_1 (fire on any received byte). LVL_1_2 (0x20)
-	 * is undefined for ULP-domain UARTs (MSPM0L series) where only values
-	 * 0 and 4 are specified; LVL_1 (0x70) is valid across all variants and
-	 * avoids losing bytes when bursts are smaller than the half-full level.
 	 */
-	config->regs->ifls = (config->regs->ifls & ~UART_IFLS_RXIFLSEL_MASK) |
-			     uart_mspm0_rx_fifo_level[config->rx_fifo_threshold];
-	config->regs->ifls = (config->regs->ifls & ~UART_IFLS_TXIFLSEL_MASK) |
-			     uart_mspm0_tx_fifo_level[config->tx_fifo_threshold];
+	rx_level = uart_mspm0_rx_fifo_level[config->rx_fifo_threshold];
+	tx_level = uart_mspm0_tx_fifo_level[config->tx_fifo_threshold];
+
+	if (unicommuart) {
+		if (config->rx_fifo_threshold == MSPM0_UART_RX_FIFO_LEVEL_ONE_ENTRY) {
+			rx_level = UART_IFLS_RXIFLSEL_LVL_1_ENTRY;
+		}
+		if (config->tx_fifo_threshold == MSPM0_UART_TX_FIFO_LEVEL_ONE_ENTRY) {
+			tx_level = UART_IFLS_TXIFLSEL_LVL_1_ENTRY;
+		}
+	}
+
+	config->regs->ifls = (config->regs->ifls & ~UART_IFLS_RXIFLSEL_MASK) | rx_level;
+	config->regs->ifls = (config->regs->ifls & ~UART_IFLS_TXIFLSEL_MASK) | tx_level;
 	config->regs->ifls = (config->regs->ifls & ~UART_IFLS_RXTOSEL_MASK) |
 			     UART_IFLS_RXTOSEL_HIGHEST_VAL; /* Highest possible RX timeout */
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -608,7 +639,7 @@ static int uart_mspm0_fifo_fill(const struct device *dev, const uint8_t *tx_data
 	const struct uart_mspm0_config *config = dev->config;
 	int count = 0;
 
-	while (count < size && ((config->regs->stat & UART_STAT_TXFF_MASK) == 0)) {
+	while (count < size && ((config->regs->stat & config->stat_txff_mask) == 0)) {
 		config->regs->txdata = tx_data[count];
 		count++;
 	}
@@ -645,7 +676,7 @@ static void uart_mspm0_irq_tx_enable(const struct device *dev)
 	 * that the ISR fires immediately rather than waiting for the next byte
 	 * to drain through the shift register.
 	 */
-	if ((config->regs->stat & UART_STAT_TXFE_MASK) != 0U) {
+	if ((config->regs->stat & config->stat_txfe_mask) != 0U) {
 		config->regs->cpu_int.iset = UART_CPU_INT_ISET_TXINT_SET;
 	}
 }
@@ -660,13 +691,10 @@ static void uart_mspm0_irq_tx_disable(const struct device *dev)
 static int uart_mspm0_irq_tx_ready(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
-	struct uart_mspm0_data *data = dev->data;
+	uint32_t imask = config->regs->cpu_int.imask;
 
-	return ((data->pending_interrupt == UART_CPU_INT_IIDX_STAT_TXIFG) ||
-		(data->pending_interrupt == UART_CPU_INT_IIDX_STAT_EOT)) &&
-			       ((config->regs->stat & UART_STAT_TXFF_MASK) == 0)
-		       ? 1
-		       : 0;
+	return ((imask & UART_MSPM0_TX_INTERRUPTS) != 0U) &&
+	       ((config->regs->stat & config->stat_txff_mask) == 0U);
 }
 
 static void uart_mspm0_irq_rx_enable(const struct device *dev)
@@ -697,26 +725,22 @@ static int uart_mspm0_irq_tx_complete(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	return ((config->regs->stat & UART_STAT_TXFE_MASK) != 0) ? 1 : 0;
+	return ((config->regs->stat & config->stat_txfe_mask) != 0) ? 1 : 0;
 }
 
 static int uart_mspm0_irq_rx_ready(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
-	struct uart_mspm0_data *data = dev->data;
+	uint32_t imask = config->regs->cpu_int.imask;
 
-	return ((data->pending_interrupt == UART_CPU_INT_IIDX_STAT_RXIFG) ||
-		(data->pending_interrupt == UART_CPU_INT_IIDX_STAT_RTFG)) &&
-			       ((config->regs->stat & UART_STAT_RXFE_MASK) == 0)
-		       ? 1
-		       : 0;
+	/* Level triggered on the live RX FIFO state, see uart_mspm0_irq_tx_ready(). */
+	return ((imask & UART_MSPM0_RX_INTERRUPTS) != 0U) &&
+	       ((config->regs->stat & UART_STAT_RXFE_MASK) == 0U);
 }
 
 static int uart_mspm0_irq_is_pending(const struct device *dev)
 {
-	struct uart_mspm0_data *data = dev->data;
-
-	return data->pending_interrupt != UART_CPU_INT_IIDX_STAT_NO_INTR;
+	return uart_mspm0_irq_rx_ready(dev) || uart_mspm0_irq_tx_ready(dev);
 }
 
 static void uart_mspm0_irq_update(const struct device *dev)
@@ -769,10 +793,12 @@ static int uart_mspm0_init(const struct device *dev)
 	const struct uart_mspm0_config *config = dev->config;
 	int ret;
 
-	/* Reset power */
-	UART_MSPM0_RESET(config->regs);
-	UART_MSPM0_ENABLE_POWER(config->regs);
-	msp_delay_peripheral_startup();
+	if (config->skip_power_on == false) {
+		/* Reset power */
+		UART_MSPM0_RESET(config->regs);
+		UART_MSPM0_ENABLE_POWER(config->regs);
+		msp_delay_peripheral_startup();
+	}
 
 	/* Init UART pins */
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
@@ -823,50 +849,56 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-#define MSP_UART_IRQ_DEFINE(inst)                                                                  \
-	static void uart_mspm0_##inst##_irq_register(const struct device *dev)                     \
+#define MSP_UART_IRQ_DEFINE(node_id)                                                               \
+	static void uart_mspm0_##node_id##_irq_register(const struct device *dev)                  \
 	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), uart_mspm0_isr,       \
-			    DEVICE_DT_INST_GET(inst), 0);                                          \
-		irq_enable(DT_INST_IRQN(inst));                                                    \
+		IRQ_CONNECT(DT_IRQN(node_id), DT_IRQ(node_id, priority), uart_mspm0_isr,           \
+			    DEVICE_DT_GET(node_id), 0);                                            \
+		irq_enable(DT_IRQN(node_id));                                                      \
 	}
 #else
-#define MSP_UART_IRQ_DEFINE(inst)
+#define MSP_UART_IRQ_DEFINE(node_id)
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
-#define MSPM0_CLK_DIV_REG(n) (DT_INST_PROP(n, clk_div) - 1)
+#define MSPM0_CLK_DIV_REG(node_id) (DT_PROP(node_id, clk_div) - 1)
 
-#define MSPM0_UART_INIT_FN(index)                                                               \
+/* Instantiated per node (not per instance) so that both compatibles share one macro */
+#define MSPM0_UART_INIT_FN(node_id, is_unicomm)                                                 \
                                                                                                 \
-	PINCTRL_DT_INST_DEFINE(index);                                                          \
+	PINCTRL_DT_DEFINE(node_id);                                                             \
                                                                                                 \
-	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =                       \
-		MSPM0_CLOCK_SUBSYS_FN(index);                                                   \
+	static const struct mspm0_sys_clock mspm0_uart_sys_clock_##node_id = {                  \
+		.clk = DT_CLOCKS_CELL(node_id, clk)};                                           \
                                                                                                 \
-	MSP_UART_IRQ_DEFINE(index);                                                             \
+	MSP_UART_IRQ_DEFINE(node_id);                                                           \
                                                                                                 \
-	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {                        \
-		.regs = (mspm0_uart_regs *)DT_INST_REG_ADDR(index),                             \
-		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
-		.clock_subsys = &mspm0_uart_sys_clock##index,                                   \
-		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)),        \
-		.clk_div = MSPM0_CLK_DIV_REG(index),                                            \
-		.disable_rx = DT_INST_PROP(index, disable_rx),                                  \
+	static const struct uart_mspm0_config uart_mspm0_cfg_##node_id = {                      \
+		.regs = (mspm0_uart_regs *)(DT_REG_ADDR(node_id) - MSPM0_UART_REGS_OFFSET),     \
+		.pinctrl = PINCTRL_DT_DEV_CONFIG_GET(node_id),                                  \
+		.clock_subsys = &mspm0_uart_sys_clock_##node_id,                                \
+		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_CLOCKS_CELL(node_id, clk)),           \
+		.clk_div = MSPM0_CLK_DIV_REG(node_id),                                          \
+		.disable_rx = DT_PROP(node_id, disable_rx),                                     \
+		.stat_txff_mask = (is_unicomm) ? UART_STAT_UNICOMM_TXFF_MASK                    \
+					       : UART_STAT_TXFF_MASK,                           \
+		.stat_txfe_mask = (is_unicomm) ? UART_STAT_UNICOMM_TXFE_MASK                    \
+					       : UART_STAT_TXFE_MASK,                           \
+		.skip_power_on = (is_unicomm),                                                  \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                        \
-			   (.irq_config_func = uart_mspm0_##index##_irq_register,))             \
+			   (.irq_config_func = uart_mspm0_##node_id##_irq_register,))           \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                        \
-			   (.rx_fifo_threshold = DT_INST_PROP(index, rx_fifo_threshold),))      \
+			   (.rx_fifo_threshold = DT_PROP(node_id, rx_fifo_threshold),))         \
 		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,                                        \
-			   (.tx_fifo_threshold = DT_INST_PROP(index, tx_fifo_threshold),))      \
+			   (.tx_fifo_threshold = DT_PROP(node_id, tx_fifo_threshold),))         \
 		};                                                                              \
                                                                                                 \
-	static struct uart_mspm0_data uart_mspm0_data_##index = {                               \
-		.current_speed = DT_INST_PROP(index, current_speed),                            \
+	static struct uart_mspm0_data uart_mspm0_data_##node_id = {                             \
+		.current_speed = DT_PROP(node_id, current_speed),                               \
 		.uart_config = {                                                                \
 				.parity = 0,                                                    \
 				.word_length = UART_LCRH_WLEN_DATABIT8,                         \
 				.stop_bits = UART_LCRH_STP2_DISABLE,                            \
-				.flow_control = (DT_INST_PROP(index, hw_flow_control)           \
+				.flow_control = (DT_PROP(node_id, hw_flow_control)              \
 							? (UART_CTL0_RTSEN_ENABLE |             \
 							   UART_CTL0_CTSEN_ENABLE)              \
 							: (UART_CTL0_RTSEN_DISABLE |            \
@@ -874,8 +906,9 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 			},                                                                      \
 	};                                                                                      \
                                                                                                 \
-	DEVICE_DT_INST_DEFINE(index, uart_mspm0_init, NULL, &uart_mspm0_data_##index,           \
-			      &uart_mspm0_cfg_##index, PRE_KERNEL_1,                            \
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
+	DEVICE_DT_DEFINE(node_id, uart_mspm0_init, NULL, &uart_mspm0_data_##node_id,            \
+			 &uart_mspm0_cfg_##node_id, PRE_KERNEL_1,                               \
+			 CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(MSPM0_UART_INIT_FN)
+DT_FOREACH_STATUS_OKAY_VARGS(ti_mspm0_uart, MSPM0_UART_INIT_FN, false)
+DT_FOREACH_STATUS_OKAY_VARGS(ti_unicomm_uart, MSPM0_UART_INIT_FN, true)
