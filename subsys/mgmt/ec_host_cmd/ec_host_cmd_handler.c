@@ -247,6 +247,10 @@ static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
 static enum ec_host_cmd_status validate_handler(const struct ec_host_cmd_handler *handler,
 						const struct ec_host_cmd_handler_args *args)
 {
+	if (args->input_buf_size > (ec_host_cmd.rx_ctx.len_max - RX_HEADER_SIZE)) {
+		return EC_HOST_CMD_REQUEST_TRUNCATED;
+	}
+
 	if (handler->min_rqt_size > args->input_buf_size) {
 		return EC_HOST_CMD_REQUEST_TRUNCATED;
 	}
