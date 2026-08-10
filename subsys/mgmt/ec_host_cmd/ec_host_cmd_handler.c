@@ -440,6 +440,10 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		args.command = rx_header->cmd_id;
 		args.version = rx_header->cmd_ver;
 		args.input_buf_size = rx_header->data_len;
+		if (args.input_buf_size > rx->len_max - RX_HEADER_SIZE) {
+			ec_host_cmd_send_response(EC_HOST_CMD_REQUEST_TRUNCATED, &args);
+			continue;
+		}
 		args.output_buf_max = tx->len_max - TX_HEADER_SIZE,
 		args.output_buf_size = 0;
 
