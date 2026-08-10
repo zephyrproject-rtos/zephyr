@@ -13,6 +13,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/xen/sched.h>
@@ -28,6 +29,7 @@ enum xen_wdt_channel_flags {
 
 enum xen_wdt_data_flags {
 	XEN_WDT_SETUP,
+	XEN_WDT_SUSPENDED,
 };
 
 /* Per-channel state for one Xen domain watchdog timer slot. */
@@ -48,7 +50,7 @@ struct xen_wdt_data {
 	struct k_sem lock;
 	/* Zephyr channel ID is the index into this Xen watchdog channel array. */
 	struct xen_wdt_channel channels[XEN_WDT_MAX_CHANNELS];
-	/* Device-wide setup state. */
+	/* Device-wide setup/suspended state. */
 	atomic_t flags;
 };
 
@@ -130,7 +132,7 @@ cleanup:
 }
 
 /* Destroy active Xen watchdog timers and optionally make installed channels reusable. */
-static int xen_wdt_stop_locked(struct xen_wdt_data *data, unsigned int num_channels,
+static int xen_wdt_stop_blocking_locked(struct xen_wdt_data *data, unsigned int num_channels,
 					bool clear_installed)
 {
 	int first_ret = 0;
@@ -189,6 +191,12 @@ static int xen_wdt_setup(const struct device *dev, uint8_t options)
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+	if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED)) {
+		LOG_WRN("setup requested while suspended");
+		ret = -EBUSY;
+		goto out;
+	}
+
 	if (atomic_test_bit(&data->flags, XEN_WDT_SETUP)) {
 		LOG_WRN("watchdog is already set up");
 		ret = -EBUSY;
@@ -211,13 +219,19 @@ static int xen_wdt_disable(const struct device *dev)
 
 	k_sem_take(&data->lock, K_FOREVER);
 
+	if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED)) {
+		LOG_WRN("disable requested while suspended");
+		ret = -EFAULT;
+		goto out;
+	}
+
 	if (!atomic_test_bit(&data->flags, XEN_WDT_SETUP)) {
 		LOG_WRN("disable requested before setup");
 		ret = -EFAULT;
 		goto out;
 	}
 
-	ret = xen_wdt_stop_locked(data, config->num_channels, true);
+	ret = xen_wdt_stop_blocking_locked(data, config->num_channels, true);
 
 out:
 	k_sem_give(&data->lock);
@@ -238,6 +252,12 @@ static int xen_wdt_install_timeout(const struct device *dev,
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
+
+	if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED)) {
+		LOG_WRN("timeout install requested while suspended");
+		ret = -EBUSY;
+		goto out;
+	}
 
 	if (atomic_test_bit(&data->flags, XEN_WDT_SETUP)) {
 		LOG_WRN("timeout install requested after setup");
@@ -305,13 +325,15 @@ static int xen_wdt_feed(const struct device *dev, int channel_id)
 		return -EINVAL;
 	}
 
-	if (!atomic_test_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE)) {
+	if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED) ||
+	    !atomic_test_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE)) {
 		LOG_WRN("feed channel %d is not active", channel_id);
 		return -EINVAL;
 	}
 
 	k_sem_take(&channel->lock, K_FOREVER);
-	if (!atomic_test_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE)) {
+	if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED) ||
+	    !atomic_test_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE)) {
 		LOG_WRN("feed channel %d is not active", channel_id);
 		ret = -EINVAL;
 		goto out;
@@ -349,6 +371,98 @@ static int xen_wdt_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_PM_DEVICE
+/* Destroy active Xen watchdog timers without blocking on an in-flight feed. */
+static int xen_wdt_stop_nonblocking_locked(struct xen_wdt_data *data, unsigned int num_channels)
+{
+	bool locked[XEN_WDT_MAX_CHANNELS] = { false };
+	int first_ret = 0;
+
+	for (unsigned int i = 0; i < num_channels; i++) {
+		struct xen_wdt_channel *channel = &data->channels[i];
+
+		if (!atomic_test_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE)) {
+			continue;
+		}
+
+		if (k_sem_take(&channel->lock, K_NO_WAIT) < 0) {
+			for (unsigned int j = 0; j < i; j++) {
+				if (locked[j]) {
+					k_sem_give(&data->channels[j].lock);
+				}
+			}
+			return -EBUSY;
+		}
+		locked[i] = true;
+	}
+
+	for (unsigned int i = 0; i < num_channels; i++) {
+		struct xen_wdt_channel *channel = &data->channels[i];
+		int call_ret;
+
+		if (!locked[i]) {
+			continue;
+		}
+
+		atomic_clear_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE);
+		call_ret = xen_sched_watchdog(&channel->xen_id, 0U);
+		if (call_ret < 0) {
+			LOG_WRN("failed to destroy Xen watchdog channel %u: %d", i, call_ret);
+			if (first_ret == 0) {
+				first_ret = call_ret;
+			}
+			atomic_set_bit(&channel->flags, XEN_WDT_CHANNEL_ACTIVE);
+			k_sem_give(&channel->lock);
+			continue;
+		}
+
+		channel->xen_id = 0U;
+		k_sem_give(&channel->lock);
+	}
+
+	return first_ret;
+}
+
+static int xen_wdt_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	const struct xen_wdt_config *config = dev->config;
+	struct xen_wdt_data *data = dev->data;
+	int ret = 0;
+
+	if (k_sem_take(&data->lock, K_NO_WAIT) < 0) {
+		LOG_WRN("PM action %d would stall", action);
+		return -EBUSY;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (atomic_test_bit(&data->flags, XEN_WDT_SETUP)) {
+			atomic_set_bit(&data->flags, XEN_WDT_SUSPENDED);
+			ret = xen_wdt_stop_nonblocking_locked(data, config->num_channels);
+			if (ret < 0) {
+				atomic_clear_bit(&data->flags, XEN_WDT_SUSPENDED);
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		if (atomic_test_bit(&data->flags, XEN_WDT_SUSPENDED)) {
+			ret = xen_wdt_start_locked(data, config->num_channels);
+			if (ret == 0) {
+				atomic_clear_bit(&data->flags, XEN_WDT_SUSPENDED);
+			}
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /* Zephyr watchdog API dispatch table for xen,watchdog devices. */
 static DEVICE_API(wdt, xen_wdt_api) = {
 	.setup = xen_wdt_setup,
@@ -364,9 +478,12 @@ static DEVICE_API(wdt, xen_wdt_api) = {
 		.num_channels = DT_INST_PROP(inst, num_channels),		\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(inst, xen_wdt_init, NULL,			\
-			      &xen_wdt_data_##inst,				\
-			      &xen_wdt_config_##inst, POST_KERNEL,		\
+	PM_DEVICE_DT_INST_DEFINE(inst, xen_wdt_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, xen_wdt_init,			\
+			      PM_DEVICE_DT_INST_GET(inst),			\
+			      &xen_wdt_data_##inst, &xen_wdt_config_##inst,	\
+			      POST_KERNEL,					\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			      &xen_wdt_api);
 
