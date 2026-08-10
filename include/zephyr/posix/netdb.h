@@ -3,85 +3,317 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/**
+ * @file
+ * @brief Definitions for network database operations.
+ * @ingroup posix
+ *
+ * Provides hostname and service resolution (getaddrinfo() and getnameinfo())
+ * and the legacy host, network, protocol, and service database functions.
+ *
+ * @posix_header{netdb.h}
+ */
+
 #ifndef ZEPHYR_INCLUDE_POSIX_NETDB_H_
 #define ZEPHYR_INCLUDE_POSIX_NETDB_H_
 
 #include <zephyr/net/socket.h>
 
 #ifndef NI_MAXSERV
-/** Provide a reasonable size for apps using getnameinfo */
-#define NI_MAXSERV 32
+#define NI_MAXSERV 32               /**< Reasonable buffer size for getnameinfo() service names. */
 #endif
 
-#define EAI_BADFLAGS DNS_EAI_BADFLAGS
-#define EAI_NONAME DNS_EAI_NONAME
-#define EAI_AGAIN DNS_EAI_AGAIN
-#define EAI_FAIL DNS_EAI_FAIL
-#define EAI_NODATA DNS_EAI_NODATA
-#define EAI_MEMORY DNS_EAI_MEMORY
-#define EAI_SYSTEM DNS_EAI_SYSTEM
-#define EAI_SERVICE DNS_EAI_SERVICE
-#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE
-#define EAI_FAMILY DNS_EAI_FAMILY
-#define EAI_OVERFLOW DNS_EAI_OVERFLOW
+#define EAI_BADFLAGS DNS_EAI_BADFLAGS /**< Invalid value in the flags argument. */
+
+#define EAI_NONAME DNS_EAI_NONAME   /**< The name does not resolve for the supplied parameters. */
+
+#define EAI_AGAIN DNS_EAI_AGAIN     /**< The name could not be resolved at this time. */
+
+#define EAI_FAIL DNS_EAI_FAIL       /**< A non-recoverable error occurred. */
+
+#define EAI_NODATA DNS_EAI_NODATA   /**< No address data. @deprecated Obsolescent extension. */
+
+#define EAI_MEMORY DNS_EAI_MEMORY   /**< There was a memory allocation failure. */
+
+#define EAI_SYSTEM DNS_EAI_SYSTEM   /**< System error; see errno for details. */
+
+#define EAI_SERVICE DNS_EAI_SERVICE /**< Service not recognized for the socket type. */
+
+#define EAI_SOCKTYPE DNS_EAI_SOCKTYPE /**< The intended socket type was not recognized. */
+
+#define EAI_FAMILY DNS_EAI_FAMILY   /**< Address family not recognized. */
+
+#define EAI_OVERFLOW DNS_EAI_OVERFLOW /**< An argument buffer overflowed. */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Host database entry.
+ */
 struct hostent {
-	char *h_name;
-	char **h_aliases;
-	int h_addrtype;
-	int h_length;
-	char **h_addr_list;
+	char *h_name;       /**< Official name of the host. */
+	char **h_aliases;   /**< A pointer to an array of pointers to alternative host names. */
+	int h_addrtype;     /**< Address type. */
+	int h_length;       /**< The length, in bytes, of the address. */
+	char **h_addr_list; /**< A pointer to an array of pointers to network addresses. */
 };
 
+/**
+ * @brief Network database entry.
+ */
 struct netent {
-	char *n_name;
-	char **n_aliases;
-	int n_addrtype;
-	uint32_t n_net;
+	char *n_name;     /**< Official name of the network. */
+	char **n_aliases; /**< A pointer to an array of pointers to alternative network names. */
+	int n_addrtype;   /**< The address type of the network. */
+	uint32_t n_net;   /**< The network number, in host byte order. */
 };
 
+/**
+ * @brief Protocol database entry.
+ */
 struct protoent {
-	char *p_name;
-	char **p_aliases;
-	int p_proto;
+	char *p_name;     /**< Official name of the protocol. */
+	char **p_aliases; /**< A pointer to an array of pointers to alternative protocol names. */
+	int p_proto;      /**< The protocol number. */
 };
 
+/**
+ * @brief Service database entry.
+ */
 struct servent {
-	char *s_name;
-	char **s_aliases;
-	int s_port;
-	char *s_proto;
+	char *s_name;     /**< Official name of the service. */
+	char **s_aliases; /**< A pointer to an array of pointers to alternative service names. */
+	int s_port;       /**< Port number in network byte order. */
+	char *s_proto;    /**< The name of the protocol to use when contacting the service. */
 };
 
+/**
+ * @brief Alias of @c zsock_addrinfo, the address information structure.
+ */
 #define addrinfo zsock_addrinfo
 
+/**
+ * @brief Close the hosts database (no-op on Zephyr).
+ *
+ * @posix_api{POSIX_NETWORKING,endhostent}
+ */
 void endhostent(void);
+
+/**
+ * @brief Close the networks database (no-op on Zephyr).
+ *
+ * @posix_api{POSIX_NETWORKING,endnetent}
+ */
 void endnetent(void);
+
+/**
+ * @brief Close the protocols database (no-op on Zephyr).
+ *
+ * @posix_api{POSIX_NETWORKING,endprotoent}
+ */
 void endprotoent(void);
+
+/**
+ * @brief Close the services database (no-op on Zephyr).
+ *
+ * @posix_api{POSIX_NETWORKING,endservent}
+ */
 void endservent(void);
+
+/**
+ * @brief Free the address information list returned by getaddrinfo().
+ *
+ * @param ai Linked list of address information structures to free.
+ *
+ * @posix_api{POSIX_NETWORKING,freeaddrinfo}
+ */
 void freeaddrinfo(struct addrinfo *ai);
+
+/**
+ * @brief Return a string describing a getaddrinfo() or getnameinfo() error code.
+ *
+ * @param errcode Error code returned by getaddrinfo() or getnameinfo().
+ *
+ * @return Pointer to a string describing the error.
+ *
+ * @posix_api{POSIX_NETWORKING,gai_strerror}
+ */
 const char *gai_strerror(int errcode);
+
+/**
+ * @brief Translate a hostname and service to a list of socket addresses.
+ *
+ * @param host     Hostname or numeric address string, or NULL.
+ * @param service  Service name or numeric port string, or NULL.
+ * @param hints    Criteria for address selection, or NULL for defaults.
+ * @param[out] res Linked list of matching addresses.
+ *
+ * @return 0 on success, or a non-zero @c EAI_* error code on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getaddrinfo}
+ */
 int getaddrinfo(const char *host, const char *service, const struct addrinfo *hints,
 		struct addrinfo **res);
+
+/**
+ * @brief Get the next sequential entry from the hosts database.
+ *
+ * @return Pointer to a static hostent on success, or NULL at end of database or on error.
+ *
+ * @posix_api{POSIX_NETWORKING,gethostent}
+ */
 struct hostent *gethostent(void);
+
+/**
+ * @brief Translate a socket address to a hostname and service name.
+ *
+ * @param addr      Socket address to look up.
+ * @param addrlen   Size of @p addr, in bytes.
+ * @param[out] host Buffer for the hostname, or NULL.
+ * @param hostlen   Size of @p host, in bytes.
+ * @param[out] serv Buffer for the service name, or NULL.
+ * @param servlen   Size of @p serv, in bytes.
+ * @param flags     @c NI_* flags controlling the conversion.
+ *
+ * @return 0 on success, or a non-zero @c EAI_* error code on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getnameinfo}
+ */
 int getnameinfo(const struct sockaddr *addr, socklen_t addrlen, char *host, socklen_t hostlen,
 		char *serv, socklen_t servlen, int flags);
+
+/**
+ * @brief Look up a network by address.
+ *
+ * @param net  Network number, in host byte order.
+ * @param type Address type of the network (@c AF_INET).
+ *
+ * @return Pointer to a static netent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getnetbyaddr}
+ */
 struct netent *getnetbyaddr(uint32_t net, int type);
+
+/**
+ * @brief Look up a network by name.
+ *
+ * @param name Network name.
+ *
+ * @return Pointer to a static netent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getnetbyname}
+ */
 struct netent *getnetbyname(const char *name);
+
+/**
+ * @brief Get the next sequential entry from the networks database.
+ *
+ * @return Pointer to a static netent on success, or NULL at end of database or on error.
+ *
+ * @posix_api{POSIX_NETWORKING,getnetent}
+ */
 struct netent *getnetent(void);
+
+/**
+ * @brief Look up a protocol by name.
+ *
+ * @param name Protocol name (e.g. "tcp").
+ *
+ * @return Pointer to a static protoent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getprotobyname}
+ */
 struct protoent *getprotobyname(const char *name);
+
+/**
+ * @brief Look up a protocol by number.
+ *
+ * @param proto Protocol number.
+ *
+ * @return Pointer to a static protoent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getprotobynumber}
+ */
 struct protoent *getprotobynumber(int proto);
+
+/**
+ * @brief Get the next sequential entry from the protocols database.
+ *
+ * @return Pointer to a static protoent on success, or NULL at end of database or on error.
+ *
+ * @posix_api{POSIX_NETWORKING,getprotoent}
+ */
 struct protoent *getprotoent(void);
+
+/**
+ * @brief Look up a service by name and protocol.
+ *
+ * @param name  Service name (e.g. "http").
+ * @param proto Protocol name ("tcp" or "udp"), or NULL for any protocol.
+ *
+ * @return Pointer to a static servent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getservbyname}
+ */
 struct servent *getservbyname(const char *name, const char *proto);
+
+/**
+ * @brief Look up a service by port number and protocol.
+ *
+ * @param port  Port number, in network byte order.
+ * @param proto Protocol name ("tcp" or "udp"), or NULL for any protocol.
+ *
+ * @return Pointer to a static servent on success, or NULL on failure.
+ *
+ * @posix_api{POSIX_NETWORKING,getservbyport}
+ */
 struct servent *getservbyport(int port, const char *proto);
+
+/**
+ * @brief Get the next sequential entry from the services database.
+ *
+ * @return Pointer to a static servent on success, or NULL at end of database or on error.
+ *
+ * @posix_api{POSIX_NETWORKING,getservent}
+ */
 struct servent *getservent(void);
+
+/**
+ * @brief Open the hosts database and reset its sequential position.
+ *
+ * @param stayopen Non-zero to keep the database open between queries.
+ *
+ * @posix_api{POSIX_NETWORKING,sethostent}
+ */
 void sethostent(int stayopen);
+
+/**
+ * @brief Open the networks database and reset its sequential position.
+ *
+ * @param stayopen Non-zero to keep the database open between queries.
+ *
+ * @posix_api{POSIX_NETWORKING,setnetent}
+ */
 void setnetent(int stayopen);
+
+/**
+ * @brief Open the protocols database and reset its sequential position.
+ *
+ * @param stayopen Non-zero to keep the database open between queries.
+ *
+ * @posix_api{POSIX_NETWORKING,setprotoent}
+ */
 void setprotoent(int stayopen);
+
+/**
+ * @brief Open the services database and reset its sequential position.
+ *
+ * @param stayopen Non-zero to keep the database open between queries.
+ *
+ * @posix_api{POSIX_NETWORKING,setservent}
+ */
 void setservent(int stayopen);
 
 #ifdef __cplusplus

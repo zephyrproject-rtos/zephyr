@@ -1,0 +1,359 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief Doxygen groups for the POSIX Option Groups and POSIX Options.
+ *
+ * Groups are named after the corresponding POSIX.1-2017 / IEEE 1003.13
+ * subprofiling units. Membership is assigned in the include/zephyr/posix
+ * headers, mirroring the tables in
+ * doc/services/portability/posix/option_groups/index.rst.
+ *
+ * This file contains no C declarations and is only processed by Doxygen.
+ */
+
+/**
+ * @defgroup posix_option_groups POSIX Option Groups
+ * @ingroup posix
+ * @brief Units of functionality defined by POSIX subprofiling (IEEE 1003.13).
+ */
+
+/**
+ * @defgroup posix_options POSIX Options
+ * @ingroup posix
+ * @brief Individually selectable POSIX Options, named after their feature-test macro.
+ */
+
+/**
+ * @defgroup POSIX_BARRIERS POSIX_BARRIERS
+ * @ingroup posix_option_groups
+ * @brief Thread barriers.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_BARRIERS}.
+ */
+
+/**
+ * @defgroup POSIX_CLOCK_SELECTION POSIX_CLOCK_SELECTION
+ * @ingroup posix_option_groups
+ * @brief Selection of the clock used for condition variable waits and timed sleeps.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_CLOCK_SELECTION}.
+ */
+
+/**
+ * @defgroup POSIX_C_LANG_SUPPORT_R POSIX_C_LANG_SUPPORT_R
+ * @ingroup posix_option_groups
+ * @brief Thread-safe (reentrant) ISO C library functions.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_C_LANG_SUPPORT_R}.
+ *
+ * @sa POSIX_THREAD_SAFE_FUNCTIONS
+ */
+
+/**
+ * @defgroup POSIX_C_LIB_EXT POSIX_C_LIB_EXT
+ * @ingroup posix_option_groups
+ * @brief General C library extensions.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_C_LIB_EXT}.
+ */
+
+/**
+ * @defgroup POSIX_DEVICE_IO POSIX_DEVICE_IO
+ * @ingroup posix_option_groups
+ * @brief Device input and output.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_DEVICE_IO}.
+ */
+
+/**
+ * @defgroup POSIX_FD_MGMT POSIX_FD_MGMT
+ * @ingroup posix_option_groups
+ * @brief File descriptor management.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_FD_MGMT}.
+ */
+
+/**
+ * @defgroup POSIX_FILE_SYSTEM POSIX_FILE_SYSTEM
+ * @ingroup posix_option_groups
+ * @brief File system operations.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_FILE_SYSTEM}.
+ */
+
+/**
+ * @defgroup POSIX_FILE_SYSTEM_R POSIX_FILE_SYSTEM_R
+ * @ingroup posix_option_groups
+ * @brief Thread-safe file system functions.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_FILE_SYSTEM_R}.
+ */
+
+/**
+ * @defgroup POSIX_MAPPED_FILES POSIX_MAPPED_FILES
+ * @ingroup posix_option_groups
+ * @brief Memory-mapped files.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_MAPPED_FILES}.
+ *
+ * @sa POSIX_SHARED_MEMORY_OBJECTS, POSIX_SYNCHRONIZED_IO
+ */
+
+/**
+ * @defgroup POSIX_MULTI_PROCESS POSIX_MULTI_PROCESS
+ * @ingroup posix_option_groups
+ * @brief Subset of the multi-process facilities supported by Zephyr.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_MULTI_PROCESS}.
+ */
+
+/**
+ * @defgroup POSIX_NETWORKING POSIX_NETWORKING
+ * @ingroup posix_option_groups
+ * @brief Sockets and network address APIs.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_NETWORKING}.
+ */
+
+/**
+ * @defgroup POSIX_REALTIME_SIGNALS POSIX_REALTIME_SIGNALS
+ * @ingroup posix_option_groups
+ * @brief Real-time signal extensions.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_REALTIME_SIGNALS}.
+ */
+
+/**
+ * @defgroup POSIX_RW_LOCKS POSIX_RW_LOCKS
+ * @ingroup posix_option_groups
+ * @brief Reader-writer locks.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_RW_LOCKS}.
+ *
+ * @sa POSIX_TIMEOUTS
+ */
+
+/**
+ * @defgroup POSIX_SEMAPHORES POSIX_SEMAPHORES
+ * @ingroup posix_option_groups
+ * @brief Counting semaphores.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SEMAPHORES}.
+ *
+ * @sa POSIX_TIMEOUTS
+ */
+
+/**
+ * @defgroup POSIX_SIGNALS POSIX_SIGNALS
+ * @ingroup posix_option_groups
+ * @brief Signal handling.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SIGNALS}.
+ */
+
+/**
+ * @defgroup POSIX_SINGLE_PROCESS POSIX_SINGLE_PROCESS
+ * @ingroup posix_option_groups
+ * @brief Single-process facilities: system configuration queries and environment access.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SINGLE_PROCESS}.
+ */
+
+/**
+ * @defgroup POSIX_SPIN_LOCKS POSIX_SPIN_LOCKS
+ * @ingroup posix_option_groups
+ * @brief Spin locks.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SPIN_LOCKS}.
+ */
+
+/**
+ * @defgroup POSIX_THREADS_BASE POSIX_THREADS_BASE
+ * @ingroup posix_option_groups
+ * @brief Base threading support: threads, mutexes, condition variables, and thread-specific
+ * storage.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREADS}.
+ *
+ * @sa POSIX_BARRIERS, POSIX_TIMEOUTS
+ */
+
+/**
+ * @defgroup POSIX_THREADS_EXT POSIX_THREADS_EXT
+ * @ingroup posix_option_groups
+ * @brief Thread extensions: guard size and mutex type attributes.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREADS_EXT}.
+ */
+
+/**
+ * @defgroup POSIX_TIMERS POSIX_TIMERS
+ * @ingroup posix_option_groups
+ * @brief Clocks and per-process timers.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_TIMERS}.
+ */
+
+/**
+ * @defgroup XSI_SINGLE_PROCESS XSI_SINGLE_PROCESS
+ * @ingroup posix_option_groups
+ * @brief XSI single-process facilities.
+ *
+ * Enable with @kconfig{CONFIG_XSI_SINGLE_PROCESS}.
+ */
+
+/**
+ * @defgroup XSI_SYSTEM_LOGGING XSI_SYSTEM_LOGGING
+ * @ingroup posix_option_groups
+ * @brief System logging.
+ *
+ * Enable with @kconfig{CONFIG_XSI_SYSTEM_LOGGING}.
+ */
+
+/**
+ * @defgroup XSI_THREADS_EXT XSI_THREADS_EXT
+ * @ingroup posix_option_groups
+ * @brief XSI thread extensions: thread stack attributes and concurrency level.
+ *
+ * Enable with @kconfig{CONFIG_XSI_THREADS_EXT}.
+ */
+
+/**
+ * @defgroup POSIX_ASYNCHRONOUS_IO _POSIX_ASYNCHRONOUS_IO
+ * @ingroup posix_options
+ * @brief Asynchronous input and output.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_ASYNCHRONOUS_IO}.
+ */
+
+/**
+ * @defgroup POSIX_FSYNC _POSIX_FSYNC
+ * @ingroup posix_options
+ * @brief File synchronization.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_FSYNC}.
+ *
+ * @sa POSIX_SYNCHRONIZED_IO
+ */
+
+/**
+ * @defgroup POSIX_MEMLOCK _POSIX_MEMLOCK
+ * @ingroup posix_options
+ * @brief Process memory locking.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_MEMLOCK}.
+ */
+
+/**
+ * @defgroup POSIX_MEMLOCK_RANGE _POSIX_MEMLOCK_RANGE
+ * @ingroup posix_options
+ * @brief Range memory locking.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_MEMLOCK_RANGE}.
+ */
+
+/**
+ * @defgroup POSIX_MESSAGE_PASSING _POSIX_MESSAGE_PASSING
+ * @ingroup posix_options
+ * @brief Message queues.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_MESSAGE_PASSING}.
+ *
+ * @sa POSIX_TIMEOUTS
+ */
+
+/**
+ * @defgroup POSIX_PRIORITY_SCHEDULING _POSIX_PRIORITY_SCHEDULING
+ * @ingroup posix_options
+ * @brief Process scheduling control.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_PRIORITY_SCHEDULING}.
+ */
+
+/**
+ * @defgroup POSIX_SHARED_MEMORY_OBJECTS _POSIX_SHARED_MEMORY_OBJECTS
+ * @ingroup posix_options
+ * @brief Shared memory objects.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SHARED_MEMORY_OBJECTS}.
+ *
+ * @sa POSIX_MAPPED_FILES
+ */
+
+/**
+ * @defgroup POSIX_SYNCHRONIZED_IO _POSIX_SYNCHRONIZED_IO
+ * @ingroup posix_options
+ * @brief Synchronized input and output.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_SYNCHRONIZED_IO}.
+ *
+ * @sa POSIX_FSYNC, POSIX_MAPPED_FILES
+ */
+
+/**
+ * @defgroup POSIX_THREAD_ATTR_STACKSIZE _POSIX_THREAD_ATTR_STACKSIZE
+ * @ingroup posix_options
+ * @brief Thread stack size attribute.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREAD_ATTR_STACKSIZE}.
+ */
+
+/**
+ * @defgroup POSIX_THREAD_PRIORITY_SCHEDULING _POSIX_THREAD_PRIORITY_SCHEDULING
+ * @ingroup posix_options
+ * @brief Thread execution scheduling: priorities and policies.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREAD_PRIORITY_SCHEDULING}.
+ */
+
+/**
+ * @defgroup POSIX_THREAD_PRIO_INHERIT _POSIX_THREAD_PRIO_INHERIT
+ * @ingroup posix_options
+ * @brief Priority-inheritance mutex protocol.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREAD_PRIO_INHERIT}.
+ *
+ * @sa POSIX_THREAD_PRIO_PROTECT
+ */
+
+/**
+ * @defgroup POSIX_THREAD_PRIO_PROTECT _POSIX_THREAD_PRIO_PROTECT
+ * @ingroup posix_options
+ * @brief Priority-ceiling (protect) mutex protocol.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREAD_PRIO_PROTECT}.
+ *
+ * @sa POSIX_THREAD_PRIO_INHERIT
+ */
+
+/**
+ * @defgroup POSIX_THREAD_SAFE_FUNCTIONS _POSIX_THREAD_SAFE_FUNCTIONS
+ * @ingroup posix_options
+ * @brief Thread-safe variants of standard library functions.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_THREAD_SAFE_FUNCTIONS}.
+ *
+ * @sa POSIX_C_LANG_SUPPORT_R
+ */
+
+/**
+ * @defgroup POSIX_TIMEOUTS _POSIX_TIMEOUTS
+ * @ingroup posix_options
+ * @brief Timed variants of blocking operations.
+ *
+ * Enable with @kconfig{CONFIG_POSIX_TIMEOUTS}.
+ *
+ * @sa POSIX_SEMAPHORES, POSIX_RW_LOCKS, POSIX_THREADS_BASE, POSIX_MESSAGE_PASSING
+ */
+
+/**
+ * @defgroup XOPEN_STREAMS _XOPEN_STREAMS
+ * @ingroup posix_options
+ * @brief XSI STREAMS interfaces.
+ *
+ * Enable with @kconfig{CONFIG_XSI_STREAMS}.
+ */

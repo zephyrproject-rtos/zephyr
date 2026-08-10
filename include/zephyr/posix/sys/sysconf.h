@@ -4,6 +4,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief POSIX runtime configuration name declarations.
+ * @ingroup posix
+ *
+ * Provides the @c _SC_* name constants accepted by sysconf() and, when
+ * @c CONFIG_POSIX_SYSCONF_IMPL_MACRO is enabled, the macro implementation of
+ * sysconf() that resolves each variable at compile time.
+ */
+
 #ifndef ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 #define ZEPHYR_INCLUDE_POSIX_SYS_SYSCONF_H_
 
@@ -15,132 +26,135 @@
 extern "C" {
 #endif
 
+/**
+ * @brief sysconf() name constants.
+ */
 enum {
-	_SC_ADVISORY_INFO,
-	_SC_ASYNCHRONOUS_IO,
-	_SC_BARRIERS,
-	_SC_CLOCK_SELECTION,
-	_SC_CPUTIME,
-	_SC_FSYNC,
-	_SC_IPV6,
-	_SC_JOB_CONTROL,
-	_SC_MAPPED_FILES,
-	_SC_MEMLOCK,
-	_SC_MEMLOCK_RANGE,
-	_SC_MEMORY_PROTECTION,
-	_SC_MESSAGE_PASSING,
-	_SC_MONOTONIC_CLOCK,
-	_SC_PRIORITIZED_IO,
-	_SC_PRIORITY_SCHEDULING,
-	_SC_RAW_SOCKETS,
-	_SC_RE_DUP_MAX,
-	_SC_READER_WRITER_LOCKS,
-	_SC_REALTIME_SIGNALS,
-	_SC_REGEXP,
-	_SC_SAVED_IDS,
-	_SC_SEMAPHORES,
-	_SC_SHARED_MEMORY_OBJECTS,
-	_SC_SHELL,
-	_SC_SPAWN,
-	_SC_SPIN_LOCKS,
-	_SC_SPORADIC_SERVER,
-	_SC_SS_REPL_MAX,
-	_SC_SYNCHRONIZED_IO,
-	_SC_THREAD_ATTR_STACKADDR,
-	_SC_THREAD_ATTR_STACKSIZE,
-	_SC_THREAD_CPUTIME,
-	_SC_THREAD_PRIO_INHERIT,
-	_SC_THREAD_PRIO_PROTECT,
-	_SC_THREAD_PRIORITY_SCHEDULING,
-	_SC_THREAD_PROCESS_SHARED,
-	_SC_THREAD_ROBUST_PRIO_INHERIT,
-	_SC_THREAD_ROBUST_PRIO_PROTECT,
-	_SC_THREAD_SAFE_FUNCTIONS,
-	_SC_THREAD_SPORADIC_SERVER,
-	_SC_THREADS,
-	_SC_TIMEOUTS,
-	_SC_TIMERS,
-	_SC_TRACE,
-	_SC_TRACE_EVENT_FILTER,
-	_SC_TRACE_EVENT_NAME_MAX,
-	_SC_TRACE_INHERIT,
-	_SC_TRACE_LOG,
-	_SC_TRACE_NAME_MAX,
-	_SC_TRACE_SYS_MAX,
-	_SC_TRACE_USER_EVENT_MAX,
-	_SC_TYPED_MEMORY_OBJECTS,
-	_SC_VERSION,
-	_SC_V7_ILP32_OFF32,
-	_SC_V7_ILP32_OFFBIG,
-	_SC_V7_LP64_OFF64,
-	_SC_V7_LPBIG_OFFBIG,
-	_SC_V6_ILP32_OFF32,
-	_SC_V6_ILP32_OFFBIG,
-	_SC_V6_LP64_OFF64,
-	_SC_V6_LPBIG_OFFBIG,
-	_SC_BC_BASE_MAX,
-	_SC_BC_DIM_MAX,
-	_SC_BC_SCALE_MAX,
-	_SC_BC_STRING_MAX,
-	_SC_2_C_BIND,
-	_SC_2_C_DEV,
-	_SC_2_CHAR_TERM,
-	_SC_COLL_WEIGHTS_MAX,
-	_SC_DELAYTIMER_MAX,
-	_SC_EXPR_NEST_MAX,
-	_SC_2_FORT_DEV,
-	_SC_2_FORT_RUN,
-	_SC_LINE_MAX,
-	_SC_2_LOCALEDEF,
-	_SC_2_PBS,
-	_SC_2_PBS_ACCOUNTING,
-	_SC_2_PBS_CHECKPOINT,
-	_SC_2_PBS_LOCATE,
-	_SC_2_PBS_MESSAGE,
-	_SC_2_PBS_TRACK,
-	_SC_2_SW_DEV,
-	_SC_2_UPE,
-	_SC_2_VERSION,
-	_SC_XOPEN_CRYPT,
-	_SC_XOPEN_ENH_I18N,
-	_SC_XOPEN_REALTIME,
-	_SC_XOPEN_REALTIME_THREADS,
-	_SC_XOPEN_SHM,
-	_SC_XOPEN_STREAMS,
-	_SC_XOPEN_UNIX,
-	_SC_XOPEN_UUCP,
-	_SC_XOPEN_VERSION,
-	_SC_CLK_TCK,
-	_SC_GETGR_R_SIZE_MAX,
-	_SC_GETPW_R_SIZE_MAX,
-	_SC_AIO_LISTIO_MAX,
-	_SC_AIO_MAX,
-	_SC_AIO_PRIO_DELTA_MAX,
-	_SC_ARG_MAX,
-	_SC_ATEXIT_MAX,
-	_SC_CHILD_MAX,
-	_SC_HOST_NAME_MAX,
-	_SC_IOV_MAX,
-	_SC_LOGIN_NAME_MAX,
-	_SC_NGROUPS_MAX,
-	_SC_MQ_OPEN_MAX,
-	_SC_MQ_PRIO_MAX,
-	_SC_OPEN_MAX,
-	_SC_PAGE_SIZE,
-	_SC_PAGESIZE,
-	_SC_THREAD_DESTRUCTOR_ITERATIONS,
-	_SC_THREAD_KEYS_MAX,
-	_SC_THREAD_STACK_MIN,
-	_SC_THREAD_THREADS_MAX,
-	_SC_RTSIG_MAX,
-	_SC_SEM_NSEMS_MAX,
-	_SC_SEM_VALUE_MAX,
-	_SC_SIGQUEUE_MAX,
-	_SC_STREAM_MAX,
-	_SC_SYMLOOP_MAX,
-	_SC_TIMER_MAX,
-	_SC_TTY_NAME_MAX,
-	_SC_TZNAME_MAX,
+	_SC_ADVISORY_INFO,          /**< Advisory information option. */
+	_SC_ASYNCHRONOUS_IO,        /**< Asynchronous I/O option. */
+	_SC_BARRIERS,               /**< Barriers option. */
+	_SC_CLOCK_SELECTION,        /**< Clock Selection option. */
+	_SC_CPUTIME,                /**< Process CPU-Time Clocks option. */
+	_SC_FSYNC,                  /**< File Synchronization option. */
+	_SC_IPV6,                   /**< IPv6 option. */
+	_SC_JOB_CONTROL,            /**< Job control. */
+	_SC_MAPPED_FILES,           /**< Mapped Files option. */
+	_SC_MEMLOCK,                /**< Process Memory Locking option. */
+	_SC_MEMLOCK_RANGE,          /**< Range Memory Locking option. */
+	_SC_MEMORY_PROTECTION,      /**< Memory Protection option. */
+	_SC_MESSAGE_PASSING,        /**< Message Passing option. */
+	_SC_MONOTONIC_CLOCK,        /**< Monotonic Clock option. */
+	_SC_PRIORITIZED_IO,         /**< Prioritized Input and Output option. */
+	_SC_PRIORITY_SCHEDULING,    /**< Process Scheduling option. */
+	_SC_RAW_SOCKETS,            /**< Raw Sockets option. */
+	_SC_RE_DUP_MAX,             /**< Maximum number of repeated occurrences in BRE. */
+	_SC_READER_WRITER_LOCKS,    /**< Read-Write Locks option. */
+	_SC_REALTIME_SIGNALS,       /**< Realtime Signals extension. */
+	_SC_REGEXP,                 /**< Regular Expressions option. */
+	_SC_SAVED_IDS,              /**< Saved IDs option. */
+	_SC_SEMAPHORES,             /**< Semaphores option. */
+	_SC_SHARED_MEMORY_OBJECTS,  /**< Shared Memory Objects option. */
+	_SC_SHELL,                  /**< Shell option. */
+	_SC_SPAWN,                  /**< Spawn option. */
+	_SC_SPIN_LOCKS,             /**< Spin Locks option. */
+	_SC_SPORADIC_SERVER,        /**< Process Sporadic Server option. */
+	_SC_SS_REPL_MAX,            /**< Maximum number of replenishments for SS. */
+	_SC_SYNCHRONIZED_IO,        /**< Synchronized Input and Output option. */
+	_SC_THREAD_ATTR_STACKADDR,  /**< Thread Stack Address Attribute option. */
+	_SC_THREAD_ATTR_STACKSIZE,  /**< Thread Stack Size Attribute option. */
+	_SC_THREAD_CPUTIME,         /**< Thread CPU-Time Clocks option. */
+	_SC_THREAD_PRIO_INHERIT,    /**< Thread Priority Inheritance option. */
+	_SC_THREAD_PRIO_PROTECT,    /**< Thread Priority Protection option. */
+	_SC_THREAD_PRIORITY_SCHEDULING, /**< Thread Execution Scheduling option. */
+	_SC_THREAD_PROCESS_SHARED,  /**< Thread Process-Shared Synchronization option. */
+	_SC_THREAD_ROBUST_PRIO_INHERIT, /**< Robust Mutex Priority Inheritance option. */
+	_SC_THREAD_ROBUST_PRIO_PROTECT, /**< Robust Mutex Priority Protection option. */
+	_SC_THREAD_SAFE_FUNCTIONS,  /**< Thread-Safe Functions option. */
+	_SC_THREAD_SPORADIC_SERVER, /**< Thread Sporadic Server option. */
+	_SC_THREADS,                /**< Threads option. */
+	_SC_TIMEOUTS,               /**< Timeouts option. */
+	_SC_TIMERS,                 /**< Timers option. */
+	_SC_TRACE,                  /**< Trace option. */
+	_SC_TRACE_EVENT_FILTER,     /**< Trace Event Filter option. */
+	_SC_TRACE_EVENT_NAME_MAX,   /**< Maximum length of trace event names. */
+	_SC_TRACE_INHERIT,          /**< Trace Inherit option. */
+	_SC_TRACE_LOG,              /**< Trace Log option. */
+	_SC_TRACE_NAME_MAX,         /**< Maximum length of trace names. */
+	_SC_TRACE_SYS_MAX,          /**< Maximum number of system trace streams. */
+	_SC_TRACE_USER_EVENT_MAX,   /**< Maximum number of user trace event type identifiers. */
+	_SC_TYPED_MEMORY_OBJECTS,   /**< Typed Memory Objects option. */
+	_SC_VERSION,                /**< POSIX.1 standard version (@c _POSIX_VERSION). */
+	_SC_V7_ILP32_OFF32,         /**< ILP32 data model, 32-bit offsets (POSIX.1-2008). */
+	_SC_V7_ILP32_OFFBIG,        /**< ILP32 data model, large file offsets (POSIX.1-2008). */
+	_SC_V7_LP64_OFF64,          /**< LP64 data model, 64-bit offsets (POSIX.1-2008). */
+	_SC_V7_LPBIG_OFFBIG,        /**< LPBIG data model, large offsets (POSIX.1-2008). */
+	_SC_V6_ILP32_OFF32,         /**< ILP32 data model, 32-bit offsets (POSIX.1-2001). */
+	_SC_V6_ILP32_OFFBIG,        /**< ILP32 data model, large file offsets (POSIX.1-2001). */
+	_SC_V6_LP64_OFF64,          /**< LP64 data model, 64-bit offsets (POSIX.1-2001). */
+	_SC_V6_LPBIG_OFFBIG,        /**< LPBIG data model, large offsets (POSIX.1-2001). */
+	_SC_BC_BASE_MAX,            /**< Maximum value of obase in bc. */
+	_SC_BC_DIM_MAX,             /**< Maximum number of elements in bc arrays. */
+	_SC_BC_SCALE_MAX,           /**< Maximum value of scale in bc. */
+	_SC_BC_STRING_MAX,          /**< Maximum length of string in bc. */
+	_SC_2_C_BIND,               /**< C-Language Binding option. */
+	_SC_2_C_DEV,                /**< C-Language Development Utilities option. */
+	_SC_2_CHAR_TERM,            /**< Terminal Characteristics option. */
+	_SC_COLL_WEIGHTS_MAX,       /**< Maximum weights in locale collating. */
+	_SC_DELAYTIMER_MAX,         /**< Maximum number of timer overruns. */
+	_SC_EXPR_NEST_MAX,          /**< Maximum number of expr()s in expr. */
+	_SC_2_FORT_DEV,             /**< FORTRAN Development Utilities option. */
+	_SC_2_FORT_RUN,             /**< FORTRAN Runtime Utilities option. */
+	_SC_LINE_MAX,               /**< Maximum length of input line in utilities. */
+	_SC_2_LOCALEDEF,            /**< Locale Creation option. */
+	_SC_2_PBS,                  /**< Batch Environment Services and Utilities option. */
+	_SC_2_PBS_ACCOUNTING,       /**< Batch Accounting option. */
+	_SC_2_PBS_CHECKPOINT,       /**< Batch Checkpoint/Restart option. */
+	_SC_2_PBS_LOCATE,           /**< Locate Batch Job Request option. */
+	_SC_2_PBS_MESSAGE,          /**< Batch Job Message Request option. */
+	_SC_2_PBS_TRACK,            /**< Track Batch Job Request option. */
+	_SC_2_SW_DEV,               /**< Software Development Utilities option. */
+	_SC_2_UPE,                  /**< User Portability Utilities option. */
+	_SC_2_VERSION,              /**< POSIX.2 standard version. */
+	_SC_XOPEN_CRYPT,            /**< Encryption option. */
+	_SC_XOPEN_ENH_I18N,         /**< Enhanced Internationalization option. */
+	_SC_XOPEN_REALTIME,         /**< X/Open Realtime option. */
+	_SC_XOPEN_REALTIME_THREADS, /**< X/Open Realtime Threads option. */
+	_SC_XOPEN_SHM,              /**< Shared Memory option. */
+	_SC_XOPEN_STREAMS,          /**< XSI STREAMS option. */
+	_SC_XOPEN_UNIX,             /**< XSI option. */
+	_SC_XOPEN_UUCP,             /**< UUCP option. */
+	_SC_XOPEN_VERSION,          /**< X/Open version. */
+	_SC_CLK_TCK,                /**< Number of clock ticks per second. */
+	_SC_GETGR_R_SIZE_MAX,       /**< Suggested buffer size for getgrgid_r(). */
+	_SC_GETPW_R_SIZE_MAX,       /**< Suggested buffer size for getpwuid_r(). */
+	_SC_AIO_LISTIO_MAX,         /**< Maximum operations in a single lio_listio() call. */
+	_SC_AIO_MAX,                /**< Maximum outstanding asynchronous I/O operations. */
+	_SC_AIO_PRIO_DELTA_MAX,     /**< Maximum amount the AIO priority can be decreased. */
+	_SC_ARG_MAX,                /**< Maximum length of argument to exec functions. */
+	_SC_ATEXIT_MAX,             /**< Maximum number of atexit() functions. */
+	_SC_CHILD_MAX,              /**< Maximum number of simultaneous processes per user. */
+	_SC_HOST_NAME_MAX,          /**< Maximum length of a host name. */
+	_SC_IOV_MAX,                /**< Maximum number of iovec structures for readv()/writev(). */
+	_SC_LOGIN_NAME_MAX,         /**< Maximum length of login name. */
+	_SC_NGROUPS_MAX,            /**< Maximum number of supplemental groups. */
+	_SC_MQ_OPEN_MAX,            /**< Maximum number of open message queues. */
+	_SC_MQ_PRIO_MAX,            /**< Maximum message priority. */
+	_SC_OPEN_MAX,               /**< Maximum number of open file descriptors. */
+	_SC_PAGE_SIZE,              /**< System memory page size. */
+	_SC_PAGESIZE,               /**< Alias for @c _SC_PAGE_SIZE. */
+	_SC_THREAD_DESTRUCTOR_ITERATIONS, /**< Maximum TSD destructor iterations. */
+	_SC_THREAD_KEYS_MAX,        /**< Maximum number of thread-specific data keys. */
+	_SC_THREAD_STACK_MIN,       /**< Minimum thread stack size. */
+	_SC_THREAD_THREADS_MAX,     /**< Maximum number of threads per process. */
+	_SC_RTSIG_MAX,              /**< Maximum number of real-time signals. */
+	_SC_SEM_NSEMS_MAX,          /**< Maximum number of semaphores per process. */
+	_SC_SEM_VALUE_MAX,          /**< Maximum value of a semaphore. */
+	_SC_SIGQUEUE_MAX,           /**< Maximum number of queued signals. */
+	_SC_STREAM_MAX,             /**< Maximum number of open stdio streams. */
+	_SC_SYMLOOP_MAX,            /**< Maximum number of symbolic links to follow. */
+	_SC_TIMER_MAX,              /**< Maximum number of timer objects per process. */
+	_SC_TTY_NAME_MAX,           /**< Maximum length of terminal device name. */
+	_SC_TZNAME_MAX,             /**< Maximum length of timezone name. */
 };
 
 /*
@@ -149,7 +163,7 @@ enum {
  */
 
 /* clang-format off */
-
+/** @cond INTERNAL_HIDDEN */
 #define __z_posix_sysconf_SC_ADVISORY_INFO (-1L)
 #define __z_posix_sysconf_SC_ASYNCHRONOUS_IO                                                       \
 	COND_CODE_1(CONFIG_POSIX_ASYNCHRONOUS_IO, (_POSIX_ASYNCHRONOUS_IO), (-1L))
@@ -312,8 +326,16 @@ enum {
 	COND_CODE_1(CONFIG_POSIX_TIMERS, (CONFIG_POSIX_TIMER_MAX), (0))
 #define __z_posix_sysconf_SC_TTY_NAME_MAX                 _POSIX_TTY_NAME_MAX
 #define __z_posix_sysconf_SC_TZNAME_MAX                   _POSIX_TZNAME_MAX
+/** @endcond */
 
 #ifdef CONFIG_POSIX_SYSCONF_IMPL_MACRO
+/**
+ * @brief Get the value of a configurable system variable.
+ *
+ * @param x @c _SC_ constant naming the variable to query (e.g. @c _SC_PAGESIZE).
+ *
+ * @return Value of the variable, or -1 if the associated option or limit is unsupported.
+ */
 #define sysconf(x) (long)CONCAT(__z_posix_sysconf, x)
 #endif
 

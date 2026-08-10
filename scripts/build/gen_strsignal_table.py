@@ -28,7 +28,14 @@ def gen_strsignal_table(input, output):
         for line in inf.readlines():
             # Select items of the form below (note: SIGNO is numeric)
             # #define SYMBOL SIGNO /**< MSG */
-            pat = r'^#define[\s]+(SIG[A-Z_]*)[\s]+([1-9][0-9]*)[\s]+/\*\*<[\s]+(.*)[\s]+\*/[\s]*$'
+            # Only actual signal numbers are of interest: skip constants such as
+            # SIGSTKSZ, SIGRTMIN, SIGRTMAX, SIGEV_* and SIG_* whose values are not
+            # signal numbers.
+            pat = (
+                r'^#define[\s]+'
+                r'(?!SIGSTKSZ\b|SIGRTMIN\b|SIGRTMAX\b)'
+                r'(SIG[A-Z]+)[\s]+([1-9][0-9]*)[\s]+/\*\*<[\s]+(.*)[\s]+\*/[\s]*$'
+            )
             match = re.match(pat, line)
 
             if not match:
