@@ -79,6 +79,9 @@
 	ckm: clock-module {
 		compatible = "ti,mspm0-ckm";
 		#clock-cells = <1>;
+		sysctl = <&sysctl>;
+		cpuss = <&cpuss>;
+		factoryregion = <&factoryregion>;
 	};
 
 	clocks: clocks {
