@@ -121,6 +121,15 @@ int supplicant_reset_stats(const struct device *dev, struct net_if *iface);
  */
 int supplicant_pmksa_flush(const struct device *dev, struct net_if *iface);
 
+#if defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT) || defined(__DOXYGEN__)
+int supplicant_pmksa_get(const struct device *dev, struct net_if *iface,
+			 struct wifi_pmksa_cache_query *query);
+#endif
+
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) || defined(__DOXYGEN__)
+int supplicant_pmksa_flush_external(const struct device *dev, struct net_if *iface);
+#endif
+
 /** Set or get 11K status
  *
  * @param dev Pointer to the device structure for the driver instance.
