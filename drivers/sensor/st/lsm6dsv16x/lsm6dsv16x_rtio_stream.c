@@ -465,6 +465,11 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	};
 	/* clang-format on */
 
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	hdr.num_ext_dev = lsm6dsv16x->num_ext_dev;
+	memcpy(hdr.shub_ext, lsm6dsv16x->shub_ext, sizeof(hdr.shub_ext));
+#endif
+
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
 
