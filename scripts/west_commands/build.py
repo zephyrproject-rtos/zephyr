@@ -661,6 +661,36 @@ class Build(Forceable):
                 self.source_dir = self._find_source_dir()
                 self._sanity_check_source_dir()
 
+    def _sdk_cmake_opt(self):
+        # Turn the 'build.sdk' configuration option, if set, into the matching
+        # CMake argument: a directory value selects the SDK install location
+        # (ZEPHYR_SDK_INSTALL_DIR), anything else is treated as a version
+        # (ZEPHYR_SDK_VERSION) and resolved by CMake. Returns None if there is
+        # nothing to forward.
+        sdk = self.config.get('build.sdk', default='').strip()
+        if not sdk:
+            return None
+
+        # An explicit value on the command line, or one already stored in the
+        # CMake cache, takes precedence over the configuration option.
+        sdk_vars = ('ZEPHYR_SDK_INSTALL_DIR', 'ZEPHYR_SDK_VERSION')
+        # A CMake definition is '-DVAR=value' or '-DVAR:TYPE=value'; match the
+        # exact variable name up to its '=' or ':' delimiter to avoid matching
+        # unrelated variables that merely share the prefix.
+        sdk_prefixes = tuple(f'-D{var}{sep}' for var in sdk_vars for sep in ('=', ':'))
+        user_opts = self.args.cmake_opts or []
+        if any(opt.startswith(sdk_prefixes) for opt in user_opts):
+            return None
+
+        cache = getattr(self, 'cmake_cache', None)
+        if cache and any(cache.get(var) for var in sdk_vars):
+            return None
+
+        path = pathlib.Path(os.path.expandvars(sdk)).expanduser()
+        if path.is_dir():
+            return f'-DZEPHYR_SDK_INSTALL_DIR={path.as_posix()}'
+        return f'-DZEPHYR_SDK_VERSION={sdk}'
+
     def _run_cmake(self, board, origin):
         if board is None and self.config.getboolean('build.board_warn', default=True):
             self.wrn('This looks like a fresh build and BOARD is unknown;',
@@ -680,6 +710,9 @@ class Build(Forceable):
             cmake_opts = [f'-DBOARD={board}']
         else:
             cmake_opts = []
+        sdk_opt = self._sdk_cmake_opt()
+        if sdk_opt:
+            cmake_opts.append(sdk_opt)
         if self.args.cmake_opts:
             cmake_opts.extend(self.args.cmake_opts)
         if self.args.snippets:
