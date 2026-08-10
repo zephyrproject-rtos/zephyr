@@ -798,8 +798,8 @@ int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn)
 	return rfcomm_send_rpn(session, BT_RFCOMM_MSG_CMD_CR, rpn);
 }
 
-static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr,
-			    uint8_t *pattern, uint8_t len)
+static int rfcomm_send_test(struct bt_rfcomm_session *session, uint8_t cr, uint8_t *pattern,
+			    uint8_t len)
 {
 	struct net_buf *buf;
 	uint8_t fcs;
@@ -1168,9 +1168,17 @@ static void rfcomm_handle_dm(struct bt_rfcomm_session *session, uint8_t dlci)
 static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
-	struct bt_rfcomm_msc *msc = (void *)buf->data;
+	struct bt_rfcomm_msc *msc;
 	struct bt_rfcomm_dlc *dlc;
-	uint8_t dlci = BT_RFCOMM_GET_DLCI(msc->dlci);
+	uint8_t dlci;
+
+	if (buf->len < sizeof(*msc)) {
+		LOG_WRN("Malformed MSC command %u < %zu", buf->len, sizeof(*msc));
+		return;
+	}
+
+	msc = net_buf_pull_mem(buf, sizeof(*msc));
+	dlci = BT_RFCOMM_GET_DLCI(msc->dlci);
 
 	LOG_DBG("dlci %d", dlci);
 
@@ -1209,9 +1217,17 @@ static void rfcomm_handle_msc(struct bt_rfcomm_session *session,
 static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
-	struct bt_rfcomm_rls *rls = (void *)buf->data;
-	uint8_t dlci = BT_RFCOMM_GET_DLCI(rls->dlci);
+	struct bt_rfcomm_rls *rls;
+	uint8_t dlci;
 	struct bt_rfcomm_dlc *dlc;
+
+	if (buf->len < sizeof(*rls)) {
+		LOG_WRN("Malformed RLS command %u < %zu", buf->len, sizeof(*rls));
+		return;
+	}
+
+	rls = net_buf_pull_mem(buf, sizeof(*rls));
+	dlci = BT_RFCOMM_GET_DLCI(rls->dlci);
 
 	LOG_DBG("dlci %d", dlci);
 
@@ -1232,29 +1248,37 @@ static void rfcomm_handle_rls(struct bt_rfcomm_session *session,
 static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 			      struct net_buf *buf, uint8_t cr)
 {
-	struct bt_rfcomm_rpn default_rpn, *rpn = (void *)buf->data;
-	uint8_t dlci = BT_RFCOMM_GET_DLCI(rpn->dlci);
+	struct bt_rfcomm_rpn default_rpn;
+	uint8_t dlci;
 	uint8_t data_bits, stop_bits, parity_bits;
-	/* Exclude fcs to get number of value bytes */
-	uint8_t value_len = buf->len - 1;
-
-	LOG_DBG("dlci %d", dlci);
 
 	if (!cr) {
 		/* Ignore if its a response */
 		return;
 	}
 
-	if (value_len == sizeof(*rpn)) {
+	if (buf->len == sizeof(struct bt_rfcomm_rpn)) {
+		struct bt_rfcomm_rpn *rpn;
+
+		rpn = net_buf_pull_mem(buf, sizeof(*rpn));
+		dlci = BT_RFCOMM_GET_DLCI(rpn->dlci);
+
+		LOG_DBG("Set RPN setting: dlci %d", dlci);
+
 		/* Accept all the values proposed by the sender */
 		rpn->param_mask = sys_cpu_to_le16(BT_RFCOMM_RPN_PARAM_MASK_ALL);
 		rfcomm_send_rpn(session, BT_RFCOMM_MSG_RESP_CR, rpn);
 		return;
 	}
 
-	if (value_len != 1U) {
+	if (buf->len != sizeof(dlci)) {
+		LOG_WRN("Invalid RPN command");
 		return;
 	}
+
+	dlci = BT_RFCOMM_GET_DLCI(net_buf_pull_u8(buf));
+
+	LOG_DBG("Get RPN setting: dlci %d", dlci);
 
 	/* If only one value byte then current port settings has to be returned
 	 * We will send default values
@@ -1278,9 +1302,15 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 			     struct net_buf *buf, uint8_t cr)
 {
-	struct bt_rfcomm_pn *pn = (void *)buf->data;
+	struct bt_rfcomm_pn *pn;
 	struct bt_rfcomm_dlc *dlc;
 
+	if (buf->len < sizeof(*pn)) {
+		LOG_WRN("Malformed PN command %u < %zu", buf->len, sizeof(*pn));
+		return;
+	}
+
+	pn = net_buf_pull_mem(buf, sizeof(*pn));
 	dlc = rfcomm_dlcs_lookup_dlci(session, pn->dlci);
 	if (dlc == NULL) {
 		/*  Ignore if it is a response */
@@ -1378,8 +1408,7 @@ static void rfcomm_handle_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 	}
 }
 
-static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
-			      struct net_buf *buf)
+static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf *buf)
 {
 	struct bt_rfcomm_msg_hdr *hdr;
 	uint8_t msg_type, len, cr;
@@ -1395,6 +1424,11 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 	len = BT_RFCOMM_GET_LEN(hdr->len);
 
 	LOG_DBG("msg type %x cr %x", msg_type, cr);
+
+	if (buf->len < len) {
+		LOG_WRN("Invalid message length %u < %u", buf->len, len);
+		return;
+	}
 
 	switch (msg_type) {
 	case BT_RFCOMM_PN:
@@ -1413,8 +1447,13 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session,
 		if (!cr) {
 			break;
 		}
-		rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data,
-				 buf->len - 1);
+
+		if (buf->len > UINT8_MAX) {
+			LOG_WRN("TEST command too long %u > %u", buf->len, UINT8_MAX);
+			return;
+		}
+
+		rfcomm_send_test(session, BT_RFCOMM_MSG_RESP_CR, buf->data, buf->len);
 		break;
 	case BT_RFCOMM_FCON:
 		if (session->cfc == BT_RFCOMM_CFC_SUPPORTED) {
@@ -1481,9 +1520,8 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 	rfcomm_send_credit(dlc, credits);
 }
 
-static void rfcomm_handle_data(struct bt_rfcomm_session *session,
-			       struct net_buf *buf, uint8_t dlci, uint8_t pf)
-
+static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf *buf, uint8_t dlci,
+			       uint8_t pf)
 {
 	struct bt_rfcomm_dlc *dlc;
 
@@ -1510,23 +1548,24 @@ static void rfcomm_handle_data(struct bt_rfcomm_session *session,
 		rfcomm_dlc_tx_give_credits(dlc, net_buf_pull_u8(buf));
 	}
 
-	if (buf->len > BT_RFCOMM_FCS_SIZE) {
-		if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED &&
-		    !dlc->rx_credit) {
-			LOG_ERR("Data recvd when rx credit is 0");
-			rfcomm_dlc_close(dlc);
-			return;
-		}
-
-		/* Remove FCS */
-		buf->len -= BT_RFCOMM_FCS_SIZE;
-		if (dlc->ops && dlc->ops->recv) {
-			dlc->ops->recv(dlc, buf);
-		}
-
-		dlc->rx_credit--;
-		rfcomm_dlc_update_credits(dlc);
+	if (buf->len == 0) {
+		LOG_DBG("Credit frame only, no payload");
+		return;
 	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED &&
+	    !dlc->rx_credit) {
+		LOG_ERR("Data recvd when rx credit is 0");
+		rfcomm_dlc_close(dlc);
+		return;
+	}
+
+	if (dlc->ops && dlc->ops->recv) {
+		dlc->ops->recv(dlc, buf);
+	}
+
+	dlc->rx_credit--;
+	rfcomm_dlc_update_credits(dlc);
 }
 
 int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
@@ -1613,6 +1652,7 @@ static int rfcomm_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	net_buf_pull(buf, hdr_len);
+	net_buf_remove_mem(buf, sizeof(fcs));
 
 	switch (frame_type) {
 	case BT_RFCOMM_SABM:
