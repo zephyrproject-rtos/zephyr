@@ -111,7 +111,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 
 		/*
 		 * Invoke post-walk callback. This is done while
-		 * still holding _sched_spinlock to enable atomic
+		 * still holding the scheduler spinlock to enable atomic
 		 * operations (from the scheduler's point of view).
 		 */
 		if (post_func != NULL) {

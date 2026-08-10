@@ -439,8 +439,8 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 #endif
 
 	/* Pick the new owner (if any) and complete the wake atomically
-	 * under _sched_spinlock, so a racing in-flight timeout handler
-	 * cannot observe a half-initialized wake-up.
+	 * under the scheduler's spinlock, so a racing in-flight timeout
+	 * handler cannot observe a half-initialized wake-up.
 	 */
 	LOCK_SCHED_SPINLOCK {
 		new_owner = z_unpend_first_thread_locked(&mutex->wait_q);

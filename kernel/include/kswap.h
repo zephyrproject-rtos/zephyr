@@ -227,7 +227,7 @@ static inline void z_swap_unlocked(void)
 #endif /* !CONFIG_USE_SWITCH */
 
 /**
- * @brief - Like z_swap() but it is known that _sched_spinlock is already held.
+ * @brief - Like z_swap() but it is known that the scheduler's spinlock is already held.
  */
 static inline int z_swap_locked(k_spinlock_key_t key)
 {
