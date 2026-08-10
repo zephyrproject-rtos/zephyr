@@ -259,7 +259,7 @@ int bmg160_trigger_init(const struct device *dev)
 	bmg160->work.handler = bmg160_work_cb;
 #endif
 
-	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_configure_dt(&cfg->int_gpio, GPIO_INPUT);
 	if (ret < 0) {
 		return ret;
 	}
