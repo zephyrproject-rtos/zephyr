@@ -908,6 +908,7 @@ static int adxl355_attr_set(const struct device *dev, enum sensor_channel chan,
 {
 	/* Changes to the configurations setting must be made in Standby Mode */
 	int ret = 0;
+	int err;
 
 	if (val == NULL) {
 		LOG_ERR("Null pointer passed for sensor value");
@@ -940,7 +941,8 @@ static int adxl355_attr_set(const struct device *dev, enum sensor_channel chan,
 			break;
 		default:
 			LOG_ERR("Channel %u not supported for configuration attribute", chan);
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 		break;
 	case SENSOR_ATTR_OFFSET:
@@ -952,7 +954,8 @@ static int adxl355_attr_set(const struct device *dev, enum sensor_channel chan,
 			break;
 		default:
 			LOG_ERR("Channel %u not supported for offset attribute", chan);
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			break;
 		}
 		break;
 	case SENSOR_ATTR_ADXL355_FIFO_WATERMARK:
@@ -990,18 +993,22 @@ static int adxl355_attr_set(const struct device *dev, enum sensor_channel chan,
 		break;
 	default:
 		LOG_ERR("Attribute not supported");
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		break;
 	}
 	if (ret != 0) {
 		LOG_ERR("Failed to set attribute");
-		return ret;
 	}
-	ret = adxl355_set_op_mode(dev, ADXL355_MEASURE);
-	if (ret != 0) {
-		LOG_ERR("Failed to set measurement mode after attribute set");
-		return ret;
+
+	err = adxl355_set_op_mode(dev, ADXL355_MEASURE);
+	if (err != 0) {
+		LOG_ERR("Failed to restore measurement mode: %d", err);
+		if (ret == 0) {
+			ret = err;
+		}
 	}
-	return 0;
+
+	return ret;
 }
 
 /**
