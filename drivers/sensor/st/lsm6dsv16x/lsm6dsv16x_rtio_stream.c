@@ -510,9 +510,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 	ARG_UNUSED(result);
 
 	const struct device *dev = arg;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
@@ -608,7 +606,8 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		struct lsm6dsv16x_rtio_data hdr = {
 			.header = {
 				.is_fifo = false,
-				.accel_fs_idx = lsm6dsv16x->accel_fs,
+				.accel_fs_idx = LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(
+					config->accel_fs_map[lsm6dsv16x->accel_fs]),
 				.gyro_fs = lsm6dsv16x->gyro_fs,
 				.timestamp = lsm6dsv16x->timestamp,
 			},
