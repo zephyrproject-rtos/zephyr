@@ -759,7 +759,7 @@ static int bmi160_attr_get(const struct device *dev, enum sensor_channel chan,
 					int32_t udeg =
 						(FIELD_GET(GENMASK((2 * i) + 1, 2 * i), data[6])
 						 << 8) |
-						data[3 + i];
+						(uint8_t)data[3 + i];
 
 					udeg |= 0 - (udeg & 0x200);
 					udeg *= 61000;
