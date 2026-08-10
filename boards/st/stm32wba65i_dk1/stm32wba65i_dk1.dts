@@ -213,6 +213,10 @@
 	status = "okay";
 };
 
+&pka {
+	status = "okay";
+};
+
 &aes {
 	status = "okay";
 };

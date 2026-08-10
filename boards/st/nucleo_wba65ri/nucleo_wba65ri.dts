@@ -199,6 +199,10 @@
 	};
 };
 
+&pka {
+	status = "okay";
+};
+
 &aes {
 	status = "okay";
 };
