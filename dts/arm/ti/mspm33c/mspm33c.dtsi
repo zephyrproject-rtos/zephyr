@@ -153,6 +153,15 @@
 			reg = <0x400cc000 0x2000>;
 		};
 
+		rtc: rtc@400d8000 {
+			compatible = "ti,mspm0-rtc";
+			reg = <0x400d8000 0x2000>;
+			interrupts = <42 0>;
+			alarms-count = <2>;
+			ti,rtc-x;
+			status = "disabled";
+		};
+
 		gpioa: gpio@400f0000 {
 			compatible = "ti,mspm0-gpio";
 			reg = <0x400f0000 0x2000>;
