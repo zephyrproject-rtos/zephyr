@@ -616,10 +616,22 @@ static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 			return -EINVAL;
 		}
 
-		icm4268x_convert_raw_to_q31(
-			&cfg, chan_spec.chan_type,
-			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type)],
-			&out->readings[0].value);
+		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+			icm4268x_convert_raw_to_q31(
+				&cfg, chan_spec.chan_type,
+				edata->readings[icm4268x_get_channel_position(chan_spec.chan_type)],
+				&out->readings[0].value);
+		} else {
+			int8_t pos = icm4268x_get_channel_position(chan_spec.chan_type);
+			int8_t base = pos >= 4 ? 4 : 1;
+			int8_t axis = pos - base;
+
+			icm4268x_convert_raw_to_q31(
+				&cfg, chan_spec.chan_type,
+				header->axis_align[axis].sign *
+					edata->readings[base + header->axis_align[axis].index],
+				&out->readings[0].value);
+		}
 		*fit = 1;
 		return 1;
 	}
@@ -640,17 +652,22 @@ static int icm4268x_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 			return -EINVAL;
 		}
 
+		int8_t base = icm4268x_get_channel_position(chan_spec.chan_type - 3);
+
 		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 3,
-			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 3)],
+			header->axis_align[0].sign *
+				edata->readings[base + header->axis_align[0].index],
 			&out->readings[0].x);
 		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 2,
-			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 2)],
+			header->axis_align[1].sign *
+				edata->readings[base + header->axis_align[1].index],
 			&out->readings[0].y);
 		icm4268x_convert_raw_to_q31(
 			&cfg, chan_spec.chan_type - 1,
-			edata->readings[icm4268x_get_channel_position(chan_spec.chan_type - 1)],
+			header->axis_align[2].sign *
+				edata->readings[base + header->axis_align[2].index],
 			&out->readings[0].z);
 		*fit = 1;
 		return 1;
