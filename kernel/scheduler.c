@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <kspinlock.h>
 #include <ksched.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/spinlock.h>
@@ -25,7 +26,7 @@ void z_sched_init(void)
 
 void k_sched_lock(void)
 {
-	K_SPINLOCK(&_sched_spinlock) {
+	Z_SCHED_SPINLOCK {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
 		__ASSERT(!arch_is_in_isr(), "");
@@ -41,7 +42,7 @@ void k_sched_unlock(void)
 {
 	SYS_PORT_TRACING_FUNC(k_thread, sched_unlock);
 
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 
 	__ASSERT(_current->base.sched_locked != 0U, "");
 	__ASSERT(!arch_is_in_isr(), "");
@@ -53,7 +54,7 @@ void z_impl_k_reschedule(void)
 {
 	k_spinlock_key_t key;
 
-	key = k_spin_lock(&_sched_spinlock);
+	key = z_sched_spinlock_lock();
 
 	z_sched_lock_reschedule(key);
 }
@@ -86,7 +87,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
 	struct k_thread *thread;
 	int  status = 0;
 
-	K_SPINLOCK(&_sched_spinlock) {
+	Z_SCHED_SPINLOCK {
 #ifndef CONFIG_WAITQ_SCALABLE
 		struct k_thread *tmp;
 
