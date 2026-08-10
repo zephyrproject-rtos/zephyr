@@ -746,7 +746,7 @@ static int lsm6dsv16x_accel_get_config(const struct device *dev,
 
 		mode = (odr >> 4) & 0xf;
 
-		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq];
+		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq & 0x0f];
 		val->val2 = 0;
 		break;
 	}
@@ -824,7 +824,7 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 
 		mode = (odr >> 4) & 0xf;
 
-		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq];
+		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq & 0x0f];
 		val->val2 = 0;
 		break;
 	}
