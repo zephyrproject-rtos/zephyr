@@ -122,7 +122,7 @@ static void max30009_flush_rtio(const struct device *dev)
 
 	if (sqe == NULL || complete_op == NULL) {
 		LOG_ERR("Failed to acquire RTIO SQEs");
-		rtio_iodev_sqe_err(data->sqe, -ENOMEM);
+		rtio_sqe_drop_all(data->rtio_ctx);
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}
