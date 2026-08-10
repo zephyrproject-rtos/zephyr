@@ -678,18 +678,30 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		}
 
 		iso->rx = buf;
-		iso->rx_len = len - buf->len;
-		if (iso->rx_len) {
-			/* if iso->rx_len then package is longer than the
-			 * buf->len and cannot fit in a SINGLE package
-			 */
-			if (pb == BT_ISO_SINGLE) {
-				LOG_ERR("Unexpected ISO single fragment");
+		iso->iso.sdu_len = len;
+
+		if (pb == BT_ISO_SINGLE) {
+			/* For single fragments the packet length shall match the `buf->len` */
+			if (len != buf->len) {
+				LOG_ERR("Unexpected ISO single fragment length %u != %u", len,
+					buf->len);
+				bt_conn_reset_rx_state(iso);
+				return;
+			}
+
+			break;
+		} else if (pb == BT_ISO_START) {
+			/* For start fragments the packet length shall be larger than `buf->len` */
+			if (len <= buf->len) {
+				LOG_ERR("Unexpected ISO start fragment length %u <= %u", len,
+					buf->len);
 				bt_conn_reset_rx_state(iso);
 			}
+
 			return;
+		} else {
+			CODE_UNREACHABLE;
 		}
-		break;
 
 	case BT_ISO_CONT:
 		/* The ISO_Data_Load field contains a continuation fragment of
@@ -701,8 +713,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 			return;
 		}
 
-		BT_ISO_DATA_DBG("Cont, len %u rx_len %u",
-				buf->len, iso->rx_len);
+		BT_ISO_DATA_DBG("Cont, len %u sdu_len %u", buf->len, iso->iso.sdu_len);
 
 		if (buf->len > net_buf_tailroom(iso->rx)) {
 			LOG_ERR("Not enough buffer space for ISO data");
@@ -712,7 +723,6 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		}
 
 		net_buf_add_mem(iso->rx, buf->data, buf->len);
-		iso->rx_len -= buf->len;
 		net_buf_unref(buf);
 		return;
 
@@ -720,7 +730,7 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		/* The ISO_Data_Load field contains the last fragment of an
 		 * SDU.
 		 */
-		BT_ISO_DATA_DBG("End, len %u rx_len %u", buf->len, iso->rx_len);
+		BT_ISO_DATA_DBG("End, len %u sdu_len %u", buf->len, iso->iso.sdu_len);
 
 		if (iso->rx == NULL) {
 			LOG_ERR("Unexpected ISO end fragment");
@@ -736,7 +746,6 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		}
 
 		(void)net_buf_add_mem(iso->rx, buf->data, buf->len);
-		iso->rx_len -= buf->len;
 		net_buf_unref(buf);
 
 		break;
@@ -744,6 +753,12 @@ void bt_iso_recv(struct bt_conn *iso, struct net_buf *buf, uint8_t flags)
 		LOG_ERR("Unexpected ISO pb flags (0x%02x)", pb);
 		bt_conn_reset_rx_state(iso);
 		net_buf_unref(buf);
+		return;
+	}
+
+	if (iso->rx->len != iso->iso.sdu_len) {
+		LOG_ERR("ISO SDU len mismatch (%u != %u)", iso->rx->len, iso->iso.sdu_len);
+		bt_conn_reset_rx_state(iso);
 		return;
 	}
 
