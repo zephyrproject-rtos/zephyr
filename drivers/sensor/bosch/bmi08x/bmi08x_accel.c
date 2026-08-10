@@ -261,8 +261,12 @@ static int bmi08x_acc_odr_set(const struct device *dev, uint16_t freq_int, uint1
 {
 	int odr = bmi08x_freq_to_odr_val(freq_int, freq_milli);
 
-	if (odr < BMI08X_ACCEL_ODR_12_5_HZ) {
+	if (odr < 0) {
 		return odr;
+	}
+
+	if (odr < BMI08X_ACCEL_ODR_12_5_HZ || odr > BMI08X_ACCEL_ODR_1600_HZ) {
+		return -ENOTSUP;
 	}
 
 	return bmi08x_accel_reg_field_update(dev, BMI08X_REG_ACCEL_CONF, 0, BMI08X_ACCEL_ODR_MASK,
