@@ -776,9 +776,9 @@ int z_unpend_all(_wait_q_t *wait_q)
 	struct k_thread *thread;
 
 	Z_SCHED_SPINLOCK {
-		for (thread = z_waitq_head(wait_q);
+		for (thread = z_waitq_head_locked(wait_q);
 		     thread != NULL;
-		     thread = z_waitq_head(wait_q)) {
+		     thread = z_waitq_head_locked(wait_q)) {
 			unpend_thread_no_timeout(thread);
 			/* Abort the timeout and ready the thread unconditionally. If
 			 * the timeout handler is in flight on another CPU, the abort
@@ -798,7 +798,9 @@ static inline void unpend_all(_wait_q_t *wait_q)
 {
 	struct k_thread *thread;
 
-	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
+	for (thread = z_waitq_head_locked(wait_q);
+	     thread != NULL;
+	     thread = z_waitq_head_locked(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
 		/* See z_unpend_all(): the in-flight handler bails on the
