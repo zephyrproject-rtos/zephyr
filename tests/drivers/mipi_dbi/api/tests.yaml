@@ -5,7 +5,11 @@ common:
 
 tests:
   drivers.mipi_dbi.api:
-    filter: dt_nodelabel_enabled("mipi-dbi")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_dtc_overlay_files:
+      - overlays/mipi_dbi_bitbang.overlay
   drivers.mipi_dbi.config:
     platform_allow:
       - native_sim
