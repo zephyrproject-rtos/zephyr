@@ -1163,10 +1163,10 @@ int bmi160_pm(const struct device *dev, enum pm_device_action action)
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
-		bmi160_resume(dev);
+		ret = bmi160_resume(dev);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
-		bmi160_suspend(dev);
+		ret = bmi160_suspend(dev);
 		break;
 	default:
 		ret = -ENOTSUP;
