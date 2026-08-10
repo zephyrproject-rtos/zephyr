@@ -22,7 +22,7 @@ void z_sched_init(void);
  * spinlock.  Callers must hold _sched_spinlock before calling; the lock is
  * released (via reschedule) before this returns.
  *
- * @param key Spinlock key obtained from k_spin_lock(&_sched_spinlock).
+ * @param key Spinlock key obtained from z_sched_spinlock_lock().
  */
 void z_sched_lock_reschedule(k_spinlock_key_t key);
 
