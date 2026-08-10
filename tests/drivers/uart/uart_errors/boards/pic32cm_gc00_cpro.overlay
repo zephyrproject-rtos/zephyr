@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Loopback wiring (EXT1 to MikroBUS):
+ *   PB15 (SERCOM0 TX, EXT1 PIN14) <-> PD15 (SERCOM3 RX, MikroBUS PIN14)
+ *   PB16 (SERCOM0 RX, EXT1 PIN13) <-> PD16 (SERCOM3 TX, MikroBUS PIN13)
+ */
+
+dut: &sercom0 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+dut_aux: &sercom3 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	rxpo = <1>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom3_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom0_uart_default: sercom0_uart_default {
+		group1 {
+			pinmux = <PB15D_SERCOM0_PAD0>,
+				 <PB16D_SERCOM0_PAD1>;
+		};
+	};
+
+	sercom3_uart_default: sercom3_uart_default {
+		group1 {
+			pinmux = <PD16D_SERCOM3_PAD0>,
+				 <PD15D_SERCOM3_PAD1>;
+		};
+	};
+};
