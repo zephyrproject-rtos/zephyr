@@ -1086,6 +1086,41 @@ static const struct max30009_attr_desc *max30009_attr_lookup(uint16_t attr)
 	return NULL;
 }
 
+/**
+ * @brief Check whether another STATUS1 reader is active.
+ *
+ * The PLL lock poll in max30009_pll_set_enable() reads the clear-on-read
+ * STATUS1 register, so it must not run while the stream or trigger paths may
+ * also read STATUS1: the poll would consume their pending events (A_FULL,
+ * FIFO_DATA_RDY) and they would consume the lock bits the poll waits for.
+ *
+ * @param dev Device pointer
+ * @return true if a stream request is pending or a trigger handler is set.
+ */
+static bool max30009_status1_readers_active(const struct device *dev)
+{
+	const struct max30009_data *data = dev->data;
+
+#ifdef CONFIG_MAX30009_STREAM
+	if (data->sqe != NULL) {
+		return true;
+	}
+#endif /* CONFIG_MAX30009_STREAM */
+#ifdef CONFIG_MAX30009_TRIGGER
+	const struct max30009_trigger_data *trig = &data->trig;
+
+	if (trig->drdy_handler != NULL || trig->dc_loff_nl_handler != NULL ||
+	    trig->dc_loff_nh_handler != NULL || trig->dc_loff_pl_handler != NULL ||
+	    trig->dc_loff_ph_handler != NULL || trig->drv_oor_handler != NULL ||
+	    trig->bioz_undr_handler != NULL || trig->bioz_over_handler != NULL ||
+	    trig->lon_handler != NULL) {
+		return true;
+	}
+#endif /* CONFIG_MAX30009_TRIGGER */
+	ARG_UNUSED(data);
+	return false;
+}
+
 static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -1123,6 +1158,10 @@ static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	/* Acquisition/drive-path fields must be changed with the PLL stopped. */
 	if (desc->flags & MAX30009_ATTR_PLL_OFF) {
+		if (max30009_status1_readers_active(dev)) {
+			return -EBUSY;
+		}
+
 		ret = max30009_pll_set_enable(dev, false);
 		if (ret != 0) {
 			return ret;
