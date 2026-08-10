@@ -531,6 +531,13 @@ MFD
   than before it, so a clear that fails ambiguously may deliver an event a second time
   instead of dropping it. (:github:`110454`)
 
+* :c:func:`mfd_npm13xx_add_callback` now rejects a callback that is ``NULL``, has a ``NULL``
+  handler, has an empty ``event_mask``, or sets mask bits at or above ``NPM13XX_EVENT_MAX``,
+  returning ``-EINVAL``. The previous ``gpio_callback`` based implementation asserted on the
+  first two and silently accepted the rest. Registering a callback that is already registered
+  also returns ``-EINVAL``, where ``gpio_manage_callback()`` removed the node, re-inserted it
+  and returned success. (:github:`110454`)
+
 MSPI
 ====
 
