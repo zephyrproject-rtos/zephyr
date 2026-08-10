@@ -1,0 +1,10 @@
+sample:
+  name: ADI Power Modes
+  description: Demonstrates power modes of a given ADI SoC
+tests:
+  sample.adi.pm:
+    platform_allow:
+      - max32657evkit/max32657
+    integration_platforms:
+      - max32657evkit/max32657
+    tags: pm
