@@ -64,6 +64,13 @@ struct btp_rfcomm_get_dlc_info_rp {
 	uint8_t state;
 } __packed;
 
+#define BTP_RFCOMM_SEND_RLS				0x08
+struct btp_rfcomm_send_rls_cmd {
+	bt_addr_le_t address;
+	uint8_t channel;
+	uint8_t line_status;
+} __packed;
+
 /* events */
 #define BTP_RFCOMM_EV_CONNECTED				0x80
 struct btp_rfcomm_connected_ev {
