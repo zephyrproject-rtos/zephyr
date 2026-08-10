@@ -56,8 +56,8 @@ void adxl355_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		}
 	}
 
-	if (fifo_watermark_irq != data->fifo_watermark) {
-		data->fifo_watermark = fifo_watermark_irq;
+	if (fifo_watermark_irq != data->fifo_watermark_irq) {
+		data->fifo_watermark_irq = fifo_watermark_irq;
 		ret = adxl355_reg_update(dev, ADXL355_INT_MAP,
 					 data->route_to_int2 ? ADXL355_INT_MAP_FIFO_FULL_EN2_MSK
 							     : ADXL355_INT_MAP_FIFO_FULL_EN1_MSK,
