@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: Apache-2.0
+/*
+ *Copyright (c) 2026 Wilmers Messtechnik GmbH
+ */
+
+/ {
+	aliases {
+		led0 = &led0;
+		led1 = &led0;
+		led2 = &led0;
+	};
+
+	uart1: uart_1 {
+		compatible = "zephyr,native-pty-uart";
+		status = "okay";
+		current-speed = <19200>;
+
+		modbus0 {
+			compatible = "zephyr,modbus-serial";
+			status = "okay";
+		};
+	};
+};

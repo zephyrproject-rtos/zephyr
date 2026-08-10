@@ -38,6 +38,15 @@ or removed in the application overlay file
 The USB to RS-485 adapter connects to the USB port of a computer.
 The two A+, B- lines should be connected to the RS-485 shield.
 
+Using NATIVE PTY UART
+=====================
+
+When building for native_sim, the console and Modbus UART are connected to
+pseudo-terminals (PTYs) on the host system.
+
+The PTYs are created dynamically when the application starts, allowing the UART
+interfaces to be accessed and tested without physical serial hardware.
+
 Using CDC ACM UART
 ==================
 

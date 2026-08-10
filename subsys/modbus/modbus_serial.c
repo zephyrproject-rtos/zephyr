@@ -576,8 +576,12 @@ static inline int configure_uart(struct modbus_context *ctx,
 	}
 
 	if (uart_configure(cfg->dev, &uart_cfg) != 0) {
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_native_pty_uart)
+		LOG_WRN("Native PTY uart does not support configure");
+#else
 		LOG_ERR("Failed to configure UART");
 		return -EINVAL;
+#endif
 	}
 
 	return 0;
