@@ -9,4 +9,5 @@ flash: 1024
 supported:
   - hwinfo
   - watchdog
+  - rtc
 vendor: ti
