@@ -52,13 +52,9 @@ LOG_MODULE_REGISTER(itim, LOG_LEVEL_ERR);
 #define EVT_CYCLES_PER_SEC LFCLK /* 32768 Hz */
 #define SYS_CYCLES_PER_TICK (sys_clock_hw_cycles_per_sec() \
 					/ CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define SYS_CYCLES_PER_USEC (sys_clock_hw_cycles_per_sec() / 1000000)
-#define EVT_CYCLES_FROM_TICKS(ticks) \
-	DIV_ROUND_UP(ticks * EVT_CYCLES_PER_SEC, \
-			 CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 #define NPCX_ITIM_CLK_SEL_DELAY 92 /* Delay for clock selection (Unit:us) */
 /* Timeout for enabling ITIM module: 100us (Unit:cycles) */
-#define NPCX_ITIM_EN_TIMEOUT_CYCLES (100 * SYS_CYCLES_PER_USEC)
+#define NPCX_ITIM_EN_TIMEOUT_CYCLES k_us_to_cyc_ceil32(100)
 #define SYS_CYC_PER_EVT_CYC         (sys_clock_hw_cycles_per_sec() / EVT_CYCLES_PER_SEC)
 
 /* Instance of system and event timers */
