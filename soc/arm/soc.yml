@@ -33,6 +33,8 @@ family:
   - name: beetle
     socs:
     - name: beetle_r0
+  socs:
+  - name: qemu_cortex_a7
 - name: arm64
   series:
   - name: fvp_aem

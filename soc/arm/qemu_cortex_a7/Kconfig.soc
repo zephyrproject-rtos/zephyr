@@ -1,0 +1,9 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_CORTEX_A7
+	bool
+	select SOC_FAMILY_ARM
+
+config SOC
+	default "qemu_cortex_a7" if SOC_QEMU_CORTEX_A7
