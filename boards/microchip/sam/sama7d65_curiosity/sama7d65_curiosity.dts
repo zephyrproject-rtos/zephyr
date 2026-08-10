@@ -20,6 +20,7 @@
 	aliases {
 		eeprom-0 = &eeprom0;
 		led0 = &led_blue;
+		sdhc0 = &sdmmc1;
 		sw0 = &button_user;
 	};
 
@@ -233,6 +234,26 @@
 		};
 	};
 
+	pinctrl_sdmmc1_default: sdmmc1-default {
+		cmd-ck-data {
+			pinmux = <PIN_PB22__SDMMC1_CMD>,
+				 <PIN_PB23__SDMMC1_CK>,
+				 <PIN_PB24__SDMMC1_DAT0>,
+				 <PIN_PB25__SDMMC1_DAT1>,
+				 <PIN_PB26__SDMMC1_DAT2>,
+				 <PIN_PB27__SDMMC1_DAT3>;
+			bias-disable;
+		};
+
+		cd-wp-rstn-vddsel {
+			pinmux = <PIN_PB21__SDMMC1_RSTN>,
+				 <PIN_PB28__SDMMC1_WP>,
+				 <PIN_PB29__SDMMC1_CD>,
+				 <PIN_PB30__SDMMC1_1V8SEL>;
+			bias-disable;
+		};
+	};
+
 	pinctrl_uart6_default: uart6-default {
 		group1 {
 			pinmux = <PIN_PD18__FLEXCOM6_IO0>,
@@ -248,4 +269,20 @@
 
 &rtc {
 	status = "okay";
+};
+
+&sdmmc1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sdmmc1_default>;
+	max-bus-freq = <DT_FREQ_M(208)>;
+	no-1-8-v;
+	rstn-power-en;
+	auto-cmd23;
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
 };
