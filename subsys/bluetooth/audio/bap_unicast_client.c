@@ -2900,6 +2900,11 @@ valid_group_stream_pair_param(const struct bt_bap_unicast_group *unicast_group,
 		return false;
 	}
 
+	if (pair_param->rx_param == NULL && pair_param->tx_param == NULL) {
+		LOG_DBG("pair_param->rx_param and pair_param->tx_param are NULL");
+		return false;
+	}
+
 	if (pair_param->rx_param != NULL) {
 		if (!valid_unicast_group_stream_param(unicast_group, pair_param->rx_param,
 						      cig_param, source_pd, BT_AUDIO_DIR_SOURCE)) {
