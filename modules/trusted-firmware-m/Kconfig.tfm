@@ -72,6 +72,16 @@ menuconfig BUILD_WITH_TFM
 
 if BUILD_WITH_TFM
 
+config TFM_PLATFORM_HANDLES_MERGE
+	bool
+	help
+	  Selected by a platform (SoC/board) that post-processes the TF-M
+	  secure and non-secure images itself (for example, extra signing)
+	  and produces the merged image on its own, instead of relying on the
+	  default secure/non-secure merge performed by the TF-M module. This
+	  is an internal symbol with no prompt and is not meant to be set by
+	  users.
+
 config TFM_PROFILE
 	string
 	default "profile_small" if TFM_PROFILE_TYPE_SMALL
