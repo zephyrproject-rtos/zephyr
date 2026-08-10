@@ -185,6 +185,8 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 	uint32_t buf_len;
 	struct lsm6dsvxxx_rtio_data *edata;
 	struct lsm6dsvxxx_data *data = dev->data;
+	struct rtio_regs_list regs_list[3];
+	struct rtio_regs regs;
 
 	/* Get the buffer for the frame, it may be allocated dynamically by the rtio context */
 	rc = rtio_sqe_rx_buf(iodev_sqe, min_buf_len, min_buf_len, &buf, &buf_len);
@@ -212,31 +214,23 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 	edata->header.gyro_fs = data->gyro_fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
+	regs.rtio_regs_list = regs_list;
+	regs.rtio_regs_num = 0;
+
 	for (int i = 0; i < num_channels; i++) {
 		switch (channels[i].chan_type) {
 		case SENSOR_CHAN_ACCEL_X:
 		case SENSOR_CHAN_ACCEL_Y:
 		case SENSOR_CHAN_ACCEL_Z:
 		case SENSOR_CHAN_ACCEL_XYZ:
+			if (edata->has_accel) {
+				break;
+			}
 			edata->has_accel = 1;
 
-			uint8_t xl_addr = lsm6dsvxxx_bus_reg(data->bus_type, data->out_xl);
-			struct rtio_regs outx_regs;
-			struct rtio_regs_list xl_regs_list[] = {
-				{
-					xl_addr,
-					(uint8_t *)edata->accel,
-					6,
-				},
-			};
-
-			outx_regs.rtio_regs_list = xl_regs_list;
-			outx_regs.rtio_regs_num = ARRAY_SIZE(xl_regs_list);
-
 			/*
-			 * Prepare rtio enabled bus to read LSM6DSVXXX_OUTX_L_A register
-			 * where accelerometer data is available.
-			 * Then lsm6dsvxxx_one_shot_complete_cb callback will be invoked.
+			 * Read LSM6DSVXXX_OUTX_L_A register where accelerometer
+			 * data is available.
 			 *
 			 * STMEMSC API equivalent code:
 			 *
@@ -244,34 +238,25 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 			 *
 			 *   lsm6dsvxxx_acceleration_raw_get(&dev_ctx, accel_raw);
 			 */
-			rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
-					     &outx_regs, iodev_sqe, dev,
-					     lsm6dsvxxx_one_shot_complete_cb);
+			regs_list[regs.rtio_regs_num].reg_addr =
+				lsm6dsvxxx_bus_reg(data->bus_type, data->out_xl);
+			regs_list[regs.rtio_regs_num].bufp = (uint8_t *)edata->accel;
+			regs_list[regs.rtio_regs_num].len = 6;
+			regs.rtio_regs_num++;
 			break;
 
 		case SENSOR_CHAN_GYRO_X:
 		case SENSOR_CHAN_GYRO_Y:
 		case SENSOR_CHAN_GYRO_Z:
 		case SENSOR_CHAN_GYRO_XYZ:
+			if (edata->has_gyro) {
+				break;
+			}
 			edata->has_gyro = 1;
 
-			uint8_t gy_addr = lsm6dsvxxx_bus_reg(data->bus_type, data->out_gy);
-			struct rtio_regs outg_regs;
-			struct rtio_regs_list gy_regs_list[] = {
-				{
-					gy_addr,
-					(uint8_t *)edata->gyro,
-					6,
-				},
-			};
-
-			outg_regs.rtio_regs_list = gy_regs_list;
-			outg_regs.rtio_regs_num = ARRAY_SIZE(gy_regs_list);
-
 			/*
-			 * Prepare rtio enabled bus to read LSM6DSVXXX_OUTX_L_G register
-			 * where gyroscope data is available.
-			 * Then lsm6dsvxxx_one_shot_complete_cb callback will be invoked.
+			 * Read LSM6DSVXXX_OUTX_L_G register where gyroscope
+			 * data is available.
 			 *
 			 * STMEMSC API equivalent code:
 			 *
@@ -279,32 +264,23 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 			 *
 			 *   lsm6dsvxxx_angular_rate_raw_get(&dev_ctx, gyro_raw);
 			 */
-			rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
-					     &outg_regs, iodev_sqe, dev,
-					     lsm6dsvxxx_one_shot_complete_cb);
+			regs_list[regs.rtio_regs_num].reg_addr =
+				lsm6dsvxxx_bus_reg(data->bus_type, data->out_gy);
+			regs_list[regs.rtio_regs_num].bufp = (uint8_t *)edata->gyro;
+			regs_list[regs.rtio_regs_num].len = 6;
+			regs.rtio_regs_num++;
 			break;
 
 #if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 		case SENSOR_CHAN_DIE_TEMP:
+			if (edata->has_temp) {
+				break;
+			}
 			edata->has_temp = 1;
 
-			uint8_t t_addr = lsm6dsvxxx_bus_reg(data->bus_type, data->out_tp);
-			struct rtio_regs outt_regs;
-			struct rtio_regs_list t_regs_list[] = {
-				{
-					t_addr,
-					(uint8_t *)&edata->temp,
-					2,
-				},
-			};
-
-			outt_regs.rtio_regs_list = t_regs_list;
-			outt_regs.rtio_regs_num = ARRAY_SIZE(t_regs_list);
-
 			/*
-			 * Prepare rtio enabled bus to read LSM6DSVXX0X_OUT_TEMP_L register
-			 * where temperature data is available.
-			 * Then lsm6dsvxxx_one_shot_complete_cb callback will be invoked.
+			 * Read LSM6DSVXX0X_OUT_TEMP_L register where temperature
+			 * data is available.
 			 *
 			 * STMEMSC API equivalent code:
 			 *
@@ -312,9 +288,11 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 			 *
 			 *   lsm6dsvxxx_temperature_raw_get(&dev_ctx, &val);
 			 */
-			rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type,
-					     &outt_regs, iodev_sqe, dev,
-					     lsm6dsvxxx_one_shot_complete_cb);
+			regs_list[regs.rtio_regs_num].reg_addr =
+				lsm6dsvxxx_bus_reg(data->bus_type, data->out_tp);
+			regs_list[regs.rtio_regs_num].bufp = (uint8_t *)&edata->temp;
+			regs_list[regs.rtio_regs_num].len = 2;
+			regs.rtio_regs_num++;
 			break;
 #endif
 
@@ -323,9 +301,18 @@ static void lsm6dsvxxx_submit_one_shot(const struct device *dev, struct rtio_iod
 		}
 	}
 
-	if (edata->has_accel == 0 && edata->has_gyro == 0 && edata->has_temp == 0) {
+	if (regs.rtio_regs_num == 0) {
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
 	}
+
+	/*
+	 * Prepare rtio enabled bus to read all requested registers in a single
+	 * chain, so that lsm6dsvxxx_one_shot_complete_cb callback is invoked
+	 * exactly once when the whole transaction is complete.
+	 */
+	rtio_read_regs_async(data->rtio_ctx, data->iodev, data->bus_type, &regs, iodev_sqe,
+			     dev, lsm6dsvxxx_one_shot_complete_cb);
 }
 
 void lsm6dsvxxx_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
