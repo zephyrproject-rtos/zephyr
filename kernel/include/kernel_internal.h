@@ -133,6 +133,7 @@ void k_heap_free_sched_locked(struct k_heap *heap, void *mem);
 void k_free_sched_locked(void *ptr);
 int z_msgq_cleanup_sched_locked(struct k_msgq *msgq);
 int z_stack_cleanup_sched_locked(struct k_stack *stack);
+int z_timer_cleanup_sched_locked(struct k_timer *timer);
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);

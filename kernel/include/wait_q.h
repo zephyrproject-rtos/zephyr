@@ -14,6 +14,7 @@
 #include <zephyr/sys/rb.h>
 #include <timeout_q.h>
 #include <priority_q.h>
+#include <kspinlock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,7 +47,7 @@ static inline void z_waitq_init(_wait_q_t *w)
 	};
 }
 
-static inline struct k_thread *z_waitq_head(_wait_q_t *w)
+static inline struct k_thread *z_waitq_head_locked(_wait_q_t *w)
 {
 	return (struct k_thread *)rb_get_min(&w->waitq.tree);
 }
@@ -89,12 +90,33 @@ static inline void z_waitq_init(_wait_q_t *w)
 	sys_dlist_init(&w->waitq);
 }
 
-static inline struct k_thread *z_waitq_head(_wait_q_t *w)
+static inline struct k_thread *z_waitq_head_locked(_wait_q_t *w)
 {
 	return (struct k_thread *)sys_dlist_peek_head(&w->waitq);
 }
 
 #endif /* !CONFIG_WAITQ_SCALABLE */
+
+static inline struct k_thread *z_waitq_head(_wait_q_t *w)
+{
+	struct k_thread *thread = NULL;
+
+	/*
+	 * On a single core system, all callers of this function are already
+	 * protected by a spinlock held by the caller. On those systems there
+	 * is no need to lock the scheduler's spinlock. However, on SMP systems
+	 * the caller controlled spinlock is insufficient as the thread timeout
+	 * handler may be running on another CPU. Use LOCK_SCHED_SPINLOCK
+	 * to protect the scope as necessary.
+	 */
+
+	LOCK_SCHED_SPINLOCK {
+		thread = z_waitq_head_locked(w);
+	}
+
+	return thread;
+}
+
 
 #ifdef __cplusplus
 }

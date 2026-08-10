@@ -8,6 +8,7 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSCHED_H_
 
 #include <zephyr/kernel_structs.h>
+#include <kspinlock.h>
 #include <kernel_internal.h>
 #include <timeout_q.h>
 #include <kthread.h>
@@ -38,17 +39,9 @@ BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
 #endif /* CONFIG_MULTITHREADING */
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
-#define LOCK_SCHED_SPINLOCK
-#else
-#define LOCK_SCHED_SPINLOCK   K_SPINLOCK(&_sched_spinlock)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-extern struct k_spinlock _sched_spinlock;
 
 extern struct k_thread _thread_dummy;
 

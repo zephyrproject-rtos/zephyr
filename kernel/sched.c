@@ -1007,7 +1007,9 @@ int z_unpend_all_locked(_wait_q_t *wait_q)
 	__ASSERT(z_spin_is_locked(&_sched_spinlock), "sched lock not held");
 #endif
 
-	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
+	for (thread = z_waitq_head_locked(wait_q);
+	     thread != NULL;
+	     thread = z_waitq_head_locked(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		z_abort_thread_timeout(thread);
 		ready_thread(thread);
@@ -1321,7 +1323,9 @@ static inline void unpend_all(_wait_q_t *wait_q)
 {
 	struct k_thread *thread;
 
-	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
+	for (thread = z_waitq_head_locked(wait_q);
+	     thread != NULL;
+	     thread = z_waitq_head_locked(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		z_abort_thread_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
