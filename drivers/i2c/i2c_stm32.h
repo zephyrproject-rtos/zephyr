@@ -169,6 +169,10 @@ int i2c_stm32_transaction(const struct device *dev,
 			  uint16_t periph);
 #endif /* CONFIG_I2C_RTIO */
 
+/* Reconfigure I2C bus according to @p config
+ * This function must be called with bus mutex locked (k_sem_take(i2c_stm32_data::bus_mutex))
+ * unless CONFIG_I2C_RTIO is enabled (in which case there is no bus_mutex to take).
+ */
 int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config);
 
 #ifdef CONFIG_I2C_TARGET
