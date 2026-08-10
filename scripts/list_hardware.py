@@ -315,7 +315,8 @@ def add_args(parser):
     parser.add_argument("--soc-root", dest='soc_roots', default=[],
                         type=Path, action='append',
                         help='add a SoC root, may be given more than once')
-    parser.add_argument("--soc", default=None, help='lookup the specific soc')
+    parser.add_argument("--soc", dest='socs_lookup', default=[], action='append',
+                        help='lookup the specific soc, may be given more than once')
     parser.add_argument("--soc-series", default=None, help='lookup the specific soc series')
     parser.add_argument("--soc-family", default=None, help='lookup the specific family')
     parser.add_argument("--socs", action='store_true', help='lookup all socs')
@@ -408,8 +409,8 @@ def dump_v2_system(args, type, system):
 def dump_v2_systems(args):
     systems = find_v2_systems(args)
 
-    if args.soc is not None:
-        socs, series, families = systems.get_loaded_trees([args.soc])
+    if args.socs_lookup:
+        socs, series, families = systems.get_loaded_trees(args.socs_lookup)
     else:
         socs = systems.get_socs()
         families = systems.get_families()
@@ -427,7 +428,7 @@ def dump_v2_systems(args):
 
 if __name__ == '__main__':
     args = parse_args()
-    if any([args.socs, args.soc, args.soc_series, args.soc_family]):
+    if any([args.socs, args.socs_lookup, args.soc_series, args.soc_family]):
         dump_v2_systems(args)
     if args.archs or args.arch is not None:
         dump_v2_archs(args)
