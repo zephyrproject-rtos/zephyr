@@ -316,6 +316,50 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
  */
 int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn);
 
+/** @brief Remote Line Status value: No error */
+#define BT_RFCOMM_RLS_NO_ERR (0x00U)
+
+/** @brief Remote Line Status value: error occurred
+ *
+ *  @param err Error code to be set in the RLS value; must be one of the following values:
+ *             @ref BT_RFCOMM_RLS_ERR_OVERRUN_ERROR, @ref BT_RFCOMM_RLS_ERR_PARITY_ERROR, or
+ *             @ref BT_RFCOMM_RLS_ERR_FRAMING_ERROR.
+ *
+ *  @return RLS value with error code set.
+ */
+#define BT_RFCOMM_RLS_ERR(err) (BIT(0) | (err))
+
+/** @brief Overrun Error - Received character overwrote an unread character */
+#define BT_RFCOMM_RLS_ERR_OVERRUN_ERROR BIT(1)
+
+/** @brief Parity Error - Received character's parity was incorrect */
+#define BT_RFCOMM_RLS_ERR_PARITY_ERROR BIT(2)
+
+/** @brief Framing Error - a character did not terminate with a stop bit */
+#define BT_RFCOMM_RLS_ERR_FRAMING_ERROR BIT(3)
+
+/**
+ * @brief Send Remote Line Status Command
+ *
+ * Send remote line status with specific rls value @p line_status to the RFCOMM DLC.
+ * For @p line_status, the BIT(4-7) are reserved and must be set to 0.
+ * The BIT(0-3) indicate the Line Status.
+ * If the BIT(0) is set to 0, there is no error occurred.
+ * If the BIT(0) is set to 1, the error is indicated by BIT(1-3) with the following values:
+ * @ref BT_RFCOMM_RLS_ERR_OVERRUN_ERROR - Received character overwrote an unread
+ * character.
+ * @ref BT_RFCOMM_RLS_ERR_PARITY_ERROR - Received character's parity was incorrect.
+ * @ref BT_RFCOMM_RLS_ERR_FRAMING_ERROR - a character did not terminate with a stop bit.
+ *
+ * @p line_status can be created using @ref BT_RFCOMM_RLS_NO_ERR and @ref BT_RFCOMM_RLS_ERR macros.
+ *
+ * @param dlc Pointer to the RFCOMM DLC
+ * @param line_status Line Status value
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int bt_rfcomm_send_rls_cmd(struct bt_rfcomm_dlc *dlc, uint8_t line_status);
+
 #ifdef __cplusplus
 }
 #endif

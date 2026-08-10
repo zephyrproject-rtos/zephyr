@@ -750,6 +750,37 @@ static int rfcomm_send_rls(struct bt_rfcomm_dlc *dlc, uint8_t cr,
 	return rfcomm_send(dlc->session, buf);
 }
 
+#define RFCOMM_RLS_MASK GENMASK(3, 0)
+#define RFCOMM_RLS_ERROR_FLAG_MASK BIT(0)
+#define RFCOMM_RLS_ERROR_CODE_MASK GENMASK(3, 1)
+
+#define RFCOMM_RLS_VALID(line_status) \
+	(((line_status) & ~RFCOMM_RLS_MASK) == 0 && \
+	 (((line_status) & RFCOMM_RLS_ERROR_FLAG_MASK) == 0 || \
+	  ((line_status) & RFCOMM_RLS_ERROR_CODE_MASK) != 0))
+
+int bt_rfcomm_send_rls_cmd(struct bt_rfcomm_dlc *dlc, uint8_t line_status)
+{
+	if (dlc == NULL) {
+		return -EINVAL;
+	}
+
+	if (!RFCOMM_RLS_VALID(line_status)) {
+		LOG_ERR("Invalid line status: 0x%02x", line_status);
+		return -EINVAL;
+	}
+
+	if (dlc->session == NULL || dlc->state != BT_RFCOMM_STATE_CONNECTED) {
+		LOG_ERR("dlc %p not connected", dlc);
+		return -ENOTCONN;
+	}
+
+	LOG_DBG("dlc %p sending RLS(0x%02x) on session %p", dlc, line_status, dlc->session);
+
+	/* Send the RLS command */
+	return rfcomm_send_rls(dlc, BT_RFCOMM_MSG_CMD_CR, line_status);
+}
+
 static int rfcomm_send_rpn(struct bt_rfcomm_session *session, uint8_t cr,
 			   struct bt_rfcomm_rpn *rpn)
 {
