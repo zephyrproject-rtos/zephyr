@@ -1083,6 +1083,48 @@ def test_prop_range_len_errs(tmp_path):
         f"{str(dts_file)} has length 1, which is less than the "
         f"'min-len' value in {binding_path} (2)")
 
+    # interrupts specific: get #interrupt-cells from parent interrupt controller
+    write_and_check(
+        """\
+/dts-v1/;
+/ {
+	controller {
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+    itr-range-len-node {
+        compatible = "min-max-len";
+		interrupt-parent = <&{/controller}>;
+        interrupts = <1 2 3 4 5 6 7 8 9 10 11 12>;
+    };
+};
+""",
+        f"value of property 'interrupts' on /itr-range-len-node in "
+        f"{str(dts_file)} has length 4, which is greater than the "
+        f"'max-len' value in {binding_path} (3)")
+
+    # interrupts specific: get #interrupt-cells from parent interrupt controller
+    write_and_check(
+        """\
+/dts-v1/;
+/ {
+	controller {
+		interrupt-controller;
+		#interrupt-cells = <3>;
+	};
+
+    itr-range-len-node {
+        compatible = "min-max-len";
+		interrupt-parent = <&{/controller}>;
+        interrupts = <1 2 3>;
+    };
+};
+""",
+        f"value of property 'interrupts' on /itr-range-len-node in "
+        f"{str(dts_file)} has length 1, which is less than the "
+        f"'min-len' value in {binding_path} (2)")
+
 def test_prop_range_binding_errs(tmp_path):
     '''Test errors in binding definitions with invalid min:/max:'''
 

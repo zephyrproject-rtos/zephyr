@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Consumer of interrupt controller with three cells
+
+compatible: "interrupt-3-cell-consumer"
+
+properties:
+  interrupts:
+    type: array
+    min-len: 2
+    max-len: 3
+
+  interrupt-names:
+    type: string-array
