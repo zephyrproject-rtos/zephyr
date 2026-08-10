@@ -174,3 +174,33 @@ config ERRNO_IN_TLS
 	help
 	  Use thread local storage to store errno instead of storing it in
 	  the kernel thread struct. This avoids a syscall if userspace is enabled.
+
+config COMMON_LIBC_UNDERSCORE_EXIT
+	bool "Common C library _exit()"
+	default y if PROCESS
+	help
+	  Common implementation of _exit(). With CONFIG_PROCESS it terminates
+	  the calling thread's process via k_exit(); otherwise it reports and
+	  halts, as the per-C-library stubs do. Overrides the weak picolibc and
+	  newlib stubs and replaces the minimal libc stub.
+
+config COMMON_LIBC_EXIT
+	bool "Common C library exit() and atexit()"
+	depends on MINIMAL_LIBC || PICOLIBC
+	default y
+	help
+	  Common implementation of exit() and atexit(): registered handlers run
+	  in reverse registration order, then _exit() terminates the program.
+	  For picolibc this replaces the prebuilt library's exit path, whose
+	  atexit() registers handlers into a stub, so the ISO C exit sequence
+	  is observable. Deviation from ISO C: open streams are not flushed and
+	  functions registered via the fini-array mechanism do not run.
+
+config COMMON_LIBC_ATEXIT_MAX
+	int "Maximum number of atexit() registrations"
+	depends on COMMON_LIBC_EXIT
+	range 1 4096
+	default 32
+	help
+	  Maximum number of handlers that can be registered with atexit().
+	  ISO C requires support for at least 32 registrations.

@@ -36,5 +36,8 @@ endif()
 
 zephyr_library_sources(source/errno/errno.c)
 
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_UNDERSCORE_EXIT source/stdlib/_exit.c)
+zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_EXIT source/stdlib/exit.c)
+
 # Prevent compiler from optimizing calloc into an infinite recursive call
 zephyr_library_compile_options($<TARGET_PROPERTY:compiler,no_builtin_malloc>)

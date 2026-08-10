@@ -21,7 +21,6 @@ zephyr_library_sources(
   source/stdlib/strtoll.c
   source/stdlib/strtoull.c
   source/stdlib/bsearch.c
-  source/stdlib/exit.c
   source/stdlib/qsort.c
   source/string/strerror.c
   source/string/strncasecmp.c
@@ -40,6 +39,7 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_ZVFS source/stdio/zvfs_libc.c)
+zephyr_library_sources_ifndef(CONFIG_COMMON_LIBC_UNDERSCORE_EXIT source/stdlib/exit.c)
 
 if(CONFIG_MINIMAL_LIBC_TIME)
   zephyr_library_sources(source/time/gmtime.c)
