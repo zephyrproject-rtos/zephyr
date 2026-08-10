@@ -388,10 +388,18 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 	}
 }
 
+/**
+ * Like reschedule(), but _sched_spinlock is known to be the locked lock.
+ */
+static void reschedule_locked(k_spinlock_key_t key)
+{
+	return reschedule(&_sched_spinlock, key);
+}
+
 void z_sched_lock_reschedule(k_spinlock_key_t key)
 {
 	update_cache(0);
-	reschedule(&_sched_spinlock, key);
+	reschedule_locked(key);
 }
 
 void z_sched_yield(void)
@@ -611,6 +619,8 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 }
 
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) ALIAS_OF(reschedule);
+
+void z_reschedule_locked(k_spinlock_key_t key) ALIAS_OF(reschedule_locked);
 
 void z_reschedule_irqlock(uint32_t key)
 {
