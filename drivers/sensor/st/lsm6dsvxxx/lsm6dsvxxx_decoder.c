@@ -286,9 +286,9 @@ static int generate_accel_output(const uint8_t *buffer, int count, uint16_t xl_c
 
 	out->shift = cfg->accel_bit_shift[header->accel_fs];
 
-	out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
-	out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
-	out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+	out->readings[count].x = Q31_SHIFT_MICROVAL((int64_t)scale * x, out->shift);
+	out->readings[count].y = Q31_SHIFT_MICROVAL((int64_t)scale * y, out->shift);
+	out->readings[count].z = Q31_SHIFT_MICROVAL((int64_t)scale * z, out->shift);
 
 	return 0;
 }
@@ -623,20 +623,20 @@ static int lsm6dsvxxx_decode_sample(const uint8_t *buffer, struct sensor_chan_sp
 
 		if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_XYZ) {
 			out->readings[0].x =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[0], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[0], out->shift);
 			out->readings[0].y =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[1], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[1], out->shift);
 			out->readings[0].z =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[2], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[2], out->shift);
 		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_X) {
 			out_q31->readings[0].value =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[0], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[0], out->shift);
 		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_Y) {
 			out_q31->readings[0].value =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[1], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[1], out->shift);
 		} else if (chan_spec.chan_type == SENSOR_CHAN_ACCEL_Z) {
 			out_q31->readings[0].value =
-			       Q31_SHIFT_MICROVAL(scale * edata->accel[2], out->shift);
+			       Q31_SHIFT_MICROVAL((int64_t)scale * edata->accel[2], out->shift);
 		} else {
 			return -ENOTSUP;
 		}
