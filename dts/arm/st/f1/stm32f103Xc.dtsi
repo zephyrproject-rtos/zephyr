@@ -180,7 +180,8 @@
 		timers8: timers@40013400 {
 			compatible = "st,stm32-timers";
 			reg = <0x40013400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>,
+				 <&rcc STM32_SRC_TIMPCLK2 NO_SEL>;
 			resets = <&rctl STM32_RESET(APB2, 13)>;
 			interrupts = <43 0>, <44 0>, <45 0>, <46 0>;
 			interrupt-names = "brk", "up", "trgcom", "cc";
