@@ -1338,11 +1338,11 @@ struct wifi_pmksa_cache_query {
 
 /** @brief PMKSA cache change event payload. */
 struct wifi_pmksa_cache_event {
-	/** SSID of the profile whose cache changed. */
+	/** SSID of the profile whose cache changed, if available. */
 	uint8_t ssid[WIFI_SSID_MAX_LEN];
 	/** BSSID whose cache entry changed. */
 	uint8_t bssid[WIFI_MAC_ADDR_LEN];
-	/** Length of the SSID. */
+	/** Length of the SSID, or zero if the profile could not be resolved. */
 	uint8_t ssid_length;
 };
 

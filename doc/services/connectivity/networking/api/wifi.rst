@@ -291,6 +291,9 @@ The intended lifecycle is:
 * Credential, station-MAC, or policy change -> issue
   :c:macro:`NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL` and delete stored records.
 
+A cache event can have an ``ssid_length`` of zero if the backend can no longer
+resolve the profile. The BSSID remains available to identify the cache entry.
+
 A GET before a connected station profile exists returns ``-ENOTCONN``. On
 ``-ENOENT``, ``entry_count`` contains the current cache size. Enumeration is
 best effort because the cache can change between requests; an event during
