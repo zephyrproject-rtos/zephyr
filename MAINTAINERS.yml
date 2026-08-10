@@ -927,14 +927,17 @@ Bouffalolab Platforms:
     - josuah
     - will-tm
   files:
+    - boards/bflb/
     - boards/**/*bflb*
     - boards/**/*bflb*/
     - boards/aithinker/ai_*/
+    - boards/aithinker/aipi_eyes_s2/
     - boards/doiting/
-    - boards/thirdreality/
+    - boards/qcom/qcc74*/
     - boards/sipeed/m0sense/
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
+    - boards/thirdreality/
     - drivers/**/*bflb*
     - drivers/**/*bflb*/
     - dts/riscv/bflb/
