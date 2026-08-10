@@ -17,9 +17,8 @@ LOG_MODULE_DECLARE(MAX30009);
  */
 static uint32_t max30009_sample_period_ns(const struct device *dev)
 {
-	const struct max30009_dev_config *cfg = dev->config;
 	struct max30009_data *data = dev->data;
-	uint32_t adc_osr = MAX30009_BIOZ_ADC_OSR_BASE << cfg->bioz_cfg.cfg_1.bioz_adc_osr;
+	uint32_t adc_osr = MAX30009_BIOZ_ADC_OSR_BASE << data->bioz_adc_osr_code;
 
 	if (data->bioz_adc_clk <= 0) {
 		return 0;
