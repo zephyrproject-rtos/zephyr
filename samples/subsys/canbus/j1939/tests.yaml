@@ -1,0 +1,9 @@
+sample:
+  name: J1939 sample
+tests:
+  sample.subsys.canbus.j1939:
+    tags:
+      - can
+      - j1939
+    depends_on: can
+    filter: dt_chosen_enabled("zephyr,canbus")
