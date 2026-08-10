@@ -157,6 +157,15 @@ zephyr_library_sources(
   src/supp_events.c
 )
 
+# Keep this condition in sync with SUPPLICANT_PMKSA_CACHE_REAL in supp_pmksa.h.
+if((CONFIG_WIFI_MGMT_PMKSA_IMPORT OR
+    CONFIG_WIFI_MGMT_PMKSA_EXPORT) AND
+   (CONFIG_WIFI_NM_WPA_SUPPLICANT_EAPOL OR
+    CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE) AND
+   NOT CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE)
+  zephyr_library_sources(src/supp_pmksa.c)
+endif()
+
 # Advanced features
 zephyr_library_sources_ifdef(CONFIG_WIFI_NM_WPA_SUPPLICANT_RRM
   ${WIFI_NM_WPA_SUPPLICANT_BASE}/op_classes.c
