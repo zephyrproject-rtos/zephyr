@@ -96,8 +96,9 @@ static inline void adxl367_temp_convert_q31(q31_t *out, const uint8_t *buff,
 			data_in |= ADXL367_COMPLEMENT;
 		}
 
-		*out = ((data_in - ADXL367_TEMP_25C) / ADXL367_TEMP_SENSITIVITY
-				+ ADXL367_TEMP_BIAS_TEST_CONDITION) * ADXL367_TEMP_QSCALE;
+		*out = (q31_t)(((int64_t)(data_in - ADXL367_TEMP_25C) * ADXL367_TEMP_QSCALE)
+				/ ADXL367_TEMP_SENSITIVITY
+				+ (int64_t)ADXL367_TEMP_BIAS_TEST_CONDITION * ADXL367_TEMP_QSCALE);
 	}
 }
 
