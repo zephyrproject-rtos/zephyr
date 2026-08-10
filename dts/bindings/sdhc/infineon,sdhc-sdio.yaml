@@ -26,15 +26,10 @@ properties:
     description: Required for cat1c devices
 
   bus-width:
-    type: int
     default: 4
     description: |
       bus width for SDMMC access, defaults to the minimum necessary
       number of bus lines
-    enum:
-      - 1
-      - 4
-      - 8
 
   no-1-8-v:
     type: boolean
