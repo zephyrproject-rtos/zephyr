@@ -757,7 +757,7 @@ static bool adxl367_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigg
 	case SENSOR_TRIG_FIFO_WATERMARK:
 		return (ADXL367_STATUS_FIFO_WATERMARK & data->int_status);
 	case SENSOR_TRIG_FIFO_FULL:
-		return (ADXL367_STATUS_FIFO_WATERMARK & data->int_status);
+		return (ADXL367_STATUS_FIFO_OVERRUN & data->int_status);
 	default:
 		return false;
 	}
