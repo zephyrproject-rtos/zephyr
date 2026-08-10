@@ -34,6 +34,7 @@
 			counterg0: counterg0 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -50,6 +51,7 @@
 			counterg1: counterg1 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
@@ -66,6 +68,7 @@
 			counterg8: counterg8 {
 				compatible = "ti,mspm0-timer-counter";
 				resolution = <16>;
+				channels = <2>;
 				status = "disabled";
 			};
 		};
