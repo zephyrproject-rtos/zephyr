@@ -131,7 +131,6 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 			*frame_count = rdata->has_accel ? 1 : 0;
 			return 0;
 
-#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 		case SENSOR_CHAN_GYRO_X:
 		case SENSOR_CHAN_GYRO_Y:
 		case SENSOR_CHAN_GYRO_Z:
@@ -139,6 +138,7 @@ static int lsm6dsvxxx_decoder_get_frame_count(const uint8_t *buffer,
 			*frame_count = rdata->has_gyro ? 1 : 0;
 			return 0;
 
+#if defined(CONFIG_LSM6DSVXXX_ENABLE_TEMP)
 		case SENSOR_CHAN_DIE_TEMP:
 			*frame_count = rdata->has_temp ? 1 : 0;
 			return 0;
