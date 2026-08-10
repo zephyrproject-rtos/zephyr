@@ -18,6 +18,7 @@ tests:
       - qemu_kvm_arm64
       - xenvm
       - xenvm/xenvm/gicv3
+      - qemu_riscv64/qemu_virt_riscv64/smp_large
       - hifive_unmatched/fu740/s7
       - hifive_unmatched/fu740/u74
       - rcar_h3ulcb/r8a77951/a57

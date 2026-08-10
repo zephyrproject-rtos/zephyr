@@ -4,3 +4,5 @@ tests:
       - kernel
       - userspace
     ignore_faults: true
+    platform_exclude:
+      - qemu_riscv64/qemu_virt_riscv64/smp_large

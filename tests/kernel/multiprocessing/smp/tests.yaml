@@ -25,6 +25,7 @@ tests:
     filter: (CONFIG_MP_MAX_NUM_CPUS > 1)
     platform_exclude:
       - qemu_riscv64/qemu_virt_riscv64/smp # qemu_riscv64 doesn't support custom ROM offset
+      - qemu_riscv64/qemu_virt_riscv64/smp_large # qemu_riscv64 doesn't support custom ROM offset
       - qemu_riscv32/qemu_virt_riscv32/smp # qemu_riscv32 doesn't support custom ROM offset
       - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp # no custom ROM offset
       - qemu_riscv32/qemu_virt_riscv32/aia-direct/smp # no custom ROM offset
