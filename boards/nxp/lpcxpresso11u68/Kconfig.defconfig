@@ -4,10 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# Since the board has little memory (32k), stack sizes are lowered
-# so that the application has more RAM for itself.
+# The Cortex-M0+ has no dedicated exception stack: exception handlers and
+# main-thread work share this stack. Keep sufficient headroom for ztest's
+# final UART summary and post-test scheduling on the 32 KiB SRAM device.
 configdefault MAIN_STACK_SIZE
-	default 512
+	default 1024
 
 configdefault ISR_STACK_SIZE
 	default 768
