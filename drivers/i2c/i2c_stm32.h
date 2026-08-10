@@ -9,18 +9,12 @@
 #ifndef ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
 #define ZEPHYR_DRIVERS_I2C_I2C_STM32_H_
 
+#include <zephyr/devicetree.h>
+#include <zephyr/drivers/dma.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c/stm32.h>
 #include <zephyr/kernel.h>
-#include <zephyr/devicetree.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
-#include <zephyr/logging/log.h>
-
-#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
-#include <zephyr/drivers/gpio.h>
-#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
-
-#include <zephyr/drivers/dma.h>
 
 typedef void (*irq_config_func_t)(const struct device *port);
 

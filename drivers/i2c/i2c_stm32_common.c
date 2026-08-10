@@ -14,19 +14,17 @@
 #include <zephyr/drivers/dma/dma_stm32.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
+
 #include <stm32_cache.h>
 #include <stm32_ll_i2c.h>
 
-#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include "i2c_bitbang.h"
 #include "i2c-priv.h"
-#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32_common);
+LOG_MODULE_REGISTER(i2c_ll_stm32_common, CONFIG_I2C_LOG_LEVEL);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2)
 #define DT_DRV_COMPAT st_stm32_i2c_v2
