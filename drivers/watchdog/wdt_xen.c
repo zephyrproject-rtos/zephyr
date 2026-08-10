@@ -13,6 +13,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/xen/sched.h>
 
@@ -41,6 +42,8 @@ struct xen_wdt_data {
 	struct xen_wdt_channel channels[XEN_WDT_MAX_CHANNELS];
 	/* At least one installed channel has been armed through Xen. */
 	bool setup;
+	/* Watchdog timers were active before a device PM suspend transition. */
+	bool suspended;
 };
 
 /* Convert Zephyr's millisecond timeout into Xen's second-based timeout. */
@@ -52,25 +55,10 @@ static uint32_t xen_wdt_timeout_to_sec(uint32_t timeout_ms)
 }
 
 /* Arm every installed Zephyr channel as a Xen domain watchdog timer. */
-static int xen_wdt_setup(const struct device *dev, uint8_t options)
+static int xen_wdt_start_locked(struct xen_wdt_data *data)
 {
-	struct xen_wdt_data *data = dev->data;
 	bool installed = false;
 	int ret;
-
-	/* Xen owns the timer, so Zephyr pause options cannot be represented. */
-	if (options != 0U) {
-		LOG_ERR("setup options 0x%x are not supported", options);
-		return -ENOTSUP;
-	}
-
-	k_sem_take(&data->lock, K_FOREVER);
-
-	if (data->setup) {
-		LOG_WRN("watchdog is already set up");
-		ret = -EBUSY;
-		goto out;
-	}
 
 	for (unsigned int i = 0; i < XEN_WDT_MAX_CHANNELS; i++) {
 		if (data->channels[i].installed) {
@@ -82,7 +70,7 @@ static int xen_wdt_setup(const struct device *dev, uint8_t options)
 	if (!installed) {
 		LOG_WRN("setup requested without installed timeouts");
 		ret = -EINVAL;
-		goto out;
+		return ret;
 	}
 
 	for (unsigned int i = 0; i < XEN_WDT_MAX_CHANNELS; i++) {
@@ -104,7 +92,7 @@ static int xen_wdt_setup(const struct device *dev, uint8_t options)
 
 	data->setup = true;
 	ret = 0;
-	goto out;
+	return ret;
 
 cleanup:
 	for (unsigned int i = 0; i < XEN_WDT_MAX_CHANNELS; i++) {
@@ -123,25 +111,13 @@ cleanup:
 		channel->active = false;
 	}
 
-out:
-	k_sem_give(&data->lock);
 	return ret;
 }
 
-/* Destroy active Xen watchdog timers and make installed channels reusable. */
-static int xen_wdt_disable(const struct device *dev)
+/* Destroy active Xen watchdog timers. Optionally make installed channels reusable. */
+static int xen_wdt_stop_locked(struct xen_wdt_data *data, bool clear_installed)
 {
-	struct xen_wdt_data *data = dev->data;
 	int first_ret = 0;
-	int ret;
-
-	k_sem_take(&data->lock, K_FOREVER);
-
-	if (!data->setup) {
-		LOG_WRN("disable requested before setup");
-		ret = -EFAULT;
-		goto out;
-	}
 
 	for (unsigned int i = 0; i < XEN_WDT_MAX_CHANNELS; i++) {
 		struct xen_wdt_channel *channel = &data->channels[i];
@@ -162,18 +138,66 @@ static int xen_wdt_disable(const struct device *dev)
 
 		channel->xen_id = 0U;
 		channel->active = false;
-		channel->installed = false;
-		channel->timeout_sec = 0U;
+		if (clear_installed) {
+			channel->installed = false;
+			channel->timeout_sec = 0U;
+		}
 	}
 
 	if (first_ret < 0) {
 		/* Successfully destroyed channels stay cleared; failed ones remain active. */
-		ret = first_ret;
-		goto out;
+		return first_ret;
 	}
 
 	data->setup = false;
-	ret = 0;
+	return 0;
+}
+
+/* Arm every installed Zephyr channel as a Xen domain watchdog timer. */
+static int xen_wdt_setup(const struct device *dev, uint8_t options)
+{
+	struct xen_wdt_data *data = dev->data;
+	int ret;
+
+	/* Xen owns the timer, so Zephyr pause options cannot be represented. */
+	if (options != 0U) {
+		LOG_ERR("setup options 0x%x are not supported", options);
+		return -ENOTSUP;
+	}
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (data->setup) {
+		LOG_WRN("watchdog is already set up");
+		ret = -EBUSY;
+		goto out;
+	}
+
+	ret = xen_wdt_start_locked(data);
+
+out:
+	k_sem_give(&data->lock);
+	return ret;
+}
+
+/* Destroy active Xen watchdog timers and make installed channels reusable. */
+static int xen_wdt_disable(const struct device *dev)
+{
+	struct xen_wdt_data *data = dev->data;
+	int ret;
+
+	k_sem_take(&data->lock, K_FOREVER);
+
+	if (!data->setup) {
+		LOG_WRN("disable requested before setup");
+		ret = -EFAULT;
+		goto out;
+	}
+
+	ret = xen_wdt_stop_locked(data, true);
+	if (ret == 0) {
+		data->suspended = false;
+	}
 
 out:
 	k_sem_give(&data->lock);
@@ -282,6 +306,45 @@ static int xen_wdt_init(const struct device *dev)
 	return k_sem_init(&data->lock, 1, 1);
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int xen_wdt_pm_action(const struct device *dev,
+			     enum pm_device_action action)
+{
+	struct xen_wdt_data *data = dev->data;
+	int ret = 0;
+
+	if (k_sem_take(&data->lock, K_NO_WAIT) < 0) {
+		LOG_WRN("PM action %d would stall", action);
+		return -EBUSY;
+	}
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->setup) {
+			ret = xen_wdt_stop_locked(data, false);
+			if (ret == 0) {
+				data->suspended = true;
+			}
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		if (data->suspended) {
+			ret = xen_wdt_start_locked(data);
+			if (ret == 0) {
+				data->suspended = false;
+			}
+		}
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+
+	k_sem_give(&data->lock);
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 /* Zephyr watchdog API dispatch table for xen,watchdog devices. */
 static DEVICE_API(wdt, xen_wdt_api) = {
 	.setup = xen_wdt_setup,
@@ -294,9 +357,11 @@ static DEVICE_API(wdt, xen_wdt_api) = {
 #define XEN_WDT_INIT(inst)							\
 	static struct xen_wdt_data xen_wdt_data_##inst;			\
 										\
-	DEVICE_DT_INST_DEFINE(inst, xen_wdt_init, NULL,			\
-			      &xen_wdt_data_##inst,				\
-			      NULL, POST_KERNEL,				\
+	PM_DEVICE_DT_INST_DEFINE(inst, xen_wdt_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(inst, xen_wdt_init,			\
+			      PM_DEVICE_DT_INST_GET(inst),			\
+			      &xen_wdt_data_##inst, NULL, POST_KERNEL,		\
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
 			      &xen_wdt_api);
 
