@@ -242,7 +242,7 @@ int siwx91x_scan(const struct device *dev,
 	if (IS_ENABLED(CONFIG_WIFI_MGMT_SCAN_SSID_FILT_MAX)) {
 		if (z_scan_config->ssids[0]) {
 			strncpy(ssid.value, z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
-			ssid.length = strlen(z_scan_config->ssids[0]);
+			ssid.length = strnlen(z_scan_config->ssids[0], WIFI_SSID_MAX_LEN);
 		}
 	}
 
