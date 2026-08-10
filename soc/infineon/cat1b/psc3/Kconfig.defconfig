@@ -41,7 +41,31 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency) if USE_INFINEON_LPTIMER
 
 config SYS_CLOCK_TICKS_PER_SEC
-	default $(div,$(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency),4) if USE_INFINEON_LPTIMER
+	default $(div,$(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency),4) \
+		if USE_INFINEON_LPTIMER && !CORTEX_M_SYSTICK
+
+# Both device PM models are enabled by default because this SoC needs both.
+# Runtime PM covers the peripherals that gate themselves around activity (the
+# SCB comms blocks); pm_suspend_devices() skips those. Everything else, such as
+# the TCPWM PWM and counter, is only suspended and resumed by the system-managed
+# pass, which is also what resumes devices after a DeepSleep-RAM warm boot: the
+# warm-boot rebuild leaves them SUSPENDED and pm_resume_devices() brings them
+# back. Upstream turns PM_DEVICE_SYSTEM_MANAGED off once PM_DEVICE_RUNTIME is
+# on, hence the explicit default here. An application that wants a single model
+# can still disable either one.
+# PM_POLICY_DEVICE_CONSTRAINTS is required by PM_DEVICE_RUNTIME and is also
+# usable on its own in the pure system-managed case.
+config PM_DEVICE
+	default y if PM
+
+config PM_DEVICE_RUNTIME
+	default y if PM_DEVICE
+
+config PM_DEVICE_SYSTEM_MANAGED
+	default y if PM_DEVICE
+
+config PM_POLICY_DEVICE_CONSTRAINTS
+	default y if PM_DEVICE_RUNTIME
 
 # add additional die specific params
 
