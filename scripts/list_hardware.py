@@ -179,7 +179,7 @@ class Systems:
         leave their CMake variables out of sync with the Kconfig that is loaded for them anyway,
         which breaks any SoC whose CONFIG_SOC resolves to a sibling in the same tree.
         '''
-        folders = {f for name in names for f in self.get_soc(name).folder}
+        folders = {f for s in self.get_soc_closure(names) for f in s.folder}
         return (
             [s for s in self._socs if folders.intersection(s.folder)],
             [s for s in self._series if folders.intersection(s.folder)],
@@ -192,6 +192,35 @@ class Systems:
         except StopIteration:
             sys.exit(f"ERROR: SoC '{name}' is not found, please ensure that the SoC exists "
                      f"and that soc-root containing '{name}' has been correctly defined.")
+
+    def get_soc_closure(self, names):
+        '''Return the given SoCs together with the transitive closure of the SoCs they list in
+        the 'requires' property of their soc.yml entry.
+
+        The SoC trees of all returned SoCs must be loaded by the build system for the given
+        SoCs to be usable.
+        '''
+        socs = []
+        seen = set()
+        pending = [(name, None) for name in names]
+
+        while pending:
+            soc_name, required_by = pending.pop(0)
+            if soc_name in seen:
+                continue
+            seen.add(soc_name)
+
+            soc = next((s for s in self._socs if s.name == soc_name), None)
+            if soc is None:
+                required_by_msg = f", required by SoC '{required_by}'," if required_by else ''
+                sys.exit(f"ERROR: SoC '{soc_name}'{required_by_msg} is not found, please ensure "
+                         f"that the SoC exists and that soc-root containing '{soc_name}' has "
+                         "been correctly defined.")
+
+            socs.append(soc)
+            pending.extend((r, soc_name) for r in soc.requires)
+
+        return socs
 
 
 @dataclass
