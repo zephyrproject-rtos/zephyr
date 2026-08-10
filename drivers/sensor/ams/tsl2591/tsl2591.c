@@ -185,11 +185,16 @@ static int tsl2591_set_threshold(const struct device *dev, enum sensor_attribute
 	const struct tsl2591_data *data = dev->data;
 	const struct tsl2591_config *config = dev->config;
 	uint64_t cpl;
-	uint32_t raw;
+	uint64_t raw;
 	uint16_t thld;
 	uint8_t thld_reg;
 	uint8_t cmd[3];
 	int ret;
+
+	if (val->val1 < 0 || val->val2 < 0) {
+		LOG_ERR("Threshold value must not be negative");
+		return -EINVAL;
+	}
 
 	/* Convert from relative strength of visible light to raw value */
 	cpl = (uint32_t)data->atime * data->again;
@@ -201,7 +206,7 @@ static int tsl2591_set_threshold(const struct device *dev, enum sensor_attribute
 		return -EOVERFLOW;
 	}
 
-	thld = sys_cpu_to_le16(raw);
+	thld = sys_cpu_to_le16((uint16_t)raw);
 	thld_reg = attr == SENSOR_ATTR_LOWER_THRESH ? TSL2591_REG_AILTL : TSL2591_REG_AIHTL;
 
 	cmd[0] = TSL2591_NORMAL_CMD | thld_reg;
