@@ -158,6 +158,10 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
 
+	/* flush and invalidate bootup stack for other CPUs (z_arm_sys_stack) */
+	sys_cache_data_flush_and_invd_range((void *)&z_arm_sys_stack[cpu_num],
+					    sizeof(z_arm_sys_stack[0]));
+
 	/* barrier to guarantee completion of the cache flush above. */
 	barrier_dsync_fence_full();
 
