@@ -13,3 +13,13 @@
  * been added to the Kconfig file.
  */
 . = MAX(ABSOLUTE(.), CONFIG_SRAM_BASE_ADDRESS + 0x2000);
+
+/*
+ * PDL references these symbols from its DeepSleep-RAM warm-boot path, which
+ * is never taken when using plain CY_SYSPM_MODE_DEEPSLEEP. Zephyr's linker
+ * does not define them, so provide dummy values to satisfy the linker.
+ */
+PROVIDE(__Vectors = __rom_region_start);
+PROVIDE(__s_vector_table_rw = _image_ram_start);
+PROVIDE(__ns_vector_table_rw = _image_ram_start);
+PROVIDE(__StackLimit = _image_ram_start);
