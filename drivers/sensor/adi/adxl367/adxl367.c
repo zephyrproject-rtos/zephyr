@@ -808,8 +808,13 @@ static int adxl367_attr_set_thresh(const struct device *dev,
 	value = (int32_t) llvalue;
 
 	threshold.value = value;
-	threshold.enable = cfg->activity_th.enable;
-	threshold.referenced = cfg->activity_th.referenced;
+	if (attr == SENSOR_ATTR_UPPER_THRESH) {
+		threshold.enable = cfg->activity_th.enable;
+		threshold.referenced = cfg->activity_th.referenced;
+	} else {
+		threshold.enable = cfg->inactivity_th.enable;
+		threshold.referenced = cfg->inactivity_th.referenced;
+	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
