@@ -4,20 +4,29 @@ boards:
   vendor: zephyr
   socs:
   - name: native
+  # Built on the native SoC, but uses the Kconfig of the nRF52 it simulates.
+  requires:
+  - nrf52833
 - name: nrf5340bsim
   full_name: nRF5340 simulated boards (BabbleSim)
   vendor: zephyr
   socs:
   - name: nrf5340
+  # Only the name and cpu-cluster definitions come from the real SoC; the build itself uses the
+  # native SoC (SOC_POSIX), so that tree has to be loaded as well.
+  requires:
+  - native
 - name: nrf54l15bsim
   full_name: nRF54L15 simulated boards (BabbleSim)
   vendor: zephyr
   socs:
   - name: nrf54l15
+  requires:
+  - native
 - name: nrf54lm20bsim
   full_name: nRF54LM20 simulated boards (BabbleSim)
   vendor: zephyr
   socs:
   - name: nrf54lm20a
-# Note the 53 and 54 are referring to the real SOC yamls, but we only use their name and cpu-cluster
-# definitions. In practice these board uses the same native SOC (SOC_POSIX) as the nrf52_bsim
+  requires:
+  - native
