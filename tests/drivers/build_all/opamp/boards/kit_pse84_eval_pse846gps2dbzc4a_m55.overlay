@@ -14,7 +14,13 @@
 	};
 };
 
+&autanalog {
+	status = "okay";
+};
+
 &ctb0 {
+	status = "okay";
+
 	opamp0: opamp@0 {
 		compatible = "infineon,autanalog-ctb-opamp";
 		reg = <0>;
