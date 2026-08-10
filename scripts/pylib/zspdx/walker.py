@@ -60,8 +60,13 @@ ZEPHYR_DEPS_COMMENT = (
 
 # Matches a git repository URL of the form '<protocol><host>/<namespace>/<package>',
 # capturing the host type (e.g. "github"), the namespace and the package name.
+
+# Valid forms:
+# https://(<user>(:<pass>)?@)?<hostname>/<namespace>/<package>(.git)?
+# git@<hostname>:<namespace>/<package>(.git)?
+
 COMMON_GIT_URL_REGEX = (
-    r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
+    r'(git@(?P<ssh_type>[\w\.]+):|http(s)?:\/\/([^@]+@)?(?P<http_type>[\w\.]+)\/)'
     r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
 )
 
@@ -190,7 +195,9 @@ class Walker:
         match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
         if not match:
             return None
-        return match.group("type"), match.group("namespace"), match.group("package")
+
+        host_type = match.group("ssh_type") or match.group("http_type")
+        return host_type, match.group("namespace"), match.group("package")
 
     def _build_purl(self, url, version=None):
         parsed = self._parse_git_url(url)
