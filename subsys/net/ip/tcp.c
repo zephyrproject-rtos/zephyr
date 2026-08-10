@@ -2406,6 +2406,30 @@ static uint32_t seq_scale(uint32_t seq)
 }
 
 static uint8_t unique_key[16]; /* MD5 128 bits as described in RFC6528 */
+static bool unique_key_valid;
+
+/* The secret key must not be known to an off-path attacker, otherwise the
+ * ISN can be computed from the four-tuple alone. RFC 6528 ch 3
+ */
+static int tcp_init_isn_key(void)
+{
+	int ret = 0;
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
+	if (!unique_key_valid) {
+		ret = sys_csrand_get(unique_key, sizeof(unique_key));
+		if (ret == 0) {
+			unique_key_valid = true;
+		} else {
+			NET_ERR("Cannot generate secret key for TCP ISN");
+		}
+	}
+
+	k_mutex_unlock(&tcp_lock);
+
+	return ret;
+}
 
 static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
 			       struct net_in6_addr *daddr,
@@ -2427,12 +2451,6 @@ static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
 
 	uint8_t hash[16];
 	size_t hash_len;
-	static bool once;
-
-	if (!once) {
-		sys_csrand_get(unique_key, sizeof(unique_key));
-		once = true;
-	}
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
@@ -2462,15 +2480,8 @@ static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
 
 	uint8_t hash[16];
 	size_t hash_len;
-	static bool once;
-
-	if (!once) {
-		sys_csrand_get(unique_key, sizeof(unique_key));
-		once = true;
-	}
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
-
 
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
@@ -2482,12 +2493,13 @@ static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
 
 #define tcpv6_init_isn(...) (0UL)
 #define tcpv4_init_isn(...) (0UL)
+#define tcp_init_isn_key() (-ENOTSUP)
 
 #endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct net_sockaddr *saddr, struct net_sockaddr *daddr)
 {
-	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)) {
+	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528) && tcp_init_isn_key() == 0) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    saddr->sa_family == NET_AF_INET6) {
 			return tcpv6_init_isn(&net_sin6(saddr)->sin6_addr,
