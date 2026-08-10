@@ -13,13 +13,20 @@
 #include <stm32_ll_rng.h>
 #if defined(CONFIG_BT_STM32WBA)
 #include <bleplat.h>
-#include <bpka.h>
+#include <pka_ctrl.h>
 #include <baes.h>
 #endif /* CONFIG_BT_STM32WBA */
 #include <linklayer_plat.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(sys_wireless_plat);
+
+#if defined(CONFIG_BT_STM32WBA)
+#define PKA_NODE DT_INST(0, st_stm32_pka)
+/* Ensure PKA node is enabled: required by BLE wireless stack */
+BUILD_ASSERT(DT_NODE_HAS_STATUS(PKA_NODE, okay),
+	     "PKA node must be enabled (status=\"okay\") for BLE/radio stack");
+#endif /* CONFIG_BT_STM32WBA */
 
 RAMCFG_HandleTypeDef hramcfg_SRAM1;
 const struct device *rng_dev;
@@ -31,6 +38,7 @@ struct entropy_stm32_rng_dev_data {
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken *pclken;
 };
+
 
 const struct device *get_rng_device(void)
 {
@@ -46,9 +54,26 @@ const struct device *get_rng_device(void)
 }
 
 #if defined(CONFIG_BT_STM32WBA)
+
+ISR_DIRECT_DECLARE(pka_isr)
+{
+	if (0u != LL_PKA_IsActiveFlag_PROCEND(PKA)) {
+		/* Clear the interrupt flag */
+		LL_PKA_ClearFlag_PROCEND(PKA);
+
+		/* Call the PKACTRL Callback */
+		PKACTRL_EndOfProcessCb();
+	}
+
+	ISR_DIRECT_PM();
+
+	return 1;
+}
+
 void BLEPLAT_Init(void)
 {
-	BPKA_Reset();
+	PKACTRL_Reset();
+	IRQ_DIRECT_CONNECT(DT_IRQN(PKA_NODE), 7, pka_isr, 0);
 
 	get_rng_device();
 }
@@ -85,26 +110,26 @@ void BLEPLAT_RngGet(uint8_t n, uint32_t *val)
 
 int BLEPLAT_PkaStartP256Key(const uint32_t *local_private_key)
 {
-	return BPKA_StartP256Key(local_private_key);
+	return PKACTRL_StartP256Key(local_private_key);
 }
 
 void BLEPLAT_PkaReadP256Key(uint32_t *local_public_key)
 {
-	BPKA_ReadP256Key(local_public_key);
+	PKACTRL_ReadP256Key(local_public_key);
 }
 
 int BLEPLAT_PkaStartDhKey(const uint32_t *local_private_key,
 			  const uint32_t *remote_public_key)
 {
-	return BPKA_StartDhKey(local_private_key, remote_public_key);
+	return PKACTRL_StartDhKey(local_private_key, remote_public_key);
 }
 
 int BLEPLAT_PkaReadDhKey(uint32_t *dh_key)
 {
-	return BPKA_ReadDhKey(dh_key);
+	return PKACTRL_ReadDhKey(dh_key);
 }
 
-void BPKACB_Complete(void)
+void PKACTRL_CB_Complete(void)
 {
 	BLEPLATCB_PkaComplete();
 }

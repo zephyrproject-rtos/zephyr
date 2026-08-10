@@ -10,7 +10,7 @@
 #include <app_conf.h>
 #if defined(CONFIG_BT_STM32WBA)
 #include <blestack.h>
-#include <bpka.h>
+#include <pka_ctrl.h>
 #endif /* CONFIG_BT_STM32WBA */
 #include <ll_intf.h>
 
@@ -19,8 +19,10 @@ LOG_MODULE_REGISTER(host_if);
 
 K_MUTEX_DEFINE(ble_ctrl_stack_mutex);
 #if defined(CONFIG_BT_STM32WBA)
+K_MUTEX_DEFINE(pka_ctrl_mutex);
+K_SEM_DEFINE(pka_ctrl_sem, 1, 1);
 static struct k_work_q ble_ctlr_work_q;
-static struct k_work ble_ctlr_stack_work, bpka_work;
+static struct k_work ble_ctlr_stack_work, pka_ctrl_work;
 static bool ble_ctlr_work_q_initialized;
 #endif /* CONFIG_BT_STM32WBA */
 struct k_work_q ll_work_q;
@@ -60,9 +62,9 @@ static void ble_ctlr_stack_handler(struct k_work *work)
 	}
 }
 
-static void bpka_work_handler(struct k_work *work)
+static void pka_ctrl_work_handler(struct k_work *work)
 {
-	BPKA_BG_Process();
+	PKACTRL_BG_Process();
 }
 #endif /* CONFIG_BT_STM32WBA */
 
@@ -91,11 +93,11 @@ int stm32wba_ble_ctlr_thread_init(void)
 		k_work_queue_init(&ble_ctlr_work_q);
 		k_work_queue_start(&ble_ctlr_work_q, ble_ctlr_work_area,
 				   K_THREAD_STACK_SIZEOF(ble_ctlr_work_area),
-				   K_PRIO_COOP(CONFIG_STM32WBA_BLE_CTLR_THREAD_PRIO),
+				   (CONFIG_STM32WBA_BLE_CTLR_THREAD_PRIO),
 				   &ble_ctlr_cfg);
 
 		k_work_init(&ble_ctlr_stack_work, &ble_ctlr_stack_handler);
-		k_work_init(&bpka_work, &bpka_work_handler);
+		k_work_init(&pka_ctrl_work, &pka_ctrl_work_handler);
 	}
 #endif /* CONFIG_BT_STM32WBA */
 	return 0;
@@ -107,8 +109,32 @@ void HostStack_Process(void)
 	k_work_submit_to_queue(&ble_ctlr_work_q, &ble_ctlr_stack_work);
 }
 
-void BPKACB_Process(void)
+void PKACTRL_CB_Process(void)
 {
-	k_work_submit_to_queue(&ble_ctlr_work_q, &bpka_work);
+	k_work_submit_to_queue(&ble_ctlr_work_q, &pka_ctrl_work);
+}
+
+int PKACTRL_MutexTake(void)
+{
+	k_mutex_lock(&pka_ctrl_mutex, K_FOREVER);
+	return 0; /* This shall be implemented by user */
+}
+
+int PKACTRL_MutexRelease(void)
+{
+	k_mutex_unlock(&pka_ctrl_mutex);
+	return 0; /* This shall be implemented by user */
+}
+
+int PKACTRL_TakeSemEndOfOperation(void)
+{
+	(void)k_sem_take(&pka_ctrl_sem, K_FOREVER);
+	return 0; /* This shall be implemented by user */
+}
+
+int PKACTRL_ReleaseSemEndOfOperation(void)
+{
+	(void)k_sem_give(&pka_ctrl_sem);
+	return 0; /* This shall be implemented by user */
 }
 #endif /* CONFIG_BT_STM32WBA */
