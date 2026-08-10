@@ -251,7 +251,7 @@ static inline q31_t icm4268x_read_temperature_from_packet(const uint8_t *pkt)
 			((temperature100 - whole * sensitivity) * INT64_C(1000000)) / sensitivity;
 	}
 	__ASSERT_NO_MSG(whole >= -512 && whole <= 511);
-	return FIELD_PREP(GENMASK(31, 22), whole) | (fraction * GENMASK64(21, 0) / 1000000);
+	return (q31_t)(((int64_t)whole << 22) + (((int64_t)fraction << 22) / INT64_C(1000000)));
 }
 
 static int icm4268x_read_imu_from_packet(const uint8_t *pkt, bool is_accel, int fs,
