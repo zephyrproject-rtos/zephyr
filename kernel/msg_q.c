@@ -148,7 +148,7 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 	if (msgq->used_msgs < msgq->max_msgs) {
 		/* message queue isn't full. Try to hand the message
 		 * directly to the longest-waiting receiver, atomically
-		 * under _sched_spinlock so a racing in-flight timeout
+		 * under the scheduler's spinlock so a racing in-flight timeout
 		 * handler cannot wake the receiver before the message
 		 * has been copied into its buffer.
 		 */
@@ -312,8 +312,8 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 				((size_t)(uintptr_t)(msgq->buffer_end - msgq->write_ptr) >=
 					msgq->msg_size));
 
-		/* handle first thread waiting to write (if any).
-		 * Done atomically under _sched_spinlock so we read the
+		/* handle first thread waiting to write (if any). Done
+		 * atomically under the scheduler's spinlock so we read the
 		 * sender's swap_data and complete the wake before any
 		 * racing in-flight timeout handler can wake the sender.
 		 */

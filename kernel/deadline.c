@@ -30,7 +30,8 @@
  *
  * If the thread is currently queued the scheduler re-inserts it so that
  * run-queue ordering (including rbtree invariants) is preserved.  May be
- * called from any context; takes and releases _sched_spinlock internally.
+ * called from any context; takes and releases the scheduler's spinlock
+ * internally.
  *
  * @param thread   Thread whose deadline is being updated.
  * @param deadline New absolute deadline value (raw cycle counter).

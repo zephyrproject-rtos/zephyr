@@ -33,7 +33,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 extern struct k_thread *pending_current;
 #endif
 
-struct k_spinlock _sched_spinlock;
+struct k_spinlock _sched_spinlock;  /* The scheduler's spinlock */
 
 /* Storage to "complete" the context switch from an invalid/incomplete thread
  * context (ex: exiting an ISR that aborted _current)
@@ -320,9 +320,9 @@ void z_thread_halt(struct k_thread *thread, k_spinlock_key_t key,
 		/* The target's next_up self-halt path passed NULL to
 		 * halt_thread() and could not retry on -EAGAIN; an
 		 * in-flight handler on a third CPU may not have run yet
-		 * (it is blocked on _sched_spinlock and will only acquire
-		 * it after we drop it via the swap/spin above). Wait now,
-		 * outside any lock, before the caller may free the thread
+		 * (it is blocked on the scheduler spinlock and will only
+		 * acquire it after we drop it via the swap/spin above). Wait
+		 * now, outside any lock, before the caller may free the thread
 		 * storage. The handler, when it runs, sees _THREAD_DEAD /
 		 * _THREAD_SUSPENDED and either bails (killed check) or
 		 * no-ops in ready_thread() (z_is_thread_ready() rejects
@@ -389,7 +389,7 @@ static void reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 }
 
 /**
- * Like reschedule(), but _sched_spinlock is known to be the locked lock.
+ * Like reschedule(), but the scheduler's spinlock is known to be the lock.
  */
 static void reschedule_locked(k_spinlock_key_t key)
 {
@@ -411,7 +411,7 @@ void z_sched_yield(void)
 	z_swap_locked(key);
 }
 
-/* _sched_spinlock must be held */
+/* The scheduler's spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
 	/* A thread must not already be on a wait queue when added to a new one. */
@@ -461,7 +461,7 @@ void z_unpend_thread_no_timeout(struct k_thread *thread)
 
 void z_sched_wake_thread_locked(struct k_thread *thread)
 {
-	/* No K_SPINLOCK: caller must hold _sched_spinlock when calling */
+	/* No K_SPINLOCK: caller must hold the scheduler's spinlock when calling */
 	bool killed = (thread->base.thread_state &
 			(_THREAD_DEAD | _THREAD_ABORTING));
 
@@ -627,8 +627,8 @@ void z_reschedule_irqlock(uint32_t key)
 	if (resched(key) && need_swap()) {
 		z_swap_irqlock(key);
 	} else {
-		/* TODO: We only hold the IRQ lock here, not _sched_spinlock,
-		 * violating the locking requirement documented in
+		/* TODO: We only hold the IRQ lock here, not the scheduler's
+		 * spinlock, violating the locking requirement documented in
 		 * signal_pending_ipi(). This can result in added delayed
 		 * rescheduling.
 		 */

@@ -113,7 +113,7 @@ static void event_post_walk_op(int status, void *data)
 	/*
 	 * Note: z_sched_wake_thread_locked() is safe
 	 * to call here because this walk_op callback
-	 * is invoked with _sched_spinlock held.
+	 * is invoked with the scheduler spinlock held.
 	 */
 	ARG_UNUSED(status);
 	struct event_walk_data *walk_data = data;
@@ -163,7 +163,7 @@ static int event_walk_op(struct k_thread *thread, void *data)
 		/*
 		 * Note: z_sched_wake_thread_locked() is safe
 		 * to call here because this walk_op callback
-		 * is invoked with _sched_spinlock held.
+		 * is invoked with the scheduler spinlock held.
 		 */
 		arch_thread_return_value_set(thread, 0);
 		z_sched_wake_thread_locked(thread);
