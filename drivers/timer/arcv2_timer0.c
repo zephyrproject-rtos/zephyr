@@ -318,9 +318,8 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 
 	cycle_count += elapsed();
-	/* clear counter early to avoid cycle loss as few as possible,
-	 * between cycle_count and clearing 0, few cycles are possible
-	 * to loss
+	/* Clear the counter as soon as possible after folding it into
+	 * cycle_count: the cycles that elapse between the two are lost.
 	 */
 	timer0_count_register_set(0);
 	overflow_cycles = 0U;
