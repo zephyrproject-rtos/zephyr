@@ -1093,6 +1093,11 @@ MFD
   per dispatch with the fired events it subscribed to rather than once per event bit, and after
   those events have been acknowledged in the PMIC rather than before. (:github:`110454`)
 
+* :c:func:`mfd_npm13xx_add_callback` now returns ``-EINVAL`` for a ``NULL`` callback or handler,
+  an empty ``event_mask``, mask bits at or above ``NPM13XX_EVENT_MAX``, or a callback that is
+  already registered; the previous implementation asserted on the first two and accepted the
+  rest. (:github:`110454`)
+
 MSPI
 ====
 

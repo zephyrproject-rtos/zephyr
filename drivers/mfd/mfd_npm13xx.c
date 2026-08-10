@@ -305,6 +305,12 @@ int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_
 	struct mfd_npm13xx_data *data = dev->data;
 	int ret = 0;
 
+	/* The gpio_callback helpers asserted these; nothing else does now. */
+	if ((callback == NULL) || (callback->handler == NULL) || (callback->event_mask == 0U) ||
+	    ((callback->event_mask & ~BIT_MASK(NPM13XX_EVENT_MAX)) != 0U)) {
+		return -EINVAL;
+	}
+
 	k_mutex_lock(&data->event_lock, K_FOREVER);
 
 	if (sys_slist_find(&data->user_callbacks, &callback->node, NULL)) {
@@ -344,6 +350,10 @@ int mfd_npm13xx_remove_callback(const struct device *dev,
 {
 	struct mfd_npm13xx_data *data = dev->data;
 	int ret = 0;
+
+	if (callback == NULL) {
+		return -EINVAL;
+	}
 
 	k_mutex_lock(&data->event_lock, K_FOREVER);
 
