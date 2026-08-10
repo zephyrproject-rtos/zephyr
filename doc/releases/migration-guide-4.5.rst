@@ -1095,6 +1095,11 @@ MFD
   clear write reports an error is still delivered, and a later retry can deliver it again.
   (:github:`110454`)
 
+* :c:func:`mfd_npm13xx_add_callback` now returns ``-EINVAL`` for a ``NULL`` callback or handler,
+  an empty ``event_mask``, mask bits at or above ``NPM13XX_EVENT_MAX``, or a callback that is
+  already registered; the previous implementation asserted on the first two and accepted the
+  rest. (:github:`110454`)
+
 MSPI
 ====
 
