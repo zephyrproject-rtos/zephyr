@@ -76,6 +76,7 @@
 			width = <240>;
 			height = <320>;
 			rotation = <180>;
+			h-mirror;
 			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			pwctrla = [39 2c 00 34 02];
 			pwctrlb = [00 c1 30];
