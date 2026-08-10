@@ -108,8 +108,6 @@ static int i2c_stm32_configure(const struct device *dev,
 	return i2c_rtio_configure(ctx, dev_config_raw);
 }
 
-#define OPERATION(msg)	((msg)->flags & I2C_MSG_RW_MASK)
-
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 			      uint8_t num_msgs, uint16_t addr)
 {
@@ -142,7 +140,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msgs,
 		}
 #endif
 
-		if ((OPERATION(msgs + n - 1) != OPERATION(msgs + n)) &&
+		if (((msgs[n].flags & I2C_MSG_RW_MASK) != (msgs[n - 1].flags & I2C_MSG_RW_MASK)) &&
 		    ((msgs[n].flags & I2C_MSG_RESTART) == 0U)) {
 			LOG_ERR("Missing restart flag between message of different directions");
 			return -EINVAL;
