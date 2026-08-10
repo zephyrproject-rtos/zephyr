@@ -206,8 +206,8 @@ of CoAP services. An example using a temperature sensor can look like:
 
     static void temp_notify(struct coap_resource *resource, struct coap_observer *observer)
     {
-        send_temperature(resource, &observer->addr, sizeof(observer->addr), resource->age, 0,
-                         observer->token, observer->tkl, false);
+        send_temperature(resource, net_sad(&observer->addr), sizeof(observer->addr), resource->age,
+                         0, observer->token, observer->tkl, false);
     }
 
     static const char * const temp_resource_path[] = { "sensors", "temp1", NULL };
