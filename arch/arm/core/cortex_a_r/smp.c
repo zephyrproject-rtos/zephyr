@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/arch/arm/cortex_a_r/lib_helpers.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/pm_cpu_ops.h>
 #include <ipi.h>
 #include "boot.h"
 #include <zephyr/cache.h>
@@ -153,13 +154,21 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 	/* store mpid last as this is our synchronization point */
 	arm_cpu_boot_params.mpid = cpu_mpid;
 
-	sys_cache_data_invd_range(
+	sys_cache_data_flush_range(
 			(void *)&arm_cpu_boot_params,
 			sizeof(arm_cpu_boot_params));
 
-	/*! TODO: Support PSCI
-	 *  \todo Support PSCI
-	 */
+	/* flush and invalidate bootup stack for other CPUs (z_arm_sys_stack) */
+	sys_cache_data_flush_and_invd_range((void *)&z_arm_sys_stack[cpu_num],
+					    sizeof(z_arm_sys_stack[0]));
+
+#ifdef CONFIG_PM_CPU_OPS
+	if (pm_cpu_on(cpu_mpid, (uintptr_t)&__start)) {
+		printk("Failed to boot secondary CPU core %d (MPID:%#x)\n",
+		       cpu_num, cpu_mpid);
+		k_panic();
+	}
+#endif
 
 	/* Wait secondary cores up, see arch_secondary_cpu_init */
 	while (arm_cpu_boot_params.fn) {
