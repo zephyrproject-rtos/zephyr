@@ -45,8 +45,40 @@ zephyr_get(ZEPHYR_TOOLCHAIN_VARIANT)
 
 zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
 
+zephyr_get(ZEPHYR_SDK_VERSION)
+
 if("${Zephyr-sdk_FIND_COMPONENTS}" STREQUAL "")
   set(Zephyr-sdk_FIND_COMPONENTS LOAD)
+endif()
+
+# Paths that are used to find installed Zephyr SDK versions.
+set(zephyr_sdk_search_paths
+  /usr
+  /usr/local
+  /opt
+  $ENV{HOME}
+  $ENV{HOME}/.local
+  $ENV{HOME}/.local/opt
+  $ENV{HOME}/bin
+)
+
+# ZEPHYR_SDK_INSTALL_DIR is cached once an SDK has been selected, also when it
+# was derived from ZEPHYR_SDK_VERSION further down. Requesting another version
+# on a later CMake run must not be shadowed by that cached directory, while an
+# install directory that was selected explicitly keeps taking precedence.
+# The derived directory is remembered, so it can be told apart from an explicit
+# one and discarded when the version it was derived from is no longer requested.
+if(DEFINED ZEPHYR_SDK_INSTALL_DIR AND
+   "${ZEPHYR_SDK_INSTALL_DIR}" STREQUAL "${ZEPHYR_SDK_DERIVED_INSTALL_DIR}")
+  if("${ZEPHYR_SDK_VERSION}" STREQUAL "${ZEPHYR_SDK_DERIVED_VERSION}")
+    set(zephyr_sdk_install_dir_derived TRUE)
+  else()
+    unset(ZEPHYR_SDK_INSTALL_DIR)
+    unset(ZEPHYR_SDK_INSTALL_DIR CACHE)
+    # Re-read the variable: the discarded cache entry may have been shadowing an
+    # install directory selected through another scope, e.g. the environment.
+    zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
+  endif()
 endif()
 
 # Load Zephyr SDK Toolchain.
@@ -59,8 +91,8 @@ endif()
 # 4) The installed Zephyr SDKs are listed, which is independent of the toolchain
 #    in use.
 #
-# ZEPHYR_SDK_INSTALL_DIR only selects which Zephyr SDK is used, it does not
-# decide whether one is used.
+# ZEPHYR_SDK_INSTALL_DIR and ZEPHYR_SDK_VERSION only select which Zephyr SDK is
+# used, they do not decide whether one is used.
 if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
   (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
   (Zephyr-sdk_FIND_REQUIRED) OR
@@ -80,6 +112,48 @@ if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
   SET(CMAKE_FIND_PACKAGE_SORT_DIRECTION DEC)
   SET(CMAKE_FIND_PACKAGE_SORT_ORDER NATURAL)
 
+  if(DEFINED ZEPHYR_SDK_VERSION AND NOT zephyr_sdk_install_dir_derived
+     AND LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
+    if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
+      message(WARNING
+        "ZEPHYR_SDK_VERSION '${ZEPHYR_SDK_VERSION}' is ignored, "
+        "ZEPHYR_SDK_INSTALL_DIR is set and takes precedence.\n"
+        "ZEPHYR_SDK_INSTALL_DIR: ${ZEPHYR_SDK_INSTALL_DIR}"
+      )
+    else()
+      # Resolve the requested version to its installation directory, so that the
+      # regular ZEPHYR_SDK_INSTALL_DIR handling below applies (toolchain variant
+      # selection, host tools loading and compatibility checking).
+      find_package(Zephyr-sdk 0.0.0 EXACT QUIET CONFIG PATHS ${zephyr_sdk_search_paths})
+
+      foreach(version config IN ZIP_LISTS
+              Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
+        if(NOT DEFINED Zephyr-sdk-${version}_DIR)
+          set(Zephyr-sdk-${version}_DIR ${config})
+        endif()
+      endforeach()
+      list(REMOVE_DUPLICATES Zephyr-sdk_CONSIDERED_VERSIONS)
+
+      if(NOT ZEPHYR_SDK_VERSION IN_LIST Zephyr-sdk_CONSIDERED_VERSIONS)
+        message(FATAL_ERROR
+          "Requested Zephyr SDK version '${ZEPHYR_SDK_VERSION}' is not installed.\n"
+          "Installed versions: ${Zephyr-sdk_CONSIDERED_VERSIONS}"
+        )
+      endif()
+
+      # The Zephyr SDK CMake config is located in '<install-dir>/cmake'.
+      cmake_path(GET Zephyr-sdk-${ZEPHYR_SDK_VERSION}_DIR PARENT_PATH ZEPHYR_SDK_INSTALL_DIR)
+      cmake_path(GET ZEPHYR_SDK_INSTALL_DIR PARENT_PATH ZEPHYR_SDK_INSTALL_DIR)
+
+      set(ZEPHYR_SDK_DERIVED_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE INTERNAL
+          "Zephyr SDK install directory derived from ZEPHYR_SDK_VERSION"
+      )
+      set(ZEPHYR_SDK_DERIVED_VERSION ${ZEPHYR_SDK_VERSION} CACHE INTERNAL
+          "Zephyr SDK version ZEPHYR_SDK_DERIVED_INSTALL_DIR was derived from"
+      )
+    endif()
+  endif()
+
   if(DEFINED ZEPHYR_SDK_INSTALL_DIR AND LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
     # The Zephyr SDK will automatically set the toolchain variant.
     # To support Zephyr SDK tools (DTC, and other tools) with 3rd party toolchains
@@ -97,17 +171,6 @@ if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
       set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
     endif()
   else()
-    # Paths that are used to find installed Zephyr SDK versions
-    SET(zephyr_sdk_search_paths
-      /usr
-      /usr/local
-      /opt
-      $ENV{HOME}
-      $ENV{HOME}/.local
-      $ENV{HOME}/.local/opt
-      $ENV{HOME}/bin
-    )
-
     # Search for Zephyr SDK version 0.0.0 which does not exist, this is needed to
     # return a list of compatible versions and find the best suited version that
     # is available.
@@ -184,6 +247,7 @@ set(zephyr_sdk_found_versions)
 set(zephyr_sdk_found_configs)
 set(zephyr_sdk_current_index)
 set(zephyr_sdk_current_check_path)
+set(zephyr_sdk_install_dir_derived)
 
 if(LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
   if(DEFINED ZEPHYR_SDK_INSTALL_DIR)
