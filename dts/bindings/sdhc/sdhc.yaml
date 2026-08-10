@@ -65,3 +65,12 @@ properties:
     description: |
       The host controller and board support eMMC HS400 enhanced strobe.
       This mode also requires HS400 at 1.8V and an 8-bit data bus.
+
+  bus-width:
+    type: int
+    description: |
+      SDHC data bus width.
+    enum:
+      - 1
+      - 4
+      - 8

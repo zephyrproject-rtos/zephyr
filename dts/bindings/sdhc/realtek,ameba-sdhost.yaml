@@ -32,7 +32,6 @@ properties:
     required: true
 
   bus-width:
-    type: int
     default: 4
     description: |
       SD bus width in bits.
@@ -42,6 +41,3 @@ properties:
       Only 1-bit and 4-bit modes are supported by the hardware.
       Boards that require 1-bit mode must explicitly set this property
       in the device tree.
-    enum:
-      - 1
-      - 4
