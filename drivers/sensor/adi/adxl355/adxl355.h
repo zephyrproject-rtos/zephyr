@@ -291,7 +291,6 @@ struct adxl355_data {
 #ifdef CONFIG_ADXL355_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
-	bool route_to_int2;
 
 	sensor_trigger_handler_t drdy_handler;
 	const struct sensor_trigger *drdy_trigger;

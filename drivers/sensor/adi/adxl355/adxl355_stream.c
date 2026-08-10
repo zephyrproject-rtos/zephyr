@@ -59,8 +59,8 @@ void adxl355_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 	if (fifo_watermark_irq != data->fifo_watermark_irq) {
 		data->fifo_watermark_irq = fifo_watermark_irq;
 		ret = adxl355_reg_update(dev, ADXL355_INT_MAP,
-					 data->route_to_int2 ? ADXL355_INT_MAP_FIFO_FULL_EN2_MSK
-							     : ADXL355_INT_MAP_FIFO_FULL_EN1_MSK,
+					 cfg_355->route_to_int2 ? ADXL355_INT_MAP_FIFO_FULL_EN2_MSK
+								: ADXL355_INT_MAP_FIFO_FULL_EN1_MSK,
 					 fifo_watermark_irq);
 		if (ret < 0) {
 			LOG_ERR("Failed to update interrupt map: %d", ret);
