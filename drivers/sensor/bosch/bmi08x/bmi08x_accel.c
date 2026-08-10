@@ -455,8 +455,8 @@ static int bmi08x_temp_channel_get(const struct device *dev, struct sensor_value
 	/* the value ranges in [-504, 496] */
 	/* the scale is 0.125°C/LSB = 125000 micro degrees */
 	temp_micro = temp_int11 * 125000 + 23 * 1000000;
-	val->val1 = temp_micro / 1000000ULL;
-	val->val2 = temp_micro % 1000000ULL;
+	val->val1 = temp_micro / 1000000;
+	val->val2 = temp_micro % 1000000;
 
 	return ret;
 }
