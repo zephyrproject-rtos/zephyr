@@ -614,7 +614,7 @@ static int icm566xx_init(const struct device *dev)
 	 */
 	k_sleep(K_MSEC(1));
 
-	icm566xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
+	err = icm566xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
 	if (err < 0) {
 		LOG_ERR("Failed to set Accel BW settings: %d", err);
 		return err;
