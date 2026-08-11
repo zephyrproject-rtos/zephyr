@@ -80,6 +80,32 @@ __syscall int sys_session_id(k_session_t session);
 __syscall k_session_t sys_session_find(int id);
 
 /**
+ * @brief Create a new session with the calling process as leader
+ *
+ * Pool-backed k_session_init(): the session and group cells come from the
+ * system pool and return to it when the last member leaves.
+ *
+ * @return the new session, or NULL if the calling process is already a
+ *         process-group leader or no cells are available
+ */
+__syscall k_session_t sys_setsid(void);
+
+/**
+ * @brief Set the process group of a process
+ *
+ * Like k_setpgid(), but @a pgrp may be NULL: the process then becomes the
+ * sole member of a new process group in its session, backed by a cell from
+ * the system pool (pool-backed k_process_group_init()).
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a pid names no process
+ * @retval -EPERM if the target is a session leader
+ * @retval -EINVAL if @a pgrp is not a live group in the target's session
+ * @retval -EAGAIN if @a pgrp is NULL and no cell is available
+ */
+__syscall int sys_setpgid(k_pid_t pid, k_pgrp_t pgrp);
+
+/**
  * @}
  */
 

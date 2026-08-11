@@ -175,6 +175,9 @@ static void pgrp_leave_locked(struct k_process *proc)
 	(void)z_session_cell_free(session);
 }
 
+static bool pgrp_is_live_locked(const struct k_process_group *grp);
+int z_pgrp_validate(k_pgrp_t pgrp);
+
 static struct k_spinlock process_lock;
 /*
  * Lock order: process_lock nests inside the scheduler lock (the thread-halt
@@ -563,6 +566,177 @@ static inline k_session_t z_vrfy_k_getsid(k_pid_t pid)
 #endif /* CONFIG_USERSPACE */
 
 /* is @a grp a live process group? the caller holds process_lock */
+static bool pgrp_is_live_locked(const struct k_process_group *grp)
+{
+	struct k_session *session;
+	struct k_process_group *g;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&session_active, session, cell_node) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&session->pgrps, g, session_node) {
+			if (g == grp) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/* is @a session registered as live? the caller holds process_lock */
+static bool session_busy_locked(const struct k_session *session)
+{
+	struct k_session *sp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&session_active, sp, cell_node) {
+		if (sp == session) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* is @a grp a member of any live session? the caller holds process_lock */
+static bool pgrp_busy_locked(const struct k_process_group *grp)
+{
+	struct k_session *sp;
+	struct k_process_group *gp;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&session_active, sp, cell_node) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&sp->pgrps, gp, session_node) {
+			if (gp == grp) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+int z_impl_k_setpgid(k_pid_t pid, k_pgrp_t pgrp)
+{
+	int ret = 0;
+	struct k_process *self;
+	struct k_process *proc;
+
+	if (pgrp == NULL) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&process_lock) {
+		self = process_self();
+		proc = (pid == NULL) ? self : process_ctx_resolve_locked(pid);
+
+		if ((proc == NULL) || ((proc != self) && (proc->parent != self))) {
+			ret = -ESRCH;
+		} else if (proc->pgrp->session->leader == proc->leader) {
+			/* a session leader cannot change its process group */
+			ret = -EPERM;
+		} else if (pgrp == proc->pgrp) {
+			/* already a member */
+		} else if (!pgrp_is_live_locked(pgrp) || (pgrp->session != proc->pgrp->session)) {
+			/* pgrp must name a live group in proc's session */
+			ret = -EINVAL;
+		} else {
+			pgrp_leave_locked(proc);
+			pgrp_join_locked(proc, pgrp);
+		}
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_setpgid(k_pid_t pid, k_pgrp_t pgrp)
+{
+	if (pgrp != NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(z_pgrp_validate(pgrp) == 0, "invalid process group"));
+	}
+	return z_impl_k_setpgid(pid, pgrp);
+}
+#include <zephyr/syscalls/k_setpgid_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int k_process_group_init(struct k_process_group *grp, k_pid_t pid)
+{
+	int ret = 0;
+
+	if (grp == NULL) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&process_lock) {
+		struct k_process *self = process_self();
+		struct k_process *proc = (pid == NULL) ? self : process_ctx_resolve_locked(pid);
+
+		if (pgrp_busy_locked(grp)) {
+			ret = -EBUSY;
+			K_SPINLOCK_BREAK;
+		}
+		if ((proc == NULL) || ((proc != self) && (proc->parent != self))) {
+			ret = -ESRCH;
+			K_SPINLOCK_BREAK;
+		}
+		if (proc->pgrp->session->leader == proc->leader) {
+			/* a session leader cannot change its process group */
+			ret = -EPERM;
+			K_SPINLOCK_BREAK;
+		}
+		if (proc->pgrp->leader == proc->leader) {
+			/* already leads its own group; @a grp is not consumed */
+			ret = -EALREADY;
+			K_SPINLOCK_BREAK;
+		}
+
+		sys_dlist_init(&grp->members);
+		grp->leader = proc->leader;
+		grp->session = proc->pgrp->session;
+		sys_dlist_append(&grp->session->pgrps, &grp->session_node);
+		pgrp_leave_locked(proc);
+		pgrp_join_locked(proc, grp);
+	}
+
+	return ret;
+}
+
+int k_session_init(struct k_session *session, struct k_process_group *grp)
+{
+	int ret = 0;
+
+	if ((session == NULL) || (grp == NULL)) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&process_lock) {
+		struct k_process *proc = process_self();
+
+		if (session_busy_locked(session) || pgrp_busy_locked(grp)) {
+			ret = -EBUSY;
+			K_SPINLOCK_BREAK;
+		}
+		if (proc->pgrp->leader == proc->leader) {
+			/* a process-group leader cannot create a new session */
+			ret = -EPERM;
+			K_SPINLOCK_BREAK;
+		}
+
+		sys_dlist_init(&session->pgrps);
+		session->leader = proc->leader;
+		session->flags = 0;
+		sys_dlist_append(&session_active, &session->cell_node);
+
+		sys_dlist_init(&grp->members);
+		grp->leader = proc->leader;
+		grp->session = session;
+		sys_dlist_append(&session->pgrps, &grp->session_node);
+
+		pgrp_leave_locked(proc);
+		pgrp_join_locked(proc, grp);
+	}
+
+	return ret;
+}
+
 #ifdef CONFIG_SIGNAL
 /*
  * Pick one thread of a process to receive a process-directed signal: the first
@@ -599,6 +773,183 @@ static k_tid_t process_sig_target(struct k_process *proc, int signo)
 	return t;
 }
 #endif /* CONFIG_SIGNAL */
+
+/* is @a proc a live process record? the caller holds process_lock */
+static bool process_record_valid_locked(const struct k_process *proc)
+{
+	struct k_process *p;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&process_active, p, active_node) {
+		if (p == proc) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
+ * Validate a user-supplied process-group handle: the pointer must name a live
+ * group, and every element of its member list must be a valid process record,
+ * before z_impl_ code walks it. TOCTOU between this check and the impl is
+ * closed by the impl re-taking process_lock.
+ */
+int z_pgrp_validate(k_pgrp_t pgrp)
+{
+	int ret = 0;
+	struct k_process *member;
+
+	K_SPINLOCK(&process_lock) {
+		if (!pgrp_is_live_locked(pgrp)) {
+			ret = -EINVAL;
+			K_SPINLOCK_BREAK;
+		}
+		SYS_DLIST_FOR_EACH_CONTAINER(&pgrp->members, member, pgrp_node) {
+			if (!process_record_valid_locked(member)) {
+				ret = -EINVAL;
+				K_SPINLOCK_BREAK;
+			}
+		}
+	}
+
+	return ret;
+}
+
+int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
+{
+	int ret = -ESRCH;
+	int found = 0;
+	size_t skip = 0;
+	bool done = false;
+	struct k_thread *targets[8];
+
+	/*
+	 * Resolve deliverable threads (one per member process) under the lock
+	 * in bounded batches, and signal between batches with the lock dropped:
+	 * k_sig_queue() allocates and takes its own locks, and group size is
+	 * unbounded at kernel build time. The skip cursor keeps each position
+	 * visited once; members joining or leaving between batches are the
+	 * usual signal-delivery TOCTOU.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&process_lock);
+
+	if (pgrp == NULL) {
+		pgrp = process_self()->pgrp;
+	}
+
+	while (!done) {
+		int n = 0;
+		size_t pos = 0;
+		struct k_process *proc;
+
+		done = true;
+		SYS_DLIST_FOR_EACH_CONTAINER(&pgrp->members, proc, pgrp_node) {
+			k_tid_t tgt;
+
+			if (pos++ < skip) {
+				continue;
+			}
+			if (n >= (int)ARRAY_SIZE(targets)) {
+				done = false;
+				break;
+			}
+			skip++;
+			if ((proc->state == K_PROCESS_UNUSED) ||
+			    sys_dlist_is_empty(&proc->threads)) {
+				continue;
+			}
+#ifdef CONFIG_SIGNAL
+			tgt = process_sig_target(proc, signo);
+#else
+			tgt = SYS_DLIST_PEEK_HEAD_CONTAINER(&proc->threads, tgt, process_node);
+#endif /* CONFIG_SIGNAL */
+			if (tgt != NULL) {
+				targets[n++] = tgt;
+			}
+		}
+		k_spin_unlock(&process_lock, key);
+
+		found += n;
+#ifdef CONFIG_SIGNAL
+		for (int i = 0; i < n; i++) {
+			int err = k_sig_queue(targets[i], signo, (union k_sig_val){0});
+
+			if (err == -EINVAL) {
+				return -EINVAL;
+			}
+			if (err == 0) {
+				ret = 0;
+			}
+		}
+#endif /* CONFIG_SIGNAL */
+
+		if (!done) {
+			key = k_spin_lock(&process_lock);
+		}
+	}
+
+#ifndef CONFIG_SIGNAL
+	ARG_UNUSED(signo);
+	ret = (found > 0) ? -ENOTSUP : -ESRCH;
+#endif /* !CONFIG_SIGNAL */
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_kill_pgrp(k_pgrp_t pgrp, int signo)
+{
+	if (pgrp != NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(z_pgrp_validate(pgrp) == 0, "invalid process group"));
+	}
+	return z_impl_k_kill_pgrp(pgrp, signo);
+}
+#include <zephyr/syscalls/k_kill_pgrp_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_kill(k_pid_t pid, int signo)
+{
+	bool found = false;
+#ifdef CONFIG_SIGNAL
+	k_tid_t tid = NULL;
+#endif /* CONFIG_SIGNAL */
+	struct k_process *proc;
+
+	K_SPINLOCK(&process_lock) {
+		proc = (pid == NULL) ? process_self() : process_ctx_resolve_locked(pid);
+		if (proc != NULL) {
+			found = true;
+#ifdef CONFIG_SIGNAL
+			tid = process_sig_target(proc, signo);
+#endif /* CONFIG_SIGNAL */
+		}
+	}
+
+	if (!found) {
+		return -ESRCH;
+	}
+	if (signo == 0) {
+		/* existence check only; zombies exist until reaped */
+		return 0;
+	}
+#ifdef CONFIG_SIGNAL
+	if (tid == NULL) {
+		return -ESRCH;
+	}
+	return k_sig_queue(tid, signo, (union k_sig_val){0});
+#else
+	return -ENOTSUP;
+#endif /* CONFIG_SIGNAL */
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_kill(k_pid_t pid, int signo)
+{
+	/* identity-value resolution validates the handle; never dereferenced */
+	return z_impl_k_kill(pid, signo);
+}
+#include <zephyr/syscalls/k_kill_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 static FUNC_NORETURN void process_exit(int wstatus)
 {
@@ -766,6 +1117,37 @@ static inline int z_vrfy_k_waitpid(k_pid_t pid, k_pid_t *reaped, int *wstatus, u
 	return z_impl_k_waitpid(pid, reaped, wstatus, options, timeout);
 }
 #include <zephyr/syscalls/k_waitpid_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_waitpid_pgrp(k_pgrp_t pgrp, k_pid_t *reaped, int *wstatus, uint32_t options,
+			  k_timeout_t timeout)
+{
+	if (pgrp == NULL) {
+		K_SPINLOCK(&process_lock) {
+			pgrp = process_self()->pgrp;
+		}
+	}
+
+	return waitpid_common(NULL, pgrp, true, reaped, wstatus, options, timeout);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_waitpid_pgrp(k_pgrp_t pgrp, k_pid_t *reaped, int *wstatus,
+					uint32_t options, k_timeout_t timeout)
+{
+	if (pgrp != NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(z_pgrp_validate(pgrp) == 0, "invalid process group"));
+	}
+	if (reaped != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(reaped, sizeof(*reaped)));
+	}
+	if (wstatus != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(wstatus, sizeof(*wstatus)));
+	}
+
+	return z_impl_k_waitpid_pgrp(pgrp, reaped, wstatus, options, timeout);
+}
+#include <zephyr/syscalls/k_waitpid_pgrp_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_process_init(struct k_process *proc, const k_tid_t *threads, size_t num_threads)

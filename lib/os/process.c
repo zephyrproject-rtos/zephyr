@@ -452,6 +452,27 @@ int z_process_record_free(struct k_process *proc)
 	return ret;
 }
 
+static struct k_process_group *pgrp_cell_alloc(void)
+{
+	void *obj = NULL;
+	sys_dnode_t *n;
+
+	K_SPINLOCK(&pool_lock) {
+		graveyards_drain_locked();
+		n = sys_dlist_get(&pgrp_section_cells);
+		if (n != NULL) {
+			obj = CONTAINER_OF(n, struct k_process_group, session_node);
+			K_SPINLOCK_BREAK;
+		}
+		(void)sys_elastipool_alloc(&pgrp_pool, &obj);
+	}
+	if (obj != NULL) {
+		memset(obj, 0, sizeof(struct k_process_group));
+	}
+
+	return obj;
+}
+
 int z_pgrp_cell_free(struct k_process_group *grp)
 {
 	int ret = 0;
@@ -472,6 +493,27 @@ int z_pgrp_cell_free(struct k_process_group *grp)
 	}
 
 	return ret;
+}
+
+static struct k_session *session_cell_alloc(void)
+{
+	void *obj = NULL;
+	sys_dnode_t *n;
+
+	K_SPINLOCK(&pool_lock) {
+		graveyards_drain_locked();
+		n = sys_dlist_get(&session_section_cells);
+		if (n != NULL) {
+			obj = CONTAINER_OF(n, struct k_session, cell_node);
+			K_SPINLOCK_BREAK;
+		}
+		(void)sys_elastipool_alloc(&session_pool, &obj);
+	}
+	if (obj != NULL) {
+		memset(obj, 0, sizeof(struct k_session));
+	}
+
+	return obj;
 }
 
 int z_session_cell_free(struct k_session *session)
@@ -608,3 +650,77 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 	return 0;
 }
 
+k_session_t z_impl_sys_setsid(void)
+{
+	int ret;
+	int n;
+	struct k_session *session;
+	struct k_process_group *grp;
+
+	session = session_cell_alloc();
+	grp = (session == NULL) ? NULL : pgrp_cell_alloc();
+	if (grp == NULL) {
+		if (session != NULL) {
+			(void)z_session_cell_free(session);
+		}
+		return NULL;
+	}
+
+	ret = k_session_init(session, grp);
+	if (ret < 0) {
+		(void)z_session_cell_free(session);
+		(void)z_pgrp_cell_free(grp);
+		return NULL;
+	}
+
+	n = z_impl_sys_process_id(k_getpid());
+	session_id_assign(session, n);
+	pgrp_id_assign(grp, n);
+
+	return session;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline k_session_t z_vrfy_sys_setsid(void)
+{
+	return z_impl_sys_setsid();
+}
+#include <zephyr/syscalls/sys_setsid_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_sys_setpgid(k_pid_t pid, k_pgrp_t pgrp)
+{
+	int ret;
+	struct k_process_group *grp;
+
+	if (pgrp != NULL) {
+		return k_setpgid(pid, pgrp);
+	}
+
+	grp = pgrp_cell_alloc();
+	if (grp == NULL) {
+		return -EAGAIN;
+	}
+
+	ret = k_process_group_init(grp, pid);
+	if (ret == 0) {
+		pgrp_id_assign(grp, z_impl_sys_process_id((pid == NULL) ? k_getpid() : pid));
+		return 0;
+	}
+
+	(void)z_pgrp_cell_free(grp);
+
+	/* the target already leads its own group: success, the cell returns */
+	return (ret == -EALREADY) ? 0 : ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_setpgid(k_pid_t pid, k_pgrp_t pgrp)
+{
+	if (pgrp != NULL) {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(z_pgrp_validate(pgrp) == 0, "invalid process group"));
+	}
+	return z_impl_sys_setpgid(pid, pgrp);
+}
+#include <zephyr/syscalls/sys_setpgid_mrsh.c>
+#endif /* CONFIG_USERSPACE */

@@ -174,6 +174,12 @@ ZTEST(kernel_process, test_waitpid)
 	waitpid_orphan_reaped();
 }
 
+ZTEST(kernel_process, test_setsid)
+{
+	/* kthreadd is its own process-group leader */
+	zassert_is_null(sys_setsid());
+}
+
 static K_THREAD_STACK_DEFINE(spawn_stack_a, STATIC_PROC_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(spawn_stack_b, STATIC_PROC_STACK_SIZE);
 static struct k_thread spawn_thread_a;
@@ -442,6 +448,237 @@ ZTEST(kernel_process, test_spawn_heap_growth)
 }
 #endif /* CONFIG_SYS_PROCESS_MAX >= 4 && CONFIG_HEAP_MEM_POOL_SIZE > 0 */
 
+static K_THREAD_STACK_DEFINE(pgrp_stack_a, STATIC_PROC_STACK_SIZE);
+static struct k_thread pgrp_thread_a;
+static K_SEM_DEFINE(pgrp_gate, 0, 2);
+
+static void pgrp_child_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_take(&pgrp_gate, K_FOREVER);
+	k_exit(0);
+}
+
+ZTEST(kernel_process, test_setpgid)
+{
+	k_pid_t child = &pgrp_thread_a;
+	struct sys_clone_args args = {
+		.entry = pgrp_child_entry,
+		.thread = &pgrp_thread_a,
+		.stack = pgrp_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	zassert_ok(sys_clone(&args));
+
+	/* a spawned child inherits the caller's process group */
+	zassert_equal(k_getpgid(child), k_getpgid(NULL));
+
+	/* a NULL pgrp starts a new group led by the child, in its session */
+	zassert_ok(sys_setpgid(child, NULL));
+	zassert_not_equal(k_getpgid(child), k_getpgid(NULL));
+	zassert_equal(sys_pgrp_id(k_getpgid(child)), sys_process_id(child));
+	zassert_equal(k_getsid(child), k_getsid(NULL));
+
+	/* joining the group it already leads is a no-op */
+	zassert_ok(k_setpgid(child, k_getpgid(child)));
+	zassert_equal(sys_pgrp_id(k_getpgid(child)), sys_process_id(child));
+
+	/* a process that is neither the caller nor its child is not reachable */
+	zassert_equal(sys_setpgid(sys_process_find(0), NULL), -ESRCH);
+
+	/* a session leader cannot change its process group */
+	zassert_equal(sys_setpgid(NULL, NULL), -EPERM);
+
+	/* release and reap */
+	k_sem_give(&pgrp_gate);
+	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
+}
+
+#ifdef CONFIG_SIGNAL
+/*
+ * Each child blocks until it receives K_SIG_CHLD (default-ignore, so it never
+ * terminates the thread asynchronously) and exits 0 only if it got the signal
+ * the group fan-out was supposed to deliver. Consuming the signal also keeps the
+ * shared signal slab from leaking an undelivered entry on exit.
+ */
+static void pgrp_sigwait_entry(void *p1, void *p2, void *p3)
+{
+	struct k_sig_set set;
+	struct k_sig_info info;
+	int ret = -1;
+	int64_t deadline = k_uptime_get() + 5000;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sig_emptyset(&set);
+	k_sig_addset(&set, K_SIG_CHLD);
+
+	/*
+	 * Block K_SIG_CHLD so a fan-out delivered before this thread reaches
+	 * k_sig_timedwait() stays pending (async delivery discards ignored
+	 * signals) and is dequeued synchronously below.
+	 */
+	k_sig_mask(K_SIG_BLOCK, &set, NULL);
+
+	do {
+		ret = k_sig_timedwait(&set, &info, K_MSEC(100));
+	} while ((ret < 0) && (k_uptime_get() < deadline));
+
+	k_exit(ret == K_SIG_CHLD ? 0 : 1);
+}
+
+static K_THREAD_STACK_DEFINE(pgrp_stack_b, STATIC_PROC_STACK_SIZE);
+static struct k_thread pgrp_thread_b;
+
+ZTEST(kernel_process, test_kill_pgrp)
+{
+	int wsa = 1;
+	int wsb = 1;
+	k_pid_t a = &pgrp_thread_a;
+	k_pid_t b = &pgrp_thread_b;
+	struct sys_clone_args args_a = {
+		.entry = pgrp_sigwait_entry,
+		.thread = &pgrp_thread_a,
+		.stack = pgrp_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+	struct sys_clone_args args_b = {
+		.entry = pgrp_sigwait_entry,
+		.thread = &pgrp_thread_b,
+		.stack = pgrp_stack_b,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	zassert_ok(sys_clone(&args_a));
+	zassert_ok(sys_clone(&args_b));
+
+	/* gather both children into a single new process group led by a */
+	zassert_ok(sys_setpgid(a, NULL));
+	k_pgrp_t grp = k_getpgid(a);
+
+	zassert_ok(k_setpgid(b, grp));
+	zassert_equal(k_getpgid(b), grp);
+	zassert_equal(sys_pgrp_id(grp), sys_process_id(a));
+
+	/* fan-out delivers to one eligible thread of every group member */
+	zassert_ok(k_kill_pgrp(grp, K_SIG_CHLD));
+
+	/* the group variant reaps any child belonging to the group */
+	zassert_ok(k_waitpid_pgrp(grp, NULL, &wsa, 0, K_FOREVER));
+	zassert_ok(k_waitpid_pgrp(grp, NULL, &wsb, 0, K_FOREVER));
+	zassert_true(K_WIFEXITED(wsa) && (K_WEXITSTATUS(wsa) == 0), "member a code=%d",
+		     K_WEXITSTATUS(wsa));
+	zassert_true(K_WIFEXITED(wsb) && (K_WEXITSTATUS(wsb) == 0), "member b code=%d",
+		     K_WEXITSTATUS(wsb));
+}
+
+/*
+ * A process whose leader blocks the signal but whose second thread does not:
+ * k_kill() must deliver to the eligible (second) thread, not the leader.
+ */
+static K_SEM_DEFINE(elig_ready, 0, 1);
+static K_THREAD_STACK_DEFINE(elig_sib_stack, STATIC_PROC_STACK_SIZE);
+static struct k_thread elig_sib_thread;
+static ZTEST_BMEM volatile k_tid_t elig_recipient;
+static ZTEST_BMEM volatile bool elig_handler_ran;
+
+static void elig_handler(int sig, struct k_sig_info *info, void *ucontext)
+{
+	ARG_UNUSED(sig);
+	ARG_UNUSED(info);
+	ARG_UNUSED(ucontext);
+
+	elig_recipient = k_current_get();
+	elig_handler_ran = true;
+}
+
+static void elig_sibling(void *p1, void *p2, void *p3)
+{
+	struct k_sig_set set;
+	struct k_sig_action action = {.handler = elig_handler};
+	int64_t deadline = k_uptime_get() + 5000;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* this thread is willing to take K_SIG_USR1; the leader is not */
+	k_sig_emptyset(&set);
+	k_sig_addset(&set, K_SIG_USR1);
+	k_sig_mask(K_SIG_UNBLOCK, &set, NULL);
+	k_sig_action(K_SIG_USR1, &action, NULL);
+
+	k_sem_give(&elig_ready);
+
+	while (!elig_handler_ran && (k_uptime_get() < deadline)) {
+		k_msleep(1);
+	}
+
+	action.handler = K_SIG_DFL;
+	k_sig_action(K_SIG_USR1, &action, NULL);
+	k_exit((elig_handler_ran && (elig_recipient == k_current_get())) ? 0 : 1);
+}
+
+static void elig_leader(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* the leader (a kernel thread) blocks all signals by default; spawn the
+	 * sibling into this same process and then idle so it is never eligible
+	 */
+	k_thread_create(&elig_sib_thread, elig_sib_stack, STATIC_PROC_STACK_SIZE, elig_sibling,
+			NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+	k_sleep(K_FOREVER);
+}
+
+ZTEST(kernel_process, test_kill)
+{
+	int ws = 1;
+	k_pid_t child = &pgrp_thread_a;
+	struct sys_clone_args args = {
+		.entry = elig_leader,
+		.thread = &pgrp_thread_a,
+		.stack = pgrp_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	/* existence checks: self (explicit and NULL), a bogus handle, a zombie */
+	zassert_ok(k_kill(k_getpid(), 0));
+	zassert_ok(k_kill(NULL, 0));
+	zassert_equal(k_kill((k_pid_t)(uintptr_t)0x4, 0), -ESRCH);
+	/* zombies exist until reaped */
+	zassert_ok(k_kill(proc_exits, 0));
+
+	/* eligible-thread delivery: leader blocks USR1, sibling accepts it */
+	elig_handler_ran = false;
+	elig_recipient = NULL;
+	zassert_ok(sys_clone(&args));
+	zassert_ok(k_sem_take(&elig_ready, K_SECONDS(5)));
+
+	zassert_ok(k_kill(child, K_SIG_USR1));
+
+	zassert_ok(k_waitpid(child, NULL, &ws, 0, K_FOREVER));
+	zassert_true(K_WIFEXITED(ws) && (K_WEXITSTATUS(ws) == 0),
+		     "signal was not delivered to the eligible non-leader thread (code=%d)",
+		     K_WEXITSTATUS(ws));
+	/* the process handle is the leader's handle */
+	zassert_not_equal(elig_recipient, child,
+			  "signal was delivered to the leader, not the eligible thread");
+}
+#endif /* CONFIG_SIGNAL */
+
 #ifdef CONFIG_SIGNAL
 static K_THREAD_STACK_DEFINE(sig_parent_stack, STATIC_PROC_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(sig_child_stack, STATIC_PROC_STACK_SIZE);
@@ -562,6 +799,93 @@ ZTEST(kernel_process, test_init_process)
 	zassert_equal(init_parent, sys_process_find(0));
 }
 #endif /* CONFIG_PROCESS_INIT */
+
+K_SESSION_DEFINE(topo_session);
+K_PROCESS_GROUP_DEFINE(topo_group, &topo_session);
+K_PROCESS_GROUP_DEFINE(topo_group2, &topo_session);
+
+static K_SEM_DEFINE(topo_proc_ran, 0, 3);
+static K_SEM_DEFINE(topo_thread_ran, 0, 2);
+static volatile k_pgrp_t topo_seen_pgrp;
+static volatile k_session_t topo_seen_session;
+static volatile k_pid_t topo_thread_pid;
+static volatile k_pid_t topo_thread2_pid;
+
+static void topo_proc_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	if (p1 != NULL) {
+		topo_seen_pgrp = k_getpgid(NULL);
+		topo_seen_session = k_getsid(NULL);
+	}
+	k_sem_give(&topo_proc_ran);
+	k_sleep(K_FOREVER);
+}
+
+static void topo_thread_entry(void *p1, void *p2, void *p3)
+{
+	volatile k_pid_t *out = p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	*out = k_getpid();
+	k_sem_give(&topo_thread_ran);
+	k_sleep(K_FOREVER);
+}
+
+K_PROCESS_DEFINE_EXT(topo_proc, &topo_group, STATIC_PROC_STACK_SIZE, topo_proc_entry,
+		     (void *)1, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+K_PROCESS_DEFINE_EXT(topo_proc2, &topo_group, STATIC_PROC_STACK_SIZE, topo_proc_entry, NULL,
+		     NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+K_PROCESS_DEFINE_EXT(topo_proc3, &topo_group2, STATIC_PROC_STACK_SIZE, topo_proc_entry, NULL,
+		     NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+K_THREAD_DEFINE_EXT(topo_thread, topo_proc, STATIC_PROC_STACK_SIZE, topo_thread_entry,
+		    (void *)&topo_thread_pid, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+K_THREAD_DEFINE_EXT(topo_thread2, topo_proc, STATIC_PROC_STACK_SIZE, topo_thread_entry,
+		    (void *)&topo_thread2_pid, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, 0);
+
+ZTEST(kernel_process, test_static_topology)
+{
+	for (int i = 0; i < 3; i++) {
+		zassert_ok(k_sem_take(&topo_proc_ran, K_SECONDS(5)));
+	}
+	for (int i = 0; i < 2; i++) {
+		zassert_ok(k_sem_take(&topo_thread_ran, K_SECONDS(5)));
+	}
+
+	/* the process was placed in the statically defined group and session */
+	zassert_equal(topo_seen_pgrp, &topo_group);
+	zassert_equal(topo_seen_session, &topo_session);
+	zassert_equal(k_getpgid(topo_proc), &topo_group);
+	zassert_equal(k_getsid(topo_proc), &topo_session);
+
+	/* two processes share the first group; the second group holds the third */
+	zassert_equal(k_getpgid(topo_proc2), &topo_group);
+	zassert_equal(k_getpgid(topo_proc3), &topo_group2);
+	zassert_not_equal(k_getpgid(topo_proc2), k_getpgid(topo_proc3));
+
+	/* both groups belong to the one statically defined session */
+	zassert_equal(k_getsid(topo_proc2), &topo_session);
+	zassert_equal(k_getsid(topo_proc3), &topo_session);
+
+	/* both statically defined member threads joined topo_proc, not their creator */
+	zassert_equal(topo_thread_pid, topo_proc);
+	zassert_equal(topo_thread2_pid, topo_proc);
+	zassert_equal(sys_process_id(topo_thread), sys_process_id(topo_proc));
+	zassert_equal(sys_process_id(topo_thread2), sys_process_id(topo_proc));
+
+	/* topology is numbered by the lowest-numbered member: deterministic */
+	int p1 = sys_process_id(topo_proc);
+	int p2 = sys_process_id(topo_proc2);
+	int p3 = sys_process_id(topo_proc3);
+
+	zassert_equal(sys_pgrp_id(&topo_group), MIN(p1, p2));
+	zassert_equal(sys_pgrp_id(&topo_group2), p3);
+	zassert_equal(sys_session_id(&topo_session), MIN(MIN(p1, p2), p3));
+}
 
 static K_THREAD_STACK_DEFINE(pi_stack_a, STATIC_PROC_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(pi_stack_b, STATIC_PROC_STACK_SIZE);
@@ -702,6 +1026,110 @@ ZTEST(kernel_process, test_process_init)
 	process_init_invalid();
 	process_init_two_threads();
 	process_init_reuse();
+}
+
+static K_THREAD_STACK_DEFINE(pgi_stack, STATIC_PROC_STACK_SIZE);
+static struct k_thread pgi_thread;
+static K_SEM_DEFINE(pgi_gate, 0, 1);
+static struct k_process_group pgi_cell;
+static struct k_process_group pgi_cell2;
+
+static void pgi_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_take(&pgi_gate, K_FOREVER);
+	k_exit(0);
+}
+
+ZTEST(kernel_process, test_process_group_init)
+{
+	k_pid_t child = &pgi_thread;
+	struct sys_clone_args args = {
+		.entry = pgi_entry,
+		.thread = &pgi_thread,
+		.stack = pgi_stack,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	zassert_ok(sys_clone(&args));
+
+	/* a caller-provided cell becomes a new group led by the child */
+	zassert_ok(k_process_group_init(&pgi_cell, child));
+	zassert_equal(k_getpgid(child), &pgi_cell);
+	zassert_equal(pgi_cell.leader, child);
+
+	/* re-initializing a busy group cell errors */
+	zassert_equal(k_process_group_init(&pgi_cell, child), -EBUSY);
+
+	/* a process already leading its group does not consume the cell */
+	zassert_equal(k_process_group_init(&pgi_cell2, child), -EALREADY);
+
+	/* the group dies with its only member; the caller's cell is reusable */
+	k_sem_give(&pgi_gate);
+	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
+	zassert_is_null(pgi_cell.session);
+
+	zassert_ok(sys_clone(&args));
+	zassert_ok(k_process_group_init(&pgi_cell, child));
+	k_sem_give(&pgi_gate);
+	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
+}
+
+static K_THREAD_STACK_DEFINE(si_stack, STATIC_PROC_STACK_SIZE);
+static struct k_thread si_thread;
+static K_SEM_DEFINE(si_ready, 0, 1);
+static K_SEM_DEFINE(si_gate, 0, 1);
+static struct k_session si_session;
+static struct k_session si_session2;
+static struct k_process_group si_group;
+static struct k_process_group si_group2;
+static volatile int si_ret;
+
+static void si_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	si_ret = k_session_init(&si_session, &si_group);
+	k_sem_give(&si_ready);
+	k_sem_take(&si_gate, K_FOREVER);
+	k_exit(0);
+}
+
+ZTEST(kernel_process, test_session_init)
+{
+	k_pid_t child = &si_thread;
+	struct sys_clone_args args = {
+		.entry = si_entry,
+		.thread = &si_thread,
+		.stack = si_stack,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	/* the calling process leads its own group: refused */
+	zassert_equal(k_session_init(&si_session2, &si_group2), -EPERM);
+
+	/* a non-leader child starts a session in caller-provided cells */
+	zassert_ok(sys_clone(&args));
+	k_sem_take(&si_ready, K_FOREVER);
+	zassert_ok(si_ret);
+	zassert_equal(k_getsid(child), &si_session);
+	zassert_equal(si_session.leader, child);
+
+	/* busy cells refuse re-initialization */
+	zassert_equal(k_session_init(&si_session, &si_group2), -EBUSY);
+	zassert_equal(k_session_init(&si_session2, &si_group), -EBUSY);
+
+	/* the session dies with its last member; the cells are reusable */
+	k_sem_give(&si_gate);
+	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
+	zassert_is_null(si_group.session);
 }
 
 ZTEST_SUITE(kernel_process, NULL, NULL, NULL, NULL, NULL);
