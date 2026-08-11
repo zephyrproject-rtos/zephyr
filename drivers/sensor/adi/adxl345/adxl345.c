@@ -114,7 +114,7 @@ int adxl345_reg_write_mask(const struct device *dev,
 	}
 
 	tmp &= ~mask;
-	tmp |= data;
+	tmp |= (data & mask);
 
 	return adxl345_reg_write_byte(dev, reg_addr, tmp);
 }
