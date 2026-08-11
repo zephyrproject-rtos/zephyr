@@ -399,8 +399,7 @@ static inline int iis2iclx_hum_convert(struct sensor_value *val,
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	sensor_value_from_float(val, rh);
 
 	return 0;
 }

@@ -577,8 +577,7 @@ static inline void ism330dhcx_hum_convert(const struct device *dev, struct senso
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	sensor_value_from_float(val, rh);
 }
 
 static inline void ism330dhcx_press_convert(const struct device *dev, struct sensor_value *val)
