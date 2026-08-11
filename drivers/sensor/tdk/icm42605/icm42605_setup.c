@@ -425,6 +425,7 @@ int icm42605_turn_on_sensor(const struct device *dev)
 
 int icm42605_turn_off_sensor(const struct device *dev)
 {
+	struct icm42605_data *drv_data = dev->data;
 	const struct icm42605_config *cfg = dev->config;
 	uint8_t v = 0;
 	int result = 0;
@@ -445,6 +446,8 @@ int icm42605_turn_off_sensor(const struct device *dev)
 	k_msleep(100);
 
 	icm42605_turn_off_fifo(dev);
+
+	drv_data->sensor_started = false;
 
 	return 0;
 }
