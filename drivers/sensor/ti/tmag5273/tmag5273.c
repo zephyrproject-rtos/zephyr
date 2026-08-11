@@ -1332,21 +1332,21 @@ static DEVICE_API(sensor, tmag5273_driver_api) = {
 };
 
 #define TMAG5273_DT_X_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_X) == TMAG5273_DT_AXIS_X) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_X)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
 	  (axis_dts == TMAG5273_DT_AXIS_XZX))                                                      \
 		 ? TMAG5273_MAG_CH_EN_X                                                            \
 		 : 0)
 
 #define TMAG5273_DT_Y_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Y) == TMAG5273_DT_AXIS_Y) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_Y)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_XYX) || (axis_dts == TMAG5273_DT_AXIS_YXY) ||              \
 	  (axis_dts == TMAG5273_DT_AXIS_YZY))                                                      \
 		 ? TMAG5273_MAG_CH_EN_Y                                                            \
 		 : 0)
 
 #define TMAG5273_DT_Z_AXIS_BIT(axis_dts)                                                           \
-	((((axis_dts & TMAG5273_DT_AXIS_Z) == TMAG5273_DT_AXIS_Z) ||                               \
+	((((axis_dts <= TMAG5273_DT_AXIS_XYZ) && (axis_dts & TMAG5273_DT_AXIS_Z)) ||               \
 	  (axis_dts == TMAG5273_DT_AXIS_YZY) || (axis_dts == TMAG5273_DT_AXIS_XZX))                \
 		 ? TMAG5273_MAG_CH_EN_Z                                                            \
 		 : 0)
