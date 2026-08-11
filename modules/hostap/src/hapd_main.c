@@ -73,7 +73,10 @@ struct hostapd_iface *zephyr_get_hapd_handle_by_ifname(const char *ifname)
 {
 	struct hapd_interfaces *interfaces = zephyr_get_default_hapd_context();
 	struct hostapd_data *hapd = NULL;
-
+	if (!interfaces->iface) {
+		wpa_printf(MSG_ERROR, "%s: Unable to get hapd iface %s\n", __func__, ifname);
+		return NULL;
+	}
 	hapd = hostapd_get_iface(interfaces, ifname);
 	if (!hapd) {
 		wpa_printf(MSG_ERROR, "%s: Unable to get hapd handle for %s\n", __func__, ifname);
@@ -457,18 +460,16 @@ static struct hostapd_iface *hostapd_interface_init(struct hapd_interfaces *inte
  * Corresponds to the interface init portion of zephyr_hostapd_init(),
  * but reuses the already-initialized global context (eloop, EAP methods).
  */
-int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces)
+int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces, struct net_if *iface)
 {
 	int ret;
 	int debug = 0;
-	struct net_if *iface;
 	char ifname[IFNAMSIZ + 1] = {0};
 
 	if (!interfaces) {
 		return -1;
 	}
 
-	/* Allocate iface pointer array (count was reset by del_iface) */
 	interfaces->count = 1;
 	interfaces->iface = os_calloc(interfaces->count, sizeof(struct hostapd_iface *));
 	if (!interfaces->iface) {
@@ -477,7 +478,6 @@ int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces)
 	}
 
 	/* Get SAP netif name */
-	iface = net_if_get_wifi_sap();
 	ret = net_if_get_name(iface, ifname, sizeof(ifname) - 1);
 	if (ret < 0) {
 		wpa_printf(MSG_ERROR, "hostapd: Cannot get interface %d (%p) name",
@@ -485,27 +485,31 @@ int zephyr_hostapd_add_iface(struct hapd_interfaces *interfaces)
 		goto err;
 	}
 
-	/* Initialize hostapd_iface: alloc + read config */
 	interfaces->iface[0] = hostapd_interface_init(interfaces, ifname, "hostapd.conf", debug);
 	if (!interfaces->iface[0]) {
 		wpa_printf(MSG_ERROR, "hostapd: Failed to initialize interface");
 		goto err;
 	}
 
-	/* Initialize driver */
+	/* Register SAP iface with hostapd network manager */
+	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
+					      WIFI_TYPE_SAP, iface);
+	if (ret) {
+		wpa_printf(MSG_ERROR, "hostapd: Failed to register SAP iface with NM (%d)", ret);
+		goto err_iface;
+	}
+
 	if (hostapd_driver_init(interfaces->iface[0])) {
 		wpa_printf(MSG_ERROR, "hostapd: Failed to init driver");
 		goto err_iface;
 	}
 
-	/* Register enable/disable callbacks */
 	interfaces->iface[0]->enable_iface_cb = hostapd_enable_iface_cb;
 	interfaces->iface[0]->disable_iface_cb = hostapd_disable_iface_cb;
 
-	/* Initialize ctrl_iface for this BSS */
 	zephyr_hostapd_ctrl_init((void *)interfaces->iface[0]->bss[0]);
 
-	/* Re-register periodic cleanup timer (was cancelled by del_iface) */
+
 	eloop_register_timeout(HOSTAPD_CLEANUP_INTERVAL, 0, hostapd_periodic, interfaces, NULL);
 
 	wpa_printf(MSG_INFO, "hostapd: add_iface %s done", ifname);
@@ -533,9 +537,10 @@ err:
  * Does NOT tear down global context (eloop, EAP methods) since
  * zephyr_hostapd_init() is only called once.
  */
-void zephyr_hostapd_del_iface(struct hapd_interfaces *interfaces)
+void zephyr_hostapd_del_iface(struct hapd_interfaces *interfaces, struct net_if *iface)
 {
 	size_t i;
+	int ret;
 
 	if (!interfaces) {
 		return;
@@ -545,6 +550,13 @@ void zephyr_hostapd_del_iface(struct hapd_interfaces *interfaces)
 
 	/* Cancel periodic timer - will be re-registered by add_iface */
 	eloop_cancel_timeout(hostapd_periodic, interfaces, NULL);
+
+	/* Unregister SAP iface from hostapd network manager */
+	ret = wifi_nm_unregister_mgd_iface(wifi_nm_get_instance("hostapd"), iface);
+	if (ret) {
+		wpa_printf(MSG_ERROR, "hostapd: Failed to unregister SAP iface with NM (%d)", ret);
+		/* Non-fatal: continue cleanup */
+	}
 
 	for (i = 0; i < interfaces->count; i++) {
 		if (!interfaces->iface[i]) {
