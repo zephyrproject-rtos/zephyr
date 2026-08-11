@@ -236,7 +236,7 @@ int icm566xx_encode(const struct device *dev, const struct sensor_chan_spec *con
 		    const size_t num_channels, uint8_t *buf)
 {
 	struct icm566xx_encoded_data *edata = (struct icm566xx_encoded_data *)buf;
-	const struct icm566xx_config *dev_config = dev->config;
+	const struct icm566xx_data *data = dev->data;
 	uint64_t cycles;
 	int err;
 
@@ -252,8 +252,8 @@ int icm566xx_encode(const struct device *dev, const struct sensor_chan_spec *con
 	}
 
 	edata->header.events = 0;
-	edata->header.accel_fs = dev_config->settings.accel.fs;
-	edata->header.gyro_fs = dev_config->settings.gyro.fs;
+	edata->header.accel_fs = data->edata.header.accel_fs;
+	edata->header.gyro_fs = data->edata.header.gyro_fs;
 	edata->header.timestamp = sensor_clock_cycles_to_ns(cycles);
 
 	return 0;

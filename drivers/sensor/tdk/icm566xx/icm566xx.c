@@ -216,7 +216,13 @@ static int icm566xx_accel_config(struct icm566xx_data *drv_data, enum sensor_att
 			LOG_ERR("Wrong config with accel mode");
 		}
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		icm566xx_set_accel_fsr(&drv_data->driver, val->val1);
+		int err = icm566xx_set_accel_fsr(&drv_data->driver, val->val1);
+
+		if (err != 0) {
+			return err;
+		}
+
+		drv_data->edata.header.accel_fs = val->val1;
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		icm566xx_set_accel_ln_bw(&drv_data->driver, val->val1);
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_AVERAGING) {
@@ -250,7 +256,13 @@ static int icm566xx_gyro_config(struct icm566xx_data *drv_data, enum sensor_attr
 			LOG_ERR("Wrong config with gyro mode");
 		}
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		icm566xx_set_gyro_fsr(&drv_data->driver, val->val1);
+		int err = icm566xx_set_gyro_fsr(&drv_data->driver, val->val1);
+
+		if (err != 0) {
+			return err;
+		}
+
+		drv_data->edata.header.gyro_fs = val->val1;
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_BW_FILTER_LPF) {
 		icm566xx_set_gyro_ln_bw(&drv_data->driver, val->val1);
 	} else {
