@@ -1665,9 +1665,9 @@ test_i2c_adxl313: adxl313@d8 {
 	reg = <0xd8>;
 };
 
-test_i2c_icm56686: icm56686@68 {
+test_i2c_icm56686: icm56686@d9 {
 	compatible = "invensense,icm56686";
-	reg = <0x68>;
+	reg = <0xd9>;
 	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 
 	accel-fs = <0>;
