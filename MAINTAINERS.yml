@@ -1244,8 +1244,9 @@ DAP:
 DFU:
   status: maintained
   maintainers:
-    - de-nordic
     - nordicjm
+  collaborators:
+    - de-nordic
   files:
     - include/zephyr/dfu/
     - subsys/dfu/
@@ -7533,8 +7534,8 @@ West:
     - libraries.uoscore.oscore_tests
 
 "West project: zcbor":
-  status: maintained
-  maintainers:
+  status: odd fixes
+  collaborators:
     - de-nordic
   files:
     - modules/zcbor/
