@@ -17,6 +17,7 @@
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_SYSTEM_TIMER_LPM_H_
 
 #include <zephyr/types.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,8 +48,19 @@ extern "C" {
  * not call it.
  *
  * @param max_lpm_time_us Maximum time allowed in low-power state, in microseconds.
+ * @return true when a valid wake deadline was armed, false otherwise.
  */
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us);
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us);
+
+/**
+ * @brief Report whether the most recent low-power companion arm succeeded
+ *
+ * The PM core uses this result to avoid entering a low-power state without a
+ * valid wake deadline. Implementations without a companion report true.
+ *
+ * @return true when the companion is armed or no companion is configured.
+ */
+bool z_sys_clock_lpm_companion_ready(void);
 
 /**
  * @brief Report elapsed time after low-power state exit

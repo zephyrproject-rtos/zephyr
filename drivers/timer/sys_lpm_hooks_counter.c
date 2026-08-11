@@ -47,8 +47,10 @@ static void stub_alarm_callback(const struct device *dev, uint8_t chan_id,
 	ARG_UNUSED(user_data);
 }
 
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
+	int ret;
+
 	counter_scheduled_lpm_ticks = counter_us_to_ticks(lpm_counter, max_lpm_time_us);
 
 	struct counter_alarm_cfg cfg = {
@@ -59,17 +61,29 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	};
 
 	/* Disable the counter alarm in case it was already running */
-	counter_cancel_channel_alarm(lpm_counter, LPM_ALARM_CHANNEL_ID);
+	ret = counter_cancel_channel_alarm(lpm_counter, LPM_ALARM_CHANNEL_ID);
+	if (ret != 0) {
+		return false;
+	}
 
 	/* Configure the alarm to wake up the system as requested */
-	counter_set_channel_alarm(lpm_counter, LPM_ALARM_CHANNEL_ID, &cfg);
+	ret = counter_set_channel_alarm(lpm_counter, LPM_ALARM_CHANNEL_ID, &cfg);
+	if (ret != 0) {
+		return false;
+	}
 
 	/*
 	 * Store the current value of the counter to allow computing
 	 * how much time was really spent in low-power state, as the
 	 * system may be awoken earlier than scheduled.
 	 */
-	counter_get_value(lpm_counter, &counter_pre_lpm_ticks);
+	ret = counter_get_value(lpm_counter, &counter_pre_lpm_ticks);
+	if (ret != 0) {
+		(void)counter_cancel_channel_alarm(lpm_counter, LPM_ALARM_CHANNEL_ID);
+		return false;
+	}
+
+	return true;
 }
 
 uint64_t z_sys_clock_lpm_exit(void)

@@ -7,6 +7,8 @@
 #include <clock_control/clock_stm32_ll_common.h>
 #include <soc.h>
 
+#include <errno.h>
+
 #include <stm32_ll_cortex.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -34,6 +36,8 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 BUILD_ASSERT(DT_SAME_NODE(SYSTEM_TIMER_COMPANION_NODE, DT_NODELABEL(rtc)),
 		"STM32N6x needs RTC as the system timer companion for power management");
 
+#define STM32N6_CLOCK_TIMEOUT_US 100000U
+
 static void stm32n6_prepare_stop(void)
 {
 	/*
@@ -41,7 +45,24 @@ static void stm32n6_prepare_stop(void)
 	 * independent asynchronous wake sources.
 	 */
 	LL_LPM_DisableEventOnPend();
+	LL_LPM_DisableSleepOnExit();
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_STOPF);
+	__HAL_RCC_PWR_CLK_ENABLE();
+	HAL_PWR_EnableBkUpAccess();
+
+	/* Match the HAL reference's active BSEC clock enable before STOP. */
+	__HAL_RCC_BSEC_CLK_ENABLE();
+	__HAL_RCC_RTC_ENABLE();
+	__HAL_RCC_RTCAPB_CLK_ENABLE();
+
+	/* Keep the secure wake-source register banks clocked throughout
+	 * STOP.
+	 */
+	__HAL_RCC_BSEC_CLK_SLEEP_ENABLE();
+	__HAL_RCC_GPIOA_CLK_SLEEP_ENABLE();
+	__HAL_RCC_SYSCFG_CLK_SLEEP_ENABLE();
+	__HAL_RCC_RTC_CLK_SLEEP_ENABLE();
+	__HAL_RCC_RTCAPB_CLK_SLEEP_ENABLE();
 
 	/*
 	 * STOP resumes on HSI. Keep that source available and make the wake clock
@@ -59,20 +80,57 @@ static void stm32n6_prepare_stop(void)
 	LL_LPM_EnableDeepSleep();
 }
 
+static int stm32n6_switch_to_hsi(void)
+{
+	if (LL_RCC_HSI_IsReady() == 0U) {
+		LL_RCC_HSI_Enable();
+		if (!WAIT_FOR(LL_RCC_HSI_IsReady(), STM32N6_CLOCK_TIMEOUT_US,
+			      k_busy_wait(1))) {
+			return -ETIMEDOUT;
+		}
+	}
+
+	LL_RCC_SetCpuClkSource(LL_RCC_CPU_CLKSOURCE_HSI);
+	if (!WAIT_FOR(LL_RCC_GetCpuClkSource() ==
+		      LL_RCC_CPU_CLKSOURCE_STATUS_HSI, STM32N6_CLOCK_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		return -ETIMEDOUT;
+	}
+	LL_RCC_SetSysClkSource(LL_RCC_SYS_CLKSOURCE_HSI);
+	if (!WAIT_FOR(LL_RCC_GetSysClkSource() ==
+		      LL_RCC_SYS_CLKSOURCE_STATUS_HSI, STM32N6_CLOCK_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
+	unsigned int key;
+
 	if (state != PM_STATE_SUSPEND_TO_IDLE || substate_id != 1U) {
 		LOG_DBG("Unsupported power state %u substate-id %u", state, substate_id);
 		return;
 	}
 
-	stm32n6_prepare_stop();
-
-	/*
-	 * PM invokes this hook with interrupts locked. k_cpu_idle() therefore enters
-	 * WFI without allowing a wake ISR to run before post operations.
+	/* The HAL reference moves CPU/SYSCLK to HSI before STOP because the PLL
+	 * clock tree is unavailable in the low-power state.
 	 */
-	k_cpu_idle();
+	if (stm32n6_switch_to_hsi() != 0) {
+		return;
+	}
+	stm32n6_prepare_stop();
+	/* Match the STM32 PM contract: preserve the PM-core lock while allowing
+	 * BASEPRI-independent wake interrupts to release WFI.
+	 */
+	key = arch_pm_state_set_prepare();
+	__DSB();
+	__ISB();
+	HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	arch_pm_state_set_finish(key);
+	LL_LPM_EnableSleep();
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
@@ -109,6 +167,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		sys_cache_data_enable();
 	}
 
-	/* PM entered this hook with interrupts locked. */
-	irq_unlock(0);
 }

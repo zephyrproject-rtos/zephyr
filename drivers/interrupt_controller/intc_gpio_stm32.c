@@ -203,6 +203,14 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 	__ASSERT_NO_MSG(irqnum != 0xFF);
 
 	/* Enable requested line interrupt */
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* STM32N6 STOP wake requires a secure EXTI event in addition to the IT.
+	 *
+	 * This path is used by the secure N6 baseline image.
+	 */
+	LL_EXTI_EnableSecure_0_31(line);
+	LL_EXTI_EnableEvent_0_31(line);
+#endif
 	EXTI_ENABLE_IT(0_31, line);
 
 	/* Enable exti irq interrupt */
@@ -212,6 +220,11 @@ void stm32_gpio_intc_enable_line(stm32_gpio_irq_line_t line)
 void stm32_gpio_intc_disable_line(stm32_gpio_irq_line_t line)
 {
 	EXTI_DISABLE_IT(0_31, line);
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_EXTI_DisableEvent_0_31(line);
+	LL_EXTI_ClearRisingFlag_0_31(line);
+	LL_EXTI_ClearFallingFlag_0_31(line);
+#endif
 }
 
 void stm32_gpio_intc_select_line_trigger(stm32_gpio_irq_line_t line, uint32_t trg)

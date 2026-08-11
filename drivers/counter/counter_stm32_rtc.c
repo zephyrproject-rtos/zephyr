@@ -148,7 +148,9 @@ struct rtc_stm32_data {
 
 static inline void ll_clear_alarm_flag(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RTC_ClearFlag_WUT(RTC);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_ClearFlag_ALR(STM32_ARG(RTC));
 #else
 	LL_RTC_ClearFlag_ALRA(STM32_ARG(RTC));
@@ -157,7 +159,10 @@ static inline void ll_clear_alarm_flag(void)
 
 static inline uint32_t ll_is_active_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/* Secure STM32N6 images observe the wake flag through SMISR. */
+	return (RTC->SMISR & RTC_SMISR_WUTMF) != 0U;
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	return LL_RTC_IsActiveFlag_ALR(STM32_ARG(RTC));
 #else
 	return LL_RTC_IsActiveFlag_ALRA(STM32_ARG(RTC));
@@ -166,7 +171,9 @@ static inline uint32_t ll_is_active_alarm(void)
 
 static inline void ll_enable_interrupt_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RTC_EnableIT_WUT(RTC);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_EnableIT_ALR(STM32_ARG(RTC));
 #else
 	LL_RTC_EnableIT_ALRA(STM32_ARG(RTC));
@@ -175,7 +182,9 @@ static inline void ll_enable_interrupt_alarm(void)
 
 static inline void ll_disable_interrupt_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RTC_DisableIT_WUT(RTC);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_DisableIT_ALR(STM32_ARG(RTC));
 #else
 	LL_RTC_DisableIT_ALRA(STM32_ARG(RTC));
@@ -185,7 +194,9 @@ static inline void ll_disable_interrupt_alarm(void)
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 static inline uint32_t ll_isenabled_interrupt_alarm(void)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	return LL_RTC_IsEnabledIT_WUT(RTC);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 	return LL_RTC_IsEnabledIT_ALR(STM32_ARG(RTC));
 #else
 	return LL_RTC_IsEnabledIT_ALRA(STM32_ARG(RTC));
@@ -195,14 +206,18 @@ static inline uint32_t ll_isenabled_interrupt_alarm(void)
 
 static inline void ll_enable_alarm(void)
 {
-#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RTC_WAKEUP_Enable(RTC);
+#elif !defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_ALMA_Enable(STM32_ARG(RTC));
 #endif
 }
 
 static inline void ll_disable_alarm(void)
 {
-#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	LL_RTC_WAKEUP_Disable(RTC);
+#elif !defined(CONFIG_SOC_SERIES_STM32F1X)
 	LL_RTC_ALMA_Disable(STM32_ARG(RTC));
 #endif
 }
@@ -435,8 +450,14 @@ static int rtc_stm32_stop(const struct device *dev)
 #if !defined(COUNTER_NO_DATE)
 tick_t rtc_stm32_read(const struct device *dev)
 {
-	struct tm now = { 0 };
-	time_t ts;
+	int64_t year;
+	uint32_t month;
+	uint32_t day;
+	int64_t era;
+	uint32_t year_of_era;
+	uint32_t day_of_year;
+	uint32_t day_of_era;
+	int64_t ts;
 	uint32_t rtc_date, rtc_time;
 	tick_t ticks;
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -465,24 +486,30 @@ tick_t rtc_stm32_read(const struct device *dev)
 		} while (rtc_time != LL_RTC_TIME_Get(STM32_ARG(RTC)));
 	} while (rtc_date != LL_RTC_DATE_Get(STM32_ARG(RTC)));
 
-	/* Convert calendar datetime to UNIX timestamp */
-	/* RTC start time: 1st, Jan, 2000 */
-	/* time_t start:   1st, Jan, 1970 */
-	now.tm_year = 100 + bcd2bin(STM32_RTC_GET_YEAR(rtc_date));
-	/* tm_mon allowed values are 0-11 */
-	now.tm_mon = bcd2bin(STM32_RTC_GET_MONTH(rtc_date)) - 1;
-	now.tm_mday = bcd2bin(STM32_RTC_GET_DAY(rtc_date));
+	/*
+	 * Convert the calendar value directly instead of constructing struct tm
+	 * and calling timeutil_timegm(). The companion invokes this path from the
+	 * idle stack; keeping the civil-date arithmetic in this frame avoids the
+	 * large libc/timeutil call chain and its 64-bit division frame.
+	 *
+	 * This is the same proleptic-Gregorian conversion used by
+	 * timeutil_timegm64(), with the RTC epoch (2000-01-01) subtracted below.
+	 */
+	year = 2000 + bcd2bin(STM32_RTC_GET_YEAR(rtc_date));
+	month = bcd2bin(STM32_RTC_GET_MONTH(rtc_date));
+	day = bcd2bin(STM32_RTC_GET_DAY(rtc_date)) - 1U;
+	year -= month <= 2U;
+	era = (year >= 0) ? year / 400 : (year - 399) / 400;
+	year_of_era = (uint32_t)(year - era * 400);
+	day_of_year = (153U * (month > 2U ? month - 3U : month + 9U) + 2U) / 5U + day;
+	day_of_era = year_of_era * 365U + year_of_era / 4U - year_of_era / 100U + day_of_year;
+	ts = (era * 146097 + (int64_t)day_of_era - 719468) * 86400LL;
+	ts += 3600LL * bcd2bin(STM32_RTC_GET_HOUR(rtc_time));
+	ts += 60LL * bcd2bin(STM32_RTC_GET_MINUTE(rtc_time));
+	ts += bcd2bin(STM32_RTC_GET_SECOND(rtc_time));
 
-	now.tm_hour = bcd2bin(STM32_RTC_GET_HOUR(rtc_time));
-	now.tm_min = bcd2bin(STM32_RTC_GET_MINUTE(rtc_time));
-	now.tm_sec = bcd2bin(STM32_RTC_GET_SECOND(rtc_time));
-
-	ts = timeutil_timegm(&now);
-
-	/* Return number of seconds since RTC init */
+	/* Return number of seconds since RTC init (1st Jan 2000). */
 	ts -= T_TIME_OFFSET;
-
-	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
 
 	ticks = ts * counter_get_frequency(dev);
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
@@ -529,9 +556,53 @@ static void rtc_stm32_set_int_pending(void)
 }
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+static bool rtc_stm32_wait_wutw(const struct device *dev)
+{
+	const struct rtc_stm32_config *cfg = dev->config;
+	const uint32_t subsecond_period = cfg->sync_prescaler + 1U;
+	const uint32_t timeout_ticks = MAX(1U,
+		(uint32_t)(((uint64_t)subsecond_period * RTC_TIMEOUT + 999999U) /
+			   1000000U));
+	const uint32_t start = LL_RTC_TIME_GetSubSecond(RTC);
+	const uint32_t cpu_timeout_cycles = MAX(1U,
+		(uint32_t)(((uint64_t)SystemCoreClock * RTC_TIMEOUT + 999999U) /
+			   1000000U));
+
+	/* DWT is a core hardware counter, not the locked Zephyr system timer. */
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+	const uint32_t start_cycles = DWT->CYCCNT;
+
+	/*
+	 * The system-timer companion calls this driver with timeout_lock held.
+	 * WAIT_FOR() samples k_cycle_get_32(), which recursively acquires that
+	 * lock on the SysTick backend. The RTC synchronous prescaler is a running
+	 * hardware timebase and remains independent of the companion lock.
+	 */
+	for (;;) {
+		if (LL_RTC_IsActiveFlag_WUTW(RTC)) {
+			return true;
+		}
+
+		uint32_t current = LL_RTC_TIME_GetSubSecond(RTC);
+		uint32_t elapsed = start >= current ? start - current
+									: start + subsecond_period - current;
+
+		if (elapsed >= timeout_ticks) {
+			return false;
+		}
+		if ((uint32_t)(DWT->CYCCNT - start_cycles) >= cpu_timeout_cycles) {
+			return false;
+		}
+	}
+}
+#endif
+
 static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
 #if !defined(COUNTER_NO_DATE)
 	struct tm alarm_tm;
 	time_t alarm_val_s;
@@ -540,12 +611,19 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 #else
 	uint32_t remain;
-#endif
+	#endif
+	#endif
 	struct rtc_stm32_data *data = dev->data;
+#if !defined(CONFIG_SOC_SERIES_STM32N6X)
 	int ret = 0;
+#endif
 
-	tick_t now = rtc_stm32_read(dev);
 	tick_t ticks = alarm_cfg->ticks;
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	tick_t now;
+#else
+	tick_t now = rtc_stm32_read(dev);
+#endif
 
 	if (data->callback != NULL) {
 		LOG_DBG("Alarm busy");
@@ -556,6 +634,88 @@ static int rtc_stm32_set_alarm(const struct device *dev, uint8_t chan_id,
 	data->callback = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
 
+#if defined(CONFIG_SOC_SERIES_STM32N6X)
+	/*
+	 * The STM32N6 HAL STOP reference uses the RTC wakeup timer (WUT), not
+	 * calendar Alarm A. WUT is also the secure wake flag observed by the
+	 * RTC_S interrupt in a secure image.
+	 */
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0U) {
+		uint32_t now32;
+		uint32_t target32 = (uint32_t)alarm_cfg->ticks;
+
+		now = rtc_stm32_read(dev);
+		now32 = (uint32_t)now;
+		ticks = (uint32_t)(target32 - now32);
+		if ((ticks == 0U) ||
+		    (((alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) != 0U) &&
+		     (target32 < now32))) {
+			ticks = 1U;
+		}
+	}
+
+	uint32_t counter_frequency = counter_get_frequency(dev);
+	uint64_t wake_ticks = ((uint64_t)ticks * (RTCCLK_FREQ / 16U) +
+			       counter_frequency - 1U) / counter_frequency;
+	uint32_t wake_clock = LL_RTC_WAKEUPCLOCK_DIV_16;
+
+	if (wake_ticks == 0U) {
+		wake_ticks = 1U;
+	}
+	if (wake_ticks > UINT16_MAX) {
+		/* Preserve long PM timeouts by falling back to the 1 Hz ck_spre
+		 * source. The normal short-timeout path remains the
+		 * HAL-equivalent RTCCLK/16 source.
+		 */
+		wake_clock = LL_RTC_WAKEUPCLOCK_CKSPRE;
+		wake_ticks = ((uint64_t)ticks + counter_frequency - 1U) /
+			     counter_frequency;
+	}
+	if (wake_ticks > UINT16_MAX) {
+		data->callback = NULL;
+		return -EINVAL;
+	}
+
+	uint32_t old_cr = RTC->CR;
+
+	stm32_backup_domain_enable_access();
+	LL_RTC_DisableWriteProtection(RTC);
+	ll_disable_interrupt_alarm();
+	ll_disable_alarm();
+	if (!rtc_stm32_wait_wutw(dev)) {
+		if ((old_cr & RTC_CR_WUTIE) != 0U) {
+			ll_enable_interrupt_alarm();
+		}
+		if ((old_cr & RTC_CR_WUTE) != 0U) {
+			ll_enable_alarm();
+		}
+		LL_RTC_EnableWriteProtection(RTC);
+		stm32_backup_domain_disable_access();
+		data->callback = NULL;
+		return -ETIMEDOUT;
+	}
+	LL_RTC_WAKEUP_SetAutoReload(RTC, (uint32_t)wake_ticks - 1U);
+	LL_RTC_WAKEUP_SetClock(RTC, wake_clock);
+	ll_clear_alarm_flag();
+	ll_enable_interrupt_alarm();
+	ll_enable_alarm();
+	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+#if defined(RTC_EXTI_LINE_NUM)
+	LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_17);
+	LL_EXTI_ClearFallingFlag_0_31(LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->RTSR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->FTSR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->SECCFGR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->EMR1, LL_EXTI_LINE_17);
+	SET_BIT(EXTI->IMR1, LL_EXTI_LINE_17);
+#endif
+	LL_RTC_EnableWriteProtection(RTC);
+	stm32_backup_domain_disable_access();
+#ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
+	data->irq_on_late = false;
+#endif
+	return 0;
+#else
 #if !defined(COUNTER_NO_DATE)
 	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		/* Add +1 in order to compensate the partially started tick.
@@ -663,6 +823,7 @@ out_disable_bkup_access:
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 
 	return ret;
+#endif /* CONFIG_SOC_SERIES_STM32N6X */
 }
 
 
@@ -821,9 +982,26 @@ static int rtc_stm32_init(const struct device *dev)
 
 #if defined(RTC_EXTI_LINE_NUM)
 #if defined(CONFIG_SOC_SERIES_STM32N6X)
-	/* RTC EXTI17 is a secure direct line without configurable triggers. */
+	/* Match the passing STM32N6 HAL reference: the wakeup timer is a secure
+	 * RTC feature, and EXTI17 is the secure direct wake line.
+	 */
+	LL_RTC_DisableWriteProtection(RTC);
+	SET_BIT(RTC->SECCFGR, RTC_SECCFGR_SEC | RTC_SECCFGR_WUTSEC);
+	/* Match HAL_RTCEx_PrivilegeModeSet(...FULL_NO): Zephyr's secure image
+	 * owns the RTC wake configuration without a privileged-only
+	 * restriction.
+	 */
+	CLEAR_BIT(RTC->PRIVCFGR, RTC_PRIVCFGR_WUTPRIV);
+	LL_RTC_EnableWriteProtection(RTC);
 	LL_EXTI_ClearRisingFlag_0_31(LL_EXTI_LINE_17);
 	LL_EXTI_ClearFallingFlag_0_31(LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->RTSR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->FTSR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->SECCFGR1, LL_EXTI_LINE_17);
+	CLEAR_BIT(EXTI->EMR1, LL_EXTI_LINE_17);
+	SET_BIT(EXTI->IMR1, LL_EXTI_LINE_17);
+	LL_EXTI_DisableSecure_0_31(LL_EXTI_LINE_17);
+	LL_EXTI_DisableEvent_0_31(LL_EXTI_LINE_17);
 	LL_EXTI_EnableIT_0_31(LL_EXTI_LINE_17);
 	ret = 0;
 #else

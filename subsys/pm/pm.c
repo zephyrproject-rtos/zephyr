@@ -7,6 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/state.h>
@@ -148,6 +149,9 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	k_spinlock_key_t key;
 	int32_t ticks, events_ticks;
 	uint32_t exit_latency_ticks;
+#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+	bool devices_suspended = false;
+#endif
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, system_suspend, kernel_ticks);
 
@@ -196,12 +200,15 @@ bool pm_system_suspend(int32_t kernel_ticks)
 							   PM_STATE_ACTIVE);
 				return false;
 			}
+			devices_suspended = true;
 		}
 	}
 #endif
 
 	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id]->exit_latency_us);
-	if ((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) {
+	if (((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) ||
+	    IS_ENABLED(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER) ||
+	    IS_ENABLED(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)) {
 		/*
 		 * We need to set the timer to interrupt a little bit early to
 		 * accommodate the time required by the CPU to fully wake up.
@@ -213,7 +220,20 @@ bool pm_system_suspend(int32_t kernel_ticks)
 		k_spinlock_key_t key = sys_clock_lock();
 
 		sys_clock_set_timeout(MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks), true);
+		bool companion_ready = z_sys_clock_lpm_companion_ready();
 		sys_clock_unlock(key);
+
+		if (!companion_ready) {
+#ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
+			if (devices_suspended) {
+				pm_resume_devices();
+			}
+			(void)atomic_add(&_cpus_active, 1);
+#endif
+			z_cpus_pm_state[id] = NULL;
+			SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, ticks, PM_STATE_ACTIVE);
+			return false;
+		}
 	}
 
 	/*

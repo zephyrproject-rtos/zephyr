@@ -54,9 +54,15 @@ static void lpm_timer_isr(void)
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
 }
 
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint32_t delay_ticks;
+	const uint64_t min_delay_us =
+		((uint64_t)3U * 1000000ULL + PILO_FREQ - 1U) / PILO_FREQ;
+
+	if (max_lpm_time_us < min_delay_us) {
+		return false;
+	}
 
 	/* Convert microseconds to PILO ticks.
 	 * Cap to avoid overflow in 32-bit arithmetic.
@@ -90,6 +96,8 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, CY_MCWDT_CTR1);
 	irq_enable(MCWDT_IRQ_NUM);
+
+	return true;
 }
 
 uint64_t z_sys_clock_lpm_exit(void)
