@@ -2070,7 +2070,7 @@ static bool valid_cig_param(const struct bt_iso_cig_param *param, bool advanced,
 		}
 
 		if (!is_p_to_c && !is_c_to_p) {
-			LOG_DBG("Neither C to P nor P to C can be configured");
+			LOG_DBG("cis_channels[%u]: Neither C to P nor P to C can be configured", i);
 			return false;
 		}
 	}
