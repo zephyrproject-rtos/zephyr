@@ -55,12 +55,16 @@ static int lsm6dso_enable_tilt_int(const struct device *dev, int enable)
 	const struct lsm6dso_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int ret = 0;
-	lsm6dso_emb_sens_t sens;
+	lsm6dso_emb_sens_t sens = {0};
+
+	if (lsm6dso_embedded_sens_get(ctx, &sens) < 0) {
+		LOG_ERR("Failed to read embedded sensor state");
+		return -EIO;
+	}
 
 	sens.tilt = enable;
 
-	ret += lsm6dso_embedded_sens_set(ctx, &sens);
-	if (ret < 0) {
+	if (lsm6dso_embedded_sens_set(ctx, &sens) < 0) {
 		LOG_ERR("Failed to enable tilt");
 		return -EIO;
 	}
