@@ -613,8 +613,7 @@ static inline void lsm6dso16is_hum_convert(struct sensor_value *val,
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	(void)sensor_value_from_float(val, rh);
 }
 
 static inline void lsm6dso16is_press_convert(struct sensor_value *val,
