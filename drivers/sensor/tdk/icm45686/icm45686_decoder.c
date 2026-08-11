@@ -73,6 +73,9 @@ static int icm45686_get_shift(enum sensor_channel channel, int accel_fs, int gyr
 		case ICM45686_DT_GYRO_FS_31_25:
 			*shift = 5;
 			return 0;
+		case ICM45686_DT_GYRO_FS_15_625:
+			*shift = 4;
+			return 0;
 		default:
 			return -EINVAL;
 		}
