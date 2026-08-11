@@ -6098,6 +6098,7 @@ TI MSPM Platforms:
     - Alex9360
     - SanjayyyV
     - karthi012
+    - Girinandha-M
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
