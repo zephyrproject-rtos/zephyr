@@ -63,6 +63,11 @@ enum {
 	 * >   practical opportunity.
 	 */
 	BT_HCI_QUIRK_NO_AUTO_DLE = BIT(1),
+	/** The controller advertises the controller to host flow control
+	 * commands as supported but does not accept them. The host treats
+	 * the feature as not supported.
+	 */
+	BT_HCI_QUIRK_NO_FLOW_CONTROL = BIT(2),
 };
 
 #define BT_DT_HCI_QUIRK_OR(node_id, prop, idx) \
