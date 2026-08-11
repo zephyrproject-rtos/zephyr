@@ -15,8 +15,8 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
-#include "cyhal.h"
-#include "qspi_memslot.h"
+#include <cyhal.h>
+#include <qspi_memslot.h>
 #include "smif_pm.h"
 
 

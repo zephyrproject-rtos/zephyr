@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_COUNTER_64BITS_FREQ
+	bool "Test with 64-bit counter frequency API"
+	select COUNTER_64BITS_FREQ
+	help
+	  Exercise the conversion helpers with the 64-bit frequency
+	  configuration, which is otherwise only selectable by counter
+	  drivers whose frequency exceeds UINT32_MAX.
+
+source "Kconfig.zephyr"

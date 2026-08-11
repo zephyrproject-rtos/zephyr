@@ -79,9 +79,9 @@ struct renesas_rx_ctsu_config {
 	uint8_t *channels_index_map;
 	uint8_t *button_position_index;
 	/** Touch components */
-	touch_button_context_t *buttons;
-	touch_slider_context_t *sliders;
-	touch_wheel_context_t *wheels;
+	const touch_button_context_t *buttons;
+	const touch_slider_context_t *sliders;
+	const touch_wheel_context_t *wheels;
 };
 
 struct renesas_rx_ctsu_data {
@@ -183,7 +183,9 @@ static void process_data(struct k_work *work)
 	data->prev_buttons_data = data->curr_buttons_data;
 
 	/** Sliders */
-	for (int i = 0; i < data->touch_instance.p_cfg->num_sliders; i++) {
+	const int num_sliders = data->touch_instance.p_cfg->num_sliders;
+
+	for (int i = 0; i < num_sliders; i++) {
 		if (data->curr_sliders_position[i] != data->prev_sliders_position[i]) {
 			input_report_abs(dev, config->sliders[i].event,
 					 data->curr_sliders_position[i], true, K_FOREVER);
@@ -192,7 +194,9 @@ static void process_data(struct k_work *work)
 	}
 
 	/** Wheels */
-	for (int i = 0; i < data->touch_instance.p_cfg->num_wheels; i++) {
+	const int num_wheels = data->touch_instance.p_cfg->num_wheels;
+
+	for (int i = 0; i < num_wheels; i++) {
 		if (data->curr_wheels_position[i] != data->prev_wheels_position[i]) {
 			input_report_abs(dev, config->wheels[i].event,
 					 data->curr_wheels_position[i], true, K_FOREVER);
@@ -530,11 +534,11 @@ static int renesas_rx_ctsu_init(const struct device *dev)
 		}                                                                                  \
 	}                                                                                          \
                                                                                                    \
-	static touch_button_context_t buttons_##idx[] = {                                          \
+	static const touch_button_context_t buttons_##idx[] = {                                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, BUTTON_GET_CONTEXT)};                       \
-	static touch_slider_context_t sliders_##idx[] = {                                          \
+	static const touch_slider_context_t sliders_##idx[] = {                                    \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, SLIDER_GET_CONTEXT)};                       \
-	static touch_wheel_context_t wheels_##idx[] = {                                            \
+	static const touch_wheel_context_t wheels_##idx[] = {                                      \
 		DT_INST_FOREACH_CHILD_STATUS_OKAY(idx, WHEEL_GET_CONTEXT)};                        \
                                                                                                    \
 	static touch_button_cfg_t                                                                  \

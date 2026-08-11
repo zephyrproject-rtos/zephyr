@@ -206,18 +206,6 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
 	return ctx->iface;
 }
 
-struct net_if *net_eth_get_vlan_main(struct net_if *iface)
-{
-	struct vlan_context *ctx;
-
-	ctx = get_vlan(iface, NET_VLAN_TAG_UNSPEC);
-	if (ctx == NULL) {
-		return NULL;
-	}
-
-	return ctx->attached_to;
-}
-
 static bool enable_vlan_iface(struct vlan_context *ctx,
 			      struct net_if *iface)
 {
@@ -588,20 +576,32 @@ static enum net_verdict vlan_interface_recv(struct net_if *iface,
 	return NET_OK;
 }
 
-int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt,
-		      size_t size, uint16_t proto, k_timeout_t timeout)
+int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t size,
+		      enum net_ip_protocol proto, k_timeout_t timeout)
 {
+	size_t reserve = sizeof(struct net_eth_vlan_hdr);
 	enum virtual_interface_caps caps;
-	int ret = 0;
 
 	caps = net_virtual_get_iface_capabilities(iface);
-	if (caps & VIRTUAL_INTERFACE_VLAN) {
-		ret = net_pkt_alloc_buffer_with_reserve(pkt, size,
-							sizeof(struct net_eth_vlan_hdr),
-							proto, timeout);
+	if (!(caps & VIRTUAL_INTERFACE_VLAN)) {
+		return -ENOTSUP;
 	}
 
-	return ret;
+	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM)) {
+		struct ethernet_config config;
+
+		iface = net_eth_get_vlan_main(iface);
+		if (iface == NULL) {
+			return -ENOENT;
+		}
+
+		if (net_eth_get_hw_config(iface, ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM,
+					  &config) == 0) {
+			reserve += config.extra_tx_pkt_headroom;
+		}
+	}
+
+	return net_pkt_alloc_buffer_with_reserve(pkt, size, reserve, proto, timeout);
 }
 
 static int vlan_interface_attach(struct net_if *vlan_iface,
@@ -635,26 +635,4 @@ static void vlan_iface_init(struct net_if *iface)
 	(void)net_virtual_set_flags(ctx->iface, NET_L2_MULTICAST);
 }
 
-#else /* CONFIG_NET_VLAN_COUNT > 0 */
-
-/* Dummy functions if VLAN is not really used. This is only needed
- * if priority tagged frames (tag 0) are supported.
- */
-bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
-			     struct net_if *iface)
-{
-	ARG_UNUSED(ctx);
-	ARG_UNUSED(iface);
-
-	return true;
-}
-
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, uint16_t tag)
-{
-	if (tag == NET_VLAN_TAG_PRIORITY) {
-		return iface;
-	}
-
-	return NULL;
-}
 #endif /* CONFIG_NET_VLAN_COUNT > 0 */

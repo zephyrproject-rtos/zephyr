@@ -15,6 +15,7 @@
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/sys/device_mmio.h>
 
 /*
@@ -86,9 +87,11 @@ struct dwmac_dma_desc {
 	uint32_t des1;
 	uint32_t des2;
 	uint32_t des3;
-#ifndef CONFIG_ETH_DWC_ETHER_QOS_CORE
-	/* software-only field for tracking the net_buf associated with this desc */
-	struct net_buf *frag;
+#ifdef CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE
+	uint32_t des4;
+	uint32_t des5;
+	uint32_t des6;
+	uint32_t des7;
 #endif
 };
 
@@ -98,6 +101,10 @@ struct dwmac_config {
 	const struct device *phy_dev;
 	const struct device *clock;
 	const clock_control_subsys_t mac_clk;
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	const struct device *ptp_clock;
+	const clock_control_subsys_t ptp_clk;
+#endif
 };
 
 struct dwmac_priv {
@@ -106,11 +113,15 @@ struct dwmac_priv {
 
 	uint8_t mac_addr[6];
 
-#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	uint32_t feature0;
+#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
 	uint32_t feature1;
 	uint32_t feature2;
 	uint32_t feature3;
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
 #endif
 
 	struct dwmac_dma_desc *tx_descs, *rx_descs;
@@ -119,26 +130,79 @@ struct dwmac_priv {
 	unsigned int rx_desc_head, rx_desc_tail;
 
 #ifdef CONFIG_MMU
-	uintptr_t tx_descs_phys, rx_descs_phys;
+	struct dwmac_dma_desc *tx_descs_phys, *rx_descs_phys;
 #endif
-#ifdef CONFIG_ETH_DWC_ETHER_QOS_CORE
-	struct net_buf *tx_frags[NB_TX_DESCS]; /* index shared with tx_descs */
+
 	struct net_buf *rx_frags[NB_RX_DESCS]; /* index shared with rx_descs */
 
 	struct net_pkt *rx_pkt;
-	unsigned int rx_bytes;
-#endif
+	uint16_t rx_bytes;
+
+	struct k_fifo tx_queue;
 
 	K_KERNEL_STACK_MEMBER(rx_refill_thread_stack, RX_REFILL_STACK_SIZE);
 	struct k_thread rx_refill_thread;
+
+	struct k_spinlock spinlock;
 };
 
 /*
  * Handy register accessors
  */
 
-#define REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
-#define REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_READ(r) sys_read32(DEVICE_MMIO_GET(dev) + (r))
+#define DWMAC_REG_WRITE(r, v) sys_write32((v), DEVICE_MMIO_GET(dev) + (r))
+
+/*
+ * PTP register definitions shared between the DWMAC core drivers and the
+ * dedicated PTP clock child device.
+ */
+#if defined(CONFIG_ETH_DWC_ETHER_QOS_CORE)
+#define DWMAC_PTP_MACTSCR  0x0b00
+#define DWMAC_PTP_MACSSIR  0x0b04
+#define DWMAC_PTP_MACSTSR  0x0b08
+#define DWMAC_PTP_MACSTNR  0x0b0c
+#define DWMAC_PTP_MACSTSUR 0x0b10
+#define DWMAC_PTP_MACSTNUR 0x0b14
+#define DWMAC_PTP_MACTSAR  0x0b18
+
+#define DWMAC_PTP_CTRL_REG        DWMAC_PTP_MACTSCR
+#define DWMAC_PTP_SSINC_REG       DWMAC_PTP_MACSSIR
+#define DWMAC_PTP_SEC_UPDATE_REG  DWMAC_PTP_MACSTSUR
+#define DWMAC_PTP_NSEC_UPDATE_REG DWMAC_PTP_MACSTNUR
+#define DWMAC_PTP_SEC_REG         DWMAC_PTP_MACSTSR
+#define DWMAC_PTP_NSEC_REG        DWMAC_PTP_MACSTNR
+#define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_MACTSAR
+
+#define DWMAC_PTP_SSINC_SHIFT 16
+#else
+#define DWMAC_PTP_PTPTSCR  0x0700
+#define DWMAC_PTP_PTPSSIR  0x0704
+#define DWMAC_PTP_PTPTSHR  0x0708
+#define DWMAC_PTP_PTPTSLR  0x070c
+#define DWMAC_PTP_PTPTSHUR 0x0710
+#define DWMAC_PTP_PTPTSLUR 0x0714
+#define DWMAC_PTP_PTPTSAR  0x0718
+
+#define DWMAC_PTP_CTRL_REG        DWMAC_PTP_PTPTSCR
+#define DWMAC_PTP_SSINC_REG       DWMAC_PTP_PTPSSIR
+#define DWMAC_PTP_SEC_UPDATE_REG  DWMAC_PTP_PTPTSHUR
+#define DWMAC_PTP_NSEC_UPDATE_REG DWMAC_PTP_PTPTSLUR
+#define DWMAC_PTP_SEC_REG         DWMAC_PTP_PTPTSHR
+#define DWMAC_PTP_NSEC_REG        DWMAC_PTP_PTPTSLR
+#define DWMAC_PTP_ADDEND_REG      DWMAC_PTP_PTPTSAR
+
+#define DWMAC_PTP_SSINC_SHIFT 0
+#endif
+
+#define DWMAC_PTP_CTRL_ENABLE			BIT(0)
+#define DWMAC_PTP_CTRL_FINE_UPDATE		BIT(1)
+#define DWMAC_PTP_CTRL_TIME_INIT		BIT(2)
+#define DWMAC_PTP_CTRL_TIME_UPDATE		BIT(3)
+#define DWMAC_PTP_CTRL_ADDEND_UPDATE		BIT(5)
+#define DWMAC_PTP_CTRL_ALL_RX			BIT(8)
+#define DWMAC_PTP_CTRL_ROLLOVER			BIT(9)
+#define DWMAC_PTP_NSEC_UPDATE_ADDSUB		BIT(31)
 
 /*
  * Shared declarations between core and platform glue code
@@ -148,6 +212,9 @@ int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
 void dwmac_isr(const struct device *ddev);
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
+#endif
 extern const struct ethernet_api dwmac_api;
 
 /*
@@ -304,6 +371,15 @@ extern const struct ethernet_api dwmac_api;
 /* 17.1.27 */
 
 #define MAC_RXQ_CTRL0				0x00a0
+
+#define MAC_RXQ_CTRL7_RXQ0EN			GENMASK(15, 14)
+#define MAC_RXQ_CTRL6_RXQ0EN			GENMASK(13, 12)
+#define MAC_RXQ_CTRL5_RXQ0EN			GENMASK(11, 10)
+#define MAC_RXQ_CTRL4_RXQ0EN			GENMASK(9, 8)
+#define MAC_RXQ_CTRL3_RXQ0EN			GENMASK(7, 6)
+#define MAC_RXQ_CTRL2_RXQ0EN			GENMASK(5, 4)
+#define MAC_RXQ_CTRL1_RXQ0EN			GENMASK(3, 2)
+#define MAC_RXQ_CTRL0_RXQ0EN			GENMASK(1, 0)
 
 /* 17.1.28 */
 
@@ -856,6 +932,12 @@ extern const struct ethernet_api dwmac_api;
 
 #define MTL_TXQn_OPERATION_MODE(n)		(0x0d00 + 0x40 * (n))
 
+#define MTL_TXQn_OPERATION_MODE_TQS		GENMASK(24, 16)
+#define MTL_TXQn_OPERATION_MODE_TTC		GENMASK(6, 4)
+#define MTL_TXQn_OPERATION_MODE_TXQEN		GENMASK(3, 2)
+#define MTL_TXQn_OPERATION_MODE_TSF		BIT(1)
+#define MTL_TXQn_OPERATION_MODE_FTQ		BIT(0)
+
 /* 17.3.2, 17.4.2 */
 
 #define MTL_TXQn_UNDERFLOW(n)			(0x0d04 + 0x40 * (n))
@@ -895,6 +977,16 @@ extern const struct ethernet_api dwmac_api;
 /* 17.3.7, 17.4.11 */
 
 #define MTL_RXQn_OPERATION_MODE(n)		(0x0d30 + 0x40 * (n))
+
+#define MTL_RXQn_OPERATION_MODE_RQS		GENMASK(28, 20)
+#define MTL_RXQn_OPERATION_MODE_RFD		GENMASK(19, 14)
+#define MTL_RXQn_OPERATION_MODE_RFA		GENMASK(13, 8)
+#define MTL_RXQn_OPERATION_MODE_EHFC		BIT(7)
+#define MTL_RXQn_OPERATION_MODE_DIS_TCP_EF	BIT(6)
+#define MTL_RXQn_OPERATION_MODE_RSF		BIT(5)
+#define MTL_RXQn_OPERATION_MODE_FEP		BIT(4)
+#define MTL_RXQn_OPERATION_MODE_FUP		BIT(3)
+#define MTL_RXQn_OPERATION_MODE_RTC		GENMASK(1, 0)
 
 /* 17.3.8, 17.4.12 */
 
@@ -1272,24 +1364,55 @@ extern const struct ethernet_api dwmac_api;
 
 #elif defined(CONFIG_ETH_DWC_ETHER_1000_CORE)
 
-/* GMAC register map */
-#define DWMAC_MACCR      0x0000
-#define DWMAC_MACFFR     0x0004
-#define DWMAC_MACA0HR    0x0040
-#define DWMAC_MACA0LR    0x0044
+/*
+ * In some SoCs, the order of the MAC and DMA register blocks is different from the default order.
+ * The following offsets are used to adjust the register addresses accordingly. We assume here that
+ * the order is the same for all instances of the DWMAC driver, so we only check the first instance.
+ */
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base)
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), mac)
+#define DWMAC_MAC_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), mac) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
 
-#define DWMAC_DMABMR       0x1000
-#define DWMAC_DMATPDR      0x1004
-#define DWMAC_DMARPDR      0x1008
-#define DWMAC_DMARDLAR     0x100C
-#define DWMAC_DMATDLAR     0x1010
-#define DWMAC_DMASR        0x1014
-#define DWMAC_DMAOMR       0x1018
-#define DWMAC_DMAIER       0x101C
+#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), dma)
+#define DWMAC_DMA_OFFSET                                                                           \
+	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), dma) -                                        \
+	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+#endif
+#endif /* DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base) */
+
+#ifndef DWMAC_MAC_OFFSET
+#define DWMAC_MAC_OFFSET		0x0000
+#endif
+
+#ifndef DWMAC_DMA_OFFSET
+#define DWMAC_DMA_OFFSET		0x1000
+#endif
+
+/* GMAC register map */
+#define DWMAC_MACCR      (DWMAC_MAC_OFFSET + 0x0000)
+#define DWMAC_MACFFR     (DWMAC_MAC_OFFSET + 0x0004)
+#define DWMAC_MACVERR    (DWMAC_MAC_OFFSET + 0x0020)
+#define DWMAC_MACA0HR    (DWMAC_MAC_OFFSET + 0x0040)
+#define DWMAC_MACA0LR    (DWMAC_MAC_OFFSET + 0x0044)
+
+#define DWMAC_DMABMR       (DWMAC_DMA_OFFSET + 0x0000)
+#define DWMAC_DMATPDR      (DWMAC_DMA_OFFSET + 0x0004)
+#define DWMAC_DMARPDR      (DWMAC_DMA_OFFSET + 0x0008)
+#define DWMAC_DMARDLAR     (DWMAC_DMA_OFFSET + 0x000C)
+#define DWMAC_DMATDLAR     (DWMAC_DMA_OFFSET + 0x0010)
+#define DWMAC_DMASR        (DWMAC_DMA_OFFSET + 0x0014)
+#define DWMAC_DMAOMR       (DWMAC_DMA_OFFSET + 0x0018)
+#define DWMAC_DMAIER       (DWMAC_DMA_OFFSET + 0x001C)
+#define DWMAC_HWFR         (DWMAC_DMA_OFFSET + 0x0058)
 
 /* MAC control bits */
 #define DWMAC_MACCR_RE     BIT(2)
 #define DWMAC_MACCR_TE     BIT(3)
+#define DWMAC_MACCR_APCS   BIT(7)
+#define DWMAC_MACCR_IPCO   BIT(10)
 #define DWMAC_MACCR_DM     BIT(11)
 #define DWMAC_MACCR_FES    BIT(14)
 #define DWMAC_MACCR_PS     BIT(15)
@@ -1308,12 +1431,16 @@ extern const struct ethernet_api dwmac_api;
 
 /* DMA operation mode bits */
 #define DWMAC_DMAOMR_SR    BIT(1)
+#define DWMAC_DMAOMR_OSF   BIT(2)
 #define DWMAC_DMAOMR_ST    BIT(13)
 #define DWMAC_DMAOMR_TSF   BIT(21)
 #define DWMAC_DMAOMR_RSF   BIT(25)
+#define DWMAC_DMAOMR_TTC   GENMASK(16, 14)
+#define DWMAC_DMAOMR_RTC   GENMASK(4, 3)
 
 /* DMA bus mode bits */
 #define DWMAC_DMABMR_SR    BIT(0)
+#define DWMAC_DMABMR_EDFE  BIT(7)
 
 /* DMA interrupt enable bits */
 #define DWMAC_DMAIER_TIE   BIT(0)
@@ -1323,9 +1450,28 @@ extern const struct ethernet_api dwmac_api;
 #define DWMAC_DMAIER_AISE  BIT(15)
 #define DWMAC_DMAIER_NISE  BIT(16)
 
+/* Hardware Feature Register */
+#define DWMAC_HWFR_10_100  BIT(0)
+#define DWMAC_HWFR_1000    BIT(1)
+#define DWMAC_HWFR_HD      BIT(2)
+#define DWMAC_HWFR_HASHF   BIT(4)
+#define DWMAC_HWFR_ADDMAC  BIT(5)
+#define DWMAC_HWFR_PCS     BIT(6)
+#define DWMAC_HWFR_SMA     BIT(8)
+#define DWMAC_HWFR_PMTW    BIT(9)
+#define DWMAC_HWFR_PMTM    BIT(10)
+#define DWMAC_HWFR_RMON    BIT(11)
+#define DWMAC_HWFR_TS2002  BIT(12)
+#define DWMAC_HWFR_TS2008  BIT(13)
+#define DWMAC_HWFR_TX_CHK  BIT(16)
+#define DWMAC_HWFR_RXCHKV1 BIT(17)
+#define DWMAC_HWFR_RXCHKV2 BIT(18)
+#define DWMAC_HWFR_FIFO2K  BIT(19)
+#define DWMAC_HWFR_ALTDESC BIT(24)
+
 /* DWMAC v3.x MDIO registers (GMAC core) */
-#define MAC_MDIO_ADDRESS 0x0010
-#define MAC_MDIO_DATA    0x0014
+#define MAC_MDIO_ADDRESS (DWMAC_MAC_OFFSET + 0x0010)
+#define MAC_MDIO_DATA    (DWMAC_MAC_OFFSET + 0x0014)
 
 #define MAC_MDIO_ADDRESS_PA     GENMASK(15, 11)
 #define MAC_MDIO_ADDRESS_RDA    GENMASK(10, 6)
@@ -1335,8 +1481,6 @@ extern const struct ethernet_api dwmac_api;
 
 #define MAC_MDIO_DATA_RA GENMASK(31, 16)
 #define MAC_MDIO_DATA_GD GENMASK(15, 0)
-
-#define MAC_VERSION 0x0020
 
 #endif /* CONFIG_ETH_DWC_ETHER_1000_CORE */
 

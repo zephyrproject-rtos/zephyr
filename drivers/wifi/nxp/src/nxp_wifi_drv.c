@@ -20,7 +20,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
-#ifndef CONFIG_NXP_RW610
+#ifdef CONFIG_PM_MCUX_GPC
 #include <fsl_gpc.h>
 #endif
 #endif
@@ -417,6 +417,41 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 
 	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
 	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), ext1_pwren_gpios)
+	struct gpio_dt_spec ext1_pwren = GPIO_DT_SPEC_GET(DT_DRV_INST(0), ext1_pwren_gpios);
+
+	if (!gpio_is_ready_dt(&ext1_pwren)) {
+		LOG_ERR("Error: failed to configure ext1_pwren %s pin %d",
+			ext1_pwren.port->name, ext1_pwren.pin);
+		return -EIO;
+	}
+
+	err = gpio_pin_configure_dt(&ext1_pwren, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure ext1_pwren %s pin %d", err,
+			ext1_pwren.port->name, ext1_pwren.pin);
+		return err;
+	}
+
+	if (enable) {
+		/* Enable VPCIe_3V3 power to M.2 module before PD_N */
+		err = gpio_pin_set_dt(&ext1_pwren, 1);
+		if (err) {
+			LOG_ERR("Error %d: failed to set ext1_pwren %s pin %d", err,
+				ext1_pwren.port->name, ext1_pwren.pin);
+			return err;
+		}
+		k_sleep(K_MSEC(100));
+	} else {
+		err = gpio_pin_set_dt(&ext1_pwren, 0);
+		if (err) {
+			LOG_ERR("Error %d: failed to clear ext1_pwren %s pin %d", err,
+				ext1_pwren.port->name, ext1_pwren.pin);
+			return err;
+		}
+	}
+#endif
 
 	if (!gpio_is_ready_dt(&sdio_reset)) {
 		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
@@ -816,8 +851,16 @@ static int nxp_wifi_ap_config_params(const struct device *dev,
 
 static int nxp_wifi_process_results(unsigned int count)
 {
+#ifndef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 	struct wlan_scan_result scan_result = {0};
 	struct wifi_scan_result res = {0};
+#endif
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	struct wifi_raw_scan_result *raw_res = NULL;
+	size_t frame_len = 0;
+	uint32_t freq = 0;
+	int8_t rssi = 0;
+#endif
 
 	if (!count) {
 		LOG_DBG("No Wi-Fi AP found");
@@ -828,6 +871,36 @@ static int nxp_wifi_process_results(unsigned int count)
 		count = g_mlan.max_bss_cnt > count ? count : g_mlan.max_bss_cnt;
 	}
 
+#ifdef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS
+	/* First pass: emit raw scan result events */
+	for (int i = 0; i < count; i++) {
+		raw_res = k_malloc(sizeof(*raw_res));
+		if (raw_res == NULL) {
+			LOG_ERR("Failed to alloc raw scan result");
+			break;
+		}
+		memset(raw_res, 0, sizeof(*raw_res));
+
+		if (wlan_get_scan_raw_frame(i, raw_res->data,
+					    sizeof(raw_res->data),
+					    &frame_len, &freq, &rssi) != 0) {
+			k_free(raw_res);
+			continue;
+		}
+
+		raw_res->frame_length = (int)frame_len;
+		raw_res->frequency = (unsigned short)freq;
+		raw_res->rssi = rssi;
+
+		wifi_mgmt_raise_raw_scan_result_event(g_mlan.netif, raw_res);
+
+		k_free(raw_res);
+		k_yield();
+	}
+#endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+#ifndef CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
+	/* Second pass: emit normal scan result events */
 	for (int i = 0; i < count; i++) {
 		wlan_get_scan_result(i, &scan_result);
 
@@ -840,7 +913,8 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		res.rssi = -scan_result.rssi;
 		res.channel = scan_result.channel;
-		res.band = scan_result.channel > 14 ? WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+		res.band = scan_result.channel > 14 ?
+			   WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
 
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
@@ -887,6 +961,7 @@ static int nxp_wifi_process_results(unsigned int count)
 			k_yield();
 		}
 	}
+#endif /* !CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
 
 out:
 	/* report end of scan event */
@@ -1900,7 +1975,7 @@ static int nxp_wifi_reg_domain(const struct device *dev, struct net_if *iface __
 			index += nxp_wifi_cfp_no;
 		}
 		reg_domain->num_channels = index;
-		wifi_get_country_code(reg_domain->country_code);
+		wlan_get_country_code(reg_domain->country_code);
 	} else {
 		if (is_uap_started()) {
 			LOG_ERR("region code can not be set after uAP start!");
@@ -2333,6 +2408,15 @@ static bool nxp_wifi_wlan_wakeup(void)
 	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_0_15_IRQn);
 #elif CONFIG_NXP_IW416
 	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_16_31_IRQn);
+#elif defined(CONFIG_SOC_SERIES_IMX9)
+	/* imx91 has no GPC, read WL_WAKE_HOST GPIO directly instead */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_gpios)
+	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_gpios);
+
+	return gpio_pin_get_dt(&wakeup) == 1;
+#else
+	return false;
+#endif
 #else
 	return false;
 #endif

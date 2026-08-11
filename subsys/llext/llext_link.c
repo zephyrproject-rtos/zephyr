@@ -342,8 +342,19 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 			continue;
 		}
 
-		uint8_t *rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
-			ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		uint8_t *rel_addr = NULL;
+
+		/*
+		 * The only time text will be on the heap with a writable ELF buffer
+		 * is if the ELF is not in instruction memory
+		 */
+		if (ext->mem_on_heap[LLEXT_MEM_TEXT]) {
+			rel_addr =
+				(uint8_t *)ext->text_in_elf - ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		} else {
+			rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+				   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
+		}
 
 		if (tgt) {
 			/* Relocatable / partially linked ELF. */
@@ -352,6 +363,12 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 					"(size %#zx), skipping",
 					(size_t)rela.r_offset, (size_t)tgt->sh_size);
 				continue;
+			}
+			/* Relocation lands in text on heap */
+			if (ext->mem_on_heap[LLEXT_MEM_TEXT] &&
+			    ldr->sect_map[shdr->sh_info].mem_idx == LLEXT_MEM_TEXT) {
+				rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+					   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 			}
 			rel_addr += rela.r_offset + tgt->sh_offset;
 		} else {
@@ -362,6 +379,16 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 				LOG_WRN("Offset %#zx not found in ELF, trying to continue",
 					(size_t)rela.r_offset);
 				continue;
+			}
+
+			ssize_t text_offset =
+				(ssize_t)ext->text_in_elf - (ssize_t)llext_peek(ldr, 0);
+			/* Relocation lands in text on heap */
+			if (ext->mem_on_heap[LLEXT_MEM_TEXT] &&
+			    (offset >= text_offset &&
+			     offset < text_offset + ext->mem_size[LLEXT_MEM_TEXT])) {
+				rel_addr = (uint8_t *)ext->mem[LLEXT_MEM_TEXT] -
+					   ldr->sects[LLEXT_MEM_TEXT].sh_offset;
 			}
 
 			rel_addr += offset;
@@ -526,6 +553,8 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 
 		sect_base = (uintptr_t) llext_loaded_sect_ptr(ldr, ext, shdr->sh_info);
 
+		size_t tgt_sect_size = ext->sect_hdrs[shdr->sh_info].sh_size;
+
 		for (int j = 0; j < rel_cnt; j++) {
 			/* get each relocation entry */
 			ret = llext_seek(ldr, shdr->sh_offset + j * shdr->sh_entsize);
@@ -536,6 +565,20 @@ int llext_link(struct llext_loader *ldr, struct llext *ext, const struct llext_l
 			ret = llext_read(ldr, &rel, shdr->sh_entsize);
 			if (ret != 0) {
 				return ret;
+			}
+
+			/*
+			 * The relocation writes a field starting at r_offset
+			 * within the target section. Reject an offset at or past
+			 * the section end before applying it. This bounds the
+			 * start of the write; the field width is relocation-type
+			 * specific and left to the per-arch handler.
+			 */
+			if (rel.r_offset >= tgt_sect_size) {
+				LOG_ERR("relocation r_offset %#zx out of section %d "
+					"(size %#zx)",
+					(size_t)rel.r_offset, shdr->sh_info, tgt_sect_size);
+				return -ENOEXEC;
 			}
 
 #if CONFIG_LLEXT_LOG_LEVEL > LOG_LEVEL_INF /* also gets skipped without CONFIG_LOG */

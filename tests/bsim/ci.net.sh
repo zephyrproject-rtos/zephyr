@@ -11,7 +11,5 @@ cd ${ZEPHYR_BASE}
 
 set -uex
 
-WORK_DIR=${ZEPHYR_BASE}/bsim_net nice tests/bsim/net/compile.sh
-BOARD=nrf52_bsim/native \
-RESULTS_FILE=${ZEPHYR_BASE}/bsim_out/bsim_results.net.52.xml \
-SEARCH_PATH=tests/bsim/net/ tests/bsim/run_parallel.sh
+${ZEPHYR_BASE}/scripts/twister -p nrf52_bsim -T tests/bsim/net/ \
+  --force-color --inline-logs -vv --fixture bsim_multi_test

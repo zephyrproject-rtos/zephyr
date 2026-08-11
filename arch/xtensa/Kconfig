@@ -31,21 +31,8 @@ config XTENSA_USE_CORE_CRT1
 
 config XTENSA_ENABLE_BACKTRACE
 	bool "Backtrace on panic exception"
-	default y
-	depends on SOC_SERIES_ESP32 || SOC_FAMILY_INTEL_ADSP || SOC_XTENSA_DC233C || SOC_MIMXRT595S_F1
 	help
 	  Enable this config option to print backtrace on panic exception
-
-config XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK
-	bool "Send backtrace to exception dump hook"
-	depends on XTENSA_ENABLE_BACKTRACE && EXCEPTION_DUMP_HOOK
-	default y if EXCEPTION_DUMP_HOOK_ONLY
-	help
-	  Enable this option to forward Xtensa panic backtrace output to
-	  exception dump hook.
-
-	  When EXCEPTION_DUMP_HOOK_ONLY is enabled, this defaults to y to
-	  preserve hook-only backtrace output.
 
 config XTENSA_SMALL_VECTOR_TABLE_ENTRY
 	bool "Workaround for small vector table entries"
@@ -164,7 +151,7 @@ config XTENSA_EAGER_HIFI_SHARING
 
 config XTENSA_LAZY_HIFI_SHARING
 	bool "Lazy HiFi Sharing"
-	depends on SCHED_IPI_SUPPORTED || (MP_MAX_NUM_CPUS = 1)
+	depends on (SCHED_IPI_SUPPORTED && ARCH_HAS_DIRECTED_IPIS) || (MP_MAX_NUM_CPUS = 1)
 	select ARCH_IPI_LAZY_COPROCESSORS_SAVE
 	help
 	  This option enables lazy sharing of HiFi registers across context
@@ -301,6 +288,14 @@ config XTENSA_SYSCALL_USE_HELPER
 	  Use syscall helpers for passing more than 3 arguments.
 	  This is a workaround for toolchains where they have
 	  issue modeling register usage.
+
+config XTENSA_SYSCALL_USE_HELPER_ALL
+	bool "Use userspace syscall helper for all argument counts"
+	depends on XTENSA_SYSCALL_USE_HELPER
+	help
+	  Also route the 0-3 argument syscall invocations through the
+	  out-of-line helper functions, in addition to the 4-6 argument
+	  ones already handled by XTENSA_SYSCALL_USE_HELPER.
 
 config XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE
 	bool "Emulate unsupported unsigned loads / stores"

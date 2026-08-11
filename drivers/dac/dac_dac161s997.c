@@ -253,7 +253,7 @@ static int dac161s997_init(const struct device *dev)
 	/* Check that DAC_RES bits are all set */
 	if (status.dac_resolution != 0x7) {
 		LOG_ERR("Unexpected DAC resolution value: 0x%02x", status.dac_resolution);
-		return ret;
+		return -EIO;
 	}
 
 	if (config->gpio_errb.port != NULL) {

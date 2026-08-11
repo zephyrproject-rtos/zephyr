@@ -23,7 +23,7 @@ SYS_RINGQ_DEFINE(test_macro1, sizeof(struct element), 4);
 
 struct element mkelement(void)
 {
-	struct element e;
+	struct element e = {};
 
 	sys_rand_get(&e.id, sizeof(e.id));
 	e.size = sys_rand8_get() % sizeof(e.data) + 1;

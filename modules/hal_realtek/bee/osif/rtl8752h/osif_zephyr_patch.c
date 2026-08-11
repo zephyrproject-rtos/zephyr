@@ -23,10 +23,10 @@
 
 #include <zephyr/devicetree.h>
 
-#include "osif_zephyr.h"
-#include "osif_zephyr_impl.h"
-#include "mem_types.h"
-#include "os_patch.h"
+#include <osif_zephyr.h>
+#include <osif_zephyr_impl.h>
+#include <mem_types.h>
+#include <os_patch.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(osif);

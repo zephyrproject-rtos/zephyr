@@ -12,7 +12,7 @@
 #define ZEPHYR_INCLUDE_NET_DHCPV4_SERVER_H_
 
 #include <zephyr/net/net_ip.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +114,8 @@ typedef void (*net_dhcpv4_lease_cb_t)(struct net_if *iface,
  * @param iface Pointer to the network interface, can be NULL
  * @param cb User-supplied callback function to call
  * @param user_data User specified data
+ *
+ * @return 0 on success, a negative error code otherwise.
  */
 int net_dhcpv4_server_foreach_lease(struct net_if *iface,
 				    net_dhcpv4_lease_cb_t cb,

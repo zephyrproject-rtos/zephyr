@@ -752,6 +752,89 @@ config TIMEOUT_64BIT
 	  availability of absolute timeout values (which require the
 	  extra precision).
 
+choice TIMEOUT_BACKEND
+	prompt "Timeout queue backend"
+	default TIMEOUT_BACKEND_DLIST
+	depends on SYS_CLOCK_EXISTS
+	help
+	  Selects the data structure used by the kernel timeout subsystem
+	  to track pending timeouts. All backends share the same front-end
+	  (kernel/timeout.c); they differ only in the queue representation
+	  and its performance trade-offs.
+
+config TIMEOUT_BACKEND_DLIST
+	bool "Sorted delta list"
+	help
+	  The original Zephyr backend: a doubly linked list sorted by
+	  expiry, each node storing a delta to its predecessor. Insertion
+	  is O(n), head removal O(1). No capacity limit and no extra static
+	  RAM. The right default for most systems.
+
+config TIMEOUT_BACKEND_MINHEAP
+	bool "Binary min-heap [EXPERIMENTAL]"
+	depends on TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  A binary min-heap keyed on absolute expiry tick. Insertion and
+	  arbitrary removal are O(log n). Requires 64-bit timeouts and a
+	  fixed-capacity heap (CONFIG_TIMEOUT_HEAP_MAX_ENTRIES); overflow is
+	  a fatal error. Consider this when many timeouts are pending and
+	  insertion cost on the delta list dominates.
+
+config TIMEOUT_BACKEND_WHEEL
+	bool "Hierarchical timer wheel [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  A hierarchical timer wheel: O(1) insertion and removal for timeouts
+	  expiring within the next ~1024 ticks, with a sorted overflow list
+	  for anything beyond. Sift work is amortised at 32-tick boundaries.
+	  Best when many short-lived timeouts are pending. Costs ~1 KB of
+	  static state, so it is a poor fit for very small-RAM targets, and
+	  it does not guarantee same-tick firing order.
+
+config TIMEOUT_BACKEND_BUCKET
+	bool "Single-level bucketed delta list [EXPERIMENTAL]"
+	depends on TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  A simpler relative of the timer wheel: one per-tick bucket list for
+	  the next CONFIG_TIMEOUT_BUCKET_LISTS ticks (O(1) insert/remove) plus
+	  a sorted overflow list for anything beyond (O(n) insert). Migration
+	  is on demand against the actual next event, so it imposes no
+	  tickless-idle floor. Requires 64-bit timeouts.
+
+endchoice # TIMEOUT_BACKEND
+
+config TIMEOUT_BUCKET_LISTS
+	int "Number of per-tick buckets for the bucketed backend"
+	depends on TIMEOUT_BACKEND_BUCKET
+	default 32
+	range 8 64
+	help
+	  Number of single-tick bucket lists (must be a power of two between 8
+	  and 64). Timeouts expiring within this many ticks get O(1) insertion;
+	  longer ones land in the sorted overflow list. Larger values widen
+	  the O(1) window at the cost of more static RAM (one list head each).
+	  Below 8 the plain delta-list backend is likely the better choice. The
+	  occupancy bitmap is a uint32_t for up to 32 buckets, a uint64_t beyond.
+
+config TIMEOUT_HEAP_MAX_ENTRIES
+	int "Maximum simultaneous pending timeouts in the heap"
+	depends on TIMEOUT_BACKEND_MINHEAP
+	default 128
+	help
+	  Static capacity of the timeout min-heap array.
+
+	  Set this to the peak number of simultaneously pending timeouts your
+	  application requires. As a starting point, count:
+	    - Active threads (each may have one pending timeout)
+	    - Active k_timer instances
+	    - Delayable work items
+	    - Network / socket timeouts
+
+	  Overflow causes k_panic() at runtime. If you see unexpected panics,
+	  increase this value and rebuild.
+
 config SYS_CLOCK_MAX_TIMEOUT_DAYS
 	int "Max timeout (in days) used in conversions"
 	default 365
@@ -936,6 +1019,25 @@ config HW_SHADOW_STACK_ALLOW_REUSE
 endmenu
 
 rsource "userspace/Kconfig"
+
+config USE_SWITCH
+	bool "Use new-style _arch_switch instead of arch_swap"
+	depends on USE_SWITCH_SUPPORTED
+	help
+	  The _arch_switch() API is a lower level context switching
+	  primitive than the original arch_swap mechanism.  It is required
+	  for an SMP-aware scheduler, or if the architecture does not
+	  provide arch_swap.  In uniprocess situations where the
+	  architecture provides both, _arch_switch incurs more somewhat
+	  overhead and may be slower.
+
+config USE_SWITCH_SUPPORTED
+	bool
+	help
+	  Indicates whether _arch_switch() API is supported by the
+	  currently enabled platform. This option should be selected by
+	  platforms that implement it.
+
 rsource "smp/Kconfig"
 
 config TICKLESS_KERNEL

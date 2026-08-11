@@ -39,6 +39,15 @@ static void rts5912_heavy_sleep(void)
 
 	realtek_WFI();
 
+	/* If we were running on the PLL before sleep, wait for it to become
+	 * stable and ready before we resume system execution.
+	 */
+	if ((main_clk_src_record & SYSTEM_SYSCLK_SRC_Msk) != 0) {
+		while ((sys_reg->PLLCTRL & SYSTEM_PLLCTRL_RDY_Msk) == 0x00) {
+			; /* Busy-wait on the safe clock until PLL locks */
+		}
+	}
+
 	if ((main_clk_src_record & SYSTEM_SYSCLK_SRC_Msk) == 0) {
 		sys_reg->SYSCLK &= ~SYSTEM_SYSCLK_SRC_Msk; /* Return system clock to 25M */
 		if ((PLL_en_record & SYSTEM_PLLCTRL_EN_Msk) == 0x0) {

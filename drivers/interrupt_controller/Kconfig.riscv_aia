@@ -39,12 +39,18 @@ config RISCV_APLIC_DIRECT
 	  Enable direct delivery mode for the APLIC.
 	  Routes wired interrupts directly to the Hart's MEXT interrupt line.
 
+config RISCV_APLIC_DIRECT_IRQ_AFFINITY
+	bool "Configure IRQ affinity for APLIC direct mode"
+	depends on RISCV_APLIC_DIRECT
+	depends on SMP && (MP_MAX_NUM_CPUS > 1)
+	help
+	  Enable configuration of IRQ affinity.
+
 config RISCV_AIA
 	bool "RISC-V AIA unified coordinator"
 	default y
 	depends on RISCV_APLIC_MSI || RISCV_APLIC_DIRECT
+	depends on (!RISCV_S_MODE && RISCV_ISA_EXT_SMAIA) || \
+			(RISCV_S_MODE && RISCV_ISA_EXT_SSAIA)
 	select MULTI_LEVEL_INTERRUPTS
 	select 2ND_LEVEL_INTERRUPTS
-	help
-	  Unified AIA coordinator providing a PLIC-like second-level interrupt
-	  controller API while hiding APLIC and IMSIC implementation details.

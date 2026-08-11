@@ -8,7 +8,7 @@ See <https://www.khadas.com/edge-v>
 Hardware
 ********
 
-See <https://docs.khadas.com/linux/edge/Hardware.html#Edge-V-1>
+See <https://docs.khadas.com/products/sbc/edge1/hardware/start>
 
 Supported Features
 ==================
@@ -64,4 +64,4 @@ EMMC, QSPI Flash or downloaded from network in uboot.
 References
 ==========
 
-`Documentation: <https://docs.khadas.com/linux/edge/>`_
+`Documentation: <https://docs.khadas.com/products/sbc/edge1/start>`_

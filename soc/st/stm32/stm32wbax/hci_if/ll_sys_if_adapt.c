@@ -10,8 +10,8 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(ll_sys_if_adapt);
 
-#include "ll_sys.h"
-#include "ll_intf_cmn.h"
+#include <ll_sys.h>
+#include <ll_intf_cmn.h>
 #if defined(CONFIG_BT_STM32WBA_USE_TEMP_BASED_CALIB)
 #include <zephyr/drivers/sensor.h>
 #endif /* defined(CONFIG_BT_STM32WBA_USE_TEMP_BASED_CALIB) */

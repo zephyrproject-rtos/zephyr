@@ -238,7 +238,7 @@ static int mcux_lpuart_err_check(const struct device *dev)
 	}
 
 	if (flags & kLPUART_NoiseErrorFlag) {
-		err |= UART_ERROR_PARITY;
+		err |= UART_ERROR_NOISE;
 	}
 
 	LPUART_ClearStatusFlags(get_base(dev), kLPUART_RxOverrunFlag |

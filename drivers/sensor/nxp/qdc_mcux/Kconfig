@@ -5,7 +5,7 @@ config QDC_MCUX
 	bool "NXP QDC MCUX driver"
 	default y
 	depends on DT_HAS_NXP_MCUX_QDC_ENABLED
-	select NXP_INPUTMUX
+	select MUX
 	select PINCTRL
 	help
 	  Enable support for NXP MCUX QDC driver.

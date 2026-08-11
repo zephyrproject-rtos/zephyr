@@ -78,7 +78,7 @@ MSPI bus inside the device driver initialization function:
 
    #. Call API for additional setups if supported by hardware
 
-      * :c:func:`mspi_xip_config` for :term:`XIP` feature
+      * :c:func:`mspi_memmap_config` for memory mapped access (e.g. :term:`XIP`)
 
       * :c:func:`mspi_scramble_config` for scrambling feature
 
@@ -157,7 +157,7 @@ The mspi device's bindings should reference mspi-device.yaml as one of the base.
                      address-length = "ADDR_4_BYTE";
                      rx-dummy = <0x8>;
                      tx-dummy = <0x0>;
-                     xip-config = <0x0 0x0 0x0 0x0>;
+                     memmap-config = <0x0 0x0 0x0 0x0>;
                      ce-break-config = <0x0 0x0>;
             };
 
@@ -189,7 +189,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_MSPI`
 * :kconfig:option:`CONFIG_MSPI_ASYNC`
 * :kconfig:option:`CONFIG_MSPI_PERIPHERAL`
-* :kconfig:option:`CONFIG_MSPI_XIP`
+* :kconfig:option:`CONFIG_MSPI_MEMMAP`
 * :kconfig:option:`CONFIG_MSPI_SCRAMBLE`
 * :kconfig:option:`CONFIG_MSPI_TIMING`
 * :kconfig:option:`CONFIG_MSPI_INIT_PRIORITY`

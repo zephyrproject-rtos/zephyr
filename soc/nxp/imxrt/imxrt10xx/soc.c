@@ -18,8 +18,8 @@
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_iomuxc.h>
 #if CONFIG_USB_DC_NXP_EHCI
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 #endif
 
 #include <zephyr/drivers/misc/flexram/nxp_flexram.h>

@@ -30,7 +30,7 @@ static struct ameba_wifi_runtime ameba_data[2];
 
 extern void (*p_wifi_join_info_free)(uint8_t iface_type);
 
-K_MSGQ_DEFINE(ameba_wifi_msgq, sizeof(struct ameba_system_event), 10, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(ameba_wifi_msgq, struct ameba_system_event, 10);
 K_THREAD_STACK_DEFINE(ameba_wifi_event_stack, CONFIG_AMEBA_WIFI_EVENT_STACK_SIZE);
 
 static struct k_thread ameba_wifi_event_thread;
@@ -673,7 +673,7 @@ static const struct net_wifi_mgmt_offload rtk_api = {
 	.wifi_mgmt_api = &ameba_wifi_mgmt,
 };
 
-/* inst replace by DT_DRV_COMPAT(inst) */
+/* inst replace by DT_DRV_INST(inst) */
 NET_DEVICE_DT_INST_DEFINE(0, ameba_wifi_dev_init, NULL, &ameba_data[STA_WLAN_INDEX], NULL,
 			  CONFIG_WIFI_INIT_PRIORITY, &rtk_api, ETHERNET_L2,
 			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);

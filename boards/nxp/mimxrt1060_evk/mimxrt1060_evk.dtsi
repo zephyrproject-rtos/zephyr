@@ -310,6 +310,11 @@ arduino_spi: &lpspi1 {
 	pinctrl-names = "default";
 };
 
+&sai2 {
+	pinctrl-0 = <&pinmux_sai2>;
+	pinctrl-names = "default";
+};
+
 /* GPT and Systick are enabled. If power management is enabled, the GPT
  * timer will be used instead of systick, as allows the core clock to
  * be gated.

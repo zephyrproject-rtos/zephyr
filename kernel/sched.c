@@ -222,10 +222,7 @@ void z_ready_thread(struct k_thread *thread)
 	}
 }
 
-void z_sched_ready_locked(struct k_thread *thread)
-{
-	ready_thread(thread);
-}
+void z_sched_ready_locked(struct k_thread *thread) ALIAS_OF(ready_thread);
 
 static void unready_thread(struct k_thread *thread)
 {
@@ -246,10 +243,7 @@ void z_unready_thread(struct k_thread *thread)
 }
 
 
-void z_sched_unready_locked(struct k_thread *thread)
-{
-	unready_thread(thread);
-}
+void z_sched_unready_locked(struct k_thread *thread) ALIAS_OF(unready_thread);
 
 /* This routine only used for testing purposes */
 void z_yield_testing_only(void)
@@ -411,6 +405,9 @@ void z_sched_yield(void)
 /* _sched_spinlock must be held */
 static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 {
+	/* A thread must not already be on a wait queue when added to a new one. */
+	__ASSERT_NO_MSG(thread->base.pended_on == NULL);
+
 	unready_thread(thread);
 	z_mark_thread_as_pending(thread);
 
@@ -423,16 +420,7 @@ static void add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
 }
 
 void z_sched_add_to_waitq_locked(struct k_thread *thread, _wait_q_t *wait_q)
-{
-	add_to_waitq_locked(thread, wait_q);
-}
-
-static void add_thread_timeout(struct k_thread *thread, k_timeout_t timeout)
-{
-	if (!K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		z_add_thread_timeout(thread, timeout);
-	}
-}
+	ALIAS_OF(add_to_waitq_locked);
 
 static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 			k_timeout_t timeout)
@@ -441,7 +429,7 @@ static void pend_locked(struct k_thread *thread, _wait_q_t *wait_q,
 	__ASSERT_NO_MSG(wait_q == NULL || sys_cache_is_mem_coherent(wait_q));
 #endif /* CONFIG_KERNEL_COHERENCE */
 	add_to_waitq_locked(thread, wait_q);
-	add_thread_timeout(thread, timeout);
+	z_add_thread_timeout(thread, timeout);
 }
 
 void z_pend_thread(struct k_thread *thread, _wait_q_t *wait_q,
@@ -503,6 +491,17 @@ void z_thread_timeout(struct _timeout *timeout)
 int z_pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, k_timeout_t timeout)
 {
+	/* A blocking pend from ISR context is a programming error with no
+	 * safe recovery: it would sleep whatever thread was interrupted and,
+	 * on CONFIG_SWAP_NONATOMIC, corrupt the scheduler. Refuse it fatally
+	 * in every build rather than degrading into the corruption traced in
+	 * #111518. Placed first so the refusal performs no side effect.
+	 */
+	if (arch_is_in_isr()) {
+		__ASSERT(false, "blocking pend from ISR context");
+		k_panic();
+	}
+
 #if defined(CONFIG_TIMESLICING) && defined(CONFIG_SWAP_NONATOMIC)
 	pending_current = _current;
 #endif /* CONFIG_TIMESLICING && CONFIG_SWAP_NONATOMIC */
@@ -610,10 +609,7 @@ bool z_thread_prio_set(struct k_thread *thread, int prio)
 	return need_sched;
 }
 
-void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
-{
-	reschedule(lock, key);
-}
+void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key) ALIAS_OF(reschedule);
 
 void z_reschedule_irqlock(uint32_t key)
 {
@@ -773,14 +769,13 @@ int z_unpend_all(_wait_q_t *wait_q)
 
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
-		/* On -EAGAIN the handler is in flight on another CPU; it is
-		 * blocked on _sched_spinlock and will ready the thread itself
-		 * once we drop the lock. The thread is already unpended, so
-		 * the handler's wake path is harmless.
+		/* Abort the timeout and ready the thread unconditionally. If
+		 * the timeout handler is in flight on another CPU, the abort
+		 * flags it superseded and z_thread_timeout() bails when it
+		 * runs -- so it will NOT ready the thread, we must.
 		 */
-		if (z_try_abort_thread_timeout(thread) != -EAGAIN) {
-			ready_thread(thread);
-		}
+		(void)z_try_abort_thread_timeout(thread);
+		ready_thread(thread);
 		need_sched = 1;
 	}
 
@@ -795,13 +790,11 @@ static inline void unpend_all(_wait_q_t *wait_q)
 	for (thread = z_waitq_head(wait_q); thread != NULL; thread = z_waitq_head(wait_q)) {
 		unpend_thread_no_timeout(thread);
 		arch_thread_return_value_set(thread, 0);
-		/* See z_unpend_all() for the -EAGAIN rationale. The return
-		 * value is set above, so an in-flight handler that later
-		 * readies this thread does not overwrite it.
+		/* See z_unpend_all(): the in-flight handler bails on the
+		 * superseded mark, so we ready the thread unconditionally.
 		 */
-		if (z_try_abort_thread_timeout(thread) != -EAGAIN) {
-			ready_thread(thread);
-		}
+		(void)z_try_abort_thread_timeout(thread);
+		ready_thread(thread);
 	}
 }
 
@@ -816,6 +809,7 @@ extern void thread_abort_hook(struct k_thread *thread);
  *
  * @param thread Identify the thread to halt
  * @param new_state New thread state (_THREAD_DEAD or _THREAD_SUSPENDED)
+ * @param key Pointer to the scheduler spinlock key held by the caller
  */
 static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state,
 				      k_spinlock_key_t *key)

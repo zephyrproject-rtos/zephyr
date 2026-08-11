@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ * @ingroup wifi_mgmt
  */
 
 /**
@@ -175,6 +176,7 @@ enum wifi_wpa3_enterprise_type {
 	/** @endcond */
 };
 
+/** @brief EAP TLS cipher types. */
 enum wifi_eap_tls_cipher_type {
 	/** EAP TLS with NONE */
 	WIFI_EAP_TLS_NONE,
@@ -210,6 +212,7 @@ enum wifi_group_mgmt_cipher_type {
 	WPA_CAPA_ENC_BIP_GMAC_256,
 };
 
+/** @brief Cipher capability and name description. */
 struct wifi_cipher_desc {
 	/** Cipher capability. */
 	unsigned int capa;
@@ -217,6 +220,7 @@ struct wifi_cipher_desc {
 	char *name;
 };
 
+/** @brief EAP cipher configuration. */
 struct wifi_eap_cipher_config {
 	/** Key management type string. */
 	char *key_mgmt;
@@ -232,6 +236,7 @@ struct wifi_eap_cipher_config {
 	char *tls_flags;
 };
 
+/** @brief EAP method configuration. */
 struct wifi_eap_config {
 	/**  Security type. */
 	enum wifi_security_type type;
@@ -314,6 +319,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
+/** Helper function to get user-friendly frequency bandwidth name. */
 const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
@@ -324,6 +330,8 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MAX_LEN 64
 /** Maximum WEP key length (WEP-104: 26 hex chars) */
 #define WIFI_WEP_KEY_MAX_LEN 26
+/** Length of the PBKDF2 key */
+#define WIFI_PSK_PBKDF2_KEY_LEN 32
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
@@ -669,9 +677,14 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode);
  * @brief Wi-Fi power save exit strategy
  */
 enum wifi_ps_exit_strategy {
-	/** PS-Poll frame based */
+	/** Custom algorithm: the driver/firmware decides how to exit power save
+	 *  based on traffic, e.g. by sending a PS-Poll, fully exiting power save,
+	 *  or a mix of both.
+	 */
 	WIFI_PS_EXIT_CUSTOM_ALGO = 0,
-	/** QoS NULL frame based */
+	/** Exit power save on every TIM, typically by sending a QoS NULL (or any
+	 *  data) frame to retrieve the buffered traffic.
+	 */
 	WIFI_PS_EXIT_EVERY_TIM,
 
 /** @cond INTERNAL_HIDDEN */

@@ -137,7 +137,7 @@ struct cb_msg {
 	uint32_t cb;
 };
 
-K_MSGQ_DEFINE(usb_dc_msgq, sizeof(struct cb_msg), 10, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(usb_dc_msgq, struct cb_msg, 10);
 static void usb_kinetis_isr_handler(void);
 
 /*

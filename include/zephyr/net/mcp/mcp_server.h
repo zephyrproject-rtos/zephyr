@@ -12,8 +12,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_MCP_SERVER_H_
-#define ZEPHYR_INCLUDE_NET_MCP_SERVER_H_
+#ifndef ZEPHYR_INCLUDE_NET_MCP_MCP_SERVER_H_
+#define ZEPHYR_INCLUDE_NET_MCP_MCP_SERVER_H_
 
 /**
  * @file
@@ -200,7 +200,7 @@ int mcp_server_is_execution_canceled(mcp_server_ctx_t server_ctx, const char *ex
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_MCP_SERVER_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_MCP_MCP_SERVER_H_ */
 
 /**
  * @}

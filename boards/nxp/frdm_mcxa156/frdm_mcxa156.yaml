@@ -30,4 +30,5 @@ supported:
   - usbd
   - watchdog
   - edac
+  - crc
 vendor: nxp

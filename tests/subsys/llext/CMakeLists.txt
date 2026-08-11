@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Intel Corporation.
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(llext_test)
 
@@ -75,6 +75,21 @@ if(CONFIG_LLEXT_VENEERS)
   get_target_property(veneer_lib veneer_ext lib_target)
   target_compile_options(${veneer_lib} PRIVATE -mno-long-calls)
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
+endif()
+
+# An extension referencing the thread-local errno, exercising the AArch64
+# local-exec TLS relocations (R_AARCH64_TLSLE_ADD_TPREL_*). Only arm64
+# implements these in arch_elf_relocate(); a libc whose errno is genuinely
+# __thread (toolchain picolibc with thread-local storage) is enabled by the
+# llext.tls scenario.
+if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE)
+  add_llext_target(tls_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/tls.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/tls_ext.c
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/tls.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls.inc
+  )
 endif()
 
 if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)

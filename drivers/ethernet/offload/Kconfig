@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Madhab Sharma <madhabsharma94@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+source "drivers/ethernet/offload/Kconfig.wch9120"
+# zephyr-keep-sorted-stop

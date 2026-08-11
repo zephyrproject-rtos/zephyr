@@ -8,7 +8,7 @@
 #include <zephyr/drivers/spi.h>
 #include "spi_rtio.h"
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include "spi_context.h"
 #include <soc.h>

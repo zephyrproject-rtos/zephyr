@@ -25,7 +25,7 @@
  */
 
 #include <zephyr/device.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/__assert.h>
 #include <errno.h>
 #include <stdbool.h>

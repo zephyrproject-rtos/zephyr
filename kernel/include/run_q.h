@@ -17,7 +17,7 @@
 static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 {
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
-	uint16_t cpu_mask = thread->base.cpu_mask;
+	uint32_t cpu_mask = thread->base.cpu_mask;
 
 	__ASSERT(cpu_mask != 0U, "thread queued with empty CPU mask");
 

@@ -11,11 +11,17 @@
 
 #include <cy_sysint.h>
 #include <system_cat2.h>/* PSoC4 system init header from PDL */
-#include "cy_pdl.h"
+#include <cy_pdl.h>
+
+int pm_init(void);
 
 /* Minimal early initialization for PSOC4100tp */
 void soc_early_init_hook(void)
 {
 	/* Initializes the system */
 	SystemInit();
+
+#ifdef CONFIG_PM
+	pm_init();
+#endif
 }

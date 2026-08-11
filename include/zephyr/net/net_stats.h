@@ -624,10 +624,10 @@ struct net_stats_eth_hw_timestamp {
 	/** Number of RX hardware timestamp cleared */
 	net_stats_t rx_hwtstamp_cleared;
 
-	/** Number of RX hardware timestamp timeout */
+	/** Number of TX hardware timestamp timeout */
 	net_stats_t tx_hwtstamp_timeouts;
 
-	/** Number of RX hardware timestamp skipped */
+	/** Number of TX hardware timestamp skipped */
 	net_stats_t tx_hwtstamp_skipped;
 };
 

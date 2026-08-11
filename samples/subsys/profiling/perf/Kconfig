@@ -1,0 +1,11 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+configdefault EXTRA_EXCEPTION_INFO
+	default y if CPU_CORTEX_M && CORTEX_M_SYSTICK
+
+configdefault ARCH_STACKWALK
+	default y if CPU_CORTEX_M && CORTEX_M_SYSTICK
+
+source "Kconfig.zephyr"

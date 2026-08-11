@@ -6,6 +6,7 @@
 #include "server_internal.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <string.h>
 
 #include <zephyr/kernel.h>
@@ -21,6 +22,7 @@
 #define SERVER_IPV4_ADDR "127.0.0.1"
 #define SERVER_PORT 18443
 #define ALT_SVC_DISABLED_PORT 18444
+#define CLIENT_PORT_BASE 19000
 #define RECV_TIMEOUT_S 1
 #define SHORT_POLL_TIMEOUT_MS 150
 #define MAX_RESPONSE_SIZE 256
@@ -38,10 +40,13 @@
 #define QPACK_STATIC_PATH_SLASH 1
 #define QPACK_STATIC_METHOD_GET 17
 #define QPACK_STATIC_METHOD_POST 20
+#define QPACK_STATIC_STATUS_200 25
+#define QPACK_STATIC_STATUS_425 70
 #define QPACK_STATIC_USER_AGENT 95
 
 #define TEST_STATIC_PAYLOAD "Hello, H3!"
 #define TEST_DYNAMIC_POST_PAYLOAD "Test dynamic POST"
+#define TEST_H3_0RTT_MAX_EARLY_DATA_SIZE 1024U
 
 static const sec_tag_t server_sec_tags[] = {
 	SERVER_CERTIFICATE_TAG,
@@ -58,15 +63,22 @@ static const char *const alpn_list[] = {
 
 static uint16_t test_http_service_port = SERVER_PORT;
 static uint16_t alt_svc_disabled_service_port = ALT_SVC_DISABLED_PORT;
+static uint16_t next_client_port = CLIENT_PORT_BASE;
 
 static const struct http_service_config test_http_service_cfg = {
 	.http_ver = HTTP_VERSION_1 | HTTP_VERSION_3,
-	.h3_alt_svc_policy = HTTP_H3_ALT_SVC_ENABLE,
+	.h3 = {
+		.alt_svc_policy = HTTP_H3_ALT_SVC_ENABLE,
+		.enable_session_tickets = true,
+		.max_early_data_size = TEST_H3_0RTT_MAX_EARLY_DATA_SIZE,
+	},
 };
 
 static const struct http_service_config alt_svc_disabled_service_cfg = {
 	.http_ver = HTTP_VERSION_1 | HTTP_VERSION_3,
-	.h3_alt_svc_policy = HTTP_H3_ALT_SVC_DISABLE,
+	.h3 = {
+		.alt_svc_policy = HTTP_H3_ALT_SVC_DISABLE,
+	},
 };
 
 HTTPS_SERVICE_DEFINE(test_http_service, SERVER_IPV4_ADDR,
@@ -195,6 +207,7 @@ struct test_headers_clone {
 };
 
 static struct test_headers_clone request_headers_clone;
+static size_t header_capture_calls;
 
 static int header_capture_cb(struct http_client_ctx *client,
 			     enum http_transaction_status status,
@@ -213,6 +226,7 @@ static int header_capture_cb(struct http_client_ctx *client,
 	}
 
 	if (request_ctx->header_count != 0) {
+		header_capture_calls++;
 		memcpy(clone->buffer, client->header_capture_ctx.buffer,
 		       sizeof(clone->buffer));
 		clone->count = request_ctx->header_count;
@@ -346,6 +360,63 @@ static size_t h3_decode_varint(const uint8_t *buf, size_t len, uint64_t *value)
 	}
 
 	return encoded_len;
+}
+
+static size_t qpack_decode_prefixed_int(const uint8_t *buf, size_t len, uint8_t prefix_bits,
+					uint64_t *value)
+{
+	uint8_t prefix_max = (uint8_t)((1U << prefix_bits) - 1U);
+	size_t pos = 1;
+	uint64_t result;
+	uint32_t shift = 0U;
+
+	zassert_true(len > 0, "Missing QPACK integer");
+
+	result = buf[0] & prefix_max;
+	if (result < prefix_max) {
+		*value = result;
+		return 1;
+	}
+
+	while (pos < len) {
+		uint8_t byte = buf[pos++];
+
+		result += (uint64_t)(byte & 0x7fU) << shift;
+		if ((byte & 0x80U) == 0U) {
+			*value = result;
+			return pos;
+		}
+
+		shift += 7U;
+	}
+
+	zassert_unreachable("Truncated QPACK integer");
+	return 0;
+}
+
+static enum http_status h3_decode_response_status(const uint8_t *buf, size_t len)
+{
+	uint64_t ignored;
+	uint64_t status_index;
+	size_t pos = 0;
+
+	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 8, &ignored);
+	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 7, &ignored);
+
+	zassert_true(pos < len, "Missing response status field");
+	zassert_true((buf[pos] & 0xc0U) == 0xc0U,
+		     "Expected indexed static status field, got 0x%02x", buf[pos]);
+	pos += qpack_decode_prefixed_int(buf + pos, len - pos, 6, &status_index);
+
+	switch (status_index) {
+	case QPACK_STATIC_STATUS_200:
+		return HTTP_200_OK;
+	case QPACK_STATIC_STATUS_425:
+		return HTTP_425_TOO_EARLY;
+	default:
+		zassert_unreachable("Unexpected status index %" PRIu64, status_index);
+		return HTTP_500_INTERNAL_SERVER_ERROR;
+	}
 }
 
 static size_t build_headers_frame(uint8_t *buf,
@@ -512,14 +583,17 @@ static void setup_tls_credentials_once(void)
 	credentials_added = true;
 }
 
-static void connect_h3_client(void)
+static void connect_h3_client(const struct quic_session_state *session_state)
 {
+	struct net_sockaddr_in client_addr;
 	struct net_sockaddr_in server_addr;
 	int ret;
 
 	init_ipv4_addr(&server_addr, SERVER_IPV4_ADDR, SERVER_PORT);
+	init_ipv4_addr(&client_addr, SERVER_IPV4_ADDR, next_client_port++);
 
-	client_conn_fd = quic_connection_open((struct net_sockaddr *)&server_addr, NULL);
+	client_conn_fd = quic_connection_open((struct net_sockaddr *)&server_addr,
+					      (struct net_sockaddr *)&client_addr);
 	zassert_true(client_conn_fd >= 0, "Failed to open client QUIC connection (%d)",
 		     client_conn_fd);
 
@@ -530,6 +604,27 @@ static void connect_h3_client(void)
 	ret = zsock_setsockopt(client_conn_fd, ZSOCK_SOL_TLS, ZSOCK_TLS_ALPN_LIST,
 			       alpn_list, sizeof(alpn_list));
 	zassert_ok(ret, "Failed to set client ALPN (%d)", errno);
+
+	if (session_state != NULL) {
+		struct quic_session_state imported_state;
+		net_socklen_t optlen;
+
+		ret = zsock_setsockopt(client_conn_fd, ZSOCK_SOL_QUIC,
+				       ZSOCK_QUIC_SO_SESSION_STATE,
+				       session_state, sizeof(*session_state));
+		zassert_ok(ret, "Failed to import client session state (%d)", errno);
+
+		memset(&imported_state, 0, sizeof(imported_state));
+		optlen = sizeof(imported_state);
+		ret = zsock_getsockopt(client_conn_fd, ZSOCK_SOL_QUIC,
+				       ZSOCK_QUIC_SO_SESSION_STATE,
+				       &imported_state, &optlen);
+		zassert_ok(ret, "Failed to read imported client session state (%d)", errno);
+		zassert_equal(optlen, sizeof(imported_state),
+			      "Unexpected imported H3 session state size %u", optlen);
+		zassert_mem_equal(session_state, &imported_state, sizeof(imported_state),
+				  "Imported H3 session state mismatch");
+	}
 }
 
 static int connect_https_client(uint16_t port)
@@ -716,12 +811,9 @@ static void accept_server_uni_streams(bool *seen_control,
 	*seen_qpack_decoder = true;
 }
 
-static void start_h3_session(bool split_control_stream)
+static void send_client_control_stream(bool split_control_stream)
 {
 	uint8_t control_buf[8];
-	bool seen_control = false;
-	bool seen_qpack_encoder = false;
-	bool seen_qpack_decoder = false;
 	size_t control_len;
 	int control_fd;
 
@@ -736,7 +828,15 @@ static void start_h3_session(bool split_control_stream)
 	} else {
 		send_all(control_fd, control_buf, control_len);
 	}
+}
 
+static void start_h3_session(bool split_control_stream)
+{
+	bool seen_control = false;
+	bool seen_qpack_encoder = false;
+	bool seen_qpack_decoder = false;
+
+	send_client_control_stream(split_control_stream);
 	accept_server_uni_streams(&seen_control, &seen_qpack_encoder,
 				    &seen_qpack_decoder);
 
@@ -798,6 +898,34 @@ static void expect_headers_only_response(int stream_fd)
 	offset += consumed;
 	zassert_true(frame_len > 0, "Empty HEADERS payload");
 	zassert_true(offset + frame_len <= response_len, "HEADERS frame exceeds buffer");
+	offset += frame_len;
+
+	zassert_equal(offset, response_len, "Unexpected extra response bytes");
+}
+
+static void expect_headers_only_status_response(int stream_fd, enum http_status expected_status)
+{
+	uint8_t response[MAX_RESPONSE_SIZE];
+	size_t offset = 0;
+	size_t response_len;
+	uint64_t frame_type;
+	uint64_t frame_len;
+	size_t consumed;
+
+	response_len = read_stream_to_eof(stream_fd, response, sizeof(response));
+	zassert_true(response_len > 0, "Empty H3 response");
+
+	consumed = h3_decode_varint(response + offset, response_len - offset, &frame_type);
+	offset += consumed;
+	zassert_equal(frame_type, H3_FRAME_HEADERS, "Expected HEADERS frame");
+
+	consumed = h3_decode_varint(response + offset, response_len - offset, &frame_len);
+	offset += consumed;
+	zassert_true(frame_len > 0, "Empty HEADERS payload");
+	zassert_true(offset + frame_len <= response_len, "HEADERS frame exceeds buffer");
+	zassert_equal(h3_decode_response_status(response + offset, frame_len),
+		      expected_status,
+		      "Unexpected HTTP/3 response status");
 	offset += frame_len;
 
 	zassert_equal(offset, response_len, "Unexpected extra response bytes");
@@ -916,18 +1044,17 @@ static void http_server_h3_before(void *fixture)
 	dynamic_final_seen = false;
 	dynamic_complete = false;
 	memset(&request_headers_clone, 0, sizeof(request_headers_clone));
+	header_capture_calls = 0;
 	tracked_stream_count = 0;
 	for (size_t i = 0; i < ARRAY_SIZE(tracked_stream_fds); i++) {
 		tracked_stream_fds[i] = -1;
 	}
 
-	connect_h3_client();
+	connect_h3_client(NULL);
 }
 
-static void http_server_h3_after(void *fixture)
+static void close_h3_client(void)
 {
-	ARG_UNUSED(fixture);
-
 	for (size_t i = 0; i < tracked_stream_count; i++) {
 		if (tracked_stream_fds[i] < 0) {
 			continue;
@@ -944,6 +1071,42 @@ static void http_server_h3_after(void *fixture)
 	}
 
 	k_msleep(100);
+}
+
+static void wait_for_client_session_state(struct quic_session_state *session_state)
+{
+	net_socklen_t optlen;
+	int ret = -1;
+
+	memset(session_state, 0, sizeof(*session_state));
+
+	for (int attempt = 0; attempt < 50; attempt++) {
+		optlen = sizeof(*session_state);
+		ret = zsock_getsockopt(client_conn_fd, ZSOCK_SOL_QUIC,
+				       ZSOCK_QUIC_SO_SESSION_STATE,
+				       session_state, &optlen);
+		if (ret == 0 && session_state->ticket_len > 0U &&
+		    session_state->psk_len > 0U &&
+		    session_state->transport_params.valid) {
+			break;
+		}
+
+		k_sleep(K_MSEC(20));
+	}
+
+	zassert_ok(ret, "Failed to export client session state (%d)", errno);
+	zassert_equal(optlen, sizeof(*session_state), "Unexpected session state size %u", optlen);
+	zassert_true(session_state->ticket_len > 0U, "Expected a non-empty H3 session ticket");
+	zassert_true(session_state->psk_len > 0U, "Expected a non-empty H3 resumption PSK");
+	zassert_true(session_state->transport_params.valid,
+		     "Expected remembered transport parameters in H3 session state");
+}
+
+static void http_server_h3_after(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	close_h3_client();
 }
 
 static void http_server_h3_teardown(void *fixture)
@@ -1269,6 +1432,69 @@ ZTEST(server_h3_tests, test_h3_post_captures_request_headers_on_first_data_callb
 
 	ret = zsock_close(stream_fd);
 	zassert_ok(ret, "Failed to close POST header capture stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_resumed_early_get_reaches_callback)
+{
+	struct quic_session_state session_state;
+	uint8_t headers[160];
+	size_t headers_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+	send_get_and_expect_static(false);
+	wait_for_client_session_state(&session_state);
+
+	close_h3_client();
+	connect_h3_client(&session_state);
+	send_client_control_stream(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_header_capture_headers_frame(headers, sizeof(headers),
+							 HTTP_GET, "/header_capture",
+							 "h3-0rtt", "early-get");
+	send_all(stream_fd, headers, headers_len);
+
+	expect_headers_only_status_response(stream_fd, HTTP_200_OK);
+	zassert_true(header_capture_calls > 0U,
+		     "Expected the header-capture callback to run for accepted 0-RTT GET");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close early GET stream (%d)", errno);
+	untrack_stream_fd(stream_fd);
+}
+
+ZTEST(server_h3_tests, test_h3_resumed_early_post_is_rejected_with_425)
+{
+	struct quic_session_state session_state;
+	uint8_t headers[64];
+	size_t headers_len;
+	int stream_fd;
+	int ret;
+
+	start_h3_session(false);
+	send_get_and_expect_static(false);
+	wait_for_client_session_state(&session_state);
+
+	close_h3_client();
+	connect_h3_client(&session_state);
+	send_client_control_stream(false);
+
+	stream_fd = open_client_stream(QUIC_STREAM_BIDIRECTIONAL);
+	headers_len = build_headers_frame(headers, HTTP_POST, "/dynamic");
+	send_all(stream_fd, headers, headers_len);
+
+	expect_headers_only_status_response(stream_fd, HTTP_425_TOO_EARLY);
+	zassert_equal(dynamic_bytes_received, 0U,
+		      "Rejected early POST must not deliver request body data");
+	zassert_false(dynamic_more_seen, "Rejected early POST must not enter DATA_MORE");
+	zassert_false(dynamic_final_seen, "Rejected early POST must not enter DATA_FINAL");
+	zassert_false(dynamic_complete, "Rejected early POST must not complete dynamically");
+
+	ret = zsock_close(stream_fd);
+	zassert_ok(ret, "Failed to close rejected early POST stream (%d)", errno);
 	untrack_stream_fd(stream_fd);
 }
 

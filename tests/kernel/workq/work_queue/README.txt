@@ -1,104 +1,78 @@
-Title: Test workqueue APIs
+Title: Workqueue APIs
 
 Description:
 
-A simple application verifying the workqueue API
+This test verifies the kernel workqueue APIs. It is organized into several
+Ztest suites:
 
---------------------------------------------------------------------------------
+1. workqueue_api
+   - test_k_work_queue_start_stop, test_k_work_queue_stop_sys_thread and
+     test_k_work_queue_run_stop exercise starting and stopping a work
+     queue and its worker thread.
 
-Building and Running Project:
+2. workqueue_delayed
+   - test_delayed submits delayed work items from cooperative and
+     preemptible threads and checks they run in the expected order.
+   - test_delayed_pending and test_delayed_cancel check pending and
+     cancellation of delayed work.
 
-This kernel project outputs to the console.  It can be built and executed
-on QEMU as follows:
+3. workqueue_triggered
+   - test_triggered and its variants (already_triggered, resubmit,
+     no_wait, wait, from_msgq, cancel, ...) exercise poll-triggered work.
+   - test_resubmit and test_delayed_work_define cover resubmission and
+     static definition of work items.
 
-    make run
+4. workqueue_work_timeout (built with CONFIG_WORKQUEUE_WORK_TIMEOUT=y)
+   - test_work verifies the per-work-item timeout behavior.
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
-Troubleshooting:
+Building and Running:
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+Build and run with twister, for example on QEMU:
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    twister -p qemu_x86 -T tests/kernel/workq/work_queue
 
---------------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
+    west build -b qemu_x86 tests/kernel/workq/work_queue
+    west build -t run
 
-***** BOOTING ZEPHYR OS vxxxx - BUILD: xxxxx *****
-Starting sequence test
- - Initializing test items
- - Submitting test items
- - Submitting work 1 from preempt thread
- - Running test item 1
- - Submitting work 2 from coop thread
- - Submitting work 3 from preempt thread
- - Submitting work 4 from coop thread
- - Running test item 2
- - Submitting work 5 from preempt thread
- - Submitting work 6 from coop thread
- - Waiting for work to finish
- - Running test item 3
- - Running test item 4
- - Running test item 5
- - Running test item 6
- - Checking results
-Starting resubmit test
- - Submitting work
- - Waiting for work to finish
- - Resubmitting work
- - Resubmitting work
- - Resubmitting work
- - Resubmitting work
- - Resubmitting work
- - Checking results
-Starting delayed test
- - Initializing delayed test items
- - Submitting delayed test items
- - Submitting delayed work 1 from preempt thread
- - Submitting delayed work 3 from preempt thread
- - Submitting delayed work 5 from preempt thread
- - Waiting for delayed work to finish
- - Submitting delayed work 2 from coop thread
- - Submitting delayed work 4 from coop thread
- - Submitting delayed work 6 from coop thread
- - Running delayed test item 1
- - Running delayed test item 2
- - Running delayed test item 3
- - Running delayed test item 4
- - Running delayed test item 5
- - Running delayed test item 6
- - Checking results
-Starting delayed resubmit test
- - Submitting delayed work
- - Waiting for work to finish
- - Resubmitting delayed work
- - Resubmitting delayed work
- - Resubmitting delayed work
- - Resubmitting delayed work
- - Resubmitting delayed work
- - Checking results
-Starting delayed resubmit from coop thread test
- - Resubmitting delayed work with 1 ms
- - Resubmitting delayed work with 1 ms
- - Resubmitting delayed work with 1 ms
- - Resubmitting delayed work with 1 ms
- - Resubmitting delayed work with 1 ms
- - Resubmitting delayed work with 1 ms
- - Waiting for work to finish
- - Running delayed test item 1
- - Checking results
-Starting delayed cancel test
- - Cancel delayed work from preempt thread
- - Cancel delayed work from coop thread
- - Cancel pending delayed work from coop thread
- - Waiting for work to finish
- - Checking results
+---------------------------------------------------------------------------
+
+Sample Output:
+
+Running TESTSUITE workqueue_api
 ===================================================================
-PASS - main.
+START - test_k_work_queue_run_stop
+ PASS - test_k_work_queue_run_stop
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+START - test_k_work_queue_start_stop
+ PASS - test_k_work_queue_start_stop
+===================================================================
+START - test_k_work_queue_stop_sys_thread
+ PASS - test_k_work_queue_stop_sys_thread
+===================================================================
+TESTSUITE workqueue_api succeeded
+
+Running TESTSUITE workqueue_delayed
+===================================================================
+START - test_delayed
+ PASS - test_delayed
+===================================================================
+START - test_delayed_cancel
+ PASS - test_delayed_cancel
+===================================================================
+START - test_delayed_pending
+ PASS - test_delayed_pending
+===================================================================
+TESTSUITE workqueue_delayed succeeded
+
+Running TESTSUITE workqueue_triggered
+===================================================================
+START - test_triggered
+ PASS - test_triggered
+===================================================================
+... (remaining triggered cases) ...
+===================================================================
+TESTSUITE workqueue_triggered succeeded

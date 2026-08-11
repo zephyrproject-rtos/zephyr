@@ -2,6 +2,8 @@
 
 /*
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,10 +47,7 @@ static struct k_poll_signal button_pressed_signal;
 static void button_pressed(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
 {
 	LOG_DBG("Button pressed...");
-
 	k_poll_signal_raise(&button_pressed_signal, 0);
-	k_sleep(K_SECONDS(1));
-	k_poll_signal_reset(&button_pressed_signal);
 }
 
 static int get_passkey_confirmation(struct bt_conn *conn)
@@ -63,12 +62,14 @@ static int get_passkey_confirmation(struct bt_conn *conn)
 	err = bt_conn_auth_passkey_confirm(conn);
 	if (err) {
 		LOG_DBG("Failed to confirm passkey.");
-		return -1;
+	} else {
+		printk("Passkey confirmed.\n");
 	}
 
-	printk("Passkey confirmed.\n");
+	k_sleep(K_SECONDS(1));
+	k_poll_signal_reset(&button_pressed_signal);
 
-	return 0;
+	return err;
 }
 
 static int setup_btn(void)
@@ -79,21 +80,21 @@ static int setup_btn(void)
 
 	if (!gpio_is_ready_dt(&button)) {
 		LOG_ERR("Error: button device %s is not ready", button.port->name);
-		return -1;
+		return -ENODEV;
 	}
 
 	ret = gpio_pin_configure_dt(&button, GPIO_INPUT);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure %s pin %d", ret, button.port->name,
 			button.pin);
-		return -1;
+		return ret;
 	}
 
 	ret = gpio_pin_interrupt_configure_dt(&button, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret != 0) {
 		LOG_ERR("Error %d: failed to configure interrupt on %s pin %d", ret,
 			button.port->name, button.pin);
-		return -1;
+		return ret;
 	}
 
 	gpio_init_callback(&button_cb_data, button_pressed, BIT(button.pin));

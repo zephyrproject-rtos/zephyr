@@ -23,7 +23,7 @@
 		};
 
 		lptim3: timers@40009000 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
 			resets = <&rctl STM32_RESET(APB1L, 26)>;
 			#address-cells = <1>;
@@ -38,7 +38,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <11 0 11 0 11 0 11 0 11 0>;
+			interrupts = <11 0>, <11 0>, <11 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <5>;
 			dma-offset = <7>;

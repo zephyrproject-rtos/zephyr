@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh BLOB Transfer Server model API.
+ * @ingroup bt_mesh_blob_srv
+ */
+
 #ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_SRV_H_
 #define ZEPHYR_INCLUDE_BLUETOOTH_MESH_BLOB_SRV_H_
 

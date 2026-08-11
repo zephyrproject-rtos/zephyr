@@ -404,6 +404,7 @@ our $Attribute	= qr{
 			____cacheline_aligned|
 			____cacheline_aligned_in_smp|
 			____cacheline_internodealigned_in_smp|
+			__aligned\s*\((?:[^()]*|\([^()]*\))*\)|
 			__weak|
 			__syscall
 		  }x;
@@ -507,6 +508,7 @@ our $signature_tags = qr{(?xi:
 	Reviewed-by:|
 	Reported-by:|
 	Suggested-by:|
+	Assisted-by:|
 	To:|
 	Cc:
 )};
@@ -867,6 +869,7 @@ our $FuncArg = qr{$Typecast{0,1}($LvalOrFunc|$Constant|$String)};
 our $declaration_macros = qr{(?x:
 	(?:$Storage\s+)?(?:[A-Z_][A-Z0-9]*_){0,2}(?:DEFINE|DECLARE)(?:_[A-Z0-9]+){0,6}\s*\(|
 	(?:$Storage\s+)?[HLP]?LIST_HEAD\s*\(|
+	(?:DEVICE_MMIO_)(?:NAMED_)?(?:ROM|RAM)(?!_PTR)|
 	(?:SKCIPHER_REQUEST|SHASH_DESC|AHASH_REQUEST)_ON_STACK\s*\(
 )};
 
@@ -1822,6 +1825,19 @@ sub annotate_values {
 			push(@av_paren_type, $type);
 			$type = 'c';
 
+		} elsif ($perl_version_ok &&
+			 $cur =~ /^((?:$Modifier\s+|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(?:\s|\*)*)(?:$Ident|,|\)|\s*$)/) {
+			# A tagged type whose name is produced by a
+			# function-like macro, e.g. "struct MY_MACRO(NODE)
+			# *spec". Consume the macro's parenthesized argument, and
+			# any trailing pointer '*', as part of the type. This
+			# mirrors how the plain $Type regex absorbs the '*' so it
+			# is not annotated as a binary operator. Requiring a
+			# struct/union/enum tag keeps this from matching a lone
+			# macro that returns a value, e.g. "u32(5) * 2".
+			print "DECLARE($1)\n" if ($dbg_values > 1);
+			$type = 'T';
+
 		} elsif ($cur =~ /^($Type)\s*(?:$Ident|,|\)|\(|\s*$)/) {
 			print "DECLARE($1)\n" if ($dbg_values > 1);
 			$type = 'T';
@@ -2730,6 +2746,15 @@ sub process {
 					$fixed[$fixlinenr] =
 					    "$ucfirst_sign_off $email";
 				}
+			}
+
+			# Assisted-by uses AGENT_NAME:MODEL_VERSION format, not email
+			if ($sign_off =~ /^Assisted-by:/i) {
+				if ($email !~ /^\S+:\S+/) {
+					WARN("BAD_SIGN_OFF",
+					     "Assisted-by expects 'AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]' format\n" . $herecurr);
+				}
+				next;
 			}
 
 			my ($email_name, $email_address, $comment) = parse_email($email);
@@ -4230,6 +4255,37 @@ sub process {
 			$to =~ s/(\b$Modifier$)/$1 /;
 
 ##			print "2: from<$from> to<$to> ident<$ident>\n";
+			if ($from ne $to && $ident !~ /^$Modifier$/) {
+				if (ERROR("POINTER_LOCATION",
+					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&
+				    $fix) {
+
+					my $sub_from = $match;
+					my $sub_to = $match;
+					$sub_to =~ s/\Q$from\E/$to/;
+					$fixed[$fixlinenr] =~
+					    s@\Q$sub_from\E@$sub_to@;
+				}
+			}
+		}
+		# Same as above, but for a tagged type whose name is produced by
+		# a function-like macro, e.g. "struct MY_MACRO(NODE)*spec". The
+		# macro's parenthesized argument sits between the type and the
+		# '*', so the plain $NonptrType patterns above do not match it.
+		while ($perl_version_ok &&
+		       $line =~ m{(\b(?:$Modifier\b\s*|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(\s*(?:$Modifier\b\s*|\*\s*)+)($Ident))}g) {
+			my ($match, $from, $to, $ident) = ($1, $3, $3, $4);
+
+			# Should start with a space.
+			$to =~ s/^(\S)/ $1/;
+			# Should not end with a space.
+			$to =~ s/\s+$//;
+			# '*'s should not have spaces between.
+			while ($to =~ s/\*\s+\*/\*\*/) {
+			}
+			# Modifiers should have spaces.
+			$to =~ s/(\b$Modifier$)/$1 /;
+
 			if ($from ne $to && $ident !~ /^$Modifier$/) {
 				if (ERROR("POINTER_LOCATION",
 					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&

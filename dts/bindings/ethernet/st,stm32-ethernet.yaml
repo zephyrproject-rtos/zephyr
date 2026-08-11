@@ -2,9 +2,28 @@
 # Copyright (c) 2024, STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  ST STM32 Ethernet MAC, a child node of the Ethernet controller.
+title: ST STM32 Ethernet MAC
 
 compatible: "st,stm32-ethernet"
 
-include: st,stm32-ethernet-common.yaml
+include:
+  - name: snps,dwmac.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+  clocks:
+    required: true
+  clock-names:
+    required: true
+  interrupts:
+    required: true
+  pinctrl-0:
+    required: true
+  pinctrl-names:
+    required: true
+  phy-connection-type:
+    required: true
+  phy-handle:
+    required: true

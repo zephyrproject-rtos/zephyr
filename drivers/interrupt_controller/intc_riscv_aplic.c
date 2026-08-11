@@ -52,7 +52,7 @@ int riscv_aplic_config_src(const struct device *dev, unsigned int src, unsigned 
 		return -EINVAL;
 	}
 	/* Validate sm parameter - 0x2 and 0x3 are reserved (RISC-V AIA spec, section 4.5.2) */
-	if (sm == 0x2 || sm == 0x3) {
+	if (sm == 0x2 || sm == 0x3 || (sm > APLIC_SM_LEVEL_LOW)) {
 		return -EINVAL;
 	}
 	uintptr_t off = aplic_sourcecfg_off(src);
@@ -108,7 +108,7 @@ uint32_t riscv_aplic_get_num_sources(const struct device *dev)
 	}
 
 #define APLIC_INIT(inst)                                                                           \
-	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, max_prio),                                        \
+	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, riscv_max_priority),                              \
 		     "max_prio is required for APLIC direct-delivery mode but is not present");    \
 	IRQ_PARENT_ENTRY_DEFINE(aplic##inst, DEVICE_DT_INST_GET(inst), DT_INST_IRQN(inst),         \
 				INTC_INST_ISR_TBL_OFFSET(inst),                                    \

@@ -27,6 +27,10 @@
 #define CRYPTO_DEV_COMPAT sifli_sf32lb_crypto
 #elif DT_HAS_COMPAT_STATUS_OKAY(bflb_sec_eng_sha)
 #define CRYPTO_DEV_COMPAT bflb_sec_eng_sha
+#elif DT_HAS_COMPAT_STATUS_OKAY(realtek_bee_sha256)
+#define CRYPTO_DEV_COMPAT realtek_bee_sha256
+#elif CONFIG_CRYPTO_INFINEON_MXCRYPTOLITE
+#define CRYPTO_DEV_COMPAT infineon_mxcryptolite_crypto
 #else
 #error "You need to enable one crypto device"
 #endif

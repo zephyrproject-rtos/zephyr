@@ -35,6 +35,7 @@ struct ssh_transport_user_request {
 		SSH_TRANSPORT_USER_REQUEST_OPEN_CHANNEL_RESULT,		/* Server only */
 		SSH_TRANSPORT_USER_REQUEST_CHANNEL_REQUEST,
 		SSH_TRANSPORT_USER_REQUEST_CHANNEL_REQUEST_RESULT,
+		SSH_TRANSPORT_USER_REQUEST_CHANNEL_CLOSE,
 	} type;
 	union {
 		struct ssh_transport_user_request_authenticate {
@@ -63,6 +64,9 @@ struct ssh_transport_user_request {
 			struct ssh_channel *channel;
 			bool success;
 		} channel_request_result;
+		struct ssh_transport_user_request_channel_close {
+			struct ssh_channel *channel;
+		} channel_close;
 	};
 };
 
@@ -228,5 +232,8 @@ int ssh_transport_send_service_request(struct ssh_transport *transport,
 #ifdef CONFIG_SSH_SERVER
 int ssh_transport_send_server_sig_algs(struct ssh_transport *transport);
 #endif
+
+int ssh_transport_register_callback(struct ssh_transport_conf *conf, bool is_server);
+int ssh_transport_unregister_callback(struct ssh_transport_conf *conf, bool is_server);
 
 #endif

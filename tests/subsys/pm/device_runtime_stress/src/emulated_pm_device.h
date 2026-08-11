@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,5 +35,26 @@ int emulated_pm_stress_submit(const struct device *dev);
  * @retval non-zero pm_device_runtime_put_async() error from timer context.
  */
 int emulated_pm_stress_wait(const struct device *dev);
+
+/**
+ * @brief Arm a one-shot timer whose expiry calls pm_device_runtime_get().
+ *
+ * The timer expiry handler calls pm_device_runtime_get() for the device and
+ * records the result, emulating a device interrupt that acquires a runtime PM
+ * reference.
+ *
+ * @param dev Emulated device instance.
+ */
+void emulated_pm_stress_isr_get_submit(const struct device *dev);
+
+/**
+ * @brief Wait for the emulated ISR get() and return its result.
+ *
+ * @param dev Emulated device instance.
+ *
+ * @retval 0 pm_device_runtime_get() succeeded in timer context.
+ * @retval -errno pm_device_runtime_get() error from timer context.
+ */
+int emulated_pm_stress_isr_get_result(const struct device *dev);
 
 #endif /* ZEPHYR_TESTS_SUBSYS_PM_DEVICE_RUNTIME_STRESS_EMULATED_PM_DEVICE_H_ */

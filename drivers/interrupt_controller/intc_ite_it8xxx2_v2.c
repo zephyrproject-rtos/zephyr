@@ -148,13 +148,13 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	group = irq / MAX_REGISR_IRQ_NUM;
 	index = irq % MAX_REGISR_IRQ_NUM;
 
-	if ((flags & IRQ_TYPE_LEVEL_HIGH) || (flags & IRQ_TYPE_EDGE_RISING)) {
+	if (flags & (IRQ_TYPE_LEVEL_HIGH | IRQ_TYPE_EDGE_RISING)) {
 		IT8XXX2_INTC_IPOLR(group) &= ~BIT(index);
 	} else {
 		IT8XXX2_INTC_IPOLR(group) |= BIT(index);
 	}
 
-	if ((flags & IRQ_TYPE_LEVEL_LOW) || (flags & IRQ_TYPE_LEVEL_HIGH)) {
+	if (flags & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH)) {
 		IT8XXX2_INTC_IELMR(group) &= ~BIT(index);
 	} else {
 		IT8XXX2_INTC_IELMR(group) |= BIT(index);

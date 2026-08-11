@@ -37,6 +37,12 @@ config SERIAL_INIT_PRIORITY
 	help
 	  Serial driver device initialization priority.
 
+config SERIAL_HAS_POST_KERNEL_INIT
+	bool
+	help
+	  This is selected by serial drivers, that init POST_KERNEL and
+	  not PRE_KERNEL
+
 module = UART
 module-str = uart
 source "subsys/logging/Kconfig.template.log_config"
@@ -167,7 +173,6 @@ rsource "Kconfig.ambiq"
 rsource "Kconfig.ameba_loguart"
 rsource "Kconfig.apbuart"
 rsource "Kconfig.b91"
-rsource "Kconfig.bcm2711"
 rsource "Kconfig.bee"
 rsource "Kconfig.bflb"
 rsource "Kconfig.bitbang"
@@ -179,6 +184,7 @@ rsource "Kconfig.cc32xx"
 rsource "Kconfig.cdns"
 rsource "Kconfig.cmsdk_apb"
 rsource "Kconfig.efinix_sapphire"
+rsource "Kconfig.em32"
 rsource "Kconfig.emul"
 rsource "Kconfig.ene"
 rsource "Kconfig.esp32"
@@ -194,6 +200,7 @@ rsource "Kconfig.it8xxx2"
 rsource "Kconfig.leuart_gecko"
 rsource "Kconfig.litex"
 rsource "Kconfig.lpc11u6x"
+rsource "Kconfig.lpc84x"
 rsource "Kconfig.max32"
 rsource "Kconfig.mchp"
 rsource "Kconfig.mcux"
@@ -232,6 +239,7 @@ rsource "Kconfig.rzt2m"
 rsource "Kconfig.sam0"
 rsource "Kconfig.sedi"
 rsource "Kconfig.sf32lb"
+rsource "Kconfig.shakti"
 rsource "Kconfig.si32"
 rsource "Kconfig.sifive"
 rsource "Kconfig.silabs_eusart"
@@ -244,6 +252,7 @@ rsource "Kconfig.test"
 rsource "Kconfig.uart_sam"
 rsource "Kconfig.usart_sam"
 rsource "Kconfig.virtio_console"
+rsource "Kconfig.wch_ch5xx"
 rsource "Kconfig.wch_usart"
 rsource "Kconfig.xec"
 rsource "Kconfig.xen"

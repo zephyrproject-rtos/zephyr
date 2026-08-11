@@ -139,7 +139,7 @@ struct airoc_wifi_event_t {
 	whd_event_data_t *whd_event_data;
 };
 
-K_MSGQ_DEFINE(airoc_wifi_msgq, sizeof(struct airoc_wifi_event_t), 10, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(airoc_wifi_msgq, struct airoc_wifi_event_t, 10);
 K_THREAD_STACK_DEFINE(airoc_wifi_event_stack, CONFIG_AIROC_WIFI_EVENT_TASK_STACK_SIZE);
 static struct k_thread airoc_wifi_event_thread;
 
@@ -381,7 +381,14 @@ static whd_result_t airoc_wifi_host_buffer_get(whd_buffer_t *buffer, whd_buffer_
 	struct net_buf *buf;
 
 	buf = net_buf_alloc_len(&airoc_pool, size, K_NO_WAIT);
-	if ((buf == NULL) || (buf->size < size)) {
+	if (buf == NULL) {
+		return WHD_BUFFER_ALLOC_FAIL;
+	}
+	if (buf->size < size) {
+		/* net_buf_alloc_len() returned a buffer smaller than requested;
+		 * release it before failing or it leaks from airoc_pool.
+		 */
+		net_buf_unref(buf);
 		return WHD_BUFFER_ALLOC_FAIL;
 	}
 	*buffer = buf;
@@ -875,6 +882,7 @@ static int airoc_mgmt_scan(const struct device *dev,
 	if (whd_wifi_scan(airoc_sta_if, scan_type, WHD_BSS_TYPE_ANY, &(data->ssid), NULL, NULL,
 			  NULL, scan_callback, &(data->scan_result), data) != WHD_SUCCESS) {
 		LOG_ERR("Failed to start scan");
+		data->scan_rslt_cb = NULL;
 		k_sem_give(&data->sema_common);
 		return -EAGAIN;
 	}

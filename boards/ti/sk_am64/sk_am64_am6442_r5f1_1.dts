@@ -14,7 +14,7 @@
 	compatible = "ti,am64x_sk_r5f1_1", "ti,am6442";
 
 	chosen {
-		zephyr,sram = &atcm;
+		zephyr,sram = &ddr1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 	};

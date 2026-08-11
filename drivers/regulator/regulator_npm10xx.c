@@ -816,9 +816,9 @@ static int configure_active_discharge(const struct regulator_npm10xx_config *con
 		}
 
 	case NPM10XX_SOURCE_LDO:
-		return i2c_reg_update_byte_dt(&config->i2c, NPM10_LDO1_CONFIG1,
-					      LDO1_CONFIG1_PULLDN_Msk,
-					      FIELD_PREP(LDO1_CONFIG1_PULLDN_Msk, reg));
+		return i2c_reg_update_byte_dt(
+			&config->i2c, NPM10_LDO1_CONFIG1, LDO1_CONFIG1_PULLDN_Msk,
+			FIELD_PREP(LDO1_CONFIG1_PULLDN_Msk, active_discharge));
 
 	case NPM10XX_SOURCE_LDSW:
 		return i2c_reg_write_byte_dt(

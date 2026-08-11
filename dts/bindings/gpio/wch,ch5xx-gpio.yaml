@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH CH5xx General-Purpose Input/Output (GPIO)
+
+compatible: "wch,ch5xx-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+  port:
+    required: true
+    type: string
+    description: GPIO port
+    enum:
+      - "port-a"
+      - "port-b"
+
+gpio-cells:
+  - pin
+  - flags

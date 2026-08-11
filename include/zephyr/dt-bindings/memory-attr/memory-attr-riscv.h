@@ -10,8 +10,8 @@
  * @ingroup dt_binding_mem_attr_riscv
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_MEM_ATTR_RISCV_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_MEM_ATTR_RISCV_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_MEMORY_ATTR_MEMORY_ATTR_RISCV_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_MEMORY_ATTR_MEMORY_ATTR_RISCV_H_
 
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
@@ -75,4 +75,4 @@
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_MEM_ATTR_RISCV_H_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_MEMORY_ATTR_MEMORY_ATTR_RISCV_H_ */

@@ -27,6 +27,14 @@ required by an application. Three modes of operation are supported,
 which are described below. In addition, the kernel's support for the SSE
 registers can be included or omitted, as desired.
 
+A thread's participation in floating point context preservation can also be
+managed at run time. :c:func:`k_float_enable` enables preservation for a thread
+and accepts options -- such as :c:macro:`K_FP_REGS` and :c:macro:`K_SSE_REGS` --
+that select which register sets are preserved, while :c:func:`k_float_disable`
+turns preservation off again. On targets that do not implement floating point
+context management these routines return ``-ENOTSUP``, and they return
+``-EINVAL`` if the request is otherwise invalid and cannot be performed.
+
 No FP registers mode
 ====================
 

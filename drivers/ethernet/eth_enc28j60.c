@@ -660,6 +660,10 @@ static int eth_enc28j60_rx(const struct device *dev)
 		/* Get the frame length from the rx status vector,
 		 * minus CRC size at the end which is always present
 		 */
+		if (sys_get_le16(info) <= 4U) {
+			LOG_ERR("Invalid enc28j60 frame length %u", sys_get_le16(info));
+			break;
+		}
 		frm_len = sys_get_le16(info) - 4;
 
 		enc28j60_read_packet(dev, frm_len);

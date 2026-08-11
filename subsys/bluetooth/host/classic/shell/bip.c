@@ -23,8 +23,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #define BIP_MOPL CONFIG_BT_GOEP_RFCOMM_MTU
 
@@ -44,10 +44,10 @@ struct bt_bip_app {
 	uint32_t conn_id;
 };
 
-static struct bt_bip_app bip_app;
+ZTESTABLE_STATIC struct bt_bip_app bip_app;
 
-static struct bt_bip_rfcomm_server rfcomm_server;
-static struct bt_bip_l2cap_server l2cap_server;
+ZTESTABLE_STATIC struct bt_bip_rfcomm_server rfcomm_server;
+ZTESTABLE_STATIC struct bt_bip_l2cap_server l2cap_server;
 
 #define TLV_COUNT       6
 #define TLV_BUFFER_SIZE 64

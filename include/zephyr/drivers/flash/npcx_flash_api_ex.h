@@ -10,8 +10,8 @@
  * @ingroup npcx_flash_ex_op
  */
 
-#ifndef __ZEPHYR_INCLUDE_DRIVERS_NPCX_FLASH_API_EX_H__
-#define __ZEPHYR_INCLUDE_DRIVERS_NPCX_FLASH_API_EX_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_NPCX_FLASH_API_EX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_NPCX_FLASH_API_EX_H_
 
 /**
  * @brief Extended operations for NPCX flash controllers.
@@ -144,4 +144,4 @@ struct npcx_ex_ops_gdma_in {
  * @}
  */
 
-#endif /* __ZEPHYR_INCLUDE_DRIVERS_NPCX_FLASH_API_EX_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_NPCX_FLASH_API_EX_H_ */

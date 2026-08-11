@@ -59,6 +59,15 @@ Example building for NXP's MCXW72 FRDM (host).
    :goals: build
    :compact:
 
+Example building for NXP's MCXW72 FRDM (host) with vendor specific radio implementation.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/openthread/shell
+   :board: frdm_mcxw72/mcxw727c
+   :gen-args: -DEXTRA_CONF_FILE="prj-ot-host.conf;prj-ot-host-no-l2-nxp-mcxw.conf"
+   :goals: build
+   :compact:
+
 Example building for Silicon Labs EFR32MG24 4187c radio board:
 
 .. zephyr-app-commands::

@@ -1,6 +1,9 @@
 family:
 - name: lpc
   series:
+  - name: lpc84x
+    socs:
+    - name: lpc845
   - name: lpc11u6x
     socs:
     - name: lpc11u66

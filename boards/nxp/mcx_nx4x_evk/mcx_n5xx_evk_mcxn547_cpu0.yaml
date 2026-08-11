@@ -13,4 +13,6 @@ flash: 2048
 toolchain:
   - zephyr
   - gnuarmemb
+supported:
+  - tsi
 vendor: nxp

@@ -13,6 +13,8 @@ pytest_root: <list of pytest testpaths> (default pytest)
     executed when a test scenario begins to run. The default pytest directory is
     ``pytest``. After the pytest run is finished, Twister will check if
     the test scenario passed or failed according to the pytest report.
+    Environment variables and Zephyr module directory variables are expanded
+    (see :ref:`twister_module_dir_vars`).
     As an example, a list of valid pytest roots is presented below:
 
     .. code-block:: yaml
@@ -24,6 +26,7 @@ pytest_root: <list of pytest testpaths> (default pytest)
             - "/tmp/test_shell.py"
             - "~/tmp/test_shell.py"
             - "$ZEPHYR_BASE/samples/subsys/testsuite/pytest/shell/pytest/test_shell.py"
+            - "$ZEPHYR_HAL_NORDIC_MODULE_DIR/tests/pytest/test_hal.py"  # path inside a module
             - "pytest/test_shell_help.py::test_shell2_sample"  # select pytest subtest
             - "pytest/test_shell_help.py::test_shell2_sample[param_a]"  # select pytest parametrized subtest
 
@@ -100,8 +103,10 @@ required_devices: <list of required device entries> (default empty)
         Directory path where Twister should search for the application
         specified in ``application``. Can be an absolute path or a path
         relative to the directory containing the test's YAML file.
-        Environment variables are expanded. If not specified, Twister
-        searches in the same directory as the referring test's YAML file.
+        Environment variables and Zephyr module directory variables are
+        expanded (see :ref:`twister_module_dir_vars`). If not specified,
+        Twister searches in the same directory as the referring test's
+        YAML file.
 
     fixture: <list of fixture names> (optional, defaults to empty)
         List of fixture names that must be present on the reserved device.

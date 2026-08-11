@@ -76,7 +76,7 @@ Installing the documentation processors
 
 Our documentation processing has been tested to run with:
 
-* Doxygen version 1.15.0
+* Doxygen version 1.17.0
 * Graphviz 2.43
 * Latexmk version 4.83
 * All Python dependencies listed in the repository file
@@ -268,6 +268,39 @@ without either of the aforementioned features::
    # and supported features index
    make html-fast
 
+For even faster iteration when working on narrative pages, additional
+``SKIP_*`` options allow skipping entire categories of auto-generated content:
+
+``SKIP_DOXYGEN``
+   Skip running Doxygen and building the C API reference.
+
+``SKIP_KCONFIG``
+   Skip generating the Kconfig option reference and its search page.
+
+``SKIP_EXTERNAL_CONTENT``
+   Skip copying in the board, sample, and snippet pages that are maintained
+   outside of the ``doc/`` folder (i.e. the contents of the
+   :zephyr_file:`boards`, :zephyr_file:`samples`, and :zephyr_file:`snippets`
+   folders).
+
+Each option can be enabled individually::
+
+   make html SKIP_DOXYGEN=1
+
+The :command:`make html-minimal` target combines all of them on top of
+``html-fast``, making it the fastest way to preview a change to a narrative
+page::
+
+   make html-minimal
+
+.. warning::
+
+   Content that a skipped generator would have produced is replaced with a
+   placeholder, cross-references to it render as plain text, and the related
+   warnings are suppressed. A build using any ``SKIP_*`` option is therefore
+   only suitable for a local preview: it cannot be used to validate
+   cross-references, and its output must not be published.
+
 When working with documentation for boards from a specific vendor, it is also
 possible to limit generation of the list of supported features to subset of board
 vendors. This can be done by setting the following option when invoking cmake::
@@ -305,6 +338,22 @@ Alternatively, the documentation can be built with the ``make html-live``
 it locally, and watch the documentation directory for changes. When changes are
 observed, it will automatically rebuild the documentation and refresh the hosted
 files.
+
+Building the Doxygen documentation standalone
+*********************************************
+
+The ``doxygen`` build target can be used to only build the Doxygen (API) documentation, which is
+much faster than building the full documentation set::
+
+   cd ~/zephyrproject/zephyr/doc
+   make doxygen
+
+The output can be found in ``_build/doxygen/html``.
+
+In the regular documentation build, references made from Doxygen comments to the main
+documentation (e.g. ``@kconfig{}``, ``@dtcompatible{}`` or ``@rstref{}``, see
+:ref:`doxygen_sphinx_xrefs`) are automatically resolved into hyperlinks. In a standalone Doxygen
+build, they are left as plain text since the rest of the documentation is not available.
 
 Linking external Doxygen projects against Zephyr
 ************************************************

@@ -510,7 +510,7 @@ static int rv8803_alarm_set_time(const struct device *dev, uint16_t id, uint16_t
 	}
 
 	/* Update WADA bit */
-	if ((mask & RTC_ALARM_TIME_MASK_MONTHDAY) || (mask & RTC_ALARM_TIME_MASK_WEEKDAY)) {
+	if (mask & (RTC_ALARM_TIME_MASK_MONTHDAY | RTC_ALARM_TIME_MASK_WEEKDAY)) {
 		reg_val = (mask & RTC_ALARM_TIME_MASK_MONTHDAY) ? RV8803_EXTENSION_WADA_BIT : 0;
 		err = rv8803_update_reg8(dev, RV8803_EXTENSION_REG, RV8803_EXTENSION_WADA_BIT,
 					 reg_val);
@@ -572,7 +572,7 @@ static int rv8803_alarm_get_time(const struct device *dev, uint16_t id, uint16_t
 			timeptr->tm_mday = bcd2bin(regs[2] & RV8803_DATE_ALARM_MASK);
 			*mask |= RTC_ALARM_TIME_MASK_MONTHDAY;
 		} else {
-			timeptr->tm_wday = find_lsb_set(regs[2] & RV8803_WEEKDAY_ALARM_MASK);
+			timeptr->tm_wday = rv8803_mask2weekday(regs[2] & RV8803_WEEKDAY_ALARM_MASK);
 			*mask |= RTC_ALARM_TIME_MASK_WEEKDAY;
 		}
 	}

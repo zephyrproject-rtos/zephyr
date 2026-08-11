@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_
-#define ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_
+#ifndef ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_
+#define ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
@@ -90,4 +90,4 @@ static inline bool net_off_is_wifi_offloaded(struct net_if *iface)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_ */

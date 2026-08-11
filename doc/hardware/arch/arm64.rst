@@ -3,6 +3,30 @@
 ARM64 Developer Guide
 #####################
 
+Wait with timeout (WFxT)
+************************
+
+The Arm WFxT extension provides the WFET and WFIT instructions, which take an
+absolute virtual counter value as a timeout. Zephyr detects the extension at
+runtime from the ``WFxT`` field in ``ID_AA64ISAR2_EL1``. Arm64 architecture
+code can query this support with ``is_wfxt_implemented()``, declared in
+:zephyr_file:`include/zephyr/arch/arm64/lib_helpers.h`.
+
+When the Arm architectural timer implements :c:func:`arch_busy_wait`, the
+Arm64 path uses WFET for :c:func:`k_busy_wait` if WFxT is implemented. It
+computes a deadline from ``CNTVCT_EL0`` and repeats WFET until the counter
+reaches that deadline. The loop is required because WFET is permitted to
+return before its timeout. CPUs without WFxT use counter polling instead. See
+:zephyr_file:`drivers/timer/arm_arch_timer.c` for the implementation.
+
+The default Arm64 :c:func:`arch_cpu_idle` implementation continues to use WFI.
+With the Arm architectural timer, the kernel's next timeout is programmed in
+the system timer and its interrupt wakes the CPU. Replacing WFI with WFIT while
+retaining that interrupt does not remove the timer programming or interrupt
+handling. Avoiding the interrupt would require complex changes to
+kernel timeout accounting, rescheduling, and SMP deadline coordination,
+adding significant risk and maintenance cost without a demonstrated benefit.
+
 .. _arm64_mmu_dt_regions:
 
 Devicetree-based MMU Region Mapping

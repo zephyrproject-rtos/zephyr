@@ -60,6 +60,10 @@ static const uint32_t sflp_period_ns[] = {
 	[LSM6DSVXXX_DT_SFLP_ODR_AT_240Hz] = UINT32_C(1000000000) / 240,
 	[LSM6DSVXXX_DT_SFLP_ODR_AT_480Hz] = UINT32_C(1000000000) / 480,
 };
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+static const uint32_t magn_period_ns = UINT32_C(1000000000) / 10;
+static const uint32_t baro_period_ns = UINT32_C(1000000000) / 10;
+#endif
 #endif /* CONFIG_LSM6DSV16X_STREAM */
 
 /*
@@ -74,6 +78,13 @@ static const uint32_t sflp_period_ns[] = {
  */
 #define Q31_SHIFT_MICROVAL(micro_val, range) \
 	(q31_t) ((int64_t)(micro_val) * ((int64_t)1 << (31 - (range))) / 1000000LL)
+
+/*
+ * Expand milli_Pa to q31_t according to its range; this is achieved
+ * multiplying by 2^31/2^range. Then transform it to kPa.
+ */
+#define Q31_SHIFT_KPA_VAL(milli_pa, range) \
+	(q31_t) ((int64_t)(milli_pa) * ((int64_t)1 << (31 - (range))) / 1000000LL)
 
 /* bit range for Accelerometer for a given accel_fs_idx value */
 static const int8_t accel_range[] = {
@@ -106,6 +117,13 @@ static const int8_t temp_range = 9;
 /* transform temperature LSB into micro-Celsius */
 #define SENSOR_TEMP_UCELSIUS(t_lsb) \
 	(int64_t) (25000000LL + (((int64_t)(t_lsb) * 1000000LL) / 256LL))
+
+#endif
+
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+/* transform barometer LSB into milli-Pascal */
+#define SENSOR_PRESS_MPA(p_lsb) \
+	((int64_t)p_lsb * 100000 / 4096.0f)
 
 #endif
 
@@ -146,6 +164,10 @@ static const int32_t gyro_scaler[] = {
 	[LSM6DSV16X_DT_FS_2000DPS] = SENSOR_SCALE_UDPS_TO_URADS(16 * GAIN_UNIT_G),
 	[LSM6DSV16X_DT_FS_4000DPS] = SENSOR_SCALE_UDPS_TO_URADS(32 * GAIN_UNIT_G),
 };
+
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+static const int32_t magn_scaler = 1500; /* uGauss/LSB */
+#endif
 
 static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 					      struct sensor_chan_spec chan_spec,
@@ -193,6 +215,10 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	uint8_t fifo_tag;
 	uint8_t tot_accel_fifo_words = 0, tot_gyro_fifo_words = 0;
 	uint8_t tot_sflp_gbias = 0, tot_sflp_gravity = 0, tot_sflp_game_rotation = 0;
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	uint8_t tot_magn_fifo_words = 0;
+	uint8_t tot_baro_fifo_words = 0;
+#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint8_t tot_temp_fifo_words = 0;
@@ -226,6 +252,26 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 		case LSM6DSV16X_SFLP_GAME_ROTATION_VECTOR_TAG:
 			tot_sflp_game_rotation++;
 			break;
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+		case LSM6DSV16X_SENSORHUB_SLAVE1_TAG:
+		case LSM6DSV16X_SENSORHUB_SLAVE2_TAG:
+		case LSM6DSV16X_SENSORHUB_SLAVE3_TAG: {
+			uint8_t k = fifo_tag - LSM6DSV16X_SENSORHUB_SLAVE1_TAG;
+			enum sensor_channel ctype = lsm6dsv16x_shub_type(k);
+
+			switch (ctype) {
+			case SENSOR_CHAN_MAGN_XYZ:
+				tot_magn_fifo_words++;
+				break;
+			case SENSOR_CHAN_PRESS:
+				tot_baro_fifo_words++;
+				break;
+			default:
+				break;
+			}
+			break;
+		}
+#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 		default:
 			break;
 		}
@@ -262,6 +308,14 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 	case SENSOR_CHAN_GBIAS_XYZ:
 		*frame_count = tot_sflp_gbias;
 		break;
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	case SENSOR_CHAN_MAGN_XYZ:
+		*frame_count = tot_magn_fifo_words;
+		break;
+	case SENSOR_CHAN_PRESS:
+		*frame_count = tot_baro_fifo_words;
+		break;
+#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 	default:
 		*frame_count = 0;
 		break;
@@ -285,6 +339,10 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 
 #if defined(CONFIG_LSM6DSV16X_ENABLE_TEMP)
 	uint16_t temp_count = 0;
+#endif
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	uint16_t magn_count = 0;
+	uint16_t baro_count = 0;
 #endif
 	uint16_t game_rot_count = 0, gravity_count = 0, gbias_count = 0;
 	int ret;
@@ -316,6 +374,14 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 		((struct sensor_data_header *)data_out)->base_timestamp_ns =
 			edata->header.timestamp -
 			(tot_chan_fifo_words - 1) * temp_period_ns[edata->temp_batch_odr];
+#endif
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	} else if (chan_spec.chan_type == SENSOR_CHAN_MAGN_XYZ) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp - (tot_chan_fifo_words - 1) * magn_period_ns;
+	} else if (chan_spec.chan_type == SENSOR_CHAN_PRESS) {
+		((struct sensor_data_header *)data_out)->base_timestamp_ns =
+			edata->header.timestamp - (tot_chan_fifo_words - 1) * baro_period_ns;
 #endif
 	} else if (chan_spec.chan_type == SENSOR_CHAN_GRAVITY_VECTOR ||
 		   chan_spec.chan_type == SENSOR_CHAN_GAME_ROTATION_VECTOR ||
@@ -546,6 +612,70 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 			out->readings[count].z = Q31_SHIFT_VAL(z, out->shift);
 			break;
 		}
+
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+		case LSM6DSV16X_SENSORHUB_SLAVE1_TAG:
+		case LSM6DSV16X_SENSORHUB_SLAVE2_TAG:
+		case LSM6DSV16X_SENSORHUB_SLAVE3_TAG: {
+			uint8_t k = fifo_tag - LSM6DSV16X_SENSORHUB_SLAVE1_TAG;
+			enum sensor_channel ctype = lsm6dsv16x_shub_type(k);
+
+			if ((uintptr_t)buffer < *fit) {
+				/* This frame was already decoded, move on to the next frame */
+				buffer = frame_end;
+				continue;
+			}
+
+			if (chan_spec.chan_type != ctype) {
+				buffer = frame_end;
+				continue;
+			}
+
+			switch (ctype) {
+			case SENSOR_CHAN_MAGN_XYZ: {
+				struct sensor_three_axis_data *out = data_out;
+				int16_t x, y, z;
+				const int32_t scale = magn_scaler;
+
+				magn_count++;
+				out->readings[count].timestamp_delta =
+					(magn_count - 1) * magn_period_ns;
+
+				x = *(const int16_t *)&buffer[1];
+				y = *(const int16_t *)&buffer[3];
+				z = *(const int16_t *)&buffer[5];
+
+				out->shift = 9;
+
+				out->readings[count].x = Q31_SHIFT_MICROVAL(scale * x, out->shift);
+				out->readings[count].y = Q31_SHIFT_MICROVAL(scale * y, out->shift);
+				out->readings[count].z = Q31_SHIFT_MICROVAL(scale * z, out->shift);
+				break;
+			}
+			case SENSOR_CHAN_PRESS: {
+				struct sensor_q31_data *out = data_out;
+				int32_t baro;
+				int64_t p_mPa;
+
+				baro_count++;
+				out->readings[count].timestamp_delta =
+					(baro_count - 1) * baro_period_ns;
+
+				baro = (int32_t)(buffer[3] << 16) | (buffer[2] << 8) | buffer[1];
+
+				p_mPa = SENSOR_PRESS_MPA(baro);
+
+				out->shift = 8;
+				out->readings[count].pressure =
+					Q31_SHIFT_KPA_VAL(p_mPa, out->shift);
+				break;
+			}
+			default:
+				return -EINVAL;
+			}
+			break;
+		}
+#endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
 		default:
 			/* skip unhandled FIFO tag */

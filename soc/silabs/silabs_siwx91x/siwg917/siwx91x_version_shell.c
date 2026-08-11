@@ -4,8 +4,8 @@
  */
 #include <zephyr/shell/shell.h>
 
-#include "nwp_fw_version.h"
-#include "sl_wifi.h"
+#include <nwp_fw_version.h>
+#include <sl_wifi.h>
 
 static int cmd_nwp_version(const struct shell *sh, size_t argc, char **argv)
 {

@@ -10,6 +10,18 @@
 /delete-node/ &sram_u;
 
 / {
+	cpus {
+		/* Fix cpu0, it has different frequency on KE17Z512 */
+		/delete-node/ cpu@0;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m0+";
+			clock-frequency = <DT_FREQ_M(96)>;
+			reg = <0>;
+			cpu-power-states = <&idle &pstop2 &pstop1 &stop>;
+		};
+	};
+
 	/* Fix sram_l and sram_u, they have different addr and size on KE17Z512 */
 	sram_l: memory@1fff8000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
@@ -25,7 +37,7 @@
 
 	soc {
 		/* Fix flash, it has different size on KE17Z512 */
-		/delete-node/ ftfe;
+		/delete-node/ flash-controller@40020000;
 
 		ftfe: flash-controller@40020000 {
 			compatible = "nxp,kinetis-ftfe";

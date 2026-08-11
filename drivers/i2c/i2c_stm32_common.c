@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -15,6 +16,12 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
+#include <stm32_cache.h>
+
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+#include "i2c_bitbang.h"
+#include "i2c-priv.h"
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
 
 #define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -27,6 +34,41 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_common);
 #endif
 
 #include "i2c_stm32.h"
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+bool i2c_stm32_xfer_will_use_dma(const struct i2c_stm32_config *cfg, void *buf, size_t len, bool tx)
+{
+	uintptr_t dest_addr = (uintptr_t)buf;
+
+	if (tx) {
+		if (cfg->tx_dma.dev_dma == NULL) {
+			return false;
+		}
+
+		if (stm32_buf_in_nocache(dest_addr, len)) {
+			return true;
+		}
+
+		return sys_cache_data_flush_range(buf, len) == 0;
+	}
+
+	if (cfg->rx_dma.dev_dma == NULL) {
+		return false;
+	}
+
+	if (stm32_buf_in_nocache(dest_addr, len)) {
+		return true;
+	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	if (((dest_addr | len) % CONFIG_DCACHE_LINE_SIZE) == 0) {
+		return true;
+	}
+#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_DCACHE */
+
+	return false;
+}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void i2c_stm32_combined_isr(void *arg)
@@ -147,6 +189,107 @@ void i2c_stm32_pm_put(const struct device *dev)
 	(void)pm_device_runtime_put(dev);
 }
 
+#ifdef CONFIG_I2C_STM32_BUS_RECOVERY
+static void i2c_stm32_bitbang_set_scl(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->scl, state);
+}
+
+static void i2c_stm32_bitbang_set_sda(void *io_context, int state)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	gpio_pin_set_dt(&config->sda, state);
+}
+
+static int i2c_stm32_bitbang_get_sda(void *io_context)
+{
+	const struct i2c_stm32_config *config = io_context;
+
+	return gpio_pin_get_dt(&config->sda) == 0 ? 0 : 1;
+}
+
+int i2c_stm32_recover_bus(const struct device *dev)
+{
+	__maybe_unused struct i2c_stm32_data *data = dev->data;
+	const struct i2c_stm32_config *config = dev->config;
+	struct i2c_bitbang bitbang_ctx;
+	struct i2c_bitbang_io bitbang_io = {
+		.set_scl = i2c_stm32_bitbang_set_scl,
+		.set_sda = i2c_stm32_bitbang_set_sda,
+		.get_sda = i2c_stm32_bitbang_get_sda,
+	};
+	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	int error = 0;
+
+	LOG_ERR("attempting to recover bus");
+
+	if ((config->scl.port == NULL) || (config->sda.port == NULL)) {
+		LOG_ERR("SCL and/or SDA GPIO definition(s) missing for I2C bus recovery");
+		return -ENOSYS;
+	}
+
+	if (!gpio_is_ready_dt(&config->scl)) {
+		LOG_ERR("SCL GPIO device not ready");
+		return -EIO;
+	}
+
+	if (!gpio_is_ready_dt(&config->sda)) {
+		LOG_ERR("SDA GPIO device not ready");
+		return -EIO;
+	}
+
+#ifndef CONFIG_I2C_RTIO
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+#endif
+
+	error = gpio_pin_configure_dt(&config->scl, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SCL GPIO (err %d)", error);
+		goto restore;
+	}
+
+	error = gpio_pin_configure_dt(&config->sda, GPIO_OUTPUT_HIGH);
+	if (error != 0) {
+		LOG_ERR("failed to configure SDA GPIO (err %d)", error);
+		goto restore;
+	}
+
+	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
+
+	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (error != 0) {
+		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+		goto restore;
+	}
+
+	error = i2c_bitbang_recover_bus(&bitbang_ctx);
+	if (error != 0) {
+		LOG_ERR("failed to recover bus (err %d)", error);
+	}
+
+restore:
+	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+
+	/* Re-initialize the I2C peripheral after GPIO-based bus recovery.
+	 * pinctrl_apply_state() restores the pin configuration, but the
+	 * peripheral registers remain in a faulted state. Re-running
+	 * runtime_configure() restores the peripheral to a working state.
+	 */
+	if (i2c_stm32_runtime_configure(dev, bitrate_cfg) != 0) {
+		LOG_ERR("failed to restore I2C peripheral after bus recovery");
+	}
+
+#ifndef CONFIG_I2C_RTIO
+	k_sem_give(&data->bus_mutex);
+#endif
+
+	return error;
+}
+#endif /* CONFIG_I2C_STM32_BUS_RECOVERY */
+
 /* I2C instances definitions */
 
 #ifdef CONFIG_I2C_STM32_V2_DMA
@@ -209,10 +352,6 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 #define I2C_STM32_INIT(index)									\
 	I2C_STM32_IRQ_HANDLER_DECL(index);							\
 												\
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_I2C_STM32_V2_DMA) ||					\
-		     (DT_INST_DMAS_HAS_NAME(index, tx) == DT_INST_DMAS_HAS_NAME(index, rx)),	\
-		     "STM32 I2C requires either none or both of rx and tx DMAs are used");	\
-												\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2), (				\
 	static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {});	\
 	))											\
@@ -227,6 +366,7 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 		.pclk_len = DT_INST_NUM_CLOCKS(index),						\
 		I2C_STM32_IRQ_HANDLER_FUNCTION(index)						\
 		.bitrate = DT_INST_PROP(index, clock_frequency),				\
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(index),			\
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),					\
 		IF_ENABLED(CONFIG_I2C_STM32_BUS_RECOVERY, (					\
 		.scl = GPIO_DT_SPEC_INST_GET_OR(index, scl_gpios, {0}),				\

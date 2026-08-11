@@ -104,6 +104,21 @@ config USE_INFINEON_TRNG
 	help
 	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
 
+config USE_INFINEON_MXCRYPTOLITE_TRNG
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL TRNG hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTOLITE_AES
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL AES-128 (ECB/CBC/CTR/CCM) hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTOLITE_SHA256
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL SHA-256 hardware accelerator sources
+
 config USE_INFINEON_UART
 	bool
 	help
@@ -125,6 +140,11 @@ config USE_INFINEON_FLASH
 	bool
 	help
 	  Enable Flash HAL module driver for Infineon devices
+
+config USE_INFINEON_FLASH_RRAM
+	bool
+	help
+	  Enable Flash RRAM module driver for Infineon devices
 
 config USE_INFINEON_SMIF
 	bool

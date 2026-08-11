@@ -659,7 +659,23 @@
 			reg = <0x428c0000 0x4000>;
 			interrupts = <146 0>;
 			gptfreq = <DT_FREQ_M(24)>;
+			low-freq = <DT_FREQ_K(32)>;
+			osc-freq = <DT_FREQ_M(24)>;
 			clocks = <&scmi_clk IMX943_CLK_GPT4>;
+		};
+
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		tstmr2: timer@42480000 {
+			compatible = "nxp,tstmr";
+			reg = <0x42480000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
 		};
 
 		netc: ethernet {

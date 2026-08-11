@@ -46,6 +46,11 @@ zephyr_library_sources_ifdef(
   did.c
   )
 
+zephyr_library_sources_ifdef(
+  CONFIG_BT_HID_DEVICE
+  hid_device.c
+  )
+
 if(CONFIG_BT_AVRCP_CT_COVER_ART OR CONFIG_BT_AVRCP_TG_COVER_ART)
   zephyr_library_sources(avrcp_cover_art.c)
 endif()
@@ -54,5 +59,10 @@ zephyr_library_sources_ifdef(
   CONFIG_BT_PBAP
   pbap.c
   )
+
+if(CONFIG_BT_PBAP)
+  message(WARNING "CONFIG_BT_PBAP: PBAP v1.x uses MD5 for authentication, which is "
+                  "cryptographically weak.")
+endif()
 
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)

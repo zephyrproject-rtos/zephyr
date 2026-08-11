@@ -75,4 +75,4 @@ References
 .. _BeagleY-AI:
    https://www.beagleboard.org/boards/beagley-ai
 .. _BeagleBoard Imaging Utility:
-   https://beagleboard.github.io/bb-imager-rs/bb-imager/1.0.8/install-gui.html
+   https://beagleboard.github.io/bb-imager-rs/

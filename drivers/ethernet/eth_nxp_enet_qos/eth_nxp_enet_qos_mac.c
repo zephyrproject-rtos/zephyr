@@ -14,7 +14,8 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel/thread_stack.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/barrier.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS)
 #include <zephyr/sys/crc.h>
@@ -33,6 +34,36 @@ BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_F
 
 static const uint32_t rx_desc_refresh_flags =
 	OWN_FLAG | RX_INTERRUPT_ON_COMPLETE_FLAG | BUF1_ADDR_VALID_FLAG;
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+#define RX_TIMESTAMP_CONTEXT_RETRIES        10U
+#define RX_TIMESTAMP_CONTEXT_RETRY_DELAY_US 1U
+
+static bool rx_timestamp_descriptors_ready(volatile union nxp_enet_qos_rx_desc *desc,
+					   volatile union nxp_enet_qos_rx_desc *ctx_desc)
+{
+	for (uint32_t retry = 0; retry <= RX_TIMESTAMP_CONTEXT_RETRIES; retry++) {
+		uint32_t context_status3 = ctx_desc->write.control3;
+
+		if (!(context_status3 & OWN_FLAG) &&
+		    (context_status3 & RECEIVE_CONTEXT_DESCRIPTOR_FLAG)) {
+			/* CTXT ownership transfer completes both descriptor writebacks. */
+			barrier_dmem_fence_full();
+
+			if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
+			    (desc->write.control1 & RX_TIMESTAMP_AVAILABLE_FLAG)) {
+				return true;
+			}
+		}
+
+		if (retry < RX_TIMESTAMP_CONTEXT_RETRIES) {
+			k_busy_wait(RX_TIMESTAMP_CONTEXT_RETRY_DELAY_US);
+		}
+	}
+
+	return false;
+}
+#endif
 
 K_THREAD_STACK_DEFINE(enet_qos_rx_stack, CONFIG_ETH_NXP_ENET_QOS_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
@@ -123,9 +154,6 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	struct net_buf *fragment = pkt->frags;
 	int frags_count = 0, total_bytes = 0, frags_idx = 0;
 	int ret;
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	bool pkt_is_ptp;
-#endif
 
 	/* Only allow send of the maximum normal packet size */
 	while (fragment != NULL) {
@@ -188,8 +216,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 	last_desc_ptr->read.control1 |= TX_INTERRUPT_ON_COMPLETE_FLAG;
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	if (net_pkt_is_tx_timestamping(pkt) || pkt_is_ptp) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		LOG_DBG("SET TX TIMESTAMP %p control %x", pkt, base->MAC_TIMESTAMP_CONTROL);
 		last_desc_ptr->read.control1 |= TX_TIMESTAMP_ENABLE_FLAG;
 	}
@@ -269,9 +296,6 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
-#endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
-	caps |= ETHERNET_PTP;
 #endif
 	return caps;
 }
@@ -408,19 +432,16 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			/*
 			 * When PTP timestamping is enabled the hardware appends a
 			 * context descriptor (RDES3 bit 30 = CTXT) immediately after
-			 * the last regular descriptor.  Peek at that slot; if it is
-			 * software-owned and carries the CTXT flag, extract the RX
-			 * timestamp (RDES0 = nanoseconds, RDES1 = seconds) and
-			 * recycle the slot as a regular RX descriptor.
+			 * the last regular descriptor.  The receive interrupt can
+			 * arrive before DMA finishes both descriptor writebacks, so
+			 * wait briefly for them before extracting the RX timestamp
+			 * (RDES0 = nanoseconds, RDES1 = seconds).
 			 */
 			{
 				uint32_t ctx_idx = rx_data->next_desc_idx;
 				volatile union nxp_enet_qos_rx_desc *ctx_desc = &desc_arr[ctx_idx];
 
-				if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
-				    (desc->write.control1 & RX_TIMESTAMP_AVAILABLE_FLAG) &&
-				    !(ctx_desc->write.control3 & OWN_FLAG) &&
-				    (ctx_desc->write.control3 & RECEIVE_CONTEXT_DESCRIPTOR_FLAG)) {
+				if (rx_timestamp_descriptors_ready(desc, ctx_desc)) {
 					pkt->timestamp.nanosecond = ctx_desc->write.vlan_tag;
 					pkt->timestamp.second = ctx_desc->write.control1;
 					net_pkt_set_rx_timestamping(pkt, true);

@@ -821,7 +821,6 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	net_pkt_set_family(pkt, NET_AF_INET6);
 	net_pkt_set_captured(pkt, true);
 	net_pkt_set_eof(pkt, true);
-	net_pkt_set_ptp(pkt, true);
 	net_pkt_set_tx_timestamping(pkt, true);
 	net_pkt_set_rx_timestamping(pkt, true);
 	net_pkt_set_forwarding(pkt, true);
@@ -857,9 +856,6 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 
 	zassert_true(net_pkt_eof(cloned_pkt),
 		     "Cloned pkt eof flag mismatch");
-
-	zassert_true(net_pkt_is_ptp(cloned_pkt),
-		     "Cloned pkt ptp_pkt flag mismatch");
 
 #if CONFIG_NET_PKT_TIMESTAMP
 	zassert_true(net_pkt_is_tx_timestamping(cloned_pkt),

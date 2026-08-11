@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 macro(app_set_runner_args)
   board_runner_args(dfu-util "--dfuse-modifiers=force:mass-erase")

@@ -4,4 +4,6 @@ zephyr_include_directories(.)
 
 if(CONFIG_SOC_MIMX9529_M7)
   add_subdirectory(m7)
+elseif(CONFIG_SOC_MIMX9529_A55)
+  add_subdirectory(a55)
 endif()

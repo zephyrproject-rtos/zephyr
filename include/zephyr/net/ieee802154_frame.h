@@ -17,8 +17,8 @@
  * LITTLE ENDIAN, see section 4, especially section 4.3.
  */
 
-#ifndef __IEEE802154_FRAME_H__
-#define __IEEE802154_FRAME_H__
+#ifndef ZEPHYR_INCLUDE_NET_IEEE802154_FRAME_H_
+#define ZEPHYR_INCLUDE_NET_IEEE802154_FRAME_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/ieee802154.h>
@@ -1032,4 +1032,4 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 /** INTERNAL_HIDDEN @endcond */
 
-#endif /* __IEEE802154_FRAME_H__ */
+#endif /* ZEPHYR_INCLUDE_NET_IEEE802154_FRAME_H_ */

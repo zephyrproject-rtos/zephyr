@@ -50,8 +50,8 @@ static const struct can_shell_mode_mapping can_shell_mode_map[] = {
 	/* zephyr-keep-sorted-stop */
 };
 
-K_MSGQ_DEFINE(can_shell_tx_msgq, sizeof(struct can_shell_tx_event),
-	      CONFIG_CAN_SHELL_TX_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(can_shell_tx_msgq, struct can_shell_tx_event,
+			  CONFIG_CAN_SHELL_TX_QUEUE_SIZE);
 const struct shell *can_shell_tx_msgq_sh;
 static struct k_work_poll can_shell_tx_msgq_work;
 static struct k_poll_event can_shell_tx_msgq_events[] = {
@@ -60,8 +60,8 @@ static struct k_poll_event can_shell_tx_msgq_events[] = {
 					&can_shell_tx_msgq, 0)
 };
 
-K_MSGQ_DEFINE(can_shell_rx_msgq, sizeof(struct can_shell_rx_event),
-	      CONFIG_CAN_SHELL_RX_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(can_shell_rx_msgq, struct can_shell_rx_event,
+			  CONFIG_CAN_SHELL_RX_QUEUE_SIZE);
 const struct shell *can_shell_rx_msgq_sh;
 static struct k_work_poll can_shell_rx_msgq_work;
 static struct k_poll_event can_shell_rx_msgq_events[] = {

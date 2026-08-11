@@ -26,4 +26,6 @@ supported:
   - watchdog
   - edac
   - pwm
+  - opamp
+  - crc
 vendor: nxp

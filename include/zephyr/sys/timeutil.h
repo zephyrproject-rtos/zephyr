@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/time_units.h>
@@ -80,6 +80,8 @@ extern "C" {
 
 /**
  * @defgroup timeutil_apis Time Utility APIs
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup utilities
  * @defgroup timeutil_repr_apis Time Representation APIs
  * @ingroup timeutil_apis

@@ -1,0 +1,13 @@
+/* Copyright (c) 2026 Nicolas Belin <nbelin@baylibre.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	flow_meter_0: flow_meter {
+		compatible = "zephyr,flow-meter";
+		/* gpio0 is the native_sim gpio_emul controller. */
+		pulse-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		pulses-per-liter = <450>;
+		status = "okay";
+	};
+};

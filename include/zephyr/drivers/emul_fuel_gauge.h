@@ -53,7 +53,7 @@ __subsystem struct fuel_gauge_emul_driver_api {
  * @param uA Microamps describing the battery current where negative is discharging.
  *
  * @retval 0 If successful.
- * @retval -EINVAL if mV or mA are 0.
+ * @retval -EINVAL if uV or uA are 0.
  */
 __syscall int emul_fuel_gauge_set_battery_charging(const struct emul *target, uint32_t uV, int uA);
 static inline int z_impl_emul_fuel_gauge_set_battery_charging(const struct emul *target,

@@ -11,7 +11,6 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/reboot.h>
-#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/otp.h>
 #include <stdint.h>
 #include <string.h>
@@ -114,22 +113,6 @@ void btblecontroller_rf_restore(void)
 }
 
 /*
- * btblecontroller_efuse_read_mac — Read BLE MAC address from eFuse
- */
-int btblecontroller_efuse_read_mac(uint8_t mac[6])
-{
-	uint8_t id[8] = {0};
-	const size_t mac_len = 6U;
-
-	if (hwinfo_get_device_id(id, mac_len) != (ssize_t)mac_len) {
-		memset(mac, 0, mac_len);
-		return -1;
-	}
-	memcpy(mac, id, mac_len);
-	return 0;
-}
-
-/*
  * GLB_AHB_MCU_Software_Reset — Toggle a software reset bit
  *
  * The reset is in GLB_SWRST_CFG0/1/2 registers at offsets 0x540/0x544/0x548.
@@ -212,10 +195,4 @@ int btblecontroller_printf(const char *fmt, ...)
 {
 	ARG_UNUSED(fmt);
 	return 0;
-}
-
-int mfg_media_read_macaddr_with_lock(uint8_t mac[6], uint8_t reload)
-{
-	ARG_UNUSED(reload);
-	return btblecontroller_efuse_read_mac(mac);
 }

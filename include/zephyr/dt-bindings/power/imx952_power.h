@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Power domain definitions for NXP i.MX952 SoC
+ * @ingroup imx952_power_domains
  *
  * This file defines power domain IDs for the i.MX952 system-on-chip.
  * These definitions are based on MIMX9529 fsl_power.h from MCUXpresso SDK.
@@ -16,8 +17,9 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_POWER_IMX952_POWER_H_
 
 /**
- * @defgroup imx952_power_domains Power Domain IDs
- * @brief Power domain slice indices for i.MX952 SoC (21 total)
+ * @defgroup imx952_power_domains NXP i.MX952 Power Domains
+ * @brief Power domain slice indices for i.MX952 SoC
+ * @ingroup devicetree
  * @{
  */
 

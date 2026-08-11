@@ -148,6 +148,18 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`weact,dcmi-camera-connector`
 
 
+ESP-01
+------
+
+This is an 8-pin header for ESP-01 Wi-Fi modules.
+
+Relevant devicetree node labels:
+
+- ``esp_01_header`` See :dtcompatible:`esp-01-header` for details on GPIO pin
+  definitions and includes for use in devicetree files.
+- ``esp_01_serial``
+
+
 Feather
 -------
 
@@ -204,6 +216,7 @@ Relevant devicetree node labels:
   technical specifications.
 - ``mikrobus_adc``
 - ``mikrobus_i2c``
+- ``mikrobus_pwm``
 - ``mikrobus_spi``
 - ``mikrobus_serial``
 
@@ -253,6 +266,26 @@ Relevant devicetree node labels:
   and includes for use in devicetree files.
 - ``st_morpho_lcd_spi``
 - ``st_morpho_flash_spi``
+
+
+STMod+
+------
+
+This is a 20-pin expansion connector found on some STMicroelectronics Discovery
+and Evaluation boards.
+
+Relevant devicetree node labels:
+
+- ``stmod_plus_connector`` See :dtcompatible:`st,stmod-plus-connector` for
+  details on GPIO pin definitions and includes for use in devicetree files.
+- ``stmod_adc``
+- ``stmod_i2c``
+- ``stmod_pwm``
+- ``stmod_serial``
+- ``stmod_spi``
+
+Boards may expose additional interface labels when a peripheral is wired to the
+STMod+ connector and enabled in the board devicetree.
 
 
 Xiao

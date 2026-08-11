@@ -7,14 +7,53 @@
 
 /**
  * @file
- * @brief Utility macro definitions to encode GPIO pin function for
- * Renesas R-Car Gen4 SoC.
+ * @brief Devicetree pin control helpers for Renesas R-Car
+ * @ingroup pinctrl_rcar
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RCAR_COMMON_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RCAR_COMMON_H_
 
-/** @cond INTERNAL_HIDDEN */
+/**
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_rcar Renesas R-Car pin control helpers
+ * @brief Pin and function macros for Renesas R-Car Gen3/Gen4/Gen5 SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * The R-Car Pin Function Controller (PFC) is configured by pairing a pin
+ * identifier with the alternate function to route to it. Both are defined per
+ * SoC in the matching header:
+ *
+ * - @c pinctrl-r8a77951.h — R-Car H3
+ * - @c pinctrl-r8a77961.h — R-Car M3-W
+ * - @c pinctrl-r8a779f0.h — R-Car S4
+ * - @c pinctrl-r8a779g0.h — R-Car V4H
+ * - @c pinctrl-r8a78000.h — R-Car Gen5
+ *
+ * Each of those headers provides @c PIN_\<NAME\> pin identifiers and
+ * @c FUNC_\<NAME\> alternate-function values, where @c \<NAME\> is the signal
+ * name from the SoC datasheet (for example @c PIN_RD and @c FUNC_CAN0_TX_A).
+ * Both are built from the encoding helpers defined here — RCAR_GP_PIN() and
+ * RCAR_NOGP_PIN() for pins, IPSR() / IPnSR() (Gen3/4) or RCAR_ALTSEL_FUNC()
+ * (Gen5) for functions.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a77951.h>
+ *
+ * &pfc {
+ *         can0_data_a_tx_default: can0_data_a_tx_default {
+ *                 pin = <PIN_RD FUNC_CAN0_TX_A>;
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
 /**
  * @brief Utility macro to build IPSR property entry (Gen3/4 only).
  * IPSR: Peripheral Function Select Register
@@ -32,8 +71,10 @@
  */
 #define IPSR(bank, shift, func) (((bank) << 10U) | ((shift) << 4U) | (func))
 
+/** @cond INTERNAL_HIDDEN */
 /* Arbitrary number to encode non capable gpio pin */
 #define PIN_NOGPSR_START 1024U
+/** @endcond */
 
 /**
  * @brief Utility macro to encode a GPIO capable pin
@@ -50,13 +91,21 @@
  */
 #define RCAR_NOGP_PIN(pin)         (PIN_NOGPSR_START + pin)
 
-/* Renesas Gen4 has IPSR registers at different base address
- * reg is here an index for the base address.
- * Each base address has 4 IPSR banks.
+/**
+ * @brief Utility macro to build an IPSR property entry for Gen4 SoCs.
+ *
+ * Renesas Gen4 has IPSR registers at different base addresses; @p reg is an
+ * index for the base address. Each base address has 4 IPSR banks.
+ *
+ * @param bank the IPSR register bank.
+ * @param reg the IPSR base address index.
+ * @param shift the bit shift for this alternate function.
+ * @param func the 4 bits encoded alternate function.
  */
 #define IPnSR(bank, reg, shift, func) \
 	IPSR(((reg) << 5U) | (bank), shift, func)
 
+/** @cond INTERNAL_HIDDEN */
 #define IP0SR0(shift, func) IPnSR(0, 0, shift, func)
 #define IP1SR0(shift, func) IPnSR(1, 0, shift, func)
 #define IP2SR0(shift, func) IPnSR(2, 0, shift, func)
@@ -93,6 +142,7 @@
 #define IP1SR8(shift, func) IPnSR(1, 8, shift, func)
 #define IP2SR8(shift, func) IPnSR(2, 8, shift, func)
 #define IP3SR8(shift, func) IPnSR(3, 8, shift, func)
+/** @endcond */
 
 /**
  * @brief Macro to define a dummy IPSR flag for a pin
@@ -122,9 +172,15 @@
  */
 #define RCAR_ALTSEL_FUNC(group, pin, func) (((pin) << 14U) | ((group) << 10U) | (func))
 
-#define PIN_VOLTAGE_NONE 0
-#define PIN_VOLTAGE_1P8V 1
-#define PIN_VOLTAGE_3P3V 2
+/**
+ * @name R-Car pin I/O voltage levels
+ * @{
+ */
+#define PIN_VOLTAGE_NONE 0 /**< No I/O voltage selection. */
+#define PIN_VOLTAGE_1P8V 1 /**< 1.8 V I/O voltage. */
+#define PIN_VOLTAGE_3P3V 2 /**< 3.3 V I/O voltage. */
+/** @} */
 
-/** @endcond */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RCAR_COMMON_H_ */

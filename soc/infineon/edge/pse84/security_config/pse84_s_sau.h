@@ -9,8 +9,8 @@
 #define pse84_s_sau_h
 
 #include <infineon_kconfig.h>
-#include "cmsis_compiler.h"
-#include "cy_device.h"
+#include <cmsis_compiler.h>
+#include <cy_device.h>
 
 #define CY_SAU_REGION_CNT     (3U)
 #define CY_SAU_MAX_REGION_CNT (8U)

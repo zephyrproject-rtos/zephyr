@@ -67,7 +67,7 @@ struct bt_cap_unicast_group;
  * Service instance.
  *
  * This shall only be done as a server, and requires
- * @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{BT_CAP_ACCEPTOR_SET_MEMBER}
+ * @kconfig{CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER}. If @kconfig{CONFIG_BT_CAP_ACCEPTOR_SET_MEMBER}
  * is not enabled, the Common Audio Service will by statically registered.
  *
  * @param[in]  param     Coordinated Set Identification Service register
@@ -165,7 +165,7 @@ struct bt_cap_initiator_cb {
 	 */
 	void (*unicast_stop_complete)(int err, struct bt_conn *conn);
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
-#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
+#if defined(CONFIG_BT_BAP_BROADCAST_SOURCE) || defined(__DOXYGEN__)
 	/**
 	 * @brief The Broadcast Source has started and all of the streams are ready for audio data
 	 *
@@ -1068,10 +1068,10 @@ int bt_cap_handover_broadcast_to_unicast(
 /** Callback structure for CAP procedures */
 struct bt_cap_commander_cb {
 	/**
-	 * @brief Callback for bt_cap_initiator_unicast_discover().
+	 * @brief Callback for bt_cap_commander_discover().
 	 *
 	 * @param conn      The connection pointer supplied to
-	 *                  bt_cap_initiator_unicast_discover().
+	 *                  bt_cap_commander_discover().
 	 * @param err       0 if Common Audio Service was found else -ENODATA.
 	 * @param member    Pointer to the set member. NULL if err != 0.
 	 * @param csis_inst The Coordinated Set Identification Service if

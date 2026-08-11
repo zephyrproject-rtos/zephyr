@@ -89,6 +89,7 @@ class TwisterConfigParser:
         "levels": {"type": "list", "default": []},
         "harness": {"type": "str", "default": "test"},
         "harness_config": {"type": "map", "default": {}},
+        "sidecar": {"type": "str", "default": None},
         "seed": {"type": "int", "default": 0},
         "sysbuild": {"type": "bool", "default": False}
     }

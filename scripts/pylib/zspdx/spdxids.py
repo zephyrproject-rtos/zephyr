@@ -5,7 +5,7 @@
 import re
 
 
-def getSPDXIDSafeCharacter(c):
+def get_spdx_id_safe_character(c):
     """
     Converts a character to an SPDX-ID-safe character.
 
@@ -19,10 +19,10 @@ def getSPDXIDSafeCharacter(c):
     return "-"
 
 
-def convertToSPDXIDSafe(s):
+def convert_to_spdx_id_safe(s):
     """
     Converts a filename or other string to only SPDX-ID-safe characters.
-    Note that a separate check (such as in getUniqueID, below) will need
+    Note that a separate check (such as in get_unique_file_id, below) will need
     to be used to confirm that this is still a unique identifier, after
     conversion.
 
@@ -30,27 +30,27 @@ def convertToSPDXIDSafe(s):
         - s: string to be converted.
     Returns: string with all non-safe characters replaced with dashes.
     """
-    return "".join([getSPDXIDSafeCharacter(c) for c in s])
+    return "".join([get_spdx_id_safe_character(c) for c in s])
 
 
-def getUniqueFileID(filenameOnly, timesSeen):
+def get_unique_file_id(filename_only, times_seen):
     """
     Find an SPDX ID that is unique among others seen so far.
 
     Arguments:
-        - filenameOnly: filename only (directories omitted) seeking ID.
-        - timesSeen: dict of all filename-only to number of times seen.
-    Returns: unique SPDX ID; updates timesSeen to include it.
+        - filename_only: filename only (directories omitted) seeking ID.
+        - times_seen: dict of all filename-only to number of times seen.
+    Returns: unique SPDX ID; updates times_seen to include it.
     """
 
-    converted = convertToSPDXIDSafe(filenameOnly)
-    spdxID = f"SPDXRef-File-{converted}"
+    converted = convert_to_spdx_id_safe(filename_only)
+    spdx_id = f"SPDXRef-File-{converted}"
 
-    # determine whether spdxID is unique so far, or not
-    filenameTimesSeen = timesSeen.get(converted, 0) + 1
-    if filenameTimesSeen > 1:
+    # determine whether spdx_id is unique so far, or not
+    filename_times_seen = times_seen.get(converted, 0) + 1
+    if filename_times_seen > 1:
         # we'll append the # of times seen to the end
-        spdxID += f"-{filenameTimesSeen}"
+        spdx_id += f"-{filename_times_seen}"
     else:
         # first time seeing this filename
         # edge case: if the filename itself ends in "-{number}", then we
@@ -58,7 +58,7 @@ def getUniqueFileID(filenameOnly, timesSeen):
         # with an appended number from a similarly-named file.
         p = re.compile(r"-\d+$")
         if p.search(converted):
-            spdxID += "-1"
+            spdx_id += "-1"
 
-    timesSeen[converted] = filenameTimesSeen
-    return spdxID
+    times_seen[converted] = filename_times_seen
+    return spdx_id

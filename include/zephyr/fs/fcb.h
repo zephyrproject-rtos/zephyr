@@ -4,6 +4,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Flash Circular Buffer (FCB) API.
+ * @ingroup fcb
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_FCB_H_
 #define ZEPHYR_INCLUDE_FS_FCB_H_
 

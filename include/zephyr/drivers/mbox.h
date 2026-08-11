@@ -132,9 +132,9 @@ struct mbox_dt_spec {
 	}
 
 /**
- * @brief Instance version of MBOX_DT_CHANNEL_GET()
+ * @brief Instance version of MBOX_DT_SPEC_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of the mboxes element
  *
  * @return static initializer for a struct mbox_dt_spec
@@ -395,7 +395,7 @@ static inline int z_impl_mbox_mtu_get(const struct device *dev)
  *
  * @param spec MBOX specification from devicetree
  *
- * @return See return values for mbox_register_callback()
+ * @return See return values for mbox_mtu_get()
  */
 static inline int mbox_mtu_get_dt(const struct mbox_dt_spec *spec)
 {

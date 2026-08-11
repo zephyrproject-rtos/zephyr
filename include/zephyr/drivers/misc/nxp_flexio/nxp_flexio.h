@@ -10,8 +10,8 @@
  * @ingroup nxp_flexio_interface
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
-#define ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
 
 /**
  * @brief Interfaces for NXP FlexIO.
@@ -120,4 +120,4 @@ int nxp_flexio_child_attach(const struct device *dev,
  * @}
  */
 
-#endif /* ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_ */

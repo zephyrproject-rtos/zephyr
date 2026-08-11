@@ -6,6 +6,7 @@
 
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/clock/mchp_pic32cm_sg_gc_clock.h>
 
 / {
 	cpus {
@@ -58,6 +59,57 @@
 				compatible = "soc-nv-flash";
 				#address-cells = <1>;
 				#size-cells = <1>;
+			};
+		};
+
+		clock: clock@4400a000 {
+			compatible = "microchip,pic32cm-sg-gc-clock";
+			reg = <0x4400a000 0x60>, <0x44006000 0x8c>,
+			      <0x45008000 0x20>, <0x44008000 0x11c>, <0x45002000 0x30>;
+			reg-names = "mclk", "oscctrl",
+				    "osc32kctrl", "gclk", "supc";
+			interrupts = <4 0>, <5 0>, <6 0>,
+				     <7 0>, <8 0>, <9 0>;
+			interrupt-names = "xosc", "dfll", "pll",
+					  "xosc32k-rdy", "xosc32k-fail", "mclk-rdy";
+
+			xosc: xosc {
+				compatible = "microchip,pic32cm-sg-gc-xosc";
+			};
+
+			dfll48m: dfll48m {
+				compatible = "microchip,pic32cm-sg-gc-dfll48m";
+			};
+
+			dpll0: dpll0 {
+				compatible = "microchip,pic32cm-sg-gc-dpll";
+			};
+
+			rtcclock: rtcclock {
+				compatible = "microchip,pic32cm-sg-gc-rtc";
+				#clock-cells = <1>;
+			};
+
+			xosc32k: xosc32k {
+				compatible = "microchip,pic32cm-sg-gc-xosc32k";
+			};
+
+			gclkgen: gclkgen {
+				compatible = "microchip,pic32cm-sg-gc-gclkgen";
+			};
+
+			gclkperiph: gclkperiph {
+				compatible = "microchip,pic32cm-sg-gc-gclkperiph";
+				#clock-cells = <1>;
+			};
+
+			mclkdomain: mclkdomain {
+				compatible = "microchip,pic32cm-sg-gc-mclkdomain";
+			};
+
+			mclkperiph: mclkperiph {
+				compatible = "microchip,pic32cm-sg-gc-mclkperiph";
+				#clock-cells = <1>;
 			};
 		};
 

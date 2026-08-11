@@ -16,6 +16,9 @@
 extern struct coredump_backend_api coredump_backend_logging;
 static struct coredump_backend_api
 	*backend_api = &coredump_backend_logging;
+#elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_LOGGING_UDP)
+extern struct coredump_backend_api coredump_backend_logging_udp;
+static struct coredump_backend_api *backend_api = &coredump_backend_logging_udp;
 #elif defined(CONFIG_DEBUG_COREDUMP_BACKEND_FLASH_PARTITION)
 extern struct coredump_backend_api coredump_backend_flash_partition;
 static struct coredump_backend_api
@@ -170,21 +173,79 @@ void process_memory_region_list(struct k_thread *current)
 #endif
 
 #ifdef CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS
-	/*
-	 * Content of _kernel.threads not being modified during dump
-	 * capture so no need to lock z_thread_monitor_lock.
-	 */
-	struct k_thread *thread;
+	{
+		struct k_thread *thread;
+		unsigned int n;
+		/*
+		 * Defensive bound on the walk below: not a real thread-count
+		 * limit, just insurance against an infinite loop if the list
+		 * is ever seen mid-corruption (e.g. a concurrent unlink on
+		 * another CPU leaves next_thread pointing back into itself).
+		 */
+		const unsigned int max_threads = 4096U;
+#ifdef CONFIG_SMP
+		k_spinlock_key_t key = {0};
+		bool locked = false;
 
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		dump_thread(thread, thread == current);
+		/*
+		 * Try to take z_thread_monitor_lock so the list is stable
+		 * against concurrent k_thread_create()/k_thread_abort() on
+		 * another CPU. Use trylock rather than a blocking lock: if
+		 * the crashing CPU itself already holds this lock (e.g. it
+		 * faulted inside k_thread_create()/k_thread_abort()),
+		 * blocking here would deadlock the dump on the same CPU and
+		 * lose the entire capture. If the lock is contended or held,
+		 * fall back to a bounded lock-free walk -- a racy read of a
+		 * single thread entry is preferable to no dump at all.
+		 *
+		 * When CONFIG_SPIN_VALIDATE is enabled, k_spin_trylock()
+		 * asserts (via z_spinlock_validate_pre()) that the current
+		 * CPU does not already hold the lock. In the fatal path the
+		 * crashing CPU may indeed already hold it, so calling trylock
+		 * would trip the assert and recurse into the fault handler.
+		 * Probe with z_spin_lock_valid() first and skip locking in
+		 * that case, falling back to the bounded lock-free walk.
+		 */
+#ifdef CONFIG_SPIN_VALIDATE
+		if (z_spin_lock_valid(&z_thread_monitor_lock)) {
+			locked = k_spin_trylock(&z_thread_monitor_lock, &key) == 0;
+		}
+#else
+		locked = k_spin_trylock(&z_thread_monitor_lock, &key) == 0;
+#endif /* CONFIG_SPIN_VALIDATE */
+#else
+		/*
+		 * On uniprocessor, IRQs are already locked by the exception
+		 * entry path so no other context can modify the list.
+		 */
+#endif /* CONFIG_SMP */
+
+		for (thread = _kernel.threads, n = 0;
+		     (thread != NULL) && (n < max_threads);
+		     thread = thread->next_thread, n++) {
+			dump_thread(thread, thread == current);
+		}
+
+#ifdef CONFIG_SMP
+		if (locked) {
+			k_spin_unlock(&z_thread_monitor_lock, key);
+		}
+#endif /* CONFIG_SMP */
+
+		/*
+		 * Dump the ISR (interrupt) stack for every CPU so that crashes
+		 * occurring inside an interrupt handler on any core are captured.
+		 * On uniprocessor this is identical to the original single-CPU
+		 * dump; on SMP it covers all CONFIG_MP_MAX_NUM_CPUS cores.
+		 */
+		for (int cpu = 0; cpu < CONFIG_MP_MAX_NUM_CPUS; cpu++) {
+			char *irq_sp = _kernel.cpus[cpu].irq_stack;
+			uintptr_t isr_start =
+				POINTER_TO_UINT(irq_sp) - CONFIG_ISR_STACK_SIZE;
+
+			coredump_memory_dump(isr_start, POINTER_TO_UINT(irq_sp));
+		}
 	}
-
-	/* Also add interrupt stack, in case error occurred in an interrupt */
-	char *irq_stack = _kernel.cpus[0].irq_stack;
-	uintptr_t start_addr = POINTER_TO_UINT(irq_stack) - CONFIG_ISR_STACK_SIZE;
-
-	coredump_memory_dump(start_addr, POINTER_TO_UINT(irq_stack));
 #endif /* CONFIG_DEBUG_COREDUMP_MEMORY_DUMP_THREADS */
 
 #if defined(CONFIG_COREDUMP_DEVICE)

@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Shared Memory.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_SHMEM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_SHMEM_H_
 
 #include <zephyr/device.h>
 #include <zephyr/arch/cpu.h>
@@ -151,4 +151,4 @@ void scmi_shmem_mark_channel_free(const struct device *dev);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_SHMEM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_SHMEM_H_ */

@@ -140,6 +140,10 @@ gpio1: &gpio0_hi {
 	status = "okay";
 };
 
+&vreg {
+	status = "okay";
+};
+
 &rng {
 	status = "okay";
 };

@@ -65,21 +65,21 @@ int dwmac_platform_init(const struct device *dev)
 	desc_uncached_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
 	p->rx_descs = (void *)desc_uncached_addr;
 
-	p->tx_descs_phys = desc_phys_addr;
+	p->tx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
 	desc_phys_addr += NB_TX_DESCS * sizeof(struct dwmac_dma_desc);
-	p->rx_descs_phys = desc_phys_addr;
+	p->rx_descs_phys = UINT_TO_POINTER(desc_phys_addr);
 
 	/* basic configuration for this platform */
-	REG_WRITE(MAC_CONF,
-		  MAC_CONF_PS |
-		  MAC_CONF_FES |
-		  MAC_CONF_DM);
-	REG_WRITE(DMA_SYSBUS_MODE,
-		  DMA_SYSBUS_MODE_AAL |
+	DWMAC_REG_WRITE(MAC_CONF,
+			MAC_CONF_PS |
+			MAC_CONF_FES |
+			MAC_CONF_DM);
+	DWMAC_REG_WRITE(DMA_SYSBUS_MODE,
+			DMA_SYSBUS_MODE_AAL |
 #ifdef CONFIG_64BIT
-		  DMA_SYSBUS_MODE_EAME |
+			DMA_SYSBUS_MODE_EAME |
 #endif
-		  DMA_SYSBUS_MODE_FB);
+			DMA_SYSBUS_MODE_FB);
 
 	/* set up IRQs (still masked for now) */
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), dwmac_isr,

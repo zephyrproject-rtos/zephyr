@@ -5,8 +5,8 @@
  */
 
 #include "uart_rzt2m.h"
-#include "zephyr/spinlock.h"
-#include "zephyr/sys/printk.h"
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
@@ -337,7 +337,7 @@ static int rzt2m_uart_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (data->uart_cfg.baudrate > ARRAY_SIZE(baud_settings)) {
+	if (data->uart_cfg.baudrate >= ARRAY_SIZE(baud_settings)) {
 		LOG_ERR("Selected baudrate variant is not supported: %u.", data->uart_cfg.baudrate);
 		return -ENOTSUP;
 	}

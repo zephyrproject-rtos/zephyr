@@ -56,12 +56,12 @@
 #include <soc/system_reg.h>
 #endif
 
-#include "memory.h"
-#include "hw_init.h"
-#include "soc_init.h"
-#include "soc_random.h"
+#include <memory.h>
+#include <hw_init.h>
+#include <soc_init.h>
+#include <soc_random.h>
 
-#if defined(CONFIG_SOC_ESP32S3_APPCPU) || defined(CONFIG_SOC_ESP32_APPCPU)
+#if defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #error "APPCPU does not need this file!"
 #endif
 
@@ -90,7 +90,7 @@
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
-#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
+#if !defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
 #define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #else
@@ -100,12 +100,18 @@
 #define PART_OFFSET PARTITION_OFFSET(slot0_appcpu_partition)
 #endif
 
+/* Image entry point: start.S on RISC-V, the C function below on Xtensa. */
 void __start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__start;
 
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
+
+#ifdef CONFIG_MCUBOOT
+extern uint32_t _loader_bss_start[];
+extern uint32_t _loader_bss_end[];
+#endif
 
 #ifndef CONFIG_MCUBOOT
 
@@ -317,58 +323,13 @@ void map_rom_segments(int core, struct rom_segments *map)
 }
 #endif /* !CONFIG_MCUBOOT */
 
-void __start(void)
+/* Common boot path, entered once the arch-specific entry has zeroed .bss. */
+static void boot_start(void)
 {
-#ifdef CONFIG_RISCV_GP
-	/* Set up stack FIRST - before any other operations */
-	__asm__ __volatile__("li sp, %0" ::"i"(DRAM_STACK_START));
-
-	/* Disable interrupts before setting up the vector table */
-	csr_read_clear(mstatus, MSTATUS_MIE);
-
-	__asm__ __volatile__("la t0, _vector_table\n"
-			     "csrw mtvec, t0\n");
-
-#if SOC_INT_CLIC_SUPPORTED
-	/* CLIC: mtvt points to the hardware-vectored interrupt table.
-	 * mtvec mode bits are hardwired to 3 (CLIC) on ESP32-C5.
-	 */
-	__asm__ __volatile__("la t0, _mtvt_table\n"
-			     "csrw 0x307, t0\n"); /* mtvt CSR */
+#ifdef CONFIG_MCUBOOT
+	memset(&_loader_bss_start, 0,
+		(size_t)((uint8_t *)_loader_bss_end - (uint8_t *)_loader_bss_start));
 #endif
-
-	/* Configure the global pointer register
-	 * (This should be the first thing startup does, as any other piece of code could be
-	 * relaxed by the linker to access something relative to __global_pointer$)
-	 */
-	__asm__ __volatile__(".option push\n"
-			     ".option norelax\n"
-			     "la gp, __global_pointer$\n"
-			     ".option pop");
-
-	arch_bss_zero();
-
-#else /* xtensa */
-
-	extern uint32_t _init_start;
-
-	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
-
-	arch_bss_zero();
-
-	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
-
-	/* Disable normal interrupts. */
-	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid arch_curr_cpu() before
-	 * arch_kernel_init() is invoked.
-	 */
-	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
-
-#endif /* CONFIG_RISCV_GP */
 
 /* Initialize hardware only during 1st boot  */
 #if defined(CONFIG_MCUBOOT) || defined(CONFIG_ESP_SIMPLE_BOOT)
@@ -397,3 +358,40 @@ void __start(void)
 	__esp_platform_mcuboot_start();
 #endif
 }
+
+#ifdef CONFIG_RISCV
+
+/* Entered from start.S, which has set up gp, the stack and the vector table. */
+void start_riscv(void)
+{
+	arch_bss_zero();
+
+	boot_start();
+}
+
+#else /* xtensa */
+
+void __start(void)
+{
+	extern uint32_t _init_start;
+
+	/* Move the exception vector table to IRAM. */
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
+
+	arch_bss_zero();
+
+	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
+
+	/* Disable normal interrupts. */
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+
+	/* Initialize the architecture CPU pointer.  Some of the
+	 * initialization code wants a valid arch_curr_cpu() before
+	 * arch_kernel_init() is invoked.
+	 */
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
+
+	boot_start();
+}
+
+#endif /* CONFIG_RISCV */

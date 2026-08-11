@@ -32,10 +32,18 @@ from devicetree import edtlib
 def main():
     global header_file
     global flash_area_num
+    global ZEPHYR_BASE
 
     args = parse_args()
 
     edtlib_logger.setup_edtlib_logging()
+
+    base_path = args.zephyr_base or os.getenv("ZEPHYR_BASE")
+
+    if base_path:
+        ZEPHYR_BASE = pathlib.Path(base_path)
+    else:
+        ZEPHYR_BASE = pathlib.Path(__file__).resolve().parents[2]
 
     with open(args.edt_pickle, 'rb') as f:
         edt = pickle.load(f)
@@ -113,6 +121,27 @@ def main():
         write_chosen(edt)
         write_global_macros(edt)
 
+    # Output text file with all binding files, if argument is provided
+    if args.deps_out is not None:
+        with open(args.deps_out, "w", encoding="utf-8") as dependency_file:
+            output_binding_paths: set[str] = set()
+
+            for node in edt.nodes:
+                if (
+                    node.matching_compat
+                    and node.binding_path
+                    and node.binding_path not in output_binding_paths
+                ):
+                    print(f'{pathlib.Path(node.binding_path).as_posix()}', file=dependency_file)
+                    output_binding_paths.add(node.binding_path)
+
+                    for path in node.binding.included_binding_paths:
+                        if path in output_binding_paths:
+                            continue
+
+                        print(f'{pathlib.Path(path).as_posix()}', file=dependency_file)
+                        output_binding_paths.add(path)
+
 
 def node_z_path_id(node: edtlib.Node) -> str:
     # Return the node specific bit of the node's path identifier:
@@ -137,7 +166,9 @@ def parse_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument("--header-out", required=True, help="path to write header to")
+    parser.add_argument("--deps-out", help="path to dependencies file to output")
     parser.add_argument("--edt-pickle", help="path to read pickled edtlib.EDT object from")
+    parser.add_argument("--zephyr-base", help="path to zephyr base")
 
     return parser.parse_args()
 
@@ -221,12 +252,11 @@ def relativize(path) -> str | None:
     # with a "$ZEPHYR_BASE/..." hint at the start of the string. Otherwise,
     # returns 'path' unchanged.
 
-    zbase = os.getenv("ZEPHYR_BASE")
-    if zbase is None:
+    if ZEPHYR_BASE is None:
         return path
 
     try:
-        return str("$ZEPHYR_BASE" / pathlib.Path(path).relative_to(zbase))
+        return str("$ZEPHYR_BASE" / pathlib.Path(path).relative_to(ZEPHYR_BASE))
     except ValueError:
         # Not within ZEPHYR_BASE
         return path
@@ -1232,7 +1262,7 @@ def list2init(values: Iterable[str]) -> str:
 
 def out_dt_define(
     macro: str,
-    val: str,
+    val: str | int,
     width: int | None = None,
     deprecation_msg: str | None = None,
 ) -> str:
@@ -1254,7 +1284,7 @@ def out_dt_define(
 
 def out_define(
     macro: str,
-    val: str,
+    val: str | int,
     width: int | None = None,
     deprecation_msg: str | None = None,
 ) -> None:

@@ -1,0 +1,52 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	spim2_loopback: spim2_loopback {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO2>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO2>;
+			input-enable;
+		};
+
+		group3 {
+			pinmux = <SPIM2_SCLK_GPIO6>,
+				 <SPIM2_CSEL_GPIO7>;
+		};
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	dma-enabled;
+	pinctrl-0 = <&spim2_loopback>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	dmas = <&dma_axi 0>, <&dma_axi 1>;
+	dma-names = "rx", "tx";
+
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <16000000>;
+	};
+};
+
+&dma_axi {
+	status = "okay";
+};

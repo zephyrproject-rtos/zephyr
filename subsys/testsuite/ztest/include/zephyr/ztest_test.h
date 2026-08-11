@@ -746,6 +746,17 @@ bool ztest_has_current_param(void);
 #define Z_ZTEST_F(suite, fn, t_options) Z_TEST(suite, fn, t_options, 1)
 
 /**
+ * @brief Skips the test
+ *
+ * Use this macro to skip the test. Return is needed when CONFIG_MULTITHREADING is disabled
+ * to exit from the test function (when test is a thread, ztest_test_skip aborts itself).
+ */
+#define Z_TEST_SKIP() do {                                                                         \
+	ztest_test_skip();                                                                         \
+	return;                                                                                    \
+} while (0)
+
+/**
  * @brief Skips the test if config is enabled
  *
  * Use this macro at the start of your test case, to skip it when
@@ -753,7 +764,7 @@ bool ztest_has_current_param(void);
  *
  * @param config The Kconfig option used to skip the test.
  */
-#define Z_TEST_SKIP_IFDEF(config) COND_CODE_1(config, (ztest_test_skip()), ())
+#define Z_TEST_SKIP_IFDEF(config) COND_CODE_1(config, (Z_TEST_SKIP()), ())
 
 /**
  * @brief Skips the test if config is not enabled
@@ -764,7 +775,7 @@ bool ztest_has_current_param(void);
  *
  * @param config The Kconfig option used to skip the test (if not enabled).
  */
-#define Z_TEST_SKIP_IFNDEF(config) COND_CODE_1(config, (), (ztest_test_skip()))
+#define Z_TEST_SKIP_IFNDEF(config) COND_CODE_1(config, (), (Z_TEST_SKIP()))
 
 /**
  * @brief Create and register a new unit test.

@@ -500,10 +500,16 @@ static int hx8353e_init(const struct device *dev)
 }
 
 #define HX8353E_INIT(n)								\
-	BUILD_ASSERT(DT_INST_PROP(n, width)  <= 132,				\
-		     "HX8353E width must be <= 132 (chip limit)");		\
-	BUILD_ASSERT(DT_INST_PROP(n, height) <= 162,				\
-		     "HX8353E height must be <= 162 (chip limit)");		\
+	BUILD_ASSERT((DT_INST_PROP(n, rotation) == 90 ||			\
+		      DT_INST_PROP(n, rotation) == 270)			\
+			     ? DT_INST_PROP(n, width) <= 162			\
+			     : DT_INST_PROP(n, width) <= 132,			\
+		     "HX8353E width exceeds the 132x162 GRAM (chip limit)");	\
+	BUILD_ASSERT((DT_INST_PROP(n, rotation) == 90 ||			\
+		      DT_INST_PROP(n, rotation) == 270)			\
+			     ? DT_INST_PROP(n, height) <= 132			\
+			     : DT_INST_PROP(n, height) <= 162,			\
+		     "HX8353E height exceeds the 132x162 GRAM (chip limit)");	\
 	static const struct hx8353e_config hx8353e_config_##n = {		\
 		.mipi_dbi      = DEVICE_DT_GET(DT_INST_PARENT(n)),		\
 		.dbi_config    = {						\

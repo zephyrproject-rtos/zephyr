@@ -12,6 +12,11 @@ config EXTERNAL_MEM_CONFIG_DATA
 config NXP_IMX_EXTERNAL_HYPERRAM
 	default y if CPU_CORTEX_M33
 
+# The cm7 MPU region table fully covers all memory the firmware uses,
+# so enable the catch-all unmapped region (Cortex-M7 erratum 1013783).
+config ARM_MPU_CM7_UNMAPPED_REGION
+	default y if CPU_CORTEX_M7
+
 if SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
 
 # Workaround for not being able to have commas in macro arguments

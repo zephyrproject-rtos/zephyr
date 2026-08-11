@@ -4,7 +4,7 @@
 zephyr_include_directories(.)
 
 set(RTS_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.rts5817.bin)
-string(TOUPPER "${SOC_NAME}" soc_name_upper)
+string(TOUPPER "${CONFIG_SOC}" soc_name_upper)
 
 if(APPVERSION)
   set(version ${APPVERSION})

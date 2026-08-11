@@ -6,6 +6,7 @@
 config VIDEO_OV7725
 	bool "OV7725 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV7725),reset-gpios)
 	depends on DT_HAS_OVTI_OV7725_ENABLED
 	default y
 	help

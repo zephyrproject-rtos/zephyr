@@ -4,3 +4,5 @@ board:
   vendor: raspberrypi
   socs:
   - name: bcm2711
+    variants:
+    - name: smp

@@ -449,12 +449,12 @@ struct adc_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
 		    (ADC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
-/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get ADC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance by name.
  *
  * @see ADC_DT_SPEC_GET_BY_NAME()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  *
  * @return Static initializer for an adc_dt_spec structure.
@@ -465,7 +465,7 @@ struct adc_dt_spec {
 /**
  * @brief Like ADC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  * @param default_value Fallback value to expand to.
  *
@@ -566,12 +566,12 @@ struct adc_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
 		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
-/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get ADC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance.
  *
  * @see ADC_DT_SPEC_GET_BY_IDX()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  *
  * @return Static initializer for an adc_dt_spec structure.
@@ -582,7 +582,7 @@ struct adc_dt_spec {
 /**
  * @brief Like ADC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  * @param default_value Fallback value to expand to.
  *
@@ -623,7 +623,7 @@ struct adc_dt_spec {
  *
  * @see ADC_DT_SPEC_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
@@ -634,7 +634,7 @@ struct adc_dt_spec {
  *
  * @see ADC_DT_SPEC_GET_OR()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value Fallback value to expand to.
  *
  * @return Static initializer for a struct adc_dt_spec for the property,
@@ -1298,6 +1298,8 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
  * measured in millivolts.
  *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
  * @return a positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
@@ -1502,13 +1504,9 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Get the decoder name for the current driver
  *
- * This function depends on `DT_DRV_COMPAT` being defined.
+ * This function depends on @c DT_DRV_COMPAT being defined.
  */
 #define ADC_DECODER_NAME() UTIL_CAT(DT_DRV_COMPAT, __adc_decoder_api)
 
@@ -1586,6 +1584,10 @@ extern const struct rtio_iodev_api __adc_iodev_api;
 		.trigger_cnt = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),			\
 	};											\
 	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

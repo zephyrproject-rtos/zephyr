@@ -38,7 +38,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 ``raspberry_pi_camera_module_2`` for boards with the necessary device tree node labels:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32n6570_dk
    :shield: raspberry_pi_camera_module_2
    :goals: build

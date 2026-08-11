@@ -158,7 +158,6 @@ static void sy1xx_mac_set_mac_addr(const struct device *dev)
 {
 	struct sy1xx_mac_dev_config *cfg = (struct sy1xx_mac_dev_config *)dev->config;
 	struct sy1xx_mac_dev_data *data = (struct sy1xx_mac_dev_data *)dev->data;
-	int ret;
 	uint32_t v_low, v_high;
 
 	LOG_INF("%s set link address %02x:%02x:%02x:%02x:%02x:%02x", dev->name, data->mac_addr[0],
@@ -388,9 +387,7 @@ static int sy1xx_mac_low_level_send(const struct device *dev, uint8_t *tx, uint1
 	}
 
 	/* copy data to dma buffer */
-	for (uint32_t i = 0; i < len; i++) {
-		data->dma_buffers->tx[i] = tx[i];
-	}
+	memcpy(data->dma_buffers->tx, tx, len);
 
 	/* start dma transfer */
 	SY1XX_UDMA_START_TX(cfg->base_addr, (uint32_t)data->dma_buffers->tx, len, 0);
@@ -443,14 +440,12 @@ static int sy1xx_mac_send(const struct device *dev, struct net_pkt *pkt)
 	data->temp.tx_len = 0;
 	do {
 		/* copy fragment to buffer */
-		for (uint32_t i = 0; i < frag->len; i++) {
-			if (data->temp.tx_len < MAX_MAC_PACKET_LEN) {
-				data->temp.tx[data->temp.tx_len++] = frag->data[i];
-			} else {
-				LOG_ERR("tx buffer overflow");
-				return -ENOMEM;
-			}
+		if (data->temp.tx_len + frag->len > MAX_MAC_PACKET_LEN) {
+			LOG_ERR("tx buffer overflow");
+			return -ENOMEM;
 		}
+		memcpy(&data->temp.tx[data->temp.tx_len], frag->data, frag->len);
+		data->temp.tx_len += frag->len;
 
 		frag = frag->frags;
 	} while (frag);

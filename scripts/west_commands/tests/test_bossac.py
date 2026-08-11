@@ -7,7 +7,7 @@
 import argparse
 import os
 import platform
-from unittest.mock import patch, call
+from unittest.mock import Mock, PropertyMock, call, patch
 
 import pytest
 
@@ -21,7 +21,49 @@ TEST_BOSSAC_PORT = 'test-bossac-serial'
 TEST_BOSSAC_SPEED = '1200'
 TEST_OFFSET = 1234
 TEST_FLASH_ADDRESS = 5678
+# Base address of the zephyr,flash node. The image offset passed to bossac is
+# the absolute code address minus this base.
+TEST_FLASH_BASE_ADDRESS = 0x4000
 TEST_BOARD_NAME = "my_board"
+
+
+def mock_edt_node(addr, compats, parent):
+    """Build a mock EDT node. 'parent' is set as an attribute after
+    construction because Mock treats the 'parent' constructor kwarg specially
+    (it configures the mock's call parent, not an attribute named 'parent').
+    'compats' is the node's DTS 'compatible' list, which get_flash_base_of_partition()
+    inspects to tell partitions apart from the flash node."""
+    node = Mock(regs=([Mock(addr=addr)] if addr is not None else []),
+                compats=compats)
+    node.parent = parent
+    return node
+
+
+def mock_code_partition_node(flash_base=TEST_FLASH_BASE_ADDRESS):
+    """Build a mock code-partition EDT node whose enclosing flash memory node
+    reports 'flash_base' as its base address. get_dts_img_offset() walks up
+    partition_nd.parent to find the flash node (nearest ancestor with a reg
+    that is not itself a partition) and subtracts its base."""
+    flash_nd = mock_edt_node(flash_base, ['soc-nv-flash'], None)
+    # A 'partitions' wrapper node has no reg, mirroring fixed-partitions layout.
+    wrapper_nd = mock_edt_node(None, [], flash_nd)
+    return mock_edt_node(flash_base, ['zephyr,mapped-partition'], wrapper_nd)
+
+
+def mock_nested_code_partition_node(flash_base=TEST_FLASH_BASE_ADDRESS):
+    """Build a mock code-partition EDT node nested inside another
+    zephyr,mapped-partition (which nests directly in the flash node, with no
+    'partitions' wrapper). The enclosing partition has its own reg, so the
+    parent walk must skip it, resolving the offset relative to the physical
+    flash, rather than stopping at the first ancestor that has a reg."""
+    flash_nd = mock_edt_node(flash_base, ['soc-nv-flash'], None)
+    # The enclosing partition's reg differs from the flash base, so a walk that
+    # wrongly stopped at the first reg-bearing ancestor would compute the wrong
+    # offset and fail the test.
+    outer_partition_nd = mock_edt_node(flash_base + 0x100,
+                                       ['zephyr,mapped-partition'], flash_nd)
+    return mock_edt_node(flash_base, ['zephyr,mapped-partition'],
+                         outer_partition_nd)
 
 EXPECTED_COMMANDS = [
     ['stty', '-F', TEST_BOSSAC_PORT, 'raw', 'ispeed', '115200',
@@ -135,6 +177,15 @@ CONFIG_USE_DT_CODE_PARTITION=y
 CONFIG_BOOTLOADER_BOSSA_LEGACY=y
 CONFIG_HAS_FLASH_LOAD_OFFSET=y
 CONFIG_FLASH_LOAD_OFFSET=0x162e
+'''
+
+# SAM-BA with zephyr,mapped-partition
+# CONFIG_FLASH_LOAD_OFFSET is disallowed with mapped-partition, so the offset
+# must be derived from the code-partition devicetree node (see issue #107855).
+DOTCONFIG_COND7 = f'''
+CONFIG_BOARD="{TEST_BOARD_NAME}"
+CONFIG_USE_DT_CODE_PARTITION=y
+CONFIG_FLASH_USES_MAPPED_PARTITION=y
 '''
 
 def adjust_runner_config(runner_config, tmpdir, dotconfig):
@@ -302,15 +353,17 @@ def test_bossac_create_with_erase(cc, req, get_cod_par, sup, runner_config, tmpd
         runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_ERASE]
 
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+	return_value=TEST_FLASH_ADDRESS + TEST_FLASH_BASE_ADDRESS)
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
-	return_value=True)
+	return_value=mock_code_partition_node())
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create_with_flash_address(cc, req, get_cod_par, sup,
-					  runner_config, tmpdir):
+					  flash_addr, runner_config, tmpdir):
     """
     Test command with offset parameter
 
@@ -345,15 +398,17 @@ def test_bossac_create_with_flash_address(cc, req, get_cod_par, sup,
     ]
 
 
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+	return_value=TEST_FLASH_BASE_ADDRESS)
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
-	return_value=True)
+	return_value=mock_code_partition_node())
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create_with_omit_address(cc, req, bcfg_ini, sup,
-                                         runner_config, tmpdir):
+                                         flash_addr, runner_config, tmpdir):
     """
     Test command that will omit offset because CONFIG_FLASH_LOAD_OFFSET is 0.
     This case is valid for ROM bootloaders that define image start at 0 and
@@ -381,15 +436,17 @@ def test_bossac_create_with_omit_address(cc, req, bcfg_ini, sup,
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+	return_value=TEST_FLASH_ADDRESS + TEST_FLASH_BASE_ADDRESS)
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
-	return_value=True)
+	return_value=mock_code_partition_node())
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create_with_arduino(cc, req, get_cod_par, sup,
-				    runner_config, tmpdir):
+				    flash_addr, runner_config, tmpdir):
     """
     Test SAM-BA extended protocol with Arduino variation
 
@@ -415,15 +472,17 @@ def test_bossac_create_with_arduino(cc, req, get_cod_par, sup,
         runner.run('flash')
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS_WITH_EXTENDED]
 
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+	return_value=TEST_FLASH_ADDRESS + TEST_FLASH_BASE_ADDRESS)
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=True)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
-	return_value=True)
+	return_value=mock_code_partition_node())
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create_with_adafruit(cc, req, get_cod_par, sup,
-				     runner_config, tmpdir):
+				     flash_addr, runner_config, tmpdir):
     """
     Test SAM-BA extended protocol with Adafruit UF2 variation
 
@@ -485,15 +544,17 @@ def test_bossac_create_with_legacy(cc, req, get_cod_par, sup,
     assert cc.call_args_list == [call(x) for x in EXPECTED_COMMANDS]
 
 
+@patch('runners.core.ZephyrBinaryRunner.flash_address_from_build_conf',
+	return_value=TEST_FLASH_ADDRESS + TEST_FLASH_BASE_ADDRESS)
 @patch('runners.bossac.BossacBinaryRunner.supports',
 	return_value=False)
 @patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
-	return_value=True)
+	return_value=mock_code_partition_node())
 @patch('runners.core.ZephyrBinaryRunner.require',
 	side_effect=require_patch)
 @patch('runners.core.ZephyrBinaryRunner.check_call')
 def test_bossac_create_with_oldsdk(cc, req, get_cod_par, sup,
-				   runner_config, tmpdir):
+				   flash_addr, runner_config, tmpdir):
     """
     Test old SDK and ask user to upgrade
 
@@ -593,3 +654,118 @@ def test_bossac_create_error_missing_kconfig(cc, req, get_cod_par, sup,
         + TEST_BOARD_NAME + "_defconfig file.\n This means that" \
         " zephyr,code-partition device tree node should not be defined." \
         " Check Zephyr SAM-BA documentation."
+
+
+def mock_mapped_partition_edt(code_partition_nd):
+    """Build a mock EDT whose zephyr,code-partition chosen node is
+    'code_partition_nd', as used by the real flash_address_from_build_conf()
+    on a zephyr,mapped-partition setup."""
+    def chosen_node(name):
+        if name == 'zephyr,code-partition':
+            return code_partition_nd
+        return None
+
+    edt = Mock()
+    edt.chosen_node.side_effect = chosen_node
+    return edt
+
+
+# A code partition whose memory-mapped address sits TEST_FLASH_ADDRESS bytes
+# into a flash based at TEST_FLASH_BASE_ADDRESS. The same node is returned both
+# by the real flash_address_from_build_conf() (via edt) and by
+# get_chosen_code_partition_node() (whose parent chain locates the flash base).
+MAPPED_CODE_PARTITION_ND = mock_code_partition_node()
+MAPPED_CODE_PARTITION_ND.regs = [Mock(addr=TEST_FLASH_BASE_ADDRESS + TEST_FLASH_ADDRESS)]
+
+
+@patch('runners.core.BuildConfiguration.edt', new_callable=PropertyMock,
+	return_value=mock_mapped_partition_edt(MAPPED_CODE_PARTITION_ND))
+@patch('runners.bossac.BossacBinaryRunner.supports',
+	return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
+	return_value=MAPPED_CODE_PARTITION_ND)
+@patch('runners.core.ZephyrBinaryRunner.require',
+	side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_create_with_mapped_partition(cc, req, get_cod_par, sup, edt,
+					     runner_config, tmpdir):
+    """
+    Test that the offset is derived from the devicetree code-partition node
+    when a zephyr,mapped-partition is used (issue #107855). In this case
+    CONFIG_FLASH_LOAD_OFFSET is disallowed, so the offset is the partition's
+    memory-mapped address minus the base of the flash node containing it.
+    This exercises the real flash_address_from_build_conf() end-to-end.
+
+    Requirements:
+	SDK >= 0.12.0
+
+    Configuration:
+	Any bootloader
+	CONFIG_USE_DT_CODE_PARTITION=y
+	CONFIG_FLASH_USES_MAPPED_PARTITION=y
+	with zephyr,mapped-partition code-partition
+
+    Input:
+	--bossac-port
+
+    Output:
+	--offset
+    """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND7)
+    runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert cc.call_args_list == [
+        call(x) for x in EXPECTED_COMMANDS_WITH_FLASH_ADDRESS
+    ]
+
+
+# A code partition nested inside another zephyr,mapped-partition. Its
+# memory-mapped address sits TEST_FLASH_ADDRESS bytes into the flash; the
+# enclosing partition has its own reg, which the parent walk must skip.
+NESTED_CODE_PARTITION_ND = mock_nested_code_partition_node()
+NESTED_CODE_PARTITION_ND.regs = [Mock(addr=TEST_FLASH_BASE_ADDRESS + TEST_FLASH_ADDRESS)]
+
+
+@patch('runners.core.BuildConfiguration.edt', new_callable=PropertyMock,
+	return_value=mock_mapped_partition_edt(NESTED_CODE_PARTITION_ND))
+@patch('runners.bossac.BossacBinaryRunner.supports',
+	return_value=True)
+@patch('runners.bossac.BossacBinaryRunner.get_chosen_code_partition_node',
+	return_value=NESTED_CODE_PARTITION_ND)
+@patch('runners.core.ZephyrBinaryRunner.require',
+	side_effect=require_patch)
+@patch('runners.core.ZephyrBinaryRunner.check_call')
+def test_bossac_create_with_nested_mapped_partition(cc, req, get_cod_par, sup,
+						    edt, runner_config, tmpdir):
+    """
+    Test that the offset is resolved relative to the physical flash when the
+    code partition is nested inside another zephyr,mapped-partition. The
+    enclosing partition also has a reg, so the parent walk must skip it rather
+    than stopping at the first ancestor with a reg, and subtract the flash
+    node's base to keep the offset flash-relative.
+
+    Requirements:
+	SDK >= 0.12.0
+
+    Configuration:
+	Any bootloader
+	CONFIG_USE_DT_CODE_PARTITION=y
+	CONFIG_FLASH_USES_MAPPED_PARTITION=y
+	with a nested zephyr,mapped-partition code-partition
+
+    Input:
+	--bossac-port
+
+    Output:
+	--offset
+    """
+    runner_config = adjust_runner_config(runner_config, tmpdir,
+                                         DOTCONFIG_COND7)
+    runner = BossacBinaryRunner(runner_config, port=TEST_BOSSAC_PORT)
+    with patch('os.path.isfile', side_effect=os_path_isfile_patch):
+        runner.run('flash')
+    assert cc.call_args_list == [
+        call(x) for x in EXPECTED_COMMANDS_WITH_FLASH_ADDRESS
+    ]

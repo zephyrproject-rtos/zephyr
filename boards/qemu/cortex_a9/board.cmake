@@ -4,11 +4,11 @@
 #
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
-set(QEMU_ARCH xilinx-aarch64)
+set(QEMU_BINARY_SUFFIX xilinx-aarch64)
 
-set(QEMU_CPU_TYPE_${ARCH} cortex-a9)
+set(QEMU_CPU_TYPE cortex-a9)
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine arm-generic-fdt-7series
   -dtb ${CMAKE_CURRENT_LIST_DIR}/fdt-zynq7000s.dtb
   )

@@ -7,11 +7,13 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	cpus: cpus {
@@ -23,11 +25,61 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	power-states {
+		/*
+		 * Note:
+		 *  - 'exit-latency-us' depends on system clock frequency and voltage level.
+		 *  - 'min-residency-us' needs to be adjusted according to the actual project
+		 *    requirements. The values provided here are not applicable to all real
+		 *    projects.
+		 */
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <1>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <10>;
+		};
+
+		powerdown: powerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <80000>;
+			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain (ARM core, NVIC, SysTick)
+		 * is power gated and LDO_CORE is turned off; the chip wakes through
+		 * the reset routine. Only the RAMA arrays kept alive by the VBAT
+		 * backup SRAM regulator survive, so the entire retained working set
+		 * must fit in that region for transparent S2RAM resume.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -92,6 +144,75 @@
 		reset: reset {
 			compatible = "nxp,mrcc-reset";
 			#reset-cells = <1>;
+		};
+	};
+
+	inputmux0: inputmux@1000 {
+		compatible = "nxp,inputmux";
+		reg = <0x1000 0x1000>;
+		status = "disabled";
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
+	freqme0: freqme@9000 {
+		compatible = "nxp,freqme";
+		reg = <0x9000 0x10>;
+		interrupts = <54 0>;
+		clocks = <&syscon MCUX_FREQME_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-fro-hf-div {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_REF_FRO_HF_DIV>;
+				clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+			};
+
+			ref-fro-12m {
+				mux-states = <&inputmux0 0 NXP_FREQME_REF_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+		};
+
+		target-sources {
+			/*
+			 * Targets without a clocks / clock-frequency provider have an
+			 * unknown or board-specific rate: MEASURE only, no WINDOW
+			 * auto-derive. CLK_IN / CLK_IN0 / CLK_IN1 are external input
+			 * pins; SLOW_CLK is a divided clock whose rate varies.
+			 */
+			tar-fro-12m {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+
+			tar-fro-hf-div {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_FRO_HF_DIV>;
+				clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+			};
+
+			tar-clk-in {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN>;
+			};
+
+			tar-clk-16k1 {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_16K1>;
+				clock-frequency = <16384>;
+			};
+
+			tar-slow-clk {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_SLOW_CLK>;
+			};
+
+			tar-clk-in0 {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN0>;
+			};
+
+			tar-clk-in1 {
+				mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN1>;
+			};
 		};
 	};
 
@@ -511,6 +632,8 @@
 		prescale-glitch-filter-bypass;
 		clk-source = <1>;
 		resolution = <32>;
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 	};
 
 	waketimer0: wake-timer@ae000 {
@@ -581,6 +704,12 @@
 
 		flexio0_lcd: flexio0-lcd {
 			compatible = "nxp,mipi-dbi-flexio-lcdif";
+			status = "disabled";
+		};
+
+		flexio0_pwm: flexio0-pwm {
+			compatible = "nxp,flexio-pwm";
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 	};
@@ -729,7 +858,7 @@
 		clocks = <&syscon MCUX_ENET_QOS_CLK>;
 
 		enet_mac: ethernet {
-			compatible = "nxp,enet-qos-mac";
+			compatible = "nxp,enet-qos-mac", "snps,dwmac";
 			status = "disabled";
 			interrupts = <90 0>, <91 0>;
 			interrupt-names = "mac", "power";
@@ -754,6 +883,24 @@
 	cmc: system-modules@c6000 {
 		compatible = "nxp,cmc";
 		reg = <0xc6000 0x1000>;
+	};
+
+	spc: system-modules@cb000 {
+		compatible = "nxp,spc";
+		reg = <0xcb000 0x1000>;
+		wakeup-delay = <0x7d>;
+	};
+
+	wuu: system-modules@92000 {
+		compatible = "nxp,wuc-wuu", "nxp,wuu";
+		reg = <0x92000 0x1000>;
+		interrupts = <18 0>;
+		#wakeup-ctrl-cells = <1>;
+	};
+
+	vbat: system-modules@93000 {
+		compatible = "nxp,vbat";
+		reg = <0x93000 0x1000>;
 	};
 
 	eim0: eim@400c7000 {

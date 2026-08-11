@@ -96,7 +96,7 @@ void smtc_modem_hal_init(const struct device *transceiver)
 	k_work_queue_start(&hal_workq, hal_workq_stack,
 			   K_THREAD_STACK_SIZEOF(hal_workq_stack),
 			   HAL_WORKQ_PRIORITY, NULL);
-	k_thread_name_set(&hal_workq.thread, "lbm_hal_workq");
+	k_thread_name_set(hal_workq.thread_id, "lbm_hal_workq");
 
 	k_work_init(&prv_cb_data.work, hal_irq_work_handler);
 }

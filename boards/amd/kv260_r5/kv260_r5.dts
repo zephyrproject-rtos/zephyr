@@ -52,6 +52,10 @@
 	status = "okay";
 };
 
+&rtc {
+	status = "okay";
+};
+
 &i2c1 {
 	status = "okay";
 	clocks = <&i2c_ref_clk>;

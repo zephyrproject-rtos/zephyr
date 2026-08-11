@@ -60,30 +60,14 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Environment Setup
-        run: |
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
-
-          west init -l . || true
-          west config --global update.narrow true
-          west update \
-            --path-cache /repo-cache/zephyrproject 2>&1 | tee west.update.log \
-            || west update \
-              --path-cache /repo-cache/zephyrproject 2>&1 | tee west.update.log \
-            || (
-              rm -rf ../modules ../bootloader ../tools
-              west update --path-cache /repo-cache/zephyrproject
-            )
-          west forall -c 'git reset --hard HEAD'
-
-          echo "ZEPHYR_SDK_INSTALL_DIR=/opt/toolchains/zephyr-sdk-$(cat SDK_VERSION)" \
-            >> $GITHUB_ENV
+        uses: ./.github/actions/zephyr-ci-env
 
       - name: Install Python packages
         run: |

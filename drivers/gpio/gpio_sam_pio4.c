@@ -180,9 +180,14 @@ static int gpio_sam_port_set_masked_raw(const struct device *dev,
 					uint32_t value)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
+	struct gpio_sam_runtime *context = dev->data;
 	pio_group_registers_t * const pio = cfg->regs;
+	k_spinlock_key_t key;
 
+	key = k_spin_lock(&context->lock);
+	pio->PIO_MSKR = mask;
 	pio->PIO_ODSR = (pio->PIO_ODSR & ~mask) | (mask & value);
+	k_spin_unlock(&context->lock, key);
 
 	return 0;
 }
@@ -211,9 +216,14 @@ static int gpio_sam_port_clear_bits_raw(const struct device *dev,
 static int gpio_sam_port_toggle_bits(const struct device *dev, uint32_t mask)
 {
 	const struct gpio_sam_config * const cfg = dev->config;
+	struct gpio_sam_runtime *context = dev->data;
 	pio_group_registers_t * const pio = cfg->regs;
+	k_spinlock_key_t key;
 
+	key = k_spin_lock(&context->lock);
+	pio->PIO_MSKR = mask;
 	pio->PIO_ODSR ^= mask;
+	k_spin_unlock(&context->lock, key);
 
 	return 0;
 }

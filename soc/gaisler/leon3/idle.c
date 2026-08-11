@@ -9,7 +9,7 @@
 
 static void leon_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 	irq_unlock(key);

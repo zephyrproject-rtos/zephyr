@@ -118,14 +118,52 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
 
         return self.build_conf['CONFIG_BOARD']
 
+    def get_flash_base_of_partition(self, partition_nd):
+        # Return the memory-mapped base address of the flash (NVM) memory node
+        # that contains 'partition_nd'.
+        #
+        # A partition's reg address is translated through any parent 'ranges'
+        # properties, so partition_nd.regs[0].addr is the absolute, memory-mapped
+        # address. To turn that into an offset within the flash device, subtract
+        # the base of the enclosing flash memory node. Walk up the parents to
+        # find it rather than assuming a fixed depth: fixed-partitions nest the
+        # partition under a 'partitions' wrapper node, while zephyr,mapped-partition
+        # nodes may be nested directly inside one another and inside the flash.
+        #
+        # The flash memory node is the nearest ancestor that carries a reg (a
+        # memory-mapped address) and is not itself a partition. Wrapper nodes
+        # such as the fixed-partitions 'partitions' node have no reg and are
+        # skipped; nested partitions are skipped so the offset is resolved
+        # relative to the physical flash rather than an enclosing partition.
+        # Use the node's DTS 'compatible' list rather than matching_compat, as
+        # the latter is None when a node has no matched binding.
+        node = partition_nd.parent
+        while node is not None:
+            is_partition = any('partition' in compat for compat in node.compats)
+            if node.regs and not is_partition:
+                return node.regs[0].addr
+            node = node.parent
+
+        raise RuntimeError(
+            f'could not find the flash memory node containing {partition_nd.path}')
+
     def get_dts_img_offset(self):
         if self.build_conf.getboolean('CONFIG_BOOTLOADER_BOSSA_LEGACY'):
             return 0
 
-        if self.build_conf.getboolean('CONFIG_HAS_FLASH_LOAD_OFFSET'):
-            return self.build_conf['CONFIG_FLASH_LOAD_OFFSET']
+        # Derive the flash offset entirely from the devicetree.
+        # flash_address_from_build_conf() returns the absolute (memory-mapped)
+        # address of the code image, handling zephyr,mapped-partition (where
+        # CONFIG_FLASH_LOAD_OFFSET is disallowed), CONFIG_FLASH_LOAD_OFFSET and
+        # the plain base-address cases alike. Subtract the base address of the
+        # flash node that actually contains the code partition to get the
+        # offset within that flash.
+        code_partition_nd = self.get_chosen_code_partition_node()
+        if code_partition_nd is None:
+            return 0
 
-        return 0
+        flash_base_address = self.get_flash_base_of_partition(code_partition_nd)
+        return self.flash_address_from_build_conf(self.build_conf) - flash_base_address
 
     def get_image_offset(self, supports_offset):
         """Validates and returns the flash offset"""

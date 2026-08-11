@@ -13,10 +13,10 @@
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/mux.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/irq.h>
-#include <fsl_inputmux.h>
 #endif
 
 #include <zephyr/logging/log.h>
@@ -47,10 +47,9 @@ struct pwm_ctimer_capture_data {
 	bool first_edge_seen;
 };
 
-struct pwm_ctimer_inputmux_entry {
-	INPUTMUX_Type *base;
-	uint16_t channel;
-	uint32_t connection;
+struct pwm_ctimer_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
 };
 #endif /* CONFIG_PWM_CAPTURE */
 
@@ -72,8 +71,8 @@ struct pwm_mcux_ctimer_config {
 	clock_control_subsys_t clock_id;
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_PWM_CAPTURE
-	const struct pwm_ctimer_inputmux_entry *inputmux_entries;
-	uint8_t inputmux_entries_count;
+	const struct pwm_ctimer_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
 	void (*irq_config_func)(const struct device *dev);
 #endif
 };
@@ -270,16 +269,25 @@ static int mcux_ctimer_pwm_get_cycles_per_sec(const struct device *dev, uint32_t
 
 #ifdef CONFIG_PWM_CAPTURE
 
-static void mcux_ctimer_pwm_setup_inputmux(const struct pwm_mcux_ctimer_config *config)
+static int mcux_ctimer_pwm_apply_mux(const struct pwm_mcux_ctimer_config *config)
 {
-	for (uint8_t i = 0; i < config->inputmux_entries_count; i++) {
-		const struct pwm_ctimer_inputmux_entry *entry = &config->inputmux_entries[i];
+	for (uint8_t i = 0; i < config->mux_entries_count; i++) {
+		const struct pwm_ctimer_mux_entry *entry = &config->mux_entries[i];
+		int err;
 
-		INPUTMUX_Init(entry->base);
-		INPUTMUX_AttachSignal(entry->base, entry->channel,
-				      (inputmux_connection_t)entry->connection);
-		INPUTMUX_Deinit(entry->base);
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR("mux controller %s not ready", entry->dev->name);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(entry->dev, entry->state);
+		if (err) {
+			LOG_ERR("failed to apply mux state %u: %d", i, err);
+			return err;
+		}
 	}
+
+	return 0;
 }
 
 static int mcux_ctimer_pwm_configure_capture(const struct device *dev, uint32_t channel,
@@ -288,6 +296,8 @@ static int mcux_ctimer_pwm_configure_capture(const struct device *dev, uint32_t 
 {
 	struct pwm_mcux_ctimer_data *data = dev->data;
 	struct pwm_ctimer_capture_data *capture = &data->capture;
+	const struct pwm_mcux_ctimer_config *config = dev->config;
+	int err;
 
 	if (channel >= CHANNEL_COUNT) {
 		LOG_ERR("invalid capture channel %u", channel);
@@ -317,6 +327,11 @@ static int mcux_ctimer_pwm_configure_capture(const struct device *dev, uint32_t 
 	if (data->num_active_pulse_chans != 0U) {
 		LOG_ERR("cannot capture while PWM output active on same ctimer");
 		return -EBUSY;
+	}
+
+	err = mcux_ctimer_pwm_apply_mux(config);
+	if (err) {
+		return err;
 	}
 
 	capture->callback = cb;
@@ -509,7 +524,6 @@ static int mcux_ctimer_pwm_init(const struct device *dev)
 	CTIMER_Init(config->base, &pwm_config);
 
 #ifdef CONFIG_PWM_CAPTURE
-	mcux_ctimer_pwm_setup_inputmux(config);
 	if (config->irq_config_func != NULL) {
 		config->irq_config_func(dev);
 	}
@@ -542,23 +556,23 @@ static DEVICE_API(pwm, pwm_mcux_ctimer_driver_api) = {
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 	}
-#define PWM_MCUX_CTIMER_INPUTMUX_ENTRY(node_id, prop, idx)                                         \
+#define PWM_MCUX_CTIMER_MUX_ENTRY(node_id, prop, idx)                                              \
 	{                                                                                          \
-		.base = (INPUTMUX_Type *)DT_REG_ADDR(DT_PHANDLE_BY_IDX(node_id, prop, idx)),       \
-		.channel = (uint16_t)DT_PHA_BY_IDX(node_id, prop, idx, channel),                   \
-		.connection = (uint32_t)DT_PHA_BY_IDX(node_id, prop, idx, connection),             \
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx),                                \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx),                                    \
 	}
 #define PWM_MCUX_CTIMER_INPUTMUX_DEFINE(n)                                                         \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, inputmux_connections),                                \
-		    (static const struct pwm_ctimer_inputmux_entry                                 \
-			    pwm_mcux_ctimer_inputmux_entries_##n[] = {                             \
-			    DT_INST_FOREACH_PROP_ELEM_SEP(n, inputmux_connections,                 \
-							  PWM_MCUX_CTIMER_INPUTMUX_ENTRY, (,))     \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),                                          \
+		    (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n);                                         \
+		     static const struct pwm_ctimer_mux_entry                                      \
+			    pwm_mcux_ctimer_mux_entries_##n[] = {                                  \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states,                           \
+						  PWM_MCUX_CTIMER_MUX_ENTRY, (,))            \
 		    };), ())
 #define PWM_MCUX_CTIMER_INPUTMUX_INIT(n)                                                           \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, inputmux_connections),                                \
-		    (.inputmux_entries = pwm_mcux_ctimer_inputmux_entries_##n,                     \
-		     .inputmux_entries_count = DT_INST_PROP_LEN(n, inputmux_connections),), ())
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),                                          \
+		    (.mux_entries = pwm_mcux_ctimer_mux_entries_##n,                               \
+		     .mux_entries_count = ARRAY_SIZE(pwm_mcux_ctimer_mux_entries_##n),), ())
 #else
 #define PWM_MCUX_CTIMER_IRQ_FUNC_DECL(n)
 #define PWM_MCUX_CTIMER_IRQ_FUNC_INIT(n)

@@ -117,7 +117,7 @@ void adxl367_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		data->fifo_wmark_irq = fifo_wmark_irq;
 		data->fifo_full_irq = fifo_full_irq;
 
-		rc = data->hw_tf->write_reg_mask(dev, ADXL367_INTMAP1_LOWER, int_mask, int_value);
+		rc = data->hw_tf->write_reg_mask(dev, cfg_367->int_map_reg, int_mask, int_value);
 		if (rc < 0) {
 			return;
 		}

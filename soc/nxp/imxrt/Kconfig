@@ -148,7 +148,8 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 
 config SECOND_CORE_MCUX
 	bool "Dual core operation on the RT multi-core series"
-	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X || SOC_SERIES_IMXRT7XX
+	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT7XX || \
+		(SOC_SERIES_IMXRT118X && !SOC_MIMXRT1182 && !SOC_MIMXRT1181)
 	help
 	  Indicates the second core will be enabled, and the part will run
 	  in dual core mode. The primary core boots an image targeting the
@@ -162,6 +163,15 @@ config SECOND_CORE_MCUX_REMOTE_DIR
 	help
 	  Sets the remote directory to include the output image header data
 	  from when launching a second core image
+
+config SOC_IMXRT118X_SECOND_CORE_KICKOFF
+	bool "Second core kickoff on the RT11xx series"
+	default y
+	depends on SECOND_CORE_MCUX && SOC_SERIES_IMXRT118X
+	help
+	  Indicates the second core will be started by the primary core at its system
+	  initialization. Otherwise, secondary core kickoff can be done independently
+	  at application level later.
 
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 

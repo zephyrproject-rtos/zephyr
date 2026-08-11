@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_
 
 /**
  * @brief Telephone and Media Audio Profile (TMAP)
@@ -73,7 +73,7 @@ enum bt_tmap_role {
 	/**
 	 * @brief TMAP Broadcast Media Receiver role
 	 *
-	 * This role is defined send media audio to TMAP Broadcast Media Senders.
+	 * This role is defined to receive media audio from TMAP Broadcast Media Senders.
 	 * Audio streams in this role are always uni-directional.
 	 */
 	BT_TMAP_ROLE_BMR = BIT(5U),
@@ -126,4 +126,4 @@ void bt_tmap_set_role(enum bt_tmap_role role);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_TMAP_H_ */

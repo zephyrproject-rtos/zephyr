@@ -48,6 +48,11 @@
 				backup-switch-mode = "disabled";
 				trickle-resistor-ohms = <3000>;
 				int-gpios = <&test_gpio 0 0>;
+
+				test_rv3028_rtc: rv3028_rtc {
+					compatible = "microcrystal,rv3028-rtc";
+					status = "okay";
+				};
 			};
 
 			test_rv8263: rv8263@4 {
@@ -111,13 +116,13 @@
 				int-gpios = <&test_gpio 0 0>;
 				evi-gpios = <&test_gpio 0 0>;
 				backup-switch-mode = "disabled";
+				trickle-resistor-ohms = <600>;
+				trickle-charger-mode = <1750>;
 				always-on;
 				status = "okay";
 
 				test_rv3032_rtc: rv3032_rtc {
 					compatible = "microcrystal,rv3032";
-					trickle-resistor-ohms = <600>;
-					trickle-charger-mode = <1750>;
 					status = "okay";
 				};
 			};

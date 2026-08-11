@@ -13,13 +13,13 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - uart
-  - i2c
-  - pwm
-  - spi
-  - netif:eth
   - counter
   - dma
+  - i2c
+  - netif:eth
+  - pwm
+  - spi
+  - uart
 testing:
   binaries:
     - flash.bin

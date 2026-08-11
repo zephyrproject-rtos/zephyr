@@ -10,8 +10,8 @@
  * @brief Main header file for keyboard matrix input devices.
  */
 
-#ifndef ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
-#define ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_
+#ifndef ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_
+#define ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_
 
 /**
  * @defgroup input_kbd_matrix Keyboard Matrix
@@ -24,7 +24,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 /** Special drive_column argument for not driving any column */
@@ -103,7 +103,7 @@ struct input_kbd_matrix_api {
 	 * interrupts row pin changes.
 	 *
 	 * @param dev Pointer to the keyboard matrix device.
-	 * @param enable Whether detection mode has to be enabled or disabled.
+	 * @param enabled Whether detection mode has to be enabled or disabled.
 	 */
 	void (*set_detect_mode)(const struct device *dev, bool enabled);
 };
@@ -369,4 +369,4 @@ bool input_kbd_matrix_active(const struct device *dev);
 
 /** @} */
 
-#endif /* ZEPHYR_INCLUDE_INPUT_KBD_MATRIX_H_ */
+#endif /* ZEPHYR_INCLUDE_INPUT_INPUT_KBD_MATRIX_H_ */

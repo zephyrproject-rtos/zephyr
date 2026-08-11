@@ -50,6 +50,7 @@ LOG_MODULE_REGISTER(ptp_clock, CONFIG_PTP_LOG_LEVEL);
 #define SYNC_SERVO_OUTLIER_NS (100LL * NSEC_PER_MSEC)
 #define SYNC_SERVO_LOCK_SAMPLES 3U
 #define SYNC_SERVO_OUTLIER_SAMPLES 2U
+#define PTP_SERVO_GAIN_SCALE 1000.0
 
 /**
  * @brief PTP Clock structure.
@@ -542,8 +543,8 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 
 static double ptp_servo_pi(int64_t nanosecond_diff)
 {
-	double kp = 0.7;
-	double ki = 0.3;
+	const double kp = (double)CONFIG_PTP_SERVO_KP / PTP_SERVO_GAIN_SCALE;
+	const double ki = (double)CONFIG_PTP_SERVO_KI / PTP_SERVO_GAIN_SCALE;
 	double ppb;
 
 	ptp_clk.pi_drift += ki * nanosecond_diff;

@@ -41,7 +41,7 @@ struct spi_stm32_config {
 	bool ioswp: 1;
 	bool soft_nss: 1;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	bool use_subghzspi_nss: 1;
+	bool is_subghzspi: 1;
 #endif
 };
 
@@ -248,6 +248,14 @@ static inline void ll_disable_spi(SPI_TypeDef *spi)
 		(void) LL_SPI_ReceiveData8(spi);
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo) */
+
+#if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
+	/* Errata ES0392, ES0445, ES0491, ES0478: TXP interrupt occurring while SPI disabled.
+	 * Workaround: disable TXP and EOT interrupts before disabling SPI.
+	 */
+	LL_SPI_DisableIT_EOT(spi);
+	LL_SPI_DisableIT_TXP(spi);
+#endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
 	LL_SPI_Disable(spi);
 

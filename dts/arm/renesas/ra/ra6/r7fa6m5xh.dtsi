@@ -341,6 +341,21 @@
 			status = "disabled";
 		};
 
+		sdhc0: sdhc@40092000 {
+			compatible = "renesas,ra-sdhc";
+			channel = <0>;
+			bus-width = <4>;
+			sd-support;
+			mmc-support;
+			card-detect;
+			max-bus-freq = <DT_FREQ_M(52)>;
+			interrupts = <57 12>, <58 12>, <59 12>;
+			interrupt-names = "accs", "card", "dma-req";
+			reg = <0x40092000 0x400>;
+			clocks = <&pclkb MSTPC 12>;
+			status = "disabled";
+		};
+
 		usbhs: usbhs@40111000 {
 			compatible = "renesas,ra-usbhs";
 			reg = <0x40111000 0x2000>;

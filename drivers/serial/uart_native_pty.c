@@ -41,7 +41,7 @@ struct native_pty_config {
 struct native_pty_status {
 	int out_fd;       /* File descriptor used for output */
 	int in_fd;        /* File descriptor used for input */
-	bool on_stdinout; /* This UART is connected to a PTY and not STDIN/OUT */
+	bool on_stdinout; /* This UART is connected to STDIN/OUT and not a PTY */
 	bool stdin_disconnected;
 
 	bool auto_attach;      /* For PTY, attach a terminal emulator automatically */

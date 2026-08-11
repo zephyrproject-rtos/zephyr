@@ -8,8 +8,10 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
@@ -22,7 +24,7 @@
 			reg = <0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			cpu-power-states = <&sleep &deepsleep &powerdown>;
+			cpu-power-states = <&sleep &deepsleep &powerdown &deeppowerdown>;
 		};
 	};
 
@@ -53,6 +55,24 @@
 			power-state-name = "standby";
 			min-residency-us = <80000>;
 			exit-latency-us = <20>;
+		};
+
+		/*
+		 * Deep Power Down. The whole CORE domain (ARM core, NVIC, SysTick)
+		 * is power gated and LDO_CORE is turned off; the chip wakes through
+		 * the reset routine. All SRAM is retained by the SPC SRAM LDO, so the
+		 * full working set survives and S2RAM resume is transparent.
+		 */
+		deeppowerdown: deeppowerdown {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-ram";
+			/* Suspend-to-RAM needs the application to place its working set
+			 * in retained RAM and arm a wakeup source, so it is opt-in:
+			 * enable this node from the application to use it.
+			 */
+			status = "disabled";
+			min-residency-us = <500000>;
+			exit-latency-us = <500>;
 		};
 	};
 
@@ -164,6 +184,71 @@
 			nxp,kinetis-port = <&porte>;
 		};
 
+		freqme0: freqme@40009000 {
+			compatible = "nxp,freqme";
+			reg = <0x40009000 0x10>;
+			interrupts = <54 0>;
+			clocks = <&syscon MCUX_FREQME_CLK>;
+			status = "disabled";
+
+			reference-sources {
+				ref-fro-hf-div {
+					default-source;
+					mux-states = <&inputmux0 0
+						      NXP_FREQME_REF_FRO_HF_DIV>;
+					clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+				};
+
+				ref-fro-12m {
+					mux-states = <&inputmux0 0 NXP_FREQME_REF_FRO_12M>;
+					clocks = <&syscon MCUX_FRO_12M_CLK>;
+				};
+			};
+
+			target-sources {
+				/*
+				 * Targets without a clocks / clock-frequency provider have an
+				 * unknown or board-specific rate: MEASURE only, no WINDOW
+				 * auto-derive. CLK_IN / CLK_IN0 / CLK_IN1 are external input
+				 * pins; SLOW_CLK is a divided clock whose rate varies.
+				 */
+				tar-fro-12m {
+					default-source;
+					mux-states = <&inputmux0 0 NXP_FREQME_TAR_FRO_12M>;
+					clocks = <&syscon MCUX_FRO_12M_CLK>;
+				};
+
+				tar-fro-hf-div {
+					mux-states = <&inputmux0 0
+						      NXP_FREQME_TAR_FRO_HF_DIV>;
+					clocks = <&syscon MCUX_FRO_HF_DIV_CLK>;
+				};
+
+				tar-clk-in {
+					mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN>;
+				};
+
+				tar-clk-16k1 {
+					mux-states = <&inputmux0 0
+						      NXP_FREQME_TAR_CLK_16K1>;
+					clock-frequency = <16384>;
+				};
+
+				tar-slow-clk {
+					mux-states = <&inputmux0 0
+						      NXP_FREQME_TAR_SLOW_CLK>;
+				};
+
+				tar-clk-in0 {
+					mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN0>;
+				};
+
+				tar-clk-in1 {
+					mux-states = <&inputmux0 0 NXP_FREQME_TAR_CLK_IN1>;
+				};
+			};
+		};
+
 		lpuart0: lpuart@4009f000 {
 			compatible = "nxp,lpuart";
 			status = "disabled";
@@ -227,7 +312,27 @@
 			prescale-glitch-filter-bypass;
 			clk-source = <1>;
 			resolution = <32>;
+			wakeup-source;
+			wakeup-ctrls = <&wuu NXP_WUU_MODULE_6_INT>;
 			status = "disabled";
+		};
+
+		rtc: rtc@400ee000 {
+			compatible = "nxp,rtc";
+			reg = <0x400ee000 0x1000>;
+			interrupts = <119 0>, <120 0>;
+			interrupt-names = "alarm", "seconds";
+			clock-frequency = <32768>;
+			prescaler = <32768>;
+			/* OSC32k is not available on this device */
+			clock-source = "LPO";
+			status = "disabled";
+
+			counter_rtc: counter_rtc {
+				compatible = "zephyr,rtc-counter";
+				alarms-count = <1>;
+				status = "disabled";
+			};
 		};
 
 		ctimer0: ctimer@40004000 {
@@ -288,6 +393,15 @@
 			mode = <0>;
 			input = <0>;
 			prescale = <0>;
+		};
+
+		dac0: dac@400b4000 {
+			compatible = "nxp,lpdac";
+			reg = <0x400b4000 0x1000>;
+			interrupts = <67 0>;
+			status = "disabled";
+			voltage-reference = <0>;
+			#io-channel-cells = <1>;
 		};
 
 		fmu: flash-controller@40095000 {
@@ -587,9 +701,10 @@
 		};
 
 		wuu: system-modules@40092000 {
-			compatible = "nxp,wuu";
+			compatible = "nxp,wuc-wuu", "nxp,wuu";
 			reg = <0x40092000 0x1000>;
 			interrupts = <18 0>;
+			#wakeup-ctrl-cells = <1>;
 		};
 
 		cmc: system-modules@4008b000 {
@@ -666,6 +781,31 @@
 			status = "disabled";
 		};
 
+		inputmux0: inputmux@40001000 {
+			compatible = "nxp,inputmux";
+			reg = <0x40001000 0x1000>;
+			#mux-control-cells = <1>;
+			#mux-state-cells = <2>;
+		};
+
+		eqdc0: eqdc@400a7000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400a7000 0x1000>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
+			clocks = <&syscon MCUX_EQDC0_CLK>;
+			status = "disabled";
+		};
+
+		eqdc1: eqdc@400a8000 {
+			compatible = "nxp,mcux-eqdc";
+			reg = <0x400a8000 0x1000>;
+			interrupts = <85 0>, <86 0>, <87 0>, <88 0>;
+			interrupt-names = "compare", "home", "watchdog", "index";
+			clocks = <&syscon MCUX_EQDC1_CLK>;
+			status = "disabled";
+		};
+
 		flexpwm0: flexpwm@400a9000 {
 			compatible = "nxp,flexpwm";
 			reg = <0x400a9000 0x1000>;
@@ -677,7 +817,7 @@
 				index = <0>;
 				interrupts = <46 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -688,7 +828,7 @@
 				index = <1>;
 				interrupts = <47 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -699,7 +839,7 @@
 				index = <2>;
 				interrupts = <48 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -717,7 +857,7 @@
 				index = <0>;
 				interrupts = <81 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -728,7 +868,7 @@
 				index = <1>;
 				interrupts = <82 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;
@@ -739,7 +879,7 @@
 				index = <2>;
 				interrupts = <83 0>;
 				#pwm-cells = <3>;
-				clocks = <&syscon MCUX_BUS_CLK>;
+				clocks = <&syscon MCUX_SYSTEM_CLK>;
 				nxp,prescaler = <128>;
 				status = "disabled";
 				run-in-wait;

@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_A2DP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_A2DP_H_
 
 /**
  * @file
@@ -35,8 +35,6 @@ extern "C" {
 #define BT_A2DP_MPEG_1_2_IE_LENGTH (4U)
 /** MPEG2,4 IE length */
 #define BT_A2DP_MPEG_2_4_IE_LENGTH (6U)
-/** The max IE (Codec Info Element) length */
-#define BT_A2DP_MAX_IE_LENGTH      (8U)
 
 /** @brief define the audio endpoint
  *  @param _role BT_AVDTP_SOURCE or BT_AVDTP_SINK.
@@ -87,7 +85,6 @@ extern "C" {
  *  @param _min_bitpool sbc codec min bit pool. for example: 18
  *  @param _max_bitpool sbc codec max bit pool. for example: 35
  *  @param _delay_report delay report capability
- *  @
  */
 #define BT_A2DP_SBC_SINK_EP(_name, _freq, _ch_mode, _blk_len, _subband, _alloc_mthd, _min_bitpool, \
 			    _max_bitpool, _delay_report)                                           \
@@ -328,7 +325,7 @@ struct bt_a2dp_codec_ie {
 	/** Length of codec_cap */
 	uint8_t len;
 	/** codec information element */
-	uint8_t codec_ie[BT_A2DP_MAX_IE_LENGTH];
+	uint8_t codec_ie[CONFIG_BT_A2DP_CODEC_MAX_IE_LEN];
 };
 
 /** @brief The endpoint configuration */
@@ -468,6 +465,7 @@ struct bt_a2dp_cb {
 	 * reconfigured.
 	 *
 	 *  @param[in] stream    Pointer to stream object.
+	 *  @param[in] codec_cfg Codec configuration.
 	 *  @param[out] rsp_err_code  give the error code if response error.
 	 *                          bt_a2dp_err_code or bt_avdtp_err_code
 	 *
@@ -780,17 +778,18 @@ struct bt_a2dp_stream_ops {
 	 * @param stream Stream object that has been suspended.
 	 */
 	void (*suspended)(struct bt_a2dp_stream *stream);
-#if defined(CONFIG_BT_A2DP_SINK)
+#if defined(CONFIG_BT_A2DP_SINK) || defined(__DOXYGEN__)
 	/** @brief the media streaming data, only for sink
 	 *
+	 *  @param stream the stream object
 	 *  @param buf the data buf
 	 *  @param seq_num the sequence number
 	 *  @param ts the time stamp
 	 */
 	void (*recv)(struct bt_a2dp_stream *stream, struct net_buf *buf, uint16_t seq_num,
 		     uint32_t ts);
-#endif
-#if defined(CONFIG_BT_A2DP_SOURCE)
+#endif /* CONFIG_BT_A2DP_SINK */
+#if defined(CONFIG_BT_A2DP_SOURCE) || defined(__DOXYGEN__)
 	/**
 	 * @brief Stream audio HCI sent callback
 	 *
@@ -814,7 +813,7 @@ struct bt_a2dp_stream_ops {
 	 * @param value The delay report value in 1/10 milliseconds.
 	 */
 	void (*delay_report)(struct bt_a2dp_stream *stream, uint16_t value);
-#endif
+#endif /* CONFIG_BT_A2DP_SOURCE */
 };
 
 /**
@@ -975,4 +974,4 @@ int bt_a2dp_stream_delay_report(struct bt_a2dp_stream *stream, uint16_t delay);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_A2DP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_A2DP_H_ */

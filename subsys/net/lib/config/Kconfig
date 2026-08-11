@@ -280,4 +280,5 @@ config NET_CONFIG_SNTP_INIT_USE_CONNECTION_MANAGER
 	  also sent every time when the network connection is established.
 
 endif # NET_CONFIG_SNTP_INIT_RESYNC
+
 endif # NET_CONFIG_CLOCK_SNTP_INIT

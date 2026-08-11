@@ -9,8 +9,8 @@
  * @brief FT8XX common functions
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_
-#define ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_
 
 #include <stdint.h>
 #include <zephyr/device.h>
@@ -91,4 +91,4 @@ uint32_t ft8xx_rd32(const struct device *dev, uint32_t address);
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_COMMON_H_ */

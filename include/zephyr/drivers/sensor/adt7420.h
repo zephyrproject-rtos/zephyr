@@ -16,7 +16,7 @@
 /**
  * @brief Analog Devices ADT7420 Temperature Sensor
  * @defgroup adt7420_interface ADT7420
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  * @{
  */
 

@@ -223,7 +223,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	}
 
@@ -249,7 +249,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 
@@ -274,7 +274,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disa
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_ENABLING);
 	}
 
@@ -299,7 +299,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disa
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_STREAMING);
 	}
 
@@ -325,7 +325,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_CODEC_CONFIGURED);
 	}
 
@@ -352,7 +352,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_QOS_CONFIGURED);
 	}
 
@@ -378,7 +378,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_rele
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_ENABLING);
 	}
 
@@ -404,7 +404,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_rele
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_STREAMING);
 	}
 
@@ -456,7 +456,7 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_inva
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		test_unicast_set_state(&fixture->cap_streams[i], get_conn_from_index(fixture, i),
-				       get_ep_from_index(fixture, i), &fixture->preset,
+				       get_ep_from_index(fixture, i), &fixture->preset.codec_cfg,
 				       BT_BAP_EP_STATE_STREAMING);
 	}
 

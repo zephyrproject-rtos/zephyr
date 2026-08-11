@@ -278,6 +278,51 @@ static int cmd_smbus_word_data_write(const struct shell *sh,
 	return 0;
 }
 
+/* smbus process_call <device> <dev_addr> <cmd> <tx_word> */
+static int cmd_smbus_process_call(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint8_t addr;
+	uint8_t command;
+	uint16_t tx_word;
+	uint16_t rx_word;
+	int ret = 0;
+
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	addr = shell_strtol(argv[ARGV_ADDR], 16, &ret);
+	if (ret) {
+		shell_error(sh, "Failed to parse addr: %d", ret);
+		return ret;
+	}
+
+	command = shell_strtol(argv[ARGV_CMD], 16, &ret);
+	if (ret) {
+		shell_error(sh, "Failed to parse command: %d", ret);
+		return ret;
+	}
+
+	tx_word = shell_strtol(argv[4], 16, &ret);
+	if (ret) {
+		shell_error(sh, "Failed to parse data: %d", ret);
+		return ret;
+	}
+
+	ret = smbus_pcall(dev, addr, command, tx_word, &rx_word);
+	if (ret < 0) {
+		shell_error(sh, "SMBus: Failed process call to periph: 0x%02x", addr);
+		return ret;
+	}
+
+	shell_print(sh, "Command: 0x%02x TX: 0x%04x RX: 0x%04x", command, tx_word, rx_word);
+
+	return 0;
+}
+
 /* smbus block_write <device> <dev_addr> <cmd> <bytes ... > */
 static int cmd_smbus_block_write(const struct shell *sh,
 				 size_t argc, char **argv)
@@ -367,6 +412,7 @@ static void device_name_get(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(dsub_device_name, device_name_get);
 
+/* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
 	SHELL_CMD_ARG(quick, &dsub_device_name,
 		      "SMBus Quick command\n"
@@ -400,6 +446,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
 		      "SMBus: word data write command\n"
 		      "Usage: word_data_write <device> <addr> <cmd> <value>",
 		      cmd_smbus_word_data_write, 5, 0),
+	SHELL_CMD_ARG(process_call, &dsub_device_name,
+		      "SMBus: Process call command\n"
+		      "Usage: process_call <device> <addr> <cmd> <tx_word>",
+		      cmd_smbus_process_call, 5, 0),
 	SHELL_CMD_ARG(block_write, &dsub_device_name,
 		      "SMBus: Block Write command\n"
 		      "Usage: block_write <device> <addr> <cmd> [<byte1>, ...]",
@@ -410,5 +460,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
 		      cmd_smbus_block_read, 4, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
+/* clang-format off */
 
 SHELL_CMD_REGISTER(smbus, &sub_smbus_cmds, "smbus commands", NULL);

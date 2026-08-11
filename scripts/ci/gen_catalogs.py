@@ -237,14 +237,20 @@ def _get_binding_type(binding_path: Path) -> str:
 # ---------------------------------------------------------------------------
 
 
-def run_twister_cmake_only(outdir: Path, vendor_filter: list) -> None:
+def run_twister_cmake_only(
+    outdir: Path, vendor_filter: list[str], extra_flags: list[str] | None = None
+) -> None:
     """Run twister in cmake-only mode to generate build-info and EDT files.
 
     Args:
         outdir: Directory where twister should write its output.
         vendor_filter: If non-empty, restrict to boards from these vendors.
+        extra_flags: List of additional flags that should be passed to twister.
     """
     python = str(_VENV_PYTHON) if _VENV_PYTHON.exists() else sys.executable
+
+    if extra_flags is None:
+        extra_flags = []
 
     twister_cmd = [
         python,
@@ -260,6 +266,7 @@ def run_twister_cmake_only(outdir: Path, vendor_filter: list) -> None:
         "-v",
         "--outdir",
         str(outdir),
+        *extra_flags,
     ]
 
     if vendor_filter:

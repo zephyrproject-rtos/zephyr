@@ -341,7 +341,7 @@ Zephyr's :zephyr:code-sample-category:`samples` as a starting point is likely to
 
    .. code-block:: cmake
 
-      cmake_minimum_required(VERSION 3.20.0)
+      cmake_minimum_required(VERSION 3.28.0)
 
       find_package(Zephyr)
       project(my_zephyr_app)

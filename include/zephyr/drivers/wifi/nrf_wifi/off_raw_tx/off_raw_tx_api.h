@@ -5,7 +5,7 @@
  */
 /** @file
  *
- * @addtogroup nrf70_off_raw_tx_api nRF70 Offloaded raw TX API
+ * @addtogroup nrf_wifi_off_raw_tx_api Offloaded raw TX API
  * @{
  *
  * @brief File containing API's for the Offloaded raw TX feature.
@@ -165,19 +165,19 @@ struct nrf_wifi_off_raw_tx_conf {
 
 
 /**
- * @brief Initialize the nRF70 for operating in the offloaded raw TX mode.
- * @param mac_addr MAC address to be used for the nRF70 device.
+ * @brief Initialize the nRF Wi-Fi for operating in the offloaded raw TX mode.
+ * @param mac_addr MAC address to be used for the nRF Wi-Fi device.
  * @param country_code Country code to be set for regularity domain.
  *
- * This function is initializes the nRF70 device for offloaded raw TX mode by:
+ * This function is initializes the nRF Wi-Fi device for offloaded raw TX mode by:
  *  - Powering it up,
  *  - Downloading a firmware patch (if any).
  *  - Initializing the firmware to accept further commands
  *
- * The mac_addr parameter is used to set the MAC address of the nRF70 device.
+ * The mac_addr parameter is used to set the MAC address of the nRF Wi-Fi device.
  * This address can be used to override the MAC addresses programmed in the OTP and
  * the value configured (if any) in CONFIG_WIFI_FIXED_MAC_ADDRESS.
- * The priority order in which the MAC address values for the nRF70 device are used is:
+ * The priority order in which the MAC address values for the nRF Wi-Fi device are used is:
  * - If mac_addr is provided, the MAC address is set to the value provided.
  * - If CONFIG_WIFI_FIXED_MAC_ADDRESS is enabled, the MAC address uses the Kconfig value.
  * - If none of the above are provided, the MAC address is set to the value programmed in the OTP.
@@ -185,15 +185,15 @@ struct nrf_wifi_off_raw_tx_conf {
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code);
+int nrf_wifi_off_raw_tx_init(uint8_t *mac_addr, unsigned char *country_code);
 
 /**
- * @brief Initialize the nRF70 for operating in the offloaded raw TX mode.
+ * @brief Initialize the nRF Wi-Fi for operating in the offloaded raw TX mode.
  *
- * This function is deinitializes the nRF70 device.
+ * This function is deinitializes the nRF Wi-Fi device.
  *
  */
-void nrf70_off_raw_tx_deinit(void);
+void nrf_wifi_off_raw_tx_deinit(void);
 
 /**
  * @brief Update the configured offloaded raw TX parameters.
@@ -206,55 +206,55 @@ void nrf70_off_raw_tx_deinit(void);
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf);
+int nrf_wifi_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf);
 
 /**
  * @brief Start the offloaded raw TX.
  * @param conf Configuration parameters necessary for the offloaded raw TX operation.
  *
- * This function is used to start offloaded raw TX operation. When this function is invoked
- * the nRF70 device will start transmitting frames as per the configuration specified by @p conf.
+ * This function is used to start offloaded raw TX operation. When this function is invoked the
+ * nRF Wi-Fi device will start transmitting frames as per the configuration specified by @p conf.
  *
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_start(struct nrf_wifi_off_raw_tx_conf *conf);
+int nrf_wifi_off_raw_tx_start(struct nrf_wifi_off_raw_tx_conf *conf);
 
 /**
  * @brief Stop the offloaded raw TX.
  *
  * This function is used to stop offloaded raw TX operation. When this function is invoked
- * the nRF70 device will stop transmitting frames.
+ * the nRF Wi-Fi device will stop transmitting frames.
  *
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_stop(void);
+int nrf_wifi_off_raw_tx_stop(void);
 
 /**
- * @brief Get the MAC address of the nRF70 device.
+ * @brief Get the MAC address of the nRF Wi-Fi device.
  * @param mac_addr Buffer to store the MAC address.
  *
- * This function is used to get the MAC address of the nRF70 device.
+ * This function is used to get the MAC address of the nRF Wi-Fi device.
  * The MAC address is stored in the buffer pointed by mac_addr.
  * The MAC address is expected to be a 6 byte value.
  *
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_mac_addr_get(uint8_t *mac_addr);
+int nrf_wifi_off_raw_tx_mac_addr_get(uint8_t *mac_addr);
 
 /**
  * @brief Get statistics of the offloaded raw TX.
  * @param off_raw_tx_stats Statistics of the offloaded raw TX operation.
  *
  * This function is used to get statistics of offloaded raw TX operation. When this function
- * is invoked the nRF70 device will show statistics.
+ * is invoked the nRF Wi-Fi device will show statistics.
  *
  * @retval 0 If the operation was successful.
  * @retval -1 If the operation failed.
  */
-int nrf70_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats);
+int nrf_wifi_off_raw_tx_stats(struct nrf_wifi_off_raw_tx_stats *off_raw_tx_stats);
 /**
  * @}
  */

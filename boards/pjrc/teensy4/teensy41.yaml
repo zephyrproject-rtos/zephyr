@@ -19,6 +19,7 @@ supported:
   - sdhc
   - usb_device
   - netif:eth
+  - i2c
 testing:
   ignore_tags:
     - net

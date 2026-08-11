@@ -12,6 +12,7 @@ from zspdx.model import (
     NOASSERTION,
     ComponentPurpose,
     ExternalReferenceType,
+    RelationshipType,
     SBOMComponent,
     SBOMDocument,
     SBOMFile,
@@ -25,7 +26,7 @@ from zspdx.serializers.helpers import (
     get_standard_licenses,
     normalize_spdx_name,
 )
-from zspdx.spdxids import getUniqueFileID
+from zspdx.spdxids import get_unique_file_id
 
 _logger = logging.getLogger(__name__)
 
@@ -41,6 +42,13 @@ class SPDX3Serializer:
         "modules-deps": "Zephyr Module Dependencies",
         "sdk": "Zephyr SDK",
     }
+
+    # Name of the SBOMDocument that hosts the Build profile (build targets).
+    _BUILD_DOCUMENT = "build"
+
+    # build_buildType is mandatory and must be a URI; used when the SBOMBuild
+    # does not provide an absolute URI of its own.
+    _DEFAULT_BUILD_TYPE = "urn:spdx.dev:zephyr-cmake"
 
     def __init__(self, sbom_graph: SBOMGraph, spdx_version=None):
         self.sbom_data = sbom_graph
@@ -60,11 +68,24 @@ class SPDX3Serializer:
         # Shared objects
         self.tool = None  # Tool element for createdUsing
         self.creator_agent = None  # SoftwareAgent for createdBy
+        self.author_agent = None  # Organization for createdBy (the SBOM author)
+        self.organizations = {}  # organization name -> shared Organization element
         self.creation_info = None
         self.documents = {}  # doc_name -> SpdxDocument
 
+        # SPDX 3.0 Build profile state
+        self.build = None  # overall build_Build element
+        self.target_builds = {}  # component name -> per-target build_Build element
+        self.build_tools = {}  # tool key -> Tool element
+        self.build_info = sbom_graph.build.metadata if sbom_graph.build else {}
+
         # Track file IDs for uniqueness
         self.filename_counts = {}
+
+        # Lazily built map: element id -> name of the document that defines it.
+        # Used to reference cross-document elements via ExternalMap instead of
+        # re-serializing them in every document that mentions them.
+        self._element_home = None
 
         # Namespace prefixes for shortened IDs
         self.namespace_prefixes = {}
@@ -90,7 +111,7 @@ class SPDX3Serializer:
     def _generate_file_id(self, file_path: str) -> str:
         """Generate URI-based ID for a file."""
         filename_only = os.path.basename(file_path)
-        unique_id = getUniqueFileID(filename_only, self.filename_counts)
+        unique_id = get_unique_file_id(filename_only, self.filename_counts)
         # Remove "SPDXRef-" prefix and normalize
         normalized_id = unique_id.replace("SPDXRef-", "").replace("_", "-")
         namespace = self.sbom_data.namespace_prefix.rstrip("/")
@@ -134,7 +155,15 @@ class SPDX3Serializer:
             # Create the tool (for createdUsing)
             self.tool = spdx.Tool()
             self.tool._id = self._shorten_id(f"{namespace}/tools/west-spdx")
-            self.tool.name = "West SPDX Tool"
+            self.tool.name = self.sbom_data.metadata.get("tool_name") or "West SPDX Tool"
+            # SPDX 3.0 has no Tool version field; record it as a packageUrl external
+            # identifier, mirroring how the Build profile tools carry their version.
+            tool_version = self.sbom_data.metadata.get("tool_version")
+            if tool_version:
+                ext_id = spdx.ExternalIdentifier()
+                ext_id.externalIdentifierType = spdx.ExternalIdentifierType.packageUrl
+                ext_id.identifier = f"pkg:generic/zephyr-spdx-builder@{tool_version}"
+                self.tool.externalIdentifier.append(ext_id)
             self.elements.append(self.tool)
 
         if self.creation_info is None:
@@ -152,6 +181,384 @@ class SPDX3Serializer:
             self.tool.creationInfo = self.creation_info._id
             self.creator_agent.creationInfo = self.creation_info._id
 
+            # Credit the organization author alongside the automated agent, so the
+            # SBOM declares a real author. Reuses the shared Organization element,
+            # which package suppliers also reference.
+            organization = self.sbom_data.metadata.get("creator_organization")
+            self.author_agent = self._get_organization(organization)
+            if self.author_agent:
+                self.creation_info.createdBy.append(self.author_agent._id)
+
+        # Build profile elements; no-ops when no build information was collected.
+        self._create_build_tools()
+        self._create_build_object()
+
+    def _get_organization(self, name: str):
+        """Return a shared Organization element for ``name``, creating it once.
+
+        Organizations are deduplicated by name so a supplier that is also the SBOM
+        author (or supplies many packages) is emitted as a single Agent that every
+        reference points at. Returns ``None`` when ``name`` is empty.
+        """
+        if not name:
+            return None
+        agent = self.organizations.get(name)
+        if agent is None:
+            namespace = self.sbom_data.namespace_prefix.rstrip("/")
+            slug = normalize_spdx_name(name).lower().replace(" ", "-")
+            agent = spdx.Organization()
+            agent._id = self._shorten_id(f"{namespace}/agents/{slug}")
+            agent.name = name
+            agent.creationInfo = self.creation_info._id
+            self.elements.append(agent)
+            self.organizations[name] = agent
+        return agent
+
+    # ---- SPDX 3.0 Build profile -------------------------------------------------
+
+    def _create_tool(
+        self, key: str, name: str, path: str = "", version: str = "", identifiers=None
+    ) -> spdx.Tool:
+        """Create and register a build Tool element keyed by ``key``.
+
+        Tool identity lives on the Tool itself: ``path`` is recorded as an ``other`` external
+        identifier and ``version`` as a ``packageUrl`` (``pkg:generic/<tool>@<version>``), since
+        SPDX 3.0 has no Tool version field. Extra ``(ExternalIdentifierType, value)`` tuples may be
+        passed in ``identifiers``.
+        """
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+        tool = spdx.Tool()
+        tool._id = self._shorten_id(f"{namespace}/tools/{key}")
+        tool.name = name
+        tool.creationInfo = self.creation_info._id
+
+        ext_ids = []
+        if path:
+            ext_ids.append((spdx.ExternalIdentifierType.other, path))
+        if version:
+            pkg = os.path.basename(path) if path else key
+            ext_ids.append((spdx.ExternalIdentifierType.packageUrl, f"pkg:generic/{pkg}@{version}"))
+        ext_ids += identifiers or []
+
+        for id_type, id_value in ext_ids:
+            if not id_value:
+                continue
+            ext_id = spdx.ExternalIdentifier()
+            ext_id.externalIdentifierType = id_type
+            ext_id.identifier = id_value
+            tool.externalIdentifier.append(ext_id)
+
+        self.elements.append(tool)
+        self.build_tools[key] = tool
+        return tool
+
+    def _create_build_tools(self):
+        """Create a Tool element for each build tool we collected information for."""
+        if self.build_tools or not self.build_info:
+            return
+
+        info = self.build_info
+        self._create_cmake_tool(info)
+
+        # the C compiler also records the target architecture
+        c_path = info.get("cmake_compiler") or info.get("cmake_c_compiler", "")
+        if c_path:
+            version = info.get("c_compiler_version", "")
+            self._create_tool(
+                "c-compiler",
+                self._compiler_tool_name("C Compiler", c_path, version),
+                path=c_path,
+                version=version,
+                identifiers=self._compiler_arch_identifiers(info),
+            )
+
+        tool_specs = [
+            ("cxx-compiler", "C++ Compiler", "cmake_cxx_compiler", "cxx_compiler_version"),
+            ("asm-compiler", "Assembler", "cmake_asm_compiler", "asm_compiler_version"),
+            ("linker", "Linker", "cmake_linker", "linker_version"),
+            ("archiver", "Archiver", "cmake_ar", "ar_version"),
+        ]
+        for key, label, path_key, version_key in tool_specs:
+            path = info.get(path_key, "")
+            # skip missing tools and the C++ compiler when it is the same binary as the C compiler
+            if not path or (key == "cxx-compiler" and path == c_path):
+                continue
+            version = info.get(version_key, "")
+            self._create_tool(
+                key,
+                self._compiler_tool_name(label, path, version),
+                path=path,
+                version=version,
+            )
+
+    def _create_cmake_tool(self, info: dict):
+        """Create the CMake build Tool from the collected build info, when present."""
+        if not (info.get("cmake_version") or info.get("cmake_generator")):
+            return
+        name = "CMake"
+        if info.get("cmake_version"):
+            name += f" {info['cmake_version']}"
+        if info.get("cmake_generator"):
+            name += f" ({info['cmake_generator']})"
+        self._create_tool("cmake", name, version=info.get("cmake_version", ""))
+
+    @staticmethod
+    def _compiler_arch_identifiers(info: dict):
+        """Target-architecture external identifier for a compiler, or ``None`` if unknown."""
+        processor = info.get("cmake_system_processor")
+        if not processor:
+            return None
+        return [(spdx.ExternalIdentifierType.other, f"target-arch:{processor}")]
+
+    @staticmethod
+    def _compiler_tool_name(label: str, path: str, version: str) -> str:
+        """Build a tool display name like ``C Compiler (gcc 12.2.0)``."""
+        basename = os.path.basename(path)
+        if version:
+            return f"{label} ({basename} {version})"
+        return f"{label} ({basename})"
+
+    def _create_build_object(self):
+        """Create the SPDX 3.0 ``build_Build`` element."""
+        if self.build is not None:
+            return
+        if not self.build_info and not self.sbom_data.build:
+            return
+
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+        self.build = spdx.build_Build()
+        self.build._id = self._shorten_id(f"{namespace}/builds/default")
+        self.build.creationInfo = self.creation_info._id
+        self.build.build_buildType = self._DEFAULT_BUILD_TYPE
+
+        sbom_build = self.sbom_data.build
+        if sbom_build:
+            if sbom_build.id:
+                self.build.build_buildId = sbom_build.id
+            if sbom_build.build_type:
+                build_type = sbom_build.build_type
+                if not build_type.startswith("http"):
+                    build_type = f"https://zephyrproject.org/build-types/{build_type}"
+                self.build.build_buildType = build_type
+            if sbom_build.started_at:
+                self.build.build_buildStartTime = sbom_build.started_at
+            if sbom_build.finished_at:
+                self.build.build_buildEndTime = sbom_build.finished_at
+
+        self._add_build_parameters()
+        self._add_build_environment()
+        self.elements.append(self.build)
+
+    def _add_build_environment(self):
+        """Populate ``build_environment`` from the collected environment variables."""
+        if not self.build:
+            return
+        for key, value in sorted(self.build_info.get("environment", {}).items()):
+            if not value:
+                continue
+            entry = spdx.DictionaryEntry()
+            entry.key = key
+            entry.value = str(value)
+            self.build.build_environment.append(entry)
+
+    def _add_build_parameters(self):
+        """Populate ``build_parameter`` with the global build configuration."""
+        info = self.build_info
+        if not self.build or not info:
+            return
+
+        for key, info_key in (
+            ("cmake:generator", "cmake_generator"),
+            ("cmake:buildType", "cmake_build_type"),
+            ("target:system", "cmake_system_name"),
+            ("target:processor", "cmake_system_processor"),
+        ):
+            value = info.get(info_key, "")
+            if value:
+                entry = spdx.DictionaryEntry()
+                entry.key = key
+                entry.value = str(value)
+                self.build.build_parameter.append(entry)
+
+    @staticmethod
+    def _is_build_target_component(component: SBOMComponent) -> bool:
+        """Whether a component is a build target (produces an artifact).
+
+        Source aggregation and ``*-deps`` components are inputs, not outputs.
+        """
+        if component.name in {"app-sources", "zephyr-sources", "sdk-sources"}:
+            return False
+        return not component.name.endswith("-deps")
+
+    def _new_build_relationship(
+        self,
+        rel_type: spdx.RelationshipType,
+        from_id: str,
+        to_ids: list[str],
+        description: str = "",
+    ) -> spdx.LifecycleScopedRelationship:
+        """Create and register a relationship scoped to the ``build`` lifecycle."""
+        rel = spdx.LifecycleScopedRelationship()
+        rel._id = self._generate_relationship_id(len(self.relationship_elements))
+        rel.relationshipType = rel_type
+        rel.from_ = from_id
+        rel.to = list(to_ids)
+        rel.scope = spdx.LifecycleScopeType.build
+        rel.creationInfo = self.creation_info._id
+        if description:
+            rel.description = description
+        self.elements.append(rel)
+        self.relationship_elements.append(rel)
+        return rel
+
+    def _create_build_relationships(self):
+        """Create the Build profile's build-scoped relationships.
+
+        The overall build ``usesTool`` every build tool, ``hasInput`` the source/dependency packages
+        and ``hasOutput`` the final image(s). Each other build target gets its own sub-build
+        recording the exact sources and tools that produced its artifact. Every relationship's
+        ``from`` is a Build, so they all stay in the build document.
+        """
+        if not self.build:
+            return
+
+        for tool in self.build_tools.values():
+            self._new_build_relationship(spdx.RelationshipType.usesTool, self.build._id, [tool._id])
+
+        self._create_build_output_relationships()
+
+        input_ids = self._build_input_ids()
+        if input_ids:
+            self._new_build_relationship(spdx.RelationshipType.hasInput, self.build._id, input_ids)
+
+    def _create_build_output_relationships(self):
+        """Emit ``hasOutput`` for the final image(s) and a sub-build for every other target."""
+        for component in self.sbom_data.components.values():
+            if not self._is_build_target_component(component):
+                continue
+            if not component.target_build_file:
+                continue
+            build_file = self.file_elements.get(component.target_build_file.path)
+            if not build_file:
+                continue
+            if component.metadata.get("target_type") == "EXECUTABLE":
+                # final images are outputs of the overall build; their compiled
+                # sources/headers are inputs of that same build
+                self._new_build_relationship(
+                    spdx.RelationshipType.hasOutput, self.build._id, [build_file._id]
+                )
+                input_ids = self._artifact_input_ids(component)
+                if input_ids:
+                    self._new_build_relationship(
+                        spdx.RelationshipType.hasInput, self.build._id, input_ids
+                    )
+            else:
+                self._create_target_build(component, build_file)
+
+    def _artifact_input_ids(self, component: SBOMComponent) -> list[str]:
+        """Element IDs of the files that fed a target's artifact.
+
+        These are the artifact's ``GENERATED_FROM`` endpoints: the compiled sources and, when
+        include analysis is enabled, the headers they pulled in. They become the Build's
+        ``hasInput`` for the target.
+        """
+        input_ids = []
+        for rel in component.target_build_file.relationships:
+            if rel.relationship_type != RelationshipType.GENERATED_FROM:
+                continue
+            for source in rel.to_elements:
+                source_id = self._get_element_id(source)
+                if source_id and source_id not in input_ids:
+                    input_ids.append(source_id)
+        return input_ids
+
+    def _create_target_build(self, component: SBOMComponent, build_file) -> None:
+        """Create a per-target sub-build for one artifact-producing target.
+
+        The sub-build ``hasOutput`` the target's artifact, ``hasInput`` its compiled sources/headers
+        and ``usesTool`` the specific compiler(s) and archiver/linker that produced it. Sub-builds
+        connect to the overall build through the artifacts they share, which carry ``hasStaticLink``
+        edges to the final image.
+        """
+        namespace = self.sbom_data.namespace_prefix.rstrip("/")
+        target_build = spdx.build_Build()
+        target_build._id = self._shorten_id(
+            f"{namespace}/builds/{normalize_spdx_name(component.name)}"
+        )
+        target_build.creationInfo = self.creation_info._id
+        target_build.build_buildType = self.build.build_buildType
+        # per-language compile flags and defines used to produce this artifact
+        for kind in ("flags", "defines"):
+            for lang, value in sorted(component.metadata.get(f"compile_{kind}", {}).items()):
+                entry = spdx.DictionaryEntry()
+                entry.key = f"compile:{kind}:{lang}"
+                entry.value = value
+                target_build.build_parameter.append(entry)
+        self.elements.append(target_build)
+        self.target_builds[component.name] = target_build
+
+        self._new_build_relationship(
+            spdx.RelationshipType.hasOutput, target_build._id, [build_file._id]
+        )
+
+        # the target's compiled sources/headers are the artifact's GENERATED_FROM endpoints
+        input_ids = self._artifact_input_ids(component)
+        if input_ids:
+            self._new_build_relationship(
+                spdx.RelationshipType.hasInput, target_build._id, input_ids
+            )
+
+        for tool_id in self._target_tool_ids(component):
+            self._new_build_relationship(
+                spdx.RelationshipType.usesTool, target_build._id, [tool_id]
+            )
+
+    def _target_tool_ids(self, component: SBOMComponent) -> list[str]:
+        """Tool IDs that built ``component``: compiler(s) per language plus the archiver (static
+        libraries) or linker (shared/module libraries).
+        """
+        language_to_tool = {
+            "C": "c-compiler",
+            "CXX": "cxx-compiler",
+            "ASM": "asm-compiler",
+            "ASM-ATT": "asm-compiler",
+        }
+        tool_ids = []
+        for lang in component.metadata.get("compile_languages", []):
+            tool = self.build_tools.get(language_to_tool.get(lang, ""))
+            if tool and tool._id not in tool_ids:
+                tool_ids.append(tool._id)
+
+        target_type = component.metadata.get("target_type", "")
+        if target_type == "STATIC_LIBRARY":
+            extra = self.build_tools.get("archiver")
+        elif target_type in ("SHARED_LIBRARY", "MODULE_LIBRARY"):
+            extra = self.build_tools.get("linker")
+        else:
+            extra = None
+        if extra and extra._id not in tool_ids:
+            tool_ids.append(extra._id)
+        return tool_ids
+
+    def _build_input_ids(self) -> list[str]:
+        """Package IDs of the build's inputs (the source/dependency roots).
+
+        The described (root) components of every non-build document, falling back to all of a
+        document's components when it declares no root.
+        """
+        input_ids = []
+        seen = set()
+        for sbom_doc in self.sbom_data.documents.values():
+            if sbom_doc.name == self._BUILD_DOCUMENT:
+                continue
+            names = sbom_doc.described_components or list(sbom_doc.components.keys())
+            for name in names:
+                package = self.component_elements.get(name)
+                if package and package._id not in seen:
+                    seen.add(package._id)
+                    input_ids.append(package._id)
+        return input_ids
+
     def _create_software_package(self, component: SBOMComponent) -> spdx.software_Package:
         """Convert SBOMComponent to SPDX 3.0 software_Package."""
         package = spdx.software_Package()
@@ -159,12 +566,18 @@ class SPDX3Serializer:
         package.name = component.name
         package.creationInfo = self.creation_info._id
         package.software_primaryPurpose = self._purpose_to_spdx3(component.purpose)
+        if component.comment:
+            package.comment = component.comment
 
         # Version
         if component.version:
             package.software_packageVersion = component.version
         elif component.revision:
             package.software_packageVersion = component.revision
+
+        supplier_agent = self._get_organization(component.supplier)
+        if supplier_agent:
+            package.suppliedBy = supplier_agent._id
 
         # Download location
         if component.url:
@@ -245,18 +658,24 @@ class SPDX3Serializer:
         """Map relationship type string to SPDX 3.0 RelationshipType enum.
         Returns a tuple of (RelationshipType, reversed).
         """
-        # Map SPDX 2.x relationship types to SPDX 3.0 RelationshipType
+        # Map SPDX 2.x relationship types to SPDX 3.0 RelationshipType.
+        # GENERATED_FROM is intentionally absent: it is handled by the Build profile
+        # (see _create_relationships and _artifact_input_ids).
         type_map = {
-            "GENERATED_FROM": (spdx.RelationshipType.generates, True),
-            "HAS_PREREQUISITE": (spdx.RelationshipType.dependsOn, False),
+            "HAS_PREREQUISITE": (spdx.RelationshipType.hasPrerequisite, False),
+            "PREREQUISITE_FOR": (spdx.RelationshipType.hasPrerequisite, True),
             "STATIC_LINK": (spdx.RelationshipType.hasStaticLink, False),
             "CONTAINS": (spdx.RelationshipType.contains, False),
+            "CONTAINED_BY": (spdx.RelationshipType.contains, True),
             "DESCRIBES": (spdx.RelationshipType.describes, False),
+            "DESCRIBED_BY": (spdx.RelationshipType.describes, True),
             "DEPENDS_ON": (spdx.RelationshipType.dependsOn, False),
+            "DEPENDENCY_OF": (spdx.RelationshipType.dependsOn, True),
             "DYNAMIC_LINK": (spdx.RelationshipType.hasDynamicLink, False),
             "BUILD_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "DEV_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "TEST_TOOL_OF": (spdx.RelationshipType.usesTool, True),
+            "VARIANT_OF": (spdx.RelationshipType.hasVariant, True),
             "OTHER": (spdx.RelationshipType.other, False),
         }
         return type_map.get(rel_type, (spdx.RelationshipType.other, False))
@@ -400,6 +819,42 @@ class SPDX3Serializer:
         self.relationship_elements.append(rel)
         return rel
 
+    def _document_owned_elements(self, sbom_doc: SBOMDocument):
+        """Yield the package and file elements defined by ``sbom_doc``."""
+        for component in sbom_doc.components.values():
+            package = self.component_elements.get(component.name)
+            if package:
+                yield package
+            for file_obj in component.files.values():
+                file_element = self.file_elements.get(file_obj.path)
+                if file_element:
+                    yield file_element
+
+    def _build_owned_elements(self):
+        """Yield the Build-profile elements, all defined in the build document."""
+        if self.build:
+            yield self.build
+        yield from self.target_builds.values()
+        yield from self.build_tools.values()
+
+    def _element_home_index(self) -> dict:
+        """Map each package/file element id to the document that defines it.
+
+        Every component belongs to exactly one document and every file to exactly
+        one component, so this "home" is unique. Build-profile elements live in the
+        build document. Ids absent from the map (licenses, the tool/agent, well-known
+        individuals) have no single owner and are serialized wherever referenced.
+        """
+        if self._element_home is None:
+            home = {}
+            for doc_name, sbom_doc in self.sbom_data.documents.items():
+                for element in self._document_owned_elements(sbom_doc):
+                    home[element._id] = doc_name
+            for element in self._build_owned_elements():
+                home[element._id] = self._BUILD_DOCUMENT
+            self._element_home = home
+        return self._element_home
+
     def _create_document(self, sbom_doc: SBOMDocument) -> spdx.SpdxDocument:
         """Create an SPDX 3.0 document for a specific SBOMDocument."""
         self._initialize_shared_objects()
@@ -407,8 +862,8 @@ class SPDX3Serializer:
         document = self._new_spdx_document(sbom_doc)
         components = sbom_doc.components.values()
 
-        element_ids = self._collect_document_element_ids(sbom_doc, components)
-        self._populate_document(document, element_ids, components)
+        element_ids, import_ids = self._collect_document_element_ids(sbom_doc, components)
+        self._populate_document(document, element_ids, import_ids, components, sbom_doc)
 
         self.elements.append(document)
         self.documents[sbom_doc.name] = document
@@ -444,14 +899,22 @@ class SPDX3Serializer:
         document.profileConformance.append(spdx.ProfileIdentifierType.core)
         document.profileConformance.append(spdx.ProfileIdentifierType.software)
         document.profileConformance.append(spdx.ProfileIdentifierType.simpleLicensing)
+        # Only the build document conforms to the Build profile.
+        if self.build and sbom_doc.name == self._BUILD_DOCUMENT:
+            document.profileConformance.append(spdx.ProfileIdentifierType.build)
         return document
 
-    def _collect_document_element_ids(self, sbom_doc: SBOMDocument, components) -> set:
+    def _collect_document_element_ids(self, sbom_doc: SBOMDocument, components) -> tuple[set, set]:
         """Gather the IDs of every element that belongs to this document.
 
         This spans the document's packages and files, the licenses they
         reference, the relationships connecting them, and the shared
         tool/agent/data-license elements.
+
+        Returns a ``(element_ids, import_ids)`` pair: ``element_ids`` are defined
+        by this document and serialized into it, while ``import_ids`` are elements
+        referenced by this document's relationships but defined in another document
+        (declared via ExternalMap rather than re-serialized here).
         """
         element_ids = self._package_and_file_ids(components)
         element_ids.update(self._referenced_license_ids(components))
@@ -460,17 +923,29 @@ class SPDX3Serializer:
         # if no package or file references them directly.
         self._register_custom_licenses(sbom_doc)
 
-        self._collect_relationship_ids(element_ids)
+        # Seed the build document so its build-scoped relationships are collected.
+        self._seed_build_element_ids(sbom_doc, element_ids)
+
+        import_ids = self._collect_relationship_ids(sbom_doc, element_ids)
 
         if self.tool:
             element_ids.add(self.tool._id)
         if self.creator_agent:
             element_ids.add(self.creator_agent._id)
+        if self.author_agent:
+            element_ids.add(self.author_agent._id)
+        for component in components:
+            supplier_agent = self.organizations.get(component.supplier)
+            if supplier_agent:
+                element_ids.add(supplier_agent._id)
         data_license = self._create_license_expression("CC0-1.0")
         if data_license:
             element_ids.add(data_license._id)
 
-        return element_ids
+        # A locally defined element is never also imported.
+        import_ids -= element_ids
+
+        return element_ids, import_ids
 
     def _package_and_file_ids(self, components) -> set:
         """IDs of the package and file elements contained in this document."""
@@ -504,35 +979,95 @@ class SPDX3Serializer:
         for lic in sbom_doc.custom_license_ids:
             self._create_license_expression(lic)
 
-    def _collect_relationship_ids(self, element_ids: set):
-        """Add relationships owned by this document, along with their endpoints.
+    def _seed_build_element_ids(self, sbom_doc: SBOMDocument, element_ids: set):
+        """Add the Build elements and build tool IDs to the build document's set.
 
-        A relationship belongs to the document when its original (pre-reversal)
-        "from" element is already part of ``element_ids``. This matches SPDX 2.x
-        behavior: e.g. ".a GENERATED_FROM .c" reversed to ".c generates .a" still
-        lands in the document that owns ".a". Each matching relationship pulls in
-        its own ID and both endpoints, so ``element_ids`` grows in place.
+        No-op for any other document, or when no Build element was produced.
         """
+        if not self.build or sbom_doc.name != self._BUILD_DOCUMENT:
+            return
+        element_ids.add(self.build._id)
+        for target_build in self.target_builds.values():
+            element_ids.add(target_build._id)
+        for tool in self.build_tools.values():
+            element_ids.add(tool._id)
+
+    def _collect_relationship_ids(self, sbom_doc: SBOMDocument, element_ids: set) -> set:
+        """Add this document's relationships and their local endpoints to ``element_ids``.
+
+        A relationship belongs to the document that owns its original
+        (pre-reversal) "from" element. Ownership is tested against a snapshot
+        of the document's own elements so that pulling in endpoints does not
+        draw in unrelated relationships.
+
+        Endpoints defined in another document are returned as the import set so
+        the caller can declare them via ExternalMap instead of re-serializing
+        them here.
+        """
+        owned = set(element_ids)
+        home = self._element_home_index()
+        this_doc = sbom_doc.name
         relationship_ids = set()
+        endpoint_ids = set()
+        import_ids = set()
         for rel in self.relationship_elements:
             from_id = getattr(rel, 'from_', None)
             original_from_id = self.relationship_original_from.get(rel._id, from_id)
-            if original_from_id in element_ids or from_id in element_ids:
-                relationship_ids.add(rel._id)
-                element_ids.add(from_id)
-                element_ids.update(rel.to)
+            if original_from_id not in owned:
+                continue
+            relationship_ids.add(rel._id)
+            endpoints = list(rel.to)
+            if from_id:
+                endpoints.append(from_id)
+            for endpoint in endpoints:
+                endpoint_home = home.get(endpoint)
+                if endpoint_home is not None and endpoint_home != this_doc:
+                    import_ids.add(endpoint)
+                else:
+                    endpoint_ids.add(endpoint)
         element_ids.update(relationship_ids)
+        element_ids.update(endpoint_ids)
+        return import_ids
 
-    def _populate_document(self, document: spdx.SpdxDocument, element_ids: set, components):
-        """Attach the selected elements and root components to the document."""
+    def _populate_document(
+        self,
+        document: spdx.SpdxDocument,
+        element_ids: set,
+        import_ids: set,
+        components,
+        sbom_doc: SBOMDocument,
+    ):
+        """Attach the selected elements, imports and root components to the document."""
         for element in self.elements:
             if self._belongs_in_document(element, document._id, element_ids):
                 document.element.append(element)
+
+        self._add_external_maps(document, import_ids)
 
         for component in components:
             package = self.component_elements.get(component.name)
             if package:
                 document.rootElement.append(package)
+
+        # The Build element is a root of the build document.
+        if self.build and sbom_doc.name == self._BUILD_DOCUMENT:
+            document.rootElement.append(self.build)
+
+    def _add_external_maps(self, document: spdx.SpdxDocument, import_ids: set):
+        """Declare elements used by, but defined outside, this document.
+
+        Each foreign endpoint becomes an ExternalMap in the document's ``import`` set instead of
+        being re-serialized here. ``locationHint`` points at the sibling JSON-LD file that defines
+        the element so a consumer can retrieve it.
+        """
+        home_index = self._element_home_index()
+        for import_id in sorted(import_ids):
+            external_map = spdx.ExternalMap()
+            external_map.externalSpdxId = import_id
+            home = home_index.get(import_id)
+            if home:
+                external_map.locationHint = f"./{home}.jsonld"
+            document.import_.append(external_map)
 
     @staticmethod
     def _belongs_in_document(element, document_id: str, element_ids: set) -> bool:
@@ -557,6 +1092,7 @@ class SPDX3Serializer:
             self._create_files()
             self._create_relationships()
             self._create_contains_relationships()
+            self._create_build_relationships()
             self._create_license_relationships()
             self._create_documents()
             self._write_documents(output_dir)
@@ -604,22 +1140,24 @@ class SPDX3Serializer:
             self._create_software_file(file_obj)
 
     def _create_relationships(self):
-        """Create the relationships declared by components, files and the graph."""
+        """Create the relationships declared by components and files.
+
+        ``GENERATED_FROM`` edges are skipped: build provenance is carried by the Build profile
+        (the Build's ``hasInput``/``hasOutput``), not by file-level ``generates`` edges like it
+        would for SPDX 2.x.
+        """
         for component in self.sbom_data.components.values():
-            for rel in component.relationships:
-                if not self._create_relationship(rel):
-                    _logger.warning(
-                        f"Failed to create relationship from component {component.name}"
-                    )
-
+            self._create_owner_relationships(component.relationships, "component", component.name)
         for file_obj in self.sbom_data.files.values():
-            for rel in file_obj.relationships:
-                if not self._create_relationship(rel):
-                    _logger.warning(f"Failed to create relationship from file {file_obj.path}")
+            self._create_owner_relationships(file_obj.relationships, "file", file_obj.path)
 
-        for rel in self.sbom_data.relationships:
+    def _create_owner_relationships(self, relationships, owner_kind, owner_id):
+        """Create each declared relationship, skipping ``GENERATED_FROM`` (see above)."""
+        for rel in relationships:
+            if rel.relationship_type == RelationshipType.GENERATED_FROM:
+                continue
             if not self._create_relationship(rel):
-                _logger.warning("Failed to create top-level relationship")
+                _logger.warning(f"Failed to create relationship from {owner_kind} {owner_id}")
 
     def _create_contains_relationships(self):
         """Create a CONTAINS relationship from each package to each of its files."""
@@ -712,11 +1250,12 @@ class SPDX3Serializer:
         if self.tool:
             elements.append(self.tool)
 
+        seen_ids = {getattr(elem, '_id', None) for elem in elements}
+
         referenced_ids = {
             elem._id for elem in getattr(document, 'element', []) if getattr(elem, '_id', None)
         }
 
-        # First-occurrence wins, mirroring the original linear search.
         elements_by_id = {}
         for elem in self.elements:
             elem_id = getattr(elem, '_id', None)
@@ -724,8 +1263,11 @@ class SPDX3Serializer:
                 elements_by_id[elem_id] = elem
 
         for elem_id in referenced_ids:
+            if elem_id in seen_ids:
+                continue
             elem = elements_by_id.get(elem_id)
-            if elem is not None and elem not in elements:
+            if elem is not None:
                 elements.append(elem)
+                seen_ids.add(elem_id)
 
         return elements

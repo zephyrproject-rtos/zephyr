@@ -53,6 +53,33 @@ they are not instances of commented-out code."
 # Series 4.
 #
 
+-doc_begin="Directive 4.6 is advisory and is not adopted by the project. The
+basic numerical types are used throughout the code base where a specific width
+and signedness is not required (for example return codes, counters, line
+numbers and indices), and the rule cannot be satisfied at all for the basic
+floating types (float, double and long double), for which the C standard
+provides no width-and-signedness typedefs. Enforcing it would require
+large-scale, churny changes to public APIs with no safety benefit, so the
+directive is disapplied."
+-config=MC3A2.D4.6,reports+={disapplied,"any()"}
+-doc_end
+
+-doc_begin="Directive 4.8 is advisory and is not adopted by the project. Public
+headers deliberately define the layout of types that are part of the API even
+though a given translation unit that includes the header may only handle
+pointers to them. Hiding such a definition is a per-unit property that cannot be
+satisfied for a shared header without splitting the API, so the directive is
+disapplied."
+-config=MC3A2.D4.8,reports+={disapplied,"any()"}
+-doc_end
+
+-doc_begin="The variadic helpers va_start() and va_end() are, by the definition
+of <stdarg.h>, always used as a correctly nested pair within a single function;
+the language guarantees the calling sequence. Reports that flag this pairing as
+a resource-operation sequence are therefore deliberate and safe."
+-config=MC3A2.D4.13,reports+={deliberate, "any_area(any_loc(any_exp(macro(^va_(start|end)$))))"}
+-doc_end
+
 -doc_begin="Files that are intended to be included more than once do not need to
 conform to the directive."
 -config=MC3A2.D4.10,reports+={safe, "first_area(text(^/\\* This file is intended to be included multiple times\\. \\*/$, begin-4))"}
@@ -121,6 +148,20 @@ const-qualified."
 -doc_begin="Declarations without definitions are allowed (specifically when the
 definition is compiled-out or optimized-out by the compiler)"
 -config=MC3A2.R8.6,reports+={deliberate, "first_area(^.*has no definition$)"}
+-doc_end
+
+-doc_begin="The enumeration constant CBPRINTF_PACKAGE_ARG_TYPE_MAX is the
+implicit upper bound of the argument-type enumeration, and the following
+constant CBPRINTF_PACKAGE_ARG_TYPE_COUNT is deliberately defined to the same
+value as a readable alias. The shared value is intentional."
+-config=MC3A2.R8.12,reports+={deliberate,"any_area(entity(kind(enum_constant)&&name(CBPRINTF_PACKAGE_ARG_TYPE_MAX)))"}
+-doc_end
+
+-doc_begin="The POSIX headers declare functions with the signatures mandated by
+the POSIX specification, which use the 'restrict' qualifier. Keeping the
+qualifier is required for API conformance, so its use in these headers is
+deliberate."
+-config=MC3A2.R8.14,reports+={deliberate, "any_area(any_loc(file(^.*include/zephyr/posix/.*$)))"}
 -doc_end
 
 #
@@ -243,6 +284,49 @@ Fixing this violation would require to increase code complexity and lower readab
 }
 -doc_end
 
+-doc_begin="The Z_ARGIFY macro deliberately relies on the constant 0 in the
+'(0) ? 0 : (arg)' construct as a universal compatible-zero so that it yields an
+rvalue of any argument type (integers, floating types, bitfields and opaque
+struct pointers). When 'arg' has pointer type the 0 acts as a null pointer
+constant; this is intentional and is required to keep the cbprintf argument
+packaging type-generic."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^Z_ARGIFY$))))"
+}
+-doc_end
+
+-doc_begin="CONTAINER_OF_VALIDATE probes the type of a field using the
+'((type *)0)->field' construct inside a BUILD_ASSERT. The null pointer constant
+is never dereferenced at run time (the expression is only used by
+__builtin_types_compatible_p / __typeof__ in an unevaluated context), so the use
+of 0 as a null pointer constant is deliberate and safe."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^CONTAINER_OF_VALIDATE$))))"
+}
+-doc_end
+
+-doc_begin="K_MEM_VIRT_RAM_START expands to '((uint8_t *)CONFIG_KERNEL_VM_BASE)',
+i.e. the configured base address of the kernel virtual memory region cast to a
+pointer. On configurations where CONFIG_KERNEL_VM_BASE is 0 the integer constant
+0 is treated as a null pointer constant, but here it denotes an address rather
+than a null pointer; the value is deliberate. K_MEM_VIRT_RAM_END is defined in
+terms of K_MEM_VIRT_RAM_START and is covered as well."
+-config=MC3A2.R11.9,reports+={deliberate, "any_area(any_loc(any_exp(macro(^K_MEM_VIRT_RAM_START$))))"
+}
+-doc_end
+
+#
+# Series 12.
+#
+
+-doc_begin="Rule 12.1 is advisory and is not adopted by the project. The reports
+are dominated by well-known precedence between the comparison/equality operators
+and the logical && / || operators (e.g. 'a && b == c'), where adding parentheses
+brings no clarity. The genuinely error-prone precedence cases (such as a bitwise
+operator mixed with a comparison, or an assignment used as a condition) are
+already diagnosed by the compiler through -Wparentheses with -Werror, so
+disapplying the rule does not lose coverage of the dangerous cases."
+-config=MC3A2.R12.1,reports+={disapplied,"any()"}
+-doc_end
+
 #
 # Series 13
 #
@@ -328,6 +412,16 @@ safe."
 -config=MC3A2.R16.3,reports+={safe, "any_area(end_loc(any_exp(text(^(?s).*/\\* [fF]all ?through\\.? \\*/.*$,0..2))))"}
 -doc_end
 
+-doc_begin="A switch clause that ends with one of the allowed terminal
+statements (break, continue, goto, return, or a call to a no-return function;
+see Rule 16.3) is well-formed even when that terminal is not an explicit break.
+This covers the common return-per-case lookup idiom, where adding a break after
+an unconditional return would only introduce unreachable code."
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_allowed_terminal"}
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_if_else"}
+-config=MC3A2.R16.1,terminals+={safe, "r16_3_if_true"}
+-doc_end
+
 -doc_begin="Switch statements having a controlling expression of enum type deliberately do not have a default case: gcc -Wall enables -Wswitch which warns (and breaks the build as we use -Werror) if one of the enum labels is missing from the switch."
 -config=MC3A2.R16.4,reports+={deliberate,"any_area(kind(context)&&^.* has no `default.*$&&stmt(node(switch_stmt)&&child(cond,skip(__non_syntactic_paren_stmts,ref(enum_underlying_type(any()))))))"}
 -doc_end
@@ -338,6 +432,14 @@ safe."
 
 -doc_begin="A switch statement with a single switch clause and no default label may be used in place of an equivalent if statement if it is considered to improve readability."
 -config=MC3A2.R16.6,switch_clauses+={deliberate, "default(0)"}
+-doc_end
+
+-doc_begin="The switch statements in the fnmatch helpers rangematch() and
+fnmatchx() are controlled by the return value of rangematch()/rangematch_cc(),
+which can only be one of RANGE_ERROR, RANGE_MATCH or RANGE_NOMATCH. All of
+these values have a case label, so a default clause would be unreachable; its
+omission is deliberate."
+-config=MC3A2.R16.4,reports+={deliberate, "any_area(context(ancestor_or_self(name(rangematch||fnmatchx)&&kind(function))))"}
 -doc_end
 
 #
@@ -361,6 +463,21 @@ safe."
 # Series 18.
 #
 
+-doc_begin="z_rb_foreach_next() indexes the iterator stack f->stack[], which
+points to a fixed-size iter_stack[Z_MAX_RBTREE_DEPTH] array. The index f->top is
+bounded by the depth of the tree, which never exceeds Z_MAX_RBTREE_DEPTH, so the
+access stays within the array even though the static analyser cannot prove it."
+-config=MC3A2.R18.1,reports+={safe, "any_area(context(ancestor_or_self(name(z_rb_foreach_next)&&kind(function))))"}
+-doc_end
+
+-doc_begin="Iterating over an iterable linker section compares the iterator
+against the section boundary markers (the generated _<type>_list_start and
+_<type>_list_end symbols, as also produced by STRUCT_SECTION_FOREACH). The two
+markers delimit a single contiguous array of objects, so the relational
+comparison is well defined even though the static analyser treats the markers as
+pointers into separate objects."
+-config=MC3A2.R18.3,reports+={safe, "any_area(any_loc(any_exp(text(^.*_list_end.*$))))"}
+-doc_end
 
 -doc_begin="The following macro performs a subtraction between pointers to obtain the mfn, but does not lead to undefined behaviour."
 -config=MC3A2.R18.2,reports+={safe, "any_area(any_loc(any_exp(macro(^page_to_mfn$))))"}

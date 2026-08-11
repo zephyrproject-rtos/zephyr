@@ -474,7 +474,7 @@ static int lc709203f_init(const struct device *dev)
 
 	if (config->thermistor) {
 		LOG_DBG("Set temperature mode: %d", config->thermistor_mode);
-		lc709203f_set_temp_mode(dev, config->thermistor_mode);
+		ret = lc709203f_set_temp_mode(dev, config->thermistor_mode);
 		if (ret) {
 			LOG_ERR("Failed to set temperature mode: %d", ret);
 		}

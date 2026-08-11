@@ -37,7 +37,7 @@ config DCACHE
 	default y
 config CACHE_MANAGEMENT
 	default y
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 128
 
 config NOCACHE_MEMORY

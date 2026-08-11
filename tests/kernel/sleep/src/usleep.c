@@ -74,6 +74,41 @@
 #define UPPER_BOUND_MS	(((3 + MAXIMUM_SHORTEST_TICKS) * 1000 * LOOPS)	\
 			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
+/**
+ * @addtogroup tests_kernel_sleep
+ * @{
+ */
+
+/**
+ * @brief Verify that k_usleep() never sleeps for less than the minimum tick
+ *        granularity.
+ *
+ * @details
+ * Absolute microsecond sleep durations cannot be validated portably because the
+ * granularity of k_usleep() depends on the tick rate and timer hardware.
+ * Instead, this test issues k_usleep(1) in a loop sized to span one second of
+ * ticks and checks that the aggregate elapsed time stays within a computed
+ * lower and upper bound. This proves that each minimal sleep rounds up to at
+ * least the tick period (never returns early) while remaining bounded above by
+ * the per-iteration alignment overhead. Because precise timing is unreliable
+ * under emulation, the measurement is retried up to RETRIES times and passes if
+ * any iteration lands in range.
+ *
+ * Test steps:
+ * - Record the uptime, then call k_usleep(1) for LOOPS iterations.
+ * - Compute the elapsed time and compare it against LOWER_BOUND_MS and
+ *   UPPER_BOUND_MS, retrying the whole measurement up to RETRIES times.
+ * - Assert the elapsed time is neither below the lower bound (short sleep) nor
+ *   above the upper bound (overslept).
+ *
+ * Expected result:
+ * - Total elapsed time is within [LOWER_BOUND_MS, UPPER_BOUND_MS], confirming
+ *   k_usleep() sleeps for at least the minimal granularity and no longer than
+ *   the expected alignment overhead.
+ *
+ * @see k_usleep()
+ * @see k_uptime_get()
+ */
 ZTEST_USER(sleep, test_usleep)
 {
 	int retries = 0;
@@ -105,3 +140,7 @@ ZTEST_USER(sleep, test_usleep)
 	zassert_true(elapsed_ms >= LOWER_BOUND_MS, "short sleep");
 	zassert_true(elapsed_ms <= UPPER_BOUND_MS, "overslept");
 }
+
+/**
+ * @}
+ */

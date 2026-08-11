@@ -5,6 +5,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/zbus/zbus.h>
+
+#include "zbus_private.h"
+
 LOG_MODULE_DECLARE(zbus, CONFIG_ZBUS_LOG_LEVEL);
 
 bool zbus_iterate_over_channels(bool (*iterator_func)(const struct zbus_channel *chan))
@@ -14,7 +17,11 @@ bool zbus_iterate_over_channels(bool (*iterator_func)(const struct zbus_channel 
 			return false;
 		}
 	}
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+	return zbus_runtime_iterate_over_channels(iterator_func);
+#else
 	return true;
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 }
 
 bool zbus_iterate_over_channels_with_user_data(
@@ -25,7 +32,11 @@ bool zbus_iterate_over_channels_with_user_data(
 			return false;
 		}
 	}
+#if defined(CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION)
+	return zbus_runtime_iterate_over_channels_with_user_data(iterator_func, user_data);
+#else
 	return true;
+#endif /* CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION */
 }
 
 bool zbus_iterate_over_observers(bool (*iterator_func)(const struct zbus_observer *obs))

@@ -11,7 +11,7 @@
 #include <zephyr/random/random.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/busy_sim.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
 #include <nrfx_grtc.h>
 #include <hal/nrf_grtc.h>
 LOG_MODULE_REGISTER(test, 1);

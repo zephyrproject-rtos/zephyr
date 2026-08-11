@@ -23,3 +23,12 @@ config BMP581_STREAM
 	depends on SENSOR_ASYNC_API
 	depends on GPIO
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMP581),int-gpios)
+
+config EMUL_BMP581
+	bool "Emulator for the BMP581 barometric pressure sensor"
+	default y
+	depends on BMP581
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMP581. Doing so allows exercising
+	  the driver against an emulated bus without real hardware.

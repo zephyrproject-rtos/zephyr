@@ -14,7 +14,6 @@
 #include <zephyr/syscall.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/device.h>
-#include <zephyr/init.h>
 #include <stdbool.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/libc-hooks.h>
@@ -23,6 +22,7 @@
 #include <inttypes.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/cache.h>
+#include <kernel_internal.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
@@ -365,6 +365,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		}
 
 		adjusted_size = STACK_ELEMENT_DATA_SIZE(size);
+		if (adjusted_size < size) {
+			/* The size adjustment above overflowed, which would
+			 * hand out an allocation smaller than requested.
+			 */
+			k_free(dyn);
+			return NULL;
+		}
+
 		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
 						     adjusted_size);
 		if (dyn->data == NULL) {
@@ -402,7 +410,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		dyn->kobj.data.stack_size = adjusted_size;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 	} else {
-		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
+		size_t total_size = obj_size_get(otype) + size;
+
+		if (total_size < size) {
+			k_free(dyn);
+			return NULL;
+		}
+
+		dyn->data = z_thread_aligned_alloc(align, total_size);
 		if (dyn->data == NULL) {
 			k_free(dyn);
 			return NULL;
@@ -1076,7 +1091,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(void)
+static void app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
@@ -1087,12 +1102,9 @@ static int app_shmem_bss_zero(void)
 	for ( ; region < end; region++) {
 		(void)memset(region->bss_start, 0, region->bss_size);
 	}
-
-	return 0;
 }
 
-SYS_INIT_NAMED(app_shmem_bss_zero_pre, app_shmem_bss_zero,
-	       PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+K_KERNEL_INIT_PRE(app_shmem_bss_zero);
 
 /*
  * Default handlers if otherwise unimplemented

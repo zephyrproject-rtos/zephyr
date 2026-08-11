@@ -70,5 +70,101 @@
 			clock-frequency = <24000000>;
 			status = "disabled";
 		};
+
+		gpioa: gpio@300b000 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b000 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <0>;
+			status = "disabled";
+		};
+
+		gpioc: gpio@300b048 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b048 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <2>;
+			status = "disabled";
+		};
+
+		gpiod: gpio@300b06c {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b06c 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <3>;
+			status = "disabled";
+		};
+
+		gpioe: gpio@300b090 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b090 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <4>;
+			status = "disabled";
+		};
+
+		gpiof: gpio@300b0b4 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b0b4 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <5>;
+			status = "disabled";
+		};
+
+		gpiog: gpio@300b0d8 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b0d8 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <6>;
+			status = "disabled";
+		};
+
+		gpioh: gpio@300b0fc {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b0fc 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <7>;
+			status = "disabled";
+		};
+
+		gpioi: gpio@300b120 {
+			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
+			reg = <0x0300b120 0x24>, <0x0300b000 0x400>;
+			reg-names = "reg_base", "pio_base";
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			allwinner,hw-bank = <8>;
+			status = "disabled";
+		};
 	};
 };

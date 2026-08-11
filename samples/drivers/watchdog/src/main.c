@@ -55,6 +55,13 @@
 #elif DT_HAS_COMPAT_STATUS_OKAY(andestech_atcwdt200)
 #define WDT_MAX_WINDOW 500U
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gswdt)
+#if !defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
+#define WDT_MAX_WINDOW  6000U
+#endif
+#define WDT_ALLOW_CALLBACK 0
+#define WDT_OPT            0
+#endif
 
 #ifndef WDT_ALLOW_CALLBACK
 #define WDT_ALLOW_CALLBACK 1

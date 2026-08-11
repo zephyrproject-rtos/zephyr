@@ -562,7 +562,7 @@ static int bt_hci_sf32lb_open(const struct device *dev)
 	return r;
 }
 
-static const DEVICE_API(bt_hci, hci_sf32lb_driver_api) = {
+static DEVICE_API(bt_hci, hci_sf32lb_driver_api) = {
 	.open = bt_hci_sf32lb_open,
 	.send = bt_hci_sf32lb_send,
 };

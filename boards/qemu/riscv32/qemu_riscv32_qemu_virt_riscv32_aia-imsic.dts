@@ -6,7 +6,6 @@
 
 /dts-v1/;
 
-#include <qemu/virt-riscv32-imsic.dtsi>
 #include <qemu/virt-riscv-aia.dtsi>
 
 / {

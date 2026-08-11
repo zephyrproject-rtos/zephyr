@@ -39,6 +39,9 @@ static struct net_in_addr subnet_prefix = { .s4_addr = { 198, 51, 100, 0 } };
 static struct net_in_addr subnet_dest_addr = { .s4_addr = { 198, 51, 100, 42 } };
 static struct net_in_addr forward_src_addr = { .s4_addr = { 198, 51, 100, 200 } };
 static struct net_in_addr onlink_dest_addr_alt = { .s4_addr = { 192, 0, 3, 50 } };
+static struct net_in_addr onlink_input_dest = { .s4_addr = { 192, 0, 3, 60 } };
+static struct net_in_addr offlink_dest_addr = { .s4_addr = { 203, 0, 113, 200 } };
+static struct net_eth_addr onlink_input_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x60 } };
 static struct net_eth_addr gateway_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x10 } };
 static struct net_eth_addr gateway_lladdr_alt = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
 
@@ -875,6 +878,112 @@ static void test_route_ipv4_forward_onlink_ttl_expired_drops(void)
 	net_pkt_unref(pkt);
 }
 
+static void test_route_ipv4_onlink_null_iface_searches_all(void)
+{
+	struct net_if *iface;
+
+	/* With a NULL *iface, net_if_ipv4_addr_onlink() must search across all
+	 * interfaces and return the one whose subnet matches, mirroring the
+	 * IPv6 variant and the documented contract. Previously the IPv4 helper
+	 * returned false whenever *iface was NULL, which left the on-link
+	 * routing branches in ipv4_route_packet() and net_route_ipv4_get_info()
+	 * dead.
+	 */
+	iface = NULL;
+	zassert_true(net_if_ipv4_addr_onlink(&iface, &dest_addr_override),
+		     "On-link search with NULL iface should succeed");
+	zassert_equal_ptr(iface, my_iface_alt,
+			  "On-link search should select the alt interface subnet");
+
+	/* An address on the primary interface's subnet resolves to my_iface. */
+	iface = NULL;
+	zassert_true(net_if_ipv4_addr_onlink(&iface, &gateway_addr),
+		     "On-link search should match the primary subnet");
+	zassert_equal_ptr(iface, my_iface,
+			  "On-link search should select the primary interface subnet");
+
+	/* A NULL iface pointer (not just *iface) must be tolerated, as
+	 * net_route_ipv4_get_info() calls it that way.
+	 */
+	zassert_true(net_if_ipv4_addr_onlink(NULL, &gateway_addr),
+		     "On-link check with NULL iface pointer should succeed");
+
+	/* An address that is not on-link on any interface must fail. */
+	iface = NULL;
+	zassert_false(net_if_ipv4_addr_onlink(&iface, &offlink_dest_addr),
+		      "Off-link address must not match any interface");
+	zassert_false(net_if_ipv4_addr_onlink(NULL, &offlink_dest_addr),
+		      "Off-link address must not match with NULL iface pointer");
+}
+
+static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
+{
+	struct net_ipv4_hdr *hdr;
+	struct net_eth_hdr *eth;
+	struct net_pkt *pkt;
+	struct net_eth_addr src_lladdr = { { 0x02, 0x00, 0x5e, 0x00, 0x53, 0x61 } };
+
+	/* A packet received on my_iface but destined to an address that is not
+	 * ours and has no routing table entry, yet is on-link on my_iface_alt,
+	 * must be routed out my_iface_alt. This exercises the on-link branch of
+	 * ipv4_route_packet(), which only works once net_if_ipv4_addr_onlink()
+	 * honors the NULL "search all interfaces" contract.
+	 */
+	net_arp_clear_cache(my_iface_alt);
+	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr,
+		       false, true);
+
+	reset_send_state();
+	drain_wait_data();
+
+	pkt = net_pkt_alloc_with_buffer(my_iface,
+					sizeof(struct net_eth_hdr) +
+					sizeof(struct net_ipv4_hdr),
+					NET_AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "On-link input packet alloc failed");
+
+	eth = (struct net_eth_hdr *)net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr));
+	zassert_not_null(eth, "Cannot reserve Ethernet header");
+	memcpy(eth->dst.addr, net_if_get_link_addr(my_iface)->addr, sizeof(eth->dst.addr));
+	memcpy(eth->src.addr, src_lladdr.addr, sizeof(eth->src.addr));
+	eth->type = net_htons(NET_ETH_PTYPE_IP);
+
+	hdr = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer, sizeof(struct net_ipv4_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv4 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vhl = 0x45;
+	hdr->ttl = 2U;
+	hdr->proto = NET_IPPROTO_UDP;
+	hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(hdr->src, forward_src_addr.s4_addr);
+	net_ipv4_addr_copy_raw(hdr->dst, onlink_input_dest.s4_addr);
+	hdr->chksum = ipv4_header_checksum(hdr);
+
+	zassert_ok(net_recv_data(my_iface, pkt), "On-link input receive failed");
+
+	/* Skip any ARP frames and wait for the routed IPv4 packet. */
+	for (int i = 0; i < 5; i++) {
+		zassert_ok(k_sem_take(&wait_data, WAIT_TIME),
+			   "On-link routed packet was not sent");
+		if (sent_ll_proto_type != NET_ETH_PTYPE_ARP) {
+			break;
+		}
+	}
+
+	zassert_true(sent_pkt_seen, "On-link routed packet not observed");
+	zassert_not_equal(sent_ll_proto_type, NET_ETH_PTYPE_ARP,
+			  "On-link routing should not stop at ARP");
+	zassert_equal(sent_ll_proto_type, NET_ETH_PTYPE_IP,
+		      "Expected the routed IPv4 packet to be sent");
+	zassert_equal_ptr(sent_iface, my_iface_alt,
+			  "On-link packet routed via wrong egress interface");
+	zassert_equal_ptr(sent_orig_iface, my_iface,
+			  "On-link routed packet missing ingress interface");
+
+	net_arp_clear_cache(my_iface_alt);
+}
+
 ZTEST(route_test_suite, test_route)
 {
 	test_init();
@@ -893,6 +1002,8 @@ ZTEST(route_test_suite, test_route)
 	test_route_ipv4_lifetime();
 	test_route_ipv4_preference();
 	test_route_ipv4_onlink_subnet();
+	test_route_ipv4_onlink_null_iface_searches_all();
+	test_route_ipv4_input_onlink_routes_via_matching_iface();
 	test_route_ipv4_default_route();
 	test_route_ipv4_packet_arp_handoff();
 	test_route_ipv4_packet_without_iface();

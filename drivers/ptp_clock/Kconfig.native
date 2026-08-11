@@ -6,6 +6,7 @@ config PTP_CLOCK_NATIVE
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_PTP_CLOCK_ENABLED
 	depends on ARCH_POSIX
+	select NET_L2_PTP_TIMESTAMPING
 	select NATIVE_USE_NSI_ERRNO
 	help
-	  Enable PTP clock driver for native_sim.
+	  Enable PTP clock driver for native_sim to support Ethernet timestamping.

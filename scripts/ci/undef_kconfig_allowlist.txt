@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
 # Many of these are symbols used as examples. Note that the list is sorted
 # alphabetically, and skips the CONFIG_ prefix.
 # zephyr-keep-sorted-start re(^\s+")
@@ -91,11 +94,12 @@ IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS
 LIBGCC_RTLIB
 LLEXT_EXPORT_SYMBOL_GROUP_  # Used in regexp by
 # scripts/build/llext_inspect_discarded_groups.py
-LLVM_USE_LD  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
+LLVM_USE_LD  # All LLVM_USE_* are in cmake/toolchain/host/llvm/Kconfig
 # which are only included if LLVM is selected but
 # not other toolchains. Compliance check would complain,
 # for example, if you are using GCC.
 LLVM_USE_LLD
+LLVM_USE_ELD
 LOG_BACKEND_MOCK_OUTPUT_DEFAULT  # Referenced in tests/subsys/logging/log_syst
 LOG_BACKEND_MOCK_OUTPUT_SYST  # Referenced in testcase.yaml of log_syst test
 LSM6DSO_INT_PIN
@@ -137,6 +141,8 @@ SHIFT
 SINGLE_APPLICATION_SLOT  # Used in sysbuild for MCUboot configuration
 SINGLE_APPLICATION_SLOT_RAM_LOAD  # Used in sysbuild for MCUboot configuration
 SOC_SDKNG_UNSUPPORTED  # Used in modules/hal_nxp/mcux/CMakeLists.txt
+RL_API_HAS_ZEROCOPY  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
+RL_USE_STATIC_API  # Provided by RPMSG-Lite integration Kconfig (hal_nxp)
 SOC_SERIES_  # Used as regex in scripts/utils/board_v1_to_v2.py
 SOC_WATCH  # Issue 13749
 SOME_BOOL
@@ -149,6 +155,7 @@ STACK_SIZE  # Used as an example in the Kconfig docs
 STD_CPP  # Referenced in CMake comment
 SYMBOL # used as an example in ci scripts
 TEST1
+TEST_EXTRA_DEFINE  # Bogus define used by twister blackbox tests to exercise -x
 TFM_SPM_BACKEND_IPC  # Used in TFM sample dummy partition - belongs to TFM
 TFM_SPM_BACKEND_SFN  # Used in TFM sample dummy partition - belongs to TFM
 # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.

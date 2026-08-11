@@ -9,6 +9,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/gd32l23x-clocks.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-sw.h>
 #include <zephyr/dt-bindings/reset/gd32l23x.h>
 
 / {
@@ -25,8 +27,12 @@
 
 	soc {
 		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(16)>;
+			zephyr,memory-region = "SRAM0";
+			zephyr,memory-attr = <(DT_MEM_DMA |
+					       DT_MEM_SW_ALLOC_NON_CACHE |
+					       DT_MEM_SW_ALLOC_DMA)>;
 		};
 
 		rcu: reset-clock-controller@40021000 {
@@ -56,6 +62,7 @@
 		fmc: flash-controller@40022000 {
 			compatible = "gd,gd32-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -63,6 +70,8 @@
 			flash0: flash@8000000 {
 				compatible = "gd,gd32-nv-flash-v1", "soc-nv-flash";
 				write-block-size = <2>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

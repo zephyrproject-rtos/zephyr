@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_
-#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_
+#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -20,6 +20,9 @@ extern "C" {
  * @brief Zbus Multi-domain API
  * @defgroup zbus_proxy_agent Zbus Proxy Agent API
  * @ingroup zbus_apis
+ *
+ * @kconfig_dep{CONFIG_ZBUS_PROXY_AGENT}
+ *
  * @{
  */
 
@@ -161,8 +164,8 @@ int zbus_init_proxy_agent(const struct zbus_proxy_agent *agent);
 	_ZBUS_PROXY_AGENT_BACKEND_CONFIG_DEFINE(_name, _type, _backend_dt_node)                    \
 	K_THREAD_STACK_DEFINE(_name##_thread_stack,                                                \
 			      CONFIG_ZBUS_PROXY_AGENT_WORK_QUEUE_STACK_SIZE);                      \
-	K_MSGQ_DEFINE(_name##_rx_msgq, sizeof(struct zbus_proxy_agent_rx_msg),                     \
-		      CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH, 4);                                  \
+	K_MSGQ_DEFINE_STATIC_TYPE(_name##_rx_msgq, struct zbus_proxy_agent_rx_msg,                 \
+				  CONFIG_ZBUS_PROXY_AGENT_RX_QUEUE_DEPTH);                         \
 	static struct k_thread _name##_thread;                                                     \
 	static k_tid_t _name##_thread_id;                                                          \
 	const struct zbus_proxy_agent _name = {                                                    \
@@ -331,4 +334,4 @@ void zbus_proxy_agent_log_shadow_pub_denied(const struct zbus_proxy_agent *agent
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_H_ */

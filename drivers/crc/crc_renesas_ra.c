@@ -72,6 +72,10 @@ static int crc_set_config(const struct device *dev, struct crc_ctx *ctx)
 		data->crc_config.polynomial = CRC_POLYNOMIAL_CRC_16;
 		break;
 	}
+	/*
+	 * CRC16_ITU_T and CRC16_CCITT use the same poly
+	 */
+	case CRC16_ITU_T:
 	case CRC16_CCITT: {
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;

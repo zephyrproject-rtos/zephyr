@@ -72,12 +72,17 @@ volatile uint32_t heap_guard0;
 K_HEAP_DEFINE(tiny_heap, 1);
 volatile uint32_t heap_guard1;
 
-/** @brief Test a minimum-size static k_heap
- *  @ingroup k_heap_api_tests
+/**
+ * @brief Test a minimum-size static k_heap
+ *
+ * @ingroup k_heap_api_tests
  *
  * @details Create a minimum size (1-byte) static heap, verify that it
  * works to allocate that byte at runtime and that it doesn't overflow
  * its memory bounds.
+ *
+ * @see K_HEAP_DEFINE()
+ * @see k_heap_alloc()
  */
 ZTEST(k_heap_api, test_k_heap_min_size)
 {
@@ -143,6 +148,9 @@ ZTEST(k_heap_api, test_k_heap_free)
  * param should be K_NO_WAIT, because this situation isn't allow to wait.
  *
  * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_alloc()
+ * @see k_heap_free()
  */
 ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
 {
@@ -157,6 +165,9 @@ ZTEST(k_heap_api, test_kheap_alloc_in_isr_nowait)
  * will wait timeout long until main thread free the buffer to heap.
  *
  * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_alloc()
+ * @see k_heap_free()
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending)
 {
@@ -194,6 +205,9 @@ ZTEST(k_heap_api, test_k_heap_alloc_pending)
  * the heap is still not enough and then return null after timeout.
  *
  * @ingroup k_heap_api_tests
+ *
+ * @see k_heap_alloc()
+ * @see k_heap_free()
  */
 ZTEST(k_heap_api, test_k_heap_alloc_pending_null)
 {
@@ -262,7 +276,7 @@ ZTEST(k_heap_api, test_k_heap_calloc)
 /**
  * @brief Test k_heap_array_get()
  *
- * @ingroup kernel_kheap_api_tests
+ * @ingroup k_heap_api_tests
  *
  * @details The test ensures that valid values are returned
  *
@@ -467,26 +481,73 @@ ZTEST(k_heap_api, test_z_k_heap_double_free)
 }
 
 /**
- * @brief Parameterized k_heap_alloc() test over a range of block sizes.
- *
- * Covers sizes from 1 byte up to HEAP_SIZE bytes (success cases) and one
- * size beyond the heap capacity (failure case) in a single test body.
- * Each parameter pair is reported as a separate named Twister test case, so
- * a failure pinpoints the exact size rather than just "FAIL -
- * test_k_heap_alloc_size".
- *
- * When expect_success is true the test allocates, writes a fill pattern, and
- * frees the block.  When false it verifies k_heap_alloc() returns NULL.
+ * @brief Test initializing a memory heap at run time over a provided region
  *
  * @ingroup k_heap_api_tests
- * @see k_heap_alloc(), k_heap_free()
+ *
+ * @details Initialize a k_heap at run time over a caller-provided memory buffer
+ * with k_heap_init(), then confirm the heap is usable: a block can be allocated
+ * (and the returned memory lies within the provided region and is writable),
+ * an allocation larger than the region fails, and the block can be freed.
+ *
+ * @see k_heap_init()
  */
+ZTEST(k_heap_api, test_k_heap_init)
+{
+	static char __aligned(8) heap_mem[1024];
+	struct k_heap runtime_heap;
+	char *p;
 
+	k_heap_init(&runtime_heap, heap_mem, sizeof(heap_mem));
+
+	/* The heap is usable: allocate a modest block from the provided region. */
+	p = k_heap_alloc(&runtime_heap, 64, K_NO_WAIT);
+	zassert_not_null(p, "allocation from a run-time initialized heap failed");
+	zassert_true(p >= heap_mem && (p + 64) <= (heap_mem + sizeof(heap_mem)),
+		     "allocated block is outside the provided memory region");
+
+	/* The memory is writable. */
+	memset(p, 0xa5, 64);
+
+	/* The heap is bounded by the provided region. */
+	zassert_is_null(k_heap_alloc(&runtime_heap, sizeof(heap_mem) * 2, K_NO_WAIT),
+			"allocation larger than the heap region should fail");
+
+	k_heap_free(&runtime_heap, p);
+}
+
+/* One (size, expectation) pair driving the parameterized alloc-size test. */
 struct heap_alloc_case {
 	size_t alloc_size;
 	bool   expect_success;
 };
 
+/**
+ * @brief Verify k_heap_alloc() succeeds within capacity and fails beyond it.
+ *
+ * @ingroup k_heap_api_tests
+ *
+ * @details
+ * Parameterized over a range of block sizes: sizes within HEAP_SIZE must
+ * allocate successfully and survive a write/read-back of a fill pattern;
+ * sizes beyond heap capacity must return NULL. Each (size, expectation) pair
+ * is reported as a separate named Twister case, so a failure pinpoints the
+ * exact size rather than a single aggregate result.
+ *
+ * Test steps:
+ * - Read the current (size, expect_success) parameter pair.
+ * - Call k_heap_alloc() for that size.
+ * - On a success case: assert non-NULL, write a per-byte pattern, read it back
+ *   to confirm no corruption, then free the block.
+ * - On a failure case: assert the call returned NULL.
+ *
+ * Expected result:
+ * - In-capacity sizes allocate, preserve data, and free cleanly.
+ * - Over-capacity sizes return NULL.
+ *
+ * @see k_heap_alloc()
+ * @see k_heap_free()
+ */
 ZTEST_P(k_heap_api, test_k_heap_alloc_size)
 {
 	const struct heap_alloc_case *tc =

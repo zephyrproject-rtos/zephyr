@@ -13,11 +13,13 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/services/ias.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/types.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(ias_test);
 
 #ifdef CONFIG_BT_IAS
 extern enum bst_result_t bst_result;
@@ -63,7 +65,7 @@ static void test_main(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_FLAG(g_high_alert_received);
-	printk("High alert received\n");
+	LOG_INF("High alert received");
 
 	err = bt_ias_local_alert_stop();
 	if (err != 0) {
@@ -73,10 +75,10 @@ static void test_main(void)
 	WAIT_FOR_FLAG(g_stop_alert_received);
 
 	WAIT_FOR_FLAG(g_mild_alert_received);
-	printk("Mild alert received\n");
+	LOG_INF("Mild alert received");
 
 	WAIT_FOR_FLAG(g_stop_alert_received);
-	printk("Stop alert received\n");
+	LOG_INF("Stop alert received");
 
 	PASS("IAS test passed\n");
 }

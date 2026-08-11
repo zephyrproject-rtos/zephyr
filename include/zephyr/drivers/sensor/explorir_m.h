@@ -15,7 +15,7 @@
 
 /**
  * @defgroup explorir_m_interface ExplorIR-M
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_gss
  * @brief Gas Sensing Solutions ExplorIR-M CO<sub>2</sub> sensor
  * @{
  */

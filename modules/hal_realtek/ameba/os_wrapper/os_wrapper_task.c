@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "os_wrapper.h"
+#include <os_wrapper.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os_if_task);

@@ -7,19 +7,19 @@
 /**
  * @file
  * @brief Devicetree pin control helpers for FocalTech FT9001
- * @ingroup focaltech_ft9001_pinctrl
+ * @ingroup pinctrl_focaltech_ft9001
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_FOCALTECH_FT9001_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_FOCALTECH_FT9001_PINCTRL_H_
 
 /**
- * @defgroup focaltech_pinctrl FocalTech pin control helpers
+ * @addtogroup focaltech_pinctrl FocalTech pin control helpers
  * @ingroup devicetree-pinctrl
  */
 
 /**
- * @defgroup focaltech_ft9001_pinctrl FocalTech FT9001 pin control helpers
+ * @defgroup pinctrl_focaltech_ft9001 FocalTech FT9001 pin control helpers
  * @brief Macros for pin multiplexing configuration on FocalTech FT9001
  * @ingroup focaltech_pinctrl
  *
@@ -64,10 +64,6 @@
 #define FOCALTECH_PINCTRL_BIT_MASK   0x1FU
 #define FOCALTECH_PINCTRL_REG_MASK   0xFFFFFU
 
-#define FOCALTECH_PINMUX(reg, bit, value)                                                          \
-	(((reg) << FOCALTECH_PINCTRL_REG_POS) | ((bit) << FOCALTECH_PINCTRL_BIT_POS) |             \
-	 ((value) << FOCALTECH_PINCTRL_VALUE_POS))
-
 #define FOCALTECH_PINCTRL_REG_GET(pinmux)                                                          \
 	((((pinmux) >> FOCALTECH_PINCTRL_REG_POS) & FOCALTECH_PINCTRL_REG_MASK) |                  \
 	 FOCALTECH_IOCTRL_BASE)
@@ -94,6 +90,7 @@
 /**
  * @defgroup focaltech_pinctrl_regs FT9001 IOCTRL register offsets
  * @brief Register offsets used as @a reg arguments to @ref FOCALTECH_PINMUX
+ * @ingroup pinctrl_focaltech_ft9001
  * @{
  */
 

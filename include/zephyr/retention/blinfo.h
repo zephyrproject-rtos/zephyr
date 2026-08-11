@@ -9,8 +9,8 @@
  * @brief Public API for boot mode interface
  */
 
-#ifndef ZEPHYR_INCLUDE_RETENTION_BLINFO_
-#define ZEPHYR_INCLUDE_RETENTION_BLINFO_
+#ifndef ZEPHYR_INCLUDE_RETENTION_BLINFO_H_
+#define ZEPHYR_INCLUDE_RETENTION_BLINFO_H_
 
 #include <stdint.h>
 #include <stddef.h>
@@ -57,4 +57,4 @@ int blinfo_lookup(uint16_t key, char *val, int val_len_max);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RETENTION_BLINFO_ */
+#endif /* ZEPHYR_INCLUDE_RETENTION_BLINFO_H_ */

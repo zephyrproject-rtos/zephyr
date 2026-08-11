@@ -992,11 +992,12 @@ static void set_up_fixed_clock_sources(void)
  * handled by this driver. Pick proper register name:
  */
 #define LSE_DRIVING_SHIFT					\
-	COND_CODE_1(IS_ENABLED(CONFIG_SOC_SERIES_STM32C0X),	\
-		(RCC_CSR1_LSEDRV_Pos),				\
-	(COND_CODE_1(IS_ENABLED(CONFIG_SOC_SERIES_STM32L0X),	\
-		(RCC_CSR_LSEDRV_Pos),				\
-		(RCC_BDCR_LSEDRV_Pos))))
+	COND_CASE_1(						\
+		IS_ENABLED(CONFIG_SOC_SERIES_STM32C0X),		\
+			(RCC_CSR1_LSEDRV_Pos),			\
+		IS_ENABLED(CONFIG_SOC_SERIES_STM32L0X),		\
+			(RCC_CSR_LSEDRV_Pos),			\
+		(RCC_BDCR_LSEDRV_Pos))
 
 		/* Configure driving capability */
 		LL_RCC_LSE_SetDriveCapability(STM32_LSE_DRIVING << LSE_DRIVING_SHIFT);

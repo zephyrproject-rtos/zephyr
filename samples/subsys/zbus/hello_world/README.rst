@@ -25,26 +25,31 @@ Sample Output
 
 .. code-block:: console
 
-    D: Sensor sample started raw reading, version 0.1-2!
-    D: Channel list:
-    D: 0 - Channel acc_data:
-    D:       Message size: 12
-    D:       Observers:
-    D:       - my_listener
-    D:       - my_subscriber
-    D: 1 - Channel version:
-    D:       Message size: 4
-    D:       Observers:
-    D: Observers list:
-    D: 0 - Listener my_listener
-    D: 1 - Subscriber my_subscriber
-    D: START processing channel acc_data change
-    D: From listener -> Acc x=1, y=1, z=1
-    D: FINISH processing channel acc_data change
-    D: From subscriber -> Acc x=1, y=1, z=1
-    D: START processing channel acc_data change
-    D: From listener -> Acc x=2, y=2, z=2
-    D: FINISH processing channel acc_data change
-    D: From subscriber -> Acc x=2, y=2, z=2
+    I: Sensor sample started raw reading, version 0.1-2!
+    I: Channel list:
+    I: 0 - Channel acc_data_chan:
+    I:       Message size: 12
+    I:       Observers:
+    I:       - foo_lis
+    I:       - bar_sub
+    I:       - baz_async_lis
+    I: 1 - Channel simple_chan:
+    I:       Message size: 4
+    I:       Observers:
+    I: 2 - Channel version_chan:
+    I:       Message size: 4
+    I:       Observers:
+    I: Observers list:
+    I: 0 - Subscriber bar_sub
+    I: 1 - Subscriber baz_async_lis
+    I: 2 - Listener foo_lis
+    I: From listener -> Acc x=1, y=1, z=1
+    I: From async listener -> Acc x=1, y=1, z=1
+    I: From subscriber -> Acc x=1, y=1, z=1
+    I: From listener -> Acc x=2, y=2, z=2
+    I: From async listener -> Acc x=2, y=2, z=2
+    I: From subscriber -> Acc x=2, y=2, z=2
+    I: Pub a valid value to a channel with validator successfully.
+    I: Pub an invalid value to a channel with validator successfully.
 
 Exit QEMU by pressing :kbd:`CTRL+A` :kbd:`x`.

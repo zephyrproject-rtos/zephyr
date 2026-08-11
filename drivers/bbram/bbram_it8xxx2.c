@@ -34,6 +34,21 @@ LOG_MODULE_REGISTER(it8xxx2_bbram, CONFIG_BBRAM_LOG_LEVEL);
 #define BRAM_VALID_MAGIC_FIELD2 ((BRAM_VALID_MAGIC >> 16) & 0xff)
 #define BRAM_VALID_MAGIC_FIELD3 ((BRAM_VALID_MAGIC >> 24) & 0xff)
 
+static bool vbat_reset;
+
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,
+	     "only one ite,it8xxx2-bbram compatible node can be supported");
+
+static int bbram_it8xxx2_check_invalid(const struct device *dev)
+{
+	bool vbat_status = vbat_reset;
+
+	/* Clear status */
+	vbat_reset = false;
+
+	return vbat_status ? -EFAULT : 0;
+}
+
 static int bbram_it8xxx2_read(const struct device *dev, size_t offset, size_t size, uint8_t *data)
 {
 	const struct bbram_it8xxx2_config *config = dev->config;
@@ -68,6 +83,7 @@ static int bbram_it8xxx2_size(const struct device *dev, size_t *size)
 }
 
 static DEVICE_API(bbram, bbram_it8xxx2_driver_api) = {
+	.check_invalid = bbram_it8xxx2_check_invalid,
 	.read = bbram_it8xxx2_read,
 	.write = bbram_it8xxx2_write,
 	.get_size = bbram_it8xxx2_size,
@@ -99,6 +115,10 @@ static int bbram_it8xxx2_init(const struct device *dev)
 		*bram_valid_flag1 = BRAM_VALID_MAGIC_FIELD1;
 		*bram_valid_flag2 = BRAM_VALID_MAGIC_FIELD2;
 		*bram_valid_flag3 = BRAM_VALID_MAGIC_FIELD3;
+
+		vbat_reset = true;
+	} else {
+		vbat_reset = false;
 	}
 
 	return 0;

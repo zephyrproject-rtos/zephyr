@@ -240,7 +240,7 @@ if(CONFIG_BUILD_WITH_TFM)
       )
   endif()
 
-  if(CONFIG_TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY)
+  if(CONFIG_TFM_ZEPHYR_4_2_COMPATIBILITY)
     list(APPEND TFM_CMAKE_ARGS -DPROFILE_DEFINITION_LARGE=ON)
   endif()
 
@@ -277,11 +277,16 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
-  # By default TF-M installs TF-PSA-Crypto include files in the build directory,
-  # but this will duplicate what's already provided by the TF-PSA-Crypto library
-  # itself. Disable this, unless CONFIG_TFM_USE_NS_APP is set because in that
-  # case the NS app is built in a completely different way than what Zephyr does.
-  if(NOT CONFIG_TFM_USE_NS_APP)
+  if(CONFIG_TFM_INSTALL_TF_PSA_CRYPTO_HEADERS)
+    # The PSA Crypto client headers are the ones installed by TF-M. TF-M
+    # exports the matching configuration through its "psa_crypto_config" CMake
+    # target, but Zephyr does not consume TF-M's CMake targets, so set the same
+    # definitions here.
+    zephyr_compile_definitions(
+      TFM_PSA_CRYPTO_CLIENT_ONLY
+      TF_PSA_CRYPTO_CONFIG_FILE="${TFM_INTERFACE_INCLUDE_DIR}/mbedtls/tf_psa_crypto_config.h"
+    )
+  else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_INSTALL_TF_PSA_CRYPTO_HEADERS=OFF)
   endif()
 

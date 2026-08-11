@@ -1,24 +1,43 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/types.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
-#include <errno.h>
+#include <sys/types.h>
+
+#include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/services/ots.h>
+#include <zephyr/bluetooth/uuid.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/net_buf.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/dlist.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/types.h>
 
-#include <zephyr/bluetooth/services/ots.h>
 #include "ots_internal.h"
 #include "ots_obj_manager_internal.h"
 #include "ots_dir_list_internal.h"
 
-#include <zephyr/logging/log.h>
-
 LOG_MODULE_DECLARE(bt_ots, CONFIG_BT_OTS_LOG_LEVEL);
+
+BUILD_ASSERT(sizeof(CONFIG_BT_OTS_DIR_LIST_OBJ_NAME) - 1U <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
+	     "BT_OTS_DIR_LIST_OBJ_NAME shall be less than or equal to "
+	     "CONFIG_BT_OTS_OBJ_MAX_NAME_LEN octets");
+/* Since we use a net_buf that has a maximum size of UINT16_MAX, we calculate the maximum number of
+ * objects supported based on what we can fit in the net_buf, based on the format of the directory
+ * listing object record
+ */
+#define MAX_DIR_OBJ_RECORDS (UINT16_MAX / DIR_LIST_OBJ_RECORD_MAX_SIZE)
+BUILD_ASSERT(CONFIG_BT_OTS_MAX_OBJ_CNT <= MAX_DIR_OBJ_RECORDS,
+	     "CONFIG_BT_OTS_MAX_OBJ_CNT is too large to support directory listing object");
 
 static struct bt_ots_dir_list dir_lists[CONFIG_BT_OTS_MAX_INST_CNT];
 
@@ -283,10 +302,6 @@ void bt_ots_dir_list_init(struct bt_ots_dir_list **dir_list, void *obj_manager)
 	}
 
 	__ASSERT(*dir_list, "Could not assign Directory Listing Object");
-
-	__ASSERT(strlen(dir_list_obj_name) <= CONFIG_BT_OTS_OBJ_MAX_NAME_LEN,
-		 "BT_OTS_DIR_LIST_OBJ_NAME shall be less than or equal to %u octets",
-		 CONFIG_BT_OTS_OBJ_MAX_NAME_LEN);
 
 	err = bt_gatt_ots_obj_manager_obj_add(obj_manager, &dir_list_obj);
 

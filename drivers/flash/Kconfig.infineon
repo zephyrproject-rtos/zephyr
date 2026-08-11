@@ -18,6 +18,18 @@ config FLASH_INFINEON_CAT1
 	help
 	  Enable the Flash driver for Infineon CAT1 family.
 
+config FLASH_INFINEON_RRAM
+	bool "Infineon CAT1 FLASH RRAM driver"
+	default y
+	depends on DT_HAS_INFINEON_RRAM_CONTROLLER_ENABLED
+	depends on SOC_FAMILY_INFINEON_EDGE
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select USE_INFINEON_FLASH_RRAM
+	select FLASH_HAS_NO_EXPLICIT_ERASE
+	help
+	  Enable the Flash RRAM driver for Infineon Edge family.
+
 config FLASH_INFINEON_PSOC4
 	bool "Infineon FLASH driver"
 	default y

@@ -32,24 +32,33 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TDES0_IC  BIT(30)
 #define TDES0_LS  BIT(29)
 #define TDES0_FS  BIT(28)
+#define TDES0_TER BIT(21)
 #define TDES0_TCH BIT(20)
+#define TDES0_TTSE BIT(25)
+#define TDES0_TTSS BIT(17)
 #define TDES0_ES  BIT(15)
+#define TDES0_CIC GENMASK(23, 22)
 
 #define TDES1_TBS1 GENMASK(12, 0)
+#define TDES1_TBS2 GENMASK(28, 16)
 
 #define RDES0_OWN BIT(31)
 #define RDES0_FL  GENMASK(29, 16)
 #define RDES0_ES  BIT(15)
+#define RDES0_TSV BIT(7)
 #define RDES0_FS  BIT(9)
 #define RDES0_LS  BIT(8)
 
 #define RDES1_RBS1 GENMASK(12, 0)
+#define RDES1_RER  BIT(15)
 #define RDES1_RCH  BIT(14)
 
 #define RX_LEN_FROM_RDES0(rdes0) (FIELD_GET(RDES0_FL, (rdes0)))
 
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
+
+static void dwmac_rx_refill(const struct device *dev);
 
 static uint32_t phys_lo32(void *addr)
 {
@@ -62,6 +71,15 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #ifdef CONFIG_NET_PROMISCUOUS_MODE
 	       | ETHERNET_PROMISC_MODE
+#endif
+#ifdef CONFIG_NET_VLAN
+	       | ETHERNET_HW_VLAN
+#endif
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
+#endif
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
 #endif
 		;
 }
@@ -77,62 +95,96 @@ static __maybe_unused unsigned int net_pkt_get_nbfrags(struct net_pkt *pkt)
 	return nbfrags;
 }
 
+#define TDES0_FLAGS_DEFAULT (TDES0_IC | \
+	(IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN) ? TDES0_CIC : 0U))
+
 static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 {
 	struct dwmac_priv *p = dev->data;
-	unsigned int d_idx;
+	unsigned int d_idx, first_d_idx;
 	struct dwmac_dma_desc *d;
 	uint32_t des0_flags;
 
 	LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt), net_pkt_get_nbfrags(pkt));
 
-	d_idx = p->tx_desc_head;
-	des0_flags = TDES0_TCH | TDES0_IC;
-
 	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		if (k_sem_take(&p->free_tx_descs, TX_AVAIL_WAIT) != 0) {
 			LOG_DBG("no more free tx descriptors");
-			goto abort;
+			NET_PKT_FRAG_FOR_EACH(pkt, frag1) {
+				if (frag1 == frag) {
+					break;
+				}
+				k_sem_give(&p->free_tx_descs);
+				/* we can put 2 fragments in one descriptor */
+				if (frag1->frags != NULL) {
+					frag1 = frag1->frags;
+				}
+			}
+			return -ENOMEM;
 		}
+		/* we can put 2 fragments in one descriptor */
+		if (frag->frags != NULL) {
+			frag = frag->frags;
+		}
+	}
 
-		net_pkt_frag_ref(frag);
+	first_d_idx = p->tx_desc_head;
+	d_idx = first_d_idx;
+	des0_flags = TDES0_FLAGS_DEFAULT;
+
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+		LOG_DBG("tx frag %p len=%zu", frag, frag->len);
+
 		sys_cache_data_flush_range(frag->data, frag->len);
 
 		d = &p->tx_descs[d_idx];
 		d->des0 = des0_flags;
-		d->des1 = FIELD_PREP(TDES1_TBS1, frag->len);
-		d->des2 = phys_lo32(frag->data);
-		/* track the net_buf associated with this desc for later release */
-		d->frag = frag;
 
-		if (!frag->frags) {
-			d->des0 |= TDES0_LS;
+		if (d_idx == NB_TX_DESCS - 1) {
+			d->des0 |= TDES0_TER;
 		}
 
-		des0_flags = TDES0_OWN | TDES0_TCH | TDES0_IC;
+		d->des1 = FIELD_PREP(TDES1_TBS1, frag->len);
+		d->des2 = phys_lo32(frag->data);
+
+		if (frag->frags != NULL) {
+			frag = frag->frags;
+			d->des1 |= FIELD_PREP(TDES1_TBS2, frag->len);
+			d->des3 = phys_lo32(frag->data);
+			sys_cache_data_flush_range(frag->data, frag->len);
+		}
+
+		des0_flags = TDES0_OWN | TDES0_FLAGS_DEFAULT;
 		INC_WRAP(d_idx, NB_TX_DESCS);
-	};
 
-	barrier_dmem_fence_full();
-
-	d = &p->tx_descs[p->tx_desc_head];
-	d->des0 = TDES0_OWN | TDES0_FS | TDES0_TCH | TDES0_IC;
-
-	barrier_dmem_fence_full();
-	p->tx_desc_head = d_idx;
-	REG_WRITE(DWMAC_DMATPDR, 0);
-
-	return 0;
-
-abort:
-	while (d_idx != p->tx_desc_head) {
-		DEC_WRAP(d_idx, NB_TX_DESCS);
-		d = &p->tx_descs[d_idx];
-		net_pkt_frag_unref(d->frag);
-		k_sem_give(&p->free_tx_descs);
+		if (frag->frags == NULL) {
+			d->des0 |= TDES0_LS;
+		}
 	}
 
-	return -ENOMEM;
+	des0_flags = TDES0_OWN | TDES0_FS;
+
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC) &&
+		net_pkt_is_tx_timestamping(pkt)) {
+		des0_flags |= TDES0_TTSE;
+	}
+
+	K_SPINLOCK(&p->spinlock) {
+		net_pkt_ref(pkt);
+		k_fifo_put(&p->tx_queue, pkt);
+
+		p->tx_desc_head = d_idx;
+
+		barrier_dmem_fence_full();
+
+		d = &p->tx_descs[first_d_idx];
+		d->des0 |= des0_flags;
+
+		barrier_dmem_fence_full();
+		DWMAC_REG_WRITE(DWMAC_DMATPDR, 0);
+	}
+
+	return 0;
 }
 
 static void dwmac_tx_release(const struct device *dev)
@@ -140,7 +192,6 @@ static void dwmac_tx_release(const struct device *dev)
 	struct dwmac_priv *p = dev->data;
 	unsigned int d_idx;
 	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
 	uint32_t des0;
 
 	for (d_idx = p->tx_desc_tail; d_idx != p->tx_desc_head; INC_WRAP(d_idx, NB_TX_DESCS)) {
@@ -151,12 +202,33 @@ static void dwmac_tx_release(const struct device *dev)
 			break;
 		}
 
-		frag = d->frag;
-		net_pkt_frag_unref(frag);
+		if ((des0 & TDES0_LS) != 0U) {
+			struct net_pkt *pkt = k_fifo_get(&p->tx_queue, K_NO_WAIT);
 
-		if ((des0 & TDES0_LS) != 0U && (des0 & TDES0_ES) != 0U) {
-			LOG_ERR("tx error (DES0 = 0x%08x)", des0);
-			eth_stats_update_errors_tx(p->iface);
+			if (pkt != NULL) {
+				LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
+					net_pkt_get_nbfrags(pkt));
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+				if ((des0 & TDES0_TTSS) != 0U) {
+#if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
+					pkt->timestamp.second = d->des7;
+					pkt->timestamp.nanosecond = d->des6;
+#else /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+					pkt->timestamp.second = d->des3;
+					pkt->timestamp.nanosecond = d->des2;
+#endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+					net_if_add_tx_timestamp(pkt);
+				}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
+			}
+
+			net_pkt_unref(pkt);
+
+			if ((des0 & TDES0_ES) != 0U) {
+				LOG_DBG("tx error (DES0 = 0x%08x)", des0);
+				eth_stats_update_errors_tx(p->iface);
+			}
 		}
 
 		k_sem_give(&p->free_tx_descs);
@@ -164,6 +236,31 @@ static void dwmac_tx_release(const struct device *dev)
 
 	p->tx_desc_tail = d_idx;
 }
+
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+static void dwmac_receive_timestamp(struct net_pkt *pkt, struct dwmac_dma_desc *d)
+{
+#if defined(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)
+	if ((d->des0 & RDES0_TSV) == 0U) {
+		return;
+	}
+	pkt->timestamp.second = d->des7;
+	pkt->timestamp.nanosecond = d->des6;
+#else
+	if (d->des2 == UINT32_MAX && d->des3 == UINT32_MAX) {
+		return;
+	}
+
+	pkt->timestamp.second = d->des3;
+	pkt->timestamp.nanosecond = d->des2;
+#endif /* CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE */
+	net_pkt_set_rx_timestamping(pkt, true);
+}
+#else
+static void dwmac_receive_timestamp(struct net_pkt *pkt __unused, struct dwmac_dma_desc *d __unused)
+{
+}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
 
 static void dwmac_receive(const struct device *dev)
 {
@@ -173,11 +270,10 @@ static void dwmac_receive(const struct device *dev)
 	unsigned int d_idx;
 	uint32_t des0;
 	uint16_t bytes_so_far;
-	struct net_pkt *rx_pkt = NULL;
-	uint16_t rx_bytes = 0;
+	unsigned int num_frags = 0U;
 
 	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
-	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
+	     INC_WRAP(d_idx, NB_RX_DESCS), num_frags++) {
 		d = &p->rx_descs[d_idx];
 		des0 = d->des0;
 
@@ -186,75 +282,85 @@ static void dwmac_receive(const struct device *dev)
 		}
 
 		if ((des0 & RDES0_FS) != 0U) {
-			rx_bytes = 0;
-			if (rx_pkt != NULL) {
+			p->rx_bytes = 0;
+			if (p->rx_pkt != NULL) {
 				eth_stats_update_errors_rx(p->iface);
-				net_pkt_unref(rx_pkt);
+				net_pkt_unref(p->rx_pkt);
 			}
-			rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
-			if (rx_pkt == NULL) {
+			p->rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
+			if (p->rx_pkt == NULL) {
 				eth_stats_update_errors_rx(p->iface);
 			}
 		}
 
-		if (rx_pkt == NULL) {
+		frag = p->rx_frags[d_idx];
+		p->rx_frags[d_idx] = NULL;
+
+		if (p->rx_pkt == NULL) {
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
-		frag = d->frag;
-		d->frag = NULL;
 		sys_cache_data_invd_range(frag->data, frag->size);
 
 		bytes_so_far = RX_LEN_FROM_RDES0(des0);
 
-		if (bytes_so_far < rx_bytes) {
+		if (bytes_so_far < p->rx_bytes) {
 			eth_stats_update_errors_rx(p->iface);
-			net_pkt_unref(rx_pkt);
-			rx_pkt = NULL;
-			net_buf_unref(frag);
+			net_pkt_unref(p->rx_pkt);
+			p->rx_pkt = NULL;
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
-		frag->len = bytes_so_far - rx_bytes;
-		rx_bytes = bytes_so_far;
-		net_pkt_frag_add(rx_pkt, frag);
+		frag->len = bytes_so_far - p->rx_bytes;
+		p->rx_bytes = bytes_so_far;
+		net_pkt_frag_add(p->rx_pkt, frag);
 
 		if ((des0 & RDES0_LS) != 0U) {
 			if ((des0 & RDES0_ES) == 0U) {
-				net_recv_data(p->iface, rx_pkt);
+				dwmac_receive_timestamp(p->rx_pkt, d);
+
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
 			} else {
-				LOG_ERR("rx error (DES0 = 0x%08x)", des0);
+				LOG_DBG("rx error (DES0 = 0x%08x)", des0);
 				eth_stats_update_errors_rx(p->iface);
-				net_pkt_unref(rx_pkt);
+				net_pkt_unref(p->rx_pkt);
 			}
-			rx_pkt = NULL;
+			p->rx_pkt = NULL;
 		}
 	}
 
 	p->rx_desc_tail = d_idx;
+
+	for (unsigned int i = 0; i < num_frags; i++) {
+		if (IS_ENABLED(CONFIG_ETH_DWMAC_RX_REFILL_IRQ)) {
+			dwmac_rx_refill(dev);
+		} else {
+			k_sem_give(&p->free_rx_descs);
+		}
+	}
 }
 
-static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
+static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 {
 	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
+	unsigned int d_idx;
+
+	d_idx = p->rx_desc_head;
+	p->rx_frags[d_idx] = frag;
 
 	d = &p->rx_descs[d_idx];
 	__ASSERT(!(d->des0 & RDES0_OWN), "rx desc still owned");
 
-	frag = d->frag;
-	if (frag == NULL) {
-		frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
-		if (frag == NULL) {
-			k_sem_give(&p->free_rx_descs);
-			return;
-		}
-		__ASSERT_NO_MSG(frag->size == RX_FRAG_SIZE);
-		d->frag = frag;
-	}
+	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size);
 
-	d->des1 = FIELD_PREP(RDES1_RBS1, frag->size) | RDES1_RCH;
+	if (d_idx == NB_RX_DESCS - 1) {
+		d->des1 |= RDES1_RER;
+	}
 	d->des2 = phys_lo32(frag->data);
 
 	barrier_dmem_fence_full();
@@ -262,10 +368,26 @@ static void dwmac_rx_refill(const struct device *dev, unsigned int d_idx)
 	d->des0 = RDES0_OWN;
 
 	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
-	REG_WRITE(DWMAC_DMARPDR, 0);
+	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
-	LOG_DBG("desc sem/head/tail=%d/%d/%d", k_sem_count_get(&p->free_rx_descs), p->rx_desc_head,
-		p->rx_desc_tail);
+	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
+		p->rx_desc_head, p->rx_desc_tail, k_is_in_isr() ? "ISR" : "thread");
+}
+
+static void dwmac_rx_refill(const struct device *dev)
+{
+	struct dwmac_priv *p = dev->data;
+	struct net_buf *frag;
+
+	frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
+	if (frag == NULL) {
+		k_sem_give(&p->free_rx_descs);
+		return;
+	}
+
+	K_SPINLOCK(&p->spinlock) {
+		dwmac_rx_refill_desc(dev, frag);
+	}
 }
 
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
@@ -278,7 +400,7 @@ static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 
 	while (true) {
 		if (k_sem_take(&p->free_rx_descs, K_FOREVER) == 0) {
-			dwmac_rx_refill(dev, p->rx_desc_head);
+			dwmac_rx_refill(dev);
 		}
 	}
 }
@@ -287,8 +409,8 @@ void dwmac_isr(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(DWMAC_DMASR);
-	REG_WRITE(DWMAC_DMASR, status);
+	status = DWMAC_REG_READ(DWMAC_DMASR);
+	DWMAC_REG_WRITE(DWMAC_DMASR, status);
 
 	LOG_DBG("DMA status 0x%08x", status);
 
@@ -307,8 +429,8 @@ void dwmac_isr(const struct device *dev)
 
 static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr)
 {
-	REG_WRITE(DWMAC_MACA0HR, (uint32_t)sys_get_le16(&addr[4]));
-	REG_WRITE(DWMAC_MACA0LR, sys_get_le32(&addr[0]));
+	DWMAC_REG_WRITE(DWMAC_MACA0HR, (uint32_t)sys_get_le16(&addr[4]));
+	DWMAC_REG_WRITE(DWMAC_MACA0LR, sys_get_le32(&addr[0]));
 }
 
 static int dwmac_set_config(const struct device *dev, struct net_if *iface __unused,
@@ -322,13 +444,13 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 		break;
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		reg = REG_READ(DWMAC_MACFFR);
+		reg = DWMAC_REG_READ(DWMAC_MACFFR);
 		if (config->promisc_mode) {
 			reg |= DWMAC_MACFFR_PM;
 		} else {
 			reg &= ~DWMAC_MACFFR_PM;
 		}
-		REG_WRITE(DWMAC_MACFFR, reg);
+		DWMAC_REG_WRITE(DWMAC_MACFFR, reg);
 		break;
 #endif
 	default:
@@ -346,7 +468,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 	uint32_t reg;
 
 	if (state->is_up) {
-		reg = REG_READ(DWMAC_MACCR);
+		reg = DWMAC_REG_READ(DWMAC_MACCR);
 
 		reg &= ~(DWMAC_MACCR_PS | DWMAC_MACCR_FES | DWMAC_MACCR_DM);
 
@@ -362,7 +484,7 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 			reg |= DWMAC_MACCR_DM;
 		}
 
-		REG_WRITE(DWMAC_MACCR, reg);
+		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -386,12 +508,13 @@ static void dwmac_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 	k_sem_init(&p->free_tx_descs, NB_TX_DESCS - 1, NB_TX_DESCS - 1);
 	k_sem_init(&p->free_rx_descs, NB_RX_DESCS - 1, NB_RX_DESCS - 1);
+	k_fifo_init(&p->tx_queue);
 
 	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(dev, p->mac_addr);
 
 	/* Pass all multicast frames */
-	REG_WRITE(DWMAC_MACFFR, REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
 
 	net_if_carrier_off(iface);
 	if (device_is_ready(cfg->phy_dev)) {
@@ -404,12 +527,23 @@ static void dwmac_iface_init(struct net_if *iface)
 			K_ESSENTIAL, K_NO_WAIT);
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
-	REG_WRITE(DWMAC_DMAIER,
-		  DWMAC_DMAIER_NISE | DWMAC_DMAIER_RIE | DWMAC_DMAIER_TIE | DWMAC_DMAIER_AISE);
+	DWMAC_REG_WRITE(DWMAC_DMAIER,
+			DWMAC_DMAIER_NISE |
+			DWMAC_DMAIER_RIE |
+			DWMAC_DMAIER_TIE |
+			DWMAC_DMAIER_AISE);
 
-	REG_WRITE(DWMAC_DMAOMR, REG_READ(DWMAC_DMAOMR) | DWMAC_DMAOMR_SR | DWMAC_DMAOMR_ST);
-	REG_WRITE(DWMAC_MACCR,
-		  REG_READ(DWMAC_MACCR) | DWMAC_MACCR_CSTF | DWMAC_MACCR_TE | DWMAC_MACCR_RE);
+	DWMAC_REG_WRITE(DWMAC_DMAOMR,
+			DWMAC_REG_READ(DWMAC_DMAOMR) |
+			DWMAC_DMAOMR_SR |
+			DWMAC_DMAOMR_ST);
+
+	DWMAC_REG_WRITE(DWMAC_MACCR,
+			DWMAC_REG_READ(DWMAC_MACCR) |
+			DWMAC_MACCR_APCS |
+			DWMAC_MACCR_CSTF |
+			DWMAC_MACCR_TE |
+			DWMAC_MACCR_RE);
 }
 
 int dwmac_probe(const struct device *dev)
@@ -417,7 +551,6 @@ int dwmac_probe(const struct device *dev)
 	struct dwmac_priv *p = dev->data;
 	int ret;
 	k_timepoint_t timeout;
-	unsigned int i;
 	uint32_t reg_val;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -427,18 +560,56 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
-	REG_WRITE(DWMAC_DMABMR, REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_SR);
+	DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_SR);
 
 	timeout = sys_timepoint_calc(K_MSEC(100));
-	while ((REG_READ(DWMAC_DMABMR) & DWMAC_DMABMR_SR) != 0U) {
+	while ((DWMAC_REG_READ(DWMAC_DMABMR) & DWMAC_DMABMR_SR) != 0U) {
 		if (sys_timepoint_expired(timeout)) {
 			LOG_ERR("unable to reset hardware");
 			return -EIO;
 		}
 	}
 
-	reg_val = REG_READ(MAC_VERSION);
+	reg_val = DWMAC_REG_READ(DWMAC_MACVERR);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
+
+	/* get configured hardware features */
+	p->feature0 = DWMAC_REG_READ(DWMAC_HWFR);
+	LOG_DBG("hw_feature: 0x%08x", p->feature0);
+	/* early IP versions don't support this register */
+	if (p->feature0 != 0) {
+		LOG_DBG("10/100 Mbps support: %s",
+			(p->feature0 & DWMAC_HWFR_10_100) ? "yes" : "no");
+		LOG_DBG("1000 Mbps support: %s", (p->feature0 & DWMAC_HWFR_1000) ? "yes" : "no");
+		LOG_DBG("Half-duplex support: %s", (p->feature0 & DWMAC_HWFR_HD) ? "yes" : "no");
+		LOG_DBG("Expanded DA Hash Filter: %s",
+			(p->feature0 & DWMAC_HWFR_HASHF) ? "yes" : "no");
+		LOG_DBG("Multiple MAC Addr Reg: %s",
+			(p->feature0 & DWMAC_HWFR_ADDMAC) ? "yes" : "no");
+		LOG_DBG("PCS register support: %s", (p->feature0 & DWMAC_HWFR_PCS) ? "yes" : "no");
+		LOG_DBG("SMA(MDIO) support: %s",
+			(p->feature0 & DWMAC_HWFR_SMA) ? "yes" : "no");
+		LOG_DBG("PMT Remote Wakeup support: %s",
+			(p->feature0 & DWMAC_HWFR_PMTW) ? "yes" : "no");
+		LOG_DBG("PMT Magic Packet support: %s",
+			(p->feature0 & DWMAC_HWFR_PMTM) ? "yes" : "no");
+		LOG_DBG("RMON support: %s", (p->feature0 & DWMAC_HWFR_RMON) ? "yes" : "no");
+		LOG_DBG("IEEE 1588-2002 support: %s",
+			(p->feature0 & DWMAC_HWFR_TS2002) ? "yes" : "no");
+		LOG_DBG("IEEE 1588-2008 support: %s",
+			(p->feature0 & DWMAC_HWFR_TS2008) ? "yes" : "no");
+		LOG_DBG("TX Checksum Offload support: %s",
+			(p->feature0 & DWMAC_HWFR_TX_CHK) ? "yes" : "no");
+		LOG_DBG("RX Checksum Offload support: %s",
+			(p->feature0 & DWMAC_HWFR_RXCHKV1) ? "yes" : "no");
+		LOG_DBG("RX Checksum Offload v2 support: %s",
+			(p->feature0 & DWMAC_HWFR_RXCHKV2) ? "yes" : "no");
+		LOG_DBG(">2K FIFO support: %s", (p->feature0 & DWMAC_HWFR_FIFO2K) ? "yes" : "no");
+		LOG_DBG("Alternate Descriptor support: %s",
+			(p->feature0 & DWMAC_HWFR_ALTDESC) ? "yes" : "no");
+	}
+
+	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
 
 	ret = dwmac_platform_init(dev);
 	if (ret < 0) {
@@ -448,22 +619,28 @@ int dwmac_probe(const struct device *dev)
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
-	for (i = 0; i < NB_TX_DESCS; i++) {
-		p->tx_descs[i].des1 = TDES0_TCH;
-		p->tx_descs[i].des3 = TXDESC_PHYS_L((i + 1) % NB_TX_DESCS);
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
+		DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
 	}
 
-	for (i = 0; i < NB_RX_DESCS; i++) {
-		p->rx_descs[i].des1 = RDES1_RCH;
-		p->rx_descs[i].des3 = RXDESC_PHYS_L((i + 1) % NB_RX_DESCS);
-	}
+	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
 
-	REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
-	REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
-	REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_TSF | DWMAC_DMAOMR_RSF);
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
+		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
+	}
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct dwmac_priv *p = dev->data;
+
+	return &p->stats;
+}
+#endif
 
 const struct ethernet_api dwmac_api = {
 	.iface_api.init = dwmac_iface_init,
@@ -471,4 +648,10 @@ const struct ethernet_api dwmac_api = {
 	.set_config = dwmac_set_config,
 	.get_phy = dwmac_get_phy,
 	.send = dwmac_send,
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.get_ptp_clock = dwmac_get_ptp_clock,
+#endif
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = dwmac_stats,
+#endif
 };

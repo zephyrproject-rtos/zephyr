@@ -143,10 +143,18 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+	/* TCP or UDP are mutually exclusive so they can share the same memory */
+	union {
 #if defined(CONFIG_NET_TCP)
-	/** Allow placing the packet into sys_slist_t */
-	sys_snode_t next;
+		/** Allow placing the packet into sys_slist_t */
+		sys_snode_t next;
 #endif
+#if defined(CONFIG_NET_UDP_OPTIONS)
+		/** Length of the UDP options surplus area (bytes after UDP user data) */
+		uint16_t udp_opt_surplus_len;
+#endif
+	};
+
 #if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
@@ -226,10 +234,6 @@ struct net_pkt {
 
 	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
 	uint8_t eof : 1;	 /* Last packet before EOF */
-	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
-				  * a L2 PTP packet.
-				  * Used only if defined (CONFIG_NET_L2_PTP)
-				  */
 	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
 				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
 				  */
@@ -243,12 +247,6 @@ struct net_pkt {
 					* Note: family needs to be
 					* NET_AF_INET.
 					*/
-#endif
-#if defined(CONFIG_NET_LLDP)
-	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
-			       * Note: family needs to be
-			       * NET_AF_UNSPEC.
-			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
@@ -512,6 +510,28 @@ static inline void net_pkt_set_vpn_peer_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_VPN */
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	return pkt->udp_opt_surplus_len;
+}
+
+static inline void net_pkt_set_udp_opt_surplus_len(struct net_pkt *pkt,
+						   uint16_t len)
+{
+	pkt->udp_opt_surplus_len = len;
+}
+#else
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+#define net_pkt_set_udp_opt_surplus_len(...)
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {
 	return pkt->family;
@@ -520,16 +540,6 @@ static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 {
 	pkt->family = family;
-}
-
-static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
-{
-	return !!(pkt->ptp_pkt);
-}
-
-static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
-{
-	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_tx_timestamping(struct net_pkt *pkt)
@@ -1495,31 +1505,6 @@ static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_IPV4_ACD */
 
-#if defined(CONFIG_NET_LLDP)
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	return !!(pkt->lldp_pkt);
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	pkt->lldp_pkt = is_lldp;
-}
-#else
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-
-	return false;
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_lldp);
-}
-#endif /* CONFIG_NET_LLDP */
-
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
 {
@@ -1943,7 +1928,10 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
 /**
  * @brief Compact the fragment list of a packet.
  *
- * @details After this there is no more any free space in individual fragments.
+ * @details Move data from later fragments into available tailroom in earlier
+ *          fragments and remove empty fragments. This does not reclaim
+ *          headroom or guarantee that the packet becomes a single fragment.
+ *
  * @param pkt Network packet.
  */
 void net_pkt_compact(struct net_pkt *pkt);
@@ -2699,12 +2687,17 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the start of the packet.
+ * @brief Remove data from the packet at the current cursor position.
  *
- * @details net_pkt's cursor should be properly initialized.
- *          Note that net_pkt's cursor is reset by this function.
- *          This functions works in similar way as net_buf_pull(),
- *          but it can handle multiple net_buf fragments.
+ * @details The packet cursor should be properly initialized and positioned.
+ *          The cursor is reset by this function. This function works in a
+ *          similar way to net_buf_pull(), but it can handle multiple net_buf
+ *          fragments.
+ *
+ *          The underlying fragment layout is not preserved: remaining data
+ *          may be moved or a fragment's data pointer may be advanced. Callers
+ *          must not rely on fragment data pointers, headroom, or tailroom
+ *          remaining unchanged.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

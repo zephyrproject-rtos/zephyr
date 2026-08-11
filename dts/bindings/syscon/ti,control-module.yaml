@@ -24,6 +24,16 @@ properties:
     const: 2
     description: Number of items to expect in a clksel specifier
 
+  "#epwm-tbclk-cells":
+    type: int
+    const: 2
+    description: |
+      Number of items to expect in a time-base clock specifier for TI Enhanced PWM.
+
 clksel-cells:
   - offset
   - value
+
+epwm-tbclk-cells:
+  - offset
+  - bit

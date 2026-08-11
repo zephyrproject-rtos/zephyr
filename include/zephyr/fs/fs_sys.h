@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief File system driver interface for file system implementations.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_FS_SYS_H_
 #define ZEPHYR_INCLUDE_FS_FS_SYS_H_
 

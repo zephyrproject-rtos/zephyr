@@ -81,6 +81,10 @@ static bool match_path_uri(const char * const *path,
 			k = i;
 
 			for (j = 0; j < plen; j++) {
+				if (k >= len) {
+					goto next;
+				}
+
 				if (uri[k] == '*') {
 					if ((k + 1) == len) {
 						return true;

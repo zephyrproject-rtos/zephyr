@@ -1,0 +1,59 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL616CL
+	bool
+	select SOC_FAMILY_BFLB
+	help
+	  Enable support for BouffaloLab BL616CL MCU series
+
+config SOC_SERIES
+	default "bl616cl" if SOC_SERIES_BL616CL
+
+config SOC_BL616CL3240
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL3250
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL3260
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4845
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4855
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4865
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4846
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4856
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC_BL616CL4866
+	bool
+	select SOC_SERIES_BL616CL
+
+config SOC
+	default "bl616cl3240" if SOC_BL616CL3240
+	default "bl616cl3250" if SOC_BL616CL3250
+	default "bl616cl3260" if SOC_BL616CL3260
+	default "bl616cl4845" if SOC_BL616CL4845
+	default "bl616cl4855" if SOC_BL616CL4855
+	default "bl616cl4865" if SOC_BL616CL4865
+	default "bl616cl4846" if SOC_BL616CL4846
+	default "bl616cl4856" if SOC_BL616CL4856
+	default "bl616cl4866" if SOC_BL616CL4866

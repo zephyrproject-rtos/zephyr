@@ -170,6 +170,8 @@ config PRINTK_BUFFER_SIZE
 
 config EARLY_CONSOLE
 	bool "Send stdout at the earliest stage possible"
+	default y
+	depends on !SERIAL_HAS_POST_KERNEL_INIT
 	help
 	  This option will enable stdout as early as possible, for debugging
 	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
@@ -341,6 +343,9 @@ config DEBUG_THREAD_INFO
 	help
 	  This option exports an array of offsets to kernel structs to allow
 	  for debugger RTOS plugins to determine the state of running threads.
+	  Not supported on SMP: thread_info.c exports K_CURR_THREAD which
+	  only reflects cpus[0].current, confusing live RTOS debugger plugins
+	  on multi-core systems.
 
 rsource "coredump/Kconfig"
 rsource "symtab/Kconfig"
@@ -367,31 +372,3 @@ config CS_TRACE_DEFMT
 	help
 	  Module is decoding data which is formatted using Coresight
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
-
-config CPU_LOAD
-	select TRACING
-	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A || XTENSA
-	depends on !SMP
-	bool "CPU load measurement"
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
-
-config CPU_LOAD_USE_COUNTER
-	bool "Use counter"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
-	default y
-	select COUNTER
-	help
-	  Use counter for tracking CPU idle time.
-
-config CPU_LOAD_LOG_PERIODICALLY
-	int "Report period (in milliseconds)"
-	depends on LOG
-	default 0
-	help
-	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
-
-module = CPU_LOAD
-module-str = cpu_load
-source "subsys/logging/Kconfig.template.log_config"

@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_XG26_DMA_H_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_XG26_DMA_H_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_DMA_SILABS_XG26_DMA_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_DMA_SILABS_XG26_DMA_H_
 
 #include <zephyr/dt-bindings/dt-util.h>
 #include "common-dma.h"
@@ -96,4 +96,4 @@
 #define DMA_REQSEL_LCD                (FIELD_PREP(DMA_SRC_MASK, 30) | FIELD_PREP(DMA_SIG_MASK, 0))
 #define DMA_REQSEL_MVPREQ             (FIELD_PREP(DMA_SRC_MASK, 31) | FIELD_PREP(DMA_SIG_MASK, 0))
 
-#endif
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_DMA_SILABS_XG26_DMA_H_ */

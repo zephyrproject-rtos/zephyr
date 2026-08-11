@@ -8,3 +8,11 @@ config ENTROPY_MCHP_TRNG_G1
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables Entropy driver for group (g1).
+
+config ENTROPY_MCHP_TRNG_G2
+	bool "Microchip MCHP G2 Entropy Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_TRNG_G2_ENTROPY_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables Entropy driver for group (g2).

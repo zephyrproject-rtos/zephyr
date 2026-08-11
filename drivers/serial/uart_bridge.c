@@ -47,6 +47,37 @@ static const struct device *uart_bridge_get_peer(const struct device *dev,
 	}
 }
 
+static void uart_bridge_line_ctrl_update(const struct device *dev,
+					 const struct device *peer_dev)
+{
+	if (!IS_ENABLED(CONFIG_UART_LINE_CTRL)) {
+		return;
+	}
+
+	static const uint32_t lines[] = {
+		UART_LINE_CTRL_DTR,
+		UART_LINE_CTRL_RTS,
+	};
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(lines); i++) {
+		int ret;
+		uint32_t val;
+
+		ret = uart_line_ctrl_get(dev, lines[i], &val);
+		if (ret) {
+			if (ret != -ENOSYS && ret != -ENOTSUP) {
+				LOG_ERR("%s: line ctrl get failed: %d", dev->name, ret);
+			}
+			continue;
+		}
+
+		ret = uart_line_ctrl_set(peer_dev, lines[i], val);
+		if (ret && ret != -ENOSYS && ret != -ENOTSUP) {
+			LOG_ERR("%s: line ctrl set failed: %d", peer_dev->name, ret);
+		}
+	}
+}
+
 void uart_bridge_settings_update(const struct device *dev,
 				 const struct device *bridge_dev)
 {
@@ -75,6 +106,8 @@ void uart_bridge_settings_update(const struct device *dev,
 			ret);
 		return;
 	}
+
+	uart_bridge_line_ctrl_update(dev, peer_dev);
 
 	LOG_INF("uart settings: baudrate=%d parity=%d dev=%s",
 		cfg.baudrate, cfg.parity, bridge_dev->name);

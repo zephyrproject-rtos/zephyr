@@ -103,7 +103,7 @@ Congratulations, you have ``dt_bl10_devkit`` configured and running Zephyr.
 
 
 .. _Bouffalo Lab BL602 MCU Website:
-	https://www.bouffalolab.com/bl602
+	https://en.bouffalolab.com/product/?type=detail&id=1
 
 .. _Bouffalo Lab BL602 MCU Datasheet:
 	https://github.com/bouffalolab/bl_docs/tree/main/BL602_DS/en

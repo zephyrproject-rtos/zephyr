@@ -489,19 +489,40 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 	/* Stop counter */
 	ret = counter_stop(config->counter_dev);
 
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
-	ret = counter_get_value(config->counter_dev, &now_ticks);
-	if (ret < 0) {
-		return ret;
+	/*
+	 * Try writing time directly to hardware. Fall back to a software
+	 * offset when the counter does not support set_value or the value
+	 * exceeds 32 bits.
+	 */
+	if (desired_ticks <= UINT32_MAX) {
+		ret = counter_set_value(config->counter_dev, (uint32_t)desired_ticks);
+	} else {
+		ret = -ENOSYS;
 	}
 
-	/* Update the software offset (in ticks): offset = desired_ticks - now_ticks */
-	K_SPINLOCK(&data->lock) {
-		data->epoch_offset = (int64_t)desired_ticks - (int64_t)now_ticks;
-		data->epoch_valid = true;
+	if (ret == 0) {
+		K_SPINLOCK(&data->lock) {
+			data->epoch_offset = 0;
+			data->epoch_valid = true;
+		}
+	} else {
+		if (ret != -ENOSYS && ret != -ENOTSUP) {
+			return ret;
+		}
+
+		ret = counter_get_value(config->counter_dev, &now_ticks);
+		if (ret < 0) {
+			return ret;
+		}
+
+		K_SPINLOCK(&data->lock) {
+			data->epoch_offset = (int64_t)desired_ticks - (int64_t)now_ticks;
+			data->epoch_valid = true;
+		}
 	}
 
 #ifdef CONFIG_RTC_ALARM
@@ -510,7 +531,7 @@ static int rtc_counter_set_time(const struct device *dev, const struct rtc_time 
 
 	/* Restart counter */
 	ret = counter_start(config->counter_dev);
-	if (ret < 0) {
+	if (ret < 0 && ret != -ENOTSUP) {
 		return ret;
 	}
 
@@ -592,16 +613,28 @@ static int rtc_counter_update_set_callback(const struct device *dev, rtc_update_
 
 static int rtc_counter_set_calibration(const struct device *dev, int32_t calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct rtc_counter_config *config = dev->config;
+	int ret;
+
+	ret = counter_set_calibration(config->counter_dev, calibration);
+	if (ret == -ENOSYS) {
+		return -ENOTSUP;
+	}
+
+	return ret;
 }
 
 static int rtc_counter_get_calibration(const struct device *dev, int32_t *calibration)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(calibration);
-	return -ENOTSUP;
+	const struct rtc_counter_config *config = dev->config;
+	int ret;
+
+	ret = counter_get_calibration(config->counter_dev, calibration);
+	if (ret == -ENOSYS) {
+		return -ENOTSUP;
+	}
+
+	return ret;
 }
 
 #endif /* CONFIG_RTC_CALIBRATION */
@@ -680,10 +713,6 @@ static DEVICE_API(rtc, rtc_counter_driver_api) = {
 #endif /* CONFIG_RTC_CALIBRATION */
 };
 
-/* Ensure RTC init priority is bigger than counter */
-BUILD_ASSERT(CONFIG_RTC_INIT_PRIORITY > CONFIG_COUNTER_INIT_PRIORITY,
-	     "RTC init priority must be bigger than counter");
-
 #define RTC_COUNTER_ALARMS_COUNT(n) DT_PROP_OR(DT_DRV_INST(n), alarms_count, 0)
 #define RTC_COUNTER_ALARMS_SZ(n)    MAX(RTC_COUNTER_ALARMS_COUNT(n), 1)
 
@@ -719,7 +748,8 @@ DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DECLARE_ALARM_STORAGE)
 		))                                                                      \
 	};                                                                          \
 	DEVICE_DT_INST_DEFINE(n, rtc_counter_init, NULL, &rtc_counter_data_##n,     \
-				&rtc_counter_config_##n, POST_KERNEL, CONFIG_RTC_INIT_PRIORITY, \
+				&rtc_counter_config_##n, POST_KERNEL,               \
+				CONFIG_RTC_COUNTER_INIT_PRIORITY,                   \
 				&rtc_counter_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RTC_COUNTER_DEVICE_INIT)

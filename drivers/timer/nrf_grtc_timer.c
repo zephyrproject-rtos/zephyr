@@ -6,8 +6,10 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/irq.h>
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if (defined(CONFIG_CLOCK_CONTROL_NRF) || defined(CONFIG_CLOCK_CONTROL_NRF_COMMON)) &&             \
+	!(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
@@ -56,8 +58,11 @@
 
 #if DT_NODE_HAS_STATUS_OKAY(LFCLK_NODE)
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
-#else
+#elif defined(CONFIG_CLOCK_CONTROL_NRF)
 #define LFCLK_FREQUENCY_HZ CONFIG_CLOCK_CONTROL_NRF_K32SRC_FREQUENCY
+#else
+#define LFCLK_FREQUENCY_HZ \
+	DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk), k32src_frequency)
 #endif
 
 /* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
@@ -174,7 +179,7 @@ static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_conte
 	}
 
 	last_elapsed = 0;
-	sys_clock_announce((int32_t)dticks);
+	sys_clock_announce(dticks);
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -516,8 +521,20 @@ void sys_clock_disable(void)
 		z_nrf_clock_control_get_onoff((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
 	err = onoff_release(mgr);
-	__ASSERT_NO_MSG(err >= 0);
 
+	__ASSERT_NO_MSG(err >= 0);
+#if !IS_ENABLED(__ASSERT_ON)
+	(void)err;
+#endif
+	nrfx_coredep_delay_us(1000);
+#elif defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                                  \
+	!(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
+	int err = nrf_clock_control_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
+
+	__ASSERT_NO_MSG(err >= 0);
+#if !IS_ENABLED(__ASSERT_ON)
+	(void)err;
+#endif
 	nrfx_coredep_delay_us(1000);
 #endif
 }
@@ -581,7 +598,9 @@ static int sys_clock_driver_init(void)
 
 static int grtc_post_init(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) ||                                                           \
+	(defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                               \
+	 !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)))
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT)
 			? CLOCK_CONTROL_NRF_LF_START_NOWAIT
@@ -626,7 +645,7 @@ static int grtc_post_init(void)
 #endif
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 

@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_
 
 /**
  * @brief Microphone Control Profile (MICP)
@@ -217,7 +217,7 @@ struct bt_micp_mic_ctlr_cb {
 	 */
 	void (*unmute_written)(struct bt_micp_mic_ctlr *mic_ctlr, int err);
 
-#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS)
+#if defined(CONFIG_BT_MICP_MIC_CTLR_AICS) || defined(__DOXYGEN__)
 	/** Audio Input Control Service client callback */
 	struct bt_aics_cb               aics_cb;
 #endif /* CONFIG_BT_MICP_MIC_CTLR_AICS */
@@ -259,10 +259,10 @@ int bt_micp_mic_ctlr_conn_get(const struct bt_micp_mic_ctlr *mic_ctlr,
 			      struct bt_conn **conn);
 
 /**
- * @brief Get the volume controller from a connection pointer
+ * @brief Get the Microphone Controller from a connection pointer
  *
- * Get the Volume Control Profile Volume Controller pointer from a connection pointer.
- * Only volume controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
+ * Get the Microphone Control Profile Microphone Controller pointer from a connection pointer.
+ * Only microphone controllers that have been initiated via bt_micp_mic_ctlr_discover() can be
  * retrieved.
  *
  * @param conn     Connection pointer.
@@ -333,4 +333,4 @@ int bt_micp_mic_ctlr_cb_register(struct bt_micp_mic_ctlr_cb *cb);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MICP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_MICP_H_ */

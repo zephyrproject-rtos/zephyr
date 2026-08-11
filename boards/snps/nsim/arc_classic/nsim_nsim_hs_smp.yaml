@@ -1,4 +1,4 @@
-identifier: nsim/nsim_hs/smp
+identifier: nsim/nsim_hs_smp
 name: Multi-core HS nSIM simulator
 type: sim
 simulation:

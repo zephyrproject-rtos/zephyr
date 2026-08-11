@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+menu "IPC service API test options"
+
+config IPC_SERVICE_API_TEST_DEREGISTER
+	bool "Test ipc_service_deregister_endpoint()"
+	default y if IPC_SERVICE_BACKEND_ICBMSG
+	help
+	  Run the endpoint deregistration test case.
+
+config IPC_SERVICE_API_TEST_PRIORITY
+	bool "Test endpoint priorities"
+	default y if IPC_SERVICE_BACKEND_ICBMSG
+	help
+	  Run the endpoint priority test case.
+
+config IPC_SERVICE_API_TEST_SECOND_ENDPOINT
+	bool "Test second endpoint"
+	default y if IPC_SERVICE_BACKEND_ICBMSG || IPC_SERVICE_BACKEND_RPMSG
+	help
+	  Run the second endpoint test case.
+
+config IPC_SERVICE_API_TEST_ISR_SEND
+	bool "Test send from interrupt context"
+	default y if IPC_SERVICE_BACKEND_ICBMSG
+	help
+	  Run test cases that call ipc_service_send() and ipc_service_send_nocopy()
+	  from a k_timer expiry handler (interrupt context).
+
+endmenu

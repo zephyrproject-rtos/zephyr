@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "os_wrapper.h"
+#include <os_wrapper.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os_if_critical);
 
@@ -13,11 +13,7 @@ static volatile uint32_t critical_nesting;
 
 int rtos_critical_is_in_interrupt(void)
 {
-#ifdef CONFIG_ARM_CORE_CM4
-	return (__get_xPSR() & 0x1FF) != 0;
-#else
 	return __get_IPSR() != 0;
-#endif
 }
 
 /*-------------------------------critical------------------------------*/

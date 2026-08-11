@@ -260,19 +260,6 @@ static int counter_gecko_init(const struct device *dev)
 #endif
 	};
 
-#if defined(cmuClock_CORELE)
-	/* Ensure LE modules are clocked. */
-	CMU_ClockEnable(cmuClock_CORELE, true);
-#endif
-
-#if defined(CMU_LFECLKEN0_RTCC)
-	/* Enable LFECLK in CMU (will also enable oscillator if not enabled). */
-	CMU_ClockSelectSet(cmuClock_LFE, cmuSelect_LFXO);
-#else
-	/* Enable LFACLK in CMU (will also enable oscillator if not enabled). */
-	CMU_ClockSelectSet(cmuClock_LFA, cmuSelect_LFXO);
-#endif
-
 	/* Enable RTCC module clock */
 	CMU_ClockEnable(cmuClock_RTCC, true);
 

@@ -1626,7 +1626,7 @@ static int esp_init(const struct device *dev)
 			   K_KERNEL_STACK_SIZEOF(esp_workq_stack),
 			   K_PRIO_COOP(CONFIG_WIFI_ESP_AT_WORKQ_THREAD_PRIORITY),
 			   NULL);
-	k_thread_name_set(&data->workq.thread, "esp_workq");
+	k_thread_name_set(data->workq.thread_id, "esp_workq");
 
 	/* cmd handler */
 	const struct modem_cmd_handler_config cmd_handler_config = {

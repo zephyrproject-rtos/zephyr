@@ -135,6 +135,18 @@ then releases it once it is no longer needed.
     ... /* use memory block pointed at by block_ptr */
     k_mem_slab_free(&my_slab, (void *)block_ptr);
 
+Querying Slab Usage
+===================
+
+The current utilization of a memory slab can be queried at run time.
+:c:func:`k_mem_slab_num_used_get` returns the number of blocks currently
+allocated, and :c:func:`k_mem_slab_num_free_get` returns the number of blocks
+still available. When :kconfig:option:`CONFIG_MEM_SLAB_TRACE_MAX_UTILIZATION`
+is enabled, :c:func:`k_mem_slab_max_used_get` reports the peak number of blocks
+that have been allocated simultaneously, and
+:c:func:`k_mem_slab_runtime_stats_get` returns these figures together in a
+:c:struct:`sys_memory_stats` structure.
+
 Suggested Uses
 **************
 

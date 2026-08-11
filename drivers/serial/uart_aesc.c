@@ -17,6 +17,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(aesc_uart, CONFIG_UART_LOG_LEVEL);
@@ -40,26 +41,22 @@ struct uart_aesc_config {
 #endif
 };
 
-struct uart_aesc_regs {
-	uint32_t data_width;
-	uint32_t sampling_sizes;
-	uint32_t fifo_depths;
-	uint32_t permissions;
-	uint32_t read_write;
-	uint32_t fifo_status;
-	uint32_t clock_div;
-	uint32_t frame_cfg;
-	uint32_t tx_trigger;
-	uint32_t ip;
-	uint32_t ie;
-	uint32_t error_pending;
-	uint32_t error_enable;
-};
+#define UART_AESC_DATA_WIDTH		0x00
+#define UART_AESC_SAMPLING_SIZES	0x04
+#define UART_AESC_FIFO_DEPTHS		0x08
+#define UART_AESC_PERMISSIONS		0x0c
+#define UART_AESC_READ_WRITE		0x10
+#define UART_AESC_FIFO_STATUS		0x14
+#define UART_AESC_CLOCK_DIV		0x18
+#define UART_AESC_FRAME_CFG		0x1c
+#define UART_AESC_TX_TRIGGER		0x20
+#define UART_AESC_IP			0x24
+#define UART_AESC_IE			0x28
+#define UART_AESC_ERROR_PENDING		0x2c
+#define UART_AESC_ERROR_ENABLE		0x30
 
 #define DEV_CFG(dev) ((struct uart_aesc_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct uart_aesc_data *)(dev)->data)
-#define DEV_UART(dev)							      \
-	((volatile struct uart_aesc_regs *)DEV_DATA(dev)->reg_base)
 
 #define AESC_UART_IRQ_TX_EN			BIT(0)
 #define AESC_UART_IRQ_RX_EN			BIT(1)
@@ -73,21 +70,22 @@ struct uart_aesc_regs {
 
 static void uart_aesc_poll_out(const struct device *dev, unsigned char c)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 
-	while ((uart->fifo_status & AESC_UART_FIFO_TX_COUNT_MASK) == 0) {
+	while ((sys_read32(data->reg_base + UART_AESC_FIFO_STATUS) &
+		AESC_UART_FIFO_TX_COUNT_MASK) == 0) {
 		/* Wait until transmit fifo is empty */
 	}
 
-	uart->read_write = c;
+	sys_write32(c, data->reg_base + UART_AESC_READ_WRITE);
 }
 
 static int uart_aesc_poll_in(const struct device *dev, unsigned char *c)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
-	int val;
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t val;
 
-	val = uart->read_write;
+	val = sys_read32(data->reg_base + UART_AESC_READ_WRITE);
 	if (val & AESC_UART_READ_FIFO_VALID_BIT) {
 		*c = val & 0xFF;
 		return 0;
@@ -101,11 +99,12 @@ static int uart_aesc_poll_in(const struct device *dev, unsigned char *c)
 static int uart_aesc_fifo_fill(const struct device *dev,
 			       const uint8_t *tx_data, int size)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 	int i = 0;
 
-	while (i < size && (uart->fifo_status & AESC_UART_FIFO_TX_COUNT_MASK)) {
-		uart->read_write = tx_data[i++];
+	while (i < size && (sys_read32(data->reg_base + UART_AESC_FIFO_STATUS) &
+			     AESC_UART_FIFO_TX_COUNT_MASK)) {
+		sys_write32(tx_data[i++], data->reg_base + UART_AESC_READ_WRITE);
 	}
 
 	return i;
@@ -114,12 +113,12 @@ static int uart_aesc_fifo_fill(const struct device *dev,
 static int uart_aesc_fifo_read(const struct device *dev, uint8_t *rx_data,
 			       const int size)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 	int i = 0;
 	uint32_t val;
 
 	while (i < size) {
-		val = uart->read_write;
+		val = sys_read32(data->reg_base + UART_AESC_READ_WRITE);
 		if (!(val & AESC_UART_READ_FIFO_VALID_BIT)) {
 			break;
 		}
@@ -131,75 +130,86 @@ static int uart_aesc_fifo_read(const struct device *dev, uint8_t *rx_data,
 
 static void uart_aesc_irq_tx_enable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t ie = sys_read32(data->reg_base + UART_AESC_IE);
 
-	uart->ie |= AESC_UART_IRQ_TX_EN;
+	sys_write32(ie | AESC_UART_IRQ_TX_EN, data->reg_base + UART_AESC_IE);
 }
 
 static void uart_aesc_irq_tx_disable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t ie = sys_read32(data->reg_base + UART_AESC_IE);
 
-	uart->ie &= ~AESC_UART_IRQ_TX_EN;
+	sys_write32(ie & ~AESC_UART_IRQ_TX_EN, data->reg_base + UART_AESC_IE);
 }
 
 static int uart_aesc_irq_tx_ready(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 
-	return !!(uart->fifo_status & AESC_UART_FIFO_TX_COUNT_MASK);
+	return !!(sys_read32(data->reg_base + UART_AESC_FIFO_STATUS) &
+		  AESC_UART_FIFO_TX_COUNT_MASK);
 }
 
 static int uart_aesc_irq_tx_complete(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 
-	return !!(uart->ip & AESC_UART_IRQ_TX_COMPLETE_EN);
+	return !!(sys_read32(data->reg_base + UART_AESC_IP) &
+		  AESC_UART_IRQ_TX_COMPLETE_EN);
 }
 
 static void uart_aesc_irq_rx_enable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t ie = sys_read32(data->reg_base + UART_AESC_IE);
 
-	uart->ie |= AESC_UART_IRQ_RX_EN;
+	sys_write32(ie | AESC_UART_IRQ_RX_EN, data->reg_base + UART_AESC_IE);
 }
 
 static void uart_aesc_irq_rx_disable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t ie = sys_read32(data->reg_base + UART_AESC_IE);
 
-	uart->ie &= ~AESC_UART_IRQ_RX_EN;
+	sys_write32(ie & ~AESC_UART_IRQ_RX_EN, data->reg_base + UART_AESC_IE);
 }
 
 static int uart_aesc_irq_rx_ready(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 
-	return !!(uart->fifo_status & AESC_UART_FIFO_RX_COUNT_MASK);
+	return !!(sys_read32(data->reg_base + UART_AESC_FIFO_STATUS) &
+		  AESC_UART_FIFO_RX_COUNT_MASK);
 }
 
 static void uart_aesc_irq_err_enable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t error_enable = sys_read32(data->reg_base + UART_AESC_ERROR_ENABLE);
 
-	uart->error_enable |= AESC_UART_ERR_FRAMING | AESC_UART_ERR_PARITY |
-				AESC_UART_ERR_OVERFLOW;
+	error_enable |= AESC_UART_ERR_FRAMING | AESC_UART_ERR_PARITY |
+			 AESC_UART_ERR_OVERFLOW;
+	sys_write32(error_enable, data->reg_base + UART_AESC_ERROR_ENABLE);
 }
 
 static void uart_aesc_irq_err_disable(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t error_enable = sys_read32(data->reg_base + UART_AESC_ERROR_ENABLE);
 
-	uart->error_enable &= ~(AESC_UART_ERR_FRAMING | AESC_UART_ERR_PARITY |
-				AESC_UART_ERR_OVERFLOW);
+	error_enable &= ~(AESC_UART_ERR_FRAMING | AESC_UART_ERR_PARITY |
+			   AESC_UART_ERR_OVERFLOW);
+	sys_write32(error_enable, data->reg_base + UART_AESC_ERROR_ENABLE);
 }
 
 static int uart_aesc_irq_is_pending(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
+	struct uart_aesc_data *data = DEV_DATA(dev);
 
 	/* ip already returns pending & masks, so any set bit means active IRQ */
-	return !!(uart->ip);
+	return !!sys_read32(data->reg_base + UART_AESC_IP);
 }
 
 static void uart_aesc_irq_callback_set(const struct device *dev,
@@ -214,15 +224,14 @@ static void uart_aesc_irq_callback_set(const struct device *dev,
 
 static void uart_aesc_isr(const struct device *dev)
 {
-	volatile struct uart_aesc_regs *uart = DEV_UART(dev);
 	struct uart_aesc_data *data = DEV_DATA(dev);
 	uint32_t pending;
 	uint32_t err_pending;
 
-	pending = uart->ip;
-	uart->ip = pending;
-	err_pending = uart->error_pending;
-	uart->error_pending = err_pending;
+	pending = sys_read32(data->reg_base + UART_AESC_IP);
+	sys_write32(pending, data->reg_base + UART_AESC_IP);
+	err_pending = sys_read32(data->reg_base + UART_AESC_ERROR_PENDING);
+	sys_write32(err_pending, data->reg_base + UART_AESC_ERROR_PENDING);
 
 	if (data->irq_cb) {
 		data->irq_cb(dev, data->irq_cb_data);
@@ -238,7 +247,6 @@ static int uart_aesc_init(const struct device *dev)
 	volatile uintptr_t *base_addr =
 		(volatile uintptr_t *)DEVICE_MMIO_GET(dev);
 	struct uart_aesc_data *data = DEV_DATA(dev);
-	volatile struct uart_aesc_regs *uart;
 	int ret;
 
 	LOG_DBG("IP core version: %i.%i.%i.",
@@ -248,7 +256,6 @@ static int uart_aesc_init(const struct device *dev)
 	);
 	data->reg_base = ip_id_relocate_driver(base_addr);
 	LOG_DBG("Relocate driver to address 0x%lx.", data->reg_base);
-	uart = DEV_UART(dev);
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
@@ -256,11 +263,12 @@ static int uart_aesc_init(const struct device *dev)
 		return ret;
 	}
 
-	uart->clock_div = cfg->sys_clk_freq / cfg->current_speed / 8;
-	uart->frame_cfg = 7;
-	uart->tx_trigger = 0;
-	uart->ie = 0;
-	uart->error_enable = 0;
+	sys_write32(cfg->sys_clk_freq / cfg->current_speed / 8,
+		    data->reg_base + UART_AESC_CLOCK_DIV);
+	sys_write32(7, data->reg_base + UART_AESC_FRAME_CFG);
+	sys_write32(0, data->reg_base + UART_AESC_TX_TRIGGER);
+	sys_write32(0, data->reg_base + UART_AESC_IE);
+	sys_write32(0, data->reg_base + UART_AESC_ERROR_ENABLE);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	cfg->irq_config(dev);
@@ -311,7 +319,7 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(no);					     \
 	AESC_UART_IRQ_INIT(no)						     \
 	static struct uart_aesc_data uart_aesc_dev_data_##no;		     \
-	static struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
+	static const struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			     \
 		.sys_clk_freq =						     \
 			DT_PROP(DT_INST(no, aesc_uart), clock_frequency),    \

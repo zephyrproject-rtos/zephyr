@@ -75,3 +75,20 @@ test_i3c_bmp581: bmp581@800000803e0000004 {
 	assigned-address = <0x8>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i3c_icm56686: icm56686@680000046a00000011 {
+	compatible = "invensense,icm56686";
+	reg = <0x68 0x0 0x0>;
+	assigned-address = <0x6a>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
+};

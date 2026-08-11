@@ -93,7 +93,7 @@ There are two ways for passing extra arguments to the called pytest subprocess:
 
    .. code-block:: console
 
-      $ ./scripts/twister --platform native_sim -T samples/subsys/testsuite/pytest/shell \
+      $ west twister --platform native_sim -T samples/subsys/testsuite/pytest/shell \
       -s samples/subsys/testsuite/pytest/shell/sample.pytest.shell \
       --pytest-args='-k test_shell_print_version'
 
@@ -338,7 +338,7 @@ How to run only one particular test from a python file?
 
    .. code-block:: console
 
-      $ ./scripts/twister ... --pytest-args='-k test_shell_print_help'
+      $ west twister ... --pytest-args='-k test_shell_print_help'
 
 How to get information about used device type in test?
 ======================================================

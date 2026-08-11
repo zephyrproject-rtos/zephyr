@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&stm32_lp_tick_source {
+&lptim1 {
 	/*
 	 * Default LPTIM period is 2 seconds. This means that application will
 	 * be woken up every 2 seconds to reload its counter.

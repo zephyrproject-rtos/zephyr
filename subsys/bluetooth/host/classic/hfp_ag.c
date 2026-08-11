@@ -13,14 +13,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_ag.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"
@@ -323,7 +323,7 @@ static struct bt_ag_tx *bt_ag_tx_alloc(void)
 	 * so if we're in the same workqueue but there are no immediate
 	 * contexts available, there's no chance we'll get one by waiting.
 	 */
-	if (k_current_get() == &k_sys_work_q.thread) {
+	if (k_current_get() == k_sys_work_q.thread_id) {
 		return k_fifo_get(&ag_tx_free, K_NO_WAIT);
 	}
 

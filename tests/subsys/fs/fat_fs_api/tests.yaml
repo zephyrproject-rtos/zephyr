@@ -1,0 +1,104 @@
+common:
+  tags:
+    - filesystem
+    - fatfs
+  modules:
+    - fatfs
+tests:
+  filesystem.fat.api:
+    platform_allow:
+      - native_sim
+  filesystem.fat.api.lfn:
+    extra_args: CONF_FILE="prj_lfn.conf"
+    platform_allow:
+      - native_sim
+  filesystem.fat.api.mmc:
+    extra_args: CONF_FILE="prj_mmc.conf"
+    filter: dt_compat_enabled("zephyr,mmc-disk")
+    platform_type:
+      - mcu
+  filesystem.fat.api.sdmmc:
+    extra_args: CONF_FILE="prj_sdmmc.conf"
+    filter: dt_compat_enabled("zephyr,sdmmc-disk")
+    platform_type:
+      - mcu
+  filesystem.fat.api.nor:
+    extra_args: CONF_FILE="prj_nor.conf"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+  filesystem.fat.ram.api:
+    platform_allow:
+      - native_sim
+      - frdm_mcxa156
+      - frdm_mcxn236
+      - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxw71
+      - frdm_rw612
+      - lpcxpresso55s06
+      - lpcxpresso55s28
+      - lpcxpresso55s36
+      - lpcxpresso55s69/lpc55s69/cpu0
+      - mimxrt1020_evk
+      - mimxrt1024_evk
+      - mimxrt1040_evk
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+      - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1064_evk
+      - mimxrt1160_evk/mimxrt1166/cm7
+      - mimxrt1170_evk/mimxrt1176/cm7
+      - mimxrt1180_evk/mimxrt1189/cm33
+      - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt685_evk/mimxrt685s/cm33
+    integration_platforms:
+      - native_sim
+    extra_args:
+      - CONF_FILE="prj_ram.conf"
+      - EXTRA_DTC_OVERLAY_FILE="ramdisk.overlay"
+  filesystem.fat.api.reentrant:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_FS_FATFS_REENTRANT=y
+      - CONFIG_MULTITHREADING=y
+  filesystem.fat.api.virtio_blk:
+    extra_args: FILE_SUFFIX=virtio_blk
+    # On 32-bit qemu_x86 the HPET runs in 64-bit mode and QEMU's -icount makes
+    # the virtual clock race ahead, degenerating into a timer-interrupt storm
+    # that starves the app and hangs this long, I/O-heavy test. This is a known
+    # qemu_x86 + icount limitation (zephyrproject-rtos/zephyr#37672, #52623),
+    # unrelated to FATFS or virtio-blk. Disabling icount only affects qemu_x86
+    # here (qemu_x86_64 keeps its board-hardcoded -icount and is unaffected).
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n
+    platform_allow:
+      - qemu_x86_64
+      - qemu_x86
+  filesystem.fat.api.virtio_blk.mmio:
+    extra_args: FILE_SUFFIX=virtio_blk
+    platform_allow:
+      - qemu_cortex_a53
+  filesystem.fat.api.virtio_blk.blk4096:
+    # Same as filesystem.fat.api.virtio_blk, but the QEMU virtio-blk device is
+    # given a 4096-byte logical block so the driver reports a 4096-byte sector;
+    # FS_FATFS_MAX_SS is raised so FATFS accepts that sector size.
+    extra_args: FILE_SUFFIX=virtio_blk
+    extra_configs:
+      - CONFIG_QEMU_ICOUNT=n
+      - CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE=4096
+      - CONFIG_FS_FATFS_MAX_SS=4096
+    platform_allow:
+      - qemu_x86_64
+      - qemu_x86
+  filesystem.fat.api.virtio_blk.mmio.blk4096:
+    extra_args: FILE_SUFFIX=virtio_blk
+    extra_configs:
+      - CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE=4096
+      - CONFIG_FS_FATFS_MAX_SS=4096
+      # A 4096-byte block makes FATFS's mount/mkfs path deeper, and under
+      # CONFIG_MMU the virtio-blk driver runs its scatter-gather path (on-stack
+      # segment arrays). Together they exceed the default main and ztest
+      # test-thread stacks, so give both more room.
+      - CONFIG_MAIN_STACK_SIZE=8192
+      - CONFIG_TEST_EXTRA_STACK_SIZE=8192
+    platform_allow:
+      - qemu_cortex_a53

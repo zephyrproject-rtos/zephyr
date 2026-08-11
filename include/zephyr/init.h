@@ -19,6 +19,8 @@ extern "C" {
 
 /**
  * @defgroup sys_init System Initialization
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup os_services
  *
  * Zephyr offers an infrastructure to call initialization code before `main`.

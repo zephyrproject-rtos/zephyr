@@ -16,9 +16,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mpu);
 
-extern void arm_core_mpu_enable(void);
-extern void arm_core_mpu_disable(void);
-
 /*
  * Maximum number of dynamic memory partitions that may be supplied to the MPU
  * driver for programming during run-time. Note that the actual number of the

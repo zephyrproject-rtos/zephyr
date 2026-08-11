@@ -28,8 +28,10 @@ LOG_MODULE_REGISTER(net_ipv4_acd, CONFIG_NET_IPV4_ACD_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(lock);
 
+static void ipv4_acd_timeout(struct k_work *work);
+
 /* Address conflict detection timer. */
-static struct k_work_delayable ipv4_acd_timer;
+static K_WORK_DELAYABLE_DEFINE(ipv4_acd_timer, ipv4_acd_timeout);
 
 /* List of IPv4 addresses under an active conflict detection. */
 static sys_slist_t active_acd_timers;
@@ -387,11 +389,6 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 
 out:
 	return NET_CONTINUE;
-}
-
-void net_ipv4_acd_init(void)
-{
-	k_work_init_delayable(&ipv4_acd_timer, ipv4_acd_timeout);
 }
 
 int net_ipv4_acd_start(struct net_if *iface, struct net_if_addr *ifaddr)

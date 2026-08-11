@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/xen/public/grant_table.h>
+#include <xen/public/grant_table.h>
 
 /**
  * @defgroup xen_grant_tables Xen grant tables

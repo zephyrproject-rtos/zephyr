@@ -61,22 +61,28 @@ BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
  */
 static uint8_t static_regions_num;
 
+#if defined(CONFIG_ARM_MPU_CM7_UNMAPPED_REGION)
+/* Lowest-priority catch-all region covering the entire 4GB address space:
+ * Strongly-ordered, no access, Execute-Never. It removes all unmapped holes
+ * from the MPU map, so that Cortex-M7 speculative accesses (Arm Cortex-M7
+ * TRM, "Memory system - Speculative accesses") and PLD linefills to
+ * faulting addresses (Arm Cortex-M7 erratum 1013783) cannot reach unmapped
+ * memory. Explicitly configured regions use higher region numbers and take
+ * precedence.
+ */
+static const struct arm_mpu_region unmapped_region =
+	MPU_REGION_ENTRY("UNMAPPED", 0U, {REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk});
+#define MPU_UNMAPPED_REGION_IDX  0U
+#define MPU_UNMAPPED_REGIONS_NUM 1U
+#else
+#define MPU_UNMAPPED_REGIONS_NUM 0U
+#endif /* CONFIG_ARM_MPU_CM7_UNMAPPED_REGION */
+
 /* Include architecture-specific internal headers. */
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_ARMV7_R)
-#include "arm_mpu_v7_internal.h"
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M52) || \
-	defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85) || \
-	defined(CONFIG_AARCH32_ARMV8_R)
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
 #include "arm_mpu_v8_internal.h"
 #else
-#error "Unsupported ARM CPU"
+#include "arm_mpu_v7_internal.h"
 #endif
 
 static int region_allocate_and_init(const uint8_t index,
@@ -319,47 +325,6 @@ void arm_core_mpu_disable(void)
 
 #if defined(CONFIG_USERSPACE)
 /**
- * @brief update configuration of an active memory partition
- */
-void arm_core_mpu_mem_partition_config_update(
-	struct z_arm_mpu_partition *partition,
-	k_mem_partition_attr_t *new_attr)
-{
-	/* Find the partition. ASSERT if not found. */
-	uint8_t i;
-	uint8_t reg_index = get_num_regions();
-
-	for (i = get_dyn_region_min_index(); i < get_num_regions(); i++) {
-		if (!is_enabled_region(i)) {
-			continue;
-		}
-
-		uint32_t base = mpu_region_get_base(i);
-
-		if (base != partition->start) {
-			continue;
-		}
-
-		uint32_t size = mpu_region_get_size(i);
-
-		if (size != partition->size) {
-			continue;
-		}
-
-		/* Region found */
-		reg_index = i;
-		break;
-	}
-	__ASSERT(reg_index != get_num_regions(),
-		 "Memory domain partition %p size %zu not found\n",
-		 (void *)partition->start, partition->size);
-
-	/* Modify the permissions */
-	partition->attr = *new_attr;
-	mpu_configure_region(reg_index, partition);
-}
-
-/**
  * @brief get the maximum number of available (free) MPU region indices
  *        for configuring dynamic MPU partitions
  */
@@ -504,22 +469,31 @@ int z_arm_mpu_init(void)
 {
 	uint32_t r_index;
 
-	if (mpu_config.num_regions > get_num_regions()) {
+	if (mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM > get_num_regions()) {
 		/* Attempt to configure more MPU regions than
 		 * what is supported by hardware. As this operation
 		 * is executed during system (pre-kernel) initialization,
 		 * we want to ensure we can detect an attempt to
 		 * perform invalid configuration.
 		 */
-		__ASSERT(0,
-			"Request to configure: %u regions (supported: %u)\n",
-			mpu_config.num_regions,
-			get_num_regions()
-		);
+		__ASSERT(0, "Request to configure: %u regions (supported: %u)\n",
+			 mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM, get_num_regions());
 		return -1;
 	}
 
 	LOG_DBG("total region count: %d", get_num_regions());
+
+#if defined(CONFIG_ARM_MPU_SKIP_ARCH_INIT)
+	/*
+	 * Early boot has already enabled the MPU. Re-programming requires
+	 * disabling it while executing from a region only reachable with
+	 * the MPU enabled.
+	 */
+	if ((__get_SCTLR() & SCTLR_M_Msk) != 0U) {
+		static_regions_num = mpu_config.num_regions;
+		return 0;
+	}
+#endif
 
 	arm_core_mpu_disable();
 
@@ -552,13 +526,20 @@ int z_arm_mpu_init(void)
 	/* Architecture-specific configuration */
 	mpu_init();
 
+#if defined(CONFIG_ARM_MPU_CM7_UNMAPPED_REGION)
+	/* Program the catch-all region first, so that it gets the lowest
+	 * priority region number and all other regions override it.
+	 */
+	region_init(MPU_UNMAPPED_REGION_IDX, &unmapped_region);
+#endif
+
 	/* Program fixed regions configured at SOC definition. */
 	for (r_index = 0U; r_index < mpu_config.num_regions; r_index++) {
-		region_init(r_index, &mpu_config.mpu_regions[r_index]);
+		region_init(r_index + MPU_UNMAPPED_REGIONS_NUM, &mpu_config.mpu_regions[r_index]);
 	}
 
 	/* Update the number of programmed MPU regions. */
-	static_regions_num = mpu_config.num_regions;
+	static_regions_num = mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM;
 #ifdef CONFIG_MEM_ATTR
 	/* DT-defined MPU regions. */
 	if (mpu_configure_regions_from_dt(&static_regions_num) == -EINVAL) {

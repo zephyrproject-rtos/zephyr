@@ -310,8 +310,6 @@
 			reg = <0x52880000 0x10000>;
 			status = "disabled";
 			wakeup-source;
-			#address-cells = <1>;
-			#size-cells = <1>;
 
 			lpcomp0_0: lpcomp0-0 {
 				compatible = "infineon,lp-comp-channel";

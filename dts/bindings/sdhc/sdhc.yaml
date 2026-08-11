@@ -59,3 +59,9 @@ properties:
     type: boolean
     description: |
       The host controller supports HS400 at 1.8V
+
+  mmc-hs400-enhanced-strobe:
+    type: boolean
+    description: |
+      The host controller and board support eMMC HS400 enhanced strobe.
+      This mode also requires HS400 at 1.8V and an 8-bit data bus.

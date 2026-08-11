@@ -17,6 +17,8 @@ endif()
 
 find_program(CMAKE_C_COMPILER   clang   ${find_program_clang_args})
 find_program(CMAKE_CXX_COMPILER clang++ ${find_program_clang_args})
+find_program(CMAKE_LLVM_COV llvm-cov ${find_program_clang_args})
+set(CMAKE_GCOV "${CMAKE_LLVM_COV} gcov" CACHE FILEPATH "Path to a program.")
 
 if(SYSROOT_DIR)
   # The toolchain has specified a sysroot dir, pass it to the compiler

@@ -161,3 +161,32 @@
 &cpu0 {
 	clock-frequency = <72000000>;
 };
+
+&clk_hfrco {
+	clock-frequency = <72000000>;
+	status = "okay";
+};
+
+&clk_hfxo {
+	clock-frequency = <50000000>;
+};
+
+&clk_hf {
+	clocks = <&clk_hfrco>;
+};
+
+&clk_lfxo {
+	status = "okay";
+};
+
+/* Used by leuart. */
+&clk_lfb {
+	clocks = <&clk_lfxo>;
+	status = "okay";
+};
+
+/* Used by rtcc. */
+&clk_lfe {
+	clocks = <&clk_lfxo>;
+	status = "okay";
+};

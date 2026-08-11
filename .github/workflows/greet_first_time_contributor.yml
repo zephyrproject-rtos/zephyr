@@ -12,13 +12,13 @@ permissions:
 jobs:
   check_for_first_interaction:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     if: github.repository == 'zephyrproject-rtos/zephyr'
     permissions:
       pull-requests: write # to comment on pull requests
       issues: write        # to comment on issues
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - uses: zephyrproject-rtos/action-first-interaction@58853996b1ac504b8e0f6964301f369d2bb22e5c # v1.1.1+zephyr.6
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}

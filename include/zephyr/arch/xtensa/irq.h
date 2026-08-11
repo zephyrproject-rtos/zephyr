@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_
 
 #include <stdint.h>
 
@@ -172,12 +172,6 @@ int z_soc_irq_is_enabled(unsigned int irq);
 
 #define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
 
-#ifdef CONFIG_DYNAMIC_INTERRUPTS
-extern int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
-				     void (*routine)(const void *parameter),
-				     const void *parameter, uint32_t flags);
-#endif
-
 #else
 
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
@@ -303,4 +297,4 @@ int xtensa_irq_is_enabled(unsigned int irq);
 
 #include <zephyr/irq.h>
 
-#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_IRQ_H_ */

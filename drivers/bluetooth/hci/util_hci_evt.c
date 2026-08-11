@@ -161,7 +161,7 @@ bool hci_ext_adv_report_process(struct hci_ext_adv_discard_ctx *ctx, const uint8
 	/* Every report is kept. */
 	if (kept_cnt == num_reports) {
 		if (buf_tailroom < len) {
-			LOG_ERR("Not enough space in buffer %zu/%zu", len, buf_tailroom);
+			LOG_DBG("Not enough space in buffer %zu/%zu", len, buf_tailroom);
 			net_buf_unref(buf);
 			return true;
 		}
@@ -178,7 +178,7 @@ bool hci_ext_adv_report_process(struct hci_ext_adv_discard_ctx *ctx, const uint8
 	}
 
 	if (buf_tailroom < repack_len) {
-		LOG_ERR("Not enough space in buffer %zu/%zu", repack_len, buf_tailroom);
+		LOG_DBG("Not enough space in buffer %zu/%zu", repack_len, buf_tailroom);
 		net_buf_unref(buf);
 		return true;
 	}

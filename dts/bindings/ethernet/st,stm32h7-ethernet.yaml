@@ -10,7 +10,7 @@ description: |
 compatible: "st,stm32h7-ethernet"
 
 include:
-  - "st,stm32-ethernet-common.yaml"
+  - "st,stm32-ethernet.yaml"
   - "memory-region.yaml"
 
 properties:

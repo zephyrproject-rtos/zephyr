@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_
 
 /**
  * @brief Volume Offset Control Service (VOCS)
@@ -130,10 +130,10 @@ void *bt_vocs_svc_decl_get(struct bt_vocs *vocs);
 /**
  * @brief Get the connection pointer of a client instance
  *
- * Get the Bluetooth connection pointer of a Audio Input Control Service
+ * Get the Bluetooth connection pointer of a Volume Offset Control Service
  * client instance.
  *
- * @param vocs    Audio Input Control Service client instance pointer.
+ * @param vocs    Volume Offset Control Service client instance pointer.
  * @param conn    Connection pointer.
  *
  * @return 0 if success, errno on failure.
@@ -345,4 +345,4 @@ int bt_vocs_discover(struct bt_conn *conn, struct bt_vocs *inst,
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VOCS_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VOCS_H_ */

@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2026, Cirrus Logic, Inc.
+ * Copyright (c) 2026 Cirrus Logic, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Core Driver for Cirrus Logic CS40L26/27 Haptic Devices
+ * @brief Core functions for Cirrus Logic CS40L26/27 haptic drivers
  */
 
 #include "cs40l26.h"
@@ -113,109 +113,46 @@ LOG_MODULE_REGISTER(CS40L26, CONFIG_HAPTICS_LOG_LEVEL);
 #define CS40L26_NUM_BUZ_EFFECTS     1
 #define CS40L26_FLASH_MEMORY_ERASED 0xFFFFFFFF
 
-#define CS40L26_WRITE_BE32(...)                                                                    \
-	.buf = (uint32_t[]){FOR_EACH(sys_cpu_to_be32, (,), __VA_ARGS__)},                          \
-	.len = NUM_VA_ARGS(__VA_ARGS__)
+enum cs40l26_monitor {
+	CS40L26_MONITOR_BEMF,
+	CS40L26_MONITOR_VBST,
+	CS40L26_MONITOR_VOUT,
+};
 
-static const struct cs40l26_multi_write cs40l26_irq_clear[] = {
+static const struct cs40l26_sensor cs40l26_sensors[] = {
+	[HAPTICS_MONITOR_BEMF] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+	[HAPTICS_MONITOR_VBST] = {.is_signed = false, .n = 24, .m = 0, .full_scale = 14},
+	[HAPTICS_MONITOR_VOUT] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+};
+
+static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
 	{.addr = CS40L26_REG_IRQ1_EINT_1,
-	 CS40L26_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
+	 CS40LXX_MULTI_WRITE_BE32(0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU)},
 };
 
-static const struct cs40l26_multi_write cs40l26_irq_masks[] = {
+static const struct cs40lxx_multi_write cs40l26_irq_masks[] = {
 	{.addr = CS40L26_REG_IRQ1_MASK_1,
-	 CS40L26_WRITE_BE32(~CS40L26_IRQ_MASK1, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
-			    0xFFFFFFFFU)},
+	 CS40LXX_MULTI_WRITE_BE32(~CS40L26_IRQ_MASK1, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU,
+				  0xFFFFFFFFU)},
 };
 
-static const struct cs40l26_multi_write cs40l26_pseq[] = {
+static const struct cs40lxx_multi_write cs40l26_pseq[] = {
 	{.addr = CS40L26_REG_PM_POWER_ON_SEQUENCE,
-	 CS40L26_WRITE_BE32(0x00000001U, 0x00011073U, 0x000FFFFFU, 0x000304FFU, 0x00FFFFFFU,
-			    0x000304FFU, 0x00FFFFFFU, 0x000304FFU, 0x00FFFFFFU, 0x000304FFU,
-			    0x00FFFFFFU)},
+	 CS40LXX_MULTI_WRITE_BE32(0x00000001U, 0x00011073U, 0x000FFFFFU, 0x000304FFU, 0x00FFFFFFU,
+				  0x000304FFU, 0x00FFFFFFU, 0x000304FFU, 0x00FFFFFFU, 0x000304FFU,
+				  0x00FFFFFFU)},
 };
-
-/* Source attenuation in decibels (dB) stored in signed Q21.2 format */
-static const uint8_t cs40l26_attenuation[] = {
-	0xFF, /* mute */
-	0xA0, 0x88, 0x7A, 0x70, 0x68, 0x62, 0x5C, 0x58, 0x54, 0x50, 0x4D, 0x4A, 0x47,
-	0x44, 0x42, 0x40, 0x3E, 0x3C, 0x3A, 0x38, 0x36, 0x35, 0x33, 0x32, 0x30, /* 25% */
-	0x2F, 0x2D, 0x2C, 0x2B, 0x2A, 0x29, 0x28, 0x27, 0x25, 0x24, 0x23, 0x23, 0x22,
-	0x21, 0x20, 0x1F, 0x1E, 0x1D, 0x1D, 0x1C, 0x1B, 0x1A, 0x1A, 0x19, 0x18, /* 50% */
-	0x17, 0x17, 0x16, 0x15, 0x15, 0x14, 0x14, 0x13, 0x12, 0x12, 0x11, 0x11, 0x10,
-	0x10, 0x0F, 0x0E, 0x0E, 0x0D, 0x0D, 0x0C, 0x0C, 0x0B, 0x0B, 0x0A, 0x0A, /* 75% */
-	0x0A, 0x09, 0x09, 0x08, 0x08, 0x07, 0x07, 0x06, 0x06, 0x06, 0x05, 0x05, 0x04,
-	0x04, 0x04, 0x03, 0x03, 0x03, 0x02, 0x02, 0x01, 0x01, 0x01, 0x00, 0x00 /* 100% */
-};
-
-static bool cs40l26_is_ready(const struct device *const dev)
-{
-	const struct cs40l26_config *const config = dev->config;
-
-	return config->bus_io->is_ready(dev);
-}
-
-static const struct device *const cs40l26_get_control_port(const struct device *const dev)
-{
-	const struct cs40l26_config *const config = dev->config;
-
-	return config->bus_io->get_device(dev);
-}
-
-static int cs40l26_burst_read(const struct device *const dev, const uint32_t addr,
-			      uint32_t *const rx, const uint32_t len)
-{
-	const struct cs40l26_config *const config = dev->config;
-
-	return config->bus_io->read(dev, addr, rx, len);
-}
-
-static int cs40l26_read(const struct device *const dev, const uint32_t addr, uint32_t *const rx)
-{
-	return cs40l26_burst_read(dev, addr, rx, 1);
-}
-
-static int cs40l26_burst_write(const struct device *const dev, const uint32_t addr,
-			       uint32_t *const tx, const uint32_t len)
-{
-	const struct cs40l26_config *const config = dev->config;
-
-	return config->bus_io->write(dev, addr, tx, len);
-}
-
-static int cs40l26_write(const struct device *const dev, const uint32_t addr, uint32_t val)
-{
-	return cs40l26_burst_write(dev, addr, &val, 1);
-}
-
-static int cs40l26_multi_write(const struct device *const dev,
-			       const struct cs40l26_multi_write *const multi_write,
-			       const uint32_t len)
-{
-	const struct cs40l26_config *const config = dev->config;
-	int ret;
-
-	for (int i = 0; i < len; i++) {
-		ret = config->bus_io->raw_write(dev, multi_write[i].addr, multi_write[i].buf,
-						multi_write[i].len);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
 
 static int cs40l26_poll(const struct device *const dev, const uint32_t addr, const uint32_t val,
 			const k_timeout_t timeout)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	const struct cs40l26_config *const config = dev->config;
 	const k_timepoint_t end = sys_timepoint_calc(timeout);
 	uint32_t reg_val;
 	int ret;
 
 	do {
-		ret = cs40l26_read(dev, addr, &reg_val);
+		ret = cs40lxx_read(&config->io_bus, addr, &reg_val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -234,14 +171,14 @@ static int cs40l26_poll(const struct device *const dev, const uint32_t addr, con
 }
 
 static inline bool cs40l26_valid_wavetable_source(const struct device *const dev,
-						  const enum cs40l26_bank bank,
-						  const uint16_t index)
+						  const enum haptics_source src,
+						  const union haptics_config *const cfg)
 {
-	switch (bank) {
-	case CS40L26_ROM_BANK:
-		return index < CS40L26_NUM_ROM_EFFECTS;
-	case CS40L26_BUZ_BANK:
-		return index < CS40L26_NUM_BUZ_EFFECTS;
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
+		return cfg->idx < CS40L26_NUM_ROM_EFFECTS;
+	case CS40L26_SOURCE_BUZ:
+		return cfg->idx < CS40L26_NUM_BUZ_EFFECTS;
 	default:
 		return false;
 	}
@@ -249,12 +186,12 @@ static inline bool cs40l26_valid_wavetable_source(const struct device *const dev
 
 static int cs40l26_write_mailbox(const struct device *const dev, const uint32_t mailbox_command)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	const struct cs40l26_config *const config = dev->config;
 	const k_timepoint_t end = sys_timepoint_calc(CS40L26_T_IW);
 	int ret;
 
 	do {
-		ret = cs40l26_write(dev, CS40L26_REG_DSP_V1MBOX, mailbox_command);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_DSP_V1MBOX, mailbox_command);
 		if (ret >= 0) {
 			return cs40l26_poll(dev, CS40L26_REG_DSP_V1MBOX, 0, CS40L26_T_MBOX_CLEAR);
 		}
@@ -270,7 +207,7 @@ static int cs40l26_write_mailbox(const struct device *const dev, const uint32_t 
 static int cs40l26_increment_mailbox(const struct device *const dev, uint32_t *const mbox_ptr)
 {
 	if (*mbox_ptr < CS40L26_REG_DSP_MBOX_8) {
-		*mbox_ptr += CS40L26_REG_WIDTH;
+		*mbox_ptr += CS40LXX_REGISTER_WIDTH;
 	} else {
 		*mbox_ptr = CS40L26_REG_DSP_MBOX_2;
 	}
@@ -321,8 +258,8 @@ static void cs40l26_error_callback(const struct device *const dev, const uint32_
 
 static int cs40l26_process_mailbox(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	uint32_t mbox_rd_ptr, mbox_status, mbox_val, mbox_wt_ptr;
+	const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
 	int ret;
 
@@ -346,7 +283,7 @@ static int cs40l26_process_mailbox(const struct device *const dev)
 	}
 
 	do {
-		ret = cs40l26_read(dev, mbox_rd_ptr, &mbox_val);
+		ret = cs40lxx_read(&config->io_bus, mbox_rd_ptr, &mbox_val);
 		if (ret < 0) {
 			return ret;
 		}
@@ -389,13 +326,14 @@ static int cs40l26_process_mailbox(const struct device *const dev)
 		}
 	} while (mbox_rd_ptr != mbox_wt_ptr);
 
-	return cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_DSP_VIRTUAL2_MBOX_WR_MASK1);
+	return cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+			     CS40L26_DSP_VIRTUAL2_MBOX_WR_MASK1);
 }
 
 static int cs40l26_process_interrupts(const struct device *const dev,
 				      const uint32_t *const irq_ints)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	const struct cs40l26_config *const config = dev->config;
 	uint32_t error_bitmask = 0;
 	int ret;
 
@@ -404,7 +342,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_AMP_ERR_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_AMP_ERR_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -415,7 +354,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERTEMPERATURE;
 
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_TEMP_ERR_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_TEMP_ERR_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -425,7 +365,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 		LOG_INST_WRN(config->log, "current limited");
 
 		/* This is not a fatal error, so don't add it to the error bitmask. */
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_BST_IPK_FLAG_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_BST_IPK_FLAG_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -436,7 +377,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERCURRENT;
 
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_BST_SHORT_ERR_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_BST_SHORT_ERR_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -447,7 +389,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_UNDERVOLTAGE;
 
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_BST_DCM_UVP_ERR_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_BST_DCM_UVP_ERR_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -458,7 +401,8 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 
 		error_bitmask |= HAPTICS_ERROR_OVERVOLTAGE;
 
-		ret = cs40l26_write(dev, CS40L26_REG_IRQ1_EINT_1, CS40L26_BST_OVP_ERR_MASK1);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_IRQ1_EINT_1,
+				    CS40L26_BST_OVP_ERR_MASK1);
 		if (ret < 0) {
 			return ret;
 		}
@@ -474,15 +418,18 @@ static int cs40l26_process_interrupts(const struct device *const dev,
 static int cs40l26_retrieve_interrupt_statuses(const struct device *const dev,
 					       uint32_t *const irq_ints)
 {
+	const struct cs40l26_config *const config = dev->config;
 	uint32_t irq_masks[CS40L26_NUM_IRQ1_INT];
 	int ret;
 
-	ret = cs40l26_burst_read(dev, CS40L26_REG_IRQ1_EINT_1, irq_ints, CS40L26_NUM_IRQ1_INT);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L26_REG_IRQ1_EINT_1, irq_ints,
+				 CS40L26_NUM_IRQ1_INT);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l26_burst_read(dev, CS40L26_REG_IRQ1_MASK_1, irq_masks, CS40L26_NUM_IRQ1_INT);
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L26_REG_IRQ1_MASK_1, irq_masks,
+				 CS40L26_NUM_IRQ1_INT);
 	if (ret < 0) {
 		return ret;
 	}
@@ -512,7 +459,7 @@ static void cs40l26_interrupt_worker(struct k_work *work)
 		return;
 	}
 
-	ret = cs40l26_read(data->dev, CS40L26_REG_IRQ1_STATUS, &irq1_status);
+	ret = cs40lxx_read(&config->io_bus, CS40L26_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
 		goto error_pm;
 	}
@@ -542,7 +489,7 @@ static void cs40l26_interrupt_worker(struct k_work *work)
 		}
 	}
 
-	ret = cs40l26_read(data->dev, CS40L26_REG_IRQ1_STATUS, &irq1_status);
+	ret = cs40lxx_read(&config->io_bus, CS40L26_REG_IRQ1_STATUS, &irq1_status);
 	if (ret < 0) {
 		goto error_pm;
 	}
@@ -590,12 +537,14 @@ static int cs40l26_irq_config(const struct device *const dev)
 		return ret;
 	}
 
-	ret = cs40l26_multi_write(dev, cs40l26_irq_masks, ARRAY_SIZE(cs40l26_irq_masks));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l26_irq_masks,
+				  ARRAY_SIZE(cs40l26_irq_masks));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l26_multi_write(dev, cs40l26_irq_clear, ARRAY_SIZE(cs40l26_irq_clear));
+	ret = cs40lxx_multi_write(&config->io_bus, cs40l26_irq_clear,
+				  ARRAY_SIZE(cs40l26_irq_clear));
 	if (ret < 0) {
 		return ret;
 	}
@@ -832,12 +781,12 @@ static int cs40l26_fingerprint(const struct device *const dev)
 	uint32_t otpid, ids[2];
 	int ret;
 
-	ret = cs40l26_burst_read(dev, CS40L26_REG_DEVID, ids, ARRAY_SIZE(ids));
+	ret = cs40lxx_burst_read(&config->io_bus, CS40L26_REG_DEVID, ids, ARRAY_SIZE(ids));
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = cs40l26_read(dev, CS40L26_REG_OTPID, &otpid);
+	ret = cs40lxx_read(&config->io_bus, CS40L26_REG_OTPID, &otpid);
 	if (ret < 0) {
 		return ret;
 	}
@@ -882,7 +831,7 @@ static int cs40l26_reset(const struct device *const dev)
 
 		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 	} else {
-		ret = cs40l26_write(dev, CS40L26_REG_SFT_RESET, CS40L26_SFT_RESET);
+		ret = cs40lxx_write(&config->io_bus, CS40L26_REG_SFT_RESET, CS40L26_SFT_RESET);
 	}
 	if (ret < 0) {
 		return ret;
@@ -998,15 +947,17 @@ static int cs40l26_teardown(const struct device *const dev)
 }
 #endif /* CONFIG_PM_DEVICE */
 
-int cs40l26_calibrate(const struct device *const dev)
+static int cs40l26_calibrate(const struct device *dev, const uint32_t routine)
 {
 	const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
 	uint32_t f0 = 0, redc = 0;
 	int ret;
 
+	ARG_UNUSED(routine);
+
 	if (!IS_ENABLED(CONFIG_HAPTICS_CS40L26_CALIBRATION)) {
-		LOG_INST_ERR(config->log, "calibration is disabled (%d)", -EPERM);
+		LOG_INST_DBG(config->log, "calibration is disabled");
 		return -EPERM;
 	}
 
@@ -1096,6 +1047,102 @@ error_pm:
 	return ret;
 }
 
+static int cs40l26_monitor_get(const struct device *dev, const enum haptics_monitor monitor,
+			       const enum haptics_monitor_type type, struct sensor_value *const val)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
+	uint32_t reading;
+	int offset, ret;
+
+	if (type >= HAPTICS_MONITOR_TYPE_SINGLE) {
+		LOG_INST_DBG(config->log, "unsupported haptics monitor type %d", type);
+		return -ENOTSUP;
+	}
+
+	offset = type * CS40L26_LOGGER_TYPE_STEP;
+
+	switch (monitor) {
+	case HAPTICS_MONITOR_BEMF:
+		offset += (CS40L26_MONITOR_BEMF * CS40L26_LOGGER_SRC_STEP);
+		break;
+	case HAPTICS_MONITOR_VBST:
+		offset += (CS40L26_MONITOR_VBST * CS40L26_LOGGER_SRC_STEP);
+		break;
+	case HAPTICS_MONITOR_VOUT:
+		offset += (CS40L26_MONITOR_VOUT * CS40L26_LOGGER_SRC_STEP);
+		break;
+	default:
+		LOG_INST_DBG(config->log, "unsupported haptics monitor %d", monitor);
+		return -ENOTSUP;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_read_offset(dev, CS40L26_REG_LOGGER_DATA, &reading, offset);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	if (ret >= 0) {
+		ret = sensor_value_from_fixed_point(val, reading, cs40l26_sensors[monitor].m,
+						    cs40l26_sensors[monitor].n,
+						    cs40l26_sensors[monitor].is_signed);
+		if (ret < 0) {
+			LOG_INST_DBG(config->log, "failed fixed-point conversion (%d)", ret);
+			return ret;
+		}
+
+		ret = sensor_value_scale(val, cs40l26_sensors[monitor].full_scale, val);
+	}
+
+	return ret;
+}
+
+static int cs40l26_monitor_set(const struct device *dev, const enum haptics_monitor monitor,
+			       const bool enable)
+{
+	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	struct cs40l26_data *const data = dev->data;
+	int ret;
+
+	if (monitor != HAPTICS_MONITOR_ALL) {
+		LOG_INST_DBG(config->log, "unsupported haptics monitor %d", monitor);
+		return -ENOTSUP;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
+	if (ret < 0) {
+		LOG_INST_DBG(config->log, "timed out waiting for lock (%d)", ret);
+		goto error_pm;
+	}
+
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_LOGGER_ENABLE, (uint32_t)enable);
+
+	(void)k_mutex_unlock(&data->lock);
+
+error_pm:
+	(void)pm_device_runtime_put(dev);
+
+	return ret;
+}
+
 static int cs40l26_register_error_callback(const struct device *dev, haptics_error_callback_t cb,
 					   void *const user_data)
 {
@@ -1107,29 +1154,37 @@ static int cs40l26_register_error_callback(const struct device *dev, haptics_err
 	return 0;
 }
 
-int cs40l26_select_output(const struct device *const dev, const enum cs40l26_bank bank,
-			  const uint16_t index)
+static int cs40l26_select_source(const struct device *dev, const enum haptics_source src,
+				 const union haptics_config *const cfg)
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
 	uint32_t output;
 	int ret;
 
-	if (!cs40l26_valid_wavetable_source(dev, bank, index)) {
-		LOG_INST_ERR(config->log, "invalid wavetable selection (%d)", -EINVAL);
-		return -EINVAL;
-	}
-
-	switch (bank) {
-	case CS40L26_ROM_BANK:
-		output = index | CS40L26_ROM_BANK_CMD;
+	switch ((int)src) {
+	case HAPTICS_SOURCE_ROM:
+		output = CS40L26_ROM_BANK_CMD;
 		break;
-	case CS40L26_BUZ_BANK:
+	case CS40L26_SOURCE_BUZ:
 		output = CS40L26_BUZ_BANK_CMD;
 		break;
 	default:
+		LOG_INST_DBG(config->log, "unsupported haptics source %d", src);
+		return -ENOTSUP;
+	}
+
+	if (cfg == NULL) {
+		LOG_INST_DBG(config->log, "idx required for supported haptic sources");
 		return -EINVAL;
 	}
+
+	if (!cs40l26_valid_wavetable_source(dev, src, cfg)) {
+		LOG_INST_DBG(config->log, "invalid wavetable selection");
+		return -EINVAL;
+	}
+
+	output |= cfg->idx;
 
 	ret = k_mutex_lock(&data->lock, CS40L26_T_WAIT);
 	if (ret < 0) {
@@ -1144,16 +1199,18 @@ int cs40l26_select_output(const struct device *const dev, const enum cs40l26_ban
 	return ret;
 }
 
-int cs40l26_set_gain(const struct device *const dev, const uint8_t gain)
+static int cs40l26_set_level(const struct device *dev, const enum haptics_source src,
+			     const union haptics_config *const cfg, const uint32_t level)
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
-	uint32_t attenuation;
 	int ret;
 
-	if (gain > CS40L26_MAX_GAIN) {
-		LOG_INST_ERR(config->log, "invalid gain, %u >= %u", gain, CS40L26_MAX_GAIN);
-		return -EINVAL;
+	ARG_UNUSED(cfg);
+
+	if (src != HAPTICS_SOURCE_ALL) {
+		LOG_INST_DBG(config->log, "unsupported haptics source %d", src);
+		return -ENOTSUP;
 	}
 
 	ret = pm_device_runtime_get(dev);
@@ -1167,13 +1224,7 @@ int cs40l26_set_gain(const struct device *const dev, const uint8_t gain)
 		goto error_pm;
 	}
 
-	if (gain == 0) {
-		attenuation = CS40L26_MAX_ATTENUATION;
-	} else {
-		attenuation = (uint32_t)cs40l26_attenuation[gain];
-	}
-
-	ret = cs40l26_firmware_write(data->dev, CS40L26_REG_SOURCE_ATTENUATION, attenuation);
+	ret = cs40l26_firmware_write(dev, CS40L26_REG_SOURCE_ATTENUATION, level);
 
 	(void)k_mutex_unlock(&data->lock);
 
@@ -1227,17 +1278,15 @@ static int cs40l26_stop_output(const struct device *const dev)
 	return ret;
 }
 
-static int cs40l26_select_source(const struct device *dev, const enum haptics_source src,
-				 const union haptics_config *const cfg)
-{
-	return -ENOTSUP;
-}
-
 static DEVICE_API(haptics, cs40l26_driver_api) = {
+	.calibrate = &cs40l26_calibrate,
+	.monitor_get = &cs40l26_monitor_get,
+	.monitor_set = &cs40l26_monitor_set,
+	.register_error_callback = &cs40l26_register_error_callback,
 	.select_source = &cs40l26_select_source,
+	.set_level = &cs40l26_set_level,
 	.start_output = &cs40l26_start_output,
 	.stop_output = &cs40l26_stop_output,
-	.register_error_callback = &cs40l26_register_error_callback,
 };
 
 static int cs40l26_pm_resume(const struct device *const dev)
@@ -1245,7 +1294,7 @@ static int cs40l26_pm_resume(const struct device *const dev)
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	int ret;
 
-	ret = pm_device_runtime_get(cs40l26_get_control_port(dev));
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
 		return ret;
 	}
@@ -1264,7 +1313,7 @@ static int cs40l26_pm_resume(const struct device *const dev)
 #ifdef CONFIG_PM_DEVICE
 static int cs40l26_pm_suspend(const struct device *const dev)
 {
-	__maybe_unused const struct cs40l26_config *const config = dev->config;
+	const struct cs40l26_config *const config = dev->config;
 	int ret;
 
 	ret = cs40l26_write_mailbox(dev, CS40L26_MBOX_ALLOW_HIBERNATION);
@@ -1275,7 +1324,7 @@ static int cs40l26_pm_suspend(const struct device *const dev)
 
 	LOG_INST_DBG(config->log, "allowing hibernation");
 
-	(void)pm_device_runtime_put(cs40l26_get_control_port(dev));
+	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
 	return ret;
 }
@@ -1321,7 +1370,7 @@ static int cs40l26_pm_turn_on(const struct device *const dev)
 		}
 	}
 
-	ret = pm_device_runtime_get(cs40l26_get_control_port(dev));
+	ret = pm_device_runtime_get(cs40lxx_get_control_port(&config->io_bus));
 	if (ret < 0) {
 		goto error_pm_reset;
 	}
@@ -1339,7 +1388,7 @@ static int cs40l26_pm_turn_on(const struct device *const dev)
 	}
 
 error_pm_io:
-	(void)pm_device_runtime_put(cs40l26_get_control_port(dev));
+	(void)pm_device_runtime_put(cs40lxx_get_control_port(&config->io_bus));
 
 error_pm_reset:
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL) {
@@ -1387,7 +1436,7 @@ static int cs40l26_init(const struct device *dev)
 		k_work_init_delayable(&data->interrupt_worker, cs40l26_interrupt_worker);
 	}
 
-	if (!cs40l26_is_ready(dev)) {
+	if (!cs40lxx_is_bus_ready(&config->io_bus)) {
 		LOG_INST_DBG(config->log, "control port is not ready");
 		return -ENODEV;
 	}
@@ -1426,10 +1475,10 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 							 .output = CS40L26_ROM_BANK_CMD}
 
 #define HAPTICS_CS40L26_BUS(inst)                                                                  \
-	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
-		(.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .bus_io = &cs40l26_bus_io_i2c,),	   \
-		(.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		           \
-			.bus_io = &cs40l26_bus_io_spi,))
+	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
+		(.io_bus.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .io_bus.io = &cs40lxx_io_i2c,),	   \
+		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
+			.io_bus.io = &cs40lxx_io_spi,))
 
 #define HAPTICS_CS40L26_FLASH_DEVICE(inst)                                                         \
 	DEVICE_DT_GET_OR_NULL(DT_MTD_FROM_FIXED_PARTITION(DT_INST_PHANDLE(inst, flash_storage)))

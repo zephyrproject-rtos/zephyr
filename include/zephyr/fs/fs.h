@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public API for the file system subsystem.
+ * @ingroup file_system_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_FS_FS_H_
 #define ZEPHYR_INCLUDE_FS_FS_H_
 
@@ -63,6 +69,9 @@ enum {
 
 	/** Identifier for in-tree Virtiofs file system. */
 	FS_VIRTIOFS,
+
+	/** Identifier for in-tree RpMsgFS file system */
+	FS_RPMSGFS,
 
 	/** Identifier for in-tree Native Simulator mount file system. */
 	FS_NATIVE_MOUNT,

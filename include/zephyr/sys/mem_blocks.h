@@ -152,7 +152,7 @@ struct sys_multi_mem_blocks {
 	BUILD_ASSERT(IS_POWER_OF_TWO(balign), "balign must be a power of 2"); \
 	mbmod uint8_t __noinit_named(sys_mem_blocks_buf_##name)		\
 		__aligned(WB_UP(balign))				\
-		_sys_mem_blocks_buf_##name[num_blks * WB_UP(blk_sz)];	\
+		_sys_mem_blocks_buf_##name[(num_blks) * WB_UP(blk_sz)];	\
 	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, blk_sz, num_blks,	\
 					   _sys_mem_blocks_buf_##name,	\
 					   mbmod);

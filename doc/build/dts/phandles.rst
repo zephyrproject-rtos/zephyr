@@ -373,3 +373,6 @@ See also
 
 - :ref:`dt-bindings-specifier-space`: how to manually specify a phandle-array
   property's specifier space
+
+- :ref:`dt-bindings-dependency-mode`: how to control node dependencies using
+  phandle properties

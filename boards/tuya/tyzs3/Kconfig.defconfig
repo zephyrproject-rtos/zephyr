@@ -4,10 +4,4 @@
 
 if BOARD_TYZS3
 
-config CMU_HFXO_FREQ
-	default 38400000
-
-config CMU_LFXO_FREQ
-	default 32768
-
 endif # BOARD_TYZS3

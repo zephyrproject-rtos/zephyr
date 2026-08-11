@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARC_V2_VPX_ARC_VPX_H_
 #define ZEPHYR_INCLUDE_ARCH_ARC_V2_VPX_ARC_VPX_H_
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /**
  * @brief Obtain a cooperative lock on the VPX vector registers

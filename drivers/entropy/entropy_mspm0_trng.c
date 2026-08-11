@@ -17,13 +17,14 @@
 #include <ti/driverlib/dl_trng.h>
 #include <ti/devices/msp/peripherals/hw_trng.h>
 
-#define TRNG_DECIMATION_RATE	CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE
+#define TRNG_DECIMATION_RATE                                                                       \
+	CONCAT(DL_TRNG_DECIMATION_RATE_, CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE)
 #define TRNG_SAMPLE_SIZE	4
 
 #define TRNG_CLOCK_DIVIDE_RATIO		CONCAT(DL_TRNG_CLOCK_DIVIDE_, DT_INST_PROP(0, ti_clk_div))
 
-#define TRNG_SAMPLE_GENERATE_TIME	(1000000 * (32 * (TRNG_DECIMATION_RATE + 1)) \
-			/ (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / (TRNG_CLOCK_DIVIDE_RATIO)))
+#define TRNG_FREQ                 (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / DT_INST_PROP(0, ti_clk_div))
+#define TRNG_SAMPLE_GENERATE_TIME (1000000 * (32 * (TRNG_DECIMATION_RATE + 1)) / (TRNG_FREQ))
 
 struct entropy_mspm0_trng_config {
 	TRNG_Regs *base;

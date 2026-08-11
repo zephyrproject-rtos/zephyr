@@ -13,6 +13,12 @@ config CPU_CORTEX_A
 	select ARCH_HAS_SINGLE_THREAD_SUPPORT if !SMP
 	select CPU_HAS_DCACHE
 	select CPU_HAS_ICACHE
+	select ARCH_HAS_PMU
+	select ARCH_SUPPORTS_COREDUMP_THREADS
+	# On SMP, threads on other CPUs may be actively running with a stale
+	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
+	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
+	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	imply FPU
 	imply FPU_SHARING
 	help
@@ -100,6 +106,13 @@ config CPU_CORTEX_A320
 	  enhanced SVE2, improved security extensions, and specialized performance
 	  optimizations.
 
+config CPU_CORTEX_A720
+	bool
+	select CPU_CORTEX_A
+	select ARMV9_A
+	help
+	  This option signifies the use of a Cortex-A720 CPU
+
 config CPU_CORTEX_R82
 	bool
 	select CPU_AARCH64_CORTEX_R
@@ -154,9 +167,6 @@ config AARCH64_IMAGE_HEADER
 	help
 	  This option enables standard ARM64 boot image header used by Linux
 	  and understood by loaders such as u-boot on Xen xl tool.
-
-config PRIVILEGED_STACK_SIZE
-	default 4096
 
 config KOBJECT_TEXT_AREA
 	default 1024 if UBSAN
@@ -480,5 +490,7 @@ config ARM64_RNG
 	help
 	  This option signifies that the processor has the FEAT_RNG or FEAT_RNG_TRAP
 	  extension.
+
+source "arch/arm64/core/Kconfig.pmu"
 
 endif # CPU_CORTEX_A || CPU_AARCH64_CORTEX_R

@@ -81,7 +81,7 @@ void arch_irq_enable(unsigned int irq)
 		return;
 	}
 #endif
-	csr_set(sie, 1 << irq);
+	csr_set(sie, 1UL << irq);
 #else
 #if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
 	/* mie is 64 bits in AIA; upper 32 bits are accessed using mieh CSR for RV32 */
@@ -90,7 +90,7 @@ void arch_irq_enable(unsigned int irq)
 		return;
 	}
 #endif
-	csr_set(mie, 1 << irq);
+	csr_set(mie, 1UL << irq);
 #endif
 }
 
@@ -124,7 +124,7 @@ void arch_irq_disable(unsigned int irq)
 		return;
 	}
 #endif
-	csr_clear(sie, 1 << irq);
+	csr_clear(sie, 1UL << irq);
 #else
 #if !defined(CONFIG_64BIT) && defined(CONFIG_RISCV_ISA_EXT_SMAIA)
 	/* mie is 64 bits in AIA; upper 32 bits are accessed using mieh CSR for RV32 */
@@ -133,13 +133,13 @@ void arch_irq_disable(unsigned int irq)
 		return;
 	}
 #endif
-	csr_clear(mie, 1 << irq);
+	csr_clear(mie, 1UL << irq);
 #endif
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
-	uint32_t ie;
+	unsigned long ie;
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_AIA)
 	unsigned int level = irq_get_level(irq);
@@ -175,7 +175,7 @@ int arch_irq_is_enabled(unsigned int irq)
 	ie = csr_read(mie);
 #endif
 
-	return !!(ie & (1 << irq));
+	return !!(ie & (1UL << irq));
 }
 
 #if defined(CONFIG_RISCV_HAS_PLIC)

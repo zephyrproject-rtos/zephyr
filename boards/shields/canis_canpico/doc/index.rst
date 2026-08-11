@@ -147,7 +147,7 @@ in your Zephyr application. For example:
    https://canislabs.com/
 
 .. _CANPico CAN Bus Shield:
-   https://canislabs.com/canpico/
+   https://kentindell.github.io/canpico
 
 .. _MCP2517FD:
    https://www.microchip.com/en-us/product/MCP2518FD

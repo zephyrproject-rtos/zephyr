@@ -5,17 +5,22 @@
 import logging
 import os
 import re
+import subprocess
 from dataclasses import dataclass
 
 import yaml
 from west.util import WestNotFound, west_topdir
 
-from zspdx.cmakecache import parseCMakeCacheFile
-from zspdx.cmakefileapijson import parseReply
-from zspdx.getincludes import getCIncludes
+from zspdx.cmakecache import parse_cmake_cache_file
+from zspdx.cmakefileapi import TargetType
+from zspdx.cmakefileapijson import parse_reply, parse_toolchains_and_info
+from zspdx.getincludes import get_c_includes
 from zspdx.model import (
+    BuildInfo,
     ComponentPurpose,
+    ExternalReferenceType,
     RelationshipType,
+    SBOMBuild,
     SBOMComponent,
     SBOMDocument,
     SBOMFile,
@@ -24,21 +29,95 @@ from zspdx.model import (
 
 _logger = logging.getLogger(__name__)
 
+# Organization credited as the SBOM author and as the supplier of Zephyr and its
+# upstream-mirrored modules (all hosted under github.com/zephyrproject-rtos).
+ZEPHYR_ORGANIZATION = "The Zephyr Project"
+
+# Name of the tool recorded in the SPDX Creator field.
+SPDX_TOOL_NAME = "Zephyr SPDX builder"
+
+# GitHub namespace under which Zephyr mirrors its modules.
+ZEPHYR_GITHUB_NAMESPACE = "zephyrproject-rtos"
+
+# Free-form notes emitted as package comments to clarify each package's role. The
+# "-sources" and "-deps" packages are systematically emitted for every module, so
+# the distinction (and why unused modules still appear) is spelled out here.
+SOURCES_COMMENT = (
+    "Source package: this component's source tree as checked out in the west "
+    "workspace. Files that were compiled into the build are listed here; a "
+    "component contributing no compiled files appears with no files."
+)
+DEPS_COMMENT = (
+    "Reference-only dependency package: identifies an upstream Zephyr module "
+    "(download location, and PURL/CPE where known) for supply-chain and "
+    "vulnerability tracking. One is emitted for every module in the west "
+    "manifest, whether or not its code is built, and it carries no files."
+)
+ZEPHYR_DEPS_COMMENT = (
+    "Reference-only package for the Zephyr RTOS itself, the common dependency "
+    "shared by every module dependency package; it carries no files."
+)
+
+# Matches a git repository URL of the form '<protocol><host>/<namespace>/<package>',
+# capturing the host type (e.g. "github"), the namespace and the package name.
+COMMON_GIT_URL_REGEX = (
+    r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
+    r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+)
+
+
+def get_tool_version(tool_path):
+    """Get a tool's version by running it with ``--version``.
+
+    Used for the linker and archiver, which the CMake toolchains-v1 reply does
+    not describe. Returns "" when the tool is missing or no version can be parsed.
+    """
+    if not tool_path or not os.path.isfile(tool_path):
+        return ""
+
+    try:
+        result = subprocess.run(
+            [tool_path, "--version"],
+            capture_output=True,
+            text=True,
+            timeout=5,  # avoid hanging on a misbehaving tool
+        )
+        output = result.stdout or result.stderr
+        if not output:
+            return ""
+
+        # parse the version from the first line of output, e.g.
+        # "GNU ld (Zephyr SDK 0.17.4) 2.38" -> "2.38",
+        # "cmake version 3.28.1" -> "3.28.1"
+        first_line = output.strip().split('\n')[0]
+        for pattern in (
+            r'version\s+(\d+\.\d+(?:\.\d+)?)',
+            r'\b(\d+\.\d+(?:\.\d+)?)\s*$',
+            r'\b(\d+\.\d+(?:\.\d+)?)\b',
+        ):
+            match = re.search(pattern, first_line, re.IGNORECASE)
+            if match:
+                return match.group(1)
+        return ""
+    except (subprocess.SubprocessError, OSError) as e:
+        _logger.debug(f"Could not get version for {tool_path}: {e}")
+        return ""
+
 
 # WalkerConfig contains configuration data for the Walker.
 @dataclass(eq=True)
 class WalkerConfig:
     # prefix for Document namespaces; should not end with "/"
-    namespacePrefix: str = ""
+    namespace_prefix: str = ""
 
     # location of build directory
-    buildDir: str = ""
+    build_dir: str = ""
 
     # should also analyze for included header files?
-    analyzeIncludes: bool = False
+    analyze_includes: bool = False
 
     # should also add an SPDX document for the SDK?
-    includeSDK: bool = False
+    include_sdk: bool = False
 
 
 # Walker is the main analysis class: it walks through the CMake codemodel,
@@ -53,7 +132,7 @@ class Walker:
         self.cfg = cfg
 
         # SBOM graph container
-        self.sbom_graph = SBOMGraph(namespace_prefix=cfg.namespacePrefix, build_dir=cfg.buildDir)
+        self.sbom_graph = SBOMGraph(namespace_prefix=cfg.namespace_prefix, build_dir=cfg.build_dir)
 
         # Component references for easy access
         self.component_app = None
@@ -71,61 +150,155 @@ class Walker:
         self.doc_modules_deps = None
 
         # queue of pending source file paths to create, process and assign
-        self.pendingSources = []
+        self.pending_sources = []
 
         # queue of pending relationship data to create, process and assign
         # Format: (from_type, from_identifier, to_type, to_identifier, relationship_type)
         # Types: "component", "file"
-        self.pendingRelationships = []
+        self.pending_relationships = []
 
         # parsed CMake codemodel
         self.cm = None
 
+        # parsed CMake toolchains-v1 reply (compiler ids and versions)
+        self.toolchains = None
+
+        # parsed CMake info (generator and version) from the file API index
+        self.cmake_info = None
+
         # parsed CMake cache dict
-        self.cmakeCache = {}
+        self.cmake_cache = {}
 
         # C compiler path from parsed CMake cache
-        self.compilerPath = ""
+        self.compiler_path = ""
 
         # SDK install path from parsed CMake cache
-        self.sdkPath = ""
+        self.sdk_path = ""
 
         # Meta file path
-        self.metaFile = ""
+        self.meta_file = ""
 
-    def _build_purl(self, url, version=None):
+    @staticmethod
+    def _parse_git_url(url):
+        """Parse a git repository URL into (host_type, namespace, package).
+
+        Returns ``None`` when the URL does not match the common
+        '<protocol><host>/<namespace>/<package>' pattern.
+        """
         if not url:
             return None
-
-        purl = None
-        # This is designed to match repository with the following url pattern:
-        # '<protocol><type>/<namespace>/<package>
-        COMMON_GIT_URL_REGEX = (
-            r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
-            r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
-        )
-
         match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
-        if match:
-            purl = f'pkg:{match.group("type")}/{match.group("namespace")}/{match.group("package")}'
+        if not match:
+            return None
+        return match.group("type"), match.group("namespace"), match.group("package")
 
-        if purl and version:
+    def _build_purl(self, url, version=None):
+        parsed = self._parse_git_url(url)
+        if not parsed:
+            return None
+
+        host_type, namespace, package = parsed
+        purl = f'pkg:{host_type}/{namespace}/{package}'
+        if version:
             purl += f'@{version}'
 
         return purl
 
+    def _supplier_from_url(self, url):
+        """Derive an SPDX supplier organization name from a git repository URL.
+
+        Modules mirrored under github.com/zephyrproject-rtos are supplied by the
+        Zephyr Project; for any other host namespace the namespace itself is used.
+        Returns "" when no supplier can be derived.
+        """
+        parsed = self._parse_git_url(url)
+        if not parsed:
+            return ""
+        _host_type, namespace, _package = parsed
+        if namespace == ZEPHYR_GITHUB_NAMESPACE:
+            return ZEPHYR_ORGANIZATION
+        return namespace
+
+    def _apply_scm_identity(self, component, url, revision):
+        """Attach supplier and a package URL derived from a module's SCM location.
+
+        Sets ``component.supplier`` from the repository namespace when not already
+        set, and adds a revision-pinned purl unless the component already carries
+        one (e.g. a curated purl from the module's security metadata).
+        """
+        if not url:
+            return
+        if not component.supplier:
+            supplier = self._supplier_from_url(url)
+            if supplier:
+                component.supplier = supplier
+        has_purl = any(
+            ref.reference_type == ExternalReferenceType.PURL
+            for ref in component.external_references
+        )
+        if not has_purl:
+            purl = self._build_purl(url, revision)
+            if purl:
+                component.add_external_reference(purl)
+
+    @staticmethod
+    def _read_zephyr_version(zephyr_path):
+        """Read the Zephyr version (e.g. "4.4.99") from the repo VERSION file.
+
+        Returns "" when the path is missing or the file cannot be parsed.
+        """
+        if not zephyr_path:
+            return ""
+        version_file = os.path.join(zephyr_path, "VERSION")
+        values = {}
+        try:
+            with open(version_file) as f:
+                for line in f:
+                    key, sep, val = line.partition("=")
+                    if sep:
+                        values[key.strip()] = val.strip()
+        except OSError:
+            return ""
+
+        try:
+            version = (
+                f"{int(values['VERSION_MAJOR'])}"
+                f".{int(values['VERSION_MINOR'])}"
+                f".{int(values['PATCHLEVEL'])}"
+            )
+        except (KeyError, ValueError):
+            return ""
+
+        extra = values.get("EXTRAVERSION", "")
+        if extra:
+            version += f"-{extra}"
+        return version
+
+    def _set_creation_metadata(self, zephyr):
+        """Record SBOM creator provenance (author organization and tool version).
+
+        Serializers read these from the graph metadata to emit the SPDX Creator
+        fields, so the SBOM advertises a human/organization author alongside the
+        versioned generation tool.
+        """
+        self.sbom_graph.metadata["creator_organization"] = ZEPHYR_ORGANIZATION
+        self.sbom_graph.metadata["tool_name"] = SPDX_TOOL_NAME
+        self.sbom_graph.metadata["tool_version"] = self._read_zephyr_version(
+            (zephyr or {}).get("path", "")
+        )
+
     # primary entry point
-    def collectSBOMGraph(self):
+    def collect_sbom_graph(self):
         """
         Collect the SBOM graph from CMake codemodel and build artifacts.
         Returns SBOMGraph object containing all collected information.
         """
         # parse CMake cache file and get compiler path
         _logger.info("parsing CMake Cache file")
-        self.getCacheFile()
+        self.get_cache_file()
 
         # check if meta file is generated
-        if not self.metaFile:
+        if not self.meta_file:
             _logger.error(
                 "CONFIG_BUILD_OUTPUT_META must be enabled to generate spdx files; bailing"
             )
@@ -133,70 +306,160 @@ class Walker:
 
         # parse codemodel from CMake file-based API
         _logger.info("parsing CMake file-based API codemodel")
-        self.cm = self.getCodemodel()
+        self.cm = self.get_codemodel()
         if not self.cm:
             _logger.error("could not parse codemodel from CMake API reply; bailing")
             return None
 
+        # extract Build profile info; non-fatal, the profile is omitted if absent
+        _logger.info("extracting build information from CMake file-based API")
+        self.get_toolchains_and_info()
+        self.extract_build_info()
+
         # set up components
         _logger.info("setting up SBOM components")
-        retval = self.setupComponents()
+        retval = self.setup_components()
         if not retval:
             return None
 
         # walk through targets in codemodel to gather information
         _logger.info("walking through targets")
-        self.walkTargets()
+        self.walk_targets()
 
         # walk through pending sources and create corresponding files
         _logger.info("walking through pending sources files")
-        self.walkPendingSources()
+        self.walk_pending_sources()
 
         # walk through pending relationship data and create relationships
         _logger.info("walking through pending relationships")
-        self.walkRelationships()
+        self.walk_relationships()
 
         return self.sbom_graph
 
     # parse cache file and pull out relevant data
-    def getCacheFile(self):
-        cacheFilePath = os.path.join(self.cfg.buildDir, "CMakeCache.txt")
-        self.cmakeCache = parseCMakeCacheFile(cacheFilePath)
-        if self.cmakeCache:
-            self.compilerPath = self.cmakeCache.get("CMAKE_C_COMPILER", "")
-            self.sdkPath = self.cmakeCache.get("ZEPHYR_SDK_INSTALL_DIR", "")
-            self.metaFile = self.cmakeCache.get("KERNEL_META_PATH", "")
+    def get_cache_file(self):
+        cache_file_path = os.path.join(self.cfg.build_dir, "CMakeCache.txt")
+        self.cmake_cache = parse_cmake_cache_file(cache_file_path)
+        if self.cmake_cache:
+            self.compiler_path = self.cmake_cache.get("CMAKE_C_COMPILER", "")
+            self.sdk_path = self.cmake_cache.get("ZEPHYR_SDK_INSTALL_DIR", "")
+            self.meta_file = self.cmake_cache.get("KERNEL_META_PATH", "")
 
-    # determine path from build dir to CMake file-based API index file, then
-    # parse it and return the Codemodel
-    def getCodemodel(self):
-        _logger.debug("getting codemodel from CMake API reply files")
-
-        # make sure the reply directory exists
-        cmakeReplyDirPath = os.path.join(self.cfg.buildDir, ".cmake", "api", "v1", "reply")
-        if not os.path.exists(cmakeReplyDirPath):
-            _logger.error(f'cmake api reply directory {cmakeReplyDirPath} does not exist')
+    # locate the CMake file-based API reply index file within the build dir
+    def get_reply_index_path(self):
+        cmake_reply_dir_path = os.path.join(self.cfg.build_dir, ".cmake", "api", "v1", "reply")
+        if not os.path.exists(cmake_reply_dir_path):
+            _logger.error(f'cmake api reply directory {cmake_reply_dir_path} does not exist')
             _logger.error('was query directory created before cmake build ran?')
             return None
-        if not os.path.isdir(cmakeReplyDirPath):
+        if not os.path.isdir(cmake_reply_dir_path):
             _logger.error(
-                f'cmake api reply directory {cmakeReplyDirPath} exists but is not a directory'
+                f'cmake api reply directory {cmake_reply_dir_path} exists but is not a directory'
             )
             return None
 
         # find file with "index" prefix; there should only be one
-        indexFilePath = ""
-        for f in os.listdir(cmakeReplyDirPath):
+        for f in os.listdir(cmake_reply_dir_path):
             if f.startswith("index"):
-                indexFilePath = os.path.join(cmakeReplyDirPath, f)
-                break
-        if indexFilePath == "":
-            # didn't find it
-            _logger.error(f'cmake api reply index file not found in {cmakeReplyDirPath}')
+                return os.path.join(cmake_reply_dir_path, f)
+
+        _logger.error(f'cmake api reply index file not found in {cmake_reply_dir_path}')
+        return None
+
+    # determine path from build dir to CMake file-based API index file, then
+    # parse it and return the Codemodel
+    def get_codemodel(self):
+        _logger.debug("getting codemodel from CMake API reply files")
+
+        index_file_path = self.get_reply_index_path()
+        if not index_file_path:
             return None
 
         # parse it
-        return parseReply(indexFilePath)
+        return parse_reply(index_file_path)
+
+    # parse the toolchains-v1 reply and CMake info from the file-based API index
+    def get_toolchains_and_info(self):
+        _logger.debug("getting toolchains and CMake info from CMake API reply files")
+
+        index_file_path = self.get_reply_index_path()
+        if not index_file_path:
+            return
+
+        self.cmake_info, self.toolchains = parse_toolchains_and_info(index_file_path)
+
+    def extract_build_info(self):
+        """Collect global build information for the SPDX 3.0 Build profile.
+
+        Stores the details on the graph's ``SBOMBuild`` (its ``id``, ``build_type`` and
+        the detailed ``metadata`` mapping); serializers without a build vocabulary ignore
+        them.
+        """
+        if not self.cmake_cache:
+            _logger.debug("no CMake cache parsed; skipping build info extraction")
+            return
+
+        build_info: BuildInfo = {}
+
+        # compiler paths, ids and versions: prefer toolchains-v1, fall back to cache
+        if self.toolchains and self.toolchains.by_language:
+            for lang, key in (("C", "c"), ("CXX", "cxx"), ("ASM", "asm")):
+                build_info[f"cmake_{key}_compiler"] = self.toolchains.get_compiler_path(lang)
+                build_info[f"{key}_compiler_version"] = self.toolchains.get_compiler_version(lang)
+                build_info[f"{key}_compiler_id"] = self.toolchains.get_compiler_id(lang)
+            # generic compiler-path key, set to the C compiler
+            build_info["cmake_compiler"] = build_info.get("cmake_c_compiler", "")
+        else:
+            build_info["cmake_compiler"] = self.cmake_cache.get("CMAKE_C_COMPILER", "")
+            build_info["cmake_cxx_compiler"] = self.cmake_cache.get("CMAKE_CXX_COMPILER", "")
+            build_info["cmake_asm_compiler"] = self.cmake_cache.get("CMAKE_ASM_COMPILER", "")
+
+        # linker, archiver, build type and target system always come from the cache
+        build_info["cmake_linker"] = self.cmake_cache.get("CMAKE_LINKER", "")
+        build_info["cmake_ar"] = self.cmake_cache.get("CMAKE_AR", "")
+        build_info["cmake_build_type"] = self.cmake_cache.get("CMAKE_BUILD_TYPE", "")
+        build_info["cmake_system_name"] = self.cmake_cache.get("CMAKE_SYSTEM_NAME", "")
+        build_info["cmake_system_processor"] = self.cmake_cache.get("CMAKE_SYSTEM_PROCESSOR", "")
+
+        # CMake generator and version from the file-API index
+        if self.cmake_info:
+            build_info["cmake_generator"] = self.cmake_info.generator_name
+            build_info["cmake_version"] = self.cmake_info.version_string
+
+        # build environment: Zephyr config inputs surfaced as build_environment
+        environment = {}
+        for var in (
+            "BOARD",
+            "ARCH",
+            "ZEPHYR_TOOLCHAIN_VARIANT",
+            "ZEPHYR_SDK_INSTALL_DIR",
+            "CMAKE_BUILD_TYPE",
+        ):
+            value = self.cmake_cache.get(var, "")
+            if value:
+                environment[var] = value
+        build_info["environment"] = environment
+
+        # linker and archiver versions are not in toolchains-v1; query the tools
+        for version_key, path in (
+            ("linker_version", build_info["cmake_linker"]),
+            ("ar_version", build_info["cmake_ar"]),
+        ):
+            version = get_tool_version(path)
+            if version:
+                build_info[version_key] = version
+
+        # drop empty entries to keep the build_parameter output tidy
+        build_info = {k: v for k, v in build_info.items() if v}
+        if not build_info:
+            _logger.debug("no build information available; skipping Build profile inputs")
+            return
+
+        # summarise as an SBOMBuild; build timestamps are omitted to keep builds reproducible
+        self.sbom_graph.build = SBOMBuild(
+            build_type=build_info.get("cmake_build_type", ""),
+            metadata=build_info,
+        )
 
     def _create_document(self, name: str, title: str = "") -> SBOMDocument:
         """Create a document with the given name and register it with SBOM data.
@@ -205,11 +468,11 @@ class Walker:
         cross-document reference ID; ``title`` is the human-readable SPDX
         ``DocumentName`` and defaults to ``name`` when not given.
         """
-        doc = SBOMDocument(name=name, title=title, namespace=f"{self.cfg.namespacePrefix}/{name}")
+        doc = SBOMDocument(name=name, title=title, namespace=f"{self.cfg.namespace_prefix}/{name}")
         self.sbom_graph.add_document(doc)
         return doc
 
-    def setupDocuments(self):
+    def setup_documents(self):
         """Set up all SBOM documents."""
         _logger.debug("setting up SBOM documents")
 
@@ -222,35 +485,36 @@ class Walker:
         self.doc_modules_deps = self._create_document("modules-deps")
 
         # SDK document is optional
-        if self.cfg.includeSDK:
+        if self.cfg.include_sdk:
             self.doc_sdk = self._create_document("sdk")
 
-    def setupComponents(self):
+    def setup_components(self):
         """Set up all SBOM components from meta file and configuration."""
         _logger.debug("setting up SBOM components")
 
         # First set up documents
-        self.setupDocuments()
+        self.setup_documents()
 
         try:
-            with open(self.metaFile) as file:
+            with open(self.meta_file) as file:
                 content = yaml.load(file.read(), yaml.SafeLoader)
-                if not self.setupZephyrComponent(content["zephyr"], content["modules"]):
+                self._set_creation_metadata(content.get("zephyr"))
+                if not self.setup_zephyr_component(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
             _logger.error("cannot find a valid zephyr.meta required for SPDX generation; bailing")
             return False
 
-        self.setupAppComponent()
+        self.setup_app_component()
 
-        if self.cfg.includeSDK:
-            self.setupSDKComponent()
+        if self.cfg.include_sdk:
+            self.setup_sdk_component()
 
-        self.setupModulesDepsComponent(content["modules"], content["zephyr"])
+        self.setup_modules_deps_component(content["modules"], content["zephyr"])
 
         return True
 
-    def setupAppComponent(self):
+    def setup_app_component(self):
         """Set up app sources component."""
         component = SBOMComponent(
             name="app-sources",
@@ -262,11 +526,11 @@ class Walker:
         self.doc_app.add_described_component(component)
         self.component_app = component
 
-    def setupZephyrComponent(self, zephyr, modules):
+    def setup_zephyr_component(self, zephyr, modules):
         """Set up zephyr sources component and module components."""
         # relativeBaseDir is Zephyr sources topdir
         try:
-            relativeBaseDir = west_topdir(self.cm.paths_source)
+            relative_base_dir = west_topdir(self.cm.paths_source)
         except WestNotFound:
             _logger.error(
                 "cannot find west_topdir for CMake Codemodel sources path "
@@ -278,10 +542,14 @@ class Walker:
         component = SBOMComponent(
             name="zephyr-sources",
             purpose=ComponentPurpose.SOURCE,
-            base_dir=relativeBaseDir,
+            base_dir=relative_base_dir,
         )
 
-        zephyr_url = zephyr.get("remote", "")
+        # Zephyr itself is always supplied by the Zephyr Project.
+        component.supplier = ZEPHYR_ORGANIZATION
+        component.comment = SOURCES_COMMENT
+
+        zephyr_url = zephyr.get("remote") or zephyr.get("url", "")
         if zephyr_url:
             component.url = zephyr_url
 
@@ -303,6 +571,13 @@ class Walker:
                 if component.version == "" and version:
                     component.version = version.group('version')
 
+        # Fall back to a revision-pinned package URL when no release tag is known,
+        # so the component still carries a purl for vulnerability matching.
+        if purl is None and zephyr_url:
+            purl = self._build_purl(zephyr_url, component.revision)
+            if purl:
+                component.add_external_reference(purl)
+
         if len(component.version) > 0:
             cpe = f'cpe:2.3:o:zephyrproject:zephyr:{component.version}:-:*:*:*:*:*:*'
             component.add_external_reference(cpe)
@@ -315,7 +590,8 @@ class Walker:
         for module in modules:
             module_name = module.get("name", None)
             module_path = module.get("path", None)
-            module_url = module.get("remote", None)
+            # west may record the module remote as either "remote" or "url"
+            module_url = module.get("remote") or module.get("url")
             module_revision = module.get("revision", None)
 
             if not module_name:
@@ -326,6 +602,7 @@ class Walker:
                 name=module_name + "-sources",
                 purpose=ComponentPurpose.SOURCE,
                 base_dir=module_path,
+                comment=SOURCES_COMMENT,
             )
 
             if module_revision:
@@ -333,6 +610,7 @@ class Walker:
 
             if module_url:
                 module_component.url = module_url
+                self._apply_scm_identity(module_component, module_url, module_revision)
 
             self.sbom_graph.add_component(module_component, "zephyr")
             self.doc_zephyr.add_described_component(module_component)
@@ -340,12 +618,12 @@ class Walker:
 
         return True
 
-    def setupSDKComponent(self):
+    def setup_sdk_component(self):
         """Set up SDK sources component."""
         component = SBOMComponent(
             name="sdk-sources",
             purpose=ComponentPurpose.SOURCE,
-            base_dir=self.sdkPath,
+            base_dir=self.sdk_path,
         )
 
         self.sbom_graph.add_component(component, "sdk")
@@ -362,8 +640,9 @@ class Walker:
             return None
 
         # no PrimaryPackagePurpose: this is a reference-only dependency package with no files
-        component = SBOMComponent(name="zephyr-deps")
-        component.url = zephyr.get("remote", "")
+        component = SBOMComponent(name="zephyr-deps", comment=ZEPHYR_DEPS_COMMENT)
+        component.supplier = ZEPHYR_ORGANIZATION
+        component.url = zephyr.get("remote") or zephyr.get("url", "")
         component.revision = zephyr.get("revision", "")
 
         purl = None
@@ -395,9 +674,15 @@ class Walker:
 
         self.sbom_graph.add_component(component, "modules-deps")
         self.doc_modules_deps.add_described_component(component)
+
+        # link this dependency package to the Zephyr source package (same relation
+        # the module dependency packages have with their -sources counterparts)
+        self.pending_relationships.append(
+            ("component", "zephyr-sources", "component", component.name, "VARIANT_OF")
+        )
         return component
 
-    def setupModulesDepsComponent(self, modules, zephyr=None):
+    def setup_modules_deps_component(self, modules, zephyr=None):
         """Set up module dependency components."""
         # the zephyr dependency component, which every module depends on
         zephyr_deps = self._setup_zephyr_deps_component(zephyr)
@@ -405,6 +690,8 @@ class Walker:
         for module in modules:
             module_name = module.get("name", None)
             module_security = module.get("security", None)
+            module_url = module.get("remote") or module.get("url")
+            module_revision = module.get("revision", None)
 
             if not module_name:
                 _logger.error("cannot find module name in meta file; bailing")
@@ -415,36 +702,67 @@ class Walker:
                 module_ext_ref = module_security.get("external-references", [])
 
             # set up module deps component (reference-only, no files; no purpose)
-            component = SBOMComponent(name=module_name + "-deps")
+            component = SBOMComponent(name=module_name + "-deps", comment=DEPS_COMMENT)
 
+            if module_url:
+                component.url = module_url
+            if module_revision:
+                component.revision = module_revision
+
+            # curated security references (CPE/purl) take precedence; the SCM
+            # identity then fills in a supplier and a purl when none was provided.
             for ref in module_ext_ref:
                 component.add_external_reference(ref)
+            if module_url:
+                self._apply_scm_identity(component, module_url, module_revision)
 
             self.sbom_graph.add_component(component, "modules-deps")
             self.component_modules_deps[module_name] = component
 
+            # link this dependency package to the module's source package: the
+            # checked-out sources are Zephyr's variant of the upstream dependency
+            self.pending_relationships.append(
+                (
+                    "component",
+                    module_name + "-sources",
+                    "component",
+                    component.name,
+                    "VARIANT_OF",
+                )
+            )
+
             # each module is a dependency of the zephyr dependency component
             if zephyr_deps is not None:
-                self.pendingRelationships.append(
+                self.pending_relationships.append(
                     ("component", component.name, "component", zephyr_deps.name, "DEPENDENCY_OF")
                 )
 
         return True
 
     # walk through targets and gather information
-    def walkTargets(self):
+    def walk_targets(self):
         _logger.debug("walking targets from codemodel")
 
         # assuming just one configuration; consider whether this is incorrect
-        cfgTargets = self.cm.configurations[0].configTargets
-        for cfgTarget in cfgTargets:
+        cfg_targets = self.cm.configurations[0].config_targets
+        for cfg_target in cfg_targets:
+            # Skip CMake UTILITY targets (menuconfig, ram_report, run/flash/debug,
+            # code-generation helpers, ...). These are phony build-system convenience
+            # targets, not software components: they produce no build artifacts and
+            # only add noise to the SBOM. Generated sources that end up in the
+            # firmware are still captured via the artifact-producing targets that
+            # compile them, so nothing of value is lost by dropping them.
+            if cfg_target.target.type == TargetType.UTILITY:
+                _logger.debug(f"  - skipping UTILITY target {cfg_target.name}")
+                continue
+
             # build the Component for this target
-            component = self.initConfigTargetComponent(cfgTarget)
+            component = self.init_config_target_component(cfg_target)
 
             # see whether this target has any build artifacts at all
-            if len(cfgTarget.target.artifacts) > 0:
+            if len(cfg_target.target.artifacts) > 0:
                 # add its build file
-                bf = self.addBuildFile(cfgTarget, component)
+                bf = self.add_build_file(cfg_target, component)
                 if component.name == "zephyr_final":
                     component.purpose = ComponentPurpose.APPLICATION
                     # the build document's primary subject is the final image
@@ -452,28 +770,61 @@ class Walker:
                 else:
                     component.purpose = ComponentPurpose.LIBRARY
 
+                self.capture_build_metadata(cfg_target, component)
+
                 # get its source files if build file is found
                 if bf:
-                    self.collectPendingSourceFiles(cfgTarget, component, bf)
+                    self.collect_pending_source_files(cfg_target, component, bf)
             else:
-                _logger.debug(f"  - target {cfgTarget.name} has no build artifacts")
+                _logger.debug(f"  - target {cfg_target.name} has no build artifacts")
 
             # get its target dependencies
-            self.collectTargetDependencies(cfgTargets, cfgTarget, component)
+            self.collect_target_dependencies(cfg_targets, cfg_target, component)
+
+    # capture the per-target metadata the SPDX 3.0 Build profile needs to attribute a compiler/
+    # archiver to each artifact: target type, compiled languages and per-language compile flags
+    def capture_build_metadata(self, cfg_target, component):
+        target = cfg_target.target
+        component.metadata["target_type"] = target.type.name
+
+        languages = set()
+        compile_flags = {}
+        compile_defines = {}
+        for cg in target.compile_groups:
+            if not cg.language:
+                continue
+            languages.add(cg.language)
+            flags = [frag for frag in (cg.compile_command_fragments or []) if frag]
+            if flags:
+                compile_flags.setdefault(cg.language, []).extend(flags)
+            defines = [f"-D{d.define}" for d in (cg.defines or []) if d.define]
+            if defines:
+                compile_defines.setdefault(cg.language, []).extend(defines)
+
+        if languages:
+            component.metadata["compile_languages"] = sorted(languages)
+        if compile_flags:
+            component.metadata["compile_flags"] = {
+                lang: " ".join(flags) for lang, flags in compile_flags.items()
+            }
+        if compile_defines:
+            component.metadata["compile_defines"] = {
+                lang: " ".join(defs) for lang, defs in compile_defines.items()
+            }
 
     # build a Component for the given ConfigTarget
-    def initConfigTargetComponent(self, cfgTarget):
-        _logger.debug(f"  - initializing Component for target: {cfgTarget.name}")
+    def init_config_target_component(self, cfg_target):
+        _logger.debug(f"  - initializing Component for target: {cfg_target.name}")
 
         # create target Component
         component = SBOMComponent(
-            name=cfgTarget.name,
+            name=cfg_target.name,
             base_dir=self.cm.paths_build,
         )
 
         # add Component to SBOM data and build document
         self.sbom_graph.add_component(component, "build")
-        self.component_build_targets[cfgTarget.name] = component
+        self.component_build_targets[cfg_target.name] = component
         return component
 
     # create a target's build product File and add it to its Component
@@ -481,23 +832,23 @@ class Walker:
     #   1) ConfigTarget
     #   2) Component for that target
     # returns: SBOMFile
-    def addBuildFile(self, cfgTarget, component):
+    def add_build_file(self, cfg_target, component):
         # assumes only one artifact in each target
-        artifactPath = os.path.join(component.base_dir, cfgTarget.target.artifacts[0])
-        _logger.debug(f"  - adding File {artifactPath}")
+        artifact_path = os.path.join(component.base_dir, cfg_target.target.artifacts[0])
+        _logger.debug(f"  - adding File {artifact_path}")
         _logger.debug(f"    - base_dir: {component.base_dir}")
-        _logger.debug(f"    - artifacts[0]: {cfgTarget.target.artifacts[0]}")
+        _logger.debug(f"    - artifacts[0]: {cfg_target.target.artifacts[0]}")
 
         # don't create build File if artifact path points to nonexistent file
-        if not os.path.exists(artifactPath):
+        if not os.path.exists(artifact_path):
             _logger.debug(
-                f"  - target {cfgTarget.name} lists build artifact {artifactPath} "
+                f"  - target {cfg_target.name} lists build artifact {artifact_path} "
                 "but file not found after build; skipping"
             )
             return None
 
         # create build File
-        bf = SBOMFile(path=artifactPath, relative_path=cfgTarget.target.artifacts[0])
+        bf = SBOMFile(path=artifact_path, relative_path=cfg_target.target.artifacts[0])
         self.sbom_graph.add_file(bf, component)
 
         # also set this file as the target component's build product file
@@ -511,23 +862,23 @@ class Walker:
     #   1) ConfigTarget
     #   2) Component for that target
     #   3) build File for that target
-    def collectPendingSourceFiles(self, cfgTarget, component, bf):
+    def collect_pending_source_files(self, cfg_target, component, bf):
         _logger.debug("  - collecting source files and adding to pending queue")
 
-        targetIncludesSet = set()
+        target_includes_set = set()
 
         # walk through target's sources
-        for src in cfgTarget.target.sources:
+        for src in cfg_target.target.sources:
             _logger.debug(f"    - add pending source file and relationship for {src.path}")
             # get absolute, normalized path if we don't have it
-            srcAbspath = src.path
+            src_abspath = src.path
             if not os.path.isabs(src.path):
-                srcAbspath = os.path.normpath(os.path.join(self.cm.paths_source, src.path))
+                src_abspath = os.path.normpath(os.path.join(self.cm.paths_source, src.path))
 
             # check whether it even exists
-            if not (os.path.exists(srcAbspath) and os.path.isfile(srcAbspath)):
+            if not (os.path.exists(src_abspath) and os.path.isfile(src_abspath)):
                 _logger.debug(
-                    f"  - {srcAbspath} does not exist but is referenced in sources for "
+                    f"  - {src_abspath} does not exist but is referenced in sources for "
                     f"target {component.name}; skipping"
                 )
                 continue
@@ -535,31 +886,31 @@ class Walker:
             # add it to pending source files queue, remembering the build
             # target that referenced it (used to assign generated/build-dir
             # files to the correct build component)
-            self.pendingSources.append((srcAbspath, component))
+            self.pending_sources.append((src_abspath, component))
 
             # create relationship data: build file GENERATED_FROM source file
-            self.pendingRelationships.append(
-                ("file", bf.path, "file", srcAbspath, "GENERATED_FROM")
+            self.pending_relationships.append(
+                ("file", bf.path, "file", src_abspath, "GENERATED_FROM")
             )
 
             # collect this source file's includes
-            if self.cfg.analyzeIncludes and self.compilerPath:
-                includes = self.collectIncludes(cfgTarget, component, bf, src)
+            if self.cfg.analyze_includes and self.compiler_path:
+                includes = self.collect_includes(cfg_target, component, bf, src)
                 for inc in includes:
-                    targetIncludesSet.add(inc)
+                    target_includes_set.add(inc)
 
         # make relationships for the overall included files,
         # avoiding duplicates for multiple source files including
         # the same headers
-        targetIncludesList = list(targetIncludesSet)
-        targetIncludesList.sort()
-        for inc in targetIncludesList:
+        target_includes_list = list(target_includes_set)
+        target_includes_list.sort()
+        for inc in target_includes_list:
             # add it to pending source files queue, remembering the build
             # target that referenced it
-            self.pendingSources.append((inc, component))
+            self.pending_sources.append((inc, component))
 
             # create relationship data: build file GENERATED_FROM include file
-            self.pendingRelationships.append(("file", bf.path, "file", inc, "GENERATED_FROM"))
+            self.pending_relationships.append(("file", bf.path, "file", inc, "GENERATED_FROM"))
 
     # collect the include files corresponding to this source file
     # call with:
@@ -568,99 +919,99 @@ class Walker:
     #   3) build File for this target
     #   4) TargetSource entry for this source file
     # returns: sorted list of include files for this source file
-    def collectIncludes(self, cfgTarget, component, bf, src):
+    def collect_includes(self, cfg_target, component, bf, src):
         # get the right compile group for this source file
-        if len(cfgTarget.target.compileGroups) < (src.compileGroupIndex + 1):
+        if len(cfg_target.target.compile_groups) < (src.compile_group_index + 1):
             _logger.debug(
-                f"    - {cfgTarget.target.name} has compileGroupIndex {src.compileGroupIndex} "
-                f"but only {len(cfgTarget.target.compileGroups)} found; "
+                f"    - {cfg_target.target.name} has compile_group_index {src.compile_group_index} "
+                f"but only {len(cfg_target.target.compile_groups)} found; "
                 "skipping included files search"
             )
             return []
-        cg = cfgTarget.target.compileGroups[src.compileGroupIndex]
+        cg = cfg_target.target.compile_groups[src.compile_group_index]
 
         # currently only doing C includes
         if cg.language != "C":
             _logger.debug(
-                f"    - {cfgTarget.target.name} has compile group language {cg.language} "
+                f"    - {cfg_target.target.name} has compile group language {cg.language} "
                 "but currently only searching includes for C files; "
                 "skipping included files search"
             )
             return []
 
-        srcAbspath = src.path
+        src_abspath = src.path
         if src.path[0] != "/":
-            srcAbspath = os.path.join(self.cm.paths_source, src.path)
-        return getCIncludes(self.compilerPath, srcAbspath, cg)
+            src_abspath = os.path.join(self.cm.paths_source, src.path)
+        return get_c_includes(self.compiler_path, src_abspath, cg)
 
     # collect relationships for dependencies of this target Component
     # call with:
     #   1) all ConfigTargets from CodeModel
     #   2) this particular ConfigTarget
     #   3) Component for this Target
-    def collectTargetDependencies(self, cfgTargets, cfgTarget, component):
+    def collect_target_dependencies(self, cfg_targets, cfg_target, component):
         _logger.debug(f"  - collecting target dependencies for {component.name}")
 
         # walk through target's dependencies
-        for dep in cfgTarget.target.dependencies:
+        for dep in cfg_target.target.dependencies:
             # extract dep name from its id
-            depFragments = dep.id.split(":")
-            depName = depFragments[0]
-            _logger.debug(f"    - adding pending relationship for {depName}")
+            dep_fragments = dep.id.split(":")
+            dep_name = dep_fragments[0]
+            _logger.debug(f"    - adding pending relationship for {dep_name}")
 
             # create relationship data between dependency components
-            self.pendingRelationships.append(
-                ("component", component.name, "component", depName, "HAS_PREREQUISITE")
+            self.pending_relationships.append(
+                ("component", component.name, "component", dep_name, "HAS_PREREQUISITE")
             )
 
             # if this is a target with any build artifacts (e.g. non-UTILITY),
             # also create STATIC_LINK relationship for dependency build files,
             # together with this Component's own target build file
-            if len(cfgTarget.target.artifacts) == 0:
+            if len(cfg_target.target.artifacts) == 0:
                 continue
 
             # find the filename for the dependency's build product, using the
             # codemodel (since we might not have created this dependency's
             # Component or File yet)
-            depAbspath = ""
-            for ct in cfgTargets:
-                if ct.name == depName:
+            dep_abspath = ""
+            for ct in cfg_targets:
+                if ct.name == dep_name:
                     # skip utility targets
                     if len(ct.target.artifacts) == 0:
                         continue
                     # all targets use the same base_dir, so this works
-                    depAbspath = os.path.join(component.base_dir, ct.target.artifacts[0])
+                    dep_abspath = os.path.join(component.base_dir, ct.target.artifacts[0])
                     break
-            if depAbspath == "":
+            if dep_abspath == "":
                 continue
 
             # create relationship data between build files
             if component.target_build_file:
-                self.pendingRelationships.append(
-                    ("file", component.target_build_file.path, "file", depAbspath, "STATIC_LINK")
+                self.pending_relationships.append(
+                    ("file", component.target_build_file.path, "file", dep_abspath, "STATIC_LINK")
                 )
 
     # walk through pending sources and create corresponding files,
     # assigning them to the appropriate Component
-    def walkPendingSources(self):
+    def walk_pending_sources(self):
         _logger.debug("walking pending sources")
 
-        for srcAbspath, collecting_component in self.pendingSources:
+        for src_abspath, collecting_component in self.pending_sources:
             # check whether we've already seen it
-            if srcAbspath in self.sbom_graph.files:
-                _logger.debug(f"  - {srcAbspath}: already seen")
+            if src_abspath in self.sbom_graph.files:
+                _logger.debug(f"  - {src_abspath}: already seen")
                 continue
 
             # not yet assigned; figure out which component should own it
-            owning_component = self.findOwningComponent(srcAbspath, collecting_component)
+            owning_component = self.find_owning_component(src_abspath, collecting_component)
             if not owning_component:
                 _logger.debug(
-                    f"  - {srcAbspath}: can't determine which component should own; skipping"
+                    f"  - {src_abspath}: can't determine which component should own; skipping"
                 )
                 continue
 
             # create File and assign it to the Component
-            self.sbom_graph.add_file(SBOMFile(path=srcAbspath), owning_component)
+            self.sbom_graph.add_file(SBOMFile(path=src_abspath), owning_component)
 
     # figure out which Component should own the given file based on path
     def _is_within(self, src_abspath, base_dir):
@@ -673,7 +1024,7 @@ class Walker:
             # Paths don't share a common ancestor (e.g. different drives)
             return False
 
-    def findOwningComponent(self, srcAbspath, collecting_component=None):
+    def find_owning_component(self, src_abspath, collecting_component=None):
         # Generated files live under the build directory. Every build-target
         # component shares the build directory as its base_dir, so a plain path
         # search cannot tell them apart and would assign every such file to whichever
@@ -682,25 +1033,25 @@ class Walker:
         if (
             collecting_component is not None
             and collecting_component.name in self.component_build_targets
-            and self._is_within(srcAbspath, collecting_component.base_dir)
+            and self._is_within(src_abspath, collecting_component.base_dir)
         ):
             return collecting_component
 
         # Check build targets first (most specific)
         for component in self.component_build_targets.values():
-            if self._is_within(srcAbspath, component.base_dir):
+            if self._is_within(src_abspath, component.base_dir):
                 return component
 
         # Check SDK
         if (
-            self.cfg.includeSDK
+            self.cfg.include_sdk
             and self.component_sdk
-            and self._is_within(srcAbspath, self.component_sdk.base_dir)
+            and self._is_within(src_abspath, self.component_sdk.base_dir)
         ):
             return self.component_sdk
 
         # Check app
-        if self.component_app and self._is_within(srcAbspath, self.component_app.base_dir):
+        if self.component_app and self._is_within(src_abspath, self.component_app.base_dir):
             return self.component_app
 
         # Check zephyr sources and module sources. A module path is nested under
@@ -712,7 +1063,7 @@ class Walker:
 
         best_match = None
         for component in zephyr_candidates:
-            if self._is_within(srcAbspath, component.base_dir) and (
+            if self._is_within(src_abspath, component.base_dir) and (
                 best_match is None or len(component.base_dir) > len(best_match.base_dir)
             ):
                 best_match = component
@@ -720,10 +1071,10 @@ class Walker:
         return best_match
 
     # walk through pending relationship data and create relationships
-    def walkRelationships(self):
+    def walk_relationships(self):
         _logger.debug("walking pending relationships")
 
-        for from_type, from_id, to_type, to_id, rln_type in self.pendingRelationships:
+        for from_type, from_id, to_type, to_id, rln_type in self.pending_relationships:
             # Get from element
             from_elem = None
             if from_type == "component":

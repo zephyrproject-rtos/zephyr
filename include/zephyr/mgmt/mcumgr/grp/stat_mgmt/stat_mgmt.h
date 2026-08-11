@@ -11,8 +11,8 @@
  * @ingroup mcumgr_stat_mgmt
  */
 
-#ifndef H_STAT_MGMT_
-#define H_STAT_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_STAT_MGMT_STAT_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_STAT_MGMT_STAT_MGMT_H_
 
 /**
  * @brief MCUmgr Statistics Management API
@@ -75,4 +75,4 @@ struct stat_mgmt_entry {
  * @}
  */
 
-#endif /* H_STAT_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_STAT_MGMT_STAT_MGMT_H_ */

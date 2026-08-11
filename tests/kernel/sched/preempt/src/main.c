@@ -295,9 +295,31 @@ void worker(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test preemption
+ * @brief Verify wakeups preempt the running thread per the documented rules.
  *
- * @ingroup kernel_sched_tests
+ * @details
+ * Exhaustively checks which thread runs next when a thread is woken, across all
+ * priority classes (cooperative, preemptible, meta-IRQ). Threads in each class
+ * sleep; a low-priority manager wakes one, which wakes another, and the test
+ * validates the next-to-run thread matches the documented preemption rules. The
+ * check is repeated for all four combinations of holding/not holding the
+ * scheduler lock and for synchronous versus interrupt-context (offloaded) wakes.
+ * Single-CPU only.
+ *
+ * Test steps:
+ * - Create paired threads at cooperative, preemptible and meta-IRQ priorities,
+ *   all sleeping, plus a manager thread.
+ * - For each scenario, wake a thread that arranges to wake a target thread.
+ * - Validate the actually-scheduled thread against the expected one.
+ *
+ * Expected result:
+ * - The next thread to run always matches the documented preemption rules for
+ *   every class/lock/context combination.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_wakeup()
+ * @see k_sched_lock()
  */
 ZTEST(suite_preempt, test_preempt)
 {

@@ -459,9 +459,10 @@ static void m_numaker_gmacdev_trigger_tx(synopGMACdevice *gmacdev, uint16_t leng
 	__DSB();
 	txdesc->status |= DescOwnByDma;
 
-	gmacdev->TxNext = synopGMAC_is_last_tx_desc(gmacdev, txdesc) ? 0 : txnext + 1;
-	gmacdev->TxNextDesc =
-		synopGMAC_is_last_tx_desc(gmacdev, txdesc) ? gmacdev->TxDesc : (txdesc + 1);
+	bool is_last = synopGMAC_is_last_tx_desc(gmacdev, txdesc);
+
+	gmacdev->TxNext = is_last ? 0 : txnext + 1;
+	gmacdev->TxNextDesc = is_last ? gmacdev->TxDesc : (txdesc + 1);
 
 	/* Enable the interrupt */
 	synopGMAC_enable_interrupt(gmacdev, DmaIntEnable);

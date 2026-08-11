@@ -14,7 +14,7 @@ config BT_CTLR_CONN_ISO_GROUPS
 
 parent-module = BT
 module = BT_CTLR_ISOAL
-module-str = "Bluetooth Controller ISO-AL"
+module-str = Bluetooth Controller ISO-AL
 source "subsys/logging/Kconfig.template.log_config_inherit"
 
 config BT_CTLR_ISOAL_LOG_DBG_VERBOSE

@@ -14,7 +14,6 @@ properties:
   msi-range:
     required: true
     type: int
-    default: 5
     description: |
       MSI clock ranges:
       0: around 65.536 kHz

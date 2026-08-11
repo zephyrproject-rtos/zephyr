@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "riscv/rvruntime-frames.h"
+#include <riscv/rvruntime-frames.h>
 #include <soc/soc_caps.h>
 
 	.equ SAVE_REGS, 32

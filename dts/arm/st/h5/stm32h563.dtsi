@@ -22,7 +22,7 @@
 
 		mac: ethernet@40028000 {
 			compatible = "st,stm32h5-ethernet", "st,stm32h7-ethernet",
-				     "st,stm32-ethernet";
+				     "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK(AHB1, 19)>,
@@ -37,6 +37,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 

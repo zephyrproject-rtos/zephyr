@@ -59,6 +59,40 @@
 		};
 	};
 
+	pinmux_lpspi_0: pinmux_lpspi_0 {
+		group1 {
+			pinmux = <PTE1_LPSPI0_SCK_O>,
+				 <PTE2_LPSPI0_SOUT_O>,
+				 <PTE6_LPSPI0_PCS2_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_LPSPI0_SIN_I>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_flexio_spi: pinmux_flexio_spi {
+		group1 {
+			pinmux = <PTE1_FXIO_D2_O>,
+				 <PTE2_FXIO_D13_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_FXIO_D3_I>;
+			input-enable;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group1 {
 			pinmux = <PTC23_FXIO_D16_O>,
@@ -88,6 +122,25 @@
 		group3 {
 			pinmux = <PTB0_FXIO_D14_O>;
 			output-enable;
+		};
+	};
+
+	pinmux_sai_0: pinmux_sai_0 {
+		group1 {
+			/* Each entry combines the pad's output mux with its
+			 * own IMCR input path (input buffer enabled), so the
+			 * receiver samples the transmitter's data, bit clock
+			 * and frame sync directly on-pad — TX->RX loopback
+			 * without external wiring:
+			 * PTB2  D0   out (MSCR34 SSS=6)  + RX D0   in (IMCR316)
+			 * PTC12 BCLK out (MSCR76 SSS=7)  + RX BCLK in (IMCR315)
+			 * PTC13 SYNC out (MSCR77 SSS=7)  + RX SYNC in (IMCR321)
+			 */
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 34, 6, 316, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 76, 7, 315, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
+			output-enable;
+			input-enable;
 		};
 	};
 };

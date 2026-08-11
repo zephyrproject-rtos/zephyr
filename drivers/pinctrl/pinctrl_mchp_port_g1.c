@@ -77,9 +77,13 @@ static void pinctrl_pinmux(const pinctrl_soc_pin_t *pin)
 		 * numbered pin in bits 4..7.
 		 */
 		if (is_odd == true) {
-			pRegister->PORT_PMUX[idx] |= PORT_PMUX_PMUXO(pin_mux);
+			pRegister->PORT_PMUX[idx] =
+				(pRegister->PORT_PMUX[idx] & ~PORT_PMUX_PMUXO_Msk) |
+				PORT_PMUX_PMUXO(pin_mux);
 		} else {
-			pRegister->PORT_PMUX[idx] |= PORT_PMUX_PMUXE(pin_mux);
+			pRegister->PORT_PMUX[idx] =
+				(pRegister->PORT_PMUX[idx] & ~PORT_PMUX_PMUXE_Msk) |
+				PORT_PMUX_PMUXE(pin_mux);
 		}
 		pRegister->PORT_PINCFG[pin_num] |= (uint8_t)PORT_PINCFG_PMUXEN_Msk;
 	}
@@ -114,6 +118,9 @@ static void pinctrl_set_flags(const pinctrl_soc_pin_t *pin)
 				 * set the corresponding bit in PORT_OUT reg
 				 */
 				pRegister->PORT_OUT |= (1 << pin_num);
+			} else {
+				/* Pull-down: drive the OUT latch low */
+				pRegister->PORT_OUT &= ~(1 << pin_num);
 			}
 			pRegister->PORT_PINCFG[pin_num] |= PORT_PINCFG_PULLEN(1);
 		} else {

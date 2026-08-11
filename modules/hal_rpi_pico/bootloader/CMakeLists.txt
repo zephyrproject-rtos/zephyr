@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # Skip compiler checking
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)

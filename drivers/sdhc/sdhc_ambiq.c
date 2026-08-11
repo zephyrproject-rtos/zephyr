@@ -468,6 +468,51 @@ static int ambiq_sdio_card_busy(const struct device *dev)
 }
 
 /*
+ * Convert Zephyr SD response type enum to Ambiq HAL response bitmask.
+ */
+static bool ambiq_sdio_resp_type_to_hal(uint32_t type, uint32_t *resp_type)
+{
+	switch (type & SDHC_NATIVE_RESPONSE_MASK) {
+	case SD_RSP_TYPE_NONE:
+		*resp_type = MMC_RSP_NONE;
+		break;
+	case SD_RSP_TYPE_R1:
+		*resp_type = MMC_RSP_R1;
+		break;
+	case SD_RSP_TYPE_R1b:
+		*resp_type = MMC_RSP_R1b;
+		break;
+	case SD_RSP_TYPE_R2:
+		*resp_type = MMC_RSP_R2;
+		break;
+	case SD_RSP_TYPE_R3:
+		*resp_type = MMC_RSP_R3;
+		break;
+	case SD_RSP_TYPE_R4:
+		*resp_type = MMC_RSP_R4;
+		break;
+	case SD_RSP_TYPE_R5:
+		*resp_type = MMC_RSP_R5;
+		break;
+	case SD_RSP_TYPE_R5b:
+		/* SDIO R5b is a 48-bit response with CRC, opcode, and busy. */
+		*resp_type = MMC_RSP_R5 | MMC_RSP_BUSY;
+		break;
+	case SD_RSP_TYPE_R6:
+		*resp_type = MMC_RSP_R6;
+		break;
+	case SD_RSP_TYPE_R7:
+		*resp_type = MMC_RSP_R7;
+		break;
+	default:
+		LOG_ERR("Invalid response type: %d", (int)type);
+		return false;
+	}
+
+	return true;
+}
+
+/*
  * Ambiq SDIO Command and Data Request Function
  */
 static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd,
@@ -483,8 +528,11 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	if (cmd) {
 		sdio_cmd.ui8Idx = cmd->opcode;
 		sdio_cmd.ui32Arg = cmd->arg;
-		sdio_cmd.ui32RespType = cmd->response_type;
 		sdio_cmd.bASync = false;
+
+		if (!ambiq_sdio_resp_type_to_hal(cmd->response_type, &sdio_cmd.ui32RespType)) {
+			return -EINVAL;
+		}
 	} else {
 		LOG_ERR("Invalid CMD");
 		return -EINVAL;
@@ -514,22 +562,9 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 	LOG_DBG("Send SDIO CMD%d", sdio_cmd.ui8Idx);
 	LOG_DBG("CMD->Arg = 0x%x CMD->RespType = 0x%x", sdio_cmd.ui32Arg, sdio_cmd.ui32RespType);
 
-	if (sdio_cmd.ui8Idx == 1 || sdio_cmd.ui8Idx == 41) {
-		LOG_DBG("Config CMD1 RespType");
-		sdio_cmd.ui32RespType = MMC_RSP_R3;
-	} else if (sdio_cmd.ui8Idx == 3) {
-		LOG_DBG("Config CMD3 RespType");
-		sdio_cmd.ui32RespType = MMC_RSP_R6;
-	} else if ((sdio_cmd.ui8Idx == 52) || (sdio_cmd.ui8Idx == 53)) {
-		LOG_DBG("Config CMD%d RespType", sdio_cmd.ui8Idx);
-		sdio_cmd.ui32RespType = MMC_RSP_R5;
-	} else if (sdio_cmd.ui8Idx == 6 || sdio_cmd.ui8Idx == 38) {
+	if (sdio_cmd.ui8Idx == 6 || sdio_cmd.ui8Idx == 38) {
 		LOG_DBG("Set CheckBusyCmd");
 		sdio_cmd.bCheckBusyCmd = true;
-		sdio_cmd.ui32RespType = MMC_RSP_R1b;
-	} else if (sdio_cmd.ui8Idx == 17 || sdio_cmd.ui8Idx == 18 || sdio_cmd.ui8Idx == 24 ||
-		   sdio_cmd.ui8Idx == 25 || sdio_cmd.ui8Idx == 55) {
-		sdio_cmd.ui32RespType = MMC_RSP_R1;
 	}
 
 #ifdef CONFIG_AMBIQ_SDIO_ASYNC
@@ -568,6 +603,8 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 #ifdef CONFIG_AMBIQ_SDIO_ASYNC
 		if ((ui32Status & 0xFFFF) == AM_HAL_STATUS_SUCCESS) {
 			if (k_sem_take(dev_data->async_sem, K_MSEC(data->timeout_ms))) {
+				k_mutex_unlock(&dev_data->access_mutex);
+				pm_device_runtime_put_async(dev, K_MSEC(2));
 				return -ETIMEDOUT;
 			}
 		}
@@ -584,8 +621,8 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 #endif /* CONFIG_SDHC_AMBIQ_HANDLE_CACHE */
 
 	} else {
-		ui32Status = dev_data->host->ops->execute_cmd(dev_data->host->pHandle,
-							      &sdio_cmd, NULL);
+		ui32Status =
+			dev_data->host->ops->execute_cmd(dev_data->host->pHandle, &sdio_cmd, NULL);
 	}
 	if ((ui32Status & 0xFFFF) != AM_HAL_STATUS_SUCCESS) {
 		if ((ui32Status & 0xFFFF) == AM_HAL_STATUS_TIMEOUT) {
@@ -600,7 +637,22 @@ static int ambiq_sdio_request(const struct device *dev, struct sdhc_command *cmd
 
 	k_mutex_unlock(&dev_data->access_mutex);
 
-	memcpy(cmd->response, sdio_cmd.ui32Resp, sizeof(cmd->response));
+	if (sdio_cmd.ui32RespType & MMC_RSP_136) {
+		/* Ambiq HAL packs R2 CID/CSD in descending word order into
+		 * ui32Resp[0..3] (ui32Resp[0] is bits 127:96). Zephyr's SD
+		 * subsystem expects response[3] to hold the highest 32 bits,
+		 * so reverse the order before returning.
+		 */
+		cmd->response[3] = sdio_cmd.ui32Resp[0];
+		cmd->response[2] = sdio_cmd.ui32Resp[1];
+		cmd->response[1] = sdio_cmd.ui32Resp[2];
+		cmd->response[0] = sdio_cmd.ui32Resp[3];
+	} else {
+		cmd->response[0] = sdio_cmd.ui32Resp[0];
+		cmd->response[1] = 0;
+		cmd->response[2] = 0;
+		cmd->response[3] = 0;
+	}
 
 	LOG_DBG("Resp0 = 0x%x, Resp1 = 0x%x, Resp2 = 0x%x, Resp3 = 0x%x", cmd->response[0],
 		cmd->response[1], cmd->response[2], cmd->response[3]);

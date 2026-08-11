@@ -25,6 +25,17 @@ config ETH_DWC_ETHER_1000_CORE
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
 	  IP version v3.x is supported.
 
+config ETH_ESP32_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based ESP32"
+	depends on !ETH_ESP32
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
+	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
+
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
@@ -71,6 +82,14 @@ config ETH_DWMAC_MMU
 	  This enables the Synopsys DesignWare MAC driver on MMU based
 	  platforms.
 
+config ETH_DWC_ETHER_1000_CORE_EDFE
+	bool
+	depends on ETH_DWC_ETHER_1000_CORE
+	depends on !SOC_SERIES_STM32F1X
+	default y if PTP_CLOCK_DWC_MAC
+	help
+	  Increases the descriptor size to 32 bytes.
+
 if ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 
 configdefault NET_BUF_ALIGNMENT
@@ -103,12 +122,52 @@ config DWMAC_NB_RX_DESCS
 	  memory. A smaller number increases the risk of an overflow and
 	  dropped packets.
 
+config ETH_DWMAC_RX_REFILL_IRQ
+	bool "Receive buffer refill in interrupt"
+	default y
+	help
+	  Refill the receive buffer pool in the rx interrupt, if
+	  possible, otherwise in the refill thread.
+
 config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	int "Receive buffer refill thread priority"
 	default 0
 	help
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
+
+config ETH_DWC_ETHER_TX_HW_CHECKSUM
+	bool "Use TX hardware checksum"
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	depends on !SOC_SERIES_ESP32P4
+	default y
+	help
+	  Enable transmit checksum offload to enhance throughput
+	  performances. Only supported when store and forward mode
+	  is used for tx, which can't be used if the tx fifo is smaller
+	  than the maximum frame size.
+
+config ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_DWC_ETHER_TX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
+config ETH_DWC_ETHER_RX_HW_CHECKSUM
+	bool "Use RX hardware checksum"
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	default y
+	help
+	  Enable receive checksum offload to enhance throughput
+	  performances.
+
+config ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	bool
+	depends on ETH_DWC_ETHER_RX_HW_CHECKSUM
+	depends on NET_CHECKSUM_OFFLOAD
+	default y
+
+rsource "Kconfig.ptp"
 
 endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 

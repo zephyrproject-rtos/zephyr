@@ -20,6 +20,8 @@
 /**
  * @brief Interfaces for Battery-Backed RAM (BBRAM).
  * @defgroup bbram_interface BBRAM
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -219,7 +221,7 @@ static inline int z_impl_bbram_read(const struct device *dev, size_t offset,
  * @param[in]  dev The BBRAM device pointer to write to.
  * @param[in]  offset The offset into the RAM address to start writing to.
  * @param[in]  size The number of bytes to write.
- * @param[out] data Pointer to the start of data to write.
+ * @param[in]  data Pointer to the start of data to write.
  * @return 0 on success, -EFAULT if the address range is out of bounds.
  */
 __syscall int bbram_write(const struct device *dev, size_t offset, size_t size,

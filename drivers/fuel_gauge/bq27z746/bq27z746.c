@@ -131,7 +131,7 @@ static int bq27z746_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		break;
 	case FUEL_GAUGE_CYCLE_COUNT:
 		rc = bq27z746_read16(dev, BQ27Z746_CYCLECOUNT, &tmp_val);
-		val->cycle_count = tmp_val * 100;
+		val->cycle_count = tmp_val;
 		break;
 	case FUEL_GAUGE_CURRENT_UA:
 		rc = bq27z746_read16(dev, BQ27Z746_CURRENT, &tmp_val);

@@ -397,7 +397,7 @@ static inline int z_impl_dai_remove(const struct device *dev)
  * The function can be called in NOT_READY or READY state only. If executed
  * successfully the function will change the interface state to READY.
  *
- * If the function is called with the parameter cfg->frame_clk_freq set to 0
+ * If the function is called with the parameter cfg->rate set to 0
  * the interface state will be changed to NOT_READY.
  *
  * @param dev Pointer to the device structure for the driver instance.

@@ -1,5 +1,6 @@
 /** @file
  * @brief Wi-Fi Network manager API
+ * @ingroup wifi_nm
  *
  * This file contains the Wi-Fi network manager API. These APIs are used by the
  * any network management application to register as a Wi-Fi network manager.
@@ -11,8 +12,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_NET_WIFI_NM_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_NET_WIFI_NM_H_
+#ifndef ZEPHYR_INCLUDE_NET_WIFI_NM_H_
+#define ZEPHYR_INCLUDE_NET_WIFI_NM_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
@@ -164,4 +165,4 @@ int wifi_nm_unregister_mgd_iface(struct wifi_nm_instance *nm, struct net_if *ifa
 #ifdef __cplusplus
 }
 #endif
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_NET_WIFI_NM_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_WIFI_NM_H_ */

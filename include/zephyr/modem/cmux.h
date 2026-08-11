@@ -27,8 +27,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_CMUX_
-#define ZEPHYR_MODEM_CMUX_
+#ifndef ZEPHYR_INCLUDE_MODEM_CMUX_H_
+#define ZEPHYR_INCLUDE_MODEM_CMUX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,7 +163,9 @@ struct modem_cmux_frame {
 	bool pf;
 	uint8_t type;
 	const uint8_t *data;
+	const uint8_t *tx_extra;
 	uint16_t data_len;
+	uint16_t tx_extra_len;
 };
 
 struct modem_cmux_work {
@@ -330,4 +332,4 @@ void modem_cmux_release(struct modem_cmux *cmux);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_CMUX_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_CMUX_H_ */

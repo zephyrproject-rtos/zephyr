@@ -156,4 +156,15 @@ config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
 	  minus 900us. Increase it if you see "flash read err, 1000" after deep
 	  sleep or an RTC_WDT/LP_WDT trigger after light sleep wakeup.
 
+config SOC_ESP32_SLEEP_DCM_VSET_VAL_IN_SLEEP
+	int "DCDC voltage parameter during sleep"
+	depends on SOC_SERIES_ESP32P4
+	default 14
+	range 0 31
+	help
+	  Voltage of the DCDC converter during sleep. The same parameter value may
+	  correspond to different voltages on different DCDC models, so adjust it
+	  according to the external DCDC selected in your hardware.
+	  Recommended value for TI TLV62569/TLV62569P: 14.
+
 endif # SOC_FAMILY_ESPRESSIF_ESP32

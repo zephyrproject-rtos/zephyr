@@ -28,7 +28,7 @@
 #ifndef SOC_INFINEON_EDGE_PSE84_MTB_IPC_CONFIG_H_
 #define SOC_INFINEON_EDGE_PSE84_MTB_IPC_CONFIG_H_
 
-#include "mtb_ipc.h"
+#include <mtb_ipc.h>
 
 
 /** Define the channel used to set up the IPC instance set up for SRF operations*/

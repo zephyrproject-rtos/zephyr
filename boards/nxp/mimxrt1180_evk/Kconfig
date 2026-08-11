@@ -21,7 +21,7 @@ config CM7_FLEXSPI_OFFSET
 	help
 	  This is the FlexSPI offset for CM7.
 
-config NXP_BOARD_SPECIFIC_MPU_SETTINGS
+config BOARD_NXP_SPECIFIC_MPU_SETTINGS
 	bool "Use default MPU settings for NXP boards"
 	default y if CPU_HAS_CUSTOM_FIXED_SOC_MPU_REGIONS
 	help

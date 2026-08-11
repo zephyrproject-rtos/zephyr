@@ -15,6 +15,8 @@
 /**
  * @brief Bluetooth Audio
  * @defgroup bt_audio Bluetooth Audio
+ * @since 3.1
+ * @version 0.8.0
  * @ingroup bluetooth
  * @{
  */
@@ -90,9 +92,9 @@ struct bt_audio_codec_octets_per_codec_frame {
  * @name Unicast Announcement Type
  * @{
  */
-/** Unicast Server is connectable and is requesting a connection. */
+/** Unicast Server is connectable and is not requesting a connection. */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_GENERAL    0x00U
-/** Unicast Server is connectable but is not requesting a connection. */
+/** Unicast Server is connectable but is requesting a connection. */
 #define BT_AUDIO_UNICAST_ANNOUNCEMENT_TARGETED   0x01U
 /** @} */
 
@@ -238,7 +240,7 @@ struct bt_audio_codec_cfg {
 	 * BT_HCI_CODING_FORMAT_TRANSPARENT if false, else uses the @ref bt_audio_codec_cfg.id.
 	 */
 	bool ctlr_transcode;
-#if defined(CONFIG_BT_BAP_UNICAST)
+#if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/** Target latency
 	 *
 	 * Unused for broadcast streams.
@@ -1084,7 +1086,7 @@ int bt_audio_codec_cap_set_freq(struct bt_audio_codec_cap *codec_cap,
 				enum bt_audio_codec_cap_freq freq);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Extract the frame duration from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
  *
@@ -1109,7 +1111,7 @@ int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
 				     enum bt_audio_codec_cap_frame_dur frame_dur);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Extract the supported audio channel counts from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
  * @param fallback_to_default If true this function will provide the default value of 1

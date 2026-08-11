@@ -20,18 +20,14 @@
 /* HP-SRAM (768kB) memory
  * From HAL soc.h: SOC_IRAM_LOW = 0x4ff00000, SOC_IRAM_HIGH = 0x4ffc0000
  *
- * The L2 cache occupies the beginning of SRAM (default 128KB = 0x20000).
- * Usable SRAM starts after the L2 cache region.
+ * The L2 cache is carved out of HP SRAM. Its location depends on the
+ * silicon revision:
+ *   rev >= v3.0: L2 cache sits at the LOW end of SRAM, so usable SRAM
+ *                starts after it (HPSRAM_BASE + L2_CACHE_SIZE).
+ *   rev <  v3.0: L2 cache sits at the HIGH end of SRAM, so usable SRAM
+ *                ends where the cache begins; it starts above the low ROM
+ *                reserved region (DRAM_ROM_RESERVED_END).
  */
-#define HPSRAM_BASE       DT_REG_ADDR(DT_NODELABEL(sramhp))
-#define HPSRAM_TOTAL_SIZE DT_REG_SIZE(DT_NODELABEL(sramhp))
-#define L2_CACHE_SIZE     CONFIG_ESP32_CACHE_L2_SIZE
-#define HPSRAM_START      (HPSRAM_BASE + L2_CACHE_SIZE)
-#define HPSRAM_SIZE       (HPSRAM_TOTAL_SIZE - L2_CACHE_SIZE)
-#define HPSRAM_DRAM_START HPSRAM_START
-#define HPSRAM_IRAM_START HPSRAM_START
-#define ICACHE_SIZE       0x8000
-
 /** Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
@@ -42,36 +38,99 @@
  *  - 0x4ffbcfc0 - 0x4ffbefc0: ROM stack (CPU0 + CPU1)
  *  - 0x4ffbefc0 - 0x4ffc0000: ROM .bss and .data
  *
+ *  Pre-v3 silicon (rev < v3.0) differs in two ways: the L2 cache is carved
+ *  from the TOP of SRAM instead of the bottom, and the ROM reserves its
+ *  static data low, in 0x4ff3cfc0 - 0x4ff40000 (from HAL soc.h:
+ *  SOC_ROM_STACK_START = 0x4ff3cfc0, SOC_DIRAM_ROM_RESERVE_HIGH =
+ *  0x4ff40000). Usable SRAM therefore runs from the top of that ROM reserve
+ *  up to the base of the top-of-SRAM cache:
+ *  - 0x4ff40000 - (0x4ffc0000 - L2_CACHE_SIZE): available for user code
+ *  - top L2_CACHE_SIZE bytes of SRAM: L2 cache
+ *
  *  The 2nd stage bootloader can take space up to the ROM stack area.
  */
 
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define DRAM_ROM_RESERVED_START 0x4ff3cfc0
+#define DRAM_ROM_RESERVED_END   0x4ff40000
+#else
 #define DRAM_ROM_RESERVED_START 0x4ffbcfc0
 #define DRAM_ROM_RESERVED_END   0x4ffc0000
+#endif
 
-/* Upper boundary of user-usable SRAM */
-#define DRAM_USER_END DRAM_ROM_RESERVED_START
+#define HPSRAM_BASE       DT_REG_ADDR(DT_NODELABEL(sramhp))
+#define HPSRAM_TOTAL_SIZE DT_REG_SIZE(DT_NODELABEL(sramhp))
+#define L2_CACHE_SIZE     CONFIG_ESP32_CACHE_L2_SIZE
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define HPSRAM_START DRAM_ROM_RESERVED_END
+#else
+#define HPSRAM_START (HPSRAM_BASE + L2_CACHE_SIZE)
+#endif
+#define HPSRAM_DRAM_START HPSRAM_START
+#define HPSRAM_IRAM_START HPSRAM_START
+#define ICACHE_SIZE       0x8000
+
+/* Upper boundary of user-usable SRAM. On pre-v3 silicon the L2 cache sits at
+ * the top of SRAM, so usable RAM ends where the cache begins. On v3.x the
+ * cache is at the bottom, so usable RAM ends at the ROM reserved region.
+ */
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+/* HP SRAM base and size as plain literals: start.S needs this expression to
+ * survive the assembler, which cannot evaluate devicetree macros.
+ */
+#define HPSRAM_LOW       0x4ff00000
+#define HPSRAM_TOTAL     0xc0000
+#define DRAM_HW_USER_END (HPSRAM_LOW + HPSRAM_TOTAL - L2_CACHE_SIZE)
+#else
+#define DRAM_HW_USER_END DRAM_ROM_RESERVED_START
+#endif
+
+/* Non-cacheable window. The __nocache section is placed here at its normal
+ * (cached, DMA-reachable) SRAM address; a PMA NAPOT entry configured at boot
+ * marks the region non-cacheable. NAPOT requires the region to be a power of
+ * two and aligned to its own size, so the block is aligned down from the top
+ * of usable RAM. Its cached bytes are removed from DRAM_USER_END so no other
+ * section can use them. Size comes from the sramhp_nocache devicetree node.
+ */
+#if defined(CONFIG_NOCACHE_MEMORY)
+#define NOCACHE_SIZE  DT_REG_SIZE(DT_NODELABEL(sramhp_nocache))
+#define NOCACHE_START (((DRAM_HW_USER_END - NOCACHE_SIZE)) & ~((NOCACHE_SIZE) - 1))
+#define DRAM_USER_END NOCACHE_START
+#else
+#define DRAM_USER_END DRAM_HW_USER_END
+#endif
 
 /* Stack pointer for early startup (__start) */
-#define DRAM_STACK_START DRAM_ROM_RESERVED_START
+#define DRAM_STACK_START DRAM_USER_END
 
 /* Safety margin between MCUboot segments and ROM stack */
 #define BOOTLOADER_STACK_OVERHEAD      0x2000
-#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x3000
+#define BOOTLOADER_IRAM_LOADER_SEG_LEN 0x2000
+#define BOOTLOADER_DRAM_LOADER_SEG_LEN 0x0C00
 
 /* Upper limit of SRAM available for MCUboot bootloader segments */
-#define BOOTLOADER_USER_DRAM_END (DRAM_ROM_RESERVED_START - BOOTLOADER_STACK_OVERHEAD)
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define BOOTLOADER_USER_DRAM_END (0x4ff3abd0 - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     HPSRAM_BASE
+#else
+#define BOOTLOADER_USER_DRAM_END (DRAM_USER_END - BOOTLOADER_STACK_OVERHEAD)
+#define BOOTLOADER_SEG_FLOOR     (HPSRAM_START + ICACHE_SIZE)
+#endif
 
-#define BOOTLOADER_IRAM_LOADER_SEG_START (BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
-
-/* MCUboot iram/dram segments: placed in upper half of SRAM, below iram_loader_seg.
- * On unified-address SoCs (P4, C5, C6, H2) these are the same physical memory.
- * The lower half is reserved for the application image.
+/* MCUboot iram/dram segments: placed below dram_loader_seg, down to
+ * BOOTLOADER_SEG_FLOOR. On unified-address SoCs (P4, C5, C6, H2) these are the
+ * same physical memory. The remaining SRAM is reserved for the application.
  */
-#define BOOTLOADER_IRAM_SEG_TARGET_LEN                                                             \
-	((BOOTLOADER_IRAM_LOADER_SEG_START - (HPSRAM_START + ICACHE_SIZE)) / 4)
-#define BOOTLOADER_IRAM_SEG_START                                                                  \
-	ALIGN_UP(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x100)
-#define BOOTLOADER_IRAM_SEG_LEN   (BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_START)
+#define BOOTLOADER_IRAM_LOADER_SEG_START \
+	(BOOTLOADER_USER_DRAM_END - BOOTLOADER_IRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_DRAM_LOADER_SEG_START \
+	(BOOTLOADER_IRAM_LOADER_SEG_START - BOOTLOADER_DRAM_LOADER_SEG_LEN)
+#define BOOTLOADER_IRAM_SEG_TARGET_LEN \
+	((BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_SEG_FLOOR) / 4)
+#define BOOTLOADER_IRAM_SEG_START \
+	ALIGN_UP(BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_TARGET_LEN, 0x100)
+#define BOOTLOADER_IRAM_SEG_LEN \
+	(BOOTLOADER_DRAM_LOADER_SEG_START - BOOTLOADER_IRAM_SEG_START)
 #define BOOTLOADER_DRAM_SEG_LEN   BOOTLOADER_IRAM_SEG_LEN
 #define BOOTLOADER_DRAM_SEG_START (BOOTLOADER_IRAM_SEG_START - BOOTLOADER_DRAM_SEG_LEN)
 

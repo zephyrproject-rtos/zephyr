@@ -19,20 +19,19 @@ config NET_SAMPLE_SSH_USE_PASSWORD
 
 config NET_SAMPLE_SSH_PASSWORD
 	string "Default SSH server password"
-	# Kconfig lib does not like (even if quoted) " , ' or , in the string
-	# chr(115)+chr(121)+chr(115) = sys
-	# chr(98)+chr(97)+chr(115)+chr(101)+chr(54)+chr(52) = base64
-	# chr(111)+chr(115) = os
-	default "$(shell,python3 -c '__import__(chr(115)+chr(121)+chr(115)).stdout.write(__import__(chr(98)+chr(97)+chr(115)+chr(101)+chr(54)+chr(52)).b64encode(__import__(chr(111)+chr(115)).urandom(12)).decode()[:15])')"
+	# Generate a random default password at build time (see gen_random_password.py).
+	default "$(shell,python3 $(ZEPHYR_BASE)/samples/net/ssh/gen_random_password.py)"
 	depends on NET_SAMPLE_SSH_USE_PASSWORD
 	help
 	  The value depends on your network setup.
 
 if USB_DEVICE_STACK_NEXT
+
 # Source common USB sample options used to initialize new experimental USB
 # device stack. The scope of these options is limited to USB samples in project
 # tree, you cannot use them in your own application.
-	source "samples/subsys/usb/common/Kconfig.sample_usbd"
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
 endif
 
 source "samples/net/common/Kconfig"

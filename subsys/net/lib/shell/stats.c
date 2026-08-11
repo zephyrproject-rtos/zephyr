@@ -430,14 +430,14 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 		net_stats_t count = GET_STAT(iface,
 					     tc.recv[i].rx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
@@ -453,7 +453,7 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		PR("[%d] %s (%u)\t%u\t%u\t\t%llu\n", i,
+		PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 		   GET_STAT(iface, tc.recv[i].priority),
 		   GET_STAT(iface, tc.recv[i].pkts),

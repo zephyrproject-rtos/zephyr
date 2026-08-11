@@ -106,6 +106,7 @@ azoteq	Azoteq (Pty) Ltd
 azw	Shenzhen AZW Technology Co., Ltd.
 baikal	BAIKAL ELECTRONICS, JSC
 bananapi	BIPAI KEJI LIMITED
+barth	Barth Elektronik GmbH
 bbc	BBC
 bcdevices	Blue Clover Devices
 beacon	Compass Electronics Group, LLC
@@ -114,6 +115,7 @@ bflb	Bouffalo Lab (Nanjing) Co., Ltd.
 bhf	Beckhoff Automation GmbH & Co. KG
 bitmain	Bitmain Technologies
 blackberry	BlackBerry Limited
+bliiot	BLIIoT Technology Co., Ltd.
 blues	Blues Wireless
 blutek	BluTek Power
 boe	BOE Technology Group Co., Ltd.
@@ -259,6 +261,7 @@ fcs	Fairchild Semiconductor
 feixin	Shenzhen Feixin Photoelectic Co., Ltd
 feiyang	Shenzhen Fly Young Technology Co.,LTD.
 festo	Festo SE & Co. KG
+fibocom	Fibocom Wireless Inc.
 fii	Foxconn Industrial Internet
 fintek	Feature Integration Technology Inc.
 firefly	Firefly
@@ -304,6 +307,7 @@ hannstar	HannStar Display Corporation
 haoyu	Haoyu Microelectronic Co. Ltd.
 hardkernel	Hardkernel Co., Ltd
 hazard3	Hazard3 by Luke Wren
+heimann	Heimann Sensor GmbH
 heltec	Chengdu Heltec Automation Technology Co., Ltd.
 hideep	HiDeep Inc.
 himax	Himax Technologies, Inc.
@@ -366,8 +370,10 @@ jdi	Japan Display Inc.
 jedec	JEDEC Solid State Technology Association
 jesurun	Shenzhen Jesurun Electronics Business Dept.
 jhd	Shenzhen Jinghua Displays Electronics Co., Ltd.
+jhoinrch	Jhoinrch
 jianda	Jiandangjing Technology Co., Ltd.
 jlc	Shenzhen JLC Technology Group Co., Ltd.
+kaga-fei	KAGA FEI Co., Ltd.
 kam	Kamstrup A/S
 karo	Ka-Ro electronics GmbH
 keithkoep	Keith & Koep GmbH
@@ -398,6 +404,7 @@ leez	Leez
 lego	LEGO Systems A/S
 lemaker	Shenzhen LeMaker Technology Co., Ltd.
 lenovo	Lenovo Group Ltd.
+levetop	LeveTop Semiconductor
 lg	LG Corporation
 lgphilips	LG Display
 libretech	Shenzhen Libre Technology Co., Ltd
@@ -429,6 +436,7 @@ macnica	Macnica Americas
 madmachine	Shenzhen FeiKaiTe Technology Co., Ltd.
 makerbase	Makerbase Co., Ltd.
 makerdiary	Shenzhen Zaowubang Technology Co., Ltd.
+makerfabs	Makerfabs
 mantix	Mantix Display Technology Co.,Ltd.
 mapleboard	Mapleboard.org
 marvell	Marvell Technology Group Ltd.
@@ -647,6 +655,7 @@ sff	Small Form Factor Committee
 sgd	Solomon Goldentek Display Corporation
 sgmicro	SG Micro Corp
 sgx	SGX Sensortech
+shakti	SHAKTI Processor Program
 sharp	Sharp Corporation
 shimafuji	Shimafuji Electric, Inc.
 shiratech	Shiratech Solutions
@@ -756,6 +765,7 @@ ubnt	Ubiquiti Networks
 ucrobotics	uCRobotics
 udoo	Udoo
 ugoos	Ugoos Industrial Co., Ltd.
+uiap	Umeta & Ikki Automotive Parts
 ultrachip	UltraChip Inc.
 uniwest	United Western Technologies Corp (UniWest)
 up-bridge-the-gap	UP Bridge the Gap

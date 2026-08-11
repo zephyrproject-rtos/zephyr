@@ -28,6 +28,54 @@ static int esp_listen(struct net_context *context, int backlog)
 	return -ENOTSUP;
 }
 
+/*
+ * The offload .get hook only runs when the ESP-AT interface is the default
+ * one at net_context_get() time. When it is a secondary interface, a context
+ * can reach these offload ops (after being bound or routed to it) without
+ * offload_context ever being populated. Allocate the backing socket on first
+ * use so the driver works regardless of interface ordering.
+ *
+ * Callers reach this under the per-socket lock held by the socket layer, so
+ * the read-then-allocate sequence is not racing against itself for the same
+ * context.
+ */
+static struct esp_socket *esp_socket_for_context(struct net_context *context)
+{
+	struct esp_socket *sock = context->offload_context;
+
+	/* Already allocated, e.g. via esp_get() on the default-iface path. */
+	if (sock != NULL) {
+		return sock;
+	}
+
+	/* ESP-AT supports IPv4 only; reject before claiming a pool slot. */
+	if (net_context_get_family(context) != NET_AF_INET) {
+		return NULL;
+	}
+
+	/*
+	 * Only claim contexts that belong to this ESP-AT interface. On a
+	 * multi-interface system a context routed to another interface (for
+	 * example DNS resolved over a native Ethernet iface) can reach these
+	 * offload ops; allocating a link for it would steal traffic ESP-AT
+	 * cannot service. Unlike at esp_get() time, context->iface is already
+	 * assigned when the send, recv, bind and connect ops run, so the owning
+	 * interface can be checked here.
+	 */
+	if (net_context_get_iface(context) != esp_driver_data.net_iface) {
+		return NULL;
+	}
+
+	sock = esp_socket_get(&esp_driver_data, context);
+	if (sock != NULL) {
+		LOG_DBG("lazily allocated link %d", sock->link_id);
+	} else {
+		LOG_ERR("No socket available");
+	}
+
+	return sock;
+}
+
 static int _sock_connect(struct esp_data *dev, struct esp_socket *sock)
 {
 	/* Calculate the largest possible AT command length based on both TCP and UDP variants. */
@@ -155,7 +203,14 @@ static int esp_bind(struct net_context *context, const struct net_sockaddr *addr
 {
 	struct esp_socket *sock;
 
-	sock = (struct esp_socket *)context->offload_context;
+	if (net_context_get_family(context) != NET_AF_INET) {
+		return -EAFNOSUPPORT;
+	}
+
+	sock = esp_socket_for_context(context);
+	if (sock == NULL) {
+		return -ENOMEM;
+	}
 
 	if (esp_socket_ip_proto(sock) == NET_IPPROTO_TCP) {
 		return 0;
@@ -189,14 +244,18 @@ static int esp_connect(struct net_context *context,
 	struct esp_data *dev;
 	int ret;
 
-	sock = (struct esp_socket *)context->offload_context;
+	if (!IS_ENABLED(CONFIG_NET_IPV4) || addr->sa_family != NET_AF_INET ||
+	    net_context_get_family(context) != NET_AF_INET) {
+		return -EAFNOSUPPORT;
+	}
+
+	sock = esp_socket_for_context(context);
+	if (sock == NULL) {
+		return -ENOMEM;
+	}
 	dev = esp_socket_to_dev(sock);
 
 	LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
-
-	if (!IS_ENABLED(CONFIG_NET_IPV4) || addr->sa_family != NET_AF_INET) {
-		return -EAFNOSUPPORT;
-	}
 
 	if (esp_socket_connected(sock)) {
 		return -EISCONN;
@@ -437,7 +496,10 @@ static int esp_sendto(struct net_pkt *pkt,
 	int ret = 0;
 
 	context = pkt->context;
-	sock = (struct esp_socket *)context->offload_context;
+	sock = esp_socket_for_context(context);
+	if (sock == NULL) {
+		return -ENOMEM;
+	}
 	dev = esp_socket_to_dev(sock);
 
 	LOG_DBG("link %d, timeout %d", sock->link_id, timeout);
@@ -679,9 +741,14 @@ static int esp_recv(struct net_context *context,
 		    int32_t timeout,
 		    void *user_data)
 {
-	struct esp_socket *sock = context->offload_context;
-	struct esp_data *dev = esp_socket_to_dev(sock);
+	struct esp_socket *sock = esp_socket_for_context(context);
+	struct esp_data *dev;
 	int ret;
+
+	if (sock == NULL) {
+		return -ENOMEM;
+	}
+	dev = esp_socket_to_dev(sock);
 
 	LOG_DBG("link_id %d, timeout %d, cb %p, data %p",
 		sock->link_id, timeout, cb, user_data);
@@ -720,6 +787,10 @@ static int esp_recv(struct net_context *context,
 static int esp_put(struct net_context *context)
 {
 	struct esp_socket *sock = context->offload_context;
+
+	if (sock == NULL) {
+		return 0;
+	}
 
 	esp_socket_workq_stop_and_flush(sock);
 

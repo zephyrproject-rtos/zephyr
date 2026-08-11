@@ -115,6 +115,7 @@
 				width = <250>;
 				height = <122>;
 				busy-gpios = <&test_gpio 0 0>;
+				ram-ping-pong-mode2;
 			};
 
 			test_uc8176_waveshare_epaper_gdew042t2: uc8176@5 {
@@ -447,6 +448,15 @@
 				mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 			};
 
+			test_mipi_dbi_ssd1683: ssd1683@19 {
+				compatible = "solomon,ssd1683";
+				mipi-max-frequency = <4000000>;
+				reg = <0x19>;
+				width = <300>;
+				height = <400>;
+				busy-gpios = <&test_gpio 0 0>;
+			};
+
 			test_mipi_dbi_ed2208_gca: ed2208_gca@25 {
 				compatible = "eink,ed2208-gca";
 				reg = <0x25>;
@@ -487,6 +497,26 @@
 				height = <128>;
 				rotation = <0>;
 				pwms = <&test_pwm 0 PWM_MSEC(20) 0>;
+			};
+
+			test_uc8253_waveshare_epaper_hat_sku22698: uc8253@28 {
+				compatible = "ultrachip,uc8253";
+				reg = <0x28>;
+				mipi-max-frequency = <4000000>;
+				width = <240>;
+				height = <360>;
+				busy-gpios = <&test_gpio 0 0>;
+				softstart = [37 3d 3d];
+
+				full {
+					pwr = [03 10 3f 3f 03];
+					cdi = <0x17>;
+					tcon = <0x22>;
+					pll = <0x09>;
+					vdcs = <0x07>;
+				};
+
+				status = "okay";
 			};
 		};
 
@@ -743,6 +773,34 @@
 				vcom-mv = <1400>;
 				initial-refresh-waveform = <0>;
 				refresh-waveform = <2>;
+			};
+
+			test_lt7680: lt7680@0 {
+				compatible = "levetop,lt7680";
+				reg = <0>;
+				spi-max-frequency = <30000000>;
+				width = <320>;
+				height = <240>;
+				reset-gpios = <&test_gpio 0 0>;
+				x-offset = <0>;
+				y-offset = <0>;
+				rotation = <180>;
+				reset-delay-ms = <100>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					clock-frequency = <10000000>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					de-active = <1>;
+					pixelclk-active = <0>;
+					hback-porch = <140>;
+					hfront-porch = <160>;
+					hsync-len = <20>;
+					vback-porch = <20>;
+					vfront-porch = <12>;
+					vsync-len = <3>;
+				};
 			};
 		};
 

@@ -502,6 +502,27 @@
 					ngpios = <3>;
 				};
 			};
+
+			test_i2c_tla2528: tla2528@20 {
+				compatible = "ti,tla2528";
+				reg = <0x20>;
+
+				test_i2c_tla2528_gpio: gpio {
+					compatible = "ti,tla2528-gpio";
+					gpio-controller;
+					#gpio-cells = <2>;
+					ngpios = <8>;
+				};
+			};
+
+			test_i2c_tca9554: tca9554@21 {
+				status = "okay";
+				compatible = "ti,tca9554";
+				reg = <0x21>;
+				ngpios = <8>;
+				#gpio-cells = <2>;
+				gpio-controller;
+			};
 		};
 
 		nct3807_alert_1 {

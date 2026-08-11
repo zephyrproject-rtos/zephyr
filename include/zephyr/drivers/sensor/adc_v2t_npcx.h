@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ADC_V2T_NPCX_H_
-#define _ADC_V2T_NPCX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_V2T_NPCX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_V2T_NPCX_H_
 
 #include <zephyr/drivers/sensor.h>
 
@@ -14,4 +14,4 @@ enum npcx_adc_v2t_sensor_attr {
 	SENSOR_ATTR_NPCX_V2T_CHANNEL_CFG = SENSOR_ATTR_PRIV_START,
 };
 
-#endif /* _ADC_V2T_NPCX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_ADC_V2T_NPCX_H_ */

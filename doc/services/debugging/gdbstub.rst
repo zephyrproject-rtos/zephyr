@@ -96,7 +96,7 @@ Run the test with the following command from your :envvar:`ZEPHYR_BASE` director
 
    .. code-block:: console
 
-      ./scripts/twister -p qemu_x86 -T tests/subsys/debug/gdbstub
+      west twister -p qemu_x86 -T tests/subsys/debug/gdbstub
 
 The test should run successfully, and now let's do something similar step-by-step
 to demonstrate how the Zephyr GDB stub works from the GDB user's perspective.

@@ -187,8 +187,13 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		*rate = RSI_CLK_GetBaseClock(M4_UART1);
 		return 0;
 	case SIWX91X_CLK_PWM:
-		/* PWM peripheral operates at the system clock frequency */
-		*rate = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+		/*
+		 * PWM peripheral runs from the M4 core clock domain.
+		 * Do not use CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC here because it may be
+		 * 32.768 kHz when the sleeptimer system timer is selected, which breaks
+		 * pwm_set() nsec-to-cycles conversion.
+		 */
+		*rate = SystemCoreClock;
 		return 0;
 	case SIWX91X_CLK_WATCHDOG:
 		*rate = LF_FSM_CLOCK_FREQUENCY;

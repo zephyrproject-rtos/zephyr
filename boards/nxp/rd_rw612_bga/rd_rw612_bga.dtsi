@@ -18,7 +18,7 @@
 		sw0 = &sw_4;
 		i2c-0 = &flexcomm2;
 		watchdog0 = &wwdt;
-		dmic-dev = &dmic0;
+		dmic0 = &dmic0;
 		mcuboot-button0 = &sw_4;
 		pwm-0 = &sctimer;
 	};

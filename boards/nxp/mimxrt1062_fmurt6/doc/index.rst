@@ -303,7 +303,7 @@ connected to the FMURT6 properly.
    https://www.nxp.com/part/RDDRONE-FMURT6#
 
 .. _MIMXRT1062-FMURT6 User Guide:
-   https://docs.px4.io/master/en/
+   https://docs.px4.io/main/en/
 
 .. _MIMXRT1062-FMURT6 Schematics:
    https://github.com/NXPHoverGames/NXP-FMUMRT6

@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "settings_test.h"
-#include "settings/settings_file.h"
+#include <settings_test.h>
+#include <settings/settings_file.h>
 
 static int test_config_save_one_byte_value(const char *name, uint8_t val)
 {

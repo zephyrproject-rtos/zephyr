@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/pm/device.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>
@@ -59,7 +59,7 @@ static inline int mcux_wwdt_get_clock_frequency(const struct device *dev, uint32
 	defined(CONFIG_SOC_SERIES_LPC54XXX) || defined(CONFIG_SOC_SERIES_LPC51U68) ||              \
 	defined(CONFIG_SOC_SERIES_LPC11U6X)
 		CLOCK_SetClkDiv(kCLOCK_DivWdtClk, config->clk_divider, true);
-#elif defined(CONFIG_SOC_FAMILY_MCXA)
+#elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 		CLOCK_SetClockDiv(kCLOCK_DivWWDT0, config->clk_divider);
 #elif defined(CONFIG_SOC_FAMILY_MCXN)
 		CLOCK_SetClkDiv(kCLOCK_DivWdt0Clk, config->clk_divider);
@@ -283,13 +283,11 @@ static int mcux_wwdt_init(const struct device *dev)
 		return ret;
 	}
 
-#if FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
 		LOG_ERR("Failed to enable clock: %d", ret);
 		return ret;
 	}
-#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 	/* The rest of the device init is done from the
 	 * PM_DEVICE_ACTION_TURN_ON in the pm callback

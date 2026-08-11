@@ -1,0 +1,25 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * FGPIO loopback test wiring (fixture: fgpio_loopback):
+ * Connect a jumper between the Arduino header pins:
+ *     J1-2 (Arduino D0 / PTC8)  <-->  J1-4 (Arduino D1 / PTC9)
+ * out-gpios drives D0 (PTC8) and in-gpios reads it back on D1 (PTC9).
+ * Note: these are FGPIO (IOPORT fast-bus) accesses to the same PTC8/PTC9
+ * pins; they do not conflict with the console (lpuart1 on PTC6/PTC7).
+ */
+
+&fgpioc {
+	status = "okay";
+};
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&fgpioc 8 0>; /* J1-2, Arduino D0, PTC8 */
+		in-gpios = <&fgpioc 9 0>;  /* J1-4, Arduino D1, PTC9 */
+	};
+};

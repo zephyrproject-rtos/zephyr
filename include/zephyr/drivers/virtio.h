@@ -22,6 +22,8 @@ extern "C" {
 /**
  * @brief Interfaces for Virtual I/O (VIRTIO) devices.
  * @defgroup virtio_interface VIRTIO
+ * @since 4.2
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

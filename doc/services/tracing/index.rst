@@ -452,35 +452,64 @@ See also the presentation by Ericsson,
 User-Defined Tracing
 ====================
 
-This tracing format allows the user to define functions to perform any work desired
-when a task is switched in or out, when an interrupt is entered or exited, and when the cpu
-is idle.
+This tracing format lets the application define plain C functions that run on
+each hook, with no need to author or fork a tracing header. Each
+``sys_port_trace_*`` hook is routed to a ``__weak`` callback named
+``sys_trace_<event>_user()``; the application overrides only the callbacks it
+cares about, and any callback it leaves undefined is a no-op.
 
 Examples include:
+
 - simple toggling of GPIO for external scope tracing while minimizing extra cpu load
 - generating/outputting trace data in a non-standard or proprietary format that can
-not be supported by the other tracing systems
+  not be supported by the other tracing systems
 
-The following functions can be defined by the user:
+The callbacks cover thread/scheduler, ISR, idle, system init and sleep events,
+GPIO, timers, RTIO, and the kernel objects (semaphores, mutexes, condition
+variables, message queues, mailboxes, events, polling, memory slabs and work
+queues). The authoritative list, with exact signatures, is the set of
+``sys_trace_*_user`` declarations in
+:zephyr_file:`subsys/tracing/user/tracing_user.h`. A representative subset:
 
 .. code-block:: c
 
    void sys_trace_thread_create_user(struct k_thread *thread);
-   void sys_trace_thread_abort_user(struct k_thread *thread);
-   void sys_trace_thread_suspend_user(struct k_thread *thread);
-   void sys_trace_thread_resume_user(struct k_thread *thread);
-   void sys_trace_thread_name_set_user(struct k_thread *thread);
-   void sys_trace_thread_switched_in_user(struct k_thread *thread);
-   void sys_trace_thread_switched_out_user(struct k_thread *thread);
-   void sys_trace_thread_info_user(struct k_thread *thread);
-   void sys_trace_thread_sched_ready_user(struct k_thread *thread);
-   void sys_trace_thread_pend_user(struct k_thread *thread);
-   void sys_trace_thread_priority_set_user(struct k_thread *thread, int prio);
-   void sys_trace_isr_enter_user(int nested_interrupts);
-   void sys_trace_isr_exit_user(int nested_interrupts);
-   void sys_trace_idle_user();
+   void sys_trace_thread_switched_in_user(void);
+   void sys_trace_thread_switched_out_user(void);
+   void sys_trace_isr_enter_user(void);
+   void sys_trace_isr_exit_user(void);
+   void sys_trace_idle_user(void);
+   void sys_trace_k_sem_give_enter_user(struct k_sem *sem);
+   void sys_trace_k_mutex_lock_enter_user(struct k_mutex *mutex, k_timeout_t timeout);
 
 Enable this format with the :kconfig:option:`CONFIG_TRACING_USER` option.
+:zephyr_file:`tests/subsys/tracing/tracing_user_callbacks` shows an application
+overriding object callbacks.
+
+Out-of-tree Tracing Formats
+===========================
+
+A downstream module can supply its own tracing format without editing the Zephyr
+tree. Set :kconfig:option:`CONFIG_TRACING_FORMAT_HEADER` (a promptless Kconfig
+string, assigned from the module's ``Kconfig`` with a ``default``) to the name of
+a header on the include path; :zephyr_file:`include/zephyr/tracing/tracing.h`
+pulls it in with a computed ``#include`` when no in-tree format is selected.
+
+The format header defines the ``sys_port_trace_*`` hooks it records and ends with:
+
+.. code-block:: c
+
+   /* default no-ops for the scheduler/idle/init/named function layer */
+   #include <zephyr/tracing/tracing_default_hooks.h>
+   /* no-op for every sys_port_trace_* hook this header does not define */
+   #include <zephyr/tracing/tracing_hooks.h>
+
+so a format only has to implement the hooks it cares about. A tracing transport
+is added independently with ``TRACING_BACKEND_DEFINE()`` (see
+:zephyr_file:`subsys/tracing/include/tracing_backend.h`), so neither a custom
+format nor a custom backend requires changes to the core tree.
+:zephyr_file:`tests/subsys/tracing/tracing_format_module` is a complete worked
+example.
 
 Transport Backends
 ******************

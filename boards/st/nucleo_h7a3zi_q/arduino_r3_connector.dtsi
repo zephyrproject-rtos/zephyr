@@ -37,4 +37,6 @@
 	};
 };
 
+arduino_spi: &spi1 {};
+
 arduino_serial: &lpuart1 {};

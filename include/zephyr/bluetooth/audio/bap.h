@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_
 
 /**
  * @brief Bluetooth Basic Audio Profile (BAP)
@@ -108,7 +108,7 @@ extern "C" {
 /**
  * @brief Recommended connection parameters for coexistence of ACL and ISO
  *
- * Defined by Table 8.3 in BAP 1.0.2
+ * Defined by Table 8.4 in BAP 1.0.2
  */
 #define BT_BAP_CONN_PARAM_RELAXED                                                                  \
 	BT_LE_CONN_PARAM(BT_GAP_MS_TO_CONN_INTERVAL(50), BT_GAP_MS_TO_CONN_INTERVAL(70), 0,        \
@@ -499,8 +499,6 @@ struct bt_bap_scan_delegator_cb {
 	 * @param conn       Pointer to the connection to a remote device if
 	 *                   the change was caused by it, otherwise NULL.
 	 * @param recv_state Pointer to the receive state that was updated.
-	 *
-	 * @return 0 in case of success or negative value in case of error.
 	 */
 	void (*recv_state_updated)(struct bt_conn *conn,
 				   const struct bt_bap_scan_delegator_recv_state *recv_state);
@@ -753,24 +751,26 @@ struct bt_bap_stream {
 struct bt_bap_stream_ops {
 #if defined(CONFIG_BT_BAP_UNICAST) || defined(__DOXYGEN__)
 	/**
-	 * @brief Stream configured callback
+	 * @brief Stream codec configured callback
 	 *
-	 * Configured callback is called whenever an Audio Stream has been configured.
+	 * Codec configured callback is called whenever an Audio Stream has been configured with a
+	 * codec configuration.
 	 *
 	 * @param stream Stream object that has been configured.
 	 * @param pref   Remote QoS preferences.
 	 */
-	void (*configured)(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg_pref *pref);
+	void (*codec_configured)(struct bt_bap_stream *stream,
+				 const struct bt_bap_qos_cfg_pref *pref);
 
 	/**
-	 * @brief Stream QoS set callback
+	 * @brief Stream QoS configured callback
 	 *
-	 * QoS set callback is called whenever an Audio Stream Quality of Service has been set or
-	 * updated.
+	 * QoS configured callback is called whenever an Audio Stream Quality of Service has been
+	 * set or updated.
 	 *
 	 * @param stream Stream object that had its QoS updated.
 	 */
-	void (*qos_set)(struct bt_bap_stream *stream);
+	void (*qos_configured)(struct bt_bap_stream *stream);
 
 	/**
 	 * @brief Stream enabled callback
@@ -929,7 +929,7 @@ void bt_bap_stream_cb_register(struct bt_bap_stream *stream, struct bt_bap_strea
  * @param ep Remote Audio Endpoint being configured
  * @param codec_cfg Codec configuration
  *
- * @return Allocated Audio Stream object or NULL in case of error.
+ * @return 0 in case of success or negative value in case of error.
  */
 int bt_bap_stream_config(struct bt_conn *conn, struct bt_bap_stream *stream, struct bt_bap_ep *ep,
 			 const struct bt_audio_codec_cfg *codec_cfg);
@@ -1089,6 +1089,10 @@ int bt_bap_stream_stop(struct bt_bap_stream *stream);
  * Broadcast sink streams cannot be released, but can be deleted by bt_bap_broadcast_sink_delete().
  * Broadcast source streams cannot be released, but can be deleted by
  * bt_bap_broadcast_source_delete().
+ *
+ * If the stream's endpoint is non-NULL and its state is @ref BT_BAP_EP_STATE_IDLE,
+ * the function will reset the stream and endpoint locally if the return value is 0,
+ * but will not send the release command.
  *
  * @param stream Stream object
  *
@@ -1840,6 +1844,34 @@ int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
  */
 int bt_bap_unicast_client_discover(struct bt_conn *conn, enum bt_audio_dir dir);
 
+/**
+ * @brief Get a copy of the QoS configured for the group of the stream
+ *
+ * This may be different from @p stream->qos if the stream has not been QoS configured or if group
+ * has been reconfigured with bt_bap_unicast_group_reconfig(). The QoS returned from this is what
+ * will be applied when bt_bap_stream_qos() is called for the group.
+ *
+ * @param[in] stream The stream to get the QoS configuration information from
+ * @param[out] qos The copy of the QoS configuration data
+ *
+ * @retval 0 Success
+ * @retval -EINVAL @p stream or @p qos are NULL, or @p stream is not part of a group.
+ */
+int bt_bap_unicast_client_qos_from_group(const struct bt_bap_stream *stream,
+					 struct bt_bap_qos_cfg *qos);
+
+/**
+ * @brief Compare two @ref bt_bap_qos_cfg and return whether they are equal
+ *
+ * @param a The first QoS config to compare with
+ * @param b The second QoS config to compare with
+ *
+ * @retval true @p a and @p b points to the same memory (including NULL),
+	   or all fields are identical.
+ * @retval false Either @p a or @p b is NULL or any of the fields are not identical.
+ */
+bool bt_bap_qos_cfg_eq(const struct bt_bap_qos_cfg *a, const struct bt_bap_qos_cfg *b);
+
 /** @} */ /* End of group bt_bap_unicast_client */
 /**
  * @brief BAP Broadcast APIs
@@ -1970,8 +2002,8 @@ int bt_bap_base_get_subgroup_codec_data(const struct bt_bap_base_subgroup *subgr
  * @param[in]  subgroup The subgroup pointer
  * @param[out] meta     Pointer that will point to the resulting codec metadata
  *
+ * @return Length of the metadata on success
  * @retval -EINVAL if arguments are invalid
- * @retval 0 on success
  */
 int bt_bap_base_get_subgroup_codec_meta(const struct bt_bap_base_subgroup *subgroup,
 					uint8_t **meta);
@@ -2587,12 +2619,7 @@ struct bt_bap_scan_delegator_mod_src_param {
 	/** Number of subgroups */
 	uint8_t num_subgroups;
 
-	/**
-	 * @brief Subgroup specific information
-	 *
-	 * If a subgroup's metadata_len is set to 0, the existing metadata
-	 * for the subgroup will remain unchanged
-	 */
+	/** Subgroup specific information */
 	struct bt_bap_bass_subgroup subgroups[BT_BAP_BASS_MAX_SUBGROUPS];
 };
 
@@ -2998,4 +3025,4 @@ int bt_bap_broadcast_assistant_read_recv_state(struct bt_conn *conn, uint8_t idx
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_BAP_H_ */

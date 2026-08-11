@@ -14,6 +14,7 @@
 
 /* BCM2711 PINCTRL Base Address */
 #define BCM2711_PINCTRL_BASE_ADDR DT_REG_ADDR(DT_DRV_INST(0))
+#define BCM2711_NUM_GPIO          DT_INST_PROP(0, ngpios)
 
 /* Function Select Registers (3 bits per pin, 10 pins per register) */
 #define GPFSEL_OFFSET(pin) (((pin) / 10) * 4)

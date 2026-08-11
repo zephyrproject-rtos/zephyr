@@ -1,11 +1,14 @@
 /*
  * Copyright (c) 2017 Linaro Limited.
  * Copyright 2025 NXP
+ * Copyright (c) 2026 Xsight Labs Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT nxp_kinetis_trng
+
+#include <errno.h>
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
@@ -27,7 +30,9 @@ static int entropy_mcux_trng_get_entropy(const struct device *dev,
 	status_t status;
 
 	status = TRNG_GetRandomData(config->base, buffer, length);
-	__ASSERT_NO_MSG(!status);
+	if (status != kStatus_Success) {
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -47,10 +52,14 @@ static int entropy_mcux_trng_init(const struct device *dev)
 	status_t status;
 
 	status = TRNG_GetDefaultConfig(&conf);
-	__ASSERT_NO_MSG(!status);
+	if (status != kStatus_Success) {
+		return -EIO;
+	}
 
 	status = TRNG_Init(config->base, &conf);
-	__ASSERT_NO_MSG(!status);
+	if (status != kStatus_Success) {
+		return -EIO;
+	}
 
 	return 0;
 }
@@ -66,8 +75,7 @@ static int entropy_mcux_trng_pm_action(const struct device *dev, enum pm_device_
 	case PM_DEVICE_ACTION_TURN_OFF:
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		entropy_mcux_trng_init(dev);
-		break;
+		return entropy_mcux_trng_init(dev);
 	default:
 		return -ENOTSUP;
 	}

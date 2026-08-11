@@ -11,10 +11,10 @@
 #include <cy_sysint.h>
 #include <system_edge.h>
 #include "pse84_s_sau.h"
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
-#include "partition_ARMCM33.h"
+#include <partition_ARMCM33.h>
 #include <zephyr/drivers/timer/system_timer.h>
 
 #include "pse84_s_system.h"

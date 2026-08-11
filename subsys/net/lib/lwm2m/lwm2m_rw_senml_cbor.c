@@ -641,7 +641,7 @@ static int get_float(struct lwm2m_input_context *in, double *value)
 static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t buflen)
 {
 	struct cbor_in_fmt_data *fd;
-	int len;
+	size_t len;
 
 	fd = engine_get_in_user_data(in);
 	if (!fd || !fd->current) {
@@ -652,7 +652,9 @@ static int get_string(struct lwm2m_input_context *in, uint8_t *buf, size_t bufle
 	if (len >= buflen) {
 		return -ENOMEM;
 	}
-	memcpy(buf, fd->current->record_union.union_vs.value, len);
+	if (len > 0) {
+		memcpy(buf, fd->current->record_union.union_vs.value, len);
+	}
 	buf[len] = '\0';
 
 	fd->current = NULL;
@@ -746,7 +748,7 @@ static int do_write_op_item(struct lwm2m_message *msg, struct record *rec)
 	}
 
 	/* If there's no name then the basename forms the path */
-	if (rec->record_n_present) {
+	if (rec != NULL && rec->record_n_present) {
 		len = MIN(sizeof(name) - 1, rec->record_n.record_n.len);
 		snprintk(name, len + 1, "%s", rec->record_n.record_n.value);
 	}

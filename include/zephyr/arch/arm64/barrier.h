@@ -3,8 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BARRIER_ARM64_H_
-#define ZEPHYR_INCLUDE_BARRIER_ARM64_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM64_BARRIER_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM64_BARRIER_H_
 
 #ifndef ZEPHYR_INCLUDE_SYS_BARRIER_H_
 #error Please include <zephyr/sys/barrier.h>
@@ -40,4 +40,4 @@ static ALWAYS_INLINE void z_barrier_isync_fence_full(void)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BARRIER_ARM64_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM64_BARRIER_H_ */

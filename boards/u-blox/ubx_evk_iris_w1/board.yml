@@ -6,8 +6,10 @@ board:
     format: custom
     default: fidelix
     revisions:
-      - name: "macronix"
       - name: "fidelix"
+      - name: "fidelix_16mb"
+      - name: "macronix"
+      - name: "macronix_16mb"
   socs:
     - name: rw612
       variants:

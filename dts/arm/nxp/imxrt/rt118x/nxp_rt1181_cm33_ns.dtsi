@@ -1,0 +1,13 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for MIMXRT1181 CM33 core (single-core part, non-secure) */
+
+/*
+ * RT1181 shares the same package and peripheral set as RT1182, except it
+ * has no EtherCAT block (no ECAT node exists in the DTS yet).
+ */
+#include <nxp/imxrt/rt118x/nxp_rt1182_cm33_ns.dtsi>

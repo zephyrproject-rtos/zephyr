@@ -1,0 +1,13 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SMBUS_ITE_IT51XXX
+	bool "ITE SMBus driver"
+	default y
+	depends on DT_HAS_ITE_IT51XXX_SMBUS_ENABLED
+	help
+	  Enable ITE SMBus driver.
+	  Supports nine controllers, performs SMBus messages with packet
+	  error checking (PEC) either enabled or disabled.
+	  Supported speeds: 50kHz, 100kHz, 400kHz and 1MHz.
+	  Supports host notify command.

@@ -73,6 +73,14 @@
 	};
 
 	soc {
+		trgmux: trgmux@40063000 {
+			compatible = "nxp,trgmux";
+			reg = <0x40063000 0x1000>;
+			#mux-control-cells = <2>;
+			#mux-state-cells = <3>;
+			status = "disabled";
+		};
+
 		scg: scg@40064000 {
 			compatible = "nxp,kinetis-scg";
 			sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
@@ -743,6 +751,7 @@
 		crc: crc@40032000 {
 			compatible = "nxp,crc";
 			reg = <0x40032000 0x1000>;
+			clocks = <&pcc 0xc8 KINETIS_PCC_SRC_NONE_OR_EXT>;
 			status = "disabled";
 		};
 

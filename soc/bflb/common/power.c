@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(bflb_power_controller, CONFIG_KERNEL_LOG_LEVEL);
 #define E24_VALID_BO_THRES_0	2000000
 #define E24_VALID_BO_THRES_1	2400000
 #define E907_VALID_BO_THRES_MIN	2050000
+#define E907_VALID_BO_ID_MAX	9U
 
 struct power_bflb_config_s {
 	uintptr_t base_hbn;
@@ -85,6 +86,39 @@ static void power_bflb_setup_bor(const struct device *dev)
 	sys_write32(tmp, config->base_hbn + HBN_BOR_CFG_OFFSET);
 }
 
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+
+static void power_bflb_setup_bor(const struct device *dev)
+{
+	const struct power_bflb_config_s *config = dev->config;
+	uint32_t tmp;
+
+	if (config->brown_out_reset) {
+		/* disable BOD interrupt */
+		tmp = sys_read32(config->base_hbn + HBN_IRQ_MODE_OFFSET);
+		tmp &= ~HBN_IRQ_BOR_EN_MSK;
+		sys_write32(tmp, config->base_hbn + HBN_IRQ_MODE_OFFSET);
+	} else {
+		tmp = sys_read32(config->base_hbn + HBN_IRQ_MODE_OFFSET);
+		tmp |= HBN_IRQ_BOR_EN_MSK;
+		sys_write32(tmp, config->base_hbn + HBN_IRQ_MODE_OFFSET);
+	}
+
+	tmp = sys_read32(config->base_hbn + HBN_BOR_CFG_OFFSET);
+	if (config->brown_out_reset) {
+		/* when brownout threshold, restart*/
+		tmp |= HBN_BOD_SEL_AON_MSK;
+	} else {
+		tmp &= ~HBN_BOD_SEL_AON_MSK;
+	}
+	tmp &= ~HBN_BOD_TH_AON_MSK;
+	tmp |= ((config->bo_threshold - E907_VALID_BO_ID_MAX) << HBN_BOD_TH_AON_POS)
+		& HBN_BOD_TH_AON_MSK;
+	/* enable BOD */
+	tmp |= HBN_PU_BOD_AON_MSK;
+	sys_write32(tmp, config->base_hbn + HBN_BOR_CFG_OFFSET);
+}
+
 #elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 
@@ -143,7 +177,7 @@ static void power_bflb_reset_irq_srcs(const struct device *dev)
 	tmp &= HBN_IRQ_BOR_EN_UMSK;
 	sys_write32(tmp, config->base_hbn + HBN_IRQ_MODE_OFFSET);
 
-#if !defined(CONFIG_SOC_SERIES_BL70XL)
+#if !defined(CONFIG_SOC_SERIES_BL70XL) && !defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(config->base_hbn + HBN_PIR_CFG_OFFSET);
 	/* Disable PIR IRQ */
 	tmp &= HBN_PIR_EN_UMSK;
@@ -171,8 +205,17 @@ DEVICE_DT_INST_DEFINE(0, power_bflb_init, NULL, NULL, &power_bflb_config, PRE_KE
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+
+#define COMPLY_LINE_0 "BL61x/BL80x Brown Out threshold must be  2050000 uV > value >= 2400000 uV"
+#define COMPLY_LINE_1 " excluding 2330000 and 2370000 uV"
+
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) > E907_VALID_BO_THRES_MIN,
 	     "BL61x/BL80x Brown Out threshold must be > 2050000 uV");
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, brown_out_threshold_microvolt) < E907_VALID_BO_ID_MAX,
+	     COMPLY_LINE_0 COMPLY_LINE_1);
+#elif defined(CONFIG_SOC_SERIES_BL616CL)
+BUILD_ASSERT(DT_INST_ENUM_IDX(0, brown_out_threshold_microvolt) >= E907_VALID_BO_ID_MAX,
+	"BL616CL Brown Out threshold must be >= 2330000 uV excluding 2350000 and 2400000 uV");
 #elif defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 BUILD_ASSERT(DT_INST_PROP(0, brown_out_threshold_microvolt) == E24_VALID_BO_THRES_0

@@ -1,4 +1,7 @@
-/* Copyright 2025 The ChromiumOS Authors
+/*
+ * Copyright 2025 The ChromiumOS Authors
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/sys/util.h>
@@ -34,12 +37,22 @@ struct hw_frame_align_fpu {
 };
 
 /* Zephyr's synthesized frame used during context switch on interrupt
- * exit.  It's a minimal hardware frame plus storage for r4-11.
+ * exit: a minimal hardware frame with storage for r4-r11.
+ * This is the variant with no alignment word.
  */
 struct synth_frame {
 	uint32_t r7, r8, r9, r10, r11;
 	uint32_t r4, r5, r6; /* these match switch format */
 	struct hw_frame_base base;
+};
+
+/* Zephyr's synthesized frame used during context switch on interrupt
+ * exit: variant used when alignment word is needed.
+ */
+struct synth_frame_align {
+	uint32_t r7, r8, r9, r10, r11;
+	uint32_t r4, r5, r6; /* these do NOT match switch format */
+	struct hw_frame_align base;
 };
 
 /* Zephyr's custom frame used for suspended threads, not hw-compatible */
@@ -94,6 +107,7 @@ union frame {
 	struct { PAD(hw_frame_align_fpu); struct hw_frame_align_fpu hwfp_a; };
 	struct { PAD(z_frame);            struct z_frame z;                 };
 	struct { PAD(z_frame_fpu);        struct z_frame_fpu zfp;           };
+	struct { PAD(synth_frame_align);  struct synth_frame_align synth_a; };
 };
 /* clang-format on */
 
@@ -105,6 +119,7 @@ BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(hw_a));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(hwfp_a));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(z));
 BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(zfp));
+BUILD_ASSERT(FRAME_FIELD_END(hw) == FRAME_FIELD_END(synth_a));
 #endif
 
 #ifdef CONFIG_FPU
@@ -125,6 +140,9 @@ struct arm_m_cs_ptrs arm_m_cs_ptrs;
 void *arm_m_lto_refs[2];
 #endif
 
+/* Bitmask to determine if the XPSR indicates the exception frame was padded */
+#define XPSR_STACK_ALIGN BIT(9)
+
 /* Unit test hook, unused in production */
 void *arm_m_last_switch_handle;
 
@@ -144,17 +162,34 @@ uint32_t arm_m_switch_control;
 	sw.r12 = r12; sw.lr = lr; sw.pc = pc; sw.apsr = apsr;           \
 } while (false)
 
-/* Emits an in-place copy from a switch_frame to a synth_frame */
-#define SWITCH_TO_SYNTH(sw, syn) do {					\
-	struct synth_frame syntmp = {                                   \
-		.r4 = sw.r4, .r5 = sw.r5, .r6 = sw.r6, .r7 = sw.r7,     \
-		.r8 = sw.r8, .r9 = sw.r9, .r10 = sw.r10, .r11 = sw.r11, \
-		.base.r0 = sw.r0, .base.r1 = sw.r1, .base.r2 = sw.r2,   \
-		.base.r3 = sw.r3, .base.r12 = sw.r12, .base.lr = sw.lr, \
-		.base.pc = sw.pc, .base.apsr = sw.apsr,                 \
-	};                                                              \
-	syn = syntmp;                                                   \
+/* Emits an in-place copy from a switch_frame to a synth_frame
+ * but is generic as to whether the frame has an alignment word so takes
+ * a separate parameter for the struct hw_frame_base
+ */
+#define SWITCH_TO_SYNTH_INNER(sw, syntmp, syntmp_hw) do {               \
+	syntmp.r4 = sw.r4, syntmp.r5 = sw.r5, syntmp.r6 = sw.r6,        \
+	syntmp.r7 = sw.r7, syntmp.r8 = sw.r8, syntmp.r9 = sw.r9,        \
+	syntmp.r10 = sw.r10, syntmp.r11 = sw.r11, syntmp_hw.r0 = sw.r0, \
+	syntmp_hw.r1 = sw.r1, syntmp_hw.r2 = sw.r2,                     \
+	syntmp_hw.r3 = sw.r3, syntmp_hw.r12 = sw.r12,                   \
+	syntmp_hw.lr = sw.lr, syntmp_hw.pc = sw.pc,                     \
+	syntmp_hw.apsr = sw.apsr;                                       \
 } while (false)
+
+/* Emits an in-place copy from a switch_frame to a synth_frame */
+#define SWITCH_TO_SYNTH(sw, hw) do {                                    \
+	struct synth_frame tmp = { 0 };                                 \
+	SWITCH_TO_SYNTH_INNER(sw, tmp, tmp.base);                       \
+	hw = tmp;                                                       \
+} while (false)
+
+/* Emits an in-place copy from a switch_frame to a synth_frame_align */
+#define SWITCH_TO_SYNTH_ALIGN(sw, hw) do {                              \
+	struct synth_frame_align tmp = { 0 };                           \
+	SWITCH_TO_SYNTH_INNER(sw, tmp, tmp.base.base);                  \
+	hw = tmp;                                                       \
+} while (false)
+
 /* clang-format on */
 
 /* The arch/cpu/toolchain are horrifyingly inconsistent with how the
@@ -270,6 +305,7 @@ static void *arm_m_switch_to_cpu(void *sp)
 {
 	union frame *f;
 	uint32_t splim;
+	bool padded;
 
 #ifdef CONFIG_FPU
 	/* When FPU switching is enabled, the suspended handle always
@@ -282,16 +318,32 @@ static void *arm_m_switch_to_cpu(void *sp)
 		f = CONTAINER_OF(sp, union frame, zfp.have_fpu);
 		splim = PSPLIM(f);
 		__asm__ volatile("vldm %0, {s0-s31}" ::"r"(&f->zfp.s_regs[0]));
-		SWITCH_TO_SYNTH(f->zfp.u.sw, f->zfp.u.hw);
+		padded = f->zfp.u.sw.apsr & XPSR_STACK_ALIGN;
+		if (padded) {
+			SWITCH_TO_SYNTH_ALIGN(f->zfp.u.sw, f->synth_a);
+		} else {
+			SWITCH_TO_SYNTH(f->zfp.u.sw, f->zfp.u.hw);
+		}
 	} else {
 		f = CONTAINER_OF(sp, union frame, z.have_fpu);
 		splim = PSPLIM(f);
-		SWITCH_TO_SYNTH(f->z.u.sw, f->zfp.u.hw);
+		padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
+		if (padded) {
+			SWITCH_TO_SYNTH_ALIGN(f->z.u.sw, f->synth_a);
+		} else {
+			SWITCH_TO_SYNTH(f->z.u.sw, f->z.u.hw);
+		}
 	}
 #else
 	f = CONTAINER_OF(sp, union frame, z.u.sw);
+	padded = f->z.u.sw.apsr & XPSR_STACK_ALIGN;
 	splim = PSPLIM(f);
-	SWITCH_TO_SYNTH(f->z.u.sw, f->z.u.hw);
+
+	if (padded) {
+		SWITCH_TO_SYNTH_ALIGN(f->z.u.sw, f->synth_a);
+	} else {
+		SWITCH_TO_SYNTH(f->z.u.sw, f->z.u.hw);
+	}
 #endif
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
@@ -301,9 +353,13 @@ static void *arm_m_switch_to_cpu(void *sp)
 	/* Mark the callee-saved pointer for the fixup assembly.  Note
 	 * funny layout that puts r7 first!
 	 */
-	arm_m_cs_ptrs.in = &f->z.u.hw.r7;
+	if (padded) {
+		arm_m_cs_ptrs.in = &f->synth_a.r7;
+	} else {
+		arm_m_cs_ptrs.in = &f->z.u.hw.r7;
+	}
 
-	return &f->z.u.hw.base;
+	return padded ? &f->synth_a.base.base : &f->z.u.hw.base;
 }
 
 static void fpu_cs_copy(struct hw_frame_fpu *src, struct z_frame_fpu *dst)
@@ -321,7 +377,7 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 {
 	union frame *f = NULL;
 	struct hw_frame_base *base = sp;
-	bool padded = (base->apsr & 0x200);
+	bool padded = (base->apsr & XPSR_STACK_ALIGN);
 	uint32_t fpscr;
 
 	if (fpu && IS_ENABLED(CONFIG_FPU)) {
@@ -335,7 +391,8 @@ static void *arm_m_cpu_to_switch(struct k_thread *th, void *sp, bool fpu)
 		__asm__ volatile("vmov %0, s0;"
 				 "mrs %0, control;"
 				 "bic %0, %0, #4;"
-				 "msr control, %0;" ::"r"(dummy));
+				 "msr control, %0;"
+				 : "+r"(dummy));
 	}
 
 	/* Detects interrupted ICI/IT instructions and rigs up thread
@@ -544,31 +601,6 @@ bool arm_m_do_switch(struct k_thread *last_thread, void *next)
 #ifdef CONFIG_THREAD_LOCAL_STORAGE
 	z_arm_tls_ptr = _current->tls;
 #endif
-
-#if defined(CONFIG_BOARD_MPS3_CORSTONE310_FVP) || \
-	defined(CONFIG_BOARD_MPS4_CORSTONE315_FVP) || \
-	defined(CONFIG_BOARD_MPS4_CORSTONE320_FVP)
-	/* The ARM Ltd. FVP emulator (at least the ones above that run
-	 * in Zephyr CI) appears to have a bug with the stack
-	 * alignment bit in xPSR.  It's common (it fails in the first
-	 * 4-6 timer interrupts in tests.syscalls.timeslicing) that
-	 * we'll take an interrupt from a seemingly aligned (!) stack
-	 * with the bit set.  If we then switch and resume the thread
-	 * from a different context later, popping the stack goes
-	 * wrong (more so than just a misalignment of four bytes: I
-	 * usually see it too low by 20 bytes) in a way that it
-	 * doesn't if we return synchronously.  Presumably legacy
-	 * PendSV didn't see this because it used the unmodified
-	 * exception frame.
-	 *
-	 * Work around this here, pending validation from ARM, by
-	 * simply assuming all interrupted stacks were aligned and
-	 * clearing the bit.  That is NOT correct in the general case,
-	 * but in practice it's enough to get tests to pass.
-	 */
-	((struct hw_frame_base *)next)->apsr &= ~BIT(9);
-#endif
-
 	return true;
 }
 

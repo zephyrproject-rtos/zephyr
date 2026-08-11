@@ -94,6 +94,14 @@
 		status = "disabled";
 	};
 
+	ana_cmpr0: ana_cmpr0 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <0>;
+		interrupts = <GPIO_EXT_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -170,7 +178,7 @@
 			mbox0: mbox@3ff8 {
 				compatible = "espressif,mbox-esp32";
 				reg = <0x3ff8 0x8>;
-				status = "disabled";
+				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
 				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
@@ -257,7 +265,7 @@
 		};
 
 		twai0: can@6000b000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000b000 DT_SIZE_K(4)>;
 			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -266,7 +274,7 @@
 		};
 
 		twai1: can@6000d000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000d000 DT_SIZE_K(4)>;
 			interrupts = <TWAI1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -411,6 +419,12 @@
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
 			reg = <0x600b1400 DT_SIZE_K(4)>;
+			interrupts = <LP_UART_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			tx-pin = <5>;
+			rx-pin = <4>;
+			rts-pin = <2>;
+			cts-pin = <3>;
 			status = "disabled";
 			current-speed = <115200>;
 		};

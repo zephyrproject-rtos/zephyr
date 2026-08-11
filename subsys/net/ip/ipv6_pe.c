@@ -87,7 +87,8 @@ static K_MUTEX_DEFINE(lock);
 #endif
 
 /* We need to periodically update the private address. */
-static struct k_work_delayable temp_lifetime;
+static void ipv6_pe_renew(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(temp_lifetime, ipv6_pe_renew);
 
 static bool ipv6_pe_use_this_prefix(const struct net_in6_addr *prefix)
 {
@@ -780,7 +781,6 @@ int net_ipv6_pe_init(struct net_if *iface)
 		IS_ENABLED(CONFIG_NET_IPV6_PE_PREFER_PUBLIC_ADDRESSES) ?
 		true : false;
 
-	k_work_init_delayable(&temp_lifetime, ipv6_pe_renew);
 	k_work_init_delayable(&trigger_deprecated_event.work,
 			      send_deprecated_event);
 

@@ -285,6 +285,7 @@
 	crc: crc@120000 {
 		compatible = "nxp,lpc-crc";
 		reg = <0x120000 0x1000>;
+		clocks = <&clkctl1 MCUX_CRC_CLK>;
 		status = "disabled";
 	};
 

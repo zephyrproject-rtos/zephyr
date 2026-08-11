@@ -13,8 +13,8 @@
  * this input and the target Redistributor and, through this, the target PE for that INTID.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_GICV3_ITS_H_
-#define ZEPHYR_INCLUDE_DRIVERS_GICV3_ITS_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_
 
 typedef unsigned int (*its_api_alloc_intid_t)(const struct device *dev);
 typedef int (*its_api_setup_deviceid_t)(const struct device *dev, uint32_t device_id,
@@ -59,4 +59,4 @@ static inline uint32_t its_get_msi_addr(const struct device *dev)
 	return DEVICE_API_GET(its, dev)->get_msi_addr(dev);
 }
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_GICV3_ITS_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GICV3_ITS_H_ */

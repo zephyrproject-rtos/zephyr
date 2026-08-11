@@ -7,6 +7,7 @@
 /** @file
  *
  * @brief Utility functions to be used by the Wi-Fi subsystem.
+ * @ingroup wifi_mgmt
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_UTILS_H_

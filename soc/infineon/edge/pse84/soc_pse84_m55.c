@@ -14,17 +14,17 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 #include "soc.h"
 #include <cy_sysint.h>
 #include <system_edge.h>
 
 #if defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
-#include "cy_syslib.h"
+#include <cy_syslib.h>
 #include "mtb_ipc_config.h"
-#include "mtb_srf.h"
-#include "mtb_srf_ipc_init.h"
-#include "mtb_srf_pool_init.h"
+#include <mtb_srf.h>
+#include <mtb_srf_ipc_init.h>
+#include <mtb_srf_pool_init.h>
 #else
 #include <ifx_cycfg_init.h>
 #endif

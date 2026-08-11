@@ -82,14 +82,10 @@ config BT_OTS_CLIENT
 if BT_OTS || BT_OTS_CLIENT
 
 config BT_OTS_MAX_OBJ_CNT
-	hex "Maximum number of objects that each service instance can store"
-	default 0x05
-	# Given the maximum size of a directory listing record (172) and the maximum size of an
-	# object using the net_buf implementation is 2^16-1, the maximum number of objects is given
-	# by 2^16-1 / 172 = 381 == 0x17D)
-	range 0x02 0x17D if BT_OTS_DIR_LIST_OBJ
-	# Max obj count is otherwise the non-RFU IDs available
-	range 0x01 0xFFFFFFFFFFFFFEFF
+	int "Maximum number of objects that each service instance can store"
+	default 5
+	# Max obj count is 2^48 - 1 - 256 (RFU IDs)
+	range 1 281474976710400
 
 config BT_OTS_L2CAP_CHAN_TX_MTU
 	int "Size of TX MTU for Object Transfer Channel"

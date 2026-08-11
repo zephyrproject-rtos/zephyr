@@ -3,6 +3,7 @@
 
 zephyr_sources(soc.c)
 zephyr_sources(sram_config.c)
+zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 zephyr_include_directories(.)
 
 zephyr_library_sources_ifdef(CONFIG_SOC_EARLY_RESET_HOOK mcxe31x_soc_initialization.S)

@@ -5,7 +5,7 @@
 
 / {
 	aliases {
-		stepper = &mikroe_h_bridge_4_click;
+		stepper-ctrl = &mikroe_h_bridge_4_click;
 	};
 };
 
@@ -14,7 +14,6 @@
 		status = "okay";
 		compatible = "zephyr,h-bridge-stepper-ctrl";
 
-		en-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
 		gpios = <&mikrobus_header 0 GPIO_ACTIVE_LOW>, /* IN1 */
 			<&mikrobus_header 1 GPIO_ACTIVE_LOW>, /* IN2 */
 			<&mikrobus_header 6 GPIO_ACTIVE_LOW>, /* IN3 */

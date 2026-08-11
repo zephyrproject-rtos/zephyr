@@ -113,6 +113,13 @@
 			divider = <1>;
 			status = "okay";
 		};
+
+		clk_uhspll: clk-uhspll {
+			#clock-cells = <0>;
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(2000)>;
+			status = "okay";
+		};
 	};
 
 	cpus {
@@ -197,14 +204,14 @@
 				 <&clk_cpupll BL808_CPUPLL_ID_DIV1>,
 				 <&clk_root>, <&clk_bclk>, <&clk_flash>,
 				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
-				 <&clk_mm>;
+				 <&clk_mm>, <&clk_uhspll>;
 			clock-names = "rc32m", "crystal",
 				      "wifipll_top",
 				      "aupll_top",
 				      "cpupll_top",
 				      "root", "bclk", "flash",
 				      "rc32k", "xtal32k", "f32k",
-				      "mm";
+				      "mm", "uhspll_top";
 		};
 
 		adc0: adc@20002000 {
@@ -348,6 +355,7 @@
 		sf_ctrl: sf@2000b000 {
 			compatible = "bflb,sf-controller";
 			reg = <0x2000b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -446,6 +454,13 @@
 			interrupt-parent = <&clic>;
 		};
 
+		psram_uhs_ctrl: psram-uhs@3000f000 {
+			compatible = "bflb,bl808-psram-uhs-controller";
+			reg = <0x3000f000 DT_SIZE_K(4)>;
+			clocks = <&clocks BL808_CLKID_CLK_UHSPLL>;
+			status = "disabled";
+		};
+
 		/* All contiguous fast RAM for M0
 		 * It is kept tightly coupled by this CPU's internal cache
 		 */
@@ -493,6 +508,13 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x3f000000 DT_SIZE_K(32)>;
 			zephyr,memory-region = "MM_VRAM";
+		};
+
+		psram: memory@50000000 {
+			compatible = "bflb,bl808-psram-uhs", "zephyr,memory-region";
+			reg = <0x50000000 DT_SIZE_M(64)>;
+			zephyr,memory-region = "PSRAM";
+			page-size = <2048>;
 		};
 
 		mtimer: timer@e000bff8 {

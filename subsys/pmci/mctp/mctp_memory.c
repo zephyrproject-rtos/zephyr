@@ -5,6 +5,7 @@
  *
  */
 
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_heap.h>
 #include <libmctp.h>
@@ -16,7 +17,7 @@ static struct {
 	struct sys_heap heap;
 } mctp_heap;
 
-static void *mctp_heap_alloc(size_t bytes)
+void *mctp_heap_alloc(size_t bytes)
 {
 	k_spinlock_key_t key = k_spin_lock(&mctp_heap.lock);
 
@@ -27,7 +28,7 @@ static void *mctp_heap_alloc(size_t bytes)
 	return ptr;
 }
 
-static void mctp_heap_free(void *ptr)
+void mctp_heap_free(void *ptr)
 {
 	k_spinlock_key_t key = k_spin_lock(&mctp_heap.lock);
 

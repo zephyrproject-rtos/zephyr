@@ -26,6 +26,8 @@ extern "C" {
 /**
  * @brief IPC Service API
  * @defgroup ipc_service_api IPC service APIs
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup ipc
  * @{
  */

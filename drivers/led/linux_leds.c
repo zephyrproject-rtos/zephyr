@@ -16,8 +16,8 @@
 #include <zephyr/drivers/led.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/util.h>
+#include "linux_leds_bottom.h"
 
 LOG_MODULE_REGISTER(linux_leds, CONFIG_LED_LOG_LEVEL);
 
@@ -68,57 +68,6 @@ static DEVICE_API(led, linux_leds_api) = {
 	.set_brightness = linux_leds_set_brightness,
 };
 
-static int linux_led_open(const char *path, int *max)
-{
-	/* 34: Length of /sys/class/leds/%s/max_brightness + \0 */
-	char full_path[strlen(path) + 34];
-	char buf[32];
-	int fd;
-	int ret;
-
-	ret = snprintf(full_path, sizeof(full_path), "/sys/class/leds/%s/max_brightness", path);
-	if (ret < 0) {
-		return ret;
-	} else if (ret >= sizeof(full_path)) {
-		return -ENOMEM;
-	}
-
-	fd = nsi_host_open(full_path, ZVFS_O_RDONLY);
-	if (fd < 0) {
-		LOG_ERR("Failed to open the led max brightness device %s: %s",
-			full_path, strerror(nsi_host_get_errno()));
-		return -EIO;
-	}
-
-	ret = nsi_host_read(fd, buf, sizeof(buf) - 1);
-	if (ret < 0) {
-		LOG_WRN("Read error: %s", strerror(nsi_host_get_errno()));
-		nsi_host_close(fd);
-		return -EIO;
-	}
-
-	buf[ret] = '\0';
-	*max = strtol(buf, NULL, 10);
-
-	nsi_host_close(fd);
-
-	ret = snprintf(full_path, sizeof(full_path), "/sys/class/leds/%s/brightness", path);
-	if (ret < 0) {
-		return ret;
-	} else if (ret >= sizeof(full_path)) {
-		return -ENOMEM;
-	}
-
-	fd = nsi_host_open(full_path, ZVFS_O_WRONLY);
-	if (fd < 0) {
-		LOG_ERR("Failed to open the led device %s: %s",
-			full_path, strerror(nsi_host_get_errno()));
-		return -EIO;
-	}
-
-	return fd;
-}
-
 static int linux_leds_init(const struct device *dev)
 {
 	const struct linux_leds_config *cfg = dev->config;
@@ -129,6 +78,7 @@ static int linux_leds_init(const struct device *dev)
 
 		ret = linux_led_open(led->path, &led->max);
 		if (ret < 0) {
+			ret = -EIO;
 			goto cleanup;
 		}
 

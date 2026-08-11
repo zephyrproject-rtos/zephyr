@@ -12,11 +12,11 @@
 
 #include <stm32_ll_rng.h>
 #if defined(CONFIG_BT_STM32WBA)
-#include "bleplat.h"
-#include "bpka.h"
-#include "baes.h"
+#include <bleplat.h>
+#include <bpka.h>
+#include <baes.h>
 #endif /* CONFIG_BT_STM32WBA */
-#include "linklayer_plat.h"
+#include <linklayer_plat.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(sys_wireless_plat);

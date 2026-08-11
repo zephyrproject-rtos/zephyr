@@ -328,3 +328,28 @@ config RISCV_ISA_EXT_SSAIA
 	  the exact set of CSRs enabled depends on various factors; this extension
 	  is used to infer whether a certain CSR is enabled (e.g. if a hart
 	  implements RV32 and SSAIA the CSRs sieh/siph are enabled).
+
+config RISCV_ISA_EXT_ZK
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zk)
+	help
+	  (Zk) - Standard Extension for Scalar Cryptography
+
+	  The "Zk" extension provides support for NIST-standard scalar
+	  cryptography instructions, including sub-extensions Zbkb
+	  (bit manipulation for cryptography), Zbkc (carry-less
+	  multiplication), Zbkx (crossbar permutations), Zknd/Zkne
+	  (NIST AES decryption/encryption), Zknh (NIST hash functions
+	  such as SHA-256 and SHA-512), and Zkr (entropy source).
+
+config RISCV_ISA_EXT_ZKS
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zks)
+	help
+	  (Zks) - Standard Extension for ShangMi Suite
+
+	  The "Zks" extension provides support for the ShangMi
+	  Suite, which implements Chinese national cryptographic
+	  standards. It includes sub-extensions Zbkb, Zbkc, Zbkx
+	  (shared with Zk), Zksed (SM4 block cipher), and Zksh
+	  (SM3 hash function).

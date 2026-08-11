@@ -6,7 +6,7 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/logging/log.h>
 #include "eth_smsc91x_priv.h"

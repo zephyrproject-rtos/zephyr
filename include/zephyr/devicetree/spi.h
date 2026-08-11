@@ -215,7 +215,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_SPI_DEV_HAS_CS_GPIOS(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return 1 if the instance's bus has a CS pin at index
  *         DT_INST_REG_ADDR(inst), 0 otherwise
  * @see DT_SPI_DEV_HAS_CS_GPIOS()
@@ -226,7 +226,7 @@ extern "C" {
 /**
  * @brief Get GPIO controller node identifier for a SPI device instance
  * This is equivalent to DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return node identifier for instance's chip select GPIO controller
  * @see DT_SPI_DEV_CS_GPIOS_CTLR()
  */
@@ -235,7 +235,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_SPI_DEV_CS_GPIOS_PIN(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return pin number of the instance's chip select GPIO
  * @see DT_SPI_DEV_CS_GPIOS_PIN()
  */
@@ -244,7 +244,7 @@ extern "C" {
 
 /**
  * @brief DT_SPI_DEV_CS_GPIOS_FLAGS(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return flags value of the instance's chip select GPIO specifier,
  *         or zero if there is none
  * @see DT_SPI_DEV_CS_GPIOS_FLAGS()

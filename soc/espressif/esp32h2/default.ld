@@ -18,7 +18,7 @@
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 user_sram_end = DRAM_SHARED_BUFFERS_END;
 #else
-user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
+user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;
 #endif
 
 /* User available memory segments */
@@ -267,6 +267,8 @@ SECTIONS
     _rtc_reserved_end = ABSOLUTE(.);
   } GROUP_LINK_IN(lp_reserved_seg)
   _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
 #else
   _rtc_reserved_length = 0;
 #endif

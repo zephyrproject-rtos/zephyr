@@ -140,7 +140,12 @@ bool gdb_mem_can_write(const uintptr_t addr, const size_t len, uint8_t *align)
 
 size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-	if ((hexlen + 1) < buflen * 2) {
+	/* The loop below writes exactly 2 * buflen characters (indices
+	 * 0 .. 2*buflen-1). The previous `(hexlen + 1) < buflen * 2` check was
+	 * off by one and admitted hexlen == 2*buflen-1, writing one past the
+	 * destination.
+	 */
+	if (hexlen < buflen * 2) {
 		return 0;
 	}
 

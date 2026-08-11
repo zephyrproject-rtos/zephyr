@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "pinctrl/m55m1h2l-pinctrl.h"
+#include <pinctrl/m55m1h2l-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

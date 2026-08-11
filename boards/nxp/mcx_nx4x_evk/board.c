@@ -9,8 +9,8 @@
 #include <fsl_spc.h>
 #include <soc.h>
 #if CONFIG_USB_DC_NXP_EHCI
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x04U)
@@ -462,6 +462,12 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivMicfilFClk, 1U);
 	CLOCK_AttachClk(kPLL1_CLK0_to_MICFILF);
 	CLOCK_EnableClock(kCLOCK_Micfil);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
+	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 
 	/* Set SystemCoreClock variable. */

@@ -1,9 +1,21 @@
 Configuration
 #############
 
-The following Kconfig options are available for the LLEXT subsystem:
+The following Kconfig options are available for the LLEXT subsystem.
 
 .. _llext_kconfig_heap:
+
+Harvard architecture
+--------------------
+
+:kconfig:option:`CONFIG_HARVARD`
+
+        Architecture uses separate instruction and data memory.
+
+:kconfig:option:`CONFIG_HARVARD` is not a Kconfig defined by the LLEXT
+subsystem. Instead, it must be defined and selected by the board or SoC
+to signal that LLEXT should be built with Harvard architecture support.
+The board or SoC must also implement :c:func:`arch_is_instr_mem`.
 
 Heap size
 ----------
@@ -178,6 +190,77 @@ option.
 
         Remove default placements of LLEXT heap sections in the linker script,
         allowing the user to place the heap(s) themselves.
+
+Word granular access instruction memory heap
+--------------------------------------------
+
+Word granular access instruction memory is a type of
+instruction memory that is byte addressable, but can only be accessed
+with word-sized and aligned loads and stores. The LLEXT subsystem
+currently supports the placement of the instruction heap in
+word granular access instruction memory on the Xtensa architecture
+only. Support for non-Xtensa architectures will be added in the
+future on request.
+
+To use LLEXT with the instruction heap in word granular access
+instruction memory, your Xtensa SoC or board must select the
+following option in addition to :kconfig:option:`CONFIG_HARVARD`.
+
+:kconfig:option:`CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM`
+
+        This option enables support for access to byte addressable and
+        word granular access instruction memory.
+
+If using the default backing data structure for the heap,
+:c:struct:`k_heap`, enable the following option.
+
+:kconfig:option:`CONFIG_SYS_HEAP_BIG_ONLY`
+
+        Select this to optimize the code for big heaps only. This can
+        accommodate any heap size but memory usage won't be as
+        efficient with small sized heaps.
+
+Unaligned and narrow accesses to instruction memory will be performed
+during the instruction heap initialization if this option is not selected.
+
+Next, place the LLEXT instruction heap in that instruction memory
+following the instructions for heap placement above. Make sure your SoC or
+board implements :c:func:`arch_memcpy_to_instr` and
+:c:func:`arch_memcpy_from_instr` in addition to :c:func:`arch_is_instr_mem`.
+The word granular access library :c:func:`memcpy_to_word_granular` and
+:c:func:`memcpy_from_word_granular` functions may be helpful.
+
+You may place your ELF buffer in RAM. At load time, the LLEXT subsystem will
+force the text region onto the instruction heap (even when the ELF buffer
+is writable) so that it is executable, and respect word granular access
+constraints when accessing the text region during loading and linking.
+
+.. warning::
+
+   You may only use the buffer loader (:c:struct:`llext_buf_loader`) to
+   load the ELF when the instruction heap is in word granular access
+   instruction memory.
+
+Note that the extension itself is responsible for ensuring any subsequent
+accesses to instruction memory also respect these constraints.
+
+If you still encounter load / store exceptions, you can enable the
+unsigned load / store exception handler for Xtensa with the following option.
+
+:kconfig:option:`CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE`
+
+        When an unsigned load / store instruction triggers an unsupported
+        load / store exception, the exception handler will perform the
+        operation itself with supported word sized and aligned loads /
+        stores. Does not currently support VLIW.
+
+As mentioned in the option description, to use this option you must also disable
+VLIW, as enabling VLIW causes the compiler to generate signed load / store
+instructions.
+
+:kconfig:option:`CONFIG_COMPILER_CODEGEN_VLIW_DISABLED`
+
+        Explicitly instructs the compiler to NEVER generate VLIW instructions.
 
 .. _llext_kconfig_type:
 

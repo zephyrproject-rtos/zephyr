@@ -9,20 +9,18 @@ board:
   - name: nsim_hs
     variants:
     - name: sram
-    - name: smp
     - name: flash_xip
     - name: mpuv6
     - name: hostlink
+  - name: nsim_hs_smp
   - name: nsim_hs5x
+  - name: nsim_hs5x_smp
     variants:
-    - name: smp
-      variants:
-      - name: 12cores
+    - name: 12cores
   - name: nsim_hs6x
+  - name: nsim_hs6x_smp
     variants:
-    - name: smp
-      variants:
-      - name: 12cores
+    - name: 12cores
   - name: nsim_sem
     variants:
     - name: mpu_stack_guard

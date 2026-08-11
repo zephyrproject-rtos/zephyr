@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2026 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,9 @@ struct emulated_pm_stress_data {
 	struct k_timer timer;
 	struct k_sem op_done;
 	atomic_t async_err;
+	struct k_timer get_timer;
+	struct k_sem get_done;
+	atomic_t isr_get_ret;
 };
 
 static void timer_handler(struct k_timer *timer)
@@ -28,6 +32,14 @@ static void timer_handler(struct k_timer *timer)
 		atomic_set(&data->async_err, ret);
 	}
 	k_sem_give(&data->op_done);
+}
+
+static void get_timer_handler(struct k_timer *timer)
+{
+	struct emulated_pm_stress_data *data = k_timer_user_data_get(timer);
+
+	atomic_set(&data->isr_get_ret, pm_device_runtime_get(data->self));
+	k_sem_give(&data->get_done);
 }
 
 static int emulated_pm_action(const struct device *dev, enum pm_device_action action)
@@ -53,6 +65,10 @@ static int emulated_pm_stress_init(const struct device *dev)
 	k_sem_init(&data->op_done, 0, 1);
 	atomic_clear(&data->async_err);
 	k_timer_init(&data->timer, timer_handler, NULL);
+	k_sem_init(&data->get_done, 0, 1);
+	atomic_clear(&data->isr_get_ret);
+	k_timer_init(&data->get_timer, get_timer_handler, NULL);
+	k_timer_user_data_set(&data->get_timer, data);
 
 	return 0;
 }
@@ -89,4 +105,20 @@ int emulated_pm_stress_wait(const struct device *dev)
 	k_sem_take(&data->op_done, K_FOREVER);
 
 	return atomic_get(&data->async_err);
+}
+
+void emulated_pm_stress_isr_get_submit(const struct device *dev)
+{
+	struct emulated_pm_stress_data *data = dev->data;
+
+	k_timer_start(&data->get_timer, K_TICKS(1), K_NO_WAIT);
+}
+
+int emulated_pm_stress_isr_get_result(const struct device *dev)
+{
+	struct emulated_pm_stress_data *data = dev->data;
+
+	k_sem_take(&data->get_done, K_FOREVER);
+
+	return atomic_get(&data->isr_get_ret);
 }

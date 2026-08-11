@@ -14,23 +14,24 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/phy.h>
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+#include <zephyr/drivers/ptp_clock.h>
+#endif
 
 #include <esp_attr.h>
 #include <esp_mac.h>
 #include <hal/emac_hal.h>
 #include <hal/emac_ll.h>
-#include <hal/emac_periph.h>
 #include <soc/rtc.h>
 #include <soc/gpio_periph.h>
 #include <soc/gpio_sig_map.h>
-#include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 #include <clk_ctrl_os.h>
 
+LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
+
 #include "eth.h"
 #include "eth_esp32_priv.h"
-
-LOG_MODULE_REGISTER(eth_esp32, CONFIG_ETHERNET_LOG_LEVEL);
 
 #define MAC_RESET_TIMEOUT_MS 100
 #define ETH_CRC_LENGTH       4
@@ -73,6 +74,11 @@ struct eth_esp32_dev_data {
 	uint8_t rxb[NET_ETH_MAX_FRAME_SIZE];
 	uint8_t *dma_rx_buf[CONFIG_ETH_ESP32_DMA_RX_BUFFER_NUM];
 	uint8_t *dma_tx_buf[CONFIG_ETH_ESP32_DMA_TX_BUFFER_NUM];
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	const struct device *ptp_clock;
+	struct net_ptp_time rx_timestamp;
+	bool rx_timestamp_valid;
+#endif
 	struct k_sem int_sem;
 	struct k_sem tx_sem;
 
@@ -182,8 +188,13 @@ static void eth_esp32_reset_desc_chain(struct eth_esp32_dev_data *dev_data)
 }
 
 static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, uint8_t *buf,
-					 uint32_t length)
+					 uint32_t length, struct net_pkt *pkt)
 {
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	const bool timestamp = net_pkt_is_tx_timestamping(pkt);
+#else
+	ARG_UNUSED(pkt);
+#endif
 	uint32_t bufcount = 0;
 	uint32_t lastlen = length;
 	uint32_t sentout = 0;
@@ -201,6 +212,9 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 	}
 
 	eth_dma_tx_descriptor_t *desc_iter = dev_data->tx_desc;
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	eth_dma_tx_descriptor_t *first_desc = dev_data->tx_desc;
+#endif
 
 	/* Fill descriptors */
 	for (size_t i = 0; i < bufcount; i++) {
@@ -213,6 +227,9 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 
 		if (i == 0) {
 			desc_iter->TDES0.FirstSegment = 1;
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+			desc_iter->TDES0.TransmitTimestampEnable = timestamp;
+#endif
 		}
 		if (i == (bufcount - 1)) {
 			desc_iter->TDES0.LastSegment = 1;
@@ -236,6 +253,35 @@ static uint32_t eth_esp32_transmit_frame(struct eth_esp32_dev_data *dev_data, ui
 		dev_data->tx_desc = tx_desc_next(dev_data, dev_data->tx_desc);
 	}
 	emac_hal_transmit_poll_demand(&dev_data->hal);
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	/*
+	 * The transmit timestamp is written back into the first descriptor
+	 * of the frame once the DMA has released it. Only wait for it when
+	 * the caller asked for a timestamp, and bound the wait so a stuck
+	 * transmission cannot block the TX path.
+	 */
+	if (timestamp) {
+		k_timepoint_t ts_deadline = sys_timepoint_calc(K_MSEC(20));
+
+		while (first_desc->TDES0.Own == EMAC_LL_DMADESC_OWNER_DMA) {
+			if (sys_timepoint_expired(ts_deadline)) {
+				return sentout;
+			}
+			k_yield();
+		}
+
+		if (first_desc->TDES0.TxTimestampStatus) {
+			struct net_ptp_time ts = {
+				.second = first_desc->TimeStampHigh,
+				.nanosecond = first_desc->TimeStampLow,
+			};
+
+			net_pkt_set_timestamp(pkt, &ts);
+			net_if_add_tx_timestamp(pkt);
+		}
+	}
+#endif
 
 	return sentout;
 }
@@ -377,108 +423,28 @@ static uint32_t eth_esp32_receive_frame(struct eth_esp32_dev_data *dev_data, uin
 		desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 		desc_iter = rx_desc_next(dev_data, desc_iter);
 	}
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	/*
+	 * The capture is reported in the last descriptor of the frame. A
+	 * timestamp is only present when the MAC snapshotted this frame,
+	 * which it does for PTP frames only, so it must be latched here
+	 * before the descriptor is handed back to the DMA.
+	 */
+	dev_data->rx_timestamp_valid = desc_iter->RDES0.TSAvailIPChecksumErrGiantFrame &&
+				       !desc_iter->ExtendedStatus.TimestampDropped;
+	if (dev_data->rx_timestamp_valid) {
+		dev_data->rx_timestamp.second = desc_iter->TimeStampHigh;
+		dev_data->rx_timestamp.nanosecond = desc_iter->TimeStampLow;
+	}
+#endif
+
 	desc_iter->RDES0.Own = EMAC_LL_DMADESC_OWNER_DMA;
 
 	dev_data->rx_desc = rx_desc_next(dev_data, desc_iter);
 	emac_hal_receive_poll_demand(&dev_data->hal);
 
 	return copy_len;
-}
-
-#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-static void eth_esp32_iomux_rmii_clk_input(int gpio_num)
-{
-	const emac_iomux_info_t *pin;
-
-	pin = esp32_emac_iomux_find(emac_rmii_iomux_pins.clki, gpio_num);
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-}
-#endif
-
-static void eth_esp32_iomux_init_mii(void)
-{
-	const emac_iomux_info_t *pin;
-
-	/*
-	 * ESP32 EMAC uses dedicated IOMUX pins, not GPIO matrix.
-	 * Only PIN_FUNC_SELECT is needed to route signals.
-	 */
-
-	/* TX_CLK - input */
-	pin = emac_mii_iomux_pins.clk_tx;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* TX_EN - output */
-	pin = emac_mii_iomux_pins.tx_en;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* TXD0-3 - outputs */
-	pin = emac_mii_iomux_pins.txd0;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd1;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd2;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.txd3;
-	if (pin != NULL) {
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RX_CLK - input */
-	pin = emac_mii_iomux_pins.clk_rx;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RX_DV - input */
-	pin = emac_mii_iomux_pins.rx_dv;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	/* RXD0-3 - inputs */
-	pin = emac_mii_iomux_pins.rxd0;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd1;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd2;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
-
-	pin = emac_mii_iomux_pins.rxd3;
-	if (pin != NULL) {
-		PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[pin->gpio_num]);
-		PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[pin->gpio_num], pin->func);
-	}
 }
 
 static enum ethernet_hw_caps eth_esp32_caps(const struct device *dev __unused,
@@ -525,7 +491,7 @@ static int eth_esp32_send(const struct device *dev, struct net_pkt *pkt)
 	k_timepoint_t deadline = sys_timepoint_calc(K_MSEC(100));
 
 	do {
-		if (eth_esp32_transmit_frame(dev_data, dev_data->txb, len) == len) {
+		if (eth_esp32_transmit_frame(dev_data, dev_data->txb, len, pkt) == len) {
 			return 0;
 		}
 	} while (k_sem_take(&dev_data->tx_sem, sys_timepoint_timeout(deadline)) == 0);
@@ -557,6 +523,13 @@ static struct net_pkt *eth_esp32_rx(
 		net_pkt_unref(pkt);
 		return NULL;
 	}
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	if (dev_data->rx_timestamp_valid) {
+		net_pkt_set_timestamp(pkt, &dev_data->rx_timestamp);
+		net_pkt_set_rx_timestamping(pkt, true);
+	}
+#endif
 
 	return pkt;
 }
@@ -706,12 +679,32 @@ int eth_esp32_initialize(const struct device *dev)
 		if (res != 0) {
 			goto err;
 		}
-#if !DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
-		eth_esp32_iomux_rmii_clk_input(rmii_clk_gpio);
+#if DT_INST_NODE_HAS_PROP(0, ref_clk_output_gpios)
+		BUILD_ASSERT(DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 0 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 16 ||
+			DT_INST_GPIO_PIN(0, ref_clk_output_gpios) == 17,
+			"Only GPIO0/16/17 are allowed as a GPIO REF_CLK source!");
+		int ref_clk_gpio = DT_INST_GPIO_PIN(0, ref_clk_output_gpios);
+
+		esp32_emac_iomux_rmii_clk_output(ref_clk_gpio);
+
+		/* Configure REF_CLK output when GPIO0 is used */
+		if (ref_clk_gpio == 0) {
+			REG_SET_FIELD(PIN_CTRL, CLK_OUT1, 6);
+		}
+
+		emac_ll_clock_enable_rmii_output(dev_data->hal.ext_regs);
+		esp_clk_tree_enable_src(SOC_MOD_CLK_APLL, true);
+		res = esp32_emac_config_apll_clock();
+		if (res != 0) {
+			goto err;
+		}
+#else
+		esp32_emac_iomux_rmii_clk_input(rmii_clk_gpio);
 		emac_hal_clock_enable_rmii_input(&dev_data->hal);
 #endif
 	} else { /* phy_connection_type: mii */
-		eth_esp32_iomux_init_mii();
+		esp32_emac_iomux_init_mii();
 		emac_hal_clock_enable_mii(&dev_data->hal);
 	}
 
@@ -737,6 +730,14 @@ int eth_esp32_initialize(const struct device *dev)
 
 	eth_esp32_reset_desc_chain(dev_data);
 	emac_hal_init_mac_default(&dev_data->hal);
+
+	/*
+	 * The MAC filters out multicast destinations by default, which drops
+	 * IPv4/IPv6 multicast traffic such as PTP, mDNS and neighbour
+	 * discovery before it reaches the DMA. Zephyr performs multicast
+	 * filtering in the network stack, so let all multicast frames pass.
+	 */
+	emac_ll_pass_all_multicast_enable(dev_data->hal.mac_regs, true);
 	emac_hal_init_dma_default(&dev_data->hal, &dma_config);
 
 	/*
@@ -815,12 +816,25 @@ static void eth_esp32_iface_init(struct net_if *iface)
 	}
 }
 
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+static const struct device *eth_esp32_get_ptp_clock(const struct device *dev,
+						   struct net_if *iface __unused)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+
+	return dev_data->ptp_clock;
+}
+#endif
+
 static const struct ethernet_api eth_esp32_api = {
 	.iface_api.init		= eth_esp32_iface_init,
 	.get_capabilities	= eth_esp32_caps,
 	.set_config		= eth_esp32_set_config,
 	.get_phy		= eth_esp32_phy_get,
 	.send			= eth_esp32_send,
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+	.get_ptp_clock		= eth_esp32_get_ptp_clock,
+#endif
 };
 
 /* DMA data must be in DRAM, descriptors must be aligned to EMAC_HAL_DMA_DESC_SIZE */
@@ -832,3 +846,103 @@ static struct eth_esp32_dev_data eth_esp32_dev = {
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_esp32_initialize, NULL, &eth_esp32_dev, &eth_esp32_config,
 			      CONFIG_ETH_INIT_PRIORITY, &eth_esp32_api, NET_ETH_MTU);
+
+#if defined(CONFIG_PTP_CLOCK_ESP32)
+
+#define PTP_CLOCK_NODE DT_INST_CHILD(0, ptp_clock)
+
+static int eth_esp32_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+
+	return emac_hal_ptp_set_sys_time(&dev_data->hal, tm->second, tm->nanosecond) == ESP_OK
+		       ? 0
+		       : -EIO;
+}
+
+static int eth_esp32_ptp_clock_get(const struct device *dev, struct net_ptp_time *tm)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	uint32_t seconds;
+	uint32_t nanoseconds;
+
+	if (emac_hal_ptp_get_sys_time(&dev_data->hal, &seconds, &nanoseconds) != ESP_OK) {
+		return -EIO;
+	}
+
+	tm->second = seconds;
+	tm->nanosecond = nanoseconds;
+
+	return 0;
+}
+
+static int eth_esp32_ptp_clock_adjust(const struct device *dev, int increment)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	bool sign = increment >= 0;
+	uint32_t offset = sign ? increment : -increment;
+
+	return emac_hal_ptp_time_add(&dev_data->hal, offset / NSEC_PER_SEC,
+				     offset % NSEC_PER_SEC, sign) == ESP_OK
+		       ? 0
+		       : -EIO;
+}
+
+static int eth_esp32_ptp_clock_rate_adjust(const struct device *dev, double ratio)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	int32_t adj_ppb = (int32_t)((ratio - 1.0) * 1000000000.0);
+
+	return emac_hal_ptp_adj_freq(&dev_data->hal, adj_ppb) == ESP_OK ? 0 : -EIO;
+}
+
+static DEVICE_API(ptp_clock, eth_esp32_ptp_clock_api) = {
+	.set = eth_esp32_ptp_clock_set,
+	.get = eth_esp32_ptp_clock_get,
+	.adjust = eth_esp32_ptp_clock_adjust,
+	.rate_adjust = eth_esp32_ptp_clock_rate_adjust,
+};
+
+static int eth_esp32_ptp_clock_init(const struct device *dev)
+{
+	struct eth_esp32_dev_data *const dev_data = dev->data;
+	const struct device *clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_NODELABEL(eth)));
+	clock_control_subsys_t ptp_subsys =
+		(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, ptp, offset);
+	emac_hal_ptp_config_t ptp_config;
+	uint32_t ptp_clk_rate;
+	int ret;
+
+	ret = clock_control_on(clock_dev, ptp_subsys);
+	if (ret < 0 && ret != -EALREADY) {
+		LOG_ERR("Failed to enable PTP reference clock");
+		return ret;
+	}
+
+	ret = clock_control_get_rate(clock_dev, ptp_subsys, &ptp_clk_rate);
+	if (ret < 0 || ptp_clk_rate == 0) {
+		LOG_ERR("Failed to get PTP reference clock rate");
+		return -EIO;
+	}
+
+	ptp_config.upd_method = ETH_PTP_UPDATE_METHOD_FINE;
+	ptp_config.roll = ETH_PTP_DIGITAL_ROLLOVER;
+	ptp_config.ptp_clk_src_period_ns = 1000000000.0f / (float)ptp_clk_rate;
+	ptp_config.ptp_req_accuracy_ns = ptp_config.ptp_clk_src_period_ns;
+
+	if (emac_hal_ptp_start(&dev_data->hal, &ptp_config) != ESP_OK) {
+		LOG_ERR("Failed to start PTP");
+		return -EIO;
+	}
+
+	dev_data->ptp_clock = dev;
+
+	LOG_INF("PTP clock started, reference %u Hz", ptp_clk_rate);
+
+	return 0;
+}
+
+DEVICE_DT_DEFINE(PTP_CLOCK_NODE, eth_esp32_ptp_clock_init, NULL, &eth_esp32_dev, NULL, POST_KERNEL,
+		 CONFIG_PTP_CLOCK_INIT_PRIORITY, &eth_esp32_ptp_clock_api);
+
+#endif /* CONFIG_PTP_CLOCK_ESP32 */

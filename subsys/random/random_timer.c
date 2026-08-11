@@ -15,7 +15,6 @@
  */
 
 #include <zephyr/random/random.h>
-#include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <string.h>

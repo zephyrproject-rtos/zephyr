@@ -391,10 +391,12 @@ static int display_init(const struct device *dev)
 		return -EIO;
 	}
 
-	err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
-	if (err) {
-		LOG_ERR("config backlight gpio failed");
-		return err;
+	if (config->backlight_gpio.port != NULL) {
+		err = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
+		if (err) {
+			LOG_ERR("config backlight gpio failed");
+			return err;
+		}
 	}
 
 	config->irq_configure();

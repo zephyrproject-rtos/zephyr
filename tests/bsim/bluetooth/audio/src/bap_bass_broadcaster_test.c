@@ -14,11 +14,13 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(bap_bass_broadcaster_test);
 
 extern enum bst_result_t bst_result;
 
@@ -41,7 +43,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	setup_broadcast_adv(&adv);
 
@@ -54,7 +56,7 @@ static void test_main(void)
 
 	start_broadcast_adv(adv);
 
-	printk("Advertising successfully started\n");
+	LOG_INF("Advertising successfully started");
 
 	k_sleep(K_SECONDS(10));
 

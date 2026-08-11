@@ -789,7 +789,7 @@ static void bt_ready(int err)
 	k_work_queue_start(&audio_play_work_q, audio_play_work_q_thread_stack,
 			   CONFIG_BT_A2DP_SOURCE_DATA_SEND_WORKQ_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_A2DP_SOURCE_DATA_SEND_WORKQ_PRIORITY), NULL);
-	k_thread_name_set(&audio_play_work_q.thread, "audio play");
+	k_thread_name_set(audio_play_work_q.thread_id, "audio play");
 
 	k_work_init(&discover_work, discover_work_handler);
 

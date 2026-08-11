@@ -29,7 +29,7 @@ from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
 from twisterlib.cmakecache import CMakeCache
-from twisterlib.constants import canonical_zephyr_base
+from twisterlib.constants import SIM_PROGRAM_CMAKE_VARS, canonical_zephyr_base
 from twisterlib.error import (
     BuildError,
     ConfigurationError,
@@ -56,6 +56,7 @@ from twisterlib.environment import TwisterEnv
 from twisterlib.harness import Harness, HarnessImporter
 from twisterlib.log_helper import log_command
 from twisterlib.platform import Platform
+from twisterlib.sidecars import SidecarImporter
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
@@ -75,81 +76,128 @@ from anytree import Node, RenderTree
 
 logger = logging.getLogger('twister')
 
+# Instance reason set when a pipeline stage assigns an illegal TwisterStatus
+# (StatusAttributeError). Shared by every stage handler in ProjectBuilder.process.
+INCORRECT_STATUS_REASON = 'Incorrect status assignment'
+# Instance reason set when CMake dt/kconfig filtering excludes an instance.
+RUNTIME_FILTER_REASON = 'runtime filter'
+
+
+class AtomicCounter:
+    '''Data descriptor for a lock-protected multiprocessing counter.
+
+    Reading, writing and incrementing all take the backing Value's lock so
+    the counter is safe to share across the ProjectBuilder worker processes.
+    The Value itself is created eagerly by ExecutionCounter.__init__ (before
+    the object is forked into workers) and stored on the instance under a
+    private, underscore-prefixed name.
+    '''
+    def __set_name__(self, owner, name):
+        self.attr = '_' + name
+
+    def _value(self, obj):
+        return getattr(obj, self.attr)
+
+    def __get__(self, obj, objtype=None):
+        if obj is None:
+            return self
+        value = self._value(obj)
+        with value.get_lock():
+            return value.value
+
+    def __set__(self, obj, value):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value = value
+
+    def increment(self, obj, by=1):
+        shared = self._value(obj)
+        with shared.get_lock():
+            shared.value += by
+
 
 class ExecutionCounter:
+    '''
+    Most of the stats are at test instance level
+    Except that case statistics are for cases of ALL test instances
+
+    total = yaml test scenarios * applicable platforms
+    done := instances that reached report_out stage of the pipeline
+    done = filtered_configs + passed + failed + error
+    completed = done - filtered_static
+    filtered_configs = filtered_runtime + filtered_static
+
+    pass rate = passed / (total - filtered_configs)
+    case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
+
+    Every counter below is an AtomicCounter descriptor. In addition to the
+    locked attribute (``results.passed``, ``results.passed = n``) each one
+    exposes a ``<name>_increment(value=1)`` method, synthesised on demand by
+    __getattr__.
+    '''
+    # instances that go through the pipeline, updated by report_out()
+    done = AtomicCounter()
+    iteration = AtomicCounter()
+    # instances that actually executed and passed, updated by report_out()
+    passed = AtomicCounter()
+    # instances that are built but not runnable, updated by report_out()
+    notrun = AtomicCounter()
+    # static filter + runtime filter + build skipped,
+    # updated by update_counting_before_pipeline() and report_out()
+    filtered_configs = AtomicCounter()
+    # cmake filter + build skipped, updated by report_out()
+    filtered_runtime = AtomicCounter()
+    # static filtered at yaml parsing time,
+    # updated by update_counting_before_pipeline()
+    filtered_static = AtomicCounter()
+    # updated by report_out() in pipeline
+    error = AtomicCounter()
+    failed = AtomicCounter()
+    skipped = AtomicCounter()
+    # initialized to number of test instances
+    total = AtomicCounter()
+
+    #######################################
+    # TestCase counters for all instances #
+    #######################################
+    # updated in report_out
+    cases = AtomicCounter()
+    # updated by update_counting_before_pipeline() and report_out()
+    skipped_cases = AtomicCounter()
+    filtered_cases = AtomicCounter()
+    # updated by report_out() in pipeline
+    passed_cases = AtomicCounter()
+    notrun_cases = AtomicCounter()
+    failed_cases = AtomicCounter()
+    error_cases = AtomicCounter()
+    blocked_cases = AtomicCounter()
+    # Incorrect statuses
+    none_cases = AtomicCounter()
+    started_cases = AtomicCounter()
+
+    warnings = AtomicCounter()
+
     def __init__(self, total=0):
-        '''
-        Most of the stats are at test instance level
-        Except that case statistics are for cases of ALL test instances
-
-        total = yaml test scenarios * applicable platforms
-        done := instances that reached report_out stage of the pipeline
-        done = filtered_configs + passed + failed + error
-        completed = done - filtered_static
-        filtered_configs = filtered_runtime + filtered_static
-
-        pass rate = passed / (total - filtered_configs)
-        case pass rate = passed_cases / (cases - filtered_cases - skipped_cases)
-        '''
-        # instances that go through the pipeline
-        # updated by report_out()
-        self._done = Value('i', 0)
-
-        # iteration
-        self._iteration = Value('i', 0)
-
-        # instances that actually executed and passed
-        # updated by report_out()
-        self._passed = Value('i', 0)
-
-        # instances that are built but not runnable
-        # updated by report_out()
-        self._notrun = Value('i', 0)
-
-        # static filter + runtime filter + build skipped
-        # updated by update_counting_before_pipeline() and report_out()
-        self._filtered_configs = Value('i', 0)
-
-        # cmake filter + build skipped
-        # updated by report_out()
-        self._filtered_runtime = Value('i', 0)
-
-        # static filtered at yaml parsing time
-        # updated by update_counting_before_pipeline()
-        self._filtered_static = Value('i', 0)
-
-        # updated by report_out() in pipeline
-        self._error = Value('i', 0)
-        self._failed = Value('i', 0)
-        self._skipped = Value('i', 0)
-
-        # initialized to number of test instances
-        self._total = Value('i', total)
-
-        #######################################
-        # TestCase counters for all instances #
-        #######################################
-        # updated in report_out
-        self._cases = Value('i', 0)
-
-        # updated by update_counting_before_pipeline() and report_out()
-        self._skipped_cases = Value('i', 0)
-        self._filtered_cases = Value('i', 0)
-
-        # updated by report_out() in pipeline
-        self._passed_cases = Value('i', 0)
-        self._notrun_cases = Value('i', 0)
-        self._failed_cases = Value('i', 0)
-        self._error_cases = Value('i', 0)
-        self._blocked_cases = Value('i', 0)
-
-        # Incorrect statuses
-        self._none_cases = Value('i', 0)
-        self._started_cases = Value('i', 0)
-
-        self._warnings = Value('i', 0)
-
+        # Create every counter's shared Value eagerly, before this object is
+        # forked into worker processes, so all processes share the same memory.
+        for descriptor in type(self).__dict__.values():
+            if isinstance(descriptor, AtomicCounter):
+                setattr(self, descriptor.attr, Value('i', 0))
+        self.total = total
         self.lock = Lock()
+
+    def __getattr__(self, name):
+        # Synthesise `<counter>_increment(value=1)` for each AtomicCounter.
+        # __getattr__ only fires for attributes not found normally, so this
+        # never shadows the descriptors or real methods above.
+        suffix = '_increment'
+        if name.endswith(suffix):
+            descriptor = type(self).__dict__.get(name[:-len(suffix)])
+            if isinstance(descriptor, AtomicCounter):
+                return lambda value=1: descriptor.increment(self, value)
+        raise AttributeError(
+            f"{type(self).__name__!r} object has no attribute {name!r}"
+        )
 
     @staticmethod
     def _find_number_length(n):
@@ -209,313 +257,6 @@ class ExecutionCounter:
         for pre, _, node in RenderTree(root):
             print(f"{pre}{node.name}")
 
-    @property
-    def warnings(self):
-        with self._warnings.get_lock():
-            return self._warnings.value
-
-    @warnings.setter
-    def warnings(self, value):
-        with self._warnings.get_lock():
-            self._warnings.value = value
-
-    def warnings_increment(self, value=1):
-        with self._warnings.get_lock():
-            self._warnings.value += value
-
-    @property
-    def cases(self):
-        with self._cases.get_lock():
-            return self._cases.value
-
-    @cases.setter
-    def cases(self, value):
-        with self._cases.get_lock():
-            self._cases.value = value
-
-    def cases_increment(self, value=1):
-        with self._cases.get_lock():
-            self._cases.value += value
-
-    @property
-    def skipped_cases(self):
-        with self._skipped_cases.get_lock():
-            return self._skipped_cases.value
-
-    @skipped_cases.setter
-    def skipped_cases(self, value):
-        with self._skipped_cases.get_lock():
-            self._skipped_cases.value = value
-
-    def skipped_cases_increment(self, value=1):
-        with self._skipped_cases.get_lock():
-            self._skipped_cases.value += value
-
-    @property
-    def filtered_cases(self):
-        with self._filtered_cases.get_lock():
-            return self._filtered_cases.value
-
-    @filtered_cases.setter
-    def filtered_cases(self, value):
-        with self._filtered_cases.get_lock():
-            self._filtered_cases.value = value
-
-    def filtered_cases_increment(self, value=1):
-        with self._filtered_cases.get_lock():
-            self._filtered_cases.value += value
-
-    @property
-    def passed_cases(self):
-        with self._passed_cases.get_lock():
-            return self._passed_cases.value
-
-    @passed_cases.setter
-    def passed_cases(self, value):
-        with self._passed_cases.get_lock():
-            self._passed_cases.value = value
-
-    def passed_cases_increment(self, value=1):
-        with self._passed_cases.get_lock():
-            self._passed_cases.value += value
-
-    @property
-    def notrun_cases(self):
-        with self._notrun_cases.get_lock():
-            return self._notrun_cases.value
-
-    @notrun_cases.setter
-    def notrun_cases(self, value):
-        with self._notrun.get_lock():
-            self._notrun.value = value
-
-    def notrun_cases_increment(self, value=1):
-        with self._notrun_cases.get_lock():
-            self._notrun_cases.value += value
-
-    @property
-    def failed_cases(self):
-        with self._failed_cases.get_lock():
-            return self._failed_cases.value
-
-    @failed_cases.setter
-    def failed_cases(self, value):
-        with self._failed_cases.get_lock():
-            self._failed_cases.value = value
-
-    def failed_cases_increment(self, value=1):
-        with self._failed_cases.get_lock():
-            self._failed_cases.value += value
-
-    @property
-    def error_cases(self):
-        with self._error_cases.get_lock():
-            return self._error_cases.value
-
-    @error_cases.setter
-    def error_cases(self, value):
-        with self._error_cases.get_lock():
-            self._error_cases.value = value
-
-    def error_cases_increment(self, value=1):
-        with self._error_cases.get_lock():
-            self._error_cases.value += value
-
-    @property
-    def blocked_cases(self):
-        with self._blocked_cases.get_lock():
-            return self._blocked_cases.value
-
-    @blocked_cases.setter
-    def blocked_cases(self, value):
-        with self._blocked_cases.get_lock():
-            self._blocked_cases.value = value
-
-    def blocked_cases_increment(self, value=1):
-        with self._blocked_cases.get_lock():
-            self._blocked_cases.value += value
-
-    @property
-    def none_cases(self):
-        with self._none_cases.get_lock():
-            return self._none_cases.value
-
-    @none_cases.setter
-    def none_cases(self, value):
-        with self._none_cases.get_lock():
-            self._none_cases.value = value
-
-    def none_cases_increment(self, value=1):
-        with self._none_cases.get_lock():
-            self._none_cases.value += value
-
-    @property
-    def started_cases(self):
-        with self._started_cases.get_lock():
-            return self._started_cases.value
-
-    @started_cases.setter
-    def started_cases(self, value):
-        with self._started_cases.get_lock():
-            self._started_cases.value = value
-
-    def started_cases_increment(self, value=1):
-        with self._started_cases.get_lock():
-            self._started_cases.value += value
-
-    @property
-    def skipped(self):
-        with self._skipped.get_lock():
-            return self._skipped.value
-
-    @skipped.setter
-    def skipped(self, value):
-        with self._skipped.get_lock():
-            self._skipped.value = value
-
-    def skipped_increment(self, value=1):
-        with self._skipped.get_lock():
-            self._skipped.value += value
-
-    @property
-    def error(self):
-        with self._error.get_lock():
-            return self._error.value
-
-    @error.setter
-    def error(self, value):
-        with self._error.get_lock():
-            self._error.value = value
-
-    def error_increment(self, value=1):
-        with self._error.get_lock():
-            self._error.value += value
-
-    @property
-    def iteration(self):
-        with self._iteration.get_lock():
-            return self._iteration.value
-
-    @iteration.setter
-    def iteration(self, value):
-        with self._iteration.get_lock():
-            self._iteration.value = value
-
-    def iteration_increment(self, value=1):
-        with self._iteration.get_lock():
-            self._iteration.value += value
-
-    @property
-    def done(self):
-        with self._done.get_lock():
-            return self._done.value
-
-    @done.setter
-    def done(self, value):
-        with self._done.get_lock():
-            self._done.value = value
-
-    def done_increment(self, value=1):
-        with self._done.get_lock():
-            self._done.value += value
-
-    @property
-    def passed(self):
-        with self._passed.get_lock():
-            return self._passed.value
-
-    @passed.setter
-    def passed(self, value):
-        with self._passed.get_lock():
-            self._passed.value = value
-
-    def passed_increment(self, value=1):
-        with self._passed.get_lock():
-            self._passed.value += value
-
-    @property
-    def notrun(self):
-        with self._notrun.get_lock():
-            return self._notrun.value
-
-    @notrun.setter
-    def notrun(self, value):
-        with self._notrun.get_lock():
-            self._notrun.value = value
-
-    def notrun_increment(self, value=1):
-        with self._notrun.get_lock():
-            self._notrun.value += value
-
-    @property
-    def filtered_configs(self):
-        with self._filtered_configs.get_lock():
-            return self._filtered_configs.value
-
-    @filtered_configs.setter
-    def filtered_configs(self, value):
-        with self._filtered_configs.get_lock():
-            self._filtered_configs.value = value
-
-    def filtered_configs_increment(self, value=1):
-        with self._filtered_configs.get_lock():
-            self._filtered_configs.value += value
-
-    @property
-    def filtered_static(self):
-        with self._filtered_static.get_lock():
-            return self._filtered_static.value
-
-    @filtered_static.setter
-    def filtered_static(self, value):
-        with self._filtered_static.get_lock():
-            self._filtered_static.value = value
-
-    def filtered_static_increment(self, value=1):
-        with self._filtered_static.get_lock():
-            self._filtered_static.value += value
-
-    @property
-    def filtered_runtime(self):
-        with self._filtered_runtime.get_lock():
-            return self._filtered_runtime.value
-
-    @filtered_runtime.setter
-    def filtered_runtime(self, value):
-        with self._filtered_runtime.get_lock():
-            self._filtered_runtime.value = value
-
-    def filtered_runtime_increment(self, value=1):
-        with self._filtered_runtime.get_lock():
-            self._filtered_runtime.value += value
-
-    @property
-    def failed(self):
-        with self._failed.get_lock():
-            return self._failed.value
-
-    @failed.setter
-    def failed(self, value):
-        with self._failed.get_lock():
-            self._failed.value = value
-
-    def failed_increment(self, value=1):
-        with self._failed.get_lock():
-            self._failed.value += value
-
-    @property
-    def total(self):
-        with self._total.get_lock():
-            return self._total.value
-
-    @total.setter
-    def total(self, value):
-        with self._total.get_lock():
-            self._total.value = value
-
-    def total_increment(self, value=1):
-        with self._total.get_lock():
-            self._total.value += value
 
 class CMake:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
@@ -719,6 +460,24 @@ class CMake:
 
         kwargs = dict()
 
+        # A sidecar may need environment or extra CMake arguments for the
+        # configure step (e.g. the virtiofs sidecar injects a -chardev socket
+        # path into QEMU's flags; the net-tools sidecar bakes the host interface
+        # name and addresses). Ask it generically so the runner stays agnostic of
+        # any specific sidecar; an unknown name is reported later by the run stage.
+        try:
+            sidecar = SidecarImporter.get_sidecar(self.instance.sidecar)
+        except ValueError:
+            sidecar = None
+        if sidecar is not None:
+            sidecar.configure(self.instance)
+            sidecar_env = sidecar.cmake_env(self.build_dir)
+            if sidecar_env:
+                env = os.environ.copy()
+                env.update(sidecar_env)
+                kwargs['env'] = env
+            cmd += sidecar.cmake_args(self.build_dir)
+
         log_command(logger, "Calling cmake", cmd)
 
         if self.capture_output:
@@ -881,6 +640,14 @@ class FilterBuilder(CMake):
 
 class ProjectBuilder(FilterBuilder):
 
+    # Optional post-build checks, run when --post-build-checks is enabled.
+    # Each entry is the name of a bound method returning None on success or a
+    # human-readable reason string on failure. Extend the pipeline by adding a
+    # new method name here rather than modifying run_post_build_checks().
+    POST_BUILD_CHECKS = (
+        "check_no_nested_git_repos",
+    )
+
     def __init__(self, instance: TestInstance, env: TwisterEnv, jobserver, **kwargs):
         super().__init__(
             instance.testsuite,
@@ -900,10 +667,25 @@ class ProjectBuilder(FilterBuilder):
     def trace(self) -> bool:
         return self.options.verbose > 2
 
-    def log_info(self, filename, inline_logs, log_testcases=False):
+    def log_info(self, filename, inline_logs, log_only_failed=False):
         filename = os.path.abspath(os.path.realpath(filename))
         if inline_logs:
             logger.info(f"{filename:-^100}")
+
+            if log_only_failed:
+                any_found = False
+                for tc in self.instance.testcases:
+                    if not tc.reason:
+                        continue
+                    logger.error(
+                        f"\n{str(tc.name).center(100, '_')}\n"
+                        f"{tc.reason}\n"
+                        f"{100*'_'}\n"
+                        f"{tc.output}"
+                    )
+                    any_found = True
+                if any_found:
+                    return
 
             try:
                 with open(filename) as fp:
@@ -922,16 +704,6 @@ class ProjectBuilder(FilterBuilder):
 
             logger.info(f"{filename:-^100}")
 
-            if log_testcases:
-                for tc in self.instance.testcases:
-                    if not tc.reason:
-                        continue
-                    logger.info(
-                        f"\n{str(tc.name).center(100, '_')}\n"
-                        f"{tc.reason}\n"
-                        f"{100*'_'}\n"
-                        f"{tc.output}"
-                    )
         else:
             logger.error("see: " + Fore.YELLOW + filename + Fore.RESET)
 
@@ -942,12 +714,12 @@ class ProjectBuilder(FilterBuilder):
         b_log = f"{build_dir}/build.log"
         v_log = f"{build_dir}/valgrind.log"
         d_log = f"{build_dir}/device.log"
-        pytest_log = f"{build_dir}/twister_harness.log"
+        script_log = f"{build_dir}/twister_harness.log"
 
         if os.path.exists(v_log) and "Valgrind" in self.instance.reason:
             self.log_info(f"{v_log}", inline_logs)
-        elif os.path.exists(pytest_log) and os.path.getsize(pytest_log) > 0:
-            self.log_info(f"{pytest_log}", inline_logs, log_testcases=True)
+        elif os.path.exists(script_log) and os.path.getsize(script_log) > 0:
+            self.log_info(f"{script_log}", inline_logs, log_only_failed=True)
         elif os.path.exists(h_log) and os.path.getsize(h_log) > 0:
             self.log_info(f"{h_log}", inline_logs)
         elif os.path.exists(he_log) and os.path.getsize(he_log) > 0:
@@ -970,296 +742,298 @@ class ProjectBuilder(FilterBuilder):
             logger.error(f"RuntimeError: {e}")
             traceback.print_exc()
 
+    def _mark_status_error(self, sae, op_label=None):
+        # Shared handling for an illegal status assignment raised by a pipeline
+        # stage: log it, force the instance to ERROR and block its remaining
+        # cases with a uniform reason.
+        logger.error(str(sae))
+        self.instance.status = TwisterStatus.ERROR
+        reason = INCORRECT_STATUS_REASON if op_label is None \
+            else f"{INCORRECT_STATUS_REASON} on {op_label}"
+        self.instance.reason = reason
+        self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+
+    # Maps a pipeline op name to the ProjectBuilder method that runs it. Each
+    # handler computes the next op, enqueues follow-up work and owns its own
+    # error handling (via _mark_status_error).
+    _PIPELINE_OPS = {
+        "filter": "_op_filter",
+        "cmake": "_op_cmake",
+        "build": "_op_build",
+        "post_build": "_op_post_build",
+        "gather_metrics": "_op_gather_metrics",
+        "run": "_op_run",
+        "coverage": "_op_coverage",
+        "report": "_op_report",
+        "cleanup": "_op_cleanup",
+    }
+
     def process(self, processing_queue: deque, processing_ready: dict[str, TestInstance],
                 message, lock, results: ExecutionCounter):
-        next_op = None
-        additionals = {}
-
         op = message.get('op')
         options = self.options
         if not logger.handlers:
             setup_logging(options.outdir, options.log_file, options.log_level, options.timestamps)
         self.instance.setup_handler(self.env)
 
-        if op == "filter":
-            try:
-                ret = self.cmake(filter_stages=self.instance.filter_stages)
-                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+        handler_name = self._PIPELINE_OPS.get(op)
+        if handler_name is not None:
+            getattr(self, handler_name)(
+                processing_queue, processing_ready, message, lock, results
+            )
+
+    def _op_filter(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        try:
+            ret = self.cmake(filter_stages=self.instance.filter_stages)
+            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                next_op = 'report'
+            else:
+                # Here we check the dt/kconfig filter results coming from running cmake
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                    logger.debug(f"filtering {self.instance.name}")
+                    self.instance.status = TwisterStatus.FILTER
+                    self.instance.reason = RUNTIME_FILTER_REASON
+                    results.filtered_runtime_increment()
+                    self.instance.add_missing_case_status(TwisterStatus.FILTER)
                     next_op = 'report'
                 else:
-                    # Here we check the dt/kconfig filter results coming from running cmake
-                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
-                        logger.debug(f"filtering {self.instance.name}")
-                        self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
-                        results.filtered_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
-                        next_op = 'report'
-                    else:
-                        next_op = 'cmake'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
-                next_op = 'report'
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op)
+                    next_op = 'cmake'
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op)
 
-        # The build process, call cmake and build with configured generator
-        elif op == "cmake":
-            try:
-                ret = self.cmake()
-                if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
-                    next_op = 'report'
-                elif self.options.cmake_only:
-                    if self.instance.status == TwisterStatus.NONE:
-                        logger.debug(f"CMake only: PASS {self.instance.name}")
-                        self.instance.status = TwisterStatus.NOTRUN
-                        self.instance.add_missing_case_status(TwisterStatus.NOTRUN, 'CMake only')
+    # The build process, call cmake and build with configured generator
+    def _op_cmake(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        try:
+            ret = self.cmake()
+            if self.instance.status in [TwisterStatus.FAIL, TwisterStatus.ERROR]:
+                next_op = 'report'
+            elif self.options.cmake_only:
+                if self.instance.status == TwisterStatus.NONE:
+                    logger.debug(f"CMake only: PASS {self.instance.name}")
+                    self.instance.status = TwisterStatus.NOTRUN
+                    self.instance.add_missing_case_status(TwisterStatus.NOTRUN, 'CMake only')
+                next_op = 'report'
+            else:
+                # Here we check the runtime filter results coming from running cmake
+                if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
+                    logger.debug(f"filtering {self.instance.name}")
+                    self.instance.status = TwisterStatus.FILTER
+                    self.instance.reason = RUNTIME_FILTER_REASON
+                    results.filtered_runtime_increment()
+                    self.instance.add_missing_case_status(TwisterStatus.FILTER)
                     next_op = 'report'
                 else:
-                    # Here we check the runtime filter results coming from running cmake
-                    if self.instance.name in ret['filter'] and ret['filter'][self.instance.name]:
-                        logger.debug(f"filtering {self.instance.name}")
-                        self.instance.status = TwisterStatus.FILTER
-                        self.instance.reason = "runtime filter"
-                        results.filtered_runtime_increment()
-                        self.instance.add_missing_case_status(TwisterStatus.FILTER)
-                        next_op = 'report'
-                    else:
-                        next_op = 'build'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
+                    next_op = 'build'
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op)
+
+    def _op_build(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        try:
+            logger.debug(f"build test: {self.instance.name}")
+            ret = self.build()
+            if not ret:
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                self.instance.reason = "Build Failure"
                 next_op = 'report'
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op)
+            else:
+                # Count skipped cases during build, for example
+                # due to ram/rom overflow.
+                if  self.instance.status == TwisterStatus.SKIP:
+                    results.skipped_increment()
+                    self.instance.add_missing_case_status(
+                        TwisterStatus.SKIP,
+                        self.instance.reason
+                    )
 
-        elif op == "build":
-            try:
-                logger.debug(f"build test: {self.instance.name}")
-                ret = self.build()
-                if not ret:
-                    self.instance.status = TwisterStatus.ERROR
-                    self.instance.reason = "Build Failure"
-                    next_op = 'report'
-                else:
-                    # Count skipped cases during build, for example
-                    # due to ram/rom overflow.
-                    if  self.instance.status == TwisterStatus.SKIP:
-                        results.skipped_increment()
-                        self.instance.add_missing_case_status(
-                            TwisterStatus.SKIP,
-                            self.instance.reason
-                        )
-
-                    if ret.get('returncode', 1) > 0:
-                        self.instance.add_missing_case_status(
-                            TwisterStatus.BLOCK,
-                            self.instance.reason
-                        )
-                        next_op = 'report'
-                    else:
-                        if self.instance.testsuite.harness in ['ztest', 'test']:
-                            logger.debug(
-                                f"Determine test cases for test instance: {self.instance.name}"
-                            )
-                            try:
-                                self.determine_testcases(results)
-                                next_op = 'post_build' if self.options.post_build_checks \
-                                    else 'gather_metrics'
-                            except BuildError as e:
-                                logger.error(str(e))
-                                self.instance.status = TwisterStatus.ERROR
-                                self.instance.reason = str(e)
-                                next_op = 'report'
-                        else:
-                            next_op = 'post_build' if self.options.post_build_checks \
-                                else 'gather_metrics'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
-                next_op = 'report'
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op)
-
-        # Run post-build checks on the freshly built artifacts
-        elif op == "post_build":
-            try:
-                ret = self.post_build()
                 if ret.get('returncode', 1) > 0:
-                    self.instance.status = TwisterStatus.ERROR
-                    self.instance.reason = ret.get('reason', 'Post-build check failure')
                     self.instance.add_missing_case_status(
                         TwisterStatus.BLOCK,
                         self.instance.reason
                     )
                     next_op = 'report'
                 else:
-                    next_op = 'gather_metrics'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
-                next_op = 'report'
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op)
-
-        elif op == "gather_metrics":
-            try:
-                ret = self.gather_metrics(self.instance)
-                if not ret or ret.get('returncode', 1) > 0:
-                    self.instance.status = TwisterStatus.ERROR
-                    self.instance.reason = "Build Failure at gather_metrics."
-                    next_op = 'report'
-                elif self.instance.run and self.instance.handler.ready:
-                    next_op = 'run'
-                else:
-                    if self.instance.status == TwisterStatus.NOTRUN:
-                        run_conditions =  (
-                            f"(run:{self.instance.run},"
-                            f" handler.ready:{self.instance.handler.ready})"
+                    if self.instance.testsuite.harness in ['ztest', 'test']:
+                        logger.debug(
+                            f"Determine test cases for test instance: {self.instance.name}"
                         )
-                        logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
-                        self.instance.add_missing_case_status(
-                            TwisterStatus.NOTRUN,
-                            "Nowhere to run"
-                        )
-                    next_op = 'report'
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
+                        try:
+                            self.determine_testcases(results)
+                            next_op = 'post_build'
+                        except BuildError as e:
+                            logger.error(str(e))
+                            self.instance.status = TwisterStatus.ERROR
+                            self.instance.reason = str(e)
+                            next_op = 'report'
+                    else:
+                        next_op = 'post_build'
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op)
+
+    # Run post-build checks on the freshly built artifacts
+    def _op_post_build(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        try:
+            ret = self.post_build()
+            if ret.get('returncode', 1) > 0:
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                self.instance.reason = ret.get('reason', 'Post-build check failure')
+                self.instance.add_missing_case_status(
+                    TwisterStatus.BLOCK,
+                    self.instance.reason
+                )
                 next_op = 'report'
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op)
+            else:
+                next_op = 'gather_metrics'
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op)
 
-        # Run the generated binary using one of the supported handlers
-        elif op == "run":
-            processing_queue_updated = False
-            try:
-                if self.ensure_required_apps_ready(processing_ready):
-                    with self.reserve_hardware() as ready_to_run:
-                        if ready_to_run:
-                            logger.debug(f"run test: {self.instance.name}")
-                            self.run()
-                            logger.debug(f"run status: {self.instance.name} {self.instance.status}")
-
-                # to make it work with pickle
-                self.instance.handler.thread = None
-
-                next_op = "coverage" if self.options.coverage else "report"
-                additionals = {
-                    "status": self.instance.status,
-                    "reason": self.instance.reason
-                }
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
+    def _op_gather_metrics(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        try:
+            ret = self.gather_metrics(self.instance)
+            if not ret or ret.get('returncode', 1) > 0:
                 self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+                self.instance.reason = "Build Failure at gather_metrics."
                 next_op = 'report'
-                additionals = {}
-            except (NoDeviceAvailableException, NoRequiredApplicationNotReadyException):
-                if processing_ready.get(self.instance.name) is None:
-                    # Register this instance as ready (build succeeded) so that other instances
-                    # listing it as a required application can unblock and proceed.
-                    # This also handles mutual dependencies between instances,
-                    # letting the pair resolve without deadlock.
-                    # The entry will be overwritten with the final state in the 'report' stage.
-                    with lock:
-                        processing_ready.update({self.instance.name: self.instance})
-
-                # no device available to run the test or required application not ready,
-                # add the task back to the pipeline to process it later
-                processing_queue.appendleft(message)
-                processing_queue_updated = True
-                # to avoid busy waiting
-                time.sleep(1)
-            finally:
-                if not processing_queue_updated:
-                    self._add_to_processing_queue(processing_queue, next_op, additionals)
-
-        # Run per-instance code coverage
-        elif op == "coverage":
-            try:
-                logger.debug(f"Run coverage for '{self.instance.name}'")
-                self.instance.coverage_status, self.instance.coverage = \
-                        run_coverage_instance(self.options, self.instance)
+            elif self.instance.run and self.instance.handler.ready:
+                next_op = 'run'
+            else:
+                if self.instance.status == TwisterStatus.NOTRUN:
+                    run_conditions =  (
+                        f"(run:{self.instance.run},"
+                        f" handler.ready:{self.instance.handler.ready})"
+                    )
+                    logger.debug(f"Instance {self.instance.name} can't run {run_conditions}")
+                    self.instance.add_missing_case_status(
+                        TwisterStatus.NOTRUN,
+                        "Nowhere to run"
+                    )
                 next_op = 'report'
-                additionals = {
-                    "status": self.instance.status,
-                    "reason": self.instance.reason
-                }
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = f"Incorrect status assignment on {op}"
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
-                next_op = 'report'
-                additionals = {}
-            finally:
-                self._add_to_processing_queue(processing_queue, next_op, additionals)
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op)
 
-        # Report results and output progress to screen
-        elif op == "report":
-            try:
+    # Run the generated binary using one of the supported handlers
+    def _op_run(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        additionals = {}
+        processing_queue_updated = False
+        try:
+            if self.ensure_required_apps_ready(processing_ready):
+                with self.reserve_hardware() as ready_to_run:
+                    if ready_to_run:
+                        logger.debug(f"run test: {self.instance.name}")
+                        self.run()
+                        logger.debug(f"run status: {self.instance.name} {self.instance.status}")
+
+            # to make it work with pickle
+            self.instance.handler.thread = None
+
+            next_op = "coverage" if self.options.coverage else "report"
+            additionals = {
+                "status": self.instance.status,
+                "reason": self.instance.reason
+            }
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = 'report'
+            additionals = {}
+        except (NoDeviceAvailableException, NoRequiredApplicationNotReadyException):
+            if processing_ready.get(self.instance.name) is None:
+                # Register this instance as ready (build succeeded) so that other instances
+                # listing it as a required application can unblock and proceed.
+                # This also handles mutual dependencies between instances,
+                # letting the pair resolve without deadlock.
+                # The entry will be overwritten with the final state in the 'report' stage.
                 with lock:
                     processing_ready.update({self.instance.name: self.instance})
-                    self.report_out(results)
 
-                if not self.options.coverage:
-                    if self.options.prep_artifacts_for_testing:
-                        next_op = 'cleanup'
-                        additionals = {"mode": "device"}
-                    elif self.options.runtime_artifact_cleanup == "pass" and \
-                        self.instance.status in [TwisterStatus.PASS, TwisterStatus.NOTRUN]:
-                        next_op = 'cleanup'
-                        additionals = {"mode": "passed"}
-                    elif self.options.runtime_artifact_cleanup == "all":
-                        next_op = 'cleanup'
-                        additionals = {"mode": "all"}
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
-                next_op = None
-                additionals = {}
-            finally:
+            # no device available to run the test or required application not ready,
+            # add the task back to the pipeline to process it later
+            processing_queue.appendleft(message)
+            processing_queue_updated = True
+            # to avoid busy waiting
+            time.sleep(1)
+        finally:
+            if not processing_queue_updated:
                 self._add_to_processing_queue(processing_queue, next_op, additionals)
 
-        elif op == "cleanup":
-            try:
-                mode = message.get("mode")
-                if mode == "device":
-                    self.cleanup_device_testing_artifacts()
-                elif (
-                    mode == "passed"
-                    or (mode == "all" and self.instance.reason != "CMake build failure")
-                ):
-                    self.cleanup_artifacts()
-            except StatusAttributeError as sae:
-                logger.error(str(sae))
-                self.instance.status = TwisterStatus.ERROR
-                reason = 'Incorrect status assignment'
-                self.instance.reason = reason
-                self.instance.add_missing_case_status(TwisterStatus.BLOCK, reason)
+    # Run per-instance code coverage
+    def _op_coverage(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        additionals = {}
+        try:
+            logger.debug(f"Run coverage for '{self.instance.name}'")
+            self.instance.coverage_status, self.instance.coverage = \
+                    run_coverage_instance(self.options, self.instance)
+            next_op = 'report'
+            additionals = {
+                "status": self.instance.status,
+                "reason": self.instance.reason
+            }
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae, op_label='coverage')
+            next_op = 'report'
+            additionals = {}
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op, additionals)
+
+    # Report results and output progress to screen
+    def _op_report(self, processing_queue, processing_ready, message, lock, results):
+        next_op = None
+        additionals = {}
+        try:
+            with lock:
+                processing_ready.update({self.instance.name: self.instance})
+                self.report_out(results)
+
+            if not self.options.coverage:
+                if self.options.prep_artifacts_for_testing:
+                    next_op = 'cleanup'
+                    additionals = {"mode": "device"}
+                elif self.options.runtime_artifact_cleanup == "pass" and \
+                    self.instance.status in [TwisterStatus.PASS, TwisterStatus.NOTRUN]:
+                    next_op = 'cleanup'
+                    additionals = {"mode": "passed"}
+                elif self.options.runtime_artifact_cleanup == "all":
+                    next_op = 'cleanup'
+                    additionals = {"mode": "all"}
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
+            next_op = None
+            additionals = {}
+        finally:
+            self._add_to_processing_queue(processing_queue, next_op, additionals)
+
+    def _op_cleanup(self, processing_queue, processing_ready, message, lock, results):
+        try:
+            mode = message.get("mode")
+            if mode == "device":
+                self.cleanup_device_testing_artifacts()
+            elif (
+                mode == "passed"
+                or (mode == "all" and self.instance.reason != "CMake build failure")
+            ):
+                self.cleanup_artifacts()
+        except StatusAttributeError as sae:
+            self._mark_status_error(sae)
 
     def demangle(self, symbol_name):
         if symbol_name[:2] == '_Z':
@@ -1592,6 +1366,13 @@ class ProjectBuilder(FilterBuilder):
                     results.warnings_increment(1)
 
 
+    @staticmethod
+    def _colored_count(count, status, always=False):
+        # Right-aligned, 4-wide count coloured with the status colour when it is
+        # non-zero (or `always`), otherwise reset to neutral.
+        color = TwisterStatus.get_color(status) if always or count > 0 else Fore.RESET
+        return f"{color}{count:>4}{Fore.RESET}"
+
     def report_out(self, results):
         total_to_do = results.total - results.filtered_static
         total_tests_width = len(str(total_to_do))
@@ -1691,29 +1472,14 @@ class ProjectBuilder(FilterBuilder):
                 f"{unfiltered:>4}/{total_to_do:>4}"
                 f"{Fore.RESET}  {completed_perc:>2}%"
             )
-            notrun_section = (
-                f"{TwisterStatus.get_color(TwisterStatus.NOTRUN)}{results.notrun:>4}{Fore.RESET}"
+            notrun_section = self._colored_count(
+                results.notrun, TwisterStatus.NOTRUN, always=True
             )
-            filtered_section_color = (
-                TwisterStatus.get_color(TwisterStatus.SKIP)
-                if results.filtered_configs > 0
-                else Fore.RESET
+            filtered_section = self._colored_count(
+                results.filtered_configs, TwisterStatus.SKIP
             )
-            filtered_section = (
-                f"{filtered_section_color}{results.filtered_configs:>4}{Fore.RESET}"
-            )
-            failed_section_color = (
-                TwisterStatus.get_color(TwisterStatus.FAIL) if results.failed > 0 else Fore.RESET
-            )
-            failed_section = (
-                f"{failed_section_color}{results.failed:>4}{Fore.RESET}"
-            )
-            error_section_color = (
-                TwisterStatus.get_color(TwisterStatus.ERROR) if results.error > 0 else Fore.RESET
-            )
-            error_section = (
-                f"{error_section_color}{results.error:>4}{Fore.RESET}"
-            )
+            failed_section = self._colored_count(results.failed, TwisterStatus.FAIL)
+            error_section = self._colored_count(results.error, TwisterStatus.ERROR)
             sys.stdout.write(
                 f"INFO    - Total complete: {complete_section}"
                 f"  built (not run): {notrun_section},"
@@ -1811,21 +1577,45 @@ class ProjectBuilder(FilterBuilder):
         return build_result
 
     def post_build(self):
-        """Run post-build checks against the build directory.
+        """Post-build processing against the freshly built artifacts.
 
-        Each check is a bound method returning ``None`` on success or a
-        human-readable reason string on failure. The first failing check
-        short-circuits and fails the build. New checks can be added to the
-        ``checks`` list below.
+        This stage always runs after a successful build. It first resolves
+        simulator availability (which may mark the instance as not run), then
+        runs the optional post-build checks. The two concerns are handled by
+        dedicated methods.
         """
-        checks = [
-            self.check_no_nested_git_repos,
-        ]
-        for check in checks:
-            reason = check()
+        self.check_simulator_availability()
+        return self.run_post_build_checks()
+
+    def check_simulator_availability(self):
+        """Mark the instance as not run if its simulator binary, resolved at
+        CMake configure time (recorded in CMakeCache), was not found.
+
+        Availability of such simulators (e.g. Arm FVP) cannot be determined
+        during test planning, so it is checked here once the build has run.
+        """
+        if self.instance.run and (sim_reason := self._simulator_unavailable_reason()):
+            logger.debug(f"Instance {self.instance.name} can't run: {sim_reason}")
+            self.instance.run = False
+            self.instance.status = TwisterStatus.NOTRUN
+            self.instance.reason = sim_reason
+            self.instance.add_missing_case_status(TwisterStatus.NOTRUN, sim_reason)
+
+    def run_post_build_checks(self):
+        """Run the optional post-build checks, gated by ``--post-build-checks``.
+
+        Each check named in ``POST_BUILD_CHECKS`` returns ``None`` on success
+        or a human-readable reason string on failure; the first failing check
+        short-circuits and fails the build.
+        """
+        if not self.options.post_build_checks:
+            return {"returncode": 0}
+
+        for check_name in self.POST_BUILD_CHECKS:
+            reason = getattr(self, check_name)()
             if reason:
                 logger.error(
-                    f"Post-build check '{check.__name__}' failed for "
+                    f"Post-build check '{check_name}' failed for "
                     f"{self.instance.name}: {reason}"
                 )
                 return {"returncode": 1, "reason": reason}
@@ -1877,9 +1667,37 @@ class ProjectBuilder(FilterBuilder):
                 logger.error(instance.reason)
                 return
 
-            # If the harness does not handle execution itself, delegate to the handler.
-            if not harness.run(instance.handler.get_test_timeout()):
-                instance.handler.handle(harness)
+            # A sidecar (selected with the `sidecar:` field, or attached by
+            # twister e.g. for ivshmem coverage) provisions a host-side resource
+            # around the run, e.g. a virtiofsd daemon or an ivshmem backing file.
+            # It is set up before the test executes by whichever path runs it --
+            # a harness that executes the test itself, or the handler -- and torn
+            # down afterwards. Teardown always runs once the sidecar has been
+            # configured, including when setup() failed part way through, so a
+            # sidecar never leaks what it already provisioned.
+            try:
+                sidecar = SidecarImporter.get_sidecar(instance.sidecar)
+            except ValueError as error:
+                instance.status = TwisterStatus.ERROR
+                instance.reason = str(error)
+                logger.error(instance.reason)
+                return
+            if sidecar is not None:
+                sidecar.configure(instance)
+
+            try:
+                # Provision on its own, before anything executes the test: a
+                # sidecar must never be short-circuited away by how the test is
+                # run. setup() reports whether execution should proceed at all.
+                proceed = sidecar.setup() if sidecar is not None else True
+
+                # If the harness does not handle execution itself, delegate to
+                # the handler.
+                if proceed and not harness.run(instance.handler.get_test_timeout()):
+                    instance.handler.handle(harness)
+            finally:
+                if sidecar is not None:
+                    sidecar.teardown()
 
         sys.stdout.flush()
 
@@ -1895,6 +1713,55 @@ class ProjectBuilder(FilterBuilder):
             instance.metrics["available_rom"] = 0
             instance.metrics["available_ram"] = 0
         return build_result
+
+    def _cmake_cache_path(self) -> str:
+        """Path to the CMakeCache.txt holding this instance's build variables.
+
+        For sysbuild builds the application image (and therefore variables
+        such as the simulator executable) lives in the default domain's build
+        directory rather than the top-level build directory.
+        """
+        build_dir = self.build_dir
+        if self.instance.sysbuild:
+            domain_path = os.path.join(build_dir, "domains.yaml")
+            try:
+                domains = Domains.from_file(domain_path)
+            except FileNotFoundError:
+                return os.path.join(build_dir, "CMakeCache.txt")
+            domain_build = domains.get_default_domain().build_dir
+            if not os.path.isabs(domain_build):
+                domain_build = os.path.normpath(os.path.join(build_dir, domain_build))
+            build_dir = domain_build
+        return os.path.join(build_dir, "CMakeCache.txt")
+
+    def _simulator_unavailable_reason(self) -> str | None:
+        """Return a reason string if the instance's simulator binary was not
+        found at CMake configure time, otherwise None.
+
+        Some simulators (e.g. Arm FVP) resolve their executable at configure
+        time via find_program(), and the binary that gets used can vary with
+        the build configuration, so their availability cannot be determined
+        during test planning. The result is recorded in CMakeCache, which is
+        inspected here after the build.
+        """
+        simulator = self.instance.platform.simulator_by_name(self.options.sim_name)
+        if simulator is None:
+            return None
+
+        cmake_var = SIM_PROGRAM_CMAKE_VARS.get(simulator.name)
+        if cmake_var is None:
+            return None
+
+        try:
+            cache = CMakeCache.from_file(self._cmake_cache_path())
+        except FileNotFoundError:
+            return None
+
+        value = cache.get(cmake_var)
+        if value is None or str(value).endswith("-NOTFOUND"):
+            return f"{simulator.name} simulator binary not found"
+
+        return None
 
     @staticmethod
     def calc_size(instance: TestInstance, from_buildlog: bool):

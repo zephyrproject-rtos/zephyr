@@ -23,8 +23,18 @@
 extern "C" {
 #endif
 
-#define SYS_CLOCK_MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-			    ? K_TICKS_FOREVER : INT_MAX)
+/*
+ * Maximum number of ticks the kernel will ever ask a timer driver to wait
+ * before the next sys_clock_announce(). It is half of the unsigned tick
+ * range so that the elapsed-tick count the driver eventually announces is
+ * guaranteed to fit in the (unsigned) sys_clock_announce() argument. The
+ * other half is left as slack to absorb a late announce (e.g. interrupt
+ * latency, or a timeout that fires slightly past its deadline) without
+ * overflowing that argument. The kernel caps the value passed to
+ * sys_clock_set_timeout() to this, so a driver need not clamp against the
+ * announce range and only has to honour its own cycle-count limits.
+ */
+#define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
 
 /**
  * @brief System Clock APIs
@@ -134,9 +144,8 @@ bool sys_clock_is_locked(void);
  * is that one tick announcement should occur within one tick BEFORE
  * the specified expiration (that is, passing ticks==1 means "announce
  * the next tick", this convention was chosen to match legacy usage).
- * Similarly a ticks value of zero (or even negative) is legal and
- * treated identically: it simply indicates the kernel would like the
- * next tick announcement as soon as possible.
+ * Similarly a ticks value of zero is legal: it simply indicates the
+ * kernel would like the next tick announcement as soon as possible.
  *
  * Note that ticks can also be passed the special value K_TICKS_FOREVER,
  * indicating that no future timer interrupts are expected or required
@@ -168,7 +177,7 @@ bool sys_clock_is_locked(void);
  * @param idle Hint to the driver that the system is about to enter
  *        the idle state immediately after setting the timeout
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle);
+void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -204,7 +213,7 @@ void sys_clock_idle_exit(void);
  * @param ticks Elapsed time, in ticks
  * @param key Lock key obtained from sys_clock_lock().
  */
-void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
+void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
 
 /**
  * @brief Announce time progress to the kernel (legacy wrapper)
@@ -216,7 +225,7 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
  *
  * @param ticks Elapsed time, in ticks
  */
-static inline void sys_clock_announce(int32_t ticks)
+static inline void sys_clock_announce(uint32_t ticks)
 {
 	sys_clock_announce_locked(ticks, sys_clock_lock());
 }

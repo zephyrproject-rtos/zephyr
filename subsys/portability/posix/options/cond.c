@@ -151,7 +151,7 @@ int pthread_cond_broadcast(pthread_cond_t *cvar)
 	int ret;
 	struct posix_cond *cv;
 
-	cv = get_posix_cond(*cvar);
+	cv = to_posix_cond(cvar);
 	if (cv == NULL) {
 		return EINVAL;
 	}

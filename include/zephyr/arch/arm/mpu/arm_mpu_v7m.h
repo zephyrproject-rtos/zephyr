@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_V7M_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_V7M_H_
+
 #ifndef _ASMLANGUAGE
 
 #include <cmsis_core.h>
@@ -130,9 +133,16 @@
 #define REGION_FLASH_ATTR(size)                                                                    \
 	{(NORMAL_OUTER_INNER_WRITE_THROUGH_NON_SHAREABLE | size | P_RO_U_RO_Msk)}
 #endif
-#define REGION_PPB_ATTR(size)    {(STRONGLY_ORDERED_SHAREABLE | size | P_RW_U_NA_Msk)}
-#define REGION_IO_ATTR(size)     {(DEVICE_NON_SHAREABLE | size | P_RW_U_NA_Msk)}
-#define REGION_EXTMEM_ATTR(size) {(STRONGLY_ORDERED_SHAREABLE | size | NO_ACCESS_Msk)}
+/* Executing from Device or Strongly-ordered memory is architecturally
+ * UNPREDICTABLE on ARMv7-M, so device-type regions are always mapped
+ * Execute-Never. On Cortex-M7 the XN attribute is also what prevents the core
+ * from speculatively fetching instructions from these regions; the memory type
+ * alone does not. See the Arm Cortex-M7 TRM (DDI0489), "Memory system -
+ * Speculative accesses - Considerations for system design".
+ */
+#define REGION_PPB_ATTR(size)    {(STRONGLY_ORDERED_SHAREABLE | NOT_EXEC | size | P_RW_U_NA_Msk)}
+#define REGION_IO_ATTR(size)     {(DEVICE_NON_SHAREABLE | NOT_EXEC | size | P_RW_U_NA_Msk)}
+#define REGION_EXTMEM_ATTR(size) {(STRONGLY_ORDERED_SHAREABLE | NOT_EXEC | size | NO_ACCESS_Msk)}
 
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RASR (including the encoded region size) */
@@ -294,3 +304,5 @@ typedef struct {
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size)                                               \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK_SIZE(size);                                                \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK_START(start, size)
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_MPU_ARM_MPU_V7M_H_ */

@@ -94,6 +94,8 @@ static inline int lsm9ds0_mfd_accel_set_fs_raw(const struct device *dev,
 	}
 
 #if defined(CONFIG_LSM9DS0_MFD_ACCEL_FULL_SCALE_RUNTIME)
+	struct lsm9ds0_mfd_data *data = dev->data;
+
 	data->accel_fs = fs;
 #endif
 
@@ -151,10 +153,10 @@ static int lsm9ds0_mfd_magn_set_odr(const struct device *dev,
 {
 	uint8_t i;
 
-	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
-		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
-		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
-		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_magn_odr_map); ++i) {
+		if (val->val1 < lsm9ds0_mfd_magn_odr_map[i].freq_int ||
+		    (val->val1 == lsm9ds0_mfd_magn_odr_map[i].freq_int &&
+		     val->val2 <= lsm9ds0_mfd_magn_odr_map[i].freq_micro)) {
 			return lsm9ds0_mfd_magn_set_odr_raw(dev, i);
 		}
 	}
@@ -175,6 +177,8 @@ static inline int lsm9ds0_mfd_magn_set_fs_raw(const struct device *dev,
 	}
 
 #if defined(CONFIG_LSM9DS0_MFD_MAGN_FULL_SCALE_RUNTIME)
+	struct lsm9ds0_mfd_data *data = dev->data;
+
 	data->magn_fs = fs;
 #endif
 

@@ -18,6 +18,7 @@
 #include <adi_tmc5xxx_common.h>
 
 #include "tmc51xx.h"
+#include "tmc51xx_reg.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);

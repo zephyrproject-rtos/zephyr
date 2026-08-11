@@ -21,7 +21,7 @@ LOG_MODULE_REGISTER(net_dns_dispatcher, CONFIG_DNS_SOCKET_DISPATCHER_LOG_LEVEL);
 
 static K_MUTEX_DEFINE(lock);
 
-static sys_slist_t sockets;
+static sys_slist_t sockets = SYS_SLIST_STATIC_INIT(&sockets);
 
 #define DNS_RESOLVER_MIN_BUF	1
 #define DNS_RESOLVER_BUF_CTR	(DNS_RESOLVER_MIN_BUF + \
@@ -68,7 +68,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher, sock,
+			ret = dispatcher->pair->cb(dispatcher->pair, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {
@@ -86,7 +86,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 					     addr, addrlen,
 					     dns_data, data_len);
 		} else if (dispatcher->pair) {
-			ret = dispatcher->pair->cb(dispatcher, sock,
+			ret = dispatcher->pair->cb(dispatcher->pair, sock,
 						   addr, addrlen,
 						   dns_data, data_len);
 		} else {
@@ -131,6 +131,13 @@ static int recv_data(struct net_socket_service_event *pev)
 	int ret = 0, len;
 
 	dispatcher = table[pev->event.fd].ctx;
+	if (dispatcher == NULL) {
+		/* The dispatch slot was cleared concurrently, for example the
+		 * server socket was just closed while its poll event was still
+		 * in flight. Nothing to dispatch to, so drop the event.
+		 */
+		return 0;
+	}
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
 
@@ -155,6 +162,14 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	dns_data = net_buf_alloc(&dns_msg_pool, dispatcher->buf_timeout);
 	if (!dns_data) {
+		uint8_t discard;
+
+		/* Flush the pending datagram to release its net_pkt and avoid RX starvation. */
+		if (zsock_recvfrom(pev->event.fd, &discard, sizeof(discard), 0,
+				   NULL, NULL) < 0) {
+			NET_DBG("DNS discard recv failed (%d)", errno);
+		}
+
 		ret = DNS_EAI_MEMORY;
 		goto unlock;
 	}
@@ -298,6 +313,22 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		goto out;
 	}
 
+	/* If port 0 was requested, bind() selected an ephemeral local port.
+	 * Store the actual socket name so later dispatcher registrations do
+	 * not treat distinct resolver sockets as duplicate port-0 sockets.
+	 */
+	if (net_sin(&ctx->local_addr)->sin_port == 0) {
+		net_socklen_t socklen = addrlen;
+
+		ret = zsock_getsockname(ctx->sock, &ctx->local_addr, &socklen);
+		if (ret < 0) {
+			ret = -errno;
+			NET_DBG("Cannot get DNS socket %d name (%d)", ctx->sock,
+				ret);
+			goto out;
+		}
+	}
+
 	ctx->pair = NULL;
 
 	for (int i = 0; i < ctx->fds_len; i++) {
@@ -331,37 +362,50 @@ out:
 
 int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 {
+	struct dns_socket_dispatcher *entry;
+	const struct net_socket_service_desc *svc;
+	int sock;
 	int ret = 0;
 
 	k_mutex_lock(&lock, K_FOREVER);
 
+	sock = ctx->sock;
+	svc = ctx->svc;
+
 	(void)sys_slist_find_and_remove(&sockets, &ctx->node);
-
-	(void)net_socket_service_unregister(ctx->svc);
-
-	/* Mark the context as unregistered */
 	ctx->sock = -1;
 
-	for (int i = 0; i < ctx->fds_len; i++) {
-		CHECKIF((int)ctx->fds[i].fd >= (int)ARRAY_SIZE(dispatch_table)) {
-			ret = -ERANGE;
+	if (sock >= 0 && sock < (int)ARRAY_SIZE(dispatch_table) &&
+	    dispatch_table[sock].ctx == ctx) {
+		dispatch_table[sock].ctx = NULL;
+	}
+
+	/* Drop any pairing that referenced this dispatcher so that a
+	 * surviving dispatcher does not delegate to an unregistered context.
+	 * Also clear our own pair so a later re-register does not inherit a
+	 * stale partner.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER(&sockets, entry, node) {
+		if (entry->pair == ctx) {
+			entry->pair = NULL;
+		}
+	}
+
+	ctx->pair = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&sockets, entry, node) {
+		if (entry->svc == svc) {
+			ret = net_socket_service_register(entry->svc, entry->fds,
+							  entry->fds_len,
+							  &dispatch_table);
 			goto out;
 		}
-
-		if (ctx->fds[i].fd < 0) {
-			continue;
-		}
-
-		dispatch_table[ctx->fds[i].fd].ctx = NULL;
 	}
+
+	(void)net_socket_service_unregister(svc);
 
 out:
 	k_mutex_unlock(&lock);
 
 	return ret;
-}
-
-void dns_dispatcher_init(void)
-{
-	sys_slist_init(&sockets);
 }

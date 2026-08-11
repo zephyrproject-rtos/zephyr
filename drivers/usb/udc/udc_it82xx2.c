@@ -102,8 +102,7 @@ struct it82xx2_ep_event {
 	enum it82xx2_event_type event;
 };
 
-K_MSGQ_DEFINE(evt_msgq, sizeof(struct it82xx2_ep_event),
-	      CONFIG_UDC_IT82xx2_EVENT_COUNT, sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC_TYPE(evt_msgq, struct it82xx2_ep_event, CONFIG_UDC_IT82xx2_EVENT_COUNT);
 
 struct usb_it8xxx2_wuc {
 	/* WUC control device structure */
@@ -1127,23 +1126,26 @@ static inline int work_handler_out(const struct device *dev, uint8_t ep)
 
 	LOG_DBG("Handle data OUT, %zu | %zu", len, net_buf_tailroom(buf));
 
+	if (ep != USB_CONTROL_EP_OUT) {
+		atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
+	}
+
+	udc_ep_set_busy(ep_cfg, false);
+
 	if (net_buf_tailroom(buf) && len == udc_mps_ep_size(ep_cfg)) {
-		work_handler_xfer_continue(dev, ep, buf);
-		if (ep != USB_CONTROL_EP_OUT) {
-			err = udc_submit_ep_event(dev, buf, 0);
+		/* For non-control endpoints, the next out transfer will be started outside
+		 * this function. Do nothing here to avoid triggering it twice.
+		 */
+		if (ep == USB_CONTROL_EP_OUT) {
+			work_handler_xfer_continue(dev, ep, buf);
 		}
-		return err;
+
+		return 0;
 	}
 
 	buf = udc_buf_get(ep_cfg);
 	if (buf == NULL) {
 		return -ENODATA;
-	}
-
-	udc_ep_set_busy(ep_cfg, false);
-
-	if (ep != USB_CONTROL_EP_OUT) {
-		atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 	}
 
 	err = udc_submit_ep_event(dev, buf, 0);
@@ -1398,7 +1400,6 @@ static int it82xx2_enable(const struct device *dev)
 	struct it82xx2_data *priv = udc_get_private(dev);
 
 	k_sem_init(&priv->suspended_sem, 0, 1);
-	k_work_init_delayable(&priv->suspended_work, suspended_handler);
 
 	atomic_clear_bit(&priv->out_fifo_state, IT82xx2_STATE_OUT_SHARED_FIFO_BUSY);
 
@@ -1569,6 +1570,8 @@ static int it82xx2_usb_driver_preinit(const struct device *dev)
 
 	/* Initializing WU (USB D+) */
 	it8xxx2_usb_dc_wuc_init(dev);
+
+	k_work_init_delayable(&priv->suspended_work, suspended_handler);
 
 	/* Connect USB interrupt */
 	irq_connect_dynamic(config->usb_irq, 0, it82xx2_usb_dc_isr, dev, 0);

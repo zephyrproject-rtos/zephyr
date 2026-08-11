@@ -17,7 +17,7 @@ struct parameter {
 	uintptr_t value;
 };
 
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 
 #include <stdlib.h>
 #include <stdarg.h>

@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <zephyr/sys/atomic.h>
 
-#define IPI_ALL_CPUS_MASK  ((1 << CONFIG_MP_MAX_NUM_CPUS) - 1)
+#define IPI_ALL_CPUS_MASK  (UINT32_MAX >> (32 - CONFIG_MP_MAX_NUM_CPUS))
 
 #define IPI_CPU_MASK(cpu_id)   \
 	(IS_ENABLED(CONFIG_IPI_OPTIMIZE) ? BIT(cpu_id) : IPI_ALL_CPUS_MASK)

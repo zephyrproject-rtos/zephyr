@@ -24,6 +24,14 @@ properties:
       This pin defaults to active high when consumed by the wlan cpu power.
       The property value should ensure the flags properly describe the signal
       that is presented to the driver.
+  ext1-pwren-gpios:
+    type: phandle-array
+    description: |
+      External power enable pin - controls an external power supply to the
+      wireless module. When present, this pin is asserted before the module
+      is powered on and deasserted during power off.
+      The property value should ensure the flags properly describe the signal
+      that is presented to the driver.
 
   sd-gpios:
     type: phandle-array

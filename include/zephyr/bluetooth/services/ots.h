@@ -10,6 +10,8 @@
 /**
  * @brief Object Transfer Service (OTS)
  * @defgroup bt_ots Object Transfer Service (OTS)
+ * @since 2.4
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  *
@@ -148,7 +150,7 @@ enum {
 #define BT_OTS_OBJ_SET_PROP_PATCH(prop) \
 	WRITE_BIT(prop, BT_OTS_OBJ_PROP_PATCH, 1)
 
-/** @brief Set @ref BT_OTS_OBJ_SET_PROP_MARKED property.
+/** @brief Set @ref BT_OTS_OBJ_PROP_MARKED property.
  *
  *  @param prop Object properties.
  */
@@ -262,7 +264,7 @@ enum bt_ots_oacp_write_op_mode {
 	BT_OTS_OACP_WRITE_OP_MODE_TRUNCATE = BIT(1),
 };
 
-/** @brief Set @ref BT_OTS_OACP_SET_FEAT_CREATE feature.
+/** @brief Set @ref BT_OTS_OACP_FEAT_CREATE feature.
  *
  *  @param feat OTS features.
  */
@@ -520,12 +522,12 @@ struct bt_ots_date_time {
  */
 struct bt_ots_obj_metadata {
 
-#if defined(CONFIG_BT_OTS)
+#if defined(CONFIG_BT_OTS) || defined(__DOXYGEN__)
 	/** @brief Object Name */
 	char                           *name;
 #endif /* CONFIG_BT_OTS */
 
-#if defined(CONFIG_BT_OTS_CLIENT)
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
 	/* TODO: Unify client/server name */
 	/** @brief Object name (client) */
 	char                           name_c[CONFIG_BT_OTS_OBJ_MAX_NAME_LEN + 1];
@@ -537,7 +539,7 @@ struct bt_ots_obj_metadata {
 	/** @brief Object Size */
 	struct bt_ots_obj_size         size;
 
-#if defined(CONFIG_BT_OTS_CLIENT)
+#if defined(CONFIG_BT_OTS_CLIENT) || defined(__DOXYGEN__)
 	/** @brief Object first created time */
 	struct bt_ots_date_time        first_created;
 

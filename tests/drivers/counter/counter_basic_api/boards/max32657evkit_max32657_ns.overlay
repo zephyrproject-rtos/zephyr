@@ -55,3 +55,12 @@
 		status = "okay";
 	};
 };
+
+&wut0 {
+	status = "okay";
+	prescaler = <2>;
+
+	counter {
+		status = "okay";
+	};
+};

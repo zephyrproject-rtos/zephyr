@@ -48,6 +48,27 @@ int stm32_usb_pwr_enable(void)
 		LOG_INF("PWR not active yet");
 		k_msleep(100);
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * The Vdd33USB voltage detector (mandatory for USB usage)
+	 * is enabled at SoC level if GPIOM port is enabled, which
+	 * is required to use USB; as such, there is no need to
+	 * enable the voltage detector here.
+	 */
+
+	/*
+	 * Enable the internal USB voltage regulator
+	 * if Vdd33USB is not supplied externally.
+	 */
+	if (!LL_PWR_IsActiveFlag_USB33RDY()) {
+		LOG_INF("No external supply detected on Vdd33USB - using internal regulator.");
+		LL_PWR_EnableUSBReg();
+	}
+
+	if (DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)) {
+		/* Enable HS PHY power regulator if OTG_HS is used */
+		LL_PWR_EnableUSBHSPHYReg();
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 	__ASSERT_NO_MSG(LL_AHB3_GRP1_IsEnabledClock(LL_AHB3_GRP1_PERIPH_PWR));
 
@@ -151,6 +172,12 @@ int stm32_usb_pwr_disable(void)
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_PWR_DisableUSBVoltageDetector();
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/* Disable HS PHY power regulator (if enabled) */
+	LL_PWR_DisableUSBHSPHYReg();
+
+	/* Disable USB power regulator (if enabled) */
+	LL_PWR_DisableUSBReg();
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 # if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_otghs)
 	LL_PWR_DisableUSBEPODBooster();

@@ -24,6 +24,7 @@ config ARC
 	imply XIP
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_SUPPORTS_ROM_START
+	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_DIRECTED_IPIS
 	help
 	  ARC architecture
@@ -39,6 +40,10 @@ config ARM
 	select GEN_PRIV_STACKS
 	select ARCH_HAS_THREAD_LOCAL_STORAGE if CPU_AARCH32_CORTEX_R || CPU_CORTEX_M || CPU_AARCH32_CORTEX_A
 	select BARRIER_OPERATIONS_ARCH
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
+	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	help
 	  ARM architecture
 
@@ -58,6 +63,11 @@ config ARM64
 	select ARCH_SUPPORTS_EVICTION_TRACKING
 	select EVICTION_TRACKING if DEMAND_PAGING
 	select MEM_DOMAIN_HAS_THREAD_LIST if ARM_MPU && USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  ARM64 (AArch64) architecture
 
@@ -76,6 +86,7 @@ config OPENRISC
 	select USE_SWITCH
 	select USE_SWITCH_SUPPORTED
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
+	select ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  OpenRISC architecture
 
@@ -115,6 +126,11 @@ config X86
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select ARCH_SUPPORTS_MEM_MAPPED_STACKS if X86_MMU && !DEMAND_PAGING
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_SUPPORTS_ROM_OFFSET
+	# Only the 32-bit (ia32) interrupt stub emits the ISR entry hook that
+	# closes the idle window; intel64 does not have one yet.
+	select ARCH_HAS_CPU_IDLE_HOOKS if !X86_64
 	help
 	  x86 architecture
 
@@ -140,7 +156,12 @@ config RISCV
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_HAS_STACK_CANARIES_TLS
 	select STACK_CANARIES_TLS_PREPEND if STACK_CANARIES_TLS
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_SUPPORTS_ROM_OFFSET
 	depends on DT_HAS_RISCV_ENABLED
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  RISCV architecture
 
@@ -152,12 +173,14 @@ config XTENSA
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_TIMING_FUNCTIONS
 	select ARCH_MEM_DOMAIN_DATA if USERSPACE
-	select ARCH_HAS_DIRECTED_IPIS
 	select THREAD_STACK_INFO
 	select ARCH_HAS_THREAD_PRIV_STACK_SPACE_GET if USERSPACE
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
 	select ARCH_HAS_USERSPACE if XTENSA_MMU || XTENSA_MPU
 	imply ARCH_HAS_RESERVED_PAGE_FRAMES if XTENSA_MMU
+	select ARCH_HAS_IRQ_OFFLOAD_NESTED
+	select ARCH_HAS_SEMIHOST
+	select ARCH_HAS_CPU_IDLE_HOOKS
 	help
 	  Xtensa architecture
 
@@ -515,7 +538,7 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	# Userspace is currently not supported
 	depends on !USERSPACE
 	# List of currently supported architectures
-	depends on ARM || ARM64 || RISCV
+	depends on ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	# List of currently supported toolchains
 	depends on "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "gnuarmemb" || "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "llvm" || TOOLCHAIN_SUPPORTS_ISR_TABLES_LOCAL_DECLARATION
 
@@ -697,7 +720,7 @@ config SRAM_SW_ISR_TABLE
 config IRQ_OFFLOAD_NESTED
 	bool "irq_offload() supports nested IRQs"
 	depends on IRQ_OFFLOAD
-	default y if ARM64 || X86 || RISCV || XTENSA
+	default y if ARCH_HAS_IRQ_OFFLOAD_NESTED
 	help
 	  When set by the platform layers, indicates that
 	  irq_offload() may legally be called in interrupt context to
@@ -811,6 +834,49 @@ config ARCH_HAS_VECTOR_TABLE_RELOCATION
 config ARCH_HAS_NESTED_EXCEPTION_DETECTION
 	bool
 
+config ARCH_HAS_IRQ_OFFLOAD_NESTED
+	bool
+	help
+	  This option is selected by architectures whose irq_offload()
+	  implementation may legally be called in interrupt context to cause a
+	  synchronous nested interrupt on the current CPU. It gates the default
+	  value of CONFIG_IRQ_OFFLOAD_NESTED.
+
+config ARCH_HAS_SEMIHOST
+	bool
+	help
+	  This option is selected by architectures that provide a semihosting
+	  implementation (arch/*/core/semihost.c). It is a prerequisite for
+	  CONFIG_SEMIHOST.
+
+config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	bool
+	help
+	  This option is selected by architectures that support local
+	  declaration of interrupt tables placed by the linker. It is a
+	  prerequisite for CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED.
+
+config ARCH_HAS_CPU_IDLE_HOOKS
+	bool
+	help
+	  This option is selected by architectures that can tell the CPU load
+	  module when the CPU enters and leaves idle (gated by
+	  CONFIG_SYS_IDLE_HOOKS). It requires the idle path to emit
+	  sys_trace_idle() on entry, and the idle window to be closed again by
+	  either of:
+
+	  - sys_trace_idle_exit() after the wait, for architectures that wait with
+	    interrupts locked (Arm, RISC-V). The wait returns without servicing the
+	    interrupt, so the exit hook runs before any ISR.
+	  - sys_trace_isr_enter() at ISR entry, for architectures that wait with
+	    interrupts enabled (x86 "sti; hlt", Xtensa "waiti 0"). There the wake-up
+	    ISR runs first and may reschedule away from the idle thread, which would
+	    defer the exit hook long past the end of idle, so the ISR entry closes
+	    the window instead.
+
+	  It is a prerequisite for the idle-hook CPU load backend
+	  (CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK).
+
 config ARCH_SUPPORTS_COREDUMP
 	bool
 
@@ -905,6 +971,14 @@ config ARCH_HAS_CODE_DATA_RELOCATION
 	help
 	  When selected, the architecture/SoC implements support for
 	  CODE_DATA_RELOCATION in its linker scripts.
+
+config ARCH_HAS_PMU
+	bool
+	help
+	  When set, the CPU or SoC is expected to provide hardware performance
+	  counters usable by the Zephyr PMU API (<zephyr/arch/pmu.h>). For AArch64,
+	  Cortex-A profiles select this option; enable CONFIG_ARM64_PMUV3 to build
+	  the ARMv8-A PMUv3 driver backend.
 
 #
 # Hidden CPU family configs
@@ -1220,12 +1294,11 @@ config CACHE_MANAGEMENT
 	  This option enables the cache management functions backed by arch or
 	  driver code.
 
-if CACHE_MANAGEMENT
-
 if DCACHE
 
 config DCACHE_LINE_SIZE_DETECT
 	bool "Detect d-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the d-cache line size at the expense of taking more memory and
@@ -1240,7 +1313,8 @@ config DCACHE_LINE_SIZE
 	depends on !DCACHE_LINE_SIZE_DETECT
 	default $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) \
 		  if $(dt_node_has_prop,/cpus/cpu@0,d-cache-line-size)
-	default 0
+	default 64 if 64BIT
+	default 32
 	help
 	  Size in bytes of a CPU d-cache line.
 
@@ -1252,6 +1326,7 @@ if ICACHE
 
 config ICACHE_LINE_SIZE_DETECT
 	bool "Detect i-cache line size at runtime"
+	depends on CACHE_MANAGEMENT
 	help
 	  This option enables querying some architecture-specific hardware for
 	  finding the i-cache line size at the expense of taking more memory and
@@ -1266,13 +1341,16 @@ config ICACHE_LINE_SIZE
 	depends on !ICACHE_LINE_SIZE_DETECT
 	default $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) \
 		  if $(dt_node_has_prop,/cpus/cpu@0,i-cache-line-size)
-	default 0
+	default 64 if 64BIT
+	default 32
 	help
 	  Size in bytes of a CPU i-cache line.
 
 	  Detect automatically at runtime by selecting ICACHE_LINE_SIZE_DETECT.
 
 endif # ICACHE
+
+if CACHE_MANAGEMENT
 
 choice CACHE_TYPE
 	prompt "Cache type"

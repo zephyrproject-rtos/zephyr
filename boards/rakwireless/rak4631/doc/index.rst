@@ -105,7 +105,7 @@ References
 .. target-notes::
 
 .. _RAK4631 Product Description:
-    https://docs.rakwireless.com/Product-Categories/WisBlock/RAK4631/Datasheet/#overview
+    https://docs.rakwireless.com/product-categories/wisblock/rak4631/datasheet/
 
 .. _JLink Downloads Page:
     https://www.segger.com/downloads/jlink

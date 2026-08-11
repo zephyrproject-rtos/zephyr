@@ -8,6 +8,7 @@ config XEN
 	default y
 	depends on ARMV8_A
 	depends on DT_HAS_XEN_XEN_ENABLED
+	select GNU_C_EXTENSIONS
 	help
 	  Enables support of Xen hypervisor on arm64 platform. Get enabled
 	  when board device tree contains "hypervisor" node with "xen,xen"
@@ -37,7 +38,7 @@ config XEN_INTERFACE_VERSION
 config XEN_DOMCTL_INTERFACE_VERSION
 	hex "Xen Domctl interface version"
 	default 0x17
-	range 0x15 0x17
+	range 0x15 0x18
 	depends on XEN
 	help
 	  Xen Domctl interface version to use. This is the version of the
@@ -48,7 +49,7 @@ config XEN_DOMCTL_INTERFACE_VERSION
 config XEN_SYSCTL_INTERFACE_VERSION
 	hex "Xen Sysctl interface version"
 	default 0x15
-	range 0x15 0x15
+	range 0x15 0x16
 	depends on XEN
 	help
 	  Xen Sysctl interface version to use. This is the version of the

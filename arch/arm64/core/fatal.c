@@ -435,7 +435,7 @@ static bool z_arm64_stack_corruption_check(struct arch_esf *esf, uint64_t esr, u
 #ifdef CONFIG_USERSPACE
 	else if ((_current->base.user_options & K_USER) != 0 && GET_ESR_EC(esr) == 0x24) {
 		sp_limit = (uint64_t)_current->stack_info.start;
-		guard_start = sp_limit - Z_ARM64_STACK_GUARD_SIZE;
+		guard_start = sp_limit - CONFIG_PRIVILEGED_STACK_SIZE - Z_ARM64_STACK_GUARD_SIZE;
 		sp = esf->sp;
 		if (sp <= sp_limit || (guard_start <= far && far <= sp_limit)) {
 			EXCEPTION_DUMP("STACK OVERFLOW FROM USERSPACE,"

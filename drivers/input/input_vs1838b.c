@@ -343,7 +343,7 @@ static int vs1838b_init(struct device const *dev)
 	data->dev = dev;
 
 	if (!gpio_is_ready_dt(data_input)) {
-		LOG_ERR_DEVICE_NOT_READY(data_input.port);
+		LOG_ERR_DEVICE_NOT_READY(data_input->port);
 		return -ENODEV;
 	}
 

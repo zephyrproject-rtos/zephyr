@@ -53,6 +53,27 @@ void worker(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Verify EDF threads run in earliest-deadline-first order.
+ *
+ * @details
+ * At equal priority the scheduler must order runnable threads by their deadline
+ * (set via k_thread_deadline_set()), running the earliest deadline first.
+ * Several equal-priority threads are given random deadlines and must execute in
+ * ascending-deadline order.
+ *
+ * Test steps:
+ * - Create NUM_THREADS equal-priority threads, each recording its run order.
+ * - Assign each a random deadline, then sleep to let them run.
+ * - Verify their execution order matches ascending deadline order.
+ *
+ * Expected result:
+ * - Threads execute earliest-deadline-first.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_thread_deadline_set()
+ */
 ZTEST(suite_deadline, test_deadline)
 {
 	int i;
@@ -134,6 +155,26 @@ void yield_worker(void *p1, void *p2, void *p3)
 	CODE_UNREACHABLE;
 }
 
+/**
+ * @brief Verify k_yield() rotates among equal deadline/priority threads.
+ *
+ * @details
+ * Threads at the same priority and deadline (0) must each get to run when they
+ * cooperatively yield. Each worker increments a counter and yields; all must
+ * have run by the time the test wakes.
+ *
+ * Test steps:
+ * - Create NUM_THREADS equal-priority/deadline threads that bump a counter and
+ *   k_yield().
+ * - Sleep and verify all threads ran.
+ *
+ * Expected result:
+ * - Every thread runs, confirming yield rotates among equal peers.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_yield()
+ */
 ZTEST(suite_deadline, test_yield)
 {
 	/* Test that yield works across threads with the
@@ -178,13 +219,26 @@ void unqueue_worker(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Validate the behavior of deadline_set when the thread is not queued
+ * @brief Verify k_thread_deadline_set() does not wake a not-yet-started thread.
  *
- * @details Create a bunch of threads with scheduling delay which make the
- * thread in unqueued state. The k_thread_deadline_set() call should not make
- * these threads run before there delay time pass.
+ * @details
+ * Setting a deadline on a thread that is still in its start delay (unqueued)
+ * must not make it run before its delay elapses. Threads are created with a
+ * start delay, given deadlines while unqueued, and must stay dormant until the
+ * delay passes.
  *
- * @ingroup kernel_sched_tests
+ * Test steps:
+ * - Create NUM_THREADS threads with a start delay (unqueued).
+ * - Set a random deadline on each and sleep less than the delay; none must run.
+ * - Sleep past the delay and confirm all threads then run.
+ *
+ * Expected result:
+ * - Deadline-set does not start an unqueued thread early; threads run only after
+ *   their start delay.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_thread_deadline_set()
  */
 ZTEST(suite_deadline, test_unqueued)
 {
@@ -270,6 +324,29 @@ static void thread_offload(void (*f)(const void *p), const void *param)
 	f(param);
 }
 
+/**
+ * @brief Verify a deadline change takes effect only on k_reschedule().
+ *
+ * @details
+ * Changing a thread's deadline does not by itself trigger a context switch; an
+ * explicit k_reschedule() must re-evaluate the ready queue and switch to the now
+ * earliest-deadline thread. The test orchestrates two EDF helpers and checks the
+ * expected thread is selected only after k_reschedule() (exercised via a direct
+ * call and, on non-SMP, via irq_offload). Built for single-CPU configs only.
+ *
+ * Test steps:
+ * - Create two EDF helper threads with different deadlines.
+ * - Confirm changing a deadline alone causes no switch.
+ * - Invoke k_reschedule() and confirm the expected thread is then selected.
+ *
+ * Expected result:
+ * - The scheduler switches to the earliest-deadline thread only on reschedule.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_reschedule()
+ * @see k_thread_deadline_set()
+ */
 ZTEST(suite_deadline, test_thread_reschedule)
 {
 	k_thread_create(&worker_threads[0], worker_stacks[0], STACK_SIZE,

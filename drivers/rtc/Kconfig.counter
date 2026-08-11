@@ -6,10 +6,21 @@ config RTC_COUNTER
 	default y
 	depends on DT_HAS_ZEPHYR_RTC_COUNTER_ENABLED
 	select COUNTER
+	select COUNTER_CALIBRATION if RTC_CALIBRATION
 	help
 	  RTC driver applied for RTC device without broken-down time registers.
 	  Wraps the counter API to provide RTC functionality.
 	  Uses unix timestamp to convert between broken-down time and counter ticks.
+
+config RTC_COUNTER_INIT_PRIORITY
+	int "rtc_counter init priority"
+	default 70
+	depends on RTC_COUNTER
+	help
+	  Initialization priority for the counter-backed RTC driver. This
+	  should normally be set so the wrapper initializes after its backing
+	  counter device; the driver also verifies the counter with
+	  device_is_ready() at init time.
 
 config RTC_COUNTER_NVMEM
 	bool "Epoch offset in NVMEM"

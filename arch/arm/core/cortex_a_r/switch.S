@@ -66,7 +66,7 @@ SECTION_FUNC(TEXT, z_arm_context_switch)
 	 * This register is used as a base pointer to all
 	 * thread variables with offsets added by toolchain.
 	 */
-	mcr 15, 0, r3, c13, c0, 2
+	mcr p15, 0, r3, c13, c0, 2
 #endif
 
 	ldr r2, =_thread_offset_to_callee_saved

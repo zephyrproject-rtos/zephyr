@@ -20,7 +20,7 @@
 #include <fsl_io_mux.h>
 #include "soc.h"
 #include "flexspi_clock_setup.h"
-#include "fsl_ocotp.h"
+#include <fsl_ocotp.h>
 
 #define NON_AON_PINS_START      0
 #define NON_AON_PINS_BREAK      21

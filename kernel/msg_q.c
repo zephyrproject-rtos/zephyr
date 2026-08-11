@@ -29,7 +29,7 @@
 static struct k_obj_type obj_type_msgq;
 #endif /* CONFIG_OBJ_CORE_MSGQ */
 
-static inline bool handle_poll_events(struct k_msgq *msgq)
+static inline bool msgq_handle_poll_events(struct k_msgq *msgq)
 {
 #ifdef CONFIG_POLL
 	return z_handle_obj_poll_events(&msgq->poll_events,
@@ -192,7 +192,7 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 				(void)memcpy(msgq->read_ptr, (char *)data, msgq->msg_size);
 			}
 			msgq->used_msgs++;
-			resched = handle_poll_events(msgq);
+			resched = msgq_handle_poll_events(msgq);
 		}
 		result = 0;
 	} else if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
@@ -504,23 +504,5 @@ static inline uint32_t z_vrfy_k_msgq_num_used_get(struct k_msgq *msgq)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MSGQ
-static int init_msgq_obj_core_list(void)
-{
-	/* Initialize msgq object type */
-
-	z_obj_type_init(&obj_type_msgq, K_OBJ_TYPE_MSGQ_ID,
-			offsetof(struct k_msgq, obj_core));
-
-	/* Initialize and link statically defined message queues */
-
-	STRUCT_SECTION_FOREACH(k_msgq, msgq) {
-		k_obj_core_init_and_link(K_OBJ_CORE(msgq), &obj_type_msgq);
-	}
-
-	return 0;
-};
-
-SYS_INIT(init_msgq_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
-
+K_OBJ_TYPE_DEFINE(obj_type_msgq, k_msgq, K_OBJ_TYPE_MSGQ_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MSGQ */

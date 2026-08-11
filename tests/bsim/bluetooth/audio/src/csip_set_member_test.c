@@ -13,13 +13,16 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "bs_tracing.h"
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(csip_set_member_test);
+
 #ifdef CONFIG_BT_CSIP_SET_MEMBER
 static struct bt_csip_set_member_svc_inst *svc_inst;
 extern enum bst_result_t bst_result;
@@ -37,7 +40,7 @@ static void csip_lock_changed_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(svc_inst);
 
-	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
+	LOG_INF("Client %p %s the lock", conn, locked ? "locked" : "released");
 	g_locked = locked;
 }
 
@@ -64,7 +67,7 @@ static void bt_ready(int err)
 		return;
 	}
 
-	printk("Audio Server: Bluetooth initialized\n");
+	LOG_INF("Audio Server: Bluetooth initialized");
 
 	param.cb = &csip_cbs;
 
@@ -90,14 +93,14 @@ static void test_sirk(void)
 	struct bt_csip_set_member_set_info info;
 	int err;
 
-	printk("Setting new SIRK\n");
+	LOG_INF("Setting new SIRK");
 	err = bt_csip_set_member_sirk(svc_inst, new_sirk);
 	if (err != 0) {
 		FAIL("Failed to set SIRK: %d\n", err);
 		return;
 	}
 
-	printk("Getting new SIRK\n");
+	LOG_INF("Getting new SIRK");
 	err = bt_csip_set_member_get_info(svc_inst, &info);
 	if (err != 0) {
 		FAIL("Failed to get SIRK: %d\n", err);
@@ -109,7 +112,7 @@ static void test_sirk(void)
 		return;
 	}
 
-	printk("New SIRK correctly set and retrieved\n");
+	LOG_INF("New SIRK correctly set and retrieved");
 }
 
 static void update_set_size_and_rank(void)
@@ -135,14 +138,14 @@ static void update_set_size_and_rank(void)
 	new_set_size = old_set_size + 1U;
 	new_rank = old_rank + 1U;
 
-	printk("Setting new SIRK\n");
+	LOG_INF("Setting new SIRK");
 	err = bt_csip_set_member_set_size_and_rank(svc_inst, new_set_size, new_rank);
 	if (err != 0) {
 		FAIL("Failed to set new size and rank: %d\n", err);
 		return;
 	}
 
-	printk("Getting new SIRK\n");
+	LOG_INF("Getting new SIRK");
 	err = bt_csip_set_member_get_info(svc_inst, &info);
 	if (err != 0) {
 		FAIL("Failed to get SIRK: %d\n", err);
@@ -159,7 +162,7 @@ static void update_set_size_and_rank(void)
 		return;
 	}
 
-	printk("New size correctly set and retrieved\n");
+	LOG_INF("New size correctly set and retrieved");
 }
 
 static void test_main(void)
@@ -212,7 +215,7 @@ static void test_force_release(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	WAIT_FOR_COND(g_locked);
-	printk("Force releasing set\n");
+	LOG_INF("Force releasing set");
 	err = bt_csip_set_member_lock(svc_inst, false, true);
 	if (err != 0) {
 		FAIL("Could not force release set (err %d)\n", err);
@@ -233,7 +236,7 @@ static void test_force_release(void)
 
 static void test_csip_enc(void)
 {
-	printk("Running %s\n", __func__);
+	LOG_INF("Running %s", __func__);
 	sirk_read_req_rsp = BT_CSIP_READ_SIRK_REQ_RSP_ACCEPT_ENC;
 	test_main();
 }
@@ -305,7 +308,7 @@ static void test_register(void)
 			*svc_insts[CONFIG_BT_CSIP_SET_MEMBER_MAX_INSTANCE_COUNT];
 		int err;
 
-		printk("Running iteration %zu\n", iteration + 1);
+		LOG_INF("Running iteration %zu", iteration + 1);
 
 		/* Run with different parameters for each iteration */
 		param.lockable = !param.lockable;

@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/uart.h>
 
 LOG_MODULE_REGISTER(futaba_sbus, CONFIG_INPUT_LOG_LEVEL);
@@ -25,7 +25,7 @@ struct sbus_input_channel {
 	uint32_t zephyr_code;
 };
 
-const struct uart_config uart_cfg_sbus = {
+static const struct uart_config uart_cfg_sbus = {
 	.baudrate = 100000,
 	.parity = UART_CFG_PARITY_EVEN,
 	.stop_bits = UART_CFG_STOP_BITS_2,

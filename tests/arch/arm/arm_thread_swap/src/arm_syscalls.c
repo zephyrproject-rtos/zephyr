@@ -146,8 +146,36 @@ static void user_thread_entry(void *p1, void *p2, void *p3)
 #endif
 }
 /**
- * @brief Test ARM thread swap mechanism
+ * @brief Verify ARM thread privilege/stack state across syscalls, ISRs and swaps.
+ *
  * @ingroup kernel_arch_sched_tests
+ *
+ * @details
+ * Exercises the ARM Cortex-M context-switch and privilege machinery and checks
+ * that the per-thread CONTROL.nPRIV mode bit, the active PSP, and (when
+ * CONFIG_BUILTIN_STACK_GUARD is set) the PSPLIM/MSPLIM stack-limit registers
+ * hold the architecturally correct values in each execution context:
+ * supervisor thread, user thread, during a system call, and inside an ISR that
+ * forces a context switch out and back in. Passing proves the kernel correctly
+ * tracks privilege level and reprograms the stack pointers/limits on every
+ * transition.
+ *
+ * Test steps:
+ * - From the ztest (supervisor) thread, verify PRIV mode, that the PSP lies in
+ *   the default stack, and that PSPLIM/MSPLIM guard the default/interrupt
+ *   stacks.
+ * - On Cortex-M mainline, find and dynamically connect a free IRQ line and
+ *   allow user-mode pending of interrupts.
+ * - Spawn a user thread that issues test_arm_user_syscall() (which checks PRIV
+ *   mode and the privileged-stack PSP/PSPLIM during the syscall) and then
+ *   triggers the ISR twice to force a context switch out and back in.
+ *
+ * Expected result:
+ * - Every privilege-mode, PSP-range and stack-limit assertion holds in the
+ *   supervisor thread, the user thread, the system call, and both ISR runs.
+ *
+ * @see arch_is_user_context()
+ * @see k_thread_create()
  */
 ZTEST(arm_thread_swap, test_arm_syscalls)
 {
@@ -243,7 +271,8 @@ void z_impl_test_arm_cpu_write_reg(void)
 	__asm__ volatile("ldr r0, =0xDEADBEEF;\n\t"
 			 "ldr r1, =0xDEADBEEF;\n\t"
 			 "ldr r2, =0xDEADBEEF;\n\t"
-			 "ldr r3, =0xDEADBEEF;\n\t");
+			 "ldr r3, =0xDEADBEEF;\n\t"
+			 : : : "r0", "r1", "r2", "r3", "memory");
 	TC_PRINT("Exit from system call\n");
 }
 
@@ -254,15 +283,27 @@ static inline void z_vrfy_test_arm_cpu_write_reg(void)
 #include <zephyr/syscalls/test_arm_cpu_write_reg_mrsh.c>
 
 /**
- * @brief Test CPU scrubs registers after system call
- *
- * @details - Call from user mode a syscall test_arm_cpu_write_reg(),
- * the system call function writes into registers 0xDEADBEEF value
- * - Then in main test function below check registers values,
- * if no 0xDEADBEEF value detected, that means CPU scrubbed registers
- * before exit from the system call.
+ * @brief Verify the kernel scrubs CPU registers when returning from a syscall.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * On return from a system call, the kernel must not leak kernel-side register
+ * contents back to the calling user thread. A syscall loads a known sentinel
+ * (0xDEADBEEF) into the ARM caller-saved registers r0-r3; back in user mode the
+ * test reads those registers and checks none still hold the sentinel, proving
+ * the kernel scrubbed them on the syscall return path.
+ *
+ * Test steps:
+ * - From a user thread, invoke the test_arm_cpu_write_reg() system call, which
+ *   writes 0xDEADBEEF into r0-r3 while in kernel mode.
+ * - After the syscall returns, read r0-r3 from user mode.
+ * - Compare each register value against 0xDEADBEEF.
+ *
+ * Expected result:
+ * - No register read back in user mode contains 0xDEADBEEF; all were scrubbed.
+ *
+ * @see test_arm_cpu_write_reg()
  */
 ZTEST_USER(arm_thread_swap, test_syscall_cpu_scrubs_regs)
 {

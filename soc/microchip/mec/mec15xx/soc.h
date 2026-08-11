@@ -11,12 +11,20 @@
 
 #ifndef _ASMLANGUAGE
 
-#include "MEC1501hsz.h"
-#include "regaccess.h"
+#include <MEC1501hsz.h>
+#include <regaccess.h>
 
 /* common peripheral register defines */
 #include <reg/mec_gpio.h>
+#include <reg/mec_pcr_vbr.h>
 #include <reg/mec_uart.h>
+
+/* Keyboard scan register offsets for mec15xx (legacy compatibility with new driver) */
+#define XEC_KBD_KSO_SEL_OFS 0x04u
+#define XEC_KBD_KSI_IN_OFS 0x08u
+#define XEC_KBD_KSI_STS_OFS 0x0cu
+#define XEC_KBD_KSI_IEN_OFS 0x10u
+#define XEC_KBD_EXT_CTRL_OFS 0x14u
 
 /* common SoC API */
 #include <soc_dt.h>

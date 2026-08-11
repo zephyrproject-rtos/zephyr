@@ -4,8 +4,8 @@
  */
 #include <zephyr/init.h>
 #include <zephyr/device.h>
-#include "fsl_power.h"
-#include "fsl_clock.h"
+#include <fsl_power.h>
+#include <fsl_clock.h>
 #include <soc.h>
 #include <fsl_glikey.h>
 

@@ -17,7 +17,7 @@
 	compatible = "beagle,beaglebone-ai64";
 
 	chosen {
-		zephyr,sram = &atcm;
+		zephyr,sram = &ddr1;
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,ipc = &ipc0;

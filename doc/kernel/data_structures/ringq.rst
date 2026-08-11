@@ -69,7 +69,7 @@ items and ensures proper boundary checking of the underlying data buffer.
     }
 
 In addition to the standard data operations (sys_ringq_put() and sys_ringq_get()), the sys_ringq API provides a set
-of utility functions for managing and inspecting the data strucures state.
+of utility functions for managing and inspecting the data structures state.
 
 * sys_ringq_capacity() – Returns the total capacity of the sys_ringq in terms of the number of items it can hold.
 * sys_ringq_empty() – Returns true if the sys_ringq contains no items.

@@ -41,8 +41,8 @@
  *    Initial Release
  *---------------------------------------------------------------------------*/
 
-#ifndef CMSIS_OS2_H_
-#define CMSIS_OS2_H_
+#ifndef ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS2_H_
+#define ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS2_H_
 
 #ifndef __NO_RETURN
 #if   defined(__CC_ARM)
@@ -750,4 +750,4 @@ osStatus_t osMessageQueueDelete(osMessageQueueId_t mq_id);
 }
 #endif
 
-#endif  /* CMSIS_OS2_H_ */
+#endif /* ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS2_H_ */

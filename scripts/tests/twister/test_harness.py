@@ -384,13 +384,12 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
-        returncode=returncode, communicate=mock.Mock(return_value=(b"output", None))
+        returncode=returncode,
+        communicate=mock.Mock(return_value=(b"output", None)),
     )
-    popen_mock = mock.Mock(
-        return_value=mock.Mock(
-            __enter__=mock.Mock(return_value=proc_mock), __exit__=mock.Mock()
-        )
-    )
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock()
+    popen_mock = mock.Mock(return_value=proc_mock)
 
     # Act
     with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, mock.patch(
@@ -562,16 +561,15 @@ def test_pytest__generate_parameters_for_hardware(tmp_path):
     assert pytest_test.pytest_params.flash_command == "flash_command"
 
 
-def test_pytest__update_command_with_env_dependencies():
-    cmd = ["cmd"]
+def test_pytest_get_run_env():
     pytest_test = Pytest()
-    mock.patch.object(Pytest, "PYTEST_PLUGIN_INSTALLED", False)
 
     # Act
-    result_cmd, _ = pytest_test._update_command_with_env_dependencies(cmd)
+    with mock.patch("twisterlib.harness.PYTEST_PLUGIN_INSTALLED", False):
+        env = pytest_test._get_run_env()
 
     # Assert
-    assert result_cmd == ["cmd", "-p", "twister_harness.plugin"]
+    assert "pytest-twister-harness" in env["PYTHONPATH"]
 
 
 def test_pytest_run(tmp_path, caplog):
@@ -1063,6 +1061,7 @@ def test_gtest_failed(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name").status
         == TwisterStatus.FAIL
     )
+    assert gtest.reason == "Gtest failure - failed test id.suite_name.test_name"
 
 def test_gtest_parametrized_failed(gtest):
     process_logs(
@@ -1091,6 +1090,7 @@ def test_gtest_parametrized_failed(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name").status
         == TwisterStatus.FAIL
     )
+    assert gtest.reason == "Gtest failure - failed test id.suite_name.test_name.0.parametrized_test_name"
 
 
 def test_gtest_skipped(gtest):
@@ -1360,6 +1360,7 @@ def test_gtest_one_fail(gtest):
         ],
     )
     assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") != TwisterStatus.NONE
@@ -1402,6 +1403,7 @@ def test_gtest_parametrized_one_fail(gtest):
         ],
     )
     assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert (
@@ -1420,6 +1422,38 @@ def test_gtest_parametrized_one_fail(gtest):
         gtest.instance.get_case_by_name("id.suite_name.test_name.1.parametrized_test_name").status
         == TwisterStatus.FAIL
     )
+
+def test_gtest_multiple_failures(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test0"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_FAIL_STATE, suite="suite_name", test="test1"
+            ),
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure - 2 tests failed"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test0").status
+        == TwisterStatus.FAIL
+    )
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test1").status
+        == TwisterStatus.FAIL
+    )
+
 
 def test_gtest_one_fail_with_variant(gtest):
     process_logs(
@@ -1442,6 +1476,7 @@ def test_gtest_one_fail_with_variant(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
@@ -1479,6 +1514,7 @@ def test_gtest_parametrized_one_fail_with_variant(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
@@ -1508,6 +1544,7 @@ def test_gtest_one_fail_with_variant_and_param(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test0") is not None
@@ -1545,6 +1582,7 @@ def test_gtest_parametrized_one_fail_with_variant_and_param(gtest):
         ],
     )
     assert gtest.status == "failed"
+    assert gtest.reason == "Gtest failure"
     assert len(gtest.detected_suite_names) == 1
     assert gtest.detected_suite_names[0] == "suite_name"
     assert gtest.instance.get_case_by_name("id.suite_name.test_name.0.parametrized_test_name") is not None
@@ -1743,6 +1781,26 @@ def test_gtest_parametrized_repeated_run(gtest):
                 ),
             ],
         )
+
+
+def test_gtest_did_not_finish(gtest):
+    process_logs(
+        gtest,
+        [
+            SAMPLE_GTEST_START,
+            SAMPLE_GTEST_FMT.format(
+                state=GTEST_START_STATE, suite="suite_name", test="test_name"
+            ),
+            # simulates a crash/hang mid-test
+            SAMPLE_GTEST_END,
+        ],
+    )
+    assert gtest.status == TwisterStatus.FAIL
+    assert gtest.reason == "Gtest failure - test id.suite_name.test_name did not finish"
+    assert (
+        gtest.instance.get_case_by_name("id.suite_name.test_name").status
+        == TwisterStatus.STARTED
+    )
 
 
 def test_bsim_build(monkeypatch, tmp_path):

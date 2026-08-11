@@ -40,7 +40,6 @@ properties:
     type: boolean
   spi-addr:
     type: int
-    default: 0
     required: true
     enum:
       - 0

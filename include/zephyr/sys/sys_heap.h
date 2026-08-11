@@ -54,10 +54,16 @@ extern "C" {
  * put the two values somewhere else, though it would make
  * SYS_HEAP_DEFINE a little hairy to write.
  */
+/* Forward declaration; full definition in <zephyr/sys/bitarray.h>. */
+struct sys_bitarray;
+
 struct sys_heap {
 	struct z_heap *heap;
 	void *init_mem;
 	size_t init_bytes;
+#ifdef CONFIG_SYS_HEAP_KASAN
+	struct sys_bitarray *kasan_ba;
+#endif
 };
 
 struct z_heap_stress_result {
@@ -69,6 +75,8 @@ struct z_heap_stress_result {
 
 /**
  * @defgroup low_level_heap_allocator Low Level Heap Allocator
+ * @since 2.3
+ * @version 1.0.0
  * @ingroup heaps
  * @{
  */

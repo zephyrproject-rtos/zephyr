@@ -95,6 +95,6 @@ static inline int z_impl_abstract_sibling_do_other(const struct device *dev, int
 
 __syscall int abstract_sibling_do_other(const struct device *dev, int val);
 
-#include <syscalls/abstract_driver.h>
+#include <zephyr/syscalls/abstract_driver.h>
 
 #endif /* _ABSTRACT_DRIVER_H_ */

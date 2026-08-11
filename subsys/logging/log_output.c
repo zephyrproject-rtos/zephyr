@@ -164,9 +164,9 @@ static int timestamp_print(const struct log_output *output,
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		length = print_formatted(output, "[%08lu] ", timestamp);
+		length = print_formatted(output, "[%010lu] ", timestamp);
 #else
-		length = print_formatted(output, "[%016llu] ", timestamp);
+		length = print_formatted(output, "[%020llu] ", timestamp);
 #endif
 	} else if (freq != 0U) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT

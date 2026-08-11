@@ -5,12 +5,23 @@
 CMake Style Guidelines
 ######################
 
+A subset of these guidelines is enforced in CI by the ``CMakeStyle`` compliance check.
+You can run the same checks locally with
+``scripts/cmake/cmake_style.py`` (a directory is searched recursively for
+``CMakeLists.txt`` and ``*.cmake`` files):
+
+.. code-block:: console
+
+   pip install tree-sitter tree-sitter-cmake
+   ./scripts/cmake/cmake_style.py path/to/CMakeLists.txt
+   ./scripts/cmake/cmake_style.py drivers/
+
 General Formatting
 ******************
 
 - **Indentation**: Use **2 spaces** for indentation. Avoid tabs to ensure
   consistency across different environments.
-- **Line Length**: Limit line length to **100 characters** where possible.
+- **Line Length**: Limit line length to **100 columns** where possible.
 - **Empty Lines**: Use empty lines to separate logically distinct sections
   within a CMake file.
 - **No Space Before Opening Brackets**: Do not add a space between a command
@@ -43,6 +54,14 @@ Commands and Syntax
 
      # Bad:
      ADD_LIBRARY(my_lib STATIC src/my_lib.cpp)
+
+  Commands defined by CMake modules, and Zephyr or sysbuild extension commands
+  that extend an existing mixed-case command, are an exception: they follow a
+  mixed-case ``Module_Action`` naming convention and must be spelled with their
+  canonical case (e.g. CMake's ``ExternalProject_Add`` extended by Zephyr's
+  ``ExternalZephyrProject_Add``). The ``CMakeStyle`` check exempts these from the
+  lowercase rule. Extensions of a lowercase command stay lowercase (e.g.
+  ``add_dependencies`` extended by sysbuild's ``sysbuild_add_dependencies``).
 
 - **One File Argument per Line**: Break the file arguments across multiple
   lines to make it easier to scan and identify each source file or item.

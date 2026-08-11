@@ -19,6 +19,7 @@ config COMPARATOR_INIT_PRIORITY
 	  Comparator device driver initialization priority.
 
 # zephyr-keep-sorted-start
+rsource "Kconfig.esp32_ana_cmpr"
 rsource "Kconfig.fake_comp"
 rsource "Kconfig.infineon_autanalog_ptcomp"
 rsource "Kconfig.infineon_lpcomp"

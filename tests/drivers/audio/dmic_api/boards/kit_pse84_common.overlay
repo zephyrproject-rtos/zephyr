@@ -7,7 +7,7 @@
 
 / {
 	aliases {
-		dmic-dev = &dmic0;
+		dmic0 = &dmic0;
 	};
 };
 

@@ -34,7 +34,7 @@ Current strategies (execution order)
    downstream strategies never see them.
 2. :class:`DirectTestStrategy` - for changed files that live directly
    inside a ``tests/`` or ``samples/`` tree, walks up to find the
-   ``testcase.yaml`` / ``tests.yaml`` / ``sample.yaml`` root and runs
+   ``tests.yaml`` root and runs
    so the exact test suite is exercised end-to-end.
    Consumes matched files so downstream strategies do not inflate the plan.
 3. :class:`SnippetStrategy` - for changed files under ``snippets/``, reads
@@ -119,6 +119,7 @@ if "ZEPHYR_BASE" not in os.environ:
 
 ZEPHYR_BASE = Path(os.environ["ZEPHYR_BASE"])
 sys.path.insert(0, str(ZEPHYR_BASE / "scripts"))
+sys.path.insert(0, str(ZEPHYR_BASE / "scripts" / "pylib" / "twister"))
 
 logging.basicConfig(format="%(levelname)s: %(message)s", level=logging.INFO)
 log = logging.getLogger(__name__)
@@ -449,6 +450,16 @@ class MaintainerAreaStrategy(SelectionStrategy):
 # ---------------------------------------------------------------------------
 
 
+class TwisterExecutionError(RuntimeError):
+    """Raised when a twister enumeration subprocess crashes.
+
+    A crash (missing dependency, import error, OOM, segfault, corrupted
+    output) is distinct from a clean run that legitimately matched no tests.
+    The former must **fail the pipeline** - silently treating it as an empty
+    test plan lets a change merge with no coverage at all.
+    """
+
+
 class TwisterExecutor:
     """Executes :class:`TwisterCall` descriptors and collects results.
 
@@ -478,20 +489,34 @@ class TwisterExecutor:
         try:
             cmd = self._build_cmd(call, partial_path)
             log.info("Running: %s", " ".join(cmd))
-            ret = subprocess.call(cmd)  # noqa: S603
-            if ret != 0:
-                log.warning("twister exited with code %d for call: %s", ret, call.description)
+            res = subprocess.run(  # noqa: S603
+                cmd, text=True, capture_output=True, check=False
+            )
+            # Forward twister's own output so CI logs keep the full detail.
+            if res.stdout:
+                sys.stdout.write(res.stdout)
+            if res.stderr:
+                sys.stderr.write(res.stderr)
 
+            if res.returncode != 0:
+                raise TwisterExecutionError(
+                    f"twister exited with code {res.returncode} for call '{call.description}'"
+                )
+
+            # Exit 0: success. The results file is absent when twister matched
+            # no tests (it exits 0 without writing one) - a valid empty result.
             if not os.path.exists(partial_path) or os.path.getsize(partial_path) == 0:
-                log.warning("twister did not produce output at %s", partial_path)
+                log.info("twister matched no tests for call: %s", call.description)
                 return []
 
             try:
                 with open(partial_path, encoding="utf-8") as fh:
                     data = json.load(fh)
             except json.JSONDecodeError as err:
-                log.warning("twister produced invalid JSON at %s: %s", partial_path, err)
-                return []
+                raise TwisterExecutionError(
+                    f"twister exited 0 but produced invalid JSON for call "
+                    f"'{call.description}': {err}"
+                ) from err
             return data.get("testsuites", [])
         finally:
             if os.path.exists(partial_path):
@@ -499,6 +524,8 @@ class TwisterExecutor:
 
     def _build_cmd(self, call, save_path):
         cmd = [str(self._zephyr_base / "scripts" / "twister"), "-c"]
+
+        cmd += ["--test-config", "tests/test_config_ci.yaml"]
 
         for pattern in call.test_patterns:
             cmd += ["--test-pattern", pattern]
@@ -718,10 +745,8 @@ class Orchestrator:
     @staticmethod
     def _count_errors(testsuites):
         errors = 0
-        try:
-            from pylib.twister.twisterlib.statuses import TwisterStatus  # noqa: PLC0415
-        except ImportError:
-            return 0
+        from twisterlib.statuses import TwisterStatus  # noqa: PLC0415
+
         for ts in testsuites:
             if TwisterStatus(ts.get("status")) == TwisterStatus.ERROR:
                 log.warning(
@@ -767,13 +792,13 @@ class SnippetStrategy(SelectionStrategy):
        snippet identifier (e.g. ``nordic-log-stm``).  Snippets without a
        ``snippet.yml`` ancestor (vendor group directories) are skipped.
 
-    3. Grep ``tests/`` and ``samples/`` for ``testcase.yaml`` and
-       ``sample.yaml`` files that contain the snippet name string, then
-       parse each found manifest to confirm the snippet name actually appears
-       in a ``required_snippets:`` list of at least one test entry.
+    3. Grep ``tests/`` and ``samples/`` for ``tests.yaml`` files that contain
+       the snippet name string, then parse each found manifest to confirm the
+       snippet name actually appears in a ``required_snippets:`` list of at
+       least one test entry.
 
     4. Walk up from the confirmed YAML file to the test root (the directory
-       that contains the ``testcase.yaml`` / ``sample.yaml``) and emit a
+       that contains the ``tests.yaml``) and emit a
        ``-T`` root call so twister exercises those tests.
 
     This strategy **consumes** all matched snippet files so downstream
@@ -876,8 +901,8 @@ class SnippetStrategy(SelectionStrategy):
     def _find_test_roots_for_snippet(self, snippet_name):
         """Return the set of test-root directories that require *snippet_name*.
 
-        Grepping for the snippet name string in ``testcase.yaml`` /
-        ``sample.yaml`` files is fast.  Each hit is then parsed to confirm
+        Grepping for the snippet name string in ``tests.yaml`` files is fast.
+        Each hit is then parsed to confirm
         the name actually appears in a ``required_snippets:`` list.
         The confirmed YAML's directory is the ``-T`` root.
         """
@@ -889,9 +914,7 @@ class SnippetStrategy(SelectionStrategy):
         for root in search_roots:
             if not root.is_dir():
                 continue
-            for manifest in root.rglob("testcase.yaml"):
-                self._check_manifest(manifest, snippet_name, test_roots)
-            for manifest in root.rglob("sample.yaml"):
+            for manifest in root.rglob("tests.yaml"):
                 self._check_manifest(manifest, snippet_name, test_roots)
         return test_roots
 
@@ -1448,8 +1471,7 @@ class DriverCompatStrategy(SelectionStrategy):
        artifacts (any path containing ``twister-out``) are skipped.
 
     4. From each found overlay/DTS, walk up the directory tree until a
-       ``testcase.yaml`` or ``sample.yaml`` is found.  That directory
-       becomes a ``-T`` root.
+       ``tests.yaml`` is found.  That directory becomes a ``-T`` root.
 
     5. Emit one :class:`TwisterCall` per discovered test directory (no
        ``--test-pattern`` filter — all tests in that directory are relevant
@@ -1838,8 +1860,7 @@ class DriverCompatStrategy(SelectionStrategy):
 
         Scans ``tests/`` and ``samples/`` for overlay and DTS files that
         reference the compat.  Skips generated build artifacts.  For each
-        hit, walks up to find the enclosing ``testcase.yaml`` or
-        ``sample.yaml``.
+        hit, walks up to find the enclosing ``tests.yaml``.
         """
         search_roots = [
             self._zephyr_base / "tests",
@@ -1874,13 +1895,13 @@ class DriverCompatStrategy(SelectionStrategy):
 
     @staticmethod
     def _find_yaml_dir(start_dir):
-        """Walk up *start_dir* until a ``testcase.yaml`` or ``sample.yaml`` is found.
+        """Walk up *start_dir* until a ``tests.yaml`` is found.
 
         Returns the directory containing the yaml file, or ``None`` if not found.
         """
         current = Path(start_dir)
         for _ in range(6):  # cap at 6 levels to avoid runaway traversal
-            if (current / "testcase.yaml").exists() or (current / "sample.yaml").exists():
+            if (current / "tests.yaml").exists():
                 return str(current)
             parent = current.parent
             if parent == current:
@@ -2260,8 +2281,7 @@ class KconfigImpactStrategy(SelectionStrategy):
        extracted symbols.
 
     4. For each matched file, determine which symbols it mentions and walk
-       up to the nearest ``testcase.yaml`` / ``tests.yaml`` / ``sample.yaml``
-       to find the test root.
+       up to the nearest ``tests.yaml`` to find the test root.
 
     5. Apply a per-symbol threshold (``_MAX_SYMBOL_ROOTS``): if a symbol
        appears in more test roots than the threshold it is considered
@@ -3187,7 +3207,7 @@ class ManifestStrategy(SelectionStrategy):
                 "(e.g. comment / formatting edit) - no module tests needed.",
                 self.name,
             )
-            return set(manifest_files), set(manifest_files)
+            return [], set(manifest_files)
 
         log.info(
             "[%s] Changed west.yml modules: %s",
@@ -3564,8 +3584,8 @@ class DirectTestStrategy(SelectionStrategy):
     1. Accept any changed file that lives under ``tests/`` or ``samples/``.
 
     2. For each such file, walk up the directory tree looking for
-       ``testcase.yaml``, ``tests.yaml``, or ``sample.yaml``.  The first
-       directory that contains one of those files becomes the test root.
+       ``tests.yaml``.  The first directory that contains one of those files
+       becomes the test root.
 
     3. Deduplicate: multiple changed files that resolve to the same root
        are merged into a single :class:`TwisterCall`.
@@ -3621,7 +3641,7 @@ class DirectTestStrategy(SelectionStrategy):
 
         if unrooted:
             log.debug(
-                "[%s] No testcase/sample yaml found for: %s",
+                "[%s] No tests yaml found for: %s",
                 self.name,
                 ", ".join(unrooted),
             )
@@ -3992,7 +4012,16 @@ def main():
         tests_per_builder=args.tests_per_builder,
     )
 
-    return orchestrator.run(changed_files, args.output_file)
+    try:
+        return orchestrator.run(changed_files, args.output_file)
+    except TwisterExecutionError as err:
+        log.error("Test plan generation FAILED: %s", err)
+        log.error(
+            "Not emitting a test plan. Failing the job so the change is not "
+            "built/merged with an incomplete or empty plan. Fix the twister "
+            "environment (e.g. missing Python dependencies) and re-run."
+        )
+        return 1
 
 
 if __name__ == "__main__":

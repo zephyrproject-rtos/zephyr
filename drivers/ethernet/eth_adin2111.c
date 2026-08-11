@@ -266,12 +266,11 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 	rca &= ADIN2111_BUFSTS_RCA_MASK;
 
 	/* Preare all tx headers */
+	hdr = ADIN2111_OA_DATA_HDR_DNC;
+	hdr |= eth_adin2111_oa_get_parity(hdr);
+	hdr = sys_cpu_to_be32(hdr);
 	for (i = 0, len = 0; i < rca; ++i) {
-		hdr = ADIN2111_OA_DATA_HDR_DNC;
-		hdr |= eth_adin2111_oa_get_parity(hdr);
-
-		*(uint32_t *)&ctx->oa_tx_buf[len] = sys_cpu_to_be32(hdr);
-
+		*(uint32_t *)&ctx->oa_tx_buf[len] = hdr;
 		len += sizeof(uint32_t) + ctx->oa_cps;
 	}
 
@@ -573,6 +572,15 @@ static int adin2111_read_fifo(const struct device *dev, const uint16_t port_idx)
 		eth_stats_update_errors_rx(iface);
 		LOG_ERR("Port %u failed to read RX FSIZE, %d", port_idx, ret);
 		return ret;
+	}
+
+	/* fsize is a 32-bit register value that must fit in ctx->buf before
+	 * the SPI burst read; reject frames that would overflow the static buf.
+	 */
+	if (fsize > CONFIG_ETH_ADIN2111_BUFFER_SIZE) {
+		eth_stats_update_errors_rx(iface);
+		LOG_ERR("Port %u RX fsize %u exceeds buffer", port_idx, fsize);
+		return -EMSGSIZE;
 	}
 
 	/* burst read must be in multiples of 4 */
@@ -881,8 +889,15 @@ static int adin2111_port_send(const struct device *dev, struct net_pkt *pkt)
 		goto end_unlock;
 	}
 
-	/* prepare tx buffer */
-	memset(ctx->buf, 0, burst_size + ADIN2111_WRITE_HEADER_SIZE);
+	/* Only the trailing pad needs zeroing; header and payload are written below */
+	{
+		size_t data_end = ADIN2111_WRITE_HEADER_SIZE + ADIN2111_FRAME_HEADER_SIZE + pkt_len;
+		size_t total = ADIN2111_WRITE_HEADER_SIZE + burst_size;
+
+		if (total > data_end) {
+			memset(ctx->buf + data_end, 0, total - data_end);
+		}
+	}
 
 	/* spi header */
 	*(uint16_t *)ctx->buf = net_htons(ADIN2111_TXN_CTRL_TX_REG);

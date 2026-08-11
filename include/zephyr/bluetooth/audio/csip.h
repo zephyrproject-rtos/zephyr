@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_
-#define ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_
 
 /**
  * @brief Coordinated Set Identification Profile (CSIP)
@@ -459,8 +459,6 @@ typedef void (*bt_csip_set_coordinator_lock_set_cb)(int err);
  * @param inst    The Coordinated Set Identification Service instance that was
  *                changed.
  * @param locked  Whether the lock is locked or release.
- *
- * @return int Return 0 on success, or an errno value on error.
  */
 typedef void (*bt_csip_set_coordinator_lock_changed_cb)(
 	struct bt_csip_set_coordinator_csis_inst *inst, bool locked);
@@ -487,6 +485,7 @@ typedef void (*bt_csip_set_coordinator_sirk_changed_cb)(
  * bt_csip_set_coordinator_discover() to rediscover and read the characteristic values of the sets
  * on each device.
  *
+ * @param conn    Pointer to the remote device.
  * @param inst    The Coordinated Set Identification Service instance that was changed.
  *                The new size is stored in the @p inst->info.size.
  */
@@ -650,4 +649,4 @@ int bt_csip_set_coordinator_release(const struct bt_csip_set_coordinator_set_mem
  * @}
  */
 
-#endif /* ZEPHYR_SUBSYS_BLUETOOTH_AUDIO_CSIP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_CSIP_H_ */

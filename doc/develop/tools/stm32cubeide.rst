@@ -114,24 +114,4 @@ If you only want to use STM32CubeIDE to debug your project you can proceed as fo
 
 #. The project can now be debugged using the :guilabel:`Debug` button.
 
-Troubleshooting
-***************
-
-When configuring your project you see an error that looks similar to:
-
-.. code-block::
-
-  Error message: Traceback (most recent call last):
-
-    File "/path/to/zephyr/scripts/list_boards.py", line 11, in <module>
-      import pykwalify.core
-
-  ModuleNotFoundError: No module named 'pykwalify'
-
-
-This means that you did not start the IDE in a Zephyr environment.  You must
-delete the ``config_default`` build directory and start STM32CubeIDE again,
-making sure that you can run ``west`` in the shell that you start STM32CubeIDE
-from.
-
 .. _STM32CubeIDE: https://www.st.com/en/development-tools/stm32cubeide.html

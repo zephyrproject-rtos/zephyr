@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __KERNEL_OBJ_CORE_H__
-#define __KERNEL_OBJ_CORE_H__
+#ifndef ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
+#define ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_
 
+#include <stddef.h>
 #include <zephyr/sys/slist.h>
+#include <zephyr/sys/iterable_sections.h>
 
 /**
  * @defgroup obj_core_apis Object Core APIs
@@ -125,6 +127,113 @@ struct k_obj_core {
 	void  *stats;              /**< Pointer to kernel object's stats */
 #endif /* CONFIG_OBJ_CORE_STATS */
 };
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/**
+ * Descriptor used to register an object type with the object core framework at
+ * boot. One descriptor is emitted per participating object type via
+ * K_OBJ_TYPE_DEFINE(); the kernel walks them all from a single init point
+ * instead of each object type providing its own SYS_INIT.
+ */
+struct k_obj_core_desc {
+	struct k_obj_type *type;        /**< Object type storage to initialize */
+	const void        *objs_start;  /**< Start of static object section */
+	const void        *objs_end;    /**< End of static object section */
+	size_t             obj_core_offset; /**< Offset of obj_core in object */
+	size_t             obj_size;    /**< Stride between static objects */
+	uint32_t           type_id;     /**< Unique type ID */
+#ifdef CONFIG_OBJ_CORE_STATS
+	struct k_obj_core_stats_desc *stats_desc; /**< Stats descriptor or NULL */
+	size_t             stats_offset; /**< Offset of per-object stats buffer */
+	size_t             stats_size;   /**< Per-object stats buffer size (0=none) */
+#endif /* CONFIG_OBJ_CORE_STATS */
+};
+
+#ifdef CONFIG_OBJ_CORE_STATS
+#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz) \
+	.stats_desc = (_stats), .stats_offset = (_soff), .stats_size = (_ssz),
+#else
+#define Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)
+#endif /* CONFIG_OBJ_CORE_STATS */
+
+#define Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, _soff, _ssz)      \
+	STRUCT_SECTION_START_EXTERN(_struct);                                  \
+	STRUCT_SECTION_END_EXTERN(_struct);                                    \
+	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
+					     _obj_core_desc_##_struct) = {     \
+		.type = &(_type_var),                                          \
+		.objs_start = STRUCT_SECTION_START(_struct),                   \
+		.objs_end = STRUCT_SECTION_END(_struct),                       \
+		.obj_core_offset = offsetof(struct _struct, obj_core),         \
+		.obj_size = sizeof(struct _struct),                            \
+		.type_id = (_id),                                              \
+		Z_OBJ_CORE_STATS_DESC(_stats, _soff, _ssz)                     \
+	}
+
+/**
+ * @brief Register an object type with the object core framework
+ *
+ * Emits a descriptor that the kernel uses at boot to initialize @a _type_var
+ * and to initialize and link every statically defined object of @a _struct.
+ * This replaces the per-type SYS_INIT boilerplate that would otherwise iterate
+ * the object's static section by hand.
+ *
+ * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _struct   Object struct type (e.g. k_sem) with an obj_core member
+ * @param _id       Unique type ID (e.g. K_OBJ_TYPE_SEM_ID)
+ * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
+ */
+#define K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats)                     \
+	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats, 0, 0)
+
+/**
+ * @brief Register an object type that also gathers per-object statistics
+ *
+ * Like K_OBJ_TYPE_DEFINE(), but additionally registers each statically defined
+ * object's embedded statistics buffer with the object core framework at boot.
+ *
+ * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _struct   Object struct type with obj_core and stats members
+ * @param _id       Unique type ID
+ * @param _stats    Pointer to a k_obj_core_stats_desc
+ * @param _member   Name of the per-object stats buffer member within @a _struct
+ */
+#define K_OBJ_TYPE_DEFINE_STATS(_type_var, _struct, _id, _stats, _member)      \
+	Z_K_OBJ_TYPE_DEFINE(_type_var, _struct, _id, _stats,                   \
+			    offsetof(struct _struct, _member),                 \
+			    sizeof(((struct _struct *)0)->_member))
+
+/**
+ * @brief Register an object type without linking any static objects
+ *
+ * Like K_OBJ_TYPE_DEFINE(), but for object types that have no statically
+ * defined instances to walk and link at boot (e.g. threads, which link their
+ * own object core as they are created). Only the object type (and its stats
+ * descriptor, if any) is initialized.
+ *
+ * @param _type_var Object type storage (struct k_obj_type) to initialize
+ * @param _struct   Object struct type with an obj_core member
+ * @param _id       Unique type ID
+ * @param _stats    Pointer to a k_obj_core_stats_desc, or NULL
+ */
+#define K_OBJ_TYPE_DEFINE_TYPE_ONLY(_type_var, _struct, _id, _stats)           \
+	static const STRUCT_SECTION_ITERABLE(k_obj_core_desc,                  \
+					     _obj_core_desc_##_struct) = {     \
+		.type = &(_type_var),                                          \
+		.objs_start = NULL,                                            \
+		.objs_end = NULL,                                              \
+		.obj_core_offset = offsetof(struct _struct, obj_core),         \
+		.obj_size = sizeof(struct _struct),                            \
+		.type_id = (_id),                                              \
+		Z_OBJ_CORE_STATS_DESC(_stats, 0, 0)                            \
+	}
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Initialize a specific object type
@@ -378,7 +487,7 @@ int k_obj_core_stats_reset(struct k_obj_core *obj_core);
 int k_obj_core_stats_disable(struct k_obj_core *obj_core);
 
 /**
- * @brief Reset the stats associated with the kernel object
+ * @brief Resume gathering the stats associated with the kernel object
  *
  * This function resumes the gathering of statistics associated with the kernel
  * object core specified by @a obj_core.
@@ -391,4 +500,4 @@ int k_obj_core_stats_disable(struct k_obj_core *obj_core);
 int k_obj_core_stats_enable(struct k_obj_core *obj_core);
 
 /** @} */
-#endif /* __KERNEL_OBJ_CORE_H__ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_OBJ_CORE_H_ */

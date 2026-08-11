@@ -3,28 +3,47 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_SHELL_TYPES_H_
-#define ZEPHYR_INCLUDE_SHELL_TYPES_H_
+
+/**
+ * @file
+ * @brief Header file for the shell terminal types and colors.
+ * @ingroup shell_api
+ */
+
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_TYPES_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_TYPES_H_
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @addtogroup shell_api
+ * @{
+ */
+
+/** @brief Text colors available for shell output. */
 enum shell_vt100_color {
-	SHELL_VT100_COLOR_BLACK,
-	SHELL_VT100_COLOR_RED,
-	SHELL_VT100_COLOR_GREEN,
-	SHELL_VT100_COLOR_YELLOW,
-	SHELL_VT100_COLOR_BLUE,
-	SHELL_VT100_COLOR_MAGENTA,
-	SHELL_VT100_COLOR_CYAN,
-	SHELL_VT100_COLOR_WHITE,
+	SHELL_VT100_COLOR_BLACK,   /**< Black. */
+	SHELL_VT100_COLOR_RED,     /**< Red. */
+	SHELL_VT100_COLOR_GREEN,   /**< Green. */
+	SHELL_VT100_COLOR_YELLOW,  /**< Yellow. */
+	SHELL_VT100_COLOR_BLUE,    /**< Blue. */
+	SHELL_VT100_COLOR_MAGENTA, /**< Magenta. */
+	SHELL_VT100_COLOR_CYAN,    /**< Cyan. */
+	SHELL_VT100_COLOR_WHITE,   /**< White. */
 
-	SHELL_VT100_COLOR_DEFAULT,
+	SHELL_VT100_COLOR_DEFAULT, /**< Terminal default foreground color. */
 
+	/** @cond INTERNAL_HIDDEN */
 	VT100_COLOR_END
+	/** @endcond */
 };
+
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 
 struct shell_vt100_colors {
 	enum shell_vt100_color col; /*!< Text color. */
@@ -47,8 +66,10 @@ struct shell_vt100_ctx {
 	uint16_t printed_cmd;  /*!< printed commands counter */
 };
 
+/** @endcond */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_TYPES_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_TYPES_H_ */

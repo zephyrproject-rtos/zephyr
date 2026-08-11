@@ -125,7 +125,7 @@ static void tcp_cb(struct tcp *conn, void *user_data)
 
 	PR("%p %p   %5u    %5u %10u %10u %5u   %s\n",
 	   conn, conn->context,
-	   net_ntohs(net_sin6_ptr(&conn->context->local)->sin6_port),
+	   net_ntohs(net_sin6(&conn->context->local)->sin6_port),
 	   net_ntohs(net_sin6(&conn->context->remote)->sin6_port),
 	   conn->seq, conn->ack, recv_mss,
 	   net_tcp_state_str(net_tcp_get_state(conn)));

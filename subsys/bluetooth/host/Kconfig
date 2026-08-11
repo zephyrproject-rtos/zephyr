@@ -450,6 +450,12 @@ config BT_USER_DATA_LEN_UPDATE
 	  about Data Length changes on the connection. The current Data Length
 	  info is available in the connection info.
 
+config BT_USER_CONN_PARAM_REJECTED
+	bool "User notification of connection parameter update rejection"
+	help
+	  Enable application callback when an application-initiated connection
+	  parameter update request is rejected by the peer.
+
 config BT_AUTO_DATA_LEN_UPDATE
 	bool "Auto-initiate Data Length Update procedure"
 	depends on BT_DATA_LEN_UPDATE
@@ -836,9 +842,10 @@ rsource "../services/Kconfig"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
-	default 0 if !BT_SMP
-	default 1
+	range 1 250 if BT_SMP
+	default 1 if BT_SMP
 	range 0 250
+	default 0
 	help
 	  Maximum number of paired Bluetooth devices. The minimum (and
 	  default) number is 1.

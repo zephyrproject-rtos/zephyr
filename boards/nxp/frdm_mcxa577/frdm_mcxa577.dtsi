@@ -9,6 +9,7 @@
 #include "frdm_mcxa577-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	aliases {
@@ -17,9 +18,12 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		watchdog0 = &wwdt0;
 		flash-controller = &fmu;
 		die-temp0 = &temp0;
+		rtc = &rtc;
+		ambient-temp0 = &p3t1755;
 	};
 
 	leds {
@@ -48,6 +52,8 @@
 			label = "User SW2";
 			gpios = <&gpio3 17 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
+			/* P3_17 reaches the core as WUU external pin 26. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_26_FALLING_INT>;
 		};
 
 		user_button_3: button_3 {
@@ -55,6 +61,19 @@
 			gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio2 8 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio2 4 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio2 30 0>;	/* Pin 11, LCD and touch reset */
 	};
 
 	arduino_header: arduino-connector {
@@ -87,6 +106,14 @@
 
 &cpu0 {
 	clock-frequency = <DT_FREQ_M(200)>;
+};
+
+&porta {
+	status = "okay";
+};
+
+&portb {
+	status = "okay";
 };
 
 &gpio0 {
@@ -243,8 +270,59 @@
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
+	clock-src = <1>;
+};
+
+&i3c0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_i3c0>;
+	pinctrl-names = "default";
+
+	i2c-scl-hz = <DT_FREQ_K(400)>;
+	i3c-scl-hz = <DT_FREQ_M(4)>;
+	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+
+	p3t1755: p3t1755@4800000236152a0090 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48 0x0236 0x152a0090>;
+		status = "okay";
+	};
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+nxp_8080_touch_panel_i2c: &lpi2c3 {};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channel 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 71>;
+	dma-names = "tx";
+	shifters-count = <4>;
+	timers-count = <1>;
+	enwr-pin = <27>;
+	rd-pin = <26>;
+	data-pin-start = <0>;
+	reset-gpios = <&gpio2 30 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio2 24 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
 	pinctrl-names = "default";
 };

@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 &xip_region {
 	status = "okay";
 };
@@ -13,5 +19,5 @@
 &mx25uw63 {
 	status = "okay";
 
-	xip-config = <1 0 0x20000000 0>;
+	memmap-config = <1 0 0x20000000 0>;
 };

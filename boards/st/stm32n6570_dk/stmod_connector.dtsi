@@ -1,0 +1,47 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/stmod-plus-connector.h>
+
+/ {
+	stmod_plus_connector: stmod-plus-connector {
+		compatible = "st,stmod-plus-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 GPIO_DT_FLAGS_MASK>;
+		/*
+		 * STMod+ pin 13 is STMOD_ADC. It has a dedicated digital I/O
+		 * path to PC9 on STM32N6570-DK, so expose PC9 here for GPIO use.
+		 * In the default board configuration, this signal is also shared
+		 * with Arduino A5 / PB10 ADC12_INP8.
+		 */
+		gpio-map = <STMOD_PLUS_NSS_CTS 0 &gpiog 5 0>,   /* NSS/CTS */
+			   <STMOD_PLUS_MOSI_TX 0 &gpiod 5 0>,   /* MOSI/TX */
+			   <STMOD_PLUS_MISO_RX 0 &gpiof 6 0>,   /* MISO/RX */
+			   <STMOD_PLUS_SCK_RTS 0 &gpiog 14 0>,  /* SCK/RTS */
+			   <STMOD_PLUS_SCL 0 &gpioh 9 0>,       /* SCL */
+			   <STMOD_PLUS_MOSIS 0 &gpioh 7 0>,     /* MOSIs */
+			   <STMOD_PLUS_MISOS 0 &gpioc 6 0>,     /* MISOs/I/O */
+			   <STMOD_PLUS_SDA 0 &gpioc 1 0>,       /* SDA */
+			   <STMOD_PLUS_INT 0 &gpioc 11 0>,      /* INT */
+			   <STMOD_PLUS_RESET 0 &gpiob 3 0>,     /* RESET */
+			   <STMOD_PLUS_ADC 0 &gpioc 9 0>,       /* ADC */
+			   <STMOD_PLUS_PWM 0 &gpioc 7 0>,       /* PWM */
+			   <STMOD_PLUS_GPIO17 0 &gpiod 13 0>,   /* GPIO */
+			   <STMOD_PLUS_GPIO18 0 &gpiof 1 0>,    /* GPIO */
+			   <STMOD_PLUS_GPIO19 0 &gpiob 8 0>,    /* GPIO */
+			   <STMOD_PLUS_GPIO20 0 &gpiog 9 0>;    /* GPIO */
+	};
+
+	stmod_adc: stmod-adc-channels {
+		io-channels = <&adc1 8>;
+	};
+};
+
+stmod_i2c: &i2c1 {};
+
+stmod_serial: &usart2 {};

@@ -15,10 +15,7 @@
 
 #if defined(CONFIG_BOARD_FVP_BASE_REVC_2XAEM)
 #define SLEEP_MS_LONG	30000
-#elif defined(CONFIG_BOARD_INTEL_ADSP_ACE30_PTL_SIM) ||                                            \
-	defined(CONFIG_BOARD_INTEL_ADSP_ACE40_NVL_SIM)
-#define SLEEP_MS_LONG	300
-#elif defined(CONFIG_WHISPER_TARGET)
+#elif defined(CONFIG_WHISPER_TARGET) || defined(CONFIG_INTEL_ADSP_SIM)
 #define SLEEP_MS_LONG	300
 #elif defined(CONFIG_QEMU_TARGET)
 /* Emulators are much slower than real hardware, especially in the kyield
@@ -300,6 +297,36 @@ ZTEST_USER(syscalls, test_string_nlen)
 	ret = string_nlen((char *)FAULTY_ADDRESS, BUF_SIZE, &err);
 	zassert_equal(err, -1, "nonsense string address did not fault");
 #endif
+}
+
+/**
+ * @brief Test that string_nlen with maxlen 0 does not touch the string
+ *
+ * @details strnlen() semantics require examining at most maxlen bytes,
+ * so with maxlen == 0 the source pointer must not be dereferenced at
+ * all: even an inaccessible address must yield length 0 and no error.
+ * Regression test for arch implementations that loaded the string
+ * byte before checking the length limit.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @see k_usermode_string_nlen()
+ */
+ZTEST(syscalls, test_string_nlen_maxsize_zero)
+{
+	int err = 0;
+	size_t ret;
+	char buf[8] = "abcdefg";
+
+	ret = k_usermode_string_nlen((const char *)FAULTY_ADDRESS, 0, &err);
+	zassert_equal(ret, 0, "maxlen=0 returned %zu", ret);
+	zassert_equal(err, 0, "maxlen=0 dereferenced the pointer (err %d)", err);
+
+	/* Capped length: no NUL within maxlen must return maxlen. */
+	err = 0;
+	ret = k_usermode_string_nlen(buf, 4, &err);
+	zassert_equal(ret, 4, "capped length returned %zu", ret);
+	zassert_equal(err, 0, "capped length faulted (err %d)", err);
 }
 
 /**

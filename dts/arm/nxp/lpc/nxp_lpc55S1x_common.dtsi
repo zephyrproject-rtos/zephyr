@@ -84,6 +84,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	pmc: pmc@20000 {
+		compatible = "nxp,lpc-pmc-hwinfo";
+		reg = <0x20000 0x1000>;
+	};
+
 	syscon: syscon@0 {
 		compatible = "nxp,lpc-syscon";
 		reg = <0x0 0x4000>;
@@ -312,6 +317,7 @@
 	crc: crc@95000 {
 		compatible = "nxp,lpc-crc";
 		reg = <0x95000 0x1000>;
+		clocks = <&syscon MCUX_CRC_CLK>;
 		status = "disabled";
 	};
 

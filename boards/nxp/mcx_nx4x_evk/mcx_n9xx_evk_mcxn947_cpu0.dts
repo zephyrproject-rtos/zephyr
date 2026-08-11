@@ -11,3 +11,11 @@
 / {
 	model = "NXP MCX-N9XX-EVK board";
 };
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};

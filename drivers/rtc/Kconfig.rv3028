@@ -1,10 +1,14 @@
 # Copyright (c) 2024 ANITRA system s.r.o.
+# Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
 # SPDX-License-Identifier: Apache-2.0
 
 config RTC_RV3028
 	bool "Micro Crystal RV3028 I2C extreme low power RTC driver"
 	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3028_RTC_ENABLED
 	depends on DT_HAS_MICROCRYSTAL_RV3028_ENABLED
-	select I2C
+	select MFD
 	help
 	  Enable the Micro Crystal RV3028 I2C RTC driver.
+	  This provides time, alarm, update event, and calibration support
+	  through the RTC API, depending on the enabled RTC API options.

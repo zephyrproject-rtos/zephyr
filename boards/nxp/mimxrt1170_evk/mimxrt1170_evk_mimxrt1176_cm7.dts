@@ -16,6 +16,7 @@
 	aliases {
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdog1;
+		i2s-codec-tx = &sai1;
 	};
 
 	chosen {
@@ -118,6 +119,7 @@ nxp_mipi_i2c: &lpi2c5 {
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 };
 
 &lpadc1 {
@@ -157,6 +159,10 @@ nxp_mipi_i2c: &lpi2c5 {
 };
 
 &sai1 {
+	mclk-output;
+	nxp,rx-sync-mode;
+	podf = <32>;
+
 	status = "okay";
 };
 

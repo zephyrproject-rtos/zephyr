@@ -16,3 +16,9 @@ properties:
     required: true
   "#size-cells":
     required: true
+  scan-buses:
+    type: array
+    description: |
+      List of additional PCIe bus numbers to scan for this host controller
+      beyond the default bus 0. Bus 0 is always scanned.
+      For example, <128> will scan bus 0 and then bus 128.

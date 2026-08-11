@@ -8,9 +8,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
 
-#include "bootloader_flash_priv.h"
-#include "ulp_lp_core.h"
-#include "ulp_lp_core_memory_shared.h"
+#include <bootloader_flash_priv.h>
+#include <ulp_lp_core.h>
+#include <ulp_lp_core_memory_shared.h>
 #include <esp_sleep.h>
 #include <hal/lp_core_ll.h>
 

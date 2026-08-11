@@ -12,7 +12,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>

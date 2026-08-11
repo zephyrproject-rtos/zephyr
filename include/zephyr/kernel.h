@@ -45,20 +45,61 @@ BUILD_ASSERT(sizeof(intptr_t) == sizeof(long));
  * @}
  */
 
+/**
+ * @brief Wildcard used to match any thread.
+ *
+ * Can be used wherever a thread identifier is expected but any thread is
+ * acceptable, such as the source or target thread of a mailbox message.
+ *
+ * @ingroup kernel_apis
+ */
 #define K_ANY NULL
 
 #if (CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES) == 0
 #error Zero available thread priorities defined!
 #endif
 
+/**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
+ * @brief Compute a cooperative thread priority.
+ *
+ * Cooperative priorities are negative thread priority values; the lower the
+ * value, the higher the priority.
+ *
+ * @param x Priority level within the cooperative range, from 0 (highest) to
+ *          @kconfig{CONFIG_NUM_COOP_PRIORITIES} - 1 (lowest).
+ * @return Thread priority value usable with thread creation APIs.
+ */
 #define K_PRIO_COOP(x) (-(CONFIG_NUM_COOP_PRIORITIES - (x)))
+
+/**
+ * @brief Compute a preemptible thread priority.
+ *
+ * Preemptible priorities are non-negative thread priority values; the lower
+ * the value, the higher the priority.
+ *
+ * @param x Priority level within the preemptible range, from 0 (highest) to
+ *          @kconfig{CONFIG_NUM_PREEMPT_PRIORITIES} - 1 (lowest).
+ * @return Thread priority value usable with thread creation APIs.
+ */
 #define K_PRIO_PREEMPT(x) (x)
 
+/** Highest (most urgent) thread priority value. */
 #define K_HIGHEST_THREAD_PRIO (-CONFIG_NUM_COOP_PRIORITIES)
+/** Lowest (least urgent) thread priority value, used by the idle thread. */
 #define K_LOWEST_THREAD_PRIO CONFIG_NUM_PREEMPT_PRIORITIES
+/** Priority of the idle thread. */
 #define K_IDLE_PRIO K_LOWEST_THREAD_PRIO
+/** Highest priority usable by application threads. */
 #define K_HIGHEST_APPLICATION_THREAD_PRIO (K_HIGHEST_THREAD_PRIO)
+/** Lowest priority usable by application threads. */
 #define K_LOWEST_APPLICATION_THREAD_PRIO (K_LOWEST_THREAD_PRIO - 1)
+
+/** @} */
 
 #ifdef CONFIG_POLL
 #define Z_POLL_EVENT_OBJ_INIT(obj) \
@@ -88,10 +129,15 @@ struct k_mem_partition;
 struct k_futex;
 struct k_event;
 
+/**
+ * @brief Types of execution contexts.
+ *
+ * @ingroup kernel_apis
+ */
 enum execution_context_types {
-	K_ISR = 0,
-	K_COOP_THREAD,
-	K_PREEMPT_THREAD,
+	K_ISR = 0,        /**< Executing in an interrupt service routine. */
+	K_COOP_THREAD,    /**< Executing in a cooperative thread. */
+	K_PREEMPT_THREAD, /**< Executing in a preemptible thread. */
 };
 
 /* private, used by k_poll and k_work_poll */
@@ -124,6 +170,12 @@ static inline void
 #endif
 }
 
+/**
+ * @brief Callback type used by thread iteration functions.
+ *
+ * @param thread Thread currently being visited by the iteration.
+ * @param user_data User data passed to the iteration function.
+ */
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -272,7 +324,13 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * */
 #define K_ESSENTIAL (BIT(0))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 #define K_FP_IDX 1
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 /**
  * @brief FPU registers are managed by context switch
  *
@@ -314,6 +372,13 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
 #define K_CALLBACK_STATE (BIT(4))
 
 /**
+ * @cond INTERNAL_HIDDEN
+ */
+#define K_DSP_IDX 13
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+/**
  * @brief DSP registers are managed by context switch
  *
  * @details
@@ -322,9 +387,15 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * restore the contents of these registers when scheduling the thread.
  * No effect if @kconfig{CONFIG_DSP_SHARING} is not enabled.
  */
-#define K_DSP_IDX 13
 #define K_DSP_REGS (BIT(K_DSP_IDX))
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+#define K_AGU_IDX 14
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 /**
  * @brief AGU registers are managed by context switch
  *
@@ -333,7 +404,6 @@ void k_thread_foreach_unlocked_filter_by_cpu(unsigned int cpu,
  * memory and DSP feature. Often used with @kconfig{CONFIG_ARC_AGU_SHARING}.
  * No effect if @kconfig{CONFIG_ARC_AGU_SHARING} is not enabled.
  */
-#define K_AGU_IDX 14
 #define K_AGU_REGS (BIT(K_AGU_IDX))
 
 /**
@@ -526,8 +596,9 @@ static inline void k_thread_heap_assign(struct k_thread *thread,
  * @return 0 on success
  * @return -EBADF Bad thread object (user mode only)
  * @return -EPERM No permissions on thread object (user mode only)
- * #return -ENOTSUP Forbidden by hardware policy
- * @return -EINVAL Thread is uninitialized or exited (user mode only)
+ * @return -ENOTSUP Forbidden by hardware policy
+ * @return -EINVAL Thread is uninitialized or exited (user mode only), or the
+ *	stack is not mapped when @kconfig{CONFIG_THREAD_STACK_MEM_MAPPED} is set
  * @return -EFAULT Bad memory address for unused_ptr (user mode only)
  */
 __syscall int k_thread_stack_space_get(const struct k_thread *thread,
@@ -685,6 +756,8 @@ __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
  * sleep rounded up to the nearest millisecond (e.g. if the thread was
  * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
  * the case where the remaining time is unrepresentable in an int32_t.
+ * If @a timeout is K_FOREVER and the thread is woken early via
+ * k_wakeup(), -1 is returned.
  */
 __syscall int32_t k_sleep(k_timeout_t timeout);
 
@@ -1111,9 +1184,9 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * above this call, which is simply input to the priority selection
  * logic.
  *
- * @note The relative deadline is silently clamped to a maximum of
- * INT32_MAX / 2 (2^30 cycles) to preserve the scheduler's modular
- * comparison invariants.
+ * @note The relative deadline is silently clamped to the range
+ * [0, INT32_MAX / 2] (2^30 cycles) to preserve the scheduler's modular
+ * comparison invariants; negative values are clamped up to 0.
  *
  * @kconfig_dep{CONFIG_SCHED_DEADLINE}
  *
@@ -1231,6 +1304,8 @@ int k_thread_cpu_mask_enable_all(k_tid_t thread);
  *
  * @note You should enable @kconfig{CONFIG_SCHED_CPU_MASK} in your project
  * configuration.
+ * @note If @kconfig{CONFIG_SCHED_CPU_MASK_PIN_ONLY} is enabled the mask must
+ * contain exactly one CPU, so enabling a second CPU is not supported.
  *
  * @param thread Thread to operate upon
  * @param cpu CPU index
@@ -1507,10 +1582,13 @@ __syscall void *k_thread_custom_data_get(void);
  *
  * @param thread Thread to set name, or NULL to set the current thread
  * @param str Name string
+ * @note A name longer than CONFIG_THREAD_MAX_NAME_LEN is silently truncated,
+ * this is not reported as an error.
+ *
  * @retval 0 on success
  * @retval -EFAULT Memory access error with supplied string
  * @retval -ENOSYS Thread name configuration option not enabled
- * @retval -EINVAL Thread name too long
+ * @retval -EINVAL Invalid thread object (user mode only)
  */
 __syscall int k_thread_name_set(k_tid_t thread, const char *str);
 
@@ -1530,10 +1608,11 @@ const char *k_thread_name_get(k_tid_t thread);
  * @param thread Thread to obtain name information
  * @param buf Destination buffer
  * @param size Destination buffer size
- * @retval -ENOSPC Destination buffer too small
- * @retval -EFAULT Memory access error
- * @retval -ENOSYS Thread name feature not enabled
  * @retval 0 Success
+ * @retval -ENOSYS Thread name feature not enabled
+ * @retval -EINVAL Invalid thread object (user mode only)
+ * @retval -ENOSPC Destination buffer too small (user mode only)
+ * @retval -EFAULT Memory access error (user mode only)
  */
 __syscall int k_thread_name_copy(k_tid_t thread, char *buf,
 				 size_t size);
@@ -1854,9 +1933,7 @@ struct k_timer_observer {
 #define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
-		.node = {},\
 		.fn = z_timer_expiration_handler, \
-		.dticks = 0, \
 	}, \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
@@ -2045,7 +2122,8 @@ __syscall uint32_t k_timer_status_sync(struct k_timer *timer);
  *
  * This routine returns the future system uptime reached at the next
  * time of expiration of the timer, in units of system ticks.  If the
- * timer is not running, current system time is returned.
+ * timer is not running, the last announced tick count is returned (which
+ * may lag the true current uptime by the elapsed sub-tick amount).
  *
  * @param timer The timer object
  * @return Uptime of expiration, in ticks
@@ -2088,7 +2166,7 @@ static inline k_ticks_t z_impl_k_timer_remaining_ticks(
  */
 static inline uint32_t k_timer_remaining_get(struct k_timer *timer)
 {
-	return k_ticks_to_ms_floor32(k_timer_remaining_ticks(timer));
+	return k_ticks_to_ms_ceil32(k_timer_remaining_ticks(timer));
 }
 
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
@@ -2235,7 +2313,7 @@ static inline uint32_t k_uptime_seconds(void)
  * @param reftime Pointer to a reference time, which is updated to the current
  *                uptime upon return.
  *
- * @return Elapsed time.
+ * @return Elapsed time, in milliseconds.
  */
 static inline int64_t k_uptime_delta(int64_t *reftime)
 {
@@ -2266,6 +2344,9 @@ static inline uint32_t k_cycle_get_32(void)
  *
  * This routine returns the current time in 64-bits, as measured by the
  * system's hardware clock, if available.
+ *
+ * @note Requires @kconfig{CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER}. When that
+ * option is not enabled this routine asserts and returns 0.
  *
  * @see CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
  *
@@ -2589,6 +2670,11 @@ __syscall void *k_queue_peek_tail(struct k_queue *queue);
  * bypasses the kernel object permission management mechanism.
  */
 struct k_futex {
+	/**
+	 * Futex value. User mode threads operate on this value directly
+	 * using atomic operations, and pass its expected content to
+	 * k_futex_wait().
+	 */
 	atomic_t val;
 };
 
@@ -2640,7 +2726,7 @@ struct z_futex_data {
  *		   will not wait on it.
  * @param timeout Waiting period on the futex, or one of the special values
  *                K_NO_WAIT or K_FOREVER.
- * @retval -EACCES Caller does not have read access to futex address.
+ * @retval -EACCES Caller does not have write access to futex address.
  * @retval -EAGAIN If the futex value did not match the expected parameter.
  * @retval -EINVAL Futex parameter address not recognized by the kernel.
  * @retval -ETIMEDOUT Thread woke up due to timeout and not a futex wakeup.
@@ -2743,7 +2829,8 @@ __syscall void k_event_init(struct k_event *event);
  * @param event Address of the event object
  * @param events Set of events to post to @a event
  *
- * @return Previous value of the events in @a event
+ * @return Previous value of the events that are being posted, i.e. the bits
+ *         of @a events that were already set in @a event before this call
  */
 __syscall uint32_t k_event_post(struct k_event *event, uint32_t events);
 
@@ -2795,7 +2882,8 @@ __syscall uint32_t k_event_set_masked(struct k_event *event, uint32_t events,
  * @param event Address of the event object
  * @param events Set of events to clear in @a event
  *
- * @return Previous value of the events in @a event
+ * @return Previous state of the events specified by @a events (any events
+ *         not selected by @a events are not reported)
  */
 __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
 
@@ -3054,6 +3142,9 @@ struct k_fifo {
  * @param fifo Address of the FIFO queue.
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
  */
 #define k_fifo_put_list(fifo, head, tail) \
 	({ \
@@ -3074,6 +3165,9 @@ struct k_fifo {
  *
  * @param fifo Address of the FIFO queue.
  * @param list Pointer to sys_slist_t object.
+ *
+ * @retval 0 on success
+ * @retval -EINVAL on invalid supplied data
  */
 #define k_fifo_put_slist(fifo, list) \
 	({ \
@@ -3376,7 +3470,8 @@ void k_stack_init(struct k_stack *stack,
  * @param stack Address of the stack.
  * @param num_entries Maximum number of values that can be stacked.
  *
- * @return -ENOMEM if memory couldn't be allocated
+ * @retval 0 on success
+ * @retval -ENOMEM if memory couldn't be allocated
  */
 
 __syscall int32_t k_stack_alloc_init(struct k_stack *stack,
@@ -3848,6 +3943,13 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 struct k_ipi_work;
 
 
+/**
+ * @brief IPI work item handler function type.
+ *
+ * Invoked at ISR level on each CPU targeted by k_ipi_work_add().
+ *
+ * @param work IPI work item being processed.
+ */
 typedef void (*k_ipi_func_t)(struct k_ipi_work *work);
 
 /**
@@ -4229,14 +4331,18 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * This call is blocking and guarantees that the work queue thread has terminated
  * cleanly if successful, no work will be processed past this point.
  *
+ * The queue must have been drained and plugged first (for example via
+ * k_work_queue_drain() with the @p plug option enabled); otherwise the call
+ * returns -EBUSY.
+ *
  * @param queue Pointer to the queue structure.
  * @param timeout Maximum time to wait for the work queue to stop.
  *
  * @retval 0 if the work queue was stopped
  * @retval -EALREADY if the work queue was not started (or already stopped)
- * @retval -EBUSY if the work queue is actively processing work items
+ * @retval -EBUSY if the work queue has not been plugged
  * @retval -ETIMEDOUT if the work queue did not stop within the stipulated timeout
- * @retval -ENOSUP if the work queue is essential
+ * @retval -ENOTSUP if the work queue is essential
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
@@ -4515,6 +4621,7 @@ int k_work_cancel_delayable(struct k_work_delayable *dwork);
 bool k_work_cancel_delayable_sync(struct k_work_delayable *dwork,
 				  struct k_work_sync *sync);
 
+/** @brief Work item and work queue state flag values. */
 enum {
 /**
  * @cond INTERNAL_HIDDEN
@@ -4801,7 +4908,7 @@ struct k_work_q {
  * @cond INTERNAL_HIDDEN
  */
 	/* The thread that animates the work. */
-	struct k_thread thread;
+	__deprecated struct k_thread thread;
 
 	/* The thread ID that animates the work. This may be an external thread
 	 * if k_work_queue_run() is used.
@@ -5261,12 +5368,11 @@ struct k_msgq {
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	.flags = 0, \
 	}
+
+#define K_MSGQ_FLAG_ALLOC	BIT(0)
 /**
  * INTERNAL_HIDDEN @endcond
  */
-
-
-#define K_MSGQ_FLAG_ALLOC	BIT(0)
 
 /**
  * @brief Message Queue Attributes
@@ -5293,6 +5399,10 @@ struct k_msgq_attrs {
  *
  * @code extern struct k_msgq <name>; @endcode
  *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MSGQ_DEFINE_STATIC
+ *       instead.
+ *
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
  * @param q_max_msgs Maximum number of messages that can be queued.
@@ -5305,6 +5415,62 @@ struct k_msgq_attrs {
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  (q_msg_size), (q_max_msgs))
+
+/**
+ * @brief Statically define and initialize a message queue in a private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is @a q_msg_size bytes long. Alignment of the message queue's
+ * ring buffer is not necessary, setting @a q_align to 1 is sufficient.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_size Message size (in bytes).
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_align Alignment of the message queue's ring buffer (power of 2).
+ *
+ */
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)	\
+	static char __noinit __aligned(q_align)				\
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =		\
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+				  (q_msg_size), (q_max_msgs))
+
+/**
+ * @brief Statically define and initialize a message queue for messages of a given type.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is the size of @a type.
+ *
+ * The message queue can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct k_msgq <name>; @endcode
+ *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MSGQ_DEFINE_STATIC_TYPE
+ *       instead.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_type Type of each message.
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ */
+#define K_MSGQ_DEFINE_TYPE(q_name, q_msg_type, q_max_msgs) \
+	K_MSGQ_DEFINE(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
+
+/**
+ * @brief Statically define and initialize a message queue for messages of a given type in a
+ * private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is the size of @a type.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_type Type of each message.
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ */
+#define K_MSGQ_DEFINE_STATIC_TYPE(q_name, q_msg_type, q_max_msgs) \
+	K_MSGQ_DEFINE_STATIC(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
 
 /**
  * @brief Initialize a message queue.
@@ -5348,12 +5514,15 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 /**
  * @brief Release allocated buffer for a queue
  *
- * Releases memory allocated for the ring buffer.
+ * Releases memory allocated for the ring buffer. The buffer is only
+ * freed if it was allocated by k_msgq_alloc_init(); the call succeeds
+ * but frees nothing for a caller-provided buffer. Any messages still
+ * in the queue are discarded with the buffer.
  *
  * @param msgq message queue to cleanup
  *
  * @retval 0 on success
- * @retval -EBUSY Queue not empty
+ * @retval -EBUSY Threads are waiting on the message queue
  */
 int k_msgq_cleanup(struct k_msgq *msgq);
 
@@ -5704,10 +5873,16 @@ void k_mbox_data_get(struct k_mbox_msg *rx_msg, void *buffer);
  */
 __syscall void k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t buffer_size);
 
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 enum pipe_flags {
 	PIPE_FLAG_OPEN = BIT(0),
 	PIPE_FLAG_RESET = BIT(1),
 };
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
 
 /**
  * @brief Kernel pipe structure
@@ -6065,7 +6240,6 @@ int k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
  *         is set to the starting address of the memory block.
  * @retval -ENOMEM Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
- * @retval -EINVAL Invalid data supplied
  */
 int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
 			    k_timeout_t timeout);
@@ -6228,7 +6402,8 @@ void k_heap_init(struct k_heap *h, void *mem,
  * @param align Alignment in bytes, must be a power of two
  * @param bytes Number of bytes requested
  * @param timeout How long to wait, or K_NO_WAIT
- * @return Pointer to memory the caller can now use
+ * @return Pointer to memory the caller can now use, or NULL if the allocation
+ *         could not be satisfied within the timeout
  */
 void *k_heap_aligned_alloc(struct k_heap *h, size_t align, size_t bytes,
 			k_timeout_t timeout) __attribute_nonnull(1);
@@ -6615,34 +6790,75 @@ enum _poll_states_bits {
 
 /* Public polling API */
 
-/* public - values for k_poll_event.type bitfield */
+/**
+ * @name Poll event types
+ * Values for the k_poll_event.type bitfield.
+ * @{
+ */
+
+/** Event is ignored by k_poll(). */
 #define K_POLL_TYPE_IGNORE 0
+/** Poll for a raised poll signal. */
 #define K_POLL_TYPE_SIGNAL Z_POLL_TYPE_BIT(_POLL_TYPE_SIGNAL)
+/** Poll for a semaphore becoming available. */
 #define K_POLL_TYPE_SEM_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_SEM_AVAILABLE)
+/** Poll for data becoming available in a queue. */
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
+/** Poll for data becoming available in a FIFO. */
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a LIFO. */
+#define K_POLL_TYPE_LIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a message queue. */
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
+/** Poll for data becoming available in a pipe. */
 #define K_POLL_TYPE_PIPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_PIPE_DATA_AVAILABLE)
 
-/* public - polling modes */
+/** @} */
+
+/** @brief Modes of operation of a poll event. */
 enum k_poll_modes {
-	/* polling thread does not take ownership of objects when available */
+	/** Polling thread is notified of object availability, but does not
+	 * take ownership of the object.
+	 */
 	K_POLL_MODE_NOTIFY_ONLY = 0,
 
-	K_POLL_NUM_MODES
+	K_POLL_NUM_MODES /**< Number of poll modes. */
 };
 
-/* public - values for k_poll_event.state bitfield */
+/**
+ * @name Poll event states
+ * Values for the k_poll_event.state bitfield.
+ * @{
+ */
+
+/** Condition being polled for has not occurred yet. */
 #define K_POLL_STATE_NOT_READY 0
+/** Poll signal was raised. */
 #define K_POLL_STATE_SIGNALED Z_POLL_STATE_BIT(_POLL_STATE_SIGNALED)
+/** Semaphore became available. */
 #define K_POLL_STATE_SEM_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_SEM_AVAILABLE)
+/** Data became available in a queue. */
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
+/** Data became available in a FIFO. */
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a LIFO. */
+#define K_POLL_STATE_LIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a message queue. */
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
+/** Data became available in a pipe. */
 #define K_POLL_STATE_PIPE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_PIPE_DATA_AVAILABLE)
+/** Wait on the polled object was cancelled, e.g. by k_queue_cancel_wait(). */
 #define K_POLL_STATE_CANCELLED Z_POLL_STATE_BIT(_POLL_STATE_CANCELLED)
 
-/* public - poll signal object */
+/** @} */
+
+/**
+ * @brief Poll signal object
+ *
+ * A poll signal is a kernel object that can be raised from threads or ISRs
+ * with k_poll_signal_raise(), and polled on with k_poll() using
+ * @ref K_POLL_TYPE_SIGNAL.
+ */
 struct k_poll_signal {
 /**
  * @cond INTERNAL_HIDDEN
@@ -6663,6 +6879,11 @@ struct k_poll_signal {
 	int result;
 };
 
+/**
+ * @brief Statically initialize a poll signal.
+ *
+ * @param obj Name of the struct k_poll_signal instance being initialized.
+ */
 #define K_POLL_SIGNAL_INITIALIZER(obj) \
 	{ \
 	.poll_events = SYS_DLIST_STATIC_INIT(&obj.poll_events), \
@@ -6703,19 +6924,36 @@ struct k_poll_event {
 
 	/** per-type data */
 	union {
-		/* The typed_* fields below are used by K_POLL_EVENT_*INITIALIZER() macros to ensure
-		 * type safety of polled objects.
+		/* The _typed_* aliases below are used by the K_POLL_EVENT_*INITIALIZER() macros to
+		 * ensure type safety of polled objects.
 		 */
-		void *obj, *typed_K_POLL_TYPE_IGNORE;
-		struct k_poll_signal *signal, *typed_K_POLL_TYPE_SIGNAL;
-		struct k_sem *sem, *typed_K_POLL_TYPE_SEM_AVAILABLE;
-		struct k_fifo *fifo, *typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
-		struct k_queue *queue, *typed_K_POLL_TYPE_DATA_AVAILABLE;
-		struct k_msgq *msgq, *typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
-		struct k_pipe *pipe, *typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
+		/** Generic object pointer. */
+		void *obj, *_typed_K_POLL_TYPE_IGNORE;
+		/** Poll signal being polled. */
+		struct k_poll_signal *signal, *_typed_K_POLL_TYPE_SIGNAL;
+		/** Semaphore being polled. */
+		struct k_sem *sem, *_typed_K_POLL_TYPE_SEM_AVAILABLE;
+		/** FIFO being polled. */
+		struct k_fifo *fifo, *_typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/** LIFO being polled. */
+		struct k_lifo *lifo, *_typed_K_POLL_TYPE_LIFO_DATA_AVAILABLE;
+		/** Queue being polled. */
+		struct k_queue *queue, *_typed_K_POLL_TYPE_DATA_AVAILABLE;
+		/** Message queue being polled. */
+		struct k_msgq *msgq, *_typed_K_POLL_TYPE_MSGQ_DATA_AVAILABLE;
+		/** Pipe being polled. */
+		struct k_pipe *pipe, *_typed_K_POLL_TYPE_PIPE_DATA_AVAILABLE;
 	};
 };
 
+/**
+ * @brief Statically initialize a poll event.
+ *
+ * @param _event_type Type of the event; one of the K_POLL_TYPE_xxx values.
+ * @param _event_mode Mode of operation; one of the enum k_poll_modes values.
+ * @param _event_obj Address of the kernel object or poll signal being polled,
+ *                   matching the event type.
+ */
 #define K_POLL_EVENT_INITIALIZER(_event_type, _event_mode, _event_obj) \
 	{ \
 	.poller = NULL, \
@@ -6724,10 +6962,19 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.typed_##_event_type = _event_obj, \
+		._typed_##_event_type = _event_obj, \
 	}, \
 	}
 
+/**
+ * @brief Statically initialize a poll event, with a user tag.
+ *
+ * @param _event_type Type of the event; one of the K_POLL_TYPE_xxx values.
+ * @param _event_mode Mode of operation; one of the enum k_poll_modes values.
+ * @param _event_obj Address of the kernel object or poll signal being polled,
+ *                   matching the event type.
+ * @param event_tag Opaque user-specified tag.
+ */
 #define K_POLL_EVENT_STATIC_INITIALIZER(_event_type, _event_mode, _event_obj, \
 					event_tag) \
 	{ \
@@ -6737,7 +6984,7 @@ struct k_poll_event {
 	.mode = _event_mode, \
 	.unused = 0, \
 	{ \
-		.typed_##_event_type = _event_obj, \
+		._typed_##_event_type = _event_obj, \
 	}, \
 	}
 
@@ -6848,15 +7095,14 @@ __syscall void k_poll_signal_check(struct k_poll_signal *sig,
  * passed again to k_poll() or k_poll() will consider it being signaled, and
  * will return immediately.
  *
- * @note The result is stored and the 'signaled' field is set even if
- * this function returns an error indicating that an expiring poll was
- * not notified.  The next k_poll() will detect the missed raise.
+ * @note The result is stored and the 'signaled' field is set even when the
+ * polling thread's timeout is already expiring and the poll is therefore not
+ * notified directly.  The next k_poll() will detect the missed raise.
  *
  * @param sig A poll signal.
  * @param result The value to store in the result field of the signal.
  *
  * @retval 0 The signal was delivered successfully.
- * @retval -EAGAIN The polling thread's timeout is in the process of expiring.
  */
 
 __syscall int k_poll_signal_raise(struct k_poll_signal *sig, int result);
@@ -7047,7 +7293,7 @@ __syscall int k_float_disable(struct k_thread *thread);
  *
  * @warning
  * This routine should only be used to enable floating point support for
- * a thread that currently has such support enabled.
+ * a thread that does not currently have such support enabled.
  *
  * @param thread  ID of thread.
  * @param options architecture dependent options

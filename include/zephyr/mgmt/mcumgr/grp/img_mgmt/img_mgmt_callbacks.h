@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_IMG_MGMT_CALLBACKS_
-#define H_MCUMGR_IMG_MGMT_CALLBACKS_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CALLBACKS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CALLBACKS_H_
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -156,4 +156,4 @@ struct img_mgmt_slot_info_slot {
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_CALLBACKS_H_ */

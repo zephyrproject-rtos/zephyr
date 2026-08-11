@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief WiFi L2 stack public header
+ * @ingroup wifi_mgmt
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_MGMT_H_
@@ -196,11 +197,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_AP_RTS_THRESHOLD);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_IFACE_STATUS);
 
+/** Request a Wi-Fi 11k configuration */
 #define NET_REQUEST_WIFI_11K_CONFIG				\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_11K_CONFIG);
 
+/** Request a Wi-Fi 11k neighbor request */
 #define NET_REQUEST_WIFI_11K_NEIGHBOR_REQUEST			\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_11K_NEIGHBOR_REQUEST)
 
@@ -218,6 +221,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_PS);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_TWT);
 
+/** Request a Wi-Fi broadcast TWT flow setup */
 #define NET_REQUEST_WIFI_BTWT			\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BTWT)
 
@@ -328,6 +332,7 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_ENTERPRISE_CREDS);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RTS_THRESHOLD_CONFIG);
 
+/** Request a Wi-Fi WPS configuration */
 #define NET_REQUEST_WIFI_WPS_CONFIG (NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_WPS_CONFIG)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
@@ -337,26 +342,31 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_WPS_CONFIG);
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED);
 #endif
 
+/** Request a Wi-Fi roaming start */
 #define NET_REQUEST_WIFI_START_ROAMING				\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_START_ROAMING)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_START_ROAMING);
 
+/** Notify that processing of a Wi-Fi neighbor report is complete */
 #define NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE			\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_NEIGHBOR_REP_COMPLETE)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_NEIGHBOR_REP_COMPLETE);
 
+/** Request a Wi-Fi BSS maximum idle period configuration */
 #define NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD				\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BSS_MAX_IDLE_PERIOD)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BSS_MAX_IDLE_PERIOD);
 
+/** Request a Wi-Fi background scan configuration */
 #define NET_REQUEST_WIFI_BGSCAN					\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_BGSCAN)
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
+/** Request a Wi-Fi Direct (P2P) operation */
 #define NET_REQUEST_WIFI_P2P_OPER						\
 	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_P2P_OPER)
 
@@ -684,6 +694,12 @@ struct wifi_connect_req_params {
 	const uint8_t *psk;
 	/** Pre-shared key length */
 	uint8_t psk_length; /* Min 8 - Max 64 */
+	/**
+	 * Pre-shared key is the pre-computed PBKDF2 output.
+	 * `psk_length` MUST be 32 bytes.
+	 * Only applicable for PSK based security types.
+	 */
+	bool psk_is_pbkdf2;
 	/** SAE password (same as PSK but with no length restrictions), optional */
 	const uint8_t *sae_password;
 	/** SAE password length */
@@ -848,6 +864,15 @@ struct wifi_connect_req_params {
 	 * 1: Enable
 	 */
 	uint8_t ssid_protection;
+	/**
+	 * WPA3 Transition Disable bitmap (WPA3 Spec v3.0, Table 5).
+	 * Sent in EAPOL Message 3 as Transition Disable KDE.
+	 *   Bit 0: WPA3-Personal
+	 *   Bit 1: WPA3-Personal SAE-PK
+	 *   Bit 2: WPA3-Enterprise
+	 *   Bit 3: OWE
+	 */
+	uint8_t transition_disable;
 };
 
 /** @brief Wi-Fi disconnect reason codes. To be overlaid on top of \ref wifi_status
@@ -893,6 +918,7 @@ enum wifi_ap_status {
 
 /** @brief Generic Wi-Fi status for commands and events */
 struct wifi_status {
+	/** Command or event specific status */
 	union {
 		/** Status value */
 		int status;
@@ -970,6 +996,7 @@ struct wifi_ps_params {
 	enum wifi_ps_exit_strategy exit_strategy;
 };
 
+/** Maximum number of broadcast TWT agreement sets */
 #define WIFI_BTWT_AGREEMENT_MAX 5
 
 /** @brief Wi-Fi broadcast TWT parameters */
@@ -1000,6 +1027,7 @@ struct wifi_twt_params {
 	uint8_t dialog_token;
 	/** Flow ID, used to map setup with teardown */
 	uint8_t flow_id;
+	/** Operation specific parameters */
 	union {
 		/** Setup specific parameters */
 		struct {
@@ -1055,11 +1083,15 @@ struct wifi_twt_params {
 
 /* Flow ID is only 3 bits */
 #define WIFI_MAX_TWT_FLOWS 8
-#define WIFI_MAX_TWT_INTERVAL_US (LONG_MAX - 1)
+/* The TWT interval is encoded per IEEE 802.11 as mantissa * 2^exponent
+ * micro-seconds, with a 16-bit mantissa and a 5-bit exponent. The maximum
+ * representable interval is therefore UINT16_MAX * 2^WIFI_MAX_TWT_EXPONENT us.
+ */
+#define WIFI_MAX_TWT_EXPONENT 31
+#define WIFI_MAX_TWT_INTERVAL_US ((uint64_t)UINT16_MAX << WIFI_MAX_TWT_EXPONENT)
 /* 256 (u8) * 1TU */
 #define WIFI_MAX_TWT_WAKE_INTERVAL_US 262144
 #define WIFI_MAX_TWT_WAKE_AHEAD_DURATION_US (LONG_MAX - 1)
-#define WIFI_MAX_TWT_EXPONENT 31
 
 /** @endcond */
 
@@ -1121,9 +1153,9 @@ struct wifi_enterprise_creds_params {
 	uint8_t *server_key;
 	/** Server key length */
 	uint32_t server_key_len;
-	/** Diffie–Hellman parameter */
+	/** Diffie-Hellman parameter */
 	uint8_t *dh_param;
-	/** Diffie–Hellman parameter length */
+	/** Diffie-Hellman parameter length */
 	uint32_t dh_param_len;
 };
 
@@ -1684,6 +1716,7 @@ struct wifi_nan_params {
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
 
+/** Maximum length of a WPS PIN */
 #define WIFI_WPS_PIN_MAX_LEN 8
 
 /** Operation for WPS */
@@ -1725,6 +1758,10 @@ enum wifi_p2p_op {
 	WIFI_P2P_INVITE,
 	/** P2P power save */
 	WIFI_P2P_POWER_SAVE,
+	/** P2P list stored persistent networks */
+	WIFI_P2P_LIST_NETWORKS,
+	/** P2P remove persistent network(s) */
+	WIFI_P2P_PERSISTENT_REMOVE,
 };
 
 /** Wi-Fi P2P discovery type */
@@ -1749,6 +1786,7 @@ enum wifi_p2p_connection_method {
 
 /** Maximum number of P2P peers that can be returned in a single query */
 #define WIFI_P2P_MAX_PEERS CONFIG_WIFI_P2P_MAX_PEERS
+#define WIFI_P2P_LIST_NETWORKS_BUF_SIZE 2048
 
 /** Wi-Fi P2P parameters */
 struct wifi_p2p_params {
@@ -1783,6 +1821,8 @@ struct wifi_p2p_params {
 		unsigned int freq;
 		/** Join an existing group (as a client) instead of starting GO negotiation */
 		bool join;
+		/** Add persistent group */
+		bool persistent_set;
 	} connect;
 	/** Group add specific parameters */
 	struct {
@@ -1790,6 +1830,8 @@ struct wifi_p2p_params {
 		int freq;
 		/** Persistent group ID (-1 = not persistent) */
 		int persistent;
+		/** Add persistent group */
+		bool persistent_set;
 		/** Enable HT40 */
 		bool ht40;
 		/** Enable VHT */
@@ -1828,19 +1870,42 @@ struct wifi_p2p_params {
 		/** GO device address length */
 		uint8_t go_dev_addr_length;
 	} invite;
+	/** List networks specific parameters */
+	struct {
+		/** Buffer to hold the LIST_NETWORKS response. */
+		char *buf;
+		/** Size of the allocated buffer in bytes */
+		size_t buf_size;
+	} list_networks;
+	/** Persistent network remove specific parameters */
+	struct {
+		/** Network ID to remove.
+		 *  >= 0 : remove the specific network with this ID.
+		 *  -1   : remove ALL saved networks.
+		 */
+		int id;
+	} persistent_remove;
 };
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
 
 /** Wi-Fi AP status
  */
 enum wifi_sap_iface_state {
+	/** Interface is uninitialized */
 	WIFI_SAP_IFACE_UNINITIALIZED,
+	/** Interface is disabled */
 	WIFI_SAP_IFACE_DISABLED,
+	/** Country code update in progress */
 	WIFI_SAP_IFACE_COUNTRY_UPDATE,
+	/** Automatic channel selection in progress */
 	WIFI_SAP_IFACE_ACS,
+	/** HT scan in progress */
 	WIFI_SAP_IFACE_HT_SCAN,
+	/** Dynamic frequency selection in progress */
 	WIFI_SAP_IFACE_DFS,
+	/** Selected channel does not allow initiating radiation */
 	WIFI_SAP_IFACE_NO_IR,
+	/** Interface is enabled */
 	WIFI_SAP_IFACE_ENABLED
 };
 
@@ -1870,12 +1935,17 @@ struct wifi_bgscan_params {
 };
 #endif
 
-/* Extended Capabilities */
+/** IEEE 802.11 Extended Capabilities bit positions */
 enum wifi_ext_capab {
+	/** 20/40 BSS coexistence management support */
 	WIFI_EXT_CAPAB_20_40_COEX = 0,
+	/** General link (GLK) support */
 	WIFI_EXT_CAPAB_GLK = 1,
+	/** Extended channel switching support */
 	WIFI_EXT_CAPAB_EXT_CHAN_SWITCH = 2,
+	/** TIM broadcast support */
 	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
+	/** BSS transition management support */
 	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
 };
 
@@ -2080,7 +2150,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the filter operation
-	 * @param packet filter settings
+	 * @param filter Filter settings
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2176,7 +2246,7 @@ struct wifi_mgmt_ops {
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
 	 * @param iface Network interface to use for the RTS threshold operation
-	 * @param RTS threshold value
+	 * @param rts_threshold RTS threshold value
 	 *
 	 * @return 0 if ok, < 0 if error
 	 */
@@ -2291,9 +2361,11 @@ struct wifi_mgmt_ops {
 	 * @param dev Pointer to the device structure for the driver instance
 	 * @param iface Network interface to use for the roaming operation
 	 *
+	 * @deprecated Controlled by connection request params
+	 *
 	 * @return 0 if ok, < 0 if error
 	 */
-	int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
+	__deprecated int (*start_11r_roaming)(const struct device *dev, struct net_if *iface);
 	/** Set BSS max idle period
 	 *
 	 * @param dev Pointer to the device structure for the driver instance.
@@ -2468,7 +2540,7 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
  * @brief Raise P2P device found event
  *
  * @param iface Network interface
- * @param device_info P2P device information
+ * @param peer_info P2P device information
  */
 void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
 		struct wifi_p2p_device_info *peer_info);

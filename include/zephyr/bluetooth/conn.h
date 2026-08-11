@@ -14,6 +14,8 @@
 /**
  * @brief Connection management
  * @defgroup bt_conn Connection management
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -1131,17 +1133,18 @@ struct bt_conn_le_info {
 	uint16_t latency; /**< Connection peripheral latency */
 	uint16_t timeout; /**< Connection supervision timeout */
 
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) || defined(__DOXYGEN__)
+	/** Connection PHY info  */
 	const struct bt_conn_le_phy_info      *phy;
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
-	/* Connection maximum single fragment parameters */
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) || defined(__DOXYGEN__)
+	/** Connection maximum single fragment parameters */
 	const struct bt_conn_le_data_len_info *data_len;
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 
-#if defined(CONFIG_BT_SUBRATING)
-	/* Connection subrating parameters */
+#if defined(CONFIG_BT_SUBRATING) || defined(__DOXYGEN__)
+	/** Connection subrating parameters */
 	const struct bt_conn_le_subrating_info *subrate;
 #endif /* defined(CONFIG_BT_SUBRATING) */
 };
@@ -2161,7 +2164,7 @@ struct bt_conn_le_cs_procedure_enable_complete {
 
 /** @brief BR/EDR specific connection callbacks. */
 struct bt_conn_br_cb {
-#if defined(CONFIG_BT_POWER_MODE_CONTROL)
+#if defined(CONFIG_BT_POWER_MODE_CONTROL) || defined(__DOXYGEN__)
 	/** @brief A BR/EDR connection mode has changed.
 	 *
 	 *  This callback notifies the application that the sniff mode has changed.
@@ -2194,6 +2197,16 @@ struct bt_conn_br_cb {
 	 */
 	void (*packet_type_changed)(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
 };
+
+/** @brief Synthetic error value for an L2CAP Connection Parameter Update
+ *         Procedure (CPUP) rejection.
+ *
+ *  Passed as the hci_err argument to @ref bt_conn_cb.le_param_update_rejected
+ *  when the remote peer does not support the HCI Connection Parameter Request
+ *  (CPR) procedure and the L2CAP CPUP fallback is rejected instead. This is a
+ *  host-internal sentinel; it is not a real HCI error code.
+ */
+#define BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP 0xFF
 
 /** @brief Connection callback structure.
  *
@@ -2306,7 +2319,30 @@ struct bt_conn_cb {
 	 */
 	void (*le_param_updated)(struct bt_conn *conn, uint16_t interval,
 				 uint16_t latency, uint16_t timeout);
-#if defined(CONFIG_BT_SMP)
+
+#if defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) || defined(__DOXYGEN__)
+	/** @brief LE connection parameter update was rejected by the peer.
+	 *
+	 *  This callback notifies the application that a connection parameter
+	 *  update request initiated by @ref bt_conn_le_param_update was rejected
+	 *  by the peer.
+	 *
+	 *  @note Only called for explicit HCI rejections and L2CAP Connection
+	 *        Parameter Update Procedure (CPUP) rejections.
+	 *        Mutually exclusive with le_param_updated for the same event.
+	 *        If the remote does not support the Connection Parameter Request
+	 *        (CPR) procedure and the L2CAP fallback is
+	 *        rejected, @p hci_err will be BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP.
+	 *
+	 *  @param conn    Connection object.
+	 *  @param hci_err HCI error code (BT_HCI_ERR_*) for CPR rejection, or
+	 *                 BT_CONN_PARAM_REJECT_ERR_L2CAP_CPUP for L2CAP fallback
+	 *                 rejection.
+	 */
+	void (*le_param_update_rejected)(struct bt_conn *conn, uint8_t hci_err);
+#endif /* defined(CONFIG_BT_USER_CONN_PARAM_REJECTED) || defined(__DOXYGEN__) */
+
+#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
 	/** @brief Remote Identity Address has been resolved.
 	 *
 	 *  This callback notifies the application that a remote
@@ -2341,7 +2377,7 @@ struct bt_conn_cb {
 				 enum bt_security_err err);
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC) */
 
-#if defined(CONFIG_BT_REMOTE_INFO)
+#if defined(CONFIG_BT_REMOTE_INFO) || defined(__DOXYGEN__)
 	/** @brief Remote information procedures has completed.
 	 *
 	 *  This callback notifies the application that the remote information
@@ -2354,12 +2390,12 @@ struct bt_conn_cb {
 				      struct bt_conn_remote_info *remote_info);
 #endif /* defined(CONFIG_BT_REMOTE_INFO) */
 
-#if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_CLASSIC) || defined(__DOXYGEN__)
 	/** @brief BR/EDR specific callbacks. */
 	struct bt_conn_br_cb br;
 #endif /* CONFIG_BT_CLASSIC */
 
-#if defined(CONFIG_BT_USER_PHY_UPDATE)
+#if defined(CONFIG_BT_USER_PHY_UPDATE) || defined(__DOXYGEN__)
 	/** @brief The PHY of the connection has changed.
 	 *
 	 *  This callback notifies the application that the PHY of the
@@ -2372,7 +2408,7 @@ struct bt_conn_cb {
 			       struct bt_conn_le_phy_info *param);
 #endif /* defined(CONFIG_BT_USER_PHY_UPDATE) */
 
-#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE)
+#if defined(CONFIG_BT_USER_DATA_LEN_UPDATE) || defined(__DOXYGEN__)
 	/** @brief The data length parameters of the connection has changed.
 	 *
 	 *  This callback notifies the application that the maximum Link Layer
@@ -2385,7 +2421,7 @@ struct bt_conn_cb {
 				    struct bt_conn_le_data_len_info *info);
 #endif /* defined(CONFIG_BT_USER_DATA_LEN_UPDATE) */
 
-#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX)
+#if defined(CONFIG_BT_DF_CONNECTION_CTE_RX) || defined(__DOXYGEN__)
 	/** @brief Callback for IQ samples report collected when sampling
 	 *        CTE received by data channel PDU.
 	 *
@@ -2396,7 +2432,7 @@ struct bt_conn_cb {
 			      const struct bt_df_conn_iq_samples_report *iq_report);
 #endif /* CONFIG_BT_DF_CONNECTION_CTE_RX */
 
-#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL)
+#if defined(CONFIG_BT_TRANSMIT_POWER_CONTROL) || defined(__DOXYGEN__)
 	/** @brief LE Read Remote Transmit Power Level procedure has completed or LE
 	 *  Transmit Power Reporting event.
 	 *
@@ -2412,7 +2448,7 @@ struct bt_conn_cb {
 				const struct bt_conn_le_tx_power_report *report);
 #endif /* CONFIG_BT_TRANSMIT_POWER_CONTROL */
 
-#if defined(CONFIG_BT_PATH_LOSS_MONITORING)
+#if defined(CONFIG_BT_PATH_LOSS_MONITORING) || defined(__DOXYGEN__)
 	/** @brief LE Path Loss Threshold event.
 	 *
 	 *  This callback notifies the application that there has been a path loss threshold
@@ -2426,7 +2462,7 @@ struct bt_conn_cb {
 				const struct bt_conn_le_path_loss_threshold_report *report);
 #endif /* CONFIG_BT_PATH_LOSS_MONITORING */
 
-#if defined(CONFIG_BT_SUBRATING)
+#if defined(CONFIG_BT_SUBRATING) || defined(__DOXYGEN__)
 	/** @brief LE Subrate Changed event.
 	 *
 	 *  This callback notifies the application that the subrating parameters
@@ -2466,7 +2502,7 @@ struct bt_conn_cb {
 				  const struct bt_conn_le_conn_rate_changed *params);
 #endif /* CONFIG_BT_SHORTER_CONNECTION_INTERVALS */
 
-#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+#if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET) || defined(__DOXYGEN__)
 	/** @brief Read all remote features complete event.
 	 *
 	 *  This callback notifies the application that a 'read all remote
@@ -2485,7 +2521,7 @@ struct bt_conn_cb {
 		const struct bt_conn_le_read_all_remote_feat_complete *params);
 #endif /* CONFIG_BT_LE_EXTENDED_FEAT_SET */
 
-#if defined(CONFIG_BT_FRAME_SPACE_UPDATE)
+#if defined(CONFIG_BT_FRAME_SPACE_UPDATE) || defined(__DOXYGEN__)
 	/** @brief Frame Space Update Complete event.
 	 *
 	 *  This callback notifies the application that the frame space of
@@ -2505,7 +2541,7 @@ struct bt_conn_cb {
 		const struct bt_conn_le_frame_space_updated *params);
 #endif /* CONFIG_BT_FRAME_SPACE_UPDATE */
 
-#if defined(CONFIG_BT_CHANNEL_SOUNDING)
+#if defined(CONFIG_BT_CHANNEL_SOUNDING) || defined(__DOXYGEN__)
 	/** @brief LE CS Read Remote Supported Capabilities Complete event.
 	 *
 	 *  This callback notifies the application that a Channel Sounding
@@ -2839,7 +2875,6 @@ struct bt_conn_oob_info {
 	};
 };
 
-#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
 /** @brief Pairing request and pairing response info structure.
  *
  *  This structure is the same for both smp_pairing_req and smp_pairing_rsp
@@ -2869,7 +2904,6 @@ struct bt_conn_pairing_feat {
 	 */
 	uint8_t resp_key_dist;
 };
-#endif /* CONFIG_BT_SMP_APP_PAIRING_ACCEPT */
 
 /**
  * Special passkey value that can be used to generate a random passkey when using the
@@ -2880,7 +2914,7 @@ struct bt_conn_pairing_feat {
 
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
-#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)
+#if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT) || defined(__DOXYGEN__)
 	/** @brief Query to proceed incoming pairing or not.
 	 *
 	 *  On any incoming pairing req/rsp this callback will be called for
@@ -2934,7 +2968,7 @@ struct bt_conn_auth_cb {
 	 */
 	void (*passkey_display)(struct bt_conn *conn, unsigned int passkey);
 
-#if defined(CONFIG_BT_PASSKEY_KEYPRESS)
+#if defined(CONFIG_BT_PASSKEY_KEYPRESS) || defined(__DOXYGEN__)
 	/** @brief Receive Passkey Keypress Notification during pairing
 	 *
 	 *  This allows the remote device to use the local device to give users
@@ -2958,7 +2992,7 @@ struct bt_conn_auth_cb {
 	 */
 	void (*passkey_display_keypress)(struct bt_conn *conn,
 					 enum bt_conn_auth_keypress type);
-#endif
+#endif /* CONFIG_BT_PASSKEY_KEYPRESS */
 
 	/** @brief Request the user to enter a passkey.
 	 *
@@ -3056,7 +3090,7 @@ struct bt_conn_auth_cb {
 	 */
 	void (*pairing_confirm)(struct bt_conn *conn);
 
-#if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_CLASSIC) || defined(__DOXYGEN__)
 	/** @brief Request the user to enter a passkey.
 	 *
 	 *  This callback will be called for a BR/EDR (Bluetooth Classic)
@@ -3076,9 +3110,9 @@ struct bt_conn_auth_cb {
 	 *  @param highsec true if 16 digit PIN is required.
 	 */
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
-#endif
+#endif /* CONFIG_BT_CLASSIC */
 
-#if defined(CONFIG_BT_APP_PASSKEY)
+#if defined(CONFIG_BT_APP_PASSKEY) || defined(__DOXYGEN__)
 	/** @brief Allow the application to provide a passkey for pairing.
 	 *
 	 *  If implemented, this callback allows the application to provide passkeys for pairing.
@@ -3134,7 +3168,7 @@ struct bt_conn_auth_info_cb {
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
 
-#if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_CLASSIC) || defined(__DOXYGEN__)
 	/** @brief Notify that bond of classic has been deleted.
 	 *
 	 *  This callback notifies the application that the bond information of classic
@@ -3365,11 +3399,12 @@ int bt_conn_br_switch_role(const struct bt_conn *conn, uint8_t role);
  */
 int bt_conn_br_set_role_switch_enable(const struct bt_conn *conn, bool enable);
 
-#if defined(CONFIG_BT_POWER_MODE_CONTROL)
 /** @brief bluetooth conn check and enter sniff mode
  *
  *  This function is used to identify which ACL link connection is to
  *  be placed in Sniff mode
+ *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
  *
  *  @param conn bt_conn conn
  *  @param min_interval Minimum sniff interval.
@@ -3382,6 +3417,8 @@ int bt_conn_br_enter_sniff_mode(struct bt_conn *conn, uint16_t min_interval,
 
 /** @brief bluetooth conn check and exit sniff mode
  *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
+ *
  *  @param conn bt_conn conn
  *
  *  @return  Zero for success, non-zero otherwise.
@@ -3393,6 +3430,8 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
  *  Configure sniff subrating parameters for a BR/EDR connection.
  *  Sniff subrating allows further power savings by reducing the
  *  number of sniff anchor points the device needs to listen on.
+ *
+ *  @kconfig_dep{CONFIG_BT_POWER_MODE_CONTROL}
  *
  *  @param conn               Connection object.
  *  @param max_latency        Maximum allowed sniff subrate latency
@@ -3410,7 +3449,6 @@ int bt_conn_br_exit_sniff_mode(struct bt_conn *conn);
 int bt_conn_br_set_sniff_subrating(struct bt_conn *conn, uint16_t max_latency,
 				   uint16_t min_remote_timeout,
 				   uint16_t min_local_timeout);
-#endif /* CONFIG_BT_POWER_MODE_CONTROL */
 
 /** @brief Read BR/EDR supervision timeout.
  *

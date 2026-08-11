@@ -17,11 +17,11 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include "uhc_common.h"
-#include "usb.h"
-#include "usb_host_config.h"
-#include "usb_host_mcux_drv_port.h"
+#include <usb.h>
+#include <usb_host_config.h>
+#include <usb_host_mcux_drv_port.h>
 #include "uhc_mcux_common.h"
-#include "usb_host_ohci.h"
+#include <usb_host_ohci.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(uhc_mcux);
@@ -230,7 +230,7 @@ static int uhc_mcux_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api mcux_uhc_api = {
+static DEVICE_API(uhc, mcux_uhc_api) = {
 	.lock = uhc_mcux_lock,
 	.unlock = uhc_mcux_unlock,
 	.init = uhc_mcux_init,

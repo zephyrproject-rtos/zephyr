@@ -12,11 +12,11 @@
 #include <zephyr/types.h>
 
 #if defined(CONFIG_SOC_PIC32CM5112SG00048)
-#include "pic32cm5112sg00048.h"
+#include <pic32cm5112sg00048.h>
 #elif defined(CONFIG_SOC_PIC32CM5112SG00064)
-#include "pic32cm5112sg00064.h"
+#include <pic32cm5112sg00064.h>
 #elif defined(CONFIG_SOC_PIC32CM5112SG00100)
-#include "pic32cm5112sg00100.h"
+#include <pic32cm5112sg00100.h>
 #else
 #error "Library does not support the specified device."
 #endif

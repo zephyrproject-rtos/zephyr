@@ -27,7 +27,7 @@
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &ram;
-		zephyr,flash = &reserved_memory;
+		zephyr,flash = &fake_flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 	};
 
@@ -106,16 +106,24 @@
 		reg = <0x80000000 DT_SIZE_M(16)>;
 	};
 
-	reserved_memory: reserved-memory@0 {
-		compatible = "soc-nv-flash";
-		reg = <0x0 DT_SIZE_M(4)>;
-		erase-block-size = <4096>;
-		write-block-size = <4>;
+	/*
+	 * The below incorrectly describes this hardware, there is no flash on this device, there
+	 * is no flash controller and it is instead all RAM. This should have been caught in review
+	 * but seemingly was missed, it is being left with fake numbers that have no relation at
+	 * all to RAM due to needing them to build a kernel image. Other boards should not copy
+	 * this approach and should describe the hardware correctly.
+	 */
+	fake_flash_controller {
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
-		partitions {
-			compatible = "fixed-partitions";
+		fake_flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(4)>;
+			ranges = <0x0 0x0 DT_SIZE_M(4)>;
+			erase-block-size = <4096>;
+			write-block-size = <4>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -125,40 +133,39 @@
 			 *
 			 * https://github.com/zephyrproject-rtos/trusted-firmware-m/blob/master/platform/ext/target/arm/mps2/an521/partition/flash_layout.h
 			 */
-			boot_partition: partition@0 {
+			boot_partition: memory@0 {
 				reg = <0x00000000 DT_SIZE_K(512)>;
-				read-only;
 			};
 
-			slot0_partition: partition@80000 {
+			slot0_partition: memory@80000 {
 				reg = <0x00080000 DT_SIZE_K(512)>;
 			};
 
-			slot0_ns_partition: partition@100000 {
+			slot0_ns_partition: memory@100000 {
 				reg = <0x00100000 DT_SIZE_K(512)>;
 			};
 
-			slot1_partition: partition@180000 {
+			slot1_partition: memory@180000 {
 				reg = <0x00180000 DT_SIZE_K(512)>;
 			};
 
-			slot1_ns_partition: partition@200000 {
+			slot1_ns_partition: memory@200000 {
 				reg = <0x00200000 DT_SIZE_K(512)>;
 			};
 
-			scratch_partition: partition@280000 {
+			scratch_partition: memory@280000 {
 				reg = <0x00280000 DT_SIZE_K(512)>;
 			};
-		};
 
-		/* This ram memory region's size is chosen to avoid conflict
-		 * with the mps2_an521_remote board's RAM region.
-		 *
-		 * Its available address space must be compatible with what
-		 * TF-M assigns to NS firmware.
-		 */
-		ram: memory@28100000 {
-			reg = <0x28100000 DT_SIZE_K(512)>;
+			/* This ram memory region's size is chosen to avoid conflict
+			 * with the mps2_an521_remote board's RAM region.
+			 *
+			 * Its available address space must be compatible with what
+			 * TF-M assigns to NS firmware.
+			 */
+			ram: memory@28100000 {
+				reg = <0x28100000 DT_SIZE_K(512)>;
+			};
 		};
 	};
 

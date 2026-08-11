@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,7 +35,7 @@
 		flc0: flash_controller@50029000 {
 			compatible = "adi,max32-flash-controller";
 			reg = <0x50029000 0x400>;
-
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "disabled";
@@ -45,6 +45,9 @@
 				reg = <0x01000000 DT_SIZE_K(1024)>;
 				write-block-size = <16>;
 				erase-block-size = <8192>;
+				ranges = <0x0 0x1000000 DT_SIZE_K(1024)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 	};

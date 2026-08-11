@@ -812,7 +812,7 @@ static void spi_stm32_cs_control(const struct device *dev, bool on __maybe_unuse
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	const struct spi_stm32_config *cfg = dev->config;
 
-	if (cfg->use_subghzspi_nss) {
+	if (cfg->is_subghzspi) {
 		if (on) {
 			LL_PWR_SelectSUBGHZSPI_NSS();
 		} else {
@@ -1324,7 +1324,7 @@ static int spi_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	LL_SPI_Disable(spi);
+	ll_disable_spi(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br]);
 
 #if defined(SPI_CFG2_IOSWP)
@@ -1508,6 +1508,12 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	if (frames <= cfg->fifo_max_transfer_size) {
+		if (LL_SPI_IsEnabled(spi)) {
+			/* CFG1 (TSIZE) is write-protected while SPE=1 on H7; disable
+			 * first to ensure the new transfer size takes effect.
+			 */
+			ll_disable_spi(spi);
+		}
 		LL_SPI_SetTransferSize(spi, (uint32_t)frames);
 	} else {
 		LOG_ERR("Buffer size exceeds maximal supported value");
@@ -1531,7 +1537,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 		while (ll_spi_is_busy(spi)) {
 			/* NOP */
 		}
-		LL_SPI_Disable(spi);
+		ll_disable_spi(spi);
 #endif /* CONFIG_SPI_STM32_INTERRUPT*/
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -1870,7 +1876,7 @@ static int transceive_dma(const struct device *dev,
 		if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX &&
 		    !spi_context_tx_on(&data->ctx) &&
 		    spi_context_rx_on(&data->ctx)) {
-			LL_SPI_Disable(spi);
+			ll_disable_spi(spi);
 			ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_RX);
 			transfer_dir = STM32_SPI_HALF_DUPLEX_RX;
 			LL_SPI_Enable(spi);
@@ -1895,7 +1901,7 @@ static int transceive_dma(const struct device *dev,
 
 	/* Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX */
 	if (!slave_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
-		LL_SPI_Disable(spi);
+		ll_disable_spi(spi);
 	}
 	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
 	LL_SPI_DisableDMAReq_TX(spi);
@@ -2065,26 +2071,21 @@ static DEVICE_API(spi, api_funcs) = {
 	.release = spi_stm32_release,
 };
 
-static bool spi_stm32_is_subghzspi(const struct device *dev)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	const struct spi_stm32_config *cfg = dev->config;
-
-	return cfg->use_subghzspi_nss;
-#else
-	ARG_UNUSED(dev);
-	return false;
-#endif /* st_stm32_spi_subghz */
-}
-
 static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 {
 	const struct spi_stm32_config *config = dev->config;
 	int err;
 
-	if (spi_stm32_is_subghzspi(dev)) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	if (config->is_subghzspi) {
+		/*
+		 * Skip call to pinctrl_apply_state() for SUBGHZSPI.
+		 * The function would error out because that node
+		 * lacks pinctrl, but this is known and expected.
+		 */
 		return 0;
 	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz) */
 
 	/* Move pins to requested state */
 	err = pinctrl_apply_state(config->pcfg, id);
@@ -2276,9 +2277,8 @@ static int spi_stm32_init(const struct device *dev)
 			DT_INST_STRING_UPPER_TOKEN(id, st_spi_data_width)),	\
 		.ioswp = DT_INST_PROP(id, ioswp),				\
 		STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
-			   (.use_subghzspi_nss =				\
-				DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
+		IF_ENABLED(DT_INST_NODE_HAS_COMPAT(id, st_stm32_spi_subghz),	\
+			   (.is_subghzspi = true,))				\
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi), (		\
 			.midi_clocks = DT_INST_PROP(id, midi_clock),		\
 			.mssi_clocks = DT_INST_PROP(id, mssi_clock),		\

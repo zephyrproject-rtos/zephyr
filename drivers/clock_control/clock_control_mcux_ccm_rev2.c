@@ -99,6 +99,13 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_Pdm);
 		return 0;
 #endif
+#if defined(CONFIG_MUX_NXP_XBAR) && defined(CONFIG_SOC_SERIES_IMXRT11XX)
+	case IMX_CCM_XBAR1_CLK:
+	case IMX_CCM_XBAR2_CLK:
+	case IMX_CCM_XBAR3_CLK:
+		CLOCK_EnableClock(kCLOCK_Xbar1 + instance);
+		return 0;
+#endif
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 #ifdef CONFIG_SOC_MIMX9352
 	case IMX_CCM_FLEXSPI_CLK:

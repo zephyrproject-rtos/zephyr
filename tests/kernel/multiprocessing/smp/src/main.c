@@ -1097,6 +1097,13 @@ static int run_concurrency(void *p1, void *p2, void *p3)
  */
 ZTEST(smp, test_inc_concurrency)
 {
+	if (LOOP_COUNT == 0) {
+		/* If LOOP_COUNT is zero, the spawned threads are not looping
+		 * at all. So skip this test.
+		 */
+		ztest_test_skip();
+	}
+
 	/* increasing global var with irq lock */
 	zassert_true(run_concurrency(INT_TO_POINTER(LOCK_IRQ), inc_global_cnt, NULL),
 			"total count %d is wrong(i)", global_cnt);

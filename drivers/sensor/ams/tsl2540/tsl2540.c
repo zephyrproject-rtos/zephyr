@@ -105,32 +105,39 @@ static int tsl2540_attr_set_gain(const struct device *dev, enum sensor_gain_tsl2
 	const struct tsl2540_config *cfg = dev->config;
 	struct tsl2540_data *data = dev->data;
 	uint8_t value = 0;
+	uint8_t value2 = 0;
 	double again = 0.0;
 
 	switch (gain) {
 	case TSL2540_SENSOR_GAIN_1_2:
 		value = TSL2540_CFG1_G1_2;
+		value2 = TSL2540_CFG2_G1_2;
 		again = TSL2540_AGAIN_S1_2;
 		break;
 	case TSL2540_SENSOR_GAIN_1:
 		value = TSL2540_CFG1_G1;
+		value2 = TSL2540_CFG2_G1;
 		again = TSL2540_AGAIN_S1;
 		break;
 	case TSL2540_SENSOR_GAIN_4:
 		value = TSL2540_CFG1_G4;
+		value2 = TSL2540_CFG2_G4;
 		again = TSL2540_AGAIN_S4;
 		break;
 	case TSL2540_SENSOR_GAIN_16:
 		value = TSL2540_CFG1_G16;
+		value2 = TSL2540_CFG2_G16;
 		again = TSL2540_AGAIN_S16;
 		break;
 	case TSL2540_SENSOR_GAIN_64:
 		value = TSL2540_CFG1_G64;
+		value2 = TSL2540_CFG2_G64;
 		again = TSL2540_AGAIN_S64;
 		break;
 	case TSL2540_SENSOR_GAIN_128:
 		value = TSL2540_CFG1_G128;
-		again = TSL2540_CFG2_G128;
+		value2 = TSL2540_CFG2_G128;
+		again = TSL2540_AGAIN_S128;
 		break;
 	}
 
@@ -138,7 +145,7 @@ static int tsl2540_attr_set_gain(const struct device *dev, enum sensor_gain_tsl2
 		return -EIO;
 	}
 
-	if (i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_REG_CFG_2, value) < 0) {
+	if (i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_REG_CFG_2, value2) < 0) {
 		return -EIO;
 	}
 

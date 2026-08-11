@@ -21,6 +21,8 @@ extern "C" {
 
 /**
  * @defgroup sys_poweroff System power off
+ * @since 3.5
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */

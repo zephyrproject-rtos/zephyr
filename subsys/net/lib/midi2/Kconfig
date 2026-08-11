@@ -18,6 +18,7 @@ config NETMIDI2_HOST
 	  Following "Network MIDI 2.0 (UDP) Transport Specification" v1.0
 
 if NETMIDI2_HOST
+
 config NETMIDI2_HOST_MAX_CLIENTS
 	int "Maximum number of clients supported by the Network MIDI2 host"
 	default 5
@@ -32,4 +33,5 @@ module-dep=NET_LOG
 module-str=Log level for network MIDI2
 module-help=Enables midi2 debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif

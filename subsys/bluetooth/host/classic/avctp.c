@@ -23,8 +23,8 @@
 #include <zephyr/bluetooth/classic/sdp.h>
 
 #include "avctp_internal.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_AVCTP_LOG_LEVEL
@@ -120,7 +120,6 @@ static void avctp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 	session = AVCTP_CHAN(chan);
 	LOG_DBG("chan %p session %p", chan, session);
-	session->br_chan.chan.conn = NULL;
 
 	net_buf_drop(&session->reassembly_buf);
 

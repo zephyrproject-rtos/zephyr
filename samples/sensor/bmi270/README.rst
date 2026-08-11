@@ -16,7 +16,7 @@ with the compatible string :dtcompatible:`bosch,bmi270`.
 References
 **********
 
- - BMI270: https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi270.html
+ - BMI270: https://www.bosch-sensortec.com/products/motion-sensors/imus/bmi270/
 
 Building and Running
 ********************

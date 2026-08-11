@@ -4,7 +4,7 @@
 set(SUPPORTED_EMU_PLATFORMS qemu)
 set(QEMU_MACH gdbsim-r5f562n8)
 
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine ${QEMU_MACH}
   )
 

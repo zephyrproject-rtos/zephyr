@@ -7,5 +7,6 @@ config PWM_MCUX_SCTIMER
 	depends on DT_HAS_NXP_SCTIMER_PWM_ENABLED
 	depends on CLOCK_CONTROL
 	select PINCTRL
+	select MUX if PWM_CAPTURE
 	help
 	  Enable sctimer based pwm driver.

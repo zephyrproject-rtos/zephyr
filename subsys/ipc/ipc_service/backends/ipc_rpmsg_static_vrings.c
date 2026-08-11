@@ -339,7 +339,7 @@ static int mbox_init(const struct device *instance)
 		char name[THREAD_MAX_NAME_LEN];
 
 		snprintk(name, sizeof(name), "mbox_wq #%d", conf->id);
-		k_thread_name_set(&data->mbox_wq.thread, name);
+		k_thread_name_set(data->mbox_wq.thread_id, name);
 	}
 
 	k_work_init(&data->mbox_work, mbox_callback_process);
@@ -858,5 +858,6 @@ static int shared_memory_prepare(void)
 	return 0;
 }
 
-SYS_INIT(shared_memory_prepare, PRE_KERNEL_1, 1);
+SYS_INIT(shared_memory_prepare, PRE_KERNEL_1,
+	 CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY);
 #endif /* CONFIG_IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET */

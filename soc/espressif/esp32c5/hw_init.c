@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hw_init.h"
+#include <hw_init.h>
 #include <stdint.h>
 #include <esp_cpu.h>
 #include <soc/rtc.h>
@@ -21,6 +21,7 @@
 #include <bootloader_flash.h>
 #include <esp_flash_internal.h>
 #include <esp_log.h>
+#include <esp_private/esp_clk_tree_common.h>
 
 #include <console_init.h>
 #include <flash_init.h>

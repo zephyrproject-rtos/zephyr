@@ -66,8 +66,8 @@
 	status = "okay";
 	firmware-lmacinitpc = <&wifi_lmac_rom>;
 	firmware-umacinitpc = <&wifi_umac_rom>;
-	firmware-lmacrompatchaddr = <&wifi_lmac_patch_partition>;
-	firmware-umacrompatchaddr = <&wifi_umac_patch_partition>;
+	firmware-lmacrompatchaddr = <&wifi_lmac_rom_entry>;
+	firmware-umacrompatchaddr = <&wifi_umac_rom_entry>;
 	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
 	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
 	ipcconfig-sparembox = <&ipc_shm_sparembox>;
@@ -133,6 +133,18 @@
 	status = "okay";
 };
 
+&lfclk {
+	status = "okay";
+};
+
+&xo {
+	status = "okay";
+};
+
+&xo24m {
+	status = "okay";
+};
+
 &spi00 {
 	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
@@ -151,6 +163,7 @@
 
 &wifi {
 	status = "okay";
+	nordic,wifi-xo-freq-offset = <0x0>;
 };
 
 &audio_auxpll {
@@ -171,7 +184,7 @@
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 
 	mx25u25645g: flash@0 {
-		compatible = "jedec,mspi-nor";
+		compatible = "jedec,nor";
 		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 25 39];
@@ -194,5 +207,29 @@
 		mspi-cpp-mode = "MSPI_CPP_MODE_0";
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+	};
+};
+
+&mspi01 {
+	status = "disabled";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+
+	is66wvs8m8f: memory@0 {
+		compatible = "is66wv";
+		reg = <0>;
+		size = <DT_SIZE_M(64)>;
+		mspi-max-frequency = <DT_FREQ_M(104)>;
+		mspi-io-mode = "MSPI_IO_MODE_QUAD";
+		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+		mspi-hardware-ce-num = <0>;
+		mspi-endian = "MSPI_BIG_ENDIAN";
+		command-length = "INSTR_1_BYTE";
+		address-length = "ADDR_3_BYTE";
+		rx-dummy = <6>;
+		tx-dummy = <0>;
+		read-command = <0xeb>;
+		write-command = <0x38>;
+		ce-break-config = <1024 4>;
+		status = "disabled";
 	};
 };

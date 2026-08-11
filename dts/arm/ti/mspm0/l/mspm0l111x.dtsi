@@ -13,5 +13,61 @@
 		sram0: memory@20000000 {
 			reg = <0x20000000 DT_SIZE_K(16)>;
 		};
+
+		trng: trng@40444000 {
+			compatible = "ti,mspm0-trng";
+			reg = <0x40444000 0x2000>;
+			interrupts = <1 0>;
+			ti,clk-div = <2>;
+			status = "disabled";
+		};
+
+		timg0: timg0@40084000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40084000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <16 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg0: counterg0 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg1: timg1@40486000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40486000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <22 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg1: counterg1 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
+
+		timg8: timg8@40090000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40090000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+			interrupts = <2 0>;
+			ti,clk-prescaler = <255>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			counterg8: counterg8 {
+				compatible = "ti,mspm0-timer-counter";
+				resolution = <16>;
+				status = "disabled";
+			};
+		};
 	};
 };

@@ -242,8 +242,6 @@ static void eth_iface_init(struct net_if *iface)
 	/* set MAC address */
 	(void)net_if_set_link_addr(iface, mac_addr, sizeof(mac_addr), NET_LINK_ETHERNET);
 
-	net_lldp_set_lldpdu(iface);
-
 	if (config->phy_dev == NULL) {
 		LOG_WRN("No PHY device");
 		return;

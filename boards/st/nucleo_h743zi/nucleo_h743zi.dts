@@ -147,12 +147,10 @@ zephyr_udc0: &usbotg_fs {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
-	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 &timers12 {
@@ -262,12 +260,18 @@ zephyr_udc0: &usbotg_fs {
 			read-only;
 		};
 
-		/* storage: 128KB for settings */
-		storage_partition: partition@20000 {
-			compatible = "zephyr,mapped-partition";
-			label = "storage";
-			reg = <0x00020000 DT_SIZE_K(128)>;
-		};
+		/* storage: 128KB for settings
+		 *
+		 * NVS needs at least 2 sectors of 32kB each max
+		 * which does not match H743x internal flash whose
+		 * sectors are all 128kB.
+		 *
+		 * storage_partition: partition@20000 {
+		 *	compatible = "zephyr,mapped-partition";
+		 *	label = "storage";
+		 *	reg = <0x00020000 DT_SIZE_K(128)>;
+		 * };
+		 */
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {

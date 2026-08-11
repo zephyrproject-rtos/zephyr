@@ -158,7 +158,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 {
 	void *buf0 = NULL;
 	void *buf1 = NULL;
-	uint16_t buf_nbr_pixels;
+	uint32_t buf_nbr_pixels;
 	uint32_t buf_size;
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	uint16_t hor_res = lv_display_get_horizontal_resolution(display);
@@ -178,6 +178,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		buf_size = 3 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_RGB_565X:
 		buf_size = 2 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_L_8:

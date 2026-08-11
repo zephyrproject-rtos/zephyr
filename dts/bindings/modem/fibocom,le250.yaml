@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Julien Vermillard <julien@clunkymachines.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Fibocom LE250 cellular modem
+
+compatible: "fibocom,le250"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    description: |
+      Active-low, open-drain connection to the LE250 PWRKEY input. The host
+      must release this signal when inactive because PWRKEY is internally
+      pulled up by the modem.

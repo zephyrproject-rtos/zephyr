@@ -1,0 +1,30 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* freqme0 is enabled and fully configured (clocks, INPUTMUX routing) at the
+ * SoC / board devicetree level; the test only supplies the fixture node.
+ * freqme0 supports both WINDOW and MEASURE, so it is listed once.
+ */
+
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		freqme {
+			monitor = <&freqme0>;
+			measure-expected-hz = <12000000>;
+			/* set_source() test: switch reference to FRO_12M (target
+			 * stays FRO_12M, ~12 MHz), then target to FRO_HF_DIV
+			 * (96 MHz: FRO_HF 96 MHz / FROHFDIV 1, per board.c).
+			 */
+			switch-reference = <NXP_FREQME_REF_FRO_12M>;
+			switch-target = <NXP_FREQME_TAR_FRO_HF_DIV>;
+			switch-target-expected-hz = <96000000>;
+		};
+	};
+};

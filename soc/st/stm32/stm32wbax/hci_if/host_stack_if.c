@@ -7,12 +7,12 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 
-#include "app_conf.h"
+#include <app_conf.h>
 #if defined(CONFIG_BT_STM32WBA)
-#include "blestack.h"
-#include "bpka.h"
+#include <blestack.h>
+#include <bpka.h>
 #endif /* CONFIG_BT_STM32WBA */
-#include "ll_intf.h"
+#include <ll_intf.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host_if);

@@ -25,7 +25,8 @@ config NET_CONNECTION_MANAGER_MONITOR_STACK_SIZE
 	int "Size of the stack allocated for the conn_mgr_monitor thread"
 	default 512
 	help
-	  Sets the stack size which will be used by the connection manager for connectivity monitoring.
+	  Sets the stack size which will be used by the connection manager for
+	  connectivity monitoring.
 
 config NET_CONNECTION_MANAGER_MONITOR_PRIORITY
 	int "Monitoring thread starting priority"

@@ -14,7 +14,7 @@
 
 	chosen {
 		zephyr,flash = &flash0;
-		zephyr,sram = &sramlp;
+		zephyr,sram = &ulp_ram;
 		zephyr,code-partition = &slot0_lpcore_partition;
 		zephyr,console = &lp_uart;
 		zephyr,shell-uart = &lp_uart;

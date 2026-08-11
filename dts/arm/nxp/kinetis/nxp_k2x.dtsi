@@ -405,6 +405,7 @@
 		crc: crc@40032000 {
 			compatible = "nxp,crc";
 			reg = <0x40032000 0x1000>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x103C, 18)>;
 			status = "disabled";
 		};
 	};

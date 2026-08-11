@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_NET_WG_H_
-#define ZEPHYR_INCLUDE_NET_WG_H_
+#ifndef ZEPHYR_INCLUDE_NET_WIREGUARD_H_
+#define ZEPHYR_INCLUDE_NET_WIREGUARD_H_
 
 /**
  * @brief Wireguard VPN service
@@ -231,4 +231,4 @@ int wireguard_get_current_time(uint64_t *seconds, uint32_t *nanoseconds);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_NET_WG_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_WIREGUARD_H_ */

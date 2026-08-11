@@ -270,7 +270,7 @@
 &flexspi1 {
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
-	status = "okay";
+	status = "disabled";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";

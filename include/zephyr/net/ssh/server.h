@@ -152,6 +152,51 @@ int ssh_server_stop(struct ssh_server *sshd);
  */
 int ssh_server_transport_close(struct ssh_server *sshd, int idx);
 
+/**
+ * @brief Register a callback function for getting the transport
+ *        associated with a client connection.
+ *
+ * The registered callback is invoked for server-side transport events.
+ * On the server role only the following event types are emitted:
+ *  - @ref SSH_TRANSPORT_EVENT_CHANNEL_OPEN when a client requests a new
+ *    channel to be opened.
+ *  - @ref SSH_TRANSPORT_EVENT_CLOSED when the transport is torn down.
+ *
+ * The callback return value is ignored; the callback acts as an observer
+ * and cannot influence the transport flow.
+ *
+ * @param conf Configuration data for the transport callback. The structure
+ *        must remain valid until it is unregistered.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_server_register_transport_callback(struct ssh_transport_conf *conf);
+
+/**
+ * @brief Unregister a callback function for getting the transport
+ *        associated with a client connection.
+ *
+ * @param conf Configuration data for the transport callback
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_server_unregister_transport_callback(struct ssh_transport_conf *conf);
+
+/**
+ * @brief Get the SSH server instance that owns a given transport.
+ *
+ * This is useful inside a registered transport callback, which is invoked
+ * globally for events from all server instances, to determine which server
+ * instance a transport belongs to. It must only be called for a transport
+ * obtained from a server transport callback.
+ *
+ * @param transport Transport to get the owning server for.
+ *
+ * @return Pointer to the owning SSH server instance, or NULL if the transport
+ *         is NULL.
+ */
+struct ssh_server *ssh_transport_get_server(struct ssh_transport *transport);
+
 #ifdef __cplusplus
 }
 #endif

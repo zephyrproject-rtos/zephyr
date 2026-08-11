@@ -15,7 +15,6 @@ properties:
     type: phandle
 
   ranges:
-    type: array
     required: true
     description: |
       As described in IEEE Std 1275-1994, but must provide at least a

@@ -30,7 +30,7 @@
  *
  * This function is invoked when a stack canary error is detected.
  *
- * @return Does not return
+ * @note This function does not return.
  */
 void _StackCheckHandler(void)
 {

@@ -78,6 +78,7 @@ config PTP_CLOCK_SAM_GMAC
 	bool "SAM GMAC PTP clock driver support"
 	default y
 	depends on PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	help
 	  Enable SAM GMAC PTP Clock support.
 

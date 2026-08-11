@@ -649,17 +649,20 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
  * @param[in] paddr Physical address to map to.
  * @param[in] attrs Page table attributes (actual hardware attributes).
  * @param[in] is_user True if mapping for user mode, false if kernel mode only.
+ *
+ * @retval true Memory mapped
+ * @retval false Mapping failed
  */
-static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, bool is_user)
+static inline bool __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, bool is_user)
 {
 	bool ret;
 
 	ret = l2_page_table_map(xtensa_kernel_ptables, vaddr, paddr, attrs, is_user);
-	__ASSERT(ret, "Cannot map virtual address (%p)", vaddr);
+	if (!ret) {
+		LOG_ERR("Cannot map virtual address (%p)", vaddr);
+	}
 
-#ifndef CONFIG_USERSPACE
-	ARG_UNUSED(ret);
-#else
+#ifdef CONFIG_USERSPACE
 	if (ret) {
 		sys_snode_t *node;
 		struct arch_mem_domain *domain;
@@ -670,8 +673,12 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
 			ret = l2_page_table_map(domain->ptables, vaddr, paddr, attrs, is_user);
-			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
-				 vaddr, domain);
+			if (!ret) {
+				LOG_ERR("Cannot map virtual address (%p) for domain %p",
+					vaddr, domain);
+
+				break;
+			}
 
 			/* We may have made a copy of L2 table containing VECBASE.
 			 * So we need to re-calculate the static TLBs so the correct ones
@@ -682,6 +689,8 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 		k_spin_unlock(&z_mem_domain_lock, key);
 	}
 #endif /* CONFIG_USERSPACE */
+
+	return ret;
 }
 
 void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
@@ -725,7 +734,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&xtensa_mmu_lock);
 
 	while (rem_size > 0) {
-		__arch_mem_map((void *)va, pa, attrs, is_user);
+		if (!__arch_mem_map((void *)va, pa, attrs, is_user)) {
+			k_panic();
+		}
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
@@ -1688,7 +1699,18 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 	return true;
 }
 
-int arch_buffer_validate(const void *addr, size_t size, int write)
+/**
+ * @brief Check if a memory region can be legally accessed.
+ *
+ * @param[in] addr Start virtual address of the memory region to be checked.
+ * @param[in] size Size of the memory region to be checked.
+ * @param[in] write True if the access needs to write to this page, false if read only.
+ * @param[in] ring Ring value for the access (RING_USER or RING_KERNEL).
+ *
+ * @retval 0 Access is legal.
+ * @retval -1 Access is not legal and will probably generate page fault.
+ */
+static int mem_buffer_validate(const void *addr, size_t size, int write, uint8_t ring)
 {
 	int ret = 0;
 	uint8_t *virt;
@@ -1702,13 +1724,23 @@ int arch_buffer_validate(const void *addr, size_t size, int write)
 
 	for (size_t offset = 0; offset < aligned_size;
 	     offset += CONFIG_MMU_PAGE_SIZE) {
-		if (!page_validate(ptables, (uint32_t)(virt + offset), RING_USER, write)) {
+		if (!page_validate(ptables, (uint32_t)(virt + offset), ring, write)) {
 			ret = -1;
 			break;
 		}
 	}
 
 	return ret;
+}
+
+int arch_buffer_validate(const void *addr, size_t size, int write)
+{
+	return mem_buffer_validate(addr, size, write, RING_USER);
+}
+
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size)
+{
+	return mem_buffer_validate(addr, size, false, RING_KERNEL) == 0;
 }
 
 void xtensa_exc_dtlb_multihit_handle(void *vaddr)

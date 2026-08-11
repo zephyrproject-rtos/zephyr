@@ -5,6 +5,7 @@ config I2S_NATIVE_SIM
 	bool "native_sim I2S file backend"
 	depends on DT_HAS_ZEPHYR_NATIVE_SIM_I2S_ENABLED
 	default y
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Enable a native_sim I2S backend which reads RX PCM samples from a host
 	  file and writes TX PCM samples to a host file.

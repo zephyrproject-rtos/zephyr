@@ -90,8 +90,6 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	switch (flags & GPIO_DIR_MASK) {
 	case GPIO_INPUT:
 		gpio_base->PDDR &= ~BIT(pin);
-		/* Enable input buffer for input pins */
-		pinconfig |= IOPCTL_INBUF_EN;
 		break;
 	case GPIO_OUTPUT:
 		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
@@ -104,6 +102,9 @@ static int gpio_mcux_iopctl_configure(const struct device *dev, gpio_pin_t pin, 
 	default:
 		return -ENOTSUP;
 	}
+
+	/* Enable digital input buffer */
+	pinconfig |= IOPCTL_INBUF_EN;
 
 	/* Select GPIO mux for this pin (func 0 is always GPIO) */
 	pinconfig |= IOPCTL_FUNC0;
@@ -153,7 +154,15 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 	}
 
 	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+#if defined(FSL_FEATURE_PORT_HAS_OPEN_DRAIN) && FSL_FEATURE_PORT_HAS_OPEN_DRAIN
+		if (flags & GPIO_LINE_OPEN_DRAIN) {
+			pcr |= PORT_PCR_ODE_MASK;
+		} else  {
+			return -ENOTSUP;
+		}
+#else
 		return -ENOTSUP;
+#endif
 	}
 
 	/* The flags contain options that require touching registers in the
@@ -175,6 +184,18 @@ static int gpio_mcux_port_configure(const struct device *dev, gpio_pin_t pin, gp
 		}
 		gpio_base->PDDR |= BIT(pin);
 		break;
+	case GPIO_DISCONNECTED:
+		gpio_base->PDDR &= ~BIT(pin);
+		/* Set the pin MUX to 0 (pin disabled / Alternative 0). This
+		 * disconnects the pin from the GPIO module and disables the
+		 * digital input buffer, so a floating pad draws no current.
+		 */
+		mask = PORT_PCR_MUX_MASK;
+#if defined(FSL_FEATURE_PORT_HAS_INPUT_BUFFER) && FSL_FEATURE_PORT_HAS_INPUT_BUFFER
+		mask |= PORT_PCR_IBE_MASK;
+#endif
+		port_base->PCR[pin] &= ~mask;
+		return 0;
 	default:
 		return -ENOTSUP;
 	}
@@ -467,6 +488,32 @@ static int gpio_mcux_port_get_direction(const struct device *dev, gpio_port_pins
 	GPIO_Type *gpio_base = config->gpio_base;
 
 	map &= config->common.port_pin_mask;
+
+#if !defined(CONFIG_PINCTRL_NXP_IOCON)
+	/*
+	 * When PORT is used, check whether GPIO is disconnected, if
+	 * 1. PORT PCR MUX is 0, and
+	 * 2. both IBE cleared (no input buffer), and
+	 * 3. PDDR cleared (no output drive)
+	 * Then the pin is disconnected, and should not be reported as input or output.
+	 */
+	PORT_Type * port_base = config->port_base;
+	gpio_port_pins_t connected = 0;
+
+	for (int i = 0; i < ARRAY_SIZE(port_base->PCR); i++) {
+		if (!(map & BIT(i))) {
+			continue;
+		}
+		if (!(((port_base->PCR[i] & PORT_PCR_MUX_MASK) == 0U) &&
+#if defined(FSL_FEATURE_PORT_HAS_INPUT_BUFFER) && FSL_FEATURE_PORT_HAS_INPUT_BUFFER
+		      ((port_base->PCR[i] & PORT_PCR_IBE_MASK) == 0U) &&
+#endif
+		      ((gpio_base->PDDR & BIT(i)) == 0U))) {
+			connected |= BIT(i);
+		}
+	}
+	map = connected;
+#endif /* !CONFIG_PINCTRL_NXP_IOCON */
 
 	if (inputs != NULL) {
 		*inputs = map & (~gpio_base->PDDR);

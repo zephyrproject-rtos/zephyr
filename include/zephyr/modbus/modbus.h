@@ -21,14 +21,20 @@
  */
 
 /**
+ * @file
+ * @brief Header file for the MODBUS transport protocol API.
+ * @ingroup modbus
+ */
+
+/**
  * @brief MODBUS transport protocol API
  * @defgroup modbus MODBUS
  * @ingroup connectivity
  * @{
  */
 
-#ifndef ZEPHYR_INCLUDE_MODBUS_H_
-#define ZEPHYR_INCLUDE_MODBUS_H_
+#ifndef ZEPHYR_INCLUDE_MODBUS_MODBUS_H_
+#define ZEPHYR_INCLUDE_MODBUS_MODBUS_H_
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/slist.h>
@@ -503,8 +509,13 @@ struct modbus_server_param {
 	uint8_t unit_id;
 };
 
+/**
+ * @brief Raw ADU callback parameter
+ */
 struct modbus_raw_cb {
+	/** Callback function used to send a raw ADU */
 	modbus_raw_cb_t raw_tx_cb;
+	/** Pointer to the user data passed to the callback function */
 	void *user_data;
 };
 
@@ -515,13 +526,16 @@ struct modbus_raw_cb {
 struct modbus_iface_param {
 	/** Mode of the interface */
 	enum modbus_mode mode;
+	/** Role specific parameter of the interface */
 	union {
+		/** Server parameter of the interface */
 		struct modbus_server_param server;
 		/** Amount of time client will wait for
 		 *  a response from the server.
 		 */
 		uint32_t rx_timeout;
 	};
+	/** Transport specific parameter of the interface */
 	union {
 		/** Serial support parameter of the interface */
 		struct modbus_serial_param serial;
@@ -637,4 +651,4 @@ int modbus_register_user_fc(const int iface, struct modbus_custom_fc *custom_fc)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_MODBUS_H_ */
+#endif /* ZEPHYR_INCLUDE_MODBUS_MODBUS_H_ */

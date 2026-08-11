@@ -27,8 +27,6 @@ properties:
       Domain ID used by this CPU/domain when locking/unlocking a SEMA42 gate.
 
   num-locks:
-    type: int
-    required: true
     description: |
       Number of available gates.
 

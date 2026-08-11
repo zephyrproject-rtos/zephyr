@@ -18,12 +18,6 @@
 
 #include <zephyr/data/json.h>
 
-struct json_obj_key_value {
-	const char *key;
-	size_t key_len;
-	struct json_token value;
-};
-
 static bool lexer_consume(struct json_lexer *lex, struct json_token *tok,
 			  enum json_tokens empty_token)
 {
@@ -1315,6 +1309,78 @@ int json_arr_separate_parse_object(struct json_obj *json, const struct json_obj_
 	}
 
 	return obj_parse(json, descr, descr_len, val);
+}
+
+int json_obj_separate_parse_init(struct json_obj *json, char *payload, size_t len)
+{
+	return obj_init(json, payload, len);
+}
+
+int json_obj_next_key_value(struct json_obj *json, struct json_obj_key_value *kv)
+{
+	int ret = obj_next(json, kv);
+
+	if (ret < 0 || kv->key == NULL) {
+		return ret;
+	}
+
+	/*
+	 * obj_next() returns a container value as its start token only. Walk the
+	 * token stream to the matching close so the caller receives the full
+	 * balanced {...} / [...] span and the walk resyncs to the next member.
+	 * Strings are single lexer tokens, so braces inside a string value do not
+	 * affect the walk.
+	 */
+	if (kv->value.type == JSON_TOK_OBJECT_START || kv->value.type == JSON_TOK_ARRAY_START) {
+		enum json_tokens type = kv->value.type;
+		char *start = kv->value.start;
+		struct json_token tok;
+		uint64_t kinds = (type == JSON_TOK_ARRAY_START) ? 1U : 0U;
+		int depth = 1;
+
+		do {
+			if (!lexer_next(&json->lex, &tok)) {
+				return -EINVAL;
+			}
+
+			switch (tok.type) {
+			case JSON_TOK_OBJECT_START:
+			case JSON_TOK_ARRAY_START:
+				if (depth >= 64) {
+					return -EINVAL;
+				}
+				if (tok.type == JSON_TOK_ARRAY_START) {
+					kinds |= ((uint64_t)1 << depth);
+				} else {
+					kinds &= ~((uint64_t)1 << depth);
+				}
+				depth++;
+				break;
+			case JSON_TOK_OBJECT_END:
+			case JSON_TOK_ARRAY_END: {
+				bool closed_array = (tok.type == JSON_TOK_ARRAY_END);
+				bool opened_array;
+
+				depth--;
+				opened_array = ((kinds >> depth) & 1U) != 0U;
+				if (closed_array != opened_array) {
+					return -EINVAL;
+				}
+				break;
+			}
+			case JSON_TOK_ERROR:
+				return -EINVAL;
+			default:
+				break;
+			}
+		} while (depth > 0);
+
+		kv->value.type = type;
+		kv->value.start = start;
+		kv->value.end = tok.end;
+	}
+
+	return ret;
 }
 
 static char escape_as(char chr)

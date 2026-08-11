@@ -6,7 +6,6 @@
 
 menuconfig WIFI_CREDENTIALS
 	bool "WIFI credentials management"
-	select EXPERIMENTAL
 	help
 	  Enable WiFi credentials management subsystem.
 

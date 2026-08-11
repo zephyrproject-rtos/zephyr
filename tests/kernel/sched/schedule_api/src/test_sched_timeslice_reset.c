@@ -31,17 +31,18 @@ K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /* Reference timestamp (in ticks) for each measurement */
 static uint64_t elapsed_slice;
 static int thread_idx;
+static struct k_thread t[NUM_THREAD];
 
 static void thread_time_slice(void *p1, void *p2, void *p3)
 {
-	uint32_t tick_delta = ticks_delta(&elapsed_slice);
+	__maybe_unused uint32_t tick_delta = ticks_delta(&elapsed_slice);
 	/*
 	 * Thread 0 picks up CPU when the main test thread voluntarily
 	 * yields halfway through its slice, so its elapsed measurement
 	 * spans the busy-wait of half a slice. The remaining threads see
 	 * the previous thread's full slice between successive wakeups.
 	 */
-	uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
+	__maybe_unused uint32_t expected = (thread_idx == 0) ? HALF_SLICE_TICKS : SLICE_TICKS;
 
 #ifdef CONFIG_DEBUG
 	TC_PRINT("thread[%d] elapsed: %u ticks, expected ~%u\n",
@@ -60,8 +61,6 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	zassert_between_inclusive(tick_delta, expected, expected + 1,
 				  "elapsed %u ticks, expected ~%u",
 				  tick_delta, expected);
-#else
-	(void)tick_delta;
 #endif /* CONFIG_COVERAGE_GCOV */
 
 	/* Keep this thread busy past one slice so the slicer fires and
@@ -70,6 +69,8 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
 	spin_for_ms(BUSY_MS);
 	k_sem_give(&sema);
 }
+
+#endif /* CONFIG_TIMESLICING */
 
 /* test cases */
 /**
@@ -80,24 +81,31 @@ static void thread_time_slice(void *p1, void *p2, void *p3)
  * priorities and few with same priorities and enable the time slice.
  * Ensure that each thread is given the time slice period to execute.
  *
+ * Skipped when CONFIG_TIMESLICING is disabled.
+ *
  * @see k_sched_time_slice_set(), k_sem_reset(), k_cycle_get_32(),
  *      k_uptime_get_32()
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_slice_reset)
 {
+#ifdef CONFIG_TIMESLICING
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
-	struct k_thread t[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 
 	thread_idx = 0;
 	/* disable timeslice */
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 
-	/* Cycle-domain length of half a slice for the busy-wait below. */
-	uint32_t half_slice_cyc = k_ticks_to_cyc_ceil32(HALF_SLICE_TICKS);
+	/* Size the busy-wait as a whole number of ticks using the driver's
+	 * real cycles per tick, floor(HW/ticks). Converting the half-slice
+	 * with the fractional ratio (k_ticks_to_cyc_ceil32()) would skew the
+	 * measured ticks where a tick isn't a whole number of cycles.
+	 */
+	uint32_t cyc_per_tick = k_ticks_to_cyc_floor32(1);
+	uint32_t half_slice_cyc = HALF_SLICE_TICKS * cyc_per_tick;
 
 	for (int j = 0; j < 2; j++) {
 		k_sem_reset(&sema);
@@ -122,7 +130,9 @@ ZTEST(threads_scheduling, test_slice_reset)
 		/* initialize reference timestamp */
 		ticks_delta(&elapsed_slice);
 
-		/* current thread (ztest native) consumed a half timeslice */
+		/* consume half a timeslice, timed on the free-running cycle
+		 * counter (independent of the tick interrupt)
+		 */
 		t32 = k_cycle_get_32();
 		while (k_cycle_get_32() - t32 < half_slice_cyc) {
 			Z_SPIN_DELAY(50);
@@ -142,11 +152,7 @@ ZTEST(threads_scheduling, test_slice_reset)
 		k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
 	}
 	k_thread_priority_set(k_current_get(), old_prio);
-}
-
-#else /* CONFIG_TIMESLICING */
-ZTEST(threads_scheduling, test_slice_reset)
-{
+#else
 	ztest_test_skip();
-}
 #endif /* CONFIG_TIMESLICING */
+}

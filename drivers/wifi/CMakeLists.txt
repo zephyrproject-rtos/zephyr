@@ -21,13 +21,16 @@ endif() # CONFIG_BUILD_ONLY_NO_BLOBS
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_WIFI_AIROC infineon)
 add_subdirectory_ifdef(CONFIG_WIFI_AMEBA ameba)
+add_subdirectory_ifdef(CONFIG_WIFI_BFLB bflb)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP32 esp32)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP_AT esp_at)
 add_subdirectory_ifdef(CONFIG_WIFI_ESP_HOSTED esp_hosted)
 add_subdirectory_ifdef(CONFIG_WIFI_ESWIFI eswifi)
+add_subdirectory_ifdef(CONFIG_WIFI_HWSIM hwsim)
 add_subdirectory_ifdef(CONFIG_WIFI_NRF70 nrf_wifi)
 add_subdirectory_ifdef(CONFIG_WIFI_NXP nxp)
 add_subdirectory_ifdef(CONFIG_WIFI_SILABS_SIWX91X siwx91x)
 add_subdirectory_ifdef(CONFIG_WIFI_SIMPLELINK simplelink)
+add_subdirectory_ifdef(CONFIG_WIFI_ST67W611M1 st67w611m1)
 add_subdirectory_ifdef(CONFIG_WIFI_WINC1500 winc1500)
 # zephyr-keep-sorted-stop

@@ -60,7 +60,7 @@ void z_arm_cpu_idle_init(void)
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_IDLE
 void arch_cpu_idle(void)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 
@@ -98,7 +98,7 @@ void arch_cpu_idle(void)
 
 	SLEEP_IF_ALLOWED(__WFI);
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle_exit();
 #endif
 	__enable_irq();
@@ -109,7 +109,7 @@ void arch_cpu_idle(void)
 #ifndef CONFIG_ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 void arch_cpu_atomic_idle(unsigned int key)
 {
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle();
 #endif
 
@@ -140,7 +140,7 @@ void arch_cpu_atomic_idle(unsigned int key)
 
 	SLEEP_IF_ALLOWED(__WFE);
 
-#if defined(CONFIG_TRACING)
+#if defined(CONFIG_SYS_IDLE_HOOKS)
 	sys_trace_idle_exit();
 #endif
 

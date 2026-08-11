@@ -265,11 +265,22 @@ static void deep_sleep_save_blocks(void)
 
 #ifdef CONFIG_I2C
 	for (size_t n = 0; n < MCHP_I2C_SMB_INSTANCES; n++) {
-		uint32_t addr = MCHP_I2C_SMB_BASE_ADDR(n) +
-				MCHP_I2C_SMB_CFG_OFS;
+		uint32_t base = MCHP_I2C_SMB_BASE_ADDR(n);
+		uint32_t addr = base + MCHP_I2C_SMB_CFG_OFS;
 		uint32_t regval = sys_read32(addr);
 
 		ds_ctx.smb_info[n] = regval;
+
+		/* If the power-aware i2c driver armed START-bit wake on this
+		 * controller (wake-enable register, START bit), it MUST stay
+		 * enabled so it can sample SCL/SDA and wake the EC on a START
+		 * from an external master. Do not disable it here.
+		 */
+		if (sys_read8(base + MCHP_I2C_SMB_WAKE_EN_OFS) &
+		    MCHP_I2C_SMB_WAKE_EN) {
+			continue;
+		}
+
 		sys_write32(regval & ~(MCHP_I2C_SMB_CFG_ENAB), addr);
 	}
 #endif

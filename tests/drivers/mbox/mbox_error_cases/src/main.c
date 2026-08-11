@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/mbox.h>
 
-int dummy_value;
+int dummy_value[] = {1, 2, 3, 4};
 
 static void dummy_callback(const struct device *dev, mbox_channel_id_t channel_id,
 		     void *user_data, struct mbox_msg *data)
@@ -130,6 +130,8 @@ ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
 	int ret;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+
 	ret = mbox_send_dt(&rx_channel, NULL);
 	zassert_true(
 		(ret == -ENOSYS),
@@ -140,26 +142,28 @@ ZTEST(mbox_error_cases, test_02b_mbox_send_on_rx_channel)
 }
 
 /**
- * @brief mbox_send_dt() with nonzero data field
+ * @brief mbox_send_dt() with too large data
  *
  * Confirm that mbox_send_dt() returns
- * -EMSGSIZE when driver does NOT support DATA transfer.
+ * -EMSGSIZE If the supplied data size is unsupported by the driver.
  *
  */
-ZTEST(mbox_error_cases, test_02c_mbox_send_message_with_data)
+ZTEST(mbox_error_cases, test_02c_mbox_send_message_data_too_large)
 {
 	const struct mbox_dt_spec tx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	struct mbox_msg data_msg = {0};
 	int ret;
 
-	if (CONFIG_TEST_EXPECTED_MTU_VALUE > 0) {
-		/* Skip this test because data transfer is supported. */
+	ret = mbox_mtu_get_dt(&tx_channel);
+
+	if (ret == 0) {
+		/* Skip this test because driver supports signalling mode only. */
 		ztest_test_skip();
 	}
 
-	data_msg.data = &dummy_value;
-	data_msg.size = 4;
+	data_msg.data = dummy_value;
+	data_msg.size = ret + 1;
 
 	ret = mbox_send_dt(&tx_channel, &data_msg);
 	zassert_true(
@@ -215,6 +219,8 @@ ZTEST(mbox_error_cases, test_03a_mbox_register_callback_on_remote_channel)
 	const struct mbox_dt_spec tx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
 
 	ret = mbox_register_callback_dt(&tx_channel, dummy_callback, NULL);
 	zassert_true(
@@ -291,6 +297,8 @@ ZTEST(mbox_error_cases, test_04a_mbox_mtu_get_on_rx_channel)
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), local_valid);
 	int ret;
 
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
+
 	ret = mbox_mtu_get_dt(&rx_channel);
 	zassert_true(
 		(ret == -ENOSYS),
@@ -347,6 +355,8 @@ ZTEST(mbox_error_cases, test_05a_mbox_set_enabled_on_tx_channel)
 	const struct mbox_dt_spec tx_channel =
 		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), remote_valid);
 	int ret;
+
+	Z_TEST_SKIP_IFDEF(CONFIG_TEST_CHANNEL_IS_BIDIRECTIONAL);
 
 	ret = mbox_set_enabled_dt(&tx_channel, true);
 	zassert_true(

@@ -9,6 +9,10 @@ zephyr_sources_ifdef(CONFIG_PM
   power.c
   )
 
+zephyr_sources_ifdef(CONFIG_PM_S2RAM
+  soc_pm_s2ram.c
+  )
+
 zephyr_sources_ifdef(CONFIG_POWEROFF poweroff.c)
 if(CONFIG_BT_STM32WBA OR CONFIG_IEEE802154_STM32WBA)
   zephyr_include_directories(hci_if)

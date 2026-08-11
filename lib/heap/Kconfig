@@ -164,6 +164,148 @@ config SYS_HEAP_CANARIES_RANDOM
 	  Without this, canaries are still effective at detecting
 	  accidental corruption but are predictable.
 
+config SYS_HEAP_SANITIZER_HOOKS
+	bool
+	help
+	  Hidden symbol selected by any sys_heap sanitizer backend. When set,
+	  heap.c emits the generic poison/unpoison hook calls
+	  (heap_sanitizer_on_init / _alloc / _free) at the public-API boundary. The
+	  active backend implements those three entry points. Keeping the call
+	  sites gated on this single symbol means heap.c carries no
+	  backend-specific conditionals.
+
+config SYS_HEAP_SANITIZER_ASAN
+	bool "Full Address Sanitizer (ASAN) heap poisoning (native_sim)"
+	depends on ASAN && ARCH_POSIX
+	depends on SYS_HEAP_BIG_ONLY || (64BIT && !SYS_HEAP_SMALL_ONLY)
+	select SYS_HEAP_SANITIZER_HOOKS
+	help
+	  Enables integration with the toolchain's Address Sanitizer (ASAN)
+	  runtime to implement memory poisoning for the sys_heap allocator.
+
+	  The whole heap buffer is poisoned at initialization; an allocation
+	  unpoisons the user region it returns and a free re-poisons it. This
+	  lets ASAN report accesses to freed, never-allocated and out-of-bounds
+	  heap memory with a full backtrace and shadow dump.
+
+	  When enabled, the following classes of memory error are detected:
+	  - Use-after-free: accessing memory after it has been freed
+	  - Unallocated access: accessing memory that was never allocated
+	  - Buffer overruns: writing beyond the requested allocation size
+
+	  This feature is only available on native simulator based platforms
+	  where ASAN is supported. It works with any toolchain that provides
+	  the ASAN runtime and the manual poisoning API, e.g. GCC (libasan) or
+	  Clang/LLVM (compiler-rt).
+
+	  The big-heap chunk format is required so the user pointer and the end
+	  of the usable region are 8-byte aligned, matching ASAN's shadow
+	  granularity. On 64-bit this is implied; on 32-bit SYS_HEAP_BIG_ONLY
+	  must be chosen explicitly, which means the small-heap chunk format is
+	  not exercised under this configuration.
+
+	  Use for debugging and validation only.
+
+config SYS_HEAP_KASAN
+	bool "Lightweight heap write sanitizer"
+	depends on !ASAN
+	select SYS_HEAP_SANITIZER_HOOKS
+	help
+	  Lightweight write sanitizer for sys_heap.  Uses
+	  -fsanitize=kernel-address compiler instrumentation combined with
+	  a per-heap shadow bitarray (one bit per granule) to detect buffer
+	  overflows, underflows, and use-after-free on write accesses.
+
+	  Ships its own lightweight sanitizer runtime (__asan_store*
+	  callbacks); does not depend on an external ASAN library and
+	  supports debugging on real embedded targets.
+
+	  Currently only supported for kernel-mode heaps.
+	  Requires GCC or Clang with -fsanitize=kernel-address support.
+	  Cannot be combined with CONFIG_ASAN.
+
+	  This option does not enable system-wide instrumentation.  Source
+	  files must be explicitly opted in: use
+	  zephyr_target_enable_heap_kasan() to instrument all sources of a
+	  CMake target, or zephyr_heap_kasan_enable_directory() to instrument
+	  sources under a specific directory.
+	  Heap tracking is opt-in; each heap must be registered to enable
+	  detection.  For the common libc malloc heap and the kernel system
+	  heap, enable CONFIG_SYS_HEAP_KASAN_MALLOC and
+	  CONFIG_SYS_HEAP_KASAN_SYSTEM respectively.  Custom k_heap or
+	  sys_heap instances must be registered explicitly with
+	  K_HEAP_KASAN_ENABLE() or SYS_HEAP_KASAN_ENABLE().
+
+config SYS_HEAP_KASAN_MAX_HEAPS
+	int "Maximum number of KASAN-tracked heaps"
+	depends on SYS_HEAP_KASAN
+	default 8
+	help
+	  Maximum number of heaps on which heap KASAN can be enabled
+	  simultaneously.
+
+choice SYS_HEAP_KASAN_GRANULE_CHOICE
+	prompt "Shadow granule size"
+	depends on SYS_HEAP_KASAN
+	default SYS_HEAP_KASAN_GRANULE_4
+	help
+	  Bytes of heap memory represented by one shadow bit.  Smaller values
+	  improve precision at proportionally higher shadow memory cost.
+
+config SYS_HEAP_KASAN_GRANULE_1
+	bool "1 byte (1:8 shadow ratio)"
+	help
+	  Byte-precise detection.  Shadow size = heap_size / 8.
+
+config SYS_HEAP_KASAN_GRANULE_4
+	bool "4 bytes (1:32 shadow ratio)"
+	help
+	  One shadow bit per 4-byte granule.  Sub-granule tail overwrites
+	  (e.g., alloc(1) then write p[1]-p[3]) go undetected; they remain
+	  within the granule and do not reach sys_heap metadata or adjacent
+	  chunks.
+	  Shadow size = heap_size / 32.
+
+config SYS_HEAP_KASAN_GRANULE_8
+	bool "8 bytes (1:64 shadow ratio)"
+	help
+	  One shadow bit per 8-byte granule.  Sub-granule tail overwrites
+	  are not detected.  Only reliable when all allocations are
+	  8-byte aligned.  Shadow size = heap_size / 64.
+
+endchoice
+
+config SYS_HEAP_KASAN_GRANULE
+	int
+	depends on SYS_HEAP_KASAN
+	default 1 if SYS_HEAP_KASAN_GRANULE_1
+	default 4 if SYS_HEAP_KASAN_GRANULE_4
+	default 8 if SYS_HEAP_KASAN_GRANULE_8
+
+config SYS_HEAP_KASAN_EXTENSIONS
+	bool "Interceptors for POSIX/GNU string extensions"
+	depends on SYS_HEAP_KASAN
+	default y if PICOLIBC || NEWLIB_LIBC || NATIVE_LIBC || POSIX_API
+	help
+	  Add KASAN write-checking wrappers for POSIX and GNU extension
+	  functions. Requires the C library to declare them.
+
+config SYS_HEAP_KASAN_MALLOC
+	bool "Track libc malloc heap with KASAN"
+	depends on SYS_HEAP_KASAN && COMMON_LIBC_MALLOC && COMMON_LIBC_MALLOC_ARENA_SIZE > 0
+	depends on !NATIVE_LIBC
+	help
+	  Enable heap KASAN on the common libc malloc heap.  The shadow
+	  buffer is statically sized from CONFIG_COMMON_LIBC_MALLOC_ARENA_SIZE
+	  at build time.
+
+config SYS_HEAP_KASAN_SYSTEM
+	bool "Track system heap with KASAN"
+	depends on SYS_HEAP_KASAN && KERNEL_MEM_POOL
+	help
+	  Enable heap KASAN on the kernel system heap (used by
+	  k_malloc / k_free).
+
 module = SYS_HEAP
 module-str = sys_heap
 source "subsys/logging/Kconfig.template.log_config"

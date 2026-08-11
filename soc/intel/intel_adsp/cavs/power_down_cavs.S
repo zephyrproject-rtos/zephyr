@@ -4,7 +4,7 @@
 
 #include "asm_ldo_management.h"
 #include "asm_memory_management.h"
-#include "adsp_memory.h"
+#include <adsp_memory.h>
 
 #define IPC_HOST_BASE		0x00071E00
 #define IPC_DIPCIDD		0x18

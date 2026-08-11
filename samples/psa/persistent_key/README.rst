@@ -24,7 +24,7 @@ Building
 
 This sample is located in :zephyr_file:`samples/psa/persistent_key`.
 
-Different configurations are defined in the :file:`sample.yaml` file.
+Different configurations are defined in the :file:`tests.yaml` file.
 You can use them to build the sample, depending on the PSA ITS provider, as follows:
 
 .. tabs::

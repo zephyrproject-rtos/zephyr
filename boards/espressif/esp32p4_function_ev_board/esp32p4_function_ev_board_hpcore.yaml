@@ -5,11 +5,15 @@ type: mcu
 arch: riscv
 toolchain:
   - zephyr
+testing:
+  ignore_tags:
+    - heap
 supported:
   - counter
   - entropy
   - gpio
   - hwinfo
+  - netif:eth
   - sdhc
   - spi
   - uart

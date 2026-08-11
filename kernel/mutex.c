@@ -5,7 +5,8 @@
  */
 
 /**
- * @file @brief mutex kernel services
+ * @file
+ * @brief mutex kernel services
  *
  * This module contains routines for handling mutex locking and unlocking.
  *
@@ -46,7 +47,7 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
  * "part of" a single k_mutex.  Should move those bits of the API
  * under the scheduler lock so we can break this up.
  */
-static struct k_spinlock lock;
+static struct k_spinlock mutex_lock;
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
 static struct k_obj_type obj_type_mutex;
@@ -116,7 +117,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&mutex_lock);
 
 	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
 
@@ -138,7 +139,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 			_current, mutex, mutex->lock_count);
 #endif
 
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&mutex_lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, 0);
 
@@ -146,7 +147,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	}
 
 	if (unlikely(K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&mutex_lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EBUSY);
 
@@ -166,7 +167,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	}
 #endif
 
-	int got_mutex = z_pend_curr(&lock, key, &mutex->wait_q, timeout);
+	int got_mutex = z_pend_curr(&mutex_lock, key, &mutex->wait_q, timeout);
 
 	LOG_DBG("on mutex %p got_mutex value: %d", mutex, got_mutex);
 
@@ -183,7 +184,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 
 	LOG_DBG("%p timeout on mutex %p", _current, mutex);
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&mutex_lock);
 
 	/*
 	 * Check if mutex was unlocked after this thread was unpended.
@@ -202,9 +203,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	}
 
 	if (resched) {
-		z_reschedule(&lock, key);
+		z_reschedule(&mutex_lock, key);
 	} else {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&mutex_lock, key);
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_mutex, lock, mutex, timeout, -EAGAIN);
@@ -268,7 +269,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 		goto k_mutex_unlock_return;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&mutex_lock);
 
 #if (CONFIG_PRIORITY_CEILING < K_LOWEST_THREAD_PRIO)
 	adjust_owner_prio(mutex, mutex->owner_orig_prio);
@@ -302,9 +303,9 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	}
 
 	if (unlikely(new_owner != NULL)) {
-		z_reschedule(&lock, key);
+		z_reschedule(&mutex_lock, key);
 	} else {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&mutex_lock, key);
 	}
 
 
@@ -324,22 +325,5 @@ static inline int z_vrfy_k_mutex_unlock(struct k_mutex *mutex)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_MUTEX
-static int init_mutex_obj_core_list(void)
-{
-	/* Initialize mutex object type */
-
-	z_obj_type_init(&obj_type_mutex, K_OBJ_TYPE_MUTEX_ID,
-			offsetof(struct k_mutex, obj_core));
-
-	/* Initialize and link statically defined mutexes */
-
-	STRUCT_SECTION_FOREACH(k_mutex, mutex) {
-		k_obj_core_init_and_link(K_OBJ_CORE(mutex), &obj_type_mutex);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_mutex_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_mutex, k_mutex, K_OBJ_TYPE_MUTEX_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_MUTEX */

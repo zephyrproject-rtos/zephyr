@@ -2,6 +2,7 @@
 
 zephyr_library()
 
+zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
 zephyr_library_sources(
   thread.c
   thread_entry_wrapper.S
@@ -34,5 +35,7 @@ add_subdirectory_ifdef(CONFIG_ARC_CORE_MPU mpu)
 add_subdirectory_ifdef(CONFIG_ARC_SECURE_FIRMWARE secureshield)
 
 zephyr_linker_sources(ROM_START SORT_KEY 0x0vectors vector_table.ld)
+
+zephyr_library_sources(instr_mem.c)
 
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)

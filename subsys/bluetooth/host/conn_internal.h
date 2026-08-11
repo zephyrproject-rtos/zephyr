@@ -22,7 +22,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 typedef enum __packed {
@@ -526,6 +526,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 void bt_conn_notify_remote_info(struct bt_conn *conn);
 
 void bt_conn_notify_le_param_updated(struct bt_conn *conn);
+
+void bt_conn_notify_le_param_rejected(struct bt_conn *conn, uint8_t hci_err);
 
 void bt_conn_notify_le_data_len_updated(struct bt_conn *conn);
 

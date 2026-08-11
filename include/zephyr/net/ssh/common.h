@@ -20,6 +20,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/slist.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -138,7 +139,7 @@ typedef int (*ssh_channel_event_callback_t)(struct ssh_channel *channel,
 /** Types of events emitted for an SSH transport. */
 enum ssh_transport_event_type {
 	/** Transport has been closed. */
-	SSH_TRANSPORT_EVENT_CLOSED,
+	SSH_TRANSPORT_EVENT_CLOSED,			/* Server and client */
 	/** Requested SSH service was accepted by the peer. */
 	SSH_TRANSPORT_EVENT_SERVICE_ACCEPTED,		/* Client only */
 	/** Authentication attempt result. */
@@ -186,6 +187,20 @@ struct ssh_transport_event {
 typedef int (*ssh_transport_event_callback_t)(struct ssh_transport *transport,
 					      const struct ssh_transport_event *event,
 					      void *user_data);
+
+/** SSH transport callback configuration */
+struct ssh_transport_conf {
+	/** List node */
+	sys_snode_t node;
+
+	/** Callback function to be called by the server to retrieve
+	 * the transport for a client connection.
+	 */
+	ssh_transport_event_callback_t cb;
+
+	/** User data to be passed to the callback function */
+	void *user_data;
+};
 
 /** Extended data type for standard error channel data. */
 #define SSH_EXTENDED_DATA_STDERR 1
@@ -309,6 +324,19 @@ int ssh_channel_read_stderr(struct ssh_channel *channel, void *data, uint32_t le
 int ssh_channel_write_stderr(struct ssh_channel *channel, const void *data, uint32_t len);
 
 /**
+ * @brief Close an SSH channel.
+ *
+ * Send a channel close message to the peer and release the channel. On success,
+ * the channel handle must no longer be used. The associated channel callback
+ * (if any) receives a @ref SSH_CHANNEL_EVENT_CLOSED event.
+ *
+ * @param channel Pointer to the SSH channel.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int ssh_channel_close(struct ssh_channel *channel);
+
+/**
  * @typedef ssh_service_client_cb_t
  * @brief Callback used while iterating over SSH client connections
  *
@@ -347,6 +375,28 @@ typedef void (*ssh_service_server_cb_t)(struct ssh_server *sshd,
  * @param user_data User specified data
  */
 void ssh_server_foreach(ssh_service_server_cb_t cb, void *user_data);
+
+/**
+ * @brief Call user configured callbacks for a given transport.
+ *
+ * @details This function is used to call user configured callbacks for a given
+ *          transport. It is used by the SSH transport to notify the user of
+ *          events such as authentication results, channel open requests, and
+ *          channel data. The function will traverse the list of configured
+ *          callbacks and call each one with the provided transport and event
+ *          information. Note that the callbacks must not call the transport
+ *          register or unregister API as that could lead to a deadlock.
+ *
+ * @param is_server If set to true, then traverse configured server callbacks.
+ *        If set to false, then traverse configured client callbacks.
+ * @param transport Transport to pass to user specified callback.
+ * @param event Event information to pass to user callback.
+ *
+ * @return 0 on success, or -EINVAL if the transport role does not match the
+ *         dispatch role (server vs client).
+ */
+int ssh_transport_traverse_callbacks(bool is_server, struct ssh_transport *transport,
+				     const struct ssh_transport_event *event);
 
 
 #ifdef __cplusplus

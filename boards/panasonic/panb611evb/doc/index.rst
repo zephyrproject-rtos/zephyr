@@ -40,7 +40,7 @@ be built, flashed, and debugged in the usual way. See
 building and running.
 
 .. target-notes::
-.. _product website: https://industry.panasonic.eu/products/devices/wireless-connectivity/bluetooth-low-energy-modules
+.. _product website: https://pideu.panasonic.de/development-hub/panb611/
 .. _Panasonic Wireless Connectivity Development Hub: https://pideu.panasonic.de/development-hub/
 .. _panb611evb user guide: https://pideu.panasonic.de/development-hub/panb611/evaluation_board/user_guide/
 .. _download section PANB611: https://pideu.panasonic.de/development-hub/panb611/downloads/

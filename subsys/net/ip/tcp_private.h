@@ -292,6 +292,9 @@ struct tcp { /* TCP connection */
 	struct k_work_delayable timewait_timer;
 	struct k_work_delayable persist_timer;
 	struct k_work_delayable ack_timer;
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	struct k_work_delayable linger_timer;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
 #if defined(CONFIG_NET_TCP_KEEPALIVE)
 	struct k_work_delayable keepalive_timer;
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
@@ -329,6 +332,7 @@ struct tcp { /* TCP connection */
 	uint16_t recv_win_sent;
 	uint16_t recv_win_max;
 	uint16_t recv_win;
+	uint16_t recv_since_ack;
 	uint16_t send_win_max;
 	uint16_t send_win;
 #ifdef CONFIG_NET_TCP_RANDOMIZED_RTO

@@ -6,7 +6,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
-#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -17,21 +16,18 @@
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/phy.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
 #include "eth.h"
 
 LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
+#include "dwc_mac/eth_stm32_dwc.h"
+
 #define DT_DRV_COMPAT st_stm32_ethernet
 
 #define ETH_STM32_HAL_MTU NET_ETH_MTU
 #define ETH_STM32_HAL_FRAME_SIZE_MAX (ETH_STM32_HAL_MTU + 18)
-
-#define ST_OUI_B0 0x00
-#define ST_OUI_B1 0x80
-#define ST_OUI_B2 0xE1
 
 #define ETH_STM32_RX_BUF_SIZE HAL_ETH_MAX_PACKET_SIZE_BYTE /* full-frame RX DMA buffer */
 #define ETH_STM32_TX_BUF_SIZE HAL_ETH_MAX_PACKET_SIZE_BYTE /* full-frame TX DMA buffer */
@@ -48,6 +44,9 @@ LOG_MODULE_REGISTER(eth_stm32_hal, CONFIG_ETHERNET_LOG_LEVEL);
 
 NET_BUF_POOL_DEFINE(rx_net_buf_pool, CONFIG_ETH_STM32_HAL_RX_BUF_POOL_COUNT, ETH_STM32_RX_BUF_SIZE,
 		    0, NULL);
+
+/* Make memcpy() for MAC address array safe between the HAL structure and the Zephyr one */
+BUILD_ASSERT(sizeof(((hal_eth_config_t *)NULL)->mac_addr) == NET_ETH_ADDR_LEN);
 
 static struct net_buf *rx_net_buf[CONFIG_ETH_STM32_HAL_RX_DMA_BUF_COUNT];
 
@@ -132,7 +131,7 @@ hal_status_t rx_channel_callback(hal_eth_handle_t *h_eth, uint32_t channel, void
 	if (!frag || size == 0U || size > frag->size) {
 		LOG_ERR("RX: Invalid frag or size");
 		if (frag) {
-			net_buf_unref(frag);
+			net_pkt_frag_unref(frag);
 		}
 		return HAL_ERROR;
 	}
@@ -142,7 +141,7 @@ hal_status_t rx_channel_callback(hal_eth_handle_t *h_eth, uint32_t channel, void
 
 	if (!pkt) {
 		LOG_ERR("RX: net_pkt_rx_alloc failed");
-		net_buf_unref(frag);
+		net_pkt_frag_unref(frag);
 		return HAL_ERROR;
 	}
 
@@ -331,8 +330,6 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
-
-	net_lldp_set_lldpdu(iface);
 
 	if (device_is_ready(eth_stm32_phy_dev)) {
 		phy_link_callback_set(eth_stm32_phy_dev, phy_link_state_changed, (void *)dev);
@@ -536,33 +533,11 @@ static int eth_initialize(const struct device *dev)
 
 	HAL_ETH_GetConfig(heth, &config_eth);
 
-	ret = net_eth_mac_load(&cfg->mac_config, dev_data->mac_addr);
-	if (ret == -ENODATA) {
-		uint8_t unique_device_ID_12_bytes[12];
-		uint32_t result_mac_32_bits;
-
-		/**
-		 * Set MAC address locally administered bit (LAA) as this is not assigned by the
-		 * manufacturer
-		 */
-		dev_data->mac_addr[0] = ST_OUI_B0 | 0x02;
-		dev_data->mac_addr[1] = ST_OUI_B1;
-		dev_data->mac_addr[2] = ST_OUI_B2;
-
-		/* Nothing defined by the user, use device id */
-		hwinfo_get_device_id(unique_device_ID_12_bytes, 12);
-		result_mac_32_bits = crc32_ieee((uint8_t *)unique_device_ID_12_bytes, 12);
-		memcpy(&dev_data->mac_addr[3], &result_mac_32_bits, 3);
-
-		ret = 0;
-	}
-
+	ret = eth_stm32_net_eth_mac_load(&cfg->mac_config, dev_data->mac_addr);
 	if (ret < 0) {
-		LOG_ERR("Failed to load MAC address (%d)", ret);
 		return ret;
 	}
 
-	BUILD_ASSERT(sizeof(config_eth.mac_addr) == sizeof(dev_data->mac_addr));
 	memcpy(config_eth.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 	config_eth.media_interface = HAL_ETH_MEDIA_IF_RMII;
@@ -607,7 +582,6 @@ static int eth_stm32_hal_set_config(const struct device *dev,
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
 		HAL_ETH_GetConfig(heth, &eth_cfg);
-		BUILD_ASSERT(sizeof(eth_cfg.mac_addr) == sizeof(dev_data->mac_addr));
 		memcpy(eth_cfg.mac_addr, dev_data->mac_addr, sizeof(dev_data->mac_addr));
 
 		if (HAL_ETH_SetConfig(heth, &eth_cfg) != HAL_OK) {

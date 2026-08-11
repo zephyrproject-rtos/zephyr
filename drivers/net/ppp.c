@@ -526,6 +526,7 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		if (byte == 0x7e) {
 			/* Note that we do not save the sync flag */
 			LOG_DBG("Sync byte (0x%02x) start", byte);
+			ppp->next_escaped = false;
 			ppp_change_state(ppp, STATE_HDLC_FRAME_ADDRESS);
 #if defined(CONFIG_PPP_CLIENT_CLIENTSERVER)
 		} else {
@@ -536,38 +537,22 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		break;
 
 	case STATE_HDLC_FRAME_ADDRESS:
-		if (byte != 0xff) {
-			/* Check if we need to sync again */
-			if (byte == 0x7e) {
-				/* Just skip to the start of the pkt byte */
-				return -EAGAIN;
-			}
-
-			LOG_DBG("Invalid (0x%02x) byte, expecting Address",
-				byte);
-
-			/* If address is != 0xff, then ignore this
-			 * frame. RFC 1662 ch 3.1
-			 */
-			ppp_change_state(ppp, STATE_HDLC_FRAME_START);
-		} else {
-			LOG_DBG("Address byte (0x%02x) start", byte);
-
-			ppp_change_state(ppp, STATE_HDLC_FRAME_DATA);
-
-			/* Save the address field so that we can calculate
-			 * the FCS. The address field will not be passed
-			 * to upper stack.
-			 */
-			ret = ppp_save_byte(ppp, byte);
-			if (ret < 0) {
-				ppp_change_state(ppp, STATE_HDLC_FRAME_START);
-			}
-
-			ret = -EAGAIN;
+		/* Check if we need to sync again */
+		if (byte == 0x7e) {
+			/* Just skip to the start of the pkt byte */
+			ppp->next_escaped = false;
+			return -EAGAIN;
 		}
 
-		break;
+		LOG_DBG("Frame start byte (0x%02x)", byte);
+
+		/* The first octet is the Address field, or the Protocol field
+		 * if the peer compressed the Address and Control fields away
+		 * (RFC 1662 ch. 3.2). Handle both as frame data;
+		 * ppp_process_msg() tells them apart.
+		 */
+		ppp_change_state(ppp, STATE_HDLC_FRAME_DATA);
+		__fallthrough;
 
 	case STATE_HDLC_FRAME_DATA:
 		/* If the next frame starts, then send this one
@@ -575,6 +560,11 @@ static int ppp_input_byte(struct ppp_driver_context *ppp, uint8_t byte)
 		 */
 		if (byte == 0x7e) {
 			LOG_DBG("End of pkt (0x%02x)", byte);
+			/* An escape at the very end of a frame (0x7d 0x7e) is
+			 * an aborted frame, RFC 1662 ch. 4.2. Do not let the
+			 * pending escape leak into the next frame.
+			 */
+			ppp->next_escaped = false;
 			ppp_change_state(ppp, STATE_HDLC_FRAME_ADDRESS);
 			ret = 0;
 		} else {
@@ -679,34 +669,29 @@ static void ppp_process_msg(struct ppp_driver_context *ppp)
 					 NET_ETH_PTYPE_HDLC);
 		}
 
-		/* Remove the Address (0xff), Control (0x03) and
-		 * FCS fields (16-bit) as the PPP L2 layer does not need
-		 * those bytes.
+		/* Remove the Address (0xff), Control (0x03) and FCS fields
+		 * (16-bit) as the PPP L2 layer does not need those bytes. The
+		 * peer may have compressed the Address and Control fields away
+		 * (RFC 1662 ch. 3.2); 0xff 0x03 cannot be mistaken for a
+		 * Protocol field, whose first octet is always even.
 		 */
-		uint16_t addr_and_ctrl = net_buf_pull_be16(ppp->pkt->buffer);
+		struct net_buf *buf = ppp->pkt->buffer;
 
-		/* Currently we do not support compressed Address and Control
-		 * fields so they must always be present.
+		if (buf->len >= 2 && buf->data[0] == 0xff && buf->data[1] == 0x03) {
+			(void)net_buf_pull_be16(buf);
+		}
+
+		/* Remove FCS bytes (2) */
+		net_pkt_remove_tail(ppp->pkt, 2);
+
+		/* Make sure we now start reading from PPP header in
+		 * PPP L2 recv()
 		 */
-		if (addr_and_ctrl != (0xff << 8 | 0x03)) {
-#if defined(CONFIG_NET_STATISTICS_PPP)
-			ppp->stats.drop++;
-			ppp->stats.pkts.rx++;
-#endif
+		net_pkt_cursor_init(ppp->pkt);
+		net_pkt_set_overwrite(ppp->pkt, true);
+
+		if (net_recv_data(ppp->iface, ppp->pkt) < 0) {
 			net_pkt_unref(ppp->pkt);
-		} else {
-			/* Remove FCS bytes (2) */
-			net_pkt_remove_tail(ppp->pkt, 2);
-
-			/* Make sure we now start reading from PPP header in
-			 * PPP L2 recv()
-			 */
-			net_pkt_cursor_init(ppp->pkt);
-			net_pkt_set_overwrite(ppp->pkt, true);
-
-			if (net_recv_data(ppp->iface, ppp->pkt) < 0) {
-				net_pkt_unref(ppp->pkt);
-			}
 		}
 	}
 
@@ -987,7 +972,7 @@ static int ppp_driver_init(const struct device *dev)
 	k_work_queue_start(&ppp->cb_workq, ppp_workq,
 			   K_KERNEL_STACK_SIZEOF(ppp_workq),
 			   K_PRIO_COOP(PPP_WORKQ_PRIORITY), NULL);
-	k_thread_name_set(&ppp->cb_workq.thread, "ppp_workq");
+	k_thread_name_set(ppp->cb_workq.thread_id, "ppp_workq");
 #if defined(CONFIG_NET_PPP_ASYNC_UART)
 	k_work_init_delayable(&ppp->uart_recovery_work, uart_recovery);
 #endif

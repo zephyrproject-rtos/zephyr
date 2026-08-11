@@ -14,20 +14,20 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 #include <system_edge.h>
 
 #if defined(CONFIG_BUILD_WITH_TFM)
-#include "cy_syslib.h"
-#include "mtb_srf_pool_init.h"
+#include <cy_syslib.h>
+#include <mtb_srf_pool_init.h>
 #endif
 
 #if defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
-#include "cyabs_rtos.h"
-#include "mtb_ipc.h"
+#include <cyabs_rtos.h>
+#include <mtb_ipc.h>
 #include "mtb_ipc_config.h"
-#include "mtb_srf_ipc.h"
-#include "mtb_srf_ipc_init.h"
+#include <mtb_srf_ipc.h>
+#include <mtb_srf_ipc_init.h>
 #endif
 
 #define PSE84_CPU_FREQ_HZ DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)
@@ -107,7 +107,7 @@ static mtb_ipc_semaphore_t pse84_srf_ipc_semaphores[MTB_SRF_IPC_SEMA_COUNT];
 static mtb_ipc_mbox_receiver_t pse84_srf_ipc_receiver;
 
 /* Relay threads */
-K_MSGQ_DEFINE(pse84_srf_request_queue, sizeof(void *), MTB_SRF_POOL_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(pse84_srf_request_queue, void *, MTB_SRF_POOL_SIZE);
 K_SEM_DEFINE(pse84_srf_relay_ready_sem, 0, 2);
 K_THREAD_STACK_DEFINE(pse84_srf_receive_stack, SRF_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(pse84_srf_process_stack, SRF_THREAD_STACK_SIZE);

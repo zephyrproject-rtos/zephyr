@@ -59,9 +59,14 @@
 	status = "okay";
 };
 
+/*
+ * In its default hardware configuration, this board uses the
+ * SMPS as power supply which prevents entry in VOS0 power mode.
+ * Configure the board to run at the maximum VOS1 speed: 400 MHz.
+ */
 &pll {
 	div-m = <1>;
-	mul-n = <120>;
+	mul-n = <100>;
 	div-p = <2>;
 	div-q = <8>;
 	div-r = <2>;
@@ -89,7 +94,7 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(480)>;
+	clock-frequency = <DT_FREQ_M(400)>;
 };
 
 &lpuart1 {

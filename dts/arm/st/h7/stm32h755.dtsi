@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/h7/stm32h7_dualcore.dtsi>
 #include <st/h7/stm32h745.dtsi>
 
 / {
@@ -17,6 +16,7 @@
 			clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
 			resets = <&rctl STM32_RESET(AHB2, 4)>;
 			interrupts = <79 0>;
+			gcm-ccm-supported;
 			status = "disabled";
 		};
 

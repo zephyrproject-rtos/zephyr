@@ -16,9 +16,6 @@
 	lvgl_pointer {
 		input = <&display_touch>;
 		status = "okay";
-		swap-xy;
-		invert-x;
-		invert-y;
 	};
 };
 
@@ -31,6 +28,9 @@
 		status = "okay";
 		reg = <0x38>;
 		int-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		swap-xy;
+		invert-x;
+		invert-y;
 	};
 };
 

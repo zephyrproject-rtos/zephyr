@@ -25,6 +25,8 @@ extern "C" {
  * @brief System I/O APIs
  *
  * @defgroup sys_io_apis System I/O APIs
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup utilities
  *
  * Low-level primitives for port I/O, memory-mapped register I/O, and in-memory bit manipulation.

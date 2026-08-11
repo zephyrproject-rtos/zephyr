@@ -49,8 +49,6 @@ static struct net_sockaddr_in local_addr4;
 static int ipv6;
 #endif
 
-static struct net_mgmt_event_callback mgmt_cb;
-
 #define BUF_ALLOC_TIMEOUT K_MSEC(100)
 
 /* This value is recommended by RFC 1035 */
@@ -115,21 +113,6 @@ static void create_ipv4_dst_addr(struct net_sockaddr_in *src_addr,
 			       (uint8_t *)&src_addr->sin_addr);
 }
 #endif
-
-static void llmnr_iface_event_handler(struct net_mgmt_event_callback *cb,
-				      uint64_t mgmt_event, struct net_if *iface)
-{
-	if (mgmt_event == NET_EVENT_IF_UP) {
-#if defined(CONFIG_NET_IPV4)
-		int ret = net_ipv4_igmp_join(iface, &local_addr4.sin_addr, NULL);
-
-		if (ret < 0) {
-			NET_DBG("Cannot add IPv4 multicast address to iface %p",
-				iface);
-		}
-#endif /* defined(CONFIG_NET_IPV4) */
-	}
-}
 
 static int get_socket(net_sa_family_t family)
 {
@@ -245,7 +228,7 @@ static int create_answer(enum dns_rr_type qtype,
 	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 1 +
 					  (DNS_QTYPE_LEN + DNS_QCLASS_LEN) * 2 +
 					  DNS_TTL_LEN + DNS_RDLENGTH_LEN +
-					  addr_len + query->len)) {
+					  addr_len)) {
 		return -ENOBUFS;
 	}
 
@@ -485,9 +468,9 @@ static int dns_read(int sock,
 			dns_qtype_to_str(qtype), "IN",
 			result->data, ret);
 
-		/* If the query matches to our hostname, then send reply */
-		if (!strncasecmp(hostname, result->data, hostname_len) &&
-		    (result->len) >= hostname_len) {
+		if (!strncasecmp(hostname, result->data,
+				 MIN(hostname_len, result->len)) &&
+		    (result->len) == hostname_len) {
 			NET_DBG("%s query to our hostname %s", "LLMNR",
 				hostname);
 			ret = send_response(sock, src_addr, addrlen, result, qtype,
@@ -514,7 +497,7 @@ static int recv_data(struct net_socket_service_event *pev)
 		    (struct net_sockaddr_in6), (struct net_sockaddr_in)) addr;
 	struct net_buf *dns_data = NULL;
 	struct dns_addrinfo info = { 0 };
-	size_t addrlen = sizeof(addr);
+	net_socklen_t addrlen = sizeof(addr);
 	int ret, family = NET_AF_UNSPEC, sock_error, len;
 	net_socklen_t optlen;
 
@@ -728,11 +711,6 @@ ipv4_out:
 
 static int llmnr_responder_init(void)
 {
-	net_mgmt_init_event_callback(&mgmt_cb, llmnr_iface_event_handler,
-				     NET_EVENT_IF_UP);
-
-	net_mgmt_add_event_callback(&mgmt_cb);
-
 	return init_listener();
 }
 

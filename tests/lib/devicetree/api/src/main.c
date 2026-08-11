@@ -6,6 +6,7 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/devicetree/counter-capture.h>
 #include <zephyr/devicetree/nvmem.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -68,6 +69,9 @@
 
 #define TEST_PWM_CTLR_1 DT_NODELABEL(test_pwm1)
 #define TEST_PWM_CTLR_2 DT_NODELABEL(test_pwm2)
+
+#define TEST_COUNTER_CTLR_1 DT_NODELABEL(test_counter1)
+#define TEST_COUNTER_CTLR_2 DT_NODELABEL(test_counter2)
 
 #define TEST_CAN_CTRL_0 DT_NODELABEL(test_can0)
 #define TEST_CAN_CTRL_1 DT_NODELABEL(test_can1)
@@ -1801,6 +1805,113 @@ ZTEST(devicetree_api, test_pwms)
 
 	/* DT_INST_PWMS_FLAGS */
 	zassert_equal(DT_INST_PWMS_FLAGS(0), 3, "");
+}
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT vnd_phandle_holder
+ZTEST(devicetree_api, test_counter_captures)
+{
+	/* DT_COUNTER_CAPTURES_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_COUNTER_CAPTURES_CTLR_BY_IDX(TEST_PH, counter_captures, 0),
+				  TEST_COUNTER_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_COUNTER_CAPTURES_CTLR_BY_IDX(TEST_PH, counter_captures, 1),
+				  TEST_COUNTER_CTLR_2), "");
+
+	/* DT_COUNTER_CAPTURES_CTLR_BY_NAME */
+	zassert_true(
+		DT_SAME_NODE(DT_COUNTER_CAPTURES_CTLR_BY_NAME(TEST_PH, counter_captures, alpha),
+			     TEST_COUNTER_CTLR_1), "");
+	zassert_true(
+		DT_SAME_NODE(DT_COUNTER_CAPTURES_CTLR_BY_NAME(TEST_PH, counter_captures, beta),
+			     TEST_COUNTER_CTLR_2), "");
+
+	/* DT_COUNTER_CAPTURES_CTLR */
+	zassert_true(DT_SAME_NODE(DT_COUNTER_CAPTURES_CTLR(TEST_PH, counter_captures),
+				  TEST_COUNTER_CTLR_1), "");
+
+	/* DT_COUNTER_CAPTURES_CELL_BY_IDX */
+	zassert_equal(DT_COUNTER_CAPTURES_CELL_BY_IDX(TEST_PH, counter_captures, 1, channel),
+		      7, "");
+	zassert_equal(DT_COUNTER_CAPTURES_CELL_BY_IDX(TEST_PH, counter_captures, 1, flags), 9, "");
+
+	/* DT_COUNTER_CAPTURES_CELL_BY_NAME */
+	zassert_equal(DT_COUNTER_CAPTURES_CELL_BY_NAME(TEST_PH, counter_captures, alpha, channel),
+		      2, "");
+	zassert_equal(DT_COUNTER_CAPTURES_CELL_BY_NAME(TEST_PH, counter_captures, alpha, flags),
+		      4, "");
+
+	/* DT_COUNTER_CAPTURES_CELL */
+	zassert_equal(DT_COUNTER_CAPTURES_CELL(TEST_PH, counter_captures, channel), 2, "");
+	zassert_equal(DT_COUNTER_CAPTURES_CELL(TEST_PH, counter_captures, flags), 4, "");
+
+	/* DT_COUNTER_CAPTURES_CHANNEL_BY_IDX */
+	zassert_equal(DT_COUNTER_CAPTURES_CHANNEL_BY_IDX(TEST_PH, counter_captures, 1), 7, "");
+
+	/* DT_COUNTER_CAPTURES_CHANNEL_BY_NAME */
+	zassert_equal(DT_COUNTER_CAPTURES_CHANNEL_BY_NAME(TEST_PH, counter_captures, beta), 7, "");
+
+	/* DT_COUNTER_CAPTURES_CHANNEL */
+	zassert_equal(DT_COUNTER_CAPTURES_CHANNEL(TEST_PH, counter_captures), 2, "");
+
+	/* DT_COUNTER_CAPTURES_FLAGS_BY_IDX */
+	zassert_equal(DT_COUNTER_CAPTURES_FLAGS_BY_IDX(TEST_PH, counter_captures, 1), 9, "");
+
+	/* DT_COUNTER_CAPTURES_FLAGS_BY_NAME */
+	zassert_equal(DT_COUNTER_CAPTURES_FLAGS_BY_NAME(TEST_PH, counter_captures, beta), 9, "");
+
+	/* DT_COUNTER_CAPTURES_FLAGS */
+	zassert_equal(DT_COUNTER_CAPTURES_FLAGS(TEST_PH, counter_captures), 4, "");
+
+	/* DT_INST */
+	zassert_equal(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT), 1, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CTLR_BY_IDX */
+	zassert_true(DT_SAME_NODE(DT_INST_COUNTER_CAPTURES_CTLR_BY_IDX(0, counter_captures, 0),
+				  TEST_COUNTER_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_COUNTER_CAPTURES_CTLR_BY_IDX(0, counter_captures, 1),
+				  TEST_COUNTER_CTLR_2), "");
+
+	/* DT_INST_COUNTER_CAPTURES_CTLR_BY_NAME */
+	zassert_true(DT_SAME_NODE(DT_INST_COUNTER_CAPTURES_CTLR_BY_NAME(0, counter_captures, alpha),
+				  TEST_COUNTER_CTLR_1), "");
+	zassert_true(DT_SAME_NODE(DT_INST_COUNTER_CAPTURES_CTLR_BY_NAME(0, counter_captures, beta),
+				  TEST_COUNTER_CTLR_2), "");
+
+	/* DT_INST_COUNTER_CAPTURES_CTLR */
+	zassert_true(DT_SAME_NODE(DT_INST_COUNTER_CAPTURES_CTLR(0, counter_captures),
+				  TEST_COUNTER_CTLR_1), "");
+
+	/* DT_INST_COUNTER_CAPTURES_CELL_BY_IDX */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(0, counter_captures, 1, channel), 7, "");
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(0, counter_captures, 1, flags), 9, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CELL_BY_NAME */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL_BY_NAME(0, counter_captures, beta, channel),
+		      7, "");
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL_BY_NAME(0, counter_captures, beta, flags),
+		      9, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CELL */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL(0, counter_captures, channel), 2, "");
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CELL(0, counter_captures, flags), 4, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX(0, counter_captures, 1), 7, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CHANNEL_BY_NAME */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CHANNEL_BY_NAME(0, counter_captures, beta), 7, "");
+
+	/* DT_INST_COUNTER_CAPTURES_CHANNEL */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_CHANNEL(0, counter_captures), 2, "");
+
+	/* DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX(0, counter_captures, 1), 9, "");
+
+	/* DT_INST_COUNTER_CAPTURES_FLAGS_BY_NAME */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_FLAGS_BY_NAME(0, counter_captures, alpha), 4, "");
+
+	/* DT_INST_COUNTER_CAPTURES_FLAGS */
+	zassert_equal(DT_INST_COUNTER_CAPTURES_FLAGS(0, counter_captures), 4, "");
 }
 
 #undef DT_DRV_COMPAT

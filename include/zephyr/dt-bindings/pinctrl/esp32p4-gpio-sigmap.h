@@ -129,19 +129,19 @@
 #define ESP_I2CEXT1_SDA_OUT 71 /**< I2C1 SDA output */
 
 /* I2S0 */
-#define ESP_I2S0_O_BCK_IN  72 /**< I2S0 output BCK input */
-#define ESP_I2S0_O_BCK_OUT 72 /**< I2S0 output BCK output */
-#define ESP_I2S0_MCLK_IN   73 /**< I2S0 MCLK input */
-#define ESP_I2S0_MCLK_OUT  73 /**< I2S0 MCLK output */
-#define ESP_I2S0_O_WS_IN   74 /**< I2S0 output WS input */
-#define ESP_I2S0_O_WS_OUT  74 /**< I2S0 output WS output */
-#define ESP_I2S0_I_SD_IN   75 /**< I2S0 input SD input */
-#define ESP_I2S0_O_SD_OUT  76 /**< I2S0 output SD output */
-#define ESP_I2S0_O_SD1_OUT 77 /**< I2S0 output SD1 output */
-#define ESP_I2S0_I_BCK_IN  78 /**< I2S0 input BCK input */
-#define ESP_I2S0_I_BCK_OUT 78 /**< I2S0 input BCK output */
-#define ESP_I2S0_I_WS_IN   79 /**< I2S0 input WS input */
-#define ESP_I2S0_I_WS_OUT  79 /**< I2S0 input WS output */
+#define ESP_I2S0_O_BCK_IN  25 /**< I2S0 output BCK input */
+#define ESP_I2S0_O_BCK_OUT 25 /**< I2S0 output BCK output */
+#define ESP_I2S0_MCLK_IN   26 /**< I2S0 MCLK input */
+#define ESP_I2S0_MCLK_OUT  26 /**< I2S0 MCLK output */
+#define ESP_I2S0_O_WS_IN   27 /**< I2S0 output WS input */
+#define ESP_I2S0_O_WS_OUT  27 /**< I2S0 output WS output */
+#define ESP_I2S0_I_SD_IN   28 /**< I2S0 input SD input */
+#define ESP_I2S0_O_SD_OUT  28 /**< I2S0 output SD output */
+#define ESP_I2S0_O_SD1_OUT 43 /**< I2S0 output SD1 output */
+#define ESP_I2S0_I_BCK_IN  29 /**< I2S0 input BCK input */
+#define ESP_I2S0_I_BCK_OUT 29 /**< I2S0 input BCK output */
+#define ESP_I2S0_I_WS_IN   30 /**< I2S0 input WS input */
+#define ESP_I2S0_I_WS_OUT  30 /**< I2S0 input WS output */
 
 /* TWAI1 */
 #define ESP_TWAI1_RX 83 /**< TWAI1 RX input */
@@ -186,5 +186,23 @@
 #define ESP_EMAC_MDI_I 107 /**< EMAC MDIO data input */
 #define ESP_EMAC_MDC_O 108 /**< EMAC MDIO clock output */
 #define ESP_EMAC_MDO_O 109 /**< EMAC MDIO data output */
+
+/* PCNT */
+#define ESP_PCNT_SIG_CH0_IN0  141 /**< PCNT unit 0 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN1  142 /**< PCNT unit 1 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN2  143 /**< PCNT unit 2 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN3  144 /**< PCNT unit 3 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH1_IN0  145 /**< PCNT unit 0 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN1  146 /**< PCNT unit 1 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN2  147 /**< PCNT unit 2 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN3  148 /**< PCNT unit 3 channel 1 pulse input */
+#define ESP_PCNT_CTRL_CH0_IN0 149 /**< PCNT unit 0 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN1 150 /**< PCNT unit 1 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN2 151 /**< PCNT unit 2 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN3 152 /**< PCNT unit 3 channel 0 control input */
+#define ESP_PCNT_CTRL_CH1_IN0 153 /**< PCNT unit 0 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN1 154 /**< PCNT unit 1 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN2 155 /**< PCNT unit 2 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN3 156 /**< PCNT unit 3 channel 1 control input */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32P4_GPIO_SIGMAP_H_ */

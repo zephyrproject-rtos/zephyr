@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/drivers/mspi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/flash.h>
@@ -13,6 +14,8 @@
 
 #if defined(CONFIG_TEST_FORCE_STORAGE_PARTITION)
 #define TEST_AREA	storage_partition
+#elif defined(CONFIG_FLASH_INFINEON_RRAM)
+#define TEST_AREA storage_partition_rram
 #elif defined(CONFIG_NORDIC_QSPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, nordic_qspi_nor)
 #elif defined(SOC_SERIES_STM32N6X)
@@ -22,7 +25,9 @@
 #elif defined(CONFIG_SPI_NOR)
 #define TEST_AREA_DEV_NODE	DT_INST(0, jedec_spi_nor)
 #elif defined(CONFIG_FLASH_MSPI_NOR)
-#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_mspi_nor)
+#define TEST_AREA_DEV_NODE	DT_INST(0, jedec_nor)
+#define TEST_IS_DTR		DT_ENUM_HAS_VALUE(TEST_AREA_DEV_NODE, mspi_data_rate,              \
+						  mspi_data_rate_dual)
 #elif defined(CONFIG_FLASH_RENESAS_RA_QSPI)
 #define TEST_AREA_DEV_NODE DT_INST(0, renesas_ra_qspi_nor)
 #elif defined(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI)
@@ -165,6 +170,9 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	const uint8_t canary = erase_value;
 	uint32_t start;
 
+	/* Require even length reads and even offsets for DTR configurations */
+	const uint8_t step = (IS_ENABLED(TEST_IS_DTR) ? 2 : 1);
+
 	if (IS_ENABLED(CONFIG_FLASH_HAS_EXPLICIT_ERASE) && ebw_required) {
 		start = page_info.start_offset;
 		/* Erase a nb of pages aligned to the EXPECTED_SIZE */
@@ -184,9 +192,9 @@ ZTEST(flash_driver, test_read_unaligned_address)
 	zassert_equal(rc, 0, "Cannot write to flash");
 
 	/* read buffer length*/
-	for (off_t len = 0; len < 25; len++) {
+	for (off_t len = 0; len < 25; len += step) {
 		/* address offset */
-		for (off_t ad_o = 0; ad_o < 4; ad_o++) {
+		for (off_t ad_o = 0; ad_o < 4; ad_o += step) {
 			/* buffer offset; leave space for buffer guard */
 			for (off_t buf_o = 1; buf_o < 5; buf_o++) {
 				/* buffer overflow protection */

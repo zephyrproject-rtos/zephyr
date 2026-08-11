@@ -412,3 +412,22 @@ int ssh_server_transport_close(struct ssh_server *sshd, int idx)
 
 	return 0;
 }
+
+int ssh_server_register_transport_callback(struct ssh_transport_conf *conf)
+{
+	return ssh_transport_register_callback(conf, true);
+}
+
+int ssh_server_unregister_transport_callback(struct ssh_transport_conf *conf)
+{
+	return ssh_transport_unregister_callback(conf, true);
+}
+
+struct ssh_server *ssh_transport_get_server(struct ssh_transport *transport)
+{
+	if (transport == NULL) {
+		return NULL;
+	}
+
+	return transport->sshd;
+}

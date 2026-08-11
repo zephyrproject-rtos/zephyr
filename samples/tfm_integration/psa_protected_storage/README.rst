@@ -26,7 +26,7 @@ Secure Storage API: https://developer.arm.com/architectures/architecture-securit
 
 This sample is available for platforms that are supported in the trusted-firmware-m repo:
 https://git.trustedfirmware.org/TF-M/trusted-firmware-m.git/
-See sample.yaml for a list of supported platforms.
+See tests.yaml for a list of supported platforms.
 
 Building and Running
 ********************

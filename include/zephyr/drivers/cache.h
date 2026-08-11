@@ -18,6 +18,8 @@
 /**
  * @brief Interfaces for external cache controllers.
  * @defgroup cache_external_interface External Cache Controller
+ * @since 2.6
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -26,12 +28,12 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_DCACHE)
-
 /**
  * @brief Enable the d-cache
  *
  * Enable the data cache.
+ *
+ * @kconfig_dep{CONFIG_DCACHE}
  */
 void cache_data_enable(void);
 
@@ -39,6 +41,8 @@ void cache_data_enable(void);
  * @brief Disable the d-cache
  *
  * Disable the data cache.
+ *
+ * @kconfig_dep{CONFIG_DCACHE}
  */
 void cache_data_disable(void);
 
@@ -46,6 +50,8 @@ void cache_data_disable(void);
  * @brief Flush the d-cache
  *
  * Flush the whole data cache.
+ *
+ * @kconfig_dep{CONFIG_DCACHE}
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
@@ -57,6 +63,8 @@ int cache_data_flush_all(void);
  *
  * Invalidate the whole data cache.
  *
+ * @kconfig_dep{CONFIG_DCACHE}
+ *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
  */
@@ -67,6 +75,8 @@ int cache_data_invd_all(void);
  *
  * Flush and Invalidate the whole data cache.
  *
+ * @kconfig_dep{CONFIG_DCACHE}
+ *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
  */
@@ -76,6 +86,8 @@ int cache_data_flush_and_invd_all(void);
  * @brief Flush an address range in the d-cache
  *
  * Flush the specified address range of the data cache.
+ *
+ * @kconfig_dep{CONFIG_DCACHE}
  *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being flushed, all the portions of the
@@ -96,6 +108,8 @@ int cache_data_flush_range(void *addr, size_t size);
  * @brief Invalidate an address range in the d-cache
  *
  * Invalidate the specified address range of the data cache.
+ *
+ * @kconfig_dep{CONFIG_DCACHE}
  *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being invalidated, all the portions of the
@@ -118,6 +132,8 @@ int cache_data_invd_range(void *addr, size_t size);
  *
  * Flush and Invalidate the specified address range of the data cache.
  *
+ * @kconfig_dep{CONFIG_DCACHE}
+ *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being flushed, all the portions of the
  *       data structures sharing the same line will be flushed before being
@@ -134,7 +150,6 @@ int cache_data_invd_range(void *addr, size_t size);
  */
 int cache_data_flush_and_invd_range(void *addr, size_t size);
 
-#if defined(CONFIG_DCACHE_LINE_SIZE_DETECT)
 /**
  *
  * @brief Get the d-cache line size.
@@ -145,19 +160,17 @@ int cache_data_flush_and_invd_range(void *addr, size_t size);
  * The function must be implemented only when CONFIG_DCACHE_LINE_SIZE_DETECT is
  * defined.
  *
+ * @kconfig_dep{CONFIG_DCACHE_LINE_SIZE_DETECT}
+ *
  * @retval size Size of the d-cache line.
  * @retval 0 The d-cache is not enabled.
  */
 size_t cache_data_line_size_get(void);
 
-#endif /* CONFIG_DCACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_DCACHE */
-
-#if defined(CONFIG_ICACHE)
-
 /**
  * @brief Enable the i-cache
+ *
+ * @kconfig_dep{CONFIG_ICACHE}
  *
  * Enable the instruction cache.
  */
@@ -165,6 +178,8 @@ void cache_instr_enable(void);
 
 /**
  * @brief Disable the i-cache
+ *
+ * @kconfig_dep{CONFIG_ICACHE}
  *
  * Disable the instruction cache.
  */
@@ -174,6 +189,8 @@ void cache_instr_disable(void);
  * @brief Flush the i-cache
  *
  * Flush the whole instruction cache.
+ *
+ * @kconfig_dep{CONFIG_ICACHE}
  *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
@@ -185,6 +202,8 @@ int cache_instr_flush_all(void);
  *
  * Invalidate the whole instruction cache.
  *
+ * @kconfig_dep{CONFIG_ICACHE}
+ *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
  */
@@ -195,6 +214,8 @@ int cache_instr_invd_all(void);
  *
  * Flush and Invalidate the whole instruction cache.
  *
+ * @kconfig_dep{CONFIG_ICACHE}
+ *
  * @return 0 on success, negative errno value on failure.
  * @retval -ENOTSUP Not supported.
  */
@@ -204,6 +225,8 @@ int cache_instr_flush_and_invd_all(void);
  * @brief Flush an address range in the i-cache
  *
  * Flush the specified address range of the instruction cache.
+ *
+ * @kconfig_dep{CONFIG_ICACHE}
  *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being flushed, all the portions of the
@@ -224,6 +247,8 @@ int cache_instr_flush_range(void *addr, size_t size);
  * @brief Invalidate an address range in the i-cache
  *
  * Invalidate the specified address range of the instruction cache.
+ *
+ * @kconfig_dep{CONFIG_ICACHE}
  *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being invalidated, all the portions of the
@@ -246,6 +271,8 @@ int cache_instr_invd_range(void *addr, size_t size);
  *
  * Flush and Invalidate the specified address range of the instruction cache.
  *
+ * @kconfig_dep{CONFIG_ICACHE}
+ *
  * @note the cache operations act on cache line. When multiple data structures
  *       share the same cache line being flushed, all the portions of the
  *       data structures sharing the same line will be flushed before being
@@ -262,7 +289,6 @@ int cache_instr_invd_range(void *addr, size_t size);
  */
 int cache_instr_flush_and_invd_range(void *addr, size_t size);
 
-#ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
 /**
  *
  * @brief Get the i-cache line size.
@@ -270,17 +296,15 @@ int cache_instr_flush_and_invd_range(void *addr, size_t size);
  * The API is provided to dynamically detect the instruction cache line size at
  * run time.
  *
- * The function must be implemented only when CONFIG_ICACHE_LINE_SIZE_DETECT is
+ * The function must be implemented only when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is
  * defined.
  *
- * @retval size Size of the d-cache line.
- * @retval 0 The d-cache is not enabled.
+ * @kconfig_dep{CONFIG_ICACHE_LINE_SIZE_DETECT}
+ *
+ * @retval size Size of the i-cache line.
+ * @retval 0 The i-cache is not enabled.
  */
 size_t cache_instr_line_size_get(void);
-
-#endif /* CONFIG_ICACHE_LINE_SIZE_DETECT */
-
-#endif /* CONFIG_ICACHE */
 
 #ifdef __cplusplus
 }

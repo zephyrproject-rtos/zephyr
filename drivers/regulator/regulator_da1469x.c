@@ -449,9 +449,9 @@ static int regulator_da1469x_pm_action(const struct device *dev,
 			(DT_PROP(node, renesas_regulator_v30_clamp) *          \
 			CRG_TOP_POWER_CTRL_REG_CLAMP_3V0_VBAT_ENABLE_Msk) |    \
 			(DT_PROP(node, renesas_regulator_v30_vbus) *           \
-			DA1469X_LDO_3V0_MODE_VBAT) |                           \
-			(DT_PROP(node, renesas_regulator_v30_vbat) *           \
 			DA1469X_LDO_3V0_MODE_VBUS) |                           \
+			(DT_PROP(node, renesas_regulator_v30_vbat) *           \
+			DA1469X_LDO_3V0_MODE_VBAT) |                           \
 			(DT_PROP(node, renesas_regulator_sleep_ldo) *          \
 			(DA1469X_LDO_ ## rail_id ##_RET)) |                    \
 			(DT_PROP(node, renesas_regulator_v30_ref_bandgap) *    \

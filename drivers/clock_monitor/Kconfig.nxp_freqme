@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_MONITOR_NXP_FREQME
+	bool "NXP FREQME frequency measurement driver"
+	default y
+	depends on DT_HAS_NXP_FREQME_ENABLED
+	select MUX
+	select MUX_NXP_INPUTMUX
+	help
+	  Zephyr clock_monitor back-end for the NXP FREQME peripheral.
+	  Routes the reference and target clocks through the INPUTMUX mux
+	  subsystem and queries the reference rate from clock_control. Supports
+	  both MEASURE (one-shot) and WINDOW (continuous MIN/MAX threshold)
+	  modes, built on the FREQME frequency-measurement operate mode.

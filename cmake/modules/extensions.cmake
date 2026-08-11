@@ -19,6 +19,7 @@ include(CheckCXXCompilerFlag)
 # 1.3. generate_inc_*
 # 1.4. board_*
 # 1.5. Misc.
+# 1.6. Heap KASAN helpers
 # 2. Kconfig-aware extensions
 # 2.1 Misc
 # 3. CMake-generic extensions
@@ -2015,6 +2016,107 @@ function(zephyr_constants_library)
 endfunction()
 
 ########################################################
+# 1.6. Heap KASAN helpers
+########################################################
+#
+# Heap KASAN is opt-in: instrument the code that uses sys_heap; must not be
+# applied to heap implementation sources.
+
+# Internal: full set of -fsanitize + -D macro-redirect flags for heap KASAN.
+macro(_zephyr_heap_kasan_flags VAR)
+  set(${VAR})
+  get_property(_heap_kasan_compiler_flags TARGET compiler PROPERTY heap_kasan)
+  list(APPEND ${VAR} ${_heap_kasan_compiler_flags})
+  # real calls instead of inlined __builtin_memcpy / __builtin_memset etc.
+  list(APPEND ${VAR}
+    -U_FORTIFY_SOURCE
+    -Dmemset=__asan_memset
+    -Dmemcpy=__asan_memcpy
+    -Dmemmove=__asan_memmove
+    -Dstrcpy=__asan_strcpy
+    -Dstrncpy=__asan_strncpy
+    -Dstrcat=__asan_strcat
+    -Dstrncat=__asan_strncat
+    -Dsprintf=__asan_sprintf
+    -Dsnprintf=__asan_snprintf
+    -Dvsprintf=__asan_vsprintf
+    -Dvsnprintf=__asan_vsnprintf
+  )
+  if(CONFIG_SYS_HEAP_KASAN_EXTENSIONS)
+    # POSIX/GNU feature macros so extension prototypes are visible after -D redirect.
+    list(APPEND ${VAR}
+      -D_POSIX_C_SOURCE=200809L
+      -D_GNU_SOURCE
+      -Dstrlcpy=__asan_strlcpy
+      -Dstrlcat=__asan_strlcat
+      -Dmemccpy=__asan_memccpy
+      -Dmempcpy=__asan_mempcpy
+      -Dstpcpy=__asan_stpcpy
+      -Dstpncpy=__asan_stpncpy
+      -Dfgets=__asan_fgets
+    )
+  endif()
+endmacro()
+
+# Internal: apply heap KASAN COMPILE_OPTIONS to each source file in _srcs.
+function(_zephyr_heap_kasan_apply_to_sources _target _srcs)
+  _zephyr_heap_kasan_flags(_flags)
+  foreach(_src IN LISTS _srcs)
+    set_property(SOURCE "${_src}"
+      TARGET_DIRECTORY ${_target}
+      APPEND PROPERTY COMPILE_OPTIONS ${_flags}
+    )
+  endforeach()
+endfunction()
+
+# Instrument all sources of <target> with heap KASAN compiler flags.
+# <target>: CMake target name (e.g. 'app').
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_target_enable_heap_kasan(app)
+function(zephyr_target_enable_heap_kasan target)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+  get_property(_srcs TARGET ${target} PROPERTY SOURCES)
+  _zephyr_heap_kasan_apply_to_sources(${target} "${_srcs}")
+endfunction()
+
+# Instrument sources under <dir> with heap KASAN compiler flags.
+# <dir>: directory to match, relative to CMAKE_CURRENT_SOURCE_DIR.
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_heap_kasan_enable_directory(src)
+function(zephyr_heap_kasan_enable_directory dir)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+
+  set(_target ${ZEPHYR_CURRENT_LIBRARY})
+
+  cmake_path(ABSOLUTE_PATH dir
+    BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    NORMALIZE OUTPUT_VARIABLE _abs_dir)
+
+  set(_matching)
+  get_property(_srcs TARGET ${_target} PROPERTY SOURCES)
+  foreach(_src IN LISTS _srcs)
+    cmake_path(ABSOLUTE_PATH _src
+      BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      NORMALIZE OUTPUT_VARIABLE _abs_src)
+    cmake_path(IS_PREFIX _abs_dir "${_abs_src}" NORMALIZE _under_dir)
+    if(_under_dir)
+      list(APPEND _matching "${_src}")
+    endif()
+  endforeach()
+
+  if(NOT _matching)
+    message(WARNING "heap_kasan_enable_directory: no sources matched under '${_abs_dir}'")
+  endif()
+
+  _zephyr_heap_kasan_apply_to_sources(${_target} "${_matching}")
+endfunction()
+
+
+########################################################
 # 2. Kconfig-aware extensions
 ########################################################
 #
@@ -3111,37 +3213,19 @@ endfunction()
 # Usage:
 #   zephyr_file_copy(<oldname> <newname> [ONLY_IF_DIFFERENT])
 #
-# Zephyr file copy extension.
-# This function is similar to CMake function
-# 'file(COPY_FILE <oldname> <newname> [ONLY_IF_DIFFERENT])'
-# introduced with CMake 3.21.
-#
-# Because the minimal required CMake version with Zephyr is 3.20, this function
-# is not guaranteed to be available.
-#
-# When using CMake version 3.21 or newer 'zephyr_file_copy()' simply calls
-# 'file(COPY_FILE...)' directly.
-# When using CMake version 3.20, the implementation will execute using CMake
-# for running command line tool in a subprocess for identical functionality.
+# Deprecated: this function only existed because 'file(COPY_FILE ...)' was
+# not available with CMake 3.20; call 'file(COPY_FILE ...)' directly instead.
 function(zephyr_file_copy oldname newname)
+  message(DEPRECATION
+          "zephyr_file_copy() is deprecated, use file(COPY_FILE ...) instead."
+  )
   set(options ONLY_IF_DIFFERENT)
   cmake_parse_arguments(ZEPHYR_FILE_COPY "${options}" "" "" ${ARGN})
 
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_options ONLY_IF_DIFFERENT)
-    endif()
-    file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
-  else()
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_command copy_if_different)
-    else()
-      set(copy_file_command copy)
-    endif()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E ${copy_file_command} ${oldname} ${newname}
-    )
+  if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
+    set(copy_file_options ONLY_IF_DIFFERENT)
   endif()
+  file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
 endfunction()
 
 # Usage:
@@ -3891,7 +3975,7 @@ endfunction()
 # of the build info file.
 #
 # <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
-#           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
+#           See 'scripts/schemas/build-schema.yaml' CMake section for valid tags.
 # VALUE <value>... : value(s) to place in the build_info.yml file.
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
@@ -3919,7 +4003,7 @@ function(build_info)
 
   yaml_context(EXISTS NAME build_info result)
   if(NOT result)
-    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
+    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yaml NAME build_info_schema)
     if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
       yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
     else()
@@ -3945,14 +4029,14 @@ function(build_info)
     set(type VALUE)
   else()
     set(schema_check ${keys})
-    list(TRANSFORM schema_check PREPEND "mapping;")
-    yaml_get(check NAME build_info_schema KEY mapping cmake ${schema_check})
+    list(TRANSFORM schema_check PREPEND "properties;")
+    yaml_get(check NAME build_info_schema KEY properties cmake ${schema_check})
     if(check MATCHES ".*-NOTFOUND")
       message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) called with invalid tag: ${keys}")
     endif()
 
-    yaml_get(type NAME build_info_schema KEY mapping cmake ${schema_check} type)
-    if(type MATCHES "seq|sequence")
+    yaml_get(type NAME build_info_schema KEY properties cmake ${schema_check} type)
+    if(type MATCHES "array")
       set(type LIST)
     else()
       set(type VALUE)
@@ -4876,7 +4960,7 @@ function(zephyr_dt_import)
       COMMAND_ERROR_IS_FATAL ANY
     )
 
-    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(COPY_FILE ${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
     file(REMOVE ${gen_dts_cmake_temp})
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
@@ -6064,8 +6148,20 @@ function(add_llext_target target_name)
     # output a relocatable file. The output file suffix is changed so
     # the result looks like the object file it actually is.
     add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
-    target_link_options(${llext_lib_target} PRIVATE
-      $<TARGET_PROPERTY:linker,partial_linking>)
+    if("${LINKER}" STREQUAL "lld")
+      # lld does not group sections by type in -r mode; an explicit grouping
+      # script is required to prevent section interleaving that would cause
+      # the LLEXT loader to see overlapping file-offset regions.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>
+        -T ${ZEPHYR_BASE}/cmake/linker/llext_relocatable.ld)
+    else()
+      # GNU ld naturally groups sections by type; no grouping script is needed.
+      # Applying the script would cause xt-ld and similar linkers to assign
+      # non-zero VMAs to sections, breaking the LLEXT Xtensa relocation handler.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>)
+    endif()
     set_target_properties(${llext_lib_target} PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})

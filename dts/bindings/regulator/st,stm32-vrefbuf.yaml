@@ -8,6 +8,7 @@ compatible: "st,stm32-vrefbuf"
 include:
   - name: base.yaml
   - name: reset-device.yaml
+  - name: nvmem-consumer.yaml
   - name: regulator.yaml
     property-allowlist:
       - regulator-name
@@ -20,6 +21,22 @@ include:
 properties:
   reg:
     required: true
+
+  clocks:
+    description: Optional VREFBUF clock (present on some STM32 series).
+
+  resets:
+    description: Optional VREFBUF reset line (present on some STM32 series).
+
+  nvmem-cells:
+    description: |
+      NVMEM cells for VREFBUF trimming data
+
+      Each entry points to the NVMEM cells containing trimming data for the corresponding
+      voltage scale (in the same order as `ref-voltages`; for example, the first entry
+      (index 0) corresponds to trimming data to use when Scale 0 is selected).
+
+      If present, this property must have the same number of entries as `ref-voltages`.
 
   ref-voltages:
     type: array
@@ -49,10 +66,11 @@ properties:
       Enables the VREF+ output pin. VREF+ pin is in high-impedance state
       otherwise.
 
-  clocks:
-    type: phandle-array
-    description: Optional VREFBUF clock (present on some STM32 series).
+  st,has-active-scale-change:
+    type: boolean
+    description: |
+      If present, indicates the VREFBUF supports changing voltage scale while enabled.
 
-  resets:
-    type: phandle-array
-    description: Optional VREFBUF reset line (present on some STM32 series).
+      Refer to description of bit(s) VRS in the VREFBUF_CSR register in Reference Manual
+      to determine if this feature is supported: if not, the description will indicate
+      "The software can program this bitfield only when the VREFBUF is disabled (ENVR=0)".

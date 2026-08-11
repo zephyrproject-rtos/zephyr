@@ -35,7 +35,7 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
@@ -79,8 +79,7 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
-	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
-	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						     const char *preset_arg);
@@ -132,6 +131,7 @@ struct shell_stream {
 #if defined(CONFIG_BT_AUDIO_RX)
 		struct {
 			struct bt_iso_recv_info last_info;
+			uint16_t last_sdu_invalid_len;
 			size_t empty_sdu_pkts;
 			size_t valid_sdu_pkts;
 			size_t lost_pkts;
@@ -314,6 +314,14 @@ static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u pd %u",
 		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->pd);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
+}
+
+static inline void print_qos_pref(const struct bt_bap_qos_cfg_pref *pref)
+{
+	bt_shell_print("QoS Preference: unframed %ssupported, PHY 0x%02x RTN %u latency %u (ms), "
+		       "pd_min %u (us), pd_max %u (us), pref_pd_min %u (us), pref_pd_max %u (us)",
+		       pref->unframed_supported ? "" : "not ", pref->phy, pref->rtn, pref->latency,
+		       pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
 }
 
 struct print_ltv_info {
@@ -735,7 +743,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	bt_shell_print("%*sCodec specific configuration:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
@@ -782,7 +789,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	/* Reduce for metadata*/
 	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	bt_shell_print("%*sCodec specific metadata:", indent, "");

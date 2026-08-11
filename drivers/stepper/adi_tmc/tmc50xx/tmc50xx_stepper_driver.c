@@ -8,6 +8,7 @@
 
 #include "tmc50xx.h"
 #include <adi_tmc5xxx_common.h>
+#include "tmc50xx_reg.h"
 
 #include <zephyr/drivers/stepper/stepper.h>
 

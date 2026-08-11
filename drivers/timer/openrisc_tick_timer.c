@@ -8,11 +8,12 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <openrisc/openriscregs.h>
 
-#define MAX_CYC SPR_TTMR_TP
+#define MAX_CYC   SPR_TTMR_TP
+#define MIN_DELAY 1000
 
 static struct k_spinlock lock;
 static uint32_t last_count;
@@ -35,6 +36,39 @@ static ALWAYS_INLINE uint32_t get_count(void)
 	return openrisc_read_spr(SPR_TTCR);
 }
 
+/* Signed distance between two counts in the 28-bit compare domain: mask to
+ * the TP field width, then shift the top bit to bit 31 so the arithmetic
+ * shift sign-extends it back.
+ */
+static ALWAYS_INLINE int32_t cyc_diff(uint32_t a, uint32_t b)
+{
+	return (int32_t)(((a - b) & MAX_CYC) << 4) >> 4;
+}
+
+/* TTMR matches only TTCR[27:0] == TP: a target at or behind the count when
+ * TTMR is written is missed until the 28-bit count wraps (13.4 s at 20 MHz),
+ * so a deadline armed close to "now" (e.g. a timeout landing just before a
+ * tick boundary) must be pushed ahead of the count until it is strictly in
+ * the future. A post-write count read still behind the target proves the
+ * match is armed; the exit check must accept any strictly-future target
+ * rather than demand MIN_DELAY of remaining headroom, which the moving
+ * count could never satisfy.
+ */
+static ALWAYS_INLINE void set_compare_safe(uint32_t time)
+{
+	uint32_t next = time & MAX_CYC;
+
+	set_compare(next);
+
+	uint32_t now = get_count() & MAX_CYC;
+
+	while (cyc_diff(next, now) <= 0) {
+		next = (now + MIN_DELAY) & MAX_CYC;
+		set_compare(next);
+		now = get_count() & MAX_CYC;
+	}
+}
+
 void z_openrisc_timer_isr(void)
 {
 	if (IS_ENABLED(CONFIG_TRACING_ISR)) {
@@ -54,7 +88,7 @@ void z_openrisc_timer_isr(void)
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		clear_compare();
 	} else {
-		set_compare((last_count + cyc_per_tick) & MAX_CYC);
+		set_compare_safe(last_count + cyc_per_tick);
 	}
 
 	k_spin_unlock(&lock, key);
@@ -65,30 +99,22 @@ void z_openrisc_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 #if defined(CONFIG_TICKLESS_KERNEL)
-	if (ticks == K_TICKS_FOREVER) {
-		if (idle) {
-			return;
-		}
-
-		ticks = INT32_MAX;
-	}
-
 	/*
 	 * Clamp the max period length to a number of cycles that can fit
 	 * in half the range of a cycle_diff_t for native width divisions
 	 * to be usable elsewhere. The half range gives us extra room to cope
 	 * with the unavoidable IRQ servicing latency.
 	 */
-	ticks = CLAMP(ticks, 0, MAX_CYC / 2 / cyc_per_tick);
+	ticks = MIN(ticks, MAX_CYC / 2 / cyc_per_tick);
 
 	const uint32_t compare =
 		((last_ticks + last_elapsed + (uint32_t)ticks) * cyc_per_tick) & MAX_CYC;
 	const k_spinlock_key_t key = k_spin_lock(&lock);
 
-	set_compare(compare);
+	set_compare_safe(compare);
 	k_spin_unlock(&lock, key);
 
 #else  /* CONFIG_TICKLESS_KERNEL */
@@ -128,7 +154,7 @@ static int sys_clock_driver_init(void)
 	last_count = last_ticks * cyc_per_tick;
 	last_elapsed = 0;
 
-	set_compare((last_count + cyc_per_tick) & MAX_CYC);
+	set_compare_safe(last_count + cyc_per_tick);
 
 	return 0;
 }

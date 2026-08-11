@@ -6,10 +6,10 @@
 
 /* This file implements the Infineon AN304 SPI Guide for F-RAM */
 
-#include "zephyr/devicetree.h"
-#include "zephyr/kernel.h"
-#include "zephyr/sys/byteorder.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/eeprom.h>
 #include <zephyr/drivers/spi.h>

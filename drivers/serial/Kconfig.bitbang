@@ -9,6 +9,7 @@ config UART_BITBANG
 	select SERIAL_SUPPORT_INTERRUPT
 	select COUNTER
 	select RING_BUFFER
+	select SERIAL_HAS_POST_KERNEL_INIT
 	help
 	  Enable the Bitbang UART controller.
 	  The driver relies on counter interrupts to generate/sample UART

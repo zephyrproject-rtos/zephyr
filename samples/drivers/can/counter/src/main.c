@@ -13,7 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/byteorder.h>
 
-#define RX_THREAD_STACK_SIZE 512
+#define RX_THREAD_STACK_SIZE 1024
 #define RX_THREAD_PRIORITY 2
 #define STATE_POLL_THREAD_STACK_SIZE 512
 #define STATE_POLL_THREAD_PRIORITY 2

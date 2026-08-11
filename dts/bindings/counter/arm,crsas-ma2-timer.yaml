@@ -1,0 +1,17 @@
+description: Arm Corstone Reference Systems Architecture Specification MA2 System Timer
+
+compatible: "arm,crsas-ma2-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      CRSAS-MA2 System Timer register base address.
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

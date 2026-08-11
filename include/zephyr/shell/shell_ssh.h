@@ -7,12 +7,12 @@
 
 /**
  * @file
- * @brief SSH shell backend
- * @ingroup shell_api
+ * @brief Header file for the SSH shell backend.
+ * @ingroup shell_ssh
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_SSH_H_
-#define ZEPHYR_INCLUDE_SHELL_SSH_H_
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_
 
 #include <zephyr/net/socket.h>
 #include <zephyr/net/ssh/server.h>
@@ -21,6 +21,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup shell_ssh SSH shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over an SSH connection.
+ * @{
+ */
 
 /** Maximum password length supported by the shell SSH transport. */
 #define SHELL_SSH_MAX_PASSWORD_LEN 32
@@ -114,8 +121,10 @@ int shell_sshd_transport_event_callback(struct ssh_transport *transport,
 
 /** @endcond */
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_SSH_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_SSH_H_ */

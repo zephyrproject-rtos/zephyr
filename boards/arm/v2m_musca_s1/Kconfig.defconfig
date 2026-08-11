@@ -1,7 +1,11 @@
 # Copyright (c) 2019-2020 Linaro Limited
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 if BOARD_V2M_MUSCA_S1
+
+configdefault BOARD_DEPRECATED_RELEASE
+	default "5.0"
 
 if SERIAL
 

@@ -12,13 +12,13 @@
 #include "memory.h"
 
 /* The "user_sram_end" represents the 2nd stage bootloader
- * "iram_loader_seg" start address (that should not be overlapped).
+ * reserved region start (dram_loader_seg); the app must not overlap it.
  * If no bootloader is used, we can extend it to gain more user ram.
  */
 #ifdef CONFIG_ESP_SIMPLE_BOOT
 user_sram_end = DRAM_SHARED_BUFFERS_END;
 #else
-user_sram_end = BOOTLOADER_IRAM_LOADER_SEG_START;
+user_sram_end = BOOTLOADER_DRAM_LOADER_SEG_START;
 #endif
 
 /* User available memory segments */
@@ -97,10 +97,22 @@ MEMORY
 
 #if CONFIG_ESP32_ULP_COPROC_ENABLED
   lp_ram_seg(RW):  org = LPSRAM_RTC_START,
-                   len = LPSRAM_RTC_SIZE
+                   len = LPSRAM_RTC_SIZE - CONFIG_RESERVE_RTC_MEM
 #else
   lp_ram_seg(RW):  org = LPSRAM_IRAM_START,
                    len = LPSRAM_RTC_START + LPSRAM_RTC_SIZE - LPSRAM_IRAM_START
+                        - CONFIG_RESERVE_RTC_MEM
+#endif
+  /* We reduced the size of lp_ram_seg by CONFIG_RESERVE_RTC_MEM value.
+     It reserves LP memory for this segment so data keep a fixed address:
+       - rtc timer data (s_rtc_timer_retain_mem, see esp_clk.c).
+     Placed at the end of usable LP linker memory, immediately before the
+     DT retainedmem / ipc / mbox regions.
+  */
+#if (CONFIG_RESERVE_RTC_MEM > 0)
+  lp_reserved_seg(RW): org = LPSRAM_RTC_START + LPSRAM_RTC_SIZE
+                             - CONFIG_RESERVE_RTC_MEM,
+                       len = CONFIG_RESERVE_RTC_MEM
 #endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
@@ -286,8 +298,10 @@ SECTIONS
     _rtc_reserved_start = ABSOLUTE(.);
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
     _rtc_reserved_end = ABSOLUTE(.);
-  } GROUP_LINK_IN(rtc_slow_seg)
+  } GROUP_LINK_IN(lp_reserved_seg)
   _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
 #else
   _rtc_reserved_length = 0;
 #endif
@@ -938,7 +952,7 @@ SECTIONS
     /* Align for PMP granularity requirements */
     MPU_MIN_SIZE_ALIGN
     __rom_region_end = ABSOLUTE(.);
-    __rom_region_size = __rom_region_end - __rom_region_start;
+    __rom_region_size = ABSOLUTE(__rom_region_end - __rom_region_start);
     _etext = .;
 
   } GROUP_DATA_LINK_IN(FLASH_CODE_REGION, ROMABLE_REGION)

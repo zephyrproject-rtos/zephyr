@@ -29,6 +29,7 @@ config TFM_BOARD
 	default "nxp/lpcxpresso55s69" if BOARD_LPCXPRESSO55S69_LPC55S69_CPU0_NS
 	default "stm/b_u585i_iot02a" if BOARD_B_U585I_IOT02A
 	default "stm/nucleo_l552ze_q" if BOARD_NUCLEO_L552ZE_Q
+	default "stm/nucleo_u3c5zi_q" if BOARD_NUCLEO_U3C5ZI_Q
 	default "stm/stm32h573i_dk" if BOARD_STM32H573I_DK
 	default "stm/stm32l562e_dk" if BOARD_STM32L562E_DK
 	default "stm/stm32wba65i_dk" if BOARD_NUCLEO_WBA65RI || BOARD_STM32WBA65I_DK1
@@ -52,8 +53,6 @@ menuconfig BUILD_WITH_TFM
 	select BUILD_OUTPUT_HEX
 	imply INIT_ARCH_HW_AT_BOOT
 	imply ARM_NONSECURE_PREEMPTIBLE_SECURE_CALLS
-	imply MBEDTLS if !TFM_USE_NS_APP
-	imply PSA_CRYPTO if !TFM_USE_NS_APP
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-M image for the Secure Execution
@@ -235,21 +234,29 @@ config TFM_BL2
 	  TFM is designed to run with MCUboot in a certain configuration.
 	  This config adds MCUboot to the build - built via TFM's build system.
 
-config TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY
-	bool "Support upgrading devices originally flashed with Zephyr v4.0 to v4.2"
+config TFM_ZEPHYR_4_2_COMPATIBILITY
+	bool "Support upgrading devices originally flashed with Zephyr v4.2"
 	depends on TFM_BL2
 	help
-	  Between Zephyr v4.0 and v4.2, the included version of TF-M had a provisioning
+	  For Zephyr v4.2, the included version of TF-M (v2.2.0) had a provisioning
 	  structure field (profile_definition) that changed size from 32 bytes to 48 bytes.
 	  This change was reverted from the TF-M version included in Zephyr v4.3, but the
 	  changing size of the structure prevents OTA upgrades (and bricks devices) when
-	  attempting to update devices programmed with any Zephyr v4.x release before v4.3.
+	  attempting to update devices originally programmed with Zephyr v4.2.
 
 	  This option sets the `PROFILE_DEFINITION_LARGE` define in TF-M, which reverts the
 	  structure field back to 48 bytes. This MUST ONLY be set for applications originally
-	  programmed with a v4.0 to v4.2 Zephyr release.
+	  programmed with a v4.2 Zephyr release.
 
 	  This option MUST remain set for all future upgrades.
+
+config TFM_ZEPHYR_4_0_TO_4_2_COMPATIBILITY
+	bool "Support upgrading devices originally flashed with Zephyr v4.2 [DEPRECATED]"
+	depends on TFM_BL2
+	select TFM_ZEPHYR_4_2_COMPATIBILITY
+	select DEPRECATED
+	help
+	  This option is deprecated, please use TFM_ZEPHYR_4_2_COMPATIBILITY instead.
 
 config TFM_USE_NS_APP
 	bool "Use the TF-M Non-Secure application"
@@ -265,6 +272,15 @@ config TFM_USE_NS_APP
 	  This option is intended for testing purposes only, since this is the
 	  easiest way to integrate and run the TF-M regression tests in the
 	  zephyr build system.
+
+config TFM_INSTALL_TF_PSA_CRYPTO_HEADERS
+	bool
+	depends on TFM_PARTITION_CRYPTO && !MBEDTLS
+	default y
+	help
+	  Hidden symbol signaling that the TF-PSA-Crypto headers (psa/crypto.h and friends)
+	  used by the Zephyr image are the ones installed by TF-M, together with the matching
+	  TF-PSA-Crypto configuration header.
 
 config TFM_CONNECTION_BASED_SERVICE_API
 	bool "TF-M use connection based service APIs"

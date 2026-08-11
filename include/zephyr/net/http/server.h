@@ -434,6 +434,9 @@ struct http3_stream_ctx {
 
 	/** Request headers have not yet been delivered to the application. */
 	bool request_headers_pending;
+
+	/** This request stream has carried accepted QUIC 0-RTT data. */
+	bool early_data;
 };
 
 /** @brief HTTP header name representation */

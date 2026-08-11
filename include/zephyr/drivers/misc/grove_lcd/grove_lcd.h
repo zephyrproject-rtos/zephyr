@@ -4,8 +4,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_
-#define ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_GROVE_LCD_GROVE_LCD_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_GROVE_LCD_GROVE_LCD_H_
 
 #include <stdint.h>
 
@@ -165,4 +165,4 @@ void glcd_color_set(const struct device *dev, uint8_t r, uint8_t g,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DISPLAY_GROVE_LCD_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_GROVE_LCD_GROVE_LCD_H_ */

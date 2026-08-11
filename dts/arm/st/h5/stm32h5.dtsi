@@ -228,6 +228,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
@@ -271,7 +272,7 @@
 		};
 
 		lptim1: timers@44004400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
 			resets = <&rctl STM32_RESET(APB3, 11)>;
 			#address-cells = <1>;
@@ -283,7 +284,7 @@
 		};
 
 		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			#address-cells = <1>;
@@ -403,6 +404,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -425,6 +427,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -447,6 +450,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -469,6 +473,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -491,6 +496,7 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
+				#counter-capture-cells = <2>;
 			};
 		};
 
@@ -598,6 +604,15 @@
 			status = "disabled";
 		};
 
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 0x800>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			interrupts = <117 0>;
+			status = "disabled";
+		};
+
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
@@ -612,7 +627,7 @@
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x1000>;
-			interrupts = <27 0 28 0 29 0 30 0 31 0 32 0 33 0 34 0>;
+			interrupts = <27 0>, <28 0>, <29 0>, <30 0>, <31 0>, <32 0>, <33 0>, <34 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-channels = <8>;
 			dma-requests = <140>;
@@ -623,7 +638,7 @@
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
 			reg = <0x40021000 0x1000>;
-			interrupts = <90 0 91 0 92 0 93 0 94 0 95 0 96 0 97 0>;
+			interrupts = <90 0>, <91 0>, <92 0>, <93 0>, <94 0>, <95 0>, <96 0>, <97 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-channels = <8>;
 			dma-requests = <140>;
@@ -695,7 +710,7 @@
 		ucpd1: ucpd@4000dc00 {
 			compatible = "st,stm32-ucpd";
 			reg = <0x4000dc00 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 23)>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 23)>;
 			interrupts = <76 0>;
 			status = "disabled";
 		};

@@ -17,6 +17,10 @@
 #include <acp70_fw_scratch_mem.h>
 #include <acp70_chip_offsets.h>
 #include <acp70_chip_reg.h>
+#elif defined(CONFIG_SOC_ACP_7_X)
+#include <acp7x_fw_scratch_mem.h>
+#include <acp7x_chip_offsets.h>
+#include <acp7x_chip_reg.h>
 #endif
 
 /* Used for driver binding */
@@ -29,7 +33,7 @@
 #define ACP_TDM0_RX_FIFO_ADDR		(ACP_TDM0_TX_FIFO_ADDR + ACP_TDM0_FIFO_SIZE)
 
 #define ACP_TDM1_FIFO_SIZE		512U
-#define ACP_TDM1_TX_FIFO_ADDR		(ACP_TDM1_FIFO_SIZE * 3)
+#define ACP_TDM1_TX_FIFO_ADDR		(ACP_TDM1_FIFO_SIZE * 4)
 #define ACP_TDM1_RX_FIFO_ADDR		(ACP_TDM1_TX_FIFO_ADDR + ACP_TDM1_FIFO_SIZE)
 
 #define ACP_TDM2_FIFO_SIZE		512U
@@ -83,9 +87,15 @@ static bool acp_pdm_streams_stopped(void)
 	if (acp_pdm_en != 0U) {
 		return false;
 	}
+#if defined(CONFIG_SOC_ACP_7_X)
+	if ((uint32_t)io_reg_read(PU_REGISTER_BASE + ACP_PDM_2_ENABLE) != 0U) {
+		return false;
+	}
+#endif
 	return true;
 }
 
+#if defined(CONFIG_SOC_ACP_7_0)
 /**
  * @brief Check if all SDW instances have stopped (no TX/RX running)
  *
@@ -107,6 +117,19 @@ static bool acp_sdw_all_streams_stopped(void)
 	}
 	return (sdw_en == 0U);
 }
+#endif /* CONFIG_SOC_ACP_7_0 */
+
+static uint32_t acp_get_sample_len_from_frame_fmt(uint32_t frame_fmt)
+{
+	switch (frame_fmt) {
+	case 1: /* 24-bit */
+		return 4U;
+	case 2: /* 32-bit */
+		return 5U;
+	default: /* 16-bit */
+		return 2U;
+	}
+}
 
 static int acp_tdm_dma_config(const struct device *dev, uint32_t channel,
 				     struct dma_config *cfg)
@@ -120,13 +143,7 @@ static int acp_tdm_dma_config(const struct device *dev, uint32_t channel,
 	uint32_t tdm_fifo_addr_tx = 0, tdm_fifo_addr_rx = 0, tdm_fifosize = 0, tdm_offset = 0;
 	uint32_t tdm_inst = ACP_TDM_INVALID_32;
 	struct acp_tdm_context *ctx = NULL;
-	struct {
-		uint32_t tdm_instance;
-		uint32_t pin_dir;
-		uint32_t dma_channel;
-		uint32_t index;
-	} *tdm_data = NULL;
-
+	struct acp_tdm_context *tdm_data = NULL;
 	dev_data->chan_data[channel].direction = cfg->channel_direction;
 	tdm_data = dev_data->dai_index_ptr;
 	if (cfg->channel_direction < 1 || cfg->channel_direction > 2) {
@@ -143,6 +160,8 @@ static int acp_tdm_dma_config(const struct device *dev, uint32_t channel,
 			acp_tdm_ctx[inst][dir].dma_channel = channel;
 			acp_tdm_ctx[inst][dir].pin_dir = cfg->channel_direction;
 			acp_tdm_ctx[inst][dir].index = tdm_data->index;
+			acp_tdm_ctx[inst][dir].frame_fmt =
+				((struct acp_tdm_context *)dev_data->dai_index_ptr)->frame_fmt;
 			break;
 		}
 	}
@@ -263,12 +282,14 @@ static int acp_tdm_dma_start(const struct device *dev, uint32_t channel)
 	uint32_t tdm_offset;
 	int dir = chan->direction - 1;
 	int tdm_inst = ACP_TDM_INVALID_32;
+	uint32_t tdm_frame_fmt = 0U;
 
 	for (int inst = 0; inst < ACP_TDM_INSTANCES; inst++) {
 		if (acp_tdm_ctx[inst][dir].dma_channel == channel &&
 		acp_tdm_ctx[inst][dir].pin_dir == chan->direction) {
 			tdm_inst = acp_tdm_ctx[inst][dir].index;
 			acp_tdm_ctx[inst][dir].prev_pos = 0;
+			tdm_frame_fmt = acp_tdm_ctx[inst][dir].frame_fmt;
 			break;
 		}
 	}
@@ -291,10 +312,14 @@ static int acp_tdm_dma_start(const struct device *dev, uint32_t channel)
 	}
 	LOG_DBG("start: tdm_offset=0x%x", tdm_offset);
 
+#if defined(CONFIG_SOC_ACP_7_0)
 	if (acp_tdm_all_streams_stopped() && acp_sdw_all_streams_stopped() &&
 	    acp_pdm_streams_stopped()) {
-		acp_change_clock_notify(600000000);
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_ACLK_CLK_SEL);
+#else
+	if (acp_tdm_all_streams_stopped() && acp_pdm_streams_stopped()) {
+#endif
+		acp_change_clock_notify(600000000);
 	}
 	if (chan->direction == MEMORY_TO_PERIPHERAL) {
 		LOG_DBG("start: TX (MEM->PERIPH)");
@@ -308,7 +333,7 @@ static int acp_tdm_dma_start(const struct device *dev, uint32_t channel)
 		tdm_iter.bits.tdm_txen = 1U;
 		tdm_iter.bits.tdm_tx_protocol_mode = 0U;
 		tdm_iter.bits.tdm_tx_data_path_mode = 1U;
-		tdm_iter.bits.tdm_tx_samp_len = 2U;
+		tdm_iter.bits.tdm_tx_samp_len = acp_get_sample_len_from_frame_fmt(tdm_frame_fmt);
 		io_reg_write((PU_REGISTER_BASE + ACP_TDM_ITER + tdm_offset), tdm_iter.u32all);
 	} else if (chan->direction == PERIPHERAL_TO_MEMORY) {
 		LOG_DBG("start: RX (PERIPH->MEM)");
@@ -322,7 +347,7 @@ static int acp_tdm_dma_start(const struct device *dev, uint32_t channel)
 		tdm_irer.bits.tdm_rx_en = 1U;
 		tdm_irer.bits.tdm_rx_protocol_mode = 0U;
 		tdm_irer.bits.tdm_rx_data_path_mode = 1U;
-		tdm_irer.bits.tdm_rx_samplen = 2U;
+		tdm_irer.bits.tdm_rx_samplen = acp_get_sample_len_from_frame_fmt(tdm_frame_fmt);
 		io_reg_write((PU_REGISTER_BASE + ACP_TDM_IRER + tdm_offset), tdm_irer.u32all);
 	} else {
 		LOG_ERR("start: invalid dir=%d ch=%d", chan->direction, channel);
@@ -437,9 +462,13 @@ static int acp_tdm_dma_stop(const struct device *dev, uint32_t channel)
 		LOG_DBG("stop: TX/RX disabled, disabling IRQ");
 		io_reg_write((PU_REGISTER_BASE + ACP_TDM_IER + tdm_offset), TDM_IER_DISABLE);
 	}
+#if defined(CONFIG_SOC_ACP_7_0)
 	if (acp_tdm_all_streams_stopped() && acp_sdw_all_streams_stopped() &&
 	    acp_pdm_streams_stopped()) {
 		io_reg_write(PU_REGISTER_BASE + ACP_CLKMUX_SEL, ACP_INTERNAL_CLK_SEL);
+#else
+	if (acp_tdm_all_streams_stopped() && acp_pdm_streams_stopped()) {
+#endif
 		acp_change_clock_notify(0);
 	}
 	dir = chan->direction - 1;

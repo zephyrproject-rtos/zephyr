@@ -9,19 +9,14 @@
 
 &tcpwm0_0 {
 	status = "okay";
-	divider-type = <PWM_IFX_SYSCLK_DIV_16_BIT>;
-	divider-sel = <0>;
-	divider-val = <2399>;
 
 	counter0_0 {
 		status = "okay";
 		clocks = <&peri0_group4_16bit_0>;
-		clock-frequency = <20000>;
 	};
 };
 
 &peri0_group4_16bit_0 {
 	status = "okay";
-	scb-block = <0>;
-	div-value = <109>;
+	clock-div = <9600>;
 };

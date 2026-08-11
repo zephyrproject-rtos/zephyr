@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(nxp_imx_eth);
 
 const struct device *netc_dev_list[NETC_DRV_MAX_INST_SUPPORT];
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 static void netc_eth_pkt_get_timestamp(struct net_pkt *pkt, const struct device *ptp_clock,
 				       uint32_t timestamp)
 {
@@ -64,7 +64,7 @@ const struct device *netc_eth_get_ptp_clock(const struct device *dev, struct net
 }
 #endif
 
-#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 static status_t netc_eth_get_tx_response(const struct device *dev, swt_tsr_resp_t *tsr)
 {
 	struct netc_eth_data *data = dev->data;
@@ -141,7 +141,7 @@ static int netc_eth_rx(const struct device *dev)
 		return -EIO;
 	}
 
-#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+#if defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) && defined(CONFIG_PTP_CLOCK_NXP_NETC)
 	/* Received response for TX timestamp reference request on DSA conduit port */
 	if (rx_result == kStatus_NETC_RxTsrResp) {
 		swt_tsr_resp_t tsr = {0};
@@ -182,7 +182,7 @@ static int netc_eth_rx(const struct device *dev)
 		return ret;
 	}
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	if (attr.isTsAvail) {
 		const struct device *ptp_dev = netc_eth_get_ptp_clock(dev, data->iface);
 
@@ -192,6 +192,7 @@ static int netc_eth_rx(const struct device *dev)
 		}
 #endif
 		netc_eth_pkt_get_timestamp(pkt, ptp_dev, attr.timestamp);
+		net_pkt_set_rx_timestamping(pkt, true);
 	}
 #endif
 	/* Send to upper layer */
@@ -300,7 +301,7 @@ int netc_eth_init_common(const struct device *dev)
 
 	config->bdr_init(&bdr_config, &rx_bdr_config, &tx_bdr_config);
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 	if (netc_eth_get_ptp_clock(dev, data->iface) != NULL) {
 		bdr_config.rxBdrConfig[0].extendDescEn = true;
 	}
@@ -444,15 +445,13 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	struct ethernet_context *eth_ctx = net_if_l2_data(data->iface);
 #endif
 #if !defined(CONFIG_DSA_NXP_IMX_NETC) || defined(NETC_SWITCH_NO_TAG_DRIVER_SUPPORT) || \
-	defined(NETC_PTP_TIMESTAMPING_SUPPORT)
+	defined(CONFIG_PTP_CLOCK_NXP_NETC)
 	const struct netc_eth_config *cfg = dev->config;
 #endif
 	status_t result;
 	int ret;
 	ep_tx_opt opt = {0};
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-	bool pkt_is_gptp;
-#endif
+
 	__ASSERT(pkt, "Packet pointer is NULL");
 
 	iface_dst = data->iface;
@@ -478,9 +477,8 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 #endif
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-	pkt_is_gptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	if ((pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) &&
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+	if (net_pkt_is_tx_timestamping(pkt) &&
 	    (netc_eth_get_ptp_clock(dev, data->iface) != NULL)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
@@ -506,8 +504,8 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 		txDesc[0].standard.flags = NETC_SI_TXDESCRIP_RD_FLQ(2) |
 					   NETC_SI_TXDESCRIP_RD_SMSO_MASK |
 					   NETC_SI_TXDESCRIP_RD_PORT(dst_port);
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
-		if (pkt_is_gptp || net_pkt_is_tx_timestamping(pkt)) {
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
+		if (net_pkt_is_tx_timestamping(pkt)) {
 			txDesc[0].standard.flags |= NETC_SI_TXDESCRIP_RD_TSR_MASK;
 		}
 #endif
@@ -539,7 +537,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 				goto error;
 			}
 
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 			if (frame_info->isTsAvail) {
 				netc_eth_pkt_get_timestamp(pkt, cfg->ptp_clock,
 							   frame_info->timestamp);
@@ -576,11 +574,6 @@ enum ethernet_hw_caps netc_eth_get_capabilities(const struct device *dev __maybe
 #endif
 	);
 
-#if defined(NETC_PTP_TIMESTAMPING_SUPPORT)
-	if (netc_eth_get_ptp_clock(dev, iface) != NULL) {
-		caps |= ETHERNET_PTP;
-	}
-#endif
 	return caps;
 }
 

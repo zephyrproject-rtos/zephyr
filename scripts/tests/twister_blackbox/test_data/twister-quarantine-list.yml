@@ -11,6 +11,6 @@
 - scenarios:
   - dummy.agnostic.group1.subgroup2
   platforms:
-  - qemu_x86_64/atom
+  - native_sim/native/64
   comment: >
-    test qemu_x86_64
+    test native_sim/native/64

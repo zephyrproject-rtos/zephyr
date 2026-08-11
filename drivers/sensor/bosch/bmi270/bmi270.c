@@ -1,6 +1,8 @@
 /*
  * Copyright (c) 2021 Bosch Sensortec GmbH
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -504,7 +506,19 @@ static int bmi270_sample_fetch(const struct device *dev, enum sensor_channel cha
 		data->gz = 0;
 	}
 
-	return ret;
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = bmi270_reg_read(dev, BMI270_REG_TEMPERATURE_0, buf, 2);
+	if (ret != 0) {
+		data->temp = (int16_t)BMI270_TEMP_INVALID;
+		return ret;
+	}
+
+	data->temp = (int16_t)sys_get_le16(&buf[0]);
+
+	return 0;
 }
 
 static int bmi270_channel_get(const struct device *dev, enum sensor_channel chan,
@@ -538,6 +552,15 @@ static int bmi270_channel_get(const struct device *dev, enum sensor_channel chan
 				     data->gyr_range);
 		channel_gyro_convert(&val[2], data->gz,
 				     data->gyr_range);
+	} else if (chan == SENSOR_CHAN_DIE_TEMP) {
+		if (data->temp == (int16_t)BMI270_TEMP_INVALID) {
+			return -ENODATA;
+		}
+		int64_t micro_c = (((int64_t)data->temp * 1000000LL) / BMI270_TEMP_LSB_PER_DEG) +
+				  BMI270_TEMP_CENTER_OFFSET;
+
+		val->val1 = micro_c / 1000000LL;
+		val->val2 = micro_c % 1000000LL;
 	} else {
 		return -ENOTSUP;
 	}
@@ -751,6 +774,17 @@ static int bmi270_init(const struct device *dev)
 
 	if (tries > BMI270_CONFIG_FILE_RETRIES) {
 		return -EIO;
+	}
+
+	/* Enable internal die temperature sensor */
+	uint8_t pwr_ctrl;
+
+	ret = bmi270_reg_read(dev, BMI270_REG_PWR_CTRL, &pwr_ctrl, 1);
+	if (ret == 0) {
+		pwr_ctrl |= BMI270_PWR_CTRL_TEMP_EN;
+		bmi270_reg_write_with_delay(dev, BMI270_REG_PWR_CTRL,
+					    &pwr_ctrl, 1,
+					    BMI270_INTER_WRITE_DELAY_US);
 	}
 
 #if CONFIG_BMI270_TRIGGER

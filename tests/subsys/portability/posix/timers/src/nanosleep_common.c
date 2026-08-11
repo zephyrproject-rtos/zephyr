@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/ztest.h>
 
 #define SELECT_NANOSLEEP       1

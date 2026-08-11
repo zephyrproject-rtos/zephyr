@@ -77,6 +77,9 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_BL70XL)
 		| (EF_CTRL_SAHB_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		| (EF_CTRL_EFUSE_CYCLE_PROTECT)
+#endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
 		| (0 << EF_CTRL_EF_IF_POR_DIG_POS)
 		| (1 << EF_CTRL_EF_IF_0_INT_CLR_POS)
@@ -100,6 +103,9 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 	defined(CONFIG_SOC_SERIES_BL70XL)
 		| (EF_CTRL_EF_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
 #endif
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		| (EF_CTRL_EFUSE_CYCLE_PROTECT)
+#endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
 		| (0 << EF_CTRL_EF_IF_POR_DIG_POS)
 		| (1 << EF_CTRL_EF_IF_0_INT_CLR_POS)
@@ -114,6 +120,9 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 		| (EF_CTRL_EF_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
+#endif
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		| (EF_CTRL_EFUSE_CYCLE_PROTECT)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
 		| (0 << EF_CTRL_EF_IF_POR_DIG_POS)
@@ -137,6 +146,9 @@ static void efuse_bflb_efuse_read(const struct device *dev)
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
 	defined(CONFIG_SOC_SERIES_BL70XL)
 		| (EF_CTRL_SAHB_CLK << EF_CTRL_EF_CLK_SAHB_DATA_SEL_POS)
+#endif
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+		| (EF_CTRL_EFUSE_CYCLE_PROTECT)
 #endif
 		| (1 << EF_CTRL_EF_IF_AUTO_RD_EN_POS)
 		| (0 << EF_CTRL_EF_IF_POR_DIG_POS)

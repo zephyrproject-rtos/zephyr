@@ -8,7 +8,7 @@
 
 #include <st/mp13/stm32mp135.dtsi>
 #include <st/mp13/stm32mp135faex-pinctrl.dtsi>
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
@@ -75,9 +75,9 @@
 			   <CSI_IO1 0 &mcp23017 3 0>;
 	};
 
-	eth_ram: sram@2fffc000 {
+	eth_ram: sram@2fff8000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2fffc000 DT_SIZE_K(16)>;
+		reg = <0x2fff8000 DT_SIZE_K(32)>;
 		#memory-region-cells = <0>;
 		zephyr,memory-region = "ETH_SRAM";
 	};
@@ -90,6 +90,10 @@
 
 &clk_hse {
 	clock-frequency = <DT_FREQ_M(24)>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -295,7 +299,7 @@ csi_interface: &dcmipp {
 	status = "disabled";
 };
 
-&mac {
+&mac0 {
 	pinctrl-0 = <&eth1_txd0_pg13
 		     &eth1_txd1_pg14
 		     &eth1_tx_ctl_pb11
@@ -305,20 +309,54 @@ csi_interface: &dcmipp {
 		     &eth1_crs_dv_pc1>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	phy-handle = <&eth_phy>;
+	phy-handle = <&eth_phy0>;
 	memory-regions = <&eth_ram>;
 
 	status = "okay";
 };
 
-&mdio {
+&mdio0 {
 	pinctrl-0 = <&eth1_mdio_pa2 &eth1_mdc_pg2>;
 	pinctrl-names = "default";
 	status = "okay";
 
-	eth_phy: ethernet-phy@0 {
+	eth_phy0: ethernet-phy@0 {
 		compatible = "microchip,lan8742";
 		reg = <0>;
 		reset-gpios = <&mcp23017 9 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB5, 8)>, <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&mac1 {
+	pinctrl-0 = <&eth2_txd0_pf7
+		     &eth2_txd1_pg11
+		     &eth2_tx_ctl_pf6
+		     &eth2_clk_pg8
+		     &eth2_rxd0_pf4
+		     &eth2_rxd1_pe2
+		     &eth2_crs_dv_pa12>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy1>;
+	memory-regions = <&eth_ram>;
+	st,ext-phyclk;
+
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&eth2_mdio_pb2 &eth2_mdc_pg5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy1: ethernet-phy@0 {
+		compatible = "microchip,lan8742";
+		reg = <0>;
+		reset-gpios = <&mcp23017 10 GPIO_ACTIVE_LOW>;
 	};
 };

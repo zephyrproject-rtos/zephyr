@@ -9,7 +9,7 @@ config STEPPER_ADI_TMC_SPI
 
 config STEPPER_ADI_TMC_UART
 	bool "Use Trinamic Stepper Controller with single wire UART"
-	select UART
+	select SERIAL
 	help
 	  A Trinamic Stepper Controller with single wire UART is enabled
 

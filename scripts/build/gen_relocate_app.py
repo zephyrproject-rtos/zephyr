@@ -583,6 +583,10 @@ def get_obj_filename(all_obj_files, filename):
         if obj_file.name == obj_filename and filename.split("/")[-2] in obj_file.parent.name:
             return str(obj_file)
 
+    for obj_file in all_obj_files:
+        if obj_file.name == obj_filename and obj_file.parent.name == 'app.dir':
+            return str(obj_file)
+
 
 # Extracts all possible components for the input string:
 # <mem_region>[\ :program_header]:<flag_1>[;<flag_2>...]:<file_1>[;<file_2>...][,filter]

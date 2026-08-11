@@ -29,13 +29,22 @@ static struct coap_client *clients[CONFIG_COAP_CLIENT_MAX_INSTANCES];
 static int num_clients;
 static K_SEM_DEFINE(coap_client_recv_sem, 0, 1);
 
-/* Wakeup channel for the recv thread's poll(). coap_client_cancel_requests()
- * writes the eventfd to interrupt poll() immediately (instead of waiting up to
- * COAP_PERIODIC_TIMEOUT for the timeout) and waits on the ack sem until the
- * recv thread has cycled past poll(), so no poll() references a cancelled
- * request when cancel returns. The cancel mutex serialises waiters; the tid
- * lets a cancel issued from the recv thread (a response callback) skip the
- * self-wait.
+/* Wakeup channel for the recv thread's poll(). Writing the eventfd interrupts a
+ * blocked poll() immediately (instead of waiting up to COAP_PERIODIC_TIMEOUT for
+ * the timeout) so the recv loop rebuilds fds[] from current client state. Two
+ * callers use it:
+ *   - coap_client_schedule_poll() writes it when a request is submitted, so a
+ *     response on a newly-added or changed (e.g. reconnected) socket is polled
+ *     without waiting for the periodic timeout.
+ *   - coap_client_cancel_requests() writes it and then waits on the ack sem
+ *     until the recv thread has cycled past poll(), so no poll() references a
+ *     cancelled request when cancel returns. The cancel mutex serialises
+ *     waiters; the tid lets a cancel issued from the recv thread (a response
+ *     callback) skip the self-wait.
+ * handle_poll() drains the eventfd on each wakeup and gives the ack sem; a
+ * schedule-driven wakeup therefore also pulses the ack sem, which is harmless
+ * because coap_client_wait_for_recv_cycle() resets it under the cancel mutex
+ * before waiting.
  */
 static int coap_client_recv_fd = -1;
 static k_tid_t coap_client_recv_tid;
@@ -101,6 +110,7 @@ static void release_internal_request(struct coap_client_internal_request *reques
 {
 	request->request_ongoing = false;
 	request->pending.timeout = 0;
+	request->unreported_error = 0;
 }
 
 static void coap_client_schedule_poll(struct coap_client *client, int sock,
@@ -112,6 +122,15 @@ static void coap_client_schedule_poll(struct coap_client *client, int sock,
 	internal_req->request_ongoing = true;
 
 	k_sem_give(&coap_client_recv_sem);
+
+	/* If the recv thread is already in poll() it holds a stale snapshot of
+	 * client->fd. Wake it so it rebuilds fds[] with the (possibly new) fd
+	 * before blocking again. Without this, a response on a new socket after
+	 * reconnect is invisible to poll() until the timeout fires.
+	 */
+	if (coap_client_recv_fd >= 0) {
+		(void)zvfs_eventfd_write(coap_client_recv_fd, 1);
+	}
 }
 
 static bool exchange_lifetime_exceeded(const struct coap_client_internal_request *internal_req)
@@ -161,6 +180,7 @@ static struct coap_client_internal_request *get_free_request(struct coap_client 
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing == false &&
+		    atomic_get(&client->requests[i].in_callback) == 0 &&
 		    exchange_lifetime_exceeded(&client->requests[i])) {
 			return &client->requests[i];
 		}
@@ -554,36 +574,91 @@ out:
 	return ret;
 }
 
-static void report_callback_error(struct coap_client_internal_request *internal_req, int error_code)
+/* Invoke the user response callback with client->lock RELEASED.
+ *
+ * An application could hold its own lock while calling coap_client_req() (which
+ * takes client->lock), and the response callback could in turn take that same
+ * application lock. Holding client->lock across the callback would then be an
+ * AB-BA deadlock. The callback never needs client->lock itself, so drop it for
+ * the duration and re-acquire afterwards.
+ *
+ * The in_callback atomic keeps the slot reserved while the lock is dropped:
+ * get_free_request() skips in_callback slots and the cancel paths defer
+ * releasing them (see cancel_internal_request()), so the request can neither be
+ * reused nor reset underneath a running callback.
+ *
+ * Must be called with client->lock held; returns with it held.
+ */
+static bool invoke_request_callback(struct coap_client *client,
+				    struct coap_client_internal_request *internal_req,
+				    const struct coap_client_response_data *resp_data)
 {
-	if (internal_req->coap_request.cb != NULL) {
-		if (!atomic_set(&internal_req->in_callback, 1)) {
-			const struct coap_client_response_data resp_data = {
-				.result_code = error_code,
-				.last_block = true,
-			};
+	if (internal_req->coap_request.cb == NULL) {
+		return true;
+	}
 
-			internal_req->coap_request.cb(&resp_data,
-						      internal_req->coap_request.user_data);
-			atomic_clear(&internal_req->in_callback);
-		} else {
-			LOG_DBG("Cannot call the callback; already in it.");
-		}
+	if (atomic_set(&internal_req->in_callback, 1)) {
+		LOG_DBG("Cannot call the callback; already in it.");
+		return false;
+	}
+
+	k_mutex_unlock(&client->lock);
+	internal_req->coap_request.cb(resp_data, internal_req->coap_request.user_data);
+	k_mutex_lock(&client->lock, K_FOREVER);
+
+	atomic_clear(&internal_req->in_callback);
+	return true;
+}
+
+/* Release a cancelled request, unless its callback is currently running with
+ * client->lock dropped (in_callback). In that case leave the slot reserved and
+ * only mark it done; invoke_request_callback()'s owner resets it on return,
+ * which keeps the slot from being reused mid-callback.
+ */
+static void cancel_internal_request(struct coap_client_internal_request *internal_req)
+{
+	if (atomic_get(&internal_req->in_callback)) {
+		internal_req->request_ongoing = false;
+	} else {
+		reset_internal_request(internal_req);
+	}
+}
+
+static bool report_callback_error(struct coap_client *client,
+				  struct coap_client_internal_request *internal_req, int error_code)
+{
+	const struct coap_client_response_data resp_data = {
+		.result_code = error_code,
+		.last_block = true,
+	};
+
+	return invoke_request_callback(client, internal_req, &resp_data);
+}
+
+/* Deliver an error/cancellation callback now, or, if a response callback for
+ * this request is already running on the recv thread with client->lock dropped,
+ * record it so the recv thread delivers it when that callback returns (see
+ * handle_response()). A request cancelled from within its own callback (same
+ * thread) records nothing: re-entrant delivery is intentionally suppressed.
+ */
+static void report_or_defer_error(struct coap_client *client,
+				  struct coap_client_internal_request *internal_req, int error_code)
+{
+	if (!report_callback_error(client, internal_req, error_code) &&
+	    k_current_get() != coap_client_recv_tid) {
+		internal_req->unreported_error = error_code;
 	}
 }
 
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
-static void report_multicast_complete(struct coap_client_internal_request *internal_req)
+static void report_multicast_complete(struct coap_client *client,
+				      struct coap_client_internal_request *internal_req)
 {
-	if (internal_req->coap_request.cb != NULL &&
-	    !atomic_set(&internal_req->in_callback, 1)) {
-		const struct coap_client_response_data resp_data = {
-			.source = NULL,
-		};
+	const struct coap_client_response_data resp_data = {
+		.source = NULL,
+	};
 
-		internal_req->coap_request.cb(&resp_data, internal_req->coap_request.user_data);
-		atomic_clear(&internal_req->in_callback);
-	}
+	invoke_request_callback(client, internal_req, &resp_data);
 }
 #endif
 
@@ -652,7 +727,7 @@ static void coap_client_resend_handler(struct coap_client *client)
 		if (timeout_expired(internal_req)) {
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 			if (internal_req->is_mcast) {
-				report_multicast_complete(internal_req);
+				report_multicast_complete(client, internal_req);
 				release_internal_request(internal_req);
 				continue;
 			}
@@ -665,7 +740,7 @@ static void coap_client_resend_handler(struct coap_client *client)
 
 			ret = resend_request(client, internal_req);
 			if (ret < 0) {
-				report_callback_error(internal_req, ret);
+				report_callback_error(client, internal_req, ret);
 				release_internal_request(internal_req);
 			}
 		}
@@ -961,6 +1036,31 @@ static bool find_echo_option(const struct coap_packet *response, struct coap_opt
 	return coap_find_options(response, COAP_OPTION_ECHO, option, 1);
 }
 
+/* Resolve the destination for an ACK / RST reply: use the received packet's
+ * source when the transport provided one, otherwise fall back to the request's
+ * address. Returns false if no reply should be sent (multicast group).
+ */
+static bool select_reply_addr(const struct coap_client_internal_request *internal_req,
+			      const struct net_sockaddr *from, net_socklen_t from_len,
+			      const struct net_sockaddr **to, net_socklen_t *to_len)
+{
+	if (from->sa_family != NET_AF_UNSPEC) {
+		*to = from;
+		*to_len = from_len;
+		return true;
+	}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		return false;
+	}
+#endif
+
+	*to = net_sad(&internal_req->addr);
+	*to_len = internal_req->addrlen;
+	return true;
+}
+
 static int handle_response(struct coap_client *client, const struct net_sockaddr *addr,
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated)
@@ -992,7 +1092,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			LOG_WRN("No matching request for RESET");
 			return 0;
 		}
-		report_callback_error(internal_req, -ECONNRESET);
+		report_callback_error(client, internal_req, -ECONNRESET);
 		release_internal_request(internal_req);
 		return 0;
 	}
@@ -1019,11 +1119,27 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
 		if (response_type != COAP_TYPE_ACK) {
-			/* Ignore errors, unrelated to our queries */
-			(void)send_rst(client->fd, addr, addrlen, response);
+			/* Ignore errors, unrelated to our queries. If no source address
+			 * was provided, assume the socket is connected and use the send()
+			 * path.
+			 */
+			net_socklen_t rst_addrlen =
+				(addr->sa_family != NET_AF_UNSPEC) ? addrlen : 0;
+
+			(void)send_rst(client->fd, addr, rst_addrlen, response);
 		}
 		return 0;
 	}
+
+	/* Snapshot the slot's keep-alive flags before dropping the lock for the
+	 * callback below: a concurrent coap_client_deregister_observe() may clear
+	 * is_observe while we are in the callback, which must not retroactively
+	 * change how THIS response is finalised at the end of the function.
+	 */
+	bool was_observe = internal_req->is_observe;
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	bool was_mcast = internal_req->is_mcast;
+#endif
 
 	/* Received echo option */
 	if (find_echo_option(response, &client->echo_option)) {
@@ -1076,6 +1192,9 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	/* Send ack for CON */
 	if (response_type == COAP_TYPE_CON) {
+		const struct net_sockaddr *ack_addr;
+		net_socklen_t ack_addrlen;
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 		if (internal_req->is_mcast) {
 			/* RFC 7252 Section 8.2: Responses to multicast requests MUST NOT be
@@ -1086,9 +1205,12 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		}
 #endif
 		/* CON response is always a separate response, respond with empty ACK. */
-		ret = send_ack(client->fd, addr, addrlen, response, COAP_CODE_EMPTY);
-		if (ret < 0) {
-			goto fail;
+		if (select_reply_addr(internal_req, addr, addrlen, &ack_addr, &ack_addrlen)) {
+			ret = send_ack(client->fd, ack_addr, ack_addrlen, response,
+				       COAP_CODE_EMPTY);
+			if (ret < 0) {
+				goto fail;
+			}
 		}
 	}
 
@@ -1103,7 +1225,13 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	if (!internal_req->request_ongoing) {
 		if (internal_req->is_observe) {
-			(void)send_rst(client->fd, addr, addrlen, response);
+			const struct net_sockaddr *rst_addr;
+			net_socklen_t rst_addrlen;
+
+			if (select_reply_addr(internal_req, addr, addrlen, &rst_addr,
+					      &rst_addrlen)) {
+				(void)send_rst(client->fd, rst_addr, rst_addrlen, response);
+			}
 			return 0;
 		}
 		LOG_DBG("Drop request, already handled");
@@ -1183,29 +1311,39 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		payload_len = MIN(payload_len, CONFIG_COAP_CLIENT_BLOCK_SIZE);
 	}
 
-	/* Call user callback */
+	/* Call user callback (with client->lock dropped, see
+	 * invoke_request_callback()).
+	 */
 	if (internal_req->coap_request.cb != NULL) {
-		if (!atomic_set(&internal_req->in_callback, 1)) {
-			const struct coap_client_response_data resp_data = {
-				.result_code = response_code,
-				.packet = response,
-				.offset = internal_req->offset,
-				.payload = payload,
-				.payload_len = payload_len,
-				.last_block = last_block,
+		const struct coap_client_response_data resp_data = {
+			.result_code = response_code,
+			.packet = response,
+			.offset = internal_req->offset,
+			.payload = payload,
+			.payload_len = payload_len,
+			.last_block = last_block,
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
-				.source = addr,
-				.source_len = addrlen,
+			.source = addr,
+			.source_len = addrlen,
 #endif
-			};
+		};
 
-			internal_req->coap_request.cb(&resp_data,
-						      internal_req->coap_request.user_data);
-			atomic_clear(&internal_req->in_callback);
-		}
+		invoke_request_callback(client, internal_req, &resp_data);
+
 		if (!internal_req->request_ongoing) {
-			/* User callback must have called coap_client_cancel_requests(). */
-			goto fail;
+			/* Cancelled while the callback ran with the lock dropped,
+			 * by the callback itself (coap_client_cancel_requests()) or
+			 * by another thread. A cross-thread canceller that could not
+			 * deliver its callback (we were mid-callback) recorded the
+			 * error here; deliver it now. The slot stayed reserved via
+			 * in_callback; release it now that the callback returned.
+			 */
+			if (internal_req->unreported_error != 0) {
+				report_callback_error(client, internal_req,
+						      internal_req->unreported_error);
+			}
+			reset_internal_request(internal_req);
+			return 0;
 		}
 		/* Update the offset for next callback in a blockwise transfer */
 		if (blockwise_transfer) {
@@ -1243,17 +1381,17 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	}
 fail:
 	if (ret < 0) {
-		report_callback_error(internal_req, ret);
+		report_callback_error(client, internal_req, ret);
 	}
 
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
-	if (internal_req->is_mcast) {
+	if (was_mcast) {
 		/* Multicast: keep request active until timeout */
 		return ret;
 	}
 #endif
 
-	if (internal_req->is_observe) {
+	if (was_observe) {
 		/* Observer: keep request active until unobserve */
 		return ret;
 	}
@@ -1278,18 +1416,18 @@ static void cancel_requests_with(struct coap_client *client, int error)
 	for (int i = 0; i < ARRAY_SIZE(client->requests); i++) {
 		if (client->requests[i].request_ongoing == true) {
 			LOG_DBG("Cancelling request %d", i);
-			/* Report the request was cancelled. This will be skipped if
-			 * this function was called from the user's callback so we
-			 * do not reenter it. In that case, the user knows their
-			 * request was cancelled anyway.
+			/* Report the cancellation, or defer it to the recv thread
+			 * if a callback for this slot is already running there.
 			 */
-			report_callback_error(&client->requests[i], error);
+			report_or_defer_error(client, &client->requests[i], error);
 		}
 
 		/* Clear all requests, even completed ones, so that our
-		 * handle_poll() does not poll() anymore for this socket.
+		 * handle_poll() does not poll() anymore for this socket. A slot
+		 * whose callback is still running stays reserved (see
+		 * cancel_internal_request()).
 		 */
-		reset_internal_request(&client->requests[i]);
+		cancel_internal_request(&client->requests[i]);
 	}
 	k_mutex_unlock(&client->lock);
 
@@ -1373,8 +1511,8 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
 		if (client->requests[i].request_ongoing &&
 		    requests_match(&client->requests[i].coap_request, req)) {
 			LOG_DBG("Cancelling request %d", i);
-			report_callback_error(&client->requests[i], -ECANCELED);
-			reset_internal_request(&client->requests[i]);
+			report_or_defer_error(client, &client->requests[i], -ECANCELED);
+			cancel_internal_request(&client->requests[i]);
 		}
 	}
 
@@ -1417,8 +1555,8 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 
 		if (err < 0) {
 			LOG_ERR("Failed to build observe deregister packet: %d", err);
-			report_callback_error(internal_req, err);
-			reset_internal_request(internal_req);
+			report_or_defer_error(client, internal_req, err);
+			cancel_internal_request(internal_req);
 			ret = err;
 			continue;
 		}
@@ -1434,8 +1572,8 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 						net_sad(&internal_req->addr), &params);
 			if (err < 0) {
 				LOG_ERR("Failed to init pending for deregister: %d", err);
-				report_callback_error(internal_req, err);
-				reset_internal_request(internal_req);
+				report_or_defer_error(client, internal_req, err);
+				cancel_internal_request(internal_req);
 				ret = err;
 				continue;
 			}
@@ -1448,16 +1586,16 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 				   internal_req->addrlen);
 		if (err < 0) {
 			LOG_ERR("Failed to send observe deregister: %d", err);
-			report_callback_error(internal_req, err);
-			reset_internal_request(internal_req);
+			report_or_defer_error(client, internal_req, err);
+			cancel_internal_request(internal_req);
 			ret = err;
 			continue;
 		}
 
 		if (!internal_req->coap_request.confirmable) {
 			/* NON: no ACK expected, release immediately */
-			report_callback_error(internal_req, -ECANCELED);
-			reset_internal_request(internal_req);
+			report_or_defer_error(client, internal_req, -ECANCELED);
+			cancel_internal_request(internal_req);
 		}
 		/* CON: slot stays alive; retransmissions and final response
 		 * handled via the normal response path once the server ACKs
@@ -1475,8 +1613,8 @@ void coap_client_recv(void *coap_cl, void *a, void *b)
 	coap_client_recv_tid = k_current_get();
 	coap_client_recv_fd = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (coap_client_recv_fd < 0) {
-		LOG_ERR("Failed to create cancel-wakeup eventfd (%d); "
-			"coap_client_cancel_requests() will fall back to a timeout",
+		LOG_ERR("Failed to create poll-wakeup eventfd (%d); request "
+			"scheduling and cancellation will fall back to a timeout",
 			-errno);
 	}
 

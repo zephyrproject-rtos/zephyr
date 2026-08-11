@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_RISCV_PMP_H_
-#define ZEPHYR_INCLUDE_RISCV_PMP_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_PMP_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_PMP_H_
 
 #include <zephyr/arch/riscv/arch.h>
 #include <zephyr/sys/iterable_sections.h>
@@ -89,4 +89,4 @@ int z_riscv_pmp_change_permissions(size_t region_idx, uint8_t perm);
  */
 void z_riscv_pmp_clear_all(void);
 
-#endif /* ZEPHYR_INCLUDE_RISCV_PMP_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_PMP_H_ */

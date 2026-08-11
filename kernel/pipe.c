@@ -341,20 +341,5 @@ void z_vrfy_k_pipe_close(struct k_pipe *pipe)
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_PIPE
-static int init_pipe_obj_core_list(void)
-{
-	/* Initialize pipe object type */
-	z_obj_type_init(&obj_type_pipe, K_OBJ_TYPE_PIPE_ID,
-			offsetof(struct k_pipe, obj_core));
-
-	/* Initialize and link statically defined pipes */
-	STRUCT_SECTION_FOREACH(k_pipe, pipe) {
-		k_obj_core_init_and_link(K_OBJ_CORE(pipe), &obj_type_pipe);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_pipe_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_pipe, k_pipe, K_OBJ_TYPE_PIPE_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_PIPE */

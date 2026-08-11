@@ -14,7 +14,7 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-static struct k_spinlock lock;
+static struct k_spinlock timer_lock;
 
 #ifdef CONFIG_OBJ_CORE_TIMER
 static struct k_obj_type obj_type_timer;
@@ -73,19 +73,19 @@ void z_timer_expiration_handler(struct _timeout *t)
 {
 	struct k_timer *timer = CONTAINER_OF(t, struct k_timer, timeout);
 	struct k_thread *thread;
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	/* A same-CPU IRQ may have raced with our dispatch between
-	 * sys_clock_announce() popping us off the list and us taking
+	 * sys_clock_announce() popping us off the queue and us taking
 	 * timer.c::lock. Two cases:
-	 *  - The timer was restarted (z_add_timeout re-linked the node):
-	 *    sys_dnode_is_linked() is true, the new schedule fires later.
+	 *  - The timer was restarted (z_add_timeout re-queued the timeout):
+	 *    it is active again, and the new schedule fires later.
 	 *  - The timer was stopped (z_try_abort_timeout marked the
 	 *    in-flight slot superseded): bail without firing expiry_fn.
 	 */
-	if (sys_dnode_is_linked(&t->node) ||
+	if (!z_is_inactive_timeout(t) ||
 	    z_timeout_inflight_superseded(t)) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		return;
 	}
 
@@ -122,7 +122,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 		k_timer_expiry_t expiry_fn = timer->expiry_fn;
 
 		/* Unlock for user handler. */
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, expiry, timer);
 
@@ -130,18 +130,18 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, expiry, timer);
 
-		key = k_spin_lock(&lock);
+		key = k_spin_lock(&timer_lock);
 	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		return;
 	}
 
 	thread = z_waitq_head(&timer->wait_q);
 
 	if (thread == NULL) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		return;
 	}
 
@@ -149,7 +149,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 
 	arch_thread_return_value_set(thread, 0);
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timer_lock, key);
 
 	z_ready_thread(thread);
 }
@@ -172,10 +172,10 @@ int k_timer_cleanup(struct k_timer *timer)
 	 * leave dangling pended_on pointers.
 	 */
 retry:
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&timer_lock);
 
 	CHECKIF(z_waitq_head(&timer->wait_q) != NULL) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, -EAGAIN);
 		return -EAGAIN;
 	}
@@ -194,11 +194,11 @@ retry:
 	 * not wait and so cannot stall.
 	 */
 	if (z_try_abort_timeout(&timer->timeout) == -EAGAIN) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		goto retry;
 	}
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timer_lock, key);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, cleanup, timer, 0);
 
@@ -250,7 +250,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 	 * makes a not-yet-committed handler bail too. Either way we do not
 	 * wait for it.
 	 */
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	(void)z_try_abort_timeout(&timer->timeout);
 
@@ -261,7 +261,7 @@ void z_impl_k_timer_start(struct k_timer *timer, k_timeout_t duration,
 
 	z_timer_observer_on_start(timer, duration, period);
 
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timer_lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -279,7 +279,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 {
 	SYS_PORT_TRACING_OBJ_FUNC(k_timer, stop, timer);
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 
 	if (z_try_abort_timeout(&timer->timeout) != 0) {
 		/* Not removed from the queue: either the timer was not
@@ -287,7 +287,7 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 		 * z_try_abort_timeout() has flagged it superseded so the
 		 * handler bails; we do not wait for it. Nothing to stop here.
 		 */
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		return;
 	}
 
@@ -295,17 +295,17 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	if (timer->stop_fn != NULL) {
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_timer, stop_fn_expiry, timer);
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 
 		timer->stop_fn(timer);
 
-		key = k_spin_lock(&lock);
+		key = k_spin_lock(&timer_lock);
 
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_timer, stop_fn_expiry, timer);
 	}
 
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 		return;
 
 	}
@@ -314,9 +314,9 @@ void z_impl_k_timer_stop(struct k_timer *timer)
 
 	if (pending_thread != NULL) {
 		z_ready_thread(pending_thread);
-		z_reschedule(&lock, key);
+		z_reschedule(&timer_lock, key);
 	} else {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&timer_lock, key);
 	}
 }
 
@@ -331,11 +331,11 @@ static inline void z_vrfy_k_timer_stop(struct k_timer *timer)
 
 uint32_t z_impl_k_timer_status_get(struct k_timer *timer)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 	uint32_t result = timer->status;
 
 	timer->status = 0U;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timer_lock, key);
 
 	return result;
 }
@@ -379,7 +379,7 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		return result;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&timer_lock);
 	uint32_t result = timer->status;
 
 	if (result == 0U) {
@@ -387,10 +387,10 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 			SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_timer, status_sync, timer, K_FOREVER);
 
 			/* wait for timer to expire or stop */
-			(void)z_pend_curr(&lock, key, &timer->wait_q, K_FOREVER);
+			(void)z_pend_curr(&timer_lock, key, &timer->wait_q, K_FOREVER);
 
 			/* get updated timer status */
-			key = k_spin_lock(&lock);
+			key = k_spin_lock(&timer_lock);
 			result = timer->status;
 		} else {
 			/* timer is already stopped */
@@ -400,7 +400,7 @@ uint32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 	}
 
 	timer->status = 0U;
-	k_spin_unlock(&lock, key);
+	k_spin_unlock(&timer_lock, key);
 
 	/**
 	 * @note	New tracing hook
@@ -452,21 +452,5 @@ static inline void z_vrfy_k_timer_user_data_set(struct k_timer *timer,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_TIMER
-static int init_timer_obj_core_list(void)
-{
-	/* Initialize timer object type */
-
-	z_obj_type_init(&obj_type_timer, K_OBJ_TYPE_TIMER_ID,
-			offsetof(struct k_timer, obj_core));
-
-	/* Initialize and link statically defined timers */
-
-	STRUCT_SECTION_FOREACH(k_timer, timer) {
-		k_obj_core_init_and_link(K_OBJ_CORE(timer), &obj_type_timer);
-	}
-
-	return 0;
-}
-SYS_INIT(init_timer_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_timer, k_timer, K_OBJ_TYPE_TIMER_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_TIMER */

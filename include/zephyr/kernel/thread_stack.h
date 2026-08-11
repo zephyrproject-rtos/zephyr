@@ -14,6 +14,8 @@
  * @brief Thread Stack APIs
  * @ingroup kernel_apis
  * @defgroup thread_stack_api Thread Stack APIs
+ * @since 1.8
+ * @version 1.0.0
  * @{
  * @}
  */
@@ -129,7 +131,7 @@ static inline char *z_stack_ptr_align(char *ptr)
  * stack. It accepts the indicated "size" as a parameter and pads some
  * extra bytes (e.g. for alignment).
  *
- * @param size Size of the shadow stack memory region
+ * @param size_ Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_SIZE(size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_SIZE(size_)
@@ -176,7 +178,7 @@ struct _stack_to_hw_shadow_stack {
  * defined with K_THREAD_STACK_DEFINE().
  *
  * @param sym Hardware shadow stack symbol name
- * @param size Size of the shadow stack memory region
+ * @param size_ Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_DEFINE(sym, size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_DEFINE(__ ## sym ## _shstk, size_); \
@@ -204,8 +206,8 @@ struct _stack_to_hw_shadow_stack_arr {
  * defined with K_THREAD_STACK_ARRAY_DEFINE().
  *
  * @param sym Hardware shadow stack array symbol name
- * @param nmemb Number of stacks defined
- * @param size Size of the shadow stack memory region
+ * @param nmemb_ Number of stacks defined
+ * @param size_ Size of the shadow stack memory region
  */
 #define K_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(sym, nmemb_, size_) \
 	ARCH_THREAD_HW_SHADOW_STACK_ARRAY_DEFINE(__ ## sym ## _shstk_arr, nmemb_, \

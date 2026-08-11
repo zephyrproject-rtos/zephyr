@@ -10,12 +10,12 @@
 
 #include "bq24190.h"
 
-#include "zephyr/device.h"
-#include "zephyr/drivers/charger.h"
-#include "zephyr/drivers/i2c.h"
-#include "zephyr/kernel.h"
-#include "zephyr/sys/util.h"
-#include "zephyr/logging/log.h"
+#include <zephyr/device.h>
+#include <zephyr/drivers/charger.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 
 LOG_MODULE_REGISTER(ti_bq24190, CONFIG_CHARGER_LOG_LEVEL);

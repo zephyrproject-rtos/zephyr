@@ -231,6 +231,11 @@ SECTIONS {
 
 #include <zephyr/linker/common-ram.ld>
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources(DATA_SECTIONS ...) CMake function.
+ */
+#include <snippets-data-sections.ld>
+
   .tm_clone_table : {
     *(.tm_clone_table)
   } >RAM

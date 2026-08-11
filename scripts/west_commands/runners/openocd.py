@@ -65,7 +65,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                  gdb_client_port=DEFAULT_OPENOCD_GDB_PORT,
                  gdb_init=None, load=True,
                  target_handle=DEFAULT_OPENOCD_TARGET_HANDLE,
-                 rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False):
+                 rtt_port=DEFAULT_OPENOCD_RTT_PORT, rtt_server=False,
+                 gdb_pre_debug=None):
         super().__init__(cfg)
 
         if not path.exists(cfg.board_dir):
@@ -134,6 +135,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.log_file = Path(log_file).as_posix() if log_file else None
         self.rtt_port = rtt_port
         self.rtt_server = rtt_server
+        self.gdb_pre_debug = gdb_pre_debug or []
 
     @classmethod
     def name(cls):
@@ -142,16 +144,21 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
-                          rtt=True, erase=True, skip_load=True, file=True)
+                          dev_id=True, rtt=True, erase=True, skip_load=True, file=True)
+
+    @classmethod
+    def dev_id_help(cls) -> str:
+        return '''Selects the debug adapter by its serial number. The value is
+                  passed to the OpenOCD config as _ZEPHYR_BOARD_SERIAL.'''
 
     @classmethod
     def do_add_parser(cls, parser):
         parser.add_argument('--config', action='append',
                             help='''if given, override default config file;
                             may be given multiple times''')
-        parser.add_argument('--serial', default="",
-                            help='''if given, selects FTDI instance by its serial number,
-                            defaults to empty''')
+        parser.add_argument('--serial', dest='dev_id', default="",
+                            help='''Deprecated: use -i/--dev-id instead. Selects the
+                            debug adapter by its serial number.''')
         # Deprecated --use-* flags for backward compatibility
         parser.add_argument('--use-hex', action='store_const',
                             dest='use_image_type', const='hex',
@@ -228,6 +235,10 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                             help='''start the RTT server while debugging.
                             To view the RTT log, connect to the rtt port using
                             a command like telnet.''')
+        parser.add_argument('--gdb-pre-debug', action='append',
+                            help='''if given, gdb command (-ex) to run
+                            after loading the image during 'debug';
+                            may be given multiple times''')
 
 
     @classmethod
@@ -252,14 +263,15 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             pre_load=args.cmd_pre_load, erase_cmd=args.cmd_erase, load_cmd=args.cmd_load,
             verify_cmd=args.cmd_verify, post_verify=args.cmd_post_verify,
             do_verify=args.verify, do_verify_only=args.verify_only, do_erase=args.erase,
-            tui=args.tui, config=args.config, serial=args.serial,
+            tui=args.tui, config=args.config, serial=args.dev_id,
             image_type=image_type,
             flash_address=args.flash_address, no_halt=args.no_halt, no_init=args.no_init,
             no_targets=args.no_targets, tcl_port=args.tcl_port,
             telnet_port=args.telnet_port, log_file=args.log_file, gdb_port=args.gdb_port,
             gdb_client_port=args.gdb_client_port, gdb_init=args.gdb_init,
             load=args.load, target_handle=args.target_handle,
-            rtt_port=args.rtt_port, rtt_server=args.rtt_server)
+            rtt_port=args.rtt_port, rtt_server=args.rtt_server,
+            gdb_pre_debug=args.gdb_pre_debug)
 
     def print_gdbserver_message(self):
         if not self.thread_info_enabled:
@@ -471,6 +483,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                     self.elf_name])
         if command == 'debug':
             gdb_cmd.extend(self.load_arg)
+            for i in self.gdb_pre_debug:
+                gdb_cmd.append("-ex")
+                gdb_cmd.append(i)
         if self.gdb_init is not None:
             for i in self.gdb_init:
                 gdb_cmd.append("-ex")

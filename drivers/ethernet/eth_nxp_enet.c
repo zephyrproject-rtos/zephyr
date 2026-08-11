@@ -37,7 +37,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/hwinfo.h>
 
-#ifdef CONFIG_PTP_CLOCK
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
 #include <zephyr/drivers/ptp_clock.h>
 #endif
 
@@ -137,26 +137,6 @@ static inline struct net_if *get_iface(struct nxp_enet_mac_data *data)
 }
 
 #if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt)
-{
-	struct net_eth_vlan_hdr *hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
-	bool pkt_is_ptp;
-
-	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
-		pkt_is_ptp = net_ntohs(hdr_vlan->type) == NET_ETH_PTYPE_PTP;
-	} else {
-		pkt_is_ptp = net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP;
-	}
-
-	if (pkt_is_ptp) {
-		net_pkt_set_priority(pkt, NET_PRIORITY_CA);
-	}
-
-	return pkt_is_ptp;
-}
-
-
 static inline void ts_register_tx_event(const struct device *dev,
 					 enet_frame_info_t *frameinfo)
 {
@@ -164,9 +144,7 @@ static inline void ts_register_tx_event(const struct device *dev,
 	struct net_pkt *pkt = frameinfo->context;
 
 	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
-		if ((eth_get_ptp_data(net_pkt_iface(pkt), pkt) ||
-		     net_pkt_is_tx_timestamping(pkt)) &&
-		    frameinfo->isTsAvail) {
+		if (net_pkt_is_tx_timestamping(pkt) && frameinfo->isTsAvail) {
 			/* Timestamp is written to packet in ISR.
 			 * Semaphore ensures sequential execution of writing
 			 * the timestamp here and subsequently reading the timestamp
@@ -193,12 +171,11 @@ static inline void eth_wait_for_ptp_ts(const struct device *dev, struct net_pkt 
 	}
 }
 #else
-#define eth_get_ptp_data(...) false
 #define ts_register_tx_event(...)
 #define eth_wait_for_ptp_ts(...)
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
-#ifdef CONFIG_PTP_CLOCK
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET
 static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 						       struct net_if *iface __unused)
 {
@@ -206,7 +183,7 @@ static const struct device *eth_nxp_enet_get_ptp_clock(const struct device *dev,
 
 	return config->ptp_clock;
 }
-#endif /* CONFIG_PTP_CLOCK */
+#endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
 static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 {
@@ -224,8 +201,7 @@ static int eth_nxp_enet_tx(const struct device *dev, struct net_pkt *pkt)
 		return ret;
 	}
 
-	frame_is_timestamped =
-		eth_get_ptp_data(net_pkt_iface(pkt), pkt) || net_pkt_is_tx_timestamping(pkt);
+	frame_is_timestamped = net_pkt_is_tx_timestamping(pkt);
 
 	ret = ENET_SendFrame(data->base, &data->enet_handle, data->tx_frame_buf, total_len, RING_ID,
 			     frame_is_timestamped, pkt);
@@ -253,9 +229,6 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 		ETHERNET_HW_FILTERING |
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
-#endif
-#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
-		ETHERNET_PTP |
 #endif
 #if defined(CONFIG_ETH_NXP_ENET_HW_ACCELERATION)
 		ETHERNET_HW_TX_CHKSUM_OFFLOAD |
@@ -409,6 +382,7 @@ static int eth_nxp_enet_rx(const struct device *dev)
 
 	pkt->timestamp.nanosecond = ts;
 	pkt->timestamp.second = ptp_time.second;
+	net_pkt_set_rx_timestamping(pkt, true);
 	k_mutex_unlock(data->ptp.ptp_mutex);
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET */
 
@@ -807,7 +781,7 @@ static const struct ethernet_api api_funcs = {
 	.set_config		= eth_nxp_enet_set_config,
 	.get_config		= eth_nxp_enet_get_config,
 	.send			= eth_nxp_enet_tx,
-#if defined(CONFIG_PTP_CLOCK)
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET)
 	.get_ptp_clock		= eth_nxp_enet_get_ptp_clock,
 #endif
 };

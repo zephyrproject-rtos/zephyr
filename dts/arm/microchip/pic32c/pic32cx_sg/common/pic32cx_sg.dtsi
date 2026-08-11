@@ -219,6 +219,7 @@
 			lock-regions = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 			status = "okay";
 
 			flash0: flash@0 {
@@ -226,6 +227,9 @@
 				reg = <0x0 DT_SIZE_K(1024)>;
 				write-block-size = <8>;
 				erase-block-size = <8192>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 
 			userrow: nvmuserrow@804000 {

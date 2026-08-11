@@ -6,8 +6,8 @@
 #ifndef SUBSYS_LORAWAN_NATIVE_MAC_MAC_H_
 #define SUBSYS_LORAWAN_NATIVE_MAC_MAC_H_
 
-#include "engine.h"
-#include "lorawan.h"
+#include <engine.h>
+#include <lorawan.h>
 
 #ifdef __cplusplus
 extern "C" {

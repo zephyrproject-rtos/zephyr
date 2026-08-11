@@ -17,9 +17,9 @@
 #include <dirent.h>
 #include <unistd.h>
 
-#include "nsi_errno.h"
-#include "nsi_fcntl.h"
-#include "nsi_tracing.h"
+#include <nsi_errno.h>
+#include <nsi_fcntl.h>
+#include <nsi_tracing.h>
 #include "native_mount_bottom.h"
 
 struct fs_mid_dir {

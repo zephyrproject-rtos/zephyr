@@ -4,4 +4,4 @@
 zephyr_include_directories(.)
 zephyr_include_directories(../common)
 add_subdirectory(common)
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})

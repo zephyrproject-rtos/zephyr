@@ -7,7 +7,7 @@
 #ifndef __SOC_CLOCK_FREQ_H__
 #define __SOC_CLOCK_FREQ_H__
 
-#include "device_imx.h"
+#include <device_imx.h>
 #include <zephyr/types.h>
 
 #if defined(__cplusplus)

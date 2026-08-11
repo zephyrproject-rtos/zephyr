@@ -4,6 +4,7 @@
 config VIDEO_OV5642
 	bool "OV5642 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV5642),powerdown-gpios)
 	depends on DT_HAS_OVTI_OV5642_ENABLED
 	default y
 	help

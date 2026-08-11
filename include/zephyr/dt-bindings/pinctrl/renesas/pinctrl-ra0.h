@@ -4,19 +4,63 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Renesas RA0
+ * @ingroup pinctrl_ra0
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA0_H__
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA0_H__
 
 /**
- * @file
- * @brief Renesas RA0 pinctrl pin configuration definitions.
+ * @addtogroup renesas_pinctrl Renesas pin control helpers
+ * @ingroup devicetree-pinctrl
  */
 
 /**
- * @name Renesas RA0 pin configuration bit field positions and masks.
+ * @defgroup pinctrl_ra0 Renesas RA0 pin control helpers
+ * @brief Macros for pin control configuration of Renesas RA0 SoCs
+ * @ingroup renesas_pinctrl
+ *
+ * Each pin configuration is built with the RA_PSEL() macro, which combines a
+ * per-port peripheral-function selector, the port number, and the pin number
+ * within that port.
+ *
+ * The selector follows the naming convention @c RA_PSEL_P\<PORT\>nPFS_\<SIGNAL\>,
+ * where @c \<PORT\> is the port number and @c \<SIGNAL\> is the peripheral signal
+ * routed to the pin (for example @c RA_PSEL_P1nPFS_TXDA0C selects the @c TXDA0C
+ * signal on port 1). Signals are grouped by peripheral:
+ *
+ * - Timer array unit (TAU): timer inputs @c TI and outputs @c TO
+ * - Serial array unit (SAU) in SPI mode: @c SCK, @c SI, @c SO, @c SSI;
+ *   in UART mode: @c TXD, @c RXD; in simple-I2C mode: @c SCL, @c SDA
+ * - IICA: @c SCLA0, @c SDAA0, @c SCLA1, @c SDAA1
+ * - UARTA: @c TXDA0, @c RXDA0, @c TXDA1, @c RXDA1
+ * - RTC: @c RTCOUT, @c RTCOUNTC
+ * - Clock output (CGC): @c PCLBUZ0, @c PCLBUZ1
+ * - Capacitive touch (CTSU): @c TS0 ... @c TS12, @c TSCAP
+ * - JTAG/SWD: @c SWDIO, @c SWCLK
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-ra0.h>
+ *
+ * &pinctrl {
+ *         uarta0_default: uarta0_default {
+ *                 group1 {
+ *                         psels = <RA_PSEL(RA_PSEL_P1nPFS_TXDA0C, 1, 5)>,
+ *                                 <RA_PSEL(RA_PSEL_P1nPFS_RXDA0C, 1, 6)>;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
+/* Pin configuration bit field positions and masks. */
 /** Position of the port field. */
 #define RA_PORT_NUM_POS  0
 /** Mask of the port field. */
@@ -30,12 +74,7 @@
 /** Mask for the function field. */
 #define RA_PSEL_MASK     0x1f
 
-/** @} */
-
-/**
- * @name Renesas RA0 pinctrl pin functions.
- * @{
- */
+/* Per-port peripheral-function selector (PSEL) values. */
 
 /** JTAG/SWD SWDIO */
 #define RA_PSEL_P1nPFS_SWDIO    0x1
@@ -337,7 +376,7 @@
 /** SAU_SPI01 SO01B */
 #define RA_PSEL_P9nPFS_SO01B  0x3
 
-/** @} */
+/** @endcond */
 
 /**
  * @brief Utility macro to build Renesas RA0 psels property entry.
@@ -348,5 +387,7 @@
  */
 #define RA_PSEL(psel, port_num, pin_num)                                                           \
 	(psel << RA_PSEL_POS | port_num << RA_PORT_NUM_POS | pin_num << RA_PIN_NUM_POS)
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_RENESAS_PINCTRL_RA0_H__ */

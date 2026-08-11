@@ -206,6 +206,17 @@
 		};
 	};
 
+	lpspi3_default: lpspi3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io08_lpspi_pcs_lpspi3_pcs0>,
+				 <&iomuxc_gpio_io09_lpspi_sin_lpspi3_sin>,
+				 <&iomuxc_gpio_io10_lpspi_sout_lpspi3_sout>,
+				 <&iomuxc_gpio_io11_lpspi_sck_lpspi3_sck>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	flexcan2_default: flexcan2_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io34_can_tx_can2_tx>,

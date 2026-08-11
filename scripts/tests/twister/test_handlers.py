@@ -862,7 +862,7 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
+         '--', '--cmd-pre-init', 'adapter serial 12345']
     ),
     (
         None,

@@ -7,3 +7,13 @@ config RTC_EMUL
 	depends on DT_HAS_ZEPHYR_RTC_EMUL_ENABLED
 	help
 	  Enable emulated Real-Time Clock (RTC) driver.
+
+if RTC_EMUL
+
+config RTC_EMUL_INIT_DATETIME
+	bool "Initialize emulated RTC time from host wall-clock"
+	depends on ARCH_POSIX
+	help
+	  Seed the emulated RTC with the host's current wall-clock time.
+
+endif

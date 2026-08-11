@@ -578,5 +578,30 @@
 			status = "okay";
 			dai-index = <213>;
 		};
+
+		tdm_dai0: tdm-dai0 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <0>;
+		};
+
+		tdm_dai1: tdm-dai1 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <1>;
+		};
+
+		tdm_dai2: tdm-dai2 {
+			compatible = "amd,tdm-dai";
+			status = "okay";
+			dai-index = <2>;
+		};
+
+		acp_tdm_dma: acp-tdm-dma {
+			compatible = "amd,acp-tdm-dma";
+			#dma-cells = <3>;
+			dma-channels = <6>;
+			status = "okay";
+		};
 	};
 };

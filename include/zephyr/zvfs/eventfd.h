@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZEPHYR_ZVFS_EVENTFD_H_
-#define ZEPHYR_INCLUDE_ZEPHYR_ZVFS_EVENTFD_H_
+#ifndef ZEPHYR_INCLUDE_ZVFS_EVENTFD_H_
+#define ZEPHYR_INCLUDE_ZVFS_EVENTFD_H_
 
 #include <stdint.h>
 
@@ -63,4 +63,4 @@ int zvfs_eventfd_write(int fd, zvfs_eventfd_t value);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZEPHYR_ZVFS_EVENTFD_H_ */
+#endif /* ZEPHYR_INCLUDE_ZVFS_EVENTFD_H_ */

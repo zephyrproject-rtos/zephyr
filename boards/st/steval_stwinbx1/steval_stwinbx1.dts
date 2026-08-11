@@ -19,6 +19,7 @@
 		zephyr,code-partition = &slot0_partition;
 
 		zephyr,bt-hci = &hci_spi;
+		zephyr,system-timer = &lptim1;
 	};
 
 	leds {
@@ -137,7 +138,7 @@
 	};
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -330,14 +331,10 @@ zephyr_udc0: &usbotg_fs {
 		slot1_partition: partition@78000 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
+			reg = <0x00078000 DT_SIZE_K(424)>;
 		};
 
-		scratch_partition: partition@e0000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
+		/* Range [0xe2000..0xf0000] is unused. */
 
 		storage_partition: partition@f0000 {
 			compatible = "zephyr,mapped-partition";

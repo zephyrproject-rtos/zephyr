@@ -32,10 +32,29 @@
 			i-cache-line-size = <16>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			cpu-power-states = <&stop0 &stop1>;
 
 			mpu: mpu@e000ed90 {
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
+			};
+		};
+
+		power-states {
+			stop0: state0 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100>;
+				exit-latency-us = <10>;
+			};
+
+			stop1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <500>;
+				exit-latency-us = <43>;
 			};
 		};
 	};
@@ -103,6 +122,13 @@
 			compatible = "fixed-clock";
 			status = "disabled";
 		};
+
+		clk48: clk48 {
+			#clock-cells = <0>;
+			compatible = "st,stm32-clock-mux";
+			clocks = <&rcc STM32_SRC_HSIDIV3 CK48_SEL(2)>;
+			status = "disabled";
+		};
 	};
 
 	mcos {
@@ -155,7 +181,7 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+			compatible = "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x1400>;
 			clock-names = "mac-clk-int", "stm-eth", "mac-clk-tx", "mac-clk-rx",
 				      "eth1clk-sel", "eth1clkdiv-sel", "eth1refclk-sel";
@@ -174,6 +200,10 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 
@@ -308,6 +338,18 @@
 			status = "disabled";
 		};
 
+		lptim1: timers@44004400 {
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44004400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
+			resets = <&rctl STM32_RESET(APB3, 11)>;
+			interrupts = <57 0>;
+			interrupt-names = "wakeup";
+			status = "disabled";
+		};
+
 		lpuart1: serial@44002400 {
 			compatible = "st,stm32-lpuart", "st,stm32-uart";
 			reg = <0x44002400 0x400>;
@@ -322,6 +364,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
+			ranges;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
@@ -396,7 +439,8 @@
 		rng: rng@420c0800 {
 			compatible = "st,stm32-rng";
 			reg = <0x420c0800 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			interrupts = <64 0>;
 			nist-config = <0x8451f00>;
 			health-test-config = <0xaac7>;
@@ -698,7 +742,7 @@
 			ram-size = <2048>;
 			maximum-speed = "full-speed";
 			clocks = <&rcc STM32_CLOCK(APB2, 24)>,
-				 <&rcc STM32_SRC_CK48 CK48_SEL(0)>;
+				 <&rcc STM32_SRC_CK48 NO_SEL>;
 			phys = <&usb_fs_phy>;
 			status = "disabled";
 		};

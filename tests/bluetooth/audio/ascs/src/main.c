@@ -415,7 +415,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_streaming_state)
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(1, &stream);
 	expect_bt_bap_stream_ops_released_called(0, NULL);
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
@@ -458,7 +458,7 @@ static void test_cis_link_loss_in_disabling_state(struct ascs_test_suite_fixture
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	/* Expected to notify the upper layers */
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 	expect_bt_bap_stream_ops_released_called(0, NULL);
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
@@ -505,7 +505,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	/* Expected no change in ASE state */
-	expect_bt_bap_stream_ops_qos_set_called(0, NULL);
+	expect_bt_bap_stream_ops_qos_configured_called(0, NULL);
 	expect_bt_bap_stream_ops_released_called(0, NULL);
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
 
@@ -515,11 +515,11 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state)
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	if (IS_ENABLED(CONFIG_BT_ASCS_ASE_SNK)) {
-		expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+		expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 		expect_bt_bap_stream_ops_disabled_called(1, &stream);
 	} else {
 		/* Server-initiated disable operation that shall not cause transition to QoS */
-		expect_bt_bap_stream_ops_qos_set_called(0, NULL);
+		expect_bt_bap_stream_ops_qos_configured_called(0, NULL);
 	}
 }
 
@@ -553,7 +553,7 @@ ZTEST_F(ascs_test_suite, test_cis_link_loss_in_enabling_state_client_retries)
 	test_drain_syswq(); /* Ensure that state transitions are completed */
 
 	/* Expected to not notify the upper layers */
-	expect_bt_bap_stream_ops_qos_set_called(0, NULL);
+	expect_bt_bap_stream_ops_qos_configured_called(0, NULL);
 	expect_bt_bap_stream_ops_released_called(0, NULL);
 	expect_bt_bap_stream_ops_disconnected_called(1, (const struct bt_bap_stream **)&stream);
 
@@ -644,7 +644,7 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	cp->write(conn, cp, (void *)buf, sizeof(buf), 0, 0);
 
 	/* Verification */
-	expect_bt_bap_stream_ops_configured_called(0, NULL, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(0, NULL, NULL);
 
 	mock_bt_gatt_notify_cb_fake.return_val = 0;
 
@@ -654,5 +654,5 @@ ZTEST_F(ascs_test_suite, test_ase_state_notification_retry)
 	/* Wait for ASE state notification retry */
 	k_sleep(K_USEC(info.le.interval_us));
 
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }

@@ -11,6 +11,5 @@ properties:
   fifo-threshold:
     type: int
     required: true
-    default: 16
     description: |
         Set the FIFO threshold to the middle by default

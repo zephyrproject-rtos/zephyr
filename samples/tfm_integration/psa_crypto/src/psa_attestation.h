@@ -6,7 +6,7 @@
 
 #include <stdarg.h>
 
-#include "psa/error.h"
+#include <psa/error.h>
 
 #ifdef __cplusplus
 extern "C" {

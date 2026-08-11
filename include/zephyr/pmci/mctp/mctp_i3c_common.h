@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I3C_COMMON_H_
-#define ZEPHYR_MCTP_I3C_COMMON_H_
+/**
+ * @file
+ * @brief Internal definitions shared by the MCTP I3C controller and target bindings.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_COMMON_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_COMMON_H_
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -18,4 +24,4 @@
 
 /** @endcond INTERNAL_HIDDEN */
 
-#endif /* ZEPHYR_MCTP_I3C_COMMON_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_COMMON_H_ */

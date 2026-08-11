@@ -1513,6 +1513,7 @@ def load_board_catalog_into_domain(app: Sphinx) -> None:
             app.builder.format == "html" and app.config.zephyr_generate_hw_features
         ),
         hw_features_vendor_filter=app.config.zephyr_hw_features_vendor_filter,
+        extra_twister_flags=app.config.zephyr_hw_features_twister_extra_flags,
     )
 
     # Preserve existing docnames when reloading the catalog
@@ -1534,6 +1535,7 @@ def setup(app):
     app.add_config_value("zephyr_breathe_insert_related_samples", False, "env")
     app.add_config_value("zephyr_generate_hw_features", False, "env")
     app.add_config_value("zephyr_hw_features_vendor_filter", [], "env", types=[list[str]])
+    app.add_config_value("zephyr_hw_features_twister_extra_flags", [], "env", types=[list[str]])
 
     app.add_domain(ZephyrDomain)
 

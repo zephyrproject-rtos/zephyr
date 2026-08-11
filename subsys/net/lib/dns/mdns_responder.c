@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <strings.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <zephyr/random/random.h>
 #include <zephyr/net/mld.h>
@@ -32,6 +33,7 @@ LOG_MODULE_REGISTER(net_mdns_responder, CONFIG_MDNS_RESPONDER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/socket_service.h>
 #include <zephyr/net/igmp.h>
+#include <zephyr/net/mdns_responder.h>
 
 #include "dns_sd.h"
 #include "dns_pack.h"
@@ -54,23 +56,196 @@ extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
+#if defined(CONFIG_NET_INTERFACE_NAME_LEN)
+#define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
+#else
+#define INTERFACE_NAME_LEN 0
+#endif
+
+#define MDNS_MAX_IFACE_COUNT MAX(MAX_IPV4_IFACE_COUNT, MAX_IPV6_IFACE_COUNT)
+
+#if defined(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL)
+static inline bool mdns_iface_policy_allows(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return true;
+}
+#else
+/* Return true if the given interface name is found in the configured comma
+ * separated interface list. Leading and trailing whitespace around each list
+ * entry is ignored.
+ */
+static bool iface_name_in_list(const char *name)
+{
+	const char *p = CONFIG_MDNS_RESPONDER_IFACE_LIST;
+	size_t name_len = strlen(name);
+
+	while (*p != '\0') {
+		const char *start;
+		size_t len;
+
+		/* Skip leading whitespace */
+		while (*p == ' ' || *p == '\t') {
+			p++;
+		}
+
+		start = p;
+
+		/* Find the end of this entry */
+		while (*p != '\0' && *p != ',') {
+			p++;
+		}
+
+		len = p - start;
+
+		/* Trim trailing whitespace */
+		while (len > 0 &&
+		       (start[len - 1] == ' ' || start[len - 1] == '\t')) {
+			len--;
+		}
+
+		if (len == name_len && strncmp(start, name, len) == 0) {
+			return true;
+		}
+
+		/* Skip the comma separator */
+		if (*p == ',') {
+			p++;
+		}
+	}
+
+	return false;
+}
+
+/* Decide whether the build-time interface policy allows the mDNS responder to
+ * operate on the given interface.
+ */
+static bool mdns_iface_policy_allows(struct net_if *iface)
+{
+	char name[INTERFACE_NAME_LEN + 1];
+	bool in_list;
+
+	if (iface == NULL) {
+		return false;
+	}
+
+	if (net_if_get_name(iface, name, sizeof(name)) < 0) {
+		in_list = false;
+	} else {
+		in_list = iface_name_in_list(name);
+	}
+
+	if (IS_ENABLED(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST)) {
+		return in_list;
+	}
+
+	/* CONFIG_MDNS_RESPONDER_IFACE_POLICY_DENYLIST */
+	return !in_list;
+}
+#endif /* CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL */
+
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+/* Per-interface runtime override of the build-time policy, indexed by
+ * (interface index - 1). Defaults to "follow policy".
+ */
+enum mdns_iface_ctrl {
+	MDNS_IFACE_CTRL_DEFAULT = 0,
+	MDNS_IFACE_CTRL_ENABLED,
+	MDNS_IFACE_CTRL_DISABLED,
+};
+
+static enum mdns_iface_ctrl iface_ctrl[MDNS_MAX_IFACE_COUNT];
+static bool listeners_running;
+
+static void mdns_mark_running(bool running)
+{
+	listeners_running = running;
+}
+
+/* Decide whether the mDNS responder should operate on a given interface. A
+ * runtime override set through mdns_responder_{enable,disable}_iface() takes
+ * precedence over the build-time policy.
+ */
+static bool mdns_iface_is_enabled(struct net_if *iface)
+{
+	int idx;
+
+	if (iface == NULL) {
+		return false;
+	}
+
+	idx = net_if_get_by_iface(iface) - 1;
+	if (idx >= 0 && idx < (int)ARRAY_SIZE(iface_ctrl)) {
+		if (iface_ctrl[idx] == MDNS_IFACE_CTRL_ENABLED) {
+			return true;
+		}
+
+		if (iface_ctrl[idx] == MDNS_IFACE_CTRL_DISABLED) {
+			return false;
+		}
+	}
+
+	return mdns_iface_policy_allows(iface);
+}
+#else
+static inline void mdns_mark_running(bool running)
+{
+	ARG_UNUSED(running);
+}
+
+static inline bool mdns_iface_is_enabled(struct net_if *iface)
+{
+	return mdns_iface_policy_allows(iface);
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
+
+/* v4_svc/v6_svc are shared between the per-interface listener dispatch below (needs
+ * MDNS_MAX_IPV4/6_IFACE_COUNT fds, one per interface) and, when probing is enabled,
+ * send_probe()'s temporary DNS resolve context (needs DNS_RESOLVER_MAX_POLL fds for its
+ * own server list). net_socket_service_register() fully replaces the previously
+ * registered set on every call rather than accumulating (see cleanup_svc_events() in
+ * sockets_service.c), so sizing only needs to cover whichever of the two is larger, not
+ * their sum -- but it does need to cover both, since the same static object is reused for
+ * both purposes at different times. Without this, dns_resolve_init_with_svc() silently
+ * fails with -ENOMEM ("Too many file descriptors") whenever DNS_RESOLVER_MAX_POLL exceeds
+ * the interface count, which is the common case (DNS_RESOLVER_MAX_POLL is at least 2 with
+ * IPv4+IPv6 mDNS both enabled, vs. the interface-count Kconfigs' default of 1) -- every
+ * probe then times out and the responder never starts.
+ */
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+#define MDNS_V4_SVC_POLL_COUNT MAX(MDNS_MAX_IPV4_IFACE_COUNT, DNS_RESOLVER_MAX_POLL)
+#define MDNS_V6_SVC_POLL_COUNT MAX(MDNS_MAX_IPV6_IFACE_COUNT, DNS_RESOLVER_MAX_POLL)
+#else
+#define MDNS_V4_SVC_POLL_COUNT MDNS_MAX_IPV4_IFACE_COUNT
+#define MDNS_V6_SVC_POLL_COUNT MDNS_MAX_IPV6_IFACE_COUNT
+#endif
+
 #if defined(CONFIG_NET_IPV4)
 static struct mdns_responder_context v4_ctx[MAX_IPV4_IFACE_COUNT];
 
+/* The socket service dispatcher keeps a pointer to the poll fd array passed at
+ * registration (and reuses it when a peer dispatcher is unregistered), so it
+ * must outlive init_listener(). Keep it at file scope for that reason.
+ */
+static struct zsock_pollfd ipv4_fds[MAX_IPV4_IFACE_COUNT];
+
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v4_svc, dns_dispatcher_svc_handler,
-				      MDNS_MAX_IPV4_IFACE_COUNT);
+				      MDNS_V4_SVC_POLL_COUNT);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
 static struct mdns_responder_context v6_ctx[MAX_IPV6_IFACE_COUNT];
 
+/* See the ipv4_fds comment above: the dispatcher retains this pointer. */
+static struct zsock_pollfd ipv6_fds[MAX_IPV6_IFACE_COUNT];
+
 NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
-				      MDNS_MAX_IPV6_IFACE_COUNT);
+				      MDNS_V6_SVC_POLL_COUNT);
 #endif
 
-static struct net_mgmt_event_callback mgmt_iface_cb;
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
+static struct net_mgmt_event_callback mgmt_iface_cb;
 static void cancel_probes(struct mdns_responder_context *ctx);
 static struct net_mgmt_event_callback mgmt_conn_cb;
 #if defined(CONFIG_NET_IPV4)
@@ -162,36 +337,23 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 }
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
 static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 				     uint64_t mgmt_event, struct net_if *iface)
 
 {
-	if (mgmt_event == NET_EVENT_IF_UP) {
-#if defined(CONFIG_NET_IPV4)
-		if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
-			int index = net_if_get_by_iface(iface) - 1;
-			int ret = net_ipv4_igmp_join(iface,
-				&net_sin(&v4_ctx[index].dispatcher.local_addr)->sin_addr,
-					NULL);
-			if (ret < 0) {
-				NET_DBG("Cannot add IPv4 multicast address %s to iface %d (%d)",
-					net_sprint_ipv4_addr(&net_sin(
-						&v4_ctx[index].dispatcher.local_addr)->sin_addr),
-					net_if_get_by_iface(iface), ret);
-			}
-		}
-#endif /* defined(CONFIG_NET_IPV4) */
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
 	}
 
-#if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	if (mgmt_event == NET_EVENT_IF_UP && init_listener_done) {
 		do_announce = true;
 		announce_count = 0;
 
 		mark_needs_announce(iface, true);
 	}
-#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 }
+#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 {
@@ -456,7 +618,6 @@ static void send_sd_response(int sock,
 			     net_sa_family_t family,
 			     struct net_sockaddr *src_addr,
 			     size_t addrlen,
-			     struct dns_msg_t *dns_msg,
 			     struct net_buf *result)
 {
 	struct net_if *iface;
@@ -538,8 +699,11 @@ static void send_sd_response(int sock,
 		}
 	}
 
-	ret = dns_sd_query_extract(dns_msg->msg,
-		dns_msg->msg_size, &filter, label, size, &n);
+	/* result->data is already the decompressed name for this question, following
+	 * any compression pointer (RFC 1035 4.1.4) avahi uses on questions after the
+	 * first in a batched query.
+	 */
+	ret = dns_sd_query_extract(result->data, result->len, &filter, label, size, &n);
 	if (ret < 0) {
 		NET_DBG("unable to extract query (%d)", ret);
 		return;
@@ -593,7 +757,7 @@ static void send_sd_response(int sock,
 				}
 			} else {
 				ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6,
-						result->data, net_buf_max_len(result));
+						result->data, net_buf_max_len(result), false);
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_ptr_query() failed (%d)", ret);
 					continue;
@@ -699,8 +863,7 @@ static int dns_read(int sock,
 				      result, qtype);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(sock, family, src_addr, addrlen,
-					 &dns_msg, result);
+			send_sd_response(sock, family, src_addr, addrlen, result);
 		}
 
 	} while (--queries);
@@ -918,7 +1081,7 @@ static int send_probe(struct mdns_responder_context *ctx)
 	 * not use cache.
 	 */
 	ret = dns_resolve_name_internal(&ctx->probe_ctx, ctx->probe_data.query,
-					DNS_RR_TYPE_ANY,
+					DNS_QUERY_TYPE_ANY,
 					&ctx->probe_data.dns_id, probe_cb,
 					&ctx->probe_data, PROBE_TIMEOUT,
 					false);
@@ -1004,6 +1167,16 @@ static void start_announce(struct net_if *iface)
 {
 	int ret;
 
+	/* Don't preempt the probe -> init_listener sequence on the very first
+	 * address (e.g. DHCP binding races the RFC 6762 probe timer). Once
+	 * init_listener() succeeds it already announces via its own call to
+	 * announce_start() below, so this is only needed for re-announces
+	 * after the listener is already up (lease renewal, etc).
+	 */
+	if (!init_listener_done) {
+		return;
+	}
+
 	do_announce = true;
 	announce_count = 0;
 	mark_needs_announce(iface, true);
@@ -1023,6 +1196,10 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 	uint32_t probe_delay = sys_rand32_get() % 250;
 	bool probe_started = false;
 	int ret;
+
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
 
 #if defined(CONFIG_NET_IPV4)
 	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
@@ -1198,6 +1375,10 @@ static void iface_ipv6_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
 	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
 		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
@@ -1220,6 +1401,10 @@ static void iface_ipv4_cb(struct net_if *iface, void *user_data)
 	int ret;
 
 	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		return;
+	}
+
+	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
@@ -1253,12 +1438,6 @@ static void setup_ipv4_addr(struct net_sockaddr_in *local_addr)
 }
 #endif /* CONFIG_NET_IPV4 */
 
-#if defined(CONFIG_NET_INTERFACE_NAME_LEN)
-#define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
-#else
-#define INTERFACE_NAME_LEN 0
-#endif
-
 static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct net_sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
@@ -1276,6 +1455,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 static int register_dispatcher(struct mdns_responder_context *ctx,
 			       const struct net_socket_service_desc *svc,
 			       struct net_sockaddr *local,
+			       size_t local_len,
 			       int ifindex,
 			       struct zsock_pollfd *fds,
 			       size_t fds_len)
@@ -1298,9 +1478,17 @@ static int register_dispatcher(struct mdns_responder_context *ctx,
 	svc->pev[0].event.fd = ctx->sock;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && local->sa_family == NET_AF_INET6) {
+		if (local_len < sizeof(struct net_sockaddr_in6)) {
+			return -EINVAL;
+		}
+
 		memcpy(&ctx->dispatcher.local_addr, local,
 		       sizeof(struct net_sockaddr_in6));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local->sa_family == NET_AF_INET) {
+		if (local_len < sizeof(struct net_sockaddr_in)) {
+			return -EINVAL;
+		}
+
 		memcpy(&ctx->dispatcher.local_addr, local,
 		       sizeof(struct net_sockaddr_in));
 	} else {
@@ -1331,11 +1519,20 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v6_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			continue;
 		}
 
 		v6_ctx[i].iface = iface;
+		/* Mark the socket as not yet created so that an announce that
+		 * is triggered (e.g. by a DHCP bound event) before the listener
+		 * is initialized does not try to send on it.
+		 */
+		v6_ctx[i].sock = -1;
 		v6_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET6;
 		v6_ctx[i].dispatcher.svc = &v6_svc;
 
@@ -1354,11 +1551,20 @@ static int pre_init_listener(void)
 
 	ARRAY_FOR_EACH(v4_ctx, i) {
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			continue;
 		}
 
 		v4_ctx[i].iface = iface;
+		/* Mark the socket as not yet created so that an announce that
+		 * is triggered (e.g. by a DHCP bound event) before the listener
+		 * is initialized does not try to send on it.
+		 */
+		v4_ctx[i].sock = -1;
 		v4_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET;
 		v4_ctx[i].dispatcher.svc = &v4_svc;
 
@@ -1391,9 +1597,9 @@ static int init_listener(void)
 
 #if defined(CONFIG_NET_IPV6)
 	/* Because there is only one IPv6 socket service context for all
-	 * IPv6 sockets, we must collect the sockets in one place.
+	 * IPv6 sockets, we must collect the sockets in one place (ipv6_fds,
+	 * defined at file scope).
 	 */
-	struct zsock_pollfd ipv6_fds[MAX_IPV6_IFACE_COUNT];
 	struct net_sockaddr_in6 local_addr6;
 	int v6;
 
@@ -1416,6 +1622,14 @@ static int init_listener(void)
 			v6_ctx[i].fds[j].fd = -1;
 		}
 
+		/* Mark the slot closed up front. Skipped slots (no socket,
+		 * disabled or missing interface) must not look "open" to the
+		 * teardown path, otherwise mdns_close_listeners() would act on
+		 * a zero-initialized slot and close(0) an unrelated fd. The
+		 * success path below overwrites this with the real socket.
+		 */
+		v6_ctx[i].sock = -1;
+
 		v6 = get_socket(NET_AF_INET6);
 		if (v6 < 0) {
 			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
@@ -1425,14 +1639,19 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV6)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV6)) {
+			zsock_close(v6);
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			zsock_close(v6);
 			continue;
 		}
 
 		ifindex = net_if_get_by_iface(iface);
 
-		ret = net_if_get_name(iface, name, INTERFACE_NAME_LEN);
+		ret = net_if_get_name(iface, name, sizeof(name));
 		if (ret < 0) {
 			NET_DBG("Cannot get interface name for %d (%d)",
 				ifindex, ret);
@@ -1478,7 +1697,8 @@ static int init_listener(void)
 		}
 
 		ret = register_dispatcher(&v6_ctx[i], &v6_svc, (struct net_sockaddr *)&local_addr6,
-					  ifindex, ipv6_fds, ARRAY_SIZE(ipv6_fds));
+					  sizeof(local_addr6), ifindex, ipv6_fds,
+					  ARRAY_SIZE(ipv6_fds));
 		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv6", "mDNS", ret);
@@ -1490,7 +1710,6 @@ static int init_listener(void)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	struct zsock_pollfd ipv4_fds[MAX_IPV4_IFACE_COUNT];
 	struct net_sockaddr_in local_addr4;
 	int v4;
 
@@ -1513,6 +1732,14 @@ static int init_listener(void)
 			v4_ctx[i].fds[j].fd = -1;
 		}
 
+		/* Mark the slot closed up front. Skipped slots (no socket,
+		 * disabled or missing interface) must not look "open" to the
+		 * teardown path, otherwise mdns_close_listeners() would act on
+		 * a zero-initialized slot and close(0) an unrelated fd. The
+		 * success path below overwrites this with the real socket.
+		 */
+		v4_ctx[i].sock = -1;
+
 		v4 = get_socket(NET_AF_INET);
 		if (v4 < 0) {
 			NET_ERR("Cannot get %s socket (%d %s interfaces). Max sockets is %d (%d)",
@@ -1522,14 +1749,19 @@ static int init_listener(void)
 		}
 
 		iface = net_if_get_by_index(i + 1);
-		if ((!net_if_flag_is_set(iface, NET_IF_IPV4)) || iface == NULL) {
+		if (iface == NULL || !net_if_flag_is_set(iface, NET_IF_IPV4)) {
+			zsock_close(v4);
+			continue;
+		}
+
+		if (!mdns_iface_is_enabled(iface)) {
 			zsock_close(v4);
 			continue;
 		}
 
 		ifindex = net_if_get_by_iface(iface);
 
-		ret = net_if_get_name(iface, name, INTERFACE_NAME_LEN);
+		ret = net_if_get_name(iface, name, sizeof(name));
 		if (ret < 0) {
 			NET_DBG("Cannot get interface name for %d (%d)",
 				ifindex, ret);
@@ -1575,7 +1807,8 @@ static int init_listener(void)
 		}
 
 		ret = register_dispatcher(&v4_ctx[i], &v4_svc, (struct net_sockaddr *)&local_addr4,
-					  ifindex, ipv4_fds, ARRAY_SIZE(ipv4_fds));
+					  sizeof(local_addr4), ifindex, ipv4_fds,
+					  ARRAY_SIZE(ipv4_fds));
 		if (ret < 0 && ret != -EALREADY) {
 			NET_DBG("Cannot register %s %s socket service (%d)",
 				"IPv4", "mDNS", ret);
@@ -1593,6 +1826,222 @@ static int init_listener(void)
 
 	return 0;
 }
+
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+static K_MUTEX_DEFINE(reconfigure_lock);
+static void mdns_leave_groups_cb(struct net_if *iface, void *user_data);
+
+/* Tear down every listener socket and its dispatcher registration. The sockets
+ * are recreated for the interfaces that remain enabled by init_listener().
+ */
+static void mdns_close_listeners(void)
+{
+#if defined(CONFIG_NET_IPV6)
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		int sock = v6_ctx[i].sock;
+
+		if (sock < 0) {
+			continue;
+		}
+
+		(void)dns_dispatcher_unregister(&v6_ctx[i].dispatcher);
+		(void)zsock_close(sock);
+		v6_ctx[i].sock = -1;
+
+		ARRAY_FOR_EACH(v6_ctx[i].fds, j) {
+			v6_ctx[i].fds[j].fd = -1;
+		}
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		int sock = v4_ctx[i].sock;
+
+		if (sock < 0) {
+			continue;
+		}
+
+		(void)dns_dispatcher_unregister(&v4_ctx[i].dispatcher);
+		(void)zsock_close(sock);
+		v4_ctx[i].sock = -1;
+
+		ARRAY_FOR_EACH(v4_ctx[i].fds, j) {
+			v4_ctx[i].fds[j].fd = -1;
+		}
+	}
+#endif /* CONFIG_NET_IPV4 */
+}
+
+#if defined(CONFIG_NET_TEST)
+/* Test-only helper. Return the raw socket stored in the given listener slot,
+ * or INT_MIN when the family/slot is out of range. The tests use this to
+ * verify that skipped listener slots are marked closed (-1) rather than left
+ * at a zero-initialized fd, which would make mdns_close_listeners() close an
+ * unrelated descriptor.
+ */
+int mdns_test_get_listener_sock(net_sa_family_t family, unsigned int slot)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (family == NET_AF_INET6) {
+		if (slot >= ARRAY_SIZE(v6_ctx)) {
+			return INT_MIN;
+		}
+
+		return v6_ctx[slot].sock;
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (family == NET_AF_INET) {
+		if (slot >= ARRAY_SIZE(v4_ctx)) {
+			return INT_MIN;
+		}
+
+		return v4_ctx[slot].sock;
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+	return INT_MIN;
+}
+
+/* Test-only helper. Reproduce the boot-time condition where a listener slot
+ * was never opened by injecting a zero-initialized fd into the given slot and
+ * re-running the listener setup. init_listener() must mark a skipped slot
+ * closed (-1); the pre-fix code left it at the injected fd, which later made
+ * mdns_close_listeners() unregister a zeroed dispatcher and close(0) an
+ * unrelated descriptor. Returns 0 on success.
+ */
+int mdns_test_reinit_with_stale_slot(unsigned int slot)
+{
+	/* Start from a clean state (every slot marked closed). */
+	mdns_close_listeners();
+	net_if_foreach(mdns_leave_groups_cb, NULL);
+
+#if defined(CONFIG_NET_IPV6)
+	if (slot < ARRAY_SIZE(v6_ctx)) {
+		v6_ctx[slot].sock = 0;
+	}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (slot < ARRAY_SIZE(v4_ctx)) {
+		v4_ctx[slot].sock = 0;
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+	return init_listener();
+}
+#endif /* CONFIG_NET_TEST */
+
+/* Leave the mDNS multicast groups on the given interface. init_listener()
+ * rejoins them on the interfaces that remain enabled.
+ */
+static void mdns_leave_groups_cb(struct net_if *iface, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_if_flag_is_set(iface, NET_IF_IPV4)) {
+		struct net_sockaddr_in addr4;
+
+		create_ipv4_addr(&addr4);
+		(void)net_ipv4_igmp_leave(iface, &addr4.sin_addr);
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+	if (net_if_flag_is_set(iface, NET_IF_IPV6)) {
+		struct net_sockaddr_in6 addr6;
+
+		create_ipv6_addr(&addr6);
+		(void)net_ipv6_mld_leave(iface, &addr6.sin6_addr);
+	}
+#endif /* CONFIG_NET_IPV6 */
+}
+
+/* Rebuild the responder listeners to match the current per-interface state.
+ * Everything is torn down and set up again so that both newly enabled and
+ * newly disabled interfaces are handled by the existing setup path.
+ */
+static void mdns_reconfigure_listeners(void)
+{
+	k_mutex_lock(&reconfigure_lock, K_FOREVER);
+
+	if (!listeners_running) {
+		/* The initial listener setup has not run yet; it will honor the
+		 * current runtime state, so there is nothing to rebuild.
+		 */
+		goto out;
+	}
+
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+	/* Stop any in-flight probing before tearing the sockets down. Only the
+	 * contexts that were configured have an initialized probe timer.
+	 */
+#if defined(CONFIG_NET_IPV6)
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		if (v6_ctx[i].iface != NULL) {
+			(void)k_work_cancel_delayable(&v6_ctx[i].probe_timer);
+		}
+	}
+#endif
+#if defined(CONFIG_NET_IPV4)
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		if (v4_ctx[i].iface != NULL) {
+			(void)k_work_cancel_delayable(&v4_ctx[i].probe_timer);
+		}
+	}
+#endif
+#endif /* CONFIG_MDNS_RESPONDER_PROBE */
+
+	mdns_close_listeners();
+
+	net_if_foreach(mdns_leave_groups_cb, NULL);
+
+#if defined(CONFIG_MDNS_RESPONDER_PROBE)
+	(void)pre_init_listener();
+#endif
+	(void)init_listener();
+
+out:
+	k_mutex_unlock(&reconfigure_lock);
+}
+
+static int mdns_set_iface_ctrl(struct net_if *iface, enum mdns_iface_ctrl ctrl)
+{
+	int idx;
+
+	if (iface == NULL) {
+		return -EINVAL;
+	}
+
+	idx = net_if_get_by_iface(iface) - 1;
+	if (idx < 0 || idx >= (int)ARRAY_SIZE(iface_ctrl)) {
+		return -ERANGE;
+	}
+
+	if (iface_ctrl[idx] == ctrl) {
+		return 0;
+	}
+
+	iface_ctrl[idx] = ctrl;
+
+	mdns_reconfigure_listeners();
+
+	return 0;
+}
+
+int mdns_responder_enable_iface(struct net_if *iface)
+{
+	return mdns_set_iface_ctrl(iface, MDNS_IFACE_CTRL_ENABLED);
+}
+
+int mdns_responder_disable_iface(struct net_if *iface)
+{
+	return mdns_set_iface_ctrl(iface, MDNS_IFACE_CTRL_DISABLED);
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 
@@ -1686,7 +2135,7 @@ static struct net_buf *create_unsolicited_mdns_answer(struct net_if *iface,
 		     left < (1 + 1 + 2 + 2 + 4 + 4 +
 			     (type == DNS_RR_TYPE_A ? sizeof(struct net_in_addr) :
 			      sizeof(struct net_in6_addr))))) {
-			NET_DBG("No more space (%u left)", left);
+			NET_DBG("No more space (%zu left)", left);
 			net_buf_unref(answer);
 			return NULL;
 		}
@@ -1747,6 +2196,69 @@ static bool check_if_needs_announce(struct net_if *iface)
 	return false;
 }
 
+#if defined(CONFIG_MDNS_RESPONDER_ANNOUNCE_DNS_SD)
+/* RFC 6762 8.3 requires announcing all newly registered records, not just addresses. Sends
+ * one extra packet per service via dns_sd_handle_ptr_query() (already used for direct
+ * queries), since that encoder resets its own header and can't compose into the address
+ * announce's buffer without a rewrite.
+ */
+static void send_dns_sd_announce(struct net_if *iface, int sock, net_sa_family_t family,
+				 struct net_sockaddr *dst_addr, net_socklen_t dst_len)
+{
+	const struct net_in_addr *addr4 = NULL;
+	const struct net_in6_addr *addr6 = NULL;
+	const struct dns_sd_rec *record;
+	struct net_buf *answer;
+	size_t rec_num;
+	size_t ext_rec_num = external_records_count;
+	int ret;
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		addr4 = net_if_ipv4_select_src_addr(iface, &net_sin(dst_addr)->sin_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		addr6 = net_if_ipv6_select_src_addr(iface, &net_sin6(dst_addr)->sin6_addr);
+	} else {
+		return;
+	}
+
+	answer = net_buf_alloc(&mdns_msg_pool, BUF_ALLOC_TIMEOUT);
+	if (answer == NULL) {
+		return;
+	}
+
+	DNS_SD_COUNT(&rec_num);
+
+	while (rec_num > 0 || ext_rec_num > 0) {
+		if (rec_num > 0) {
+			DNS_SD_GET(rec_num - 1, &record);
+			rec_num--;
+		} else {
+			record = &external_records[ext_rec_num - 1];
+			ext_rec_num--;
+		}
+
+		ret = dns_sd_handle_ptr_query(iface, record, addr4, addr6, answer->data,
+					      net_buf_max_len(answer), true);
+		if (ret < 0) {
+			continue;
+		}
+
+		answer->len = ret;
+
+		ret = zsock_sendto(sock, answer->data, answer->len, 0, dst_addr, dst_len);
+		if (ret < 0) {
+			NET_DBG("Cannot send %s DNS-SD announce for %s.%s.%s.%s (%d)", "mDNS",
+				record->instance, record->service, record->proto, record->domain,
+				-errno);
+		} else {
+			net_stats_update_dns_sent(iface);
+		}
+	}
+
+	net_buf_unref(answer);
+}
+#endif /* CONFIG_MDNS_RESPONDER_ANNOUNCE_DNS_SD */
+
 static int send_announce(const char *name)
 {
 	struct net_buf *answer;
@@ -1792,6 +2304,11 @@ static int send_announce(const char *name)
 
 		NET_DBG("Announcing %s responder for %s%s (iface %d)",
 			"mDNS", name, ".local", net_if_get_by_iface(v4_ctx[i].iface));
+
+#if defined(CONFIG_MDNS_RESPONDER_ANNOUNCE_DNS_SD)
+		send_dns_sd_announce(v4_ctx[i].iface, v4_ctx[i].sock, NET_AF_INET,
+				     (struct net_sockaddr *)&dst_addr4, sizeof(dst_addr4));
+#endif
 	}
 #endif /* defined(CONFIG_NET_IPV4) */
 
@@ -1835,6 +2352,11 @@ static int send_announce(const char *name)
 
 		NET_DBG("Announcing %s responder for %s%s (iface %d)",
 			"mDNS", name, ".local", net_if_get_by_iface(v6_ctx[i].iface));
+
+#if defined(CONFIG_MDNS_RESPONDER_ANNOUNCE_DNS_SD)
+		send_dns_sd_announce(v6_ctx[i].iface, v6_ctx[i].sock, NET_AF_INET6,
+				     (struct net_sockaddr *)&dst_addr6, sizeof(dst_addr6));
+#endif
 	}
 #endif /* defined(CONFIG_NET_IPV6) */
 
@@ -1892,6 +2414,11 @@ static void do_init_listener(struct k_work *work)
 			init_listener_done = true;
 		};
 
+		/* Allow runtime enable/disable to rebuild the listeners now
+		 * that the initial setup has run.
+		 */
+		mdns_mark_running(true);
+
 		mark_needs_announce(NULL, true);
 		announce_count = 0;
 		announce_start(work);
@@ -1901,15 +2428,14 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	uint64_t flags = NET_EVENT_IF_UP;
 	external_records = NULL;
 	external_records_count = 0;
 
-	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, flags);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	int ret;
+
+	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, NET_EVENT_IF_UP);
+	net_mgmt_add_event_callback(&mgmt_iface_cb);
 
 	net_mgmt_init_event_callback(&mgmt_conn_cb, mdns_conn_event_handler,
 				     NET_EVENT_L4_DISCONNECTED);
@@ -1952,14 +2478,21 @@ static int mdns_responder_init(void)
 				   K_KERNEL_STACK_SIZEOF(mdns_work_q_stack),
 				   THREAD_PRIORITY, NULL);
 
-		k_thread_name_set(&mdns_work_q.thread, "mdns_work");
+		k_thread_name_set(mdns_work_q.thread_id, "mdns_work");
 	}
 
 	k_work_init_delayable(&init_listener_timer, do_init_listener);
 
 	return ret;
 #else
-	return init_listener();
+	int ret = init_listener();
+
+	/* Allow runtime enable/disable to rebuild the listeners now that the
+	 * initial setup has run.
+	 */
+	mdns_mark_running(true);
+
+	return ret;
 #endif
 }
 

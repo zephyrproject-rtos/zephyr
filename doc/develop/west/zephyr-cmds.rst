@@ -75,12 +75,26 @@ See :zephyr_file:`share/zephyr-package/cmake` for details.
 Software bill of materials: ``west spdx``
 *****************************************
 
-This command generates SPDX documents (2.2, 2.3 tag-value format, or 3.0 JSON-LD format),
-creating relationships from source files to the corresponding generated build files.
-``SPDX-License-Identifier`` comments in source files are scanned and filled
-into the SPDX documents.
+This command generates a Software Bill of Materials (SBOM) for a Zephyr build as a set of `SPDX`_
+documents. It records the source files that went into the build, the build artifacts they produced,
+and the relationships between them. ``SPDX-License-Identifier`` comments found in source files are
+scanned and filled into the documents, together with file hashes and (best-effort) copyright
+notices.
 
-To use this command:
+.. _west-spdx-versions:
+
+Choosing an SPDX version
+------------------------
+
+``west spdx`` can emit either of the two major SPDX specification families. SPDX 2.3 is the default;
+select another version with the ``--spdx-version`` option.
+
+SPDX 2.3 is a superset of 2.2 and adds fields such as ``PrimaryPackagePurpose``. Pick SPDX 2.x for
+compatibility with tooling that does not yet understand SPDX 3.0; pick SPDX 3.0 for the richer,
+machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+
+Generating SPDX documents
+-------------------------
 
 #. Pre-populate a build directory :file:`BUILD_DIR` like this:
 
@@ -88,10 +102,10 @@ To use this command:
 
       west spdx --init -d BUILD_DIR
 
-   This step ensures the build directory contains CMake metadata required for
-   SPDX document generation.
+   This step ensures the build directory contains the CMake metadata (a CMake file-API query)
+   required for SPDX document generation.
 
-#. Enable :file:`CONFIG_BUILD_OUTPUT_META` in your project.
+#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project.
 
 #. Build your application using this pre-created build directory, like so:
 
@@ -105,8 +119,8 @@ To use this command:
 
       west spdx -d BUILD_DIR
 
-   By default, this generates SPDX 2.3 tag-value documents. To generate SPDX 2.2 or 3.0 documents
-   instead, use the ``--spdx-version`` option. For example:
+   This generates SPDX 2.3 tag-value documents by default. To generate SPDX 2.2
+   or 3.0 documents instead, pass ``--spdx-version``:
 
    .. code-block:: bash
 
@@ -124,20 +138,23 @@ To use this command:
      west build -d BUILD_DIR/hello_world
      west spdx -d BUILD_DIR/hello_world
 
-This generates the following SPDX bill-of-materials (BOM) documents in
-:file:`BUILD_DIR/spdx/`:
+Output documents
+----------------
 
-**For SPDX 2.x (tag-value format):**
+The documents are written to :file:`BUILD_DIR/spdx/` (override with ``-s``). The same set of
+bill-of-materials (BOM) documents is produced regardless of the SPDX version; only the file
+extension differs: ``.spdx`` for the SPDX 2.x tag-value format and ``.jsonld`` for the SPDX 3.0
+JSON-LD format:
 
-- :file:`app.spdx`: BOM for the application source files used for the build
-- :file:`zephyr.spdx`: BOM for the specific Zephyr source code files used for the build
-- :file:`build.spdx`: BOM for the built output files
-- :file:`modules-deps.spdx`: BOM for modules dependencies. Check
-  :ref:`modules <modules-vulnerability-monitoring>` for more details.
+- ``app``: BOM for the application source files used for the build
+- ``zephyr``: BOM for the specific Zephyr source code files used for the build
+- ``build``: BOM for the built output files
+- ``modules-deps``: BOM for modules dependencies. Check :ref:`modules
+  <modules-vulnerability-monitoring>` for more details.
 
-**For SPDX 3.0 (JSON-LD format):**
-
-Same file names as above, but with the ``.jsonld`` extension.
+For SPDX 3.0, every document declares conformance to the Core, Software and Simple Licensing
+profiles, and :file:`build.jsonld` additionally declares the :ref:`Build profile
+<west-spdx-build-profile>` that captures how the artifacts were produced.
 
 Each file in the bill-of-materials is scanned, so that its hashes (SHA256, SHA1, and MD5)
 can be recorded, along with any detected licenses if an
@@ -151,9 +168,43 @@ or copyright properties (SPDX 3.0).
    Copyright extraction uses heuristics that may not capture complete notice text, so
    ``FileCopyrightText`` content is best-effort. This aligns with SPDX specification recommendations.
 
-SPDX Relationships are created to indicate dependencies between
-CMake build targets, build targets that are linked together, and
-source files that are compiled to generate the built library files.
+Relationships
+-------------
+
+SPDX relationships are created to indicate dependencies between CMake build targets, build targets
+that are linked together, and source files that are compiled to generate the built library files.
+
+The two specification families express build provenance differently:
+
+- In **SPDX 2.x**, each generated artifact carries file-level ``GENERATED_FROM`` relationships
+  pointing back at the source (and, with ``--analyze-includes``, header) files it was compiled from.
+
+- In **SPDX 3.0**, that provenance is carried by the :ref:`Build profile <west-spdx-build-profile>`
+  instead, using ``hasInput``/``hasOutput``/``usesTool`` relationships scoped to the ``build``
+  lifecycle.
+
+.. _west-spdx-build-profile:
+
+Build profile (SPDX 3.0)
+------------------------
+
+When generating SPDX 3.0 documents, ``west spdx`` populates the `SPDX 3.0 Build profile`_ so the
+SBOM records not just *what* was built but *how* it was built. The information is collected
+automatically from the CMake file-API, and lives in :file:`build.jsonld`.
+
+The profile adds a ``build_Build`` element describing the overall build: its build type, the CMake
+generator and build configuration, and selected environment variables such as ``BOARD`` and
+``ARCH``. The toolchain (CMake, the compilers, assembler, linker and archiver) is recorded as
+``Tool`` elements, each with its path and version. Build-scoped relationships then link the build to
+its inputs (the source packages and compiled files), its outputs (the final image) and the tools it
+used.
+
+Each intermediate target, such as a static library, also gets its own sub-build capturing the exact
+sources, tools and compile flags that produced its artifact, so any output can be traced back to how
+it was built.
+
+Command-line options
+--------------------
 
 ``west spdx`` accepts these additional options:
 
@@ -166,8 +217,8 @@ source files that are compiled to generate the built library files.
   should be written instead of :file:`BUILD_DIR/spdx/`.
 
 - ``--spdx-version {2.2,2.3,3.0}``: specifies which SPDX specification version to use.
-  Defaults to ``2.3``. SPDX 2.3 includes additional fields like ``PrimaryPackagePurpose``
-  that are not available in SPDX 2.2. SPDX 3.0 generates JSON-LD format documents.
+  Defaults to ``2.3``. See :ref:`west-spdx-versions` for the differences between
+  the versions.
 
 - ``--analyze-includes``: in addition to recording the compiled source code
   files (e.g. ``.c``, ``.S``) in the bills-of-materials, also attempt to
@@ -178,11 +229,17 @@ source files that are compiled to generate the built library files.
   build.
 
 - ``--include-sdk``: with ``--analyze-includes``, also create a fourth SPDX
-  document, :file:`sdk.spdx`, which lists header files included from the SDK.
+  document, :file:`sdk.spdx` (or :file:`sdk.jsonld`), which lists header files
+  included from the SDK.
 
 .. warning::
 
    The generation of SBOM documents for the ``native_sim`` platform is currently not supported.
+
+.. _SPDX: https://spdx.dev/
+
+.. _SPDX 3.0 Build profile:
+   https://spdx.github.io/spdx-spec/v3.0.1/model/Build/Build/
 
 .. _SPDX specification clause 6:
    https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/

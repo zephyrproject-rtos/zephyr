@@ -152,10 +152,17 @@ config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK_ENABLED
 
 config MBEDTLS_PSK_MAX_LEN
 	int "Max size of TLS pre-shared keys"
+	default 48 if MBEDTLS_SSL_SESSION_TICKETS && PSA_WANT_ALG_SHA_384
 	default 32
 	help
 	  Max size of TLS pre-shared keys, in bytes. It has no effect if no
 	  PSK key exchange is used.
+
+	  TLS 1.3 session tickets derive a resumption PSK that has a length
+	  as long as the hash of the negotiated ciphersuite. Mbed TLS enforces
+	  this limit when the PSK is loaded during a resumption handshake.
+	  When session tickets and SHA-384 based ciphersuites are enabled, the
+	  default therefore needs to be raised to 48.
 
 config MBEDTLS_KEY_EXCHANGE_ECDHE_RSA_ENABLED
 	bool "ECDHE-RSA based ciphersuite modes"

@@ -27,6 +27,7 @@ LOG_MODULE_REGISTER(ws2812_gpio);
 
 struct ws2812_gpio_cfg {
 	struct gpio_dt_spec gpio;
+	uintptr_t gpio_outset_base;
 	uint8_t num_colors;
 	const uint8_t *color_mapping;
 	size_t length;
@@ -76,16 +77,26 @@ struct ws2812_gpio_cfg {
 static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 {
 	const struct ws2812_gpio_cfg *config = dev->config;
-	volatile uint32_t *base = (uint32_t *)&NRF_GPIO->OUTSET;
+	volatile uint32_t *base = (uint32_t *)config->gpio_outset_base;
 	const uint32_t val = BIT(config->gpio.pin);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF);
+#else
+	const struct device *clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+							       (nordic_nrf_clock_hfclk),
+							       (nordic_nrf_clock_xo)));
+#endif
 	struct onoff_client cli;
 	unsigned int key;
 	int rc;
 
 	sys_notify_init_spinwait(&cli.notify);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	rc = onoff_request(mgr, &cli);
+#else
+	rc = nrf_clock_control_request(clk_dev, NULL, &cli);
+#endif
 	if (rc < 0) {
 		return rc;
 	}
@@ -122,7 +133,11 @@ static int send_buf(const struct device *dev, uint8_t *buf, size_t len)
 
 	irq_unlock(key);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	rc = onoff_release(mgr);
+#else
+	rc = nrf_clock_control_release(drv_data->clk_dev, NULL);
+#endif
 	/* Returns non-negative value on success. Cap to 0 as API states. */
 	rc = MIN(rc, 0);
 
@@ -233,6 +248,9 @@ static const uint8_t ws2812_gpio_##idx##_color_mapping[] =		\
 									\
 	static const struct ws2812_gpio_cfg ws2812_gpio_##idx##_cfg = { \
 		.gpio = GPIO_DT_SPEC_INST_GET(idx, gpios),		\
+		.gpio_outset_base =					\
+			DT_REG_ADDR(DT_GPIO_CTLR(DT_DRV_INST(idx), gpios)) + \
+			offsetof(NRF_GPIO_Type, OUTSET),		\
 		.num_colors = WS2812_NUM_COLORS(idx),			\
 		.color_mapping = ws2812_gpio_##idx##_color_mapping,	\
 		.length = DT_INST_PROP(idx, chain_length),		\

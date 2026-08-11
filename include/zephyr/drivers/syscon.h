@@ -88,7 +88,7 @@ __subsystem struct syscon_driver_api {
 /**
  * @brief Get the syscon base address
  *
- * @param dev The device to get the register size for.
+ * @param dev The device to get the base address for.
  * @param addr Where to write the base address.
  *
  * @retval 0 When @a addr was written to.
@@ -113,7 +113,7 @@ static inline int z_impl_syscon_get_base(const struct device *dev, uintptr_t *ad
  *
  * This function reads from a specific register in the syscon area
  *
- * @param dev The device to get the register size for.
+ * @param dev The device to read from.
  * @param reg The register offset
  * @param val The returned value read from the syscon register
  *
@@ -139,7 +139,7 @@ static inline int z_impl_syscon_read_reg(const struct device *dev, uint32_t reg,
  *
  * This function writes to a specific register in the syscon area
  *
- * @param dev The device to get the register size for.
+ * @param dev The device to write to.
  * @param reg The register offset
  * @param val The value to be written in the register
  *

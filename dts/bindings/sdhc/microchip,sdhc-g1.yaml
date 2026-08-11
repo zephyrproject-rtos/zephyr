@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip SDHC controller
+
+description: |
+  Microchip SDHC controller
+
+  Microchip G1 SDHC controller supports the following hardware peripheral:
+    - module name="SDHC" compatible="microchip,sdhc-g1"
+
+compatible: "microchip,sdhc-g1"
+
+include:
+  - name: sdhc.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Names of the clock sources listed in "clocks", in the same order.
+      Must be "mclk" (main clock), "gclk" (generic clock) and "gclk-slow"
+      (slow generic clock).
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+    description: |
+      Names of the pinctrl states defined for this controller. Must include
+      "default" matching pinctrl-0.
+
+examples:
+  - |
+    #Example devicetree configuration for Microchip G1 SDHC controller:
+
+    sdhc0: sdhc@46000000 {
+            compatible = "microchip,sdhc-g1";
+            reg = <0x46000000 0x234>;
+            interrupts = <136 0>;
+            clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_SDHC1>,
+                     <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1>,
+                     <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SDHC1_SLOW>;
+            clock-names = "mclk", "gclk", "gclk-slow";
+            min-bus-freq = <400000>;
+            max-bus-freq = <25000000>;
+            pinctrl-0 = <&sdhc0_default>;
+            pinctrl-names = "default";
+            status = "okay";
+    };

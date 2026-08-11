@@ -9,15 +9,27 @@
 #define TIMEOUT K_MSEC(100)
 
 /**
- * @addtogroup kernel_fifo_tests
+ * @addtogroup tests_kernel_fifo
  * @{
  */
 
 /**
- * @brief Test FIFO get fail
- * @details test zephyr fifo_get when no data to read,
- * it should returns NULL.
- * @see k_fifo_init(), k_fifo_get()
+ * @brief Verify k_fifo_get() on an empty FIFO returns NULL.
+ *
+ * @details
+ * When no data is queued, k_fifo_get() must return NULL rather than block
+ * indefinitely or return stale data. The contract is checked both with
+ * K_NO_WAIT (immediate) and with a finite timeout that is allowed to expire.
+ *
+ * Test steps:
+ * - Initialize an empty FIFO.
+ * - Call k_fifo_get() with K_NO_WAIT and verify it returns NULL.
+ * - Call k_fifo_get() with a finite timeout and verify it returns NULL.
+ *
+ * Expected result:
+ * - Both k_fifo_get() calls return NULL.
+ *
+ * @see k_fifo_get()
  */
 ZTEST(fifo_api, test_fifo_get_fail)
 {

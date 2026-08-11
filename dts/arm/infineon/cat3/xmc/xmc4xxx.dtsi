@@ -253,7 +253,7 @@
 			reg = <0x5000c000 0x3fff>;
 
 			eth: ethernet {
-				compatible = "infineon,xmc4xxx-ethernet";
+				compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
 				interrupts = <108 1>;
 				status = "disabled";
 			};

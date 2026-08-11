@@ -15,7 +15,7 @@
 /**
  * @brief Maxim MAX31790 6-Channel PWM-Output Fan RPM Controller
  * @defgroup max31790_interface MAX31790
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_adi
  *
  * The MAX31790 provides fan fault monitoring and fan speed (RPM) sensing.
  * Fan speed uses the standard @ref SENSOR_CHAN_RPM channel.

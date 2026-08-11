@@ -133,6 +133,127 @@ enum {
 
 	/** Set the error code to use when sending STOP_SENDING frame on stream close */
 	ZSOCK_QUIC_SO_STOP_SENDING_CODE = 4,
+
+	/**
+	 * Export or import resumable client session state.
+	 *
+	 * The option value is a pointer to struct quic_session_state. Use
+	 * getsockopt() on a connected client connection socket after a
+	 * NewSessionTicket has been received, then pass the returned state to
+	 * setsockopt() on a new client connection socket before opening the first
+	 * stream to attempt session resumption and, when permitted, 0-RTT. Since
+	 * 0-RTT data can be replayed or rejected by the peer, applications must
+	 * only send replay-safe early data and be prepared to retry after the
+	 * handshake completes. When CONFIG_QUIC_0RTT is disabled, imported
+	 * session state still resumes at 1-RTT but does not arm early data.
+	 */
+	ZSOCK_QUIC_SO_SESSION_STATE = 5,
+
+	/**
+	 * Enable or disable server-side session ticket issuance.
+	 *
+	 * The option value is a pointer to an int. Set a non-zero value on a
+	 * listening or server-side connection socket before the handshake to have
+	 * the server send NewSessionTicket after the handshake completes.
+	 */
+	ZSOCK_QUIC_SO_SESSION_TICKET_ENABLE = 6,
+
+	/**
+	 * Enable 0-RTT early data on tickets this server issues.
+	 *
+	 * The option value is a pointer to a uint32_t. Set it on a listening or
+	 * server-side connection socket before the handshake. A value of 0 keeps
+	 * 0-RTT disabled for newly issued tickets; any non-zero value enables it.
+	 * Per RFC 9001 4.6.1 the ticket always advertises the fixed 0xffffffff
+	 * sentinel and the amount of early data a resuming client may send is
+	 * bounded by the connection's flow-control (transport-parameter) limits,
+	 * not by this value; the option is therefore only an enable switch, not a
+	 * byte cap. This only affects newly issued tickets; applications must still
+	 * treat accepted early data as replayable at the protocol level. Non-zero
+	 * values require CONFIG_QUIC_0RTT; otherwise setsockopt() fails with ENOTSUP.
+	 */
+	ZSOCK_QUIC_SO_MAX_EARLY_DATA_SIZE = 7,
+
+	/**
+	 * Query whether a QUIC stream has received accepted 0-RTT data.
+	 *
+	 * The option value is a pointer to an int and is only valid on QUIC stream
+	 * sockets. A non-zero result means the receive side of that stream has
+	 * already carried accepted early data on this connection.
+	 */
+	ZSOCK_QUIC_SO_STREAM_EARLY_DATA = 8,
+};
+
+/** Version of struct quic_session_state. */
+#define QUIC_SESSION_STATE_VERSION 2U
+
+/** Maximum serialized ticket length exported through struct quic_session_state. */
+#define QUIC_MAX_SESSION_TICKET_LEN 256U
+
+/** Maximum resumable PSK length exported through struct quic_session_state. */
+#define QUIC_MAX_RESUMPTION_PSK_LEN 48U
+
+/**
+ * @brief Remembered peer transport parameters for resumption.
+ *
+ * These are the server limits associated with the stored ticket. They are used
+ * to initialize early flow-control state and to validate a later 0-RTT-capable
+ * resumption attempt.
+ */
+struct quic_session_transport_params {
+	/** True when the remembered transport-parameter snapshot is present. */
+	bool valid;
+	/** Remembered initial_max_data. */
+	uint64_t initial_max_data;
+	/** Remembered initial_max_stream_data_bidi_local. */
+	uint64_t initial_max_stream_data_bidi_local;
+	/** Remembered initial_max_stream_data_bidi_remote. */
+	uint64_t initial_max_stream_data_bidi_remote;
+	/** Remembered initial_max_stream_data_uni. */
+	uint64_t initial_max_stream_data_uni;
+	/** Remembered initial_max_streams_bidi. */
+	uint64_t initial_max_streams_bidi;
+	/** Remembered initial_max_streams_uni. */
+	uint64_t initial_max_streams_uni;
+	/** Remembered max_idle_timeout in milliseconds. */
+	uint64_t max_idle_timeout;
+	/** Remembered max_udp_payload_size. */
+	uint16_t max_udp_payload_size;
+};
+
+/**
+ * @brief Resumable QUIC client session state.
+ *
+ * The structure is exported with getsockopt() and imported with setsockopt()
+ * using ZSOCK_QUIC_SO_SESSION_STATE on a connection socket.
+ */
+struct quic_session_state {
+	/** Structure format version, must be QUIC_SESSION_STATE_VERSION. */
+	uint16_t version;
+	/** TLS 1.3 cipher suite associated with the resumable state. */
+	uint16_t cipher_suite;
+	/** Ticket lifetime in seconds from NewSessionTicket. */
+	uint32_t ticket_lifetime;
+	/** Random ticket_age_add value from NewSessionTicket. */
+	uint32_t ticket_age_add;
+	/**
+	 * Early-data allowance from NewSessionTicket: 0 when 0-RTT is not
+	 * permitted, otherwise the RFC 9001 4.6.1 sentinel 0xffffffff (in QUIC
+	 * the actual early-data limit is governed by transport parameters).
+	 */
+	uint32_t max_early_data_size;
+	/** Local monotonic timestamp in milliseconds when the ticket was received. */
+	uint64_t issue_time_ms;
+	/** Length of the opaque ticket identity. */
+	uint16_t ticket_len;
+	/** Length of the derived resumption PSK. */
+	uint16_t psk_len;
+	/** Opaque ticket identity from NewSessionTicket. */
+	uint8_t ticket[QUIC_MAX_SESSION_TICKET_LEN];
+	/** Derived resumption PSK used for the next resumed handshake. */
+	uint8_t psk[QUIC_MAX_RESUMPTION_PSK_LEN];
+	/** Remembered peer transport parameters associated with the ticket. */
+	struct quic_session_transport_params transport_params;
 };
 
 /**

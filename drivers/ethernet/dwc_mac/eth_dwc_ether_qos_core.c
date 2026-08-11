@@ -57,10 +57,10 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  * different from the normal RAM virt_to_phys mapping.
  */
 #ifdef CONFIG_MMU
-#define TXDESC_PHYS_H(idx) hi32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define TXDESC_PHYS_L(idx) lo32(p->tx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_H(idx) hi32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
-#define RXDESC_PHYS_L(idx) lo32(p->rx_descs_phys + (idx) * sizeof(struct dwmac_dma_desc))
+#define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs_phys[idx])
+#define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs_phys[idx])
+#define RXDESC_PHYS_H(idx) phys_hi32(&p->rx_descs_phys[idx])
+#define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs_phys[idx])
 #else
 #define TXDESC_PHYS_H(idx) phys_hi32(&p->tx_descs[idx])
 #define TXDESC_PHYS_L(idx) phys_lo32(&p->tx_descs[idx])
@@ -68,33 +68,28 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define RXDESC_PHYS_L(idx) phys_lo32(&p->rx_descs[idx])
 #endif
 
-static inline uint32_t hi32(uintptr_t val)
+/*
+ * If dribbling error flag (RDES3_DE) is set but CRC error flag (RDES3_CE)
+ * is not set, the packet is still valid and can be passed up to the stack.
+ * Therefore, exclude the dribbling error flag from the error mask to avoid
+ * dropping valid packets.
+ */
+#define RDES3_ERROR_MASK (RDES3_RE | RDES3_OE | RDES3_RWT | RDES3_GP | RDES3_CE)
+
+static inline uint32_t phys_hi32(void *addr)
 {
 	/* trickery to avoid compiler warnings on 32-bit build targets */
-	if (sizeof(uintptr_t) > 4) {
-		uint64_t hi = val;
+	if (sizeof(void *) > 4) {
+		uint64_t hi = POINTER_TO_UINT(addr);
 
 		return hi >> 32;
 	}
 	return 0;
 }
 
-static inline uint32_t lo32(uintptr_t val)
-{
-	/* just a typecast return to be symmetric with hi32() */
-	return val;
-}
-
-static inline uint32_t phys_hi32(void *addr)
-{
-	/* the default 1:1 mapping is assumed */
-	return hi32((uintptr_t)addr);
-}
-
 static inline uint32_t phys_lo32(void *addr)
 {
-	/* the default 1:1 mapping is assumed */
-	return lo32((uintptr_t)addr);
+	return (uint32_t)POINTER_TO_UINT(addr);
 }
 
 static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if *iface __unused)
@@ -111,6 +106,18 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev, struct net_if 
 	}
 
 	caps |= ETHERNET_PROMISC_MODE;
+
+#ifdef CONFIG_NET_VLAN
+	caps |= ETHERNET_HW_VLAN;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+#endif
+
+#ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+#endif
 
 	return caps;
 }
@@ -137,9 +144,47 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("pkt len/frags=%u/%u", pkt_len, net_pkt_get_nbfrags(pkt));
 
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+		if (k_sem_take(&p->free_tx_descs, TX_AVAIL_WAIT) < 0) {
+
+			LOG_DBG("no more free tx descriptors");
+			NET_PKT_FRAG_FOR_EACH(pkt, frag1) {
+				if (frag1 == frag) {
+					break;
+				}
+				k_sem_give(&p->free_tx_descs);
+
+				if (!IS_ENABLED(CONFIG_64BIT) && (frag1->frags != NULL)) {
+					/*
+					 * On 32-bit, each descriptor can accept two fragments.
+					 * Skip over the next fragment in the chain to ensure
+					 * we only increment the "free descriptors" count once
+					 * per two fragments.
+					 */
+					frag1 = frag1->frags;
+				}
+			}
+			return -ENOMEM;
+		}
+
+		if (!IS_ENABLED(CONFIG_64BIT) && (frag->frags != NULL)) {
+			/* Same logic as above */
+			frag = frag->frags;
+		}
+	}
+
 	/* initial flag values */
-	des2_flags = 0;
+	des2_flags = TDES2_IOC;
 	des3_flags = TDES3_FD | TDES3_OWN;
+
+	if (IS_ENABLED(CONFIG_PTP_CLOCK_DWC_MAC) &&
+		net_pkt_is_tx_timestamping(pkt)) {
+		des2_flags |= TDES2_TTSE;
+	}
+
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN)) {
+		des3_flags |= TDES3_CIC;
+	}
 
 	/* map packet fragments */
 	d_idx = p->tx_desc_head;
@@ -148,65 +193,58 @@ static int dwmac_send(const struct device *dev, struct net_pkt *pkt)
 			k_sem_count_get(&p->free_tx_descs),
 			p->tx_desc_head, p->tx_desc_tail);
 
-		/* reserve a free descriptor for this fragment */
-		if (k_sem_take(&p->free_tx_descs, TX_AVAIL_WAIT) != 0) {
-			LOG_DBG("no more free tx descriptors");
-			goto abort;
-		}
-
-		/* Take reference for the DMA */
-		net_pkt_frag_ref(frag);
-
 		sys_cache_data_flush_range(frag->data, frag->len);
-		p->tx_frags[d_idx] = frag;
 		LOG_DBG("d[%d]: frag %p len %d", d_idx, (void *)frag->data, frag->len);
-
-		/* if no more fragments after this one: */
-		if (!frag->frags) {
-			/* set those flags on the last descriptor */
-			des2_flags |= TDES2_IOC;
-			des3_flags |= TDES3_LD;
-		}
 
 		/* fill the descriptor */
 		d = &p->tx_descs[d_idx];
 		d->des0 = phys_lo32(frag->data);
-		d->des1 = phys_hi32(frag->data);
 		d->des2 = frag->len | des2_flags;
 		d->des3 = pkt_len | des3_flags;
+
+		if (IS_ENABLED(CONFIG_64BIT)) {
+			d->des1 = phys_hi32(frag->data);
+		} else if (frag->frags == NULL) {
+			d->des1 = 0U;
+		} else {
+			frag = frag->frags;
+			d->des2 |= FIELD_PREP(TDES2_B2L, frag->len);
+			d->des1 = phys_lo32(frag->data);
+			sys_cache_data_flush_range(frag->data, frag->len);
+			LOG_DBG("d[%d]: frag %p len %d", d_idx, (void *)frag->data, frag->len);
+		}
 
 		/* clear the FD flag on subsequent descriptors */
 		des3_flags &= ~TDES3_FD;
 
 		INC_WRAP(d_idx, NB_TX_DESCS);
+
+		if (frag->frags == NULL) {
+			/* set LD flag on last descriptor */
+			d->des3 |= TDES3_LD;
+		}
 	};
 
-	/* make sure all the above made it to memory */
-	barrier_dmem_fence_full();
+	net_pkt_ref(pkt);
+	k_fifo_put(&p->tx_queue, pkt);
 
 	/* update the descriptor index head */
 	p->tx_desc_head = d_idx;
 
+	/* make sure all the above made it to memory */
+	barrier_dmem_fence_full();
+
 	/* lastly notify the hardware */
-	REG_WRITE(DMA_CHn_TXDESC_TAIL_PTR(0), TXDESC_PHYS_L(d_idx));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_TAIL_PTR(0), TXDESC_PHYS_L(d_idx));
 
 	return 0;
-
-abort:
-	while (d_idx != p->tx_desc_head) {
-		/* release already prepared fragments */
-		DEC_WRAP(d_idx, NB_TX_DESCS);
-		net_pkt_frag_unref(p->tx_frags[d_idx]);
-		k_sem_give(&p->free_tx_descs);
-	}
-	return -ENOMEM;
 }
 
-static void dwmac_tx_release(struct dwmac_priv *p)
+static void dwmac_tx_release(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	unsigned int d_idx;
 	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
 	uint32_t des3_val;
 
 	for (d_idx = p->tx_desc_tail;
@@ -226,13 +264,25 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 			break;
 		}
 
-		/* release corresponding fragments */
-		frag = p->tx_frags[d_idx];
-		LOG_DBG("unref frag %p", (void *)frag->data);
-		net_pkt_frag_unref(frag);
-
 		/* last packet descriptor: */
 		if (des3_val & TDES3_LD) {
+			struct net_pkt *pkt = k_fifo_get(&p->tx_queue, K_NO_WAIT);
+
+			if (pkt != NULL) {
+				LOG_DBG("pkt len/frags=%zu/%u", net_pkt_get_len(pkt),
+					net_pkt_get_nbfrags(pkt));
+
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				if ((des3_val & TDES3_TTSS) != 0U) {
+					pkt->timestamp.second = d->des1;
+					pkt->timestamp.nanosecond = d->des0;
+					net_if_add_tx_timestamp(pkt);
+				}
+#endif /* CONFIG_PTP_CLOCK_DWC_MAC */
+			}
+
+			net_pkt_unref(pkt);
+
 			/* log any errors */
 			if (des3_val & TDES3_ES) {
 				LOG_ERR("tx error (DES3 = 0x%08x)", des3_val);
@@ -243,16 +293,20 @@ static void dwmac_tx_release(struct dwmac_priv *p)
 	p->tx_desc_tail = d_idx;
 }
 
-static void dwmac_receive(struct dwmac_priv *p)
+static void dwmac_rx_refill(const struct device *dev);
+
+static void dwmac_receive(const struct device *dev)
 {
+	struct dwmac_priv *p = dev->data;
 	struct dwmac_dma_desc *d;
 	struct net_buf *frag;
-	unsigned int d_idx, bytes_so_far;
+	unsigned int d_idx;
 	uint32_t des3_val;
+	uint16_t bytes_so_far;
+	unsigned int num_frags = 0U;
 
-	for (d_idx = p->rx_desc_tail;
-	     d_idx != p->rx_desc_head;
-	     INC_WRAP(d_idx, NB_RX_DESCS), k_sem_give(&p->free_rx_descs)) {
+	for (d_idx = p->rx_desc_tail; d_idx != p->rx_desc_head;
+	     INC_WRAP(d_idx, NB_RX_DESCS), num_frags++) {
 
 		LOG_DBG("desc sem/tail/head=%d/%d/%d",
 			k_sem_count_get(&p->free_rx_descs),
@@ -267,34 +321,50 @@ static void dwmac_receive(struct dwmac_priv *p)
 			break;
 		}
 
-		/* we ignore those for now */
+		/* retrieve current fragment */
+		frag = p->rx_frags[d_idx];
+		p->rx_frags[d_idx] = NULL;
+
+		/* a context descriptor, it contains the packet's timestamp */
 		if (des3_val & RDES3_CTXT) {
+			net_pkt_frag_unref(frag);
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+			if (p->rx_pkt != NULL) {
+				if (d->des0 != UINT32_MAX && d->des1 != UINT32_MAX) {
+					p->rx_pkt->timestamp.second = d->des1;
+					p->rx_pkt->timestamp.nanosecond = d->des0;
+					net_pkt_set_rx_timestamping(p->rx_pkt, true);
+				}
+
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
+				p->rx_pkt = NULL;
+			}
+#endif
 			continue;
 		}
 
 		/* a packet's first descriptor: */
 		if (des3_val & RDES3_FD) {
 			p->rx_bytes = 0;
-			if (p->rx_pkt) {
-				LOG_ERR("d[%d] first desc but pkt exists", d_idx);
+			if (p->rx_pkt != NULL) {
 				eth_stats_update_errors_rx(p->iface);
 				net_pkt_unref(p->rx_pkt);
 			}
 			p->rx_pkt = net_pkt_rx_alloc_on_iface(p->iface, K_NO_WAIT);
-			if (!p->rx_pkt) {
-				LOG_ERR("net_pkt_rx_alloc_on_iface() failed");
+			if (p->rx_pkt == NULL) {
 				eth_stats_update_errors_rx(p->iface);
 			}
 		}
 
-		if (!p->rx_pkt) {
-			LOG_ERR("no rx_pkt: skipping desc %d", d_idx);
+		if (p->rx_pkt == NULL) {
+			net_pkt_frag_unref(frag);
 			continue;
 		}
 
-		/* retrieve current fragment */
-		frag = p->rx_frags[d_idx];
-		p->rx_frags[d_idx] = NULL;
+		sys_cache_data_invd_range(frag->data, frag->size);
+
 		bytes_so_far = FIELD_GET(RDES3_PL, des3_val);
 		frag->len = bytes_so_far - p->rx_bytes;
 		p->rx_bytes = bytes_so_far;
@@ -303,11 +373,24 @@ static void dwmac_receive(struct dwmac_priv *p)
 		/* last descriptor: */
 		if (des3_val & RDES3_LD) {
 			/* submit packet if no errors */
-			if (!(des3_val & RDES3_ES)) {
+			if ((des3_val & RDES3_ERROR_MASK) == 0) {
 				LOG_DBG("pkt len/frags=%zd/%d",
 					net_pkt_get_len(p->rx_pkt),
 					net_pkt_get_nbfrags(p->rx_pkt));
-				net_recv_data(p->iface, p->rx_pkt);
+#ifdef CONFIG_PTP_CLOCK_DWC_MAC
+				/*
+				 * The next descriptor is a context descriptor with a timestamp
+				 * for this packet, so skip here to the next descriptor, so we
+				 * can add the timestamp to this packet, before submitting it.
+				 */
+				if (((des3_val & RDES3_RS1V) != 0) &&
+				    ((d->des1 & RDES1_TSA) != 0)) {
+					continue;
+				}
+#endif
+				if (net_recv_data(p->iface, p->rx_pkt) < 0) {
+					net_pkt_unref(p->rx_pkt);
+				}
 			} else {
 				LOG_ERR("rx error (DES3 = 0x%08x)", des3_val);
 				eth_stats_update_errors_rx(p->iface);
@@ -316,82 +399,88 @@ static void dwmac_receive(struct dwmac_priv *p)
 			p->rx_pkt = NULL;
 		}
 	}
+
 	p->rx_desc_tail = d_idx;
+
+	for (unsigned int i = 0; i < num_frags; i++) {
+		if (IS_ENABLED(CONFIG_ETH_DWMAC_RX_REFILL_IRQ)) {
+			dwmac_rx_refill(dev);
+		} else {
+			k_sem_give(&p->free_rx_descs);
+		}
+	}
+}
+
+
+static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
+{
+	struct dwmac_priv *p = dev->data;
+	struct dwmac_dma_desc *d;
+	unsigned int d_idx;
+
+	d_idx = p->rx_desc_head;
+	p->rx_frags[d_idx] = frag;
+
+	d = &p->rx_descs[d_idx];
+	__ASSERT(!(d->des3 & RDES3_OWN), "rx desc still owned");
+
+	/* all is good: initialize the descriptor */
+	d->des0 = phys_lo32(frag->data);
+	d->des1 = phys_hi32(frag->data);
+	d->des2 = 0;
+	d->des3 = RDES3_BUF1V | RDES3_IOC | RDES3_OWN;
+
+	/* commit the above to memory */
+	barrier_dmem_fence_full();
+
+	/* advance to the next descriptor */
+	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+
+	/* lastly notify the hardware */
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
+
+	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
+		p->rx_desc_head, p->rx_desc_tail, k_is_in_isr() ? "ISR" : "thread");
+}
+
+static void dwmac_rx_refill(const struct device *dev)
+{
+	struct dwmac_priv *p = dev->data;
+	struct net_buf *frag;
+
+	frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
+	if (frag == NULL) {
+		k_sem_give(&p->free_rx_descs);
+		return;
+	}
+
+	K_SPINLOCK(&p->spinlock) {
+		dwmac_rx_refill_desc(dev, frag);
+	}
 }
 
 static void dwmac_rx_refill_thread(void *arg1, void *unused1, void *unused2)
 {
 	const struct device *dev = arg1;
 	struct dwmac_priv *p = dev->data;
-	struct dwmac_dma_desc *d;
-	struct net_buf *frag;
-	unsigned int d_idx;
 
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 
-	d_idx = p->rx_desc_head;
-	for (;;) {
-		LOG_DBG("desc sem/head/tail=%d/%d/%d",
-			k_sem_count_get(&p->free_rx_descs),
-			p->rx_desc_head, p->rx_desc_tail);
-
-		/* wait for an empty descriptor */
-		if (k_sem_take(&p->free_rx_descs, K_FOREVER) != 0) {
-			LOG_ERR("can't get free RX desc to refill");
-			break;
+	while (true) {
+		if (k_sem_take(&p->free_rx_descs, K_FOREVER) == 0) {
+			dwmac_rx_refill(dev);
 		}
-
-		d = &p->rx_descs[d_idx];
-
-		__ASSERT(!(d->des3 & RDES3_OWN),
-			 "desc[%d]=0x%x: still hw owned! (sem/head/tail=%d/%d/%d)",
-			 d_idx, d->des3, k_sem_count_get(&p->free_rx_descs),
-			 p->rx_desc_head, p->rx_desc_tail);
-
-		frag = p->rx_frags[d_idx];
-
-		/* get a new fragment if the previous one was consumed */
-		if (!frag) {
-			frag = net_pkt_get_reserve_rx_data(RX_FRAG_SIZE, K_FOREVER);
-			if (!frag) {
-				LOG_ERR("net_pkt_get_reserve_rx_data() returned NULL");
-				k_sem_give(&p->free_rx_descs);
-				break;
-			}
-			LOG_DBG("new frag[%d] at %p", d_idx, (void *)frag->data);
-			__ASSERT(frag->size == RX_FRAG_SIZE, "");
-			sys_cache_data_invd_range(frag->data, frag->size);
-			p->rx_frags[d_idx] = frag;
-		} else {
-			LOG_DBG("reusing frag[%d] at %p", d_idx, (void *)frag->data);
-		}
-
-		/* all is good: initialize the descriptor */
-		d->des0 = phys_lo32(frag->data);
-		d->des1 = phys_hi32(frag->data);
-		d->des2 = 0;
-		d->des3 = RDES3_BUF1V | RDES3_IOC | RDES3_OWN;
-
-		/* commit the above to memory */
-		barrier_dmem_fence_full();
-
-		/* advance to the next descriptor */
-		p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
-
-		/* lastly notify the hardware */
-		REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));
 	}
 }
 
 static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 {
-	struct dwmac_priv *p = dev->data;
 	uint32_t status;
 
-	status = REG_READ(DMA_CHn_STATUS(ch));
+	status = DWMAC_REG_READ(DMA_CHn_STATUS(ch));
 	LOG_DBG("DMA_CHn_STATUS(%d) = 0x%08x", ch, status);
-	REG_WRITE(DMA_CHn_STATUS(ch), status);
+	DWMAC_REG_WRITE(DMA_CHn_STATUS(ch), status);
 
 	__ASSERT(ch == 0, "only one DMA channel is currently supported");
 
@@ -400,11 +489,11 @@ static void dwmac_dma_irq(const struct device *dev, unsigned int ch)
 	}
 
 	if (status & DMA_CHn_STATUS_TI) {
-		dwmac_tx_release(p);
+		dwmac_tx_release(dev);
 	}
 
 	if (status & DMA_CHn_STATUS_RI) {
-		dwmac_receive(p);
+		dwmac_receive(dev);
 	}
 }
 
@@ -412,7 +501,7 @@ static void dwmac_mac_irq(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(MAC_IRQ_STATUS);
+	status = DWMAC_REG_READ(MAC_IRQ_STATUS);
 	LOG_DBG("MAC_IRQ_STATUS = 0x%08x", status);
 	__ASSERT(false, "unimplemented");
 }
@@ -421,7 +510,7 @@ static void dwmac_mtl_irq(const struct device *dev)
 {
 	uint32_t status;
 
-	status = REG_READ(MTL_IRQ_STATUS);
+	status = DWMAC_REG_READ(MTL_IRQ_STATUS);
 	LOG_DBG("MTL_IRQ_STATUS = 0x%08x", status);
 	__ASSERT(false, "unimplemented");
 }
@@ -431,7 +520,7 @@ void dwmac_isr(const struct device *dev)
 	uint32_t irq_status;
 	unsigned int ch;
 
-	irq_status = REG_READ(DMA_IRQ_STATUS);
+	irq_status = DWMAC_REG_READ(DMA_IRQ_STATUS);
 	LOG_DBG("DMA_IRQ_STATUS = 0x%08x", irq_status);
 
 	while (irq_status & 0xff) {
@@ -454,9 +543,9 @@ static void dwmac_set_mac_addr(const struct device *dev, const uint8_t *addr, in
 	uint32_t reg_val;
 
 	reg_val = (addr[5] << 8) | addr[4];
-	REG_WRITE(MAC_ADDRESS_HIGH(n), reg_val | MAC_ADDRESS_HIGH_AE);
+	DWMAC_REG_WRITE(MAC_ADDRESS_HIGH(n), reg_val | MAC_ADDRESS_HIGH_AE);
 	reg_val = (addr[3] << 24) | (addr[2] << 16) | (addr[1] << 8) | addr[0];
-	REG_WRITE(MAC_ADDRESS_LOW(n), reg_val);
+	DWMAC_REG_WRITE(MAC_ADDRESS_LOW(n), reg_val);
 }
 
 static int dwmac_set_config(const struct device *dev,
@@ -476,15 +565,15 @@ static int dwmac_set_config(const struct device *dev,
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
-		reg_val = REG_READ(MAC_PKT_FILTER);
+		reg_val = DWMAC_REG_READ(MAC_PKT_FILTER);
 		if (config->promisc_mode &&
 		    !(reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val | MAC_PKT_FILTER_PR);
+			DWMAC_REG_WRITE(MAC_PKT_FILTER,
+					reg_val | MAC_PKT_FILTER_PR);
 		} else if (!config->promisc_mode &&
 			   (reg_val & MAC_PKT_FILTER_PR)) {
-			REG_WRITE(MAC_PKT_FILTER,
-				  reg_val & ~MAC_PKT_FILTER_PR);
+			DWMAC_REG_WRITE(MAC_PKT_FILTER,
+					reg_val & ~MAC_PKT_FILTER_PR);
 		} else {
 			ret = -EALREADY;
 		}
@@ -510,7 +599,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 	ARG_UNUSED(phy_dev);
 
 	if (state->is_up) {
-		reg_val = REG_READ(MAC_CONF);
+		reg_val = DWMAC_REG_READ(MAC_CONF);
 
 		switch (state->speed) {
 		case LINK_HALF_10BASE:
@@ -542,7 +631,7 @@ static void phy_link_state_changed(const struct device *phy_dev,
 			reg_val &= ~MAC_CONF_DM;
 		}
 
-		REG_WRITE(MAC_CONF, reg_val);
+		DWMAC_REG_WRITE(MAC_CONF, reg_val);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -577,7 +666,7 @@ static void dwmac_iface_init(struct net_if *iface)
 	 *   - pass multicast packets
 	 *   - pass broadcast packets
 	 */
-	REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
+	DWMAC_REG_WRITE(MAC_PKT_FILTER, MAC_PKT_FILTER_PM);
 
 	if (cfg->phy_dev != NULL) {
 		/* Do not start the interface until PHY link is up */
@@ -599,6 +688,7 @@ static void dwmac_iface_init(struct net_if *iface)
 	 */
 	k_sem_init(&p->free_tx_descs, NB_TX_DESCS - 1, NB_TX_DESCS - 1);
 	k_sem_init(&p->free_rx_descs, NB_RX_DESCS - 1, NB_RX_DESCS - 1);
+	k_fifo_init(&p->tx_queue);
 
 	/* set up RX buffer refill thread */
 	k_thread_create(&p->rx_refill_thread, p->rx_refill_thread_stack,
@@ -609,16 +699,16 @@ static void dwmac_iface_init(struct net_if *iface)
 	k_thread_name_set(&p->rx_refill_thread, "dwmac_rx_refill");
 
 	/* start up TX/RX */
-	reg_val = REG_READ(DMA_CHn_TX_CTRL(0));
-	REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
-	reg_val = REG_READ(DMA_CHn_RX_CTRL(0));
-	REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
-	reg_val = REG_READ(MAC_CONF);
+	reg_val = DWMAC_REG_READ(DMA_CHn_TX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0), reg_val | DMA_CHn_TX_CTRL_St);
+	reg_val = DWMAC_REG_READ(DMA_CHn_RX_CTRL(0));
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0), reg_val | DMA_CHn_RX_CTRL_SR);
+	reg_val = DWMAC_REG_READ(MAC_CONF);
 	reg_val |= MAC_CONF_CST | MAC_CONF_TE | MAC_CONF_RE;
-	REG_WRITE(MAC_CONF, reg_val);
+	DWMAC_REG_WRITE(MAC_CONF, reg_val);
 
 	/* unmask IRQs */
-	REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
+	DWMAC_REG_WRITE(DMA_CHn_IRQ_ENABLE(0),
 		  DMA_CHn_IRQ_ENABLE_TIE |
 		  DMA_CHn_IRQ_ENABLE_RIE |
 		  DMA_CHn_IRQ_ENABLE_NIE |
@@ -635,6 +725,8 @@ int dwmac_probe(const struct device *dev)
 	int ret;
 	uint32_t reg_val;
 	k_timepoint_t timeout;
+	uint32_t rx_fifo_size;
+	uint32_t tx_fifo_size;
 
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
 
@@ -643,15 +735,15 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
-	reg_val = REG_READ(MAC_VERSION);
+	reg_val = DWMAC_REG_READ(MAC_VERSION);
 	LOG_INF("HW version %u.%u0", (reg_val >> 4) & 0xf, reg_val & 0xf);
 	__ASSERT(FIELD_GET(MAC_VERSION_SNPSVER, reg_val) >= 0x40,
 		 "This driver expects DWC-ETHERNET version >= 4.00");
 
 	/* resets all of the MAC internal registers and logic */
-	REG_WRITE(DMA_MODE, DMA_MODE_SWR);
+	DWMAC_REG_WRITE(DMA_MODE, DMA_MODE_SWR);
 	timeout = sys_timepoint_calc(K_MSEC(100));
-	while (REG_READ(DMA_MODE) & DMA_MODE_SWR) {
+	while (DWMAC_REG_READ(DMA_MODE) & DMA_MODE_SWR) {
 		if (sys_timepoint_expired(timeout)) {
 			LOG_ERR("unable to reset hardware");
 			return -EIO;
@@ -659,10 +751,10 @@ int dwmac_probe(const struct device *dev)
 	}
 
 	/* get configured hardware features */
-	p->feature0 = REG_READ(MAC_HW_FEATURE0);
-	p->feature1 = REG_READ(MAC_HW_FEATURE1);
-	p->feature2 = REG_READ(MAC_HW_FEATURE2);
-	p->feature3 = REG_READ(MAC_HW_FEATURE3);
+	p->feature0 = DWMAC_REG_READ(MAC_HW_FEATURE0);
+	p->feature1 = DWMAC_REG_READ(MAC_HW_FEATURE1);
+	p->feature2 = DWMAC_REG_READ(MAC_HW_FEATURE2);
+	p->feature3 = DWMAC_REG_READ(MAC_HW_FEATURE3);
 	LOG_DBG("hw_feature: 0x%08x 0x%08x 0x%08x 0x%08x",
 		p->feature0, p->feature1, p->feature2, p->feature3);
 
@@ -671,23 +763,53 @@ int dwmac_probe(const struct device *dev)
 		return ret;
 	}
 
+	/* setup queues */
+	/* currently only a single queue is supported, assign full FIFO to it */
+	rx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_RXFIFOSIZE, p->feature1));
+	tx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_TXFIFOSIZE, p->feature1));
+	LOG_DBG("RX/TX fifo size: %u/%u bytes", rx_fifo_size, tx_fifo_size);
+
+	DWMAC_REG_WRITE(MTL_RXQn_OPERATION_MODE(0),
+			MTL_RXQn_OPERATION_MODE_RSF |
+			FIELD_PREP(MTL_RXQn_OPERATION_MODE_RQS, (rx_fifo_size/256) - 1));
+	DWMAC_REG_WRITE(MAC_RXQ_CTRL0, FIELD_PREP(MAC_RXQ_CTRL0_RXQ0EN, 2));
+	DWMAC_REG_WRITE(MTL_TXQn_OPERATION_MODE(0),
+			MTL_TXQn_OPERATION_MODE_TSF |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TQS, (tx_fifo_size/256) - 1) |
+			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TXQEN, 1));
+
+	/* set up DMA */
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
-	/* set up DMA */
-	REG_WRITE(DMA_CHn_TX_CTRL(0), 0);
-	REG_WRITE(DMA_CHn_RX_CTRL(0),
-		  FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
-		  FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
-	REG_WRITE(DMA_CHn_TXDESC_LIST_HADDR(0), TXDESC_PHYS_H(0));
-	REG_WRITE(DMA_CHn_TXDESC_LIST_ADDR(0), TXDESC_PHYS_L(0));
-	REG_WRITE(DMA_CHn_RXDESC_LIST_HADDR(0), RXDESC_PHYS_H(0));
-	REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
-	REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
-	REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+	DWMAC_REG_WRITE(DMA_CHn_TX_CTRL(0),
+			FIELD_PREP(DMA_CHn_TX_CTRL_PBL, 32));
+	DWMAC_REG_WRITE(DMA_CHn_RX_CTRL(0),
+			FIELD_PREP(DMA_CHn_RX_CTRL_PBL, 32) |
+			FIELD_PREP(DMA_CHn_RX_CTRL_RBSZ, RX_FRAG_SIZE));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_LIST_HADDR(0), TXDESC_PHYS_H(0));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_LIST_ADDR(0), TXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_HADDR(0), RXDESC_PHYS_H(0));
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_LIST_ADDR(0), RXDESC_PHYS_L(0));
+	DWMAC_REG_WRITE(DMA_CHn_TXDESC_RING_LENGTH(0), NB_TX_DESCS - 1);
+	DWMAC_REG_WRITE(DMA_CHn_RXDESC_RING_LENGTH(0), NB_RX_DESCS - 1);
+
+	/* setup RX checksum offloading */
+	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
+		DWMAC_REG_WRITE(MAC_CONF, DWMAC_REG_READ(MAC_CONF) | MAC_CONF_IPC);
+	}
 
 	return 0;
 }
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *dwmac_stats(const struct device *dev, struct net_if *iface __unused)
+{
+	struct dwmac_priv *p = dev->data;
+
+	return &p->stats;
+}
+#endif
 
 const struct ethernet_api dwmac_api = {
 	.iface_api.init		= dwmac_iface_init,
@@ -695,4 +817,10 @@ const struct ethernet_api dwmac_api = {
 	.set_config		= dwmac_set_config,
 	.get_phy		= dwmac_get_phy,
 	.send			= dwmac_send,
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	.get_ptp_clock		= dwmac_get_ptp_clock,
+#endif
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats		= dwmac_stats,
+#endif
 };

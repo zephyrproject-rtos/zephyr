@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARM_STRUCTS_H_
-#define ZEPHYR_INCLUDE_ARM_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_STRUCTS_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_STRUCTS_H_
 
 #include <zephyr/types.h>
 
@@ -30,4 +30,4 @@ struct _cpu_arch {
 
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARM_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_STRUCTS_H_ */

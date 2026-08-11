@@ -20,7 +20,7 @@
 
 #include <zephyr/devicetree.h>
 #if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
-#include <zephyr/arch/openrisc/exception.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/arch/openrisc/irq.h>
 #include <zephyr/arch/openrisc/thread.h>
 #include <zephyr/arch/common/sys_bitops.h>

@@ -395,6 +395,17 @@ static void *iface_setup(void)
 	dev->state->init_res = 0;
 	device_ok = true;
 
+	/* The interface init was skipped because device was not ready during
+	 * system initialization. Now that the device is ready, we need to
+	 * manually initialize the interface to set the link address and
+	 * enable IPv4/IPv6 support (which are normally set in init_iface()).
+	 */
+	net_if_flag_set(iface1, NET_IF_IPV4);
+	net_if_flag_set(iface1, NET_IF_IPV6);
+	k_mutex_init(&iface1->lock);
+	k_mutex_init(&iface1->tx_lock);
+	net_iface_init(iface1);
+
 	/* We need to sleep a bit to let the interface
 	 * operational state change time to be set.
 	 */
@@ -858,6 +869,24 @@ ZTEST(net_iface, test_v4_addr_add_rm)
 	v4_addr_rm();
 }
 
+ZTEST(net_iface, test_v4_addr_lookup_by_iface)
+{
+	struct net_if_addr *ifaddr;
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1, &my_ipv4_addr1);
+	zassert_not_null(ifaddr, "IPv4 address not found");
+	zassert_mem_equal(&ifaddr->address.in_addr, &my_ipv4_addr1,
+			  sizeof(struct net_in_addr),
+			  "Wrong IPv4 address returned");
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface2, &my_ipv4_addr1);
+	zassert_is_null(ifaddr, "IPv4 address found from a wrong interface");
+
+	ifaddr = net_if_ipv4_addr_lookup_by_iface(iface1,
+						  &my_ipv4_addr_not_found);
+	zassert_is_null(ifaddr, "Unknown IPv4 address found");
+}
+
 #define MY_ADDR_V4_USER      { { { 10, 0, 0, 2 } } }
 #define UNKNOWN_ADDR_V4_USER { { { 5, 6, 7, 8 } } }
 
@@ -1243,38 +1272,49 @@ ZTEST(net_iface, test_ipv4_maddr_foreach)
 	zassert_equal(count, 0, "Incorrect number of callback calls");
 }
 
+struct foreach_ipv6_ctx {
+	struct net_if *iface;
+	int count;
+};
+
 static void foreach_ipv6_addr_check(struct net_if *iface,
 				    struct net_if_addr *if_addr,
 				    void *user_data)
 {
-	int *count = (int *)user_data;
+	struct foreach_ipv6_ctx *ctx = user_data;
 
-	(*count)++;
+	ctx->count++;
 
-	zassert_equal_ptr(iface, iface1, "Callback called on wrong interface");
+	zassert_equal_ptr(iface, ctx->iface, "Callback called on wrong interface");
 
 	if (net_ipv6_is_ll_addr(&if_addr->address.in6_addr)) {
-		zassert_mem_equal(&if_addr->address.in6_addr, &ll_addr,
-				  sizeof(struct net_in6_addr), "Wrong IPv6 address");
-	} else {
-		zassert_mem_equal(&if_addr->address.in6_addr, &my_addr1,
-				  sizeof(struct net_in6_addr), "Wrong IPv6 address");
+		/* iface1 has both a manually configured link-local address and
+		 * the one autoconfigured on bring-up; accept any link-local.
+		 */
+		return;
 	}
+
+	zassert_mem_equal(&if_addr->address.in6_addr, &my_addr1,
+			  sizeof(struct net_in6_addr), "Wrong IPv6 address");
 }
 
 ZTEST(net_iface, test_ipv6_addr_foreach)
 {
-	int count = 0;
+	struct foreach_ipv6_ctx ctx;
 
-	/* iface1 has two IPv6 addresses configured */
-	net_if_ipv6_addr_foreach(iface1, foreach_ipv6_addr_check, &count);
-	zassert_equal(count, 2, "Incorrect number of callback calls");
+	/* iface1 has my_addr1, a manually configured link-local address and
+	 * the link-local address autoconfigured on bring-up.
+	 */
+	ctx.iface = iface1;
+	ctx.count = 0;
+	net_if_ipv6_addr_foreach(iface1, foreach_ipv6_addr_check, &ctx);
+	zassert_equal(ctx.count, 3, "Incorrect number of callback calls");
 
-	count = 0;
-
-	/* iface4 has no IPv6 address configured */
-	net_if_ipv6_addr_foreach(iface4, foreach_ipv6_addr_check, &count);
-	zassert_equal(count, 0, "Incorrect number of callback calls");
+	/* iface4 only has the link-local address autoconfigured on bring-up. */
+	ctx.iface = iface4;
+	ctx.count = 0;
+	net_if_ipv6_addr_foreach(iface4, foreach_ipv6_addr_check, &ctx);
+	zassert_equal(ctx.count, 1, "Incorrect number of callback calls");
 }
 
 static void foreach_ipv6_maddr_check(struct net_if *iface,
@@ -1422,6 +1462,155 @@ ZTEST(net_iface, test_ipv6_iid_stable)
 #else
 	ztest_test_skip();
 #endif
+}
+
+ZTEST(net_iface, test_ipv6_config_put)
+{
+	/* Configured on iface3, which no other test uses for IP. The values
+	 * differ from the other test addresses so that the same address is
+	 * never live on two interfaces at once.
+	 */
+	const struct net_in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 4, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0, 0x1 } } };
+	const struct net_in6_addr maddr = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x4 } } };
+	const struct net_in6_addr prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 4, 0,
+					      0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } } };
+	struct net_if_ipv6 *ipv6, *reused;
+	struct net_if *tmp = iface3;
+	int ret;
+
+	ret = net_if_config_ipv6_get(iface3, &ipv6);
+	zassert_equal(ret, 0, "Cannot get IPv6 config (%d)", ret);
+
+	zassert_not_null(net_if_ipv6_addr_add(iface3, &addr,
+					      NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv6 address");
+	zassert_not_null(net_if_ipv6_maddr_add(iface3, &maddr),
+			 "Cannot add IPv6 multicast address");
+	zassert_not_null(net_if_ipv6_prefix_add(iface3, &prefix, 64, 3600),
+			 "Cannot add IPv6 prefix");
+
+	net_if_ipv6_set_hop_limit(iface3, 42);
+
+	zassert_equal(net_if_config_ipv6_put(iface3), -EBUSY,
+		      "IPv6 config released while the interface is up");
+
+	net_if_down(iface3);
+
+	ret = net_if_config_ipv6_put(iface3);
+	zassert_equal(ret, 0, "Cannot release IPv6 config (%d)", ret);
+	zassert_is_null(iface3->config.ip.ipv6, "IPv6 config not released");
+
+	ARRAY_FOR_EACH(ipv6->unicast, i) {
+		zassert_false(ipv6->unicast[i].is_used,
+			      "Unicast address %zu still in use", i);
+		zassert_equal(atomic_get(&ipv6->unicast[i].atomic_ref), 0,
+			      "Unicast address %zu still referenced", i);
+	}
+
+	ARRAY_FOR_EACH(ipv6->mcast, i) {
+		zassert_false(ipv6->mcast[i].is_used,
+			      "Multicast address %zu still in use", i);
+		zassert_false(ipv6->mcast[i].is_joined,
+			      "Multicast address %zu still joined", i);
+	}
+
+	ARRAY_FOR_EACH(ipv6->prefix, i) {
+		zassert_false(ipv6->prefix[i].is_used,
+			      "Prefix %zu still in use", i);
+		zassert_is_null(ipv6->prefix[i].iface,
+				"Prefix %zu still bound to an interface", i);
+	}
+
+	zassert_equal(ipv6->hop_limit, CONFIG_NET_INITIAL_HOP_LIMIT,
+		      "Hop limit not reset (%u)", ipv6->hop_limit);
+
+	/* The released config goes back to the pool, the next interface
+	 * allocating it must not see anything left from this one.
+	 */
+	ret = net_if_config_ipv6_get(iface3, &reused);
+	zassert_equal(ret, 0, "Cannot get IPv6 config again (%d)", ret);
+	zassert_equal_ptr(reused, ipv6, "Released config was not re-used");
+	zassert_is_null(net_if_ipv6_addr_lookup_by_iface(iface3, &addr),
+			"Stale IPv6 address in re-used config");
+	zassert_is_null(net_if_ipv6_maddr_lookup(&maddr, &tmp),
+			"Stale IPv6 multicast address in re-used config");
+	zassert_equal(net_if_ipv6_get_hop_limit(iface3),
+		      CONFIG_NET_INITIAL_HOP_LIMIT,
+		      "Stale hop limit in re-used config");
+
+	net_if_up(iface3);
+}
+
+ZTEST(net_iface, test_ipv4_config_put)
+{
+	/* Configured on iface3, which no other test uses for IP. The values
+	 * differ from the other test addresses so that the same address is
+	 * never live on two interfaces at once.
+	 */
+	const struct net_in_addr addr = { { { 198, 51, 100, 1 } } };
+	const struct net_in_addr maddr = { { { 224, 0, 0, 4 } } };
+	const struct net_in_addr gw = { { { 198, 51, 100, 254 } } };
+	struct net_if_ipv4 *ipv4, *reused;
+	struct net_if *tmp = iface3;
+	int ret;
+
+	ret = net_if_config_ipv4_get(iface3, &ipv4);
+	zassert_equal(ret, 0, "Cannot get IPv4 config (%d)", ret);
+
+	zassert_not_null(net_if_ipv4_addr_add(iface3, &addr,
+					      NET_ADDR_MANUAL, 0),
+			 "Cannot add IPv4 address");
+	zassert_not_null(net_if_ipv4_maddr_add(iface3, &maddr),
+			 "Cannot add IPv4 multicast address");
+
+	net_if_ipv4_set_gw(iface3, &gw);
+	net_if_ipv4_set_ttl(iface3, 13);
+
+	zassert_equal(net_if_config_ipv4_put(iface3), -EBUSY,
+		      "IPv4 config released while the interface is up");
+
+	net_if_down(iface3);
+
+	ret = net_if_config_ipv4_put(iface3);
+	zassert_equal(ret, 0, "Cannot release IPv4 config (%d)", ret);
+	zassert_is_null(iface3->config.ip.ipv4, "IPv4 config not released");
+
+	ARRAY_FOR_EACH(ipv4->unicast, i) {
+		zassert_false(ipv4->unicast[i].ipv4.is_used,
+			      "Unicast address %zu still in use", i);
+		zassert_equal(atomic_get(&ipv4->unicast[i].ipv4.atomic_ref), 0,
+			      "Unicast address %zu still referenced", i);
+		zassert_equal(ipv4->unicast[i].netmask.s_addr, 0,
+			      "Netmask %zu not cleared", i);
+	}
+
+	ARRAY_FOR_EACH(ipv4->mcast, i) {
+		zassert_false(ipv4->mcast[i].is_used,
+			      "Multicast address %zu still in use", i);
+		zassert_false(ipv4->mcast[i].is_joined,
+			      "Multicast address %zu still joined", i);
+	}
+
+	zassert_equal(ipv4->gw.s_addr, 0, "Gateway not cleared");
+	zassert_equal(ipv4->ttl, CONFIG_NET_INITIAL_TTL,
+		      "TTL not reset (%u)", ipv4->ttl);
+
+	/* The released config goes back to the pool, the next interface
+	 * allocating it must not see anything left from this one.
+	 */
+	ret = net_if_config_ipv4_get(iface3, &reused);
+	zassert_equal(ret, 0, "Cannot get IPv4 config again (%d)", ret);
+	zassert_equal_ptr(reused, ipv4, "Released config was not re-used");
+	zassert_is_null(net_if_ipv4_addr_lookup_by_iface(iface3, &addr),
+			"Stale IPv4 address in re-used config");
+	zassert_is_null(net_if_ipv4_maddr_lookup(&maddr, &tmp),
+			"Stale IPv4 multicast address in re-used config");
+	zassert_equal(net_if_ipv4_get_ttl(iface3), CONFIG_NET_INITIAL_TTL,
+		      "Stale TTL in re-used config");
+
+	net_if_up(iface3);
 }
 
 ZTEST_SUITE(net_iface, NULL, iface_setup, NULL, NULL, iface_teardown);

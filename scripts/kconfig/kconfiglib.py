@@ -5,7 +5,7 @@
 Overview
 ========
 
-Kconfiglib is a Python 2/3 library for scripting and extracting information
+Kconfiglib is a Python 3 library for scripting and extracting information
 from Kconfig (https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt)
 configuration systems.
 
@@ -52,17 +52,14 @@ sections.
 make kmenuconfig
 ----------------
 
-This target runs the curses menuconfig interface with Python 3. As of
-Kconfiglib 12.2.0, both Python 2 and Python 3 are supported (previously, only
-Python 3 was supported, so this was a backport).
+This target runs the curses menuconfig interface with Python 3.
 
 
 make guiconfig
 --------------
 
-This target runs the Tkinter menuconfig interface. Both Python 2 and Python 3
-are supported. To change the Python interpreter used, pass
-PYTHONCMD=<executable> to 'make'. The default is 'python'.
+This target runs the Tkinter menuconfig interface. To change the Python
+interpreter used, pass PYTHONCMD=<executable> to 'make'. The default is 'python'.
 
 
 make [ARCH=<arch>] iscriptconfig
@@ -877,11 +874,8 @@ class Kconfig(object):
 
         Raises KconfigError on syntax/semantic errors, and OSError or (possibly
         a subclass of) IOError on IO errors ('errno', 'strerror', and
-        'filename' are available). Note that IOError is an alias for OSError on
-        Python 3, so it's enough to catch OSError there. If you need Python 2/3
-        compatibility, it's easiest to catch EnvironmentError, which is a
-        common base class of OSError/IOError on Python 2 and an alias for
-        OSError on Python 3.
+        'filename' are available). Note that IOError is an alias for OSError in
+        Python 3, so it's enough to catch OSError.
 
         filename (default: "Kconfig"):
           The Kconfig file to load. For the Linux kernel, you'll want "Kconfig"
@@ -923,11 +917,6 @@ class Kconfig(object):
 
           The "utf-8" default avoids exceptions on systems that are configured
           to use the C locale, which implies an ASCII encoding.
-
-          This parameter has no effect on Python 2, due to implementation
-          issues (regular strings turning into Unicode strings, which are
-          distinct in Python 2). Python 2 doesn't decode regular strings
-          anyway.
 
           Related PEP: https://www.python.org/dev/peps/pep-0538/
 
@@ -1141,7 +1130,7 @@ class Kconfig(object):
                 if expr_value(cond):
                     try:
                         with self._open_config(filename.str_value) as f:
-                            return f.name
+                            return f.name.replace('\\', '/')
                     except EnvironmentError:
                         continue
 
@@ -2118,18 +2107,12 @@ class Kconfig(object):
             try:
                 return self._open(join(self.srctree, filename), "r")
             except EnvironmentError as e2:
-                # This is needed for Python 3, because e2 is deleted after
-                # the try block:
-                #
-                # https://docs.python.org/3/reference/compound_stmts.html#the-try-statement
-                e = e2
-
-            raise _KconfigIOError(
-                e, "Could not open '{}' ({}: {}). Check that the $srctree "
-                   "environment variable ({}) is set correctly."
-                   .format(filename, errno.errorcode[e.errno], e.strerror,
-                           "set to '{}'".format(self.srctree) if self.srctree
-                               else "unset or blank"))
+                raise _KconfigIOError(
+                    e2, "Could not open '{}' ({}: {}). Check that the $srctree "
+                    "environment variable ({}) is set correctly."
+                    .format(filename, errno.errorcode[e.errno], e.strerror,
+                            "set to '{}'".format(self.srctree) if self.srctree
+                                else "unset or blank"))
 
     def _enter_file(self, filename):
         # Jumps to the beginning of a sourced Kconfig file, saving the previous
@@ -2148,6 +2131,10 @@ class Kconfig(object):
         else:
             # Absolute path
             rel_filename = filename
+
+        # Normalize path separators to '/' for cross-platform consistency
+        # (on Windows, paths may use '\' which would break comparisons)
+        rel_filename = rel_filename.replace('\\', '/')
 
         self.kconfig_filenames.append(rel_filename)
 
@@ -3125,6 +3112,36 @@ class Kconfig(object):
 
         return expr
 
+    def _parse_depends(self):
+        # Parses conditional dependencies with syntax "depends on <expr> if <condition>"
+        # Returns the appropriate expression that represents the conditional dependency
+
+        # Parse the main dependency expression
+        main_expr = self._parse_expr(True)
+
+        # Check if there's an optional "if <condition>" clause
+        if self._check_token(_T_IF):
+            # Parse the condition expression
+            condition = self._parse_expr(True)
+
+            # Check for end of line
+            if self._tokens[self._tokens_i] is not None:
+                self._trailing_tokens_error()
+
+            # Create conditional dependency: "depends on A if B" becomes "!B || A"
+            # This means: if B is false, the dependency is satisfied (y)
+            #             if B is true, the dependency becomes A
+            return self._make_or(
+                (NOT, condition),
+                main_expr
+            )
+        else:
+            # No conditional clause, just return the main expression
+            if self._tokens[self._tokens_i] is not None:
+                self._trailing_tokens_error()
+
+            return main_expr
+
     def _parse_props(self, node):
         # Parses and adds properties to the MenuNode 'node' (type, 'prompt',
         # 'default's, etc.) Properties are later copied up to symbols and
@@ -3160,7 +3177,7 @@ class Kconfig(object):
                     self._parse_error("expected 'on' after 'depends'")
 
                 node.dep = self._make_and(node.dep,
-                                          self._expect_expr_and_eol())
+                                          self._parse_depends())
 
             elif t0 is _T_HELP:
                 self._parse_help(node)
@@ -3917,41 +3934,8 @@ class Kconfig(object):
         self._parse_error("extra tokens at end of line")
 
     def _open(self, filename, mode):
-        # open() wrapper:
-        #
-        # - Enable universal newlines mode on Python 2 to ease
-        #   interoperability between Linux and Windows. It's already the
-        #   default on Python 3.
-        #
-        #   The "U" flag would currently work for both Python 2 and 3, but it's
-        #   deprecated on Python 3, so play it future-safe.
-        #
-        #   io.open() defaults to universal newlines on Python 2 (and is an
-        #   alias for open() on Python 3), but it returns 'unicode' strings and
-        #   slows things down:
-        #
-        #     Parsing x86 Kconfigs on Python 2
-        #
-        #     with open(..., "rU"):
-        #
-        #       real  0m0.930s
-        #       user  0m0.905s
-        #       sys   0m0.025s
-        #
-        #     with io.open():
-        #
-        #       real  0m1.069s
-        #       user  0m1.040s
-        #       sys   0m0.029s
-        #
-        #   There's no appreciable performance difference between "r" and
-        #   "rU" for parsing performance on Python 2.
-        #
-        # - For Python 3, force the encoding. Forcing the encoding on Python 2
-        #   turns strings into Unicode strings, which gets messy. Python 2
-        #   doesn't decode regular strings anyway.
-        return open(filename, "rU" if mode == "r" else mode) if _IS_PY2 else \
-               open(filename, mode, encoding=self._encoding)
+        # open() wrapper that forces the encoding
+        return open(filename, mode, encoding=self._encoding)
 
     def _check_undef_syms(self):
         # Prints warnings for all references to undefined symbols within the
@@ -3980,7 +3964,7 @@ class Kconfig(object):
 
             return True
 
-        for sym in (self.syms.viewvalues if _IS_PY2 else self.syms.values)():
+        for sym in self.syms.values():
             # - sym.nodes empty means the symbol is undefined (has no
             #   definition locations)
             #
@@ -6548,16 +6532,9 @@ def _save_old(path):
     if islink(path):
         # Preserve symlinks
         copy_fn = copy
-    elif hasattr(os, "replace"):
-        # Python 3 (3.3+) only. Best choice when available, because it
-        # removes <filename>.old on both *nix and Windows.
-        copy_fn = os.replace
-    elif os.name == "posix":
-        # Removes <filename>.old on POSIX systems
-        copy_fn = os.rename
     else:
-        # Fall back on copying
-        copy_fn = copy
+        # atomic replace of <filename>.old
+        copy_fn = os.replace
 
     try:
         copy_fn(path, path + ".old")
@@ -6928,30 +6905,21 @@ def _error_if_fn(kconf, _, cond, msg):
 def _shell_fn(kconf, _, command):
     import subprocess  # Only import as needed, to save some startup time
 
-    stdout, stderr = subprocess.Popen(
-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    ).communicate()
+    result = subprocess.run(
+        command,
+        shell=True,
+        capture_output=True,
+        text=True,
+        encoding=kconf._encoding
+    )
 
-    if not _IS_PY2:
-        try:
-            stdout = stdout.decode(kconf._encoding)
-            stderr = stderr.decode(kconf._encoding)
-        except UnicodeDecodeError as e:
-            _decoding_error(e, kconf.filename, kconf.linenr)
-
-    if stderr:
+    if result.stderr:
         kconf._warn("'{}' wrote to stderr: {}".format(
-                        command, "\n".join(stderr.splitlines())),
+                        command, "\n".join(result.stderr.splitlines())),
                     kconf.loc)
 
-    # Universal newlines with splitlines() (to prevent e.g. stray \r's in
-    # command output on Windows), trailing newline removal, and
-    # newline-to-space conversion.
-    #
-    # On Python 3 versions before 3.6, it's not possible to specify the
-    # encoding when passing universal_newlines=True to Popen() (the 'encoding'
-    # parameter was added in 3.6), so we do this manual version instead.
-    return "\n".join(stdout.splitlines()).rstrip("\n").replace("\n", " ")
+    # Trailing newline removal, and newline-to-space conversion.
+    return result.stdout.rstrip("\n").replace("\n", " ")
 
 #
 # Global constants
@@ -6973,9 +6941,6 @@ STR_TO_TRI = {
 # distinct from a cached None (no selection). Any object that's not None or a
 # Symbol will do. We test this with 'is'.
 _NO_CACHED_SELECTION = 0
-
-# Are we running on Python 2?
-_IS_PY2 = sys.version_info[0] < 3
 
 try:
     _UNAME_RELEASE = os.uname()[2]
@@ -7267,15 +7232,14 @@ KIND_TO_STR = {
 # Helper functions for getting compiled regular expressions, with the needed
 # matching function returned directly as a small optimization.
 #
-# Use ASCII regex matching on Python 3. It's already the default on Python 2.
-
+# Use ASCII regex matching on Python 3.
 
 def _re_match(regex):
-    return re.compile(regex, 0 if _IS_PY2 else re.ASCII).match
+    return re.compile(regex, re.ASCII).match
 
 
 def _re_search(regex):
-    return re.compile(regex, 0 if _IS_PY2 else re.ASCII).search
+    return re.compile(regex, re.ASCII).search
 
 
 # Various regular expressions used during parsing

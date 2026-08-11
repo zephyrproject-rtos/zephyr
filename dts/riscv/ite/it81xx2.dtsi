@@ -54,8 +54,6 @@
 
 		pinctrl: pin-controller {
 			compatible = "ite,it8xxx2-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			status = "okay";
 		};
 

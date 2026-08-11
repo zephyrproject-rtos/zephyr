@@ -11,12 +11,8 @@
 };
 
 sdhc: &sdmmc1 {
-	compatible = "st,stm32-sdmmc";
-	interrupts = <49 0>;
-	interrupt-names = "event";
 	hw-flow-control;
 	bus-width = <4>;
-	status = "okay";
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;
 

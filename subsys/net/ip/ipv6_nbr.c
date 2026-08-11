@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(net_ipv6_nd, CONFIG_NET_IPV6_ND_LOG_LEVEL);
 /* Maximum reachable time value specified in RFC 4861 section
  * 6.2.1. Router Configuration Variables, AdvReachableTime
  */
-#define MAX_REACHABLE_TIME 3600000
+#define MAX_REACHABLE_TIME NET_IPV6_MAX_REACHABLE_TIME
 
 /* IPv6 minimum link MTU specified in RFC 8200 section 5
  * Packet Size Issues
@@ -70,8 +70,8 @@ static uint32_t stale_counter;
 #endif
 
 #if defined(CONFIG_NET_IPV6_ND)
-static struct k_work_delayable ipv6_nd_reachable_timer;
 static void ipv6_nd_reachable_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(ipv6_nd_reachable_timer, ipv6_nd_reachable_timeout);
 static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 #endif
 
@@ -86,8 +86,10 @@ static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, int64_t time);
 extern void net_neighbor_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
 
+static void ipv6_ns_reply_timeout(struct k_work *work);
+
 /** Neighbor Solicitation reply timer */
-static struct k_work_delayable ipv6_ns_reply_timer;
+static K_WORK_DELAYABLE_DEFINE(ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 
 NET_NBR_POOL_INIT(net_neighbor_pool,
 		  CONFIG_NET_IPV6_MAX_NEIGHBORS,
@@ -339,6 +341,34 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 
 	net_ipv6_nbr_unlock();
 	return true;
+}
+
+void net_ipv6_nbr_clear_cache(struct net_if *iface)
+{
+	/* The lock is recursive, so it can be held across net_ipv6_nbr_rm(),
+	 * which takes it again. Removing an entry frees its slot, so the
+	 * indexed scan simply skips it on the next pass.
+	 */
+	net_ipv6_nbr_lock();
+
+	for (int i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		struct net_nbr *nbr = get_nbr(i);
+		struct net_in6_addr addr;
+
+		if (!nbr->ref || nbr->iface != iface ||
+		    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
+			continue;
+		}
+
+		/* Copy the address out first: net_ipv6_nbr_rm() frees the entry
+		 * and then reads the address it is passed, so a pointer into the
+		 * freed entry would be a use-after-free.
+		 */
+		net_ipaddr_copy(&addr, &net_ipv6_nbr_data(nbr)->addr);
+		net_ipv6_nbr_rm(iface, &addr);
+	}
+
+	net_ipv6_nbr_unlock();
 }
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
@@ -985,7 +1015,7 @@ try_send:
 		entry = net_pmtu_get_entry((struct net_sockaddr *)&dst);
 		if (entry == NULL) {
 			ret = net_pmtu_update_mtu((struct net_sockaddr *)&dst,
-						  net_if_get_mtu(iface));
+						  net_if_get_mtu(net_pkt_iface(pkt)));
 			if (ret < 0) {
 				NET_DBG("Cannot update PMTU for %s (%d)",
 					net_sprint_ipv6_addr(&dst.sin6_addr),
@@ -2182,6 +2212,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 			/* Let the system timeout and then send the NS again */
 			net_ipv6_nbr_unlock();
+			net_pkt_unref(pkt);
 			return 0;
 		}
 	}
@@ -2754,7 +2785,7 @@ static enum net_verdict handle_ra_input(struct net_icmp_ctx *ctx,
 	}
 
 	if (reachable_time && reachable_time <= MAX_REACHABLE_TIME &&
-	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
+	    (net_if_ipv6_get_base_reachable_time(net_pkt_iface(pkt)) !=
 	     reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
 						    reachable_time);
@@ -2941,7 +2972,7 @@ drop:
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 /* Packet format described in RFC 4443 ch 3.2. Packet Too Big Message */
 static enum net_verdict handle_ptb_input(struct net_icmp_ctx *ctx,
 					 struct net_pkt *pkt,
@@ -3040,7 +3071,7 @@ silent_drop:
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;
 }
-#endif /* CONFIG_NET_IPV6_PMTU */
+#endif /* CONFIG_NET_IPV6_PMTU_PTB */
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 static struct net_icmp_ctx ns_ctx;
@@ -3051,9 +3082,9 @@ static struct net_icmp_ctx na_ctx;
 static struct net_icmp_ctx ra_ctx;
 #endif /* CONFIG_NET_IPV6_ND */
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 static struct net_icmp_ctx ptb_ctx;
-#endif /* CONFIG_NET_IPV6_PMTU */
+#endif /* CONFIG_NET_IPV6_PMTU_PTB */
 
 #if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_IPV6_NBR_CACHE)
 /* Check if the NS reply timer is pending and cancel it if so.
@@ -3075,6 +3106,68 @@ int net_ipv6_nbr_test_cancel(void)
 }
 #endif /* CONFIG_NET_TEST */
 
+#if defined(CONFIG_NET_IPV6_UNSOLICITED_NA)
+static void send_unsolicited_na(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_in6_addr dst;
+	int ret;
+
+	net_ipv6_addr_create_ll_allnodes_mcast(&dst);
+
+	/* RFC 4861 ch 7.2.6: an unsolicited Neighbor Advertisement to the
+	 * all-nodes multicast address, target set to our own address and the
+	 * Override flag set so neighbors replace a stale link-layer address.
+	 */
+	ret = net_ipv6_send_na(iface, addr, &dst, addr, NET_ICMPV6_NA_FLAG_OVERRIDE);
+	if (ret < 0) {
+		NET_DBG("Cannot send unsolicited NA for %s on iface %d (%d)",
+			net_sprint_ipv6_addr(addr), net_if_get_by_iface(iface), ret);
+	}
+}
+
+static void unsolicited_na_addr_event(uint64_t mgmt_event, struct net_if *iface, void *info,
+				      size_t info_length, void *user_data __unused)
+{
+	struct net_if_addr *ifaddr;
+	struct net_in6_addr addr;
+
+	if (mgmt_event != NET_EVENT_IPV6_ADDR_ADD && mgmt_event != NET_EVENT_IPV6_DAD_SUCCEED) {
+		return;
+	}
+
+	/* With DAD disabled an address is preferred as soon as it is added, so
+	 * NET_EVENT_IPV6_ADDR_ADD can fire while the interface is still down.
+	 * Only announce on an up interface (matches gratuitous ARP).
+	 */
+	if (!net_if_is_up(iface)) {
+		return;
+	}
+
+	if (info == NULL || info_length != sizeof(struct net_in6_addr)) {
+		return;
+	}
+
+	net_ipaddr_copy(&addr, (const struct net_in6_addr *)info);
+
+	/* Only announce a usable (preferred) address, and announce each exactly
+	 * once: with DAD enabled the address is still tentative on ADDR_ADD and
+	 * is announced later on DAD_SUCCEED (which also fires when an address is
+	 * re-validated as the interface comes back up, covering reconnects);
+	 * with DAD disabled it is already preferred on ADDR_ADD.
+	 */
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(iface, &addr);
+	if (ifaddr == NULL || ifaddr->addr_state != NET_ADDR_PREFERRED) {
+		return;
+	}
+
+	send_unsolicited_na(iface, &addr);
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(unsolicited_na_addr_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_DAD_SUCCEED,
+				unsolicited_na_addr_event, NULL);
+#endif /* CONFIG_NET_IPV6_UNSOLICITED_NA */
+
 void net_ipv6_nbr_init(void)
 {
 	int ret;
@@ -3091,8 +3184,6 @@ void net_ipv6_nbr_init(void)
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_NA),
 			ret);
 	}
-
-	k_work_init_delayable(&ipv6_ns_reply_timer, ipv6_ns_reply_timeout);
 #endif
 #if defined(CONFIG_NET_IPV6_ND)
 	ret = net_icmp_init_ctx(&ra_ctx, NET_AF_INET6, NET_ICMPV6_RA, 0, handle_ra_input);
@@ -3100,12 +3191,9 @@ void net_ipv6_nbr_init(void)
 		NET_ERR("Cannot register %s handler (%d)", STRINGIFY(NET_ICMPV6_RA),
 			ret);
 	}
-
-	k_work_init_delayable(&ipv6_nd_reachable_timer,
-			      ipv6_nd_reachable_timeout);
 #endif
 
-#if defined(CONFIG_NET_IPV6_PMTU)
+#if defined(CONFIG_NET_IPV6_PMTU_PTB)
 	ret = net_icmp_init_ctx(&ptb_ctx, NET_AF_INET6, NET_ICMPV6_PACKET_TOO_BIG, 0,
 				handle_ptb_input);
 	if (ret < 0) {

@@ -29,7 +29,7 @@
 #include <zephyr/shell/shell_string_conv.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>

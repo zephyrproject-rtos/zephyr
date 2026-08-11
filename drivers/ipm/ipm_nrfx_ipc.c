@@ -43,7 +43,7 @@ static void nrfx_ipc_handler(uint8_t event_idx, void *p_context)
 static int ipm_nrf_send(const struct device *dev, int wait, uint32_t id,
 			const void *data, int size)
 {
-	if (id > NRFX_IPC_ID_MAX_VALUE) {
+	if (id >= NRFX_IPC_ID_MAX_VALUE) {
 		return -EINVAL;
 	}
 
@@ -66,7 +66,7 @@ static uint32_t ipm_nrf_max_id_val_get(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return NRFX_IPC_ID_MAX_VALUE;
+	return NRFX_IPC_ID_MAX_VALUE - 1;
 }
 
 static void ipm_nrf_register_callback(const struct device *dev,
@@ -162,7 +162,7 @@ static int vipm_nrf_##_idx##_send(const struct device *dev, int wait,	\
 		return -EINVAL;						\
 	}								\
 									\
-	if (id > NRFX_IPC_ID_MAX_VALUE) {				\
+	if (id >= NRFX_IPC_ID_MAX_VALUE) {				\
 		return -EINVAL;						\
 	}								\
 									\

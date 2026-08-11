@@ -195,6 +195,7 @@ struct net_config_ssh_key {
  *        This buffer is needed for loading and saving keys.
  *        The buffer can be shared between private and public key configurations if needed,
  *        but it must be big enough to hold the key data for both configurations.
+ * @param _key_buf_len Size of the key buffer in bytes.
  * @param _key_name SSH key name. This is used when saving or loading keys to
  *        identify them. The key name cannot contain spaces.
  * @param _key_id Key id. This is used to identify the key.
@@ -229,6 +230,7 @@ struct net_config_ssh_key {
  *        This buffer is needed for loading and saving keys.
  *        The buffer can be shared between private and public key configurations if needed,
  *        but it must be big enough to hold the key data for both configurations.
+ * @param _key_buf_len Size of the key buffer in bytes.
  * @param _key_name SSH key name. This is used when saving or loading keys to
  *        identify them. The key name cannot contain spaces.
  * @param _key_id Key id. This is used to identify the key.

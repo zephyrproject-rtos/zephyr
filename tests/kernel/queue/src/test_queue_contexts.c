@@ -137,19 +137,28 @@ static void tqueue_isr_thread(struct k_queue *pqueue)
 
 /*test cases*/
 /**
- * @brief Verify data passing between threads using queue
+ * @brief Verify data passes between two threads through a queue in order.
  *
- * @details Static define and Dynamic define queues,
- * Then initialize them.
- * Create a new thread to wait for reading data.
- * Current thread will append item into queue.
- * Verify if rx_data is equal insert-data address.
- * Verify queue can be define at compile time.
+ * @details
+ * A consumer thread blocks on k_queue_get() while the main thread enqueues items
+ * using every insertion API (insert, append, prepend, append_list, merge_slist).
+ * The consumer must receive all items in the resulting dequeue order. Run against
+ * both a k_queue_init()ed and a K_QUEUE_DEFINE()d queue.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Start a consumer thread that drains the queue.
+ * - Insert items via insert/append/prepend/append_list/merge_slist.
+ * - Synchronize on a semaphore once the consumer has read all items.
+ * - Repeat for a statically defined queue.
  *
- * @see k_queue_init(), k_queue_insert(), k_queue_append()
- * K_THREAD_STACK_DEFINE()
+ * Expected result:
+ * - The consumer dequeues every item, matching the expected ordering.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append()
+ * @see k_queue_prepend()
+ * @see k_queue_get()
  */
 ZTEST(queue_api_1cpu, test_queue_thread2thread)
 {
@@ -162,18 +171,310 @@ ZTEST(queue_api_1cpu, test_queue_thread2thread)
 }
 
 /**
- * @brief Verify data passing between thread and ISR
+ * @brief Verify a queue defined at compile time is ready for use.
  *
- * @details Create a new ISR to insert data
- * And current thread is used for getting data
- * Verify if the rx_data is equal insert-data address.
- * If the received data address is the same as
- * the created array, prove that the queue data structures
- * are stored within the provided data items.
+ * @details
+ * A queue created with K_QUEUE_DEFINE() must be fully initialized at boot:
+ * empty and immediately usable for data passing without any run-time
+ * initialization call.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Check the statically defined queue is empty.
+ * - Append an item and get it back, verifying the same item is returned.
  *
- * @see k_queue_init(), k_queue_insert(), k_queue_append()
+ * Expected result:
+ * - The statically defined queue accepts and delivers items as-is.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see K_QUEUE_DEFINE
+ */
+ZTEST(queue_api, test_queue_define)
+{
+	/* usable at boot without any run-time initialization */
+	zassert_true(k_queue_is_empty(&kqueue));
+
+	k_queue_append(&kqueue, (void *)&data[0]);
+	zassert_equal(k_queue_get(&kqueue, K_NO_WAIT), (void *)&data[0]);
+
+	/* the queue is drained: a non-blocking get returns NULL */
+	zassert_is_null(k_queue_get(&kqueue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify run-time initialization of a queue.
+ *
+ * @details
+ * k_queue_init() must yield an empty queue that is immediately usable for
+ * data passing.
+ *
+ * Test steps:
+ * - Initialize a queue at run time and check it is empty.
+ * - Append an item and get it back, verifying the same item is returned.
+ *
+ * Expected result:
+ * - The initialized queue is empty and accepts and delivers items.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_init()
+ */
+ZTEST(queue_api, test_queue_init)
+{
+	k_queue_init(&queue);
+
+	zassert_true(k_queue_is_empty(&queue));
+	k_queue_append(&queue, (void *)&data[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+
+	/* the queue is drained: a non-blocking get returns NULL */
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify prepended items are dequeued before appended ones.
+ *
+ * @details
+ * k_queue_prepend() adds an item to the front of the queue, so items
+ * prepended after an append must be dequeued first, with the most recently
+ * prepended item coming out first.
+ *
+ * Test steps:
+ * - Add one item, then prepend two items.
+ * - Get all three items and verify the order: most recently prepended
+ *   first, appended item last.
+ *
+ * Expected result:
+ * - Items are dequeued in prepend-reverse order followed by the appended
+ *   item.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_prepend()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_prepend_order)
+{
+	k_queue_init(&queue);
+
+	k_queue_append(&queue, (void *)&data[0]);
+	k_queue_prepend(&queue, (void *)&data_p[1]);
+	k_queue_prepend(&queue, (void *)&data_p[0]);
+
+	/* prepended items precede the appended one, most recent first */
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[1]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+}
+
+/**
+ * @brief Verify k_queue_insert() places an item after a given node.
+ *
+ * @details
+ * k_queue_insert() adds an item immediately after a caller-specified node
+ * already in the queue, so dequeuing must return the inserted item between
+ * its predecessor and the items that followed it.
+ *
+ * Test steps:
+ * - Append two items.
+ * - Insert a third item after the first one.
+ * - Get all items and verify the inserted item comes out second.
+ *
+ * Expected result:
+ * - The inserted item is dequeued directly after the node it was inserted
+ *   behind.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_insert()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_insert_after)
+{
+	k_queue_init(&queue);
+
+	k_queue_append(&queue, (void *)&data[0]);
+	k_queue_append(&queue, (void *)&data[1]);
+
+	/* insert between the two appended items */
+	k_queue_insert(&queue, (void *)&data[0], (void *)&data_p[0]);
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_p[0]);
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[1]);
+}
+
+/**
+ * @brief Verify appending a singly-linked item list to the back of a queue.
+ *
+ * @details
+ * k_queue_append_list() must transfer a caller-built singly-linked list to
+ * the back of the queue with its order preserved.
+ *
+ * Test steps:
+ * - Append one item so the queue is non-empty.
+ * - Link the items of an array into a list.
+ * - Append the list and confirm it lands behind the pre-existing item.
+ * - Get all items and verify list order is preserved.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every list item in its
+ *   original order.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append_list()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_append_list_order)
+{
+	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
+
+	k_queue_init(&queue);
+
+	/* a pre-existing item so the list is demonstrably appended behind it */
+	k_queue_append(&queue, (void *)&data[0]);
+
+	head->snode.next = (sys_snode_t *)tail;
+	tail->snode.next = NULL;
+	k_queue_append_list(&queue, (uint32_t *)head, (uint32_t *)tail);
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_queue_get(&queue, K_NO_WAIT),
+			      (void *)&data_l[i]);
+	}
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify merging a sys_slist empties the list into the queue.
+ *
+ * @details
+ * k_queue_merge_slist() must move every node of a sys_slist to the back of
+ * the queue in list order and leave the source list empty.
+ *
+ * Test steps:
+ * - Append one item so the queue is non-empty.
+ * - Build a sys_slist with two nodes and merge it into the queue.
+ * - Verify the source list is empty after the merge.
+ * - Get all items and confirm the merged nodes land behind the pre-existing
+ *   item, in list order.
+ *
+ * Expected result:
+ * - The pre-existing item is delivered first, then every merged node in
+ *   order, and the source list is emptied.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_merge_slist()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api, test_queue_merge_slist_order)
+{
+	sys_slist_t slist;
+
+	k_queue_init(&queue);
+
+	/* a pre-existing item so the merged nodes land behind it */
+	k_queue_append(&queue, (void *)&data[0]);
+
+	sys_slist_init(&slist);
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[0].snode));
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[1].snode));
+	k_queue_merge_slist(&queue, &slist);
+
+	/* the source list is emptied by the merge */
+	zassert_true(sys_slist_is_empty(&slist));
+
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data[0]);
+	for (int i = 0; i < LIST_LEN; i++) {
+		zassert_equal(k_queue_get(&queue, K_NO_WAIT),
+			      (void *)&data_sl[i]);
+	}
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+static void tqueue_merge_slist_wake_entry(void *p1, void *p2, void *p3)
+{
+	/* blocks until the main thread's k_queue_merge_slist() wakes us */
+	void *rx_data = k_queue_get(&queue, K_FOREVER);
+
+	zassert_equal(rx_data, (void *)&data_sl[0]);
+	k_sem_give(&end_sema);
+}
+
+/**
+ * @brief Verify k_queue_merge_slist() wakes a thread pending on the queue.
+ *
+ * @details
+ * A thread blocked in k_queue_get() on an empty queue must be woken when
+ * another context makes items available with k_queue_merge_slist(), and it
+ * must receive the first node of the merged list.
+ *
+ * Test steps:
+ * - Start a thread that blocks on an empty queue with k_queue_get(K_FOREVER).
+ * - Merge a two-node sys_slist into the queue.
+ * - Verify the woken thread received the first merged node and the second
+ *   node stays queued behind it.
+ *
+ * Expected result:
+ * - The pending thread is woken and dequeues the first merged node; the
+ *   remaining node stays in the queue.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_merge_slist()
+ * @see k_queue_get()
+ */
+ZTEST(queue_api_1cpu, test_queue_merge_slist_wake)
+{
+	sys_slist_t slist;
+
+	k_queue_init(&queue);
+	k_sem_init(&end_sema, 0, 1);
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tqueue_merge_slist_wake_entry, NULL, NULL,
+				      NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+
+	/* let the thread reach k_queue_get() and pend on the empty queue */
+	k_sleep(K_MSEC(10));
+
+	sys_slist_init(&slist);
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[0].snode));
+	sys_slist_append(&slist, (sys_snode_t *)&(data_sl[1].snode));
+	k_queue_merge_slist(&queue, &slist);
+
+	/* the merge woke the pending thread, which took the first node */
+	k_sem_take(&end_sema, K_FOREVER);
+	k_thread_abort(tid);
+
+	/* the second node remains queued behind the consumed one */
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), (void *)&data_sl[1]);
+	zassert_is_null(k_queue_get(&queue, K_NO_WAIT));
+}
+
+/**
+ * @brief Verify data passes from an ISR to a thread through a queue.
+ *
+ * @details
+ * Items are enqueued from interrupt context (via irq_offload()) and dequeued in
+ * thread context, confirming the queue insertion APIs are ISR-safe and the
+ * thread receives every item. Run against both an init()ed and a DEFINE()d queue.
+ *
+ * Test steps:
+ * - From an ISR, insert items into the queue.
+ * - In thread context, get all items and verify their addresses/order.
+ * - Repeat for a statically defined queue.
+ *
+ * Expected result:
+ * - The thread dequeues every ISR-enqueued item in the expected order.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append()
+ * @see k_queue_get()
  */
 ZTEST(queue_api, test_queue_thread2isr)
 {
@@ -186,16 +487,25 @@ ZTEST(queue_api, test_queue_thread2isr)
 }
 
 /**
- * @brief Verify data passing between ISR and thread
+ * @brief Verify data passes from a thread to an ISR through a queue.
  *
- * @details Create a new ISR and ready for getting data
- * And current thread is used for inserting data
- * Verify if the rx_data is equal insert-data address.
+ * @details
+ * Items are enqueued in thread context and dequeued from interrupt context (via
+ * irq_offload()), confirming k_queue_get() is ISR-safe and the ISR receives
+ * every item. Run against both an init()ed and a DEFINE()d queue.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - In thread context, insert items into the queue.
+ * - From an ISR, get all items and verify their addresses/order.
+ * - Repeat for a statically defined queue.
  *
- * @see k_queue_init(), k_queue_insert(), k_queue_get(),
- * k_queue_append(), k_queue_remove()
+ * Expected result:
+ * - The ISR dequeues every thread-enqueued item in the expected order.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append()
+ * @see k_queue_get()
  */
 ZTEST(queue_api, test_queue_isr2thread)
 {
@@ -239,10 +549,25 @@ static void tqueue_get_2threads(struct k_queue *pqueue)
 }
 
 /**
- * @brief Verify k_queue_get()
- * @ingroup kernel_queue_tests
- * @see k_queue_init(), k_queue_get(),
- * k_queue_append(), k_queue_alloc_prepend()
+ * @brief Verify two threads blocked on a queue are each woken by an append.
+ *
+ * @details
+ * When multiple threads block on an empty queue with K_FOREVER, each appended
+ * item must wake exactly one waiter so that every blocked getter eventually
+ * receives data.
+ *
+ * Test steps:
+ * - Start two threads that each block in k_queue_get(K_FOREVER).
+ * - Append two items to the queue.
+ * - Confirm both threads complete (each got one item).
+ *
+ * Expected result:
+ * - Both waiting threads are woken, each receiving one item.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_get()
+ * @see k_queue_append()
  */
 ZTEST(queue_api_1cpu, test_queue_get_2threads)
 {
@@ -291,11 +616,28 @@ static void tqueue_alloc(struct k_queue *pqueue)
 }
 
 /**
- * @brief Test queue alloc append and prepend
- * @ingroup kernel_queue_tests
- * @see k_queue_alloc_append(), k_queue_alloc_prepend(),
- * k_thread_heap_assign(), k_queue_is_empty(),
- * k_queue_get(), k_queue_remove()
+ * @brief Verify alloc append/prepend honor the thread's resource pool.
+ *
+ * @details
+ * k_queue_alloc_append()/k_queue_alloc_prepend() allocate a container from the
+ * calling thread's heap. With no pool (or a too-small pool) the insertion must
+ * fail and leave the queue empty; with a sufficient pool it must succeed and the
+ * item becomes retrievable.
+ *
+ * Test steps:
+ * - With no resource pool assigned, attempt an alloc append; verify it fails.
+ * - Assign a too-small pool, attempt an alloc prepend; verify it fails and the
+ *   queue stays empty.
+ * - Assign a sufficient pool, alloc prepend succeeds and the item can be gotten.
+ *
+ * Expected result:
+ * - Allocation fails without enough pool memory and succeeds with it.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
+ * @see k_queue_alloc_prepend()
+ * @see k_thread_heap_assign()
  */
 ZTEST(queue_api, test_queue_alloc)
 {
@@ -327,11 +669,30 @@ static void queue_poll_race_consume(void *p1, void *p2, void *p3)
 	}
 }
 
-/* There was a historical race in the queue internals when CONFIG_POLL
- * was enabled -- it was possible to wake up a lower priority thread
- * with an insert but then steal it with a higher priority thread
- * before it got a chance to run, and the lower priority thread would
- * then return NULL before its timeout expired.
+/**
+ * @brief Verify an append wakes exactly one waiter (CONFIG_POLL race).
+ *
+ * @details
+ * Guards against a historical CONFIG_POLL race: an insert could wake a
+ * lower-priority waiter, then a higher-priority waiter could steal the item
+ * before the first ran, causing the lower-priority getter to spuriously return
+ * NULL before its timeout. Two consumers of different priority block on the
+ * queue; appending two items must deliver exactly one to each (two total) with
+ * no spurious early return.
+ *
+ * Test steps:
+ * - Start two consumer threads of different priority that block on the queue.
+ * - Append two items.
+ * - Verify neither consumer woke prematurely and exactly two gets succeeded.
+ *
+ * Expected result:
+ * - The two appended items are consumed (low_count + mid_count == 2) with no
+ *   spurious NULL return.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_append()
+ * @see k_queue_get()
  */
 ZTEST(queue_api_1cpu, test_queue_poll_race)
 {
@@ -373,13 +734,20 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
 }
 
 /**
- * @brief Verify that multiple queues can be defined
- * simultaneously
+ * @brief Verify multiple independent queues operate without interference.
  *
- * @details define multiple queues to verify
- * they can work.
+ * @details
+ * Several queues initialized from the same code must each store and return their
+ * own items correctly, confirming queue instances do not share state.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Initialize an array of queues.
+ * - For each, append a set of items and drain it, verifying the contents.
+ *
+ * Expected result:
+ * - Every queue independently delivers its own items.
+ *
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_init()
  */
@@ -406,23 +774,25 @@ void user_access_queue_private_data(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test access kernel object with private data using system call
+ * @brief Verify a user thread faults accessing a queue it has no permission on.
  *
  * @details
- * - When defining system calls, it is very important to ensure that
- *   access to the API’s private data is done exclusively through system call
- *   interfaces. Private kernel data should never be made available to user mode
- *   threads directly. For example, the k_queue APIs were intentionally not made
- *   available as they store bookkeeping information about the queue directly
- *   in the queue buffers which are visible from user mode.
- * - Current test makes user thread try to access private kernel data within
- *   their associated data structures. Kernel will track that system call
- *   access to these object with the kernel object permission system.
- *   Current user thread doesn't have permission on it, trying to access
- *   &pqueue kernel object will happen kernel oops, because current user
- *   thread doesn't have permission on k_queue object with private kernel data.
+ * The k_queue APIs keep bookkeeping data inside structures visible from user
+ * mode, so direct access must be gated by the kernel object permission system. A
+ * user thread without permission on the queue object that calls a k_queue API
+ * must trigger a kernel oops rather than read private kernel data.
  *
- * @ingroup kernel_memprotect_tests
+ * Test steps:
+ * - Initialize a queue and insert an item from supervisor mode.
+ * - Spawn a user thread (with no granted access) that calls k_queue_is_empty().
+ * - Mark the fault as expected and join the thread.
+ *
+ * Expected result:
+ * - The unprivileged access triggers the expected kernel oops.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_is_empty()
  */
 ZTEST(queue_api, test_access_kernel_obj_with_priv_data)
 {
@@ -464,17 +834,28 @@ static void high_prio_t2_wait_for_queue(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test multi-threads to get data from a queue.
+ * @brief Verify queued data is delivered by priority then wait time.
  *
- * @details Define three threads, and set a higher priority for two of them,
- * and set a lower priority for the last one. Then Add a delay between
- * creating the two high priority threads.
- * Test point:
- * 1. Any number of threads may wait on an empty FIFO simultaneously.
- * 2. When a data item is added, it is given to the highest priority
- * thread that has waited longest.
+ * @details
+ * Any number of threads may block on an empty queue. When data arrives it must
+ * go to the highest-priority waiter, and among equal-priority waiters to the one
+ * that has waited longest. Three threads (one low priority, two equal higher
+ * priority created with a delay between them) block, then three items are
+ * appended; each thread must receive the item matching its expected order.
  *
- * @ingroup kernel_queue_tests
+ * Test steps:
+ * - Start a low-priority waiter and two higher-priority waiters (staggered).
+ * - Append three distinct items.
+ * - Each thread asserts it received the item matching its priority/wait rank.
+ *
+ * Expected result:
+ * - The longest-waiting highest-priority thread gets the first item, the other
+ *   high-priority thread next, and the low-priority thread last.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_get()
+ * @see k_queue_append()
  */
 ZTEST(queue_api_1cpu, test_queue_multithread_competition)
 {
@@ -528,14 +909,22 @@ ZTEST(queue_api_1cpu, test_queue_multithread_competition)
 }
 
 /**
- * @brief Verify k_queue_unique_append()
+ * @brief Verify k_queue_unique_append() rejects duplicate entries.
  *
- * @ingroup kernel_queue_tests
+ * @details
+ * k_queue_unique_append() must add an item only if it is not already queued: a
+ * first append of an item succeeds, a second append of the same item fails, and
+ * appending a different item succeeds.
  *
- * @details Append the same data to the queue repeatedly,
- * see if it returns expected value.
- * And verify operation succeed if append different data to
- * the queue.
+ * Test steps:
+ * - Append an item and verify it succeeds.
+ * - Append the same item again and verify it fails.
+ * - Append a different item and verify it succeeds.
+ *
+ * Expected result:
+ * - Duplicate appends return false; unique appends return true.
+ *
+ * @ingroup tests_kernel_queue
  *
  * @see k_queue_unique_append()
  */

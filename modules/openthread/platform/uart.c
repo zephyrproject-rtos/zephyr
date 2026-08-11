@@ -279,7 +279,7 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 		}
 		return OT_ERROR_NONE;
 #else
-		int ret = uart_tx(ot_uart.dev, aBuf, aBufLength, SYS_FOREVER_MS);
+		int ret = uart_tx(ot_uart.dev, aBuf, aBufLength, SYS_FOREVER_US);
 
 		if (ret == 0) {
 			if (is_panic_mode) {

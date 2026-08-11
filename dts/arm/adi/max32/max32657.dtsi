@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
+ * Copyright 2024 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +8,7 @@
 #include <mem.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/adi_max32_clock.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	soc {
@@ -21,22 +23,6 @@
 				ranges = <0x8000 0x50008000 0x1000>;
 			};
 
-			flc0: flash_controller@29000 {
-				compatible = "adi,max32-flash-controller";
-				reg = <0x29000 0x400>;
-
-				#address-cells = <1>;
-				#size-cells = <1>;
-				status = "okay";
-
-				flash0: flash@1000000 {
-					compatible = "soc-nv-flash";
-					reg = <0x01000000 DT_SIZE_K(1024)>;
-					write-block-size = <16>;
-					erase-block-size = <8192>;
-				};
-			};
-
 			dma1: dma@35000 {
 				compatible = "adi,max32-dma";
 				reg = <0x35000 0x1000>;
@@ -47,6 +33,33 @@
 				#dma-cells = <2>;
 			};
 		};
+
+		flc0: flash_controller@50029000 {
+			compatible = "adi,max32-flash-controller";
+			reg = <0x50029000 0x400>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash0: flash@1000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x01000000 DT_SIZE_K(1024)>;
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+				ranges = <0x0 0x1000000 DT_SIZE_K(1024)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+	};
+
+	null_ptr_detect: null_ptr_detect@0 {
+		compatible = "zephyr,memory-region";
+		/* 0 - CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE> */
+		reg = <0x0 0x400>;
+		zephyr,memory-region = "NULL_PTR_DETECT";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };
 

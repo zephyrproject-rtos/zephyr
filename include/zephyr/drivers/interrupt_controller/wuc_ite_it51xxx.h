@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IT51XXX_WUC_H_
-#define ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IT51XXX_WUC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_WUC_ITE_IT51XXX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_WUC_ITE_IT51XXX_H_
 
 #include <zephyr/device.h>
 
@@ -64,4 +64,4 @@ void it51xxx_wuc_clear_status(const struct device *dev, uint8_t mask);
  */
 void it51xxx_wuc_set_polarity(const struct device *dev, uint8_t mask, uint32_t flags);
 
-#endif /* ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_IT51XXX_WUC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_WUC_ITE_IT51XXX_H_ */

@@ -64,7 +64,7 @@ To run the unit tests for this library, run the following command:
 
 .. code-block:: console
 
-    $ twister --inline-logs -p mps2/an521/cpu0 -T tests
+    $ west twister --inline-logs -p mps2/an521/cpu0 -T tests
     See the tests folder for further details.
 
 

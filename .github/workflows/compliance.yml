@@ -11,9 +11,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check_compliance:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     name: Run compliance checks on patch series (PR)
     steps:
     - name: Update PATH for west
@@ -21,8 +26,9 @@ jobs:
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
     - name: Checkout the code
-      uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
+        persist-credentials: false
         ref: ${{ github.event.pull_request.head.sha }}
         fetch-depth: 0
 
@@ -44,7 +50,7 @@ jobs:
         git log  --pretty=oneline | head -n 10
 
     - name: Set up Python
-      uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
       with:
         python-version: 3.12
         cache: pip
@@ -61,7 +67,7 @@ jobs:
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log
 
     - name: Setup Node.js
-      uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
         node-version: "lts/*"
         cache: npm
@@ -84,11 +90,7 @@ jobs:
         # Increase rename limit to allow for large PRs
         git config diff.renameLimit 10000
         excludes="-e KconfigBasic -e SysbuildKconfigBasic -e ClangFormat"
-        # The signed-off-by check for dependabot should be skipped
-        if [ "${{ github.actor }}" == "dependabot[bot]" ]; then
-          excludes="$excludes -e Identity"
-        fi
-        ./scripts/ci/check_compliance.py --annotate $excludes -c origin/${BASE_REF}..
+        ./scripts/ci/check_compliance.py --annotate $excludes --parallel -c origin/${BASE_REF}..
 
     - name: upload-results
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

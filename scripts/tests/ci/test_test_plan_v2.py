@@ -613,6 +613,39 @@ class TestIgnoreStrategy:
 
 
 # ---------------------------------------------------------------------------
+# ManifestStrategy
+# ---------------------------------------------------------------------------
+
+
+class TestManifestStrategy:
+    """Unit tests for ManifestStrategy."""
+
+    def _strategy(self, tmp_path, diff_result):
+        strategy = tp.ManifestStrategy(
+            zephyr_base=str(tmp_path), repo=mock.Mock(), commits="base..head"
+        )
+        strategy._diff_manifests = mock.Mock(return_value=diff_result)
+        return strategy
+
+    def test_no_revision_change_returns_no_calls(self, tmp_path):
+        # west.yml changed but no project revision differs (e.g. a
+        # comment/formatting edit, or an unrelated field such as
+        # `west-commands`). `calls` must stay a list of TwisterCall objects,
+        # not the set of consumed filenames - see run()'s `call.full_run`.
+        strategy = self._strategy(tmp_path, set())
+        calls, handled = strategy.analyze(["west.yml"])
+        assert calls == []
+        assert handled == {"west.yml"}
+
+    def test_revision_change_emits_call(self, tmp_path):
+        strategy = self._strategy(tmp_path, {"hal_realtek"})
+        calls, handled = strategy.analyze(["west.yml"])
+        assert len(calls) == 1
+        assert calls[0].extra_args == ["-t", "hal_realtek"]
+        assert handled == {"west.yml"}
+
+
+# ---------------------------------------------------------------------------
 # DirectTestStrategy
 # ---------------------------------------------------------------------------
 

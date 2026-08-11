@@ -99,6 +99,7 @@
 		flash: flash-controller@c000 {
 			compatible = "ambiq,flash-controller";
 			reg = <0x0000c000 0x1f4000>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -107,6 +108,11 @@
 			flash0: flash@c000 {
 				compatible = "soc-nv-flash";
 				reg = <0x0000c000 0x1f4000>;
+				ranges = <0x0 0x0000c000 0x1f4000>;
+				erase-block-size = <8192>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

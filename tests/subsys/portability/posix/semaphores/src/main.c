@@ -140,7 +140,7 @@ static void semaphore_test(sem_t *sem)
 
 ZTEST(posix_semaphores, test_semaphore)
 {
-	sem_t sema;
+	static sem_t sema;
 
 	/* TESTPOINT: Call sem_post with invalid kobject */
 	zassert_equal(sem_post(NULL), -1,
