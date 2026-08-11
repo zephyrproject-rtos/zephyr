@@ -21,6 +21,10 @@ boards:
   rcar_spider_s4/r8a779f0/a55:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/rcar_spider_s4_r8a779f0_a55.overlay
+  rcar_ironhide_x5h/r8a78000/a720:
+    append:
+      EXTRA_DTC_OVERLAY_FILE: boards/rcar_ironhide_x5h_r8a78000_a720.overlay
+      EXTRA_CONF_FILE: boards/rcar_ironhide_x5h_r8a78000_a720.conf
   rpi_5/bcm2712:
     append:
       EXTRA_DTC_OVERLAY_FILE: boards/rpi_5.overlay
