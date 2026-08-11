@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <gpio.h>
+#include <wrap_max32_lp.h>
 
 #define DT_DRV_COMPAT adi_max32_gpio
 
@@ -163,30 +164,42 @@ static int api_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 
 	switch (mode) {
 	case GPIO_INT_MODE_LEVEL:
-		if (trig == GPIO_INT_TRIG_LOW) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_LOW);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_HIGH);
-		} else if (trig == GPIO_INT_TRIG_BOTH) {
+		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_BOTH);
+		} else if (trig & GPIO_INT_TRIG_HIGH) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_HIGH);
+		} else if (trig & GPIO_INT_TRIG_LOW) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_LOW);
 		} else {
+			LOG_ERR("Invalid trigger mode for level interrupt: %08x", trig);
 			return -EINVAL;
 		}
 		break;
 	case GPIO_INT_MODE_EDGE:
-		if (trig == GPIO_INT_TRIG_LOW) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_FALLING);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_RISING);
-		} else if (trig == GPIO_INT_TRIG_BOTH) {
+		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_BOTH);
+		} else if (trig & GPIO_INT_TRIG_HIGH) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_RISING);
+		} else if (trig & GPIO_INT_TRIG_LOW) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_FALLING);
 		} else {
+			LOG_ERR("Invalid trigger mode for edge interrupt: %08x", trig);
 			return -EINVAL;
 		}
 		break;
 	default:
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_PM
+	if (trig & GPIO_INT_TRIG_WAKE) {
+		MXC_LP_EnableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_SetWakeEn(gpio_cfg.port, gpio_cfg.mask);
+	} else {
+		MXC_LP_DisableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_ClearWakeEn(gpio_cfg.port, gpio_cfg.mask);
+	}
+#endif /* CONFIG_PM */
 
 	cfg->irq_func();
 	MXC_GPIO_EnableInt(cfg->regs, gpio_cfg.mask);
