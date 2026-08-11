@@ -236,7 +236,7 @@ static bool z_sig_match(const struct k_sig_set *match, uint8_t *pos, k_tid_t tid
 }
 
 static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int code,
-			      struct k_timer *timer)
+			      struct k_timer *timer, k_pid_t child_pid, int child_status)
 {
 	if ((signo < 0) || (signo > SIGNAL_SET_SIZE)) {
 		LOG_DBG("invalid signo %d", signo);
@@ -310,6 +310,10 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 				.signo = signo,
 				.code = code,
 				.value = value,
+#ifdef CONFIG_PROCESS
+				.pid = child_pid,
+				.status = child_status,
+#endif /* CONFIG_PROCESS */
 #ifdef CONFIG_TIMER_SIGNAL
 				/* the generating timer doubles as one-pending/overrun state */
 				.timer = timer,
@@ -340,13 +344,36 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 
 int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL);
+	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL, NULL, 0);
 }
+
+#ifdef CONFIG_PROCESS
+int z_sig_queue_chld(k_tid_t tid, k_pid_t child_pid, int child_status, bool exited)
+{
+	return z_sig_queue_common(tid, K_SIG_CHLD, (union k_sig_val){0},
+				  exited ? K_SI_CLD_EXITED : K_SI_CLD_KILLED, NULL, child_pid,
+				  child_status);
+}
+#endif /* CONFIG_PROCESS */
+
+#ifdef CONFIG_MSGQ_NOTIFY
+int z_sig_queue_msgq(k_pid_t pid, int signo, union k_sig_val value)
+{
+	return z_sig_queue_common(pid, signo, value, K_SI_MSGQ, NULL, NULL, 0);
+}
+#endif /* CONFIG_MSGQ_NOTIFY */
+
+#ifdef CONFIG_SYS_AIO
+int z_sig_queue_aio(k_pid_t pid, int signo, union k_sig_val value)
+{
+	return z_sig_queue_common(pid, signo, value, K_SI_ASYNCIO, NULL, NULL, 0);
+}
+#endif /* CONFIG_SYS_AIO */
 
 #ifdef CONFIG_TIMER_SIGNAL
 int z_sig_queue_timer(struct k_timer *timer, k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_TIMER, timer);
+	return z_sig_queue_common(pid, signo, value, K_SI_TIMER, timer, NULL, 0);
 }
 
 void z_sig_purge_timer(struct k_timer *timer)
@@ -504,6 +531,10 @@ int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_i
 			.signo = ret,
 			.code = k_sig_array[pos].info.code,
 			.value = k_sig_array[pos].info.value,
+#ifdef CONFIG_PROCESS
+			.pid = k_sig_array[pos].info.pid,
+			.status = k_sig_array[pos].info.status,
+#endif /* CONFIG_PROCESS */
 #ifdef CONFIG_TIMER_SIGNAL
 			.timer = k_sig_array[pos].info.timer,
 #endif /* CONFIG_TIMER_SIGNAL */
