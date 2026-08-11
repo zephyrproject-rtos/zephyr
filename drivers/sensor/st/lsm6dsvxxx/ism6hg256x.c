@@ -98,7 +98,7 @@ static int ism6hg256x_accel_set_fs_raw(const struct device *dev, uint8_t fs)
 		}
 
 		data->out_xl = ISM6HG256X_UI_OUTX_L_A_OIS_HG;
-		data->out_gy = ISM6HG256X_UI_OUTX_L_G_OIS_EIS;
+		data->out_gy = ISM6HG256X_OUTX_L_G;
 	} else {
 		return -EINVAL;
 	}
