@@ -232,53 +232,6 @@ int adc_emul_ref_voltage_set(const struct device *dev, enum adc_reference ref,
 	return err;
 }
 
-/**
- * @brief Convert @p ref to reference voltage value in mV
- *
- * @param data Internal data of ADC emulator
- * @param ref Select which reference source should be used
- *
- * @return Reference voltage in mV
- * @return 0 on error
- */
-static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data,
-					 enum adc_reference ref)
-{
-	uint16_t voltage;
-
-	k_mutex_lock(&data->cfg_mtx, K_FOREVER);
-
-	switch (ref) {
-	case ADC_REF_VDD_1:
-		voltage = data->ref_vdd;
-		break;
-	case ADC_REF_VDD_1_2:
-		voltage = data->ref_vdd / 2;
-		break;
-	case ADC_REF_VDD_1_3:
-		voltage = data->ref_vdd / 3;
-		break;
-	case ADC_REF_VDD_1_4:
-		voltage = data->ref_vdd / 4;
-		break;
-	case ADC_REF_INTERNAL:
-		voltage = data->ref_int;
-		break;
-	case ADC_REF_EXTERNAL0:
-		voltage = data->ref_ext0;
-		break;
-	case ADC_REF_EXTERNAL1:
-		voltage = data->ref_ext1;
-		break;
-	default:
-		voltage = 0;
-	}
-
-	k_mutex_unlock(&data->cfg_mtx);
-
-	return voltage;
-}
-
 static int adc_emul_ref_get(const struct device *dev, enum adc_reference ref,
 			    uint16_t *vref_mv)
 {
@@ -328,6 +281,24 @@ static int adc_emul_ref_get(const struct device *dev, enum adc_reference ref,
 
 	*vref_mv = voltage;
 	return 0;
+}
+
+/**
+ * @brief Convert @p ref to reference voltage value in mV
+ *
+ * @param data Internal data of ADC emulator
+ * @param ref Select which reference source should be used
+ *
+ * @return Reference voltage in mV
+ * @return 0 on error
+ */
+static uint16_t adc_emul_get_ref_voltage(struct adc_emul_data *data,
+					 enum adc_reference ref)
+{
+	uint16_t voltage;
+	int err = adc_emul_ref_get(data->dev, ref, &voltage);
+
+	return err == 0 ? voltage : 0;
 }
 
 static int adc_emul_channel_setup(const struct device *dev,
