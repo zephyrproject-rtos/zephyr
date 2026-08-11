@@ -131,7 +131,8 @@ static const uint8_t lis3mdl_odr_bits[] = {
 #define LIS3MDL_MD_CONTINUOUS          0x00
 
 /* Others */
-#define LIS3MDL_SENSITIVITY       6842
+/* 6842 LSB/gauss at the +/-4 gauss full scale left by reset */
+#define LIS3MDL_SENSITIVITY       (1000000.0f / 6842.0f)
 
 static int lsm6dsl_lis3mdl_init(const struct device *dev, uint8_t i2c_addr)
 {
