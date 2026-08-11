@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  High-frequency free-running oscillator in an NXP i.MX CGU analog block.
+
+  Its selectable output band is the whole configuration, so clock-frequency is
+  both the request and the description. This oscillator is untrimmed, so treat
+  the value as nominal: it is the right source for parking a clock while a PLL
+  is reconfigured, and the wrong one to derive a baud rate or a timer from.
+
+compatible: "nxp,imx-cguana-fro192m"
+
+include: [base.yaml, fixed-clock.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      The source's register groups inside the parent nxp,imx-cguana block, as
+      offsets: "ctrl" and "status". Split rather than one span, because
+      the block reserves address space between the groups.
+
+  reg-names:
+    required: true

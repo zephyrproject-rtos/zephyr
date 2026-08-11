@@ -1,0 +1,228 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX Clock Controller Module, rev3.
+
+  The i.MX CCM models a peripheral's clock as two independent things: a gate
+  (LPCG) that turns its bus and functional clocks on and off, and a clock root
+  whose mux and dividers determine the frequency it receives. The two identifier
+  spaces are unrelated, and both have to reach this driver.
+
+  The shared NXP peripheral drivers read one clock cell -- DT_INST_CLOCKS_CELL(n,
+  name) -- and pass that single value to clock_control_on(),
+  clock_control_get_rate(), and clock_control_configure() alike, so a second cell
+  would be invisible to them. Both identifiers are therefore packed into the one
+  cell with IMX_CCM_CLK():
+
+      #include <nxp/imxrt/imxrt266x/clock/imx_ccm_rev3_rt266x.h>
+
+      lpuart0: serial@42190000 {
+              compatible = "nxp,lpuart";
+              clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART0,
+                                         IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>;
+      };
+
+  Use IMX_CCM_GATE_NONE for a peripheral with no gate of its own, and
+  IMX_CCM_ROOT_NONE for one with no dedicated root; asking the latter for its
+  rate returns -ENOTSUP rather than a fabricated number.
+
+  Configurable clock roots are child nodes with compatible
+  "nxp,imx-ccm-rev3-root". The controller programs every enabled root child at
+  initialization, in devicetree order, so a board or application overlay can
+  retarget an individual root without touching C:
+
+      &peri3_rootclk {
+              clock-mux = <IMX_CCM_MUX_PERI3_SYSPLL_DIVOUT2>;
+      };
+
+  Per-device clock roots (a "source" clocks entry)
+  -----------------------------------------------
+
+  A root child node states how a root is configured, but it says nothing about
+  which peripheral cares, so setting a peripheral's frequency means editing two
+  unrelated places: the peripheral node for its gate and rate lookup, and a ccm
+  child for its mux and dividers. A peripheral that owns its root exclusively
+  can instead carry that root's configuration itself, in its `clocks` property,
+  as a second entry beyond the gate:
+
+      lpuart0: serial@42190000 {
+              compatible = "nxp,lpuart";
+              clock-names = "gate", "source";
+              clocks = <&ccm IMX_CCM_CLK(IMX_CCM_LPCG_MAIN_HSP_LPUART0,
+                                         IMX_CCM_ROOT_MAIN_LPUART0_FCLK)>,
+                       <&ccm IMX_CCM_ROOT_CFG(IMX_CCM_ROOT_MAIN_LPUART0_FCLK,
+                                              IMX_CCM_MUX_LPUART0_PERI3, 5, 1)>;
+      };
+
+  There are thus two KINDS of single-cell clock specifier, both #clock-cells 1:
+
+    - IMX_CCM_CLK(gate, root) -- the usual gate + rate-lookup cell, read by
+      clock_control_on()/_get_rate(). Named "gate" on the nodes here.
+    - IMX_CCM_ROOT_CFG(root, mux, div, snd_div) -- a root-configuration cell,
+      naming the root to program, its mux source, and its two dividers (the same
+      values a "nxp,imx-ccm-rev3-root" child would carry). Neither divider may
+      be 0. Named "source", always.
+
+  The two kinds are distinguished by a fixed tag in the cell's top nibble that a
+  gate cell can never produce, so the controller can tell them apart: the shared
+  LPUART and LPSPI drivers already hand it the gate cell on
+  clock_control_configure() unconditionally, and it must ignore that rather than
+  misread it as a root.
+
+  clock-names is what selects the root-configuration cell: the consuming driver
+  looks it up by the name "source" and passes the cell to
+  clock_control_configure() before it enables the peripheral's gate, so the root
+  is programmed when the device is actually brought up rather than for every
+  root at controller init. A node that names no "source" entry -- every NXP
+  family without clock roots -- gets the previous behaviour, since the same
+  driver serves both.
+
+  "source" is the only name this binding reserves, and it is deliberately the
+  only one. clock-names is a vocabulary each consuming driver owns: FlexCAN and
+  WDOG32 name their entries "clksrc0"/"clksrc1" and pick one with clk-source,
+  the system counter names them "base"/"slow", MIPI-DSI "dphy"/"esc"/"pixel".
+  Forcing a single name on entry 0 would collide with those. "gate" is what a
+  node uses when its driver has no opinion, as the LPUART and LPSPI nodes here
+  do; a peripheral whose driver does name its entries keeps those names and
+  appends "source". Looking the entry up by name rather than by index is what
+  makes that appending safe.
+
+  "source" and FlexCAN's "clksrc0"/"clksrc1" both read as picking a clock source,
+  but they are different muxes at different levels and do not substitute for each
+  other. A "clksrcN" entry is a whole gate cell naming a DIFFERENT upstream clock,
+  and clk-source both selects which one the driver uses and is written to the CAN
+  engine's own 1-bit mux inside the IP. A "source" entry names no new clock: it
+  carries the mux and dividers of the SAME root the "gate" entry already points
+  at, in the CCM outside the IP. Hence the different destinations -- a "clksrcN"
+  cell goes to clock_control_on()/_get_rate(), a "source" cell only ever to
+  clock_control_configure() -- and the different cardinality: clksrc0 and clksrc1
+  are alternatives, exactly one in use, while "source" is additive and there is at
+  most one.
+
+  Two restrictions follow, and both are on the peripheral rather than on this
+  controller:
+
+    - The consuming driver has to opt in -- look up "source" and call
+      clock_control_configure() with it. Until it does, the cell is inert
+      devicetree; put the root in a ccm child instead.
+    - Do not add a "source" entry to a node whose driver reads a clocks entry at
+      index 1 or beyond for its own purpose. The USB EHCI drivers (udc and uhc)
+      are the case in tree: they take clocks entry 1 as the USB PHY clock. There
+      the misread needs a second clock-rates element too, since that arm is
+      guarded on both, but the node would be wrong either way. Such a root stays
+      a ccm child. A misread that does happen is caught at boot rather than
+      silently -- a root-configuration cell handed to clock_control_on() fails
+      the gate range check with -EINVAL.
+
+  A peripheral node carries at most one root-configuration cell. One fed through
+  several roots keeps them as ccm children.
+
+  A root belongs either to a peripheral node or to a ccm child, never to both:
+  two writers of one root would race, and the last one would silently win.
+  Roots shared between peripherals stay ccm children.
+
+  One instance, or several
+  ------------------------
+
+  Some SoCs implement the CCM as a single addressable block; others implement it as
+  several instances, one per subsystem. Both are declared the same way: one node per
+  hardware instance, each with its own "reg" and its own clock-root children. The
+  driver instantiates a device per node, so a single-block SoC needs no special case.
+
+  What makes that work is that the clock root and gate identifier spaces are flat
+  across the instances: the HAL selects the owning instance by testing an identifier
+  against per-instance ranges. A consumer's clocks phandle therefore names the clock
+  service rather than a particular block -- any instance resolves any specifier, and
+  the identifier in the cell already says which subsystem owns the resource. On an SoC
+  with several instances, point consumers at whichever instance is most natural and
+  keep it consistent.
+
+  A clock root is a child node whose "reg" is the register block that configures
+  it. A CCM numbers its slices per instance -- CLOCK_ROOT<N> in the reference
+  manual -- and each slice occupies a fixed, SoC-specific stride from the instance
+  base (0x10 on RT266x, 0x80 on RT1170, 0x40 on RT1180), so a root's reg is
+  <N * stride  stride>:
+
+      cmpt_ccm: clock-controller@44060000 {
+              compatible = "nxp,imx-ccm-rev3";
+              reg = <0x44060000 0x4000>;
+              #clock-cells = <1>;
+              #address-cells = <1>;
+              #size-cells = <1>;
+              ranges = <0x0 0x44060000 0x4000>;
+
+              /* CLOCK_ROOT3 */
+              systick_rootclk: clock-root@30 {
+                      compatible = "nxp,imx-ccm-rev3-root";
+                      reg = <0x30 0x10>;
+                      nxp,root-id = <IMX_CCM_ROOT_CMPT_SYSTICK_CLK0>;
+                      clock-mux = <...>;
+              };
+      };
+
+  The HAL, by contrast, addresses a root by a flat identifier that spans every
+  instance. That identifier is not derived from reg: each root states it in its own
+  nxp,root-id property, so this binding needs no per-instance base and the driver
+  needs no arithmetic that a differently numbered SoC could invalidate. Declare a
+  root under the instance whose identifier range contains it. That placement is
+  descriptive: the HAL resolves the instance from the identifier rather than from
+  the node's position, so a root under the wrong instance is still programmed
+  correctly while describing the hardware wrongly. Initialization order across
+  instances follows the devicetree dependency ordinal rather than the order the
+  nodes are written, so two roots that need a fixed order relative to each other
+  must be children of the same instance.
+
+  Relationship to nxp,imx-ccm-rev2
+  --------------------------------
+
+  rev3 is a superset of rev2 rather than a parallel design, and this binding is
+  deliberately SoC-agnostic so it can absorb the rev2 users.
+
+  The rev2 parts use the same underlying model: RT1176 and RT1189 both gate
+  peripherals through clock_lpcg_t identifiers and configure roots through
+  CLOCK_SetRootClock(root, {clockOff, mux, div}). rev3 adds only a second
+  divider. rev2's binding declares three cells (name, offset, bits) but its
+  driver reads cell 0 only, so cells 1 and 2 carry no information.
+
+  Migrating an SoC from rev2 to rev3 therefore means:
+
+    1. replacing each peripheral's <name offset bits> with
+       IMX_CCM_CLK(gate, root),
+    2. expressing that SoC's soc.c CLOCK_SetRootClock() sequence as
+       nxp,imx-ccm-rev3-root child nodes, and
+    3. deleting its arm of the rev2 driver's per-peripheral switch.
+
+  Step 1 touches every board devicetree of the migrating family, which is why
+  no migration is attempted here.
+
+  Known exception: i.MX 93 and i.MX 95 resolve peripheral rates through
+  CLOCK_GetIpFreq() rather than CLOCK_GetRootClockFreq(). That is a different
+  resolver, so those SoCs need their own evaluation and may be better left on
+  rev2.
+
+compatible: "nxp,imx-ccm-rev3"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  ranges:
+    description: |
+      Required on any instance that declares clock-root children, so their register
+      blocks translate to real addresses. An instance with no children may omit it.
+
+clock-cells:
+  - name
