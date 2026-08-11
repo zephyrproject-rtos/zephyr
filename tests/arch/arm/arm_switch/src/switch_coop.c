@@ -1,7 +1,9 @@
-/* Copyright 2025 The ChromiumOS Authors
- * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+/*
+ * SPDX-FileCopyrightText: 2025 The ChromiumOS Authors
+ * SPDX-FileCopyrightText: 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #include <zephyr/kernel.h>
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/ztest.h>
@@ -93,7 +95,7 @@ void my_svc(void)
 	printk("   arm_m_exc_tail() has been called\n");
 }
 
-ZTEST(arm_m_switch, test_smoke)
+ZTEST(arm_switch_coop, test_smoke)
 {
 	vector_hijack(my_svc);
 
@@ -169,4 +171,4 @@ ZTEST(arm_m_switch, test_smoke)
 	}
 }
 
-ZTEST_SUITE(arm_m_switch, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(arm_switch_coop, NULL, NULL, NULL, NULL, NULL);
