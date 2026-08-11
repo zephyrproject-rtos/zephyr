@@ -798,29 +798,53 @@ static void mspm_pwm_cc_isr(const struct device *dev)
 	}
 
 	if (!(data->flags & PWM_CAPTURE_MODE_CONTINUOUS)) {
+		uint32_t mask = mspm_pwm_cap_intr_mask(config, data);
+
+		base->CPU_INT.IMASK &= ~mask;
 		base->COUNTERREGS.CTRCTL &= ~GPTIMER_CTRCTL_EN_MASK;
 		data->is_synced = false;
+		data->armed = false;
 	}
 
-	period = (data->last_sample - cc1) & 0xFFFFU;
-	pulse = (data->last_sample - cc0) & 0xFFFFU;
+	if (data->cap_mode == PWM_MSPM_CAP_EDGE_TIME) {
+		/*
+		 * Single-channel edge-time mode: cc0 holds the current edge,
+		 * last_sample holds the previous one. Both are counter values
+		 * from a down-counter, so earlier == larger value.
+		 */
+		period = (data->last_sample - cc0) & 0xFFFFU;
+		pulse = 0U;
+		data->last_sample = cc0;
+	} else {
+		/*
+		 * PULSE_WIDTH: interrupt triggers on cc1 (rise edge).
+		 * cc0 = fall edge, cc1 = current rise, last_sample = prev rise.
+		 * period = prev_rise - cur_rise, pulse = prev_rise - fall.
+		 */
+		period = (data->last_sample - cc1) & 0xFFFFU;
+		pulse = (data->last_sample - cc0) & 0xFFFFU;
 
-	/*
-	 * Residual defensive guard: cc0/cc1 should structurally never
-	 * produce pulse > period once armed (see the `armed` discard
-	 * above, which handles the one confirmed cause of this). Kept as
-	 * a graceful fallback for any unconfirmed capture-block timing
-	 * edge case rather than reporting a nonsensical pulse width.
-	 */
-	if (pulse > period) {
-		pulse -= period;
+		/*
+		 * Defensive guard: pulse > period can only occur if a stale
+		 * fall edge pre-dates the previous rise (straddled arm). The
+		 * `armed` discard above should prevent this, but keep the
+		 * fallback for any unconfirmed edge case.
+		 */
+		if (pulse > period) {
+			pulse -= period;
+		}
+
+		if (!(data->flags & PWM_CAPTURE_TYPE_PULSE)) {
+			/* PERIOD-only: caller did not ask for pulse width. */
+			pulse = 0U;
+		}
+
+		data->last_sample = cc1;
 	}
 
 	if (data->callback && period) {
 		data->callback(dev, 0, period, pulse, 0, data->user_data);
 	}
-
-	data->last_sample = cc1;
 }
 
 #endif /* CONFIG_PWM_CAPTURE */
