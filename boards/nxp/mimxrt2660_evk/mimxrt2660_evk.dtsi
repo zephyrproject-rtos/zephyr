@@ -1,0 +1,96 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt2660_evk-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &user_led;
+		sw0 = &user_button;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		user_led: led_0 {
+			/*
+			 * USER_LED (D16), ball PIO2_26 -> HSP gpio0 pin 26.
+			 * Driven through series R329 and transistor Q6, so it
+			 * is active low.
+			 */
+			gpios = <&gpio0 26 GPIO_ACTIVE_LOW>;
+			label = "User LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			/*
+			 * WAKE_SS_BTN, ball PIO1_0 -> gpio6 pin 0. SW6 shorts the
+			 * net to ground, so it is active low. The 3V3 pull-up R49
+			 * is DNP on this revision, which makes the internal pull-up
+			 * required rather than optional.
+			 */
+			label = "User SW (WAKE)";
+			gpios = <&gpio6 0 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+};
+
+&lpuart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart0>;
+	pinctrl-names = "default";
+};
+
+/*
+ * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
+ * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
+ * configuration block (xip/); no Zephyr driver programs this node at runtime.
+ * Left unpartitioned, so MCUboot, DFU and settings are out of scope.
+ */
+&xspi0 {
+	w25h512_ctrl: flash-controller@0 {
+		compatible = "nxp,xspi-nor";
+		reg = <0>;
+		status = "disabled";
+		device-name = "w25h512nweam";
+		size = <DT_SIZE_M(64)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
+
+		w25h512: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(64)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <4>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+		};
+	};
+};
+
+/*
+ * W958D6NMYA 32 MB Xccela PSRAM on XSPI1, LLC-cached AHB alias 0x88000000
+ * (direct window is 0x80000000). Initialized by boot ROM from the external
+ * memory configuration data block (xip/); no Zephyr driver programs it.
+ */
+/ {
+	psram: memory@88000000 {
+		compatible = "zephyr,memory-region";
+		device_type = "memory";
+		reg = <0x88000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		status = "disabled";
+	};
+};

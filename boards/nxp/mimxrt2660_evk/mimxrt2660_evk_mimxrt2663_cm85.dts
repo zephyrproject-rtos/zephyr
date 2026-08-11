@@ -1,0 +1,94 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+/*
+ * Non-secure address view: it is what MIMXRT266x_COMMON.h yields for a build
+ * without -mcmse, so devicetree and the SDK headers agree. Switch to
+ * nxp_rt2663.dtsi once this port builds as secure firmware.
+ */
+#include <nxp/imxrt/imxrt266x/nxp_rt2663_cm85_ns.dtsi>
+#include "mimxrt2660_evk.dtsi"
+#include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	model = "NXP MIMXRT2660-EVK board";
+	compatible = "nxp,mimxrt2663";
+
+	chosen {
+		/*
+		 * XIP from the XSPI0 NOR, data in the XSPI1 PSRAM, both initialized
+		 * by the boot ROM from the boot header (see xip/).
+		 * soc/nxp/common/Kconfig.xspi_xip derives XIP and the flash base and
+		 * size from these nodes. itcm/dtcm are chosen for their linker
+		 * regions: the clock bring-up parks both XSPI controllers, so the
+		 * window code must be in ITCM and all stacks must not reside in any
+		 * memory clocked by XSPI0 or XSPI1 (CONFIG_ARM_STACKS_IN_DTCM).
+		 */
+		zephyr,flash-controller = &w25h512_ctrl;
+		zephyr,flash = &w25h512;
+		zephyr,sram = &psram;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,console = &lpuart0;
+		zephyr,shell-uart = &lpuart0;
+	};
+};
+
+/*
+ * Which devices this core's image owns. Enabling a device is per-core, not
+ * per-board: on a part with a second cluster a status in the shared board file
+ * would hand the same peripheral to both images, so both would configure it and
+ * only one would receive its interrupt. The board file keeps the wiring -- pins,
+ * baud rate -- and this file says who uses it.
+ */
+&ccm {
+	status = "okay";
+};
+
+&lpuart0 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&cpu0 {
+	/*
+	 * The CPU rate, not the system timer's -- SysTick counts the external
+	 * reference selected below. 1 GHz is the Over Drive Run operating point
+	 * the SoC clock bring-up programs, and the fitted MIMXRT2663CVVAA
+	 * supports it.
+	 */
+	clock-frequency = <DT_FREQ_M(1000)>;
+};
+
+&systick {
+	/*
+	 * Count the crystal-derived 24 MHz reference (CMPT systick_clk0 <- SXOSC)
+	 * rather than the core clock, so ticks stay crystal-accurate.
+	 * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC has to match that root.
+	 */
+	external-clock-source;
+};
+
+/* XIP NOR flash and PSRAM both initialized by boot ROM; no Zephyr driver
+ * programs the controllers.
+ */
+&w25h512 {
+	status = "okay";
+};
+
+&psram {
+	status = "okay";
+};
