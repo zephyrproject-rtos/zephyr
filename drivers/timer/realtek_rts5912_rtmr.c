@@ -58,7 +58,8 @@ static uint32_t rtmr_get_counter(void)
 {
 	uint32_t counter = RTMR_REG->CNT;
 
-	if ((counter == 0) && (RTMR_REG->CTRL & RTOSTMR_CTRL_EN_Msk)) {
+	if ((counter == 0) && (RTMR_REG->CTRL & RTOSTMR_CTRL_EN_Msk) &&
+	    !(RTMR_REG->INTSTS & RTOSTMR_INTSTS_STS_Msk)) {
 		counter = previous_cnt;
 	}
 
