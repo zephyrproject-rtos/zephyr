@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <st/g5/stm32g564.dtsi>
+
+/ {
+	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(512)>;
+				ranges = <0 0x8000000 DT_SIZE_K(512)>;
+			};
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		/* SRAM1 (32 KB) + SRAM2 (64 KB) + SRAM3 (16 KB) */
+		reg = <0x20000000 DT_SIZE_K(112)>;
+	};
+};
