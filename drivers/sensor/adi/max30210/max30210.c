@@ -329,16 +329,32 @@ static int max30210_attr_set_temp_inc_fast_thresh(const struct device *dev,
 	uint16_t whole_numbers_data;
 	uint16_t fractional_data;
 
+	/* Highest possible whole number is 1 degrees celsius */
+	ret = max30210_validate_fast_thresh_whole_part(val);
+	if (ret < 0) {
+		LOG_ERR("Invalid whole part for INC FAST THRESH\n");
+		return -EINVAL;
+	}
+
+	/* Validate value is non-negative, <= 1 degree, and a multiple of 0.005 degrees */
+	ret = max30210_validate_fractional_parts(val);
+	if (ret < 0) {
+		LOG_ERR("Invalid fractional part for INC FAST THRESH\n");
+		return -EINVAL;
+	}
+
 	whole_numbers_data = (val->val1) * MAX30210_TEMP_COUNTS_PER_C;
-	fractional_data = ((val->val2) / MAX30210_TEMP_FRAC_MAX_UC) * MAX30210_TEMP_COUNTS_PER_C;
-	uint8_t inc_fast_thresh = whole_numbers_data + fractional_data;
+	fractional_data = (val->val2 * MAX30210_TEMP_COUNTS_PER_C) / MAX30210_TEMP_FRAC_MAX_UC;
+	uint16_t thresh = whole_numbers_data + fractional_data;
 
-	temp_data->temp_inc_fast_thresh = inc_fast_thresh;
-
-	if (inc_fast_thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
+	if (thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
 		LOG_ERR("INC FAST THRESH exceeds maximum value\n");
 		return -EINVAL;
 	}
+
+	uint8_t inc_fast_thresh = (uint8_t)thresh;
+
+	temp_data->temp_inc_fast_thresh = inc_fast_thresh;
 
 	ret = max30210_reg_write(dev, TEMP_INC_FAST_THRESH, inc_fast_thresh);
 	if (ret < 0) {
@@ -378,15 +394,17 @@ static int max30210_attr_set_temp_dec_fast_thresh(const struct device *dev,
 	}
 
 	whole_numbers_data = (val->val1) * MAX30210_TEMP_COUNTS_PER_C;
-	fractional_data = ((val->val2) / MAX30210_TEMP_FRAC_MAX_UC) * MAX30210_TEMP_COUNTS_PER_C;
-	uint8_t dec_fast_thresh = whole_numbers_data + fractional_data;
+	fractional_data = (val->val2 * MAX30210_TEMP_COUNTS_PER_C) / MAX30210_TEMP_FRAC_MAX_UC;
+	uint16_t thresh = whole_numbers_data + fractional_data;
 
-	temp_data->temp_dec_fast_thresh = dec_fast_thresh;
-
-	if (dec_fast_thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
+	if (thresh > MAX30210_TEMP_SLOPE_MAX_REG_VALUE) {
 		LOG_ERR("DEC FAST THRESH exceeds maximum value\n");
 		return -EINVAL;
 	}
+
+	uint8_t dec_fast_thresh = (uint8_t)thresh;
+
+	temp_data->temp_dec_fast_thresh = dec_fast_thresh;
 
 	ret = max30210_reg_write(dev, TEMP_DEC_FAST_THRESH, dec_fast_thresh);
 	if (ret < 0) {
