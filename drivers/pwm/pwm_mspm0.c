@@ -187,6 +187,9 @@ BUILD_ASSERT(offsetof(struct mspm_gptimer_counter_regs, IFCTL_01) == 0x80U);
 #ifndef GPTIMER_CCACT_01_ZACT_CCP_HIGH
 #define GPTIMER_CCACT_01_ZACT_CCP_HIGH 0x00000001U
 #endif
+#ifndef GPTIMER_CCACT_01_ZACT_CCP_LOW
+#define GPTIMER_CCACT_01_ZACT_CCP_LOW 0x00000002U
+#endif
 #ifndef GPTIMER_CCACT_01_LACT_CCP_HIGH
 #define GPTIMER_CCACT_01_LACT_CCP_HIGH 0x00000008U
 #endif
@@ -346,6 +349,22 @@ static inline uint32_t mspm_pwm_edge_align_ccact(uint32_t pulse, uint32_t load)
 }
 
 /*
+ * UP-counting EDGE_ALIGN_UP: ZACT (zero/restart) sets HIGH, CUACT (CC match
+ * going up) sets LOW, giving pulse ticks of HIGH from 0 to CC. At 0% and
+ * 100% both events fire on the same tick; use a single sticky action instead.
+ */
+static inline uint32_t mspm_pwm_edge_align_up_ccact(uint32_t pulse, uint32_t load)
+{
+	if (pulse == 0U) {
+		return GPTIMER_CCACT_01_ZACT_CCP_LOW;
+	}
+	if (pulse >= load) {
+		return GPTIMER_CCACT_01_ZACT_CCP_HIGH;
+	}
+	return GPTIMER_CCACT_01_ZACT_CCP_HIGH | GPTIMER_CCACT_01_CUACT_CCP_LOW;
+}
+
+/*
  * UP-DOWN counting CENTER_ALIGN: LOAD holds period/2 (up-down counting
  * doubles the effective tick count). CC must be the symmetric offset from
  * the peak that gives `pulse` total ticks of HIGH time: load - pulse/2.
@@ -368,7 +387,7 @@ static void mspm_pwm_setup_cc_chan(struct mspm_gptimer_regs *base, uint8_t ch,
 		ccupd = GPTIMER_CCCTL_01_CCUPD_ZERO_EVT;
 		break;
 	case PWM_MSPM_EDGE_ALIGN_UP:
-		ccact = GPTIMER_CCACT_01_ZACT_CCP_HIGH | GPTIMER_CCACT_01_CUACT_CCP_LOW;
+		ccact = mspm_pwm_edge_align_up_ccact(pulse, base->COUNTERREGS.LOAD);
 		ccupd = GPTIMER_CCCTL_01_CCUPD_ZERO_EVT;
 		break;
 	default: /* PWM_MSPM_CENTER_ALIGN */
@@ -403,14 +422,15 @@ static void mspm_pwm_setup_output(const struct pwm_mspm_config *config, struct p
 		break;
 	}
 
-	if (config->mode == PWM_MSPM_CENTER_ALIGN) {
-		/* Up-down counting doubles the effective tick count; LOAD
-		 * must hold period/2 to match pwm_mspm_set_cycles() and the
-		 * CC offset math in mspm_pwm_setup_cc_chan().
-		 */
-		data->period >>= 1;
-	}
-	base->COUNTERREGS.LOAD = data->period;
+	/*
+	 * CENTER_ALIGN up-down counting doubles the effective tick count;
+	 * LOAD must hold period/2. Use a local so data->period stays at the
+	 * full configured value (avoids double-halving on any future reinit).
+	 */
+	uint32_t load = (config->mode == PWM_MSPM_CENTER_ALIGN) ? (data->period >> 1)
+								 : data->period;
+
+	base->COUNTERREGS.LOAD = load;
 
 	for (int i = 0; i < config->cc_idx_cnt; i++) {
 		uint8_t ch = config->cc_idx[i];
@@ -440,9 +460,14 @@ static int pwm_mspm_set_cycles(const struct device *dev, uint32_t channel, uint3
 		return -EINVAL;
 	}
 
-	if (period_cycles > UINT16_MAX) {
-		LOG_ERR("period cycles exceeds 16-bit timer limit");
+	if (period_cycles == 0U || period_cycles > UINT16_MAX) {
+		LOG_ERR("period_cycles %u out of range [1, %u]", period_cycles, UINT16_MAX);
 		return -ENOTSUP;
+	}
+
+	if ((flags & PWM_POLARITY_INVERTED) && pulse_cycles > period_cycles) {
+		LOG_ERR("pulse_cycles %u > period_cycles %u", pulse_cycles, period_cycles);
+		return -EINVAL;
 	}
 
 	period = (config->mode == PWM_MSPM_CENTER_ALIGN) ? (period_cycles >> 1) : period_cycles;
@@ -459,18 +484,26 @@ static int pwm_mspm_set_cycles(const struct device *dev, uint32_t channel, uint3
 	base->COUNTERREGS.LOAD = period;
 
 	if (config->mode == PWM_MSPM_CENTER_ALIGN) {
-		mspm_pwm_write_cc(base, config->cc_idx[channel],
-				  mspm_pwm_center_align_cc(period, pulse_cycles));
+		/*
+		 * LOAD is shared across all channels; recompute every
+		 * channel's CC so none drifts after a period change.
+		 */
+		for (int i = 0; i < config->cc_idx_cnt; i++) {
+			mspm_pwm_write_cc(base, config->cc_idx[i],
+					  mspm_pwm_center_align_cc(period, data->pulse[i]));
+		}
 	} else {
 		mspm_pwm_write_cc(base, config->cc_idx[channel], pulse_cycles);
 	}
 
 	if (config->mode == PWM_MSPM_EDGE_ALIGN) {
-		/* Re-evaluate the 0%/100% CDACT special case; see
-		 * mspm_pwm_edge_align_ccact() for why this is needed.
-		 */
+		/* Re-evaluate the 0%/100% CDACT special case on every update. */
 		mspm_pwm_write_ccact(base, config->cc_idx[channel],
 				     mspm_pwm_edge_align_ccact(pulse_cycles, period));
+	} else if (config->mode == PWM_MSPM_EDGE_ALIGN_UP) {
+		/* Re-evaluate the 0%/100% CUACT special case on every update. */
+		mspm_pwm_write_ccact(base, config->cc_idx[channel],
+				     mspm_pwm_edge_align_up_ccact(pulse_cycles, period));
 	}
 
 	k_mutex_unlock(&data->lock);
