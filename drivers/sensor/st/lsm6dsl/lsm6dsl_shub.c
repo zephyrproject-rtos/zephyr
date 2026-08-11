@@ -354,7 +354,7 @@ static int lsm6dsl_shub_read_slave_reg(const struct device *dev,
 	struct lsm6dsl_data *data = dev->data;
 	uint8_t slave[3];
 
-	slave[0] = (slv_addr << 1) | LSM6DSL_EMBEDDED_SLVX_READ;
+	slave[0] = slv_addr | LSM6DSL_EMBEDDED_SLVX_READ;
 	slave[1] = slv_reg;
 	slave[2] = (len & 0x7);
 
@@ -384,7 +384,7 @@ static int lsm6dsl_shub_write_slave_reg(const struct device *dev,
 	uint8_t cnt = 0U;
 
 	while (cnt < len) {
-		slv_cfg[0] = (slv_addr << 1) & ~LSM6DSL_EMBEDDED_SLVX_READ;
+		slv_cfg[0] = slv_addr & ~LSM6DSL_EMBEDDED_SLVX_READ;
 		slv_cfg[1] = slv_reg + cnt;
 
 		if (lsm6dsl_shub_write_embedded_regs(dev,
@@ -448,7 +448,7 @@ static int lsm6dsl_shub_set_data_channel(const struct device *dev)
 	}
 
 	/* Set data channel for slave device */
-	slv_cfg[0] = (slv_i2c_addr << 1) | LSM6DSL_EMBEDDED_SLVX_READ;
+	slv_cfg[0] = slv_i2c_addr | LSM6DSL_EMBEDDED_SLVX_READ;
 	slv_cfg[1] = lsm6dsl_shub_sens_list[0].out_data_addr;
 	slv_cfg[2] = lsm6dsl_shub_sens_list[0].out_data_len;
 	if (lsm6dsl_shub_write_embedded_regs(dev,
