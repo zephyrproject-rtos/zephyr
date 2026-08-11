@@ -250,7 +250,7 @@ static void dma_esp32_cache_flush_data(struct dma_esp32_channel *dma_channel)
 {
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM && desc; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
 			sys_cache_data_flush_range(desc->buffer, desc->dw0.size);
 		}
@@ -269,7 +269,7 @@ static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
 	const size_t line = sys_cache_data_line_size_get();
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM && desc; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
 			uintptr_t start = (uintptr_t)desc->buffer;
 			uintptr_t end = start + desc->dw0.size;
@@ -370,7 +370,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 	uint32_t target_address = 0, block_size = 0;
 	esp_dma_desc_t *desc_iter = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list); ++i) {
 		if (block_size == 0) {
 			if (dma_channel->dir == DMA_TX) {
 				target_address = block->source_address;
