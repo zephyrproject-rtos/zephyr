@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Integer PLL in an NXP i.MX CGU analog block.
+
+  Output frequency is the reference multiplied by nxp,loop-div, optionally
+  halved by nxp,post-div-by-2. clock-frequency states the resulting output so
+  the devicetree is readable without doing the arithmetic; it is checked against
+  the multiplier at build time rather than trusted.
+
+      core_pll: core-pll {
+              compatible = "nxp,imx-cguana-core-pll";
+              clocks = <&sxosc>;
+              nxp,loop-div = <33>;
+              clock-frequency = <792000000>;
+              #clock-cells = <0>;
+      };
+
+compatible: "nxp,imx-cguana-core-pll"
+
+include: [base.yaml, fixed-clock.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      The source's register groups inside the parent nxp,imx-cguana block, as
+      offsets: "ctrl" and "status". Split rather than one span, because
+      the block reserves address space between the groups.
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      The reference this PLL locks to, normally the crystal. Which source is
+      selected and what frequency it runs at both come from this phandle, so
+      the two cannot disagree.
+
+  nxp,loop-div:
+    type: int
+    required: true
+    description: Feedback loop divider; the reference is multiplied by this.
+
+  nxp,post-div-by-2:
+    type: boolean
+    description: Halve the PLL output after the loop divider.
+
+  nxp,vco-high-band:
+    type: boolean
+    description: |
+      Select the high VCO band. The low band covers roughly 600-858 MHz; a
+      target above that needs this set.
