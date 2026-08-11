@@ -92,6 +92,42 @@ functions only once allowing the test function to run hot within a dedicated tim
 This will give a more realistic measurements as it includes the overhead of the system as it would
 be in a real-world scenario, such as interrupts, context switches, and other background tasks.
 
+Manual Benchmarks
+=================
+
+Standard and timed benchmarks are timed by the framework itself, which takes both timestamps in
+thread context around each invocation of the benchmark body. Some measurements cannot be expressed
+that way because their endpoints are captured in different execution contexts: for example the
+latency from raising an interrupt to the first instruction of its ISR, or from the end of an ISR to
+a woken thread running.
+
+Manual benchmarks hand the measurement itself over to the benchmark body. The body is invoked
+exactly once, performs its own measurement loop using the :ref:`timing API <timing_functions>`, and
+reports each measured span with :c:func:`ztest_benchmark_record_sample`. The framework computes and
+reports the same statistics as for standard benchmarks.
+
+.. code-block:: c
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, <benchmark name>, <setup_fn>, <teardown_fn>)
+   {
+         for (int i = 0; i < NUM_SAMPLES; i++) {
+               timing_t start, end;
+
+               start = timing_counter_get();
+               /* span to measure; end may be captured in another context,
+                * e.g. stored by an ISR
+                */
+               end = timing_counter_get();
+
+               ztest_benchmark_record_sample(timing_cycles_get(&start, &end));
+         }
+   }
+
+Samples should be recorded as raw cycle deltas between two ``timing_counter_get()`` calls; the
+framework applies the same control-measurement noise correction as for standard benchmarks when
+reporting. :c:func:`ztest_benchmark_record_sample` must be called from thread context; ISRs should
+only capture timestamps and leave computing and recording the delta to the benchmark body.
+
 Understanding Results
 *********************
 
