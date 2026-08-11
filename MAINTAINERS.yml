@@ -6097,6 +6097,7 @@ TI MSPM Platforms:
     - Aman-Lachhiramka-ti
     - Alex9360
     - SanjayyyV
+    - karthi012
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
