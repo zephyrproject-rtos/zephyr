@@ -259,6 +259,22 @@ config TFLM_NXP_NEUTRON
 	  This allows TFLM models to use the NEUTRON accelerator
 	  for inference operations.
 
+config MCUX_TRDC
+	bool "Use TRDC MCUX Driver"
+	default y if SOC_MCXW727C || SOC_SERIES_IMXRT118X
+	help
+	  Enable the MCUX TRDC (Trusted Resource Domain Controller) driver,
+	  pulling in the driver.trdc HAL component. Used by SoCs that route
+	  peripheral accesses through a primary TRDC instance.
+
+config MCUX_TRDC_1
+	bool "Use TRDC_1 MCUX Driver"
+	default y if SOC_MIMX9352_M33
+	help
+	  Enable the MCUX TRDC_1 driver, pulling in the driver.trdc_1 HAL
+	  component. Used by SoCs whose secondary TRDC instance is exposed
+	  as the TRDC_1 variant.
+
 endif # HAS_MCUX
 
 config BT_NXP_PCM_PINS_DIR_REVERSE
