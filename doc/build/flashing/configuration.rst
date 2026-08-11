@@ -41,7 +41,7 @@ targets, or to ``last`` which will be ran once for the final image flash per set
 An example flashing configuration for a ``soc.yml`` is shown below in which the ``--recover``
 command will only be used once for any board targets which used the nRF5340 SoC application or
 network CPU cores, and will only reset the network or application core after all images for the
-respective core have been flashed.
+respective core have been flashed. test test
 
 .. code-block:: yaml
 
