@@ -295,6 +295,9 @@ static inline int iis2iclx_accel_get_channel(enum sensor_channel chan,
 		for (i = 0; i < 2; i++) {
 			iis2iclx_accel_convert(val++, data->acc[i], sensitivity);
 		}
+		/* 2-axis part: there is no Z output register, report a defined 0 */
+		val->val1 = 0;
+		val->val2 = 0;
 		break;
 	default:
 		return -ENOTSUP;
@@ -375,8 +378,8 @@ static inline int iis2iclx_magn_get_channel(enum sensor_channel chan,
 	return 0;
 }
 
-static inline void iis2iclx_hum_convert(struct sensor_value *val,
-					  struct iis2iclx_data *data)
+static inline int iis2iclx_hum_convert(struct sensor_value *val,
+				       struct iis2iclx_data *data)
 {
 	float rh;
 	int16_t raw_val;
@@ -386,7 +389,7 @@ static inline void iis2iclx_hum_convert(struct sensor_value *val,
 	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_HUMIDITY);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
-		return;
+		return -ENOTSUP;
 	}
 
 	raw_val = ((int16_t)(data->ext_data[idx][0] |
@@ -399,10 +402,12 @@ static inline void iis2iclx_hum_convert(struct sensor_value *val,
 	/* convert humidity to integer and fractional part */
 	val->val1 = rh;
 	val->val2 = rh * 1000000;
+
+	return 0;
 }
 
-static inline void iis2iclx_press_convert(struct sensor_value *val,
-					    struct iis2iclx_data *data)
+static inline int iis2iclx_press_convert(struct sensor_value *val,
+					 struct iis2iclx_data *data)
 {
 	int32_t raw_val;
 	int idx;
@@ -410,7 +415,7 @@ static inline void iis2iclx_press_convert(struct sensor_value *val,
 	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
-		return;
+		return -ENOTSUP;
 	}
 
 	raw_val = (int32_t)(data->ext_data[idx][0] |
@@ -422,10 +427,12 @@ static inline void iis2iclx_press_convert(struct sensor_value *val,
 	val->val1 = (raw_val >> 12) / 10;
 	val->val2 = (raw_val >> 12) % 10 * 100000 +
 		(((int32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
+
+	return 0;
 }
 
-static inline void iis2iclx_temp_convert(struct sensor_value *val,
-					   struct iis2iclx_data *data)
+static inline int iis2iclx_temp_convert(struct sensor_value *val,
+					struct iis2iclx_data *data)
 {
 	int16_t raw_val;
 	int idx;
@@ -433,7 +440,7 @@ static inline void iis2iclx_temp_convert(struct sensor_value *val,
 	idx = iis2iclx_shub_get_idx(data->dev, SENSOR_CHAN_PRESS);
 	if (idx < 0) {
 		LOG_DBG("external press/temp not supported");
-		return;
+		return -ENOTSUP;
 	}
 
 	raw_val = (int16_t)(data->ext_data[idx][3] |
@@ -442,6 +449,8 @@ static inline void iis2iclx_temp_convert(struct sensor_value *val,
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
 	val->val2 = (int32_t)raw_val % 100 * (10000);
+
+	return 0;
 }
 #endif
 
@@ -454,10 +463,8 @@ static int iis2iclx_channel_get(const struct device *dev,
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_ACCEL_Y:
-	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_ACCEL_XYZ:
-		iis2iclx_accel_channel_get(chan, val, data);
-		break;
+		return iis2iclx_accel_channel_get(chan, val, data);
 #if defined(CONFIG_IIS2ICLX_ENABLE_TEMP)
 	case SENSOR_CHAN_DIE_TEMP:
 		iis2iclx_temp_channel_get(val, data);
@@ -473,8 +480,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		iis2iclx_magn_get_channel(chan, val, data);
-		break;
+		return iis2iclx_magn_get_channel(chan, val, data);
 
 	case SENSOR_CHAN_HUMIDITY:
 		if (!data->shub_inited) {
@@ -482,8 +488,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		iis2iclx_hum_convert(val, data);
-		break;
+		return iis2iclx_hum_convert(val, data);
 
 	case SENSOR_CHAN_PRESS:
 		if (!data->shub_inited) {
@@ -491,8 +496,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		iis2iclx_press_convert(val, data);
-		break;
+		return iis2iclx_press_convert(val, data);
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!data->shub_inited) {
@@ -500,8 +504,7 @@ static int iis2iclx_channel_get(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		iis2iclx_temp_convert(val, data);
-		break;
+		return iis2iclx_temp_convert(val, data);
 #endif
 	default:
 		return -ENOTSUP;
