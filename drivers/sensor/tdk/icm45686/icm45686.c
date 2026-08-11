@@ -203,6 +203,7 @@ static int icm45686_channel_get(const struct device *dev, enum sensor_channel ch
 		} else if ((cfg->apex == TDK_APEX_TILT) || (cfg->apex == TDK_APEX_SMD)) {
 			val[0].val1 = data->apex_status;
 		}
+		break;
 #endif
 
 	default:
