@@ -4,7 +4,7 @@ Stacks
 ######
 
 .. design:: DESIGN-STACKS Stacks
-   :fulfills: ZEP-SRS-30-1 ZEP-SRS-30-2 ZEP-SRS-30-3 ZEP-SRS-30-5 ZEP-SRS-30-7 ZEP-SRS-30-6 ZEP-SRS-30-10 ZEP-SRS-30-9 ZEP-SRS-30-11 ZEP-SRS-30-4
+   :fulfills: ZEP-SRS-30-1 ZEP-SRS-30-2 ZEP-SRS-30-3 ZEP-SRS-30-5 ZEP-SRS-30-7 ZEP-SRS-30-6 ZEP-SRS-30-9 ZEP-SRS-30-11 ZEP-SRS-30-4
 
 
 A :dfn:`stack` is a kernel object that implements a traditional
