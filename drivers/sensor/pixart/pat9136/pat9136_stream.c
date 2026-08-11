@@ -159,11 +159,13 @@ static void pat9136_stream_get_data(const struct device *dev)
 	CHECKIF(!write_res_x_sqe || !read_res_x_sqe ||
 		!write_res_y_sqe || !read_res_y_sqe ||
 		!write_sqe || !read_sqe || !cb_sqe) {
+		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
 		LOG_ERR("Failed to acquire RTIO SQE's. Dropping all pending SQE's");
 		rtio_sqe_drop_all(data->rtio.ctx);
 
 		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(data->stream.iodev_sqe, -ENOMEM);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
 
