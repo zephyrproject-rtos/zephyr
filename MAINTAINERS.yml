@@ -6117,6 +6117,7 @@ TI MSPM Platforms:
     - SanjayyyV
     - karthi012
     - Girinandha-M
+    - santhosh-c-c
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
