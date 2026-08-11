@@ -161,6 +161,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 			icm45686_stream_result(dev, -ENOMEM);
 			return;
 		}
+		rtio_submit(data->bus.rtio.ctx, 0);
+
 		icm45686_stream_result(dev, 0);
 		return;
 	}
