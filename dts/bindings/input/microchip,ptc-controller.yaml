@@ -1,0 +1,470 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Peripheral Touch Controller
+
+description: |
+  Microchip Peripheral Touch Driver
+
+  Base binding for Microchip Peripheral Touch Controller.
+  This defines common properties shared across all PTC versions.
+    - module name="PTC"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,ptc-controller"
+
+properties:
+  interrupts:
+    required: true
+
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  run-in-standby-en:
+    type: int
+    default: 0
+
+  status:
+    type: string
+    required: true
+
+  def-touch-measurement-period-ms:
+    type: int
+    default: 20
+    description: |
+      Measurement Period
+
+      Measurement period is the total time required to acquire (including oversampling)
+      and process touch signals of all active buttons.
+      By default, the system has been configured with a measurement period of 20 milliseconds
+
+  def-ptc-cal-option:
+    type: string
+    enum:
+      - "CAL_AUTO_TUNE_NONE"
+      - "CAL_AUTO_TUNE_RSEL"
+      - "CAL_AUTO_TUNE_PRSC"
+      - "CAL_AUTO_TUNE_CSD"
+    default: "CAL_AUTO_TUNE_NONE"
+    description: |
+      PTC Calibration Option
+
+      Set sensor calibration mode for charge share delay, Prescaler or series resistor.
+      By default, the system has been configured with a calibration option of CAL_AUTO_TUNE_NONE
+
+  def-ptc-tau-target:
+    type: string
+    enum:
+      - "CAL_CHRG_2TAU"
+      - "CAL_CHRG_3TAU"
+      - "CAL_CHRG_4TAU"
+      - "CAL_CHRG_5TAU"
+    description: |
+      PTC Tau Target
+
+      Calibration option to ensure full charge transfer.
+
+  def-sel-freq-init:
+    type: string
+    enum:
+      - "FREQ_SEL_0"
+      - "FREQ_SEL_1"
+      - "FREQ_SEL_2"
+      - "FREQ_SEL_3"
+      - "FREQ_SEL_4"
+      - "FREQ_SEL_5"
+      - "FREQ_SEL_6"
+      - "FREQ_SEL_7"
+      - "FREQ_SEL_8"
+      - "FREQ_SEL_9"
+      - "FREQ_SEL_10"
+      - "FREQ_SEL_11"
+      - "FREQ_SEL_12"
+      - "FREQ_SEL_13"
+      - "FREQ_SEL_14"
+      - "FREQ_SEL_15"
+      - "FREQ_SEL_SPREAD"
+    default: "FREQ_SEL_0"
+    description: |
+      Startup Acquisition Frequency
+
+      By default, the system has been configured with a Startup frequency of FREQ_SEL_0
+
+  def-num-channels:
+    type: int
+    default: 1
+    description: |
+      Define Number Of Channels
+
+      Defines the number of sensor nodes in the acquisition set
+      By default, the system has been configured with a value of 1
+
+  def-num-sensors:
+    type: int
+    default: 1
+    description: |
+      Define Number Of Key Sensors
+
+      Defines the number of sensor nodes in the key module
+      By default, the system has been configured with a value of 1
+
+  def-touch-det-int:
+    type: int
+    default: 4
+    description: |
+      Detect Integration
+
+      De-bounce counter for additional measurements to confirm touch detection
+      By default, the system has been configured with a value of 4
+
+  def-anti-tch-det-int:
+    type: int
+    default: 5
+    description: |
+      Anti-touch Detect Integration
+
+      De-bounce counter for additional measurements to confirm away from touch signal
+      to initiate Away from touch re-calibration
+
+      By default, the system has been configured with a value of 5
+
+  def-anti-tch-recal-thrshld:
+    type: string
+    enum:
+      - "RECAL_100"
+      - "RECAL_50"
+      - "RECAL_25"
+      - "RECAL_12_5"
+      - "RECAL_6_25"
+      - "MAX_RECAL"
+    default: "RECAL_100"
+    description: |
+      Anti-touch Recalibration Threshold
+
+      Threshold beyond with automatic sensor recalibration is initiated.
+
+      List of available values
+      +===================+================================+
+      |       Type        |    Description                 |
+      +===================+================================+
+      |     RECAL_100     |   100% of the threshold value  |
+      +-------------------+--------------------------------+
+      |     RECAL_50      |   50% of the threshold value   |
+      +-------------------+--------------------------------+
+      |     RECAL_25      |   25% of the threshold value   |
+      +-------------------+--------------------------------+
+      |     RECAL_12_5    |   12.5% of the threshold value |
+      +-------------------+--------------------------------+
+      |     RECAL_6_25    |   6.25% of the threshold value |
+      +-------------------+--------------------------------+
+      |     MAX_RECAL     |               -                |
+      +-------------------+--------------------------------+
+
+      By default, the system has been configured with a value of RECAL_100
+
+  def-tch-drift-rate:
+    type: int
+    default: 20
+    description: |
+      Touch Drift Rate
+
+      Rate at which sensor reference value is adjusted towards sensor signal value
+      when signal value is greater than reference.
+      Basetime is 200ms
+
+      Formula to compute the drift period
+      --------------------
+      | value x Basetime |
+      --------------------
+
+      By default, the system has been configured with a value of 20
+      which means 20 x 200ms = 4 seconds
+
+  def-anti-tch-drift-rate:
+    type: int
+    default: 5
+    description: |
+      Anti-touch Drift Rate
+
+      Rate at which sensor reference value is adjusted towards sensor signal value
+      when signal value is less than reference.
+      Basetime is 200ms
+
+      Formula to compute the anti-touch drift period
+      --------------------
+      | value x Basetime |
+      --------------------
+
+      By default, the system has been configured with a value of 5
+      which means 5 x 200ms = 1 second
+
+  def-drift-hold-time:
+    type: int
+    default: 20
+    description: |
+      Drift Hold Time
+
+      Time to restrict drift on all sensor when one or more sensors are activated.
+      Basetime is 200ms
+
+      Formula to compute the drift hold Time
+      --------------------
+      | value x Basetime |
+      --------------------
+
+      By default, the system has been configured with a value of 20
+      which means 20 x 200ms = 4 seconds
+
+  def-reburst-mode:
+    type: string
+    enum:
+      - "REBURST_NONE"
+      - "REBURST_UNRESOLVED"
+      - "REBURST_ALL"
+    default: "REBURST_UNRESOLVED"
+    description: |
+      Reburst Mode
+
+      Set mode for additional sensor measurements based on touch activity.
+
+      List Of Reburst Modes
+      +===========================+===========================+
+      |       Mode                | Description               |
+      +===========================+===========================+
+      |                           | Reburst is never set,     |
+      |     REBURST_NONE          | measurements according to |
+      |                           | application schedule      |
+      +---------------------------+---------------------------+
+      |                           | Reburst is set, all       |
+      |     REBURST_UNRESOLVED    | sensors suspended         |
+      |                           | but those in same AKS     |
+      |                           | as the target sensor      |
+      +---------------------------+---------------------------+
+      |     REBURST_ALL           | Reburst is set,           |
+      |                           | no sensors are suspended  |
+      +---------------------------+---------------------------+
+
+      By default, the system has been configured with a value of REBURST_UNRESOLVED
+
+  def-max-on-duration:
+    type: int
+    default: 0
+    description: |
+      Max-On Duration
+
+      Number of repeat measurements to
+      confirm anti-touch recalibration required
+
+      Basetime is 200ms
+
+      Formula to compute the Max-On Duration
+      --------------------
+      | value x Basetime |
+      --------------------
+
+  data-streamer-port:
+    type: phandle
+    description: |
+      Datastreamer
+
+      Add a communication port node to visualize the touch run-time data
+      using Microchip Data Visualizer Software
+
+  num-freq-steps:
+    type: int
+    default: 3
+    description: |
+      Number Of Frequency Steps for Frequency Hop Operation
+
+  def-median-filter-frequencies:
+    type: string-array
+    enum:
+      - "FREQ_SEL_0"
+      - "FREQ_SEL_1"
+      - "FREQ_SEL_2"
+      - "FREQ_SEL_3"
+      - "FREQ_SEL_4"
+      - "FREQ_SEL_5"
+      - "FREQ_SEL_6"
+      - "FREQ_SEL_7"
+      - "FREQ_SEL_8"
+      - "FREQ_SEL_9"
+      - "FREQ_SEL_10"
+      - "FREQ_SEL_11"
+      - "FREQ_SEL_12"
+      - "FREQ_SEL_13"
+      - "FREQ_SEL_14"
+      - "FREQ_SEL_15"
+      - "FREQ_SEL_SPREAD"
+    default:
+      - "FREQ_SEL_0"
+      - "FREQ_SEL_1"
+      - "FREQ_SEL_2"
+    description: |
+      Median Filter Frequencies
+
+      It is for Frequency Hop Operation.
+      PTC Sampling Delay Selection
+
+      The user must select the frequencies based on the noisy condition.
+
+      The frequencies should be selected based on the configured
+      num-freq-steps value. By default, the system is configured
+      with a num-freq-steps value of 3; therefore, def-median-filter-frequencies
+      is defined using the following three frequency values.
+
+      By default, the system has been configured with a frequencies of
+      FREQ_SEL_0, FREQ_SEL_3 and FREQ_SEL_7
+
+  def-freq-autotune-enable:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 1
+    description: |
+      Frequency Hop Auto-tune
+
+      The frequency hop auto-tune module is the super set of frequency hop module
+      with additionally providing noise monitoring and tuning the frequency
+      according to the measured noise factor.
+
+      Frequency Hop + Noise monitoring = Frequency Hop Auto-Tune
+
+      List of available options
+      +===========+===========================+
+      | value     |  Frequency Hop Auto-tune  |
+      +===========+===========================+
+      | 0         |     DISABLE               |
+      +-----------+---------------------------+
+      | 1         |     ENABLE                |
+      +-----------+---------------------------+
+
+  freq-autotune-max-variance:
+    type: int
+    default: 15
+    description: |
+      Frequency Hop Auto-tune Max variance
+
+      sets the maximum variance for Frequency Hop Auto tune.
+
+  freq-autotune-count-in:
+    type: int
+    default: 6
+    description: |
+      Frequency Hop Auto-tune Count In
+
+      sets the Tune in count for Frequency Hop Auto tune.
+
+  def-num-scrollers:
+    type: int
+    description: |
+      Define Number Of scrollers
+
+      Defines the number of scrollers (sliders or wheels).
+
+child-binding:
+  description: |
+    Child nodes for touch sensor configuration (nodes, keys, scrollers).
+
+  properties:
+    x-mask:
+      type: array
+      description: |
+        Node X Mask
+
+        It could be shield for self-cap measurement (or)
+        drive line for mutual-cap measurement.
+
+    x-names:
+      type: string-array
+      description: |
+        X Mask Names
+
+        Define X-Mask Names
+
+    y-mask:
+      type: array
+      description: |
+        Node Y Mask
+
+        y-mask is the sensing electrode connected directly to touch sensor.
+
+    y-names:
+      type: string-array
+      description: y-mask names.
+
+    csd:
+      type: int
+      description:
+        Charge Share Delay (CSD)
+
+        Number of delay cycles to ensure charging of
+        sensor node capacitances.
+
+    threshold:
+      type: int
+      description: |
+        Channel Threshold
+
+        The Detect Threshold parameter of a sensor defines
+        how much its Signal must increase above its Reference level
+        to be qualified as a potential touch event.
+
+    hysteresis:
+      type: string
+      enum:
+        - "HYST_50"
+        - "HYST_25"
+        - "HYST_12_5"
+        - "HYST_6_25"
+        - "MAX_HYST"
+      default: "HYST_25"
+      description: |
+        Channel Hysteresis
+
+        Sensor detection hysteresis value and is expressed
+        as a percentage of the sensor detection threshold setting.
+
+        List of available Channel Hysteresis options
+        +===================+================================+
+        |       Type        |    Description                 |
+        +===================+================================+
+        |     HYST_50       |   50% of the threshold value   |
+        +-------------------+--------------------------------+
+        |     HYST_25       |   25% of the threshold value   |
+        +-------------------+--------------------------------+
+        |     HYST_12_5     |   12.5% of the threshold value |
+        +-------------------+--------------------------------+
+        |     HYST_6_25     |   6.25% of the threshold value |
+        +-------------------+--------------------------------+
+        |     MAX_HYST      |                                |
+        +-------------------+--------------------------------+
+
+    aks-group:
+      type: string
+      enum:
+        - "NO_AKS_GROUP"
+        - "AKS_GROUP_1"
+        - "AKS_GROUP_2"
+        - "AKS_GROUP_3"
+        - "AKS_GROUP_4"
+        - "AKS_GROUP_5"
+        - "AKS_GROUP_6"
+        - "AKS_GROUP_7"
+        - "MAX_AKS_GROUP"
+      default: "NO_AKS_GROUP"
+      description: |
+        Channel AKS (Adjacent Key Suppression) Group
+
+        Grouping of key sensors controlling
+        simultaneous touch detect
