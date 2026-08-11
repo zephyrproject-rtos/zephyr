@@ -34,6 +34,19 @@ static struct socket_dispatch_table {
 	struct dns_socket_dispatcher *ctx;
 } dispatch_table[ZVFS_OPEN_SIZE];
 
+static uint16_t dns_dispatcher_addr_port(const struct net_sockaddr_storage *addr)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->ss_family == NET_AF_INET6) {
+		return net_sin6(net_sad(addr))->sin6_port;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->ss_family == NET_AF_INET) {
+		return net_sin(net_sad(addr))->sin_port;
+	}
+
+	return 0;
+}
+
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct net_sockaddr *addr, size_t addrlen,
 			struct net_buf *dns_data, size_t buf_len)
@@ -228,8 +241,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	(void)k_mutex_init(&ctx->lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sockets, entry, next, node) {
-		uint16_t entry_port = net_sin(net_sad(&entry->local_addr_storage))->sin_port;
-		uint16_t ctx_port = net_sin(net_sad(&ctx->local_addr_storage))->sin_port;
+		uint16_t entry_port = dns_dispatcher_addr_port(&entry->local_addr_storage);
+		uint16_t ctx_port = dns_dispatcher_addr_port(&ctx->local_addr_storage);
 		bool ports_match = ctx_port != 0 && ctx_port == entry_port;
 
 		/* Refuse to register context if we have identical context
@@ -320,18 +333,21 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	 * Record it so that this dispatcher can be told apart from other
 	 * registrations.
 	 */
-	if (net_sin(net_sad(&ctx->local_addr_storage))->sin_port == 0) {
+	if (dns_dispatcher_addr_port(&ctx->local_addr_storage) == 0) {
+		struct net_sockaddr_storage local_addr = ctx->local_addr_storage;
 		net_socklen_t socklen = addrlen;
 
 		/* The local port is only used to match dispatcher
 		 * registrations, so continue with an unknown port if the
-		 * socket implementation cannot report it.
+		 * socket implementation cannot report it. Restore the address
+		 * we bound with, as a failing call may still have written to
+		 * the buffer.
 		 */
 		if (zsock_getsockname(ctx->sock, net_sad(&ctx->local_addr_storage),
 				      &socklen) < 0) {
 			NET_DBG("Cannot get DNS socket %d name (%d), local port unknown",
 				ctx->sock, -errno);
-			net_sin(net_sad(&ctx->local_addr_storage))->sin_port = 0;
+			ctx->local_addr_storage = local_addr;
 		}
 	}
 
