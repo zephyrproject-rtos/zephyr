@@ -310,8 +310,7 @@ static int ch9120_configure_interrupt(void)
 static void ch9120_uart_cb(const struct device *uart_dev, void *user_data)
 {
 	int rx;
-	int ret;
-	uint32_t claimed_len = 0;
+	uint32_t space;
 	uint32_t total_size = 0;
 	uint8_t *buf;
 	struct ch9120_runtime *data = (struct ch9120_runtime *)user_data;
@@ -329,42 +328,25 @@ static void ch9120_uart_cb(const struct device *uart_dev, void *user_data)
 	if (uart_irq_rx_ready(uart_dev) > 0) {
 
 		while (true) {
-
-			if (!claimed_len) {
-				if (total_size > 0) {
-					ret = ring_buf_put_finish(&sck->rx_buf, total_size);
-					__ASSERT_NO_MSG(ret == 0);
-					total_size = 0;
-				}
-
-				claimed_len = ring_buf_put_claim(&sck->rx_buf, &buf, UINT32_MAX);
-			}
-
-			if (!claimed_len) {
+			space = ring_buf_put_ptr(&sck->rx_buf, &buf, total_size);
+			if (!space) {
 				LOG_ERR("Rx buffer doesn't have enough space");
 				ch9120_uart_flush_rx_fifo(uart_dev);
 				break;
 			}
 
-			rx = uart_fifo_read(uart_dev, buf, claimed_len);
+			rx = uart_fifo_read(uart_dev, buf, space);
 			if (rx <= 0) {
 				break;
 			}
 
-			buf += rx;
 			total_size += rx;
-			claimed_len -= rx;
 		}
 	}
 
 	if (total_size > 0) {
-		ret = ring_buf_put_finish(&sck->rx_buf, total_size);
-		__ASSERT_NO_MSG(ret == 0);
+		ring_buf_commit(&sck->rx_buf, total_size);
 		k_sem_give(&sck->rx_sem);
-	} else {
-		if (claimed_len > 0) {
-			ring_buf_put_finish(&sck->rx_buf, 0);
-		}
 	}
 }
 
