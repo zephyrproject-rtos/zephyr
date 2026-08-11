@@ -4713,10 +4713,10 @@ static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *arg
 			break;
 		}
 		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
 					      params->publish.ssi,
 					      sizeof(params->publish.ssi));
-			if (ssi_len < 0) {
+			if (ssi_len == 0 && strlen(state->optarg) > 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
@@ -4806,10 +4806,10 @@ static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, ch
 			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
 			break;
 		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
 					      params->update_publish.ssi,
 					      sizeof(params->update_publish.ssi));
-			if (ssi_len < 0) {
+			if (ssi_len == 0 && strlen(state->optarg) > 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
@@ -4879,10 +4879,10 @@ static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *a
 			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
 			break;
 		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
 					      params->subscribe.ssi,
 					      sizeof(params->subscribe.ssi));
-			if (ssi_len < 0) {
+			if (ssi_len == 0 && strlen(state->optarg) > 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
@@ -4975,10 +4975,10 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 			}
 			break;
 		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
+			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
 					      params->transmit.ssi,
 					      sizeof(params->transmit.ssi));
-			if (ssi_len < 0) {
+			if (ssi_len == 0 && strlen(state->optarg) > 0) {
 				PR_ERROR("Invalid SSI hex string\n");
 				return -EINVAL;
 			}
