@@ -35,6 +35,19 @@ extern char _iram_text_end[];
 PMP_SOC_REGION_DEFINE(esp32c5_iram_text, _iram_text_start, _iram_text_end, PMP_R | PMP_X);
 
 /*
+ * Flash-mapped read-only data (DROM).
+ *
+ * Const data and string literals live in a separate MMU window from
+ * executable flash text (__rom_region). Without an explicit PMP entry,
+ * user mode cannot read that window. Use _image_rodata_* so sections
+ * after __rodata_region_end that still map into DROM are covered.
+ */
+extern char _image_rodata_start[];
+extern char _image_rodata_end[];
+
+PMP_SOC_REGION_DEFINE(esp32c5_flash_rodata, _image_rodata_start, _image_rodata_end, PMP_R);
+
+/*
  * ESP32-C5 peripheral region.
  *
  * Memory-mapped I/O registers (UART, SPI, I2C, GPIO, PMU, etc.) live
