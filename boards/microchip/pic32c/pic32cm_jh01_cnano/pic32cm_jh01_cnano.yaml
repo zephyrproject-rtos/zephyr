@@ -14,5 +14,6 @@ supported:
   - counter
   - gpio
   - pinctrl
+  - ptc
   - uart
 vendor: microchip
