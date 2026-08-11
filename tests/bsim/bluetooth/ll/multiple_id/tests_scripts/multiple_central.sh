@@ -27,6 +27,6 @@ done
 let device_count=$central_count+1
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=$device_count -sim_length=1800e6 $@ -argschannel -at=40
+  -D=$device_count -sim_length=480e6 $@ -argschannel -at=40
 
 wait_for_background_jobs
