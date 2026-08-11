@@ -3609,7 +3609,6 @@ __syscall int k_stack_push(struct k_stack *stack, stack_data_t data);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  * @satisfies ZEP-SRS-30-6
- * @satisfies ZEP-SRS-30-10
  * @satisfies ZEP-SRS-30-9
  * @satisfies ZEP-SRS-30-11
  */
