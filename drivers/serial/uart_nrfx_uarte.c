@@ -1002,7 +1002,7 @@ static int rx_disable(const struct device *dev, bool api)
 	async_rx->stoprx_deferred = false;
 	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		if (!IS_CBWT(dev) && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 			/* The short may have already started the next buffer. Stopping it now
 			 * would overwrite RX.AMOUNT before the pending ENDRX is processed.
 			 * RX remains active until that ISR runs, so ENDRX must be serviced
