@@ -558,13 +558,6 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 	osr_bits = ((rx_buf[2] & BMM350_AVG_MSK) >> BMM350_AVG_POS);
 	odr_bits = ((rx_buf[2] & BMM350_ODR_MSK) >> BMM350_ODR_POS);
 
-	/* to change sampling rate, device needs to suspend first */
-	ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
-	if (ret < 0) {
-		LOG_ERR("failed to set suspend mode");
-		return -EIO;
-	}
-
 	if (odr) {
 		odr_bits = mag_odr_to_reg(odr);
 	}
@@ -575,8 +568,17 @@ static int set_mag_odr_osr(const struct device *dev, const struct sensor_value *
 			return -EINVAL;
 		}
 	}
+
+	/* to change sampling rate, device needs to suspend first */
+	ret = bmm350_set_powermode(dev, BMM350_SUSPEND_MODE);
+	if (ret < 0) {
+		LOG_ERR("failed to set suspend mode");
+		return -EIO;
+	}
+
 	if (bmm350_set_odr_performance((enum bmm350_data_rates)odr_bits, osr_bits, dev) < 0) {
 		LOG_ERR("bmm350_set_odr_performance failed");
+		(void)bmm350_set_powermode(dev, BMM350_NORMAL_MODE);
 		return -EIO;
 	}
 
