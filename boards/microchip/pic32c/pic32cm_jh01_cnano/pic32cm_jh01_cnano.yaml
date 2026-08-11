@@ -1,4 +1,4 @@
-# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-FileCopyrightText: Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: pic32cm_jh01_cnano
@@ -15,6 +15,7 @@ supported:
   - counter
   - flash
   - gpio
+  - input
   - pinctrl
   - uart
 vendor: microchip
