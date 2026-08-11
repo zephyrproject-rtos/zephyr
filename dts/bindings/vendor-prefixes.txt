@@ -717,6 +717,7 @@ swir	Sierra Wireless
 syna	Synaptics Inc.
 synochip	Hangzhou Synochip Data Security Technology Co., Ltd.
 synology	Synology, Inc.
+t3gemstone	T3 Gemstone
 tbs	TBS Technologies
 tbs-biometrics	Touchless Biometric Systems AG
 tcg	Trusted Computing Group

@@ -1,0 +1,6 @@
+board:
+  name: t3_gem_o1
+  full_name: T3 Gemstone O1
+  vendor: t3gemstone
+  socs:
+  - name: j722s
