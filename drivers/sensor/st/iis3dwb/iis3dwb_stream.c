@@ -241,7 +241,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 		memset(buf, 0, buf_len);
 		rx_data->header.is_fifo = 1;
 		rx_data->header.timestamp = iis3dwb->timestamp;
-		rx_data->header.int_status = iis3dwb->fifo_status[0];
+		rx_data->header.int_status = iis3dwb->fifo_status[1];
 		rx_data->fifo_count = 0;
 		rx_data->fifo_mode_sel = 0;
 
@@ -295,7 +295,7 @@ static void iis3dwb_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe, int
 			.is_fifo = 1,
 			.range = iis3dwb->range,
 			.timestamp = iis3dwb->timestamp,
-			.int_status = iis3dwb->fifo_status[0],
+			.int_status = iis3dwb->fifo_status[1],
 		},
 		.fifo_count = fifo_count,
 		.accel_batch_odr = iis3dwb->accel_batch_odr,
