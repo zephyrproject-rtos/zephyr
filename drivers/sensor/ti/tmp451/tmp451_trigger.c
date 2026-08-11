@@ -81,9 +81,9 @@ static void tmp451_handle_interrupt(const struct device *dev)
 	 * the status register. The reset is done by the master reading
 	 * the temperature sensor device address to service the interrupt."
 	 *
-	 * But in practice it seems just reading the status reg is sufficient.
-	 * This might only apply to an SMBUS scenario where multiple sensors are sharing an alert
-	 * line?
+	 * The pin thus stays latched low while the alert condition persists, so the
+	 * interrupt is level-triggered: if ALERT is still asserted after handling,
+	 * the handler runs again instead of waiting for an edge that never comes.
 	 */
 	if (i2c_reg_read_byte_dt(&cfg->i2c, TMP451_REG_STATUS, &status) < 0) {
 		LOG_ERR("Failed to read status register");
@@ -109,7 +109,7 @@ static void tmp451_handle_interrupt(const struct device *dev)
 		}
 	}
 
-	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_LEVEL_ACTIVE);
 }
 
 static void tmp451_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
@@ -198,7 +198,7 @@ int tmp451_init_interrupt(const struct device *dev)
 	data->work.handler = tmp451_work_cb;
 #endif
 
-	ret = gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_TO_ACTIVE);
+	ret = gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_LEVEL_ACTIVE);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure alert-gpios interrupt");
 	}
