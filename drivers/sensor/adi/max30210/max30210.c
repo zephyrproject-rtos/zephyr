@@ -701,11 +701,46 @@ static int max30210_sample_fetch(const struct device *dev, enum sensor_channel c
 {
 	struct max30210_data *data = dev->data;
 	uint8_t temp_data[2];
+	uint8_t convert;
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		LOG_ERR("Unsupported channel: %d", chan);
 		return -ENOTSUP;
+	}
+
+	ret = max30210_reg_read(dev, TEMP_CONVERT, &convert, 1);
+	if (ret < 0) {
+		LOG_ERR("Failed to read TEMP_CONVERT: %d", ret);
+		return ret;
+	}
+
+	if (!(convert & AUTO_MODE_MASK)) {
+		ret = max30210_reg_write(dev, TEMP_CONVERT, convert | CONVERT_T_MASK);
+		if (ret < 0) {
+			LOG_ERR("Failed to start conversion: %d", ret);
+			return ret;
+		}
+
+		/* CONVERT_T self-clears once the single-shot conversion completes */
+		for (int i = 0; i < MAX30210_CONVERSION_POLL_COUNT; i++) {
+			k_sleep(K_MSEC(MAX30210_CONVERSION_POLL_INTERVAL_MS));
+
+			ret = max30210_reg_read(dev, TEMP_CONVERT, &convert, 1);
+			if (ret < 0) {
+				LOG_ERR("Failed to read TEMP_CONVERT: %d", ret);
+				return ret;
+			}
+
+			if (!(convert & CONVERT_T_MASK)) {
+				break;
+			}
+		}
+
+		if (convert & CONVERT_T_MASK) {
+			LOG_ERR("Timed out waiting for conversion to complete");
+			return -ETIMEDOUT;
+		}
 	}
 
 	ret = max30210_reg_read(dev, TEMP_DATA_MSB, temp_data, 2);
