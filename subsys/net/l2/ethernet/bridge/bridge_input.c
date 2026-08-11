@@ -100,6 +100,10 @@ static int eth_bridge_forward(struct net_if *bridge, struct net_if *orig_iface, 
 static enum net_verdict eth_bridge_handle_locally(struct net_if *bridge, struct net_if *orig_iface,
 						  struct net_pkt *pkt)
 {
+	const struct net_l2 *l2 = net_if_l2(bridge);
+
+	NET_ASSERT(l2 != NULL);
+
 	net_pkt_set_iface(pkt, bridge);
 	net_pkt_set_orig_iface(pkt, orig_iface);
 
@@ -107,9 +111,9 @@ static enum net_verdict eth_bridge_handle_locally(struct net_if *bridge, struct 
 		pkt, net_if_get_by_iface(bridge),
 		net_if_get_by_iface(orig_iface));
 
-	NET_ASSERT(net_if_l2(bridge)->recv != NULL);
+	NET_ASSERT(l2->recv != NULL);
 
-	return net_if_l2(bridge)->recv(bridge, pkt);
+	return l2->recv(bridge, pkt);
 }
 
 static inline bool is_link_local_addr(struct net_eth_addr *addr)
@@ -132,9 +136,13 @@ enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	struct net_if *bridge = net_eth_get_bridge(ctx);
 	struct net_eth_addr *dst_addr = (struct net_eth_addr *)(net_pkt_lladdr_dst(pkt)->addr);
-	struct net_eth_addr *bridge_addr =
-		(struct net_eth_addr *)(net_if_get_link_addr(bridge)->addr);
+	struct net_linkaddr *bridge_lladdr = net_if_get_link_addr(bridge);
+	struct net_eth_addr *bridge_addr;
 	enum net_verdict verdict = NET_DROP;
+
+	NET_ASSERT(bridge_lladdr != NULL);
+
+	bridge_addr = (struct net_eth_addr *)bridge_lladdr->addr;
 
 	/* Lookup FDB table to forward */
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_FDB)
