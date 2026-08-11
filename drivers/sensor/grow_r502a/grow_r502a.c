@@ -1209,6 +1209,7 @@ static int grow_r502a_led_set_color(const struct device *dev, uint32_t led,
 static int grow_r502a_led_on(const struct device *dev, uint32_t led)
 {
 	struct grow_r502a_data *drv_data = dev->data;
+	int ret;
 
 	if (!drv_data->led_color) {
 		drv_data->led_color = R502A_LED_COLOR_BLUE;
@@ -1219,16 +1220,27 @@ static int grow_r502a_led_on(const struct device *dev, uint32_t led)
 		.color_idx = drv_data->led_color,
 	};
 
-	return fps_led_control(dev, &led_ctrl);
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+	ret = fps_led_control(dev, &led_ctrl);
+	k_mutex_unlock(&drv_data->lock);
+
+	return ret;
 }
 
 static int grow_r502a_led_off(const struct device *dev, uint32_t led)
 {
+	struct grow_r502a_data *drv_data = dev->data;
+	int ret;
+
 	struct r502a_led_params led_ctrl = {
 		.ctrl_code = R502A_LED_CTRL_OFF_ALWAYS,
 	};
 
-	return fps_led_control(dev, &led_ctrl);
+	k_mutex_lock(&drv_data->lock, K_FOREVER);
+	ret = fps_led_control(dev, &led_ctrl);
+	k_mutex_unlock(&drv_data->lock);
+
+	return ret;
 }
 
 static DEVICE_API(led, grow_r502a_leds_api) = {
