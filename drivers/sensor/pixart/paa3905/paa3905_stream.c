@@ -26,6 +26,7 @@ static inline void handle_result_on_error(const struct device *dev, int err)
 	struct paa3905_data *data = dev->data;
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
 
+	k_timer_stop(&data->stream.timer);
 	data->stream.iodev_sqe = NULL;
 	rtio_iodev_sqe_err(iodev_sqe, err);
 }
@@ -81,10 +82,6 @@ static void paa3905_complete_result(struct rtio *ctx,
 		edata->header.channels |= paa3905_encode_channel(SENSOR_CHAN_POS_DXYZ);
 	}
 
-	if (data->stream.settings.enabled.drdy) {
-		start_drdy_backup_timer(dev);
-	}
-
 	/* Flush RTIO bus CQEs */
 	do {
 		cqe = rtio_cqe_consume(ctx);
@@ -97,8 +94,12 @@ static void paa3905_complete_result(struct rtio *ctx,
 	} while (cqe != NULL);
 
 	if (err < 0) {
-		rtio_iodev_sqe_err(iodev_sqe, err);
+		handle_result_on_error(dev, err);
 		return;
+	}
+
+	if (data->stream.settings.enabled.drdy) {
+		start_drdy_backup_timer(dev);
 	}
 
 	/** Attempt chip recovery if erratic behavior is detected  */
