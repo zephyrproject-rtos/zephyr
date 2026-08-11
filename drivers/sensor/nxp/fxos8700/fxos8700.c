@@ -40,14 +40,15 @@ int fxos8700_read_spi(const struct device *dev,
 {
 	const struct fxos8700_config *cfg = dev->config;
 
-	/* Reads must clock out a dummy byte after sending the address. */
-	uint8_t reg_buf[3] = { DIR_READ(reg), ADDR_7(reg), 0 };
-	const struct spi_buf buf[2] = {
-		{ .buf = reg_buf, .len = 3 },
+	/* The address phase is 2 bytes; data starts on the 3rd byte. */
+	uint8_t reg_buf[2] = { DIR_READ(reg), ADDR_7(reg) };
+	const struct spi_buf tx_buf = { .buf = reg_buf, .len = 2 };
+	const struct spi_buf rx_buf[2] = {
+		{ .buf = NULL, .len = 2 },
 		{ .buf = data, .len = length }
 	};
-	const struct spi_buf_set tx = { .buffers = buf, .count = 1 };
-	const struct spi_buf_set rx = { .buffers = buf, .count = 2 };
+	const struct spi_buf_set tx = { .buffers = &tx_buf, .count = 1 };
+	const struct spi_buf_set rx = { .buffers = rx_buf, .count = 2 };
 
 	return spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx);
 }
