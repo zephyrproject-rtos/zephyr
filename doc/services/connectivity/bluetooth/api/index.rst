@@ -39,6 +39,7 @@ Bluetooth LE Host
    :maxdepth: 1
 
    services.rst
+   profiles.rst
    gap.rst
    gatt.rst
    att.rst

@@ -39,6 +39,11 @@ extern "C" {
  * Profile (HOGP) HID Device role. The GATT attribute table is built at
  * registration time from the reports declared by the application.
  *
+ * When the HOGP Device role is enabled (@kconfig{CONFIG_BT_HOGP_DEVICE}), use
+ * the profile API in <zephyr/bluetooth/hogp_device.h> instead of registering
+ * the service directly, so that the profile level requirements are applied as
+ * well.
+ *
  * Not supported yet: multiple HID Service instances (HOGP v1.1, Section 2.5),
  * the «Include» of external services whose characteristics are described in
  * the Report Map together with the External Report Reference descriptor

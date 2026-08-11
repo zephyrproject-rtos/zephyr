@@ -1,0 +1,11 @@
+# Bluetooth LE profiles
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Bluetooth LE Profiles"
+	depends on BT_CONN
+
+rsource "hogp/Kconfig"
+
+endmenu

@@ -839,6 +839,7 @@ endif # BT_SMP
 rsource "Kconfig.l2cap"
 rsource "Kconfig.gatt"
 rsource "../services/Kconfig"
+rsource "../profiles/Kconfig"
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"

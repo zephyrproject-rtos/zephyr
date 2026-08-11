@@ -588,6 +588,18 @@ endif # BT_HIDS
 
 endmenu # Services
 
+menu "Profiles"
+
+if BT_HOGP_DEVICE
+
+module = BT_HOGP_DEVICE
+module-str = HOGP Device
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_HOGP_DEVICE
+
+endmenu # Profiles
+
 endmenu # Bluetooth logging
 
 endif # BT_LOG
