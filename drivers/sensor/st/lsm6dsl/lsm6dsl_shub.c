@@ -471,7 +471,10 @@ int lsm6dsl_shub_read_external_chip(const struct device *dev, uint8_t *buf,
 {
 	struct lsm6dsl_data *data = dev->data;
 
-	data->hw_tf->read_data(dev, LSM6DSL_REG_SENSORHUB1, buf, len);
+	if (data->hw_tf->read_data(dev, LSM6DSL_REG_SENSORHUB1, buf, len) < 0) {
+		LOG_DBG("failed to read external chip data");
+		return -EIO;
+	}
 
 	return 0;
 }
