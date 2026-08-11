@@ -22,11 +22,13 @@ int bmi08x_prep_reg_read_rtio_async(const struct bmi08x_rtio_bus *bus,
 		rtio_sqe_drop_all(ctx);
 		return -ENOMEM;
 	}
-	reg |= BIT(7);
+	if (bus->type == BMI08X_RTIO_BUS_TYPE_SPI) {
+		reg |= BIT(7);
+	}
 	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 
-	if (dummy_byte) {
+	if (dummy_byte && bus->type == BMI08X_RTIO_BUS_TYPE_SPI) {
 		struct rtio_sqe *dummy_byte_sqe = rtio_sqe_acquire(ctx);
 
 		if (!dummy_byte_sqe) {
