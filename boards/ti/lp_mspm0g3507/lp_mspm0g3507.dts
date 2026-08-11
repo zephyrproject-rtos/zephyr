@@ -60,7 +60,12 @@
 
 &mclk {
 	clock-frequency = <DT_FREQ_M(80)>;
+	clocks = <&hsclk>;
+};
+
+&hsclk {
 	clocks = <&syspll>;
+	status = "okay";
 };
 
 &canclk {
