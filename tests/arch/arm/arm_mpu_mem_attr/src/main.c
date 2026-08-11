@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
+#include <zephyr/devicetree.h>
 #include <zephyr/ztest.h>
 
 #define TEST_REGION DT_NODELABEL(test_mpu_region)

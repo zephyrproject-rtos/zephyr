@@ -110,14 +110,57 @@ static int region_allocate_and_init(const uint8_t index,
 						    (reg).dt_size,	\
 						    _ATTR)
 #ifdef CONFIG_MEM_ATTR
-#define DT_MEM_POLICY_RW		(DT_MEM_READABLE | DT_MEM_WRITABLE | DT_MEM_CACHEABLE)
-#define DT_MEM_POLICY_RO		(DT_MEM_READABLE | DT_MEM_CACHEABLE)
-#define DT_MEM_POLICY_RX		(DT_MEM_READABLE | DT_MEM_EXECUTABLE | DT_MEM_CACHEABLE)
-#define DT_MEM_POLICY_RWX                                                                    \
-	(DT_MEM_READABLE | DT_MEM_WRITABLE | DT_MEM_EXECUTABLE | DT_MEM_CACHEABLE)
-#define DT_MEM_POLICY_IPC                                                                    \
-	(DT_MEM_READABLE | DT_MEM_WRITABLE | DT_MEM_NON_CACHEABLE | DT_MEM_SHAREABLE |        \
-	 DT_MEM_USERSPACE)
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+static int mpu_region_from_generic_policy(const struct mem_attr_region_t *region,
+					  struct arm_mpu_region *region_conf)
+{
+	uint32_t policy = DT_MEM_ATTR_GET(region->dt_attr);
+	bool readable = (policy & DT_MEM_READABLE) != 0U;
+	bool writable = (policy & DT_MEM_WRITABLE) != 0U;
+	bool executable = (policy & DT_MEM_EXECUTABLE) != 0U;
+	bool cacheable = (policy & DT_MEM_CACHEABLE) != 0U;
+	bool non_cacheable = (policy & DT_MEM_NON_CACHEABLE) != 0U;
+	bool shareable = (policy & DT_MEM_SHAREABLE) != 0U;
+	bool userspace = (policy & DT_MEM_USERSPACE) != 0U;
+	uint32_t access;
+
+	if (!readable || (cacheable == non_cacheable)) {
+		LOG_ERR("Invalid MPU attributes 0x%x for %s", policy, region->dt_name);
+		return -EINVAL;
+	}
+
+	if (writable) {
+		access = userspace ? P_RW_U_RW_Msk : P_RW_U_NA_Msk;
+	} else {
+		access = userspace ? P_RO_U_RO_Msk : P_RO_U_NA_Msk;
+	}
+
+	region_conf->name = region->dt_name;
+	region_conf->base = region->dt_addr;
+
+#if defined(CONFIG_ARMV7_R)
+	uint32_t memory_attr;
+
+	if (cacheable) {
+		memory_attr = shareable ?
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_SHAREABLE :
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE;
+	} else {
+		memory_attr = shareable ? NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE :
+			NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE;
+	}
+	region_conf->attr.rasr = memory_attr | access | (executable ? 0U : NOT_EXEC);
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+	region_conf->attr.rbar = access | (shareable ? OUTER_SHAREABLE_Msk : NON_SHAREABLE_Msk) |
+		(executable ? 0U : NOT_EXEC);
+	region_conf->attr.mair_idx = cacheable ? MPU_MAIR_INDEX_SRAM :
+		MPU_MAIR_INDEX_SRAM_NOCACHE;
+	region_conf->attr.r_limit = region->dt_addr + region->dt_size - 1U;
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
 
 static int mpu_configure_dt_region(uint8_t *reg_index,
 				   const struct mem_attr_region_t *region,
@@ -139,7 +182,8 @@ static int mpu_configure_dt_region(uint8_t *reg_index,
 		return -EINVAL;
 	}
 
-	for (uint8_t index = 0; index < *reg_index; index++) {
+	/* ARMv8-R PMSA regions must not overlap, including static regions. */
+	for (uint8_t index = 0U; index < *reg_index; index++) {
 		uint32_t existing_base;
 		uint32_t existing_limit;
 
@@ -180,36 +224,12 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 	for (size_t idx = 0; idx < num_regions; idx++) {
 		struct arm_mpu_region region_conf;
-		uint32_t generic_attr = DT_MEM_ATTR_GET(region[idx].dt_attr);
-		uint32_t policy = generic_attr & (DT_MEM_PERM_MASK | DT_MEM_CACHEABLE |
-			DT_MEM_NON_CACHEABLE | DT_MEM_SHAREABLE | DT_MEM_USERSPACE);
 
 #if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+		uint32_t policy = DT_MEM_ATTR_GET(region[idx].dt_attr);
+
 		if (policy & DT_MEM_PERM_MASK) {
-			switch (policy) {
-			case DT_MEM_POLICY_RW:
-				region_conf = _BUILD_REGION_CONF(region[idx],
-								 REGION_RAM_PRIV_RW_ATTR);
-				break;
-			case DT_MEM_POLICY_RO:
-				region_conf = _BUILD_REGION_CONF(region[idx],
-								 REGION_RAM_PRIV_RO_ATTR);
-				break;
-			case DT_MEM_POLICY_RX:
-				region_conf = _BUILD_REGION_CONF(region[idx],
-								 REGION_RAM_PRIV_TEXT_ATTR);
-				break;
-			case DT_MEM_POLICY_RWX:
-				region_conf = _BUILD_REGION_CONF(region[idx],
-								 REGION_RAM_PRIV_RWX_ATTR);
-				break;
-			case DT_MEM_POLICY_IPC:
-				region_conf = _BUILD_REGION_CONF(region[idx],
-								 REGION_SHARED_MEM_USERSPACE_ATTR);
-				break;
-			default:
-				LOG_ERR("Unsupported MPU attributes 0x%x for %s",
-					generic_attr, region[idx].dt_name);
+			if (mpu_region_from_generic_policy(&region[idx], &region_conf) < 0) {
 				return -EINVAL;
 			}
 
