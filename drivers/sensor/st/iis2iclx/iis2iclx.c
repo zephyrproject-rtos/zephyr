@@ -22,8 +22,7 @@
 
 LOG_MODULE_REGISTER(IIS2ICLX, CONFIG_SENSOR_LOG_LEVEL);
 
-static const uint16_t iis2iclx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833,
-					1660, 3330, 6660};
+static const uint16_t iis2iclx_odr_map[] = {0, 12, 26, 52, 104, 208, 416, 833};
 
 static int iis2iclx_freq_to_odr_val(uint16_t freq)
 {
