@@ -642,6 +642,18 @@ static void isr_rx(void *param)
 			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+			/* Discard the received PDU, whether unencrypted or the
+			 * decrypted, with length that exceeds the configured
+			 * maximum receive data length used to setup the radio
+			 * packet reception.
+			 */
+			if (pdu_rx->len > cis_lll->rx.max_pdu) {
+				radio_isr_set(isr_done, param);
+				radio_disable();
+
+				return;
+			}
+
 			/* Enqueue Rx ISO PDU */
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = cis_lll->handle;
