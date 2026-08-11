@@ -603,8 +603,12 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 	struct icm42x70_data *data = dev->data;
 	int status = 0;
 	uint8_t int_status;
-	uint16_t packet_size = FIFO_HEADER_SIZE + FIFO_ACCEL_DATA_SIZE + FIFO_GYRO_DATA_SIZE +
-			       FIFO_TEMP_DATA_SIZE + FIFO_TS_FSYNC_SIZE;
+	uint16_t packet_size =
+		data->driver.fifo_highres_enabled
+			? FIFO_20BYTES_PACKET_SIZE
+			: (FIFO_HEADER_SIZE + FIFO_ACCEL_DATA_SIZE +
+			   (IS_ENABLED(CONFIG_USE_EMD_ICM42670) ? FIFO_GYRO_DATA_SIZE : 0) +
+			   FIFO_TEMP_DATA_SIZE + FIFO_TS_FSYNC_SIZE);
 	uint16_t fifo_idx = 0;
 
 	/* Ensure data ready status bit is set */
@@ -648,10 +652,28 @@ static int icm42x70_fetch_from_fifo(const struct device *dev)
 
 		for (uint16_t i = 0; i < packet_count; i++) {
 			inv_imu_sensor_event_t event;
+			uint8_t header = data->driver.fifo_data[fifo_idx];
+			uint16_t frame_size = packet_size;
+
+			if (!(header & (FIFO_HEADER_MSG | FIFO_HEADER_HEADER_20))) {
+				frame_size = FIFO_HEADER_SIZE + FIFO_TEMP_DATA_SIZE;
+				if (header & FIFO_HEADER_ACC) {
+					frame_size += FIFO_ACCEL_DATA_SIZE;
+				}
+				if (IS_ENABLED(CONFIG_USE_EMD_ICM42670) &&
+				    (header & FIFO_HEADER_GYRO)) {
+					frame_size += FIFO_GYRO_DATA_SIZE;
+				}
+				if ((header & FIFO_HEADER_TMST) ||
+				    (IS_ENABLED(CONFIG_USE_EMD_ICM42670) &&
+				     (header & FIFO_HEADER_FSYNC))) {
+					frame_size += FIFO_TS_FSYNC_SIZE;
+				}
+			}
 
 			status |= inv_imu_decode_fifo_frame(
 				&data->driver, &data->driver.fifo_data[fifo_idx], &event);
-			fifo_idx += packet_size;
+			fifo_idx += frame_size;
 
 			/* Check for error */
 			if (status != 0) {
