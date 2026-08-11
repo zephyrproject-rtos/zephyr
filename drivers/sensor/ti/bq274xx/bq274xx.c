@@ -788,7 +788,11 @@ static int bq274xx_enter_shutdown_mode(const struct device *dev)
 static int bq274xx_exit_shutdown_mode(const struct device *dev)
 {
 	const struct bq274xx_config *const config = dev->config;
+	struct bq274xx_data *data = dev->data;
 	int ret;
+
+	/* Leaving shutdown mode triggers a POR, the gauge configuration is lost */
+	data->configured = false;
 
 	ret = gpio_pin_configure_dt(&config->int_gpios, GPIO_OUTPUT | GPIO_OPEN_DRAIN);
 	if (ret < 0) {
