@@ -276,6 +276,17 @@ struct lora_modem_config {
 	/** Set to true to disable the 16-bit payload CRC */
 	bool packet_crc_disable;
 
+	/** Set to true to disable the explicit lora header */
+	bool explicit_header_disable;
+
+	/**
+	 * Fixed packet length when explicit lora header is disabled.
+	 * Make sure that @a data_len from @ref lora_send and @ref lora_send_asnyc
+	 * matches this setting. Otherwise @c -EINVAL is returned.
+	 * Ignored when @c explicit_header_disable is false.
+	 */
+	uint8_t implicit_packet_length;
+
 	/** Channel Activity Detection parameters. */
 	struct {
 		/** CAD mode. See @ref lora_cad_mode for details. */
