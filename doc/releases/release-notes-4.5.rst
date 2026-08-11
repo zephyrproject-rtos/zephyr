@@ -434,6 +434,9 @@ Libraries / Subsystems
   * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
     found `here <https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.htm>`_.
 
+  * TF-M can now be compiled using LLVM by setting ``ZEPHYR_TOOLCHAIN_VARIANT``
+    to ``zephyr/llvm``.
+
 * DFU
 
   * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
