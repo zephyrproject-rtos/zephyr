@@ -140,8 +140,7 @@ static inline int lsm9ds0_mfd_magn_set_odr_raw(const struct device *dev,
 static const struct {
 	int freq_int;
 	int freq_micro;
-} lsm9ds0_mfd_magn_odr_map[] = { {0, 0},
-				 {3, 125000},
+} lsm9ds0_mfd_magn_odr_map[] = { {3, 125000},
 				 {6, 250000},
 				 {12, 500000},
 				 {25, 0},
