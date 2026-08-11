@@ -279,7 +279,8 @@ static inline int tmag5273_attr_set_xyz_meas_range(const struct device *dev,
 	uint8_t regdata;
 	uint16_t range;
 
-	if (val->val1 >= range_high) {
+	/* the attribute is expressed in G, while the range constants are in mT */
+	if (val->val1 >= (int32_t)range_high * CONV_FACTOR_MT_TO_GS) {
 		regdata = TMAG5273_XYZ_MEAS_RANGE_HIGH;
 		range = range_high;
 	} else {
@@ -322,9 +323,9 @@ static inline int tmag5273_attr_get_xyz_meas_range(const struct device *dev,
 	}
 
 	if ((regdata & TMAG5273_MEAS_RANGE_XYZ_MSK) == TMAG5273_XYZ_MEAS_RANGE_HIGH) {
-		val->val1 = tmag5273_range_high(drv_data->version);
+		val->val1 = (int32_t)tmag5273_range_high(drv_data->version) * CONV_FACTOR_MT_TO_GS;
 	} else {
-		val->val1 = tmag5273_range_low(drv_data->version);
+		val->val1 = (int32_t)tmag5273_range_low(drv_data->version) * CONV_FACTOR_MT_TO_GS;
 	}
 
 	val->val2 = 0;

@@ -16,6 +16,10 @@
  * @brief Texas Instruments TMAG5273 Low-Power Linear 3D Hall-Effect Sensor
  * @defgroup tmag5273_interface TMAG5273
  * @ingroup sensor_interface_ext_ti
+ *
+ * @c SENSOR_ATTR_FULL_SCALE on @c SENSOR_CHAN_MAGN_XYZ is expressed in G, like the magnetometer
+ * channels themselves, e.g. 400 G or 800 G on a TMAG5273A1.
+ *
  * @{
  */
 
