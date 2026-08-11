@@ -26,7 +26,7 @@ int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 	}
 	databuf &= ~BIT_ACCEL_FSR;
 
-	databuf |= a_sf;
+	databuf |= (a_sf << SHIFT_ACCEL_FS_SEL) & BIT_ACCEL_FSR;
 
 	result = inv_spi_single_write(&cfg->spi, REG_ACCEL_CONFIG0, &databuf);
 
@@ -37,7 +37,7 @@ int icm42605_set_fs(const struct device *dev, uint16_t a_sf, uint16_t g_sf)
 	}
 
 	databuf &= ~BIT_GYRO_FSR;
-	databuf |= g_sf;
+	databuf |= (g_sf << SHIFT_GYRO_FS_SEL) & BIT_GYRO_FSR;
 
 	result = inv_spi_single_write(&cfg->spi, REG_GYRO_CONFIG0, &databuf);
 
