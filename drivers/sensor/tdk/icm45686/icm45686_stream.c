@@ -246,6 +246,8 @@ static void icm45686_event_handler(const struct device *dev)
 	}
 	read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 
+	read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+
 	if (atomic_cas(&data->stream.state, ICM45686_STREAM_ON, ICM45686_STREAM_BUSY) == false) {
 		/*
 		 * A data-ready edge arrived while the previous readout was still
