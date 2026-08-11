@@ -280,7 +280,7 @@ static int lsm6dso16is_gyro_config(const struct device *dev,
 			return -EIO;
 		}
 
-		return lsm6dso16is_xl_hm_mode_set(ctx, mode);
+		return lsm6dso16is_gy_hm_mode_set(ctx, mode);
 	default:
 		LOG_DBG("Gyro attribute not supported.");
 		return -ENOTSUP;
