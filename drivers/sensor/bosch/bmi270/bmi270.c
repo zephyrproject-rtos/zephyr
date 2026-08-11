@@ -457,6 +457,9 @@ static int8_t write_config_file(const struct device *dev)
 	/* Disable loading of the configuration */
 	for (index = 0; index < cfg->feature->config_file_len;
 	     index += BMI270_WR_LEN) {
+		uint16_t len = MIN((size_t)BMI270_WR_LEN,
+				   cfg->feature->config_file_len - index);
+
 		/* Store 0 to 3 bits of address in first byte */
 		addr_array[0] = (uint8_t)((index / 2) & 0x0F);
 
@@ -471,7 +474,7 @@ static int8_t write_config_file(const struct device *dev)
 			ret = bmi270_reg_write_with_delay(dev,
 						BMI270_REG_INIT_DATA,
 						&cfg->feature->config_file[index],
-						BMI270_WR_LEN,
+						len,
 						BMI270_INTER_WRITE_DELAY_US);
 		}
 	}
