@@ -221,7 +221,8 @@ int i2c_stm32_recover_bus(const struct device *dev)
 		.set_sda = i2c_stm32_bitbang_set_sda,
 		.get_sda = i2c_stm32_bitbang_get_sda,
 	};
-	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	uint32_t device_config = data->dev_config;
+	uint32_t bb_config;
 	int error = 0;
 
 	LOG_ERR("attempting to recover bus");
@@ -259,7 +260,13 @@ int i2c_stm32_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
+	if (I2C_SPEED_GET(device_config) == I2C_SPEED_DT) {
+		bb_config = i2c_map_dt_bitrate(cfg->bitrate) | I2C_MODE_CONTROLLER;
+	} else {
+		bb_config = device_config;
+	}
+
+	error = i2c_bitbang_configure(&bitbang_ctx, bb_config);
 	if (error != 0) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
 		goto restore;
@@ -278,7 +285,7 @@ restore:
 	 * peripheral registers remain in a faulted state. Re-running
 	 * runtime_configure() restores the peripheral to a working state.
 	 */
-	if (i2c_stm32_runtime_configure(dev, bitrate_cfg) != 0) {
+	if (i2c_stm32_runtime_configure(dev, device_config) != 0) {
 		LOG_ERR("failed to restore I2C peripheral after bus recovery");
 	}
 
