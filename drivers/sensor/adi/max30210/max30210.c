@@ -133,21 +133,6 @@ static int max30210_attr_set_continuous_conversion_mode(const struct device *dev
 }
 
 /**
- * @brief Validate whole part for MAX30210 temperature thresholds
- *
- * @param val Sensor Value Pointer
- * @return int 0 on success, negative error code on failure
- */
-static int max30210_validate_whole_part(const struct sensor_value *val)
-{
-	if (val->val1 < 0 || val->val1 > MAX30210_TEMP_MAX_C) {
-		LOG_ERR("Invalid whole part for THRESH\n");
-		return -EINVAL;
-	}
-	return 0;
-}
-
-/**
  * @brief Validate fractional parts for MAX30210 temperature thresholds
  *
  * @param val Sensor Value Pointer
@@ -164,6 +149,39 @@ static int max30210_validate_fractional_parts(const struct sensor_value *val)
 }
 
 /**
+ * @brief Validate a MAX30210 temperature threshold and convert it to register counts
+ *
+ * @param val Sensor Value Pointer
+ * @param counts Pointer to store the threshold in register counts
+ * @return int 0 on success, negative error code on failure
+ */
+static int max30210_validate_threshold(const struct sensor_value *val, int16_t *counts)
+{
+	int64_t thresh;
+
+	if (val->val2 <= -MAX30210_TEMP_FRAC_MAX_UC || val->val2 >= MAX30210_TEMP_FRAC_MAX_UC ||
+	    val->val2 % MAX30210_TEMP_FRAC_STEP_UC != 0) {
+		LOG_ERR("Invalid fractional part for THRESH\n");
+		return -EINVAL;
+	}
+
+	if ((val->val1 > 0 && val->val2 < 0) || (val->val1 < 0 && val->val2 > 0)) {
+		LOG_ERR("Mismatched signs for THRESH\n");
+		return -EINVAL;
+	}
+
+	thresh = (int64_t)val->val1 * MAX30210_TEMP_COUNTS_PER_C +
+		 ((int64_t)val->val2 * MAX30210_TEMP_COUNTS_PER_C) / MAX30210_TEMP_FRAC_MAX_UC;
+	if (thresh < INT16_MIN || thresh > INT16_MAX) {
+		LOG_ERR("THRESH out of range\n");
+		return -EINVAL;
+	}
+
+	*counts = (int16_t)thresh;
+	return 0;
+}
+
+/**
  * @brief Set Temperature Threshold for MAX30210
  *
  * @param dev Device Pointer
@@ -176,32 +194,21 @@ static int max30210_attr_set_threshold(const struct device *dev, const struct se
 {
 	int ret;
 	struct max30210_data *temp_data = dev->data;
-	uint16_t whole_numbers_data;
-	uint16_t fractional_data;
-
-	ret = max30210_validate_whole_part(val);
-	if (ret < 0) {
-		LOG_ERR("Failed to validate whole part for THRESH: %d\n", ret);
-		return ret;
-	}
-
-	ret = max30210_validate_fractional_parts(val);
-	if (ret < 0) {
-		LOG_ERR("Failed to validate fractional part for THRESH: %d\n", ret);
-		return ret;
-	}
-
-	whole_numbers_data = (val->val1) * MAX30210_TEMP_COUNTS_PER_C;
-	fractional_data = (val->val2 * MAX30210_TEMP_COUNTS_PER_C) / MAX30210_TEMP_FRAC_MAX_UC;
-	uint16_t thresh = whole_numbers_data + fractional_data;
+	int16_t thresh;
 	uint8_t thresh_data[2];
 
-	sys_put_be16(thresh, thresh_data);
+	ret = max30210_validate_threshold(val, &thresh);
+	if (ret < 0) {
+		LOG_ERR("Failed to validate THRESH: %d\n", ret);
+		return ret;
+	}
+
+	sys_put_be16((uint16_t)thresh, thresh_data);
 	if (upper) {
-		temp_data->temp_alarm_high_setup = thresh;
+		temp_data->temp_alarm_high_setup = (uint16_t)thresh;
 		ret = max30210_reg_write_multiple(dev, TEMP_ALARM_HIGH_MSB, thresh_data, 2);
 	} else {
-		temp_data->temp_alarm_low_setup = thresh;
+		temp_data->temp_alarm_low_setup = (uint16_t)thresh;
 		ret = max30210_reg_write_multiple(dev, TEMP_ALARM_LOW_MSB, thresh_data, 2);
 	}
 	if (ret < 0) {
