@@ -13,3 +13,8 @@ zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_SILABS_BURAM retained_mem_silab
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_ZEPHYR_RAM retained_mem_zephyr_ram.c)
 zephyr_library_sources_ifdef(CONFIG_RETAINED_MEM_ZEPHYR_REG retained_mem_zephyr_reg.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_RETAINED_MEM_RV3028)
+  zephyr_library_sources(retained_mem_rv3028.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
+endif()
