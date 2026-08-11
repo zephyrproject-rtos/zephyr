@@ -317,18 +317,21 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	}
 
 	/* If port 0 was requested, bind() selected an ephemeral local port.
-	 * Store the actual socket name so later dispatcher registrations do
-	 * not treat distinct resolver sockets as duplicate port-0 sockets.
+	 * Record it so that this dispatcher can be told apart from other
+	 * registrations.
 	 */
 	if (net_sin(net_sad(&ctx->local_addr_storage))->sin_port == 0) {
 		net_socklen_t socklen = addrlen;
 
-		ret = zsock_getsockname(ctx->sock, net_sad(&ctx->local_addr_storage), &socklen);
-		if (ret < 0) {
-			ret = -errno;
-			NET_DBG("Cannot get DNS socket %d name (%d)", ctx->sock,
-				ret);
-			goto out;
+		/* The local port is only used to match dispatcher
+		 * registrations, so continue with an unknown port if the
+		 * socket implementation cannot report it.
+		 */
+		if (zsock_getsockname(ctx->sock, net_sad(&ctx->local_addr_storage),
+				      &socklen) < 0) {
+			NET_DBG("Cannot get DNS socket %d name (%d), local port unknown",
+				ctx->sock, -errno);
+			net_sin(net_sad(&ctx->local_addr_storage))->sin_port = 0;
 		}
 	}
 
