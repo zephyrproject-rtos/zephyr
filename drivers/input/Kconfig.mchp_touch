@@ -1,0 +1,62 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Microchip Capacitive Touch Driver"
+
+config INPUT_MCHP_TOUCH
+	bool "This option is used to activate the Microchip Capacitive Touch Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_PTC_CONTROLLER_ENABLED
+	depends on INPUT
+	help
+	  Activate driver for capacitive touch peripheral.
+
+if INPUT_MCHP_TOUCH
+
+config INPUT_MCHP_TOUCH_THREAD_STACK_SIZE
+	int "This option is used to configure the thread stack for this device driver"
+	default 310
+	help
+	  This defines the stack size for the PTC peripheral thread
+	  it requires at least 310 bytes.
+
+config INPUT_MCHP_TOUCH_THREAD_PRIORITY
+	int "This option is used to configure the thread priority for this device driver"
+	default 7
+	help
+	  Thread priority for ptc peripheral
+
+config INPUT_MCHP_TOUCH_EN_BTTN_MODULE
+	bool "This option is used to activate the Touch Button Module"
+	default y
+	help
+	  Activate to Button module
+
+config INPUT_MCHP_TOUCH_EN_FREQ_HOP
+	bool "This option is used to activate the Touch Frequency Hop Module"
+	default y
+	help
+	  Activate Frequency Hop Module
+
+config INPUT_MCHP_TOUCH_EN_FREQ_AUTO_TUNE
+	bool "This option is used to activate the Freqency Hop Autotune Module"
+	default y
+	depends on INPUT_MCHP_TOUCH_EN_FREQ_HOP
+	help
+	  Activate Frequency Hop Autotune module
+
+config INPUT_MCHP_TOUCH_EN_SCROLLER
+	bool "This option is used to activate the Scroller Module"
+	depends on DT_HAS_MICROCHIP_PTC_SCROLLER_ENABLED
+	help
+	  Activate Scroller Module
+
+config INPUT_MCHP_TOUCH_DATASTREAMER_UNI_DIR
+	bool "This option is used to activate the Touch Datastreamer - Uni Direction"
+	default y
+	help
+	  Activate to visualize the touch data variables in MPLab Datavisualizer
+
+endif # INPUT_MCHP_TOUCH
+
+endmenu
