@@ -111,7 +111,7 @@
 #define ICM566XX_DT_GYRO_ODR_100	9  /**< 100 Hz (LN or LP mode) */
 #define ICM566XX_DT_GYRO_ODR_50		10 /**< 50 Hz (LN or LP mode) */
 #define ICM566XX_DT_GYRO_ODR_25		11 /**< 25 Hz (LN or LP mode) */
-#define ICM566XX_DT_GYRO_ODR_12_5	1  /**< 12.5 Hz (LN or LP mode) */
+#define ICM566XX_DT_GYRO_ODR_12_5	12 /**< 12.5 Hz (LN or LP mode) */
 #define ICM566XX_DT_GYRO_ODR_6_25	13 /**< 6.25 Hz (LP mode only) */
 #define ICM566XX_DT_GYRO_ODR_3_125	14 /**< 3.125 Hz (LP mode only) */
 #define ICM566XX_DT_GYRO_ODR_1_5625	15 /**< 1.5625 Hz (LP mode only) */

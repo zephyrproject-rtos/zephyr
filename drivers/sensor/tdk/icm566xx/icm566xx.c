@@ -645,13 +645,13 @@ static int icm566xx_init(const struct device *dev)
 }
 
 #define ICM566XX_VALID_ACCEL_ODR(pwr_mode, odr)                                                    \
-	((pwr_mode == ICM566XX_DT_ACCEL_LP && odr > ICM566XX_DT_ACCEL_ODR_400) ||                 \
-	 (pwr_mode == ICM566XX_DT_ACCEL_LN && odr < ICM566XX_DT_ACCEL_ODR_12_5) ||                \
+	((pwr_mode == ICM566XX_DT_ACCEL_LP && odr >= ICM566XX_DT_ACCEL_ODR_400) ||                \
+	 (pwr_mode == ICM566XX_DT_ACCEL_LN && odr <= ICM566XX_DT_ACCEL_ODR_12_5) ||               \
 	 (pwr_mode == ICM566XX_DT_ACCEL_OFF))
 
 #define ICM566XX_VALID_GYRO_ODR(pwr_mode, odr)                                                     \
-	((pwr_mode == ICM566XX_DT_GYRO_LP && odr > ICM566XX_DT_GYRO_ODR_400) ||                   \
-	 (pwr_mode == ICM566XX_DT_GYRO_LN && odr < ICM566XX_DT_GYRO_ODR_12_5) ||                  \
+	((pwr_mode == ICM566XX_DT_GYRO_LP && odr >= ICM566XX_DT_GYRO_ODR_400) ||                  \
+	 (pwr_mode == ICM566XX_DT_GYRO_LN && odr <= ICM566XX_DT_GYRO_ODR_12_5) ||                 \
 	 (pwr_mode == ICM566XX_DT_GYRO_OFF))
 
 #define ICM566XX_INIT(inst)                                                                        \
