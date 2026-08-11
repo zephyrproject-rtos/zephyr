@@ -1,0 +1,20 @@
+common:
+  tags:
+    - test_framework
+    - benchmark
+  # The framework's timed control benchmark spins until a deadline
+  # expires, and on a simulated target time does not advance while the
+  # CPU is busy, so it never returns. tests/benchmarks/memory_allocators
+  # excludes posix for the same reason.
+  arch_exclude:
+    - posix
+tests:
+  testing.ztest.benchmark_manual:
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+  testing.ztest.benchmark_manual.csv:
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    integration_platforms:
+      - qemu_x86
