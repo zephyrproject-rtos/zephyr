@@ -224,6 +224,13 @@ struct bosch_bmi323_data {
 	uint32_t acc_full_scale;
 	uint32_t gyro_full_scale;
 
+	uint16_t saved_acc_conf;
+	uint16_t saved_gyro_conf;
+	uint16_t saved_int_map1;
+	uint16_t saved_int_map2;
+	uint16_t saved_feature_io0;
+	bool pm_state_saved;
+
 	struct gpio_callback gpio_callback;
 	const struct sensor_trigger *trigger;
 	sensor_trigger_handler_t trigger_handler;
