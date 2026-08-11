@@ -237,7 +237,7 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 		int_en = 0;
 	}
 
-	if (sys_count_bits(&int_mask, sizeof(int_mask)) > 1) {
+	if (handler && sys_count_bits(&int_mask, sizeof(int_mask)) > 1) {
 		int_en = 0x3;
 	}
 
