@@ -146,7 +146,7 @@ int max30210_trigger_set(const struct device *dev, const struct sensor_trigger *
 		max30210_reg_read(dev, TEMP_ALARM_HIGH_MSB, temp_hi_setup, 2);
 		data->temp_alarm_high_setup = (temp_hi_setup[0] << 8) | temp_hi_setup[1];
 
-		if (data->temp_alarm_high_setup >= 0x7FFF) {
+		if ((int16_t)data->temp_alarm_high_setup == INT16_MAX) {
 			LOG_ERR("Temperature high threshold not set\n");
 		}
 
