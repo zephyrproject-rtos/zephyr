@@ -61,6 +61,11 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 #define RTC_MSPM0_IMASK_RTCRDY			BIT(0)
 #define RTC_MSPM0_STA_RTCTCRDY_MASK		BIT(1)
 
+#define RTC_MSPM0_CAL_MAX_VALUE			240
+#define RTC_MSPM0_CAL_PPB_PER_PPM		1000
+#define RTC_MSPM0_CAL_UP_ENABLE			BIT(15)
+#define RTC_MSPM0_CAL_MASK			BIT_MASK(8)
+
 typedef struct {
 	volatile uint32_t a_min;	/* RTC Alarm Minutes	*/
 	volatile uint32_t a_hour;	/* RTC Alarm Hours	*/
@@ -498,6 +503,49 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 }
 #endif
 
+#if defined(CONFIG_RTC_CALIBRATION)
+static int rtc_ti_mspm0_set_calibration(const struct device *dev, int32_t calibration)
+{
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
+	struct rtc_ti_mspm0_data *data = dev->data;
+	int32_t cal_ppm = calibration / RTC_MSPM0_CAL_PPB_PER_PPM;
+
+	if (cal_ppm > RTC_MSPM0_CAL_MAX_VALUE || cal_ppm < -RTC_MSPM0_CAL_MAX_VALUE) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&data->lock) {
+		if (cal_ppm > 0) {
+			cfg->regs->cal = RTC_MSPM0_CAL_UP_ENABLE | (cal_ppm & RTC_MSPM0_CAL_MASK);
+		} else {
+			cfg->regs->cal = ((-cal_ppm) & RTC_MSPM0_CAL_MASK);
+		}
+	}
+	return 0;
+}
+
+static int rtc_ti_mspm0_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
+	struct rtc_ti_mspm0_data *data = dev->data;
+	uint32_t cal_reg;
+	int32_t cal_ppm;
+
+	K_SPINLOCK(&data->lock) {
+		cal_reg = cfg->regs->cal;
+	}
+
+	cal_ppm = cal_reg & RTC_MSPM0_CAL_MASK;
+	if (!(cal_reg & RTC_MSPM0_CAL_UP_ENABLE)) {
+		cal_ppm = -cal_ppm;
+	}
+
+	*calibration = cal_ppm * RTC_MSPM0_CAL_PPB_PER_PPM;
+
+	return 0;
+}
+#endif
+
 static int rtc_ti_mspm0_init(const struct device *dev)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
@@ -534,6 +582,10 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 #endif /* CONFIG_RTC_ALARM */
 #if defined(CONFIG_RTC_UPDATE)
 	.update_set_callback = rtc_ti_mspm0_update_set_callback,
+#endif
+#if defined(CONFIG_RTC_CALIBRATION)
+	.set_calibration = rtc_ti_mspm0_set_calibration,
+	.get_calibration = rtc_ti_mspm0_get_calibration,
 #endif
 };
 
