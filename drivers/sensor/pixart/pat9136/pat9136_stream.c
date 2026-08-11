@@ -332,7 +332,7 @@ void pat9136_stream_submit(const struct device *dev,
 	struct pat9136_stream stream = {0};
 
 	for (size_t i = 0 ; i < read_config->count ; i++) {
-		switch (read_config->channels[i].chan_type) {
+		switch (read_config->triggers[i].trigger) {
 		case SENSOR_TRIG_DATA_READY:
 			stream.settings.enabled.drdy = true;
 			stream.settings.opt.drdy = read_config->triggers[i].opt;
