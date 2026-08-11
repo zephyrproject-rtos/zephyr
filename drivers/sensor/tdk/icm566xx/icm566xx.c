@@ -127,7 +127,7 @@ void icm566xx_gyro_rads(uint8_t fs, int32_t in, bool high_res, int32_t *out_rads
 		CODE_UNREACHABLE;
 	}
 
-	total_urads = ((int64_t)in * SENSOR_PI * 10000LL) / (sensitivity * 180LL);
+	total_urads = ((int64_t)in * SENSOR_PI * 1000LL) / (sensitivity * 180LL);
 	*out_rads = (int32_t)(total_urads / 1000000LL);
 	*out_urads = (int32_t)(total_urads % 1000000LL);
 }
