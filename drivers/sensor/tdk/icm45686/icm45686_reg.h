@@ -67,7 +67,11 @@
 #define REG_FIFO_CONFIG3_FIFO_EN(val)       ((val) & BIT_MASK(1))
 
 /* Misc. Defines */
-#define WHO_AM_I_ICM45686 0xE9
+#define WHO_AM_I_ICM45605  0xE5
+#define WHO_AM_I_ICM45605S 0xEB
+#define WHO_AM_I_ICM45686  0xE9
+#define WHO_AM_I_ICM45686S 0xEE
+#define WHO_AM_I_ICM45688P 0xE7
 
 #define REG_IREG_PREPARE_WRITE_ARRAY(base, reg, val)                                               \
 	{                                                                                          \

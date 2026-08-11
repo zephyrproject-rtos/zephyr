@@ -176,6 +176,7 @@ struct icm45686_config {
 	} settings;
 	struct gpio_dt_spec int_gpio;
 	uint8_t apex;
+	uint8_t whoami;
 };
 
 static inline void icm45686_accel_ms(uint8_t fs, int32_t in, bool high_res, int32_t *out_ms,
