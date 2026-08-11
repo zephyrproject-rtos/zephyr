@@ -9,8 +9,8 @@
  * Zephyr OS layer of the Wi-Fi driver.
  */
 
-#ifndef __QSPI_IF_H__
-#define __QSPI_IF_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_QSPI_IF_H_
+#define ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_QSPI_IF_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
@@ -133,4 +133,4 @@ int func_rpu_sleep_status(void);
  */
 int qspi_enable_encryption(uint8_t *key);
 
-#endif /* __QSPI_IF_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_WIFI_NRF_WIFI_BUS_QSPI_IF_H_ */

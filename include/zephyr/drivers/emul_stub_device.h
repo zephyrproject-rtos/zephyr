@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
-#define ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_EMUL_STUB_DEVICE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_EMUL_STUB_DEVICE_H_
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -38,4 +38,4 @@ struct emul_stub_dev_api {
 	DEVICE_DT_INST_DEFINE(n, &emul_init_stub_##n, NULL, &stub_data_##n, &stub_config_##n,      \
 			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &stub_api_##n);
 
-#endif /* ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_EMUL_STUB_DEVICE_H_ */

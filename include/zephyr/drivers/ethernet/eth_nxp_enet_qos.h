@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_QOS_H__
-#define ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_QOS_H__
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_QOS_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_QOS_H_
 
 #include <fsl_device_registers.h>
 #include <zephyr/drivers/clock_control.h>
@@ -51,4 +51,4 @@ struct nxp_enet_qos_config {
 };
 #define ENET_QOS_MODULE_CFG(module_dev) ((struct nxp_enet_qos_config *) module_dev->config)
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ETHERNET_ETH_NXP_ENET_QOS_H_ */

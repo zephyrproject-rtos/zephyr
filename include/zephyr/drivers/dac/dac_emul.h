@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVER_DAC_DAC_EMUL_H_
-#define ZEPHYR_INCLUDE_DRIVER_DAC_DAC_EMUL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DAC_DAC_EMUL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DAC_DAC_EMUL_H_
 
 #include <zephyr/device.h>
 #include <stdint.h>
@@ -33,4 +33,4 @@
  **/
 int dac_emul_value_get(const struct device *dev, uint8_t channel, uint32_t *value);
 
-#endif /* ZEPHYR_INCLUDE_DRIVER_DAC_DAC_EMUL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DAC_DAC_EMUL_H_ */

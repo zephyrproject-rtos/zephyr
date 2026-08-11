@@ -10,11 +10,11 @@
  * This header defines the macros for use with the Microchip reset controller driver.
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RESET_H_
-#define INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RESET_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RESET_H_
+#define ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RESET_H_
 
 #if defined(CONFIG_RESET_MCHP_RSTC_G1)
 #include "mchp_rstc_g1.h"
 #endif
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RESET_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RESET_H_ */

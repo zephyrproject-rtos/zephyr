@@ -10,8 +10,8 @@
  * Copyright 2020 Broadcom
  *
  */
-#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_
-#define ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_ENDPOINT_PCIE_EP_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PCIE_ENDPOINT_PCIE_EP_H_
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -287,4 +287,4 @@ int pcie_ep_xfer_data_dma(const struct device *dev, uint64_t pcie_addr,
 			  enum pcie_ob_mem_type ob_mem_type,
 			  enum xfer_direction dir);
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_EP_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PCIE_ENDPOINT_PCIE_EP_H_ */

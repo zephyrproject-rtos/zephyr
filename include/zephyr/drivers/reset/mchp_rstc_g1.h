@@ -11,8 +11,8 @@
  * This header includes the  Microchip RSTC G1 macro definitions.
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RSTC_G1_H_
-#define INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RSTC_G1_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RSTC_G1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RSTC_G1_H_
 
 /**
  * @enum rstc_g1_rcause
@@ -41,4 +41,4 @@ enum rstc_g1_rcause {
 #define RSTC_UNSUPPORTED_RCAUSE 0U
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_RESET_MCHP_RSTC_G1_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_RESET_MCHP_RSTC_G1_H_ */

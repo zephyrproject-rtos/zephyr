@@ -9,8 +9,8 @@
  * @brief Public APIs for Time-aware GPIO drivers
  * @ingroup tgpio_interface
  */
-#ifndef ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO
-#define ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO
+#ifndef ZEPHYR_INCLUDE_DRIVERS_TIMEAWARE_GPIO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_TIMEAWARE_GPIO_H_
 
 /**
  * @brief Interfaces for time-aware GPIO controllers.
@@ -187,4 +187,4 @@ static inline int z_impl_tgpio_pin_read_ts_ec(const struct device *dev, uint32_t
 
 #include <zephyr/syscalls/timeaware_gpio.h>
 
-#endif /* ZEPHYR_DRIVERS_MISC_TIMEAWARE_GPIO_TIMEAWARE_GPIO */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_TIMEAWARE_GPIO_H_ */

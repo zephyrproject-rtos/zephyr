@@ -9,8 +9,8 @@
  * @brief Main header file for stepper motion controller driver API.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_CTRL_H_
-#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_CTRL_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_CTRL_H_
+#define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_CTRL_H_
 
 /**
  * @brief Interfaces for stepper motion controllers.
@@ -452,4 +452,4 @@ static inline int z_impl_stepper_ctrl_is_moving(const struct device *dev, bool *
 
 #include <zephyr/syscalls/stepper_ctrl.h>
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_CTRL_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_CTRL_H_ */

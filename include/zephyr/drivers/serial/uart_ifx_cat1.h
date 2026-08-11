@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_IFX_CAT1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_IFX_CAT1_H_
+
 #include <zephyr/drivers/uart.h>
 #include <string.h>
 #include <cy_scb_uart.h>
@@ -87,3 +90,5 @@ static inline IRQn_Type _ifx_cat1_irq_get_active(void)
 	return irqn;
 #endif
 }
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SERIAL_UART_IFX_CAT1_H_ */
