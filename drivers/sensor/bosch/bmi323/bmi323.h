@@ -272,6 +272,15 @@ struct bmi323_reading {
 	int16_t temperature;
 };
 
+/* The BMI323 returns 0x8000 in a data register when no valid sample is
+ * available, e.g. the sensor is disabled or its first conversion has not
+ * completed yet.
+ */
+static inline bool bosch_bmi323_value_is_valid(int16_t value)
+{
+	return ((uint16_t)value != 0x8000);
+}
+
 /* RTIO support structures */
 #ifdef CONFIG_SENSOR_ASYNC_API
 
