@@ -130,8 +130,10 @@ struct mtch9010_config {
 	const struct gpio_dt_spec heartbeat_gpio;
 	/* Operating mode (Capacitive / Conductive) */
 	uint8_t mode;
-	/* Sleep Time of device in seconds. Set to 0 for Wake on Request */
+	/* Sleep Time command index of device. Set to 0 for Wake on Request */
 	int sleep_time;
+	/* Sleep Time of device in seconds. Set to 0 for Wake on Request */
+	uint16_t sleep_time_s;
 	/* Set to true if extended format output is configured */
 	bool extended_mode_enable;
 	/* Format of the UART Output Data */
