@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -183,4 +184,31 @@ bap_stream_from_audio_test_stream(struct audio_test_stream *test_stream)
 	return bap_stream_from_cap_stream(cap_stream_from_audio_test_stream(test_stream));
 }
 
+#define CAP_UNICAST_AC_MAX_CONN   2U
+#define CAP_UNICAST_AC_MAX_SNK    (2U * CAP_UNICAST_AC_MAX_CONN)
+#define CAP_UNICAST_AC_MAX_SRC    (2U * CAP_UNICAST_AC_MAX_CONN)
+#define CAP_UNICAST_AC_MAX_PAIR   MAX(CAP_UNICAST_AC_MAX_SNK, CAP_UNICAST_AC_MAX_SRC)
+#define CAP_UNICAST_AC_MAX_STREAM (CAP_UNICAST_AC_MAX_SNK + CAP_UNICAST_AC_MAX_SRC)
+
+struct cap_unicast_ac_cis_param {
+	bool has_snk;
+	bool has_src;
+	enum bt_audio_location snk_loc;
+	enum bt_audio_location src_loc;
+};
+
+struct cap_unicast_ac_conn_param {
+	size_t cis_cnt;
+	struct cap_unicast_ac_cis_param cis_param[CAP_UNICAST_AC_MAX_PAIR];
+};
+
+struct cap_unicast_ac_param {
+	char *name;
+	size_t conn_cnt;
+	struct cap_unicast_ac_conn_param conn_param[CAP_UNICAST_AC_MAX_CONN];
+	const struct named_lc3_preset *snk_named_preset;
+	const struct named_lc3_preset *src_named_preset;
+};
+
+void test_cap_initiator_unicast_ac(const struct cap_unicast_ac_param *param);
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_ */

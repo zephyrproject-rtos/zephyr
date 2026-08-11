@@ -49,34 +49,8 @@ LOG_MODULE_REGISTER(cap_initiator_unicast_test);
 #define UNICAST_SINK_SUPPORTED (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0)
 #define UNICAST_SRC_SUPPORTED  (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0)
 
-#define CAP_AC_MAX_CONN   2U
-#define CAP_AC_MAX_SNK    (2U * CAP_AC_MAX_CONN)
-#define CAP_AC_MAX_SRC    (2U * CAP_AC_MAX_CONN)
-#define CAP_AC_MAX_PAIR   MAX(CAP_AC_MAX_SNK, CAP_AC_MAX_SRC)
-#define CAP_AC_MAX_STREAM (CAP_AC_MAX_SNK + CAP_AC_MAX_SRC)
-
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
-
-struct cap_unicast_ac_cis_param {
-	bool has_snk;
-	bool has_src;
-	enum bt_audio_location snk_loc;
-	enum bt_audio_location src_loc;
-};
-
-struct cap_unicast_ac_conn_param {
-	size_t cis_cnt;
-	struct cap_unicast_ac_cis_param cis_param[CAP_AC_MAX_PAIR];
-};
-
-struct cap_unicast_ac_param {
-	char *name;
-	size_t conn_cnt;
-	struct cap_unicast_ac_conn_param conn_param[CAP_AC_MAX_CONN];
-	const struct named_lc3_preset *snk_named_preset;
-	const struct named_lc3_preset *src_named_preset;
-};
 
 extern enum bst_result_t bst_result;
 
@@ -91,8 +65,8 @@ static struct bt_bap_ep
 	*unicast_sink_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep
 	*unicast_source_eps[CONFIG_BT_MAX_CONN][CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
-static struct unicast_stream unicast_streams[CAP_AC_MAX_STREAM];
-static struct bt_conn *connected_conns[CAP_AC_MAX_CONN];
+static struct unicast_stream unicast_streams[CAP_UNICAST_AC_MAX_STREAM];
+static struct bt_conn *connected_conns[CAP_UNICAST_AC_MAX_CONN];
 static size_t connected_conn_cnt;
 static const struct named_lc3_preset *snk_named_preset;
 static const struct named_lc3_preset *src_named_preset;
@@ -1206,12 +1180,14 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_unicast_ac_par
 						 size_t src_cnt,
 						 struct bt_cap_unicast_group **unicast_group)
 {
-	struct bt_cap_unicast_group_stream_param snk_group_stream_params[CAP_AC_MAX_SNK] = {0};
-	struct bt_cap_unicast_group_stream_param src_group_stream_params[CAP_AC_MAX_SRC] = {0};
-	struct bt_cap_unicast_group_stream_pair_param pair_params[CAP_AC_MAX_PAIR] = {0};
+	struct bt_cap_unicast_group_stream_param snk_group_stream_params[CAP_UNICAST_AC_MAX_SNK] = {
+		0};
+	struct bt_cap_unicast_group_stream_param src_group_stream_params[CAP_UNICAST_AC_MAX_SRC] = {
+		0};
+	struct bt_cap_unicast_group_stream_pair_param pair_params[CAP_UNICAST_AC_MAX_PAIR] = {0};
 	struct bt_cap_unicast_group_param group_param = {0};
-	struct bt_bap_qos_cfg *snk_qos[CAP_AC_MAX_SNK];
-	struct bt_bap_qos_cfg *src_qos[CAP_AC_MAX_SRC];
+	struct bt_bap_qos_cfg *snk_qos[CAP_UNICAST_AC_MAX_SNK];
+	struct bt_bap_qos_cfg *src_qos[CAP_UNICAST_AC_MAX_SRC];
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t pair_cnt = 0U;
@@ -1285,14 +1261,15 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_unicast_ac_param 
 					      size_t src_cnt,
 					      struct bt_cap_unicast_group *unicast_group)
 {
-	struct bt_cap_unicast_audio_start_stream_param stream_params[CAP_AC_MAX_STREAM] = {0};
-	struct bt_audio_codec_cfg *snk_codec_cfgs[CAP_AC_MAX_SNK] = {0};
-	struct bt_audio_codec_cfg *src_codec_cfgs[CAP_AC_MAX_SRC] = {0};
-	struct bt_cap_stream *snk_cap_streams[CAP_AC_MAX_SNK] = {0};
-	struct bt_cap_stream *src_cap_streams[CAP_AC_MAX_SRC] = {0};
+	struct bt_cap_unicast_audio_start_stream_param stream_params[CAP_UNICAST_AC_MAX_STREAM] = {
+		0};
+	struct bt_audio_codec_cfg *snk_codec_cfgs[CAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_audio_codec_cfg *src_codec_cfgs[CAP_UNICAST_AC_MAX_SRC] = {0};
+	struct bt_cap_stream *snk_cap_streams[CAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_cap_stream *src_cap_streams[CAP_UNICAST_AC_MAX_SRC] = {0};
 	struct bt_cap_unicast_audio_start_param start_param = {0};
-	struct bt_bap_ep *snk_eps[CAP_AC_MAX_SNK] = {0};
-	struct bt_bap_ep *src_eps[CAP_AC_MAX_SRC] = {0};
+	struct bt_bap_ep *snk_eps[CAP_UNICAST_AC_MAX_SNK] = {0};
+	struct bt_bap_ep *src_eps[CAP_UNICAST_AC_MAX_SRC] = {0};
 	size_t snk_stream_cnt = 0U;
 	size_t src_stream_cnt = 0U;
 	size_t stream_cnt = 0U;
@@ -1430,8 +1407,8 @@ static int cap_initiator_ac_unicast(const struct cap_unicast_ac_param *param,
 				    struct bt_cap_unicast_group **unicast_group)
 {
 	/* Allocate params large enough for any params, but only use what is required */
-	struct unicast_stream *snk_uni_streams[CAP_AC_MAX_SNK];
-	struct unicast_stream *src_uni_streams[CAP_AC_MAX_SRC];
+	struct unicast_stream *snk_uni_streams[CAP_UNICAST_AC_MAX_SNK];
+	struct unicast_stream *src_uni_streams[CAP_UNICAST_AC_MAX_SRC];
 	size_t total_snk_cnt = 0U;
 	size_t total_src_cnt = 0U;
 	size_t total_cnt = 0U;
@@ -1521,7 +1498,7 @@ static int cap_initiator_ac_unicast(const struct cap_unicast_ac_param *param,
 	return 0;
 }
 
-static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
+void test_cap_initiator_unicast_ac(const struct cap_unicast_ac_param *param)
 {
 	struct bt_cap_unicast_group *unicast_group;
 	bool expect_tx = false;
@@ -1535,7 +1512,7 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 	       param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
 	       param->src_named_preset != NULL ? param->src_named_preset->name : "None");
 
-	if (param->conn_cnt > CAP_AC_MAX_CONN) {
+	if (param->conn_cnt > CAP_UNICAST_AC_MAX_CONN) {
 		FAIL("Invalid conn_cnt: %zu\n", param->conn_cnt);
 		return;
 	}
@@ -1552,13 +1529,13 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
 		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
 
-		if (conn_param->cis_cnt > CAP_AC_MAX_PAIR) {
+		if (conn_param->cis_cnt > CAP_UNICAST_AC_MAX_PAIR) {
 			FAIL("Invalid param->conn_param[%zu].cis_cnt: %zu", i, conn_param->cis_cnt);
 
 			return;
 		}
 
-		if (conn_param->cis_cnt > CAP_AC_MAX_PAIR) {
+		if (conn_param->cis_cnt > CAP_UNICAST_AC_MAX_PAIR) {
 			FAIL("Invalid param->conn_param[%zu].cis_cnt: %zu", i, conn_param->cis_cnt);
 
 			return;
@@ -1571,7 +1548,7 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 
 			if (cis_param->has_snk) {
 				total_snk_cnt++;
-				if (total_snk_cnt > CAP_AC_MAX_SNK) {
+				if (total_snk_cnt > CAP_UNICAST_AC_MAX_SNK) {
 					FAIL("Invalid total_snk_cnt: %zu\n", total_snk_cnt);
 					return;
 				}
@@ -1587,7 +1564,7 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 
 			if (cis_param->has_src) {
 				total_src_cnt++;
-				if (total_src_cnt > CAP_AC_MAX_SRC) {
+				if (total_src_cnt > CAP_UNICAST_AC_MAX_SRC) {
 					FAIL("Invalid total_src_cnt: %zu\n", total_src_cnt);
 					return;
 				}
@@ -1602,7 +1579,7 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 			}
 
 			total_cis_cnt++;
-			if (total_cis_cnt > CAP_AC_MAX_PAIR) {
+			if (total_cis_cnt > CAP_UNICAST_AC_MAX_PAIR) {
 				FAIL("Invalid total_cis_cnt: %zu\n", total_cis_cnt);
 
 				return;
@@ -1699,7 +1676,7 @@ static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 static void test_cap_initiator_ac_1(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_1",
+		.name = "gmap_ac_1",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1712,13 +1689,13 @@ static void test_cap_initiator_ac_1(void)
 		.src_named_preset = NULL,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_2(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_2",
+		.name = "gmap_ac_2",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1731,13 +1708,13 @@ static void test_cap_initiator_ac_2(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_3(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_3",
+		.name = "gmap_ac_3",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1751,13 +1728,13 @@ static void test_cap_initiator_ac_3(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_4(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_4",
+		.name = "gmap_ac_4",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1771,13 +1748,13 @@ static void test_cap_initiator_ac_4(void)
 		.src_named_preset = NULL,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_5(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_5",
+		.name = "gmap_ac_5",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1792,13 +1769,13 @@ static void test_cap_initiator_ac_5(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_6_i(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_6_i",
+		.name = "gmap_ac_6_i",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 2U,
@@ -1815,13 +1792,13 @@ static void test_cap_initiator_ac_6_i(void)
 		.src_named_preset = NULL,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_6_ii(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_6_ii",
+		.name = "gmap_ac_6_ii",
 		.conn_cnt = 2U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1840,13 +1817,13 @@ static void test_cap_initiator_ac_6_ii(void)
 		.src_named_preset = NULL,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_7_i(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_7_i",
+		.name = "gmap_ac_7_i",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 2U,
@@ -1863,13 +1840,13 @@ static void test_cap_initiator_ac_7_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_7_ii(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_7_ii",
+		.name = "gmap_ac_7_ii",
 		.conn_cnt = 2U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1888,13 +1865,13 @@ static void test_cap_initiator_ac_7_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_8_i(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_8_i",
+		.name = "gmap_ac_8_i",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 2U,
@@ -1912,13 +1889,13 @@ static void test_cap_initiator_ac_8_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_8_ii(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_8_ii",
+		.name = "gmap_ac_8_ii",
 		.conn_cnt = 2U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1938,13 +1915,13 @@ static void test_cap_initiator_ac_8_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_9_i(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_9_i",
+		.name = "gmap_ac_9_i",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 2U,
@@ -1961,13 +1938,13 @@ static void test_cap_initiator_ac_9_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_9_ii(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_9_ii",
+		.name = "gmap_ac_9_ii",
 		.conn_cnt = 2U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -1986,12 +1963,12 @@ static void test_cap_initiator_ac_9_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 static void test_cap_initiator_ac_10(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_10",
+		.name = "gmap_ac_10",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -2005,13 +1982,13 @@ static void test_cap_initiator_ac_10(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_11_i(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_11_i",
+		.name = "gmap_ac_11_i",
 		.conn_cnt = 1U,
 
 		.conn_param[0].cis_cnt = 2U,
@@ -2030,13 +2007,13 @@ static void test_cap_initiator_ac_11_i(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_cap_initiator_ac_11_ii(void)
 {
 	const struct cap_unicast_ac_param param = {
-		.name = "ac_11_ii",
+		.name = "gmap_ac_11_ii",
 		.conn_cnt = 2U,
 
 		.conn_param[0].cis_cnt = 1U,
@@ -2057,7 +2034,7 @@ static void test_cap_initiator_ac_11_ii(void)
 		.src_named_preset = src_named_preset,
 	};
 
-	test_cap_initiator_ac(&param);
+	test_cap_initiator_unicast_ac(&param);
 }
 
 static void test_args(int argc, char *argv[])
