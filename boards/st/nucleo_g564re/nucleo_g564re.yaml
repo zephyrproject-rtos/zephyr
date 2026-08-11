@@ -1,0 +1,14 @@
+identifier: nucleo_g564re
+name: ST Nucleo G564RE
+vendor: st
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 112
+flash: 512
+supported:
+  - arduino_gpio
+  - gpio
+  - rtc
