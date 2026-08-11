@@ -95,6 +95,13 @@ config DEBUG_COREDUMP_BACKEND_INTEL_ADSP_MEM_WINDOW
 	  It is Intel ADSP memory region shared with xtensa DSP.
 	  Window 2 slot [1] is reserved for debugging information.
 
+config DEBUG_COREDUMP_BACKEND_AMD_ACP_PANIC_DUMP
+	bool "AMD ACP Panic Dump"
+	help
+	  Use AMD ACP exception box as coredump backend.
+	  Coredump data is written to the exception buffer in
+	  ACP exception box and host is notified via interrupt.
+
 config DEBUG_COREDUMP_BACKEND_OTHER
 	bool "Backend subsystem for coredump defined out of tree"
 	help
