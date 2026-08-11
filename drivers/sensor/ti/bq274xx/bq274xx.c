@@ -833,11 +833,15 @@ static int bq274xx_pm_action(const struct device *dev,
 	int ret;
 
 	switch (action) {
-	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
 		ret = bq274xx_enter_shutdown_mode(dev);
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		ret = bq274xx_exit_shutdown_mode(dev);
+		break;
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		ret = 0;
 		break;
 	default:
 		ret = -ENOTSUP;
