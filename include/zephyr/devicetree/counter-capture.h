@@ -321,9 +321,9 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the counter controller from a
- *        DT_DRV_COMPAT instance's counter-captures property at an index
+ *        @c DT_DRV_COMPAT instance's counter-captures property at an index
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
  * @return the node identifier for the counter controller referenced at
  *         index @p idx
@@ -334,8 +334,8 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the counter controller from a
- *        DT_DRV_COMPAT instance's counter-captures property by name
- * @param inst DT_DRV_COMPAT instance number
+ *        @c DT_DRV_COMPAT instance's counter-captures property by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
  * @return the node identifier for the counter controller in the named element
@@ -346,7 +346,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CTLR_BY_IDX(inst, counter_capture_pha, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the counter controller at index 0
  *         in the instance's <tt>counter-captures</tt> property
  * @see DT_COUNTER_CAPTURES_CTLR_BY_IDX()
@@ -355,9 +355,9 @@ extern "C" {
 	DT_INST_COUNTER_CAPTURES_CTLR_BY_IDX(inst, counter_capture_pha, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's counter capture specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's counter capture specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index @p idx
@@ -366,9 +366,9 @@ extern "C" {
 	DT_COUNTER_CAPTURES_CELL_BY_IDX(DT_DRV_INST(inst), counter_capture_pha, idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's counter capture specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's counter capture specifier's cell value
  *        by name
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
  * @param cell lowercase-and-underscores cell name
@@ -380,7 +380,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(inst, counter_capture_pha, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the cell value at index 0
  */
@@ -390,7 +390,7 @@ extern "C" {
 /**
  * @brief Equivalent to
  * DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(inst, counter_capture_pha, idx, channel)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
  * @return the channel cell value at index @p idx
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_IDX()
@@ -401,7 +401,7 @@ extern "C" {
 /**
  * @brief Equivalent to
  * DT_INST_COUNTER_CAPTURES_CELL_BY_NAME(inst, counter_capture_pha, name, channel)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
  * @return the channel cell value in the specifier at the named element
@@ -412,7 +412,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX(inst, counter_capture_pha, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the channel cell value at index 0
  * @see DT_INST_COUNTER_CAPTURES_CHANNEL_BY_IDX()
  */
@@ -421,7 +421,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_CELL_BY_IDX(inst, counter_capture_pha, idx, flags)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into <tt>counter-captures</tt> property
  * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_INST_COUNTER_CAPTURES_CELL_BY_IDX()
@@ -432,7 +432,7 @@ extern "C" {
 /**
  * @brief Equivalent to
  * DT_INST_COUNTER_CAPTURES_CELL_BY_NAME(inst, counter_capture_pha, name, flags)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a <tt>counter-captures</tt> element
  *             as defined by the node's <tt>counter-capture-names</tt> property
  * @return the flags cell value in the specifier at the named element,
@@ -444,7 +444,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX(inst, counter_capture_pha, 0)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return the flags cell value at index 0, or zero if there is none
  * @see DT_INST_COUNTER_CAPTURES_FLAGS_BY_IDX()
  */
