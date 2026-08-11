@@ -1,0 +1,8 @@
+# Copyright (c) 2026 T3 Gemstone
+# 	T3 Gemstone Developer Team <support@t3gemstone.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_T3_GEM_O1
+	select SOC_J722S_MAIN_R5F0_0 if BOARD_T3_GEM_O1_J722S_MAIN_R5F0_0
+	select SOC_J722S_MCU_R5F0_0 if BOARD_T3_GEM_O1_J722S_MCU_R5F0_0
