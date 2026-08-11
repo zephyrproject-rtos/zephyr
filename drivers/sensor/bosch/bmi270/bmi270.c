@@ -588,8 +588,8 @@ static int bmi270_write_anymo_threshold(const struct device *dev,
 		val.val2 = 1e6;
 	}
 
-	/* max = BIT_MASK(10) = 1g => 0.49 mg/LSB */
-	uint16_t lsbs = (val.val2 * BMI270_ANYMO_2_THRESHOLD_MASK) / 1e6;
+	/* max = BIT_MASK(11) = 1g => 0.49 mg/LSB */
+	uint16_t lsbs = ((uint32_t)val.val2 * BMI270_ANYMO_2_THRESHOLD_MASK) / 1000000U;
 
 	if (!lsbs) {
 		LOG_ERR("Threshold too low!");
