@@ -751,6 +751,15 @@ static void isr_rx(void *param)
 				}
 			}
 
+			/* Discard the received PDU, whether unencrypted or the
+			 * decrypted, with length that exceeds the configured
+			 * maximum receive data length used to setup the radio
+			 * packet reception.
+			 */
+			if (pdu->len > lll->max_pdu) {
+				goto isr_rx_done;
+			}
+
 			ull_iso_pdu_rx_alloc();
 
 			handle = LL_BIS_SYNC_HANDLE_FROM_IDX(stream_handle);
