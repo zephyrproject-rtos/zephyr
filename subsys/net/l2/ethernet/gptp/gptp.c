@@ -41,7 +41,11 @@ struct gptp_clock_data gptp_clock;
 int gptp_get_port_number(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
-	int port = ctx->gptp_port;
+	int port;
+
+	NET_ASSERT(ctx != NULL);
+
+	port = ctx->gptp_port;
 
 	if (port >= GPTP_PORT_START && port <= GPTP_PORT_END) {
 		return port;
@@ -53,6 +57,8 @@ int gptp_set_port_number(struct net_if *iface, uint16_t port)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *clk;
+
+	NET_ASSERT(ctx != NULL);
 
 	clk = net_eth_get_ptp_clock(iface);
 	if (clk == NULL) {
@@ -83,18 +89,23 @@ static void gptp_compute_clock_identity(int port)
 {
 	struct net_if *iface = GPTP_PORT_IFACE(port);
 	struct gptp_default_ds *default_ds;
+	struct net_linkaddr *ll_addr;
 
 	default_ds = GPTP_DEFAULT_DS();
 
 	if (iface) {
-		default_ds->clk_id[0] = net_if_get_link_addr(iface)->addr[0];
-		default_ds->clk_id[1] = net_if_get_link_addr(iface)->addr[1];
-		default_ds->clk_id[2] = net_if_get_link_addr(iface)->addr[2];
+		ll_addr = net_if_get_link_addr(iface);
+
+		NET_ASSERT(ll_addr != NULL);
+
+		default_ds->clk_id[0] = ll_addr->addr[0];
+		default_ds->clk_id[1] = ll_addr->addr[1];
+		default_ds->clk_id[2] = ll_addr->addr[2];
 		default_ds->clk_id[3] = 0xFF;
 		default_ds->clk_id[4] = 0xFE;
-		default_ds->clk_id[5] = net_if_get_link_addr(iface)->addr[3];
-		default_ds->clk_id[6] = net_if_get_link_addr(iface)->addr[4];
-		default_ds->clk_id[7] = net_if_get_link_addr(iface)->addr[5];
+		default_ds->clk_id[5] = ll_addr->addr[3];
+		default_ds->clk_id[6] = ll_addr->addr[4];
+		default_ds->clk_id[7] = ll_addr->addr[5];
 	}
 }
 
