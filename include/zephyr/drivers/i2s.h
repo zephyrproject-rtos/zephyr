@@ -28,6 +28,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/device.h>
+#include <zephyr/rtio/rtio.h>
 
 #ifdef __cplusplus
 extern "C" {

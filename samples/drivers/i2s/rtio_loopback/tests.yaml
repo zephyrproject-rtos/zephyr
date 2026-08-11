@@ -1,0 +1,15 @@
+sample:
+  name: I2S RTIO loopback sample
+tests:
+  sample.drivers.i2s.rtio_loopback:
+    tags:
+      - rtio
+      - i2s
+    harness: console
+    harness_config:
+      fixture: i2s_loopback
+      type: one_line
+      regex:
+        - "sample complete"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
