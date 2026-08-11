@@ -207,7 +207,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 			}
 			if (!(drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO)) {
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[7]);
+					(int16_t)(int8_t)drv_data->fifo_data[7];
 			} else {
 				if (!(drv_data->fifo_data[7] ==
 				      FIFO_GYRO0_RESET_VALUE &&
@@ -224,7 +224,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 						+ (drv_data->fifo_data[12]);
 				}
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[13]);
+					(int16_t)(int8_t)drv_data->fifo_data[13];
 			}
 		} else {
 			if (drv_data->fifo_data[0] & BIT_FIFO_HEAD_GYRO) {
@@ -243,7 +243,7 @@ static int icm42605_sample_fetch(const struct device *dev,
 						+ (drv_data->fifo_data[6]);
 				}
 				drv_data->temp =
-					(int16_t)(drv_data->fifo_data[7]);
+					(int16_t)(int8_t)drv_data->fifo_data[7];
 			}
 		}
 	}
