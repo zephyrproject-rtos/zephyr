@@ -64,8 +64,17 @@ static int lsm6dso16is_accel_range_to_fs_val(int32_t range)
 	return -EINVAL;
 }
 
-static const uint16_t lsm6dso16is_gyro_fs_map[] = {250, 125, 500, 0, 1000, 0, 2000};
-static const uint16_t lsm6dso16is_gyro_fs_sens[] = {2, 1, 4, 0, 8, 0, 16};
+/* 125 dps is selected by the FS_125 bit, all other ranges by FS_G[1:0] */
+#define LSM6DSO16IS_GYRO_FS_125DPS		0x10
+#define LSM6DSO16IS_GYRO_FS_125DPS_IDX		4
+
+static const uint16_t lsm6dso16is_gyro_fs_map[] = {250, 500, 1000, 2000, 125};
+static const uint16_t lsm6dso16is_gyro_fs_sens[] = {2, 4, 8, 16, 1};
+
+static inline uint8_t lsm6dso16is_gyro_fs_idx(uint8_t fs)
+{
+	return (fs == LSM6DSO16IS_GYRO_FS_125DPS) ? LSM6DSO16IS_GYRO_FS_125DPS_IDX : (fs & 0x3);
+}
 
 static int lsm6dso16is_gyro_range_to_fs_val(int32_t range)
 {
@@ -73,6 +82,10 @@ static int lsm6dso16is_gyro_range_to_fs_val(int32_t range)
 
 	for (i = 0; i < ARRAY_SIZE(lsm6dso16is_gyro_fs_map); i++) {
 		if (range == lsm6dso16is_gyro_fs_map[i]) {
+			if (i == LSM6DSO16IS_GYRO_FS_125DPS_IDX) {
+				return LSM6DSO16IS_GYRO_FS_125DPS;
+			}
+
 			return i;
 		}
 	}
@@ -237,7 +250,7 @@ static int lsm6dso16is_gyro_range_set(const struct device *dev, int32_t range)
 		return -EIO;
 	}
 
-	data->gyro_gain = (lsm6dso16is_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	data->gyro_gain = (lsm6dso16is_gyro_fs_sens[lsm6dso16is_gyro_fs_idx(fs)] * GAIN_UNIT_G);
 	return 0;
 }
 
@@ -785,7 +798,8 @@ static int lsm6dso16is_init_chip(const struct device *dev)
 		LOG_ERR("failed to set gyroscope range %d", fs);
 		return -EIO;
 	}
-	lsm6dso16is->gyro_gain = (lsm6dso16is_gyro_fs_sens[fs] * GAIN_UNIT_G);
+	lsm6dso16is->gyro_gain =
+		(lsm6dso16is_gyro_fs_sens[lsm6dso16is_gyro_fs_idx(fs)] * GAIN_UNIT_G);
 
 	odr = cfg->gyro_odr;
 	LOG_DBG("gyro odr is %d", odr);
