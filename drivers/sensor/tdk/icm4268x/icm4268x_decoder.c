@@ -232,15 +232,15 @@ static inline q31_t icm4268x_read_temperature_from_packet(const uint8_t *pkt)
 
 	/* Temperature always assumes a shift of 9 for a range of (-273,273) C */
 	if (FIELD_GET(FIFO_HEADER_20, pkt[0]) == 1) {
-		temperature = (pkt[0xd] << 8) | pkt[0xe];
+		temperature = (int16_t)((pkt[0xd] << 8) | pkt[0xe]);
 
 		icm4268x_temp_c(temperature, &whole, &fraction);
 	} else {
 		if (FIELD_GET(FIFO_HEADER_ACCEL, pkt[0]) == 1 &&
 		    FIELD_GET(FIFO_HEADER_GYRO, pkt[0]) == 1) {
-			temperature = pkt[0xd];
+			temperature = (int8_t)pkt[0xd];
 		} else {
-			temperature = pkt[0x7];
+			temperature = (int8_t)pkt[0x7];
 		}
 
 		int64_t sensitivity = 207;
