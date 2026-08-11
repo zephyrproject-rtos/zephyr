@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX CGU analog block (CGUANA) -- the block that generates clocks.
+
+  An i.MX RT clock tree splits into two hardware classes, and this binding covers
+  the first of them:
+
+    - Generation: the crystal oscillator, the free-running oscillators and the
+      PLLs. They live inside this block, and the SoC layer programs them during
+      boot bring-up. Their sequencing is hazard-ordered and strongly SoC-specific,
+      which is why they are not modelled as Zephyr clock-control devices: nothing
+      calls clock_control_on() or clock_control_get_rate() on them.
+    - Distribution: the gates and the mux/divider roots, which are the
+      clock_control abstraction. See nxp,imx-ccm-rev3.
+
+  This node is therefore a description of the hardware plus a data table the SoC
+  layer reads, not a driver binding surface. It has no driver of its own; the SoC
+  clock C code reaches the block by node label to take its base address, and each
+  source by node label to take its parameters.
+
+  Each clock source is an addressed child at its offset inside the block, taken
+  from the device header's register map. Offsets, not absolute addresses, so one
+  shared SoC devicetree serves both the secure and non-secure views of the
+  peripheral aperture through this node's "ranges":
+
+      cguana: clock-generation@40500000 {
+              compatible = "nxp,imx-cguana";
+              reg = <0x40500000 0x10000>;
+              #address-cells = <1>;
+              #size-cells = <1>;
+              ranges = <0x0 0x40500000 0x10000>;
+
+              sxosc: sxosc@20a0 {
+                      compatible = "nxp,imx-cguana-sxosc", "nxp,imx-clock-source";
+                      reg = <0x20a0 0x4>, <0x20a8 0x4>;
+                      reg-names = "ctrl", "status";
+                      clock-frequency = <24000000>;
+                      #clock-cells = <0>;
+              };
+      };
+
+  A child exists because it is a clock source referenced by a phandle, not because
+  a register group exists. Register groups that belong to the block as a whole --
+  the block control and interrupt registers, and the FRO tuner shared by both
+  free-running oscillators -- are covered by this node's own "reg" and get no
+  child node.
+
+compatible: "nxp,imx-cguana"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  ranges:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1

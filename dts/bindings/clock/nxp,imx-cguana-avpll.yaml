@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Audio/Video PLL in an NXP i.MX CGU analog block.
+
+  A dedicated fractional PLL for the audio and video clock trees. Unlike the
+  generic fractional PLL, its output is set by a CCO band selector, an integer
+  post-divider, and -- for the video PLL -- a fractional numerator, so it needs
+  properties the frac-pll binding does not have.
+
+      avpll_audio: avpll-audio {
+              compatible = "nxp,imx-cguana-avpll";
+              clocks = <&sxosc>;
+              nxp,cco-band-sel = <6>;
+              nxp,post-div-ratio = <16>;
+              #clock-cells = <0>;
+      };
+
+compatible: "nxp,imx-cguana-avpll"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      The source's register groups inside the parent nxp,imx-cguana block, as
+      offsets: "ctrl", "cal" and "status". Split rather than one span, because
+      the block reserves address space between the groups.
+
+  reg-names:
+    required: true
+
+  "#clock-cells":
+    type: int
+    const: 0
+
+  clocks:
+    required: true
+    description: |
+      The reference this PLL locks to, normally the crystal. Which source is
+      selected and what frequency it runs at both come from this phandle.
+
+  nxp,cco-band-sel:
+    type: int
+    required: true
+    description: |
+      CCO band selector. Selects the current-controlled-oscillator frequency
+      band the PLL runs in; the valid bands are hardware-defined.
+
+  nxp,post-div-ratio:
+    type: int
+    required: true
+    description: |
+      Integer post-divider applied to the CCO output to produce the PLL output.
+
+  nxp,dnum:
+    type: int
+    default: 0
+    description: |
+      Fractional numerator for the output divider. Zero selects a pure integer
+      divide (the audio PLL); a non-zero value adds the fractional part used by
+      the video PLL. The denominator is fixed in hardware.
