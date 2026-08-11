@@ -220,7 +220,11 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 	};
 
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	/* Make sure we're an ethernet device */
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
@@ -265,6 +269,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	bool is_vlan_pkt = false;
 	bool handled = false;
 	struct net_linkaddr *lladdr;
+	struct net_linkaddr *mac_addr;
 	uint16_t type;
 	bool dst_broadcast, dst_eth_multicast, dst_iface_addr;
 	struct net_if *iface_eth = iface;
@@ -339,11 +344,14 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	}
 
 	lladdr = net_pkt_lladdr_dst(pkt);
+	mac_addr = net_if_get_link_addr(iface);
+
+	NET_ASSERT(mac_addr != NULL);
 
 	net_pkt_set_ll_proto_type(pkt, type);
 	dst_broadcast = net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr);
 	dst_eth_multicast = net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr);
-	dst_iface_addr = net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr);
+	dst_iface_addr = net_linkaddr_cmp(mac_addr, lladdr);
 
 	if (is_vlan_pkt) {
 		print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
@@ -362,7 +370,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		 * are different.
 		 */
 		NET_DBG("Dropping frame, not for me [%s]",
-			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+			net_sprint_ll_addr(mac_addr->addr,
 					   sizeof(struct net_eth_addr)));
 		goto drop;
 	}
@@ -683,11 +691,16 @@ static void ethernet_update_tx_stats(struct net_if *iface, struct net_pkt *pkt)
 
 static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ethernet_api *api = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api;
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	uint16_t ptype = net_htons(net_pkt_ll_proto_type(pkt));
 	struct net_pkt *orig_pkt = pkt;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	NET_ASSERT(api != NULL);
 	NET_ASSERT(api->send != NULL);
@@ -771,7 +784,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	net_pkt_cursor_init(pkt);
 
 send:
-	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
+	ret = net_l2_send(api->send, dev, iface, pkt);
 	if (ret != 0) {
 		eth_stats_update_errors_tx(iface);
 		goto arp_error;
@@ -806,9 +819,13 @@ arp_error:
 static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *eth = dev->api;
+	const struct ethernet_api *eth;
 	struct net_linkaddr *mac_addr;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	eth = dev->api;
 
 	NET_ASSERT(eth != NULL);
 
@@ -839,6 +856,8 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 	 */
 	mac_addr = net_if_get_link_addr(iface);
 
+	NET_ASSERT(mac_addr != NULL);
+
 	if ((mac_addr->len != NET_ETH_ADDR_LEN) ||
 	    !net_eth_is_addr_valid((struct net_eth_addr *)mac_addr->addr)) {
 		NET_ERR("Invalid MAC address for iface %d (%p)", net_if_get_by_iface(iface), iface);
@@ -851,6 +870,8 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 enum net_l2_flags ethernet_flags(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	return ctx->ethernet_l2_flags;
 }
@@ -911,6 +932,8 @@ void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	if (atomic_test_and_set_bit_to(&ctx->flags, ETH_CARRIER_UP, carrier_up)) {
 		k_work_submit(&ctx->carrier_work);
 	}
@@ -919,7 +942,11 @@ void net_eth_carrier_set(struct net_if *iface, bool carrier_up)
 const struct device *net_eth_get_phy(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -938,7 +965,11 @@ const struct device *net_eth_get_phy(struct net_if *iface)
 const struct device *net_eth_get_ptp_clock(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	NET_ASSERT(api != NULL);
 
@@ -1038,6 +1069,8 @@ void ethernet_init(struct net_if *iface)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	enum ethernet_hw_caps caps;
+
+	NET_ASSERT(ctx != NULL);
 
 	NET_DBG("Initializing Ethernet L2 %p for iface %d (%p)", ctx,
 		net_if_get_by_iface(iface), iface);
