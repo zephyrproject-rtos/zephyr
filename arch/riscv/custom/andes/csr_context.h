@@ -16,8 +16,8 @@
 #if defined(CONFIG_RISCV_CUSTOM_CSR_ANDES_PFT) && \
 	defined(CONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP)
 	#define CUSTOM_CSR_ESF_MEMBERS			\
-		uint32_t mxstatus;			\
-		uint32_t ucode				\
+		unsigned long mxstatus;			\
+		unsigned long ucode			\
 
 	#define CUSTOM_CSR_ESF_INIT			\
 		0,					\
@@ -25,14 +25,14 @@
 
 #elif defined(CONFIG_RISCV_CUSTOM_CSR_ANDES_PFT)
 	#define CUSTOM_CSR_ESF_MEMBERS			\
-		uint32_t mxstatus
+		unsigned long mxstatus
 
 	#define CUSTOM_CSR_ESF_INIT			\
 		0
 
 #elif defined(CONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP)
 	#define CUSTOM_CSR_ESF_MEMBERS			\
-		uint32_t ucode
+		unsigned long ucode
 
 	#define CUSTOM_CSR_ESF_INIT			\
 		0
