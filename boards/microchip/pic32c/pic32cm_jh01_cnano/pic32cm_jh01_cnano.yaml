@@ -15,6 +15,7 @@ supported:
   - counter
   - flash
   - gpio
+  - input
   - pinctrl
   - uart
 vendor: microchip

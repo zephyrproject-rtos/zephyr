@@ -67,4 +67,22 @@
 				 <PB1D_SERCOM5_PAD3>;
 		};
 	};
+
+	ptc_btn1_default: ptc_btn1_default {
+		group1 {
+			pinmux = <PB4B_PTC_Y10>,
+				 <PB5K_PTC_DS11>;
+		};
+	};
+
+	ptc_qt7_default: ptc_qt7_default {
+		group1 {
+			pinmux = <PB7B_PTC_Y13>,
+				 <PB8B_PTC_Y14>,
+				 <PA11B_PTC_Y19>,
+				 <PB12B_PTC_Y28>,
+				 <PB13B_PTC_Y29>,
+				 <PA21B_PTC_Y25>;
+		};
+	};
 };

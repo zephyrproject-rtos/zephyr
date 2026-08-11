@@ -21,6 +21,7 @@ supported:
   - hwinfo
   - i2c
   - pinctrl
+  - ptc
   - pwm
   - reset
   - rtc
