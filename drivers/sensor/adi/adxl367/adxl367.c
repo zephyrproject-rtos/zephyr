@@ -465,9 +465,9 @@ int adxl367_set_fifo_sample_sets_nb(const struct device *dev,
 {
 	struct adxl367_data *data = dev->data;
 	int ret;
-	uint8_t fifo_samples_msb = sets_nb & BIT(9) ? 1U : 0U;
+	uint8_t fifo_samples_msb = sets_nb & BIT(8) ? 1U : 0U;
 
-	/* bit 9 goes to FIFO_SAMPLES from ADXL367_FIFO_CONTROL */
+	/* bit 8 goes to FIFO_SAMPLES from ADXL367_FIFO_CONTROL */
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_FIFO_CONTROL,
 					  ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
 					  FIELD_PREP(ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
