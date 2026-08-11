@@ -205,7 +205,7 @@ static int icm566xx_accel_config(struct icm566xx_data *drv_data, enum sensor_att
 		icm566xx_set_accel_frequency(&drv_data->driver, val->val1);
 
 		if (val->val1 && c_mode == PWR_MGMT0_ACCEL_MODE_OFF) {
-			if (val->val1 >= ACCEL_CONFIG0_ACCEL_ODR_12_5_HZ) {
+			if (val->val1 <= ACCEL_CONFIG0_ACCEL_ODR_12_5_HZ) {
 				icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_LN);
 			} else {
 				icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_LP);
@@ -239,7 +239,7 @@ static int icm566xx_gyro_config(struct icm566xx_data *drv_data, enum sensor_attr
 		icm566xx_set_gyro_frequency(&drv_data->driver, val->val1);
 
 		if (val->val1 && c_mode == PWR_MGMT0_GYRO_MODE_OFF) {
-			if (val->val1 >= GYRO_CONFIG0_GYRO_ODR_12_5_HZ) {
+			if (val->val1 <= GYRO_CONFIG0_GYRO_ODR_12_5_HZ) {
 				icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_LN);
 			} else {
 				icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_LP);
