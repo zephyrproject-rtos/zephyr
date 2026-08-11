@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g5/stm32g5.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g534", "st,stm32g5", "simple-bus";
+	};
+};
