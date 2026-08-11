@@ -21,25 +21,7 @@
 #include <stm32_hsem.h>
 
 #include "clock_stm32_ll_common.h"
-
-#if defined(CONFIG_SOC_SERIES_STM32F4X) && \
-	DT_NODE_HAS_PROP(DT_NODELABEL(rcc), st_supply_microvolt)
-#include "clock_stm32_f4_flash_latency.h"
-/* Opt-in: computed from actual VDD (RM0090 Table 11) instead of VOS alone. */
-static inline void stm32_set_flash_latency(uint32_t freq)
-{
-	ARG_UNUSED(freq);
-	LL_FLASH_SetLatency(STM32F4_FLASH_LATENCY);
-	while (LL_FLASH_GetLatency() != STM32F4_FLASH_LATENCY) {
-	}
-}
-#else
-/* Default: unchanged, VOS-only vendor helper. */
-static inline void stm32_set_flash_latency(uint32_t freq)
-{
-	LL_SetFlashLatency(freq);
-}
-#endif
+#include "clock_stm32_int_flash_latency.h"
 
 /* Macros to fill up prescaler values */
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)

@@ -15,3 +15,25 @@ properties:
       RDP1 but in multi-image environment, some other image could check if
       RDP1 is enabled by comparing it to some hardcoded value. The byte has to
       be different than 0xAA and 0xCC.
+
+  st,supply-microvolt:
+    type: int
+    description: |
+      Actual board VDD supply to the MCU, in microvolts. Must be the
+      minimum VDD over tolerance and ripple, not the nominal value -- the
+      wait-state table provided in the SoC reference manual is only safe
+      at the worst-case (lowest) voltage the board can see. Optional:
+      when absent, flash wait-states are computed from VOS alone.
+
+      Only supported on STM32F405xx/407xx/415xx/417xx, where it is used to
+      compute wait-states as per RM0090's voltage-banded table (Rev 21,
+      Table 11: HCLK and actual VDD, not VOS) for applicable products. The
+      value must match constraints defined in the reference manual: must
+      be 2100000 (2.1V) or higher when CONFIG_STM32_FLASH_PREFETCH is
+      enabled, since Table 11's 1.8-2.1V column is characterized by ST
+      only with the flash prefetch buffer disabled (RM0090 Section
+      3.5.1). Other series currently ignore this property if set.
+
+      Useful for boards that run below the nominal 2.7-3.6V range by
+      design (e.g. level-shifted to match a companion SoC's logic level),
+      where VOS alone cannot express the actual latency requirement.
