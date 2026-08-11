@@ -378,9 +378,13 @@ static int icm566xx_one_shot_decode(const uint8_t *buffer, struct sensor_chan_sp
 
 		int32_t raw_reading;
 #if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
-		int pos = icm566xx_get_channel_position(chan_spec.chan_type);
+		if (chan_spec.chan_type == SENSOR_CHAN_DIE_TEMP) {
+			raw_reading = edata->payload.temp;
+		} else {
+			int pos = icm566xx_get_channel_position(chan_spec.chan_type);
 
-		raw_reading = get_raw_reading_by_position(edata, pos);
+			raw_reading = get_raw_reading_by_position(edata, pos);
+		}
 #else
 		raw_reading =
 			edata->payload.readings[icm566xx_get_channel_position(chan_spec.chan_type)];
