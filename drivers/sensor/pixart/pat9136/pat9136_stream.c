@@ -167,6 +167,12 @@ static void pat9136_stream_get_data(const struct device *dev)
 		return;
 	}
 
+	/** Only the LOWER resolution registers are read below, as the UPPER
+	 * ones always read back zero (resolution is capped to 199).
+	 */
+	buf->header.resolution.x = 0;
+	buf->header.resolution.y = 0;
+
 	/* X Resolution used for decoding DXY in mm */
 	{
 		val = REG_RESOLUTION_X_LOWER | REG_SPI_READ_BIT;
