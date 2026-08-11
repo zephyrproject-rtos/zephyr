@@ -70,6 +70,15 @@ int bma4xx_enable_interrupt1(const struct device *dev, struct bma4xx_runtime_con
 {
 	struct bma4xx_data *data = dev->data;
 	uint8_t value = 0;
+	int ret;
+
+	/* The INT1 pad is disabled after reset, enable it as a push-pull active high output */
+	ret = data->hw_ops->write_reg(dev, BMA4XX_REG_INT1_IO_CTRL,
+				      BMA4XX_BIT_INT1_IO_CTRL_OUTPUT_EN |
+					      BMA4XX_BIT_INT1_IO_CTRL_LVL);
+	if (ret != 0) {
+		return ret;
+	}
 
 	if (new_cfg->interrupt1_fifo_wm) {
 		value |= FIELD_PREP(BMA4XX_BIT_INT_MAP_DATA_INT1_FWM, 1);
