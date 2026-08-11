@@ -21,9 +21,14 @@
 #define STRESS_ITERATIONS 128
 
 #define DMAEND_SUPPORTED IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_HAS_DMAEND)
+#define CBWT_ENABLED                                                                               \
+	(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER) &&                             \
+	 DT_NODE_HAS_PROP(UART_NODE, timer))
 
 BUILD_ASSERT(DT_NODE_HAS_PROP(UART_NODE, frame_timeout_supported));
 BUILD_ASSERT(NRF_UARTE_HAS_FRAME_TIMEOUT);
+BUILD_ASSERT(!IS_ENABLED(CONFIG_NRF_UARTE_TEST_CBWT) || CBWT_ENABLED);
+BUILD_ASSERT(!IS_ENABLED(CONFIG_NRF_UARTE_TEST_CBWT) || !DMAEND_SUPPORTED);
 #if DMAEND_SUPPORTED
 BUILD_ASSERT(DT_NODE_HAS_PROP(UART_NODE, dmaend_supported));
 BUILD_ASSERT(NRF_UARTE_HAS_DMAEND_TASK);
@@ -202,6 +207,9 @@ static void validation_reset(void)
 #if DMAEND_SUPPORTED
 	state.response_short = FRAME_TIMEOUT_SHORT_DMAEND;
 	state.no_response_short = FRAME_TIMEOUT_SHORT_DMAEND;
+#elif CBWT_ENABLED
+	state.response_short = FRAME_TIMEOUT_SHORTS_DISABLED;
+	state.no_response_short = FRAME_TIMEOUT_SHORTS_DISABLED;
 #else
 	state.response_short = FRAME_TIMEOUT_SHORT_STOPRX;
 	state.no_response_short = FRAME_TIMEOUT_SHORT_STOPRX;
@@ -209,11 +217,13 @@ static void validation_reset(void)
 	zassert_ok(uart_callback_set(UART_DEV, uart_callback, NULL));
 }
 
+#if !defined(CONFIG_NRF_UARTE_TEST_CBWT)
 static void transmit(size_t len)
 {
 	zassert_ok(uart_tx(UART_DEV, tx_buf, len, 100 * USEC_PER_MSEC));
 	zassert_ok(k_sem_take(&tx_done, K_MSEC(100)));
 }
+#endif
 
 static void receiver_start(size_t len, int32_t timeout)
 {
@@ -228,6 +238,7 @@ static void *suite_setup(void)
 	return NULL;
 }
 
+#if !defined(CONFIG_NRF_UARTE_TEST_CBWT)
 ZTEST(nrf_uarte, test_frame_timeout_rollover)
 {
 	static const enum test_event expected_events[] = {
@@ -399,11 +410,15 @@ ZTEST(nrf_uarte, test_rollover_stress)
 	zassert_ok(k_sem_take(&rx_disabled, K_MSEC(100)));
 	frame_timeout_shorts_assert(FRAME_TIMEOUT_SHORTS_DISABLED);
 }
+#endif
 
 ZTEST(nrf_uarte, test_disable_with_pending_endrx)
 {
 	size_t event_count;
 	unsigned int key;
+#if DMAEND_SUPPORTED || CBWT_ENABLED
+	NRF_UARTE_Type *uarte = (NRF_UARTE_Type *)DT_REG_ADDR(UART_NODE);
+#endif
 
 	validation_reset();
 	state.supply_once = true;
@@ -411,12 +426,23 @@ ZTEST(nrf_uarte, test_disable_with_pending_endrx)
 	receiver_start(sizeof(rx_buf[0]), RX_TIMEOUT_US);
 
 	key = irq_lock();
+#if CBWT_ENABLED
+	zassert_equal(nrf_uarte_shorts_get(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX),
+		      NRF_UARTE_SHORT_ENDRX_STARTRX);
+#endif
+#if DMAEND_SUPPORTED || CBWT_ENABLED
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+#endif
+#if DMAEND_SUPPORTED
+	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_FRAME_TIMEOUT);
+#endif
 	zassert_ok(uart_tx(UART_DEV, tx_buf, sizeof(tx_buf), 100 * USEC_PER_MSEC));
 	k_busy_wait(2 * RX_TIMEOUT_US);
 #if DMAEND_SUPPORTED
-	NRF_UARTE_Type *uarte = (NRF_UARTE_Type *)DT_REG_ADDR(UART_NODE);
-
 	zassert_true(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_FRAME_TIMEOUT));
+#endif
+#if DMAEND_SUPPORTED || CBWT_ENABLED
 	zassert_true(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX));
 	zassert_true(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_RXSTARTED));
 #endif
@@ -440,6 +466,7 @@ ZTEST(nrf_uarte, test_disable_with_pending_endrx)
 	k_sleep(K_MSEC(2));
 	zassert_equal(event_count, state.request_count + state.release_count[0] +
 					   state.release_count[1] + state.disabled_count);
+	zassert_equal(state.stopped_count, 0);
 
 	validation_reset();
 	receiver_start(sizeof(rx_buf[0]), RX_TIMEOUT_US);
