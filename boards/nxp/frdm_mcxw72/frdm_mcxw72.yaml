@@ -15,9 +15,11 @@ supported:
   - gpio
   - flexio
   - i2c
+  - arduino_i2c
   - pinctrl
   - pwm
   - spi
+  - arduino_spi
   - uart
   - watchdog
   - netif:openthread

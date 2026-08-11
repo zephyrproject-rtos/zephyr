@@ -1,0 +1,7 @@
+shields:
+  - name: nxp_sr250
+    full_name: NXP SR250 UWB Shield
+    vendor: nxp
+    supported_features:
+      - uwb
+

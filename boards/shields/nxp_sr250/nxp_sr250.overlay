@@ -1,0 +1,27 @@
+/*
+ *
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+/ {
+	aliases {
+		uwb-i2c-device = &arduino_i2c;
+	};
+};
+
+&arduino_spi {
+	status = "okay";
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+
+	sr2xx: sr2xx@0 {
+        status = "okay";
+		compatible = "nxp,uwb-device";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+		uwb,irq-gpios = <&arduino_header ARDUINO_HEADER_R3_A2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
+		uwb,rstn-gpios = <&arduino_header ARDUINO_HEADER_R3_D4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+};
