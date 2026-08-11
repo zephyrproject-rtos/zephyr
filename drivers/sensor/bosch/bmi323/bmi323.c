@@ -1200,9 +1200,11 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 		return ret;
 	}
 
-	/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
-	data->acc_full_scale = 8000;  /* ±8G in milli-G */
-	data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
+	if (!data->pm_state_saved) {
+		/* Soft reset restores chip to power-on defaults: 8g accel, 2000dps gyro */
+		data->acc_full_scale = 8000;  /* ±8G in milli-G */
+		data->gyro_full_scale = 2000000;  /* ±2000dps in micro-dps */
+	}
 
 	ret = bosch_bmi323_bus_init(dev);
 
@@ -1227,6 +1229,53 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 		return ret;
 	}
 
+	if (data->pm_state_saved) {
+		uint16_t buf[2];
+
+		buf[0] = data->saved_acc_conf;
+		buf[1] = data->saved_gyro_conf;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore acc/gyro config");
+
+			return ret;
+		}
+
+		buf[0] = data->saved_feature_io0;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO0, buf, 1);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore feature config");
+
+			return ret;
+		}
+
+		buf[0] = IMU_BOSCH_BMI323_REG_VALUE(FEATURE_IO_STATUS, STATUS, SET);
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO_STATUS, buf,
+						   1);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to commit feature config");
+
+			return ret;
+		}
+
+		buf[0] = data->saved_int_map1;
+		buf[1] = data->saved_int_map2;
+
+		ret = bosch_bmi323_bus_write_words(dev, IMU_BOSCH_BMI323_REG_INT_MAP1, buf, 2);
+
+		if (ret < 0) {
+			LOG_WRN("Failed to restore interrupt mapping");
+
+			return ret;
+		}
+	}
+
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 	if (ret < 0) {
 		LOG_WRN("Failed to configure int");
@@ -1239,12 +1288,45 @@ static int bosch_bmi323_pm_resume(const struct device *dev)
 static int bosch_bmi323_pm_suspend(const struct device *dev)
 {
 	const struct bosch_bmi323_config *config = (const struct bosch_bmi323_config *)dev->config;
+	struct bosch_bmi323_data *data = (struct bosch_bmi323_data *)dev->data;
+	uint16_t buf[2];
 	int ret;
 
 	ret = gpio_pin_interrupt_configure_dt(&config->int_gpio, GPIO_INT_DISABLE);
 	if (ret < 0) {
 		LOG_WRN("Failed to disable int");
 	}
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_ACC_CONF, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_acc_conf = buf[0];
+	data->saved_gyro_conf = buf[1];
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_INT_MAP1, buf, 2);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_int_map1 = buf[0];
+	data->saved_int_map2 = buf[1];
+
+	ret = bosch_bmi323_bus_read_words(dev, IMU_BOSCH_BMI323_REG_FEATURE_IO0, buf, 1);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->saved_feature_io0 = buf[0];
+	data->pm_state_saved = true;
+
+	data->acc_samples_valid = false;
+	data->gyro_samples_valid = false;
+	data->temperature_valid = false;
 
 	/* Soft reset device to put it into suspend */
 	return bosch_bmi323_soft_reset(dev);
