@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "I2S RTIO loopback"
+
+config SAMPLE_BUFFER_COUNT
+	int "Number of TX and RX buffers respectively"
+	default 8
+
+choice SAMPLE_WORD_SIZE
+	prompt "Word size (sample width)"
+	default SAMPLE_WORD_SIZE_16
+
+config SAMPLE_WORD_SIZE_8
+	bool "Use 8-bit word size (sample width)"
+
+config SAMPLE_WORD_SIZE_16
+	bool "Use 16-bit word size (sample width)"
+
+endchoice # SAMPLE_WORD_SIZE
+
+config SAMPLE_FRAME_CLK_FREQ
+	int "Frame clock frequency in Hz"
+	default 44100
+	range 8000 192000
+
+config SAMPLE_FRAME_COUNT
+	int "Number of frames in TX and RX buffers respectively"
+	default 256
+
+config SAMPLE_STREAM_COUNT
+	int "Number of buffers which will be submitted and consumed before sample is complete"
+	default 256
+
+config SAMPLE_STREAM_BUFFER_COUNT
+	int "The stream buffer count"
+	default 4
+
+config SAMPLE_SIGNAL_FREQ
+	int "The streamed sawtooth signal frequency in Hertz"
+	default 1000
+	range 10 10000
+
+config SAMPLE_SIGNAL_ATTENUATION
+	int "The attenuation factor of the streamed sawtooth signal (1/value)"
+	default 1
+	range 1 20
+
+config SAMPLE_STREAM_DELAY
+	int "Delay between TX stream and RX stream in frames"
+	default 0
