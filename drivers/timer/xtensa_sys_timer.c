@@ -47,12 +47,17 @@ static void set_ccompare(uint32_t val)
 			  :: "r"(val));
 }
 
-static uint32_t ccount(void)
+static uint32_t ccount_raw(void)
 {
 	uint32_t val;
 
 	__asm__ volatile ("rsr.CCOUNT %0" : "=r"(val));
-	return val + ccount_comp();
+	return val;
+}
+
+static uint32_t ccount(void)
+{
+	return ccount_raw() + ccount_comp();
 }
 
 static uint32_t sys_clock_elapsed_ticks(uint32_t curr)
@@ -67,6 +72,15 @@ static uint32_t sys_clock_elapsed_ticks(uint32_t curr)
 static void ccompare_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+
+	/* Disarm the IRQ. Writing CCOMPARE is what clears the pending timer
+	 * interrupt, and the match is on equality, so a compare one behind the
+	 * current count both acknowledges it and puts the next match a whole
+	 * counter period away, which is as far as a 32-bit comparator reaches.
+	 * This interrupt then fires once for the deadline it was armed with,
+	 * whether or not another one is programmed afterwards.
+	 */
+	set_ccompare(ccount_raw() - 1);
 
 	k_spinlock_key_t key = sys_clock_lock();
 
