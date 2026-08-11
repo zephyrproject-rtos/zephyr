@@ -446,7 +446,7 @@ static void its_setup_cmd_queue(const struct device *dev)
 	/* Zero out cmd table */
 	memset(cfg->cmd_queue, 0, cfg->cmd_queue_size);
 
-	reg |= MASK_SET(cfg->cmd_queue_size / SIZE_4K, GITS_CBASER_SIZE);
+	reg |= MASK_SET((cfg->cmd_queue_size / SIZE_4K) - 1, GITS_CBASER_SIZE);
 	reg |= MASK_SET(GIC_BASER_SHARE_INNER, GITS_CBASER_SHAREABILITY);
 	reg |= MASK_SET((uintptr_t)cfg->cmd_queue >> GITS_CBASER_ADDR_SHIFT, GITS_CBASER_ADDR);
 	reg |= MASK_SET(GIC_BASER_CACHE_RAWAWB, GITS_CBASER_OUTER_CACHE);
