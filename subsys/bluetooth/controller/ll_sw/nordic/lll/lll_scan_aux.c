@@ -862,7 +862,12 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	}
 
 	pdu = (void *)node_rx->pdu;
-	if (unlikely((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len)) {
+	if (unlikely((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len ||
+		     (pdu->len > LL_EXT_OCTETS_RX_MAX))) {
+		/* Discard received PDU with length that exceeds the configured
+		 * maximum receive data length used to setup the radio packet
+		 * reception.
+		 */
 		err = -EINVAL;
 
 		goto isr_rx_do_close;
