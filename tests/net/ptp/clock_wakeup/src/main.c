@@ -31,6 +31,8 @@ static int fake_eventfd_create_calls;
 static int fake_eventfd_write_calls;
 static int fake_eventfd_last_fd;
 static zvfs_eventfd_t fake_eventfd_last_value;
+static int fake_work_submit_calls;
+static struct k_work *fake_work_submit_last;
 static int fake_ptp_clock_get_calls;
 static int fake_ptp_clock_set_calls;
 static int fake_ptp_clock_rate_adjust_calls;
@@ -77,6 +79,14 @@ static int fake_zvfs_eventfd_read(int fd, zvfs_eventfd_t *value)
 	}
 
 	return 0;
+}
+
+static int fake_k_work_submit(struct k_work *work)
+{
+	fake_work_submit_calls++;
+	fake_work_submit_last = work;
+
+	return 1;
 }
 
 static struct net_if *fake_net_if_get_first_by_type(const struct net_l2 *l2)
@@ -317,6 +327,7 @@ int ptp_port_management_msg_process(struct ptp_port *port, struct ptp_port *send
 #define zvfs_eventfd             fake_zvfs_eventfd
 #define zvfs_eventfd_write       fake_zvfs_eventfd_write
 #define zvfs_eventfd_read        fake_zvfs_eventfd_read
+#define k_work_submit               fake_k_work_submit
 #define net_if_get_first_by_type fake_net_if_get_first_by_type
 #define net_if_get_link_addr     fake_net_if_get_link_addr
 #define net_eth_get_ptp_clock    fake_net_eth_get_ptp_clock
@@ -342,6 +353,7 @@ int ptp_port_management_msg_process(struct ptp_port *port, struct ptp_port *send
 #undef net_eth_get_ptp_clock
 #undef net_if_get_link_addr
 #undef net_if_get_first_by_type
+#undef k_work_submit
 #undef zvfs_eventfd_read
 #undef zvfs_eventfd_write
 #undef zvfs_eventfd
@@ -357,6 +369,8 @@ static void reset_clock_state(void)
 	fake_eventfd_write_calls = 0;
 	fake_eventfd_last_fd = -1;
 	fake_eventfd_last_value = 0;
+	fake_work_submit_calls = 0;
+	fake_work_submit_last = NULL;
 	fake_ptp_clock_get_calls = 0;
 	fake_ptp_clock_set_calls = 0;
 	fake_ptp_clock_rate_adjust_calls = 0;
@@ -413,6 +427,25 @@ ZTEST(ptp_clock_wakeup, test_pollfd_invalidate_wakes_worker_after_init)
 
 	zassert_false(ptp_clk.pollfd_valid, "pollfd cache should be invalidated");
 	zassert_equal(fake_eventfd_write_calls, 1, "worker was not woken");
+	zassert_equal(fake_eventfd_last_fd, 17, "unexpected eventfd target");
+	zassert_equal(fake_eventfd_last_value, 1, "unexpected wakeup value");
+}
+
+ZTEST(ptp_clock_wakeup, test_timeout_wakeup_is_deferred)
+{
+	zassert_not_null(ptp_clock_init(), "clock init failed");
+	fake_eventfd_write_calls = 0;
+
+	ptp_clock_signal_timeout();
+
+	zassert_equal(fake_work_submit_calls, 1, "timeout work was not submitted");
+	zassert_equal(fake_work_submit_last, &ptp_clk.timeout_work, "unexpected timeout work item");
+	zassert_equal(fake_eventfd_write_calls, 0,
+		      "eventfd write ran in the timer callback context");
+
+	ptp_clk.timeout_work.handler(&ptp_clk.timeout_work);
+
+	zassert_equal(fake_eventfd_write_calls, 1, "deferred wakeup was not delivered");
 	zassert_equal(fake_eventfd_last_fd, 17, "unexpected eventfd target");
 	zassert_equal(fake_eventfd_last_value, 1, "unexpected wakeup value");
 }
