@@ -48,7 +48,7 @@ static int lsm6dso16is_enable_t_int(const struct device *dev, int enable)
 		return ret;
 	}
 
-	val.drdy_temp = 1;
+	val.drdy_temp = enable;
 
 	return lsm6dso16is_pin_int2_route_set(ctx, val);
 }
@@ -80,7 +80,7 @@ static int lsm6dso16is_enable_xl_int(const struct device *dev, int enable)
 			return ret;
 		}
 
-		val.drdy_xl = 1;
+		val.drdy_xl = enable;
 
 		ret = lsm6dso16is_pin_int1_route_set(ctx, val);
 	} else {
@@ -92,7 +92,7 @@ static int lsm6dso16is_enable_xl_int(const struct device *dev, int enable)
 			return ret;
 		}
 
-		val.drdy_xl = 1;
+		val.drdy_xl = enable;
 
 		ret = lsm6dso16is_pin_int2_route_set(ctx, val);
 	}
@@ -126,7 +126,7 @@ static int lsm6dso16is_enable_g_int(const struct device *dev, int enable)
 			return ret;
 		}
 
-		val.drdy_gy = 1;
+		val.drdy_gy = enable;
 
 		ret = lsm6dso16is_pin_int1_route_set(ctx, val);
 	} else {
@@ -138,7 +138,7 @@ static int lsm6dso16is_enable_g_int(const struct device *dev, int enable)
 			return ret;
 		}
 
-		val.drdy_gy = 1;
+		val.drdy_gy = enable;
 
 		ret = lsm6dso16is_pin_int2_route_set(ctx, val);
 	}
