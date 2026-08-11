@@ -235,7 +235,7 @@ static void bmi323_complete_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	edata->has_temp         = fetch_temp;
 	/* acc_full_scale is in milli-G, convert to G */
 	edata->accel_range      = (data->acc_full_scale / 1000);
-	/* gyro_full_scale is in micro-dps, convert to dps */
+	/* gyro_full_scale is in milli-dps, convert to dps */
 	edata->gyro_range       = (data->gyro_full_scale / 1000);
 	edata->reading          = reading;
 
