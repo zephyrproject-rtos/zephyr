@@ -768,6 +768,12 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	dma_channel = &config->dma_channel[channel];
 	desc_iter = dma_channel->desc_list;
 
+	if (size > ARRAY_SIZE(dma_channel->desc_list) *
+		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
+		return -EINVAL;
+	}
+
 	if (dma_channel->dir == DMA_RX) {
 		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 		buf = dst;
