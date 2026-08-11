@@ -91,6 +91,12 @@
 			status = "disabled";
 		};
 
+		hsclk: hsclk {
+			#clock-cells = <0>;
+			compatible = "ti,mspm0-clk";
+			status = "disabled";
+		};
+
 		lfclk: lfclk {
 			#clock-cells = <0>;
 			compatible = "ti,mspm0-clk";
