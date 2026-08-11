@@ -74,12 +74,20 @@ static int lis2dh_sample_fetch_temp(const struct device *dev)
 		if (cfg->temperature.fractional_bits == 0) {
 			lis2dh->temperature.val2 = 0;
 		} else {
-			lis2dh->temperature.val2 =
-				(raw[0] >> (8 - cfg->temperature.fractional_bits));
-			lis2dh->temperature.val2 = (lis2dh->temperature.val2 * 1000000);
-			lis2dh->temperature.val2 >>= cfg->temperature.fractional_bits;
-			if (lis2dh->temperature.val1 < 0) {
-				lis2dh->temperature.val2 *= -1;
+			int32_t frac = raw[0] >> (8 - cfg->temperature.fractional_bits);
+
+			frac = (frac * 1000000) >> cfg->temperature.fractional_bits;
+
+			if (lis2dh->temperature.val1 < 0 && frac != 0) {
+				/*
+				 * The raw value is two's complement, so the fractional
+				 * part is always a positive addend.  Renormalize it so
+				 * that val1 and val2 have the same sign.
+				 */
+				lis2dh->temperature.val1 += 1;
+				lis2dh->temperature.val2 = frac - 1000000;
+			} else {
+				lis2dh->temperature.val2 = frac;
 			}
 		}
 	}
