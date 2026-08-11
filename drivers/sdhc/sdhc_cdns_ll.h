@@ -17,19 +17,17 @@
 #define CDNS_SRS09_CI			BIT(16)
 
 /* SRS10 - Host Control 1 (General / Power / Block-Gap / Wake-Up) */
-#define LEDC     BIT(0)
-#define DT_WIDTH BIT(1)
-#define HS_EN    BIT(2)
-
+#define CDNS_SRS10_LEDC		BIT(0)
 #define CDNS_SRS10_DTW		1
+#define CDNS_SRS10_HS_EN	BIT(2)
+#define CDNS_SRS10_DMASEL	GENMASK(4, 3)
 #define CDNS_SRS10_EDTW		5
 #define CDNS_SRS10_BP		BIT(8)
+#define CDNS_SRS10_BVS		GENMASK(11, 9)
+#define BUS_VOLTAGE_3_3_V	CDNS_SRS10_BVS
 
-#define CDNS_SRS10_BVS		9
-#define BUS_VOLTAGE_1_8_V	(5 << CDNS_SRS10_BVS)
-#define BUS_VOLTAGE_3_0_V	(6 << CDNS_SRS10_BVS)
-#define BUS_VOLTAGE_3_3_V	(7 << CDNS_SRS10_BVS)
-
+#define ADMA2_64		CDNS_SRS10_DMASEL
+#define ADMA2_32		BIT(4)
 
 /* data bus width */
 #define WIDTH_BIT1		CDNS_SRS10_DTW
@@ -353,10 +351,6 @@
 #define ADMA_DESC_ATTR_ACT2		BIT(5)
 #define ADMA_DESC_TRANSFER_DATA		ADMA_DESC_ATTR_ACT2
 
-/* Conf depends on SRS15.HV4E */
-#define SDMA				0
-#define ADMA2_32			(2 << 3)
-#define ADMA2_64			(3 << 3)
 /* here 0 defines the 64 Kb size */
 #define MAX_64KB_PAGE			0
 
