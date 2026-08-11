@@ -524,6 +524,18 @@ config WIFI_NM_WPA_SUPPLICANT_NAN
 	bool "NAN (Neighbor Awareness Networking) support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
 
+config WIFI_NAN_MAX_SSI_LEN
+	int "Maximum length of NAN service specific info"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	default 128
+	help
+	  Maximum NAN Service Specific Info (SSI) payload length in bytes.
+	  This value is stored inline in NAN event and request structures,
+	  so increasing it raises the net_mgmt event queue footprint by
+	  roughly CONFIG_NET_MGMT_EVENT_QUEUE_SIZE times this value.
+	  Users needing larger SSI payloads (e.g. Matter PAF commissioning
+	  with MTU=350) should set this to the required size.
+
 config WIFI_NM_WPA_SUPPLICANT_11AC
 	bool "IEEE 802.11ac VHT support"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
