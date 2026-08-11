@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2026 Microchip Technology Inc.
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,6 +10,13 @@
 		group1 {
 			pinmux = <PA0D_SERCOM1_PAD0>,
 				 <PA1D_SERCOM1_PAD1>;
+		};
+	};
+
+	ptc_btn1_default: ptc_btn1_default {
+		group1 {
+			pinmux = <PB2B_PTC_Y8>,
+				 <PB3K_PTC_DS9>;
 		};
 	};
 };
