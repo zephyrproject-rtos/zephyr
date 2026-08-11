@@ -10,6 +10,7 @@
 #include <zephyr/drivers/flash.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
 #include "spi_nor.h"
 #include "jesd216.h"
@@ -1935,7 +1936,7 @@ _program_lut:
 					FLEXSPI_INSTR_PROG_END * MEMC_FLEXSPI_CMD_PER_SEQ,
 					data->port);
 	if (ret < 0) {
-		return ret;
+		goto _exit;
 	}
 
 _exit:
@@ -2031,6 +2032,48 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 #endif
 };
 
+#ifdef CONFIG_PM_DEVICE
+/*
+ * PM_DEVICE_ACTION_TURN_ON: re-initialize the FlexSPI controller (device
+ * configuration + LUT) after its state was lost, e.g. on wake from a deep
+ * power state.
+ */
+static int flash_flexspi_nor_pm_action(const struct device *dev,
+				       enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_TURN_ON:
+#ifdef CONFIG_FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE
+	{
+		struct flash_flexspi_nor_data *data = dev->data;
+		const struct flash_flexspi_nor_config *config = dev->config;
+		int ret;
+
+		/* Re-initialize the FlexSPI controller configuration. */
+		memc_flexspi_reset_lut_alloc(&data->controller, data->port);
+		ret = flash_flexspi_nor_probe(data, config);
+		if (ret < 0) {
+			LOG_ERR("FlexSPI NOR re-probe failed: %d", ret);
+			return ret;
+		}
+	}
+#endif
+		return 0;
+	case PM_DEVICE_ACTION_TURN_OFF:
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		/* Nothing to save/do: config lives in RAM, chip state (QE,
+		 * 4BA) is retained by the flash itself across PM3, and the
+		 * controller state is rebuilt by probe on TURN_ON when
+		 * CONFIG_FLASH_MCUX_FLEXSPI_NOR_PM_RESTORE is enabled.
+		 */
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
+
 #define CONCAT3(x, y, z) x ## y ## z
 
 #define CS_INTERVAL_UNIT(unit)						\
@@ -2109,9 +2152,11 @@ static DEVICE_API(flash, flash_flexspi_nor_api) = {
 		},							\
 	};								\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, flash_flexspi_nor_pm_action);	\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			      flash_flexspi_nor_init,			\
-			      NULL,					\
+			      PM_DEVICE_DT_INST_GET(n),			\
 			      &flash_flexspi_nor_data_##n,		\
 			      &flash_flexspi_nor_config_##n,		\
 			      POST_KERNEL,				\
