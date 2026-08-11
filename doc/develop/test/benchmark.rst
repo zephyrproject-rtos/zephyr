@@ -92,6 +92,58 @@ functions only once allowing the test function to run hot within a dedicated tim
 This will give a more realistic measurements as it includes the overhead of the system as it would
 be in a real-world scenario, such as interrupts, context switches, and other background tasks.
 
+Manual Benchmarks
+=================
+
+Standard and timed benchmarks are timed by the framework itself, which takes both timestamps in
+thread context around each invocation of the benchmark body. Some measurements cannot be expressed
+that way because their endpoints are captured in different execution contexts: for example the
+latency from raising an interrupt to the first instruction of its ISR, or from the end of an ISR to
+a woken thread running.
+
+Manual benchmarks keep the loop, the setup and the teardown in the framework and hand the body
+only the choice of what is measured, by bracketing it with :c:func:`ztest_benchmark_start` and
+:c:func:`ztest_benchmark_end`. The framework computes and reports the same statistics as for
+standard benchmarks.
+
+.. code-block:: c
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, <benchmark name>, <samples>, <setup_fn>, <teardown_fn>)
+   {
+         prepare();
+
+         ztest_benchmark_start();
+         operation_under_test();
+         ztest_benchmark_end();
+   }
+
+When the span does not begin and end in the same execution context, the endpoint captured
+elsewhere is handed over instead, with :c:func:`ztest_benchmark_start_at` or
+:c:func:`ztest_benchmark_end_at`. An ISR captures ``timing_counter_get()`` into a variable and the
+body passes it in once it runs:
+
+.. code-block:: c
+
+   static volatile timing_t isr_timestamp;
+
+   static void my_isr(const void *arg)
+   {
+         isr_timestamp = timing_counter_get();
+   }
+
+   ZTEST_BENCHMARK_MANUAL(<suite name>, isr_exit_latency, 1000, NULL, NULL)
+   {
+         trigger_the_interrupt();
+
+         ztest_benchmark_start_at(isr_timestamp);
+         ztest_benchmark_end();
+   }
+
+The framework applies the same control-measurement noise correction as for standard benchmarks
+when reporting. The span is closed from thread context, so an ISR should only capture a timestamp
+and leave the recording to the body. An iteration whose body records no span contributes no
+sample.
+
 Understanding Results
 *********************
 

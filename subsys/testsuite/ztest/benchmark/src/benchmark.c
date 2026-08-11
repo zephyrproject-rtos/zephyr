@@ -42,14 +42,25 @@ static int64_t discrete_noise_correction(uint64_t value, double ctrl)
 	return (int64_t)value - (int64_t)trunc(ctrl);
 }
 
-static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark,
-					  struct ztest_benchmark_stats *ctrl_stats)
+static void ztest_benchmark_print_stats(const char *suite_name, const char *bench_name,
+					char record_type, struct ztest_benchmark_stats *stats,
+					struct ztest_benchmark_stats *ctrl_stats)
 {
 	double ctrl = (double)ctrl_stats->mean;
 	double stddev = 0.0;
 	double sample_variance;
 	double std_error = 0.0;
-	struct ztest_benchmark_stats *stats = &benchmark->stats;
+
+	if (stats->samples == 0) {
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
+		printk("%c,%s,%s\tINCONCLUSIVE\n", record_type, suite_name, bench_name);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+		printk_line(bench_name, '=');
+		printk("\tTest inconclusive (no samples recorded)\n");
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+		return;
+	}
 
 	if (stats->samples > 1) {
 		sample_variance = stats->m2 / (double)(stats->samples - 1);
@@ -58,8 +69,8 @@ static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark,
 	}
 
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
-	printk("S,%s,%s,%lld,%lld,%.3f,%.3f,%.3f,%lld,%lld,%lld,%lld\n",
-		benchmark->suite->name, benchmark->name,
+	printk("%c,%s,%s,%lld,%lld,%.3f,%.3f,%.3f,%lld,%lld,%lld,%lld\n",
+		record_type, suite_name, bench_name,
 		stats->samples,
 		discrete_noise_correction(stats->total, ctrl * stats->samples),
 		noise_correction(stats->mean, ctrl), stddev, std_error,
@@ -67,7 +78,7 @@ static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark,
 		discrete_noise_correction(stats->max.value, ctrl), stats->max.sample);
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
-	printk_line(benchmark->name, '=');
+	printk_line(bench_name, '=');
 	printk("\tSample size:%lld, total cycles: %lld\n", stats->samples,
 			discrete_noise_correction(stats->total, ctrl * stats->samples));
 
@@ -127,6 +138,102 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 
 		if (benchmark->teardown) {
 			benchmark->teardown();
+		}
+	}
+}
+
+/*
+ * The benchmark whose body is running, and the span it has marked.
+ *
+ * Only one benchmark runs at a time, so a single set of these serves all
+ * of them. Neither hook records anything: they only take timestamps, so
+ * both are safe to call from an ISR, and the sample is computed by the
+ * runner once the body has returned and the thread is running again.
+ * That is what keeps the floating point of update_metrics() out of
+ * interrupt context, where it is not allowed on every architecture.
+ */
+static bool manual_active;
+static timing_t manual_span_start;
+static timing_t manual_span_end;
+static bool manual_span_open;
+static bool manual_span_closed;
+
+void ztest_benchmark_start(void)
+{
+	if (!manual_active) {
+		LOG_DBG("%s() outside a manual benchmark body, ignored", __func__);
+		return;
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	manual_span_start = timing_counter_get();
+	manual_span_open = true;
+}
+
+void ztest_benchmark_end(void)
+{
+	if (!manual_active) {
+		LOG_DBG("%s() outside a manual benchmark body, ignored", __func__);
+		return;
+	}
+
+	if (!manual_span_open) {
+		LOG_DBG("%s() without a matching start, ignored", __func__);
+		return;
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	manual_span_end = timing_counter_get();
+	manual_span_open = false;
+	manual_span_closed = true;
+}
+
+/* One iteration of a manual benchmark, returning its span or nothing. */
+static bool manual_run_once(struct ztest_benchmark_manual *benchmark, uint64_t *cycles)
+{
+	bool measured;
+
+	if (benchmark->setup) {
+		benchmark->setup();
+	}
+
+	manual_span_open = false;
+	manual_span_closed = false;
+	manual_active = true;
+	benchmark->run();
+	manual_active = false;
+
+	measured = manual_span_closed;
+	if (measured) {
+		*cycles = timing_cycles_get(&manual_span_start, &manual_span_end);
+	} else {
+		LOG_DBG("%s recorded no span this iteration", benchmark->name);
+	}
+
+	if (benchmark->teardown) {
+		benchmark->teardown();
+	}
+
+	return measured;
+}
+
+static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
+{
+	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
+	benchmark->stats.min.value = UINT64_MAX;
+
+	/*
+	 * The loop, the setup and the teardown are the framework's, exactly
+	 * as for a sampled benchmark. All the body decides is which part of
+	 * itself the timestamps go around.
+	 */
+	for (size_t i = 0; i < benchmark->iterations; i++) {
+		uint64_t cycles;
+
+		if (manual_run_once(benchmark, &cycles)) {
+			update_metrics(&benchmark->stats, cycles);
 		}
 	}
 }
@@ -221,6 +328,30 @@ static struct ztest_benchmark ctrl = {
 	.run = empty_function,
 };
 
+/*
+ * A manual span costs the two timestamps that bracket it and nothing
+ * else: the body is not called from inside the span, so the indirect
+ * call that the sampled control measures is not part of one. Correcting
+ * a manual sample against the sampled control would subtract an
+ * overhead it never paid, so it gets a control of its own, an empty
+ * span with the framework's own hooks around it.
+ *
+ * A span whose ends are captured in two different contexts pays neither
+ * of these exactly, and no control can express that; the correction is
+ * still the closest of the two.
+ */
+static void empty_span(void)
+{
+	ztest_benchmark_start();
+	ztest_benchmark_end();
+}
+
+static struct ztest_benchmark_manual ctrl_manual = {
+	.name = "ctrl_manual",
+	.iterations = 1000,
+	.run = empty_span,
+};
+
 static struct ztest_benchmark_timed ctrl_timed = {
 	.duration_ms = 100,
 	.name = "ctrl_timed",
@@ -234,6 +365,7 @@ void benchmark_main(void)
 
 	k_sched_lock();
 	ztest_benchmark_run(&ctrl);
+	ztest_benchmark_manual_run(&ctrl_manual);
 	ztest_benchmark_timed_run(&ctrl_timed);
 	k_sched_unlock();
 
@@ -250,7 +382,17 @@ void benchmark_main(void)
 				continue;
 			}
 			ztest_benchmark_run(benchmark);
-			ztest_benchmark_print_results(benchmark, &ctrl.stats);
+			ztest_benchmark_print_stats(suite->name, benchmark->name, 'S',
+						    &benchmark->stats, &ctrl.stats);
+		}
+
+		STRUCT_SECTION_FOREACH(ztest_benchmark_manual, benchmark) {
+			if (benchmark->suite != suite) {
+				continue;
+			}
+			ztest_benchmark_manual_run(benchmark);
+			ztest_benchmark_print_stats(suite->name, benchmark->name, 'M',
+						    &benchmark->stats, &ctrl_manual.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_timed, benchmark) {
