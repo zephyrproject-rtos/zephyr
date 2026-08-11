@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+# SPDX-License-Identifier: Apache-2.0
+
+description: >
+  Generic QPI PSRAM device on MSPI bus.
+
+  Two mutually exclusive operating modes are supported. Pick one - the
+  device parameters come either from the driver or from devicetree, never
+  from both.
+
+  1. Known chip variant (chip-variant is set):
+     The driver takes every device parameter from its internal table:
+     read/write commands, command and address length, rx/tx dummy cycles,
+     CE refresh interval and maximum burst size. None of these have to be
+     given in devicetree, and neither is size. Besides the MSPI bus
+     properties (reg, mspi-max-frequency, mspi-io-mode) only chip-variant
+     is needed.
+     Supported chip variants: ESP-PSRAM64H, ISSI IS66WVS4M8BLL, IS66WVS8M8BLL.
+
+  2. Generic mode (chip-variant is omitted):
+     The driver uses the standard de-facto QPI PSRAM init sequence
+     (Enter QPI 0x35, Reset 0x66+0x99, Read ID 0x9F, all overridable) but
+     skips KGD verification, and takes every device parameter from
+     devicetree: size, read-command, write-command, command-length,
+     address-length, rx-dummy, and CE timing via ce-break-config. All of
+     those except rx-dummy and the CE timing are checked at init and the
+     driver refuses to probe without them.
+
+compatible: "qspi-psram"
+
+include: [mspi-device.yaml]
+
+properties:
+  size:
+    type: int
+    description: >
+      Memory capacity in bits (e.g. 67108864 for 64 Mbit).
+      Required in generic mode; when chip-variant is set the capacity of that
+      part is known to the driver and any value given here is ignored.
+
+  chip-variant:
+    type: string
+    enum:
+      - "ESP64H"          # Espressif ESP-PSRAM64H  64 Mbit (8 MB)
+      - "IS66WVS4M8BLL"   # ISSI IS66WVS4M8BLL      32 Mbit (4 MB)
+      - "IS66WVS8M8BLL"   # ISSI IS66WVS8M8BLL      64 Mbit (8 MB)
+    description: >
+      Selects the PSRAM chip variant. The driver then takes all device
+      parameters from its internal table and overrides whatever DT holds
+      for them, so none of read-command, write-command, command-length,
+      address-length, rx-dummy, tx-dummy or ce-break-config needs to be
+      given. Omit this property to use generic mode, in which those
+      parameters must be specified in DT instead.
+
+  mspi-io-mode:
+    description: >
+      Must be MSPI_IO_MODE_QUAD; the driver refuses to probe with anything
+      else. Left optional to match the other MSPI device bindings, so an
+      omitted value is reported at init rather than at build time.
+
+  mspi-data-rate:
+    description: >
+      Must be MSPI_DATA_RATE_SINGLE, the default; this device family is
+      single data rate only and the driver rejects anything else.
+
+  read-command:
+    description: >
+      QPI fast-read command byte sent by the MSPI controller in DMA/memory-mapped mode.
+      Generic mode only, where the driver rejects a missing value; ignored
+      and overridden from the internal chip table when chip-variant is set.
+
+  write-command:
+    description: >
+      QPI write command byte sent by the MSPI controller in DMA/memory-mapped mode.
+      Generic mode only, where the driver rejects a missing value; ignored
+      and overridden from the internal chip table when chip-variant is set.
+
+  command-length:
+    description: >
+      Length of the read/write command in bytes.
+      Generic mode only, where the driver rejects a missing value; ignored
+      when chip-variant is set (the chip table holds INSTR_1_BYTE for all
+      supported variants).
+
+  address-length:
+    description: >
+      Length of the address phase in bytes.
+      Generic mode only, where the driver rejects a missing value; ignored
+      when chip-variant is set (the chip table holds ADDR_3_BYTE for all
+      supported variants).
+
+  rx-dummy:
+    description: >
+      Read dummy cycles. Use the value from the chip datasheet for the
+      chosen operating frequency (typically 6 at or below 80 MHz).
+      Generic mode only, where leaving it at 0 disables the dummy phase and
+      is warned about at init; ignored when chip-variant is set (the chip
+      table holds the datasheet value).
+
+  enter-qpi-cmd:
+    type: int
+    default: 0x35
+    description: >
+      SPI command to switch the chip into QPI (quad) mode.
+      Default 0x35 is the de-facto standard for most QPI PSRAM vendors.
+      Only used in generic mode (chip-variant not set); for known variants
+      the driver takes this value from its internal chip table.
+
+  exit-qpi-cmd:
+    type: int
+    default: 0xF5
+    description: >
+      QPI command to return the chip to SPI mode.
+      Default 0xF5 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  reset-en-cmd:
+    type: int
+    default: 0x66
+    description: >
+      Reset Enable command (sent before reset-cmd).
+      Default 0x66 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  reset-cmd:
+    type: int
+    default: 0x99
+    description: >
+      Reset command.
+      Default 0x99 is the de-facto standard.
+      Only used in generic mode (chip-variant not set).
+
+  read-id-cmd:
+    type: int
+    default: 0x9F
+    description: >
+      Read ID command. The driver reads 3 bytes (MF / KGD / EID) at address 0.
+      Default 0x9F is the de-facto standard.
+      In generic mode KGD verification is skipped; the command is still
+      issued so the chip presence can be confirmed via LOG_INF output.
+      Only used in generic mode (chip-variant not set).
+
+examples:
+  - |
+    /* Known part: the driver supplies size, commands, dummy cycles and CE
+     * timing from its internal table.
+     */
+    psram0: psram@0 {
+        compatible = "qspi-psram";
+        reg = <0>;
+        chip-variant = "ESP64H";
+        mspi-max-frequency = <DT_FREQ_M(80)>;
+        mspi-io-mode = "MSPI_IO_MODE_QUAD";
+        memmap-config = <1 0 0 0>;
+    };
+  - |
+    /* Any other QPI PSRAM: every parameter comes from devicetree. */
+    psram0: psram@0 {
+        compatible = "qspi-psram";
+        reg = <0>;
+        size = <DT_SIZE_M(64)>; /* 64 Mbit */
+        mspi-max-frequency = <DT_FREQ_M(80)>;
+        mspi-io-mode = "MSPI_IO_MODE_QUAD";
+        read-command = <0xeb>;
+        write-command = <0x38>;
+        command-length = "INSTR_1_BYTE";
+        address-length = "ADDR_3_BYTE";
+        rx-dummy = <6>;
+        ce-break-config = <1024 8>;
+        memmap-config = <1 0 0 0>;
+    };
