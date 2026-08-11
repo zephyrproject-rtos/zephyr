@@ -14,13 +14,13 @@ __Vectors = __VECTOR_TABLE;
 #else
 . += CONFIG_FLEXSPI_CONFIG_BLOCK_OFFSET - (. - __rom_start_address);
 #endif
-#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT118X)
+#if defined(CONFIG_SOC_SERIES_IMXRT11XX) || defined(CONFIG_SOC_SERIES_IMXRT10XX) || defined(CONFIG_SOC_SERIES_IMXRT118X) || defined(CONFIG_SOC_SERIES_IMXRT266X)
 KEEP(*(.boot_hdr.conf))
 #endif
 #if defined(CONFIG_SOC_SERIES_IMXRT6XX) || defined(CONFIG_SOC_SERIES_IMXRT5XX) || defined(CONFIG_SOC_SERIES_IMXRT7XX)
 KEEP(*(.flash_conf))
 #endif
-#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+#if defined(CONFIG_SOC_SERIES_IMXRT118X) || defined(CONFIG_SOC_SERIES_IMXRT266X)
 #ifdef CONFIG_EXTERNAL_MEM_CONFIG_DATA
 	. += CONFIG_EXTERNAL_MEM_CONFIG_OFFSET - (. - __rom_start_address);
 	KEEP(*(.boot_hdr.xmcd_data))
