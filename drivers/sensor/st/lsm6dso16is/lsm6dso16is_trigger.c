@@ -19,6 +19,11 @@
 
 LOG_MODULE_DECLARE(LSM6DSO16IS, CONFIG_SENSOR_LOG_LEVEL);
 
+/* data ready flags are only cleared by reading the output registers, so bound
+ * the drain loop in case a handler defers the actual sample fetch
+ */
+#define LSM6DSO16IS_MAX_DRDY_LOOPS	8
+
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
 /**
  * lsm6dso16is_enable_t_int - TEMP enable selected int pin to generate interrupt
@@ -204,17 +209,18 @@ static void lsm6dso16is_handle_interrupt(const struct device *dev)
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	lsm6dso16is_status_reg_t status;
 
-	while (1) {
+	for (int i = 0; i < LSM6DSO16IS_MAX_DRDY_LOOPS; i++) {
 		if (lsm6dso16is_status_reg_get(ctx, &status) < 0) {
 			LOG_DBG("failed reading status reg");
-			return;
+			break;
 		}
 
-		if ((status.xlda == 0) && (status.gda == 0)
+		if (!((status.xlda && (lsm6dso16is->handler_drdy_acc != NULL)) ||
+		      (status.gda && (lsm6dso16is->handler_drdy_gyr != NULL))
 #if defined(CONFIG_LSM6DSO16IS_ENABLE_TEMP)
-					&& (status.tda == 0)
+		      || (status.tda && (lsm6dso16is->handler_drdy_temp != NULL))
 #endif
-					) {
+		     )) {
 			break;
 		}
 
