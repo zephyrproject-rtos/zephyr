@@ -72,8 +72,7 @@ int bma4xx_configure(const struct device *dev, struct bma4xx_runtime_config *cfg
 						   FIELD_PREP(BMA4XX_FIFO_ACC_EN, 0));
 		__ASSERT(res == 0, "%s could not disable fifo acceleration", __func__);
 
-		res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_CMD,
-						   FIELD_PREP(BMA4XX_CMD_FIFO_FLUSH, 1));
+		res |= dev_data->hw_ops->write_reg(dev, BMA4XX_REG_CMD, BMA4XX_CMD_FIFO_FLUSH);
 		__ASSERT(res == 0, "%s could not flush fifo", __func__);
 	}
 
