@@ -197,79 +197,91 @@ static pwr_mgmt0_gyro_mode_t icm566xx_get_gyro_mode(inv_imu_device_t *s)
 static int icm566xx_accel_config(struct icm566xx_data *drv_data, enum sensor_attribute attr,
 				 const struct sensor_value *val)
 {
+	int err = 0;
+
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
-		icm566xx_set_accel_mode(&drv_data->driver, val->val1);
+		err = icm566xx_set_accel_mode(&drv_data->driver, val->val1);
 	} else if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 		pwr_mgmt0_accel_mode_t c_mode = icm566xx_get_accel_mode(&drv_data->driver);
 
-		icm566xx_set_accel_frequency(&drv_data->driver, val->val1);
+		err = icm566xx_set_accel_frequency(&drv_data->driver, val->val1);
+		if (err < 0) {
+			return err;
+		}
 
 		if (val->val1 && c_mode == PWR_MGMT0_ACCEL_MODE_OFF) {
 			if (val->val1 <= ACCEL_CONFIG0_ACCEL_ODR_12_5_HZ) {
-				icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_LN);
+				err = icm566xx_set_accel_mode(&drv_data->driver,
+							      PWR_MGMT0_ACCEL_MODE_LN);
 			} else {
-				icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_LP);
+				err = icm566xx_set_accel_mode(&drv_data->driver,
+							      PWR_MGMT0_ACCEL_MODE_LP);
 			}
 		} else if (val->val1 == 0) {
-			icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_OFF);
+			err = icm566xx_set_accel_mode(&drv_data->driver, PWR_MGMT0_ACCEL_MODE_OFF);
 		} else {
 			LOG_ERR("Wrong config with accel mode");
 		}
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		int err = icm566xx_set_accel_fsr(&drv_data->driver, val->val1);
-
+		err = icm566xx_set_accel_fsr(&drv_data->driver, val->val1);
 		if (err != 0) {
 			return err;
 		}
 
 		drv_data->edata.header.accel_fs = val->val1;
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_BW_FILTER_LPF) {
-		icm566xx_set_accel_ln_bw(&drv_data->driver, val->val1);
+		err = icm566xx_set_accel_ln_bw(&drv_data->driver, val->val1);
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_AVERAGING) {
-		icm566xx_set_accel_lp_avg(&drv_data->driver, val->val1);
+		err = icm566xx_set_accel_lp_avg(&drv_data->driver, val->val1);
 	} else {
 		LOG_ERR("Unsupported attribute");
 		return -EINVAL;
 	}
-	return 0;
+	return err;
 }
 
 static int icm566xx_gyro_config(struct icm566xx_data *drv_data, enum sensor_attribute attr,
 				const struct sensor_value *val)
 {
+	int err = 0;
+
 	if (attr == SENSOR_ATTR_CONFIGURATION) {
-		icm566xx_set_gyro_mode(&drv_data->driver, val->val1);
+		err = icm566xx_set_gyro_mode(&drv_data->driver, val->val1);
 	} else if (attr == SENSOR_ATTR_SAMPLING_FREQUENCY) {
 		pwr_mgmt0_gyro_mode_t c_mode = icm566xx_get_gyro_mode(&drv_data->driver);
 
-		icm566xx_set_gyro_frequency(&drv_data->driver, val->val1);
+		err = icm566xx_set_gyro_frequency(&drv_data->driver, val->val1);
+		if (err < 0) {
+			return err;
+		}
 
 		if (val->val1 && c_mode == PWR_MGMT0_GYRO_MODE_OFF) {
 			if (val->val1 <= GYRO_CONFIG0_GYRO_ODR_12_5_HZ) {
-				icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_LN);
+				err = icm566xx_set_gyro_mode(&drv_data->driver,
+							     PWR_MGMT0_GYRO_MODE_LN);
 			} else {
-				icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_LP);
+				err = icm566xx_set_gyro_mode(&drv_data->driver,
+							     PWR_MGMT0_GYRO_MODE_LP);
 			}
 		} else if (val->val1 == 0) {
-			icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_OFF);
+			err = icm566xx_set_gyro_mode(&drv_data->driver, PWR_MGMT0_GYRO_MODE_OFF);
 		} else {
 			LOG_ERR("Wrong config with gyro mode");
 		}
 	} else if (attr == SENSOR_ATTR_FULL_SCALE) {
-		int err = icm566xx_set_gyro_fsr(&drv_data->driver, val->val1);
-
+		err = icm566xx_set_gyro_fsr(&drv_data->driver, val->val1);
 		if (err != 0) {
 			return err;
 		}
 
 		drv_data->edata.header.gyro_fs = val->val1;
 	} else if ((enum sensor_attribute_icm566xx)attr == SENSOR_ATTR_BW_FILTER_LPF) {
-		icm566xx_set_gyro_ln_bw(&drv_data->driver, val->val1);
+		err = icm566xx_set_gyro_ln_bw(&drv_data->driver, val->val1);
 	} else {
 		LOG_ERR("Unsupported attribute");
 		return -EINVAL;
 	}
-	return 0;
+	return err;
 }
 
 static int icm566xx_attr_set(const struct device *dev, enum sensor_channel chan,
@@ -283,9 +295,9 @@ static int icm566xx_attr_set(const struct device *dev, enum sensor_channel chan,
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	} else if (SENSOR_CHANNEL_IS_ACCEL(chan)) {
-		icm566xx_accel_config(drv_data, attr, val);
+		return icm566xx_accel_config(drv_data, attr, val);
 	} else if (SENSOR_CHANNEL_IS_GYRO(chan)) {
-		icm566xx_gyro_config(drv_data, attr, val);
+		return icm566xx_gyro_config(drv_data, attr, val);
 	} else {
 		LOG_ERR("Unsupported channel");
 		(void)drv_data;
@@ -626,7 +638,7 @@ static int icm566xx_init(const struct device *dev)
 	 */
 	k_sleep(K_MSEC(1));
 
-	icm566xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
+	err = icm566xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
 	if (err < 0) {
 		LOG_ERR("Failed to set Accel BW settings: %d", err);
 		return err;
