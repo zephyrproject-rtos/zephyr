@@ -70,7 +70,7 @@ static int transceive_packet(const struct device *dev, union r502a_packet *tx_pa
 static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 {
 	uint16_t recv_cks = 0, calc_cks = 0;
-	uint8_t cks_start_idx;
+	uint16_t cks_start_idx;
 
 	if (sys_be16_to_cpu(rx_packet->start) == R502A_STARTCODE) {
 		LOG_DBG("startcode matched 0x%X", sys_be16_to_cpu(rx_packet->start));
@@ -103,7 +103,8 @@ static int r502a_validate_rx_packet(union r502a_packet *rx_packet)
 
 	const uint16_t packet_len = sys_be16_to_cpu(rx_packet->len);
 
-	if (packet_len < R502A_CHECKSUM_LEN || packet_len > CONFIG_R502A_DATA_PKT_SIZE) {
+	if (packet_len < R502A_CHECKSUM_LEN ||
+	    packet_len > (R502A_MAX_BUF_SIZE - R502A_HEADER_LEN)) {
 		LOG_ERR("Invalid packet length %d", packet_len);
 		return -EINVAL;
 	}
