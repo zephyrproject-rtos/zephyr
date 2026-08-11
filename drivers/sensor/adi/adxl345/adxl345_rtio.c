@@ -31,6 +31,10 @@ static void adxl345_submit_fetch(struct rtio_iodev_sqe *iodev_sqe)
 
 	struct adxl345_sample *data = (struct adxl345_sample *)buffer;
 
+#ifdef CONFIG_ADXL345_STREAM
+	data->is_fifo = 0;
+#endif /* CONFIG_ADXL345_STREAM */
+
 	rc = adxl345_read_sample(dev, data);
 	if (rc != 0) {
 		LOG_ERR("Failed to fetch samples");
