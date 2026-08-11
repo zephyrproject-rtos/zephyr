@@ -347,7 +347,7 @@ manifest:
       revision: 5499fd4c9a478f8139eeb07a82c3b4468d6067f7
       path: modules/lib/nanopb
     - name: net-tools
-      revision: c3431f482ea8a7b570fa4573aa5d35875b7f2a23
+      revision: pull/69/head
       path: tools/net-tools
       groups:
         - tools
