@@ -17,4 +17,7 @@ configdefault NET_L2_ETHERNET
 configdefault NXP_FW_DUMP_FLASH_START_ADDR
 	default 0x60500000
 
+configdefault BT_RX_STACK_SIZE
+	default 2048 if BT_SETTINGS && !BT_MESH_GATT_CLIENT && !BT_MESH_PB_GATT && !BT_MESH
+
 endif # BOARD_MIMXRT1060_EVK
