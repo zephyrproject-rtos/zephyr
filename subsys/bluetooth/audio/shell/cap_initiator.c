@@ -934,8 +934,7 @@ int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *pa
 				if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
 					shell_error(sh,
 						    "Invalid "
-						    "param->conn_param[%zu].cis_param[%zu]."
-						    "has_snk",
+						    "param->conn_param[%zu].cis_param[%zu].has_src",
 						    i, j);
 					return -ENOEXEC;
 				}
