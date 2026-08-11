@@ -22,7 +22,16 @@
 
 #ifdef CONFIG_CUSTOM_STACK_GUARD
 void z_riscv_custom_stack_guard_init(void);
+
+/*
+ * Enable the custom stack guard for the given thread's stack.
+ *
+ * @thread may be NULL when CONFIG_MULTITHREADING is disabled, since no
+ * thread object exists for the main thread in that mode; implementations
+ * must handle NULL and guard the main stack instead.
+ */
 void z_riscv_custom_stack_guard_enable(struct k_thread *thread);
+
 void z_riscv_custom_stack_guard_disable(void);
 bool z_riscv_custom_stack_guard_is_fault(struct arch_esf *esf);
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
