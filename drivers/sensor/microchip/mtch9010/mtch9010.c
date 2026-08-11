@@ -578,7 +578,7 @@ int mtch9010_decode_char_buffer(const char *buffer, uint8_t format, struct mtch9
 	}
 
 	/* Check to see if the first digit is valid */
-	if (isdigit(buffer[0]) == 0) {
+	if ((isdigit((unsigned char)buffer[0]) == 0) && (buffer[0] != '-')) {
 		return -EINVAL;
 	}
 
