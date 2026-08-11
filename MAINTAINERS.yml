@@ -1329,6 +1329,8 @@ Demand Paging:
   tests:
     - kernel.demand_paging
     - sample.demand_paging
+  labels:
+    - "area: Demand Paging"
 
 Device Driver Model:
   status: maintained
