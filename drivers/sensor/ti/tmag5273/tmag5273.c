@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <zephyr/drivers/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
@@ -871,25 +872,50 @@ static int tmag5273_channel_get(const struct device *dev, enum sensor_channel ch
 
 	const bool all_mag_axis = (chan == SENSOR_CHAN_MAGN_XYZ) || (chan == SENSOR_CHAN_ALL);
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_X) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_X))) {
-		tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
-	}
+	if (all_mag_axis) {
+		if (drv_cfg->axis == TMAG5273_MAG_CH_EN_NONE) {
+			return -ENOTSUP;
+		}
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_Y))) {
-		tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
-	}
+		/* the sensor API mandates the order val[0] = X, val[1] = Y, val[2] = Z,
+		 * therefore deactivated axis read back as zero
+		 */
+		memset(val, 0, 3 * sizeof(struct sensor_value));
 
-	if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) &&
-	    (all_mag_axis || (chan == SENSOR_CHAN_MAGN_Z))) {
-		tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
-						 val + val_offset);
-		val_offset++;
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_X) {
+			tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
+							 &val[0]);
+		}
+
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) {
+			tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
+							 &val[1]);
+		}
+
+		if (drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) {
+			tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
+							 &val[2]);
+		}
+
+		val_offset = 3;
+	} else {
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_X) && (chan == SENSOR_CHAN_MAGN_X)) {
+			tmag5273_channel_b_field_convert(drv_data->x_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
+
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Y) && (chan == SENSOR_CHAN_MAGN_Y)) {
+			tmag5273_channel_b_field_convert(drv_data->y_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
+
+		if ((drv_cfg->axis & TMAG5273_MAG_CH_EN_Z) && (chan == SENSOR_CHAN_MAGN_Z)) {
+			tmag5273_channel_b_field_convert(drv_data->z_sample, drv_data->xyz_range,
+							 val + val_offset);
+			val_offset++;
+		}
 	}
 
 	if (drv_cfg->temperature && (chan == SENSOR_CHAN_DIE_TEMP)) {
