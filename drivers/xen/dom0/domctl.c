@@ -324,9 +324,9 @@ int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 		return -EINVAL;
 	}
 
-	domctl.cmd = XEN_DOMCTL_createdomain,
-	domctl.domain = *domid,
-	domctl.u.createdomain = *config,
+	domctl.cmd = XEN_DOMCTL_createdomain;
+	domctl.domain = *domid;
+	domctl.u.createdomain = *config;
 
 	ret = do_domctl(&domctl);
 	*domid = domctl.domain;
