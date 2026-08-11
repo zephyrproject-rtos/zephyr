@@ -1120,6 +1120,14 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 		return -EIO;
 	}
 
+	/* REG_MAG_GAIN_CONFIG */
+	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
+				       drv_cfg->mag_gain_correction);
+	if (retval < 0) {
+		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
+		return -EIO;
+	}
+
 	/* the 3001 Variant has REG_CONFIG_3 instead of REG_T_CONFIG. No need for temp enable. */
 	if (version == TMAG5273_VER_TMAG3001X1 || version == TMAG5273_VER_TMAG3001X2) {
 		return 0;
@@ -1134,13 +1142,6 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_T_CONFIG, regdata);
 	if (retval < 0) {
 		LOG_ERR("error setting SENSOR_CONFIG_2 %d", retval);
-		return -EIO;
-	}
-
-	retval = i2c_reg_write_byte_dt(&drv_cfg->i2c, TMAG5273_REG_MAG_GAIN_CONFIG,
-				       drv_cfg->mag_gain_correction);
-	if (retval < 0) {
-		LOG_ERR("error setting MAG_GAIN_CONFIG %d", retval);
 		return -EIO;
 	}
 
