@@ -557,7 +557,14 @@ static void gptp_state_machine(void)
 
 	/* Manage port states. */
 	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
-		struct gptp_port_ds *port_ds = GPTP_PORT_DS(port);
+		struct gptp_port_ds *port_ds;
+
+		/* gptp_add_port() never registers more ports than the per-port
+		 * arrays can hold, so this only makes that bound explicit.
+		 */
+		NET_ASSERT(GPTP_PORT_INDEX(port) < CONFIG_NET_GPTP_NUM_PORTS);
+
+		port_ds = GPTP_PORT_DS(port);
 
 		/* If interface is down, don't move forward */
 		if (net_if_flag_is_set(GPTP_PORT_IFACE(port), NET_IF_UP)) {
