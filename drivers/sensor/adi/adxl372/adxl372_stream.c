@@ -74,7 +74,7 @@ void adxl372_submit_stream(const struct device *dev, struct rtio_iodev_sqe *iode
 		(const struct sensor_read_config *)iodev_sqe->sqe.iodev->data;
 	struct adxl372_data *data = (struct adxl372_data *)dev->data;
 	const struct adxl372_dev_config *cfg_372 = dev->config;
-	uint8_t int_value = (uint8_t)~ADXL372_INT1_MAP_FIFO_FULL_MSK;
+	uint8_t int_value = 0;
 	uint8_t fifo_full_irq = 0;
 
 	int rc = gpio_pin_interrupt_configure_dt(&cfg_372->interrupt, GPIO_INT_DISABLE);
