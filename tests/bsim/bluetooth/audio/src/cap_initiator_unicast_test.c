@@ -58,13 +58,22 @@ LOG_MODULE_REGISTER(cap_initiator_unicast_test);
 #define CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED)
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 
-struct cap_initiator_ac_param {
+struct cap_unicast_ac_cis_param {
+	bool has_snk;
+	bool has_src;
+	enum bt_audio_location snk_loc;
+	enum bt_audio_location src_loc;
+};
+
+struct cap_unicast_ac_conn_param {
+	size_t cis_cnt;
+	struct cap_unicast_ac_cis_param cis_param[CAP_AC_MAX_PAIR];
+};
+
+struct cap_unicast_ac_param {
 	char *name;
 	size_t conn_cnt;
-	size_t snk_cnt[CAP_AC_MAX_CONN];
-	size_t src_cnt[CAP_AC_MAX_CONN];
-	size_t snk_chan_cnt;
-	size_t src_chan_cnt;
+	struct cap_unicast_ac_conn_param conn_param[CAP_AC_MAX_CONN];
 	const struct named_lc3_preset *snk_named_preset;
 	const struct named_lc3_preset *src_named_preset;
 };
@@ -1190,7 +1199,7 @@ static const struct named_lc3_preset *cap_get_named_preset(const char *preset_ar
 	return NULL;
 }
 
-static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_param *param,
+static int cap_initiator_ac_create_unicast_group(const struct cap_unicast_ac_param *param,
 						 struct unicast_stream *snk_uni_streams[],
 						 size_t snk_cnt,
 						 struct unicast_stream *src_uni_streams[],
@@ -1220,7 +1229,9 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 	 * First setup the individual stream parameters and then match them in pairs by connection
 	 * and direction
 	 */
+	LOG_ERR("snk_cnt %zu src_cnt %zu", snk_cnt, src_cnt);
 	for (size_t i = 0U; i < snk_cnt; i++) {
+
 		snk_group_stream_params[i].qos_cfg = snk_qos[i];
 		snk_group_stream_params[i].stream =
 			cap_stream_from_audio_test_stream(&snk_uni_streams[i]->stream);
@@ -1229,11 +1240,18 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 		src_group_stream_params[i].qos_cfg = src_qos[i];
 		src_group_stream_params[i].stream =
 			cap_stream_from_audio_test_stream(&src_uni_streams[i]->stream);
+
+		LOG_ERR("%zu %zu %p", i, src_cnt, src_group_stream_params[i].stream);
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0U; j < MAX(param->snk_cnt[i], param->src_cnt[i]); j++) {
-			if (param->snk_cnt[i] > j) {
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
+
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
+
+			if (cis_param->has_snk) {
 				pair_params[pair_cnt].tx_param =
 					&snk_group_stream_params[snk_stream_cnt];
 				snk_stream_cnt++;
@@ -1241,7 +1259,7 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 				pair_params[pair_cnt].tx_param = NULL;
 			}
 
-			if (param->src_cnt[i] > j) {
+			if (cis_param->has_src) {
 				pair_params[pair_cnt].rx_param =
 					&src_group_stream_params[src_stream_cnt];
 				src_stream_cnt++;
@@ -1260,7 +1278,7 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_initiator_ac_p
 	return bt_cap_unicast_group_create(&group_param, unicast_group);
 }
 
-static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_param *param,
+static int cap_initiator_ac_cap_unicast_start(const struct cap_unicast_ac_param *param,
 					      struct unicast_stream *snk_uni_streams[],
 					      size_t snk_cnt,
 					      struct unicast_stream *src_uni_streams[],
@@ -1284,30 +1302,39 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 	ARG_UNUSED(unicast_group);
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		const uint8_t conn_index = bt_conn_index(connected_conns[i]);
-#if UNICAST_SINK_SUPPORTED
-		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
-			snk_eps[snk_ep_cnt] = unicast_sink_eps[conn_index][j];
-			if (snk_eps[snk_ep_cnt] == NULL) {
-				FAIL("No sink[%u][%zu] endpoint available\n", conn_index, j);
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
+		size_t conn_snk_ep_cnt = 0U;
+		size_t conn_src_ep_cnt = 0U;
 
-				return -ENODEV;
+		/* Verify conn values */
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
+
+			if (cis_param->has_snk) {
+				snk_eps[snk_ep_cnt] = unicast_sink_eps[i][conn_snk_ep_cnt];
+				if (snk_eps[snk_ep_cnt] == NULL) {
+					FAIL("No sink[%u][%zu] endpoint available\n", i,
+					     conn_snk_ep_cnt);
+
+					return -ENODEV;
+				}
+				conn_snk_ep_cnt++;
+				snk_ep_cnt++;
 			}
-			snk_ep_cnt++;
-		}
-#endif /* UNICAST_SINK_SUPPORTED */
 
-#if UNICAST_SRC_SUPPORTED
-		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
-			src_eps[src_ep_cnt] = unicast_source_eps[conn_index][j];
-			if (src_eps[src_ep_cnt] == NULL) {
-				FAIL("No source[%u][%zu] endpoint available\n", conn_index, j);
+			if (cis_param->has_src) {
+				src_eps[src_ep_cnt] = unicast_source_eps[i][conn_src_ep_cnt];
+				if (src_eps[src_ep_cnt] == NULL) {
+					FAIL("No source[%u][%zu] endpoint available\n", i,
+					     conn_src_ep_cnt);
 
-				return -ENODEV;
+					return -ENODEV;
+				}
+				conn_src_ep_cnt++;
+				src_ep_cnt++;
 			}
-			src_ep_cnt++;
 		}
-#endif /* UNICAST_SRC_SUPPORTED > 0 */
 	}
 
 	if (snk_ep_cnt != snk_cnt) {
@@ -1338,55 +1365,54 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 
 	/* CAP Start */
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
-			struct bt_cap_unicast_audio_start_stream_param *stream_param =
-				&stream_params[stream_cnt];
-			struct bt_audio_codec_cfg *codec_cfg = snk_codec_cfgs[snk_stream_cnt];
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
 
-			stream_param->member.member = connected_conns[i];
-			stream_param->codec_cfg = codec_cfg;
-			stream_param->ep = snk_eps[snk_stream_cnt];
-			stream_param->stream = snk_cap_streams[snk_stream_cnt];
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
 
-			snk_stream_cnt++;
-			stream_cnt++;
+			if (cis_param->has_snk) {
+				struct bt_cap_unicast_audio_start_stream_param *stream_param =
+					&stream_params[stream_cnt];
+				struct bt_audio_codec_cfg *codec_cfg =
+					snk_codec_cfgs[snk_stream_cnt];
+				int err;
 
-			/* If we have more than 1 connection or stream in one direction, we set the
-			 * location bit accordingly
-			 */
-			if (param->conn_cnt > 1U || param->snk_cnt[i] > 1U) {
-				const int err = bt_audio_codec_cfg_set_chan_allocation(
-					codec_cfg, (enum bt_audio_location)BIT(i));
+				stream_param->member.member = connected_conns[i];
+				stream_param->codec_cfg = codec_cfg;
+				stream_param->ep = snk_eps[snk_stream_cnt];
+				stream_param->stream = snk_cap_streams[snk_stream_cnt];
 
+				snk_stream_cnt++;
+				stream_cnt++;
+
+				err = bt_audio_codec_cfg_set_chan_allocation(codec_cfg,
+									     cis_param->snk_loc);
 				if (err < 0) {
-					FAIL("Failed to set channel allocation: %d\n", err);
+					FAIL("Failed to set snk channel allocation: %d\n", err);
 					return err;
 				}
 			}
-		}
 
-		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
-			struct bt_cap_unicast_audio_start_stream_param *stream_param =
-				&stream_params[stream_cnt];
-			struct bt_audio_codec_cfg *codec_cfg = src_codec_cfgs[src_stream_cnt];
+			if (cis_param->has_src) {
+				struct bt_cap_unicast_audio_start_stream_param *stream_param =
+					&stream_params[stream_cnt];
+				struct bt_audio_codec_cfg *codec_cfg =
+					src_codec_cfgs[src_stream_cnt];
+				int err;
 
-			stream_param->member.member = connected_conns[i];
-			stream_param->codec_cfg = codec_cfg;
-			stream_param->ep = src_eps[src_stream_cnt];
-			stream_param->stream = src_cap_streams[src_stream_cnt];
+				stream_param->member.member = connected_conns[i];
+				stream_param->codec_cfg = codec_cfg;
+				stream_param->ep = src_eps[src_stream_cnt];
+				stream_param->stream = src_cap_streams[src_stream_cnt];
 
-			src_stream_cnt++;
-			stream_cnt++;
+				src_stream_cnt++;
+				stream_cnt++;
 
-			/* If we have more than 1 connection or stream in one direction, we set the
-			 * location bit accordingly
-			 */
-			if (param->conn_cnt > 1U || param->src_cnt[i] > 1U) {
-				const int err = bt_audio_codec_cfg_set_chan_allocation(
-					codec_cfg, (enum bt_audio_location)BIT(i));
-
+				err = bt_audio_codec_cfg_set_chan_allocation(codec_cfg,
+									     cis_param->src_loc);
 				if (err < 0) {
-					FAIL("Failed to set channel allocation: %d\n", err);
+					FAIL("Failed to set src channel allocation: %d\n", err);
 					return err;
 				}
 			}
@@ -1400,87 +1426,78 @@ static int cap_initiator_ac_cap_unicast_start(const struct cap_initiator_ac_para
 	return bt_cap_initiator_unicast_audio_start(&start_param);
 }
 
-static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
+static int cap_initiator_ac_unicast(const struct cap_unicast_ac_param *param,
 				    struct bt_cap_unicast_group **unicast_group)
 {
 	/* Allocate params large enough for any params, but only use what is required */
 	struct unicast_stream *snk_uni_streams[CAP_AC_MAX_SNK];
 	struct unicast_stream *src_uni_streams[CAP_AC_MAX_SRC];
-	size_t snk_cnt = 0U;
-	size_t src_cnt = 0U;
+	size_t total_snk_cnt = 0U;
+	size_t total_src_cnt = 0U;
+	size_t total_cnt = 0U;
 	int err;
-
-	if (param->conn_cnt > CAP_AC_MAX_CONN) {
-		FAIL("Invalid conn_cnt: %zu\n", param->conn_cnt);
-
-		return -EINVAL;
-	}
-
-	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		/* Verify conn values */
-		if (param->snk_cnt[i] > CAP_AC_MAX_SNK) {
-			FAIL("Invalid param->snk_cnt[%zu]: %zu\n", i, param->snk_cnt[i]);
-
-			return -EINVAL;
-		}
-
-		if (param->src_cnt[i] > CAP_AC_MAX_SRC) {
-			FAIL("Invalid param->src_cnt[%zu]: %zu\n", i, param->src_cnt[i]);
-
-			return -EINVAL;
-		}
-	}
 
 	/* Set all endpoints from multiple connections in a single array, and verify that the known
 	 * endpoints matches the audio configuration
 	 */
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
-		for (size_t j = 0U; j < param->snk_cnt[i]; j++) {
-			snk_cnt++;
-		}
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
 
-		for (size_t j = 0U; j < param->src_cnt[i]; j++) {
-			src_cnt++;
+		/* Verify conn values */
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
+
+			if (cis_param->has_snk) {
+				snk_uni_streams[total_snk_cnt] = &unicast_streams[total_cnt];
+
+				if (param->snk_named_preset == NULL) {
+					FAIL("No sink preset available\n");
+					return -EINVAL;
+				}
+
+				copy_unicast_stream_preset(snk_uni_streams[total_snk_cnt],
+							   param->snk_named_preset);
+
+				if (cis_param->snk_loc != BT_AUDIO_LOCATION_MONO_AUDIO) {
+					/* Some audio configuration requires multiple channels,
+					 * so multiply the SDU based on the channel count
+					 */
+					snk_uni_streams[total_snk_cnt]->qos.sdu *= sys_count_bits(
+						&cis_param->snk_loc, sizeof(cis_param->snk_loc));
+				}
+
+				total_snk_cnt++;
+				total_cnt++;
+			}
+
+			if (cis_param->has_src) {
+				src_uni_streams[total_src_cnt] = &unicast_streams[total_cnt];
+
+				if (param->src_named_preset == NULL) {
+					FAIL("No source preset available\n");
+					return -EINVAL;
+				}
+
+				copy_unicast_stream_preset(src_uni_streams[total_src_cnt],
+							   param->src_named_preset);
+
+				if (cis_param->src_loc != BT_AUDIO_LOCATION_MONO_AUDIO) {
+					/* Some audio configuration requires multiple channels,
+					 * so multiply the SDU based on the channel count
+					 */
+					src_uni_streams[total_src_cnt]->qos.sdu *= sys_count_bits(
+						&cis_param->src_loc, sizeof(cis_param->src_loc));
+				}
+
+				total_src_cnt++;
+				total_cnt++;
+			}
 		}
 	}
 
-	/* Setup arrays of parameters based on the preset for easier access. This also copies the
-	 * preset so that we can modify them (e.g. update the metadata)
-	 */
-	for (size_t i = 0U; i < snk_cnt; i++) {
-		snk_uni_streams[i] = &unicast_streams[i];
-
-		if (param->snk_named_preset == NULL) {
-			FAIL("No sink preset available\n");
-			return -EINVAL;
-		}
-
-		copy_unicast_stream_preset(snk_uni_streams[i], param->snk_named_preset);
-
-		/* Some audio configuration requires multiple sink channels,
-		 * so multiply the SDU based on the channel count
-		 */
-		snk_uni_streams[i]->qos.sdu *= param->snk_chan_cnt;
-	}
-
-	for (size_t i = 0U; i < src_cnt; i++) {
-		src_uni_streams[i] = &unicast_streams[i + snk_cnt];
-
-		if (param->src_named_preset == NULL) {
-			FAIL("No sink preset available\n");
-			return -EINVAL;
-		}
-
-		copy_unicast_stream_preset(src_uni_streams[i], param->src_named_preset);
-
-		/* Some audio configuration requires multiple source channels,
-		 * so multiply the SDU based on the channel count
-		 */
-		src_uni_streams[i]->qos.sdu *= param->src_chan_cnt;
-	}
-
-	err = cap_initiator_ac_create_unicast_group(param, snk_uni_streams, snk_cnt,
-						    src_uni_streams, src_cnt, unicast_group);
+	err = cap_initiator_ac_create_unicast_group(param, snk_uni_streams, total_snk_cnt,
+						    src_uni_streams, total_src_cnt, unicast_group);
 	if (err != 0) {
 		FAIL("Failed to create group: %d\n", err);
 
@@ -1489,9 +1506,9 @@ static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
 
 	UNSET_FLAG(flag_started);
 
-	LOG_INF("Starting %zu streams for %s", snk_cnt + src_cnt, param->name);
-	err = cap_initiator_ac_cap_unicast_start(param, snk_uni_streams, snk_cnt, src_uni_streams,
-						 src_cnt, *unicast_group);
+	LOG_INF("Starting %zu streams for %s", total_snk_cnt + total_src_cnt, param->name);
+	err = cap_initiator_ac_cap_unicast_start(param, snk_uni_streams, total_snk_cnt,
+						 src_uni_streams, total_src_cnt, *unicast_group);
 	if (err != 0) {
 		FAIL("Failed to start unicast audio: %d\n\n", err);
 
@@ -1504,11 +1521,15 @@ static int cap_initiator_ac_unicast(const struct cap_initiator_ac_param *param,
 	return 0;
 }
 
-static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
+static void test_cap_initiator_ac(const struct cap_unicast_ac_param *param)
 {
 	struct bt_cap_unicast_group *unicast_group;
 	bool expect_tx = false;
 	bool expect_rx = false;
+	size_t total_snk_cnt;
+	size_t total_src_cnt;
+	size_t total_cis_cnt;
+	size_t total_cnt;
 
 	LOG_INF("Running test for %s with Sink Preset %s and Source Preset %s", param->name,
 	       param->snk_named_preset != NULL ? param->snk_named_preset->name : "None",
@@ -1522,6 +1543,80 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	if (param->snk_named_preset == NULL && param->src_named_preset == NULL) {
 		FAIL("No presets available\n");
 		return;
+	}
+
+	total_cnt = 0U;
+	total_snk_cnt = 0U;
+	total_src_cnt = 0U;
+	total_cis_cnt = 0U;
+	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
+
+		if (conn_param->cis_cnt > CAP_AC_MAX_PAIR) {
+			FAIL("Invalid param->conn_param[%zu].cis_cnt: %zu", i, conn_param->cis_cnt);
+
+			return;
+		}
+
+		if (conn_param->cis_cnt > CAP_AC_MAX_PAIR) {
+			FAIL("Invalid param->conn_param[%zu].cis_cnt: %zu", i, conn_param->cis_cnt);
+
+			return;
+		}
+
+		/* Verify conn values */
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
+
+			if (cis_param->has_snk) {
+				total_snk_cnt++;
+				if (total_snk_cnt > CAP_AC_MAX_SNK) {
+					FAIL("Invalid total_snk_cnt: %zu\n", total_snk_cnt);
+					return;
+				}
+
+				if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+					FAIL("Invalid "
+					     "param->conn_param[%zu].cis_param[%zu].has_snk",
+					     i, j);
+
+					return;
+				}
+			}
+
+			if (cis_param->has_src) {
+				total_src_cnt++;
+				if (total_src_cnt > CAP_AC_MAX_SRC) {
+					FAIL("Invalid total_src_cnt: %zu\n", total_src_cnt);
+					return;
+				}
+
+				if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+					FAIL("Invalid "
+					     "param->conn_param[%zu].cis_param[%zu].has_snk",
+					     i, j);
+
+					return;
+				}
+			}
+
+			total_cis_cnt++;
+			if (total_cis_cnt > CAP_AC_MAX_PAIR) {
+				FAIL("Invalid total_cis_cnt: %zu\n", total_cis_cnt);
+
+				return;
+			}
+
+			total_cnt +=
+				(cis_param->has_snk ? 1U : 0U) + (cis_param->has_src ? 1U : 0U);
+			if (total_cnt > ARRAY_SIZE(unicast_streams)) {
+				FAIL("Cannot start %zu streams (max supported is %zu)", total_cnt,
+				     ARRAY_SIZE(unicast_streams));
+
+				return;
+			}
+		}
 	}
 
 	init();
@@ -1544,18 +1639,27 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	}
 
 	for (size_t i = 0U; i < param->conn_cnt; i++) {
+		const struct cap_unicast_ac_conn_param *conn_param = &param->conn_param[i];
+		bool discovered_snk = false;
+		bool discovered_src = false;
+
 		update_security(connected_conns[i]);
 
 		discover_cas(connected_conns[i]);
 
-		if (param->snk_cnt[i] > 0U) {
-			discover_sink(connected_conns[i]);
-			expect_tx = true;
-		}
+		for (size_t j = 0U; j < conn_param->cis_cnt; j++) {
+			const struct cap_unicast_ac_cis_param *cis_param =
+				&conn_param->cis_param[j];
 
-		if (param->src_cnt[i] > 0U) {
-			discover_source(connected_conns[i]);
-			expect_rx = true;
+			if (cis_param->has_snk && !discovered_snk) {
+				discover_sink(connected_conns[i]);
+				expect_tx = true;
+			}
+
+			if (cis_param->has_src && !discovered_src) {
+				discover_source(connected_conns[i]);
+				expect_rx = true;
+			}
 		}
 	}
 
@@ -1594,13 +1698,16 @@ static void test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 
 static void test_cap_initiator_ac_1(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_1",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = false,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = NULL,
 	};
@@ -1610,13 +1717,16 @@ static void test_cap_initiator_ac_1(void)
 
 static void test_cap_initiator_ac_2(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_2",
 		.conn_cnt = 1U,
-		.snk_cnt = {0U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 0U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = false,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = NULL,
 		.src_named_preset = src_named_preset,
 	};
@@ -1626,13 +1736,17 @@ static void test_cap_initiator_ac_2(void)
 
 static void test_cap_initiator_ac_3(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_3",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1642,13 +1756,17 @@ static void test_cap_initiator_ac_3(void)
 
 static void test_cap_initiator_ac_4(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_4",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 2U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc =
+			BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[0].has_src = false,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = NULL,
 	};
@@ -1658,13 +1776,18 @@ static void test_cap_initiator_ac_4(void)
 
 static void test_cap_initiator_ac_5(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_5",
 		.conn_cnt = 1U,
-		.snk_cnt = {1U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 2U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc =
+			BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1674,13 +1797,20 @@ static void test_cap_initiator_ac_5(void)
 
 static void test_cap_initiator_ac_6_i(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_6_i",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = false,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = NULL,
 	};
@@ -1690,13 +1820,22 @@ static void test_cap_initiator_ac_6_i(void)
 
 static void test_cap_initiator_ac_6_ii(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_6_ii",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {0U, 0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 0U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = false,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = NULL,
 	};
@@ -1706,14 +1845,20 @@ static void test_cap_initiator_ac_6_ii(void)
 
 static void test_cap_initiator_ac_7_i(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_7_i",
 		.conn_cnt = 1U,
-		/*  TODO: These should be in different CIS but will be in the same currently */
-		.snk_cnt = {1U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[0].cis_param[1].has_snk = false,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1723,13 +1868,22 @@ static void test_cap_initiator_ac_7_i(void)
 
 static void test_cap_initiator_ac_7_ii(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_7_ii",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 0U},
-		.src_cnt = {0U, 1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = false,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1739,13 +1893,21 @@ static void test_cap_initiator_ac_7_ii(void)
 
 static void test_cap_initiator_ac_8_i(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_8_i",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1755,13 +1917,23 @@ static void test_cap_initiator_ac_8_i(void)
 
 static void test_cap_initiator_ac_8_ii(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_8_ii",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {1U, 0U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = false,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_MONO_AUDIO,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1771,13 +1943,20 @@ static void test_cap_initiator_ac_8_ii(void)
 
 static void test_cap_initiator_ac_9_i(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_9_i",
 		.conn_cnt = 1U,
-		.snk_cnt = {0U},
-		.src_cnt = {2U},
-		.snk_chan_cnt = 0U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = false,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[0].cis_param[1].has_snk = false,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+
 		.snk_named_preset = NULL,
 		.src_named_preset = src_named_preset,
 	};
@@ -1787,13 +1966,22 @@ static void test_cap_initiator_ac_9_i(void)
 
 static void test_cap_initiator_ac_9_ii(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_9_ii",
 		.conn_cnt = 2U,
-		.snk_cnt = {0U, 0U},
-		.src_cnt = {1U, 1U},
-		.snk_chan_cnt = 0U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = false,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = false,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+
 		.snk_named_preset = NULL,
 		.src_named_preset = src_named_preset,
 	};
@@ -1802,13 +1990,17 @@ static void test_cap_initiator_ac_9_ii(void)
 }
 static void test_cap_initiator_ac_10(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_10",
 		.conn_cnt = 1U,
-		.snk_cnt = {0U},
-		.src_cnt = {1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 2U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = false,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc =
+			BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1818,13 +2010,22 @@ static void test_cap_initiator_ac_10(void)
 
 static void test_cap_initiator_ac_11_i(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_11_i",
 		.conn_cnt = 1U,
-		.snk_cnt = {2U},
-		.src_cnt = {2U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 2U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[0].cis_param[1].has_snk = true,
+		.conn_param[0].cis_param[1].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[0].cis_param[1].has_src = true,
+		.conn_param[0].cis_param[1].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
@@ -1834,13 +2035,24 @@ static void test_cap_initiator_ac_11_i(void)
 
 static void test_cap_initiator_ac_11_ii(void)
 {
-	const struct cap_initiator_ac_param param = {
+	const struct cap_unicast_ac_param param = {
 		.name = "ac_11_ii",
 		.conn_cnt = 2U,
-		.snk_cnt = {1U, 1U},
-		.src_cnt = {1U, 1U},
-		.snk_chan_cnt = 1U,
-		.src_chan_cnt = 1U,
+
+		.conn_param[0].cis_cnt = 1U,
+
+		.conn_param[0].cis_param[0].has_snk = true,
+		.conn_param[0].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+		.conn_param[0].cis_param[0].has_src = true,
+		.conn_param[0].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_LEFT,
+
+		.conn_param[1].cis_cnt = 1U,
+
+		.conn_param[1].cis_param[0].has_snk = true,
+		.conn_param[1].cis_param[0].snk_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+		.conn_param[1].cis_param[0].has_src = true,
+		.conn_param[1].cis_param[0].src_loc = BT_AUDIO_LOCATION_FRONT_RIGHT,
+
 		.snk_named_preset = snk_named_preset,
 		.src_named_preset = src_named_preset,
 	};
