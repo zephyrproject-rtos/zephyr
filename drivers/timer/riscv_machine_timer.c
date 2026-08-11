@@ -90,6 +90,14 @@ static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
+	/* Disarm the IRQ. MTIP is level sensitive: it stays asserted while
+	 * mtime is past mtimecmp, and writing mtimecmp is the only way to
+	 * clear it. Push the compare out of reach so this interrupt fires
+	 * once for the deadline it was armed with, whether or not another
+	 * one is programmed afterwards.
+	 */
+	set_mtimecmp(UINT64_MAX);
+
 	k_spinlock_key_t key = sys_clock_lock();
 
 	uint64_t now = mtime();
