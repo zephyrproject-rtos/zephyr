@@ -1,0 +1,5 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_G564RE
+	select SOC_STM32G564XX
