@@ -714,6 +714,11 @@ static int mtch9010_sample_fetch(const struct device *dev, enum sensor_channel c
 	case SENSOR_CHAN_MTCH9010_OUT_STATE: {
 		/* I/O output state - poll GPIO */
 
+		if (config->out_gpio.port == NULL) {
+			LOG_INST_ERR(config->log, "OUT GPIO not configured");
+			return -ENOTSUP;
+		}
+
 		data->last_out_state = gpio_pin_get_dt(&config->out_gpio);
 		if (data->last_out_state < 0) {
 			LOG_ERR("GPIO Error %d", data->last_out_state);
