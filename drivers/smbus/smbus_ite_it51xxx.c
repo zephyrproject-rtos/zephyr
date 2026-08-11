@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/crc.h>
 #include <zephyr/sys/util.h>
 
 #include "smbus_utils.h"
@@ -193,9 +194,38 @@ struct smbus_it51xxx_data {
 	uint8_t blk_len;
 	/* Host Notify peripheral address captured from NDADR */
 	uint8_t notify_addr;
+	uint8_t pec_crc;
+	uint8_t pec_recv;
 	bool blk_is_write;
 	bool blk_active;
+	bool pec_sw;
 };
+
+static inline void it51xxx_smb_pec_update(const struct device *dev, const uint8_t *buf, size_t len)
+{
+	struct smbus_it51xxx_data *data = dev->data;
+
+	data->pec_crc = crc8_ccitt(data->pec_crc, buf, len);
+}
+
+static inline bool it51xxx_smb_pec_sw_check(const struct device *dev, enum smbus_direction rw,
+					    uint8_t protocol)
+{
+	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
+
+	/*
+	 * SMBus Process Call and FIFO mode of Block Read do not support PEC hardware check.
+	 */
+	if ((protocol == SMBUS_CMD_PROC_CALL) ||
+	    (cfg->fifo_enable && protocol == SMBUS_CMD_BLOCK && rw == SMBUS_MSG_READ)) {
+		data->pec_sw = true;
+	} else {
+		data->pec_sw = false;
+	}
+
+	return data->pec_sw;
+}
 
 static void it51xxx_smb_reset(const struct device *dev)
 {
@@ -233,6 +263,9 @@ static inline void it51xxx_smb_xfer_reset(struct smbus_it51xxx_data *data, uint1
 	data->blk_idx = 0;
 	data->blk_len = 0;
 	data->blk_rlen = NULL;
+	data->pec_sw = false;
+	data->pec_crc = 0;
+	data->pec_recv = 0;
 	k_sem_reset(&data->xfer_done);
 }
 
@@ -314,20 +347,59 @@ static void it51xxx_smb_host_disable(const struct device *dev, uint8_t status)
 	sys_write8(status, cfg->host_base + SMB_HOSTARn);
 }
 
+static inline void it51xxx_smb_pec_setup(const struct device *dev, enum smbus_direction rw,
+					 uint8_t protocol)
+{
+	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
+
+	if (!(data->dev_config & SMBUS_MODE_PEC) || protocol == SMBUS_CMD_QUICK) {
+		/*
+		 * No PEC for this transaction; clear any stale MAHPF from a previous
+		 * PEC transaction
+		 */
+		data->pec_sw = false;
+		sys_write8(SMB_MAHPCE, cfg->host_base + SMB_SPESRn);
+		return;
+	}
+
+	if (it51xxx_smb_pec_sw_check(dev, rw, protocol)) {
+		sys_write8(SMB_MAHPCE, cfg->host_base + SMB_SPESRn);
+	} else {
+		/* Supports HW PEC calculation */
+		sys_write8(SMB_MAHPCE | SMB_MAHPF, cfg->host_base + SMB_SPESRn);
+	}
+}
+
 static inline void it51xxx_smb_target_addr(const struct device *dev, uint16_t addr,
 					   enum smbus_direction rw)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
 	uint8_t target_addr;
 
 	target_addr = (uint8_t)((addr << 1) | (rw == SMBUS_MSG_READ ? SMB_DIR : 0));
 	sys_write8(target_addr, cfg->host_base + SMB_TRASLAn);
+
+	if (data->pec_sw) {
+		/*
+		 * FIFO Block Read: target_addr (=ADDR+R) is what's written to TRASLAn,
+		 * but on the wire the command byte still goes out under ADDR+W first;
+		 * ADDR+R only appears later via the hardware's own repeated START. PEC must
+		 * be seeded with the actual first byte on the wire (ADDR+W), not target_addr.
+		 */
+		if (rw == SMBUS_MSG_READ) {
+			target_addr &= ~SMB_DIR;
+		}
+		it51xxx_smb_pec_update(dev, &target_addr, 1);
+	}
 }
 
 static void it51xxx_smb_write_cmd(const struct device *dev, enum smbus_direction rw, uint8_t cmd,
 				  uint8_t protocol)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
 
 	/* Optional read/write command byte */
 	switch (protocol) {
@@ -347,11 +419,16 @@ static void it51xxx_smb_write_cmd(const struct device *dev, enum smbus_direction
 		sys_write8(cmd, cfg->host_base + SMB_HOCMDRn);
 		break;
 	}
+
+	if (data->pec_sw) {
+		it51xxx_smb_pec_update(dev, &cmd, 1);
+	}
 }
 
 static void it51xxx_smb_write_data(const struct device *dev, uint8_t *buf, size_t count)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
 
 	LOG_DBG("%s: count=%u buf[0]=0x%02x", dev->name, count, buf[0]);
 
@@ -360,6 +437,10 @@ static void it51xxx_smb_write_data(const struct device *dev, uint8_t *buf, size_
 	if (count > 1) {
 		LOG_DBG("%s: buf[1]=0x%02x", dev->name, buf[1]);
 		sys_write8(buf[1], cfg->host_base + SMB_D1REGn);
+	}
+
+	if (data->pec_sw) {
+		it51xxx_smb_pec_update(dev, buf, count);
 	}
 }
 
@@ -426,6 +507,7 @@ static inline int smbus_it51xxx_get_start_cmd(const struct device *dev, uint8_t 
 static int it51xxx_smb_set_protocol(const struct device *dev, uint8_t protocol)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
 	int ret;
 	uint8_t start_cmd;
 
@@ -433,6 +515,10 @@ static int it51xxx_smb_set_protocol(const struct device *dev, uint8_t protocol)
 	if (ret) {
 		it51xxx_smb_host_disable(dev, 0);
 		return ret;
+	}
+
+	if (data->dev_config & SMBUS_MODE_PEC && protocol != SMBUS_CMD_QUICK) {
+		start_cmd |= SMB_PEC_EN;
 	}
 
 	LOG_DBG("%s: IRQ num=%u start_cmd=0x%02x", dev->name, cfg->smbus_irq, start_cmd);
@@ -460,6 +546,9 @@ static int it51xxx_smb_parsing_err(const struct device *dev)
 	if (data->err == ETIMEDOUT) {
 		/* Connection timed out */
 		LOG_ERR("Transaction time out");
+	} else if (data->err == EINVAL) {
+		/* PEC check error */
+		LOG_ERR("PEC check error");
 	} else {
 		/* Host error bits message*/
 		if (data->err & SMB_TMOE) {
@@ -516,11 +605,25 @@ static inline uint8_t it51xxx_smb_protocol_data_len(uint8_t protocol)
 static inline void it51xxx_smb_read_data(const struct device *dev, uint8_t *buf, uint8_t count)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
 
 	buf[0] = sys_read8(cfg->host_base + SMB_D0REGn);
 
 	if (count > 1) {
 		buf[1] = sys_read8(cfg->host_base + SMB_D1REGn);
+	}
+
+	if (data->pec_sw) {
+		/* Repeated-start Read address byte, as it appears on the wire */
+		uint8_t addr_r_byte = (uint8_t)((data->xfer_addr << 1) | SMB_DIR);
+
+		it51xxx_smb_pec_update(dev, &addr_r_byte, 1);
+		it51xxx_smb_pec_update(dev, buf, count);
+		/*
+		 * PEC data is loaded from the SMBus into this register and is then
+		 * read by software
+		 */
+		data->pec_recv = sys_read8(cfg->host_base + SMB_PECERCRn);
 	}
 }
 
@@ -556,7 +659,48 @@ static int it51xxx_smb_fifo_block_read_data(const struct device *dev, uint8_t *r
 		rx_buf[i] = sys_read8(cfg->host_base + SMB_HOBDBRn);
 	}
 
+	if (data->pec_sw) {
+		/* Repeated-start Read address byte, as it appears on the wire */
+		uint8_t addr_r_byte = (uint8_t)((data->xfer_addr << 1) | SMB_DIR);
+
+		it51xxx_smb_pec_update(dev, &addr_r_byte, 1);
+		it51xxx_smb_pec_update(dev, &byte_count, 1);
+		it51xxx_smb_pec_update(dev, rx_buf, byte_count);
+		/*
+		 * PEC data is loaded from the SMBus into this register and is then
+		 * read by software
+		 */
+		data->pec_recv = sys_read8(cfg->host_base + SMB_PECERCRn);
+	}
+
 	return 0;
+}
+
+static void it51xxx_smb_pec_verify(const struct device *dev, uint8_t protocol)
+{
+	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
+
+	/* Only if this transaction actually requested PEC */
+	if (!(data->dev_config & SMBUS_MODE_PEC) || protocol == SMBUS_CMD_QUICK) {
+		return;
+	}
+
+	if (!data->pec_sw) {
+		uint8_t spesr = sys_read8(cfg->host_base + SMB_SPESRn);
+
+		/* HW PEC check */
+		if (spesr & SMB_MAHPCE) {
+			/* W/C the error bit */
+			sys_write8(SMB_MAHPCE, cfg->host_base + SMB_SPESRn);
+			data->err = EINVAL;
+		}
+	} else {
+		/* SW PEC check */
+		if (data->pec_crc != data->pec_recv) {
+			data->err = EINVAL;
+		}
+	}
 }
 
 static int it51xxx_smbus_xfer(const struct device *dev, uint16_t periph_addr,
@@ -582,6 +726,12 @@ static int it51xxx_smbus_xfer(const struct device *dev, uint16_t periph_addr,
 
 	/* Enable SMBus host interface */
 	it51xxx_smb_host_enable(dev);
+
+	/*
+	 * Must run before it51xxx_smb_target_addr(): decides HW vs SW PEC
+	 * for this transaction, and SW-PEC CRC accumulation starts there.
+	 */
+	it51xxx_smb_pec_setup(dev, rw, protocol);
 
 	/* Target address + R/W bit */
 	it51xxx_smb_target_addr(dev, periph_addr, rw);
@@ -620,9 +770,14 @@ static int it51xxx_smbus_xfer(const struct device *dev, uint16_t periph_addr,
 	}
 
 	if (cfg->fifo_enable && protocol == SMBUS_CMD_BLOCK && rw == SMBUS_MSG_READ) {
-		it51xxx_smb_fifo_block_read_data(dev, rx_buf, rx_cnt);
+		ret = it51xxx_smb_fifo_block_read_data(dev, rx_buf, rx_cnt);
+		if (ret) {
+			goto done;
+		}
 	}
 
+	/* PEC check */
+	it51xxx_smb_pec_verify(dev, protocol);
 done:
 	if (cfg->fifo_enable && protocol == SMBUS_CMD_BLOCK) {
 		it51xxx_smb_fifo_enable(dev, false);
@@ -676,6 +831,10 @@ static int smbus_it51xxx_configure(const struct device *dev, uint32_t config_val
 	if ((config_value & SMBUS_MODE_CONTROLLER) == 0) {
 		LOG_ERR("%s: Only controller mode is supported", dev->name);
 		return -EIO;
+	}
+
+	if (config_value & SMBUS_MODE_PEC) {
+		LOG_INF("%s: PEC enabled", dev->name);
 	}
 
 	if (config_value & SMBUS_MODE_HOST_NOTIFY) {
