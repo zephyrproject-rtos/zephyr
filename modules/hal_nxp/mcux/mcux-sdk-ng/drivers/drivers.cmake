@@ -457,5 +457,17 @@ if(CONFIG_ADVC_DRIVER_USED)
   endif()
 endif()
 
+# RT266x's power controller is split across several shared components that
+# fsl_power.h includes directly and fsl_power.c calls into. POWERCON_* are all
+# static inline (the device's driver.power component supplies the include path),
+# but pdcon and the RT2K PMU provide external functions and have to be compiled.
+# These must be selected before the directory scan below, not from
+# device/device.cmake, because that runs afterwards.
+if(CONFIG_SOC_SERIES_IMXRT266X)
+  set(CONFIG_MCUX_COMPONENT_driver.powercon ON)
+  set(CONFIG_MCUX_COMPONENT_driver.pdcon ON)
+  set(CONFIG_MCUX_COMPONENT_driver.rt2k_pmu ON)
+endif()
+
 # Load all drivers
 mcux_load_all_cmakelists_in_directory(${SdkRootDirPath}/drivers)
