@@ -455,7 +455,7 @@ static int8_t write_config_file(const struct device *dev)
 	LOG_DBG("writing config file %s", cfg->feature->name);
 
 	/* Disable loading of the configuration */
-	for (index = 0; index < cfg->feature->config_file_len;
+	for (index = 0; (index < cfg->feature->config_file_len) && (ret == 0);
 	     index += BMI270_WR_LEN) {
 		uint16_t len = MIN((size_t)BMI270_WR_LEN,
 				   cfg->feature->config_file_len - index);
