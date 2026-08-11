@@ -246,7 +246,7 @@ static int set_accel_range(const struct device *dev, const struct sensor_value *
 {
 	struct bmi270_data *data = dev->data;
 	int ret = 0;
-	uint8_t acc_range, reg;
+	uint8_t acc_range, reg, new_range;
 
 	ret = bmi270_reg_read(dev, BMI270_REG_ACC_RANGE, &acc_range, 1);
 	if (ret != 0) {
@@ -257,19 +257,19 @@ static int set_accel_range(const struct device *dev, const struct sensor_value *
 	switch (range->val1) {
 	case 2:
 		reg = BMI270_ACC_RANGE_2G;
-		data->acc_range = 2;
+		new_range = 2;
 		break;
 	case 4:
 		reg = BMI270_ACC_RANGE_4G;
-		data->acc_range = 4;
+		new_range = 4;
 		break;
 	case 8:
 		reg = BMI270_ACC_RANGE_8G;
-		data->acc_range = 8;
+		new_range = 8;
 		break;
 	case 16:
 		reg = BMI270_ACC_RANGE_16G;
-		data->acc_range = 16;
+		new_range = 16;
 		break;
 	default:
 		return -ENOTSUP;
@@ -279,6 +279,9 @@ static int set_accel_range(const struct device *dev, const struct sensor_value *
 					  reg);
 	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_ACC_RANGE, &acc_range,
 					  1, BMI270_INTER_WRITE_DELAY_US);
+	if (ret == 0) {
+		data->acc_range = new_range;
+	}
 
 	return ret;
 }
@@ -406,6 +409,7 @@ static int set_gyro_range(const struct device *dev, const struct sensor_value *r
 	struct bmi270_data *data = dev->data;
 	int ret = 0;
 	uint8_t gyr_range, reg;
+	uint16_t new_range;
 
 	ret = bmi270_reg_read(dev, BMI270_REG_GYR_RANGE, &gyr_range, 1);
 	if (ret != 0) {
@@ -416,23 +420,23 @@ static int set_gyro_range(const struct device *dev, const struct sensor_value *r
 	switch (range->val1) {
 	case 125:
 		reg = BMI270_GYR_RANGE_125DPS;
-		data->gyr_range = 125;
+		new_range = 125;
 		break;
 	case 250:
 		reg = BMI270_GYR_RANGE_250DPS;
-		data->gyr_range = 250;
+		new_range = 250;
 		break;
 	case 500:
 		reg = BMI270_GYR_RANGE_500DPS;
-		data->gyr_range = 500;
+		new_range = 500;
 		break;
 	case 1000:
 		reg = BMI270_GYR_RANGE_1000DPS;
-		data->gyr_range = 1000;
+		new_range = 1000;
 		break;
 	case 2000:
 		reg = BMI270_GYR_RANGE_2000DPS;
-		data->gyr_range = 2000;
+		new_range = 2000;
 		break;
 	default:
 		return -ENOTSUP;
@@ -441,6 +445,9 @@ static int set_gyro_range(const struct device *dev, const struct sensor_value *r
 	gyr_range = BMI270_SET_BITS_POS_0(gyr_range, BMI270_GYR_RANGE, reg);
 	ret = bmi270_reg_write_with_delay(dev, BMI270_REG_GYR_RANGE, &gyr_range,
 					  1, BMI270_INTER_WRITE_DELAY_US);
+	if (ret == 0) {
+		data->gyr_range = new_range;
+	}
 
 	return ret;
 }
