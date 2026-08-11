@@ -38,6 +38,20 @@
 	 * Refer to Chapter 3 of the Reference Manual
 	 */
 	soc {
+		/*
+		 * Cortex-M7 peripheral/device memory aperture, needed by
+		 * board-level MPU region tables (see boards/nxp/<board>/cm7/mpu_regions.c).
+		 * Sized to 512MB (0x4000_0000-0x5FFF_FFFF): covers AIPS-1..4,
+		 * AIPS M7, CDOG, GPU/GPU2D and all other real peripherals per
+		 * the reference manual system memory map, but deliberately
+		 * stops before 0x6000_0000 (FlexSPI2/HyperRAM window) since
+		 * that range is live memory on boards that use it (e.g.
+		 * frdm_imxrt1152) and must not be forced to Device/no-access.
+		 */
+		peripheral: peripheral@40000000 {
+			reg = <0x40000000 0x20000000>;
+		};
+
 		caam: caam@40440000 {
 			compatible = "nxp,imx-caam";
 			reg = <0x40440000 0x81000>;
