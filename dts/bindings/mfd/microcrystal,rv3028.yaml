@@ -84,5 +84,10 @@ examples:
           compatible = "microcrystal,rv3028-eeprom";
           status = "okay";
         };
+
+        rv3028_ram: rv3028_ram {
+          compatible = "microcrystal,rv3028-ram";
+          status = "okay";
+        };
       };
     };
