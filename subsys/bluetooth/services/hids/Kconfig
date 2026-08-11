@@ -1,0 +1,83 @@
+# Bluetooth HID Service (HIDS)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HIDS
+	bool "HID Service (HIDS) [EXPERIMENTAL]"
+	depends on BT_PERIPHERAL
+	depends on BT_SMP
+	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enable the HID Service server. Provides a HID Service with a
+	  dynamically built GATT attribute table supporting a configurable
+	  Report Map and Input, Output and Feature reports.
+
+	  All HID Service characteristics require an encrypted link, as
+	  required by the HID over GATT Profile, Section 7.1.
+
+if BT_HIDS
+
+config BT_HIDS_MAX_CONNECTIONS
+	int "Maximum simultaneous HID Service connections"
+	default BT_MAX_CONN
+	range 1 BT_MAX_CONN
+	help
+	  Maximum number of simultaneous Host connections the HID Service
+	  keeps HID state (Protocol Mode, Suspend) for. Connections beyond
+	  this limit are denied access to the Protocol Mode and HID Control
+	  Point characteristics, so the default matches BT_MAX_CONN.
+
+config BT_HIDS_PROTOCOL_MODE
+	bool "Protocol Mode characteristic"
+	default y
+	help
+	  Include the Protocol Mode characteristic in the HID Service.
+
+	  The Boot Keyboard and Boot Mouse Report characteristics are not
+	  implemented, so a Boot Host cannot operate with this Device even when
+	  the Protocol Mode characteristic is present. Disable this option to
+	  expose a Device that only supports Report Protocol Mode.
+
+config BT_HIDS_INPUT_REPORT_COUNT
+	int "Number of Input Report characteristics"
+	default 1
+	range 0 16
+	help
+	  Number of Input Report characteristics in the HID Service. The
+	  application has to register exactly this many Input Reports.
+
+config BT_HIDS_OUTPUT_REPORT_COUNT
+	int "Number of Output Report characteristics"
+	default 1 if BT_SHELL
+	default 0
+	range 0 16
+	help
+	  Number of Output Report characteristics in the HID Service. The
+	  application has to register exactly this many Output Reports.
+
+	  The `hogp` shell command set registers one Report of each type, hence
+	  the default when the Bluetooth shell is enabled.
+
+config BT_HIDS_FEATURE_REPORT_COUNT
+	int "Number of Feature Report characteristics"
+	default 1 if BT_SHELL
+	default 0
+	range 0 16
+	help
+	  Number of Feature Report characteristics in the HID Service. The
+	  application has to register exactly this many Feature Reports.
+
+	  The `hogp` shell command set registers one Report of each type, hence
+	  the default when the Bluetooth shell is enabled.
+
+config BT_HIDS_MAX_REPORT_LEN
+	int "Maximum single report data length (bytes)"
+	default 64
+	range 8 256
+	help
+	  Maximum length of a single HID report data payload. Used as
+	  stack buffer size in the GET_REPORT read callback.
+
+endif # BT_HIDS
