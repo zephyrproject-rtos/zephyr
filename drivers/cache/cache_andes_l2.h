@@ -31,7 +31,7 @@
 /* L2 cache control registers bitfields */
 #define L2C_CTRL_CEN		BIT(0)
 #define L2C_CTRL_IPFDPT_3	GENMASK(4, 3)
-#define L2C_CTRL_DPFDPT_8	GENMASK(7, 6)
+#define L2C_CTRL_DPFDPT_8	GENMASK(6, 5)
 
 /* L2 cache CCTL Access Line registers bitfields */
 #define L2C_CCTLACC_WAY_SHIFT	28
