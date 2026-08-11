@@ -20,18 +20,20 @@ static void lsm6dsv16x_config_drdy(const struct device *dev, struct trigger_conf
 {
 	const struct lsm6dsv16x_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
-	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
+	lsm6dsv16x_pin_int_route_t pin_int;
 	int16_t buf[3];
 
 	/* dummy read: re-trigger interrupt */
 	lsm6dsv16x_acceleration_raw_get(ctx, buf);
 
-	pin_int.drdy_xl = PROPERTY_ENABLE;
-
-	/* Set pin interrupt */
+	/* Set pin interrupt, preserving already routed sources */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
+		lsm6dsv16x_pin_int1_route_get(ctx, &pin_int);
+		pin_int.drdy_xl = trig_cfg.int_drdy ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
 	} else {
+		lsm6dsv16x_pin_int2_route_get(ctx, &pin_int);
+		pin_int.drdy_xl = trig_cfg.int_drdy ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
 	}
 }
@@ -82,6 +84,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	uint8_t fifo_wtm = 0;
 	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
+	lsm6dsv16x_pin_int_route_t route;
 	lsm6dsv16x_fifo_xl_batch_t xl_batch = LSM6DSVXXX_DT_XL_NOT_BATCHED;
 	lsm6dsv16x_fifo_gy_batch_t gy_batch = LSM6DSVXXX_DT_GY_NOT_BATCHED;
 	lsm6dsv16x_fifo_temp_batch_t temp_batch = LSM6DSVXXX_DT_TEMP_NOT_BATCHED;
@@ -206,11 +209,17 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_sh_master_set(ctx, PROPERTY_ENABLE);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
-	/* Set pin interrupt (fifo_th could be on or off) */
+	/* Set pin interrupt (fifo_th could be on or off), preserving already routed sources */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
-		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
+		lsm6dsv16x_pin_int1_route_get(ctx, &route);
+		route.fifo_th = pin_int.fifo_th;
+		route.fifo_full = pin_int.fifo_full;
+		lsm6dsv16x_pin_int1_route_set(ctx, &route);
 	} else {
-		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
+		lsm6dsv16x_pin_int2_route_get(ctx, &route);
+		route.fifo_th = pin_int.fifo_th;
+		route.fifo_full = pin_int.fifo_full;
+		lsm6dsv16x_pin_int2_route_set(ctx, &route);
 	}
 }
 
