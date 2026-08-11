@@ -188,7 +188,7 @@ ZTEST(stack_contexts, test_stack_init)
  * @ingroup kernel_stack_tests
  *
  * @see k_stack_push(), k_stack_pop()
- * @verifies ZEP-SRS-30-10
+ * @verifies ZEP-SRS-30-6
  */
 ZTEST(stack_contexts, test_stack_pop_order)
 {
