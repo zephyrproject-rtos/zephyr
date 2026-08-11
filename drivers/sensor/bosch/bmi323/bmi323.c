@@ -90,11 +90,6 @@ static void bosch_bmi323_value_to_sensor_value(struct sensor_value *result, int1
 	result->val2 = frac_part;
 }
 
-static bool bosch_bmi323_value_is_valid(int16_t value)
-{
-	return ((uint16_t)value == 0x8000) ? false : true;
-}
-
 static int bosch_bmi323_validate_chip_id(const struct device *dev)
 {
 	uint16_t sensor_id;
