@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_IMXRT266X
+
+config GPIO
+	default y
+
+endif # SOC_SERIES_IMXRT266X
+
+# Scoped to the core, not the die: NVIC vector count, this core's L1, the
+# layout of the image it boots, and SysTick.
+if SOC_SERIES_IMXRT266X_CM85
+
+config NUM_IRQS
+	# Highest device IRQ in MIMXRT2663_COMMON.h is MEDIA_FREQME_IRQn = 333.
+	default 334
+
+config ROM_START_OFFSET
+	# The core image starts after the flash configuration block, the external
+	# memory configuration data and the container; see the series Kconfig.
+	default 0xC000 if BOOT_XSPI_NOR
+
+config XSPI_CONFIG_BLOCK_OFFSET
+	default 0x400 if BOOT_XSPI_NOR
+
+config EXTERNAL_MEM_CONFIG_OFFSET
+	default 0xA00 if EXTERNAL_MEM_CONFIG_DATA
+
+config IMAGE_CONTAINER_OFFSET
+	default 0x1000 if BOOT_XSPI_NOR
+
+config IMAGE_VECTOR_TABLE_OFFSET
+	# Inert here -- the boot format is container-based and boot_header.ld emits no
+	# .boot_hdr.ivt -- but the symbol still needs a value: every hex symbol
+	# becomes an absolute symbol in the generated configs.c, so an empty one fails
+	# to assemble. Zero rather than the image start, so it cannot be mistaken for
+	# a real offset.
+	default 0x0 if BOOT_XSPI_NOR
+	default 0x0
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	# SysTick counts one of two sources, and `external-clock-source` on &systick
+	# picks which. This series' devicetree states the rate of both, so neither is
+	# board data: a board sets this symbol only if it remuxes the SysTick root
+	# away from the crystal.
+	default $(dt_nodelabel_int_prop,sxosc,clock-frequency) \
+		if CORTEX_M_SYSTICK && \
+		$(dt_nodelabel_bool_prop,systick,external-clock-source)
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) \
+		if CORTEX_M_SYSTICK && \
+		!$(dt_nodelabel_bool_prop,systick,external-clock-source)
+
+endif # SOC_SERIES_IMXRT266X_CM85
