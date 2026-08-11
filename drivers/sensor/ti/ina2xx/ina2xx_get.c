@@ -38,9 +38,7 @@ static int ina2xx_get_bus_voltage(const struct device *dev, struct sensor_value 
 		return -ENOTSUP;
 	}
 
-	value.s32 = (ch->mult * value.s32) / ch->div;
-
-	return sensor_value_from_micro(val, value.s32);
+	return sensor_value_from_micro(val, ((int64_t)ch->mult * value.s32) / (int32_t)ch->div);
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_INA2XX_HAS_CHANNEL_BUS_VOLTAGE */
@@ -75,9 +73,7 @@ static int ina2xx_get_shunt_voltage(const struct device *dev, struct sensor_valu
 		return -ENOTSUP;
 	}
 
-	value.s32 = (ch->mult * value.s32) / ch->div;
-
-	return sensor_value_from_micro(val, value.s32);
+	return sensor_value_from_micro(val, ((int64_t)ch->mult * value.s32) / (int32_t)ch->div);
 #else
 	return -ENOTSUP;
 #endif /* CONFIG_INA2XX_HAS_CHANNEL_SHUNT_VOLTAGE */
