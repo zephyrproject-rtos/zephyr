@@ -1,0 +1,8 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - ethernet
+tests:
+  net.ethernet_mcast_filter:
+    min_ram: 32
