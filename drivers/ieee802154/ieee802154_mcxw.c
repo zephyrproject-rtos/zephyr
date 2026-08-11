@@ -652,8 +652,21 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
 
-	/* Ensure PHY is on correct channel before TX */
+	/* Ensure PHY is on correct channel before TX.
+	 * For timed transmissions, use the per-packet txchannel set by the upper
+	 * layer (e.g. OpenThread for CSL transmissions). The txchannel field is
+	 * only valid for TXTIME modes (it shares storage with lqi/rssi for RX).
+	 * For all other TX modes, use the current network channel.
+	 */
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL) && defined(CONFIG_NET_PKT_TXTIME)
+	if (mode == IEEE802154_TX_MODE_TXTIME || mode == IEEE802154_TX_MODE_TXTIME_CCA) {
+		rf_change_channel(net_pkt_ieee802154_txchannel(pkt), false, false);
+	} else {
+		rf_change_channel(mcxw_radio->channel, false, false);
+	}
+#else
 	rf_change_channel(mcxw_radio->channel, false, false);
+#endif
 
 	msg->msgType = gPdDataReq_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
@@ -1455,6 +1468,17 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			mcxw_ctx.energy_scan_done = NULL;
 			callback(net_if_get_device(mcxw_ctx.iface), mcxw_ctx.max_ed);
 		}
+		/*
+		 * rf_abort() was called before the energy scan which set gPhyPibRxOnWhenIdle=0
+		 * in the PHY hardware. Since the scan may span multiple channels (each call to
+		 * mcxw_energy_scan() permanently updates mcxw_ctx.channel via rf_change_channel),
+		 * restore the main network channel and re-enable PHY RX here.
+		 * Without this, the PHY stays deaf after the scan: subsequent TX (e.g. a CoAP
+		 * energy report) completes but the PHY never re-enters RX, causing the DUT to
+		 * stop sending MAC-level ACKs and retransmit indefinitely.
+		 */
+		rf_restore_main_channel();
+		rf_restart_rx_if_enabled();
 		break;
 	case gPlmeTimeoutInd_c:
 		if (RADIO_STATE_TRANSMIT == mcxw_ctx.state) {
@@ -1636,8 +1660,11 @@ static enum ieee802154_hw_caps mcxw_get_capabilities(const struct device *dev)
 	caps = IEEE802154_HW_FCS | IEEE802154_HW_PROMISC | IEEE802154_HW_FILTER |
 	       IEEE802154_HW_TX_RX_ACK | IEEE802154_HW_RX_TX_ACK | IEEE802154_HW_ENERGY_SCAN |
 	       IEEE802154_HW_TXTIME | IEEE802154_HW_RXTIME | IEEE802154_HW_SLEEP_TO_TX |
-	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC |
-	       IEEE802154_HW_SELECTIVE_TXCHANNEL;
+	       IEEE802154_RX_ON_WHEN_IDLE | IEEE802154_HW_TX_SEC
+#if defined(CONFIG_IEEE802154_SELECTIVE_TXCHANNEL)
+	       | IEEE802154_HW_SELECTIVE_TXCHANNEL
+#endif
+	       ;
 	return caps;
 }
 
