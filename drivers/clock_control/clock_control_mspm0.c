@@ -77,11 +77,18 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_HFCLK    DT_NODELABEL(hfclk)
 #define DT_HFCLK_IN DT_NODELABEL(hfclk_in)
 #define DT_HFXT     DT_NODELABEL(hfxt)
+#define DT_LFCLK    DT_NODELABEL(lfclk)
+#define DT_LFCLK_IN DT_NODELABEL(lfclk_in)
+#define DT_LFOSC    DT_NODELABEL(lfosc)
+#define DT_LFXT     DT_NODELABEL(lfxt)
 #define DT_SYSPLL   DT_NODELABEL(syspll)
 
 #define DT_HFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_HFCLK_IN)
 #define DT_HFCLK_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_HFCLK)
 #define DT_HFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_HFXT)
+#define DT_LFCLK_IN_OKAY DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_IN)
+#define DT_LFOSC_OKAY    DT_NODE_HAS_STATUS_OKAY(DT_LFOSC)
+#define DT_LFXT_OKAY     DT_NODE_HAS_STATUS_OKAY(DT_LFXT)
 #define DT_SYSPLL_OKAY   DT_NODE_HAS_STATUS_OKAY(DT_SYSPLL)
 
 #define DT_MCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mclk))
@@ -118,6 +125,18 @@ BUILD_ASSERT(MSPM0_HFXT_FREQ_MHZ >= 4 && MSPM0_HFXT_FREQ_MHZ <= 48,
 
 #endif /* DT_HFCLK_OKAY */
 
+/* Low-Frequency clock */
+BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_LFCLK_CLOCKS_CTRL), "LFCLK source not enabled");
+
+BUILD_ASSERT(DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT) ||
+		     DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN) ||
+		     DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFOSC),
+	     "Invalid LFCLK source; must be LFXT, LFCLK_IN, or LFOSC");
+
+#if DT_LFXT_OKAY
+#define MSPM0_LFXT_STARTUP_US DT_PROP_OR(DT_LFXT, ti_xtal_startup_delay_us, 0)
+#endif /* DT_LFXT_OKAY */
+
 /* System PLL */
 #if DT_SYSPLL_OKAY
 
@@ -152,10 +171,6 @@ BUILD_ASSERT(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_SYSPLL), DT_HFCLK) ||
 struct mspm0_clk_cfg {
 	uint32_t clk_div;
 	uint32_t clk_freq;
-};
-
-static struct mspm0_clk_cfg mspm0_lfclk_cfg = {
-	.clk_freq = DT_PROP(DT_NODELABEL(lfclk), clock_frequency),
 };
 
 #if MSPM0_CANCLK_ENABLED
@@ -388,6 +403,43 @@ static enum clock_control_status clock_mspm0_get_status(const struct device *dev
 	}
 #endif /* DT_HFCLK_OKAY */
 
+	case MSPM0_CLOCK_LFCLK: {
+		uint32_t clkstatus;
+		uint32_t mux;
+
+		int ret = syscon_read_reg(cfg->sysctl, SYSCTL_CLKSTATUS_OFFSET, &clkstatus);
+
+		if (ret < 0) {
+			return CLOCK_CONTROL_STATUS_UNKNOWN;
+		}
+		mux = FIELD_GET(SYSCTL_CLKSTATUS_LFCLKMUX, clkstatus);
+
+		switch (mux) {
+		case SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFOSC:
+			if (clkstatus & SYSCTL_CLKSTATUS_LFOSCGOOD) {
+				return CLOCK_CONTROL_STATUS_ON;
+			}
+
+			return CLOCK_CONTROL_STATUS_OFF;
+
+		case SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFXT:
+			if (clkstatus & SYSCTL_CLKSTATUS_LFXTGOOD) {
+				return CLOCK_CONTROL_STATUS_ON;
+			} else if (clkstatus & SYSCTL_CLKSTATUS_LFCLKFAIL) {
+				return CLOCK_CONTROL_STATUS_OFF;
+			}
+
+			return CLOCK_CONTROL_STATUS_UNKNOWN;
+
+		default:
+			if (clkstatus & SYSCTL_CLKSTATUS_LFCLKFAIL) {
+				return CLOCK_CONTROL_STATUS_OFF;
+			}
+			/* LFCLK_IN: no hardware readiness bit for an external input */
+			return CLOCK_CONTROL_STATUS_UNKNOWN;
+		}
+	}
+
 	default:
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
@@ -432,6 +484,38 @@ static int clock_mspm0_sysosc_rate(const struct device *dev, uint32_t *rate)
 
 	*rate = MHZ(32);
 	return 0;
+}
+
+static int clock_mspm0_lfclk_rate(const struct device *dev, uint32_t *rate)
+{
+	const struct clock_mspm0_config *cfg = dev->config;
+	uint32_t clkstatus;
+	uint32_t mux;
+	int ret = syscon_read_reg(cfg->sysctl, SYSCTL_CLKSTATUS_OFFSET, &clkstatus);
+
+	if (ret < 0) {
+		return ret;
+	}
+	mux = FIELD_GET(SYSCTL_CLKSTATUS_LFCLKMUX, clkstatus);
+
+	switch (mux) {
+#if DT_LFXT_OKAY
+	case SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFXT:
+		*rate = DT_PROP(DT_LFXT, clock_frequency);
+		return 0;
+#endif /* DT_LFXT_OKAY */
+
+#if DT_LFCLK_IN_OKAY
+	case SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFCLKIN:
+		*rate = DT_PROP(DT_LFCLK_IN, clock_frequency);
+		return 0;
+#endif /* DT_LFCLK_IN_OKAY */
+
+	case SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFOSC:
+	default:
+		*rate = DT_PROP(DT_LFOSC, clock_frequency);
+		return 0;
+	}
 }
 
 #if DT_HFCLK_OKAY
@@ -563,8 +647,7 @@ static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t
 		return clock_mspm0_sysosc_rate(dev, rate);
 
 	case MSPM0_CLOCK_LFCLK:
-		*rate = mspm0_lfclk_cfg.clk_freq;
-		break;
+		return clock_mspm0_lfclk_rate(dev, rate);
 
 	case MSPM0_CLOCK_ULPCLK:
 		*rate = mspm0_ulpclk_cfg.clk_freq;
@@ -977,8 +1060,94 @@ static int clock_mspm0_configure_hfclk(const struct device *sysctl, enum mspm0_c
 }
 #endif /* DT_HFCLK_OKAY */
 
+static int clock_mspm0_configure_lfclk(const struct device *sysctl, enum mspm0_clock_source source)
+{
+	uint32_t clkstatus;
+	uint32_t mux;
+	int ret = syscon_read_reg(sysctl, SYSCTL_CLKSTATUS_OFFSET, &clkstatus);
+
+	if (ret < 0) {
+		return ret;
+	}
+	mux = FIELD_GET(SYSCTL_CLKSTATUS_LFCLKMUX, clkstatus);
+
+	switch (source) {
+#if DT_LFXT_OKAY
+	case MSPM0_CLOCK_SRC_LFXT: {
+		/* cannot switch to LFXT if LFCLK_IN is being used */
+		if (mux == SYSCTL_CLKSTATUS_LFCLKMUX_VAL_LFCLKIN) {
+			return -ENOTSUP;
+		}
+
+		/* disable low power mode and set drive strength to lowest */
+		ret = syscon_update_bits(sysctl, SYSCTL_LFCLKCFG_OFFSET,
+					 SYSCTL_LFCLKCFG_LOWCAP | SYSCTL_LFCLKCFG_XT1DRIVE, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* start LFXT */
+		ret = syscon_write_reg(sysctl, SYSCTL_LFXTCTL_OFFSET,
+				       FIELD_PREP(SYSCTL_LFXTCTL_KEY, SYSCTL_LFXTCTL_KEY_VAL) |
+					       SYSCTL_LFXTCTL_STARTLFXT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* wait for LFXT to stabilize */
+		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_LFXTGOOD, true,
+						 MSPM0_XTAL_WAIT_TIMEOUT_US(MSPM0_LFXT_STARTUP_US));
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* set LFCLK source as LFXT */
+		ret = syscon_write_reg(sysctl, SYSCTL_LFXTCTL_OFFSET,
+				       FIELD_PREP(SYSCTL_LFXTCTL_KEY, SYSCTL_LFXTCTL_KEY_VAL) |
+					       SYSCTL_LFXTCTL_SETUSELFXT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* wait for lfosc to turn off */
+		ret = clock_mspm0_wait_clkstatus(sysctl, SYSCTL_CLKSTATUS_LFOSCGOOD, false,
+						 MSPM0_CLK_WAIT_TIMEOUT_US);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	}
+#endif /* DT_LFXT_OKAY */
+
+#if DT_LFCLK_IN_OKAY
+	case MSPM0_CLOCK_SRC_LFCLK_IN:
+		/* turn off LFXT */
+		ret = syscon_write_reg(sysctl, SYSCTL_LFXTCTL_OFFSET,
+				       FIELD_PREP(SYSCTL_LFXTCTL_KEY, SYSCTL_LFXTCTL_KEY_VAL));
+		if (ret < 0) {
+			return ret;
+		}
+
+		/* set LFCLK source as LFCLK_IN */
+		ret = syscon_write_reg(sysctl, SYSCTL_EXLFCTL_OFFSET,
+				       FIELD_PREP(SYSCTL_EXLFCTL_KEY, SYSCTL_EXLFCTL_KEY_VAL) |
+					       SYSCTL_EXLFCTL_SETUSEEXLF);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+#endif /* DT_LFCLK_IN_OKAY */
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_t sys, void *data)
 {
+	const struct clock_mspm0_config *cfg = dev->config;
 	struct mspm0_sys_clock *sys_clock = (struct mspm0_sys_clock *)sys;
 	enum mspm0_clock_source *source = (enum mspm0_clock_source *)data;
 	bool disabled = false;
@@ -989,6 +1158,10 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 	}
 
 	switch (sys_clock->clk) {
+	case MSPM0_CLOCK_LFCLK:
+		ret = clock_mspm0_configure_lfclk(cfg->sysctl, *source);
+		break;
+
 #if DT_SYSPLL_OKAY
 	case MSPM0_CLOCK_SYSPLL:
 		ret = clock_mspm0_configure_syspll(dev, *source);
@@ -996,12 +1169,9 @@ static int clock_mspm0_configure(const struct device *dev, clock_control_subsys_
 #endif /* DT_SYSPLL_OKAY */
 
 #if DT_HFCLK_OKAY
-	case MSPM0_CLOCK_HFCLK: {
-		const struct clock_mspm0_config *cfg = dev->config;
-
+	case MSPM0_CLOCK_HFCLK:
 		ret = clock_mspm0_configure_hfclk(cfg->sysctl, *source);
 		break;
-	}
 #endif /* DT_HFCLK_OKAY */
 
 	default:
@@ -1064,14 +1234,18 @@ static int clock_mspm0_init(const struct device *dev)
 	}
 #endif /* DT_SYSPLL_OKAY */
 
-#if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfxt))
-	DL_SYSCTL_LFCLKConfig config = {0};
-
-	DL_SYSCTL_setLFCLKSourceLFXT(&config);
-#elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_NODELABEL(lfdig_in))
-	DL_SYSCTL_setLFCLKSourceEXLF();
-
+#if DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFXT)
+	ret = clock_mspm0_configure_lfclk(cfg->sysctl, MSPM0_CLOCK_SRC_LFXT);
+#elif DT_SAME_NODE(DT_LFCLK_CLOCKS_CTRL, DT_LFCLK_IN)
+	ret = clock_mspm0_configure_lfclk(cfg->sysctl, MSPM0_CLOCK_SRC_LFCLK_IN);
+#else
+	/* LFCLK is by default sourced by LFOSC, which is not runtime configurable */
+	ret = 0;
 #endif
+	if (ret < 0) {
+		LOG_ERR("failed to configure LFCLK: %d", ret);
+		return ret;
+	}
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_NODELABEL(hfclk))
 	DL_SYSCTL_setMCLKSource(SYSOSC, HSCLK,
