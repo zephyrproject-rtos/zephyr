@@ -548,6 +548,7 @@ int icm45686_stream_init(const struct device *dev)
 			LOG_ERR("Failed to configure interrupt");
 		}
 
+		memset(&int_config, INV_IMU_DISABLE, sizeof(int_config));
 		err = icm456xx_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");
