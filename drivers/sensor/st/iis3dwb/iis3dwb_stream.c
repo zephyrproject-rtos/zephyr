@@ -528,10 +528,8 @@ void iis3dwb_stream_irq_handler(const struct device *dev)
 		 */
 		rtio_read_regs_async(iis3dwb->rtio_ctx, iis3dwb->iodev, RTIO_BUS_SPI, &fifo_regs,
 				     iis3dwb->streaming_sqe, dev, iis3dwb_read_fifo_cb);
-	}
-
-	/* handle drdy trigger */
-	if (iis3dwb->trig_cfg.int_drdy) {
+	} else if (iis3dwb->trig_cfg.int_drdy) {
+		/* handle drdy trigger */
 		iis3dwb->status = 0;
 
 		struct rtio_regs fifo_regs;
