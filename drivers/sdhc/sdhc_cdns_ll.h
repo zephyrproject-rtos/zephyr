@@ -6,17 +6,6 @@
 #include <zephyr/cache.h>
 #include <zephyr/drivers/sdhc.h>
 
-/* HRS09 */
-#define CDNS_HRS09_PHY_SW_RESET		BIT(0)
-#define CDNS_HRS09_PHY_INIT_COMP	BIT(1)
-#define CDNS_HRS09_EXT_WR_MODE		BIT(3)
-#define CDNS_HRS09_RDCMD_EN_BIT		BIT(15)
-#define CDNS_HRS09_RDDATA_EN_BIT	BIT(16)
-#define CDNS_HRS09_EXT_RD_MODE(x)	((x) << 2)
-#define CDNS_HRS09_EXTENDED_WR(x)	((x) << 3)
-#define CDNS_HRS09_RDCMD_EN(x)		((x) << 15)
-#define CDNS_HRS09_RDDATA_EN(x)		((x) << 16)
-
 /* HRS00 */
 #define CDNS_HRS00_SWR			BIT(0)
 
@@ -237,6 +226,14 @@
 
 /* HCSDCLKADJ DATA; DDR Mode */
 #define SDHC_HRS10_HCSDCLKADJ(x)	((x) << 16)
+
+/* HRS09 */
+#define CDNS_HRS09_PHY_SW_RESET		BIT(0)
+#define CDNS_HRS09_PHY_INIT_COMP	BIT(1)
+#define CDNS_HRS09_EXT_RD_MODE		BIT(2)
+#define CDNS_HRS09_EXT_WR_MODE		BIT(3)
+#define CDNS_HRS09_RDCMD_EN_BIT		BIT(15)
+#define CDNS_HRS09_RDDATA_EN_BIT	BIT(16)
 
 /* HRS16 */
 #define CDNS_HRS16_WRCMD0_DLY(x)        (x)
