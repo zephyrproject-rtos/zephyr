@@ -5236,6 +5236,23 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 
 	keys->remote_csrk.cnt = cnt + 1U;
 
+	/* The sign counter is bound to the lifetime of the CSRK, not to a
+	 * single power cycle. Without persisting each accepted value, a
+	 * reboot would restore the counter stored at pairing time, making
+	 * previously captured Signed Write Commands verify (replay) again.
+	 *
+	 * Fail closed if the new value cannot be persisted, so that no
+	 * command gets executed unless it is also protected from replay.
+	 * The incremented in-memory value is kept, since the peer has
+	 * already consumed this counter value and expects the next one.
+	 */
+	err = bt_keys_store(keys);
+	if (err != 0) {
+		LOG_ERR("Unable to store updated sign counter for %s",
+			bt_addr_le_str(&conn->le.dst));
+		return err;
+	}
+
 	return 0;
 }
 
@@ -5281,6 +5298,21 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	keys->local_csrk.cnt++;
+
+	/* Persist the new counter value so that a reboot does not lead to
+	 * reuse of an already used value, which the peer would reject.
+	 *
+	 * On failure the increment is reverted: the PDU is not sent in
+	 * that case, so the counter value has not been consumed and must
+	 * be used for the next attempt to stay in sync with the peer.
+	 */
+	err = bt_keys_store(keys);
+	if (err != 0) {
+		LOG_ERR("Unable to store updated sign counter for %s",
+			bt_addr_le_str(&conn->le.dst));
+		keys->local_csrk.cnt--;
+		return err;
+	}
 
 	return 0;
 }
