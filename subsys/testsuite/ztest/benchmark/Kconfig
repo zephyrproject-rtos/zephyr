@@ -51,6 +51,11 @@ config ZTEST_BENCHMARK_OUTPUT_CSV
 	  - min / max: extreme cycle values
 	  - min_sample / max_sample: iteration at which each extreme occurred
 
+	  Manually sampled benchmarks (created with ZTEST_BENCHMARK_MANUAL()) emit "M" rows with
+	  the same column layout as "S" rows, where samples is the number of calls made to
+	  ztest_benchmark_record_sample(). A manual benchmark that records no samples emits
+	  "M, suite, name, INCONCLUSIVE" instead.
+
 	  Timed benchmarks (created with ZTEST_BENCHMARK_TIMED() or
 	  ZTEST_BENCHMARK_TIMED_SETUP_TEARDOWN()) emit rows of the form:
 
