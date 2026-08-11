@@ -214,6 +214,7 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	int odr;
 	int status;
 	uint8_t value;
+	bool lp;
 	struct lis2dh_data *data = dev->data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
@@ -226,14 +227,21 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 		return status;
 	}
 
+	lp = (value & LIS2DH_LP_EN_BIT_MASK) != 0U;
+
 	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0U && odr == LIS2DH_ODR_8) {
+	if (!lp && (odr == LIS2DH_ODR_8 || odr == LIS2DH_ODR_9 + 1)) {
+		/* 1620 Hz and 5376 Hz are low power mode only */
+		return -ENOTSUP;
+	}
+
+	if (lp && odr == LIS2DH_ODR_9) {
+		/* 1344 Hz is normal/high resolution mode only */
 		return -ENOTSUP;
 	}
 
 	/* adjust odr index for LP enabled mode, see table above */
-	if (((value & LIS2DH_LP_EN_BIT_MASK) == LIS2DH_LP_EN_BIT_MASK) &&
-		(odr == LIS2DH_ODR_9 + 1)) {
+	if (lp && odr == LIS2DH_ODR_9 + 1) {
 		odr--;
 	}
 
