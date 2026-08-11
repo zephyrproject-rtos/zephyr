@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
@@ -36,6 +37,8 @@ struct mcux_rgpio_config {
 	const struct pinctrl_soc_pinmux *pin_muxes;
 	uint8_t mux_count;
 	uint8_t irq_sel;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 };
 
 struct mcux_rgpio_data {
@@ -89,7 +92,34 @@ static int mcux_rgpio_configure(const struct device *dev,
 	uint32_t reg = *gpio_cfg_reg;
 #endif
 
-#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+#if defined(CONFIG_SOC_SERIES_IMXRT266X)
+	/*
+	 * RT266x uses a single combined IOMUXC PIO register per pad with its own
+	 * field layout (see soc .../imxrt266x/pinctrl_soc.h):
+	 *   PULLENA bits [5:4] (0b00=disable, 0b01=pull-down, 0b10=pull-up),
+	 *   IBENA   bit  [7]   (input buffer enable),
+	 *   ODENA   bit  [10]  (open-drain).
+	 * Set the receiver (IBENA) so PDIR reflects the pad, then apply the
+	 * requested pull / open-drain. Clear the mux field: this value is a
+	 * read-modify-write of the same combined register, and the pinctrl driver
+	 * ORs the GPIO mux into it, so a stale peripheral mux would survive.
+	 */
+	reg &= ~IOMUXC_PIO_MUX_MODE_MASK;
+	reg |= BIT(MCUX_RT266X_IBENA_SHIFT);
+
+	if ((flags & GPIO_SINGLE_ENDED) != 0) {
+		reg |= BIT(MCUX_RT266X_ODENA_SHIFT);
+	} else {
+		reg &= ~BIT(MCUX_RT266X_ODENA_SHIFT);
+	}
+
+	reg &= ~(0x3U << MCUX_RT266X_PULLENA_SHIFT);
+	if ((flags & GPIO_PULL_UP) != 0) {
+		reg |= (MCUX_RT266X_PULL_UP << MCUX_RT266X_PULLENA_SHIFT);
+	} else if ((flags & GPIO_PULL_DOWN) != 0) {
+		reg |= (MCUX_RT266X_PULL_DOWN << MCUX_RT266X_PULLENA_SHIFT);
+	}
+#elif defined(CONFIG_SOC_SERIES_IMXRT118X)
 	/* Enable Software Input On (SION) so PDIR reflects the driven pad value. */
 	reg |= BIT(MCUX_IMX_INPUT_ENABLE_SHIFT);
 
@@ -182,7 +212,6 @@ static int mcux_rgpio_port_get_raw(const struct device *dev, uint32_t *value)
 {
 	RGPIO_Type *base = (RGPIO_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
-	/* Read actual pad state from the input data register. */
 	*value = base->PDIR;
 
 	return 0;
@@ -337,6 +366,40 @@ static DEVICE_API(gpio, mcux_rgpio_driver_api) = {
 		irq_enable(DT_INST_IRQ_BY_IDX(n, i, irq));		\
 	} while (false)
 
+/*
+ * Open this port's clock gate if the devicetree provides one. On i.MX RT266x the
+ * RGPIO gate is closed at reset and the port reads back nothing until opened; on
+ * SoCs where the port is always clocked, no "clocks" property is given and this
+ * is a no-op.
+ */
+static int mcux_rgpio_enable_clock(const struct mcux_rgpio_config *config)
+{
+	int ret;
+
+	if (config->clock_dev == NULL) {
+		return 0;
+	}
+
+	if (!device_is_ready(config->clock_dev)) {
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(config->clock_dev, config->clock_subsys);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+/* clang-format off */
+#define MCUX_RGPIO_CLOCK_INIT(n)						\
+	.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+	.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			(NULL)),
+
 #define MCUX_RGPIO_INIT(n)						\
 	MCUX_RGPIO_PIN_DECLARE(n)					\
 	BUILD_ASSERT((DT_INST_PROP(n, irq_output_select) != 1) || DT_INST_IRQ_HAS_IDX(n, 1),       \
@@ -346,7 +409,8 @@ static DEVICE_API(gpio, mcux_rgpio_driver_api) = {
 	static const struct mcux_rgpio_config mcux_rgpio_##n##_config = { \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		DEVICE_MMIO_NAMED_ROM_INIT(reg_base, DT_DRV_INST(n)), \
-		MCUX_RGPIO_PIN_INIT(n)					\
+		MCUX_RGPIO_PIN_INIT(n),					\
+		MCUX_RGPIO_CLOCK_INIT(n)				\
 	};								\
 									\
 	static struct mcux_rgpio_data mcux_rgpio_##n##_data;		\
@@ -362,11 +426,19 @@ static DEVICE_API(gpio, mcux_rgpio_driver_api) = {
 									\
 	static int mcux_rgpio_##n##_init(const struct device *dev)	\
 	{								\
+		const struct mcux_rgpio_config *config = dev->config;	\
+		int ret;						\
+									\
 		DEVICE_MMIO_NAMED_MAP(dev, reg_base, \
 			K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
+		ret = mcux_rgpio_enable_clock(config);			\
+		if (ret < 0) {						\
+			return ret;					\
+		}							\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, DT_INST_PROP(n, irq_output_select)), \
 		   (MCUX_RGPIO_IRQ_INIT(n, DT_INST_PROP(n, irq_output_select));)) \
 		return 0;						\
 	}
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_RGPIO_INIT)
