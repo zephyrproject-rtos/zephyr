@@ -190,7 +190,7 @@ static int bma4xx_attr_set_bwp(const struct sensor_value *val,
 		return -EINVAL;
 	}
 
-	new_config->accel_bwp = (((uint8_t)val->val1) << BMA4XX_SHIFT_ACC_CONF_BWP);
+	new_config->accel_bwp = (uint8_t)val->val1;
 
 	return 0;
 }
