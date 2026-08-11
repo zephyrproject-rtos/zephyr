@@ -22,9 +22,12 @@
 #define HAPTICS_MONITOR_GET_HELP SHELL_HELP("Get monitor reading", "<device> <monitor> <type>")
 #define HAPTICS_MONITOR_SET_HELP SHELL_HELP("Turn monitor on/off", "<device> <monitor> <enable>")
 #define HAPTICS_SELECT_HELP      SHELL_HELP("Select haptic source", "<device> <source> [<idx>]")
-#define HAPTICS_START_HELP       SHELL_HELP("Start haptic output", "<device>")
-#define HAPTICS_STOP_HELP        SHELL_HELP("Stop haptic output", "<device>")
-#define HAPTICS_STREAM_HELP      SHELL_HELP("Stream samples", "<device> [<byte1> <byte2> ...]")
+#define HAPTICS_SET_TRIGGER_HELP                                                                   \
+	SHELL_HELP("Set triggered effect", "<device> <trigger> <type> [<source> [<idx>] <level>]")
+#define HAPTICS_START_HELP   SHELL_HELP("Start haptic output", "<device>")
+#define HAPTICS_STOP_HELP    SHELL_HELP("Stop haptic output", "<device>")
+#define HAPTICS_STREAM_HELP  SHELL_HELP("Stream samples", "<device> [<byte1> <byte2> ...]")
+#define HAPTICS_TRIGGER_HELP SHELL_HELP("Trigger an effect", "<device> <trigger> <type>")
 
 #define HAPTICS_MONITORS     bemf, current, f0, re, ambient_temp, die_temp, vbat, vbst, vout
 #define HAPTICS_MONITORS_ALL HAPTICS_MONITORS, all
@@ -32,14 +35,19 @@
 #define HAPTICS_MONITORS_SET disable, enable
 #define HAPTICS_SOURCES      rom, ram, dai, analog, pwm, control_port, all
 
-#define HAPTICS_ARGS_DEVICE         1
-#define HAPTICS_ARGS_MONITOR        2
-#define HAPTICS_ARGS_ROUTINE        2
-#define HAPTICS_ARGS_SOURCE         2
-#define HAPTICS_ARGS_STREAM_START   2
-#define HAPTICS_ARGS_ID_OR_LEVEL    3
-#define HAPTICS_ARGS_MONITOR_OPTION 3
-#define HAPTICS_ARGS_LEVEL          4
+#define HAPTICS_ARGS_DEVICE              1
+#define HAPTICS_ARGS_MONITOR             2
+#define HAPTICS_ARGS_ROUTINE             2
+#define HAPTICS_ARGS_SOURCE              2
+#define HAPTICS_ARGS_STREAM_START        2
+#define HAPTICS_ARGS_TRIGGER             2
+#define HAPTICS_ARGS_TRIGGER_TYPE        3
+#define HAPTICS_ARGS_ID_OR_LEVEL         3
+#define HAPTICS_ARGS_MONITOR_OPTION      3
+#define HAPTICS_ARGS_LEVEL               4
+#define HAPTICS_ARGS_TRIGGER_SOURCE      4
+#define HAPTICS_ARGS_TRIGGER_ID_OR_LEVEL 5
+#define HAPTICS_ARGS_TRIGGER_LEVEL       6
 
 static const char *const monitor_units[] = {
 	[HAPTICS_MONITOR_BEMF] = " V",         [HAPTICS_MONITOR_CURRENT] = " A",
@@ -103,6 +111,30 @@ static int source_lookup(const char *const arg, enum haptics_source *const src)
 		*src = HAPTICS_SOURCE_ALL;
 	} else {
 		*src = shell_strtol(arg, 10, &ret);
+		if (ret < 0) {
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int trigger_type_lookup(const char *const arg, enum haptics_trigger_type *const type)
+{
+	int ret;
+
+	if (strcmp(arg, "rising") == 0) {
+		*type = HAPTICS_TRIGGER_RISING;
+	} else if (strcmp(arg, "falling") == 0) {
+		*type = HAPTICS_TRIGGER_FALLING;
+	} else if (strcmp(arg, "high") == 0) {
+		*type = HAPTICS_TRIGGER_HIGH;
+	} else if (strcmp(arg, "low") == 0) {
+		*type = HAPTICS_TRIGGER_LOW;
+	} else if (strcmp(arg, "none") == 0) {
+		*type = HAPTICS_TRIGGER_NONE;
+	} else {
+		*type = shell_strtol(arg, 10, &ret);
 		if (ret < 0) {
 			return -EINVAL;
 		}
@@ -303,6 +335,66 @@ static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+static int cmd_set_trigger(const struct shell *sh, size_t argc, char **argv)
+{
+	union haptics_config cfg = {0};
+	enum haptics_trigger_type type;
+	enum haptics_source src = 0;
+	uint32_t level = 0, trigger;
+	const struct device *dev;
+	int ret;
+
+	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
+	if (dev == NULL) {
+		shell_error(sh, "haptic device not found");
+		return -EINVAL;
+	}
+
+	trigger = shell_strtoul(argv[HAPTICS_ARGS_TRIGGER], 10, &ret);
+	if (ret < 0) {
+		shell_error(sh, "failed to parse trigger (%d)", ret);
+		return ret;
+	}
+
+	ret = trigger_type_lookup(argv[HAPTICS_ARGS_TRIGGER_TYPE], &type);
+	if (ret < 0) {
+		shell_error(sh, "invalid type '%s'", argv[HAPTICS_ARGS_TRIGGER_TYPE]);
+		return ret;
+	}
+
+	if (type != HAPTICS_TRIGGER_NONE && argc > HAPTICS_ARGS_TRIGGER_SOURCE) {
+		ret = source_lookup(argv[HAPTICS_ARGS_TRIGGER_SOURCE], &src);
+		if (ret < 0) {
+			shell_error(sh, "invalid source '%s'", argv[HAPTICS_ARGS_TRIGGER_SOURCE]);
+			return ret;
+		}
+
+		if (argc > HAPTICS_ARGS_TRIGGER_LEVEL) {
+			cfg.idx = shell_strtoul(argv[HAPTICS_ARGS_TRIGGER_ID_OR_LEVEL], 10, &ret);
+			if (ret < 0) {
+				shell_error(sh, "failed to parse idx (%d)", ret);
+				return ret;
+			}
+
+			level = shell_strtoul(argv[HAPTICS_ARGS_TRIGGER_LEVEL], 10, &ret);
+		} else {
+			level = shell_strtoul(argv[HAPTICS_ARGS_TRIGGER_ID_OR_LEVEL], 10, &ret);
+		}
+		if (ret < 0) {
+			shell_error(sh, "failed to parse level (%d)", ret);
+			return ret;
+		}
+	}
+
+	ret = haptics_set_trigger(dev, trigger, type, src,
+				  (argc > HAPTICS_ARGS_TRIGGER_LEVEL) ? &cfg : NULL, level);
+	if (ret < 0) {
+		shell_error(sh, "failed to set trigger (%d)", ret);
+	}
+
+	return ret;
+}
+
 static int cmd_start(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -383,6 +475,39 @@ static int cmd_stream(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+static int cmd_trigger(const struct shell *sh, size_t argc, char **argv)
+{
+	enum haptics_trigger_type type;
+	const struct device *dev;
+	uint32_t trigger;
+	int ret;
+
+	dev = shell_device_get_binding(argv[HAPTICS_ARGS_DEVICE]);
+	if (dev == NULL) {
+		shell_error(sh, "haptic device not found");
+		return -EINVAL;
+	}
+
+	trigger = shell_strtoul(argv[HAPTICS_ARGS_TRIGGER], 10, &ret);
+	if (ret < 0) {
+		shell_error(sh, "failed to parse trigger (%d)", ret);
+		return ret;
+	}
+
+	ret = trigger_type_lookup(argv[HAPTICS_ARGS_TRIGGER_TYPE], &type);
+	if (ret < 0) {
+		shell_error(sh, "invalid type '%s'", argv[HAPTICS_ARGS_TRIGGER_TYPE]);
+		return ret;
+	}
+
+	ret = haptics_trigger(dev, trigger, type);
+	if (ret < 0) {
+		shell_error(sh, "failed to trigger (%d)", ret);
+	}
+
+	return ret;
+}
+
 static bool device_is_haptics(const struct device *dev)
 {
 	return DEVICE_API_IS(haptics, dev);
@@ -429,10 +554,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(haptic_cmds,
 	SHELL_CMD_ARG(monitor_set, &dsub_device_monitor_set, HAPTICS_MONITOR_SET_HELP,
 		      cmd_monitor_set, 4, 0),
 	SHELL_CMD_ARG(select, &dsub_device_source, HAPTICS_SELECT_HELP, cmd_select, 3, 1),
+	SHELL_CMD_ARG(set_trigger, &dsub_device_only, HAPTICS_SET_TRIGGER_HELP, cmd_set_trigger,
+		      4, 3),
 	SHELL_CMD_ARG(start, &dsub_device_only, HAPTICS_START_HELP, cmd_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_device_only, HAPTICS_STOP_HELP, cmd_stop, 2, 0),
 	SHELL_CMD_ARG(stream, &dsub_device_only, HAPTICS_STREAM_HELP, cmd_stream, 2,
 		      HAPTICS_ARGS_MAX),
+	SHELL_CMD_ARG(trigger, &dsub_device_only, HAPTICS_TRIGGER_HELP, cmd_trigger, 4, 0),
 	SHELL_SUBCMD_SET_END);
 /* clang-format on */
 
