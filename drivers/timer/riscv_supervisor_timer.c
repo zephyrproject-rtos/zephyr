@@ -78,6 +78,14 @@ static void timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
+	/* Disarm the IRQ. STIP is level sensitive and only the SBI timer call
+	 * clears it, so ask for an infinite expiry, which the SBI spec defines
+	 * as clearing the pending interrupt without scheduling another. This
+	 * interrupt then fires once for the deadline it was armed with,
+	 * whether or not another one is programmed afterwards.
+	 */
+	sbi_set_timer(UINT64_MAX);
+
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	uint64_t now = stime();
