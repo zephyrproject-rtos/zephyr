@@ -9,5 +9,7 @@ target_sources(app PRIVATE
   src/benchmarks.c
 )
 
+target_sources_ifdef(CONFIG_INT_BENCH_LOAD app PRIVATE src/load.c)
+
 target_sources_ifdef(CONFIG_INT_BENCH_TRIGGER_SW_IRQ app PRIVATE src/trigger_sw_irq.c)
 target_sources_ifdef(CONFIG_INT_BENCH_TRIGGER_OFFLOAD app PRIVATE src/trigger_offload.c)

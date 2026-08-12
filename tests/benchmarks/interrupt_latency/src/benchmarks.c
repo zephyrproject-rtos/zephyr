@@ -20,6 +20,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/timing/timing.h>
 
+#include "load.h"
 #include "trigger.h"
 
 #define NUM_ITERATIONS CONFIG_INT_BENCH_NUM_ITERATIONS
@@ -38,9 +39,17 @@ static void suite_setup(void)
 #endif
 
 	(void)bench_trigger_init();
+
+	printk("Background load: %s\n", bench_load_description());
+	bench_load_start();
 }
 
-ZTEST_BENCHMARK_SUITE(interrupt, suite_setup, NULL);
+static void suite_teardown(void)
+{
+	bench_load_stop();
+}
+
+ZTEST_BENCHMARK_SUITE(interrupt, suite_setup, suite_teardown);
 
 #if defined(CONFIG_INT_BENCH_SCENARIO_ENTRY) || defined(CONFIG_INT_BENCH_SCENARIO_EXIT) || \
 	defined(CONFIG_INT_BENCH_SCENARIO_LOCKED)
@@ -76,6 +85,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_trigger_to_isr, NUM_ITERATIONS, entry_se
 		       entry_teardown)
 {
 	fired = false;
+	bench_load_pollute();
 
 	ztest_benchmark_start();
 	bench_trigger();
@@ -112,6 +122,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, exit_resume_interrupted, NUM_ITERATIONS, exit_
 		       exit_teardown)
 {
 	fired = false;
+	bench_load_pollute();
 
 	bench_trigger();
 
@@ -170,6 +181,8 @@ static void resched_teardown(void)
 ZTEST_BENCHMARK_MANUAL(interrupt, exit_reschedule, NUM_ITERATIONS, resched_setup,
 		       resched_teardown)
 {
+	bench_load_pollute();
+
 	bench_trigger();
 	k_sem_take(&sync_sem, K_FOREVER);
 
@@ -205,6 +218,14 @@ ZTEST_BENCHMARK_MANUAL(interrupt, locked_unlock_to_isr, NUM_ITERATIONS, locked_s
 
 	bench_trigger();
 	k_busy_wait(CONFIG_INT_BENCH_LOCK_HOLD_US);
+
+	/*
+	 * Pollute from inside the critical section, so that the
+	 * interrupt is unmasked with the caches in the state a critical
+	 * section doing real work would leave them in. This lengthens
+	 * the hold time beyond the configured value.
+	 */
+	bench_load_pollute();
 
 	ztest_benchmark_start();
 	irq_unlock(key);
@@ -258,6 +279,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, throughput_round_trip, NUM_ITERATIONS, through
 {
 	isr_count = 0U;
 	done = false;
+	bench_load_pollute();
 
 	bench_trigger();
 
@@ -289,6 +311,8 @@ ZTEST_BENCHMARK_MANUAL(interrupt, dynamic_connect, NUM_ITERATIONS, dynamic_setup
 		       dynamic_teardown)
 {
 	unsigned int line = bench_trigger_irq_line();
+
+	bench_load_pollute();
 
 	ztest_benchmark_start();
 	(void)irq_connect_dynamic(line, CONFIG_INT_BENCH_IRQ_PRIO, bench_trigger_isr, NULL, 0);
