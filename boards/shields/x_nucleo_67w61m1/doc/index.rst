@@ -28,6 +28,7 @@ X-NUCLEO-67W61M1 provides an ST67W611M1 chip with the following key features:
  - Wi-Fi 6 2.4 GHz
  - STA and STA + SoftAP modes
  - Full-duplex SPI communication (up to 40 MHz)
+ - DTIM or TWT based low power modes
 
 Coprocessor flashing
 ********************
