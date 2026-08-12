@@ -78,6 +78,70 @@ Interrupt generation is abstracted behind a small backend API
    backend; entry latency, critical section and throughput scenarios are
    not available.
 
+Background load
+***************
+
+Latency measured on an otherwise idle system is a best case: caches hold the
+benchmark's own working set, no other interrupt is in service and nothing
+else competes for the memory system. Build with the ``prj.load.conf``
+overlay to re-run every scenario under background load:
+
+.. code-block:: console
+
+   west build -p -b qemu_x86 tests/benchmarks/interrupt_latency -t run -- \
+       -DEXTRA_CONF_FILE=prj.load.conf
+
+Three load sources are enabled independently
+(:kconfig:option:`CONFIG_INT_BENCH_LOAD` and the options under it):
+
+``CONFIG_INT_BENCH_LOAD_CACHE``
+   Walks a working set larger than the benchmark's own between samples,
+   outside the measured span, so that each measured interrupt is served with
+   cold caches and TLBs. Runs in the benchmark thread, so it affects every
+   scenario. Note that this has little effect under emulation: QEMU does not
+   model caches, so the walk costs time but does not slow later accesses.
+
+``CONFIG_INT_BENCH_LOAD_TIMER``
+   A periodic timer whose handler runs in the system clock ISR, competing
+   with the benchmark interrupt for the interrupt controller and for the
+   interrupt-disabled windows of the kernel timeout code. This is the load
+   source that dominates under emulation.
+
+``CONFIG_INT_BENCH_LOAD_THREADS``
+   Threads of lower priority than the benchmark that continuously write to
+   memory. On SMP these run on the other CPUs and contend for the memory
+   system throughout; on a uniprocessor they only run while the benchmark
+   blocks, so their effect is limited to the rescheduling scenario. They are
+   deliberately kept below the benchmark's priority so that they cannot
+   preempt it and be mistaken for interrupt latency.
+
+Under load the mean stays close to the idle figure while the maximum and the
+standard deviation grow by an order of magnitude or more; on qemu_x86 the
+entry latency maximum rises from 1184 cycles idle to over 25000 under load.
+The maximum is the number that matters for a real-time application, and it
+is only visible with the system doing something.
+
+The load configuration can be impractically slow on emulated targets. The
+critical section scenario busy waits with interrupts locked while the load
+timer keeps expiring, and under emulation that combination can cost orders
+of magnitude more wall clock than the nominal hold time; ARC is excluded
+from the load run in ``tests.yaml`` for that reason. On such targets, lower
+:kconfig:option:`CONFIG_INT_BENCH_NUM_ITERATIONS`, or disable
+:kconfig:option:`CONFIG_INT_BENCH_LOAD_TIMER`.
+
+How much each scenario moves under load is itself informative. On Arm GIC
+the benchmark SGI is configured above the system timer, so
+``locked_unlock_to_isr`` does not move at all: whatever else is pending when
+interrupts are unmasked, the benchmark interrupt is serviced first. On x86
+the same scenario grows from 928 to 1726 cycles on average, because the
+competing timer interrupt outranks the benchmark vector and is serviced
+before it. That difference is a property of the platform's interrupt
+priorities rather than of the benchmark.
+
+``throughput_round_trip`` barely moves anywhere. It saturates the interrupt
+path by design, so it measures a steady state that stays warm whatever else
+the system is doing.
+
 Running
 *******
 
@@ -123,9 +187,15 @@ Future work
 ***********
 
 * sw-irq trigger backend for Xtensa (INTSET).
-* Nested interrupt preemption latency (two lines, two priorities).
+* Nested interrupt preemption latency and priority interference, both of
+  which need the trigger backend extended to a second line at a second
+  priority.
 * Direct ISR (``IRQ_DIRECT_CONNECT``) and zero-latency IRQ comparison
   scenarios.
-* Percentile (p99) reporting and latency distribution histograms.
-* Background-load variants and SMP scenarios (IPI latency, ISR on
-  non-boot CPU).
+* Percentile (p99) reporting and latency distribution histograms, which
+  the benchmark framework cannot express today because it keeps no
+  sample buffer.
+* An external event trigger, for example a GPIO loopback described in
+  devicetree, so that entry latency includes the pin and interrupt
+  controller propagation delays that a software trigger skips.
+* SMP scenarios (IPI latency, ISR on a non-boot CPU).
