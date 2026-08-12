@@ -14,19 +14,25 @@ config INT_BENCH_NUM_ITERATIONS
 
 choice INT_BENCH_TRIGGER
 	prompt "Interrupt trigger backend"
-	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86
+	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86 || \
+		(RISCV && !SMP && !RISCV_S_MODE)
 	default INT_BENCH_TRIGGER_OFFLOAD
 
 config INT_BENCH_TRIGGER_SW_IRQ
 	bool "Software-triggered hardware interrupt"
-	depends on CPU_CORTEX_M || GIC || ARC || X86
+	depends on CPU_CORTEX_M || GIC || ARC || X86 || \
+		(RISCV && !SMP && !RISCV_S_MODE)
 	help
 	  Raise a real asynchronous interrupt through the platform
 	  interrupt controller (NVIC STIR/ISPR on Cortex-M, a GIC SGI on
 	  Arm GIC platforms, IRQ_HINT on ARC, a local APIC self IPI on
-	  x86). This exercises the full
-	  hardware interrupt entry path and is required for the entry
-	  latency, critical section and throughput scenarios.
+	  x86, and a CLIC pending bit or a CLINT machine software
+	  interrupt on RISC-V). This exercises the full hardware
+	  interrupt entry path and is required for the entry latency,
+	  critical section and throughput scenarios.
+
+	  Not available in RISC-V supervisor mode: both the CLINT and
+	  mhartid are machine mode only.
 
 config INT_BENCH_TRIGGER_OFFLOAD
 	bool "irq_offload() software trap"
@@ -47,10 +53,12 @@ config INT_BENCH_IRQ_LINE
 	help
 	  IRQ line the benchmark connects its ISR to and then triggers
 	  from software. The default of -1 selects a platform-appropriate
-	  line automatically: an SGI on GIC platforms, a line known to be
-	  free on selected QEMU boards and on x86, and the last
-	  available line (CONFIG_NUM_IRQS - 1) otherwise. Override this on SoCs where
-	  the automatic choice is not an implemented or free line.
+	  line automatically: an SGI on GIC platforms, the machine
+	  software interrupt on RISC-V platforms without a CLIC, a line
+	  known to be free on selected QEMU boards and on x86, and the
+	  last available line (CONFIG_NUM_IRQS - 1) otherwise. Override
+	  this on SoCs where the automatic choice is not an implemented
+	  or free line.
 
 config INT_BENCH_IRQ_PRIO
 	int "Priority of the benchmark IRQ"

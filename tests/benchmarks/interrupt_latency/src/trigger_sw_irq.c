@@ -42,15 +42,31 @@
  * is known not to collide with the platform's own IRQ assignments.
  */
 #define BENCH_IRQ_LINE 27
+#elif defined(CONFIG_RISCV) && !defined(CONFIG_CLIC) && !defined(CONFIG_NRFX_CLIC)
+/*
+ * Without a CLIC, the only interrupt a RISC-V hart can raise on itself
+ * is the machine software interrupt, asserted through the CLINT.
+ */
+#define BENCH_IRQ_LINE RISCV_IRQ_MSOFT
 #else
 #define BENCH_IRQ_LINE (CONFIG_NUM_IRQS - 1)
 #endif
+
+/*
+ * Deassert a level triggered benchmark interrupt. Called at the very
+ * start of the ISR, before the measurement handler, so that the
+ * throughput scenario can reassert the interrupt from within its own
+ * handler.
+ */
+static inline void bench_trigger_ack(void);
 
 static bench_trigger_handler_t trigger_handler;
 
 void bench_trigger_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
+
+	bench_trigger_ack();
 
 	if (trigger_handler != NULL) {
 		trigger_handler();
@@ -142,8 +158,62 @@ void bench_trigger(void)
 #endif /* CONFIG_X2APIC */
 }
 
+#elif defined(CONFIG_RISCV)
+#if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
+void riscv_clic_irq_set_pending(uint32_t irq);
+
+void bench_trigger(void)
+{
+	riscv_clic_irq_set_pending(BENCH_IRQ_LINE);
+}
+
+#else
+#include <zephyr/arch/riscv/csr.h>
+
+/*
+ * Without a CLIC, a hart cannot make one of its own external
+ * interrupts pending: PLIC pending bits are driven by the interrupt
+ * gateways, and the machine software, timer and external pending bits
+ * of the mip CSR are read only. The machine software interrupt is
+ * therefore asserted the same way the SMP IPI code does it, by writing
+ * this hart's MSIP register in the CLINT.
+ *
+ * MSIP is level triggered, so the ISR has to deassert it; see
+ * bench_trigger_ack() below.
+ *
+ * Both the CLINT and mhartid are machine mode only, which is why
+ * CONFIG_INT_BENCH_TRIGGER_SW_IRQ excludes CONFIG_RISCV_S_MODE.
+ */
+#define CLINT_NODE DT_NODELABEL(clint)
+#if !DT_NODE_EXISTS(CLINT_NODE)
+#error "No CLIC and no 'clint' devicetree node: cannot trigger an interrupt"
+#endif
+
+#define MSIP_BASE       DT_REG_ADDR_RAW(CLINT_NODE)
+#define MSIP(hartid)    ((volatile uint32_t *)MSIP_BASE)[hartid]
+
+#define BENCH_TRIGGER_LEVEL_ACK 1
+
+void bench_trigger(void)
+{
+	MSIP(csr_read(mhartid)) = 1U;
+}
+
+static inline void bench_trigger_ack(void)
+{
+	MSIP(csr_read(mhartid)) = 0U;
+}
+#endif /* CONFIG_CLIC || CONFIG_NRFX_CLIC */
+
 #else
 #error "No software interrupt trigger available for this architecture"
+#endif
+
+#ifndef BENCH_TRIGGER_LEVEL_ACK
+static inline void bench_trigger_ack(void)
+{
+	/* Edge triggered: nothing to deassert */
+}
 #endif
 
 int bench_trigger_init(void)
