@@ -155,6 +155,33 @@ config INT_BENCH_LOAD_TIMER_PERIOD_US
 	  the system clock are rounded up, so raise
 	  CONFIG_SYS_CLOCK_TICKS_PER_SEC accordingly.
 
+config INT_BENCH_LOAD_KERNEL
+	bool "Kernel activity from interrupt context"
+	depends on INT_BENCH_LOAD_TIMER
+	default y
+	help
+	  Have the load timer handler exercise kernel primitives from
+	  interrupt context, so that the benchmark interrupt competes
+	  with the interrupt-disabled windows the kernel takes around its
+	  own data structures rather than only with an empty handler.
+
+	  Runs in the system clock ISR, so unlike a thread it takes
+	  effect regardless of priorities and on uniprocessors too.
+
+config INT_BENCH_LOAD_SCHED
+	bool "Scheduler churn between samples"
+	default y
+	help
+	  Wake a higher priority thread and let it block again before
+	  each sample, so that every measurement is taken on a system
+	  that has just context switched rather than one that has been
+	  spinning in the same thread.
+
+	  The churn happens between samples rather than during them on
+	  purpose. A thread that could preempt the benchmark while it is
+	  measuring would add its own scheduling delay to the result and
+	  be indistinguishable from interrupt latency.
+
 config INT_BENCH_LOAD_THREADS
 	bool "Background CPU and memory load threads"
 	default y
