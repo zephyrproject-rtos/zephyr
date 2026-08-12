@@ -2891,7 +2891,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 	case BT_CONN_TYPE_LE:
 		(void)bt_addr_le_to_str(&conn->le.dst, val.str, sizeof(val.str));
 		break;
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_ISO_UNICAST)
 	case BT_CONN_TYPE_ISO:
 		if (conn->iso.acl != NULL) {
 			(void)bt_addr_le_to_str(&conn->iso.acl->le.dst, val.str, sizeof(val.str));
@@ -2899,7 +2899,7 @@ struct bt_conn_tmp_str bt_conn_dst_tmp_str(const struct bt_conn *conn)
 			val.str[0] = '\0';
 		}
 		break;
-#endif /* CONFIG_BT_ISO */
+#endif /* CONFIG_BT_ISO_UNICAST */
 	default:
 		val.str[0] = '\0';
 		break;
@@ -2988,8 +2988,8 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 #endif
 #if defined(CONFIG_BT_ISO)
 	case BT_CONN_TYPE_ISO:
-		if (IS_ENABLED(CONFIG_BT_ISO_UNICAST) &&
-		    (conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
+#if defined(CONFIG_BT_ISO_UNICAST)
+		if ((conn->iso.info.type == BT_ISO_CHAN_TYPE_CENTRAL ||
 		     conn->iso.info.type == BT_ISO_CHAN_TYPE_PERIPHERAL) &&
 		    conn->iso.acl != NULL) {
 			info->le.dst = &conn->iso.acl->le.dst;
@@ -2998,8 +2998,12 @@ int bt_conn_get_info(const struct bt_conn *conn, struct bt_conn_info *info)
 			info->le.src = BT_ADDR_LE_NONE;
 			info->le.dst = BT_ADDR_LE_NONE;
 		}
+#else
+		info->le.src = BT_ADDR_LE_NONE;
+		info->le.dst = BT_ADDR_LE_NONE;
+#endif /* CONFIG_BT_ISO_UNICAST */
 		return 0;
-#endif
+#endif /* CONFIG_BT_ISO */
 	default:
 		break;
 	}

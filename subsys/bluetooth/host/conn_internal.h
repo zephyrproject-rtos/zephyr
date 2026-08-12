@@ -178,8 +178,10 @@ struct bt_conn_sco {
 };
 
 struct bt_conn_iso {
+#if defined(CONFIG_BT_ISO_UNICAST)
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+#endif /* CONFIG_BT_ISO_UNICAST */
 
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
