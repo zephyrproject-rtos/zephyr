@@ -436,7 +436,12 @@ class Script(Harness):
 
     def run(self, timeout: float) -> bool:
         self.instance.testcases = []
-        for script in self._get_test_scripts():
+
+        all_scripts = self._get_test_scripts()
+        if not all_scripts:
+            self._log_error("No scripts found!")
+
+        for script in all_scripts:
             if not os.path.exists(script):
                 self._handle_missing_script(script)
                 continue
@@ -455,12 +460,15 @@ class Script(Harness):
         self._update_test_status()
         return True
 
-    def _handle_missing_script(self, script: str) -> None:
-        reason = f"{script} not found!"
+    def _log_error(self, reason: str) -> None:
         logger.error(reason)
-        self._add_testcase_from_script(script, rc=-1, reason=reason)
         with open(self.log_file_path, 'a') as log_file:
             log_file.write(reason + '\n\n')
+
+    def _handle_missing_script(self, script: str) -> None:
+        reason = f"{script} not found!"
+        self._add_testcase_from_script(script, rc=-1, reason=reason)
+        self._log_error(reason)
 
     def _get_env(self) -> dict[str, str]:
         """Return environment variables with BOARD set to the platform name."""
