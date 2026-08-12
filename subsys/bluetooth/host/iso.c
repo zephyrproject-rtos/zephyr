@@ -457,13 +457,14 @@ void bt_iso_connected(struct bt_conn *iso)
 static void bt_iso_chan_disconnected(struct bt_iso_chan *chan, uint8_t reason)
 {
 	uint8_t conn_type;
-	struct net_buf *buf;
 
 	LOG_DBG("%p, reason 0x%02x", chan, reason);
 
 	__ASSERT(chan->iso != NULL, "NULL conn for iso chan %p", chan);
 
 #if defined(CONFIG_BT_ISO_TX)
+	struct net_buf *buf;
+
 	/* release buffers from tx_queue */
 	while ((buf = k_fifo_get(&chan->iso->iso.txq, K_NO_WAIT))) {
 		__ASSERT_NO_MSG(!bt_buf_has_view(buf));
