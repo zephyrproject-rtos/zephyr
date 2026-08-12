@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/portability/cmsis_types.h>
+#include <zephyr/sys/check.h>
 #include <string.h>
 
 K_MEM_SLAB_DEFINE_TYPE(cmsis_rtos_semaphore_cb_slab, struct cmsis_rtos_semaphore_cb,
@@ -35,8 +36,9 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	}
 
 	if (attr->cb_mem != NULL) {
-		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_semaphore_cb),
-			 "Invalid cb_size\n");
+		CHECKIF(attr->cb_size < sizeof(struct cmsis_rtos_semaphore_cb)) {
+			return NULL;
+		}
 		semaphore = (struct cmsis_rtos_semaphore_cb *)attr->cb_mem;
 	} else if (k_mem_slab_alloc(&cmsis_rtos_semaphore_cb_slab, (void **)&semaphore,
 				    K_MSEC(100)) != 0) {
