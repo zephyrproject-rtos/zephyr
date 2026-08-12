@@ -54,10 +54,11 @@ static int icm40627_set_accel_fs(const struct device *dev, uint16_t fs)
 
 	sensor_g_to_ms2(round_fs, &accel_fs_value);
 	data->accel_fs = accel_fs_value.val1;
-	data->accel_sensitivity_shift = MIN_ACCEL_SENS_SHIFT;
+	/* BIT_ACCEL_UI_FS_16/8/4/2 are 0..3, so the shift is 11/12/13/14 */
+	data->accel_sensitivity_shift = MIN_ACCEL_SENS_SHIFT + temp;
 
 	return cfg->bus_io->update(&cfg->bus, REG_ACCEL_CONFIG0, (uint8_t)MASK_ACCEL_UI_FS_SEL,
-				   temp);
+				   (uint8_t)FIELD_PREP(MASK_ACCEL_UI_FS_SEL, temp));
 }
 
 static int icm40627_set_gyro_fs(const struct device *dev, uint16_t fs)

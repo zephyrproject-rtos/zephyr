@@ -227,7 +227,7 @@
 
 /* misc. defines */
 #define WHO_AM_I_ICM40627     0x4E
-#define MIN_ACCEL_SENS_SHIFT  10
+#define MIN_ACCEL_SENS_SHIFT  11
 #define ACCEL_DATA_SIZE       6
 #define GYRO_DATA_SIZE        6
 #define TEMP_DATA_SIZE        2
