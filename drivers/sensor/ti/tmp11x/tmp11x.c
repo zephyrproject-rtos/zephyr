@@ -227,6 +227,12 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return rc;
 	}
 
+#ifdef CONFIG_TMP11X_TRIGGER
+	/* The interrupt handler may already have consumed the clear-on-read flag */
+	cfg_reg |= drv_data->alert_status & TMP11X_CFGR_DATA_READY;
+	drv_data->alert_status &= ~TMP11X_CFGR_DATA_READY;
+#endif
+
 	if ((cfg_reg & TMP11X_CFGR_DATA_READY) == 0) {
 		LOG_DBG("%s: no data ready", dev->name);
 		return -EBUSY;
@@ -472,6 +478,9 @@ static int tmp11x_attr_set(const struct device *dev, enum sensor_channel chan,
 static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 			   enum sensor_attribute attr, struct sensor_value *val)
 {
+#ifdef CONFIG_TMP11X_TRIGGER
+	struct tmp11x_data *drv_data = dev->data;
+#endif
 	uint16_t data;
 	int rc;
 
@@ -484,6 +493,11 @@ static int tmp11x_attr_get(const struct device *dev, enum sensor_channel chan,
 		rc = tmp11x_reg_read(dev, TMP11X_REG_CFGR, &data);
 
 		if (rc == 0) {
+#ifdef CONFIG_TMP11X_TRIGGER
+			/* Report the status bits the interrupt handler already consumed */
+			data |= drv_data->alert_status;
+			drv_data->alert_status = 0;
+#endif
 			val->val1 = data;
 			val->val2 = 0;
 		}
