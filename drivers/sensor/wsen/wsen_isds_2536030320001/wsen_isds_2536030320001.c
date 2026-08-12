@@ -69,8 +69,7 @@ static int isds_2536030320001_sample_fetch(const struct device *dev, enum sensor
 	uint32_t accel_step_sleep_duration, gyro_step_sleep_duration, step_sleep_duration;
 
 	switch (channel) {
-	case SENSOR_CHAN_ALL:
-	case SENSOR_CHAN_AMBIENT_TEMP: {
+	case SENSOR_CHAN_ALL: {
 		if (!wsen_sensor_step_sleep_duration_milli_from_odr_hz(
 			    &isds_2536030320001_accel_odr_list[data->accel_odr],
 			    &accel_step_sleep_duration)) {
@@ -88,6 +87,30 @@ static int isds_2536030320001_sample_fetch(const struct device *dev, enum sensor
 		step_sleep_duration = accel_step_sleep_duration < gyro_step_sleep_duration
 					      ? gyro_step_sleep_duration
 					      : accel_step_sleep_duration;
+		break;
+	}
+	case SENSOR_CHAN_AMBIENT_TEMP: {
+		bool accel_enabled = wsen_sensor_step_sleep_duration_milli_from_odr_hz(
+			&isds_2536030320001_accel_odr_list[data->accel_odr],
+			&accel_step_sleep_duration);
+		bool gyro_enabled = wsen_sensor_step_sleep_duration_milli_from_odr_hz(
+			&isds_2536030320001_gyro_odr_list[data->gyro_odr],
+			&gyro_step_sleep_duration);
+
+		if (!accel_enabled && !gyro_enabled) {
+			LOG_ERR("Accelerometer and gyroscope are disabled.");
+			return -ENOTSUP;
+		}
+
+		if (!gyro_enabled) {
+			step_sleep_duration = accel_step_sleep_duration;
+		} else if (!accel_enabled) {
+			step_sleep_duration = gyro_step_sleep_duration;
+		} else {
+			step_sleep_duration = accel_step_sleep_duration < gyro_step_sleep_duration
+						      ? gyro_step_sleep_duration
+						      : accel_step_sleep_duration;
+		}
 		break;
 	}
 	case SENSOR_CHAN_ACCEL_X:
