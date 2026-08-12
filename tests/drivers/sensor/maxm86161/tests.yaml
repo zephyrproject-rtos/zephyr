@@ -1,0 +1,67 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  # Core driver on native_sim with the I2C register-file emulator and no
+  # interrupt trigger (CONFIG_MAXM86161_TRIGGER_NONE from prj.conf). Covers
+  # init, attr_set/get, register access, sample fetch, and error paths.
+  drivers.sensor.maxm86161.emul:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_I2C_EMUL=y
+
+  # Own-thread trigger stack WITHOUT streaming. Compiles maxm86161_trigger.c and
+  # exercises trigger_set enable-bit management and INTB dispatch. Kept separate
+  # from the stream scenario so the trigger-dispatch tests do not share driver
+  # runtime state (stream_mode / status caches) with the RTIO pipeline.
+  drivers.sensor.maxm86161.trigger:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_I2C_EMUL=y
+      - CONFIG_GPIO=y
+      - CONFIG_MAXM86161_TRIGGER_OWN_THREAD=y
+
+  # Own-thread trigger + RTIO streaming stack enabled so the stream, decoder, and
+  # rtio translation units are compiled and exercised. Coverage from all
+  # native_sim scenarios is merged by twister.
+  drivers.sensor.maxm86161.stream:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_EMUL=y
+      - CONFIG_I2C_EMUL=y
+      - CONFIG_I2C_RTIO=y
+      - CONFIG_GPIO=y
+      - CONFIG_MAXM86161_TRIGGER_OWN_THREAD=y
+      - CONFIG_MAXM86161_STREAM=y
+      - CONFIG_SENSOR_ASYNC_API=y
+
+  # Hardware-in-the-loop on a real MAXM86161 over I2C. Executed manually with a
+  # board connected; observed via serial console.
+  drivers.sensor.maxm86161.hw:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - max32655fthr/max32655/m4
+    extra_configs:
+      - CONFIG_EMUL=n
+      - CONFIG_I2C_EMUL=n
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
