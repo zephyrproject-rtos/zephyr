@@ -37,6 +37,36 @@ static void tad214x_gpio_callback(const struct device *dev, struct gpio_callback
 #endif
 }
 
+static void tad214x_handle_enc(const struct device *dev)
+{
+	struct tad214x_data *drv_data = dev->data;
+	const struct tad214x_config *cfg = dev->config;
+
+	static volatile uint8_t last_encoder_state;
+	int val_a = gpio_pin_get_dt(&cfg->gpio_enca); /* encA */
+	int val_b = gpio_pin_get_dt(&cfg->gpio_encb); /* encB */
+	int val_z = gpio_pin_get_dt(&cfg->gpio_encz);  /* encZ */
+
+	uint8_t current_state = (val_a << 1) | val_b;
+	/* Check for index pulse (Z channel) */
+	if (val_z) {
+		/* Reset position on index pulse */
+		drv_data->encoder_position = 0;
+	} else if (current_state != last_encoder_state) {
+		if (((last_encoder_state == 0x00) && (current_state == 0x02)) ||
+			((last_encoder_state == 0x01) && (current_state == 0x00)) ||
+			((last_encoder_state == 0x02) && (current_state == 0x03)) ||
+			((last_encoder_state == 0x03) && (current_state == 0x01))) {
+			drv_data->encoder_position++;
+		} else {
+			drv_data->encoder_position--;
+		}
+	}
+
+	drv_data->encoder_position = drv_data->encoder_position % 16384;
+	last_encoder_state = current_state;
+}
+
 static void tad214x_thread_cb(const struct device *dev)
 {
 	struct tad214x_data *drv_data = dev->data;
@@ -47,6 +77,8 @@ static void tad214x_thread_cb(const struct device *dev)
 		gpio_pin_interrupt_configure_dt(&cfg->gpio_enca, GPIO_INT_DISABLE);
 		gpio_pin_interrupt_configure_dt(&cfg->gpio_encb, GPIO_INT_DISABLE);
 		gpio_pin_interrupt_configure_dt(&cfg->gpio_encz, GPIO_INT_DISABLE);
+
+		tad214x_handle_enc(dev);
 	} else {
 		gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
 	}
@@ -152,40 +184,6 @@ int tad214x_trigger_init(const struct device *dev)
 	return 0;
 }
 
-static void tad214x_handle_enc(const struct device *dev, const struct sensor_trigger *trig)
-{
-	struct tad214x_data *drv_data = dev->data;
-	const struct tad214x_config *cfg = dev->config;
-
-	if (trig->type == SENSOR_TRIG_DATA_READY) {
-		static volatile uint8_t last_encoder_state;
-
-		int val_a = gpio_pin_get_dt(&cfg->gpio_enca); /* encA */
-		int val_b = gpio_pin_get_dt(&cfg->gpio_encb); /* encB */
-		int val_z = gpio_pin_get_dt(&cfg->gpio_encz);  /* encZ */
-
-		uint8_t current_state = (val_a << 1) | val_b;
-		/* Check for index pulse (Z channel) */
-		if (val_z) {
-			/* Reset position on index pulse */
-			drv_data->encoder_position = 0;
-		} else if (current_state != last_encoder_state) {
-			if (((last_encoder_state == 0x00) && (current_state == 0x02)) ||
-				((last_encoder_state == 0x01) && (current_state == 0x00)) ||
-				((last_encoder_state == 0x02) && (current_state == 0x03)) ||
-				((last_encoder_state == 0x03) && (current_state == 0x01))) {
-				drv_data->encoder_position++;
-			} else {
-				drv_data->encoder_position--;
-			}
-		}
-
-		drv_data->encoder_position = drv_data->encoder_position % 16384;
-		last_encoder_state = current_state;
-	}
-}
-
-
 int tad214x_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 			 sensor_trigger_handler_t handler)
 {
@@ -205,12 +203,17 @@ int tad214x_trigger_set(const struct device *dev, const struct sensor_trigger *t
 			gpio_pin_interrupt_configure_dt(&cfg->gpio_encb, GPIO_INT_DISABLE);
 			gpio_pin_interrupt_configure_dt(&cfg->gpio_encz, GPIO_INT_DISABLE);
 
-			drv_data->drdy_handler = tad214x_handle_enc;
+			drv_data->drdy_handler = handler;
 			drv_data->drdy_trigger = trig;
 
-			gpio_pin_interrupt_configure_dt(&cfg->gpio_enca, GPIO_INT_EDGE_BOTH);
-			gpio_pin_interrupt_configure_dt(&cfg->gpio_encb, GPIO_INT_EDGE_BOTH);
-			gpio_pin_interrupt_configure_dt(&cfg->gpio_encz, GPIO_INT_EDGE_BOTH);
+			if (handler != NULL) {
+				gpio_pin_interrupt_configure_dt(&cfg->gpio_enca,
+								GPIO_INT_EDGE_BOTH);
+				gpio_pin_interrupt_configure_dt(&cfg->gpio_encb,
+								GPIO_INT_EDGE_BOTH);
+				gpio_pin_interrupt_configure_dt(&cfg->gpio_encz,
+								GPIO_INT_EDGE_BOTH);
+			}
 		} else {
 			if (handler == NULL) {
 				tad214x_mutex_unlock(dev);
