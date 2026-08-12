@@ -16,7 +16,7 @@ config SOC_CORSTONE300
 	select ARMV8_1_M_MVEI
 	select ARMV8_1_M_MVEF
 	select ARMV8_1_M_PMU
-	select USE_SWITCH
+	imply USE_SWITCH
 
 config SOC_CORSTONE310
 	select CPU_CORTEX_M85
