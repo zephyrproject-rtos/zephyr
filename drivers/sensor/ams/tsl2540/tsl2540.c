@@ -139,6 +139,8 @@ static int tsl2540_attr_set_gain(const struct device *dev, enum sensor_gain_tsl2
 		value2 = TSL2540_CFG2_G128;
 		again = TSL2540_AGAIN_S128;
 		break;
+	default:
+		return -EINVAL;
 	}
 
 	if (i2c_reg_write_byte_dt(&cfg->i2c_spec, TSL2540_REG_CFG_1, value) < 0) {
@@ -219,7 +221,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 #endif /* CONFIG_TSL2540_TRIGGER */
 
 	if (attr == SENSOR_ATTR_GAIN) {
-		tsl2540_attr_set_gain(dev, (enum sensor_gain_tsl2540)val->val1);
+		ret = tsl2540_attr_set_gain(dev, (enum sensor_gain_tsl2540)val->val1);
 		goto exit;
 	}
 
@@ -283,17 +285,20 @@ exit:
 static int tsl2540_setup(const struct device *dev)
 {
 	struct sensor_value integration_time;
+	int ret;
 
 	/* Set ALS integration time */
-	tsl2540_attr_set(dev, (enum sensor_channel)SENSOR_CHAN_LIGHT,
-			 (enum sensor_attribute)SENSOR_ATTR_GAIN,
-			 &(struct sensor_value){.val1 = TSL2540_SENSOR_GAIN_1_2, .val2 = 0});
+	ret = tsl2540_attr_set(dev, (enum sensor_channel)SENSOR_CHAN_LIGHT,
+			       (enum sensor_attribute)SENSOR_ATTR_GAIN,
+			       &(struct sensor_value){.val1 = TSL2540_SENSOR_GAIN_1_2, .val2 = 0});
+	if (ret) {
+		return ret;
+	}
 
 	sensor_value_from_double(&integration_time, 500.0);
-	tsl2540_attr_set(dev, (enum sensor_channel)SENSOR_CHAN_LIGHT,
-			 (enum sensor_attribute)SENSOR_ATTR_INTEGRATION_TIME, &integration_time);
-
-	return 0;
+	return tsl2540_attr_set(dev, (enum sensor_channel)SENSOR_CHAN_LIGHT,
+				(enum sensor_attribute)SENSOR_ATTR_INTEGRATION_TIME,
+				&integration_time);
 }
 
 static int tsl2540_init(const struct device *dev)
@@ -303,6 +308,9 @@ static int tsl2540_init(const struct device *dev)
 	int ret;
 
 	data->enable_mode = TSL2540_ENABLE_DISABLE;
+	/* Hardware reset defaults: CFG1=0x00/CFG2=0x04 (1x gain), ATIME=0x00 */
+	data->again = TSL2540_AGAIN_S1;
+	data->integration_time = 0;
 
 	k_sem_init(&data->sem, 1, K_SEM_MAX_LIMIT);
 
