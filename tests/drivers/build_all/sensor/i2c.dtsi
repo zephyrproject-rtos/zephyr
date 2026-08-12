@@ -1760,3 +1760,10 @@ test_i2c_adxl373: adxl373@e4 {
 	reg = <0xe4>;
 	int1-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_maxm86161: maxm86161@e5 {
+	compatible = "adi,maxm86161";
+	reg = <0xdd>;
+
+	interrupt-gpios = <&test_gpio 0 0>;
+};
