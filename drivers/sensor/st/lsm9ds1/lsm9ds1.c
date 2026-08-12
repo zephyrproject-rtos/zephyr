@@ -181,6 +181,10 @@ static int lsm9ds1_gyro_odr_set(const struct device *dev, uint16_t freq)
 	int ret;
 
 	odr = lsm9ds1_gyro_freq_to_odr_val(freq);
+	if (odr < 0) {
+		LOG_DBG("gyroscope sampling frequency not supported");
+		return odr;
+	}
 
 	if (odr == data->gyro_odr) {
 		return 0;
@@ -228,6 +232,10 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 	if (old_odr & GYRO_ODR_MASK) {
 
 		odr = lsm9ds1_gyro_freq_to_odr_val(freq);
+		if (odr < 0) {
+			LOG_DBG("gyroscope sampling frequency not supported");
+			return odr;
+		}
 
 		if (odr == data->gyro_odr) {
 			return 0;
@@ -251,13 +259,13 @@ static int lsm9ds1_accel_odr_set(const struct device *dev, uint16_t freq)
 	} else {
 
 		odr = lsm9ds1_accel_freq_to_odr_val(freq);
+		if (odr < 0) {
+			LOG_DBG("accelerometer sampling frequency not supported");
+			return odr;
+		}
 
 		if (odr == data->accel_odr) {
 			return 0;
-		}
-
-		if (odr < 0) {
-			return odr;
 		}
 
 		ret = lsm9ds1_accel_set_odr_raw(dev, odr);
