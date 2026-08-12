@@ -55,11 +55,22 @@ Interrupt generation is abstracted behind a small backend API
 ``CONFIG_INT_BENCH_TRIGGER_SW_IRQ``
    Raises a real interrupt through the interrupt controller. Currently
    implemented for Cortex-M (NVIC STIR/ISPR), Arm GIC v2/v3 (SGI), ARC
-   (IRQ_HINT) and x86 (local APIC self IPI, both xAPIC and x2APIC), using
-   the same mechanisms as ``tests/arch/common/interrupt``. The IRQ line is
-   auto-selected (an SGI on GIC, ``CONFIG_NUM_IRQS - 1`` otherwise) and can
+   (IRQ_HINT), x86 (local APIC self IPI, both xAPIC and x2APIC) and RISC-V
+   (CLIC pending bit, or the CLINT machine software interrupt where there
+   is no CLIC), largely using the same mechanisms as
+   ``tests/arch/common/interrupt``. The IRQ line is auto-selected and can
    be overridden with ``CONFIG_INT_BENCH_IRQ_LINE`` for SoCs where the
    automatic choice is not a free, implemented line.
+
+   On RISC-V without a CLIC, a hart cannot make one of its own external
+   interrupts pending -- PLIC pending bits are driven by the interrupt
+   gateways and the ``mip`` software, timer and external bits are read
+   only -- so the machine software interrupt is asserted through the
+   CLINT, as the SMP IPI code does. That interrupt is level triggered, so
+   the ISR deasserts it before running the measurement handler; RISC-V
+   entry latency therefore includes one store to the CLINT. This backend
+   is unavailable on SMP builds, where the machine software interrupt is
+   already used for scheduler IPIs.
 
 ``CONFIG_INT_BENCH_TRIGGER_OFFLOAD``
    Fallback for every other architecture, based on ``irq_offload()``. Since
@@ -111,7 +122,7 @@ Notes on methodology
 Future work
 ***********
 
-* sw-irq trigger backends for RISC-V (CLIC/mip) and Xtensa (INTSET).
+* sw-irq trigger backend for Xtensa (INTSET).
 * Nested interrupt preemption latency (two lines, two priorities).
 * Direct ISR (``IRQ_DIRECT_CONNECT``) and zero-latency IRQ comparison
   scenarios.

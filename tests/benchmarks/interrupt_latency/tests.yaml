@@ -20,6 +20,7 @@ tests:
       - qemu_cortex_m3
       - qemu_cortex_a53
       - qemu_x86
+      - qemu_riscv32
     harness_config:
       type: one_line
       record:
@@ -34,6 +35,7 @@ tests:
     platform_allow:
       - qemu_cortex_m3
       - qemu_cortex_a53
+      - qemu_riscv32
     extra_configs:
       - CONFIG_DYNAMIC_INTERRUPTS=y
     harness: console
