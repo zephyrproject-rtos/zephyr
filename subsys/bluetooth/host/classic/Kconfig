@@ -44,6 +44,55 @@ config BT_MAX_SCO_CONN
 	  Maximum number of simultaneous Bluetooth synchronous connections
 	  supported. The minimum (and default) number is 1.
 
+config BT_SCO_OVER_HCI
+	bool "SCO data over HCI transport [EXPERIMENTAL]"
+	depends on BT_MAX_SCO_CONN > 0
+	select EXPERIMENTAL
+	help
+	  Enable routing of SCO audio data over the HCI transport between
+	  the host and controller, instead of through dedicated PCM/I2S
+	  hardware pins on the controller. This is required for controllers
+	  that do not expose PCM pins and for host-side audio codec
+	  processing such as mSBC.
+
+if BT_SCO_OVER_HCI
+
+config BT_BUF_SCO_RX_SIZE
+	int "Maximum supported SCO size for incoming data"
+	default 120
+	range 60 255
+	help
+	  Maximum supported SCO payload size for data received from the
+	  controller over HCI. This value does not include the HCI SCO header.
+
+config BT_BUF_SCO_TX_SIZE
+	int "Maximum supported SCO size for outgoing data"
+	default BT_BUF_SCO_RX_SIZE
+	range 60 255
+	help
+	  Maximum supported SCO payload size for data sent from the Host to
+	  the Controller. This value does not include the HCI SCO header.
+
+	  In a Host-only build the effective maximum is the smaller of this
+	  value and the SCO packet length reported by the Controller in the
+	  HCI Read Buffer Size command.
+
+config BT_BUF_SCO_RX_COUNT
+	int "Number of incoming SCO data buffers"
+	default 3
+	range 1 255
+	help
+	  Number of buffers available for incoming SCO data from the controller.
+
+config BT_BUF_SCO_TX_COUNT
+	int "Number of outgoing SCO data buffers"
+	default 3
+	range 1 255
+	help
+	  Number of buffers available for outgoing SCO data to the controller.
+
+endif # BT_SCO_OVER_HCI
+
 config BT_ACCEPT_CONN_AS_CENTRAL
 	bool "Accept a new incoming ACL connection request as central role"
 	help
