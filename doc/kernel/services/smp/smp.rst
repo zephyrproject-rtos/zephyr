@@ -79,6 +79,48 @@ Where this matters, enabling :kconfig:option:`CONFIG_TICKET_SPINLOCKS` switches
 to a ticket-based implementation that grants a contended lock to requesting CPUs
 in first-come, first-served order, at the cost of a slightly larger lock object.
 
+Spinlock pools
+--------------
+
+A spinlock pool allows many objects to share a fixed number of spinlocks. This
+reduces the memory required compared with embedding one spinlock in every object,
+while permitting operations on objects assigned to different spinlocks to run
+concurrently.
+
+Define a pool at file scope with :c:macro:`SPINLOCK_POOL_DEFINE`. The number of
+spinlocks must be a nonzero power of two. Use :c:macro:`spinlock_find` to select
+the spinlock associated with an object identity:
+
+.. code-block:: c
+
+   SPINLOCK_POOL_DEFINE(device_locks, 16);
+
+   void update_device(struct device_data *data)
+   {
+           struct k_spinlock *lock = spinlock_find(device_locks, data);
+           k_spinlock_key_t key = k_spin_lock(lock);
+
+           update_device_state(data);
+
+           k_spin_unlock(lock, key);
+   }
+
+The lookup derives an index from the object identity. Repeated lookups using the
+same identity and pool return the same spinlock. Different identities can map to
+the same spinlock; this is an expected collision and only reduces concurrency.
+The identity should normally be a stable, naturally aligned object address.
+
+Spinlock pools do not make spinlocks recursive. Two logical locks from the same
+pool can resolve to the same physical spinlock. Acquiring one while holding the
+other can therefore deadlock. Do not use a shared pool for locks that may be
+nested unless their assigned spinlocks are guaranteed to be distinct. The same
+lock ordering requirements that apply to individual spinlocks also apply to
+spinlocks returned from a pool.
+
+Increasing the pool size reduces collisions at the cost of static memory. It
+does not guarantee that each spinlock occupies a separate cache line, so adjacent
+spinlocks can still experience cache-line contention on SMP systems.
+
 Legacy irq_lock() emulation
 ===========================
 
