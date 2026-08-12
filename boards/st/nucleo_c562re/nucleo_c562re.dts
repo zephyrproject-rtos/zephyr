@@ -193,6 +193,20 @@
 	};
 };
 
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in8_pc0>;
+	pinctrl-names = "default";
+	status = "okay";
+	vref-mv = <3300>;
+};
+
+&adc2 {
+	pinctrl-0 = <&adc2_in6_pb0 &adc2_in5_pc5>;
+	pinctrl-names = "default";
+	status = "okay";
+	vref-mv = <3300>;
+};
+
 &die_temp {
 	status = "okay";
 };
