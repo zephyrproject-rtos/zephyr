@@ -82,12 +82,6 @@ static int iis2dh_spi_write(const struct device *dev, uint8_t reg, uint8_t *data
 	return 0;
 }
 
-stmdev_ctx_t iis2dh_spi_ctx = {
-	.read_reg = (stmdev_read_ptr) iis2dh_spi_read,
-	.write_reg = (stmdev_write_ptr) iis2dh_spi_write,
-	.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
-};
-
 int iis2dh_spi_init(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
@@ -98,7 +92,11 @@ int iis2dh_spi_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->ctx = &iis2dh_spi_ctx;
+	data->ctx_spi.read_reg = (stmdev_read_ptr) iis2dh_spi_read;
+	data->ctx_spi.write_reg = (stmdev_write_ptr) iis2dh_spi_write;
+	data->ctx_spi.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+
+	data->ctx = &data->ctx_spi;
 	data->ctx->handle = (void *)dev;
 
 	return 0;
