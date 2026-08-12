@@ -19,10 +19,6 @@
 	};
 };
 
-&cpuflpr_sram {
-	status = "okay";
-};
-
 &cpuflpr_rram {
 	partitions {
 		#address-cells = <1>;
