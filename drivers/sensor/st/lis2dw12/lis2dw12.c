@@ -69,7 +69,12 @@ static int lis2dw12_set_odr(const struct device *dev, uint16_t odr)
 
 	/* check if power off */
 	if (odr == 0U) {
-		return lis2dw12_data_rate_set(ctx, LIS2DW12_XL_ODR_OFF);
+		int ret = lis2dw12_data_rate_set(ctx, LIS2DW12_XL_ODR_OFF);
+
+		if (ret == 0) {
+			lis2dw12->odr = 0;
+		}
+		return ret;
 	}
 
 	val =  LIS2DW12_ODR_TO_REG(odr);
