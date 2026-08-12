@@ -10,6 +10,8 @@
  * @brief Bouffalo Lab RISC-V MCU series initialization code
  */
 
+#include <string.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -27,6 +29,15 @@ void soc_early_init_hook(void)
 	uint32_t *p;
 	uint32_t i = 0;
 	uint32_t tmp = 0;
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wifi_ram))
+	/* WIFI_RAM is a custom memory-region -- Zephyr's arch_data_copy /
+	 * arch_bss_zero do not touch it.  Zero it here so the WiFi blob's
+	 * SHAREDRAM / SHAREDRAMIPC objects (which the linker places NOLOAD)
+	 * start in a known state.
+	 */
+	memset((void *)DT_REG_ADDR(DT_NODELABEL(wifi_ram)), 0, DT_REG_SIZE(DT_NODELABEL(wifi_ram)));
+#endif
 
 	/* disable hardware_pullup_pull_down (reg_en_hw_pu_pd = 0) */
 	tmp = sys_read32(HBN_BASE + HBN_IRQ_MODE_OFFSET);

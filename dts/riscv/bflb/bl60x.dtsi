@@ -111,7 +111,13 @@
 			compatible = "sifive,e24", "riscv";
 			reg = <0>;
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			/* The E24 implements the A extension but only supports
+			 * atomics in its tightly-integrated memories -- an AMO
+			 * to OCRAM bus-faults.  Omit "a" so the build uses the
+			 * AMO-free multilib (the kernel uses
+			 * ATOMIC_OPERATIONS_C on this SoC).
+			 */
+			riscv,isa-extensions = "i", "m", "f", "c", "zicsr", "zifencei";
 			hardware-exec-breakpoint-count = <4>;
 			status = "okay";
 
@@ -447,6 +453,19 @@
 				ranges = <0x0 0xc000 DT_SIZE_K(176)>;
 				status = "disabled";
 			};
+		};
+
+		wifi0: wifi@44000000 {
+			compatible = "bflb,bl60x-wifi";
+			reg = <0x44000000 0x1000>;
+			interrupts = <70 1>, <79 1>, <21 1>, <22 1>;
+			interrupt-names = "wifi", "wifi-ipc", "rf-top0", "rf-top1";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+
+			pwr-table-11b = <56 56 56 56>;
+			pwr-table-11g = <40 40 40 40 40 40 40 40>;
+			pwr-table-11n = <40 40 40 40 40 40 40 40>;
 		};
 	};
 };

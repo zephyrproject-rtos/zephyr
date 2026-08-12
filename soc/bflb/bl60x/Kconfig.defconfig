@@ -22,4 +22,56 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
+# Defaults the wifi4 WiFi driver needs from the rest of the system;
+# boards can still override them in their configuration fragments.
+if WIFI_BFLB
+
+# Key install (and the BL60x SW-CCMP psa_aead_encrypt) run on the system
+# work queue; the Zephyr default overflows on RISC-V.
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+# The supplicant only holds a handful of transient keys at a time; the
+# default key-slot table wastes several KB of RAM.
+configdefault MBEDTLS_PSA_KEY_SLOT_COUNT
+	default 6
+
+# Trade flash for RAM on these small-SRAM targets.
+configdefault MBEDTLS_AES_ROM_TABLES
+	default y
+
+# Scan results are delivered via the net_mgmt event thread.
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 2048
+
+# The TX path runs in the caller's thread: net_pkt_read -> blob TX chain
+# (-> SW CCMP encrypt on BL60x).  The shell default of 5200 overflows.
+configdefault SHELL_STACK_SIZE
+	default 8192 if SHELL
+
+# Net buffer sizing for the small SRAM budget.
+configdefault NET_PKT_RX_COUNT
+	default 8
+
+configdefault NET_PKT_TX_COUNT
+	default 4
+
+configdefault NET_BUF_RX_COUNT
+	default 16
+
+configdefault NET_BUF_TX_COUNT
+	default 8
+
+# Unicast DHCP replies use the MAC HW's dedicated unicast RX path.
+configdefault NET_DHCPV4_ACCEPT_UNICAST
+	default y
+
+# The blob's FW scheduler thread re-wakes every millisecond while polling
+# its RX semaphore; the kernel's default 20 ms slice lets it monopolise
+# its priority level during traffic bursts, starving net_mgmt/shell_uart.
+configdefault TIMESLICE_SIZE
+	default 10
+
+endif # WIFI_BFLB
+
 endif # SOC_SERIES_BL60X
