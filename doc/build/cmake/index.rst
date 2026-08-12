@@ -343,6 +343,44 @@ target. This is accomplished in a straightforward manner with *objdump*.
     :width: 80%
 
 
+.. _cmake-unsupported-versions:
+
+Supported CMake versions
+========================
+
+Zephyr enforces a minimum CMake version, but individual CMake releases
+occasionally ship regressions that break the build. Such a release can be
+rejected at configuration time with the ``zephyr_reject_cmake_version()`` helper
+(defined in :zephyr_file:`cmake/modules/extensions.cmake`); the core denylist is
+applied in :zephyr_file:`cmake/modules/zephyr_default.cmake`:
+
+.. code-block:: cmake
+
+   zephyr_reject_cmake_version(4.1.0 4.1.1
+     "a regression in string(GENEX_STRIP) that produces invalid linker arguments")
+
+Versions in the half-open range ``[broken_since, fixed_in)`` are rejected, and
+``fixed_in`` is reported as the version to upgrade to (use ``NONE`` when no fix
+exists yet). This turns a cryptic downstream failure into a clear error.
+
+.. note::
+
+   This is a denylist of versions *known* to be broken; it does not imply every
+   other version is supported. CI tests a single CMake version (see the
+   :ref:`getting_started` guide), and others are best-effort.
+
+Add an entry only when all of the following hold:
+
+* the defect is upstream and cannot reasonably be worked around in Zephyr;
+* it has been observed to break a real Zephyr build, not just reported upstream;
+* a working CMake version exists for users to move to.
+
+Because the helper lives in ``extensions.cmake``, a call may also be guarded (for
+example by ``CMAKE_HOST_WIN32``) or placed in a module, to cover regressions that
+only affect specific configurations. Entries whose range is at or below the
+minimum required version are reported with an ``AUTHOR_WARNING`` so they are
+removed when the minimum is bumped.
+
 .. _build_system_scripts:
 
 Supporting Scripts and Tools
