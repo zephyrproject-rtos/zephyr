@@ -29,6 +29,7 @@
 		pwm-led0 = &green_pwm_led;
 		rtc = &rtc;
 		sw0 = &user_button;
+		volt-sensor0 = &vref;
 		watchdog0 = &iwdg;
 	};
 
@@ -208,6 +209,10 @@
 };
 
 &die_temp {
+	status = "okay";
+};
+
+&vref {
 	status = "okay";
 };
 
