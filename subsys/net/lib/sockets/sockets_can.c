@@ -461,6 +461,23 @@ static int can_close_socket(struct net_context *ctx)
 		}
 	}
 
+	/* Drain any CAN packets left sitting in this socket's receive queue.
+	 * These are net_pkt buffers queued by zcan_received_cb() for frames
+	 * that matched a filter but were never read via recv() before
+	 * close() -- if we don't free them here, they stay allocated
+	 * forever, leaking net_pkt/net_buf pool slots independently of the
+	 * net_context leak fixed above.
+	 */
+	while (1) {
+		struct net_pkt *pkt = k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+
+		if (pkt == NULL) {
+			break;
+		}
+
+		net_pkt_unref(pkt);
+	}
+
 	/* Release the net_context itself back to the CONFIG_NET_MAX_CONTEXTS
 	 * pool. Unconditional -- the context's lifetime is owned by the fd
 	 * existing at all, not by whether a filter happened to be registered
