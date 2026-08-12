@@ -214,15 +214,10 @@ static void convert_sensor_value(uint16_t *raw_value, struct sensor_value *senso
 		/* Integer part */
 		sensor_val->val1 = (int32_t)(numerator / UINT16_MAX);
 
-		/* Fractional part in microseconds */
+		/* Fractional part in micro-units, keeping the sign of the result */
 		remainder = (int32_t)(numerator % UINT16_MAX);
-		if (remainder < 0) {
-			/* Handle negative remainders properly */
-			sensor_val->val1 -= 1;
-			remainder += UINT16_MAX;
-		}
 
-		/* Convert remainder to microseconds: remainder * 1000000 / 65535 */
+		/* Convert remainder to micro-units: remainder * 1000000 / 65535 */
 		sensor_val->val2 = ((int64_t)remainder * 1000000LL) / UINT16_MAX;
 	} else {
 		sensor_micro = (int64_t)sensor_val->val1 * 1000000LL + (int64_t)sensor_val->val2;
