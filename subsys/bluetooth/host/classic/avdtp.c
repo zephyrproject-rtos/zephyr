@@ -811,8 +811,6 @@ static int avdtp_send(struct bt_avdtp *session,
 	req->tid = AVDTP_GET_TR_ID(hdr->hdr);
 	LOG_DBG("sig 0x%02X, tid 0x%02X", req->sig, req->tid);
 
-	/* Init the timer */
-	k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 	/* Start timeout work */
 	k_work_reschedule(&session->timeout_work, AVDTP_TIMEOUT);
 	return result;
@@ -863,6 +861,9 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
 
 	LOG_DBG("chan %p session %p", chan, session);
+
+	k_work_cancel_delayable(&session->timeout_work);
+
 	session->br_chan.chan.conn = NULL;
 	session->signalling_l2cap_connected = 0;
 	/* todo: Clear the Pending req if set*/
@@ -987,6 +988,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	}
 
 	session->signalling_l2cap_connected = 1;
+	k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 	session->br_chan.rx.mtu	= BT_L2CAP_RX_MTU;
 	session->br_chan.chan.ops = &ops;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
@@ -1027,6 +1029,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 			.recv = bt_avdtp_l2cap_recv,
 		};
 		session->signalling_l2cap_connected = 1;
+		k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 		session->br_chan.chan.ops = &ops;
 		session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
 		*chan = &session->br_chan.chan;
