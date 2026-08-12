@@ -8,6 +8,7 @@
 #include <st/c5/stm32c562Xe.dtsi>
 #include <st/c5/stm32c5(5-6)2r(c-e)tx-pinctrl.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
 #include "arduino_r3_connector.dtsi"
 #include "st_morpho_connector.dtsi"
 
@@ -25,6 +26,7 @@
 	aliases {
 		die-temp0 = &die_temp;
 		led0 = &green_led_1;
+		pwm-led0 = &green_pwm_led;
 		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
@@ -44,8 +46,18 @@
 		compatible = "gpio-leds";
 
 		green_led_1: led_1 {
-			/* LD1 may conflict with SPI1 SCK on PA5 */
 			gpios = <&gpioa 5 GPIO_ACTIVE_HIGH>;
+			label = "LD1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		/* PA5 is shared with SPI1/PWM1. Prioritized for SPI1 in default. */
+		status = "disabled";
+
+		green_pwm_led: green_pwm_led {
+			pwms = <&pwm1 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "LD1";
 		};
 	};
@@ -122,7 +134,6 @@
 };
 
 &spi1 {
-	/* SPI1 SCK may conflict with LD1 (Green LED) on PA5 */
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioc 9 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -168,6 +179,18 @@
 
 &iwdg {
 	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <10000>;
+	status = "okay";
+
+	pwm1: pwm {
+		pinctrl-0 = <&tim1_ch3_pa5>;
+		pinctrl-names = "default";
+		/* NOTE: Disabled by default, PWM1 conflicts with SPI1 */
+		status = "disabled";
+	};
 };
 
 &die_temp {
