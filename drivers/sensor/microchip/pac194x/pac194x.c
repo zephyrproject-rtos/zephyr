@@ -511,7 +511,7 @@ static int pac194x_parse_sensor_acc_avg(const struct device *dev, uint16_t ch_id
 			res_uv = i128.low >> denominator;
 			res_uv |= i128.high << (64 - denominator);
 
-			if (i128.high >> denominator) {
+			if (((int64_t)i128.high >> denominator) != (res_uv >> 63)) {
 				/* This is VERY unlikely but take care of the corner case */
 				LOG_ERR("accumulated power exceeds 64-bit");
 				return -E2BIG;
