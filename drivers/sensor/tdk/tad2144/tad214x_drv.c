@@ -64,21 +64,21 @@ static void tad214x_convert_encoder(struct sensor_value *val, uint16_t raw_val)
 {
 	raw_val = raw_val*36000/16384;
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static void tad214x_convert_angle(struct sensor_value *val, uint16_t raw_val)
 {
 	raw_val = ((uint32_t)raw_val*36000/65535+18000) % 36000;
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static void tad214x_convert_temperature(struct sensor_value *val, int16_t raw_val)
 {
 	raw_val = (2500 + raw_val*10/16);
 	val->val1 = raw_val / 100;
-	val->val2 = (raw_val % 100) * 1000;
+	val->val2 = (raw_val % 100) * 10000;
 }
 
 static int tad214x_channel_get(const struct device *dev, enum sensor_channel chan,
