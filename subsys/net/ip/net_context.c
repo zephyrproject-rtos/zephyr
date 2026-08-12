@@ -794,7 +794,7 @@ static int bind_default(struct net_context *context)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
-		struct net_sockaddr_in6 addr6;
+		struct net_sockaddr_in6 addr6 = { 0 };
 
 		addr6.sin6_family = NET_AF_INET6;
 		memcpy(&addr6.sin6_addr, net_ipv6_unspecified_address(),
@@ -808,7 +808,7 @@ static int bind_default(struct net_context *context)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
-		struct net_sockaddr_in addr4;
+		struct net_sockaddr_in addr4 = { 0 };
 
 		addr4.sin_family = NET_AF_INET;
 		addr4.sin_addr.s_addr = NET_INADDR_ANY;
@@ -821,7 +821,7 @@ static int bind_default(struct net_context *context)
 	}
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) && family == NET_AF_PACKET) {
-		struct net_sockaddr_ll ll_addr;
+		struct net_sockaddr_ll ll_addr = { 0 };
 		struct net_if *iface = net_context_get_iface(context);
 
 		ll_addr.sll_family = NET_AF_PACKET;
