@@ -251,11 +251,11 @@ static int tmp11x_sample_fetch(const struct device *dev, enum sensor_channel cha
  */
 static void tmp11x_temperature_to_sensor_value(int16_t temperature, struct sensor_value *val)
 {
-	int32_t tmp;
+	int64_t tmp;
 
-	tmp = (temperature * (int32_t)TMP11X_RESOLUTION) / 10;
-	val->val1 = tmp / 1000000; /* uCelsius */
-	val->val2 = tmp % 1000000;
+	tmp = ((int64_t)temperature * TMP11X_RESOLUTION) / 10;
+	val->val1 = (int32_t)(tmp / 1000000); /* uCelsius */
+	val->val2 = (int32_t)(tmp % 1000000);
 }
 
 static int tmp11x_channel_get(const struct device *dev, enum sensor_channel chan,
