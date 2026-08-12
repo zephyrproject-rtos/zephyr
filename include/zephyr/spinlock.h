@@ -458,6 +458,38 @@ static ALWAYS_INLINE void z_spin_onexit(__maybe_unused k_spinlock_key_t *k)
 	for (k_spinlock_key_t __i K_SPINLOCK_ONEXIT = {}, __key = k_spin_lock(lck); !__i.key;      \
 	     k_spin_unlock((lck), __key), __i.key = 1)
 
+/**
+ * @brief Define a spinlock pool.
+ *
+ * Defines an array of zero-initialized spinlocks for use with spinlock_find().
+ * The pool size must be a nonzero power of two.
+ *
+ * @param name Name of the spinlock pool.
+ * @param num_spinlocks Number of spinlocks in the pool.
+ */
+#define SPINLOCK_POOL_DEFINE(name, num_spinlocks)					\
+	BUILD_ASSERT((num_spinlocks) > 0 && IS_POWER_OF_TWO(num_spinlocks),		\
+		     "spinlock pool count must be a power of two");			\
+	static struct k_spinlock name[num_spinlocks];					\
+	enum { z_##name##_spinlock_pool_size = (num_spinlocks) }
+
+/* @cond INTERNAL_HIDDEN */
+static ALWAYS_INLINE size_t z_spinlock_index(uintptr_t obj, size_t pool_size)
+{
+	return ((obj >> 2) & (pool_size - 1));
+}
+/* @endcond */
+
+/**
+ * @brief Find the spinlock associated with an object identity.
+ *
+ * @param pool Spinlock pool defined with SPINLOCK_POOL_DEFINE().
+ * @param obj Integer or pointer identifying the object.
+ *
+ * @return Pointer to the spinlock associated with @p obj.
+ */
+#define spinlock_find(pool, obj) \
+	(&(pool)[z_spinlock_index((uintptr_t)(obj), z_##pool##_spinlock_pool_size)])
 /** @} */
 
 #ifdef __cplusplus
