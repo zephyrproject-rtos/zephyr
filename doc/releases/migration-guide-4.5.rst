@@ -68,6 +68,10 @@ Kernel
   keeping ``SCHED_SIMPLE`` for affinity purposes can now use their preferred
   backend directly.
 
+* The underlying values of macros :c:macro:`K_MEM_CACHE_NONE`, :c:macro:`K_MEM_CACHE_WT`
+  and :c:macro:`K_MEM_CACHE_WB` have changed. If the caching attribute is not specified,
+  no caching is now the default instead of write-back caching.
+
 Boards
 ******
 

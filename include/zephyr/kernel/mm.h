@@ -33,13 +33,13 @@
  */
 
 /** No caching. Most drivers want this. */
-#define K_MEM_CACHE_NONE	2
+#define K_MEM_CACHE_NONE	0
 
 /** Write-through caching. Used by certain drivers. */
 #define K_MEM_CACHE_WT		1
 
 /** Full write-back caching. Any RAM mapped wants this. */
-#define K_MEM_CACHE_WB		0
+#define K_MEM_CACHE_WB		2
 
 /*
  * ARM64 Specific flags are defined in arch/arm64/arm_mem.h,

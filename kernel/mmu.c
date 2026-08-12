@@ -579,7 +579,7 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 
 	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
-	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
+	__ASSERT((flags & K_MEM_CACHE_MASK) == K_MEM_CACHE_WB,
 		 "%s does not support explicit cache settings", __func__);
 
 	if (((flags & K_MEM_PERM_USER) != 0U) &&
