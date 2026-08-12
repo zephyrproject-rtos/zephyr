@@ -23,6 +23,7 @@
 #define EEPROM_SIZE_REG        sizeof(uint16_t)
 #define EEPROM_TMP117_RESERVED (2 * sizeof(uint16_t))
 #define EEPROM_MIN_BUSY_MS     7
+#define EEPROM_MAX_BUSY_MS     50
 #define RESET_MIN_BUSY_MS      2
 
 LOG_MODULE_REGISTER(TMP11X, CONFIG_SENSOR_LOG_LEVEL);
@@ -115,16 +116,32 @@ static bool check_eeprom_bounds(const struct device *dev, off_t offset, size_t l
 
 int tmp11x_eeprom_await(const struct device *dev)
 {
-	int res;
+	k_timepoint_t deadline;
 	uint16_t val;
+	int res;
 
 	k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
 
-	WAIT_FOR((res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val)) != 0 ||
-			 val & TMP11X_EEPROM_UL_BUSY,
-		 100, k_msleep(1));
+	deadline = sys_timepoint_calc(K_MSEC(EEPROM_MAX_BUSY_MS));
 
-	return res;
+	while (true) {
+		res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val);
+		if (res != 0) {
+			return res;
+		}
+
+		if ((val & TMP11X_EEPROM_UL_BUSY) == 0) {
+			return 0;
+		}
+
+		if (sys_timepoint_expired(deadline)) {
+			LOG_ERR("%s: timed out waiting for EEPROM programming to finish",
+				dev->name);
+			return -ETIMEDOUT;
+		}
+
+		k_msleep(1);
+	}
 }
 
 int tmp11x_eeprom_write(const struct device *dev, off_t offset, const void *data, size_t len)
