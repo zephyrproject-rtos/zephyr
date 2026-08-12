@@ -175,10 +175,12 @@ static void net_post_init(void)
 
 static inline void copy_ll_addr(struct net_pkt *pkt)
 {
-	memcpy(net_pkt_lladdr_src(pkt), net_pkt_lladdr_if(pkt),
-	       sizeof(struct net_linkaddr));
-	memcpy(net_pkt_lladdr_dst(pkt), net_pkt_lladdr_if(pkt),
-	       sizeof(struct net_linkaddr));
+	struct net_linkaddr *lladdr_if = net_pkt_lladdr_if(pkt);
+
+	NET_ASSERT(lladdr_if != NULL);
+
+	memcpy(net_pkt_lladdr_src(pkt), lladdr_if, sizeof(struct net_linkaddr));
+	memcpy(net_pkt_lladdr_dst(pkt), lladdr_if, sizeof(struct net_linkaddr));
 }
 
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
