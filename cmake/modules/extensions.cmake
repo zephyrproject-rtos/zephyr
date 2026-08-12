@@ -1161,6 +1161,48 @@ endfunction()
 
 # 1.5. Misc.
 
+# zephyr_reject_cmake_version(<broken_since> <fixed_in> <reason>)
+#
+# Reject CMake releases that are known to break the Zephyr build because of an
+# upstream regression that Zephyr cannot reasonably work around.
+#
+# Versions in the half-open range [broken_since, fixed_in) are rejected, so
+# 'fixed_in' names the first release that works again and is reported as the
+# version to upgrade to. Pass NONE for 'fixed_in' when no fixed release exists
+# yet; every version from 'broken_since' onwards is then rejected.
+function(zephyr_reject_cmake_version broken_since fixed_in reason)
+  # Flag entries that can no longer trigger because the whole broken range is at
+  # or below the required minimum CMake version. Such calls are dead code and
+  # should be removed when the minimum is bumped; warn the developer instead of
+  # silently keeping them.
+  if(NOT fixed_in STREQUAL NONE AND
+     fixed_in VERSION_LESS_EQUAL CMAKE_MINIMUM_REQUIRED_VERSION)
+    message(AUTHOR_WARNING
+      "zephyr_reject_cmake_version(${broken_since} ${fixed_in} ...) is obsolete: "
+      "the minimum required CMake version is ${CMAKE_MINIMUM_REQUIRED_VERSION}, so "
+      "this range can no longer be selected. Please remove this call.")
+    return()
+  endif()
+
+  if(CMAKE_VERSION VERSION_LESS broken_since)
+    return()
+  endif()
+
+  if(NOT fixed_in STREQUAL NONE AND CMAKE_VERSION VERSION_GREATER_EQUAL fixed_in)
+    return()
+  endif()
+
+  if(fixed_in STREQUAL NONE)
+    set(upgrade_hint "Please use a different CMake version.")
+  else()
+    set(upgrade_hint "Please upgrade to CMake ${fixed_in} or newer.")
+  endif()
+
+  message(FATAL_ERROR
+    "CMake ${CMAKE_VERSION} is not supported by Zephyr due to ${reason}. "
+    "${upgrade_hint}")
+endfunction()
+
 # zephyr_check_compiler_flag is a part of Zephyr's toolchain
 # infrastructure. It should be used when testing toolchain
 # capabilities and it should normally be used in place of the
