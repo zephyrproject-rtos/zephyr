@@ -13,7 +13,8 @@
 #endif
 
 #define TEST_IRQ (CONFIG_NUM_IRQS - 1)
-#define TEST_IRQ_PRIO 1
+/* Priority 0 for Zero Latency Interrupt */
+#define TEST_IRQ_PRIO 0
 
 static volatile bool isr_executed;
 
@@ -25,28 +26,20 @@ static void test_isr(const void *arg)
 
 static int test_early_interrupt(void)
 {
-	/* Connect and enable the test IRQ */
-	IRQ_CONNECT(TEST_IRQ, TEST_IRQ_PRIO, test_isr, NULL, 0);
+	/* Connect and enable the test IRQ as a Zero Latency Interrupt */
+	IRQ_CONNECT(TEST_IRQ, TEST_IRQ_PRIO, test_isr, NULL, IRQ_ZERO_LATENCY);
 	irq_enable(TEST_IRQ);
 
-	/* Temporarily unlock interrupts to allow our test IRQ to fire.
-	 * Normally, interrupts are locked during PRE_KERNEL_1/2.
-	 * This simulates the condition in issue #88929 where an interrupt
-	 * incorrectly fires during early boot.
+	/* Trigger the interrupt. Because it's a Zero Latency Interrupt,
+	 * it will fire immediately even though BASEPRI is set,
+	 * without needing to call irq_unlock(0) which is unsafe
+	 * and can cause spurious interrupts or crashes during early boot.
 	 */
-	unsigned int key = irq_lock();
-
-	irq_unlock(0);
-
-	/* Trigger the interrupt */
 	NVIC_SetPendingIRQ(TEST_IRQ);
 
 	/* Wait a bit to ensure it fired */
 	__asm__ volatile("nop" : : : "memory");
 	__asm__ volatile("nop" : : : "memory");
-
-	/* Restore interrupts to previous locked state */
-	irq_unlock(key);
 
 	return 0;
 }
