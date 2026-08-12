@@ -42,6 +42,131 @@ static int64_t discrete_noise_correction(uint64_t value, double ctrl)
 	return (int64_t)value - (int64_t)trunc(ctrl);
 }
 
+#ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
+/*
+ * Retained samples, for the percentile report. Only one benchmark runs
+ * at a time, so a single buffer serves all of them.
+ */
+static uint64_t retained[CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES];
+static size_t retained_count;
+static size_t dropped_count;
+
+static void percentiles_reset(void)
+{
+	retained_count = 0;
+	dropped_count = 0;
+}
+
+static void percentiles_record(uint64_t cycles)
+{
+	if (retained_count < ARRAY_SIZE(retained)) {
+		retained[retained_count++] = cycles;
+	} else {
+		dropped_count++;
+	}
+}
+
+static void percentiles_sort(void)
+{
+	/* Shell sort: no allocation, no recursion, good enough here */
+	for (size_t gap = retained_count / 2; gap > 0; gap /= 2) {
+		for (size_t i = gap; i < retained_count; i++) {
+			uint64_t value = retained[i];
+			size_t j = i;
+
+			while ((j >= gap) && (retained[j - gap] > value)) {
+				retained[j] = retained[j - gap];
+				j -= gap;
+			}
+			retained[j] = value;
+		}
+	}
+}
+
+/*
+ * Nearest-rank percentile, with the percentile given in hundredths of a
+ * percent so that 99.99 can be expressed: 5000 is the median, 9999 is
+ * the 99.99th percentile.
+ */
+static uint64_t percentile(uint32_t hundredths)
+{
+	uint64_t rank = ((uint64_t)hundredths * retained_count + 9999U) / 10000U;
+
+	if (rank == 0U) {
+		rank = 1U;
+	}
+
+	if (rank > retained_count) {
+		rank = retained_count;
+	}
+
+	return retained[rank - 1U];
+}
+
+static void percentiles_report(const char *suite_name, const char *bench_name,
+			       struct ztest_benchmark_stats *ctrl_stats)
+{
+	double ctrl = (double)ctrl_stats->mean;
+
+	if (retained_count == 0) {
+		return;
+	}
+
+	/*
+	 * The retained samples are the first ones taken, not a sample of
+	 * the whole run, so percentiles over them are not percentiles of
+	 * the distribution: whatever happened after the buffer filled is
+	 * missing entirely, and the tail is exactly where it tends to
+	 * live. Report nothing rather than something misleading.
+	 */
+	if (dropped_count != 0) {
+		printk("%s %s: no percentiles, %zu of %zu samples did not fit; "
+		       "raise CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES\n",
+		       suite_name, bench_name, dropped_count,
+		       retained_count + dropped_count);
+		return;
+	}
+
+	percentiles_sort();
+
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
+	printk("P,%s,%s,%zu,%lld,%lld,%lld,%lld,%lld,%lld,%lld\n",
+		suite_name, bench_name, retained_count,
+		discrete_noise_correction(retained[0], ctrl),
+		discrete_noise_correction(percentile(5000), ctrl),
+		discrete_noise_correction(percentile(9000), ctrl),
+		discrete_noise_correction(percentile(9900), ctrl),
+		discrete_noise_correction(percentile(9990), ctrl),
+		discrete_noise_correction(percentile(9999), ctrl),
+		discrete_noise_correction(retained[retained_count - 1], ctrl));
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+	printk("\tp50: %lld\n", discrete_noise_correction(percentile(5000), ctrl));
+	printk("\tp90: %lld\n", discrete_noise_correction(percentile(9000), ctrl));
+	printk("\tp99: %lld\n", discrete_noise_correction(percentile(9900), ctrl));
+	printk("\tp99.9: %lld\n", discrete_noise_correction(percentile(9990), ctrl));
+	printk("\tp99.99: %lld\n", discrete_noise_correction(percentile(9999), ctrl));
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+}
+#else
+static inline void percentiles_reset(void)
+{
+}
+
+static inline void percentiles_record(uint64_t cycles)
+{
+	ARG_UNUSED(cycles);
+}
+
+static inline void percentiles_report(const char *suite_name, const char *bench_name,
+				      struct ztest_benchmark_stats *ctrl_stats)
+{
+	ARG_UNUSED(suite_name);
+	ARG_UNUSED(bench_name);
+	ARG_UNUSED(ctrl_stats);
+}
+#endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
+
 static void ztest_benchmark_print_stats(const char *suite_name, const char *bench_name,
 					char record_type, struct ztest_benchmark_stats *stats,
 					struct ztest_benchmark_stats *ctrl_stats)
@@ -90,11 +215,16 @@ static void ztest_benchmark_print_stats(const char *suite_name, const char *benc
 	printk("\tMax: %lld (run #%llu)\n", discrete_noise_correction(stats->max.value, ctrl),
 		stats->max.sample);
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+
+	percentiles_report(suite_name, bench_name, ctrl_stats);
 }
+
 
 static void update_metrics(struct ztest_benchmark_stats *stats, uint64_t cycles)
 {
 	double delta, delta2;
+
+	percentiles_record(cycles);
 
 	/* Welfords method */
 	stats->samples += 1;
@@ -122,6 +252,7 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
+	percentiles_reset();
 
 	for (size_t i = 0; i < benchmark->iterations; i++) {
 		if (benchmark->setup) {
@@ -201,6 +332,7 @@ static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 {
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
+	percentiles_reset();
 
 	/*
 	 * The loop, the setup and the teardown are the framework's, exactly
