@@ -156,6 +156,16 @@ Standard Benchmarking Results
 Statistical Metrics
 """""""""""""""""""
 
+.. note::
+
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIERS` replaces the standard error line with the
+   number of samples slower than the median, and that number as a percentage. A latency
+   distribution is usually a baseline plus a handful of disturbed runs rather than samples of
+   one stochastic population, and a standard error over the two suggests an average that no
+   single execution ever produced -- ten thousand runs of 760 cycles and one of 1240 give a
+   standard error of 0.048, which reads as precision and is not, where ``1 / 10000 (0.010%)``
+   says what happened. Only the report changes; the standard error keeps its CSV column.
+
 * **Mean (u)**: The average number of cycles taken per sample. It provides a
   central value representing the expected cost of execution.
 
@@ -236,6 +246,7 @@ Timed Benchmarking Results
 
 Statistical Metrics
 """""""""""""""""""
+
 * **Total Time**: The total time taken for all samples of the benchmark, including overhead.
 
 * **Work Time**: The total time taken for the code under test, excluding the overhead of the
