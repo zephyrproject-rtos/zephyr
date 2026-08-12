@@ -453,4 +453,50 @@ ZTEST(dhcpv6_server, test_parse_confirm_without_addresses)
 	net_pkt_unref(pkt);
 }
 
+ZTEST(dhcpv6_server, test_extend_known_client)
+{
+	zexpect_equal(dhcpv6_server_extend_action(DHCPV6_MSG_TYPE_RENEW, true),
+		      DHCPV6_SERVER_ACTION_GRANT,
+		      "A Renew for a known client extends the lease");
+	zexpect_equal(dhcpv6_server_extend_action(DHCPV6_MSG_TYPE_REBIND, true),
+		      DHCPV6_SERVER_ACTION_GRANT,
+		      "A Rebind for a known client extends the lease");
+}
+
+ZTEST(dhcpv6_server, test_extend_unknown_client)
+{
+	/* Neither message may quietly turn into a new lease, e.g. after the
+	 * client's lease was reaped or the server was restarted.
+	 */
+	zexpect_equal(dhcpv6_server_extend_action(DHCPV6_MSG_TYPE_RENEW, false),
+		      DHCPV6_SERVER_ACTION_NO_BINDING,
+		      "A Renew without a binding is answered with NoBinding");
+	zexpect_equal(dhcpv6_server_extend_action(DHCPV6_MSG_TYPE_REBIND, false),
+		      DHCPV6_SERVER_ACTION_DROP,
+		      "A Rebind without a binding is discarded");
+}
+
+ZTEST(dhcpv6_server, test_no_binding_status_follows_requested_ias)
+{
+	struct dhcpv6_server_reply_opts opts = { 0 };
+	struct dhcpv6_server_msg msg;
+
+	reset_server_ctx();
+
+	/* fill_msg() asks for an address only, so the reply must not claim
+	 * anything about a prefix the client never asked for.
+	 */
+	fill_msg(&msg, 1);
+	dhcpv6_server_set_no_binding_status(&msg, &opts);
+	zexpect_equal(opts.ia_na_status, DHCPV6_STATUS_NO_BINDING, NULL);
+	zexpect_equal(opts.ia_pd_status, DHCPV6_STATUS_SUCCESS,
+		      "An IA_PD that was not requested must be left out");
+
+	memset(&opts, 0, sizeof(opts));
+	msg.has_ia_pd = true;
+	dhcpv6_server_set_no_binding_status(&msg, &opts);
+	zexpect_equal(opts.ia_na_status, DHCPV6_STATUS_NO_BINDING, NULL);
+	zexpect_equal(opts.ia_pd_status, DHCPV6_STATUS_NO_BINDING, NULL);
+}
+
 ZTEST_SUITE(dhcpv6_server, NULL, NULL, NULL, NULL, NULL);
