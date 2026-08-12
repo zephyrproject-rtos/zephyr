@@ -39,8 +39,12 @@ static void fdc2x1x_raw_to_freq(const struct device *dev,
 		*freq = (cfg->ch_cfg[ch].fin_sel * fref_mhz *
 			 data->channel_buf[ch]) / pow(2, 28);
 	} else {
+		/* OUTPUT_GAIN codes 0..3 select a gain of 1/4/8/16 */
+		static const uint8_t gain_shift[4] = { 0, 2, 3, 4 };
+
 		*freq = cfg->ch_cfg[ch].fin_sel * fref_mhz *
-			((data->channel_buf[ch] / pow(2, 12 + cfg->output_gain)) +
+			((data->channel_buf[ch] /
+			  pow(2, 12 + gain_shift[cfg->output_gain & 0x3])) +
 			 (cfg->ch_cfg[ch].offset / pow(2, 16)));
 	}
 }
