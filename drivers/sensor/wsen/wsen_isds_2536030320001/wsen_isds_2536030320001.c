@@ -606,6 +606,12 @@ static int isds_2536030320001_gyro_full_scale_set(const struct device *dev,
 
 	uint8_t idx;
 
+	if (scale_dps == 0) {
+		/* 0 marks the reserved gaps in isds_2536030320001_gyro_full_scale_list */
+		LOG_ERR("Bad scale %d", scale_dps);
+		return -EINVAL;
+	}
+
 	for (idx = 0; idx < ARRAY_SIZE(isds_2536030320001_gyro_full_scale_list); idx++) {
 		if (isds_2536030320001_gyro_full_scale_list[idx] == scale_dps) {
 			break;
