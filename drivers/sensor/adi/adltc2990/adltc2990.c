@@ -143,7 +143,6 @@ int adltc2990_trigger_measurement(const struct device *dev,
 		goto trigger_conversion;
 	}
 
-	data->acq_format = format;
 	uint8_t ctrl_reg_setting;
 
 	if (i2c_reg_read_byte_dt(&cfg->bus, ADLTC2990_REG_CONTROL, &ctrl_reg_setting)) {
@@ -157,6 +156,8 @@ int adltc2990_trigger_measurement(const struct device *dev,
 		LOG_ERR("configuring for single bus failed.");
 		return -EIO;
 	}
+
+	data->acq_format = format;
 
 trigger_conversion:
 	return i2c_reg_write_byte_dt(&cfg->bus, ADLTC2990_REG_TRIGGER, 0x1);
