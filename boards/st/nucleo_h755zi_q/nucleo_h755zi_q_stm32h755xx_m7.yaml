@@ -16,6 +16,7 @@ supported:
   - uart
   - gpio
   - counter
+  - dma
   - i2c
   - pwm
   - netif:eth
