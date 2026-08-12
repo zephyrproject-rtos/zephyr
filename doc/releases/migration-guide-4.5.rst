@@ -1651,6 +1651,11 @@ Trusted Firmware-M (TF-M)
 * :kconfig:option:`CONFIG_BUILD_WITH_TFM` does not enable :kconfig:option:`CONFIG_MBEDTLS` /
   :kconfig:option:`CONFIG_PSA_CRYPTO` anymore. Make sure to enable them explicitly in your build as needed. (:github:`114762`)
 
+* :kconfig:option:`CONFIG_TFM_PARTITION_CRYPTO` now depends on
+  :kconfig:option:`CONFIG_PSA_CRYPTO_PROVIDER_TFM`, meaning you need to enable
+  :kconfig:option:`CONFIG_PSA_CRYPTO` for the TF-M Crypto partition to get enabled.
+  (:github:`116318`)
+
 Snippets
 ********
 
