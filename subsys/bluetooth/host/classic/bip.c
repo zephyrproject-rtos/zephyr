@@ -585,7 +585,6 @@ struct bip_function {
 	bool op_get;
 	uint8_t func_bit;
 	uint32_t supported_features;
-	uint32_t required_appl_param_tag_id;
 	struct bip_required_hdr hdr;
 	bt_bip_server_cb_t (*get_server_cb)(struct bt_bip_server *server);
 	bt_bip_client_cb_t (*get_client_cb)(struct bt_bip_client *client);
