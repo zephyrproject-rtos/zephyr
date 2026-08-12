@@ -251,6 +251,7 @@ static int mmc56x3_wait_until_ready(const struct device *dev)
 int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
 				struct mmc56x3_data *data)
 {
+	struct mmc56x3_data *drv_data = dev->data;
 	int32_t raw_magn_x, raw_magn_y, raw_magn_z;
 	int ret;
 
@@ -258,7 +259,12 @@ int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel ch
 		/* Temperature cannot be read in continuous mode */
 		uint8_t raw_temp;
 
-		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0, MMC56X3_CMD_TAKE_MEAS_T);
+		/*
+		 * The take measurement bits are self-clearing, but Auto_SR_en in the same
+		 * register is not, so the cached configuration must be written along them.
+		 */
+		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0,
+					drv_data->ctrl0_cache | MMC56X3_CMD_TAKE_MEAS_T);
 		if (ret < 0) {
 			return ret;
 		}
@@ -266,7 +272,8 @@ int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel ch
 		k_timer_start(&meas_req_timer, K_MSEC(10), K_NO_WAIT);
 		k_timer_status_sync(&meas_req_timer);
 
-		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0, MMC56X3_CMD_TAKE_MEAS_M);
+		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0,
+					drv_data->ctrl0_cache | MMC56X3_CMD_TAKE_MEAS_M);
 		if (ret < 0) {
 			return ret;
 		}
