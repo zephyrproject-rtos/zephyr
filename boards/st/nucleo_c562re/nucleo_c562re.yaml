@@ -18,6 +18,7 @@ supported:
   - spi
   - uart
   - usbd
+  - watchdog
 ram: 128
 flash: 512
 vendor: st

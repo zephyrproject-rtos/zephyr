@@ -26,6 +26,7 @@
 		led0 = &green_led_1;
 		rtc = &rtc;
 		sw0 = &user_button;
+		watchdog0 = &iwdg;
 	};
 
 	gpio_keys {
@@ -161,6 +162,10 @@
 };
 
 &rng {
+	status = "okay";
+};
+
+&iwdg {
 	status = "okay";
 };
 
