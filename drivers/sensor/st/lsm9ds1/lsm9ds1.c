@@ -499,7 +499,7 @@ static inline void lsm9ds1_gyro_convert(struct sensor_value *val, int raw_val, u
 {
 	/* Sensitivity is exposed in udps/LSB */
 	/* Convert to rad/s */
-	sensor_10udegrees_to_rad((raw_val * (int32_t)sensitivity) / 10, val);
+	sensor_10udegrees_to_rad((int32_t)(((int64_t)raw_val * sensitivity) / 10), val);
 }
 
 static inline int lsm9ds1_gyro_get_channel(enum sensor_channel chan, struct sensor_value *val,
