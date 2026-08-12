@@ -438,14 +438,6 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer);
 
-/** Connection parameters for ISO connections */
-struct bt_iso_create_param {
-	uint8_t			id;
-	uint8_t			num_conns;
-	struct bt_conn		**conns;
-	struct bt_iso_chan	**chans;
-};
-
 int bt_conn_iso_init(void);
 
 /* Cleanup ISO references */
