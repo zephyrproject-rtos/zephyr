@@ -3343,6 +3343,8 @@ int net_if_ipv6_router_start(struct net_if *iface)
 
 	net_if_unlock(iface);
 
+	net_ipv6_ra_update_timer();
+
 	/* Join the all-routers multicast group (ff02::2) so that the interface
 	 * receives Router Solicitations from downstream hosts and can answer
 	 * them with a Router Advertisement (RFC 4861 ch. 2.2 and 6.2.6).
@@ -3352,8 +3354,6 @@ int net_if_ipv6_router_start(struct net_if *iface)
 	 * joining under the lock could deadlock (ABBA). net_ipv6_mld_join() is
 	 * idempotent, so no explicit "already joined" check is needed.
 	 */
-	net_ipv6_ra_update_timer();
-
 	net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
 	ret = net_ipv6_mld_join(iface, &all_routers);
 	if (ret == -ENOTSUP) {
