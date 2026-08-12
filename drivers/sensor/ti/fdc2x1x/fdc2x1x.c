@@ -32,12 +32,14 @@ static void fdc2x1x_raw_to_freq(const struct device *dev,
 {
 	struct fdc2x1x_data *data = dev->data;
 	const struct fdc2x1x_config *cfg = dev->config;
+	/* f_REFx = f_CLK / CHx_FREF_DIVIDER, in MHz */
+	double fref_mhz = (cfg->fref / 1000.0) / cfg->ch_cfg[ch].fref_divider;
 
 	if (data->fdc221x) {
-		*freq = (cfg->ch_cfg[ch].fin_sel * (cfg->fref / 1000.0) *
+		*freq = (cfg->ch_cfg[ch].fin_sel * fref_mhz *
 			 data->channel_buf[ch]) / pow(2, 28);
 	} else {
-		*freq = cfg->ch_cfg[ch].fin_sel * (cfg->fref / 1000.0) *
+		*freq = cfg->ch_cfg[ch].fin_sel * fref_mhz *
 			((data->channel_buf[ch] / pow(2, 12 + cfg->output_gain)) +
 			 (cfg->ch_cfg[ch].offset / pow(2, 16)));
 	}
