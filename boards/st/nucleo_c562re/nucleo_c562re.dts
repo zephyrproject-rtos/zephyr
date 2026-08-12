@@ -23,6 +23,7 @@
 	};
 
 	aliases {
+		die-temp0 = &die_temp;
 		led0 = &green_led_1;
 		rtc = &rtc;
 		sw0 = &user_button;
@@ -166,6 +167,10 @@
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&die_temp {
 	status = "okay";
 };
 
