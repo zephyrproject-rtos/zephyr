@@ -26,3 +26,11 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+
+  drivers.net.wifi.build.st67w611m1_softap:
+    extra_args: DTC_OVERLAY_FILE="st67w611m1.overlay"
+    extra_configs:
+      - CONFIG_ST67W611M1_WIFI_STA_SAP_MODE=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
