@@ -503,8 +503,8 @@ enum dns_resolve_context_state {
  * DNS resolve context structure.
  */
 struct dns_resolve_context {
-	/** List of configured DNS servers */
-	struct dns_server {
+	/** Information about one configured DNS server */
+	struct dns_server_info {
 		/** DNS server address storage */
 		union {
 			/** DNS server information */
@@ -535,7 +535,7 @@ struct dns_resolve_context {
 		/** Dispatch DNS data between resolver and responder */
 		struct dns_socket_dispatcher dispatcher;
 /** @endcond */
-	} servers[DNS_RESOLVER_MAX_POLL];
+	} servers[DNS_RESOLVER_MAX_POLL]; /**< List of configured DNS servers */
 
 /** @cond INTERNAL_HIDDEN */
 	/** Socket polling for each server connection */

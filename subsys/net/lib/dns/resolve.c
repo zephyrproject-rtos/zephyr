@@ -511,7 +511,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 			 struct net_buf *dns_data, size_t len)
 {
 	struct dns_resolve_context *ctx = my_ctx->resolve_ctx;
-	struct dns_server *server;
+	struct dns_server_info *server;
 	struct net_buf *dns_cname = NULL;
 	uint16_t query_hash = 0U;
 	uint16_t dns_id = 0U;
@@ -538,7 +538,7 @@ static int dispatcher_cb(struct dns_socket_dispatcher *my_ctx, int sock,
 	 * can both bind the reply to a server we actually queried and handle
 	 * a per-server failure below.
 	 */
-	server = CONTAINER_OF(my_ctx, struct dns_server, dispatcher);
+	server = CONTAINER_OF(my_ctx, struct dns_server_info, dispatcher);
 	server_idx = (int)(server - ctx->servers);
 	if (server_idx < 0 || server_idx >= SERVER_COUNT) {
 		server_idx = -1;
@@ -626,7 +626,7 @@ unlock:
 
 static int register_dispatcher(struct dns_resolve_context *ctx,
 			       const struct net_socket_service_desc *svc,
-			       struct dns_server *server,
+			       struct dns_server_info *server,
 			       struct net_sockaddr *local,
 			       size_t local_len,
 			       const struct net_in6_addr *addr6,
