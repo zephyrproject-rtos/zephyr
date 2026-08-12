@@ -209,13 +209,15 @@ static int tad214x_init(const struct device *dev)
 		inv_tad214x_sleep_us(30000);
 	}
 
-	if (IS_ENABLED(CONFIG_TAD2144_TRIGGER)) {
+#ifdef CONFIG_TAD2144_TRIGGER
+	if (config->if_mode == IF_ENC || config->gpio_int.port != NULL) {
 		rc = tad214x_trigger_init(dev);
 		if (rc < 0) {
 			LOG_ERR("Failed to initialize interrupt.");
 			return rc;
 		}
 	}
+#endif
 
 	/* successful init, return 0 */
 	return 0;
