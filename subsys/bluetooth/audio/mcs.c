@@ -101,6 +101,10 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	__maybe_unused int err;
 
+	if (!bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+		return;
+	}
+
 	err = k_mutex_lock(&mcs_inst.mutex, MUTEX_TIMEOUT);
 	__ASSERT(err == 0, "Failed to lock mutex: %d", err);
 
