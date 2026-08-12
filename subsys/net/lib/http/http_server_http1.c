@@ -691,8 +691,9 @@ BUILD_ASSERT(CONFIG_HTTP_SERVER_STATIC_FS_RESPONSE_SIZE >= STATIC_FS_RESPONSE_SI
 	/* get filename and content-type from url */
 	len = strlen(client->url_buffer);
 	if (len == 1) {
-		/* url is just the leading slash, use index.html as filename */
-		snprintk(fname, sizeof(fname), "%s/index.html", static_fs_detail->fs_path);
+		/* url is just the leading slash, serve configured index file */
+		snprintk(fname, sizeof(fname), "%s/" CONFIG_HTTP_SERVER_STATIC_FS_INDEX_FILE,
+			 static_fs_detail->fs_path);
 	} else {
 		http_server_get_content_type_from_extension(client->url_buffer, content_type,
 							    sizeof(content_type));

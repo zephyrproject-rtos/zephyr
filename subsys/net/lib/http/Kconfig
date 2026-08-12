@@ -316,6 +316,13 @@ config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
 	  Please note that it is allocated on the stack of the HTTP server thread,
 	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
 
+config HTTP_SERVER_STATIC_FS_INDEX_FILE
+	string "Static file system index file name"
+	default "index.html"
+	depends on FILE_SYSTEM
+	help
+	  File served when the request URL is just '/'.
+
 config HTTP_SERVER_STATIC_FS_CACHE_CONTROL
 	bool "Add Cache-Control to static file system responses"
 	default y
