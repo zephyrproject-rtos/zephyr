@@ -88,13 +88,21 @@ config INT_BENCH_IRQ_PRIO
 config INT_BENCH_IRQ_PRIO_ALT
 	int "Priority of the second benchmark IRQ"
 	depends on INT_BENCH_TRIGGER_SW_IRQ
-	default 0
+	# Zero-latency interrupts have to sit within the levels reserved
+	# for them, and the nested scenario needs to outrank the first
+	# line. Everything else wants the two lines at equal priority, so
+	# that comparing them measures only how they are connected.
+	default 0 if INT_BENCH_SCENARIO_ZLI
+	default 0 if INT_BENCH_SCENARIO_NESTED
+	default INT_BENCH_IRQ_PRIO
 	help
-	  Interrupt priority for the second benchmark IRQ line. It has to
-	  be a higher priority than CONFIG_INT_BENCH_IRQ_PRIO for the
-	  nested scenario to be able to preempt the first line, and on
-	  Cortex-M a zero-latency interrupt additionally has to be within
-	  the levels reserved for them.
+	  Interrupt priority for the second benchmark IRQ line, in the
+	  same convention as CONFIG_INT_BENCH_IRQ_PRIO.
+
+	  The default matches the first line, so that the entry latency
+	  of the two can be compared without the priority differing as
+	  well. The nested and zero-latency scenarios override it because
+	  they are about the second line outranking the first.
 
 config INT_BENCH_LOCK_HOLD_US
 	int "Critical section hold time (microseconds)"
@@ -321,9 +329,19 @@ config INT_BENCH_MASK_INJECT_US
 	  measured delay falls short of the injected one. Zero measures
 	  only the windows the kernel creates by itself.
 
+choice INT_BENCH_ALT_LINE_USE
+	prompt "Use of the second benchmark IRQ line"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default INT_BENCH_SCENARIO_DIRECT if CPU_CORTEX_M || ARC || (X86 && !X86_64)
+	default INT_BENCH_SCENARIO_NESTED if GIC
+	default INT_BENCH_ALT_LINE_NONE
+	help
+	  How an interrupt is connected and what priority it runs at are
+	  both fixed at build time, so the scenarios that need a second
+	  line cannot share one. Pick the one to build.
+
 config INT_BENCH_SCENARIO_DIRECT
 	bool "Direct ISR entry latency"
-	depends on INT_BENCH_TRIGGER_SW_IRQ
 	# Needs both a second triggerable line and IRQ_DIRECT_CONNECT().
 	# There is no capability symbol for the latter, so the
 	# architectures that implement ARCH_ISR_DIRECT_DECLARE() are
@@ -331,43 +349,46 @@ config INT_BENCH_SCENARIO_DIRECT
 	# only on IA32, and RISC-V without a CLIC has only the one
 	# interrupt a hart can raise on itself.
 	depends on CPU_CORTEX_M || ARC || (X86 && !X86_64)
-	depends on !INT_BENCH_SCENARIO_ZLI
-	default y
 	help
 	  Measure entry latency for an interrupt connected with
 	  IRQ_DIRECT_CONNECT(), which is dispatched straight from the
-	  vector table instead of through the software ISR table. Run
-	  alongside the regular entry latency scenario, the pair shows
-	  what the common interrupt entry code costs.
+	  vector table instead of through the software ISR table. The
+	  line runs at the same priority as the first one, so comparing
+	  the two measures only the dispatch.
 
 config INT_BENCH_SCENARIO_ZLI
-	bool "Zero-latency interrupt entry while interrupts are locked"
-	depends on INT_BENCH_TRIGGER_SW_IRQ
+	bool "Zero-latency interrupt"
 	depends on ZERO_LATENCY_IRQS
-	default n
 	help
-	  Connect the second line as a zero-latency interrupt and trigger
-	  it with interrupts locked. A zero-latency interrupt is not
-	  masked by irq_lock(), so it is served during the critical
-	  section rather than after it, which the regular critical
-	  section scenario can be compared against.
+	  Connect the second line as a zero-latency interrupt and measure
+	  it both with interrupts enabled and from inside a critical
+	  section. A zero-latency interrupt is not masked by irq_lock(),
+	  so it is served during the critical section rather than after
+	  it, which the regular critical section scenario can be compared
+	  against.
 
-	  This claims the same line as the direct ISR scenario, so only
-	  one of the two can be built at a time.
+	  The priority difference is inherent here: a zero-latency
+	  interrupt is one that runs above the level the kernel masks.
 
 config INT_BENCH_SCENARIO_NESTED
 	bool "Nested interrupt preemption latency"
-	depends on INT_BENCH_TRIGGER_SW_IRQ
 	# Same set of platforms whose nesting behaviour
 	# tests/arch/common/interrupt exercises.
 	depends on CPU_CORTEX_M || ARC || GIC
-	default y
 	help
 	  Raise the second, higher priority interrupt from inside the
 	  first one's ISR and measure how long it takes to preempt it.
 	  This is the latency a high priority interrupt suffers when a
 	  lower priority one is already being serviced, which for an
 	  interrupt-heavy application is often the dominant term.
+
+config INT_BENCH_ALT_LINE_NONE
+	bool "Unused"
+	help
+	  Leave the second line alone. This is the only option on
+	  platforms that have no second line to trigger.
+
+endchoice
 
 config INT_BENCH_SCENARIO_THROUGHPUT
 	bool "Sustained interrupt round-trip cost"

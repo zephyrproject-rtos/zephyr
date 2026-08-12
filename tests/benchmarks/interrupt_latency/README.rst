@@ -39,7 +39,9 @@ All benchmarks are in the ``interrupt`` suite:
   what a high priority handler sees than the plain entry latency, since the
   CPU is rarely idle when the event arrives. On qemu_cortex_a53 preemption
   takes 66 cycles against 74 for entry from thread context, the nested
-  entry having less state to save.
+  entry having less state to save. Selecting this scenario connects the
+  second line as a regular ISR, so the number describes preemption into an
+  ordinary handler.
 * ``throughput_round_trip`` -- the ISR re-triggers itself so the next
   interrupt is already pending while the current one is being serviced;
   each sample runs from one ISR entry to the next and so covers a full
@@ -132,19 +134,33 @@ Direct and zero-latency interrupts
 
 Three scenarios need a second IRQ line -- two because how an interrupt is
 connected is fixed at build time, and the nested one because it needs a
-second priority, because how an interrupt is connected is fixed at
-build time. The second line is available on Cortex-M, Arm GIC, ARC and x86;
-RISC-V without a CLIC has only the one interrupt a hart can raise on
-itself, which the first line already uses.
+second priority. Only one of them can be built at a time, because they
+disagree about what priority that line should run at, so the
+``INT_BENCH_ALT_LINE_USE`` choice picks between them. The direct
+comparison is the default where the architecture supports direct
+interrupts, nesting where it does not, and ``prj.nested.conf`` and
+``prj.zli.conf`` select the other two. The second line is available on
+Cortex-M, Arm GIC, ARC and x86; RISC-V without a CLIC has only the one
+interrupt a hart can raise on itself, which the first line already uses.
 
 ``entry_direct_isr`` connects the second line with ``IRQ_DIRECT_CONNECT()``
 and measures its entry latency exactly as ``entry_trigger_to_isr`` does for
-a regular ISR. The difference between the two is the common entry code and
-the software ISR table lookup that a regular interrupt goes through. How
-much that is worth is entirely a property of the architecture: on qemu_x86
-a direct ISR is entered in 576 cycles against 1216 for a regular one, while
-on ARC, whose regular entry path is already thin, the two are within a
-cycle of each other and the direct connection buys nothing.
+a regular ISR, and at the same priority, so the difference between the two
+is the common entry code and the software ISR table lookup that a regular
+interrupt goes through and nothing else. How much that is worth is entirely
+a property of the architecture: on qemu_x86 a direct ISR is entered in 576
+cycles against 1216 for a regular one, while on ARC, whose regular entry
+path is already thin, the two are within a cycle of each other and the
+direct connection buys nothing.
+
+Equal priority matters for reading the result. On an FRDM-MCXN947 a direct
+ISR is entered in 19 cycles against 33 for a regular one, and under load
+both have the same tail, 1210 and 1236 cycles at p99.99. Direct dispatch
+saves a fixed amount on every interrupt and nothing at all in the tail,
+because what fills the tail is waiting behind other interrupts, which is a
+matter of priority. Running the second line at a higher priority instead
+made the direct ISR appear to have no tail whatsoever, which said nothing
+about direct dispatch.
 
 The scenario is enabled by default wherever the architecture implements
 direct interrupts. There is no capability symbol for that, so the Kconfig

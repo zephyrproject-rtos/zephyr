@@ -15,8 +15,6 @@ tests:
     platform_exclude:
       - qemu_cortex_m0
       - m2gl025_miv
-    extra_configs:
-      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
     harness: console
     integration_platforms:
       - qemu_cortex_m3
@@ -119,6 +117,28 @@ tests:
     harness: console
     integration_platforms:
       - qemu_cortex_m3
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
+
+  # The nested scenario needs the second line at a higher priority than
+  # the first, so it cannot share a build with the direct ISR
+  # comparison, which needs the two at equal priority.
+  benchmark.kernel.interrupt.latency.nested:
+    filter: CONFIG_CPU_CORTEX_M or CONFIG_ARC or CONFIG_GIC
+    extra_args:
+      - EXTRA_CONF_FILE="prj.nested.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_cortex_a53
     harness_config:
       type: one_line
       record:
