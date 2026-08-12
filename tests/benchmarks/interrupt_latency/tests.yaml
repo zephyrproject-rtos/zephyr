@@ -84,3 +84,24 @@ tests:
           - "^M,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<total_cycles>[^,]+),(?P<mean>[^,]+),(?P<stddev>[^,]+),(?P<std_error>[^,]+),(?P<min>[^,]+),(?P<min_sample>[^,]+),(?P<max>[^,]+),(?P<max_sample>[^,]+)$"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Zero-latency interrupts are Cortex-M only, and claim the same IRQ
+  # line as the direct ISR scenario, so they need a build of their own.
+  benchmark.kernel.interrupt.latency.zli:
+    arch_allow: arm
+    filter: CONFIG_CPU_CORTEX_M_HAS_BASEPRI
+    extra_args:
+      - EXTRA_CONF_FILE="prj.zli.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^M,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<total_cycles>[^,]+),(?P<mean>[^,]+),(?P<stddev>[^,]+),(?P<std_error>[^,]+),(?P<min>[^,]+),(?P<min_sample>[^,]+),(?P<max>[^,]+),(?P<max_sample>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

@@ -60,6 +60,16 @@ config INT_BENCH_IRQ_LINE
 	  this on SoCs where the automatic choice is not an implemented
 	  or free line.
 
+config INT_BENCH_IRQ_LINE_ALT
+	int "Second IRQ line used by the benchmark (-1 = auto-select)"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default -1
+	help
+	  Scenarios that compare how an interrupt is connected need a
+	  second line, because the connection method is fixed at build
+	  time. Selected the same way as CONFIG_INT_BENCH_IRQ_LINE, one
+	  line below it where that is derived from CONFIG_NUM_IRQS.
+
 config INT_BENCH_IRQ_PRIO
 	int "Priority of the benchmark IRQ"
 	depends on INT_BENCH_TRIGGER_SW_IRQ
@@ -239,6 +249,40 @@ config INT_BENCH_MASK_INJECT_US
 	  timer then re-anchors to when it was last serviced, so the
 	  measured delay falls short of the injected one. Zero measures
 	  only the windows the kernel creates by itself.
+
+config INT_BENCH_SCENARIO_DIRECT
+	bool "Direct ISR entry latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# Needs both a second triggerable line and IRQ_DIRECT_CONNECT().
+	# There is no capability symbol for the latter, so the
+	# architectures that implement ARCH_ISR_DIRECT_DECLARE() are
+	# listed explicitly: Arm64 has no direct interrupts, x86 has them
+	# only on IA32, and RISC-V without a CLIC has only the one
+	# interrupt a hart can raise on itself.
+	depends on CPU_CORTEX_M || ARC || (X86 && !X86_64)
+	depends on !INT_BENCH_SCENARIO_ZLI
+	default y
+	help
+	  Measure entry latency for an interrupt connected with
+	  IRQ_DIRECT_CONNECT(), which is dispatched straight from the
+	  vector table instead of through the software ISR table. Run
+	  alongside the regular entry latency scenario, the pair shows
+	  what the common interrupt entry code costs.
+
+config INT_BENCH_SCENARIO_ZLI
+	bool "Zero-latency interrupt entry while interrupts are locked"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	depends on ZERO_LATENCY_IRQS
+	default n
+	help
+	  Connect the second line as a zero-latency interrupt and trigger
+	  it with interrupts locked. A zero-latency interrupt is not
+	  masked by irq_lock(), so it is served during the critical
+	  section rather than after it, which the regular critical
+	  section scenario can be compared against.
+
+	  This claims the same line as the direct ISR scenario, so only
+	  one of the two can be built at a time.
 
 config INT_BENCH_SCENARIO_THROUGHPUT
 	bool "Sustained interrupt round-trip cost"
