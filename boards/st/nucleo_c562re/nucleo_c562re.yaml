@@ -12,6 +12,7 @@ supported:
   - arduino_serial
   - arduino_spi
   - crc
+  - dac
   - entropy
   - gpio
   - i2c
