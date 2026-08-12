@@ -772,12 +772,87 @@ static void dhcpv6_server_set_ia_status(struct dhcpv6_server_msg *msg,
 	}
 }
 
+/* Tell the client that the IAs it wants to extend are not known to this
+ * server, RFC 8415 ch. 18.3.4.
+ */
+static void dhcpv6_server_set_no_binding_status(struct dhcpv6_server_msg *msg,
+						struct dhcpv6_server_reply_opts *opts)
+{
+	if (msg->has_ia_na) {
+		opts->ia_na_status = DHCPV6_STATUS_NO_BINDING;
+	}
+
+	if (msg->has_ia_pd) {
+		opts->ia_pd_status = DHCPV6_STATUS_NO_BINDING;
+	}
+}
+
+enum dhcpv6_server_action {
+	/** Do not answer the message. */
+	DHCPV6_SERVER_ACTION_DROP,
+	/** Hand out (or extend) the lease and reply with the IAs. */
+	DHCPV6_SERVER_ACTION_GRANT,
+	/** Reply with empty IAs carrying the NoBinding status. */
+	DHCPV6_SERVER_ACTION_NO_BINDING,
+};
+
+/* Decide how a Renew or Rebind is answered. Both ask to extend a lease, but
+ * they differ in what the server owes a client it has no binding for.
+ */
+static enum dhcpv6_server_action
+dhcpv6_server_extend_action(uint8_t type, bool have_binding)
+{
+	if (have_binding) {
+		return DHCPV6_SERVER_ACTION_GRANT;
+	}
+
+	if (type == DHCPV6_MSG_TYPE_RENEW) {
+		/* RFC 8415 ch. 18.3.4: the client asked this very server to
+		 * extend a lease it does not have, so tell it so instead of
+		 * silently creating a new one. The client then falls back to
+		 * Solicit/Request.
+		 */
+		return DHCPV6_SERVER_ACTION_NO_BINDING;
+	}
+
+	/* Rebind, RFC 8415 ch. 18.3.5: with no record of the client, the
+	 * server would have to tell from the client's addresses whether they
+	 * belong to this link. It may then either invalidate them or silently
+	 * discard the message; the latter is chosen here, the client recovers
+	 * by soliciting a new lease.
+	 */
+	return DHCPV6_SERVER_ACTION_DROP;
+}
+
+/* Hand out a lease for the IAs in the message and reply with what could be
+ * assigned.
+ */
+static void dhcpv6_server_grant(struct net_if *iface,
+				const struct net_in6_addr *src,
+				struct dhcpv6_server_msg *msg)
+{
+	struct dhcpv6_server_reply_opts opts = { 0 };
+	struct dhcpv6_server_binding *b;
+
+	b = dhcpv6_server_bind(msg, true);
+	if (b != NULL) {
+		opts.include_addr = b->has_addr;
+		opts.include_prefix = b->has_prefix;
+	}
+
+	dhcpv6_server_set_ia_status(msg, &opts);
+
+	(void)dhcpv6_server_send_reply(iface, src, DHCPV6_MSG_TYPE_REPLY, msg,
+				       b, &opts);
+}
+
 static void dhcpv6_server_handle(struct net_if *iface,
 				 const struct net_in6_addr *src,
 				 struct dhcpv6_server_msg *msg)
 {
 	struct dhcpv6_server_reply_opts opts = { 0 };
 	struct dhcpv6_server_binding *b;
+	enum dhcpv6_server_action action;
 
 	if (!msg->has_clientid) {
 		NET_DBG("Client message without Client ID, ignoring");
@@ -807,6 +882,13 @@ static void dhcpv6_server_handle(struct net_if *iface,
 		break;
 
 	case DHCPV6_MSG_TYPE_REQUEST:
+		if (!dhcpv6_server_for_us(msg)) {
+			return;
+		}
+
+		dhcpv6_server_grant(iface, src, msg);
+		break;
+
 	case DHCPV6_MSG_TYPE_RENEW:
 		if (!dhcpv6_server_for_us(msg)) {
 			return;
@@ -814,16 +896,23 @@ static void dhcpv6_server_handle(struct net_if *iface,
 		__fallthrough;
 	case DHCPV6_MSG_TYPE_REBIND:
 		/* Rebind is multicast and carries no Server ID. */
-		b = dhcpv6_server_bind(msg, true);
-		if (b != NULL) {
-			opts.include_addr = b->has_addr;
-			opts.include_prefix = b->has_prefix;
+		b = dhcpv6_server_find_binding(msg->clientid, msg->clientid_len);
+		action = dhcpv6_server_extend_action(msg->type, b != NULL);
+
+		if (action == DHCPV6_SERVER_ACTION_DROP) {
+			NET_DBG("No binding to extend, ignoring message");
+			return;
 		}
 
-		dhcpv6_server_set_ia_status(msg, &opts);
+		if (action == DHCPV6_SERVER_ACTION_GRANT) {
+			dhcpv6_server_grant(iface, src, msg);
+			break;
+		}
+
+		dhcpv6_server_set_no_binding_status(msg, &opts);
 
 		(void)dhcpv6_server_send_reply(iface, src,
-					       DHCPV6_MSG_TYPE_REPLY, msg, b,
+					       DHCPV6_MSG_TYPE_REPLY, msg, NULL,
 					       &opts);
 		break;
 
