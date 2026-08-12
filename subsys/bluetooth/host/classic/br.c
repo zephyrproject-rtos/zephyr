@@ -1318,6 +1318,19 @@ static void bt_br_limited_discoverable_timeout_handler(struct k_work *work)
 		return;
 	}
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		/* bt_disable() is in progress or has completed, so the
+		 * transport may already be closed and no HCI commands can be
+		 * sent here. The controller scan state is handled by the
+		 * disable procedure itself (HCI Reset), or deliberately left
+		 * intact for controllers with the no-reset quirk. If
+		 * disabling fails and the stack resumes operation,
+		 * BT_DEV_READY gets restored with this timer still armed, so
+		 * the limited discoverable deadline keeps being honored.
+		 */
+		return;
+	}
+
 	err = bt_br_set_discoverable(false, false);
 	if (err) {
 		LOG_WRN("Disable discoverable failure (err %d)", err);
