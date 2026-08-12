@@ -120,9 +120,12 @@ int tmp11x_eeprom_await(const struct device *dev)
 
 	k_sleep(K_MSEC(EEPROM_MIN_BUSY_MS));
 
-	WAIT_FOR((res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val)) != 0 ||
-			 val & TMP11X_EEPROM_UL_BUSY,
-		 100, k_msleep(1));
+	if (!WAIT_FOR((res = tmp11x_reg_read(dev, TMP11X_REG_EEPROM_UL, &val)) != 0 ||
+			      (val & TMP11X_EEPROM_UL_BUSY) == 0,
+		      50000, k_msleep(1))) {
+		LOG_ERR("%s: timed out waiting for EEPROM programming to finish", dev->name);
+		return -ETIMEDOUT;
+	}
 
 	return res;
 }
