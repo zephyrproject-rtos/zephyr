@@ -1144,8 +1144,12 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, uint8_t idx)
 
 static inline uint8_t get_llao_len(struct net_if *iface)
 {
-	uint8_t total_len = net_if_get_link_addr(iface)->len +
-			 sizeof(struct net_icmpv6_nd_opt_hdr);
+	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
+	uint8_t total_len;
+
+	NET_ASSERT(lladdr != NULL);
+
+	total_len = lladdr->len + sizeof(struct net_icmpv6_nd_opt_hdr);
 
 	return ROUND_UP(total_len, 8U);
 }
@@ -1158,6 +1162,8 @@ static inline bool set_llao(struct net_pkt *pkt,
 		.type = type,
 		.len  = llao_len >> 3,
 	};
+
+	NET_ASSERT(lladdr != NULL);
 
 	if (net_pkt_write(pkt, &opt_hdr,
 			  sizeof(struct net_icmpv6_nd_opt_hdr)) ||
