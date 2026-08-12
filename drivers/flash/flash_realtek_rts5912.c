@@ -672,7 +672,7 @@ static int flash_rts5912_erase(const struct device *dev, off_t offset, size_t le
 	for (; len > 0; len -= FLASH_ERASE_BLK_SZ) {
 		ret = flash_erase_sector(dev, offset);
 		if (ret < 0) {
-			LOG_ERR("erase @0x%08lx fail", offset);
+			LOG_ERR("erase @0x%08lx fail", (long)offset);
 		}
 		offset += FLASH_ERASE_BLK_SZ;
 	}

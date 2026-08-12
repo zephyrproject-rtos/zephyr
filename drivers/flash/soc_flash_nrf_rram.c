@@ -144,7 +144,7 @@ static void commit_changes(off_t addr, size_t len)
 	 * write-only memory, then one would have to rely on
 	 * READYNEXTTIMEOUT to eventually commit the write.
 	 */
-	volatile uint8_t dummy_read = *(volatile uint8_t *)(addr + len - 1);
+	volatile uint8_t dummy_read = *(volatile uint8_t *)(uintptr_t)(addr + len - 1);
 	ARG_UNUSED(dummy_read);
 #endif
 
@@ -166,9 +166,9 @@ static void rram_write(off_t addr, const void *data, uint8_t fill_val, size_t le
 		chunk_len = MIN(len, CONFIG_NRF_RRAM_THROTTLING_DATA_BLOCK * WRITE_LINE_SIZE);
 #endif /* CONFIG_SOC_FLASH_NRF_THROTTLING */
 		if (data) {
-			memcpy((void *)addr, data, chunk_len);
+			memcpy((void *)(uintptr_t)addr, data, chunk_len);
 		} else {
-			memset((void *)addr, fill_val, chunk_len);
+			memset((void *)(uintptr_t)addr, fill_val, chunk_len);
 		}
 #ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
 		addr += chunk_len;
@@ -282,7 +282,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 		return 0;
 	}
 
-	LOG_DBG("Write: %p:%zu", (void *)addr, len);
+	LOG_DBG("Write: %p:%zu", (void *)(uintptr_t)addr, len);
 
 	SYNC_LOCK();
 
@@ -352,7 +352,7 @@ static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 
 	while (cur < end) {
 		while (cur < end &&
-			rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+		       rram_line_holds((const uint8_t *)((uintptr_t)cur + RRAM_START), pat)) {
 			cur += WRITE_LINE_SIZE;
 		}
 		if (cur >= end) {
@@ -362,7 +362,7 @@ static int nrf_rram_fill_impl(off_t addr, uint8_t val, size_t len)
 		const off_t dirty_start = cur;
 
 		while (cur < end &&
-			!rram_line_holds((const uint8_t *)(cur + RRAM_START), pat)) {
+		       !rram_line_holds((const uint8_t *)((uintptr_t)cur + RRAM_START), pat)) {
 			cur += WRITE_LINE_SIZE;
 		}
 
@@ -388,10 +388,10 @@ static int nrf_rram_read(const struct device *dev, off_t addr, void *data, size_
 	addr += RRAM_START;
 
 	if (soc_secure_flash_range_is_secure((uintptr_t)addr, len)) {
-		return soc_secure_mem_read(data, (void *)addr, len);
+		return soc_secure_mem_read(data, (void *)(uintptr_t)addr, len);
 	}
 
-	memcpy(data, (void *)addr, len);
+	memcpy(data, (void *)(uintptr_t)addr, len);
 	return 0;
 }
 

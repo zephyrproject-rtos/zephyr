@@ -792,6 +792,15 @@ STM32
   and will trigger a build error. Use the :ref:`generic chosen <devicetree-zephyr-chosen-nodes>`
   ``zephyr,system-timer`` instead. (:github:`112999`)
 
+Storage
+=======
+
+* The ``fs_off`` element of :c:struct:`flash_sector` has been changed from type ``off_t`` to
+  ``size_t``. This should make all platforms and toolchains use the native machine register size and
+  not vary based on the POSIX ``off_t`` type inherited from the C library. Picolibc 1.8.12 always
+  defines ``off_t`` as a 64-bit integer, even on 32-bit platforms; this change effectively returns
+  the struct to the previous layout when using this C library.
+
 Syscon
 ======
 
