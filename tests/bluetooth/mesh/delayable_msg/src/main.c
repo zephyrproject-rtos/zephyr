@@ -739,3 +739,68 @@ ZTEST(bt_mesh_delayable_msg, test_stop_during_in_flight_send)
 			      stop_race_slots[i].err);
 	}
 }
+
+#define STALE_BUF_LEN 20
+
+/* Regression test for a stale work invocation sending the next message before it is due.
+ *
+ * k_work_reschedule() does not withdraw a submission that already happened, so the handler can run
+ * for an expiry that another context has already consumed. Popping the head unconditionally then
+ * transmits a message that is not due, truncating the random delay the Access layer transmission
+ * rules require.
+ *
+ * The interleaving is built from a cooperative thread above the sysworkq priority: k_busy_wait()
+ * lets the first deadline expire and its work be submitted without giving the sysworkq a chance to
+ * run, and the purge path then consumes that same message, leaving the submission stale.
+ */
+ZTEST(bt_mesh_delayable_msg, test_stale_handler_no_early_send)
+{
+	/* bt_rand() is mocked, so these become delays of 20, 420, 430 and 440 ms. */
+	static const uint16_t fake_delays[] = {0, 400, 410, 420};
+	uint8_t tx_data[STALE_BUF_LEN];
+	int orig_prio;
+	int sends_after_purge;
+	int sends_at_end;
+
+	NET_BUF_SIMPLE_DEFINE(buf, STALE_BUF_LEN);
+
+	memset(tx_data, 3, sizeof(tx_data));
+
+	orig_prio = k_thread_priority_get(k_current_get());
+	k_thread_priority_set(k_current_get(), STRESS_COOP_PRIO);
+	is_fake_random = true;
+
+	for (int i = 0; i < ARRAY_SIZE(fake_delays); i++) {
+		fake_random = fake_delays[i];
+		net_buf_simple_reset(&buf);
+		net_buf_simple_add_mem(&buf, tx_data, sizeof(tx_data));
+		zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf, SRC_ADDR, NULL, NULL));
+	}
+
+	/* Let the first deadline expire and its work be submitted. Busy-waiting keeps the CPU, so
+	 * the cooperative sysworkq cannot run the handler yet.
+	 */
+	k_busy_wait(40 * USEC_PER_MSEC);
+
+	/* The ctx pool is full, so this call purges the first message itself. The submission made
+	 * on its behalf is now stale.
+	 */
+	fake_random = 440;
+	net_buf_simple_reset(&buf);
+	net_buf_simple_add_mem(&buf, tx_data, sizeof(tx_data));
+	zexpect_ok(bt_mesh_delayable_msg_manage(&gctx, &buf, SRC_ADDR, NULL, NULL));
+
+	/* Hand the CPU over so the stale invocation runs while nothing is due. */
+	k_sleep(K_MSEC(50));
+	sends_after_purge = atomic_get(&send_call_count);
+
+	k_sleep(K_MSEC(600));
+	sends_at_end = atomic_get(&send_call_count);
+
+	k_thread_priority_set(k_current_get(), orig_prio);
+	is_fake_random = false;
+
+	zassert_equal(sends_after_purge, 1, "Message sent before it was due (%d sends, expected 1)",
+		      sends_after_purge);
+	zassert_equal(sends_at_end, 5, "Not every message was sent (%d of 5)", sends_at_end);
+}

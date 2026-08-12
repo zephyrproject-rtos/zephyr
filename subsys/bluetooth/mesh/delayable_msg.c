@@ -96,7 +96,7 @@ static struct delayable_msg_ctx *peek_pending_msg(void)
 
 static void reschedule_delayable_msg(struct delayable_msg_ctx *msg)
 {
-	uint32_t curr_time;
+	int32_t remaining;
 	k_timeout_t delay = K_NO_WAIT;
 	struct delayable_msg_ctx *pending_msg;
 	k_spinlock_key_t key = k_spin_lock(&lock);
@@ -112,9 +112,9 @@ static void reschedule_delayable_msg(struct delayable_msg_ctx *msg)
 		return;
 	}
 
-	curr_time = k_uptime_get_32();
-	if (curr_time < pending_msg->fired_time) {
-		delay = K_MSEC(pending_msg->fired_time - curr_time);
+	remaining = (int32_t)(pending_msg->fired_time - k_uptime_get_32());
+	if (remaining > 0) {
+		delay = K_MSEC(remaining);
 	}
 
 	/* k_work_reschedule() is safe to call under our spinlock: it uses its own internal spinlock
@@ -218,28 +218,55 @@ static void complete_delayable_msg(struct delayable_msg_ctx *msg, int err)
 	}
 }
 
-static bool push_msg_from_delayable_msgs(void)
+/* Signed delta keeps this correct across the 32-bit uptime wrap. */
+static bool msg_expired(const struct delayable_msg_ctx *msg)
+{
+	return (int32_t)(k_uptime_get_32() - msg->fired_time) >= 0;
+}
+
+/* Takes the head off busy_ctx only if it is due. k_work_reschedule() cannot withdraw a submission
+ * that already happened, so the handler can run for an expiry another context has consumed; this
+ * leaves such an invocation with nothing to send.
+ */
+static struct delayable_msg_ctx *take_expired_msg(void)
+{
+	struct delayable_msg_ctx *msg;
+	k_spinlock_key_t key = k_spin_lock(&lock);
+
+	msg = peek_pending_msg();
+	if (msg && !msg_expired(msg)) {
+		msg = NULL;
+	} else if (msg) {
+		(void)sys_slist_get(&access_delayable_msg.busy_ctx);
+	}
+	k_spin_unlock(&lock, key);
+
+	return msg;
+}
+
+/* Takes the head whatever its fired_time, so the purge path can force out the earliest msg. */
+static struct delayable_msg_ctx *take_earliest_msg(void)
 {
 	sys_snode_t *node;
-	struct delayable_msg_chunk *chunk;
-	struct delayable_msg_ctx *msg;
-	uint16_t len;
-	int err;
-	k_spinlock_key_t key;
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	/* Detaching the head under the lock stops concurrent pushers from sending and releasing
-	 * the same msg twice.
+	/* Dequeueing under the lock stops concurrent callers from sending and releasing the same
+	 * msg twice.
 	 */
-	key = k_spin_lock(&lock);
 	node = sys_slist_get(&access_delayable_msg.busy_ctx);
 	k_spin_unlock(&lock, key);
 
-	if (!node) {
-		return false;
-	}
+	return node ? CONTAINER_OF(node, struct delayable_msg_ctx, node) : NULL;
+}
 
-	msg = CONTAINER_OF(node, struct delayable_msg_ctx, node);
-	len = msg->len;
+/* Sends `msg` and releases it. Returns false if a transient failure put it back on busy_ctx. */
+static bool send_delayable_msg(struct delayable_msg_ctx *msg)
+{
+	sys_snode_t *node;
+	struct delayable_msg_chunk *chunk;
+	uint16_t len = msg->len;
+	int err;
+	k_spinlock_key_t key;
 
 	/* bt_mesh_suspend() sets BT_MESH_SUSPENDED and bt_mesh_reset() clears BT_MESH_VALID before
 	 * the queue is drained, so either one means the stack is down. Never hand a message to the
@@ -253,8 +280,8 @@ static bool push_msg_from_delayable_msgs(void)
 
 	NET_BUF_SIMPLE_DEFINE(buf, BT_MESH_TX_SDU_MAX);
 
-	/* sys_slist_get() removed msg from busy_ctx, so it is on no list and unreachable from other
-	 * contexts; its chunks can be walked unlocked.
+	/* msg is off busy_ctx, so it is unreachable from other contexts and its chunks can be
+	 * walked unlocked.
 	 */
 	SYS_SLIST_FOR_EACH_NODE(&msg->chunks, node) {
 		uint16_t tmp = MIN(CONFIG_BT_MESH_ACCESS_DELAYABLE_MSG_CHUNK_SIZE, len);
@@ -288,14 +315,27 @@ static bool push_msg_from_delayable_msgs(void)
 	return true;
 }
 
+static bool push_msg_from_delayable_msgs(void)
+{
+	struct delayable_msg_ctx *msg = take_earliest_msg();
+
+	if (!msg) {
+		return false;
+	}
+
+	return send_delayable_msg(msg);
+}
+
 static void delayable_msg_handler(struct k_work *w)
 {
-	/* push_msg_from_delayable_msgs() re-arms the timer itself on the transient-failure path,
-	 * so only the success path needs it here.
-	 */
-	if (push_msg_from_delayable_msgs()) {
-		reschedule_delayable_msg(NULL);
+	struct delayable_msg_ctx *msg = take_expired_msg();
+
+	if (msg) {
+		(void)send_delayable_msg(msg);
 	}
+
+	/* Re-arms for the next msg, immediately if one is already due. */
+	reschedule_delayable_msg(NULL);
 }
 
 int bt_mesh_delayable_msg_manage(struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf,
