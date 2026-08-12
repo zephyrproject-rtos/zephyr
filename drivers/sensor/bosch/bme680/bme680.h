@@ -166,6 +166,11 @@ struct bme680_config {
 #define BME680_HEATR_DUR_MS                             1943
 #endif
 
+/* Forced-mode data-ready time is the TPH conversion time plus the programmed
+ * gas heater duration.
+ */
+#define BME680_MEAS_TIMEOUT_MS                          (BME680_HEATR_DUR_MS + 100)
+
 #if defined CONFIG_BME680_FILTER_OFF
 #define BME680_FILTER                   0
 #elif defined CONFIG_BME680_FILTER_2
