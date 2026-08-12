@@ -39,6 +39,8 @@ enum wifi_nm_iface_type {
 	WIFI_TYPE_STA = 0,
 	/** IEEE 802.11 Wi-Fi Soft AP */
 	WIFI_TYPE_SAP,
+	/** MAX of Wi-Fi interface type */
+	WIFI_TYPE_MAX,
 };
 
 /**
