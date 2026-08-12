@@ -3417,8 +3417,18 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 			goto cleanup;
 		}
 
-		memcpy(&client_ctx->remote_addr_storage, res->ai_addr,
-		       sizeof(client_ctx->remote_addr_storage));
+		if (res->ai_addrlen > sizeof(client_ctx->remote_addr_storage)) {
+			LOG_DBG("Resolved address does not fit (%u > %zu)", res->ai_addrlen,
+				sizeof(client_ctx->remote_addr_storage));
+			zsock_freeaddrinfo(res);
+			ret = -EINVAL;
+			goto cleanup;
+		}
+
+		/* net_addr_pton() above may have left a partial address behind. */
+		(void)memset(&client_ctx->remote_addr_storage, 0,
+			     sizeof(client_ctx->remote_addr_storage));
+		memcpy(&client_ctx->remote_addr_storage, res->ai_addr, res->ai_addrlen);
 		client_ctx->remote_addr_storage.ss_family = res->ai_family;
 		zsock_freeaddrinfo(res);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
