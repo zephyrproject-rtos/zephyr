@@ -474,6 +474,10 @@ New Drivers
 
 * GPIO
 
+  * Added Fast GPIO API extension (:kconfig:option:`CONFIG_GPIO_FAST`) for
+    sub-microsecond GPIO operations. Vendor implementation for SAM0., See
+    :ref:`gpio_fast_api`. (:github:`110787`)
+
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
   * ST Zio connector for STM32 Nucleo-144 boards
