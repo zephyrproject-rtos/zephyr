@@ -64,7 +64,7 @@ static uint64_t lptim_count;
  * Configures the OS timer to wake up the system after the specified time.
  * Coordinates with BLE link layer to ensure wakeup happens before next BLE event.
  */
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint32_t lptim_freq;
 
@@ -110,6 +110,8 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	/* Set the match value to wake up the system*/
 	OSTIMER_SetMatchValue(lptim_base, lptim_count + USEC_TO_COUNT(max_lpm_time_us, lptim_freq),
 			      NULL);
+
+	return true;
 }
 
 /**

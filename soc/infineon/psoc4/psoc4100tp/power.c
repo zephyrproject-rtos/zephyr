@@ -108,8 +108,16 @@ static void wdt_lpm_arm_window(uint32_t from_count, uint64_t remaining_cycles)
  * and z_sys_clock_lpm_exit hooks so the Zephyr system timer can reconcile
  * elapsed time duration after wakeup.
  */
-void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
+bool z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
+	uint64_t min_delay_us;
+
+	min_delay_us = ((uint64_t)MIN_WDT_CYCLES * USEC_PER_SEC + ilo_freq_hz - 1U) /
+		       ilo_freq_hz;
+	if (max_lpm_time_us < min_delay_us) {
+		return false;
+	}
+
 	wdt_target_cycles = (max_lpm_time_us * (uint64_t)ilo_freq_hz) / USEC_PER_SEC;
 	if (wdt_target_cycles < MIN_WDT_CYCLES) {
 		wdt_target_cycles = MIN_WDT_CYCLES;
@@ -131,6 +139,8 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 
 	NVIC_ClearPendingIRQ(WDT_IRQ_NUM);
 	irq_enable(WDT_IRQ_NUM);
+
+	return true;
 }
 
 static bool wdt_lpm_continue(void)

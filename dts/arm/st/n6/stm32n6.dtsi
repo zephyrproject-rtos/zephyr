@@ -1389,9 +1389,10 @@
 			rtc: rtc@56004000 {
 				compatible = "st,stm32-rtc";
 				reg = <0x56004000 0x400>;
-				interrupts = <16 0>;
+				interrupts = <10 0>;
 				clocks = <&rcc STM32_CLOCK(APB4, 16)>;
 				alarms-count = <2>;
+				alrm-exti-line = <17>;
 				status = "disabled";
 			};
 

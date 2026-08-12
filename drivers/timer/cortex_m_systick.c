@@ -148,6 +148,14 @@ static uint32_t last_elapsed;
  */
 static volatile uint32_t overflow_cyc;
 
+/* Result of the most recent low-power companion arm attempt. */
+static bool lpm_companion_ready = true;
+
+bool z_sys_clock_lpm_companion_ready(void)
+{
+	return lpm_companion_ready;
+}
+
 static uint32_t elapsed(uint32_t *val_out);
 
 #if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
@@ -383,6 +391,16 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	 */
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL) && IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) &&
 	    ticks == SYS_CLOCK_MAX_WAIT) {
+#if !defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE)
+		if (idle) {
+			timeout_idle = true;
+			lpm_companion_ready = z_sys_clock_lpm_enter(UINT64_MAX);
+			if (!lpm_companion_ready) {
+				timeout_idle = false;
+				return;
+			}
+		}
+#endif
 		SysTick->CTRL &= ~SysTick_CTRL_ENABLE_Msk;
 		last_load = TIMER_STOPPED;
 		return;
@@ -399,7 +417,14 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 		 * Invoke platform-specific layer to configure LPTIM
 		 * such that system wakes up after timeout elapses.
 		 */
-		z_sys_clock_lpm_enter(timeout_us);
+		lpm_companion_ready = z_sys_clock_lpm_enter(timeout_us);
+		if (!lpm_companion_ready) {
+			/* Keep the primary timer configured, but make the idle request
+			 * visible to PM as unsafe for STOP entry.
+			 */
+			timeout_idle = false;
+			return;
+		}
 
 #if !defined(CONFIG_SYSTEM_TIMER_RESET_BY_LPM)
 		/* Store current value of SysTick counter to be able to
