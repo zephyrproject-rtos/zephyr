@@ -121,7 +121,7 @@ int lis2du12_enable_delta_int(const struct device *dev, int enable)
 
 	lis2du12_int_mode_t int_mode;
 
-	if (lis2du12_interrupt_mode_set(ctx, &int_mode) < 0) {
+	if (lis2du12_interrupt_mode_get(ctx, &int_mode) < 0) {
 		LOG_ERR("failed reading int mode");
 		return -EIO;
 	}
