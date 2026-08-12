@@ -383,7 +383,16 @@ static bool is_already_attached(struct socketcan_filter *sfilter,
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(receivers); i++) {
-		if (receivers[i].ctx != ctx && receivers[i].iface == iface &&
+		/* Must also require ctx != NULL here. can_close_socket()
+		 * clears receivers[i].ctx to NULL for the entry being
+		 * closed, but leaves iface/can_id/can_mask on that same
+		 * entry unchanged. Without this check, every close() finds
+		 * its own just-cleared entry (NULL != ctx is trivially
+		 * true) and concludes some other socket still needs the
+		 * filter, so the native filter is never actually removed.
+		 */
+		if (receivers[i].ctx != NULL && receivers[i].ctx != ctx &&
+		    receivers[i].iface == iface &&
 		    ((receivers[i].can_id & receivers[i].can_mask) ==
 		     (UNALIGNED_GET(&sfilter->can_id) &
 		      UNALIGNED_GET(&sfilter->can_mask)))) {
