@@ -4261,28 +4261,6 @@ static void hci_vs_init(void)
 	rp.cmds = (void *)rsp->data;
 	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
-
-	if (BT_VS_CMD_SUP_FEAT(bt_dev.vs_commands)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
-					   NULL, &rsp);
-		if (err) {
-			LOG_WRN("Failed to read supported vendor features");
-			return;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
-		    rsp->len !=
-		    sizeof(struct bt_hci_rp_vs_read_supported_features)) {
-			LOG_WRN("Invalid Vendor HCI extensions");
-			net_buf_unref(rsp);
-			return;
-		}
-
-		rp.feat = (void *)rsp->data;
-		memcpy(bt_dev.vs_features, rp.feat->features,
-		       BT_DEV_VS_FEAT_MAX);
-		net_buf_unref(rsp);
-	}
 }
 
 static int hci_vs_write_bd_addr(bt_addr_t *bdaddr)
