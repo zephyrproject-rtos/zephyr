@@ -11,7 +11,7 @@ menuconfig USBIP
 	depends on NET_TCP
 	depends on NET_SOCKETS
 	help
-	  Experimental USB USBIP support.
+	  Experimental USB USBIP support for exporting a device attached to a host controller.
 
 if USBIP
 

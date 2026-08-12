@@ -7,7 +7,7 @@ menuconfig USB_HOST_STACK
 	select EXPERIMENTAL
 	select UHC_DRIVER
 	help
-	  New experimental USB host stack.
+	  USB host stack for device enumeration and class drivers.
 
 if USB_HOST_STACK
 
@@ -43,9 +43,13 @@ config USBH_INIT_PRIO
 
 config USBH_STACK_SIZE
 	int "USB host stack thread stack size"
-	default 1024
+	default 2048
 	help
-	  USB host stack thread stack size in bytes.
+	  Stack size in bytes for both usbh and usbh_bus kernel threads.
+
+	  The bus thread runs usbh_device_init() and uhc_bus_reset(); with verbose
+	  host-controller drivers and logging, 1024 is often too small on AArch64
+	  (stack corruption after k_sem_take / control-transfer completion).
 
 config USBH_MAX_UHC_MSG
 	int "Maximum number of UHC events"
@@ -55,5 +59,87 @@ config USBH_MAX_UHC_MSG
 
 rsource "Kconfig.usbip"
 rsource "class/Kconfig"
+
+config USBH_USB2_ENUM_SCHEME
+	bool "USB2 enumeration (64-byte GET_DESCRIPTOR before SET_ADDRESS)"
+	default y
+	help
+	  USB2 (non-SuperSpeed) enumeration order in usbh_device_init():
+
+	    1) Bus reset (host driver: Address Device BSR=1)
+	    2) GET_DESCRIPTOR(DEVICE) with wLength=64
+	    3) Optional second bus reset (off by default)
+	    4) Address assignment (xHCI: @ref uhc_assign_address / Address Device BSR=0;
+	       legacy HCDs: CH9 SET_ADDRESS)
+	    5) busy-wait(post-set-address); Zephyr busy-waits (mutex held)
+	    6) GET_DESCRIPTOR(DEVICE) for the full 18-byte device descriptor
+
+	  On integrated xHCI hosts the host stack calls @ref uhc_assign_address()
+	  (Address Device BSR=0) instead of CH9 SET_ADDRESS; the HCD returns the
+	  wire address from the output slot context.
+
+	  Disable to use the legacy order: 8-byte read, validate, 18-byte read,
+	  then SET_ADDRESS.
+
+config USBH_USB2_ENUM_SECOND_RESET
+	bool "Second bus reset after first GET_DESCRIPTOR"
+	default n
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  After the 64-byte descriptor read and before SET_ADDRESS, call
+	  uhc_bus_reset() again. Can require host-controller-specific slot
+	  recovery; leave disabled unless your HCD needs it.
+
+config USBH_POST_SET_ADDRESS_MS
+	int "Milliseconds to delay after SET_ADDRESS"
+	default 10
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  Post-SET_ADDRESS settle interval before the full device descriptor read.
+	  usbh_device_init() holds udev->mutex across enumeration; k_msleep() is
+	  used so other threads can run while the device mutex remains held.
+	  Set to 0 to skip.
+
+config USBH_GET_DESCRIPTOR_TRIES
+	int "GET_DESCRIPTOR retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  Retry count for the first GET_DESCRIPTOR loop in USB2 enumeration,
+	  with USBH_ENUM_RETRY_DELAY_MS between tries.
+
+config USBH_SET_ADDRESS_TRIES
+	int "SET_ADDRESS retry count"
+	default 2
+	range 1 5
+	depends on USBH_USB2_ENUM_SCHEME
+	help
+	  Retry count for SET_ADDRESS in USB2 enumeration, with
+	  USBH_SET_ADDRESS_RETRY_DELAY_MS between tries.
+
+config USBH_ENUM_RETRY_DELAY_MS
+	int "Milliseconds between GET_DESCRIPTOR retries"
+	default 100
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_SET_ADDRESS_RETRY_DELAY_MS
+	int "Milliseconds between SET_ADDRESS retries"
+	default 200
+	range 0 500
+	depends on USBH_USB2_ENUM_SCHEME
+
+config USBH_POST_SET_CONFIGURATION_MS
+	int "Milliseconds to delay after SET_CONFIGURATION before full cfg read"
+	default 0
+	range 0 500
+	help
+	  Some devices and integrated xHCI hosts need a short settle after
+	  SET_CONFIGURATION before the next EP0 transfer. If enumeration fails
+	  reading the full configuration descriptor (often the first chunk right
+	  after SET_CONFIGURATION), try 5–20 ms here. Uses k_msleep() like
+	  USBH_POST_SET_ADDRESS_MS.
 
 endif # USB_HOST_STACK
