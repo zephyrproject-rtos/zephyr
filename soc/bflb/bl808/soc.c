@@ -128,58 +128,67 @@ static void soc_bl808_halt_secondary_cores(void)
  * We reconfigure for correctness: flash XIP should be cacheable but not bufferable,
  * and PSRAM data bus at 0x50000000 needs cacheable+bufferable for performance.
  *
- * BL808 M0 core address map:
- *   0x00000000 - 0x50000000  Peripherals, uncached OCRAM/WRAM      → SO
+ * BL808 M0 core address map (8 sysmap entries, single layout for all
+ * configurations -- the BLE EM bridge and gap attributes are harmless
+ * when BLE is disabled since nothing accesses those windows):
+ *   0x00000000 - 0x28000000  Peripherals, uncached OCRAM/WRAM      → SO
+ *   0x28000000 - 0x29000000  BLE Exchange Memory bus bridge        → B
+ *   0x29000000 - 0x50000000  Remaining peripherals                 → SO
  *   0x50000000 - 0x54000000  PSRAM (64MB window, data bus)         → CB
- *   0x54000000 - 0x58000000  Gap                                   → SO
- *   0x58000000 - 0x5C000000  Flash XIP (primary)                   → C
+ *   0x54000000 - 0x5C000000  Gap + flash XIP (primary)             → C
  *   0x5C000000 - 0x62020000  Flash XIP (secondary) + gap           → SO
  *   0x62020000 - 0x62058000  OCRAM + WRAM (cacheable aliases)      → CB
- *   0x62058000 - 0x7EF80000  Gap                                   → SO
- *   0x7EF80000 - 0xFFFFF000  DRAM/VRAM/CLIC/sysmap                → SO
+ *   0x62058000 - 0xFFFFF000  Gap + DRAM/VRAM/CLIC/sysmap           → SO
  */
 static void system_sysmap_init(void)
 {
 	uintptr_t base = SYSMAP_BASE;
 
-	/* 0: 0x00000000 ~ 0x50000000: SO (peripherals, uncached memory) */
+	/* 0: 0x00000000 ~ 0x28000000: SO (peripherals, uncached OCRAM/WRAM) */
+	sys_write32(0x28000000U >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
+	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
+	base += SYSMAP_ENTRY_OFFSET;
+
+	/* 1: 0x28000000 ~ 0x29000000: B (BLE Exchange Memory bus bridge).
+	 * The bus bridge does not support Strongly Ordered writes — they are
+	 * silently dropped, which corrupts EM heap metadata on init. Must be
+	 * Bufferable.
+	 */
+	sys_write32(0x29000000U >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
+	sys_write32(SYSMAP_ATTR_BUFFER_ABLE, base + SYSMAP_FLAGS_OFFSET);
+	base += SYSMAP_ENTRY_OFFSET;
+
+	/* 2: 0x29000000 ~ 0x50000000: SO (remaining peripherals) */
 	sys_write32(0x50000000U >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
 	base += SYSMAP_ENTRY_OFFSET;
 
-	/* 1: 0x50000000 ~ 0x54000000: CB (PSRAM data bus, 64MB window) */
+	/* 3: 0x50000000 ~ 0x54000000: CB (PSRAM data bus, 64MB window) */
 	sys_write32(0x54000000U >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_CACHE_ABLE | SYSMAP_ATTR_BUFFER_ABLE, base + SYSMAP_FLAGS_OFFSET);
 	base += SYSMAP_ENTRY_OFFSET;
 
-	/* 2: 0x54000000 ~ 0x58000000: SO (gap between PSRAM and flash XIP) */
-	sys_write32(BL808_FLASH_XIP_BASE >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
-	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
-	base += SYSMAP_ENTRY_OFFSET;
-
-	/* 3: 0x58000000 ~ 0x5C000000: C (flash XIP, cacheable, not bufferable) */
+	/* 4: 0x54000000 ~ 0x5C000000: C (gap + flash XIP).
+	 * Marking the gap as cacheable is harmless (no real memory) and
+	 * keeps the map within the 8 available sysmap entries.
+	 */
 	sys_write32(BL808_FLASH2_XIP_BASE >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_CACHE_ABLE, base + SYSMAP_FLAGS_OFFSET);
 	base += SYSMAP_ENTRY_OFFSET;
 
-	/* 4: 0x5C000000 ~ 0x62020000: SO (flash2 XIP + gap) */
+	/* 5: 0x5C000000 ~ 0x62020000: SO (flash2 XIP + gap) */
 	sys_write32(BL808_OCRAM_CACHEABLE_BASE >> SYSMAP_BASE_SHIFT,
 		    base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
 	base += SYSMAP_ENTRY_OFFSET;
 
-	/* 5: 0x62020000 ~ 0x62058000: CB (OCRAM + WRAM cacheable) */
+	/* 6: 0x62020000 ~ 0x62058000: CB (OCRAM + WRAM cacheable) */
 	sys_write32(BL808_WRAM_CACHEABLE_END >> SYSMAP_BASE_SHIFT,
 		    base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_CACHE_ABLE | SYSMAP_ATTR_BUFFER_ABLE, base + SYSMAP_FLAGS_OFFSET);
 	base += SYSMAP_ENTRY_OFFSET;
 
-	/* 6: 0x62058000 ~ 0x7EF80000: SO (gap) */
-	sys_write32(BL808_DRAM_CACHEABLE_BASE >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
-	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
-	base += SYSMAP_ENTRY_OFFSET;
-
-	/* 7: 0x7EF80000 ~ 0xFFFFF000: SO (DRAM/VRAM, CLIC, sysmap regs) */
+	/* 7: 0x62058000 ~ 0xFFFFF000: SO (gap + DRAM/VRAM/CLIC/sysmap) */
 	sys_write32(0xFFFFF000U >> SYSMAP_BASE_SHIFT, base + SYSMAP_ADDR_OFFSET);
 	sys_write32(SYSMAP_ATTR_STRONG_ORDER, base + SYSMAP_FLAGS_OFFSET);
 }
@@ -337,9 +346,18 @@ void soc_prep_hook(void)
 	tzc_sec_psram_init();
 	pmp_init();
 
-	/* Set EM to 160KB WRAM / 0KB EM (GLB_WRAM160KB_EM0KB = 0) */
 	tmp = sys_read32(GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 	tmp &= GLB_EM_SEL_UMSK;
+#if defined(CONFIG_BT_BFLB_BL808)
+	/* 32KB EM + 128KB WRAM (GLB_WRAM128KB_EM32KB encoded as 0x0F bitmask
+	 * per SDK GLB_Set_EM_Sel — each bit selects an 8KB WRAM bank as EM).
+	 * BLE blob's btble_ke_mem_init runs before ble_rf_init in rwip_init;
+	 * without EM enabled, ke_mem_init writes garbage heap metadata.
+	 */
+	tmp |= (0x0FU << GLB_EM_SEL_POS);
+#else
+	/* 160KB WRAM / 0KB EM (GLB_WRAM160KB_EM0KB = 0) */
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 }
 
@@ -349,6 +367,15 @@ void soc_early_init_hook(void)
 
 	soc_bl808_halt_secondary_cores();
 	system_sysmap_init();
+
+#if defined(CONFIG_BT_BFLB_BL808)
+	/* WiFi PHY clock gate (shared RF block; BLE depends on it).
+	 * CGEN_CFG0 bit 7 may be TZC-locked once tzc_sec_psram_init runs
+	 * later — set it at the earliest opportunity.
+	 */
+	sys_write32(sys_read32(GLB_BASE + GLB_CGEN_CFG0_OFFSET) | BIT(7),
+		    GLB_BASE + GLB_CGEN_CFG0_OFFSET);
+#endif
 
 	sys_cache_data_flush_all();
 	sys_cache_instr_invd_all();
