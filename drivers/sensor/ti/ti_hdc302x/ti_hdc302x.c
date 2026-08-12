@@ -51,6 +51,7 @@ struct ti_hdc302x_config {
 };
 
 struct ti_hdc302x_data {
+	const struct device *dev;
 	struct gpio_callback cb_int;
 	sensor_trigger_handler_t th_handler;
 	const struct sensor_trigger *th_trigger;
@@ -300,13 +301,14 @@ static int read_sensor_data(const struct device *dev, uint8_t *buf, size_t len)
 	return i2c_read_dt(&config->bus, buf, len);
 }
 
-static void interrupt_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
+static void interrupt_callback(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
+	ARG_UNUSED(port);
 	ARG_UNUSED(pins);
 	struct ti_hdc302x_data *data = CONTAINER_OF(cb, struct ti_hdc302x_data, cb_int);
 
 	if (data->th_handler != NULL) {
-		data->th_handler(dev, data->th_trigger);
+		data->th_handler(data->dev, data->th_trigger);
 	}
 }
 
@@ -948,6 +950,7 @@ static int ti_hdc302x_init(const struct device *dev)
 	int rc;
 
 	/* Initialize default settings */
+	data->dev = dev;
 	data->power_mode = HDC302X_SENSOR_POWER_MODE_0;
 	data->interval = HDC302X_SENSOR_MEAS_INTERVAL_MANUAL;
 	data->t_offset = 0;
