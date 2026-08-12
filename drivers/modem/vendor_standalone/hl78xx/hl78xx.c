@@ -2056,6 +2056,7 @@ static int hl78xx_on_await_power_on_state_enter(struct hl78xx_data *data)
 {
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
+	data->status.boot.init_sequence_completed = false;
 	hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	hl78xx_power_down_allow_feeding(data);
@@ -2091,7 +2092,6 @@ static void hl78xx_await_power_on_event_handler(struct hl78xx_data *data, enum h
 		(void)hl78xx_get_uart_config(data);
 		/* Reset per-cycle flag so AT_CMD_READY is dispatched exactly once. */
 		data->status.at_cmd_ready_sent = false;
-		data->status.boot.init_sequence_completed = false;
 		LOG_DBG("Current baudrate after post-restart script: %d",
 			data->status.uart.current_baudrate);
 #if defined(CONFIG_MODEM_HL78XX_AUTOBAUD_ONLY_IF_COMMS_FAIL) ||                                    \
