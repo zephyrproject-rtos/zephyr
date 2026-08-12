@@ -98,6 +98,19 @@ void bench_trigger(void)
 #endif
 }
 
+#ifdef BENCH_HAS_ALT_LINE
+void bench_trigger_alt(void)
+{
+#if defined(CONFIG_SOC_TI_LM3S6965_QEMU) || defined(CONFIG_CPU_CORTEX_M0) ||                       \
+	defined(CONFIG_CPU_CORTEX_M0PLUS) || defined(CONFIG_CPU_CORTEX_M1) ||                      \
+	defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	NVIC_SetPendingIRQ(BENCH_IRQ_LINE_ALT);
+#else
+	NVIC->STIR = BENCH_IRQ_LINE_ALT;
+#endif
+}
+#endif
+
 #elif defined(CONFIG_GIC)
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -114,12 +127,33 @@ void bench_trigger(void)
 #endif
 }
 
+#ifdef BENCH_HAS_ALT_LINE
+void bench_trigger_alt(void)
+{
+#if CONFIG_GIC_VER <= 2
+	sys_write32(GICD_SGIR_TGTFILT_REQONLY | GICD_SGIR_SGIINTID(BENCH_IRQ_LINE_ALT), GICD_SGIR);
+#else
+	uint64_t mpidr = GET_MPIDR();
+	uint8_t aff0 = MPIDR_AFFLVL(mpidr, 0);
+
+	gic_raise_sgi(BENCH_IRQ_LINE_ALT, mpidr, BIT(aff0));
+#endif
+}
+#endif
+
 #elif defined(CONFIG_ARC)
 
 void bench_trigger(void)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, BENCH_IRQ_LINE);
 }
+
+#ifdef BENCH_HAS_ALT_LINE
+void bench_trigger_alt(void)
+{
+	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, BENCH_IRQ_LINE_ALT);
+}
+#endif
 
 #elif defined(CONFIG_X86)
 #ifdef CONFIG_X2APIC
@@ -143,20 +177,35 @@ void bench_trigger(void)
  * on a flag set by the ISR instead.
  */
 static uint8_t bench_vector;
+#ifdef BENCH_HAS_ALT_LINE
+static uint8_t bench_vector_alt;
+#endif
 
-void bench_trigger(void)
+static inline void bench_send_self_ipi(uint8_t vector)
 {
 #ifdef CONFIG_X2APIC
-	x86_write_x2apic(LOAPIC_SELF_IPI, bench_vector & VECTOR_MASK);
+	x86_write_x2apic(LOAPIC_SELF_IPI, vector & VECTOR_MASK);
 #else
 #ifdef CONFIG_SMP
 	int cpu_id = arch_curr_cpu()->id;
 #else
 	int cpu_id = 0;
 #endif
-	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, bench_vector);
+	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, vector);
 #endif /* CONFIG_X2APIC */
 }
+
+void bench_trigger(void)
+{
+	bench_send_self_ipi(bench_vector);
+}
+
+#ifdef BENCH_HAS_ALT_LINE
+void bench_trigger_alt(void)
+{
+	bench_send_self_ipi(bench_vector_alt);
+}
+#endif
 
 #elif defined(CONFIG_RISCV)
 #if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
@@ -227,6 +276,9 @@ int bench_trigger_init(void)
 	 * so that triggering costs no more than the APIC write itself.
 	 */
 	bench_vector = (uint8_t)Z_IRQ_TO_INTERRUPT_VECTOR(BENCH_IRQ_LINE);
+#ifdef BENCH_HAS_ALT_LINE
+	bench_vector_alt = (uint8_t)Z_IRQ_TO_INTERRUPT_VECTOR(BENCH_IRQ_LINE_ALT);
+#endif
 #endif
 
 	irq_enable(BENCH_IRQ_LINE);

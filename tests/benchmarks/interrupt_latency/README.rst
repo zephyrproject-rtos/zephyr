@@ -39,6 +39,16 @@ All benchmarks are in the ``interrupt`` suite:
   what this number does and does not prove. Needs a tick rate of at least
   100 Hz, so it is enabled by the load overlay rather than the base
   configuration.
+* ``entry_direct_isr`` -- entry latency for an interrupt connected with
+  ``IRQ_DIRECT_CONNECT()``, dispatched straight from the vector table.
+  Compared against ``entry_trigger_to_isr`` in the same run, the pair
+  isolates the cost of the software ISR table dispatch and the common
+  entry code: on qemu_x86 that is 1216 cycles regular against 576 direct,
+  while on ARC the two are within a cycle of each other.
+* ``zli_entry_while_locked`` -- entry latency for a zero-latency interrupt
+  raised *while interrupts are locked*. Cortex-M only, and built from the
+  ``prj.zli.conf`` overlay because it claims the same line as
+  ``entry_direct_isr``. See `Direct and zero-latency interrupts`_.
 * ``dynamic_connect`` -- cost of installing an ISR at runtime with
   ``irq_connect_dynamic()`` (needs ``CONFIG_DYNAMIC_INTERRUPTS``). Not
   available on x86, where connecting an interrupt dynamically is a one
@@ -83,6 +93,45 @@ Interrupt generation is abstracted behind a small backend API
    this is a synchronous trap, only the exit-path scenarios run with this
    backend; entry latency, critical section and throughput scenarios are
    not available.
+
+Direct and zero-latency interrupts
+**********************************
+
+Two scenarios measure what a different kind of connection buys, and both
+need a second IRQ line, because how an interrupt is connected is fixed at
+build time. The second line is available on Cortex-M, Arm GIC, ARC and x86;
+RISC-V without a CLIC has only the one interrupt a hart can raise on
+itself, which the first line already uses.
+
+``entry_direct_isr`` connects the second line with ``IRQ_DIRECT_CONNECT()``
+and measures its entry latency exactly as ``entry_trigger_to_isr`` does for
+a regular ISR. The difference between the two is the common entry code and
+the software ISR table lookup that a regular interrupt goes through. How
+much that is worth is entirely a property of the architecture: on qemu_x86
+a direct ISR is entered in 576 cycles against 1216 for a regular one, while
+on ARC, whose regular entry path is already thin, the two are within a
+cycle of each other and the direct connection buys nothing.
+
+The scenario is enabled by default wherever the architecture implements
+direct interrupts. There is no capability symbol for that, so the Kconfig
+names the architectures: Arm64 has none, and on x86 only IA32 does, the
+64-bit ``ARCH_ISR_DIRECT_DECLARE()`` being an empty stub that silently
+produces a function with no return type.
+
+``zli_entry_while_locked`` connects the second line as a zero-latency
+interrupt and triggers it *inside* a critical section. Because a
+zero-latency interrupt runs above the priority the kernel masks with, it is
+served during the lock rather than after it, which is the whole point of
+the feature; ``locked_unlock_to_isr`` is the comparison, measuring an
+interrupt that has to wait for ``irq_unlock()``. On Arm a zero-latency
+interrupt must be registered with ``IRQ_DIRECT_CONNECT()``, so it is also a
+direct ISR, and it claims the same line: build it with the
+``prj.zli.conf`` overlay, which turns the direct scenario off.
+
+Both scenarios bound their wait for the ISR and report that they were
+skipped rather than hanging if it never arrives. That matters most for the
+zero-latency case, where the wait happens with interrupts locked and
+nothing else could break the deadlock.
 
 Background load
 ***************
@@ -245,8 +294,6 @@ Future work
 * Nested interrupt preemption latency and priority interference, both of
   which need the trigger backend extended to a second line at a second
   priority.
-* Direct ISR (``IRQ_DIRECT_CONNECT``) and zero-latency IRQ comparison
-  scenarios.
 * Percentile (p99) reporting and latency distribution histograms, which
   the benchmark framework cannot express today because it keeps no
   sample buffer.
