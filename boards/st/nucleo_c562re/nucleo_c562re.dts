@@ -208,6 +208,14 @@
 	vref-mv = <3300>;
 };
 
+&dac1 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 11)>,
+		 <&rcc STM32_SRC_PSIS ADCDAC_SEL(1)>;
+	pinctrl-0 = <&dac1_out1_pa4>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &die_temp {
 	status = "okay";
 };
