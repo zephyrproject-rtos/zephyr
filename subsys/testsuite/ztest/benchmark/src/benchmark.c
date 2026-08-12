@@ -32,15 +32,45 @@ static void printk_line(const char *fn, char sep_char)
 }
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 
+/*
+ * Subtract the control measurement from a reported statistic.
+ *
+ * Every statistic has to be corrected by the same amount, or they stop
+ * describing one set of samples: truncating the control to an integer
+ * for the discrete statistics, as this used to do, left a benchmark
+ * whose samples were all identical reporting a mean below its own
+ * minimum whenever the control was under one cycle.
+ *
+ * The correction is a real number, so the corrected values are real
+ * numbers too, and generally do not coincide with any single
+ * measurement.
+ */
 static double noise_correction(double value, double ctrl)
 {
 	return value - ctrl;
 }
 
-static int64_t discrete_noise_correction(uint64_t value, double ctrl)
+/*
+ * Render a corrected extreme as a whole number of cycles.
+ *
+ * The extremes are single measurements and a cycle is a discrete thing,
+ * so printing them with a fraction reads oddly. The correction is still
+ * a real number, so rounding has to be directional: the minimum rounds
+ * down and the maximum rounds up, which keeps each of them outside the
+ * statistics computed from the same samples instead of letting a
+ * rounded extreme cross the mean.
+ */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+static int64_t noise_corrected_floor(uint64_t value, double ctrl)
 {
-	return (int64_t)value - (int64_t)trunc(ctrl);
+	return (int64_t)floor(noise_correction((double)value, ctrl));
 }
+
+static int64_t noise_corrected_ceil(uint64_t value, double ctrl)
+{
+	return (int64_t)ceil(noise_correction((double)value, ctrl));
+}
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 
 #ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
 /*
@@ -130,22 +160,22 @@ static void percentiles_report(const char *suite_name, const char *bench_name,
 	percentiles_sort();
 
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
-	printk("P,%s,%s,%zu,%lld,%lld,%lld,%lld,%lld,%lld,%lld\n",
+	printk("P,%s,%s,%zu,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
 		suite_name, bench_name, retained_count,
-		discrete_noise_correction(retained[0], ctrl),
-		discrete_noise_correction(percentile(5000), ctrl),
-		discrete_noise_correction(percentile(9000), ctrl),
-		discrete_noise_correction(percentile(9900), ctrl),
-		discrete_noise_correction(percentile(9990), ctrl),
-		discrete_noise_correction(percentile(9999), ctrl),
-		discrete_noise_correction(retained[retained_count - 1], ctrl));
+		noise_correction((double)retained[0], ctrl),
+		noise_correction((double)percentile(5000), ctrl),
+		noise_correction((double)percentile(9000), ctrl),
+		noise_correction((double)percentile(9900), ctrl),
+		noise_correction((double)percentile(9990), ctrl),
+		noise_correction((double)percentile(9999), ctrl),
+		noise_correction((double)retained[retained_count - 1], ctrl));
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
-	printk("\tp50: %lld\n", discrete_noise_correction(percentile(5000), ctrl));
-	printk("\tp90: %lld\n", discrete_noise_correction(percentile(9000), ctrl));
-	printk("\tp99: %lld\n", discrete_noise_correction(percentile(9900), ctrl));
-	printk("\tp99.9: %lld\n", discrete_noise_correction(percentile(9990), ctrl));
-	printk("\tp99.99: %lld\n", discrete_noise_correction(percentile(9999), ctrl));
+	printk("\tp50: %.3f\n", noise_correction((double)percentile(5000), ctrl));
+	printk("\tp90: %.3f\n", noise_correction((double)percentile(9000), ctrl));
+	printk("\tp99: %.3f\n", noise_correction((double)percentile(9900), ctrl));
+	printk("\tp99.9: %.3f\n", noise_correction((double)percentile(9990), ctrl));
+	printk("\tp99.99: %.3f\n", noise_correction((double)percentile(9999), ctrl));
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 }
 #else
@@ -194,25 +224,25 @@ static void ztest_benchmark_print_stats(const char *suite_name, const char *benc
 	}
 
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
-	printk("%c,%s,%s,%lld,%lld,%.3f,%.3f,%.3f,%lld,%lld,%lld,%lld\n",
+	printk("%c,%s,%s,%lld,%.3f,%.3f,%.3f,%.3f,%.3f,%lld,%.3f,%lld\n",
 		record_type, suite_name, bench_name,
 		stats->samples,
-		discrete_noise_correction(stats->total, ctrl * stats->samples),
+		noise_correction((double)stats->total, ctrl * (double)stats->samples),
 		noise_correction(stats->mean, ctrl), stddev, std_error,
-		discrete_noise_correction(stats->min.value, ctrl), stats->min.sample,
-		discrete_noise_correction(stats->max.value, ctrl), stats->max.sample);
+		noise_correction((double)stats->min.value, ctrl), stats->min.sample,
+		noise_correction((double)stats->max.value, ctrl), stats->max.sample);
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
 	printk_line(bench_name, '=');
-	printk("\tSample size:%lld, total cycles: %lld\n", stats->samples,
-			discrete_noise_correction(stats->total, ctrl * stats->samples));
+	printk("\tSample size:%lld, total cycles: %.3f\n", stats->samples,
+			noise_correction((double)stats->total, ctrl * (double)stats->samples));
 
 	printk("\tMean(u): %.3f\n", noise_correction(stats->mean, ctrl));
 	printk("\tStandard deviation(s): %.3f\n", stddev);
 	printk("\tStandard Error(SE): %.3f\n", std_error);
-	printk("\tMin: %lld (run #%llu)\n", discrete_noise_correction(stats->min.value, ctrl),
+	printk("\tMin: %lld (run #%llu)\n", noise_corrected_floor(stats->min.value, ctrl),
 		stats->min.sample);
-	printk("\tMax: %lld (run #%llu)\n", discrete_noise_correction(stats->max.value, ctrl),
+	printk("\tMax: %lld (run #%llu)\n", noise_corrected_ceil(stats->max.value, ctrl),
 		stats->max.sample);
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 
@@ -326,6 +356,17 @@ void ztest_benchmark_end(void)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 	ztest_benchmark_end_at(timing_counter_get());
+}
+
+void ztest_benchmark_discard_samples(void)
+{
+	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
+
+	if (manual_active_stats != NULL) {
+		memset(manual_active_stats, 0, sizeof(*manual_active_stats));
+		manual_active_stats->min.value = UINT64_MAX;
+		percentiles_reset();
+	}
 }
 
 static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
