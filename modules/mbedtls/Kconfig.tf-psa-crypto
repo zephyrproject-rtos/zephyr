@@ -126,11 +126,13 @@ config MBEDTLS_ENABLE_HEAP
 	bool "Global heap for mbed TLS"
 	select MBEDTLS_MEMORY_BUFFER_ALLOC_C
 	help
-	  This option enables the mbedtls to use the heap. This setting must
+	  This option enables the mbedtls to use a dedicated heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not
 	  try to do this themselves as there can be only one heap defined
 	  in mbedtls. If this is enabled, and MBEDTLS_INIT is enabled then the
 	  Zephyr will, during the device startup, initialize the heap automatically.
+
+	  When disabled, mbedtls uses the system default heap.
 
 if MBEDTLS_ENABLE_HEAP
 
