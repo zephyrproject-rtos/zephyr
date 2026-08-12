@@ -55,9 +55,26 @@ All benchmarks are in the ``interrupt`` suite:
   shot allocation of an IDT vector and an interrupt stub rather than a
   rebindable install, so it cannot be repeated to gather samples.
 
-Each benchmark records ``CONFIG_INT_BENCH_NUM_ITERATIONS`` samples; the
-framework reports mean, standard deviation, standard error and min/max with
-control-measurement noise correction. The default configuration selects the
+Each benchmark records ``CONFIG_INT_BENCH_NUM_ITERATIONS`` samples, all
+with control-measurement noise correction.
+
+The numbers to read are the percentiles, which the benchmark enables with
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_PERCENTILES`: ``min``, ``p50``,
+``p90``, ``p99``, ``p99.9``, ``p99.99`` and ``max``. What characterises a
+platform for interrupt-heavy work is how bad an individual interrupt can
+be, not how precisely the average was estimated, and the two can describe
+entirely different systems. Entry latency on a loaded qemu_x86 has a mean
+of 1264 cycles and a standard error of 34, yet no interrupt ever took
+1264 cycles: 99% of them took 1216 and the rest took 25184. The mean and
+standard deviation are still reported, for comparison against other
+benchmarks that use them.
+
+Resolving a percentile takes samples: p99 needs a hundred, p99.9 a
+thousand and p99.99 ten thousand. At the default thousand iterations
+p99.9 is the last meaningful one, so raise both
+:kconfig:option:`CONFIG_INT_BENCH_NUM_ITERATIONS` and
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES` to characterise
+further out. The default configuration selects the
 CSV output format so that twister records the values (``twister.json`` /
 ``recording.csv``); build with ``CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE=y``
 for human readable output instead.
@@ -294,9 +311,7 @@ Future work
 * Nested interrupt preemption latency and priority interference, both of
   which need the trigger backend extended to a second line at a second
   priority.
-* Percentile (p99) reporting and latency distribution histograms, which
-  the benchmark framework cannot express today because it keeps no
-  sample buffer.
+* Latency distribution histograms.
 * An external event trigger, for example a GPIO loopback described in
   devicetree, so that entry latency includes the pin and interrupt
   controller propagation delays that a software trigger skips.
