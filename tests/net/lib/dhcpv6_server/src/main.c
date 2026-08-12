@@ -299,4 +299,158 @@ ZTEST(dhcpv6_server, test_foreach_skips_expired)
 	zassert_equal(ctx.count, 0, "Expired leases must not be reported");
 }
 
+ZTEST(dhcpv6_server, test_addr_on_link)
+{
+	struct net_in6_addr on_link = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x05 } } };
+	struct net_in6_addr off_link = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0x01, 0, 0,
+					     0, 0, 0, 0, 0, 0, 0, 0x05 } } };
+
+	reset_server_ctx();
+
+	zexpect_true(dhcpv6_server_addr_on_link(&on_link),
+		     "An address out of the pool prefix is on link");
+	zexpect_false(dhcpv6_server_addr_on_link(&off_link),
+		      "An address from another prefix is not on link");
+}
+
+/* Build a Confirm message carrying a single IA_NA with "count" IA Address
+ * options, laid out the way dhcpv6_server_parse() expects to find it in a
+ * received packet.
+ */
+static struct net_pkt *build_confirm(const struct net_in6_addr *addrs,
+				     uint8_t count)
+{
+	static const uint8_t duid[] = { 0, 3, 0, 1, 0xaa, 0xbb, 0xcc, 0xdd, 0, 1 };
+	static const uint8_t tid[DHCPV6_TID_SIZE] = { 1, 2, 3 };
+	uint16_t iaaddr_len = DHCPV6_OPTION_HEADER_SIZE +
+			      DHCPV6_OPTION_IAADDR_HEADER_SIZE;
+	uint16_t ia_na_len = DHCPV6_OPTION_IA_NA_HEADER_SIZE +
+			     count * iaaddr_len;
+	struct net_pkt *pkt;
+	size_t size;
+
+	size = NET_IPV6UDPH_LEN + DHCPV6_HEADER_SIZE +
+	       DHCPV6_OPTION_HEADER_SIZE + sizeof(duid) +
+	       DHCPV6_OPTION_HEADER_SIZE + ia_na_len;
+
+	pkt = net_pkt_alloc_with_buffer(NULL, size, NET_AF_INET6,
+					NET_IPPROTO_UDP, K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate test packet");
+
+	/* The parser skips the IPv6 and UDP headers, their content does not
+	 * matter here.
+	 */
+	zassert_ok(net_pkt_memset(pkt, 0, NET_IPV6UDPH_LEN), NULL);
+
+	zassert_ok(net_pkt_write_u8(pkt, DHCPV6_MSG_TYPE_CONFIRM), NULL);
+	zassert_ok(net_pkt_write(pkt, tid, sizeof(tid)), NULL);
+
+	zassert_ok(net_pkt_write_be16(pkt, DHCPV6_OPTION_CODE_CLIENTID), NULL);
+	zassert_ok(net_pkt_write_be16(pkt, sizeof(duid)), NULL);
+	zassert_ok(net_pkt_write(pkt, duid, sizeof(duid)), NULL);
+
+	zassert_ok(net_pkt_write_be16(pkt, DHCPV6_OPTION_CODE_IA_NA), NULL);
+	zassert_ok(net_pkt_write_be16(pkt, ia_na_len), NULL);
+	zassert_ok(net_pkt_write_be32(pkt, 0x1234), NULL); /* IAID */
+	zassert_ok(net_pkt_write_be32(pkt, 0), NULL);      /* T1 */
+	zassert_ok(net_pkt_write_be32(pkt, 0), NULL);      /* T2 */
+
+	for (uint8_t i = 0; i < count; i++) {
+		zassert_ok(net_pkt_write_be16(pkt, DHCPV6_OPTION_CODE_IAADDR),
+			   NULL);
+		zassert_ok(net_pkt_write_be16(
+				   pkt, DHCPV6_OPTION_IAADDR_HEADER_SIZE), NULL);
+		zassert_ok(net_pkt_write(pkt, &addrs[i], sizeof(addrs[i])),
+			   NULL);
+		zassert_ok(net_pkt_write_be32(pkt, 100), NULL); /* preferred */
+		zassert_ok(net_pkt_write_be32(pkt, 200), NULL); /* valid */
+	}
+
+	/* Received packets are parsed in overwrite mode, the input path sets
+	 * this before the message reaches the server.
+	 */
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_cursor_init(pkt);
+
+	return pkt;
+}
+
+ZTEST(dhcpv6_server, test_parse_confirm_addresses)
+{
+	struct net_in6_addr addrs[2] = {
+		{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+		      0, 0, 0, 0, 0, 0, 0, 0x01 } } },
+		{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+		      0, 0, 0, 0, 0, 0, 0, 0x02 } } },
+	};
+	struct dhcpv6_server_msg msg;
+	struct net_pkt *pkt;
+
+	reset_server_ctx();
+
+	pkt = build_confirm(addrs, ARRAY_SIZE(addrs));
+
+	/* Everything below reads the parsed message, so the parsing itself
+	 * has to succeed before the fields are worth looking at.
+	 */
+	zassert_ok(dhcpv6_server_parse(pkt, &msg), "Confirm should parse");
+
+	zexpect_equal(msg.type, DHCPV6_MSG_TYPE_CONFIRM, NULL);
+	zexpect_true(msg.has_clientid, NULL);
+	zexpect_true(msg.has_ia_na, NULL);
+	zexpect_equal(msg.ia_na_iaid, 0x1234, "IAID must survive the sub-options");
+	zexpect_equal(msg.ia_addr_count, ARRAY_SIZE(addrs),
+		      "All IA Address options must be counted");
+	zexpect_true(msg.ia_addrs_on_link,
+		     "Addresses from the pool prefix are on link");
+
+	net_pkt_unref(pkt);
+}
+
+ZTEST(dhcpv6_server, test_parse_confirm_off_link_address)
+{
+	struct net_in6_addr addrs[2] = {
+		{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+		      0, 0, 0, 0, 0, 0, 0, 0x01 } } },
+		/* Same pool base, different subnet: the client has moved. */
+		{ { { 0x20, 0x01, 0x0d, 0xb8, 0, 0x01, 0, 0,
+		      0, 0, 0, 0, 0, 0, 0, 0x02 } } },
+	};
+	struct dhcpv6_server_msg msg;
+	struct net_pkt *pkt;
+
+	reset_server_ctx();
+
+	pkt = build_confirm(addrs, ARRAY_SIZE(addrs));
+
+	zassert_ok(dhcpv6_server_parse(pkt, &msg), NULL);
+
+	zexpect_equal(msg.ia_addr_count, ARRAY_SIZE(addrs), NULL);
+	zexpect_false(msg.ia_addrs_on_link,
+		      "A single off-link address makes the whole Confirm fail");
+
+	net_pkt_unref(pkt);
+}
+
+ZTEST(dhcpv6_server, test_parse_confirm_without_addresses)
+{
+	struct dhcpv6_server_msg msg;
+	struct net_pkt *pkt;
+
+	reset_server_ctx();
+
+	/* An empty IA_NA leaves the server without anything to check, which is
+	 * what tells dhcpv6_server_handle() not to answer at all.
+	 */
+	pkt = build_confirm(NULL, 0);
+
+	zassert_ok(dhcpv6_server_parse(pkt, &msg), NULL);
+
+	zexpect_true(msg.has_ia_na, NULL);
+	zexpect_equal(msg.ia_addr_count, 0, "No addresses were listed");
+
+	net_pkt_unref(pkt);
+}
+
 ZTEST_SUITE(dhcpv6_server, NULL, NULL, NULL, NULL, NULL);

@@ -97,6 +97,13 @@ struct dhcpv6_server_msg {
 
 	bool has_ia_pd;
 	uint32_t ia_pd_iaid;
+
+	/* Number of IA Address options the client listed in its IAs, and
+	 * whether all of them belong to the link the server serves. Used to
+	 * answer Confirm, see dhcpv6_server_addr_on_link().
+	 */
+	uint8_t ia_addr_count;
+	bool ia_addrs_on_link;
 };
 
 /* What a reply carries in addition to the mandatory Server ID and Client ID. */
@@ -271,19 +278,81 @@ static int dhcpv6_server_read_duid(struct net_pkt *pkt, uint16_t length,
 	return 0;
 }
 
-static int dhcpv6_server_read_ia_iaid(struct net_pkt *pkt, uint16_t length,
-				      uint32_t *iaid)
+/* The address pool the server hands out from is a single /64 on the link the
+ * server runs on, so an address is appropriate for that link exactly when it
+ * shares the pool prefix.
+ */
+#define DHCPV6_SERVER_LINK_PREFIX_LEN 64
+
+static bool dhcpv6_server_addr_on_link(const struct net_in6_addr *addr)
 {
+	return net_ipv6_is_prefix(addr->s6_addr, server_ctx.params.addr.s6_addr,
+				  DHCPV6_SERVER_LINK_PREFIX_LEN);
+}
+
+/* Read an IA_NA/IA_PD option. Only the IA identifier is needed to hand out a
+ * lease, but the addresses the client lists are inspected as well because
+ * Confirm is answered based on them.
+ */
+static int dhcpv6_server_read_ia(struct net_pkt *pkt, uint16_t length,
+				 struct dhcpv6_server_msg *msg, uint32_t *iaid)
+{
+	uint16_t remaining;
+
 	if (length < DHCPV6_OPTION_IA_NA_HEADER_SIZE) {
 		return -EMSGSIZE;
 	}
 
-	if (net_pkt_read_be32(pkt, iaid) < 0) {
+	/* IA identifier, followed by t1 and t2 which the server ignores. */
+	if (net_pkt_read_be32(pkt, iaid) < 0 ||
+	    net_pkt_skip(pkt, 2 * sizeof(uint32_t)) < 0) {
 		return -EBADMSG;
 	}
 
-	/* Skip t1, t2 and any nested sub-options. */
-	if (net_pkt_skip(pkt, length - sizeof(uint32_t)) < 0) {
+	remaining = length - DHCPV6_OPTION_IA_NA_HEADER_SIZE;
+
+	while (remaining >= DHCPV6_OPTION_HEADER_SIZE) {
+		struct net_in6_addr addr;
+		uint16_t code;
+		uint16_t sub_length;
+
+		if (net_pkt_read_be16(pkt, &code) < 0 ||
+		    net_pkt_read_be16(pkt, &sub_length) < 0) {
+			return -EBADMSG;
+		}
+
+		remaining -= DHCPV6_OPTION_HEADER_SIZE;
+		if (sub_length > remaining) {
+			return -EBADMSG;
+		}
+
+		remaining -= sub_length;
+
+		if (code != DHCPV6_OPTION_CODE_IAADDR ||
+		    sub_length < DHCPV6_OPTION_IAADDR_HEADER_SIZE) {
+			if (net_pkt_skip(pkt, sub_length) < 0) {
+				return -EBADMSG;
+			}
+
+			continue;
+		}
+
+		if (net_pkt_read(pkt, &addr, sizeof(addr)) < 0 ||
+		    net_pkt_skip(pkt, sub_length - sizeof(addr)) < 0) {
+			return -EBADMSG;
+		}
+
+		if (!dhcpv6_server_addr_on_link(&addr)) {
+			msg->ia_addrs_on_link = false;
+		}
+
+		if (msg->ia_addr_count < UINT8_MAX) {
+			msg->ia_addr_count++;
+		}
+	}
+
+	/* Trailing bytes that are too short to hold an option header. */
+	if (remaining > 0U && net_pkt_skip(pkt, remaining) < 0) {
 		return -EBADMSG;
 	}
 
@@ -294,6 +363,9 @@ static int dhcpv6_server_parse(struct net_pkt *pkt,
 			       struct dhcpv6_server_msg *msg)
 {
 	memset(msg, 0, sizeof(*msg));
+
+	/* Cleared again by the first address that is not on this link. */
+	msg->ia_addrs_on_link = true;
 
 	net_pkt_cursor_init(pkt);
 
@@ -336,16 +408,16 @@ static int dhcpv6_server_parse(struct net_pkt *pkt,
 			break;
 
 		case DHCPV6_OPTION_CODE_IA_NA:
-			if (dhcpv6_server_read_ia_iaid(pkt, length,
-						       &msg->ia_na_iaid) < 0) {
+			if (dhcpv6_server_read_ia(pkt, length, msg,
+						  &msg->ia_na_iaid) < 0) {
 				return -EBADMSG;
 			}
 			msg->has_ia_na = true;
 			break;
 
 		case DHCPV6_OPTION_CODE_IA_PD:
-			if (dhcpv6_server_read_ia_iaid(pkt, length,
-						       &msg->ia_pd_iaid) < 0) {
+			if (dhcpv6_server_read_ia(pkt, length, msg,
+						  &msg->ia_pd_iaid) < 0) {
 				return -EBADMSG;
 			}
 			msg->has_ia_pd = true;
@@ -756,24 +828,26 @@ static void dhcpv6_server_handle(struct net_if *iface,
 		break;
 
 	case DHCPV6_MSG_TYPE_CONFIRM:
-		/* A Reply to a Confirm always carries a Status Code option,
-		 * RFC 8415 ch. 18.3.3. Without a binding we cannot tell whether
-		 * the addresses are still appropriate for the link, which the
-		 * RFC maps to NotOnLink.
+		/* Confirm asks whether the addresses the client already has are
+		 * still appropriate for the link it is attached to. A server
+		 * that cannot answer that question - which includes a Confirm
+		 * that lists no addresses at all - stays quiet rather than
+		 * guessing, RFC 8415 ch. 18.3.3.
 		 */
-		b = dhcpv6_server_find_binding(msg->clientid, msg->clientid_len);
-		opts.include_status = true;
-
-		if (b == NULL) {
-			opts.status = DHCPV6_STATUS_NOT_ON_LINK;
-		} else {
-			opts.status = DHCPV6_STATUS_SUCCESS;
-			opts.include_addr = b->has_addr;
-			opts.include_prefix = b->has_prefix;
+		if (msg->ia_addr_count == 0U) {
+			NET_DBG("Confirm without addresses, not replying");
+			return;
 		}
 
+		/* The Reply carries the status and nothing else, the client
+		 * only needs to know whether it may keep its addresses.
+		 */
+		opts.include_status = true;
+		opts.status = msg->ia_addrs_on_link ? DHCPV6_STATUS_SUCCESS :
+						      DHCPV6_STATUS_NOT_ON_LINK;
+
 		(void)dhcpv6_server_send_reply(iface, src,
-					       DHCPV6_MSG_TYPE_REPLY, msg, b,
+					       DHCPV6_MSG_TYPE_REPLY, msg, NULL,
 					       &opts);
 		break;
 
