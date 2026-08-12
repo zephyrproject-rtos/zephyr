@@ -186,14 +186,32 @@ int icp201xx_trigger_set(const struct device *dev, const struct sensor_trigger *
 
 	icp201xx_mutex_lock(dev);
 	gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_DISABLE);
-	if (handler == NULL) {
-		return -1;
-	}
 
 	if ((trig->type != SENSOR_TRIG_DATA_READY) && (trig->type != SENSOR_TRIG_DELTA) &&
 	    (trig->type != SENSOR_TRIG_THRESHOLD)) {
 		icp201xx_mutex_unlock(dev);
 		return -ENOTSUP;
+	}
+
+	if (handler == NULL) {
+		if (trig->type == SENSOR_TRIG_DATA_READY) {
+			drv_data->drdy_handler = NULL;
+			drv_data->drdy_trigger = NULL;
+		} else if (trig->type == SENSOR_TRIG_DELTA) {
+			drv_data->delta_handler = NULL;
+			drv_data->delta_trigger = NULL;
+		} else {
+			drv_data->threshold_handler = NULL;
+			drv_data->threshold_trigger = NULL;
+		}
+
+		if ((drv_data->drdy_handler != NULL) || (drv_data->delta_handler != NULL) ||
+		    (drv_data->threshold_handler != NULL)) {
+			gpio_pin_interrupt_configure_dt(&cfg->gpio_int, GPIO_INT_LEVEL_LOW);
+		}
+
+		icp201xx_mutex_unlock(dev);
+		return 0;
 	}
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
