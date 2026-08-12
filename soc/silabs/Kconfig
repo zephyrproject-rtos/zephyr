@@ -61,6 +61,29 @@ config SILABS_PM_LOW_INTERRUPT_LATENCY
 
 endif
 
+# Hardware capability flags (auto-detected from Device Tree)
+# Bluetooth 5.0
+config SILABS_HAS_RADIO_BLE_2M
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-2mbps-supported)
+
+config SILABS_HAS_RADIO_BLE_CODED
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
+
+# Bluetooth 5.1
+config SILABS_HAS_RADIO_CTE_TX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-tx-supported)
+
+config SILABS_HAS_RADIO_CTE_RX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-rx-supported) && SILABS_HAS_RADIO_CTE_TX
+
+# Bluetooth 6.0
+config SILABS_HAS_RADIO_CS
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cs-supported)
+
+# Vendor-specific
+config SILABS_HAS_RADIO_TX_HIGH_POWER
+	def_bool $(dt_nodelabel_bool_prop,radio,radio-tx-high-power-supported)
+
 endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
