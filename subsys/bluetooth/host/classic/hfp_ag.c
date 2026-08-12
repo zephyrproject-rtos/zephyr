@@ -3666,6 +3666,8 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 	struct bt_hfp_ag_call *call;
 
 	k_work_cancel_delayable(&ag->tx_work);
+	k_work_cancel_delayable(&ag->ongoing_call_work);
+	k_work_cancel(&ag->slc_work);
 
 	tx = ag_get_tx(ag, &ag->tx_pending);
 	while (tx != NULL) {
