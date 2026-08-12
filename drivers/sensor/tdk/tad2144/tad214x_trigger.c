@@ -193,6 +193,10 @@ int tad214x_trigger_set(const struct device *dev, const struct sensor_trigger *t
 	struct tad214x_data *drv_data = dev->data;
 	const struct tad214x_config *cfg = dev->config;
 
+	if (cfg->if_mode != IF_ENC && cfg->gpio_int.port == NULL) {
+		return -ENOTSUP;
+	}
+
 	tad214x_mutex_lock(dev);
 
 	if (trig->type == SENSOR_TRIG_DATA_READY) {
