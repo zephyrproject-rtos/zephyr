@@ -466,6 +466,20 @@ def extract_static_strings(elf, database, section_extraction=False):
                 )
                 break
 
+    # Always extract NUL-terminated strings from stripped sections (e.g.
+    # log_strings) before parsing log instances so module names resolve.
+    for sect_name in REMOVED_STRING_SECTIONS:
+        if sect_name in elf_sections:
+            before = len(string_mappings)
+            string_mappings = extract_strings_in_one_section(
+                elf_sections[sect_name], string_mappings
+            )
+            logger.info(
+                "Found %d strings in section '%s'",
+                len(string_mappings) - before,
+                sect_name,
+            )
+
     if section_extraction:
         # Extract strings from ELF sections
         string_sections = list(STATIC_STRING_SECTIONS)
