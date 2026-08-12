@@ -337,7 +337,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 
 #ifdef CONFIG_BOOTARGS
-	extern int main(int, char **);
+	extern int main(int argc, char **argv);
 	extern char **sys_boot_prepare_main_args(int *argc);
 
 	int argc = 0;
