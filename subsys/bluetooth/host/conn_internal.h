@@ -184,8 +184,10 @@ struct bt_conn_iso {
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
+#if defined(CONFIG_BT_ISO_RX)
 	/* Expected SDU size of current parsing data `conn->rx` */
 	uint16_t sdu_len;
+#endif /* CONFIG_BT_ISO_RX */
 
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
