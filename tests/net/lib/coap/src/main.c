@@ -61,11 +61,22 @@ static struct coap_resource server_resources[] = {
 };
 
 #define MY_PORT 12345
+
+/* The peer address has to be one that struct net_sockaddr_storage can hold,
+ * as NET_SOCKADDR_MAX_SIZE only covers the enabled families.
+ */
+#if defined(CONFIG_NET_IPV6)
 #define peer_addr { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 static struct net_sockaddr_in6 dummy_addr = {
 	.sin6_family = NET_AF_INET6,
 	.sin6_addr = peer_addr };
+#else
+#define peer_addr { { { 192, 0, 2, 2 } } }
+static struct net_sockaddr_in dummy_addr = {
+	.sin_family = NET_AF_INET,
+	.sin_addr = peer_addr };
+#endif
 
 static uint8_t data_buf[2][COAP_BUF_SIZE];
 
@@ -836,13 +847,18 @@ static bool ipaddr_cmp(const struct net_sockaddr *a, const struct net_sockaddr *
 		return false;
 	}
 
+#if defined(CONFIG_NET_IPV6)
 	if (a->sa_family == NET_AF_INET6) {
 		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
 					 &net_sin6(b)->sin6_addr);
-	} else if (a->sa_family == NET_AF_INET) {
+	}
+#endif
+#if defined(CONFIG_NET_IPV4)
+	if (a->sa_family == NET_AF_INET) {
 		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
 					 &net_sin(b)->sin_addr);
 	}
+#endif
 
 	return false;
 }
