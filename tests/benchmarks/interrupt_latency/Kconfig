@@ -207,6 +207,39 @@ config INT_BENCH_SCENARIO_DYNAMIC
 	  on the benchmark IRQ line. This requires the architecture to
 	  support rebinding a line that is already connected.
 
+config INT_BENCH_SCENARIO_MASKING
+	bool "Delay inflicted on a periodic interrupt"
+	# Two samples are taken per tick, so the tick has to be frequent
+	# enough both to sample the windows of interest and to finish in
+	# reasonable time. The base configuration runs far slower than
+	# that; the load overlay raises it to 1000.
+	depends on SYS_CLOCK_TICKS_PER_SEC >= 1000
+	default y
+	help
+	  Run a periodic timer at the tick rate while exercising kernel
+	  primitives, and measure how much later than its period each
+	  timer interrupt is actually served. This is the delay an
+	  application sees when the kernel or a driver masks interrupts.
+
+	  This is a sampling technique and cannot attribute the delay: a
+	  masked window that does not overlap a tick is never seen, and
+	  the measured delay also contains time spent in interrupts
+	  served earlier. The maximum is a sampled lower bound on the
+	  longest interrupt-disabled window, not proof of one.
+
+config INT_BENCH_MASK_INJECT_US
+	int "Inject a known interrupt-disabled window (microseconds)"
+	depends on INT_BENCH_SCENARIO_MASKING
+	default 0
+	help
+	  Mask interrupts for this long inside the scenario's work loop,
+	  to check on a new platform that the measurement responds to a
+	  known window. Keep the value well below the tick period: a
+	  window comparable to it masks nearly continuously, and the
+	  timer then re-anchors to when it was last serviced, so the
+	  measured delay falls short of the injected one. Zero measures
+	  only the windows the kernel creates by itself.
+
 config INT_BENCH_SCENARIO_THROUGHPUT
 	bool "Sustained interrupt round-trip cost"
 	depends on INT_BENCH_TRIGGER_SW_IRQ
