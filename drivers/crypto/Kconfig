@@ -24,7 +24,7 @@ source "subsys/logging/Kconfig.template.log_config"
 config CRYPTO_MBEDTLS_SHIM
 	bool "Mbed TLS shim driver [EXPERIMENTAL]"
 	select PSA_CRYPTO
-	select MBEDTLS_ENABLE_HEAP
+	select MBEDTLS_ENABLE_HEAP if PSA_CRYPTO_PROVIDER_MBEDTLS
 	imply PSA_WANT_ALG_SHA_224
 	imply PSA_WANT_ALG_SHA_256
 	imply PSA_WANT_ALG_SHA_384
@@ -36,8 +36,11 @@ config CRYPTO_MBEDTLS_SHIM
 	imply PSA_WANT_ALG_GCM
 	select EXPERIMENTAL
 	help
-	  Enable Mbed TLS shim layer compliant with crypto APIs. You will need
-	  to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
+	  Enable Mbed TLS shim layer compliant with crypto APIs.
+
+	  If Mbed TLS is embedded in the application
+	  (CONFIG_PSA_CRYPTO_PROVIDER_MBEDTLS is enabled), you will
+	  need to fill in a relevant value to CONFIG_MBEDTLS_HEAP_SIZE.
 
 config CRYPTO_MBEDTLS_SHIM_DRV_NAME
 	string "Device name for Mbed TLS Pseudo device"
