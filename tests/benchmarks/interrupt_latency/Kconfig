@@ -202,6 +202,20 @@ config INT_BENCH_LOAD_NUM_THREADS
 
 endif # INT_BENCH_LOAD
 
+config INT_BENCH_ISR_IN_RAM
+	bool "Place the benchmark ISR in RAM"
+	depends on ARCH_HAS_RAMFUNC_SUPPORT
+	depends on XIP
+	help
+	  Relocate the benchmark's interrupt handlers to RAM with
+	  __ramfunc, so that comparing a run against one built without
+	  this option shows what fetching the handler from flash costs.
+
+	  Only the benchmark's own handlers move. The vector table and
+	  the architecture's interrupt entry code stay where the build
+	  put them, so the difference is a lower bound on what fully
+	  relocating the interrupt path would save.
+
 comment "Scenarios"
 
 config INT_BENCH_SCENARIO_ENTRY
