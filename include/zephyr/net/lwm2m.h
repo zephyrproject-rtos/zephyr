@@ -173,6 +173,8 @@ enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_DEREGISTER,
 	/** Server disabled */
 	LWM2M_RD_CLIENT_EVENT_SERVER_DISABLED,
+	/** Context closed */
+	LWM2M_RD_CLIENT_EVENT_CONTEXT_CLOSED,
 };
 
 
