@@ -276,30 +276,59 @@ static void update_metrics(struct ztest_benchmark_stats *stats, uint64_t cycles)
 	stats->m2 += delta * delta2;
 }
 
-static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
+/* One iteration of a sampled benchmark, setup and teardown included. */
+static uint64_t sampled_run_once(struct ztest_benchmark *benchmark)
 {
 	timing_t start, end;
 
+	if (benchmark->setup) {
+		benchmark->setup();
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	start = timing_counter_get();
+	benchmark->run();
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	end = timing_counter_get();
+
+	if (benchmark->teardown) {
+		benchmark->teardown();
+	}
+
+	return timing_cycles_get(&start, &end);
+}
+
+static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
+{
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
 	percentiles_reset();
 
+	/*
+	 * The first execution is the cold cost and is never part of the
+	 * distribution. It is reported on its own, and a benchmark that
+	 * reported it in both places would have it decide the far
+	 * percentiles: at ten thousand samples the nearest-rank p99.99 is
+	 * the second largest value, so a single cold start describes the
+	 * tail instead of the steady state it is supposed to characterise.
+	 *
+	 * Warmup and measurement are then separate loops rather than one
+	 * loop with a test on the iteration number. Such a test flips
+	 * exactly once, on the first measured iteration, so the mispredict
+	 * lands on the one sample the warmup exists to protect. The loop
+	 * bounds fold at build time, the warmup count being a Kconfig
+	 * constant.
+	 */
+	benchmark->stats.cold = sampled_run_once(benchmark);
+
+	for (size_t i = 1; i < CONFIG_ZTEST_BENCHMARK_WARMUP; i++) {
+		(void)sampled_run_once(benchmark);
+	}
+
 	for (size_t i = 0; i < benchmark->iterations; i++) {
-		if (benchmark->setup) {
-			benchmark->setup();
-		}
-
-		barrier_dsync_fence_full();
-		barrier_isync_fence_full();
-		start = timing_counter_get();
-		benchmark->run();
-		end = timing_counter_get();
-
-		update_metrics(&benchmark->stats, timing_cycles_get(&start, &end));
-
-		if (benchmark->teardown) {
-			benchmark->teardown();
-		}
+		update_metrics(&benchmark->stats, sampled_run_once(benchmark));
 	}
 }
 
@@ -380,31 +409,24 @@ static bool manual_run_once(struct ztest_benchmark_manual *benchmark, uint64_t *
 	return measured;
 }
 
-void ztest_benchmark_discard_samples(void)
-{
-	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
-
-	if (manual_active_stats != NULL) {
-		memset(manual_active_stats, 0, sizeof(*manual_active_stats));
-		manual_active_stats->min.value = UINT64_MAX;
-		percentiles_reset();
-	}
-}
-
 static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 {
+	uint64_t cycles;
+
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
 	percentiles_reset();
 
-	/*
-	 * The loop, the setup and the teardown are the framework's, exactly
-	 * as for a sampled benchmark. All the body decides is which part of
-	 * itself the timestamps go around.
-	 */
-	for (size_t i = 0; i < benchmark->iterations; i++) {
-		uint64_t cycles;
+	/* Cold first, then the two phases, as in ztest_benchmark_run(). */
+	if (manual_run_once(benchmark, &cycles)) {
+		benchmark->stats.cold = cycles;
+	}
 
+	for (size_t i = 1; i < CONFIG_ZTEST_BENCHMARK_WARMUP; i++) {
+		(void)manual_run_once(benchmark, &cycles);
+	}
+
+	for (size_t i = 0; i < benchmark->iterations; i++) {
 		if (manual_run_once(benchmark, &cycles)) {
 			update_metrics(&benchmark->stats, cycles);
 		}
