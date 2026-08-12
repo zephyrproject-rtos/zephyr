@@ -55,6 +55,10 @@ extern "C" {
 #define CONN_CMD_MAX_LEN                                                                           \
 	(sizeof("AT+CWJAP=\"\",\"\"\r\n") + WIFI_SSID_MAX_LEN * 2 + WIFI_PSK_MAX_LEN * 2)
 
+#define TWT_SETUP_CMD_MAX_LEN (sizeof("AT+TWT_PARAM=x,x,xxx,xxxxxxxxxx,xxxxx\r\n"))
+
+#define TWT_TEARDOWN_CMD_MAX_LEN (sizeof("AT+TWT_TEARDOWN=x,x,xxx\r\n"))
+
 #define AP_ENABLE_CMD_MAX_LEN                                                                      \
 	(sizeof("AT+CWSAP=\"\",\"\",XX,X,,X\r\n") + WIFI_SSID_MAX_LEN * 2 + WIFI_PSK_MAX_LEN * 2)
 
@@ -103,6 +107,8 @@ struct st67_driver_data {
 	uint8_t cmd_match_buf[ST67W611M1_AT_CMD_MAX_LEN];
 
 	char conn_cmd[CONN_CMD_MAX_LEN];
+	char twt_setup_cmd[TWT_SETUP_CMD_MAX_LEN];
+	char twt_teardown_cmd[TWT_TEARDOWN_CMD_MAX_LEN];
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	char ap_enable_cmd[AP_ENABLE_CMD_MAX_LEN];
 	char ap_sta_disconn_cmd[AP_STA_DISCONN_CMD_MAX_LEN];
@@ -115,6 +121,9 @@ struct st67_driver_data {
 	struct k_work scan_work;
 	struct k_work connect_work;
 	struct k_work disconnect_work;
+	struct k_work set_twt_setup_work;
+	struct k_work set_twt_teardown_work;
+	struct k_work power_save_config_work;
 	struct k_work reg_domain_work;
 	struct k_work sta_iface_status_work;
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
@@ -127,6 +136,7 @@ struct st67_driver_data {
 	struct k_sem sem_st67_init_over;
 	struct k_sem sem_cmd_response_wait;
 	struct k_sem sem_wifi_scan_done_wait;
+	struct k_sem sem_power_save_config_wait;
 	struct k_sem sem_reg_domain_wait;
 	struct k_sem sem_rx_wait;
 	struct k_sem sem_sta_iface_status_wait;
@@ -134,6 +144,7 @@ struct st67_driver_data {
 	struct k_sem sem_sap_iface_status_wait;
 #endif
 
+	struct wifi_ps_config *ps_config;
 	struct wifi_reg_domain *reg_domain;
 	uint8_t sta_mac_addr[NET_ETH_ADDR_LEN];
 	struct wifi_iface_status *sta_wifi_status;
@@ -142,6 +153,7 @@ struct st67_driver_data {
 	struct wifi_iface_status *sap_wifi_status;
 #endif
 
+	bool is_ps_enabled;
 	enum st67_sta_current_state sta_current_state;
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	bool is_sap_enabled;

@@ -774,6 +774,242 @@ static int st67_iface_status(const struct device *dev, struct net_if *iface,
 	}
 }
 
+static int st67_set_ps_state(const struct device *dev, enum wifi_ps enabled)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+
+	if (enabled == WIFI_PS_ENABLED) {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+PWR=2,1\r\n",
+				       ST67W611M1_AT_CMD_TIMEOUT);
+	} else {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+PWR=0\r\n",
+				       ST67W611M1_AT_CMD_TIMEOUT);
+	}
+	if (ret < 0) {
+		return ret;
+	}
+
+	st67_data->is_ps_enabled = enabled == WIFI_PS_ENABLED ? true : false;
+
+	return 0;
+}
+
+static int st67_set_power_save(const struct device *dev, struct net_if *iface,
+			       struct wifi_ps_params *params)
+{
+	struct st67_driver_data *st67_data = dev->data;
+
+	if (iface != st67_data->sta_net_iface) {
+		return -ENOTSUP;
+	}
+
+	switch (params->type) {
+	case WIFI_PS_PARAM_STATE:
+		return st67_set_ps_state(dev, params->enabled);
+	case WIFI_PS_PARAM_LISTEN_INTERVAL:
+		goto notsup;
+	case WIFI_PS_PARAM_WAKEUP_MODE:
+		/* Set during init with AT+SLWKDTIM. */
+		if (params->wakeup_mode != WIFI_PS_WAKEUP_MODE_DTIM) {
+			goto notsup;
+		}
+		break;
+	case WIFI_PS_PARAM_MODE:
+		if (params->mode != WIFI_PS_MODE_LEGACY) {
+			goto notsup;
+		}
+		break;
+	case WIFI_PS_PARAM_EXIT_STRATEGY:
+		if (params->exit_strategy != WIFI_PS_EXIT_CUSTOM_ALGO) {
+			goto notsup;
+		}
+		break;
+	case WIFI_PS_PARAM_TIMEOUT:
+		if (params->timeout_ms != 0) {
+			goto notsup;
+		}
+		break;
+	default:
+		goto notsup;
+	}
+
+	return 0;
+
+notsup:
+	params->fail_reason = WIFI_PS_PARAM_FAIL_OPERATION_NOT_SUPPORTED;
+	return -ENOTSUP;
+}
+
+static void st67_set_twt_setup_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, set_twt_setup_work);
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, st67_data->twt_setup_cmd,
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to setup TWT: %d", ret);
+	}
+	memset(st67_data->twt_setup_cmd, 0, sizeof(st67_data->twt_setup_cmd));
+}
+
+static int st67_set_twt_setup(const struct device *dev, struct wifi_twt_params *params)
+{
+	struct st67_driver_data *st67_data = dev->data;
+	char setup_type;
+
+	if (params->negotiation_type != WIFI_TWT_INDIVIDUAL || params->setup.responder ||
+	    params->setup.announce) {
+		goto notsup;
+	}
+
+	switch (params->setup_cmd) {
+	case WIFI_TWT_SETUP_CMD_REQUEST:
+		setup_type = '0';
+		break;
+	case WIFI_TWT_SETUP_CMD_SUGGEST:
+		setup_type = '1';
+		break;
+	case WIFI_TWT_SETUP_CMD_DEMAND:
+		setup_type = '2';
+		break;
+	default:
+		goto notsup;
+	}
+
+	snprintk(st67_data->twt_setup_cmd, sizeof(st67_data->twt_setup_cmd),
+		 "AT+TWT_PARAM=%c,1,%u,%u,%u\r\n", setup_type, params->setup.twt_exponent,
+		 params->setup.twt_wake_interval, params->setup.twt_mantissa);
+
+	k_work_submit_to_queue(&st67_data->workq, &st67_data->set_twt_setup_work);
+
+	return 0;
+
+notsup:
+	params->fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+	return -ENOTSUP;
+}
+
+static void st67_set_twt_teardown_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, set_twt_teardown_work);
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, st67_data->twt_teardown_cmd,
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to teardown TWT: %d", ret);
+	}
+	memset(st67_data->twt_teardown_cmd, 0, sizeof(st67_data->twt_teardown_cmd));
+}
+
+static int st67_set_twt_teardown(const struct device *dev, struct wifi_twt_params *params)
+{
+	struct st67_driver_data *st67_data = dev->data;
+
+	if (params->negotiation_type != WIFI_TWT_INDIVIDUAL) {
+		params->fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+		return -ENOTSUP;
+	}
+
+	if (params->teardown.teardown_all) {
+		snprintk(st67_data->twt_teardown_cmd, sizeof(st67_data->twt_teardown_cmd),
+			 "AT+TWT_TEARDOWN=0,1\r\n");
+	} else {
+		snprintk(st67_data->twt_teardown_cmd, sizeof(st67_data->twt_teardown_cmd),
+			 "AT+TWT_TEARDOWN=0,0,%u\r\n", params->flow_id);
+	}
+
+	k_work_submit_to_queue(&st67_data->workq, &st67_data->set_twt_teardown_work);
+
+	return 0;
+}
+
+static int st67_set_twt(const struct device *dev, struct net_if *iface,
+			struct wifi_twt_params *params)
+{
+	struct st67_driver_data *st67_data = dev->data;
+
+	if (iface != st67_data->sta_net_iface) {
+		goto notsup;
+	}
+
+	switch (params->operation) {
+	case WIFI_TWT_SETUP:
+		return st67_set_twt_setup(dev, params);
+	case WIFI_TWT_TEARDOWN:
+		return st67_set_twt_teardown(dev, params);
+	default:
+		goto notsup;
+	}
+	return 0;
+
+notsup:
+	params->fail_reason = WIFI_TWT_FAIL_OPERATION_NOT_SUPPORTED;
+	return -ENOTSUP;
+}
+
+static void st67_get_power_save_config_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, power_save_config_work);
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+LP_INTERVAL_GET\r\n",
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get listen interval: %d", ret);
+	}
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+TWT_STATUS?\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get TWT status: %d", ret);
+	}
+
+	k_sem_give(&st67_data->sem_power_save_config_wait);
+}
+
+static int st67_get_power_save_config(const struct device *dev, struct net_if *iface,
+				      struct wifi_ps_config *config)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+	struct wifi_ps_params *params = &config->ps_params;
+
+	if (iface != st67_data->sta_net_iface) {
+		return -ENOTSUP;
+	}
+
+	params->enabled = st67_data->is_ps_enabled ? WIFI_PS_ENABLED : WIFI_PS_DISABLED;
+	params->listen_interval = 0;
+	params->wakeup_mode = WIFI_PS_WAKEUP_MODE_DTIM;
+	params->mode = WIFI_PS_MODE_LEGACY;
+	params->timeout_ms = 0;
+	params->exit_strategy = WIFI_PS_EXIT_CUSTOM_ALGO;
+	config->num_twt_flows = 0;
+
+	st67_data->ps_config = config;
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->power_save_config_work);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = k_sem_take(&st67_data->sem_power_save_config_wait, ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = 0;
+out:
+	st67_data->ps_config = NULL;
+
+	return ret;
+}
+
 static void st67_reg_domain_work(struct k_work *work)
 {
 	int ret;
@@ -1314,6 +1550,55 @@ MODEM_CMD_DEFINE(on_cmd_ap_dtim)
 	return 0;
 }
 
+MODEM_CMD_DEFINE(on_cmd_lp_interval)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	if (st67_data->ps_config == NULL) {
+		return -EINVAL;
+	}
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+
+	st67_data->ps_config->ps_params.listen_interval = strtol(argv[0], NULL, 10);
+
+	return 0;
+}
+
+/* +TWT:ACTIVE:flow_id,type,type_str,exponent,min_wake_duration,mantissa */
+MODEM_CMD_DEFINE(on_cmd_twt_status)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+	struct wifi_ps_config *config;
+	struct wifi_twt_flow_info *flow;
+
+	if (st67_data->ps_config == NULL) {
+		return -EINVAL;
+	}
+
+	if (argc < 6) {
+		return -EBADMSG;
+	}
+
+	config = st67_data->ps_config;
+	flow = &config->twt_flows[0];
+
+	flow->flow_id = strtol(argv[0], NULL, 10);
+	flow->negotiation_type = WIFI_TWT_INDIVIDUAL;
+	flow->responder = false;
+	flow->announce = false;
+	flow->twt_wake_interval = strtol(argv[4], NULL, 10);
+	flow->twt_interval = (uint64_t)strtol(argv[5], NULL, 10) << strtol(argv[3], NULL, 10);
+
+	config->num_twt_flows = 1;
+
+	return 0;
+}
+
 /* +CWSAP:(ssid,psk,channel,security,max_conn,ssid_hidden) */
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 MODEM_CMD_DEFINE(on_cmd_cwsap_status)
@@ -1580,6 +1865,8 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+CWSTATE:", on_cmd_cwstate_status, 1U, ""),
 	MODEM_CMD("+DTIM:", on_cmd_ap_dtim, 1U, ""),
 	MODEM_CMD("+TWT_SUPPORT:", on_cmd_twt_support, 1U, ""),
+	MODEM_CMD("+TWT:ACTIVE:", on_cmd_twt_status, 6U, ","),
+	MODEM_CMD("+LP INTERVAL:", on_cmd_lp_interval, 1U, ""),
 	MODEM_CMD("+CWCOUNTRY:", on_cmd_cwcountry, 2U, ","),
 };
 
@@ -1719,6 +2006,8 @@ static void st67_init_work(struct k_work *work)
 		SETUP_CMD("AT+CIPAPMAC?\r\n", "+CIPAPMAC:", on_cmd_cipapmac, 1U, ""),
 #endif
 		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
+		SETUP_CMD_NOHANDLE("AT+SLWKIO=28,0\r\n"),
+		SETUP_CMD_NOHANDLE("AT+SLWKDTIM=1\r\n"),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&st67_data->mctx.iface, &st67_data->mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
@@ -1761,6 +2050,7 @@ static int st67_init(const struct device *dev)
 	k_sem_init(&st67_data->sem_wifi_scan_done_wait, 0, 1);
 	k_sem_init(&st67_data->sem_reg_domain_wait, 0, 1);
 	k_sem_init(&st67_data->sem_sta_iface_status_wait, 0, 1);
+	k_sem_init(&st67_data->sem_power_save_config_wait, 0, 1);
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	k_sem_init(&st67_data->sem_sap_iface_status_wait, 0, 1);
 #endif
@@ -1773,8 +2063,11 @@ static int st67_init(const struct device *dev)
 	k_work_init(&st67_data->scan_work, st67_scan_work);
 	k_work_init(&st67_data->connect_work, st67_connect_work);
 	k_work_init(&st67_data->disconnect_work, st67_disconnect_work);
+	k_work_init(&st67_data->set_twt_setup_work, st67_set_twt_setup_work);
+	k_work_init(&st67_data->set_twt_teardown_work, st67_set_twt_teardown_work);
 	k_work_init(&st67_data->reg_domain_work, st67_reg_domain_work);
 	k_work_init(&st67_data->sta_iface_status_work, st67_sta_iface_status_work);
+	k_work_init(&st67_data->power_save_config_work, st67_get_power_save_config_work);
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	k_work_init(&st67_data->sap_iface_status_work, st67_sap_iface_status_work);
 	k_work_init(&st67_data->ap_enable_work, st67_ap_enable_work);
@@ -1878,6 +2171,9 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.ap_sta_disconnect = st67_ap_sta_disconnect,
 #endif
 	.iface_status = st67_iface_status,
+	.set_power_save = st67_set_power_save,
+	.set_twt = st67_set_twt,
+	.get_power_save_config = st67_get_power_save_config,
 	.reg_domain = st67_reg_domain,
 };
 
