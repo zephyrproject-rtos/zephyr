@@ -224,7 +224,7 @@ if CRYPTO_STM32
 # AES CCM with up to 14 bytes of Additional Data (AD)
 config HEAP_MEM_POOL_ADD_SIZE_CRYPTO_STM32
 	int
-	default 16 if $(dt_nodelabel_enabled,cryp) && $(dt_nodelabel_has_prop,cryp,gcm-ccm-supported)
+	default 16 if $(dt_nodelabel_enabled,cryp) && $(dt_nodelabel_bool_prop,cryp,gcm-ccm-supported)
 
 endif # CRYPTO_STM32
 
