@@ -1,0 +1,565 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description:
+  Bindings for the Analog Devices' MAXM86161 ultra-low-power,
+  completely integrated, optical data-acquisition system.
+
+compatible: "adi,maxm86161"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      Interrupt pin connected to the INTB pin of the MAXM86161.
+
+  enable-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the LDO enable pin used to power the MAXM86161.
+
+  interrupt-alc-ovf-enable:
+    type: boolean
+    description: |
+      This interrupt triggers when the ambient light cancellation function of
+      the photodiode has reached its maximum limit due to overflow, and
+      therefore, ambient light is affecting the output of the ADC.
+      This is a read-only bit. The interrupt is cleared by reading the
+      interrupt status register.
+
+  interrupt-led-compb-enable:
+    type: boolean
+    description: |
+      LED is not compliant. At the end of each sample, if the LED Driver is
+      not compliant, LED_COMPB interrupt is asserted if LED_COMPB_EN is set
+      to 1. It is a read-only bit and is cleared when the status register is
+      read.
+
+  interrupt-die-temp-rdy-enable:
+    type: boolean
+    description: |
+      This is a read-only bit and it is automatically cleared when the
+      temperature data is read or when the interrupt Status register is read.
+
+  interrupt-sha-done-enable:
+    type: boolean
+    description: |
+      SHA256 Authentication Done status bit is set to 1 when the
+      authentication algorithm completes. This is a read-only bit and it gets
+      cleared when the status register is read.
+
+  fifo-watermark:
+    type: int
+    default: 63 # register default
+    min: 0
+    max: 127
+    description: |
+      Sets the FIFO Almost Full threshold level. When the number of samples
+      in the FIFO reaches this level, the FIFO Almost Full interrupt is
+      triggered.
+
+      Note: FIFO Almost Full interrupt is always on.
+
+      Valid range: 0 to 127
+
+  fifo-almost-full-type:
+    type: int
+    description: |
+      Sets the FIFO Almost Full interrupt type.
+      - AFULL_RPT: A_FULL interrupt gets asserted when the A_FULL condition is
+                   detected. It is cleared by status register read, but
+                   re-asserts for every sample if the A_FULL condition persists.
+      - AFULL_ONCE: A_FULL interrupt gets asserted only when the A_FULL
+                    condition is detected. The interrupt gets cleared on status
+                    register read, and does not re-assert for every sample until
+                    a new A_FULL condition is detected.
+    default: 0
+    enum:
+      - 0 # MAXM86161_DT_AFULL_RPT (register default)
+      - 1 # MAXM86161_DT_AFULL_ONCE
+
+  fifo-rollover-mode:
+    type: int
+    default: 0 # register default
+    description: |
+      Sets the FIFO Rollover mode.
+      - FIFO mode: Stop on full.
+                   New samples are lost when FIFO is full.
+      - Stream mode: Rollover on full.
+                     New samples overwrite old samples when FIFO is full.
+    enum:
+      - 0 # MAXM86161_DT_FIFO_MODE_FIFO
+      - 1 # MAXM86161_DT_FIFO_MODE_STREAM
+
+  low-power-mode-enable:
+    type: boolean
+    description: |
+      In low power mode, the sensor can be dynamically powered down between
+      samples to conserve power. This dynamic power down mode option only
+      supports samples rates of 256sps and below.
+      This mode is not available for higher sample rates.
+
+      Low Power Mode reduces power consumption by optimizing the sensor's
+      operating parameters for lower sample rates.
+
+  ppg-timestamp-enable:
+    type: boolean
+    description: |
+      Enable pushing TIME_STAMP to FIFO.
+
+      - false: TIME_STAMP is not pushed to FIFO
+      - true: TIME_STAMP is pushed to FIFO for a block of eight samples.
+
+  ppg-dac-code-change-tag-enable:
+    type: boolean
+    description: |
+      Override Tag with 0x1D in the FIFO when the subranging DAC code changes
+      for the exposure data.
+
+      - false: FIFO will have the original tags for each exposure. (default).
+      - true: If DAC code for any exposure has changed in the current sample,
+            the tag in the FIFO DATA for that exposure is 0x1D.
+
+  ppg-ambient-light-cancellation-disable:
+    type: boolean
+    description: |
+      Enable Ambient Light Cancellation (ALC) function.
+
+      - false: ALC is enabled (default).
+      - true: ALC is disabled.
+
+  ppg-add-offset-enable:
+    type: boolean
+    description: |
+      ADD_OFFSET is an option designed for dark current measurement.
+      Adding offset to the PPG Data allows the dark current measurement
+      without clipping the signal below 0.
+      When ADD_OFFSET is set to 1, an offset is added to the PPG Data to be
+      able to measure the dark current.
+      The offset is 8192 counts if PPG_SR is programmed for single pulse mode.
+      The offset is 4096 counts if PPG_SR is programmed for dual pulse mode.
+
+      - false: Offset addition is disabled (default).
+      - true: Offset addition is enabled.
+
+  ppg-sync-gpio-function:
+    type: int
+    default: 0 # register default
+    description: |
+      Set the GPIO function of the device's GPIO pin.
+      When using as a controller-target device pair, make sure that they are
+      both configured identically for the following register fields:
+      PPG_SAMP_RATE, PPG_INTEG_TIME, SMP_AVE, TIME_STAMP_EN, FIFO_A_FULL,
+      FIFO_ROLLS_ON_FULL.
+
+      Also ensure that DATA_RDY or A_FULL us enabled only to the controller.
+      The controller will be read before the target, both read with the same
+      number of items.
+    enum:
+      - 0  # MAXM86161_DT_GPIO_TRI_MUX
+      - 2  # MAXM86161_DT_GPIO_IN_SAMP_TRIG
+      - 6  # MAXM86161_DT_GPIO_IN_EXP_TRIG
+      - 9  # MAXM86161_DT_GPIO_IN_HW_SYNC
+      - 10 # MAXM86161_DT_GPIO_IN_SAMP_SYNC_ONESHOT
+
+
+  ppg-adc-range:
+    type: int
+    default: 0 # register default
+    description: |
+      Set the full scale range of the PPG ADC.
+    enum:
+      - 0 # MAXM86161_DT_4096NA  # 7.8125 pA/LSB
+      - 1 # MAXM86161_DT_8192NA  # 15.625 pA/LSB
+      - 2 # MAXM86161_DT_16384NA # 31.25 pA/LSB
+      - 3 # MAXM86161_DT_32768NA # 62.5 pA/LSB
+
+  ppg-time-integration:
+    type: int
+    default: 3 # register default
+    description: |
+      Set the pulse width of the LED drivers and the integration time of PPG ADC
+      Total Pulse Width = Time integration + LED settling time + 0.5 uS
+    enum:
+      - 0 # MAXM86161_DT_14p8US
+      - 1 # MAXM86161_DT_29p4US
+      - 2 # MAXM86161_DT_58p7US
+      - 3 # MAXM86161_DT_117p3US
+
+  ppg-sample-rate:
+    type: int
+    default: 17 # register default
+    description: |
+      Set the effective sampling rate of the PPG sensor.
+      Note: If a sample rate is set that can not be supported by the selected
+          pulse width and number of exposures per sample, then the highest
+          available sample rate is automatically set.
+          SPS (Samples Per Second), PPS (Pulses Per Sample)
+    enum:
+      - 0  # MAXM86161_DT_24p995SPS_1PPS
+      - 1  # MAXM86161_DT_50p027SPS_1PPS
+      - 2  # MAXM86161_DT_84p021SPS_1PPS
+      - 3  # MAXM86161_DT_99p902SPS_1PPS
+      - 4  # MAXM86161_DT_199p805SPS_1PPS
+      - 5  # MAXM86161_DT_399p610SPS_1PPS
+      - 6  # MAXM86161_DT_24p995SPS_2PPS
+      - 7  # MAXM86161_DT_50p027SPS_2PPS
+      - 8  # MAXM86161_DT_84p021SPS_2PPS
+      - 9  # MAXM86161_DT_99p902SPS_2PPS
+      - 10 # MAXM86161_DT_8SPS_1PPS
+      - 11 # MAXM86161_DT_16SPS_1PPS
+      - 12 # MAXM86161_DT_32SPS_1PPS
+      - 13 # MAXM86161_DT_64SPS_1PPS
+      - 14 # MAXM86161_DT_128SPS_1PPS
+      - 15 # MAXM86161_DT_256SPS_1PPS
+      - 16 # MAXM86161_DT_512SPS_1PPS
+      - 17 # MAXM86161_DT_1024SPS_1PPS
+      - 18 # MAXM86161_DT_2048SPS_1PPS
+      - 19 # MAXM86161_DT_4096SPS_1PPS
+
+  ppg-sample-averaging:
+    type: int
+    default: 0 # register default
+    description: |
+      To reduce the amount of data throughput, adjacent samples
+      (in each individual channel) can be averaged and decimated on the chip
+      by setting this register. These bits set the number of samples that are
+      averaged on chip before being written to the FIFO.
+    enum:
+      - 0 # MAXM86161_DT_SMP_AVG_1
+      - 1 # MAXM86161_DT_SMP_AVG_2
+      - 2 # MAXM86161_DT_SMP_AVG_4
+      - 3 # MAXM86161_DT_SMP_AVG_8
+      - 4 # MAXM86161_DT_SMP_AVG_16
+      - 5 # MAXM86161_DT_SMP_AVG_32
+      - 6 # MAXM86161_DT_SMP_AVG_64
+      - 7 # MAXM86161_DT_SMP_AVG_128
+
+  led-settling-time:
+    type: int
+    default: 1 # register default
+    description: |
+      Delay from rising edge of LED to start of ADC integration.
+      This allows for the LED current to settle before the start of ADC
+      integration.
+    enum:
+      - 0 # MAXM86161_DT_4US
+      - 1 # MAXM86161_DT_6US
+      - 2 # MAXM86161_DT_8US
+      - 3 # MAXM86161_DT_12US
+
+  digital-filter-select:
+    type: int
+    default: 0 # register default
+    description: |
+      Select digital filter type of ambient light cancellation method.
+    enum:
+      - 0 # MAXM86161_DT_DIG_FILTER_CDM
+      - 1 # MAXM86161_DT_DIG_FILTER_FDM
+
+  burst-rate-enable:
+    type: boolean
+    description: |
+      When Burst Mode is disabled, PPG data conversions are continuous at the
+      sample rate defined by PPG_SR register.
+      When Burst mode is enabled, a burst of PPG data conversions occur at the
+      sample rate defined by PPG_SR register.
+
+      Number of conversion in the burst is defined by the SMP_AVE register.
+      Average data from the burst of data conversions is pushed to the FIFO.
+      The burst repeats at the rate defined in BURST_RATE[2:0] register.
+      If the number of conversions cannot be accommodated, the device uses the
+      next highest number of conversions.
+      If the effective PPG_SR is too slow to accommodate the burst rate
+      programmed, BURST_EN is automatically set to 0, and the device runs in
+      continuous mode.
+
+      Each data conversion cycle is a sequence of conversions defined in the
+      LEDC1 to LEDC6 registers.
+
+      - false: Disable Burst Conversion Mode. (default)
+      - true: Enable Burst Conversion Mode.
+
+  burst-rate:
+    type: int
+    default: 0 # register default
+    description: |
+      When Burst Mode is disabled, PPG data conversions are continuous at the
+      sample rate defined by PPG_SR register. When Burst mode is enabled,
+      a burst of PPG data conversions occur at the sample rate defined by
+      PPG_SR register. Number of conversion in the burst is defined by the
+      SMP_AVE register. Average data from the burst of data conversions is
+      pushed to the FIFO. The burst repeats at the rate defined in
+      BURST_RATE[2:0] register. If the number of conversions cannot be
+      accommodated, the device uses the next highest number of conversions.
+      If the effective PPG_SR is too slow to accommodate the burst rate
+      programmed, BURST_EN is automatically set to 0, and the device runs in
+      continuous mode.
+      Each data conversion cycle is a sequence of conversions defined in the
+      LEDC1 to LEDC6 registers.
+    enum:
+      - 0 # MAXM86161_DT_BURST_8HZ
+      - 1 # MAXM86161_DT_BURST_32HZ
+      - 2 # MAXM86161_DT_BURST_84HZ
+      - 3 # MAXM86161_DT_BURST_256HZ
+
+  photodiode-bias-cap:
+    type: int
+    default: 1 # MAXM86161_DT_PD_BIAS_0PF_TO_65PF (register default)
+    description: |
+      Sets the photodiode bias capacitor value.
+    enum:
+      - 1 # MAXM86161_DT_PD_BIAS_0PF_TO_65PF
+      - 5 # MAXM86161_DT_PD_BIAS_65PF_TO_130PF
+      - 6 # MAXM86161_DT_PD_BIAS_130PF_TO_260PF
+      - 7 # MAXM86161_DT_PD_BIAS_260PF_TO_520PF
+
+  led1-range:
+    type: int
+    default: 0 # register default
+    description: |
+      Sets the full scale range of the LED1 current.
+    enum:
+      - 0 # MAXM86161_DT_LED_RANGE_31MA
+      - 1 # MAXM86161_DT_LED_RANGE_62MA
+      - 2 # MAXM86161_DT_LED_RANGE_93MA
+      - 3 # MAXM86161_DT_LED_RANGE_124MA
+
+  led2-range:
+    type: int
+    default: 0 # register default
+    description: |
+      Sets the full scale range of the LED2 current.
+    enum:
+      - 0 # MAXM86161_DT_LED_RANGE_31MA
+      - 1 # MAXM86161_DT_LED_RANGE_62MA
+      - 2 # MAXM86161_DT_LED_RANGE_93MA
+      - 3 # MAXM86161_DT_LED_RANGE_124MA
+
+  led3-range:
+    type: int
+    default: 0 # register default
+    description: |
+      Sets the full scale range of the LED3 current.
+    enum:
+      - 0 # MAXM86161_DT_LED_RANGE_31MA
+      - 1 # MAXM86161_DT_LED_RANGE_62MA
+      - 2 # MAXM86161_DT_LED_RANGE_93MA
+      - 3 # MAXM86161_DT_LED_RANGE_124MA
+
+  led1-pulse-amplitude:
+    type: int
+    default: 0 # register default
+    min: 0
+    max: 255
+    description: |
+      Set the current amplitude for LED1 in hundreths of milliamps
+      The maximum value depends on the LEDx_RANGE setting.
+
+      Note: Pulse amplitude is not required in proximity mode, unless
+      this LED is actually assigned to sequence slot.
+
+      The actual current value is calculated as: LEDx_PA / 100.0 mA.
+
+      LEDx_RANGE = 0: 0.0 mA to 31.0 mA, 0.12 mA/LSB (Max value: 3100)
+      LEDx_RANGE = 1: 0.0 mA to 62.0 mA, 0.24 mA/LSB (Max value: 6200)
+      LEDx_RANGE = 2: 0.0 mA to 93.0 mA, 0.36 mA/LSB (Max value: 9300)
+      LEDx_RANGE = 3: 0.0 mA to 124.0 mA 0.48 mA/LSB (Max value: 12400)
+
+      Examples:
+        - 0 = 0.00 mA
+        - 1550 = 15.50 mA
+
+  led2-pulse-amplitude:
+    type: int
+    default: 0 # register default
+    min: 0
+    max: 255
+    description: |
+      See led1-pulse-amplitude description for details.
+
+  led3-pulse-amplitude:
+    type: int
+    default: 0 # register default
+    min: 0
+    max: 255
+    description: |
+      See led1-pulse-amplitude description for details.
+
+  led-pilot-pulse-amplitude:
+    type: int
+    default: 0 # register default
+    min: 0
+    max: 255
+    description: |
+      [PILOT_ON_GREEN_PA] current (low-power current) used when no
+      object is detected in proximity of the sensor.
+
+      The purpose of PILOT_PA<7:0> is to set the LED power during the PROX
+      mode, as well as in Multi-LED mode. These bits set the nominal drive
+      current for the pilot mode.
+      LEDx_RANGE together with PILOT_PA will be used to set the LEDx current.
+
+  led-sequence-slot1:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 1.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  led-sequence-slot2:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 2.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  led-sequence-slot3:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 3.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  led-sequence-slot4:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 4.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  led-sequence-slot5:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 5.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  led-sequence-slot6:
+    type: int
+    default: 0 # register default
+    description: |
+      Exposure to use for slot 6.
+    enum:
+      - 0  # MAXM86161_DT_EXPOSURE_NONE
+      - 1  # MAXM86161_DT_EXPOSURE_GREEN
+      - 2  # MAXM86161_DT_EXPOSURE_IR
+      - 3  # MAXM86161_DT_EXPOSURE_RED
+      - 8  # MAXM86161_DT_EXPOSURE_PILOT_ON_GREEN
+      - 9  # MAXM86161_DT_EXPOSURE_DIRECT_AMB_LIGHT
+
+  proximity-feature-enable:
+    type: boolean
+    description: |
+      Enable proximity mode during driver initialization.
+
+      - false: Proximity feature is disabled (default).
+      - true: Proximity feature is enabled.
+
+  proximity-interrupt-threshold:
+    type: int
+    default: 0 # register default
+    min: 0
+    max: 255
+    description: |
+      Sets the LED1 (Green) ADC count that triggers the transition between
+      proximity mode and normal mode. The threshold is defined as the 8 MSB
+      bits of the ADC count.
+      For example, if PROX_INT_THRESH[7:0] = 0x01, then an ADC value of 2048
+      or higher triggers the PROX interrupt.
+      If PROX_INT_THRESH[7:0] equals 0xFF, then only a saturated ADC triggers
+      the interrupt.
+      Please see the Proximity Function section in the detailed description
+      for more details on the operation of proximity mode.
+
+      Tip: Set proximity-current to desired value first,
+      ideally, the value should be lower than the current value used in
+      normal mode then adjust this value to tune the detection sensitivity.
+      If the lowest value still didn't trigger proximity mode, slightly
+      increase proximity-current and try again.
+
+      Valid range: 0 to 255
+
+  pf-threshold-sigma:
+    type: int
+    default: 0
+    description: |
+      Picket Fence threshold in sigma units. Sets the detection sensitivity
+      for anomalous samples.
+    enum:
+      - 0 # MAXM86161_DT_PF_THRESH_SIGMA_4
+      - 1 # MAXM86161_DT_PF_THRESH_SIGMA_8
+      - 2 # MAXM86161_DT_PF_THRESH_SIGMA_16
+      - 3 # MAXM86161_DT_PF_THRESH_SIGMA_32
+
+  pf-iir-init-value:
+    type: int
+    default: 0
+    description: |
+      Initial value for the Picket Fence IIR filter.
+    enum:
+      - 0 # MAXM86161_DT_PF_IIR_INIT_VAL_64
+      - 1 # MAXM86161_DT_PF_IIR_INIT_VAL_48
+      - 2 # MAXM86161_DT_PF_IIR_INIT_VAL_32
+      - 3 # MAXM86161_DT_PF_IIR_INIT_VAL_24
+
+  pf-iir-time-constant:
+    type: int
+    default: 0
+    description: |
+      IIR filter time constant for Picket Fence.
+    enum:
+      - 0 # MAXM86161_DT_PF_IIR_TC_64
+      - 1 # MAXM86161_DT_PF_IIR_TC_32
+      - 2 # MAXM86161_DT_PF_IIR_TC_16
+      - 3 # MAXM86161_DT_PF_IIR_TC_8
+
+  pf-order:
+    type: int
+    default: 0
+    description: |
+      Picket Fence filter order.
+    enum:
+      - 0 # MAXM86161_DT_PF_ORDER_LAST_SAMPLE
+      - 1 # MAXM86161_DT_PF_ORDER_FIT_4_PTS
+
+  pf-enable:
+    type: boolean
+    description: |
+      Enable the Picket Fence device function. This function corrects the
+      final PPG results in case of ALC circuit failure due to extreme conditions.
