@@ -33,6 +33,12 @@ All benchmarks are in the ``interrupt`` suite:
   each sample runs from one ISR entry to the next and so covers a full
   ISR + exit + entry round trip under back-to-back service. Its inverse
   is the maximum sustainable interrupt rate.
+* ``periodic_isr_delay`` -- how much later than its period a periodic timer
+  interrupt is actually served while the kernel is busy, which is the delay
+  interrupt masking inflicts on an application. See `Masking windows`_ for
+  what this number does and does not prove. Needs a tick rate of at least
+  100 Hz, so it is enabled by the load overlay rather than the base
+  configuration.
 * ``dynamic_connect`` -- cost of installing an ISR at runtime with
   ``irq_connect_dynamic()`` (needs ``CONFIG_DYNAMIC_INTERRUPTS``). Not
   available on x86, where connecting an interrupt dynamically is a one
@@ -124,8 +130,8 @@ is only visible with the system doing something.
 The load configuration can be impractically slow on emulated targets. The
 critical section scenario busy waits with interrupts locked while the load
 timer keeps expiring, and under emulation that combination can cost orders
-of magnitude more wall clock than the nominal hold time; ARC is excluded
-from the load run in ``tests.yaml`` for that reason. On such targets, lower
+of magnitude more wall clock than the nominal hold time; ARC and
+Cortex-M3 are excluded from the load run in ``tests.yaml`` for that reason. On such targets, lower
 :kconfig:option:`CONFIG_INT_BENCH_NUM_ITERATIONS`, or disable
 :kconfig:option:`CONFIG_INT_BENCH_LOAD_TIMER`.
 
@@ -141,6 +147,55 @@ priorities rather than of the benchmark.
 ``throughput_round_trip`` barely moves anywhere. It saturates the interrupt
 path by design, so it measures a steady state that stays warm whatever else
 the system is doing.
+
+Masking windows
+***************
+
+``periodic_isr_delay`` addresses a question the other scenarios cannot: how
+long does the system keep interrupts masked? That is a property of the
+kernel and the drivers rather than something the benchmark can trigger, and
+Zephyr has no instrumentation of ``irq_lock()`` windows, so it is measured
+by its effect. A periodic timer runs at the tick rate while the benchmark
+exercises kernel primitives that take spinlocks, and each sample is how
+much later than its period a timer interrupt was served.
+
+Read the maximum as *the worst delay a periodic real-time event was
+actually made to suffer*, which is the number an application cares about.
+It is not a measurement of the longest ``irq_lock()`` in the tree, for
+three reasons: a sample is only taken at a tick boundary, so a masked
+window that does not overlap one is never seen; the measured delay also
+contains time spent in interrupts that were served first; and the framework
+subtracts its control measurement from every statistic, so samples with no
+delay are reported as a small negative number.
+
+:kconfig:option:`CONFIG_INT_BENCH_MASK_INJECT_US` masks interrupts for a
+known time in the work loop, to confirm the measurement responds on a new
+platform. On qemu_x86 with a 1 kHz tick, injecting 50us raises the reported
+maximum from roughly 700 cycles to 57568, or about 58us against a 50us
+window. Keep the injected value well below the tick period: a window
+comparable to it masks nearly continuously, the timer re-anchors to when it
+was last serviced, and the measured delay then falls well short of the
+injected one. The same effect limits what the scenario can report about a
+system that is genuinely saturated.
+
+The undelayed interval is established empirically, as the median of the
+observed intervals, rather than computed from the configured tick rate. The
+timing counter does not run at ``timing_freq_get()`` on every platform, and
+a baseline off by a constant would either hide every delay or turn every
+interval into one; on RISC-V the computed baseline exceeded every observed
+interval, so the scenario reported nothing at all until it was made
+self-calibrating.
+
+Where the periodic timer does not deliver at the tick rate at all, the
+scenario reports that it was skipped and records no samples, which the
+framework shows as inconclusive. That is the case on qemu_cortex_m3.
+
+This scenario is the most sensitive of all of them to being run under
+emulation, because it measures wall clock delay rather than a span of the
+guest's own execution. When the host deschedules the emulator, the guest
+sees it as a late interrupt: on qemu_x86_64 that shows up as isolated
+maxima of over a hundred million cycles, which say nothing about Zephyr.
+Read this scenario on hardware.
 
 Running
 *******

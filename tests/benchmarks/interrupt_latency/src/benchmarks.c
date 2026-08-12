@@ -319,3 +319,112 @@ ZTEST_BENCHMARK_MANUAL(interrupt, dynamic_connect, NUM_ITERATIONS, dynamic_setup
 	ztest_benchmark_end();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_DYNAMIC */
+
+#ifdef CONFIG_INT_BENCH_SCENARIO_MASKING
+/*
+ * How long the system keeps interrupts masked is a property of the
+ * kernel and its drivers rather than something the benchmark can
+ * trigger, and Zephyr does not instrument irq_lock() windows, so
+ * measure it by its effect: arm a one-shot timer for one tick, keep
+ * the kernel busy taking spinlocks until it fires, and measure from
+ * arming it to the first instruction of its ISR.
+ *
+ * The span is one nominal tick plus whatever delay the ISR suffered,
+ * so the distribution reads directly: the median is the undelayed
+ * period, and everything above it is delay that masking inflicted.
+ * Reporting the interval rather than a delay computed against an
+ * assumed period avoids having to know the counter frequency, which
+ * timing_freq_get() does not report correctly on every platform.
+ *
+ * The number is the worst delay a periodic real-time event was
+ * actually made to suffer, not the longest irq_lock() in the tree: a
+ * window that does not overlap a tick boundary is never seen, and the
+ * delay also contains time spent in interrupts served first.
+ * CONFIG_INT_BENCH_MASK_INJECT_US masks for a known time so the
+ * measurement can be checked on a new platform.
+ */
+static K_SEM_DEFINE(mask_sem, 0, 1);
+static K_MUTEX_DEFINE(mask_mutex);
+
+static volatile uint32_t mask_seq;
+
+/*
+ * The span is the interval between two expiries, so the first one opens
+ * it and the second closes it. Both hooks are safe here: they only take
+ * a timestamp, and the framework turns the span into a sample once the
+ * body has returned to thread context.
+ */
+static void mask_timer_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	if (mask_seq == 0U) {
+		ztest_benchmark_start();
+	} else if (mask_seq == 1U) {
+		ztest_benchmark_end();
+	}
+
+	mask_seq++;
+}
+
+static K_TIMER_DEFINE(mask_timer, mask_timer_handler, NULL);
+
+/* Kernel primitives that take spinlocks, and so mask interrupts */
+static void mask_kernel_work(void)
+{
+	k_sem_give(&mask_sem);
+	(void)k_sem_take(&mask_sem, K_NO_WAIT);
+	(void)k_mutex_lock(&mask_mutex, K_NO_WAIT);
+	(void)k_mutex_unlock(&mask_mutex);
+	(void)k_uptime_get();
+}
+
+static void mask_setup(void)
+{
+	mask_seq = 0U;
+	k_timer_start(&mask_timer, K_TICKS(1), K_TICKS(1));
+}
+
+static void mask_teardown(void)
+{
+	k_timer_stop(&mask_timer);
+}
+
+ZTEST_BENCHMARK_MANUAL(interrupt, periodic_isr_interval, NUM_ITERATIONS, mask_setup,
+		       mask_teardown)
+{
+	int64_t deadline;
+
+	/*
+	 * Two expiries, so the span runs between consecutive periods of
+	 * a running periodic timer rather than from an arbitrary arming
+	 * point to the next tick boundary, which would carry up to a
+	 * whole tick of phase noise. Each sample therefore costs two
+	 * ticks, which is why this scenario needs the tick rate the load
+	 * overlay configures rather than the much slower one the base
+	 * configuration runs at.
+	 *
+	 * Give up rather than spin forever where the timer does not
+	 * deliver at the tick rate at all, which under emulation can
+	 * otherwise cost minutes of wall clock. Recording no sample
+	 * leaves the benchmark inconclusive, which is the honest
+	 * outcome.
+	 */
+	deadline = k_uptime_get() + 100;
+
+	while (mask_seq < 2U) {
+		if (k_uptime_get() > deadline) {
+			return;
+		}
+
+		mask_kernel_work();
+
+		if (CONFIG_INT_BENCH_MASK_INJECT_US > 0) {
+			unsigned int key = irq_lock();
+
+			k_busy_wait(CONFIG_INT_BENCH_MASK_INJECT_US);
+			irq_unlock(key);
+		}
+	}
+}
+#endif /* CONFIG_INT_BENCH_SCENARIO_MASKING */
