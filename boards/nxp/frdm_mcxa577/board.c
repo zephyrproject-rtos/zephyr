@@ -378,6 +378,14 @@ void board_early_init_hook(void)
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN | kCLKE_16K_VBAT);
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToAll);
+	CLOCK_AttachClk(kFRO_HF_DIV_to_TSI0);
+	CLOCK_SetClockDiv(kCLOCK_DivTSI0, 4);
+	CLOCK_EnableClock(kCLOCK_GateTSI0);
+#endif
+
 	/* Set SystemCoreClock variable. */
 	SystemCoreClock = CLOCK_INIT_CORE_CLOCK;
 }
