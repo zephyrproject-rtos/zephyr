@@ -7,3 +7,4 @@ tests:
     build_only: true
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
+      - mimxrt1060_evk/mimxrt1062/qspi

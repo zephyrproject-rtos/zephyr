@@ -13,6 +13,7 @@ tests:
     filter: dt_alias_exists("sram-ext")
     integration_platforms:
       - mimxrt595_evk/mimxrt595s/cm33
+      - mimxrt1060_evk/mimxrt1062/qspi
   sample.drivers.memc.mspi:
     tags: mspi
     filter: dt_alias_exists("psram0")
