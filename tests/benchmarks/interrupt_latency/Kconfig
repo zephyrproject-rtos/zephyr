@@ -12,21 +12,42 @@ config INT_BENCH_NUM_ITERATIONS
 	  Number of samples collected for each measured scenario. Larger
 	  values give more stable statistics at the cost of runtime.
 
+config INT_BENCH_RISCV_SW_IRQ
+	bool
+	depends on RISCV && !SMP && !RISCV_S_MODE
+	default y if CLIC || NRFX_CLIC
+	default $(dt_nodelabel_enabled,clint)
+	help
+	  The RISC-V sw-irq trigger needs an interrupt a hart can raise on
+	  itself: a CLIC pending bit, or the machine software interrupt of
+	  a CLINT. Cores with neither, such as the single core LiteX
+	  VexRiscv, have none: their external pending bits mirror the
+	  interrupt wires and the mip bits are read only.
+
 choice INT_BENCH_TRIGGER
 	prompt "Interrupt trigger backend"
-	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86
+	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86 || \
+		INT_BENCH_RISCV_SW_IRQ
 	default INT_BENCH_TRIGGER_OFFLOAD
 
 config INT_BENCH_TRIGGER_SW_IRQ
 	bool "Software-triggered hardware interrupt"
-	depends on CPU_CORTEX_M || GIC || ARC || X86
+	depends on CPU_CORTEX_M || GIC || ARC || X86 || \
+		INT_BENCH_RISCV_SW_IRQ
 	help
 	  Raise a real asynchronous interrupt through the platform
 	  interrupt controller (NVIC STIR/ISPR on Cortex-M, a GIC SGI on
 	  Arm GIC platforms, IRQ_HINT on ARC, a local APIC self IPI on
-	  x86). This exercises the full
-	  hardware interrupt entry path and is required for the entry
-	  latency, critical section and throughput scenarios.
+	  x86, and a CLIC pending bit or a CLINT machine software
+	  interrupt on RISC-V). This exercises the full hardware
+	  interrupt entry path and is required for the entry latency,
+	  critical section and throughput scenarios.
+
+	  Not available on RISC-V in supervisor mode, where both the CLINT
+	  and mhartid are machine mode only, on SMP builds, where the
+	  machine software interrupt carries the scheduler IPIs, or on
+	  cores with neither a CLIC nor a CLINT, which have no interrupt a
+	  hart can raise on itself.
 
 config INT_BENCH_TRIGGER_OFFLOAD
 	bool "irq_offload() software trap"
@@ -47,10 +68,12 @@ config INT_BENCH_IRQ_LINE
 	help
 	  IRQ line the benchmark connects its ISR to and then triggers
 	  from software. The default of -1 selects a platform-appropriate
-	  line automatically: an SGI on GIC platforms, a line known to be
-	  free on selected QEMU boards and on x86, and the last
-	  available line (CONFIG_NUM_IRQS - 1) otherwise. Override this on SoCs where
-	  the automatic choice is not an implemented or free line.
+	  line automatically: an SGI on GIC platforms, the machine
+	  software interrupt on RISC-V platforms without a CLIC, a line
+	  known to be free on selected QEMU boards and on x86, and the
+	  last available line (CONFIG_NUM_IRQS - 1) otherwise. Override
+	  this on SoCs where the automatic choice is not an implemented
+	  or free line.
 
 config INT_BENCH_IRQ_PRIO
 	int "Priority of the benchmark IRQ"
