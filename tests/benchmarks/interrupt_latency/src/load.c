@@ -39,6 +39,10 @@
 static volatile uint8_t working_set[WORKING_SET_SIZE];
 #endif /* CONFIG_INT_BENCH_LOAD_CACHE */
 
+#ifdef CONFIG_INT_BENCH_LOAD_KERNEL
+static K_SEM_DEFINE(kernel_load_sem, 0, 1);
+#endif
+
 #ifdef CONFIG_INT_BENCH_LOAD_TIMER
 static void load_timer_handler(struct k_timer *timer)
 {
@@ -49,10 +53,49 @@ static void load_timer_handler(struct k_timer *timer)
 	 * point is to compete for interrupt service, not to monopolise
 	 * the CPU.
 	 */
+#ifdef CONFIG_INT_BENCH_LOAD_KERNEL
+	/*
+	 * Kernel calls that take a spinlock, so that the benchmark
+	 * interrupt competes with the windows the kernel masks
+	 * interrupts for rather than with an empty handler.
+	 */
+	k_sem_give(&kernel_load_sem);
+	(void)k_sem_take(&kernel_load_sem, K_NO_WAIT);
+	(void)k_uptime_get();
+#endif
 }
 
 static K_TIMER_DEFINE(load_timer, load_timer_handler, NULL);
 #endif /* CONFIG_INT_BENCH_LOAD_TIMER */
+
+#ifdef CONFIG_INT_BENCH_LOAD_SCHED
+#define CHURN_STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+static K_SEM_DEFINE(churn_sem, 0, 1);
+static K_SEM_DEFINE(churn_done_sem, 0, 1);
+static K_THREAD_STACK_DEFINE(churn_stack, CHURN_STACK_SIZE);
+static struct k_thread churn_thread;
+static volatile bool churn_running;
+
+/*
+ * Runs at a higher priority than the benchmark, so waking it forces a
+ * context switch away and back. It only ever runs between samples,
+ * because that is the only point at which the benchmark gives it the
+ * semaphore; a thread that could preempt a measurement in progress
+ * would add its scheduling delay to the result.
+ */
+static void churn_thread_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (churn_running) {
+		k_sem_take(&churn_sem, K_FOREVER);
+		k_sem_give(&churn_done_sem);
+	}
+}
+#endif /* CONFIG_INT_BENCH_LOAD_SCHED */
 
 #ifdef CONFIG_INT_BENCH_LOAD_THREADS
 #define LOAD_STACK_SIZE  (512 + CONFIG_TEST_EXTRA_STACK_SIZE)
@@ -83,8 +126,24 @@ static void load_thread_entry(void *p1, void *p2, void *p3)
 }
 #endif /* CONFIG_INT_BENCH_LOAD_THREADS */
 
+void bench_load_churn(void)
+{
+#ifdef CONFIG_INT_BENCH_LOAD_SCHED
+	k_sem_give(&churn_sem);
+	(void)k_sem_take(&churn_done_sem, K_FOREVER);
+#endif
+}
+
 void bench_load_start(void)
 {
+#ifdef CONFIG_INT_BENCH_LOAD_SCHED
+	int churn_priority = k_thread_priority_get(k_current_get()) - 1;
+
+	churn_running = true;
+	k_thread_create(&churn_thread, churn_stack, CHURN_STACK_SIZE, churn_thread_entry,
+			NULL, NULL, NULL, churn_priority, 0, K_NO_WAIT);
+#endif
+
 #ifdef CONFIG_INT_BENCH_LOAD_TIMER
 	k_timer_start(&load_timer, K_USEC(CONFIG_INT_BENCH_LOAD_TIMER_PERIOD_US),
 		      K_USEC(CONFIG_INT_BENCH_LOAD_TIMER_PERIOD_US));
@@ -105,6 +164,13 @@ void bench_load_start(void)
 
 void bench_load_stop(void)
 {
+#ifdef CONFIG_INT_BENCH_LOAD_SCHED
+	churn_running = false;
+	k_sem_give(&churn_sem);
+	(void)k_sem_take(&churn_done_sem, K_FOREVER);
+	(void)k_thread_join(&churn_thread, K_FOREVER);
+#endif
+
 #ifdef CONFIG_INT_BENCH_LOAD_TIMER
 	k_timer_stop(&load_timer);
 #endif
@@ -135,6 +201,12 @@ const char *bench_load_description(void)
 #endif
 #ifdef CONFIG_INT_BENCH_LOAD_TIMER
 		"timer "
+#endif
+#ifdef CONFIG_INT_BENCH_LOAD_KERNEL
+		"kernel "
+#endif
+#ifdef CONFIG_INT_BENCH_LOAD_SCHED
+		"sched "
 #endif
 #ifdef CONFIG_INT_BENCH_LOAD_THREADS
 		"threads "

@@ -180,7 +180,7 @@ overlay to re-run every scenario under background load:
    west build -p -b qemu_x86 tests/benchmarks/interrupt_latency -t run -- \
        -DEXTRA_CONF_FILE=prj.load.conf
 
-Three load sources are enabled independently
+Five load sources are enabled independently
 (:kconfig:option:`CONFIG_INT_BENCH_LOAD` and the options under it):
 
 ``CONFIG_INT_BENCH_LOAD_CACHE``
@@ -195,6 +195,22 @@ Three load sources are enabled independently
    with the benchmark interrupt for the interrupt controller and for the
    interrupt-disabled windows of the kernel timeout code. This is the load
    source that dominates under emulation.
+
+``CONFIG_INT_BENCH_LOAD_KERNEL``
+   Has the load timer handler exercise kernel primitives from interrupt
+   context, so the benchmark interrupt competes with the interrupt-disabled
+   windows the kernel takes around its own data structures rather than with
+   an empty handler. Running in the system clock ISR, it takes effect
+   regardless of thread priorities and on uniprocessors too.
+
+``CONFIG_INT_BENCH_LOAD_SCHED``
+   Wakes a higher priority thread and lets it block again before each
+   sample, so every measurement is taken on a system that has just context
+   switched rather than one that has been spinning in the same thread. The
+   churn happens between samples rather than during them on purpose: a
+   thread that could preempt the benchmark mid-measurement would add its
+   own scheduling delay to the result and be indistinguishable from
+   interrupt latency.
 
 ``CONFIG_INT_BENCH_LOAD_THREADS``
    Threads of lower priority than the benchmark that continuously write to

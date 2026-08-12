@@ -34,6 +34,14 @@ void bench_load_stop(void);
  */
 void bench_load_pollute(void);
 
+/*
+ * Exercise the kernel and the scheduler between samples, outside the
+ * measured span. Separate from bench_load_pollute() because that one
+ * is also called from inside a critical section, where making kernel
+ * calls would not be valid.
+ */
+void bench_load_churn(void);
+
 /* Describe the enabled load sources, for the benchmark banner. */
 const char *bench_load_description(void);
 
@@ -48,6 +56,10 @@ static inline void bench_load_stop(void)
 }
 
 static inline void bench_load_pollute(void)
+{
+}
+
+static inline void bench_load_churn(void)
 {
 }
 
