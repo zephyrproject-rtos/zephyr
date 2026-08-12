@@ -21,11 +21,58 @@
 	};
 
 	mac_default: mac_default {
-		/* No pinmux needed for internal 100M PHY */
+		mac_internal_crsdv {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 9, ETH, 0)>;
+			bias-pull-up;
+		};
+
+		mac_internal_rxd0 {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 14, ETH, 0)>;
+			bias-pull-up;
+		};
+
+		mac_internal_rxd1 {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 13, ETH, 0)>;
+			bias-pull-up;
+		};
+
+		mac_internal_txen {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 8, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_txc {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 12, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_txd0 {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 11, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_txd1 {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 10, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
 	};
 
 	mdio_default: mdio_default {
-		/* No MDIO pinmux required for internal PHY */
+		mac_internal_mdc {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PE, 15, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
+
+		mac_internal_mdio {
+			pinmux = <CH32V20X_V30X_PINMUX_DEFINE(PD, 8, ETH, 0)>;
+			output-high;
+			slew-rate = "max-speed-50mhz";
+		};
 	};
 
 	pwm2_default: pwm2_default {
