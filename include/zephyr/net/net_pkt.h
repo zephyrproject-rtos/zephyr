@@ -430,17 +430,17 @@ static inline struct net_if *net_pkt_iface(struct net_pkt *pkt)
 
 static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 {
+	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
+
 	pkt->iface = iface;
 
 	/* If the network interface is set in pkt, then also set the type of
 	 * the network address that is stored in pkt. This is done here so
 	 * that the address type is properly set and is not forgotten.
 	 */
-	if (iface) {
-		uint8_t type = net_if_get_link_addr(iface)->type;
-
-		pkt->lladdr_src.type = type;
-		pkt->lladdr_dst.type = type;
+	if (lladdr != NULL) {
+		pkt->lladdr_src.type = lladdr->type;
+		pkt->lladdr_dst.type = lladdr->type;
 	}
 }
 
