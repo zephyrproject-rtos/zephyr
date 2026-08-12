@@ -2524,6 +2524,20 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif
 
+static uint32_t nxp_wifi_get_iface_caps(const struct device *dev,
+					    struct net_if *iface)
+{
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	if (iface == (struct net_if *)net_get_uap_interface()) {
+		/* uap interface: second net_if on this device */
+		return BIT(WIFI_TYPE_SAP);
+	}
+#endif
+
+	/* mlan interface: default STA */
+	return BIT(WIFI_TYPE_STA);
+}
+
 static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.get_version = nxp_wifi_version,
 	.scan = nxp_wifi_scan,
@@ -2552,6 +2566,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.set_twt = nxp_wifi_set_twt,
 #endif
 	.set_rts_threshold = nxp_wifi_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
@@ -2638,6 +2653,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #endif
 	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)
