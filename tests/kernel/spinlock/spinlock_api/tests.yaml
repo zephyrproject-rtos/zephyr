@@ -31,3 +31,14 @@ tests:
       - CONFIG_SCHED_SIMPLE=y
       - CONFIG_SCHED_CPU_MASK=y
       - CONFIG_TICKET_SPINLOCKS=y
+  kernel.spinlock.stripe.up:
+    tags:
+      - kernel
+      - spinlock
+    filter: not CONFIG_SMP
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_SMP=n
+      - CONFIG_SPIN_VALIDATE=n
+      - CONFIG_NONZERO_SPINLOCK_SIZE=n
