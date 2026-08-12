@@ -21,6 +21,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash0;
+		zephyr,canbus = &fdcan1;
 	};
 
 	aliases {
@@ -61,6 +62,13 @@
 			pwms = <&pwm1 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
 			label = "LD1";
 		};
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
+		standby-gpios = <&gpioe 2 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
 	};
 };
 
@@ -227,5 +235,17 @@
 zephyr_udc0: &usb {
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
+};
+
+/* Make sure SB32, SB34, and SB36 are fitted (default configuration).
+ * Set JP9 to ON to enable 120 Ohm termination on the board.
+ */
+&fdcan1 {
+	clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+		 <&rcc STM32_SRC_HSE FDCAN_SEL(3)>;
+	pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
 	status = "okay";
 };
