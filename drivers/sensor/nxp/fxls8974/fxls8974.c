@@ -272,7 +272,7 @@ static int fxls8974_sample_fetch(const struct device *dev, enum sensor_channel c
 			*raw++ = (buf[i+1] << 8) | (buf[i]);
 		}
 
-		*raw = *(buf+FXLS8974_MAX_ACCEL_BYTES);
+		*raw = (int8_t)*(buf+FXLS8974_MAX_ACCEL_BYTES);
 
 exit:
 		k_sem_give(&data->sem);
@@ -366,6 +366,7 @@ static int fxls8974_get_temp_data(const struct device *dev, struct sensor_value 
 		k_sem_take(&data->sem, K_FOREVER);
 		raw = &data->raw[FXLS8974_CHANNEL_TEMP];
 		val->val1 = *raw+FXLS8974_ZERO_TEMP;
+		val->val2 = 0;
 		k_sem_give(&data->sem);
 
 		return 0;
