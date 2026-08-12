@@ -92,7 +92,7 @@ static inline void lps2xdf_press_convert(const struct device *dev,
 {
 	const struct lps2xdf_config *const cfg = dev->config;
 	int32_t press_tmp = raw_val >> 8; /* raw value is left aligned (24 msb) */
-	int divider;
+	int divider, factor;
 
 	/* Pressure sensitivity is:
 	 * - 4096 LSB/hPa for Full-Scale of 260 - 1260 hPa:
@@ -101,15 +101,16 @@ static inline void lps2xdf_press_convert(const struct device *dev,
 	 */
 	if (cfg->fs == 0) {
 		divider = 40960;
+		/* For the decimal part use (3125 / 128) as a factor instead of
+		 * (1000000 / 40960) to avoid int32 overflow
+		 */
+		factor = 3125;
 	} else {
 		divider = 20480;
+		factor = 6250;
 	}
 	val->val1 = press_tmp / divider;
-
-	/* For the decimal part use (3125 / 128) as a factor instead of
-	 * (1000000 / 40960) to avoid int32 overflow
-	 */
-	val->val2 = (press_tmp % divider) * 3125 / 128;
+	val->val2 = (press_tmp % divider) * factor / 128;
 }
 
 
