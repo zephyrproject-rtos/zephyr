@@ -961,8 +961,12 @@ static int ti_hdc302x_init(const struct device *dev)
 		return rc;
 	}
 
-	if (verify_crc(manufacturer_id_buf, 2, manufacturer_id_buf[2]) != true &&
-	    sys_get_be16(manufacturer_id_buf) != HDC_302X_MANUFACTURER_ID) {
+	if (!verify_crc(manufacturer_id_buf, 2, manufacturer_id_buf[2])) {
+		LOG_ERR("Manufacturer ID CRC verification failed");
+		return -EIO;
+	}
+
+	if (sys_get_be16(manufacturer_id_buf) != HDC_302X_MANUFACTURER_ID) {
 		LOG_ERR("Invalid manufacturer ID: 0x%04X (expected 0x%04X)",
 			sys_get_be16(manufacturer_id_buf), HDC_302X_MANUFACTURER_ID);
 		return -EINVAL;
