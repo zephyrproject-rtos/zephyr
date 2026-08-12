@@ -104,7 +104,8 @@ static int icm40627_set_gyro_fs(const struct device *dev, uint16_t fs)
 	data->gyro_fs = gyro_fs_value.val1;
 	data->gyro_sensitivity_x10 = icm40627_gyro_sensitivity_x10[temp];
 
-	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0, (uint8_t)MASK_GYRO_UI_FS_SEL, temp);
+	return cfg->bus_io->update(&cfg->bus, REG_GYRO_CONFIG0, (uint8_t)MASK_GYRO_UI_FS_SEL,
+				   (uint8_t)FIELD_PREP(MASK_GYRO_UI_FS_SEL, temp));
 }
 
 static int icm40627_set_accel_odr(const struct device *dev, uint16_t rate)
