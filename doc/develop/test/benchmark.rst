@@ -17,7 +17,9 @@ providing:
 * **Statistical Analysis**: Calculations of Mean, Standard Deviation, Standard
   Error, and Min/Max values.
 * **Overhead Compensation**: Inclusion of a control test to account for the
-  benchmarking frameworks own execution time.
+  benchmarking frameworks own execution time. The control is subtracted from
+  every reported statistic identically, so the corrected values are real
+  numbers that generally do not coincide with any single measurement.
 
 Configuration
 *************
@@ -143,6 +145,13 @@ The framework applies the same control-measurement noise correction as for stand
 when reporting. The span is closed from thread context, so an ISR should only capture a timestamp
 and leave the recording to the body. An iteration whose body records no span contributes no
 sample.
+
+A benchmark that wants a warmup phase should run it through the full measurement loop, recording
+included, and then call :c:func:`ztest_benchmark_discard_samples` to throw the results away.
+Skipping the recording during warmup instead leaves the first measured iteration as the only one
+not preceded by the bookkeeping that :c:func:`ztest_benchmark_record_sample` performs, which is
+enough to make it measurably faster than every iteration after it and to leave the reported
+minimum describing a state the benchmark is never in again.
 
 Understanding Results
 *********************
