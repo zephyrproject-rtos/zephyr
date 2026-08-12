@@ -81,15 +81,15 @@ enum {
 };
 
 /** Flag prevents formatting device if requested file system not found */
-#define FS_MOUNT_FLAG_NO_FORMAT BIT(0)
+#define FS_MOUNT_FLAG_NO_FORMAT       BIT(0)
 /** Flag makes mounted file system read-only */
-#define FS_MOUNT_FLAG_READ_ONLY BIT(1)
+#define FS_MOUNT_FLAG_READ_ONLY       BIT(1)
 /** Flag used in pre-defined mount structures that are to be mounted
  * on startup.
  *
  * This flag has no impact in user-defined mount structures.
  */
-#define FS_MOUNT_FLAG_AUTOMOUNT BIT(2)
+#define FS_MOUNT_FLAG_AUTOMOUNT       BIT(2)
 /** Flag requests file system driver to use Disk Access API. When the flag is
  * set to the fs_mount_t.flags prior to fs_mount call, a file system
  * needs to use the Disk Access API, otherwise mount callback for the driver
@@ -157,19 +157,18 @@ struct fs_statvfs {
 	unsigned long f_bfree;
 };
 
-
 /**
  * @name fs_open open and creation mode flags
  * @{
  */
 /** Open for read flag */
-#define FS_O_READ       0x01
+#define FS_O_READ      0x01
 /** Open for write flag */
-#define FS_O_WRITE      0x02
+#define FS_O_WRITE     0x02
 /** Open for read-write flag combination */
-#define FS_O_RDWR       (FS_O_READ | FS_O_WRITE)
+#define FS_O_RDWR      (FS_O_READ | FS_O_WRITE)
 /** Bitmask for read and write flags */
-#define FS_O_MODE_MASK  0x03
+#define FS_O_MODE_MASK 0x03
 
 /** Create file if it does not exist */
 #define FS_O_CREATE     0x10
@@ -180,9 +179,8 @@ struct fs_statvfs {
 /** Bitmask for open/create flags */
 #define FS_O_FLAGS_MASK 0x70
 
-
 /** Bitmask for open flags */
-#define FS_O_MASK       (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
+#define FS_O_MASK (FS_O_MODE_MASK | FS_O_FLAGS_MASK)
 /**
  * @}
  */
@@ -193,15 +191,15 @@ struct fs_statvfs {
  */
 #ifndef FS_SEEK_SET
 /** Seek from the beginning of file */
-#define FS_SEEK_SET	0
+#define FS_SEEK_SET 0
 #endif
 #ifndef FS_SEEK_CUR
 /** Seek from a current position */
-#define FS_SEEK_CUR	1
+#define FS_SEEK_CUR 1
 #endif
 #ifndef FS_SEEK_END
 /** Seek from the end of file */
-#define FS_SEEK_END	2
+#define FS_SEEK_END 2
 #endif
 /**
  * @}
@@ -215,11 +213,11 @@ struct fs_statvfs {
  * @return a value suitable for initializing an fs_mount_t flags
  * member.
  */
-#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)				\
-	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0)	\
-	 | (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0)	\
-	 | (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0)  \
-	 | (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
+#define FSTAB_ENTRY_DT_MOUNT_FLAGS(node_id)                                                        \
+	((DT_PROP(node_id, automount) ? FS_MOUNT_FLAG_AUTOMOUNT : 0) |                             \
+	 (DT_PROP(node_id, read_only) ? FS_MOUNT_FLAG_READ_ONLY : 0) |                             \
+	 (DT_PROP(node_id, no_format) ? FS_MOUNT_FLAG_NO_FORMAT : 0) |                             \
+	 (DT_PROP(node_id, disk_access) ? FS_MOUNT_FLAG_USE_DISK_ACCESS : 0))
 
 /**
  * @brief Get the mount-point from an fstab entry.
@@ -227,8 +225,7 @@ struct fs_statvfs {
  * @param node_id The node identifier for a child entry in a zephyr,fstab node.
  * @return The mount-point path.
  */
-#define FSTAB_ENTRY_DT_MOUNT_POINT(node_id) \
-	DT_PROP(node_id, mount_point)
+#define FSTAB_ENTRY_DT_MOUNT_POINT(node_id) DT_PROP(node_id, mount_point)
 
 /**
  * @brief Get the mount-point from an fstab entry.
@@ -236,8 +233,7 @@ struct fs_statvfs {
  * @param inst Instance number
  * @return The mount-point path.
  */
-#define FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst) \
-	DT_INST_PROP(inst, mount_point)
+#define FSTAB_ENTRY_DT_INST_MOUNT_POINT(inst) DT_INST_PROP(inst, mount_point)
 
 /**
  * @brief The name under which a zephyr,fstab entry mount structure is
@@ -255,8 +251,7 @@ struct fs_statvfs {
  *
  * @param node_id the node identifier for a child entry in a zephyr,fstab node.
  */
-#define FS_FSTAB_DECLARE_ENTRY(node_id)		\
-	extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
+#define FS_FSTAB_DECLARE_ENTRY(node_id) extern struct fs_mount_t FS_FSTAB_ENTRY(node_id)
 
 /**
  * @brief Initialize fs_file_t object
@@ -609,6 +604,22 @@ int fs_mount(struct fs_mount_t *mp);
 int fs_unmount(struct fs_mount_t *mp);
 
 /**
+ * @brief Unmount filesystem by mount-point path
+ *
+ * Looks up an active mount at @a mnt_point and calls @ref fs_unmount.
+ *
+ * @since 4.3
+ *
+ * @param mnt_point Mount point path (e.g. ``/USB:``)
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if @a mnt_point is NULL or invalid
+ * @retval -ENOENT if no mount exists at @a mnt_point
+ * @retval negative errno from the file system unmount operation
+ */
+int fs_unmount_path(const char *mnt_point);
+
+/**
  * @brief Get path of mount point at index
  *
  * This function iterates through the list of mount points and returns
@@ -720,7 +731,6 @@ int fs_gc(struct fs_mount_t *mp);
 /**
  * @}
  */
-
 
 #ifdef __cplusplus
 }

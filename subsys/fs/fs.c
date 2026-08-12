@@ -40,8 +40,7 @@ static inline void registry_clear_entry(struct registry_entry *ep)
 	ep->fstp = NULL;
 }
 
-static int registry_add(int type,
-			const struct fs_file_system_t *fstp)
+static int registry_add(int type, const struct fs_file_system_t *fstp)
 {
 	int rv = -ENOSPC;
 
@@ -78,8 +77,7 @@ static const struct fs_file_system_t *fs_type_get(int type)
 	return (ep != NULL) ? ep->fstp : NULL;
 }
 
-static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp,
-			    const char *name, size_t *match_len)
+static int fs_get_mnt_point(struct fs_mount_t **mnt_pntp, const char *name, size_t *match_len)
 {
 	struct fs_mount_t *mnt_p = NULL, *itr;
 	size_t longest_match = 0;
@@ -375,7 +373,6 @@ int fs_opendir(struct fs_dir_t *zdp, const char *abs_path)
 		return -EBUSY;
 	}
 
-
 	if (strcmp(abs_path, "/") == 0) {
 		/* Open VFS root dir, marked by zdp->mp == NULL */
 		k_mutex_lock(&mutex, K_FOREVER);
@@ -416,7 +413,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 		int rc = -EINVAL;
 
 		CHECKIF(zdp->mp->fs->readdir == NULL) {
-			return  -ENOTSUP;
+			return -ENOTSUP;
 		}
 
 		/* Loop until error or not special directory */
@@ -431,8 +428,7 @@ int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 			if (entry->type != FS_DIR_ENTRY_DIR) {
 				break;
 			}
-			if ((strcmp(entry->name, ".") != 0)
-			    && (strcmp(entry->name, "..") != 0)) {
+			if ((strcmp(entry->name, ".") != 0) && (strcmp(entry->name, "..") != 0)) {
 				break;
 			}
 		}
@@ -582,8 +578,8 @@ int fs_rename(const char *from, const char *to)
 	size_t match_len;
 	int rc = -EINVAL;
 
-	if ((from == NULL) || (from[0] != '/') || (from[1] == '\0') ||
-			(to == NULL) || (to[0] != '/') || (to[1] == '\0')) {
+	if ((from == NULL) || (from[0] != '/') || (from[1] == '\0') || (to == NULL) ||
+	    (to[0] != '/') || (to[1] == '\0')) {
 		LOG_ERR("invalid file name!!");
 		return -EINVAL;
 	}
@@ -778,8 +774,7 @@ int fs_mount(struct fs_mount_t *mp)
 	}
 
 	if (fs->unmount == NULL) {
-		LOG_WRN("mount path %s is not unmountable",
-			mp->mnt_point);
+		LOG_WRN("mount path %s is not unmountable", mp->mnt_point);
 	}
 
 	rc = fs->mount(mp);
@@ -812,8 +807,7 @@ int fs_mkfs(int fs_type, uintptr_t dev_id, void *cfg, int flags)
 	/* Get file system information */
 	fs = fs_type_get(fs_type);
 	if (fs == NULL) {
-		LOG_ERR("fs type %d not registered!!",
-				fs_type);
+		LOG_ERR("fs type %d not registered!!", fs_type);
 		rc = -ENOENT;
 		goto mount_err;
 	}
@@ -837,15 +831,9 @@ mount_err:
 
 #endif /* CONFIG_FILE_SYSTEM_MKFS */
 
-int fs_unmount(struct fs_mount_t *mp)
+static int fs_unmount_locked(struct fs_mount_t *mp)
 {
 	int rc = -EINVAL;
-
-	if (mp == NULL) {
-		return rc;
-	}
-
-	k_mutex_lock(&mutex, K_FOREVER);
 
 	if (!sys_dnode_is_linked(&mp->node)) {
 		LOG_ERR("fs not mounted (mp == %p)", mp);
@@ -869,6 +857,63 @@ int fs_unmount(struct fs_mount_t *mp)
 	LOG_DBG("fs unmounted from %s", mp->mnt_point);
 
 unmount_err:
+	return rc;
+}
+
+int fs_unmount(struct fs_mount_t *mp)
+{
+	int rc;
+
+	if (mp == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+	rc = fs_unmount_locked(mp);
+	k_mutex_unlock(&mutex);
+
+	return rc;
+}
+
+int fs_unmount_path(const char *mnt_point)
+{
+	struct fs_mount_t *mp = NULL;
+	sys_dnode_t *node;
+	size_t len;
+	int rc;
+
+	if (mnt_point == NULL) {
+		return -EINVAL;
+	}
+
+	len = strlen(mnt_point);
+	if (len == 0U || mnt_point[0] != '/') {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&mutex, K_FOREVER);
+
+	SYS_DLIST_FOR_EACH_NODE(&fs_mnt_list, node) {
+		struct fs_mount_t *itr = CONTAINER_OF(node, struct fs_mount_t, node);
+
+		if (len != itr->mountp_len) {
+			continue;
+		}
+
+		if (strncmp(mnt_point, itr->mnt_point, len) == 0) {
+			mp = itr;
+			break;
+		}
+	}
+
+	if (mp == NULL) {
+		rc = -ENOENT;
+		goto out;
+	}
+
+	rc = fs_unmount_locked(mp);
+
+out:
 	k_mutex_unlock(&mutex);
 	return rc;
 }
@@ -902,7 +947,6 @@ int fs_readmount(int *index, const char **name)
 	}
 
 	return rc;
-
 }
 
 /* Register File system */
