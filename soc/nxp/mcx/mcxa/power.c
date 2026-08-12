@@ -198,6 +198,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		/* re-build clock tree */
 		board_early_init_hook();
 
+#if DT_PROP(DT_INST(0, nxp_spc), active_mode_bandgap_buffer)
+		/* Deep Power Down resets ACTIVE_CFG[BGMODE]
+		 * back to its reset value, so the buffer must be re-applied here.
+		 */
+		(void)SPC_SetActiveModeBandgapModeConfig(MCXA_SPC_ADDR,
+							 kSPC_BandgapEnabledBufferEnabled);
+#endif
+
 		/* idle-thread stack is nearly full, it is easy to reach the
 		 * PSPLIM limit on resume. Drop the limit here, the next context
 		 * switch re-establishes the per-thread PSPLIM.

@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: NXP System Power Control (SPC)
@@ -28,3 +28,16 @@ properties:
       configured value against the levels the DCDC can actually produce.
       When this property is absent, the SoC leaves the active-mode DCDC
       output voltage untouched.
+
+  active-mode-bandgap-buffer:
+    type: boolean
+    description: |
+      Enable the buffered output of the SPC bandgap voltage reference in active
+      mode. The bandgap core itself is already running whenever a voltage
+      detect or a normal-drive-strength regulator needs it.
+      It is required for blocks outside the SPC to sample it,
+      such as the ADC bandgap input channel.
+      The buffer is enabled during system initialization and stays enabled
+      for the lifetime of the application, including across Deep Power Down
+      resume. It draws additional current, so it is opt-in. When this property
+      is absent the SoC leaves the active-mode bandgap configuration untouched.
