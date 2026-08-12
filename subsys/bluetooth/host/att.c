@@ -108,10 +108,6 @@ struct bt_att_tx_meta_data {
 	enum bt_att_chan_opt chan_opt;
 };
 
-struct bt_att_tx_meta {
-	struct bt_att_tx_meta_data *data;
-};
-
 /* ATT channel specific data */
 struct bt_att_chan {
 	/* Connection this channel is associated with */
