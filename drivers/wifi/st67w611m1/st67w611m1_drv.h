@@ -115,6 +115,7 @@ struct st67_driver_data {
 	struct k_work scan_work;
 	struct k_work connect_work;
 	struct k_work disconnect_work;
+	struct k_work reg_domain_work;
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	struct k_work ap_enable_work;
 	struct k_work ap_disable_work;
@@ -124,8 +125,10 @@ struct st67_driver_data {
 	struct k_sem sem_st67_init_over;
 	struct k_sem sem_cmd_response_wait;
 	struct k_sem sem_wifi_scan_done_wait;
+	struct k_sem sem_reg_domain_wait;
 	struct k_sem sem_rx_wait;
 
+	struct wifi_reg_domain *reg_domain;
 	uint8_t sta_mac_addr[NET_ETH_ADDR_LEN];
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	uint8_t sap_mac_addr[NET_ETH_ADDR_LEN];
@@ -140,6 +143,8 @@ struct st67_driver_data {
 
 	/* Module's current AT+CWAUTOCONN value, read back during init. */
 	bool is_auto_connect_enabled;
+
+	char reg_domain_country_code[WIFI_COUNTRY_CODE_LEN + 1]; /* WIFI_COUNTRY_CODE_LEN  + \0 */
 };
 
 #ifdef __cplusplus

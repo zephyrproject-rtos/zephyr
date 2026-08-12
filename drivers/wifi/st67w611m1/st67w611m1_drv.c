@@ -620,6 +620,68 @@ static int st67_ap_sta_disconnect(const struct device *dev, struct net_if *iface
 }
 #endif
 
+static void st67_reg_domain_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, reg_domain_work);
+
+	struct wifi_reg_domain *reg_domain = st67_data->reg_domain;
+
+	if (reg_domain->oper == WIFI_MGMT_GET) {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+CWCOUNTRY?\r\n",
+				       ST67W611M1_AT_CMD_TIMEOUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to get reg domain: %d", ret);
+			return;
+		}
+		memcpy(reg_domain->country_code, st67_data->reg_domain_country_code,
+		       WIFI_COUNTRY_CODE_LEN);
+
+	} else if (reg_domain->oper == WIFI_MGMT_SET) {
+		static char country_cmd[sizeof("AT+CWCOUNTRY=0,\"US\"\r\n")];
+
+		snprintk(country_cmd, sizeof(country_cmd), "AT+CWCOUNTRY=%d,\"%.*s\"\r\n",
+			 reg_domain->force ? 1 : 0, WIFI_COUNTRY_CODE_LEN,
+			 reg_domain->country_code);
+
+		ret = st67_send_at_cmd(st67_data, NULL, 0, country_cmd, ST67W611M1_AT_CMD_TIMEOUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to set reg domain: %d", ret);
+			return;
+		}
+	}
+
+	k_sem_give(&st67_data->sem_reg_domain_wait);
+}
+
+static int st67_reg_domain(const struct device *dev, struct net_if *iface,
+			   struct wifi_reg_domain *reg_domain)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+
+	ARG_UNUSED(iface);
+
+	if (reg_domain == NULL) {
+		return -EINVAL;
+	}
+
+	st67_data->reg_domain = reg_domain;
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->reg_domain_work);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_sem_take(&st67_data->sem_reg_domain_wait, ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
 static void st67_at_rx(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p2);
@@ -998,6 +1060,23 @@ MODEM_CMD_DEFINE(on_cmd_sap_sta_disconnected)
 }
 #endif
 
+MODEM_CMD_DEFINE(on_cmd_cwcountry)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	if (argc < 2) {
+		return -EBADMSG;
+	}
+
+	char *country_code = str_unquote(argv[1]);
+
+	strncpy(st67_data->reg_domain_country_code, country_code, WIFI_COUNTRY_CODE_LEN);
+	st67_data->reg_domain_country_code[WIFI_COUNTRY_CODE_LEN] = '\0';
+
+	return 0;
+}
+
 /* The AT command says "ERROR" but it's rather a return value received after the
  * connection/disconnection command.
  */
@@ -1081,6 +1160,7 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+CW:STA_CONNECTED ", on_cmd_sap_sta_connected, 1U, ""),
 	MODEM_CMD("+CW:STA_DISCONNECTED ", on_cmd_sap_sta_disconnected, 1U, ""),
 #endif
+	MODEM_CMD("+CWCOUNTRY:", on_cmd_cwcountry, 2U, ","),
 };
 
 static void handle_at_cmd_frame(const uint8_t *buf, size_t len)
@@ -1259,6 +1339,7 @@ static int st67_init(const struct device *dev)
 	k_sem_init(&st67_data->sem_st67_init_over, 0, 1);
 	k_sem_init(&st67_data->sem_cmd_response_wait, 0, 1);
 	k_sem_init(&st67_data->sem_wifi_scan_done_wait, 0, 1);
+	k_sem_init(&st67_data->sem_reg_domain_wait, 0, 1);
 	k_sem_init(&st67_data->sem_rx_wait, 0, 1);
 
 	/* Implemented with work items to return the API calls quickly and not wait for semaphore
@@ -1268,6 +1349,7 @@ static int st67_init(const struct device *dev)
 	k_work_init(&st67_data->scan_work, st67_scan_work);
 	k_work_init(&st67_data->connect_work, st67_connect_work);
 	k_work_init(&st67_data->disconnect_work, st67_disconnect_work);
+	k_work_init(&st67_data->reg_domain_work, st67_reg_domain_work);
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	k_work_init(&st67_data->ap_enable_work, st67_ap_enable_work);
 	k_work_init(&st67_data->ap_disable_work, st67_ap_disable_work);
@@ -1369,6 +1451,7 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.ap_disable = st67_ap_disable,
 	.ap_sta_disconnect = st67_ap_sta_disconnect,
 #endif
+	.reg_domain = st67_reg_domain,
 };
 
 static const struct net_wifi_mgmt_offload st67_api = {
