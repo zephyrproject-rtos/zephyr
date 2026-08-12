@@ -94,7 +94,7 @@ uint32_t sys_clock_cycle_get_32(void)
 	return MXC_TMR_GetCount(regs) * DT_INST_PROP(0, prescaler);
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return 0;
@@ -112,7 +112,7 @@ uint32_t sys_clock_elapsed(void)
 	return delta_ticks;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;

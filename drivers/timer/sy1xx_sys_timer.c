@@ -140,7 +140,7 @@ static int32_t sy1xx_sys_timer_config(uint32_t base, struct sy1xx_timer_cfg *cfg
 	return 0;
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	return 0;
 }

@@ -82,7 +82,7 @@ static void ra_ulpt_timer_isr(void)
 	}
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -122,7 +122,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 	RA_ULPT_INST0_REG->ULPTCNT = delay - 1U;
 }
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	/* Elapsed time calculation is unsupported in tickful mode. */
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {

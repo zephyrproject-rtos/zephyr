@@ -9,6 +9,10 @@ config ARM_ARCH_TIMER
 	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	# On ARM64 the cycle-domain math is all 64-bit, so a full
+	# SYS_CLOCK_MAX_WAIT is overflow-safe. On ARM32 (Cortex-A/R) cycle_diff_t
+	# is 32-bit to optimize division and could overflow on a long wait.
+	select SYSTEM_CLOCK_LONG_WAIT_CAPABLE if ARM64
 	help
 	  This module implements a kernel device driver for the ARM architected
 	  timer which provides per-cpu timers attached to a GIC to deliver its

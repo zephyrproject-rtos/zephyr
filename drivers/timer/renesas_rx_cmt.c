@@ -120,7 +120,7 @@ uint64_t sys_clock_cycle_get_64(void)
 }
 #endif /* CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER */
 
-uint32_t sys_clock_elapsed(void)
+sys_clock_ticks_t sys_clock_elapsed(void)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Always return 0 for tickful operation */
@@ -207,7 +207,7 @@ static int sys_clock_driver_init(void)
 	return 0;
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
+void sys_clock_set_timeout(sys_clock_ticks_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
