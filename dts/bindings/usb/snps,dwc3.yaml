@@ -1,0 +1,98 @@
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Synopsys DesignWare USB3 DRD Controller (xHCI host mode).
+
+  MMIO is mapped by the driver via DEVICE_MMIO (see drivers/usb/uhc/uhc_dwc3.c):
+  the `core` register block holds the integrated DWC3 + xHCI registers; an optional
+  `usb2_wrapper` block maps the Versal/ZynqMP USB2_REGS wrapper for platform tuning.
+
+compatible: "snps,dwc3"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    description: |
+      Register blocks for the controller. The `core` name is required and covers
+      the main DWC3/xHCI MMIO window. When present, `usb2_wrapper` names the
+      platform USB2 wrapper used for Versal/ZynqMP host tuning (256 bytes is
+      sufficient for the registers accessed by the driver).
+
+  interrupts:
+    required: true
+
+  zephyr,boot-probe-ports:
+    type: int
+    description: |
+      Minimum number of root-hub ports to poll at boot (may bump probe count).
+      The driver never reads past HCSPARAMS1 N_PORTS — requesting more is capped
+      with a log line. Use only when N_PORTS under-reports implemented ports.
+
+  zephyr,usb2-poll-port:
+    type: int
+    description: |
+      Root-hub port index (1-based) for USB2 (HS/FS/LS) PORTSC polling and CCS
+      checks. 0 = automatic: use port 2 when N_PORTS >= 2 (USB2 companion next
+      to SuperSpeed), otherwise port 1. Values are capped to N_PORTS.
+
+  snps,dis-u2-susphy-quirk:
+    type: boolean
+    description: |
+      DWC3 devicetree binding — clear U2 suspend-PHY during host init and do not
+      re-enable it after xHCI RUN. When omitted on integrated wrappers, the
+      driver applies this quirk by default.
+
+  snps,dis-u3-susphy-quirk:
+    type: boolean
+    description: |
+      DWC3 devicetree binding — clear U3 suspend-PHY during host init and do not
+      re-enable it after xHCI RUN. When omitted on integrated wrappers, the
+      driver applies this quirk by default.
+
+  snps,quirk-frame-length-adjustment:
+    type: int
+    description: |
+      DWC3 devicetree binding — GFLADJ 30 MHz field for frame-length adjustment.
+      When omitted on integrated wrappers, the Versal-class default (0x20) is used.
+
+  zephyr,post-set-address-ms:
+    type: int
+    description: |
+      Busy-wait in milliseconds after successful Address Device (BSR=0). When
+      omitted on integrated wrappers, defaults to 10 ms; otherwise 0 (disabled).
+
+  zephyr,xhci-bulk-force-drop-add:
+    type: boolean
+    description: |
+      xHCI quirk — after CLEAR_FEATURE(ENDPOINT_HALT), reconfigure bulk endpoints
+      with Configure Endpoint drop+add. Default on integrated wrappers.
+
+  zephyr,xhci-bulk-in-staging:
+    type: boolean
+    description: |
+      xHCI quirk — bulk IN DMA uses driver-owned bounce buffers. Default on
+      integrated wrappers.
+
+  zephyr,xhci-cfg-ep-ctx-mirror:
+    type: boolean
+    description: |
+      xHCI quirk — mirror Configure Endpoint input contexts when the HC skips
+      output context writeback. Default on integrated wrappers.
+
+  write-64-hi-lo-quirk:
+    type: boolean
+    description: |
+      xhci-plat / dwc3_host_init property — reserved for 64-bit register
+      access ordering. Set by default on integrated wrappers.
+
+  xhci-sg-trb-cache-size-quirk:
+    type: boolean
+    description: |
+      xhci-plat / dwc3_host_init property — reserved for scatter/gather
+      TRB cache sizing. Set by default on integrated wrappers.
