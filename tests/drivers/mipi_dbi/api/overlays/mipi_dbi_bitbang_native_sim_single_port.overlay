@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2026 Andrew Yong <me@ndoo.sg>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	mipi_dbi: mipi_dbi {
+		compatible = "zephyr,mipi-dbi-bitbang";
+		status = "okay";
+		dc-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+		wr-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		rd-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		cs-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		data-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>, <&gpio0 6 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 7 GPIO_ACTIVE_HIGH>, <&gpio0 8 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 9 GPIO_ACTIVE_HIGH>, <&gpio0 10 GPIO_ACTIVE_HIGH>,
+			     <&gpio0 11 GPIO_ACTIVE_HIGH>, <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+	};
+};
