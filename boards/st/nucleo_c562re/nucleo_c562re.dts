@@ -24,6 +24,7 @@
 
 	aliases {
 		led0 = &green_led_1;
+		rtc = &rtc;
 		sw0 = &user_button;
 	};
 
@@ -46,6 +47,10 @@
 			label = "LD1";
 		};
 	};
+};
+
+&clk_lse {
+	status = "okay";
 };
 
 &clk_hse {
@@ -133,6 +138,12 @@
 	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB3, 21)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };
 
