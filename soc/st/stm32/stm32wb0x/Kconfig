@@ -14,7 +14,7 @@ config SOC_SERIES_STM32WB0X
 	# Software options
 	select HAS_PM
 	select HAS_PM_S2RAM_CUSTOM_MARKING
-	# WB0x has a ROM bootloader executed at reset
+	# STM32WB0 series has a ROM bootloader executed at reset
 	# which makes the following option required
 	select INIT_ARCH_HW_AT_BOOT
 	# STM32WB0 series only supports suspend-to-RAM as low-power mode.
