@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menu "MSC sample options"
+
+config APP_HOST_MASS_USE_FILESYSTEM
+	bool "Enable file system access on USB mass storage device"
+	imply FILE_SYSTEM
+	imply FAT_FILESYSTEM_ELM
+	help
+	  When enabled, the application will mount a FAT file system on the
+	  connected USB mass storage device and demonstrate basic file
+	  operations (mount, list directory, create/read a test file).
+	  When disabled, only raw sector-level disk access is performed.
+
+if APP_HOST_MASS_USE_FILESYSTEM
+
+config FS_FATFS_CUSTOM_MOUNT_POINT_COUNT
+	default 1
+
+config FS_FATFS_CUSTOM_MOUNT_POINTS
+	default "usbh_msc_0"
+
+endif # APP_HOST_MASS_USE_FILESYSTEM
+
+endmenu
+
+source "samples/subsys/usb/common/Kconfig.sample_usbd"
+
+source "Kconfig.zephyr"
