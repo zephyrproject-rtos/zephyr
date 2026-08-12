@@ -1,0 +1,21 @@
+/*
+ * DWC3 xHCI USB host for in-tree versal_apu (&soc DTS).
+ * Same content as boards/amd/versal_apu/usb_host.overlay — kept here so Twister
+ * picks it up as boards/versal_apu.overlay relative to the sample app.
+ *
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Advanced Micro Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+
+&soc {
+	zephyr_uhc0: usb_host@fe200000 {
+		compatible = "snps,dwc3";
+		reg = <0x00 0xfe200000 0x00 0x10000>,
+		      <0x00 0xff9d0000 0x00 0x100>;
+		reg-names = "core", "usb2_wrapper";
+		interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		status = "okay";
+	};
+};
