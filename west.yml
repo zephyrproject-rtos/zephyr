@@ -134,7 +134,7 @@ manifest:
       groups:
         - hal
     - name: dhara
-      revision: 6f163ca05e174b168b4d148160b50eeaeeb561fc
+      revision: pull/1/head
       path: modules/lib/dhara
     - name: edtt
       revision: c282625e694f0b53ea53e13231ea6d2f49411768
