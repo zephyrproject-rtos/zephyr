@@ -306,6 +306,16 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 			struct net_if *vlan_iface;
 
+			/* The frame was only checked to hold a non-tagged
+			 * Ethernet header so far. Make sure the larger VLAN
+			 * header is fully present before reading the tag out
+			 * of it and before pulling it below.
+			 */
+			if (pkt->buffer->len < sizeof(struct net_eth_vlan_hdr)) {
+				NET_DBG("Dropping frame, truncated VLAN header");
+				goto drop;
+			}
+
 			net_pkt_set_vlan_tci(pkt, net_ntohs(hdr_vlan->vlan.tci));
 			type = net_ntohs(hdr_vlan->type);
 			hdr_len = sizeof(struct net_eth_vlan_hdr);
