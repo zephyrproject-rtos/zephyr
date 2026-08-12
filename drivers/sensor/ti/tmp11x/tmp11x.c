@@ -607,7 +607,8 @@ static int tmp11x_pm_control(const struct device *dev, enum pm_device_action act
 	case PM_DEVICE_ACTION_RESUME: {
 		const struct tmp11x_dev_config *cfg = dev->config;
 
-		ret = tmp11x_write_config(dev, TMP11X_CFGR_CONV, cfg->odr);
+		ret = tmp11x_write_config(dev, TMP11X_CFGR_MODE | TMP11X_CFGR_CONV,
+					  TMP11X_MODE_CONTINUOUS | cfg->odr);
 		if (ret < 0) {
 			LOG_ERR("Failed to resume TMP11X");
 		}
