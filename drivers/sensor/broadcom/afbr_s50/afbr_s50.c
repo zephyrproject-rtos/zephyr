@@ -122,6 +122,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 	if (status != STATUS_OK) {
 		LOG_ERR("Data not valid: %d, %d", status, edata->payload.Status);
 		handle_error_on_result(data, -EIO);
+		return;
 	}
 	CHECKIF(Argus_IsDataEvaluationPending(data->platform.argus.handle)) {
 		LOG_WRN("Overrun. More pending data than what we've served.");
