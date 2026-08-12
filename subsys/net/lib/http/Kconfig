@@ -316,6 +316,21 @@ config HTTP_SERVER_STATIC_FS_RESPONSE_SIZE
 	  Please note that it is allocated on the stack of the HTTP server thread,
 	  so CONFIG_HTTP_SERVER_STACK_SIZE has to be sufficiently large.
 
+config HTTP_SERVER_STATIC_FS_CACHE_CONTROL
+	bool "Add Cache-Control to static file system responses"
+	default y
+	depends on FILE_SYSTEM
+	help
+	  If enabled, the HTTP/1 static file system response includes a Cache-Control
+	  header so browsers can cache static assets.
+
+config HTTP_SERVER_STATIC_FS_CACHE_CONTROL_MAX_AGE
+	int "Static file system Cache-Control max-age"
+	default 3600
+	depends on HTTP_SERVER_STATIC_FS_CACHE_CONTROL
+	help
+	  Cache lifetime in seconds used for the static file system Cache-Control header.
+
 config HTTP_SERVER_COMPLETE_STATUS_PHRASES
 	bool "Complete HTTP status reason phrases"
 	help

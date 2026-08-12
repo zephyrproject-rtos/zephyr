@@ -18,6 +18,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/net/http/service.h>
 #include <zephyr/net/http/server.h>
+#include <zephyr/sys/util_macro.h>
 
 LOG_MODULE_DECLARE(net_http_server, CONFIG_NET_HTTP_SERVER_LOG_LEVEL);
 
@@ -455,6 +456,16 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 					   struct http2_frame *frame,
 					   struct http_client_ctx *client)
 {
+#ifdef CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL
+	static const struct http_header cache_headers[] = {
+		{
+			.name = "cache-control",
+			.value = "public, max-age="
+			STRINGIFY(CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL_MAX_AGE),
+		},
+	};
+#endif
+
 	int ret;
 	struct fs_file_t file;
 	char fname[HTTP_SERVER_MAX_URL_LENGTH];
@@ -521,8 +532,13 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
 		res_detail.content_encoding = http_compression_text(chosen_compression);
 	}
+#ifdef CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
-				 NULL, 0);
+					 cache_headers, ARRAY_SIZE(cache_headers));
+#else
+	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
+					 NULL, 0);
+#endif
 	if (ret < 0) {
 		LOG_DBG("Cannot write to socket (%d)", ret);
 		goto out;

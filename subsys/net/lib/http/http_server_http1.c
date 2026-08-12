@@ -637,8 +637,18 @@ static int dynamic_post_put_req(struct http_resource_detail_dynamic *dynamic_det
 int handle_http1_static_fs_resource(struct http_resource_detail_static_fs *static_fs_detail,
 				    struct http_client_ctx *client)
 {
+#ifdef CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL
+#define HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER                                                 \
+	"Cache-Control: public, max-age="                                                 \
+	STRINGIFY(CONFIG_HTTP_SERVER_STATIC_FS_CACHE_CONTROL_MAX_AGE)                              \
+	"\r\n"
+#else
+#define HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER ""
+#endif
+
 #define RESPONSE_TEMPLATE_STATIC_FS                                                                \
 	"HTTP/1.1 200 OK\r\n"                                                                      \
+	HTTP_SERVER_STATIC_FS_CACHE_CONTROL_HEADER                                                 \
 	"Content-Length: %zd\r\n"                                                                  \
 	"Content-Type: %s%s%s\r\n\r\n"
 #define CONTENT_ENCODING_HEADER "\r\nContent-Encoding: "
