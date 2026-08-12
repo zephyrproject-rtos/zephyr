@@ -81,6 +81,7 @@ tests:
       - nucleo_wl55jc
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h755zi_q/stm32h755xx/m7
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_u385rg_q
@@ -98,6 +99,7 @@ tests:
     platform_allow:
       - nucleo_h743zi
       - nucleo_h753zi
+      - nucleo_h755zi_q/stm32h755xx/m7
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
     integration_platforms:
