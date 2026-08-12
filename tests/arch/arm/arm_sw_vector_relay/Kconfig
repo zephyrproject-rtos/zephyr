@@ -1,0 +1,12 @@
+# Copyright (c) 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SKIP_IRQS
+	string "Vector-table entries excluded from relay verification"
+	default ""
+	help
+	  Comma-separated vector-table entry numbers that the relay test must
+	  not verify. Use this for board-required vector-table contents that
+	  cannot contain the vector relay handler.

@@ -15,6 +15,33 @@ extern uint32_t _vector_table;
 extern uint32_t __vector_relay_handler;
 extern uint32_t _vector_table_pointer;
 
+static bool skip_irq(int irq)
+{
+	const char *list = CONFIG_SKIP_IRQS;
+
+	while (*list != '\0') {
+		int entry = 0;
+
+		while (*list == ' ' || *list == ',') {
+			list++;
+		}
+
+		while (*list >= '0' && *list <= '9') {
+			entry = (entry * 10) + (*list - '0');
+			list++;
+		}
+
+		if (entry == irq) {
+			return true;
+		}
+
+		while (*list != '\0' && *list != ',') {
+			list++;
+		}
+	}
+
+	return false;
+}
 
 /**
  * @brief Test the ARM Software Vector Relay functionality.
@@ -34,6 +61,10 @@ ZTEST(arm_sw_vector_relay, test_arm_sw_vector_relay)
 	const uint32_t *vector_relay_table_addr_val = (uint32_t *)(vector_relay_table_addr);
 
 	for (int i = 2; i < 16 + CONFIG_NUM_IRQS; i++) {
+		if (skip_irq(i)) {
+			continue;
+		}
+
 		zassert_true(vector_relay_table_addr_val[i] == vector_relay_handler_func,
 			     "vector relay table not pointing to the relay handler: 0x%x, 0x%x\n",
 			     vector_relay_table_addr_val[i], vector_relay_handler_func);
