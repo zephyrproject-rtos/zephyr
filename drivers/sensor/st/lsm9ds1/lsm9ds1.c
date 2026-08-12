@@ -649,6 +649,10 @@ static int lsm9ds1_init(const struct device *dev)
 		return ret;
 	}
 
+	/* imu_odr packs CTRL_REG6_XL.odr_xl in bits 6:4 and CTRL_REG1_G.odr_g in bits 2:0 */
+	data->accel_odr = (cfg->imu_odr >> 4) & GYRO_ODR_MASK;
+	data->gyro_odr = cfg->imu_odr & GYRO_ODR_MASK;
+
 	fs = cfg->accel_range;
 	LOG_DBG("accel range is %d\n", fs);
 	ret = lsm9ds1_xl_full_scale_set(ctx, fs);
