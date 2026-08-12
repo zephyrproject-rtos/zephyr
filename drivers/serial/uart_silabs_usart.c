@@ -213,7 +213,7 @@ static void uart_silabs_irq_tx_enable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
-	USART_IntEnable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	USART_IntEnable(config->base, USART_IEN_TXBL);
 }
 
 static void uart_silabs_irq_tx_disable(const struct device *dev)
@@ -221,6 +221,7 @@ static void uart_silabs_irq_tx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	USART_IntClear(config->base, USART_IF_TXC);
 	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 }
 
