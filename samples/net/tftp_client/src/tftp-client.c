@@ -51,6 +51,13 @@ static int tftp_init(const char *hostname)
 		return -ENOENT;
 	}
 
+	if (res->ai_addrlen > sizeof(remote_addr)) {
+		LOG_DBG("Resolved address does not fit (%u > %zu)", res->ai_addrlen,
+			sizeof(remote_addr));
+		freeaddrinfo(res);
+		return -EINVAL;
+	}
+
 	memcpy(&remote_addr, res->ai_addr, res->ai_addrlen);
 	freeaddrinfo(res);
 
