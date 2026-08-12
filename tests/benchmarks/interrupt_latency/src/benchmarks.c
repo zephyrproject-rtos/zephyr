@@ -25,8 +25,14 @@
 
 #define NUM_ITERATIONS CONFIG_INT_BENCH_NUM_ITERATIONS
 
-#if defined(CONFIG_INT_BENCH_SCENARIO_DIRECT) || defined(CONFIG_INT_BENCH_SCENARIO_ZLI)
+#if defined(CONFIG_INT_BENCH_SCENARIO_DIRECT) || defined(CONFIG_INT_BENCH_SCENARIO_ZLI) || \
+	defined(CONFIG_INT_BENCH_SCENARIO_NESTED)
+#define BENCH_ALT_LINE_USED 1
 static volatile bool alt_fired;
+#endif
+
+#if defined(CONFIG_INT_BENCH_SCENARIO_DIRECT) || defined(CONFIG_INT_BENCH_SCENARIO_ZLI)
+#define BENCH_ALT_LINE_DIRECT 1
 
 /*
  * Dispatched straight from the vector table: no software ISR table
@@ -40,6 +46,14 @@ ISR_DIRECT_DECLARE(bench_alt_isr)
 	alt_fired = true;
 
 	return 0;
+}
+#elif defined(BENCH_ALT_LINE_USED)
+static void bench_alt_regular_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	ztest_benchmark_end();
+	alt_fired = true;
 }
 #endif
 
@@ -59,7 +73,17 @@ static void suite_setup(void)
 	(void)bench_trigger_init();
 
 #ifdef CONFIG_INT_BENCH_SCENARIO_DIRECT
-	IRQ_DIRECT_CONNECT(BENCH_IRQ_LINE_ALT, CONFIG_INT_BENCH_IRQ_PRIO, bench_alt_isr, 0);
+	IRQ_DIRECT_CONNECT(BENCH_IRQ_LINE_ALT, CONFIG_INT_BENCH_IRQ_PRIO_ALT, bench_alt_isr, 0);
+	irq_enable(BENCH_IRQ_LINE_ALT);
+#endif
+#if defined(BENCH_ALT_LINE_USED) && !defined(BENCH_ALT_LINE_DIRECT)
+	/*
+	 * Nothing claimed the line as a direct or zero-latency
+	 * interrupt, so connect it the ordinary way. This is the only
+	 * option on platforms without direct interrupts.
+	 */
+	IRQ_CONNECT(BENCH_IRQ_LINE_ALT, CONFIG_INT_BENCH_IRQ_PRIO_ALT, bench_alt_regular_isr,
+		    NULL, 0);
 	irq_enable(BENCH_IRQ_LINE_ALT);
 #endif
 #ifdef CONFIG_INT_BENCH_SCENARIO_ZLI
@@ -463,12 +487,13 @@ ZTEST_BENCHMARK_MANUAL(interrupt, periodic_isr_interval, NUM_ITERATIONS, mask_se
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_MASKING */
 
-#if defined(CONFIG_INT_BENCH_SCENARIO_DIRECT) || defined(CONFIG_INT_BENCH_SCENARIO_ZLI)
+#ifdef BENCH_ALT_LINE_USED
 /*
- * Bound on the spin waiting for the second line's ISR. A direct or
- * zero-latency interrupt that never arrives would otherwise hang the
- * run, and in the zero-latency case the wait happens with interrupts
- * locked, so nothing else could break the deadlock.
+ * Bound on the spin waiting for the second line's ISR. An interrupt
+ * that never arrives would otherwise hang the run, and in the
+ * zero-latency and nested cases the wait happens with the first
+ * interrupt masked or in service, so nothing else could break the
+ * deadlock.
  */
 #define ALT_SPIN_LIMIT 10000000U
 
@@ -484,6 +509,7 @@ static bool alt_wait(void)
 }
 #endif
 
+#ifdef BENCH_ALT_LINE_DIRECT
 /*
  * Entry latency of the second line, measured exactly as
  * entry_trigger_to_isr measures the first. What differs is only how
@@ -502,6 +528,7 @@ static void alt_entry_measure(const char *name)
 		return;
 	}
 }
+#endif /* BENCH_ALT_LINE_DIRECT */
 
 #ifdef CONFIG_INT_BENCH_SCENARIO_DIRECT
 /*
@@ -613,3 +640,64 @@ ZTEST_BENCHMARK_MANUAL(interrupt, irq_to_thread, NUM_ITERATIONS, e2e_setup, e2e_
 	k_sem_take(&sync_sem, K_FOREVER);
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_END_TO_END */
+
+#ifdef CONFIG_INT_BENCH_SCENARIO_NESTED
+static volatile bool nested_done;
+static volatile bool nested_preempted;
+
+/*
+ * Runs at the lower priority. Raises the higher priority interrupt and
+ * waits for it to preempt this ISR, which is what nesting means: the
+ * second interrupt is served while the first is still in progress.
+ *
+ * Both ends of the span are marked from interrupt context, this handler
+ * opening it and the preempting one closing it. The framework turns the
+ * pair into a sample once the body has returned to thread context.
+ */
+static void nested_low_handler(void)
+{
+	alt_fired = false;
+
+	ztest_benchmark_start();
+	bench_trigger_alt();
+
+	nested_preempted = alt_wait();
+
+	nested_done = true;
+}
+
+/*
+ * Latency of a high priority interrupt raised while a lower priority
+ * ISR is running. An interrupt-heavy application rarely has the CPU
+ * idle when an event arrives, so this is often a better description of
+ * what a high priority handler will see than the plain entry latency.
+ */
+static void nested_setup(void)
+{
+	bench_trigger_set_handler(nested_low_handler);
+}
+
+static void nested_teardown(void)
+{
+	bench_trigger_set_handler(NULL);
+}
+
+ZTEST_BENCHMARK_MANUAL(interrupt, nested_preempt, NUM_ITERATIONS, nested_setup,
+		       nested_teardown)
+{
+	nested_done = false;
+	bench_load_pollute();
+
+	bench_trigger();
+
+	while (!nested_done) {
+	}
+
+	if (!nested_preempted) {
+		printk("nested_preempt: the higher priority interrupt did not "
+		       "preempt the lower one, skipping\n");
+		return;
+	}
+
+}
+#endif /* CONFIG_INT_BENCH_SCENARIO_NESTED */

@@ -73,11 +73,28 @@ config INT_BENCH_IRQ_LINE_ALT
 config INT_BENCH_IRQ_PRIO
 	int "Priority of the benchmark IRQ"
 	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# On Arm GIC the priority is a raw eight bit value of which only
+	# the upper bits select the preemption group, so a line at
+	# priority 1 cannot be preempted by one at priority 0: they share
+	# a group. Use the platform default, which is both representative
+	# and far enough from the top for the second line to outrank it.
+	default 160 if GIC
 	default 1
 	help
 	  Interrupt priority for the benchmark IRQ line, using the same
 	  convention as the priority argument of IRQ_CONNECT() on the
 	  target architecture.
+
+config INT_BENCH_IRQ_PRIO_ALT
+	int "Priority of the second benchmark IRQ"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default 0
+	help
+	  Interrupt priority for the second benchmark IRQ line. It has to
+	  be a higher priority than CONFIG_INT_BENCH_IRQ_PRIO for the
+	  nested scenario to be able to preempt the first line, and on
+	  Cortex-M a zero-latency interrupt additionally has to be within
+	  the levels reserved for them.
 
 config INT_BENCH_LOCK_HOLD_US
 	int "Critical section hold time (microseconds)"
@@ -296,6 +313,20 @@ config INT_BENCH_SCENARIO_ZLI
 
 	  This claims the same line as the direct ISR scenario, so only
 	  one of the two can be built at a time.
+
+config INT_BENCH_SCENARIO_NESTED
+	bool "Nested interrupt preemption latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# Same set of platforms whose nesting behaviour
+	# tests/arch/common/interrupt exercises.
+	depends on CPU_CORTEX_M || ARC || GIC
+	default y
+	help
+	  Raise the second, higher priority interrupt from inside the
+	  first one's ISR and measure how long it takes to preempt it.
+	  This is the latency a high priority interrupt suffers when a
+	  lower priority one is already being serviced, which for an
+	  interrupt-heavy application is often the dominant term.
 
 config INT_BENCH_SCENARIO_THROUGHPUT
 	bool "Sustained interrupt round-trip cost"

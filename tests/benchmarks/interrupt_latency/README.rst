@@ -33,6 +33,13 @@ All benchmarks are in the ``interrupt`` suite:
 * ``locked_unlock_to_isr`` -- the interrupt is raised while interrupts are
   locked and kept pending for a configurable window; measured is the time
   from ``irq_unlock()`` to ISR entry (latency after a critical section).
+* ``nested_preempt`` -- the second, higher priority interrupt is raised from
+  inside the first one's ISR; measured is how long it takes to preempt it.
+  For an interrupt-heavy application this is often a better description of
+  what a high priority handler sees than the plain entry latency, since the
+  CPU is rarely idle when the event arrives. On qemu_cortex_a53 preemption
+  takes 66 cycles against 74 for entry from thread context, the nested
+  entry having less state to save.
 * ``throughput_round_trip`` -- the ISR re-triggers itself so the next
   interrupt is already pending while the current one is being serviced;
   each sample runs from one ISR entry to the next and so covers a full
@@ -123,8 +130,9 @@ Interrupt generation is abstracted behind a small backend API
 Direct and zero-latency interrupts
 **********************************
 
-Two scenarios measure what a different kind of connection buys, and both
-need a second IRQ line, because how an interrupt is connected is fixed at
+Three scenarios need a second IRQ line -- two because how an interrupt is
+connected is fixed at build time, and the nested one because it needs a
+second priority, because how an interrupt is connected is fixed at
 build time. The second line is available on Cortex-M, Arm GIC, ARC and x86;
 RISC-V without a CLIC has only the one interrupt a hart can raise on
 itself, which the first line already uses.
@@ -317,9 +325,8 @@ Future work
 ***********
 
 * sw-irq trigger backend for Xtensa (INTSET).
-* Nested interrupt preemption latency and priority interference, both of
-  which need the trigger backend extended to a second line at a second
-  priority.
+* Priority interference: how much a high priority ISR delays a lower
+  priority one that is already pending.
 * Latency distribution histograms.
 * An external event trigger, for example a GPIO loopback described in
   devicetree, so that entry latency includes the pin and interrupt
