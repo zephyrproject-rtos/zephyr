@@ -659,6 +659,7 @@ int scd4x_attr_set(const struct device *dev, enum sensor_channel chan, enum sens
 		   const struct sensor_value *val)
 {
 	const struct scd4x_config *cfg = dev->config;
+	bool stopped = false;
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
@@ -672,99 +673,115 @@ int scd4x_attr_set(const struct device *dev, enum sensor_channel chan, enum sens
 			LOG_ERR("Failed to set idle mode.");
 			return ret;
 		}
+		stopped = true;
 	}
 
 	if (val->val1 < 0 || val->val2 < 0) {
-		return -EINVAL;
+		ret = -EINVAL;
+		goto out;
 	}
 
 	switch ((enum sensor_attribute_scd4x)attr) {
 	case SENSOR_ATTR_SCD4X_TEMPERATURE_OFFSET:
 		if (val->val1 > SCD4X_TEMPERATURE_OFFSET_IDX_MAX) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		ret = scd4x_set_temperature_offset(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set temperature offset.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SENSOR_ALTITUDE:
 		if (val->val1 > SCD4X_SENSOR_ALTITUDE_IDX_MAX) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		ret = scd4x_set_sensor_altitude(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set sensor altitude.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_AMBIENT_PRESSURE:
 		if (val->val1 > SCD4X_AMBIENT_PRESSURE_IDX_MAX || val->val1 < 700) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		ret = scd4x_set_ambient_pressure(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set ambient pressure.");
-			return ret;
+			goto out;
 		}
-		/* return 0 to not call scd4x_start_measurement */
-		return 0;
+		break;
 	case SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_ENABLE:
 		if (val->val1 > SCD4X_BOOL_IDX_MAX) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		ret = scd4x_set_automatic_calib_enable(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set automatic calib enable.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SELF_CALIB_INITIAL_PERIOD:
 		if (val->val1 % 4) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		if (cfg->model == SCD4X_MODEL_SCD40) {
 			LOG_ERR("SELF_CALIB_INITIAL_PERIOD not available for SCD40.");
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 		ret = scd4x_set_self_calib_initial_period(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set self calib initial period.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SELF_CALIB_STANDARD_PERIOD:
 		if (val->val1 % 4) {
-			return -EINVAL;
+			ret = -EINVAL;
+			goto out;
 		}
 		if (cfg->model == SCD4X_MODEL_SCD40) {
 			LOG_ERR("SELF_CALIB_STANDARD_PERIOD not available for SCD40.");
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 		ret = scd4x_set_self_calib_standard_period(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set self calib standard period.");
-			return ret;
+			goto out;
 		}
 		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto out;
 	}
 
-	ret = scd4x_setup_measurement(dev);
-	if (ret < 0) {
-		LOG_ERR("Failed to setup measurement.");
-		return ret;
+	ret = 0;
+out:
+	if (stopped) {
+		int rc = scd4x_setup_measurement(dev);
+
+		if (rc < 0) {
+			LOG_ERR("Failed to setup measurement.");
+			return (ret != 0) ? ret : rc;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int scd4x_attr_get(const struct device *dev, enum sensor_channel chan,
 			  enum sensor_attribute attr, struct sensor_value *val)
 {
 	const struct scd4x_config *cfg = dev->config;
+	bool stopped = false;
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP &&
@@ -779,6 +796,7 @@ static int scd4x_attr_get(const struct device *dev, enum sensor_channel chan,
 			LOG_ERR("Failed to set idle mode.");
 			return ret;
 		}
+		stopped = true;
 	}
 
 	switch ((enum sensor_attribute_scd4x)attr) {
@@ -786,64 +804,71 @@ static int scd4x_attr_get(const struct device *dev, enum sensor_channel chan,
 		ret = scd4x_get_temperature_offset(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to get temperature offset.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SENSOR_ALTITUDE:
 		ret = scd4x_get_sensor_altitude(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to get sensor altitude.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_AMBIENT_PRESSURE:
 		ret = scd4x_get_ambient_pressure(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to get ambient pressure.");
-			return ret;
+			goto out;
 		}
-		/* return 0 to not call scd4x_setup_measurement */
-		return 0;
+		break;
 	case SENSOR_ATTR_SCD4X_AUTOMATIC_CALIB_ENABLE:
 		ret = scd4x_get_automatic_calib_enable(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to get automatic calib.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SELF_CALIB_INITIAL_PERIOD:
 		if (cfg->model == SCD4X_MODEL_SCD40) {
 			LOG_ERR("SELF_CALIB_INITIAL_PERIOD not available for SCD40.");
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 		ret = scd4x_get_self_calib_initial_period(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set get self calib initial period.");
-			return ret;
+			goto out;
 		}
 		break;
 	case SENSOR_ATTR_SCD4X_SELF_CALIB_STANDARD_PERIOD:
 		if (cfg->model == SCD4X_MODEL_SCD40) {
 			LOG_ERR("SELF_CALIB_STANDARD_PERIOD not available for SCD40.");
-			return -ENOTSUP;
+			ret = -ENOTSUP;
+			goto out;
 		}
 		ret = scd4x_get_self_calib_standard_period(dev, val);
 		if (ret < 0) {
 			LOG_ERR("Failed to set get self calib standard period.");
-			return ret;
+			goto out;
 		}
 		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
+		goto out;
 	}
 
-	ret = scd4x_setup_measurement(dev);
-	if (ret < 0) {
-		LOG_ERR("Failed to setup measurement.");
-		return ret;
+	ret = 0;
+out:
+	if (stopped) {
+		int rc = scd4x_setup_measurement(dev);
+
+		if (rc < 0) {
+			LOG_ERR("Failed to setup measurement.");
+			return (ret != 0) ? ret : rc;
+		}
 	}
 
-	return 0;
+	return ret;
 }
 
 static int scd4x_init(const struct device *dev)
