@@ -17,13 +17,18 @@
 
 LOG_MODULE_DECLARE(bme680, CONFIG_SENSOR_LOG_LEVEL);
 
-#if defined(CONFIG_BME680_HEATR_DUR_LP)
-#define BME680_MEAS_WAIT_MS (197U + 25U)
-#elif defined(CONFIG_BME680_HEATR_DUR_ULP)
-#define BME680_MEAS_WAIT_MS (1943U + 25U)
-#else
-#define BME680_MEAS_WAIT_MS (222U)
-#endif
+/* Oversampling register field value to number of measurement cycles: {0, 1, 2, 4, 8, 16} */
+#define BME680_OS_CYCLES(os) ((os) == 0U ? 0U : (1U << ((os) - 1U)))
+
+#define BME680_TPH_CYCLES (BME680_OS_CYCLES(BME680_TEMP_OVER >> 5) +			\
+			   BME680_OS_CYCLES(BME680_PRESS_OVER >> 2) +			\
+			   BME680_OS_CYCLES((uint32_t)BME680_HUMIDITY_OVER))
+
+/* 1963us per cycle, 4 x 477us TPH switching, 5 x 477us gas measurement, 1000us wake-up */
+#define BME680_TPH_DUR_US ((BME680_TPH_CYCLES * 1963U) + (477U * 9U) + 1000U)
+
+/* The gas heater runs after the TPH conversion, so both durations add up */
+#define BME680_MEAS_WAIT_MS (BME680_HEATR_DUR_MS + DIV_ROUND_UP(BME680_TPH_DUR_US, 1000U) + 5U)
 
 static void bme680_start_transfer(struct rtio_iodev_sqe *iodev_sqe,
 								  const struct device *dev);
