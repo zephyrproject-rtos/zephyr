@@ -193,6 +193,9 @@ static int get_single_mode_raw_data(const struct device *dev,
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int rc = 0;
 
+	/* drop any count left over from a conversion nobody consumed */
+	k_sem_reset(&lis2mdl->fetch_sem);
+
 	rc = lis2mdl_operating_mode_set(ctx, LIS2MDL_SINGLE_TRIGGER);
 	if (rc) {
 		LOG_ERR("set single mode failed");
