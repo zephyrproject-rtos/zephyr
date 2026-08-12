@@ -13,6 +13,37 @@ config ZTEST_BENCHMARK
 
 if ZTEST_BENCHMARK
 
+config ZTEST_BENCHMARK_PERCENTILES
+	bool "Report latency percentiles"
+	help
+	  Retain the individual samples of each benchmark and report
+	  min, p50, p90, p99, p99.9, p99.99 and max alongside the usual
+	  statistics.
+
+	  The mean and the standard error describe how precisely the
+	  average was estimated, which is the right question for
+	  throughput but not for latency: a real-time system is
+	  characterised by how bad an individual operation can be, and
+	  that lives in the tail of the distribution.
+
+	  A percentile needs enough samples to be resolved at all. p99
+	  needs at least 100, p99.9 at least 1000 and p99.99 at least
+	  10000; below that the reported value degenerates to the
+	  maximum. Retaining samples costs 8 bytes each, so the buffer
+	  has to be sized for the number of iterations the benchmarks
+	  run.
+
+config ZTEST_BENCHMARK_MAX_SAMPLES
+	int "Number of samples retained for percentiles"
+	depends on ZTEST_BENCHMARK_PERCENTILES
+	default 1024
+	help
+	  Size of the sample buffer, in samples of 8 bytes each. Only one
+	  benchmark runs at a time, so a single buffer of this size is
+	  allocated for all of them. Samples beyond this count are
+	  dropped, and the report says how many, since percentiles taken
+	  over a truncated prefix are biased.
+
 choice ZTEST_BENCHMARK_OUTPUT_FORMAT
 	prompt "Ztest benchmark output format"
 	default ZTEST_BENCHMARK_OUTPUT_VERBOSE
@@ -71,6 +102,17 @@ config ZTEST_BENCHMARK_OUTPUT_CSV
 
 	  If measured overhead exceeds the total time, the row contains INCONCLUSIVE instead of
 	  numeric results (e.g. "T, my_suite, my_benchmark, INCONCLUSIVE").
+
+	  With CONFIG_ZTEST_BENCHMARK_PERCENTILES, every sampled and manual benchmark emits an
+	  additional row of the form:
+
+	    P, suite, name, samples, min, p50, p90, p99, p999, p9999, max
+
+	  - samples: number of retained samples the percentiles were taken over
+	  - min / max: extreme cycle values
+	  - p50 ... p9999: nearest-rank percentiles, p9999 being the 99.99th
+
+	  All values are noise-corrected against the control measurement.
 endchoice
 
 endif

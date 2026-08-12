@@ -164,6 +164,33 @@ Statistical Metrics
 * **Min/Max**: The minimum and maximum cycle counts observed, along with which
   sample they occurred on.
 
+Latency percentiles
+"""""""""""""""""""
+
+The mean and the standard error describe how precisely the average was
+estimated. That is the right question for throughput, but not for latency: a
+real-time system is characterised by how bad an individual operation can be,
+and that lives in the tail of the distribution rather than near the mean.
+
+Enable :kconfig:option:`CONFIG_ZTEST_BENCHMARK_PERCENTILES` to retain the
+individual samples and report ``min``, ``p50``, ``p90``, ``p99``, ``p99.9``,
+``p99.99`` and ``max`` alongside the usual statistics. In CSV mode each
+sampled and manual benchmark emits an additional ``P`` row; see
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV` for the columns.
+
+The difference this makes is clearest on a distribution with a tail. Measuring
+interrupt entry latency on a loaded system gives a mean of 1264 cycles with a
+standard error of 34, which describes no interrupt that actually occurred: the
+percentiles show 1216 cycles all the way out to p99, and 25184 beyond it.
+
+A percentile has to be resolvable by the number of samples taken. p99 needs at
+least 100 samples, p99.9 at least 1000 and p99.99 at least 10000; with fewer,
+the reported value degenerates to the maximum. Samples are retained in a
+buffer of :kconfig:option:`CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES` entries of
+8 bytes each, sized for the iteration count of the benchmarks. Samples beyond
+it are dropped and the report says how many, because percentiles taken over a
+truncated prefix are biased.
+
 Plainly speaking, lower values are better for all metrics.
 Lower mean, min, and max values indicates better raw performance.
 Lower standard deviation and standard error values indicate more consistent and
