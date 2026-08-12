@@ -1,0 +1,12 @@
+sample:
+  name: USB host mass storage sample
+tests:
+  sample.usb.host.msc.storage:
+    tags:
+      - usbh
+      - storage
+      - samples
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
+    integration_platforms:
+      - frdm_mcxn947/mcxn947/cpu0
