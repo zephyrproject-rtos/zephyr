@@ -138,13 +138,31 @@ int mmc56x3_chip_set_decimation_filter(const struct device *dev, bool bw0, bool 
 	struct mmc56x3_data *data = dev->data;
 	struct mmc56x3_config *config = &data->config;
 
-	data->ctrl1_cache |= (bw0 ? BIT(0) : 0);
-	data->ctrl1_cache |= (bw1 ? BIT(1) : 0);
+	uint8_t ctrl1 = data->ctrl1_cache;
 
-	config->bw0 = bw0;
-	config->bw1 = bw1;
+	if (bw0) {
+		ctrl1 |= BIT(0);
+	} else {
+		ctrl1 &= ~BIT(0);
+	}
 
-	return mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_1, data->ctrl1_cache);
+	if (bw1) {
+		ctrl1 |= BIT(1);
+	} else {
+		ctrl1 &= ~BIT(1);
+	}
+
+	int ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_1, ctrl1);
+
+	if (ret < 0) {
+		LOG_DBG("Setting bandwidth bits failed: %d", ret);
+	} else {
+		data->ctrl1_cache = ctrl1;
+		config->bw0 = bw0;
+		config->bw1 = bw1;
+	}
+
+	return ret;
 }
 
 static int mmc56x3_chip_init(const struct device *dev)
