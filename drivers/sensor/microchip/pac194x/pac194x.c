@@ -824,7 +824,7 @@ static int pac194x_configure_channels(const struct device *dev)
 			continue;
 		}
 
-		tmp = config->channels[a].vbus_mode;
+		tmp = config->channels[a].vsense_mode;
 		switch (tmp) {
 		case PAC_UNIPOLAR_FSR:
 		case PAC_BIPOLAR_FSR:
@@ -836,7 +836,7 @@ static int pac194x_configure_channels(const struct device *dev)
 		}
 		vsense |= tmp << (2 * (3 - a));
 
-		tmp = config->channels[a].vsense_mode;
+		tmp = config->channels[a].vbus_mode;
 		switch (tmp) {
 		case PAC_UNIPOLAR_FSR:
 		case PAC_BIPOLAR_FSR:
