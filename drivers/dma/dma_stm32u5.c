@@ -423,6 +423,8 @@ static int dma_stm32_configure(const struct device *dev,
 		stream->dma_callback = config->dma_callback;
 		stream->user_data = config->user_data;
 		return 0;
+	} else {
+		stream->hal_override = false;
 	}
 
 	if (config->head_block->block_size > DMA_STM32_MAX_DATA_ITEMS) {
