@@ -1722,6 +1722,11 @@ void uart_stm32_dma_rx_cb(const struct device *dma_dev, void *user_data,
 	const struct device *uart_dev = user_data;
 	struct uart_stm32_data *data = uart_dev->data;
 
+	/* Drop DMA callbacks after RX is disabled */
+	if (!data->dma_rx.enabled) {
+		return;
+	}
+
 	if (status < 0) {
 		async_evt_rx_err(data, status);
 		return;
