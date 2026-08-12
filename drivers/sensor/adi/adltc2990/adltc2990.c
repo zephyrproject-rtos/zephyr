@@ -378,26 +378,31 @@ static int fetch_pin_current_value(const struct device *dev,
 				   const enum adltc2990_monitoring_type mode,
 				   const enum adltc2990_monitor_pins pin)
 {
+	const struct adltc2990_config *cfg = dev->config;
+	struct adltc2990_data *data = dev->data;
+	int32_t value;
 	int ret;
 
-	ret = fetch_pin_differential_voltage_value(dev, mode, pin);
+	if (mode != VOLTAGE_DIFFERENTIAL) {
+		LOG_DBG("Pin is not configured to measure current");
+		return 0;
+	}
+
+	ret = adltc2990_fetch_property_value(dev, VOLTAGE_DIFFERENTIAL, pin, &value);
 	if (ret) {
 		return ret;
 	}
 
-	const struct adltc2990_config *cfg = dev->config;
-	struct adltc2990_data *data = dev->data;
-
 	switch (pin) {
 	case V1:
 	case V2:
-		data->pins_v1_v2_values[0] *= (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
+		data->current_v1_v2 = value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
 					       (float)cfg->pins_v1_v2.pins_current_resistor);
 		break;
 
 	case V3:
 	case V4:
-		data->pins_v3_v4_values[0] *= (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
+		data->current_v3_v4 = value * (ADLTC2990_MICROOHM_CONVERSION_FACTOR /
 					       (float)cfg->pins_v3_v4.pins_current_resistor);
 		break;
 
@@ -599,18 +604,18 @@ static int adltc2990_channel_get(const struct device *dev, enum sensor_channel c
 			LOG_ERR("Sensor is not configured to measure Current");
 			return -EINVAL;
 		}
-		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL && mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
-			LOG_DBG("Getting I12 and I34");
-			num_values_v1_v2 = ADLTC2990_CURRENT_VALUES;
-			num_values_v3_v4 = ADLTC2990_CURRENT_VALUES;
-		} else if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
+		if (mode_v1_v2 == VOLTAGE_DIFFERENTIAL) {
 			LOG_DBG("Getting I12");
-			num_values_v1_v2 = ADLTC2990_CURRENT_VALUES;
-		} else if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
-			LOG_DBG("Getting I34");
-			num_values_v3_v4 = ADLTC2990_CURRENT_VALUES;
+			val[offset_index].val1 = data->current_v1_v2 / 1000000;
+			val[offset_index].val2 = data->current_v1_v2 % 1000000;
+			offset_index++;
 		}
-		break;
+		if (mode_v3_v4 == VOLTAGE_DIFFERENTIAL) {
+			LOG_DBG("Getting I34");
+			val[offset_index].val1 = data->current_v3_v4 / 1000000;
+			val[offset_index].val2 = data->current_v3_v4 % 1000000;
+		}
+		return 0;
 
 	case SENSOR_CHAN_AMBIENT_TEMP:
 		if (!(mode_v1_v2 == TEMPERATURE || mode_v3_v4 == TEMPERATURE)) {

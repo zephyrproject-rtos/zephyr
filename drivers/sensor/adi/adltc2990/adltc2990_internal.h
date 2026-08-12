@@ -51,6 +51,8 @@ struct adltc2990_data {
 	int32_t supply_voltage;
 	int32_t pins_v1_v2_values[2];
 	int32_t pins_v3_v4_values[2];
+	int32_t current_v1_v2;
+	int32_t current_v3_v4;
 };
 
 struct adltc2990_config {
