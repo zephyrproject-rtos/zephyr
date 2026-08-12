@@ -2,6 +2,7 @@
 
 # Copyright (c) 2017 Nordic Semiconductor ASA
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2026 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Bluetooth buffer configuration"
@@ -317,6 +318,36 @@ config BT_DEBUG_MONITOR_UART
 	  however if there is only a single external UART then
 	  UART_CONSOLE needs to be disabled (in which case printk/printf
 	  will get encoded into the monitor protocol).
+
+if BT_DEBUG_MONITOR_UART
+
+config BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN
+	bool "Interrupt-driven UART monitor output"
+	depends on SERIAL_SUPPORT_INTERRUPT
+	# Minimal logging has no panic hook, so buffered records could not be
+	# flushed during a fatal error and crash output would be lost.
+	depends on !LOG_MODE_MINIMAL
+	select UART_INTERRUPT_DRIVEN
+	help
+	  Buffer complete monitor records and transmit them from the UART
+	  interrupt handler. This avoids blocking the Bluetooth host while
+	  waiting for each byte to be transmitted. Records which cannot fit
+	  in the buffer are dropped and reported in the next monitor record.
+
+config BT_DEBUG_MONITOR_UART_BUFFER_SIZE
+	int "UART monitor transmit buffer size"
+	default 1024
+	# The upper limit matches RING_BUFFER_MAX_SIZE without RING_BUFFER_LARGE
+	range 64 32767
+	depends on BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN
+	help
+	  Size in bytes of the ring buffer used for interrupt-driven monitor
+	  output. A record larger than the buffer can never be sent and is
+	  always dropped, so make sure the buffer can hold the largest
+	  monitor record: the largest HCI packet plus up to 25 bytes of
+	  monitor header.
+
+endif # BT_DEBUG_MONITOR_UART
 
 config BT_DEBUG_MONITOR_RTT
 	bool "Monitor protocol over RTT"

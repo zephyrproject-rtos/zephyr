@@ -4,6 +4,7 @@
 
 /*
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +37,7 @@
 #include <zephyr/sys/util_macro.h>
 
 #include "monitor.h"
+#include "monitor_buffer.h"
 
 /* This is the same default priority as for other console handlers,
  * except that we're not exporting it as a Kconfig variable until a
@@ -111,49 +113,36 @@ static bool panic_mode;
 #define RTT_BUFFER_NAME CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_NAME
 #define RTT_BUF_SIZE CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER_SIZE
 
-static void monitor_send(const void *data, size_t len)
+static bool monitor_send(const struct bt_monitor_data *frags, size_t count)
 {
 	static uint8_t rtt_buf[RTT_BUF_SIZE];
-	static size_t rtt_buf_offset;
-	struct bt_monitor_hdr *hdr;
+	size_t total = 0;
 	unsigned int cnt = 0;
-	bool drop;
 
-	/* Drop any packet which cannot fit the buffer */
-	drop = rtt_buf_offset + len > sizeof(rtt_buf);
-	if (!drop) {
-		(void)memcpy(rtt_buf + rtt_buf_offset, data, len);
-	}
-
-	rtt_buf_offset += len;
-
-	/* Check if the packet is complete */
-	hdr = (struct bt_monitor_hdr *)rtt_buf;
-	if (rtt_buf_offset < sizeof(hdr->data_len) + hdr->data_len) {
-		return;
-	}
-
-	if (!drop) {
-		if (panic_mode) {
-			cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-						     rtt_buf, rtt_buf_offset);
-		} else {
-			cnt = SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER,
-					       rtt_buf, rtt_buf_offset);
+	for (size_t i = 0; i < count; i++) {
+		/* Zero-length fragments may carry a NULL data pointer */
+		if (frags[i].len == 0) {
+			continue;
 		}
+
+		/* total only grows after passing this check, so it never
+		 * exceeds sizeof(rtt_buf) and the subtraction cannot underflow.
+		 */
+		if (frags[i].len > sizeof(rtt_buf) - total) {
+			return false;
+		}
+
+		(void)memcpy(rtt_buf + total, frags[i].data, frags[i].len);
+		total += frags[i].len;
 	}
 
-	if (!cnt) {
-		drop_add(hdr->opcode);
+	if (panic_mode) {
+		cnt = SEGGER_RTT_WriteNoLock(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER, rtt_buf, total);
+	} else {
+		cnt = SEGGER_RTT_Write(CONFIG_BT_DEBUG_MONITOR_RTT_BUFFER, rtt_buf, total);
 	}
 
-	/* Prepare for the next packet */
-	rtt_buf_offset = 0;
-}
-
-static void poll_out(char c)
-{
-	monitor_send(&c, sizeof(c));
+	return cnt != 0;
 }
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 static const struct device *const monitor_dev =
@@ -167,19 +156,106 @@ static const struct device *const monitor_dev =
 #error "BT_DEBUG_MONITOR_UART enabled but no UART specified"
 #endif
 
-static void poll_out(char c)
+static void monitor_poll_send(const struct bt_monitor_data *frags, size_t count)
 {
-	uart_poll_out(monitor_dev, c);
-}
+	for (size_t i = 0; i < count; i++) {
+		const uint8_t *buf = frags[i].data;
 
-static void monitor_send(const void *data, size_t len)
-{
-	const uint8_t *buf = data;
-
-	while (len--) {
-		poll_out(*buf++);
+		for (size_t j = 0; j < frags[i].len; j++) {
+			uart_poll_out(monitor_dev, buf[j]);
+		}
 	}
 }
+
+#if defined(CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN)
+/* Single producer (serialized by BT_LOG_BUSY) and single consumer (the UART
+ * ISR), matching the ring buffer's lock-free SPSC contract. The memory
+ * ordering that contract additionally requires on SMP systems is provided by
+ * the fences in the bt_monitor_ring_buf_* helpers. On panic the flush in
+ * monitor_log_panic() becomes a second consumer; monitor_tx_lock serializes
+ * it with the ISR, while producers stay lock-free.
+ */
+static uint8_t monitor_tx_data[CONFIG_BT_DEBUG_MONITOR_UART_BUFFER_SIZE];
+static struct ring_buf monitor_tx_buf = RING_BUF_INIT(monitor_tx_data, sizeof(monitor_tx_data));
+static atomic_t monitor_tx_busy;
+static struct k_spinlock monitor_tx_lock;
+/* Set on panic or when the UART driver lacks interrupt support */
+static bool poll_mode;
+
+static void monitor_uart_tx(void)
+{
+	uint8_t *data;
+	uint32_t len;
+	int sent;
+
+	len = bt_monitor_ring_buf_get_ptr(&monitor_tx_buf, &data);
+	if (len > 0) {
+		sent = uart_fifo_fill(monitor_dev, data, len);
+		if (sent > 0) {
+			bt_monitor_ring_buf_consume(&monitor_tx_buf, sent);
+			return;
+		}
+
+		/* TX ready but nothing accepted: disable TX so a persistent
+		 * driver error cannot cause an interrupt storm. The next
+		 * committed record re-enables TX and retries. Unlike the
+		 * empty-buffer path below, deliberately no re-check here:
+		 * the buffer is non-empty at this point, so re-enabling
+		 * would defeat the backoff.
+		 */
+		uart_irq_tx_disable(monitor_dev);
+		atomic_set(&monitor_tx_busy, 0);
+		return;
+	}
+
+	uart_irq_tx_disable(monitor_dev);
+	atomic_set(&monitor_tx_busy, 0);
+
+	/* Close the race with a producer that committed while TX was disabled. */
+	if (!ring_buf_is_empty(&monitor_tx_buf) && atomic_cas(&monitor_tx_busy, 0, 1)) {
+		uart_irq_tx_enable(monitor_dev);
+	}
+}
+
+static void monitor_uart_isr(const struct device *dev, void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	k_spinlock_key_t key = k_spin_lock(&monitor_tx_lock);
+
+	uart_irq_update(dev);
+	if (uart_irq_tx_ready(dev) > 0) {
+		monitor_uart_tx();
+	}
+
+	k_spin_unlock(&monitor_tx_lock, key);
+}
+
+static bool monitor_send(const struct bt_monitor_data *frags, size_t count)
+{
+	if (poll_mode) {
+		monitor_poll_send(frags, count);
+		return true;
+	}
+
+	if (!bt_monitor_ring_buf_put(&monitor_tx_buf, frags, count)) {
+		return false;
+	}
+
+	if (atomic_cas(&monitor_tx_busy, 0, 1)) {
+		uart_irq_tx_enable(monitor_dev);
+	}
+
+	return true;
+}
+#else
+static bool monitor_send(const struct bt_monitor_data *frags, size_t count)
+{
+	monitor_poll_send(frags, count);
+
+	return true;
+}
+#endif /* CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN */
 #endif /* CONFIG_BT_DEBUG_MONITOR_UART */
 
 static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
@@ -191,6 +267,51 @@ static void encode_drops(struct bt_monitor_hdr *hdr, uint8_t type,
 	if (count) {
 		hdr->ext[hdr->hdr_len++] = type;
 		hdr->ext[hdr->hdr_len++] = MIN(count, 255);
+		if (count > 255) {
+			/* Keep the surplus for the next record */
+			atomic_add(val, count - 255);
+		}
+	}
+}
+
+static atomic_t *drop_counter(uint8_t type)
+{
+	switch (type) {
+	case BT_MONITOR_COMMAND_DROPS:
+		return &drops.cmd;
+	case BT_MONITOR_EVENT_DROPS:
+		return &drops.evt;
+	case BT_MONITOR_ACL_TX_DROPS:
+		return &drops.acl_tx;
+	case BT_MONITOR_ACL_RX_DROPS:
+		return &drops.acl_rx;
+#if defined(CONFIG_BT_CLASSIC)
+	case BT_MONITOR_SCO_TX_DROPS:
+		return &drops.sco_tx;
+	case BT_MONITOR_SCO_RX_DROPS:
+		return &drops.sco_rx;
+#endif
+	case BT_MONITOR_OTHER_DROPS:
+		return &drops.other;
+	default:
+		return NULL;
+	}
+}
+
+/* Restore drop counts that encode_hdr() consumed into a record which then
+ * failed to be sent: without this, every record dropped back-to-back would
+ * destroy the counts accumulated by its predecessors, understating drops
+ * under sustained overload.
+ */
+static void restore_drops(const struct bt_monitor_hdr *hdr)
+{
+	/* The timestamp is always encoded first, drop pairs follow */
+	for (uint8_t i = sizeof(struct bt_monitor_ts32); i + 1U < hdr->hdr_len; i += 2U) {
+		atomic_t *counter = drop_counter(hdr->ext[i]);
+
+		if (counter != NULL) {
+			atomic_add(counter, hdr->ext[i + 1]);
+		}
 	}
 }
 
@@ -247,6 +368,10 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, log_timestamp_t timest
 void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 {
 	struct bt_monitor_hdr hdr;
+	struct bt_monitor_data frags[] = {
+		{ &hdr, 0 }, /* Length known only after encode_hdr() */
+		{ data, len },
+	};
 
 	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
 		drop_add(opcode);
@@ -254,9 +379,12 @@ void bt_monitor_send(uint16_t opcode, const void *data, size_t len)
 	}
 
 	encode_hdr(&hdr, monitor_ts_get(), opcode, len);
+	frags[0].len = BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len;
 
-	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
-	monitor_send(data, len);
+	if (!monitor_send(frags, ARRAY_SIZE(frags))) {
+		restore_drops(&hdr);
+		drop_add(opcode);
+	}
 
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
@@ -356,6 +484,13 @@ static void monitor_log_process(const struct log_backend *const backend,
 	struct monitor_log_ctx ctx;
 	struct bt_monitor_hdr hdr;
 	static const char id[] = "bt";
+	struct bt_monitor_data frags[] = {
+		{ &hdr, 0 },    /* Length known only after encode_hdr() */
+		{ &user_log, sizeof(user_log) },
+		{ id, sizeof(id) },
+		{ ctx.msg, 0 }, /* Length known only after log processing */
+		{ "", 1 }, /* Terminating NUL for the message string */
+	};
 
 	log_output_ctx_set(&monitor_log_output, &ctx);
 
@@ -374,14 +509,13 @@ static void monitor_log_process(const struct log_backend *const backend,
 
 	user_log.priority = monitor_priority_get(log_msg_get_level(&msg->log));
 	user_log.ident_len = sizeof(id);
+	frags[0].len = BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len;
+	frags[3].len = ctx.total_len;
 
-	monitor_send(&hdr, BT_MONITOR_BASE_HDR_LEN + hdr.hdr_len);
-	monitor_send(&user_log, sizeof(user_log));
-	monitor_send(id, sizeof(id));
-	monitor_send(ctx.msg, ctx.total_len);
-
-	/* Terminate the string with null */
-	poll_out('\0');
+	if (!monitor_send(frags, ARRAY_SIZE(frags))) {
+		restore_drops(&hdr);
+		drop_add(BT_MONITOR_USER_LOGGING);
+	}
 
 	atomic_clear_bit(&flags, BT_LOG_BUSY);
 }
@@ -390,6 +524,49 @@ static void monitor_log_panic(const struct log_backend *const backend)
 {
 #if defined(CONFIG_BT_DEBUG_MONITOR_RTT)
 	panic_mode = true;
+#elif defined(CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN)
+	k_spinlock_key_t key;
+	bool locked = false;
+	uint8_t *data;
+	uint32_t len;
+
+	poll_mode = true;
+
+	/* Setting monitor_tx_busy prevents a producer that read poll_mode
+	 * before it was set above from re-enabling TX interrupts: from here
+	 * on the buffer is drained only by the flush below. A record such a
+	 * producer still commits stays buffered and untransmitted, which is
+	 * accepted in panic context.
+	 */
+	atomic_set(&monitor_tx_busy, 1);
+	uart_irq_tx_disable(monitor_dev);
+
+	/* Serialize with a UART ISR that may be consuming on another CPU.
+	 * Bounded, because if the panic originated inside that ISR the lock
+	 * would never be released: then flush unserialized rather than hang
+	 * the panic path.
+	 */
+	for (int i = 0; i < 100; i++) {
+		if (k_spin_trylock(&monitor_tx_lock, &key) == 0) {
+			locked = true;
+			break;
+		}
+
+		k_busy_wait(10);
+	}
+
+	len = bt_monitor_ring_buf_get_ptr(&monitor_tx_buf, &data);
+	while (len > 0) {
+		struct bt_monitor_data frag = { data, len };
+
+		monitor_poll_send(&frag, 1);
+		bt_monitor_ring_buf_consume(&monitor_tx_buf, len);
+		len = bt_monitor_ring_buf_get_ptr(&monitor_tx_buf, &data);
+	}
+
+	if (locked) {
+		k_spin_unlock(&monitor_tx_lock, key);
+	}
 #endif
 }
 
@@ -418,6 +595,17 @@ static int bt_monitor_init(void)
 				  SEGGER_RTT_MODE_NO_BLOCK_SKIP);
 #elif defined(CONFIG_BT_DEBUG_MONITOR_UART)
 	__ASSERT_NO_MSG(device_is_ready(monitor_dev));
+
+#if defined(CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN)
+	/* SERIAL_SUPPORT_INTERRUPT only guarantees that some UART driver
+	 * supports the interrupt API, not necessarily the monitor UART's.
+	 * Fall back to polling instead of failing, so that a misconfigured
+	 * board still produces monitor output.
+	 */
+	if (uart_irq_callback_user_data_set(monitor_dev, monitor_uart_isr, NULL) != 0) {
+		poll_mode = true;
+	}
+#endif /* CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN */
 
 #if defined(CONFIG_UART_INTERRUPT_DRIVEN)
 	uart_irq_rx_disable(monitor_dev);
