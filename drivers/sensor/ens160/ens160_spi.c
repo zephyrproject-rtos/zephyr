@@ -123,7 +123,7 @@ static int ens160_write_data_spi(const struct device *dev, uint8_t reg, uint8_t 
 			.len = 1,
 		},
 		{
-			.buf = &data,
+			.buf = data,
 			.len = len,
 		}
 	};
