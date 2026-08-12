@@ -130,12 +130,10 @@ framework applies the same control-measurement noise correction as for standard 
 reporting. :c:func:`ztest_benchmark_record_sample` must be called from thread context; ISRs should
 only capture timestamps and leave computing and recording the delta to the benchmark body.
 
-A benchmark that wants a warmup phase should run it through the full measurement loop, recording
-included, and then call :c:func:`ztest_benchmark_discard_samples` to throw the results away.
-Skipping the recording during warmup instead leaves the first measured iteration as the only one
-not preceded by the bookkeeping that :c:func:`ztest_benchmark_record_sample` performs, which is
-enough to make it measurably faster than every iteration after it and to leave the reported
-minimum describing a state the benchmark is never in again.
+The body loops over :c:func:`ztest_benchmark_iterations` and records on every one of them. That
+count is the warmup plus the measured samples; the framework drops the warmup ones and keeps the
+first as the cold cost, so the body never distinguishes between the two phases and every measured
+iteration is preceded by exactly the same work as the one before it.
 
 Understanding Results
 *********************
@@ -172,6 +170,25 @@ Statistical Metrics
 
 * **Min/Max**: The minimum and maximum cycle counts observed, along with which
   sample they occurred on.
+
+Warmup and the cold cost
+""""""""""""""""""""""""
+
+A benchmark is defined as three phases: the setup, then
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` iterations that are executed but not recorded,
+then the measured samples. Individual benchmarks override the warmup with
+``ZTEST_BENCHMARK_WARMUP()`` and ``ZTEST_BENCHMARK_MANUAL_WARMUP()``.
+
+The separation matters because a first execution runs with cold caches, branch predictors and
+TLBs and can be an order of magnitude slower than the steady state. Left in the sample set it
+moves the maximum and the standard deviation while describing a state the benchmark is never in
+again.
+
+Rather than discard that information, the framework keeps it: the duration of the very first
+execution is reported separately as the **cold cost**, alongside the steady-state distribution.
+The two answer different questions — what an operation costs the first time it is reached, and
+what it costs thereafter — and an application that runs a path once at startup cares about the
+first.
 
 Latency percentiles
 """""""""""""""""""

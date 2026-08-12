@@ -166,6 +166,30 @@ static inline void percentiles_report(const char *suite_name, const char *bench_
 }
 #endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
 
+/*
+ * The very first execution of a benchmark, before anything is warm.
+ * Reported separately rather than folded into the distribution, where a
+ * single cold sample would move the maximum and tell the reader nothing
+ * about the steady state.
+ */
+static void ztest_benchmark_print_cold(const char *suite_name, const char *bench_name,
+				       size_t warmup, uint64_t cold,
+				       struct ztest_benchmark_stats *ctrl_stats)
+{
+	double value = noise_correction((double)cold, (double)ctrl_stats->mean);
+
+	if (cold == 0) {
+		return;
+	}
+
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
+	printk("C,%s,%s,%zu,%.3f\n", suite_name, bench_name, warmup, value);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+	printk("\tCold (first run): %.3f, then %zu warmup iterations\n", value, warmup);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+}
+
 static void ztest_benchmark_print_stats(const char *suite_name, const char *bench_name,
 					char record_type, struct ztest_benchmark_stats *stats,
 					struct ztest_benchmark_stats *ctrl_stats)
@@ -251,9 +275,17 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
+	benchmark->cold = 0;
 	percentiles_reset();
 
-	for (size_t i = 0; i < benchmark->iterations; i++) {
+	/*
+	 * The warmup iterations run the whole loop, setup and teardown
+	 * included, and are simply not recorded. Only the very first is
+	 * kept, as the cold cost.
+	 */
+	for (size_t i = 0; i < benchmark->warmup + benchmark->iterations; i++) {
+		uint64_t cycles;
+
 		if (benchmark->setup) {
 			benchmark->setup();
 		}
@@ -264,7 +296,15 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 		benchmark->run();
 		end = timing_counter_get();
 
-		update_metrics(&benchmark->stats, timing_cycles_get(&start, &end));
+		cycles = timing_cycles_get(&start, &end);
+
+		if (i == 0) {
+			benchmark->cold = cycles;
+		}
+
+		if (i >= benchmark->warmup) {
+			update_metrics(&benchmark->stats, cycles);
+		}
 
 		if (benchmark->teardown) {
 			benchmark->teardown();
@@ -272,32 +312,48 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 	}
 }
 
-static struct ztest_benchmark_stats *manual_active_stats;
+static struct ztest_benchmark_manual *manual_active;
+static size_t manual_recorded;
 
 void ztest_benchmark_record_sample(uint64_t cycles)
 {
 	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
 
-	if (manual_active_stats != NULL) {
-		update_metrics(manual_active_stats, cycles);
+	if (manual_active == NULL) {
+		return;
+	}
+
+	if (manual_recorded == 0) {
+		manual_active->cold = cycles;
+	}
+
+	manual_recorded++;
+
+	/*
+	 * Drop the warmup samples here rather than asking the body to
+	 * tell the two phases apart. Recording every iteration and
+	 * discarding the early ones keeps each measured iteration
+	 * preceded by exactly the same work as the one before it.
+	 */
+	if (manual_recorded > manual_active->warmup) {
+		update_metrics(&manual_active->stats, cycles);
 	}
 }
 
-void ztest_benchmark_discard_samples(void)
+size_t ztest_benchmark_iterations(void)
 {
-	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
-
-	if (manual_active_stats != NULL) {
-		memset(manual_active_stats, 0, sizeof(*manual_active_stats));
-		manual_active_stats->min.value = UINT64_MAX;
-		percentiles_reset();
+	if (manual_active == NULL) {
+		return 0;
 	}
+
+	return manual_active->warmup + manual_active->iterations;
 }
 
 static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 {
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
+	benchmark->cold = 0;
 	percentiles_reset();
 
 	if (benchmark->setup) {
@@ -307,9 +363,10 @@ static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 	barrier_dsync_fence_full();
 	barrier_isync_fence_full();
 
-	manual_active_stats = &benchmark->stats;
+	manual_active = benchmark;
+	manual_recorded = 0;
 	benchmark->run();
-	manual_active_stats = NULL;
+	manual_active = NULL;
 
 	if (benchmark->teardown) {
 		benchmark->teardown();
@@ -437,6 +494,9 @@ void benchmark_main(void)
 			ztest_benchmark_run(benchmark);
 			ztest_benchmark_print_stats(suite->name, benchmark->name, 'S',
 						    &benchmark->stats, &ctrl.stats);
+			ztest_benchmark_print_cold(suite->name, benchmark->name,
+						   benchmark->warmup, benchmark->cold,
+						   &ctrl.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_manual, benchmark) {
@@ -446,6 +506,9 @@ void benchmark_main(void)
 			ztest_benchmark_manual_run(benchmark);
 			ztest_benchmark_print_stats(suite->name, benchmark->name, 'M',
 						    &benchmark->stats, &ctrl.stats);
+			ztest_benchmark_print_cold(suite->name, benchmark->name,
+						   benchmark->warmup, benchmark->cold,
+						   &ctrl.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_timed, benchmark) {

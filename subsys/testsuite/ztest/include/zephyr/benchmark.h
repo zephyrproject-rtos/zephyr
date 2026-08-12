@@ -49,19 +49,24 @@ struct ztest_benchmark_stats {
 struct ztest_benchmark {
 	const char *name;
 	size_t iterations;
+	size_t warmup;
 	ztest_benchmark_fn_t setup;
 	ztest_benchmark_fn_t run;
 	ztest_benchmark_fn_t teardown;
 	struct ztest_benchmark_stats stats;
+	uint64_t cold;
 	const struct ztest_benchmark_suite *suite;
 };
 
 struct ztest_benchmark_manual {
 	const char *name;
+	size_t iterations;
+	size_t warmup;
 	ztest_benchmark_fn_t setup;
 	ztest_benchmark_fn_t run;
 	ztest_benchmark_fn_t teardown;
 	struct ztest_benchmark_stats stats;
+	uint64_t cold;
 	const struct ztest_benchmark_suite *suite;
 };
 
@@ -114,19 +119,37 @@ void benchmark_main(void);
  * @param setup_fn Function to run before the benchmark
  * @param teardown_fn Function to run after the benchmark
  */
-#define ZTEST_BENCHMARK(suite_name, benchmark, samples, setup_fn, teardown_fn)			\
+#define ZTEST_BENCHMARK_WARMUP(suite_name, benchmark, samples, warmup_count, setup_fn,		\
+			       teardown_fn)							\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void);		\
-	static const STRUCT_SECTION_ITERABLE(ztest_benchmark,					\
-					     Z_ZTEST_BENCHMARK_NODE(suite_name, benchmark)) =	\
+	static STRUCT_SECTION_ITERABLE(ztest_benchmark,						\
+				       Z_ZTEST_BENCHMARK_NODE(suite_name, benchmark)) =		\
 	{											\
 		.name = #benchmark,								\
 		.iterations = samples,								\
+		.warmup = warmup_count,								\
 		.setup = setup_fn,								\
 		.teardown = teardown_fn,							\
 		.run = Z_ZTEST_BENCHMARK_FN(suite_name, benchmark),				\
 		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(suite_name),				\
 	};											\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void)
+
+/**
+ * @brief Define a benchmark with the default warmup
+ *
+ * As ZTEST_BENCHMARK_WARMUP(), with the warmup taken from
+ * CONFIG_ZTEST_BENCHMARK_WARMUP.
+ *
+ * @param suite_name Name of the suite the benchmark belongs to
+ * @param benchmark Name of the benchmark
+ * @param samples Number of measured iterations
+ * @param setup_fn Function to run before each iteration
+ * @param teardown_fn Function to run after each iteration
+ */
+#define ZTEST_BENCHMARK(suite_name, benchmark, samples, setup_fn, teardown_fn)			\
+	ZTEST_BENCHMARK_WARMUP(suite_name, benchmark, samples, CONFIG_ZTEST_BENCHMARK_WARMUP,	\
+			       setup_fn, teardown_fn)
 
 
 /**
@@ -172,18 +195,37 @@ void benchmark_main(void);
  * @param setup_fn Function to run before the benchmark
  * @param teardown_fn Function to run after the benchmark
  */
-#define ZTEST_BENCHMARK_MANUAL(suite_name, benchmark, setup_fn, teardown_fn)			\
+#define ZTEST_BENCHMARK_MANUAL_WARMUP(suite_name, benchmark, samples, warmup_count, setup_fn,	\
+				      teardown_fn)						\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void);		\
 	static STRUCT_SECTION_ITERABLE(ztest_benchmark_manual,					\
 				       Z_ZTEST_BENCHMARK_MANUAL_NODE(suite_name, benchmark)) =	\
 	{											\
 		.name = #benchmark,								\
+		.iterations = samples,								\
+		.warmup = warmup_count,								\
 		.setup = setup_fn,								\
-		.teardown = teardown_fn,							\
 		.run = Z_ZTEST_BENCHMARK_FN(suite_name, benchmark),				\
+		.teardown = teardown_fn,							\
 		.suite = &Z_ZTEST_BENCHMARK_SUITE_NODE(suite_name),				\
 	};											\
 	static __noinline void Z_ZTEST_BENCHMARK_FN(suite_name, benchmark)(void)
+
+/**
+ * @brief Define a manually sampled benchmark with the default warmup
+ *
+ * As ZTEST_BENCHMARK_MANUAL_WARMUP(), with the warmup taken from
+ * CONFIG_ZTEST_BENCHMARK_WARMUP.
+ *
+ * @param suite_name Name of the suite the benchmark belongs to
+ * @param benchmark Name of the benchmark
+ * @param samples Number of measured samples
+ * @param setup_fn Function to run before the benchmark
+ * @param teardown_fn Function to run after the benchmark
+ */
+#define ZTEST_BENCHMARK_MANUAL(suite_name, benchmark, samples, setup_fn, teardown_fn)		\
+	ZTEST_BENCHMARK_MANUAL_WARMUP(suite_name, benchmark, samples,				\
+				      CONFIG_ZTEST_BENCHMARK_WARMUP, setup_fn, teardown_fn)
 
 /**
  * @brief Record one sample of a manually sampled benchmark
@@ -200,6 +242,19 @@ void benchmark_main(void);
  * @param cycles Measured span in timing cycles
  */
 void ztest_benchmark_record_sample(uint64_t cycles);
+
+/**
+ * @brief Number of times a manual benchmark body should run its loop
+ *
+ * The warmup count plus the measured sample count of the running
+ * ZTEST_BENCHMARK_MANUAL() benchmark. The body records a sample on every
+ * one of these iterations; the framework drops the warmup ones and keeps
+ * the first as the cold cost, so the body does not have to distinguish
+ * between the two phases.
+ *
+ * Returns zero outside a manual benchmark body.
+ */
+size_t ztest_benchmark_iterations(void);
 
 /**
  * @}
