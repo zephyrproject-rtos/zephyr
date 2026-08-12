@@ -519,7 +519,9 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 
 	/* send headers */
 	if (IS_ENABLED(CONFIG_HTTP_SERVER_COMPRESSION)) {
-		res_detail.content_encoding = http_compression_text(chosen_compression);
+		if (chosen_compression != HTTP_NONE) {
+			res_detail.content_encoding = http_compression_text(chosen_compression);
+		}
 	}
 	ret = send_headers_frame(client, HTTP_200_OK, frame->stream_identifier, &res_detail, 0,
 				 NULL, 0);
