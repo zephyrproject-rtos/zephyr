@@ -59,6 +59,7 @@ config USBH_MAX_UHC_MSG
 
 rsource "Kconfig.usbip"
 rsource "class/Kconfig"
+rsource "Kconfig.msc"
 
 config USBH_USB2_ENUM_SCHEME
 	bool "USB2 enumeration (64-byte GET_DESCRIPTOR before SET_ADDRESS)"

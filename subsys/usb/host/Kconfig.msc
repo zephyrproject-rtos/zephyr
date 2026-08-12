@@ -1,0 +1,158 @@
+# Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_MSC
+	bool "USB Mass Storage host descriptor helpers"
+	default n
+	select SCSI
+	help
+	  Parse the configuration descriptor to find the MSC interface and bulk
+	  IN/OUT endpoints (MSC class bind/probe).
+
+config USBH_MSC_CLASS
+	bool "USB MSC host class driver (automatic class probe)"
+	depends on USBH_MSC
+	default y
+	help
+	  Register a USB host class instance that matches Mass Storage interfaces
+	  and runs storage bringup from usbh_class_probe_device() after
+	  enumeration completes.
+
+config USBH_MSC_AUTO_BRINGUP
+	bool "Auto-run MSC storage bringup from class probe"
+	depends on USBH_MSC_CLASS
+	default y
+	help
+	  When enabled, the MSC host class probe handler calls
+	  usbh_msc_storage_bringup() (SCSI probe + optional scsi_disk attach).
+	  Disable to bind descriptors only and call bringup from the application.
+
+config USBH_MSC_LUN_SLOTS
+	int "Maximum concurrent USB MSC LUN contexts"
+	depends on USBH_MSC
+	default 4
+	range 1 16
+	help
+	  Number of struct usb_msc_lun objects (transport + scsi_device
+	  [+ scsi_disk]). Covers transport bindings, probe-only bringup, and
+	  registered scsi_disk volumes in one registry.
+
+config USBH_MSC_DISK
+	bool "Register USB MSC LUNs as scsi_disk volumes"
+	depends on USBH_MSC && DISK_DRIVER_SCSI
+	default y
+	help
+	  After SCSI probe, register a generic scsi_disk volume for use with
+	  disk_access / FatFs.
+
+if USBH_MSC_DISK
+
+config USBH_MSC_DISK_NAME
+	string "disk_access name for auto-attached LUN0"
+	default "USB"
+	help
+	  Volume name passed to scsi_disk_register() for LUN0 when auto-attach
+	  is enabled during usbh_msc_storage_bringup().
+
+config USBH_MSC_DISK_AUTO_ATTACH
+	bool "Auto-attach LUN0 scsi_disk during storage bringup"
+	default y
+	help
+	  When enabled, usbh_msc_storage_bringup() registers LUN0 as a
+	  disk_access volume using CONFIG_USBH_MSC_DISK_NAME.
+
+config USBH_MSC_DISK_ATTACH_ALL_LUNS
+	bool "Auto-attach every probed MSC LUN as a scsi_disk volume"
+	default n
+	depends on USBH_MSC_DISK_AUTO_ATTACH
+	help
+	  When enabled, each probed LUN is attached during bringup (names: USB,
+	  USB1, USB2, …). Requires CONFIG_USBH_MSC_LUN_SLOTS large enough for
+	  the device.
+
+config USBH_MSC_DISK_PARTITION
+	bool "Discover FAT/exFAT partition before registering LUN0"
+	default y
+	help
+	  Run scsi_partition_discover_fat() before scsi_disk_register(). When
+	  no FAT volume is found the full LUN is still registered (whole-disk
+	  fallback).
+
+endif # USBH_MSC_DISK
+
+config USBH_MSC_STRICT_PROBE
+	bool "Strict MSC descriptor probe rules"
+	depends on USBH_MSC
+	default y
+	help
+	  Apply descriptor gates per the USB Mass Storage class specification:
+
+	  bDeviceClass must be 0 (definitions at interface), interface subclass
+	  in the RBC..SCSI range, protocol CB/CBI/BBB, alternate setting 0 only,
+	  bulk IN+OUT, interrupt endpoint required for CBI, and subclass must be
+	  UFI, 8070, or SCSI for the SCSI command path.
+
+	  Disable for non-standard devices that still expose a valid MSC bulk pair.
+
+config USBH_MSC_LOG_PROBE
+	bool "Log MSC bulk interface probe when configuration completes"
+	depends on USBH_MSC
+	default n
+	help
+	  Emit one INFO line from the host stack right after USB_STATE_CONFIGURED.
+
+config USBH_MSC_BOT_CBW_CDB_LOG
+	bool "Log MSC BOT CBW and SCSI CDB at INFO before each bulk OUT"
+	depends on USBH_MSC
+	default n
+	help
+	  Emit one INFO line plus a 31-byte CBW hexdump for every BOT command
+	  (CBW bulk OUT). Decodes READ(10) and WRITE(10) CDB LBA and block count.
+
+config USBH_MSC_FLOW_LOG
+	bool "MSC host bringup and BOT phase flow logs at INFO"
+	depends on USBH_MSC
+	default n
+	help
+	  Step-by-step INFO logs during usbh_msc_storage_bringup and each BOT
+	  phase (CBW / DATA / CSW), including errno names on failures. Use with
+	  CONFIG_USBH_LOG_LEVEL_DBG and CONFIG_UHC_DRIVER_LOG_LEVEL_DBG for full
+	  UHC detail.
+
+config USBH_MSC_BRINGUP_MODE_SENSE6
+	bool "Hexdump MODE SENSE(6) during usbh_msc_storage_bringup probe-only path"
+	depends on USBH_MSC
+	default n
+	help
+	  When bringup probes LUNs without scsi_disk attach, issue an extra
+	  MODE SENSE(6) after @ref scsi_device_probe for debug logging.
+	  Write-protected status is already captured during probe. Default off:
+	  some USB sticks STALL CSW on MODE SENSE(6) during bringup.
+
+config USBH_MSC_BOT_CBW_TRANSFER_TIMEOUT_MS
+	int "MSC BOT synchronous bulk CBW/Data/CSW timeout (milliseconds)"
+	depends on USBH_MSC
+	default 5000
+	range 100 600000
+	help
+	  Maximum wait for each BOT bulk-phase completion when using the Zephyr MSC
+	  host BOT helper (blocking synchronous transport). Applies per CBW OUT, DATA IN/OUT,
+	  and CSW IN.
+
+config USBH_MSC_BOT_POST_CBW_DELAY_US
+	int "Busy-wait (microseconds) after CBW OUT before DATA (0 = no pacing)"
+	depends on USBH_MSC
+	default 0
+	range 0 100000
+	help
+	  Optional delay between CBW OUT and the DATA phase. Default 0 issues DATA
+	  immediately after CBW completion.
+
+config USBH_MSC_BOT_TRANSPORT_RECOVER_ON_XFER_ERR
+	bool "MSC BOT transport reset (EP0 0xFF + HALT clear) after bulk xfer errors"
+	depends on USBH_MSC
+	default n
+	help
+	  When a BOT bulk phase fails (-EIO, -ETIMEDOUT, -EPIPE), run full transport
+	  recovery before the next command. Default off uses minimal BOT reset behavior;
+	  the HCD soft-retry path handles COMP=4 transaction errors.

@@ -1,0 +1,7 @@
+tests:
+  usb.msc_host:
+    platform_allow:
+      - native_sim
+    tags:
+      - usb
+      - msc
