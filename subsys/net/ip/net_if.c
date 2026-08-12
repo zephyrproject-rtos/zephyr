@@ -449,6 +449,8 @@ static inline void init_iface(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct net_if_api *api;
 
+	NET_ASSERT(dev != NULL);
+
 	if (!device_is_ready(dev)) {
 		NET_ERR("Iface %p device not ready", iface);
 		return;
@@ -715,10 +717,11 @@ struct net_if *net_if_get_first_up(void)
 
 static enum net_l2_flags l2_flags_get(struct net_if *iface)
 {
+	const struct net_l2 *l2 = net_if_l2(iface);
 	enum net_l2_flags flags = 0;
 
-	if (net_if_l2(iface) && net_if_l2(iface)->get_flags) {
-		flags = net_if_l2(iface)->get_flags(iface);
+	if (l2 != NULL && l2->get_flags != NULL) {
+		flags = l2->get_flags(iface);
 	}
 
 	return flags;
@@ -6278,6 +6281,10 @@ int net_if_addr_unref(struct net_if *iface,
 
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	const struct net_l2 *l2 = net_if_l2(iface);
+
+	NET_ASSERT(l2 != NULL);
+
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
 	    net_if_is_promisc(iface)) {
 		struct net_pkt *new_pkt;
@@ -6289,7 +6296,7 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	return net_if_l2(iface)->recv(iface, pkt);
+	return l2->recv(iface, pkt);
 }
 
 void net_if_register_link_cb(struct net_if_link_cb *link,
@@ -6431,7 +6438,8 @@ static void notify_iface_up(struct net_if *iface)
 		/* CAN does not require link address. */
 	} else {
 		if (!net_if_is_offloaded(iface)) {
-			NET_ASSERT(net_if_get_link_addr(iface)->len > 0);
+			NET_ASSERT(net_if_get_link_addr(iface) != NULL &&
+				   net_if_get_link_addr(iface)->len > 0);
 		}
 	}
 
