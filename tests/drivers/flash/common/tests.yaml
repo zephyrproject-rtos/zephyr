@@ -74,6 +74,7 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -196,6 +197,7 @@ tests:
       - nucleo_g474re
     platform_exclude:
       - nucleo_wb55rg
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
   drivers.flash.common.non_quad_mode:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE=boards/mx25r64_non_quad.overlay
@@ -220,6 +222,7 @@ tests:
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
     extra_args:
       - CONFIG_TEST_FORCE_STORAGE_PARTITION=y
   drivers.flash.common.test_storage_partition.nrf54lm20:
@@ -354,3 +357,10 @@ tests:
     extra_args:
       - FILE_SUFFIX="w25n01gv"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.stm32.xspi_driver_relocation:
+    filter: CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION
+    sysbuild: true
+    platform_allow:
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
+    integration_platforms:
+      - stm32h7s78_dk/stm32h7s7xx/ext_flash_app
