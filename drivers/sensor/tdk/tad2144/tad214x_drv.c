@@ -43,6 +43,7 @@ static int tad214x_sample_fetch(const struct device *dev, const enum sensor_chan
 {
 	struct tad214x_data *data = (struct tad214x_data *)dev->data;
 	const struct tad214x_config *cfg = dev->config;
+	int rc = 0;
 
 	tad214x_mutex_lock(dev);
 
@@ -50,10 +51,13 @@ static int tad214x_sample_fetch(const struct device *dev, const enum sensor_chan
 		data->angle = data->encoder_position;
 
 	} else {
-		TAD214x_GetData(&data->tad214x_device, &data->angle, &data->temperature);
+		if (TAD214x_GetData(&data->tad214x_device, &data->angle,
+				    &data->temperature) != INV_ERROR_SUCCESS) {
+			rc = -EIO;
+		}
 	}
 	tad214x_mutex_unlock(dev);
-	return 0;
+	return rc;
 }
 
 static void tad214x_convert_encoder(struct sensor_value *val, uint16_t raw_val)
