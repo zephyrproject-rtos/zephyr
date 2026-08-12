@@ -1680,3 +1680,8 @@ test_i2c_icm56686: icm56686@d9 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_i2c_tlv493d: tlv493d@d9 {
+	compatible = "infineon,tlv493d";
+	reg = <0xd9>;
+};
