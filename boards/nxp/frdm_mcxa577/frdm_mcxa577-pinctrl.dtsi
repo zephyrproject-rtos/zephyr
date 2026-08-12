@@ -240,4 +240,13 @@
 			slew-rate = "slow";
 		};
 	};
+
+	pinmux_tsi: pinmux_tsi {
+		group0 {
+			pinmux = <TSI0_CH0_P5_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
