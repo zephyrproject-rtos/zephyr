@@ -17,7 +17,9 @@ providing:
 * **Statistical Analysis**: Calculations of Mean, Standard Deviation, Standard
   Error, and Min/Max values.
 * **Overhead Compensation**: Inclusion of a control test to account for the
-  benchmarking frameworks own execution time.
+  benchmarking frameworks own execution time. The control is subtracted from
+  every reported statistic identically, so the corrected values are real
+  numbers that generally do not coincide with any single measurement.
 
 Configuration
 *************
@@ -127,6 +129,13 @@ Samples should be recorded as raw cycle deltas between two ``timing_counter_get(
 framework applies the same control-measurement noise correction as for standard benchmarks when
 reporting. :c:func:`ztest_benchmark_record_sample` must be called from thread context; ISRs should
 only capture timestamps and leave computing and recording the delta to the benchmark body.
+
+A benchmark that wants a warmup phase should run it through the full measurement loop, recording
+included, and then call :c:func:`ztest_benchmark_discard_samples` to throw the results away.
+Skipping the recording during warmup instead leaves the first measured iteration as the only one
+not preceded by the bookkeeping that :c:func:`ztest_benchmark_record_sample` performs, which is
+enough to make it measurably faster than every iteration after it and to leave the reported
+minimum describing a state the benchmark is never in again.
 
 Understanding Results
 *********************
