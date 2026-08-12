@@ -1,17 +1,22 @@
 common:
-  timeout: 3600
+  timeout: 1500
   tags:
     - bluetooth
   depends_on: bsim
   sysbuild: true
   harness: bsim
+  platform_allow:
+    - nrf52_bsim
+    - nrf54l15bsim/nrf54l15/cpuapp
+    - nrf5340bsim/nrf5340/cpuapp
 
 tests:
+  # Note: By now twister's bsim(script) harness does not parallelize tests scripts
+  # that are part of the same test. As we have lots of test scripts for this, we split it in several
+  # chunks so they are at least parallelized at that level.
+  # See #116077
+
   bluetooth.audio:
-    platform_allow:
-      - nrf52_bsim
-      - nrf54l15bsim/nrf54l15/cpuapp
-      - nrf5340bsim/nrf5340/cpuapp
     extra_args:
       - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
@@ -20,4 +25,22 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_audio_prj_conf
       tests_scripts:
-        - test_scripts/
+        - test_scripts/[!_]*.sh
+
+  bluetooth.audio.audio_config.cap:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/cap*
+    required_applications:
+      - application: bluetooth.audio
+
+  bluetooth.audio.audio_config.gmap:
+    build: false
+    harness_config:
+      fixture: bsim_multi_test
+      tests_scripts:
+        - test_scripts/audio_config_tests/gmap*
+    required_applications:
+      - application: bluetooth.audio
