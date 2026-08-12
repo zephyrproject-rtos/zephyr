@@ -10,6 +10,7 @@ supported:
   - arduino_i2c
   - arduino_serial
   - arduino_spi
+  - crc
   - entropy
   - gpio
   - i2c
