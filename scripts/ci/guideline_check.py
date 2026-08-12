@@ -18,6 +18,7 @@ coccinelle_scripts = [
     RESERVED_NAMES_SCRIPT,
     "/scripts/coccinelle/same_identifier.cocci",
     "/scripts/coccinelle/boolean_strict_init.cocci",
+    "/scripts/coccinelle/unnamed_parameters.cocci",
     # "/scripts/coccinelle/boolean.cocci",  # Rule 14.4 - disabled (timeout)
     # "/scripts/coccinelle/identifier_length.cocci",
 ]
