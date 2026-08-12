@@ -4851,6 +4851,10 @@ int bt_disable(void)
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
 
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_settings_flush();
+	}
+
 	/* Reset IDs and corresponding keys. */
 	bt_dev.id_count = 0;
 #if defined(CONFIG_BT_SMP)
