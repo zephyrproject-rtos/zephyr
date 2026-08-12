@@ -303,12 +303,14 @@ static int fxls8974_get_accel_data(const struct device *dev,
 		struct fxls8974_data *data = dev->data;
 		int16_t *raw;
 		uint8_t fsr;
+		int ret = 0;
 
 		k_sem_take(&data->sem, K_FOREVER);
 
 		if (cfg->ops->byte_read(dev, FXLS8974_REG_CTRLREG1, &fsr)) {
 			LOG_ERR("Could not read scale settings");
-			return -EIO;
+			ret = -EIO;
+			goto exit;
 		}
 
 		fsr = (fsr & FXLS8974_CTRLREG1_FSR_MASK) >> 1;
@@ -344,13 +346,16 @@ static int fxls8974_get_accel_data(const struct device *dev,
 				raw = &data->raw[FXLS8974_CHANNEL_ACCEL_Z];
 				break;
 			default:
-				return -ENOTSUP;
+				ret = -ENOTSUP;
+				goto exit;
 			}
 			fxls8974_accel_convert(val, *raw, fsr);
 		}
+
+exit:
 		k_sem_give(&data->sem);
 
-		return 0;
+		return ret;
 }
 
 static int fxls8974_get_temp_data(const struct device *dev, struct sensor_value *val)
