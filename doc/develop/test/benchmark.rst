@@ -175,7 +175,10 @@ Statistical Metrics
 .. note::
 
    :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIERS` replaces the standard error line with the
-   number of samples slower than the median, and that number as a percentage. A latency
+   number of samples that exceed the median by more than
+   :kconfig:option:`CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV` allows, and that number as a
+   percentage. The margin matters because the counter resolution spreads the baseline over a
+   few counts; without it about half of any distribution would be reported. A latency
    distribution is usually a baseline plus a handful of disturbed runs rather than samples of
    one stochastic population, and a standard error over the two suggests an average that no
    single execution ever produced -- ten thousand runs of 760 cycles and one of 1240 give a

@@ -50,8 +50,8 @@ config ZTEST_BENCHMARK_PERCENTILES
 	  characterised by how bad an individual operation can be, and
 	  that lives in the tail of the distribution.
 
-	  The percentiles also give CONFIG_ZTEST_BENCHMARK_OUTLIERS its count of samples slower
-	  than the median.
+	  The percentiles also give CONFIG_ZTEST_BENCHMARK_OUTLIERS its count of samples that sit
+	  clear of the median.
 
 	  A percentile needs enough samples to be resolved at all. p99
 	  needs at least 100, p99.9 at least 1000 and p99.99 at least
@@ -65,8 +65,9 @@ config ZTEST_BENCHMARK_OUTLIERS
 	depends on ZTEST_BENCHMARK_PERCENTILES
 	help
 	  Replace the standard error line of the report with the number
-	  of samples slower than the median, and that number as a
-	  percentage of the samples taken.
+	  of samples that sit clear of the median, and that number as a
+	  percentage of the samples taken. How far clear is set by
+	  CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV.
 
 	  The standard error describes how precisely the mean of one
 	  stochastic population has been estimated. A latency
@@ -79,6 +80,29 @@ config ZTEST_BENCHMARK_OUTLIERS
 
 	  Only the human-readable report changes. The standard error
 	  keeps its column in the CSV output.
+
+config ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV
+	int "Outlier margin above the median, as a divisor"
+	depends on ZTEST_BENCHMARK_OUTLIERS
+	default 16
+	range 1 1000
+	help
+	  How far above the median a sample has to sit before it counts as
+	  an outlier, expressed as a divisor of the median: the default of
+	  16 sets the margin at a sixteenth of the median, so a baseline of
+	  400 counts a sample from 426 upwards. The margin is never less
+	  than two counts, so that a distribution spanning only adjacent
+	  counts of a coarse timer never registers.
+
+	  Without a margin every sample above the median counts, and the
+	  baseline of a benchmark is not one exact value: the resolution of
+	  the timing counter spreads it over a few counts, and where that
+	  counter is coarse relative to the operation being measured the
+	  whole distribution can span as little as two values. Half the
+	  samples then land above the median and are reported as outliers
+	  although nothing disturbed them. Lower this to count smaller
+	  disturbances, raise it on a platform whose baseline is noisy by
+	  nature.
 
 config ZTEST_BENCHMARK_MAX_SAMPLES
 	int "Number of samples retained for percentiles"

@@ -44,6 +44,10 @@ static void printk_line(const char *fn, char sep_char)
  * The correction is a real number, so the corrected values are real
  * numbers too, and generally do not coincide with any single
  * measurement.
+ *
+ * A negative result is not clamped: it means the operation costs less
+ * than the control loop bracketing it, so the counter is too coarse to
+ * measure it. Clamping would hide that behind a plausible number.
  */
 static double noise_correction(double value, double ctrl)
 {
@@ -135,20 +139,33 @@ static uint64_t percentile(uint32_t hundredths)
 
 #if defined(CONFIG_ZTEST_BENCHMARK_OUTLIERS) && defined(CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE)
 /*
- * Samples slower than the median.
+ * Samples disturbed enough to sit clear of the baseline, which for a
+ * kernel latency distribution is the median.
  *
- * For a kernel latency distribution the median is the baseline: the
- * operation costs the same on almost every run, and what matters is how
- * many runs were disturbed and by how much. Counting them says that
- * directly, where a standard error would only describe how precisely an
- * average of two different populations had been estimated.
+ * Merely exceeding the median is not enough: the counter resolution
+ * spreads the baseline over a few counts, so that would report about
+ * half the samples as outliers. Require a margin instead, relative so
+ * it holds across platforms, floored below for quantized distributions.
  */
 static size_t percentiles_outliers(void)
 {
 	uint64_t median = percentile(5000);
+	uint64_t margin = median / CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV;
+	uint64_t threshold;
 	size_t count = 0;
 
-	while ((count < retained_count) && (retained[retained_count - 1 - count] > median)) {
+	/*
+	 * A distribution spanning a couple of counts is at the counter
+	 * resolution, not above it. One count is not enough to exclude
+	 * it: the neighbouring count is exactly one away.
+	 */
+	if (margin < 2U) {
+		margin = 2U;
+	}
+
+	threshold = median + margin;
+
+	while ((count < retained_count) && (retained[retained_count - 1 - count] > threshold)) {
 		count++;
 	}
 
