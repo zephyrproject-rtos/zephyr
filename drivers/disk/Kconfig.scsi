@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_SCSI
+	bool "Generic disk_access backend over SCSI mid-layer"
+	depends on SCSI
+	help
+	  Register a disk_access volume backed by a bound struct scsi_device.
+	  Useful for USB MSC and other transports that expose SCSI LUNs at runtime.
+
+if DISK_DRIVER_SCSI
+
+config SCSI_DISK_BOUNCE_BUF
+	bool "Bounce buffer for unaligned disk I/O"
+	default y
+	help
+	  When application buffers are not DMA-aligned, allocate an internal
+	  bounce buffer for SCSI read/write transfers.
+
+config SCSI_DISK_BOUNCE_SIZE
+	int "Bounce buffer size in bytes"
+	default 4096
+	depends on SCSI_DISK_BOUNCE_BUF
+	help
+	  Size of the internal bounce buffer used for unaligned I/O.
+
+config SCSI_DISK_BUF_ALIGN
+	int "Minimum buffer alignment for direct SCSI I/O"
+	default 4
+	help
+	  Buffers aligned to this boundary are passed directly to the SCSI
+	  mid-layer; others use the bounce buffer when enabled.
+
+module = SCSI_DISK
+module-str = scsi_disk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_SCSI

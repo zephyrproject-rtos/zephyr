@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/scsi/scsi_cmd.h>
 #include <zephyr/storage/disk_access.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/usb/usbd.h>
@@ -14,10 +15,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(usbd_msc, CONFIG_USBD_MSC_LOG_LEVEL);
 
-#define INQUIRY_VERSION_SPC_2	0x04
-#define INQUIRY_VERSION_SPC_3	0x05
-#define INQUIRY_VERSION_SPC_4	0x06
-#define INQUIRY_VERSION_SPC_5	0x07
+#define INQUIRY_VERSION_SPC_2 0x04
+#define INQUIRY_VERSION_SPC_3 0x05
+#define INQUIRY_VERSION_SPC_4 0x06
+#define INQUIRY_VERSION_SPC_5 0x07
 
 /* Claim conformance to SPC-2 because this allows us to implement less commands
  * and do not care about multiple reserved bits that became actual options
@@ -27,9 +28,9 @@ LOG_MODULE_DECLARE(usbd_msc, CONFIG_USBD_MSC_LOG_LEVEL);
  */
 #define CLAIMED_CONFORMANCE_VERSION INQUIRY_VERSION_SPC_2
 
-#define T10_VENDOR_LENGTH	8
-#define T10_PRODUCT_LENGTH	16
-#define T10_REVISION_LENGTH	4
+#define T10_VENDOR_LENGTH   8
+#define T10_PRODUCT_LENGTH  16
+#define T10_REVISION_LENGTH 4
 
 /* Optional, however Windows insists on reading Unit Serial Number.
  * There doesn't seem to be requirement on minimum product serial number length,
@@ -42,15 +43,14 @@ LOG_MODULE_DECLARE(usbd_msc, CONFIG_USBD_MSC_LOG_LEVEL);
  * to allow generating boilerplate handling code.
  */
 #define SCSI_CMD_STRUCT(opcode) struct scsi_##opcode##_cmd
-#define SCSI_CMD_HANDLER(opcode)					\
-static int scsi_##opcode(struct scsi_ctx *ctx,				\
-			 struct scsi_##opcode##_cmd *cmd,		\
-			 uint8_t data_in_buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+#define SCSI_CMD_HANDLER(opcode)                                                                   \
+	static int scsi_##opcode(struct scsi_ctx *ctx, struct scsi_##opcode##_cmd *cmd,            \
+				 uint8_t data_in_buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
 
 /* SAM-6 5.2 Command descriptor block (CDB)
  * Table 43 – CONTROL byte
  */
-#define GET_CONTROL_NACA(cmd)		(cmd->control & BIT(2))
+#define GET_CONTROL_NACA(cmd) (cmd->control & BIT(2))
 
 /* SPC-5 4.3.3 Variable type data field requirements
  * Table 25 — Code set enumeration
@@ -63,47 +63,51 @@ enum code_set {
 
 /* SPC-5 F.3.1 Operation codes Table F.2 — Operation codes */
 enum scsi_opcode {
-	TEST_UNIT_READY = 0x00,
-	REQUEST_SENSE = 0x03,
-	INQUIRY = 0x12,
-	MODE_SENSE_6 = 0x1A,
-	START_STOP_UNIT = 0x1B,
-	PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1E,
-	READ_FORMAT_CAPACITIES = 0x23,
-	READ_CAPACITY_10 = 0x25,
-	READ_10 = 0x28,
-	WRITE_10 = 0x2A,
-	MODE_SENSE_10 = 0x5A,
+	TEST_UNIT_READY = SCSI_OPCODE_TEST_UNIT_READY,
+	REQUEST_SENSE = SCSI_OPCODE_REQUEST_SENSE,
+	INQUIRY = SCSI_OPCODE_INQUIRY,
+	MODE_SENSE_6 = SCSI_OPCODE_MODE_SENSE_6,
+	START_STOP_UNIT = SCSI_OPCODE_START_STOP_UNIT,
+	PREVENT_ALLOW_MEDIUM_REMOVAL = 0x1EU,
+	READ_FORMAT_CAPACITIES = 0x23U,
+	READ_CAPACITY_10 = SCSI_OPCODE_READ_CAPACITY_10,
+	READ_10 = SCSI_OPCODE_READ_10,
+	WRITE_10 = SCSI_OPCODE_WRITE_10,
+	MODE_SENSE_10 = 0x5AU,
 };
 
-SCSI_CMD_STRUCT(TEST_UNIT_READY) {
+SCSI_CMD_STRUCT(TEST_UNIT_READY)
+{
 	uint8_t opcode;
 	uint32_t reserved;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 /* DESC bit was reserved in SPC-2 and is optional since SPC-3 */
-#define GET_REQUEST_SENSE_DESC(cmd)	(cmd->desc & BIT(0))
+#define GET_REQUEST_SENSE_DESC(cmd) (cmd->desc & BIT(0))
 
-SCSI_CMD_STRUCT(REQUEST_SENSE) {
+SCSI_CMD_STRUCT(REQUEST_SENSE)
+{
 	uint8_t opcode;
 	uint8_t desc;
 	uint8_t reserved2;
 	uint8_t reserved3;
 	uint8_t allocation_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
-#define SENSE_VALID			BIT(7)
-#define SENSE_CODE_CURRENT_ERRORS	0x70
-#define SENSE_CODE_DEFERRED_ERRORS	0x71
+#define SENSE_VALID                BIT(7)
+#define SENSE_CODE_CURRENT_ERRORS  0x70
+#define SENSE_CODE_DEFERRED_ERRORS 0x71
 
-#define SENSE_FILEMARK			BIT(7)
-#define SENSE_EOM			BIT(6)
-#define SENSE_ILI			BIT(5)
-#define SENSE_KEY_MASK			BIT_MASK(4)
+#define SENSE_FILEMARK BIT(7)
+#define SENSE_EOM      BIT(6)
+#define SENSE_ILI      BIT(5)
+#define SENSE_KEY_MASK BIT_MASK(4)
 
-#define SENSE_SKSV			BIT(7)
+#define SENSE_SKSV BIT(7)
 
 struct scsi_request_sense_response {
 	uint8_t valid_code;
@@ -118,9 +122,9 @@ struct scsi_request_sense_response {
 	uint16_t sense_key_specific;
 } __packed;
 
-#define INQUIRY_EVPD		BIT(0)
+#define INQUIRY_EVPD           BIT(0)
 /* CMDDT in SPC-2, but obsolete since SPC-3 */
-#define INQUIRY_CMDDT_OBSOLETE	BIT(1)
+#define INQUIRY_CMDDT_OBSOLETE BIT(1)
 
 enum vpd_page_code {
 	VPD_SUPPORTED_VPD_PAGES = 0x00,
@@ -142,7 +146,8 @@ enum designator_type {
 	DESIGNATOR_UUID_IDENTIFIER = 0xA,
 };
 
-SCSI_CMD_STRUCT(INQUIRY) {
+SCSI_CMD_STRUCT(INQUIRY)
+{
 	uint8_t opcode;
 	uint8_t cmddt_evpd;
 	uint8_t page_code;
@@ -151,7 +156,8 @@ SCSI_CMD_STRUCT(INQUIRY) {
 	 */
 	uint16_t allocation_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 struct scsi_inquiry_response {
 	uint8_t peripheral;
@@ -172,16 +178,18 @@ struct scsi_inquiry_response {
 	 */
 } __packed;
 
-#define MODE_SENSE_PAGE_CODE_ALL_PAGES		0x3F
+#define MODE_SENSE_PAGE_CODE_ALL_PAGES 0x3F
 
-SCSI_CMD_STRUCT(MODE_SENSE_6) {
+SCSI_CMD_STRUCT(MODE_SENSE_6)
+{
 	uint8_t opcode;
 	uint8_t dbd;
 	uint8_t page;
 	uint8_t subpage;
 	uint8_t allocation_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 /* SPC-5 7.5.6 Mode parameter header formats
  * Table 443 — Mode parameter header(6)
@@ -193,12 +201,12 @@ struct scsi_mode_sense_6_response {
 	uint8_t block_descriptor_length;
 } __packed;
 
-#define GET_IMMED(cmd)				(cmd->immed & BIT(0))
-#define GET_POWER_CONDITION_MODIFIER(cmd)	(cmd->condition & BIT_MASK(4))
-#define GET_POWER_CONDITION(cmd)		((cmd->start & 0xF0) >> 4)
-#define GET_NO_FLUSH(cmd)			(cmd->start & BIT(2))
-#define GET_LOEJ(cmd)				(cmd->start & BIT(1))
-#define GET_START(cmd)				(cmd->start & BIT(0))
+#define GET_IMMED(cmd)                    (cmd->immed & BIT(0))
+#define GET_POWER_CONDITION_MODIFIER(cmd) (cmd->condition & BIT_MASK(4))
+#define GET_POWER_CONDITION(cmd)          ((cmd->start & 0xF0) >> 4)
+#define GET_NO_FLUSH(cmd)                 (cmd->start & BIT(2))
+#define GET_LOEJ(cmd)                     (cmd->start & BIT(1))
+#define GET_START(cmd)                    (cmd->start & BIT(0))
 /* SBC-4 Table 114 — POWER CONDITION and POWER CONDITION MODIFIER field */
 enum power_condition {
 	POWER_COND_START_VALID = 0x0,
@@ -210,16 +218,18 @@ enum power_condition {
 	POWER_COND_FORCE_STANDBY_0 = 0xB,
 };
 
-SCSI_CMD_STRUCT(START_STOP_UNIT) {
+SCSI_CMD_STRUCT(START_STOP_UNIT)
+{
 	uint8_t opcode;
 	uint8_t immed;
 	uint8_t reserved;
 	uint8_t condition;
 	uint8_t start;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
-#define GET_PREVENT(cmd)			(cmd->prevent & BIT_MASK(2))
+#define GET_PREVENT(cmd) (cmd->prevent & BIT_MASK(2))
 /* SBC-4 Table 77 — PREVENT field */
 enum prevent_field {
 	MEDIUM_REMOVAL_ALLOWED = 0,
@@ -228,16 +238,19 @@ enum prevent_field {
 	PREVENT_OBSOLETE_3 = 3,
 };
 
-SCSI_CMD_STRUCT(PREVENT_ALLOW_MEDIUM_REMOVAL) {
+SCSI_CMD_STRUCT(PREVENT_ALLOW_MEDIUM_REMOVAL)
+{
 	uint8_t opcode;
 	uint8_t reserved1;
 	uint8_t reserved2;
 	uint8_t reserved3;
 	uint8_t prevent;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
-SCSI_CMD_STRUCT(READ_FORMAT_CAPACITIES) {
+SCSI_CMD_STRUCT(READ_FORMAT_CAPACITIES)
+{
 	uint8_t opcode;
 	uint8_t reserved1;
 	uint8_t reserved2;
@@ -247,7 +260,8 @@ SCSI_CMD_STRUCT(READ_FORMAT_CAPACITIES) {
 	uint8_t reserved6;
 	uint16_t allocation_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 struct capacity_list_header {
 	uint8_t reserved1;
@@ -265,7 +279,7 @@ enum descriptor_types {
 struct current_maximum_capacity_descriptor {
 	uint32_t number_of_blocks;
 	uint8_t type;
-	uint32_t block_length : 24;
+	uint32_t block_length: 24;
 } __packed;
 
 struct scsi_read_format_capacities_response {
@@ -273,36 +287,43 @@ struct scsi_read_format_capacities_response {
 	struct current_maximum_capacity_descriptor desc;
 } __packed;
 
-SCSI_CMD_STRUCT(READ_CAPACITY_10) {
+SCSI_CMD_STRUCT(READ_CAPACITY_10)
+{
 	uint8_t opcode;
 	uint8_t reserved_or_obsolete[8];
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 struct scsi_read_capacity_10_response {
 	uint32_t last_lba;
 	uint32_t block_length;
 } __packed;
 
-SCSI_CMD_STRUCT(READ_10) {
+SCSI_CMD_STRUCT(READ_10)
+{
 	uint8_t opcode;
 	uint8_t rdprotect;
 	uint32_t lba;
 	uint8_t group_number;
 	uint16_t transfer_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
-SCSI_CMD_STRUCT(WRITE_10) {
+SCSI_CMD_STRUCT(WRITE_10)
+{
 	uint8_t opcode;
 	uint8_t wrprotect;
 	uint32_t lba;
 	uint8_t group_number;
 	uint16_t transfer_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
-SCSI_CMD_STRUCT(MODE_SENSE_10) {
+SCSI_CMD_STRUCT(MODE_SENSE_10)
+{
 	uint8_t opcode;
 	uint8_t llbaa_dbd;
 	uint8_t page;
@@ -312,7 +333,8 @@ SCSI_CMD_STRUCT(MODE_SENSE_10) {
 	uint8_t reserved6;
 	uint16_t allocation_length;
 	uint8_t control;
-} __packed;
+}
+__packed;
 
 /* SPC-5 7.5.6 Mode parameter header formats
  * Table 444 — Mode parameter header(10)
@@ -401,8 +423,8 @@ static size_t medium_error(struct scsi_ctx *ctx, enum scsi_additional_sense_code
 	return 0;
 }
 
-void scsi_init(struct scsi_ctx *ctx, const char *disk, const char *vendor,
-	       const char *product, const char *revision)
+void scsi_init(struct scsi_ctx *ctx, const char *disk, const char *vendor, const char *product,
+	       const char *revision)
 {
 	memset(ctx, 0, sizeof(struct scsi_ctx));
 	ctx->disk = disk;
@@ -450,7 +472,8 @@ SCSI_CMD_HANDLER(REQUEST_SENSE)
 	r.obsolete = 0;
 	r.filemark_eom_ili_sense_key = ctx->sense_key & SENSE_KEY_MASK;
 	r.information = sys_cpu_to_be32(0);
-	r.additional_sense_length = sizeof(struct scsi_request_sense_response) - 1 -
+	r.additional_sense_length =
+		sizeof(struct scsi_request_sense_response) - 1 -
 		offsetof(struct scsi_request_sense_response, additional_sense_length);
 	r.command_specific_information = sys_cpu_to_be32(0);
 	r.additional_sense_with_qualifier = sys_cpu_to_be16(ctx->asc);
@@ -468,8 +491,7 @@ SCSI_CMD_HANDLER(REQUEST_SENSE)
 	return good(ctx, length);
 }
 
-static int fill_inquiry(struct scsi_ctx *ctx,
-			uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
+static int fill_inquiry(struct scsi_ctx *ctx, uint8_t buf[static CONFIG_USBD_MSC_SCSI_BUFFER_SIZE])
 {
 	/* For simplicity prepare whole response on stack and then copy
 	 * requested length.
@@ -489,7 +511,7 @@ static int fill_inquiry(struct scsi_ctx *ctx,
 	/* ACA not supported; No SAM-5 LUNs; Complies to SPC */
 	r.format = 0x02;
 	r.additional_length = sizeof(struct scsi_inquiry_response) - 1 -
-		offsetof(struct scsi_inquiry_response, additional_length);
+			      offsetof(struct scsi_inquiry_response, additional_length);
 	/* No embedded storage array controller available */
 	r.sccs = 0x00;
 	/* No embedded enclosure services */
@@ -563,7 +585,7 @@ SCSI_CMD_HANDLER(INQUIRY)
 		/* Optional in SPC-2 and later obsoleted, do not support it */
 		ret = -EINVAL;
 	} else if (cmd->cmddt_evpd & INQUIRY_EVPD) {
-		/* Linux won't ask for VPD unless enabled with
+		/* Hosts may not request VPD unless enabled with
 		 * echo "Zephyr:Disk:0x10000000" > /proc/scsi/device_info
 		 */
 		ret = MIN(sys_be16_to_cpu(cmd->allocation_length),
@@ -573,8 +595,7 @@ SCSI_CMD_HANDLER(INQUIRY)
 		ret = -EINVAL;
 	} else {
 		/* Standard inquiry */
-		ret = MIN(sys_be16_to_cpu(cmd->allocation_length),
-			  fill_inquiry(ctx, data_in_buf));
+		ret = MIN(sys_be16_to_cpu(cmd->allocation_length), fill_inquiry(ctx, data_in_buf));
 	}
 
 	if (ret < 0) {
@@ -703,8 +724,7 @@ SCSI_CMD_HANDLER(READ_CAPACITY_10)
 	return good(ctx, sizeof(r));
 }
 
-static int
-validate_transfer_length(struct scsi_ctx *ctx, uint32_t lba, uint16_t length)
+static int validate_transfer_length(struct scsi_ctx *ctx, uint32_t lba, uint16_t length)
 {
 	uint32_t last_lba = lba + length - 1;
 
@@ -853,14 +873,22 @@ int scsi_usb_boot_cmd_len(const uint8_t *cb, int len)
 	}
 
 	switch (cb[0]) {
-	case TEST_UNIT_READY:	return sizeof(SCSI_CMD_STRUCT(TEST_UNIT_READY));
-	case REQUEST_SENSE:	return sizeof(SCSI_CMD_STRUCT(REQUEST_SENSE));
-	case INQUIRY:		return sizeof(SCSI_CMD_STRUCT(INQUIRY));
-	case READ_CAPACITY_10:	return sizeof(SCSI_CMD_STRUCT(READ_CAPACITY_10));
-	case READ_10:		return sizeof(SCSI_CMD_STRUCT(READ_10));
-	case WRITE_10:		return sizeof(SCSI_CMD_STRUCT(WRITE_10));
-	case MODE_SENSE_10:	return sizeof(SCSI_CMD_STRUCT(MODE_SENSE_10));
-	default:		return len;
+	case TEST_UNIT_READY:
+		return sizeof(SCSI_CMD_STRUCT(TEST_UNIT_READY));
+	case REQUEST_SENSE:
+		return sizeof(SCSI_CMD_STRUCT(REQUEST_SENSE));
+	case INQUIRY:
+		return sizeof(SCSI_CMD_STRUCT(INQUIRY));
+	case READ_CAPACITY_10:
+		return sizeof(SCSI_CMD_STRUCT(READ_CAPACITY_10));
+	case READ_10:
+		return sizeof(SCSI_CMD_STRUCT(READ_10));
+	case WRITE_10:
+		return sizeof(SCSI_CMD_STRUCT(WRITE_10));
+	case MODE_SENSE_10:
+		return sizeof(SCSI_CMD_STRUCT(MODE_SENSE_10));
+	default:
+		return len;
 	}
 }
 
@@ -873,16 +901,16 @@ size_t scsi_cmd(struct scsi_ctx *ctx, const uint8_t *cb, int len,
 	ctx->read_cb = NULL;
 	ctx->write_cb = NULL;
 
-#define SCSI_CMD(opcode) do {							\
-	if (len == sizeof(SCSI_CMD_STRUCT(opcode)) && cb[0] == opcode) {	\
-		LOG_DBG("SCSI " #opcode);					\
-		if (GET_CONTROL_NACA(((SCSI_CMD_STRUCT(opcode)*)cb))) {		\
-			return illegal_request(ctx, INVALID_FIELD_IN_CDB);	\
-		}								\
-		return scsi_##opcode(ctx, (SCSI_CMD_STRUCT(opcode)*)cb,		\
-				     data_in_buf);				\
-	}									\
-} while (0)
+#define SCSI_CMD(opcode)                                                                           \
+	do {                                                                                       \
+		if (len == sizeof(SCSI_CMD_STRUCT(opcode)) && cb[0] == opcode) {                   \
+			LOG_DBG("SCSI " #opcode);                                                  \
+			if (GET_CONTROL_NACA(((SCSI_CMD_STRUCT(opcode) *)cb))) {                   \
+				return illegal_request(ctx, INVALID_FIELD_IN_CDB);                 \
+			}                                                                          \
+			return scsi_##opcode(ctx, (SCSI_CMD_STRUCT(opcode) *)cb, data_in_buf);     \
+		}                                                                                  \
+	} while (0)
 
 	SCSI_CMD(TEST_UNIT_READY);
 	SCSI_CMD(REQUEST_SENSE);
