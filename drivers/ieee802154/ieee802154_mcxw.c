@@ -1407,6 +1407,12 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		k_free(msg);
 	}
 
+	/* Restore main channel after a CSL RX slot on a temporary channel.
+	 * Channel restore is needed for both successful (gPdDataInd_c) and
+	 * failed (gPlmeTimeoutInd_c) CSL receptions.
+	 */
+	rf_restore_main_channel();
+
 	/* Always stop, the CSL restarts as needed */
 	stop_csl_receiver();
 
