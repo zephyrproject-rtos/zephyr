@@ -114,7 +114,7 @@ static volatile bool fired;
 
 #if defined(CONFIG_INT_BENCH_SCENARIO_ENTRY) || defined(CONFIG_INT_BENCH_SCENARIO_LOCKED)
 /* Timestamp as early as possible in the ISR: measures the entry path */
-static void entry_handler(void)
+static BENCH_ISR_FUNC void entry_handler(void)
 {
 	ztest_benchmark_end();
 	fired = true;
@@ -163,7 +163,7 @@ static struct k_thread waiter_thread;
 
 #ifdef CONFIG_INT_BENCH_SCENARIO_EXIT
 /* Timestamp as the last operation in the ISR: measures the exit path */
-static void exit_handler(void)
+static BENCH_ISR_FUNC void exit_handler(void)
 {
 	fired = true;
 	ztest_benchmark_start();

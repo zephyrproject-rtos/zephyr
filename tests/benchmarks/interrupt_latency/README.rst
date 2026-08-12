@@ -296,6 +296,28 @@ sees it as a late interrupt: on qemu_x86_64 that shows up as isolated
 maxima of over a hundred million cycles, which say nothing about Zephyr.
 Read this scenario on hardware.
 
+Handlers in RAM
+***************
+
+On a device that executes in place from flash, part of the interrupt entry
+latency is spent fetching the handler. Build with the ``prj.ramfunc.conf``
+overlay to relocate the benchmark's handlers to RAM with ``__ramfunc`` and
+compare against a run without it:
+
+.. code-block:: console
+
+   west build -p -b <board> tests/benchmarks/interrupt_latency -t run -- \
+       -DEXTRA_CONF_FILE=prj.ramfunc.conf
+
+Only the benchmark's own handlers move. The vector table and the
+architecture's interrupt entry code stay where the build put them, so the
+difference between the two runs is a lower bound on what relocating the
+whole interrupt path would save.
+
+This one needs real hardware to say anything: emulators do not model flash
+wait states, so under QEMU the two runs are identical apart from where the
+symbols landed.
+
 Running
 *******
 
@@ -344,6 +366,8 @@ Future work
 * Priority interference: how much a high priority ISR delays a lower
   priority one that is already pending.
 * Latency distribution histograms.
+* Relocating the vector table and the architecture entry code, not just
+  the benchmark's handlers, so the full flash contribution can be seen.
 * An external event trigger, for example a GPIO loopback described in
   devicetree, so that entry latency includes the pin and interrupt
   controller propagation delays that a software trigger skips.
