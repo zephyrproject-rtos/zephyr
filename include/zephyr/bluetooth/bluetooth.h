@@ -122,6 +122,29 @@ struct bt_le_ext_adv_sent_info {
 };
 
 /**
+ * @brief Info of the advertising set terminated event.
+ *
+ * @note Used in @ref bt_le_ext_adv_cb.
+ */
+struct bt_le_ext_adv_terminated_info {
+	/**
+	 * @brief Reason the advertising set was terminated (HCI error code).
+	 *
+	 * BT_HCI_ERR_SUCCESS indicates the advertising set was terminated
+	 * because a connection was created; the
+	 * @ref bt_le_ext_adv_cb.connected callback is invoked in addition to
+	 * this one. BT_HCI_ERR_LIMIT_REACHED and BT_HCI_ERR_ADV_TIMEOUT
+	 * indicate the limit set in @ref bt_le_ext_adv_start_param was
+	 * reached. Other values indicate the Controller terminated the set
+	 * due to an error.
+	 */
+	uint8_t reason;
+
+	/** Number of completed extended advertising events */
+	uint8_t num_completed_ext_adv_evts;
+};
+
+/**
  * @brief Info of the advertising connected event.
  *
  * @note Used in @ref bt_le_ext_adv_cb.
@@ -251,6 +274,26 @@ struct bt_le_ext_adv_cb {
 	 */
 	void (*scanned)(struct bt_le_ext_adv *adv,
 			struct bt_le_ext_adv_scanned_info *info);
+
+	/**
+	 * @brief The advertising set was terminated by the Controller.
+	 *
+	 * This callback is invoked for every LE Advertising Set Terminated
+	 * event, regardless of the reason: a connection was created, the
+	 * duration or max-events limit was reached, or the Controller
+	 * terminated the set due to an error.
+	 *
+	 * It is not invoked when advertising is stopped by the application
+	 * with @ref bt_le_ext_adv_stop.
+	 *
+	 * It is invoked before the @ref bt_le_ext_adv_cb.connected and
+	 * @ref bt_le_ext_adv_cb.sent callbacks for the same event.
+	 *
+	 * @param adv  The advertising set object.
+	 * @param info Information about the terminated event.
+	 */
+	void (*terminated)(struct bt_le_ext_adv *adv,
+			   const struct bt_le_ext_adv_terminated_info *info);
 
 #if defined(CONFIG_BT_PRIVACY) || defined(__DOXYGEN__)
 	/**
