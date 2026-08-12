@@ -425,6 +425,7 @@ class Script(Harness):
         self.running_dir = None
         self.log_prefix = None
         self._output = []
+        self._script_names = {}
 
     def configure(self, instance: TestInstance):
         super().configure(instance)
@@ -480,16 +481,22 @@ class Script(Harness):
         """Return list of test scripts resolved from harness config."""
         input_sources = self.instance.testsuite.harness_config.tests_scripts or ['tests_scripts']
         tests_scripts = []
+        self._script_names = {}
         for src in input_sources:
             source = os.path.normpath(
                 os.path.join(self.source_dir, os.path.expanduser(os.path.expandvars(src)))
             )
             if os.path.isdir(source):
-                # Get all .sh files in the directory, excluding those starting with '_'
-                scripts = glob(os.path.join(source, "*.sh"))
-                tests_scripts.extend(
-                    s for s in scripts if not os.path.basename(s).startswith('_')
-                )
+                # Get all .sh files in the directory and sub-directories,
+                # excluding those starting with '_'
+                scripts = sorted(glob(os.path.join(source, "**", "*.sh"), recursive=True))
+                for s in scripts:
+                    if os.path.basename(s).startswith('_'):
+                        continue
+                    tests_scripts.append(s)
+                    # Save the relative path of the script inside the directory, so scripts with
+                    # the same names in different sub-directories don't end with the same testname
+                    self._script_names[s] = os.path.relpath(s, source).replace(os.sep, '.')
             else:
                 # A directly specified file or non-existent path are included as-is
                 tests_scripts.append(source)
@@ -551,7 +558,7 @@ class Script(Harness):
     def _add_testcase_from_script(
         self, script: str, rc: int, duration: float = 0.0, reason: str = ''
     ) -> None:
-        script_name = os.path.basename(script)
+        script_name = self._script_names.get(script, os.path.basename(script))
         tc_name = f"{self.id}.{script_name}"
         tc = self.instance.add_testcase(tc_name)
         tc.duration = duration
