@@ -12,6 +12,7 @@ supported:
   - arduino_spi
   - gpio
   - i2c
+  - rtc
   - spi
   - uart
   - usbd
