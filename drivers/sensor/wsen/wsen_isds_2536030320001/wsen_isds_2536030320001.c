@@ -624,8 +624,7 @@ static int isds_2536030320001_gyro_full_scale_get(const struct device *dev, stru
 
 	data->gyro_range = gyro_fs;
 
-	fs->val1 = isds_2536030320001_gyro_full_scale_list[gyro_fs];
-	fs->val2 = 0;
+	sensor_degrees_to_rad((int32_t)isds_2536030320001_gyro_full_scale_list[gyro_fs], fs);
 
 	return 0;
 }
