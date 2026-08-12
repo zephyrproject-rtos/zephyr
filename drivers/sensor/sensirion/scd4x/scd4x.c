@@ -311,12 +311,12 @@ static int scd4x_get_temperature_offset(const struct device *dev, struct sensor_
 		return ret;
 	}
 
-	int32_t temp;
+	int64_t temp;
 
 	/*Calculation from Datasheet*/
 	temp = sys_get_be16(rx_buf) * SCD4X_MAX_TEMP;
 	val->val1 = (int32_t)(temp / 0xFFFF);
-	val->val2 = ((temp % 0xFFFF) * 1000000) / 0xFFFF;
+	val->val2 = (int32_t)(((temp % 0xFFFF) * 1000000) / 0xFFFF);
 
 	return 0;
 }
