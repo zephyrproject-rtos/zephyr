@@ -8,7 +8,6 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
-#include <wait_q.h>
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
@@ -75,8 +74,6 @@ void k_free(void *ptr)
 		struct k_heap *heap = *heap_ref;
 		k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-		__ASSERT(z_waitq_head(&heap->wait_q) == NULL,
-			 "unexpected heap waiters");
 		sys_heap_free(&heap->heap, ptr);
 		k_spin_unlock(&heap->lock, key);
 
