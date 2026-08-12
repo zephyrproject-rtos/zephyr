@@ -140,6 +140,7 @@ static void entry_teardown(void)
 ZTEST_BENCHMARK_MANUAL(interrupt, entry_trigger_to_isr, NUM_ITERATIONS, entry_setup, entry_teardown)
 {
 	fired = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	ztest_benchmark_start();
@@ -186,6 +187,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, exit_resume_interrupted, NUM_ITERATIONS, exit_
 		       exit_teardown)
 {
 	fired = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	bench_trigger();
@@ -236,6 +238,7 @@ static void resched_teardown(void)
 
 ZTEST_BENCHMARK_MANUAL(interrupt, exit_reschedule, NUM_ITERATIONS, resched_setup, resched_teardown)
 {
+	bench_load_churn();
 	bench_load_pollute();
 
 	bench_trigger();
@@ -266,6 +269,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, locked_unlock_to_isr, NUM_ITERATIONS, locked_s
 	unsigned int key;
 
 	fired = false;
+	bench_load_churn();
 
 	key = irq_lock();
 
@@ -276,7 +280,10 @@ ZTEST_BENCHMARK_MANUAL(interrupt, locked_unlock_to_isr, NUM_ITERATIONS, locked_s
 	 * Pollute from inside the critical section, so that the
 	 * interrupt is unmasked with the caches in the state a critical
 	 * section doing real work would leave them in. This lengthens
-	 * the hold time beyond the configured value.
+	 * the hold time beyond the configured value. Only the cache load
+	 * runs here: the kernel and scheduler churn make kernel calls,
+	 * which is not valid with interrupts locked, so they ran before
+	 * the lock was taken.
 	 */
 	bench_load_pollute();
 
@@ -332,6 +339,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, throughput_round_trip, NUM_ITERATIONS, through
 {
 	isr_count = 0U;
 	done = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	bench_trigger();
@@ -362,6 +370,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, dynamic_connect, NUM_ITERATIONS, dynamic_setup
 {
 	unsigned int line = bench_trigger_irq_line();
 
+	bench_load_churn();
 	bench_load_pollute();
 
 	ztest_benchmark_start();
@@ -509,6 +518,7 @@ static bool alt_wait(void)
 static void alt_entry_measure(const char *name)
 {
 	alt_fired = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	ztest_benchmark_start();
@@ -560,6 +570,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, 
 	bool served;
 
 	alt_fired = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	key = irq_lock();
@@ -623,6 +634,7 @@ static void e2e_teardown(void)
 
 ZTEST_BENCHMARK_MANUAL(interrupt, irq_to_thread, NUM_ITERATIONS, e2e_setup, e2e_teardown)
 {
+	bench_load_churn();
 	bench_load_pollute();
 
 	ztest_benchmark_start();
@@ -676,6 +688,7 @@ static void nested_teardown(void)
 ZTEST_BENCHMARK_MANUAL(interrupt, nested_preempt, NUM_ITERATIONS, nested_setup, nested_teardown)
 {
 	nested_done = false;
+	bench_load_churn();
 	bench_load_pollute();
 
 	bench_trigger();
