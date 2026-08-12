@@ -424,8 +424,7 @@ static int close_socket(struct net_context *ctx)
 
 static int can_close_socket(struct net_context *ctx)
 {
-	int i, ret;
-	bool found = false;
+	int i, ret = 0;
 
 	/* A single socket can have registered more than one filter (each
 	 * setsockopt(CAN_RAW_FILTER) call adds one receivers[] entry for the
@@ -439,7 +438,6 @@ static int can_close_socket(struct net_context *ctx)
 			struct socketcan_filter sfilter;
 
 			receivers[i].ctx = NULL;
-			found = true;
 
 			sfilter.can_id = receivers[i].can_id;
 			sfilter.can_mask = receivers[i].can_mask;
@@ -448,28 +446,35 @@ static int can_close_socket(struct net_context *ctx)
 						net_context_get_iface(ctx),
 						ctx)) {
 				/* We can detach now as there are no other
-				 * sockets that have same filter.
+				 * sockets that have same filter. Record the
+				 * result instead of returning early -- the
+				 * net_context_put() below must always run, so
+				 * one filter's detach failing can't be allowed
+				 * to skip cleanup for the rest of this socket.
 				 */
-				ret = close_socket(ctx);
-				if (ret < 0) {
-					return ret;
+				int close_ret = close_socket(ctx);
+
+				if (close_ret < 0 && ret == 0) {
+					ret = close_ret;
 				}
 			}
 		}
 	}
 
-	if (found) {
-		/* Release the net_context itself back to the
-		 * CONFIG_NET_MAX_CONTEXTS pool. Without this call the context
-		 * stays marked NET_CONTEXT_IN_USE forever, so every
-		 * close()+socket() cycle on a CAN socket permanently burns one
-		 * slot until the pool is exhausted and socket()/bind() start
-		 * failing with -ENOENT for every CAN socket in the system.
-		 */
-		net_context_put(ctx);
-	}
+	/* Release the net_context itself back to the CONFIG_NET_MAX_CONTEXTS
+	 * pool. Unconditional -- the context's lifetime is owned by the fd
+	 * existing at all, not by whether a filter happened to be registered
+	 * on it. A socket that never called setsockopt(CAN_RAW_FILTER) never
+	 * gets a receivers[] entry, so gating this call on "was one found"
+	 * leaked the context for that case too. Without this call the
+	 * context stays marked NET_CONTEXT_IN_USE forever, so every
+	 * close()+socket() cycle on a CAN socket permanently burns one slot
+	 * until the pool is exhausted and socket()/bind() start failing with
+	 * -ENOENT for every CAN socket in the system.
+	 */
+	net_context_put(ctx);
 
-	return 0;
+	return ret;
 }
 
 static int can_sock_close_vmeth(void *obj)
