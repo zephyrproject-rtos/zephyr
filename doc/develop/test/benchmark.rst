@@ -119,39 +119,38 @@ standard benchmarks.
          ztest_benchmark_end();
    }
 
-When the span does not begin and end in the same execution context, the endpoint captured
-elsewhere is handed over instead, with :c:func:`ztest_benchmark_start_at` or
-:c:func:`ztest_benchmark_end_at`. An ISR captures ``timing_counter_get()`` into a variable and the
-body passes it in once it runs:
+Both hooks only take a timestamp, so either may be called from an ISR and the span need not begin
+and end in the same execution context. For the latency from an interrupt to the thread it wakes,
+the ISR marks the start and the thread ends the span:
 
 .. code-block:: c
 
-   static volatile timing_t isr_timestamp;
-
    static void my_isr(const void *arg)
    {
-         isr_timestamp = timing_counter_get();
+         ztest_benchmark_start();
    }
 
    ZTEST_BENCHMARK_MANUAL(<suite name>, isr_exit_latency, 1000, NULL, NULL)
    {
          trigger_the_interrupt();
 
-         ztest_benchmark_start_at(isr_timestamp);
          ztest_benchmark_end();
    }
 
-The framework applies the same control-measurement noise correction as for standard benchmarks
-when reporting. The span is closed from thread context, so an ISR should only capture a timestamp
-and leave the recording to the body. An iteration whose body records no span contributes no
-sample.
+The sample itself is computed once the body has returned, which is what keeps the statistics out
+of interrupt context: updating them uses floating point, which is not allowed in an ISR on every
+architecture. An iteration whose body marks no span contributes no sample.
 
-A benchmark that wants a warmup phase should run it through the full measurement loop, recording
-included, and then call :c:func:`ztest_benchmark_discard_samples` to throw the results away.
-Skipping the recording during warmup instead leaves the first measured iteration as the only one
-not preceded by the bookkeeping that :c:func:`ztest_benchmark_record_sample` performs, which is
-enough to make it measurably faster than every iteration after it and to leave the reported
-minimum describing a state the benchmark is never in again.
+Manual benchmarks are corrected against a control of their own rather than the one the sampled
+benchmarks use. A manual span costs the two timestamps that bracket it and nothing else, where the
+sampled control also measures the indirect call to the benchmark body, which is not part of a
+manual span. A span whose ends are captured in two different contexts pays neither exactly, and no
+control can express that.
+
+The warmup applies here exactly as it does to a sampled benchmark: the framework runs the body
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` extra times and discards those spans, keeping the
+first as the cold cost. The body never has to distinguish between the two phases, and every
+measured iteration is preceded by exactly the same work as the one before it.
 
 Understanding Results
 *********************
@@ -188,6 +187,30 @@ Statistical Metrics
 
 * **Min/Max**: The minimum and maximum cycle counts observed, along with which
   sample they occurred on.
+
+Warmup and the cold cost
+""""""""""""""""""""""""
+
+A benchmark is defined as three phases: the setup, then
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` iterations that are executed but not recorded,
+then the measured samples. The warmup applies to every benchmark in the image.
+
+The very first execution is always unrecorded, whatever the warmup is set to. It runs with cold
+caches, branch predictors and TLBs and can be an order of magnitude slower than the steady state,
+and rather than discard that information the framework reports it on its own as the **cold cost**.
+The two answer different questions — what an operation costs the first time it is reached, and
+what it costs thereafter — and an application that runs a path once at startup cares about the
+first.
+
+Keeping it out of the distribution is what makes the distribution mean anything at the tail. A
+benchmark that reported the cold start in both places would have it decide the far percentiles:
+at ten thousand samples the nearest-rank p99.99 is the second largest value, so one cold start
+would be read as the steady-state tail.
+
+Raising the warmup beyond that costs accuracy on a micro benchmark whose whole cost is comparable
+to a cache miss, and with a large enough sample count the early iterations have no measurable
+effect on the mean, so the default of zero is the right starting point. Raise it when the
+benchmark is large enough for cache state to matter and the steady state is what you are after.
 
 Latency percentiles
 """""""""""""""""""
