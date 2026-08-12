@@ -288,7 +288,7 @@ void riscv_plic_irq_complete(uint32_t irq)
  *
  * @param irq IRQ number to enable
  */
-void riscv_plic_irq_enable(uint32_t irq)
+Z_NO_THREAD_SAFETY_ANALYSIS void riscv_plic_irq_enable(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	struct plic_data *data = dev->data;
@@ -309,7 +309,7 @@ void riscv_plic_irq_enable(uint32_t irq)
  *
  * @param irq IRQ number to disable
  */
-void riscv_plic_irq_disable(uint32_t irq)
+Z_NO_THREAD_SAFETY_ANALYSIS void riscv_plic_irq_disable(uint32_t irq)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	struct plic_data *data = dev->data;
@@ -434,7 +434,7 @@ const struct device *riscv_plic_get_dev(void)
  * @param irq IRQ number for which to set smp irq affinity
  * @param cpumask Bitmask to specific which cores can handle IRQ
  */
-int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask)
+Z_NO_THREAD_SAFETY_ANALYSIS int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask)
 {
 	const struct device *dev = get_plic_dev_from_irq(irq);
 	struct plic_data *data = dev->data;

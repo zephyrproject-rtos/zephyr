@@ -139,7 +139,7 @@ static inline int z_vrfy_k_stack_push(struct k_stack *stack, stack_data_t data)
 #endif /* CONFIG_USERSPACE */
 
 int z_impl_k_stack_pop(struct k_stack *stack, stack_data_t *data,
-		       k_timeout_t timeout)
+						   k_timeout_t timeout)
 {
 	k_spinlock_key_t key;
 	int result;

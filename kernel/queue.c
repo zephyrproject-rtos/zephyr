@@ -125,8 +125,10 @@ static inline void z_vrfy_k_queue_cancel_wait(struct k_queue *queue)
  * The queue's spinlock must be held prior to entry.
  * However, that same spinlock will be unlocked before it returns.
  */
-static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
-			    bool alloc, bool is_append, k_spinlock_key_t key)
+static int32_t queue_insert(struct k_queue *queue, void *prev,
+			    void *data, bool alloc, bool is_append,
+			    k_spinlock_key_t key)
+	Z_RELEASES(&queue->lock)
 {
 	int32_t result = 0;
 	bool resched = false;

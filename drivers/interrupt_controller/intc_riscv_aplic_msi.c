@@ -43,8 +43,10 @@ int riscv_aplic_msi_route(const struct device *dev, unsigned int src, uint32_t h
 	return 0;
 }
 
-int riscv_aplic_msi_inject_software_interrupt(const struct device *dev, uint32_t eiid,
-					      uint32_t hart_id, uint32_t context)
+Z_NO_THREAD_SAFETY_ANALYSIS int riscv_aplic_msi_inject_software_interrupt(const struct device *dev,
+									  uint32_t eiid,
+									  uint32_t hart_id,
+									  uint32_t context)
 {
 	const struct aplic_cfg *cfg = dev->config;
 
