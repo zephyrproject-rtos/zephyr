@@ -8,3 +8,4 @@ tests:
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
       - mimxrt1060_evk/mimxrt1062/qspi
+      - mimxrt1170_evk/mimxrt1176/cm7
