@@ -127,6 +127,15 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_trigger_to_isr, NUM_ITERATIONS, entry_se
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_ENTRY */
 
+#if defined(CONFIG_INT_BENCH_SCENARIO_EXIT) || defined(CONFIG_INT_BENCH_SCENARIO_END_TO_END)
+#define WAITER_STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
+
+static K_SEM_DEFINE(wake_sem, 0, 1);
+static K_SEM_DEFINE(sync_sem, 0, 1);
+static K_THREAD_STACK_DEFINE(waiter_stack, WAITER_STACK_SIZE);
+static struct k_thread waiter_thread;
+#endif
+
 #ifdef CONFIG_INT_BENCH_SCENARIO_EXIT
 /* Timestamp as the last operation in the ISR: measures the exit path */
 static void exit_handler(void)
@@ -163,13 +172,6 @@ ZTEST_BENCHMARK_MANUAL(interrupt, exit_resume_interrupted, NUM_ITERATIONS, exit_
 
 	ztest_benchmark_end();
 }
-
-#define WAITER_STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACK_SIZE)
-
-static K_SEM_DEFINE(wake_sem, 0, 1);
-static K_SEM_DEFINE(sync_sem, 0, 1);
-static K_THREAD_STACK_DEFINE(waiter_stack, WAITER_STACK_SIZE);
-static struct k_thread waiter_thread;
 
 static void resched_handler(void)
 {
@@ -482,14 +484,12 @@ static bool alt_wait(void)
 }
 #endif
 
-#ifdef CONFIG_INT_BENCH_SCENARIO_DIRECT
 /*
- * Entry latency of a directly connected ISR. Identical to
- * entry_trigger_to_isr apart from the line it uses, so the difference
- * between the two is the cost of the software ISR table dispatch and
- * the common entry code that a regular ISR goes through.
+ * Entry latency of the second line, measured exactly as
+ * entry_trigger_to_isr measures the first. What differs is only how
+ * the line is connected, so the two are directly comparable.
  */
-ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
+static void alt_entry_measure(const char *name)
 {
 	alt_fired = false;
 	bench_load_pollute();
@@ -498,9 +498,20 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
 	bench_trigger_alt();
 
 	if (!alt_wait()) {
-		printk("entry_direct_isr: direct ISR did not run, skipping\n");
+		printk("%s: ISR did not run, skipping\n", name);
 		return;
 	}
+}
+
+#ifdef CONFIG_INT_BENCH_SCENARIO_DIRECT
+/*
+ * A directly connected ISR is dispatched from the vector table, so the
+ * difference from entry_trigger_to_isr is the software ISR table
+ * dispatch and the common entry code a regular ISR goes through.
+ */
+ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
+{
+	alt_entry_measure("entry_direct_isr");
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_DIRECT */
 
@@ -513,6 +524,18 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
  * two scenarios together show what a critical section costs an
  * interrupt, and what escaping it buys.
  */
+/*
+ * Entry latency of a zero-latency interrupt with interrupts enabled.
+ * This is the lowest latency Zephyr offers, and being measured the
+ * same way as entry_trigger_to_isr and entry_direct_isr it can be
+ * compared with them; zli_entry_while_locked below answers the
+ * different question of what happens inside a critical section.
+ */
+ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_trigger_to_isr, NUM_ITERATIONS, NULL, NULL)
+{
+	alt_entry_measure("zli_entry_trigger_to_isr");
+}
+
 ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, NULL)
 {
 	unsigned int key;
@@ -536,3 +559,57 @@ ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, 
 	}
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_ZLI */
+
+#ifdef CONFIG_INT_BENCH_SCENARIO_END_TO_END
+static void e2e_handler(void)
+{
+	k_sem_give(&wake_sem);
+}
+
+static void e2e_waiter_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	k_sem_take(&wake_sem, K_FOREVER);
+	ztest_benchmark_end();
+	k_sem_give(&sync_sem);
+}
+
+/*
+ * The whole path an application actually waits on: from raising the
+ * interrupt to the high priority thread it wakes being on the CPU.
+ *
+ * The other scenarios measure the pieces of this span, but the pieces
+ * cannot simply be added: entry latency and the rescheduling exit are
+ * measured in separate runs and neither includes the ISR body or the
+ * handoff between them. This is the figure to quote for how quickly an
+ * application can respond to an event.
+ */
+static void e2e_setup(void)
+{
+	int priority = k_thread_priority_get(k_current_get());
+
+	bench_trigger_set_handler(e2e_handler);
+
+	k_thread_create(&waiter_thread, waiter_stack, K_THREAD_STACK_SIZEOF(waiter_stack),
+			e2e_waiter_entry, NULL, NULL, NULL, priority - 1, 0, K_NO_WAIT);
+}
+
+static void e2e_teardown(void)
+{
+	(void)k_thread_join(&waiter_thread, K_FOREVER);
+	bench_trigger_set_handler(NULL);
+}
+
+ZTEST_BENCHMARK_MANUAL(interrupt, irq_to_thread, NUM_ITERATIONS, e2e_setup, e2e_teardown)
+{
+	bench_load_pollute();
+
+	ztest_benchmark_start();
+	bench_trigger();
+
+	k_sem_take(&sync_sem, K_FOREVER);
+}
+#endif /* CONFIG_INT_BENCH_SCENARIO_END_TO_END */
