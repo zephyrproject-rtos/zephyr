@@ -285,7 +285,9 @@ static int iis2dh_init(const struct device *dev)
 #endif
 
 #if (CONFIG_IIS2DH_RANGE != 0)
-	iis2dh_set_fs_raw(dev, CONFIG_IIS2DH_RANGE);
+	if (iis2dh_set_fs_raw(dev, IIS2DH_FS_TO_REG(CONFIG_IIS2DH_RANGE)) < 0) {
+		return -EIO;
+	}
 #endif
 
 #ifdef CONFIG_IIS2DH_TRIGGER
