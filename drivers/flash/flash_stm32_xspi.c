@@ -1657,11 +1657,7 @@ static int setup_pages_layout(const struct device *dev)
 		}
 	}
 
-	uint32_t erase_size = BIT(value);
-
-	if (erase_size == 0) {
-		erase_size = SPI_NOR_SECTOR_SIZE;
-	}
+	uint32_t erase_size = (value != 0U) ? BIT(value) : SPI_NOR_SECTOR_SIZE;
 
 	/* We need layout page size to be compatible with erase size */
 	if ((layout_page_size % erase_size) != 0) {
