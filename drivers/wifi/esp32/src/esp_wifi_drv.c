@@ -137,7 +137,32 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
+/*
+ * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
+ * when it is usable and the station is associated. A static address is usually
+ * set before the connection, so the connect handler calls this as well.
+ */
+static void esp32_wifi_set_sta_ip(void)
+{
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		return;
+	}
+
+	if (net_if_ipv4_get_global_addr(esp32_wifi_iface, NET_ADDR_PREFERRED) == NULL) {
+		return;
+	}
+
+	esp_wifi_internal_set_sta_ip();
+}
+
+#if defined(CONFIG_NET_IPV4)
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+#define ESP32_WIFI_IPV4_EVENT_MASK                                                                 \
+	(NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED | NET_EVENT_IPV4_DHCP_BOUND)
+#else
+#define ESP32_WIFI_IPV4_EVENT_MASK (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED)
+#endif
+
 static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				size_t info_length __unused, void *user_data __unused)
 {
@@ -146,17 +171,23 @@ static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *
 	}
 
 	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ADDR_ADD:
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		esp32_wifi_set_sta_ip();
+		break;
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
+#endif
 	default:
 		break;
 	}
 }
 
-NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, NET_EVENT_IPV4_DHCP_BOUND, wifi_event_handler,
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, ESP32_WIFI_IPV4_EVENT_MASK, wifi_event_handler,
 				NULL);
-#endif /* CONFIG_WIFI_STA_AUTO_DHCPV4 */
+#endif /* CONFIG_NET_IPV4 */
 
 static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
 			       bool status __unused)
@@ -466,6 +497,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
+	esp32_wifi_set_sta_ip();
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
