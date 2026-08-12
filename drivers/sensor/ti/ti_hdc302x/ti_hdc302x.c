@@ -160,6 +160,15 @@ static const uint8_t
 			[HDC302X_SENSOR_MEAS_INTERVAL_10] = {0x27, 0xFF},
 		},
 };
+
+/* Maximum measurement duration per power mode, in microseconds (datasheet Table 7-3) */
+static const uint16_t meas_duration_us[HDC302X_SENSOR_POWER_MODE_MAX] = {
+	[HDC302X_SENSOR_POWER_MODE_0] = 12500,
+	[HDC302X_SENSOR_POWER_MODE_1] = 7500,
+	[HDC302X_SENSOR_POWER_MODE_2] = 5000,
+	[HDC302X_SENSOR_POWER_MODE_3] = 3700,
+};
+
 /**
  * @brief Verify CRC for a given data buffer.
  */
@@ -322,6 +331,9 @@ static int ti_hdc302x_sample_fetch(const struct device *dev, enum sensor_channel
 			LOG_ERR("Failed to trigger manual measurement: %d", rc);
 			return rc;
 		}
+
+		/* The sensor NACKs the read until the conversion has completed */
+		k_sleep(K_USEC(meas_duration_us[data->power_mode]));
 	} else {
 		rc = write_command(dev, REG_MEAS_AUTO_READ, 2);
 		if (rc < 0) {
