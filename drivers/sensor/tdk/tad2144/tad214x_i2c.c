@@ -26,6 +26,7 @@ static int tad214x_read_reg_i2c(const union tad214x_bus *bus, uint8_t reg, uint1
 	uint8_t write_buf[TAD214X_BUFFER_LEN];
 	uint8_t read_buf[TAD214X_BUFFER_LEN];
 	uint8_t calc_crc;
+	int rc;
 
 	if (size * 2 + 1 > TAD214X_BUFFER_LEN) {
 		LOG_ERR("Size error: %d", size);
@@ -35,8 +36,15 @@ static int tad214x_read_reg_i2c(const union tad214x_bus *bus, uint8_t reg, uint1
 	write_buf[0] = reg;
 	write_buf[1] = crc8(&reg, 1, 0x1D, 0xFF, false) ^ 0xFF;
 
-	i2c_write(bus->i2c.bus, write_buf, 2, bus->i2c.addr);
-	i2c_read(bus->i2c.bus, read_buf, size * 2 + 1, bus->i2c.addr);
+	rc = i2c_write(bus->i2c.bus, write_buf, 2, bus->i2c.addr);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = i2c_read(bus->i2c.bus, read_buf, size * 2 + 1, bus->i2c.addr);
+	if (rc < 0) {
+		return rc;
+	}
 
 	calc_crc = crc8(read_buf, size * 2, 0x1D, 0xFF, false) ^ 0xFF;
 	if (calc_crc != read_buf[size * 2]) {
@@ -69,8 +77,7 @@ static int tad214x_write_reg_i2c(const union tad214x_bus *bus, uint8_t reg, uint
 	msg.len = 1U + (size * 2) + 1U;
 	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	i2c_transfer(bus->i2c.bus, &msg, 1, bus->i2c.addr);
-	return 0;
+	return i2c_transfer(bus->i2c.bus, &msg, 1, bus->i2c.addr);
 }
 
 const struct tad214x_bus_io tad214x_bus_io_i2c = {
