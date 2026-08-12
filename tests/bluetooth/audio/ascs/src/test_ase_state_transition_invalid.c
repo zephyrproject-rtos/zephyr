@@ -17,6 +17,7 @@
 #include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/lc3.h>
 #include <zephyr/bluetooth/byteorder.h>
+#include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -83,9 +84,13 @@ static void test_ase_state_transition_invalid_before(void *f)
 
 static void test_ase_state_transition_invalid_after(void *f)
 {
+	struct test_ase_state_transition_invalid_fixture *fixture =
+		(struct test_ase_state_transition_invalid_fixture *)f;
 	int err;
 
-	ARG_UNUSED(f);
+	if (fixture->conn.info.state == BT_CONN_STATE_CONNECTED) {
+		mock_bt_conn_disconnected(&fixture->conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+	}
 
 	err = bt_ascs_unregister();
 	zassert_equal(err, 0, "Unexpected err response %d", err);
@@ -112,7 +117,7 @@ static void test_client_config_codec_expect_transition_error(struct bt_conn *con
 	};
 
 	test_ase_control_client_config_codec(conn, ase_id, NULL);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -129,7 +134,7 @@ static void test_client_config_qos_expect_transition_error(struct bt_conn *conn,
 	};
 
 	test_ase_control_client_config_qos(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -146,7 +151,7 @@ static void test_client_enable_expect_transition_error(struct bt_conn *conn, uin
 	};
 
 	test_ase_control_client_enable(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -163,7 +168,7 @@ static void test_client_receiver_start_ready_expect_transition_error(
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -180,7 +185,7 @@ static void test_client_receiver_start_ready_expect_ase_direction_error(
 	};
 
 	test_ase_control_client_receiver_start_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -197,7 +202,7 @@ static void test_client_disable_expect_transition_error(struct bt_conn *conn, ui
 	};
 
 	test_ase_control_client_disable(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -214,7 +219,7 @@ static void test_client_receiver_stop_ready_expect_transition_error(
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -231,7 +236,7 @@ static void test_client_receiver_stop_ready_expect_ase_direction_error(
 	};
 
 	test_ase_control_client_receiver_stop_ready(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -248,7 +253,7 @@ static void test_client_update_metadata_expect_transition_error(
 	};
 
 	test_ase_control_client_update_metadata(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
@@ -265,7 +270,7 @@ static void test_client_release_expect_transition_error(struct bt_conn *conn, ui
 	};
 
 	test_ase_control_client_release(conn, ase_id);
-	expect_bt_gatt_notify_cb_called_once(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
+	expect_bt_gatt_notify_cb_called_with(conn, BT_UUID_ASCS_ASE_CP, ase_cp, expected_error,
 					     sizeof(expected_error));
 	test_mocks_reset();
 }
