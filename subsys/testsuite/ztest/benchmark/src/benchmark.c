@@ -197,6 +197,30 @@ static inline void percentiles_report(const char *suite_name, const char *bench_
 }
 #endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
 
+/*
+ * The very first execution of a benchmark, before anything is warm.
+ * Reported separately rather than folded into the distribution, where a
+ * single cold sample would move the maximum and tell the reader nothing
+ * about the steady state.
+ */
+static void ztest_benchmark_print_cold(const char *suite_name, const char *bench_name,
+				       struct ztest_benchmark_stats *stats,
+				       struct ztest_benchmark_stats *ctrl_stats)
+{
+	double value = noise_correction((double)stats->cold, (double)ctrl_stats->mean);
+
+	if (stats->cold == 0) {
+		return;
+	}
+
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
+	printk("C,%s,%s,%d,%.3f\n", suite_name, bench_name, CONFIG_ZTEST_BENCHMARK_WARMUP, value);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+	printk("\tCold (first run): %.3f\n", value);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+}
+
 static void ztest_benchmark_print_stats(const char *suite_name, const char *bench_name,
 					char record_type, struct ztest_benchmark_stats *stats,
 					struct ztest_benchmark_stats *ctrl_stats)
@@ -284,7 +308,14 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 	benchmark->stats.min.value = UINT64_MAX;
 	percentiles_reset();
 
-	for (size_t i = 0; i < benchmark->iterations; i++) {
+	/*
+	 * The warmup iterations run the whole loop, setup and teardown
+	 * included, and are simply not recorded. Only the very first is
+	 * kept, as the cold cost.
+	 */
+	for (size_t i = 0; i < CONFIG_ZTEST_BENCHMARK_WARMUP + benchmark->iterations; i++) {
+		uint64_t cycles;
+
 		if (benchmark->setup) {
 			benchmark->setup();
 		}
@@ -295,7 +326,15 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 		benchmark->run();
 		end = timing_counter_get();
 
-		update_metrics(&benchmark->stats, timing_cycles_get(&start, &end));
+		cycles = timing_cycles_get(&start, &end);
+
+		if (i == 0) {
+			benchmark->stats.cold = cycles;
+		}
+
+		if (i >= CONFIG_ZTEST_BENCHMARK_WARMUP) {
+			update_metrics(&benchmark->stats, cycles);
+		}
 
 		if (benchmark->teardown) {
 			benchmark->teardown();
@@ -304,15 +343,17 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 }
 
 /*
- * The benchmark whose body is running, and the span it has open.
+ * The benchmark whose body is running, the span it has open, and which
+ * iteration it is on.
  *
  * Only one benchmark runs at a time, so a single set of these serves all
- * of them. manual_started separates "no span open" from a span that
+ * of them. manual_span_open separates "no span open" from a span that
  * legitimately began at timestamp zero.
  */
 static struct ztest_benchmark_stats *manual_active_stats;
 static timing_t manual_span_start;
 static bool manual_span_open;
+static size_t manual_iteration;
 
 void ztest_benchmark_start_at(timing_t start)
 {
@@ -337,6 +378,8 @@ void ztest_benchmark_start(void)
 
 void ztest_benchmark_end_at(timing_t end)
 {
+	uint64_t cycles;
+
 	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
 
 	if ((manual_active_stats == NULL) || !manual_span_open) {
@@ -344,7 +387,19 @@ void ztest_benchmark_end_at(timing_t end)
 	}
 
 	manual_span_open = false;
-	update_metrics(manual_active_stats, timing_cycles_get(&manual_span_start, &end));
+	cycles = timing_cycles_get(&manual_span_start, &end);
+
+	if (manual_iteration == 0) {
+		manual_active_stats->cold = cycles;
+	}
+
+	/*
+	 * The warmup iterations run the body in full and are simply not
+	 * recorded, exactly as for a sampled benchmark.
+	 */
+	if (manual_iteration >= CONFIG_ZTEST_BENCHMARK_WARMUP) {
+		update_metrics(manual_active_stats, cycles);
+	}
 }
 
 void ztest_benchmark_end(void)
@@ -358,17 +413,6 @@ void ztest_benchmark_end(void)
 	ztest_benchmark_end_at(timing_counter_get());
 }
 
-void ztest_benchmark_discard_samples(void)
-{
-	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
-
-	if (manual_active_stats != NULL) {
-		memset(manual_active_stats, 0, sizeof(*manual_active_stats));
-		manual_active_stats->min.value = UINT64_MAX;
-		percentiles_reset();
-	}
-}
-
 static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 {
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
@@ -380,13 +424,14 @@ static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
 	 * as for a sampled benchmark. All the body decides is which part of
 	 * itself the timestamps go around.
 	 */
-	for (size_t i = 0; i < benchmark->iterations; i++) {
+	for (size_t i = 0; i < CONFIG_ZTEST_BENCHMARK_WARMUP + benchmark->iterations; i++) {
 		if (benchmark->setup) {
 			benchmark->setup();
 		}
 
 		manual_active_stats = &benchmark->stats;
 		manual_span_open = false;
+		manual_iteration = i;
 		benchmark->run();
 		manual_active_stats = NULL;
 
@@ -517,6 +562,8 @@ void benchmark_main(void)
 			ztest_benchmark_run(benchmark);
 			ztest_benchmark_print_stats(suite->name, benchmark->name, 'S',
 						    &benchmark->stats, &ctrl.stats);
+			ztest_benchmark_print_cold(suite->name, benchmark->name,
+						   &benchmark->stats, &ctrl.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_manual, benchmark) {
@@ -526,6 +573,8 @@ void benchmark_main(void)
 			ztest_benchmark_manual_run(benchmark);
 			ztest_benchmark_print_stats(suite->name, benchmark->name, 'M',
 						    &benchmark->stats, &ctrl.stats);
+			ztest_benchmark_print_cold(suite->name, benchmark->name,
+						   &benchmark->stats, &ctrl.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_timed, benchmark) {

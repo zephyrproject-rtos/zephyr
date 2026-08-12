@@ -13,6 +13,30 @@ config ZTEST_BENCHMARK
 
 if ZTEST_BENCHMARK
 
+config ZTEST_BENCHMARK_WARMUP
+	int "Iterations run before sampling starts"
+	default 0
+	help
+	  Iterations every benchmark executes, in full, before it begins
+	  recording. They are not part of the reported distribution.
+
+	  A benchmark's first execution runs with cold caches, branch
+	  predictors and TLBs and can be an order of magnitude slower
+	  than its steady state. Left in the sample set it moves the
+	  maximum and the standard deviation while describing a state the
+	  benchmark is never in again.
+
+	  The default of zero samples from the first iteration, which is
+	  what the framework has always done: with a large enough sample
+	  count the first iteration has no measurable effect on the mean,
+	  and discarding iterations costs accuracy on micro benchmarks
+	  whose whole cost is comparable to a cache miss. Raise it only
+	  when the steady state is what you are after.
+
+	  The first iteration is reported separately as the cold cost
+	  either way, so the effect of a cold start stays visible without
+	  having to discard anything.
+
 config ZTEST_BENCHMARK_PERCENTILES
 	bool "Report latency percentiles"
 	help
@@ -85,6 +109,14 @@ config ZTEST_BENCHMARK_OUTPUT_CSV
 	  - std_error: standard error of the mean
 	  - min / max: extreme cycle values
 	  - min_sample / max_sample: iteration at which each extreme occurred
+
+	  Every benchmark that ran at least one iteration also emits a "C" row carrying its cold
+	  cost, the duration of its very first execution, which is excluded from the distribution:
+
+	    C, suite, name, warmup, cold
+
+	  - warmup: iterations executed before sampling started
+	  - cold: cycles taken by the first execution, noise-corrected
 
 	  Manually sampled benchmarks (created with ZTEST_BENCHMARK_MANUAL()) emit "M" rows with
 	  the same column layout as "S" rows, where samples is the number of iterations that

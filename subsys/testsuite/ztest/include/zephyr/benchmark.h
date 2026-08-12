@@ -49,6 +49,8 @@ struct ztest_benchmark_stats {
 	uint64_t samples;
 	struct ztest_extreme_value min;
 	struct ztest_extreme_value max;
+	/* First iteration, measured before the steady state is reached. */
+	uint64_t cold;
 };
 
 struct ztest_benchmark {

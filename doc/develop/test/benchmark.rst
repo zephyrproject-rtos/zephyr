@@ -146,12 +146,10 @@ when reporting. The span is closed from thread context, so an ISR should only ca
 and leave the recording to the body. An iteration whose body records no span contributes no
 sample.
 
-A benchmark that wants a warmup phase should run it through the full measurement loop, recording
-included, and then call :c:func:`ztest_benchmark_discard_samples` to throw the results away.
-Skipping the recording during warmup instead leaves the first measured iteration as the only one
-not preceded by the bookkeeping that :c:func:`ztest_benchmark_record_sample` performs, which is
-enough to make it measurably faster than every iteration after it and to leave the reported
-minimum describing a state the benchmark is never in again.
+The warmup applies here exactly as it does to a sampled benchmark: the framework runs the body
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` extra times and discards those spans, keeping the
+first as the cold cost. The body never has to distinguish between the two phases, and every
+measured iteration is preceded by exactly the same work as the one before it.
 
 Understanding Results
 *********************
@@ -188,6 +186,27 @@ Statistical Metrics
 
 * **Min/Max**: The minimum and maximum cycle counts observed, along with which
   sample they occurred on.
+
+Warmup and the cold cost
+""""""""""""""""""""""""
+
+A benchmark is defined as three phases: the setup, then
+:kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` iterations that are executed but not recorded,
+then the measured samples. The warmup applies to every benchmark in the image and defaults to
+zero, so by default sampling starts at the first iteration.
+
+Raising it matters when the steady state is what you are after, because a first execution runs
+with cold caches, branch predictors and TLBs and can be an order of magnitude slower. Left in
+the sample set it moves the maximum and the standard deviation while describing a state the
+benchmark is never in again. It is not free either: on a micro benchmark whose whole cost is
+comparable to a cache miss, discarding iterations costs accuracy, and with a large enough sample
+count the first iteration has no measurable effect on the mean.
+
+Rather than discard that information, the framework keeps it: the duration of the very first
+execution is reported separately as the **cold cost**, alongside the steady-state distribution.
+The two answer different questions — what an operation costs the first time it is reached, and
+what it costs thereafter — and an application that runs a path once at startup cares about the
+first.
 
 Latency percentiles
 """""""""""""""""""
