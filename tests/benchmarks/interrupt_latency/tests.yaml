@@ -105,3 +105,24 @@ tests:
           - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
       regex:
         - "PROJECT EXECUTION SUCCESSFUL"
+
+  # Same scenarios with the benchmark's interrupt handlers relocated to
+  # RAM. Compare against the base run to see what fetching them from
+  # flash costs; only meaningful on hardware with flash wait states.
+  benchmark.kernel.interrupt.latency.ramfunc:
+    filter: CONFIG_ARCH_HAS_RAMFUNC_SUPPORT and CONFIG_XIP
+    extra_args:
+      - EXTRA_CONF_FILE="prj.ramfunc.conf"
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    timeout: 120
+    harness: console
+    integration_platforms:
+      - qemu_cortex_m3
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"

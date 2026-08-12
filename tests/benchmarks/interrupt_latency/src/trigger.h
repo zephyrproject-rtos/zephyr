@@ -18,6 +18,17 @@
  * install their measurement handler with bench_trigger_set_handler()
  * and fire it with bench_trigger().
  */
+/*
+ * Placement of the benchmark's interrupt handlers. With
+ * CONFIG_INT_BENCH_ISR_IN_RAM they are relocated out of flash, so that
+ * two runs can be compared to see what fetching them costs.
+ */
+#ifdef CONFIG_INT_BENCH_ISR_IN_RAM
+#define BENCH_ISR_FUNC __ramfunc
+#else
+#define BENCH_ISR_FUNC
+#endif
+
 typedef void (*bench_trigger_handler_t)(void);
 
 int bench_trigger_init(void);
@@ -25,7 +36,7 @@ void bench_trigger_set_handler(bench_trigger_handler_t handler);
 void bench_trigger(void);
 
 /* ISR wrapper installed on the benchmark IRQ line */
-void bench_trigger_isr(const void *arg);
+BENCH_ISR_FUNC void bench_trigger_isr(const void *arg);
 
 #ifdef CONFIG_INT_BENCH_TRIGGER_SW_IRQ
 unsigned int bench_trigger_irq_line(void);

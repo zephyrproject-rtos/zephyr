@@ -17,7 +17,7 @@
 
 static bench_trigger_handler_t trigger_handler;
 
-void bench_trigger_isr(const void *arg)
+BENCH_ISR_FUNC void bench_trigger_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
