@@ -1265,7 +1265,7 @@ static K_MUTEX_DEFINE(z_mm_paging_lock);
 #endif
 
 static void virt_region_foreach(void *addr, size_t size,
-				void (*func)(void *))
+				void (*func)(void *vaddr))
 {
 	k_mem_assert_virtual_region(addr, size);
 
