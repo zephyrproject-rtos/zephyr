@@ -340,6 +340,54 @@ static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_t
 #endif
 }
 
+static int supplicant_register_iface_type(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api;
+	struct wifi_nm_instance *nm = wifi_nm_get_instance("wifi_supplicant");
+	uint32_t caps = 0;
+	int ret;
+
+	if (dev == NULL || nm == NULL) {
+		return -EINVAL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	/* Query driver for its static role capabilities.
+	 * If the driver does not implement get_iface_caps, fall back to
+	 * WIFI_TYPE_STA plus WIFI_TYPE_SAP when CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
+	 * is enabled.
+	 */
+	if (off_api != NULL && off_api->wifi_mgmt_api != NULL &&
+	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
+		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
+	}
+	caps &= BIT_MASK(WIFI_TYPE_MAX);
+
+	if (caps == 0) {
+		/* No caps declared: default to STA */
+		caps = BIT(WIFI_TYPE_STA);
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
+			caps |= BIT(WIFI_TYPE_SAP);
+		}
+	}
+
+	/* Register each declared role */
+	for (enum wifi_nm_iface_type type = WIFI_TYPE_STA;
+	     type < WIFI_TYPE_MAX; type++) {
+		if (!(caps & BIT(type))) {
+			continue;
+		}
+		ret = wifi_nm_register_mgd_type_iface(nm, type, iface);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -388,27 +436,11 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-					      WIFI_TYPE_STA,
-					      iface);
-	if (ret) {
+	ret = supplicant_register_iface_type(iface);
+	if (ret != 0) {
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);
 		goto out;
-	}
-
-	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
-		/* In SoftAP-via-supplicant mode the same interface can also act
-		 * as an AP, so register it as SAP capable too.
-		 */
-		ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-						      WIFI_TYPE_SAP,
-						      iface);
-		if (ret) {
-			LOG_ERR("Failed to register mgd SAP iface with native stack %s (%d)",
-				ifname, ret);
-			goto out;
-		}
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_ADDED, 0);

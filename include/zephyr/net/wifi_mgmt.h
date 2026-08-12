@@ -2404,6 +2404,18 @@ struct wifi_mgmt_ops {
 			struct net_if *iface,
 			struct wifi_p2p_params *params);
 #endif
+	/** Get interface supported roles (static driver capability).
+	 * Read once by the supplicant at interface-add time, and treated
+	 * as a static per-interface property. A driver cannot use it to
+	 * signal a role change at runtime.
+	 *
+	 * @param dev  Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to query.
+	 *
+	 * @return BIT(enum wifi_nm_iface_type) of supported roles.
+	 * Return 0 to let the caller use the default.
+	 */
+	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
 };
 
 /** Wi-Fi management offload API */
