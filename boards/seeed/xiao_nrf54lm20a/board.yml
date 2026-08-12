@@ -20,6 +20,7 @@ runners:
       - nrfjprog
       - jlink
       - nrfutil
+      - openocd
       run: first
       groups:
       - boards:
