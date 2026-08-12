@@ -26,8 +26,8 @@ Features
 X-NUCLEO-67W61M1 provides an ST67W611M1 chip with the following key features:
 
  - Wi-Fi 6 2.4 GHz
- - STA mode (SoftAP not yet supported by the Zephyr driver)
- - SPI communication (up to 40 MHz)
+ - STA and STA + SoftAP modes
+ - Full-duplex SPI communication (up to 40 MHz)
 
 Coprocessor flashing
 ********************
@@ -44,25 +44,30 @@ A flashing script is included in the X-CUBE package:
    cd x-cube-st67w61/Projects/ST67W6X_Scripts/Binaries/
    ./NCP_update_mission_profile_t02.sh
 
+.. note::
+
+   Firmware versions older than v2.0.106 are not fully supported and can cause
+   issues with some features (such as low power).
+
 Programming
 ***********
 
 Enable the shield for the project build by adding the ``--shield`` argument:
 
- .. zephyr-app-commands::
-    :app: your_app
-    :board: your_board_name
-    :shield: x_nucleo_67w61m1
-    :goals: build
+.. zephyr-app-commands::
+   :app: your_app
+   :board: your_board_name
+   :shield: x_nucleo_67w61m1
+   :goals: build
 
 For example, the zperf sample can be built with:
 
- .. zephyr-app-commands::
-    :app: samples/net/zperf
-    :board: your_board_name
-    :shield: x_nucleo_67w61m1
-    :goals: build
-    :gen-args: -DEXTRA_CONF_FILE=boards/x_nucleo_67w61m1.conf
+.. zephyr-app-commands::
+   :app: samples/net/zperf
+   :board: your_board_name
+   :shield: x_nucleo_67w61m1
+   :goals: build
+   :gen-args: -DEXTRA_CONF_FILE=boards/x_nucleo_67w61m1.conf
 
 Improve performance
 *******************

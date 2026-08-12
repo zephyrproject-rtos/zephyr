@@ -11,7 +11,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(st67w611m1, CONFIG_WIFI_LOG_LEVEL);
 
-#include <errno.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,10 +23,12 @@ LOG_MODULE_REGISTER(st67w611m1, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_linkaddr.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/wifi.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/util.h>
 
@@ -49,6 +50,14 @@ RING_BUF_DECLARE(rx_at_cmd_ring_buf, CONFIG_ST67W611M1_RX_AT_CMD_RING_BUF_SIZE);
 static struct k_thread st67_at_rx_thread;
 
 static struct st67_driver_data driver_data;
+
+NET_IF_DT_INST_DECLARE(0, 0);
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+NET_IF_DT_INST_DECLARE(0, 1);
+
+/* Needed for STA SoftAP disconnect cmd. */
+extern char *net_sprint_ll_addr_buf(const uint8_t *ll, uint8_t ll_len, char *buf, int buflen);
+#endif
 
 static inline int st67_send_at_cmd(struct st67_driver_data *st67_data,
 				   const struct modem_cmd *handler_cmds, size_t handler_cmds_len,
@@ -158,7 +167,7 @@ static void st67_scan_work(struct k_work *work)
 out:
 	if (st67_data->scan_cb != NULL) {
 		/* Inform wifi mgmt that scan is over. */
-		st67_data->scan_cb(st67_data->net_iface, 0, NULL);
+		st67_data->scan_cb(st67_data->sta_net_iface, 0, NULL);
 		st67_data->scan_cb = NULL;
 	}
 }
@@ -181,11 +190,11 @@ static int st67_scan(const struct device *dev, struct net_if *iface,
 	return 0;
 }
 
-static int conn_cmd_append(struct st67_driver_data *st67_data, size_t *off, const char *chunk,
-			   size_t chunk_len)
+static int cmd_append(char *cmd_buf, size_t buf_len, size_t *off, const char *chunk,
+		      size_t chunk_len)
 {
-	char *str_end = &st67_data->conn_cmd[sizeof(st67_data->conn_cmd)];
-	char *str = &st67_data->conn_cmd[*off];
+	char *str_end = &cmd_buf[buf_len];
+	char *str = &cmd_buf[*off];
 	const char *chunk_end = chunk + chunk_len;
 
 	for (; chunk < chunk_end; chunk++) {
@@ -197,19 +206,34 @@ static int conn_cmd_append(struct st67_driver_data *st67_data, size_t *off, cons
 		str++;
 	}
 
-	*off = str - st67_data->conn_cmd;
+	*off = str - cmd_buf;
 
 	return 0;
 }
 
-#define conn_cmd_append_literal(data, off, chunk)                                                  \
-	conn_cmd_append(data, off, chunk, sizeof(chunk) - 1)
+#define cmd_append_literal(cmd_buf, buf_len, off, chunk)                                           \
+	cmd_append(cmd_buf, buf_len, off, chunk, sizeof(chunk) - 1)
 
-static int conn_cmd_escape_and_append(struct st67_driver_data *st67_data, size_t *off,
-				      const char *chunk, size_t chunk_len)
+/* Disable unused function warning in STA-only mode. */
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+static int cmd_append_char(char *cmd_buf, size_t buf_len, size_t *off, char c)
 {
-	char *str_end = &st67_data->conn_cmd[sizeof(st67_data->conn_cmd)];
-	char *str = &st67_data->conn_cmd[*off];
+	if (*off >= buf_len) {
+		return -ENOSPC;
+	}
+
+	cmd_buf[*off] = c;
+	(*off)++;
+
+	return 0;
+}
+#endif
+
+static int cmd_escape_and_append(char *cmd_buf, size_t buf_len, size_t *off, const char *chunk,
+				 size_t chunk_len)
+{
+	char *str_end = &cmd_buf[buf_len];
+	char *str = &cmd_buf[*off];
 	const char *chunk_end = chunk + chunk_len;
 
 	for (; chunk < chunk_end; chunk++) {
@@ -235,7 +259,7 @@ static int conn_cmd_escape_and_append(struct st67_driver_data *st67_data, size_t
 		str++;
 	}
 
-	*off = str - st67_data->conn_cmd;
+	*off = str - cmd_buf;
 
 	return 0;
 }
@@ -248,7 +272,7 @@ static void st67_connect_work(struct k_work *work)
 
 	ret = st67_send_at_cmd(st67_data, NULL, 0, st67_data->conn_cmd, ST67W611M1_AT_CMD_TIMEOUT);
 	if (ret < 0) {
-		LOG_ERR("Failed to send connect cmd");
+		LOG_ERR("Failed to send connect cmd: %d", ret);
 	}
 	memset(st67_data->conn_cmd, 0, sizeof(st67_data->conn_cmd));
 }
@@ -256,31 +280,33 @@ static void st67_connect_work(struct k_work *work)
 static int st67_connect(const struct device *dev, struct net_if *iface,
 			struct wifi_connect_req_params *params)
 {
+	int ret;
 	struct st67_driver_data *st67_data = dev->data;
 
 	size_t off = 0;
-	int err;
 
-	err = conn_cmd_append_literal(st67_data, &off, "AT+CWJAP=\"");
-
-	if (err) {
-		return err;
+	ret = cmd_append_literal(st67_data->conn_cmd, sizeof(st67_data->conn_cmd), &off,
+				 "AT+CWJAP=\"");
+	if (ret < 0) {
+		return ret;
 	}
-	err = conn_cmd_escape_and_append(st67_data, &off, params->ssid, params->ssid_length);
-	if (err) {
-		return err;
+	ret = cmd_escape_and_append(st67_data->conn_cmd, sizeof(st67_data->conn_cmd), &off,
+				    params->ssid, params->ssid_length);
+	if (ret < 0) {
+		return ret;
 	}
-	err = conn_cmd_append_literal(st67_data, &off, "\",\"");
-	if (err) {
-		return err;
+	ret = cmd_append_literal(st67_data->conn_cmd, sizeof(st67_data->conn_cmd), &off, "\",\"");
+	if (ret < 0) {
+		return ret;
 	}
-	err = conn_cmd_escape_and_append(st67_data, &off, params->psk, params->psk_length);
-	if (err) {
-		return err;
+	ret = cmd_escape_and_append(st67_data->conn_cmd, sizeof(st67_data->conn_cmd), &off,
+				    params->psk, params->psk_length);
+	if (ret < 0) {
+		return ret;
 	}
-	err = conn_cmd_append_literal(st67_data, &off, "\"\r\n");
-	if (err) {
-		return err;
+	ret = cmd_append_literal(st67_data->conn_cmd, sizeof(st67_data->conn_cmd), &off, "\"\r\n");
+	if (ret < 0) {
+		return ret;
 	}
 
 	st67_data->conn_cmd[off] = '\0';
@@ -291,19 +317,308 @@ static int st67_connect(const struct device *dev, struct net_if *iface,
 
 static void st67_disconnect_work(struct k_work *work)
 {
+	int ret;
 	struct st67_driver_data *st67_data =
 		CONTAINER_OF(work, struct st67_driver_data, disconnect_work);
 
-	st67_send_at_cmd(st67_data, NULL, 0, "AT+CWQAP\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+CWQAP\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to disconnect: %d", ret);
+	}
 }
 
 static int st67_disconnect(const struct device *dev, struct net_if *iface)
 {
+	int ret;
 	struct st67_driver_data *st67_data = dev->data;
 
-	k_work_submit_to_queue(&st67_data->workq, &st67_data->disconnect_work);
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->disconnect_work);
+	if (ret < 0) {
+		return ret;
+	}
+
 	return 0;
 }
+
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+static void st67_ap_enable_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, ap_enable_work);
+
+	/* Keep previous STA state. */
+	if (st67_data->sta_current_state == ST67_DISCONNECTED) {
+		ret = st67_send_at_cmd(st67_data, NULL, 0,
+				       ST67W611M1_WIFI_MODE_STA_SAP_CMD_NO_RECONNECT,
+				       ST67W611M1_AT_CMD_TIMEOUT);
+
+	} else {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, ST67W611M1_WIFI_MODE_STA_SAP_CMD,
+				       ST67W611M1_AT_CMD_TIMEOUT);
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to send ap enable cmd: %d", ret);
+		wifi_mgmt_raise_ap_enable_result_event(st67_data->sap_net_iface,
+						       WIFI_STATUS_AP_FAIL);
+		return;
+	}
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, st67_data->ap_enable_cmd,
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to send ap enable cmd: %d", ret);
+		/* Keep previous STA state. */
+		if (st67_data->sta_current_state == ST67_DISCONNECTED) {
+			st67_send_at_cmd(st67_data, NULL, 0,
+					 ST67W611M1_WIFI_MODE_STA_CMD_NO_RECONNECT,
+					 ST67W611M1_AT_CMD_TIMEOUT);
+
+		} else {
+			st67_send_at_cmd(st67_data, NULL, 0, ST67W611M1_WIFI_MODE_STA_CMD,
+					 ST67W611M1_AT_CMD_TIMEOUT);
+		}
+		wifi_mgmt_raise_ap_enable_result_event(st67_data->sap_net_iface,
+						       WIFI_STATUS_AP_FAIL);
+		return;
+	}
+
+	memset(st67_data->ap_enable_cmd, 0, sizeof(st67_data->ap_enable_cmd));
+	net_if_dormant_off(st67_data->sap_net_iface);
+
+	wifi_mgmt_raise_ap_enable_result_event(st67_data->sap_net_iface, WIFI_STATUS_AP_SUCCESS);
+	st67_data->is_sap_enabled = true;
+}
+
+static int st67_ap_enable(const struct device *dev, struct net_if *iface,
+			  struct wifi_connect_req_params *params)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+
+	char ssid_hidden;
+	char security;
+
+	size_t off = 0;
+
+	char channel[3]; /* 2 digits + \0 */
+
+	if (params->band == WIFI_FREQ_BAND_5_GHZ || params->band == WIFI_FREQ_BAND_6_GHZ) {
+		LOG_ERR("Wi-Fi band parameter %d not supported", params->band);
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		snprintk(channel, sizeof(channel), "%d", 1);
+	} else if (params->channel <= 14) {
+		snprintk(channel, sizeof(channel), "%d", params->channel);
+	} else {
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	switch (params->ignore_broadcast_ssid) {
+	case 0:
+		ssid_hidden = '0';
+		break;
+	case 1:
+		ssid_hidden = '1';
+		break;
+	default:
+		LOG_ERR("ignore_broadcast_ssid config %d not supported",
+			params->ignore_broadcast_ssid);
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	switch (params->security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		security = '0';
+		break;
+	case WIFI_SECURITY_TYPE_WPA_PSK:
+		security = '2';
+		break;
+	case WIFI_SECURITY_TYPE_PSK:
+		security = '3';
+		break;
+	case WIFI_SECURITY_TYPE_SAE:
+		security = '4';
+		break;
+	default:
+		wifi_mgmt_raise_ap_enable_result_event(st67_data->sap_net_iface,
+						       WIFI_STATUS_AP_AUTH_TYPE_NOT_SUPPORTED);
+		return -ENOTSUP;
+	}
+
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 "AT+CWSAP=\"");
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_escape_and_append(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd),
+				    &off, params->ssid, params->ssid_length);
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 "\",\"");
+	if (ret < 0) {
+		goto error;
+	}
+	if (security == '4') {
+		ret = cmd_escape_and_append(st67_data->ap_enable_cmd,
+					    sizeof(st67_data->ap_enable_cmd), &off,
+					    params->sae_password, params->sae_password_length);
+	} else {
+		ret = cmd_escape_and_append(st67_data->ap_enable_cmd,
+					    sizeof(st67_data->ap_enable_cmd), &off, params->psk,
+					    params->psk_length);
+	}
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 "\",");
+	if (ret < 0) {
+		goto error;
+	}
+
+	ret = cmd_append(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off, channel,
+			 strlen(channel));
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 ",");
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_char(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+			      security);
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 ",,");
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_char(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+			      ssid_hidden);
+	if (ret < 0) {
+		goto error;
+	}
+	ret = cmd_append_literal(st67_data->ap_enable_cmd, sizeof(st67_data->ap_enable_cmd), &off,
+				 "\r\n");
+	if (ret < 0) {
+		goto error;
+	}
+
+	st67_data->ap_enable_cmd[off] = '\0';
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->ap_enable_work);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+
+error:
+	wifi_mgmt_raise_ap_enable_result_event(st67_data->sap_net_iface, WIFI_STATUS_AP_FAIL);
+	return ret;
+}
+
+static void st67_ap_disable_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, ap_disable_work);
+
+	/* Keep previous STA state. */
+	if (st67_data->sta_current_state == ST67_DISCONNECTED) {
+		ret = st67_send_at_cmd(st67_data, NULL, 0,
+				       ST67W611M1_WIFI_MODE_STA_CMD_NO_RECONNECT,
+				       ST67W611M1_AT_CMD_TIMEOUT);
+
+	} else {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, ST67W611M1_WIFI_MODE_STA_CMD,
+				       ST67W611M1_AT_CMD_TIMEOUT);
+	}
+	if (ret < 0) {
+		LOG_ERR("Failed to send ap disable cmd: %d", ret);
+		wifi_mgmt_raise_ap_disable_result_event(st67_data->sap_net_iface,
+							WIFI_STATUS_AP_FAIL);
+		return;
+	}
+
+	net_if_dormant_on(st67_data->sap_net_iface);
+
+	wifi_mgmt_raise_ap_disable_result_event(st67_data->sap_net_iface, WIFI_STATUS_AP_SUCCESS);
+	st67_data->is_sap_enabled = false;
+}
+
+static int st67_ap_disable(const struct device *dev, struct net_if *iface)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->ap_disable_work);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static void st67_ap_sta_disconnect_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, ap_sta_disconnect_work);
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, st67_data->ap_sta_disconn_cmd,
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to disconnect STA from AP: %d", ret);
+	}
+	memset(st67_data->ap_sta_disconn_cmd, 0, sizeof(st67_data->ap_sta_disconn_cmd));
+}
+
+static int st67_ap_sta_disconnect(const struct device *dev, struct net_if *iface,
+				  const uint8_t *mac)
+{
+	int ret;
+	struct st67_driver_data *st67_data = dev->data;
+
+	size_t off = 0;
+	char mac_str[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	net_sprint_ll_addr_buf(mac, WIFI_MAC_ADDR_LEN, mac_str, sizeof(mac_str));
+
+	ret = cmd_append_literal(st67_data->ap_sta_disconn_cmd,
+				 sizeof(st67_data->ap_sta_disconn_cmd), &off, "AT+CWQIF=\"");
+	if (ret < 0) {
+		return ret;
+	}
+	ret = cmd_append(st67_data->ap_sta_disconn_cmd, sizeof(st67_data->ap_sta_disconn_cmd), &off,
+			 mac_str, sizeof(mac_str) - 1); /* -1 is to remove \0. */
+	if (ret < 0) {
+		return ret;
+	}
+	ret = cmd_append_literal(st67_data->ap_sta_disconn_cmd,
+				 sizeof(st67_data->ap_sta_disconn_cmd), &off, "\"\r\n");
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->ap_sta_disconnect_work);
+	if (ret < 0) {
+		return ret;
+	}
+	return 0;
+}
+#endif
 
 static void st67_at_rx(void *p1, void *p2, void *p3)
 {
@@ -379,6 +694,20 @@ MODEM_CMD_DEFINE(on_cmd_cipstamac)
 	return ret;
 }
 
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+MODEM_CMD_DEFINE(on_cmd_cipapmac)
+{
+	int ret = 0;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	char *mac = str_unquote(argv[0]);
+
+	ret = net_bytes_from_str(st67_data->sap_mac_addr, ARRAY_SIZE(st67_data->sap_mac_addr), mac);
+	return ret;
+}
+#endif
+
 MODEM_CMD_DEFINE(on_cmd_cwnetmode)
 {
 	struct st67_driver_data *st67_data =
@@ -433,11 +762,12 @@ static int get_next_int_token(int *dest, char **cursor, int max_len)
 {
 	char token[max_len + 1];
 	int token_len = 0;
-	bool comma_found = false;
+	bool delimiter_found = false;
 
 	while (token_len < max_len) {
-		if (**cursor == ',' || (**cursor == ')' && (*cursor)[1] == '\0')) {
-			comma_found = true;
+		if (**cursor == ',' || ((**cursor == ')' && (*cursor)[1] == '\0')) ||
+		    **cursor == '\0') {
+			delimiter_found = true;
 			(*cursor)++; /* Skip delimiter. */
 			break;
 		}
@@ -446,7 +776,7 @@ static int get_next_int_token(int *dest, char **cursor, int max_len)
 		token_len++;
 	}
 
-	if (!comma_found) {
+	if (!delimiter_found) {
 		return -EINVAL;
 	}
 
@@ -461,7 +791,7 @@ static int get_next_quoted_token(char *dest, char **cursor, int max_len)
 	int token_len = 0;
 	bool ending_quote_found = false;
 
-	if ((dest == NULL) || (cursor == NULL)) {
+	if (dest == NULL || cursor == NULL) {
 		return -EINVAL;
 	}
 
@@ -471,7 +801,7 @@ static int get_next_quoted_token(char *dest, char **cursor, int max_len)
 
 	(*cursor)++;
 
-	while (token_len < max_len) {
+	while (token_len < max_len && **cursor != '\0') {
 		if (**cursor == '"') {
 			if (((*cursor)[1] == ',') ||
 			    (((*cursor)[1] == ')' && (*cursor)[2] == '\0'))) {
@@ -519,10 +849,10 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	if (ret < 0) {
 		return ret;
 	}
-	if (security_index > ARRAY_SIZE(st67w611m1_ap_security_type)) {
+	if (security_index >= ARRAY_SIZE(st67w611m1_sta_security_type)) {
 		return -EBADMSG;
 	}
-	result.security = st67w611m1_ap_security_type[security_index];
+	result.security = st67w611m1_sta_security_type[security_index];
 
 	/* Scan result won't be correct if it contains ",
 	 * This is a known limitation of the AT cmd syntax on the ST67's firmware.
@@ -530,7 +860,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	 */
 	ssid_length = get_next_quoted_token(result.ssid, &cursor, ARRAY_SIZE(result.ssid));
 	if (ssid_length < 0) {
-		return -EBADMSG;
+		return ssid_length;
 	}
 	result.ssid_length = ssid_length;
 
@@ -544,8 +874,9 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	if (ret < 0) {
 		return ret;
 	}
-	if (net_bytes_from_str(result.mac, ARRAY_SIZE(result.mac), mac) < 0) {
-		return -EBADMSG;
+	ret = net_bytes_from_str(result.mac, ARRAY_SIZE(result.mac), mac);
+	if (ret < 0) {
+		return ret;
 	}
 
 	result.mac_length = WIFI_MAC_ADDR_LEN;
@@ -557,7 +888,7 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	result.channel = channel;
 
 	if (st67_data->scan_cb) {
-		st67_data->scan_cb(st67_data->net_iface, 0, &result);
+		st67_data->scan_cb(st67_data->sta_net_iface, 0, &result);
 	}
 	return 0;
 }
@@ -584,8 +915,8 @@ MODEM_CMD_DEFINE(on_cmd_wifi_connected)
 		LOG_WRN("Unexpected sta state %d", st67_data->sta_current_state);
 	}
 
-	wifi_mgmt_raise_connect_result_event(st67_data->net_iface, WIFI_STATUS_CONN_SUCCESS);
-	net_if_dormant_off(st67_data->net_iface);
+	wifi_mgmt_raise_connect_result_event(st67_data->sta_net_iface, WIFI_STATUS_CONN_SUCCESS);
+	net_if_dormant_off(st67_data->sta_net_iface);
 
 	st67_data->sta_current_state = ST67_CONNECTED;
 	return 0;
@@ -600,12 +931,72 @@ MODEM_CMD_DEFINE(on_cmd_wifi_disconnected)
 		LOG_WRN("Unexpected sta state %d", st67_data->sta_current_state);
 	}
 
-	wifi_mgmt_raise_disconnect_result_event(st67_data->net_iface, WIFI_REASON_DISCONN_SUCCESS);
-	net_if_dormant_on(st67_data->net_iface);
+	wifi_mgmt_raise_disconnect_result_event(st67_data->sta_net_iface,
+						WIFI_REASON_DISCONN_SUCCESS);
+	net_if_dormant_on(st67_data->sta_net_iface);
 
 	st67_data->sta_current_state = ST67_DISCONNECTED;
 	return 0;
 }
+
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+MODEM_CMD_DEFINE(on_cmd_sap_sta_connected)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	char *mac;
+	struct wifi_ap_sta_info sta_info = {0};
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+
+	/* No AT cmd for those two. */
+	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+	sta_info.twt_capable = false;
+	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
+
+	mac = str_unquote(argv[0]);
+	ret = net_bytes_from_str(sta_info.mac, WIFI_MAC_ADDR_LEN, mac);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	wifi_mgmt_raise_ap_sta_connected_event(st67_data->sap_net_iface, &sta_info);
+
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_sap_sta_disconnected)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	char *mac;
+	struct wifi_ap_sta_info sta_info = {0};
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+
+	sta_info.link_mode = WIFI_LINK_MODE_UNKNOWN;
+	sta_info.twt_capable = false;
+	sta_info.mac_length = WIFI_MAC_ADDR_LEN;
+
+	mac = str_unquote(argv[0]);
+	ret = net_bytes_from_str(sta_info.mac, WIFI_MAC_ADDR_LEN, mac);
+	if (ret < 0) {
+		return -EINVAL;
+	}
+
+	wifi_mgmt_raise_ap_sta_disconnected_event(st67_data->sap_net_iface, &sta_info);
+
+	return 0;
+}
+#endif
 
 /* The AT command says "ERROR" but it's rather a return value received after the
  * connection/disconnection command.
@@ -660,10 +1051,10 @@ MODEM_CMD_DEFINE(on_cmd_wifi_error)
 	}
 
 	if (current_state == ST67_DISCONNECTED) {
-		wifi_mgmt_raise_disconnect_result_event(st67_data->net_iface, status);
+		wifi_mgmt_raise_disconnect_result_event(st67_data->sta_net_iface, status);
 	} else if (current_state == ST67_CONNECTING) {
 		st67_data->sta_current_state = ST67_DISCONNECTED;
-		wifi_mgmt_raise_connect_result_event(st67_data->net_iface, status);
+		wifi_mgmt_raise_connect_result_event(st67_data->sta_net_iface, status);
 	} else {
 		LOG_WRN("Unexpected sta state %d", current_state);
 	}
@@ -685,6 +1076,11 @@ static const struct modem_cmd unsol_cmds[] = {
 	MODEM_CMD("+CW:DISCONNECTED", on_cmd_wifi_disconnected, 0U, ""),
 	/* Received at both connection and disconnection. */
 	MODEM_CMD("+CW:ERROR,", on_cmd_wifi_error, 1U, ""),
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	/* Whitespace is part of the cmd for some reason. */
+	MODEM_CMD("+CW:STA_CONNECTED ", on_cmd_sap_sta_connected, 1U, ""),
+	MODEM_CMD("+CW:STA_DISCONNECTED ", on_cmd_sap_sta_disconnected, 1U, ""),
+#endif
 };
 
 static void handle_at_cmd_frame(const uint8_t *buf, size_t len)
@@ -704,7 +1100,7 @@ static void handle_at_cmd_frame(const uint8_t *buf, size_t len)
 static void handle_sta_data_frame(const uint8_t *buf, size_t len)
 {
 	struct st67_driver_data *st67_data = &driver_data;
-	struct net_if *iface = st67_data->net_iface;
+	struct net_if *iface = st67_data->sta_net_iface;
 	struct net_pkt *pkt;
 
 	if (iface == NULL) {
@@ -733,15 +1129,45 @@ static void handle_sta_data_frame(const uint8_t *buf, size_t len)
 
 static void handle_sap_data_frame(const uint8_t *buf, size_t len)
 {
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	struct st67_driver_data *st67_data = &driver_data;
+	struct net_if *iface = st67_data->sap_net_iface;
+	struct net_pkt *pkt;
+
+	if (iface == NULL) {
+		return;
+	}
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, len, NET_AF_UNSPEC, 0,
+					   ST67W611M1_NET_PKT_ALLOC_TIMEOUT);
+	if (pkt == NULL) {
+		LOG_ERR("Failed to alloc for pkt");
+		return;
+	}
+
+	if (net_pkt_write(pkt, buf, len) < 0) {
+		LOG_ERR("Failed to write in pkt");
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	if (net_recv_data(iface, pkt) < 0) {
+		LOG_ERR("Failed to send pkt");
+		net_pkt_unref(pkt);
+		return;
+	}
+#else
 	ARG_UNUSED(buf);
 	ARG_UNUSED(len);
 
-	LOG_ERR("SoftAP not yet supported");
+	LOG_ERR("SoftAP disabled! Set CONFIG_ST67W611M1_WIFI_STA_SAP_MODE for SoftAP support.");
+#endif
 }
 
 static int st67_send(const struct device *dev, struct net_pkt *pkt)
 {
 	int ret;
+	struct st67_driver_data *st67_data = dev->data;
 
 	if ((pkt == NULL) || (pkt->buffer == NULL)) {
 		return -EINVAL;
@@ -755,10 +1181,19 @@ static int st67_send(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	spi_pkt->net_pkt = pkt;
-	/* For now, the driver only supports STA.
-	 * For SoftAP, the iface will be checked to determine the type.
-	 */
-	spi_pkt->type = STA_DATA;
+
+	if (pkt->iface == st67_data->sta_net_iface) {
+		spi_pkt->type = STA_DATA;
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	} else if (pkt->iface == st67_data->sap_net_iface) {
+		spi_pkt->type = SAP_DATA;
+#endif
+	} else {
+		LOG_ERR("Unknown iface in net_pkt");
+		k_mem_slab_free(&st67_spi_pkt_mem_slab, spi_pkt);
+		return -EINVAL;
+	}
+
 	net_pkt_ref(pkt);
 	ret = st67_spi_send(spi_pkt);
 	if (ret < 0) {
@@ -776,11 +1211,14 @@ static void st67_init_work(struct k_work *work)
 	struct st67_driver_data *st67_data = CONTAINER_OF(work, struct st67_driver_data, init_work);
 
 	static const struct setup_cmd cmds[] = {
-		SETUP_CMD_NOHANDLE("AT+CWMODE=1,1\r\n"),
-		SETUP_CMD("AT+CIPSTAMAC?\r\n", "+CIPSTAMAC:", on_cmd_cipstamac, 1U, ""),
-		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
+		SETUP_CMD_NOHANDLE(ST67W611M1_WIFI_MODE_STA_CMD),
 		SETUP_CMD("AT+CWNETMODE?\r\n", "+CWNETMODE:", on_cmd_cwnetmode, 1U, ""),
 		SETUP_CMD("AT+CWAUTOCONN?\r\n", "+CWAUTOCONN:", on_cmd_cwautoconn, 1U, ""),
+		SETUP_CMD("AT+CIPSTAMAC?\r\n", "+CIPSTAMAC:", on_cmd_cipstamac, 1U, ""),
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+		SETUP_CMD("AT+CIPAPMAC?\r\n", "+CIPAPMAC:", on_cmd_cipapmac, 1U, ""),
+#endif
+		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&st67_data->mctx.iface, &st67_data->mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
@@ -830,6 +1268,11 @@ static int st67_init(const struct device *dev)
 	k_work_init(&st67_data->scan_work, st67_scan_work);
 	k_work_init(&st67_data->connect_work, st67_connect_work);
 	k_work_init(&st67_data->disconnect_work, st67_disconnect_work);
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	k_work_init(&st67_data->ap_enable_work, st67_ap_enable_work);
+	k_work_init(&st67_data->ap_disable_work, st67_ap_disable_work);
+	k_work_init(&st67_data->ap_sta_disconnect_work, st67_ap_sta_disconnect_work);
+#endif
 
 	k_work_queue_start(&st67_data->workq, st67_workq_stack,
 			   K_KERNEL_STACK_SIZEOF(st67_workq_stack),
@@ -893,12 +1336,23 @@ static void st67_iface_init(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	struct st67_driver_data *st67_data = dev->data;
 
-	st67_data->net_iface = iface;
+	uint8_t *mac_addr;
 
 	net_eth_set_if_type_wifi(iface);
 
-	if (net_if_set_link_addr(st67_data->net_iface, st67_data->sta_mac_addr,
-				 ARRAY_SIZE(st67_data->sta_mac_addr), NET_LINK_ETHERNET) < 0) {
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	if (iface == NET_IF_DT_INST_GET(0, 1)) {
+		st67_data->sap_net_iface = iface;
+		mac_addr = st67_data->sap_mac_addr;
+	} else {
+#endif
+		st67_data->sta_net_iface = iface;
+		mac_addr = st67_data->sta_mac_addr;
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	}
+#endif
+
+	if (net_if_set_link_addr(iface, mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET) < 0) {
 		LOG_ERR("Failed to set mac address");
 	}
 
@@ -910,6 +1364,11 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.scan = st67_scan,
 	.connect = st67_connect,
 	.disconnect = st67_disconnect,
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	.ap_enable = st67_ap_enable,
+	.ap_disable = st67_ap_disable,
+	.ap_sta_disconnect = st67_ap_sta_disconnect,
+#endif
 };
 
 static const struct net_wifi_mgmt_offload st67_api = {
@@ -920,3 +1379,7 @@ static const struct net_wifi_mgmt_offload st67_api = {
 
 ETH_NET_DEVICE_DT_INST_DEFINE(0, st67_init, NULL, &driver_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
 			      &st67_api, ST67W611M1_ETH_MTU);
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+NET_DEVICE_DT_INST_ADD_IFACE(0, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), ST67W611M1_ETH_MTU,
+			     1);
+#endif
