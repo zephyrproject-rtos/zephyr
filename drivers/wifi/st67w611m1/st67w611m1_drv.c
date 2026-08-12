@@ -620,6 +620,160 @@ static int st67_ap_sta_disconnect(const struct device *dev, struct net_if *iface
 }
 #endif
 
+static void st67_sta_iface_status_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, sta_iface_status_work);
+
+	/* Timeout to avoid deadlock if AT cmds fail. */
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+CWJAP?\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get STA status: %d", ret);
+	}
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+CWSTATE?\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get STA status: %d", ret);
+	}
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+GET_AP_DTIM?\r\n",
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get STA status: %d", ret);
+	}
+
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+GET_TWT_SUPPORTED?\r\n",
+			       ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get STA status: %d", ret);
+	}
+
+	k_sem_give(&st67_data->sem_sta_iface_status_wait);
+}
+
+static int st67_sta_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	int ret = 0;
+	struct st67_driver_data *st67_data = dev->data;
+
+	memset(status, 0, sizeof(*status));
+
+	/* No need to fill the struct if disconnected or connecting. */
+	switch (st67_data->sta_current_state) {
+	case ST67_DISCONNECTED:
+		status->state = WIFI_STATE_DISCONNECTED;
+		goto out;
+	case ST67_CONNECTING:
+		status->state = WIFI_STATE_AUTHENTICATING;
+		goto out;
+	case ST67_CONNECTED:
+		status->state = WIFI_STATE_COMPLETED;
+		break;
+	default:
+		LOG_ERR("Unexpected wifi state %d", st67_data->sta_current_state);
+		goto out;
+	}
+
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->iface_mode = WIFI_MODE_INFRA;
+	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+	status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	status->mfp = WIFI_MFP_UNKNOWN;
+
+	st67_data->sta_wifi_status = status;
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->sta_iface_status_work);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Needed to avoid dangling pointers to status. */
+	ret = k_sem_take(&st67_data->sem_sta_iface_status_wait, ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		goto out;
+	}
+
+out:
+	st67_data->sta_wifi_status = NULL;
+
+	return ret;
+}
+
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+static void st67_sap_iface_status_work(struct k_work *work)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(work, struct st67_driver_data, sap_iface_status_work);
+
+	/* Timeout to avoid deadlock if AT cmds fail. */
+	ret = st67_send_at_cmd(st67_data, NULL, 0, "AT+CWSAP?\r\n", ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to get SoftAP status: %d", ret);
+	}
+
+	k_sem_give(&st67_data->sem_sap_iface_status_wait);
+}
+
+static int st67_sap_iface_status(const struct device *dev, struct wifi_iface_status *status)
+{
+	int ret = 0;
+	struct st67_driver_data *st67_data = dev->data;
+
+	memset(status, 0, sizeof(*status));
+
+	if (st67_data->is_sap_enabled) {
+		status->state = WIFI_STATE_COMPLETED;
+	} else {
+		status->state = WIFI_STATE_INACTIVE;
+		goto out;
+	}
+
+	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	status->iface_mode = WIFI_MODE_AP;
+	status->link_mode = WIFI_6;
+	status->security = WIFI_SECURITY_TYPE_UNKNOWN;
+	status->mfp = WIFI_MFP_UNKNOWN;
+	status->twt_capable = false;
+
+	st67_data->sap_wifi_status = status;
+
+	ret = k_work_submit_to_queue(&st67_data->workq, &st67_data->sap_iface_status_work);
+	if (ret < 0) {
+		goto out;
+	}
+
+	/* Needed to avoid dangling pointers to status. */
+	ret = k_sem_take(&st67_data->sem_sap_iface_status_wait, ST67W611M1_AT_CMD_TIMEOUT);
+	if (ret < 0) {
+		goto out;
+	}
+
+out:
+	st67_data->sap_wifi_status = NULL;
+
+	return ret;
+}
+#endif
+
+static int st67_iface_status(const struct device *dev, struct net_if *iface,
+			     struct wifi_iface_status *status)
+{
+	struct st67_driver_data *st67_data = dev->data;
+
+	if (iface == st67_data->sta_net_iface) {
+		return st67_sta_iface_status(dev, status);
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	} else if (iface == st67_data->sap_net_iface) {
+		return st67_sap_iface_status(dev, status);
+#endif
+	} else {
+		LOG_ERR("Unknown iface");
+		return -EINVAL;
+	}
+}
+
 static void st67_reg_domain_work(struct k_work *work)
 {
 	int ret;
@@ -886,6 +1040,44 @@ static int get_next_quoted_token(char *dest, char **cursor, int max_len)
 	return token_len;
 }
 
+static int skip_next_token(char **cursor)
+{
+	bool is_quoted = false;
+	bool ending_quote_found = false;
+
+	if (cursor == NULL) {
+		return -EINVAL;
+	}
+
+	if (**cursor == '"') {
+		is_quoted = true;
+		(*cursor)++;
+	}
+
+	while (**cursor != '\0') {
+		if (is_quoted) {
+			if (**cursor == '"') {
+				if (((*cursor)[1] == ',') ||
+				    (((*cursor)[1] == ')' && (*cursor)[2] == '\0'))) {
+					*cursor += 2; /* Skip both quote and delimiter. */
+					ending_quote_found = true;
+					break;
+				}
+			}
+		} else if (**cursor == ',' || (**cursor == ')' && (*cursor)[1] == '\0')) {
+			(*cursor)++;
+			break;
+		}
+		(*cursor)++;
+	}
+
+	if (is_quoted && !ending_quote_found) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Depends on ST67W611M1_CWLAPOPT_CMD */
 /* +CWLAP:(ecn,ssid,rssi,mac,channel) */
 MODEM_CMD_DEFINE(on_cmd_cwlap)
@@ -954,6 +1146,229 @@ MODEM_CMD_DEFINE(on_cmd_cwlap)
 	}
 	return 0;
 }
+
+/* +CWJAP:(ssid,mac,channel,rssi,wep_en) */
+MODEM_CMD_DEFINE(on_cmd_cwjap_status)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+	char *cursor;
+	struct wifi_iface_status *status;
+
+	int ssid_len;
+	char mac[ST67W611M1_CWLAP_MAC_ADDR_STR_LEN];
+	int channel;
+	int rssi;
+
+	if (st67_data->sta_wifi_status == NULL) {
+		return -EINVAL;
+	}
+
+	status = st67_data->sta_wifi_status;
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+	cursor = argv[0];
+
+	ssid_len = get_next_quoted_token(status->ssid, &cursor, ARRAY_SIZE(status->ssid));
+	if (ssid_len < 0) {
+		return ssid_len;
+	}
+	status->ssid_len = ssid_len;
+
+	ret = get_next_quoted_token(mac, &cursor, ARRAY_SIZE(mac));
+	if (ret < 0) {
+		return ret;
+	}
+	ret = net_bytes_from_str(status->bssid, ARRAY_SIZE(status->bssid), mac);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = get_next_int_token(&channel, &cursor, 4);
+	if (ret < 0) {
+		return ret;
+	}
+	status->channel = channel;
+
+	ret = get_next_int_token(&rssi, &cursor, 5);
+	if (ret < 0) {
+		return ret;
+	}
+	status->rssi = rssi;
+
+	return 0;
+}
+
+/* Used only to get security.
+ * +CWSTATE:state,ssid,mode,security
+ */
+MODEM_CMD_DEFINE(on_cmd_cwstate_status)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+	char *cursor;
+	struct wifi_iface_status *status;
+
+	int link_mode;
+	int security_index;
+
+	if (st67_data->sta_wifi_status == NULL) {
+		return -EINVAL;
+	}
+
+	status = st67_data->sta_wifi_status;
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+	cursor = argv[0];
+
+	for (int i = 0; i < 2; i++) {
+		ret = skip_next_token(&cursor);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	ret = get_next_int_token(&link_mode, &cursor, 3);
+	if (ret < 0) {
+		return ret;
+	}
+	switch (link_mode) {
+	case 0:
+		status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+		break;
+	case 1:
+		status->link_mode = WIFI_1;
+		break;
+	case 3:
+		status->link_mode = WIFI_3;
+		break;
+	case 7:
+		status->link_mode = WIFI_4;
+		break;
+	case 15:
+		status->link_mode = WIFI_6;
+		break;
+	default:
+		status->link_mode = WIFI_LINK_MODE_UNKNOWN;
+		break;
+	}
+
+	ret = get_next_int_token(&security_index, &cursor, 2);
+	if (ret < 0) {
+		return ret;
+	}
+	if (security_index >= ARRAY_SIZE(st67w611m1_sta_security_type)) {
+		return -EBADMSG;
+	}
+	status->security = st67w611m1_sta_security_type[security_index];
+
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_twt_support)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+	struct wifi_iface_status *status;
+
+	if (st67_data->sta_wifi_status == NULL) {
+		return -EINVAL;
+	}
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+
+	status = st67_data->sta_wifi_status;
+
+	if (argv[0][0] == '1') {
+		status->twt_capable = true;
+	} else {
+		status->twt_capable = false;
+	}
+
+	return 0;
+}
+
+MODEM_CMD_DEFINE(on_cmd_ap_dtim)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	if (st67_data->sta_wifi_status == NULL) {
+		return -EINVAL;
+	}
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+
+	st67_data->sta_wifi_status->dtim_period = strtol(argv[0], NULL, 10);
+
+	return 0;
+}
+
+/* +CWSAP:(ssid,psk,channel,security,max_conn,ssid_hidden) */
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+MODEM_CMD_DEFINE(on_cmd_cwsap_status)
+{
+	int ret;
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+	char *cursor;
+
+	if (st67_data->sap_wifi_status == NULL) {
+		return -EINVAL;
+	}
+
+	struct wifi_iface_status *status = st67_data->sap_wifi_status;
+
+	int ssid_len;
+	int channel;
+	int security_index;
+
+	if (argc < 1) {
+		return -EBADMSG;
+	}
+	cursor = argv[0];
+
+	ssid_len = get_next_quoted_token(status->ssid, &cursor, ARRAY_SIZE(status->ssid));
+	if (ssid_len < 0) {
+		return ssid_len;
+	}
+	status->ssid_len = ssid_len;
+
+	ret = skip_next_token(&cursor);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = get_next_int_token(&channel, &cursor, 4);
+	if (ret < 0) {
+		return ret;
+	}
+	status->channel = channel;
+
+	ret = get_next_int_token(&security_index, &cursor, 2);
+	if (ret < 0) {
+		return ret;
+	}
+	if (security_index >= ARRAY_SIZE(st67w611m1_softap_security_type)) {
+		return -EBADMSG;
+	}
+	status->security = st67w611m1_softap_security_type[security_index];
+
+	memcpy(status->bssid, st67_data->sap_mac_addr, WIFI_MAC_ADDR_LEN);
+
+	return 0;
+}
+#endif
 
 MODEM_CMD_DEFINE(on_cmd_wifi_connecting)
 {
@@ -1159,7 +1574,12 @@ static const struct modem_cmd unsol_cmds[] = {
 	/* Whitespace is part of the cmd for some reason. */
 	MODEM_CMD("+CW:STA_CONNECTED ", on_cmd_sap_sta_connected, 1U, ""),
 	MODEM_CMD("+CW:STA_DISCONNECTED ", on_cmd_sap_sta_disconnected, 1U, ""),
+	MODEM_CMD("+CWSAP:", on_cmd_cwsap_status, 1U, ""),
 #endif
+	MODEM_CMD("+CWJAP:", on_cmd_cwjap_status, 1U, ""),
+	MODEM_CMD("+CWSTATE:", on_cmd_cwstate_status, 1U, ""),
+	MODEM_CMD("+DTIM:", on_cmd_ap_dtim, 1U, ""),
+	MODEM_CMD("+TWT_SUPPORT:", on_cmd_twt_support, 1U, ""),
 	MODEM_CMD("+CWCOUNTRY:", on_cmd_cwcountry, 2U, ","),
 };
 
@@ -1340,6 +1760,10 @@ static int st67_init(const struct device *dev)
 	k_sem_init(&st67_data->sem_cmd_response_wait, 0, 1);
 	k_sem_init(&st67_data->sem_wifi_scan_done_wait, 0, 1);
 	k_sem_init(&st67_data->sem_reg_domain_wait, 0, 1);
+	k_sem_init(&st67_data->sem_sta_iface_status_wait, 0, 1);
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	k_sem_init(&st67_data->sem_sap_iface_status_wait, 0, 1);
+#endif
 	k_sem_init(&st67_data->sem_rx_wait, 0, 1);
 
 	/* Implemented with work items to return the API calls quickly and not wait for semaphore
@@ -1350,7 +1774,9 @@ static int st67_init(const struct device *dev)
 	k_work_init(&st67_data->connect_work, st67_connect_work);
 	k_work_init(&st67_data->disconnect_work, st67_disconnect_work);
 	k_work_init(&st67_data->reg_domain_work, st67_reg_domain_work);
+	k_work_init(&st67_data->sta_iface_status_work, st67_sta_iface_status_work);
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	k_work_init(&st67_data->sap_iface_status_work, st67_sap_iface_status_work);
 	k_work_init(&st67_data->ap_enable_work, st67_ap_enable_work);
 	k_work_init(&st67_data->ap_disable_work, st67_ap_disable_work);
 	k_work_init(&st67_data->ap_sta_disconnect_work, st67_ap_sta_disconnect_work);
@@ -1451,6 +1877,7 @@ static const struct wifi_mgmt_ops st67_mgmt_ops = {
 	.ap_disable = st67_ap_disable,
 	.ap_sta_disconnect = st67_ap_sta_disconnect,
 #endif
+	.iface_status = st67_iface_status,
 	.reg_domain = st67_reg_domain,
 };
 

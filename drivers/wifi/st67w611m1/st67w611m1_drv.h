@@ -116,7 +116,9 @@ struct st67_driver_data {
 	struct k_work connect_work;
 	struct k_work disconnect_work;
 	struct k_work reg_domain_work;
+	struct k_work sta_iface_status_work;
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	struct k_work sap_iface_status_work;
 	struct k_work ap_enable_work;
 	struct k_work ap_disable_work;
 	struct k_work ap_sta_disconnect_work;
@@ -127,11 +129,17 @@ struct st67_driver_data {
 	struct k_sem sem_wifi_scan_done_wait;
 	struct k_sem sem_reg_domain_wait;
 	struct k_sem sem_rx_wait;
+	struct k_sem sem_sta_iface_status_wait;
+#if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
+	struct k_sem sem_sap_iface_status_wait;
+#endif
 
 	struct wifi_reg_domain *reg_domain;
 	uint8_t sta_mac_addr[NET_ETH_ADDR_LEN];
+	struct wifi_iface_status *sta_wifi_status;
 #if defined(CONFIG_ST67W611M1_WIFI_STA_SAP_MODE)
 	uint8_t sap_mac_addr[NET_ETH_ADDR_LEN];
+	struct wifi_iface_status *sap_wifi_status;
 #endif
 
 	enum st67_sta_current_state sta_current_state;
