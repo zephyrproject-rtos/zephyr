@@ -565,8 +565,7 @@ static int isds_2536030320001_accel_full_scale_get(const struct device *dev,
 
 	data->accel_range = accel_fs;
 
-	fs->val1 = isds_2536030320001_accel_full_scale_list[accel_fs];
-	fs->val2 = 0;
+	sensor_g_to_ms2(isds_2536030320001_accel_full_scale_list[accel_fs], fs);
 
 	return 0;
 }
