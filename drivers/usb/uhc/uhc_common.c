@@ -5,22 +5,23 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/dlist.h>
 #include <zephyr/usb/usb_ch9.h>
 #include "uhc_common.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhc, CONFIG_UHC_DRIVER_LOG_LEVEL);
 
-K_MEM_SLAB_DEFINE_STATIC_TYPE(uhc_xfer_pool, struct uhc_transfer,
-			      CONFIG_UHC_XFER_COUNT);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(uhc_xfer_pool, struct uhc_transfer, CONFIG_UHC_XFER_COUNT);
 
-USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool,
-			CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE,
-			0, NULL);
+/*
+ * Variable-size pool for EP0/ch9/BOT (CSW 13 B, GET_MAX_LUN 1 B, etc.).
+ * Bulk IN uses 64-byte DMA staging in the host driver when the buffer payload
+ * is not aligned; direct DMA when aligned.
+ */
+USB_BUF_POOL_VAR_DEFINE(uhc_ep_pool, CONFIG_UHC_BUF_COUNT, CONFIG_UHC_BUF_POOL_SIZE, 0, NULL);
 
-int uhc_submit_event(const struct device *dev,
-		     const enum uhc_event_type type,
-		     const int status)
+int uhc_submit_event(const struct device *dev, const enum uhc_event_type type, const int status)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
@@ -36,9 +37,7 @@ int uhc_submit_event(const struct device *dev,
 	return data->event_cb(dev, &drv_evt);
 }
 
-void uhc_xfer_return(const struct device *dev,
-		     struct uhc_transfer *const xfer,
-		     const int err)
+void uhc_xfer_return(const struct device *dev, struct uhc_transfer *const xfer, const int err)
 {
 	struct uhc_data *data = dev->data;
 	struct uhc_event drv_evt = {
@@ -46,6 +45,11 @@ void uhc_xfer_return(const struct device *dev,
 		.xfer = xfer,
 		.dev = dev,
 	};
+
+	if (!sys_dnode_is_linked(&xfer->node)) {
+		LOG_WRN("uhc: duplicate xfer_return ignored (%p)", (void *)xfer);
+		return;
+	}
 
 	sys_dlist_remove(&xfer->node);
 	xfer->queued = 0;
@@ -69,8 +73,7 @@ struct uhc_transfer *uhc_xfer_get_next(const struct device *dev)
 	return (node == NULL) ? NULL : SYS_DLIST_CONTAINER(node, xfer, node);
 }
 
-int uhc_xfer_append(const struct device *dev,
-		    struct uhc_transfer *const xfer)
+int uhc_xfer_append(const struct device *dev, struct uhc_transfer *const xfer)
 {
 	struct uhc_data *data = dev->data;
 
@@ -79,8 +82,7 @@ int uhc_xfer_append(const struct device *dev,
 	return 0;
 }
 
-struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   const size_t size)
+struct net_buf *uhc_xfer_buf_alloc(const struct device *dev, const size_t size)
 {
 	return net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
 }
@@ -90,10 +92,8 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 	net_buf_unref(buf);
 }
 
-struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t ep,
-				    struct usb_device *const udev,
-				    void *const cb,
+struct uhc_transfer *uhc_xfer_alloc(const struct device *dev, const uint8_t ep,
+				    struct usb_device *const udev, void *const cb,
 				    void *const cb_priv)
 {
 	uint8_t ep_idx = USB_EP_GET_IDX(ep) & 0xF;
@@ -154,12 +154,9 @@ xfer_alloc_error:
 	return xfer;
 }
 
-struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t ep,
-					     struct usb_device *const udev,
-					     void *const cb,
-					     void *const cb_priv,
-					     size_t size)
+struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev, const uint8_t ep,
+					     struct usb_device *const udev, void *const cb,
+					     void *const cb_priv, size_t size)
 {
 	struct uhc_transfer *xfer;
 	struct net_buf *buf;
@@ -201,9 +198,7 @@ xfer_free_error:
 	return ret;
 }
 
-int uhc_xfer_buf_add(const struct device *dev,
-		     struct uhc_transfer *const xfer,
-		     struct net_buf *buf)
+int uhc_xfer_buf_add(const struct device *dev, struct uhc_transfer *const xfer, struct net_buf *buf)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	int ret = 0;
@@ -237,7 +232,6 @@ int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
 	if (ret) {
 		xfer->queued = 0;
 	}
-
 
 ep_enqueue_error:
 	api->unlock(dev);
@@ -317,8 +311,7 @@ uhc_disable_error:
 	return ret;
 }
 
-int uhc_init(const struct device *dev,
-	     uhc_event_cb_t event_cb, const void *const event_ctx)
+int uhc_init(const struct device *dev, uhc_event_cb_t event_cb, const void *const event_ctx)
 {
 	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
 	struct uhc_data *data = dev->data;
@@ -373,6 +366,175 @@ int uhc_shutdown(const struct device *dev)
 	atomic_clear_bit(&data->status, UHC_STATUS_INITIALIZED);
 
 uhc_shutdown_error:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_add_endpoints(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api = DEVICE_API_GET(uhc, dev);
+	int ret = 0;
+
+	if (udev == NULL) {
+		return -EINVAL;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out;
+	}
+
+	if (api->add_endpoints != NULL) {
+		ret = api->add_endpoints(dev, udev);
+	}
+
+out:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_eps_verify_steady(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL) {
+		return 0;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->eps_verify_steady == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_verify;
+	}
+
+	ret = api->eps_verify_steady(dev, udev);
+
+out_verify:
+	api->unlock(dev);
+
+	return ret;
+}
+
+int uhc_ep_sync_after_clear_feature(const struct device *dev, struct usb_device *udev)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL) {
+		return 0;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->ep_sync_after_clear_feature == NULL) {
+		return 0;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_sync;
+	}
+
+	ret = api->ep_sync_after_clear_feature(dev, udev);
+
+out_sync:
+	api->unlock(dev);
+
+	return ret;
+}
+
+bool uhc_post_configure_steady(const struct device *dev)
+{
+	const struct uhc_driver_api *api;
+	bool steady;
+
+	if (dev == NULL) {
+		return true;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->post_configure_steady == NULL) {
+		return true;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		steady = false;
+		goto out_steady;
+	}
+
+	steady = api->post_configure_steady(dev);
+
+out_steady:
+	api->unlock(dev);
+
+	return steady;
+}
+
+void uhc_free_dev(const struct device *dev)
+{
+	const struct uhc_driver_api *api;
+
+	if (dev == NULL) {
+		return;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->free_dev == NULL) {
+		return;
+	}
+
+	api->lock(dev);
+
+	if (uhc_is_initialized(dev)) {
+		api->free_dev(dev);
+	}
+
+	api->unlock(dev);
+}
+
+int uhc_assign_address(const struct device *dev, struct usb_device *udev, uint8_t *addr_out)
+{
+	const struct uhc_driver_api *api;
+	int ret;
+
+	if (dev == NULL || udev == NULL || addr_out == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(uhc, dev);
+
+	if (api->assign_address == NULL) {
+		return -ENOTSUP;
+	}
+
+	api->lock(dev);
+
+	if (!uhc_is_initialized(dev)) {
+		ret = -EPERM;
+		goto out_assign;
+	}
+
+	ret = api->assign_address(dev, udev, addr_out);
+
+out_assign:
 	api->unlock(dev);
 
 	return ret;
