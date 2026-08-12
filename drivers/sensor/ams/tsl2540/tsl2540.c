@@ -269,7 +269,7 @@ static int tsl2540_attr_set(const struct device *dev, enum sensor_channel chan,
 	case SENSOR_ATTR_TSL2540_CONTINUOUS_NO_WAIT_MODE:
 		data->enable_mode = TSL2540_ENABLE_AEN_PON;
 		ret = i2c_reg_update_byte_dt(&cfg->i2c_spec, TSL2540_CFG3_ADDR, TSL2540_CFG3_MASK,
-						TSL2540_CFG3_DFLT);
+						TSL2540_CFG3_NO_SAI_CONF);
 		break;
 	}
 
