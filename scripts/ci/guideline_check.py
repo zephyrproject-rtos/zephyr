@@ -31,7 +31,9 @@ coccinelle_reserved_names_exclude_regex = [
 
 
 def parse_coccinelle(contents: str, violations: dict):
-    reg = re.compile("([a-zA-Z0-9_/]*\\.[ch]:[0-9]*)(:[0-9\\-]*: )(.*)")
+    # Paths may contain any character other than the colon that separates them
+    # from the line number, hyphens and dots included.
+    reg = re.compile("([^\\s:]+\\.[ch]:[0-9]+)(:[0-9\\-]*: )(.*)")
     for line in contents.split("\n"):
         r = reg.match(line)
         if r:
