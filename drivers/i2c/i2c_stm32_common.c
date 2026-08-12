@@ -223,6 +223,7 @@ int i2c_stm32_recover_bus(const struct device *dev)
 	};
 	uint32_t device_config = data->dev_config;
 	int error = 0;
+	int ret2;
 
 	LOG_ERR("attempting to recover bus");
 
@@ -282,15 +283,22 @@ int i2c_stm32_recover_bus(const struct device *dev)
 	}
 
 restore:
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	ret2 = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret2 != 0) {
+		return (error != 0) ? error : ret2;
+	}
 
 	/* Re-initialize the I2C peripheral after GPIO-based bus recovery.
 	 * pinctrl_apply_state() restores the pin configuration, but the
 	 * peripheral registers remain in a faulted state. Re-running
 	 * runtime_configure() restores the peripheral to a working state.
 	 */
-	if (i2c_stm32_runtime_configure(dev, device_config) != 0) {
-		LOG_ERR("failed to restore I2C peripheral after bus recovery");
+	ret2 = i2c_stm32_runtime_configure(dev, device_config);
+	if (ret2 != 0) {
+		LOG_ERR("failed to restore I2C peripheral after bus recovery: %d", ret2);
+		if (error == 0) {
+			return ret2;
+		}
 	}
 
 #ifndef CONFIG_I2C_RTIO
