@@ -768,6 +768,8 @@ ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, 
 #endif /* CONFIG_INT_BENCH_SCENARIO_ZLI */
 
 #ifdef CONFIG_INT_BENCH_SCENARIO_END_TO_END
+static volatile bool e2e_done;
+
 static void e2e_handler(void)
 {
 	k_sem_give(&wake_sem);
@@ -781,7 +783,7 @@ static void e2e_waiter_entry(void *p1, void *p2, void *p3)
 
 	k_sem_take(&wake_sem, K_FOREVER);
 	BENCH_SPAN_END();
-	k_sem_give(&sync_sem);
+	e2e_done = true;
 }
 
 /*
@@ -815,10 +817,19 @@ ZTEST_BENCHMARK_MANUAL(interrupt, irq_to_thread, NUM_ITERATIONS, e2e_setup, e2e_
 	bench_load_churn();
 	bench_load_pollute();
 
+	/*
+	 * Spin rather than block: blocking would race the interrupt,
+	 * which can arrive while this thread is still entering
+	 * k_sem_take(), charging the woken thread for a block that is
+	 * immediately unwound. The waiter runs at a higher priority, so
+	 * it preempts this loop as soon as the ISR wakes it.
+	 */
+	e2e_done = false;
 	BENCH_SPAN_START();
 	bench_trigger();
 
-	k_sem_take(&sync_sem, K_FOREVER);
+	while (!e2e_done) {
+	}
 
 	bench_trace();
 }
