@@ -101,6 +101,7 @@ static int icp201xx_pressure_interrupt(const struct device *dev, struct sensor_v
 {
 	int16_t pressure_value, pressure_delta_value;
 	uint8_t int_mask = 0;
+	uint8_t enabled;
 	int rc = 0;
 	struct icp201xx_data *data = (struct icp201xx_data *)dev->data;
 
@@ -109,8 +110,10 @@ static int icp201xx_pressure_interrupt(const struct device *dev, struct sensor_v
 	/* PABS = (P(kPa)-70kPa)/40kPa*2^13 */
 	pressure_value =
 		(8192 * (pressure.val1 - 70) + ((8192 * (uint64_t)pressure.val2) / 1000000)) / 40;
+	enabled = (uint8_t)~int_mask &
+		  (ICP201XX_INT_MASK_PRESS_ABS | ICP201XX_INT_MASK_PRESS_DELTA);
 	rc |= inv_icp201xx_set_press_notification_config(&(data->icp_device),
-							 ~int_mask | ICP201XX_INT_MASK_PRESS_ABS,
+							 enabled | ICP201XX_INT_MASK_PRESS_ABS,
 							 pressure_value, pressure_delta_value);
 	return rc;
 }
@@ -120,6 +123,7 @@ static int icp201xx_pressure_change_interrupt(const struct device *dev,
 {
 	int16_t pressure_value, pressure_delta_value;
 	uint8_t int_mask = 0;
+	uint8_t enabled;
 	int rc = 0;
 	struct icp201xx_data *data = (struct icp201xx_data *)dev->data;
 
@@ -129,8 +133,10 @@ static int icp201xx_pressure_change_interrupt(const struct device *dev,
 	pressure_delta_value =
 		(16384 * pressure_delta.val1 + (16384 * (uint64_t)pressure_delta.val2 / 1000000)) /
 		80;
+	enabled = (uint8_t)~int_mask &
+		  (ICP201XX_INT_MASK_PRESS_ABS | ICP201XX_INT_MASK_PRESS_DELTA);
 	rc |= inv_icp201xx_set_press_notification_config(&(data->icp_device),
-							 ~int_mask | ICP201XX_INT_MASK_PRESS_DELTA,
+							 enabled | ICP201XX_INT_MASK_PRESS_DELTA,
 							 pressure_value, pressure_delta_value);
 	return rc;
 }
