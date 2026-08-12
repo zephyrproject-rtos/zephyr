@@ -222,7 +222,6 @@ int i2c_stm32_recover_bus(const struct device *dev)
 		.get_sda = i2c_stm32_bitbang_get_sda,
 	};
 	uint32_t device_config = data->dev_config;
-	uint32_t bb_config;
 	int error = 0;
 
 	LOG_ERR("attempting to recover bus");
@@ -260,16 +259,21 @@ int i2c_stm32_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	if (I2C_SPEED_GET(device_config) == I2C_SPEED_DT) {
-		bb_config = i2c_map_dt_bitrate(cfg->bitrate) | I2C_MODE_CONTROLLER;
-	} else {
-		bb_config = device_config;
-	}
-
-	error = i2c_bitbang_configure(&bitbang_ctx, bb_config);
-	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
-		goto restore;
+	/* Use Fast speed (highest supported by bitbang) if not standard speed (bitbang default) */
+	switch (I2C_SPEED_GET(device_config)) {
+	case I2C_SPEED_STANDARD:
+		break;
+	case I2C_SPEED_DT:
+		if (config->bitrate == I2C_BITRATE_STANDARD) {
+			break;
+		}
+		__fallthrough;
+	default:
+		error = i2c_bitbang_configure(&bitbang_ctx, I2C_SPEED_SET(I2C_SPEED_FAST));
+		if (error != 0) {
+			LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+			goto restore;
+		}
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
