@@ -2873,6 +2873,7 @@ static int context_sendto(struct net_context *context,
 	net_sa_family_t family;
 	size_t alloc_len;
 	size_t tmp_len;
+	uint16_t proto;
 	int ret;
 #if defined(CONFIG_NET_UDP_OPTIONS)
 	struct net_udp_opt_info udp_opts = { 0 };
@@ -3181,8 +3182,9 @@ static int context_sendto(struct net_context *context,
 	context->send_cb = cb;
 	context->user_data = user_data;
 
-	if (IS_ENABLED(CONFIG_NET_TCP) &&
-	    net_context_get_proto(context) == NET_IPPROTO_TCP &&
+	proto = net_context_get_proto(context);
+
+	if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP &&
 	    !net_if_is_ip_offloaded(net_context_get_iface(context))) {
 		goto skip_alloc;
 	}
@@ -3193,8 +3195,7 @@ static int context_sendto(struct net_context *context,
 		return -ENOBUFS;
 	}
 
-	tmp_len = net_pkt_available_payload_buffer(
-				pkt, net_context_get_proto(context));
+	tmp_len = net_pkt_available_payload_buffer(pkt, proto);
 	if (tmp_len < alloc_len) {
 		if (net_context_get_type(context) == NET_SOCK_DGRAM ||
 		    net_context_get_type(context) == NET_SOCK_RAW) {
@@ -3260,8 +3261,7 @@ skip_alloc:
 		}
 
 		ret = net_try_send_data(pkt, timeout);
-	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
-	    net_context_get_proto(context) == NET_IPPROTO_UDP) {
+	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == NET_IPPROTO_UDP) {
 		ret = context_setup_udp_packet(context, family, pkt, buf, len, msghdr,
 					       dst_addr, addrlen, dont_fragment);
 		if (ret < 0) {
@@ -3276,8 +3276,7 @@ skip_alloc:
 		}
 
 		ret = net_try_send_data(pkt, timeout);
-	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
-		   net_context_get_proto(context) == NET_IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == NET_IPPROTO_TCP) {
 
 		ret = net_tcp_queue(context, buf, len, msghdr);
 		if (ret < 0) {
