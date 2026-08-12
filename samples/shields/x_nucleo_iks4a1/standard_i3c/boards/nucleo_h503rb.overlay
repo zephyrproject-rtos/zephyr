@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i3c1 {
+	status = "okay";
+	/*
+	 * The IKS4A1 targets keep their I2C spike filter armed until they see an
+	 * OD SCL HIGH >= 200 ns, and i3c_bus_init() applies that only to the first
+	 * broadcast, so ENTDAA would fail with CE2. STM32 shares one SCLH field
+	 * between the OD and PP high phases, so this also lowers the SCL rate.
+	 */
+	od-thigh-min-ns = <200>;
+};
