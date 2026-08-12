@@ -45,12 +45,35 @@ config ZTEST_BENCHMARK_PERCENTILES
 	  characterised by how bad an individual operation can be, and
 	  that lives in the tail of the distribution.
 
+	  The percentiles also give CONFIG_ZTEST_BENCHMARK_OUTLIERS its count of samples slower
+	  than the median.
+
 	  A percentile needs enough samples to be resolved at all. p99
 	  needs at least 100, p99.9 at least 1000 and p99.99 at least
 	  10000; below that the reported value degenerates to the
 	  maximum. Retaining samples costs 8 bytes each, so the buffer
 	  has to be sized for the number of iterations the benchmarks
 	  run.
+
+config ZTEST_BENCHMARK_OUTLIERS
+	bool "Report the outlier count in place of the standard error"
+	depends on ZTEST_BENCHMARK_PERCENTILES
+	help
+	  Replace the standard error line of the report with the number
+	  of samples slower than the median, and that number as a
+	  percentage of the samples taken.
+
+	  The standard error describes how precisely the mean of one
+	  stochastic population has been estimated. A latency
+	  distribution is usually not that: it is a baseline the
+	  operation hits on almost every run plus a handful of runs that
+	  something interrupted. Ten thousand samples of 760 cycles and
+	  one of 1240 give a standard error of 0.048, which reads as
+	  precision about an average no execution ever produced, where
+	  "1 / 10000 (0.010%)" says what happened.
+
+	  Only the human-readable report changes. The standard error
+	  keeps its column in the CSV output.
 
 config ZTEST_BENCHMARK_MAX_SAMPLES
 	int "Number of samples retained for percentiles"
@@ -133,11 +156,12 @@ config ZTEST_BENCHMARK_OUTPUT_CSV
 	  With CONFIG_ZTEST_BENCHMARK_PERCENTILES, every sampled and manual benchmark emits an
 	  additional row of the form:
 
-	    P, suite, name, samples, min, p50, p90, p99, p999, p9999, max
+	    P, suite, name, samples, min, p50, p90, p99, p999, p9999, max, outliers
 
 	  - samples: number of retained samples the percentiles were taken over
 	  - min / max: extreme cycle values
 	  - p50 ... p9999: nearest-rank percentiles, p9999 being the 99.99th
+	  - outliers: samples slower than the median
 
 	  All values are noise-corrected against the control measurement.
 endchoice
