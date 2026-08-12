@@ -9,6 +9,7 @@
  * @brief Haptics shell commands.
  */
 
+#include "haptics_shell.h"
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/drivers/haptics.h>
@@ -29,11 +30,12 @@
 #define HAPTICS_STREAM_HELP  SHELL_HELP("Stream samples", "<device> [<byte1> <byte2> ...]")
 #define HAPTICS_TRIGGER_HELP SHELL_HELP("Trigger an effect", "<device> <trigger> <type>")
 
-#define HAPTICS_MONITORS     bemf, current, f0, re, ambient_temp, die_temp, vbat, vbst, vout
-#define HAPTICS_MONITORS_ALL HAPTICS_MONITORS, all
-#define HAPTICS_MONITORS_GET min, max, mean, single
-#define HAPTICS_MONITORS_SET disable, enable
-#define HAPTICS_SOURCES      rom, ram, dai, analog, pwm, control_port, all
+#define HAPTICS_MONITORS      bemf, current, f0, re, ambient_temp, die_temp, vbat, vbst, vout
+#define HAPTICS_MONITORS_ALL  HAPTICS_MONITORS, all
+#define HAPTICS_MONITORS_GET  min, max, mean, single
+#define HAPTICS_MONITORS_SET  disable, enable
+#define HAPTICS_SOURCES       rom, ram, dai, analog, pwm, control_port, all
+#define HAPTICS_TRIGGER_TYPES rising, falling, high, low, none
 
 #define HAPTICS_ARGS_DEVICE              1
 #define HAPTICS_ARGS_MONITOR             2
@@ -508,6 +510,17 @@ static int cmd_trigger(const struct shell *sh, size_t argc, char **argv)
 	return ret;
 }
 
+static const struct haptics_shell_registry *haptics_shell_registry_find(const struct device *dev)
+{
+	STRUCT_SECTION_FOREACH(haptics_shell_registry, registry) {
+		if (registry->dev == dev) {
+			return registry;
+		}
+	}
+
+	return NULL;
+}
+
 static bool device_is_haptics(const struct device *dev)
 {
 	return DEVICE_API_IS(haptics, dev);
@@ -532,18 +545,57 @@ static bool device_is_haptics(const struct device *dev)
                                                                                                    \
 	SHELL_DYNAMIC_CMD_CREATE(dsub_device_##_name, device_##_name)
 
+#define HAPTICS_DYNAMIC_REGISTRY_CMD_CREATE(_name, _subcmd)                                        \
+	static void device_##_name(size_t idx, struct shell_static_entry *entry)                   \
+	{                                                                                          \
+		const struct device *dev = shell_device_filter(idx, device_is_haptics);            \
+		const struct haptics_shell_registry *registry = haptics_shell_registry_find(dev);  \
+		entry->syntax = (dev != NULL) ? dev->name : NULL;                                  \
+		entry->handler = NULL;                                                             \
+		entry->help = NULL;                                                                \
+		entry->subcmd = (registry != NULL) ? registry->_subcmd : NULL;                     \
+	}                                                                                          \
+                                                                                                   \
+	SHELL_DYNAMIC_CMD_CREATE(dsub_device_##_name, device_##_name)
+
+#define HAPTICS_DYNAMIC_REGISTRY_SUBCMD_DEFINE(_name, _subcmd)                                     \
+	void _name(const struct device *dev, size_t idx, struct shell_static_entry *entry)         \
+	{                                                                                          \
+		const struct haptics_shell_registry *registry = haptics_shell_registry_find(dev);  \
+		static char syntax[32];                                                            \
+		entry->syntax = NULL;                                                              \
+		entry->handler = NULL;                                                             \
+		entry->help = NULL;                                                                \
+		entry->subcmd = (registry != NULL) ? _subcmd : NULL;                               \
+                                                                                                   \
+		if (registry != NULL && idx < registry->num_triggers) {                            \
+			snprintk(syntax, sizeof(syntax), "%u", (unsigned int)idx);                 \
+			entry->syntax = syntax;                                                    \
+		}                                                                                  \
+	}
+
 /* Create static subcommand trees for tab auto-completion. */
 HAPTICS_STATIC_SUBCMD_SET_CREATE(monitors_get, NULL, HAPTICS_MONITORS_GET);
 HAPTICS_STATIC_SUBCMD_SET_CREATE(monitors_set, NULL, HAPTICS_MONITORS_SET);
 HAPTICS_STATIC_SUBCMD_SET_CREATE(monitors, &monitors_get, HAPTICS_MONITORS);
 HAPTICS_STATIC_SUBCMD_SET_CREATE(monitors_all, &monitors_set, HAPTICS_MONITORS_ALL);
 HAPTICS_STATIC_SUBCMD_SET_CREATE(sources, NULL, HAPTICS_SOURCES);
+HAPTICS_STATIC_SUBCMD_SET_CREATE(types_set_trigger, &sources, HAPTICS_TRIGGER_TYPES);
+HAPTICS_STATIC_SUBCMD_SET_CREATE(types_trigger, NULL, HAPTICS_TRIGGER_TYPES);
 
 /* Create dynamic commands to get haptic devices and traverse subcommand trees declared above. */
 HAPTICS_DYNAMIC_CMD_CREATE(only, NULL);
 HAPTICS_DYNAMIC_CMD_CREATE(monitor_get, &monitors);
 HAPTICS_DYNAMIC_CMD_CREATE(monitor_set, &monitors_all);
 HAPTICS_DYNAMIC_CMD_CREATE(source, &sources);
+
+/* Define shell registry subcommands. */
+HAPTICS_DYNAMIC_REGISTRY_SUBCMD_DEFINE(haptics_shell_set_trigger_get, &types_set_trigger);
+HAPTICS_DYNAMIC_REGISTRY_SUBCMD_DEFINE(haptics_shell_trigger_get, &types_trigger);
+
+/* Create dynamic commands from haptics registry information to traverse subcommand trees. */
+HAPTICS_DYNAMIC_REGISTRY_CMD_CREATE(set_trigger, set_trigger_subcmd);
+HAPTICS_DYNAMIC_REGISTRY_CMD_CREATE(trigger, trigger_subcmd);
 
 /* clang-format off */
 SHELL_STATIC_SUBCMD_SET_CREATE(haptic_cmds,
@@ -554,13 +606,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(haptic_cmds,
 	SHELL_CMD_ARG(monitor_set, &dsub_device_monitor_set, HAPTICS_MONITOR_SET_HELP,
 		      cmd_monitor_set, 4, 0),
 	SHELL_CMD_ARG(select, &dsub_device_source, HAPTICS_SELECT_HELP, cmd_select, 3, 1),
-	SHELL_CMD_ARG(set_trigger, &dsub_device_only, HAPTICS_SET_TRIGGER_HELP, cmd_set_trigger,
-		      4, 3),
+	SHELL_CMD_ARG(set_trigger, &dsub_device_set_trigger, HAPTICS_SET_TRIGGER_HELP,
+		      cmd_set_trigger, 4, 3),
 	SHELL_CMD_ARG(start, &dsub_device_only, HAPTICS_START_HELP, cmd_start, 2, 0),
 	SHELL_CMD_ARG(stop, &dsub_device_only, HAPTICS_STOP_HELP, cmd_stop, 2, 0),
 	SHELL_CMD_ARG(stream, &dsub_device_only, HAPTICS_STREAM_HELP, cmd_stream, 2,
 		      HAPTICS_ARGS_MAX),
-	SHELL_CMD_ARG(trigger, &dsub_device_only, HAPTICS_TRIGGER_HELP, cmd_trigger, 4, 0),
+	SHELL_CMD_ARG(trigger, &dsub_device_trigger, HAPTICS_TRIGGER_HELP, cmd_trigger, 4, 0),
 	SHELL_SUBCMD_SET_END);
 /* clang-format on */
 
