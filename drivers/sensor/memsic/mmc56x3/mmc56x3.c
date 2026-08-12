@@ -126,7 +126,7 @@ static int mmc56x3_chip_set_continuous_mode(const struct device *dev, uint16_t o
 	return ret;
 }
 
-static bool mmc56x3_is_continuous_mode(const struct device *dev)
+bool mmc56x3_is_continuous_mode(const struct device *dev)
 {
 	struct mmc56x3_data *data = dev->data;
 
