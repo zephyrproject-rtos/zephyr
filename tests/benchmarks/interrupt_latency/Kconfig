@@ -176,6 +176,19 @@ config INT_BENCH_SCENARIO_EXIT
 	  interrupted thread, and the time from the end of an ISR that
 	  wakes a higher priority thread to that thread running.
 
+config INT_BENCH_SCENARIO_END_TO_END
+	bool "Interrupt to awakened thread latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Measure the whole path an application waits on, from raising
+	  the interrupt to the high priority thread it wakes running.
+
+	  The entry and exit scenarios measure the pieces of this span,
+	  but they cannot be added together: they are measured in
+	  separate runs and neither covers the ISR body or the handoff
+	  between them.
+
 config INT_BENCH_SCENARIO_LOCKED
 	bool "Entry latency after a critical section"
 	depends on INT_BENCH_TRIGGER_SW_IRQ

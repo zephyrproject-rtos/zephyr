@@ -25,6 +25,11 @@ All benchmarks are in the ``interrupt`` suite:
   the interrupted thread.
 * ``exit_reschedule`` -- time from the end of an ISR that wakes a higher
   priority thread to that thread running (exit plus context switch).
+* ``irq_to_thread`` -- the whole path an application waits on, from raising
+  the interrupt to the woken high priority thread running. The other
+  scenarios measure the pieces of this span but they cannot be added: they
+  come from separate runs and neither covers the ISR body or the handoff.
+  On qemu_x86 the pieces total 3264 cycles while the span itself is 16800.
 * ``locked_unlock_to_isr`` -- the interrupt is raised while interrupts are
   locked and kept pending for a configurable window; measured is the time
   from ``irq_unlock()`` to ISR entry (latency after a critical section).
@@ -45,6 +50,10 @@ All benchmarks are in the ``interrupt`` suite:
   isolates the cost of the software ISR table dispatch and the common
   entry code: on qemu_x86 that is 1216 cycles regular against 576 direct,
   while on ARC the two are within a cycle of each other.
+* ``zli_entry_trigger_to_isr`` -- entry latency for a zero-latency
+  interrupt with interrupts enabled, the lowest latency Zephyr offers.
+  Measured the same way as the two entry scenarios above, so the three
+  connection kinds can be compared directly.
 * ``zli_entry_while_locked`` -- entry latency for a zero-latency interrupt
   raised *while interrupts are locked*. Cortex-M only, and built from the
   ``prj.zli.conf`` overlay because it claims the same line as
