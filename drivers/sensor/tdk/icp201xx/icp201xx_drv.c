@@ -419,7 +419,7 @@ static DEVICE_API(sensor, icp201xx_api_funcs) = {.sample_fetch = icp201xx_sample
 	{                                                              \
 		.if_mode = ICP201XX_IF_4_WIRE_SPI,                         \
 		.bus.spi = SPI_DT_SPEC_INST_GET(inst,                      \
-			(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |    \
+			(SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 			SPI_TRANSFER_MSB | SPI_FULL_DUPLEX |      \
 			SPI_MODE_CPHA | SPI_MODE_CPOL)), \
 		.bus_io = &icp201xx_bus_io_spi,                            \

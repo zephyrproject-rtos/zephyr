@@ -61,25 +61,35 @@ properties:
       Please note the range is limited with Dual Frequency Mode enabled (up to 100 Hz).
     min: 1
 
-  spi-mosi-gpios:
+  spi-sdi-gpios:
     type: phandle-array
-    required: true
     description: |
-      SPI MOSI GPIO pin. Used by the driver in order to use the bus in GPIO
-      mode, which is required to interact with the internal EEPROM the
-      AFBR contains (mandatory).
+      SPI SDI GPIO pin (data into the sensor). Used by the driver in order
+      to use the bus in GPIO mode, which is required to interact with the
+      internal EEPROM the AFBR contains (mandatory).
       This property is required since the SPI bus is configured and used
       through pinctrl, which is not directly mapped to a GPIO port/pin.
 
-  spi-miso-gpios:
+  spi-sdo-gpios:
     type: phandle-array
-    required: true
     description: |
-      SPI MISO GPIO pin. Used by the driver in order to use the bus in GPIO
-      mode, which is required to interact with the internal EEPROM the
-      AFBR contains (mandatory).
+      SPI SDO GPIO pin (data out of the sensor). Used by the driver in order
+      to use the bus in GPIO mode, which is required to interact with the
+      internal EEPROM the AFBR contains (mandatory).
       This property is required since the SPI bus is configured and used
       through pinctrl, which is not directly mapped to a GPIO port/pin.
+
+  spi-mosi-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use spi-sdi-gpios instead.
+
+  spi-miso-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use spi-sdo-gpios instead.
 
   spi-sck-gpios:
     type: phandle-array
@@ -110,8 +120,8 @@ examples:
           dual-freq-mode = <AFBR_S50_DT_DFM_MODE_OFF>;
           odr = <10>;
           int-gpios = <&gpio0 10 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-          spi-mosi-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
+          spi-sdi-gpios = <&gpio0 24 GPIO_ACTIVE_HIGH>;
           spi-sck-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
-          spi-miso-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+          spi-sdo-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
         };
     };
