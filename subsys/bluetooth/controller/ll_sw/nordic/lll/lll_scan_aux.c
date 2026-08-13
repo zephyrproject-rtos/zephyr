@@ -1415,7 +1415,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	return -EINVAL;
 }
 
-static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *), void *param)
+static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *arg), void *param)
 {
 	struct node_rx_pdu *node_rx_prof;
 	struct node_rx_pdu *node_rx;
