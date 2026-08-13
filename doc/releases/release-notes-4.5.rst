@@ -453,6 +453,10 @@ Libraries / Subsystems
   * TF-PSA-Crypto was updated to version 1.1.1. Release notes can be found
     `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1>`_.
 
+  * Added :kconfig:option:`CONFIG_TF_PSA_CRYPTO_DISPATCH_DIR`, which enables TF-PSA-Crypto to use
+    custom implementations of crypto operation dispatch. This makes hardware acceleration of
+    cryptographic operations possible by using an accelerator-aware dispatch implementation.
+
 * TF-M
 
   * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
