@@ -18,6 +18,7 @@
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
 #ifdef CONFIG_PM_MCUX_GPC
@@ -913,8 +914,7 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		res.rssi = -scan_result.rssi;
 		res.channel = scan_result.channel;
-		res.band = scan_result.channel > 14 ?
-			   WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+		res.band = wifi_utils_chan_to_band(scan_result.channel);
 
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
@@ -1381,10 +1381,16 @@ static int nxp_wifi_uap_status(const struct device *dev,
 			}
 
 			if (nxp_wlan_uap_network.channel != 0) {
-				status->band = nxp_wlan_uap_network.channel > 14 ?
-					WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+				status->band =
+					wifi_utils_chan_to_band(nxp_wlan_uap_network.channel);
 			} else {
-				status->band = nxp_wlan_uap_network.acs_band;
+				/* ACS has not picked a channel yet, so report the
+				 * band it was asked to scan. acs_band is 1 for
+				 * 5 GHz and 0 for 2.4 GHz.
+				 */
+				status->band = nxp_wlan_uap_network.acs_band
+						       ? WIFI_FREQ_BAND_5_GHZ
+						       : WIFI_FREQ_BAND_2_4_GHZ;
 			}
 
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
@@ -1472,8 +1478,7 @@ static int nxp_wifi_status(const struct device *dev,
 #else
 			status->twt_capable = false;
 #endif
-			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-								     : WIFI_FREQ_BAND_2_4_GHZ;
+			status->band = wifi_utils_chan_to_band(nxp_wlan_network.channel);
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
 				nxp_wlan_network.security.key_mgmt,
 				nxp_wlan_network.security.pwe_derivation);
