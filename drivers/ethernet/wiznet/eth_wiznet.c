@@ -161,7 +161,7 @@ void wiznet_rx(const struct device *dev)
 	rx_len = sys_get_be16(header) - 2;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len, NET_AF_UNSPEC, 0,
-					   K_MSEC(cfg->rx_timeout_ms));
+					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
 		return;
@@ -240,12 +240,12 @@ static void wiznet_thread_poll(const struct device *dev)
 	struct wiznet_runtime *ctx = dev->data;
 
 	if (!ctx->state.is_up) {
-		k_msleep(cfg->poll_period_ms);
+		k_msleep(CONFIG_ETH_WIZNET_POLL_PERIOD);
 		cfg->ops->update_link_status(dev);
 		return;
 	}
 
-	k_msleep(cfg->poll_period_ms);
+	k_msleep(CONFIG_ETH_WIZNET_POLL_PERIOD);
 
 	if (wiznet_check_for_ir(dev) == 0U) {
 		cfg->ops->update_link_status(dev);
@@ -258,7 +258,7 @@ static void wiznet_thread_interrupt(const struct device *dev)
 	struct wiznet_runtime *ctx = dev->data;
 	int res;
 
-	res = k_sem_take(&ctx->int_sem, K_MSEC(cfg->monitor_period_ms));
+	res = k_sem_take(&ctx->int_sem, K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
 	if (res == 0) {
 		if (!ctx->state.is_up) {
@@ -322,8 +322,9 @@ void wiznet_iface_init(struct net_if *iface)
 
 	cfg->ops->update_link_status(dev);
 
-	k_thread_create(&ctx->thread, cfg->thread_stack, cfg->thread_stack_size, wiznet_thread,
-			(void *)dev, NULL, NULL, K_PRIO_COOP(cfg->thread_prio), 0, K_NO_WAIT);
+	k_thread_create(&ctx->thread, cfg->thread_stack, CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE,
+			wiznet_thread, (void *)dev, NULL, NULL,
+			K_PRIO_COOP(CONFIG_ETH_WIZNET_RX_THREAD_PRIO), 0, K_NO_WAIT);
 	k_thread_name_set(&ctx->thread, cfg->thread_name);
 }
 
