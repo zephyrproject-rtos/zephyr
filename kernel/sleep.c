@@ -8,11 +8,10 @@
  * @file
  * @brief Thread sleep/wake APIs
  *
- * Implements k_sleep_ticks(), the primitive that k_sleep(), k_msleep() and
- * k_usleep() are built upon.  It suspends the calling thread for a specified
- * duration and relies on the scheduler (via z_sched_unready_locked()) and the
- * timeout subsystem (via z_add_thread_timeout()) to do the heavy lifting.  The
- * millisecond and microsecond flavours are inlined in sleep.h on top of it.
+ * Implements k_sleep(), k_usleep(), and the internal z_tick_sleep() helper.
+ * These APIs suspend the calling thread for a specified duration and rely on
+ * the scheduler (via z_sched_unready_locked()) and the timeout subsystem
+ * (via z_add_thread_timeout()) to do the heavy lifting.
  */
 
 #include <zephyr/kernel.h>
@@ -44,21 +43,17 @@ extern struct k_thread *pending_current;
  * wakeup.
  *
  * @param timeout Sleep duration.
- * @return Ticks remaining when woken early, 0 on normal expiry, or
- *         K_TICKS_FOREVER if @a timeout was K_FOREVER.
+ * @return Ticks remaining when woken early, or 0 on normal expiry.
  */
-k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
+static int32_t z_tick_sleep(k_timeout_t timeout)
 {
 	uint32_t expected_wakeup_ticks;
 
 	__ASSERT(!arch_is_in_isr(), "");
 
-	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
-
 	/* K_NO_WAIT is treated as a 'yield' */
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_yield();
-		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, 0);
 		return 0;
 	}
 
@@ -73,14 +68,6 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 
 	(void)z_swap(&_sched_spinlock, key);
 
-	/* There is no meaningful remainder to report for K_FOREVER: reaching
-	 * this point at all means a k_wakeup() cut the sleep short.
-	 */
-	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, K_TICKS_FOREVER);
-		return K_TICKS_FOREVER;
-	}
-
 	/* We require a 32 bit unsigned subtraction to handle a wraparound.
 	 * A normal timeout-driven wakeup leaves zero (or a slightly negative)
 	 * remainder; only an early k_wakeup() yields a positive value.
@@ -94,18 +81,59 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	 */
 	int32_t signed_left = (int32_t)left_ticks;
 
-	if (signed_left < 0) {
-		signed_left = 0;
+	if (signed_left > 0) {
+		return (k_ticks_t)signed_left;
 	}
 
-	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, signed_left);
-	return (k_ticks_t)signed_left;
+	return 0;
+}
+
+int32_t z_impl_k_sleep(k_timeout_t timeout)
+{
+	k_ticks_t ticks;
+
+	__ASSERT(!arch_is_in_isr(), "");
+
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep, timeout);
+
+	ticks = z_tick_sleep(timeout);
+
+	/* k_sleep() still returns 32 bit milliseconds for compatibility */
+	int64_t ms = K_TIMEOUT_EQ(timeout, K_FOREVER) ? K_TICKS_FOREVER :
+		clamp(k_ticks_to_ms_ceil64(ticks), 0, INT_MAX);
+
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep, timeout, ms);
+	return (int32_t) ms;
 }
 
 #ifdef CONFIG_USERSPACE
-static inline k_ticks_t z_vrfy_k_sleep_ticks(k_timeout_t timeout)
+static inline int32_t z_vrfy_k_sleep(k_timeout_t timeout)
 {
-	return z_impl_k_sleep_ticks(timeout);
+	return z_impl_k_sleep(timeout);
 }
-#include <zephyr/syscalls/k_sleep_ticks_mrsh.c>
+#include <zephyr/syscalls/k_sleep_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int32_t z_impl_k_usleep(int32_t us)
+{
+	int32_t ticks;
+
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, usleep, us);
+
+	ticks = k_us_to_ticks_ceil64(us);
+	ticks = z_tick_sleep(Z_TIMEOUT_TICKS(ticks));
+
+	int32_t ret = k_ticks_to_us_ceil64(ticks);
+
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, usleep, us, ret);
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int32_t z_vrfy_k_usleep(int32_t us)
+{
+	return z_impl_k_usleep(us);
+}
+#include <zephyr/syscalls/k_usleep_mrsh.c>
 #endif /* CONFIG_USERSPACE */
