@@ -83,9 +83,10 @@ static bool spi_b91_config_cs(const struct device *dev,
 
 	/* hardware flow control */
 
-	/* check for correct slave id */
-	if (config->slave >= CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d not supported (max. %d)", config->slave, CHIP_SELECT_COUNT - 1);
+	/* check for correct peripheral id */
+	if (config->peripheral >= CHIP_SELECT_COUNT) {
+		LOG_ERR("Peripheral %d not supported (max. %d)", config->peripheral,
+			CHIP_SELECT_COUNT - 1);
 		return false;
 	}
 
@@ -94,14 +95,14 @@ static bool spi_b91_config_cs(const struct device *dev,
 		/* get cs pin defined in device tree */
 		cs_pin = b91_config->cs_pin[cs_id];
 
-		/*  if cs pin is not defined for the selected slave, return error */
-		if ((cs_pin == 0) && (cs_id == config->slave)) {
-			LOG_ERR("cs%d-pin is not defined in device tree", config->slave);
+		/*  if cs pin is not defined for the selected peripheral, return error */
+		if ((cs_pin == 0) && (cs_id == config->peripheral)) {
+			LOG_ERR("cs%d-pin is not defined in device tree", config->peripheral);
 			return false;
 		}
 
 		/* disable cs pin if it is defined and is not requested */
-		if ((cs_pin != 0) && (cs_id != config->slave)) {
+		if ((cs_pin != 0) && (cs_id != config->peripheral)) {
 			if (b91_config->peripheral_id == PSPI_MODULE) {
 				pspi_cs_pin_dis(cs_pin);
 			} else {
@@ -110,7 +111,7 @@ static bool spi_b91_config_cs(const struct device *dev,
 		}
 
 		/* enable cs pin if it is defined and is requested */
-		if ((cs_pin != 0) && (cs_id == config->slave)) {
+		if ((cs_pin != 0) && (cs_id == config->peripheral)) {
 			if (b91_config->peripheral_id == PSPI_MODULE) {
 				pspi_set_pin_mux(cs_pin);
 				pspi_cs_pin_en(cs_pin);
@@ -283,9 +284,9 @@ static bool spi_b91_is_config_supported(const struct spi_config *config,
 		}
 	}
 
-	/* check for slave configuration */
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("SPI Slave is not implemented");
+	/* check for peripheral configuration */
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("SPI Peripheral is not implemented");
 		return -ENOTSUP;
 	}
 
@@ -307,7 +308,7 @@ static int spi_b91_config(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* config slave selection (CS): hw or sw */
+	/* config chip select (CS): hw or sw */
 	if (!spi_b91_config_cs(dev, config)) {
 		return -ENOTSUP;
 	}
@@ -327,7 +328,7 @@ static int spi_b91_config(const struct device *dev,
 		mode = SPI_MODE3;
 	}
 
-	/* init SPI master */
+	/* init SPI controller */
 	spi_master_init(b91_config->peripheral_id,
 			clk_src * 1000000 / (2 * config->frequency) - 1, mode);
 	spi_master_config(b91_config->peripheral_id, SPI_NOMAL);

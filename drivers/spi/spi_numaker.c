@@ -71,8 +71,8 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not support");
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not support");
 		return -ENOTSUP;
 	}
 
@@ -89,16 +89,18 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 	/* Make SPI module be ready to transfer */
 	if (dev_cfg->is_qspi) {
 		QSPI_Open((QSPI_T *)dev_cfg->spi,
-			  (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) ? QSPI_SLAVE
-										    : QSPI_MASTER,
+			  (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL)
+				  ? QSPI_SLAVE
+				  : QSPI_MASTER,
 			  qsmode_tbl[mode],
 			  SPI_WORD_SIZE_GET(config->operation), config->frequency);
 	} else {
 		/* Clear SPI CTL before set */
 		dev_cfg->spi->CTL &= ~SPI_NUMAKER_CTL_MSK;
 		SPI_Open(dev_cfg->spi,
-			 (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) ? SPI_SLAVE
-										   : SPI_MASTER,
+			 (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL)
+				 ? SPI_SLAVE
+				 : SPI_MASTER,
 			 smode_tbl[mode],
 			 SPI_WORD_SIZE_GET(config->operation), config->frequency);
 	}
@@ -126,7 +128,7 @@ static int spi_numaker_configure(const struct device *dev, const struct spi_conf
 		SPI_SET_SS_LOW(dev_cfg->spi);
 	}
 
-	/* Enable the automatic hardware slave select function. Select the SS pin and configure as
+	/* Enable the automatic hardware chip select function. Select the SS pin and configure as
 	 * low-active.
 	 */
 	if (UTIL_OR(IS_ENABLED(DT_SPI_CTX_HAS_NO_CS_GPIOS), (data->ctx.num_cs_gpios == 0))) {

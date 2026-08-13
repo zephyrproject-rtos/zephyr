@@ -83,7 +83,7 @@ static int spi_config(const struct device *dev, uint32_t frequency,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_CONTROLLER) {
 		return -ENOTSUP;
 	}
 

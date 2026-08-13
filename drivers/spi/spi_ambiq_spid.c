@@ -143,7 +143,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		}
 	}
 
-	if (config->operation & SPI_OP_MODE_MASTER) {
+	if (config->operation & SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Controller mode not supported");
 		return -ENOTSUP;
 	}
