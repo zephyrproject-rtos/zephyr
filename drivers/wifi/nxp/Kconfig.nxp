@@ -12,6 +12,7 @@ menuconfig WIFI_NXP
 	select WIFI_NM
 	select EVENTS
 	depends on DT_HAS_NXP_WIFI_ENABLED
+	select NXP_WIFI_SOFTAP_SUPPORT if WIFI_NM_WPA_SUPPLICANT_P2P
 	help
 	  Enable NXP SoC Wi-Fi support.
 
@@ -749,6 +750,26 @@ config NXP_WIFI_UAP_WORKAROUND_STICKY_TIM
 	  enabled this will enable the sticky TIM bit
 	  workaround. A downside of this is that the STA
 	  client of the uAP will not be able to go in IEEE PS.
+
+endif
+
+if WIFI_NM_WPA_SUPPLICANT_P2P
+
+config NXP_WIFI_P2P_IP_ADDRESS
+	string "NXP P2P AGO mode IP Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_GATEWAY
+	string "Gateway Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_MASK
+	string "Network Mask"
+	default "255.255.255.0"
+
+config NXP_WIFI_P2P_IP_BASE
+	string "NXP P2P AGO base address"
+	default "192.168.20.2"
 
 endif
 

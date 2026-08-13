@@ -40,7 +40,7 @@ enum wifi_nm_iface_type {
 	/** IEEE 802.11 Wi-Fi Soft AP */
 	WIFI_TYPE_SAP,
 	/** IEEE 802.11 Wi-Fi P2P (Wi-Fi Direct) */
-        WIFI_TYPE_P2P,
+	WIFI_TYPE_P2P,
 	/** MAX of Wi-Fi interface type */
 	WIFI_TYPE_MAX,
 };
