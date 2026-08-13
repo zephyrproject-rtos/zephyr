@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* To run this loopback test, connect MOSI pin to the MISO of the SPI */
+/* To run this loopback test, connect the SDO pin to the SDI of the SPI */
 
 /*
  ************************
@@ -32,7 +32,7 @@
 #define MODE_LOOP  COND_CODE_1(CONFIG_SPI_LOOPBACK_MODE_LOOP, (SPI_MODE_LOOP), (0))
 
 #define SPI_OP(frame_size)                                                                         \
-	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | MODE_LOOP | SPI_MODE_CPHA |                           \
+	SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | MODE_LOOP | SPI_MODE_CPHA |                       \
 		SPI_WORD_SET(frame_size) | SPI_LINES_SINGLE
 
 #define SPI_FAST_DEV DT_COMPAT_GET_ANY_STATUS_OKAY(test_spi_loopback_fast)
@@ -58,8 +58,8 @@ static int spec_idx;
  */
 struct spi_dt_spec spec_copies[5];
 
-const struct gpio_dt_spec miso_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), miso_gpios, {});
-const struct gpio_dt_spec mosi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), mosi_gpios, {});
+const struct gpio_dt_spec sdi_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sdi_gpios, {});
+const struct gpio_dt_spec sdo_pin = GPIO_DT_SPEC_GET_OR(DT_PATH(zephyr_user), sdo_gpios, {});
 
 /*
  ********************
@@ -912,8 +912,8 @@ ZTEST(spi_loopback, test_spi_deinit)
 	const struct device *dev = spec->bus;
 	int ret;
 
-	if (miso_pin.port == NULL || mosi_pin.port == NULL) {
-		TC_PRINT("  zephyr,user miso-gpios or mosi-gpios are not defined\n");
+	if (sdi_pin.port == NULL || sdo_pin.port == NULL) {
+		TC_PRINT("  zephyr,user sdi-gpios or sdo-gpios are not defined\n");
 		ztest_test_skip();
 	}
 
@@ -924,14 +924,14 @@ ZTEST(spi_loopback, test_spi_deinit)
 	}
 
 	zassert_ok(ret);
-	zassert_ok(gpio_pin_configure_dt(&miso_pin, GPIO_INPUT));
-	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_OUTPUT_INACTIVE));
-	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
-	zassert_ok(gpio_pin_set_dt(&mosi_pin, 1));
-	zassert_equal(gpio_pin_get_dt(&miso_pin), 1);
-	zassert_ok(gpio_pin_set_dt(&mosi_pin, 0));
-	zassert_equal(gpio_pin_get_dt(&miso_pin), 0);
-	zassert_ok(gpio_pin_configure_dt(&mosi_pin, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&sdi_pin, GPIO_INPUT));
+	zassert_ok(gpio_pin_configure_dt(&sdo_pin, GPIO_OUTPUT_INACTIVE));
+	zassert_equal(gpio_pin_get_dt(&sdi_pin), 0);
+	zassert_ok(gpio_pin_set_dt(&sdo_pin, 1));
+	zassert_equal(gpio_pin_get_dt(&sdi_pin), 1);
+	zassert_ok(gpio_pin_set_dt(&sdo_pin, 0));
+	zassert_equal(gpio_pin_get_dt(&sdi_pin), 0);
+	zassert_ok(gpio_pin_configure_dt(&sdo_pin, GPIO_INPUT));
 	zassert_ok(device_init(dev));
 }
 
