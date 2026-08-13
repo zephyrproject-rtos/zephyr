@@ -1639,7 +1639,15 @@ void bt_cap_initiator_codec_configured(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
+
 		next_cap_stream = proc_param->stream;
 		conn = proc_param->start.conn;
 		ep = proc_param->start.ep;
@@ -1844,7 +1852,14 @@ void bt_cap_initiator_qos_configured(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
 
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
@@ -1909,7 +1924,15 @@ void bt_cap_initiator_enabled(struct bt_cap_stream *cap_stream)
 		struct bt_bap_stream *next_bap_stream;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
+
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 
@@ -1996,7 +2019,15 @@ void bt_cap_initiator_connected(struct bt_cap_stream *cap_stream)
 		bt_cap_common_abort_proc(cap_stream->bap_stream.conn, -EBADMSG);
 	} else {
 		proc_param = get_proc_param_by_cap_stream(active_proc, cap_stream);
-		__ASSERT_NO_MSG(proc_param != NULL);
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param for stream %p",
+				cap_stream);
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
 
 		/* Sets connected before update_proc_done_cnt as that is the only way to can track
 		 * the CIS state change
@@ -2328,7 +2359,12 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_META_UPDATE);
 
 	proc_param = get_next_proc_param(active_proc);
-	__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+	if (proc_param == NULL) {
+		LOG_WRN("proc failed to start as we could not get next proc_param");
+		bt_cap_common_clear_proc(active_proc);
+
+		return -ESRCH;
+	}
 
 	bap_stream = &proc_param->stream->bap_stream;
 	meta_len = proc_param->meta_update.meta_len;
@@ -2618,8 +2654,12 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_DISABLE);
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL,
-			 "proc is not started, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc failed to start as we could not get next proc_param");
+
+			return -ESRCH;
+		}
+
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
@@ -2635,8 +2675,12 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_STOP);
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL,
-			 "proc is not started, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc failed to start as we could not get next proc_param");
+
+			return -ESRCH;
+		}
+
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
@@ -2652,8 +2696,12 @@ int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 		bt_cap_common_set_subproc(BT_CAP_COMMON_SUBPROC_TYPE_RELEASE);
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL,
-			 "proc is not started, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc failed to start as we could not get next proc_param");
+
+			return -ESRCH;
+		}
+
 		bap_stream = &proc_param->stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
 		proc_param->in_progress = true;
@@ -2736,7 +2784,15 @@ void bt_cap_initiator_disabled(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
+
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
@@ -2935,7 +2991,15 @@ void bt_cap_initiator_released(struct bt_cap_stream *cap_stream)
 		int err;
 
 		proc_param = get_next_proc_param(active_proc);
-		__ASSERT(proc_param != NULL, "proc is not done, but could not get next proc_param");
+		if (proc_param == NULL) {
+			LOG_WRN("proc is not done, but could not get next proc_param");
+
+			bt_cap_common_abort_proc(NULL, -ESRCH);
+			cap_initiator_unicast_audio_proc_complete(active_proc);
+
+			return;
+		}
+
 		next_cap_stream = proc_param->stream;
 		next_bap_stream = &next_cap_stream->bap_stream;
 		active_proc->proc_initiated_cnt++;
