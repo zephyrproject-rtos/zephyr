@@ -33,6 +33,17 @@ static const char *tag(void)
 	return buf;
 }
 
+/**
+ * @brief Verify the uptime clock advances monotonically under timer starvation
+ *
+ * @details Repeatedly start and stop timers in a tight, spinlock-protected loop
+ * for a sustained period and confirm that the system uptime and tick count keep
+ * advancing monotonically without regressing or overflowing.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_uptime_get_32()
+ * @see sys_clock_tick_get()
+ */
 ZTEST(starve_fn, test_timer_starve)
 {
 	static struct k_timer tmr;
