@@ -67,20 +67,23 @@ struct axi_dmac_data {
 	uint32_t width_dest;
 	bool hw_cyclic;
 	bool has_irq;
-	/* Per-transfer configuration (from dma_config). */
+	/*
+	 * Per-transfer configuration (from dma_config). Retained across
+	 * stop()/start() so a stopped transfer can be restarted unchanged, and
+	 * used as the rearm source when a cyclic buffer wraps.
+	 */
 	bool cyclic;
 	dma_callback_t callback;
 	void *user_data;
+	uint32_t cfg_dest_addr;
+	uint32_t cfg_src_addr;
+	uint32_t cfg_size;
 	/* Burst state machine. */
 	volatile bool saw_sot;
 	uint32_t remaining_size;
 	uint32_t next_src_addr;
 	uint32_t next_dest_addr;
 	uint32_t pending_bursts;
-	/* cyclic mode: saved base address and total size for resubmission */
-	uint32_t cyclic_dest_addr;
-	uint32_t cyclic_src_addr;
-	uint32_t cyclic_size;
 };
 
 static inline uint32_t dmac_read(const struct device *dev, uint32_t reg)
@@ -164,9 +167,9 @@ static int dmac_service(const struct device *dev, struct axi_dmac_data *data)
 			if (data->cyclic) {
 				/* Buffer wrapped: rearm and report a block. */
 				data->saw_sot = false;
-				data->next_src_addr = data->cyclic_src_addr;
-				data->next_dest_addr = data->cyclic_dest_addr;
-				data->remaining_size = data->cyclic_size;
+				data->next_src_addr = data->cfg_src_addr;
+				data->next_dest_addr = data->cfg_dest_addr;
+				data->remaining_size = data->cfg_size;
 				/*
 				 * Only re-submit when the hardware is not looping
 				 * on its own; doing both would queue a second
@@ -187,6 +190,7 @@ static int dmac_service(const struct device *dev, struct axi_dmac_data *data)
 	return event;
 }
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(interrupts)
 static void axi_dmac_isr(const struct device *dev)
 {
 	struct axi_dmac_data *data = dev->data;
@@ -196,6 +200,7 @@ static void axi_dmac_isr(const struct device *dev)
 		data->callback(dev, data->user_data, AXI_DMAC_CHANNEL, event);
 	}
 }
+#endif
 
 static enum axi_dmac_direction to_hw_dir(uint32_t channel_direction)
 {
@@ -267,18 +272,22 @@ static int axi_dmac_configure(const struct device *dev, uint32_t channel, struct
 		return -EINVAL;
 	}
 
+	/*
+	 * Completion is reported through dma_get_status(); a callback can only
+	 * be delivered from the ISR, so refuse one on a core synthesized without
+	 * an interrupt line rather than silently never calling it.
+	 */
+	if (cfg->dma_callback != NULL && !data->has_irq) {
+		LOG_ERR("callback requested but core has no interrupt line");
+		return -ENOTSUP;
+	}
+
 	data->cyclic = cfg->cyclic;
 	data->callback = cfg->dma_callback;
 	data->user_data = cfg->user_data;
-	data->next_src_addr = src_addr;
-	data->next_dest_addr = dest_addr;
-	data->remaining_size = block->block_size;
-
-	if (cfg->cyclic) {
-		data->cyclic_src_addr = src_addr;
-		data->cyclic_dest_addr = dest_addr;
-		data->cyclic_size = block->block_size;
-	}
+	data->cfg_src_addr = src_addr;
+	data->cfg_dest_addr = dest_addr;
+	data->cfg_size = block->block_size;
 
 	return 0;
 }
@@ -292,13 +301,20 @@ static int axi_dmac_start(const struct device *dev, uint32_t channel)
 		return -EINVAL;
 	}
 
-	if (data->remaining_size == 0U) {
+	if (data->cfg_size == 0U) {
 		LOG_ERR("start without a configured transfer");
 		return -EINVAL;
 	}
 
+	/*
+	 * Rearm from the stored configuration, so a start() after a stop()
+	 * replays the same transfer instead of requiring a reconfigure.
+	 */
 	data->saw_sot = false;
 	data->pending_bursts = 0;
+	data->next_src_addr = data->cfg_src_addr;
+	data->next_dest_addr = data->cfg_dest_addr;
+	data->remaining_size = data->cfg_size;
 
 	/*
 	 * Hand cyclic mode to the hardware when the core supports it. The software
@@ -338,9 +354,12 @@ static int axi_dmac_stop(const struct device *dev, uint32_t channel)
 	/* Clear cyclic so a subsequent one-shot transfer does not loop forever. */
 	dmac_write(dev, AXI_DMAC_REG_FLAGS, 0);
 
+	/*
+	 * Drop the in-flight burst state only. The configuration stays, so
+	 * start() restarts the same (possibly cyclic) transfer.
+	 */
 	data->remaining_size = 0;
 	data->pending_bursts = 0;
-	data->cyclic = false;
 
 	return 0;
 }
@@ -357,14 +376,11 @@ static int axi_dmac_get_status(const struct device *dev, uint32_t channel,
 	/*
 	 * On a core synthesized without an interrupt line the state machine has
 	 * no ISR to pump it, so advance it here whenever status is polled. This
-	 * lets a consumer drive a transfer to completion via dma_get_status().
+	 * lets a consumer drive a transfer to completion by polling status; no
+	 * callback is delivered here (configure() rejects one in that case).
 	 */
 	if (!data->has_irq) {
-		int event = dmac_service(dev, data);
-
-		if (event >= 0 && data->callback != NULL) {
-			data->callback(dev, data->user_data, AXI_DMAC_CHANNEL, event);
-		}
+		(void)dmac_service(dev, data);
 	}
 
 	status->dir = from_hw_dir(data->direction);
@@ -437,6 +453,12 @@ static int axi_dmac_init(const struct device *dev)
 		data->has_irq = true;
 	}
 
+	/*
+	 * Guarded rather than left to LOG_DBG's runtime filter: the name table
+	 * and format string are rodata that would otherwise be linked in on
+	 * every build.
+	 */
+#if CONFIG_DMA_LOG_LEVEL >= LOG_LEVEL_DBG
 	static const char *const dir_names[] = {
 		[AXI_DMAC_DIR_INVALID] = "INVALID",
 		[AXI_DMAC_DEV_TO_MEM] = "DEV_TO_MEM",
@@ -444,10 +466,13 @@ static int axi_dmac_init(const struct device *dev)
 		[AXI_DMAC_MEM_TO_MEM] = "MEM_TO_MEM",
 	};
 
-	LOG_INF("AXI DMAC v%d.%d.%c — %s, max_len=%u, src_w=%u, dest_w=%u, cyclic=%s",
+	LOG_DBG("AXI DMAC v%d.%d.%c - %s, max_len=%u, src_w=%u, dest_w=%u, cyclic=%s",
 		version >> 16, (version >> 8) & 0xff, version & 0xff, dir_names[data->direction],
 		data->max_length + 1, data->width_src, data->width_dest,
 		data->hw_cyclic ? "hw" : "sw-only");
+#else
+	ARG_UNUSED(version);
+#endif
 
 	return 0;
 }
