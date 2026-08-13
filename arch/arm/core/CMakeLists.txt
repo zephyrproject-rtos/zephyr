@@ -10,6 +10,10 @@ if(CONFIG_SLOW_FLASH_DATA)
   endif()
 endif()
 
+if(CONFIG_THREAD_LOCAL_STORAGE)
+  zephyr_compile_options("$<TARGET_PROPERTY:compiler,thread_local_storage>")
+endif()
+
 zephyr_library_sources(
   fatal.c
   nmi.c
