@@ -16,7 +16,8 @@ typedef struct {
 } k_timer_wrapper_t;
 
 int rtos_timer_create(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_t timer_id,
-		      uint32_t interval_ms, uint8_t reload, void (*p_timer_callback)(void *))
+		      uint32_t interval_ms, uint8_t reload,
+		      void (*p_timer_callback)(void *p_context))
 {
 	k_timer_wrapper_t *p_timer;
 
@@ -59,7 +60,8 @@ int rtos_timer_delete(rtos_timer_t p_handle, uint32_t wait_ms)
 }
 
 int rtos_timer_create_static(rtos_timer_t *pp_handle, const char *p_timer_name, uint32_t timer_id,
-			     uint32_t interval_ms, uint8_t reload, void (*p_timer_callback)(void *))
+			     uint32_t interval_ms, uint8_t reload,
+			     void (*p_timer_callback)(void *p_context))
 {
 	return rtos_timer_create(pp_handle, p_timer_name, timer_id, interval_ms, reload,
 				 p_timer_callback);
