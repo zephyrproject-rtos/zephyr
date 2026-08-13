@@ -308,6 +308,32 @@ follows:
 
 Connect J37 pin 1-2., the DAC output is available on TP14.
 
+Building and Running for TI LP-MSPM0G3507
+=========================================
+The sample can be built and executed for the
+:zephyr:board:`lp_mspm0g3507` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: lp_mspm0g3507
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin PA15 (J3 pin 30).
+
+Building and Running for TI LP-MSPM0G3519
+=========================================
+The sample can be built and executed for the
+:zephyr:board:`lp_mspm0g3519` as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: lp_mspm0g3519
+   :goals: build flash
+   :compact:
+
+DAC output is available on pin PA15 (J3 pin 30).
+
 Sample output
 =============
 
