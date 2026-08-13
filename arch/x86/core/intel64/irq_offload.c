@@ -23,6 +23,7 @@ static const void *irq_offload_args[CONFIG_MP_MAX_NUM_CPUS];
 
 static void dispatcher(const void *arg)
 {
+	ARG_UNUSED(arg);
 	uint8_t cpu_id = _current_cpu->id;
 
 	if (irq_offload_funcs[cpu_id] != NULL) {
