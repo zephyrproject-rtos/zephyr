@@ -55,6 +55,7 @@ int arch_float_disable(struct k_thread *thread)
 #if defined(CONFIG_LAZY_FPU_SHARING)
 	return z_float_disable(thread);
 #else
+	ARG_UNUSED(thread);
 	return -ENOTSUP;
 #endif /* CONFIG_LAZY_FPU_SHARING */
 }
@@ -66,6 +67,8 @@ int arch_float_enable(struct k_thread *thread, unsigned int options)
 #if defined(CONFIG_LAZY_FPU_SHARING)
 	return z_float_enable(thread, options);
 #else
+	ARG_UNUSED(thread);
+	ARG_UNUSED(options);
 	return -ENOTSUP;
 #endif /* CONFIG_LAZY_FPU_SHARING */
 }
@@ -76,6 +79,7 @@ int arch_coprocessors_disable(struct k_thread *thread)
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	return arch_float_disable(thread);
 #else
+	ARG_UNUSED(thread);
 	return -ENOTSUP;
 #endif
 }
@@ -92,6 +96,8 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * which is only needed if the stack is not memory mapped.
 	 */
 	z_x86_set_stack_guard(stack);
+#else
+	ARG_UNUSED(stack);
 #endif
 
 #ifdef CONFIG_USERSPACE
