@@ -2129,6 +2129,8 @@ static const struct bt_l2cap_chan_ops signal_chan_ops = {
 /*A2DP Layer interface */
 int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 {
+	int err;
+
 	if (!session) {
 		return -EINVAL;
 	}
@@ -2156,7 +2158,25 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	session->br_chan.chan.ops = &signal_chan_ops;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
 
-	return bt_l2cap_chan_connect(conn, &session->br_chan.chan, BT_L2CAP_PSM_AVDTP);
+	err = bt_l2cap_chan_connect(conn, &session->br_chan.chan, BT_L2CAP_PSM_AVDTP);
+	if (err != 0) {
+		/* If the L2CAP connection creation failed before the channel
+		 * was added to the connection, no disconnected callback will
+		 * ever run to clear the connection marker set above, which
+		 * would prevent the session from ever being used again. Clear
+		 * the marker so that the session can be reused. If the
+		 * failure happened after the channel was added, the marker
+		 * has already been cleared by bt_l2cap_br_chan_del(), so only
+		 * clear it if it still holds the value set above.
+		 */
+		k_sem_take(&avdtp_sem_lock, K_FOREVER);
+		if (session->br_chan.chan.conn == conn) {
+			session->br_chan.chan.conn = NULL;
+		}
+		k_sem_give(&avdtp_sem_lock);
+	}
+
+	return err;
 }
 
 int bt_avdtp_disconnect(struct bt_avdtp *session)
