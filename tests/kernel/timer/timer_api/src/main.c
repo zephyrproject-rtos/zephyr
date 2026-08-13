@@ -821,6 +821,17 @@ ZTEST_USER(timer_api, test_timer_remaining)
 				  0, latency_ticks, NULL);
 }
 
+/**
+ * @brief Test absolute timeouts
+ *
+ * @details Where 64-bit timeouts are enabled, verify that a timeout specified
+ * as an absolute point in time (via K_TIMEOUT_ABS_*) yields the expected
+ * remaining time until expiry.
+ *
+ * @ingroup kernel_timer_tests
+ * @see K_TIMEOUT_ABS_TICKS
+ * @see k_timer_remaining_ticks()
+ */
 ZTEST_USER(timer_api, test_timeout_abs)
 {
 #ifdef CONFIG_TIMEOUT_64BIT
@@ -958,6 +969,16 @@ ZTEST_USER(timer_api, test_timeout_abs)
 #endif
 }
 
+/**
+ * @brief Test sleeping until an absolute deadline
+ *
+ * @details Verify that k_sleep() with an absolute timeout (K_TIMEOUT_ABS_TICKS)
+ * wakes the thread at the requested tick-aligned point in time.
+ *
+ * @ingroup kernel_timer_tests
+ * @see k_sleep()
+ * @see K_TIMEOUT_ABS_TICKS
+ */
 ZTEST_USER(timer_api, test_sleep_abs)
 {
 	if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
