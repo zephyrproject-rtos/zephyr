@@ -67,7 +67,7 @@ static int spi_config(const struct device *dev,
 	sys_clear_bits(SPI_TIMIN(cfg->base), TIMIN_SCLK_DIV_MSK);
 	sys_set_bits(SPI_TIMIN(cfg->base), sclk_div);
 
-	/* Set Master mode */
+	/* Set Controller mode */
 	sys_clear_bits(SPI_TFMAT(cfg->base), TFMAT_SLVMODE_MSK);
 
 	/* Disable data merge mode */
@@ -166,8 +166,8 @@ static int configure(const struct device *dev,
 		return 0;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported on %s",
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode is not supported on %s",
 			    dev->name);
 		return -EINVAL;
 	}
