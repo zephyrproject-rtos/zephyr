@@ -49,6 +49,27 @@ config ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_SIZE
 	  Special value 0 (default value) means the pool is refilled
 	  using the biggest possible chunks.
 
+config ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	bool "Use a private worqueue to refill the pool"
+	default y if BUILD_WITH_TFM
+	help
+	  When enabled, a private workqueue is use to run the work
+	  that refills the ISR random bytes pool. It can be used
+	  to specify the workqueue priority with
+	  ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ_PRIO.
+
+	  When disabled, Zephyr system workqueue is used.
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_STACK_SIZE
+	int "Private workqueue stack byte size"
+	depends on ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	default 384
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_PRIO
+	int "Private workqueue priority"
+	depends on ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	default 1
+
 endif # ENTROPY_PSA_CRYPTO_RNG_ISR
 
 endif # ENTROPY_PSA_CRYPTO_RNG

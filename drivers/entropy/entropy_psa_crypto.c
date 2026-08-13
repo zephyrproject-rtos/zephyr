@@ -23,17 +23,30 @@
 #define ISR_REFILL_THRESHOLD	0 /* Dummy value to keep compiler happy */
 #endif /* CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR */
 
+#ifdef CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+#define ISR_WQ_STACK_SIZE	CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_STACK_SIZE
+#define ISR_WQ_PRIORITY		CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_PRIO
+#else
+#define ISR_WQ_STACK_SIZE	0 /* Dummy value to keep compiler happy */
+#define ISR_WQ_PRIORITY		0 /* Dummy value to keep compiler happy */
+#endif /* CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ */
+
 LOG_MODULE_REGISTER(entropy_psa_crypto, CONFIG_ENTROPY_LOG_LEVEL);
 
 struct entropy_psa_crypto_context {
 	struct ring_buf isr_rbuf;
 	struct k_spinlock isr_lock;
 	struct k_work isr_refill_work;
+	struct k_work_q *isr_wq;
 };
 
 /* Context used only when CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR is enabled */
 static struct entropy_psa_crypto_context entropy_psa_crypto_ctx;
 static uint8_t __noinit entropy_psa_crypto_isr_pool[ISR_BUFFER_SIZE];
+
+/* Proivate workqueue, used only when CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ is enabled */
+static K_THREAD_STACK_DEFINE(entropy_psa_crypto_isr_wq_stack, ISR_WQ_STACK_SIZE);
+static struct k_work_q entropy_psa_crypto_isr_work_queue;
 
 /* API implementation: get_entropy */
 static int entropy_psa_crypto_rng_get_entropy(const struct device *dev,
@@ -75,7 +88,13 @@ static int __maybe_unused entropy_psa_crypto_rng_get_entropy_isr(const struct de
 	k_spin_unlock(&ctx->isr_lock, key);
 
 	if (refill) {
-		ret = k_work_submit(&ctx->isr_refill_work);
+		if (IS_ENABLED(CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ) &&
+		    ctx->isr_wq != NULL) {
+			ret = k_work_submit_to_queue(ctx->isr_wq, &ctx->isr_refill_work);
+		} else {
+			ret = k_work_submit(&ctx->isr_refill_work);
+		}
+
 		if ((ret < 0) && (ret != -ENODEV)) {
 			LOG_ERR("Failed to launch RNG pool refill: %d", ret);
 		}
@@ -88,6 +107,18 @@ static int __maybe_unused entropy_psa_crypto_rng_get_entropy_isr(const struct de
 	return (int)rand_size;
 }
 
+static void protect_work(bool lock)
+{
+	/* Mutex like protect on transition to private workqueue */
+	static struct k_sem work_lock = Z_SEM_INITIALIZER(work_lock, 1, 1);
+
+	if (lock) {
+		k_sem_take(&work_lock, K_FOREVER);
+	} else {
+		k_sem_give(&work_lock);
+	}
+}
+
 static void entropy_psa_crypto_isr_refill_work_fn(struct k_work *work)
 {
 	struct entropy_psa_crypto_context *ctx = &entropy_psa_crypto_ctx;
@@ -96,6 +127,11 @@ static void entropy_psa_crypto_isr_refill_work_fn(struct k_work *work)
 	bool done = false;
 	uint32_t size;
 	uint8_t *ptr;
+
+	if (IS_ENABLED(CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ)) {
+		/* Mutex like protect on transition to private workqueue */
+		protect_work(true);
+	}
 
 	/* Get random byte per small chunks to lower latency to TF-M services */
 	do {
@@ -131,14 +167,34 @@ static void entropy_psa_crypto_isr_refill_work_fn(struct k_work *work)
 	} while (!done);
 
 	LOG_DBG("Refilled %zu bytes", total);
+
+	if (IS_ENABLED(CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ)) {
+		protect_work(false);
+	}
 }
 
-static int __maybe_unused entropy_psa_crypto_init_refill_isr_pool(void)
+static int __maybe_unused entropy_psa_crypto_init_post_kernel(void)
 {
+	struct entropy_psa_crypto_context *ctx = &entropy_psa_crypto_ctx;
 	int ret;
 
-	/* Refill the pool in case it was used prio system work was started */
-	ret = k_work_submit(&entropy_psa_crypto_ctx.isr_refill_work);
+	if (IS_ENABLED(CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ)) {
+		k_work_queue_init(&entropy_psa_crypto_isr_work_queue);
+		k_work_queue_start(&entropy_psa_crypto_isr_work_queue,
+				   ((k_thread_stack_t *)&entropy_psa_crypto_isr_wq_stack),
+				   K_THREAD_STACK_SIZEOF(entropy_psa_crypto_isr_wq_stack),
+				   ISR_WQ_PRIORITY, NULL);
+		k_thread_name_set(entropy_psa_crypto_isr_work_queue.thread_id, "psa-rng-isr-pool");
+
+		ctx->isr_wq = &entropy_psa_crypto_isr_work_queue;
+
+		/* Refill the pool in case it was used prio system work was started */
+		ret = k_work_submit_to_queue(ctx->isr_wq, &ctx->isr_refill_work);
+	} else {
+		/* Refill the pool in case it was used prio system work was started */
+		ret = k_work_submit(&ctx->isr_refill_work);
+	}
+
 	if (ret < 0) {
 		LOG_ERR("Failed to launch RNG pool refill: %d", ret);
 	}
@@ -147,7 +203,7 @@ static int __maybe_unused entropy_psa_crypto_init_refill_isr_pool(void)
 }
 
 #ifdef CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR
-SYS_INIT(entropy_psa_crypto_init_refill_isr_pool, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(entropy_psa_crypto_init_post_kernel, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif /* CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR */
 
 static int entropy_psa_crypto_init_isr_pool(void)
