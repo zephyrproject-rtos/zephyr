@@ -5,10 +5,6 @@
 
 if BOARD_B_U585I_IOT02A
 
-config SPI_STM32_INTERRUPT
-	default y
-	depends on SPI
-
 if BUILD_WITH_TFM
 
 # Initial Attestation key provisioned by the BL1 bootloader

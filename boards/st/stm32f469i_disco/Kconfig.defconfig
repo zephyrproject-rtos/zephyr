@@ -5,10 +5,6 @@
 
 if BOARD_STM32F469I_DISCO
 
-config SPI_STM32_INTERRUPT
-	default y
-	depends on SPI
-
 if LVGL
 
 # Double frame buffer maintained by lvgl.
