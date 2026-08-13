@@ -9,6 +9,8 @@ config SOC_R8A78000_R52
 	select ARM_ARCH_TIMER
 	select CPU_HAS_ARM_MPU
 	select ARM_MPU
+	select CACHE_MANAGEMENT
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_R8A78000_A720
 	select ARM64
