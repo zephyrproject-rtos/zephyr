@@ -2145,6 +2145,16 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 		return -ENOMEM;
 	}
 
+	/* The release work submitted when the previous connection was
+	 * disconnected may still be pending. Re-initializing a queued work
+	 * item would corrupt the work queue, so reject the session reuse
+	 * until the release work has completed.
+	 */
+	if (k_work_busy_get(&session->_release_work) != 0) {
+		k_sem_give(&avdtp_sem_lock);
+		return -EBUSY;
+	}
+
 	/* Locking semaphore initialized to 1 (unlocked). It has to be
 	 * initialized before the session is published, since the session
 	 * memory is owned and cleared by the upper layer.
@@ -2212,6 +2222,16 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 
 	if (session->br_chan.chan.conn == NULL) {
+		/* The release work submitted when the previous connection
+		 * was disconnected may still be pending. Re-initializing a
+		 * queued work item would corrupt the work queue, so reject
+		 * the session reuse until the release work has completed.
+		 */
+		if (k_work_busy_get(&session->_release_work) != 0) {
+			k_sem_give(&avdtp_sem_lock);
+			return -ENOMEM;
+		}
+
 		/* Locking semaphore initialized to 1 (unlocked). It has to be
 		 * initialized before the session is published, since the
 		 * session memory is owned and cleared by the upper layer.
