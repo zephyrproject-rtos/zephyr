@@ -536,7 +536,7 @@ int lwm2m_device_add_err(uint8_t error_code);
 
 
 /**
- * @name LWM2M Firmware Update object states
+ * @name LwM2M Firmware Update object states
  *
  * An LwM2M client or the LwM2M Firmware Update object use the following codes
  * to represent the LwM2M Firmware Update state (5/0/3).
@@ -563,7 +563,7 @@ int lwm2m_device_add_err(uint8_t error_code);
 /** @} */
 
 /**
- * @name LWM2M Firmware Update object result codes
+ * @name LwM2M Firmware Update object result codes
  *
  * After processing a firmware update, the client sets the result via one of
  * the following codes via lwm2m_set_u8("5/0/5", [result code])
@@ -698,7 +698,7 @@ lwm2m_engine_execute_cb_t lwm2m_firmware_get_update_cb_inst(uint16_t obj_inst_id
 /**
  * @brief Set callback to handle software activation requests
  *
- * The callback will be executed when the LWM2M execute operation gets called
+ * The callback will be executed when the LwM2M execute operation gets called
  * on the corresponding object's Activate resource instance.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -711,7 +711,7 @@ int lwm2m_swmgmt_set_activate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb_t
 /**
  * @brief Set callback to handle software deactivation requests
  *
- * The callback will be executed when the LWM2M execute operation gets called
+ * The callback will be executed when the LwM2M execute operation gets called
  * on the corresponding object's Deactivate resource instance.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -724,7 +724,7 @@ int lwm2m_swmgmt_set_deactivate_cb(uint16_t obj_inst_id, lwm2m_engine_execute_cb
 /**
  * @brief Set callback to handle software install requests
  *
- * The callback will be executed when the LWM2M execute operation gets called
+ * The callback will be executed when the LwM2M execute operation gets called
  * on the corresponding object's Install resource instance.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -737,7 +737,7 @@ int lwm2m_swmgmt_set_install_package_cb(uint16_t obj_inst_id, lwm2m_engine_execu
 /**
  * @brief Set callback to handle software uninstall requests
  *
- * The callback will be executed when the LWM2M execute operation gets called
+ * The callback will be executed when the LwM2M execute operation gets called
  * on the corresponding object's Uninstall resource instance.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -750,7 +750,7 @@ int lwm2m_swmgmt_set_delete_package_cb(uint16_t obj_inst_id, lwm2m_engine_execut
 /**
  * @brief Set callback to read software package
  *
- * The callback will be executed when the LWM2M read operation gets called
+ * The callback will be executed when the LwM2M read operation gets called
  * on the corresponding object.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -763,7 +763,7 @@ int lwm2m_swmgmt_set_read_package_version_cb(uint16_t obj_inst_id, lwm2m_engine_
 /**
  * @brief Set data callback for software management block transfer.
  *
- * The callback will be executed when the LWM2M block write operation gets called
+ * The callback will be executed when the LwM2M block write operation gets called
  * on the corresponding object's resource instance.
  *
  * @param[in] obj_inst_id The instance number to set the callback for.
@@ -792,7 +792,7 @@ int lwm2m_swmgmt_install_completed(uint16_t obj_inst_id, int error_code);
 /**
  * @brief Set callback to read log data
  *
- * The callback will be executed when the LWM2M read operation gets called
+ * The callback will be executed when the LwM2M read operation gets called
  * on the corresponding object.
  *
  * @param[in] cb A callback function for handling the read event.
@@ -807,7 +807,7 @@ void lwm2m_event_log_set_read_log_data_cb(lwm2m_engine_get_data_cb_t cb);
 #define LWM2M_OBJLNK_MAX_ID USHRT_MAX
 
 /**
- * @brief LWM2M Objlnk resource type structure
+ * @brief LwM2M Objlnk resource type structure
  */
 struct lwm2m_objlnk {
 	uint16_t obj_id;     /**< Object ID */

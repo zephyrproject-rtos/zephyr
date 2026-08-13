@@ -1315,14 +1315,14 @@ int lwm2m_engine_pause(void)
 	while (active_engine_thread) {
 		k_msleep(10);
 	}
-	LOG_INF("LWM2M engine thread paused");
+	LOG_INF("LwM2M engine thread paused");
 	return 0;
 }
 
 int lwm2m_engine_resume(void)
 {
 	if (suspend_engine_thread || active_engine_thread) {
-		LOG_WRN("LWM2M engine thread state not ok for resume");
+		LOG_WRN("LwM2M engine thread state not ok for resume");
 		return -EPERM;
 	}
 
@@ -1397,7 +1397,7 @@ static int lwm2m_engine_init(void)
 			K_KERNEL_STACK_SIZEOF(engine_thread_stack), socket_loop,
 			NULL, NULL, NULL, THREAD_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
-	LOG_DBG("LWM2M engine socket receive thread started");
+	LOG_DBG("LwM2M engine socket receive thread started");
 	active_engine_thread = true;
 
 	return 0;
