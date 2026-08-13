@@ -366,6 +366,9 @@ struct uart_ns16550_dev_config {
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
 #endif
+#if UART_NS16550_DLF_ENABLED
+	bool dlf_auto;
+#endif
 	bool loopback;
 };
 
@@ -524,6 +527,45 @@ static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 #endif
 }
 
+#if UART_NS16550_DLF_ENABLED
+/*
+ * Compute a combined integer/fractional baud rate divisor, using the
+ * fractional divisor register (DLF) to reduce the baud rate error that a
+ * plain 16-bit integer divisor (DLL/DLH) would otherwise introduce. This
+ * is most useful when pclk is a fixed, relatively low frequency (tens of MHz)
+ * relative to the desired baud rate, where the rounding error of an
+ * integer-only divisor is a significant fraction of a baud.
+ *
+ * DW_apb_uart's DLF register has 1/64 resolution: effective divisor =
+ * dll_dlh + dlf / 64. This matches the divisor/DLF relationship documented
+ * for this IP. SoCs integrating a compatible but differently-scaled
+ * fractional divider should not enable the 'dlf-auto' property.
+ */
+#define DLF_RESOLUTION 64U
+
+static uint32_t get_uart_baudrate_divisor_dlf(uint32_t baud_rate, uint32_t pclk,
+					      uint8_t *dlf_out)
+{
+	/* Fixed-point target divisor, scaled by DLF_RESOLUTION. */
+	uint64_t scaled = ((uint64_t)pclk * DLF_RESOLUTION + (baud_rate << 3)) /
+			   (baud_rate << 4);
+	uint32_t divisor = (uint32_t)(scaled / DLF_RESOLUTION);
+	uint32_t dlf = (uint32_t)(scaled % DLF_RESOLUTION);
+
+	if (divisor == 0U) {
+		/*
+		 * Baud rate is not achievable (pclk too low); fall back to
+		 * the plain integer divisor to preserve prior behavior.
+		 */
+		divisor = 1U;
+		dlf = 0U;
+	}
+
+	*dlf_out = (uint8_t)dlf;
+	return divisor;
+}
+#endif /* UART_NS16550_DLF_ENABLED */
+
 #ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 static uint32_t get_ite_uart_baudrate_divisor(const struct device *dev,
 					      uint32_t baud_rate,
@@ -581,6 +623,15 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 #else
 		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 #endif
+
+#if UART_NS16550_DLF_ENABLED
+		if (dev_cfg->dlf_auto) {
+			divisor = get_uart_baudrate_divisor_dlf(baud_rate, pclk,
+								&dev_data->dlf);
+			ns16550_outbyte(dev_cfg, DLF(dev), dev_data->dlf);
+		}
+#endif
+
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
 		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
@@ -2089,6 +2140,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
 			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		IF_ENABLED(UART_NS16550_DLF_ENABLED,                                 \
+			(.dlf_auto = DT_INST_PROP(n, dlf_auto),))                    \
 		.loopback = DT_INST_PROP(n, loopback),
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \
