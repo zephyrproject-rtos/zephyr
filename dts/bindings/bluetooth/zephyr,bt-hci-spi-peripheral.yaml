@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Deprecated. Use zephyr,bt-hci-spi-peripheral instead.
-
     Configures SPI peripheral settings for a Bluetooth controller that uses
     Zephyr's Bluetooth Host Controller Interface SPI (HCI SPI) driver.
 
@@ -11,20 +9,20 @@ description: |
 
        &myspi {
             bt-hci@0 {
-                    compatible = "zephyr,bt-hci-spi-slave";
+                    compatible = "zephyr,bt-hci-spi-peripheral";
                     reg = <0>;
                     irq-gpios = <&gpio1 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
             };
        };
 
-    The bt-hci@0 node configures an HCI SPI slave on SPI slave
+    The bt-hci@0 node configures an HCI SPI peripheral on SPI
     interface myspi.
 
     The host interrupt GPIO is set to gpio1 pin 2 via irq-gpios. The
     GPIO flags are just for example and may be different depending on
     hardware.
 
-compatible: "zephyr,bt-hci-spi-slave"
+compatible: "zephyr,bt-hci-spi-peripheral"
 
 include: base.yaml
 
