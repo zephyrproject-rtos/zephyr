@@ -29,6 +29,33 @@ extern "C" {
  */
 
 /**
+ * @brief Put the current thread to sleep, with tick resolution.
+ *
+ * This routine puts the current thread to sleep for @a duration,
+ * specified as a k_timeout_t object.
+ *
+ * This is the primitive that k_sleep(), k_msleep() and k_usleep() are built
+ * upon.  It reports the time left to sleep in ticks, the unit the kernel
+ * works in, so it needs no unit conversion and is the cheapest of the four.
+ *
+ * @param timeout Desired duration of sleep.
+ *
+ * @return Zero if the requested time has elapsed, or the time left to sleep
+ * in ticks (e.g. if the thread was awoken by the \ref k_wakeup call).  If
+ * @a timeout is K_FOREVER and the thread is woken early via k_wakeup(),
+ * K_TICKS_FOREVER is returned.
+ */
+__syscall k_ticks_t k_sleep_ticks(k_timeout_t timeout);
+
+/*
+ * k_sleep() and k_usleep() below are inlined on top of k_sleep_ticks()
+ * rather than being separate out of line entry points.  That way the compiler
+ * sees both whether the requested duration is constant and whether the caller
+ * actually cares about the returned value, and it can fold or discard the
+ * unit conversions accordingly.
+ */
+
+/**
  * @brief Put the current thread to sleep.
  *
  * This routine puts the current thread to sleep for @a duration,
@@ -43,7 +70,17 @@ extern "C" {
  * If @a timeout is K_FOREVER and the thread is woken early via
  * k_wakeup(), -1 is returned.
  */
-__syscall int32_t k_sleep(k_timeout_t timeout);
+static inline int32_t k_sleep(k_timeout_t timeout)
+{
+	k_ticks_t ticks = k_sleep_ticks(timeout);
+
+	/* k_sleep() still returns 32 bit milliseconds for compatibility */
+	if (K_TIMEOUT_EQ(timeout, Z_FOREVER)) {
+		return (int32_t)K_TICKS_FOREVER;
+	}
+
+	return (int32_t)MIN(k_ticks_to_ms_ceil64(ticks), (uint64_t)INT32_MAX);
+}
 
 /**
  * @brief Put the current thread to sleep.
@@ -77,7 +114,12 @@ static inline int32_t k_msleep(int32_t ms)
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * microsecond.
  */
-__syscall int32_t k_usleep(int32_t us);
+static inline int32_t k_usleep(int32_t us)
+{
+	k_ticks_t ticks = k_sleep_ticks(Z_TIMEOUT_TICKS(k_us_to_ticks_ceil64(MAX(us, 0))));
+
+	return (int32_t)MIN(k_ticks_to_us_ceil64(ticks), (uint64_t)INT32_MAX);
+}
 
 /** @} */
 
