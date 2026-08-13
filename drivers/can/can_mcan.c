@@ -213,11 +213,7 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 		FIELD_PREP(CAN_MCAN_NBTP_NBRP, timing->prescaler - 1UL);
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_NBTP, nbtp);
-	if (err != 0) {
-		goto unlock;
-	}
 
-unlock:
 	k_mutex_unlock(&data->lock);
 
 	return err;
@@ -261,9 +257,6 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 	}
 
 	err = can_mcan_write_reg(dev, CAN_MCAN_DBTP, dbtp);
-	if (err != 0) {
-		goto unlock;
-	}
 
 unlock:
 	k_mutex_unlock(&data->lock);
@@ -1286,18 +1279,12 @@ void can_mcan_enable_configuration_change(const struct device *dev)
 	k_mutex_lock(&data->lock, K_FOREVER);
 
 	err = can_mcan_read_reg(dev, CAN_MCAN_CCCR, &cccr);
-	if (err != 0) {
-		goto unlock;
+	if (err == 0) {
+		cccr |= CAN_MCAN_CCCR_CCE;
+
+		(void)can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
 	}
 
-	cccr |= CAN_MCAN_CCCR_CCE;
-
-	err = can_mcan_write_reg(dev, CAN_MCAN_CCCR, cccr);
-	if (err != 0) {
-		goto unlock;
-	}
-
-unlock:
 	k_mutex_unlock(&data->lock);
 }
 
