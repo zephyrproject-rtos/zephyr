@@ -10,4 +10,5 @@ supported:
   - hwinfo
   - watchdog
   - rtc
+  - uart
 vendor: ti
