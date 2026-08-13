@@ -252,6 +252,9 @@ struct mqtt_topic_alias {
 
 	/** Topic name size. */
 	uint16_t topic_size;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -406,6 +409,9 @@ struct mqtt_common_ack_properties {
 		/** User Property property was present. */
 		bool has_user_prop;
 	} rx;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -624,6 +630,9 @@ struct mqtt_disconnect_param {
 			bool has_server_reference;
 		} rx;
 	} prop;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -658,6 +667,9 @@ struct mqtt_auth_param {
 			bool has_user_prop;
 		} rx;
 	} prop;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
