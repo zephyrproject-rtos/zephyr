@@ -5251,6 +5251,19 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOENT;
 	}
 
+	/* Fail closed when the counter space is exhausted, instead of
+	 * wrapping around and reusing counter values, which the peer
+	 * would reject as replays. The final possible value is never used
+	 * for signing, since a receiver cannot accept it without its own
+	 * next expected value wrapping (see bt_smp_sign_verify()). A new
+	 * pairing needs to distribute a fresh CSRK to resume signing.
+	 */
+	if (keys->local_csrk.cnt == UINT32_MAX) {
+		LOG_ERR("Sign counter of local CSRK for %s exhausted",
+			bt_conn_dst_str(conn));
+		return -EOVERFLOW;
+	}
+
 	/* Reserve space for data signature */
 	net_buf_add(buf, 12);
 
