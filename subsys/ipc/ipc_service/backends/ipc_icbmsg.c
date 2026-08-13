@@ -1085,7 +1085,8 @@ static int register_ept(const struct device *instance, void **token, const struc
 	bool bound = false;
 	int rv = 0;
 
-	name_hash = cfg->name == NULL ? 0 : sys_hash32_djb2(cfg->name, strlen(cfg->name));
+	/* If there is no name then use something else than 0. */
+	name_hash = cfg->name == NULL ? 1 : sys_hash32_djb2(cfg->name, strlen(cfg->name));
 
 	key = k_spin_lock(&data->lock);
 
