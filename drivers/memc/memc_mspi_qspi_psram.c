@@ -18,12 +18,25 @@
 
 LOG_MODULE_REGISTER(memc_mspi_qspi_psram, CONFIG_MEMC_LOG_LEVEL);
 
+/* Expands to `1 ||` for every enabled node that selects the given variant */
+#define QSPI_PSRAM_VARIANT_USED_OR(n, variant)                                    \
+	DT_INST_ENUM_HAS_VALUE(n, chip_variant, variant) ||
+
+/* 1 when at least one enabled node selects this chip variant, 0 otherwise */
+#define QSPI_PSRAM_VARIANT_USED(variant)                                          \
+	(DT_INST_FOREACH_STATUS_OKAY_VARGS(QSPI_PSRAM_VARIANT_USED_OR, variant) 0)
+
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(chip_variant)
 /*
- * Chip parameter table - indexed by enum qspi_psram_variant (0..N-1, not GENERIC).
- * Values come from device datasheets and must not be changed without
- * verifying against the relevant datasheet revision.
+ * Chip parameter table, one entry per supported part. Values come from device
+ * datasheets and must not be changed without verifying against the relevant
+ * datasheet revision.
+ *
+ * Only the parts named in devicetree are compiled in; a build that describes
+ * the device in devicetree instead drops the table entirely.
  */
 static const struct qspi_psram_chip_params chip_table[] = {
+#if QSPI_PSRAM_VARIANT_USED(esp64h)
 	[QSPI_PSRAM_VARIANT_ESP64H] = {
 		/* Espressif ESP-PSRAM64H, 64 Mbit (8 MB), 3.3 V / 1.8 V     */
 		/* Datasheet: tCEM = 8 us, page size = 1 KB, tCPH = 50 ns    */
@@ -43,6 +56,8 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 8,
 	},
+#endif
+#if QSPI_PSRAM_VARIANT_USED(is66wvs4m8bll)
 	[QSPI_PSRAM_VARIANT_IS66WVS4M8BLL] = {
 		/* ISSI IS66WVS4M8BLL, 32 Mbit (4 MB)                        */
 		/* Datasheet: tCEM = 4 us up to 85 C, page size = 1 KB.      */
@@ -64,6 +79,8 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 4,
 	},
+#endif
+#if QSPI_PSRAM_VARIANT_USED(is66wvs8m8bll)
 	[QSPI_PSRAM_VARIANT_IS66WVS8M8BLL] = {
 		/* ISSI IS66WVS8M8BLL, 64 Mbit (8 MB)                        */
 		/* Datasheet: tCEM = 4 us up to 85 C, page size = 1 KB.      */
@@ -85,10 +102,20 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 4,
 	},
+#endif
 };
 
-BUILD_ASSERT(ARRAY_SIZE(chip_table) == QSPI_PSRAM_VARIANT_GENERIC,
-	     "chip_table must hold one entry per chip-variant enum value");
+BUILD_ASSERT(ARRAY_SIZE(chip_table) <= QSPI_PSRAM_VARIANT_GENERIC,
+	     "chip_table must not hold more entries than the chip-variant enum");
+#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(chip_variant) */
+
+/*
+ * Resolve a node to its table entry at build time, so an instance that
+ * describes the device in devicetree never pulls the table into the image.
+ */
+#define QSPI_PSRAM_CHIP_PARAMS(n)                                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, chip_variant),                       \
+		    (&chip_table[DT_INST_ENUM_IDX(n, chip_variant)]), (NULL))
 
 struct memc_mspi_qspi_psram_config {
 	uint32_t                    port;
@@ -105,8 +132,9 @@ struct memc_mspi_qspi_psram_config {
 
 	bool                        sw_multi_periph;
 	bool                        pm_dev_rt_auto;
-	bool                        has_chip_variant; /* false -> generic mode, use DT params */
-	enum qspi_psram_variant     variant;          /* valid only when has_chip_variant */
+
+	/* Table entry of the chip named in DT, NULL in generic mode */
+	const struct qspi_psram_chip_params *chip;
 
 	/*
 	 * Generic-mode init commands. Read with a fallback so the driver also
@@ -413,7 +441,7 @@ static int qspi_psram_check_dt_cfg(const struct memc_mspi_qspi_psram_config *cfg
 	}
 
 	/* Everything below comes from the chip table for a known variant. */
-	if (cfg->has_chip_variant) {
+	if (cfg->chip != NULL) {
 		return 0;
 	}
 
@@ -446,8 +474,8 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	uint32_t mem_size;
 	int ret;
 
-	if (cfg->has_chip_variant) {
-		chip = &chip_table[cfg->variant];
+	if (cfg->chip != NULL) {
+		chip = cfg->chip;
 	} else {
 		/*
 		 * Build chip params from DT-configurable fields; transfer
@@ -473,7 +501,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	 * The capacity of a known chip variant is a property of the part, so it
 	 * comes from the chip table; generic mode has to be told in devicetree.
 	 */
-	mem_size = cfg->has_chip_variant ? (chip->size_bits / 8) : cfg->mem_size;
+	mem_size = (cfg->chip != NULL) ? (chip->size_bits / 8) : cfg->mem_size;
 	if (mem_size == 0) {
 		LOG_ERR("Generic mode requires size in DT/%u", __LINE__);
 		return -EINVAL;
@@ -524,7 +552,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	 * For generic mode: all transfer parameters come from DT as-is.
 	 */
 	data->dev_cfg = cfg->tar_dev_cfg;
-	if (cfg->has_chip_variant) {
+	if (cfg->chip != NULL) {
 		data->dev_cfg.read_cmd      = chip->read_cmd;
 		data->dev_cfg.write_cmd     = chip->write_cmd;
 		data->dev_cfg.cmd_length    = chip->cmd_length;
@@ -652,9 +680,7 @@ static DEVICE_API(memc, memc_mspi_qspi_psram_api) = {
 		.sw_multi_periph    = DT_PROP_OR(DT_INST_BUS(n),                         \
 						 software_multiperipheral, false),       \
 		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),    \
-		.has_chip_variant   = DT_INST_NODE_HAS_PROP(n, chip_variant),            \
-		.variant            = DT_INST_ENUM_IDX_OR(n, chip_variant,               \
-						QSPI_PSRAM_VARIANT_GENERIC),             \
+		.chip               = QSPI_PSRAM_CHIP_PARAMS(n),                         \
 		.enter_qpi_cmd      = DT_INST_PROP_OR(n, enter_qpi_cmd, 0x35),           \
 		.exit_qpi_cmd       = DT_INST_PROP_OR(n, exit_qpi_cmd, 0xF5),            \
 		.reset_en_cmd       = DT_INST_PROP_OR(n, reset_en_cmd, 0x66),            \

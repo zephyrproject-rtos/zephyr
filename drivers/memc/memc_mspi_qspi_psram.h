@@ -14,7 +14,7 @@
  * @brief Supported QPI PSRAM chip variants.
  *
  * Indices 0..N must match the chip-variant enum order in the DT binding.
- * GENERIC is the sentinel used when no chip-variant is specified in DT; the
+ * GENERIC is the value used when no chip-variant is specified in DT; the
  * driver then uses standard QPI init commands but reads all transfer
  * parameters (read_cmd, write_cmd, rx-dummy, cmd/addr length, CE timing)
  * from DT properties.
@@ -33,6 +33,9 @@ enum qspi_psram_variant {
  * The driver applies them during initialization, overriding the matching
  * DT properties (read/write command, cmd/addr length, dummy cycles and
  * ce-break-config), so none of them has to be given in devicetree.
+ *
+ * Entries are held in one table indexed by enum qspi_psram_variant, of which
+ * a build only carries the parts its devicetree names.
  */
 /*
  * DT enum indices for command-length and address-length (mspi-device.yaml).
