@@ -790,6 +790,18 @@ static void unicast_audio_update_inval(void)
 		     "fail\n");
 		return;
 	}
+
+	/* Attempt to set identical metadata */
+	(void)memcpy(&invalid_codec.meta, stream_params[0].stream->bap_stream.codec_cfg->meta,
+		     stream_params[0].stream->bap_stream.codec_cfg->meta_len);
+	stream_params[0].meta = invalid_codec.meta;
+	stream_params[0].meta_len = stream_params[0].stream->bap_stream.codec_cfg->meta_len;
+
+	err = bt_cap_initiator_unicast_audio_update(&param);
+	if (err != -EALREADY) {
+		FAIL("bt_cap_initiator_unicast_audio_update with identical meta did not fail\n");
+		return;
+	}
 }
 
 static void unicast_audio_update(void)
