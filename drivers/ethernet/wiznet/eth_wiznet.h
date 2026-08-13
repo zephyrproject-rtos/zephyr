@@ -74,12 +74,7 @@ struct wiznet_config {
 	const struct wiznet_chip_ops *ops;
 	const struct wiznet_regs *regs;
 	k_thread_stack_t *thread_stack;
-	size_t thread_stack_size;
 	const char *thread_name;
-	int thread_prio;
-	uint16_t rx_timeout_ms;
-	uint16_t poll_period_ms;
-	uint16_t monitor_period_ms;
 	uint16_t reset_pulse_us;
 	uint16_t reset_delay_ms;
 };
@@ -127,10 +122,11 @@ int wiznet_get_link_state(const struct device *dev, struct phy_link_state *state
 
 int wiznet_init(const struct device *dev);
 
-#define WIZNET_DEVICE_DEFINE(node, init_fn, phy_api, chip_ops, chip_regs, stack_size, prio,        \
-			     rx_timeout, poll_period, monitor_period, reset_pulse, reset_delay)    \
+#define WIZNET_DEVICE_DEFINE(node, init_fn, phy_api, chip_ops, chip_regs, reset_pulse,             \
+			     reset_delay)                                                          \
 	DEVICE_DECLARE(wiznet_phy_##node);                                                         \
-	static K_KERNEL_STACK_DEFINE(wiznet_stack_##node, stack_size);                             \
+	static K_KERNEL_STACK_DEFINE(wiznet_stack_##node,                                          \
+				     CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE);                  \
 	static struct wiznet_runtime wiznet_runtime_##node = {                                     \
 		.tx_sem = Z_SEM_INITIALIZER(wiznet_runtime_##node.tx_sem, 1, UINT_MAX),            \
 		.int_sem = Z_SEM_INITIALIZER(wiznet_runtime_##node.int_sem, 0, UINT_MAX),          \
@@ -144,12 +140,7 @@ int wiznet_init(const struct device *dev);
 		.ops = chip_ops,                                                                   \
 		.regs = chip_regs,                                                                 \
 		.thread_stack = wiznet_stack_##node,                                               \
-		.thread_stack_size = stack_size,                                                   \
 		.thread_name = DT_NODE_FULL_NAME(node),                                            \
-		.thread_prio = prio,                                                               \
-		.rx_timeout_ms = rx_timeout,                                                       \
-		.poll_period_ms = poll_period,                                                     \
-		.monitor_period_ms = monitor_period,                                               \
 		.reset_pulse_us = reset_pulse,                                                     \
 		.reset_delay_ms = reset_delay,                                                     \
 	};                                                                                         \
