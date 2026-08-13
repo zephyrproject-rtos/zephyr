@@ -1099,6 +1099,9 @@ Bluetooth Audio
     :zephyr:code-sample:`bluetooth_cap_handover` and
     :zephyr:code-sample:`bluetooth_cap_initiator` have been moved from
     ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
+  * :c:func:`bt_cap_initiator_unicast_audio_update` now rejects the API call if it would result in
+    no changed states (i.e. the metadata in the parameters are identical to the metadata the server
+    have reported to us), and will return ``-EALREADY``.
 
 * CCP
 
