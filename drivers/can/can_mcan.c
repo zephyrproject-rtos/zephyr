@@ -198,7 +198,7 @@ unlock:
 int can_mcan_set_timing(const struct device *dev, const struct can_timing *timing)
 {
 	struct can_mcan_data *data = dev->data;
-	uint32_t nbtp = 0U;
+	uint32_t nbtp;
 	int err;
 
 	if (data->common.started) {
@@ -207,7 +207,7 @@ int can_mcan_set_timing(const struct device *dev, const struct can_timing *timin
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	nbtp |= FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL) |
+	nbtp = FIELD_PREP(CAN_MCAN_NBTP_NSJW, timing->sjw - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NTSEG1, timing->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NTSEG2, timing->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_NBTP_NBRP, timing->prescaler - 1UL);
@@ -228,7 +228,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 {
 	const uint8_t tdco_max = FIELD_GET(CAN_MCAN_TDCR_TDCO, CAN_MCAN_TDCR_TDCO);
 	struct can_mcan_data *data = dev->data;
-	uint32_t dbtp = 0U;
+	uint32_t dbtp;
 	uint8_t tdco;
 	int err;
 
@@ -238,7 +238,7 @@ int can_mcan_set_timing_data(const struct device *dev, const struct can_timing *
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 
-	dbtp |= FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL) |
+	dbtp = FIELD_PREP(CAN_MCAN_DBTP_DSJW, timing_data->sjw - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG1, timing_data->phase_seg1 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DTSEG2, timing_data->phase_seg2 - 1UL) |
 		FIELD_PREP(CAN_MCAN_DBTP_DBRP, timing_data->prescaler - 1UL);
