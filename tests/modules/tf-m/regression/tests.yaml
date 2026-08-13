@@ -7,9 +7,6 @@ common:
   filter: CONFIG_BUILD_WITH_TFM and not CONFIG_TFM_LOG_LEVEL_SILENCE
   integration_platforms:
     - mps2/an521/cpu0/ns
-  integration_toolchains:
-    - zephyr/llvm
-    - zephyr/gnu
   harness: console
   harness_config:
     type: multi_line
@@ -32,7 +29,29 @@ tests:
       - CONFIG_TFM_ISOLATION_LEVEL=1
     timeout: 200
 
+  tfm.regression.ipc.lvl1.llvm:
+    integration_toolchains:
+      - zephyr/llvm
+    platform_allow:
+      - mps2/an521/cpu0/ns
+      - mps3/corstone300/fvp/ns
+    extra_args:
+      - CONFIG_TFM_IPC=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
+
   tfm.regression.ipc.lvl2:
+    extra_args:
+      - CONFIG_TFM_IPC=y
+      - CONFIG_TFM_ISOLATION_LEVEL=2
+    timeout: 200
+
+  tfm.regression.ipc.lvl2.llvm:
+    integration_toolchains:
+      - zephyr/llvm
+    platform_allow:
+      - mps2/an521/cpu0/ns
+      - mps3/corstone300/fvp/ns
     extra_args:
       - CONFIG_TFM_IPC=y
       - CONFIG_TFM_ISOLATION_LEVEL=2
@@ -41,6 +60,18 @@ tests:
   tfm.regression.sfn:
     platform_exclude:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
+    extra_args:
+      - CONFIG_TFM_SFN=y
+      - CONFIG_TFM_ISOLATION_LEVEL=1
+    timeout: 200
+
+  tfm.regression.sfn.llvm:
+    integration_toolchains:
+      - zephyr/llvm
+    platform_allow:
+      - mps2/an521/cpu0/ns
+      - mps3/corstone300/fvp/ns
     filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
     extra_args:
       - CONFIG_TFM_SFN=y
