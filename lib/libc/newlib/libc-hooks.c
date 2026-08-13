@@ -167,7 +167,7 @@ static int _stdout_hook_default(int c)
 
 static int (*_stdout_hook)(int) = _stdout_hook_default;
 
-void __stdout_hook_install(int (*hook)(int))
+void __stdout_hook_install(int (*hook)(int c))
 {
 	_stdout_hook = hook;
 }
