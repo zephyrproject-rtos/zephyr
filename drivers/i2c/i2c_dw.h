@@ -9,6 +9,7 @@
 #define ZEPHYR_DRIVERS_I2C_I2C_DW_H_
 
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/sys/sys_io.h>
 #include <stdbool.h>
 
 #define DT_DRV_COMPAT snps_designware_i2c
@@ -229,30 +230,30 @@ struct i2c_dw_dev_config {
 #define Z_REG_TEST_BIT    sys_test_bit
 
 #define DEFINE_MM_REG_READ(__reg, __off, __sz)                                                     \
-	static inline uint32_t read_##__reg(uint32_t addr)                                         \
+	static inline uint32_t read_##__reg(mm_reg_t addr)                                         \
 	{                                                                                          \
 		return Z_REG_READ(__sz)(addr + __off);                                             \
 	}
 #define DEFINE_MM_REG_WRITE(__reg, __off, __sz)                                                    \
-	static inline void write_##__reg(uint32_t data, uint32_t addr)                             \
+	static inline void write_##__reg(uint32_t data, mm_reg_t addr)                             \
 	{                                                                                          \
 		Z_REG_WRITE(__sz)(data, addr + __off);                                             \
 	}
 
 #define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)                                             \
-	static inline void set_bit_##__reg_bit(uint32_t addr)                                      \
+	static inline void set_bit_##__reg_bit(mm_reg_t addr)                                      \
 	{                                                                                          \
 		Z_REG_SET_BIT(addr + __reg_off, __bit);                                            \
 	}
 
 #define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)                                           \
-	static inline void clear_bit_##__reg_bit(uint32_t addr)                                    \
+	static inline void clear_bit_##__reg_bit(mm_reg_t addr)                                    \
 	{                                                                                          \
 		Z_REG_CLEAR_BIT(addr + __reg_off, __bit);                                          \
 	}
 
 #define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)                                            \
-	static inline int test_bit_##__reg_bit(uint32_t addr)                                      \
+	static inline int test_bit_##__reg_bit(mm_reg_t addr)                                      \
 	{                                                                                          \
 		return Z_REG_TEST_BIT(addr + __reg_off, __bit);                                    \
 	}
