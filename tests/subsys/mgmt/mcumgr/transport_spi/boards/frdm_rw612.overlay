@@ -13,8 +13,8 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&hsgpio0 7 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&hsgpio0 9 GPIO_ACTIVE_HIGH>;
-		miso-gpios = <&hsgpio0 8 0>;
+		sdo-gpios = <&hsgpio0 9 GPIO_ACTIVE_HIGH>;
+		sdi-gpios = <&hsgpio0 8 0>;
 		cs-gpios = <&hsgpio0 10 GPIO_ACTIVE_LOW>;
 
 		smp_spi: smp-spi@0 {
