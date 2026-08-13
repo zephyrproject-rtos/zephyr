@@ -36,6 +36,9 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <oscore.h>
 #include "oscore/nvm.h"
+#if defined(CONFIG_SETTINGS)
+#include <zephyr/settings/settings.h>
+#endif
 
 /*
  * Shared OSCORE test infrastructure.
@@ -1573,6 +1576,16 @@ ZTEST(coap_oscore, test_oscore_ssn_persisted_to_nvm)
 	};
 	uint64_t stored_ssn = 0;
 
+#if defined(CONFIG_SETTINGS)
+	/* SSN persistence needs a working settings/NVS backend. On boards whose
+	 * storage_partition overlaps the bootloader-less image or uses flash
+	 * geometry NVS cannot mount, settings init fails; skip instead of failing.
+	 */
+	if (settings_subsys_init() != 0) {
+		ztest_test_skip();
+	}
+#endif
+
 	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
 	 * and to make the stored value deterministic across runs.
 	 */
@@ -1675,6 +1688,16 @@ ZTEST(coap_oscore, test_oscore_replay_window_echo_resync)
 		.id_context = {.len = 0, .ptr = NULL},
 	};
 	uint64_t stored_ssn = 0;
+
+#if defined(CONFIG_SETTINGS)
+	/* SSN persistence needs a working settings/NVS backend. On boards whose
+	 * storage_partition overlaps the bootloader-less image or uses flash
+	 * geometry NVS cannot mount, settings init fails; skip instead of failing.
+	 */
+	if (settings_subsys_init() != 0) {
+		ztest_test_skip();
+	}
+#endif
 
 	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
 	 * and to make the stored value deterministic across runs.
