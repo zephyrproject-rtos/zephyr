@@ -41,6 +41,25 @@ static inline int z_vrfy_peci_transfer(const struct device *dev,
 	K_OOPS(K_SYSCALL_DRIVER_PECI(dev, transfer));
 	K_OOPS(k_usermode_from_copy(&msg_copy, msg, sizeof(*msg)));
 
+	/**
+	 * k_usermode_from_copy() only duplicates the outer struct; the buffer
+	 * pointers it carries are still caller supplied and the driver
+	 * dereferences them in supervisor mode, so they must be checked here.
+	 */
+	if ((msg_copy.tx_buffer.buf != NULL) && (msg_copy.tx_buffer.len > 1U)) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(msg_copy.tx_buffer.buf,
+					     msg_copy.tx_buffer.len - 1U));
+	}
+
+	if (msg_copy.rx_buffer.buf != NULL) {
+		size_t rx_len;
+
+		K_OOPS(K_SYSCALL_VERIFY_MSG(!size_add_overflow(msg_copy.rx_buffer.len,
+							       1U, &rx_len),
+					    "rx_buffer.len overflow"));
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(msg_copy.rx_buffer.buf, rx_len));
+	}
+
 	return z_impl_peci_transfer(dev, &msg_copy);
 }
 #include <zephyr/syscalls/peci_transfer_mrsh.c>
