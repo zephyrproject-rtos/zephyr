@@ -65,13 +65,13 @@ extern "C" {
  * @brief Controller mode.
  * @deprecated Use @ref SPI_OP_MODE_CONTROLLER instead.
  */
-#define SPI_OP_MODE_MASTER	SPI_OP_MODE_CONTROLLER
+#define SPI_OP_MODE_MASTER	SPI_OP_MODE_CONTROLLER __DEPRECATED_MACRO
 
 /**
  * @brief Peripheral mode.
  * @deprecated Use @ref SPI_OP_MODE_PERIPHERAL instead.
  */
-#define SPI_OP_MODE_SLAVE	SPI_OP_MODE_PERIPHERAL
+#define SPI_OP_MODE_SLAVE	SPI_OP_MODE_PERIPHERAL __DEPRECATED_MACRO
 
 /** @cond INTERNAL_HIDDEN */
 #define SPI_OP_MODE_MASK	0x1U
@@ -474,14 +474,15 @@ struct spi_config {
 	 * - 18..31: Reserved for future use.
 	 */
 	spi_operation_t operation;
+	/** @brief Peripheral number from 0 to host controller peripheral limit. */
 	union {
-		/** @brief Peripheral number from 0 to host controller peripheral limit. */
+		/** Peripheral number. */
 		uint16_t peripheral;
 		/**
-		 * @brief Peripheral number from 0 to host controller peripheral limit.
+		 * @brief Peripheral number.
 		 * @deprecated Use spi_config.peripheral instead.
 		 */
-		uint16_t slave;
+		__deprecated uint16_t slave;
 	};
 	/**
 	 * @brief GPIO chip-select line (optional, must be initialized to zero
@@ -609,7 +610,7 @@ struct spi_dt_spec {
  * @brief Value that will never compare true with any valid overrun character
  * @deprecated Use @ref SPI_SDO_OVERRUN_UNKNOWN instead.
  */
-#define SPI_MOSI_OVERRUN_UNKNOWN SPI_SDO_OVERRUN_UNKNOWN
+#define SPI_MOSI_OVERRUN_UNKNOWN SPI_SDO_OVERRUN_UNKNOWN __DEPRECATED_MACRO
 
 /**
  * @brief The value sent on SDO when all TX bytes are sent, but RX continues
@@ -630,7 +631,7 @@ struct spi_dt_spec {
  * @brief The value sent on SDO when all TX bytes are sent, but RX continues
  * @deprecated Use @ref SPI_SDO_OVERRUN_DT instead.
  */
-#define SPI_MOSI_OVERRUN_DT(node_id) SPI_SDO_OVERRUN_DT(node_id)
+#define SPI_MOSI_OVERRUN_DT(node_id) SPI_SDO_OVERRUN_DT(node_id) __DEPRECATED_MACRO
 
 /**
  * @brief The value sent on SDO when all TX bytes are sent, but RX continues
@@ -650,7 +651,7 @@ struct spi_dt_spec {
  * @brief The value sent on SDO when all TX bytes are sent, but RX continues
  * @deprecated Use @ref SPI_SDO_OVERRUN_DT_INST instead.
  */
-#define SPI_MOSI_OVERRUN_DT_INST(inst) SPI_SDO_OVERRUN_DT_INST(inst)
+#define SPI_MOSI_OVERRUN_DT_INST(inst) SPI_SDO_OVERRUN_DT_INST(inst) __DEPRECATED_MACRO
 
 /**
  * @brief SPI buffer structure
