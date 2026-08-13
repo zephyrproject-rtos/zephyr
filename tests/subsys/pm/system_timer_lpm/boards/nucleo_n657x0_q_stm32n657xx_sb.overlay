@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		sleep-durations-ms = <50 250 1500 3000>;
+	};
+
+	cpus {
+		power-states {
+			stm32n6_stop: stop {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <100000>;
+				exit-latency-us = <1000>;
+			};
+		};
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&stm32n6_stop>;
+};

@@ -393,7 +393,7 @@ csi_capture_port: &pipe_main {};
 };
 
 &rtc {
-	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+	clocks = <&rcc STM32_CLOCK_BUS_APB4 ((1 << 17) | (1 << 16))>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	status = "okay";
 };

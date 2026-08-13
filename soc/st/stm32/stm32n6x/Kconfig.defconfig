@@ -39,4 +39,17 @@ endif # STM32_IOCELL
 configdefault LV_DRAW_DMA2D_HAL_INCLUDE
 	default "stm32n6xx.h" if LVGL && DT_HAS_ST_STM32_DMA2D_ENABLED
 
+if PM
+
+config COUNTER
+	default y
+
+config COUNTER_RTC_STM32_SUBSECONDS
+	default y if DT_HAS_ST_STM32_RTC_ENABLED
+
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if DT_HAS_ST_STM32_RTC_ENABLED
+
+endif # PM
+
 endif # SOC_SERIES_STM32N6X
