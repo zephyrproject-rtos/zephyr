@@ -10,17 +10,17 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
-#define W1_MASTER  DT_NODELABEL(w1_0)
-#define W1_SLAVE_1 DT_NODELABEL(slave_1)
-#define W1_SLAVE_2 DT_NODELABEL(slave_2)
+#define W1_CONTROLLER   DT_NODELABEL(w1_0)
+#define W1_PERIPHERAL_1 DT_NODELABEL(peripheral_1)
+#define W1_PERIPHERAL_2 DT_NODELABEL(peripheral_2)
 
-const struct device *get_w1_master_dev(void)
+const struct device *get_w1_controller_dev(void)
 {
-	const struct device *const master_dev = DEVICE_DT_GET(W1_MASTER);
+	const struct device *const controller_dev = DEVICE_DT_GET(W1_CONTROLLER);
 
-	zassert_true(device_is_ready(master_dev), "W1 master not found");
+	zassert_true(device_is_ready(controller_dev), "W1 controller not found");
 
-	return master_dev;
+	return controller_dev;
 }
 
 /* test vectors: */
@@ -60,23 +60,23 @@ const uint16_t crc16_3 = 0x5d69;
 
 ZTEST_USER(w1_api, test_w1_basic)
 {
-	const struct device *master_dev = get_w1_master_dev();
-	size_t slave_count;
-	int slave1_family = DT_PROP(W1_SLAVE_1, family_code);
-	bool slave1_overdrive = DT_PROP(W1_SLAVE_1, overdrive_speed);
+	const struct device *controller_dev = get_w1_controller_dev();
+	size_t peripheral_count;
+	int peripheral1_family = DT_PROP(W1_PERIPHERAL_1, family_code);
+	bool peripheral1_overdrive = DT_PROP(W1_PERIPHERAL_1, overdrive_speed);
 
-	zassert_equal(slave1_family, 0x28, "slave 1 family code not matching");
-	zassert_true(slave1_overdrive, "slave 1 overdrive param. not matching");
+	zassert_equal(peripheral1_family, 0x28, "peripheral 1 family code not matching");
+	zassert_true(peripheral1_overdrive, "peripheral 1 overdrive param. not matching");
 
-	zassert_equal(w1_lock_bus(master_dev), 0, "Fail lock 1");
-	zassert_equal(w1_lock_bus(master_dev), 0, "Fail lock 2");
-	zassert_equal(w1_unlock_bus(master_dev), 0, "Fail unlock 1");
-	zassert_equal(w1_unlock_bus(master_dev), 0, "Fail unlock 2");
+	zassert_equal(w1_lock_bus(controller_dev), 0, "Fail lock 1");
+	zassert_equal(w1_lock_bus(controller_dev), 0, "Fail lock 2");
+	zassert_equal(w1_unlock_bus(controller_dev), 0, "Fail unlock 1");
+	zassert_equal(w1_unlock_bus(controller_dev), 0, "Fail unlock 2");
 
-	slave_count = w1_get_slave_count(master_dev);
-	zassert_equal(slave_count, 2,
-		      "slave_count does not match dt definitions: %u/2",
-		      slave_count);
+	peripheral_count = w1_get_peripheral_count(controller_dev);
+	zassert_equal(peripheral_count, 2,
+		      "peripheral_count does not match dt definitions: %u/2",
+		      peripheral_count);
 }
 
 ZTEST_USER(w1_api, test_w1_crc)
@@ -155,9 +155,9 @@ ZTEST_USER(w1_api, test_w1_rom_sensor_value)
 ZTEST_USER(w1_api, test_w1_reset_empty)
 {
 	int ret;
-	const struct device *master_dev = get_w1_master_dev();
+	const struct device *controller_dev = get_w1_controller_dev();
 
-	ret = w1_reset_bus(master_dev);
+	ret = w1_reset_bus(controller_dev);
 	zassert_false((ret < 0), "w1_reset failed. Err: %d", ret);
 	zassert_equal(ret, 0, "In case no devices are connected should return 0");
 }
@@ -174,16 +174,16 @@ void w1_test_search_callback(struct w1_rom found_rom, void *callback_arg)
 ZTEST(w1_api, test_w1_search_empty)
 {
 	int ret;
-	const struct device *master_dev = get_w1_master_dev();
+	const struct device *controller_dev = get_w1_controller_dev();
 
-	ret = w1_search_rom(master_dev, w1_test_search_callback, 0);
-	zassert_equal(ret, 0, "In case no slaves are connected should return 0");
+	ret = w1_search_rom(controller_dev, w1_test_search_callback, 0);
+	zassert_equal(ret, 0, "In case no peripherals are connected should return 0");
 	zassert_equal(found_w1_devices, 0, "No callback expected");
 
-	ret = w1_search_rom(master_dev, 0, 0);
-	zassert_equal(ret, 0, "In case no slaves are connected should return 0");
+	ret = w1_search_rom(controller_dev, 0, 0);
+	zassert_equal(ret, 0, "In case no peripherals are connected should return 0");
 
-	ret = w1_search_alarm(master_dev, 0, 0);
+	ret = w1_search_alarm(controller_dev, 0, 0);
 	zassert_equal(ret, 0, "In case no devices are connected should return 0");
 	zassert_equal(found_w1_devices, 0, "No callback expected");
 }
@@ -191,72 +191,72 @@ ZTEST(w1_api, test_w1_search_empty)
 ZTEST_USER(w1_api, test_w1_fire_and_forget)
 {
 	int ret;
-	const struct device *master_dev = get_w1_master_dev();
+	const struct device *controller_dev = get_w1_controller_dev();
 	const uint8_t block_send[8] = { 0x0F, 0x0E, 0x0D, 0x0C, 0xC0, 0xD0, 0xE0, 0xF0 };
 
-	ret = w1_write_bit(master_dev, false);
+	ret = w1_write_bit(controller_dev, false);
 	zassert_equal(ret, 0, "write_bit: error: %d", ret);
 
-	ret = w1_write_byte(master_dev, 0x3b);
+	ret = w1_write_byte(controller_dev, 0x3b);
 	zassert_equal(ret, 0, "write_byte: error: %d", ret);
 
-	ret = w1_write_block(master_dev, block_send, sizeof(block_send));
+	ret = w1_write_block(controller_dev, block_send, sizeof(block_send));
 	zassert_equal(ret, 0, "write_block: error: %d", ret);
 }
 
 ZTEST_USER(w1_api, test_w1_receive_nothing)
 {
 	int ret;
-	const struct device *master_dev = get_w1_master_dev();
+	const struct device *controller_dev = get_w1_controller_dev();
 	uint8_t block_rcv[8] = { 0x0F, 0x0E, 0x0D, 0x0C, 0xC0, 0xD0, 0xE0, 0xF0 };
 	const uint8_t block_ref[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 	/* on idle bus without sender all received bits should be logical ones */
 
-	ret = w1_read_bit(master_dev);
+	ret = w1_read_bit(controller_dev);
 	zassert_true((ret >= 0), "read_bit: error: %d", ret);
 	zassert_equal(ret, 1, "bit: empty receive should be logical ones");
 
-	ret = w1_read_byte(master_dev);
+	ret = w1_read_byte(controller_dev);
 	zassert_true((ret >= 0), "read_byte: error: %d", ret);
 	zassert_equal(ret, 0xFF, "byte: empty receive should be logical 0xFF");
 
-	ret = w1_read_block(master_dev, block_rcv, sizeof(block_rcv));
+	ret = w1_read_block(controller_dev, block_rcv, sizeof(block_rcv));
 	zassert_equal(ret, 0, "read_block: error: %d", ret);
 	zassert_mem_equal(block_rcv, block_ref, sizeof(block_rcv),
 			  "block: empty receive should be local all 0xFF");
 }
 
-ZTEST_USER(w1_api, test_w1_slave)
+ZTEST_USER(w1_api, test_w1_peripheral)
 {
 	int ret;
-	struct w1_slave_config cfg_1 = { .rom = {} };
-	const struct device *master_dev = get_w1_master_dev();
+	struct w1_peripheral_config cfg_1 = { .rom = {} };
+	const struct device *controller_dev = get_w1_controller_dev();
 	const uint8_t block_send[8] = { 0x0F, 0x0E, 0x0D, 0x0C, 0xC0, 0xD0, 0xE0, 0xF0 };
 	uint8_t block_rcv[8] = { 0x00 };
 
-	ret = w1_read_rom(master_dev, &cfg_1.rom);
+	ret = w1_read_rom(controller_dev, &cfg_1.rom);
 	zassert_equal(ret, -ENODEV, "read_rom should fail w/o connected dev");
 
-	ret = w1_match_rom(master_dev, &cfg_1);
+	ret = w1_match_rom(controller_dev, &cfg_1);
 	zassert_equal(ret, -ENODEV, "match_rom should fail w/o connected dev");
 
-	ret = w1_resume_command(master_dev);
+	ret = w1_resume_command(controller_dev);
 	zassert_equal(ret, -ENODEV, "resume command should fail w/o connected dev");
 
-	ret = w1_skip_rom(master_dev, &cfg_1);
+	ret = w1_skip_rom(controller_dev, &cfg_1);
 	zassert_equal(ret, -ENODEV, "skip_rom should fail w/o connected dev");
 
-	ret = w1_reset_select(master_dev, &cfg_1);
+	ret = w1_reset_select(controller_dev, &cfg_1);
 	zassert_equal(ret, -ENODEV, "reset_select should fail w/o connected dev");
 
-	ret = w1_write_read(master_dev, &cfg_1, block_send, 8, block_rcv, 0);
+	ret = w1_write_read(controller_dev, &cfg_1, block_send, 8, block_rcv, 0);
 	zassert_equal(ret, -ENODEV, "w1_write_read should fail w/o connected dev");
 }
 
 static void *w1_api_tests_setup(void)
 {
-	k_object_access_grant(get_w1_master_dev(), k_current_get());
+	k_object_access_grant(get_w1_controller_dev(), k_current_get());
 	return NULL;
 }
 
