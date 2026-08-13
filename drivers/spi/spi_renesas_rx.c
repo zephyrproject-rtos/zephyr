@@ -152,8 +152,8 @@ void rx_rspi_spti_sub(const struct device *dev)
 	if ((!spi_context_rx_on(&data->ctx)) && (tx_count == rspi_tcb->xfr_length - 1)) {
 		data->preg->SPCR2.BIT.SPIIE = 1;
 
-		/* If the SPI is in slave mode */
-		if (spi_context_is_slave(&data->ctx)) {
+		/* If the SPI is in peripheral mode */
+		if (spi_context_is_peripheral(&data->ctx)) {
 			/* Disable RSPI */
 			data->preg->SPCR.BIT.SPE = 0;
 
@@ -175,7 +175,7 @@ void rx_rspi_spti_sub(const struct device *dev)
 		transmit_data(data, tx_count);
 		rspi_tcb->tx_count++;
 	} else {
-		if (spi_context_is_slave(&data->ctx)) {
+		if (spi_context_is_peripheral(&data->ctx)) {
 			spi_context_update_tx(&data->ctx, data->dfs, data->data_len);
 		}
 	}
@@ -198,7 +198,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		data->channel_setting.master_slave_mode = RSPI_MS_MODE_SLAVE;
 	} else {
 		data->channel_setting.master_slave_mode = RSPI_MS_MODE_MASTER;
@@ -216,7 +216,7 @@ static int rx_rspi_configure(const struct device *dev, const struct spi_config *
 		if (data->channel_setting.master_slave_mode == RSPI_MS_MODE_MASTER) {
 			data->command_word.cpha = RSPI_SPCMD_CPHA_SAMPLE_ODD;
 		} else {
-			/* In slave mode cpha must be 1 */
+			/* In peripheral mode cpha must be 1 */
 			LOG_ERR("Invalid clock phase");
 			return -EINVAL;
 		}
@@ -338,7 +338,7 @@ static bool rx_spi_transfer_ongoing(struct rx_rspi_data *data)
 }
 
 #ifndef CONFIG_SPI_RENESAS_RX_INTERRUPT
-static int rx_rspi_transceive_slave(struct rx_rspi_data *data)
+static int rx_rspi_transceive_peripheral(struct rx_rspi_data *data)
 {
 	if (data->preg->SPSR.BIT.SPTEF && spi_context_tx_on(&data->ctx)) {
 		uint32_t tx;
@@ -380,7 +380,7 @@ static int rx_rspi_transceive_slave(struct rx_rspi_data *data)
 	return 0;
 }
 
-static int rx_rspi_transceive_master(struct rx_rspi_data *data)
+static int rx_rspi_transceive_controller(struct rx_rspi_data *data)
 {
 	uint32_t tx;
 	uint32_t rx;
@@ -434,10 +434,10 @@ static int rx_rspi_transceive_data(struct rx_rspi_data *data)
 {
 	uint16_t operation = data->ctx.config->operation;
 
-	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
-		rx_rspi_transceive_master(data);
+	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_CONTROLLER) {
+		rx_rspi_transceive_controller(data);
 	} else {
-		rx_rspi_transceive_slave(data);
+		rx_rspi_transceive_peripheral(data);
 	}
 
 	return 0;
@@ -479,15 +479,15 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 #ifdef CONFIG_SPI_RENESAS_RX_INTERRUPT
 
 	if (data->ctx.rx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? (spi_context_total_tx_len(&data->ctx) / data->dfs)
 					 : data->ctx.tx_len;
 	} else if (data->ctx.tx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? (spi_context_total_rx_len(&data->ctx) / data->dfs)
 					 : data->ctx.rx_len;
 	} else {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? (MAX(spi_context_total_tx_len(&data->ctx),
 						spi_context_total_rx_len(&data->ctx)) /
 					    data->dfs)
@@ -615,7 +615,7 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		rx_rspi_transceive_data(data);
 	} while (rx_spi_transfer_ongoing(data));
 
-	if (SPI_OP_MODE_GET(data->ctx.config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(data->ctx.config->operation) == SPI_OP_MODE_CONTROLLER) {
 		/* Wait for transmission complete */
 		while (data->preg->SPSR.BIT.IDLNF) {
 			if (data->preg->SPSR.BIT.SPRF) {
@@ -630,11 +630,11 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 	/* Disable the SPI Transfer. */
 	data->preg->SPCR.BIT.SPE = 0;
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 #endif /* CONFIG_SPI_RENESAS_RX_INTERRUPT */
 
 end:
@@ -801,8 +801,8 @@ static void rx_rspi_spri_isr(const struct device *dev)
 		if (rx_count == rspi_tcb->xfr_length) {
 			data->preg->SPCR2.BIT.SPIIE = 1;
 
-			/* If the SPI is in slave mode */
-			if (spi_context_is_slave(&data->ctx)) {
+			/* If the SPI is in peripheral mode */
+			if (spi_context_is_peripheral(&data->ctx)) {
 				spi_context_update_rx(&data->ctx, data->dfs, data->data_len);
 				/* Disable RSPI */
 				data->preg->SPCR.BIT.SPE = 0;
@@ -822,8 +822,8 @@ static void rx_rspi_spri_isr(const struct device *dev)
 		data->tcb.rx_count = data->data_len;
 		data->preg->SPCR2.BIT.SPIIE = 1;
 
-		/* If the SPI is in slave mode */
-		if (spi_context_is_slave(&data->ctx)) {
+		/* If the SPI is in peripheral mode */
+		if (spi_context_is_peripheral(&data->ctx)) {
 			spi_context_update_rx(&data->ctx, data->dfs, data->data_len);
 			/* Disable RSPI */
 			data->preg->SPCR.BIT.SPE = 0;
@@ -853,8 +853,8 @@ static void rx_rspi_spti_isr(const struct device *dev)
 		}
 
 /**
- * If master mode then disable further SPTI interrupts on first transmit.
- * If slave mode then we do two transmits to fill the double buffer,
+ * If controller mode then disable further SPTI interrupts on first transmit.
+ * If peripheral mode then we do two transmits to fill the double buffer,
  * then disable SPTI interrupts.
  * The receive interrupt will handle any remaining data.
  */
@@ -882,8 +882,8 @@ static void rx_rspi_spti_isr(const struct device *dev)
 		if (!spi_context_rx_on(&data->ctx)) {
 			data->preg->SPCR2.BIT.SPIIE = 1;
 
-			/* If the SPI is in slave mode */
-			if (spi_context_is_slave(&data->ctx)) {
+			/* If the SPI is in peripheral mode */
+			if (spi_context_is_peripheral(&data->ctx)) {
 				/* Disable RSPI */
 				data->preg->SPCR.BIT.SPE = 0;
 
