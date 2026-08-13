@@ -36,6 +36,9 @@
  * @{
  */
 
+/** Not defined pin (means there is nothing to configure) */
+#define CH570_PINCTRL_PIN_NOT_DEFINED 0xF
+
 /** Offset of the UART_RXD function field */
 #define CH570_PINCTRL_UART_RXD       0
 /** Offset of the UART_TXD function field */
@@ -239,11 +242,13 @@
  * @{
  */
 /** CMP positive input (no alternate function) */
-#define CMP_P0_PA3_0 CH570_PINMUX_DEFINE(3, NO_ALTERNATE, 0)
-/** CMP positive input (PA7 selected via CMP CTRL register instead of PA3) */
-#define CMP_P1_PA7_0 CH570_PINMUX_DEFINE(7, NO_ALTERNATE, 0)
+#define CMP_P_PA3_0      CH570_PINMUX_DEFINE(3, NO_ALTERNATE, 0)
+/** CMP positive input (PA7 selected via CMP CTRL register) */
+#define CMP_P_PA7_1      CH570_PINMUX_DEFINE(7, NO_ALTERNATE, 1)
 /** CMP negative input (no alternate function) */
-#define CMP_N_PA2_0  CH570_PINMUX_DEFINE(2, NO_ALTERNATE, 0)
+#define CMP_N_PA2_0      CH570_PINMUX_DEFINE(2, NO_ALTERNATE, 0)
+/** CMP negative input (internal reference voltage, selected via CMP CTRL register) */
+#define CMP_N_CMP_VREF_1 CH570_PINMUX_DEFINE(CH570_PINCTRL_PIN_NOT_DEFINED, NO_ALTERNATE, 1)
 /** @} */
 
 /**
