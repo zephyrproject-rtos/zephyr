@@ -736,7 +736,7 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 }
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-/* Shift a SPI frame as master. */
+/* Shift a SPI frame as controller. */
 static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -764,7 +764,7 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 }
 
-/* Shift a SPI frame as slave. */
+/* Shift a SPI frame as peripheral. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -791,7 +791,7 @@ static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	spi_operation_t operation = data->ctx.config->operation;
 	int ret;
 
-	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(operation) == SPI_OP_MODE_CONTROLLER) {
 		ret = spi_stm32_shift_m(spi, data);
 		if (ret != 0) {
 			return ret;
@@ -838,7 +838,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 	/* With the STM32MP1, STM32U5 and the STM32H7,
-	 * if the device is the SPI master,
+	 * if the device is the SPI controller,
 	 * we need to enable the start of the transfer with
 	 * LL_SPI_StartMasterTransfer(spi)
 	 */
@@ -918,9 +918,9 @@ static void spi_stm32_iodev_msg_start(const struct device *dev, struct spi_confi
 	data->ctx.sync_status = 0;
 	data->ctx.owner = config;
 
-#ifdef CONFIG_SPI_SLAVE
+#ifdef CONFIG_SPI_PERIPHERAL
 	ctx->recv_frames = 0;
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	if (!spi_stm32_transfer_ongoing(data)) {
 		spi_stm32_iodev_complete(dev, 0);
@@ -1157,19 +1157,19 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	LL_SPI_SetTransferSize(spi, 0);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
-#ifdef CONFIG_SPI_SLAVE
-	bool slave_hd_tx = spi_context_is_slave(&data->ctx) &&
-			   (data->ctx.config->operation & SPI_HALF_DUPLEX) &&
-			   (ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
+#ifdef CONFIG_SPI_PERIPHERAL
+	bool peripheral_hd_tx = spi_context_is_peripheral(&data->ctx) &&
+				(data->ctx.config->operation & SPI_HALF_DUPLEX) &&
+				(ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
 #else
-	bool slave_hd_tx = false;
+	bool peripheral_hd_tx = false;
 #endif
 
 	/*
-	 * Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX.
+	 * Keep SPE enabled for SPI_HOLD_ON_CS or Peripheral Half-Duplex TX.
 	 * Application must call spi_release() to disable SPE.
 	 */
-	if (!slave_hd_tx && !(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
+	if (!peripheral_hd_tx && !(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
 		ll_disable_spi(spi);
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
 	} else {
@@ -1329,7 +1329,7 @@ static int spi_stm32_configure(const struct device *dev,
 
 #if defined(SPI_CFG2_IOSWP)
 	if (cfg->ioswp) {
-		ll_spi_swap_mosi_miso(spi);
+		ll_spi_swap_sdo_sdi(spi);
 	}
 #endif
 
@@ -1365,20 +1365,20 @@ static int spi_stm32_configure(const struct device *dev,
 
 	if (spi_cs_is_gpio(config) || cfg->soft_nss) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) &&
+		if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
 		    (LL_SPI_GetNSSPolarity(spi) == LL_SPI_NSS_POLARITY_LOW)) {
 			LL_SPI_SetInternalSSLevel(spi, LL_SPI_SS_LEVEL_HIGH);
 		}
 #endif
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
-		if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
+		if ((config->operation & SPI_OP_MODE_PERIPHERAL) != 0U) {
 			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_INPUT);
 		} else {
 			LL_SPI_SetNSSMode(spi, LL_SPI_NSS_HARD_OUTPUT);
 		}
 	}
-	if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) != 0U) {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_SLAVE);
 	} else {
 		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
@@ -1429,12 +1429,12 @@ static int spi_stm32_configure(const struct device *dev,
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;
 
-	LOG_DBG("Installed config %p: freq %uHz (div = %u), mode %u/%u/%u, slave %u",
+	LOG_DBG("Installed config %p: freq %uHz (div = %u), mode %u/%u/%u, peripheral %u",
 		config, clock >> br, 1 << br,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
 		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
-		config->slave);
+		config->peripheral);
 
 	return 0;
 }
@@ -1543,7 +1543,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		const struct spi_config *config = data->ctx.config;
 
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 			int num_bytes = spi_context_total_rx_len(&data->ctx);
 			uint8_t dfs = bits2bytes(config->operation);
 
@@ -1561,7 +1561,7 @@ static int spi_stm32_half_duplex_switch_to_receive(const struct spi_stm32_config
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		/* With the STM32MP1, STM32U5 and the STM32H7,
-		 * if the device is the SPI master,
+		 * if the device is the SPI controller,
 		 * we need to enable the start of the transfer with
 		 * LL_SPI_StartMasterTransfer(spi).
 		 */
@@ -1612,10 +1612,10 @@ static int wait_dma_rx_tx_done(const struct device *dev)
 	k_timeout_t timeout;
 
 	/*
-	 * In slave mode we do not know when the transaction will start. Hence,
+	 * In peripheral mode we do not know when the transaction will start. Hence,
 	 * it doesn't make sense to have timeout in this case.
 	 */
-	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
 		timeout = K_FOREVER;
 	} else {
 		timeout = K_MSEC(1000);
@@ -1840,7 +1840,7 @@ static int transceive_dma(const struct device *dev,
 	LL_SPI_Enable(spi);
 	spi_stm32_cs_control(dev, true);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 		LL_SPI_StartMasterTransfer(spi);
 	}
 #endif /* st_stm32h7_spi */
@@ -1881,7 +1881,7 @@ static int transceive_dma(const struct device *dev,
 			transfer_dir = STM32_SPI_HALF_DUPLEX_RX;
 			LL_SPI_Enable(spi);
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-			if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+			if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 				LL_SPI_StartMasterTransfer(spi);
 			}
 #endif /* st_stm32h7_spi */
@@ -1891,16 +1891,16 @@ static int transceive_dma(const struct device *dev,
 	/* spi complete relies on SPI Status Reg which cannot be disabled */
 	spi_stm32_complete(dev, ret);
 
-#ifdef CONFIG_SPI_SLAVE
-	bool slave_hd_tx = spi_context_is_slave(&data->ctx) &&
-			   (config->operation & SPI_HALF_DUPLEX) &&
-			   (ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
+#ifdef CONFIG_SPI_PERIPHERAL
+	bool peripheral_hd_tx = spi_context_is_peripheral(&data->ctx) &&
+				(config->operation & SPI_HALF_DUPLEX) &&
+				(ll_get_transfer_direction(spi) == STM32_SPI_HALF_DUPLEX_TX);
 #else
-	bool slave_hd_tx = false;
+	bool peripheral_hd_tx = false;
 #endif
 
-	/* Keep SPE enabled for SPI_HOLD_ON_CS or Slave Half-Duplex TX */
-	if (!slave_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
+	/* Keep SPE enabled for SPI_HOLD_ON_CS or Peripheral Half-Duplex TX */
+	if (!peripheral_hd_tx && !(config->operation & SPI_HOLD_ON_CS)) {
 		ll_disable_spi(spi);
 	}
 	/* The Config. Reg. on some mcus is write un-protected when SPI is disabled */
@@ -1916,11 +1916,11 @@ static int transceive_dma(const struct device *dev,
 		LOG_DBG("Tx dma_stop failed with error %d", err);
 	}
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && ret == 0) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && ret == 0) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	return ret;
 }
@@ -2024,11 +2024,11 @@ static int transceive(const struct device *dev,
 
 	spi_stm32_complete(dev, ret);
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && ret == 0) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && ret == 0) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
