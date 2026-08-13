@@ -7,7 +7,12 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+/*
+ * Build the real test bodies for the documentation build (__DOXYGEN__) as
+ * well as when CONFIG_TIMESLICING is set, so the documented cases are not
+ * hidden by the #else skip-stubs below.
+ */
+#if defined(CONFIG_TIMESLICING) || defined(__DOXYGEN__)
 
 /* nrf 51 has lower ram, so creating less number of threads */
 #if (DT_CHOSEN_SRAM_SIZE / 1024) <= 24

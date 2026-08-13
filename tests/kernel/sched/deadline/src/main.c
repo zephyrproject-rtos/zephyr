@@ -274,7 +274,11 @@ ZTEST(suite_deadline, test_unqueued)
 	}
 }
 
-#if (CONFIG_MP_MAX_NUM_CPUS == 1)
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below is visible to Doxygen even though
+ * CONFIG_MP_MAX_NUM_CPUS is not defined there.
+ */
+#if (CONFIG_MP_MAX_NUM_CPUS == 1) || defined(__DOXYGEN__)
 static void reschedule_wrapper(const void *param)
 {
 	ARG_UNUSED(param);
