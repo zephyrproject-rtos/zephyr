@@ -8,6 +8,7 @@ config SDHC_INFINEON_CAT1_PDL
 	bool "Infineon SDHC driver"
 	default y
 	depends on DT_HAS_INFINEON_SDHC_SDIO_ENABLED
+	select SDHC_COMMON
 	select USE_INFINEON_SDIO
 	select SDHC_SUPPORTS_NATIVE_MODE
 	select SDHC_SUPPORTS_UHS

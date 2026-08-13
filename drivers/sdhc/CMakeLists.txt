@@ -1,4 +1,4 @@
-# Copyright 2022 NXP
+# SPDX-FileCopyrightText: Copyright 2022, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
@@ -14,6 +14,7 @@ zephyr_library_sources_ifdef(CONFIG_SAM_SDMMC sam_sdmmc.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_AMBIQ sdhc_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_AMEBA sdhc_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_BFLB sdhc_bflb.c)
+zephyr_library_sources_ifdef(CONFIG_SDHC_COMMON sdhc_common.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_ESP32 sdhc_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_INFINEON_CAT1_PDL sdhc_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_SDHC_LITEX_LITESDCARD sdhc_litex_litesdcard.c)
