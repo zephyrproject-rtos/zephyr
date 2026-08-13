@@ -21,7 +21,7 @@ config SOC_GECKO_HAS_RADIO
 config SOC_GECKO_USE_RAIL
 	bool "Use RAIL (Radio Abstraction Interface Layer)"
 	depends on SOC_GECKO_HAS_RADIO
-	select SILABS_SISDK_LDMA
+	select SILABS_SISDK_LDMA if HAS_SILABS_SISDK
 	select SILABS_SISDK_TIMER if BT_CHANNEL_SOUNDING
 	help
 	  RAIL (Radio Abstraction Interface Layer) is a library needed to use the EFR radio
@@ -36,6 +36,29 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  If enabled, RAIL can be used for user generated custom radio phy
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
+
+# Hardware capability flags (auto-detected from Device Tree)
+# Bluetooth 5.0
+config SOC_GECKO_HAS_RADIO_BLE_2M
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-2mbps-supported)
+
+config SOC_GECKO_HAS_RADIO_BLE_CODED
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
+
+# Bluetooth 5.1
+config SOC_GECKO_HAS_RADIO_CTE_TX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-tx-supported)
+
+config SOC_GECKO_HAS_RADIO_CTE_RX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-rx-supported) && SOC_GECKO_HAS_RADIO_CTE_TX
+
+# Bluetooth 6.0
+config SOC_GECKO_HAS_RADIO_CS
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cs-supported)
+
+# Vendor-specific
+config SOC_GECKO_HAS_RADIO_TX_HIGH_POWER
+	def_bool $(dt_nodelabel_bool_prop,radio,radio-tx-high-power-supported)
 
 endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 

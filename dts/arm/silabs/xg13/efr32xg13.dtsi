@@ -271,11 +271,41 @@
 			interrupts = <45 0>;
 			status = "disabled";
 		};
-	};
 
-	bt_hci_silabs: bt_hci_silabs {
-		compatible = "silabs,bt-hci-efr32";
-		status = "disabled";
+		radio: radio@b0000000 {
+			compatible = "silabs,series1-radio";
+			reg = <0xb0000000 0x01000000>;
+			ble-2mbps-supported;
+			ble-coded-phy-supported;
+			ble-cte-rx-supported;
+			ble-cte-tx-supported;
+			interrupt-names = "agc", "bufc", "frc_pri", "frc", "modem", "prortc",
+					  "protimer", "rac_rsm", "rac_seq", "synth", "rfsense";
+			interrupts = <28 1>, <8 1>, <1 1>, <4 1>, <5 1>, <30 1>,
+				     <29 1>, <7 1>, <6 1>, <32 1>, <34 1>;
+			pa-initial-power-dbm = <10>;
+			pa-ramp-time-us = <10>;
+			pa-voltage-mv = <3300>;
+			pa-2p4ghz = "hp";
+			radio-tx-high-power-supported;
+
+			bt_hci_silabs: bt_hci_silabs {
+				compatible = "silabs,bt-hci-efr32";
+				status = "disabled";
+			};
+
+			protimer: protimer {
+				compatible = "silabs,protimer";
+				status = "disabled";
+			};
+
+			pti: pti {
+				compatible = "silabs,pti";
+				clock-frequency = <DT_FREQ_K(1600)>;
+				mode = "uart";
+				status = "disabled";
+			};
+		};
 	};
 
 	pinctrl: pin-controller {

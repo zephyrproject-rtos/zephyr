@@ -13,6 +13,8 @@ set(DEVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/Device)
 set(RADIO_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/radio)
 set(BLOBS_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/zephyr/blobs/gecko)
 set(SERVICE_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/service)
+set(BLUETOOTH_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/protocol/bluetooth)
+set(SECURITY_DIR ${ZEPHYR_HAL_SILABS_MODULE_DIR}/gecko/platform/security)
 
 # Translate the SoC name and part number into the gecko device and cpu name
 # respectively.
@@ -27,30 +29,73 @@ string(REGEX REPLACE "[^0-9]" "" GECKO_SERIES_NUMBER "${GECKO_SERIES_NUMBER}")
 string(REGEX MATCH "^[0-9]" GECKO_MAJOR_SERIES_NUMBER "${GECKO_SERIES_NUMBER}")
 
 function(add_prebuilt_library lib_name prebuilt_path)
-  add_library(${lib_name} STATIC IMPORTED GLOBAL)
-  set_target_properties(${lib_name} PROPERTIES
-    IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
-  )
-  zephyr_link_libraries(${lib_name})
+  if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+    add_library(${lib_name} STATIC IMPORTED GLOBAL)
+    set_target_properties(${lib_name} PROPERTIES
+      IMPORTED_LOCATION ${BLOBS_DIR}/${prebuilt_path}
+    )
+    zephyr_link_libraries(${lib_name})
+  endif()
 endfunction()
 
 if(${CONFIG_SOC_GECKO_HAS_RADIO})
   if(${CONFIG_SOC_FAMILY_SILABS_S1})
     zephyr_include_directories(
-      ${RADIO_DIR}/rail_lib/plugin/pa-conversions/efr32xg1x/config
       ${RADIO_DIR}/rail_lib/chip/efr32/efr32xg1x
     )
   endif()
+
+  zephyr_compile_definitions(
+    SL_RAIL_UTIL_PA_CONFIG_HEADER="sl_rail_util_pa_config.h"
+  )
 
   zephyr_include_directories(
     ${RADIO_DIR}/rail_lib/common
     ${RADIO_DIR}/rail_lib/plugin/pa-conversions
   )
 
+  # sl_protocol_crypto
+  zephyr_library_sources_ifdef(CONFIG_SILABS_GECKO_PROTOCOL_CRYPTO
+    ${EMLIB_DIR}/src/em_crypto.c
+    ${SECURITY_DIR}/sl_component/sl_protocol_crypto/src/sli_protocol_crypto_crypto.c
+    ${SECURITY_DIR}/sl_component/sl_psa_driver/src/crypto_management.c
+  )
+  zephyr_include_directories_ifdef(CONFIG_SILABS_GECKO_PROTOCOL_CRYPTO
+      ${SECURITY_DIR}/sl_component/sl_psa_driver/inc
+  )
+
+  if(CONFIG_BT_SILABS_EFR32)
+    zephyr_include_directories(
+      ${BLUETOOTH_DIR}/bgstack/ll/inc
+      btstack
+    )
+    zephyr_library_sources(btstack/sl_bluetooth_controller.c)
+
+    # prebuilt libs
+    add_prebuilt_library(libbluetooth_controller protocol/bluetooth/bgstack/ll/lib/libbluetooth_controller_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+    add_prebuilt_library(libbgcommon protocol/bluetooth/bgcommon/lib/libbgcommon_efr32xg${GECKO_SERIES_NUMBER}_gcc_release.a)
+
+    if(NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+      # There is a circular dependency between the libs: libbgcommon depends on the symbol
+      # bg_pool_pools while libbluetooth_controller depends on many symbols in libbgcommon
+      target_link_libraries(libbgcommon INTERFACE libbluetooth_controller)
+      target_link_libraries(libbluetooth_controller INTERFACE libbgcommon)
+
+      # These use deprecated mbedtls APIs, so we just implement them ourselves.
+      target_link_options(libbgcommon INTERFACE -Wl,--wrap=bg_random_init)
+      target_link_options(libbgcommon INTERFACE -Wl,--wrap=bg_random_deinit)
+      target_link_options(libbgcommon INTERFACE -Wl,--wrap=bg_random_get_data)
+    endif()
+  endif()
+
   if(CONFIG_SOC_GECKO_USE_RAIL)
     # rail
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c)
     zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_curves_efr32.c)
+    zephyr_library_sources(${RADIO_DIR}/rail_lib/plugin/rail_util_sequencer/sl_rail_util_sequencer.c)
+    zephyr_include_directories(
+      ${RADIO_DIR}/rail_lib/plugin/rail_util_sequencer/config/efr32xg${GECKO_SERIES_NUMBER}
+    )
 
     # prebuilt libs
     if(CONFIG_SILABS_GECKO_RAIL_MULTIPROTOCOL)
@@ -80,6 +125,7 @@ if(${CONFIG_SOC_GECKO_HAS_RADIO})
 endif()
 
 zephyr_include_directories(
+  config
   ${DEVICE_DIR}/SiliconLabs/${SILABS_GECKO_DEVICE}/Include
   ${COMMON_DIR}/inc
   ${EMLIB_DIR}/inc
@@ -89,6 +135,15 @@ zephyr_include_directories(
   ${SERVICE_DIR}/sleeptimer/inc
   ${SERVICE_DIR}/sleeptimer/src
   ${BOARD_DIR}
+)
+
+zephyr_library_sources(
+  sl_memory_manager_shim.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_BUILD_ONLY_NO_BLOBS
+  blob_stubs.c
 )
 
 # The gecko SDK uses the cpu name to include the matching device header.
