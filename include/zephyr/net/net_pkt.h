@@ -143,6 +143,7 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+#if defined(CONFIG_NET_TCP) || defined(CONFIG_NET_UDP_OPTIONS)
 	/* TCP or UDP are mutually exclusive so they can share the same memory */
 	union {
 #if defined(CONFIG_NET_TCP)
@@ -154,6 +155,7 @@ struct net_pkt {
 		uint16_t udp_opt_surplus_len;
 #endif
 	};
+#endif /* CONFIG_NET_TCP || CONFIG_NET_UDP_OPTIONS */
 
 #if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
