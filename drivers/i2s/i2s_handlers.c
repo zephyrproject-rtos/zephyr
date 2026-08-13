@@ -134,3 +134,27 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 	return z_impl_i2s_trigger(dev, dir, cmd);
 }
 #include <zephyr/syscalls/i2s_trigger_mrsh.c>
+
+#if CONFIG_I2S_RTIO
+
+int z_vrfy_i2s_configure_iodev(const struct rtio_iodev *i2s_iodev,
+			       const struct i2s_iodev_config *config)
+{
+	struct i2s_iodev_config config_copy;
+
+	K_OOPS(K_SYSCALL_OBJ(i2s_iodev, K_OBJ_RTIO_IODEV));
+	K_OOPS(k_usermode_from_copy(&config_copy, config, sizeof(config_copy)));
+	return z_impl_i2s_configure_iodev(i2s_iodev, config);
+}
+#include <zephyr/syscalls/i2s_configure_iodev_mrsh.c>
+
+void z_vrfy_i2s_get_config_iodev(const struct rtio_iodev *i2s_iodev,
+				 struct i2s_iodev_config *config)
+{
+	K_OOPS(K_SYSCALL_OBJ(i2s_iodev, K_OBJ_RTIO_IODEV));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(config, sizeof(struct i2s_iodev_config)));
+	z_impl_i2s_get_config_iodev(i2s_iodev, config);
+}
+#include <zephyr/syscalls/i2s_get_config_iodev_mrsh.c>
+
+#endif /*  */

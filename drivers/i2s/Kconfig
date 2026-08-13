@@ -18,7 +18,7 @@ config I2S_RTIO
 	select EXPERIMENTAL
 	select RTIO
 	help
-	  API and implementations of I2S for RTIO
+	  I2S RTIO APIs and common context.
 
 config I2S_INIT_PRIORITY
 	int "Init priority"
