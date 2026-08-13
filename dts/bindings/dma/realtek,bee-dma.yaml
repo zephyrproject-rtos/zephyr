@@ -64,9 +64,22 @@ description: |
 
   Example of devicetree configuration
 
+  Include the matching per-SoC header (e.g. <dt-bindings/dma/rtl87x2g-dma.h>)
+  and compose the slot and config cells from the named macros instead of
+  writing raw numbers:
+
+  #include <dt-bindings/dma/rtl87x2g-dma.h>
+
   &uart2 {
         status = "okay";
-        dmas = <&dma0 2 4 0x10021>, <&dma0 3 5 0xa>;
+        dmas = <&dma0 2 BEE_DMA_HANDSHAKE_UART2_TX
+                (BEE_DMA_M2P | BEE_DMA_SRC_INC | BEE_DMA_DST_FIXED | BEE_DMA_SRC_WIDTH_8BIT |
+                 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+                 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(1))>,
+               <&dma0 3 BEE_DMA_HANDSHAKE_UART2_RX
+                (BEE_DMA_P2M | BEE_DMA_SRC_FIXED | BEE_DMA_DST_INC | BEE_DMA_SRC_WIDTH_8BIT |
+                 BEE_DMA_DST_WIDTH_8BIT | BEE_DMA_SRC_MSIZE(BEE_DMA_MSIZE_1) |
+                 BEE_DMA_DST_MSIZE(BEE_DMA_MSIZE_1) | BEE_DMA_PRIORITY(0))>;
         dma-names = "tx", "rx";
   };
 
@@ -74,7 +87,8 @@ description: |
   Each is named "tx" and "rx".
   The channel cell assigns channel 2 to transmit and channel 3 to receive.
   The slot cell configs specified handshake for different peripherals.
-  The config cell can take various configs.
+  The config cell can take various configs, composed from the BEE_DMA_*
+  macros above; the raw bit layout is documented in the "config" field above.
   But the setting used depends on each driver implementation.
   Set the priority for the transmitting channel as HIGH, LOW(the default) for receive channel.
 
