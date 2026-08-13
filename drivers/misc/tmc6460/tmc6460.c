@@ -560,7 +560,8 @@ static int tmc6460_init(const struct device *dev)
 #define TMC6460_CONFIG_SPI(inst)                                                                   \
 	.bus_io = &tmc6460_bus_io_spi,                                                             \
 	.spi = SPI_DT_SPEC_INST_GET(                                                               \
-		inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_MODE_CPHA | SPI_WORD_SET(8))),
+		inst, (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_MODE_CPHA |                 \
+		       SPI_WORD_SET(8))),
 #endif
 
 #ifdef CONFIG_TMC6460_UART

@@ -213,7 +213,7 @@
 #define LR11XX_LORA_SYNC_WORD_PUBLIC		0x34
 #define LR11XX_LORA_SYNC_WORD_PRIVATE		0x12
 
-/* Status Stat1 (MISO byte 0 on all commands) */
+/* Status Stat1 (SDO byte 0 on all commands) */
 #define LR11XX_STAT1_HAS_IRQ			BIT(0)
 #define LR11XX_STAT1_CMD_MSK			GENMASK(3, 1)
 #define LR11XX_STAT1_CMD_OFF			1U
@@ -225,7 +225,7 @@
 #define LR11XX_STAT1_CMD_GET(_v)		\
 	(((_v) & LR11XX_STAT1_CMD_MSK) >> LR11XX_STAT1_CMD_OFF)
 
-/* Status Stat2 (MISO byte 1 on all commands) */
+/* Status Stat2 (SDO byte 1 on all commands) */
 #define LR11XX_STAT2_IS_FLASH			BIT(0)
 #define LR11XX_STAT2_MODE_MSK			GENMASK(3, 1)
 #define LR11XX_STAT2_MODE_OFF			1U

@@ -30,7 +30,7 @@
 #define ESP_HOSTED_SCAN_TIMEOUT  (10000)
 #define ESP_HOSTED_QUEUE_TIMEOUT (1000)
 #define ESP_HOSTED_SPI_CONFIG                                                                      \
-	(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL)
+	(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL)
 
 #define TLV_HEADER_SIZE      (14)
 #define TLV_HEADER_TYPE_EP   (1)
