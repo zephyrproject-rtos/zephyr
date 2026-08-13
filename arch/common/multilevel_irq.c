@@ -11,12 +11,31 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
 
-BUILD_ASSERT(CONFIG_MAX_IRQ_PER_AGGREGATOR < BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
+#ifdef CONFIG_2ND_LEVEL_INTERRUPTS
+BUILD_ASSERT(CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR < BIT(CONFIG_2ND_LEVEL_INTERRUPT_BITS),
 	     "L2 bits not enough to cover the number of L2 IRQs");
+#endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
 #ifdef CONFIG_3RD_LEVEL_INTERRUPTS
-BUILD_ASSERT(CONFIG_MAX_IRQ_PER_AGGREGATOR < BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
+BUILD_ASSERT(CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR < BIT(CONFIG_3RD_LEVEL_INTERRUPT_BITS),
 	     "L3 bits not enough to cover the number of L3 IRQs");
 #endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+
+/* Aggregator window size in _sw_isr_table for the given interrupt level. */
+static inline unsigned int max_irq_per_aggregator(unsigned int level)
+{
+#ifdef CONFIG_3RD_LEVEL_INTERRUPTS
+	if (level == 3) {
+		return CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR;
+	}
+#else
+	ARG_UNUSED(level);
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS */
+#ifdef CONFIG_2ND_LEVEL_INTERRUPTS
+	return CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR;
+#else
+	return 0;
+#endif /* CONFIG_2ND_LEVEL_INTERRUPTS */
+}
 
 /**
  * @brief Get the aggregator that's responsible for the given irq
@@ -77,7 +96,7 @@ unsigned int z_get_sw_isr_table_idx(unsigned int irq)
 
 	if (intc != NULL) {
 		local_irq = irq_from_level(irq, level);
-		__ASSERT_NO_MSG(local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR);
+		__ASSERT_NO_MSG(local_irq < max_irq_per_aggregator(level));
 
 		table_idx = intc->offset + local_irq;
 	} else {
