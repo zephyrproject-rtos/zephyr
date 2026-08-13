@@ -988,6 +988,25 @@ Video
 * The APIs present in ``<zephyr/drivers/video.h>`` are now available under
   ``<zephyr/video/video.h>``. (:github:`112420`)
 
+W1
+==
+
+* The 1-Wire API now uses controller/peripheral terminology. The former names remain available as
+  deprecated aliases:
+
+  * :c:struct:`w1_master_config` is deprecated in favor of :c:struct:`w1_controller_config`, and
+    its ``slave_count`` member is deprecated in favor of ``peripheral_count``.
+  * :c:struct:`w1_master_data` is deprecated in favor of :c:struct:`w1_controller_data`.
+  * :c:struct:`w1_slave_config` is deprecated in favor of :c:struct:`w1_peripheral_config`.
+  * :c:func:`w1_get_slave_count` is deprecated in favor of :c:func:`w1_get_peripheral_count`.
+  * ``W1_SLAVE_COUNT`` and ``W1_INST_SLAVE_COUNT`` are deprecated in favor of
+    ``W1_PERIPHERAL_COUNT`` and ``W1_INST_PERIPHERAL_COUNT``.
+
+* The common devicetree binding include files ``w1-master.yaml`` and ``w1-slave.yaml`` are
+  deprecated in favor of ``w1-controller.yaml`` and ``w1-peripheral.yaml``. Out-of-tree bindings
+  should update their ``include:`` statements accordingly; the old files are kept as thin
+  includes of the new ones for compatibility.
+
 WiFi
 ====
 

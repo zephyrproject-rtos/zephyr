@@ -195,6 +195,16 @@ Deprecated APIs and options
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
     subsystem (``<zephyr/video/video.h>``). Application only need to rename the ``#include``.
 
+* W1
+
+  * The 1-Wire API's master/slave terminology has been deprecated in favor of
+    controller/peripheral terminology: :c:struct:`w1_master_config`,
+    :c:struct:`w1_master_data`, :c:struct:`w1_slave_config`,
+    :c:func:`w1_get_slave_count`, ``W1_SLAVE_COUNT`` and ``W1_INST_SLAVE_COUNT`` are
+    deprecated in favor of :c:struct:`w1_controller_config`, :c:struct:`w1_controller_data`,
+    :c:struct:`w1_peripheral_config`, :c:func:`w1_get_peripheral_count`,
+    ``W1_PERIPHERAL_COUNT`` and ``W1_INST_PERIPHERAL_COUNT``.
+
 * Work queue
 
   * :c:member:`k_work_q.thread` has been deprecated. Use :c:member:`k_work_q.thread_id` instead.

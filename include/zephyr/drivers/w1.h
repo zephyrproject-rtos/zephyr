@@ -48,8 +48,8 @@ extern "C" {
 #define W1_INST_PERIPHERAL_COUNT(inst)  \
 		(W1_PERIPHERAL_COUNT(DT_DRV_INST(inst)))
 
-#define W1_SLAVE_COUNT(node_id) W1_PERIPHERAL_COUNT(node_id)
-#define W1_INST_SLAVE_COUNT(inst) W1_INST_PERIPHERAL_COUNT(inst)
+#define W1_SLAVE_COUNT(node_id) W1_PERIPHERAL_COUNT(node_id) __DEPRECATED_MACRO
+#define W1_INST_SLAVE_COUNT(inst) W1_INST_PERIPHERAL_COUNT(inst) __DEPRECATED_MACRO
 
 /** @endcond */
 
@@ -94,7 +94,7 @@ struct w1_controller_config {
 		 * @brief Number of connected peripherals.
 		 * @deprecated Use w1_controller_config.peripheral_count instead.
 		 */
-		uint16_t slave_count;
+		__deprecated uint16_t slave_count;
 	};
 };
 
@@ -102,7 +102,7 @@ struct w1_controller_config {
  * @brief Configuration common to all 1-Wire controller implementations.
  * @deprecated Use struct w1_controller_config instead.
  */
-#define w1_master_config w1_controller_config
+#define w1_master_config w1_controller_config __DEPRECATED_MACRO
 
 /**
  * @brief Data common to all 1-Wire controller implementations.
@@ -120,7 +120,7 @@ struct w1_controller_data {
  * @brief Data common to all 1-Wire controller implementations.
  * @deprecated Use struct w1_controller_data instead.
  */
-#define w1_master_data w1_controller_data
+#define w1_master_data w1_controller_data __DEPRECATED_MACRO
 
 /**
  * @brief Reset the 1-Wire bus to prepare peripherals for communication.
@@ -176,7 +176,7 @@ typedef size_t (*w1_get_peripheral_count_t)(const struct device *dev);
  * @brief Get the number of peripherals on the bus.
  * @deprecated Use w1_get_peripheral_count_t instead.
  */
-typedef w1_get_peripheral_count_t w1_get_slave_count_t;
+typedef w1_get_peripheral_count_t w1_get_slave_count_t __deprecated;
 
 /**
  * @brief Configure parameters of the 1-Wire controller.
@@ -423,7 +423,7 @@ static inline size_t z_impl_w1_get_peripheral_count(const struct device *dev)
  * @return Positive number of connected 1-Wire peripherals on success, negative errno value
  * on failure.
  */
-__syscall size_t w1_get_slave_count(const struct device *dev);
+__deprecated __syscall size_t w1_get_slave_count(const struct device *dev);
 
 static inline size_t z_impl_w1_get_slave_count(const struct device *dev)
 {
@@ -583,7 +583,7 @@ struct w1_peripheral_config {
  * @brief Node specific 1-wire configuration struct.
  * @deprecated Use struct w1_peripheral_config instead.
  */
-#define w1_slave_config w1_peripheral_config
+#define w1_slave_config w1_peripheral_config __DEPRECATED_MACRO
 
 /**
  * @brief Define the application callback handler function signature
