@@ -76,8 +76,12 @@ static const cy_stc_ble_config_t psoc6_bless_config = {
 	.hw = &psoc6_bless_hw_config,
 };
 
-static void psoc6_bless_rx_thread(void *, void *, void *)
+static void psoc6_bless_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		k_sem_take(&psoc6_bless_rx_sem, K_MSEC(BLE_THREAD_SEM_TMOUT_MS));
 		Cy_BLE_ProcessEvents();
