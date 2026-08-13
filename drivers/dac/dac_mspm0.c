@@ -75,9 +75,9 @@ static int dac_mspm0_channel_setup(const struct device *dev,
 	 * and the external DAC_OUT pin. HW does not allow separate control.
 	 */
 	if (channel_cfg->internal) {
-		DL_DAC12_enableOutputPin(regs);
-	} else {
 		DL_DAC12_disableOutputPin(regs);
+	} else {
+		DL_DAC12_enableOutputPin(regs);
 	}
 
 	DL_DAC12_enable(regs);
