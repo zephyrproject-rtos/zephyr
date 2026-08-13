@@ -95,6 +95,36 @@ irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 					   parameter, flags);
 }
 
+/*
+ * Direct interrupts are optional; only architectures selecting
+ * CONFIG_ARCH_HAS_DIRECT_INTERRUPTS define the ARCH_*_DIRECT_* hooks used
+ * below. Without these fallbacks the undefined function-like macros survive
+ * preprocessing and misparse as K&R function definitions, which reports a
+ * missing return type rather than the missing feature.
+ *
+ * Only the two API entry points are stubbed: the HEADER/FOOTER/PM hooks are
+ * reachable solely from inside a direct ISR body, so the assertion on
+ * ARCH_ISR_DIRECT_DECLARE() already covers them, and RX defines the
+ * HEADER/FOOTER hooks for its internal ISR accounting without supporting
+ * direct interrupts, so stubbing those would collide.
+ *
+ * The guard cannot test the hooks themselves: the arch-level irq.h headers
+ * include this file before defining them. Doxygen is kept out so that the
+ * documented stubs in arch_interface.h remain the only visible definitions.
+ */
+#if !defined(CONFIG_ARCH_HAS_DIRECT_INTERRUPTS) && !defined(__DOXYGEN__)
+
+#define Z_ISR_DIRECT_UNSUPPORTED \
+	BUILD_ASSERT(0, "direct interrupts are not supported by this architecture")
+
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
+	Z_ISR_DIRECT_UNSUPPORTED
+#define ARCH_ISR_DIRECT_DECLARE(name) \
+	Z_ISR_DIRECT_UNSUPPORTED; \
+	int name(void)
+
+#endif /* !CONFIG_ARCH_HAS_DIRECT_INTERRUPTS && !__DOXYGEN__ */
+
 /**
  * @brief Initialize a 'direct' interrupt handler.
  *
