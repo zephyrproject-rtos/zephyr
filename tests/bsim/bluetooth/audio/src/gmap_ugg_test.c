@@ -187,26 +187,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
-
-	LOG_INF("Started stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	}
+	bap_common_stream_started_cb(stream);
 
 	k_sem_give(&sem_stream_started);
 }
@@ -1258,12 +1239,6 @@ static int test_gmap_ugg_broadcast_ac(const struct gmap_broadcast_ac_param *para
 	if (err != 0) {
 		FAIL("Failed to create broadcast source: %d\n", err);
 		return -ENOEXEC;
-	}
-
-	for (size_t i = 0U; i < param->stream_cnt; i++) {
-		struct audio_test_stream *test_stream = &broadcast_streams[i];
-
-		test_stream->tx_sdu_size = create_param.qos->sdu;
 	}
 
 	broadcast_audio_start(broadcast_source, adv);

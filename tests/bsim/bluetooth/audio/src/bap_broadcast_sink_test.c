@@ -581,15 +581,11 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
 	struct bt_conn *ep_conn;
 	int err;
 
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
+	bap_common_stream_started_cb(stream);
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {

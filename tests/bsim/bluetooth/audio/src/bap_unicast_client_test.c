@@ -105,11 +105,7 @@ static void stream_codec_configured(struct bt_bap_stream *stream,
 
 static void stream_qos_configured(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
 	LOG_INF("QoS set stream %p", stream);
-
-	test_stream->tx_sdu_size = stream->qos->sdu;
 
 	atomic_inc(&flag_stream_qos_configured);
 }
@@ -123,17 +119,7 @@ static void stream_enabled(struct bt_bap_stream *stream)
 
 static void stream_started(struct bt_bap_stream *stream)
 {
-	LOG_INF("Started stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	}
+	bap_common_stream_started_cb(stream);
 
 	SET_FLAG(flag_stream_started);
 }

@@ -180,13 +180,11 @@ static void validate_stream_codec_cfg(const struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
 	struct bt_bap_ep_info info;
 	struct bt_conn *ep_conn;
 	int err;
 
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
+	bap_common_stream_started_cb(stream);
 
 	err = bt_bap_ep_get_info(stream->ep, &info);
 	if (err != 0) {
@@ -222,12 +220,6 @@ static void stream_started_cb(struct bt_bap_stream *stream)
 	ep_conn = bt_bap_ep_get_conn(stream->ep);
 	if (ep_conn != NULL) {
 		FAIL("Invalid conn from endpoint: %p", ep_conn);
-		return;
-	}
-
-	err = bap_stream_tx_register(stream);
-	if (err != 0) {
-		FAIL("Failed to register stream %p for TX: %d\n", stream, err);
 		return;
 	}
 
@@ -318,12 +310,6 @@ static int setup_broadcast_source(struct bt_bap_broadcast_source **source, bool 
 	if (err != 0) {
 		LOG_ERR("Unable to create broadcast source: %d", err);
 		return err;
-	}
-
-	for (size_t i = 0U; i < stream_cnt; i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = preset_16_1_1.qos.sdu;
 	}
 
 	return 0;
@@ -426,12 +412,6 @@ static void test_broadcast_source_reconfig(struct bt_bap_broadcast_source *sourc
 	if (err != 0) {
 		FAIL("Unable to reconfigure broadcast source: %d\n", err);
 		return;
-	}
-
-	for (size_t i = 0U; i < stream_cnt; i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = preset_16_1_1.qos.sdu;
 	}
 
 	/* Update the BASE */

@@ -89,26 +89,9 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+	bap_common_stream_started_cb(stream);
 
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
-
-	LOG_INF("Started stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	} else if (bap_stream_rx_can_recv(stream)) {
+	if (bap_stream_rx_can_recv(stream)) {
 		expect_rx = true;
 	}
 

@@ -27,6 +27,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
+#include "bap_common.h"
 #include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
@@ -66,19 +67,7 @@ static struct bt_le_ext_adv *adv;
 
 static void started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	int err;
-
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-
-	LOG_INF("Stream %p started", stream);
-
-	err = bap_stream_tx_register(stream);
-	if (err != 0) {
-		FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-		return;
-	}
+	bap_common_stream_started_cb(stream);
 
 	k_sem_give(&sem_started);
 }
