@@ -4768,7 +4768,7 @@ Networking:
   tests:
     - net.http
 
-"Networking: LWM2M":
+"Networking: LwM2M":
   status: maintained
   maintainers:
     - rlubos
@@ -4779,7 +4779,7 @@ Networking:
     - tests/net/lib/lwm2m/
     - subsys/net/lib/lwm2m/
   labels:
-    - "area: LWM2M"
+    - "area: LwM2M"
   tests:
     - net.lwm2m
     - sample.net.lwm2m_client
