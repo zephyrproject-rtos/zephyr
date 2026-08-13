@@ -56,6 +56,10 @@
 #define STM32_DMA_PRIORITY_HIGH			STM32_DMA_CH_CFG_PRIORITY(2)
 #define STM32_DMA_PRIORITY_VERY_HIGH		STM32_DMA_CH_CFG_PRIORITY(3)
 
+/** DMA  double buffer mode config on bit 18 (mirrors DMA_SxCR DBM) */
+#define STM32_DMA_CH_CFG_DOUBLE_BUFFER(val)	((val & 0x1) << 18)
+#define STM32_DMA_MODE_DOUBLE_BUFFER		STM32_DMA_CH_CFG_DOUBLE_BUFFER(1)
+
 /** DMA  FIFO threshold feature */
 #define STM32_DMA_FIFO_1_4			0U
 #define STM32_DMA_FIFO_HALF			1U

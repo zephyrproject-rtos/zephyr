@@ -34,6 +34,16 @@ config DMA_STM32_V1
 	help
 	  Enable DMA V1 support.
 
+config DMA_STM32_DOUBLE_BUFFER
+	bool "STM32 DMA hardware double buffer mode"
+	depends on DMA_STM32_V1
+	help
+	  Let a cyclic transfer ping-pong between two buffers in hardware, so
+	  that no buffer has to be re-armed from an interrupt. Clients request
+	  it by passing the second buffer as a second block in the transfer
+	  configuration. When this option is disabled a second block is
+	  ignored, which is the historical behaviour.
+
 config DMA_STM32_V2
 	bool
 	default y

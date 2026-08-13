@@ -61,6 +61,8 @@
 /* macros for channel-config */
 /* enable circular buffer */
 #define STM32_DMA_CONFIG_CYCLIC(config)                 ((config >> 5) & 0x1)
+/* enable hardware double buffer mode (stream-based DMA only) */
+#define STM32_DMA_CONFIG_DOUBLE_BUFFER(config)          ((config >> 18) & 0x1)
 /* direction defined on bits 6-7 */
 /* 0 -> MEM_TO_MEM, 1 -> MEM_TO_PERIPH, 2 -> PERIPH_TO_MEM */
 #define STM32_DMA_CONFIG_DIRECTION(config)		((config >> 6) & 0x3)
