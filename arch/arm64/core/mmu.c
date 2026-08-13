@@ -1776,10 +1776,13 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	uintptr_t virt = far;
 	uint64_t *pte, desc;
 	uintptr_t phys;
+	uint64_t ec = GET_ESR_EC(esr);
 
 	/* filter relevant exceptions */
-	switch (GET_ESR_EC(esr)) {
+	switch (ec) {
+	case 0x20: /* insn abort from lower EL */
 	case 0x21: /* insn abort from current EL */
+	case 0x24: /* data abort from lower EL */
 	case 0x25: /* data abort from current EL */
 		break;
 	default:
@@ -1794,6 +1797,51 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	}
 
 	virt = ROUND_DOWN(virt, CONFIG_MMU_PAGE_SIZE);
+
+	/*
+	 * Fault status codes for Data aborts (DFSC):
+	 *  0b0010LL	Access flag fault
+	 *  0b0011LL	Permission fault
+	 */
+	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
+	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
+
+#ifdef CONFIG_USERSPACE
+	if (ec == 0x20 || ec == 0x24) {
+		/*
+		 * An abort from EL0 was raised against the faulting thread's
+		 * own (domain) page tables, so that is where the access must
+		 * be validated: unless the leaf entry there grants EL0 the
+		 * access it attempted, the fault is genuine and the thread
+		 * must not get the page paged in, dirtied or LRU-refreshed on
+		 * its behalf.
+		 *
+		 * Take xlat_lock: sync_domains() may free domain subtables
+		 * on another CPU.
+		 */
+		k_spinlock_key_t key = k_spin_lock(&xlat_lock);
+		uint64_t *upte = get_pte_location(_current->arch.ptables, virt);
+		uint64_t udesc = upte ? *upte : 0;
+
+		k_spin_unlock(&xlat_lock, key);
+
+		if (!upte || (udesc & PTE_BLOCK_DESC_AP_ELx) == 0) {
+			/* no EL0 access at all */
+			return false;
+		}
+		if (ec == 0x20 && (udesc & PTE_BLOCK_DESC_UXN) != 0) {
+			/* page is not executable from EL0 */
+			return false;
+		}
+		if (ec == 0x24 && write && (udesc & PTE_SW_WRITABLE) == 0) {
+			/*
+			 * Read-only for EL0: the dirty path below judges
+			 * writability from the kernel entry.
+			 */
+			return false;
+		}
+	}
+#endif
 
 	pte = get_pte_location(&kernel_ptables, virt);
 	if (!pte) {
@@ -1816,13 +1864,7 @@ bool z_arm64_do_demand_paging(struct arch_esf *esf, uint64_t esr, uint64_t far)
 	 *    RO flag marking the page dirty.
 	 *
 	 * We bail out on anything else.
-	 *
-	 * Fault status codes for Data aborts (DFSC):
-	 *  0b0010LL	Access flag fault
-	 *  0b0011LL	Permission fault
 	 */
-	uint32_t dfsc = GET_ESR_ISS(esr) & GENMASK(5, 0);
-	bool write = (GET_ESR_ISS(esr) & BIT(6)) != 0; /* WnR */
 
 	if (dfsc == (0b001000 | XLAT_LAST_LEVEL) &&
 	    (desc & PTE_BLOCK_DESC_AF) == 0) {
