@@ -73,7 +73,7 @@ struct spi_mchp_dev_data {
 /*Wait for synchronization*/
 static inline void spi_wait_sync(const struct mchp_spi_reg_config *spi_reg_cfg, uint32_t sync_flag)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	if (WAIT_FOR(((spi->SERCOM_SYNCBUSY & sync_flag) == 0), TIMEOUT_VALUE_US,
 		     k_busy_wait(DELAY_US)) == false) {
@@ -85,7 +85,7 @@ static inline void spi_wait_sync(const struct mchp_spi_reg_config *spi_reg_cfg, 
 static void spi_enable(const struct mchp_spi_reg_config *spi_reg_cfg, spi_operation_t op)
 {
 	sercom_spi_registers_t *spi =
-		SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_GET(op) == SPI_OP_MODE_SLAVE);
+		SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_GET(op) == SPI_OP_MODE_PERIPHERAL);
 
 	spi->SERCOM_CTRLA |= SERCOM_SPI_CTRLA_ENABLE_Msk;
 	spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_ENABLE_Msk);
@@ -94,7 +94,7 @@ static void spi_enable(const struct mchp_spi_reg_config *spi_reg_cfg, spi_operat
 /*Disable the SPI peripheral*/
 static void spi_disable(const struct mchp_spi_reg_config *spi_reg_cfg)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	spi->SERCOM_CTRLA &= ~SERCOM_SPI_CTRLA_ENABLE_Msk;
 	spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_ENABLE_Msk);
@@ -109,7 +109,7 @@ static void spi_set_baudrate(const struct mchp_spi_reg_config *spi_reg_cfg,
 	/* Use the requested or next highest possible frequency */
 	uint32_t baud_value = (clk_freq_hz / divisor) - 1;
 
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	if ((clk_freq_hz % divisor) >= (divisor / 2U)) {
 		/* Round up the baud_value to ensures SPI clock is as close as possible to
@@ -126,31 +126,32 @@ static void spi_set_baudrate(const struct mchp_spi_reg_config *spi_reg_cfg,
 /*Write Data into DATA register*/
 static inline void spi_write_data(const struct mchp_spi_reg_config *spi_reg_cfg, uint8_t data)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	spi->SERCOM_DATA = data;
 }
 
-/*Read Data from the SPI MASTER DATA register*/
+/*Read Data from the SPI controller DATA register*/
 static inline uint8_t spi_read_data(const struct mchp_spi_reg_config *spi_reg_cfg)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	return (uint8_t)spi->SERCOM_DATA;
 }
 
 /*Return true if data register empty flag is set*/
-static inline bool spi_slave_is_data_reg_empty(const struct mchp_spi_reg_config *spi_reg_cfg)
+static inline bool spi_peripheral_is_data_reg_empty(const struct mchp_spi_reg_config *spi_reg_cfg)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_SLAVE);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_PERIPHERAL);
 
 	return (spi->SERCOM_INTFLAG & SERCOM_SPI_INTFLAG_DRE_Msk) == SERCOM_SPI_INTFLAG_DRE_Msk;
 }
 
 /*Write Data into DATA register*/
-static inline void spi_slave_write_data(const struct mchp_spi_reg_config *spi_reg_cfg, uint8_t data)
+static inline void spi_peripheral_write_data(const struct mchp_spi_reg_config *spi_reg_cfg,
+					     uint8_t data)
 {
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_SLAVE);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_PERIPHERAL);
 
 	spi->SERCOM_DATA = data;
 }
@@ -159,11 +160,11 @@ static int spi_configure_pinout(const struct mchp_spi_reg_config *spi_reg_cfg,
 				const struct spi_config *config)
 {
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE);
+		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 
 	if ((config->operation & SPI_MODE_LOOP) != 0U) {
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-			LOG_ERR("For slave Loopback mode is not supported");
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+			LOG_ERR("For peripheral Loopback mode is not supported");
 
 			return -ENOTSUP;
 		}
@@ -185,7 +186,7 @@ static void spi_configure_cpol(const struct mchp_spi_reg_config *spi_reg_cfg,
 			       const struct spi_config *config)
 {
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE);
+		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 
 	uint32_t reg = spi->SERCOM_CTRLA;
 
@@ -205,7 +206,7 @@ static void spi_configure_cpha(const struct mchp_spi_reg_config *spi_reg_cfg,
 			       const struct spi_config *config)
 {
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE);
+		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 
 	uint32_t reg = spi->SERCOM_CTRLA;
 
@@ -225,7 +226,7 @@ static void spi_configure_bit_order(const struct mchp_spi_reg_config *spi_reg_cf
 				    const struct spi_config *config)
 {
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE);
+		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 
 	uint32_t reg = spi->SERCOM_CTRLA;
 
@@ -249,7 +250,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	uint32_t clock_rate;
 	bool has_cs = false;
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE);
+		spi_reg_cfg->regs, SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL);
 
 	spi_disable(spi_reg_cfg);
 
@@ -273,22 +274,22 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	/*Enable the Receiver in SPI peripheral*/
 	spi->SERCOM_CTRLB |= SERCOM_SPI_CTRLB_RXEN_Msk;
 	spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_CTRLB_Msk);
-#ifdef CONFIG_SPI_SLAVE
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
-		/* Enable the preload slave data*/
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
+		/* Enable the preload peripheral data*/
 		spi->SERCOM_CTRLB |= SERCOM_SPI_CTRLB_PLOADEN_Msk;
-		/* Enable the slave select detection*/
+		/* Enable the peripheral select detection*/
 		spi->SERCOM_CTRLB |= SERCOM_SPI_CTRLB_SSDE_Msk;
 		spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_CTRLB_Msk);
 		/* Enable the Immediate buffer overflow*/
 		spi->SERCOM_CTRLA |= SERCOM_SPI_CTRLA_IBON_Msk;
-		/*Set the SPI Slave Mode*/
+		/*Set the SPI Peripheral Mode*/
 		spi->SERCOM_CTRLA = (spi->SERCOM_CTRLA & ~SERCOM_SPI_CTRLA_MODE_Msk) |
 				    SERCOM_SPI_CTRLA_MODE_SPI_SLAVE;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 
 #ifdef CONFIG_SPI_MCHP_INTER_CHARACTER_SPACE
 		spi_reg_cfg->regs->SPIM.SERCOM_CTRLC =
@@ -305,7 +306,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 			return -ENOTSUP;
 		}
 
-		/* Clear the MODE bit field and set it to SPI Master mode */
+		/* Clear the MODE bit field and set it to SPI Controller mode */
 		spi->SERCOM_CTRLA = (spi->SERCOM_CTRLA & ~SERCOM_SPI_CTRLA_MODE_Msk) |
 				    SERCOM_SPI_CTRLA_MODE_SPI_MASTER;
 
@@ -319,7 +320,7 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 				return retval;
 			}
 		} else if (cfg->pcfg->states->pin_cnt == SPI_PIN_CNT) {
-			/* Enable Master Slave Select */
+			/* Enable hardware-controlled chip select (MSSEN) */
 			spi->SERCOM_CTRLB |= SERCOM_SPI_CTRLB_MSSEN_Msk;
 			spi_wait_sync(spi_reg_cfg, SERCOM_SPI_SYNCBUSY_CTRLB_Msk);
 		} else {
@@ -369,10 +370,11 @@ static int spi_dma_tx_load(const struct device *dev, const uint8_t *buf, size_t 
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
 	struct spi_mchp_dev_data *data = dev->data;
-	bool is_slave = spi_context_is_slave(&data->ctx);
+	bool is_peripheral = spi_context_is_peripheral(&data->ctx);
 
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, (is_slave ? SPI_OP_MODE_SLAVE : SPI_OP_MODE_MASTER));
+		spi_reg_cfg->regs,
+		(is_peripheral ? SPI_OP_MODE_PERIPHERAL : SPI_OP_MODE_CONTROLLER));
 
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
@@ -415,10 +417,11 @@ static int spi_dma_rx_load(const struct device *dev, uint8_t *buf, size_t len)
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
 	struct spi_mchp_dev_data *data = dev->data;
-	bool is_slave = spi_context_is_slave(&data->ctx);
+	bool is_peripheral = spi_context_is_peripheral(&data->ctx);
 
 	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(
-		spi_reg_cfg->regs, (is_slave ? SPI_OP_MODE_SLAVE : SPI_OP_MODE_MASTER));
+		spi_reg_cfg->regs,
+		(is_peripheral ? SPI_OP_MODE_PERIPHERAL : SPI_OP_MODE_CONTROLLER));
 
 	struct dma_config dma_cfg = {0};
 	struct dma_block_config dma_blk = {0};
@@ -534,7 +537,7 @@ static void spi_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id
 	if (error_code != 0) {
 		dma_stop(cfg->spi_dma.dma_dev, cfg->spi_dma.tx_dma_channel);
 		dma_stop(cfg->spi_dma.dma_dev, cfg->spi_dma.rx_dma_channel);
-		if (spi_context_is_slave(&data->ctx) == false) {
+		if (spi_context_is_peripheral(&data->ctx) == false) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 		spi_context_complete(&data->ctx, dev, -EIO);
@@ -547,7 +550,7 @@ static void spi_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id
 
 	/* Check if more segments need to be transferred */
 	if (spi_dma_select_segment(dev) == false) {
-		if (spi_context_is_slave(&data->ctx) == false) {
+		if (spi_context_is_peripheral(&data->ctx) == false) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 		/* Transmission complete */
@@ -562,7 +565,7 @@ static void spi_dma_rx_done(const struct device *dma_dev, void *arg, uint32_t id
 		/* Stop DMA and terminate the SPI transaction in case of failure */
 		dma_stop(cfg->spi_dma.dma_dev, cfg->spi_dma.tx_dma_channel);
 		dma_stop(cfg->spi_dma.dma_dev, cfg->spi_dma.rx_dma_channel);
-		if (spi_context_is_slave(&data->ctx) == false) {
+		if (spi_context_is_peripheral(&data->ctx) == false) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 		spi_context_complete(&data->ctx, dev, retval);
@@ -598,7 +601,7 @@ static int spi_transceive_interrupt(const struct device *dev, const struct spi_c
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
 	struct spi_mchp_dev_data *const data = dev->data;
 	uint8_t tx_data;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	/* Prepare first byte for transmission */
 	if (spi_context_tx_buf_on(&data->ctx) == true) {
@@ -645,60 +648,61 @@ static int spi_transceive_interrupt(const struct device *dev, const struct spi_c
 	return 0;
 }
 
-#ifdef CONFIG_SPI_SLAVE
-static void spi_slave_write(const struct device *dev)
+#ifdef CONFIG_SPI_PERIPHERAL
+static void spi_peripheral_write(const struct device *dev)
 {
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
 	struct spi_mchp_dev_data *const data = dev->data;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_SLAVE);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_PERIPHERAL);
 
 	/* Prepare initial bytes for transmission */
 	if (spi_context_tx_buf_on(&data->ctx) == true) {
 		while ((spi_context_tx_buf_on(&data->ctx) == true) &&
-		       (spi_slave_is_data_reg_empty(spi_reg_cfg) == true)) {
-			spi_slave_write_data(spi_reg_cfg, *data->ctx.tx_buf);
+		       (spi_peripheral_is_data_reg_empty(spi_reg_cfg) == true)) {
+			spi_peripheral_write_data(spi_reg_cfg, *data->ctx.tx_buf);
 
 			/* Write data byte to the SPI data register */
 			spi_context_update_tx(&data->ctx, 1, 1);
 		}
 	} else {
-		if (spi_slave_is_data_reg_empty(spi_reg_cfg) == true) {
-			spi_slave_write_data(spi_reg_cfg, 0);
+		if (spi_peripheral_is_data_reg_empty(spi_reg_cfg) == true) {
+			spi_peripheral_write_data(spi_reg_cfg, 0);
 		}
 	}
 	/*Enable the Data Register Empty Interrupt*/
 	spi->SERCOM_INTENSET = SERCOM_SPI_INTENSET_DRE_Msk;
 }
 
-static int spi_slave_transceive_interrupt(const struct device *dev, const struct spi_config *config,
-					  const struct spi_buf_set *tx_bufs,
-					  const struct spi_buf_set *rx_bufs)
+static int spi_peripheral_transceive_interrupt(const struct device *dev,
+					       const struct spi_config *config,
+					       const struct spi_buf_set *tx_bufs,
+					       const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
 	int ret = 0;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_SLAVE);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_PERIPHERAL);
 
 	/* Start clean */
 	if (WAIT_FOR(((spi->SERCOM_INTFLAG & SERCOM_SPI_INTFLAG_RXC_Msk) == 0), TIMEOUT_VALUE_US,
 		     (void)spi->SERCOM_DATA) == false) {
-		LOG_ERR("Timeout draining stale RX at slave setup");
+		LOG_ERR("Timeout draining stale RX at peripheral setup");
 	}
 	spi->SERCOM_STATUS = SERCOM_SPI_STATUS_BUFOVF_Msk;
 	spi->SERCOM_INTFLAG = (uint8_t)(SERCOM_SPI_INTFLAG_ERROR_Msk | SERCOM_SPI_INTFLAG_TXC_Msk);
 
 	/* Prepare for transmission */
-	spi_slave_write(dev);
+	spi_peripheral_write(dev);
 
 	/*Enable the Receive Complete Interrupt*/
 	spi->SERCOM_INTENSET = SERCOM_SPI_INTENSET_RXC_Msk;
-	/* Enable slave select line interrupt */
+	/* Enable peripheral select line interrupt */
 	spi->SERCOM_INTENSET = SERCOM_SPI_INTENSET_SSL_Msk;
 
 	return ret;
 }
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 static int spi_transfer(const struct device *dev, const struct spi_config *config,
 			const struct spi_buf_set *tx_bufs, const struct spi_buf_set *rx_bufs,
@@ -725,9 +729,9 @@ static int spi_transfer(const struct device *dev, const struct spi_config *confi
 		return retval;
 	}
 
-#ifdef CONFIG_SPI_SLAVE
-	/* Sync slave mode not supported */
-	if (!asynchronous && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_SLAVE) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	/* Sync peripheral mode not supported */
+	if (!asynchronous && SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_PERIPHERAL) {
 		return -ENOTSUP;
 	}
 #endif
@@ -746,7 +750,7 @@ static int spi_transfer(const struct device *dev, const struct spi_config *confi
 		return retval;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 		spi_context_cs_control(&data->ctx, true);
 	}
 
@@ -762,12 +766,12 @@ static int spi_transfer(const struct device *dev, const struct spi_config *confi
 		}
 #endif
 	} else {
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 			retval = spi_transceive_interrupt(dev, config, tx_bufs, rx_bufs);
 		}
-#ifdef CONFIG_SPI_SLAVE
+#ifdef CONFIG_SPI_PERIPHERAL
 		else {
-			retval = spi_slave_transceive_interrupt(dev, config, tx_bufs, rx_bufs);
+			retval = spi_peripheral_transceive_interrupt(dev, config, tx_bufs, rx_bufs);
 		}
 #endif
 	}
@@ -780,7 +784,7 @@ static int spi_transfer(const struct device *dev, const struct spi_config *confi
 			dma_stop(cfg->spi_dma.dma_dev, cfg->spi_dma.rx_dma_channel);
 		}
 #endif
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 
@@ -793,7 +797,7 @@ static int spi_transfer(const struct device *dev, const struct spi_config *confi
 		/* Sync path: wait for ISR/DMA to signal completion */
 		retval = spi_context_wait_for_completion(&data->ctx);
 
-		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_MASTER) {
+		if (SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) {
 			spi_context_cs_control(&data->ctx, false);
 		}
 
@@ -832,20 +836,20 @@ static int spi_mchp_release(const struct device *dev, const struct spi_config *c
 	return 0;
 }
 
-#ifdef CONFIG_SPI_SLAVE
-static void spi_mchp_isr_slave(const struct device *dev)
+#ifdef CONFIG_SPI_PERIPHERAL
+static void spi_mchp_isr_peripheral(const struct device *dev)
 {
 	struct spi_mchp_dev_data *data = dev->data;
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_SLAVE);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_PERIPHERAL);
 
 	uint8_t intFlag = spi->SERCOM_INTFLAG;
 	spi->SERCOM_INTFLAG = intFlag;
 	uint8_t tx_data = 0U;
 	uint8_t rx_data = 0U;
 
-	/* Handle slave select */
+	/* Handle peripheral select */
 	if ((intFlag & SERCOM_SPI_INTFLAG_SSL_Msk) == SERCOM_SPI_INTFLAG_SSL_Msk) {
 		/* Enable the Transmit Complete Interrupt */
 		spi->SERCOM_INTENSET = SERCOM_SPI_INTENSET_TXC_Msk;
@@ -870,7 +874,7 @@ static void spi_mchp_isr_slave(const struct device *dev)
 	}
 
 	/* Handle transmit data */
-	if (spi_slave_is_data_reg_empty(spi_reg_cfg) == true) {
+	if (spi_peripheral_is_data_reg_empty(spi_reg_cfg) == true) {
 		if (spi_context_tx_on(&data->ctx) == true) {
 			tx_data = *data->ctx.tx_buf;
 			spi_context_update_tx(&data->ctx, 1, 1);
@@ -879,7 +883,7 @@ static void spi_mchp_isr_slave(const struct device *dev)
 			/*Disable DRE interrupt*/
 			spi->SERCOM_INTENCLR = (uint8_t)SERCOM_SPI_INTENCLR_DRE_Msk;
 		}
-		spi_slave_write_data(spi_reg_cfg, tx_data);
+		spi_peripheral_write_data(spi_reg_cfg, tx_data);
 	}
 
 	/* Handle transaction complete */
@@ -889,11 +893,11 @@ static void spi_mchp_isr_slave(const struct device *dev)
 		spi_context_complete(&data->ctx, dev, 0);
 	}
 }
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
-static inline bool spi_mchp_master_handle_overflow(struct spi_mchp_dev_data *data,
-						   const struct device *dev,
-						   sercom_spi_registers_t *spi)
+static inline bool spi_mchp_controller_handle_overflow(struct spi_mchp_dev_data *data,
+						       const struct device *dev,
+						       sercom_spi_registers_t *spi)
 {
 	if ((spi->SERCOM_STATUS & SERCOM_SPI_STATUS_BUFOVF_Msk) == 0U) {
 		return false;
@@ -908,7 +912,7 @@ static inline bool spi_mchp_master_handle_overflow(struct spi_mchp_dev_data *dat
 	return true;
 }
 
-static inline uint8_t spi_mchp_master_next_tx_byte(struct spi_mchp_dev_data *data)
+static inline uint8_t spi_mchp_controller_next_tx_byte(struct spi_mchp_dev_data *data)
 {
 	uint8_t tx_data;
 
@@ -928,12 +932,12 @@ static inline uint8_t spi_mchp_master_next_tx_byte(struct spi_mchp_dev_data *dat
 	return tx_data;
 }
 
-static void spi_mchp_isr_master(const struct device *dev)
+static void spi_mchp_isr_controller(const struct device *dev)
 {
 	struct spi_mchp_dev_data *data = dev->data;
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 
 	uint8_t tx_data = 0U;
 
@@ -952,7 +956,7 @@ static void spi_mchp_isr_master(const struct device *dev)
 	bool receive_needed = rx_ready && rx_on;
 
 	/* 1. Handle buffer overflow error (Early Return) */
-	if (spi_mchp_master_handle_overflow(data, dev, spi)) {
+	if (spi_mchp_controller_handle_overflow(data, dev, spi)) {
 		return;
 	}
 
@@ -985,7 +989,7 @@ static void spi_mchp_isr_master(const struct device *dev)
 
 	/* 3. Handle transmit data */
 	if ((tx_ready == true) && (transmit_needed == true)) {
-		tx_data = spi_mchp_master_next_tx_byte(data);
+		tx_data = spi_mchp_controller_next_tx_byte(data);
 
 		if ((data->dummysize == 0) && (spi_context_tx_on(&data->ctx) != true) &&
 		    (spi_context_rx_on(&data->ctx) != true)) {
@@ -1014,17 +1018,17 @@ static void spi_mchp_isr_master(const struct device *dev)
 
 static void spi_mchp_isr(const struct device *dev)
 {
-#ifdef CONFIG_SPI_SLAVE
+#ifdef CONFIG_SPI_PERIPHERAL
 	struct spi_mchp_dev_data *data = dev->data;
 
-	if (spi_context_is_slave(&data->ctx) == true) {
-		spi_mchp_isr_slave(dev);
+	if (spi_context_is_peripheral(&data->ctx) == true) {
+		spi_mchp_isr_peripheral(dev);
 
 		return;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
-	spi_mchp_isr_master(dev);
+	spi_mchp_isr_controller(dev);
 }
 
 static int spi_mchp_init(const struct device *dev)
@@ -1032,7 +1036,7 @@ static int spi_mchp_init(const struct device *dev)
 	int retval;
 	const struct spi_mchp_dev_config *cfg = dev->config;
 	const struct mchp_spi_reg_config *spi_reg_cfg = &cfg->reg_cfg;
-	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_MASTER);
+	sercom_spi_registers_t *spi = SPI_GET_BASE_ADDR(spi_reg_cfg->regs, SPI_OP_MODE_CONTROLLER);
 	struct spi_mchp_dev_data *const data = dev->data;
 
 	retval = clock_control_on(cfg->spi_clock.clock_dev, cfg->spi_clock.gclk_sys);
