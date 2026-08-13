@@ -659,6 +659,7 @@ shakti	SHAKTI Processor Program
 sharp	Sharp Corporation
 shimafuji	Shimafuji Electric, Inc.
 shiratech	Shiratech Solutions
+shtdo	Shanghai Top Display Optoelectronics Co., Ltd.
 si-en	Si-En Technology Ltd.
 si-linux	Silicon Linux Corporation
 siemens	Siemens AG

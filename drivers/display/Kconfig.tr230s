@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 A Blue Thing In The Cloud SLU
+# SPDX-License-Identifier: Apache-2.0
+
+config TR230S
+	bool "Shanghai TDO TR230S display controller"
+	default y
+	depends on GPIO
+	depends on SPI
+	depends on DT_HAS_SHTDO_TR230S_ENABLED
+	help
+	  Enable the display driver for the Shanghai Top Display
+	  Optoelectronics TR230S SPI-to-RGB display bridge/controller.

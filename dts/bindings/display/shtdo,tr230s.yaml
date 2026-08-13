@@ -1,0 +1,61 @@
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "shtdo,tr230s"
+
+description: |
+  Shanghai Top Display Optoelectronics TR230S SPI-to-RGB display bridge.
+
+  This binding describes the four-wire SPI host interface. The host uses a
+  data/command GPIO to distinguish commands from payload bytes. The WAIT
+  signal is active when the controller can accept a new transaction.
+
+include:
+  - name: spi-device.yaml
+  - name: display-controller.yaml
+
+properties:
+  dc-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Data/command selection GPIO. The inactive logical state selects command
+      bytes and the active logical state selects parameters or pixel data.
+
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Hardware reset GPIO. The active logical state resets TR230S.
+
+  wait-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Controller-ready input. The active logical state means that a new
+      transaction may be transmitted.
+
+  ready-timeout-ms:
+    type: int
+    default: 500
+    description: |
+      Maximum time to wait for the controller-ready signal. A value of zero
+      waits indefinitely.
+
+  reset-pre-delay-ms:
+    type: int
+    default: 0
+    description: Delay before asserting hardware reset.
+
+  reset-pulse-ms:
+    type: int
+    default: 10
+    description: Duration of the active hardware-reset pulse.
+
+  post-reset-delay-ms:
+    type: int
+    default: 0
+    description: Delay after releasing hardware reset.
+
+  default-brightness:
+    type: int
+    default: 50
+    description: Backlight duty percentage restored when blanking is disabled.
