@@ -98,12 +98,14 @@ struct i2s_sam_dev_data {
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
 static const struct device *get_dev_from_dma_channel(uint32_t dma_channel);
-static void dma_rx_callback(const struct device *, void *, uint32_t, int);
-static void dma_tx_callback(const struct device *, void *, uint32_t, int);
-static void rx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
-static void tx_stream_disable(struct stream *, Ssc *const,
-			      const struct device *);
+static void dma_rx_callback(const struct device *dma_dev, void *user_data,
+			    uint32_t channel, int status);
+static void dma_tx_callback(const struct device *dma_dev, void *user_data,
+			    uint32_t channel, int status);
+static void rx_stream_disable(struct stream *stream, Ssc *ssc,
+			      const struct device *dev_dma);
+static void tx_stream_disable(struct stream *stream, Ssc *ssc,
+			      const struct device *dev_dma);
 
 /*
  * Get data from the queue
