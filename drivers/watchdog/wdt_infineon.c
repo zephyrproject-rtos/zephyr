@@ -241,7 +241,12 @@ static struct ifx_cat1_wdt_data wdt_data;
 #else
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
 #endif
-#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2UL << IFX_DETERMINE_MATCH_BITS(bits))
+/* Shift in 64-bit: on a 32-bit A-type counter ignore_bits == 0 yields a match
+ * position of 31, and 2 << 31 overflows a 32-bit unsigned long to 0, which then
+ * turns the wrap modulo below into a divide-by-zero. 2ULL keeps the full
+ * 2^32 wrap count representable.
+ */
+#define IFX_GET_COUNT_FROM_MATCH_BITS(bits) (2ULL << IFX_DETERMINE_MATCH_BITS(bits))
 #endif
 
 __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t ignore_bits,
@@ -264,7 +269,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 #else
 	ARG_UNUSED(dev_data);
 
-	uint32_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
+	uint64_t wrap_count_for_ignore_bits = (IFX_GET_COUNT_FROM_MATCH_BITS(ignore_bits));
 	/* Promote to 64-bit for the multiply: on the 32-bit MXS40SSRSS WDT
 	 * timeout_ms can reach hundreds of millions, and timeout_ms * ILO_FREQ
 	 * overflows a uint32_t well before the /1000 brings it back in range.
@@ -272,7 +277,8 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 	uint32_t timeout_count =
 		(uint32_t)(((uint64_t)timeout_ms * CY_SYSCLK_ILO_FREQ) / 1000ULL);
 	/* handle multiple possible wraps of WDT counter */
-	timeout_count = ((timeout_count + Cy_WDT_GetCount()) % wrap_count_for_ignore_bits);
+	timeout_count = (uint32_t)(((uint64_t)timeout_count + Cy_WDT_GetCount()) %
+				  wrap_count_for_ignore_bits);
 	return timeout_count;
 #endif
 }
