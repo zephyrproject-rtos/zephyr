@@ -317,9 +317,18 @@ static inline int chan_to_freq(int chan)
 	return freq;
 }
 
-enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_band band)
+enum wifi_frequency_bands wpas_freq_to_zephyr_band(int freq)
 {
-	switch (band) {
+	if (freq <= 0) {
+		return WIFI_FREQ_BAND_UNKNOWN;
+	}
+
+	/* The supplicant lumps 6 GHz in with 5 GHz, so ask separately. */
+	if (is_6ghz_freq(freq)) {
+		return WIFI_FREQ_BAND_6_GHZ;
+	}
+
+	switch (wpas_freq_to_band(freq)) {
 	case BAND_2_4_GHZ:
 		return WIFI_FREQ_BAND_2_4_GHZ;
 	case BAND_5_GHZ:
@@ -1597,7 +1606,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED) {
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
-		u8 channel;
+		u8 channel = 0;
 		struct signal_poll_resp signal_poll;
 		u8 *_ssid;
 		size_t ssid_len;
@@ -1617,7 +1626,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 		key_mgmt = ssid->key_mgmt;
 		sae_pwe = wpa_s->conf->sae_pwe;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
-		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
+		status->band = wpas_freq_to_zephyr_band(wpa_s->assoc_freq);
 		status->wpa3_ent_type = wpas_key_mgmt_to_zephyr_wpa3_ent(key_mgmt);
 		status->security = wpas_key_mgmt_to_zephyr(0, ssid, key_mgmt, proto, sae_pwe);
 #ifdef CONFIG_WEP
@@ -1639,7 +1648,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 		 * does when associating.
 		 */
 		status->mfp = get_mfp(wpas_get_ssid_pmf(wpa_s, ssid));
-		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
+		if (ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel) == NUM_HOSTAPD_MODES) {
+			/* The frequency is not in any known band, so the
+			 * channel was left untouched.
+			 */
+			channel = 0;
+		}
 		status->channel = channel;
 
 		if (ssid_len == 0) {
