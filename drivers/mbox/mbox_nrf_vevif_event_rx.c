@@ -24,14 +24,14 @@ struct mbox_vevif_event_rx_cbs {
 	mbox_callback_t cb[EVENTS_IDX_MAX - EVENTS_IDX_MIN + 1U];
 	void *user_data[EVENTS_IDX_MAX - EVENTS_IDX_MIN + 1U];
 	uint32_t enabled_mask;
-#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 	bool pending_irq;
 #endif
 };
 
 struct mbox_vevif_event_rx_conf {
 	NRF_VPR_Type *vpr;
-#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 	IRQn_Type irqn;
 #endif
 	uint32_t events_mask;
@@ -44,7 +44,7 @@ static void trigger_callback(const struct device *dev, struct mbox_vevif_event_r
 {
 	uint8_t idx = id - EVENTS_IDX_MIN;
 
-#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 	if (cbs->enabled_mask == 0) {
 		cbs->pending_irq = true;
 		return;
@@ -122,7 +122,7 @@ static int vevif_event_rx_set_enabled(const struct device *dev, uint32_t id, boo
 		}
 
 		cbs->enabled_mask |= BIT(id);
-#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 		if (cbs->pending_irq) {
 			NRFX_IRQ_PENDING_SET(config->irqn);
 		}
@@ -135,7 +135,7 @@ static int vevif_event_rx_set_enabled(const struct device *dev, uint32_t id, boo
 		}
 
 		cbs->enabled_mask &= ~BIT(id);
-#if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if !defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 		nrfy_vpr_int_disable(config->vpr, BIT(id));
 #endif
 	}
@@ -155,7 +155,7 @@ static int vevif_event_rx_init(const struct device *dev)
 
 	config->irq_connect();
 
-#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16)
+#if defined(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE)
 	/* Only one event is used anyway so all can be enabled. Interrupt is enabled
 	 * here because workaround works in a way that event triggered when interrupts
 	 * are enabled would be lost. Interrupts are enabled from the start and if
@@ -188,7 +188,7 @@ static int vevif_event_rx_init(const struct device *dev)
 		.events = DT_INST_PROP(inst, nordic_events),                                       \
 		.events_mask = DT_INST_PROP(inst, nordic_events_mask),                             \
 		.irq_connect = irq_connect##inst,                                                  \
-		IF_ENABLED(CONFIG_MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16,                          \
+		IF_ENABLED(CONFIG_MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE,                           \
 				(.irqn = DT_IRQN(DT_DRV_INST(inst))))                              \
 	};                                                                                         \
                                                                                                    \
