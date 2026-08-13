@@ -211,6 +211,25 @@ static void demux_init(void)
 	zassert_equal(err, 0);
 }
 
+/**
+ * @brief Verify demux initialization rejects too many major IDs.
+ *
+ * @details
+ * The STMESP demultiplexer supports a bounded number of major (source) IDs.
+ * Validate that initialization fails when the configured ID count exceeds the
+ * supported limit and succeeds when it is within the limit.
+ *
+ * Test steps:
+ * - Initialize the demux with 9 major IDs (above the limit of 8).
+ * - Initialize the demux with exactly 8 major IDs.
+ *
+ * Expected result:
+ * - Initialization with too many IDs returns -EINVAL.
+ * - Initialization within the limit returns 0.
+ *
+ * @see log_frontend_stmesp_demux_init()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_init)
 {
 	/* Ids limit is 8 */
@@ -227,6 +246,27 @@ ZTEST(log_frontend_stmesp_demux_test, test_init)
 	zassert_equal(err, 0);
 }
 
+/**
+ * @brief Verify basic packet write and claim through the demultiplexer.
+ *
+ * @details
+ * Validate the fundamental demux flow: packets written for several major and
+ * channel IDs are reassembled and can be claimed back in order with their
+ * original timestamp, length and payload, and that no packets are dropped.
+ *
+ * Test steps:
+ * - Initialize the demux.
+ * - Write three complete packets for different major/channel IDs.
+ * - Claim each packet and verify its contents.
+ * - Confirm the demux is empty and the dropped counter is zero.
+ *
+ * Expected result:
+ * - Each claimed packet matches the written timestamp, length and data.
+ * - No packets are reported as dropped.
+ *
+ * @see log_frontend_stmesp_demux_claim()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_basic)
 {
 	uint16_t m = M_ID0;
@@ -252,6 +292,28 @@ ZTEST(log_frontend_stmesp_demux_test, test_basic)
 	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 }
 
+/**
+ * @brief Verify the demux buffer overwrites oldest packets when full.
+ *
+ * @details
+ * When the demux buffer is saturated and a new packet is written, the oldest
+ * stored packets are dropped to make room. Validate that the dropped counter is
+ * updated accordingly and that the remaining packets can still be claimed in
+ * order.
+ *
+ * Test steps:
+ * - Initialize the demux and fill the buffer to capacity.
+ * - Write one more packet to force an overwrite.
+ * - Read the dropped count and claim the surviving packets.
+ *
+ * Expected result:
+ * - No drops occur until the buffer is full.
+ * - At least one packet is reported dropped after overflow.
+ * - The remaining packets are claimed in order.
+ *
+ * @see log_frontend_stmesp_demux_get_dropped()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_overwrite)
 {
 	uint64_t ts = 0;
@@ -280,6 +342,26 @@ ZTEST(log_frontend_stmesp_demux_test, test_overwrite)
 	DEMUX_EMPTY();
 }
 
+/**
+ * @brief Verify interleaved packets from different channels are demuxed.
+ *
+ * @details
+ * Multiple packets that share a major ID but use different channels can be
+ * written in an interleaved fashion. Validate that the demultiplexer keeps the
+ * per-channel state separate and reassembles each packet correctly.
+ *
+ * Test steps:
+ * - Initialize the demux.
+ * - Start two packets on two channels and write their data interleaved.
+ * - End both packets and claim them.
+ *
+ * Expected result:
+ * - Both packets are claimed with their correct timestamp, length and payload.
+ * - The demux is empty afterwards.
+ *
+ * @see log_frontend_stmesp_demux_packet_start()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_mix)
 {
 	uint16_t m_id = M_ID0;
@@ -315,6 +397,28 @@ ZTEST(log_frontend_stmesp_demux_test, test_mix)
 	DEMUX_EMPTY();
 }
 
+/**
+ * @brief Verify the demux drops packets when too many are active at once.
+ *
+ * @details
+ * The demultiplexer can track only a limited number of concurrently open
+ * (active) packets. Validate that starting more active packets than supported
+ * results in a drop, and that once an active packet is completed a new one can
+ * be started again.
+ *
+ * Test steps:
+ * - Initialize the demux and open the maximum number of active packets.
+ * - Attempt to start one more packet and verify it is dropped.
+ * - Complete an active packet, then start a new one successfully.
+ *
+ * Expected result:
+ * - Starting beyond the active-packet limit returns -ENOMEM and increments the
+ *   dropped counter.
+ * - After completing a packet, a new packet can be started with no drops.
+ *
+ * @see log_frontend_stmesp_demux_packet_start()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_drop_too_many_active)
 {
 	BUILD_ASSERT(CONFIG_LOG_FRONTEND_STMESP_DEMUX_ACTIVE_PACKETS == 3,
@@ -356,6 +460,26 @@ ZTEST(log_frontend_stmesp_demux_test, test_drop_too_many_active)
 	zassert_equal(log_frontend_stmesp_demux_get_dropped(), 0);
 }
 
+/**
+ * @brief Verify reporting of maximum demux buffer utilization.
+ *
+ * @details
+ * When utilization tracking is enabled the demux reports the peak number of
+ * bytes used in its buffer. Validate that the reported value reflects the size
+ * of stored packets, and that the feature reports unsupported when disabled.
+ *
+ * Test steps:
+ * - Query max utilization with the feature disabled and expect -ENOTSUP.
+ * - With the feature enabled, initialize the demux and write one packet.
+ * - Query max utilization again.
+ *
+ * Expected result:
+ * - Returns -ENOTSUP when utilization tracking is not enabled.
+ * - Reports zero before any packet and the expected packet size afterwards.
+ *
+ * @see log_frontend_stmesp_demux_max_utilization()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_max_utilization)
 {
 	int utilization;
@@ -379,6 +503,28 @@ ZTEST(log_frontend_stmesp_demux_test, test_max_utilization)
 	zassert_equal(utilization, exp_utilization);
 }
 
+/**
+ * @brief Verify trace-point packets are demultiplexed correctly.
+ *
+ * @details
+ * Besides log packets, the STMESP frontend carries trace points, optionally
+ * with an attached data word, identified by a dedicated channel base. Validate
+ * that trace points written for various major/channel IDs are claimed back with
+ * the correct ID, timestamp and optional data.
+ *
+ * Test steps:
+ * - Initialize the demux.
+ * - Write several trace points, some with and some without data.
+ * - Claim each trace point and verify its fields.
+ *
+ * Expected result:
+ * - Each trace point is claimed with the expected major, ID, timestamp and
+ *   data-present flag/value.
+ * - The demux is empty afterwards.
+ *
+ * @see log_frontend_stmesp_demux_claim()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_trace_point)
 {
 	uint16_t m_id0 = M_ID0;
@@ -422,6 +568,26 @@ ZTEST(log_frontend_stmesp_demux_test, test_trace_point)
 	DEMUX_EMPTY();
 }
 
+/**
+ * @brief Verify hardware-event packets are demultiplexed correctly.
+ *
+ * @details
+ * The STMESP frontend can carry hardware events written on the dedicated HW
+ * major channel. Validate that hardware events are reassembled and claimed back
+ * with the correct event value and timestamp.
+ *
+ * Test steps:
+ * - Initialize the demux.
+ * - Write two hardware events with distinct values and timestamps.
+ * - Claim each event and verify its fields.
+ *
+ * Expected result:
+ * - Each hardware event is claimed with the expected value and timestamp.
+ * - The demux is empty afterwards.
+ *
+ * @see log_frontend_stmesp_demux_claim()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_hw_event)
 {
 	uint64_t t0 = 0x1122334455;
@@ -442,6 +608,27 @@ ZTEST(log_frontend_stmesp_demux_test, test_hw_event)
 	DEMUX_EMPTY();
 }
 
+/**
+ * @brief Verify demux reset drops active packets but keeps completed ones.
+ *
+ * @details
+ * Resetting the demultiplexer discards any packets that are still being
+ * assembled while preserving packets that were already completed. Validate that
+ * the dropped counter reflects the abandoned active packets and that completed
+ * packets remain claimable.
+ *
+ * Test steps:
+ * - Initialize the demux and open several active packets, completing one.
+ * - Reset the demux.
+ * - Read the dropped count and claim the surviving completed packet.
+ *
+ * Expected result:
+ * - The dropped count equals the number of active (incomplete) packets.
+ * - The completed packet is still claimable after reset.
+ *
+ * @see log_frontend_stmesp_demux_reset()
+ * @ingroup logging_tests
+ */
 ZTEST(log_frontend_stmesp_demux_test, test_reset)
 {
 	uint16_t m_id0 = M_ID0;
