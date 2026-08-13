@@ -53,6 +53,14 @@ config SDHC_SCATTER_GATHER_TRANSFER
 	help
 	  Enable SDHC scatter-gather API.
 
+config SDHC_STANDARD
+	bool
+	help
+	  Selected by host controller driver if hardware is compliant with
+	  the standard of SD Host Controller Simplified Specification.
+	  With sdhc_standard_host structure variable initialized, the host
+	  controller driver can reuse SDHC standard host driver APIs.
+
 config SDHC_SUPPORTS_SCATTER_GATHER_TRANSFER
 	bool
 	help
