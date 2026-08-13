@@ -26,12 +26,9 @@ static struct k_sem sync_sema;
 static struct k_sem dummy_sema;
 static struct k_thread *main_thread;
 
-/**
- * @brief Common function using like a handler for workqueue tests
- * API call in it means successful execution of that function
- *
- * @param unused of type k_work to make handler function accepted
- * by k_work_init
+/* Common handler for the user workqueue tests; the k_sem_give() call in it
+ * signals successful execution of the handler. The unused parameter keeps the
+ * signature accepted by k_work_user_init().
  */
 static void common_work_handler(struct k_work_user *unused)
 {
@@ -45,16 +42,9 @@ static void test_k_work_user_init(void)
 	zassert_equal(local.flags, 0);
 }
 
-/**
- * @brief Test k_work_user_submit_to_queue API
- *
- * @details Function k_work_user_submit_to_queue() will return
- * -EBUSY: if the work item was already in some workqueue and
- * -ENOMEM: if no memory for thread resource pool allocation.
- * Create two situation to meet the error return value.
- *
- * @see k_work_user_submit_to_queue()
- * @ingroup kernel_workqueue_tests
+/* Exercise the k_work_user_submit_to_queue() error paths: resubmitting an
+ * item that is still pending must not queue it twice, and submission fails
+ * once the thread resource pool is exhausted.
  */
 static void test_k_work_user_submit_to_queue_fail(void)
 {
@@ -121,24 +111,14 @@ static void twork_submit(const void *data)
 	}
 }
 
-/**
- * @brief Test user mode work queue start before submit
- *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_work_user_queue_start()
- */
+/* Start the user-mode work queue; must happen before any submission. */
 static void test_work_user_queue_start_before_submit(void)
 {
 	k_work_user_queue_start(&user_workq, user_tstack, STACK_SIZE,
 				CONFIG_MAIN_THREAD_PRIORITY, "user.wq");
 }
 
-/**
- * @brief Setup object permissions before test_user_workq_granted_access()
- *
- * @ingroup kernel_workqueue_tests
- */
+/* Set up object permissions for test_user_workq_granted_access(). */
 static void test_user_workq_granted_access_setup(void)
 {
 	/* Subsequent test cases will have access to the dummy_sema,
@@ -147,25 +127,16 @@ static void test_user_workq_granted_access_setup(void)
 	k_object_access_grant(&dummy_sema, main_thread);
 }
 
-/**
- * @brief Test user mode grant workqueue permissions
- *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_work_q_object_access_grant()
+/* Grant the user work queue thread access to the semaphore its handler
+ * uses, showing permissions can be extended to the work queue thread.
  */
 static void test_user_workq_granted_access(void)
 {
 	k_object_access_grant(&dummy_sema, &user_workq.thread);
 }
 
-/**
- * @brief Test work submission to work queue (user mode)
- *
- * @ingroup kernel_workqueue_tests
- *
- * @see k_work_init(), k_work_is_pending(), k_work_submit_to_queue(),
- * k_work_submit()
+/* Initialize and submit the user work items and wait until every handler
+ * has signalled completion.
  */
 static void test_user_work_submit_to_queue_thread(void)
 {
@@ -191,6 +162,36 @@ void *workq_setup(void)
 	return NULL;
 }
 
+/**
+ * @brief Verify a user-mode work queue runs work submitted from user mode.
+ *
+ * @details
+ * A user-mode work queue is started, the user thread is granted access to
+ * the objects it needs, and user work items are initialized, submitted and
+ * run to completion. The submission error paths are exercised as well: an
+ * item still pending on the queue cannot be queued twice, and submission
+ * fails when the thread resource pool is exhausted.
+ *
+ * Test steps:
+ * - Start a user-mode work queue with k_work_user_queue_start().
+ * - Grant the work queue thread access to a kernel object and verify a
+ *   handler running on the queue can use it.
+ * - Initialize and submit user work items and wait for their handlers to
+ *   run.
+ * - Resubmit an item that is still pending and verify it is not queued
+ *   twice.
+ * - Exhaust the thread resource pool and verify submission fails.
+ *
+ * Expected result:
+ * - Submitted user work items execute exactly once, and both error paths
+ *   (already pending, out of memory) refuse the submission.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_user_queue_start()
+ * @see k_work_user_init()
+ * @see k_work_user_submit_to_queue()
+ * @see k_work_user_is_pending()
+ */
 ZTEST_USER(workqueue_api, test_workq_user_mode)
 {
 	/* Do not disturb the ordering of these test cases */

@@ -57,10 +57,10 @@ K_SEM_DEFINE(ALT_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(REGRESS_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
 
-/**
- * @brief Routine to be called from a workqueue
+/*
+ * Routine to be called from a workqueue
  *
- * This routine increments the global variable @a critical_var.
+ * This routine increments the global variable critical_var.
  */
 void critical_rtn(struct k_work *unused)
 {
@@ -72,13 +72,13 @@ void critical_rtn(struct k_work *unused)
 	critical_var = x + 1;
 }
 
-/**
- * @brief Common code for invoking work
+/*
+ * Common code for invoking work
  *
- * @param tag text identifying the invocation context
- * @param count number of critical section calls made thus far
+ * tag: text identifying the invocation context
+ * count: number of critical section calls made thus far
  *
- * @return number of critical section calls made by a thread
+ * Returns number of critical section calls made by a thread
  */
 uint32_t critical_loop(const char *tag, uint32_t count)
 {
@@ -107,8 +107,8 @@ uint32_t critical_loop(const char *tag, uint32_t count)
 	return count;
 }
 
-/**
- * @brief Alternate thread
+/*
+ * Alternate thread
  *
  * This routine invokes the workqueue many times.
  */
@@ -131,12 +131,12 @@ void alternate_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(&REGRESS_SEM);
 }
 
-/**
- * @brief Regression thread
+/*
+ * Regression thread
  *
  * This routine invokes the workqueue many times. It also checks to
  * ensure that the number of times it is called matches the global variable
- * @a critical_var.
+ * critical_var.
  */
 
 void regression_thread(void *arg1, void *arg2, void *arg3)
@@ -180,9 +180,11 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  * @brief Verify thread context
  *
  * @details Check whether variable value per-thread is saved
- * during context switch
+ * during context switch. Work items are submitted to the offload work queue
+ * from an interrupt service routine.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start()
  */
 ZTEST(kernel_offload_wq, test_offload_workqueue)
 {
