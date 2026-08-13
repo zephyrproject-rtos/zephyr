@@ -2218,6 +2218,14 @@ Documentation Infrastructure:
     - tests/boards/*/i2c/
     - tests/drivers/*/i2c/
     - samples/drivers/i2c/
+  file-groups:
+    - name: I2C driver
+      defer-to-other-areas: true
+      files:
+        - drivers/i2c/i2c_*.c
+        - drivers/i2c/Kconfig.*
+        - dts/bindings/i2c/
+        - include/zephyr/dt-bindings/i2c/
   labels:
     - "area: I2C"
   tests:
