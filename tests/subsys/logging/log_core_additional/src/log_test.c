@@ -201,7 +201,11 @@ static bool log_test_process(void)
 	}
 }
 
-#ifndef CONFIG_USERSPACE
+/* __DOXYGEN__ is predefined in the traceability build (which defines
+ * CONFIG_USERSPACE) so the requirement-annotated supervisor-mode tests below
+ * stay visible to Doxygen.
+ */
+#if !defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 
 /**
  * @brief Verify dynamic activation and deactivation of a logging backend.
