@@ -76,7 +76,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		sdo-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 	};
 
