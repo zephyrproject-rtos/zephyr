@@ -32,8 +32,8 @@ enum spi_ctx_runtime_op_mode {
 };
 
 /* Deprecated, use the CONTROLLER/PERIPHERAL names instead. */
-#define SPI_CTX_RUNTIME_OP_MODE_MASTER SPI_CTX_RUNTIME_OP_MODE_CONTROLLER
-#define SPI_CTX_RUNTIME_OP_MODE_SLAVE  SPI_CTX_RUNTIME_OP_MODE_PERIPHERAL
+#define SPI_CTX_RUNTIME_OP_MODE_MASTER SPI_CTX_RUNTIME_OP_MODE_CONTROLLER __DEPRECATED_MACRO
+#define SPI_CTX_RUNTIME_OP_MODE_SLAVE  SPI_CTX_RUNTIME_OP_MODE_PERIPHERAL __DEPRECATED_MACRO
 
 struct spi_context {
 	const struct spi_config *config;
@@ -122,7 +122,7 @@ static inline bool spi_context_is_peripheral(struct spi_context *ctx)
 }
 
 /* Deprecated, use spi_context_is_peripheral() instead. */
-static inline bool spi_context_is_slave(struct spi_context *ctx)
+__deprecated static inline bool spi_context_is_slave(struct spi_context *ctx)
 {
 	return spi_context_is_peripheral(ctx);
 }
