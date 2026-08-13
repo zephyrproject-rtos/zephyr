@@ -209,10 +209,10 @@ static int w5500_init(const struct device *dev)
 }
 
 #define W5500_DEFINE(node)                                                                         \
-	WIZNET_DEVICE_DEFINE(node, w5500_init, &w5500_phy_driver_api,            \
-			     &w5500_ops, &w5500_regs, CONFIG_ETH_W5500_RX_THREAD_STACK_SIZE,       \
-			     CONFIG_ETH_W5500_RX_THREAD_PRIO, CONFIG_ETH_W5500_TIMEOUT,            \
-			     CONFIG_ETH_W5500_POLL_PERIOD, CONFIG_ETH_W5500_MONITOR_PERIOD, 500,   \
+	WIZNET_DEVICE_DEFINE(node, w5500_init, &w5500_phy_driver_api,                              \
+			     &w5500_ops, &w5500_regs, CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE,      \
+			     CONFIG_ETH_WIZNET_RX_THREAD_PRIO, CONFIG_ETH_WIZNET_TIMEOUT,          \
+			     CONFIG_ETH_WIZNET_POLL_PERIOD, CONFIG_ETH_WIZNET_MONITOR_PERIOD, 500, \
 			     1)
 
 DT_FOREACH_STATUS_OKAY(wiznet_w5500, W5500_DEFINE)

@@ -229,10 +229,10 @@ static int w6100_init(const struct device *dev)
 }
 
 #define W6100_DEFINE(node)                                                                         \
-	WIZNET_DEVICE_DEFINE(node, w6100_init, &w6100_phy_driver_api,            \
-			     &w6100_ops, &w6100_regs, CONFIG_ETH_W6100_RX_THREAD_STACK_SIZE,       \
-			     CONFIG_ETH_W6100_RX_THREAD_PRIO, CONFIG_ETH_W6100_TIMEOUT,            \
-			     CONFIG_ETH_W6100_POLL_PERIOD, CONFIG_ETH_W6100_MONITOR_PERIOD,        \
+	WIZNET_DEVICE_DEFINE(node, w6100_init, &w6100_phy_driver_api,                              \
+			     &w6100_ops, &w6100_regs, CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE,      \
+			     CONFIG_ETH_WIZNET_RX_THREAD_PRIO, CONFIG_ETH_WIZNET_TIMEOUT,          \
+			     CONFIG_ETH_WIZNET_POLL_PERIOD, CONFIG_ETH_WIZNET_MONITOR_PERIOD,      \
 			     T_RST_US, T_STA_mS)
 
 DT_FOREACH_STATUS_OKAY(wiznet_w6100, W6100_DEFINE)

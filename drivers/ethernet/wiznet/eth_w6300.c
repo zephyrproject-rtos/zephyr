@@ -339,7 +339,7 @@ static void w6300_rx(const struct device *dev)
 	}
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len, NET_AF_UNSPEC, 0,
-					   K_MSEC(CONFIG_ETH_W6300_TIMEOUT));
+					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
 	if (!pkt) {
 		eth_stats_update_errors_rx(ctx->iface);
 		(void)w6300_drop_rx(dev, off, total_len);
@@ -458,7 +458,7 @@ static void w6300_thread(void *p1, void *p2, void *p3)
 
 	while (true) {
 		res = k_sem_take(&ctx->int_sem,
-				 K_MSEC(CONFIG_ETH_W6300_MONITOR_PERIOD));
+				 K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
 		if (res == 0 || res == -EAGAIN) {
 			w6300_update_link_status(dev);
@@ -487,10 +487,10 @@ static void w6300_iface_init(struct net_if *iface)
 
 	/* Create RX thread after iface is set */
 	k_thread_create(&ctx->thread, ctx->thread_stack,
-			CONFIG_ETH_W6300_RX_THREAD_STACK_SIZE,
+			CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE,
 			w6300_thread,
 			(void *)dev, NULL, NULL,
-			K_PRIO_COOP(CONFIG_ETH_W6300_RX_THREAD_PRIO),
+			K_PRIO_COOP(CONFIG_ETH_WIZNET_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 	k_thread_name_set(&ctx->thread, "eth_w6300");
 }
