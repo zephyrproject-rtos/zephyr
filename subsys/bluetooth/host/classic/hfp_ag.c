@@ -4071,6 +4071,15 @@ static uint8_t bt_hfp_ag_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 
 	ag = &bt_hfp_ag_pool[index];
 
+	if (ag->acl_conn != conn) {
+		/* The AG object has been released or reused for another
+		 * connection since the discovery was started. Do not touch
+		 * the object state or re-submit any work in that case.
+		 */
+		LOG_WRN("AG %p is not aligned with conn %p", ag, conn);
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
+
 	if ((result == NULL) || (result->resp_buf == NULL)) {
 		LOG_ERR("SDP discovery failed");
 		goto failed;
@@ -4115,6 +4124,15 @@ static uint8_t bt_hfp_ag_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	atomic_set_bit(ag->flags, BT_HFP_AG_RECORD_FOUND);
 failed:
 	atomic_set_bit(ag->flags, BT_HFP_AG_DISCOVER_DONE);
+	if (atomic_test_bit(ag->flags, BT_HFP_AG_RELEASING)) {
+		/* The RFCOMM connection creation failed and the object was
+		 * kept allocated only to keep the SDP discovery request
+		 * valid. Release the object now that the discovery has
+		 * completed.
+		 */
+		ag->acl_conn = NULL;
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
 	bt_work_submit(&ag->slc_work);
 
 	return BT_SDP_DISCOVER_UUID_STOP;
@@ -4165,8 +4183,11 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 	ag->sdp_param.pool = &ag_pool;
 	ag->sdp_param.ids  = &id_list;
 
+	ag->acl_conn = conn;
+
 	err = bt_sdp_discover(conn, &ag->sdp_param);
 	if (err != 0) {
+		ag->acl_conn = NULL;
 		return NULL;
 	}
 
@@ -4204,8 +4225,6 @@ static struct bt_hfp_ag *hfp_ag_create(struct bt_conn *conn)
 
 	ag->hf_features = 0;
 	ag->hf_codec_ids = 0;
-
-	ag->acl_conn = conn;
 
 	/* Set AG indicator value */
 	ag->indicator_value[BT_HFP_AG_SERVICE_IND] = 0;
@@ -4260,7 +4279,17 @@ int bt_hfp_ag_connect(struct bt_conn *conn, struct bt_hfp_ag **ag, uint8_t chann
 
 	err = bt_rfcomm_dlc_connect(conn, &new_ag->rfcomm_dlc, channel);
 	if (err != 0) {
-		(void)memset(new_ag, 0, sizeof(*new_ag));
+		/* The SDP discovery request started by hfp_ag_create() is
+		 * linked in the SDP client's request list, so the object
+		 * cannot be wiped here. Mark the object for release and let
+		 * the SDP discovery callback release it. If the discovery
+		 * has already completed, release the object immediately.
+		 */
+		atomic_set_bit(new_ag->flags, BT_HFP_AG_RELEASING);
+		if (atomic_test_bit(new_ag->flags, BT_HFP_AG_DISCOVER_DONE)) {
+			k_work_cancel(&new_ag->slc_work);
+			new_ag->acl_conn = NULL;
+		}
 		*ag = NULL;
 	} else {
 		*ag = new_ag;
