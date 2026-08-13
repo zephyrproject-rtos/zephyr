@@ -65,6 +65,7 @@ config SPI_PERIPHERAL
 
 config SPI_SLAVE
 	bool "Peripheral support (deprecated alias) [DEPRECATED]"
+	select DEPRECATED
 	select SPI_PERIPHERAL
 	help
 	  Deprecated alias for SPI_PERIPHERAL. Use SPI_PERIPHERAL
