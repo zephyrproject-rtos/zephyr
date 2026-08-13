@@ -523,7 +523,8 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	size_t itf = esp_hosted_get_iface(dev);
 
 	status->state = data->state[itf];
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 	status->mfp = WIFI_MFP_DISABLE;
@@ -543,6 +544,7 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	if (itf == ESP_HOSTED_STA_IF) {
 		status->security = esp_hosted_prot_to_sec(ctrl_msg.resp_get_ap_config.sec_prot);
 		status->channel = ctrl_msg.resp_get_ap_config.chnl;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->rssi = ctrl_msg.resp_get_ap_config.rssi;
 		status->ssid_len = MIN(ctrl_msg.resp_get_ap_config.ssid.size, WIFI_SSID_MAX_LEN);
 		memcpy(status->ssid, ctrl_msg.resp_get_ap_config.ssid.bytes, status->ssid_len);
@@ -550,6 +552,7 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	} else {
 		status->security = esp_hosted_prot_to_sec(ctrl_msg.resp_get_softap_config.sec_prot);
 		status->channel = ctrl_msg.resp_get_softap_config.chnl;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->ssid_len =
 			MIN(ctrl_msg.resp_get_softap_config.ssid.size, WIFI_SSID_MAX_LEN);
 		memcpy(status->ssid, ctrl_msg.resp_get_softap_config.ssid.bytes, status->ssid_len);
@@ -577,6 +580,7 @@ static int esp_hosted_scan(const struct device *dev,
 
 		result.rssi = ap_list[i].rssi;
 		result.channel = ap_list[i].chnl;
+		result.band = wifi_utils_chan_to_band(result.channel);
 		result.security = esp_hosted_prot_to_sec(ap_list[i].sec_prot);
 
 		if (ap_list[i].ssid.size) {
