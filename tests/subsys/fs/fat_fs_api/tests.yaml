@@ -23,7 +23,10 @@ tests:
     platform_type:
       - mcu
   filesystem.fat.api.nor:
-    extra_args: CONF_FILE="prj_nor.conf"
+    extra_args:
+      CONF_FILE="prj_nor.conf"
+      FILE_SUFFIX="nor"
+    timeout: 300
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
   filesystem.fat.ram.api:
