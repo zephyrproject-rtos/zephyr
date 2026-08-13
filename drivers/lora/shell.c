@@ -25,12 +25,6 @@ static struct lora_modem_config modem_config = {
 	.tx_power = 4,
 };
 
-static const int bw_table[] = {
-	[BW_125_KHZ] = 125,
-	[BW_250_KHZ] = 250,
-	[BW_500_KHZ] = 500,
-};
-
 static int parse_long(long *out, const struct shell *sh, const char *arg)
 {
 	char *eptr;
@@ -133,7 +127,7 @@ static int lora_conf_dump(const struct shell *sh)
 	shell_print(sh, "  TX power: %" PRIi8 " dBm",
 		    modem_config.tx_power);
 	shell_print(sh, "  Bandwidth: %i kHz",
-		    bw_table[modem_config.bandwidth]);
+		    (int)modem_config.bandwidth);
 	shell_print(sh, "  Spreading factor: SF%i",
 		    (int)modem_config.datarate);
 	shell_print(sh, "  Coding rate: 4/%i",
@@ -165,24 +159,32 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 			return -EINVAL;
 		}
 		switch (lval) {
-		case 125:
-			modem_config.bandwidth = BW_125_KHZ;
-			break;
-		case 250:
-			modem_config.bandwidth = BW_250_KHZ;
-			break;
-		case 500:
-			modem_config.bandwidth = BW_500_KHZ;
+		case BW_7_KHZ:
+		case BW_10_KHZ:
+		case BW_15_KHZ:
+		case BW_20_KHZ:
+		case BW_31_KHZ:
+		case BW_41_KHZ:
+		case BW_62_KHZ:
+		case BW_125_KHZ:
+		case BW_200_KHZ:
+		case BW_250_KHZ:
+		case BW_400_KHZ:
+		case BW_500_KHZ:
+		case BW_800_KHZ:
+		case BW_1000_KHZ:
+		case BW_1600_KHZ:
+			modem_config.bandwidth = lval;
 			break;
 		default:
 			shell_error(sh, "Invalid bandwidth: %ld", lval);
 			return -EINVAL;
 		}
 	} else if (!strcmp("sf", param)) {
-		if (parse_long_range(&lval, sh, value, "sf", 6, 12) < 0) {
+		if (parse_long_range(&lval, sh, value, "sf", SF_5, SF_12) < 0) {
 			return -EINVAL;
 		}
-		modem_config.datarate = SF_6 + (unsigned int)lval - 6;
+		modem_config.datarate = lval;
 	} else if (!strcmp("cr", param)) {
 		if (parse_long_range(&lval, sh, value, "cr", 5, 8) < 0) {
 			return -EINVAL;
