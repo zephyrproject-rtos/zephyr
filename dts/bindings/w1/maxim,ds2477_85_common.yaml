@@ -1,9 +1,9 @@
 # Copyright (c) 2022 Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
 
-# Common Properties for the DS2477 and DS2485 I2C 1-Wire masters:
+# Common Properties for the DS2477 and DS2485 I2C 1-Wire controllers:
 
-include: [w1-master.yaml, i2c-device.yaml]
+include: [w1-controller.yaml, i2c-device.yaml]
 
 properties:
   switching-threshold:
@@ -33,7 +33,7 @@ properties:
       - "off"
     description: |
       Default Active Pullup on Threshold configuration.
-      For configurations with a single slave a "low" active pull
+      For configurations with a single peripheral a "low" active pull
       threshold is recommended.
 
       Only the following values are allowed:
@@ -52,7 +52,7 @@ properties:
       - "333"
     description: |
       Default 1-Wire Weak Pullup Resistance in ohms.
-      For most configurations with a single slave "1000" ohms are recommended,
+      For most configurations with a single peripheral "1000" ohms are recommended,
       but some devices and multidrop configurations might need a stronger pullup.
 
       To enter floating condition, it is suggested to switch the weak-pull up
