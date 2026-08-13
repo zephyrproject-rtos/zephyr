@@ -4,8 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define DT_DRV_COMPAT espressif_esp32_intc
+
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/irq_multilevel.h>
 #include <zephyr/sw_isr_table.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -23,6 +26,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <soc/soc.h>
+#include <rom/ets_sys.h>
 
 #if SOC_INT_CLIC_SUPPORTED
 #include <hal/interrupt_clic_ll.h>
@@ -276,41 +280,6 @@ static struct vector_desc_t *get_desc_for_int(int intno, int cpu)
 	}
 }
 
-/*
- * Returns a vector_desc entry for an source, the cpu parameter is used
- * to tell GPIO_INT and GPIO_NMI from different CPUs
- */
-static struct vector_desc_t *find_desc_for_source(int source, int cpu)
-{
-	struct vector_desc_t *vd = vector_desc_head;
-
-	while (vd != NULL) {
-		if (!(vd->flags & VECDESC_FL_SHARED)) {
-			if (vd->source == source && cpu == vd->cpu) {
-				break;
-			}
-		} else if (vd->cpu == cpu) {
-			/* check only shared vds for the correct cpu, otherwise skip */
-			bool found = false;
-			struct shared_vector_desc_t *svd = vd->shared_vec_info;
-
-			assert(svd != NULL);
-			while (svd) {
-				if (svd->source == source) {
-					found = true;
-					break;
-				}
-				svd = svd->next;
-			}
-			if (found) {
-				break;
-			}
-		}
-		vd = vd->next;
-	}
-	return vd;
-}
-
 int esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
 {
 	if (intno >= SOC_CPU_INTR_NUM) {
@@ -358,720 +327,6 @@ int esp_intr_reserve(int intno, int cpu)
 	return 0;
 }
 
-/* Returns true if handler for interrupt is not the default unhandled interrupt handler */
-static bool intr_has_handler(int intr, int cpu)
-{
-	bool r;
-
-	r = _sw_isr_table[intr * CONFIG_MP_MAX_NUM_CPUS + cpu].isr != z_irq_spurious;
-
-	return r;
-}
-#if 0
-static bool is_vect_desc_usable(struct vector_desc_t *vd, int flags, int cpu, int force)
-{
-	/* Check if interrupt is not reserved by design */
-	int x = vd->intno;
-	esp_cpu_intr_desc_t intr_desc;
-	esp_cpu_intr_get_desc(cpu, x, &intr_desc);
-
-	if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD) {
-		INTC_LOG("....Unusable: reserved");
-		return false;
-	}
-	if (intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_SPECIAL && force == -1) {
-		INTC_LOG("....Unusable: special-purpose int");
-		return false;
-	}
-
-#if SOC_CPU_HAS_FLEXIBLE_INTC
-	const int vector_lvl = VECDESC_FL_LEVEL(vd->flags);
-
-	if (vector_lvl != 0 && (flags & (1 << vector_lvl)) == 0) {
-		INTC_LOG("....Unusable: incompatible priority");
-		return false;
-	}
-#else
-	/* Check if the interrupt level is acceptable */
-	if (!(flags & (1 << intr_desc.priority))) {
-		INTC_LOG("....Unusable: incompatible level");
-		return false;
-	}
-	/* check if edge/level type matches what we want */
-	if (((flags & ESP_INTR_FLAG_EDGE) && (intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL)) ||
-	    (((!(flags & ESP_INTR_FLAG_EDGE)) && (intr_desc.type == ESP_CPU_INTR_TYPE_EDGE)))) {
-		INTC_LOG("....Unusable: incompatible trigger type");
-		return false;
-	}
-#endif
-
-	/* check if interrupt is reserved at runtime */
-	if (vd->flags & VECDESC_FL_RESERVED) {
-		INTC_LOG("....Unusable: reserved at runtime.");
-		return false;
-	}
-
-	/* Ints can't be both shared and non-shared. */
-	assert(!((vd->flags & VECDESC_FL_SHARED) && (vd->flags & VECDESC_FL_NONSHARED)));
-	/* check if interrupt already is in use by a non-shared interrupt */
-	if (vd->flags & VECDESC_FL_NONSHARED) {
-		INTC_LOG("....Unusable: already in (non-shared) use.");
-		return false;
-	}
-	/* check shared interrupt flags */
-	if (vd->flags & VECDESC_FL_SHARED) {
-		if (flags & ESP_INTR_FLAG_SHARED) {
-			bool in_iram_flag = ((flags & ESP_INTR_FLAG_IRAM) != 0);
-			bool desc_in_iram_flag = ((vd->flags & VECDESC_FL_INIRAM) != 0);
-			/*
-			 * Bail out if int is shared, but iram property
-			 * doesn't match what we want.
-			 */
-			if ((vd->flags & VECDESC_FL_SHARED) &&
-				(desc_in_iram_flag != in_iram_flag)) {
-				INTC_LOG("....Unusable: shared but iram prop doesn't match");
-				return false;
-			}
-		} else {
-			/*
-			 * We need an unshared IRQ; can't use shared ones;
-			 * bail out if this is shared.
-			 */
-			INTC_LOG("...Unusable: int is shared, we need non-shared.");
-			return false;
-		}
-	} else if (intr_has_handler(x, cpu)) {
-		INTC_LOG("....Unusable: already allocated");
-		return false;
-	}
-
-	return true;
-}
-
-/*
- * Locate a free interrupt compatible with the flags given.
- * The 'force' argument can be -1, or 0-31 to force checking a certain interrupt.
- * When a CPU is forced, the INTDESC_SPECIAL marked interrupts are also accepted.
- */
-static int get_available_int(int flags, int cpu, int force, int source)
-{
-	int x;
-	int best = -1;
-	int best_level = 9;
-	int best_shared_ct = INT_MAX;
-	/* Default vector desc, for vectors not in the linked list */
-	struct vector_desc_t empty_vect_desc;
-
-	memset(&empty_vect_desc, 0, sizeof(struct vector_desc_t));
-
-	/* Level defaults to any low/med interrupt */
-	if (!(flags & ESP_INTR_FLAG_LEVELMASK)) {
-		flags |= ESP_INTR_FLAG_LOWMED;
-	}
-
-	INTC_LOG("%s: try to find existing. Cpu: %d, Source: %d", __func__, cpu, source);
-	struct vector_desc_t *vd = find_desc_for_source(source, cpu);
-
-	if (vd) {
-		/* if existing vd found, don't need to search any more. */
-		INTC_LOG("%s: existing vd found. intno: %d", __func__, vd->intno);
-		if (force != -1 && force != vd->intno) {
-			INTC_LOG("%s: intr forced but not match existing. "
-				 "existing intno: %d, force: %d", __func__, vd->intno, force);
-		} else if (!is_vect_desc_usable(vd, flags, cpu, force)) {
-			INTC_LOG("%s: existing vd invalid.", __func__);
-		} else {
-			best = vd->intno;
-		}
-		return best;
-	}
-	if (force != -1) {
-		INTC_LOG("%s: try to find force. "
-			 "Cpu: %d, Source: %d, Force: %d", __func__, cpu, source, force);
-		/* if force assigned, don't need to search any more. */
-		vd = find_desc_for_int(force, cpu);
-		if (vd == NULL) {
-			/* if existing vd not found, just check the default state for the intr. */
-			empty_vect_desc.intno = force;
-			vd = &empty_vect_desc;
-		}
-		if (is_vect_desc_usable(vd, flags, cpu, force)) {
-			best = vd->intno;
-		} else {
-			INTC_LOG("%s: forced vd invalid.", __func__);
-		}
-		return best;
-	}
-
-	INTC_LOG("%s: start looking. Current cpu: %d", __func__, cpu);
-	/* No allocated handlers as well as forced intr, iterate over the 32 possible interrupts */
-	for (x = 0; x < SOC_CPU_INTR_NUM; x++) {
-		/* Grab the vector_desc for this vector. */
-		vd = find_desc_for_int(x, cpu);
-		if (vd == NULL) {
-			empty_vect_desc.intno = x;
-			vd = &empty_vect_desc;
-		}
-
-		esp_cpu_intr_desc_t intr_desc;
-		esp_cpu_intr_get_desc(cpu, x, &intr_desc);
-
-		INTC_LOG("Int %d reserved %d level %d %s hasIsr %d",
-			 x, intr_desc.flags & ESP_CPU_INTR_DESC_FLAG_RESVD, intr_desc.priority,
-			 intr_desc.type == ESP_CPU_INTR_TYPE_LEVEL ? "LEVEL" : "EDGE",
-			 intr_has_handler(x, cpu));
-
-		if (!is_vect_desc_usable(vd, flags, cpu, force)) {
-			continue;
-		}
-
-		if (flags & ESP_INTR_FLAG_SHARED) {
-			/* We're allocating a shared int. */
-
-			/* See if int already is used as a shared interrupt. */
-			if (vd->flags & VECDESC_FL_SHARED) {
-				/*
-				 * We can use this already-marked-as-shared interrupt. Count the
-				 * already attached isrs in order to see how useful it is.
-				 */
-				int no = 0;
-				struct shared_vector_desc_t *svdesc = vd->shared_vec_info;
-
-				while (svdesc != NULL) {
-					no++;
-					svdesc = svdesc->next;
-				}
-				if (no < best_shared_ct ||
-					best_level > intr_desc.priority) {
-					/*
-					 * Seems like this shared vector is both okay and has
-					 * the least amount of ISRs already attached to it.
-					 */
-					best = x;
-					best_shared_ct = no;
-					best_level = intr_desc.priority;
-					INTC_LOG("...int %d more usable as a shared int: "
-						 "has %d existing vectors", x, no);
-				} else {
-					INTC_LOG("...worse than int %d", best);
-				}
-			} else {
-				if (best == -1) {
-					/*
-					 * We haven't found a feasible shared interrupt yet.
-					 * This one is still free and usable, even if not
-					 * marked as shared.
-					 * Remember it in case we don't find any other shared
-					 * interrupt that qualifies.
-					 */
-					if (best_level > intr_desc.priority) {
-						best = x;
-						best_level = intr_desc.priority;
-						INTC_LOG("...int %d usable as new shared int", x);
-					}
-				} else {
-					INTC_LOG("...already have a shared int");
-				}
-			}
-		} else {
-			/*
-			 * Seems this interrupt is feasible. Select it and break out of the loop
-			 * No need to search further.
-			 */
-			if (best_level > intr_desc.priority) {
-				best = x;
-				best_level = intr_desc.priority;
-			} else {
-				INTC_LOG("...worse than int %d", best);
-			}
-		}
-	}
-	INTC_LOG("%s: using int %d", __func__, best);
-
-	/*
-	 * By now we have looked at all potential interrupts and
-	 * hopefully have selected the best one in best.
-	 */
-	return best;
-}
-
-/* Common shared isr handler. Chain-call all ISRs. */
-static void IRAM_ATTR shared_intr_isr(void *arg)
-{
-	struct vector_desc_t *vd = (struct vector_desc_t *)arg;
-	struct shared_vector_desc_t *sh_vec = vd->shared_vec_info;
-
-	unsigned int key = irq_lock();
-	while (sh_vec) {
-		if (!sh_vec->disabled) {
-			if (!(sh_vec->statusreg) || (*sh_vec->statusreg & sh_vec->statusmask)) {
-				sh_vec->isr(sh_vec->arg);
-			}
-		}
-		sh_vec = sh_vec->next;
-	}
-	irq_unlock(key);
-}
-
-int esp_intr_alloc_intrstatus(int source,
-			      int flags,
-			      uint32_t intrstatusreg,
-			      uint32_t intrstatusmask,
-			      intr_handler_t handler,
-			      void *arg,
-			     intr_handle_t *ret_handle)
-{
-	intr_handle_data_t *ret = NULL;
-	int force = -1;
-
-	INTC_LOG("%s (cpu %d): checking args", __func__, esp_cpu_get_core_id());
-	/* Shared interrupts should be level-triggered. */
-	if ((flags & ESP_INTR_FLAG_SHARED) && (flags & ESP_INTR_FLAG_EDGE)) {
-		return -EINVAL;
-	}
-	/* You can't set an handler / arg for a non-C-callable interrupt. */
-	if ((flags & ESP_INTR_FLAG_HIGH) && (handler)) {
-		return -EINVAL;
-	}
-	/* Shared ints should have handler and non-processor-local source */
-	if ((flags & ESP_INTR_FLAG_SHARED) && (!handler || source < 0)) {
-		return -EINVAL;
-	}
-	/* Statusreg should have a mask */
-	if (intrstatusreg && !intrstatusmask) {
-		return -EINVAL;
-	}
-	/*
-	 * If the ISR is marked to be IRAM-resident, the handler must not be in the cached region
-	 * If we are to allow placing interrupt handlers into the 0x400c0000—0x400c2000 region,
-	 * we need to make sure the interrupt is connected to the CPU0.
-	 * CPU1 does not have access to the RTC fast memory through this region.
-	 */
-	if ((flags & ESP_INTR_FLAG_IRAM) && handler && !esp_ptr_in_iram(handler) &&
-	    !esp_ptr_in_rtc_iram_fast(handler) && !esp_ptr_in_rom(handler)) {
-		return -EINVAL;
-	}
-
-	/*
-	 * Default to prio 1 for shared interrupts.
-	 * Default to prio 1, 2 or 3 for non-shared interrupts.
-	 */
-	if ((flags & ESP_INTR_FLAG_LEVELMASK) == 0) {
-		if (flags & ESP_INTR_FLAG_SHARED) {
-			flags |= ESP_INTR_FLAG_LEVEL1;
-		} else {
-			flags |= ESP_INTR_FLAG_LOWMED;
-		}
-	}
-	INTC_LOG("%s (cpu %d): Args okay."
-		"Resulting flags 0x%X", __func__, esp_cpu_get_core_id(), flags);
-
-	/*
-	 * Check 'special' interrupt sources. These are tied to one specific
-	 * interrupt, so we have to force get_available_int to only look at that.
-	 */
-	switch (source) {
-	case ETS_INTERNAL_TIMER0_INTR_SOURCE:
-		force = ETS_INTERNAL_TIMER0_INTR_NO;
-		break;
-	case ETS_INTERNAL_TIMER1_INTR_SOURCE:
-		force = ETS_INTERNAL_TIMER1_INTR_NO;
-		break;
-	case ETS_INTERNAL_TIMER2_INTR_SOURCE:
-		force = ETS_INTERNAL_TIMER2_INTR_NO;
-		break;
-	case ETS_INTERNAL_SW0_INTR_SOURCE:
-		force = ETS_INTERNAL_SW0_INTR_NO;
-		break;
-	case ETS_INTERNAL_SW1_INTR_SOURCE:
-		force = ETS_INTERNAL_SW1_INTR_NO;
-		break;
-	case ETS_INTERNAL_PROFILING_INTR_SOURCE:
-		force = ETS_INTERNAL_PROFILING_INTR_NO;
-		break;
-	default:
-		break;
-	}
-
-	/* Allocate a return handle. If we end up not needing it, we'll free it later on. */
-	ret = k_malloc(sizeof(struct intr_handle_data_t));
-	if (ret == NULL) {
-		return -ENOMEM;
-	}
-
-	unsigned int key = irq_lock();
-	int cpu = esp_cpu_get_core_id();
-	int rc;
-	/* See if we can find an interrupt that matches the flags. */
-	int intr = get_available_int(flags, cpu, force, source);
-
-	if (intr == -1) {
-		/* None found. Bail out. */
-		irq_unlock(key);
-		k_free(ret);
-		return -ENODEV;
-	}
-	/* Get an int vector desc for int. */
-	struct vector_desc_t *vd = get_desc_for_int(intr, cpu);
-
-	if (vd == NULL) {
-		irq_unlock(key);
-		k_free(ret);
-		return -ENOMEM;
-	}
-
-	/* Allocate that int! */
-	if (flags & ESP_INTR_FLAG_SHARED) {
-		/* Populate vector entry and add to linked list. */
-		struct shared_vector_desc_t *sv = k_malloc(sizeof(struct shared_vector_desc_t));
-
-		if (sv == NULL) {
-			irq_unlock(key);
-			k_free(ret);
-			return -ENOMEM;
-		}
-		memset(sv, 0, sizeof(struct shared_vector_desc_t));
-		sv->statusreg = (uint32_t *)intrstatusreg;
-		sv->statusmask = intrstatusmask;
-		sv->isr = handler;
-		sv->arg = arg;
-		sv->next = vd->shared_vec_info;
-		sv->source = source;
-		sv->disabled = 0;
-		vd->shared_vec_info = sv;
-		vd->flags |= VECDESC_FL_SHARED;
-
-		/* Disable interrupt to avoid assert at IRQ install */
-		irq_disable(intr);
-
-		/* (Re-)set shared isr handler to new value. */
-		rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)shared_intr_isr, vd, flags);
-		if (rc < 0) {
-			vd->shared_vec_info = sv->next;
-			k_free(sv);
-			irq_unlock(key);
-			k_free(ret);
-			return rc;
-		}
-	} else {
-		/* Mark as unusable for other interrupt sources. This is ours now! */
-		vd->flags = VECDESC_FL_NONSHARED;
-		if (handler) {
-			irq_disable(intr);
-			rc = irq_connect_dynamic(intr, 0, (intc_dyn_handler_t)handler, arg, flags);
-			if (rc < 0) {
-				vd->flags &= ~VECDESC_FL_NONSHARED;
-				irq_unlock(key);
-				k_free(ret);
-				return rc;
-			}
-		}
-		if (flags & ESP_INTR_FLAG_EDGE) {
-			esp_cpu_intr_edge_ack(intr);
-		}
-		vd->source = source;
-	}
-	if (flags & ESP_INTR_FLAG_IRAM) {
-		vd->flags |= VECDESC_FL_INIRAM;
-	} else {
-		vd->flags &= ~VECDESC_FL_INIRAM;
-	}
-	if (source >= 0) {
-		esp_rom_route_intr_matrix(cpu, source, intr);
-	}
-
-	/* Fill return handle data. */
-	ret->vector_desc = vd;
-	ret->shared_vector_desc = vd->shared_vec_info;
-
-#if SOC_CPU_HAS_FLEXIBLE_INTC
-	/*
-	 * Set interrupt priority and type BEFORE enabling the interrupt.
-	 * On RISC-V chips with flexible INTC, the default priority is 0 which
-	 * would cause the interrupt to be masked if the threshold is >= 1.
-	 */
-	int level = esp_intr_flags_to_level(flags);
-
-	vd->flags |= level << VECDESC_FL_LEVEL_SHIFT;
-	esp_cpu_intr_set_priority(intr, level);
-
-	if (flags & ESP_INTR_FLAG_EDGE) {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_EDGE);
-	} else {
-		esp_cpu_intr_set_type(intr, ESP_CPU_INTR_TYPE_LEVEL);
-	}
-#endif
-
-#if SOC_INT_CLIC_SUPPORTED
-	interrupt_clic_ll_set_vectored(intr + CLIC_EXT_INTR_NUM_OFFSET, true);
-#endif
-
-	/* Enable int at CPU-level; */
-	irq_enable(intr);
-
-	/*
-	 * If interrupt has to be started disabled, do that now; ints won't be enabled for
-	 * real until the end of the critical section.
-	 */
-	if (flags & ESP_INTR_FLAG_INTRDISABLED) {
-		esp_intr_disable(ret);
-	}
-
-#if SOC_INT_PLIC_SUPPORTED
-	/* Make sure the interrupt is not delegated to user mode (IDF uses machine mode only) */
-	RV_CLEAR_CSR(mideleg, BIT(intr));
-#endif
-
-	irq_unlock(key);
-
-	/* Fill return handle if needed, otherwise free handle. */
-	if (ret_handle != NULL) {
-		*ret_handle = ret;
-	} else {
-		k_free(ret);
-	}
-
-	LOG_DBG("Connected src %d to int %d (cpu %d)", source, intr, cpu);
-
-	return 0;
-}
-
-int esp_intr_alloc(int source,
-		int flags,
-		intr_handler_t handler,
-		void *arg,
-		intr_handle_t *ret_handle)
-{
-	/*
-	 * As an optimization, we can create a table with the possible interrupt status
-	 * registers and masks for every single source there is. We can then add code here to
-	 * look up an applicable value and pass that to the esp_intr_alloc_intrstatus function.
-	 */
-	return esp_intr_alloc_intrstatus(source, flags, 0, 0, handler, arg, ret_handle);
-}
-
-int IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
-{
-	if (!handle) {
-		return -EINVAL;
-	}
-	struct vector_desc_t *vd = handle->vector_desc;
-
-	if (vd->flags & VECDESC_FL_SHARED) {
-		return -EINVAL;
-	}
-	unsigned int key = irq_lock();
-	uint32_t old_flags = (vd->flags & VECDESC_FL_INIRAM) ? ESP_INTR_FLAG_IRAM : 0;
-	uint32_t new_flags = is_in_iram ? ESP_INTR_FLAG_IRAM : 0;
-	int rc;
-
-	if (old_flags != new_flags) {
-		rc = z_soc_irq_flags_clear(vd->intno, old_flags);
-		if (rc < 0) {
-			irq_unlock(key);
-			return rc;
-		}
-		rc = z_soc_irq_flags_apply(vd->intno, new_flags);
-		if (rc < 0) {
-			(void)z_soc_irq_flags_apply(vd->intno, old_flags);
-			irq_unlock(key);
-			return rc;
-		}
-	}
-
-	if (is_in_iram) {
-		vd->flags |= VECDESC_FL_INIRAM;
-	} else {
-		vd->flags &= ~VECDESC_FL_INIRAM;
-	}
-	irq_unlock(key);
-	return 0;
-}
-
-int esp_intr_free(intr_handle_t handle)
-{
-	bool free_shared_vector = false;
-
-	if (!handle) {
-		return -EINVAL;
-	}
-
-	unsigned int key = irq_lock();
-	uint32_t clear_flags = (handle->vector_desc->flags & VECDESC_FL_INIRAM) ?
-				       ESP_INTR_FLAG_IRAM :
-				       0;
-
-	esp_intr_disable(handle);
-	if (handle->vector_desc->flags & VECDESC_FL_SHARED) {
-		/* Find and kill the shared int */
-		struct shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
-		struct shared_vector_desc_t *prevsvd = NULL;
-
-		assert(svd); /* should be something in there for a shared int */
-		while (svd != NULL) {
-			if (svd == handle->shared_vector_desc) {
-				/* Found it. Now kill it. */
-				if (prevsvd) {
-					prevsvd->next = svd->next;
-				} else {
-					handle->vector_desc->shared_vec_info = svd->next;
-				}
-				k_free(svd);
-				break;
-			}
-			prevsvd = svd;
-			svd = svd->next;
-		}
-		/* If nothing left, disable interrupt. */
-		if (handle->vector_desc->shared_vec_info == NULL) {
-			free_shared_vector = true;
-		}
-		INTC_LOG("%s: Deleting shared int: %s. "
-			"Shared int is %s", __func__, svd ? "not found or last one" : "deleted",
-			free_shared_vector ? "empty now." : "still in use");
-	}
-
-	if ((handle->vector_desc->flags & VECDESC_FL_NONSHARED) || free_shared_vector) {
-		INTC_LOG("%s: Disabling int, killing handler", __func__);
-
-		/* Disable interrupt to avoid assert at IRQ install */
-		irq_disable(handle->vector_desc->intno);
-
-		/* Reset IRQ handler without updating IRAM mask flags */
-#if defined(CONFIG_RISCV)
-		z_isr_install(handle->vector_desc->intno +
-				      CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET,
-			      (void (*)(const void *))z_irq_spurious,
-			      (void *)((intptr_t)handle->vector_desc->intno));
-#else
-		z_isr_install(handle->vector_desc->intno,
-			      (void (*)(const void *))z_irq_spurious,
-			      (void *)((intptr_t)handle->vector_desc->intno));
-#endif
-		/*
-		 * Theoretically, we could free the vector_desc... not sure if that's worth the
-		 * few bytes of memory we save.(We can also not use the same exit path for empty
-		 * shared ints anymore if we delete the desc.) For now, just mark it as free.
-		 */
-		handle->vector_desc->flags &=
-			~(VECDESC_FL_NONSHARED | VECDESC_FL_RESERVED | VECDESC_FL_SHARED);
-#if SOC_CPU_HAS_FLEXIBLE_INTC
-		handle->vector_desc->flags &= ~(VECDESC_FL_LEVEL_MASK << VECDESC_FL_LEVEL_SHIFT);
-#endif
-		handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
-	}
-
-	z_soc_irq_flags_clear(handle->vector_desc->intno, clear_flags);
-	irq_unlock(key);
-	k_free(handle);
-	return 0;
-}
-
-int esp_intr_get_intno(intr_handle_t handle)
-{
-	if (handle == NULL || handle->vector_desc == NULL) {
-		return -1;
-	}
-	return handle->vector_desc->intno;
-}
-
-int esp_intr_get_cpu(intr_handle_t handle)
-{
-	if (handle == NULL || handle->vector_desc == NULL) {
-		return -1;
-	}
-	return handle->vector_desc->cpu;
-}
-
-/**
- * Interrupt disabling strategy:
- * If the source is >=0 (meaning a muxed interrupt), we disable it by muxing the interrupt to a
- * non-connected interrupt. If the source is <0 (meaning an internal, per-cpu interrupt).
- * This allows us to, for the muxed CPUs, disable an int from
- * the other core. It also allows disabling shared interrupts.
- */
-
-/*
- * Muxing an interrupt source to interrupt 6, 7, 11, 15, 16 or 29
- * cause the interrupt to effectively be disabled.
- */
-#define INT_MUX_DISABLED_INTNO 6
-
-int IRAM_ATTR esp_intr_enable(intr_handle_t handle)
-{
-	if (!handle) {
-		return -EINVAL;
-	}
-	unsigned int key = irq_lock();
-	int source;
-
-	if (handle->shared_vector_desc) {
-		handle->shared_vector_desc->disabled = 0;
-		source = handle->shared_vector_desc->source;
-	} else {
-		source = handle->vector_desc->source;
-	}
-	if (source >= 0) {
-		/* Disabled using int matrix; re-connect to enable */
-		esp_rom_route_intr_matrix(handle->vector_desc->cpu, source,
-			handle->vector_desc->intno);
-	} else {
-		/* Re-enable using cpu int ena reg */
-		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			irq_unlock(key);
-			return -EINVAL; /* Can only enable these ints on this cpu */
-		}
-		irq_enable(handle->vector_desc->intno);
-	}
-	irq_unlock(key);
-	return 0;
-}
-
-int IRAM_ATTR esp_intr_disable(intr_handle_t handle)
-{
-	if (!handle) {
-		return -EINVAL;
-	}
-	unsigned int key = irq_lock();
-	int source;
-	bool disabled = true;
-
-	if (handle->shared_vector_desc) {
-		handle->shared_vector_desc->disabled = 1;
-		source = handle->shared_vector_desc->source;
-
-		struct shared_vector_desc_t *svd = handle->vector_desc->shared_vec_info;
-
-		assert(svd != NULL);
-		while (svd) {
-			if (svd->source == source && svd->disabled == 0) {
-				disabled = false;
-				break;
-			}
-			svd = svd->next;
-		}
-	} else {
-		source = handle->vector_desc->source;
-	}
-
-	if (source >= 0) {
-		if (disabled) {
-			/* Disable using int matrix */
-			esp_rom_route_intr_matrix(handle->vector_desc->cpu, source,
-				INT_MUX_DISABLED_INTNO);
-		}
-	} else {
-		/* Disable using per-cpu regs */
-		if (handle->vector_desc->cpu != esp_cpu_get_core_id()) {
-			irq_unlock(key);
-			return -EINVAL; /* Can only enable these ints on this cpu */
-		}
-		irq_disable(handle->vector_desc->intno);
-	}
-	irq_unlock(key);
-	return 0;
-}
-#endif
 void IRAM_ATTR esp_intr_noniram_disable(void)
 {
 	unsigned int key = irq_lock();
@@ -1107,27 +362,631 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 }
 
 #if defined(CONFIG_RISCV)
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+/* Multi-level backend (defined further below); arch_irq_* delegate to it. */
+void z_soc_irq_enable(unsigned int irq);
+void z_soc_irq_disable(unsigned int irq);
+int z_soc_irq_is_enabled(unsigned int irq);
+#endif
+
 /*
- * Functions below are implemented to keep consistency with current
- * Xtensa chips API behavior. When accessing Zephyr's API
- * directly, the CPU IRQs can be enabled or disabled directly. This
- * is mostly used to control lines that are not muxed, thus bypass the
- * interrupt matrix. For RISCV, these functions are not expected to
- * be used via user API, as peripherals are all routed through INTMUX
- * and shared interrupts require managing sources state.
+ * arch_irq_* is the RISC-V entry point for irq_enable()/irq_disable(). With the
+ * multi-level backend, irq is a multilevel-encoded DT_IRQN, so routing it
+ * through the INTMUX and installing the shared dispatcher must go through
+ * z_soc_irq_*. Without it (flat matrix, pre-migration SoCs) the argument is a
+ * bare CPU line and the line is toggled directly.
  */
 void arch_irq_enable(unsigned int irq)
 {
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	z_soc_irq_enable(irq);
+#else
 	esp_cpu_intr_enable(1 << irq);
+#endif
 }
 
 void arch_irq_disable(unsigned int irq)
 {
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	z_soc_irq_disable(irq);
+#else
 	esp_cpu_intr_disable(1 << irq);
+#endif
 }
 
 int arch_irq_is_enabled(unsigned int irq)
 {
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	return z_soc_irq_is_enabled(irq);
+#else
 	return !!(esp_cpu_intr_get_enabled_mask() & (1 << irq));
+#endif
 }
 #endif
+
+/*
+ * SoC interrupt glue (previously soc/espressif/common/irq.c).
+ *
+ * Xtensa with CONFIG_MULTI_LEVEL_INTERRUPTS implements the multi-level backend
+ * (z_soc_irq_* taking a single multilevel-encoded IRQ) plus the level-2 INTMUX
+ * software dispatcher. Interrupt hierarchy:
+ *
+ *   L1  intc            - CPU interrupt line
+ *   L2  <periph>_intmux - INTMUX aggregator: muxes several peripheral sources
+ *                         onto one CPU line (espressif,esp32-intmux)
+ *
+ * A level-2 encoded IRQ is [l2 source][l1 cpu_line]. The INTMUX is modelled as a
+ * single 2nd-level aggregator (CONFIG_NUM_2ND_LEVEL_AGGREGATORS == 1): every
+ * peripheral source shares one window in _sw_isr_table starting at
+ * CONFIG_2ND_LVL_ISR_TBL_OFFSET, so a leaf's slot is OFFSET + source. The L1
+ * field is the real CPU line, used only for matrix routing (not as a window
+ * selector).
+ *
+ * A CPU line that carries two or more sources fires the shared dispatcher, which
+ * reads the INTMUX pending status and, for every pending source routed to its
+ * line, invokes the matching _sw_isr_table entry (the peripheral ISR). A line
+ * with a single source needs no dispatcher: gen_isr_tables.py places that lone
+ * ISR directly in the line's 1st-level slot. z_soc_irq_enable() then installs
+ * the dispatcher lazily, only on lines whose 1st-level slot is still the
+ * spurious handler (i.e. the shared ones), leaving lone-source lines untouched.
+ *
+ * Everything else (RISC-V, and Xtensa without the multi-level layer) keeps the
+ * flat z_soc_irq_enable(irq, source) matrix helpers.
+ */
+#include <soc/periph_defs.h>
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+
+#include "sw_isr_common.h"
+
+#include <zephyr/device.h>
+#include <zephyr/devicetree/interrupt_controller.h>
+#include <zephyr/irq_multilevel.h>
+#include <zephyr/irq_nextlevel.h>
+#include <soc/soc_caps.h>
+
+/*
+ * The INTMUX MAP (per-source routing) and pending-STATUS register bases come
+ * from the intc node's reg property, so no SoC-specific interrupt register
+ * header is needed here (the register-block naming differs on every SoC and is
+ * absent entirely on some, e.g. esp32/esp32s2 which use DPORT). Layout:
+ *   reg[0] = core0 MAP base    reg[1] = core0 STATUS base
+ *   reg[2] = core1 MAP base    reg[3] = core1 STATUS base   (dual-core only)
+ * The number of pending-status words is the core0 STATUS region size / 4.
+ */
+#define ESP_INTR_STATUS_WORDS (DT_INST_REG_SIZE_BY_IDX(0, 1) / 4)
+
+/*
+ * The interrupt matrix is per-CPU: on dual-core SoCs core 1 (APPCPU) has its own
+ * MAP (per-source routing) and pending-status register block. The routing writes
+ * already pick the block via esp_rom_route_intr_matrix(core, ...); these helpers
+ * do the same for the status/MAP reads so the dispatcher and state queries look
+ * at the block belonging to the core they run on. Note CORE1's MAP block sits at
+ * CORE1_BASE + 0x800, so the named macro is used rather than CORE1_BASE + src*4.
+ */
+static inline int esp_intr_core(void)
+{
+#if SOC_CPU_CORES_NUM > 1
+	return esp_cpu_get_core_id();
+#else
+	return 0;
+#endif
+}
+
+static inline uint32_t esp_intr_map_base(int core)
+{
+#if SOC_CPU_CORES_NUM > 1
+	return (core != 0) ? DT_INST_REG_ADDR_BY_IDX(0, 2) : DT_INST_REG_ADDR_BY_IDX(0, 0);
+#else
+	ARG_UNUSED(core);
+	return DT_INST_REG_ADDR_BY_IDX(0, 0);
+#endif
+}
+
+static inline uint32_t esp_intr_status_base(int core)
+{
+#if SOC_CPU_CORES_NUM > 1
+	return (core != 0) ? DT_INST_REG_ADDR_BY_IDX(0, 3) : DT_INST_REG_ADDR_BY_IDX(0, 1);
+#else
+	ARG_UNUSED(core);
+	return DT_INST_REG_ADDR_BY_IDX(0, 1);
+#endif
+}
+
+#define ESP_L1_MASK BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS)
+
+/*
+ * First _sw_isr_table index of the single source-indexed 2nd-level window: a
+ * level-2 leaf lives at ESP_L2_BASE + source. gen_isr_tables.py uses the same
+ * formula for statically connected sources on shared CPU lines.
+ */
+#define ESP_L2_BASE CONFIG_2ND_LVL_ISR_TBL_OFFSET
+
+/*
+ * _sw_isr_table slot of a CPU line's 1st-level entry. On RISC-V parts with a
+ * reserved-IRQ table offset (CLIC: the first entries are reserved vectors) CPU
+ * line N lives at slot N + offset, and the runtime mcause index and
+ * gen_isr_tables.py both already account for it. Xtensa (and RISC-V without the
+ * offset) use 0.
+ */
+#if defined(CONFIG_RISCV) && defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#define ESP_RESERVED_OFF CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+#else
+#define ESP_RESERVED_OFF 0
+#endif
+#define ESP_L1_SLOT(line) ((line) + ESP_RESERVED_OFF)
+
+/* Decode the (source, cpu_line) pair carried by a level-2 encoded IRQ. */
+static inline void esp_irq_decode(unsigned int irq, unsigned int *source, unsigned int *cpu_line)
+{
+	*source = irq_from_level_2(irq);
+	*cpu_line = irq & ESP_L1_MASK;
+}
+
+/*
+ * Level-2 dispatcher, shared by every CPU line that carries two or more sources.
+ * @arg is this line's CPU interrupt number. For each pending source routed to
+ * this line (confirmed via the source's MAP register), call its leaf entry at
+ * ESP_L2_BASE + source (the peripheral ISR).
+ *
+ * The symbol name is the gen_isr_tables.py convention for the flat
+ * single-aggregator layout: the generator places this handler statically in
+ * the 1st-level slot of every CPU line shared by two or more statically
+ * connected sources, with the _sw_isr_table slot index as its argument. The
+ * lazy install in esp_intc_intr_enable() only remains for lines whose sources
+ * are all attached at runtime (dynamic connects the generator cannot see).
+ *
+ * @arg is the L1 _sw_isr_table slot index (== CPU line + reserved-IRQ offset).
+ * The raw CPU line, recovered by subtracting the offset, is what the peripheral
+ * MAP registers hold (esp_rom_route_intr_matrix routes to the raw line), so it
+ * is the value compared against the per-source MAP entry below.
+ *
+ * IRAM_ATTR: some leaves (e.g. the esp_timer systimer alarm) are IRAM ISRs that
+ * may fire while the flash cache is disabled, so the dispatcher in their path
+ * must also be resident in IRAM. Everything it touches is inline (sys_read32,
+ * __builtin_ctz) or RAM data (_sw_isr_table).
+ */
+void IRAM_ATTR z_soc_2nd_lvl_isr(const void *arg)
+{
+	unsigned int cpu_line = (unsigned int)(uintptr_t)arg - ESP_RESERVED_OFF;
+	int core = esp_intr_core();
+	uint32_t status_base = esp_intr_status_base(core);
+	uint32_t map_base = esp_intr_map_base(core);
+
+	for (int w = 0; w < ESP_INTR_STATUS_WORDS; w++) {
+		uint32_t pending = sys_read32(status_base + (w * 4));
+
+		while (pending != 0U) {
+			int bit = __builtin_ctz(pending);
+			unsigned int src = (w * 32) + bit;
+//ets_printf("%d.%d;", src, cpu_line);
+			pending &= ~BIT(bit);
+
+			if (sys_read32(map_base + (src * 4)) != cpu_line) {
+				continue;
+			}
+
+			const struct _isr_table_entry *ent = &_sw_isr_table[ESP_L2_BASE + src];
+
+			ent->isr(ent->arg);
+		}
+	}
+}
+
+/*
+ * 3rd-level aggregators: a level-2 INTMUX source that is itself a per-peripheral
+ * interrupt controller demuxing several status-register flags. Each flag is a
+ * level-3 leaf placed by gen_isr_tables.py at win_base + flag.
+ *
+ * The table is generated from the devicetree: every "espressif,esp32-l3-intc"
+ * node carries its level-2 INTMUX source (its own "interrupts") and the address
+ * of the peripheral's interrupt-status register ("status-reg"), so no peripheral
+ * register layout is hardcoded here. Adding an L3 aggregator is DTS-only.
+ *
+ * NOTE: win_base is the single 3rd-level window base; correct for one L3
+ * aggregator (the current esp32s3 configuration, NUM_3RD_LEVEL_AGGREGATORS=1).
+ * Multiple L3 aggregators would each need a distinct window here and in the
+ * parent entry / 3RD_LVL_INTR_xx_OFFSET Kconfig.
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_l3_intc)
+
+struct esp_l3_agg {
+	uint8_t l2_src;    /* the aggregator's own level-2 INTMUX source */
+	uint32_t st_reg;   /* peripheral interrupt-status register */
+	uint16_t win_base; /* first _sw_isr_table slot of this aggregator's flags */
+};
+
+#define ESP_L3_AGG_ENTRY(node_id)                                                                  \
+	{ DT_IRQ_BY_IDX(node_id, 0, irq), DT_PROP(node_id, status_reg),                             \
+	  CONFIG_3RD_LVL_ISR_TBL_OFFSET },
+
+/*
+ * NOT const: the array must live in DRAM (not .rodata/flash) so z_soc_3rd_lvl_isr
+ * can read it while the flash cache is disabled (it is in the IRAM_ATTR path).
+ */
+static struct esp_l3_agg esp_l3_aggs[] = {
+	DT_FOREACH_STATUS_OKAY(espressif_esp32_l3_intc, ESP_L3_AGG_ENTRY)
+};
+
+static struct esp_l3_agg *esp_l3_lookup(unsigned int l2_src)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(esp_l3_aggs); i++) {
+		if (esp_l3_aggs[i].l2_src == l2_src) {
+			return &esp_l3_aggs[i];
+		}
+	}
+	return NULL;
+}
+
+/*
+ * Level-3 dispatcher: installed at the aggregator's 2nd-level slot
+ * (ESP_L2_BASE + l2_src) and invoked by z_soc_2nd_lvl_isr. @arg points at the
+ * aggregator descriptor. Reads the peripheral status register and calls each
+ * pending flag's leaf; the leaf clears its own peripheral status (as with L2).
+ */
+void IRAM_ATTR z_soc_3rd_lvl_isr(const void *arg)
+{
+	const struct esp_l3_agg *agg = arg;
+	uint32_t pending = sys_read32(agg->st_reg);
+
+	while (pending != 0U) {
+		int bit = __builtin_ctz(pending);
+		const struct _isr_table_entry *ent = &_sw_isr_table[agg->win_base + bit];
+
+		pending &= ~BIT(bit);
+		ent->isr(ent->arg);
+	}
+}
+
+/*
+ * If the level-2 source is a 3rd-level aggregator, install z_soc_3rd_lvl_isr at
+ * its 2nd-level slot (still spurious: the source has no L2 leaf, only its flags
+ * are connected) so z_soc_2nd_lvl_isr forwards here to demux the flags.
+ */
+static void esp_l3_install(unsigned int l2_src)
+{
+	struct esp_l3_agg *agg = esp_l3_lookup(l2_src);
+
+	if (agg != NULL && _sw_isr_table[ESP_L2_BASE + l2_src].isr == z_irq_spurious) {
+		_sw_isr_table[ESP_L2_BASE + l2_src].isr = z_soc_3rd_lvl_isr;
+		_sw_isr_table[ESP_L2_BASE + l2_src].arg = agg;
+	}
+}
+
+#else
+static inline void esp_l3_install(unsigned int l2_src)
+{
+	ARG_UNUSED(l2_src);
+}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_l3_intc) */
+
+/*
+ * irq_next_level_api backend: the whole interrupt matrix is a single 2nd-level
+ * aggregator device (the intc node). The irq argument of the per-IRQ calls is
+ * the full encoded level-2 IRQ; the (source, cpu_line) pair is decoded
+ * internally since the routing needs both.
+ */
+static void esp_intc_intr_enable(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+
+	unsigned int source, cpu_line;
+
+	esp_irq_decode(irq, &source, &cpu_line);
+	esp_rom_route_intr_matrix(esp_cpu_get_core_id(), source, cpu_line);
+
+//ets_printf("intr_enable: 0x%04x; %d->%d\n",irq, source, cpu_line);
+	/*
+	 * The CPU line's 1st-level slot tells us how the line is used (the encoded
+	 * CPU line is all the information we need):
+	 *   - z_soc_2nd_lvl_isr -> dispatcher already there: statically shared
+	 *                          lines get it from gen_isr_tables.py, or an
+	 *                          earlier dynamic source installed it below.
+	 *   - spurious handler  -> a line whose sources are all attached at
+	 *                          runtime (invisible to the generator); install
+	 *                          the dispatcher now, keyed on this CPU line.
+	 *   - anything else     -> a lone source whose real ISR gen_isr_tables.py
+	 *                          placed directly on the line; leave it in place.
+	 *                          (A second, dynamic source landing on such a
+	 *                          line is not supported: the generator saw only
+	 *                          one static source. Route it elsewhere.)
+	 * The slot is set before the line is enabled below, so the line cannot fire
+	 * with a stale handler.
+	 */
+	unsigned int l1_slot = ESP_L1_SLOT(cpu_line);
+
+	if (_sw_isr_table[l1_slot].isr == z_irq_spurious) {
+		_sw_isr_table[l1_slot].isr = z_soc_2nd_lvl_isr;
+		/* arg is the slot index, matching gen_isr_tables.py; the dispatcher
+		 * subtracts the reserved-IRQ offset to recover the raw CPU line.
+		 */
+		_sw_isr_table[l1_slot].arg = (const void *)(uintptr_t)l1_slot;
+	}
+
+	/*
+	 * Level-3 flag: the L2 source is a per-peripheral aggregator; install its
+	 * L3 dispatcher so z_soc_2nd_lvl_isr forwards there to demux the flags.
+	 * Per-flag masking is the peripheral driver's job (its int-enable register).
+	 */
+	if (irq_get_level(irq) == 3) {
+		esp_l3_install(source);
+	}
+
+	esp_cpu_intr_enable(1 << cpu_line);
+}
+
+static void esp_intc_intr_disable(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+
+//ets_printf("ds:0x%04x;\n",irq);
+	if (irq_get_level(irq) == 3) {
+		/*
+		 * Level-3 flags share one L2 source; per-flag masking is done by the
+		 * peripheral driver. Leave the shared source and dispatchers in place
+		 * so the other flags keep working.
+		 */
+		return;
+	}
+
+	unsigned int source, cpu_line;
+
+	esp_irq_decode(irq, &source, &cpu_line);
+	/*
+	 * Only detach the source from its CPU line; leave the line enabled
+	 * since other sources on the same aggregator may still need it.
+	 */
+	esp_rom_route_intr_matrix(esp_cpu_get_core_id(), source, ETS_INVALID_INUM);
+}
+
+static unsigned int esp_intc_intr_get_state(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+//ets_printf("gs:0x%x;\n", dev);
+	uint32_t map_base = esp_intr_map_base(esp_intr_core());
+
+	for (unsigned int source = 0; source < ETS_MAX_INTR_SOURCE; source++) {
+		if (sys_read32(map_base + (source * 4)) != ETS_INVALID_INUM) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+static int esp_intc_intr_get_line_state(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+
+	unsigned int source, cpu_line;
+
+	esp_irq_decode(irq, &source, &cpu_line);
+
+//ets_printf("state:%d:%d->%d;", irq, source, cpu_line);
+	return sys_read32(esp_intr_map_base(esp_intr_core()) + (source * 4)) != ETS_INVALID_INUM;
+}
+
+#if defined(CONFIG_RISCV)
+/*
+ * RISC-V CPU-interrupt priority is settable per line (hardware range 1-7; 0 is
+ * invalid). The authoritative per-line priorities are applied from the intmux
+ * nodes in esp_intc_init(); this hook is for completeness (the multilevel
+ * framework does not currently invoke irq_set_priority_next_level).
+ */
+static void esp_intc_intr_set_priority(const struct device *dev, unsigned int irq,
+				       unsigned int prio, uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(flags);
+
+	if (prio == 0) {
+		return;
+	}
+	esp_cpu_intr_set_priority(irq & ESP_L1_MASK, prio);
+}
+#endif
+
+static const struct irq_next_level_api esp_intc_api = {
+	.intr_enable = esp_intc_intr_enable,
+	.intr_disable = esp_intc_intr_disable,
+	.intr_get_state = esp_intc_intr_get_state,
+#if defined(CONFIG_RISCV)
+	.intr_set_priority = esp_intc_intr_set_priority,
+#else
+	/* Xtensa interrupt priority is fixed by the CPU line, not settable */
+	.intr_set_priority = NULL,
+#endif
+	.intr_get_line_state = esp_intc_intr_get_line_state,
+};
+
+static int esp_intc_init(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+#if defined(CONFIG_RISCV)
+	/*
+	 * Apply each CPU line's priority from its intmux node's level-1
+	 * "interrupts = <line priority flags>" cell. RISC-V CPU-interrupt
+	 * priority is per line and settable; on Xtensa it is fixed by the line,
+	 * so this is RISC-V only. Sources sharing a line carry the same priority.
+	 */
+#define ESP_INTMUX_SET_PRIO(node_id)                                                               \
+	esp_cpu_intr_set_priority(DT_IRQ(node_id, irq), DT_IRQ(node_id, priority));
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(0, ESP_INTMUX_SET_PRIO)
+#undef ESP_INTMUX_SET_PRIO
+#endif
+
+//ets_printf("init: %x\n", dev);
+	/*
+	 * Nothing to pre-wire: lone-source lines get their ISR from the static
+	 * table (gen_isr_tables.py) and shared-line dispatchers are installed
+	 * lazily by esp_intc_intr_enable() when the first source on the line
+	 * attaches. An IRQ_CONNECT of the dispatcher here would instead claim
+	 * every L1 slot statically and clobber the lone-source optimization.
+	 */
+	return 0;
+}
+
+DEVICE_DT_INST_DEFINE(0, esp_intc_init, NULL, NULL, NULL, PRE_KERNEL_1,
+		      CONFIG_INTC_INIT_PRIORITY, &esp_intc_api);
+
+/*
+ * One intc_table entry per intmux child node: the generic lookup
+ * (get_intc_entry_for_irq) matches a level-2 leaf by its L1 CPU line
+ * (irq_get_intc_irq), which varies per peripheral, so a single entry cannot
+ * cover the matrix. Children sharing a CPU line produce duplicate entries;
+ * that is benign - first match wins and every entry carries the same device
+ * and the same flat-window offset (CONFIG_2ND_LVL_ISR_TBL_OFFSET), keeping
+ * z_get_sw_isr_table_idx() = offset + source, identical to gen_isr_tables.py.
+ */
+#define ESP_INTMUX_PARENT_ENTRY(node_id)                                                           \
+	IRQ_PARENT_ENTRY_DEFINE(CONCAT(esp_intmux_agg_, DT_NODE_CHILD_IDX(node_id)),               \
+				DEVICE_DT_INST_GET(0), DT_IRQN(node_id),                           \
+				INTC_BASE_ISR_TBL_OFFSET(node_id),                                 \
+				DT_INTC_GET_AGGREGATOR_LEVEL(node_id));
+
+DT_INST_FOREACH_CHILD_STATUS_OKAY(0, ESP_INTMUX_PARENT_ENTRY)
+
+void z_soc_irq_enable(unsigned int irq)
+{
+	if (irq_get_level(irq) == 1) {
+		esp_cpu_intr_enable(1 << irq);
+		return;
+	}
+
+//ets_printf("soc_irq_en: 0x%04x\n", irq);
+	const struct device *dev = z_get_sw_isr_device_from_irq(irq);
+
+	if (dev != NULL) {
+//ets_printf("next_level_en: 0x%04x\n", irq);
+		irq_enable_next_level(dev, irq);
+	}
+}
+
+void z_soc_irq_disable(unsigned int irq)
+{
+//ets_printf("soc_irq_disable: 0x%04x\n", irq);
+	if (irq_get_level(irq) == 1) {
+		esp_cpu_intr_disable(1 << irq);
+		return;
+	}
+
+	const struct device *dev = z_get_sw_isr_device_from_irq(irq);
+
+	if (dev != NULL) {
+		irq_disable_next_level(dev, irq);
+	}
+}
+
+int z_soc_irq_is_enabled(unsigned int irq)
+{
+	if (irq_get_level(irq) == 1) {
+		return !!(esp_cpu_intr_get_enabled_mask() & (1 << irq));
+	}
+
+	const struct device *dev = z_get_sw_isr_device_from_irq(irq);
+
+	return (dev != NULL) ? irq_line_is_enabled_next_level(dev, irq) : 0;
+}
+
+void z_soc_irq_init(void)
+{
+	/* All setup happens in esp_intc_init() and lazily on first enable. */
+}
+
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+int z_soc_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+			      void (*routine)(const void *parameter), const void *parameter,
+			      uint32_t flags)
+{
+	ARG_UNUSED(priority);
+	ARG_UNUSED(flags);
+
+	/*
+	 * The intc_table entries defined above make the generic lookup agree
+	 * with the single source-indexed window: a level-2 IRQ resolves to
+	 * ESP_L2_BASE + source, a level-1 IRQ to its own slot, mirroring
+	 * gen_isr_tables.py so static and dynamic connects agree.
+	 */
+	unsigned int index = z_get_sw_isr_table_idx(irq);
+
+	_sw_isr_table[index].isr = routine;
+	_sw_isr_table[index].arg = parameter;
+
+	return irq;
+}
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+
+#else /* flat matrix backend: RISC-V and non-multilevel Xtensa */
+
+void z_soc_irq_enable(unsigned int irq, unsigned int source)
+{
+	if (irq >= CONFIG_NUM_IRQS) {
+		LOG_ERR("Invalid IRQ %u", irq);
+		return;
+	}
+
+	if (source >= ETS_MAX_INTR_SOURCE) {
+		LOG_ERR("Invalid interrupt source %u", source);
+		return;
+	}
+
+	/* Route the peripheral interrupt source to CPU interrupt line */
+	esp_rom_route_intr_matrix(esp_cpu_get_core_id(), source, irq);
+
+	/* Enable the CPU interrupt line */
+	esp_cpu_intr_enable(1 << irq);
+}
+
+void z_soc_irq_disable(unsigned int irq, unsigned int source)
+{
+	if (irq >= CONFIG_NUM_IRQS) {
+		LOG_ERR("Invalid IRQ %u", irq);
+		return;
+	}
+
+	if (source != 0 && source < ETS_MAX_INTR_SOURCE) {
+		/* Route to an invalid/disabled interrupt number */
+		esp_rom_route_intr_matrix(esp_cpu_get_core_id(), source, ETS_INVALID_INUM);
+	}
+
+#if !defined(CONFIG_SHARED_INTERRUPTS)
+	esp_cpu_intr_disable(1 << irq);
+#endif
+}
+
+#endif /* CONFIG_XTENSA && CONFIG_MULTI_LEVEL_INTERRUPTS */
+
+/*
+ * Only a real function when the RISC-V arch expects one (PLIC/CLIC/AIA); for the
+ * plain espressif interrupt-matrix parts z_riscv_irq_priority_set is a no-op
+ * macro from <zephyr/arch/riscv/irq.h>, and per-line priorities are applied from
+ * the intmux nodes in esp_intc_init() instead.
+ */
+#if defined(CONFIG_RISCV) &&                                                                       \
+	(defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                        \
+	 defined(CONFIG_RISCV_HAS_AIA))
+void z_riscv_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	ARG_UNUSED(flags);
+
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+	/*
+	 * ARCH_IRQ_CONNECT passes the raw multilevel-encoded DT_IRQN; a level-2+
+	 * leaf must be reduced to its CPU line, otherwise the encoded value trips
+	 * esp_cpu_intr_set_priority()'s 0..31 range check.
+	 */
+	if (irq_get_level(irq) != 1) {
+		irq &= BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS);
+	}
+#endif
+
+	/* 0 is not a valid RISC-V interrupt priority; keep the line's default. */
+	if (prio == 0) {
+		return;
+	}
+	esp_cpu_intr_set_priority(irq, prio);
+}
+#endif
+
