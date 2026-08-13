@@ -101,7 +101,7 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (state) {
 	case STATE_DOWNLOADING:
 		if (update_state[obj_inst_id] == STATE_IDLE) {
@@ -168,7 +168,7 @@ void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (result) {
 	case RESULT_DEFAULT:
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
@@ -465,7 +465,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	inst[index].resources = res[index];
 	inst[index].resource_count = i;
 
-	LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
+	LOG_DBG("Create LwM2M firmware instance: %d", obj_inst_id);
 	return &inst[index];
 }
 
@@ -500,7 +500,7 @@ static int lwm2m_firmware_init(void)
 #endif
 		ret = lwm2m_create_obj_inst(LWM2M_OBJECT_FIRMWARE_ID, idx, &obj_inst);
 		if (ret < 0) {
-			LOG_DBG("Create LWM2M instance %d error: %d", idx, ret);
+			LOG_DBG("Create LwM2M instance %d error: %d", idx, ret);
 			break;
 		}
 	}

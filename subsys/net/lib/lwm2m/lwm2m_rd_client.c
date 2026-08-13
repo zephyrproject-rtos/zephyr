@@ -840,7 +840,7 @@ static void sm_do_bootstrap_reg(void)
 
 	ret = lwm2m_engine_start(client.ctx);
 	if (ret < 0) {
-		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		LOG_ERR("Cannot init LwM2M engine (%d)", ret);
 		set_sm_state(ENGINE_NETWORK_ERROR);
 		return;
 	}
@@ -1124,7 +1124,7 @@ static void sm_do_registration(void)
 
 		ret = lwm2m_engine_start(client.ctx);
 		if (ret < 0) {
-			LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+			LOG_ERR("Cannot init LwM2M engine (%d)", ret);
 			goto retry;
 		}
 	}
@@ -1615,7 +1615,7 @@ int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
 	client.ep_name[CLIENT_EP_LEN - 1] = '\0';
-	LOG_INF("Start LWM2M Client: %s", client.ep_name);
+	LOG_INF("Start LwM2M Client: %s", client.ep_name);
 
 	set_sm_state(ENGINE_INIT);
 
@@ -1645,7 +1645,7 @@ int lwm2m_rd_client_stop(struct lwm2m_ctx *client_ctx,
 		set_sm_state(ENGINE_DEREGISTERED);
 	}
 
-	LOG_INF("Stop LWM2M Client: %s", client.ep_name);
+	LOG_INF("Stop LwM2M Client: %s", client.ep_name);
 
 	k_mutex_unlock(&client.mutex);
 

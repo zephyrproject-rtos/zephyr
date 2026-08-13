@@ -21,7 +21,7 @@ config LWM2M_UCIFI_BATTERY_INSTANCE_COUNT
 	default 1
 	help
 	  This setting establishes the total count of uCIFI Battery
-	  instances available to the LWM2M client.
+	  instances available to the LwM2M client.
 
 endif # LWM2M_UCIFI_BATTERY
 
