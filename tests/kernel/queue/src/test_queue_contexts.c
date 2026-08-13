@@ -794,6 +794,9 @@ ZTEST(queue_api_1cpu, test_queue_poll_race)
  * @see k_queue_init()
  */
 #define QUEUE_NUM 10
+/**
+ * @brief Operate on multiple independent queues
+ */
 ZTEST(queue_api, test_multiple_queues)
 {
 	/*define multiple queues*/
