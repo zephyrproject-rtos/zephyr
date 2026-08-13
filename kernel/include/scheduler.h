@@ -68,7 +68,9 @@ typedef void (*_waitq_post_walk_cb_t)(int status, void *data);
  * As such, care must be taken when using this function and in the callbacks.
  *
  * @warning @p walk_func may safely remove the thread received as argument from
- * the wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
+ * the wait queue only when `CONFIG_WAITQ_SCALABLE=n` or if the removal is
+ * performed on the final iteration of the walk (i.e. when the callback returns
+ * a non-zero value).
  *
  * @param wait_q    Identifies the wait queue to walk
  * @param walk_func Callback to invoke for each waiting thread
