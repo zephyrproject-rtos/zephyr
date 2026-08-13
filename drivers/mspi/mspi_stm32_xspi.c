@@ -260,53 +260,6 @@ static int mspi_stm32_xspi_abort_memmap_if_enabled(const struct device *dev)
 	return ret;
 }
 
-/**
- * @brief Reads/Writes in memory mapped mode.
- *
- */
-static int read_write_in_memory_map_mode(const struct device *dev,
-					 const struct mspi_xfer_packet *packet)
-{
-	int ret;
-	struct mspi_stm32_data *dev_data = dev->data;
-
-	if (packet->data_buf == NULL) {
-		LOG_ERR("data buf is null : 0x%x", packet->cmd);
-		return -EIO;
-	}
-
-	if (!mspi_stm32_xspi_is_memorymap(dev)) {
-		ret = mspi_stm32_xspi_memmap_on(dev);
-		if (ret != 0) {
-			LOG_ERR("Failed to set memory mapped");
-			return ret;
-		}
-	}
-
-	uintptr_t mmap_addr = dev_data->memmap_base_addr + packet->address;
-
-	if (packet->dir == MSPI_RX) {
-		LOG_INF("Memory-mapped read from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
-		memcpy(packet->data_buf, (void *)mmap_addr, packet->num_bytes);
-		k_sleep(K_MSEC(1));
-		return 0;
-	}
-
-	if (!dev_data->memmap_cfg.permission) {
-		LOG_INF("Memory-mapped write from 0x%08lx, len %u", mmap_addr, packet->num_bytes);
-		memcpy((void *)mmap_addr, packet->data_buf, packet->num_bytes);
-		k_sleep(K_MSEC(1));
-		return 0;
-	}
-
-	ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
-	return -EPROTONOSUPPORT;
-}
-
 static HAL_StatusTypeDef read_write_in_indirect_mode(const struct device *dev,
 						     const struct mspi_xfer_packet *packet,
 						     uint8_t access_mode)
@@ -396,32 +349,13 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 {
 	HAL_StatusTypeDef hal_ret;
 	struct mspi_stm32_data *dev_data = dev->data;
+	int ret;
 
-	if (dev_data->memmap_cfg.enable) {
-		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
-		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
-		    (packet->cmd == MSPI_NOR_CMD_SE) ||
-		    ((mspi_stm32_xspi_hal_address_size(dev_data->dev_cfg.addr_length) ==
-		      HAL_XSPI_ADDRESS_24_BITS) &&
-		     (dev_data->dev_cfg.io_mode == MSPI_IO_MODE_SINGLE))) {
-			LOG_DBG(" MSPI_IO_MODE_SINGLE in 3Bytes addressing is not supported in "
-				"memory map mode, switching to indirect mode");
-
-			int ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
-
-			if (ret != 0) {
-				return ret;
-			}
-			goto indirect;
-		}
-
-		if (read_write_in_memory_map_mode(dev, packet) == -EPROTONOSUPPORT) {
-			goto indirect;
-		}
-		return 0;
+	ret = mspi_stm32_xspi_abort_memmap_if_enabled(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
-indirect:
 	(void)pm_device_runtime_get(dev);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
