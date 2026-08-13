@@ -190,7 +190,7 @@
 	status = "okay";
 };
 
-&sercom3 {
+i2c0: &sercom3 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;

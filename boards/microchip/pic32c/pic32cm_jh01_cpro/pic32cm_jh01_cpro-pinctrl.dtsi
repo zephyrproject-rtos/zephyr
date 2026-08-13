@@ -16,8 +16,8 @@
 
 	sercom3_i2c_default: sercom3_i2c_default {
 		group1 {
-			pinmux = <PA22C_SERCOM3_PAD0>,
-				 <PA23C_SERCOM3_PAD1>;
+			pinmux = <PA22C_SERCOM3_PAD0>,  /* SDA */
+				 <PA23C_SERCOM3_PAD1>;  /* SCL */
 		};
 	};
 
