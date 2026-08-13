@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Infineon I3C controller (Synopsys DW I3C IP with Infineon wrapper)
+
+compatible: "infineon,i3c"
+
+include: snps,designware-i3c.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
