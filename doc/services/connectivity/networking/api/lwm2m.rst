@@ -1,6 +1,6 @@
 .. _lwm2m_interface:
 
-Lightweight M2M (LWM2M)
+Lightweight M2M (LwM2M)
 #######################
 
 .. contents::
@@ -551,7 +551,7 @@ Send scheduler helper objects
 
 The optional SEND scheduler extension exposes two objects (Send scheduler Control ``10523`` and
 Sampling Rules ``10524``) that sit on top of cached resources to decide when samples should be kept
-and when the client should trigger a LWM2M SEND.
+and when the client should trigger a LwM2M SEND.
 
 Enabling and wiring
 ===================
