@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+# SPDX-License-Identifier: Apache-2.0
+
+title: CH5xx Comparator
+
+description: |
+  Binding for the WCH CH5xx Comparator driver.
+
+examples:
+  - |
+    &pinctrl {
+      cmp0_pins: cmp0_pins {
+        group {
+          pinmux = <CMP_P_PA2_0 CMP_N_PA3_0>;
+          /* It's recommended on CH57x to disable digital input
+           * This configures the pin as analog input only */
+          input-disable;
+        };
+      };
+    };
+
+    &cmp0 {
+      compatible = "wch,ch5xx-comparator";
+      status = "okay";
+      pinctrl-0 = <&cmp0_pins>;
+      pinctrl-names = "default";
+    };
+
+compatible: "wch,ch5xx-comparator"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true

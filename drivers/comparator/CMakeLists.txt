@@ -28,4 +28,5 @@ zephyr_library_sources_ifdef(CONFIG_COMPARATOR_RENESAS_RX_LVD comparator_renesas
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_SHELL comparator_shell.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_SILABS_ACMP comparator_silabs_acmp.c)
 zephyr_library_sources_ifdef(CONFIG_COMPARATOR_STM32_COMP comparator_stm32_comp.c)
+zephyr_library_sources_ifdef(CONFIG_COMPARATOR_WCH_CH5XX comparator_wch_ch5xx.c)
 # zephyr-keep-sorted-stop
