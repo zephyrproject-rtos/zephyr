@@ -106,14 +106,7 @@ static struct bt_bap_broadcast_sink_cb broadcast_sink_cbs = {
 
 static void started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
-
-	LOG_INF("Stream %p started", stream);
+	bap_common_stream_started_cb(stream);
 }
 
 static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)

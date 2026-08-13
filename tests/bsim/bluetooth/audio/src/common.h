@@ -137,10 +137,11 @@ void backchannel_sync_clear_all(void);
 struct audio_test_stream {
 	struct bt_cap_stream stream;
 
+	/* TX */
 	uint16_t seq_num;
 	size_t tx_cnt;
-	uint16_t tx_sdu_size;
 
+	/* RX */
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
 	size_t valid_rx_cnt;

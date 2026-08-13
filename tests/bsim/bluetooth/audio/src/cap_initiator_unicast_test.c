@@ -172,30 +172,6 @@ static void unicast_stream_enabled(struct bt_bap_stream *stream)
 	LOG_INF("Enabled stream %p", stream);
 }
 
-static void unicast_stream_started(struct bt_bap_stream *stream)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
-
-	LOG_INF("Started stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	}
-}
-
 static void unicast_stream_metadata_updated(struct bt_bap_stream *stream)
 {
 	LOG_INF("Metadata updated stream %p", stream);
@@ -242,7 +218,7 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.codec_configured = unicast_stream_codec_configured,
 	.qos_configured = unicast_stream_qos_configured,
 	.enabled = unicast_stream_enabled,
-	.started = unicast_stream_started,
+	.started = bap_common_stream_started_cb,
 	.metadata_updated = unicast_stream_metadata_updated,
 	.disabled = unicast_stream_disabled,
 	.stopped = unicast_stream_stopped,

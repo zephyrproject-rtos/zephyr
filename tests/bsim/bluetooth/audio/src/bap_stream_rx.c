@@ -43,13 +43,12 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 			   struct net_buf *buf)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	static bool last_failed;
 
 	test_stream->rx_cnt++;
 	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
 		if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
 			test_stream->valid_rx_cnt++;
-			last_failed = false;
+			test_stream->last_rx_failed = false;
 
 			if (test_stream->valid_rx_cnt >= MIN_SEND_COUNT) {
 				SET_FLAG(test_stream->flag_audio_received);
