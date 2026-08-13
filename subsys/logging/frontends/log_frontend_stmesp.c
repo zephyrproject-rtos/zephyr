@@ -335,7 +335,6 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 {
 	uint16_t strl[4];
 	union log_frontend_stmesp_demux_header hdr = {.log = {.level = desc.level}};
-	bool use_timestamp = desc.level != LOG_LEVEL_INTERNAL_RAW_STRING;
 	const char *sname;
 	static const char null_c = '\0';
 	size_t sname_len;
@@ -371,7 +370,7 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 		if (IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_MSG_END_TIMESTAMP)) {
 			STM_D32(stm_esp, hdr.raw, false, false);
 		} else {
-			STM_D32(stm_esp, hdr.raw, use_timestamp, true);
+			STM_D32(stm_esp, hdr.raw, true, true);
 		}
 		(void)cbprintf_package_convert(package, desc.package_len, package_cb, stm_esp,
 					       flags, strl, ARRAY_SIZE(strl));
