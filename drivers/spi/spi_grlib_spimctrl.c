@@ -45,8 +45,8 @@ struct data {
 
 static int spi_config(struct spi_context *ctx, const struct spi_config *config)
 {
-	if (config->slave != 0) {
-		LOG_ERR("More slaves than supported");
+	if (config->peripheral != 0) {
+		LOG_ERR("More peripherals than supported");
 		return -ENOTSUP;
 	}
 
@@ -80,8 +80,8 @@ static int spi_config(struct spi_context *ctx, const struct spi_config *config)
 		return -ENOTSUP;
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 

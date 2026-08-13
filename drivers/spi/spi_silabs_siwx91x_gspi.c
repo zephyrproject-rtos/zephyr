@@ -43,7 +43,8 @@ struct gspi_siwx91x_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
-	uint8_t mosi_overrun __aligned(32);
+
+	uint8_t sdo_overrun __aligned(32);
 };
 
 struct gspi_siwx91x_data {
@@ -96,7 +97,7 @@ static int gspi_siwx91x_config(const struct device *dev, const struct spi_config
 
 	/* Validate unsupported configurations */
 	if (spi_cfg->operation & (SPI_HALF_DUPLEX | SPI_CS_ACTIVE_HIGH | SPI_TRANSFER_LSB |
-				  SPI_OP_MODE_SLAVE | SPI_MODE_LOOP)) {
+				  SPI_OP_MODE_PERIPHERAL | SPI_MODE_LOOP)) {
 		LOG_ERR("Unsupported configuration 0x%X!", spi_cfg->operation);
 		return -ENOTSUP;
 	}
@@ -262,7 +263,7 @@ static void gspi_siwx91x_fill_desc(const struct gspi_siwx91x_config *cfg,
 			new_blk_cfg->source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		} else {
 			/* Null buffer pointer means sending dummy byte */
-			new_blk_cfg->source_address = (uint32_t)&(cfg->mosi_overrun);
+			new_blk_cfg->source_address = (uint32_t)&(cfg->sdo_overrun);
 			new_blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
 		}
 	} else {
@@ -736,7 +737,7 @@ static DEVICE_API(spi, gspi_siwx91x_driver_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.mosi_overrun = (uint8_t)SPI_MOSI_OVERRUN_DT(inst),                                \
+		.sdo_overrun = (uint8_t)SPI_SDO_OVERRUN_DT(inst),                                  \
 	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(inst, gspi_siwx91x_pm_action);                                    \
 	DEVICE_DT_INST_DEFINE(inst, &gspi_siwx91x_init, PM_DEVICE_DT_INST_GET(inst),               \
