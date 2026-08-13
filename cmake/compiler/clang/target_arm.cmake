@@ -43,6 +43,10 @@ endif()
 list(APPEND TOOLCHAIN_C_FLAGS ${ARM_C_FLAGS})
 list(APPEND TOOLCHAIN_GROUPED_LD_FLAGS ARM_C_FLAGS)
 
+if(CONFIG_THREAD_LOCAL_STORAGE)
+  list(APPEND ARM_C_FLAGS -mtp=soft)
+endif()
+
 # Flags not supported by llext linker
 # (regexps are supported and match whole word)
 set(LLEXT_REMOVE_FLAGS
