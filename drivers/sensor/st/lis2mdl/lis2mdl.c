@@ -526,7 +526,7 @@ static int lis2mdl_pm_action(const struct device *dev,
 			(LIS2MDL_CFG_IRQ(inst)), ())
 
 #define LIS2MDL_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER |			\
+				SPI_OP_MODE_CONTROLLER |		\
 				SPI_MODE_CPOL |				\
 				SPI_MODE_CPHA)				\
 

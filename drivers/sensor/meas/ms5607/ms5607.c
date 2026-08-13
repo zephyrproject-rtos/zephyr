@@ -317,7 +317,7 @@ static DEVICE_API(sensor, ms5607_api_funcs) = {
 	.channel_get = ms5607_channel_get,
 };
 
-#define MS5607_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |	\
+#define MS5607_SPI_OPERATION (SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 			      SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
 
 /* Initializes a struct ms5607_config for an instance on a SPI bus. */

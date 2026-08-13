@@ -1562,7 +1562,7 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
  */
 
 #define LSM6DSV16X_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
+			 SPI_OP_MODE_CONTROLLER |			\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 

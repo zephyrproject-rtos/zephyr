@@ -27,7 +27,7 @@ static int hx711_spi_read_sample(const struct device *dev, int32_t *sample)
 	struct hx711_data *data = dev->data;
 
 	/*
-	 * Send out a clock pulse sequence through MOSI to HX711.
+	 * Send out a clock pulse sequence through SDO to HX711.
 	 * The first 48 bits are 101010... repeating 24 times, for reading
 	 * out the last 24-bit sample.
 	 * The last 8 bits are trailing clock pulses that set the gain of
@@ -263,7 +263,7 @@ static int hx711_sample_wait(const struct device *dev)
 		}
 
 		if (rx_buffer == 0) {
-			/* MISO low => data ready */
+			/* SDI low => data ready */
 			break;
 		}
 
@@ -397,7 +397,8 @@ static int hx711_init(const struct device *dev)
 }
 
 #define HX711_SPI_OPERATION                                                                        \
-	(SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB)
+	(SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA |                \
+	 SPI_TRANSFER_MSB)
 
 #define HX711_TRGGER_ENABLED(node)                                                                 \
 	COND_CODE_1(CONFIG_HX711_SPI_TRIGGER, (DT_INST_PINCTRL_HAS_NAME(node, trigger)), (false))

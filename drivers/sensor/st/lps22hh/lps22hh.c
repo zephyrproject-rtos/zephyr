@@ -364,7 +364,8 @@ static int lps22hh_init(const struct device *dev)
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 			(LPS22HH_CFG_IRQ(inst)), ())
 
-#define LPS22HH_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+#define LPS22HH_SPI_OPERATION                                           \
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define LPS22HH_CONFIG_SPI(inst)                                        \
 	{                                                               \

@@ -798,7 +798,7 @@ static int ism330dhcx_init(const struct device *dev)
 		.gyro_range = DT_INST_PROP(inst, gyro_range),					\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),						\
 			    (.bus_init = ism330dhcx_spi_init,					\
-			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
+			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |		\
 							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
 							 SPI_WORD_SET(8)),),			\
 			    ())									\
