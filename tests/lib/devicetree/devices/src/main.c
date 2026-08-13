@@ -67,6 +67,21 @@ DEVICE_DT_DEFINE(TEST_NOLABEL, dev_init, NULL,
 #define DEV_HDL(node_id) device_handle_get(DEVICE_DT_GET(node_id))
 #define DEV_HDL_NAME(name) device_handle_get(DEVICE_GET(name))
 
+/**
+ * @brief Verify DEVICE_INIT_DT_GET() resolves to the matching device.
+ *
+ * @details
+ * For every test devicetree node, the init entry obtained with
+ * DEVICE_INIT_DT_GET() must reference the same device object that
+ * DEVICE_DT_GET() returns.
+ *
+ * Expected result:
+ * - Each init entry's device pointer equals the corresponding device.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_INIT_DT_GET()
+ * @see DEVICE_DT_GET()
+ */
 ZTEST(devicetree_devices, test_init_get)
 {
 	/* Check device pointers */
@@ -110,6 +125,20 @@ ZTEST(devicetree_devices, test_init_get)
 	zassert_equal(DEVICE_DT_GET(TEST_NOLABEL)->ops.init, dev_init);
 }
 
+/**
+ * @brief Verify devices initialize in devicetree dependency order.
+ *
+ * @details
+ * Each test driver records its device handle during initialization. The
+ * recorded sequence must match the expected order derived from the
+ * devicetree dependencies and init priorities.
+ *
+ * Expected result:
+ * - The recorded initialization sequence matches the expected handle order.
+ *
+ * @ingroup kernel_device_tests
+ * @see device_handle_get()
+ */
 ZTEST(devicetree_devices, test_init_order)
 {
 	zassert_equal(init_order[0], DEV_HDL(TEST_GPIO));
@@ -165,6 +194,15 @@ static int device_visitor(const struct device *dev,
 	return -ENOSPC;
 }
 
+/**
+ * @brief Test querying the devices a device requires
+ *
+ * @details Verify device_required_handles_get() and device_required_foreach()
+ * report the devices that a given device depends on.
+ *
+ * @ingroup kernel_device_tests
+ * @see device_required_handles_get, device_required_foreach
+ */
 ZTEST(devicetree_devices, test_requires)
 {
 	size_t nhdls = 0;
@@ -244,6 +282,25 @@ ZTEST(devicetree_devices, test_requires)
 	zassert_equal(nhdls, 0);
 }
 
+/**
+ * @brief Verify injected dependencies are reported for a device.
+ *
+ * @details
+ * device_injected_handles_get() must return no handles for devices without
+ * injected dependencies and exactly the injected device's handle for a node
+ * declared with an injected dependency.
+ *
+ * Test steps:
+ * - Query injected handles for two devices without injected dependencies.
+ * - Query the device with an injected dependency and check the handle list.
+ *
+ * Expected result:
+ * - Only the node with an injected dependency reports a handle, and it is
+ *   the injected device's handle.
+ *
+ * @ingroup kernel_device_tests
+ * @see device_injected_handles_get()
+ */
 ZTEST(devicetree_devices, test_injected)
 {
 	size_t nhdls = 0;
@@ -267,6 +324,20 @@ ZTEST(devicetree_devices, test_injected)
 	zassert_true(check_handle(DEV_HDL(TEST_DEVB), hdls, nhdls));
 }
 
+/**
+ * @brief Verify DEVICE_DT_GET_OR_NULL() for present and absent nodes.
+ *
+ * @details
+ * The macro must resolve to the device for an existing devicetree node and
+ * to NULL for a non-existent node, without failing the build.
+ *
+ * Expected result:
+ * - An existing node yields a non-NULL device; a non-existent node yields
+ *   NULL.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_DT_GET_OR_NULL()
+ */
 ZTEST(devicetree_devices, test_get_or_null)
 {
 	const struct device *dev;
@@ -278,6 +349,15 @@ ZTEST(devicetree_devices, test_get_or_null)
 	zassert_is_null(dev);
 }
 
+/**
+ * @brief Test querying the devices that depend on a device
+ *
+ * @details Verify device_supported_handles_get() and
+ * device_supported_foreach() report the devices that depend on a given device.
+ *
+ * @ingroup kernel_device_tests
+ * @see device_supported_handles_get, device_supported_foreach
+ */
 ZTEST(devicetree_devices, test_supports)
 {
 	size_t nhdls = 0;

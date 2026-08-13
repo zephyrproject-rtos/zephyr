@@ -442,6 +442,15 @@ ZTEST(device, test_abstraction_driver_common)
 	zassert_true(baz == 2, "common API do_that fail");
 }
 
+/**
+ * @brief Test deferred device initialization
+ *
+ * @details Verify a device marked for deferred initialization is not ready
+ * at boot and becomes ready after an explicit device_init() at runtime.
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ */
 ZTEST(device, test_deferred_init)
 {
 	int ret;
@@ -486,6 +495,28 @@ ZTEST(device, test_deferred_init_failure)
 	zassert_equal(dev->state->init_res, EIO);
 }
 
+/**
+ * @brief Verify DEVICE_API_IS() identifies devices by their API class.
+ *
+ * @details
+ * Devices implementing an API, including drivers whose APIs extend it at
+ * one or two levels of inheritance, must be recognized as instances of the
+ * base API class, while a device with an unrelated API must not.
+ *
+ * Test steps:
+ * - Check DEVICE_API_IS() is true for two direct implementations of the
+ *   abstract API.
+ * - Check it is also true for the child, grandchild and sibling drivers
+ *   whose APIs extend the abstract API.
+ * - Check it is false for a device with an unrelated API.
+ *
+ * Expected result:
+ * - DEVICE_API_IS() reflects API class membership for every driver.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_API_IS()
+ * @see device_get_binding()
+ */
 ZTEST(device, test_device_api)
 {
 	const struct device *dev;
@@ -510,6 +541,27 @@ ZTEST(device, test_device_api)
 	zexpect_false(DEVICE_API_IS(abstract, dev));
 }
 
+/**
+ * @brief Verify a device with an extended API exposes parent and child APIs.
+ *
+ * @details
+ * The child driver's API extends the abstract API. The device must test true
+ * for both the base and the child API classes, false for the unrelated
+ * grandchild and sibling classes, and both the inherited and the extending
+ * API methods must dispatch correctly.
+ *
+ * Test steps:
+ * - Check DEVICE_API_IS() for the base and child API classes.
+ * - Check DEVICE_API_IS() is false for grandchild and sibling classes.
+ * - Invoke base-API and child-API methods and validate their results.
+ *
+ * Expected result:
+ * - API class checks and method dispatch match the child driver's API
+ *   inheritance.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_API_IS()
+ */
 ZTEST(device, test_device_api_extends)
 {
 	const struct device *dev;
@@ -536,6 +588,25 @@ ZTEST(device, test_device_api_extends)
 	zexpect_equal(ret, 9);
 }
 
+/**
+ * @brief Verify two-level API extension is visible at every level.
+ *
+ * @details
+ * The grandchild driver's API extends the child API, which extends the
+ * abstract API. The device must test true for all three API classes and
+ * dispatch methods from each level of the hierarchy.
+ *
+ * Test steps:
+ * - Check DEVICE_API_IS() for the abstract, child and grandchild classes.
+ * - Check DEVICE_API_IS() is false for the sibling class.
+ * - Invoke methods from each API level and validate their results.
+ *
+ * Expected result:
+ * - The grandchild device is an instance of all three API classes.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_API_IS()
+ */
 ZTEST(device, test_device_api_extends_grandchild)
 {
 	const struct device *dev;
@@ -568,6 +639,26 @@ ZTEST(device, test_device_api_extends_grandchild)
 	zexpect_equal(ret, 19);
 }
 
+/**
+ * @brief Verify sibling API extensions are independent of each other.
+ *
+ * @details
+ * The sibling driver's API extends the abstract API independently of the
+ * child API branch. The device must test true for the abstract and sibling
+ * classes but false for the child and grandchild classes.
+ *
+ * Test steps:
+ * - Check DEVICE_API_IS() for the abstract and sibling classes.
+ * - Check DEVICE_API_IS() is false for the child and grandchild classes.
+ * - Invoke inherited and sibling-specific methods and validate results.
+ *
+ * Expected result:
+ * - Sibling extension does not make the device an instance of the other
+ *   extension branch.
+ *
+ * @ingroup kernel_device_tests
+ * @see DEVICE_API_IS()
+ */
 ZTEST(device, test_device_api_extends_sibling)
 {
 	const struct device *dev;
@@ -596,6 +687,12 @@ ZTEST(device, test_device_api_extends_sibling)
 	zexpect_equal(ret, 50);
 }
 
+/**
+ * @brief Test deferred device initialization from user mode
+ *
+ * @see device_init
+ * @ingroup kernel_device_tests
+ */
 ZTEST_USER(device, test_deferred_init_user)
 {
 	int ret;
@@ -608,6 +705,15 @@ ZTEST_USER(device, test_deferred_init_user)
 	zassert_true(device_is_ready(FAKEDEFERDRIVER1));
 }
 
+/**
+ * @brief Test that de-initialization is rejected when unsupported
+ *
+ * @details Verify device_deinit() returns -ENOTSUP for a device that does
+ * not provide a de-initialization function.
+ *
+ * @see device_deinit
+ * @ingroup kernel_device_tests
+ */
 ZTEST(device, test_deinit_not_supported)
 {
 	const struct device *dev = device_get_binding(DUMMY_NOINIT);
@@ -628,6 +734,15 @@ static int dummy_deinit(const struct device *dev)
 DEVICE_DEINIT_DEFINE(dummy_deinit, DUMMY_DEINIT, NULL, dummy_deinit, NULL, NULL, NULL, POST_KERNEL,
 		     CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+/**
+ * @brief Test de-initializing a device at runtime
+ *
+ * @details Verify device_deinit() succeeds for a device that provides a
+ * de-initialization function, and that a subsequent de-init is rejected.
+ *
+ * @see device_deinit
+ * @ingroup kernel_device_tests
+ */
 ZTEST(device, test_deinit_success_and_redeinit)
 {
 	const struct device *dev = device_get_binding(DUMMY_DEINIT);
@@ -646,6 +761,15 @@ ZTEST(device, test_deinit_success_and_redeinit)
 DEVICE_DT_DEFINE(FAKEDRIVER0_NODEID, NULL, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
 
+/**
+ * @brief Test obtaining a device by its devicetree node label
+ *
+ * @details Verify device_get_by_dt_nodelabel() returns the expected device
+ * for a valid node label and NULL for an unknown one.
+ *
+ * @see device_get_by_dt_nodelabel
+ * @ingroup kernel_device_tests
+ */
 ZTEST(device, test_device_get_by_dt_nodelabel)
 {
 	const struct device *dev = DEVICE_DT_GET(FAKEDRIVER0_NODEID);
