@@ -24,6 +24,7 @@
 
 	/delete-node/ cpus;
 	/delete-node/ sw-pwm;
+	/delete-node/ ipc;
 
 	soc {
 		/delete-node/ memory@20000000;

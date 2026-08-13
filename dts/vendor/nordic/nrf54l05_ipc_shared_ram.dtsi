@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	soc {
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			cpuapp_cpuflpr_ipc_shm: memory@2000ec00 {
+				reg = <0x2000ec00 DT_SIZE_K(2)>;
+			};
+
+			cpuflpr_cpuapp_ipc_shm: memory@2000f400 {
+				reg = <0x2000f400 DT_SIZE_K(2)>;
+			};
+		};
+	};
+};
