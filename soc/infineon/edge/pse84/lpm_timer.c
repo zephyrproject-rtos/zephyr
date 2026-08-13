@@ -42,51 +42,133 @@
 /* Time in microseconds for MCWDT reset/enable propagation */
 #define MCWDT_RESET_TIME_US 62U
 
+/* Minimum alarm in PILO ticks: MCWDT match values take effect after ~2 PILO
+ * cycles, so the shortest deterministic delay is 3 ticks.
+ */
+#define LPM_MIN_DELAY_TICKS 3U
+
+/* Maximum programmable delay.  Matches the HAL cap: it leaves headroom in the
+ * high 16 bits (Counter 1) so the combined match never wraps onto itself.
+ */
+#define LPM_MAX_DELAY_TICKS 0xFFF0FFFFUL
+
+/* Width of Counter 0 (and Counter 1); each is a 16-bit counter. */
+#define LPM_C0_PERIOD 0x10000U
+
+/* Post-write synchronization delay for Cy_MCWDT_SetMatch().  The alarm is armed
+ * far from the live count (the cascade-settle loops below guarantee it), so the
+ * 2-cycle sync never races the match and no blocking wait is required.
+ */
+#define MCWDT_SETMATCH_TIME_US 0U
+
+/* Bound on the cascade-settle busy-wait loops.  One LFCLK cycle is ~30 us at
+ * 32 kHz; this many CPU iterations covers the worst-case propagation while
+ * still terminating if the LFCLK source ever stops (avoids a lockup).
+ */
+#define LPM_CASCADE_TIMEOUT 0xFFFFU
+
 static MCWDT_STRUCT_Type *const mcwdt_base = (MCWDT_STRUCT_Type *)MCWDT_REG_ADDR;
+
+/* Counter 0 match value programmed by the previous entry.  Tracked here so the
+ * next entry can wait for that queued cascade to settle without reading it back
+ * from the hardware.
+ */
+static uint16_t lpm_c0_last_match = 0xFFFFU;
 
 /* Counter value captured at LPM entry */
 static uint32_t lpm_entry_count;
 
 static void lpm_timer_isr(void)
 {
-	/* Clear all interrupt flags - the alarm fired to wake the system */
-	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR0 | CY_MCWDT_CTR1);
+	/* Counter 1 (the alarm) is the only counter in INT mode, so it is the
+	 * only source that can raise a flag. Clear it and disable the alarm until
+	 * the next entry re-arms it.
+	 */
+	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
 }
 
 void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 {
 	uint32_t delay_ticks;
+	uint16_t c0_now;
+	uint16_t c0_match;
+	uint16_t c0_settle;
+	uint16_t c1_now;
+	uint16_t c1_match;
+	uint32_t timeout;
+	uint32_t key;
 
-	/* Convert microseconds to PILO ticks.
-	 * Cap to avoid overflow in 32-bit arithmetic.
-	 */
-	if (max_lpm_time_us > ((uint64_t)UINT32_MAX * 1000000ULL / PILO_FREQ)) {
-		delay_ticks = UINT32_MAX - 1U;
+	/* Convert microseconds to PILO ticks, clamped to the programmable range. */
+	if (max_lpm_time_us > ((uint64_t)LPM_MAX_DELAY_TICKS * 1000000ULL / PILO_FREQ)) {
+		delay_ticks = LPM_MAX_DELAY_TICKS;
 	} else {
 		delay_ticks = (uint32_t)((max_lpm_time_us * PILO_FREQ) / 1000000ULL);
 	}
 
-	/* MCWDT match values take effect after 2 PILO cycles (see
-	 * Cy_MCWDT_SetMatch()), so the minimum useful delay is 3 ticks.
-	 */
-	if (delay_ticks < 3U) {
-		delay_ticks = 3U;
+	if (delay_ticks < LPM_MIN_DELAY_TICKS) {
+		delay_ticks = LPM_MIN_DELAY_TICKS;
+	}
+	if (delay_ticks > LPM_MAX_DELAY_TICKS) {
+		delay_ticks = LPM_MAX_DELAY_TICKS;
 	}
 
-	/* Capture current counter value */
+	/* Disarm the alarm while the match registers are reprogrammed. */
+	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
+	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
+
+	key = irq_lock();
+
+	/* Wait for any queued C0->C1 cascade from the previous match to settle.
+	 * The cascade takes up to ~1 LFCLK cycle after C0 reaches its match and up
+	 * to another LFCLK cycle to propagate to the HFCLK-domain registers the CPU
+	 * reads, so C0 is read until it is clear of the previous match value.
+	 */
+	timeout = LPM_CASCADE_TIMEOUT;
+	c0_now = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER0);
+	while ((((uint16_t)(lpm_c0_last_match - 1U) == c0_now) || (lpm_c0_last_match == c0_now) ||
+		((uint16_t)(lpm_c0_last_match + 1U) == c0_now)) &&
+	       (timeout != 0U)) {
+		c0_now = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER0);
+		timeout--;
+	}
+
+	/* A new match written within ~2 LFCLK cycles of the live count has
+	 * ambiguous first-cascade timing.  Advance past that window and fold the
+	 * ticks skipped while waiting back into the remaining delay so the total
+	 * stays exact.
+	 */
+	c0_match = (uint16_t)(c0_now + delay_ticks);
+	timeout = LPM_CASCADE_TIMEOUT;
+	c0_settle = c0_now;
+	while (((c0_settle == c0_match) || (c0_settle == (uint16_t)(c0_match + 1U)) ||
+		(c0_settle == (uint16_t)(c0_match + 2U))) &&
+	       (timeout != 0U)) {
+		c0_settle = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER0);
+		timeout--;
+	}
+
+	delay_ticks -= (c0_settle >= c0_now) ? (uint32_t)(c0_settle - c0_now)
+					     : (uint32_t)((LPM_C0_PERIOD - c0_now) + c0_settle);
+
+	/* Program the 32-bit match: low 16 bits into Counter 0, high 16 bits into
+	 * Counter 1.  Counter 1 fires when it is bumped off its match value by the
+	 * next Counter 0 match, i.e. after exactly delay_ticks.
+	 */
+	c0_match = (uint16_t)(c0_settle + delay_ticks);
+	c1_now = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER1);
+	c1_match = (uint16_t)(c1_now + (delay_ticks >> 16));
+
+	Cy_MCWDT_SetMatch(mcwdt_base, CY_MCWDT_COUNTER0, c0_match, MCWDT_SETMATCH_TIME_US);
+	Cy_MCWDT_SetMatch(mcwdt_base, CY_MCWDT_COUNTER1, c1_match, MCWDT_SETMATCH_TIME_US);
+	lpm_c0_last_match = c0_match;
+
+	/* Snapshot the free-running elapsed reference at the same instant. */
 	lpm_entry_count = Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER2);
 
-	/* Program match on C0/C1 cascade for wakeup.
-	 * C0 is 16-bit, C1 cascades on C0 match. Together they form
-	 * a 32-bit programmable match against the free-running counter.
-	 */
-	uint16_t c0_current = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER0);
-	uint16_t c0_match = (uint16_t)(c0_current + (uint16_t)(delay_ticks & 0xFFFFU));
-	uint16_t c1_current = (uint16_t)Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER1);
-	uint16_t c1_match = (uint16_t)(c1_current + (uint16_t)(delay_ticks >> 16U));
+	irq_unlock(key);
 
-	MCWDT_MATCH(mcwdt_base) = (uint32_t)c0_match | ((uint32_t)c1_match << 16U);
+	/* Arm the alarm: Counter 1 is the only counter allowed to wake the SoC. */
 	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, CY_MCWDT_CTR1);
 	irq_enable(MCWDT_IRQ_NUM);
@@ -99,7 +181,7 @@ uint64_t z_sys_clock_lpm_exit(void)
 
 	/* Disable further MCWDT interrupts */
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
-	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR0 | CY_MCWDT_CTR1);
+	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	irq_disable(MCWDT_IRQ_NUM);
 
 	/* Read current free-running counter (C2 is 32-bit, never resets) */
@@ -117,7 +199,7 @@ static int lpm_timer_init(void)
 	static const cy_stc_mcwdt_config_t cfg = {
 		.c0Match = 0xFFFFU,
 		.c1Match = 0xFFFFU,
-		.c0Mode = CY_MCWDT_MODE_INT,
+		.c0Mode = CY_MCWDT_MODE_NONE,
 		.c1Mode = CY_MCWDT_MODE_INT,
 		.c2Mode = CY_MCWDT_MODE_NONE,
 		.c2ToggleBit = 0U,
@@ -133,7 +215,13 @@ static int lpm_timer_init(void)
 		return -EINVAL;
 	}
 
+	/* Start C0/C1/C2 once and leave them running continuously.  The alarm is
+	 * kept masked until the first z_sys_clock_lpm_enter() arms it.
+	 */
+	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
 	Cy_MCWDT_Enable(mcwdt_base, MCWDT_COUNTERS, MCWDT_RESET_TIME_US);
+
+	lpm_c0_last_match = 0xFFFFU;
 
 	IRQ_CONNECT(MCWDT_IRQ_NUM, MCWDT_IRQ_PRIO, lpm_timer_isr, NULL, 0);
 
