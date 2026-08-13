@@ -1,9 +1,17 @@
 sample:
   name: 6DOF Motion dataready sample
+common:
+  build_only: true
+  tags: sensors
+  filter: dt_alias_exists("6dof-motion-drdy0")
+  platform_allow:
+    - nrf52dk/nrf52832
+  integration_platforms:
+    - nrf52dk/nrf52832
 tests:
-  sample.sensor.6dof_motion_drdy:
-    build_only: true
-    tags: sensors
-    filter: dt_alias_exists("6dof_motion_drdy0")
-    integration_platforms:
-      - nrf52dk/nrf52832
+  sample.sensor.6dof_motion_drdy.i2c:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/nrf52dk_nrf52832_i2c.overlay
+  sample.sensor.6dof_motion_drdy.spi:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/nrf52dk_nrf52832_spi.overlay
