@@ -13,7 +13,26 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 		};
+
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_rx: memory@20026c00 {
+				reg = <0x20026c00 DT_SIZE_K(2)>;
+			};
+
+			sram_tx: memory@20027400 {
+				reg = <0x20027400 DT_SIZE_K(2)>;
+			};
+		};
 	};
+};
+
+&ipc0 {
+	status = "okay";
+	tx-region = <&sram_tx>;
+	rx-region = <&sram_rx>;
 };
 
 &uart30 {
@@ -21,8 +40,8 @@
 };
 
 &cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(159)>;
-	ranges = <0x0 0x20000000 DT_SIZE_K(159)>;
+	reg = <0x20000000 DT_SIZE_K(155)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(155)>;
 };
 
 &cpuapp_rram {
@@ -47,6 +66,10 @@
 &cpuflpr_vpr {
 	execution-memory = <&cpuflpr_sram_code_data>;
 	source-memory = <&cpuflpr_rram>;
+};
+
+&cpuapp_vevif_rx {
+	status = "okay";
 };
 
 &cpuapp_vevif_tx {
