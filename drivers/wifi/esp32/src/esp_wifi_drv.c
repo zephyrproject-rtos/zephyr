@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER_CONNECTIVITY_WIFI_MGMT)
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 #endif
@@ -394,7 +395,7 @@ static void scan_done_handler(void)
 		strncpy(res.ssid, ap_record.ssid, ssid_len);
 		res.rssi = ap_record.rssi;
 		res.channel = ap_record.primary;
-		res.band = ap_record.primary <= 14 ? WIFI_FREQ_BAND_2_4_GHZ : WIFI_FREQ_BAND_5_GHZ;
+		res.band = wifi_utils_chan_to_band(res.channel);
 
 		memcpy(res.mac, ap_record.bssid, WIFI_MAC_ADDR_LEN);
 		res.mac_length = WIFI_MAC_ADDR_LEN;
@@ -1610,7 +1611,8 @@ static int esp32_wifi_status(const struct device *dev __unused,
 	status->ssid[WIFI_SSID_MAX_LEN-1] = '\0';
 	/* We know it is NUL terminated, so we can use strlen */
 	status->ssid_len = strlen(data->status.ssid);
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
@@ -1632,6 +1634,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 
 			status->iface_mode = WIFI_MODE_INFRA;
 			status->channel = ap_info.primary;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->rssi = ap_info.rssi;
 			memcpy(status->bssid, ap_info.bssid, WIFI_MAC_ADDR_LEN);
 
@@ -1655,6 +1658,7 @@ static int esp32_wifi_status(const struct device *dev __unused,
 			status->iface_mode = WIFI_MODE_AP;
 			status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 			status->channel = conf.ap.channel;
+			status->band = wifi_utils_chan_to_band(status->channel);
 			status->beacon_interval = conf.ap.beacon_interval;
 
 		} else {
