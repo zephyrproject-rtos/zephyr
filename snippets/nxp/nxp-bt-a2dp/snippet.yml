@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-bt-a2dp
+description: |
+  Enables NXP Bluetooth A2DP support.
+append:
+  EXTRA_CONF_FILE: nxp-bt-a2dp.conf

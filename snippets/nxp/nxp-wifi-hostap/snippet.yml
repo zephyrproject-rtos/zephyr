@@ -1,0 +1,14 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+name: nxp-wifi-hostap
+description: Enables NXP hostapd configuration.
+append:
+  EXTRA_CONF_FILE: nxp-wifi-hostap.conf
+boards:
+  /.*mimxrt1060.*/:
+    append:
+      EXTRA_CONF_FILE: boards/mimxrt1060.conf
+  /.*rw612.*/:
+    append:
+      EXTRA_CONF_FILE: boards/rw612.conf
