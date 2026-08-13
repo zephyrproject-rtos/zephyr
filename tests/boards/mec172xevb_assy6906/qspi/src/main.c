@@ -45,7 +45,8 @@ static const struct device *const spi_dev = DEVICE_DT_GET(DT_NODELABEL(qspi0));
 
 static const struct spi_config spi_cfg_single = {
 	.frequency = TEST_FREQ_HZ,
-	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
+	.operation =
+		(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
 };
 
 static void spi_single_init(void)

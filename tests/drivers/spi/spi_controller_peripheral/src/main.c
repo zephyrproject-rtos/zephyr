@@ -23,8 +23,8 @@
 				| SPI_MODE_CPOL)
 #endif
 
-#define SPIM_OP	 (SPI_OP_MODE_MASTER | SPI_MODE)
-#define SPIS_OP	 (SPI_OP_MODE_SLAVE | SPI_MODE)
+#define SPIM_OP	 (SPI_OP_MODE_CONTROLLER | SPI_MODE)
+#define SPIS_OP	 (SPI_OP_MODE_PERIPHERAL | SPI_MODE)
 
 #if CONFIG_TEST_INCORRECT_SCK_STATE && DT_NODE_HAS_PROP(DT_PATH(zephyr_user), sck_gpios)
 static const struct gpio_dt_spec sck = GPIO_DT_SPEC_GET(DT_PATH(zephyr_user), sck_gpios);
@@ -34,7 +34,7 @@ static struct spi_dt_spec spim = SPI_DT_SPEC_GET(DT_NODELABEL(dut_spi_dt), SPIM_
 static const struct device *spis_dev = DEVICE_DT_GET(DT_NODELABEL(dut_spis));
 static const struct spi_config spis_config = {
 	.operation = SPIS_OP,
-	.slave = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
+	.peripheral = DT_PROP_OR(DT_PATH(zephyr_user), peripheral_cs, 0),
 	.frequency = DT_PROP(DT_NODELABEL(dut_spi_dt), spi_max_frequency),
 };
 
@@ -415,7 +415,7 @@ ZTEST(spi_controller_peripheral, test_short_rx_async)
 	test_short_rx(true);
 }
 
-/** Test where only master transmits. */
+/** Test where only controller transmits. */
 static void test_only_tx(bool async)
 {
 	size_t len = 16;
