@@ -26,7 +26,7 @@ extern "C" {
  *
  * @defgroup sys_io_apis System I/O APIs
  * @since 1.0
- * @version 1.0.0
+ * @version 1.1.0
  * @ingroup utilities
  *
  * Low-level primitives for port I/O, memory-mapped register I/O, and in-memory bit manipulation.
@@ -185,6 +185,11 @@ static inline int sys_io_test_and_clear_bit(io_port_t port, unsigned int bit);
  * @defgroup sys_io_mmio_apis Memory-mapped register I/O APIs
  * @ingroup sys_io_apis
  *
+ * Supported standard accessors guarantee one atomic memory-mapped I/O access of the indicated
+ * width and must not be implemented as multiple narrower accesses. Deprecated compatibility
+ * implementations that cannot provide this guarantee remain temporarily available on some
+ * 32-bit targets. The ordered 64-bit helpers explicitly document their non-atomic behavior.
+ *
  * @internal
  * Memory mapped registers I/O is optional and only implemented by a few architectures (e.g. x86),
  * in their architecture-specific headers. Those headers are excluded from the Doxygen build, so the
@@ -266,6 +271,11 @@ static inline uint32_t sys_read32(mm_reg_t addr);
  *
  * @param data the 64 bits to write
  * @param addr the memory mapped register address where to write the 64 bits
+ *
+ * @note This API requires one atomic 64-bit memory-mapped I/O write. Deprecated compatibility
+ *       implementations on some 32-bit targets may split the operation into two 32-bit writes.
+ *       Use one of the ordered non-atomic helpers when the addressed register supports such
+ *       accesses.
  */
 static inline void sys_write64(uint64_t data, mm_reg_t addr);
 
@@ -278,6 +288,11 @@ static inline void sys_write64(uint64_t data, mm_reg_t addr);
  *        the 64 bits
  *
  * @return the 64 bits read
+ *
+ * @note This API requires one atomic 64-bit memory-mapped I/O read. Deprecated compatibility
+ *       implementations on some 32-bit targets may split the operation into two 32-bit reads.
+ *       Use one of the ordered non-atomic helpers when the addressed register supports such
+ *       accesses.
  */
 static inline uint64_t sys_read64(mm_reg_t addr);
 

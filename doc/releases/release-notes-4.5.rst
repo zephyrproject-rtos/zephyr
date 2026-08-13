@@ -304,6 +304,12 @@ Deprecated APIs and options
   * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
     have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
 
+* System I/O
+
+  * Implementations of :c:func:`sys_read64` and :c:func:`sys_write64` that cannot guarantee one
+    atomic 64-bit memory-mapped I/O access. This includes the generic implementations on 32-bit
+    targets and the AArch32 :c:func:`sys_read64` implementation.
+
 * Ring buffer
 
   * The ring buffer item API (:c:func:`ring_buf_item_init`, :c:func:`ring_buf_item_put`,
