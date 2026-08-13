@@ -4571,6 +4571,57 @@ static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+static int cmd_wifi_p2p_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PBC;
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pbc connection failed\n");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_p2p_wps_pin(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PIN_GET;
+	} else if (argc == 2) {
+		params.oper = WIFI_WPS_PIN_SET;
+		strncpy(params.pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pin connection failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_WPS_PIN_GET) {
+		PR("WPS PIN is: %s\n", params.pin);
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char *argv[])
 {
 	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
@@ -5818,6 +5869,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "<on>: Enable P2P power save\n"
 				 "<off>: Disable P2P power save"),
 		      cmd_wifi_p2p_power_save, 2, 3),
+	SHELL_CMD_ARG(wps_pbc, NULL,
+		      SHELL_HELP("Start a WPS PBC connection",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_wps_pbc, 1, 2),
+	SHELL_CMD_ARG(wps_pin, NULL,
+		      SHELL_HELP("Set and get WPS pin",
+				 "[-i, --iface=<interface index>]\n"
+				 "[pin] Only applicable for set"),
+		      cmd_wifi_p2p_wps_pin, 1, 3),
 	SHELL_CMD_ARG(list_networks, NULL,
 		      SHELL_HELP("List stored persistent P2P networks",
 				 "[-i, --iface=<interface index>]"),
