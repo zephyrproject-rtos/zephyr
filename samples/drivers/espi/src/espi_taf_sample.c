@@ -195,7 +195,7 @@ int spi_saf_init(void)
 	 * controls chip select.
 	 */
 	spi_cfg.frequency = SAF_TEST_FREQ_HZ;
-	spi_cfg.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
+	spi_cfg.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
 	spi_cfg.slave = 0;
 	spi_cfg.cs.delay = 0;
 	spi_cfg.cs.gpio.pin = 0;
