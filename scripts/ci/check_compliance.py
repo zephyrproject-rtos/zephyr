@@ -2358,8 +2358,8 @@ class KeepSorted(ComplianceTest):
     MARKER = "zephyr-keep-sorted"
 
     def block_check_sorted(self, block_data, *, regex, strip, fold, icase):
-        def _test_indent(txt: str):
-            return txt.startswith((" ", "\t"))
+        def _is_continuation(txt: str):
+            return txt.startswith((" ", "\t")) or txt.rstrip() == ")"
 
         if regex is None:
             block_data = textwrap.dedent(block_data)
@@ -2380,12 +2380,12 @@ class KeepSorted(ComplianceTest):
                 if not re.match(regex, line):
                     continue
             else:
-                if _test_indent(line):
+                if _is_continuation(line):
                     continue
 
                 if fold:
                     # Fold back indented lines after the current one
-                    for cont in takewhile(_test_indent, lines[idx + 1 :]):
+                    for cont in takewhile(_is_continuation, lines[idx + 1 :]):
                         line += cont.strip()
 
             if icase:
