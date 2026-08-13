@@ -107,6 +107,10 @@ static void helper_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Meta-IRQ preempts a coop thread on its CPU without migrating it
+ * @ingroup kernel_smp_tests
+ */
 ZTEST(smp_metairq, test_smp_metairq_no_migration)
 {
 	unsigned int i;

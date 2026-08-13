@@ -660,6 +660,26 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
  * @see arch_curr_cpu()
  */
 static int _cpu_id;
+/**
+ * @brief Verify a thread can query the CPU it is executing on.
+ *
+ * @details
+ * The main thread records its CPU id with arch_curr_cpu(), then spawns a
+ * cooperative thread whose entry point queries arch_curr_cpu() itself and
+ * checks the id it observes; on SMP the spawned thread runs on a different
+ * CPU than the recorded one. The thread is then aborted and joined.
+ *
+ * Test steps:
+ * - Record the current CPU id via arch_curr_cpu().
+ * - Spawn a cooperative thread that queries and validates its own CPU id.
+ * - Busy-wait, then abort and join the spawned thread.
+ *
+ * Expected result:
+ * - The spawned thread observes a valid CPU id on which it executes.
+ *
+ * @ingroup kernel_smp_tests
+ * @see arch_curr_cpu()
+ */
 ZTEST(smp, test_get_cpu)
 {
 	k_tid_t thread_id;
@@ -791,7 +811,7 @@ void z_trace_sched_ipi(void)
  *
  * @see arch_sched_broadcast_ipi()
  */
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
+#if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 ZTEST(smp, test_smp_ipi)
 {
 #ifndef CONFIG_TRACE_SCHED_IPI
@@ -1245,6 +1265,9 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
 	}
 }
 
+/**
+ * @brief Stress context switching across CPUs via k_poll signals
+ */
 ZTEST(smp_stress, test_smp_switch_stress)
 {
 	unsigned int num_threads = arch_num_cpus();
