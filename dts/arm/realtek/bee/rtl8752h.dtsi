@@ -426,7 +426,7 @@
 			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
-			is-slave;
+			is-peripheral;
 		};
 
 		spi1: spi@40013400 {
