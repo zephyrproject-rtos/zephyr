@@ -73,7 +73,7 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
-		.slave = DT_REG_ADDR(node_id),				\
+		.peripheral = DT_REG_ADDR(node_id),				\
 		.cs = {									\
 			COND_CODE_1(DT_SPI_HAS_CS_GPIOS(MIPI_DBI_DT_SPI_DEV(node_id)),	\
 			(MIPI_DBI_SPI_CS_CONTROL_INIT_GPIO(node_id, delay_)),		\
