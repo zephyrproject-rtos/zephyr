@@ -264,6 +264,7 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
+  * :c:func:`k_sleep_ticks`
 
 * LoRa
 

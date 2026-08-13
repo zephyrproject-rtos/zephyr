@@ -60,6 +60,25 @@ Kernel
   keeping ``SCHED_SIMPLE`` for affinity purposes can now use their preferred
   backend directly.
 
+* :c:func:`k_sleep` and :c:func:`k_usleep` are no longer system calls of their
+  own.  They are now inline wrappers around the new :c:func:`k_sleep_ticks`
+  system call, so that the compiler can fold or discard their unit conversions.
+  Their prototypes, semantics and return values are unchanged, and they have
+  moved from :file:`include/zephyr/kernel.h` to a new
+  :file:`include/zephyr/sleep.h` which :file:`kernel.h` includes.  Code calling
+  them needs no change.  Out of tree code taking their address, or relying on
+  ``K_SYSCALL_K_SLEEP`` or ``K_SYSCALL_K_USLEEP``, must be updated to use
+  :c:func:`k_sleep_ticks` instead.  Note that it reports an early wakeup from
+  ``K_FOREVER`` as ``K_TICKS_FOREVER``, where :c:func:`k_sleep` returns ``-1``.
+
+* Because the sleep tracing hooks now sit in the single out of line
+  implementation rather than in each flavour, ``sys_port_trace_k_thread_sleep_exit()``
+  reports the time left to sleep in ticks instead of milliseconds, and
+  ``sys_port_trace_k_thread_usleep_enter()`` and
+  ``sys_port_trace_k_thread_usleep_exit()`` are no longer emitted.  Tracing
+  backends that presented the sleep remainder as milliseconds should convert
+  from ticks, for instance with :c:func:`k_ticks_to_ms_ceil64`.
+
 Boards
 ******
 
