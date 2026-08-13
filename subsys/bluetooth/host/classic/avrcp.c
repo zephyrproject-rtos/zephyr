@@ -509,6 +509,8 @@ static void avrcp_connected(struct bt_avctp *session)
 	}
 }
 
+static void cleanup_fragmentation_context(struct bt_avrcp_ct *ct);
+
 /* The AVCTP L2CAP channel released */
 static void avrcp_disconnected(struct bt_avctp *session)
 {
@@ -542,6 +544,9 @@ static void avrcp_disconnected(struct bt_avctp *session)
 		node = sys_slist_get(&tg->vd_rsp_tx_pending);
 	}
 	avrcp_tg_unlock(tg);
+
+	/* Drop any partially reassembled vendor dependent response */
+	cleanup_fragmentation_context(ct);
 
 	memset(&ct->ct_notify, 0, sizeof(ct->ct_notify));
 	memset(&tg->tg_notify, 0, sizeof(tg->tg_notify));
