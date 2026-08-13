@@ -312,3 +312,6 @@ set_compiler_property(PROPERTY func_instrumentation_exclude_function_list
   "-finstrument-functions-exclude-function-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FUNCTION_LIST}")
 set_compiler_property(PROPERTY func_instrumentation_exclude_file_list
   "-finstrument-functions-exclude-file-list=${CONFIG_INSTRUMENTATION_EXCLUDE_FILE_LIST}")
+
+# Compiler flag to let compiler use __aeabi_read_tp for setting thread pointer for TLS
+check_set_compiler_property(APPEND PROPERTY thread_local_storage -mtp=soft)
