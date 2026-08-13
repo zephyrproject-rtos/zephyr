@@ -495,7 +495,7 @@ BUILD_ASSERT(CONFIG_DAC_AD5529R_INIT_PRIORITY > CONFIG_SPI_INIT_PRIORITY,
 	static struct ad5529r_data data_##inst;                                                    \
 	static const struct ad5529r_config config_##inst = {                                       \
 		.bus = SPI_DT_SPEC_INST_GET(                                                       \
-			inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB),            \
+			inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB),        \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                    \
 		.gpio_ldac = GPIO_DT_SPEC_INST_GET_OR(inst, ldac_gpios, {0}),                      \
 		.gpio_clear = GPIO_DT_SPEC_INST_GET_OR(inst, clear_gpios, {0}),                    \
