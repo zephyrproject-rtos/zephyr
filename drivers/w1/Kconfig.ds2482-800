@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config W1_DS2482_800
-	bool "DS2482-800, 8-Channel 1-Wire Master"
+	bool "DS2482-800, 8-Channel 1-Wire Controller"
 	select I2C
 	depends on DT_HAS_MAXIM_DS2482_800_ENABLED
 	default y
