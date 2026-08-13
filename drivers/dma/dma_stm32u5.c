@@ -225,6 +225,34 @@ void stm32_dma_clear_stream_irq(DMA_TypeDef *dma, uint32_t id)
 	LL_DMA_ClearFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id));
 }
 
+static void stm32_dma_enable_stream_irq(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	struct dma_stm32_stream *stream = &config->streams[id];
+	DMA_TypeDef *dma = (DMA_TypeDef *)config->base;
+
+	LL_DMA_EnableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_EnableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
+
+	if (stream->cyclic) {
+		LL_DMA_EnableIT_HT(STM32_DMA_GET_CHANNEL(dma, id));
+	}
+}
+
+static void stm32_dma_disable_stream_irq(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)config->base;
+
+	LL_DMA_DisableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_DisableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_DisableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_DisableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
+	LL_DMA_DisableIT_HT(STM32_DMA_GET_CHANNEL(dma, id));
+}
+
 bool stm32_dma_is_irq_happened(DMA_TypeDef *dma, uint32_t id)
 {
 	if (dma_stm32_is_te_active(dma, id)) {
@@ -410,8 +438,6 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EBUSY;
 	}
 
-	dma_stm32_clear_stream_irq(dev, id);
-
 	/* Check potential DMA override (if id parameters and stream are valid) */
 	if (config->linked_channel == STM32_DMA_HAL_OVERRIDE) {
 		/* DMA channel is overridden by HAL DMA
@@ -573,7 +599,8 @@ static int dma_stm32_configure(const struct device *dev,
 	/* The request ID is stored in the dma_slot */
 	LL_DMA_SetPeriphRequest(STM32_DMA_GET_CHANNEL(dma, id), config->dma_slot);
 
-	if (config->head_block->source_reload_en == 0) {
+	stream->cyclic = config->head_block->source_reload_en != 0;
+	if (!stream->cyclic) {
 		LL_DMA_SetLinkStepMode(STM32_DMA_GET_CHANNEL(dma, id),
 				       STM32_DMA_LINKEDLIST_EXECUTION_NODE);
 		/* Initialize the DMA structure in non-cyclic mode only */
@@ -608,11 +635,8 @@ static int dma_stm32_configure(const struct device *dev,
 					(uint32_t)&linked_list_node[0]);
 
 		/* Continuous transfers with Linked List */
-		stream->cyclic = true;
 		LL_DMA_SetLinkStepMode(STM32_DMA_GET_CHANNEL(dma, id),
 				       STM32_DMA_LINKEDLIST_EXECUTION_Q);
-
-		LL_DMA_EnableIT_HT(STM32_DMA_GET_CHANNEL(dma, id));
 	}
 
 #ifdef CONFIG_ARM_SECURE_FIRMWARE
@@ -655,11 +679,6 @@ static int dma_stm32_configure(const struct device *dev,
 	}
 #endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
-	LL_DMA_EnableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_EnableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
-
 	return ret;
 }
 
@@ -688,11 +707,6 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 	LL_DMA_ConfigAddresses(STM32_DMA_GET_CHANNEL(dma, id), src, dst);
 	LL_DMA_SetBlkDataLength(STM32_DMA_GET_CHANNEL(dma, id), size);
 
-	/* When reloading the dma, the stream is busy again before enabling */
-	stream->busy = true;
-
-	stm32_dma_enable_stream(dma, id);
-
 	return 0;
 }
 
@@ -717,7 +731,7 @@ static int dma_stm32_start(const struct device *dev, uint32_t id)
 	stream->busy = true;
 
 	dma_stm32_clear_stream_irq(dev, id);
-
+	stm32_dma_enable_stream_irq(dev, id);
 	stm32_dma_enable_stream(dma, id);
 
 	return 0;
@@ -800,11 +814,7 @@ static int dma_stm32_stop(const struct device *dev, uint32_t id)
 		return 0;
 	}
 
-	LL_DMA_DisableIT_TC(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_DisableIT_USE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_DisableIT_ULE(STM32_DMA_GET_CHANNEL(dma, id));
-	LL_DMA_DisableIT_DTE(STM32_DMA_GET_CHANNEL(dma, id));
-
+	stm32_dma_disable_stream_irq(dev, id);
 	dma_stm32_clear_stream_irq(dev, id);
 	dma_stm32_disable_stream(dma, id);
 
