@@ -515,6 +515,7 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	struct bt_avrcp *avrcp = AVRCP_AVCTP(session);
 	struct bt_avrcp_ct *ct = get_avrcp_ct(avrcp);
 	struct bt_avrcp_tg *tg = get_avrcp_tg(avrcp);
+	sys_snode_t *node;
 
 	if ((avrcp_ct_cb != NULL) && (avrcp_ct_cb->disconnected != NULL)) {
 		avrcp_ct_cb->disconnected(ct);
@@ -523,6 +524,24 @@ static void avrcp_disconnected(struct bt_avctp *session)
 	if ((avrcp_tg_cb != NULL) && (avrcp_tg_cb->disconnected != NULL)) {
 		avrcp_tg_cb->disconnected(tg);
 	}
+
+	/* Cancel the vendor dependent response TX machine and drop any
+	 * queued or partially sent responses. The TX state, including the
+	 * TX_ONGOING flag, lives in the buffer user data, so releasing the
+	 * buffers also resets the TX state. Without this, a disconnection
+	 * in the middle of a fragmented response leaks the buffer and
+	 * leaves the TX machine stalled on the stale list head when the
+	 * object is reused for a new connection.
+	 */
+	k_work_cancel_delayable(&tg->vd_rsp_tx_work);
+
+	avrcp_tg_lock(tg);
+	node = sys_slist_get(&tg->vd_rsp_tx_pending);
+	while (node != NULL) {
+		net_buf_unref(CONTAINER_OF(node, struct net_buf, node));
+		node = sys_slist_get(&tg->vd_rsp_tx_pending);
+	}
+	avrcp_tg_unlock(tg);
 
 	memset(&ct->ct_notify, 0, sizeof(ct->ct_notify));
 	memset(&tg->tg_notify, 0, sizeof(tg->tg_notify));
