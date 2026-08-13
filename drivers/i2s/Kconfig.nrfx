@@ -5,6 +5,7 @@ menuconfig I2S_NRFX
 	bool "nRF I2S nrfx driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_I2S_ENABLED
+	depends on !I2S_RTIO
 	select NRFX_I2S
 	select PINCTRL
 	help
@@ -29,6 +30,16 @@ config I2S_NRFX_ALLOW_MCK_BYPASS
 	  the standard MCK selection mechanism.
 
 endif # I2S_NRFX
+
+config I2S_NRFX_RTIO
+	bool "nRF I2S NRFX RTIO device driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_I2S_ENABLED
+	depends on I2S_RTIO
+	select NRFX_I2S
+	select PINCTRL
+	help
+	  Enable support for NRFX I2S RTIO based driver for nRF MCU series.
 
 menuconfig I2S_NRF_TDM
 	bool "nRF TDM driver"
