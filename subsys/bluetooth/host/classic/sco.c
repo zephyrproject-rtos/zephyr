@@ -382,7 +382,21 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	sco_conn->sco.link_type = evt->link_type;
 
 	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
+		struct bt_sco_chan *chan = sco_conn->sco.chan;
+
 		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
+
+		/* If the server accepted the connection request, a channel was
+		 * attached in sco_accept(). Detach it before releasing the
+		 * connection object so that the channel does not keep a
+		 * dangling reference to it. The disconnected callback is not
+		 * called since the connection was never established.
+		 */
+		if (chan != NULL) {
+			bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
+			chan->sco = NULL;
+		}
+
 		bt_sco_cleanup(sco_conn);
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
