@@ -61,8 +61,8 @@ struct afbr_s50_config {
 	struct {
 		struct gpio_dt_spec cs;
 		struct gpio_dt_spec clk;
-		struct gpio_dt_spec mosi;
-		struct gpio_dt_spec miso;
+		struct gpio_dt_spec sdi;
+		struct gpio_dt_spec sdo;
 		struct gpio_dt_spec irq;
 	} gpio;
 	struct {
@@ -437,13 +437,13 @@ const static struct device *afbr_s50_list[] = {
 	DT_INST_FOREACH_STATUS_OKAY(AFBR_S50_LIST)
 };
 
-int afbr_s50_platform_get_by_id(s2pi_slave_t slave,
+int afbr_s50_platform_get_by_id(s2pi_slave_t peripheral,
 				struct afbr_s50_platform_data **data)
 {
 	for (size_t i = 0 ; i < ARRAY_SIZE(afbr_s50_list) ; i++) {
 		struct afbr_s50_data *drv_data = afbr_s50_list[i]->data;
 
-		if (drv_data->platform.argus.id == slave) {
+		if (drv_data->platform.argus.id == peripheral) {
 			*data = &drv_data->platform;
 			return 0;
 		}
@@ -485,15 +485,19 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096 && CONFIG_RTIO_WORKQ_THREADS_POOL_ST
 	RTIO_DEFINE(afbr_s50_rtio_ctx_##inst, 8, 8);						   \
 	SPI_DT_IODEV_DEFINE(afbr_s50_bus_##inst,						   \
 			    DT_DRV_INST(inst),							   \
-			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |		   \
+			    SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	   \
 			    SPI_MODE_CPOL | SPI_MODE_CPHA);					   \
 												   \
 	static const struct afbr_s50_config afbr_s50_cfg_##inst = {				   \
 		.gpio = {									   \
 			.irq = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 			.clk = GPIO_DT_SPEC_INST_GET_OR(inst, spi_sck_gpios, {0}),		   \
-			.miso = GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}),		   \
-			.mosi = GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}),		   \
+			.sdo = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_sdo_gpios),		   \
+					   (GPIO_DT_SPEC_INST_GET(inst, spi_sdo_gpios)),	   \
+					   (GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}))), \
+			.sdi = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_sdi_gpios),		   \
+					   (GPIO_DT_SPEC_INST_GET(inst, spi_sdi_gpios)),	   \
+					   (GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}))), \
 		},										   \
 		.settings = {									   \
 			.odr = DT_INST_PROP(inst, odr),						   \
@@ -519,8 +523,8 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096 && CONFIG_RTIO_WORKQ_THREADS_POOL_ST
 						.cs =						   \
 						&_spi_dt_spec_##afbr_s50_bus_##inst.config.cs.gpio,\
 						.clk = &afbr_s50_cfg_##inst.gpio.clk,		   \
-						.mosi = &afbr_s50_cfg_##inst.gpio.mosi,		   \
-						.miso = &afbr_s50_cfg_##inst.gpio.miso,		   \
+						.sdi = &afbr_s50_cfg_##inst.gpio.sdi,		   \
+						.sdo = &afbr_s50_cfg_##inst.gpio.sdo,		   \
 					},							   \
 					.irq = &afbr_s50_cfg_##inst.gpio.irq,			   \
 				},								   \

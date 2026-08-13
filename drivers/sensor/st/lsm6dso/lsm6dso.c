@@ -922,7 +922,7 @@ static int lsm6dso_init(const struct device *dev)
 #endif /* CONFIG_LSM6DSO_TRIGGER */
 
 #define LSM6DSO_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
+			 SPI_OP_MODE_CONTROLLER |			\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 

@@ -723,7 +723,7 @@ static int lis2dw12_init(const struct device *dev)
 			(LIS2DW12_CFG_IRQ(inst)), ())
 
 #define LIS2DW12_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER |			\
+				SPI_OP_MODE_CONTROLLER |		\
 				SPI_MODE_CPOL |				\
 				SPI_MODE_CPHA)				\
 

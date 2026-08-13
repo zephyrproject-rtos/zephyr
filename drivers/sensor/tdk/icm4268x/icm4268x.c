@@ -335,7 +335,7 @@ void icm4268x_unlock(const struct device *dev)
 
 /* device defaults to spi mode 0/3 support */
 #define ICM4268X_SPI_CFG                                                                           \
-	SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
+	SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_TRANSFER_MSB
 
 #define ICM4268X_RTIO_DEFINE(inst)                                                                 \
 	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \

@@ -204,7 +204,7 @@ static int lps2xdf_init(const struct device *dev)
 	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),                    \
 		   (LPS2XDF_CFG_IRQ(inst)))
 
-#define LPS2XDF_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_MASTER |          \
+#define LPS2XDF_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER |      \
 			       SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define LPS2XDF_CONFIG_SPI(inst, name)                                         \
