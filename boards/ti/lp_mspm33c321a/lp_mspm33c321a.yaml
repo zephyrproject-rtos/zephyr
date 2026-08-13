@@ -10,4 +10,5 @@ supported:
   - watchdog
   - pinctrl
   - uart
+  - gpio
 vendor: ti
