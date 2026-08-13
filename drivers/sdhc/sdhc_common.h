@@ -1,11 +1,46 @@
 /*
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
- *
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #ifndef ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_
 #define ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_
+
+#include <zephyr/drivers/sdhc.h>
+
+/**
+ * @brief SD host controller common configuration
+ */
+struct sdhc_common_config {
+	uint32_t max_current_330;       /**< Max current of 3.3V */
+	uint32_t max_current_300;       /**< Max current of 3.0V */
+	uint32_t max_current_180;       /**< Max current of 1.8V */
+	uint32_t min_bus_freq;          /**< Min bus frequency */
+	uint32_t max_bus_freq;          /**< Max bus frequency */
+	uint32_t power_delay_ms;        /**< Delay for power up */
+	uint8_t bus_width;              /**< Data bus width */
+	bool mmc_hs200_1_8v;            /**< HS200 support */
+	bool mmc_hs400_1_8v;            /**< HS400 support */
+	bool mmc_hs400_enhanced_strobe; /**< HS400 enhanced strobe mode support */
+};
+
+/**
+ * @brief SD host controller common configuration initialization for instance
+ */
+#define SDHC_COMMON_CONFIG_DT_INST_INIT(n) \
+	{ \
+		.max_current_330 = DT_INST_PROP(n, max_current_330),                     \
+		.max_current_300 = DT_INST_PROP(n, max_current_300),                     \
+		.max_current_180 = DT_INST_PROP(n, max_current_180),                     \
+		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                           \
+		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                           \
+		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                       \
+		.bus_width = DT_INST_PROP_OR(n, bus_width, 1),                           \
+		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                       \
+		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                       \
+		.mmc_hs400_enhanced_strobe = DT_INST_PROP(n, mmc_hs400_enhanced_strobe), \
+	}
 
 /**
  * @brief Convert enum sd_voltage to a human-readable string
@@ -57,5 +92,8 @@ static inline const char *sdhc_timing_mode_str(enum sdhc_timing_mode timing)
 		return "Unknown";
 	}
 }
+
+/* SDHC common DT properties initialization */
+void sdhc_common_dt_props_init(struct sdhc_host_props *props, const struct sdhc_common_config *cfg);
 
 #endif /* ZEPHYR_DRIVERS_SDHC_SDHC_COMMON_H_ */
