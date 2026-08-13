@@ -23,4 +23,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Ensure SHA pinned actions
-        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@3db98c0363e2fa5df3e1c4c471777a7c10b24cc9 # v5.0.5
+        uses: zgosalvez/github-actions-ensure-sha-pinned-actions@46cfe808a5f1588656ef299eedd0ce2fd7ec0dcc # v5.0.6
