@@ -29,6 +29,7 @@ tests:
     timeout: 300
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
   filesystem.fat.ram.api:
     platform_allow:
       - native_sim

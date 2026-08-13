@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mspi00 {
+	status = "okay";
+};
+
+&mx25u25645g {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		nor_partition: partition@0 {
+			label = "nor";
+			reg = <0x0 DT_SIZE_K(704)>;
+		};
+	};
+};
+
+/ {
+	test_disk: msc_disk0 {
+		compatible = "zephyr,flash-disk";
+		partition = <&nor_partition>;
+		disk-name = "NOR";
+		cache-size = <65536>;
+	};
+};
