@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef CONFIG_USERSPACE
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below is visible to Doxygen, which builds with
+ * CONFIG_USERSPACE defined.
+ */
+#if !defined(CONFIG_USERSPACE) || defined(__DOXYGEN__)
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -88,6 +92,8 @@ static void high_prio_t2_wait_for_mutex(void *p1, void *p2, void *p3)
  * thread that has waited longest.
  *
  * @ingroup kernel_mutex_tests
+ * @see sys_mutex_lock()
+ * @see sys_mutex_unlock()
  */
 ZTEST(mutex_complex, test_mutex_multithread_competition)
 {

@@ -1378,6 +1378,8 @@ ZTEST(semaphore, test_sem_multi_take_timeout_diff_sem)
  * That variable is a critical section and can't be changed by two threads
  * at the same time.
  * @ingroup kernel_semaphore_tests
+ * @see k_sem_take()
+ * @see k_sem_give()
  */
 ZTEST(semaphore_1cpu, test_sem_queue_mutual_exclusion)
 {
