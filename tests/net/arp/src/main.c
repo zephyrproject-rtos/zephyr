@@ -694,4 +694,95 @@ ZTEST(arp_fn_tests, test_arp)
 	}
 }
 
+/* Feed an IPv4 frame to the Ethernet L2 and tell whether it was let through.
+ * The L2 sets the packet family only for a frame that it accepts, so a family
+ * that is still unspecified afterwards means the frame was dropped.
+ */
+static void recv_ipv4_frame(struct net_if *iface,
+			    const struct net_eth_addr *dst_hwaddr,
+			    const uint8_t *dst_ipaddr,
+			    bool expect_accepted)
+{
+	static const struct net_eth_addr peer_hwaddr = {
+		{ 0x00, 0x00, 0x5e, 0x00, 0x53, 0x01 } };
+	static const uint8_t peer_ipaddr[] = { 192, 0, 2, 2 };
+	struct net_ipv4_hdr *ipv4_hdr;
+	struct net_eth_hdr *eth_hdr;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface,
+					   sizeof(struct net_eth_hdr) +
+					   sizeof(struct net_ipv4_hdr),
+					   NET_AF_UNSPEC, 0, K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr) +
+		    sizeof(struct net_ipv4_hdr));
+
+	setup_eth_header(iface, pkt, dst_hwaddr, NET_ETH_PTYPE_IP);
+
+	/* setup_eth_header() uses our own address as the source but the frame
+	 * is supposed to come from a peer.
+	 */
+	eth_hdr = (struct net_eth_hdr *)net_pkt_data(pkt);
+	memcpy(&eth_hdr->src.addr, &peer_hwaddr, sizeof(struct net_eth_addr));
+
+	ipv4_hdr = (struct net_ipv4_hdr *)(net_pkt_data(pkt) +
+					   sizeof(struct net_eth_hdr));
+	memset(ipv4_hdr, 0, sizeof(struct net_ipv4_hdr));
+	ipv4_hdr->vhl = 0x45;
+	ipv4_hdr->len = net_htons(sizeof(struct net_ipv4_hdr));
+	ipv4_hdr->ttl = 64;
+	ipv4_hdr->proto = NET_IPPROTO_UDP;
+	net_ipv4_addr_copy_raw(ipv4_hdr->src, peer_ipaddr);
+	net_ipv4_addr_copy_raw(ipv4_hdr->dst, dst_ipaddr);
+
+	/* Hold on to the packet so that the family can still be read after the
+	 * stack is done with it.
+	 */
+	net_pkt_ref(pkt);
+
+	ret = net_recv_data(iface, pkt);
+	zassert_equal(ret, 0, "Cannot receive data (%d)", ret);
+
+	/* Give the RX thread a chance to process the frame. */
+	k_msleep(10);
+
+	if (expect_accepted) {
+		zexpect_equal(net_pkt_family(pkt), NET_AF_INET,
+			      "Frame was dropped by the L2");
+	} else {
+		zexpect_equal(net_pkt_family(pkt), NET_AF_UNSPEC,
+			      "Frame was accepted by the L2");
+	}
+
+	net_pkt_unref(pkt);
+}
+
+/* RFC 1122 ch 3.3.6: a frame sent to the broadcast link layer address must not
+ * carry a unicast IPv4 destination address.
+ */
+ZTEST(arp_fn_tests, test_bcast_hwaddr_unicast_ipaddr)
+{
+	static const uint8_t unicast_ipaddr[] = { 192, 0, 2, 1 };
+	static const uint8_t bcast_ipaddr[] = { 255, 255, 255, 255 };
+	struct net_if *iface = net_if_get_first_by_type(
+					&NET_L2_GET_NAME(ETHERNET));
+
+	zassert_not_null(iface, "No Ethernet interface");
+
+	/* The mismatching frame must be dropped. */
+	recv_ipv4_frame(iface, net_eth_broadcast_addr(), unicast_ipaddr, false);
+
+	/* A broadcast IPv4 destination matches the broadcast MAC address, and
+	 * a unicast IPv4 destination matches our own MAC address, so both of
+	 * these must be accepted.
+	 */
+	recv_ipv4_frame(iface, net_eth_broadcast_addr(), bcast_ipaddr, true);
+	recv_ipv4_frame(iface,
+			(struct net_eth_addr *)net_if_get_link_addr(iface)->addr,
+			unicast_ipaddr, true);
+}
+
 ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);
