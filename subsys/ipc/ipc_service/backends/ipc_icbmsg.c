@@ -68,6 +68,9 @@
 #define MAYBE_CONST const
 #endif
 
+#define NAME_HASH_EMPTY 0U
+#define NAME_HASH_NONAME 1U
+
 LOG_MODULE_REGISTER(ipc_icbmsg, CONFIG_IPC_SERVICE_BACKEND_ICBMSG_LOG_LEVEL);
 
 /** Size of the header (size field) of the block. */
@@ -849,7 +852,7 @@ static int handle_ep_unbound_request(const struct device *instance,
 
 	data->ept[ept_addr].state = EPT_UNBOUND;
 	data->ept[ept_addr].cfg = NULL;
-	data->ept[ept_addr].name_hash = 0;
+	data->ept[ept_addr].name_hash = NAME_HASH_EMPTY;
 	data->ep_cnt--;
 
 	if (unbound_callback != NULL) {
@@ -1085,7 +1088,9 @@ static int register_ept(const struct device *instance, void **token, const struc
 	bool bound = false;
 	int rv = 0;
 
-	name_hash = cfg->name == NULL ? 0 : sys_hash32_djb2(cfg->name, strlen(cfg->name));
+	/* If there is no name then use something else than 0. */
+	name_hash = cfg->name == NULL ?
+		NAME_HASH_NONAME : sys_hash32_djb2(cfg->name, strlen(cfg->name));
 
 	key = k_spin_lock(&data->lock);
 
@@ -1164,7 +1169,7 @@ static int deregister_ept(const struct device *instance, void *token)
 		for (i = 0; i < NUM_EPT; i++) {
 			if (&data->ept[i] == ept) {
 				data->ept[i].cfg = NULL;
-				data->ept[i].name_hash = 0;
+				data->ept[i].name_hash = NAME_HASH_EMPTY;
 				data->ept[i].state = EPT_UNBOUND;
 				data->ep_cnt--;
 				break;
