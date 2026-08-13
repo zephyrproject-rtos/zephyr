@@ -88,6 +88,15 @@ static struct bt_a2dp *a2dp_get_connection(struct bt_conn *conn)
 	a2dp = &connection[index];
 
 	if (a2dp->session.br_chan.chan.conn == NULL) {
+		/* The session release work submitted when the previous
+		 * connection was disconnected may still be pending. Wiping
+		 * a queued work item would corrupt the work queue, so
+		 * reject the object reuse until the work has completed.
+		 */
+		if (k_work_busy_get(&a2dp->session._release_work) != 0) {
+			return NULL;
+		}
+
 		/* Clean the memory area before returning */
 		(void)memset(a2dp, 0, sizeof(struct bt_a2dp));
 	}
