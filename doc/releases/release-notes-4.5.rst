@@ -576,6 +576,12 @@ Deprecated APIs and options
     ``mosi-gpios``/``miso-gpios``-style devicetree properties of the bindings listed in the
     migration guide.
 
+* System I/O
+
+  * Implementations of :c:func:`sys_read64` and :c:func:`sys_write64` that cannot guarantee one
+    atomic 64-bit memory-mapped I/O access. This includes the generic implementations on 32-bit
+    targets and the AArch32 :c:func:`sys_read64` implementation.
+
 * Timer
 
   * New :c:func:`sys_clock_no_timeout` hook for handling of

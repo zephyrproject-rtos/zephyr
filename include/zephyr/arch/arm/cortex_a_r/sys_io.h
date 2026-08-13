@@ -72,7 +72,8 @@ static ALWAYS_INLINE void sys_write32(uint32_t data, mem_addr_t addr)
 	__asm__ volatile("str %0, [%1]" : : "r" (data), "r" (addr));
 }
 
-static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
+#ifndef RUST_BINDGEN
+__deprecated static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
 {
 	uint64_t val;
 
@@ -81,6 +82,7 @@ static ALWAYS_INLINE uint64_t sys_read64(mem_addr_t addr)
 	barrier_dmem_fence_full();
 	return val;
 }
+#endif
 
 #ifdef __cplusplus
 }
