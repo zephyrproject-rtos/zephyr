@@ -31,8 +31,8 @@ int readdir_r(DIR *ZRESTRICT dirp, struct dirent *ZRESTRICT entry,
 #endif
 void rewinddir(DIR *dirp);
 #if (_POSIX_C_SOURCE >= 200809L) || (_XOPEN_SOURCE >= 700)
-int scandir(const char *dir, struct dirent ***namelist, int (*sel)(const struct dirent *),
-	    int (*compar)(const struct dirent **, const struct dirent **));
+int scandir(const char *dir, struct dirent ***namelist, int (*sel)(const struct dirent *entry),
+	    int (*compar)(const struct dirent **a, const struct dirent **b));
 #endif
 #if defined(_XOPEN_SOURCE)
 void seekdir(DIR *dirp, long loc);

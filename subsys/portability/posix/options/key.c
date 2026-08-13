@@ -98,7 +98,7 @@ static pthread_key_obj *to_posix_key(pthread_key_t *key)
  * See IEEE 1003.1
  */
 int pthread_key_create(pthread_key_t *key,
-		void (*destructor)(void *))
+		void (*destructor)(void *value))
 {
 	pthread_key_obj *new_key;
 
