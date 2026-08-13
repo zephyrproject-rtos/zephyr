@@ -21,12 +21,8 @@ struct mock_log_backend {
 /**
  * @brief This function validates the log message.
  *
- * @param type Field in message header to indicate the type of SyS-T message.
- * @param optional_flags Optional Flags in message header.
- * @param module_id ModuleID in a Message Header distinguish between multiple
- *					instances of the same Origin.
- * @param sub_type Enumerated types for representing the sub-type of a Message.
- * @param payload The content of the Message.
+ * @param raw_data_str Raw log message data as a string to be validated.
+ * @param log_type Expected type of the log message.
  */
 void validate_log_type(const char *raw_data_str, uint32_t log_type);
 
