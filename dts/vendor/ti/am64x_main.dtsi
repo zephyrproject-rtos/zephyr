@@ -33,6 +33,105 @@
 		status = "disabled";
 	};
 
+	amp: amp-controller {
+		compatible = "ti,amp-k3";
+		dmsc = <&dmsc>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		r5f_clusters: r5f-clusters@0 {
+			compatible = "amp-cluster-group";
+			reg = <0x0>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			r5fss@0 {
+				compatible = "amp-cluster-instance";
+				reg = <0x0>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				r5fss_0_0: cpu@0 {
+					compatible = "ti,amp-k3-cortex-r-core";
+					reg = <0x0>;
+					ti,tisci-core-id = <0x01>;
+					power-domains = <&r5fss0_core0_pd>;
+					atcm-address = <0x78000000>;
+					btcm-address = <0x78100000>;
+					self-cpu;
+					status = "disabled";
+				};
+
+				r5fss_0_1: cpu@1 {
+					compatible = "ti,amp-k3-cortex-r-core";
+					reg = <0x1>;
+					ti,tisci-core-id = <0x02>;
+					power-domains = <&r5fss0_core1_pd>;
+					atcm-address = <0x78200000>;
+					btcm-address = <0x78300000>;
+					status = "disabled";
+				};
+			};
+
+			r5fss@1 {
+				compatible = "amp-cluster-instance";
+				reg = <0x1>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+
+				r5fss_1_0: cpu@0 {
+					compatible = "ti,amp-k3-cortex-r-core";
+					reg = <0x0>;
+					ti,tisci-core-id = <0x06>;
+					power-domains = <&r5fss1_core0_pd>;
+					atcm-address = <0x78400000>;
+					btcm-address = <0x78500000>;
+					status = "disabled";
+				};
+
+				r5fss_1_1: cpu@1 {
+					compatible = "ti,amp-k3-cortex-r-core";
+					reg = <0x1>;
+					ti,tisci-core-id = <0x07>;
+					power-domains = <&r5fss1_core1_pd>;
+					atcm-address = <0x78600000>;
+					btcm-address = <0x78700000>;
+					status = "disabled";
+				};
+			};
+		};
+
+		m4f_clusters: m4f-clusters@1 {
+			compatible = "amp-cluster-group";
+			reg = <0x1>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			m4fss@0 {
+				compatible = "amp-cluster-instance";
+				reg = <0x0>;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				/* TODO: Actual name */
+				m4fss_0: cpu@0 {
+					reg = <0x0>;
+					compatible = "ti,amp-k3-cortex-m-core";
+					ti,tisci-core-id = <0x18>;
+					power-domains = <&mcu_m4fss0_pd>;
+					status = "disabled";
+				};
+			};
+		};
+	};
+
+
 	main_padcfg0: syscon@f0000 {
 		compatible = "ti,control-module";
 		reg = <0xf0000 DT_SIZE_K(32)>;

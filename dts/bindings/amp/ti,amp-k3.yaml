@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+description: Texas Instruments Keystone 3 AMP root node
+
+compatible: "ti,amp-k3"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: false
+
+  dmsc:
+    type: phandle
+    required: true
+    description: Phandle to the device DMSC-L node
