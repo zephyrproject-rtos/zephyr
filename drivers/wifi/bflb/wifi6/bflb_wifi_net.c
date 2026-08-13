@@ -637,7 +637,7 @@ void wl80211_tcpip_input(uint8_t vif_type, void *rxhdr, void *buf, uint32_t frm_
 
 /* TX for control frames (EAPOL). Bypasses sem/backpressure -- uses nolimit WRAM alloc. */
 int wl80211_output_raw(uint8_t vif_type, void *buffer, uint16_t len, unsigned int flags,
-		       void (*cb)(void *), void *opaque)
+		       void (*cb)(void *opaque), void *opaque)
 {
 	const size_t hdr_size = sizeof(struct wl80211_mac_tx_desc);
 	const size_t total = TX_CTX_PAD + hdr_size + len;
