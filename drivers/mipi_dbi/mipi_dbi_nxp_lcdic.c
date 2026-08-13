@@ -270,8 +270,8 @@ static int mipi_dbi_lcdic_configure(const struct device *dev,
 		LOG_ERR("Invalid clock frequency %d", spi_cfg->frequency);
 		return ret;
 	}
-	if (spi_cfg->slave != 0) {
-		/* Only one slave select line */
+	if (spi_cfg->peripheral != 0) {
+		/* Only one chip select line */
 		return -ENOTSUP;
 	}
 	if (SPI_WORD_SIZE_GET(spi_cfg->operation) > 8) {

@@ -951,7 +951,7 @@ static DEVICE_API(display, uc81xx_driver_api) = {
 		.dbi_config = {                                         \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
 			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-					SPI_OP_MODE_MASTER |            \
+					SPI_OP_MODE_CONTROLLER |        \
 					SPI_LOCK_ON | SPI_WORD_SET(8),  \
 					0),                             \
 		},                                                      \

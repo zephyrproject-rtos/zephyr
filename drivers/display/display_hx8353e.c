@@ -517,7 +517,7 @@ static int hx8353e_init(const struct device *dev)
 					DT_DRV_INST(n), mipi_mode),	\
 			.color_coding = MIPI_DBI_MODE_RGB565,		\
 			.config       = MIPI_DBI_SPI_CONFIG_DT_INST(	\
-					n, SPI_OP_MODE_MASTER |		\
+					n, SPI_OP_MODE_CONTROLLER |	\
 					SPI_WORD_SET(8), 0),		\
 		},							\
 		.width         = DT_INST_PROP(n, width),			\

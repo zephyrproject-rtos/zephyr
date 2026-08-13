@@ -494,7 +494,7 @@ static DEVICE_API(display, st7735r_api) = {
 	const static struct st7735r_config st7735r_config_ ## inst = {		\
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),		\
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,			\
-				SPI_OP_MODE_MASTER |				\
+				SPI_OP_MODE_CONTROLLER |			\
 				((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == \
 				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
 				 SPI_WORD_SET(9)) |				\
