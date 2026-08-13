@@ -1,0 +1,10 @@
+common:
+  tags:
+    - wifi
+    - net
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  net.wifi.utils: {}
