@@ -323,6 +323,9 @@ static int dma_stm32_configure(const struct device *dev,
 		stream->dma_callback = config->dma_callback;
 		stream->user_data = config->user_data;
 		stream->cyclic = false;
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+		stream->double_buffer = false;
+#endif
 		return 0;
 	}
 
@@ -380,6 +383,10 @@ static int dma_stm32_configure(const struct device *dev,
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
 	stream->cyclic		= config->head_block->source_reload_en;
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	/* LL_DMA_Init() below clears DBM, so any previous setting is gone. */
+	stream->double_buffer	= false;
+#endif
 
 	/* Check dest or source memory address, warn if 0 */
 	if (config->head_block->source_address == 0) {
@@ -568,6 +575,16 @@ static int dma_stm32_reload(const struct device *dev, uint32_t id,
 
 	stream = &config->streams[id];
 
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	/* Reloading would leave the second memory target pointing at a stale
+	 * buffer, and the current target selection untouched.
+	 */
+	if (stream->double_buffer) {
+		LOG_ERR("use dma_stm32_double_buffer_set_target() in double buffer mode.");
+		return -ENOTSUP;
+	}
+#endif
+
 	if (dma_stm32_disable_stream(dma, id) != 0) {
 		return -EBUSY;
 	}
@@ -730,6 +747,137 @@ static DEVICE_API(dma, dma_funcs) = {
 	.stop		 = dma_stm32_stop,
 	.get_status	 = dma_stm32_get_status,
 };
+
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+
+int dma_stm32_double_buffer_enable(const struct device *dev, uint32_t id, uint32_t buffer1)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	struct dma_stm32_stream *stream;
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams || buffer1 == 0) {
+		return -EINVAL;
+	}
+
+	stream = &config->streams[id];
+
+	if (!stream->cyclic) {
+		LOG_ERR("double buffer mode requires cyclic mode.");
+		return -ENOTSUP;
+	}
+
+	/* DBM forces circular behaviour, which the hardware forbids for M2M. */
+	if (stream->direction == MEMORY_TO_MEMORY) {
+		LOG_ERR("double buffer mode is not available for memory-to-memory.");
+		return -ENOTSUP;
+	}
+
+	/* DBM and M1AR are write protected while the stream is enabled. */
+	if (stm32_dma_is_enabled_stream(dma, id)) {
+		return -EBUSY;
+	}
+
+	LL_DMA_SetMemory1Address(dma, dma_stm32_id_to_stream(id), buffer1);
+	LL_DMA_EnableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+	stream->double_buffer = true;
+
+	return 0;
+}
+
+int dma_stm32_double_buffer_disable(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	if (stm32_dma_is_enabled_stream(dma, id)) {
+		return -EBUSY;
+	}
+
+	LL_DMA_DisableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+	LL_DMA_SetCurrentTargetMem(dma, dma_stm32_id_to_stream(id), LL_DMA_CURRENTTARGETMEM0);
+	config->streams[id].double_buffer = false;
+
+	return 0;
+}
+
+int dma_stm32_double_buffer_get_target(const struct device *dev, uint32_t id)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	if (!config->streams[id].double_buffer) {
+		return -ENOTSUP;
+	}
+
+	if (LL_DMA_GetCurrentTargetMem(dma, dma_stm32_id_to_stream(id)) ==
+	    LL_DMA_CURRENTTARGETMEM1) {
+		return STM32_DMA_MEM_TARGET_1;
+	}
+
+	return STM32_DMA_MEM_TARGET_0;
+}
+
+int dma_stm32_double_buffer_set_target(const struct device *dev, uint32_t id,
+				       uint32_t target, uint32_t buffer)
+{
+	const struct dma_stm32_config *config = dev->config;
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+	uint32_t current;
+
+	if (buffer == 0 ||
+	    (target != STM32_DMA_MEM_TARGET_0 && target != STM32_DMA_MEM_TARGET_1)) {
+		return -EINVAL;
+	}
+
+	/* Give channel from index 0 */
+	id = id - STM32_DMA_STREAM_OFFSET;
+
+	if (id >= config->max_streams) {
+		return -EINVAL;
+	}
+
+	if (!config->streams[id].double_buffer) {
+		return -ENOTSUP;
+	}
+
+	/* The address register of the target being filled is write protected. */
+	current = LL_DMA_GetCurrentTargetMem(dma, dma_stm32_id_to_stream(id)) ==
+			  LL_DMA_CURRENTTARGETMEM1
+			  ? STM32_DMA_MEM_TARGET_1
+			  : STM32_DMA_MEM_TARGET_0;
+
+	if (current == target && stm32_dma_is_enabled_stream(dma, id)) {
+		return -EBUSY;
+	}
+
+	if (target == STM32_DMA_MEM_TARGET_1) {
+		LL_DMA_SetMemory1Address(dma, dma_stm32_id_to_stream(id), buffer);
+	} else {
+		LL_DMA_SetMemoryAddress(dma, dma_stm32_id_to_stream(id), buffer);
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_DMA_STM32_DOUBLE_BUFFER */
 
 #define DMA_STM32_INIT_DEV(index)						\
 	static struct dma_stm32_stream						\
