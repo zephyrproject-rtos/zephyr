@@ -209,6 +209,11 @@ static int uaol_intel_adsp_set_power(const struct device *dev, bool power)
 
 	dp->is_powered_up = power;
 
+	/* The link power domain retains neither the BDF nor the frame alignment */
+	if (!power) {
+		dp->is_initialized = false;
+	}
+
 	return 0;
 }
 
