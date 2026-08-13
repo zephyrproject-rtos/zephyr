@@ -16,18 +16,6 @@
 
 #define SLEEP_TIME K_MSEC(1000)
 
-static struct k_work_delayable j1939_work;
-
-static void j1939_work_handler(struct k_work *work)
-{
-	ARG_UNUSED(work);
-
-	j1939_task();
-
-	k_work_schedule(&j1939_work,
-			K_MSEC(10));
-}
-
 const struct device *const can_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_canbus));
 
 J1939_NODE_DEFINE(diag_node, /* Name */
@@ -134,10 +122,6 @@ int main(void)
 	}
 
 	j1939_init();
-
-	k_work_init_delayable(&j1939_work, j1939_work_handler);
-	k_work_schedule(&j1939_work,
-			K_MSEC(10));
 
 	printf("Finished init.\n");
 

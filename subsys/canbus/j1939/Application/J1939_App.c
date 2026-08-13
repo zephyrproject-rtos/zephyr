@@ -4,8 +4,11 @@
  */
 #include <zephyr/canbus/j1939.h>
 #include <J1939Ac.h>
-/* #include <J1939Ma.h> */
 #include <J1939Tp.h>
+
+#ifdef J1939_MEMORY_ACCESS
+#include <J1939Ma.h>
+#endif
 
 #ifdef J1939DM13_ENABLE
 #include <J1939Dm13.h>

@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/canbus/j1939.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/drivers/can.h>
 #include "J1939Ac.h"
@@ -13,6 +14,13 @@
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(j1939, CONFIG_J1939_LOG_LEVEL);
+
+struct enriched_can_frame {
+	const struct device *can_dev;
+	struct can_frame frame;
+};
+
+K_MSGQ_DEFINE_STATIC_TYPE(j1939_can_msgq, struct enriched_can_frame, CONFIG_J1939_CAN_MSGQ_SIZE);
 
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
 typedef struct j1939_receive_pgn_handler_s {
@@ -48,6 +56,9 @@ static bool j1939_route_can_messages(const struct can_frame *message, const stru
 /** @brief CAN RX callback entrypoint used by can_add_rx_filter(). */
 static void j1939_rx_filter_callback(const struct device *dev, struct can_frame *frame,
 					 void *user_data);
+
+/** @brief Thread entry for periodic J1939 processing. */
+static void j1939_task_thread(void *arg1, void *arg2, void *arg3);
 
 /** @brief Returns true when this node is the first node configured on its CAN bus. */
 static bool j1939_is_first_node_on_bus(size_t node_index);
@@ -85,6 +96,9 @@ static inline bool j1939_route_without_loopback(const struct can_frame *message,
  */
 static inline bool j1939_run_message_callback(const struct can_frame *message,
 						  j1939_pdu_format_t pf, j1939_node_t node);
+
+K_THREAD_STACK_DEFINE(j1939_task_thread_stack, CONFIG_J1939_STACK_SIZE);
+static struct k_thread j1939_task_thread_data;
 
 /**************************************************************************************************/
 void j1939_init(void)
@@ -172,9 +186,16 @@ void j1939_init(void)
 		int filter_id = can_add_rx_filter(can_dev, j1939_rx_filter_callback, NULL, &filter);
 
 		if (filter_id < 0) {
-			printk("j1939: add filter failed for %s: %d\n", can_dev->name, filter_id);
+			LOG_ERR("add filter failed for %s: %d\n", can_dev->name, filter_id);
 		}
 	}
+
+	k_tid_t tid = k_thread_create(&j1939_task_thread_data, j1939_task_thread_stack,
+						K_THREAD_STACK_SIZEOF(j1939_task_thread_stack),
+						j1939_task_thread, NULL, NULL, NULL,
+						CONFIG_J1939_TASK_PRIORITY, 0, K_NO_WAIT);
+
+	k_thread_name_set(tid, "j1939_task");
 }
 
 /**************************************************************************************************/
@@ -229,6 +250,15 @@ bool j1939_is_pgn_requested(j1939_pgn_t pgn, j1939_source_address_t *source, j19
 	return false;
 }
 
+void j1939_process_rx_msgs(void)
+{
+	struct enriched_can_frame msg;
+
+	while (k_msgq_get(&j1939_can_msgq, &msg, K_NO_WAIT) == 0) {
+		(void)j1939_route_can_messages(&msg.frame, msg.can_dev);
+	}
+}
+
 /**************************************************************************************************/
 void j1939_task(void)
 {
@@ -236,6 +266,8 @@ void j1939_task(void)
 	j1939_timer_t elapsedCanTime = j1939_timer_elapse(&j1939_last_current_time);
 
 	(void)elapsedCanTime;
+
+	j1939_process_rx_msgs();
 
 	j1939_ac_task();
 
@@ -619,7 +651,12 @@ static void j1939_rx_filter_callback(const struct device *dev, struct can_frame 
 {
 	(void)user_data;
 
-	(void)j1939_route_can_messages(frame, dev);
+	/* queue message */
+	struct enriched_can_frame enriched_frame = {
+		.can_dev = dev,
+		.frame = *frame,
+	};
+	(void)k_msgq_put(&j1939_can_msgq, &enriched_frame, K_NO_WAIT);
 }
 
 /**************************************************************************************************/
@@ -1019,3 +1056,16 @@ void j1939_app_transmit_software_id(j1939_destination_address_t destination, j19
 		j1939_tp_free_buffer(data);
 	}
 } /* lint !e438 */
+
+
+static void j1939_task_thread(void *arg1, void *arg2, void *arg3)
+{
+	ARG_UNUSED(arg1);
+	ARG_UNUSED(arg2);
+	ARG_UNUSED(arg3);
+
+	while (true) {
+		j1939_task();
+		k_sleep(K_MSEC(CONFIG_J1939_TASK_INTERVAL_MS));
+	}
+}

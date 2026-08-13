@@ -7,9 +7,6 @@
 
 #include <zephyr/canbus/j1939.h>
 
-/** Initialize timer functions */
-void j1939_timer_init(void);
-
 /**
  * @brief Calculate elapsed time
  * @note The first time this function is called, the return value is undefined.  Subsequent
