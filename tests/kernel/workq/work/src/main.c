@@ -188,8 +188,27 @@ static void delay_handler(struct k_work *work)
 	counter_handler(work);
 }
 
-/* Check that standard initializations result in expected content. */
-static void test_work_init(void)
+/**
+ * @brief Verify K_WORK_DEFINE() and k_work_init() produce the same work item.
+ *
+ * @details
+ * A work item can be defined statically or initialized at run time, and the two
+ * forms must be interchangeable, so code that uses one is not subtly different
+ * from code that uses the other.
+ *
+ * Test steps:
+ * - Define a work item statically with K_WORK_DEFINE().
+ * - Initialize a second item with k_work_init() using the same handler.
+ * - Compare the two structures.
+ *
+ * Expected result:
+ * - The statically defined and run-time initialized items are identical.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see K_WORK_DEFINE()
+ * @see k_work_init()
+ */
+ZTEST(work, test_workq_work_define_matches_init)
 {
 	static K_WORK_DEFINE(fnstat, counter_handler);
 
@@ -200,7 +219,28 @@ static void test_work_init(void)
 			  NULL);
 }
 
-static void test_delayable_init(void)
+/**
+ * @brief Verify K_WORK_DELAYABLE_DEFINE() and k_work_init_delayable() produce
+ * the same delayable work item.
+ *
+ * @details
+ * As for plain work items, the static and run-time forms of initializing a
+ * delayable work item must be interchangeable.
+ *
+ * Test steps:
+ * - Define a delayable work item statically with K_WORK_DELAYABLE_DEFINE().
+ * - Initialize a second item with k_work_init_delayable() using the same
+ *   handler.
+ * - Compare the two structures.
+ *
+ * Expected result:
+ * - The statically defined and run-time initialized items are identical.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see K_WORK_DELAYABLE_DEFINE()
+ * @see k_work_init_delayable()
+ */
+ZTEST(work, test_workq_delayable_define_matches_init)
 {
 	static K_WORK_DELAYABLE_DEFINE(fnstat, counter_handler);
 
@@ -211,8 +251,26 @@ static void test_delayable_init(void)
 			  NULL);
 }
 
-/* Check that submission to an unstarted queue is diagnosed. */
-ZTEST(work, test_unstarted)
+/**
+ * @brief Verify submitting to a work queue that was never started fails.
+ *
+ * @details
+ * A work queue that has never been started has no thread to run handlers, so a
+ * submission must be rejected outright rather than accepted and never run.
+ *
+ * Test steps:
+ * - Initialize a work item and confirm it reports no busy flags.
+ * - Submit it to a work queue that was never started.
+ *
+ * Expected result:
+ * - k_work_submit_to_queue() returns -ENODEV.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_submit_to_queue()
+ */
+ZTEST(work, test_workq_submit_unstarted)
 {
 	int rc;
 
@@ -238,7 +296,12 @@ static void cooplo_main(void *workq_ptr, void *p2, void *p3)
 	k_work_queue_run(queue, &cfg);
 }
 
-static void test_queue_start(void)
+/* Start the work queues the test cases submit to. This has to happen in the
+ * suite setup because nearly every case needs the queues already running; the
+ * observable results of starting them are checked by
+ * test_workq_queue_start_config().
+ */
+static void start_test_queues(void)
 {
 	struct k_work_queue_config cfg = {
 		.name = "wq.preempt",
@@ -247,29 +310,6 @@ static void test_queue_start(void)
 	zassert_equal(preempt_queue.flags, 0);
 	k_work_queue_start(&preempt_queue, preempt_stack, STACK_SIZE,
 			    PREEMPT_PRIORITY, &cfg);
-	zassert_equal(preempt_queue.flags, K_WORK_QUEUE_STARTED);
-
-	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(preempt_queue.thread_id);
-
-		zassert_true(tn != cfg.name);
-		zassert_true(tn != NULL);
-		zassert_str_equal(tn, cfg.name);
-	}
-
-	cfg.name = NULL;
-	zassert_equal(invalid_test_queue.flags, 0);
-	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
-			    PREEMPT_PRIORITY, &cfg);
-	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED);
-
-	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-		const char *tn = k_thread_name_get(invalid_test_queue.thread_id);
-
-		zassert_true(tn != cfg.name);
-		zassert_true(tn != NULL);
-		zassert_str_equal(tn, "");
-	}
 
 	cfg.name = "wq.coophi";
 	cfg.no_yield = true;
@@ -290,8 +330,85 @@ static void test_queue_start(void)
 		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD, NULL);
 }
 
-/* Check validation of submission without a destination queue. */
-ZTEST(work, test_null_queue)
+/**
+ * @brief Verify a started work queue reflects its start configuration.
+ *
+ * @details
+ * k_work_queue_start() records the requested configuration on the queue: the
+ * started flag, the no-yield option, and the thread name. A NULL name in the
+ * configuration is not an error and must leave the queue thread with an empty
+ * name rather than a dangling pointer into the caller's configuration.
+ *
+ * Test steps:
+ * - Check the flags and thread name of the queues started by the suite setup,
+ *   both with and without the no-yield option.
+ * - Initialize a further queue and confirm k_work_queue_init() leaves its flags
+ *   clear.
+ * - Start that queue with a NULL name in its configuration.
+ *
+ * Expected result:
+ * - Every started queue reports K_WORK_QUEUE_STARTED, queues started with the
+ *   no-yield option also report K_WORK_QUEUE_NO_YIELD, a named queue's thread
+ *   carries a copy of the name rather than the caller's pointer, and the queue
+ *   started with a NULL name has an empty thread name.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_init()
+ * @see k_work_queue_start()
+ * @see k_thread_name_get()
+ */
+ZTEST(work, test_workq_queue_start_config)
+{
+	struct k_work_queue_config cfg = {
+		.name = NULL,
+	};
+
+	zassert_equal(preempt_queue.flags, K_WORK_QUEUE_STARTED);
+	zassert_equal(coophi_queue.flags,
+		      K_WORK_QUEUE_STARTED | K_WORK_QUEUE_NO_YIELD, NULL);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *tn = k_thread_name_get(preempt_queue.thread_id);
+
+		zassert_true(tn != NULL);
+		zassert_str_equal(tn, "wq.preempt");
+	}
+
+	/* A NULL name is accepted and leaves the thread name empty. */
+	zassert_equal(invalid_test_queue.flags, 0);
+	k_work_queue_start(&invalid_test_queue, invalid_test_stack, STACK_SIZE,
+			    PREEMPT_PRIORITY, &cfg);
+	zassert_equal(invalid_test_queue.flags, K_WORK_QUEUE_STARTED);
+
+	if (IS_ENABLED(CONFIG_THREAD_NAME)) {
+		const char *tn = k_thread_name_get(invalid_test_queue.thread_id);
+
+		zassert_true(tn != cfg.name);
+		zassert_true(tn != NULL);
+		zassert_str_equal(tn, "");
+	}
+}
+
+/**
+ * @brief Verify submitting to a NULL work queue is rejected.
+ *
+ * @details
+ * k_work_submit_to_queue() names the queue explicitly, and passing no queue at
+ * all is a caller error that must be reported rather than dereferenced.
+ *
+ * Test steps:
+ * - Initialize a work item and confirm it reports no busy flags.
+ * - Submit it with a NULL queue pointer.
+ *
+ * Expected result:
+ * - k_work_submit_to_queue() returns -EINVAL.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_submit_to_queue()
+ */
+ZTEST(work, test_workq_submit_null_queue)
 {
 	int rc;
 
@@ -303,14 +420,31 @@ ZTEST(work, test_null_queue)
 }
 
 /**
- * @brief Verify submitting a work item to a started queue runs its handler.
+ * @brief Verify a work item submitted to a started queue runs when the
+ * submitting thread yields.
  *
  * @details
- * Basic single-CPU check submitting with a non-blocking handler.
+ * The test thread is cooperative and higher priority than the queue thread, so
+ * a submitted item must stay queued until the test thread blocks, and then run
+ * exactly once and return the item to idle.
+ *
+ * Test steps:
+ * - Initialize a work item with a non-blocking handler and submit it to the
+ *   cooperative queue.
+ * - Check the item is reported queued and pending, and has not run.
+ * - Sleep to let the queue thread run.
+ *
+ * Expected result:
+ * - The handler runs exactly once while the test thread sleeps, and the item
+ *   afterwards reports no busy flags.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_is_pending()
+ * @see k_work_submit_to_queue()
  */
-ZTEST(work_1cpu, test_1cpu_simple_queue)
+ZTEST(work_1cpu, test_workq_1cpu_simple_queue)
 {
 	int rc;
 
@@ -341,11 +475,31 @@ ZTEST(work_1cpu, test_1cpu_simple_queue)
 	zassert_equal(rc, 0);
 }
 
-/* Single CPU check that work submitted while the queue's runner
- * thread is suspended is queued (not lost or rejected) and runs as
- * soon as the thread is resumed.
+/**
+ * @brief Verify work submitted while the queue thread is suspended runs on
+ * resume.
+ *
+ * @details
+ * Work submitted while the work queue's thread is suspended must be accepted
+ * and stay queued, not lost or rejected, and must run as soon as the thread
+ * is resumed.
+ *
+ * Test steps:
+ * - Look up the queue's thread with k_work_queue_thread_get() and suspend it.
+ * - Submit a work item and verify it is accepted and reported as queued.
+ * - Sleep and verify the item has not run and is still pending.
+ * - Resume the queue thread.
+ *
+ * Expected result:
+ * - The handler runs exactly once after the resume, and the item ends idle.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_submit_to_queue()
+ * @see k_work_queue_thread_get()
+ * @see k_thread_suspend()
+ * @see k_thread_resume()
  */
-ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
+ZTEST(work_1cpu, test_workq_1cpu_suspend_resume_queue)
 {
 	int rc;
 	k_tid_t wq_tid = k_work_queue_thread_get(&coophi_queue);
@@ -381,8 +535,30 @@ ZTEST(work_1cpu, test_1cpu_suspend_resume_queue)
 	zassert_equal(k_work_busy_get(&common_work), 0);
 }
 
-/* Basic SMP check submitting with a non-blocking handler. */
-ZTEST(work, test_smp_simple_queue)
+/**
+ * @brief Verify work submitted on SMP runs without the submitter yielding.
+ *
+ * @details
+ * With more than one CPU the queue thread can run the handler concurrently with
+ * the submitting thread, so the item must complete even though the test thread
+ * never blocks. Skipped when the configuration has a single CPU.
+ *
+ * Test steps:
+ * - Initialize a work item with a non-blocking handler and submit it to the
+ *   cooperative queue.
+ * - Busy-poll the item's pending state without sleeping.
+ *
+ * Expected result:
+ * - The handler runs exactly once and the item reports no busy flags, without
+ *   the test thread yielding.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_is_pending()
+ * @see k_work_submit_to_queue()
+ */
+ZTEST(work, test_workq_smp_simple_queue)
 {
 	if (!IS_ENABLED(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS == 1)) {
 		ztest_test_skip();
@@ -418,14 +594,29 @@ ZTEST(work, test_smp_simple_queue)
 }
 
 /**
- * @brief Verify flushing a work item blocks until its handler completes.
+ * @brief Verify the busy state of a work item whose handler blocks.
  *
  * @details
- * Basic single-CPU check submitting with a blocking handler
+ * A work item reports K_WORK_QUEUED while it waits for the queue thread and
+ * K_WORK_RUNNING once its handler has started, so a handler that blocks leaves
+ * the item running until something releases it.
+ *
+ * Test steps:
+ * - Submit a work item whose handler blocks on a semaphore.
+ * - Check it reports queued, then sleep and check it reports running without
+ *   having completed.
+ * - Release the handler and wait for completion.
+ *
+ * Expected result:
+ * - The item is queued before the queue thread runs, running while its handler
+ *   is blocked, and its handler completes exactly once after the release.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_submit_to_queue()
  */
-ZTEST(work_1cpu, test_1cpu_sync_queue)
+ZTEST(work_1cpu, test_workq_1cpu_sync_queue)
 {
 	int rc;
 
@@ -460,16 +651,28 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
 }
 
 /**
- * @brief Verify a work item handler can resubmit the work item.
+ * @brief Verify resubmitting a running item diverts it to the queue it runs on.
  *
  * @details
- * Verify that if a work item is submitted while it is being run by a
- * queue thread it gets submitted to the queue it's running on, to
- * prevent reentrant invocation, at least on a single CPU.
+ * A handler must never be entered twice concurrently. If an item that is
+ * already running is submitted to a different queue, the submission is
+ * redirected to the queue currently running it, so the second invocation
+ * happens after the first one returns instead of in parallel.
+ *
+ * Test steps:
+ * - Submit a blocking work item to the cooperative queue and let it start.
+ * - Submit the same item to the preemptible queue while it is running.
+ * - Release the handler twice and count where the invocations ran.
+ *
+ * Expected result:
+ * - The second submission is accepted and both invocations run on the
+ *   cooperative queue, never on the preemptible one.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
  */
-ZTEST(work_1cpu, test_1cpu_reentrant_queue)
+ZTEST(work_1cpu, test_workq_1cpu_reentrant_queue)
 {
 	int rc;
 
@@ -505,10 +708,29 @@ ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 	zassert_equal(coophi_counter(), 2);
 }
 
-/* Single CPU submit two work items and wait for flush in order
- * before they get started.
+/**
+ * @brief Verify k_work_flush() waits for a queued item to complete.
+ *
+ * @details
+ * Two items with delaying handlers are submitted to a cooperative queue so
+ * neither has started when the test flushes the second one. The flush must
+ * block until that item's handler has run, which also implies the item
+ * queued ahead of it completed first.
+ *
+ * Test steps:
+ * - Submit two work items with delaying handlers to the cooperative queue.
+ * - Verify both are still queued and no handler has run.
+ * - Call k_work_flush() on the second item.
+ *
+ * Expected result:
+ * - The flush returns only after both handlers have completed, in
+ *   submission order.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_flush()
+ * @see k_work_submit_to_queue()
  */
-ZTEST(work_1cpu, test_1cpu_queued_flush)
+ZTEST(work_1cpu, test_workq_1cpu_queued_flush)
 {
 	int rc;
 
@@ -545,14 +767,29 @@ ZTEST(work_1cpu, test_1cpu_queued_flush)
 }
 
 /**
- * @brief Verify flushing a running work item waits for it to finish.
+ * @brief Verify flushing a work item whose handler is already running waits.
  *
  * @details
- * Single CPU submit a work item and wait for flush after it's started.
+ * k_work_flush() must block until the handler has returned, whether the item is
+ * still queued or already running. Here the handler is started first and sleeps,
+ * so the flush cannot be satisfied immediately.
+ *
+ * Test steps:
+ * - Submit a work item with a delaying handler and let it start running.
+ * - Confirm the item reports running and has not completed.
+ * - Call k_work_flush() on it.
+ *
+ * Expected result:
+ * - The flush reports that waiting was required and returns only after the
+ *   handler has completed.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_busy_get()
+ * @see k_work_flush()
  */
-ZTEST(work_1cpu, test_1cpu_running_flush)
+ZTEST(work_1cpu, test_workq_1cpu_running_flush)
 {
 	int rc;
 
@@ -582,8 +819,29 @@ ZTEST(work_1cpu, test_1cpu_running_flush)
 	zassert_equal(rc, 0);
 }
 
-/* Single CPU schedule a work item and wait for flush. */
-ZTEST(work_1cpu, test_1cpu_delayed_flush)
+/**
+ * @brief Verify flushing a delayable work item runs it without its delay.
+ *
+ * @details
+ * k_work_flush_delayable() completes immediately for an item that is not
+ * scheduled. For an item waiting on a delay it must submit the item right away
+ * and wait for the handler, rather than blocking for the remaining delay.
+ *
+ * Test steps:
+ * - Flush an unscheduled delayable work item.
+ * - Schedule the item for a future delay, then flush it and record when its
+ *   handler ran relative to the flush.
+ *
+ * Expected result:
+ * - Flushing the unscheduled item reports no wait, and flushing the scheduled
+ *   item runs the handler immediately rather than after the remaining delay.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_flush_delayable()
+ * @see k_work_schedule_for_queue()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_delayed_flush)
 {
 	int rc;
 	uint32_t flush_ms;
@@ -615,15 +873,26 @@ ZTEST(work_1cpu, test_1cpu_delayed_flush)
 }
 
 /**
- * @brief Verify cancelling a work item that is still queued.
+ * @brief Verify cancelling a work item before the queue thread dequeues it.
  *
  * @details
- * Single CPU cancel before work item is unqueued should complete
- * immediately.
+ * An item that is still waiting in the queue has not started, so cancelling it
+ * can take effect at once: the cancel reports nothing left busy and the handler
+ * never runs.
+ *
+ * Test steps:
+ * - Submit a work item to the cooperative queue without letting it run.
+ * - Call k_work_cancel() on it.
+ *
+ * Expected result:
+ * - The cancel returns 0 (nothing still busy) and the handler is never invoked.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_cancel()
  */
-ZTEST(work_1cpu, test_1cpu_queued_cancel)
+ZTEST(work_1cpu, test_workq_1cpu_queued_cancel)
 {
 	int rc;
 
@@ -644,14 +913,28 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel)
 }
 
 /**
- * @brief Verify cancelling a queued work item and waiting for completion.
+ * @brief Verify a synchronous cancel of a queued item does not wait.
  *
  * @details
- * Single CPU cancel before work item is unqueued should not wait.
+ * k_work_cancel_sync() reports whether the item was pending and had to be
+ * waited for. For an item that never started there is nothing to wait for, and
+ * for an item that was never submitted there is nothing to cancel at all.
+ *
+ * Test steps:
+ * - Call k_work_cancel_sync() on an item that was never submitted.
+ * - Submit the item to the cooperative queue without letting it run.
+ * - Call k_work_cancel_sync() again.
+ *
+ * Expected result:
+ * - The first call reports the item was not pending, the second reports it was,
+ *   and the handler never runs.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_cancel_sync()
+ * @see k_work_submit_to_queue()
  */
-ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
+ZTEST(work_1cpu, test_workq_1cpu_queued_cancel_sync)
 {
 	int rc;
 
@@ -679,15 +962,26 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 }
 
 /**
- * @brief Verify cancelling a delayable work item before it expires.
+ * @brief Verify cancelling a delayable work item before its delay elapses.
  *
  * @details
- * Single CPU cancel before scheduled work item is queued should
- * complete immediately.
+ * A scheduled item that has not yet been submitted to its queue can be
+ * cancelled outright: the timeout is stopped, nothing is left busy and the
+ * handler never runs.
+ *
+ * Test steps:
+ * - Schedule a delayable work item for a future delay.
+ * - Call k_work_cancel_delayable() before the delay elapses.
+ *
+ * Expected result:
+ * - The cancel returns 0 (nothing still busy) and the handler is never invoked.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_schedule_for_queue()
+ * @see k_work_cancel_delayable()
  */
-ZTEST(work_1cpu, test_1cpu_delayed_cancel)
+ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel)
 {
 	int rc;
 
@@ -708,8 +1002,29 @@ ZTEST(work_1cpu, test_1cpu_delayed_cancel)
 }
 
 
-/* Single CPU cancel before scheduled work item is queued should not wait. */
-ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync)
+/**
+ * @brief Verify a synchronous cancel of a scheduled delayable item.
+ *
+ * @details
+ * k_work_cancel_delayable_sync() reports whether the item was pending. An item
+ * that was never scheduled is not pending, while one waiting on a delay is, and
+ * neither case has a running handler to wait for.
+ *
+ * Test steps:
+ * - Call k_work_cancel_delayable_sync() on an item that was never scheduled.
+ * - Schedule the item for a future delay.
+ * - Call k_work_cancel_delayable_sync() again.
+ *
+ * Expected result:
+ * - The first call reports the item was not pending, the second reports it was,
+ *   and the handler never runs.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_cancel_delayable_sync()
+ * @see k_work_schedule_for_queue()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel_sync)
 {
 	int rc;
 
@@ -736,8 +1051,31 @@ ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync)
 	zassert_equal(coophi_counter(), 0);
 }
 
-/* Single CPU cancel after delayable item starts should wait. */
-ZTEST(work_1cpu, test_1cpu_delayed_cancel_sync_wait)
+/**
+ * @brief Verify a synchronous cancel waits for a running delayable item.
+ *
+ * @details
+ * Once a delayable item's handler has started, cancelling it cannot unschedule
+ * anything: the synchronous cancel must block until that handler returns, so
+ * the caller knows the handler is no longer executing.
+ *
+ * Test steps:
+ * - Schedule a delayable item with no delay and let its blocking handler start.
+ * - Confirm the item reports running.
+ * - Arrange for the handler to be released asynchronously, then call
+ *   k_work_cancel_delayable_sync().
+ *
+ * Expected result:
+ * - The cancel reports that waiting was required and returns only after the
+ *   handler has completed.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_schedule_for_queue()
+ * @see k_work_delayable_busy_get()
+ * @see k_work_cancel_delayable_sync()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_delayed_cancel_sync_wait)
 {
 	int rc;
 
@@ -777,7 +1115,7 @@ struct test_running_cancel_timer {
 
 static struct test_running_cancel_timer test_running_cancel_ctx;
 
-static void test_running_cancel_cb(struct k_timer *timer)
+static void running_cancel_timer_cb(struct k_timer *timer)
 {
 	struct test_running_cancel_timer *ctx =
 		CONTAINER_OF(timer, struct test_running_cancel_timer, timer);
@@ -788,14 +1126,33 @@ static void test_running_cancel_cb(struct k_timer *timer)
 }
 
 /**
- * @brief Verify cancelling a work item whose handler is running.
+ * @brief Verify a non-blocking cancel of a running item reports it as
+ * cancelling.
  *
  * @details
- * Single CPU test cancellation after work starts.
+ * k_work_cancel() never waits. If the handler is already running the item
+ * enters the cancelling state, which the handler itself can observe, and any
+ * submission attempted while cancellation is in progress is refused.
+ *
+ * Test steps:
+ * - Submit a work item with a blocking handler and let it start running.
+ * - Call k_work_cancel() and check the returned busy state.
+ * - From a timer callback, read the item's busy state, attempt to resubmit it,
+ *   and release the handler.
+ * - Wait out the cancellation with k_work_cancel_sync().
+ *
+ * Expected result:
+ * - k_work_cancel() reports the item running and cancelling, the resubmission
+ *   is refused with -EBUSY, and once cancellation completes the item reports no
+ *   busy flags.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_cancel()
+ * @see k_work_cancel_sync()
  */
-ZTEST(work_1cpu, test_1cpu_running_cancel)
+ZTEST(work_1cpu, test_workq_1cpu_running_cancel)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
@@ -818,7 +1175,7 @@ ZTEST(work_1cpu, test_1cpu_running_cancel)
 	/* Schedule the async process to capture state and release work. */
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
-	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
+	k_timer_init(&ctx->timer, running_cancel_timer_cb, NULL);
 	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should not complete. */
@@ -857,10 +1214,32 @@ ZTEST(work_1cpu, test_1cpu_running_cancel)
 	zassert_equal(rc, 0, "bad: %d", rc);
 }
 
-/* Single CPU test wait-for-cancellation after the work item has
- * started running.
+/**
+ * @brief Verify k_work_cancel_sync() waits for a running item to finish.
+ *
+ * @details
+ * A work item whose handler blocks is started on a cooperative queue, then
+ * cancelled synchronously. Because the handler is already running the
+ * cancellation cannot take effect immediately: the call must report that
+ * waiting was required and return only after the handler has completed,
+ * while resubmission during cancellation is rejected.
+ *
+ * Test steps:
+ * - Submit a work item with a blocking handler and let it start running.
+ * - Call k_work_cancel_sync() on the running item from a timer-driven
+ *   context that also releases the handler.
+ * - Attempt to resubmit the item while cancellation is in progress.
+ *
+ * Expected result:
+ * - k_work_cancel_sync() returns true (waiting was required), the
+ *   resubmission is rejected with -EBUSY, and the item ends with no busy
+ *   flags set.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_cancel_sync()
+ * @see k_work_busy_get()
  */
-ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
+ZTEST(work_1cpu, test_workq_1cpu_running_cancel_sync)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
 	struct k_work *wp = &ctx->work;
@@ -883,7 +1262,7 @@ ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 	/* Schedule the async process to capture state and release work. */
 	ctx->submit_rc = INT_MAX;
 	ctx->busy_rc = INT_MAX;
-	k_timer_init(&ctx->timer, test_running_cancel_cb, NULL);
+	k_timer_init(&ctx->timer, running_cancel_timer_cb, NULL);
 	k_timer_start(&ctx->timer, K_MSEC(ms_timeout), K_NO_WAIT);
 
 	/* Cancellation should wait. */
@@ -919,10 +1298,31 @@ ZTEST(work_1cpu, test_1cpu_running_cancel_sync)
 	zassert_equal(rc, 0, "bad: %d", rc);
 }
 
-/* SMP cancel after work item is started should succeed but require
- * wait.
+/**
+ * @brief Verify cancelling a running item on SMP requires a synchronous wait.
+ *
+ * @details
+ * On SMP the work queue runs the handler concurrently with the test thread.
+ * Once the item is observed running, a plain k_work_cancel() must report the
+ * item still busy, and k_work_cancel_sync() must wait for the handler to
+ * complete before returning.
+ *
+ * Test steps:
+ * - Submit a work item with a delaying handler and busy-wait until it is
+ *   reported running on another CPU.
+ * - Call k_work_cancel() and check the returned busy state.
+ * - Call k_work_cancel_sync() and verify it reports having waited.
+ *
+ * Expected result:
+ * - The running item cannot be cancelled without waiting; after the
+ *   synchronous cancel completes the item reports no busy flags.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_cancel()
+ * @see k_work_cancel_sync()
+ * @see k_work_busy_get()
  */
-ZTEST(work, test_smp_running_cancel)
+ZTEST(work, test_workq_smp_running_cancel)
 {
 	int rc;
 
@@ -963,8 +1363,24 @@ ZTEST(work, test_smp_running_cancel)
 	zassert_equal(rc, 0);
 }
 
-/* Drain with no active workers completes immediately. */
-ZTEST(work, test_drain_empty)
+/**
+ * @brief Verify draining a work queue with nothing queued returns at once.
+ *
+ * @details
+ * Draining waits for the queue to become empty. A queue that is already empty
+ * has nothing to wait for, so the call must return immediately and report that
+ * no items were pending.
+ *
+ * Test steps:
+ * - Call k_work_queue_drain() on a queue with no queued or running items.
+ *
+ * Expected result:
+ * - The drain returns 0, meaning nothing was pending.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_drain()
+ */
+ZTEST(work, test_workq_drain_empty)
 {
 	int rc;
 
@@ -980,7 +1396,7 @@ struct test_drain_wait_timer {
 
 static struct test_drain_wait_timer test_drain_wait_ctx;
 
-static void test_drain_wait_cb(struct k_timer *timer)
+static void drain_wait_timer_cb(struct k_timer *timer)
 {
 	struct test_drain_wait_timer *ctx =
 		CONTAINER_OF(timer, struct test_drain_wait_timer, timer);
@@ -989,14 +1405,29 @@ static void test_drain_wait_cb(struct k_timer *timer)
 }
 
 /**
- * @brief Verify draining a work queue waits for queued items to finish.
+ * @brief Verify draining waits for queued work and blocks new submissions.
  *
  * @details
- * Single CPU submit an item and wait for it to drain.
+ * While a drain is in progress the queue keeps processing what it already has,
+ * including items a handler chains onto itself, but submissions from outside
+ * are refused so the queue can actually reach empty.
+ *
+ * Test steps:
+ * - Submit an item whose handler resubmits itself once, then start a drain.
+ * - From a timer callback, attempt to submit another item while the drain is
+ *   running.
+ *
+ * Expected result:
+ * - The drain reports one item pending and returns after both chained
+ *   invocations have run, while the external submission is refused with
+ *   -EBUSY.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_queue_drain()
  */
-ZTEST(work_1cpu, test_1cpu_drain_wait)
+ZTEST(work_1cpu, test_workq_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
 	struct k_work *wp = &ctx->work;
@@ -1018,7 +1449,7 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 	 * while draining.
 	 */
 	ctx->submit_rc = INT_MAX;
-	k_timer_init(&ctx->timer, test_drain_wait_cb, NULL);
+	k_timer_init(&ctx->timer, drain_wait_timer_cb, NULL);
 	k_timer_start(&ctx->timer, K_MSEC(10), K_NO_WAIT);
 
 	/* Wait to drain */
@@ -1040,14 +1471,30 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 }
 
 /**
- * @brief Verify submission is blocked while a queue is plugged for drain.
+ * @brief Verify a queue plugged by a drain refuses work until it is unplugged.
  *
  * @details
- * Single CPU submit item, drain with plug, test, then unplug.
+ * Draining with the plug option leaves the queue closed to new work once it is
+ * empty, so a caller can be sure nothing else starts running before it acts.
+ * The queue accepts work again only after an explicit unplug.
+ *
+ * Test steps:
+ * - Submit an item, then drain the queue with the plug option.
+ * - Check the queue's plugged state and try to submit another item.
+ * - Unplug the queue, unplug it a second time, and submit again.
+ *
+ * Expected result:
+ * - Submission to the plugged queue is refused with -EBUSY, the first unplug
+ *   succeeds and the redundant one returns -EALREADY, and submission succeeds
+ *   and completes once the queue is unplugged.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_queue_drain()
+ * @see k_work_queue_unplug()
  */
-ZTEST(work_1cpu, test_1cpu_plugged_drain)
+ZTEST(work_1cpu, test_workq_1cpu_plugged_drain)
 {
 	int rc;
 
@@ -1104,14 +1551,31 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 }
 
 /**
- * @brief Verify scheduling a delayable work item runs it after the delay.
+ * @brief Verify a scheduled delayable item runs only after its delay elapses.
  *
  * @details
- * Single CPU test delayed submission
+ * Scheduling a delayable item starts a timeout rather than queueing it, so the
+ * item reports the delayed state until the timeout fires, and the handler runs
+ * no earlier than the requested delay. A second schedule while the first is
+ * still waiting must not change the pending timeout.
+ *
+ * Test steps:
+ * - Schedule an idle delayable item for a known delay and check it reports
+ *   delayed and pending.
+ * - Schedule it again with no delay while it is still waiting.
+ * - Wait for the handler and measure the elapsed time since scheduling.
+ *
+ * Expected result:
+ * - The second schedule is a no-op, the handler runs once after at least the
+ *   requested delay and within the accepted tolerance, and the item ends idle.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_busy_get()
+ * @see k_work_schedule_for_queue()
+ * @see k_work_delayable_busy_get()
  */
-ZTEST(work_1cpu, test_1cpu_basic_schedule)
+ZTEST(work_1cpu, test_workq_1cpu_basic_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1185,8 +1649,29 @@ static void handle_1cpu_basic_schedule_running(struct k_work *work)
 	counter_handler(work);
 }
 
-/* Single CPU test that schedules when running */
-ZTEST(work_1cpu, test_1cpu_basic_schedule_running)
+/**
+ * @brief Verify a delayable work handler can schedule itself again.
+ *
+ * @details
+ * A handler running on a queue may schedule its own item for a later delay, so
+ * periodic work can keep itself going. The scheduling call has to be accepted
+ * while the item is still running.
+ *
+ * Test steps:
+ * - Schedule a delayable item whose handler schedules the same item once more.
+ * - Wait for the first invocation and record the result of the scheduling call
+ *   made from inside the handler.
+ * - Wait for the second invocation.
+ *
+ * Expected result:
+ * - The scheduling call from the handler succeeds, and the handler runs twice
+ *   on the same queue.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_schedule_for_queue()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_basic_schedule_running)
 {
 	int rc;
 	static struct state_1cpu_basic_schedule_running state = {
@@ -1221,8 +1706,30 @@ ZTEST(work_1cpu, test_1cpu_basic_schedule_running)
 	zassert_equal(coop_counter(&coophi_queue), 2);
 }
 
-/* Single CPU test schedule without delay is queued immediately. */
-ZTEST(work_1cpu, test_1cpu_immed_schedule)
+/**
+ * @brief Verify scheduling a delayable item with no delay queues it directly.
+ *
+ * @details
+ * K_NO_WAIT means there is no timeout to wait for, so the item must go straight
+ * into the queue and report the queued rather than the delayed state, while a
+ * repeated schedule is still a no-op.
+ *
+ * Test steps:
+ * - Schedule an idle delayable item with K_NO_WAIT.
+ * - Check it reports queued and pending, and schedule it again.
+ * - Sleep to let the queue thread run.
+ *
+ * Expected result:
+ * - The item is queued immediately, the second schedule does nothing, and the
+ *   handler runs once and leaves the item idle.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_busy_get()
+ * @see k_work_schedule_for_queue()
+ * @see k_work_delayable_busy_get()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_immed_schedule)
 {
 	int rc;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
@@ -1260,14 +1767,30 @@ ZTEST(work_1cpu, test_1cpu_immed_schedule)
 }
 
 /**
- * @brief Verify rescheduling a delayable work item updates its delay.
+ * @brief Verify rescheduling replaces a delayable item's pending delay and
+ * queue.
  *
  * @details
- * Single CPU test that delayed work can be rescheduled.
+ * Unlike scheduling, rescheduling an item that is already waiting must take
+ * effect: the previous timeout is discarded and the item runs after the new
+ * delay, on the queue named by the newer call.
+ *
+ * Test steps:
+ * - Reschedule an idle delayable item onto the preemptible queue with a long
+ *   delay.
+ * - Reschedule it again onto the cooperative queue with a shorter delay.
+ * - Wait for the handler and measure the elapsed time since the second call.
+ *
+ * Expected result:
+ * - The handler runs once, on the cooperative queue, after the second delay and
+ *   within the accepted tolerance.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_busy_get()
+ * @see k_work_reschedule_for_queue()
  */
-ZTEST(work_1cpu, test_1cpu_basic_reschedule)
+ZTEST(work_1cpu, test_workq_1cpu_basic_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1318,10 +1841,29 @@ ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-/* Single CPU test that delayed work can be immediately queued by
- * reschedule API.
+/**
+ * @brief Verify rescheduling with no wait queues delayable work immediately.
+ *
+ * @details
+ * A delayable work item rescheduled with K_NO_WAIT must go straight to the
+ * queue instead of starting a delay, and rescheduling it again while it is
+ * running must schedule a fresh invocation after the requested delay.
+ *
+ * Test steps:
+ * - Reschedule an idle delayable item with K_NO_WAIT and verify it is
+ *   queued immediately.
+ * - Let the handler start, then reschedule the running item with a delay.
+ * - Measure when the second invocation completes.
+ *
+ * Expected result:
+ * - The first invocation runs without delay and the rescheduled invocation
+ *   runs after the requested delay within the expected tolerance.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_reschedule_for_queue()
+ * @see k_work_init_delayable()
  */
-ZTEST(work_1cpu, test_1cpu_immed_reschedule)
+ZTEST(work_1cpu, test_workq_1cpu_immed_reschedule)
 {
 	int rc;
 	struct k_work *wp = &dwork.work; /* whitebox testing */
@@ -1452,8 +1994,30 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 	return is_high;
 }
 
-/* Verify that no-yield policy works */
-ZTEST(work_1cpu, test_1cpu_queue_no_yield)
+/**
+ * @brief Verify the no-yield option keeps a queue running between items.
+ *
+ * @details
+ * A queue configured with no_yield does not yield between work items, so once
+ * it starts processing it drains everything queued before any equal or lower
+ * priority thread runs. Whether that starves the test thread depends on the
+ * queue's priority, so the behavior is checked on both a queue above and a
+ * queue below the test thread's priority.
+ *
+ * Test steps:
+ * - Submit a work item and a delayable item to a no-yield queue of higher
+ *   priority than the test thread, and wait for completion.
+ * - Repeat with a no-yield queue of lower priority than the test thread.
+ *
+ * Expected result:
+ * - Both items run on each queue without an intervening yield, and the helper
+ *   reports the queue priority relative to the test thread correctly.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_submit_to_queue()
+ * @see k_work_schedule_for_queue()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_queue_no_yield)
 {
 	/* This test needs two slots available in the sem! */
 	k_sem_init(&sync_sem, 0, 2);
@@ -1463,14 +2027,29 @@ ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 }
 
 /**
- * @brief Verify submitting a work item to the system work queue.
+ * @brief Verify a work item submitted to the system work queue runs there.
  *
  * @details
- * Basic functionality with the system work queue.
+ * k_work_submit() targets the system work queue rather than a queue the test
+ * started, so it must behave like an explicit submission and run the handler on
+ * the system queue's thread.
+ *
+ * Test steps:
+ * - Initialize a work item with a non-blocking handler and submit it with
+ *   k_work_submit().
+ * - Check the item reports queued and has not run.
+ * - Sleep to let the system queue thread run.
+ *
+ * Expected result:
+ * - The handler runs exactly once on the system work queue thread and the item
+ *   ends idle.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_init()
+ * @see k_work_busy_get()
+ * @see k_work_submit()
  */
-ZTEST(work_1cpu, test_1cpu_system_queue)
+ZTEST(work_1cpu, test_workq_1cpu_system_queue)
 {
 	int rc;
 
@@ -1499,7 +2078,31 @@ ZTEST(work_1cpu, test_1cpu_system_queue)
 	zassert_equal(rc, 0);
 }
 
-ZTEST(work_1cpu, test_1cpu_system_schedule)
+/**
+ * @brief Verify a delayable item scheduled on the system queue honors its
+ * delay.
+ *
+ * @details
+ * k_work_schedule() is the system work queue counterpart of
+ * k_work_schedule_for_queue(), and must apply the same delay semantics: the
+ * item waits out its timeout, a repeated schedule is a no-op, and the handler
+ * then runs on the system queue thread.
+ *
+ * Test steps:
+ * - Schedule an idle delayable item on the system queue for a known delay.
+ * - Schedule it again while it is still waiting.
+ * - Wait for the handler and measure the elapsed time since scheduling.
+ *
+ * Expected result:
+ * - The second schedule is a no-op and the handler runs once on the system
+ *   queue after at least the requested delay and within the tolerance.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_delayable_busy_get()
+ * @see k_work_schedule()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_system_schedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1542,7 +2145,30 @@ ZTEST(work_1cpu, test_1cpu_system_schedule)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-ZTEST(work_1cpu, test_1cpu_system_reschedule)
+/**
+ * @brief Verify rescheduling a delayable item on the system queue replaces its
+ * delay.
+ *
+ * @details
+ * k_work_reschedule() must discard a pending timeout on the system work queue
+ * just as k_work_reschedule_for_queue() does on a dedicated queue, so the item
+ * runs after the most recently requested delay.
+ *
+ * Test steps:
+ * - Reschedule an idle delayable item on the system queue with a long delay.
+ * - Reschedule it again with a shorter delay.
+ * - Wait for the handler and measure the elapsed time since the second call.
+ *
+ * Expected result:
+ * - The handler runs once on the system queue after the second delay and within
+ *   the accepted tolerance.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_init_delayable()
+ * @see k_work_delayable_busy_get()
+ * @see k_work_reschedule()
+ */
+ZTEST(work_1cpu, test_workq_1cpu_system_reschedule)
 {
 	int rc;
 	uint32_t sched_ms;
@@ -1590,11 +2216,6 @@ ZTEST(work_1cpu, test_1cpu_system_reschedule)
 		     "long %u > %u\n", elapsed_ms, max_ms);
 }
 
-ZTEST(work, test_nop)
-{
-	ztest_test_skip();
-}
-
 /* Cooperative priority below the ztest thread so submitted work stays queued
  * until the test thread blocks, making the processing deterministic on 1 CPU.
  */
@@ -1623,14 +2244,29 @@ static void order_handler(struct k_work *work)
 }
 
 /**
- * @brief Verify a work queue processes work items in submission order
+ * @brief Verify a work queue processes work items in submission order.
  *
  * @details
- * Verify work items are processed in submission order.
+ * A work queue is FIFO: items are handled in the order they were accepted. The
+ * queue used here runs below the test thread's priority, so all three items are
+ * queued before the queue thread gets to run and the resulting order is decided
+ * purely by the queue.
+ *
+ * Test steps:
+ * - Start a work queue at a priority below the test thread.
+ * - Submit three work items that record their identity when handled.
+ * - Wait for the last item to run, then drain and stop the queue.
+ *
+ * Expected result:
+ * - The recorded identities are in submission order.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start()
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_queue_drain()
  */
-ZTEST(work_1cpu, test_1cpu_queue_order)
+ZTEST(work_1cpu, test_workq_1cpu_queue_order)
 {
 	struct k_work_queue_config cfg = {
 		.name = "order",
@@ -1702,18 +2338,35 @@ static void yield_w1_handler(struct k_work *work)
 	k_sem_give(&yield_done_sem);
 }
 
-/* Verify the work queue yields to other ready threads between items. */
 /**
- * @brief Verify a work queue yields between processing successive work items
+ * @brief Verify a work queue yields between successive work items by default.
  *
- * @details A cooperative work queue with the default (yielding) policy runs two
- * work items. The first item makes an equal-priority competitor thread runnable;
- * because the queue yields between items, the competitor runs before the second
- * item, producing the interleaving "0C1".
+ * @details
+ * Without the no-yield option a cooperative queue yields after each item, so it
+ * cannot monopolize the CPU against threads of its own priority. The first
+ * handler makes an equal-priority competitor runnable, and the yield is
+ * observable as the competitor running before the second item rather than after
+ * both.
+ *
+ * Test steps:
+ * - Start a cooperative work queue with the default configuration and create a
+ *   competitor thread at the same priority, initially blocked.
+ * - Submit two work items; the first unblocks the competitor, and each handler
+ *   and the competitor append to a shared sequence.
+ * - Wait for both items and the competitor to finish, then drain and stop the
+ *   queue.
+ *
+ * Expected result:
+ * - The recorded sequence is "0C1": the competitor ran between the two work
+ *   items.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start()
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_work_queue_drain()
  */
-ZTEST(work_1cpu, test_1cpu_queue_yield)
+ZTEST(work_1cpu, test_workq_1cpu_queue_yield)
 {
 	/* Default config: no_yield not set, so the queue yields between items. */
 	struct k_work_queue_config cfg = {
@@ -1754,11 +2407,8 @@ void *workq_setup(void)
 	k_sem_init(&sync_sem, 0, 1);
 	k_sem_init(&rel_sem, 0, 1);
 
-	test_work_init();
-	test_delayable_init();
-
 	if (run_flag) {
-		test_queue_start();
+		start_test_queues();
 		run_flag = false;
 	}
 
