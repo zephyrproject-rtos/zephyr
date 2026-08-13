@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/logging/log.h>
+#include <zephyr/net/wifi_utils.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -38,16 +39,16 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 		.mac_length = sizeof(result->scan_info[item].bssid),
 		.security = WIFI_SECURITY_TYPE_UNKNOWN,
 		.mfp = WIFI_MFP_UNKNOWN,
-		.band = WIFI_FREQ_BAND_2_4_GHZ,
+		.band = WIFI_FREQ_BAND_UNKNOWN,
 	};
 
 	if (result->scan_count == 0) {
 		return;
 	}
 
-	if (result->scan_info[item].rf_channel <= 0 || result->scan_info[item].rf_channel > 14) {
+	tmp.band = wifi_utils_chan_to_band(tmp.channel);
+	if (tmp.band != WIFI_FREQ_BAND_2_4_GHZ) {
 		LOG_WRN("Unexpected scan result");
-		tmp.band = WIFI_FREQ_BAND_UNKNOWN;
 	}
 
 	memcpy(tmp.ssid, result->scan_info[item].ssid, tmp.ssid_length);
