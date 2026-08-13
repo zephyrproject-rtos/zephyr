@@ -1201,7 +1201,7 @@ void bt_iso_cleanup_acl(struct bt_conn *iso)
 			LOG_DBG("Trigger disconnect work for ACL %p", acl);
 
 			__maybe_unused const int err =
-				k_work_schedule(&acl->deferred_work, K_NO_WAIT);
+				bt_work_schedule(&acl->deferred_work, K_NO_WAIT);
 
 			__ASSERT(err >= 0, "Failed to retrigger conn->deferred_work for %p", acl);
 		}

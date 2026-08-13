@@ -2109,8 +2109,8 @@ static void le_conn_update_complete(struct net_buf *buf)
 			   evt->status == BT_HCI_ERR_UNSUPP_LL_PARAM_VAL &&
 			   conn->le.conn_param_retry_countdown) {
 			conn->le.conn_param_retry_countdown--;
-			k_work_schedule(&conn->deferred_work,
-					K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
+			bt_work_schedule(&conn->deferred_work,
+					 K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
 		} else {
 			if (IS_ENABLED(CONFIG_BT_USER_CONN_PARAM_REJECTED)) {
 				/* A host-initiated (auto) update is only reported as a
