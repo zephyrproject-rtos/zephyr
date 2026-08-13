@@ -707,11 +707,17 @@ void test_poll_cancel(bool is_main_low_prio)
 	k_thread_abort(tid);
 }
 
+/**
+ * @brief k_poll() reports cancellation when a polled FIFO is cancelled (low-priority poller)
+ */
 ZTEST(poll_api_1cpu, test_poll_cancel_main_low_prio)
 {
 	test_poll_cancel(true);
 }
 
+/**
+ * @brief k_poll() reports cancellation when a polled FIFO is cancelled (high-priority poller)
+ */
 ZTEST(poll_api_1cpu, test_poll_cancel_main_high_prio)
 {
 	test_poll_cancel(false);
@@ -908,6 +914,9 @@ static void high_prio_main(void *param1, void *param2, void *param3)
 	zassert_equal(wake_up_by_poll, true);
 }
 
+/**
+ * @brief k_poll() wakes a high-priority thread waiting on a message queue
+ */
 ZTEST(poll_api_1cpu, test_poll_msgq)
 {
 	int low_prio_thread_priority = 1;
@@ -928,6 +937,9 @@ ZTEST(poll_api_1cpu, test_poll_msgq)
 	wake_up_by_poll = false;
 }
 
+/**
+ * @brief k_poll() with zero events returns -EAGAIN
+ */
 ZTEST(poll_api_1cpu, test_poll_zero_events)
 {
 	struct k_poll_event event;
