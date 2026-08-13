@@ -7,7 +7,12 @@
 #include <zephyr/ztest.h>
 #include "test_sched.h"
 
-#ifdef CONFIG_TIMESLICING
+/*
+ * Build the real test body for the documentation build (__DOXYGEN__) as
+ * well as when CONFIG_TIMESLICING is set, so the documented case is not
+ * hidden by the #else skip-stub below.
+ */
+#if defined(CONFIG_TIMESLICING) || defined(__DOXYGEN__)
 
 #define NUM_THREAD 3
 
