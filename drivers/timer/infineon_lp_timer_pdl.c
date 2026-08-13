@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,7 @@ static void lptimer_delay(uint32_t cycles)
 	 * This actually means we delay 210us here to reset in total.
 	 */
 	Cy_MCWDT_ResetCounters(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 105);
+	WAIT_FOR(MCWDT_CNTLOW(lptimer) == 0, 100, NULL);
 	__ASSERT(MCWDT_CNTLOW(lptimer) == 0, "Issue with Cy_MCWDT_ResetCounters function call.");
 
 	MCWDT_MATCH(lptimer) = cycles;
