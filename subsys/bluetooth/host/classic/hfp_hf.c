@@ -4272,6 +4272,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
 
 	k_work_cancel(&hf->work);
+	k_work_cancel(&hf->slc_work);
 	k_work_cancel_delayable(&hf->deferred_work);
 
 	/* Drop queued TX buffers. Nothing will send them any more, and
@@ -4353,6 +4354,15 @@ static uint8_t bt_hfp_hf_discover_cb(struct bt_conn *conn, struct bt_sdp_client_
 	__ASSERT(index < ARRAY_SIZE(bt_hfp_hf_pool), "Index is out of bounds");
 
 	hf = &bt_hfp_hf_pool[index];
+
+	if (hf->acl == NULL) {
+		/* The HF object was released by hfp_hf_disconnected() while
+		 * the discovery was still ongoing. Do not touch the object
+		 * state or re-submit any work in that case.
+		 */
+		LOG_WRN("HF %p released before discovery completed", hf);
+		return BT_SDP_DISCOVER_UUID_STOP;
+	}
 
 	if ((result == NULL) || (result->resp_buf == NULL)) {
 		LOG_ERR("SDP discovery failed");
@@ -4463,12 +4473,13 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	hf->sdp_param.pool = &hf_pool;
 	hf->sdp_param.ids  = &id_list;
 
+	hf->acl = conn;
+
 	err = bt_sdp_discover(conn, &hf->sdp_param);
 	if (err != 0) {
+		hf->acl = NULL;
 		return NULL;
 	}
-
-	hf->acl = conn;
 
 	hf->rfcomm_dlc.ops = &ops;
 	hf->rfcomm_dlc.mtu = BT_HFP_MAX_MTU;
