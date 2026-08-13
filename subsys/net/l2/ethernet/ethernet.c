@@ -187,23 +187,41 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
+ *
+ * This runs after the Ethernet header has been pulled off the packet, so the
+ * destination MAC address is read from the link address stored in the packet
+ * and the IPv4 header is fetched through the cursor.
  */
-static inline
-enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
-						struct net_eth_hdr *hdr)
+static enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
+	struct net_linkaddr *lladdr = net_pkt_lladdr_dst(pkt);
+	enum net_verdict verdict = NET_OK;
+	struct net_pkt_cursor cur;
+	struct net_ipv4_hdr *hdr;
+
 	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
 		return NET_OK;
 	}
 
-	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
-					 NET_IPV4_HDR(pkt)->dst))) {
-		return NET_DROP;
+	if (lladdr->len != sizeof(struct net_eth_addr) ||
+	    !net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
+		return NET_OK;
 	}
 
-	return NET_OK;
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
+
+	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
+	if (hdr == NULL ||
+	    !(net_ipv4_is_addr_mcast_raw(hdr->dst) ||
+	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		verdict = NET_DROP;
+	}
+
+	net_pkt_cursor_restore(pkt, &cur);
+
+	return verdict;
 }
 #endif
 
@@ -440,9 +458,7 @@ static enum net_verdict ethernet_ip_recv(struct net_if *iface,
 	ARG_UNUSED(iface);
 
 	if (ptype == NET_ETH_PTYPE_IP) {
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ethernet_check_ipv4_bcast_addr(pkt, hdr) == NET_DROP) {
+		if (ethernet_check_ipv4_bcast_addr(pkt) == NET_DROP) {
 			return NET_DROP;
 		}
 
