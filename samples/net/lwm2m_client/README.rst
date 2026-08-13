@@ -41,7 +41,7 @@ samples/net/lwm2m_client directory:
       - This is the standard default config.
 
     * - :file:`overlay-bootstrap.conf`
-      - This overlay config can be added to enable LWM2M Bootstrap support.
+      - This overlay config can be added to enable LwM2M Bootstrap support.
 
     * - :file:`overlay-ot.conf`
       - This overlay config can be added for OpenThread support.
@@ -53,7 +53,7 @@ samples/net/lwm2m_client directory:
       - This overlay config can be added for DTLS with certificates support via MBEDTLS.
 
     * - :file:`overlay-queue.conf`
-      - This overlay config can be added to enable LWM2M Queue Mode support.
+      - This overlay config can be added to enable LwM2M Queue Mode support.
 
     * - :file:`overlay-send-scheduler.conf`
       - This overlay config enables LwM2M send scheduler support and activate caching for the temperature and humidity IPSO objects.
@@ -152,12 +152,12 @@ Configure the lwm2m-client sample in the Demo Bootstrap Server:
 
     * Client endpoint: qemu_x86
 
-#. In the ``LWM2M Server`` tab, enter the following data:
+#. In the ``LwM2M Server`` tab, enter the following data:
 
-    * LWM2M Server URL: coap://[2001:db8::2]:5683 (or coap://192.0.2.2:5683 if IPv4 is used)
+    * LwM2M Server URL: coap://[2001:db8::2]:5683 (or coap://192.0.2.2:5683 if IPv4 is used)
     * Security mode: No Security
 
-#. The ``LWM2M Bootstrap Server`` tab can be left intact in the default
+#. The ``LwM2M Bootstrap Server`` tab can be left intact in the default
    configuration (No Security).
 
 To build the lwm2m-client sample for QEMU with Bootstrap enabled do the
@@ -179,7 +179,7 @@ Bootstrap Server configuration.
 It is possible to combine overlay files, to enable DTLS and Bootstrap for
 instance. In that case, the user should make sure to update the port number in
 the overlay file for Bootstrap over DTLS (5784 in case of Leshan Demo Bootstrap
-Server) and to configure correct security mode in the ``LWM2M Bootstrap Server``
+Server) and to configure correct security mode in the ``LwM2M Bootstrap Server``
 tab in the web UI (Pre-shared Key).
 
 OpenThread Support
@@ -224,7 +224,7 @@ the following command:
 Queue Mode Support
 ==================
 
-To build the lwm2m-client sample with LWM2M Queue Mode support do the following:
+To build the lwm2m-client sample with LwM2M Queue Mode support do the following:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
@@ -234,8 +234,8 @@ To build the lwm2m-client sample with LWM2M Queue Mode support do the following:
    :goals: build
    :compact:
 
-With Queue Mode enabled, the LWM2M client will register with "UDP with Queue
-Mode" binding. The LWM2M engine will notify the application with
+With Queue Mode enabled, the LwM2M client will register with "UDP with Queue
+Mode" binding. The LwM2M engine will notify the application with
 ``LWM2M_RD_CLIENT_EVENT_QUEUE_MODE_RX_OFF`` event when the RX window
 is closed so it can e. g. turn the radio off. The next RX window will be open
 with consecutive ``LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE`` event.
@@ -269,12 +269,12 @@ sent to the server where the endpoint is initialized.
     [QEMU] CPU: qemu32,+nx,+pae
     qemu-system-i386: warning: Unknown firmware file in legacy mode: genroms/multiboot.bin
 
-    shell> [lib/lwm2m_engine] [DBG] lwm2m_engine_init: LWM2M engine thread started
-    [lwm2m_obj_security] [DBG] security_create: Create LWM2M security instance: 0
-    [lwm2m_obj_server] [DBG] server_create: Create LWM2M server instance: 0
-    [lwm2m_obj_device] [DBG] device_create: Create LWM2M device instance: 0
-    [lwm2m_obj_firmware] [DBG] firmware_create: Create LWM2M firmware instance: 0
-    [lwm2m-client] [INF] main: Run LWM2M client
+    shell> [lib/lwm2m_engine] [DBG] lwm2m_engine_init: LwM2M engine thread started
+    [lwm2m_obj_security] [DBG] security_create: Create LwM2M security instance: 0
+    [lwm2m_obj_server] [DBG] server_create: Create LwM2M server instance: 0
+    [lwm2m_obj_device] [DBG] device_create: Create LwM2M device instance: 0
+    [lwm2m_obj_firmware] [DBG] firmware_create: Create LwM2M firmware instance: 0
+    [lwm2m-client] [INF] main: Run LwM2M client
     [lib/lwm2m_engine] [DBG] lwm2m_engine_set: path:3/0/0, value:0x0001c99e, len:6
     [lib/lwm2m_engine] [DBG] lwm2m_engine_set: path:3/0/1, value:0x0001c9ab, len:23
     [lib/lwm2m_engine] [DBG] lwm2m_engine_set: path:3/0/2, value:0x0001c9c9, len:9
@@ -288,7 +288,7 @@ sent to the server where the endpoint is initialized.
     [lib/lwm2m_engine] [DBG] lwm2m_engine_create_obj_inst: path:3303/0
     [ipso_temp_sensor] [DBG] temp_sensor_create: Create IPSO Temperature Sensor instance: 0
     [lib/lwm2m_engine] [DBG] lwm2m_engine_set: path:3303/0/5700, value:0x0041a3b8, len:8
-    [lib/lwm2m_rd_client] [INF] lwm2m_rd_client_start: LWM2M Client: qemu_x86
+    [lib/lwm2m_rd_client] [INF] lwm2m_rd_client_start: LwM2M Client: qemu_x86
     [lib/lwm2m_rd_client] [INF] sm_do_init: RD Client started with endpoint 'qemu_x86' and client lifetime 0
     [lib/lwm2m_rd_client] [DBG] sm_send_registration: registration sent [2001:db8::2]
     [lib/lwm2m_engine] [DBG] lwm2m_udp_receive: checking for reply from [2001:db8::2]
