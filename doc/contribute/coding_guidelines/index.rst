@@ -1050,6 +1050,10 @@ Status
        - Selected Replacements
        - Status
 
+     * - :ref:`1-Wire <w1_api>`
+       - * ``master / slave`` => ``controller / peripheral``
+       - Migrated in v4.5 with deprecated compatibility aliases retained.
+
      * - :ref:`Bluetooth <bluetooth_api>`
        - See `Bluetooth Appropriate Language Mapping Tables`_
        -
