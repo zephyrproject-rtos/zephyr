@@ -16,7 +16,7 @@ tests:
   # chunks so they are at least parallelized at that level.
   # See #116077
 
-  bluetooth.audio:
+  tests.bsim.bluetooth.audio:
     extra_args:
       - EXTRA_CONF_FILE=overlay-bt_ll_sw_split.conf
       - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
@@ -27,20 +27,20 @@ tests:
       tests_scripts:
         - test_scripts/[!_]*.sh
 
-  bluetooth.audio.audio_config.cap:
+  tests.bsim.bluetooth.audio.audio_config.cap:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - test_scripts/audio_config_tests/cap*
     required_applications:
-      - application: bluetooth.audio
+      - application: tests.bsim.bluetooth.audio
 
-  bluetooth.audio.audio_config.gmap:
+  tests.bsim.bluetooth.audio.audio_config.gmap:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - test_scripts/audio_config_tests/gmap*
     required_applications:
-      - application: bluetooth.audio
+      - application: tests.bsim.bluetooth.audio
