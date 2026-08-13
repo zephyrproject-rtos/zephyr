@@ -35,6 +35,40 @@ LOG_MODULE_REGISTER(acp_intc, CONFIG_INTC_AMD_ACP_LOG_LEVEL);
 #define IRQS_NUM          9
 #define IRQS_PER_LINE     1
 
+#ifdef CONFIG_SOC_ACP_7_X
+/* dsp_interrupt_routing_ctrl *_intr_level field values. */
+#define ACP_INTR_ROUTE_LEVEL_3 0
+#define ACP_INTR_ROUTE_LEVEL_5 2
+/*
+ * Route the generic DMA interrupt to EXT_LEVEL3 and the host->DSP
+ * software (IPC) interrupt to EXT_LEVEL5, so the log DMA completion
+ * (EXT_LEVEL3) and IPC (EXT_LEVEL5) use independent Xtensa lines.
+ */
+static void acp_intr_route(void)
+{
+	dsp_interrupt_routing_ctrl_0_t rout0;
+	dsp_interrupt_routing_ctrl_1_t rout1;
+
+	rout0 = (dsp_interrupt_routing_ctrl_0_t)io_reg_read(
+		PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_0);
+	rout0.bits.dma_intr_level = ACP_INTR_ROUTE_LEVEL_3;
+	io_reg_write(PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_0, rout0.u32all);
+
+	rout1 = (dsp_interrupt_routing_ctrl_1_t)io_reg_read(
+		PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_1);
+	rout1.bits.host_to_dsp_intr1_level = ACP_INTR_ROUTE_LEVEL_5;
+	io_reg_write(PU_REGISTER_BASE + ACP_DSP_INTERRUPT_ROUTING_CTRL_1, rout1.u32all);
+}
+#else
+/* Other ACP SoCs keep IPC on EXT_LEVEL3 and program no routing. */
+#define IRQ_NUM_EXT_LEVEL5       IRQ_NUM_EXT_LEVEL3
+
+static inline void acp_intr_route(void)
+{
+	/* No interrupt routing required on non-ACP-7.X SoCs. */
+}
+#endif /* CONFIG_SOC_ACP_7_X */
+
 /* Enable ACP DSP software interrupt */
 void acp_dsp_sw_intr_enable(void)
 {
@@ -46,7 +80,7 @@ void acp_dsp_sw_intr_enable(void)
 	/* Write the Software Interrupt controller register */
 	io_reg_write((PU_REGISTER_BASE + ACP_DSP_SW_INTR_CNTL), sw_intr_ctrl_reg.u32all);
 	/* Enabling software interrupts */
-	irq_enable(IRQ_NUM_EXT_LEVEL3);
+	irq_enable(IRQ_NUM_EXT_LEVEL5);
 }
 
 /* Disable ACP DSP software interrupt */
@@ -60,12 +94,14 @@ void acp_dsp_sw_intr_disable(void)
 	sw_intr_ctrl_reg.bits.dsp0_to_host_intr_mask = INTERRUPT_DISABLE;
 	/* Write the Software Interrupt controller register */
 	io_reg_write((PU_REGISTER_BASE + ACP_DSP_SW_INTR_CNTL), sw_intr_ctrl_reg.u32all);
-	irq_disable(IRQ_NUM_EXT_LEVEL3);
+	irq_disable(IRQ_NUM_EXT_LEVEL5);
 }
 
 int acp_intc_init(void)
 {
 	acp_external_intr_enb_t ext_interrupt_enb;
+	/* Route DMA -> EXT_LEVEL3, IPC (host->DSP sw intr) -> EXT_LEVEL5. */
+	acp_intr_route();
 
 	/* Enable the ACP to Host interrupts */
 	ext_interrupt_enb.bits.acpextintrenb = 1;
