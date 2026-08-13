@@ -262,7 +262,7 @@ static DEVICE_API(eeprom, eeprom_fm25xxx_api) = {
 #define FM25XXX_INIT(inst)                                                                         \
 	static struct fm25xxx_data fm25xxx_data_##inst;                                            \
 	static const struct fm25xxx_config fm25xxx_config_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),           \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)),       \
 		.size = DT_INST_PROP(inst, size),                                                  \
 		.readonly = DT_INST_PROP(inst, read_only),                                         \
 	};                                                                                         \
