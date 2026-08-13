@@ -7,9 +7,9 @@
 #include <Can_Transmit.h>
 #include <stddef.h>
 
-void tx_callback(const struct device *dev, int error, void *arg)
+void tx_callback(const struct device *dev, int error, void *user_data)
 {
-
+	/* used to prevent a synchronous send call */
 }
 
 bool Can_Transmit_BuildAndQueueMessage(const struct device *dev, uint32_t arbitration,
@@ -23,7 +23,7 @@ bool Can_Transmit_BuildAndQueueMessage(const struct device *dev, uint32_t arbitr
 	msg.flags = is_extended ? CAN_FRAME_IDE : 0U;
 	msg.id = arbitration;
 	msg.dlc = length;
-	/* msg.TransmitLoopbackMessage = loopback; */
+	/* TODO - need to implement loopback msg.TransmitLoopbackMessage = loopback; */
 
 	memcpy(msg.data, data, length > CAN_MAX_DLC ? CAN_MAX_DLC : length);
 
@@ -34,5 +34,5 @@ bool Can_Transmit_BuildAndQueueMessage(const struct device *dev, uint32_t arbitr
 
 void Can_Transmit_SendQueues(void)
 {
-
+	/* used by the J1939 stack to transmit all queued messages. queueing not currently implemented*/
 }

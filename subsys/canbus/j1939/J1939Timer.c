@@ -6,11 +6,6 @@
 #include <zephyr/kernel.h>
 
 /**************************************************************************************************/
-void j1939_timer_init(void)
-{
-}
-
-/**************************************************************************************************/
 j1939_timer_t j1939_timer_elapse(j1939_timer_t *elapsedTime)
 {
 	j1939_timer_t currentTime = j1939_timer_get_time();
@@ -21,7 +16,7 @@ j1939_timer_t j1939_timer_elapse(j1939_timer_t *elapsedTime)
 		*elapsedTime = currentTime;
 	}
 
-	return (delta);
+	return delta;
 }
 
 /**************************************************************************************************/

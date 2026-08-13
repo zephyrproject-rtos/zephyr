@@ -15,6 +15,37 @@ module = J1939
 module-str = J1939
 source "subsys/logging/Kconfig.template.log_config"
 
+config J1939_CAN_MSGQ_SIZE
+	int "Size of the CAN message queue for J1939"
+	default 32
+	help
+	  This is the size of the CAN message queue for J1939. If you have a high volume of
+	  messages on the bus, you may want to increase this value.
+
+config J1939_TASK_INTERVAL_MS
+	int "J1939 task interval (ms)"
+	range 1 1000
+	default 10
+	help
+	  This is the interval at which the J1939 task will be called. If you have a high volume
+	  of messages on the bus, you may want to decrease this value.
+
+config J1939_TASK_PRIORITY
+	int "J1939 task priority"
+	range 0 31
+	default 10
+	help
+	  This is the priority of the J1939 task. If you have a high volume of messages on the
+	  bus, you may want to increase this value.
+
+config J1939_STACK_SIZE
+	int "J1939 stack size"
+	range 1024 65536
+	default 4096
+	help
+	  This is the stack size for the J1939 task. If you have a high volume of messages on the
+	  bus, you may want to increase this value.
+
 config J1939_NODES_COUNT
 	int "Number of CAN nodes used on this device"
 	range 1 253
@@ -55,7 +86,7 @@ config J1939TP_NUMBER_OF_TP_RX_SESSIONS
 	default 3
 
 config J1939TP_MAX_PACKETS
-	int "Number of packets to allow before flow control between sender and receiver is required"
+	int "Number of packets to allow before flow control between sender and receiver is used"
 	default 16
 
 config J1939TP_BUFFER_SMALL_SIZE
@@ -90,21 +121,15 @@ config J1939TP_NUM_MAX_BUFFERS
 	int "Number of max buffers for J1939 Transport Protocol"
 	default 0
 
-config J1939TP_NUM_ALL_BUFFERS
-	int "Total number of buffers for J1939 Transport Protocol"
-	default 3
-	help
-	  Sum of J1939TP_NUM_SMALL_BUFFERS, J1939TP_NUM_MEDIUM_BUFFERS, J1939TP_NUM_LARGE_BUFFERS,
-	  and J1939TP_NUM_MAX_BUFFERS
-
 config J1939TP_NUM_TRANSMIT_SESSIONS
 	int "Number of transport protocol transmit sessions"
-	default J1939TP_NUM_ALL_BUFFERS
+	default 3
 	help
 	  Total number of transport protocol transmit sessions we'll allow at any one time.
-	  This number should always be less than or equal to J1939TP_NUM_ALL_BUFFERS
-	  If you want to gaurentee that there will always be a transport buffer available for
-	  a receive session it should be less than J1939TP_NUM_ALL_BUFFERS
+	  This number should always be less than or equal to the sum of all buffers defined above
+	  (i.e. J1939TP_NUM_SMALL_BUFFERS + J1939TP_NUM_MEDIUM_BUFFERS + J1939TP_NUM_LARGE_BUFFERS
+	  + J1939TP_NUM_MAX_BUFFERS), since we want to increase the likelihood that there
+	  will be a transport buffer available for a receive session
 
 config J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS
 	int "Milliseconds between packet groups for J1939 Transport Protocol"
@@ -131,7 +156,7 @@ config J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION
 
 config J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS
 	int "Max total messages queued for all transport sessions"
-	default 20
+	default 255
 	help
 	  If you set J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS to zero, you can control how many
 	  back to back messages are queued back-to-back for non-BAM transport transmit sessions
