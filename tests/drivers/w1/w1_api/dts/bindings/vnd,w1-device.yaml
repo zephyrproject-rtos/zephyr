@@ -5,4 +5,4 @@ description: 1-Wire dummy slave
 
 compatible: "vnd,w1-device"
 
-include: w1-slave.yaml
+include: w1-peripheral.yaml
