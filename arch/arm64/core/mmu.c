@@ -38,6 +38,20 @@ static struct k_spinlock xlat_lock;
 #define XLAT_PTE_COUNT_MASK	GENMASK(15, 0)
 #define XLAT_REF_COUNT_UNIT	BIT(16)
 
+/*
+ * Descriptor attributes that belong to a domain-private mapping (e.g. a
+ * partition or thread stack mapped via private_map()): EL0 accessibility,
+ * execute-never bits, the non-global bit and the software writability
+ * marker. When synchronizing demand paging state from the kernel
+ * ("global") page tables, these attributes must be preserved on private
+ * entries; only the structural state (descriptor type, physical address
+ * or location token, access flag and, for writable mappings, the
+ * read-only dirty-tracking state) is propagated.
+ */
+#define PTE_PRIVATE_ATTRS_MASK                                                                     \
+	(PTE_BLOCK_DESC_AP_ELx | PTE_BLOCK_DESC_NG | PTE_BLOCK_DESC_UXN | PTE_BLOCK_DESC_PXN |     \
+	 PTE_SW_WRITABLE)
+
 /* Returns a reference to a free table */
 static uint64_t *new_table(void)
 {
@@ -545,8 +559,14 @@ static void discard_table(uint64_t *table, unsigned int level)
 	table_usage(table, -free_count);
 }
 
-static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
-			   uintptr_t virt, size_t size, unsigned int level)
+/*
+ * preserve_private must be true when propagating demand paging state
+ * (page out/page in, AF/dirty sync) so that private mappings keep their
+ * permissions, and false when the caller wants to strip private mappings
+ * and revert the range to the global entries (see reset_map()).
+ */
+static int globalize_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t virt, size_t size,
+			   unsigned int level, bool preserve_private)
 {
 	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 	unsigned int i;
@@ -589,11 +609,42 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
 				}
 			}
 			ret = globalize_table(pte_desc_table(dst_table[i]),
-					      pte_desc_table(src_table[i]),
-					      virt, step, level + 1);
+					      pte_desc_table(src_table[i]), virt, step, level + 1,
+					      preserve_private);
 			if (ret) {
 				return ret;
 			}
+			continue;
+		}
+
+		/*
+		 * The destination entry may hold a domain-private mapping whose
+		 * permission attributes intentionally differ from the global
+		 * entry (see private_map()). Replacing it wholesale would
+		 * strip user permissions and the nG bit on every page
+		 * out/page in or AF/dirty sync, breaking user access to the
+		 * page. Keep the private permission attributes and only
+		 * synchronize the structural state. Both entries are leaf
+		 * descriptors here, so no table or usage accounting applies.
+		 *
+		 * The read-only bit is dirty-tracking state only where the
+		 * mapping is writable, so it can only be taken from the
+		 * global entry when the private entry says the mapping is
+		 * writable; a genuinely read-only private mapping keeps its
+		 * RO bit even after the kernel dirties the global entry.
+		 */
+		uint64_t mask = PTE_PRIVATE_ATTRS_MASK;
+
+		if ((dst_table[i] & PTE_SW_WRITABLE) == 0) {
+			mask |= PTE_BLOCK_DESC_AP_RO;
+		}
+
+		if (preserve_private && !is_free_desc(src_table[i]) &&
+		    !is_table_desc(src_table[i], level) && !is_free_desc(dst_table[i]) &&
+		    !is_table_desc(dst_table[i], level) &&
+		    (dst_table[i] & mask) != (src_table[i] & mask)) {
+			dst_table[i] = (src_table[i] & ~mask) | (dst_table[i] & mask);
+			debug_show_pte(&dst_table[i], level);
 			continue;
 		}
 
@@ -631,11 +682,13 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table,
  * dst_pt are then discarded. If page tables in the given range are already
  * shared then nothing is done. If page table sharing is not possible then
  * page table entries in dst_pt are synchronized with those from src_pt.
+ * If preserve_private is true, leaf entries holding domain-private mappings
+ * keep their permission attributes and only their structural state is
+ * synchronized; if false, private entries are reverted to the global ones.
  */
-static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
-				struct arm_mmu_ptables *src_pt,
-				uintptr_t virt_start, size_t size,
-				const char *name)
+static int globalize_page_range(struct arm_mmu_ptables *dst_pt, struct arm_mmu_ptables *src_pt,
+				uintptr_t virt_start, size_t size, const char *name,
+				bool preserve_private)
 {
 	k_spinlock_key_t key;
 	int ret;
@@ -645,8 +698,8 @@ static int globalize_page_range(struct arm_mmu_ptables *dst_pt,
 
 	key = k_spin_lock(&xlat_lock);
 
-	ret = globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table,
-			      virt_start, size, BASE_XLAT_LEVEL);
+	ret = globalize_table(dst_pt->base_xlat_table, src_pt->base_xlat_table, virt_start, size,
+			      BASE_XLAT_LEVEL, preserve_private);
 
 	k_spin_unlock(&xlat_lock, key);
 	return ret;
@@ -790,16 +843,22 @@ static void invalidate_tlb_all(void)
 #endif
 }
 
+/*
+ * Invalidate one virtual address from the TLB across every ASID (TLBI
+ * VAAE1{IS}). Domain page tables are allocated ASIDs from 1 up and
+ * their entries are non-global, so a single-ASID VAE1 would leave
+ * stale translations behind in domains that already touched the page.
+ */
 static inline void invalidate_tlb_page(uintptr_t virt)
 {
 #ifdef CONFIG_SMP
 	/* Use IS variant to broadcast to all CPUs in Inner Shareable domain */
 	__asm__ volatile (
-	"dsb ishst; tlbi vae1is, %0; dsb ish; isb"
+	"dsb ishst; tlbi vaae1is, %0; dsb ish; isb"
 	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
 #else
 	__asm__ volatile (
-	"dsb ishst; tlbi vae1, %0; dsb ish; isb"
+	"dsb ishst; tlbi vaae1, %0; dsb ish; isb"
 	: : "r" (virt >> PAGE_SIZE_SHIFT) : "memory");
 #endif
 }
@@ -1018,8 +1077,7 @@ static void sync_domains(uintptr_t virt, size_t size, const char *name)
 	SYS_SLIST_FOR_EACH_NODE(&domain_list, node) {
 		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 		domain_ptables = &domain->ptables;
-		ret = globalize_page_range(domain_ptables, &kernel_ptables,
-					   virt, size, name);
+		ret = globalize_page_range(domain_ptables, &kernel_ptables, virt, size, name, true);
 		if (ret) {
 			LOG_ERR("globalize_page_range() returned %d", ret);
 		}
@@ -1261,7 +1319,7 @@ static int reset_map(struct arm_mmu_ptables *ptables, const char *name,
 {
 	int ret;
 
-	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name);
+	ret = globalize_page_range(ptables, &kernel_ptables, addr, size, name, false);
 	__ASSERT(ret == 0, "globalize_page_range() returned %d", ret);
 	invalidate_tlb_all();
 
