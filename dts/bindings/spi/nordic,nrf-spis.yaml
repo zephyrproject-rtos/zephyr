@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF family SPIS (SPI slave with EasyDMA)
+description: Nordic nRF family SPIS (SPI peripheral with EasyDMA)
 
 compatible: "nordic,nrf-spis"
 
@@ -12,5 +12,5 @@ properties:
     type: int
     required: true
     description: |
-        Default character. Character clocked out when the slave was not
+        Default character. Character clocked out when the peripheral was not
         provided with buffers and is ignoring the transaction.
