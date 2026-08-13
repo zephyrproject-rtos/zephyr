@@ -103,6 +103,29 @@ bool wifi_utils_validate_chan(uint8_t band,
 	return result;
 }
 
+
+enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan)
+{
+	/* The 2.4 GHz (1-14) and 6 GHz (1, 2, 5, 9, ...) channel numbers overlap, as
+	 * do the 5 GHz and 6 GHz ones above 14. A channel number on its own cannot
+	 * resolve that, so return the lowest band it is valid in. Every open coded
+	 * conversion this replaces made the same assumption.
+	 */
+	if (wifi_utils_validate_chan_2g(chan)) {
+		return WIFI_FREQ_BAND_2_4_GHZ;
+	}
+
+	if (wifi_utils_validate_chan_5g(chan)) {
+		return WIFI_FREQ_BAND_5_GHZ;
+	}
+
+	if (wifi_utils_validate_chan_6g(chan)) {
+		return WIFI_FREQ_BAND_6_GHZ;
+	}
+
+	return WIFI_FREQ_BAND_UNKNOWN;
+}
+
 /**
  * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
  * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.

@@ -13,6 +13,9 @@
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_UTILS_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_UTILS_H_
 
+#include <zephyr/net/wifi.h>
+#include <zephyr/net/wifi_mgmt.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -149,6 +152,22 @@ bool wifi_utils_validate_chan_5g(uint16_t chan);
  * @retval false if the channel is not valid for the band.
  */
 bool wifi_utils_validate_chan_6g(uint16_t chan);
+
+/**
+ * @brief Get the frequency band a channel belongs to.
+ *
+ * @details Channel numbers are not unique across bands: 1-14 are valid in both the
+ * 2.4 GHz and the 6 GHz band, and the 5 GHz and 6 GHz numbering overlaps above 14.
+ * The channel number alone cannot resolve that, so the lowest matching band is
+ * returned. A caller that already knows its radio is operating in the 6 GHz band
+ * must not use this function.
+ *
+ * @param chan Channel to look up.
+ *
+ * @return The band the channel belongs to.
+ * @retval WIFI_FREQ_BAND_UNKNOWN if the channel is not valid in any band.
+ */
+enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan);
 
 /**
  * @}
