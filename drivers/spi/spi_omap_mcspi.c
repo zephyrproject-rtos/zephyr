@@ -112,7 +112,7 @@ struct omap_mcspi_data {
 static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
 {
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
-	uint8_t chan = DEV_DATA(dev)->ctx.config->slave;
+	uint8_t chan = DEV_DATA(dev)->ctx.config->peripheral;
 
 	if (enable) {
 		regs->CHAN[chan].CHCTRL |= OMAP_MCSPI_CHCTRL_EN;
@@ -124,7 +124,7 @@ static void omap_mcspi_channel_enable(const struct device *dev, bool enable)
 static void omap_mcspi_hw_cs_control(const struct device *dev, bool enabled)
 {
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
-	uint8_t chan = DEV_DATA(dev)->ctx.config->slave;
+	uint8_t chan = DEV_DATA(dev)->ctx.config->peripheral;
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 
 	/*
@@ -160,7 +160,7 @@ static void omap_mcspi_set_mode(const struct device *dev, bool is_peripheral)
 	/* disable system test mode */
 	modulctrl &= ~(OMAP_MCSPI_MODULCTRL_SYSTEST);
 
-	/* set controller or peripheral (master/slave) */
+	/* set controller or peripheral */
 	if (is_peripheral) {
 		modulctrl |= OMAP_MCSPI_MODULCTRL_MS;
 	} else {
@@ -223,9 +223,9 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
-	uint8_t chan = config->slave;
+	uint8_t chan = config->peripheral;
 	uint8_t word_size = SPI_WORD_SIZE_GET(config->operation);
-	bool is_peripheral = config->operation & SPI_OP_MODE_SLAVE;
+	bool is_peripheral = config->operation & SPI_OP_MODE_PERIPHERAL;
 	int rv;
 
 	if (spi_context_configured(ctx, config)) {
@@ -237,13 +237,13 @@ static int omap_mcspi_configure(const struct device *dev, const struct spi_confi
 		return -ENOTSUP;
 	}
 
-	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for SPI slave mode is not enabled");
+	if (is_peripheral && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for SPI peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
 	if (chan >= cfg->num_cs) {
-		LOG_ERR("invalid slave selected");
+		LOG_ERR("invalid peripheral selected");
 		return -EINVAL;
 	}
 
@@ -400,7 +400,7 @@ static int omap_mcspi_transceive_pio(const struct device *dev, size_t count)
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
 	const uint32_t word_mask = (1ULL << SPI_WORD_SIZE_GET(ctx->config->operation)) - 1;
-	const uint8_t chan = ctx->config->slave;
+	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t dfs = data->dfs;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
@@ -500,7 +500,7 @@ static int omap_mcspi_transceive_one(const struct device *dev)
 	struct omap_mcspi_data *data = DEV_DATA(dev);
 	struct omap_mcspi_regs *regs = DEV_REGS(dev);
 	struct spi_context *ctx = &data->ctx;
-	const uint8_t chan = ctx->config->slave;
+	const uint8_t chan = ctx->config->peripheral;
 	const uint8_t *tx_buf = ctx->tx_buf;
 	uint8_t *rx_buf = ctx->rx_buf;
 	size_t count = spi_context_max_continuous_chunk(ctx);
