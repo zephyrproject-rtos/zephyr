@@ -9,7 +9,7 @@
 / {
 	test_mpu_region: memory@70000000 {
 		compatible = "zephyr,memory-region";
-		reg = <0x0 0x70000000 0x0 0x1000>;
+		reg = <0x70000000 0x1000>;
 		zephyr,memory-region = "TEST_MPU_REGION";
 		zephyr,memory-attr = <(DT_MEM_READABLE |
 				       DT_MEM_NON_CACHEABLE | DT_MEM_NON_VOLATILE)>;

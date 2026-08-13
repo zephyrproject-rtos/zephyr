@@ -162,9 +162,9 @@ static int mpu_region_from_generic_policy(const struct mem_attr_region_t *region
 }
 #endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
 
-static int mpu_configure_dt_region(uint8_t *reg_index,
-				   const struct mem_attr_region_t *region,
-				   struct arm_mpu_region *region_conf)
+static int mpu_validate_dt_region(uint8_t reg_index,
+				  const struct mem_attr_region_t *region,
+				  struct arm_mpu_region *region_conf)
 {
 #if defined(CONFIG_ARMV7_R)
 	if (!is_power_of_two(region->dt_size) ||
@@ -183,7 +183,7 @@ static int mpu_configure_dt_region(uint8_t *reg_index,
 	}
 
 	/* ARMv8-R PMSA regions must not overlap, including static regions. */
-	for (uint8_t index = 0U; index < *reg_index; index++) {
+	for (uint8_t index = 0U; index < reg_index; index++) {
 		uint32_t existing_base;
 		uint32_t existing_limit;
 
@@ -203,6 +203,17 @@ static int mpu_configure_dt_region(uint8_t *reg_index,
 	}
 #endif
 
+	return 0;
+}
+
+static int mpu_configure_dt_region(uint8_t *reg_index,
+				   const struct mem_attr_region_t *region,
+				   struct arm_mpu_region *region_conf)
+{
+	if (mpu_validate_dt_region(*reg_index, region, region_conf) < 0) {
+		return -EINVAL;
+	}
+
 	if (region_allocate_and_init(*reg_index, region_conf) < 0) {
 		return -EINVAL;
 	}
@@ -210,6 +221,26 @@ static int mpu_configure_dt_region(uint8_t *reg_index,
 	(*reg_index)++;
 	return 0;
 }
+
+#if defined(CONFIG_ZTEST) && \
+	(defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R))
+int z_arm_mpu_validate_dt_region(uint32_t addr, uint32_t size, uint32_t attr)
+{
+	struct mem_attr_region_t region = {
+		.dt_name = "test-region",
+		.dt_addr = addr,
+		.dt_size = size,
+		.dt_attr = attr,
+	};
+	struct arm_mpu_region region_conf;
+
+	if (mpu_region_from_generic_policy(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	return mpu_validate_dt_region(static_regions_num, &region, &region_conf);
+}
+#endif
 
 /* This internal function programs MPU regions defined by the DT
  * `zephyr,memory-attr` property. R-profile CPUs accept generic permission

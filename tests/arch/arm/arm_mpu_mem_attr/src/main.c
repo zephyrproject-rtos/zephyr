@@ -8,10 +8,14 @@
 
 #include <zephyr/arch/arm/mpu/arm_mpu.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/ztest.h>
 
 #define TEST_REGION DT_NODELABEL(test_mpu_region)
 #define TEST_REGION_ADDR DT_REG_ADDR(TEST_REGION)
+
+#define TEST_VALID_ATTR \
+	(DT_MEM_READABLE | DT_MEM_NON_CACHEABLE | DT_MEM_NON_VOLATILE)
 
 static inline uint32_t read_mpu_info(void)
 {
@@ -87,6 +91,20 @@ ZTEST(arm_mpu_mem_attr, test_dt_region_programmed)
 	}
 	zassert_true(found, "DT-defined MPU region was not programmed");
 }
+
+ZTEST(arm_mpu_mem_attr, test_invalid_dt_regions_rejected)
+{
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR, 0x1000,
+						     DT_MEM_WRITABLE | DT_MEM_CACHEABLE),
+		      -EINVAL, "unreadable policy was accepted");
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR, 0x1000,
+						     DT_MEM_READABLE | DT_MEM_CACHEABLE |
+						     DT_MEM_NON_CACHEABLE),
+		      -EINVAL, "conflicting cache policy was accepted");
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR + 1U, 0x1000,
+						     TEST_VALID_ATTR),
+		      -EINVAL, "misaligned region was accepted");
+}
 #elif defined(CONFIG_AARCH32_ARMV8_R)
 static inline void select_region(uint32_t index)
 {
@@ -153,6 +171,23 @@ ZTEST(arm_mpu_mem_attr, test_dt_region_programmed)
 		}
 	}
 	zassert_true(found, "DT-defined MPU region was not programmed");
+}
+
+ZTEST(arm_mpu_mem_attr, test_invalid_dt_regions_rejected)
+{
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR, 0x1000,
+						     DT_MEM_WRITABLE | DT_MEM_CACHEABLE),
+		      -EINVAL, "unreadable policy was accepted");
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR, 0x1000,
+						     DT_MEM_READABLE | DT_MEM_CACHEABLE |
+						     DT_MEM_NON_CACHEABLE),
+		      -EINVAL, "conflicting cache policy was accepted");
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR + 1U, 0x1000,
+						     TEST_VALID_ATTR),
+		      -EINVAL, "misaligned region was accepted");
+	zassert_equal(z_arm_mpu_validate_dt_region(TEST_REGION_ADDR, 0x1000,
+						     TEST_VALID_ATTR),
+		      -EINVAL, "overlapping region was accepted");
 }
 #else
 #error "This test requires ARMv7-R or ARMv8-R"
