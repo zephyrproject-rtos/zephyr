@@ -45,81 +45,12 @@ data!
 Spinlocks
 =========
 
-SMP systems provide a more constrained :c:func:`k_spin_lock` primitive
-that not only masks interrupts locally, as done by :c:func:`irq_lock`, but
-also atomically validates that a shared lock variable has been
-modified before returning to the caller, "spinning" on the check if
-needed to wait for the other CPU to exit the lock.  The default Zephyr
-implementation of :c:func:`k_spin_lock` and :c:func:`k_spin_unlock` is built
-on top of the pre-existing :c:struct:`atomic_` layer (itself usually
-implemented using compiler intrinsics), though facilities exist for
-architectures to define their own for performance reasons.
-
-One important difference between IRQ locks and spinlocks is that the
-earlier API was naturally recursive: the lock was global, so it was
-legal to acquire a nested lock inside of a critical section.
-Spinlocks are separable: you can have many locks for separate
-subsystems or data structures, preventing CPUs from contending on a
-single global resource.  But that means that spinlocks must not be
-used recursively.  Code that holds a specific lock must not try to
-re-acquire it or it will deadlock (it is perfectly legal to nest
-**distinct** spinlocks, however).  A validation layer is available to
-detect and report bugs like this.
-
-When used on a uniprocessor system, the data component of the spinlock
-(the atomic lock variable) is unnecessary and elided.  Except for the
-recursive semantics above, spinlocks in single-CPU contexts produce
-identical code to legacy IRQ locks.  In fact the entirety of the
-Zephyr core kernel has now been ported to use spinlocks exclusively.
-
-The default spinlock implementation is built on a single atomic variable and
-does not guarantee fairness between contending CPUs: it is possible for one CPU
-to repeatedly win the contention, in pathological cases starving the others.
-Where this matters, enabling :kconfig:option:`CONFIG_TICKET_SPINLOCKS` switches
-to a ticket-based implementation that grants a contended lock to requesting CPUs
-in first-come, first-served order, at the cost of a slightly larger lock object.
-
-Spinlock pools
---------------
-
-A spinlock pool allows many objects to share a fixed number of spinlocks. This
-reduces the memory required compared with embedding one spinlock in every object,
-while permitting operations on objects assigned to different spinlocks to run
-concurrently.
-
-Define a pool at file scope with :c:macro:`SPINLOCK_POOL_DEFINE`. The number of
-spinlocks must be a nonzero power of two. Use :c:macro:`spinlock_find` to select
-the spinlock associated with an object identity:
-
-.. code-block:: c
-
-   SPINLOCK_POOL_DEFINE(device_locks, 16);
-
-   void update_device(struct device_data *data)
-   {
-           struct k_spinlock *lock = spinlock_find(device_locks, data);
-           k_spinlock_key_t key = k_spin_lock(lock);
-
-           update_device_state(data);
-
-           k_spin_unlock(lock, key);
-   }
-
-The lookup derives an index from the object identity. Repeated lookups using the
-same identity and pool return the same spinlock. Different identities can map to
-the same spinlock; this is an expected collision and only reduces concurrency.
-The identity should normally be a stable, naturally aligned object address.
-
-Spinlock pools do not make spinlocks recursive. Two logical locks from the same
-pool can resolve to the same physical spinlock. Acquiring one while holding the
-other can therefore deadlock. Do not use a shared pool for locks that may be
-nested unless their assigned spinlocks are guaranteed to be distinct. The same
-lock ordering requirements that apply to individual spinlocks also apply to
-spinlocks returned from a pool.
-
-Increasing the pool size reduces collisions at the cost of static memory. It
-does not guarantee that each spinlock occupies a separate cache line, so adjacent
-spinlocks can still experience cache-line contention on SMP systems.
+SMP systems provide a more constrained :c:func:`k_spin_lock` primitive that
+masks interrupts locally, like :c:func:`irq_lock`, while also atomically
+guarding a shared lock variable so that only one CPU enters the critical
+section at a time. Unlike the legacy IRQ locks, spinlocks are separable and
+must not be acquired recursively. See :ref:`spinlocks` for a full description,
+including ticket spinlocks, spinlock pools, and the API reference.
 
 Legacy irq_lock() emulation
 ===========================
@@ -516,8 +447,3 @@ system, it is moved to the back of the queue for its priority level. In
 contrast, on UP systems, a preempted thread does not move to the back of its
 priority queue; it simply waits to regain the CPU, preserving its original
 ordering relative to other threads of the same priority.
-
-API Reference
-**************
-
-.. doxygengroup:: spinlock_apis
