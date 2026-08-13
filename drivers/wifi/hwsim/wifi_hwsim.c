@@ -140,6 +140,9 @@ static int hwsim_mgmt_scan(const struct device *dev, struct net_if *iface,
 		res.channel = r->channel;
 		res.rssi = r->tx_power_dbm;
 		res.security = (enum wifi_security_type)r->security;
+		/* The simulated radio is 2.4 GHz by construction, see the
+		 * channel to frequency mapping in hwsim_mgmt_ap_enable().
+		 */
 		res.band = WIFI_FREQ_BAND_2_4_GHZ;
 		memcpy(res.mac, r->bssid, 6);
 		res.mac_length = 6;
@@ -219,6 +222,9 @@ static int hwsim_mgmt_iface_status(const struct device *dev, struct net_if *ifac
 
 	memset(status, 0, sizeof(*status));
 	status->channel = radio->channel;
+	/* Fixed rather than derived from the channel: the simulated radio only
+	 * ever operates in the 2.4 GHz band.
+	 */
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	memcpy(status->bssid, radio->ap_mode ? radio->bssid : radio->ap_bssid, 6);
 	memcpy(status->ssid, radio->ssid, radio->ssid_len);
