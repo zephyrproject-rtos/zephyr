@@ -37,6 +37,17 @@ config ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_THRESHOLD
 	  pool when the number of available bytes is equal to or lower
 	  than this threshold.
 
+config ENTROPY_PSA_CRYPTO_RNG_ISR_NOREFILL_THRESHOLD
+	int "Byte size upper threshold when refilling the ISR pool"
+	range 0 ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	default 0
+	help
+	  When refilling ISR random bytes, ensure at least the number of
+	  available bytes in the ISR random pool reaches this threshold.
+	  Using a value lower than the buffer size prevents keeping the
+	  refill work relax its thread when an interrupt service
+	  consumes few bytes will that thread refill the ISR pool.
+
 config ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_SIZE
 	int "Chunk byte size for refilling ISR random bytes pool"
 	range 0 ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE

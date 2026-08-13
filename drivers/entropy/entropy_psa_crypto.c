@@ -17,10 +17,12 @@
 #define ISR_BUFFER_SIZE		CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
 #define ISR_REFILL_SIZE		CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_SIZE
 #define ISR_REFILL_THRESHOLD	CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_THRESHOLD
+#define ISR_NOREFILL_THRESHOLD	CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_NOREFILL_THRESHOLD
 #else
 #define ISR_BUFFER_SIZE		1 /* Dummy value to keep compiler happy */
 #define ISR_REFILL_SIZE		0 /* Dummy value to keep compiler happy */
 #define ISR_REFILL_THRESHOLD	0 /* Dummy value to keep compiler happy */
+#define ISR_NOREFILL_THRESHOLD	0 /* Dummy value to keep compiler happy */
 #endif /* CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR */
 
 #ifdef CONFIG_ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
@@ -159,8 +161,11 @@ static void entropy_psa_crypto_isr_refill_work_fn(struct k_work *work)
 			LOG_ERR("Failed to finish ring buffer update");
 			done = true;
 		} else {
+			uint32_t unfilled = ring_buf_space_get(&ctx->isr_rbuf);
+
+			done = ((ISR_NOREFILL_THRESHOLD == 0) && (unfilled == 0)) ||
+			       (unfilled <= (ISR_BUFFER_SIZE - ISR_NOREFILL_THRESHOLD));
 			total += size;
-			done = (ring_buf_space_get(&ctx->isr_rbuf) == 0);
 		}
 
 		k_spin_unlock(&ctx->isr_lock, key);
