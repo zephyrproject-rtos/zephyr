@@ -88,6 +88,12 @@ Removed APIs and options
       those work items now run in the Bluetooth RX thread. See the migration
       guide for affected callback families.
 
+    * The ``CONFIG_BT_HCI_RAW_H4`` and ``CONFIG_BT_HCI_RAW_H4_ENABLE`` Kconfig
+      options have been removed. They have had no effect since Zephyr 4.2,
+      where the HCI raw layer switched to using H:4 packet encoding for all
+      buffers unconditionally. Applications still setting these options can
+      simply drop them.
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
