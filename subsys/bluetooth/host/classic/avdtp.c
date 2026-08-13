@@ -2157,6 +2157,16 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 		return -ENOMEM;
 	}
 
+	/* The release work submitted when the previous connection was
+	 * disconnected may still be pending. Re-initializing a queued work
+	 * item would corrupt the work queue, so reject the session reuse
+	 * until the release work has completed.
+	 */
+	if (k_work_busy_get(&session->_release_work) != 0) {
+		k_sem_give(&avdtp_sem_lock);
+		return -EBUSY;
+	}
+
 	session->br_chan.chan.conn = conn;
 	bt_avdtp_clear_tx(session);
 	k_sem_give(&avdtp_sem_lock);
@@ -2221,6 +2231,16 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 
 	if (session->br_chan.chan.conn == NULL) {
+		/* The release work submitted when the previous connection
+		 * was disconnected may still be pending. Re-initializing a
+		 * queued work item would corrupt the work queue, so reject
+		 * the session reuse until the release work has completed.
+		 */
+		if (k_work_busy_get(&session->_release_work) != 0) {
+			k_sem_give(&avdtp_sem_lock);
+			return -ENOMEM;
+		}
+
 		session->br_chan.chan.conn = conn;
 		bt_avdtp_clear_tx(session);
 		k_sem_give(&avdtp_sem_lock);
