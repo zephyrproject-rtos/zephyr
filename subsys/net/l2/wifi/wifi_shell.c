@@ -2299,7 +2299,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 	if ((params->setup.twt_interval != 0) &&
 	   ((params->setup.twt_exponent != 0) ||
 	   (params->setup.twt_mantissa != 0))) {
-		PR_ERROR("Only one of TWT internal or (mantissa, exponent) should be used\n");
+		PR_ERROR("Only one of TWT interval or (mantissa, exponent) should be used\n");
 		return -EINVAL;
 	}
 
