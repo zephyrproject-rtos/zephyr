@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -698,11 +699,7 @@ static int wifi_neighbor_rep_complete(uint64_t mgmt_request, struct net_if *ifac
 
 	for (int i = 0; i < roaming_params.neighbor_rep.neighbor_cnt; i++) {
 		params.band_chan[i].channel = roaming_params.neighbor_rep.neighbor_ap[i].channel;
-		if (params.band_chan[i].channel > 14) {
-			params.band_chan[i].band = WIFI_FREQ_BAND_5_GHZ;
-		} else {
-			params.band_chan[i].band = WIFI_FREQ_BAND_2_4_GHZ;
-		}
+		params.band_chan[i].band = wifi_utils_chan_to_band(params.band_chan[i].channel);
 	}
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->candidate_scan == NULL) {
 		return -ENOTSUP;
