@@ -49,6 +49,7 @@ void busy_loop(uint32_t ticks)
  * 5. Busy loop for 3 ticks
  *    - Idle time should not increase
  *    - current, peak and average cycles should be different
+ * @ingroup kernel_thread_tests
  */
 ZTEST(usage_api, test_all_stats_usage)
 {
@@ -192,9 +193,13 @@ ZTEST(usage_api, test_all_stats_usage)
 #endif
 }
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test stays visible to Doxygen.
+ */
+#if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) || defined(__DOXYGEN__)
 /**
  * @brief Test the k_thread_runtime_stats_enable/disable APIs
+ * @ingroup kernel_thread_tests
  */
 ZTEST(usage_api, test_thread_stats_enable_disable)
 {
@@ -342,9 +347,10 @@ ZTEST(usage_api, test_thread_stats_enable_disable_current)
 }
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS && CONFIG_SCHED_THREAD_USAGE_ALL */
 
-#ifdef CONFIG_SCHED_THREAD_USAGE_ALL
+#if defined(CONFIG_SCHED_THREAD_USAGE_ALL) || defined(__DOXYGEN__)
 /**
  * @brief Test the k_sys_runtime_stats_enable/disable APIs
+ * @ingroup kernel_thread_tests
  */
 ZTEST(usage_api, test_sys_stats_enable_disable)
 {
@@ -469,6 +475,7 @@ void resume_main(struct k_timer *timer)
  * This routine tests the k_thread_runtime_stats_get() routine. It verifies
  * that the contents of the fields guarded by CONFIG_SCHED_THREAD_USAGE
  * are correct.
+ * @ingroup kernel_thread_tests
  */
 ZTEST(usage_api, test_thread_stats_usage)
 {
