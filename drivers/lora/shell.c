@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/lora.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
@@ -66,6 +67,7 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 	char *eptr;
 	unsigned long val;
 
+	errno = 0;
 	val = strtoul(arg, &eptr, 0);
 	if (*eptr != '\0') {
 		shell_error(sh, "Invalid frequency, '%s' is not an integer",
@@ -73,7 +75,7 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 		return -EINVAL;
 	}
 
-	if (val == ULONG_MAX) {
+	if (errno == ERANGE || val > UINT32_MAX) {
 		shell_error(sh, "Frequency %s out of range", arg);
 		return -EINVAL;
 	}
