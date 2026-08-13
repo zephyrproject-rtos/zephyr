@@ -84,6 +84,14 @@ static inline int z_vrfy_w1_configure(const struct device *dev,
 }
 #include <zephyr/syscalls/w1_configure_mrsh.c>
 
+static inline size_t z_vrfy_w1_get_peripheral_count(const struct device *dev)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));
+
+	return z_impl_w1_get_peripheral_count((const struct device *)dev);
+}
+#include <zephyr/syscalls/w1_get_peripheral_count_mrsh.c>
+
 static inline size_t z_vrfy_w1_get_slave_count(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_W1));

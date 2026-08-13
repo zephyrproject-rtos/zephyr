@@ -36,22 +36,25 @@ extern "C" {
 /**  @cond INTERNAL_HIDDEN */
 
 /*
- * Count the number of slaves expected on the bus.
+ * Count the number of peripherals expected on the bus.
  * This can be used to decide if the bus has a multidrop topology or
- * only a single slave is present.
+ * only a single peripheral is present.
  * There is a comma after each ordinal (including the last)
  * Hence FOR_EACH adds "+1" once too often which has to be subtracted in the end.
  */
 #define F1(x) 1
-#define W1_SLAVE_COUNT(node_id) \
+#define W1_PERIPHERAL_COUNT(node_id) \
 		(FOR_EACH(F1, (+), DT_SUPPORTS_DEP_ORDS(node_id)) - 1)
-#define W1_INST_SLAVE_COUNT(inst)  \
-		(W1_SLAVE_COUNT(DT_DRV_INST(inst)))
+#define W1_INST_PERIPHERAL_COUNT(inst)  \
+		(W1_PERIPHERAL_COUNT(DT_DRV_INST(inst)))
+
+#define W1_SLAVE_COUNT(node_id) W1_PERIPHERAL_COUNT(node_id)
+#define W1_INST_SLAVE_COUNT(inst) W1_INST_PERIPHERAL_COUNT(inst)
 
 /** @endcond */
 
 /**
- * @brief Defines the 1-Wire master settings types, which are runtime configurable.
+ * @brief Defines the 1-Wire controller settings types, which are runtime configurable.
  */
 enum w1_settings_type {
 	/** Overdrive speed is enabled in case a value of 1 is passed and
@@ -76,31 +79,51 @@ enum w1_settings_type {
  */
 
 /**
- * @brief Configuration common to all 1-Wire master implementations.
+ * @brief Configuration common to all 1-Wire controller implementations.
  *
- * This structure is common to all 1-Wire master implementations and is
+ * This structure is common to all 1-Wire controller implementations and is
  * expected to be the first element in the object pointed to by the config
  * field in the device structure.
  */
-struct w1_master_config {
-	/** Number of connected slaves */
-	uint16_t slave_count;
+struct w1_controller_config {
+	/** Number of connected peripherals */
+	union {
+		/** Number of connected peripherals. */
+		uint16_t peripheral_count;
+		/**
+		 * @brief Number of connected peripherals.
+		 * @deprecated Use w1_controller_config.peripheral_count instead.
+		 */
+		uint16_t slave_count;
+	};
 };
 
 /**
- * @brief Data common to all 1-Wire master implementations.
+ * @brief Configuration common to all 1-Wire controller implementations.
+ * @deprecated Use struct w1_controller_config instead.
+ */
+#define w1_master_config w1_controller_config
+
+/**
+ * @brief Data common to all 1-Wire controller implementations.
  *
- * This structure is common to all 1-Wire master implementations and is
+ * This structure is common to all 1-Wire controller implementations and is
  * expected to be the first element in the object pointed to by the data
  * field in the device structure.
  */
-struct w1_master_data {
+struct w1_controller_data {
 	/** The mutex used by w1_lock_bus() and w1_unlock_bus() methods */
 	struct k_mutex bus_lock;
 };
 
 /**
- * @brief Reset the 1-Wire bus to prepare slaves for communication.
+ * @brief Data common to all 1-Wire controller implementations.
+ * @deprecated Use struct w1_controller_data instead.
+ */
+#define w1_master_data w1_controller_data
+
+/**
+ * @brief Reset the 1-Wire bus to prepare peripherals for communication.
  * See w1_reset_bus() for argument description.
  */
 typedef int (*w1_reset_bus_t)(const struct device *dev);
@@ -144,13 +167,19 @@ typedef int (*w1_write_block_t)(const struct device *dev, const uint8_t *buffer,
 				size_t len);
 
 /**
- * @brief Get the number of slaves on the bus.
- * See w1_get_slave_count() for argument description.
+ * @brief Get the number of peripherals on the bus.
+ * See w1_get_peripheral_count() for argument description.
  */
-typedef size_t (*w1_get_slave_count_t)(const struct device *dev);
+typedef size_t (*w1_get_peripheral_count_t)(const struct device *dev);
 
 /**
- * @brief Configure parameters of the 1-Wire master.
+ * @brief Get the number of peripherals on the bus.
+ * @deprecated Use w1_get_peripheral_count_t instead.
+ */
+typedef w1_get_peripheral_count_t w1_get_slave_count_t;
+
+/**
+ * @brief Configure parameters of the 1-Wire controller.
  * See w1_configure() for argument description.
  */
 typedef int (*w1_configure_t)(const struct device *dev,
@@ -207,7 +236,7 @@ __syscall int w1_change_bus_lock(const struct device *dev, bool lock);
 
 static inline int z_impl_w1_change_bus_lock(const struct device *dev, bool lock)
 {
-	struct w1_master_data *ctrl_data = (struct w1_master_data *)dev->data;
+	struct w1_controller_data *ctrl_data = (struct w1_controller_data *)dev->data;
 	const struct w1_driver_api *api = DEVICE_API_GET(w1, dev);
 
 	if (api->change_bus_lock) {
@@ -260,11 +289,11 @@ static inline int w1_unlock_bus(const struct device *dev)
  */
 
 /**
- * @brief Reset the 1-Wire bus to prepare slaves for communication.
+ * @brief Reset the 1-Wire bus to prepare peripherals for communication.
  *
- * This routine resets all 1-Wire bus slaves such that they are
+ * This routine resets all 1-Wire bus peripherals such that they are
  * ready to receive a command.
- * Connected slaves answer with a presence pulse once they are ready
+ * Connected peripherals answer with a presence pulse once they are ready
  * to receive data.
  *
  * In case the driver supports both standard speed and overdrive speed,
@@ -274,8 +303,8 @@ static inline int w1_unlock_bus(const struct device *dev)
  *
  * @param[in] dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 No slaves answer with a present pulse.
- * @retval 1 At least one slave answers with a present pulse.
+ * @retval 0 No peripherals answer with a present pulse.
+ * @retval 1 At least one peripheral answers with a present pulse.
  * @return Negative errno value on failure.
  */
 __syscall int w1_reset_bus(const struct device *dev);
@@ -367,35 +396,53 @@ __syscall int w1_write_block(const struct device *dev,
 			     const uint8_t *buffer, size_t len);
 
 /**
- * @brief Get the number of slaves on the bus.
+ * @brief Get the number of peripherals on the bus.
  *
  * @param[in] dev  Pointer to the device structure for the driver instance.
  *
- * @return Positive number of connected 1-Wire slaves on success, negative errno value on failure.
+ * @return Positive number of connected 1-Wire peripherals on success, negative errno value
+ * on failure.
+ */
+__syscall size_t w1_get_peripheral_count(const struct device *dev);
+
+static inline size_t z_impl_w1_get_peripheral_count(const struct device *dev)
+{
+	const struct w1_controller_config *ctrl_cfg =
+		(const struct w1_controller_config *)dev->config;
+
+	return ctrl_cfg->peripheral_count;
+}
+
+/**
+ * @brief Get the number of peripherals on the bus.
+ *
+ * @deprecated Use w1_get_peripheral_count() instead.
+ *
+ * @param[in] dev  Pointer to the device structure for the driver instance.
+ *
+ * @return Positive number of connected 1-Wire peripherals on success, negative errno value
+ * on failure.
  */
 __syscall size_t w1_get_slave_count(const struct device *dev);
 
 static inline size_t z_impl_w1_get_slave_count(const struct device *dev)
 {
-	const struct w1_master_config *ctrl_cfg =
-		(const struct w1_master_config *)dev->config;
-
-	return ctrl_cfg->slave_count;
+	return z_impl_w1_get_peripheral_count(dev);
 }
 
 /**
- * @brief Configure parameters of the 1-Wire master.
+ * @brief Configure parameters of the 1-Wire controller.
  *
  * Allowed configuration parameters are defined in enum w1_settings_type,
- * but master devices may not support all types.
+ * but controller devices may not support all types.
  *
  * @param[in] dev  Pointer to the device structure for the driver instance.
  * @param type     Enum specifying the setting type.
  * @param value    The new value for the passed settings type.
  *
  * @retval 0        On success.
- * @retval -ENOTSUP The master doesn't support the configuration of the supplied type.
- * @retval -EIO     General input / output error, failed to configure master devices.
+ * @retval -ENOTSUP The controller doesn't support the configuration of the supplied type.
+ * @retval -EIO     General input / output error, failed to configure controller devices.
  */
 __syscall int w1_configure(const struct device *dev,
 			   enum w1_settings_type type, uint32_t value);
@@ -423,51 +470,51 @@ static inline int z_impl_w1_configure(const struct device *dev,
  */
 
 /**
- * This command allows the bus master to read the slave devices without
+ * This command allows the bus controller to read the peripheral devices without
  * providing their ROM code.
  */
 #define W1_CMD_SKIP_ROM			0xCC
 
 /**
- * This command allows the bus master to address a specific slave device by
+ * This command allows the bus controller to address a specific peripheral device by
  * providing its ROM code.
  */
 #define W1_CMD_MATCH_ROM		0x55
 
 /**
- * This command allows the bus master to resume a previous read out from where
+ * This command allows the bus controller to resume a previous read out from where
  * it left off.
  */
 #define W1_CMD_RESUME			0xA5
 
 /**
- * This command allows the bus master to read the ROM code from a single slave
+ * This command allows the bus controller to read the ROM code from a single peripheral
  * device.
- * This command should be used when there is only a single slave device on the
+ * This command should be used when there is only a single peripheral device on the
  * bus.
  */
 #define W1_CMD_READ_ROM			0x33
 
 /**
- * This command allows the bus master to discover the addresses (i.e., ROM
- * codes) of all slave devices on the bus.
+ * This command allows the bus controller to discover the addresses (i.e., ROM
+ * codes) of all peripheral devices on the bus.
  */
 #define W1_CMD_SEARCH_ROM		0xF0
 
 /**
- * This command allows the bus master to identify which devices have experienced
+ * This command allows the bus controller to identify which devices have experienced
  * an alarm condition.
  */
 #define W1_CMD_SEARCH_ALARM		0xEC
 
 /**
- * This command allows the bus master to address all devices on the bus and then
+ * This command allows the bus controller to address all devices on the bus and then
  * switch them to overdrive speed.
  */
 #define W1_CMD_OVERDRIVE_SKIP_ROM	0x3C
 
 /**
- * This command allows the bus master to address a specific device and switch it
+ * This command allows the bus controller to address a specific device and switch it
  * to overdrive speed.
  */
 #define W1_CMD_OVERDRIVE_MATCH_ROM	0x69
@@ -503,7 +550,7 @@ static inline int z_impl_w1_configure(const struct device *dev,
  * @brief w1_rom struct.
  */
 struct w1_rom {
-	/** @brief The 1-Wire family code identifying the slave device type.
+	/** @brief The 1-Wire family code identifying the peripheral device type.
 	 *
 	 * An incomplete list of family codes is available at:
 	 * https://www.analog.com/en/resources/technical-articles/1wire-software-resource-guide-device-description.html
@@ -520,9 +567,9 @@ struct w1_rom {
  * @brief Node specific 1-wire configuration struct.
  *
  * This struct is passed to network functions, such that they can configure
- * the bus to address the specific slave using the selected speed.
+ * the bus to address the specific peripheral using the selected speed.
  */
-struct w1_slave_config {
+struct w1_peripheral_config {
 	/** Unique 1-Wire ROM. */
 	struct w1_rom rom;
 	/** overdrive speed is used if set to 1. */
@@ -533,10 +580,16 @@ struct w1_slave_config {
 };
 
 /**
+ * @brief Node specific 1-wire configuration struct.
+ * @deprecated Use struct w1_peripheral_config instead.
+ */
+#define w1_slave_config w1_peripheral_config
+
+/**
  * @brief Define the application callback handler function signature
  *        for searches.
  *
- * @param rom found The ROM of the found slave.
+ * @param rom found The ROM of the found peripheral.
  * @param user_data User data provided to the w1_search_bus() call.
  */
 typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
@@ -544,7 +597,7 @@ typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
 /**
  * @brief Read Peripheral 64-bit ROM.
  *
- * This procedure allows the 1-Wire bus master to read the peripherals’
+ * This procedure allows the 1-Wire bus controller to read the peripherals’
  * 64-bit ROM without using the Search ROM procedure.
  * This command can be used as long as not more than a single peripheral is
  * connected to the bus.
@@ -554,98 +607,98 @@ typedef void (*w1_search_callback_t)(struct w1_rom rom, void *user_data);
  * @param[out] rom Pointer to the ROM structure.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
 int w1_read_rom(const struct device *dev, struct w1_rom *rom);
 
 /**
- * @brief Select a specific slave by broadcasting a selected ROM.
+ * @brief Select a specific peripheral by broadcasting a selected ROM.
  *
- * This routine allows the 1-Wire bus master to select a slave
+ * This routine allows the 1-Wire bus controller to select a peripheral
  * identified by its unique ROM, such that the next command will target only
- * this single selected slave.
+ * this single selected peripheral.
  *
  * This command is only necessary in multidrop environments, otherwise the
  * Skip ROM command can be issued.
- * Once a slave has been selected, to reduce the communication overhead, the
+ * Once a peripheral has been selected, to reduce the communication overhead, the
  * resume command can be used instead of this command to communicate with the
- * selected slave.
+ * selected peripheral.
  *
  * @param[in] dev    Pointer to the device structure for the driver instance.
- * @param[in] config Pointer to the slave specific 1-Wire config.
+ * @param[in] config Pointer to the peripheral specific 1-Wire config.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
-int w1_match_rom(const struct device *dev, const struct w1_slave_config *config);
+int w1_match_rom(const struct device *dev, const struct w1_peripheral_config *config);
 
 /**
- * @brief Select the slave last addressed with a Match ROM or Search ROM command.
+ * @brief Select the peripheral last addressed with a Match ROM or Search ROM command.
  *
- * This routine allows the 1-Wire bus master to re-select a slave
+ * This routine allows the 1-Wire bus controller to re-select a peripheral
  * device that was already addressed using a Match ROM or Search ROM command.
  *
  * @param dev     Pointer to the device structure for the driver instance.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
 int w1_resume_command(const struct device *dev);
 
 /**
- * @brief Select all slaves regardless of ROM.
+ * @brief Select all peripherals regardless of ROM.
  *
- * This routine sets up the bus slaves to receive a command.
+ * This routine sets up the bus peripherals to receive a command.
  * It is usually used when there is only one peripheral on the bus
  * to avoid the overhead of the Match ROM command.
- * But it can also be used to concurrently write to all slave devices.
+ * But it can also be used to concurrently write to all peripheral devices.
  *
  * @param[in] dev    Pointer to the device structure for the driver instance.
- * @param[in] config Pointer to the slave specific 1-Wire config.
+ * @param[in] config Pointer to the peripheral specific 1-Wire config.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
-int w1_skip_rom(const struct device *dev, const struct w1_slave_config *config);
+int w1_skip_rom(const struct device *dev, const struct w1_peripheral_config *config);
 
 /**
  * @brief In single drop configurations use Skip Select command, otherwise use
  *        Match ROM command.
  *
  * @param[in] dev    Pointer to the device structure for the driver instance.
- * @param[in] config Pointer to the slave specific 1-Wire config.
+ * @param[in] config Pointer to the peripheral specific 1-Wire config.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
-int w1_reset_select(const struct device *dev, const struct w1_slave_config *config);
+int w1_reset_select(const struct device *dev, const struct w1_peripheral_config *config);
 
 /**
- * @brief Write then read data from the 1-Wire slave with matching ROM.
+ * @brief Write then read data from the 1-Wire peripheral with matching ROM.
  *
  * This routine uses w1_reset_select to select the given ROM.
- * Then writes given data and reads the response back from the slave.
+ * Then writes given data and reads the response back from the peripheral.
  *
  * @param[in] dev       Pointer to the device structure for the driver instance.
- * @param[in] config    Pointer to the slave specific 1-Wire config.
+ * @param[in] config    Pointer to the peripheral specific 1-Wire config.
  * @param[in] write_buf Pointer to the data to be written.
  * @param write_len     Number of bytes to write.
  * @param[out] read_buf Pointer to storage for read data.
  * @param read_len      Number of bytes to read.
  *
  * @return 0 on success, negative errno value on failure.
- * @retval -ENODEV No slave responds to reset.
+ * @retval -ENODEV No peripheral responds to reset.
  */
-int w1_write_read(const struct device *dev, const struct w1_slave_config *config,
+int w1_write_read(const struct device *dev, const struct w1_peripheral_config *config,
 		  const uint8_t *write_buf, size_t write_len,
 		  uint8_t *read_buf, size_t read_len);
 
 /**
- * @brief Search 1-wire slaves on the bus.
+ * @brief Search 1-wire peripherals on the bus.
  *
- * This function searches slaves on the 1-wire bus, with the possibility
- * to search either all slaves or only slaves that have an active alarm state.
- * If a callback is passed, the callback is called for each found slave.
+ * This function searches peripherals on the 1-wire bus, with the possibility
+ * to search either all peripherals or only peripherals that have an active alarm state.
+ * If a callback is passed, the callback is called for each found peripheral.
  *
  * The algorithm mostly follows the suggestions of
  * https://www.analog.com/en/resources/app-notes/1wire-search-algorithm.html
@@ -657,29 +710,29 @@ int w1_write_read(const struct device *dev, const struct w1_slave_config *config
  * @param family        W1_SEARCH_ALL_FAMILIES searcheas all families,
  *                      filtering on a specific family is not yet supported.
  * @param callback      Application callback handler function to be called
- *                      for each found slave.
+ *                      for each found peripheral.
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @return Number of slaves found, negative errno value on failure.
+ * @return Number of peripherals found, negative errno value on failure.
  */
 __syscall int w1_search_bus(const struct device *dev, uint8_t command,
 			    uint8_t family, w1_search_callback_t callback,
 			    void *user_data);
 
 /**
- * @brief Search for 1-Wire slave on bus.
+ * @brief Search for 1-Wire peripheral on bus.
  *
- * This routine can discover unknown slaves on the bus by scanning for the
+ * This routine can discover unknown peripherals on the bus by scanning for the
  * unique 64-bit registration number.
  *
  * @param[in] dev       Pointer to the device structure for the driver instance.
  * @param callback      Application callback handler function to be called
- *                      for each found slave.
+ *                      for each found peripheral.
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @return Number of slaves found, negative errno value on failure.
+ * @return Number of peripherals found, negative errno value on failure.
  */
 static inline int w1_search_rom(const struct device *dev,
 				w1_search_callback_t callback, void *user_data)
@@ -689,18 +742,18 @@ static inline int w1_search_rom(const struct device *dev,
 }
 
 /**
- * @brief Search for 1-Wire slaves with an active alarm.
+ * @brief Search for 1-Wire peripherals with an active alarm.
  *
- * This routine searches 1-Wire slaves on the bus, which currently have
+ * This routine searches 1-Wire peripherals on the bus, which currently have
  * an active alarm.
  *
  * @param[in] dev       Pointer to the device structure for the driver instance.
  * @param callback      Application callback handler function to be called
- *                      for each found slave.
+ *                      for each found peripheral.
  * @param[in] user_data User data to pass to the application callback handler
  *                      function.
  *
- * @return Number of slaves found, negative errno value on failure.
+ * @return Number of peripherals found, negative errno value on failure.
  */
 static inline int w1_search_alarm(const struct device *dev,
 				  w1_search_callback_t callback, void *user_data)
