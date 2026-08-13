@@ -1098,7 +1098,7 @@ config NXP_WIFI_TX_RX_HISTOGRAM
 
 config NXP_WIFI_RF_TEST_MODE
 	bool "WLAN RF Test Mode"
-	default y if NXP_RW610 || NXP_IW610
+	default y if NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
 	help
 	  This option enables WLAN test mode commands.
 
