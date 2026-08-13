@@ -18,7 +18,7 @@
 
 extern const uintptr_t _irq_vector_table[];
 
-#if defined(ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
+#if defined(CONFIG_ARCH_HAS_DIRECT_INTERRUPTS) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS
 #endif
 

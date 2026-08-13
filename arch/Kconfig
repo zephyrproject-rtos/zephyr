@@ -26,6 +26,7 @@ config ARC
 	select ARCH_SUPPORTS_ROM_START
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_DIRECTED_IPIS
+	select ARCH_HAS_DIRECT_INTERRUPTS
 	help
 	  ARC architecture
 
@@ -44,6 +45,7 @@ config ARM
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
+	select ARCH_HAS_DIRECT_INTERRUPTS
 	help
 	  ARM architecture
 
@@ -131,6 +133,8 @@ config X86
 	# Only the 32-bit (ia32) interrupt stub emits the ISR entry hook that
 	# closes the idle window; intel64 does not have one yet.
 	select ARCH_HAS_CPU_IDLE_HOOKS if !X86_64
+	# Only the 32-bit (ia32) variant implements the direct interrupt hooks.
+	select ARCH_HAS_DIRECT_INTERRUPTS if !X86_64
 	help
 	  x86 architecture
 
@@ -162,6 +166,7 @@ config RISCV
 	select ARCH_SUPPORTS_ROM_OFFSET
 	depends on DT_HAS_RISCV_ENABLED
 	select ARCH_HAS_CPU_IDLE_HOOKS
+	select ARCH_HAS_DIRECT_INTERRUPTS
 	help
 	  RISCV architecture
 
@@ -197,6 +202,9 @@ config ARCH_POSIX
 	select BARRIER_OPERATIONS_BUILTIN
 	# POSIX arch based targets get their memory cleared on entry by the host OS
 	select SKIP_BSS_CLEAR
+	# The direct interrupt hooks are provided by the board's board_irq.h
+	# (boards/native/common/irq/board_irq.h for the in-tree boards).
+	select ARCH_HAS_DIRECT_INTERRUPTS
 	help
 	  POSIX (native) architecture
 
@@ -841,6 +849,16 @@ config ARCH_HAS_IRQ_OFFLOAD_NESTED
 	  implementation may legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU. It gates the default
 	  value of CONFIG_IRQ_OFFLOAD_NESTED.
+
+config ARCH_HAS_DIRECT_INTERRUPTS
+	bool
+	help
+	  This option is selected by architectures that implement the direct
+	  interrupt hooks, i.e. ARCH_IRQ_DIRECT_CONNECT() and
+	  ARCH_ISR_DIRECT_DECLARE() together with the ARCH_ISR_DIRECT_HEADER(),
+	  ARCH_ISR_DIRECT_FOOTER() and ARCH_ISR_DIRECT_PM() hooks they expand
+	  to. It is a prerequisite for any code using IRQ_DIRECT_CONNECT() or
+	  ISR_DIRECT_DECLARE().
 
 config ARCH_HAS_SEMIHOST
 	bool
