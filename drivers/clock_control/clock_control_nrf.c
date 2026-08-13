@@ -631,7 +631,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		return;
 	}
 
-	can_sleep = !k_is_in_isr() && !k_is_pre_kernel();
+	can_sleep = IS_ENABLED(CONFIG_MULTITHREADING) && !k_is_in_isr() && !k_is_pre_kernel();
 
 	nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 
