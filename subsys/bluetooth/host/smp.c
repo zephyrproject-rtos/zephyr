@@ -5193,12 +5193,39 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOENT;
 	}
 
-	/* Copy signing count */
-	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
-	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
+	cnt = sys_get_le32(sig);
+
+	/* The Signing Algorithm is performed with the received counter
+	 * value, and replay protection is done by rejecting counter values
+	 * that have already been used (Core Spec v6.2, Vol 3, Part C,
+	 * Section 10.4.2, the last version to specify data signing before
+	 * its removal in v6.3). Values greater than the expected next one
+	 * are accepted, since the peer may consume counter values for
+	 * signed PDUs that never end up being received, e.g. when it
+	 * retries a failed send with a fresh signature or disconnects with
+	 * signed PDUs still queued.
+	 */
+	if (cnt < keys->remote_csrk.cnt) {
+		LOG_WRN("Rejecting already used sign counter %u from %s", cnt,
+			bt_addr_le_str(&conn->le.dst));
+		return -EBADMSG;
+	}
+
+	/* Fail closed when the received counter is the final possible
+	 * value: accepting it would wrap the next expected value around
+	 * to zero, re-opening the replay window for every previously used
+	 * counter value. The counter space of the CSRK is then exhausted,
+	 * and signing can only resume once a new pairing distributes a
+	 * fresh CSRK.
+	 */
+	if (cnt == UINT32_MAX) {
+		LOG_WRN("Sign counter of remote CSRK for %s exhausted",
+			bt_addr_le_str(&conn->le.dst));
+		return -EOVERFLOW;
+	}
 
 	LOG_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
-		bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
+		bt_hex(keys->remote_csrk.val, 16), cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
 			   buf->len - sizeof(sig));
@@ -5212,7 +5239,7 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		return -EBADMSG;
 	}
 
-	keys->remote_csrk.cnt++;
+	keys->remote_csrk.cnt = cnt + 1U;
 
 	return 0;
 }
