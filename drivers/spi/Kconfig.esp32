@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ESP32_SPIM
-	bool "ESP32 SPI Master driver"
+	bool "ESP32 SPI controller driver"
 	default y
 	depends on DT_HAS_ESPRESSIF_ESP32_SPI_ENABLED
 	help
-	  Enables support for ESP32 SPI Master driver.
+	  Enables support for ESP32 SPI controller driver.
 
 if ESP32_SPIM
 
@@ -19,7 +19,7 @@ config SPI_ESP32_INTERRUPT
 
 config ESP32_SPI_TARGET
 	bool "ESP32 SPI target mode"
-	select SPI_SLAVE
+	select SPI_PERIPHERAL
 	select SPI_ESP32_INTERRUPT
 	help
 	  Enables target mode for the ESP32 SPI driver. Target
