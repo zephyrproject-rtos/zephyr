@@ -167,6 +167,13 @@ Boards
 * Boards must now select :kconfig:option:`CONFIG_TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED` if they
   support firmware update via TF-M.
 
+* :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` default activation is removed from STM32 based boards
+  that used to do it.
+  Choosing interrupt-driven vs polling SPI transfers is an application concern, not a board one.
+  Applications that rely on interrupt-driven SPI (for example to use :c:func:`spi_transceive_signal`
+  or :c:func:`spi_transceive_cb` without DMA) on an affected board must now explicitly enable
+  :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` in their own configuration. (:github:`116218`)
+
 Device Drivers and Devicetree
 *****************************
 
