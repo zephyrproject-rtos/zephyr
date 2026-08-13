@@ -15,6 +15,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <stm32_backup_domain.h>
 
@@ -668,6 +669,38 @@ static int set_up_ics(void)
 	return 0;
 }
 
+static int stm32_clock_control_restore_cpu_clock(void)
+{
+	uint32_t source;
+	uint32_t status;
+
+#if defined(STM32_CPUCLK_SRC_HSI)
+	if (LL_RCC_HSI_IsReady() != 1U) {
+		LL_RCC_HSI_Enable();
+		if (!WAIT_FOR(LL_RCC_HSI_IsReady(), 100000U, k_busy_wait(1))) {
+			return -ETIMEDOUT;
+		}
+	}
+	source = LL_RCC_CPU_CLKSOURCE_HSI;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_HSI;
+#elif defined(STM32_CPUCLK_SRC_MSI)
+	source = LL_RCC_CPU_CLKSOURCE_MSI;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_MSI;
+#elif defined(STM32_CPUCLK_SRC_HSE)
+	source = LL_RCC_CPU_CLKSOURCE_HSE;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_HSE;
+#elif defined(STM32_CPUCLK_SRC_IC1)
+	source = LL_RCC_CPU_CLKSOURCE_IC1;
+	status = LL_RCC_CPU_CLKSOURCE_STATUS_IC1;
+#else
+	return -ENOTSUP;
+#endif
+
+	LL_RCC_SetCpuClkSource(source);
+	return WAIT_FOR(LL_RCC_GetCpuClkSource() == status, 100000U,
+			k_busy_wait(1)) ? 0 : -ETIMEDOUT;
+}
+
 static int set_up_plls(void)
 {
 #if defined(STM32_PLL1_ENABLED)
@@ -1016,6 +1049,12 @@ int stm32_clock_control_init(const struct device *dev)
 		}
 	} else {
 		return -ENOTSUP;
+	}
+
+	/* Restore the configured CPUCLK source after STOP resumes on HSI. */
+	r = stm32_clock_control_restore_cpu_clock();
+	if (r < 0) {
+		return r;
 	}
 
 	/* Update CMSIS variable */

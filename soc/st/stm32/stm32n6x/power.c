@@ -6,6 +6,7 @@
 
 #include <clock_control/clock_stm32_ll_common.h>
 #include <soc.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 
 #include <errno.h>
 
@@ -37,6 +38,21 @@ BUILD_ASSERT(DT_SAME_NODE(SYSTEM_TIMER_COMPANION_NODE, DT_NODELABEL(rtc)),
 		"STM32N6x needs RTC as the system timer companion for power management");
 
 #define STM32N6_CLOCK_TIMEOUT_US 100000U
+
+static uint32_t stm32n6_cpu_clock_source(void)
+{
+#if defined(STM32_CPUCLK_SRC_HSI)
+	return LL_RCC_CPU_CLKSOURCE_STATUS_HSI;
+#elif defined(STM32_CPUCLK_SRC_MSI)
+	return LL_RCC_CPU_CLKSOURCE_STATUS_MSI;
+#elif defined(STM32_CPUCLK_SRC_HSE)
+	return LL_RCC_CPU_CLKSOURCE_STATUS_HSE;
+#elif defined(STM32_CPUCLK_SRC_IC1)
+	return LL_RCC_CPU_CLKSOURCE_STATUS_IC1;
+#else
+	return UINT32_MAX;
+#endif
+}
 
 static void stm32n6_prepare_stop(void)
 {
@@ -156,6 +172,19 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 			while (true) {
 				__WFI();
 			}
+		}
+
+		uint32_t measured_frequency = HAL_RCC_GetCpuClockFreq();
+		uint32_t expected_source = stm32n6_cpu_clock_source();
+		uint32_t measured_source = LL_RCC_GetCpuClkSource();
+
+		if (measured_frequency != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC ||
+		    (expected_source != UINT32_MAX &&
+		     measured_source != expected_source)) {
+			LOG_WRN("clock mismatch: source %u/%u, rate %u/%u",
+				measured_source, expected_source,
+				measured_frequency,
+				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 		}
 
 		/*
