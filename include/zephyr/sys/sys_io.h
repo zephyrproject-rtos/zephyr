@@ -25,6 +25,8 @@ extern "C" {
  * @brief System I/O APIs
  *
  * @defgroup sys_io_apis System I/O APIs
+ * @since 1.0
+ * @version 1.1.0
  * @ingroup utilities
  *
  * Low-level primitives for port I/O, memory-mapped register I/O, and in-memory bit manipulation.
@@ -264,6 +266,11 @@ static inline uint32_t sys_read32(mm_reg_t addr);
  *
  * @param data the 64 bits to write
  * @param addr the memory mapped register address where to write the 64 bits
+ *
+ * @note The generic implementation is deprecated on 32-bit targets because the compiler may split
+ *       the operation into two 32-bit writes in an unspecified order. Architecture-specific
+ *       implementations with defined access semantics remain supported. Use one of the non-atomic
+ *       ordered helpers when the addressed register supports two non-atomic 32-bit writes.
  */
 static inline void sys_write64(uint64_t data, mm_reg_t addr);
 
@@ -276,6 +283,11 @@ static inline void sys_write64(uint64_t data, mm_reg_t addr);
  *        the 64 bits
  *
  * @return the 64 bits read
+ *
+ * @note The generic implementation is deprecated on 32-bit targets because the compiler may split
+ *       the operation into two 32-bit reads in an unspecified order. Architecture-specific
+ *       implementations with defined access semantics remain supported. Use one of the non-atomic
+ *       ordered helpers when the addressed register supports two non-atomic 32-bit reads.
  */
 static inline uint64_t sys_read64(mm_reg_t addr);
 

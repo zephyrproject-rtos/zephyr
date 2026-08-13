@@ -1223,6 +1223,19 @@ Snippets
 Architectures
 *************
 
+* The generic implementations of :c:func:`sys_read64` and :c:func:`sys_write64` are deprecated on
+  32-bit targets because the compiler may split the operation into two 32-bit accesses in an
+  unspecified order. Existing out-of-tree callers continue to build with a deprecation warning.
+  An architecture can continue to provide either accessor without deprecation when it defines the
+  access semantics. The generic 32-bit implementations may be removed in Zephyr 4.7 or later.
+  Drivers using the generic 32-bit fallback should include
+  ``<zephyr/sys/sys_io_non_atomic.h>`` and migrate to :c:func:`sys_read64_lo_hi`,
+  :c:func:`sys_read64_hi_lo`, :c:func:`sys_write64_lo_hi`, or :c:func:`sys_write64_hi_lo` when the
+  addressed register supports non-atomic 32-bit accesses in the selected order. The helpers place
+  the low and high words according to the target endianness. Use :c:func:`sys_read32` and
+  :c:func:`sys_write32` directly for register-specific sequences such as latched or
+  stability-checked reads, or when the peripheral does not use the target's native endianness.
+
 * A new architecture primitive, ``arch_cpu_irqs_are_enabled()``, has been added.
   It returns the current interrupt-enable state of the calling CPU without
   modifying it, complementing ``arch_irq_unlocked()`` which inspects a saved
