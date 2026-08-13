@@ -435,7 +435,7 @@ int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
 int pthread_detach(pthread_t thread);
 int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
-		   void *(*threadroutine)(void *), void *arg);
+		   void *(*threadroutine)(void *arg), void *arg);
 int pthread_setcancelstate(int state, int *oldstate);
 int pthread_setcanceltype(int type, int *oldtype);
 void pthread_testcancel(void);
@@ -457,7 +457,7 @@ int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
 int pthread_key_create(pthread_key_t *key,
-		void (*destructor)(void *));
+		void (*destructor)(void *value));
 int pthread_key_delete(pthread_key_t key);
 int pthread_setspecific(pthread_key_t key, const void *value);
 void *pthread_getspecific(pthread_key_t key);
