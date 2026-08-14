@@ -59,17 +59,31 @@ void thread2_set_prio_test(void *p1, void *p2, void *p3)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test setting and verifying thread priorities
+ * @brief Verify that a thread's priority can be changed and read back.
  *
- * @details This test creates a thread with a lower priority than the
- * current thread. It then sets the priority of the thread to a
- * higher value, and checks that the priority has been set correctly.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_priority_set() must take effect on both the calling thread and
+ * another thread, and the new value has to be what k_thread_priority_get()
+ * subsequently reports. The second thread reads its own priority back and
+ * hands the result to the test through a semaphore, so what is checked is the
+ * priority the scheduler actually recorded rather than the value that was
+ * requested.
+ *
+ * Test steps:
+ * - Lower the current thread's own priority and read it back.
+ * - Create a second thread and change its priority from the test thread.
+ * - Have the second thread read its own priority and report it.
+ * - Compare the reported priority against the requested one and join.
+ *
+ * Expected result:
+ * - Both threads report exactly the priorities that were set for them.
  *
  * @see k_thread_priority_set()
  * @see k_thread_priority_get()
  */
-ZTEST(threads_lifecycle, test_threads_priority_set)
+ZTEST(threads_lifecycle, test_thread_priority_set)
 {
 	int rv;
 	int prio = k_thread_priority_get(k_current_get());
@@ -131,16 +145,32 @@ ZTEST(threads_lifecycle, test_threads_priority_set)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test changing thread priorities from an ISR
+ * @brief Verify that a thread's priority can be changed from an ISR.
  *
- * @details This test verifies that thread priorities can be changed
- * correctly when invoked from an interrupt service routine (ISR).
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_priority_set() is callable from interrupt context, where it must
+ * apply the same change without needing to reschedule inside the ISR. The
+ * same priority changes as the thread-context case are therefore driven
+ * through an offloaded interrupt, and the results are read back afterwards
+ * from thread context.
+ *
+ * Test steps:
+ * - Lower the current thread's own priority from an ISR via irq_offload().
+ * - Read the priority back and compare it with the requested value.
+ * - Change a second thread's priority from an ISR the same way.
+ * - Have the second thread report its own priority and compare.
+ *
+ * Expected result:
+ * - Both priority changes made from interrupt context take effect and are
+ *   reported back.
  *
  * @see k_thread_priority_set()
  * @see k_thread_priority_get()
+ * @see irq_offload()
  */
-ZTEST(threads_lifecycle, test_isr_threads_priority_set_)
+ZTEST(threads_lifecycle, test_thread_priority_set_from_isr)
 {
 	int rv;
 	int prio = k_thread_priority_get(k_current_get());
