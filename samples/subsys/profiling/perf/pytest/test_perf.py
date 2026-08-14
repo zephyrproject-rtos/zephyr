@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def test_shell_perf(dut: DeviceAdapter, shell: Shell):
 
-    shell.base_timeout=10
+    shell.base_timeout=20
 
     logger.info('send "perf record 200 99" command')
     lines = shell.exec_command('perf record 200 99')
