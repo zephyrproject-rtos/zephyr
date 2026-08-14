@@ -98,7 +98,7 @@ static void reset_state(void)
  * @see k_thread_cpu_mask_disable()
  * @see k_thread_cpu_pin()
  */
-ZTEST(cpu_mask, test_api_rejects_running_thread)
+ZTEST(cpu_mask, test_cpu_mask_rejects_running_thread)
 {
 	/* PIN_ONLY places __ASSERT before the soft -EINVAL path in
 	 * cpu_mask_mod(), so calling any mask API on a running thread
@@ -149,7 +149,7 @@ ZTEST(cpu_mask, test_api_rejects_running_thread)
  *
  * @see k_thread_cpu_mask_clear()
  */
-ZTEST(cpu_mask, test_mask_clear_prevents_execution)
+ZTEST(cpu_mask, test_cpu_mask_clear_prevents_execution)
 {
 	/* k_thread_cpu_mask_clear() sets the mask to zero.  In PIN_ONLY mode
 	 * cpu_mask_mod() asserts that the mask is a single set bit after every
@@ -203,7 +203,7 @@ ZTEST(cpu_mask, test_mask_clear_prevents_execution)
  *
  * @see k_thread_cpu_mask_enable_all()
  */
-ZTEST(cpu_mask, test_mask_enable_all_allows_execution)
+ZTEST(cpu_mask, test_cpu_mask_enable_all_allows_execution)
 {
 	/* enable_all sets all CPU bits; PIN_ONLY allows only one bit. */
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
@@ -260,7 +260,7 @@ ZTEST(cpu_mask, test_mask_enable_all_allows_execution)
  *
  * @see k_thread_cpu_mask_disable()
  */
-ZTEST(cpu_mask, test_mask_disable_local_cpu)
+ZTEST(cpu_mask, test_cpu_mask_disable_local_cpu)
 {
 	/* disable() on a thread with all CPUs enabled leaves more than one bit
 	 * set in the mask, which PIN_ONLY does not permit.
@@ -316,7 +316,7 @@ ZTEST(cpu_mask, test_mask_disable_local_cpu)
  *
  * @see k_thread_cpu_pin()
  */
-ZTEST(cpu_mask, test_cpu_pin_runs_on_target)
+ZTEST(cpu_mask, test_cpu_mask_pin_runs_on_target)
 {
 	unsigned int ncpus = arch_num_cpus();
 	k_tid_t tid;
@@ -368,7 +368,7 @@ ZTEST(cpu_mask, test_cpu_pin_runs_on_target)
  *
  * @see k_thread_cpu_pin()
  */
-ZTEST(cpu_mask, test_pin_each_thread_to_distinct_cpu)
+ZTEST(cpu_mask, test_cpu_mask_pin_each_thread_distinct)
 {
 	unsigned int ncpus = arch_num_cpus();
 	int prio = k_thread_priority_get(k_current_get()) - 1;
@@ -434,7 +434,7 @@ ZTEST(cpu_mask, test_pin_each_thread_to_distinct_cpu)
  * @see k_thread_cpu_mask_enable()
  * @see k_thread_cpu_mask_disable()
  */
-ZTEST(cpu_mask, test_individual_cpu_enable_disable)
+ZTEST(cpu_mask, test_cpu_mask_enable_disable_single_cpu)
 {
 	/* enable_all sets all CPU bits; PIN_ONLY allows only one bit. */
 	if (IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
@@ -505,7 +505,7 @@ ZTEST(cpu_mask, test_individual_cpu_enable_disable)
  *
  * @see k_thread_cpu_pin()
  */
-ZTEST(cpu_mask, test_coop_thread_pinned_cpu)
+ZTEST(cpu_mask, test_cpu_mask_pin_coop_thread)
 {
 	unsigned int ncpus = arch_num_cpus();
 	int local = curr_cpu();
@@ -555,7 +555,7 @@ ZTEST(cpu_mask, test_coop_thread_pinned_cpu)
  *
  * @see k_thread_cpu_pin()
  */
-ZTEST(cpu_mask, test_pin_only_single_cpu)
+ZTEST(cpu_mask, test_cpu_mask_pin_only_single_cpu)
 {
 	if (!IS_ENABLED(CONFIG_SCHED_CPU_MASK_PIN_ONLY)) {
 		ztest_test_skip();
@@ -609,7 +609,7 @@ ZTEST(cpu_mask, test_pin_only_single_cpu)
  * @see k_thread_cpu_pin()
  * @see k_thread_cpu_mask_enable_all()
  */
-ZTEST(cpu_mask, test_pinned_and_free_thread_coexist)
+ZTEST(cpu_mask, test_cpu_mask_pinned_and_free_coexist)
 {
 	/* The "free" thread uses enable_all which sets all CPU bits;
 	 * PIN_ONLY allows only one bit.
@@ -659,8 +659,8 @@ ZTEST(cpu_mask, test_pinned_and_free_thread_coexist)
 	k_thread_join(unmasked, K_FOREVER);
 }
 
-/* Worker body for test_pin_affinity_across_yield: re-checks that it is still
- * on its pinned CPU after each of 30 k_yield() calls.
+/* Worker body for test_cpu_mask_pin_persists_across_yield: re-checks that it
+ * is still on its pinned CPU after each of 30 k_yield() calls.
  */
 static void check_affinity(void *arg0, void *arg1, void *arg2)
 {
@@ -701,7 +701,7 @@ static void check_affinity(void *arg0, void *arg1, void *arg2)
  * @see k_thread_cpu_pin()
  * @see k_yield()
  */
-ZTEST(cpu_mask, test_pin_affinity_across_yield)
+ZTEST(cpu_mask, test_cpu_mask_pin_persists_across_yield)
 {
 	unsigned int ncpus = arch_num_cpus();
 
