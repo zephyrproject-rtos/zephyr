@@ -78,6 +78,7 @@ enum modem_cellular_state {
 	MODEM_CELLULAR_STATE_RUN_SHUTDOWN_SCRIPT,
 	MODEM_CELLULAR_STATE_POWER_OFF_PULSE,
 	MODEM_CELLULAR_STATE_AWAIT_POWER_OFF,
+	MODEM_CELLULAR_STATE_AWAIT_DIAL,
 };
 
 enum modem_cellular_event {
@@ -99,6 +100,8 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_APN_SET,
 	MODEM_CELLULAR_EVENT_RING,
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
+	MODEM_CELLULAR_EVENT_DIAL,
+	MODEM_CELLULAR_EVENT_HANGUP,
 };
 
 struct modem_cellular_event_cb {
@@ -173,6 +176,9 @@ struct modem_cellular_data {
 	struct modem_chat_script board_init_script;
 
 	struct net_mgmt_event_callback net_mgmt_event_callback;
+#if defined(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)
+	struct net_mgmt_event_callback if_event_callback;
+#endif
 
 	enum modem_cellular_state state;
 	const struct device *dev;
