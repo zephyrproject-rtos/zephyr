@@ -5,7 +5,7 @@ Building, Flashing and Debugging
 
 Zephyr provides several :ref:`west extension commands <west-extensions>` for
 building, flashing, and interacting with Zephyr programs running on a board:
-``build``, ``flash``, ``debug``, ``debugserver`` and ``attach``.
+``build``, ``flash``, ``debug``, ``debugserver``, ``rtt``, and ``attach``.
 
 For information on adding board support for the flashing and debugging
 commands, see :ref:`flash-and-debug-support` in the board porting guide.
