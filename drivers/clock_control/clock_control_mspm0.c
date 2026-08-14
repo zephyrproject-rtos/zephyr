@@ -14,6 +14,8 @@
 
 #include <soc_cpuss.h>
 #include <soc_factoryregion.h>
+#include <soc_fri.h>
+#include <soc_memcfg.h>
 #include <soc_sysctl.h>
 
 #include <ti/driverlib/driverlib.h>
@@ -22,7 +24,8 @@
 LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #if defined(CONFIG_SOC_SERIES_MSPM33C)
-#define MSPM0_REQUIRES_SYSPLLPARAM2
+#define MSPM0_REQUIRES_SYSPLLPARAM2 1
+#define MSPM0_CONFIGURE_WAIT_STATES 1
 #endif
 
 #if defined(CONFIG_SOC_SERIES_MSPM0L) || defined(CONFIG_SOC_SERIES_MSPM0G)
@@ -158,6 +161,10 @@ struct clock_mspm0_config {
 #endif
 #if DT_SYSPLL_OKAY
 	const struct device *factoryregion;
+#endif
+#if defined(MSPM0_CONFIGURE_WAIT_STATES)
+	const struct device *fri;
+	const struct device *memcfg;
 #endif
 };
 
@@ -565,6 +572,28 @@ static int clock_mspm0_syspll_load_trim(const struct device *dev, uint32_t floop
 	}
 #endif /* MSPM0_HAS_CPUSS */
 
+#if defined(MSPM0_CONFIGURE_WAIT_STATES)
+	ret = syscon_update_bits(
+		cfg->fri, FRI_FRDCNTL_OFFSET,
+		FRI_FRDCNTL_TRIMENGRRWAIT | FRI_FRDCNTL_RWAIT | FRI_FRDCNTL_WS0_MODE,
+		FIELD_PREP(FRI_FRDCNTL_TRIMENGRRWAIT, 2) | FIELD_PREP(FRI_FRDCNTL_RWAIT, 2));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = syscon_update_bits(
+		cfg->memcfg, MEMCFG_RAM_WS_CONFIG_OFFSET,
+		MEMCFG_RAM_WS_CONFIG_ULL_WS_ENABLE | MEMCFG_RAM_WS_CONFIG_GLXMP_0_WS_ENABLE |
+			MEMCFG_RAM_WS_CONFIG_GLXMP_1_WS_ENABLE |
+			MEMCFG_RAM_WS_CONFIG_GLXMP_2_WS_ENABLE,
+		MEMCFG_RAM_WS_CONFIG_ULL_WS_ENABLE | MEMCFG_RAM_WS_CONFIG_GLXMP_0_WS_ENABLE |
+			MEMCFG_RAM_WS_CONFIG_GLXMP_1_WS_ENABLE |
+			MEMCFG_RAM_WS_CONFIG_GLXMP_2_WS_ENABLE);
+	if (ret < 0) {
+		return ret;
+	}
+#endif /* defined(MSPM0_CONFIGURE_WAIT_STATES) */
+
 	if (floopin_hz >= MHZ(4) && floopin_hz < MHZ(8)) {
 		ret = syscon_read_reg(cfg->factoryregion, FACTORY_PLLSTARTUP0_4_8_OFFSET, &param0);
 		if (ret == 0) {
@@ -958,6 +987,10 @@ static const struct clock_mspm0_config clock_mspm0_cfg = {
 #endif
 #if DT_SYSPLL_OKAY
 	.factoryregion = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), factoryregion)),
+#endif
+#if defined(MSPM0_CONFIGURE_WAIT_STATES)
+	.fri = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), fri)),
+	.memcfg = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), memcfg)),
 #endif
 };
 
