@@ -49,7 +49,7 @@
  * arming primitive rather than tracking it separately. The core does not model
  * interrupt masking.
  *
- *   - static inline uint32_t/uint64_t timer_driver_cycle_get(void): the hardware cycle
+ *   - static uint32_t/uint64_t timer_driver_cycle_get(void): the hardware cycle
  *     count. Its rate is TIMER_CORE_CYCLES_PER_SEC (see the knobs below), by default the
  *     kernel system clock rate. Return the raw counter, even a narrow one that wraps:
  *     declare its width with TIMER_CORE_COUNTER_WIDTH and the core masks every delta to
@@ -60,7 +60,7 @@
  *     spares a 32-bit target the widening.
  *
  *   - the arming primitive for the chosen backend:
- *       COMPARE: static inline void timer_driver_set_compare(uint32_t/uint64_t cycles)
+ *       COMPARE: static void timer_driver_set_compare(uint32_t/uint64_t cycles)
  *                Write the comparator so an interrupt fires when the counter
  *                reaches @p cycles, a full-width cycle count. The argument width
  *                is the driver's: a 64-bit comparator takes uint64_t; a 32-bit
@@ -69,7 +69,7 @@
  *                that is wanted here: with COMPARE_ORDERED the hardware handles a
  *                past target itself, and with COMPARE_EXACT the core wraps this
  *                in the verify loop that deals with it.
- *       RELOAD:  static inline void timer_driver_set_reload(uint32_t/uint64_t cycles)
+ *       RELOAD:  static void timer_driver_set_reload(uint32_t/uint64_t cycles)
  *                Fire an interrupt after @p cycles more cycles. The core has
  *                already clamped @p cycles to [TIMER_CORE_ALARM_MIN_CYCLES,
  *                TIMER_CORE_ALARM_MAX_CYCLES]. The argument width is the driver's:
