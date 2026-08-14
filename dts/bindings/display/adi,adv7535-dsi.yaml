@@ -1,0 +1,27 @@
+# Copyright (C) 2026, Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Analog Devices ADV7535 MIPI DSI endpoint
+
+description: |
+  MIPI DSI endpoint of an ADV7535 bridge. This is an auxiliary node: it only
+  describes the DSI link so that the endpoint is enumerated by its MIPI DSI
+  host parent. The corresponding I2C control device is described separately
+  with an 'adi,adv7535' compatible node and has a reference to the DSI endpoint node.
+
+compatible: "adi,adv7535-dsi"
+
+include: mipi-dsi-device.yaml
+
+properties:
+  data-lanes:
+    const: [4]
+    description: |
+      The ADV7535 DSI receiver is wired for four data lanes.
+
+  pixel-format:
+    enum:
+      - 0 # MIPI_DSI_PIXFMT_RGB888
+    description: |
+      Pixel format from dt-bindings/mipi_dsi/mipi_dsi.h. The bridge only
+      supports MIPI_DSI_PIXFMT_RGB888.
