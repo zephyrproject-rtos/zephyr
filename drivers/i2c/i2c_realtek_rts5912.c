@@ -100,7 +100,7 @@ static inline int i2c_rts5912_reset_sda_stuck(const struct device *dev)
 	 * SDA line) and then this bit gets auto clear
 	 */
 	LOG_DBG("CLK Recovery Start");
-	/* initiate the Master Clock Reset */
+	/* initiate the Controller Clock Reset */
 	set_bit_enable_clk_reset(reg_base);
 	if (!WAIT_FOR(!test_bit_enable_clk_reset(reg_base), RECOVERY_TIME_US, NULL)) {
 		LOG_ERR("ERROR: CLK recovery Fail");

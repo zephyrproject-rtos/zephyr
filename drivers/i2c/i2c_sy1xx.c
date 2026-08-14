@@ -109,7 +109,7 @@ static int sy1xx_i2c_configure(const struct device *dev, uint32_t flags)
 	struct sy1xx_i2c_dev_data *const data = dev->data;
 
 	if (!(flags & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is required");
+		LOG_ERR("Controller Mode is required");
 		return -EIO;
 	}
 

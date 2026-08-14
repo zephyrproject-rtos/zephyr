@@ -214,7 +214,7 @@ enum _i2c_driver_state {
 
 /* brief I2C Status */
 struct _i2c_status {
-/* /< Mode: 0=Slave, 1=Master */
+/* /< Mode: 0=Target, 1=Controller */
 	uint32_t mode:1;
 	uint32_t general_call: 1;
 	uint32_t arbitration_lost : 1;

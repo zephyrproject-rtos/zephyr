@@ -90,7 +90,7 @@ static int i2c_nios2_transfer(const struct device *dev, struct i2c_msg *msgs,
 			stop = ALT_AVALON_I2C_NO_STOP;
 		}
 
-		/* Set the slave device address */
+		/* Set the target device address */
 		alt_avalon_i2c_master_target_set(&data->i2c_dev, addr);
 
 		/* Start the transfer */
