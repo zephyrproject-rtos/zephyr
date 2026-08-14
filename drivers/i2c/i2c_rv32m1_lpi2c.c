@@ -49,8 +49,8 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 	int err;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config)) {
-		/* Slave mode not supported - yet */
-		LOG_ERR("Slave mode not supported");
+		/* Target mode not supported - yet */
+		LOG_ERR("Target mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -94,10 +94,10 @@ static int rv32m1_lpi2c_configure(const struct device *dev,
 	return 0;
 }
 
-static void rv32m1_lpi2c_master_transfer_callback(LPI2C_Type *base,
-						  lpi2c_master_handle_t *handle,
-						  status_t completionStatus,
-						  void *userData)
+static void rv32m1_lpi2c_controller_transfer_callback(LPI2C_Type *base,
+						      lpi2c_master_handle_t *handle,
+						      status_t completionStatus,
+						      void *userData)
 {
 	struct rv32m1_lpi2c_data *data = userData;
 
@@ -205,7 +205,7 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 {
 	const struct rv32m1_lpi2c_config *config = dev->config;
 	struct rv32m1_lpi2c_data *data = dev->data;
-	lpi2c_master_config_t master_config;
+	lpi2c_master_config_t controller_config;
 	uint32_t clk_freq, dev_cfg;
 	int err;
 
@@ -228,10 +228,10 @@ static int rv32m1_lpi2c_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	LPI2C_MasterGetDefaultConfig(&master_config);
-	LPI2C_MasterInit(config->base, &master_config, clk_freq);
+	LPI2C_MasterGetDefaultConfig(&controller_config);
+	LPI2C_MasterInit(config->base, &controller_config, clk_freq);
 	LPI2C_MasterTransferCreateHandle(config->base, &data->handle,
-					 rv32m1_lpi2c_master_transfer_callback,
+					 rv32m1_lpi2c_controller_transfer_callback,
 					 data);
 
 	dev_cfg = i2c_map_dt_bitrate(config->bitrate);

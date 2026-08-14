@@ -261,9 +261,9 @@ static void mcux_lpi2c_submit(const struct device *dev, struct rtio_iodev_sqe *i
 	}
 }
 
-static void mcux_lpi2c_master_transfer_callback(LPI2C_Type *base,
-						lpi2c_master_handle_t *handle,
-						status_t status, void *userData)
+static void mcux_lpi2c_controller_transfer_callback(LPI2C_Type *base,
+						    lpi2c_master_handle_t *handle,
+						    status_t status, void *userData)
 {
 	ARG_UNUSED(handle);
 	ARG_UNUSED(base);
@@ -302,7 +302,7 @@ static int mcux_lpi2c_init(const struct device *dev)
 	struct mcux_lpi2c_data *data = dev->data;
 	LPI2C_Type *base;
 	uint32_t clock_freq, bitrate_cfg;
-	lpi2c_master_config_t master_config;
+	lpi2c_master_config_t controller_config;
 	int error;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
@@ -324,11 +324,11 @@ static int mcux_lpi2c_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	LPI2C_MasterGetDefaultConfig(&master_config);
-	master_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
-	LPI2C_MasterInit(base, &master_config, clock_freq);
+	LPI2C_MasterGetDefaultConfig(&controller_config);
+	controller_config.busIdleTimeout_ns = config->bus_idle_timeout_ns;
+	LPI2C_MasterInit(base, &controller_config, clock_freq);
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
-					 mcux_lpi2c_master_transfer_callback,
+					 mcux_lpi2c_controller_transfer_callback,
 					 (void *)dev);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
