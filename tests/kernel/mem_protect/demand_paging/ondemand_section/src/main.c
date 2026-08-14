@@ -19,6 +19,34 @@ static void __ondemand_func evictable_function(void)
 	printk("This %s code, count=%d\n", message, ++count);
 }
 
+/**
+ * @brief Verify that code in an on-demand section is paged in and evictable.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Code and data placed in an on-demand linker section are not resident at
+ * boot: the first access has to fault them in, they stay resident until
+ * evicted, and they can be evicted and fetched back explicitly. The kernel's
+ * page fault counter is what makes each transition observable, since it is
+ * sampled either side of every call to the evictable function rather than
+ * inferred from the call succeeding.
+ *
+ * Test steps:
+ * - Call the on-demand function and confirm the fault count rose.
+ * - Call it again and confirm the count did not move, so it stayed resident.
+ * - Evict its page with k_mem_page_out() and call it again, expecting a fault.
+ * - Evict it once more, then fetch it back with k_mem_page_in().
+ * - Call it a final time and confirm no fault was taken.
+ *
+ * Expected result:
+ * - The first call and the call after each eviction fault; the call while
+ *   resident and the call after an explicit page-in do not.
+ *
+ * @see k_mem_page_out()
+ * @see k_mem_page_in()
+ * @see k_mem_num_pagefaults_get()
+ */
 ZTEST(ondemand_section, test_ondemand_basic)
 {
 	unsigned long faults_before, faults_after;
