@@ -40,3 +40,6 @@ strictdoc>=0.28.1
 
 # Used by the licensing extension
 reuse>=6.3.0
+
+# Requirements traceability (items, matrices, coverage) in the Sphinx docs
+sphinx-needs
