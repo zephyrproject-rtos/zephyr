@@ -16,6 +16,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -109,6 +110,8 @@ struct decoded_sdu {
 RING_BUF_DECLARE(usb_in_ring_buf, USB_IN_RING_BUF_SIZE);
 K_MEM_SLAB_DEFINE_STATIC(usb_in_buf_pool, ROUND_UP(USB_STEREO_FRAME_SIZE, UDC_BUF_GRANULARITY),
 			 USB_ENQUEUE_COUNT, UDC_BUF_ALIGN);
+static K_MUTEX_DEFINE(usb_in_data_mutex);
+#define USB_IN_DATA_MUTEX_TIMEOUT K_MSEC(5)
 
 /* USB consumer callback, called every 1ms, consumes data from ring-buffer */
 static void usb_data_request(const struct device *dev)
@@ -128,12 +131,24 @@ static void usb_data_request(const struct device *dev)
 		return;
 	}
 
+	err = k_mutex_lock(&usb_in_data_mutex, USB_IN_DATA_MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_WRN("Failed to lock usb_in_data_mutex for USB data request: %d", err);
+		k_mem_slab_free(&usb_in_buf_pool, pcm_buf);
+		return;
+	}
+
 	/* This may fail without causing issues since usb_audio_data is 0-initialized */
 	size = ring_buf_get(&usb_in_ring_buf, pcm_buf, USB_STEREO_FRAME_SIZE);
 	if (size != USB_STEREO_FRAME_SIZE) {
+		LOG_WRN_RATELIMIT("Could only get %u / %u octets for USB", size,
+				  USB_STEREO_FRAME_SIZE);
 		/* If we could not fill the buffer, zero-fill the rest (possibly all) */
 		memset(((uint8_t *)pcm_buf) + size, 0, USB_STEREO_FRAME_SIZE - size);
 	}
+
+	err = k_mutex_unlock(&usb_in_data_mutex);
+	__ASSERT(err == 0, "Failed to unlock usb_in_data_mutex: %d", err);
 
 	if (size != 0U) {
 		static size_t cnt;
@@ -192,18 +207,7 @@ static void bap_usb_send_frames_to_usb(void)
 		const int16_t *mono_frame = decoded_sdu.left_frames[i]; /* use left as mono */
 		static size_t fail_cnt;
 		uint32_t rb_size;
-
-		/* Not enough space to store data */
-		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
-			fail_cnt++;
-			LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
-					       "[%zu] Could not send more than %zu frames to USB",
-					       fail_cnt, i);
-
-			break;
-		}
-
-		fail_cnt = 0U;
+		int err;
 
 		/* Generate the stereo frame
 		 *
@@ -230,13 +234,38 @@ static void bap_usb_send_frames_to_usb(void)
 			}
 		}
 
+		err = k_mutex_lock(&usb_in_data_mutex, USB_IN_DATA_MUTEX_TIMEOUT);
+		if (err != 0) {
+			LOG_WRN("Failed to lock usb_in_data_mutex for putting USB data: %d", err);
+			return;
+		}
+
+		/* Not enough space to store data */
+		if (ring_buf_space_get(&usb_in_ring_buf) < sizeof(stereo_frame)) {
+			fail_cnt++;
+			LOG_WRN_RATELIMIT_RATE(USB_LOG_RATE,
+					       "[%zu] Could not send more than %zu frames to USB",
+					       fail_cnt, i);
+
+			err = k_mutex_unlock(&usb_in_data_mutex);
+			__ASSERT(err == 0, "Failed to unlock usb_in_data_mutex: %d", err);
+			break;
+		}
+
+		fail_cnt = 0U;
+
 		rb_size = ring_buf_put(&usb_in_ring_buf, (uint8_t *)stereo_frame,
 				       sizeof(stereo_frame));
 		if (rb_size != sizeof(stereo_frame)) {
 			LOG_WRN("Failed to put frame on USB ring buf");
 
+			err = k_mutex_unlock(&usb_in_data_mutex);
+			__ASSERT(err == 0, "Failed to unlock usb_in_data_mutex: %d", err);
 			break;
 		}
+
+		err = k_mutex_unlock(&usb_in_data_mutex);
+		__ASSERT(err == 0, "Failed to unlock usb_in_data_mutex: %d", err);
 	}
 
 	cnt++;
@@ -287,6 +316,8 @@ int bap_usb_add_frame_to_usb(enum bt_audio_location chan_allocation, const int16
 				   : "is_mono",
 			decoded_sdu.mono_frames_cnt, decoded_sdu.left_frames_cnt,
 			decoded_sdu.right_frames_cnt);
+
+		bap_usb_clear_frames_to_usb();
 
 		return -EINVAL;
 	}
@@ -386,7 +417,9 @@ K_MEM_SLAB_DEFINE_STATIC(usb_out_buf_pool, USB_STEREO_FRAME_SIZE, 3, UDC_BUF_ALI
 
 static int16_t usb_out_left_ring_buffer[USB_OUT_RING_BUF_SIZE];
 static int16_t usb_out_right_ring_buffer[USB_OUT_RING_BUF_SIZE];
-static size_t write_index; /* Points to the oldest/uninitialized data */
+static volatile size_t write_index; /* Points to the oldest/uninitialized data */
+static K_MUTEX_DEFINE(usb_out_data_mutex);
+#define USB_OUT_DATA_MUTEX_TIMEOUT K_MSEC(5)
 
 size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream)
 {
@@ -465,6 +498,7 @@ static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *b
 	const size_t old_write_index = write_index;
 	static size_t cnt;
 	int16_t *pcm;
+	int err;
 
 	ARG_UNUSED(dev);
 	ARG_UNUSED(terminal);
@@ -476,6 +510,13 @@ static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *b
 	}
 
 	pcm = (int16_t *)buf;
+
+	err = k_mutex_lock(&usb_out_data_mutex, USB_OUT_DATA_MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_WRN("Failed to lock usb_out_data_mutex for new USB data: %d", err);
+		k_mem_slab_free(&usb_out_buf_pool, buf);
+		return;
+	}
 
 	/* Split the data into left and right as LC3 uses LLLLRRRR instead of LRLRLRLR as USB
 	 *
@@ -499,6 +540,9 @@ static void usb_data_recv_cb(const struct device *dev, uint8_t terminal, void *b
 	 * than their read indexes
 	 */
 	bap_foreach_stream(stream_cb, UINT_TO_POINTER(old_write_index));
+
+	err = k_mutex_unlock(&usb_out_data_mutex);
+	__ASSERT(err == 0, "Failed to unlock usb_out_data_mutex: %d", err);
 
 	cnt++;
 	LOG_DBG_RATELIMIT_RATE(USB_LOG_RATE, "USB Data received (count = %zu)", cnt);
@@ -537,11 +581,22 @@ bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream)
 		buffer_cnt = write_index + (USB_OUT_RING_BUF_SIZE - read_idx);
 	}
 
+	/* For the first SDU, we want to wait until we can send at least 2 SDUs to help reduce
+	 * issues at the cost of presentation delay
+	 */
+	if (sh_stream->tx.lc3_sdu_cnt == 0) {
+		if (buffer_cnt < (retrieve_cnt * 2U)) {
+			return false;
+		}
+	}
+
 	if (buffer_cnt < retrieve_cnt) {
 		/* Not enough for a frame yet */
 		if (!failed_last_time) {
-			LOG_WRN("Ring buffer (%u/%u) does not contain enough for an entire SDU %u",
-				buffer_cnt, USB_OUT_RING_BUF_SIZE, retrieve_cnt);
+			LOG_WRN_RATELIMIT("Ring buffer (%u/%u) does not contain enough for an "
+					  "entire SDU %u for channel allocation 0x%08X",
+					  buffer_cnt, USB_OUT_RING_BUF_SIZE, retrieve_cnt,
+					  sh_stream->lc3_chan_allocation);
 		}
 
 		failed_last_time = true;
@@ -596,6 +651,14 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 	const bool is_right = (chan_alloc & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
 	const bool is_mono = chan_alloc == BT_AUDIO_LOCATION_MONO_AUDIO;
 	const uint32_t read_cnt = bap_usb_get_read_cnt(sh_stream);
+	int err;
+
+	err = k_mutex_lock(&usb_out_data_mutex, USB_OUT_DATA_MUTEX_TIMEOUT);
+	if (err != 0) {
+		LOG_WRN("Failed to lock usb_out_data_mutex to get USB data: %d", err);
+		(void)memset(buffer, 0, read_cnt * USB_BYTES_PER_SAMPLE);
+		return;
+	}
 
 	if (is_left || is_mono) {
 		sh_stream->tx.left_read_idx = usb_ring_buf_get(
@@ -603,6 +666,21 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 	} else if (is_right) {
 		sh_stream->tx.right_read_idx = usb_ring_buf_get(
 			buffer, usb_out_right_ring_buffer, sh_stream->tx.right_read_idx, read_cnt);
+	}
+
+	err = k_mutex_unlock(&usb_out_data_mutex);
+	__ASSERT(err == 0, "Failed to unlock usb_out_data_mutex: %d", err);
+
+	if (sh_stream->tx.right_read_idx > sh_stream->tx.left_read_idx &&
+	    sh_stream->tx.left_read_idx > read_cnt * USB_BYTES_PER_SAMPLE) {
+		LOG_ERR("Unexpected sh_stream->tx.right_read_idx %u for "
+			"sh_stream->tx.left_read_idx %u",
+			sh_stream->tx.right_read_idx, sh_stream->tx.left_read_idx);
+	} else if (sh_stream->tx.left_read_idx > sh_stream->tx.right_read_idx &&
+		   sh_stream->tx.right_read_idx > read_cnt * USB_BYTES_PER_SAMPLE) {
+		LOG_ERR("Unexpected sh_stream->tx.left_read_idx %u for "
+			"sh_stream->tx.right_read_idx %u",
+			sh_stream->tx.right_read_idx, sh_stream->tx.left_read_idx);
 	}
 }
 #endif /* CONFIG_BT_AUDIO_TX */
