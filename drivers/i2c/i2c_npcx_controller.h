@@ -88,7 +88,7 @@ struct i2c_ctrl_data {
 	struct i2c_msg *msg_head;
 	int is_write;     /* direction of current msg */
 	uint8_t *ptr_msg; /* current msg pointer for FIFO read/write */
-	uint16_t addr;    /* slave address of transaction */
+	uint16_t addr;    /* target address of transaction */
 	uint8_t msg_max_num;
 	uint8_t msg_curr_idx;
 	uint8_t port;       /* current port used the controller */
@@ -265,7 +265,7 @@ int npcx_i2c_ctrl_get_speed(const struct device *i2c_dev, uint32_t *speed);
  *
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
- * @retval -ENXIO No slave address match.
+ * @retval -ENXIO No target address match.
  * @retval -ETIMEDOUT Timeout occurred for a i2c transaction.
  */
 int npcx_i2c_ctrl_transfer(const struct device *i2c_dev, struct i2c_msg *msgs,

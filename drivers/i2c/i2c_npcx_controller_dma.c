@@ -159,7 +159,7 @@ void i2c_ctrl_handle_write_int_event(const struct device *dev)
 
 	/* START condition is issued */
 	if (data->oper_state == NPCX_I2C_WAIT_START) {
-		/* Write slave address with W bit */
+		/* Write target address with W bit */
 		i2c_ctrl_data_write(dev, ((data->addr << 1) & ~BIT(0)));
 
 		/* Start first DMA transmitted transaction */
@@ -180,7 +180,7 @@ void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		/* Configure first DMA received transaction before sending address */
 		i2c_ctrl_dma_proceed_read(dev);
 
-		/* Write slave address with R bit */
+		/* Write target address with R bit */
 		i2c_ctrl_data_write(dev, ((data->addr << 1) | BIT(0)));
 
 		/* Start to proceed read process */
