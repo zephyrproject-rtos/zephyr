@@ -307,6 +307,7 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	uint32_t actual_peri_freq;
 	uint32_t data_rate;
 	cy_rslt_t status;
+	const bool clk_is_fractional = ifx_cat1_utils_peri_is_fract_div(&data->clock);
 
 	/* Map I2C data rate to the required SCB oversampling clock frequency */
 	if (freq == 0) {
@@ -333,7 +334,7 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	 * repeated reconfigurations and independent of the SoC-specific
 	 * HFCLK-to-peripheral-group routing.
 	 */
-	if (ifx_cat1_utils_peri_is_fract_div(&data->clock)) {
+	if (clk_is_fractional) {
 		uint32_t div_int = 0;
 		uint32_t div_frac = 0;
 
@@ -378,7 +379,7 @@ static int _i2c_set_peri_divider(const struct device *dev, uint32_t freq, bool i
 	}
 
 	/* Program the divider (integer or fractional depending on divider type). */
-	if (ifx_cat1_utils_peri_is_fract_div(&data->clock)) {
+	if (clk_is_fractional) {
 		/*
 		 * Integer-only ratio: div_value was floored above and the target
 		 * clk_scb sits well inside the SCB oversampling window, so the
