@@ -139,6 +139,7 @@ config RISCV
 	select ARCH_IS_SET
 	select ATOMIC_OPERATIONS_C if (!RISCV_ISA_EXT_A && !ATOMIC_OPERATIONS_ARCH)
 	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
+	select ARCH_SUPPORTS_IRQ_STATS if !RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
 	select ARCH_SUPPORTS_COREDUMP_THREADS if !SMP
@@ -979,6 +980,14 @@ config ARCH_HAS_PMU
 	  counters usable by the Zephyr PMU API (<zephyr/arch/pmu.h>). For AArch64,
 	  Cortex-A profiles select this option; enable CONFIG_ARM64_PMUV3 to build
 	  the ARMv8-A PMUv3 driver backend.
+
+config ARCH_SUPPORTS_IRQ_STATS
+	bool
+	help
+	  When set, the architecture's interrupt dispatch path calls the
+	  z_irq_stats_enter()/z_irq_stats_exit() hooks with the software
+	  ISR table index, so CONFIG_IRQ_STATS can collect per-interrupt
+	  statistics.
 
 #
 # Hidden CPU family configs

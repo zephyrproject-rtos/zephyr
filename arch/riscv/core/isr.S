@@ -125,6 +125,8 @@ GTEXT(z_riscv_thread_start)
 #ifdef CONFIG_TRACING
 GTEXT(sys_trace_isr_enter)
 GTEXT(sys_trace_isr_exit)
+GTEXT(z_irq_stats_enter)
+GTEXT(z_irq_stats_exit)
 #endif
 
 #ifdef CONFIG_USERSPACE
@@ -729,6 +731,15 @@ on_irq_stack:
 	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
+#ifdef CONFIG_IRQ_STATS
+	/* Record dispatch entry; preserve the IRQ number across the call */
+	addi sp, sp, -16
+	sr a0, 0(sp)
+	call z_irq_stats_enter
+	lr a0, 0(sp)
+	addi sp, sp, 16
+#endif
+
 	/*
 	 * Clear pending IRQ generating the interrupt at SOC level
 	 * Pass IRQ number to __soc_handle_irq via register a0
@@ -758,6 +769,10 @@ on_irq_stack:
 
 	/* Call ISR function */
 	jalr ra, t1, 0
+
+#ifdef CONFIG_IRQ_STATS
+	call z_irq_stats_exit
+#endif
 
 #ifdef CONFIG_TRACING_ISR
 	call sys_trace_isr_exit

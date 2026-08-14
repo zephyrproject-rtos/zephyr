@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory_ifdef(CONFIG_PROFILING_PERF perf)
+add_subdirectory_ifdef(CONFIG_IRQ_STATS irq_stats)
