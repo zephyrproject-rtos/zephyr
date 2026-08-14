@@ -40,19 +40,51 @@ static int main_prio;
 static ZTEST_DMEM int tp = 10;
 
 /**
+ * @brief Verify that the main thread runs at its configured priority.
+ *
  * @ingroup kernel_thread_tests
- * @brief Verify main thread
+ *
+ * @details
+ * The thread that runs main() has to be started at the priority named by
+ * CONFIG_MAIN_THREAD_PRIORITY, since applications rely on it to sit at a known
+ * point in the scheduling order. The priority is sampled during suite setup,
+ * before any case has had a chance to change it.
+ *
+ * Test steps:
+ * - Record the main thread's priority in the suite setup function.
+ * - Compare it against CONFIG_MAIN_THREAD_PRIORITY.
+ *
+ * Expected result:
+ * - The main thread runs at the configured priority.
+ *
+ * @see k_thread_priority_get()
  */
-ZTEST(threads_lifecycle, test_systhreads_main)
+ZTEST(threads_lifecycle, test_thread_main_priority)
 {
 	zassert_true(main_prio == CONFIG_MAIN_THREAD_PRIORITY, "%d", CONFIG_MAIN_THREAD_PRIORITY);
 }
 
 /**
+ * @brief Verify that the idle thread runs below every application thread.
+ *
  * @ingroup kernel_thread_tests
- * @brief Verify idle thread
+ *
+ * @details
+ * The idle thread must be the lowest priority thread in the system, so that it
+ * only ever runs when nothing else can. Rather than inspecting the idle thread
+ * directly, the test sleeps to let it run and then checks that its own
+ * priority is still above K_IDLE_PRIO.
+ *
+ * Test steps:
+ * - Sleep so the idle thread gets a chance to run on each CPU.
+ * - Compare the current thread's priority against K_IDLE_PRIO.
+ *
+ * Expected result:
+ * - The running thread's priority is higher than the idle priority.
+ *
+ * @see k_thread_priority_get()
  */
-ZTEST(threads_lifecycle, test_systhreads_idle)
+ZTEST(threads_lifecycle, test_thread_idle_priority)
 {
 	k_msleep(100);
 	/** TESTPOINT: check working thread priority should */
@@ -76,13 +108,28 @@ static void customdata_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test thread custom data get/set from coop thread
+ * @brief Verify that custom data is per thread, from a cooperative thread.
  *
- * @see k_thread_custom_data_get()
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The custom data slot belongs to the thread that set it, so a value written
+ * by one thread must be readable by that same thread and must not be seen by
+ * another. The cooperative case writes and reads the slot repeatedly across
+ * yields, so a slot that is global rather than per thread shows up as a
+ * mismatch.
+ *
+ * Test steps:
+ * - Set the custom data of the current thread and read it back.
+ * - Yield, then repeat several times with changing values.
+ *
+ * Expected result:
+ * - Each read returns the value this thread most recently set.
+ *
  * @see k_thread_custom_data_set()
+ * @see k_thread_custom_data_get()
  */
-ZTEST(threads_lifecycle_1cpu, test_customdata_get_set_coop)
+ZTEST(threads_lifecycle_1cpu, test_thread_custom_data_coop)
 {
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
 				      customdata_entry, NULL, NULL, NULL,
@@ -100,11 +147,30 @@ static void thread_name_entry(void *p1, void *p2, void *p3)
 }
 
 /**
+ * @brief Verify that a thread name can be set and read back.
+ *
  * @ingroup kernel_thread_tests
- * @brief Test thread name get/set from supervisor thread
+ *
+ * @details
+ * A thread's name is what identifies it in logs and debug output, so setting
+ * it has to be reflected by both accessors: k_thread_name_get(), which returns
+ * the kernel's own string, and k_thread_name_copy(), which copies it into a
+ * caller buffer. Too small a buffer must be reported rather than truncated
+ * silently.
+ *
+ * Test steps:
+ * - Set a name on the current thread and on a spawned thread.
+ * - Read them back with k_thread_name_get() and compare.
+ * - Copy them out with k_thread_name_copy() and compare.
+ * - Attempt a copy into a buffer that is too small.
+ *
+ * Expected result:
+ * - Both accessors report the name that was set, and the undersized copy
+ *   fails rather than truncating.
+ *
+ * @see k_thread_name_set()
  * @see k_thread_name_get()
  * @see k_thread_name_copy()
- * @see k_thread_name_set()
  */
 ZTEST(threads_lifecycle, test_thread_name_get_set)
 {
@@ -143,10 +209,29 @@ struct k_sem sem;
 #endif /* CONFIG_USERSPACE */
 
 /**
+ * @brief Verify that thread names are handled safely from user mode.
+ *
  * @ingroup kernel_thread_tests
- * @brief Test thread name get/set from user thread
- * @see k_thread_name_copy()
+ *
+ * @details
+ * Reached from user mode, the name calls become system calls that must
+ * validate every pointer they are handed instead of trusting the caller: an
+ * unreadable source string, a buffer the caller does not own, and a thread
+ * object it has no permission for all have to be rejected rather than
+ * faulting the kernel. Skipped when userspace is not enabled.
+ *
+ * Test steps:
+ * - Set and read back the current thread's name from user mode.
+ * - Attempt to set a name from a string the thread cannot read.
+ * - Attempt to copy a name into a buffer the thread does not own.
+ * - Attempt to name a thread the caller has no access to.
+ *
+ * Expected result:
+ * - The legitimate calls succeed and every invalid pointer or permission is
+ *   rejected with an error instead of a fault.
+ *
  * @see k_thread_name_set()
+ * @see k_thread_name_copy()
  */
 ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 {
@@ -213,12 +298,28 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 }
 
 /**
+ * @brief Verify that custom data is per thread, from a preemptible user
+ *        thread.
+ *
  * @ingroup kernel_thread_tests
- * @brief Test thread custom data get/set from preempt thread
- * @see k_thread_custom_data_get()
+ *
+ * @details
+ * The preemptible, user-mode counterpart of the cooperative custom data case.
+ * Here the accessors are reached as system calls and the thread can be
+ * preempted between the write and the read, so the slot has to survive
+ * arbitrary scheduling rather than only cooperative yields.
+ *
+ * Test steps:
+ * - Set the custom data of the current user thread and read it back.
+ * - Yield, then repeat several times with changing values.
+ *
+ * Expected result:
+ * - Each read returns the value this thread most recently set.
+ *
  * @see k_thread_custom_data_set()
+ * @see k_thread_custom_data_get()
  */
-ZTEST_USER(threads_lifecycle_1cpu, test_customdata_get_set_preempt)
+ZTEST_USER(threads_lifecycle_1cpu, test_thread_custom_data_preempt)
 {
 	/** TESTPOINT: custom data of preempt thread */
 	k_tid_t tid = k_thread_create(&tdata_custom, tstack_custom, STACK_SIZE,
@@ -263,17 +364,28 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify a thread can run with user-mode (unprivileged) privileges.
- *
- * @details
- * Create a thread that calls k_thread_user_mode_enter() so it transitions to
- * user mode, confirming the kernel can create threads with a defined privilege
- * level.
+ * @brief Verify that a thread can drop into user mode.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_user_mode_enter() converts the calling supervisor thread into an
+ * unprivileged one and does not return. The thread checks
+ * k_is_user_context() on the far side of the transition, so a pass proves the
+ * privilege level really changed rather than that the call merely returned.
+ *
+ * Test steps:
+ * - Confirm the test thread is already running in user mode.
+ * - Create a supervisor thread that calls k_thread_user_mode_enter().
+ * - In its user-mode entry point, check k_is_user_context() and signal.
+ *
+ * Expected result:
+ * - The thread continues in user mode and reports unprivileged context.
+ *
  * @see k_thread_user_mode_enter()
+ * @see k_is_user_context()
  */
-ZTEST_USER(threads_lifecycle, test_user_mode)
+ZTEST_USER(threads_lifecycle, test_thread_user_mode)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      enter_user_mode_entry, NULL, NULL,
@@ -408,9 +520,27 @@ static inline int join_scenario(enum control_method m)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test thread join
+ * @brief Verify that k_thread_join() waits for a thread in every end state.
  *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A join has to return only once the target thread is really finished,
+ * whichever way it got there, and it has to behave the same when the thread
+ * has already ended before the join is issued. Each way a thread can reach
+ * its end is driven in turn so no single path can hide a join that returns
+ * early.
+ *
+ * Test steps:
+ * - Join a thread that exits on its own.
+ * - Join a thread that is aborted while running.
+ * - Join a thread that is still waiting out a start delay.
+ * - Join a thread that had already exited before the join.
+ *
+ * Expected result:
+ * - Every join returns success only after the target thread has ended.
+ *
+ * @see k_thread_join()
  */
 ZTEST_USER(threads_lifecycle, test_thread_join)
 {
@@ -436,11 +566,26 @@ ZTEST_USER(threads_lifecycle, test_thread_join)
 }
 
 /**
+ * @brief Verify that k_thread_join() from an ISR cannot block.
+ *
  * @ingroup kernel_thread_tests
- * @brief Test thread join from ISR
+ *
+ * @details
+ * Interrupt context must never block, so a join issued from an ISR can only
+ * be attempted without waiting. Joining a still-running thread has to be
+ * refused with -EBUSY, while joining one that has already finished can be
+ * satisfied immediately.
+ *
+ * Test steps:
+ * - Spawn a thread and, from an ISR, join it with K_NO_WAIT while it runs.
+ * - Let the thread finish, then join it again from an ISR.
+ *
+ * Expected result:
+ * - The join of the running thread returns -EBUSY, and the join of the
+ *   finished thread succeeds.
  *
  * @see k_thread_join()
- * @see k_thread_abort()
+ * @see irq_offload()
  */
 ZTEST(threads_lifecycle, test_thread_join_isr)
 {
@@ -477,17 +622,25 @@ static void deadlock2_entry(void *p1, void *p2, void *p3)
 
 
 /**
- * @brief Test case for thread join deadlock scenarios.
- *
- * This test verifies the behavior of the `k_thread_join` API in scenarios
- * that could lead to deadlocks. It includes the following checks:
- *
- * - Ensures that a thread cannot join itself, which would result in a
- *   self-deadlock. The API should return `-EDEADLK` in this case.
- * - Creates two threads (`deadlock1_thread` and `deadlock2_thread`) and
- *   verifies that they can be joined successfully without causing a deadlock.
+ * @brief Verify that k_thread_join() refuses to deadlock.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A thread joining itself would wait forever for its own exit, so the kernel
+ * has to detect that and refuse rather than hang. Joins that only look
+ * circular must still be allowed, which is why two threads that join each
+ * other in a legal order are exercised alongside the self-join.
+ *
+ * Test steps:
+ * - Call k_thread_join() on the calling thread itself.
+ * - Create two threads that join one another and join them from the test.
+ *
+ * Expected result:
+ * - The self-join is rejected with -EDEADLK, and the two-thread joins all
+ *   succeed.
+ *
+ * @see k_thread_join()
  */
 ZTEST_USER(threads_lifecycle, test_thread_join_deadlock)
 {
@@ -519,9 +672,31 @@ static void user_start_thread(void *p1, void *p2, void *p3)
 	/* do nothing */
 }
 /**
- * @brief Test case for verifying thread timeout expiration and remaining time.
+ * @brief Verify that a thread's pending timeout can be queried.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A thread waiting out its start delay has a timeout pending, and the kernel
+ * can report it two ways: as the absolute tick the thread becomes ready, and
+ * as the ticks still to go. The absolute view must not fall before the
+ * deadline computed at creation, and the relative view has to keep shrinking
+ * as time passes, which is what sampling it repeatedly checks.
+ *
+ * Test steps:
+ * - Compute the expected expiry tick and create a thread with that start
+ *   delay.
+ * - Read the thread's expiry tick and compare it against the expected one.
+ * - Read its remaining ticks and confirm they are below the full delay.
+ * - Sleep and read the remaining ticks again.
+ * - Abort the thread before it starts.
+ *
+ * Expected result:
+ * - The expiry tick is no earlier than the deadline set at creation, and each
+ *   reading of the remaining ticks is smaller than the one before.
+ *
+ * @see k_thread_timeout_remaining_ticks()
+ * @see k_thread_timeout_expires_ticks()
  */
 
 ZTEST_USER(threads_lifecycle, test_thread_timeout_remaining_expires)
@@ -576,15 +751,27 @@ static void foreach_callback(const struct k_thread *thread, void *user_data)
 }
 
 /**
- * @brief Test case for thread runtime statistics retrieval in Zephyr kernel
- *
- * This case accumulates every thread's execution_cycles first, then
- * get the total execution_cycles from a global
- * k_thread_runtime_stats_t to see that all time is reflected in the
- * total.
+ * @brief Verify that per-thread runtime statistics add up to the system total.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The kernel accounts execution time both per thread and system wide, and the
+ * two views have to describe the same time: no thread's cycles may be missing
+ * from the total. Summing every thread's execution cycles and comparing
+ * against the global figure is what makes a dropped or double-counted thread
+ * visible.
+ *
+ * Test steps:
+ * - Walk every thread and accumulate its execution cycles.
+ * - Read the system-wide runtime statistics.
+ * - Compare the accumulated sum against the reported total.
+ *
+ * Expected result:
+ * - Every thread's execution time is reflected in the system total.
+ *
  * @see k_thread_runtime_stats_get()
+ * @see k_thread_runtime_stats_all_get()
  */
 ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 {
@@ -606,12 +793,29 @@ ZTEST(threads_lifecycle, test_thread_runtime_stats_get)
 
 
 /**
- * @brief Test the behavior of k_busy_wait with thread runtime statistics.
+ * @brief Verify that busy waiting is accounted as execution time.
  *
- * This test verifies the accuracy of the `k_busy_wait` function by checking
- * the thread's execution cycle statistics before and after calling the function.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_busy_wait() spins on the CPU rather than blocking, so the time it takes
+ * must show up as the calling thread's own execution cycles. Sampling the
+ * thread's runtime statistics on both sides of a busy wait of known length is
+ * what ties the accounting to real elapsed time.
+ *
+ * Test steps:
+ * - Read the current thread's runtime statistics.
+ * - Call k_busy_wait() for a known duration.
+ * - Read the statistics again and compare the difference.
+ *
+ * Expected result:
+ * - The thread's execution cycles grow by at least the time spent busy
+ *   waiting.
+ *
+ * @see k_busy_wait()
+ * @see k_thread_runtime_stats_get()
  */
-ZTEST(threads_lifecycle, test_k_busy_wait)
+ZTEST(threads_lifecycle, test_thread_busy_wait)
 {
 	uint64_t cycles, dt;
 	k_thread_runtime_stats_t test_stats;
@@ -650,12 +854,29 @@ static void tp_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test the behavior of k_busy_wait with thread runtime statistics
- *        in user mode.
+ * @brief Verify that busy waiting is accounted for a user thread.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The same accounting has to hold when the busy wait is performed by a user
+ * thread, where both the wait and the statistics query are system calls. The
+ * case runs on a single CPU so the measurement is not disturbed by the thread
+ * migrating.
+ *
+ * Test steps:
+ * - From a user thread, read its runtime statistics.
+ * - Call k_busy_wait() for a known duration.
+ * - Read the statistics again and compare the difference.
+ *
+ * Expected result:
+ * - The user thread's execution cycles grow by at least the time spent busy
+ *   waiting.
+ *
+ * @see k_busy_wait()
+ * @see k_thread_runtime_stats_get()
  */
-ZTEST_USER(threads_lifecycle_1cpu, test_k_busy_wait_user)
+ZTEST_USER(threads_lifecycle_1cpu, test_thread_busy_wait_user)
 {
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -691,15 +912,28 @@ static int small_stack(size_t *space)
 }
 
 /**
- * @brief Test k_thread_stack_sapce_get
- *
- * Test k_thread_stack_sapce_get unused stack space in large_stack_space()
- * is smaller than that in small_stack() because the former function has a
- * large local variable
+ * @brief Verify that reported unused stack space tracks actual stack use.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_stack_space_get() reports how much of a thread's stack has never
+ * been touched, so the figure has to fall as the thread uses more of it.
+ * Calling it from a function with a large local variable and again from one
+ * with a small local gives two points whose order is known in advance,
+ * regardless of the absolute numbers, which vary by architecture.
+ *
+ * Test steps:
+ * - Query the unused stack space from a function with a small local variable.
+ * - Query it again from a function with a large local variable.
+ * - Compare the two figures.
+ *
+ * Expected result:
+ * - The deeper call reports less unused stack space than the shallow one.
+ *
+ * @see k_thread_stack_space_get()
  */
-ZTEST_USER(threads_lifecycle, test_k_thread_stack_space_get_user)
+ZTEST_USER(threads_lifecycle, test_thread_stack_space_get_user)
 {
 	size_t a, b;
 

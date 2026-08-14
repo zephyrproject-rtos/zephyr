@@ -31,16 +31,28 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	zassert_true(1 == 0);
 }
 /**
- * @ingroup kernel_thread_tests
- * @brief Validate aborting a thread when called by current thread
+ * @brief Verify that a thread can abort itself.
  *
- * @details Create a user thread and let the thread execute.
- * Then call k_thread_abort() and check if the thread is terminated.
- * Here the main thread is also a user thread.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A thread calling k_thread_abort() on itself must not return from the call:
+ * it has to terminate at that point. The spawned thread raises a flag, aborts
+ * itself, and would raise a second value on the line after the call, so the
+ * flag distinguishes "ran and stopped there" from "ran past the abort".
+ *
+ * Test steps:
+ * - Create a user thread that flags that it ran and then aborts itself.
+ * - Sleep long enough for it to run.
+ * - Read the flag back.
+ *
+ * Expected result:
+ * - The thread ran and stopped inside the abort, never reaching the code
+ *   after it.
  *
  * @see k_thread_abort()
  */
-ZTEST_USER(threads_lifecycle, test_threads_abort_self)
+ZTEST_USER(threads_lifecycle, test_thread_abort_self)
 {
 	execute_flag = 0;
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_abort,
@@ -51,16 +63,28 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_self)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Validate aborting a thread when called by other thread
+ * @brief Verify that a thread can be aborted by another thread.
  *
- * @details Create a user thread and abort the thread before its
- * execution. Create a another user thread and abort the thread
- * after it has started.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Aborting another thread has to work both before that thread has had a
+ * chance to run and after it has started, since the two take different paths:
+ * one removes a ready thread that was never scheduled, the other terminates
+ * one that is already executing. Both are covered here from user mode.
+ *
+ * Test steps:
+ * - Create a user thread and abort it immediately, before it can run.
+ * - Sleep past the point it would have run and check its flag.
+ * - Create a second user thread, let it start, then abort it.
+ *
+ * Expected result:
+ * - The thread aborted before starting never runs, and the one aborted after
+ *   starting is terminated.
  *
  * @see k_thread_abort()
  */
-ZTEST_USER(threads_lifecycle, test_threads_abort_others)
+ZTEST_USER(threads_lifecycle, test_thread_abort_others)
 {
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -84,12 +108,25 @@ ZTEST_USER(threads_lifecycle, test_threads_abort_others)
 }
 
 /**
+ * @brief Verify that aborting an already terminated thread is harmless.
+ *
  * @ingroup kernel_thread_tests
- * @brief Test abort on an already terminated thread
+ *
+ * @details
+ * A thread that has already been aborted may still be referenced by code that
+ * does not know it is gone, so a second k_thread_abort() on it has to be
+ * accepted quietly rather than corrupting the scheduler or faulting.
+ *
+ * Test steps:
+ * - Create a thread and abort it.
+ * - Call k_thread_abort() on the same thread again, twice.
+ *
+ * Expected result:
+ * - The repeated aborts complete without error and the system keeps running.
  *
  * @see k_thread_abort()
  */
-ZTEST(threads_lifecycle_1cpu, test_threads_abort_repeat)
+ZTEST(threads_lifecycle_1cpu, test_thread_abort_repeat)
 {
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
@@ -121,14 +158,24 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
  * @brief Test abort on delayed thread before it has started
  * execution
  *
- * @details Create a thread with a 100ms start delay and abort it while
- * it is still waiting to start. Sleep past the original start deadline
- * and verify the thread never ran: a broken abort would have let the
- * thread start and set execute_flag.
+ * @details
+ * A thread that is still waiting out its start delay is not yet on any ready
+ * queue, so aborting it has to cancel the pending start rather than leave a
+ * timeout that would launch a dead thread later. Sleeping past the original
+ * deadline is what makes a surviving timeout visible.
+ *
+ * Test steps:
+ * - Create a thread with a 100 ms start delay.
+ * - Abort it while it is still waiting to start.
+ * - Sleep past the original start deadline.
+ * - Check the flag the thread would have set had it run.
+ *
+ * Expected result:
+ * - The thread never runs, so its flag stays clear.
  *
  * @see k_thread_abort()
  */
-ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
+ZTEST(threads_lifecycle_1cpu, test_thread_abort_delayed)
 {
 	int current_prio = k_thread_priority_get(k_current_get());
 
@@ -195,16 +242,29 @@ static void entry_abort_isr(void *p1, void *p2, void *p3)
 extern struct k_sem offload_sem;
 
 /**
+ * @brief Verify that a thread can be aborted from an ISR interrupting it.
+ *
  * @ingroup kernel_thread_tests
  *
- * @brief Show that threads can be aborted from interrupt context by itself
+ * @details
+ * k_thread_abort() is callable from interrupt context, including on the very
+ * thread the ISR interrupted. The kernel has to let the ISR run to completion
+ * and only then drop the aborted thread, rather than switching away inside
+ * the handler. The ISR sets a flag as its last act, so the test can tell that
+ * it finished as well as that the thread died.
  *
- * @details Spawn a thread, then enter ISR context in child thread and abort
- * the child thread. Check if ISR completed and target thread was aborted.
+ * Test steps:
+ * - Spawn a thread that enters an ISR and aborts itself from there.
+ * - Join the spawned thread.
+ * - Check the flag the ISR sets before returning.
+ *
+ * Expected result:
+ * - The ISR completes and the interrupted thread is terminated.
  *
  * @see k_thread_abort()
+ * @see irq_offload()
  */
-ZTEST(threads_lifecycle, test_abort_from_isr)
+ZTEST(threads_lifecycle, test_thread_abort_from_isr)
 {
 	isr_finished = false;
 	k_thread_create(&tdata, tstack, STACK_SIZE, entry_abort_isr,
@@ -249,16 +309,29 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
 }
 
 /**
+ * @brief Verify that a thread can be aborted from an ISR on another thread.
+ *
  * @ingroup kernel_thread_tests
  *
- * @brief Show that threads can be aborted from interrupt context
+ * @details
+ * The counterpart of aborting the interrupted thread: here the ISR runs on
+ * the test thread and aborts a different, already running thread. That target
+ * may be executing on another CPU or merely be ready, so the abort has to
+ * complete from interrupt context without waiting on the target to reach a
+ * scheduling point.
  *
- * @details Spawn a thread, then enter ISR context in main thread and abort
- * the child thread. Check if ISR completed and target thread was aborted.
+ * Test steps:
+ * - Spawn a thread and let it start running.
+ * - From the test thread, enter an ISR and abort the spawned thread there.
+ * - Join the spawned thread and check the flag the ISR sets.
+ *
+ * Expected result:
+ * - The ISR completes and the target thread is terminated.
  *
  * @see k_thread_abort()
+ * @see irq_offload()
  */
-ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
+ZTEST(threads_lifecycle, test_thread_abort_from_isr_not_self)
 {
 	k_tid_t tid;
 
