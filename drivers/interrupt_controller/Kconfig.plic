@@ -70,16 +70,20 @@ config PLIC_SHELL
 	depends on SHELL
 	help
 	  Enable additional shell commands useful for debugging.
-	  Caution: This can use quite a bit of RAM (PLICs * IRQs * sizeof(uint16_t)).
 
 if PLIC_SHELL
 
 config PLIC_SHELL_IRQ_COUNT
 	bool "IRQ count shell commands"
+	depends on IRQ_STATS
 	default y
 	help
-	  Records the number of hits per interrupt line and provide shell commands to access them.
-	  Caution: This can use quite a bit of RAM (PLICs * IRQs * sizeof(PLIC_IRQ_COUNT_TYPE)).
+	  Provide shell commands reporting the per-interrupt-line
+	  statistics collected by CONFIG_IRQ_STATS: hit count per CPU,
+	  total handler time and longest invocation. The counters
+	  themselves are kept by the profiling subsystem, which records
+	  them for every interrupt dispatched through the software ISR
+	  table, so enabling this costs no additional RAM.
 
 config PLIC_SHELL_IRQ_AFFINITY
 	bool "Shell commands to configure IRQ affinity"

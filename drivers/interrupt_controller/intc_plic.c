@@ -27,6 +27,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #include <zephyr/irq.h>
+#include <zephyr/profiling/irq_stats.h>
 
 #define PLIC_BASE_ADDR(n) DT_INST_REG_ADDR(n)
 /*
@@ -97,17 +98,8 @@ struct plic_config {
 	const uint32_t *const hart_context;
 };
 
-struct plic_stats {
-	uint16_t *const irq_count;
-	const int irq_count_len;
-};
-
 struct plic_data {
 	struct k_spinlock lock;
-
-#ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
-	struct plic_stats stats;
-#endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
 	plic_cpumask_t *irq_cpumask;
@@ -466,43 +458,6 @@ int riscv_plic_irq_set_affinity(uint32_t irq, uint32_t cpumask)
 }
 #endif /* CONFIG_PLIC_IRQ_AFFINITY */
 
-#ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
-/**
- * If there's more than one core, irq_count points to a 2D-array: irq_count[NUM_CPUs + 1][nr_irqs]
- *
- *    i.e. NUM_CPUs == 2:
- *      CPU 0    [0 ... nr_irqs - 1]
- *      CPU 1    [0 ... nr_irqs - 1]
- *      TOTAL    [0 ... nr_irqs - 1]
- */
-static ALWAYS_INLINE uint16_t *get_irq_hit_count_cpu(const struct device *dev, int cpu,
-						     uint32_t local_irq)
-{
-	const struct plic_config *config = dev->config;
-	const struct plic_data *data = dev->data;
-	uint32_t offset = local_irq;
-
-	if (CONFIG_MP_MAX_NUM_CPUS > 1) {
-		offset = cpu * config->nr_irqs + local_irq;
-	}
-
-	return &data->stats.irq_count[offset];
-}
-
-static ALWAYS_INLINE uint16_t *get_irq_hit_count_total(const struct device *dev, uint32_t local_irq)
-{
-	const struct plic_config *config = dev->config;
-	const struct plic_data *data = dev->data;
-	uint32_t offset = local_irq;
-
-	if (CONFIG_MP_MAX_NUM_CPUS > 1) {
-		offset = arch_num_cpus() * config->nr_irqs + local_irq;
-	}
-
-	return &data->stats.irq_count[offset];
-}
-#endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
-
 static void plic_irq_handler(const struct device *dev)
 {
 	const struct plic_config *config = dev->config;
@@ -511,19 +466,6 @@ static void plic_irq_handler(const struct device *dev)
 	uint32_t cpu_id = arch_curr_cpu()->id;
 	/* Get the IRQ number generating the interrupt */
 	const uint32_t local_irq = sys_read32(claim_complete_addr);
-
-#ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
-	uint16_t *cpu_count = get_irq_hit_count_cpu(dev, cpu_id, local_irq);
-	uint16_t *total_count = get_irq_hit_count_total(dev, local_irq);
-
-	/* Cap the count at __UINT16_MAX__ */
-	if (*total_count < __UINT16_MAX__) {
-		(*cpu_count)++;
-		if (CONFIG_MP_MAX_NUM_CPUS > 1) {
-			(*total_count)++;
-		}
-	}
-#endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 	/*
 	 * Note: Because PLIC only supports multicast of interrupt, all enabled
@@ -567,7 +509,9 @@ static void plic_irq_handler(const struct device *dev)
 
 	/* Call the corresponding IRQ handler in _sw_isr_table */
 	ite = &config->isr_table[local_irq];
+	z_irq_stats_enter((unsigned int)(ite - _sw_isr_table));
 	ite->isr(ite->arg);
+	z_irq_stats_exit();
 
 	/*
 	 * Write to claim_complete register to indicate to
@@ -642,11 +586,19 @@ static inline int parse_device(const struct shell *sh, size_t argc, char *argv[]
 }
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
+/* Global software ISR table index of a PLIC-local IRQ line */
+static inline unsigned int local_irq_to_isr_index(const struct device *dev, uint32_t local_irq)
+{
+	const struct plic_config *config = dev->config;
+
+	return (unsigned int)(config->isr_table - _sw_isr_table) + local_irq;
+}
+
 static int cmd_stats_get(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
 	int ret = parse_device(sh, argc, argv, &dev);
-	uint16_t min_hit = 0;
+	uint32_t min_hit = 0;
 
 	if (ret != 0) {
 		return ret;
@@ -655,7 +607,7 @@ static int cmd_stats_get(const struct shell *sh, size_t argc, char *argv[])
 	const struct plic_config *config = dev->config;
 
 	if (argc > 2) {
-		min_hit = (uint16_t)shell_strtoul(argv[2], 10, &ret);
+		min_hit = shell_strtoul(argv[2], 10, &ret);
 		if (ret != 0) {
 			shell_error(sh, "Failed to parse %s: %d", argv[2], ret);
 			return ret;
@@ -670,27 +622,32 @@ static int cmd_stats_get(const struct shell *sh, size_t argc, char *argv[])
 	if (CONFIG_MP_MAX_NUM_CPUS > 1) {
 		shell_fprintf(sh, SHELL_NORMAL, "  Total");
 	}
-	shell_fprintf(sh, SHELL_NORMAL, "\tISR(ARG)\n");
+	shell_fprintf(sh, SHELL_NORMAL, "  Total(us)   Max(us)\tISR(ARG)\n");
 
 	for (int i = 0; i < config->nr_irqs; i++) {
-		uint16_t *total_count = get_irq_hit_count_total(dev, i);
+		const unsigned int isr_index = local_irq_to_isr_index(dev, i);
+		struct irq_stats_entry entry;
 
-		if (*total_count <= min_hit) {
-			/* Skips printing if total_hit is lesser than min_hit */
+		if (irq_stats_get(isr_index, &entry) != 0 || entry.count <= min_hit) {
+			/* Skips printing if the hit count is lesser than min_hit */
 			continue;
 		}
 
 		shell_fprintf(sh, SHELL_NORMAL, "  %4d", i); /* IRQ number */
 		/* Print the IRQ hit counts on each CPU */
 		for (int cpu_id = 0; cpu_id < arch_num_cpus(); cpu_id++) {
-			uint16_t *cpu_count = get_irq_hit_count_cpu(dev, cpu_id, i);
+			struct irq_stats_entry per_cpu;
 
-			shell_fprintf(sh, SHELL_NORMAL, "  %5d", *cpu_count);
+			(void)irq_stats_get_cpu(isr_index, cpu_id, &per_cpu);
+			shell_fprintf(sh, SHELL_NORMAL, "  %5u", per_cpu.count);
 		}
 		if (CONFIG_MP_MAX_NUM_CPUS > 1) {
 			/* If there's > 1 CPU, print the total hit count at the end */
-			shell_fprintf(sh, SHELL_NORMAL, "  %5d", *total_count);
+			shell_fprintf(sh, SHELL_NORMAL, "  %5u", entry.count);
 		}
+		shell_fprintf(sh, SHELL_NORMAL, "  %9llu  %8u",
+			      (unsigned long long)k_cyc_to_us_floor64(entry.total_cycles),
+			      (uint32_t)k_cyc_to_us_floor32(entry.max_cycles));
 #ifdef CONFIG_SYMTAB
 		const char *name =
 			symtab_find_symbol_name((uintptr_t)config->isr_table[i].isr, NULL);
@@ -715,15 +672,11 @@ static int cmd_stats_clear(const struct shell *sh, size_t argc, char *argv[])
 		return ret;
 	}
 
-	const struct plic_data *data = dev->data;
 	const struct plic_config *config = dev->config;
-	struct plic_stats stat = data->stats;
 
-	memset(stat.irq_count, 0,
-	       config->nr_irqs *
-		       COND_CODE_1(CONFIG_MP_MAX_NUM_CPUS, (1),
-				   (UTIL_INC(CONFIG_MP_MAX_NUM_CPUS))) *
-		       sizeof(uint16_t));
+	for (int i = 0; i < config->nr_irqs; i++) {
+		(void)irq_stats_reset_irq(local_irq_to_isr_index(dev, i));
+	}
 
 	shell_print(sh, "Cleared stats of %s.\n", dev->name);
 
@@ -879,20 +832,13 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 #define PLIC_MIN_IRQ_NUM(n) MIN(DT_INST_PROP(n, riscv_ndev), CONFIG_MAX_IRQ_PER_AGGREGATOR)
 
-#ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
-#define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
-	static uint16_t local_irq_count_##n[COND_CODE_1(CONFIG_MP_MAX_NUM_CPUS, (1),               \
-							(UTIL_INC(CONFIG_MP_MAX_NUM_CPUS)))]       \
-					   [PLIC_MIN_IRQ_NUM(n)];
-#define PLIC_INTC_IRQ_COUNT_INIT(n)                                                                \
-	.stats = {                                                                                 \
-		.irq_count = &local_irq_count_##n[0][0],                                           \
-	},
-
-#else
+/*
+ * Per-line hit counts come from CONFIG_IRQ_STATS, which records them
+ * for every interrupt dispatched through the software ISR table, so
+ * the driver keeps no counters of its own.
+ */
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)
 #define PLIC_INTC_IRQ_COUNT_INIT(n)
-#endif /* CONFIG_PLIC_SHELL_IRQ_COUNT */
 
 #ifdef CONFIG_PLIC_IRQ_AFFINITY
 #define PLIC_IRQ_CPUMASK_BUF_DECLARE(n)                                                            \
