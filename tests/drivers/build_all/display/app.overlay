@@ -12,6 +12,7 @@
 
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
@@ -553,7 +554,7 @@
 			};
 		};
 
-		test_mipi_dsi {
+		test_mipi_dsi: test_mipi_dsi {
 			compatible = "vnd,mipi-dsi";
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -826,6 +827,16 @@
 			status = "okay";
 			clock-frequency = <100000>;
 
+			test_adv7535: hdmi-bridge@3d {
+				compatible = "adi,adv7535";
+				reg = <0x3d>;
+				adi,addr-cec = <0x3b>;
+				mipi-dsi = <&test_mipi_dsi>;
+				data-lanes = <4>;
+				pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+				display-timing = <&test_adv7535_timing>;
+			};
+
 			test_ist3931: ist3931@0 {
 				reg = <0x0>;
 				width = <64>;
@@ -940,6 +951,26 @@
 				multiplex-ratio = <0x3f>;
 				phase-length = <0x22>;
 				vcomh-voltage = <0x2>;
+			};
+		};
+
+		test_adv7535_timing_source {
+			compatible = "zephyr,dummy-dc";
+			width = <1920>;
+			height = <1080>;
+
+			test_adv7535_timing: display-timings {
+				compatible = "zephyr,panel-timing";
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+				hsync-len = <44>;
+				hfront-porch = <88>;
+				hback-porch = <148>;
+				vsync-len = <5>;
+				vfront-porch = <4>;
+				vback-porch = <36>;
 			};
 		};
 	};
