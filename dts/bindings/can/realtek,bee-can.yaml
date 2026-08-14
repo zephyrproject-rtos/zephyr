@@ -30,5 +30,5 @@ properties:
       Prescaler value for computing the RX timestamps of received frames.
       The timestamp counter is derived from the CAN source clock divided by this value.
       A value of 1 means the timestamp counter runs at the CAN source clock rate.
-    min: 1
-    max: 256
+      min: 1
+      max: 256
