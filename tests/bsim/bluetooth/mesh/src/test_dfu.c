@@ -166,9 +166,16 @@ static int dist_fw_send(struct bt_mesh_dfd_srv *srv,
 	return 0;
 }
 
+/* Number of times the DFD Server reported Distribution Phase Completed. */
+static int dist_completed_cnt;
+
 static void dist_phase_changed(struct bt_mesh_dfd_srv *srv, enum bt_mesh_dfd_phase phase)
 {
 	static enum bt_mesh_dfd_phase prev_phase;
+
+	if (phase == BT_MESH_DFD_PHASE_COMPLETED) {
+		dist_completed_cnt++;
+	}
 
 	if (phase == BT_MESH_DFD_PHASE_COMPLETED ||
 	    phase == BT_MESH_DFD_PHASE_FAILED) {
@@ -821,6 +828,50 @@ static void test_dist_dfu_self_update_apply_err(void)
 	}
 
 	ASSERT_EQUAL(BT_MESH_DFD_PHASE_FAILED, dfd_srv.phase);
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_apply_sync(void)
+{
+	ASSERT_TRUE(dfu_targets_cnt > 0);
+
+	/* No emulation flag, so the apply callback calls
+	 * bt_mesh_dfu_srv_applied() and returns. The distribution completes
+	 * while dfu_confirmed() is still on the stack, and must be reported
+	 * once rather than by both the notification and dfu_confirmed().
+	 */
+	dist_self_update_distribute();
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
+
+	PASS();
+}
+
+static void test_dist_dfu_self_update_apply_async(void)
+{
+	ASSERT_TRUE(dfu_targets_cnt > 0);
+
+	/* The apply callback installs the image and returns without calling
+	 * bt_mesh_dfu_srv_applied(), as an application that installs
+	 * asynchronously would. The distribution must stay in APPLYING_UPDATE
+	 * until the application reports completion, and must then reach
+	 * COMPLETED without a reboot.
+	 */
+	self_update_reboot_emulation = true;
+
+	dist_self_update_distribute();
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_APPLYING_UPDATE, dfd_srv.phase);
+	ASSERT_EQUAL(0, dist_completed_cnt);
+
+	bt_mesh_dfu_srv_applied(&dfu_srv);
+
+	ASSERT_EQUAL(BT_MESH_DFD_PHASE_COMPLETED, dfd_srv.phase);
+	ASSERT_EQUAL(BT_MESH_DFU_PHASE_IDLE, dfu_srv.update.phase);
+	ASSERT_EQUAL(1, dist_completed_cnt);
 
 	PASS();
 }
@@ -1964,6 +2015,10 @@ static const struct bst_test_instance test_dfu[] = {
 		  "Distributor self-update reboots before the image is applied"),
 	TEST_CASE(dist, dfu_self_update_apply_err,
 		  "Distributor self-update where the apply callback fails"),
+	TEST_CASE(dist, dfu_self_update_apply_async,
+		  "Distributor self-update applied asynchronously after the callback"),
+	TEST_CASE(dist, dfu_self_update_apply_sync,
+		  "Distributor self-update applied inside the callback"),
 	TEST_CASE(dist, dfu_self_update_remote_fail,
 		  "Distributor self-update completes while a remote target fails"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
