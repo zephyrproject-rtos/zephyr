@@ -249,16 +249,34 @@ static inline uint32_t z_vrfy_more_args(uint32_t arg1, uint32_t arg2,
 #include <zephyr/syscalls/more_args_mrsh.c>
 
 /**
- * @brief Test to demonstrate usage of k_usermode_string_nlen()
- *
- * @details The test will be called from user mode and kernel
- * mode to check the behavior of k_usermode_string_nlen()
+ * @brief Verify that k_usermode_string_nlen() measures only memory the caller
+ *        may read.
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @details
+ * String lengths handed to the kernel come from untrusted callers, so the
+ * measuring helper has to respect the caller's permissions: from user mode a
+ * kernel-owned string or a wild address must fault into the error argument
+ * rather than being read, while a string the caller owns measures normally.
+ * The same call from supervisor mode may read everything. The case runs in
+ * both modes via ZTEST_USER, so both sides of that contract are covered by
+ * one body.
+ *
+ * Test steps:
+ * - Measure a kernel-owned string; expect a fault in user mode and a correct
+ *   length in supervisor mode.
+ * - Measure a user-owned string; expect the correct length in both modes.
+ * - Measure a known-faulty address; expect a fault (skipped on platforms
+ *   whose emulation cannot fault it).
+ *
+ * Expected result:
+ * - Lengths are returned only for memory the caller is allowed to read, and
+ *   every forbidden access is reported through the error argument.
+ *
  * @see k_usermode_string_nlen()
  */
-ZTEST_USER(syscalls, test_string_nlen)
+ZTEST_USER(syscalls, test_syscall_string_nlen)
 {
 	int err;
 	size_t ret;
@@ -312,7 +330,7 @@ ZTEST_USER(syscalls, test_string_nlen)
  *
  * @see k_usermode_string_nlen()
  */
-ZTEST(syscalls, test_string_nlen_maxsize_zero)
+ZTEST(syscalls, test_syscall_string_nlen_maxsize_zero)
 {
 	int err = 0;
 	size_t ret;
@@ -330,14 +348,32 @@ ZTEST(syscalls, test_string_nlen_maxsize_zero)
 }
 
 /**
- * @brief Test to verify syscall for string alloc copy
+ * @brief Verify that k_usermode_string_alloc_copy() copies only readable,
+ *        fitting strings.
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @details
+ * The allocating copy helper brings a user string into kernel memory before
+ * the kernel looks at it, so it must reject a string that does not match the
+ * expectation, one that exceeds the destination size, and one the caller has
+ * no right to read -- the kernel_string case, where the copy itself must
+ * fault. Only a readable string of acceptable length may be copied and
+ * compared successfully.
+ *
+ * Test steps:
+ * - Pass a valid but unexpected string and check the comparison fails.
+ * - Pass an over-long string and check the copy is rejected.
+ * - Pass a kernel-owned string and check the copy faults.
+ * - Pass the expected string and check it copies and matches.
+ *
+ * Expected result:
+ * - Each invalid input is rejected with its own error and only the readable,
+ *   fitting string succeeds.
+ *
  * @see k_usermode_string_alloc_copy()
- * @see strcmp()
  */
-ZTEST_USER(syscalls, test_user_string_alloc_copy)
+ZTEST_USER(syscalls, test_syscall_string_alloc_copy)
 {
 	int ret;
 
@@ -356,14 +392,29 @@ ZTEST_USER(syscalls, test_user_string_alloc_copy)
 }
 
 /**
- * @brief Test sys_call for string copy
+ * @brief Verify that k_usermode_string_copy() copies only readable, fitting
+ *        strings.
  *
  * @ingroup kernel_memprotect_tests
  *
+ * @details
+ * The fixed-buffer counterpart of the allocating copy: same contract, but
+ * into a caller-provided buffer, with EINVAL for a string that does not fit
+ * and EFAULT for one the caller cannot read.
+ *
+ * Test steps:
+ * - Pass a valid but unexpected string and check the comparison fails.
+ * - Pass an over-long string and check EINVAL is returned.
+ * - Pass a kernel-owned string and check EFAULT is returned.
+ * - Pass the expected string and check it copies and matches.
+ *
+ * Expected result:
+ * - Each invalid input is rejected with its own error and only the readable,
+ *   fitting string succeeds.
+ *
  * @see k_usermode_string_copy()
- * @see strcmp()
  */
-ZTEST_USER(syscalls, test_user_string_copy)
+ZTEST_USER(syscalls, test_syscall_string_copy)
 {
 	int ret;
 
@@ -381,14 +432,29 @@ ZTEST_USER(syscalls, test_user_string_copy)
 }
 
 /**
- * @brief Test to demonstrate system call for copy
+ * @brief Verify that k_usermode_to_copy() writes only to caller-writable
+ *        memory.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see memcpy()
+ * @details
+ * Copying data out of the kernel back to the caller must validate the
+ * destination the same way inbound copies validate the source: a buffer the
+ * user thread cannot write has to be refused with EFAULT, and a writable
+ * buffer receives the data intact.
+ *
+ * Test steps:
+ * - Ask the kernel to copy into a kernel-owned buffer; expect EFAULT.
+ * - Ask it to copy into a stack buffer of the calling user thread.
+ * - Compare the received data with what the kernel was asked to send.
+ *
+ * Expected result:
+ * - The unwritable destination is rejected and the writable one receives the
+ *   exact data.
+ *
  * @see k_usermode_to_copy()
  */
-ZTEST_USER(syscalls, test_to_copy)
+ZTEST_USER(syscalls, test_syscall_to_copy)
 {
 	char buf[BUF_SIZE];
 	int ret;
@@ -424,7 +490,7 @@ void run_test_arg64(void)
  * @ingroup kernel_memprotect_tests
  * @see syscall_arg64()
  */
-ZTEST_USER(syscalls, test_arg64)
+ZTEST_USER(syscalls, test_syscall_arg64)
 {
 	run_test_arg64();
 }
@@ -439,7 +505,7 @@ ZTEST_USER(syscalls, test_arg64)
  *
  * @ingroup kernel_memprotect_tests
  */
-ZTEST_USER(syscalls, test_more_args)
+ZTEST_USER(syscalls, test_syscall_more_args)
 {
 	zassert_equal(more_args(1, 2, 3, 4, 5, 6, 7),
 		      z_impl_more_args(1, 2, 3, 4, 5, 6, 7),
@@ -499,13 +565,26 @@ void syscall_switch_stress(void *arg1, void *arg2, void *arg3)
 }
 
 /**
- * @brief Stress test system calls under concurrency
- *
- * @details Spawn many user threads that hammer the test system calls in a tight
- * loop across all CPUs, smoking out concurrency problems in the system call
- * path used by user threads to perform privileged operations.
+ * @brief Stress the system call path with many concurrent user threads.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The entry and exit paths of a system call touch per-CPU and per-thread
+ * state that has to hold up when every CPU is crossing the privilege boundary
+ * at once. Four user threads per CPU hammer the string-handling test calls in
+ * a tight loop, yielding periodically so the schedulers on all CPUs keep
+ * moving threads around; corruption anywhere in the path shows up as a failed
+ * validation inside one of the calls.
+ *
+ * Test steps:
+ * - Spawn four user threads per CPU running the string system calls in a
+ *   loop.
+ * - Let them run for the configured iteration count and join them all.
+ *
+ * Expected result:
+ * - Every thread completes every iteration without a validation failure or
+ *   fault.
  */
 ZTEST(syscalls_extended, test_syscall_switch_stress)
 {
@@ -561,13 +640,27 @@ void test_syscall_context_user(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test detection of user system call context
+ * @brief Verify that k_is_in_user_syscall() identifies user-invoked calls.
  *
- * @details Show that k_is_in_user_syscall() correctly reports whether execution
- * is inside a system call invoked from user mode: false in a supervisor thread
- * and in a supervisor-mode call, true when invoked from a user thread. This
- * exercises the system call mechanism that lets user threads perform privileged
- * operations.
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Some kernel code behaves differently depending on whether it was entered
+ * through a system call from user mode, so the predicate has to be true
+ * exactly then: not in an ordinary supervisor thread, not when the same
+ * function is invoked directly in supervisor mode, only inside a system call
+ * made by a user thread.
+ *
+ * Test steps:
+ * - Check the predicate is false in the supervisor-mode test thread.
+ * - Invoke the test system call from supervisor mode and check it reports
+ *   false inside.
+ * - Enter user mode and invoke the same call, checking it reports true.
+ *
+ * Expected result:
+ * - The predicate is true only inside a system call invoked from user mode.
+ *
+ * @see k_is_in_user_syscall()
  */
 ZTEST(syscalls, test_syscall_context)
 {
