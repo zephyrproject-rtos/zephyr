@@ -6,4 +6,6 @@ toolchain:
   - zephyr
 ram: 256
 flash: 1024
+supported:
+  - trng
 vendor: ti
