@@ -67,6 +67,33 @@ struct silabs_clock_control_cmu_config {
 		.branch = DT_INST_CLOCKS_CELL(inst, branch),                                       \
 	}
 
+/**
+ * @brief Initialize a @ref silabs_clock_control_cmu_config from a DT node by name.
+ *
+ * @param node_id Devicetree node identifier with a @c clocks property.
+ * @param name lowercase-and-underscores name of a clocks element defined by the node's
+ *             clock-names property
+ */
+#define SILABS_DT_CLOCK_CFG_BY_NAME(node_id, name)                                                 \
+	{                                                                                          \
+		.bus_clock = DT_CLOCKS_CELL_BY_NAME(node_id, name, enable),                        \
+		.branch = DT_CLOCKS_CELL_BY_NAME(node_id, name, branch),                           \
+	}
+
+
+/**
+ * @brief Equivalent to SILABS_DT_CLOCK_CFG_BY_NAME() for a DT instance.
+ *
+ * @param inst DT instance number.
+ * @param name lowercase-and-underscores name of a clocks element defined by the node's
+ *             clock-names property
+ */
+#define SILABS_DT_INST_CLOCK_CFG_BY_NAME(inst, name)                                               \
+	{                                                                                          \
+		.bus_clock = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, enable),                      \
+		.branch = DT_INST_CLOCKS_CELL_BY_NAME(inst, name, branch),                         \
+	}
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_SILABS_H_ */
