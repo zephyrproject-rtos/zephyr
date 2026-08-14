@@ -16,6 +16,7 @@ set(SPHINXOPTS "-j auto -W --keep-going -T" CACHE STRING "Default Sphinx Options
 set(SPHINXOPTS_EXTRA "" CACHE STRING "Extra Sphinx Options (added to defaults)")
 set(LATEXMKOPTS "-halt-on-error -no-shell-escape" CACHE STRING "Default latexmk options")
 set(DT_TURBO_MODE OFF CACHE BOOL "Enable DT turbo mode")
+set(LLMS_TXT OFF CACHE BOOL "Generate LLM-friendly markdown output (llms.txt) alongside HTML")
 set(HW_FEATURES_TURBO_MODE OFF CACHE BOOL "Enable HW features turbo mode")
 set(HW_FEATURES_VENDOR_FILTER "" CACHE STRING "Vendor filter for HW features")
 set(NO_EXTERNAL_DEPS OFF CACHE BOOL "Enable serving external CSS/JS libraries locally instead of fetching from the Internet.")
@@ -266,6 +267,10 @@ endif()
 
 if(REQMGMT_FOUND)
   list(APPEND SPHINX_TAGS "reqmgmt")
+endif()
+
+if(LLMS_TXT)
+  list(APPEND SPHINX_TAGS "llms_txt")
 endif()
 
 set(SPHINX_TAGS_ARGS "")

@@ -119,6 +119,7 @@ extensions = [
     "zephyr.domain",
     "zephyr.api_overview",
     "zephyr.partial_build",
+    "zephyr.llms_txt",
 ]
 
 # Only use image conversion when it is really needed, e.g. LaTeX build.
@@ -410,6 +411,30 @@ external_content_keep = [
     "build/requirements/*",
     "build/requirements/**/*",
 ]
+
+# -- Options for zephyr.llms_txt ------------------------------------------
+
+llms_txt_enabled = tags.has("llms_txt")  # pylint: disable=undefined-variable  # noqa: F821
+llms_txt_description = (
+    "Zephyr is a small, scalable, real-time operating system (RTOS) optimized for "
+    "resource-constrained devices, built with security in mind, and supporting "
+    "multiple architectures."
+)
+# The markdown sub-build reuses the main build's doctrees and must therefore
+# run after it, not concurrently with it.
+llms_txt_build_parallel = False
+llms_txt_exclude = [
+    # Generated Devicetree bindings pages are too numerous to be part of the
+    # aggregated llms.txt / llms-full.txt outputs. Their individual markdown
+    # renditions are still generated.
+    "build/dts/api/bindings",
+    "build/dts/api/bindings/**",
+    "build/dts/api/compatibles/**",
+]
+
+# Make links in the llms.txt outputs point to the published documentation
+# rather than being relative to the local output directory.
+markdown_http_base = html_baseurl.rstrip("/")
 
 # -- Options for zephyr.domain --------------------------------------------
 

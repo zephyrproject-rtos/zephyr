@@ -276,6 +276,7 @@ docutils==0.22.4 \
     --hash=sha256:d0013f540772d1420576855455d050a2180186c91c15779301ac2ccb3eeb68de
     # via
     #   sphinx
+    #   sphinx-markdown-builder
     #   sphinx-rtd-theme
     #   sphinx-tabs
     #   sphinx-togglebutton
@@ -1174,6 +1175,8 @@ sphinx==9.1.0 \
     #   sphinx-copybutton
     #   sphinx-design
     #   sphinx-last-updated-by-git
+    #   sphinx-llm
+    #   sphinx-markdown-builder
     #   sphinx-notfound-page
     #   sphinx-rtd-theme
     #   sphinx-tabs
@@ -1198,6 +1201,14 @@ sphinx-last-updated-by-git==0.3.8 \
     --hash=sha256:6382c8285ac1f222483a58569b78c0371af5e55f7fbf9c01e5e8a72d6fdfa499 \
     --hash=sha256:c145011f4609d841805b69a9300099fc02fed8f5bb9e5bcef77d97aea97b7761
     # via sphinx-sitemap
+sphinx-llm==1.0.0 \
+    --hash=sha256:1cc8284343a0100caa3110010da5933cdad8da37d2b9dda0e2a7d503b8da6b1c \
+    --hash=sha256:8d45dbe5f9caffb4d78589c35d15fc8399dd41fc5b445ee4292ff83969754e75
+    # via -r requirements.in
+sphinx-markdown-builder==0.6.10 \
+    --hash=sha256:16d86738b9ac69fcbc86e373c31c6402c30af1fa8d98d0f62cc5f38bfe5fc26e \
+    --hash=sha256:cd5acf88d52ea0146a712fd557404f10326dff3428a78ba928e59b1727fd4a86
+    # via sphinx-llm
 sphinx-notfound-page==1.1.0 \
     --hash=sha256:835dc76ff7914577a1f58d80a2c8418fb6138c0932c8da8adce4d9096fbcd389 \
     --hash=sha256:913e1754370bb3db201d9300d458a8b8b5fb22e9246a816643a819a9ea2b8067
@@ -1268,6 +1279,10 @@ strictdoc==0.27.1 \
     --hash=sha256:1e7d6ffe2d70bff177613bb70e979b85f72ed61c46338771ed10bef43e73636f \
     --hash=sha256:cfbce1d7ec37287e4039dafcfff14683dcb63e14c7bd32ce70fe081a4a5b52ec
     # via -r requirements.in
+tabulate==0.10.0 \
+    --hash=sha256:e2cfde8f79420f6deeffdeda9aaec3b6bc5abce947655d17ac662b126e48a60d \
+    --hash=sha256:f0b0622e567335c8fabaaa659f1b33bcb6ddfe2e496071b743aa113f8774f2d3
+    # via sphinx-markdown-builder
 textx==4.4.0 \
     --hash=sha256:a7b15a4698b503edde631d5227c0d0f6024898a86a7924b5fc741973305f9286 \
     --hash=sha256:f08071316d662d8dbecb0e8322510eeba71e89fa91c69a5278cbebfd1debde42
