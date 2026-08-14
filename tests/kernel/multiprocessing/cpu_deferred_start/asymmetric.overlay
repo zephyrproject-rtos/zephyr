@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Asymmetric bring-up: CPU 1 goes back to being started during boot while the
+ * remaining secondary CPUs stay deferred. Applied on top of the board overlay,
+ * which defers every secondary CPU.
+ */
+
+&{/cpus/cpu@1} {
+	/delete-property/ zephyr,deferred-start;
+};
