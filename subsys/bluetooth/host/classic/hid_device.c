@@ -115,7 +115,7 @@ static void hid_send_handshake(struct bt_hid_device *hid, uint8_t result_code)
 	struct bt_hid_hdr *hdr;
 	int err;
 
-	buf = bt_l2cap_create_pdu(&hid_hs_pool, sizeof(struct bt_hid_hdr));
+	buf = bt_l2cap_create_pdu(&hid_hs_pool, 0);
 	if (buf == NULL) {
 		LOG_ERR("Handshake buf alloc failed");
 		return;
