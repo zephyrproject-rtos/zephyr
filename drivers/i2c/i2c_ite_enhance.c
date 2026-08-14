@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #define I2C_CQ_CMD_L_P  BIT(5)
 /* E (End) is this device end flag. */
 #define I2C_CQ_CMD_L_E  BIT(4)
-/* LA (Last ACK) is Last ACK in master receiver. */
+/* LA (Last ACK) is Last ACK in controller receiver. */
 #define I2C_CQ_CMD_L_LA BIT(3)
 /* bit[2:0] are number of transfer out or receive data which depends on R/W. */
 #define I2C_CQ_CMD_L_NUM_BIT_2_0 GENMASK(2, 0)
@@ -194,7 +194,7 @@ enum enhanced_i2c_ctl {
 	E_RX_MODE = 0x80,
 	/* State reset and hardware reset */
 	E_STS_AND_HW_RST = (E_STS_RST | E_HW_RST),
-	/* Generate start condition and transmit slave address */
+	/* Generate start condition and transmit target address */
 	E_START_ID = (E_INT_EN | E_MODE_SEL | E_ACK | E_START | E_HW_RST),
 	/* Generate stop condition */
 	E_FINISH = (E_INT_EN | E_MODE_SEL | E_ACK | E_STOP | E_HW_RST),
@@ -468,7 +468,7 @@ static void i2c_pio_trans_data(const struct device *dev,
 	uint32_t nack = 0;
 
 	if (first_byte) {
-		/* First byte must be slave address. */
+		/* First byte must be target address. */
 		IT8XXX2_I2C_DTR(base) = trans_data |
 					(direct == RX_DIRECT ? BIT(0) : 0);
 		/* start or repeat start signal. */
