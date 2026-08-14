@@ -6,7 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 1376
-flash: 8192
+flash: 128
 supported:
   - uart
   - gpio
