@@ -68,4 +68,32 @@ CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_id)
 CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_clkid)
 CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_clk_id)
 
+/* Renesas R-Car CPG/MSSR: the selector is a {domain, module} descriptor. */
+
+static inline bool
+zephyr_clock_controller_emul_rcar_cpg_mssr_subsys_match(clock_control_subsys_t sys,
+							const uint32_t *cells, size_t num_cells)
+{
+	const struct rcar_cpg_clk *clk = sys;
+
+	return clk != NULL && num_cells == 2U && cells[0] == clk->domain && cells[1] == clk->module;
+}
+
+static inline int
+zephyr_clock_controller_emul_rcar_cpg_mssr_rate_to_value(clock_control_subsys_rate_t rate,
+							 uint32_t *value)
+{
+	return zephyr_clock_controller_emul_id_rate_to_value(rate, value);
+}
+
+static inline clock_control_subsys_t
+zephyr_clock_controller_emul_rcar_cpg_mssr_cells_to_subsys(const uint32_t *cells,
+							   union clock_control_emul_subsys *storage)
+{
+	storage->rcar_cpg_clk.domain = cells[0];
+	storage->rcar_cpg_clk.module = cells[1];
+
+	return &storage->rcar_cpg_clk;
+}
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_EMUL_H_ */
