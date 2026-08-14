@@ -358,6 +358,22 @@ config NONZERO_SPINLOCK_SIZE
 	  non-zero size (such as if used in an array). It is automatically
 	  selected when using C++.
 
+config SEM_SPINLOCK_POOL_SHIFT
+	int "Semaphore spinlock pool size (log2)"
+	default 0 if !SMP
+	default 3
+	range 0 8
+	help
+	  Log2 of the number of spinlocks in the pool shared by all
+	  semaphores. The pool size is (1 << this value), always a power
+	  of two. Semaphores are hashed onto the pool by address, so a
+	  larger pool reduces lock contention between unrelated
+	  semaphores at the cost of static RAM.
+
+	  A pool provides no concurrency benefit on uniprocessor systems.
+	  On SMP, 2-4x the number of CPUs is recommended, the default of
+	  shift 3 (8 locks) suits typical 2-4 core systems.
+
 endmenu
 
 menu "Kernel Debugging and Metrics"
