@@ -62,6 +62,37 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	zassert_true(false, "Thread %u did not abort!", index);
 }
 
+/**
+ * @brief Verify that circular cross-CPU thread aborts from ISRs do not
+ *        deadlock.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * Aborting a thread that is running on another CPU makes the aborting CPU wait
+ * for that thread to be switched out. If every CPU simultaneously aborts the
+ * thread interrupted on the next CPU, the wait becomes circular and a naive
+ * implementation deadlocks. The test sets up exactly that ring: one thread per
+ * CPU, each entering an ISR that waits for the next thread to reach its own
+ * ISR before aborting it.
+ *
+ * Test steps:
+ * - Build the abort ring so thread i waits on thread i+1 and aborts it,
+ *   wrapping around at the last thread.
+ * - Create one thread per CPU at a priority above the test thread; each thread
+ *   immediately invokes an ISR through irq_offload().
+ * - In each ISR, flag that it is in progress, spin until the next thread's ISR
+ *   is in progress, call k_thread_abort() on that thread, then delay so the
+ *   other CPUs reach their abort call too.
+ * - Join every thread from the test thread.
+ *
+ * Expected result:
+ * - All threads are aborted and joined, and no thread returns from its ISR
+ *   into its entry point.
+ *
+ * @see k_thread_abort()
+ * @see irq_offload()
+ */
 ZTEST(smp_abort, test_smp_thread_abort_deadlock)
 {
 	unsigned int  i;
