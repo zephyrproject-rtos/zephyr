@@ -1,0 +1,85 @@
+# Copyright (C) 2026, Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Analog Devices ADV7535 MIPI DSI to HDMI bridge
+
+description: |
+  The ADV7535 is an I2C-controlled bridge that converts MIPI DSI video to HDMI.
+  Its CEC/DSI register map uses a secondary I2C address. The MIPI DSI endpoint
+  is represented separately as a child of the MIPI DSI host.
+
+compatible: "adi,adv7535"
+
+include: i2c-device.yaml
+
+properties:
+  adi,addr-cec:
+    type: int
+    required: true
+    description: Seven-bit address of the CEC/DSI register map.
+
+  dsi-device:
+    type: phandle
+    required: true
+    description: |
+      Auxiliary adi,adv7535-dsi node describing the DSI link of this
+      bridge. It is a child of the MIPI DSI host the bridge is wired to.
+
+  display-timing:
+    type: phandle
+    required: true
+    description: |
+      zephyr,panel-timing node describing the porches, sync lengths and pixel
+      clock of the HDMI output. Its parent is the display controller node
+      that owns the timing and carries the active area.
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
+
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      display-bridge@3d {
+        compatible = "adi,adv7535";
+        reg = <0x3d>;
+        adi,addr-cec = <0x3b>;
+        dsi-device = <&adv7535_dsi>;
+        display-timing = <&hdmi_timing>;
+      };
+    };
+
+    mipi_dsi: mipi-dsi@40000000 {
+      compatible = "vnd,mipi-dsi-host";
+      reg = <0x40000000 0x1000>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      adv7535_dsi: display-bridge@0 {
+        compatible = "adi,adv7535-dsi";
+        reg = <0>;
+        data-lanes = <4>;
+        pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+      };
+    };
+
+    display-controller {
+      width = <1920>;
+      height = <1080>;
+
+      hdmi_timing: display-timings {
+        compatible = "zephyr,panel-timing";
+        clock-frequency = <148500000>;
+        hsync-len = <44>;
+        hfront-porch = <88>;
+        hback-porch = <148>;
+        vsync-len = <5>;
+        vfront-porch = <4>;
+        vback-porch = <36>;
+        hsync-active = <1>;
+        vsync-active = <1>;
+        de-active = <1>;
+        pixelclk-active = <1>;
+      };
+    };
