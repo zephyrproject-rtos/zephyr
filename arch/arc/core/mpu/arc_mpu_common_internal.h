@@ -132,6 +132,7 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 	uint32_t num_partitions;
 	struct k_mem_partition *pparts;
 	struct k_mem_domain *mem_domain = NULL;
+	uint32_t slot = 0U;
 
 	if (thread) {
 		mem_domain = thread->mem_domain_info.mem_domain;
@@ -148,16 +149,25 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 	}
 
 	for (; region_index >= 0; region_index--) {
-		if (num_partitions) {
-			LOG_DBG("set region 0x%x 0x%lx 0x%x", region_index, pparts->start,
-				pparts->size);
-			_region_init(region_index, pparts->start, pparts->size, pparts->attr);
+		/*
+		 * Skip zero-sized holes: they must not consume a region slot
+		 * or the remaining-partition counter
+		 */
+		while (num_partitions && slot < CONFIG_MAX_DOMAIN_PARTITIONS &&
+		       pparts[slot].size == 0U) {
+			slot++;
+		}
+		if (num_partitions && slot < CONFIG_MAX_DOMAIN_PARTITIONS) {
+			LOG_DBG("set region 0x%x 0x%lx 0x%x", region_index, pparts[slot].start,
+				pparts[slot].size);
+			_region_init(region_index, pparts[slot].start, pparts[slot].size,
+				     pparts[slot].attr);
 			num_partitions--;
+			slot++;
 		} else {
 			/* clear the left mpu entries */
 			_region_init(region_index, 0, 0, 0);
 		}
-		pparts++;
 	}
 }
 
