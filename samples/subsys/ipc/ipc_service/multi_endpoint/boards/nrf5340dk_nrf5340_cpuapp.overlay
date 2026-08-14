@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2023 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,9 +36,11 @@
 		/delete-node/ ipc0;
 
 		ipc0: ipc0 {
-			compatible = "zephyr,ipc-icmsg-me-initiator";
+			compatible = "zephyr,ipc-icbmsg";
 			tx-region = <&sram_ipc0_tx>;
 			rx-region = <&sram_ipc0_rx>;
+			tx-blocks = <16>;
+			rx-blocks = <24>;
 			mboxes = <&mbox 0>, <&mbox 1>;
 			mbox-names = "tx", "rx";
 			status = "okay";
@@ -50,9 +52,11 @@
 		};
 
 		ipc1: ipc1 {
-			compatible = "zephyr,ipc-icmsg-me-initiator";
+			compatible = "zephyr,ipc-icbmsg";
 			tx-region = <&sram_ipc1_tx>;
 			rx-region = <&sram_ipc1_rx>;
+			tx-blocks = <32>;
+			rx-blocks = <32>;
 			mboxes = <&mbox 2>, <&mbox 3>;
 			mbox-names = "tx", "rx";
 			status = "okay";
