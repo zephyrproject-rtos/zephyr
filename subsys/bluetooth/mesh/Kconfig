@@ -1617,6 +1617,19 @@ config BT_MESH_LPN_ESTABLISHMENT
 	  until it has successfully set up Friendship with a Friend
 	  node.
 
+config BT_MESH_LPN_OFFER_WAIT_TIMEOUT
+	int "Time to wait for Friend Offers after a Friend Request"
+	default 1000
+	range 100 10000
+	help
+	  Time in milliseconds that the Low Power node waits for Friend Offer
+	  messages, starting 100 ms after the Friend Request was sent. The
+	  Bluetooth Mesh Protocol specification recommends listening for up to
+	  1 second. When BT_MESH_LPN_ESTABLISHMENT is enabled, this is also the
+	  duration for which the scanner is kept enabled. If no acceptable
+	  Friend Offer is received, the next Friend Request is sent after
+	  BT_MESH_LPN_RETRY_TIMEOUT.
+
 config BT_MESH_LPN_AUTO
 	bool "Automatically start looking for Friend nodes once provisioned"
 	default y
