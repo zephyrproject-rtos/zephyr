@@ -52,6 +52,37 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Verify that chained cross-CPU suspend and resume never starves a
+ *        thread.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * The threads form a chain. Thread 0 never suspends itself: on every
+ * iteration it resumes thread 1 and keeps running. Every other thread
+ * resumes its successor, if it has one, and then suspends itself until
+ * its predecessor resumes it again, so the set of runnable threads is
+ * constantly being handed around between CPUs. A lost resume, or
+ * a CPU bias in the spinlock relax path, would leave one thread permanently
+ * suspended or starved. The test detects that by sampling every thread's
+ * iteration counter once a second and requiring all of them to keep
+ * advancing.
+ *
+ * Test steps:
+ * - Create NUM_THREADS threads at descending priorities, each suspended before
+ *   it is started.
+ * - Resume the first thread to start the chain.
+ * - Every second, for fifteen iterations, compare each thread's counter
+ *   against the value sampled in the previous iteration.
+ *
+ * Expected result:
+ * - Every thread's counter advances in every sampling interval; none of them
+ *   is starved.
+ *
+ * @see k_thread_suspend()
+ * @see k_thread_resume()
+ */
 ZTEST(smp_suspend_resume, test_smp_thread_suspend_resume_stress)
 {
 	unsigned int  i;
