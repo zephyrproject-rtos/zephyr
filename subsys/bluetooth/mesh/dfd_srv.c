@@ -904,6 +904,29 @@ static struct bt_mesh_dfu_srv *self_target_dfu_srv(struct bt_mesh_dfd_srv *srv)
 	return NULL;
 }
 
+static void dfd_srv_find_cb(const struct bt_mesh_model *mod,
+			    const struct bt_mesh_elem *elem,
+			    bool vnd, bool primary, void *user_data)
+{
+	struct bt_mesh_dfd_srv **srv = user_data;
+
+	if (!vnd && mod->id == BT_MESH_MODEL_ID_DFD_SRV) {
+		*srv = mod->rt->user_data;
+	}
+}
+
+void bt_mesh_dfd_srv_self_applied(void)
+{
+	struct bt_mesh_dfd_srv *srv = NULL;
+
+	bt_mesh_model_foreach(dfd_srv_find_cb, &srv);
+	if (!srv || srv->phase != BT_MESH_DFD_PHASE_APPLYING_UPDATE) {
+		return;
+	}
+
+	dfd_phase_set(srv, BT_MESH_DFD_PHASE_COMPLETED);
+}
+
 static int trigger_self_apply(struct bt_mesh_dfd_srv *srv)
 {
 	struct bt_mesh_dfu_srv *dfu_srv;
@@ -1028,7 +1051,8 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
 	 * APPLYING_UPDATE with state persisted, and dfd_srv_model_start() finishes
 	 * the Confirm step on the next boot. If the self-target is still in
 	 * APPLYING after the callback (async apply or pending reboot), keep
-	 * DFD in APPLYING_UPDATE so state remains persisted for resume.
+	 * DFD in APPLYING_UPDATE so state remains persisted for resume; an
+	 * async apply completes it from bt_mesh_dfd_srv_self_applied().
 	 */
 	if (trigger_self_apply(srv)) {
 		dfd_phase_set(srv, BT_MESH_DFD_PHASE_FAILED);
@@ -1037,6 +1061,11 @@ static void dfu_confirmed(struct bt_mesh_dfu_cli *cli)
 
 	dfu_srv = self_target_dfu_srv(srv);
 	if (dfu_srv && dfu_srv->update.phase == BT_MESH_DFU_PHASE_APPLYING) {
+		return;
+	}
+
+	/* An apply that completed inside the callback has already notified us. */
+	if (srv->phase == BT_MESH_DFD_PHASE_COMPLETED) {
 		return;
 	}
 

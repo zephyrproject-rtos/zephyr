@@ -8,6 +8,7 @@
 #include "dfu.h"
 #include "blob.h"
 #include "access.h"
+#include "dfd_srv_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -657,6 +658,13 @@ void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 
 	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
 	store_state(srv);
+
+	/* Not set after a reboot, so the Distribution Server's own resume path
+	 * does not complete the distribution before the Confirm step re-runs.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_DFD_SRV) && srv->update.self_update) {
+		bt_mesh_dfd_srv_self_applied();
+	}
 }
 
 bool bt_mesh_dfu_srv_is_busy(const struct bt_mesh_dfu_srv *srv)
