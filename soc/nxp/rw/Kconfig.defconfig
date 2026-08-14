@@ -105,4 +105,11 @@ config POWER_DOMAIN
 
 endif # PM_DEVICE
 
+if NET_L2_OPENTHREAD
+
+config HDLC_RCP_IF
+	default y
+
+endif # NET_L2_OPENTHREAD
+
 endif # SOC_SERIES_RW6XX
