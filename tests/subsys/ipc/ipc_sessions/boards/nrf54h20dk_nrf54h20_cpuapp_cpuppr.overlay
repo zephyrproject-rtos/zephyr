@@ -7,8 +7,11 @@
 /delete-node/ &ipc0;
 
 ipc0: &cpuapp_cpuppr_ipc {
+	compatible = "zephyr,ipc-icmsg";
 	status = "okay";
 	unbound = "detect";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 };
 
 &cpuppr_vevif {
