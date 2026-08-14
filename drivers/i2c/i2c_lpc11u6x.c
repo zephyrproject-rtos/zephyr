@@ -102,8 +102,8 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 	}
 	data->transfer.status = LPC11U6X_I2C_STATUS_INACTIVE;
 
-	/* If a slave is registered, put the controller in slave mode */
-	if (data->slave) {
+	/* If a target is registered, put the controller in target mode */
+	if (data->target) {
 		cfg->base->con_set = LPC11U6X_I2C_CONTROL_AA;
 	}
 
@@ -111,8 +111,8 @@ static int lpc11u6x_i2c_transfer(const struct device *dev,
 	return ret;
 }
 
-static int lpc11u6x_i2c_slave_register(const struct device *dev,
-				       struct i2c_target_config *cfg)
+static int lpc11u6x_i2c_target_register(const struct device *dev,
+					struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -127,13 +127,13 @@ static int lpc11u6x_i2c_slave_register(const struct device *dev,
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
-	if (data->slave) {
+	if (data->target) {
 		ret = -EBUSY;
 		goto exit;
 	}
 
-	data->slave = cfg;
-	/* Configure controller to act as slave */
+	data->target = cfg;
+	/* Configure controller to act as target */
 	dev_cfg->base->addr0 = (cfg->address << 1);
 	dev_cfg->base->con_clr = LPC11U6X_I2C_CONTROL_START |
 		LPC11U6X_I2C_CONTROL_STOP | LPC11U6X_I2C_CONTROL_SI;
@@ -145,8 +145,8 @@ exit:
 }
 
 
-static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
-					 struct i2c_target_config *cfg)
+static int lpc11u6x_i2c_target_unregister(const struct device *dev,
+					  struct i2c_target_config *cfg)
 {
 	const struct lpc11u6x_i2c_config *dev_cfg = dev->config;
 	struct lpc11u6x_i2c_data *data = dev->data;
@@ -154,12 +154,12 @@ static int lpc11u6x_i2c_slave_unregister(const struct device *dev,
 	if (!cfg) {
 		return -EINVAL;
 	}
-	if (data->slave != cfg) {
+	if (data->target != cfg) {
 		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
-	data->slave = NULL;
+	data->target = NULL;
 	dev_cfg->base->con_clr = LPC11U6X_I2C_CONTROL_AA;
 	k_mutex_unlock(&data->mutex);
 
@@ -176,7 +176,7 @@ static void lpc11u6x_i2c_isr(const struct device *dev)
 	uint8_t val;
 
 	switch (i2c->stat) {
-		/* Master TX states */
+		/* Controller TX states */
 	case LPC11U6X_I2C_MASTER_TX_START:
 	case LPC11U6X_I2C_MASTER_TX_RESTART:
 		i2c->dat = (transfer->addr << 1) |
@@ -204,7 +204,7 @@ static void lpc11u6x_i2c_isr(const struct device *dev)
 		}
 		break;
 
-		/* Master RX states */
+		/* Controller RX states */
 	case LPC11U6X_I2C_MASTER_RX_DAT_NACK:
 		transfer->msgs++;
 		transfer->nr_msgs--;
@@ -227,12 +227,12 @@ static void lpc11u6x_i2c_isr(const struct device *dev)
 		}
 		break;
 
-		/* Slave States */
+		/* Target States */
 	case LPC11U6X_I2C_SLAVE_RX_ADR_ACK:
 	case LPC11U6X_I2C_SLAVE_RX_ARB_LOST_ADR_ACK:
 	case LPC11U6X_I2C_SLAVE_RX_GC_ACK:
 	case LPC11U6X_I2C_SLAVE_RX_ARB_LOST_GC_ACK:
-		if (data->slave->callbacks->write_requested(data->slave)) {
+		if (data->target->callbacks->write_requested(data->target)) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;
 		}
 		break;
@@ -240,7 +240,7 @@ static void lpc11u6x_i2c_isr(const struct device *dev)
 	case LPC11U6X_I2C_SLAVE_RX_DAT_ACK:
 	case LPC11U6X_I2C_SLAVE_RX_GC_DAT_ACK:
 		val = i2c->dat;
-		if (data->slave->callbacks->write_received(data->slave, val)) {
+		if (data->target->callbacks->write_received(data->target, val)) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;
 		}
 		break;
@@ -248,32 +248,32 @@ static void lpc11u6x_i2c_isr(const struct device *dev)
 	case LPC11U6X_I2C_SLAVE_RX_DAT_NACK:
 	case LPC11U6X_I2C_SLAVE_RX_GC_DAT_NACK:
 		val = i2c->dat;
-		data->slave->callbacks->write_received(data->slave, val);
-		data->slave->callbacks->stop(data->slave);
+		data->target->callbacks->write_received(data->target, val);
+		data->target->callbacks->stop(data->target);
 		set |= LPC11U6X_I2C_CONTROL_AA;
 		break;
 
 	case LPC11U6X_I2C_SLAVE_RX_STOP:
-		data->slave->callbacks->stop(data->slave);
+		data->target->callbacks->stop(data->target);
 		set |= LPC11U6X_I2C_CONTROL_AA;
 		break;
 
 	case LPC11U6X_I2C_SLAVE_TX_ADR_ACK:
 	case LPC11U6X_I2C_SLAVE_TX_ARB_LOST_ADR_ACK:
-		if (data->slave->callbacks->read_requested(data->slave, &val)) {
+		if (data->target->callbacks->read_requested(data->target, &val)) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;
 		}
 		i2c->dat = val;
 		break;
 	case LPC11U6X_I2C_SLAVE_TX_DAT_ACK:
-		if (data->slave->callbacks->read_processed(data->slave, &val)) {
+		if (data->target->callbacks->read_processed(data->target, &val)) {
 			clear |= LPC11U6X_I2C_CONTROL_AA;
 		}
 		i2c->dat = val;
 		break;
 	case LPC11U6X_I2C_SLAVE_TX_DAT_NACK:
 	case LPC11U6X_I2C_SLAVE_TX_LAST_BYTE:
-		data->slave->callbacks->stop(data->slave);
+		data->target->callbacks->stop(data->target);
 		set |= LPC11U6X_I2C_CONTROL_AA;
 		break;
 
@@ -339,8 +339,8 @@ static int lpc11u6x_i2c_init(const struct device *dev)
 static DEVICE_API(i2c, i2c_api) = {
 	.configure = lpc11u6x_i2c_configure,
 	.transfer = lpc11u6x_i2c_transfer,
-	.target_register = lpc11u6x_i2c_slave_register,
-	.target_unregister = lpc11u6x_i2c_slave_unregister,
+	.target_register = lpc11u6x_i2c_target_register,
+	.target_unregister = lpc11u6x_i2c_target_unregister,
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
 #endif
