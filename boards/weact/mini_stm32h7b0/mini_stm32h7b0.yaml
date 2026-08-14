@@ -6,7 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 ram: 512
-flash: 8192
+flash: 2048
 supported:
   - gpio
   - counter
