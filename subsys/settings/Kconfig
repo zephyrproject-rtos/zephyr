@@ -149,10 +149,9 @@ config SETTINGS_CUSTOM
 	  Use a custom settings storage back-end.
 
 config SETTINGS_TFM_PSA
-	bool "TF-M PSA [EXPERIMENTAL]"
+	bool "TF-M PSA"
 	depends on BUILD_WITH_TFM
 	select EXPERIMENTAL
-	select PSA_CRYPTO
 	help
 	  Enables PSA Settings backend. Intended for use with boards
 	  using TF-M which cannot make use of persistent storage otherwise.
