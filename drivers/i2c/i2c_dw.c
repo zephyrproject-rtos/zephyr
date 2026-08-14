@@ -1027,10 +1027,12 @@ error:
 	k_sem_give(&dw->bus_sem);
 
 	pm_device_runtime_put(dev);
+#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
 	if (ret != 0) {
 		/* Failed/aborted transaction is no longer active, require setup */
 		dw->need_setup = true;
 	}
+#endif
 
 	return ret;
 }
