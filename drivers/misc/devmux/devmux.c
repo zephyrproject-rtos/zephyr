@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/misc/devmux/devmux.h>
+#include <zephyr/internal/syscall_handler.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 
@@ -89,14 +90,6 @@ ssize_t z_impl_devmux_select_get(const struct device *dev)
 	return index;
 }
 
-#ifdef CONFIG_USERSPACE
-ssize_t z_vrfy_devmux_select_get(const struct device *dev)
-{
-	return z_impl_devmux_select_get(dev);
-}
-#include <zephyr/syscalls/devmux_select_get_mrsh.c>
-#endif
-
 int z_impl_devmux_select_set(struct device *dev, size_t index)
 {
 	struct devmux_data *const data = devmux_data_get(dev);
@@ -120,8 +113,28 @@ int z_impl_devmux_select_set(struct device *dev, size_t index)
 }
 
 #ifdef CONFIG_USERSPACE
+ssize_t z_vrfy_devmux_select_get(const struct device *dev)
+{
+	/* We can't simply use DEVICE_API_GET because the way devmux works
+	 * is that its content is the device selected, so we only have the pointer
+	 * to identify the devmux device.
+	 */
+	K_OOPS(devmux_inst_get(dev) == SIZE_MAX);
+	K_OOPS(k_object_access_check(dev) != 0);
+
+	return z_impl_devmux_select_get(dev);
+}
+#include <zephyr/syscalls/devmux_select_get_mrsh.c>
+
 int z_vrfy_devmux_select_set(struct device *dev, size_t index)
 {
+	/* We can't simply use DEVICE_API_GET because the way devmux works
+	 * is that its content is the device selected, so we only have the pointer
+	 * to identify the devmux device.
+	 */
+	K_OOPS(devmux_inst_get(dev) == SIZE_MAX);
+	K_OOPS(k_object_access_check(dev) != 0);
+
 	return z_impl_devmux_select_set(dev, index);
 }
 #include <zephyr/syscalls/devmux_select_set_mrsh.c>
@@ -149,6 +162,16 @@ static int devmux_init(struct device *const dev)
 #define DEVMUX_PHANDLE_TO_DEVICE(node_id, prop, idx)                                               \
 	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(node_id, prop, idx))
 
+/**
+ * That is needed in order to have a kernel object tracked for these devices.
+ * An alternatie would be create a specific kernel object type, but that would
+ * just make things more complex.
+ */
+static const struct devmux_driver_api devmux_api = {
+	.select_get = NULL,
+	.select_set = NULL,
+};
+
 #define DEVMUX_PHANDLE_DEVICES(_n)                                                                 \
 	DT_INST_FOREACH_PROP_ELEM_SEP(_n, devices, DEVMUX_PHANDLE_TO_DEVICE, (,))
 
@@ -171,7 +194,7 @@ static int devmux_init(struct device *const dev)
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(_n, devmux_init, NULL, &devmux_data_##_n, &devmux_config_##_n,       \
-			      PRE_KERNEL_1, CONFIG_DEVMUX_INIT_PRIORITY, NULL);
+			      PRE_KERNEL_1, CONFIG_DEVMUX_INIT_PRIORITY, &devmux_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEVMUX_DEFINE)
 

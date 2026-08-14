@@ -54,6 +54,16 @@ extern "C" {
  */
 
 /**
+ * @brief Devmux driver API
+ */
+__subsystem struct devmux_driver_api {
+	/** Callback API to get the current selection of a devmux device. */
+	ssize_t (*select_get)(const struct device *dev);
+	/** Callback API to set the selection of a devmux device. */
+	int (*select_set)(struct device *dev, size_t index);
+};
+
+/**
  * @brief Get the current selection of a devmux device.
  *
  * Return the index of the currently selected device.
