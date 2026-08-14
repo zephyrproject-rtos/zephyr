@@ -177,9 +177,9 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EIO;
 	}
 
-	/* Support for slave mode has not been implemented */
+	/* Support for target mode has not been implemented */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Slave mode is not supported");
+		LOG_ERR("Target mode is not supported");
 		return -EIO;
 	}
 
@@ -189,7 +189,7 @@ static int i2c_cc13xx_cc26xx_configure(const struct device *dev,
 		return -EIO;
 	}
 
-	/* Enables and configures I2C master */
+	/* Enables and configures I2C controller */
 	I2CMasterInitExpClk(config->base, CPU_FREQ, fast);
 
 #ifdef CONFIG_PM
