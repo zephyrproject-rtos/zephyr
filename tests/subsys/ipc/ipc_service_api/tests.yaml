@@ -20,6 +20,8 @@ tests:
       - FILE_SUFFIX=icmsg
       - remote_FILE_SUFFIX=icmsg
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_SNIPPET=nordic-flpr
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_EXTRA_DTC_OVERLAY_FILE=boards/nordic_flpr_icmsg.overlay
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY=-3
@@ -40,6 +42,7 @@ tests:
       - FILE_SUFFIX=icbmsg
       - remote_FILE_SUFFIX=icbmsg
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_SNIPPET=nordic-flpr
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
   tests.ipc.ipc_service_api.static_vrings:
@@ -128,6 +131,8 @@ tests:
       - remote_FILE_SUFFIX=icmsg
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
       - remote_CONFIG_MULTITHREADING=n
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_SNIPPET=nordic-flpr
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_EXTRA_DTC_OVERLAY_FILE=boards/nordic_flpr_icmsg.overlay
     extra_configs:
       - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
       - CONFIG_MULTITHREADING=n
@@ -145,6 +150,7 @@ tests:
       - remote_FILE_SUFFIX=icbmsg
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
+      - platform:nrf54l15dk/nrf54l15/cpuapp:ipc_service_api_SNIPPET=nordic-flpr
     extra_configs:
       - CONFIG_MULTITHREADING=n
       - CONFIG_IPC_SERVICE_BACKEND_ICBMSG_DEINIT=y
