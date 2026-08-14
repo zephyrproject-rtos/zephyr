@@ -27,7 +27,10 @@
  * controller re-program (PCR reset) onto that port before the transfer.
  *
  * Synchronous transfers block the calling thread on a semaphore that the
- * ISR gives at completion.
+ * ISR gives at completion. Asynchronous (CONFIG_I2C_CALLBACK) transfers
+ * return immediately; the ISR hands completion to a custom kernel work
+ * queue -- shared by all controller instances -- which invokes the user
+ * callback outside interrupt context.
  */
 
 #include <soc.h>
@@ -224,6 +227,14 @@ struct xec_i2c_v3_bm_xdat {
 	uint32_t bpos;
 	uint32_t rx_total;
 	uint32_t rx_done;
+#ifdef CONFIG_I2C_CALLBACK
+	struct k_work kw; /* async completion dispatch */
+	i2c_callback_t cb;
+	void *cb_user_data;
+	const struct device *cb_dev;
+	struct k_work_delayable timeout_dwork; /* async completion watchdog */
+	atomic_t async_done;                   /* claim: completion vs watchdog */
+#endif
 #ifdef CONFIG_I2C_MCHP_XEC_V3_BM_STATE_CAPTURE
 	volatile uint32_t capidx;
 	volatile uint8_t capture[CONFIG_I2C_MCHP_XEC_V3_BM_STATE_CAPTURE_SIZE] __aligned(4);
@@ -324,6 +335,19 @@ int mchp_xec_i2c_bm_copy_capture(const struct device *i2c_nl_dev, uint8_t *capde
 	return -ENOSYS;
 }
 #endif /* CONFIG_I2C_MCHP_XEC_V3_BM_STATE_CAPTURE */
+
+#ifdef CONFIG_I2C_CALLBACK
+/* One kernel work queue shared by every controller instance; each instance
+ * owns its own k_work item (data->kw). The handler dispatches the completion
+ * callback for whichever instance signalled. Used only by the asynchronous
+ * (transfer_cb) path -- synchronous transfers complete on the caller's thread
+ * via data->sync -- so the whole thing is compiled out when CONFIG_I2C_CALLBACK
+ * is disabled.
+ */
+K_THREAD_STACK_DEFINE(xec_i2c_v3_bm_q_stack, CONFIG_I2C_MCHP_XEC_V3_BM_KWQ_STACK_SIZE);
+static struct k_work_q xec_i2c_v3_bm_work_q;
+static bool xec_i2c_v3_bm_wq_started;
+#endif
 
 /* ---- helpers ------------------------------------------------------------ */
 
@@ -594,6 +618,12 @@ static void xec_i2c_v3_bm_finish(const struct device *ctrl)
 
 	xdat->state = BM_STATE_DONE;
 
+#ifdef CONFIG_I2C_CALLBACK
+	if (xdat->cb != NULL) {
+		k_work_submit_to_queue(&xec_i2c_v3_bm_work_q, &xdat->kw);
+		return;
+	}
+#endif
 	k_sem_give(&xdat->sync);
 }
 
@@ -1005,8 +1035,14 @@ static int xec_i2c_v3_bm_start(const struct device *port_dev, struct i2c_msg *ms
 	xdat->num_msgs = num_msgs;
 	xdat->msg_idx = 0;
 	xdat->addr = addr;
+#ifdef CONFIG_I2C_CALLBACK
+	xdat->cb = cb;
+	xdat->cb_user_data = userdata;
+	xdat->cb_dev = port_dev;
+#else
 	ARG_UNUSED(cb);
 	ARG_UNUSED(userdata);
+#endif
 
 	if (cb == NULL) {
 		xec_i2c_bm_cap_update(xdat, 5U);
@@ -1096,6 +1132,74 @@ static int xec_i2c_v3_bm_vport_transfer(const struct device *port_dev, struct i2
 	return rc;
 }
 
+/* Asynchronous transfer. Returns immediately after arming the first group;
+ * completion (and any group chaining) is driven from the ISR via the work
+ * queue, which invokes cb and releases the controller lock.
+ *
+ * A per-group watchdog (timeout_dwork, BM_TIMEOUT) guards against a wedged
+ * bus or lost interrupt: if a group does not complete in time the watchdog
+ * resets the controller and delivers -ETIMEDOUT. The watchdog is armed here
+ * (before the START, so an immediate completion still finds it scheduled and
+ * cancels it), refreshed per group by the work handler, and canceled on
+ * completion by async_deliver.
+ */
+#ifdef CONFIG_I2C_CALLBACK
+static int xec_i2c_v3_bm_vport_transfer_cb(const struct device *port_dev, struct i2c_msg *msgs,
+					   uint8_t num_msgs, uint16_t addr, i2c_callback_t cb,
+					   void *userdata)
+{
+	const struct xec_i2c_v3_bm_port_xcfg *pc = port_dev->config;
+	const struct device *ctrl = pc->parent;
+	struct xec_i2c_v3_bm_xdat *xdat = ctrl->data;
+	int rc;
+
+	if (cb == NULL) {
+		return xec_i2c_v3_bm_vport_transfer(port_dev, msgs, num_msgs, addr);
+	}
+	if (num_msgs == 0U) {
+		cb(port_dev, 0, userdata);
+		return 0;
+	}
+	if (msgs == NULL) {
+		return -EINVAL;
+	}
+	rc = bm_validate(msgs, num_msgs, addr);
+	if (rc != 0) {
+		return rc;
+	}
+
+	k_sem_take(&xdat->lock, K_FOREVER);
+
+#ifdef CONFIG_I2C_TARGET
+	if (xdat->target_attached) {
+		k_sem_give(&xdat->lock);
+		return -EBUSY;
+	}
+#endif
+
+	/* Open the completion claim and arm the watchdog BEFORE issuing the
+	 * START inside start(): if the transfer completes immediately, the
+	 * work handler's async_deliver then finds a scheduled watchdog to
+	 * cancel rather than racing an as-yet-unscheduled one.
+	 */
+	atomic_set(&xdat->async_done, 0);
+	k_work_reschedule_for_queue(&xec_i2c_v3_bm_work_q, &xdat->timeout_dwork, BM_TIMEOUT);
+
+	rc = xec_i2c_v3_bm_start(port_dev, msgs, num_msgs, addr, cb, userdata);
+	if (rc != 0) {
+		(void)k_work_cancel_delayable(&xdat->timeout_dwork);
+		atomic_set(&xdat->async_done, 1);
+		k_sem_give(&xdat->lock);
+		return rc;
+	}
+
+	/* Completion is delivered from the work queue (or the watchdog), which
+	 * releases the lock and invokes cb.
+	 */
+	return 0;
+}
+#endif /* CONFIG_I2C_CALLBACK */
+
 static int xec_i2c_v3_bm_vport_configure(const struct device *port_dev, uint32_t dev_config)
 {
 	const struct xec_i2c_v3_bm_port_xcfg *pc = port_dev->config;
@@ -1179,6 +1283,113 @@ static int xec_i2c_v3_bm_vport_recover_bus(const struct device *port_dev)
 	return rc;
 }
 
+/* ---- work queue: async completion dispatch ------------------------------ */
+
+#ifdef CONFIG_I2C_CALLBACK
+/* Deliver the async result. The CALLER must already have won the async_done
+ * claim, which guarantees this runs exactly once per transfer. Cancels the
+ * watchdog, releases the controller lock, and invokes the user callback on the
+ * work-queue thread (never interrupt context). cb/user-data/dev are captured
+ * before the lock is dropped, since a new transfer may reuse those fields
+ * immediately.
+ */
+static void xec_i2c_v3_bm_async_deliver(const struct device *ctrl, int result)
+{
+	struct xec_i2c_v3_bm_xdat *xdat = ctrl->data;
+	i2c_callback_t cb = xdat->cb;
+	void *ud = xdat->cb_user_data;
+	const struct device *dev = xdat->cb_dev;
+
+	(void)k_work_cancel_delayable(&xdat->timeout_dwork);
+
+	k_sem_give(&xdat->lock);
+
+	if (cb != NULL) {
+		cb(dev, result, ud);
+	}
+}
+
+/* Async completion watchdog. Fires BM_TIMEOUT after a group was armed if the
+ * transfer has not completed. Claims delivery FIRST (so the completion work
+ * item can never also deliver), then decides the outcome: if a completion
+ * actually landed (state == DONE and it was the last group) report its real
+ * result; otherwise the bus/controller is wedged (or an interrupt was lost)
+ * -- reset it and report -ETIMEDOUT.
+ */
+static void xec_i2c_v3_bm_timeout_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct xec_i2c_v3_bm_xdat *xdat =
+		CONTAINER_OF(dwork, struct xec_i2c_v3_bm_xdat, timeout_dwork);
+	const struct device *ctrl = xdat->ctrl_dev;
+	int result = -ETIMEDOUT;
+	unsigned int key;
+	bool completed;
+
+	if (!atomic_cas(&xdat->async_done, 0, 1)) {
+		return; /* the completion path already delivered this transfer */
+	}
+
+	/* "Completed" only if the WHOLE transfer finished, not merely an
+	 * intermediate group: a delayed work queue could let this fire after
+	 * a mid-transfer group's IDLE set state=DONE but before the next group
+	 * was armed. Treat that as a genuine timeout (later groups never ran).
+	 * (A completion landing in the tiny window after this snapshot is
+	 * reported as -ETIMEDOUT -- acceptable, as it is past the deadline.)
+	 */
+	key = irq_lock();
+	completed = (xdat->state == BM_STATE_DONE) &&
+		    (xdat->err != 0 || (xdat->msg_idx + 1U) >= xdat->num_msgs);
+	irq_unlock(key);
+
+	if (completed) {
+		result = xdat->err;
+	} else {
+		LOG_ERR("i2c async xfer timeout (%s)", ctrl->name);
+		xec_i2c_v3_bm_abort(ctrl);
+	}
+
+	xec_i2c_v3_bm_async_deliver(ctrl, result);
+}
+
+static void xec_i2c_v3_bm_work_handler(struct k_work *work)
+{
+	struct xec_i2c_v3_bm_xdat *const xdat = CONTAINER_OF(work, struct xec_i2c_v3_bm_xdat, kw);
+	const struct device *ctrl = xdat->ctrl_dev;
+
+	/* The watchdog already delivered this transfer (and released the lock):
+	 * do not touch hardware, the lock, or the watchdog. This handler and the
+	 * watchdog handler are serialized on the one work-queue thread, so the
+	 * claim read here cannot change under us.
+	 */
+	if (atomic_get(&xdat->async_done) != 0) {
+		return;
+	}
+
+	/* If the completed group succeeded and more STOP-delimited groups
+	 * remain, arm the next one on the now-idle bus (the prior group
+	 * completed via its IDLE interrupt, so NBB=1) and refresh the
+	 * watchdog for the new group; its completion re-enters this handler.
+	 * The controller lock stays held throughout.
+	 */
+	if (xdat->err == 0 && (xdat->msg_idx + 1U) < xdat->num_msgs) {
+		xdat->msg_idx++;
+		bm_arm_group(ctrl);
+		k_work_reschedule_for_queue(&xec_i2c_v3_bm_work_q, &xdat->timeout_dwork,
+					    BM_TIMEOUT);
+		return;
+	}
+
+	/* Final group: claim delivery. If the watchdog beat us (it fired and
+	 * claimed between our top-of-handler check and here -- impossible while
+	 * serialized, but the CAS keeps it correct regardless), do nothing.
+	 */
+	if (atomic_cas(&xdat->async_done, 0, 1)) {
+		xec_i2c_v3_bm_async_deliver(ctrl, xdat->err);
+	}
+}
+#endif /* CONFIG_I2C_CALLBACK */
+
 /* ---- device init -------------------------------------------------------- */
 
 static int xec_i2c_v3_bm_ctrl_init(const struct device *ctrl)
@@ -1194,6 +1405,19 @@ static int xec_i2c_v3_bm_ctrl_init(const struct device *ctrl)
 
 	k_sem_init(&xdat->lock, 1, 1);
 	k_sem_init(&xdat->sync, 0, 1);
+#ifdef CONFIG_I2C_CALLBACK
+	k_work_init(&xdat->kw, xec_i2c_v3_bm_work_handler);
+	k_work_init_delayable(&xdat->timeout_dwork, xec_i2c_v3_bm_timeout_handler);
+	atomic_set(&xdat->async_done, 1); /* no async transfer in flight yet */
+
+	/* The work queue exists only for the async completion/watchdog path. */
+	if (!xec_i2c_v3_bm_wq_started) {
+		k_work_queue_start(&xec_i2c_v3_bm_work_q, xec_i2c_v3_bm_q_stack,
+				   K_THREAD_STACK_SIZEOF(xec_i2c_v3_bm_q_stack),
+				   K_PRIO_PREEMPT(CONFIG_I2C_MCHP_XEC_V3_BM_KWQ_PRIORITY), NULL);
+		xec_i2c_v3_bm_wq_started = true;
+	}
+#endif
 
 	rc = xec_i2c_v3_bm_program_ctrl(ctrl, cfg->dflt_freq, 0);
 	if (rc != 0) {
@@ -1229,6 +1453,9 @@ static DEVICE_API(i2c, xec_i2c_v3_bm_port_api) = {
 	.configure = xec_i2c_v3_bm_vport_configure,
 	.get_config = xec_i2c_v3_bm_vport_get_config,
 	.transfer = xec_i2c_v3_bm_vport_transfer,
+#ifdef CONFIG_I2C_CALLBACK
+	.transfer_cb = xec_i2c_v3_bm_vport_transfer_cb,
+#endif
 	.recover_bus = xec_i2c_v3_bm_vport_recover_bus,
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
