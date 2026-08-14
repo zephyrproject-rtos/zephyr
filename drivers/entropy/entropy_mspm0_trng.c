@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Linumiz GmbH
+ * Copyright (c) 2026 Texas Instruments Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,21 +14,66 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/ring_buffer.h>
 
-/* TI Driverlib includes */
-#include <ti/driverlib/dl_trng.h>
-#include <ti/devices/msp/peripherals/hw_trng.h>
+#define TRNG_MSPM0_PWREN_MASK				BIT(0)
+#define TRNG_MSPM0_PWREN_KEY_MASK			GENMASK(31, 24)
+#define TRNG_MSPM0_PWREN_KEY				0x26
 
-#define TRNG_DECIMATION_RATE                                                                       \
-	CONCAT(DL_TRNG_DECIMATION_RATE_, CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE)
-#define TRNG_SAMPLE_SIZE	4
+#define TRNG_MSPM0_CLKDIVIDE_MASK			BIT_MASK(3)
 
-#define TRNG_CLOCK_DIVIDE_RATIO		CONCAT(DL_TRNG_CLOCK_DIVIDE_, DT_INST_PROP(0, ti_clk_div))
+#define TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK		BIT(3)
+#define TRNG_MSPM0_IIDX_CMD_DONE_MASK			BIT(2)
+#define TRNG_MSPM0_IIDX_CMD_FAIL_MASK			BIT(1)
+#define TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK		BIT(0)
+
+#define TRNG_MSPM0_CTL_CMD_MASK				BIT_MASK(2)
+#define TRNG_MSPM0_CTL_CMD_OFF				0x0
+#define TRNG_MSPM0_CTL_CMD_PWRUP_DIG			0x1
+#define TRNG_MSPM0_CTL_CMD_PWRUP_ANA			0x2
+#define TRNG_MSPM0_CTL_CMD_NORM_FUNC			0x3
+
+#define TRNG_MSPM0_TEST_RESULTS_DIG_TEST_MASK		GENMASK(7, 0)
+#define TRNG_MSPM0_TEST_RESULTS_DIG_TEST_SUCCESS	BIT_MASK(8)
+#define TRNG_MSPM0_TEST_RESULTS_ANA_TEST_MASK		BIT(8)
+#define TRNG_MSPM0_TEST_RESULTS_ANA_TEST_SUCCESS	BIT(8)
+
+
+#define TRNG_MSPM0_DECIMATION_RATE		(CONFIG_ENTROPY_MSPM0_TRNG_DECIMATION_RATE - 1)
+#define TRNG_MSPM0_DECIMATION_RATE_MASK		GENMASK(10, 8)
+#define TRNG_SAMPLE_SIZE			4
 
 #define TRNG_FREQ                 (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / DT_INST_PROP(0, ti_clk_div))
-#define TRNG_SAMPLE_GENERATE_TIME (1000000 * (32 * (TRNG_DECIMATION_RATE + 1)) / (TRNG_FREQ))
+#define TRNG_SAMPLE_GENERATE_TIME (1000000 * (32 * (TRNG_MSPM0_DECIMATION_RATE + 1)) / (TRNG_FREQ))
+
+typedef struct {
+	uint32_t RESERVED0[0x200];
+	volatile uint32_t PWREN;	/* Power Enable				@0x800h */
+	volatile uint32_t RSTCTL;	/* Reset Control			@0x804h */
+	uint32_t RESERVED1[3];
+	volatile uint32_t STAT;		/* Status Register			@0x814h */
+	uint32_t RESERVED2[0x202];
+	volatile uint32_t IIDX;		/* Interrupt Index			@0x1020h */
+	uint32_t RESERVED3[1];
+	volatile uint32_t IMASK;	/* Interrupt Mask			@0x1028h */
+	uint32_t RESERVED4[1];
+	volatile uint32_t RIS;		/* Raw Interrupt Status			@0x1030h */
+	uint32_t RESERVED5[1];
+	volatile uint32_t MIS;		/* Masked Interrupt Status		@0x1038h */
+	uint32_t RESERVED6[1];
+	volatile uint32_t ISET;		/* Interrupt Set			@0x1040h */
+	uint32_t RESERVED7[1];
+	volatile uint32_t ICLR;		/* Interrupt Clear			@0x1048h */
+	uint32_t RESERVED8[44];
+	volatile uint32_t DESC;		/* Module Description			@0x10FCh */
+	volatile uint32_t CTL;		/* Control				@0x1100h */
+	volatile uint32_t HLTH_STAT;	/* TRNG Status				@0x1104h */
+	volatile uint32_t DATA_CAPTURE;	/* Captured RNG Word Buffer		@0x1108h */
+	volatile uint32_t TEST_RESULTS;	/* TEST_ANA and TEST_DIG Results	@0x110Ch */
+	volatile uint32_t CLKDIVIDE;	/* Clock Divider			@0x1110h */
+} trng_ti_mspm0_reg_t;
 
 struct entropy_mspm0_trng_config {
-	TRNG_Regs *base;
+	trng_ti_mspm0_reg_t *regs;
+	uint8_t clk_divide;
 };
 
 struct entropy_mspm0_trng_data {
@@ -37,28 +83,28 @@ struct entropy_mspm0_trng_data {
 	uint8_t pool_buffer[CONFIG_ENTROPY_MSPM0_TRNG_POOL_SIZE];
 };
 
-static inline bool entropy_mspm0_trng_run_dig_test(TRNG_Regs *base)
+static inline bool entropy_mspm0_trng_run_dig_test(trng_ti_mspm0_reg_t *regs)
 {
-	uint8_t dig_test = DL_TRNG_getDigitalHealthTestResults(base);
+	uint32_t dig_test = (regs->TEST_RESULTS & TRNG_MSPM0_TEST_RESULTS_DIG_TEST_MASK);
 
-	if (dig_test == DL_TRNG_DIGITAL_HEALTH_TEST_SUCCESS) {
+	if (dig_test == TRNG_MSPM0_TEST_RESULTS_DIG_TEST_SUCCESS) {
 		return true;
 	}
 
-	DL_TRNG_sendCommand(base, DL_TRNG_CMD_TEST_DIG);
+	regs->CTL = (regs->CTL & ~TRNG_MSPM0_CTL_CMD_MASK) | TRNG_MSPM0_CTL_CMD_PWRUP_DIG;
 	/* Test needs to run, return false to indicate ISR should return */
 	return false;
 }
 
-static inline bool entropy_mspm0_trng_run_ana_test(TRNG_Regs *base)
+static inline bool entropy_mspm0_trng_run_ana_test(trng_ti_mspm0_reg_t *regs)
 {
-	uint8_t ana_test = DL_TRNG_getAnalogHealthTestResults(base);
+	uint32_t ana_test = (regs->TEST_RESULTS & TRNG_MSPM0_TEST_RESULTS_ANA_TEST_MASK);
 
-	if (ana_test == DL_TRNG_ANALOG_HEALTH_TEST_SUCCESS) {
+	if (ana_test == TRNG_MSPM0_TEST_RESULTS_ANA_TEST_SUCCESS) {
 		return true;
 	}
 
-	DL_TRNG_sendCommand(base, DL_TRNG_CMD_TEST_ANA);
+	regs->CTL = (regs->CTL & ~TRNG_MSPM0_CTL_CMD_MASK) | TRNG_MSPM0_CTL_CMD_PWRUP_ANA;
 	/* Test needs to run, return false to indicate ISR should return */
 	return false;
 }
@@ -73,28 +119,29 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 	bool dig_test;
 	bool ana_test;
 
-	status = DL_TRNG_getEnabledInterruptStatus(config->base,
-						   DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT |
-						   DL_TRNG_INTERRUPT_HEALTH_FAIL_EVENT |
-						   DL_TRNG_INTERRUPT_CMD_DONE_EVENT);
+	status = config->regs->MIS & (TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK |
+				      TRNG_MSPM0_IIDX_CMD_DONE_MASK	|
+				      TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK);
 
-	if (status & DL_TRNG_INTERRUPT_HEALTH_FAIL_EVENT) {
-		DL_TRNG_clearInterruptStatus(config->base, DL_TRNG_INTERRUPT_HEALTH_FAIL_EVENT);
-		DL_TRNG_sendCommand(config->base, DL_TRNG_CMD_PWROFF);
+	if (status & TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK) {
+		config->regs->ICLR = TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK |
+					TRNG_MSPM0_IIDX_CMD_DONE_MASK;
+		config->regs->CTL = (config->regs->CTL & ~TRNG_MSPM0_CTL_CMD_MASK) |
+					TRNG_MSPM0_CTL_CMD_OFF;
 		return;
 	}
 
-	if (status & DL_TRNG_INTERRUPT_CMD_DONE_EVENT) {
-		DL_TRNG_clearInterruptStatus(config->base, DL_TRNG_INTERRUPT_CMD_DONE_EVENT);
+	if (status & TRNG_MSPM0_IIDX_CMD_DONE_MASK) {
+		config->regs->ICLR = TRNG_MSPM0_IIDX_CMD_DONE_MASK;
 
 		/* Run DIG test */
-		dig_test = entropy_mspm0_trng_run_dig_test(config->base);
+		dig_test = entropy_mspm0_trng_run_dig_test(config->regs);
 		if (!dig_test) {
 			return;
 		}
 
 		/* Run ANALOG test */
-		ana_test = entropy_mspm0_trng_run_ana_test(config->base);
+		ana_test = entropy_mspm0_trng_run_ana_test(config->regs);
 		if (!ana_test) {
 			return;
 		}
@@ -104,28 +151,30 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 		 * and set DECIM RATE, enable IRQ_CAPTURE_RDY
 		 */
 		if (dig_test && ana_test) {
-			DL_TRNG_getCapture(config->base);
-			DL_TRNG_clearInterruptStatus(config->base,
-						     DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
-			DL_TRNG_setDecimationRate(config->base,
-						  (DL_TRNG_DECIMATION_RATE)TRNG_DECIMATION_RATE);
-			DL_TRNG_disableInterrupt(config->base, DL_TRNG_INTERRUPT_CMD_DONE_EVENT);
-			DL_TRNG_enableInterrupt(config->base, DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+			(void)config->regs->DATA_CAPTURE;
+			config->regs->ICLR = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
+			config->regs->CTL = (config->regs->CTL &
+					     ~TRNG_MSPM0_DECIMATION_RATE_MASK) |
+					     FIELD_PREP(TRNG_MSPM0_DECIMATION_RATE_MASK,
+					     TRNG_MSPM0_DECIMATION_RATE);
+			config->regs->IMASK = (config->regs->IMASK &
+					       ~TRNG_MSPM0_IIDX_CMD_DONE_MASK) |
+					       TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			return;
 		}
 	}
 
-	if (status & DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT) {
-		entropy_data = DL_TRNG_getCapture(config->base);
+	if (status & TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK) {
+		entropy_data = config->regs->DATA_CAPTURE;
 		bytes_written = ring_buf_put(&data->entropy_pool, (uint8_t *)&entropy_data,
 					     TRNG_SAMPLE_SIZE);
 
 		/* If the ring buf is exhausted, disable the interrupt in IMASK */
 		if (bytes_written < TRNG_SAMPLE_SIZE) {
-			DL_TRNG_disableInterrupt(config->base, DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+			config->regs->IMASK &= ~TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		}
 
-		DL_TRNG_clearInterruptStatus(config->base, DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+		config->regs->ICLR = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		k_sem_give(&data->sem_sync);
 	}
 }
@@ -147,8 +196,7 @@ static int entropy_mspm0_trng_get_entropy(const struct device *dev,
 		 * wait until the additional entropy is available in ring buf.
 		 */
 		if (bytes_read == 0U) {
-			DL_TRNG_enableInterrupt(config->base,
-						DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+			config->regs->IMASK |= TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			k_sem_take(&data->sem_sync, K_FOREVER);
 			continue;
 		}
@@ -188,10 +236,9 @@ static int entropy_mspm0_trng_get_entropy_isr(const struct device *dev, uint8_t 
 
 	while (length) {
 		/* Check if data is ready by checking IRQ_CAPTURED_RDY */
-		if (DL_TRNG_isCaptureReady(config->base)) {
-			entropy_data = DL_TRNG_getCapture(config->base);
-			DL_TRNG_clearInterruptStatus(config->base,
-						     DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+		if (config->regs->RIS & TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK) {
+			entropy_data = config->regs->DATA_CAPTURE;
+			config->regs->ICLR = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			bytes_read = (length >= TRNG_SAMPLE_SIZE) ? TRNG_SAMPLE_SIZE : length;
 
 			for (uint8_t i = 0; i < bytes_read; i++) {
@@ -220,23 +267,27 @@ static int entropy_mspm0_trng_init(const struct device *dev)
 	ring_buf_init(&data->entropy_pool, sizeof(data->pool_buffer), data->pool_buffer);
 
 	/* Enable TRNG power */
-	DL_TRNG_enablePower(config->base);
+	if (!(config->regs->PWREN & TRNG_MSPM0_PWREN_MASK)) {
+		/* Write Power enable key and set Power enable bit simultaneously */
+		config->regs->PWREN =
+			FIELD_PREP(TRNG_MSPM0_PWREN_KEY_MASK, TRNG_MSPM0_PWREN_KEY) |
+			TRNG_MSPM0_PWREN_MASK;
+	}
 
 	/* Configure TRNG clock divider */
-	DL_TRNG_setClockDivider(config->base, TRNG_CLOCK_DIVIDE_RATIO);
-
-	/* Disable the CAPTURE_RDY IRQ until health tests are complete */
-	DL_TRNG_disableInterrupt(config->base, DL_TRNG_INTERRUPT_CAPTURE_RDY_EVENT);
+	/* Register values are 1 less than divide by values */
+	config->regs->CLKDIVIDE = (config->clk_divide - 1) & TRNG_MSPM0_CLKDIVIDE_MASK;
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    entropy_mspm0_trng_isr, DEVICE_DT_INST_GET(0), 0);
 	irq_enable(DT_INST_IRQN(0));
 
-	DL_TRNG_enableInterrupt(config->base, DL_TRNG_INTERRUPT_CMD_DONE_EVENT |
-					      DL_TRNG_INTERRUPT_HEALTH_FAIL_EVENT);
+	/* Enable CMD_DONE and HEALTH_FAIL interrupts */
+	config->regs->IMASK = TRNG_MSPM0_IIDX_CMD_DONE_MASK | TRNG_MSPM0_IIDX_HEALTH_FAIL_MASK;
 
 	/* Move TRNG from OFF to NORM FUNC state */
-	DL_TRNG_sendCommand(config->base, DL_TRNG_CMD_NORM_FUNC);
+	config->regs->CTL = (config->regs->CTL & ~TRNG_MSPM0_CTL_CMD_MASK) |
+			     TRNG_MSPM0_CTL_CMD_NORM_FUNC;
 
 	return 0;
 }
@@ -247,7 +298,8 @@ static DEVICE_API(entropy, entropy_mspm0_trng_driver_api) = {
 };
 
 static const struct entropy_mspm0_trng_config entropy_mspm0_trng_config = {
-	.base = (TRNG_Regs *)DT_INST_REG_ADDR(0),
+	.regs = (trng_ti_mspm0_reg_t *)DT_INST_REG_ADDR(0),
+	.clk_divide = DT_INST_PROP(0, ti_clk_div),
 };
 
 static struct entropy_mspm0_trng_data entropy_mspm0_trng_data = {
