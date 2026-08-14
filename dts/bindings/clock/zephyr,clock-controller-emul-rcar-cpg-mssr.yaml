@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas CPG/MSSR emulation
+
+  The subsystem selector is a pointer to a struct rcar_cpg_clk holding both
+  cells, as declared in
+  include/zephyr/drivers/clock_control/renesas_cpg_mssr.h. A consumer keeps
+  the descriptor alive for the duration of the call:
+
+      struct rcar_cpg_clk clk = {
+              .domain = DT_CLOCKS_CELL(node, domain),
+              .module = DT_CLOCKS_CELL(node, module),
+      };
+
+      clock_control_on(dev, (clock_control_subsys_t)&clk);
+
+  The driver dereferences it and matches domain and module against one
+  clock-ids entry. Its rate member is not read; set_rate takes the rate
+  through clock_control_subsys_rate_t instead.
+
+include: ["zephyr,clock-controller-emul-common.yaml"]
+
+compatible: "zephyr,clock-controller-emul-rcar-cpg-mssr"
+
+properties:
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - domain
+  - module
