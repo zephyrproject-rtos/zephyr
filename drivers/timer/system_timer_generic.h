@@ -135,7 +135,7 @@
 #define ZEPHYR_DRIVERS_TIMER_SYSTEM_TIMER_GENERIC_H_
 
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
 #if (defined(TIMER_CORE_BACKEND_COMPARE_ORDERED) + \
