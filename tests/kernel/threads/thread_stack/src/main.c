@@ -405,15 +405,38 @@ void scenario_entry(void *stack_obj, size_t obj_size, size_t reported_size,
 }
 
 /**
- * @brief Test kernel provides user thread read/write access to its own stack
- * memory buffer
- *
- * @details Thread can access its own stack memory buffer and perform
- * read/write operations.
+ * @brief Verify that every kind of declared stack is sized, aligned and
+ *        writable as its macros promise.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A thread must be able to read and write the whole stack buffer it was given,
+ * and the size and alignment reported by the K_THREAD_STACK and K_KERNEL_STACK
+ * macros have to agree with what the object actually occupies. Getting this
+ * wrong is what turns a stack into an overlapping or under-sized region, so
+ * each form a stack can be declared in is checked in turn: a single stack, an
+ * element of a stack array, and a stack embedded in a struct, for both thread
+ * and kernel stacks.
+ *
+ * Test steps:
+ * - Report the reserved space and interrupt stack sizes for the record.
+ * - For each declared stack, spawn a thread on it and have that thread check
+ *   its reported bounds, alignment and reserved space, then write over the
+ *   full usable extent of its own stack.
+ * - Repeat for user stacks, user stack arrays, kernel stacks, kernel stack
+ *   arrays and a struct-embedded stack.
+ *
+ * Expected result:
+ * - Every stack reports the size and alignment its declaration implies, and a
+ *   thread can write the whole buffer without faulting.
+ *
+ * @see K_THREAD_STACK_DEFINE()
+ * @see K_KERNEL_STACK_DEFINE()
+ * @see K_THREAD_STACK_SIZEOF()
+ * @see k_thread_stack_space_get()
  */
-ZTEST(userspace_thread_stack, test_stack_buffer)
+ZTEST(userspace_thread_stack, test_thread_stack_buffer_access)
 {
 	printk("Reserved space (thread stacks): %zu\n",
 	       K_THREAD_STACK_RESERVED);
@@ -480,15 +503,34 @@ void no_op_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Show that the idle thread stack size is correct
- *
- * The idle thread has to occasionally clean up self-exiting threads.
- * Exercise this and show that we didn't overflow, reporting out stack
- * usage.
+ * @brief Verify that cleaning up an exited thread does not overflow the idle
+ *        thread stack.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The idle thread is where a self-exiting thread's resources are reclaimed,
+ * including any dynamic kernel objects whose last reference it held. That
+ * cleanup runs on the idle thread's own stack, which is sized by
+ * CONFIG_IDLE_STACK_SIZE, so it has to fit. The test drives that path and then
+ * reads back how much of the idle stack was left, which also reports the
+ * headroom for the record. Skipped on coherence platforms, where the idle
+ * stack may have been initialized on another CPU and cannot be inspected from
+ * this one.
+ *
+ * Test steps:
+ * - Spawn a thread that allocates a dynamic kernel object and self-exits, so
+ *   the idle thread has to clean up after it.
+ * - Join the thread and sleep briefly so the idle thread runs.
+ * - Query the unused space of the idle thread's stack.
+ *
+ * Expected result:
+ * - The query succeeds and the idle thread stack still has unused space, so
+ *   the cleanup did not overflow it.
+ *
+ * @see k_thread_stack_space_get()
  */
-ZTEST(userspace_thread_stack, test_idle_stack)
+ZTEST(userspace_thread_stack, test_thread_stack_idle_no_overflow)
 {
 	if (IS_ENABLED(CONFIG_KERNEL_COHERENCE)) {
 		/* Stacks on coherence platforms aren't coherent, and
