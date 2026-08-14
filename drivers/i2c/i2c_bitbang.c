@@ -8,7 +8,7 @@
  * @file
  * @brief Software driven 'bit-banging' library for I2C
  *
- * This code implements the I2C single master protocol in software by directly
+ * This code implements the I2C single controller protocol in software by directly
  * manipulating the levels of the SCL and SDA lines of an I2C bus. It supports
  * the Standard-mode and Fast-mode speeds and doesn't support optional
  * protocol feature like 10-bit addresses or clock stretching.
@@ -82,7 +82,7 @@ static void i2c_set_scl(struct i2c_bitbang *context, int state)
 	context->io->set_scl(context->io_context, state);
 #ifdef CONFIG_I2C_GPIO_CLOCK_STRETCHING
 	if (state == 1) {
-		/* Wait for slave to release the clock */
+		/* Wait for target to release the clock */
 		WAIT_FOR(context->io->get_scl(context->io_context) != 0,
 			 CONFIG_I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US,
 			 ;);
@@ -114,7 +114,7 @@ static void i2c_start(struct i2c_bitbang *context)
 	if (!i2c_get_sda(context)) {
 		/*
 		 * SDA is already low, so we need to do something to make it
-		 * high. Try pulsing clock low to get slave to release SDA.
+		 * high. Try pulsing clock low to get target to release SDA.
 		 */
 		i2c_set_scl(context, 0);
 		i2c_delay(context->delays[T_LOW]);
@@ -166,7 +166,7 @@ static bool i2c_read_bit(struct i2c_bitbang *context)
 	bool bit;
 
 	/* SDA hold time is zero, so no need for a delay here */
-	i2c_set_sda(context, 1); /* Stop driving low, so slave has control */
+	i2c_set_sda(context, 1); /* Stop driving low, so target has control */
 
 	i2c_set_scl(context, 1);
 	i2c_delay(context->delays[T_HIGH]);
@@ -204,7 +204,7 @@ static uint8_t i2c_read_byte(struct i2c_bitbang *context)
 
 int i2c_bitbang_transfer(struct i2c_bitbang *context,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t slave_address)
+			   uint16_t target_address)
 {
 	uint8_t *buf, *buf_end;
 	unsigned int flags;
@@ -213,7 +213,7 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 	/* We want an initial Start condition */
 	flags = I2C_MSG_RESTART;
 
-	/* Make sure we're in a good state so slave recognises the Start */
+	/* Make sure we're in a good state so target recognises the Start */
 	i2c_set_scl(context, 1);
 	flags |= I2C_MSG_STOP;
 
@@ -238,7 +238,7 @@ int i2c_bitbang_transfer(struct i2c_bitbang *context,
 
 		/* Send address after any Start condition */
 		if (flags & I2C_MSG_RESTART) {
-			unsigned int byte0 = slave_address << 1;
+			unsigned int byte0 = target_address << 1;
 
 			byte0 |= (flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
 			if (!i2c_write_byte(context, byte0)) {
@@ -285,13 +285,13 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *context)
 
 	/*
 	 * The I2C-bus specification and user manual (NXP UM10204
-	 * rev. 6, section 3.1.16) suggests the master emit 9 SCL
+	 * rev. 6, section 3.1.16) suggests the controller emit 9 SCL
 	 * clock pulses to recover the bus.
 	 *
 	 * The Linux kernel I2C bitbang recovery functionality issues
 	 * a START condition followed by 9 STOP conditions.
 	 *
-	 * Other I2C slave devices (e.g. Microchip ATSHA204a) suggest
+	 * Other I2C target devices (e.g. Microchip ATSHA204a) suggest
 	 * issuing a START condition followed by 9 SCL clock pulses
 	 * with SDA held high/floating, a REPEATED START condition,
 	 * and a STOP condition.

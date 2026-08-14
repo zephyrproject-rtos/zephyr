@@ -124,7 +124,7 @@ static int i2c_gpio_get_config(const struct device *dev, uint32_t *config)
 }
 
 static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t slave_address)
+				uint8_t num_msgs, uint16_t target_address)
 {
 	struct i2c_gpio_context *context = dev->data;
 	int rc;
@@ -132,7 +132,7 @@ static int i2c_gpio_transfer(const struct device *dev, struct i2c_msg *msgs,
 	k_mutex_lock(&context->mutex, K_FOREVER);
 
 	rc = i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
-				    slave_address);
+				    target_address);
 
 	k_mutex_unlock(&context->mutex);
 
