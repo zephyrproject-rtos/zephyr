@@ -8,7 +8,7 @@ tests:
       - perf
       - profiling
     extra_configs:
-      - CONFIG_PROFILING_PERF_BUFFER_SIZE=128
+      - CONFIG_PROFILING_PERF_BUFFER_SIZE=256
     filter: CONFIG_PROFILING_PERF_HAS_BACKEND
     integration_platforms:
       - qemu_cortex_m3
