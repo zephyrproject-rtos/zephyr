@@ -188,7 +188,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	}
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
-			     net_buf_max_len(dns_data), 0,
+			     net_buf_max_len(dns_data), ZSOCK_MSG_DONTWAIT,
 			     net_sad(&addr), &addrlen);
 	if (ret < 0) {
 		ret = -errno;
