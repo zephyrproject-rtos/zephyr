@@ -48,9 +48,30 @@ LOG_MODULE_REGISTER(ifx_cat1_dma, CONFIG_DMA_LOG_LEVEL);
 #define IFX_CAT1_DMA_SRC_ADDR(v) ((void *)v)
 #endif
 
+/* Per-channel state machine. A DW channel is a single-owner object, so these
+ * transitions are driven only by this channel's config/start/stop/suspend/
+ * resume calls and its own completion interrupt (see the dma.h channel state
+ * machine expectations).
+ */
+enum ifx_cat1_dma_ch_state {
+	IFX_DMA_CH_UNCONFIGURED = 0, /* reset state: no descriptor configured */
+	IFX_DMA_CH_CONFIGURED,      /* configured and idle (also after completion) */
+	IFX_DMA_CH_RUNNING,         /* enabled and triggered, transfer in flight */
+	IFX_DMA_CH_SUSPENDED,       /* paused: the next SW (re)start trigger is withheld */
+};
+
 struct ifx_cat1_dma_channel {
 	uint32_t channel_direction: 3;
 	uint32_t error_callback_dis: 1;
+
+	enum ifx_cat1_dma_ch_state state;
+
+	/* Set when a software (re)start withheld its trigger because the channel
+	 * was suspended; resume() re-issues exactly one such withheld trigger. A
+	 * transfer that completed while suspended never sets this, so resume()
+	 * cannot re-trigger a finished chain into a CURR_PTR_NULL error.
+	 */
+	bool restart_withheld;
 
 	cy_stc_dma_descriptor_t *descr;
 	IRQn_Type irq;
@@ -328,9 +349,6 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 	_dma_free_linked_descriptors(data->channels[channel].descr);
 	data->channels[channel].descr = NULL;
 
-	/* Lock and page in the channel configuration */
-	uint32_t key = irq_lock();
-
 	struct dma_block_config *block_config = config->head_block;
 
 	for (uint32_t i = 0u; i < config->block_count; i++) {
@@ -398,7 +416,13 @@ static int ifx_cat1_dma_configure(const struct device *dev, uint32_t channel,
 		return -EIO;
 	}
 
-	irq_unlock(key);
+	/* A (re)configure of a suspended channel is the rechain of a paused
+	 * logical transfer, so keep it suspended; otherwise the channel is now
+	 * configured and idle.
+	 */
+	if (data->channels[channel].state != IFX_DMA_CH_SUSPENDED) {
+		data->channels[channel].state = IFX_DMA_CH_CONFIGURED;
+	}
 	return 0;
 }
 
@@ -407,6 +431,26 @@ DW_Type *ifx_cat1_dma_get_regs(const struct device *dev)
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
 
 	return cfg->regs;
+}
+
+/* Issue the software trigger a memory-sourced DW transfer needs to (re)start.
+ * Shared by ifx_cat1_dma_start() and ifx_cat1_dma_resume() so both paths stay
+ * in sync.
+ */
+static void ifx_cat1_dma_sw_trigger(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	if ((data->channels[channel].channel_direction == MEMORY_TO_MEMORY) ||
+	    (data->channels[channel].channel_direction == MEMORY_TO_PERIPHERAL)) {
+		cyhal_dma_t dma_obj = {
+			.resource.type = CYHAL_RSC_DW,
+			.resource.block_num = _get_hw_block_num(cfg->regs),
+			.resource.channel_num = channel,
+		};
+		(void)cyhal_dma_start_transfer(&dma_obj);
+	}
 }
 
 static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
@@ -427,14 +471,12 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 
 	/* Enable DMA channel */
 	Cy_DMA_Channel_Enable(cfg->regs, channel);
-	if ((data->channels[channel].channel_direction == MEMORY_TO_MEMORY) ||
-	    (data->channels[channel].channel_direction == MEMORY_TO_PERIPHERAL)) {
-		cyhal_dma_t dma_obj = {
-			.resource.type = CYHAL_RSC_DW,
-			.resource.block_num = _get_hw_block_num(cfg->regs),
-			.resource.channel_num = channel,
-		};
-		(void)cyhal_dma_start_transfer(&dma_obj);
+	if (data->channels[channel].state == IFX_DMA_CH_SUSPENDED) {
+		/* Paused: withhold this restart's trigger for resume() to re-arm. */
+		data->channels[channel].restart_withheld = true;
+	} else {
+		ifx_cat1_dma_sw_trigger(dev, channel);
+		data->channels[channel].state = IFX_DMA_CH_RUNNING;
 	}
 	return 0;
 }
@@ -442,14 +484,95 @@ static int ifx_cat1_dma_start(const struct device *dev, uint32_t channel)
 static int ifx_cat1_dma_stop(const struct device *dev, uint32_t channel)
 {
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
 
+	/* A full stop cancels any pause and returns the channel to idle. */
+	data->channels[channel].restart_withheld = false;
+	data->channels[channel].state = IFX_DMA_CH_CONFIGURED;
+
 	/* Disable DMA channel */
 	Cy_DMA_Channel_Disable(cfg->regs, channel);
+
+	return 0;
+}
+
+static int ifx_cat1_dma_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	if (channel >= cfg->num_channels) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	/* Suspend gates the driver's software trigger, so it only applies to a
+	 * memory-sourced (software-triggered) transfer. A hardware-triggered
+	 * channel is advanced by its peripheral trigger, which this driver cannot
+	 * gate, so report suspend unsupported rather than silently not pausing.
+	 */
+	if ((data->channels[channel].channel_direction != MEMORY_TO_MEMORY) &&
+	    (data->channels[channel].channel_direction != MEMORY_TO_PERIPHERAL)) {
+		return -ENOTSUP;
+	}
+
+	/* Only a running transfer can be suspended (per the dma.h channel state
+	 * machine). This rejects an unconfigured, idle, or already-completed
+	 * channel - including a zero-initialized one whose direction reads as
+	 * MEMORY_TO_MEMORY (direction 0).
+	 */
+	if (data->channels[channel].state != IFX_DMA_CH_RUNNING) {
+		return -EINVAL;
+	}
+
+	/* The pause takes effect at the next software-trigger boundary: the
+	 * in-flight descriptor is allowed to finish and the withheld restart is
+	 * deferred to resume(). The channel is deliberately NOT disabled, because
+	 * per the DW TRM disabling an active channel by software leaves its state
+	 * undefined.
+	 */
+	data->channels[channel].state = IFX_DMA_CH_SUSPENDED;
+
+	return 0;
+}
+
+static int ifx_cat1_dma_resume(const struct device *dev, uint32_t channel)
+{
+	const struct ifx_cat1_dma_config *const cfg = dev->config;
+	struct ifx_cat1_dma_data *data = dev->data;
+
+	if (channel >= cfg->num_channels) {
+		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	/* Only a suspended channel can be resumed. */
+	if (data->channels[channel].state != IFX_DMA_CH_SUSPENDED) {
+		return -EINVAL;
+	}
+
+	if (data->channels[channel].restart_withheld) {
+		/* A rechained segment's trigger was withheld while paused; re-enable
+		 * and issue exactly that trigger so the transfer continues.
+		 */
+		data->channels[channel].restart_withheld = false;
+		Cy_DMA_Channel_Enable(cfg->regs, channel);
+		ifx_cat1_dma_sw_trigger(dev, channel);
+		data->channels[channel].state = IFX_DMA_CH_RUNNING;
+	} else {
+		/* No trigger was withheld: the segment running when suspend() was
+		 * called was a single or final block that has since completed (or is
+		 * still finishing under its own trigger). There is nothing to re-arm,
+		 * so issue no trigger - avoiding a CURR_PTR_NULL on a freed chain -
+		 * and just clear the pause.
+		 */
+		data->channels[channel].state = IFX_DMA_CH_CONFIGURED;
+	}
 
 	return 0;
 }
@@ -459,10 +582,16 @@ int ifx_cat1_dma_reload(const struct device *dev, uint32_t channel, uint32_t src
 {
 	struct ifx_cat1_dma_data *data = dev->data;
 	const struct ifx_cat1_dma_config *const cfg = dev->config;
-	cy_stc_dma_descriptor_t *descriptor = data->channels[channel].descr;
+	cy_stc_dma_descriptor_t *descriptor;
 
 	if (channel >= cfg->num_channels) {
 		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	descriptor = data->channels[channel].descr;
+	if (descriptor == NULL) {
+		LOG_ERR("Channel not configured");
 		return -EINVAL;
 	}
 
@@ -560,7 +689,15 @@ static int ifx_cat1_dma_get_status(const struct device *dev, uint32_t channel,
 			uint32_t total_transfer_size = get_total_size(dev, channel);
 			uint32_t transferred_size = get_transferred_size(dev, channel);
 
-			stat->pending_length = total_transfer_size - transferred_size;
+			/* transferred_size can momentarily read >= total when the
+			 * transfer has just completed; clamp to avoid an unsigned
+			 * underflow wrapping pending_length to a huge value.
+			 */
+			if (total_transfer_size > transferred_size) {
+				stat->pending_length = total_transfer_size - transferred_size;
+			} else {
+				stat->pending_length = 0;
+			}
 		} else {
 			stat->pending_length = 0;
 		}
@@ -669,6 +806,16 @@ static void ifx_cat1_dma_isr(struct ifx_cat1_dma_irq_context *irq_context)
 		break;
 	}
 
+	/* The in-flight segment has ended. A running channel returns to idle; a
+	 * suspended channel stays suspended so a rechained start() issued from the
+	 * callback below withholds its trigger. If this was a single or final
+	 * block (no rechain follows), the channel is simply left suspended-idle
+	 * and resume()/stop() resolve it without a spurious trigger.
+	 */
+	if (data->channels[channel].state == IFX_DMA_CH_RUNNING) {
+		data->channels[channel].state = IFX_DMA_CH_CONFIGURED;
+	}
+
 	if ((callback != NULL && status == 0) ||
 	    (callback != NULL && data->channels[channel].error_callback_dis)) {
 		void *callback_arg = data->channels[channel].user_data;
@@ -681,6 +828,8 @@ static DEVICE_API(dma, ifx_cat1_dma_api) = {
 	.config = ifx_cat1_dma_configure,
 	.start = ifx_cat1_dma_start,
 	.stop = ifx_cat1_dma_stop,
+	.suspend = ifx_cat1_dma_suspend,
+	.resume = ifx_cat1_dma_resume,
 	.reload = ifx_cat1_dma_reload,
 	.get_status = ifx_cat1_dma_get_status,
 };
