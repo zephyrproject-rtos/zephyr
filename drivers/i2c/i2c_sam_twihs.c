@@ -10,7 +10,7 @@
 /** @file
  * @brief I2C bus (TWIHS) driver for Atmel SAM MCU family.
  *
- * Only I2C Master Mode with 7 bit addressing is currently supported.
+ * Only I2C Controller Mode with 7 bit addressing is currently supported.
  */
 
 
@@ -111,7 +111,7 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 	int ret;
 
 	if (!(config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Master Mode is not enabled");
+		LOG_ERR("Controller Mode is not enabled");
 		return -EIO;
 	}
 
@@ -142,10 +142,10 @@ static int i2c_sam_twihs_configure(const struct device *dev, uint32_t config)
 		goto unlock;
 	}
 
-	/* Disable Slave Mode */
+	/* Disable Target Mode */
 	twihs->TWIHS_CR = TWIHS_CR_SVDIS;
 
-	/* Enable Master Mode */
+	/* Enable Controller Mode */
 	twihs->TWIHS_CR = TWIHS_CR_MSEN;
 
 	ret = 0;
@@ -158,7 +158,7 @@ unlock:
 static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 			    uint8_t daddr)
 {
-	/* Set slave address. */
+	/* Set target address. */
 	twihs->TWIHS_MMR = TWIHS_MMR_DADR(daddr);
 
 	/* Write first data byte on I2C bus */
@@ -173,7 +173,7 @@ static void read_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 {
 	uint32_t twihs_cr_stop;
 
-	/* Set slave address and number of internal address bytes */
+	/* Set target address and number of internal address bytes */
 	twihs->TWIHS_MMR = TWIHS_MMR_MREAD | TWIHS_MMR_DADR(daddr);
 
 	/* In single data byte read the START and STOP must both be set */
