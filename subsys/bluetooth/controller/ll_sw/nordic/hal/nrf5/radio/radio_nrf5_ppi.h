@@ -424,14 +424,14 @@ static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_
 	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
 				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
-				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
-	/* NOTE: HAL_SW_SWITCH_TIMER_CLEAR_PPI is re-enabled by sw_switch(), so the
-	 *       switch timer will be (re)started on the next Radio IFS-end event.
-	 *       No explicit code to enable or set up switch-timer start is required here.
-	 */
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
+					    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
+		/* NOTE: HAL_SW_SWITCH_TIMER_CLEAR_PPI is re-enabled by sw_switch(), so the
+		 *       switch timer will be (re)started on the next Radio IFS-end event.
+		 *       No explicit code to enable or set up switch-timer start is required here.
+		 */
+	}
 }
 
 static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
@@ -459,14 +459,14 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_
 	nrf_ppi_task_endpoint_setup(NRF_PPI, radio_enable_ppi,
 				    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
-				    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
-	/* NOTE: HAL_SW_SWITCH_TIMER_CLEAR_PPI is re-enabled by sw_switch(), so the
-	 *       switch timer will be (re)started on the next Radio IFS-end event.
-	 *       No explicit code to enable or set up switch-timer start is required here.
-	 */
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_ppi_fork_endpoint_setup(NRF_PPI, radio_enable_ppi,
+					    (uint32_t)&(SW_SWITCH_TIMER->TASKS_STOP));
+		/* NOTE: HAL_SW_SWITCH_TIMER_CLEAR_PPI is re-enabled by sw_switch(), so the
+		 *       switch timer will be (re)started on the next Radio IFS-end event.
+		 *       No explicit code to enable or set up switch-timer start is required here.
+		 */
+	}
 }
 
 static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
