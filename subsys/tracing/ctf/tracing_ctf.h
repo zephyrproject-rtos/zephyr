@@ -39,13 +39,11 @@ extern "C" {
 #define sys_port_trace_k_thread_join_exit(thread, timeout, ret)                                    \
 	sys_trace_k_thread_join_exit(thread, timeout, ret)
 
-#define sys_port_trace_k_thread_sleep_enter(timeout)     sys_trace_k_thread_sleep_enter(timeout)
-#define sys_port_trace_k_thread_sleep_exit(timeout, ret) sys_trace_k_thread_sleep_exit(timeout, ret)
+#define sys_port_trace_k_thread_sleep_ticks_enter(timeout)                                         \
+	sys_trace_k_thread_sleep_ticks_enter(timeout)
+#define sys_port_trace_k_thread_sleep_ticks_exit(timeout, ret)                                     \
+	sys_trace_k_thread_sleep_ticks_exit(timeout, ret)
 
-#define sys_port_trace_k_thread_msleep_enter(ms)     sys_trace_k_thread_msleep_enter(ms)
-#define sys_port_trace_k_thread_msleep_exit(ms, ret) sys_trace_k_thread_msleep_exit(ms, ret)
-#define sys_port_trace_k_thread_usleep_enter(us)     sys_trace_k_thread_usleep_enter(us)
-#define sys_port_trace_k_thread_usleep_exit(us, ret) sys_trace_k_thread_usleep_exit(us, ret)
 #define sys_port_trace_k_thread_busy_wait_enter(usec_to_wait)                                      \
 	sys_trace_k_thread_busy_wait_enter(usec_to_wait)
 #define sys_port_trace_k_thread_busy_wait_exit(usec_to_wait)                                       \
@@ -314,12 +312,8 @@ void sys_trace_k_thread_heap_assign(struct k_thread *thread, struct k_heap *heap
 void sys_trace_k_thread_join_blocking(struct k_thread *thread, k_timeout_t timeout);
 void sys_trace_k_thread_join_enter(struct k_thread *thread, k_timeout_t timeout);
 void sys_trace_k_thread_join_exit(struct k_thread *thread, k_timeout_t timeout, int ret);
-void sys_trace_k_thread_sleep_enter(k_timeout_t timeout);
-void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int ret);
-void sys_trace_k_thread_msleep_enter(int32_t ms);
-void sys_trace_k_thread_msleep_exit(int32_t ms, int ret);
-void sys_trace_k_thread_usleep_enter(int32_t us);
-void sys_trace_k_thread_usleep_exit(int32_t us, int ret);
+void sys_trace_k_thread_sleep_ticks_enter(k_timeout_t timeout);
+void sys_trace_k_thread_sleep_ticks_exit(k_timeout_t timeout, int ret);
 void sys_trace_k_thread_busy_wait_enter(uint32_t usec_to_wait);
 void sys_trace_k_thread_busy_wait_exit(uint32_t usec_to_wait);
 void sys_trace_k_thread_yield(void);

@@ -39,7 +39,7 @@ static uint8_t *string_tracked[] = {
 	"sys_trace_k_thread_resume", "sys_trace_k_thread_ready",
 	"sys_trace_k_thread_sched_ready", "sys_trace_k_thread_sched_abort",
 	"sys_trace_k_thread_sched_resume", "sys_trace_k_thread_sched_suspend",
-	"sys_trace_k_thread_sleep_enter", "sys_trace_k_thread_sleep_exit",
+	"sys_trace_k_thread_sleep_ticks_enter", "sys_trace_k_thread_sleep_ticks_exit",
 	"sys_trace_k_thread_abort_enter", "sys_trace_k_thread_abort_exit",
 	"sys_trace_k_thread_yield", "sys_trace_k_thread_wakeup",
 	"sys_trace_k_thread_pend", "sys_trace_k_thread_info",
@@ -147,8 +147,8 @@ ZTEST(tracing_api, test_tracing_sys_api)
 	sys_trace_k_thread_sched_abort(&thread);
 	sys_trace_k_thread_sched_resume(&thread);
 	sys_trace_k_thread_sched_suspend(&thread);
-	sys_trace_k_thread_sleep_enter(timeout);
-	sys_trace_k_thread_sleep_exit(timeout, ret);
+	sys_trace_k_thread_sleep_ticks_enter(timeout);
+	sys_trace_k_thread_sleep_ticks_exit(timeout, ret);
 	sys_trace_k_thread_abort_enter(&thread);
 	sys_trace_k_thread_abort_exit(&thread);
 	sys_trace_k_thread_yield();
