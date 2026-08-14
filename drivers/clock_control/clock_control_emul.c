@@ -195,3 +195,4 @@ static DEVICE_API(clock_control, clock_control_emul_api) = {
 DT_FOREACH_STATUS_OKAY_VARGS(zephyr_clock_controller_emul_clkid, CLOCK_CONTROL_EMUL_INIT, 1)
 DT_FOREACH_STATUS_OKAY_VARGS(zephyr_clock_controller_emul_clk_id, CLOCK_CONTROL_EMUL_INIT, 1)
 DT_FOREACH_STATUS_OKAY_VARGS(zephyr_clock_controller_emul_id, CLOCK_CONTROL_EMUL_INIT, 1)
+DT_FOREACH_STATUS_OKAY_VARGS(zephyr_clock_controller_emul_rcar_cpg_mssr, CLOCK_CONTROL_EMUL_INIT, 2)

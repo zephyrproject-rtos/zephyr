@@ -117,4 +117,55 @@ CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_id)
 CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_clkid)
 CLOCK_CONTROL_EMUL_DEFINE_1CELL(zephyr_clock_controller_emul_clk_id)
 
+/* Renesas R-Car CPG/MSSR: the selector is a {domain, module} descriptor. */
+
+/**
+ * Match an R-Car CPG/MSSR selector against devicetree cells.
+ *
+ * @param sys R-Car selector pointing to a @ref rcar_cpg_clk descriptor.
+ * @param cells Two-cell clock identifier in domain, module order.
+ * @param num_cells Number of cells in @p cells; must be two.
+ * @return true if the selector's domain and module match @p cells, or false otherwise.
+ */
+static inline bool
+zephyr_clock_controller_emul_rcar_cpg_mssr_subsys_match(clock_control_subsys_t sys,
+							const uint32_t *cells, size_t num_cells)
+{
+	const struct rcar_cpg_clk *clk = sys;
+
+	return clk != NULL && num_cells == 2U && cells[0] == clk->domain && cells[1] == clk->module;
+}
+
+/**
+ * Convert an R-Car CPG/MSSR rate to a stored value.
+ *
+ * @param rate Scalar rate encoded in the opaque subsystem-rate pointer.
+ * @param[out] value Converted rate value.
+ * @retval 0 Conversion succeeds.
+ */
+static inline int
+zephyr_clock_controller_emul_rcar_cpg_mssr_rate_to_value(clock_control_subsys_rate_t rate,
+							 uint32_t *value)
+{
+	return zephyr_clock_controller_emul_id_rate_to_value(rate, value);
+}
+
+/**
+ * Build an R-Car CPG/MSSR selector from devicetree cells.
+ *
+ * @param cells Two-cell clock identifier in domain, module order.
+ * @param[out] storage Storage that receives the selector descriptor. Keep it valid while the
+ *                    returned selector is in use.
+ * @return A pointer to the R-Car selector stored in @p storage.
+ */
+static inline clock_control_subsys_t
+zephyr_clock_controller_emul_rcar_cpg_mssr_cells_to_subsys(const uint32_t *cells,
+							   union clock_control_emul_subsys *storage)
+{
+	storage->rcar_cpg_clk.domain = cells[0];
+	storage->rcar_cpg_clk.module = cells[1];
+
+	return &storage->rcar_cpg_clk;
+}
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_CLOCK_CONTROL_EMUL_H_ */
