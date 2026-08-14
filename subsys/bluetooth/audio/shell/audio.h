@@ -74,8 +74,13 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #define LC3_MAX_NUM_SAMPLES_MONO   ((LC3_MAX_FRAME_DURATION_US * LC3_MAX_SAMPLE_RATE) /            \
 				    USEC_PER_SEC)
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
-#endif /* CONFIG_LIBLC3 */
 
+/* The PCM data exchanged with USB is always interleaved stereo at USB_SAMPLE_RATE. A "USB frame"
+ * is a single left+right sample pair, so that all streams advance their cursors by the same
+ * amount for the same duration of audio, independently of their channel allocation.
+ */
+#define USB_CHANNELS 2U
+#endif /* CONFIG_LIBLC3 */
 #define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
 #define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
@@ -119,10 +124,18 @@ struct shell_stream {
 			lc3_encoder_mem_48k_t lc3_encoder_mem;
 			lc3_encoder_t lc3_encoder;
 #if defined(CONFIG_USBD_AUDIO2_CLASS)
-			/* Indicates where to read left USB data in the ring buffer */
-			size_t left_read_idx;
-			/* Indicates where to read right USB data in the ring buffer */
-			size_t right_read_idx;
+			/* Position of this stream in the interleaved USB OUT ring buffer,
+			 * in USB frames (left+right sample pairs). Always a multiple of
+			 * bap_usb_get_read_cnt() so that an LC3 frame never straddles the
+			 * end of the ring buffer.
+			 */
+			size_t usb_read_cursor;
+			/* Set until the ring buffer has been pre-filled once */
+			bool usb_needs_prefill;
+			/* Set while the ring buffer does not hold an entire SDU, used to
+			 * only log the first of a burst of underruns
+			 */
+			bool usb_underrun;
 #endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
@@ -158,17 +171,60 @@ void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data)
 
 int bap_usb_init(void);
 
-int bap_usb_add_frame_to_usb(enum bt_audio_location lc3_chan_allocation, const int16_t *frame,
-			     size_t frame_size, uint32_t ts);
-void bap_usb_clear_frames_to_usb(void);
 uint16_t get_next_seq_num(struct bt_bap_stream *bap_stream);
 struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream);
 struct bt_bap_stream *bap_stream_from_shell_stream(struct shell_stream *sh_stream);
 struct bt_cap_stream *cap_stream_from_shell_stream(struct shell_stream *sh_stream);
+
+/* Declared unconditionally as bap.c guards the calls with IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS) */
+/** Number of USB frames (left+right sample pairs) covered by a single LC3 frame of @p sh_stream */
+size_t bap_usb_get_read_cnt(const struct shell_stream *sh_stream);
+
+/**
+ * Place @p sh_stream in the USB OUT ring buffer so that it starts reading data that is old enough
+ * to not be overwritten before it is consumed. Shall be called when the stream starts sending.
+ */
+void bap_usb_tx_stream_started(struct shell_stream *sh_stream);
+
+/**
+ * Returns true if the USB OUT ring buffer holds an entire SDU worth of data for @p sh_stream.
+ *
+ * Shall be called before bap_usb_claim_frame_block() for every SDU.
+ */
 bool bap_usb_can_get_full_sdu(struct shell_stream *sh_stream);
-void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location chan_alloc,
-		       int16_t buffer[]);
-size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
+
+/**
+ * Provide a pointer to @p sh_stream's current position in the interleaved USB OUT ring buffer.
+ *
+ * The returned pointer is valid for bap_usb_get_read_cnt() interleaved stereo frames, and shall
+ * be released with bap_usb_release_frame_block() once the frame block has been encoded.
+ */
+const int16_t *bap_usb_claim_frame_block(struct shell_stream *sh_stream);
+
+/** Advance @p sh_stream past the frame block claimed with bap_usb_claim_frame_block() */
+void bap_usb_release_frame_block(struct shell_stream *sh_stream);
+
+/**
+ * Mark @p chan_alloc as being provided by a stream, so that the USB IN data is taken from the
+ * ring buffer rather than being generated from the other channel.
+ */
+void bap_usb_activate_in_chan(enum bt_audio_location chan_alloc);
+
+/** Mark @p chan_alloc as no longer being provided by any stream */
+void bap_usb_deactivate_in_chan(enum bt_audio_location chan_alloc);
+
+/**
+ * Provide a pointer to the position of @p chan_alloc in the interleaved USB IN ring buffer that
+ * the next decoded frame shall be written to.
+ *
+ * @p sample_cnt samples shall be written with a stride of USB_CHANNELS, after which the channel
+ * shall be advanced with bap_usb_release_in_frame(). Returns NULL if @p chan_alloc cannot
+ * currently be written.
+ */
+int16_t *bap_usb_claim_in_frame(enum bt_audio_location chan_alloc, size_t sample_cnt);
+
+/** Advance @p chan_alloc past the frame claimed with bap_usb_claim_in_frame() */
+void bap_usb_release_in_frame(enum bt_audio_location chan_alloc, size_t sample_cnt);
 
 struct broadcast_source {
 	bool is_cap: 1;

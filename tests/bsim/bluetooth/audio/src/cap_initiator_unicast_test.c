@@ -1234,7 +1234,6 @@ static int cap_initiator_ac_create_unicast_group(const struct cap_unicast_ac_par
 	 * First setup the individual stream parameters and then match them in pairs by connection
 	 * and direction
 	 */
-	LOG_ERR("snk_cnt %zu src_cnt %zu", snk_cnt, src_cnt);
 	for (size_t i = 0U; i < snk_cnt; i++) {
 
 		snk_group_stream_params[i].qos_cfg = snk_qos[i];
