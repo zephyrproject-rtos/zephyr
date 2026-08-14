@@ -195,13 +195,36 @@ void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
  */
 void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain, uint32_t part_id)
 {
-	ARG_UNUSED(domain);
-
 	int region_index = get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+	uint32_t i;
 
-	LOG_DBG("disable region 0x%x", region_index + part_id);
+	if (part_id >= CONFIG_MAX_DOMAIN_PARTITIONS || domain->partitions[part_id].size == 0U) {
+		return;
+	}
+
+	/*
+	 * arc_core_mpu_configure_mem_domain() programs valid partitions in
+	 * array order into consecutive region slots counting down from the
+	 * domain-partition base region, skipping holes; count the valid
+	 * partitions before this one to derive its region slot.
+	 */
+	for (i = 0; i < part_id; i++) {
+		if (domain->partitions[i].size != 0U) {
+			region_index--;
+		}
+	}
+
+	/*
+	 * Defensive: unreachable while the kernel caps partitions at
+	 * base + 1 via arch_mem_domain_max_partitions_get().
+	 */
+	if (region_index < 0) {
+		return;
+	}
+
+	LOG_DBG("disable region 0x%x", region_index);
 	/* Disable region */
-	_region_init(region_index + part_id, 0, 0, 0);
+	_region_init(region_index, 0, 0, 0);
 }
 
 /**
