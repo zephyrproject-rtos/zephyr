@@ -23,6 +23,11 @@
  * @version 0.3.0
  * @ingroup audio_interface
  * @{
+ *
+ * @defgroup audio_codec_interface_ext Device-specific audio codec API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <errno.h>
