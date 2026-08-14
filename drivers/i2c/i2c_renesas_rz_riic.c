@@ -21,7 +21,7 @@ typedef iic_master_extended_cfg_t riic_master_extended_cfg_t;
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(renesas_rz_riic);
 
-#define RZ_RIIC_MASTER_DIV_TIME_NS (1000000000.0)
+#define RZ_RIIC_CONTROLLER_DIV_TIME_NS (1000000000.0)
 
 struct i2c_rz_riic_config {
 	const struct pinctrl_dev_config *pin_config;
@@ -35,16 +35,17 @@ struct i2c_rz_riic_config {
 struct i2c_rz_riic_data {
 	i2c_master_ctrl_t *fsp_ctrl;
 	i2c_master_cfg_t *fsp_cfg;
-	riic_master_extended_cfg_t *riic_master_ext_cfg;
+	riic_master_extended_cfg_t *riic_controller_ext_cfg;
 	struct k_mutex bus_mutex;
 	struct k_sem complete_sem;
 	i2c_master_event_t event;
 	uint32_t dev_config;
 };
 
-/* IIC master clock setting calculation function. */
-static void calc_riic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
-					   iic_master_clock_settings_t *clk_cfg);
+/* IIC controller clock setting calculation function. */
+static void calc_riic_controller_clock_setting(const struct device *dev,
+					       const uint32_t fsp_i2c_rate,
+					       iic_master_clock_settings_t *clk_cfg);
 
 #if defined(CONFIG_I2C_RENESAS_RZ_RIIC)
 /* FSP interruption handlers. */
@@ -57,60 +58,60 @@ void riic_master_spi_isr(void *irq);
 void riic_master_ali_isr(void *irq);
 void riic_master_tmoi_isr(void *irq);
 
-static void i2c_rz_riic_master_rxi_isr(const struct device *dev)
+static void i2c_rz_riic_controller_rxi_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
 	riic_master_rxi_isr((void *)data->fsp_cfg->rxi_irq);
 }
 
-static void i2c_rz_riic_master_txi_isr(const struct device *dev)
+static void i2c_rz_riic_controller_txi_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
 	riic_master_txi_isr((void *)data->fsp_cfg->txi_irq);
 }
 
-static void i2c_rz_riic_master_tei_isr(const struct device *dev)
+static void i2c_rz_riic_controller_tei_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
 	riic_master_tei_isr((void *)data->fsp_cfg->tei_irq);
 }
 
-static void i2c_rz_riic_master_naki_isr(const struct device *dev)
+static void i2c_rz_riic_controller_naki_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
-	riic_master_naki_isr((void *)data->riic_master_ext_cfg->naki_irq);
+	riic_master_naki_isr((void *)data->riic_controller_ext_cfg->naki_irq);
 }
 
-static void i2c_rz_riic_master_sti_isr(const struct device *dev)
+static void i2c_rz_riic_controller_sti_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
-	riic_master_sti_isr((void *)data->riic_master_ext_cfg->sti_irq);
+	riic_master_sti_isr((void *)data->riic_controller_ext_cfg->sti_irq);
 }
 
-static void i2c_rz_riic_master_spi_isr(const struct device *dev)
+static void i2c_rz_riic_controller_spi_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
-	riic_master_spi_isr((void *)data->riic_master_ext_cfg->spi_irq);
+	riic_master_spi_isr((void *)data->riic_controller_ext_cfg->spi_irq);
 }
 
-static void i2c_rz_riic_master_ali_isr(const struct device *dev)
+static void i2c_rz_riic_controller_ali_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
-	riic_master_ali_isr((void *)data->riic_master_ext_cfg->ali_irq);
+	riic_master_ali_isr((void *)data->riic_controller_ext_cfg->ali_irq);
 }
 
-static void i2c_rz_riic_master_tmoi_isr(const struct device *dev)
+static void i2c_rz_riic_controller_tmoi_isr(const struct device *dev)
 {
 	struct i2c_rz_riic_data *data = dev->data;
 
-	riic_master_tmoi_isr((void *)data->riic_master_ext_cfg->tmoi_irq);
+	riic_master_tmoi_isr((void *)data->riic_controller_ext_cfg->tmoi_irq);
 }
 
 #if defined(CONFIG_SOC_SERIES_RZV2H) || defined(CONFIG_SOC_SERIES_RZV2N)
@@ -149,7 +150,7 @@ void iic_master_tei_isr(void);
 void iic_master_eri_isr(void);
 #endif
 
-struct rz_riic_master_bitrate {
+struct rz_riic_controller_bitrate {
 	uint32_t bitrate;
 	uint32_t duty;
 	uint32_t divider;
@@ -165,7 +166,7 @@ static int i2c_rz_riic_configure(const struct device *dev, uint32_t dev_config)
 	fsp_err_t err;
 
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERR("Only I2C Controller mode supported.");
 		return -EIO;
 	}
 
@@ -185,8 +186,8 @@ static int i2c_rz_riic_configure(const struct device *dev, uint32_t dev_config)
 	}
 
 	/* Recalc clock setting after updating config. */
-	calc_riic_master_clock_setting(dev, data->fsp_cfg->rate,
-				       &data->riic_master_ext_cfg->clock_settings);
+	calc_riic_controller_clock_setting(dev, data->fsp_cfg->rate,
+					   &data->riic_controller_ext_cfg->clock_settings);
 
 	err = config->fsp_api->close(data->fsp_ctrl);
 	if (err != FSP_SUCCESS) {
@@ -287,7 +288,7 @@ static int i2c_rz_riic_transfer(const struct device *dev, struct i2c_msg *msgs, 
 
 	err = config->fsp_api->slaveAddressSet(data->fsp_ctrl, addr, addr_mode);
 	if (err != FSP_SUCCESS) {
-		LOG_ERR("Failed to set slave address");
+		LOG_ERR("Failed to set target address");
 		return -EIO;
 	}
 
@@ -390,10 +391,10 @@ static int i2c_rz_riic_init(const struct device *dev)
 	case I2C_MASTER_RATE_STANDARD:
 	case I2C_MASTER_RATE_FAST:
 	case I2C_MASTER_RATE_FASTPLUS:
-		calc_riic_master_clock_setting(dev, data->fsp_cfg->rate,
-					       &data->riic_master_ext_cfg->clock_settings);
-		data->riic_master_ext_cfg->timeout_mode = IIC_MASTER_TIMEOUT_MODE_SHORT;
-		data->riic_master_ext_cfg->timeout_scl_low = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED;
+		calc_riic_controller_clock_setting(dev, data->fsp_cfg->rate,
+						   &data->riic_controller_ext_cfg->clock_settings);
+		data->riic_controller_ext_cfg->timeout_mode = IIC_MASTER_TIMEOUT_MODE_SHORT;
+		data->riic_controller_ext_cfg->timeout_scl_low = IIC_MASTER_TIMEOUT_SCL_LOW_ENABLED;
 		break;
 	default:
 		LOG_ERR("%s: Invalid I2C speed rate: %d", __func__, data->fsp_cfg->rate);
@@ -410,9 +411,9 @@ static int i2c_rz_riic_init(const struct device *dev)
 	return 0;
 }
 
-static void calc_riic_master_bitrate(const struct i2c_rz_riic_config *config,
-				     uint32_t total_brl_brh, uint32_t brh, uint32_t divider,
-				     struct rz_riic_master_bitrate *result)
+static void calc_riic_controller_bitrate(const struct i2c_rz_riic_config *config,
+					 uint32_t total_brl_brh, uint32_t brh, uint32_t divider,
+					 struct rz_riic_controller_bitrate *result)
 {
 	const uint32_t noise_filter_stages = config->noise_filter_stage;
 	const double rise_time_s = config->rise_time_s;
@@ -449,8 +450,9 @@ static void calc_riic_master_bitrate(const struct i2c_rz_riic_config *config,
 		requested_duty;
 }
 
-static void calc_riic_master_clock_setting(const struct device *dev, const uint32_t fsp_i2c_rate,
-					   iic_master_clock_settings_t *clk_cfg)
+static void calc_riic_controller_clock_setting(const struct device *dev,
+					       const uint32_t fsp_i2c_rate,
+					       iic_master_clock_settings_t *clk_cfg)
 {
 	const struct i2c_rz_riic_config *config = dev->config;
 	const uint32_t noise_filter_stages = config->noise_filter_stage;
@@ -475,9 +477,9 @@ static void calc_riic_master_clock_setting(const struct device *dev, const uint3
 	/* Start with maximum possible bitrate. */
 	uint32_t min_brh = noise_filter_stages + 1;
 	uint32_t min_brl_brh = 2 * min_brh;
-	struct rz_riic_master_bitrate bitrate = {};
+	struct rz_riic_controller_bitrate bitrate = {};
 
-	calc_riic_master_bitrate(config, min_brl_brh, min_brh, 0, &bitrate);
+	calc_riic_controller_bitrate(config, min_brl_brh, min_brh, 0, &bitrate);
 
 	/* Start with the smallest divider because it gives the most resolution. */
 	uint32_t constant_add = 3 + noise_filter_stages;
@@ -506,13 +508,13 @@ static void calc_riic_master_clock_setting(const struct device *dev, const uint3
 		}
 
 		/* Calculate the actual bitrate and duty cycle. */
-		struct rz_riic_master_bitrate temp_bitrate = {};
+		struct rz_riic_controller_bitrate temp_bitrate = {};
 
-		calc_riic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-					 &temp_bitrate);
+		calc_riic_controller_bitrate(config, total_brl_brh, temp_brh, temp_divider,
+					     &temp_bitrate);
 
 		/* Adjust duty cycle down if it helps. */
-		struct rz_riic_master_bitrate test_bitrate = temp_bitrate;
+		struct rz_riic_controller_bitrate test_bitrate = temp_bitrate;
 
 		while (test_bitrate.duty > requested_duty) {
 			temp_brh -= 1;
@@ -521,10 +523,10 @@ static void calc_riic_master_clock_setting(const struct device *dev, const uint3
 				break;
 			}
 
-			struct rz_riic_master_bitrate new_bitrate = {};
+			struct rz_riic_controller_bitrate new_bitrate = {};
 
-			calc_riic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-						 &new_bitrate);
+			calc_riic_controller_bitrate(config, total_brl_brh, temp_brh, temp_divider,
+						     &new_bitrate);
 
 			if (new_bitrate.duty_error_percent < temp_bitrate.duty_error_percent) {
 				temp_bitrate = new_bitrate;
@@ -542,10 +544,10 @@ static void calc_riic_master_clock_setting(const struct device *dev, const uint3
 				break;
 			}
 
-			struct rz_riic_master_bitrate new_bitrate = {};
+			struct rz_riic_controller_bitrate new_bitrate = {};
 
-			calc_riic_master_bitrate(config, total_brl_brh, temp_brh, temp_divider,
-						 &new_bitrate);
+			calc_riic_controller_bitrate(config, total_brl_brh, temp_brh, temp_divider,
+						     &new_bitrate);
 
 			if (new_bitrate.duty_error_percent < temp_bitrate.duty_error_percent) {
 				temp_bitrate = new_bitrate;
@@ -601,17 +603,17 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 
 #define I2C_RZ_CONFIG_FUNC(index)                                                                  \
 	I2C_RZ_CONNECT_IRQ_SELECT(index);                                                          \
-	I2C_RZ_IRQ_CONNECT(index, rxi, i2c_rz_riic_master_rxi_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, txi, i2c_rz_riic_master_txi_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, tei, i2c_rz_riic_master_tei_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, naki, i2c_rz_riic_master_naki_isr);                              \
-	I2C_RZ_IRQ_CONNECT(index, sti, i2c_rz_riic_master_sti_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, spi, i2c_rz_riic_master_spi_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, ali, i2c_rz_riic_master_ali_isr);                                \
-	I2C_RZ_IRQ_CONNECT(index, tmoi, i2c_rz_riic_master_tmoi_isr);
+	I2C_RZ_IRQ_CONNECT(index, rxi, i2c_rz_riic_controller_rxi_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, txi, i2c_rz_riic_controller_txi_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, tei, i2c_rz_riic_controller_tei_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, naki, i2c_rz_riic_controller_naki_isr);                          \
+	I2C_RZ_IRQ_CONNECT(index, sti, i2c_rz_riic_controller_sti_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, spi, i2c_rz_riic_controller_spi_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, ali, i2c_rz_riic_controller_ali_isr);                            \
+	I2C_RZ_IRQ_CONNECT(index, tmoi, i2c_rz_riic_controller_tmoi_isr);
 
 #define I2C_RZ_EXTENDED_CFG(index)                                                                 \
-	static riic_master_extended_cfg_t g_i2c_master##index##_extend = {                         \
+	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {                     \
 		.noise_filter_stage = DT_INST_PROP(index, noise_filter_stages),                    \
 		.naki_irq = DT_INST_IRQ_BY_NAME(index, naki, irq),                                 \
 		.sti_irq = DT_INST_IRQ_BY_NAME(index, sti, irq),                                   \
@@ -630,14 +632,14 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	I2C_RZ_IRQ_CONNECT(index, tei, iic_master_tei_isr);
 
 #define I2C_RZ_EXTENDED_CFG(index)                                                                 \
-	static riic_master_extended_cfg_t g_i2c_master##index##_extend = {};
+	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {};
 #endif /* CONFIG_I2C_RENESAS_RZ_IIC */
 
 #define I2C_RZ_RIIC_INIT(index)                                                                    \
                                                                                                    \
 	I2C_RZ_EXTENDED_CFG(index)                                                                 \
                                                                                                    \
-	static i2c_master_cfg_t g_i2c_master##index##_cfg = {                                      \
+	static i2c_master_cfg_t g_i2c_controller##index##_cfg = {                                  \
 		.channel = DT_INST_PROP(index, channel),                                           \
 		.rate = DT_INST_PROP(index, clock_frequency),                                      \
 		.slave = 0x00,                                                                     \
@@ -650,7 +652,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 		.txi_irq = DT_INST_IRQ_BY_NAME(index, txi, irq),                                   \
 		.tei_irq = DT_INST_IRQ_BY_NAME(index, tei, irq),                                   \
 		.ipl = DT_INST_IRQ_BY_NAME(index, rxi, priority),                                  \
-		.p_extend = &g_i2c_master##index##_extend,                                         \
+		.p_extend = &g_i2c_controller##index##_extend,                                     \
 		IF_ENABLED(CONFIG_I2C_RENESAS_RZ_IIC,                                              \
 				(.eri_irq = DT_INST_IRQ_BY_NAME(index, eri, irq),))};       \
                                                                                                    \
@@ -659,18 +661,18 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	static const struct i2c_rz_riic_config i2c_rz_riic_config_##index = {                      \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
 		.fsp_api = &g_i2c_master_on_iic,                                                   \
-		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RZ_RIIC_MASTER_DIV_TIME_NS,     \
-		.fall_time_s = DT_INST_PROP(index, fall_time_ns) / RZ_RIIC_MASTER_DIV_TIME_NS,     \
+		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RZ_RIIC_CONTROLLER_DIV_TIME_NS, \
+		.fall_time_s = DT_INST_PROP(index, fall_time_ns) / RZ_RIIC_CONTROLLER_DIV_TIME_NS, \
 		.duty_cycle_percent = DT_INST_PROP(index, duty_cycle_percent),                     \
 		.noise_filter_stage = DT_INST_PROP(index, noise_filter_stages),                    \
 	};                                                                                         \
                                                                                                    \
-	static iic_master_instance_ctrl_t g_i2c_master##index##_ctrl;                              \
+	static iic_master_instance_ctrl_t g_i2c_controller##index##_ctrl;                          \
                                                                                                    \
 	static struct i2c_rz_riic_data i2c_rz_riic_data_##index = {                                \
-		.fsp_ctrl = (i2c_master_ctrl_t *)&g_i2c_master##index##_ctrl,                      \
-		.fsp_cfg = &g_i2c_master##index##_cfg,                                             \
-		.riic_master_ext_cfg = &g_i2c_master##index##_extend,                              \
+		.fsp_ctrl = (i2c_master_ctrl_t *)&g_i2c_controller##index##_ctrl,                  \
+		.fsp_cfg = &g_i2c_controller##index##_cfg,                                         \
+		.riic_controller_ext_cfg = &g_i2c_controller##index##_extend,                      \
 	};                                                                                         \
                                                                                                    \
 	static int i2c_rz_riic_init_##index(const struct device *dev)                              \
