@@ -7443,6 +7443,7 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files: []
   labels:
     - "area: TF-M"
@@ -7478,6 +7479,7 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files: []
   labels:
     - "area: TF-M"
@@ -7531,6 +7533,7 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
