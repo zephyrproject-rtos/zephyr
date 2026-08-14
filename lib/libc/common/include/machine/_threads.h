@@ -8,6 +8,7 @@
 #define ZEPHYR_LIB_LIBC_COMMON_INCLUDE_MACHINE__THREADS_H_
 
 #include <stdint.h>
+#include <zephyr/posix/posix_types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,9 +20,7 @@ typedef uint32_t cnd_t;
 typedef uint32_t mtx_t;
 typedef uint32_t thrd_t;
 typedef uint32_t tss_t;
-typedef struct {
-	char flag;
-} once_flag;
+typedef struct pthread_once once_flag;
 
 #ifdef __cplusplus
 }
