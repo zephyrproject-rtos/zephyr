@@ -19,30 +19,30 @@ LOG_MODULE_REGISTER(i2c_numaker, CONFIG_I2C_LOG_LEVEL);
 #include <soc.h>
 #include <NuMicro.h>
 
-/* i2c Master Mode Status */
+/* i2c Controller Mode Status */
 #define M_START          0x08 /* Start */
-#define M_REPEAT_START   0x10 /* Master Repeat Start */
-#define M_TRAN_ADDR_ACK  0x18 /* Master Transmit Address ACK */
-#define M_TRAN_ADDR_NACK 0x20 /* Master Transmit Address NACK */
-#define M_TRAN_DATA_ACK  0x28 /* Master Transmit Data ACK */
-#define M_TRAN_DATA_NACK 0x30 /* Master Transmit Data NACK */
-#define M_ARB_LOST       0x38 /* Master Arbitration Los */
-#define M_RECE_ADDR_ACK  0x40 /* Master Receive Address ACK */
-#define M_RECE_ADDR_NACK 0x48 /* Master Receive Address NACK */
-#define M_RECE_DATA_ACK  0x50 /* Master Receive Data ACK */
-#define M_RECE_DATA_NACK 0x58 /* Master Receive Data NACK */
+#define M_REPEAT_START   0x10 /* Controller Repeat Start */
+#define M_TRAN_ADDR_ACK  0x18 /* Controller Transmit Address ACK */
+#define M_TRAN_ADDR_NACK 0x20 /* Controller Transmit Address NACK */
+#define M_TRAN_DATA_ACK  0x28 /* Controller Transmit Data ACK */
+#define M_TRAN_DATA_NACK 0x30 /* Controller Transmit Data NACK */
+#define M_ARB_LOST       0x38 /* Controller Arbitration Los */
+#define M_RECE_ADDR_ACK  0x40 /* Controller Receive Address ACK */
+#define M_RECE_ADDR_NACK 0x48 /* Controller Receive Address NACK */
+#define M_RECE_DATA_ACK  0x50 /* Controller Receive Data ACK */
+#define M_RECE_DATA_NACK 0x58 /* Controller Receive Data NACK */
 #define BUS_ERROR        0x00 /* Bus error */
 
-/* i2c Slave Mode Status */
-#define S_REPEAT_START_STOP  0xA0 /* Slave Transmit Repeat Start or Stop */
-#define S_TRAN_ADDR_ACK      0xA8 /* Slave Transmit Address ACK */
-#define S_TRAN_DATA_ACK      0xB8 /* Slave Transmit Data ACK */
-#define S_TRAN_DATA_NACK     0xC0 /* Slave Transmit Data NACK */
-#define S_TRAN_LAST_DATA_ACK 0xC8 /* Slave Transmit Last Data ACK */
-#define S_RECE_ADDR_ACK      0x60 /* Slave Receive Address ACK */
-#define S_RECE_ARB_LOST      0x68 /* Slave Receive Arbitration Lost */
-#define S_RECE_DATA_ACK      0x80 /* Slave Receive Data ACK */
-#define S_RECE_DATA_NACK     0x88 /* Slave Receive Data NACK */
+/* i2c Target Mode Status */
+#define S_REPEAT_START_STOP  0xA0 /* Target Transmit Repeat Start or Stop */
+#define S_TRAN_ADDR_ACK      0xA8 /* Target Transmit Address ACK */
+#define S_TRAN_DATA_ACK      0xB8 /* Target Transmit Data ACK */
+#define S_TRAN_DATA_NACK     0xC0 /* Target Transmit Data NACK */
+#define S_TRAN_LAST_DATA_ACK 0xC8 /* Target Transmit Last Data ACK */
+#define S_RECE_ADDR_ACK      0x60 /* Target Receive Address ACK */
+#define S_RECE_ARB_LOST      0x68 /* Target Receive Arbitration Lost */
+#define S_RECE_DATA_ACK      0x80 /* Target Receive Data ACK */
+#define S_RECE_DATA_NACK     0x88 /* Target Receive Data NACK */
 
 /* i2c GC Mode Status */
 #define GC_ADDR_ACK  0x70 /* GC mode Address ACK */
@@ -70,7 +70,7 @@ struct i2c_numaker_config {
 struct i2c_numaker_data {
 	struct k_sem lock;
 	uint32_t dev_config;
-	/* Master transfer context */
+	/* Controller transfer context */
 	struct {
 		struct k_sem xfer_sync;
 		uint16_t addr;
@@ -80,41 +80,41 @@ struct i2c_numaker_data {
 		uint8_t *buf_beg;
 		uint8_t *buf_pos;
 		uint8_t *buf_end;
-	} master_xfer;
+	} controller_xfer;
 #ifdef CONFIG_I2C_TARGET
-	/* Slave transfer context */
+	/* Target transfer context */
 	struct {
-		struct i2c_target_config *slave_config;
-		bool slave_addressed;
-	} slave_xfer;
+		struct i2c_target_config *target_config;
+		bool target_addressed;
+	} target_xfer;
 #endif
 };
 
 /* ACK/NACK last data byte, dependent on whether or not message merge is allowed */
-static void m_numaker_i2c_master_xfer_msg_read_last_byte(const struct device *dev)
+static void m_numaker_i2c_controller_xfer_msg_read_last_byte(const struct device *dev)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
 	I2C_T *i2c_base = config->i2c_base;
 
 	/* Shouldn't invoke with message pointer OOB */
-	__ASSERT_NO_MSG(data->master_xfer.msgs_pos < data->master_xfer.msgs_end);
+	__ASSERT_NO_MSG(data->controller_xfer.msgs_pos < data->controller_xfer.msgs_end);
 	/* Should invoke with exactly one data byte remaining for read */
-	__ASSERT_NO_MSG((data->master_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ);
-	__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) == 1);
+	__ASSERT_NO_MSG((data->controller_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ);
+	__ASSERT_NO_MSG((data->controller_xfer.buf_end - data->controller_xfer.buf_pos) == 1);
 
 	/* Flags of previous message */
-	bool do_stop_prev = data->master_xfer.msgs_pos->flags & I2C_MSG_STOP;
+	bool do_stop_prev = data->controller_xfer.msgs_pos->flags & I2C_MSG_STOP;
 
 	/* Advance to next messages temporarily */
-	data->master_xfer.msgs_pos++;
+	data->controller_xfer.msgs_pos++;
 
 	/* Has next message? */
-	if (data->master_xfer.msgs_pos < data->master_xfer.msgs_end) {
+	if (data->controller_xfer.msgs_pos < data->controller_xfer.msgs_end) {
 		/* Flags of next message */
-		struct i2c_msg *msgs_pos = data->master_xfer.msgs_pos;
+		struct i2c_msg *msgs_pos = data->controller_xfer.msgs_pos;
 		bool is_read_next = (msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-		bool do_restart_next = data->master_xfer.msgs_pos->flags & I2C_MSG_RESTART;
+		bool do_restart_next = data->controller_xfer.msgs_pos->flags & I2C_MSG_RESTART;
 
 		/*
 		 * Different R/W bit so message merge is disallowed.
@@ -127,23 +127,23 @@ static void m_numaker_i2c_master_xfer_msg_read_last_byte(const struct device *de
 		}
 
 		if (do_stop_prev || do_restart_next) {
-			/* NACK last data byte (required for Master Receiver) */
+			/* NACK last data byte (required for Controller Receiver) */
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		} else {
 			/* ACK last data byte, so to merge adjacent messages into one transaction */
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		}
 	} else {
-		/* NACK last data byte (required for Master Receiver) */
+		/* NACK last data byte (required for Controller Receiver) */
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 	}
 
 	/* Roll back message pointer */
-	data->master_xfer.msgs_pos--;
+	data->controller_xfer.msgs_pos--;
 }
 
 /* End the transfer, involving I2C Stop and signal to thread */
-static void m_numaker_i2c_master_xfer_end(const struct device *dev, bool do_stop)
+static void m_numaker_i2c_controller_xfer_end(const struct device *dev, bool do_stop)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
@@ -154,26 +154,26 @@ static void m_numaker_i2c_master_xfer_end(const struct device *dev, bool do_stop
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_STO_Msk | I2C_CTL0_SI_Msk);
 	}
 
-	/* Signal master transfer end */
-	k_sem_give(&data->master_xfer.xfer_sync);
+	/* Signal controller transfer end */
+	k_sem_give(&data->controller_xfer.xfer_sync);
 }
 
-static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev);
+static void m_numaker_i2c_controller_xfer_msg_end(const struct device *dev);
 /* Read next data byte, involving ACK/NACK last data byte and message merge */
-static void m_numaker_i2c_master_xfer_msg_read_next_byte(const struct device *dev)
+static void m_numaker_i2c_controller_xfer_msg_read_next_byte(const struct device *dev)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
 	I2C_T *i2c_base = config->i2c_base;
 
-	switch (data->master_xfer.buf_end - data->master_xfer.buf_pos) {
+	switch (data->controller_xfer.buf_end - data->controller_xfer.buf_pos) {
 	case 0:
 		/* Last data byte ACKed, we'll do message merge */
-		m_numaker_i2c_master_xfer_msg_end(dev);
+		m_numaker_i2c_controller_xfer_msg_end(dev);
 		break;
 	case 1:
 		/* Read last data byte for this message */
-		m_numaker_i2c_master_xfer_msg_read_last_byte(dev);
+		m_numaker_i2c_controller_xfer_msg_read_last_byte(dev);
 		break;
 	default:
 		/* ACK non-last data byte */
@@ -182,30 +182,31 @@ static void m_numaker_i2c_master_xfer_msg_read_next_byte(const struct device *de
 }
 
 /* End one message transfer, involving message merge and transfer end */
-static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
+static void m_numaker_i2c_controller_xfer_msg_end(const struct device *dev)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
 	I2C_T *i2c_base = config->i2c_base;
 
 	/* Shouldn't invoke with message pointer OOB */
-	__ASSERT_NO_MSG(data->master_xfer.msgs_pos < data->master_xfer.msgs_end);
+	__ASSERT_NO_MSG(data->controller_xfer.msgs_pos < data->controller_xfer.msgs_end);
 	/* Should have transferred up */
-	__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) == 0);
+	__ASSERT_NO_MSG((data->controller_xfer.buf_end - data->controller_xfer.buf_pos) == 0);
 
 	/* Flags of previous message */
-	bool is_read_prev = (data->master_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-	bool do_stop_prev = data->master_xfer.msgs_pos->flags & I2C_MSG_STOP;
+	bool is_read_prev =
+		(data->controller_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
+	bool do_stop_prev = data->controller_xfer.msgs_pos->flags & I2C_MSG_STOP;
 
 	/* Advance to next messages */
-	data->master_xfer.msgs_pos++;
+	data->controller_xfer.msgs_pos++;
 
 	/* Has next message? */
-	if (data->master_xfer.msgs_pos < data->master_xfer.msgs_end) {
+	if (data->controller_xfer.msgs_pos < data->controller_xfer.msgs_end) {
 		/* Flags of next message */
-		struct i2c_msg *msgs_pos = data->master_xfer.msgs_pos;
+		struct i2c_msg *msgs_pos = data->controller_xfer.msgs_pos;
 		bool is_read_next = (msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-		bool do_restart_next = data->master_xfer.msgs_pos->flags & I2C_MSG_RESTART;
+		bool do_restart_next = data->controller_xfer.msgs_pos->flags & I2C_MSG_RESTART;
 
 		/*
 		 * Different R/W bit so message merge is disallowed.
@@ -229,13 +230,13 @@ static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
 			/* Merge into the same transaction */
 
 			/* Prepare buffer for current message */
-			data->master_xfer.buf_beg = data->master_xfer.msgs_pos->buf;
-			data->master_xfer.buf_pos = data->master_xfer.msgs_pos->buf;
-			data->master_xfer.buf_end = data->master_xfer.msgs_pos->buf +
-						    data->master_xfer.msgs_pos->len;
+			data->controller_xfer.buf_beg = data->controller_xfer.msgs_pos->buf;
+			data->controller_xfer.buf_pos = data->controller_xfer.msgs_pos->buf;
+			data->controller_xfer.buf_end = data->controller_xfer.msgs_pos->buf +
+							data->controller_xfer.msgs_pos->len;
 
 			if (is_read_prev) {
-				m_numaker_i2c_master_xfer_msg_read_next_byte(dev);
+				m_numaker_i2c_controller_xfer_msg_read_next_byte(dev);
 			} else {
 				/*
 				 * Interrupt flag not cleared, expect to re-enter ISR with
@@ -248,7 +249,7 @@ static void m_numaker_i2c_master_xfer_msg_end(const struct device *dev)
 			LOG_WRN("Last message not marked I2C Stop");
 		}
 
-		m_numaker_i2c_master_xfer_end(dev, do_stop_prev);
+		m_numaker_i2c_controller_xfer_end(dev, do_stop_prev);
 	}
 }
 
@@ -286,8 +287,8 @@ static int i2c_numaker_configure(const struct device *dev, uint32_t dev_config)
 	irq_disable(config->irq_n);
 
 #ifdef CONFIG_I2C_TARGET
-	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Reconfigure with slave being busy");
+	if (data->target_xfer.target_addressed) {
+		LOG_ERR("Reconfigure with target being busy");
 		err = -EBUSY;
 		goto done;
 	}
@@ -323,11 +324,11 @@ static int i2c_numaker_get_config(const struct device *dev, uint32_t *dev_config
 }
 
 /*
- * Master active transfer:
+ * Controller active transfer:
  * 1. Do I2C Start to start the transfer (thread)
  * 2. I2C FSM (ISR)
  * 3. Force I2C Stop to end the transfer (thread)
- * Slave passive transfer:
+ * Target passive transfer:
  * 1. Prepare callback (thread)
  * 2. Do data transfer via above callback (ISR)
  */
@@ -343,40 +344,41 @@ static int i2c_numaker_transfer(const struct device *dev, struct i2c_msg *msgs, 
 	irq_disable(config->irq_n);
 
 #ifdef CONFIG_I2C_TARGET
-	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Master transfer with slave being busy");
+	if (data->target_xfer.target_addressed) {
+		LOG_ERR("Controller transfer with target being busy");
 		err = -EBUSY;
 		goto cleanup;
 	}
 #endif
 
 	/* Prepare to start transfer */
-	data->master_xfer.addr = addr;
-	data->master_xfer.msgs_beg = msgs;
-	data->master_xfer.msgs_pos = msgs;
-	data->master_xfer.msgs_end = msgs + num_msgs;
+	data->controller_xfer.addr = addr;
+	data->controller_xfer.msgs_beg = msgs;
+	data->controller_xfer.msgs_pos = msgs;
+	data->controller_xfer.msgs_end = msgs + num_msgs;
 
 	/* Do I2C Start to start the transfer */
 	I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_STA_Msk | I2C_CTL0_SI_Msk);
 
 	irq_enable(config->irq_n);
-	k_sem_take(&data->master_xfer.xfer_sync, K_FOREVER);
+	k_sem_take(&data->controller_xfer.xfer_sync, K_FOREVER);
 	irq_disable(config->irq_n);
 
 	/* Check transfer result */
-	if (data->master_xfer.msgs_pos != data->master_xfer.msgs_end) {
+	if (data->controller_xfer.msgs_pos != data->controller_xfer.msgs_end) {
 		bool is_read;
 		bool is_10bit;
 
-		is_read = (data->master_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-		is_10bit = data->master_xfer.msgs_pos->flags & I2C_MSG_ADDR_10_BITS;
+		is_read = (data->controller_xfer.msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
+		is_10bit = data->controller_xfer.msgs_pos->flags & I2C_MSG_ADDR_10_BITS;
 		LOG_ERR("Failed message:");
-		LOG_ERR("MSG IDX: %d", data->master_xfer.msgs_pos - data->master_xfer.msgs_beg);
+		LOG_ERR("MSG IDX: %d",
+			data->controller_xfer.msgs_pos - data->controller_xfer.msgs_beg);
 		LOG_ERR("ADDR (%d-bit): 0x%04X", is_10bit ? 10 : 7, addr);
 		LOG_ERR("DIR: %s", is_read ? "R" : "W");
 		LOG_ERR("Expected %d bytes transferred, but actual %d",
-			data->master_xfer.msgs_pos->len,
-			data->master_xfer.buf_pos - data->master_xfer.buf_beg);
+			data->controller_xfer.msgs_pos->len,
+			data->controller_xfer.buf_pos - data->controller_xfer.buf_beg);
 		err = -EIO;
 		goto i2c_stop;
 	}
@@ -387,8 +389,8 @@ i2c_stop:
 	I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_STO_Msk | I2C_CTL0_SI_Msk);
 
 #ifdef CONFIG_I2C_TARGET
-	/* Enable slave mode if one slave is registered */
-	if (data->slave_xfer.slave_config) {
+	/* Enable target mode if one target is registered */
+	if (data->target_xfer.target_config) {
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 	}
 
@@ -402,14 +404,14 @@ cleanup:
 }
 
 #ifdef CONFIG_I2C_TARGET
-static int i2c_numaker_slave_register(const struct device *dev,
-				      struct i2c_target_config *slave_config)
+static int i2c_numaker_target_register(const struct device *dev,
+				       struct i2c_target_config *target_config)
 {
-	if (!slave_config || !slave_config->callbacks) {
+	if (!target_config || !target_config->callbacks) {
 		return -EINVAL;
 	}
 
-	if (slave_config->flags & I2C_ADDR_10_BITS) {
+	if (target_config->flags & I2C_ADDR_10_BITS) {
 		LOG_ERR("10-bits address not supported");
 		return -ENOTSUP;
 	}
@@ -422,19 +424,19 @@ static int i2c_numaker_slave_register(const struct device *dev,
 	k_sem_take(&data->lock, K_FOREVER);
 	irq_disable(config->irq_n);
 
-	if (data->slave_xfer.slave_config) {
+	if (data->target_xfer.target_config) {
 		err = -EBUSY;
 		goto cleanup;
 	}
 
-	data->slave_xfer.slave_config = slave_config;
-	/* Slave address */
-	I2C_SetSlaveAddr(i2c_base, 0, slave_config->address, I2C_GCMODE_DISABLE);
+	data->target_xfer.target_config = target_config;
+	/* Target address */
+	I2C_SetSlaveAddr(i2c_base, 0, target_config->address, I2C_GCMODE_DISABLE);
 
-	/* Slave address state */
-	data->slave_xfer.slave_addressed = false;
+	/* Target address state */
+	data->target_xfer.target_addressed = false;
 
-	/* Enable slave mode */
+	/* Enable target mode */
 	I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 
 cleanup:
@@ -445,41 +447,41 @@ cleanup:
 	return err;
 }
 
-static int i2c_numaker_slave_unregister(const struct device *dev,
-					struct i2c_target_config *slave_config)
+static int i2c_numaker_target_unregister(const struct device *dev,
+					 struct i2c_target_config *target_config)
 {
 	const struct i2c_numaker_config *config = dev->config;
 	struct i2c_numaker_data *data = dev->data;
 	I2C_T *i2c_base = config->i2c_base;
 	int err = 0;
 
-	if (!slave_config) {
+	if (!target_config) {
 		return -EINVAL;
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
 	irq_disable(config->irq_n);
 
-	if (data->slave_xfer.slave_config != slave_config) {
+	if (data->target_xfer.target_config != target_config) {
 		err = -EINVAL;
 		goto cleanup;
 	}
 
-	if (data->slave_xfer.slave_addressed) {
-		LOG_ERR("Unregister slave driver with slave being busy");
+	if (data->target_xfer.target_addressed) {
+		LOG_ERR("Unregister target driver with target being busy");
 		err = -EBUSY;
 		goto cleanup;
 	}
 
-	/* Slave address: Zero */
+	/* Target address: Zero */
 	I2C_SetSlaveAddr(i2c_base, 0, 0, I2C_GCMODE_DISABLE);
 
-	/* Slave address state */
-	data->slave_xfer.slave_addressed = false;
+	/* Target address state */
+	data->target_xfer.target_addressed = false;
 
-	/* Disable slave mode */
+	/* Disable target mode */
 	I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
-	data->slave_xfer.slave_config = NULL;
+	data->target_xfer.target_config = NULL;
 
 cleanup:
 
@@ -510,9 +512,9 @@ static void i2c_numaker_isr(const struct device *dev)
 	struct i2c_numaker_data *data = dev->data;
 	I2C_T *i2c_base = config->i2c_base;
 #ifdef CONFIG_I2C_TARGET
-	struct i2c_target_config *slave_config = data->slave_xfer.slave_config;
-	const struct i2c_target_callbacks *slave_callbacks = slave_config ? slave_config->callbacks
-									  : NULL;
+	struct i2c_target_config *target_config = data->target_xfer.target_config;
+	const struct i2c_target_callbacks *target_callbacks =
+		target_config ? target_config->callbacks : NULL;
 	uint8_t data_byte;
 #endif
 	uint32_t status;
@@ -526,71 +528,73 @@ static void i2c_numaker_isr(const struct device *dev)
 
 	switch (status) {
 	case M_START:        /* Start */
-	case M_REPEAT_START: /* Master Repeat Start */
+	case M_REPEAT_START: /* Controller Repeat Start */
 		/* Prepare buffer for current message */
-		data->master_xfer.buf_beg = data->master_xfer.msgs_pos->buf;
-		data->master_xfer.buf_pos = data->master_xfer.msgs_pos->buf;
-		data->master_xfer.buf_end = data->master_xfer.msgs_pos->buf +
-					    data->master_xfer.msgs_pos->len;
+		data->controller_xfer.buf_beg = data->controller_xfer.msgs_pos->buf;
+		data->controller_xfer.buf_pos = data->controller_xfer.msgs_pos->buf;
+		data->controller_xfer.buf_end = data->controller_xfer.msgs_pos->buf +
+						data->controller_xfer.msgs_pos->len;
 
 		/* Write I2C address */
-		struct i2c_msg *msgs_pos = data->master_xfer.msgs_pos;
+		struct i2c_msg *msgs_pos = data->controller_xfer.msgs_pos;
 		bool is_read = (msgs_pos->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ;
-		uint16_t addr = data->master_xfer.addr;
+		uint16_t addr = data->controller_xfer.addr;
 		int addr_rw = is_read ? ((addr << 1) | 1) : (addr << 1);
 
 		I2C_SET_DATA(i2c_base, (uint8_t)(addr_rw & 0xFF));
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		break;
-	case M_TRAN_ADDR_ACK: /* Master Transmit Address ACK */
-	case M_TRAN_DATA_ACK: /* Master Transmit Data ACK */
-		__ASSERT_NO_MSG(data->master_xfer.buf_pos);
-		if (data->master_xfer.buf_pos < data->master_xfer.buf_end) {
-			I2C_SET_DATA(i2c_base, *data->master_xfer.buf_pos++);
+	case M_TRAN_ADDR_ACK: /* Controller Transmit Address ACK */
+	case M_TRAN_DATA_ACK: /* Controller Transmit Data ACK */
+		__ASSERT_NO_MSG(data->controller_xfer.buf_pos);
+		if (data->controller_xfer.buf_pos < data->controller_xfer.buf_end) {
+			I2C_SET_DATA(i2c_base, *data->controller_xfer.buf_pos++);
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		} else {
 			/* End this message */
-			m_numaker_i2c_master_xfer_msg_end(dev);
+			m_numaker_i2c_controller_xfer_msg_end(dev);
 		}
 		break;
-	case M_TRAN_ADDR_NACK: /* Master Transmit Address NACK */
-	case M_TRAN_DATA_NACK: /* Master Transmit Data NACK */
-	case M_RECE_ADDR_NACK: /* Master Receive Address NACK */
-	case M_ARB_LOST:       /* Master Arbitration Lost */
-		m_numaker_i2c_master_xfer_end(dev, true);
+	case M_TRAN_ADDR_NACK: /* Controller Transmit Address NACK */
+	case M_TRAN_DATA_NACK: /* Controller Transmit Data NACK */
+	case M_RECE_ADDR_NACK: /* Controller Receive Address NACK */
+	case M_ARB_LOST:       /* Controller Arbitration Lost */
+		m_numaker_i2c_controller_xfer_end(dev, true);
 		break;
-	case M_RECE_ADDR_ACK: /* Master Receive Address ACK */
-	case M_RECE_DATA_ACK: /* Master Receive Data ACK */
-		__ASSERT_NO_MSG(data->master_xfer.buf_pos);
+	case M_RECE_ADDR_ACK: /* Controller Receive Address ACK */
+	case M_RECE_DATA_ACK: /* Controller Receive Data ACK */
+		__ASSERT_NO_MSG(data->controller_xfer.buf_pos);
 
 		if (status == M_RECE_ADDR_ACK) {
-			__ASSERT_NO_MSG(data->master_xfer.buf_pos < data->master_xfer.buf_end);
+			__ASSERT_NO_MSG(data->controller_xfer.buf_pos <
+					data->controller_xfer.buf_end);
 		} else if (status == M_RECE_DATA_ACK) {
-			__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) >=
-					1);
-			*data->master_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
+			__ASSERT_NO_MSG((data->controller_xfer.buf_end -
+					 data->controller_xfer.buf_pos) >= 1);
+			*data->controller_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
 		}
 
-		m_numaker_i2c_master_xfer_msg_read_next_byte(dev);
+		m_numaker_i2c_controller_xfer_msg_read_next_byte(dev);
 		break;
-	case M_RECE_DATA_NACK: /* Master Receive Data NACK */
-		__ASSERT_NO_MSG((data->master_xfer.buf_end - data->master_xfer.buf_pos) == 1);
-		*data->master_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
+	case M_RECE_DATA_NACK: /* Controller Receive Data NACK */
+		__ASSERT_NO_MSG((data->controller_xfer.buf_end - data->controller_xfer.buf_pos) ==
+				1);
+		*data->controller_xfer.buf_pos++ = I2C_GET_DATA(i2c_base);
 		/* End this message */
-		m_numaker_i2c_master_xfer_msg_end(dev);
+		m_numaker_i2c_controller_xfer_msg_end(dev);
 		break;
 	case BUS_ERROR: /* Bus error */
-		m_numaker_i2c_master_xfer_end(dev, true);
+		m_numaker_i2c_controller_xfer_end(dev, true);
 		break;
 #ifdef CONFIG_I2C_TARGET
-	/* NOTE: Don't disable interrupt here because slave mode relies on */
+	/* NOTE: Don't disable interrupt here because target mode relies on */
 	/* for passive transfer in ISR. */
 
-	/* Slave Transmit */
-	case S_TRAN_ADDR_ACK:    /* Slave Transmit Address ACK */
-	case ADDR_TRAN_ARB_LOST: /* Slave Transmit Arbitration Lost */
-		data->slave_xfer.slave_addressed = true;
-		if (slave_callbacks->read_requested(slave_config, &data_byte) == 0) {
+	/* Target Transmit */
+	case S_TRAN_ADDR_ACK:    /* Target Transmit Address ACK */
+	case ADDR_TRAN_ARB_LOST: /* Target Transmit Arbitration Lost */
+		data->target_xfer.target_addressed = true;
+		if (target_callbacks->read_requested(target_config, &data_byte) == 0) {
 			/* Non-last data byte */
 			I2C_SET_DATA(i2c_base, data_byte);
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
@@ -600,8 +604,8 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_TRAN_DATA_ACK: /* Slave Transmit Data ACK */
-		if (slave_callbacks->read_processed(slave_config, &data_byte) == 0) {
+	case S_TRAN_DATA_ACK: /* Target Transmit Data ACK */
+		if (target_callbacks->read_processed(target_config, &data_byte) == 0) {
 			/* Non-last data byte */
 			I2C_SET_DATA(i2c_base, data_byte);
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
@@ -611,17 +615,17 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_TRAN_DATA_NACK:     /* Slave Transmit Data NACK */
-	case S_TRAN_LAST_DATA_ACK: /* Slave Transmit Last Data ACK */
-		/* Go slave end */
-		data->slave_xfer.slave_addressed = false;
-		slave_callbacks->stop(slave_config);
+	case S_TRAN_DATA_NACK:     /* Target Transmit Data NACK */
+	case S_TRAN_LAST_DATA_ACK: /* Target Transmit Last Data ACK */
+		/* Go target end */
+		data->target_xfer.target_addressed = false;
+		target_callbacks->stop(target_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
-		/* Slave Receive */
-	case S_RECE_DATA_ACK: /* Slave Receive Data ACK */
+		/* Target Receive */
+	case S_RECE_DATA_ACK: /* Target Receive Data ACK */
 		data_byte = I2C_GET_DATA(i2c_base);
-		if (slave_callbacks->write_received(slave_config, data_byte) == 0) {
+		if (target_callbacks->write_received(target_config, data_byte) == 0) {
 			/* Write OK, ACK next data byte */
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		} else {
@@ -629,16 +633,16 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_RECE_DATA_NACK: /* Slave Receive Data NACK */
-		/* Go slave end */
-		data->slave_xfer.slave_addressed = false;
-		slave_callbacks->stop(slave_config);
+	case S_RECE_DATA_NACK: /* Target Receive Data NACK */
+		/* Go target end */
+		data->target_xfer.target_addressed = false;
+		target_callbacks->stop(target_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
-	case S_RECE_ADDR_ACK: /* Slave Receive Address ACK */
-	case S_RECE_ARB_LOST: /* Slave Receive Arbitration Lost */
-		data->slave_xfer.slave_addressed = true;
-		if (slave_callbacks->write_requested(slave_config) == 0) {
+	case S_RECE_ADDR_ACK: /* Target Receive Address ACK */
+	case S_RECE_ARB_LOST: /* Target Receive Arbitration Lost */
+		data->target_xfer.target_addressed = true;
+		if (target_callbacks->write_requested(target_config) == 0) {
 			/* Write ready, ACK next byte */
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		} else {
@@ -646,10 +650,10 @@ static void i2c_numaker_isr(const struct device *dev)
 			I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk);
 		}
 		break;
-	case S_REPEAT_START_STOP: /* Slave Transmit/Receive Repeat Start or Stop */
-		/* Go slave end */
-		data->slave_xfer.slave_addressed = false;
-		slave_callbacks->stop(slave_config);
+	case S_REPEAT_START_STOP: /* Target Transmit/Receive Repeat Start or Stop */
+		/* Go target end */
+		data->target_xfer.target_addressed = false;
+		target_callbacks->stop(target_config);
 		I2C_SET_CONTROL_REG(i2c_base, I2C_CTL0_SI_Msk | I2C_CTL0_AA_Msk);
 		break;
 #endif /* CONFIG_I2C_TARGET */
@@ -659,7 +663,7 @@ static void i2c_numaker_isr(const struct device *dev)
 		break;
 	default:
 		__ASSERT(false, "Uncaught I2C FSM state");
-		m_numaker_i2c_master_xfer_end(dev, true);
+		m_numaker_i2c_controller_xfer_end(dev, true);
 	}
 }
 
@@ -680,7 +684,7 @@ static int i2c_numaker_init(const struct device *dev)
 	memset(data, 0x00, sizeof(*data));
 
 	k_sem_init(&data->lock, 1, 1);
-	k_sem_init(&data->master_xfer.xfer_sync, 0, 1);
+	k_sem_init(&data->controller_xfer.xfer_sync, 0, 1);
 
 	SYS_UnlockReg();
 
@@ -729,8 +733,8 @@ static DEVICE_API(i2c, i2c_numaker_driver_api) = {
 	.get_config = i2c_numaker_get_config,
 	.transfer = i2c_numaker_transfer,
 #ifdef CONFIG_I2C_TARGET
-	.target_register = i2c_numaker_slave_register,
-	.target_unregister = i2c_numaker_slave_unregister,
+	.target_register = i2c_numaker_target_register,
+	.target_unregister = i2c_numaker_target_unregister,
 #endif
 #ifdef CONFIG_I2C_RTIO
 	.iodev_submit = i2c_iodev_submit_fallback,
