@@ -186,9 +186,29 @@ void busy_threads_priority_set(int priority, int delta)
 }
 
 /**
- * Verify that arch_sched_broadcast_ipi() broadcasts IPIs as expected.
+ * @brief Verify that arch_sched_broadcast_ipi() reaches every other CPU.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * A broadcast scheduler IPI must be delivered to all CPUs except the one that
+ * issued it. Every CPU is kept busy by a cooperative thread so none of them is
+ * idle, and the z_trace_sched_ipi() hook counts the IPIs each CPU receives.
+ *
+ * Test steps:
+ * - Create one busy cooperative thread per other CPU and wait until all of
+ *   them are running.
+ * - Clear the per-CPU IPI counts.
+ * - Call arch_sched_broadcast_ipi().
+ * - Wait until the expected CPUs report an IPI, then read all counts.
+ *
+ * Expected result:
+ * - Every CPU other than the issuing one received exactly one IPI, and the
+ *   issuing CPU received none.
+ *
+ * @see arch_sched_broadcast_ipi()
  */
-ZTEST(ipi, test_arch_sched_broadcast_ipi)
+ZTEST(ipi, test_ipi_broadcast_reaches_all_cpus)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
@@ -220,11 +240,36 @@ ZTEST(ipi, test_arch_sched_broadcast_ipi)
 	}
 }
 
-#ifdef CONFIG_ARCH_HAS_DIRECTED_IPIS
-/**
- * Verify that arch_sched_directed_ipi() directs IPIs as expected.
+/* __DOXYGEN__ is predefined in the traceability build so the
+ * requirement-annotated test below stays visible to Doxygen.
  */
-ZTEST(ipi, test_arch_sched_directed_ipi)
+#if defined(CONFIG_ARCH_HAS_DIRECTED_IPIS) || defined(__DOXYGEN__)
+/**
+ * @brief Verify that arch_sched_directed_ipi() reaches only the targeted CPU.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * On architectures with directed IPIs, an IPI sent to a single CPU mask must
+ * be delivered to that CPU alone; no other CPU may take the interrupt. Each
+ * CPU is targeted in turn while all of them are kept busy, and the
+ * z_trace_sched_ipi() hook counts the IPIs each CPU receives.
+ *
+ * Test steps:
+ * - Create one busy cooperative thread per other CPU and wait until all of
+ *   them are running.
+ * - For each CPU other than the current one: clear the IPI counts, call
+ *   arch_sched_directed_ipi() with only that CPU's bit set, and wait for the
+ *   IPI to be observed.
+ * - Read the per-CPU counts after each directed IPI.
+ *
+ * Expected result:
+ * - Only the targeted CPU received an IPI in each iteration; every other CPU
+ *   count stayed at zero.
+ *
+ * @see arch_sched_directed_ipi()
+ */
+ZTEST(ipi, test_ipi_directed_reaches_target_cpu)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
@@ -266,10 +311,31 @@ ZTEST(ipi, test_arch_sched_directed_ipi)
 #endif
 
 /**
- * Verify that waking a thread whose priority is lower than any other
- * currently executing thread does not result in any IPIs being sent.
+ * @brief Verify that waking a low priority thread sends no IPIs.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * With IPI optimization enabled, the scheduler only signals a CPU when the
+ * newly ready thread could actually preempt what that CPU is running. A thread
+ * whose priority is lower than every currently executing thread cannot preempt
+ * anything, so waking it must not generate any IPI at all.
+ *
+ * Test steps:
+ * - Create a low priority thread and wait until it pends on a semaphore.
+ * - Create busy threads on all other CPUs, then lower their priority above the
+ *   pending thread's.
+ * - Clear the per-CPU IPI counts and give the semaphore to wake the low
+ *   priority thread.
+ * - Busy-wait for any IPIs to be processed, then read all counts.
+ *
+ * Expected result:
+ * - The woken thread becomes ready and no CPU received an IPI.
+ *
+ * @see k_sem_give()
+ * @see z_is_thread_ready()
  */
-ZTEST(ipi, test_low_thread_wakes_no_ipis)
+ZTEST(ipi, test_ipi_low_thread_wake_sends_none)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
@@ -314,10 +380,31 @@ ZTEST(ipi, test_low_thread_wakes_no_ipis)
 }
 
 /**
- * Verify that waking a thread whose priority is higher than all currently
- * executing threads results in the proper IPIs being sent and processed.
+ * @brief Verify that waking a high priority thread sends the expected IPIs.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * The counterpart of the low priority case: a thread that outranks every
+ * executing thread must preempt one of them, so the scheduler has to signal
+ * the other CPUs. The current CPU is running a cooperative thread and must
+ * never signal itself.
+ *
+ * Test steps:
+ * - Create a high priority thread and wait until it pends on a semaphore.
+ * - Create busy threads on all other CPUs, then lower their priorities.
+ * - Clear the per-CPU IPI counts and give the semaphore to wake the high
+ *   priority thread.
+ * - Wait for the IPIs to be observed and read all counts.
+ *
+ * Expected result:
+ * - The woken thread becomes ready, every other CPU received exactly one IPI,
+ *   and the current CPU received none.
+ *
+ * @see k_sem_give()
+ * @see z_is_thread_ready()
  */
-ZTEST(ipi, test_high_thread_wakes_some_ipis)
+ZTEST(ipi, test_ipi_high_thread_wake_sends_all)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
@@ -369,12 +456,33 @@ ZTEST(ipi, test_high_thread_wakes_some_ipis)
 }
 
 /**
- * Verify that lowering the priority of an active thread results in an IPI.
- * If directed IPIs are enabled, then only the CPU executing that active
- * thread ought to receive the IPI. Otherwise if IPIs are broadcast, then all
- * other CPUs save the current CPU ought to receive IPIs.
+ * @brief Verify that lowering an executing thread's priority sends an IPI.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * Lowering the priority of a thread that is currently executing on another CPU
+ * may make a ready thread eligible to preempt it, so that CPU must be told to
+ * reschedule. Where directed IPIs are available only the CPU running the
+ * demoted thread is signalled; otherwise the IPI is broadcast to every CPU but
+ * the current one. The expected mask is built accordingly, so the test asserts
+ * on exactly the CPUs that should have been signalled.
+ *
+ * Test steps:
+ * - Create busy threads on all other CPUs and wait until they run.
+ * - Compute the expected IPI mask: the CPU executing the target thread when
+ *   directed IPIs are supported, otherwise all CPUs but the current one.
+ * - Clear the per-CPU IPI counts and call k_thread_priority_set() to lower the
+ *   target thread's priority.
+ * - Wait for the expected IPIs and read all counts.
+ *
+ * Expected result:
+ * - Exactly the CPUs in the expected mask received one IPI each, and the
+ *   current CPU received none.
+ *
+ * @see k_thread_priority_set()
  */
-ZTEST(ipi, test_thread_priority_set_lower)
+ZTEST(ipi, test_ipi_priority_set_lower_sends)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
@@ -425,11 +533,32 @@ ZTEST(ipi, test_thread_priority_set_lower)
 	zassert_true(set[id] == 0, "Current CPU got %u IPI(s).\n", set[id]);
 }
 
-/*
- * Verify that IPIs are not sent to CPUs that are executing cooperative
- * threads.
+/**
+ * @brief Verify that no IPIs are sent to CPUs running cooperative threads.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * A cooperative thread cannot be preempted, so signalling the CPU it runs on
+ * would achieve nothing. Even waking a thread of higher priority than every
+ * running thread must therefore leave the CPUs executing cooperative threads
+ * untouched.
+ *
+ * Test steps:
+ * - Create a high priority thread and wait until it pends on a semaphore.
+ * - Create cooperative busy threads on all other CPUs and leave their
+ *   priorities unchanged.
+ * - Clear the per-CPU IPI counts and give the semaphore to wake the high
+ *   priority thread.
+ * - Busy-wait for any IPIs to be processed, then read all counts.
+ *
+ * Expected result:
+ * - The woken thread becomes ready and no CPU received an IPI.
+ *
+ * @see k_sem_give()
+ * @see K_PRIO_COOP()
  */
-ZTEST(ipi, test_thread_coop_no_ipis)
+ZTEST(ipi, test_ipi_coop_cpus_receive_none)
 {
 	uint32_t  set[CONFIG_MP_MAX_NUM_CPUS];
 	uint32_t  id;
