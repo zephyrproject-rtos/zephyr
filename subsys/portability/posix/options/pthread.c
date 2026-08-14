@@ -1009,29 +1009,59 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
  *
  * See IEEE 1003.1
  */
+static void pthread_once_cleanup(void *arg)
+{
+	struct pthread_once *const _once = (struct pthread_once *)arg;
+
+	/* Revert state to 0 so another thread can attempt initialization */
+	atomic_set(&_once->state, 0);
+}
+
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	int ret = EINVAL;
-	bool run_init_func = false;
 	struct pthread_once *const _once = (struct pthread_once *)once;
 
-	if (init_func == NULL) {
+	/* initial state for once is an implicit value of 0 - i.e. as BSS */
+	const atomic_val_t once_wait = 0x3a173a17;
+	const atomic_val_t once_done = 0x73a173a1;
+
+	if (once == NULL || init_func == NULL) {
 		return EINVAL;
 	}
 
-	SYS_SEM_LOCK(&pthread_pool_lock) {
-		if (!_once->flag) {
-			run_init_func = true;
-			_once->flag = true;
+	while (true) {
+		/* Read the current state */
+		atomic_val_t state = atomic_get(&_once->state);
+
+		if (state == once_done) {
+			/* Already initialized, we can safely proceed */
+			return 0;
 		}
-		ret = 0;
-	}
 
-	if (ret == 0 && run_init_func) {
-		init_func();
-	}
+		if (state == 0) {
+			/* Attempt to claim the lock to execute the init routine */
+			if (atomic_cas(&_once->state, 0, once_wait)) {
+				/* Register the cleanup handler */
+				pthread_cleanup_push(pthread_once_cleanup, once);
 
-	return ret;
+				/* Execute the initialization routine */
+				init_func();
+
+				/* Init complete. Pop the cleanup handler without executing it. */
+				pthread_cleanup_pop(0);
+
+				/* Mark as done and wake waiting threads */
+				atomic_set(&_once->state, once_done);
+				return 0;
+			}
+
+			/* CAS failed (another thread beat us to it). Loop and wait. */
+			continue;
+		}
+
+		/* Another thread is currently initializing. We must wait */
+		k_msleep(1);
+	}
 }
 
 /**
