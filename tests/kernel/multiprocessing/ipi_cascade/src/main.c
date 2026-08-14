@@ -178,6 +178,39 @@ void thread2_entry(void *p1, void *p2, void *p3)
 	zassert_true(false, "This message should not appear!");
 }
 
+/**
+ * @brief Test inter-processor reschedule signalling under cascading IPIs
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details With CPU-mask affinity and cascading IPIs enabled, a thread
+ * preempted by a CPU-mask-restricted thread triggers additional IPIs so the
+ * system settles on a valid set of highest-priority runnable threads across
+ * the CPUs. This exercises the inter-processor reschedule signalling.
+ *
+ * The scenario builds four threads: the test thread (T1), a low priority
+ * thread on the other CPU (T2), a high priority thread pinned to T1's CPU
+ * (T3), and a medium-low priority unpinned thread (T4). Waking T3 and T4 while
+ * interrupts are locked forces T3 onto T1's CPU, which in turn must cascade an
+ * IPI that moves T1 onto the CPU freed by T4.
+ *
+ * Test steps:
+ * - Create T3 (high priority) and T4 (medium-low priority) and let both block
+ *   on an event.
+ * - Pin T3 to the CPU currently running the test thread.
+ * - Create T2 on the other CPU and spin until it signals readiness.
+ * - Arm a timer as a watchdog against a system hang.
+ * - Lock interrupts on the test thread's CPU, flag T2 to wake T3 and T4, and
+ *   busy-wait so the IPI stays pending.
+ * - Unlock interrupts to let the IPI cascade run, then busy-wait again.
+ *
+ * Expected result:
+ * - The watchdog timer does not expire, and the test thread has been migrated
+ *   to a different CPU by the cascaded IPI.
+ *
+ * @see k_thread_cpu_pin()
+ * @see k_event_set()
+ */
 ZTEST(ipi_cascade, test_ipi_cascade)
 {
 	int  key;
