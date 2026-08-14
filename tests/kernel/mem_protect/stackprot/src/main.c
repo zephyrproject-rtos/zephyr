@@ -110,34 +110,56 @@ K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;
 
 /**
- * @brief test Stack Protector feature using canary
- *
- * @details This is the test program to test stack protection using canary.
- * The main thread starts a second thread, which generates a stack check
- * failure.
- * By design, the second thread will not complete its execution and
- * will not set ret to TC_FAIL.
- * This is the entry point to the test stack protection feature.
- * It starts the thread that tests stack protection, then prints out
- * a few messages before terminating.
+ * @brief Verify that legitimate stack use does not trip the canary.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The stack protector must be silent for well-behaved code: only an actual
+ * overflow may trigger it. This case runs the same buffer-handling function
+ * the overflow case uses, but with input that fits, and also checks that the
+ * overflow case's failure flag was never set -- the overflowing thread must
+ * have been stopped by the canary before it could reach the code that sets
+ * the flag. Ztest orders a suite alphabetically, so the overflow case
+ * (test_stackprot_canary_overflow) has already run when this check is made.
+ *
+ * Test steps:
+ * - Check that the shared failure flag is still clear.
+ * - Call the buffer-copying function repeatedly with input that fits.
+ *
+ * Expected result:
+ * - The calls complete normally and no stack check failure is raised.
  */
-ZTEST_USER(stackprot, test_stackprot)
+ZTEST_USER(stackprot, test_stackprot_no_false_positive)
 {
 	zassert_true(ret == TC_PASS);
 	print_loop(__func__);
 }
 
 /**
- * @brief Test optional mechanism to detect stack overflow
- *
- * @details Test that the system provides an optional mechanism to detect
- * when supervisor threads overflow stack memory buffer.
+ * @brief Verify that a stack buffer overflow is caught by the canary.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * With CONFIG_STACK_CANARIES a function whose local buffer is overrun must be
+ * stopped when it returns, raising K_ERR_STACK_CHK_FAIL rather than letting
+ * corrupted stack contents be used. The overflowing thread would set a shared
+ * failure flag if it survived, and the suite's fatal error handler accepts
+ * only the stack-check reason, so both a missed overflow and a wrong error
+ * type are detected.
+ *
+ * Test steps:
+ * - Spawn a thread that copies an over-long string into a 16-byte stack
+ *   buffer.
+ * - Let it run; the canary check fails when the overflowed function returns.
+ * - The fatal error handler verifies the reason is K_ERR_STACK_CHK_FAIL.
+ *
+ * Expected result:
+ * - The thread is terminated by the stack check and never reaches the code
+ *   that would flag a failure.
  */
-ZTEST(stackprot, test_create_alt_thread)
+ZTEST(stackprot, test_stackprot_canary_overflow)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
@@ -177,14 +199,27 @@ void alternate_thread_canary(void *arg1, void *arg2, void *arg3)
 }
 
 /**
- * @brief Test stack canaries behavior
- *
- * @details Test that canaries value are different between threads when
- * CONFIG_STACK_CANARIES_TLS is enabled.
+ * @brief Verify the scope of the stack canary value.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * With CONFIG_STACK_CANARIES_TLS every thread gets its own canary value, so
+ * leaking one thread's canary does not help overflow another's; without it
+ * there is a single global canary shared by all threads. The spawned thread
+ * compares its own canary against its parent's, and which relation is correct
+ * depends on the configuration under test.
+ *
+ * Test steps:
+ * - Read the current thread's canary value.
+ * - Spawn a thread, passing it that value, and have it compare against its
+ *   own canary.
+ *
+ * Expected result:
+ * - With per-thread canaries the values differ; with a global canary they are
+ *   identical.
  */
-ZTEST(stackprot, test_canary_value)
+ZTEST(stackprot, test_stackprot_canary_scope)
 {
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
