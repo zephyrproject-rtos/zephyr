@@ -215,7 +215,7 @@ static inline void i2c_set_ack(const struct device *dev, bool ack)
 	}
 }
 
-/* Checks if NACK was received from I2C slave */
+/* Checks if NACK was received from I2C target */
 static inline bool i2c_got_nack(const struct device *dev)
 {
 	return (I2CM(dev).SERCOM_STATUS & SERCOM_I2CM_STATUS_RXNACK_Msk) != 0;
