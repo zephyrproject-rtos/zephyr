@@ -5,23 +5,10 @@
  */
 
 #include "nrf54h20dk_nrf54h20_cpuapp_common.dtsi"
+#include "nrf54h20dk_nrf54h20_cpuppr_common.dtsi"
 
-/delete-node/ &ipc0;
-
-ipc0: &cpuapp_cpuppr_ipc {
-	status = "okay";
-};
-
-/ {
-	aliases {
-		dut-ipc = &cpuapp_cpuppr_ipc;
-	};
-};
-
-&cpuppr_vevif {
-	status = "okay";
-};
-
-&cpuapp_bellboard {
-	status = "okay";
+&cpuapp_cpuppr_ipc {
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 };
