@@ -465,6 +465,48 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 	return 0;
 }
 
+static void dma_esp32_channel_reset(struct dma_esp32_data *data, uint32_t channel_id,
+				    gdma_channel_direction_t dir)
+{
+#if defined(SOC_AXI_GDMA_SUPPORTED)
+	if (data->is_axi) {
+		/* An AXI transfer cannot be reset while it is still in flight. */
+		if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+			axi_dma_ll_rx_abort(data->hal.axi_dma_dev, channel_id, true);
+			while (!axi_dma_ll_rx_is_reset_avail(data->hal.axi_dma_dev, channel_id)) {
+			}
+			axi_dma_ll_rx_reset_channel(data->hal.axi_dma_dev, channel_id);
+			axi_dma_ll_rx_abort(data->hal.axi_dma_dev, channel_id, false);
+		} else {
+			axi_dma_ll_tx_abort(data->hal.axi_dma_dev, channel_id, true);
+			while (!axi_dma_ll_tx_is_reset_avail(data->hal.axi_dma_dev, channel_id)) {
+			}
+			axi_dma_ll_tx_reset_channel(data->hal.axi_dma_dev, channel_id);
+			axi_dma_ll_tx_abort(data->hal.axi_dma_dev, channel_id, false);
+		}
+
+		return;
+	}
+#endif /* SOC_AXI_GDMA_SUPPORTED */
+
+	gdma_hal_reset(&data->hal, channel_id, dir);
+}
+
+static void dma_esp32_stop_barrier(struct dma_esp32_data *data, uint32_t channel_id,
+				   gdma_channel_direction_t dir)
+{
+	uint32_t mask = GDMA_LL_TX_EVENT_MASK;
+
+	if (dir == GDMA_CHANNEL_DIRECTION_RX) {
+		mask = GDMA_LL_RX_EVENT_MASK;
+	}
+
+	dma_esp32_channel_reset(data, channel_id, dir);
+
+	/* Reset leaves events the abandoned transfer already latched. */
+	gdma_hal_clear_intr(&data->hal, channel_id, dir, mask);
+}
+
 static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channel *dma_channel,
 			       struct dma_config *config_dma)
 {
@@ -473,7 +515,7 @@ static int dma_esp32_config_rx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->dir = DMA_RX;
 
-	gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+	dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
@@ -511,7 +553,7 @@ static int dma_esp32_config_tx(const struct device *dev, struct dma_esp32_channe
 
 	dma_channel->dir = DMA_TX;
 
-	gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+	dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		gdma_hal_connect_mem(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
@@ -677,6 +719,8 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 				     GDMA_LL_TX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 #if CONFIG_PM
 		struct dma_esp32_channel *dma_channel_rx =
 			&config->dma_channel[dma_channel->channel_id * 2];
@@ -690,10 +734,12 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_RX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 	} else if (dma_channel->dir == DMA_TX) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
 				     GDMA_LL_TX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		dma_esp32_stop_barrier(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 	}
 
 	return 0;
@@ -775,10 +821,10 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 	}
 
 	if (dma_channel->dir == DMA_RX) {
-		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
+		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
 		buf = dst;
 	} else if (dma_channel->dir == DMA_TX) {
-		gdma_hal_reset(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
+		dma_esp32_channel_reset(data, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX);
 		buf = src;
 	} else {
 		return -EINVAL;
