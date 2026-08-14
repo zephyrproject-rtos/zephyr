@@ -291,10 +291,10 @@ static inline void hal_sw_switch_timer_clear_ppi_config(void)
 	nrf_timer_subscribe_set(SW_SWITCH_TIMER,
 				NRF_TIMER_TASK_CLEAR, HAL_SW_SWITCH_TIMER_CLEAR_PPI);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START,
-				HAL_SW_SWITCH_TIMER_CLEAR_PPI);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_START,
+					HAL_SW_SWITCH_TIMER_CLEAR_PPI);
+	}
 
 	/* NOTE: nRF5340 may share the DPPI channel being triggered by Radio End,
 	 *       for End time capture and sw_switch DPPI channel toggling.
@@ -476,9 +476,9 @@ static inline void hal_radio_txen_on_sw_switch(uint8_t compare_reg_index, uint8_
 
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
+	}
 }
 
 static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
@@ -498,9 +498,9 @@ static inline void hal_radio_b2b_txen_on_sw_switch(uint8_t compare_reg_index,
 	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_TXEN, radio_enable_ppi);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
+	}
 }
 
 static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_t radio_enable_ppi)
@@ -516,9 +516,9 @@ static inline void hal_radio_rxen_on_sw_switch(uint8_t compare_reg_index, uint8_
 
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
+	}
 }
 
 static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
@@ -538,9 +538,9 @@ static inline void hal_radio_b2b_rxen_on_sw_switch(uint8_t compare_reg_index,
 	radio_enable_ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(prev_ppi_idx);
 	nrf_radio_subscribe_set(NRF_RADIO, NRF_RADIO_TASK_RXEN, radio_enable_ppi);
 
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_set(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP, radio_enable_ppi);
+	}
 }
 
 static inline void hal_radio_sw_switch_disable(void)
@@ -582,10 +582,10 @@ static inline void hal_radio_sw_switch_b2b_rx_disable(uint8_t compare_reg_index)
 
 static inline void hal_radio_sw_switch_cleanup(void)
 {
-#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
-	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
-	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP);
-#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+	if (!IS_ENABLED(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)) {
+		nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_START);
+		nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_STOP);
+	}
 
 	nrf_timer_subscribe_clear(SW_SWITCH_TIMER, NRF_TIMER_TASK_CLEAR);
 	hal_radio_sw_switch_disable();
