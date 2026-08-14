@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Ambiq Micro Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-description: Ambiq IOS I2C target (slave) peripheral
+description: Ambiq IOS I2C target peripheral
 
 compatible: "ambiq,ios-i2c"
 
