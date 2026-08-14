@@ -267,6 +267,7 @@ New APIs and options
     * :c:struct:`bt_mesh_lpn_timing`
     * :c:func:`bt_mesh_stat_lpn_timing_get`
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
+    * :kconfig:option:`CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT`
 
 * Crypto
 
