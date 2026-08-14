@@ -18,7 +18,19 @@ LOG_MODULE_REGISTER(remote, LOG_LEVEL_INF);
 static struct test_context test_ctx[TEST_EP_COUNT];
 static const char *ep_name[TEST_EP_COUNT] = {"ep0", "ep1"};
 
-static const struct device *ipc_instance = DEVICE_DT_GET(DT_ALIAS(dut_ipc));
+#if DT_HAS_ALIAS(dut_ipc)
+#define IPC_NODE DT_ALIAS(dut_ipc)
+#elif DT_NUM_INST_STATUS_OKAY(zephyr_ipc_icbmsg) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_icbmsg)
+#elif DT_NUM_INST_STATUS_OKAY(zephyr_ipc_icmsg) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_icmsg)
+#elif DT_NUM_INST_STATUS_OKAY(zephyr_ipc_openamp_static_vrings) == 1
+#define IPC_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_ipc_openamp_static_vrings)
+#else
+#error "No IPC node found"
+#endif
+
+static const struct device *ipc_instance = DEVICE_DT_GET(IPC_NODE);
 static volatile bool close_after_unbound;
 
 static volatile bool reregister_request;
