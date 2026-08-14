@@ -8,11 +8,35 @@
 /**
  * @brief LPM companion timer for PSE84 using MCWDT.
  *
- * When SysTick is the primary system timer, it stops during deepsleep
- * because HF clocks are gated. This module initializes the MCWDT
- * (Multi-Counter Watchdog Timer) as a free-running counter on the PILO
- * (32 kHz) clock and implements the z_sys_clock_lpm_enter/exit hooks
- * so the SysTick driver can reconcile elapsed time after wakeup.
+ * When SysTick is the primary system timer it stops during deepsleep because
+ * the HF clocks are gated. This module drives the MCWDT (Multi-Counter
+ * Watchdog Timer) from the PILO (32 kHz) clock and implements the
+ * z_sys_clock_lpm_enter/exit hooks so the SysTick driver can reconcile elapsed
+ * time after wakeup.
+ *
+ *   - Counter 0 and Counter 1 form a single 32-bit timer through the
+ *     match-based C0->C1 cascade: C0 free-runs as the low 16 bits and, each
+ *     time it reaches its match value, increments C1 (the high 16 bits).  The
+ *     wake alarm is programmed as C0_match = C0 + (delay & 0xFFFF) and
+ *     C1_match = C1 + (delay >> 16), giving exact single-tick granularity for
+ *     the whole 32-bit range instead of the ~2 s granularity of a roll-over
+ *     cascade.
+ *
+ *   - Counter 1 is the ONLY counter whose interrupt is enabled.  On this IP a
+ *     raw MCWDT match wakes the SoC from deepsleep regardless of the interrupt
+ *     mask, so Counter 0 is left in NONE mode (it never raises an interrupt and
+ *     therefore can never wake the SoC early); only the C1 alarm does.
+ *
+ *   - Counter 2 free-runs as a 32-bit elapsed-time reference: it is sampled at
+ *     entry and read again at exit, and the difference is the time actually
+ *     slept.
+ *
+ * All three counters are started once at init and run continuously.  The MCWDT
+ * lives in the always-on LFCLK domain, so the counters keep advancing through
+ * both regular DeepSleep and the DeepSleep-RAM warm boot; each LPM entry only
+ * reprograms the C0/C1 match and each exit reads C2, without ever stopping or
+ * resetting the counters.  That keeps the timing identical across the two sleep
+ * modes.
  */
 
 #include <zephyr/init.h>
@@ -36,12 +60,6 @@
 /* PILO clock frequency - the MCWDT source clock */
 #define PILO_FREQ DT_PROP(DT_PATH(clk_pilo), clock_frequency)
 
-/* Enable counters C0 + C1 cascaded for 32-bit match, C2 free-running */
-#define MCWDT_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1 | CY_MCWDT_CTR2)
-
-/* Time in microseconds for MCWDT reset/enable propagation */
-#define MCWDT_RESET_TIME_US 62U
-
 /* Minimum alarm in PILO ticks: MCWDT match values take effect after ~2 PILO
  * cycles, so the shortest deterministic delay is 3 ticks.
  */
@@ -61,6 +79,12 @@
  */
 #define MCWDT_SETMATCH_TIME_US 0U
 
+/* Startup delay for Cy_MCWDT_Enable(), in microseconds.  Enabling or disabling
+ * an MCWDT takes up to 2 CLK_LF cycles to come into effect (~62 us at 32 kHz),
+ * so the counters are guaranteed running before the first alarm.
+ */
+#define MCWDT_ENABLE_DELAY_US 62U
+
 /* Bound on the cascade-settle busy-wait loops.  One LFCLK cycle is ~30 us at
  * 32 kHz; this many CPU iterations covers the worst-case propagation while
  * still terminating if the LFCLK source ever stops (avoids a lockup).
@@ -76,7 +100,7 @@ static MCWDT_STRUCT_Type *const mcwdt_base = (MCWDT_STRUCT_Type *)MCWDT_REG_ADDR
 static uint16_t lpm_c0_last_match = 0xFFFFU;
 
 /* Counter value captured at LPM entry */
-static uint32_t lpm_entry_count;
+static uint32_t lpm_entry_c2;
 
 static void lpm_timer_isr(void)
 {
@@ -164,7 +188,7 @@ void z_sys_clock_lpm_enter(uint64_t max_lpm_time_us)
 	lpm_c0_last_match = c0_match;
 
 	/* Snapshot the free-running elapsed reference at the same instant. */
-	lpm_entry_count = Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER2);
+	lpm_entry_c2 = Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER2);
 
 	irq_unlock(key);
 
@@ -184,11 +208,11 @@ uint64_t z_sys_clock_lpm_exit(void)
 	Cy_MCWDT_ClearInterrupt(mcwdt_base, CY_MCWDT_CTR1);
 	irq_disable(MCWDT_IRQ_NUM);
 
-	/* Read current free-running counter (C2 is 32-bit, never resets) */
+	/* Read the elapsed-time reference (C2 is 32-bit and free-running). */
 	current_count = Cy_MCWDT_GetCount(mcwdt_base, CY_MCWDT_COUNTER2);
 
-	/* Unsigned subtraction handles wraparound correctly */
-	elapsed_ticks = current_count - lpm_entry_count;
+	/* Unsigned subtraction handles wraparound correctly. */
+	elapsed_ticks = current_count - lpm_entry_c2;
 
 	/* Convert PILO ticks to microseconds */
 	return ((uint64_t)elapsed_ticks * 1000000ULL) / PILO_FREQ;
@@ -199,12 +223,19 @@ static int lpm_timer_init(void)
 	static const cy_stc_mcwdt_config_t cfg = {
 		.c0Match = 0xFFFFU,
 		.c1Match = 0xFFFFU,
+		/* Counter 0 never interrupts (a raw match would wake the SoC); it
+		 * only clocks the cascade into Counter 1.
+		 */
 		.c0Mode = CY_MCWDT_MODE_NONE,
+		/* Counter 1 is the wake alarm */
 		.c1Mode = CY_MCWDT_MODE_INT,
+		/* Counter 2 free-runs as the elapsed-time reference */
 		.c2Mode = CY_MCWDT_MODE_NONE,
 		.c2ToggleBit = 0U,
+		/* Counter 0 free-runs as the cascade prescaler (no clear on match) */
 		.c0ClearOnMatch = false,
 		.c1ClearOnMatch = false,
+		/* Match-based C0->C1 cascade forms the 32-bit alarm timer */
 		.c0c1Cascade = true,
 		.c1c2Cascade = false,
 	};
@@ -219,7 +250,8 @@ static int lpm_timer_init(void)
 	 * kept masked until the first z_sys_clock_lpm_enter() arms it.
 	 */
 	Cy_MCWDT_SetInterruptMask(mcwdt_base, 0U);
-	Cy_MCWDT_Enable(mcwdt_base, MCWDT_COUNTERS, MCWDT_RESET_TIME_US);
+	Cy_MCWDT_Enable(mcwdt_base, CY_MCWDT_CTR0 | CY_MCWDT_CTR1 | CY_MCWDT_CTR2,
+			MCWDT_ENABLE_DELAY_US);
 
 	lpm_c0_last_match = 0xFFFFU;
 
