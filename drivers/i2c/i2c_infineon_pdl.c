@@ -34,7 +34,7 @@ LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
 	(CY_SCB_I2C_MASTER_WR_CMPLT_EVENT | CY_SCB_I2C_MASTER_RD_CMPLT_EVENT |                     \
 	 CY_SCB_I2C_MASTER_ERR_EVENT)
 
-#define I2C_CAT1_SLAVE_EVENTS_MASK                                                                 \
+#define I2C_CAT1_TARGET_EVENTS_MASK                                                                \
 	(CY_SCB_I2C_SLAVE_READ_EVENT | CY_SCB_I2C_SLAVE_WRITE_EVENT |                              \
 	 CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT | CY_SCB_I2C_SLAVE_RD_CMPLT_EVENT |                   \
 	 CY_SCB_I2C_SLAVE_WR_CMPLT_EVENT | CY_SCB_I2C_SLAVE_RD_BUF_EMPTY_EVENT |                   \
@@ -73,7 +73,7 @@ struct ifx_cat1_i2c_data {
 	struct i2c_target_config *p_target_config;
 	uint8_t i2c_target_wr_byte;
 	uint8_t target_wr_buffer[CONFIG_I2C_INFINEON_CAT1_TARGET_BUF];
-	uint8_t slave_address;
+	uint8_t target_address;
 	uint32_t frequencyhal_hz;
 	cy_stc_syspm_callback_t i2c_deep_sleep;
 	cy_stc_syspm_callback_params_t i2c_deep_sleep_param;
@@ -81,7 +81,7 @@ struct ifx_cat1_i2c_data {
 
 /* Device config structure */
 struct ifx_cat1_i2c_config {
-	uint32_t master_frequency;
+	uint32_t controller_frequency;
 	CySCB_Type *base;
 	const struct pinctrl_dev_config *pcfg;
 	uint8_t irq_priority;
@@ -232,7 +232,7 @@ static void ifx_cat1_i2c_event_handler(void *callback_arg, uint32_t event)
 	if (((CY_SCB_I2C_MASTER_ERR_EVENT | CY_SCB_I2C_SLAVE_ERR_EVENT) & event) != 0) {
 		(void)_i2c_abort_async(dev);
 		/*
-		 * Abort does not confirm the master went idle when it times out,
+		 * Abort does not confirm the controller went idle when it times out,
 		 * so clear the async state unconditionally. This stops the
 		 * interrupt handler from starting a spurious read after a failed
 		 * write and leaving a stale completion for the next transfer.
@@ -486,13 +486,13 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-	data->scb_config.slaveAddress = data->slave_address;
+	data->scb_config.slaveAddress = data->target_address;
 
 	if (is_target_mode) {
 		data->scb_config.slaveAddressMask = 0xFE;
 		data->scb_config.ackGeneralAddr = false;
 	} else {
-		/* Controller mode: the PDL consults these slave-only fields only in
+		/* Controller mode: the PDL consults these target-only fields only in
 		 * target mode, but scb_config is a persistent per-instance copy, so
 		 * reset them to their defaults to avoid carrying stale target state
 		 * across a target-to-controller reconfiguration.
@@ -579,9 +579,9 @@ static int ifx_cat1_i2c_msg_validate(struct i2c_msg *msg, uint8_t num_msgs)
 	return 0;
 }
 
-static int _i2c_master_transfer_async(const struct device *dev, uint16_t address,
-					    const void *tx, size_t tx_size, void *rx,
-					    size_t rx_size)
+static int _i2c_controller_transfer_async(const struct device *dev, uint16_t address,
+					  const void *tx, size_t tx_size, void *rx,
+					  size_t rx_size)
 {
 	struct ifx_cat1_i2c_data *data = dev->data;
 	const struct ifx_cat1_i2c_config *const config = dev->config;
@@ -665,11 +665,14 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			}
 		}
 
-		/* Initiate master write and read transfer using tx_buff and rx_buff respectively */
-		ret = _i2c_master_transfer_async(dev, addr, (tx_msg == NULL) ? NULL : tx_msg->buf,
-						 (tx_msg == NULL) ? 0 : tx_msg->len,
-						 (rx_msg == NULL) ? NULL : rx_msg->buf,
-						 (rx_msg == NULL) ? 0 : rx_msg->len);
+		/* Initiate controller write and read transfer using tx_buff and rx_buff
+		 * respectively
+		 */
+		ret = _i2c_controller_transfer_async(dev, addr,
+						     (tx_msg == NULL) ? NULL : tx_msg->buf,
+						     (tx_msg == NULL) ? 0 : tx_msg->len,
+						     (rx_msg == NULL) ? NULL : rx_msg->buf,
+						     (rx_msg == NULL) ? 0 : rx_msg->len);
 
 		if (ret < 0) {
 			k_sem_give(&data->operation_sem);
@@ -691,7 +694,7 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			 */
 			abort_status = _i2c_abort_async(dev);
 			if (abort_status != CY_RSLT_SUCCESS) {
-				LOG_WRN("I2C abort did not confirm master idle "
+				LOG_WRN("I2C abort did not confirm controller idle "
 					"(0x%x); bus may be stuck", abort_status);
 			}
 
@@ -766,7 +769,7 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	 */
 	return ifx_cat1_i2c_configure(dev,
 				      I2C_MODE_CONTROLLER |
-					      i2c_map_dt_bitrate(config->master_frequency));
+					      i2c_map_dt_bitrate(config->controller_frequency));
 }
 
 void _i2c_free(const struct device *dev)
@@ -793,7 +796,7 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 	}
 
 	data->p_target_config = cfg;
-	data->slave_address = (uint8_t)cfg->address;
+	data->target_address = (uint8_t)cfg->address;
 
 	/* Restore pinctrl to SCB mode after unregister released pins */
 	ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
@@ -816,7 +819,7 @@ static int ifx_cat1_i2c_target_register(const struct device *dev, struct i2c_tar
 	Cy_SCB_I2C_SlaveConfigWriteBuf(config->base, (uint8_t *)data->target_wr_buffer,
 				       CONFIG_I2C_INFINEON_CAT1_TARGET_BUF, &data->context);
 
-	data->irq_cause |= I2C_CAT1_SLAVE_EVENTS_MASK;
+	data->irq_cause |= I2C_CAT1_TARGET_EVENTS_MASK;
 
 	return 0;
 }
@@ -833,7 +836,7 @@ static int ifx_cat1_i2c_target_unregister(const struct device *dev, struct i2c_t
 	_i2c_free(dev);
 	data->p_target_config = NULL;
 
-	data->irq_cause &= ~I2C_CAT1_SLAVE_EVENTS_MASK;
+	data->irq_cause &= ~I2C_CAT1_TARGET_EVENTS_MASK;
 
 	/* Disable NVIC to prevent ISR loops from stale INTR_S bits. */
 	irq_disable(config->irq_num);
@@ -857,9 +860,9 @@ static void i2c_isr_handler(const struct device *dev)
 	Cy_SCB_I2C_Interrupt(config->base, &data->context);
 
 	if (data->pending != CAT1_I2C_PENDING_NONE) {
-		/* The write-read read phase is chained from the master
+		/* The write-read read phase is chained from the controller
 		 * WR_CMPLT event, so only the single TX or RX phase needs to be
-		 * cleared once the master goes idle.
+		 * cleared once the controller goes idle.
 		 */
 		if (0 == (Cy_SCB_I2C_MasterGetStatus(config->base, &data->context) &
 			  CY_SCB_I2C_MASTER_BUSY)) {
@@ -942,7 +945,7 @@ static int ifx_cat1_i2c_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	bitrate_cfg = i2c_map_dt_bitrate(config->master_frequency) | I2C_MODE_CONTROLLER;
+	bitrate_cfg = i2c_map_dt_bitrate(config->controller_frequency) | I2C_MODE_CONTROLLER;
 	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
 	if (error != 0) {
 		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
@@ -1030,7 +1033,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
                                                                                                    \
 	static const struct ifx_cat1_i2c_config i2c_cat1_cfg_##n = {                               \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.master_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),                   \
+		.controller_frequency = DT_INST_PROP_OR(n, clock_frequency, 100000),               \
 		.base = (CySCB_Type *)DT_INST_REG_ADDR(n),                                         \
 		.irq_priority = DT_INST_IRQ(n, priority),                                          \
 		.irq_num = DT_INST_IRQN(n),                                                        \
