@@ -1009,29 +1009,80 @@ int pthread_getschedparam(pthread_t pthread, int *policy, struct sched_param *pa
  *
  * See IEEE 1003.1
  */
+#ifdef CONFIG_USERSPACE
+#define ONCE_STATE(once) (&(once)->futex.val)
+#else
+#define ONCE_STATE(once) (&(once)->state)
+#endif
+
+static void pthread_once_cleanup(void *arg)
+{
+	struct pthread_once *const _once = (struct pthread_once *)arg;
+
+	/* Revert state to 0 so another thread can attempt initialization */
+	atomic_set(ONCE_STATE(_once), 0);
+#ifdef CONFIG_USERSPACE
+	k_futex_wake(&_once->futex, true);
+#endif
+}
+
 int pthread_once(pthread_once_t *once, void (*init_func)(void))
 {
-	int ret = EINVAL;
-	bool run_init_func = false;
 	struct pthread_once *const _once = (struct pthread_once *)once;
 
-	if (init_func == NULL) {
+	/* initial state for once is an implicit value of 0 - i.e. as BSS */
+	const atomic_val_t once_wait = 0x3a173a17;
+	const atomic_val_t once_done = 0x73a173a1;
+
+	if (once == NULL || init_func == NULL) {
 		return EINVAL;
 	}
 
-	SYS_SEM_LOCK(&pthread_pool_lock) {
-		if (!_once->flag) {
-			run_init_func = true;
-			_once->flag = true;
+	while (true) {
+		/* Read the current state */
+		atomic_val_t state = atomic_get(ONCE_STATE(_once));
+
+		if (state == once_done) {
+			/* Already initialized, we can safely proceed */
+			return 0;
 		}
-		ret = 0;
-	}
 
-	if (ret == 0 && run_init_func) {
-		init_func();
-	}
+		if (state == 0) {
+			/* Attempt to claim the lock to execute the init routine */
+			if (atomic_cas(ONCE_STATE(_once), 0, once_wait)) {
+				/* Register the cleanup handler */
+				pthread_cleanup_push(pthread_once_cleanup, once);
 
-	return ret;
+				/* Execute the initialization routine */
+				init_func();
+
+				/* Init complete. Pop the cleanup handler without executing it. */
+				pthread_cleanup_pop(0);
+
+				/* Mark as done and wake waiting threads */
+				atomic_set(ONCE_STATE(_once), once_done);
+#ifdef CONFIG_USERSPACE
+				k_futex_wake(&_once->futex, true);
+#endif
+				return 0;
+			}
+
+			/* CAS failed (another thread beat us to it). Loop and wait. */
+			continue;
+		}
+
+		/* Another thread is currently initializing. We must wait */
+#ifdef CONFIG_USERSPACE
+		/* Double-check main state to prevent race conditions before waiting */
+		if (atomic_get(ONCE_STATE(_once)) != once_wait) {
+			continue;
+		}
+
+		k_futex_wait(&_once->futex, (int)once_wait, K_FOREVER);
+#else
+		k_msleep(1);
+#endif
+	}
 }
 
 /**
