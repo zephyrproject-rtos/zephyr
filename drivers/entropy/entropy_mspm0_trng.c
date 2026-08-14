@@ -9,6 +9,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
@@ -21,6 +23,8 @@ LOG_MODULE_REGISTER(entropy_mspm0_trng, CONFIG_ENTROPY_LOG_LEVEL);
 #define TRNG_MSPM0_PWREN_KEY				0x26
 
 #define TRNG_MSPM0_CLKDIVIDE_MASK			BIT_MASK(3)
+#define TRNG_MSPM0_MIN_FREQ				MHZ(9.5)
+#define TRNG_MSPM0_MAX_FREQ				MHZ(25)
 
 #define TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK		BIT(3)
 #define TRNG_MSPM0_IIDX_CMD_DONE_MASK			BIT(2)
@@ -43,9 +47,11 @@ LOG_MODULE_REGISTER(entropy_mspm0_trng, CONFIG_ENTROPY_LOG_LEVEL);
 #define TRNG_MSPM0_DECIMATION_RATE_MASK		GENMASK(10, 8)
 #define TRNG_SAMPLE_SIZE			4
 
-#define TRNG_FREQ                 (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / DT_INST_PROP(0, ti_clk_div))
-#define TRNG_SAMPLE_GENERATE_TIME (1000000 * (32 * (TRNG_MSPM0_DECIMATION_RATE + 1)) / (TRNG_FREQ))
-
+#define BEST_CLK_DIV(freq) \
+	((freq) <= MHZ(25) ? 1 : \
+	(freq) <= MHZ(25) * 2  ? 2 : \
+	(freq) <= MHZ(25) * 4  ? 4 : \
+	(freq) <= MHZ(25) * 6  ? 6 : 8)
 typedef struct {
 	uint32_t reserved0[0x200];
 	volatile uint32_t pwren;	/* Power Enable				@0x800h */
@@ -75,7 +81,7 @@ typedef struct {
 
 struct entropy_mspm0_trng_config {
 	trng_ti_mspm0_reg_t *regs;
-	uint8_t clk_divide;
+	struct mspm0_sys_clock clock_subsys;
 };
 
 struct entropy_mspm0_trng_data {
@@ -83,6 +89,7 @@ struct entropy_mspm0_trng_data {
 	struct k_sem sem_sync;
 	struct ring_buf entropy_pool;
 	uint8_t pool_buffer[CONFIG_ENTROPY_MSPM0_TRNG_POOL_SIZE];
+	uint32_t sample_generate_time_us;
 };
 
 static inline bool entropy_mspm0_trng_run_dig_test(trng_ti_mspm0_reg_t *regs)
@@ -256,7 +263,7 @@ static int entropy_mspm0_trng_get_entropy_isr(const struct device *dev, uint8_t 
 			length -= bytes_read;
 			total_read += bytes_read;
 		} else {
-			k_busy_wait(TRNG_SAMPLE_GENERATE_TIME);
+			k_busy_wait(data->sample_generate_time_us);
 		}
 	}
 
@@ -269,6 +276,10 @@ static int entropy_mspm0_trng_init(const struct device *dev)
 {
 	const struct entropy_mspm0_trng_config *config = dev->config;
 	struct entropy_mspm0_trng_data *data = dev->data;
+	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
+	uint32_t mclk_freq, mclk_cldiv_freq;
+	uint8_t clk_div;
+	int ret;
 
 	/* Initialize ring buffer for entropy storage */
 	ring_buf_init(&data->entropy_pool, sizeof(data->pool_buffer), data->pool_buffer);
@@ -281,9 +292,28 @@ static int entropy_mspm0_trng_init(const struct device *dev)
 			TRNG_MSPM0_PWREN_MASK;
 	}
 
+	ret = clock_control_get_rate(clk_dev,
+				    (clock_control_subsys_t)(uintptr_t)&config->clock_subsys,
+				    &mclk_freq);
+	if (ret < 0) {
+		return ret;
+	}
+
+	clk_div = BEST_CLK_DIV(mclk_freq);
+	mclk_cldiv_freq = mclk_freq / clk_div;
+
+	if (mclk_cldiv_freq < TRNG_MSPM0_MIN_FREQ || mclk_cldiv_freq > TRNG_MSPM0_MAX_FREQ) {
+		LOG_ERR("no valid TRNG clock divider for MCLK %dHz (valid range: %f-%dHz)",
+			 mclk_freq, TRNG_MSPM0_MIN_FREQ, TRNG_MSPM0_MAX_FREQ);
+		return -EINVAL;
+	}
+
+	data->sample_generate_time_us = 1000000U * 32U * (TRNG_MSPM0_DECIMATION_RATE + 1U) /
+					(mclk_freq / clk_div);
+
 	/* Configure TRNG clock divider */
 	/* Register values are 1 less than divide by values */
-	config->regs->clk_divide = (config->clk_divide - 1) & TRNG_MSPM0_CLKDIVIDE_MASK;
+	config->regs->clk_divide = (clk_div - 1) & TRNG_MSPM0_CLKDIVIDE_MASK;
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
 		    entropy_mspm0_trng_isr, DEVICE_DT_INST_GET(0), 0);
@@ -307,7 +337,7 @@ static DEVICE_API(entropy, entropy_mspm0_trng_driver_api) = {
 
 static const struct entropy_mspm0_trng_config entropy_mspm0_trng_config = {
 	.regs = (trng_ti_mspm0_reg_t *)DT_INST_REG_ADDR(0),
-	.clk_divide = DT_INST_PROP(0, ti_clk_div),
+	.clock_subsys = MSPM0_CLOCK_SUBSYS_FN(0),
 };
 
 static struct entropy_mspm0_trng_data entropy_mspm0_trng_data = {
