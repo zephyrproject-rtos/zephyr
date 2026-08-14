@@ -4344,7 +4344,7 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/mimxrt*/
         - soc/nxp/imxrt/
-        - dts/arm/nxp/*rt*
+        - dts/arm/nxp/imxrt/
     - name: NXP MCX
       collaborators:
         - peterwangsz
@@ -4353,7 +4353,7 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/frdm_mcx*/
         - soc/nxp/mcx/
-        - dts/arm/nxp/*mcx*
+        - dts/arm/nxp/mcx/
         - boards/nxp/mcx_*/
     - name: NXP Kinetis
       collaborators:
