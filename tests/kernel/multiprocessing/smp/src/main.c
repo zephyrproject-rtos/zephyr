@@ -76,23 +76,16 @@ static int curr_cpu(void)
 }
 
 /**
- * @brief SMP
+ * @brief Symmetric multiprocessing (SMP) tests
+ *
  * @defgroup kernel_smp_tests SMP Tests
+ *
  * @ingroup all_tests
- * @{
- * @}
- */
-
-/**
- * @defgroup kernel_smp_integration_tests SMP Integration Tests
- * @ingroup kernel_smp_tests
- * @{
- * @}
- */
-
-/**
- * @defgroup kernel_smp_module_tests SMP Module Tests
- * @ingroup kernel_smp_tests
+ *
+ * These tests validate that the kernel schedules threads across all available
+ * CPUs, that per-CPU state is reported correctly, and that the SMP-specific
+ * paths of the scheduler (IPIs, the global lock, context switching) behave as
+ * documented.
  * @{
  * @}
  */
@@ -119,12 +112,31 @@ static void t2_fn(void *a, void *b, void *c)
 }
 
 /**
- * @brief Verify SMP with 2 cooperative threads
+ * @brief Verify that two cooperative threads execute simultaneously on
+ *        different CPUs.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Multi processing is verified by checking whether
- * 2 cooperative threads run simultaneously at different cores
+ * @details
+ * A cooperative thread cannot be preempted, so on a uniprocessor system a
+ * spinning cooperative thread would starve every other thread. The test
+ * spawns such a thread and checks from the (also cooperative) test thread
+ * that it keeps making progress, which is only possible if the two threads
+ * are running on separate CPUs at the same time.
+ *
+ * Test steps:
+ * - Spawn a cooperative thread that busy-waits and increments a counter.
+ * - Wait until the spawned thread has started running.
+ * - Ten times, busy-wait slightly longer than the spawned thread's iteration
+ *   and check that its counter has advanced past the local iteration count.
+ * - Abort and join the spawned thread.
+ *
+ * Expected result:
+ * - The spawned thread's counter advances on every iteration, proving both
+ *   cooperative threads run concurrently.
+ *
+ * @see k_thread_create()
+ * @see K_PRIO_COOP()
  */
 ZTEST(smp, test_smp_coop_threads)
 {
@@ -181,16 +193,32 @@ static void child_fn(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify CPU IDs of threads in SMP
+ * @brief Verify that a child thread is scheduled on a different CPU than its
+ *        parent.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Verify whether thread running on other core is
- * parent thread from child thread. Relies on the SMP initialization having
- * brought up the secondary CPUs so that a child thread can run on a different
- * core than its parent.
+ * @details
+ * Once the secondary CPUs have been brought up, a newly created thread is
+ * eligible to run on any of them. The child thread reads its own CPU id and
+ * compares it against the id its parent recorded before the create call, so a
+ * pass proves the scheduler placed the two threads on distinct CPUs.
+ *
+ * Test steps:
+ * - Sleep briefly so every CPU has entered its idle thread.
+ * - Record the test thread's CPU id via arch_curr_cpu().
+ * - Create a preemptible child thread and pass it the recorded id.
+ * - In the child, read the current CPU id and assert it differs from the
+ *   parent's, then signal a semaphore.
+ * - Take the semaphore, then abort and join the child.
+ *
+ * Expected result:
+ * - The child observes a CPU id different from its parent's.
+ *
+ * @see arch_curr_cpu()
+ * @see k_thread_create()
  */
-ZTEST(smp, test_cpu_id_threads)
+ZTEST(smp, test_smp_cpu_id_threads)
 {
 	/* Make sure idle thread runs on each core */
 	k_sleep(K_MSEC(1000));
@@ -321,9 +349,20 @@ static void __no_optimization thread_ab_entry(void *p1, void *p2, void *p3)
  *
  * This was the test case for zephyrproject-rtos/zephyr#58040 issue where this test caused system
  * hang.
+ *
+ * Test steps:
+ * - Spawn one cooperative thread per CPU, each spinning in an infinite loop.
+ * - Busy-wait so the spawned threads occupy every other CPU.
+ * - Abort the spawned threads one by one from the test thread.
+ * - Join every aborted thread.
+ *
+ * Expected result:
+ * - All spawned threads are aborted and joined; the system does not hang.
+ *
+ * @see k_thread_abort()
+ * @see k_thread_join()
  */
-
-ZTEST(smp, test_coop_switch_in_abort)
+ZTEST(smp, test_smp_coop_switch_in_abort)
 {
 	k_tid_t tid[MAX_NUM_THREADS];
 	unsigned int num_threads = arch_num_cpus();
@@ -366,16 +405,32 @@ ZTEST(smp, test_coop_switch_in_abort)
 }
 
 /**
- * @brief Test cooperative threads non-preemption
+ * @brief Verify that a cooperative thread is never preempted on an SMP system.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Spawn cooperative threads equal to number of cores
- * supported. Main thread will already be running on 1 core.
- * Check if the last thread created preempts any threads
- * already running.
+ * @details
+ * The test thread itself occupies one CPU, so spawning one cooperative thread
+ * per CPU leaves the last one ready but with no CPU to run on. Because
+ * cooperative threads cannot be preempted, that last thread must stay
+ * unscheduled even though it has the highest priority of the group.
+ *
+ * Test steps:
+ * - Spawn one cooperative thread per CPU, each with a higher priority than the
+ *   previous one.
+ * - Busy-wait to give the threads placed on other CPUs time to run.
+ * - Check the per-thread "executed" flag of every spawned thread.
+ * - Abort the spawned threads and clean up.
+ *
+ * Expected result:
+ * - All threads but the last one execute.
+ * - The last (highest priority) thread does not execute, as no running
+ *   cooperative thread yields its CPU to it.
+ *
+ * @see K_PRIO_COOP()
+ * @see k_thread_create()
  */
-ZTEST(smp, test_coop_resched_threads)
+ZTEST(smp, test_smp_coop_resched_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
@@ -408,15 +463,31 @@ ZTEST(smp, test_coop_resched_threads)
 }
 
 /**
- * @brief Test preemptness of preemptive thread
+ * @brief Verify that preemptible threads are rescheduled across all CPUs.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Create preemptive thread and let it run
- * on another core and verify if it gets preempted
- * if another thread of higher priority is spawned
+ * @details
+ * Unlike cooperative threads, preemptible threads yield their CPU to any
+ * higher-priority thread that becomes ready. Spawning one preemptible thread
+ * per CPU with increasing priority must therefore let every one of them run to
+ * completion, including the last thread created, which preempts an already
+ * running one.
+ *
+ * Test steps:
+ * - Spawn one preemptible thread per CPU, each with a higher priority than the
+ *   previous one.
+ * - Spin until all spawned threads have terminated.
+ * - Check the per-thread "executed" flag of every spawned thread.
+ * - Abort the spawned threads and clean up.
+ *
+ * Expected result:
+ * - Every spawned preemptible thread executes.
+ *
+ * @see K_PRIO_PREEMPT()
+ * @see k_thread_create()
  */
-ZTEST(smp, test_preempt_resched_threads)
+ZTEST(smp, test_smp_preempt_resched_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
@@ -440,16 +511,29 @@ ZTEST(smp, test_preempt_resched_threads)
 }
 
 /**
- * @brief Validate behavior of thread when it yields
+ * @brief Verify that k_yield() releases a CPU to a pending cooperative thread.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Spawn cooperative threads equal to number
- * of cores, so last thread would be pending, call
- * yield() from main thread. Now, all threads must be
- * executed
+ * @details
+ * With one cooperative thread spawned per CPU, the last one stays ready but
+ * unscheduled because the test thread occupies the remaining CPU. Yielding
+ * from the test thread hands that CPU over, so the pending thread must then
+ * be scheduled and run to completion.
+ *
+ * Test steps:
+ * - Spawn one cooperative thread per CPU with no start delay.
+ * - Call k_yield() from the test thread, then busy-wait.
+ * - Check the per-thread "executed" flag of every spawned thread.
+ * - Abort the spawned threads and clean up.
+ *
+ * Expected result:
+ * - Every spawned thread executes, including the one that was pending before
+ *   the yield.
+ *
+ * @see k_yield()
  */
-ZTEST(smp, test_yield_threads)
+ZTEST(smp, test_smp_yield_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
@@ -474,15 +558,27 @@ ZTEST(smp, test_yield_threads)
 }
 
 /**
- * @brief Test behavior of thread when it sleeps
+ * @brief Verify that sleeping releases a CPU to a pending cooperative thread.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Spawn cooperative thread and call
- * sleep() from main thread. After timeout, all
- * threads has to be scheduled.
+ * @details
+ * Same scenario as the yield case, but the test thread gives up its CPU by
+ * sleeping instead of yielding. While it sleeps, the thread that had no CPU
+ * available must be scheduled and run.
+ *
+ * Test steps:
+ * - Spawn one cooperative thread per CPU with no start delay.
+ * - Call k_msleep() from the test thread for longer than the threads need.
+ * - Check the per-thread "executed" flag of every spawned thread.
+ * - Abort the spawned threads and clean up.
+ *
+ * Expected result:
+ * - Every spawned thread has executed by the time the sleep expires.
+ *
+ * @see k_msleep()
  */
-ZTEST(smp, test_sleep_threads)
+ZTEST(smp, test_smp_sleep_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
@@ -555,16 +651,33 @@ static void check_wokeup_threads(int tnum)
 }
 
 /**
- * @brief Test behavior of wakeup() in SMP case
+ * @brief Verify that k_wakeup() resumes threads sleeping on other CPUs.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Spawn number of threads equal to number of
- * remaining cores and let them sleep for a while. Call
- * wakeup() of those threads from parent thread and check
- * if they are all running
+ * @details
+ * k_wakeup() must cancel the timeout of a sleeping thread regardless of which
+ * CPU that thread was last scheduled on, and the woken threads must then be
+ * dispatched. The woken threads set a flag after their sleep returns, so the
+ * test can confirm they resumed before their (much longer) sleep would have
+ * expired on its own.
+ *
+ * Test steps:
+ * - Spawn one cooperative thread per remaining CPU; each flags that it started
+ *   and then sleeps.
+ * - Spin until every thread has flagged its start and is blocked.
+ * - Call k_wakeup() on each of them from the test thread.
+ * - Busy-wait to let the other CPUs schedule them, then count the threads that
+ *   ran past their sleep.
+ * - Abort the spawned threads and clean up.
+ *
+ * Expected result:
+ * - Every thread starts, and every thread resumes after k_wakeup().
+ *
+ * @see k_wakeup()
+ * @see k_msleep()
  */
-ZTEST(smp, test_wakeup_threads)
+ZTEST(smp, test_smp_wakeup_threads)
 {
 	unsigned int num_threads = arch_num_cpus();
 
@@ -611,55 +724,34 @@ static void thread_get_cpu_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+static int _cpu_id;
+
 /**
- * @brief Test get a pointer of CPU
+ * @brief Verify that a thread can query the CPU record it is executing on.
  *
- * @ingroup kernel_smp_module_tests
+ * @ingroup kernel_smp_tests
  *
  * @details
- * Test Objective:
- * - To verify architecture layer provides a mechanism to return a pointer to the
- *   current kernel CPU record of the running CPU.
- *   We call arch_curr_cpu() and get its member, both in main and spawned thread
- *   separately, and compare them. They shall be different in SMP environment.
+ * The architecture layer must provide a pointer to the kernel CPU record of
+ * the CPU the caller is running on. The test thread records its own CPU id and
+ * hands it to a spawned thread, which queries arch_curr_cpu() itself and
+ * asserts that the record is valid and reports a different CPU — which is only
+ * true if the spawned thread really was dispatched to another CPU.
  *
- * Testing techniques:
- * - Interface testing, function and block box testing,
- *   dynamic analysis and testing,
+ * Test steps:
+ * - Record the test thread's CPU id via arch_curr_cpu().
+ * - Spawn a cooperative thread and pass it the recorded id.
+ * - In the spawned thread, call arch_curr_cpu(), check the returned pointer is
+ *   not NULL and that its id differs from the recorded one, then spin.
+ * - Busy-wait, then abort and join the spawned thread.
  *
- * Prerequisite Conditions:
- * - CONFIG_SMP=y, and the HW platform must support SMP.
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# In main thread, call arch_curr_cpu() to get it's member "id",then store it
- *  into a variable thread_id.
- * -# Spawn a thread t2, and pass the stored thread_id to it, then call
- *  k_busy_wait() 50us to wait for thread run and won't be swapped out.
- * -# In thread t2, call arch_curr_cpu() to get pointer of current cpu data. Then
- *  check if it not NULL.
- * -# Store the member id via accessing pointer of current cpu data to var cpu_id.
- * -# Check if cpu_id is not equaled to bsp_id that we pass into thread.
- * -# Call k_busy_wait() and loop forever.
- * -# In main thread, terminate the thread t2 before exit.
- *
- * Expected Test Result:
- * - The pointer of current cpu data that we got from function call is correct.
- *
- * Pass/Fail Criteria:
- * - Successful if the check of step 3,5 are all passed.
- * - Failure if one of the check of step 3,5 is failed.
- *
- * Assumptions and Constraints:
- * - This test using for the platform that support SMP, in our current scenario
- *   , only x86_64, arc and xtensa supported.
+ * Expected result:
+ * - arch_curr_cpu() returns a valid CPU record in the spawned thread, whose id
+ *   differs from the test thread's CPU.
  *
  * @see arch_curr_cpu()
  */
-static int _cpu_id;
-ZTEST(smp, test_get_cpu)
+ZTEST(smp, test_smp_get_cpu)
 {
 	k_tid_t thread_id;
 
@@ -691,14 +783,21 @@ ZTEST(smp, test_get_cpu)
  *
  * @ingroup kernel_smp_tests
  *
- * @details The maximum number of CPUs is configurable via
- * CONFIG_MP_MAX_NUM_CPUS. Verify that the number of CPUs the kernel brought up
- * and reports through arch_num_cpus() is at least one and never exceeds the
- * configured maximum.
+ * @details
+ * The maximum number of CPUs is configurable via CONFIG_MP_MAX_NUM_CPUS.
+ * Verify that the number of CPUs the kernel brought up and reports through
+ * arch_num_cpus() is at least one and never exceeds the configured maximum.
+ *
+ * Test steps:
+ * - Query the number of active CPUs with arch_num_cpus().
+ * - Compare it against the range [1, CONFIG_MP_MAX_NUM_CPUS].
+ *
+ * Expected result:
+ * - arch_num_cpus() reports a count within the configured range.
  *
  * @see arch_num_cpus()
  */
-ZTEST(smp, test_num_cpus)
+ZTEST(smp, test_smp_num_cpus)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
@@ -717,51 +816,34 @@ void z_trace_sched_ipi(void)
 }
 #endif
 
+#if defined(CONFIG_SCHED_IPI_SUPPORTED) || defined(__DOXYGEN__)
 /**
- * @brief Test interprocessor interrupt
+ * @brief Verify that a broadcast scheduler IPI reaches the other CPUs.
  *
- * @ingroup kernel_smp_integration_tests
+ * @ingroup kernel_smp_tests
  *
  * @details
- * Test Objective:
- * - To verify architecture layer provides a mechanism to issue an interprocessor
- *   interrupt to all other CPUs in the system that calls the scheduler IPI.
- *   We simply add a hook in z_sched_ipi(), in order to check if it has been
- *   called once in another CPU except the caller, when arch_sched_broadcast_ipi()
- *   is called.
+ * The architecture layer must be able to issue an interprocessor interrupt to
+ * every other CPU in the system, which those CPUs then handle as a scheduler
+ * IPI. The test hooks z_trace_sched_ipi(), which the scheduler IPI handler
+ * calls on the receiving CPU, so an incremented counter proves the IPI was
+ * both delivered and processed elsewhere. Skipped when the trace hook is not
+ * built in, as there is then no way to observe delivery.
  *
- * Testing techniques:
- * - Interface testing, function and block box testing,
- *   dynamic analysis and testing
+ * Test steps:
+ * - Clear the IPI counter.
+ * - Call arch_sched_broadcast_ipi().
+ * - Sleep in a retry loop until the counter becomes non-zero or the retries
+ *   are exhausted.
+ * - Repeat CONFIG_SMP_IPI_NUM_ITERS times.
  *
- * Prerequisite Conditions:
- * - CONFIG_SMP=y, and the HW platform must support SMP.
- * - CONFIG_TRACE_SCHED_IPI=y was set.
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# In main thread, given a global variable sched_ipi_has_called equaled zero.
- * -# Call arch_sched_broadcast_ipi() then sleep for 100ms.
- * -# In z_sched_ipi() handler, increment the sched_ipi_has_called.
- * -# In main thread, check the sched_ipi_has_called is not equaled to zero.
- * -# Repeat step 1 to 4 for 3 times.
- *
- * Expected Test Result:
- * - The pointer of current cpu data that we got from function call is correct.
- *
- * Pass/Fail Criteria:
- * - Successful if the check of step 4 are all passed.
- * - Failure if one of the check of step 4 is failed.
- *
- * Assumptions and Constraints:
- * - This test using for the platform that support SMP, in our current scenario
- *   , only x86_64 and arc supported.
+ * Expected result:
+ * - The scheduler IPI handler runs at least once on another CPU in every
+ *   iteration.
  *
  * @see arch_sched_broadcast_ipi()
+ * @see z_trace_sched_ipi()
  */
-#ifdef CONFIG_SCHED_IPI_SUPPORTED
 ZTEST(smp, test_smp_ipi)
 {
 #ifndef CONFIG_TRACE_SCHED_IPI
@@ -828,15 +910,32 @@ void entry_oops(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test fatal error can be triggered on different core
-
- * @details When CONFIG_SMP is enabled, on some multiprocessor
- * platforms, exception can be triggered on different core at
- * the same time.
+ * @brief Verify that fatal errors are handled per CPU.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * On an SMP system a fatal error may be raised concurrently on more than one
+ * CPU, and each CPU must run the fatal error handler for the thread it was
+ * executing. A child thread and the test thread each trigger a kernel oops;
+ * the fatal error handler records the CPU it was entered on and checks that
+ * the two crashes were handled on different CPUs.
+ *
+ * Test steps:
+ * - Create a preemptible child thread whose entry point calls k_oops().
+ * - Busy-wait without rescheduling and confirm the child thread is dead.
+ * - Call k_oops() from the test thread itself.
+ * - In the fatal error handler, record the handling CPU for both crashes and
+ *   compare them.
+ *
+ * Expected result:
+ * - Both oopses are reported as K_ERR_KERNEL_OOPS, the child thread is
+ *   terminated, and the two fatal errors are handled on different CPUs.
+ *
+ * @see k_oops()
+ * @see k_sys_fatal_error_handler()
  */
-ZTEST(smp, test_fatal_on_smp)
+ZTEST(smp, test_smp_fatal_error)
 {
 	/* Creat a child thread and trigger a crash */
 	k_thread_create(&t2, t2_stack, T2_STACK_SIZE, entry_oops,
@@ -864,14 +963,32 @@ static void workq_handler(struct k_work *work)
 }
 
 /**
- * @brief Test system workq run on different core
-
- * @details When macro CONFIG_SMP is enabled, workq can be run
- * on different core.
+ * @brief Verify that the system workqueue runs on a different CPU.
  *
- * @ingroup kernel_common_tests
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * The system workqueue thread is an ordinary kernel thread and is therefore
+ * eligible to be scheduled on any CPU. With the test thread occupying one CPU
+ * and never blocking, a submitted work item must still be processed, which is
+ * only possible on another CPU. The handler records the CPU it ran on so the
+ * placement can be checked.
+ *
+ * Test steps:
+ * - Initialize a work item whose handler records its CPU id.
+ * - Submit it to the system workqueue with k_work_submit().
+ * - Busy-wait without giving up the current CPU.
+ * - Check that the work item is no longer busy and compare the recorded CPU id
+ *   against the test thread's.
+ *
+ * Expected result:
+ * - The work item completes, and its handler ran on a CPU other than the one
+ *   running the test thread.
+ *
+ * @see k_work_submit()
+ * @see k_work_busy_get()
  */
-ZTEST(smp, test_workq_on_smp)
+ZTEST(smp, test_smp_workq)
 {
 	static struct k_work work;
 
@@ -933,12 +1050,31 @@ static void t2_mutex_lock(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test scenario that a thread release the global lock
+ * @brief Verify that a thread pending on a mutex releases the global lock.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Validate the scenario that make the internal APIs of SMP
- * z_smp_release_global_lock() to be called.
+ * @details
+ * When a thread is switched out, the SMP layer calls
+ * z_smp_release_global_lock() to drop any global lock the outgoing thread
+ * still holds. A thread that did not take an irq_lock() must leave its
+ * per-thread global lock count at zero across that switch. Two threads
+ * contend for the same mutex on another CPU so the release path is taken, and
+ * the second thread asserts its lock count before, between and after its
+ * lock/unlock pair.
+ *
+ * Test steps:
+ * - Create a lower-priority thread that takes the mutex, sleeps and unlocks it.
+ * - Create a higher-priority thread that pends on the same mutex.
+ * - Busy-wait on the current CPU so the contention resolves on another CPU.
+ * - Join both threads and clean up.
+ *
+ * Expected result:
+ * - The contending thread's global lock count stays zero throughout, and both
+ *   threads terminate without deadlocking.
+ *
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
  */
 ZTEST(smp, test_smp_release_global_lock)
 {
@@ -1103,22 +1239,34 @@ static int run_concurrency(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test if the concurrency of SMP works or not
+ * @brief Verify that the locking primitives serialize updates across CPUs.
  *
  * @ingroup kernel_smp_tests
  *
- * @details Validate the global lock and unlock API of SMP are thread-safe.
- * We make 3 thread to increase the global count in different cpu and
- * they both do locking then unlocking for LOOP_COUNT times. It shall be no
- * deadlock happened and total global count shall be 3 * LOOP COUNT.
+ * @details
+ * Three threads increment a shared counter concurrently on different CPUs,
+ * each guarding the update with the primitive under test. If the primitive
+ * provides mutual exclusion, no update is lost and the final count is exactly
+ * three times the loop count; a lost update or a deadlock fails the test. The
+ * scenario is repeated for the global IRQ lock, a semaphore and a mutex.
  *
- * We show the 4 kinds of scenario:
- * - No any lock used
- * - Use global irq lock
- * - Use semaphore
- * - Use mutex
+ * Test steps:
+ * - Reset the shared counter and select the locking primitive.
+ * - Spawn three preemptible threads that each take the lock, update the shared
+ *   counter and release the lock, LOOP_COUNT times.
+ * - Join all three threads and compare the counter against 3 * LOOP_COUNT.
+ * - Repeat for irq_lock(), k_sem_take()/k_sem_give() and
+ *   k_mutex_lock()/k_mutex_unlock().
+ *
+ * Expected result:
+ * - For every primitive the final count equals 3 * LOOP_COUNT and no deadlock
+ *   occurs.
+ *
+ * @see irq_lock()
+ * @see k_sem_take()
+ * @see k_mutex_lock()
  */
-ZTEST(smp, test_inc_concurrency)
+ZTEST(smp, test_smp_inc_concurrency)
 {
 	if (LOOP_COUNT == 0) {
 		/* If LOOP_COUNT is zero, the spawned threads are not looping
@@ -1140,19 +1288,14 @@ ZTEST(smp, test_inc_concurrency)
 			"total count %d is wrong(M)", global_cnt);
 }
 
-/** Keep track of how many signals raised. */
+/* Keep track of how many signals raised. */
 static unsigned int t_signal_raised;
 
-/** Keep track of how many signals received per thread. */
+/* Keep track of how many signals received per thread. */
 static unsigned int t_signals_rcvd[MAX_NUM_THREADS];
 
-/**
- * @brief Stress test for context switching code
- *
- * @ingroup kernel_smp_tests
- *
- * @details Leverage the polling API to stress test the context switching code.
- *          This test will hammer all the CPUs with thread swapping requests.
+/* Worker body: waits on its own poll event, validates the raised signal and
+ * resets both event and signal so the raiser can signal it again.
  */
 static void process_events(void *arg0, void *arg1, void *arg2)
 {
@@ -1215,6 +1358,35 @@ static void signal_raise(void *arg0, void *arg1, void *arg2)
 	}
 }
 
+/**
+ * @brief Stress the context switching code across all CPUs via k_poll signals.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * The polling API is used to hammer every CPU with thread swapping requests:
+ * one worker thread per CPU blocks in k_poll(), while a cooperative thread
+ * raises their signals in a tight loop. Sustaining this for several seconds
+ * exercises the SMP context switch paths under contention; a lost wakeup, a
+ * corrupted signal or a hang shows up as a thread that received no signals at
+ * all. Skipped when CONFIG_SMP_TEST_RUN_FACTOR is zero, which reduces the run
+ * time to nothing.
+ *
+ * Test steps:
+ * - Initialize one poll signal and event per CPU and spawn a worker thread for
+ *   each, at distinct preemptible priorities.
+ * - Spawn a cooperative thread that continuously raises every signal.
+ * - Sleep for the configured run time, then abort and join all threads.
+ * - Check the per-thread count of received signals.
+ *
+ * Expected result:
+ * - Every worker thread received at least one signal, and all threads abort
+ *   and join cleanly.
+ *
+ * @see k_poll()
+ * @see k_poll_signal_raise()
+ * @see k_poll_signal_reset()
+ */
 ZTEST(smp_stress, test_smp_switch_stress)
 {
 	unsigned int num_threads = arch_num_cpus();
