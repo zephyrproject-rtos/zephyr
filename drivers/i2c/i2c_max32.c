@@ -708,14 +708,14 @@ static void i2c_max32_isr_target(const struct device *dev, mxc_i2c_regs_t *i2c)
 		if (int_fl0 & ADI_MAX32_I2C_INT_FL0_ADDR_MATCH) {
 			/* Address match occurred, prepare for transaction */
 			if (Wrap_MXC_I2C_GetReadWriteBitStatus(i2c)) {
-				/* Read request received from the master */
+				/* Read request received from the controller */
 				i2c_max32_target_callback(dev, i2c, MXC_I2C_EVT_MASTER_RD);
 				int_en0 = ADI_MAX32_I2C_INT_EN0_TX_THD |
 					  ADI_MAX32_I2C_INT_EN0_TX_LOCK_OUT |
 					  ADI_MAX32_I2C_INT_EN0_DONE | ADI_MAX32_I2C_INT_EN0_ERR;
 				int_en1 = ADI_MAX32_I2C_INT_EN1_TX_UNDERFLOW;
 			} else {
-				/* Write request received from the master */
+				/* Write request received from the controller */
 				i2c_max32_target_callback(dev, i2c, MXC_I2C_EVT_MASTER_WR);
 				int_en0 = ADI_MAX32_I2C_INT_EN0_RX_THD |
 					  ADI_MAX32_I2C_INT_EN0_DONE | ADI_MAX32_I2C_INT_EN0_ERR;
@@ -938,7 +938,7 @@ static int i2c_max32_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = MXC_I2C_Init(i2c, 1, 0); /* Configure as master */
+	ret = MXC_I2C_Init(i2c, 1, 0); /* Configure as controller */
 	if (ret) {
 		return ret;
 	}

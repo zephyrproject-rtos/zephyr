@@ -384,7 +384,7 @@ static int i2c_max32_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = MXC_I2C_Init(i2c, 1, 0); /* Configure as master */
+	ret = MXC_I2C_Init(i2c, 1, 0); /* Configure as controller */
 	if (ret) {
 		return ret;
 	}
