@@ -53,9 +53,12 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 
 	__ASSERT(!arch_is_in_isr(), "");
 
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep_ticks, timeout);
+
 	/* K_NO_WAIT is treated as a 'yield' */
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_yield();
+		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, 0);
 		return 0;
 	}
 
@@ -74,6 +77,7 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	 * this point at all means a k_wakeup() cut the sleep short.
 	 */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
+		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, K_TICKS_FOREVER);
 		return K_TICKS_FOREVER;
 	}
 
@@ -94,6 +98,7 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 		signed_left = 0;
 	}
 
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, signed_left);
 	return (k_ticks_t)signed_left;
 }
 

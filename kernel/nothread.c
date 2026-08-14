@@ -25,10 +25,13 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 {
 	__ASSERT(!arch_is_in_isr(), "");
 
+	SYS_PORT_TRACING_FUNC_ENTER(k_thread, sleep_ticks, timeout);
+
 	/* in case of K_FOREVER, we suspend */
 	if (K_TIMEOUT_EQ(timeout, K_FOREVER)) {
 		/* In Single Thread, just wait for an interrupt saving power */
 		k_cpu_idle();
+		SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, K_TICKS_FOREVER);
 
 		return K_TICKS_FOREVER;
 	}
@@ -40,6 +43,8 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 	 * using k_cpu_idle() until the timer has expired.
 	 */
 	k_timer_status_sync(&sleep_timer);
+
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, 0);
 
 	/* This implementation is compiled when multithreading is disabled.
 	 * Therefore, unlike its multithreaded counterpart, it shall always
@@ -68,6 +73,8 @@ k_ticks_t z_impl_k_sleep_ticks(k_timeout_t timeout)
 
 	/* busy wait to be time coherent since subsystems may depend on it */
 	z_impl_k_busy_wait(k_ticks_to_us_ceil32(ticks_to_wait));
+
+	SYS_PORT_TRACING_FUNC_EXIT(k_thread, sleep_ticks, timeout, 0);
 
 	return 0;
 #endif
