@@ -412,6 +412,29 @@ void arch_irq_enable(unsigned int irq);
  */
 int arch_irq_is_enabled(unsigned int irq);
 
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS) || defined(__DOXYGEN__)
+/**
+ * Clear the pending state of the specified interrupt line
+ *
+ * @see k_irq_clear_pending()
+ */
+void arch_irq_clear_pending(unsigned int irq);
+
+/**
+ * Set the pending state of the specified interrupt line
+ *
+ * @see k_irq_set_pending()
+ */
+void arch_irq_set_pending(unsigned int irq);
+
+/**
+ * Test if the specified interrupt line is pending
+ *
+ * @see k_irq_is_pending()
+ */
+bool arch_irq_is_pending(unsigned int irq);
+#endif
+
 /**
  * Arch-specific hook to install a dynamic interrupt.
  *

@@ -10,6 +10,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/tracing/tracing.h>
 #include <zephyr/irq.h>
@@ -46,6 +47,29 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	return arm_gic_irq_is_enabled(irq);
 }
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+void arch_irq_clear_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_clear_pending(irq);
+}
+
+void arch_irq_set_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_set_pending(irq);
+}
+
+bool arch_irq_is_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	return arm_gic_irq_is_pending(irq);
+}
+#endif
 
 void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
