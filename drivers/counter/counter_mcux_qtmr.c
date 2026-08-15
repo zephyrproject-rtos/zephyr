@@ -300,7 +300,7 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 			 * forcing the interrupt.
 			 */
 			atomic_set(&data->irq_pending, 1);
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			QTMR_DisableInterrupts(config->base, config->channel,
 					       kQTMR_Compare1InterruptEnable);
