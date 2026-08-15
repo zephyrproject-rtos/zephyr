@@ -53,10 +53,34 @@ MODEM_UBX_MATCH_ARRAY_DEFINE(u_blox_m10_unsol_messages,
 #endif
 );
 
+static int ubx_m10_send_init_config(const struct device *dev)
+{
+	const struct u_blox_iface_config *cfg = dev->config;
+	int err;
+
+	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
+	if (err != 0) {
+		LOG_ERR("Failed to set fix-rate: %d", err);
+		return err;
+	}
+
+	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_m10_init_seq) ; i++) {
+		err = u_blox_iface_msg_send(dev,
+				       u_blox_m10_init_seq[i],
+				       UBX_FRAME_SZ(u_blox_m10_init_seq[i]->payload_size),
+				       true);
+		if (err < 0) {
+			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int u_blox_m10_init(const struct device *dev)
 {
 	int err;
-	const struct u_blox_iface_config *cfg = dev->config;
 
 	const static struct ubx_frame version_get = UBX_FRAME_GET_INITIALIZER(
 						UBX_CLASS_ID_MON, UBX_MSG_ID_MON_VER);
@@ -77,24 +101,7 @@ static int u_blox_m10_init(const struct device *dev)
 	}
 	LOG_INF("SW Version %s, HW Version: %s", ver.sw_ver, ver.hw_ver);
 
-	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
-	if (err != 0) {
-		LOG_ERR("Failed to set GNSS fix-rate: %d", err);
-		return err;
-	}
-
-	for (size_t i = 0; i < ARRAY_SIZE(u_blox_m10_init_seq); i++) {
-		err = u_blox_iface_msg_send(dev,
-					u_blox_m10_init_seq[i],
-					UBX_FRAME_SZ(u_blox_m10_init_seq[i]->payload_size),
-					true);
-		if (err < 0) {
-			LOG_ERR("Failed to send init sequence. idx: %d, result %d", i, err);
-			return err;
-		}
-	}
-
-	return 0;
+	return ubx_m10_send_init_config(dev);
 }
 
 static int ubx_m10_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
