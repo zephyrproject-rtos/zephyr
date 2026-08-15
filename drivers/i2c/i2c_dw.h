@@ -153,7 +153,9 @@ struct i2c_dw_rom_config {
 	uint32_t bitrate;
 	uint32_t sda_hold_tx;
 	uint32_t sda_hold_rx;
+#ifdef CONFIG_I2C_RTS5912
 	uint32_t irqnumber;
+#endif
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
 	uint8_t fs_spk_len;
