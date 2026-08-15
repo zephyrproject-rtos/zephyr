@@ -7,10 +7,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifdef CONFIG_I2C_RTS5912
-#include <cmsis_core.h>
-#endif
-
 #include <stddef.h>
 #include <zephyr/types.h>
 #include <stdlib.h>
@@ -512,7 +508,7 @@ static inline void i2c_dw_transfer_complete(const struct device *dev)
 	 * source has been cleared, so the pending bit has to be dropped by hand.
 	 * This is a quirk of that SoC, not of the DesignWare IP.
 	 */
-	NVIC_ClearPendingIRQ(rom->irqnumber);
+	k_irq_clear_pending(rom->irqnumber);
 #endif
 	k_sem_give(&dw->device_sync_sem);
 }
