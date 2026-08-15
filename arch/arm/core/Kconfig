@@ -85,6 +85,17 @@ config CPU_AARCH32_CORTEX_A
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
 
+config ARM_TRACK_ACTIVE_IRQ
+	bool "Track the active IRQ in the ISR wrapper"
+	depends on CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
+	select ARCH_HAS_IRQ_GET_ACTIVE
+	help
+	  Provide k_irq_get_active() on Cortex-A/R. The GIC has no register
+	  that reports the INTID being serviced after acknowledge, so the
+	  ISR wrapper records it per CPU, at the cost of a few instructions
+	  on every interrupt entry and exit. Works with both the GIC and a
+	  custom interrupt controller.
+
 config GDBSTUB_BUF_SZ
 	# GDB for ARM expects up to 18 4-byte plus 8 12-byte
 	# registers - 336 HEX letters

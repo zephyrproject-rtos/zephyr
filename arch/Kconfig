@@ -852,6 +852,15 @@ config ARCH_HAS_IRQ_PENDING_OPS
 	  line, providing arch_irq_set_pending(), arch_irq_clear_pending()
 	  and arch_irq_is_pending() and therefore the k_irq_*_pending() API.
 
+config ARCH_HAS_IRQ_GET_ACTIVE
+	bool
+	help
+	  Selected by architectures that can report the interrupt line being
+	  serviced on the local CPU through arch_irq_get_active() and
+	  therefore k_irq_get_active(). Some interrupt controllers expose
+	  this in a register; others record it in the interrupt dispatch
+	  path.
+
 config ARCH_HAS_SEMIHOST
 	bool
 	help

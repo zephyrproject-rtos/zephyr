@@ -30,6 +30,11 @@
 
 #define _cpu_offset_to_exc_depth \
 	(___cpu_t_arch_OFFSET + ___cpu_arch_t_exc_depth_OFFSET)
+
+#if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
+#define _cpu_offset_to_active_irq \
+	(___cpu_t_arch_OFFSET + ___cpu_arch_t_active_irq_OFFSET)
+#endif
 #endif
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_FPU_SHARING)

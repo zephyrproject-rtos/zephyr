@@ -80,6 +80,19 @@ bool arm_irq_is_pending(unsigned int irq)
 }
 #endif
 
+#if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
+unsigned int arch_irq_get_active(void)
+{
+	/*
+	 * The ISR wrapper stores the INTID biased by one so that the
+	 * zero-initialized boot state reads as "none" on every CPU.
+	 */
+	uint32_t biased = _current_cpu->arch.active_irq;
+
+	return (biased == 0U) ? K_IRQ_ACTIVE_NONE : (biased - 1U);
+}
+#endif
+
 /**
  * @internal
  *
