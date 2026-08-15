@@ -8,6 +8,7 @@
 #define _POSIX_C_SOURCE 200809L /* Required for gmtime_r */
 
 #include <zephyr/drivers/gnss.h>
+#include <zephyr/drivers/gnss/gnss_emul.h>
 #include <zephyr/drivers/gnss/gnss_publish.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
@@ -41,6 +42,7 @@ struct gnss_emul_data {
 	gnss_systems_t enabled_systems;
 	struct gnss_data data;
 	bool active;
+	bool started;
 
 #ifdef CONFIG_GNSS_SATELLITES
 	struct gnss_satellite satellites[GNSS_EMUL_SUPPORTED_SYSTEMS_COUNT];
@@ -97,6 +99,13 @@ static bool gnss_emul_is_resumed(const struct device *dev)
 	return data->active;
 }
 
+static bool gnss_emul_is_started(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	return data->started;
+}
+
 static void gnss_emul_lock(const struct device *dev)
 {
 	gnss_emul_lock_sem(dev);
@@ -105,11 +114,37 @@ static void gnss_emul_lock(const struct device *dev)
 
 static void gnss_emul_unlock(const struct device *dev)
 {
-	if (gnss_emul_is_resumed(dev)) {
+	if (gnss_emul_is_resumed(dev) && gnss_emul_is_started(dev)) {
 		gnss_emul_schedule_work(dev);
 	}
 
 	gnss_emul_unlock_sem(dev);
+}
+
+static int gnss_emul_start(const struct device *dev, enum gnss_start_mode mode)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	if (mode > GNSS_COLD_START) {
+		return -EINVAL;
+	}
+
+	if (!data->started) {
+		gnss_emul_update_fix_timestamp(dev, true);
+	}
+	data->started = true;
+
+	return 0;
+}
+
+static int gnss_emul_stop(const struct device *dev)
+{
+	struct gnss_emul_data *data = dev->data;
+
+	data->started = false;
+	gnss_emul_clear_data(dev);
+
+	return 0;
 }
 
 static int gnss_emul_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
@@ -171,6 +206,40 @@ int gnss_emul_get_enabled_systems(const struct device *dev, gnss_systems_t *syst
 
 	*systems = data->enabled_systems;
 	return 0;
+}
+
+static int gnss_emul_api_start(const struct device *dev, enum gnss_start_mode mode)
+{
+	int ret = -ENODEV;
+
+	gnss_emul_lock(dev);
+
+	if (!gnss_emul_is_resumed(dev)) {
+		goto unlock_return;
+	}
+
+	ret = gnss_emul_start(dev, mode);
+
+unlock_return:
+	gnss_emul_unlock(dev);
+	return ret;
+}
+
+static int gnss_emul_api_stop(const struct device *dev)
+{
+	int ret = -ENODEV;
+
+	gnss_emul_lock(dev);
+
+	if (!gnss_emul_is_resumed(dev)) {
+		goto unlock_return;
+	}
+
+	ret = gnss_emul_stop(dev);
+
+unlock_return:
+	gnss_emul_unlock(dev);
+	return ret;
 }
 
 static int gnss_emul_api_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
@@ -284,6 +353,8 @@ static int gnss_emul_api_get_supported_systems(const struct device *dev, gnss_sy
 }
 
 static DEVICE_API(gnss, api) = {
+	.start = gnss_emul_api_start,
+	.stop = gnss_emul_api_stop,
 	.set_fix_rate = gnss_emul_api_set_fix_rate,
 	.get_fix_rate = gnss_emul_api_get_fix_rate,
 	.set_navigation_mode = gnss_emul_api_set_navigation_mode,
@@ -503,6 +574,7 @@ static int gnss_emul_init(const struct device *dev)
 		.fix_interval_ms = GNSS_EMUL_DEFAULT_FIX_INTERVAL_MS,			\
 		.nav_mode = GNSS_EMUL_DEFAULT_NAV_MODE,					\
 		.enabled_systems = GNSS_EMUL_DEFAULT_ENABLED_SYSTEMS_MASK,		\
+		.started = true,							\
 	};										\
 											\
 	PM_DEVICE_DT_INST_DEFINE(inst, gnss_emul_pm_action);				\
