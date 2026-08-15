@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Dylan Rowe
+# SPDX-License-Identifier: Apache-2.0
+
+description: Hynitron CST3530 touchscreen sensor
+
+compatible: "hynitron,cst3530"
+
+include: [i2c-device.yaml, touchscreen-common.yaml]
+
+properties:
+  irq-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The irq signal defaults to active low as produced by the
+      sensor. The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The reset signal defaults to active low to the
+      sensor. The property value should ensure the flags properly
+      describe the signal that is presented to the driver.
