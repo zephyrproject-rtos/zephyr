@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <fsl_clock.h>
@@ -54,7 +55,7 @@ static void pin0_isr(const struct device *dev)
 	uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level)) & 0x1;
 
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin0, level);
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
+	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin0)));
 	DisableIRQ(DT_IRQN(DT_NODELABEL(pin0)));
 	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(pin0)));
 }
@@ -66,7 +67,7 @@ static void pin1_isr(const struct device *dev)
 	uint8_t level = ~(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level)) & 0x1;
 
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, level);
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
+	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin1)));
 	DisableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
 	POWER_DisableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
 }
@@ -170,14 +171,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin0, DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level));
 	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin0)));
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin0)));
+	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin0)));
 	EnableIRQ(DT_IRQN(DT_NODELABEL(pin0)));
 	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin0)));
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
 	POWER_ConfigWakeupPin(kPOWER_WakeupPin1, DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level));
 	POWER_ClearWakeupStatus(DT_IRQN(DT_NODELABEL(pin1)));
-	NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(pin1)));
+	k_irq_clear_pending(DT_IRQN(DT_NODELABEL(pin1)));
 	EnableIRQ(DT_IRQN(DT_NODELABEL(pin1)));
 	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
 #endif
@@ -234,7 +235,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 				RTC_ClearStatusFlags(RTC, kRTC_WakeupFlag);
 #endif
-				NVIC_ClearPendingIRQ(DT_IRQN(DT_NODELABEL(rtc)));
+				k_irq_clear_pending(DT_IRQN(DT_NODELABEL(rtc)));
 				sys_clock_idle_exit();
 				{
 					k_spinlock_key_t key = sys_clock_lock();
