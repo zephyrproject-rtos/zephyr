@@ -219,6 +219,30 @@ static int lpspi_dma_rxtx_load(const struct device *dev)
 	return dma_size;
 }
 
+/*
+ * The last word is still in the shift register once the TX FIFO reports
+ * empty, so poll the module busy flag as well before calling a transfer done.
+ */
+static void lpspi_wait_transfer_complete(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	int cycle_limit = CONFIG_SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES;
+	bool limit_wait = cycle_limit > 0;
+
+	(void)lpspi_wait_tx_fifo_empty(dev);
+
+	while (base->SR & LPSPI_SR_MBF_MASK) {
+		if (!limit_wait) {
+			continue;
+		}
+
+		if (cycle_limit-- < 0) {
+			LOG_WRN("Timed out waiting for LPSPI to go idle");
+			return;
+		}
+	}
+}
+
 static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	/* arg directly holds the spi device */
@@ -304,9 +328,12 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	case LPSPI_TRANSFER_STATE_TX_DONE:
 	case LPSPI_TRANSFER_STATE_RX_DONE:
 		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
-		/* TX and RX both done here. */
-		spi_context_complete(ctx, spi_dev, 0);
+		/* Deselect before waking the waiter, which may start the next
+		 * transfer straight away
+		 */
+		lpspi_wait_transfer_complete(spi_dev);
 		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, spi_dev, 0);
 		break;
 
 	default:
@@ -319,8 +346,11 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	return;
 error:
 	LOG_ERR("DMA callback error with channel %d.", channel);
-	spi_context_complete(ctx, spi_dev, ret);
+	/* Same ordering as the success path, but without waiting for a bus that
+	 * has already failed
+	 */
 	spi_context_cs_control(ctx, false);
+	spi_context_complete(ctx, spi_dev, ret);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
