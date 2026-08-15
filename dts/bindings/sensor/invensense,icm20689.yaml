@@ -1,0 +1,131 @@
+# Copyright (c) 2025 Silicon Laboratories Inc. www.silabs.com
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TDK InvenSense ICM-20689 6-axis SPI inertial sensor.
+
+  When setting the accel-fs, gyro-fs, accel-dlpf, or gyro-dlpf
+  properties, include <zephyr/dt-bindings/sensor/icm20689.h> and use
+  the macros defined there.
+
+compatible: "invensense,icm20689"
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/icm20689.h>
+
+    &spi0 {
+        status = "okay";
+
+        icm20689: icm20689@0 {
+            compatible = "invensense,icm20689";
+            reg = <0>;
+            spi-max-frequency = <8000000>;
+
+            int-gpios = <&gpio0 10 GPIO_ACTIVE_HIGH>;
+
+            accel-fs = <ICM20689_DT_ACCEL_FS_2G>;
+            gyro-fs = <ICM20689_DT_GYRO_FS_250DPS>;
+
+            accel-dlpf = <ICM20689_DT_ACCEL_DLPF_99HZ>;
+            gyro-dlpf = <ICM20689_DT_GYRO_DLPF_41HZ>;
+
+            smplrt-div = <9>;
+        };
+    };
+
+include:
+  - sensor-axis-align.yaml
+  - sensor-device.yaml
+  - spi-device.yaml
+
+properties:
+  spi-max-frequency:
+    max: 8000000
+
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the INT pin. The GPIO flags must describe
+      the interrupt polarity configured by the driver.
+
+  accel-fs:
+    type: int
+    default: 2
+    description: |
+      Initial accelerometer full-scale range in g.
+      The hardware reset value is 2 g.
+    enum:
+      - 2  # ICM20689_DT_ACCEL_FS_2G
+      - 4  # ICM20689_DT_ACCEL_FS_4G
+      - 8  # ICM20689_DT_ACCEL_FS_8G
+      - 16 # ICM20689_DT_ACCEL_FS_16G
+
+  gyro-fs:
+    type: int
+    default: 250
+    description: |
+      Initial gyroscope full-scale range in degrees per second.
+      The hardware reset value is 250 dps.
+    enum:
+      - 250  # ICM20689_DT_GYRO_FS_250DPS
+      - 500  # ICM20689_DT_GYRO_FS_500DPS
+      - 1000 # ICM20689_DT_GYRO_FS_1000DPS
+      - 2000 # ICM20689_DT_GYRO_FS_2000DPS
+
+  smplrt-div:
+    type: int
+    default: 0
+    min: 0
+    max: 255
+    description: |
+      Initial value written to the shared SMPLRT_DIV register.
+
+      For accelerometer filter modes with ACCEL_FCHOICE_B equal to zero,
+      the output data rate is 1000 / (1 + smplrt-div) Hz. Accelerometer
+      DLPF bypass has a fixed 4 kHz output data rate.
+
+      For gyroscope filter modes with FCHOICE_B equal to zero and DLPF_CFG
+      between 1 and 6, the output data rate is 1000 / (1 + smplrt-div) Hz.
+      Gyroscope DLPF_CFG values 0 and 7 have a fixed 8 kHz output data
+      rate, while DLPF bypass modes have a fixed 32 kHz output data rate.
+
+      Because SMPLRT_DIV is shared, it affects both sensor paths whenever
+      their selected filter modes use the divider.
+
+  accel-dlpf:
+    type: int
+    default: 0
+    description: |
+      Initial accelerometer filter configuration. The value packs
+      ACCEL_CONFIG2.A_DLPF_CFG into bits 2:0 and
+      ACCEL_CONFIG2.ACCEL_FCHOICE_B into bit 3.
+    enum:
+      - 0 # ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG0
+      - 1 # ICM20689_DT_ACCEL_DLPF_218_1HZ_CFG1
+      - 2 # ICM20689_DT_ACCEL_DLPF_99HZ
+      - 3 # ICM20689_DT_ACCEL_DLPF_44_8HZ
+      - 4 # ICM20689_DT_ACCEL_DLPF_21_2HZ
+      - 5 # ICM20689_DT_ACCEL_DLPF_10_2HZ
+      - 6 # ICM20689_DT_ACCEL_DLPF_5_1HZ
+      - 7 # ICM20689_DT_ACCEL_DLPF_420HZ
+      - 8 # ICM20689_DT_ACCEL_BYPASS_1046HZ
+
+  gyro-dlpf:
+    type: int
+    default: 0
+    description: |
+      Initial gyroscope filter configuration. The value packs
+      CONFIG.DLPF_CFG into bits 2:0 and GYRO_CONFIG.FCHOICE_B into
+      bits 4:3.
+    enum:
+      - 0   # ICM20689_DT_GYRO_DLPF_250HZ
+      - 1   # ICM20689_DT_GYRO_DLPF_176HZ
+      - 2   # ICM20689_DT_GYRO_DLPF_92HZ
+      - 3   # ICM20689_DT_GYRO_DLPF_41HZ
+      - 4   # ICM20689_DT_GYRO_DLPF_20HZ
+      - 5   # ICM20689_DT_GYRO_DLPF_10HZ
+      - 6   # ICM20689_DT_GYRO_DLPF_5HZ
+      - 7   # ICM20689_DT_GYRO_DLPF_3281HZ_8KHZ
+      - 8   # ICM20689_DT_GYRO_BYPASS_8173HZ_32KHZ
+      - 16  # ICM20689_DT_GYRO_BYPASS_3281HZ_32KHZ
