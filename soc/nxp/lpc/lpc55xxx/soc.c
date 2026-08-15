@@ -11,6 +11,7 @@
  * hardware for the nxp_lpc55s69 platform.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -319,8 +320,8 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhfs), nxp_uhc_ohci, okay)
 	/* set BOD VBAT level to 1.65V */
 	POWER_SetBodVbatLevel(kPOWER_BodVbatLevel1650mv, kPOWER_BodHystLevel50mv, false);
-	NVIC_ClearPendingIRQ(USB0_IRQn);
-	NVIC_ClearPendingIRQ(USB0_NEEDCLK_IRQn);
+	k_irq_clear_pending(USB0_IRQn);
+	k_irq_clear_pending(USB0_NEEDCLK_IRQn);
 	/*< Turn on USB Phy */
 #if defined(CONFIG_SOC_LPC55S36)
 	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
