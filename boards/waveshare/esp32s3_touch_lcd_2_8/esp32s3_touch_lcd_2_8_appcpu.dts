@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2024 Dylan Rowe <dylanthomasrowe@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp.dtsi>
+#include "esp32s3_touch_lcd_2_8-pinctrl.dtsi"
+
+/ {
+	model = "Waveshare ESP32S3-Touch-LCD-2.8 APPCPU";
+	compatible = "waveshare,esp32s3-touch-lcd-2-8", "espressif,esp32s3";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,ipc_shm = &shm0;
+		zephyr,ipc = &ipm0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_appcpu_partition;
+	};
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&ipm0 {
+	status = "okay";
+};

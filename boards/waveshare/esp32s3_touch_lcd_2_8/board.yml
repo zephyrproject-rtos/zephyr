@@ -1,0 +1,6 @@
+board:
+  name: esp32s3_touch_lcd_2_8
+  full_name: Waveshare ESP32-S3-Touch-LCD-2.8
+  vendor: waveshare
+  socs:
+  - name: esp32s3
