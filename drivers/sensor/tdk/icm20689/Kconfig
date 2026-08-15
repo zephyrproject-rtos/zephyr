@@ -1,0 +1,56 @@
+# ICM20689 Six-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2022 Esco Medical ApS
+# Copyright (c) 2020 TDK Invensense
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ICM20689
+	bool "ICM-20689 6-Axis Inertial Sensor"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM20689_ENABLED
+	select SPI
+	help
+	  Enable driver for ICM20689 SPI-based six-axis motion tracking device.
+
+if ICM20689
+
+choice ICM20689_TRIGGER_MODE
+	prompt "Trigger mode"
+	default ICM20689_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config ICM20689_TRIGGER_NONE
+	bool "No trigger"
+
+config ICM20689_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select ICM20689_TRIGGER
+
+config ICM20689_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select ICM20689_TRIGGER
+
+endchoice
+
+config ICM20689_TRIGGER
+	bool
+
+config ICM20689_THREAD_PRIORITY
+	int "Thread priority"
+	depends on ICM20689_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config ICM20689_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on ICM20689_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+endif # ICM20689
