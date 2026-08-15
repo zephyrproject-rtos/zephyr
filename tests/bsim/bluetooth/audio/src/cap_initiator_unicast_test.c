@@ -641,7 +641,8 @@ static void unicast_group_create(struct bt_cap_unicast_group **out_unicast_group
 
 static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, void *user_data)
 {
-	const uint32_t expected_pd = cap_stream->bap_stream.qos->pd;
+	const struct bt_bap_qos_cfg *qos = cap_stream->bap_stream.qos;
+	const uint32_t expected_pd = qos->pd;
 	struct bt_cap_unicast_group *unicast_group = user_data;
 	struct bt_bap_unicast_group_info bap_info;
 	struct bt_cap_unicast_group_info cap_info;
@@ -672,12 +673,52 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 			     expected_pd);
 			return false;
 		}
+
+		if (bap_info.c_to_p_interval != qos->interval) {
+			FAIL("Unexpected C to P interval %u (expected %u)\n",
+			     bap_info.c_to_p_interval, qos->interval);
+			return false;
+		}
+
+		if (bap_info.c_to_p_latency != qos->latency) {
+			FAIL("Unexpected C to P latency %u (expected %u)\n",
+			     bap_info.c_to_p_latency, qos->latency);
+			return false;
+		}
 	} else {
 		if (bap_info.source_pd != expected_pd) {
 			FAIL("Unexpected source PD %u (expected %u)\n", bap_info.source_pd,
 			     expected_pd);
 			return false;
 		}
+
+		if (bap_info.p_to_c_interval != qos->interval) {
+			FAIL("Unexpected P to C interval %u (expected %u)\n",
+			     bap_info.p_to_c_interval, qos->interval);
+			return false;
+		}
+
+		if (bap_info.p_to_c_latency != qos->latency) {
+			FAIL("Unexpected P to C latency %u (expected %u)\n",
+			     bap_info.p_to_c_latency, qos->latency);
+			return false;
+		}
+	}
+
+	if (bap_info.framing != qos->framing) {
+		FAIL("Unexpected framing %u (expected %u)\n", bap_info.framing, qos->framing);
+		return false;
+	}
+
+	if (bap_info.packing != BT_ISO_PACKING_SEQUENTIAL) {
+		FAIL("Unexpected packing %u (expected %u)\n", bap_info.packing,
+		     BT_ISO_PACKING_SEQUENTIAL);
+		return false;
+	}
+
+	if (!bap_info.has_been_connected) {
+		FAIL("Expected has_been_connected to be true after start\n");
+		return false;
 	}
 
 	return true;
