@@ -74,9 +74,14 @@ Programming and Debugging
 Building
 ========
 
+Use ``nucode_nu87/rtl872xd/ns`` with the supplied Realtek bootloader, which
+starts the application in the non-secure state. The target without ``/ns``
+does not select the non-secure configuration and is not supported by that boot
+flow. Secure bootloader integration is not provided by this board port.
+
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: nucode_nu87
+   :board: nucode_nu87/rtl872xd/ns
    :goals: build
 
 That builds and links without any binary blobs. Producing an image that can
@@ -86,7 +91,7 @@ which is off by default and does require the Realtek HAL blobs:
 .. code-block:: console
 
    west blobs fetch hal_realtek
-   west build -b nucode_nu87 samples/hello_world -- -DCONFIG_SOC_AMEBA_NP_IMAGE=y
+   west build -b nucode_nu87/rtl872xd/ns samples/hello_world -- -DCONFIG_SOC_AMEBA_NP_IMAGE=y
 
 That build writes ``bootloader_all.bin`` and ``km0_km4_app.bin`` into the
 ``images`` directory alongside the usual build output.

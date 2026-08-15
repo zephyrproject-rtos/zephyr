@@ -4,3 +4,5 @@ board:
   vendor: nucode
   socs:
     - name: rtl872xd
+      variants:
+        - name: ns

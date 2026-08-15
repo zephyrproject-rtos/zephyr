@@ -1,6 +1,8 @@
 # Copyright (c) 2026 NUCODE Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
+CONFIG_TRUSTED_EXECUTION_NONSECURE=y
+
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
@@ -11,6 +13,6 @@ CONFIG_GPIO=y
 
 # The ROM bootloader maps slot0_partition to the base of the flash window, so
 # the application links at offset 0 rather than at the partition offset. Cap the
-# linker region at the partition size so an oversized image cannot run past
-# slot0 into the partitions above it.
+# linker region at the partition size. The final package also includes the
+# NP image and headers, which must fit within the same partition.
 CONFIG_FLASH_LOAD_SIZE=0x1ec000

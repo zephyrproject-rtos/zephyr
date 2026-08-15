@@ -1,8 +1,8 @@
 # Copyright (c) 2026 NUCODE Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: nucode_nu87
-name: NUCODE NU87-TinyDK
+identifier: nucode_nu87/rtl872xd/ns
+name: NUCODE NU87-TinyDK (non-secure)
 vendor: nucode
 type: mcu
 arch: arm
