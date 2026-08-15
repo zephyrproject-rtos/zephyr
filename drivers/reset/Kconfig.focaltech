@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_FOCALTECH_FT9001
-	bool "FocalTech FT9001 Reset Control Module driver"
+	bool "FocalTech FT9001 reset driver"
 	default y
 	depends on DT_HAS_FOCALTECH_FT9001_CPM_RCTL_ENABLED
 	help
