@@ -250,6 +250,16 @@ New APIs and options
     * :c:func:`bt_ascs_unregister`
     * :c:func:`bt_bap_unicast_client_qos_from_group`
     * :c:func:`bt_bap_qos_cfg_eq`
+    * :c:member:`bt_bap_unicast_group_info.c_to_p_interval`
+    * :c:member:`bt_bap_unicast_group_info.p_to_c_interval`
+    * :c:member:`bt_bap_unicast_group_info.c_to_p_latency`
+    * :c:member:`bt_bap_unicast_group_info.p_to_c_latency`
+    * :c:member:`bt_bap_unicast_group_info.framing`
+    * :c:member:`bt_bap_unicast_group_info.packing`
+    * :c:member:`bt_bap_unicast_group_info.has_been_connected`
+    * :c:member:`bt_bap_unicast_group_info.c_to_p_ft`
+    * :c:member:`bt_bap_unicast_group_info.p_to_c_ft`
+    * :c:member:`bt_bap_unicast_group_info.iso_interval`
 
   * Host
 
