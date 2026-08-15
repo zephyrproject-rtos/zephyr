@@ -347,8 +347,13 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		return -ENOTSUP;
 	}
 
-	/* Always use continuous mode to satisfy SPI API requirements. */
-	base->TCR = lpspi_read_tcr(base) | LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	/*
+	 * Ending a continuous transfer needs a command word with CONTC clear,
+	 * and such a word ends the frame at the current word, ignoring FRAMESZ
+	 * (RM rev 5, table 70-2). Every frame after the first would end early.
+	 */
+	base->TCR = lpspi_read_tcr(base) &
+		    ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
 
 	/* Please set both watermarks as 0 because there are some synchronize requirements
 	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
