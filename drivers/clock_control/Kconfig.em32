@@ -22,18 +22,6 @@ config CLOCK_CONTROL_EM32_APB
 
 if CLOCK_CONTROL_EM32_AHB || CLOCK_CONTROL_EM32_APB
 
-config EM32_DELAY_SWITCH_PRIORITY
-	int "Delay switch init priority"
-	default 1
-	help
-	  Initialization priority for switching the delay backend to k_busy_wait().
-	  Must be greater than CONFIG_SYSTEM_CLOCK_INIT_PRIORITY, because the
-	  system timer is initialized in PRE_KERNEL_2.
-
-	  Default is 1 (CONFIG_SYSTEM_CLOCK_INIT_PRIORITY + 1 on this SoC).
-	  A BUILD_ASSERT enforces ordering and will fail the build if the system
-	  clock init priority changes.
-
 endif # CLOCK_CONTROL_EM32_AHB || CLOCK_CONTROL_EM32_APB
 
 if CLOCK_CONTROL_EM32_APB
