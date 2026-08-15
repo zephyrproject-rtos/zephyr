@@ -319,11 +319,11 @@ static DEVICE_API(counter, counter_bee_rtc_driver_api) = {
 	RTC_IRQ_CONFIG_FUNC(index);                                                                \
 	static void set_irq_pending_##index(void)                                                  \
 	{                                                                                          \
-		(NVIC_SetPendingIRQ(DT_INST_IRQN(index)));                                         \
+		(k_irq_set_pending(DT_INST_IRQN(index)));                                         \
 	}                                                                                          \
 	static uint32_t get_irq_pending_##index(void)                                              \
 	{                                                                                          \
-		return NVIC_GetPendingIRQ(DT_INST_IRQN(index));                                    \
+		return k_irq_is_pending(DT_INST_IRQN(index));                                    \
 	}
 
 #define BEE_RTC_INIT(index)                                                                        \

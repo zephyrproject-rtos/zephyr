@@ -346,7 +346,7 @@ static DEVICE_API(counter, counter_bee_timer_driver_api) = {
 	TIMER_IRQ_HANDLER(index);                                                                  \
 	static uint32_t get_irq_pending_##index(void)                                              \
 	{                                                                                          \
-		return NVIC_GetPendingIRQ(DT_IRQN(PARENT_NODE(index)));                            \
+		return k_irq_is_pending(DT_IRQN(PARENT_NODE(index)));                            \
 	}
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
