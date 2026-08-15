@@ -1,0 +1,14 @@
+common:
+  tags:
+    - kernel
+    - interrupt
+tests:
+  arch.interrupt.active:
+    # trigger_irq() raises GIC SGIs, and the tracking itself is implemented
+    # in the AArch32 Cortex-A/R ISR wrapper, so the scenario needs both.
+    filter: CONFIG_ARCH_HAS_IRQ_GET_ACTIVE and CONFIG_GIC
+    arch_allow:
+      - arm
+    integration_platforms:
+      - qemu_cortex_r5
+      - qemu_cortex_a9
