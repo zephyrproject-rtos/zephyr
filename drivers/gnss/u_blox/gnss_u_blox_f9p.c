@@ -83,10 +83,34 @@ static void f9p_rtk_data_cb(const struct device *dev, const struct gnss_rtk_data
 
 #endif /* CONFIG_GNSS_U_BLOX_F9P_RTK */
 
+static int f9p_send_init_config(const struct device *dev)
+{
+	const struct u_blox_iface_config *cfg = dev->config;
+	int err;
+
+	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
+	if (err != 0) {
+		LOG_ERR("Failed to set fix-rate: %d", err);
+		return err;
+	}
+
+	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_f9p_init_seq) ; i++) {
+		err = u_blox_iface_msg_send(dev,
+				       u_blox_f9p_init_seq[i],
+				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
+				       true);
+		if (err < 0) {
+			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static int u_blox_f9p_init(const struct device *dev)
 {
 	int err = 0;
-	const struct u_blox_iface_config *cfg = dev->config;
 
 	const static struct ubx_frame version_get = UBX_FRAME_GET_INITIALIZER(
 						UBX_CLASS_ID_MON,
@@ -108,24 +132,7 @@ static int u_blox_f9p_init(const struct device *dev)
 	}
 	LOG_INF("SW Version: %s, HW Version: %s", ver.sw_ver, ver.hw_ver);
 
-	err = gnss_set_fix_rate(dev, cfg->fix_rate_ms);
-	if (err != 0) {
-		LOG_ERR("Failed to set fix-rate: %d", err);
-		return err;
-	}
-
-	for (size_t i = 0 ; i < ARRAY_SIZE(u_blox_f9p_init_seq) ; i++) {
-		err = u_blox_iface_msg_send(dev,
-				       u_blox_f9p_init_seq[i],
-				       UBX_FRAME_SZ(u_blox_f9p_init_seq[i]->payload_size),
-				       true);
-		if (err < 0) {
-			LOG_ERR("Failed to send init sequence - idx: %d, result: %d", i, err);
-			return err;
-		}
-	}
-
-	return 0;
+	return f9p_send_init_config(dev);
 }
 
 static int ubx_f9p_set_fix_rate(const struct device *dev, uint32_t fix_interval_ms)
