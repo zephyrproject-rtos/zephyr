@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Shrink RAM to keep the demand paging region small and the run fast. */
+&sram0 {
+	reg = <0x0 0x40000000 0x0 0x8c000>;
+};
