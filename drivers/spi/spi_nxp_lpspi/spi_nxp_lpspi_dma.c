@@ -88,6 +88,8 @@ struct spi_nxp_dma_data {
 	size_t synchronize_dma_size;
 	/* kept for the cache invalidate at the end of the transfer */
 	const struct spi_buf_set *rx_bufs;
+	/* receive masked in TCR, so no RX DMA and no RX callback */
+	bool rx_masked;
 };
 
 /*
@@ -241,14 +243,16 @@ static int lpspi_dma_rxtx_load(const struct device *dev)
 		return ret;
 	}
 
-	ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
-	if (ret != 0) {
-		return ret;
-	}
+	if (!dma_data->rx_masked) {
+		ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
+		if (ret != 0) {
+			return ret;
+		}
 
-	ret = dma_start(rx->dma_dev, rx->channel);
-	if (ret != 0) {
-		return ret;
+		ret = dma_start(rx->dma_dev, rx->channel);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	ret = dma_start(tx->dma_dev, tx->channel);
@@ -309,7 +313,9 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	switch (dma_data->state) {
 	case LPSPI_TRANSFER_STATE_ONGOING:
 		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
-		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		if (!dma_data->rx_masked) {
+			spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		}
 		/* Calculate next DMA transfer size */
 		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
 		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
@@ -338,8 +344,16 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 			/* This is the end of the transfer. */
 			if (channel == dma_data->dma_tx.channel) {
 				spi_mcux_issue_TCR(spi_dev);
-				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
 				base->DER &= ~LPSPI_DER_TDDE_MASK;
+				/* No RX DMA means no second callback */
+				if (dma_data->rx_masked) {
+					dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+					lpspi_wait_transfer_complete(spi_dev);
+					spi_context_cs_control(ctx, false);
+					spi_context_complete(ctx, spi_dev, 0);
+					return;
+				}
+				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
 			} else {
 				dma_data->state = LPSPI_TRANSFER_STATE_RX_DONE;
 				base->DER &= ~LPSPI_DER_RDDE_MASK;
@@ -428,8 +442,21 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	 * and such a word ends the frame at the current word, ignoring FRAMESZ
 	 * (RM rev 5, table 70-2). Every frame after the first would end early.
 	 */
-	base->TCR = lpspi_read_tcr(base) &
-		    ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK);
+	{
+		uint32_t tcr = lpspi_read_tcr(base) &
+			       ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK | LPSPI_TCR_RXMSK_MASK);
+
+		/*
+		 * Without RXMSK the receive FIFO fills with data that is only
+		 * discarded, and overflows under load. SR[REF] then aborts the
+		 * transfer, which the driver does not notice.
+		 */
+		dma_data->rx_masked = !spi_context_rx_buf_on(ctx);
+		if (dma_data->rx_masked) {
+			tcr |= LPSPI_TCR_RXMSK_MASK;
+		}
+		base->TCR = tcr;
+	}
 
 	/* Please set both watermarks as 0 because there are some synchronize requirements
 	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
