@@ -45,6 +45,9 @@ tests:
     tags: userspace
     # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
     platform_exclude: rpi_zero_2w
+    # test_dynamic_thread_stack_permission expects a kernel oops here; it
+    # skips itself unless prefer_alloc, alloc and userspace are all enabled.
+    ignore_faults: true
     extra_configs:
       # 011
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
@@ -77,6 +80,8 @@ tests:
     tags: userspace
     # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
     platform_exclude: rpi_zero_2w
+    # See kernel.threads.dynamic_thread.stack.no_pool.alloc.user.
+    ignore_faults: true
     extra_configs:
       # 111
       - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y
