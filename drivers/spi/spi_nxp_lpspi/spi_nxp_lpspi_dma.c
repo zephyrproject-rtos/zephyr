@@ -231,6 +231,48 @@ static int lpspi_dma_rxtx_load(const struct device *dev)
 	return dma_size;
 }
 
+/*
+ * The last word is still in the shift register once the TX FIFO reports
+ * empty, so poll the module busy flag as well before calling a transfer done.
+ */
+static int lpspi_wait_transfer_complete(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	const struct spi_config *spi_cfg = DEV_DATA(dev)->ctx.config;
+	uint8_t major_ver = (base->VERID & LPSPI_VERID_MAJOR_MASK) >> LPSPI_VERID_MAJOR_SHIFT;
+	int cycle_limit = CONFIG_SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES;
+	bool limit_wait = cycle_limit > 0;
+	int ret;
+
+	/* A peripheral does not drive the clock, MBF follows the external PCS */
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
+		return 0;
+	}
+
+	ret = lpspi_wait_tx_fifo_empty(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	/* spi_mcux_issue_TCR() leaves the frame open here, so MBF stays set */
+	if (major_ver >= 2 && (spi_cfg->operation & SPI_HOLD_ON_CS)) {
+		return 0;
+	}
+
+	while (base->SR & LPSPI_SR_MBF_MASK) {
+		if (!limit_wait) {
+			continue;
+		}
+
+		if (cycle_limit-- < 0) {
+			LOG_WRN("Timed out waiting for LPSPI to go idle");
+			return -EIO;
+		}
+	}
+
+	return 0;
+}
+
 static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
 {
 	/* arg directly holds the spi device */
@@ -315,14 +357,24 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 
 	case LPSPI_TRANSFER_STATE_TX_DONE:
 	case LPSPI_TRANSFER_STATE_RX_DONE:
+		/* A TX callback serviced after the last RX one still has to end
+		 * the frame
+		 */
+		if (channel == dma_data->dma_tx.channel) {
+			spi_mcux_issue_TCR(spi_dev);
+			base->DER &= ~LPSPI_DER_TDDE_MASK;
+		}
 		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
-		/* TX and RX both done here. */
+		/* Deselect before waking the waiter, which may start the next
+		 * transfer straight away
+		 */
+		ret = lpspi_wait_transfer_complete(spi_dev);
+		spi_context_cs_control(ctx, false);
 		/* Not after spi_context_wait_for_completion(), which does not
 		 * wait for an asynchronous transfer
 		 */
 		lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
-		spi_context_complete(ctx, spi_dev, 0);
-		spi_context_cs_control(ctx, false);
+		spi_context_complete(ctx, spi_dev, ret);
 		break;
 
 	default:
@@ -335,10 +387,13 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	return;
 error:
 	LOG_ERR("DMA callback error with channel %d.", channel);
+	/* Same ordering as the success path, but without waiting for a bus that
+	 * has already failed
+	 */
+	spi_context_cs_control(ctx, false);
 	/* The DMA may have written part of the RX data before failing */
 	lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
 	spi_context_complete(ctx, spi_dev, ret);
-	spi_context_cs_control(ctx, false);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
