@@ -91,7 +91,7 @@ static void vmon_init(void)
 {
 	/* VMON must be enabled for flash write/erase support */
 
-	NVIC_ClearPendingIRQ(VDDLOW_IRQn);
+	k_irq_clear_pending(VDDLOW_IRQn);
 
 	IRQ_CONNECT(VDDLOW_IRQn, 0, vddlow_irq_handler, NULL, 0);
 	irq_enable(VDDLOW_IRQn);
