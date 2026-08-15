@@ -1747,6 +1747,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 	struct bt_l2cap_chan *chan = &session->chan.chan;
 	struct bt_sdp_discover_params *param, *tmp;
 
+	k_sem_take(&session->sem_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
 		if (param != session->param) {
 			continue;
@@ -1766,7 +1767,6 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		/* Clear received length */
 		session->recv_len = 0;
 
-		k_sem_take(&session->sem_lock, K_FOREVER);
 		/* Check if there's valid next UUID */
 		if (!sys_slist_is_empty(&session->reqs)) {
 			k_sem_give(&session->sem_lock);
@@ -1778,8 +1778,9 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		session->state = SDP_CLIENT_DISCONNECTING;
 		k_sem_give(&session->sem_lock);
 		bt_l2cap_chan_disconnect(chan);
-		break;
+		return;
 	}
+	k_sem_give(&session->sem_lock);
 }
 
 static int sdp_client_get_total(struct bt_sdp_client *session, struct net_buf *buf, uint16_t *total,
@@ -2049,9 +2050,6 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 
-	/* Update context param directly. */
-	session->param = param;
-
 	buf = bt_sdp_create_pdu();
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
@@ -2187,9 +2185,6 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint16_t len;
 
-	/* Update context param directly. */
-	session->param = param;
-
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
 		LOG_WRN("No more space to start next SDP discovery");
@@ -2240,9 +2235,6 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 	uint16_t len;
-
-	/* Update context param directly. */
-	session->param = param;
 
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
@@ -2364,6 +2356,13 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 		/* No UUID items, disconnect channel */
 		return bt_l2cap_chan_disconnect(chan);
 	}
+
+	/* Activate the request while holding the lock, so that a concurrent
+	 * bt_sdp_discover_cancel() either sees it as still waiting and
+	 * removes it before the request PDU goes out, or sees it as the
+	 * active one and refuses to cancel it.
+	 */
+	session->param = param;
 	k_sem_give(&session->sem_lock);
 
 	switch (param->type) {
@@ -2700,6 +2699,13 @@ static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
 	LOG_DBG("session %p chan %p", session, chan);
 
 	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
+	if (session->param == NULL) {
+		/* All requests were canceled while the channel was being
+		 * established. Returning NULL makes sdp_client_connected()
+		 * disconnect the channel.
+		 */
+		return NULL;
+	}
 
 	buf = net_buf_alloc(session->param->pool, K_FOREVER);
 	__ASSERT_NO_MSG(buf);
@@ -2758,24 +2764,29 @@ static void sdp_client_clean_after_release(struct bt_sdp_client *session)
 
 static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_sdp_discover_params *param, *tmp;
-
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+	sys_snode_t *node;
 
 	LOG_DBG("session %p chan %p disconnected", session, chan);
 
 	/* The disconnecting may be triggered by acl disconnection or failed sdp connecting */
 	k_sem_take(&session->sem_lock, K_FOREVER);
 	session->state = SDP_CLIENT_DISCONNECTING;
-	k_sem_give(&session->sem_lock);
 
-	/* callback all the sdp reqs */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
-		session->param = param;
+	/* callback all the sdp reqs; each node is popped while holding the
+	 * lock, so that a concurrent bt_sdp_discover_cancel() either removes
+	 * a request before its callback is called here, or does not find it
+	 * at all.
+	 */
+	node = sys_slist_get(&session->reqs);
+	while (node != NULL) {
+		session->param = GET_PARAM(node);
+		k_sem_give(&session->sem_lock);
 		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
-		/* Remove already callbacked UUID node */
-		sys_slist_find_and_remove(&session->reqs, &param->_node);
+		k_sem_take(&session->sem_lock, K_FOREVER);
+		node = sys_slist_get(&session->reqs);
 	}
+	k_sem_give(&session->sem_lock);
 
 	net_buf_drop(&session->rec_buf);
 
@@ -2922,6 +2933,50 @@ int bt_sdp_discover(struct bt_conn *conn,
 	}
 
 	return sdp_client_discovery_start(conn, params);
+}
+
+int bt_sdp_discover_cancel(struct bt_conn *conn,
+			   struct bt_sdp_discover_params *params)
+{
+	struct bt_sdp_client *session;
+	sys_snode_t *node;
+	size_t index;
+	bool found;
+
+	if (conn == NULL || params == NULL) {
+		LOG_WRN("Invalid user params");
+		return -EINVAL;
+	}
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "ACL CONN index is out of bounds");
+
+	session = &bt_sdp_client_pool[index];
+
+	k_sem_take(&session->sem_lock, K_FOREVER);
+
+	if (session->param == params) {
+		/* The request is being resolved: a request PDU is out and its
+		 * response may already be under processing, so it is too late
+		 * to keep the callback from being called.
+		 */
+		k_sem_give(&session->sem_lock);
+		return -EINPROGRESS;
+	}
+
+	node = &params->_node;
+	found = sys_slist_find_and_remove(&session->reqs, node);
+	if (!found) {
+		found = sys_slist_find_and_remove(&session->reqs_next, node);
+	}
+
+	k_sem_give(&session->sem_lock);
+
+	if (!found) {
+		return -ESRCH;
+	}
+
+	return 0;
 }
 
 /* Helper getting length of data determined by DTD for integers */
