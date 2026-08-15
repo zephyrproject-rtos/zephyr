@@ -12,36 +12,37 @@ REFERENCE_OUTPUT = [
     "ERROR: Device initialization priority validation failed, the sequence of initialization calls "
     "does not match the devicetree dependencies.",
     "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /gpio@ffff "
-    "<init_fn_0> (PRE_KERNEL+0 < PRE_KERNEL+1)",
+    "<init_fn_0> (PRE_KERNEL+1 < PRE_KERNEL+2)",
     "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency "
-    "/i2c@11112222 <init_fn_1> (PRE_KERNEL+0 < PRE_KERNEL+2)",
+    "/i2c@11112222 <init_fn_1> (PRE_KERNEL+1 < PRE_KERNEL+3)",
+    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+4 > /gpio@ffff <init_fn_0> PRE_KERNEL+2",
+    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+4 > /i2c@11112222 <init_fn_1> "
+    "PRE_KERNEL+3",
+    "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+7 > /gpio@ffff <init_fn_0> PRE_KERNEL+2",
+    "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+7 > /i2c@11112222 <init_fn_1> "
+    "PRE_KERNEL+3",
+    "INFO: /i2c@11112222/test-i2c-dev@14 <NULL> PRE_KERNEL+11 > /gpio@ffff <init_fn_0> "
+    "PRE_KERNEL+2",
+    "INFO: /i2c@11112222/test-i2c-dev@14 <NULL> PRE_KERNEL+11 > /i2c@11112222 <init_fn_1> "
+    "PRE_KERNEL+3",
+    "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+0 > /gpio@ffff <init_fn_0> "
+    "PRE_KERNEL+2",
+    "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+0 > /i2c@11112222 <init_fn_1> "
+    "PRE_KERNEL+3",
     "ERROR: init entry init_fn_3 (PRE_KERNEL) runs before /i2c@11112222/test-i2c-dev@13 <NULL> "
-    "(PRE_KERNEL_2+1), the device it is ordered after",
+    "(PRE_KERNEL_2+0), the device it is ordered after",
     "ERROR: init entry init_fn_5 (PRE_KERNEL) is ordered after /i2c@11112222/test-i2c-dev@14, "
     "which is itself ordered by an anchor: ordinal-keyed entries run ahead of anchored ones, use "
     "SYS_INIT_ANCHORED() with the device's anchor key",
-    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+3 > /gpio@ffff <init_fn_0> PRE_KERNEL+1",
-    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL+3 > /i2c@11112222 <init_fn_1> "
-    "PRE_KERNEL+2",
-    "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+6 > /gpio@ffff <init_fn_0> PRE_KERNEL+1",
-    "INFO: /i2c@11112222/test-i2c-dev@12 <NULL> PRE_KERNEL+6 > /i2c@11112222 <init_fn_1> "
-    "PRE_KERNEL+2",
-    "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+1 > /gpio@ffff <init_fn_0> "
-    "PRE_KERNEL+1",
-    "INFO: /i2c@11112222/test-i2c-dev@13 <NULL> PRE_KERNEL_2+1 > /i2c@11112222 <init_fn_1> "
-    "PRE_KERNEL+2",
-    "INFO: /i2c@11112222/test-i2c-dev@14 <NULL> PRE_KERNEL+10 > /gpio@ffff <init_fn_0> "
-    "PRE_KERNEL+1",
-    "INFO: /i2c@11112222/test-i2c-dev@14 <NULL> PRE_KERNEL+10 > /i2c@11112222 <init_fn_1> "
-    "PRE_KERNEL+2",
 ]
 
 REFERENCE_OUTPUT_INITLEVELS = [
     "EARLY",
     "PRE_KERNEL",
+    "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
+    "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
     "__init___device_dts_ord_<ord>: init_fn_0(__device_dts_ord_<ord>)",
     "__init___device_dts_ord_<ord>: init_fn_1(__device_dts_ord_<ord>)",
-    "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
     "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
     "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
     "__init_init_fn_2: init_fn_2(NULL)",
@@ -51,7 +52,6 @@ REFERENCE_OUTPUT_INITLEVELS = [
     "__init_test_service: init_fn_4(NULL)",
     "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
     "PRE_KERNEL_2",
-    "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
     "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
     "POST_KERNEL",
     "APPLICATION",
