@@ -187,7 +187,7 @@ static int peci_xec_disable(const struct device *dev)
 
 #ifdef CONFIG_PECI_INTERRUPT_DRIVEN
 	peci_girq_status_clear(dev);
-	NVIC_ClearPendingIRQ(cfg->irq_num);
+	k_irq_clear_pending(cfg->irq_num);
 	irq_disable(cfg->irq_num);
 #endif
 	regs->CONTROL |= MCHP_PECI_CTRL_PD;
