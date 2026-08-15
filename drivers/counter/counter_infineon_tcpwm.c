@@ -122,7 +122,7 @@ static void counter_isr_handler(const struct device *dev)
 
 	pending_int = Cy_TCPWM_GetInterruptStatusMasked(config->reg_base, config->index);
 	Cy_TCPWM_ClearInterrupt(config->reg_base, config->index, pending_int);
-	NVIC_ClearPendingIRQ(config->irq_num);
+	k_irq_clear_pending(config->irq_num);
 
 	/* Alarm compare/capture interrupt */
 	if ((data->alarm_cfg.callback != NULL) &&
@@ -475,7 +475,7 @@ static uint32_t ifx_tcpwm_counter_get_pending_int(const struct device *dev)
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 	return (pending & CY_TCPWM_INT_ON_CC) ? COUNTER_IRQ_CAPTURE_COMPARE : 0U;
 #else
-	return NVIC_GetPendingIRQ(config->irq_num);
+	return k_irq_is_pending(config->irq_num);
 #endif
 }
 
