@@ -250,6 +250,14 @@ New APIs and options
     * :c:func:`bt_ascs_unregister`
     * :c:func:`bt_bap_unicast_client_qos_from_group`
     * :c:func:`bt_bap_qos_cfg_eq`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_codec_configured`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_qos_configured`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_enabled`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_connected`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_started`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_disabled`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_stopped`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_released`
 
   * Host
 
