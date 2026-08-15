@@ -1388,15 +1388,89 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	return 0;
 }
 
-static int private_map(struct arm_mmu_ptables *ptables, const char *name,
-		       uintptr_t phys, uintptr_t virt, size_t size, uint32_t attrs)
+/*
+ * Combine the attributes of a new mapping with what an existing entry
+ * already maps. The descriptor type, the output address (or the paging
+ * location token when the page is paged out) and the access flag belong
+ * to the entry and are kept; everything else comes from the new mapping.
+ */
+static uint64_t merge_attrs(uint64_t desc, uint64_t attr_desc)
 {
+	uint64_t keep = PTE_DESC_TYPE_MASK | PTE_PHYSADDR_MASK | PTE_BLOCK_DESC_AF;
+
+	if (IS_ENABLED(CONFIG_DEMAND_PAGING) && (attr_desc & PTE_SW_WRITABLE) != 0) {
+		/* on a writable mapping the RO bit is dirty state, not permission */
+		keep |= PTE_BLOCK_DESC_AP_RO;
+	}
+
+	return (desc & keep) | (attr_desc & ~keep);
+}
+
+/*
+ * Apply new attributes to the entries covering the given range, leaving
+ * what they map alone. Entries with nothing mapped are left untouched:
+ * access can only be granted to memory that is actually mapped.
+ */
+static void remap_mapping(uint64_t *table, uintptr_t virt, size_t size,
+			  uint64_t attr_desc, unsigned int level)
+{
+	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
+	uint64_t *pte, *subtable;
+
+	for ( ; size; virt += step, size -= step) {
+		step = level_size - (virt & (level_size - 1));
+		if (step > size) {
+			step = size;
+		}
+		pte = &table[XLAT_TABLE_VA_IDX(virt, level)];
+
+		if (is_free_desc(*pte)) {
+			continue;
+		}
+
+		if (step != level_size && is_block_desc(*pte)) {
+			/* need to split this block mapping */
+			expand_to_table(pte, level);
+		}
+
+		if (is_table_desc(*pte, level)) {
+			subtable = pte_desc_table(*pte);
+			remap_mapping(subtable, virt, step, attr_desc, level + 1);
+			continue;
+		}
+
+		*pte = merge_attrs(*pte, attr_desc);
+		debug_show_pte(pte, level);
+	}
+}
+
+/*
+ * Give the given range domain private attributes. The range keeps whatever
+ * the kernel tables map it to: the virtual address is not necessarily the
+ * physical address, and with demand paging the range may be paged out, in
+ * which case the private entry keeps the location token and the new
+ * attributes apply when the page comes back in.
+ */
+static int private_map(struct arm_mmu_ptables *ptables, const char *name,
+		       uintptr_t virt, size_t size, uint32_t attrs)
+{
+	uint64_t attr_desc = get_region_desc(attrs | MT_NG);
+	k_spinlock_key_t key;
 	int ret;
+
+	MMU_DEBUG("private map [%s]: virt %lx size %lx attr %llx\n",
+		  name, virt, size, attr_desc);
+	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
+		 "address/size are not page aligned\n");
 
 	ret = privatize_page_range(ptables, &kernel_ptables, virt, size, name);
 	__ASSERT(ret == 0, "privatize_page_range() returned %d", ret);
-	ret = add_map(ptables, name, phys, virt, size, attrs | MT_NG);
-	__ASSERT(ret == 0, "add_map() returned %d", ret);
+
+	key = k_spin_lock(&xlat_lock);
+	remap_mapping(ptables->base_xlat_table, virt, size, attr_desc,
+		      BASE_XLAT_LEVEL);
+	k_spin_unlock(&xlat_lock, key);
+
 	invalidate_tlb_all();
 
 	return ret;
@@ -1420,8 +1494,8 @@ int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	struct arm_mmu_ptables *domain_ptables = &domain->arch.ptables;
 	struct k_mem_partition *ptn = &domain->partitions[partition_id];
 
-	return private_map(domain_ptables, "partition", ptn->start, ptn->start,
-			   ptn->size, ptn->attr.attrs | MT_NORMAL);
+	return private_map(domain_ptables, "partition", ptn->start, ptn->size,
+			   ptn->attr.attrs | MT_NORMAL);
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
@@ -1438,8 +1512,7 @@ static int map_thread_stack(struct k_thread *thread,
 			    struct arm_mmu_ptables *ptables)
 {
 	return private_map(ptables, "thread_stack", thread->stack_info.start,
-			    thread->stack_info.start, thread->stack_info.size,
-			    MT_P_RW_U_RW | MT_NORMAL);
+			   thread->stack_info.size, MT_P_RW_U_RW | MT_NORMAL);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
