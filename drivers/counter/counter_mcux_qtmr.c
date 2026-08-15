@@ -144,7 +144,7 @@ static void mcux_qtmr_isr(const struct device *timers[])
 			uint32_t channel_status = QTMR_GetStatus(config->base, ch);
 			bool sw_pending = (atomic_clear(&data->irq_pending) != 0);
 
-			/* A late alarm forced through NVIC_SetPendingIRQ has no
+			/* A late alarm forced through k_irq_set_pending() has no
 			 * hardware compare flag set. Synthesize the compare event
 			 * so the handler runs the alarm callback immediately.
 			 */
