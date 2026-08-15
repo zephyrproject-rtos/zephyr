@@ -477,7 +477,7 @@ void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool e
 	irq_disable(config->irq_num);
 
 #if !defined(CONFIG_INFINEON_INTC_SYSINTC)
-	NVIC_ClearPendingIRQ(config->irq_num);
+	k_irq_clear_pending(config->irq_num);
 #endif /* CONFIG_INFINEON_INTC_SYSINTC */
 
 	if (event & CY_SCB_UART_TRANSMIT_EMTPY) {
