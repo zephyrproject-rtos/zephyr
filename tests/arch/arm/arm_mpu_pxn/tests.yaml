@@ -5,6 +5,8 @@ common:
   tags:
     - arm
     - mpu
+  # Executing from a PXN region in privileged mode faults on purpose.
+  ignore_faults: true
   platform_allow:
     - mps3/corstone300/an547
     - mps3/corstone300/fvp
