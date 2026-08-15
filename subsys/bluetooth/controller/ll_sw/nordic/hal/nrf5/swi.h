@@ -63,6 +63,8 @@
 
 #endif
 
+#include <zephyr/irq.h>
+
 static inline void hal_swi_init(void)
 {
 	/* No platform-specific initialization required. */
@@ -70,15 +72,15 @@ static inline void hal_swi_init(void)
 
 static inline void hal_swi_lll_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_RADIO_IRQ);
+	k_irq_set_pending(HAL_SWI_RADIO_IRQ);
 }
 
 static inline void hal_swi_worker_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_WORKER_IRQ);
+	k_irq_set_pending(HAL_SWI_WORKER_IRQ);
 }
 
 static inline void hal_swi_job_pend(void)
 {
-	NVIC_SetPendingIRQ(HAL_SWI_JOB_IRQ);
+	k_irq_set_pending(HAL_SWI_JOB_IRQ);
 }
