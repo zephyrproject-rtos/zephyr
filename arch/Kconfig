@@ -68,6 +68,8 @@ config ARM64
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS
+	# Backed by the GIC distributor ICPENDR/ISPENDR registers.
+	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER
 	help
 	  ARM64 (AArch64) architecture
 
@@ -841,6 +843,14 @@ config ARCH_HAS_IRQ_OFFLOAD_NESTED
 	  implementation may legally be called in interrupt context to cause a
 	  synchronous nested interrupt on the current CPU. It gates the default
 	  value of CONFIG_IRQ_OFFLOAD_NESTED.
+
+config ARCH_HAS_IRQ_PENDING_OPS
+	bool
+	help
+	  Selected by architectures whose interrupt controller can set, clear
+	  and query the latched pending state of an individual interrupt
+	  line, providing arch_irq_set_pending(), arch_irq_clear_pending()
+	  and arch_irq_is_pending() and therefore the k_irq_*_pending() API.
 
 config ARCH_HAS_SEMIHOST
 	bool

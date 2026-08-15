@@ -32,10 +32,16 @@ extern "C" {
 #define arch_irq_enable                     z_soc_irq_enable
 #define arch_irq_disable                    z_soc_irq_disable
 #define arch_irq_is_enabled                 z_soc_irq_is_enabled
+#define arch_irq_clear_pending              z_soc_irq_clear_pending
+#define arch_irq_set_pending                z_soc_irq_set_pending
+#define arch_irq_is_pending                 z_soc_irq_is_pending
 #else
 #define arch_irq_enable                     arm_irq_enable
 #define arch_irq_disable                    arm_irq_disable
 #define arch_irq_is_enabled                 arm_irq_is_enabled
+#define arch_irq_clear_pending              arm_irq_clear_pending
+#define arch_irq_set_pending                arm_irq_set_pending
+#define arch_irq_is_pending                 arm_irq_is_pending
 #endif
 #ifndef CONFIG_USE_SWITCH
 GTEXT(z_arm_int_exit);
@@ -43,6 +49,11 @@ GTEXT(z_arm_int_exit);
 GTEXT(arch_irq_enable)
 GTEXT(arch_irq_disable)
 GTEXT(arch_irq_is_enabled)
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+GTEXT(arch_irq_clear_pending)
+GTEXT(arch_irq_set_pending)
+GTEXT(arch_irq_is_pending)
+#endif
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(z_soc_irq_get_active)
 GTEXT(z_soc_irq_eoi)
@@ -54,11 +65,21 @@ extern void arm_irq_enable(unsigned int irq);
 extern void arm_irq_disable(unsigned int irq);
 extern int arm_irq_is_enabled(unsigned int irq);
 extern void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+extern void arm_irq_clear_pending(unsigned int irq);
+extern void arm_irq_set_pending(unsigned int irq);
+extern bool arm_irq_is_pending(unsigned int irq);
+#endif
 #if !defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
 #define arch_irq_enable(irq)                     arm_irq_enable(irq)
 #define arch_irq_disable(irq)                    arm_irq_disable(irq)
 #define arch_irq_is_enabled(irq)                 arm_irq_is_enabled(irq)
 #define z_arm_irq_priority_set(irq, prio, flags) arm_irq_priority_set(irq, prio, flags)
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+#define arch_irq_clear_pending(irq)              arm_irq_clear_pending(irq)
+#define arch_irq_set_pending(irq)                arm_irq_set_pending(irq)
+#define arch_irq_is_pending(irq)                 arm_irq_is_pending(irq)
+#endif
 #endif
 #endif
 
@@ -80,9 +101,21 @@ void z_soc_irq_priority_set(
 unsigned int z_soc_irq_get_active(void);
 void z_soc_irq_eoi(unsigned int irq);
 
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+void z_soc_irq_clear_pending(unsigned int irq);
+void z_soc_irq_set_pending(unsigned int irq);
+bool z_soc_irq_is_pending(unsigned int irq);
+#endif
+
 #define arch_irq_enable(irq)		z_soc_irq_enable(irq)
 #define arch_irq_disable(irq)		z_soc_irq_disable(irq)
 #define arch_irq_is_enabled(irq)	z_soc_irq_is_enabled(irq)
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+#define arch_irq_clear_pending(irq)	z_soc_irq_clear_pending(irq)
+#define arch_irq_set_pending(irq)	z_soc_irq_set_pending(irq)
+#define arch_irq_is_pending(irq)	z_soc_irq_is_pending(irq)
+#endif
 
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
