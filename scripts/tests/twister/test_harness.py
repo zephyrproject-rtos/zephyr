@@ -278,6 +278,56 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.recording == []
 
 
+def test_harness_process_test_fault_is_logged_with_a_prefix():
+    """A fault is emitted through the logging subsystem, so the marker is
+    surrounded by a timestamp and a module name rather than being a line of
+    its own."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+
+
+def test_harness_process_test_fault_after_run_passed():
+    """A fault reported once the test has already announced success still
+    fails the run."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    assert harness.status == TwisterStatus.PASS
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+    assert harness.status == TwisterStatus.FAIL
+    assert harness.reason == "Fault detected while running test"
+
+
+def test_harness_process_test_fault_after_run_passed_ignored():
+    """Tests that fault on purpose opt out with ignore_faults, and keep their
+    PASS even when the fault comes last."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert not harness.fault
+    assert harness.status == TwisterStatus.PASS
+
+
 def test_robot_configure(tmp_path):
     # Arrange
     mock_platform = mock.Mock()

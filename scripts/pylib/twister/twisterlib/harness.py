@@ -185,6 +185,18 @@ class Harness:
             if run_id == str(self.run_id):
                 self.matched_run_id = True
 
+        # Faults are logged with a timestamp and module prefix, so the marker
+        # has to be matched as a substring rather than against the whole line.
+        if self.fail_on_fault and self.FAULT in line:
+            self.fault = True
+            # A fault can be reported after the test has already announced
+            # success, for instance a stray interrupt taken once the test
+            # threads are done. Such a run is not healthy, so withdraw a PASS
+            # that was recorded earlier in the output.
+            if self.status == TwisterStatus.PASS:
+                self.status = TwisterStatus.FAIL
+                self.reason = "Fault detected while running test"
+
         if self.RUN_PASSED in line:
             if self.fault:
                 self.status = TwisterStatus.FAIL
@@ -195,9 +207,6 @@ class Harness:
         if self.RUN_FAILED in line:
             self.status = TwisterStatus.FAIL
             self.reason = "Testsuite failed"
-
-        if self.fail_on_fault and line == self.FAULT:
-            self.fault = True
 
         if self.GCOV_START in line:
             self.capture_coverage = True
@@ -359,9 +368,6 @@ class Console(Harness):
                 self.status = TwisterStatus.PASS
         else:
             logger.error("Unknown harness_config type")
-
-        if self.fail_on_fault and self.FAULT in line:
-            self.fault = True
 
         self.process_test(line)
         # Reset the resulting test state to FAIL when not all of the patterns were
