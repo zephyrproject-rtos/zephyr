@@ -96,8 +96,16 @@ CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_start_failed);
 CREATE_FLAG(flag_start_timeout);
+CREATE_FLAG(flag_start_codec_configured_subproc);
+CREATE_FLAG(flag_start_qos_configured_subproc);
+CREATE_FLAG(flag_start_enabled_subproc);
+CREATE_FLAG(flag_start_connected_subproc);
+CREATE_FLAG(flag_start_started_subproc);
 CREATE_FLAG(flag_updated);
 CREATE_FLAG(flag_stopped);
+CREATE_FLAG(flag_stop_disabled_subproc);
+CREATE_FLAG(flag_stop_stopped_subproc);
+CREATE_FLAG(flag_stop_released_subproc);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_source_discovered);
@@ -268,6 +276,41 @@ static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 	}
 }
 
+static void unicast_start_codec_configured_cb(void)
+{
+	LOG_INF("All streams codec configured");
+
+	SET_FLAG(flag_start_codec_configured_subproc);
+}
+
+static void unicast_start_qos_configured_cb(void)
+{
+	LOG_INF("All streams QoS configured");
+
+	SET_FLAG(flag_start_qos_configured_subproc);
+}
+
+static void unicast_start_enabled_cb(void)
+{
+	LOG_INF("All streams enabled");
+
+	SET_FLAG(flag_start_enabled_subproc);
+}
+
+static void unicast_start_connected_cb(void)
+{
+	LOG_INF("All streams connected");
+
+	SET_FLAG(flag_start_connected_subproc);
+}
+
+static void unicast_start_started_cb(void)
+{
+	LOG_INF("All streams started");
+
+	SET_FLAG(flag_start_started_subproc);
+}
+
 static void unicast_update_complete_cb(int err, struct bt_conn *conn)
 {
 	if (err != 0) {
@@ -290,11 +333,40 @@ static void unicast_stop_complete_cb(int err, struct bt_conn *conn)
 	SET_FLAG(flag_stopped);
 }
 
+static void unicast_stop_disabled_cb(void)
+{
+	LOG_INF("All streams disabled");
+
+	SET_FLAG(flag_stop_disabled_subproc);
+}
+
+static void unicast_stop_stopped_cb(void)
+{
+	LOG_INF("All streams stopped");
+
+	SET_FLAG(flag_stop_stopped_subproc);
+}
+
+static void unicast_stop_released_cb(void)
+{
+	LOG_INF("All streams released");
+
+	SET_FLAG(flag_stop_released_subproc);
+}
+
 static struct bt_cap_initiator_cb cap_cb = {
 	.unicast_discovery_complete = cap_discovery_complete_cb,
 	.unicast_start_complete = unicast_start_complete_cb,
+	.unicast_start_codec_configured = unicast_start_codec_configured_cb,
+	.unicast_start_qos_configured = unicast_start_qos_configured_cb,
+	.unicast_start_enabled = unicast_start_enabled_cb,
+	.unicast_start_connected = unicast_start_connected_cb,
+	.unicast_start_started = unicast_start_started_cb,
 	.unicast_update_complete = unicast_update_complete_cb,
 	.unicast_stop_complete = unicast_stop_complete_cb,
+	.unicast_stop_disabled = unicast_stop_disabled_cb,
+	.unicast_stop_stopped = unicast_stop_stopped_cb,
+	.unicast_stop_released = unicast_stop_released_cb,
 };
 
 static void add_remote_sink(const struct bt_conn *conn, struct bt_bap_ep *ep)
@@ -683,6 +755,25 @@ static bool unicast_group_foreach_stream_cb(struct bt_cap_stream *cap_stream, vo
 	return true;
 }
 
+static bool stream_is_in_state(const struct bt_cap_stream *cap_stream, enum bt_bap_ep_state state)
+{
+	struct bt_bap_ep_info ep_info;
+	int err;
+
+	if (cap_stream->bap_stream.ep == NULL) {
+		return BT_BAP_EP_STATE_IDLE;
+	}
+
+	err = bt_bap_ep_get_info(cap_stream->bap_stream.ep, &ep_info);
+	if (err != 0) {
+		LOG_DBG("Failed to get endpoint info %p: %d", cap_stream, err);
+
+		return BT_BAP_EP_STATE_IDLE;
+	}
+
+	return ep_info.state == state;
+}
+
 static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool wait)
 {
 	struct bt_cap_unicast_audio_start_stream_param stream_param[2];
@@ -703,6 +794,32 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool
 	stream_param[1].ep = unicast_source_eps[bt_conn_index(default_conn)][0];
 	stream_param[1].codec_cfg = &unicast_preset_16_2_1.codec_cfg;
 
+	/* Unset flags based on the stream EP and ISO states, as some subprocedures may be skipped
+	 * if all streams are already in that state
+	 */
+	for (size_t i = 0U; i < param.count; i++) {
+		if (stream_is_in_state(param.stream_params->stream, BT_BAP_EP_STATE_IDLE)) {
+			UNSET_FLAG(flag_start_codec_configured_subproc);
+		}
+
+		if (stream_is_in_state(param.stream_params->stream,
+				       BT_BAP_EP_STATE_CODEC_CONFIGURED)) {
+			UNSET_FLAG(flag_start_qos_configured_subproc);
+		}
+
+		if (stream_is_in_state(param.stream_params->stream,
+				       BT_BAP_EP_STATE_QOS_CONFIGURED)) {
+			UNSET_FLAG(flag_start_enabled_subproc);
+		}
+
+		if (stream_is_in_state(param.stream_params->stream, BT_BAP_EP_STATE_ENABLING)) {
+			UNSET_FLAG(flag_start_started_subproc);
+		}
+
+		if (param.stream_params->stream->bap_stream.iso == NULL) {
+			UNSET_FLAG(flag_start_connected_subproc);
+		}
+	}
 	UNSET_FLAG(flag_started);
 
 	err = bt_cap_initiator_unicast_audio_start(&param);
@@ -712,6 +829,14 @@ static void unicast_audio_start(struct bt_cap_unicast_group *unicast_group, bool
 	}
 
 	if (wait) {
+		/* The streams were all in the idle state, so all subprocedures shall have been
+		 * performed
+		 */
+		WAIT_FOR_FLAG(flag_start_codec_configured_subproc);
+		WAIT_FOR_FLAG(flag_start_qos_configured_subproc);
+		WAIT_FOR_FLAG(flag_start_enabled_subproc);
+		WAIT_FOR_FLAG(flag_start_connected_subproc);
+		WAIT_FOR_FLAG(flag_start_started_subproc);
 		WAIT_FOR_FLAG(flag_started);
 		/* let other devices know we have started what we wanted */
 		backchannel_sync_send_all();
@@ -833,6 +958,9 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 
 	/* Stop without release first to verify that we enter the QoS Configured state */
 	UNSET_FLAG(flag_stopped);
+	UNSET_FLAG(flag_stop_disabled_subproc);
+	UNSET_FLAG(flag_stop_stopped_subproc);
+	UNSET_FLAG(flag_stop_released_subproc);
 	LOG_INF("Stopping without releasing");
 
 	/* Mark streams as stopping to not treat lost SDUs as a failure condition */
@@ -850,6 +978,15 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	}
 
 	WAIT_FOR_FLAG(flag_stopped);
+	/* The streams were all streaming, so both the disable and the receiver stop ready
+	 * subprocedures shall have been performed, but the streams shall not have been released
+	 */
+	WAIT_FOR_FLAG(flag_stop_disabled_subproc);
+	WAIT_FOR_FLAG(flag_stop_stopped_subproc);
+	if (TEST_FLAG(flag_stop_released_subproc)) {
+		FAIL("Streams released without being requested to\n");
+		return;
+	}
 
 	/* Verify that it cannot be stopped twice */
 	err = bt_cap_initiator_unicast_audio_stop(&param);
@@ -861,6 +998,9 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 
 	/* Stop with release first to verify that we enter the idle state */
 	UNSET_FLAG(flag_stopped);
+	UNSET_FLAG(flag_stop_disabled_subproc);
+	UNSET_FLAG(flag_stop_stopped_subproc);
+	UNSET_FLAG(flag_stop_released_subproc);
 	param.release = true;
 	LOG_INF("Releasing");
 
@@ -871,6 +1011,14 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	}
 
 	WAIT_FOR_FLAG(flag_stopped);
+	/* The streams were already in the QoS Configured state, so only the release subprocedure
+	 * shall have been performed
+	 */
+	WAIT_FOR_FLAG(flag_stop_released_subproc);
+	if (TEST_FLAG(flag_stop_disabled_subproc) || TEST_FLAG(flag_stop_stopped_subproc)) {
+		FAIL("Streams disabled or stopped when they were already stopped\n");
+		return;
+	}
 
 	/* Verify that it cannot be stopped twice */
 	err = bt_cap_initiator_unicast_audio_stop(&param);

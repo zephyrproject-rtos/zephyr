@@ -88,6 +88,7 @@ void bt_cap_common_set_subproc(enum bt_cap_common_subproc_type subproc_type)
 	active_proc.proc_done_cnt = 0U;
 	active_proc.proc_initiated_cnt = 0U;
 	active_proc.subproc_type = subproc_type;
+	active_proc.subproc_initiated = false;
 }
 
 bool bt_cap_common_proc_is_type(enum bt_cap_common_proc_type proc_type)
