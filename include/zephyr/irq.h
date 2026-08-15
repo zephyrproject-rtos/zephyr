@@ -15,6 +15,7 @@
 #include <zephyr/arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#include <limits.h>
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
@@ -369,6 +370,31 @@ static ALWAYS_INLINE bool k_irq_is_pending(unsigned int irq)
 	return arch_irq_is_pending(irq);
 }
 #endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */
+
+#if defined(CONFIG_ARCH_HAS_IRQ_GET_ACTIVE) || defined(__DOXYGEN__)
+/**
+ * @brief Value returned by k_irq_get_active() outside interrupt context.
+ */
+#define K_IRQ_ACTIVE_NONE UINT_MAX
+
+/**
+ * @brief Get the IRQ currently being serviced on this CPU.
+ *
+ * Report the interrupt line whose handler is executing on the current CPU,
+ * the innermost one when interrupts nest. Only hardware interrupts
+ * dispatched through the architecture interrupt path are reported;
+ * irq_offload() handlers and CPU exceptions are not.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_GET_ACTIVE}
+ *
+ * @return the active IRQ line, or @ref K_IRQ_ACTIVE_NONE if no interrupt is
+ *         being serviced
+ */
+static ALWAYS_INLINE unsigned int k_irq_get_active(void)
+{
+	return arch_irq_get_active();
+}
+#endif /* CONFIG_ARCH_HAS_IRQ_GET_ACTIVE */
 
 /**
  * @}
