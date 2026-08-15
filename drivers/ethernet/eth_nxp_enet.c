@@ -226,7 +226,9 @@ static enum ethernet_hw_caps eth_nxp_enet_get_capabilities(const struct device *
 	enum ethernet_hw_caps caps;
 
 	caps = ETHERNET_LINK_10BASE |
+#if defined(CONFIG_ETH_NXP_ENET_MULTICAST_FILTER)
 		ETHERNET_HW_FILTERING |
+#endif
 #if defined(CONFIG_NET_VLAN)
 		ETHERNET_HW_VLAN |
 #endif
@@ -265,6 +267,7 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 			data->mac_addr[2], data->mac_addr[3],
 			data->mac_addr[4], data->mac_addr[5]);
 		return 0;
+#if defined(CONFIG_ETH_NXP_ENET_MULTICAST_FILTER)
 	case ETHERNET_CONFIG_TYPE_FILTER:
 		/* The ENET driver does not modify the address buffer but the API is not const */
 		if (cfg->filter.set) {
@@ -275,6 +278,7 @@ static int eth_nxp_enet_set_config(const struct device *dev,
 						 (uint8_t *)cfg->filter.mac_address.addr);
 		}
 		return 0;
+#endif
 	case ETHERNET_CONFIG_TYPE_PROMISC_MODE:
 		/* Promiscuous mode is enabled at eth_nxp_enet_init and
 		 * cannot be disabled at runtime
@@ -728,6 +732,16 @@ static int eth_nxp_enet_init(const struct device *dev)
 	nxp_enet_driver_cb(config->ptp_clock, NXP_ENET_PTP_CLOCK,
 				NXP_ENET_MODULE_RESET, &data->ptp);
 	ENET_SetTxReclaim(&data->enet_handle, true, 0);
+#endif
+
+#if !defined(CONFIG_ETH_NXP_ENET_MULTICAST_FILTER)
+	/*
+	 * With hash filtering disabled, open the group-address hash (GAUR/GALR)
+	 * to every multicast address so reception does not depend on per-group
+	 * hash installation. Software filtering still applies in the stack.
+	 */
+	data->base->GAUR = 0xFFFFFFFFU;
+	data->base->GALR = 0xFFFFFFFFU;
 #endif
 
 	ENET_ActiveRead(data->base);
