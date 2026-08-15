@@ -1,0 +1,11 @@
+# Copyright (c) 2024 Dylan Rowe
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_CST3530
+	bool "CST3530 capacitive touch panel driver"
+	default y
+	depends on DT_HAS_HYNITRON_CST3530_ENABLED
+	select I2C
+	select INPUT_TOUCH
+	help
+	  Enable driver for hynitron cst3530 touch panel.
