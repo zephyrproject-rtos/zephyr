@@ -103,6 +103,19 @@ void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
+#if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
+unsigned int arch_irq_get_active(void)
+{
+	/*
+	 * The ISR wrapper stores the INTID biased by one so that the
+	 * zero-initialized boot state reads as "none" on every CPU.
+	 */
+	uint32_t biased = _current_cpu->arch.active_irq;
+
+	return (biased == 0U) ? K_IRQ_ACTIVE_NONE : (biased - 1U);
+}
+#endif
+
 void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 
 /**

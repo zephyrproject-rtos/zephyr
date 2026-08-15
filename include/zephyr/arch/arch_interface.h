@@ -435,6 +435,15 @@ void arch_irq_set_pending(unsigned int irq);
 bool arch_irq_is_pending(unsigned int irq);
 #endif
 
+#if defined(CONFIG_ARCH_HAS_IRQ_GET_ACTIVE) || defined(__DOXYGEN__)
+/**
+ * Report the interrupt line being serviced on the current CPU
+ *
+ * @see k_irq_get_active()
+ */
+unsigned int arch_irq_get_active(void);
+#endif
+
 /**
  * Arch-specific hook to install a dynamic interrupt.
  *
