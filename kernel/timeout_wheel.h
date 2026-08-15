@@ -245,7 +245,7 @@ static void timeout_wheel_insert_distant(struct _timeout *to, uint32_t cutoff)
  */
 static void timeout_wheel_add_timeout(struct _timeout *to)
 {
-	__ASSERT_NO_MSG(to->dticks != 0);
+	ZASSERT_M(KERNEL, to->dticks != 0);
 
 	if (to->dticks <= (NUM_SOON_LISTS - wheel.announcing)) {
 		timeout_wheel_append_soon(to);

@@ -19,11 +19,11 @@ static ALWAYS_INLINE void *thread_runq(struct k_thread *thread)
 #ifdef CONFIG_SCHED_CPU_MASK_PIN_ONLY
 	uint32_t cpu_mask = thread->base.cpu_mask;
 
-	__ASSERT(cpu_mask != 0U, "thread queued with empty CPU mask");
+	ZASSERT_M(KERNEL, cpu_mask != 0U, "thread queued with empty CPU mask");
 
 	unsigned int cpu = (unsigned int)u32_count_trailing_zeros(cpu_mask);
 
-	__ASSERT(cpu < ARRAY_SIZE(_kernel.cpus),
+	ZASSERT_M(KERNEL, cpu < ARRAY_SIZE(_kernel.cpus),
 		 "cpu_mask bit %u exceeds cpu count %zu",
 		 cpu, ARRAY_SIZE(_kernel.cpus));
 
@@ -50,16 +50,16 @@ static ALWAYS_INLINE void *curr_cpu_runq(void)
 
 static ALWAYS_INLINE void runq_add(struct k_thread *thread)
 {
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-	__ASSERT_NO_MSG(!is_thread_dummy(thread));
+	ZASSERT_M(KERNEL, !z_is_idle_thread_object(thread));
+	ZASSERT_M(KERNEL, !is_thread_dummy(thread));
 
 	_priq_run_add(thread_runq(thread), thread);
 }
 
 static ALWAYS_INLINE void runq_remove(struct k_thread *thread)
 {
-	__ASSERT_NO_MSG(!z_is_idle_thread_object(thread));
-	__ASSERT_NO_MSG(!is_thread_dummy(thread));
+	ZASSERT_M(KERNEL, !z_is_idle_thread_object(thread));
+	ZASSERT_M(KERNEL, !is_thread_dummy(thread));
 
 	_priq_run_remove(thread_runq(thread), thread);
 }

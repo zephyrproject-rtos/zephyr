@@ -16,6 +16,8 @@
 
 #include <timeslicing.h>
 
+ZASSERT_MODULE(KERNEL);
+
 /* Absolute tick counter: ticks since boot. */
 static uint64_t curr_tick;
 
@@ -180,10 +182,10 @@ k_ticks_t z_add_timeout(struct _timeout *to, _timeout_func_t fn, k_timeout_t tim
 	}
 
 #ifdef CONFIG_KERNEL_COHERENCE
-	__ASSERT_NO_MSG(sys_cache_is_mem_coherent(to));
+	ZASSERT(sys_cache_is_mem_coherent(to));
 #endif /* CONFIG_KERNEL_COHERENCE */
 
-	__ASSERT(z_is_inactive_timeout(to), "");
+	ZASSERT(z_is_inactive_timeout(to), "");
 	to->fn = fn;
 
 	K_SPINLOCK(&timeout_lock) {

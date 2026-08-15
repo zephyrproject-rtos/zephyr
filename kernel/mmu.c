@@ -28,6 +28,8 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 #include <zephyr/kernel/mm/demand_paging.h>
 #endif /* CONFIG_DEMAND_PAGING */
 
+ZASSERT_MODULE(KERNEL);
+
 /*
  * General terminology:
  * - A page frame is a page-sized physical memory region in RAM. It is a
@@ -55,12 +57,12 @@ struct k_spinlock z_mm_lock;
 /* Database of all RAM page frames */
 struct k_mem_page_frame k_mem_page_frames[K_MEM_NUM_PAGE_FRAMES];
 
-#if __ASSERT_ON
+#ifdef CONFIG_ASSERT
 /* Indicator that k_mem_page_frames has been initialized, many of these APIs do
  * not work before POST_KERNEL
  */
 static bool page_frames_initialized;
-#endif
+#endif /* CONFIG_ASSERT */
 
 /* Add colors to page table dumps to indicate mapping type */
 #define COLOR_PAGE_FRAMES	1
@@ -111,7 +113,7 @@ void k_mem_page_frames_dump(void)
 {
 	int column = 0;
 
-	__ASSERT(page_frames_initialized, "%s called too early", __func__);
+	ZASSERT(page_frames_initialized, "%s called too early", __func__);
 	printk("Physical memory from 0x%lx to 0x%lx\n",
 	       K_MEM_PHYS_RAM_START, K_MEM_PHYS_RAM_END);
 
@@ -254,7 +256,7 @@ static void virt_region_free(void *vaddr, size_t size)
 	 * simple.
 	 */
 
-	__ASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
+	ZASSERT((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
 		 && ((vaddr_u8 + size - 1) < Z_VIRT_REGION_END_ADDR),
 		 "invalid virtual address region %p (%zu)", vaddr_u8, size);
 	if (!((vaddr_u8 >= Z_VIRT_REGION_START_ADDR)
@@ -394,7 +396,7 @@ static sys_sflist_t free_page_frame_list;
 static size_t z_free_page_count;
 
 #define PF_ASSERT(pf, expr, fmt, ...) \
-	__ASSERT(expr, "page frame 0x%lx: " fmt, k_mem_page_frame_to_phys(pf), \
+	ZASSERT(expr, "page frame 0x%lx: " fmt, k_mem_page_frame_to_phys(pf), \
 		 ##__VA_ARGS__)
 
 /* Get an unused page frame. don't care which one, or NULL if there are none */
@@ -533,7 +535,7 @@ static int map_anon_page(void *addr, uint32_t flags)
 		int ret;
 
 		pf = k_mem_paging_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		ZASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -577,9 +579,9 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 	uint8_t *pos;
 	bool uninit = (flags & K_MEM_MAP_UNINIT) != 0U;
 
-	__ASSERT(!is_anon || (is_anon && page_frames_initialized),
+	ZASSERT(!is_anon || (is_anon && page_frames_initialized),
 		 "%s called too early", __func__);
-	__ASSERT((flags & K_MEM_CACHE_MASK) == 0U,
+	ZASSERT((flags & K_MEM_CACHE_MASK) == 0U,
 		 "%s does not support explicit cache settings", __func__);
 
 	if (((flags & K_MEM_PERM_USER) != 0U) &&
@@ -687,7 +689,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	int ret;
 
 	/* Need space for the "before" guard page */
-	__ASSERT_NO_MSG(POINTER_TO_UINT(addr) >= CONFIG_MMU_PAGE_SIZE);
+	ZASSERT(POINTER_TO_UINT(addr) >= CONFIG_MMU_PAGE_SIZE);
 
 	/* Make sure address range is still valid after accounting
 	 * for two guard pages.
@@ -703,7 +705,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	 */
 	pos = addr;
 	ret = arch_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
-	__ASSERT(ret != 0,
+	ZASSERT(ret != 0,
 		 "%s: cannot find preceding guard page for (%p, %zu)",
 		 __func__, addr, size);
 	if (ret == 0) {
@@ -711,7 +713,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	}
 
 	ret = arch_page_phys_get(pos + size, NULL);
-	__ASSERT(ret != 0,
+	ZASSERT(ret != 0,
 		 "%s: cannot find succeeding guard page for (%p, %zu)",
 		 __func__, addr, size);
 	if (ret == 0) {
@@ -754,7 +756,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 #else
 			ret = arch_page_phys_get(pos, &phys);
 #endif
-			__ASSERT(ret == 0,
+			ZASSERT(ret == 0,
 				 "%s: cannot unmap an unmapped address %p",
 				 __func__, pos);
 			if (ret != 0) {
@@ -762,7 +764,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 				goto out;
 			}
 
-			__ASSERT(k_mem_is_page_frame(phys),
+			ZASSERT(k_mem_is_page_frame(phys),
 				 "%s: 0x%lx is not a page frame", __func__, phys);
 			if (!k_mem_is_page_frame(phys)) {
 				/* Physical address has no corresponding page frame
@@ -775,7 +777,7 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 			/* Grab the corresponding page frame from physical address */
 			pf = k_mem_phys_to_page_frame(phys);
 
-			__ASSERT(k_mem_page_frame_is_mapped(pf),
+			ZASSERT(k_mem_page_frame_is_mapped(pf),
 				 "%s: 0x%lx is not a mapped page frame", __func__, phys);
 			if (!k_mem_page_frame_is_mapped(pf)) {
 				/* Page frame is not marked mapped.
@@ -852,7 +854,7 @@ size_t k_mem_free_get(void)
 	size_t ret;
 	k_spinlock_key_t key;
 
-	__ASSERT(page_frames_initialized, "%s called too early", __func__);
+	ZASSERT(page_frames_initialized, "%s called too early", __func__);
 
 	key = k_spin_lock(&z_mm_lock);
 #ifdef CONFIG_DEMAND_PAGING
@@ -900,13 +902,13 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 	size_t offset;
 
 #ifndef CONFIG_KERNEL_DIRECT_MAP
-	__ASSERT(!(flags & K_MEM_DIRECT_MAP), "The direct-map is not enabled");
+	ZASSERT(!(flags & K_MEM_DIRECT_MAP), "The direct-map is not enabled");
 #endif /* CONFIG_KERNEL_DIRECT_MAP */
 	addr_offset = k_mem_region_align(&aligned_phys, &aligned_size,
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
-	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
+	ZASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
+	ZASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
 		 "wraparound for physical address 0x%lx (size %zu)",
 		 aligned_phys, aligned_size);
 
@@ -952,7 +954,7 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 	}
 
 	/* If this fails there's something amiss with virt_region_get */
-	__ASSERT((uintptr_t)dest_addr <
+	ZASSERT((uintptr_t)dest_addr <
 		 ((uintptr_t)dest_addr + (size - 1)),
 		 "wraparound for virtual address %p (size %zu)",
 		 dest_addr, size);
@@ -987,8 +989,8 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 	addr_offset = k_mem_region_align(&aligned_virt, &aligned_size,
 					 POINTER_TO_UINT(virt), size,
 					 CONFIG_MMU_PAGE_SIZE);
-	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
-	__ASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
+	ZASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
+	ZASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
 		 "wraparound for virtual address 0x%lx (size %zu)",
 		 aligned_virt, aligned_size);
 
@@ -1150,9 +1152,10 @@ void z_mem_manage_init(void)
 	z_paging_ondemand_section_map();
 #endif
 
-#if __ASSERT_ON
+#ifdef CONFIG_ASSERT
 	page_frames_initialized = true;
-#endif
+#endif /* CONFIG_ASSERT */
+
 	k_spin_unlock(&z_mm_lock, key);
 }
 
@@ -1298,7 +1301,7 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 	bool dirty = *dirty_ptr;
 
 	phys = k_mem_page_frame_to_phys(pf);
-	__ASSERT(!k_mem_page_frame_is_pinned(pf), "page frame 0x%lx is pinned",
+	ZASSERT(!k_mem_page_frame_is_pinned(pf), "page frame 0x%lx is pinned",
 		 phys);
 
 	/* If the backing store doesn't have a copy of the page, even if it
@@ -1334,11 +1337,11 @@ static int page_frame_prepare_locked(struct k_mem_page_frame *pf, bool *dirty_pt
 		}
 	} else {
 		/* Shouldn't happen unless this function is mis-used */
-		__ASSERT(!dirty, "un-mapped page determined to be dirty");
+		ZASSERT(!dirty, "un-mapped page determined to be dirty");
 	}
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	/* Mark as busy so that k_mem_page_frame_is_evictable() returns false */
-	__ASSERT(!k_mem_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
+	ZASSERT(!k_mem_page_frame_is_busy(pf), "page frame 0x%lx is already busy",
 		 phys);
 	k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_BUSY);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
@@ -1360,7 +1363,7 @@ static int do_mem_evict(void *addr)
 	int ret;
 
 #if CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	__ASSERT(!k_is_in_isr(),
+	ZASSERT(!k_is_in_isr(),
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
 #ifdef CONFIG_SMP
@@ -1371,7 +1374,7 @@ static int do_mem_evict(void *addr)
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
 	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
-	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+	ZASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "address %p isn't mapped", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) == 0) {
 		/* Un-mapped or already evicted. Nothing to do */
@@ -1381,13 +1384,13 @@ static int do_mem_evict(void *addr)
 
 	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
 	pf = k_mem_phys_to_page_frame(phys);
-	__ASSERT(k_mem_page_frame_to_virt(pf) == addr, "page frame address mismatch");
+	ZASSERT(k_mem_page_frame_to_virt(pf) == addr, "page frame address mismatch");
 	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 	if (ret != 0) {
 		goto out;
 	}
 
-	__ASSERT(ret == 0, "failed to prepare page frame");
+	ZASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
@@ -1412,7 +1415,7 @@ out:
 
 int k_mem_page_out(void *addr, size_t size)
 {
-	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
+	ZASSERT(page_frames_initialized, "%s called on %p too early", __func__,
 		 addr);
 	k_mem_assert_virtual_region(addr, size);
 
@@ -1438,7 +1441,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	uintptr_t location;
 	int ret;
 
-	__ASSERT(page_frames_initialized, "%s called on 0x%lx too early",
+	ZASSERT(page_frames_initialized, "%s called on 0x%lx too early",
 		 __func__, phys);
 
 	/* Implementation is similar to do_page_fault() except there is no
@@ -1446,7 +1449,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	 */
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
-	__ASSERT(!k_is_in_isr(),
+	ZASSERT(!k_is_in_isr(),
 		 "%s is unavailable in ISRs with CONFIG_DEMAND_PAGING_ALLOW_IRQ",
 		 __func__);
 #ifdef CONFIG_SMP
@@ -1464,7 +1467,7 @@ int k_mem_page_frame_evict(uintptr_t phys)
 	}
 	flags = arch_page_info_get(k_mem_page_frame_to_virt(pf), NULL, false);
 	/* Shouldn't ever happen */
-	__ASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
+	ZASSERT((flags & ARCH_DATA_PAGE_LOADED) != 0, "data page not loaded");
 	dirty = (flags & ARCH_DATA_PAGE_DIRTY) != 0;
 	ret = page_frame_prepare_locked(pf, &dirty, false, &location);
 	if (ret != 0) {
@@ -1597,7 +1600,7 @@ static bool do_page_fault(void *addr, bool pin)
 	struct k_thread *faulting_thread;
 	int ret;
 
-	__ASSERT(page_frames_initialized, "page fault at %p happened too early",
+	ZASSERT(page_frames_initialized, "page fault at %p happened too early",
 		 addr);
 
 	LOG_DBG("page fault at %p", addr);
@@ -1641,7 +1644,7 @@ static bool do_page_fault(void *addr, bool pin)
 	 * and k_sched_lock()  is equivalent to a no-op on SMP anyway.
 	 * As a result, sleeping/rescheduling in the SMP case is fine.
 	 */
-	__ASSERT(!k_is_in_isr(), "ISR page faults are forbidden");
+	ZASSERT(!k_is_in_isr(), "ISR page faults are forbidden");
 #ifdef CONFIG_SMP
 	k_mutex_lock(&z_mm_paging_lock, K_FOREVER);
 #else
@@ -1681,7 +1684,7 @@ static bool do_page_fault(void *addr, bool pin)
 		 */
 		goto out;
 	}
-	__ASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
+	ZASSERT(status == ARCH_PAGE_LOCATION_PAGED_OUT,
 		 "unexpected status value %d", status);
 
 	paging_stats_faults_inc(faulting_thread, key.key);
@@ -1690,7 +1693,7 @@ static bool do_page_fault(void *addr, bool pin)
 	if (pf == NULL) {
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		ZASSERT(pf != NULL, "failed to get a page frame");
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -1698,7 +1701,7 @@ static bool do_page_fault(void *addr, bool pin)
 		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
-	__ASSERT(ret == 0, "failed to prepare page frame");
+	ZASSERT(ret == 0, "failed to prepare page frame");
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
@@ -1745,13 +1748,13 @@ static void do_page_in(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, false);
-	__ASSERT(ret, "unmapped memory address %p", addr);
+	ZASSERT(ret, "unmapped memory address %p", addr);
 	(void)ret;
 }
 
 void k_mem_page_in(void *addr, size_t size)
 {
-	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
+	ZASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
 		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
 		 __func__);
 	virt_region_foreach(addr, size, do_page_in);
@@ -1762,13 +1765,13 @@ static void do_mem_pin(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, true);
-	__ASSERT(ret, "unmapped memory address %p", addr);
+	ZASSERT(ret, "unmapped memory address %p", addr);
 	(void)ret;
 }
 
 void k_mem_pin(void *addr, size_t size)
 {
-	__ASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
+	ZASSERT(!IS_ENABLED(CONFIG_DEMAND_PAGING_ALLOW_IRQ) || !k_is_in_isr(),
 		 "%s may not be called in ISRs if CONFIG_DEMAND_PAGING_ALLOW_IRQ is enabled",
 		 __func__);
 	virt_region_foreach(addr, size, do_mem_pin);
@@ -1787,7 +1790,7 @@ static void do_mem_unpin(void *addr)
 
 	key = k_spin_lock(&z_mm_lock);
 	flags = arch_page_info_get(addr, &phys, false);
-	__ASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
+	ZASSERT((flags & ARCH_DATA_PAGE_NOT_MAPPED) == 0,
 		 "invalid data page at %p", addr);
 	if ((flags & ARCH_DATA_PAGE_LOADED) != 0) {
 		pf = k_mem_phys_to_page_frame(phys);
@@ -1804,7 +1807,7 @@ static void do_mem_unpin(void *addr)
 
 void k_mem_unpin(void *addr, size_t size)
 {
-	__ASSERT(page_frames_initialized, "%s called on %p too early", __func__,
+	ZASSERT(page_frames_initialized, "%s called on %p too early", __func__,
 		 addr);
 	virt_region_foreach(addr, size, do_mem_unpin);
 }

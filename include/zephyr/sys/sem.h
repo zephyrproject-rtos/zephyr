@@ -23,7 +23,6 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/sys/__assert.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -146,7 +145,7 @@ unsigned int sys_sem_count_get(struct sys_sem *sem);
 #if defined(__GNUC__)
 static ALWAYS_INLINE void z_sys_sem_lock_onexit(__maybe_unused int *rc)
 {
-	__ASSERT(*rc == 1, "SYS_SEM_LOCK exited with goto, break or return, "
+	ZASSERT_M(KERNEL, *rc == 1, "SYS_SEM_LOCK exited with goto, break or return, "
 			   "use SYS_SEM_LOCK_BREAK instead.");
 }
 #define SYS_SEM_LOCK_ONEXIT __attribute__((__cleanup__(z_sys_sem_lock_onexit)))
@@ -206,12 +205,12 @@ static ALWAYS_INLINE void z_sys_sem_lock_onexit(__maybe_unused int *rc)
  */
 #define SYS_SEM_LOCK(sem)                                                                          \
 	for (int __rc SYS_SEM_LOCK_ONEXIT = sys_sem_take((sem), K_FOREVER); ({                     \
-		     __ASSERT(__rc >= 0, "Failed to take sem: %d", __rc);                          \
+		     ZASSERT_M(KERNEL, __rc >= 0, "Failed to take sem: %d", __rc);                 \
 		     __rc == 0;                                                                    \
 	     });                                                                                   \
 	     ({                                                                                    \
 		     __rc = sys_sem_give((sem));                                                   \
-		     __ASSERT(__rc == 0, "Failed to give sem: %d", __rc);                          \
+		     ZASSERT_M(KERNEL, __rc == 0, "Failed to give sem: %d", __rc);                 \
 	     }),                                                                                   \
 		      __rc = 1)
 

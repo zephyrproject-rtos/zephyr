@@ -4,13 +4,13 @@
  */
 #include <zephyr/kernel.h>
 #include <ksched.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <run_q.h>
 #include <wait_q.h>
 #include <scheduler.h>
 
+ZASSERT_MODULE(KERNEL);
 
 void z_sched_init(void)
 {
@@ -28,8 +28,8 @@ void k_sched_lock(void)
 	K_SPINLOCK(&_sched_spinlock) {
 		SYS_PORT_TRACING_FUNC(k_thread, sched_lock);
 
-		__ASSERT(!arch_is_in_isr(), "");
-		__ASSERT(_current->base.sched_locked != 1U, "");
+		ZASSERT(!arch_is_in_isr(), "");
+		ZASSERT(_current->base.sched_locked != 1U, "");
 
 		--_current->base.sched_locked;
 
@@ -43,8 +43,8 @@ void k_sched_unlock(void)
 
 	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
 
-	__ASSERT(_current->base.sched_locked != 0U, "");
-	__ASSERT(!arch_is_in_isr(), "");
+	ZASSERT(_current->base.sched_locked != 0U, "");
+	ZASSERT(!arch_is_in_isr(), "");
 	++_current->base.sched_locked;
 	z_sched_lock_reschedule(key);
 }

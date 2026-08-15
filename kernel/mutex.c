@@ -40,6 +40,8 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/llext/symbol.h>
+
+ZASSERT_MODULE(KERNEL);
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 /* We use a global spinlock here because some of the synchronization
@@ -113,7 +115,7 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, k_timeout_t timeout)
 	int new_prio;
 #endif
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!k_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, lock, mutex, timeout);
 
@@ -232,7 +234,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	struct k_thread *new_owner = NULL;
 
-	__ASSERT(!arch_is_in_isr(), "mutexes cannot be used inside ISRs");
+	ZASSERT(!k_is_in_isr(), "mutexes cannot be used inside ISRs");
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_mutex, unlock, mutex);
 
@@ -256,7 +258,7 @@ int z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	 * therefore no underflow check is required. Use assert to catch
 	 * undefined behavior.
 	 */
-	__ASSERT_NO_MSG(mutex->lock_count > 0U);
+	ZASSERT(mutex->lock_count > 0U);
 
 	LOG_DBG("mutex %p lock_count: %d", mutex, mutex->lock_count);
 

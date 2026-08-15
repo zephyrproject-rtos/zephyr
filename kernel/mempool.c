@@ -10,6 +10,8 @@
 #include <zephyr/sys/util.h>
 #include <wait_q.h>
 
+ZASSERT_MODULE(KERNEL);
+
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
 static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
@@ -21,7 +23,7 @@ static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
 	k_spinlock_key_t key;
 
 	/* A power of 2 as well as 0 is OK */
-	__ASSERT((align & (align - 1)) == 0,
+	ZASSERT((align & (align - 1)) == 0,
 		"align must be a power of 2");
 
 	/*
@@ -50,7 +52,7 @@ static void *z_alloc_helper(struct k_heap *heap, size_t align, size_t size,
 	heap_ref = mem;
 	*heap_ref = heap;
 	mem = ++heap_ref;
-	__ASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
+	ZASSERT(align == 0 || ((uintptr_t)mem & (align - 1)) == 0,
 		 "misaligned memory at %p (align = %zu)", mem, align);
 
 	return mem;
@@ -75,7 +77,7 @@ void k_free(void *ptr)
 		struct k_heap *heap = *heap_ref;
 		k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-		__ASSERT(z_waitq_head(&heap->wait_q) == NULL,
+		ZASSERT(z_waitq_head(&heap->wait_q) == NULL,
 			 "unexpected heap waiters");
 		sys_heap_free(&heap->heap, ptr);
 		k_spin_unlock(&heap->lock, key);

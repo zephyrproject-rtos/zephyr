@@ -7,6 +7,8 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/llext/symbol.h>
 
+ZASSERT_MODULE(KERNEL);
+
 #define SPIN_CPU_ID_MASK (sizeof(void *) - 1)
 
 /* Outermost spinlock held on each CPU; set-if-NULL on lock,
@@ -51,7 +53,7 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 	if (arch_is_in_isr() && _current->base.thread_state & _THREAD_DUMMY) {
 		/* Edge case where an ISR aborted _current */
 		z_held_spinlock_count[cpu_id]--;
-		__ASSERT(z_held_spinlock_count[cpu_id] >= 0,
+		ZASSERT(z_held_spinlock_count[cpu_id] >= 0,
 			 "spinlock unlock with no matching lock");
 		return true;
 	}
@@ -59,7 +61,7 @@ bool z_spin_unlock_valid(struct k_spinlock *l)
 		return false;
 	}
 	z_held_spinlock_count[cpu_id]--;
-	__ASSERT(z_held_spinlock_count[cpu_id] >= 0,
+	ZASSERT(z_held_spinlock_count[cpu_id] >= 0,
 		 "spinlock unlock with no matching lock");
 	return true;
 }
@@ -146,16 +148,16 @@ void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock)
 	    _current->base.swap_data == (void *)&z_spinlock_abort_sentinel) {
 		z_spin_validate_reset(swap_lock != NULL);
 	} else {
-		__ASSERT(extra >= 0,
+		ZASSERT(extra >= 0,
 			 "swap_lock %p is not tracked in the spinlock hold count!", swap_lock);
 
-		__ASSERT(held == NULL || held == swap_lock,
+		ZASSERT(held == NULL || held == swap_lock,
 			 "Context switching while holding spinlock %p!", held);
 
 		/* Catches lock(A); lock(B); unlock(A); z_swap(): slot cleared when A
 		 * is released but count stays at 1 because B is still held.
 		 */
-		__ASSERT(extra == 0,
+		ZASSERT(extra == 0,
 			 "Context switching while holding %d extra spinlock(s)!", extra);
 	}
 
@@ -166,7 +168,7 @@ void z_assert_can_swap(unsigned int key, struct k_spinlock *swap_lock)
 	 * usage in exception context may leave IRQs masked without holding
 	 * a lock (see #94285).
 	 */
-	__ASSERT(arch_irq_unlocked(key) ||
+	ZASSERT(arch_irq_unlocked(key) ||
 		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
 		 "Context switching with irq_lock held!");
 #endif

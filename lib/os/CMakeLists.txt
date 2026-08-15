@@ -90,9 +90,7 @@ if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)
 endif()
 
-if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
-zephyr_sources(assert.c)
-endif()
+add_subdirectory_ifdef(CONFIG_ASSERT zassert)
 
 zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 

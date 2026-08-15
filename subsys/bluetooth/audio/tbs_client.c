@@ -146,7 +146,7 @@ static uint8_t tbs_index(struct bt_conn *conn, const struct bt_tbs_instance *ins
 		 "Invalid bt_tbs_instance pointer");
 
 #else
-	__ASSERT_PRINT("Invalid bt_tbs_instance pointer");
+	LOG_ERR("Invalid bt_tbs_instance pointer");
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 
 	return (uint8_t)index;

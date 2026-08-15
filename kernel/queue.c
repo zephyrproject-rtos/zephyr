@@ -22,6 +22,8 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+ZASSERT_MODULE(KERNEL);
+
 struct alloc_node {
 	sys_sfnode_t node;
 	void *data;
@@ -321,6 +323,9 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 
 void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 {
+	ZASSERT(!k_is_in_isr() || K_TIMEOUT_EQ(timeout, K_NO_WAIT),
+		"Calling a blocking API from an ISR context with a non-K_NO_WAIT timeout is not allowed.");
+
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;
 

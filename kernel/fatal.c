@@ -7,7 +7,6 @@
 #include <zephyr/kernel.h>
 
 #include <kernel_internal.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/exception.h>
 #include <zephyr/logging/log_ctrl.h>
@@ -15,6 +14,8 @@
 #include <zephyr/fatal.h>
 #include <zephyr/debug/coredump.h>
 #include <zephyr/sys/reboot.h>
+
+ZASSERT_MODULE(KERNEL);
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
@@ -153,14 +154,14 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	 * not others; e.g. on ARC, x86_64, Xtensa with ASM2, ARM
 	 */
 	if (!IS_ENABLED(CONFIG_TEST)) {
-		__ASSERT(reason != K_ERR_KERNEL_PANIC,
+		ZASSERT(reason != K_ERR_KERNEL_PANIC,
 			 "Attempted to recover from a kernel panic condition");
 		/* FIXME: #17656 */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
 		if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
 #if defined(CONFIG_STACK_SENTINEL)
 			if (reason != K_ERR_STACK_CHK_FAIL) {
-				__ASSERT(0,
+				ZASSERT(0,
 				 "Attempted to recover from a fatal error in ISR");
 			 }
 #endif /* CONFIG_STACK_SENTINEL */
