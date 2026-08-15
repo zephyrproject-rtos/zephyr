@@ -448,7 +448,7 @@ void ifx_cat1_uart_enable_event(const struct device *dev, uint32_t event, bool e
 
 	irq_disable(config->irq_num);
 
-	NVIC_ClearPendingIRQ(config->irq_num);
+	k_irq_clear_pending(config->irq_num);
 
 	if (event & CY_SCB_UART_TRANSMIT_EMTPY) {
 		tx_mask |= CY_SCB_UART_TX_EMPTY;
