@@ -1249,7 +1249,6 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 
 	return 0;
 }
-
 #define IS_WITHIN(inner_start, inner_size, outer_start, outer_size) \
 	((inner_start) >= (outer_start) && (inner_size) <= (outer_size) && \
 	 ((inner_start) - (outer_start)) <= ((outer_size) - (inner_size)))
