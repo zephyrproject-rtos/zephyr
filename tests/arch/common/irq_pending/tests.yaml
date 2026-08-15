@@ -1,0 +1,11 @@
+common:
+  tags:
+    - kernel
+    - interrupt
+tests:
+  arch.interrupt.pending:
+    # Latching an interrupt on a disabled line needs a software trigger with a
+    # clearable pending state. get_available_nvic_line() gives us that on
+    # Cortex-M; GIC SGIs keep their pending state elsewhere than ICPENDR, so
+    # they are not a substitute here.
+    filter: CONFIG_ARCH_HAS_IRQ_PENDING_OPS and CONFIG_CPU_CORTEX_M
