@@ -466,14 +466,14 @@ static void uart_ra_sci_b_irq_err_enable(const struct device *dev)
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 
-	NVIC_EnableIRQ(data->fsp_config.eri_irq);
+	irq_enable(data->fsp_config.eri_irq);
 }
 
 static void uart_ra_sci_b_irq_err_disable(const struct device *dev)
 {
 	struct uart_ra_sci_b_data *data = dev->data;
 
-	NVIC_DisableIRQ(data->fsp_config.eri_irq);
+	irq_disable(data->fsp_config.eri_irq);
 }
 
 static int uart_ra_sci_b_irq_is_pending(const struct device *dev)
