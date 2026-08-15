@@ -192,7 +192,7 @@ static int set_cc(const struct device *dev, uint8_t id, uint32_t val, uint32_t f
 		 * for absolute depending on the flag.
 		 */
 		if (irq_on_late) {
-			NVIC_SetPendingIRQ(MXC_TMR_GET_IRQ(MXC_TMR_GET_IDX(regs)));
+			k_irq_set_pending(MXC_TMR_GET_IRQ(MXC_TMR_GET_IDX(regs)));
 		} else {
 			config->ch_data[id].callback = NULL;
 		}

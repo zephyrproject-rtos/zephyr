@@ -164,7 +164,7 @@ static int counter_max32_wut_set_alarm(const struct device *dev, uint8_t chan,
 
 	irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 	if (irq_on_late || !absolute) {
-		NVIC_SetPendingIRQ(cfg->irq_number);
+		k_irq_set_pending(cfg->irq_number);
 	} else {
 		data->alarm.callback = NULL;
 		data->alarm.user_data = NULL;
