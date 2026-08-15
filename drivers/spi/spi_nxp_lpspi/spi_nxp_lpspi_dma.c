@@ -9,8 +9,46 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
+
+/*
+ * eDMA is not coherent with the D-cache and nothing else in the path does
+ * cache maintenance, so a buffer in cached RAM is transferred stale.
+ */
+static void lpspi_dma_cache_clean_tx(const struct spi_buf_set *tx_bufs)
+{
+	if (!IS_ENABLED(CONFIG_DCACHE) || tx_bufs == NULL) {
+		return;
+	}
+
+	for (size_t i = 0; i < tx_bufs->count; i++) {
+		const struct spi_buf *buf = &tx_bufs->buffers[i];
+
+		if (buf->buf != NULL && buf->len != 0) {
+			sys_cache_data_flush_range((void *)buf->buf, buf->len);
+		}
+	}
+}
+
+static void lpspi_dma_cache_invd_rx(const struct spi_buf_set *rx_bufs)
+{
+	if (!IS_ENABLED(CONFIG_DCACHE) || rx_bufs == NULL) {
+		return;
+	}
+
+	for (size_t i = 0; i < rx_bufs->count; i++) {
+		const struct spi_buf *buf = &rx_bufs->buffers[i];
+
+		if (buf->buf != NULL && buf->len != 0) {
+			/* Clean too: a buffer not aligned to the line size
+			 * shares its first and last lines with other data
+			 */
+			sys_cache_data_flush_and_invd_range(buf->buf, buf->len);
+		}
+	}
+}
 
 /* These states indicate what's the status of RX and TX, also synchronization
  * status of DMA size of the next DMA transfer.
@@ -48,6 +86,8 @@ struct spi_nxp_dma_data {
 	 * size once and update the buffer pointers at the same time.
 	 */
 	size_t synchronize_dma_size;
+	/* kept for the cache invalidate at the end of the transfer */
+	const struct spi_buf_set *rx_bufs;
 };
 
 /*
@@ -333,6 +373,10 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 		 */
 		lpspi_wait_transfer_complete(spi_dev);
 		spi_context_cs_control(ctx, false);
+		/* Not after spi_context_wait_for_completion(), which does not
+		 * wait for an asynchronous transfer
+		 */
+		lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
 		spi_context_complete(ctx, spi_dev, 0);
 		break;
 
@@ -350,6 +394,8 @@ error:
 	 * has already failed
 	 */
 	spi_context_cs_control(ctx, false);
+	/* The DMA may have written part of the RX data before failing */
+	lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
 	spi_context_complete(ctx, spi_dev, ret);
 }
 
@@ -392,6 +438,10 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0);
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
+	/* The source does not change in flight, so one clean covers every chunk */
+	lpspi_dma_cache_clean_tx(tx_bufs);
+	dma_data->rx_bufs = rx_bufs;
+
 	/* Set next dma size is invalid. */
 	dma_data->synchronize_dma_size = 0;
 	dma_data->state = LPSPI_TRANSFER_STATE_NULL;
@@ -412,6 +462,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	if (ret) {
 		spi_context_cs_control(ctx, false);
 	}
+
 out:
 	spi_context_release(ctx, ret);
 	return ret;
