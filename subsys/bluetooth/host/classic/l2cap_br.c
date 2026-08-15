@@ -2860,7 +2860,16 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	br_chan->required_sec_level = server->sec_level;
 	br_chan->psm = psm;
 
-	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
+	if (!l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy)) {
+		/* Give the channel the server just accepted back to it,
+		 * following the normal channel lifecycle so that the server
+		 * knows the channel object is no longer in use.
+		 */
+		bt_l2cap_br_chan_del(chan);
+		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
+		goto no_chan;
+	}
+
 	BR_CHAN(chan)->tx.cid = scid;
 	br_chan->ident = ident;
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
