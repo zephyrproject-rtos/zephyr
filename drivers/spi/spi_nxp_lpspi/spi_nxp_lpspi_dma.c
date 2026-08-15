@@ -51,6 +51,34 @@ struct spi_nxp_dma_data {
 };
 
 /*
+ * TCR is loaded from the transmit FIFO, so a read taken while the FIFO is
+ * loading a new command word returns a value that was never programmed.
+ * Read until two reads agree, as LPSPI_GetTcr() in the HAL does.
+ */
+static uint32_t lpspi_read_tcr(LPSPI_Type *base)
+{
+	uint32_t previous = base->TCR;
+	int attempts = 16;
+
+	while (attempts-- > 0) {
+		uint32_t current;
+
+		/* ERR050606: touch another register between TCR reads */
+		(void)base->SR;
+		current = base->TCR;
+
+		if (current == previous) {
+			return current;
+		}
+
+		previous = current;
+	}
+
+	LOG_WRN("TCR did not read back consistently");
+	return previous;
+}
+
+/*
  * Issue a TCR (Transmit Command Register) command to properly end RX DMA transfers
  * on certain LPSPI versions. The behavior depends on:
  *
@@ -80,7 +108,7 @@ static void spi_mcux_issue_TCR(const struct device *dev)
 	 * On a newer LPSPI version, only issue TCR when hold on CS feature is disabled.
 	 */
 	if (major_ver < 2 || !(spi_cfg->operation & SPI_HOLD_ON_CS)) {
-		base->TCR &= ~LPSPI_TCR_CONTC_MASK;
+		base->TCR = lpspi_read_tcr(base) & ~LPSPI_TCR_CONTC_MASK;
 	}
 }
 
@@ -320,7 +348,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	}
 
 	/* Always use continuous mode to satisfy SPI API requirements. */
-	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	base->TCR = lpspi_read_tcr(base) | LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
 
 	/* Please set both watermarks as 0 because there are some synchronize requirements
 	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
