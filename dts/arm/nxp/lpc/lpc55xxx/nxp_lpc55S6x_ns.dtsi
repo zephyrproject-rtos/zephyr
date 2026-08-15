@@ -4,12 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LPC55S6X_IAP_BASE 40034000
-#define LPC55S6X_FLASH_BASE 0
-#define LPC55S6X_FLASH_RESERVED_BASE 9d800
-#define LPC55S6X_UUID_BASE 9fc70
-#define LPC55S6X_BOOT_ROM_BASE 3000000
-
 / {
 	soc {
 		sram: sram@4000000 {
@@ -17,15 +11,10 @@
 		};
 
 		peripheral: peripheral@40000000 {
-			ranges = <0x0 0x40000000 0x10000000>;
+			ranges = <0x0 0x40000000 0x10000000>,
+				 <0x10000000 0x0 0x3020000>;
 		};
 	};
 };
 
 #include "nxp_lpc55S6x_common.dtsi"
-
-#undef LPC55S6X_IAP_BASE
-#undef LPC55S6X_FLASH_BASE
-#undef LPC55S6X_FLASH_RESERVED_BASE
-#undef LPC55S6X_UUID_BASE
-#undef LPC55S6X_BOOT_ROM_BASE

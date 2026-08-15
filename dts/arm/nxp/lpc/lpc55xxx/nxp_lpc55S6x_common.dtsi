@@ -25,43 +25,6 @@
 		zephyr,flash-controller = &iap;
 	};
 
-	soc {
-		iap: flash-controller@LPC55S6X_IAP_BASE {
-			compatible = "nxp,iap-fmc55";
-			reg = <DT_ADDR(LPC55S6X_IAP_BASE) 0x1000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-
-			flash0: flash@LPC55S6X_FLASH_BASE {
-				compatible = "soc-nv-flash";
-				reg = <DT_ADDR(LPC55S6X_FLASH_BASE) DT_SIZE_K(630)>;
-				ranges = <0x0 DT_ADDR(LPC55S6X_FLASH_BASE) DT_SIZE_K(630)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				erase-block-size = <512>;
-				write-block-size = <512>;
-			};
-
-			flash_reserved: flash@LPC55S6X_FLASH_RESERVED_BASE {
-				compatible = "soc-nv-flash";
-				reg = <DT_ADDR(LPC55S6X_FLASH_RESERVED_BASE) DT_SIZE_K(9)>;
-				status = "disabled";
-			};
-
-			uuid: flash@LPC55S6X_UUID_BASE {
-				compatible = "nxp,lpc-uid";
-				reg = <DT_ADDR(LPC55S6X_UUID_BASE) 0x10>;
-			};
-
-			boot_rom: flash@LPC55S6X_BOOT_ROM_BASE {
-				compatible = "soc-nv-flash";
-				reg = <DT_ADDR(LPC55S6X_BOOT_ROM_BASE) DT_SIZE_K(128)>;
-			};
-		};
-	};
-
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -143,6 +106,41 @@
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	iap: flash-controller@34000 {
+		compatible = "nxp,iap-fmc55";
+		reg = <0x34000 0x1000>;
+		ranges = <0x0 0x10000000 0x3020000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(630)>;
+			ranges = <0x0 0x0 DT_SIZE_K(630)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <512>;
+			write-block-size = <512>;
+		};
+
+		flash_reserved: flash@9d800 {
+			compatible = "soc-nv-flash";
+			reg = <0x9d800 DT_SIZE_K(9)>;
+			status = "disabled";
+		};
+
+		uuid: flash@9fc70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x9fc70 0x10>;
+		};
+
+		boot_rom: flash@3000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x3000000 DT_SIZE_K(128)>;
+		};
+	};
 
 	pmc: pmc@20000 {
 		compatible = "nxp,lpc-pmc-hwinfo";
