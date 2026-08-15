@@ -63,6 +63,29 @@ int arm_irq_is_enabled(unsigned int irq)
 	return arm_gic_irq_is_enabled(irq);
 }
 
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+void arm_irq_clear_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_clear_pending(irq);
+}
+
+void arm_irq_set_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_set_pending(irq);
+}
+
+bool arm_irq_is_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	return arm_gic_irq_is_pending(irq);
+}
+#endif
+
 /**
  * @internal
  *

@@ -15,6 +15,7 @@
 #include <zephyr/arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -316,6 +317,58 @@ void z_smp_global_unlock(unsigned int key);
  * @return interrupt enable state, true or false
  */
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS) || defined(__DOXYGEN__)
+/**
+ * @brief Clear the pending state of an IRQ.
+ *
+ * Discard a latched, not yet serviced interrupt from source @a irq. Only the
+ * controller's latched state is affected: a level-triggered line still
+ * asserted by the peripheral pends again immediately.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
+{
+	arch_irq_clear_pending(irq);
+}
+
+/**
+ * @brief Set the pending state of an IRQ.
+ *
+ * Latch source @a irq in the interrupt controller as if the hardware had
+ * raised it. The peripheral behind @a irq knows nothing about a
+ * software-raised interrupt.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
+{
+	arch_irq_set_pending(irq);
+}
+
+/**
+ * @brief Get IRQ pending state.
+ *
+ * Report whether an interrupt from source @a irq is latched in the interrupt
+ * controller and has not been serviced yet. The result is a momentary
+ * snapshot.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ *
+ * @return interrupt pending state, true or false
+ */
+static ALWAYS_INLINE bool k_irq_is_pending(unsigned int irq)
+{
+	return arch_irq_is_pending(irq);
+}
+#endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */
 
 /**
  * @}
