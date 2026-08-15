@@ -143,7 +143,7 @@ static inline void mcux_rtc_jdp_alarm_sw_pend(struct mcux_rtc_jdp_data *data,
 {
 	data->sw_pending_mask |= BIT(chan_id);
 	irq_enable(config->irqn);
-	NVIC_SetPendingIRQ(config->irqn);
+	k_irq_set_pending(config->irqn);
 }
 
 static inline int mcux_rtc_jdp_alarm_handle_late_or_drop(struct mcux_rtc_jdp_data *data,
