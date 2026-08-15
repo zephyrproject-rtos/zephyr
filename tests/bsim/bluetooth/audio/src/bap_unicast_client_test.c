@@ -44,6 +44,8 @@ LOG_MODULE_REGISTER(bap_unicast_client_test);
 
 extern enum bst_result_t bst_result;
 
+#define CIG_PACKING BT_ISO_PACKING_SEQUENTIAL
+
 static struct audio_test_stream test_streams[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *g_sinks[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT];
 static struct bt_bap_ep *g_sources[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
@@ -712,10 +714,74 @@ static void codec_configure_streams(size_t stream_cnt)
 	}
 }
 
+static void check_unicast_group_info(struct bt_bap_unicast_group *unicast_group,
+				     const struct bt_bap_qos_cfg *rx_qos,
+				     const struct bt_bap_qos_cfg *tx_qos,
+				     bool expected_has_been_connected)
+{
+	struct bt_bap_unicast_group_info info;
+	int err;
+
+	err = bt_bap_unicast_group_get_info(unicast_group, &info);
+	if (err != 0) {
+		FAIL("Unable to get unicast group info: %d\n", err);
+		return;
+	}
+
+	if (info.sink_pd != tx_qos->pd) {
+		FAIL("Unexpected sink PD %u (expected %u)\n", info.sink_pd, tx_qos->pd);
+		return;
+	}
+
+	if (info.source_pd != rx_qos->pd) {
+		FAIL("Unexpected source PD %u (expected %u)\n", info.source_pd, rx_qos->pd);
+		return;
+	}
+
+	if (info.c_to_p_interval != tx_qos->interval) {
+		FAIL("Unexpected C to P interval %u (expected %u)\n", info.c_to_p_interval,
+		     tx_qos->interval);
+		return;
+	}
+
+	if (info.p_to_c_interval != rx_qos->interval) {
+		FAIL("Unexpected P to C interval %u (expected %u)\n", info.p_to_c_interval,
+		     rx_qos->interval);
+		return;
+	}
+
+	if (info.c_to_p_latency != tx_qos->latency) {
+		FAIL("Unexpected C to P latency %u (expected %u)\n", info.c_to_p_latency,
+		     tx_qos->latency);
+		return;
+	}
+
+	if (info.p_to_c_latency != rx_qos->latency) {
+		FAIL("Unexpected P to C latency %u (expected %u)\n", info.p_to_c_latency,
+		     rx_qos->latency);
+		return;
+	}
+
+	if (info.framing != tx_qos->framing) {
+		FAIL("Unexpected framing %u (expected %u)\n", info.framing, tx_qos->framing);
+		return;
+	}
+
+	if (info.packing != CIG_PACKING) {
+		FAIL("Unexpected packing %u (expected %u)\n", info.packing, CIG_PACKING);
+		return;
+	}
+
+	if (info.has_been_connected != expected_has_been_connected) {
+		FAIL("Unexpected has_been_connected %d (expected %d)\n", info.has_been_connected,
+		     expected_has_been_connected);
+		return;
+	}
+}
+
 static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 				  size_t stream_cnt)
 {
-	struct bt_bap_unicast_group_info info;
 	int err;
 
 	UNSET_FLAG(flag_stream_qos_configured);
@@ -734,22 +800,7 @@ static void qos_configure_streams(struct bt_bap_unicast_group *unicast_group,
 		(void)k_sleep(K_MSEC(1U));
 	}
 
-	err = bt_bap_unicast_group_get_info(unicast_group, &info);
-	if (err != 0) {
-		FAIL("Unable to QoS configure streams: %d\n", err);
-		return;
-	}
-
-	if (info.sink_pd != preset_16_2_1.qos.pd) {
-		FAIL("Unexpected sink PD %u (expected %u)\n", info.sink_pd, preset_16_2_1.qos.pd);
-		return;
-	}
-
-	if (info.source_pd != preset_16_2_1.qos.pd) {
-		FAIL("Unexpected source PD %u (expected %u)\n", info.source_pd,
-		     preset_16_2_1.qos.pd);
-		return;
-	}
+	check_unicast_group_info(unicast_group, &preset_16_2_1.qos, &preset_16_2_1.qos, false);
 }
 
 static int enable_stream(struct bt_bap_stream *stream)
@@ -1092,7 +1143,7 @@ static size_t create_unicast_group(struct bt_bap_unicast_group **unicast_group)
 
 	param.params = pair_params;
 	param.params_count = pair_cnt;
-	param.packing = BT_ISO_PACKING_SEQUENTIAL;
+	param.packing = CIG_PACKING;
 
 	/* Require controller support for CIGs */
 	err = bt_bap_unicast_group_create(&param, unicast_group);
@@ -1278,7 +1329,7 @@ static void test_main_async_group(void)
 	struct bt_bap_unicast_group_param param = {
 		.params = &pair_param,
 		.params_count = 1U,
-		.packing = BT_ISO_PACKING_SEQUENTIAL,
+		.packing = CIG_PACKING,
 	};
 	struct bt_bap_unicast_group *unicast_group;
 	int err;
@@ -1291,6 +1342,8 @@ static void test_main_async_group(void)
 
 		return;
 	}
+
+	check_unicast_group_info(unicast_group, &rx_qos, &tx_qos, false);
 
 	deinit();
 
@@ -1318,7 +1371,7 @@ static void test_main_reconf_group(void)
 	struct bt_bap_unicast_group_param param = {
 		.params = &pair_param,
 		.params_count = 1U,
-		.packing = BT_ISO_PACKING_SEQUENTIAL,
+		.packing = CIG_PACKING,
 	};
 	struct bt_bap_unicast_group *unicast_group;
 	int err;
@@ -1332,6 +1385,8 @@ static void test_main_reconf_group(void)
 		return;
 	}
 
+	check_unicast_group_info(unicast_group, &preset_16_2_1.qos, &preset_16_2_1.qos, false);
+
 	rx_param.qos = &preset_16_2_2.qos;
 	tx_param.qos = &preset_16_2_2.qos;
 	err = bt_bap_unicast_group_reconfig(unicast_group, &param);
@@ -1340,6 +1395,8 @@ static void test_main_reconf_group(void)
 
 		return;
 	}
+
+	check_unicast_group_info(unicast_group, &preset_16_2_2.qos, &preset_16_2_2.qos, false);
 
 	deinit();
 

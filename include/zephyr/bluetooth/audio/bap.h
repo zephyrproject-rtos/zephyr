@@ -1573,9 +1573,10 @@ int bt_bap_unicast_group_foreach_stream(struct bt_bap_unicast_group *unicast_gro
 					bt_bap_unicast_group_foreach_stream_func_t func,
 					void *user_data);
 
-/** Structure holding information of audio stream endpoint */
+/** Structure holding information of a unicast group */
 struct bt_bap_unicast_group_info {
-	/** Presentation delay for sink ASEs
+	/**
+	 * @brief Presentation delay for sink ASEs (central to peripheral audio direction)
 	 *
 	 * Will be @ref BT_BAP_PD_UNSET if no sink streams have been added to group.
 	 * The value does not reflect what has been configured on any remote ASEs, but only the
@@ -1583,13 +1584,79 @@ struct bt_bap_unicast_group_info {
 	 */
 	uint32_t sink_pd;
 
-	/** Presentation delay for source ASEs
+	/**
+	 * @brief Presentation delay for source ASEs (peripheral to central audio direction)
 	 *
 	 * Will be @ref BT_BAP_PD_UNSET if no source streams have been added to group.
 	 * The value does not reflect what has been configured on any remote ASEs, but only the
 	 * local value from when the group was created or reconfigured.
 	 */
 	uint32_t source_pd;
+
+	/**
+	 * @brief Central to Peripheral SDU interval in microseconds
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint32_t c_to_p_interval;
+
+	/**
+	 * @brief Peripheral to Central SDU interval in microseconds
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint32_t p_to_c_interval;
+
+	/**
+	 * @brief Central to Peripheral maximum transport latency in milliseconds
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint16_t c_to_p_latency;
+
+	/**
+	 * @brief Peripheral to Central maximum transport latency in milliseconds
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint16_t p_to_c_latency;
+
+	/** @brief The framing of the streams in the group */
+	enum bt_bap_qos_cfg_framing framing;
+
+	/**
+	 * @brief The packing of the group
+	 *
+	 * @ref BT_ISO_PACKING_SEQUENTIAL or @ref BT_ISO_PACKING_INTERLEAVED.
+	 */
+	uint8_t packing;
+
+	/**
+	 * @brief Whether any stream in the group has been connected
+	 *
+	 * If this is true, then the group can no longer be modified with e.g.
+	 * bt_bap_unicast_group_reconfig() or bt_bap_unicast_group_add_streams().
+	 */
+	bool has_been_connected;
+
+#if defined(CONFIG_BT_ISO_TEST_PARAMS) || defined(__DOXYGEN__)
+	/**
+	 * @brief Central to Peripheral flush timeout in multiples of the ISO interval
+	 *
+	 * Will be 0 if no sink streams have been added to the group.
+	 */
+	uint8_t c_to_p_ft;
+
+	/**
+	 * @brief Peripheral to Central flush timeout in multiples of the ISO interval
+	 *
+	 * Will be 0 if no source streams have been added to the group.
+	 */
+	uint8_t p_to_c_ft;
+
+	/** @brief ISO interval in 1.25 ms units */
+	uint16_t iso_interval;
+#endif /* CONFIG_BT_ISO_TEST_PARAMS */
 };
 
 /**
