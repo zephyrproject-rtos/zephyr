@@ -14,8 +14,13 @@ static int board_init(void)
 }
 
 /*
- * Because platform is using ARM SCMI, drivers like scmi, mbox etc. are
- * initialized during PRE_KERNEL_1. Common init hooks is not able to use.
- * SoC early init and board early init could be run during PRE_KERNEL_2 instead.
+ * This runs after the devices it needs, which initialize at PRE_KERNEL, so
+ * neither platform init hook fits: the early one runs before any of them and
+ * the late one only after all of POST_KERNEL. An anchored entry runs at the
+ * end of PRE_KERNEL instead, ordered after the SoC initialization where the
+ * SoC registers one.
  */
-SYS_INIT(board_init, PRE_KERNEL_2, 10);
+#define SYS_ANCHOR_board_init                                                  \
+	SYS_ANCHOR_AFTER_IF(CONFIG_SOC_INIT_ANCHOR, SYS_ANCHOR_soc_init,       \
+			    board_init)
+SYS_INIT_ANCHORED(board_init, board_init, PRE_KERNEL);
