@@ -140,4 +140,12 @@ static int lpm_timer_init(void)
 	return 0;
 }
 
-SYS_INIT(lpm_timer_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Sets up the MCWDT and connects its interrupt, so it has to run once the
+ * devices it shares the SoC clocking and interrupt controller with are up. An
+ * anchored entry runs at the end of PRE_KERNEL, after every device ordered by
+ * priority or by devicetree, which is the position PRE_KERNEL_2 was standing
+ * in for.
+ */
+#define SYS_ANCHOR_pse84_lpm_timer SYS_ANCHOR(pse84_lpm_timer)
+SYS_INIT_ANCHORED(pse84_lpm_timer, lpm_timer_init, PRE_KERNEL);
