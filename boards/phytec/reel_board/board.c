@@ -26,5 +26,9 @@ static int board_reel_board_init(void)
 	return 0;
 }
 
-SYS_INIT(board_reel_board_init, PRE_KERNEL_2,
-	 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Writes the GPIO registers directly, so it depends on no device. An anchored
+ * entry keeps it at the end of PRE_KERNEL, where the deprecated level put it.
+ */
+#define SYS_ANCHOR_reel_board SYS_ANCHOR(reel_board)
+SYS_INIT_ANCHORED(reel_board, board_reel_board_init, PRE_KERNEL);

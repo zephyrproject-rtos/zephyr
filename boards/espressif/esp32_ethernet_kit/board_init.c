@@ -25,4 +25,5 @@ static int board_esp32_ethernet_kit_init(void)
 	return res;
 }
 
-SYS_INIT(board_esp32_ethernet_kit_init, PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY);
+/* Ordered after the GPIO controller it configures the PHY reset pin on. */
+SYS_INIT_DEPENDS(board_esp32_ethernet_kit_init, PRE_KERNEL, DT_NODELABEL(gpio0));

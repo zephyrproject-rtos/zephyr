@@ -31,4 +31,5 @@ static int board_heltec_wifi_lora32_v2_init(void)
 	return 0;
 }
 
-SYS_INIT(board_heltec_wifi_lora32_v2_init, PRE_KERNEL_2, CONFIG_GPIO_INIT_PRIORITY);
+/* Ordered after the GPIO controller whose pins it drives. */
+SYS_INIT_DEPENDS(board_heltec_wifi_lora32_v2_init, PRE_KERNEL, DT_NODELABEL(gpio0));
