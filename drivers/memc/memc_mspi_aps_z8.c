@@ -13,6 +13,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/drivers/memc.h>
 #include "memc_mspi_aps_z8.h"
 #if CONFIG_SOC_FAMILY_AMBIQ
 #include "mspi_ambiq.h"
@@ -216,6 +217,7 @@ static int memc_mspi_aps_z8_exit_command_mode(const struct device *psram)
 	data->dev_cfg = cfg->tar_dev_cfg;
 	return 0;
 }
+#endif /* CONFIG_PM_DEVICE */
 
 static void acquire(const struct device *psram)
 {
@@ -236,7 +238,6 @@ static void acquire(const struct device *psram)
 		}
 	}
 }
-#endif /* CONFIG_PM_DEVICE */
 
 static void release(const struct device *psram)
 {
@@ -632,6 +633,76 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 	return 0;
 }
 
+/**
+ * @brief Writes data to APS Z8 PSRAM.
+ *
+ * Performs a linear burst write to the specified PSRAM address.
+ *
+ * @param dev PSRAM device.
+ * @param addr Address to write to.
+ * @param data Data buffer to write.
+ * @param len Number of bytes to write.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+static int memc_mspi_aps_z8_write(const struct device *dev,
+				  uint32_t addr,
+				  const uint8_t *data,
+				  size_t len)
+{
+	int ret;
+
+	acquire(dev);
+	ret = memc_mspi_aps_z8_command_write(dev,
+					     APS_Z8_LINEAR_BURST_WRITE,
+					     addr,
+					     (uint8_t *)data,
+					     len);
+	release(dev);
+
+	return ret;
+}
+
+/**
+ * @brief Reads data from APS Z8 PSRAM.
+ *
+ * Performs a linear burst read from the specified PSRAM address.
+ *
+ * @param dev PSRAM device.
+ * @param addr Address to read from.
+ * @param data Buffer to store the read data.
+ * @param len Number of bytes to read.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+static int memc_mspi_aps_z8_read(const struct device *dev,
+				 uint32_t addr,
+				 uint8_t *data,
+				 size_t len)
+{
+	int ret;
+
+	acquire(dev);
+	ret = memc_mspi_aps_z8_command_read(dev,
+					    APS_Z8_LINEAR_BURST_READ,
+					    addr,
+					    data,
+					    len);
+	release(dev);
+
+	return ret;
+}
+
+/**
+ * @brief APS Z8 PSRAM MEMC API.
+ *
+ * Provides read and write operations for the APS Z8 PSRAM device.
+ */
+static DEVICE_API(memc, memc_mspi_aps_z8_api) = {
+	.read  = memc_mspi_aps_z8_read,
+	.write = memc_mspi_aps_z8_write,
+};
+
 #define MSPI_DEVICE_CONFIG_OCTAL(n)                                                               \
 	{                                                                                         \
 		.ce_num             = DT_INST_PROP(n, mspi_hardware_ce_num),                      \
@@ -702,6 +773,6 @@ static int memc_mspi_aps_z8_init(const struct device *psram)
 			      &memc_mspi_aps_z8_config_##n,                                       \
 			      POST_KERNEL,                                                        \
 			      CONFIG_MEMC_INIT_PRIORITY,                                          \
-			      NULL);
+			      &memc_mspi_aps_z8_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MEMC_MSPI_APS_Z8)
