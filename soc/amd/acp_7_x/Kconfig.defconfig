@@ -3,7 +3,7 @@
 
 if SOC_ACP_7_X
 
-config DCACHE
+configdefault DCACHE
 	default y
 
 choice CACHE_TYPE
