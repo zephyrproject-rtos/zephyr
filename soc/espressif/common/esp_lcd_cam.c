@@ -5,6 +5,7 @@
 
 #include <hal/cam_ll.h>
 #include <zephyr/device.h>
+#include <zephyr/init.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/esp32_clock_control.h>
@@ -59,4 +60,12 @@ static int esp32_lcd_cam_init(void)
 	return 0;
 }
 
-SYS_INIT(esp32_lcd_cam_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Ordered by the devicetree rather than by a level: this needs the clock
+ * controller (and the DMA controller the node names) that it takes from the
+ * lcd_cam node's own properties, and it has to run before the image sensor is
+ * probed over I2C, which happens at POST_KERNEL. Taking the node's place in
+ * the devicetree order satisfies both, and the node has no device of its own
+ * to be confused with.
+ */
+SYS_INIT_DEPENDS(esp32_lcd_cam_init, PRE_KERNEL, ESP32_LCD_CAM_INST);
