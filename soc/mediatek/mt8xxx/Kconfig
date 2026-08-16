@@ -3,3 +3,5 @@
 
 config SOC_FAMILY_MTK
 	select XTENSA
+	select CPU_HAS_DCACHE
+	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
