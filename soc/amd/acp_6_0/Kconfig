@@ -5,3 +5,4 @@ config SOC_ACP_6_0
 	select XTENSA_HAL if ("$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xcc" && "$(ZEPHYR_TOOLCHAIN_VARIANT)" != "xt-clang")
 	select XTENSA_RESET_VECTOR
 	select ATOMIC_OPERATIONS_BUILTIN
+	select CPU_HAS_DCACHE
