@@ -366,6 +366,24 @@ struct init_entry {
 		__used __noasan Z_INIT_ENTRY_NAME(name) = {                               \
 			.init_fn = (init_fn_), .dev = NULL}
 
+/**
+ * @brief Anchor left by the architecture's SMP bring-up.
+ *
+ * Under @kconfig{CONFIG_SMP} the kernel runs arch_smp_init() as an anchored
+ * entry at the end of `PRE_KERNEL`; it is what makes the inter-core hardware
+ * (IPIs, and on some architectures a shared free-running counter) usable.
+ * Drivers that touch such hardware while initializing order themselves after
+ * it, typically with a conditional dependency so that they still initialize
+ * on a build without SMP:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_my_timer \
+ *	SYS_ANCHOR_AFTER_IF(CONFIG_SMP, SYS_ANCHOR_arch_smp_init, my_timer)
+ * SYS_INIT_ANCHORED(my_timer, my_timer_init, PRE_KERNEL);
+ * @endcode
+ */
+#define SYS_ANCHOR_arch_smp_init SYS_ANCHOR(arch_smp_init)
+
 /** @} */
 
 #ifdef __cplusplus

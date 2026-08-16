@@ -543,6 +543,14 @@ void __weak z_early_rand_get(uint8_t *buf, size_t length)
  *
  * @return Does not return
  */
+#if defined(CONFIG_SMP)
+/* Brings up the architecture's inter-core hardware. Anchored rather than given
+ * a priority so that drivers can declare a dependency on it; it runs at the end
+ * of PRE_KERNEL, after every device ordered by priority or by devicetree.
+ */
+SYS_INIT_ANCHORED(arch_smp_init, arch_smp_init, PRE_KERNEL);
+#endif
+
 __boot_func
 FUNC_NO_STACK_PROTECTOR
 FUNC_NORETURN void z_cstart(void)
@@ -577,11 +585,12 @@ FUNC_NORETURN void z_cstart(void)
 		entry->init_fn();
 	}
 
-	/* perform basic hardware initialization */
+	/* perform basic hardware initialization. Under SMP this level also
+	 * runs arch_smp_init(), registered as an anchored entry so that
+	 * drivers needing the inter-core hardware can order themselves after
+	 * it rather than being pushed into a later level.
+	 */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL);
-#if defined(CONFIG_SMP)
-	arch_smp_init();
-#endif
 	/* Deprecated PRE_KERNEL_2 compatibility level, kept while it is
 	 * phased out. Migrate entries to PRE_KERNEL with a priority ordering
 	 * them after their dependencies.
