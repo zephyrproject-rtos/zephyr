@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_MCHP_G1
-	bool "Microchip G1 DAC Driver"
+	bool "Microchip G1 DAC driver"
 	depends on DT_HAS_MICROCHIP_DAC_G1_ENABLED
 	default y
 	select PINCTRL
@@ -40,7 +40,7 @@ config DAC_MCHP_G1_OVERSAMPLING_RATIO
 endif # DAC_MCHP_G1
 
 config DAC_MCHP_G2
-	bool "Microchip G2 DAC Driver"
+	bool "Microchip G2 DAC driver"
 	depends on DT_HAS_MICROCHIP_DAC_G2_ENABLED
 	default y
 	select PINCTRL
