@@ -38,7 +38,7 @@ endif # PM
 
 if HAS_MCUX_SYSCON_LPCAC
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE
