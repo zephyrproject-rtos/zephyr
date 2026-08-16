@@ -19,7 +19,7 @@ choice CACHE_TYPE
 endchoice
 
 # LPCAC uses a 256-byte per-line, write-through organization (RM LPCAC chapter).
-config ICACHE_LINE_SIZE
+configdefault ICACHE_LINE_SIZE
 	default 256
 
 config NUM_IRQS
