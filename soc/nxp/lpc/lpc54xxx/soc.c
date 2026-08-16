@@ -245,6 +245,13 @@ int _slave_init(void)
 	return 0;
 }
 
-SYS_INIT(_slave_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Releases the second core, which expects the devices of this core to be up
+ * first. An anchored entry runs at the end of PRE_KERNEL, after every device
+ * ordered by priority or by devicetree, which is the position PRE_KERNEL_2 was
+ * standing in for.
+ */
+#define SYS_ANCHOR_lpc54xxx_slave SYS_ANCHOR(lpc54xxx_slave)
+SYS_INIT_ANCHORED(lpc54xxx_slave, _slave_init, PRE_KERNEL);
 
 #endif /*CONFIG_SECOND_CORE_MCUX && CONFIG_SOC_LPC54114_M4 */
