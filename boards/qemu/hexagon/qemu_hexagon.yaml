@@ -1,0 +1,35 @@
+identifier: qemu_hexagon
+name: QEMU Hexagon Virtual Machine
+type: qemu
+simulation:
+  - name: qemu
+    exec: qemu-system-hexagon
+arch: hexagon
+toolchain:
+  - host
+  - hexagon
+preferred_toolchain: hexagon
+env:
+  - HEXAGON_TOOLCHAIN_PATH
+ram: 16384
+testing:
+  default: true
+  timeout_multiplier: 2
+  ignore_tags:
+    - net
+    - bluetooth
+    - cpp
+  only_tags:
+    - cbprintf
+    - cmsis_rtos
+    - heap
+    - introduction
+    - log_api
+    - log_output
+    - logging
+    - mipi-sys-t
+    - security
+    - smf
+supported:
+  - uart
+vendor: qemu
