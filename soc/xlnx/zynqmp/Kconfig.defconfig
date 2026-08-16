@@ -24,7 +24,7 @@ configdefault DCACHE_LINE_SIZE
 configdefault ICACHE_LINE_SIZE
 	default 64
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config ARM_ARCH_TIMER
