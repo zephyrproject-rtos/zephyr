@@ -6,7 +6,7 @@ if SOC_SERIES_APOLLO5X
 
 rsource "Kconfig.defconfig.apollo5*"
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 configdefault DCACHE_LINE_SIZE
