@@ -277,8 +277,12 @@ status
 
     The devicetree specification allows this property to have values
     ``"okay"``, ``"disabled"``, ``"reserved"``, ``"fail"``, and ``"fail-sss"``.
-    Only the values ``"okay"`` and ``"disabled"`` are currently relevant to
-    Zephyr; use of other values currently results in undefined behavior.
+    Zephyr treats any value other than ``"okay"`` as disabled. In particular,
+    ``"reserved"`` is used to document that a node exists but is enabled
+    elsewhere (e.g. by another core or domain in a multi-domain application);
+    it is handled the same as ``"disabled"`` by ``edtlib``. Use of the
+    remaining values (``"fail"`` and ``"fail-sss"``) is not currently
+    supported by Zephyr.
 
     A node is considered enabled if its status property is either ``"okay"`` or
     not defined (i.e. does not exist in the devicetree source). Nodes with
