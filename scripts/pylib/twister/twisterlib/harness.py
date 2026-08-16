@@ -634,7 +634,8 @@ class Pytest(ReportHarness):
         command = [
             sys.executable, '-m', 'pytest', '-s', '-v',
             '--log-cli-level=DEBUG',
-            '--log-cli-format=%(levelname)s: %(message)s',
+            '--log-cli-format=%(asctime)s %(levelname)s: %(message)s',
+            '--log-date-format="%Y-%m-%d %H:%M:%S"',
             f'--junit-xml={self.report_file}',
             f'--twister-config={self.pytest_config_file}'
         ]
