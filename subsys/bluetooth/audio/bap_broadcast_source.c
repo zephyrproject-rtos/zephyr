@@ -387,7 +387,6 @@ broadcast_source_setup_stream(uint8_t index, struct bt_bap_stream *stream,
 	bt_bap_stream_attach(NULL, stream, ep);
 	stream->qos = &ep->qos;
 	stream->group = source;
-	ep->broadcast_source = source;
 
 	return 0;
 }
@@ -538,7 +537,6 @@ static void broadcast_source_cleanup(struct bt_bap_broadcast_source *source)
 			bt_bap_iso_unbind_ep(stream->ep->iso, stream->ep);
 			stream->iso = NULL;
 			stream->ep->stream = NULL;
-			stream->ep->broadcast_source = NULL;
 			stream->ep = NULL;
 			stream->codec_cfg = NULL;
 			stream->qos = NULL;
