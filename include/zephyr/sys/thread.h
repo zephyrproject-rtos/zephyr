@@ -23,6 +23,14 @@ struct k_thread;
 struct k_sig_set;
 
 /**
+ * @brief Duplicate the caller's writable memory into the child
+ *
+ * The child receives copies of the calling process's writable memory at the
+ * same virtual addresses and resumes at the clone point (the fork() model).
+ */
+#define SYS_CLONE_VM_COPY BIT64(0)
+
+/**
  * @brief Create the child stopped
  *
  * The child is fully constructed but its initial thread is not started; the
@@ -70,7 +78,9 @@ struct sys_clone_args {
 	 * Initial signal mask of the created thread, or NULL for the
 	 * thread-creation inheritance rules. As with k_sig_mask(), a
 	 * user-mode request cannot mask K_SIG_KILL or K_SIG_STOP; a
-	 * kernel-mode caller may. Requires CONFIG_SIGNAL.
+	 * kernel-mode caller may. Requires CONFIG_SIGNAL and is invalid
+	 * with SYS_CLONE_VM_COPY (a forked child always inherits the
+	 * caller's mask).
 	 */
 	const struct k_sig_set *sigmask;
 };

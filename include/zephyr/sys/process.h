@@ -106,6 +106,21 @@ __syscall k_session_t sys_setsid(void);
 __syscall int sys_setpgid(k_pid_t pid, k_pgrp_t pgrp);
 
 /**
+ * @brief Create a child process that resumes at the call site (fork)
+ *
+ * Equivalent to sys_clone() with SYS_CLONE_VM_COPY and no entry point: the
+ * child is a copy of the calling process resuming from this call, which
+ * returns twice - the child handle to the parent, NULL to the child.
+ *
+ * @param child parent-side storage for the child's handle
+ *
+ * @retval 0 on success, in both the parent and the child
+ * @retval -ENOSYS until the address-space duplication substrate is available
+ * @retval -EAGAIN if no process record is available
+ */
+__syscall int sys_fork(k_pid_t *child);
+
+/**
  * @}
  */
 

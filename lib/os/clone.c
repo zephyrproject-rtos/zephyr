@@ -18,11 +18,19 @@
 #include <zephyr/sys/thread.h>
 #include <ksched.h>
 
-/* process-tier provider (process.c); this dispatch is its only consumer */
+/* process-tier providers (process.c); this dispatch is their only consumer */
 #ifdef CONFIG_SYS_PROCESS
 int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child);
+int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child);
 #else
 static inline int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
+{
+	ARG_UNUSED(args);
+	ARG_UNUSED(child);
+	return -ENOTSUP;
+}
+
+static inline int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
 {
 	ARG_UNUSED(args);
 	ARG_UNUSED(child);
@@ -104,11 +112,20 @@ static int clone_thread(const struct sys_clone_args *args, k_pid_t *child)
 int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 {
 	if ((args == NULL) ||
-	    ((args->flags & ~(SYS_CLONE_PAUSED | SYS_CLONE_THREAD)) != 0U)) {
+	    ((args->flags & ~(SYS_CLONE_VM_COPY | SYS_CLONE_PAUSED | SYS_CLONE_THREAD)) != 0U) ||
+	    ((args->flags & SYS_CLONE_THREAD) && (args->flags & SYS_CLONE_VM_COPY))) {
 		return -EINVAL;
 	}
-	if ((args->sigmask != NULL) && !IS_ENABLED(CONFIG_SIGNAL)) {
+	if ((args->sigmask != NULL) &&
+	    (!IS_ENABLED(CONFIG_SIGNAL) || ((args->flags & SYS_CLONE_VM_COPY) != 0U))) {
 		return -EINVAL;
+	}
+	if ((args->flags & SYS_CLONE_VM_COPY) != 0U) {
+		/* the fork model: no entry point, the child resumes in place */
+		if (args->entry != NULL) {
+			return -EINVAL;
+		}
+		return z_sys_clone_vm_copy(args, child);
 	}
 	if (args->entry == NULL) {
 		return -EINVAL;

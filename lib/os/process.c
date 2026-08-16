@@ -622,6 +622,55 @@ SYS_INIT(process_sys_init, PRE_KERNEL_1, 1);
 
 
 
+/*
+ * Duplicate the calling process's writable memory into a child domain at
+ * identical virtual addresses. This is the M4 address-space substrate: with
+ * copied memory the child's execution cannot disturb the parent (the vfork
+ * shared-stack hazard does not exist), and a plain setjmp/longjmp resumes
+ * the child at the clone point because every stack address it restores is
+ * valid in its own copy. Until per-process virtual address spaces exist
+ * (per-domain page tables mapping fresh frames at the caller's addresses),
+ * there is nothing to duplicate onto.
+ */
+static int process_vm_clone(struct k_process *parent, struct k_process *proc)
+{
+	ARG_UNUSED(parent);
+	ARG_UNUSED(proc);
+
+	return -ENOSYS;
+}
+
+/* the fork tier of sys_clone(); the dispatch has validated args */
+int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
+{
+	int ret;
+	struct k_process *proc;
+
+	ARG_UNUSED(args);
+
+	proc = record_alloc();
+	if (proc == NULL) {
+		return -EAGAIN;
+	}
+
+	ret = process_vm_clone(_current->process, proc);
+	if (ret < 0) {
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+
+	/*
+	 * The remainder of the fork model (blocked on process_vm_clone):
+	 * create the child's leader on the copied stack, seed it with a
+	 * longjmp trampoline into the jmp_buf sys_fork() captured, and start
+	 * it; both sides then return from sys_fork() - the parent with the
+	 * child's handle, the child with NULL.
+	 */
+	(void)z_process_record_free(proc);
+
+	return -ENOSYS;
+}
+
 #ifdef CONFIG_SYS_THREAD
 /* a leader without a caller-supplied k_thread is drawn from the system pool */
 static int leader_create(const struct sys_clone_args *args, k_thread_entry_t entry, void *p1,
@@ -720,6 +769,26 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 
 	return 0;
 }
+
+int z_impl_sys_fork(k_pid_t *child)
+{
+	struct sys_clone_args args = {
+		.flags = SYS_CLONE_VM_COPY,
+	};
+
+	return z_impl_sys_clone(&args, child);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_fork(k_pid_t *child)
+{
+	if (child != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(child, sizeof(*child)));
+	}
+	return z_impl_sys_fork(child);
+}
+#include <zephyr/syscalls/sys_fork_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 k_session_t z_impl_sys_setsid(void)
 {

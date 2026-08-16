@@ -344,6 +344,10 @@ ZTEST(kernel_process, test_spawn)
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
+	zassert_equal(sys_clone(&(struct sys_clone_args){.flags = SYS_CLONE_THREAD |
+							 SYS_CLONE_VM_COPY},
+			       NULL),
+		      -EINVAL);
 	zassert_ok(sys_clone(&targs, &member));
 	zassert_equal(member, (k_pid_t)&child_b);
 	zassert_ok(k_thread_join(&child_b, K_SECONDS(5)));
@@ -424,6 +428,14 @@ ZTEST(kernel_process, test_spawn_invalid)
 
 	zassert_equal(sys_clone(NULL, NULL), -EINVAL);
 	zassert_equal(sys_clone(&args, NULL), -EINVAL);
+
+	/* undefined flags are invalid; the fork model awaits its substrate */
+	args.flags = BIT64(63);
+	zassert_equal(sys_clone(&args, NULL), -EINVAL);
+	args.flags = SYS_CLONE_VM_COPY;
+	args.entry = NULL;
+	zassert_equal(sys_clone(&args, NULL), -ENOSYS);
+	zassert_equal(sys_fork(NULL), -ENOSYS);
 }
 
 #if (CONFIG_SYS_PROCESS_MAX >= 4) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
