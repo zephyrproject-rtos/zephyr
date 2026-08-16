@@ -1,0 +1,42 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if UWB
+
+config UWB_NOTIFICATION_CALLBACK_TASK_SIZE
+	int "Size of default notification callback handler"
+	default 10000
+	help
+	  Size of default notification callback handler
+
+config UWB_NOTIFICATION_HANDLER_TASK_PRIO
+	int "Priority of default notification callback handler"
+	default 5
+	help
+	  Priority of default notification callback handler
+
+config NUM_SUPPORTED_ALIRO_PROTOCOL_VERSIONS
+	int "Maximum number of Aliro supported protocol versions accepted from UWB device"
+	default 2
+	help
+	  Maximum number of Aliro supported protocol versions accepted from UWB device
+
+config NUM_SUPPORTED_CCC_PROTOCOL_VERSIONS
+	int "Maximum number of CCC supported protocol versions accepted from UWB device"
+	default 2
+	help
+	  Maximum number of CCC supported protocol versions accepted from UWB device
+
+config NUM_SUPPORTED_CCC_UWB_CONFIG_ID
+	int "Maximum number of CCC UWB Config IDs accepted from UWB device"
+	default 2
+	help
+	  Maximum number of CCC UWB Config IDs accepted from UWB device
+
+config NUM_SUPPORTED_CCC_PULSESHAPE_COMBO
+	int "Maximum number of CCC pulseshape combo values accepted from UWB device"
+	default 9
+	help
+	  Maximum number of CCC pulseshape combo values accepted from UWB device
+
+endif
