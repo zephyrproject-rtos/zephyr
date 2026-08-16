@@ -19,7 +19,7 @@ config FLASH_FILL_BUFFER_SIZE
 configdefault DCACHE
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 config CORTEX_M_SYSTICK
