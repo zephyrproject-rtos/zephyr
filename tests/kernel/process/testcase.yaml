@@ -58,3 +58,16 @@ tests:
       # 6 heap-growth children + the suite's other thread objects exceed the
       # 16-thread kobject permission bitmap
       - CONFIG_MAX_THREAD_BYTES=4
+  kernel.process.pool:
+    integration_platforms:
+      - qemu_cortex_m3
+      - qemu_x86
+    extra_configs:
+      - CONFIG_SYS_THREAD=y
+      - CONFIG_SYS_THREAD_THREAD_MAX=2
+      - CONFIG_SYS_THREAD_STACK_MAX=2
+      - CONFIG_HEAP_MEM_POOL_SIZE=16384
+      # SYS_THREAD selects SIGNAL; size the DBs like kernel.process.sigchld
+      - CONFIG_SIGNAL_SET_SIZE=40
+      - CONFIG_SIGNAL_QUEUE_SIZE=8
+      - CONFIG_SIGNAL_ACTION_DB_SIZE=8

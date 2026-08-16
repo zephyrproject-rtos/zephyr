@@ -22,6 +22,7 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/elastipool.h>
 #include <zephyr/sys/process.h>
+#include <zephyr/sys/thread.h>
 #include <kernel_internal.h>
 #include <ksched.h>
 
@@ -391,6 +392,9 @@ SYS_ELASTIPOOL_DEFINE_ADVANCED(session_pool, sizeof(struct k_session),
 			       session_pool_storage, static);
 
 static struct k_spinlock pool_lock;
+#ifdef CONFIG_SYS_THREAD
+/* dead pool-owned leaders parked at reap until the next spawn can destroy them */
+#endif /* CONFIG_SYS_THREAD */
 static sys_dlist_t record_graveyard = SYS_DLIST_STATIC_INIT(&record_graveyard);
 static sys_dlist_t pgrp_graveyard = SYS_DLIST_STATIC_INIT(&pgrp_graveyard);
 static sys_dlist_t session_graveyard = SYS_DLIST_STATIC_INIT(&session_graveyard);
@@ -616,6 +620,49 @@ static int process_sys_init(void)
 /* after the kernel's process_boot_init() (PRE_KERNEL_1, 0) */
 SYS_INIT(process_sys_init, PRE_KERNEL_1, 1);
 
+
+
+#ifdef CONFIG_SYS_THREAD
+/* a leader without a caller-supplied k_thread is drawn from the system pool */
+static int leader_create(const struct sys_clone_args *args, k_thread_entry_t entry, void *p1,
+			 void *p2, void *p3, k_tid_t *tid)
+{
+	if (args->thread == NULL) {
+		return sys_thread_create_paused(tid, NULL, args->stack_size, 0, entry, p1, p2, p3,
+						args->prio, args->options);
+	}
+
+	*tid = k_thread_create(args->thread, args->stack, args->stack_size, entry, p1, p2, p3,
+			       args->prio, args->options, K_FOREVER);
+
+	return 0;
+}
+
+static void leader_discard(const struct sys_clone_args *args, k_tid_t tid)
+{
+	k_thread_abort(tid);
+	if (args->thread == NULL) {
+		(void)sys_thread_destroy(tid);
+	}
+}
+#else
+static int leader_create(const struct sys_clone_args *args, k_thread_entry_t entry, void *p1,
+			 void *p2, void *p3, k_tid_t *tid)
+{
+	*tid = k_thread_create(args->thread, args->stack, args->stack_size, entry, p1, p2, p3,
+			       args->prio, args->options, K_FOREVER);
+
+	return 0;
+}
+
+static void leader_discard(const struct sys_clone_args *args, k_tid_t tid)
+{
+	ARG_UNUSED(args);
+
+	k_thread_abort(tid);
+}
+#endif /* CONFIG_SYS_THREAD */
+
 /* the process tier of sys_clone(); the dispatch has validated args */
 int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 {
@@ -629,12 +676,15 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 	}
 
 	/* create the leader paused; k_process_init() re-homes it */
-	tid = k_thread_create(args->thread, args->stack, args->stack_size, args->entry, args->p1,
-			      args->p2, args->p3, args->prio, args->options, K_FOREVER);
+	ret = leader_create(args, args->entry, args->p1, args->p2, args->p3, &tid);
+	if (ret < 0) {
+		(void)z_process_record_free(proc);
+		return ret;
+	}
 
 	ret = k_process_init(proc, &tid, 1);
 	if (ret < 0) {
-		k_thread_abort(tid);
+		leader_discard(args, tid);
 		(void)z_process_record_free(proc);
 		return ret;
 	}

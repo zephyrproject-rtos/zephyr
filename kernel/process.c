@@ -431,6 +431,24 @@ void z_process_exit_thread(struct k_thread *thread)
 	}
 }
 
+/* called only on dead threads: a linked membership node is the release queue */
+bool z_process_leader_pinned(struct k_thread *thread)
+{
+	bool pinned = false;
+	struct k_process *proc;
+	k_spinlock_key_t key = k_spin_lock(&process_lock);
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&process_active, proc, active_node) {
+		if (proc->leader == thread) {
+			pinned = true;
+			break;
+		}
+	}
+	k_spin_unlock(&process_lock, key);
+
+	return pinned;
+}
+
 static int process_boot_init(void)
 {
 	/* single-threaded boot path: the _locked helpers run without the lock */

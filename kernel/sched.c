@@ -962,7 +962,7 @@ static ALWAYS_INLINE void halt_thread(struct k_thread *thread, uint8_t new_state
 
 		/* a detached thread's death is its last use; a pinned leader stays for reap */
 #ifdef CONFIG_THREAD_DETACH
-		bool reap = k_thread_is_detached(thread);
+		bool reap = k_thread_is_detached(thread) && !z_process_leader_pinned(thread);
 #else
 		bool reap = false;
 #endif /* CONFIG_THREAD_DETACH */

@@ -405,7 +405,7 @@ ZTEST(kernel_process, test_spawn_invalid)
 {
 	struct sys_clone_args args = {0};
 
-	zassert_equal(sys_clone(NULL), -EINVAL);
+	zassert_equal(sys_clone(NULL, NULL), -EINVAL);
 	zassert_equal(sys_clone(&args, NULL), -EINVAL);
 }
 
@@ -480,7 +480,7 @@ ZTEST(kernel_process, test_setpgid)
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
-	zassert_ok(sys_clone(&args));
+	zassert_ok(sys_clone(&args, NULL));
 
 	/* a spawned child inherits the caller's process group */
 	zassert_equal(k_getpgid(child), k_getpgid(NULL));
@@ -565,8 +565,8 @@ ZTEST(kernel_process, test_kill_pgrp)
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
-	zassert_ok(sys_clone(&args_a));
-	zassert_ok(sys_clone(&args_b));
+	zassert_ok(sys_clone(&args_a, NULL));
+	zassert_ok(sys_clone(&args_b, NULL));
 
 	/* gather both children into a single new process group led by a */
 	zassert_ok(sys_setpgid(a, NULL));
@@ -671,7 +671,7 @@ ZTEST(kernel_process, test_kill)
 	/* eligible-thread delivery: leader blocks USR1, sibling accepts it */
 	elig_handler_ran = false;
 	elig_recipient = NULL;
-	zassert_ok(sys_clone(&args));
+	zassert_ok(sys_clone(&args, NULL));
 	zassert_ok(k_sem_take(&elig_ready, K_SECONDS(5)));
 
 	zassert_ok(k_kill(child, K_SIG_USR1));
@@ -1107,7 +1107,7 @@ ZTEST(kernel_process, test_process_group_init)
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
-	zassert_ok(sys_clone(&args));
+	zassert_ok(sys_clone(&args, NULL));
 
 	/* a caller-provided cell becomes a new group led by the child */
 	zassert_ok(k_process_group_init(&pgi_cell, child));
@@ -1125,7 +1125,7 @@ ZTEST(kernel_process, test_process_group_init)
 	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
 	zassert_is_null(pgi_cell.session);
 
-	zassert_ok(sys_clone(&args));
+	zassert_ok(sys_clone(&args, NULL));
 	zassert_ok(k_process_group_init(&pgi_cell, child));
 	k_sem_give(&pgi_gate);
 	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
@@ -1168,7 +1168,7 @@ ZTEST(kernel_process, test_session_init)
 	zassert_equal(k_session_init(&si_session2, &si_group2), -EPERM);
 
 	/* a non-leader child starts a session in caller-provided cells */
-	zassert_ok(sys_clone(&args));
+	zassert_ok(sys_clone(&args, NULL));
 	k_sem_take(&si_ready, K_FOREVER);
 	zassert_ok(si_ret);
 	zassert_equal(k_getsid(child), &si_session);
@@ -1182,6 +1182,54 @@ ZTEST(kernel_process, test_session_init)
 	k_sem_give(&si_gate);
 	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
 	zassert_is_null(si_group.session);
+}
+
+ZTEST(kernel_process, test_spawn_pooled_leader)
+{
+	int ws = 0;
+	int pid;
+	k_pid_t child = NULL;
+	k_pid_t other = NULL;
+	k_pid_t reaped = NULL;
+	struct sys_clone_args args = {
+		.entry = spawn_entry_exit,
+		.p1 = (void *)(intptr_t)9,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	if (!IS_ENABLED(CONFIG_SYS_THREAD)) {
+		ztest_test_skip();
+	}
+
+	zassert_ok(sys_clone(&args, &child));
+	pid = sys_process_id(child);
+	zassert_true(pid >= 3);
+
+	/* the zombie is observable without reaping; the leader thread is dead */
+	zassert_ok(k_waitpid(child, NULL, NULL, K_PROCESS_WNOWAIT, K_FOREVER));
+
+	/* a join is synchronization only: the TCB stays the pid until reap */
+	zassert_ok(k_thread_join(child, K_SECONDS(5)));
+	zassert_equal(sys_process_id(child), pid);
+	zassert_equal(sys_process_find(pid), child);
+
+	/* the joined, unreaped leader must not be recycled into the pool */
+	zassert_ok(sys_clone(&args, &other));
+	zassert_true(other != child);
+	zassert_true(sys_process_id(other) != pid);
+	zassert_ok(k_waitpid(other, NULL, NULL, 0, K_FOREVER));
+
+	/* reap retires the pid and hands the leader back to the pool */
+	zassert_ok(k_waitpid(child, &reaped, &ws, 0, K_FOREVER));
+	zassert_equal(reaped, child);
+	zassert_true(K_WIFEXITED(ws));
+	zassert_equal(K_WEXITSTATUS(ws), 9);
+	zassert_equal(sys_process_id(child), -ESRCH);
+
+	/* the deferred release ran: pooled spawn still succeeds after reap */
+	zassert_ok(sys_clone(&args, &child));
+	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
 }
 
 ZTEST_SUITE(kernel_process, NULL, NULL, NULL, NULL, NULL);

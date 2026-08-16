@@ -173,11 +173,9 @@ FUNC_NORETURN void z_process_exit_signaled(int sig);
 /*
  * Release-side providers and the number query, implemented by lib/os. The
  * kernel never calls an allocator: it hands memory back to the provider that
- * owns it (the sys_thread_destroy() precedent), and -EINVAL identifies
- * memory the provider does not own (static or caller-provided; reusable
- * where it lives). Called
- * under the process lock; may also run under the scheduler lock and must
- * defer heap reclamation.
+ * owns it, and -EINVAL identifies memory the provider does not own (static or
+ * caller-provided; reusable where it lives). Called under the process lock;
+ * may also run under the scheduler lock and must defer heap reclamation.
  */
 #ifdef CONFIG_SYS_PROCESS
 int z_process_record_free(struct k_process *proc);
@@ -213,6 +211,20 @@ static inline FUNC_NORETURN void z_process_exit_signaled(int sig)
 	CODE_UNREACHABLE;
 }
 #endif /* CONFIG_PROCESS */
+
+#ifdef CONFIG_PROCESS
+/* a dead thread's TCB still owned by the process layer: an unreaped process's
+ * pid identity
+ */
+bool z_process_leader_pinned(struct k_thread *thread);
+#else
+static inline bool z_process_leader_pinned(struct k_thread *thread)
+{
+	ARG_UNUSED(thread);
+	return false;
+}
+#endif /* CONFIG_PROCESS */
+
 #ifdef CONFIG_USERSPACE
 /* thread and stack objects under the kernel-object collector (kernel/userspace.c) */
 /* an OWNED object is about to be disposed: its pool drops the bookkeeping (weak in

@@ -15,6 +15,7 @@
 #include <zephyr/kernel/internal/mm.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/internal/kobject_internal.h>
+#include <zephyr/sys/process.h>
 #include <zephyr/sys/thread.h>
 #include <zephyr/sys/elastipool.h>
 #include <zephyr/toolchain.h>

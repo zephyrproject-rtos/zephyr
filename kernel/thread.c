@@ -2040,8 +2040,10 @@ static int z_thread_epilogue(struct k_thread *thread, void **result)
 		*result = (void *)atomic_get(&thread->base.result);
 	}
 #endif
-	/* the join is the thread's reap */
-	z_thread_reap(thread, false);
+	/* the join is the thread's reap, unless its process still needs it */
+	if (!z_process_leader_pinned(thread)) {
+		z_thread_reap(thread, false);
+	}
 
 	return 0;
 }
@@ -2423,7 +2425,7 @@ int z_impl_k_thread_detach(struct k_thread *th)
 		destroy = z_is_thread_dead(th);
 	}
 
-	if (destroy) {
+	if (destroy && !z_process_leader_pinned(th)) {
 		z_thread_reap(th, false);
 	}
 

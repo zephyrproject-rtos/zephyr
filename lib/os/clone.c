@@ -99,7 +99,9 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 		}
 		return clone_thread(args, child);
 	}
-	if (args->thread == NULL) {
+	if ((args->thread == NULL) &&
+	    (!IS_ENABLED(CONFIG_SYS_THREAD) || (args->stack != NULL))) {
+		/* a pool-drawn leader takes a pool stack */
 		return -EINVAL;
 	}
 
