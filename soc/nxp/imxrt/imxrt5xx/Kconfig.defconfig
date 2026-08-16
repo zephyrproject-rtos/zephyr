@@ -90,7 +90,7 @@ config DYNAMIC_INTERRUPTS
 config CACHE
 	default n
 
-config DCACHE
+configdefault DCACHE
 	default n
 
 config CACHE_MANAGEMENT
