@@ -163,6 +163,7 @@ void z_kernel_process_init_one(struct k_process *proc, struct k_process *parent)
 
 /* Add a new thread to its creator's process (thread group) */
 void z_process_init_thread(struct k_thread *thread);
+void z_process_user_mode_enter(struct k_thread *thread);
 
 /* Remove a dying thread from its process; zombifies the process on last exit */
 void z_process_exit_thread(struct k_thread *thread);
@@ -200,6 +201,15 @@ static inline int z_session_cell_free(struct k_session *session)
 	return -EINVAL;
 }
 #endif /* CONFIG_SYS_PROCESS */
+
+#ifdef CONFIG_USERSPACE
+/* permission-principal index management and the reap-time sweep */
+int16_t z_process_perm_index_alloc(void);
+void z_process_perm_index_free(int16_t index);
+void z_process_perms_all_clear(struct k_process *proc);
+/* copy a parent process's kernel-object permissions to a child (fork, spawn) */
+void z_process_perms_inherit(struct k_process *parent, struct k_process *child);
+#endif /* CONFIG_USERSPACE */
 
 /* validate a user-supplied group handle and every member record (under lock) */
 int z_pgrp_validate(k_pgrp_t pgrp);

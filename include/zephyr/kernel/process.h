@@ -261,6 +261,10 @@ struct k_process {
 	/** Count of process-scoped pending signals (any member may claim) */
 	atomic_t sig_pending;
 #endif /* CONFIG_SIGNAL */
+#ifdef CONFIG_USERSPACE
+	/** Permission-principal index; every member thread holds it */
+	int16_t perm_index;
+#endif /* CONFIG_USERSPACE */
 	/** @endcond */
 };
 

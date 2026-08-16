@@ -1,0 +1,16 @@
+common:
+  tags:
+    - kernel
+    - process
+    - userspace
+  filter: CONFIG_ARCH_HAS_USERSPACE
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "user_mode_enter: child ok"
+tests:
+  kernel.process.user_mode_enter:
+    integration_platforms:
+      - qemu_x86
+      - qemu_riscv32

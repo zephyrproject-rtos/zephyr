@@ -688,6 +688,14 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 		(void)z_process_record_free(proc);
 		return ret;
 	}
+#ifdef CONFIG_USERSPACE
+	/* grants made at creation (the leader, its stack, the cloned descriptors) landed on the
+	 * caller's process: the child inherits them, as a copied process does
+	 */
+	z_process_perms_inherit(k_current_get()->process, proc);
+	k_object_access_grant(tid, tid);
+	k_object_access_grant(tid->stack_obj, tid);
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SIGNAL
 	if (args->sigmask != NULL) {

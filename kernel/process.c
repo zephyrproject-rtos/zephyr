@@ -236,6 +236,9 @@ void z_kernel_process_init_one(struct k_process *proc, struct k_process *parent)
 	sys_dlist_init(&proc->threads);
 	z_waitq_init(&proc->waitq);
 	proc->state = K_PROCESS_ACTIVE;
+#ifdef CONFIG_USERSPACE
+	proc->perm_index = z_process_perm_index_alloc();
+#endif /* CONFIG_USERSPACE */
 	k_object_init(proc);
 	sys_dlist_append(&process_active, &proc->active_node);
 	if (parent != NULL) {
@@ -254,6 +257,25 @@ static void thread_join_group(struct k_process *proc, struct k_thread *thread)
 		thread->process = proc;
 		sys_dlist_append(&proc->threads, &thread->process_node);
 	}
+}
+
+/* the boot thread dropping to user mode leaves the idle process for init */
+void z_process_user_mode_enter(struct k_thread *thread)
+{
+	if (thread->process != &z_proc_idle) {
+		return;
+	}
+
+	K_SPINLOCK(&process_lock) {
+		sys_dlist_remove(&thread->process_node);
+		thread->process = &z_proc_init;
+		sys_dlist_append(&z_proc_init.threads, &thread->process_node);
+	}
+
+#ifdef CONFIG_USERSPACE
+	/* objects granted to it as the boot thread stay usable */
+	z_process_perms_inherit(&z_proc_idle, &z_proc_init);
+#endif /* CONFIG_USERSPACE */
 }
 
 void z_process_init_thread(struct k_thread *thread)
@@ -329,6 +351,9 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 #endif /* CONFIG_SIGNAL */
 #ifdef CONFIG_USERSPACE
 	k_object_uninit(proc);
+	z_process_perms_all_clear(proc);
+	z_process_perm_index_free(proc->perm_index);
+	proc->perm_index = -1;
 #endif /* CONFIG_USERSPACE */
 	proc->state = K_PROCESS_UNUSED;
 	/* the single pid-retirement point: the leader handle may be reused now */
@@ -464,6 +489,11 @@ static int process_boot_init(void)
 	for (size_t i = 0; i < RESERVED_NUM; i++) {
 		sys_dlist_append(&session_active, &z_session_reserved[i].cell_node);
 	}
+#ifdef CONFIG_USERSPACE
+	z_proc_idle.perm_index = z_process_perm_index_alloc();
+	z_proc_init.perm_index = z_process_perm_index_alloc();
+	z_proc_kth.perm_index = z_process_perm_index_alloc();
+#endif /* CONFIG_USERSPACE */
 
 	STRUCT_SECTION_FOREACH(k_process, proc) {
 		z_kernel_process_init_one(proc, &z_proc_init);

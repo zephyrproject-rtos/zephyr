@@ -837,9 +837,11 @@ static inline void init_thread_userspace_perms(struct k_thread *thread,
 #ifdef CONFIG_USERSPACE
 	z_mem_domain_init_thread(thread);
 
+#ifndef CONFIG_PROCESS
 	if ((options & K_INHERIT_PERMS) != 0U) {
 		k_thread_perms_inherit(_current, thread);
 	}
+#endif /* !CONFIG_PROCESS */
 #else
 	ARG_UNUSED(thread);
 	ARG_UNUSED(options);
@@ -966,6 +968,9 @@ char *z_setup_new_thread(struct k_thread *new_thread,
 #if defined(CONFIG_USERSPACE)
 	/* grants resolve through the thread's process, assigned just now */
 	k_object_access_grant(new_thread, new_thread);
+	if ((options & K_INHERIT_PERMS) != 0U) {
+		k_thread_perms_inherit(_current, new_thread);
+	}
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_PROCESS */
 
@@ -1234,6 +1239,9 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 	/* likewise cancellable */
 	_current->base.user_options &= ~K_CANCEL_DISABLED;
 #endif /* CONFIG_THREAD_CANCEL */
+#ifdef CONFIG_PROCESS
+	z_process_user_mode_enter(_current);
+#endif /* CONFIG_PROCESS */
 	_current->base.user_options |= K_USER;
 	z_thread_essential_clear(_current);
 #ifdef CONFIG_THREAD_MONITOR

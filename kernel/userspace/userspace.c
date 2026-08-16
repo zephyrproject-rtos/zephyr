@@ -79,6 +79,7 @@ extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
 extern int z_msgq_cleanup(struct k_msgq *q, bool locked);
 extern int z_stack_cleanup(struct k_stack *stack, bool locked);
 extern int z_timer_cleanup(struct k_timer *timer, bool locked);
+static void clear_perms_cb_locked(struct k_object *ko, void *ctx_ptr);
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
 static void unref_check(struct k_object *ko, uintptr_t index, bool locked);
@@ -192,7 +193,7 @@ static void kobj_free_data(struct dyn_obj *dyn);
 
 static inline bool kobj_referenced(const struct k_object *ko)
 {
-	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+	for (int i = 0; i < K_OBJ_PERM_BYTES; i++) {
 		if (ko->perms[i] != 0U) {
 			return true;
 		}
@@ -279,12 +280,14 @@ static struct dyn_obj *dyn_object_find(const void *obj)
 	return node;
 }
 
+#ifndef CONFIG_PROCESS
 static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
 {
 	uintptr_t id = (uintptr_t)ctx_ptr;
 
 	unref_check(ko, id, false);
 }
+#endif /* CONFIG_PROCESS */
 
 /**
  * @internal
@@ -316,7 +319,9 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 		idx = find_lsb_set(_thread_idx_map[i]);
 
 		if (idx != 0) {
+#ifndef CONFIG_PROCESS
 			struct dyn_obj *obj, *next;
+#endif /* CONFIG_PROCESS */
 
 			*tidx = base + (idx - 1);
 
@@ -325,6 +330,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 			 */
 			_thread_idx_map[i] &= ~(BIT(idx - 1));
 
+#ifndef CONFIG_PROCESS
 			/* Clear permission from all objects */
 
 			z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)*tidx);
@@ -332,6 +338,7 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 			SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
 				clear_perms_cb(&obj->kobj, (void *)*tidx);
 			}
+#endif /* CONFIG_PROCESS */
 
 			ret = true;
 			break;
@@ -367,15 +374,19 @@ static void thread_idx_map_set(uintptr_t tidx)
  **/
 static void thread_idx_free(uintptr_t tidx)
 {
+#ifndef CONFIG_PROCESS
 	struct dyn_obj *obj, *next;
+#endif /* CONFIG_PROCESS */
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
+#ifndef CONFIG_PROCESS
 	z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
 		clear_perms_cb(&obj->kobj, (void *)tidx);
 	}
+#endif /* CONFIG_PROCESS */
 
 	thread_idx_map_set(tidx);
 
@@ -466,7 +477,7 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 
 	dyn->kobj.type = otype;
 	dyn->kobj.flags = 0;
-	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	(void)memset(dyn->kobj.perms, 0, K_OBJ_PERM_BYTES);
 
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
@@ -711,7 +722,7 @@ void *z_impl_k_object_map_size(enum k_objects otype, size_t size)
 
 	dyn->kobj.type = otype;
 	dyn->kobj.flags = K_OBJ_FLAG_ALLOC | K_OBJ_FLAG_MAP;
-	(void)memset(dyn->kobj.perms, 0, CONFIG_MAX_THREAD_BYTES);
+	(void)memset(dyn->kobj.perms, 0, K_OBJ_PERM_BYTES);
 
 	K_SPINLOCK(&lists_lock) {
 		sys_dlist_append(&obj_list, &dyn->dobj_list);
@@ -754,6 +765,15 @@ __weak void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 static unsigned int thread_index_get(struct k_thread *thread)
 {
+#ifdef CONFIG_PROCESS
+	struct k_process *proc = thread->process;
+
+	if ((proc == NULL) || (proc->perm_index < 0)) {
+		return -1;
+	}
+
+	return (unsigned int)proc->perm_index;
+#else
 	struct k_object *ko;
 
 	ko = k_object_find(thread);
@@ -763,8 +783,69 @@ static unsigned int thread_index_get(struct k_thread *thread)
 	}
 
 	return ko->data.thread_id;
+#endif /* CONFIG_PROCESS */
 }
 
+#ifdef CONFIG_PROCESS
+static uint8_t process_idx_map[CONFIG_MAX_PROCESS_BYTES];
+
+int16_t z_process_perm_index_alloc(void)
+{
+	for (int i = 0; i < CONFIG_MAX_PROCESS_BYTES; i++) {
+		int bit = find_lsb_set((uint8_t)~process_idx_map[i]);
+
+		if (bit != 0) {
+			process_idx_map[i] |= BIT(bit - 1);
+			return (int16_t)((i * BITS_PER_BYTE) + (bit - 1));
+		}
+	}
+
+	return -1;
+}
+
+void z_process_perm_index_free(int16_t index)
+{
+	if (index >= 0) {
+		process_idx_map[index / BITS_PER_BYTE] &=
+			(uint8_t)~BIT((unsigned int)index % BITS_PER_BYTE);
+	}
+}
+
+void z_process_perms_all_clear(struct k_process *proc)
+{
+	uintptr_t index = (uintptr_t)proc->perm_index;
+
+	if (proc->perm_index >= 0) {
+		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)index);
+	}
+}
+
+struct perm_inherit_ctx {
+	int parent_index;
+	int child_index;
+};
+
+static void perm_inherit_cb(struct k_object *ko, void *ctx_ptr)
+{
+	struct perm_inherit_ctx *ctx = ctx_ptr;
+
+	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_index)) {
+		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_index);
+	}
+}
+
+void z_process_perms_inherit(struct k_process *parent, struct k_process *child)
+{
+	struct perm_inherit_ctx ctx = {
+		.parent_index = parent->perm_index,
+		.child_index = child->perm_index,
+	};
+
+	if ((ctx.parent_index >= 0) && (ctx.child_index >= 0)) {
+		k_object_wordlist_foreach(perm_inherit_cb, &ctx);
+	}
+}
+#endif /* CONFIG_PROCESS */
 
 /* the pool that drew an OWNED object releases its bookkeeping before the object goes */
 __weak void z_kobj_owner_release(struct k_object *ko, bool sched_locked)
@@ -910,7 +991,7 @@ static void kobj_unref(struct k_object *ko, int index, bool sched_locked)
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
 	if (index == KOBJ_UNREF_ALL) {
-		(void)memset(ko->perms, 0, CONFIG_MAX_THREAD_BYTES);
+		(void)memset(ko->perms, 0, K_OBJ_PERM_BYTES);
 	} else if (index >= 0) {
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
 	}
@@ -1151,11 +1232,16 @@ static void clear_perms_cb_locked(struct k_object *ko, void *ctx_ptr)
  */
 void k_thread_perms_all_clear(struct k_thread *thread)
 {
+#ifdef CONFIG_PROCESS
+	/* permissions belong to the process and are swept at reap */
+	ARG_UNUSED(thread);
+#else
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
 		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)index);
 	}
+#endif /* CONFIG_PROCESS */
 }
 
 static int thread_perms_test(struct k_object *ko)

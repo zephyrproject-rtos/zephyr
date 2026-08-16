@@ -55,9 +55,16 @@ union k_object_data {
  * @note This is an internal API. Do not use unless you are extending
  *       functionality in the Zephyr tree.
  */
+/* one permission bit per principal: processes when enabled, else threads */
+#ifdef CONFIG_PROCESS
+#define K_OBJ_PERM_BYTES CONFIG_MAX_PROCESS_BYTES
+#else
+#define K_OBJ_PERM_BYTES CONFIG_MAX_THREAD_BYTES
+#endif /* CONFIG_PROCESS */
+
 struct k_object {
 	void *name;
-	uint8_t perms[CONFIG_MAX_THREAD_BYTES];
+	uint8_t perms[K_OBJ_PERM_BYTES];
 	uint8_t type;
 	uint8_t flags;
 	union k_object_data data;

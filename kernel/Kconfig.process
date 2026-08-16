@@ -19,6 +19,16 @@ config PROCESS
 
 if PROCESS
 
+config MAX_PROCESS_BYTES
+	int "Bytes to use to track process permissions to kernel objects"
+	default 1
+	depends on USERSPACE
+	help
+	  Every kernel object stores one permission bit per process (a thread
+	  holds permissions through the process it belongs to). This is the
+	  size of that per-object bitmap in bytes, bounding the number of
+	  simultaneously live processes.
+
 config PROCESS_INIT
 	bool "Start the init process with an initial thread"
 	help
