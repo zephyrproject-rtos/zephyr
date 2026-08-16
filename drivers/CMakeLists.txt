@@ -12,6 +12,7 @@ add_subdirectory(misc)
 add_subdirectory(pcie)
 add_subdirectory(usb)
 add_subdirectory(usb_c)
+add_subdirectory(uwb)
 
 add_subdirectory_ifdef(CONFIG_ADC adc)
 add_subdirectory_ifdef(CONFIG_ARM_SIP_SVC_DRIVER sip_svc)
