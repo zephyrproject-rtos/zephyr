@@ -30,7 +30,7 @@ config HARVARD
 config ARC_FIRQ
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config ARC_HAS_ACCL_REGS
