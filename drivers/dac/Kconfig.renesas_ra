@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_RENESAS_RA
-	bool "Renesas RA DAC"
+	bool "Renesas RA DAC driver"
 	default y
 	depends on DT_HAS_RENESAS_RA_DAC_ENABLED
 	select USE_RA_FSP_DAC
