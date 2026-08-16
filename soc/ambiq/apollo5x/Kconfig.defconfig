@@ -15,7 +15,7 @@ configdefault DCACHE_LINE_SIZE
 configdefault DCACHE
 	default y
 
-config ICACHE
+configdefault ICACHE
 	default y
 
 # Need to enlarge the IDLE stack size because the power
