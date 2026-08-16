@@ -384,6 +384,31 @@ struct init_entry {
  */
 #define SYS_ANCHOR_arch_smp_init SYS_ANCHOR(arch_smp_init)
 
+/**
+ * @brief Anchor left by the SoC initialization.
+ *
+ * A SoC whose bring-up has to run after the devices it talks to - clock,
+ * power or firmware-protocol devices initialized at `PRE_KERNEL` - cannot use
+ * soc_early_init_hook(), which runs before any of them, nor
+ * soc_late_init_hook(), which runs after the whole of `POST_KERNEL`. Such a
+ * SoC registers its init under this key instead and selects
+ * @kconfig{CONFIG_SOC_INIT_ANCHOR}:
+ *
+ * @code{.c}
+ * SYS_INIT_ANCHORED(soc_init, soc_init, PRE_KERNEL);
+ * @endcode
+ *
+ * Board code that has to follow the SoC orders itself against the key,
+ * conditionally so that it still initializes on a SoC that has no such entry:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_board_init \
+ *	SYS_ANCHOR_AFTER_IF(CONFIG_SOC_INIT_ANCHOR, SYS_ANCHOR_soc_init, board_init)
+ * SYS_INIT_ANCHORED(board_init, board_init, PRE_KERNEL);
+ * @endcode
+ */
+#define SYS_ANCHOR_soc_init SYS_ANCHOR(soc_init)
+
 /** @} */
 
 #ifdef __cplusplus
