@@ -13,7 +13,7 @@ endchoice
 configdefault DCACHE_LINE_SIZE
 	default 128
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config XTENSA_TIMER
