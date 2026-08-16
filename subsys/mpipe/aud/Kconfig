@@ -1,0 +1,64 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_AUD
+	bool "Audio plugin support"
+	select AUDIO
+	help
+	  Elements that capture, process and play back PCM audio: a digital
+	  microphone source, a gain transform, and a sink driving an audio codec
+	  over I2S.
+
+	  They sit on Zephyr's audio APIs and describe what they carry as a
+	  sample rate, a sample width, a channel count and the layout of those
+	  channels within a buffer.
+
+if MPIPE_AUD
+
+config MPIPE_AUD_BUFFER_POOL_SZ_MAX
+	int "Size of the largest buffer in the buffer pool"
+	default 98304
+	help
+	  Size in bytes of the largest buffer the audio pool can hand out. It
+	  bounds one block of PCM, so it follows from the sample rate, the sample
+	  width, the channel count and how much time one buffer covers.
+
+	  The default holds roughly half a second of 48 kHz 16-bit stereo, or a
+	  full second of the same in mono. Reserved
+	  memory, so lower it when the pipeline's format is known and smaller.
+
+config MPIPE_AUD_BUFFER_POOL_NUM_MAX
+	int "Number of maximum sized buffers in the buffer pool"
+	default 10
+	help
+	  Upper bound on how many buffers the audio pool provides. Negotiation
+	  settles the number actually used, and this caps what it may ask for.
+
+	  Audio needs more slack than video: a codec starved of data produces an
+	  audible artifact rather than a dropped frame, so leave enough for the
+	  sink to keep its buffers primed.
+
+config MPIPE_AUD_I2S_CODEC_SINK_SET_OUTPUT_VOLUME
+	bool "Set codec output volume in the I2S codec sink"
+	help
+	  When enabled, the I2S codec sink programs the codec output volume
+	  after configuring it. Without this, the codec keeps its driver
+	  default (typically 0 dB / unity), which can overdrive the analog
+	  output stage and sound distorted on boards with a fixed line/speaker
+	  amplifier.
+
+config MPIPE_AUD_I2S_CODEC_SINK_OUTPUT_VOLUME
+	int "Codec output volume (codec-specific units)"
+	default 106
+	depends on MPIPE_AUD_I2S_CODEC_SINK_SET_OUTPUT_VOLUME
+	help
+	  Output volume value passed to audio_codec_set_property() as the
+	  AUDIO_PROPERTY_OUTPUT_VOLUME for AUDIO_CHANNEL_ALL. The units are
+	  codec specific. For the WM8962 the field is 7 bits where 121 (0x79)
+	  is 0 dB, each step is 1 dB and values up to and including 47 (0x2F)
+	  mute the output. The default of 106 is approximately -15 dB.
+
+endif # MPIPE_AUD
