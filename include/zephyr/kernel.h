@@ -8440,6 +8440,17 @@ __syscall int k_process_init(struct k_process *proc, const k_tid_t *threads,
 __syscall int k_clone(const struct k_clone_args *args, k_tid_t *child);
 
 /**
+ * @brief Reduce the calling process to the calling thread
+ *
+ * Aborts every other member thread of the calling process. The process, its
+ * identity, and its group and session membership are unchanged; the calling
+ * thread becomes the sole member.
+ *
+ * @retval 0 on success
+ */
+__syscall int k_process_prune(void);
+
+/**
  * @brief Initialize a process group from caller-provided memory
  *
  * Initializes the non-initialized group cell @a grp (zeroed, or retired) as a

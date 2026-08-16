@@ -1409,6 +1409,41 @@ static inline int z_vrfy_k_clone(const struct k_clone_args *args, k_tid_t *child
 #include <zephyr/syscalls/k_clone_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+int z_impl_k_process_prune(void)
+{
+	k_tid_t victim;
+
+	/* k_thread_abort() cannot run under process_lock: drop and retake */
+	while (true) {
+		victim = NULL;
+		K_SPINLOCK(&process_lock) {
+			struct k_thread *t;
+			struct k_process *proc = process_self();
+
+			SYS_DLIST_FOR_EACH_CONTAINER(&proc->threads, t, process_node) {
+				if (t != _current) {
+					victim = t;
+					break;
+				}
+			}
+		}
+		if (victim == NULL) {
+			break;
+		}
+		k_thread_abort(victim);
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_process_prune(void)
+{
+	return z_impl_k_process_prune();
+}
+#include <zephyr/syscalls/k_process_prune_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 #ifdef CONFIG_SIGNAL
 static struct k_process *sigchld_pending_get_locked(void)
 {
