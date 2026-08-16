@@ -24,8 +24,8 @@ config WINSTREAM_CONSOLE
 	def_bool y
 endif
 
-config CACHE_MANAGEMENT
-	def_bool y
+configdefault CACHE_MANAGEMENT
+	default y
 
 choice CACHE_TYPE
 	default SOC_CACHE
