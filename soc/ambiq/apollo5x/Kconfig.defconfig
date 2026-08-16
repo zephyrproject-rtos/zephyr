@@ -12,7 +12,7 @@ config CACHE_MANAGEMENT
 configdefault DCACHE_LINE_SIZE
 	default 32
 
-config DCACHE
+configdefault DCACHE
 	default y
 
 config ICACHE
