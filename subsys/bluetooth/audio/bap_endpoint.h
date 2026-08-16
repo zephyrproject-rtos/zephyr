@@ -58,10 +58,6 @@ struct bt_bap_ep {
 
 	/* Used by the unicast server and client */
 	bool receiver_ready;
-
-	/* TODO: Create a union to reduce memory usage */
-	struct bt_bap_unicast_group *unicast_group;
-	struct bt_bap_broadcast_source *broadcast_source;
 };
 
 struct bt_bap_unicast_group_cig_param {
