@@ -19,6 +19,7 @@
  * @{
  */
 
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 
@@ -38,6 +39,8 @@ struct smp_shell_data {
 	struct net_buf *buf;
 	/** Which parts of the SMP over console frame have been detected */
 	atomic_t esc_state;
+	/** Receiving UART shell object */
+	const struct shell_uart_common *uart;
 };
 
 /**
