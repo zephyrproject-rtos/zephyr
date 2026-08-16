@@ -1684,12 +1684,15 @@ struct bt_bap_unicast_client_cb {
 	void (*enable)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		       enum bt_bap_ascs_reason reason);
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) || defined(__DOXYGEN__)
 	/**
 	 * @brief Callback function for bt_bap_stream_start().
 	 *
 	 * Called when the start operation is completed on the server. This will
 	 * only be called if the stream supplied to bt_bap_stream_start() is
 	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
+	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC}
 	 *
 	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
 	 *                 associated with the ASE ID sent by the server.
@@ -1706,6 +1709,8 @@ struct bt_bap_unicast_client_cb {
 	 * only be called if the stream supplied to bt_bap_stream_stop() is
 	 * for a @ref BT_AUDIO_DIR_SOURCE endpoint.
 	 *
+	 * @kconfig_dep{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC}
+	 *
 	 * @param stream   Stream the operation was performed on. May be NULL if there is no stream
 	 *                 associated with the ASE ID sent by the server.
 	 * @param rsp_code Response code.
@@ -1713,6 +1718,7 @@ struct bt_bap_unicast_client_cb {
 	 */
 	void (*stop)(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		     enum bt_bap_ascs_reason reason);
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 	/**
 	 * @brief Callback function for bt_bap_stream_disable().
@@ -1837,6 +1843,10 @@ int bt_bap_unicast_client_unregister_cb(struct bt_bap_unicast_client_cb *cb);
  * @retval 0 Success
  * @retval -EINVAL @p conn is NULL, not a central connection or does not conform to security
  *                 requirements, or @p dir is invalid.
+ * @retval -ENOTSUP @p dir is not supported by this device. Discovering @ref BT_AUDIO_DIR_SINK
+ *                  requires @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT} to be non-zero,
+ *                  and discovering @ref BT_AUDIO_DIR_SOURCE requires
+ *                  @kconfig{CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT} to be non-zero.
  * @retval -EBUSY Another operation is already in progress for this @p conn
  * @retval -ENOTCONN @p conn is not connected
  * @retval -ENOMEM Could not allocate memory for the request
