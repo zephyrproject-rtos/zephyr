@@ -12,6 +12,16 @@ MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 
 MODEM_CHAT_MATCHES_DEFINE(u_blox_sara_r4_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(u_blox_sara_r4_set_baudrate_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+IPR="
+				  STRINGIFY(CONFIG_MODEM_CELLULAR_NEW_BAUDRATE), ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_set_baudrate_chat_script,
+			 u_blox_sara_r4_set_baudrate_chat_script_cmds,
+			 abort_matches, modem_cellular_chat_callback_handler, 1);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	u_blox_sara_r4_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
 	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100), MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT", 100),
@@ -51,6 +61,7 @@ MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_periodic_chat_script,
 static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
 	/* clang-format off */
 	.scripts = {
+		.set_baudrate = &u_blox_sara_r4_set_baudrate_chat_script,
 		.init = &u_blox_sara_r4_init_chat_script,
 		.dial = &u_blox_sara_r4_dial_chat_script,
 		.periodic = &u_blox_sara_r4_periodic_chat_script,
