@@ -102,6 +102,14 @@ static const struct xspim_stm32_cfg xspim_stm32_cfg = {
 	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, &xspim_stm32_init, NULL,
-		      NULL, &xspim_stm32_cfg,
-		      PRE_KERNEL_2, 0, NULL);
+/*
+ * Ordered by the devicetree: the only dependency this init has is the clock
+ * controller it calls clock_control_on() on, and the io-port-n phandles are
+ * marked dependency-mode: ignore in the binding, so the XSPI controllers they
+ * name are correctly not treated as dependencies. Those controllers must be
+ * unclocked while this runs, which holds because every driver binding to them
+ * initializes at POST_KERNEL.
+ */
+DEVICE_DT_INST_DEFINE_AUTO(0, &xspim_stm32_init, NULL,
+			   NULL, &xspim_stm32_cfg,
+			   PRE_KERNEL, NULL);
