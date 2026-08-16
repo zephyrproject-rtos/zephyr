@@ -33,7 +33,7 @@ config BUILD_OUTPUT_HEX
 config CLOCK_CONTROL
 	default y
 
-config DCACHE
+configdefault DCACHE
 	default n
 
 config CACHE_MANAGEMENT
