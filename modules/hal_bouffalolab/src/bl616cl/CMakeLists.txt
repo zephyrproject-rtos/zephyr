@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+include("../../cmake/blob_objcopy.cmake")
+
 set(BLOBS_DIR ${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/zephyr/blobs/lib/${CONFIG_SOC_SERIES})
 
 if(CONFIG_BT_BFLB_BL616CL)
@@ -26,15 +28,19 @@ if(CONFIG_WIFI_BFLB)
     set(MACSW_CFG_LIB libmacsw_config_bl616cl_default.a)
   endif()
 
-  message(STATUS "BL61x WiFi MACSW: ${MACSW_LIB}")
+  message(STATUS "BL61x WiFi MACSW: ${MACSW_CFG_LIB}")
 endif()
 
 if((CONFIG_BT_BFLB_BL616CL OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
+
+  # Replace blob's printf with blob_printf
+  set(BLOBS_OBJCOPY_ARGS --redefine-sym printf=blob_printf)
+
   # phyrf is shared between BLE and WiFi
-  zephyr_link_libraries(${BLOBS_DIR}/libbl616cl_phyrf.a)
+  blob_objcopy(phyrf.a "${BLOBS_DIR}/libbl616cl_phyrf.a" ${BLOBS_OBJCOPY_ARGS})
 
   if(CONFIG_BT_BFLB_BL616CL)
-    zephyr_link_libraries(${BLOBS_DIR}/${BLE_VARIANT_LIB})
+    blob_objcopy(${BLE_VARIANT_LIB} "${BLOBS_DIR}/${BLE_VARIANT_LIB}" ${BLOBS_OBJCOPY_ARGS})
   endif()
 
   if(CONFIG_WIFI_BFLB)
@@ -45,12 +51,9 @@ if((CONFIG_BT_BFLB_BL616CL OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLO
       ${ZEPHYR_BASE}/kernel/timeout.c
     LOCATION RAM NOKEEP)
 
-
-    zephyr_link_libraries(
-      ${BLOBS_DIR}/libwl80211_bl616cl.a
-      ${BLOBS_DIR}/libmacsw_bl616cl.a
-      ${BLOBS_DIR}/${MACSW_CFG_LIB}
-    )
+    blob_objcopy(libwl80211.a "${BLOBS_DIR}/libwl80211_bl616cl.a" ${BLOBS_OBJCOPY_ARGS})
+    blob_objcopy(libmacsw.a "${BLOBS_DIR}/libmacsw_bl616cl.a" ${BLOBS_OBJCOPY_ARGS})
+    blob_objcopy(${MACSW_CFG_LIB} "${BLOBS_DIR}/${MACSW_CFG_LIB}" ${BLOBS_OBJCOPY_ARGS})
   endif()
 
 endif()
