@@ -159,6 +159,10 @@ ZTEST(kernel_process, test_static_process_lifecycle)
 
 static void waitpid_orphan_reaped(void);
 
+#ifdef CONFIG_SIGNAL
+static void waitpid_chld_drop(void);
+#endif /* CONFIG_SIGNAL */
+
 ZTEST(kernel_process, test_waitpid)
 {
 	int ws;
@@ -170,6 +174,9 @@ ZTEST(kernel_process, test_waitpid)
 		      -ECHILD);
 	zassert_equal(k_waitpid(NULL, &reaped, &ws, K_PROCESS_WUNTRACED, K_NO_WAIT),
 		      -ENOTSUP);
+#ifdef CONFIG_SIGNAL
+	waitpid_chld_drop();
+#endif /* CONFIG_SIGNAL */
 	/* positive reap paths are covered once sys_clone() creates children */
 	waitpid_orphan_reaped();
 }
@@ -768,6 +775,51 @@ ZTEST(kernel_process, test_sigchld)
 	zassert_ok(k_waitpid(&sig_parent_thread, NULL, &ws, 0, K_FOREVER));
 	zassert_true(K_WIFEXITED(ws));
 	zassert_equal(K_WEXITSTATUS(ws), SIGCHLD_OK, "parent reported 0x%x", K_WEXITSTATUS(ws));
+}
+
+/* reap retires an unclaimed CHLD notification: no signal-queue slot may leak */
+static void waitpid_chld_drop(void)
+{
+	int ret;
+	int ws = 0;
+	struct k_sig_set set;
+	struct k_sig_info info;
+	int64_t deadline;
+	struct sys_clone_args args = {
+		.entry = spawn_entry_exit,
+		.p1 = (void *)(intptr_t)1,
+		.thread = &child_a,
+		.stack = child_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	k_sig_emptyset(&set);
+	k_sig_addset(&set, K_SIG_CHLD);
+
+	for (int i = 0; i < CONFIG_SIGNAL_QUEUE_SIZE + 2; ++i) {
+		zassert_ok(sys_clone(&args, NULL));
+		/* let the child exit and the notifier queue its CHLD first */
+		k_sleep(K_MSEC(20));
+		zassert_ok(k_waitpid(&child_a, NULL, NULL, 0, K_FOREVER));
+	}
+
+	/*
+	 * A later notification still finds a queue slot, and the first claim is
+	 * that fresh notification: reap left no stale entries to claim instead.
+	 */
+	args.p1 = (void *)(intptr_t)42;
+	zassert_ok(sys_clone(&args, NULL));
+	deadline = k_uptime_get() + 5000;
+	do {
+		ret = k_sig_timedwait(&set, &info, K_MSEC(100));
+	} while ((ret < 0) && (k_uptime_get() < deadline));
+	zassert_equal(ret, K_SIG_CHLD);
+	zassert_equal(info.pid, &child_a);
+	zassert_true(K_WIFEXITED(info.status));
+	zassert_equal(K_WEXITSTATUS(info.status), 42);
+	zassert_ok(k_waitpid(&child_a, NULL, &ws, 0, K_FOREVER));
+	zassert_true(K_WIFEXITED(ws));
 }
 #endif /* CONFIG_SIGNAL */
 

@@ -249,6 +249,10 @@ struct k_process {
 	_wait_q_t waitq;
 	/** Node in the kernel's registry of live process records */
 	sys_dnode_t active_node;
+#ifdef CONFIG_SIGNAL
+	/** Count of process-scoped pending signals (any member may claim) */
+	atomic_t sig_pending;
+#endif /* CONFIG_SIGNAL */
 	/** @endcond */
 };
 

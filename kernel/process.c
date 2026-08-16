@@ -324,6 +324,9 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 
 	pgrp_leave_locked(proc);
 	sys_dlist_remove(&proc->active_node);
+#ifdef CONFIG_SIGNAL
+	z_sig_process_drop(proc);
+#endif /* CONFIG_SIGNAL */
 #ifdef CONFIG_USERSPACE
 	k_object_uninit(proc);
 #endif /* CONFIG_USERSPACE */
@@ -762,15 +765,8 @@ static k_tid_t process_sig_target(struct k_process *proc, int signo)
 		}
 	}
 
-	/* all masked: pend on a non-leader member when one exists */
-	SYS_DLIST_FOR_EACH_CONTAINER(&proc->threads, t, process_node) {
-		if ((k_tid_t)t != proc->leader) {
-			return t;
-		}
-	}
-
-	t = SYS_DLIST_PEEK_HEAD_CONTAINER(&proc->threads, t, process_node);
-	return t;
+	/* every member has the signal masked: pend at process scope */
+	return NULL;
 }
 #endif /* CONFIG_SIGNAL */
 
@@ -822,6 +818,7 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 	size_t skip = 0;
 	bool done = false;
 	struct k_thread *targets[8];
+	struct k_process *scopes[8];
 
 	/*
 	 * Resolve deliverable threads (one per member process) under the lock
@@ -863,16 +860,19 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 #else
 			tgt = SYS_DLIST_PEEK_HEAD_CONTAINER(&proc->threads, tgt, process_node);
 #endif /* CONFIG_SIGNAL */
-			if (tgt != NULL) {
-				targets[n++] = tgt;
-			}
+			/* NULL target: every member masked, pend at process scope */
+			targets[n] = tgt;
+			scopes[n] = (tgt == NULL) ? proc : NULL;
+			n++;
 		}
 		k_spin_unlock(&process_lock, key);
 
 		found += n;
 #ifdef CONFIG_SIGNAL
 		for (int i = 0; i < n; i++) {
-			int err = k_sig_queue(targets[i], signo, (union k_sig_val){0});
+			int err = (targets[i] == NULL)
+					  ? z_sig_queue_process(scopes[i], signo)
+					  : k_sig_queue(targets[i], signo, (union k_sig_val){0});
 
 			if (err == -EINVAL) {
 				return -EINVAL;
@@ -935,6 +935,10 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 #ifdef CONFIG_SIGNAL
 	if (tid == NULL) {
 		return -ESRCH;
+	}
+	if (tid == NULL) {
+		/* every member has the signal masked: pend at process scope */
+		return z_sig_queue_process(proc, signo);
 	}
 	return k_sig_queue(tid, signo, (union k_sig_val){0});
 #else
@@ -1340,6 +1344,7 @@ static void sigchld_notifier(void *p1, void *p2, void *p3)
 		bool exited;
 		k_tid_t target;
 		struct k_process *child;
+		struct k_process *parent;
 		atomic_val_t gen = atomic_get(&process_wait_gen);
 
 		k_spinlock_key_t key = k_spin_lock(&process_lock);
@@ -1357,13 +1362,14 @@ static void sigchld_notifier(void *p1, void *p2, void *p3)
 		pid = child->leader;
 		status = child->wstatus;
 		exited = K_WIFEXITED(status);
-		target = (child->parent == NULL) ? NULL
-						 : process_sig_target(child->parent, K_SIG_CHLD);
+		parent = child->parent;
+		target = (parent == NULL) ? NULL : process_sig_target(parent, K_SIG_CHLD);
 		k_spin_unlock(&process_lock, key);
 
-		if (target != NULL) {
-			/* best-effort: the target may have exited, or the queue may be full */
-			(void)z_sig_queue_chld(target, pid, status, exited);
+		if ((target != NULL) || (parent != NULL)) {
+			/* best effort: the target may exit, or the queue may be full */
+			(void)z_sig_queue_chld(target, (target == NULL) ? parent : NULL, pid,
+					       status, exited);
 		}
 	}
 }
