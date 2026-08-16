@@ -40,11 +40,15 @@ static int soc_init(void)
 }
 
 /*
- * Because platform is using ARM SCMI, drivers like scmi, mbox etc. are
- * initialized during PRE_KERNEL_1. Common init hooks is not able to use.
- * SoC early init and board early init could be run during PRE_KERNEL_2 instead.
+ * This programs clocks and power domains through the SCMI protocol devices,
+ * which initialize at PRE_KERNEL, so neither platform init hook fits: the
+ * early one runs before any PRE_KERNEL device and the late one only after all
+ * of POST_KERNEL, by which point the clocks are already needed. An anchored
+ * entry runs at the end of PRE_KERNEL, after every device ordered by priority
+ * or by devicetree, which is exactly the position PRE_KERNEL_2 was standing in
+ * for.
  */
-SYS_INIT(soc_init, PRE_KERNEL_2, 0);
+SYS_INIT_ANCHORED(soc_init, soc_init, PRE_KERNEL);
 
 #ifdef CONFIG_PM
 void pm_state_before(void)
