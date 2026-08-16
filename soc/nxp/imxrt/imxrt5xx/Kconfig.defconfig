@@ -93,7 +93,7 @@ config CACHE
 configdefault DCACHE
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 config LOG

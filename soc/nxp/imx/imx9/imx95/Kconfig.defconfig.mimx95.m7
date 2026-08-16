@@ -58,7 +58,7 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 1024 if MCUX_LPTMR_TIMER
 	default 1000 if CORTEX_M_SYSTICK
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config ETH_NXP_IMX_MSGINTR

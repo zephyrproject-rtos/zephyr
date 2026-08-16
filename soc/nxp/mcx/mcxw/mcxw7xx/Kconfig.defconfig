@@ -11,7 +11,7 @@ config MCUX_LPTMR_TIMER
 # The LPCAC is enabled out of reset; this exposes the cache management API
 # (backed by cache_nxp_mcm_lpcac) so consumers such as the flash driver can
 # invalidate the code cache through the standard sys_cache_* interface.
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE
