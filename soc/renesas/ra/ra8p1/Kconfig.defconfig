@@ -36,7 +36,7 @@ config CLOCK_CONTROL
 configdefault DCACHE
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 if ETHOS_U
