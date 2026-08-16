@@ -4167,11 +4167,13 @@ Multimedia Pipeline:
     - doc/services/mpipe/
     - include/zephyr/mpipe/
     - subsys/mpipe/
+    - samples/subsys/mpipe/
     - tests/subsys/mpipe/
   labels:
     - "area: Multimedia Pipeline"
   tests:
     - mpipe
+    - sample.mpipe
 
 NEORV32 platform:
   status: maintained
