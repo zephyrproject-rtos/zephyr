@@ -720,6 +720,11 @@ static uint8_t sw_tifs_toggle;
  * PPIs related with the Radio operation switch.
  * Enable of end event compensation is controller by @p end_evt_delay_en.
  *
+ * On an RX-to-TX switch, flags for the received PHY are unused. For Coded
+ * PHY, the radio hardware determines whether the received PDU used S2 or S8
+ * and adjusts TIFS using the S2-event PPI/DPPI configuration. The flags for
+ * the following TX PHY select its coding scheme.
+ *
  * @param dir_curr         Current direction the Radio is working: SW_SWITCH_TX or SW_SWITCH_RX
  * @param dir_next         Next direction the Radio is preparing for: SW_SWITCH_TX or SW_SWITCH_RX
  * @param phy_curr         PHY the Radio is working on.
