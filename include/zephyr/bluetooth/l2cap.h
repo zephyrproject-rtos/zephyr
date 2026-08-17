@@ -353,25 +353,30 @@ struct bt_l2cap_fixed_chan {
 	 *
 	 *  This callback needs to be provided by the application, and is invoked when a new
 	 *  connection has been established. If accepting the connection, the user is expected to
-	 *  allocate memory with suitable alignment for the type @ref bt_l2cap_chan for the channel,
-	 *  and update the channel reference @p chan to point to the allocated memory. The channel
-	 *  should be initialized by assigning the callbacks to the @ref bt_l2cap_chan_ops field
-	 *  as follows:
+	 *  allocate memory for a zero-initialized object of type @ref bt_l2cap_le_chan, and update
+	 *  the channel reference @p chan to point to the @ref bt_l2cap_le_chan.chan member of the
+	 *  allocated object. The channel should be initialized by assigning the callbacks to the
+	 *  @ref bt_l2cap_chan_ops field as follows:
 	 *  @code
 	 *  static int accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	 *  {
 	 *      // Allocation of fixed_chan and definition of the ops are assumed done prior.
-	 *      *chan = &fixed_chan;
-	 *
-	 *      **chan = (struct bt_l2cap_chan){
-	 *          .ops = &ops,
+	 *      fixed_chan = (struct bt_l2cap_le_chan){
+	 *          .chan.ops = &ops,
 	 *      };
+	 *
+	 *      *chan = &fixed_chan.chan;
 	 *
 	 *      return 0;
 	 *  }
 	 *  @endcode
 	 *  The allocated context needs to be valid for the lifetime of the channel, i. e.
 	 *  freeing of the memory can be done in the @ref bt_l2cap_chan_ops.released callback.
+	 *
+	 *  @warning Even though the reference passed back through @p chan is a
+	 *           @ref bt_l2cap_chan, it must be the @ref bt_l2cap_le_chan.chan member of a
+	 *           @ref bt_l2cap_le_chan object. The stack uses the containing object, so
+	 *           returning a bare @ref bt_l2cap_chan would result in out-of-bounds access.
 	 *
 	 *  @param conn The connection that has been established.
 	 *  @param chan L2CAP channel reference.
@@ -831,10 +836,21 @@ struct bt_l2cap_server {
 	/** @brief Server accept callback
 	 *
 	 *  This callback is called whenever a new incoming connection requires
-	 *  authorization.
+	 *  authorization. If accepting the connection, the callback is expected
+	 *  to allocate a zero-initialized channel object and update the channel
+	 *  reference @p chan to point to its common member: for a server
+	 *  registered with bt_l2cap_server_register() the object must be of type
+	 *  @ref bt_l2cap_le_chan and @p chan set to its @ref bt_l2cap_le_chan.chan
+	 *  member, and for a server registered with bt_l2cap_br_server_register()
+	 *  the object must be of type @ref bt_l2cap_br_chan and @p chan set to its
+	 *  @ref bt_l2cap_br_chan.chan member.
 	 *
-	 *  @warning It is the responsibility of this callback to zero out the
-	 *  parent of the chan object.
+	 *  @warning Even though the reference passed back through @p chan is a
+	 *  @ref bt_l2cap_chan, it must be a member of a @ref bt_l2cap_le_chan or
+	 *  @ref bt_l2cap_br_chan object as described above. The stack uses the
+	 *  containing object, so returning a bare @ref bt_l2cap_chan would result in
+	 *  out-of-bounds access. It is the responsibility of this callback to
+	 *  zero out the containing object.
 	 *
 	 *  @param conn The connection that is requesting authorization
 	 *  @param server Pointer to the server structure this callback relates to
