@@ -23,9 +23,8 @@ tests:
     min_flash: 192
     tags: net
     depends_on: netif
-    extra_args:
-      - COAP_OSCORE_SALT_ONLY=ON
     extra_configs:
+      - CONFIG_TEST_OSCORE_SALT_ONLY=y
       - CONFIG_COAP_OSCORE_MASTER_SALT_MAX_LEN=0
       - CONFIG_COAP_OSCORE_MAX_CONTEXTS=2
 
