@@ -56,8 +56,17 @@
 	status = "okay";
 };
 
+&clk_inro {
+	status = "okay";
+};
+
 &clk_ipo {
 	status = "okay";
+};
+
+&clk_32k {
+	status = "okay";
+	clocks = <&clk_inro>;
 };
 
 &gpio0 {
@@ -76,7 +85,6 @@
 
 &rtc_counter {
 	status = "okay";
-	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
 };
 
 &i3c0 {
