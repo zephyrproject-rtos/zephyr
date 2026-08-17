@@ -26,6 +26,7 @@ target_include_directories(mocks PUBLIC
   ${ZEPHYR_BASE}/tests/bluetooth/host
   ${ZEPHYR_BASE}/tests/bluetooth/host/crypto/mocks
   ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include
+  ${CONFIG_TF_PSA_CRYPTO_DISPATCH_DIR}/include
   ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
 )
 
