@@ -25,6 +25,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
@@ -76,28 +77,42 @@ static void cap_initiator_test_unicast_start_fixture_init(
 		test_conn_init(&fixture->conns[i], i);
 	}
 
-	while (stream_cnt < ARRAY_SIZE(fixture->group_stream_param)) {
-		const enum bt_audio_dir dir = INDEX_TO_DIR(stream_cnt);
+	while (stream_cnt < ARRAY_SIZE(fixture->group_stream_param) &&
+	       pair_idx < ARRAY_SIZE(fixture->group_pair_params)) {
+		struct bt_cap_unicast_group_stream_pair_param *pair_param =
+			&fixture->group_pair_params[pair_idx];
+		struct bt_cap_unicast_group_stream_param *stream_param =
+			&fixture->group_stream_param[stream_cnt];
 
-		pair_idx = stream_cnt / 2U;
+		stream_param->stream = &fixture->cap_streams[stream_cnt];
+		stream_param->qos_cfg = &fixture->preset.qos;
 
-		fixture->group_stream_param[stream_cnt].stream = &fixture->cap_streams[stream_cnt];
-		fixture->group_stream_param[stream_cnt].qos_cfg = &fixture->preset.qos;
+		if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) &&
+		    IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+			const enum bt_audio_dir dir = INDEX_TO_DIR(stream_cnt);
 
-		/* Switch between sink and source depending on index*/
-		if (dir == BT_AUDIO_DIR_SINK) {
-			fixture->group_pair_params[pair_idx].tx_param =
-				&fixture->group_stream_param[stream_cnt];
-		} else {
-			fixture->group_pair_params[pair_idx].rx_param =
-				&fixture->group_stream_param[stream_cnt];
+			/* Switch between sink and source depending on index*/
+			if (dir == BT_AUDIO_DIR_SINK) {
+				pair_param->tx_param = stream_param;
+			} else {
+				pair_param->rx_param = stream_param;
+			}
+			stream_cnt++;
+			pair_idx = stream_cnt / 2U;
+
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+			pair_param->tx_param = stream_param;
+			stream_cnt++;
+			pair_idx++;
+		} else { /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
+			pair_param->rx_param = stream_param;
+			stream_cnt++;
+			pair_idx++;
 		}
-
-		stream_cnt++;
 	}
 
 	fixture->group_param.packing = BT_ISO_PACKING_SEQUENTIAL;
-	fixture->group_param.params_count = pair_idx + 1U;
+	fixture->group_param.params_count = pair_idx;
 	fixture->group_param.params = fixture->group_pair_params;
 
 	err = bt_cap_unicast_group_create(&fixture->group_param, &fixture->unicast_group);
@@ -117,40 +132,79 @@ static void *cap_initiator_test_unicast_start_setup(void)
 static void init_default_params(struct cap_initiator_test_unicast_start_fixture *fixture)
 {
 	/* Setup default params */
+	fixture->audio_start_param.count = 0U;
 	ARRAY_FOR_EACH(fixture->audio_start_stream_params, i) {
 		struct bt_cap_unicast_audio_start_stream_param *stream_param =
 			&fixture->audio_start_stream_params[i];
 
-		/* We pair 2 streams, so only increase conn_index every 2nd stream and otherwise
-		 * round robin on all conns
-		 */
-		const size_t conn_index = (i / 2U) % ARRAY_SIZE(fixture->conns);
-		const size_t ep_index = i / (ARRAY_SIZE(fixture->conns) * 2U);
-		const enum bt_audio_dir dir = INDEX_TO_DIR(i);
+		if (fixture->cap_streams[i].bap_stream.group == NULL) {
+			break;
+		}
 
 		stream_param->stream = &fixture->cap_streams[i];
 		stream_param->codec_cfg = &fixture->preset.codec_cfg;
 
-		/* Distribute the streams like
-		 * [0]: conn[0] snk[0]
-		 * [1]: conn[0] src[0]
-		 * [2]: conn[1] snk[0]
-		 * [3]: conn[1] src[0]
-		 * [4]: conn[0] snk[1]
-		 * [5]: conn[0] src[1]
-		 * [6]: conn[1] snk[1]
-		 * [7]: conn[1] src[1]
-		 */
-		stream_param->member.member = &fixture->conns[conn_index];
-		if (dir == BT_AUDIO_DIR_SINK) {
+		if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) &&
+		    IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+			/* We pair 2 streams, so only increase conn_index every 2nd stream and
+			 * otherwise round robin on all conns
+			 */
+			const size_t conn_index = (i / 2U) % ARRAY_SIZE(fixture->conns);
+			const size_t ep_index = i / (ARRAY_SIZE(fixture->conns) * 2U);
+			const enum bt_audio_dir dir = INDEX_TO_DIR(i);
+
+			/* Distribute the streams like
+			 * [0]: conn[0] snk[0]
+			 * [1]: conn[0] src[0]
+			 * [2]: conn[1] snk[0]
+			 * [3]: conn[1] src[0]
+			 * [4]: conn[0] snk[1]
+			 * [5]: conn[0] src[1]
+			 * [6]: conn[1] snk[1]
+			 * [7]: conn[1] src[1]
+			 */
+			stream_param->member.member = &fixture->conns[conn_index];
+			if (dir == BT_AUDIO_DIR_SINK) {
+				stream_param->ep = fixture->snk_eps[conn_index][ep_index];
+			} else {
+				stream_param->ep = fixture->src_eps[conn_index][ep_index];
+			}
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+			const size_t conn_index = i % ARRAY_SIZE(fixture->conns);
+			const size_t ep_index = i / ARRAY_SIZE(fixture->conns);
+
+			/* Distribute the streams like
+			 * [0]: conn[0] snk[0]
+			 * [1]: conn[1] snk[0]
+			 * [2]: conn[0] snk[1]
+			 * [3]: conn[1] snk[1]
+			 * [4]: conn[0] snk[2]
+			 * [5]: conn[1] snk[2]
+			 */
+
+			stream_param->member.member = &fixture->conns[conn_index];
 			stream_param->ep = fixture->snk_eps[conn_index][ep_index];
-		} else {
+		} else { /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
+			const size_t conn_index = i % ARRAY_SIZE(fixture->conns);
+			const size_t ep_index = i / ARRAY_SIZE(fixture->conns);
+
+			/* Distribute the streams like
+			 * [0]: conn[0] src[0]
+			 * [1]: conn[1] src[0]
+			 * [2]: conn[0] src[1]
+			 * [3]: conn[1] src[1]
+			 * [4]: conn[0] src[2]
+			 * [5]: conn[1] src[2]
+			 */
+
+			stream_param->member.member = &fixture->conns[conn_index];
 			stream_param->ep = fixture->src_eps[conn_index][ep_index];
 		}
+
+		fixture->audio_start_param.count++;
 	}
 
 	fixture->audio_start_param.type = BT_CAP_SET_TYPE_AD_HOC;
-	fixture->audio_start_param.count = CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT;
 	fixture->audio_start_param.stream_params = fixture->audio_start_stream_params;
 }
 
