@@ -1,10 +1,14 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2025-2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 title: Microchip G1 Analog Comparator
 
 description: |
   Binding for the Microchip Comparator driver supporting AC G1 peripherals.
+
+  Group g1 RTC driver supports following hardware peripherals:
+    - module name="AC" id="U2501" version="1.0.0"
+    - module name="AC" id="U2245" version="1.1.1"
 
 compatible: "microchip,ac-g1-comparator"
 
@@ -126,3 +130,14 @@ properties:
     type: boolean
     description: |
       Enable the event output path for the comparator.
+
+examples:
+  - |
+    ac: ac@42004c00 {
+      compatible = "microchip,ac-g1-comparator";
+      reg = <0x42004c00 0x24>;
+      interrupts = <27 0>;
+      interrupt-names = "win0-1";
+      comparator-channel = <0>;
+      status = "disabled";
+    };
