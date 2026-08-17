@@ -179,13 +179,20 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 
 	if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
-		return set_random_address(addr);
+		err = set_random_address(addr);
+		if (err != 0) {
+			return err;
+		}
+
+		bt_id_save_adv_addr(adv, BT_HCI_OWN_ADDR_RANDOM);
+
+		return 0;
 	}
 
 	LOG_DBG("%s", bt_addr_str(addr));
 
 	if (!atomic_test_bit(adv->flags, BT_ADV_PARAMS_SET)) {
-		bt_addr_le_copy_addr(&adv->random_addr, addr, BT_ADDR_LE_RANDOM);
+		bt_addr_le_copy_addr(&adv->adv_addr, addr, BT_ADDR_LE_RANDOM);
 		atomic_set_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING);
 		return 0;
 	}
@@ -206,8 +213,8 @@ int bt_id_set_adv_random_addr(struct bt_le_ext_adv *adv,
 		return err;
 	}
 
-	if (&adv->random_addr.a != addr) {
-		bt_addr_le_copy_addr(&adv->random_addr, addr, BT_ADDR_LE_RANDOM);
+	if (&adv->adv_addr.a != addr) {
+		bt_addr_le_copy_addr(&adv->adv_addr, addr, BT_ADDR_LE_RANDOM);
 	}
 
 	return 0;
@@ -646,6 +653,14 @@ static void le_update_private_addr(void)
 	if (err) {
 		LOG_WRN("Failed to update RPA address (%d)", err);
 		return;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) && adv != NULL &&
+	    !atomic_test_bit(adv->flags, BT_ADV_USE_IDENTITY)) {
+		/* The legacy advertiser advertises with the device-wide
+		 * random address that was just refreshed.
+		 */
+		bt_id_save_adv_addr(adv, BT_HCI_OWN_ADDR_RANDOM);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
@@ -2047,6 +2062,45 @@ int bt_id_set_adv_own_addr(struct bt_le_ext_adv *adv, uint32_t options,
 	return 0;
 }
 
+void bt_id_save_adv_addr(struct bt_le_ext_adv *adv, uint8_t own_addr_type)
+{
+	switch (own_addr_type) {
+	case BT_HCI_OWN_ADDR_PUBLIC:
+	case BT_HCI_OWN_ADDR_RPA_OR_PUBLIC:
+		/* The identity address is not programmed into the controller,
+		 * so it has to be recorded here.
+		 *
+		 * For BT_HCI_OWN_ADDR_RPA_OR_PUBLIC the controller substitutes
+		 * a locally generated RPA whenever the peer is in the resolving
+		 * list, which the host cannot observe, so the configured
+		 * fallback address is recorded instead.
+		 */
+		bt_addr_le_copy(&adv->adv_addr, &bt_dev.id_addr[adv->id]);
+		break;
+	case BT_HCI_OWN_ADDR_RANDOM:
+	case BT_HCI_OWN_ADDR_RPA_OR_RANDOM:
+		if (!(IS_ENABLED(CONFIG_BT_EXT_ADV) &&
+		      BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features))) {
+			/* With extended advertising the per-set random address
+			 * is always programmed through
+			 * bt_id_set_adv_random_addr(), which saves it, so
+			 * there is nothing to do here. Without it the set
+			 * advertises with the device-wide random address,
+			 * which is not always set through that function: with
+			 * privacy it comes from bt_id_set_private_addr(), and
+			 * when scanning with a static random identity it is
+			 * already in place.
+			 */
+			bt_addr_le_copy_addr(&adv->adv_addr,
+					     &bt_dev.random_addr,
+					     BT_ADDR_LE_RANDOM);
+		}
+		break;
+	default:
+		break;
+	}
+}
+
 #if defined(CONFIG_BT_CLASSIC)
 int bt_br_oob_get_local(struct bt_br_oob *oob)
 {
@@ -2181,7 +2235,7 @@ int bt_le_ext_adv_oob_get_local(struct bt_le_ext_adv *adv,
 			le_force_rpa_timeout();
 		}
 
-		bt_addr_le_copy(&oob->addr, &adv->random_addr);
+		bt_addr_le_copy(&oob->addr, &adv->adv_addr);
 	} else {
 		bt_addr_le_copy(&oob->addr, &bt_dev.id_addr[adv->id]);
 	}
