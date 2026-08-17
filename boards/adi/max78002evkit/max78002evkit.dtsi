@@ -92,6 +92,10 @@
 	status = "okay";
 };
 
+&clk_ertco {
+	status = "okay";
+};
+
 &uart0 {
 	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,6 +83,10 @@ m4_serial: &cmsis_serial {};
 };
 
 &clk_ibro {
+	status = "okay";
+};
+
+&clk_ertco {
 	status = "okay";
 };
 
