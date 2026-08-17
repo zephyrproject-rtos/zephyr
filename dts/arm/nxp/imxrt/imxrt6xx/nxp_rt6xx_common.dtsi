@@ -13,7 +13,6 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
-#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
 	chosen {
@@ -54,28 +53,10 @@
 	};
 
 	dsp: dsp {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		compatible = "nxp,rt600-dsp-ctrl";
 		sysctl = <&sysctl0>;
 
 		status = "disabled";
-
-		region@24020000 {
-			reg = <0x24020000 DT_SIZE_K(1)>;
-			type = <NXP_RTXXX_DSP_REGION_RESET>;
-		};
-
-		region@20400000 {
-			reg = <0x20400000 DT_SIZE_K(256)>;
-			type = <NXP_RTXXX_DSP_REGION_TEXT>;
-		};
-
-		region@20440000 {
-			reg = <0x20440000 DT_SIZE_K(256)>;
-			type = <NXP_RTXXX_DSP_REGION_DATA>;
-		};
 	};
 };
 

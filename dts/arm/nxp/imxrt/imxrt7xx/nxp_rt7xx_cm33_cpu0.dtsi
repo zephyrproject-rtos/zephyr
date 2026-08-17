@@ -7,7 +7,6 @@
 #include "nxp_rt7xx_common.dtsi"
 #include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
-#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 / {
 	aliases {
@@ -32,31 +31,10 @@
 	};
 
 	dsp: dsp {
-		#address-cells = <1>;
-		#size-cells = <1>;
-
 		compatible = "nxp,rt700-dsp-ctrl-hifi4";
 		sysctl = <&syscon0>;
 
 		status = "disabled";
-
-		/* 1st 1 kiB of HiFi4's ITCM */
-		memory@24020000 {
-			reg = <0x24020000 DT_SIZE_K(1)>;
-			type = <NXP_RTXXX_DSP_REGION_RESET>;
-		};
-
-		/* 1st half of reserved HiFi4 SRAM region (see below) */
-		memory@200000 {
-			reg = <0x200000 DT_SIZE_M(1)>;
-			type = <NXP_RTXXX_DSP_REGION_TEXT>;
-		};
-
-		/* 2nd half of reserved HiFi4 SRAM region (see below) */
-		memory@300000 {
-			reg = <0x300000 DT_SIZE_M(1)>;
-			type = <NXP_RTXXX_DSP_REGION_DATA>;
-		};
 	};
 
 	soc {
