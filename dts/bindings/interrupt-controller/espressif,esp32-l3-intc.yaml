@@ -1,0 +1,102 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 level-3 (per-peripheral) interrupt aggregator.
+
+  A single INTMUX (level-2) source collects several flags of one peripheral
+  interrupt-status register. Two or more handlers wanting the same INTMUX
+  source shares the same level-2 while each of them owns level-3 interrupt
+  so they can be told apart.
+
+  The node's own "interrupts" cell is the INTMUX source it consumes, and
+  "status-reg" is the peripheral register the dispatcher reads to find out which
+  flags are pending:
+
+      lcd_cam_l3_intc: lcd_cam_l3_intc {
+              compatible = "espressif,esp32-l3-intc";
+              interrupt-controller;
+              #interrupt-cells = <1>;
+              interrupt-parent = <&lcd_cam_intmux>;
+              interrupts = <LCD_CAM_INTR_SOURCE>;
+              status-reg = <0x6004106c>;
+      };
+
+  Consumers name a flag by its raw bit position in that register:
+
+      lcd_cam: lcd_cam@60041000 {
+              interrupt-parent = <&lcd_cam_l3_intc>;
+              interrupts = <0>,   /* LCD_VSYNC      */
+                           <1>,   /* LCD_TRANS_DONE */
+                           <2>,   /* CAM_VSYNC      */
+                           <3>;   /* CAM_HS         */
+      };
+
+  There is deliberately no mask property. gen_isr_tables.py is the only stage
+  that sees every connected flag, so it derives the aggregator's mask as the OR
+  of the declared bits and packs the ISR-table window densely - one slot per
+  connected bit, not one per register bit. The interrupt-controller driver joins
+  that generated window onto "status-reg" at init.
+
+  Two placement rules follow from this and are enforced by the build:
+
+  - The node must be a child of the "espressif,esp32-intc" node, not of its
+    parent INTMUX, so the driver's IRQ_PARENT_ENTRY sweep covers it.
+  - Nothing may connect a handler directly to an aggregator's INTMUX source;
+    every handler goes through the aggregator.
+
+  One consumer per aggregator may instead use ESP_L3_CATCH_ALL in place of a bit
+  number. That leaf owns no bit of "status-reg": it takes the slot just past the
+  masked ones and the dispatcher calls it unconditionally, after every bit that
+  is actually pending. It exists for hardware where one INTMUX source is shared
+  by a handler that has a clean status bit and one that has none - on ESP32-H2,
+  GPIO_INTR_SOURCE is raised both by the analog comparator, which owns
+  GPIO_EXT.int_st bit 0, and by the GPIO port driver, which reads its own per-pin
+  status word and has no bit in that register at all:
+
+      gpio0_l3_intc: gpio0_l3_intc {
+              compatible = "espressif,esp32-l3-intc";
+              interrupt-controller;
+              #interrupt-cells = <1>;
+              interrupt-parent = <&gpio0_intmux>;
+              interrupts = <GPIO_INTR_SOURCE>;
+              status-reg = <0x60091fe4>;   /* GPIO_EXT.int_st */
+      };
+
+      ana_cmpr0: ana_cmpr0 { interrupts = <0>; };                 /* pad_comp */
+      gpio0:     gpio@60091000 { interrupts = <ESP_L3_CATCH_ALL>; };
+
+  A catch-all handler must inspect its own peripheral state and return when it
+  has nothing to do, because it runs on every interrupt from the source. Use it
+  only when the handler genuinely has no status bit; a handler that has one
+  should name it, so it is not woken needlessly.
+
+  Masking an individual flag is the peripheral driver's job, done in its own
+  interrupt-enable register. irq_disable() on one level-3 IRQ deliberately does
+  nothing, because the flags share a single INTMUX source and unrouting it would
+  silence the aggregator's other flags. Level-3 IRQs also cannot be connected
+  with arch_irq_connect_dynamic(): the dense window is only known to the
+  generator, so they must be connected statically through the devicetree.
+
+compatible: "espressif,esp32-l3-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+  status-reg:
+    type: int
+    required: true
+    description: |
+      Absolute address of the peripheral's interrupt-status register. Bit n of
+      this register is level-3 interrupt n of this aggregator. The dispatcher
+      reads it, masks it down to the bits that actually have a handler, and
+      calls each pending flag's ISR; the ISR clears its own peripheral status.
+
+# First cell must be named "irq": the multilevel DT_IRQN() macros read it as the
+# interrupt number. On this node it carries the peripheral's level-2 INTMUX
+# source; on a consumer of this node it carries the status-register bit.
+interrupt-cells:
+  - irq
