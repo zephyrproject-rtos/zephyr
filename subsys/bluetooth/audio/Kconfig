@@ -21,9 +21,19 @@ if BT_AUDIO
 
 config BT_AUDIO_RX
 	def_bool BT_ASCS_ASE_SNK || BT_BAP_UNICAST_CLIENT_ASE_SRC || BT_BAP_BROADCAST_SINK
+	help
+	  Indicates that the stack is configured with support for receiving
+	  audio (for example as a unicast Audio Stream sink or a Broadcast
+	  Sink). This internal option is derived automatically and is not meant
+	  to be set directly.
 
 config BT_AUDIO_TX
 	def_bool BT_ASCS_ASE_SRC || BT_BAP_UNICAST_CLIENT_ASE_SNK || BT_BAP_BROADCAST_SOURCE
+	help
+	  Indicates that the stack is configured with support for transmitting
+	  audio (for example as a unicast Audio Stream source or a Broadcast
+	  Source). This internal option is derived automatically and is not
+	  meant to be set directly.
 
 config BT_AUDIO_NOTIFY_RETRY_DELAY
 	int "Delay for notification sending retried attempt in 1.25 ms units"

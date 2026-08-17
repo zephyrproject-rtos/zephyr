@@ -12,13 +12,19 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_CLOCK_CONTROL_NRF
 /**
  * @brief Initialize LFCLK RC calibration.
  *
  * @param mgrs Pointer to array of onoff managers for HF and LF clocks.
  */
 void z_nrf_clock_calibration_init(struct onoff_manager *mgrs);
-
+#else
+/**
+ * @brief Initialize LFCLK RC calibration.
+ */
+void z_nrf_clock_calibration_init(void);
+#endif
 /**
  * @brief Calibration done handler
  *

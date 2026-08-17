@@ -34,27 +34,59 @@ static struct net_sockaddr_in *in4_addr_my;
 
 #define SOCK_ID_IPV4 0
 #define SOCK_ID_IPV6 1
-#define SOCK_ID_MAX 2
+#define SOCK_ID_MAX  2
 
-#define UDP_RECEIVER_BUF_SIZE 1500
-#define POLL_TIMEOUT_MS 100
+#define UDP_RECEIVER_BUF_SIZE   1500
+#define POLL_TIMEOUT_MS         100
+#define UDP_REORDER_WINDOW_SIZE 64U
 
 static zperf_callback udp_session_cb;
 static void *udp_user_data;
 static bool udp_server_running;
 static uint16_t udp_server_port;
-static struct net_sockaddr udp_server_addr;
+static struct net_sockaddr_storage udp_server_addr;
 
 struct zsock_pollfd fds[SOCK_ID_MAX] = { 0 };
 
 static void udp_svc_handler(struct net_socket_service_event *pev);
 
-NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_udp, udp_svc_handler,
-				      SOCK_ID_MAX);
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(svc_udp, udp_svc_handler, SOCK_ID_MAX);
 static char udp_server_iface_name[NET_IFNAMSIZ];
 
-static inline void build_reply(struct zperf_udp_datagram *hdr,
-			       struct zperf_server_hdr *stat,
+static void udp_update_sequence(struct session *ses, uint32_t packet_id)
+{
+	uint32_t advance;
+
+	if (packet_id < ses->next_id) {
+		uint32_t distance = ses->next_id - packet_id - 1U;
+
+		ses->outorder++;
+		if (distance < UDP_REORDER_WINDOW_SIZE &&
+		    (ses->missing_id_bitmap & BIT64(distance)) != 0U) {
+			ses->missing_id_bitmap &= ~BIT64(distance);
+			if (ses->error > 0U) {
+				ses->error--;
+			}
+		}
+
+		return;
+	}
+
+	advance = packet_id - ses->next_id;
+	ses->error += advance;
+
+	if (advance >= UDP_REORDER_WINDOW_SIZE - 1U) {
+		/* Track the most recent missing IDs and account for older ones as lost. */
+		ses->missing_id_bitmap = ~BIT64(0);
+	} else {
+		ses->missing_id_bitmap <<= advance + 1U;
+		ses->missing_id_bitmap |= BIT64_MASK(advance) << 1U;
+	}
+
+	ses->next_id = packet_id + 1U;
+}
+
+static inline void build_reply(struct zperf_udp_datagram *hdr, struct zperf_server_hdr *stat,
 			       uint8_t *buf)
 {
 	int pos = 0;
@@ -109,6 +141,8 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 	int32_t transit_time;
 	int64_t time;
 	int32_t id;
+	uint32_t packet_id;
+	bool is_final;
 
 	if (datalen < sizeof(struct zperf_udp_datagram)) {
 		NET_WARN("Short iperf packet!");
@@ -125,11 +159,13 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 	}
 
 	id = net_ntohl(hdr->id);
+	is_final = id < 0;
+	packet_id = is_final ? (uint32_t)(-(int64_t)id) : (uint32_t)id;
 
 	switch (session->state) {
 	case STATE_COMPLETED:
 	case STATE_NULL:
-		if (id < 0) {
+		if (is_final) {
 			/* Session is already completed: Resend the stat packet
 			 * and continue
 			 */
@@ -177,23 +213,13 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 		session->last_transit_time = transit_time;
 
 		/* Check header id */
-		if (abs(id) != session->next_id) {
-			if (id < session->next_id) {
-				session->outorder++;
-			} else {
-				session->error += id - session->next_id;
-				session->next_id = id + 1;
-			}
-		} else {
-			session->next_id++;
-		}
+		udp_update_sequence(session, packet_id);
 
-		if (id < 0) { /* Negative id means session end. */
-			struct zperf_results results = { 0 };
+		if (is_final) { /* Negative id means session end. */
+			struct zperf_results results = {0};
 			uint64_t duration;
 
-			duration = k_ticks_to_us_ceil64(time -
-							session->start_time);
+			duration = k_ticks_to_us_ceil64(time - session->start_time);
 
 			/* Update state machine */
 			session->state = STATE_COMPLETED;
@@ -207,7 +233,8 @@ static void udp_received(int sock, const struct net_sockaddr *addr, uint8_t *dat
 			session->stat.stop_usec = duration % USEC_PER_SEC;
 			session->stat.error_cnt = session->error;
 			session->stat.outorder_cnt = session->outorder;
-			session->stat.datagrams = session->counter;
+			/* iPerf encodes the total sequence count, including loss. */
+			session->stat.datagrams = packet_id;
 			session->stat.jitter1 = 0;
 			session->stat.jitter2 = session->jitter;
 
@@ -274,21 +301,24 @@ static void zperf_udp_join_mcast_ipv6(char *if_name, struct net_in6_addr *addr)
 static void zperf_udp_leave_mcast(int sock)
 {
 	struct net_if *iface = NULL;
-	struct net_sockaddr addr = {0};
-	net_socklen_t addr_len = NET_IPV6_ADDR_SIZE;
+	struct net_sockaddr_storage addr = {0};
+	struct net_sockaddr *sa = net_sad(&addr);
+	net_socklen_t addr_len = sizeof(addr);
 
-	zsock_getsockname(sock, &addr, &addr_len);
+	if (zsock_getsockname(sock, sa, &addr_len) < 0) {
+		return;
+	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
-		struct net_sockaddr_in *addr4 = (struct net_sockaddr_in *)&addr;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.ss_family == NET_AF_INET) {
+		struct net_sockaddr_in *addr4 = net_sin(sa);
 
 		if (net_ipv4_is_addr_mcast(&addr4->sin_addr)) {
 			net_ipv4_igmp_leave(iface, &addr4->sin_addr);
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
-		struct net_sockaddr_in6 *addr6 = (struct net_sockaddr_in6 *)&addr;
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.ss_family == NET_AF_INET6) {
+		struct net_sockaddr_in6 *addr6 = net_sin6(sa);
 
 		if (net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
 			net_ipv6_mld_leave(iface, &addr6->sin6_addr);
@@ -322,7 +352,8 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 	int ret = 1;
 	int family, sock_error = 0;
 	int default_error = EIO;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
+	struct net_sockaddr *sa = net_sad(&addr);
 	net_socklen_t optlen = sizeof(int);
 	net_socklen_t addrlen = sizeof(addr);
 
@@ -356,7 +387,7 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 
 	while (ret > 0) {
 		ret = zsock_recvfrom(pev->event.fd, buf, sizeof(buf), ZSOCK_MSG_DONTWAIT,
-				     &addr, &addrlen);
+				     sa, &addrlen);
 		if ((ret < 0) && (errno == EAGAIN)) {
 			ret = 0;
 			break;
@@ -371,7 +402,7 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 			goto error;
 		}
 
-		udp_received(pev->event.fd, &addr, buf, ret);
+		udp_received(pev->event.fd, sa, buf, ret);
 	}
 	return ret;
 
@@ -395,6 +426,7 @@ static void udp_svc_handler(struct net_socket_service_event *pev)
 
 static int zperf_udp_receiver_init(void)
 {
+	struct net_sockaddr *server_sa = net_sad(&udp_server_addr);
 	int ret;
 	int family;
 
@@ -402,7 +434,7 @@ static int zperf_udp_receiver_init(void)
 		fds[i].fd = -1;
 	}
 
-	family = udp_server_addr.sa_family;
+	family = udp_server_addr.ss_family;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && (family == NET_AF_INET || family == NET_AF_UNSPEC)) {
 		const struct net_in_addr *in4_addr = NULL;
@@ -417,7 +449,7 @@ static int zperf_udp_receiver_init(void)
 			goto error;
 		}
 
-		in4_addr = &net_sin(&udp_server_addr)->sin_addr;
+		in4_addr = &net_sin(server_sa)->sin_addr;
 
 		if (!net_ipv4_is_addr_unspecified(in4_addr)) {
 			memcpy(&in4_addr_my->sin_addr, in4_addr,
@@ -471,7 +503,7 @@ use_any_ipv4:
 			goto error;
 		}
 
-		in6_addr = &net_sin6(&udp_server_addr)->sin6_addr;
+		in6_addr = &net_sin6(server_sa)->sin6_addr;
 
 		if (!net_ipv6_is_addr_unspecified(in6_addr)) {
 			memcpy(&in6_addr_my->sin6_addr, in6_addr,
@@ -544,7 +576,7 @@ int zperf_udp_download(const struct zperf_download_params *param,
 	udp_session_cb = callback;
 	udp_user_data  = user_data;
 	udp_server_port = param->port;
-	memcpy(&udp_server_addr, &param->addr, sizeof(struct net_sockaddr));
+	memcpy(&udp_server_addr, &param->addr_storage, sizeof(udp_server_addr));
 
 	if (param->if_name[0]) {
 		/*

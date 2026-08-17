@@ -107,7 +107,7 @@ static mtb_ipc_semaphore_t pse84_srf_ipc_semaphores[MTB_SRF_IPC_SEMA_COUNT];
 static mtb_ipc_mbox_receiver_t pse84_srf_ipc_receiver;
 
 /* Relay threads */
-K_MSGQ_DEFINE(pse84_srf_request_queue, sizeof(void *), MTB_SRF_POOL_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(pse84_srf_request_queue, void *, MTB_SRF_POOL_SIZE);
 K_SEM_DEFINE(pse84_srf_relay_ready_sem, 0, 2);
 K_THREAD_STACK_DEFINE(pse84_srf_receive_stack, SRF_THREAD_STACK_SIZE);
 K_THREAD_STACK_DEFINE(pse84_srf_process_stack, SRF_THREAD_STACK_SIZE);

@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/v2m-musca-b1-pinctrl.h>
+
+&pinctrl {
+	/omit-if-no-ref/ uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TXD>, <UART0_RXD>;
+		};
+	};
+
+	/omit-if-no-ref/ spi_default: spi_default {
+		group1 {
+			pinmux = <SPIO_NSS0>, <SPIO_MOSI>,
+				 <SPIO_SCK>;
+		};
+
+		group2 {
+			pinmux = <SPIO_MISO>;
+		};
+	};
+
+	/omit-if-no-ref/ i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_DATA>, <I2C0_CLOCK>;
+		};
+	};
+};

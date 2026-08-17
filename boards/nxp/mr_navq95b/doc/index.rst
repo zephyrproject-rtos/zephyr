@@ -117,6 +117,58 @@ When running the firmware from external flash, the standard boot flow involves:
 4. Firmware executes from flash (XIP)
 
 
+Ethernet: running a NETC VSI alongside Linux
+********************************************
+
+The i.MX95 NETC (ENETC) Ethernet controller is shared between Linux on the
+Cortex-A55 cores and Zephyr on the Cortex-M7. Linux owns the physical port and
+PHY through the Physical Station Interface (PSI), which shows up as the ``end0``
+network interface. Zephyr on the M7 uses a Virtual Station Interface (VSI) - a
+virtual function (VF) of the same controller (``enetc0_vsi1``, ENETC0 VF1) - and
+sends and receives through that shared port.
+
+The VF belongs to the PF, so Linux must create and hand over the VF before the
+M7 can use it. The M7 driver never touches the PHY or the PF; it only brings up
+its own station interface and asks the PSI to set its MAC filter over the NETC
+VSI-to-PSI message channel.
+
+Linux device tree
+=================
+
+No M7-specific change is required in the Linux device tree. The default NavQ95
+Linux image (see `NXP IMX-MANIFEST-NAVQ95`_) already enables the ENETC0 PF as
+``end0`` with SR-IOV support, which is all that is needed. The VF itself is
+created at runtime (below), not described statically in the device tree.
+
+Bringing up the VF from Linux
+=============================
+
+Run the following once on the A55 (as root) after Linux has booted, where
+``end0`` is the ENETC0 PF handed to the M7 as VF1:
+
+.. code-block:: bash
+
+   # Keep Linux's VF driver off the VF so the M7 can own it, then create VF0+VF1.
+   echo 0 > /sys/class/net/end0/device/sriov_drivers_autoprobe
+   echo 2 > /sys/class/net/end0/device/sriov_numvfs
+
+   # Resolve the VF1 PCI address and let it DMA and raise MSI-X interrupts.
+   vf=$(basename "$(readlink -f /sys/class/net/end0/device/virtfn1)")
+   setpci -s "$vf" COMMAND=0x0006          # Bus Master Enable
+   setpci -s "$vf" CAP_MSIX+2.w=0x8000:0x8000
+
+   # Trust the VF so the PSI honours the M7 driver's MAC-filter requests.
+   ip link set end0 vf 1 trust on
+
+After this, the M7 VSI driver sees that the VF is enabled and comes up on the
+network through ``end0``.
+
+.. note::
+
+   The NavQ95 BSP (see `NXP IMX-MANIFEST-NAVQ95`_) ships an
+   ``enetc-vsi-handoff-mcore`` service that runs these steps at boot, so you
+   normally do not run them by hand. They are shown here for custom setups.
+
 .. include:: ../../common/board-footer.rst.inc
 
 References

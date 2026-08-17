@@ -478,7 +478,8 @@ static void crypto_init(struct wg_context *ctx)
 
 static int wireguard_init(void)
 {
-	struct net_sockaddr local_addr = { 0 };
+	struct net_sockaddr_storage local_addr_storage = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	const struct device *dev;
 	struct wg_context *ctx;
 	uint16_t port;
@@ -512,20 +513,20 @@ static int wireguard_init(void)
 	crypto_init(ctx);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		local_addr.sa_family = NET_AF_INET6;
+		local_addr->sa_family = NET_AF_INET6;
 
 		/* Note that if IPv4 is enabled, then v4-to-v6-mapping option
 		 * is set and the system will use the IPv6 socket to provide
 		 * IPv4 connectivity.
 		 */
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		local_addr.sa_family = NET_AF_INET;
+		local_addr->sa_family = NET_AF_INET;
 	}
 
 	if (CONFIG_WIREGUARD_PORT > 0) {
 		port = CONFIG_WIREGUARD_PORT;
 	} else {
-		port = get_port(&local_addr);
+		port = get_port(local_addr);
 		if (port == 0) {
 			port = WG_DEFAULT_PORT;
 		}
@@ -533,9 +534,9 @@ static int wireguard_init(void)
 		NET_INFO("Wireguard service port %d", port);
 	}
 
-	ret = net_udp_register(local_addr.sa_family,
+	ret = net_udp_register(local_addr->sa_family,
 			       NULL,
-			       &local_addr,
+			       local_addr,
 			       0,
 			       port,
 			       NULL,

@@ -239,6 +239,7 @@ Supported modems
 The following modems are already supported in
 :zephyr_file:`drivers/modem/modem_cellular.c`:
 
+* Fibocom LE250
 * Quectel BG95, BG96
 * Quectel EG25-G, EG800Q
 * SIMCom SIM7080, A76xx

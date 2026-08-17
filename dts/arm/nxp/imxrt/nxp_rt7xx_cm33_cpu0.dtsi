@@ -5,6 +5,7 @@
  */
 
 #include "nxp_rt7xx_common.dtsi"
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
@@ -122,6 +123,97 @@
 		interrupts = <136 0>;
 		#wakeup-ctrl-cells = <1>;
 		status = "okay";
+	};
+
+	inputmux0: inputmux@26000 {
+		compatible = "nxp,inputmux";
+		reg = <0x26000 0x1000>;
+		status = "disabled";
+		#mux-control-cells = <1>;
+		#mux-state-cells = <2>;
+	};
+
+	freqme0: freqme@23000 {
+		compatible = "nxp,freqme";
+		reg = <0x23000 0x10>;
+		interrupts = <124 0>;
+		clocks = <&clkctl0 MCUX_FREQME_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-osc {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_REF_OSC_CLK>;
+				clocks = <&clkctl0 MCUX_EXT_CLK>;
+			};
+
+			ref-fro1 {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_REF_FRO1>;
+				clocks = <&clkctl0 MCUX_FRO_HF_CLK>;
+			};
+
+			ref-fro1-div8 {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_REF_FRO1_DIV8>;
+				clock-frequency = <24000000>;
+			};
+
+			ref-osc32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_REF_OSC32K>;
+				clock-frequency = <32768>;
+			};
+		};
+
+		target-sources {
+			/*
+			 * Targets without a clocks / clock-frequency provider are
+			 * MEASURE only (no WINDOW auto-derive): LPOSC and FRO0 have no
+			 * fixed nominal rate here; GPIO_A / GPIO_B are GPIO clock
+			 * domains.
+			 */
+			tar-fro1 {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO1>;
+				clocks = <&clkctl0 MCUX_FRO_HF_CLK>;
+			};
+
+			tar-osc {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_OSC_CLK>;
+				clocks = <&clkctl0 MCUX_EXT_CLK>;
+			};
+
+			tar-fro1-div8 {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO1_DIV8>;
+				clock-frequency = <24000000>;
+			};
+
+			tar-lposc {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_LPOSC>;
+			};
+
+			tar-osc32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_OSC32K>;
+				clock-frequency = <32768>;
+			};
+
+			tar-fro0 {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO0>;
+			};
+
+			tar-fro2 {
+				mux-states = <&inputmux0 0 NXP_FREQME_RT7XX_TAR_FRO2>;
+				clock-frequency = <300000000>;
+			};
+
+			tar-gpio-a {
+				mux-states = <&inputmux0 0
+					      NXP_FREQME_RT7XX_TAR_GPIO_A_CLK>;
+			};
+
+			tar-gpio-b {
+				mux-states = <&inputmux0 0
+					      NXP_FREQME_RT7XX_TAR_GPIO_B_CLK>;
+			};
+		};
 	};
 
 	ctimer0: timer@28000 {
@@ -925,6 +1017,37 @@
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "disabled";
+	};
+
+	micfil: micfil@20e000 {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		compatible = "nxp,micfil";
+		reg = <0x20e000 0x1000>;
+
+		interrupts = <18 0>;
+		clocks = <&clkctl0 MCUX_MICFIL_CLK>;
+		quality-mode = <1>;
+		cic-decimation-rate = <16>;
+		fifo-watermark = <7>;
+		sample-rate = <16000>;
+
+		status = "disabled";
+
+		channel0: micfil-channel@0 {
+			reg = <0>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel1: micfil-channel@1 {
+			reg = <1>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
 	};
 
 	/* LPFlexcomm14/16 only support LPSPI function  */

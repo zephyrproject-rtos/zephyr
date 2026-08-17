@@ -37,6 +37,9 @@ extern "C" {
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */
 # include <zephyr/arch/xtensa/atomic_xtensa.h>
+# elif defined(CONFIG_ARC)
+/* MWDT ignores the memory-order argument of the atomic builtins */
+# include <zephyr/arch/arc/atomic_arc.h>
 # else
 /* Other arch specific implementation */
 # include <zephyr/sys/atomic_arch.h>

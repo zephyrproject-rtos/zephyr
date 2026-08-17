@@ -12,5 +12,6 @@ i2s_rxtx: &i2s0 {
 	max9867: max9867@18 {
 		compatible = "adi,max9867";
 		reg = <0x18>;
+		adi,stereo-capacitorless-output;
 	};
 };

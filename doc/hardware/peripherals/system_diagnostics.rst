@@ -16,3 +16,4 @@ System information, synchronization, DMA, and diagnostics.
    crc.rst
    peci.rst
    dma.rst
+   mux.rst

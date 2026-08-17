@@ -67,7 +67,7 @@ int mqtt_client_tls_connect(struct mqtt_client *client)
 	if (client->transport.proxy.addrlen != 0) {
 		ret = setsockopt(client->transport.tls.sock,
 				 ZSOCK_SOL_SOCKET, ZSOCK_SO_SOCKS5,
-				 &client->transport.proxy.addr,
+				 net_sad(&client->transport.proxy.addr_storage),
 				 client->transport.proxy.addrlen);
 		if (ret < 0) {
 			goto error;

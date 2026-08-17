@@ -77,6 +77,7 @@ tests:
     integration_platforms:
       - qemu_x86
       - mimxrt1060_evk/mimxrt1062/qspi
+      - pic32cz_ca80_cult
   drivers.flash.common.intel_pflash_cfi01:
     platform_allow: qemu_x86
     integration_platforms:
@@ -164,6 +165,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
   drivers.flash.common.silabs.dma.lpwrite:
@@ -171,6 +173,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
     extra_args:
@@ -180,6 +183,7 @@ tests:
       - xg24_rb4187c
       - xg29_rb4412a
       - bg29_rb4420a
+      - kg100s_rb4332a
     extra_configs:
       - CONFIG_DMA=y
       - CONFIG_SOC_FLASH_SILABS_S2_DMA_READ=y
@@ -294,6 +298,14 @@ tests:
       - SHIELD=mikroe_flash_5_click
       - DTC_OVERLAY_FILE="./boards/mikroe_flash_5_click.overlay"
       - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
+  drivers.flash.common.spi_nand.w25n01gv:
+    harness_config:
+      fixture: w25n01gv
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - FILE_SUFFIX="w25n01gv"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"
   drivers.flash.common.versalnet:
     build_only: true
     platform_allow:
@@ -334,3 +346,11 @@ tests:
       - CONFIG_TEST_DRIVER_FLASH_SIZE=-1
     integration_platforms:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
+  drivers.flash.common.spi_nand.w25n01gv:
+    platform_allow:
+      - nrf7120dk/nrf7120/cpuapp
+    harness_config:
+      fixture: w25n01gv
+    extra_args:
+      - FILE_SUFFIX="w25n01gv"
+      - EXTRA_CONF_FILE="./boards/mikroe_flash_5_click.conf"

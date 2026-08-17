@@ -111,10 +111,10 @@ struct dac_channel_cfg {
  * @return Static initializer for an dac_channel_cfg structure.
  */
 #define DAC_CHANNEL_CFG_DT(node_id) { \
+	.channel_id       = DT_REG_ADDR(node_id),                      \
 	.resolution       = DT_PROP_OR(node_id, zephyr_resolution, 0), \
 	.buffered         = DT_PROP(node_id, zephyr_buffered),         \
 	.internal         = DT_PROP(node_id, zephyr_internal),         \
-	.channel_id       = DT_REG_ADDR(node_id),                      \
 }
 
 /**

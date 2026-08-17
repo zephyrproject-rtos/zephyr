@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(bluetooth_mesh_brg)
 
@@ -16,6 +16,7 @@ target_include_directories(app
     ${ZEPHYR_BASE}/subsys/bluetooth/mesh
     ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include
     ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
+    ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/dispatch/include/
 )
 
 target_compile_options(app

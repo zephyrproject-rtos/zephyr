@@ -17,11 +17,11 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include "uhc_common.h"
-#include "usb.h"
-#include "usb_host_config.h"
-#include "usb_host_mcux_drv_port.h"
+#include <usb.h>
+#include <usb_host_config.h>
+#include <usb_host_mcux_drv_port.h>
 #include "uhc_mcux_common.h"
-#include "usb_host_khci.h"
+#include <usb_host_khci.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(uhc_mcux);

@@ -74,6 +74,26 @@ Removed APIs and options
 
       * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``
 
+* Bluetooth
+
+  * Host
+
+    * The ``CONFIG_BT_RECV_CONTEXT`` choice and its options ``CONFIG_BT_RECV_WORKQ_SYS``
+      and ``CONFIG_BT_RECV_WORKQ_BT`` have been removed. The host now always
+      processes low-priority HCI packets on the dedicated Bluetooth RX workqueue
+      (the former ``CONFIG_BT_RECV_WORKQ_BT`` behavior). See the migration guide.
+
+    * Selected Host work items have moved from the system workqueue to the
+      dedicated Bluetooth RX workqueue. Application callbacks reached from
+      those work items now run in the Bluetooth RX thread. See the migration
+      guide for affected callback families.
+
+    * The ``CONFIG_BT_HCI_RAW_H4`` and ``CONFIG_BT_HCI_RAW_H4_ENABLE`` Kconfig
+      options have been removed. They have had no effect since Zephyr 4.2,
+      where the HCI raw layer switched to using H:4 packet encoding for all
+      buffers unconditionally. Applications still setting these options can
+      simply drop them.
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
@@ -111,6 +131,11 @@ Deprecated APIs and options
 
   * The :c:struct:`audio_codec_api` struct has been deprecated. Audio codec drivers are now
     expected to use the :c:macro:`DEVICE_API` macro to declare their driver API.
+
+* Build system
+
+  * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
+    ``file(COPY_FILE ...)`` CMake command instead.
 
 * CPU Load
 
@@ -163,6 +188,14 @@ Deprecated APIs and options
   * Deprecated :kconfig:option:`CONFIG_NET_L2_PTP`.
     Used :kconfig:option:`CONFIG_NET_L2_PTP_TIMESTAMPING` instead.
 
+* Timer
+
+  * New :c:func:`sys_clock_no_timeout` hook for handling of
+    :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE`, replacing the call to
+    :c:func:`sys_clock_set_timeout` with ``ticks=K_TICKS_FOREVER``.
+  * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
+    replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
@@ -181,6 +214,24 @@ New APIs and options
   instead.
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
+
+* ADC
+
+  * Optional :c:member:`adc_driver_api.ref_get` callback and
+    :c:func:`adc_ref_get` so applications and
+    :c:func:`adc_raw_to_millivolts_dt` can use a driver-owned runtime
+    millivolt scale for any :c:enum:`adc_reference`. Static
+    :c:member:`adc_driver_api.ref_internal` remains the fallback for
+    :c:enumerator:`ADC_REF_INTERNAL` when the callback is NULL.
+    :c:func:`adc_raw_to_millivolts_dt` falls back to channel DT
+    ``zephyr,vref-mv`` when :c:func:`adc_ref_get` fails.
+
+* Architectures
+
+  * :kconfig:option:`CONFIG_ARM_MPU_CM7_UNMAPPED_REGION` (Arm Cortex-M7 catch-all MPU region
+    for unmapped addresses, erratum 1013783 workaround)
+  * :kconfig:option:`CONFIG_EXCEPTION_DUMP` (enabled by default, can be disabled to compile
+    out the fault handler output on size constrained builds)
 
 * Audio
 
@@ -236,6 +287,13 @@ New APIs and options
   * :c:func:`haptics_set_level`
   * :c:func:`haptics_stream_samples`
 
+* HWSPINLOCK
+
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_DEFINE`
+  * :c:macro:`HWSPINLOCK_SPINLOCK_ARRAY_DT_INST_DEFINE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
+  * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)
@@ -244,11 +302,21 @@ New APIs and options
 
   * :c:func:`k_thread_runtime_stats_is_enabled`
   * :c:func:`atomic_test_and_set_bit_to`
+  * :c:macro:`K_MSGQ_DEFINE_STATIC`
+  * :c:macro:`K_MSGQ_DEFINE_TYPE`
+  * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
 
 * LoRa
 
   * :c:func:`lora_recv_duty_cycle`
   * :c:func:`lora_recv_duty_cycle_async`
+
+* Management
+
+  * MCUmgr
+
+    * Added support for SPI MCUmgr SMP transport, which can be enabled with
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SPI`.
 
 * Network
 
@@ -264,6 +332,32 @@ New APIs and options
     :c:func:`mdns_responder_disable_iface`
     (:kconfig:option:`CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL`) to enable or
     disable the mDNS responder on a network interface at runtime.
+  * Add a DHCPv6 server with IPv6 prefix delegation support
+    (:kconfig:option:`CONFIG_NET_DHCPV6_SERVER`):
+    :c:func:`net_dhcpv6_server_start`, :c:func:`net_dhcpv6_server_stop` and
+    :c:func:`net_dhcpv6_server_foreach_lease`.
+  * Add IPv6 router role, that is, transmission of Router Advertisements
+    (:kconfig:option:`CONFIG_NET_IPV6_ND_RA_TX`):
+    :c:func:`net_if_ipv6_router_start`, :c:func:`net_if_ipv6_router_stop` and
+    :c:func:`net_if_ipv6_prefix_set_advertise`.
+  * Add requesting router support to the DHCPv6 client, a delegated prefix can
+    be sub-delegated onto downstream links via
+    :c:member:`net_dhcpv6_params.downstream_ifaces`.
+
+* Power Management
+
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_ERR_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_GET`
+  * :c:macro:`LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT`
+  * :c:macro:`LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT`
 
 * Ring buffer
 
@@ -313,14 +407,25 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* ADC
+
+  * Analog Devices AD4190-8 and AD4195-8 Sigma-Delta ADCs
+    (:dtcompatible:`adi,ad4190-8-adc`, :dtcompatible:`adi,ad4195-8-adc`).
+
 * GPIO
 
   * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
     (:dtcompatible:`diodes,pi4ioe5v6408`).
+  * ST Zio connector for STM32 Nucleo-144 boards
+    (:dtcompatible:`st-zio-header`).
 
 * Input
 
   * VIRTIO input device (:dtcompatible:`virtio,input`).
+
+* Sensors
+
+  * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
 
 * Clock Monitor
 
@@ -357,11 +462,25 @@ Libraries / Subsystems
 
   * Added AES CFB and OFB cipher mode support.
 
+* Mbed TLS
+
   * Mbed TLS was updated to version 4.1.1. Release notes can be found
     `here <https://github.com/Mbed-TLS/mbedtls/releases/tag/mbedtls-4.1.1>`_.
 
   * TF-PSA-Crypto was updated to version 1.1.1. Release notes can be found
     `here <https://github.com/Mbed-TLS/TF-PSA-Crypto/releases/tag/tf-psa-crypto-1.1.1>`_.
+
+  * Added :kconfig:option:`CONFIG_TF_PSA_CRYPTO_DISPATCH_DIR`, which enables TF-PSA-Crypto to use
+    custom implementations of crypto operation dispatch. This makes hardware acceleration of
+    cryptographic operations possible by using an accelerator-aware dispatch implementation.
+
+* TF-M
+
+  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
+    found `here <https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.htm>`_.
+
+  * TF-M can now be compiled using LLVM by setting ``ZEPHYR_TOOLCHAIN_VARIANT``
+    to ``zephyr/llvm``.
 
 * DFU
 
@@ -389,19 +508,21 @@ Libraries / Subsystems
 
 Devicetree
 **********
+* Nodes can now use phandles to refer to their children without causing a cycle in the
+  dependency graph and a build error. See :ref:`dt-bindings-dependency-mode` how to
+  use this new feature. (:github:`108892`)
 
   * :c:macro:`DT_NODELABEL_C_TOKEN`
   * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
 
-
-* TF-M
-
-  * TF-M was updated from version 2.2.2 to version 2.3.0. Release notes can be
-    found at:
-    https://trustedfirmware-m.readthedocs.io/en/tf-mv2.3.0/releases/2.3.0.html
-
 Other notable changes
 *********************
+
+* Build system
+
+  * The minimum required CMake version has been raised to 3.28.0, a version satisfied by the CMake package in the
+    Ubuntu 24.04 LTS package repositories. See the :ref:`migration guide <migration_4.5>` for
+    options if your distribution ships an older version.
 
 * Kernel
 
@@ -420,10 +541,34 @@ Other notable changes
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
 
+* Timer
+
+  * With :kconfig:option:`CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE` enabled, a driver may no
+    longer stop its time base as soon as no timeout is pending, if that breaks
+    :c:func:`sys_clock_cycle_get_32` / :c:func:`sys_clock_cycle_get_64`. Those must
+    keep counting while the CPU runs. Stopping the time base is permitted only from
+    :c:func:`sys_clock_idle_enter`, where :c:func:`sys_clock_idle_exit` is
+    guaranteed to follow.
+
+  * Tickless system-timer drivers can now be built on a shared implementation
+    header, :file:`drivers/timer/system_timer_generic.h`, which owns the tick
+    accounting each driver previously open-coded: the cycle-to-tick conversion,
+    the announce baseline, the tick-aligned deadline and the counter wrap and
+    range handling. A driver reduces to a few cycle-domain primitives, a
+    cycle-counter read plus an absolute-compare arm. See the
+    :ref:`migration guide <migration_4.5>` for how to use it (:github:`115844`).
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test
     certificates (DES-encrypted private keys). Use ``rsa2k_no_des`` instead.
+
+  * The transmit power ceiling properties in ``wifi-tx-power-2g.yaml`` and
+    ``wifi-tx-power-5g.yaml`` are no longer ``required`` and now carry
+    conservative defaults, so a board that has not been characterised errs on
+    the side of transmitting too little rather than exceeding a regulatory
+    limit. Boards that have measured their own limits continue to state them
+    explicitly, so no board changes behaviour.
 
 * MCUboot
 
@@ -435,6 +580,31 @@ Other notable changes
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
 
+* NXP
+
+  * The NXP LPC DTSI files have been reorganized from the flat
+    ``dts/arm/nxp/lpc/`` directory into per-series subdirectories
+    (``lpc11u6x/``, ``lpc51u68/``, ``lpc54xxx/``, ``lpc55xxx/``, ``lpc84x/``).
+    See the :ref:`migration guide <migration_4.5>` for how to update out-of-tree
+    board includes.
+
+* Arm
+
+  * The non-secure variant of
+      :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1/musca_s1/ns``)
+      has been removed due to TF-M removing platform support for this board.
+
+  * As a consequence of the above, the secure variant of
+    :zephyr:board:`Arm Musca-S1 <v2m_musca_s1>` (``v2m_musca_s1``) has been deprecated.
+    This is to avoid a confusing state of partial support.
+
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+Trusted Firmware-A
+******************
+
+* ``CONFIG_TFA_BUILD_FIP`` is introduced to configure FIP (Firmware Image Package) generation.
+  FIP generation is by default disabled, but can be enabled by setting ``CONFIG_TFA_BUILD_FIP=y``
+  in ``prj.conf`` or for custom boards, in the board's ``<board>_defconfig`` file.

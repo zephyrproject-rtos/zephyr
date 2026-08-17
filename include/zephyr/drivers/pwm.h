@@ -34,7 +34,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/toolchain.h>

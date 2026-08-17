@@ -103,6 +103,18 @@ LOG_MODULE_REGISTER(uart_nrfx_uarte, CONFIG_UART_LOG_LEVEL);
 #define UARTE_HAS_FRAME_TIMEOUT 1
 #endif
 
+#if defined(CONFIG_UARTE_NRFX_UARTE_HAS_DMAEND)
+BUILD_ASSERT(IS_ENABLED(UARTE_HAS_FRAME_TIMEOUT), "DMAEND support requires frame timeout support");
+BUILD_ASSERT(NRF_UARTE_HAS_DMAEND_TASK, "Devicetree enables an unsupported DMAEND task");
+BUILD_ASSERT(NRF_UARTE_HAS_FRAMETIMEOUT_DMAEND_SHORT,
+	     "Devicetree enables an unsupported FRAMETIMEOUT_DMAEND short");
+#endif
+
+#if defined(CONFIG_UARTE_NRFX_UARTE_HAS_DMAEND) && NRF_UARTE_HAS_DMAEND_TASK &&                    \
+	NRF_UARTE_HAS_FRAMETIMEOUT_DMAEND_SHORT
+#define UARTE_HAS_DMAEND 1
+#endif
+
 /* Frame timeout has a bug that countdown counter may not be triggered in some
  * specific condition. It may happen if RX is manually started after ENDRX (STOPRX
  * task was not triggered) and there is ongoing reception of a byte. RXDRDY event
@@ -224,6 +236,8 @@ struct uarte_async_rx {
 	uint8_t flush_cnt;
 	/* Flag indicating that STOPRX is triggered and RXTO is expected. */
 	bool stopped;
+	/* STOPRX must wait until ISR accounts for a pending ENDRX rollover. */
+	bool stoprx_deferred;
 	volatile bool enabled;
 	volatile bool discard_fifo;
 };
@@ -871,6 +885,27 @@ static void rx_buf_release(const struct device *dev, uint8_t *buf)
 	user_callback(dev, &evt);
 }
 
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+#ifdef UARTE_HAS_DMAEND
+#define FRAME_TIMEOUT_SHORT_ACTIVE NRF_UARTE_SHORT_FRAMETIMEOUT_DMAEND
+#define FRAME_TIMEOUT_SHORTS_ALL                                                                   \
+	(NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX | NRF_UARTE_SHORT_FRAMETIMEOUT_DMAEND)
+#else
+#define FRAME_TIMEOUT_SHORT_ACTIVE NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX
+#define FRAME_TIMEOUT_SHORTS_ALL   NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX
+#endif
+
+static void frame_timeout_shorts_disable(NRF_UARTE_Type *uarte)
+{
+	nrf_uarte_shorts_disable(uarte, FRAME_TIMEOUT_SHORTS_ALL);
+}
+
+static void frame_timeout_shorts_enable(NRF_UARTE_Type *uarte)
+{
+	nrf_uarte_shorts_enable(uarte, FRAME_TIMEOUT_SHORT_ACTIVE);
+}
+#endif
+
 static void rx_disable_finalize(const struct device *dev)
 {
 	const struct uarte_nrfx_config *cfg = dev->config;
@@ -926,6 +961,17 @@ static ALWAYS_INLINE void trigger_stoprx(const struct device *dev, bool force)
 	nrf_uarte_task_trigger(get_uarte_instance(dev), NRF_UARTE_TASK_STOPRX);
 }
 
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+static ALWAYS_INLINE void trigger_rx_end(const struct device *dev)
+{
+#ifdef UARTE_HAS_DMAEND
+	nrf_uarte_task_trigger(get_uarte_instance(dev), NRF_UARTE_TASK_DMAEND);
+#else
+	trigger_stoprx(dev, false);
+#endif
+}
+#endif
+
 static int rx_disable(const struct device *dev, bool api)
 {
 	struct uarte_nrfx_data *data = dev->data;
@@ -953,9 +999,19 @@ static int rx_disable(const struct device *dev, bool api)
 	}
 #endif
 
+	async_rx->stoprx_deferred = false;
 	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+		if (!IS_CBWT(dev) && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+			/* The short may have already started the next buffer. Stopping it now
+			 * would overwrite RX.AMOUNT before the pending ENDRX is processed.
+			 * RX remains active until that ISR runs, so ENDRX must be serviced
+			 * before the next buffer fills.
+			 */
+			async_rx->stoprx_deferred = true;
+		} else {
+			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXSTARTED);
+		}
 	}
 
 	async_rx->enabled = false;
@@ -963,7 +1019,12 @@ static int rx_disable(const struct device *dev, bool api)
 		async_rx->discard_fifo = true;
 	}
 
-	trigger_stoprx(dev, true);
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+	frame_timeout_shorts_disable(uarte);
+#endif
+	if (!async_rx->stoprx_deferred) {
+		trigger_stoprx(dev, true);
+	}
 	irq_unlock(key);
 
 	return 0;
@@ -1624,6 +1685,7 @@ static int count_byte_with_timer_common_init(const struct device *dev)
 
 	ret = nrfx_gppi_conn_alloc(evt, tsk, &async_rx->ppi_h);
 	if (ret < 0) {
+		LOG_ERR("GPPI allocation failed: %d", ret);
 		return ret;
 	}
 
@@ -1834,7 +1896,6 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		uint32_t baudrate = COND_CODE_1(CONFIG_UART_USE_RUNTIME_CONFIGURE,
 				(data->uart_config.baudrate), (cfg->baudrate));
 		nrf_uarte_frame_timeout_set(uarte, us_to_bauds(baudrate, timeout));
-		nrf_uarte_shorts_enable(uarte, NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX);
 	}
 #endif
 
@@ -1854,6 +1915,7 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 	async_rx->offset = 0;
 	async_rx->next_buf = NULL;
 	async_rx->next_buf_len = 0;
+	async_rx->stoprx_deferred = false;
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		pm_device_runtime_get(dev);
@@ -1930,6 +1992,12 @@ static int uarte_nrfx_rx_enable(const struct device *dev, uint8_t *buf,
 		NRF_UARTE_INT_ERROR_MASK |
 		NRF_UARTE_INT_RXTO_MASK;
 
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+	if (with_timeout) {
+		/* Arm the short only after all paths that can return without starting RX. */
+		frame_timeout_shorts_enable(uarte);
+	}
+#endif
 	nrf_uarte_int_enable(uarte, rx_int_mask);
 	async_rx->enabled = true;
 	nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
@@ -1946,7 +2014,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	unsigned int key = irq_lock();
 
-	if (async_rx->buf == NULL) {
+	if (!async_rx->enabled || async_rx->buf == NULL) {
 		err = -EACCES;
 	} else if (async_rx->next_buf == NULL) {
 #ifdef CONFIG_HAS_NORDIC_DMM
@@ -1956,6 +2024,7 @@ static int uarte_nrfx_rx_buf_rsp(const struct device *dev, uint8_t *buf,
 
 			err = dmm_buffer_in_prepare(config->mem_reg, buf, len, (void **)&dma_buf);
 			if (err < 0) {
+				irq_unlock(key);
 				return err;
 			}
 			async_rx->next_usr_buf = buf;
@@ -2083,8 +2152,8 @@ static void rx_timeout(struct k_timer *timer)
 		}
 	} else {
 		if (!rxdrdy) {
-			trigger_stoprx(dev, false);
 			k_timer_stop(timer);
+			trigger_rx_end(dev);
 		}
 	}
 
@@ -2225,7 +2294,9 @@ static void endrx_isr(const struct device *dev, bool rxstarted, bool rxto)
 			nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
 
 			/* If RXSTARTED is not set then it means that second buffer was
-			 * provided not on time.
+			 * provided not on time. RXSTARTED means that ENDRX_STARTRX
+			 * synchronously started the next DMA. The frame timeout workaround
+			 * is needed only for the delayed software STARTRX below.
 			 */
 			if (!rxstarted && !rxto) {
 				nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
@@ -2344,15 +2415,15 @@ static void rxto_isr(const struct device *dev)
 	}
 
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+#ifdef UARTE_HAS_FRAME_TIMEOUT
+	frame_timeout_shorts_disable(uarte);
+#endif
 	if (IS_ENABLED(CONFIG_HAS_HW_NRF_UARTE120) && (config->flags & UARTE_CFG_FLAG_CACHEABLE)) {
 		/* Spurious RXTO event was seen on fast instance (UARTE120) thus
 		 * RXTO interrupt is kept enabled only when RX is active.
 		 */
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_RXTO_MASK);
 	}
-#ifdef UARTE_HAS_FRAME_TIMEOUT
-	nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_FRAME_TIMEOUT_STOPRX);
-#endif
 	nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_RXDRDY);
 	rx_disable_finalize(dev);
 }
@@ -2476,10 +2547,11 @@ static void uarte_nrfx_isr_async(const void *arg)
 	struct uarte_async_rx *async_rx = &data->async->rx;
 	uint32_t imask = nrf_uarte_int_enable_check(uarte, UINT32_MAX);
 	bool rxto, endrx, rxstarted, rxdrdy, error;
+	bool endrx_processed = false;
 
-#ifdef UARTE_HAS_FRAME_TIMEOUT
-	/* Frame timeout short may also trigger RX stopping. Detect that case to set
-	 * the flag that RXTO is expected.
+#if defined(UARTE_HAS_FRAME_TIMEOUT) && !defined(UARTE_HAS_DMAEND)
+	/* The frame timeout short triggers STOPRX. Detect that case to set the flag
+	 * that RXTO is expected.
 	 */
 	if (!IS_CBWT(dev) &&
 	    event_check_clear(uarte, NRF_UARTE_EVENT_FRAME_TIMEOUT,
@@ -2514,15 +2586,25 @@ static void uarte_nrfx_isr_async(const void *arg)
 			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDRX);
 		}
 		endrx_isr(dev, rxstarted, rxto);
+		endrx_processed = true;
 		endrx = false;
 	}
 
-	if (rxstarted) {
+	if (rxstarted && async_rx->enabled) {
 		rxstarted_isr(dev);
 	}
 
 	if (endrx) {
 		endrx_isr(dev, false, false);
+		endrx_processed = true;
+	}
+
+	if (async_rx->stoprx_deferred && endrx_processed) {
+		/* RX.AMOUNT for the previous buffer has now been consumed. It is safe to
+		 * stop the buffer started by ENDRX_STARTRX.
+		 */
+		async_rx->stoprx_deferred = false;
+		trigger_stoprx(dev, true);
 	}
 
 	/* If RXTO is set, check also if STOPRX was triggered as there are cases where RXTO
@@ -3242,7 +3324,7 @@ static int uarte_instance_deinit(const struct device *dev)
 		 },									\
 		 .bounce_buf_len = sizeof(uart##idx##_bounce_buf) / 2,			\
 		 .bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(sizeof(uart##idx##_bounce_buf) / 2,\
-				UARTE_US_TO_BYTES(UARTE_PROP(idx, current_speed))),	\
+				UARTE_PROP(idx, current_speed)),	\
 		 .cbwt_data = &uart##idx##_bounce_data,))
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \
@@ -3399,22 +3481,27 @@ static int uarte_instance_deinit(const struct device *dev)
  *
  * Macro determines if delayed initialization needs to be applied.
  */
-#define UARTE_INIT_AFTER_GPPI(idx)					       \
-	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,   \
-			     UARTE_HAS_PROP(idx, timer)),		       \
-		    (UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),      \
-			      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL))), (0))
+#define UARTE_INIT_AFTER_GPPI(idx)							\
+	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,		\
+			     UARTE_HAS_PROP(idx, timer)),				\
+		    (UTIL_OR(IS_ENABLED(CONFIG_GPPI_EXT_ALLOCATOR_CLI),			\
+			     UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),	\
+				      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL)))), (0))
 
 /* Init phase is delayed to POST_KERNEL if it relies on Ironside+GPPI being ready. */
 #define UARTE_INIT_PHASE(idx)						       \
 	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx), (POST_KERNEL), (PRE_KERNEL_1))
 
+#define UARTE_INIT_BASE_PRIO COND_CODE_1(CONFIG_GPPI_EXT_ALLOCATOR_CLI,			\
+			(UTIL_INC(UTIL_INC(CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY))),	\
+			(UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))))
+
 /* If delayed initialization is used then init priority is derived from Ironside
- * communication initialization priority.
+ * communication initialization priority or GPPI external allocator backend priority.
  */
-#define UARTE_INIT_PRIO(idx)						       \
-	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),				       \
-		   (UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))),\
+#define UARTE_INIT_PRIO(idx)								\
+	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),						\
+		   (UARTE_INIT_BASE_PRIO),						\
 		   (CONFIG_SERIAL_INIT_PRIORITY))
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \

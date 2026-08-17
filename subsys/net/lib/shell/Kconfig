@@ -42,7 +42,7 @@ config NET_SHELL_DHCPV4_SUPPORTED
 config NET_SHELL_DHCPV6_SUPPORTED
 	bool "DHCPv6 start / stop"
 	default y
-	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DHCPV6
+	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || NET_DHCPV6_SERVER || NET_DHCPV6
 
 config NET_SHELL_DNS_RESOLVER_SUPPORTED
 	bool "DNS resolver"
@@ -159,6 +159,7 @@ config NET_SHELL_PTP_SUPPORTED
 	bool "PTP monitoring"
 	default y
 	depends on NET_SHELL_SHOW_DISABLED_COMMANDS || PTP
+	select POSIX_C_LANG_SUPPORT_R if PTP
 
 config NET_SHELL_ROUTE_SUPPORTED
 	bool "IP routing config"

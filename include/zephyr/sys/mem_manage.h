@@ -27,7 +27,7 @@
 /**
  * @brief Check if a physical address is within range of physical memory.
  *
- * This checks if the physical address (@p virt) is within
+ * This checks if the physical address (@p phys) is within
  * permissible range, e.g. between
  * :c:macro:`DT_CHOSEN_SRAM_ADDR` and
  * (:c:macro:`DT_CHOSEN_SRAM_ADDR` +

@@ -201,6 +201,9 @@ This has been fixed in main for v4.4.0
 - `PR 107927 fix for 4.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/107927>`_
 
+- `PR 107926 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/107926>`_
+
 :cve:`2026-5068`
 ----------------
 
@@ -225,6 +228,9 @@ This has been fixed in main for v4.4.0
 
 - `PR 108335 fix for 4.3
   <https://github.com/zephyrproject-rtos/zephyr/pull/108335>`_
+
+- `PR 108336 fix for 3.7
+  <https://github.com/zephyrproject-rtos/zephyr/pull/108336>`_
 
 :cve:`2026-5071`
 ----------------

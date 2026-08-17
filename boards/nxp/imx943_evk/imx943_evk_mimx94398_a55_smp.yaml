@@ -16,6 +16,7 @@ supported:
   - counter
   - gpio
   - net
+  - spi
   - uart
 testing:
   binaries:

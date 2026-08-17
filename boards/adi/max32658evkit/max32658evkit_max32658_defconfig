@@ -1,5 +1,8 @@
-# Copyright (c) 2024-2025 Analog Devices, Inc.
+# Copyright (c) 2024-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
+
+# Enable MPU
+CONFIG_ARM_MPU=y
 
 # Enable GPIO
 CONFIG_GPIO=y
@@ -14,3 +17,5 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 
 # It is secure fw, enable flags
 CONFIG_TRUSTED_EXECUTION_SECURE=y
+
+CONFIG_USE_DT_CODE_PARTITION=y

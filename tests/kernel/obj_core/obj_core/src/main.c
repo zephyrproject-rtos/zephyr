@@ -28,7 +28,7 @@ static struct k_lifo lifo2;
 
 K_PIPE_DEFINE(pipe1, 16, 8);
 static struct k_pipe pipe2;
-static char pipe2_buffer[16];
+static uint8_t pipe2_buffer[16];
 
 K_MSGQ_DEFINE(msgq1, 16, 4, 8);
 static struct k_msgq msgq2;

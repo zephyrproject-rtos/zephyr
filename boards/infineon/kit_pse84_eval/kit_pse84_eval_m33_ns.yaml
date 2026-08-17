@@ -18,3 +18,5 @@ supported:
   - bluetooth
   - wifi
   - flash
+  - dma
+  - spi

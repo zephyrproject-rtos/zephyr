@@ -87,16 +87,20 @@ int ring_buf_area_finish(struct ring_buf *buf, struct ring_buf_index *ring,
  */
 static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t value)
 {
-	buf->put.head = buf->put.tail = buf->put.base = value;
-	buf->get.head = buf->get.tail = buf->get.base = value;
+	buf->put.head = value;
+	buf->put.tail = value;
+	buf->put.base = value;
+	buf->get.head = value;
+	buf->get.tail = value;
+	buf->get.base = value;
 }
 
 /** @endcond */
 
 #define RING_BUF_INIT(buf, size8)	\
 {					\
-	.buffer = buf,			\
-	.size = size8,			\
+	.buffer = (buf),		\
+	.size = (size8),		\
 }
 
 /**
@@ -114,10 +118,10 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size8 Size of ring buffer (in bytes).
  */
 #define RING_BUF_DECLARE(name, size8) \
-	BUILD_ASSERT(size8 <= RING_BUFFER_MAX_SIZE,\
+	BUILD_ASSERT((size8) <= RING_BUFFER_MAX_SIZE,\
 		RING_BUFFER_SIZE_ASSERT_MSG); \
 	static uint8_t __noinit _ring_buffer_data_##name[size8]; \
-	struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, size8)
+	struct ring_buf name = RING_BUF_INIT(_ring_buffer_data_##name, (size8))
 
 /**
  * @brief Define and initialize an "item based" ring buffer.
@@ -153,7 +157,7 @@ static inline void ring_buf_internal_reset(struct ring_buf *buf, ring_buf_idx_t 
  * @param size32 Size of ring buffer (in 32-bit words).
  */
 #define RING_BUF_ITEM_DECLARE_SIZE(name, size32) \
-	RING_BUF_ITEM_DECLARE(name, size32)
+	RING_BUF_ITEM_DECLARE(name, (size32))
 
 /**
  * @brief Define and initialize a power-of-2 sized "item based" ring buffer.

@@ -41,11 +41,15 @@
 	};
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
 &qdc0 {
 	status = "okay";
 	counts-per-revolution = <480>;
-	input-channels = <0 0>;
-	inputmux-connections = <0x3700002b 0x36c0002d>;
+	mux-states = <&inputmux0 0 0x3700002b>,
+		     <&inputmux0 0 0x36c0002d>;
 	pinctrl-0 = <&qdc0_default>;
 	pinctrl-names = "default";
 };

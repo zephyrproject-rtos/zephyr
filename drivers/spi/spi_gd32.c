@@ -212,7 +212,7 @@ static int spi_gd32_frame_exchange(const struct device *dev)
 		spi_context_update_tx(ctx, 1, 1);
 	} else {
 		if (spi_context_tx_buf_on(ctx)) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
 		SPI_DATA(cfg->reg) = tx_frame;
 

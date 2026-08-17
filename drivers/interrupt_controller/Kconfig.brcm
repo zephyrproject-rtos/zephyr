@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BCM2836_L1_INTC
+	bool "BCM2836 ARM-local interrupt controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2836_L1_INTC_ENABLED
+	help
+	  Driver for the BCM2836 ARM-local interrupt controller (also
+	  present on BCM2710 / Pi Zero 2 W). Routes per-core ARM
+	  generic timer IRQs, four mailbox IRQs per core, the per-core
+	  PMU IRQ, and the cascaded GPU IRQ to the parent controller of
+	  the ARM CPU IRQ line.
+
+config BCM2835_ARMCTRL_IC
+	bool "BCM2835 ARMC peripheral interrupt controller"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_ARMCTRL_IC_ENABLED
+	help
+	  Driver for the BCM2835 ARMC peripheral interrupt controller --
+	  the "GPU IRQ" side of the BCM283x family. On BCM2710 (Pi Zero
+	  2 W) it cascades under the BCM2836 ARM-local intc; on BCM2835
+	  (Pi 1 / Pi Zero W) it is the root controller wired directly to
+	  the ARM core IRQ line.

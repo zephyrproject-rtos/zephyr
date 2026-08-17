@@ -10,6 +10,7 @@ supported:
   - entropy
   - gpio
   - hwinfo
+  - netif:eth
   - sdhc
   - spi
   - uart

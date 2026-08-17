@@ -254,7 +254,7 @@ ZTEST(dns_dispatcher, test_dispatcher_pair_cleanup)
 	responder.fds_len = 1;
 	responder.sock = responder_sock;
 	responder.svc = &test_pair_svc;
-	memcpy(&responder.local_addr, &local, sizeof(local));
+	memcpy(&responder.local_addr_storage, &local, sizeof(local));
 
 	resolver.type = DNS_SOCKET_RESOLVER;
 	resolver.cb = test_dispatch_cb;
@@ -262,7 +262,7 @@ ZTEST(dns_dispatcher, test_dispatcher_pair_cleanup)
 	resolver.fds_len = 1;
 	resolver.sock = resolver_sock;
 	resolver.svc = &test_pair_svc;
-	memcpy(&resolver.local_addr, &local, sizeof(local));
+	memcpy(&resolver.local_addr_storage, &local, sizeof(local));
 
 	zassert_ok(dns_dispatcher_register(&responder), "Cannot register responder");
 	zassert_ok(dns_dispatcher_register(&resolver), "Cannot register resolver");
@@ -329,8 +329,8 @@ ZTEST(dns_dispatcher, test_dns_dispatcher_ephemeral_ports)
 	zassert_true(ctx->servers[0].sock >= 0, "First server socket not open");
 	zassert_true(ctx->servers[1].sock >= 0, "Second server socket not open");
 
-	port0 = net_sin(&ctx->servers[0].dispatcher.local_addr)->sin_port;
-	port1 = net_sin(&ctx->servers[1].dispatcher.local_addr)->sin_port;
+	port0 = net_sin(net_sad(&ctx->servers[0].dispatcher.local_addr_storage))->sin_port;
+	port1 = net_sin(net_sad(&ctx->servers[1].dispatcher.local_addr_storage))->sin_port;
 
 	/* Both registrations must have captured their real ephemeral port. */
 	zassert_not_equal(port0, 0, "First dispatcher port not resolved");

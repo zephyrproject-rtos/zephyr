@@ -1,0 +1,6 @@
+board:
+  name: kg100s_rb4332a
+  full_name: KG100S Radio board (KG100S-RB4332A)
+  vendor: silabs
+  socs:
+    - name: efr32bg21b010f1024im32

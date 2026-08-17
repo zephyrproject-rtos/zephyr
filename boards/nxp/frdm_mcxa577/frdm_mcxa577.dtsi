@@ -63,6 +63,19 @@
 		};
 	};
 
+	/*
+	 * This node describes the GPIO pins of the LCD-PAR-S035 panel 8080 interface.
+	 */
+	nxp_lcd_8080_connector: lcd-8080-connector {
+		compatible = "nxp,lcd-8080";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <9 0 &gpio2 8 0>,	/* Pin 9, LCD touch INT */
+			   <10 0 &gpio2 4 0>,	/* Pin 10, LCD backlight control */
+			   <11 0 &gpio2 30 0>;	/* Pin 11, LCD and touch reset */
+	};
+
 	arduino_header: arduino-connector {
 		compatible = "arduino-header-r3";
 		#gpio-cells = <2>;
@@ -218,6 +231,77 @@
 	};
 };
 
+&flexspi {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND W25Q64JV flash memory */
+	ext_flash_ctrl: flash-controller@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "okay";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		jedec-id = [ef 40 17];
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		w25q64: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ext_boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-mcuboot";
+					reg = <0x00000000 DT_SIZE_K(80)>;
+				};
+
+				ext_slot0_partition: partition@14000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-image-0";
+					reg = <0x00014000 DT_SIZE_M(3)>;
+				};
+
+				ext_slot1_partition: partition@314000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-image-1";
+					reg = <0x00314000 DT_SIZE_M(3)>;
+				};
+
+				ext_storage_partition: partition@614000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-storage";
+					reg = <0x00614000 DT_SIZE_K(1968)>;
+				};
+			};
+		};
+	};
+};
+
 &enet {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_qos>;
@@ -257,6 +341,14 @@
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
@@ -282,4 +374,38 @@
 		reg = <0x48 0x0236 0x152a0090>;
 		status = "okay";
 	};
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+&tsi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tsi>;
+	pinctrl-names = "default";
+	/* On-board electrode E2 is wired to TSI0_CH0 (P5_3). */
+	channel-mask = <0x1>;
+	input-codes = <INPUT_KEY_A>;
+	touch-threshold = <100>;
+	release-threshold = <50>;
+	scan-period-ms = <50>;
+};
+
+nxp_8080_touch_panel_i2c: &lpi2c3 {};
+
+zephyr_mipi_dbi_parallel: &flexio0_lcd {
+	/* DMA channel 0, muxed to FlexIO TX */
+	dmas = <&edma0 0 71>;
+	dma-names = "tx";
+	shifters-count = <4>;
+	timers-count = <1>;
+	enwr-pin = <27>;
+	rd-pin = <26>;
+	data-pin-start = <0>;
+	reset-gpios = <&gpio2 30 GPIO_ACTIVE_HIGH>;
+	cs-gpios = <&gpio2 24 GPIO_ACTIVE_HIGH>;
+	rs-gpios = <&gpio2 31 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&pinmux_flexio_lcd>;
+	pinctrl-names = "default";
 };

@@ -1,0 +1,48 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ * Copyright (c) 2026 Siemens Mobility GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+&main_pinctrl {
+	spi0_cs1: spi0_cs1_default {
+		pinmux = <K3_PINMUX(0x20c, PIN_OUTPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	spi0_clk: spi0_clk_default {
+		pinmux = <K3_PINMUX(0x210, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	spi0_d0: spi0_d0_default {
+		pinmux = <K3_PINMUX(0x214, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	spi0_d1: spi0_d1_default {
+		pinmux = <K3_PINMUX(0x218, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	status = "okay";
+};
+
+/* CS1 is used so it's observable with a logic analyzer */
+&main_mcspi0 {
+	pinctrl-0 = <&spi0_clk &spi0_cs1 &spi0_d0 &spi0_d1>;
+	pinctrl-names = "default";
+
+	slow@1 {
+		compatible = "test-spi-loopback-slow";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_K(500)>;
+	};
+
+	fast@1 {
+		compatible = "test-spi-loopback-fast";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(50)>;
+	};
+
+	status = "okay";
+};

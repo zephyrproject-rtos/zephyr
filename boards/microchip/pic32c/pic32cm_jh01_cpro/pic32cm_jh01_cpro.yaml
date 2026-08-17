@@ -16,10 +16,13 @@ supported:
   - dac
   - dma
   - gpio
+  - hwinfo
   - i2c
   - pinctrl
   - pwm
   - reset
+  - rtc
+  - spi
   - uart
   - watchdog
 vendor: microchip

@@ -24,7 +24,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /* Shared prescaler division factor. The GPTIMER subtimers share a single
  * decrementer, so the minimum valid division factor is ntimers + 1 (GRLIB IP

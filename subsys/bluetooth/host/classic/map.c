@@ -12,14 +12,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/map.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "obex_internal.h"
 
@@ -76,7 +76,7 @@ struct map_required_hdr {
 };
 
 #define MAP_REQUIRED_APP_PARAM_LIST(...)                                                           \
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), \
 		    ({.count = 0, .tags = NULL}), \
 		    (_MAP_REQUIRED_APP_PARAM_LIST(__VA_ARGS__)))
 
@@ -88,8 +88,8 @@ struct map_required_hdr {
 	}
 
 #define MAP_REQUIRED_HDR_LIST(...)                                                                 \
-	COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__), \
-		    ({.count = 0, .tags = NULL}), \
+	COND_CODE_1(IS_EMPTY(__VA_ARGS__), \
+		    ({.count = 0, .hdrs = NULL}), \
 		    (_MAP_REQUIRED_HDR_LIST(__VA_ARGS__)))
 #define _MAP_REQUIRED_HDR_LIST(...)                                                                \
 	MAP_REQUIRED_HDR(sizeof((uint8_t[]){__VA_ARGS__}), ((uint8_t[]){__VA_ARGS__}))
@@ -121,7 +121,7 @@ static bool has_required_app_params(struct net_buf *buf, const struct map_requir
 }
 
 #define SEND_EVENT_REQUIRED_HDR BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE
-#define SEND_EVENT_REQUIRED_AP
+#define SEND_EVENT_REQUIRED_AP BT_MAP_APPL_PARAM_TAG_ID_MAS_INST_ID
 
 #define SET_NTF_REG_REQUIRED_HDR                                                                   \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_APP_PARAM
@@ -1225,7 +1225,7 @@ static enum bt_obex_rsp_code mce_mns_get_req_cb(struct bt_map_mce_mns *mce_mns, 
 			continue;
 		}
 
-		if (!has_required_app_params(buf, &map_mas_functions[i].ap)) {
+		if (!has_required_app_params(buf, &map_mns_functions[i].ap)) {
 			continue;
 		}
 

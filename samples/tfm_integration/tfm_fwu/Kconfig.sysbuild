@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config SAMPLE_TFM_FWU_COMPONENT_ID
+	int "PSA FWU component ID to update"
+	default 1
+	help
+	  The PSA Firmware Update component ID that the application
+	  operates on.

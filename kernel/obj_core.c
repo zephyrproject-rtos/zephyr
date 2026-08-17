@@ -114,7 +114,7 @@ struct k_obj_type *k_obj_type_find(uint32_t type_id)
 }
 
 int k_obj_type_walk_locked(struct k_obj_type *type,
-			   int (*func)(struct k_obj_core *, void *),
+			   int (*func)(struct k_obj_core *obj_core, void *data),
 			   void *data)
 {
 	k_spinlock_key_t  key;
@@ -138,7 +138,7 @@ int k_obj_type_walk_locked(struct k_obj_type *type,
 }
 
 int k_obj_type_walk_unlocked(struct k_obj_type *type,
-			   int (*func)(struct k_obj_core *, void *),
+			   int (*func)(struct k_obj_core *obj_core, void *data),
 			   void *data)
 {
 	struct k_obj_core *obj_core;

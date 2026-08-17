@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config COMPARATOR_ESP32_ANA_CMPR
+	bool "ESP32 Analog Comparator (ana_cmpr) driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_ANA_CMPR_ENABLED
+	help
+	  Enable the driver for Espressif's analog comparator (ana_cmpr)
+	  peripheral, present on the ESP32-P4, ESP32-C5, and ESP32-H2 SoCs.

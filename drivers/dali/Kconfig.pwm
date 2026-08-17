@@ -9,6 +9,7 @@ config DALI_PWM
 	depends on DT_HAS_ZEPHYR_DALI_PWM_ENABLED
 	select PWM
 	select COUNTER
+	select GPIO
 	help
 	  Enable DALI driver for generic PWM MCUs.
 

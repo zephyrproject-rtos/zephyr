@@ -7,8 +7,6 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/kernel.h>
 
-#include "rtio_sched.h"
-
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(rtio_executor, CONFIG_RTIO_LOG_LEVEL);
 
@@ -40,11 +38,6 @@ static void rtio_executor_op(struct rtio_iodev_sqe *iodev_sqe, int last_result)
 		sqe->callback.callback(iodev_sqe->r, sqe, last_result, sqe->callback.arg0);
 		rtio_iodev_sqe_ok(iodev_sqe, 0);
 		break;
-#ifdef CONFIG_RTIO_OP_DELAY
-	case RTIO_OP_DELAY:
-		rtio_sched_alarm(iodev_sqe, sqe->delay.timeout);
-		break;
-#endif /* CONFIG_RTIO_OP_DELAY */
 	case RTIO_OP_AWAIT:
 		rtio_iodev_sqe_await_signal(iodev_sqe, rtio_executor_sqe_signaled, NULL);
 		break;

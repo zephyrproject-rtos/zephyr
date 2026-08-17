@@ -6,7 +6,7 @@
 
 #include <zephyr/arch/x86/arch.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/app_memory/app_memdomain.h>
 
@@ -77,7 +77,15 @@ uint64_t arch_timing_freq_get(void)
 
 uint64_t arch_timing_cycles_to_ns(uint64_t cycles)
 {
-	return ((cycles) * NSEC_PER_SEC / tsc_freq);
+	/*
+	 * Multiplying first would overflow: cycles * NSEC_PER_SEC leaves the
+	 * 64-bit range at 1.8e10 cycles, which on a 3.2 GHz TSC is under six
+	 * seconds of uptime, after which the result wraps back towards zero.
+	 * Splitting the division out keeps the result exact and cannot
+	 * overflow for any counter frequency below about 18 GHz, since the
+	 * remainder is always smaller than tsc_freq.
+	 */
+	return (cycles / tsc_freq) * NSEC_PER_SEC + ((cycles % tsc_freq) * NSEC_PER_SEC) / tsc_freq;
 }
 
 uint64_t arch_timing_cycles_to_ns_avg(uint64_t cycles, uint32_t count)

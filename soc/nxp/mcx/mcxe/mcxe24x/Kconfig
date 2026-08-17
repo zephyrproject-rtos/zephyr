@@ -6,6 +6,7 @@ config SOC_SERIES_MCXE24X
 	select CPU_CORTEX_M4
 	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_FPU
+	select CPU_HAS_NXP_SYSMPU
 	select HAS_MCUX
 	select HAS_PM
 	select CLOCK_CONTROL

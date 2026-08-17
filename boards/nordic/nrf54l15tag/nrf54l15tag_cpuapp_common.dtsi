@@ -55,6 +55,14 @@
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
 &regulators {
 	status = "okay";
 };

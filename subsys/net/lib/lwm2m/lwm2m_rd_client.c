@@ -1023,7 +1023,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	/* log the registration attempt */
 	LOG_DBG("registration sent [%s]",
-		lwm2m_sprint_ip_addr(&client.ctx->remote_addr));
+		lwm2m_sprint_ip_addr(net_sad(&client.ctx->remote_addr_storage)));
 
 	return 0;
 

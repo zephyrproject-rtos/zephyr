@@ -419,7 +419,7 @@ static int serial_vnd_rx_enable(const struct device *dev, uint8_t *read_buf, siz
 		return -EINVAL;
 	}
 
-	__ASSERT(timeout == SYS_FOREVER_MS, "Async timeout not implemented.");
+	__ASSERT(timeout == SYS_FOREVER_US, "Async timeout not implemented.");
 
 	data->read_buf = read_buf;
 	data->read_size = read_size;

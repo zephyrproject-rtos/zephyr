@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_library()
@@ -15,6 +15,7 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS2 pinctrl_arm_mps2.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS3 pinctrl_arm_mps3.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_MPS4 pinctrl_arm_mps4.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_V2M_BEETLE pinctrl_arm_v2m_beetle.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_ARM_V2M_MUSCA_B1 pinctrl_arm_v2m_musca_b1.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_BCM2711 pinctrl_bcm2711.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_BEE pinctrl_bee.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_CC13XX_CC26XX pinctrl_cc13xx_cc26xx.c)
@@ -66,6 +67,7 @@ zephyr_library_sources_ifdef(CONFIG_PINCTRL_TI_K3 pinctrl_ti_k3.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_00X_AFIO pinctrl_wch_00x_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_20X_30X_AFIO pinctrl_wch_20x_30x_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_AFIO pinctrl_wch_afio.c)
+zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_CH570 pinctrl_wch_ch570.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_WCH_H41X_AFIO pinctrl_wch_h41x_afio.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_XLNX_ZYNQ pinctrl_xlnx_zynq.c)
 zephyr_library_sources_ifdef(CONFIG_PINCTRL_XLNX_ZYNQMP pinctrl_xlnx_zynqmp.c)

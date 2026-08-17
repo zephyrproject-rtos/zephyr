@@ -5,6 +5,9 @@
 
 config I2C_EEPROM_TARGET
 	bool "I2C Target EEPROM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_I2C_TARGET_EEPROM_ENABLED
+	select I2C_TARGET_REGSET_LIB
 	help
 	  Enable virtual I2C Target EEPROM driver
 

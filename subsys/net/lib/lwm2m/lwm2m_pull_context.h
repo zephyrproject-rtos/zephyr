@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <zephyr/net/lwm2m.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #define LWM2M_PACKAGE_URI_LEN CONFIG_LWM2M_SWMGMT_PACKAGE_URI_LEN
 

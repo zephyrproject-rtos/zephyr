@@ -42,7 +42,16 @@ ZTEST_SUITE(comparator_gpio_loopback, NULL, test_setup, test_before, NULL, NULL)
 
 ZTEST(comparator_gpio_loopback, test_get_output)
 {
-	zassert_equal(comparator_get_output(test_dev), 0);
+	int rc = comparator_get_output(test_dev);
+
+	if (rc == -ENOTSUP) {
+		/* Some comparator IPs only latch edge-cross events and have no
+		 * register reflecting the instantaneous comparison result.
+		 */
+		ztest_test_skip();
+	}
+
+	zassert_equal(rc, 0);
 	k_msleep(1);
 	zassert_ok(gpio_pin_set_dt(&test_pin, 1));
 	k_msleep(1);

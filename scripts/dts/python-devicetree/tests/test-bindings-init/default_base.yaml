@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Base file declaring a "default:" value at each nesting level,
+# for testing bindings which override them with "required: true".
+
+properties:
+  prop-with-default:
+    type: int
+    default: 1
+
+child-binding:
+  properties:
+    child-prop-with-default:
+      type: int
+      default: 2
+
+  child-binding:
+    properties:
+      grandchild-prop-with-default:
+        type: int
+        default: 3

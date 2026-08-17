@@ -175,10 +175,12 @@ static void net_post_init(void)
 
 static inline void copy_ll_addr(struct net_pkt *pkt)
 {
-	memcpy(net_pkt_lladdr_src(pkt), net_pkt_lladdr_if(pkt),
-	       sizeof(struct net_linkaddr));
-	memcpy(net_pkt_lladdr_dst(pkt), net_pkt_lladdr_if(pkt),
-	       sizeof(struct net_linkaddr));
+	struct net_linkaddr *lladdr_if = net_pkt_lladdr_if(pkt);
+
+	NET_ASSERT(lladdr_if != NULL);
+
+	memcpy(net_pkt_lladdr_src(pkt), lladdr_if, sizeof(struct net_linkaddr));
+	memcpy(net_pkt_lladdr_dst(pkt), lladdr_if, sizeof(struct net_linkaddr));
 }
 
 /* Check if the IPv{4|6} addresses are proper. As this can be expensive,
@@ -430,6 +432,13 @@ int net_try_send_data(struct net_pkt *pkt, k_timeout_t timeout)
 
 		if (clone != NULL) {
 			net_pkt_set_iface(clone, net_pkt_iface(pkt));
+			/* The clone has no L2 header yet, so mark it as already
+			 * processed. Otherwise the receive path passes it to the
+			 * L2, which reads the network header as a link layer one
+			 * and drops the packet.
+			 */
+			net_pkt_set_loopback(clone, true);
+			net_pkt_set_l2_processed(clone, true);
 			if (net_recv_data(net_pkt_iface(clone), clone) < 0) {
 				if (IS_ENABLED(CONFIG_NET_STATISTICS)) {
 					switch (net_pkt_family(pkt)) {
@@ -663,27 +672,24 @@ static void init_rx_queues(void)
 	 */
 	net_if_init();
 
-	/* This will take the interface up and start everything. */
-	net_if_post_init();
-
-	/* Things to init after network interface is working */
+	/* Things to init after network interface is initialized */
 	net_post_init();
 }
 
-static inline int services_init(void)
+static inline void services_init(void)
 {
 	int status;
 
 	socket_service_init();
 
 	status = net_dhcpv4_init();
-	if (status) {
-		return status;
+	if (status != 0) {
+		return;
 	}
 
 	status = net_dhcpv6_init();
 	if (status != 0) {
-		return status;
+		return;
 	}
 
 	net_dhcpv4_server_init();
@@ -698,8 +704,6 @@ static inline int services_init(void)
 	net_quic_init();
 
 	net_shell_init();
-
-	return status;
 }
 
 static int net_init(void)
@@ -716,7 +720,12 @@ static int net_init(void)
 
 	init_rx_queues();
 
-	return services_init();
+	services_init();
+
+	/* This will take all interfaces up, that have autostart enabled. */
+	net_if_post_init();
+
+	return 0;
 }
 
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);

@@ -276,12 +276,20 @@ int esp32_cpu_clock_configure(const struct esp32_cpu_clock_config *cpu_cfg)
 	if (cpu_cfg->clk_src == SOC_CPU_CLK_SRC_PLL) {
 		clk_ll_mspi_fast_set_hs_divider(6);
 		/*
-		 * The I2C analog master may be clocked from 160MHz PLL.
-		 * If PLL was disabled, that clock is dead and REGI2C
-		 * writes will hang. Switch to XTAL-based clock before
-		 * re-enabling PLL, then restore 160MHz after PLL is up.
+		 * Use the PLL-derived I2C analog master clock, like the IDF
+		 * bootloader (bootloader_hardware_init()): on the C6 the
+		 * BBPLL is alive on every boot path, since the ROM needs it
+		 * for USB-Serial-JTAG and esp_restart() deliberately keeps
+		 * it running. The XTAL-side source (sel_160m = 0) is routed
+		 * through modem_lpcon state that
+		 * esp_system_reset_modules_on_exit() resets at shutdown and
+		 * the ROM's soft-boot path does not restore, so after a
+		 * software reset the BBPLL calibration in
+		 * rtc_clk_bbpll_configure() polls a clockless status
+		 * register forever (pre-console boot hang until power
+		 * cycle).
 		 */
-		MODEM_LPCON.i2c_mst_clk_conf.clk_i2c_mst_sel_160m = 0;
+		regi2c_ctrl_ll_master_configure_clock();
 	}
 #endif
 

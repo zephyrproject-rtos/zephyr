@@ -223,7 +223,6 @@ struct bt_hfp_hf {
 	/* SCL work */
 	struct k_work slc_work;
 
-	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;

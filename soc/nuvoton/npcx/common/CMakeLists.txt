@@ -21,7 +21,7 @@ endif()
 
 if(DEFINED CONFIG_NPCX_IMAGE_OUTPUT_BIN)
   set(NPCX_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.npcx.bin)
-  string(TOUPPER "${SOC_NAME}" soc_name_upper)
+  string(TOUPPER "${CONFIG_SOC}" soc_name_upper)
   set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/ecst/ecst.py
     -i ${KERNEL_BIN_NAME}

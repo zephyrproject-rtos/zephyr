@@ -20,7 +20,7 @@
 #include <zephyr/net/wifi_mgmt.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
-#ifndef CONFIG_NXP_RW610
+#ifdef CONFIG_PM_MCUX_GPC
 #include <fsl_gpc.h>
 #endif
 #endif
@@ -417,6 +417,41 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 
 	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
 	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), ext1_pwren_gpios)
+	struct gpio_dt_spec ext1_pwren = GPIO_DT_SPEC_GET(DT_DRV_INST(0), ext1_pwren_gpios);
+
+	if (!gpio_is_ready_dt(&ext1_pwren)) {
+		LOG_ERR("Error: failed to configure ext1_pwren %s pin %d",
+			ext1_pwren.port->name, ext1_pwren.pin);
+		return -EIO;
+	}
+
+	err = gpio_pin_configure_dt(&ext1_pwren, GPIO_OUTPUT);
+	if (err) {
+		LOG_ERR("Error %d: failed to configure ext1_pwren %s pin %d", err,
+			ext1_pwren.port->name, ext1_pwren.pin);
+		return err;
+	}
+
+	if (enable) {
+		/* Enable VPCIe_3V3 power to M.2 module before PD_N */
+		err = gpio_pin_set_dt(&ext1_pwren, 1);
+		if (err) {
+			LOG_ERR("Error %d: failed to set ext1_pwren %s pin %d", err,
+				ext1_pwren.port->name, ext1_pwren.pin);
+			return err;
+		}
+		k_sleep(K_MSEC(100));
+	} else {
+		err = gpio_pin_set_dt(&ext1_pwren, 0);
+		if (err) {
+			LOG_ERR("Error %d: failed to clear ext1_pwren %s pin %d", err,
+				ext1_pwren.port->name, ext1_pwren.pin);
+			return err;
+		}
+	}
+#endif
 
 	if (!gpio_is_ready_dt(&sdio_reset)) {
 		LOG_ERR("Error: failed to configure sdio_reset %s pin %d", sdio_reset.port->name,
@@ -2373,6 +2408,15 @@ static bool nxp_wifi_wlan_wakeup(void)
 	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_0_15_IRQn);
 #elif CONFIG_NXP_IW416
 	return GPC_GetIRQStatusFlag(GPC, GPIO1_Combined_16_31_IRQn);
+#elif defined(CONFIG_SOC_SERIES_IMX9)
+	/* imx91 has no GPC, read WL_WAKE_HOST GPIO directly instead */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), wakeup_gpios)
+	struct gpio_dt_spec wakeup = GPIO_DT_SPEC_GET(DT_DRV_INST(0), wakeup_gpios);
+
+	return gpio_pin_get_dt(&wakeup) == 1;
+#else
+	return false;
+#endif
 #else
 	return false;
 #endif
@@ -2480,6 +2524,20 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif
 
+static uint32_t nxp_wifi_get_iface_caps(const struct device *dev,
+					    struct net_if *iface)
+{
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	if (iface == (struct net_if *)net_get_uap_interface()) {
+		/* uap interface: second net_if on this device */
+		return BIT(WIFI_TYPE_SAP);
+	}
+#endif
+
+	/* mlan interface: default STA */
+	return BIT(WIFI_TYPE_STA);
+}
+
 static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.get_version = nxp_wifi_version,
 	.scan = nxp_wifi_scan,
@@ -2508,6 +2566,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.set_twt = nxp_wifi_set_twt,
 #endif
 	.set_rts_threshold = nxp_wifi_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
@@ -2594,6 +2653,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #endif
 	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)

@@ -68,10 +68,6 @@
 	pinctrl-names = "default";
 };
 
-&main_timer8 {
-	status = "okay";
-};
-
 /*
  * The ROMSTART region from the linker script will occupy the first 0x3C byte
  * with the exception vector. To avoid overlaps the ATCM needs to be shrunken

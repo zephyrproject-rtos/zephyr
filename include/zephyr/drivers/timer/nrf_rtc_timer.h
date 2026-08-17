@@ -7,7 +7,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_TIMER_NRF_RTC_TIMER_H
 #define ZEPHYR_INCLUDE_DRIVERS_TIMER_NRF_RTC_TIMER_H
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {

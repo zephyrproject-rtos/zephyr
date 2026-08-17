@@ -49,6 +49,36 @@ config NET_DHCPV6_DNS_SERVER_VIA_INTERFACE
 
 if NET_DHCPV6
 
+config NET_DHCPV6_MAX_DOWNSTREAM
+	int "Maximum number of downstream interfaces for prefix delegation"
+	default 1
+	range 1 16
+	help
+	  Maximum number of downstream interfaces onto which a delegated prefix
+	  (IA_PD) can be sub-delegated by a requesting router. Each downstream
+	  interface listed in net_dhcpv6_params is assigned a distinct /64
+	  carved from the delegated prefix.
+
+config NET_DHCPV6_SEND_RELEASE_ON_STOP
+	bool "Send DHCPv6 Release when the client is stopped"
+	help
+	  When enabled, the DHCPv6 client sends a Release message to the server
+	  when it is stopped while holding a lease (RFC 8415 ch. 18.2.7), so the
+	  server can free the assigned address(es)/prefix(es) immediately. When
+	  disabled (default), the lease is simply abandoned and the client relies
+	  on lease expiry on the server side.
+
+config NET_DHCPV6_DECLINE_ON_DAD_FAILURE
+	bool "Send DHCPv6 Decline on duplicate address detection failure"
+	depends on NET_IPV6_DAD
+	select NET_MGMT_EVENT_INFO
+	help
+	  When enabled, if Duplicate Address Detection fails for an address
+	  assigned via DHCPv6, the client sends a Decline message to the server
+	  (RFC 8415 ch. 18.2.8), removes the offending address and restarts
+	  negotiation. When disabled (default), a DAD failure on a DHCPv6
+	  address is ignored, matching the previous behaviour.
+
 module = NET_DHCPV6
 module-dep = NET_LOG
 module-str = Log level for DHCPv6 client
@@ -56,3 +86,46 @@ module-help = Enables DHCPv6 client code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
 endif # NET_DHCPV6
+
+config NET_DHCPV6_SERVER
+	bool "DHCPv6 server (address assignment and prefix delegation)"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	depends on NET_IPV6 && NET_UDP
+	help
+	  Enable a DHCPv6 server supporting IPv6 non-temporary address
+	  assignment (IA_NA) and prefix delegation (IA_PD) as specified in
+	  RFC 8415. The server hands out addresses and/or prefixes from
+	  configured pools to requesting clients/routers.
+
+if NET_DHCPV6_SERVER
+
+config NET_DHCPV6_SERVER_MAX_LEASES
+	int "Maximum number of concurrent DHCPv6 leases"
+	default 4
+	range 1 255
+	help
+	  Maximum number of simultaneous client bindings the server keeps
+	  track of. Statically allocated.
+
+config NET_DHCPV6_SERVER_VALID_LIFETIME
+	int "Default valid lifetime for leases (seconds)"
+	default 86400
+	help
+	  Default valid lifetime advertised for leased addresses/prefixes when
+	  not overridden via net_dhcpv6_server_params.
+
+config NET_DHCPV6_SERVER_PREFERRED_LIFETIME
+	int "Default preferred lifetime for leases (seconds)"
+	default 43200
+	help
+	  Default preferred lifetime advertised for leased addresses/prefixes
+	  when not overridden via net_dhcpv6_server_params.
+
+module = NET_DHCPV6_SERVER
+module-dep = NET_LOG
+module-str = Log level for DHCPv6 server
+module-help = Enables DHCPv6 server code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_DHCPV6_SERVER

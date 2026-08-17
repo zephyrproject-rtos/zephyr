@@ -284,7 +284,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 	}
 
 	/* context setup */
@@ -307,7 +307,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	 */
 	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, ret);
 	}
 
 	return ret;

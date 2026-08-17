@@ -77,6 +77,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
+#ifdef CONFIG_PM
+#include <power.h>
+#include <zephyr/drivers/pinctrl/pinctrl_esp32_common.h>
+#endif
 #include <errno.h>
 #include <zephyr/sys/util.h>
 #include <esp_attr.h>
@@ -1297,6 +1301,30 @@ static void uart_esp32_uhci_hw_init(const struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_PM
+/*
+ * Sleep switches every pad to its sleep configuration, which isolates
+ * the pin and leaves it floating. With the UART RX line floating and
+ * the peripheral still on, the receiver reads a constant low as a break
+ * character and stores a null byte, while raising a pending interrupt
+ * which stalls the driver/system on wake. Holding the pads keeps the
+ * lines at their idle level, avoiding this problem.
+ */
+static void uart_esp32_sleep_hold_pins(const struct device *dev)
+{
+	const struct uart_esp32_config *config = dev->config;
+	const struct pinctrl_state *state;
+
+	if (pinctrl_lookup_state(config->pcfg, PINCTRL_STATE_DEFAULT, &state) < 0) {
+		return;
+	}
+
+	for (uint8_t i = 0; i < state->pin_cnt; i++) {
+		esp32_sleep_gpio_hold_config(ESP32_PIN_NUM(state->pins[i].pinmux), true);
+	}
+}
+#endif
+
 static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct uart_esp32_config *config = dev->config;
@@ -1325,6 +1353,10 @@ static int uart_esp32_pm_action(const struct device *dev, enum pm_device_action 
 			LOG_ERR("Failed to configure UART pins (%d)", ret);
 			return ret;
 		}
+
+#ifdef CONFIG_PM
+		uart_esp32_sleep_hold_pins(dev);
+#endif
 
 #if UART_SLEEP_RETENTION_ENABLED
 		struct uart_esp32_data *data = dev->data;

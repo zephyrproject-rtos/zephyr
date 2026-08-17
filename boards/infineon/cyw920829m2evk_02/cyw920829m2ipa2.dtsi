@@ -32,6 +32,7 @@
 	flash0: flash@8000000 {
 		compatible = "soc-nv-flash";
 		reg = <0x08000000 DT_SIZE_M(1)>;
+		ranges = <0x0 0x08000000 DT_SIZE_M(1)>;
 		write-block-size = <1>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		#address-cells = <1>;

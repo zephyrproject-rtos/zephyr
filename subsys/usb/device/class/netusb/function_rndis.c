@@ -305,10 +305,13 @@ static void rndis_bulk_out(uint8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	/* We already use frame keeping with len, warn here about
-	 * receiving frame delimiter
+	/* A single 0x00 byte is only a frame delimiter when no packet is
+	 * currently being assembled. When a packet is in progress, the same
+	 * byte can be the genuine trailing byte of a frame whose length is
+	 * not a multiple of the bulk endpoint size, so it must be kept and
+	 * written to complete the frame instead of being skipped.
 	 */
-	if (len == 1U && !rx_buf[0]) {
+	if (len == 1U && !rx_buf[0] && rndis.in_pkt == NULL) {
 		LOG_DBG("Got frame delimiter, skip");
 		return;
 	}

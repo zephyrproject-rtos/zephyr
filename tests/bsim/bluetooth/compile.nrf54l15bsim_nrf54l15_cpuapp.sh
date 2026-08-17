@@ -9,6 +9,9 @@
 set -ue
 : "${ZEPHYR_BASE:?ZEPHYR_BASE must be set to point to the zephyr root directory}"
 
+echo "This script is deprecated and will be removed in a future release.\
+ Please build these tests using twister"
+
 export BOARD="${BOARD:-nrf54l15bsim/nrf54l15/cpuapp}"
 
 source ${ZEPHYR_BASE}/tests/bsim/compile.source
@@ -24,5 +27,9 @@ app=tests/bsim/bluetooth/ll/multiple_id compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-sequential.conf compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-interleaved.conf  compile
 app=tests/bsim/bluetooth/ll/bis conf_overlay=overlay-ticker_expire_info.conf compile
+
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/samples/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio/compile.sh
+run_in_background ${ZEPHYR_BASE}/tests/bsim/bluetooth/audio_samples/compile.sh
 
 wait_for_background_jobs

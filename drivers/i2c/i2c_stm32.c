@@ -70,6 +70,8 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	uint32_t i2c_clock = 0U;
 	int ret;
 
+	__ASSERT(k_sem_count_get(&data->bus_mutex) == 0, "Bus is not locked");
+
 	if (cfg->pclk_len > 1) {
 		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
 					   &i2c_clock) < 0) {
@@ -86,13 +88,11 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 
 	data->dev_config = config;
 
-	k_sem_take(&data->bus_mutex, K_FOREVER);
-
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
 		LOG_ERR("failure Enabling I2C clock");
-		goto out;
+		return ret;
 	}
 #endif
 
@@ -102,7 +102,7 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 #endif
 	ret = i2c_stm32_configure_timing(dev, i2c_clock);
 	if (ret < 0) {
-		goto out;
+		return ret;
 	}
 
 	if (data->smbalert_active) {
@@ -113,14 +113,11 @@ int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
 	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
 	if (ret < 0) {
 		LOG_ERR("failure disabling I2C clock");
-		goto out;
+		return ret;
 	}
 #endif
 
-out:
-	k_sem_give(&data->bus_mutex);
-
-	return ret;
+	return 0;
 }
 
 #define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
@@ -209,8 +206,21 @@ out_sem:
 	return ret;
 }
 
+static int i2c_stm32_configure(const struct device *dev,
+				uint32_t dev_config_raw)
+{
+	struct i2c_stm32_data *data = dev->data;
+	int ret;
+
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+	ret = i2c_stm32_runtime_configure(dev, dev_config_raw);
+	k_sem_give(&data->bus_mutex);
+
+	return ret;
+}
+
 DEVICE_API(i2c, i2c_stm32_driver_api) = {
-	.configure = i2c_stm32_runtime_configure,
+	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
 #if defined(CONFIG_I2C_STM32_BUS_RECOVERY)
@@ -273,7 +283,10 @@ int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	k_sem_give(&data->bus_mutex);
+
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;

@@ -383,6 +383,10 @@ enum display_event {
 	DISPLAY_EVENT_VSYNC = BIT(1),
 	/** Fired when a frame transfer to the panel or frame buffer update completes */
 	DISPLAY_EVENT_FRAME_DONE = BIT(2),
+	/** Fired when a FIFO underflow occurs.
+	 *  Checked in some UI frameworks such as Qt Ultralite
+	 */
+	DISPLAY_EVENT_FIFO_UNDERFLOW = BIT(3),
 };
 
 /** @brief Display event callback return flags. */

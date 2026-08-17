@@ -385,19 +385,34 @@ static int set_odr_config(const struct sensor_value *odr, const struct device *d
 
 static int soft_reset(const struct device *dev)
 {
+	CHECKIF(dev == NULL) {
+		return -EINVAL;
+	}
+
 	struct bmp581_config *conf = (struct bmp581_config *)dev->config;
 	int ret = 0;
 	const uint8_t reset_cmd = BMP5_SOFT_RESET_CMD;
 	uint8_t int_status = 0;
 
-	CHECKIF(dev == NULL) {
-		return -EINVAL;
-	}
-
 	ret = bmp581_reg_write_rtio(&conf->bus, BMP5_REG_CMD, &reset_cmd, 1);
 
 	if (ret == BMP5_OK) {
 		k_usleep(BMP5_DELAY_US_SOFT_RESET);
+
+		/*
+		 * Soft-reset returns the device to its power-up I2C/I3C mode.
+		 * Re-issue the SPI dummy read to switch the interface back to
+		 * SPI before reading the reset status.
+		 */
+		if (conf->bus.rtio.type == BMP581_BUS_TYPE_SPI) {
+			uint8_t dummy = 0;
+
+			ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &dummy, 1);
+			if (ret != BMP5_OK) {
+				return ret;
+			}
+		}
+
 		ret = get_interrupt_status(&int_status, dev);
 		if (ret == BMP5_OK) {
 			if ((int_status & BMP5_INT_ASSERTED_POR_SOFTRESET_COMPLETE) != 0) {
@@ -597,17 +612,6 @@ static int bmp581_init(const struct device *dev)
 	if (ret != BMP5_OK) {
 		LOG_ERR("Failed to perform soft-reset: %d", ret);
 		return ret;
-	}
-
-	/*
-	 * Soft-reset returns the device to its power-up I2C/I3C mode. Re-issue the
-	 * SPI dummy read to switch the interface back to SPI before subsequent
-	 * register accesses.
-	 */
-	if (conf->bus.rtio.type == BMP581_BUS_TYPE_SPI) {
-		uint8_t dummy = 0;
-
-		(void)bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &dummy, 1);
 	}
 
 	ret = bmp581_reg_read_rtio(&conf->bus, BMP5_REG_CHIP_ID, &drv->chip_id, 1);

@@ -27,7 +27,9 @@ include: adc-controller.yaml
 properties:
   reg:
     required: true
-    description: Base address of the HPPASS SAR ADC registers
+    description: |
+      SAR controller register region (HPPASS_SAR: sequencer, channel
+      config, sample gain, result masks, interrupts).
 
   interrupts:
     required: true

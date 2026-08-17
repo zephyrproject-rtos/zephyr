@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/__assert.h>
 

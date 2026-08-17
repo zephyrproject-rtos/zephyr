@@ -41,7 +41,7 @@ struct spi_stm32_config {
 	bool ioswp: 1;
 	bool soft_nss: 1;
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	bool use_subghzspi_nss: 1;
+	bool is_subghzspi: 1;
 #endif
 };
 

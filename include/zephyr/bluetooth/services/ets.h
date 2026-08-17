@@ -211,8 +211,8 @@ struct bt_ets_cb {
 	 * @brief Write elapsed time callback (OPTIONAL).
 	 *
 	 * Called when a BLE client writes to the Current Elapsed Time characteristic.
-	 * Only applicable if @kconfig_dep{CONFIG_BT_ETS_CURRENT_ELAPSED_TIME_WRITABLE} is enabled.
 	 * Application should validate time source quality, range, and other constraints.
+	 * @kconfig_dep{CONFIG_BT_ETS_CURRENT_ELAPSED_TIME_WRITABLE}
 	 *
 	 * @note Clock Status and Clock Capabilities are excluded from writes per spec.
 	 *
@@ -270,15 +270,15 @@ int bt_ets_indicate(const struct bt_ets_elapsed_time *elapsed_time, uint8_t cloc
  * and timezone conversion based on the flags field in @p et_time.
  *
  * The output @p unix_ms is always in UTC. Timezone handling based on flags:
- * - @kconfig_dep{CONFIG_BT_ETS_SUPPORT_UTC}: Time is already UTC, no conversion needed.
+ * - @kconfig{CONFIG_BT_ETS_SUPPORT_UTC}: Time is already UTC, no conversion needed.
  *   If @ref BT_ETS_FLAG_TZ_DST_USED is set, the offset is informational only.
- * - @kconfig_dep{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME} with @kconfig_dep{CONFIG_BT_ETS_SUPPORT_TZ_DST}:
+ * - @kconfig{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME} with @kconfig{CONFIG_BT_ETS_SUPPORT_TZ_DST}:
  *   If @ref BT_ETS_FLAG_TZ_DST_USED is set in @p et_time, converts local time to UTC
  *   by subtracting the offset: UTC = Local time - TZ/DST Offset × 15 minutes
  *
- * @note This function is only available when @kconfig_dep{CONFIG_BT_ETS_HELPER_API} is enabled.
- *       This requires either @kconfig_dep{CONFIG_BT_ETS_SUPPORT_UTC} or
- *       @kconfig_dep{CONFIG_BT_ETS_SUPPORT_TZ_DST} to be enabled (proper UTC conversion needs
+ * @kconfig_dep{CONFIG_BT_ETS_HELPER_API}
+ * @note This requires either @kconfig{CONFIG_BT_ETS_SUPPORT_UTC} or
+ *       @kconfig{CONFIG_BT_ETS_SUPPORT_TZ_DST} to be enabled (proper UTC conversion needs
  *       either UTC mode or timezone offset information).
  *
  * @param et_time ETS time formatted structure to decode.
@@ -298,22 +298,21 @@ int bt_ets_time_to_unix_ms(const struct bt_ets_elapsed_time *et_time, int64_t *u
  * and timezone conversion based on compile-time configuration.
  *
  * The @p unix_ms input is always in UTC. The @p tz_dst_offset parameter behavior:
- * - @kconfig_dep{CONFIG_BT_ETS_SUPPORT_UTC}: Time stays as UTC, no conversion.
- *   If @kconfig_dep{CONFIG_BT_ETS_SUPPORT_TZ_DST} enabled, offset is stored for client use.
- * - @kconfig_dep{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME} with @kconfig_dep{CONFIG_BT_ETS_SUPPORT_TZ_DST}:
+ * - @kconfig{CONFIG_BT_ETS_SUPPORT_UTC}: Time stays as UTC, no conversion.
+ *   If @kconfig{CONFIG_BT_ETS_SUPPORT_TZ_DST} is enabled, offset is stored for client use.
+ * - @kconfig{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME} with @kconfig{CONFIG_BT_ETS_SUPPORT_TZ_DST}:
  *   Offset is applied to convert UTC to local time and stored in output.
  *   Formula: Local time = UTC time + TZ/DST Offset × 15 minutes
  *   @ref BT_ETS_FLAG_TZ_DST_USED flag is set in output.
  *
  * The output @p et_time flags are set based on compile-time configuration:
- * - Time mode: @kconfig_dep{CONFIG_BT_ETS_SUPPORT_UTC} or
- * @kconfig_dep{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME}
+ * - Time mode: @kconfig{CONFIG_BT_ETS_SUPPORT_UTC} or @kconfig{CONFIG_BT_ETS_SUPPORT_LOCAL_TIME}
  * - Resolution: CONFIG_BT_ETS_RESOLUTION_* (1_SEC, 100_MS, 1_MS, or 100_US)
  * - @ref BT_ETS_FLAG_CURRENT_TIMELINE is always set
  *
- * @note This function is only available when @kconfig_dep{CONFIG_BT_ETS_HELPER_API} is enabled.
- *       This requires either @kconfig_dep{CONFIG_BT_ETS_SUPPORT_UTC} or
- *       @kconfig_dep{CONFIG_BT_ETS_SUPPORT_TZ_DST} to be enabled.
+ * @kconfig_dep{CONFIG_BT_ETS_HELPER_API}
+ * @note This requires either @kconfig{CONFIG_BT_ETS_SUPPORT_UTC} or
+ *       @kconfig{CONFIG_BT_ETS_SUPPORT_TZ_DST} to be enabled.
  *
  * @param et_time Pointer to ETS time structure to fill.
  * @param unix_ms Milliseconds since Unix epoch (1970-01-01 00:00:00 UTC) - always UTC.

@@ -235,9 +235,8 @@ static int uart_gecko_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void uart_gecko_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config;
-	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
-	USART_IntEnable(config->base, mask);
+	USART_IntEnable(config->base, USART_IEN_TXBL);
 }
 
 static void uart_gecko_irq_tx_disable(const struct device *dev)
@@ -246,6 +245,7 @@ static void uart_gecko_irq_tx_disable(const struct device *dev)
 	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
 	USART_IntDisable(config->base, mask);
+	USART_IntClear(config->base, USART_IF_TXC);
 }
 
 static int uart_gecko_irq_tx_complete(const struct device *dev)

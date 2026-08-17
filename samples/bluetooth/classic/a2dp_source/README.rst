@@ -21,13 +21,15 @@ Requirements
 Building and Running
 ********************
 
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/classic/a2dp_source
-   :board: mimxrt1170_evk@B/mimxrt1176/cm7
+   :board: <board>
    :goals: build flash
    :compact:
 
-After flashing, the device discovers nearby A2DP sink devices and starts streaming audio
-automatically.
+After flashing, the device discovers nearby A2DP sink devices and starts
+streaming audio automatically.
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.

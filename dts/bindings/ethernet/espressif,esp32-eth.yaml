@@ -2,12 +2,12 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 Ethernet
+title: ESP32 Ethernet
 
 compatible: "espressif,esp32-eth"
 
 include:
-  - name: ethernet-controller.yaml
+  - name: snps,dwmac.yaml
   - name: pinctrl-device.yaml
 
 properties:

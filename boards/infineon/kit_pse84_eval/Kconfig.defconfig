@@ -11,7 +11,7 @@ choice AIROC_PART
 endchoice
 
 choice CYW55500_MODULE
-	default CYW55513IUBG_SM
+	default CYW55513_MOD_PSE84_SOM
 endchoice
 
 # Heap Pool Size

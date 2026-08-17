@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	zephyr,user {
+		sck-gpios = <&gpio7 3 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &pinctrl {
 	spis120_default_alt: spis120_default_alt {
 		group1 {

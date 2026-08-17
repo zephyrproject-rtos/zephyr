@@ -10,11 +10,13 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/services/ias.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(ias_client_test);
 
 #ifdef CONFIG_BT_IAS_CLIENT
 
@@ -31,7 +33,7 @@ static void discover_cb(struct bt_conn *conn, int err)
 		return;
 	}
 
-	printk("IAS discovered\n");
+	LOG_INF("IAS discovered");
 	SET_FLAG(g_service_discovered);
 }
 
@@ -45,7 +47,7 @@ static void test_alert_high(struct bt_conn *conn)
 
 	err = bt_ias_client_alert_write(conn, BT_IAS_ALERT_LVL_HIGH_ALERT);
 	if (err == 0) {
-		printk("High alert sent\n");
+		LOG_INF("High alert sent");
 	} else {
 		FAIL("Failed to send high alert\n");
 	}
@@ -57,7 +59,7 @@ static void test_alert_mild(struct bt_conn *conn)
 
 	err = bt_ias_client_alert_write(conn, BT_IAS_ALERT_LVL_MILD_ALERT);
 	if (err == 0) {
-		printk("Mild alert sent\n");
+		LOG_INF("Mild alert sent");
 	} else {
 		FAIL("Failed to send mild alert\n");
 	}
@@ -69,7 +71,7 @@ static void test_alert_stop(struct bt_conn *conn)
 
 	err = bt_ias_client_alert_write(conn, BT_IAS_ALERT_LVL_NO_ALERT);
 	if (err == 0) {
-		printk("Stop alert sent\n");
+		LOG_INF("Stop alert sent");
 	} else {
 		FAIL("Failed to send no alert\n");
 	}
@@ -100,7 +102,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	err = bt_ias_client_cb_register(&ias_client_cb);
 	if (err < 0) {
@@ -116,7 +118,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 

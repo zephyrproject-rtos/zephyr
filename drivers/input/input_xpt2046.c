@@ -142,7 +142,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 
 	for (int i = 0; i < rounds; i++) {
 		if (xpt2046_read_and_cumulate(&config->bus, &tx_bufs, &rx_bufs, &meas) != 0) {
-			return;
+			goto reenable_cb;
 		}
 	}
 	meas.x /= rounds;
@@ -185,6 +185,7 @@ static void xpt2046_work_handler(struct k_work *kw)
 		k_work_reschedule(&data->dwork, K_MSEC(100));
 	}
 
+reenable_cb:
 	ret = gpio_add_callback(config->int_gpio.port, &data->int_gpio_cb);
 	if (ret < 0) {
 		LOG_ERR("Could not set gpio callback");

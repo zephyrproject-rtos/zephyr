@@ -23,13 +23,15 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(pbp_public_broadcast_source_test);
 
 #if defined(CONFIG_BT_PBP)
 /* PBS ASCII text */
@@ -70,7 +72,7 @@ static void started_cb(struct bt_bap_stream *stream)
 	test_stream->seq_num = 0U;
 	test_stream->tx_cnt = 0U;
 
-	printk("Stream %p started\n", stream);
+	LOG_INF("Stream %p started", stream);
 
 	err = bap_stream_tx_register(stream);
 	if (err != 0) {
@@ -85,7 +87,7 @@ static void stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	int err;
 
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 
 	err = bap_stream_tx_unregister(stream);
 	if (err != 0) {
@@ -129,17 +131,17 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	if (pba_params & BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY) {
 		pba_params = 0;
 		pba_params |= BT_PBP_ANNOUNCEMENT_FEATURE_STANDARD_QUALITY;
-		printk("Starting stream with standard quality!\n");
+		LOG_INF("Starting stream with standard quality!");
 	} else {
 		pba_params = 0;
 		pba_params |= BT_PBP_ANNOUNCEMENT_FEATURE_HIGH_QUALITY;
-		printk("Starting stream with high quality!\n");
+		LOG_INF("Starting stream with high quality!");
 	}
 
 	err = bt_pbp_get_announcement(pba_metadata, ARRAY_SIZE(pba_metadata), pba_params,
 				      &pbp_ad_buf);
 	if (err != 0) {
-		printk("Failed to create public broadcast announcement!: %d\n", err);
+		LOG_ERR("Failed to create public broadcast announcement!: %d", err);
 
 		return err;
 	}
@@ -149,7 +151,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 
 	err = bt_le_ext_adv_set_data(adv, ext_ad, ARRAY_SIZE(ext_ad), NULL, 0);
 	if (err != 0) {
-		printk("Failed to set extended advertising data: %d\n", err);
+		LOG_ERR("Failed to set extended advertising data: %d", err);
 
 		return err;
 	}
@@ -157,7 +159,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	/* Setup periodic advertising data */
 	err = bt_cap_initiator_broadcast_get_base(source, &base_buf);
 	if (err != 0) {
-		printk("Failed to get encoded BASE: %d\n", err);
+		LOG_ERR("Failed to get encoded BASE: %d", err);
 
 		return err;
 	}
@@ -167,7 +169,7 @@ static int setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	per_ad.data = base_buf.data;
 	err = bt_le_per_adv_set_data(adv, &per_ad, 1);
 	if (err != 0) {
-		printk("Failed to set periodic advertising data: %d\n", err);
+		LOG_ERR("Failed to set periodic advertising data: %d", err);
 
 		return err;
 	}
@@ -181,21 +183,21 @@ static int stop_extended_adv(struct bt_le_ext_adv *adv)
 
 	err = bt_le_per_adv_stop(adv);
 	if (err != 0) {
-		printk("Failed to stop periodic advertising: %d\n", err);
+		LOG_ERR("Failed to stop periodic advertising: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
 	if (err != 0) {
-		printk("Failed to stop extended advertising: %d\n", err);
+		LOG_ERR("Failed to stop extended advertising: %d", err);
 
 		return err;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
 	if (err != 0) {
-		printk("Failed to delete extended advertising: %d\n", err);
+		LOG_ERR("Failed to delete extended advertising: %d", err);
 
 		return err;
 	}
@@ -221,7 +223,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	broadcast_stream = &broadcast_source_stream.stream;
@@ -250,19 +252,19 @@ static void test_main(void)
 
 		err = bt_cap_initiator_broadcast_audio_create(&create_param, &broadcast_source);
 		if (err != 0) {
-			printk("Unable to create broadcast source: %d\n", err);
+			LOG_ERR("Unable to create broadcast source: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 
 		err = bt_cap_initiator_broadcast_audio_start(broadcast_source, adv);
 		if (err != 0) {
-			printk("Unable to start broadcast source: %d\n", err);
+			LOG_ERR("Unable to start broadcast source: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 
 		err = setup_extended_adv_data(broadcast_source, adv);
 		if (err != 0) {
-			printk("Unable to setup extended advertising data: %d\n", err);
+			LOG_ERR("Unable to setup extended advertising data: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 
@@ -270,31 +272,31 @@ static void test_main(void)
 
 		err = k_sem_take(&sem_started, SEM_TIMEOUT);
 		if (err != 0) {
-			printk("sem_started timed out: %d\n", err);
+			LOG_ERR("sem_started timed out: %d", err);
 			FAIL("Public Broadcast source failed\n");
 			return;
 		}
 
 		/* Wait for other devices to let us know when we can stop the source */
-		printk("Waiting for signal from receiver to stop\n");
+		LOG_INF("Waiting for signal from receiver to stop");
 		backchannel_sync_wait_any();
 
-		printk("Stopping broadcast source\n");
+		LOG_INF("Stopping broadcast source");
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {
-			printk("Failed to stop broadcast source: %d\n", err);
+			LOG_ERR("Failed to stop broadcast source: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 
 		err = k_sem_take(&sem_stopped, SEM_TIMEOUT);
 		if (err != 0) {
-			printk("sem_stopped timed out: %d\n", err);
+			LOG_ERR("sem_stopped timed out: %d", err);
 			FAIL("Public Broadcast source failed\n");
 			return;
 		}
 		err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 		if (err != 0) {
-			printk("Failed to stop broadcast source: %d\n", err);
+			LOG_ERR("Failed to stop broadcast source: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 
@@ -302,7 +304,7 @@ static void test_main(void)
 
 		err = stop_extended_adv(adv);
 		if (err != 0) {
-			printk("Failed to stop and delete extended advertising: %d\n", err);
+			LOG_ERR("Failed to stop and delete extended advertising: %d", err);
 			FAIL("Public Broadcast source failed\n");
 		}
 

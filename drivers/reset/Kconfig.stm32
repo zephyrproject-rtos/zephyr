@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_STM32
-	bool "STM32 Reset Controller Driver"
+	bool "STM32 RCC reset driver"
 	default y
 	depends on DT_HAS_ST_STM32_RCC_RCTL_ENABLED

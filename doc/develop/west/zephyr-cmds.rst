@@ -90,8 +90,12 @@ Choosing an SPDX version
 select another version with the ``--spdx-version`` option.
 
 SPDX 2.3 is a superset of 2.2 and adds fields such as ``PrimaryPackagePurpose``. Pick SPDX 2.x for
-compatibility with tooling that does not yet understand SPDX 3.0; pick SPDX 3.0 for the richer,
-machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+compatibility with tooling that does not yet understand SPDX 3; pick SPDX 3.0 or above for the
+richer, machine-readable build provenance described in :ref:`west-spdx-build-profile`.
+
+.. note::
+
+   SPDX 3.1 support is experimental: the SPDX 3.1 specification is still in development.
 
 Generating SPDX documents
 -------------------------
@@ -216,7 +220,7 @@ Command-line options
 - ``-s SPDX_DIR``: specifies an alternate directory where the SPDX documents
   should be written instead of :file:`BUILD_DIR/spdx/`.
 
-- ``--spdx-version {2.2,2.3,3.0}``: specifies which SPDX specification version to use.
+- ``--spdx-version {2.2,2.3,3.0,3.1}``: specifies which SPDX specification version to use.
   Defaults to ``2.3``. See :ref:`west-spdx-versions` for the differences between
   the versions.
 

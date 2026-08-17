@@ -138,7 +138,7 @@ void rtos_mutex_unlock(rtos_mutex mutex)
 
 void rtos_timeouts_init(void)
 {
-	k_timer_start(&wl80211_timeout_timer, K_MSEC(WL80211_TIMEOUT_INIT_MS), K_NO_WAIT);
+	/* Stub, our timer is fully static */
 }
 
 void rtos_timeouts_start(unsigned int delay)

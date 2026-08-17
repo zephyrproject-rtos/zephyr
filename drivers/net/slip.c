@@ -316,10 +316,6 @@ void slip_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 #endif
 
-#if defined(CONFIG_NET_LLDP)
-	net_lldp_set_lldpdu(iface);
-#endif
-
 	slip->iface = iface;
 	slip->state = STATE_OK;
 

@@ -223,7 +223,7 @@ struct bt_bap_lc3_preset {
 			  BT_BAP_QOS_CFG_UNFRAMED(10000u, 120u, 5u, 20u, 40000u))
 
 /**
- * @brief Helper to declare LC3 Unicast 8_5_1 codec configuration
+ * @brief Helper to declare LC3 Unicast 48_5_1 codec configuration
  *
  * @param _loc             Audio channel location bitfield (@ref bt_audio_location)
  * @param _stream_context  Stream context (``BT_AUDIO_CONTEXT_*``)

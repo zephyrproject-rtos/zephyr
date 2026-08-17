@@ -54,20 +54,21 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 static int setup_iface(struct net_if *iface, const char *ipaddr)
 {
+	struct net_sockaddr_storage addr;
+	struct net_sockaddr *sa = net_sad(&addr);
 	struct net_if_addr *ifaddr;
-	struct net_sockaddr addr;
 
 	/* Before setting up tunnel, make sure it will be ignored by conn_mgr */
 	conn_mgr_ignore_iface(iface);
 
-	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), &addr)) {
+	if (!net_ipaddr_parse(ipaddr, strlen(ipaddr), sa)) {
 		LOG_ERR("Tunnel peer address \"%s\" invalid.", ipaddr);
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.sa_family == NET_AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr.ss_family == NET_AF_INET6) {
 		ifaddr = net_if_ipv6_addr_add(iface,
-					      &net_sin6(&addr)->sin6_addr,
+					      &net_sin6(sa)->sin6_addr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
 			LOG_ERR("Cannot add %s to interface %d",
@@ -76,9 +77,9 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.sa_family == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr.ss_family == NET_AF_INET) {
 		ifaddr = net_if_ipv4_addr_add(iface,
-					      &net_sin(&addr)->sin_addr,
+					      &net_sin(sa)->sin_addr,
 					      NET_ADDR_MANUAL, 0);
 		if (!ifaddr) {
 			LOG_ERR("Cannot add %s to interface %d",
@@ -93,7 +94,8 @@ static int setup_iface(struct net_if *iface, const char *ipaddr)
 int init_tunnel(void)
 {
 	struct virtual_interface_req_params params = { 0 };
-	struct net_sockaddr peer = { 0 };
+	struct net_sockaddr_storage peer = { 0 };
+	struct net_sockaddr *peer_sa = net_sad(&peer);
 	struct ud ud;
 	int ret;
 	int mtu;
@@ -107,36 +109,36 @@ int init_tunnel(void)
 
 	if (!net_ipaddr_parse(NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR,
 			      strlen(NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR),
-			      &peer)) {
+			      peer_sa)) {
 		LOG_ERR("Tunnel peer address \"%s\" invalid.",
 			NET_SAMPLE_COMMON_TUNNEL_PEER_ADDR);
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && peer.sa_family == NET_AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && peer.ss_family == NET_AF_INET6) {
 		struct net_if *iface;
 
 		iface = net_if_ipv6_select_src_iface(
-					&net_sin6(&peer)->sin6_addr);
+					&net_sin6(peer_sa)->sin6_addr);
 		ud.peer = iface;
 		params.family = NET_AF_INET6;
 		net_ipaddr_copy(&params.peer6addr,
-				&net_sin6(&peer)->sin6_addr);
+				&net_sin6(peer_sa)->sin6_addr);
 		mtu = NET_ETH_MTU - sizeof(struct net_ipv6_hdr);
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && peer.sa_family == NET_AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && peer.ss_family == NET_AF_INET) {
 		struct net_if *iface;
 
 		iface = net_if_ipv4_select_src_iface(
-					&net_sin(&peer)->sin_addr);
+					&net_sin(peer_sa)->sin_addr);
 		ud.peer = iface;
 		params.family = NET_AF_INET;
 		net_ipaddr_copy(&params.peer4addr,
-				&net_sin(&peer)->sin_addr);
+				&net_sin(peer_sa)->sin_addr);
 		mtu = NET_ETH_MTU - sizeof(struct net_ipv4_hdr);
 
 	} else {
-		LOG_ERR("Invalid address family %d", peer.sa_family);
+		LOG_ERR("Invalid address family %d", peer.ss_family);
 		return -EINVAL;
 	}
 

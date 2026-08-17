@@ -204,7 +204,13 @@ static log_timestamp_t monitor_ts_get(void)
 		cycle = k_cycle_get_32();
 	}
 
-	return (cycle / (sys_clock_hw_cycles_per_sec() / MONITOR_TS_FREQ));
+	/* Convert to 1/10th of a millisecond via microseconds, rather than
+	 * dividing by hw_cycles / MONITOR_TS_FREQ: the latter truncates badly
+	 * for cycle rates that are not a multiple of MONITOR_TS_FREQ (e.g.
+	 * 32768 Hz yields a divisor of 3 instead of 3.2768, making the
+	 * timestamps run 9.2% fast).
+	 */
+	return (log_timestamp_t)(k_cyc_to_us_floor64(cycle) / (USEC_PER_MSEC / 10U));
 }
 
 static inline void encode_hdr(struct bt_monitor_hdr *hdr, log_timestamp_t timestamp,

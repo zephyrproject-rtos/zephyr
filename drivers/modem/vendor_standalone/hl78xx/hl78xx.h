@@ -164,7 +164,7 @@ enum hl78xx_state {
 	MODEM_HL78XX_STATE_AWAIT_POWER_ON,
 	MODEM_HL78XX_STATE_SET_BAUDRATE,
 	MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
-	MODEM_HL78XX_STATE_RUN_INIT_FAIL_DIAGNOSTIC_SCRIPT,
+	MODEM_HL78XX_STATE_RECOVERY,
 	MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT,
 	MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT,
@@ -520,6 +520,41 @@ struct hl78xx_low_power_status {
 };
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
+#define HL78XX_SCRIPT_RESULT_BIT(_result) BIT(_result)
+
+struct hl78xx_data;
+struct hl78xx_script_recovery_rule;
+
+struct hl78xx_script_failure {
+	const struct hl78xx_script_recovery_rule *recovery_rule;
+	enum modem_chat_script_result result;
+	enum hl78xx_state origin_state;
+	uint16_t script_chat_index;
+	bool valid;
+};
+
+typedef int (*hl78xx_script_recovery_action_t)(struct hl78xx_data *data,
+					       const struct hl78xx_script_failure *failure);
+
+struct hl78xx_script_recovery_rule {
+	enum hl78xx_state failed_state;
+	const char *failed_request;
+	uint16_t failed_script_chat_index;
+	uint32_t result_mask;
+	hl78xx_script_recovery_action_t action;
+	/* State whose specified event confirms full recovery. */
+	enum hl78xx_state success_state;
+	enum hl78xx_event success_event;
+	/* State to resume after recovery action is completed */
+	enum hl78xx_state resume_state;
+	uint8_t max_attempts;
+};
+
+struct hl78xx_script_recovery {
+	const struct hl78xx_script_recovery_rule *attempted_rule;
+	uint8_t attempts;
+};
+
 struct modem_status {
 	struct registration_status registration;
 	struct hl78xx_network_info network_info;
@@ -531,7 +566,6 @@ struct modem_status {
 #endif /* CONFIG_MODEM_HL78XX_12 */
 
 	uint8_t ksrep;
-	uint16_t script_fail_counter;
 	int variant;
 	enum hl78xx_state state;
 
@@ -678,6 +712,9 @@ struct hl78xx_data {
 	struct kselacq_syntax kselacq_data;
 	struct hl78xx_runtime_band runtime_band;
 	struct hl78xx_at_cmd_capture_ctx at_cmd_capture;
+
+	struct hl78xx_script_failure script_failure;
+	struct hl78xx_script_recovery script_recovery;
 };
 
 struct hl78xx_config {

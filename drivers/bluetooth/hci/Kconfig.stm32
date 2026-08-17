@@ -53,3 +53,52 @@ config BT_STM32WBA_FULL_LIB
 endchoice
 
 endmenu
+
+config BT_STM32_IPM
+	bool
+	default y
+	depends on DT_HAS_ST_STM32WB_RF_ENABLED
+	select USE_STM32_HAL_CORTEX
+	select HAS_STM32LIB
+	select BT_HCI_SETUP
+	help
+	  STM32WB HCI driver using the shared memory transport between
+	  CPU1 and the wireless coprocessor on CPU2.
+
+config BT_STM32_IPM_FW_INFO_CHECK
+	bool "STM32WB wireless firmware runtime check"
+	default y
+	depends on BT_STM32_IPM
+	select LOG
+	help
+	  Validate at runtime that the STM32WB wireless stack running on CPU2
+	  matches the expected stack type and version used by the driver.
+
+config BT_STM32_IPM_FW_CHECK_STRICT
+	bool "Fail initialization on STM32WB wireless firmware mismatch"
+	default y
+	depends on BT_STM32_IPM_FW_INFO_CHECK
+	help
+	  If enabled, Bluetooth initialization fails when the detected CPU2
+	  wireless firmware stack type or version does not match expectations.
+	  If disabled, mismatches are logged as warnings and initialization
+	  continues.
+
+if BT_STM32_IPM_FW_INFO_CHECK
+
+config BT_FW_EXPECTED_VERSION_MAJOR
+	int "Expected STM32WB wireless firmware major version"
+	help
+	  Expected STM32WB wireless firmware major version.
+
+config BT_FW_EXPECTED_VERSION_MINOR
+	int "Expected STM32WB wireless firmware minor version"
+	help
+	  Expected STM32WB wireless firmware minor version.
+
+config BT_FW_EXPECTED_VERSION_SUB
+	int "Expected STM32WB wireless firmware sub version"
+	help
+	  Expected STM32WB wireless firmware sub version.
+
+endif # BT_STM32_IPM_FW_INFO_CHECK

@@ -107,7 +107,7 @@ static struct mod_relation mod_rel_list[MOD_REL_LIST_SIZE];
 #define RELATION_TYPE_EXT 0xFF
 
 static const struct {
-	uint8_t *path;
+	const char *path;
 	uint8_t page;
 } comp_data_pages[] = {
 	{ "bt/mesh/cmp/0", 0, },
@@ -458,7 +458,7 @@ int bt_mesh_comp_data_get_page_0(struct net_buf_simple *buf, size_t offset)
 }
 
 static uint8_t count_mod_ext(const struct bt_mesh_model *mod,
-			     uint8_t *max_offset, uint8_t sig_offset)
+			     int8_t *max_offset, uint8_t sig_offset)
 {
 	int i;
 	uint8_t extensions = 0;

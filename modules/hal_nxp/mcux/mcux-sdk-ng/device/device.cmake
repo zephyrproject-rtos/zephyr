@@ -141,16 +141,6 @@ endif()
 # Load device files
 mcux_add_cmakelists(${mcux_device_folder})
 
-# i.MX943 Cortex-A ships ca55/exception.c, a weak putc/puts helper that pulls in
-# the SDK debug console (fsl_debug_console.h). That header is not part of
-# hal_nxp and Zephyr provides its own console, so drop the file from the build.
-if(CONFIG_SOC_MIMX94398 AND CONFIG_CPU_CORTEX_A)
-  mcux_project_remove_source(
-    BASE_PATH ${SdkRootDirPath}
-    SOURCES devices/i.MX/i.MX943/MIMX94398/ca55/exception.c
-  )
-endif()
-
 # Workaround for fsl_flexspi_nor_boot link error, remove the one in SDK, use the Zephyr file.
 if(CONFIG_MCUX_COMPONENT_device.boot_header)
 

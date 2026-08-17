@@ -151,7 +151,8 @@ static ALWAYS_INLINE int arm64_dcache_all(int op)
 {
 	uint32_t clidr_el1, csselr_el1, ccsidr_el1;
 	uint8_t loc, ctype, cache_level, line_size, way_pos;
-	uint32_t max_ways, max_sets, dc_val, set, way;
+	uint32_t max_ways, max_sets, set, way;
+	uint64_t dc_val;
 
 	if (op != K_CACHE_INVD && op != K_CACHE_WB && op != K_CACHE_WB_INVD) {
 		return -ENOTSUP;

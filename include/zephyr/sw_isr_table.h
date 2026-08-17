@@ -299,11 +299,11 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
+void z_isr_install(unsigned int irq, void (*routine)(const void *parameter),
 		   const void *param);
 
 #ifdef CONFIG_SHARED_INTERRUPTS
-int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+int z_isr_uninstall(unsigned int irq, void (*routine)(const void *parameter),
 		    const void *param);
 #endif /* CONFIG_SHARED_INTERRUPTS */
 #endif

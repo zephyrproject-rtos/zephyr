@@ -204,6 +204,28 @@ enum fuel_gauge_prop_type {
 
 typedef uint16_t fuel_gauge_prop_t;
 
+/**
+ * @brief Type for custom signed integer property values.
+ *
+ * Used only by downstream custom properties (>= FUEL_GAUGE_CUSTOM_BEGIN).
+ */
+typedef int32_t fuel_gauge_custom_value_int_t;
+
+/**
+ * @brief Type for custom unsigned integer property values.
+ *
+ * Used only by downstream custom properties (>= FUEL_GAUGE_CUSTOM_BEGIN).
+ */
+typedef uint32_t fuel_gauge_custom_value_uint_t;
+
+/**
+ * @brief Type for custom boolean property values.
+ *
+ * Used only by downstream custom properties (>= FUEL_GAUGE_CUSTOM_BEGIN),
+ * typically for feature/status flags.
+ */
+typedef bool fuel_gauge_custom_value_bool_t;
+
 /** Property field to value/type union */
 union fuel_gauge_prop_val {
 	/* Fields have the format: */
@@ -427,6 +449,12 @@ union fuel_gauge_prop_val {
 	uint8_t state_of_health;
 	/** FUEL_GAUGE_THERM_VOLTAGE_UV */
 	uint32_t therm_voltage_uv;
+	/** Generic integer value for downstream custom properties */
+	fuel_gauge_custom_value_int_t custom_int;
+	/** Generic unsigned value for downstream custom properties */
+	fuel_gauge_custom_value_uint_t custom_uint;
+	/** Generic boolean value for downstream custom properties */
+	fuel_gauge_custom_value_bool_t custom_bool;
 };
 
 /**

@@ -1,0 +1,9 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - otp
+tests:
+  drivers.otp.build:
+    min_ram: 32
+    min_flash: 128

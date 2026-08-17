@@ -75,6 +75,7 @@ struct flash_mspi_nor_config {
 	const struct device *bus;
 	uint32_t packet_data_limit;
 	uint32_t flash_size;
+	uint32_t erase_block_size;
 	uint16_t page_size;
 	struct mspi_dev_id mspi_id;
 	struct mspi_dev_cfg mspi_nor_cfg;

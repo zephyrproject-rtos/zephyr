@@ -24,7 +24,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 /** Special drive_column argument for not driving any column */

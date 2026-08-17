@@ -86,6 +86,9 @@
 #error "Non-multithreading mode isn't supported on SMP targets"
 #endif
 
+/* ARC HS DMB instruction operand masks. */
+#include <zephyr/arch/arc/dmb.h>
+
 #ifndef _ASMLANGUAGE
 
 #ifdef __cplusplus

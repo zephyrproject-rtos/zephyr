@@ -94,6 +94,14 @@
 		status = "disabled";
 	};
 
+	ana_cmpr0: ana_cmpr0 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <0>;
+		interrupts = <GPIO_EXT_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;

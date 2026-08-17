@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF XO24M clock control node
+
+compatible: "nordic,nrf-clock-xo24m"
+
+include: [base.yaml, fixed-clock.yaml]

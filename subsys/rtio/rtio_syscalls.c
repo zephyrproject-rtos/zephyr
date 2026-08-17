@@ -40,6 +40,14 @@ static inline bool rtio_vrfy_sqe(struct rtio_sqe *sqe)
 		break;
 	case RTIO_OP_TINY_TX:
 		break;
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	case RTIO_OP_DELAY:
+		/* Carries only a timeout value and opaque userdata; the iodev (the
+		 * shared timeout iodev) is validated by the K_SYSCALL_OBJ check above.
+		 */
+		break;
+#endif
 	case RTIO_OP_TXRX:
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.tx_buf, sqe->txrx.buf_len, true);
 		valid_sqe &= K_SYSCALL_MEMORY(sqe->txrx.rx_buf, sqe->txrx.buf_len, true);

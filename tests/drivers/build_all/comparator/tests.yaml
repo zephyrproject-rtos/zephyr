@@ -14,6 +14,7 @@ tests:
       - xg24_rb4187c
       - xg27_dk2602a
       - xg29_rb4412a
+      - kg100s_rb4332a
   drivers.comparator.build.nrf_comp.diff:
     extra_args:
       - DTC_OVERLAY_FILE="nrf_comp/diff.overlay"
@@ -142,3 +143,10 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - kit_pse84_ai/pse846gps2dbzc4a/m33
       - kit_pse84_ai/pse846gps2dbzc4a/m55
+  drivers.comparator.build.infineon_hppass_csg.standalone:
+    extra_args:
+      - DTC_OVERLAY_FILE="infineon_hppass_csg/standalone.overlay"
+    extra_configs:
+      - CONFIG_MFD=y
+    platform_allow:
+      - kit_psc3m5_evk

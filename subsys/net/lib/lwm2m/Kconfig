@@ -71,7 +71,7 @@ menu "Engine features"
 
 config LWM2M_DTLS_SUPPORT
 	bool "DTLS support in the LwM2M client"
-
+	select MBEDTLS
 
 config LWM2M_DNS_SUPPORT
 	bool "DNS support in the LwM2M client"

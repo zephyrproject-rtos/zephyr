@@ -34,10 +34,7 @@ var serial = {};
 
   serial.Port.prototype.connect = function() {
     let readLoop = () => {
-      const {
-        endpointNumber
-      } = this.device_.configuration.interfaces[0].alternate.endpoints[0]
-      this.device_.transferIn(endpointNumber, 64).then(result => {
+      this.device_.transferIn(this.inEndpoint, 64).then(result => {
         this.onReceive(result.data);
         readLoop();
       }, error => {
@@ -51,10 +48,14 @@ var serial = {};
             return this.device_.selectConfiguration(1);
           }
         })
-        .then(() => this.device_.claimInterface(0))
-        .then(() => {
+      .then(() => {
+        const [iface] = this.device_.configuration.interfaces.filter(i => i.alternate.interfaceClass === 0xFF)
+        this.device_.claimInterface(iface.interfaceNumber).then(() => {
+          this.inEndpoint = iface.alternate.endpoints.find((endpoint) => endpoint.direction === 'in').endpointNumber;
+          this.outEndpoint = iface.alternate.endpoints.find((endpoint) => endpoint.direction === 'out').endpointNumber;
           readLoop();
         });
+      })
   };
 
   serial.Port.prototype.disconnect = function() {
@@ -62,10 +63,7 @@ var serial = {};
   };
 
   serial.Port.prototype.send = function(data) {
-    const {
-      endpointNumber
-    } = this.device_.configuration.interfaces[0].alternate.endpoints[1]
-    return this.device_.transferOut(endpointNumber, data);
+    return this.device_.transferOut(this.outEndpoint, data);
   };
 })();
 

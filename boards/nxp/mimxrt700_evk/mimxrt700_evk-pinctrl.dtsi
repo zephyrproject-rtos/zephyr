@@ -294,4 +294,14 @@
 			drive-strength = "normal";
 		};
 	};
+
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM_CLK_PIO10_8>,
+				 <PDM_DATA0_PIO10_9>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
+		};
+	};
 };

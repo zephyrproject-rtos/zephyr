@@ -24,6 +24,14 @@ properties:
       This pin defaults to active high when consumed by the wlan cpu power.
       The property value should ensure the flags properly describe the signal
       that is presented to the driver.
+  ext1-pwren-gpios:
+    type: phandle-array
+    description: |
+      External power enable pin - controls an external power supply to the
+      wireless module. When present, this pin is asserted before the module
+      is powered on and deasserted during power off.
+      The property value should ensure the flags properly describe the signal
+      that is presented to the driver.
 
   sd-gpios:
     type: phandle-array
@@ -32,3 +40,35 @@ properties:
       This pin defaults to active high when consumed by the SD card. The
       property value should ensure the flags properly describe the signal
       that is presented to the driver.
+
+child-binding:
+  description: WiFi antenna information
+  properties:
+    antenna-gain-2ghz:
+      type: int
+      default: 0
+      description: |
+        Net antenna gain in the 2.4 GHz band, in 0.25 dBi units.
+        Defaults to 0 (isotropic / unknown antenna, no derating applied),
+        the safe assumption when a board does not characterize its antenna.
+
+    antenna-gain-5ghz-sb1:
+      type: int
+      default: 0
+      description: |
+        Net antenna gain in 5 GHz sub-band 1 5180 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2g4hz.
+
+    antenna-gain-5ghz-sb2:
+      type: int
+      default: 0
+      description: |
+        Net antenna gain in 5 GHz sub-band 2 5600 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2g4hz.
+
+    antenna-gain-5ghz-sb3:
+      type: int
+      default: 0
+      description: |
+        Net antenna gain in 5 GHz sub-band 3 5825 MHz, in 0.25 dBi units.
+        Defaults to 0 (no derating), see antenna-gain-2g4hz.

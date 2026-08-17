@@ -42,6 +42,7 @@ struct session {
 	uint32_t next_id;
 	uint32_t outorder;
 	uint32_t error;
+	uint64_t missing_id_bitmap;
 	uint64_t length;
 	int64_t start_time;
 	uint32_t last_time;

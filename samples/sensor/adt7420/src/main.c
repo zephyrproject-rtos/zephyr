@@ -10,8 +10,9 @@
 #include <stdio.h>
 #include <zephyr/sys/__assert.h>
 
-#define DELAY_WITH_TRIGGER K_SECONDS(5)
 #define DELAY_WITHOUT_TRIGGER K_SECONDS(1)
+
+#define DEVICE_NODE DT_ALIAS(temp_sensor)
 
 #define UCEL_PER_CEL 1000000
 #define UCEL_PER_MCEL 1000
@@ -41,6 +42,10 @@ static const char *now_str(void)
 		 h, min, s, ms);
 	return buf;
 }
+
+#ifdef CONFIG_ADT7420_TRIGGER
+#define DELAY_WITH_TRIGGER K_SECONDS(5)
+
 static void trigger_handler(const struct device *dev,
 			    const struct sensor_trigger *trigger)
 {
@@ -49,24 +54,6 @@ static void trigger_handler(const struct device *dev,
 
 static int low_ucel;
 static int high_ucel;
-
-static int sensor_set_attribute(const struct device *dev,
-				enum sensor_channel chan,
-				enum sensor_attribute attr, int value)
-{
-	struct sensor_value sensor_val;
-	int ret;
-
-	sensor_val.val1 = value / UCEL_PER_CEL;
-	sensor_val.val2 = value % UCEL_PER_CEL;
-
-	ret = sensor_attr_set(dev, chan, attr, &sensor_val);
-	if (ret) {
-		printf("sensor_attr_set failed ret %d\n", ret);
-	}
-
-	return ret;
-}
 
 static bool temp_in_window(const struct sensor_value *val)
 {
@@ -99,6 +86,25 @@ static int sensor_set_window(const struct device *dev,
 
 	return rc;
 }
+#endif
+
+static int sensor_set_attribute(const struct device *dev,
+				enum sensor_channel chan,
+				enum sensor_attribute attr, int value)
+{
+	struct sensor_value sensor_val;
+	int ret;
+
+	sensor_val.val1 = value / UCEL_PER_CEL;
+	sensor_val.val2 = value % UCEL_PER_CEL;
+
+	ret = sensor_attr_set(dev, chan, attr, &sensor_val);
+	if (ret) {
+		printf("sensor_attr_set failed ret %d\n", ret);
+	}
+
+	return ret;
+}
 
 static void process(const struct device *dev)
 {
@@ -110,76 +116,67 @@ static void process(const struct device *dev)
 	sensor_set_attribute(dev, SENSOR_CHAN_AMBIENT_TEMP,
 			     SENSOR_ATTR_SAMPLING_FREQUENCY, 240 * 1000);
 
-	if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-		struct sensor_trigger trig = {
-			.type = SENSOR_TRIG_THRESHOLD,
-			.chan = SENSOR_CHAN_AMBIENT_TEMP,
-		};
-		struct sensor_value val = {
-			.val1 = TEMP_INITIAL_CEL,
-		};
+#ifdef CONFIG_ADT7420_TRIGGER
+	struct sensor_trigger trig = {
+		.type = SENSOR_TRIG_THRESHOLD,
+		.chan = SENSOR_CHAN_AMBIENT_TEMP,
+	};
+	struct sensor_value val = {
+		.val1 = TEMP_INITIAL_CEL,
+	};
 
-		ret = sensor_set_window(dev, &val);
-		if (ret == 0) {
-			ret = sensor_trigger_set(dev, &trig, trigger_handler);
-		}
-		if (ret != 0) {
-			printf("Could not set trigger\n");
-			return;
-		}
+	ret = sensor_set_window(dev, &val);
+	if (ret == 0) {
+		ret = sensor_trigger_set(dev, &trig, trigger_handler);
 	}
+	if (ret != 0) {
+		printf("Could not set trigger\n");
+		return;
+	}
+#endif
 
 	/* configuration for trigger thresholds */
 	temp_val.val1 = T_HIGH_CEL;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_set failed ret %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_UPPER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_UPPER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_High %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_High %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
 	temp_val.val1 = T_LOW_CEL;
-	ret = sensor_attr_set(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_set failed ret %d\n", ret);
 		return;
 	}
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_LOWER_THRESH,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_LOWER_THRESH, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_Low %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_Low %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
 
 	/* Read device configuration */
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_HYSTERESIS,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_HYSTERESIS, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
 	}
 
-	printf("[%s]: T_Hyst %.6f Cel\n", now_str(),
-		sensor_value_to_double(&temp_val));
+	printf("[%s]: T_Hyst %.6f Cel\n", now_str(), sensor_value_to_double(&temp_val));
 
-	ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_CONFIGURATION,
-			      &temp_val);
+	ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_CONFIGURATION, &temp_val);
 	if (ret) {
 		printf("sensor_attr_get failed ret %d\n", ret);
 		return;
@@ -195,22 +192,21 @@ static void process(const struct device *dev)
 			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
-					 &temp_val);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp_val);
 		if (ret) {
 			printf("sensor_channel_get failed ret %d\n", ret);
 			return;
 		}
 
-		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-			reset_window |= !temp_in_window(&temp_val);
-		}
+#ifdef CONFIG_ADT7420_TRIGGER
+		reset_window |= !temp_in_window(&temp_val);
+#endif
 
 		printf("[%s]: temperature %.6f Cel%s\n", now_str(),
 		       sensor_value_to_double(&temp_val),
 		       reset_window ? ": NEED RESET" : "");
 
-		ret = sensor_attr_get(dev, SENSOR_CHAN_ALL, SENSOR_ATTR_ALERT, &temp_val);
+		ret = sensor_attr_get(dev, SENSOR_CHAN_AMBIENT_TEMP, SENSOR_ATTR_ALERT, &temp_val);
 		if (ret) {
 			printf("sensor_attr_get failed ret %d\n", ret);
 			return;
@@ -221,28 +217,28 @@ static void process(const struct device *dev)
 			((temp_val.val1 & BIT(5)) != 0),
 			((temp_val.val1 & BIT(6)) != 0));
 
-		if (IS_ENABLED(CONFIG_ADT7420_TRIGGER)) {
-			if (reset_window) {
-				ret = sensor_set_window(dev, &temp_val);
-			}
-			if (ret) {
-				printf("Window update failed ret %d\n", ret);
-				return;
-			}
-
-			printk("Wait for trigger...");
-			ret = k_sem_take(&sem, DELAY_WITH_TRIGGER);
-			reset_window = (ret == 0);
-			printk("%s\n", reset_window ? "ALERTED!" : "timed-out");
-		} else {
-			k_sleep(DELAY_WITHOUT_TRIGGER);
+#if  defined(CONFIG_ADT7420_TRIGGER)
+		if (reset_window) {
+			ret = sensor_set_window(dev, &temp_val);
 		}
+		if (ret) {
+			printf("Window update failed ret %d\n", ret);
+			return;
+		}
+
+		printk("Wait for trigger...");
+		ret = k_sem_take(&sem, DELAY_WITH_TRIGGER);
+		reset_window = (ret == 0);
+		printk("%s\n", reset_window ? "ALERTED!" : "timed-out");
+#else
+	k_sleep(DELAY_WITHOUT_TRIGGER);
+#endif
 	}
 }
 
 int main(void)
 {
-	const struct device *const dev = DEVICE_DT_GET_ONE(adi_adt7420);
+	const struct device *const dev = DEVICE_DT_GET(DEVICE_NODE);
 
 	if (!device_is_ready(dev)) {
 		printk("sensor: device not ready.\n");

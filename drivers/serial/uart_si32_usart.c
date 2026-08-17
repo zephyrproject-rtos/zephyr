@@ -10,7 +10,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <SI32_CLKCTRL_A_Type.h>
 #include <SI32_USART_A_Type.h>

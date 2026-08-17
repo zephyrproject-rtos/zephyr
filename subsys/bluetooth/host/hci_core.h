@@ -284,8 +284,6 @@ struct bt_dev_le {
 
 #if defined(CONFIG_BT_CONN)
 	/* Controller buffer information */
-	uint16_t		mtu;
-	struct k_sem		pkts;
 	uint16_t		acl_mtu;
 	struct k_sem		acl_pkts;
 #endif /* CONFIG_BT_CONN */
@@ -379,7 +377,6 @@ struct bt_dev {
 
 #if defined(CONFIG_BT_HCI_VS)
 	/* Vendor HCI support */
-	uint8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
 	uint8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
 #endif
 
@@ -439,6 +436,15 @@ extern struct bt_dev bt_dev;
 extern const struct bt_conn_auth_cb *bt_auth;
 extern sys_slist_t bt_auth_info_cbs;
 enum bt_security_err bt_security_err_get(uint8_t hci_err);
+
+/* Submit work to the general purpose Bluetooth workqueue.
+ *
+ * This is used for the host's internal work items to avoid the shared system
+ * workqueue. The work runs in the RX thread context.
+ */
+int bt_work_submit(struct k_work *work);
+int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay);
+int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay);
 
 /* Data type to store state related with command to be updated
  * when command completes successfully.

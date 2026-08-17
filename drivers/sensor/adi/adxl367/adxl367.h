@@ -384,6 +384,7 @@ struct adxl367_dev_config {
 
 #ifdef CONFIG_ADXL367_TRIGGER
 	struct gpio_dt_spec interrupt;
+	uint8_t int_map_reg;
 #endif
 
 	enum adxl367_odr odr;

@@ -7,12 +7,15 @@
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
 #include <soc.h>
+#include <soc_timer.h>
 
 /* Handle when enter deep doze mode. */
 static void ite_power_soc_deep_doze(void)
 {
+	ite_ec_clock_capture_low_freq_timer();
 	/* Enter deep doze mode */
 	riscv_idle(CHIP_PLL_DEEP_DOZE, MSTATUS_IEN);
+	ite_ec_clock_compensate_system_timer();
 }
 
 /* Invoke Low Power/System Off specific Tasks */

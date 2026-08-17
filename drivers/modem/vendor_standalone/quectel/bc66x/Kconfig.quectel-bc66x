@@ -59,14 +59,14 @@ config MODEM_QUECTEL_BC66X_WORKQ_PRIORITY
 
 config MODEM_QUECTEL_BC66X_INIT_PRIORITY
 	int "Quectel BC66x modem driver initialization priority"
-	default 91
+	default 75
 	range 0 99
 	help
 	  This priority must be < MODEM_QUECTEL_BC66X_NET_INIT_PRIORITY
 
 config MODEM_QUECTEL_BC66X_NET_INIT_PRIORITY
 	int "Net device init priority"
-	default 92
+	default 80
 	range 0 99
 	help
 	  This priority must be > MODEM_QUECTEL_BC66X_INIT_PRIORITY

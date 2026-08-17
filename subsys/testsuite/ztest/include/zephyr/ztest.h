@@ -22,7 +22,7 @@
 #error "You need to add CONFIG_ZTEST to your config file."
 #endif
 
-#ifndef KERNEL
+#ifdef ZTEST_UNITTEST
 #define ARCH_STACK_PTR_ALIGN 8
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #ifdef __cplusplus
@@ -32,7 +32,7 @@ struct arch_esf;
 #ifdef __cplusplus
 }
 #endif
-#endif /* KERNEL */
+#endif /* ZTEST_UNITTEST */
 
 #include <zephyr/sys/printk.h>
 #define PRINT printk

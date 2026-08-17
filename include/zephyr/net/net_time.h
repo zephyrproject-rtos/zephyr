@@ -24,7 +24,7 @@
 #define ZEPHYR_INCLUDE_NET_NET_TIME_H_
 
 /* Include required for NSEC_PER_* constants. */
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #ifdef __cplusplus
 extern "C" {

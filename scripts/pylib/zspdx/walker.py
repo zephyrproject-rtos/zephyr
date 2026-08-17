@@ -12,11 +12,13 @@ import yaml
 from west.util import WestNotFound, west_topdir
 
 from zspdx.cmakecache import parse_cmake_cache_file
+from zspdx.cmakefileapi import TargetType
 from zspdx.cmakefileapijson import parse_reply, parse_toolchains_and_info
 from zspdx.getincludes import get_c_includes
 from zspdx.model import (
     BuildInfo,
     ComponentPurpose,
+    ExternalReferenceType,
     RelationshipType,
     SBOMBuild,
     SBOMComponent,
@@ -26,6 +28,42 @@ from zspdx.model import (
 )
 
 _logger = logging.getLogger(__name__)
+
+# Organization credited as the SBOM author and as the supplier of Zephyr and its
+# upstream-mirrored modules (all hosted under github.com/zephyrproject-rtos).
+ZEPHYR_ORGANIZATION = "The Zephyr Project"
+
+# Name of the tool recorded in the SPDX Creator field.
+SPDX_TOOL_NAME = "Zephyr SPDX builder"
+
+# GitHub namespace under which Zephyr mirrors its modules.
+ZEPHYR_GITHUB_NAMESPACE = "zephyrproject-rtos"
+
+# Free-form notes emitted as package comments to clarify each package's role. The
+# "-sources" and "-deps" packages are systematically emitted for every module, so
+# the distinction (and why unused modules still appear) is spelled out here.
+SOURCES_COMMENT = (
+    "Source package: this component's source tree as checked out in the west "
+    "workspace. Files that were compiled into the build are listed here; a "
+    "component contributing no compiled files appears with no files."
+)
+DEPS_COMMENT = (
+    "Reference-only dependency package: identifies an upstream Zephyr module "
+    "(download location, and PURL/CPE where known) for supply-chain and "
+    "vulnerability tracking. One is emitted for every module in the west "
+    "manifest, whether or not its code is built, and it carries no files."
+)
+ZEPHYR_DEPS_COMMENT = (
+    "Reference-only package for the Zephyr RTOS itself, the common dependency "
+    "shared by every module dependency package; it carries no files."
+)
+
+# Matches a git repository URL of the form '<protocol><host>/<namespace>/<package>',
+# capturing the host type (e.g. "github"), the namespace and the package name.
+COMMON_GIT_URL_REGEX = (
+    r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
+    r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
+)
 
 
 def get_tool_version(tool_path):
@@ -140,26 +178,114 @@ class Walker:
         # Meta file path
         self.meta_file = ""
 
-    def _build_purl(self, url, version=None):
+    @staticmethod
+    def _parse_git_url(url):
+        """Parse a git repository URL into (host_type, namespace, package).
+
+        Returns ``None`` when the URL does not match the common
+        '<protocol><host>/<namespace>/<package>' pattern.
+        """
         if not url:
             return None
-
-        purl = None
-        # This is designed to match repository with the following url pattern:
-        # '<protocol><type>/<namespace>/<package>
-        COMMON_GIT_URL_REGEX = (
-            r'((git@|http(s)?:\/\/)(?P<type>[\w\.@]+)(\.\w+)(\/|:))'
-            r'(?P<namespace>[\w,\-,\_\/]+)\/(?P<package>[\w,\-,\_]+)(.git){0,1}((\/){0,1})$'
-        )
-
         match = re.fullmatch(COMMON_GIT_URL_REGEX, url)
-        if match:
-            purl = f'pkg:{match.group("type")}/{match.group("namespace")}/{match.group("package")}'
+        if not match:
+            return None
+        return match.group("type"), match.group("namespace"), match.group("package")
 
-        if purl and version:
+    def _build_purl(self, url, version=None):
+        parsed = self._parse_git_url(url)
+        if not parsed:
+            return None
+
+        host_type, namespace, package = parsed
+        purl = f'pkg:{host_type}/{namespace}/{package}'
+        if version:
             purl += f'@{version}'
 
         return purl
+
+    def _supplier_from_url(self, url):
+        """Derive an SPDX supplier organization name from a git repository URL.
+
+        Modules mirrored under github.com/zephyrproject-rtos are supplied by the
+        Zephyr Project; for any other host namespace the namespace itself is used.
+        Returns "" when no supplier can be derived.
+        """
+        parsed = self._parse_git_url(url)
+        if not parsed:
+            return ""
+        _host_type, namespace, _package = parsed
+        if namespace == ZEPHYR_GITHUB_NAMESPACE:
+            return ZEPHYR_ORGANIZATION
+        return namespace
+
+    def _apply_scm_identity(self, component, url, revision):
+        """Attach supplier and a package URL derived from a module's SCM location.
+
+        Sets ``component.supplier`` from the repository namespace when not already
+        set, and adds a revision-pinned purl unless the component already carries
+        one (e.g. a curated purl from the module's security metadata).
+        """
+        if not url:
+            return
+        if not component.supplier:
+            supplier = self._supplier_from_url(url)
+            if supplier:
+                component.supplier = supplier
+        has_purl = any(
+            ref.reference_type == ExternalReferenceType.PURL
+            for ref in component.external_references
+        )
+        if not has_purl:
+            purl = self._build_purl(url, revision)
+            if purl:
+                component.add_external_reference(purl)
+
+    @staticmethod
+    def _read_zephyr_version(zephyr_path):
+        """Read the Zephyr version (e.g. "4.4.99") from the repo VERSION file.
+
+        Returns "" when the path is missing or the file cannot be parsed.
+        """
+        if not zephyr_path:
+            return ""
+        version_file = os.path.join(zephyr_path, "VERSION")
+        values = {}
+        try:
+            with open(version_file) as f:
+                for line in f:
+                    key, sep, val = line.partition("=")
+                    if sep:
+                        values[key.strip()] = val.strip()
+        except OSError:
+            return ""
+
+        try:
+            version = (
+                f"{int(values['VERSION_MAJOR'])}"
+                f".{int(values['VERSION_MINOR'])}"
+                f".{int(values['PATCHLEVEL'])}"
+            )
+        except (KeyError, ValueError):
+            return ""
+
+        extra = values.get("EXTRAVERSION", "")
+        if extra:
+            version += f"-{extra}"
+        return version
+
+    def _set_creation_metadata(self, zephyr):
+        """Record SBOM creator provenance (author organization and tool version).
+
+        Serializers read these from the graph metadata to emit the SPDX Creator
+        fields, so the SBOM advertises a human/organization author alongside the
+        versioned generation tool.
+        """
+        self.sbom_graph.metadata["creator_organization"] = ZEPHYR_ORGANIZATION
+        self.sbom_graph.metadata["tool_name"] = SPDX_TOOL_NAME
+        self.sbom_graph.metadata["tool_version"] = self._read_zephyr_version(
+            (zephyr or {}).get("path", "")
+        )
 
     # primary entry point
     def collect_sbom_graph(self):
@@ -372,6 +498,7 @@ class Walker:
         try:
             with open(self.meta_file) as file:
                 content = yaml.load(file.read(), yaml.SafeLoader)
+                self._set_creation_metadata(content.get("zephyr"))
                 if not self.setup_zephyr_component(content["zephyr"], content["modules"]):
                     return False
         except (FileNotFoundError, yaml.YAMLError):
@@ -418,7 +545,11 @@ class Walker:
             base_dir=relative_base_dir,
         )
 
-        zephyr_url = zephyr.get("remote", "")
+        # Zephyr itself is always supplied by the Zephyr Project.
+        component.supplier = ZEPHYR_ORGANIZATION
+        component.comment = SOURCES_COMMENT
+
+        zephyr_url = zephyr.get("remote") or zephyr.get("url", "")
         if zephyr_url:
             component.url = zephyr_url
 
@@ -440,6 +571,13 @@ class Walker:
                 if component.version == "" and version:
                     component.version = version.group('version')
 
+        # Fall back to a revision-pinned package URL when no release tag is known,
+        # so the component still carries a purl for vulnerability matching.
+        if purl is None and zephyr_url:
+            purl = self._build_purl(zephyr_url, component.revision)
+            if purl:
+                component.add_external_reference(purl)
+
         if len(component.version) > 0:
             cpe = f'cpe:2.3:o:zephyrproject:zephyr:{component.version}:-:*:*:*:*:*:*'
             component.add_external_reference(cpe)
@@ -452,7 +590,8 @@ class Walker:
         for module in modules:
             module_name = module.get("name", None)
             module_path = module.get("path", None)
-            module_url = module.get("remote", None)
+            # west may record the module remote as either "remote" or "url"
+            module_url = module.get("remote") or module.get("url")
             module_revision = module.get("revision", None)
 
             if not module_name:
@@ -463,6 +602,7 @@ class Walker:
                 name=module_name + "-sources",
                 purpose=ComponentPurpose.SOURCE,
                 base_dir=module_path,
+                comment=SOURCES_COMMENT,
             )
 
             if module_revision:
@@ -470,6 +610,7 @@ class Walker:
 
             if module_url:
                 module_component.url = module_url
+                self._apply_scm_identity(module_component, module_url, module_revision)
 
             self.sbom_graph.add_component(module_component, "zephyr")
             self.doc_zephyr.add_described_component(module_component)
@@ -499,8 +640,9 @@ class Walker:
             return None
 
         # no PrimaryPackagePurpose: this is a reference-only dependency package with no files
-        component = SBOMComponent(name="zephyr-deps")
-        component.url = zephyr.get("remote", "")
+        component = SBOMComponent(name="zephyr-deps", comment=ZEPHYR_DEPS_COMMENT)
+        component.supplier = ZEPHYR_ORGANIZATION
+        component.url = zephyr.get("remote") or zephyr.get("url", "")
         component.revision = zephyr.get("revision", "")
 
         purl = None
@@ -532,6 +674,12 @@ class Walker:
 
         self.sbom_graph.add_component(component, "modules-deps")
         self.doc_modules_deps.add_described_component(component)
+
+        # link this dependency package to the Zephyr source package (same relation
+        # the module dependency packages have with their -sources counterparts)
+        self.pending_relationships.append(
+            ("component", "zephyr-sources", "component", component.name, "VARIANT_OF")
+        )
         return component
 
     def setup_modules_deps_component(self, modules, zephyr=None):
@@ -542,6 +690,8 @@ class Walker:
         for module in modules:
             module_name = module.get("name", None)
             module_security = module.get("security", None)
+            module_url = module.get("remote") or module.get("url")
+            module_revision = module.get("revision", None)
 
             if not module_name:
                 _logger.error("cannot find module name in meta file; bailing")
@@ -552,13 +702,34 @@ class Walker:
                 module_ext_ref = module_security.get("external-references", [])
 
             # set up module deps component (reference-only, no files; no purpose)
-            component = SBOMComponent(name=module_name + "-deps")
+            component = SBOMComponent(name=module_name + "-deps", comment=DEPS_COMMENT)
 
+            if module_url:
+                component.url = module_url
+            if module_revision:
+                component.revision = module_revision
+
+            # curated security references (CPE/purl) take precedence; the SCM
+            # identity then fills in a supplier and a purl when none was provided.
             for ref in module_ext_ref:
                 component.add_external_reference(ref)
+            if module_url:
+                self._apply_scm_identity(component, module_url, module_revision)
 
             self.sbom_graph.add_component(component, "modules-deps")
             self.component_modules_deps[module_name] = component
+
+            # link this dependency package to the module's source package: the
+            # checked-out sources are Zephyr's variant of the upstream dependency
+            self.pending_relationships.append(
+                (
+                    "component",
+                    module_name + "-sources",
+                    "component",
+                    component.name,
+                    "VARIANT_OF",
+                )
+            )
 
             # each module is a dependency of the zephyr dependency component
             if zephyr_deps is not None:
@@ -575,6 +746,16 @@ class Walker:
         # assuming just one configuration; consider whether this is incorrect
         cfg_targets = self.cm.configurations[0].config_targets
         for cfg_target in cfg_targets:
+            # Skip CMake UTILITY targets (menuconfig, ram_report, run/flash/debug,
+            # code-generation helpers, ...). These are phony build-system convenience
+            # targets, not software components: they produce no build artifacts and
+            # only add noise to the SBOM. Generated sources that end up in the
+            # firmware are still captured via the artifact-producing targets that
+            # compile them, so nothing of value is lost by dropping them.
+            if cfg_target.target.type == TargetType.UTILITY:
+                _logger.debug(f"  - skipping UTILITY target {cfg_target.name}")
+                continue
+
             # build the Component for this target
             component = self.init_config_target_component(cfg_target)
 

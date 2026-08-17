@@ -17,3 +17,11 @@
 	clock-frequency = <16384>;
 	timer-mode-sel = <0>;
 };
+
+&ostimer0 {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};

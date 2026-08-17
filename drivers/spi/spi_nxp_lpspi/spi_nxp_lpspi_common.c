@@ -407,12 +407,13 @@ static int lpspi_module_system_init(const struct device *dev)
 
 int spi_nxp_init_common(const struct device *dev)
 {
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	LPSPI_Type *base;
 	const struct lpspi_config *config = dev->config;
 	struct lpspi_data *data = dev->data;
 	int err = 0;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+	base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");

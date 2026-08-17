@@ -110,6 +110,17 @@
 	pinctrl-names = "default";
 };
 
+/* test pwm dimming mode */
+&pwm1 {
+	status = "okay";
+	prescaler-cx = <PWM_PRESCALER_C7>;
+	max-dimming-duty = <PWM_DIMMING_DC_FFH>;
+	dimming-duty-increase = <PWM_DIMMING_DC_STEP_8H>;
+	dimming-duty-decrease = <PWM_DIMMING_DC_STEP_8H>;
+	pinctrl-0 = <&pwm1_gpa1_default>;
+	pinctrl-names = "default";
+};
+
 /* test fan */
 &pwm7 {
 	status = "okay";

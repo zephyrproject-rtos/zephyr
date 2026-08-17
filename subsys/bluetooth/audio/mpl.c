@@ -1373,27 +1373,14 @@ static uint8_t inactive_state_command_handler(const struct mpl_cmd *command)
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 	case MEDIA_PROXY_OP_STOP:
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
+	case MEDIA_PROXY_OP_PREV_TRACK:
+	case MEDIA_PROXY_OP_NEXT_TRACK:
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		result_code = MEDIA_PROXY_CMD_PLAYER_INACTIVE;
-		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
-		do_prev_track(&media_player);
-		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
-		/* TODO:
-		 * The case where the next track has been set explicitly breaks somewhat
-		 * with the "next" order hardcoded into the group and track structure
-		 */
-		do_next_track(&media_player);
-
-		/* For next track, the position is kept if the track */
-		/* does not change */
-		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player, false);

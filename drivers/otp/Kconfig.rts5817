@@ -6,6 +6,6 @@ config OTP_RTS5817
 	default y
 	depends on DT_HAS_REALTEK_RTS5817_OCOTP_ENABLED
 	depends on RESET_RTS5817 && CLOCK_CONTROL_RTS5817
-	select SYSCON
+	depends on SYSCON
 	help
 	  Enable support for RTS5817 OCOTP driver.

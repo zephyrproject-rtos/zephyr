@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 set(ZEPHYR_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/my_module")
 set(EXTRA_ZEPHYR_MODULES "${CMAKE_CURRENT_SOURCE_DIR}/my_extra_module")

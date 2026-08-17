@@ -1,0 +1,61 @@
+/*
+ * Copyright (c) 2026 Martin Moya <martin.moya@focus.uy>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/xg21/efr32bg21b010f1024im32.dtsi>
+#include <silabs/xg21/clock-hfrcodpll.dtsi>
+#include <silabs/xg21/clock-lfxo.dtsi>
+#include <zephyr/dt-bindings/lora/sx126x.h>
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+
+&pinctrl {
+	/* SPI to SX1262: MOSI=PC0, SCLK=PC3, MISO=PC1 */
+	usart2_default: usart2_default {
+		group0 {
+			pins = <USART2_TX_PC0>, <USART2_CLK_PC3>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART2_RX_PC1>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+&hfxo {
+	ctune = <129>;
+	precision = <50>;
+};
+
+&lfxo {
+	ctune = <79>;
+	precision = <50>;
+};
+
+&usart2 {
+	compatible = "silabs,usart-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(1)>;
+	cs-gpios = <&gpioc 2 GPIO_ACTIVE_LOW>;
+
+	lora0: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		reset-gpios = <&gpiod 2 GPIO_ACTIVE_LOW>;
+		busy-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		antenna-enable-gpios = <&gpioa 3 GPIO_ACTIVE_LOW>;
+		dio2-tx-enable;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+	};
+};

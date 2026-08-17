@@ -42,40 +42,6 @@ config BT_HCI_TX_PRIO
 	int
 	default 7
 
-choice BT_RECV_CONTEXT
-	prompt "BT RX Thread Selection"
-	default BT_RECV_WORKQ_SYS if SOC_SERIES_NRF51
-	default BT_RECV_WORKQ_BT
-	help
-	  Selects in which context incoming low priority HCI packets are processed.
-	  The host defines some events as high priority to avoid race conditions and deadlocks.
-	  High priority events are always processed in the context of the caller of bt_recv()
-	  or bt_recv_prio(). The choice will influence RAM usage and how fast incoming HCI
-	  packets are processed.
-
-config BT_RECV_WORKQ_SYS
-	bool "Process low priority HCI packets in the system work queue"
-	help
-	  When this option is selected, the host will process incoming low priority HCI packets
-	  in the system work queue.
-	  The application needs to ensure the system workqueue stack size (SYSTEM_WORKQUEUE_STACK_SIZE)
-	  is large enough, refer to BT_RX_STACK_SIZE for the recommended minimum.
-	  Warning: Enabling this option will cause the latency of incoming Bluetooth events to be
-	  affected by other tasks using the system work queue. When this option is active, the Host
-	  will process Bluetooth events in a blocking manner. This can lead to deadlocks if the
-	  application waits for the system work queue while handling Bluetooth events. This feature
-	  is intended for advanced users to allow aggressive memory optimization for devices with
-	  very limited memory. It is strongly advised not to use this option.
-
-config BT_RECV_WORKQ_BT
-	bool "Process low priority HCI packets in the bluetooth-specific work queue"
-	help
-	  When this option is selected, the host will process incoming low priority HCI packets
-	  in the Bluetooth-specific work queue.
-	  The application needs to ensure the bluetooth-specific work queue size is large enough,
-	  refer to BT_RX_STACK_SIZE for the recommended minimum.
-endchoice
-
 config BT_RX_STACK_SIZE
 	int "Size of the receiving thread stack"
 	default 768 if BT_HCI_RAW

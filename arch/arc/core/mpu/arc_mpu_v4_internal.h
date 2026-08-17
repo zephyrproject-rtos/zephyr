@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_
 #define ZEPHYR_ARCH_ARC_CORE_MPU_ARC_MPU_V4_INTERNAL_H_
 
+#include <zephyr/sys/math_extras.h>
+
 #define AUX_MPU_RPER_SID1       0x10000
 /* valid mask: SID1+secure+valid */
 #define AUX_MPU_RPER_VALID_MASK ((0x1) | AUX_MPU_RPER_SID1 | AUX_MPU_ATTR_S)
@@ -789,16 +791,31 @@ int arc_core_mpu_buffer_validate(const void *addr, size_t size, int write)
 	 * we can stop the iteration immediately once we find the
 	 * matched region that grants permission or denies access.
 	 */
-	r_index = _mpu_probe((uint32_t)addr);
-	/*  match and the area is in one region */
-	if (r_index >= 0 && r_index == _mpu_probe((uint32_t)addr + (size - 1))) {
-		if (_is_user_accessible_region(r_index, write)) {
+	if (size == 0U) {
+		r_index = _mpu_probe((uint32_t)addr);
+		if (r_index >= 0 && _is_user_accessible_region(r_index, write)) {
 			r_index = 0;
 		} else {
 			r_index = -EPERM;
 		}
 	} else {
-		r_index = -EPERM;
+		uint32_t end;
+
+		if (u32_add_overflow((uint32_t)addr, size - 1U, &end)) {
+			r_index = -EPERM;
+		} else {
+			r_index = _mpu_probe((uint32_t)addr);
+			/*  match and the area is in one region */
+			if (r_index >= 0 && r_index == _mpu_probe(end)) {
+				if (_is_user_accessible_region(r_index, write)) {
+					r_index = 0;
+				} else {
+					r_index = -EPERM;
+				}
+			} else {
+				r_index = -EPERM;
+			}
+		}
 	}
 
 	arch_irq_unlock(key);

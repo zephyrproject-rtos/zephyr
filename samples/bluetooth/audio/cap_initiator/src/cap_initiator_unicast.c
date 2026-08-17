@@ -93,8 +93,8 @@ static bool is_tx_stream(struct bt_bap_stream *stream)
 	return ep_info.dir == BT_AUDIO_DIR_SINK;
 }
 
-static void unicast_stream_configured_cb(struct bt_bap_stream *stream,
-					 const struct bt_bap_qos_cfg_pref *pref)
+static void unicast_stream_codec_configured_cb(struct bt_bap_stream *stream,
+					       const struct bt_bap_qos_cfg_pref *pref)
 {
 	LOG_INF("Configured stream %p", stream);
 
@@ -108,7 +108,7 @@ static void unicast_stream_configured_cb(struct bt_bap_stream *stream,
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
 }
 
-static void unicast_stream_qos_set_cb(struct bt_bap_stream *stream)
+static void unicast_stream_qos_configured_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("QoS set stream %p", stream);
 }
@@ -204,8 +204,8 @@ static void unicast_stream_sent_cb(struct bt_bap_stream *stream)
 }
 
 static struct bt_bap_stream_ops unicast_stream_ops = {
-	.configured = unicast_stream_configured_cb,
-	.qos_set = unicast_stream_qos_set_cb,
+	.codec_configured = unicast_stream_codec_configured_cb,
+	.qos_configured = unicast_stream_qos_configured_cb,
 	.enabled = unicast_stream_enabled_cb,
 	.started = unicast_stream_started_cb,
 	.metadata_updated = unicast_stream_metadata_updated_cb,

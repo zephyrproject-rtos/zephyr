@@ -32,10 +32,14 @@ static int ethernet_set_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	if (!api) {
 		return -ENOENT;
@@ -214,10 +218,14 @@ static int ethernet_get_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	if (!api) {
 		return -ENOENT;

@@ -240,15 +240,19 @@ static void dns_result_cb(enum dns_resolve_status status,
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) && info->ai_family == NET_AF_INET) {
+			struct net_sockaddr *ai_addr = net_sad(&info->ai_addr_storage);
+
 			sntp_addrlen = info->ai_addrlen;
 			sntp_addr.ss_family = NET_AF_INET;
 			net_ipv4_addr_copy_raw(net_sin(net_sad(&sntp_addr))->sin_addr.s4_addr,
-					       net_sin(&info->ai_addr)->sin_addr.s4_addr);
+					       net_sin(ai_addr)->sin_addr.s4_addr);
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) && info->ai_family == NET_AF_INET6) {
+			struct net_sockaddr *ai_addr = net_sad(&info->ai_addr_storage);
+
 			sntp_addrlen = info->ai_addrlen;
 			sntp_addr.ss_family = NET_AF_INET6;
 			net_ipv6_addr_copy_raw(net_sin6(net_sad(&sntp_addr))->sin6_addr.s6_addr,
-					       net_sin6(&info->ai_addr)->sin6_addr.s6_addr);
+					       net_sin6(ai_addr)->sin6_addr.s6_addr);
 		} else {
 			/* Ignore. */
 			return;

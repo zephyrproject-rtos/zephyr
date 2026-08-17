@@ -39,6 +39,10 @@
 	input-n = "local_vref";
 };
 
+&autanalog {
+	status = "okay";
+};
+
 &ptcomp0 {
 	status = "okay";
 

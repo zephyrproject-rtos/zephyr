@@ -407,11 +407,21 @@ void board_early_init_hook(void)
 	ITRC->OUT_SEL[4][0] = 0xAAAAAA0A;
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || \
+		DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0))
 	/* SAI clock 368.64 / 15 = 24.576MHz */
-	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_AUDIO_VDD2);
 	CLOCK_AttachClk(kAUDIO_VDD2_to_SAI012);
 	CLOCK_SetClkDiv(kCLOCK_DivSai012Clk, 15U);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+	CLOCK_SetClkDiv(kCLOCK_DivMicfil0Clk, 15U);
+	CLOCK_AttachClk(kAUDIO_PLL_PFD3_to_MICFIL0);
+	RESET_ClearPeripheralReset(kPDM_RST_SHIFT_RSTn);
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sc_timer))

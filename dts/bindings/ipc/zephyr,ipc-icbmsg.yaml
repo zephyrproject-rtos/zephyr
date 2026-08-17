@@ -15,8 +15,12 @@ properties:
     description: number of allocable TX blocks
     required: true
     type: int
+    min: 1
+    max: 32
 
   rx-blocks:
     description: number of allocable RX blocks
     required: true
     type: int
+    min: 1
+    max: 32

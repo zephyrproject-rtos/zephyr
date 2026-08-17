@@ -402,7 +402,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				reg = <0x56020000 0x4400>;
-				ranges = <0x56020000 0x56020000 0x4400>;
+				ranges;
 
 				gpioa: gpio@56020000 {
 					compatible = "st,stm32-gpio";
@@ -969,7 +969,7 @@
 
 			mac: ethernet@58036000 {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
-					     "st,stm32-ethernet";
+					     "st,stm32-ethernet", "snps,dwmac";
 				reg = <0x58036000 0x8000>;
 				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
@@ -979,7 +979,7 @@
 				status = "disabled";
 
 				mdio: mdio {
-					compatible = "st,stm32-mdio";
+					compatible = "snps,dwmac-mdio";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";
@@ -1467,7 +1467,7 @@
 			};
 
 			usbphyc1: usbphyc@5803fc00 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x5803fc00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
 					 <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
@@ -1476,7 +1476,7 @@
 			};
 
 			usbphyc2: usbphyc@580c0000 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x580c0000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 28)>,
 					 <&rcc STM32_SRC_HSE OTGPHY2_SEL(3)>;
@@ -1512,6 +1512,7 @@
 				reg = <0x52005800 0x400>;
 				ranges;
 				clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
 				sai1_a: sai1a@52005804 {
@@ -1540,6 +1541,7 @@
 				reg = <0x52005c00 0x400>;
 				ranges;
 				clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
 				sai2_a: sai2a@52005c04 {

@@ -156,7 +156,7 @@ static int gpio_em32_pin_configure(const struct device *dev, gpio_pin_t pin, gpi
 #ifdef CONFIG_PM_DEVICE_RUNTIME
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 #endif

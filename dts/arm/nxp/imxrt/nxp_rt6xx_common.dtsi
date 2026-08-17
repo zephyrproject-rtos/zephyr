@@ -666,6 +666,14 @@
 
 		status = "disabled";
 	};
+
+	/* For RT685, PowerQuad can't access flexspi memory */
+	powerquad: powerquad@150000 {
+		compatible = "nxp,powerquad";
+		reg = <0x150000 0x1000>;
+		clocks = <&clkctl0 MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
 };
 
 &flexspi {

@@ -74,6 +74,7 @@ if(CONFIG_HAS_RPI_PICO)
     ${common_dir}/boot_picoboot_headers/include
     ${common_dir}/pico_base_headers/include
     ${common_dir}/pico_binary_info/include
+    ${common_dir}/pico_util/include/
     ${rp2_common_dir}/boot_bootrom_headers/include
     ${rp2_common_dir}/hardware_base/include
     ${rp2_common_dir}/hardware_boot_lock/include

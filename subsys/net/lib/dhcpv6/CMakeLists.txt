@@ -7,3 +7,4 @@ zephyr_library()
 zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 
 zephyr_library_sources_ifdef(CONFIG_NET_DHCPV6 dhcpv6.c)
+zephyr_library_sources_ifdef(CONFIG_NET_DHCPV6_SERVER dhcpv6_server.c)

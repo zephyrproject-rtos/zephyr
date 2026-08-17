@@ -12,19 +12,19 @@ unset(_SOC_IS_IN_TREE)
 add_subdirectory(common)
 
 # Below is inclusion of HWMv2 SoC CMake lists.
-string(TOUPPER SOC_FAMILY_${SOC_FAMILY}_DIR family_setting_dir)
-string(TOUPPER SOC_SERIES_${SOC_SERIES}_DIR series_setting_dir)
-string(TOUPPER SOC_${SOC_NAME}_DIR soc_setting_dir)
+string(TOUPPER SOC_FAMILY_${CONFIG_SOC_FAMILY}_DIR family_setting_dir)
+string(TOUPPER SOC_SERIES_${CONFIG_SOC_SERIES}_DIR series_setting_dir)
+string(TOUPPER SOC_${CONFIG_SOC}_DIR soc_setting_dir)
 
 if(DEFINED ${soc_setting_dir})
-  add_subdirectory(${${soc_setting_dir}} soc/${SOC_NAME})
+  add_subdirectory(${${soc_setting_dir}} soc/${CONFIG_SOC})
 elseif(DEFINED ${series_setting_dir})
-  add_subdirectory(${${series_setting_dir}} soc/${SOC_SERIES})
+  add_subdirectory(${${series_setting_dir}} soc/${CONFIG_SOC_SERIES})
 elseif(DEFINED ${family_setting_dir})
-  add_subdirectory(${${family_setting_dir}} soc/${SOC_FAMILY})
+  add_subdirectory(${${family_setting_dir}} soc/${CONFIG_SOC_FAMILY})
 else()
-  message(FATAL_ERROR "No CMakeLists.txt file found for SoC: ${SOC_NAME}, "
-                      "series: ${SOC_SERIES}, family: ${SOC_FAMILY}")
+  message(FATAL_ERROR "No CMakeLists.txt file found for SoC: ${CONFIG_SOC}, "
+                      "series: ${CONFIG_SOC_SERIES}, family: ${CONFIG_SOC_FAMILY}")
 endif()
 
 # Include all SoC roots except Zephyr, as we are already in the Zephyr SoC root.

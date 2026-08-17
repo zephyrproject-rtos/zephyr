@@ -102,6 +102,7 @@
 			compatible = "vnd,hwspinlock";
 			#hwlock-cells = <1>;
 			status = "okay";
+			num-locks = <16>;
 		};
 
 		test_hwspinlock_dev: hwspinlock-dev {

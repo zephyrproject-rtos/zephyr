@@ -1174,4 +1174,90 @@ ZTEST(net_vlan, test_vlan_tag_0)
 	zassert_equal(test_iface, eth_interfaces[0], "Wrong interface");
 }
 
+/* Feed a frame that carries the VLAN ethertype but is too short to hold the
+ * whole VLAN header, and verify that it is dropped without the VLAN header
+ * being pulled off the buffer.
+ */
+static void recv_truncated_vlan_frame(size_t frame_len)
+{
+	/* dst is filled in with our own MAC below so that the frame is not
+	 * dropped as being for someone else before it is parsed.
+	 */
+	uint8_t frame[sizeof(struct net_eth_vlan_hdr) - 1] = {
+		[6] = 0x00, [7] = 0x00, [8] = 0x5e,	/* src */
+		[9] = 0x00, [10] = 0x53, [11] = 0xff,
+		[12] = 0x81, [13] = 0x00,		/* VLAN ethertype */
+		[14] = (VLAN_TAG_7 >> 8), [15] = (VLAN_TAG_7 & 0xff),
+		[16] = 0x86,				/* first half of type */
+	};
+	struct eth_context *context;
+	struct net_pkt *pkt;
+	uint8_t *data;
+	uint16_t len;
+	int ret;
+
+	zassert_true(frame_len <= sizeof(frame), "Frame is not truncated");
+
+	context = net_if_get_device(eth_interfaces[0])->data;
+	memcpy(&frame[0], context->mac_addr, 6);
+
+	pkt = net_pkt_rx_alloc_with_buffer(eth_interfaces[0], sizeof(frame),
+					   NET_AF_UNSPEC, 0, K_NO_WAIT);
+	zassert_not_null(pkt, "Cannot allocate pkt");
+
+	ret = net_pkt_write(pkt, frame, frame_len);
+	zassert_equal(ret, 0, "Cannot write to pkt");
+
+	/* Hold on to the packet so that the buffer is still around for
+	 * inspection after the stack has dropped and unreffed it.
+	 */
+	net_pkt_ref(pkt);
+
+	data = pkt->buffer->data;
+	len = pkt->buffer->len;
+
+	ret = net_recv_data(eth_interfaces[0], pkt);
+	zassert_false(ret < 0, "Cannot receive data (%d)", ret);
+
+	/* Give the RX thread a chance to process the frame. */
+	k_msleep(10);
+
+	/* A truncated VLAN header must not be pulled. Without the length
+	 * check this either asserts inside net_buf_simple_pull() or, with
+	 * assertions compiled out, underflows the buffer length.
+	 */
+	zassert_equal(pkt->buffer->len, len,
+		      "Truncated %zu byte VLAN frame was pulled (len %u -> %u)",
+		      frame_len, len, pkt->buffer->len);
+	zassert_equal_ptr(pkt->buffer->data, data,
+			  "Truncated %zu byte VLAN frame advanced the buffer",
+			  frame_len);
+
+	net_pkt_unref(pkt);
+}
+
+ZTEST(net_vlan, test_vlan_truncated_header)
+{
+	int ret;
+
+	if (NET_VLAN_MAX_COUNT == 0) {
+		ztest_test_skip();
+		return;
+	}
+
+	ret = net_eth_vlan_enable(eth_interfaces[0], VLAN_TAG_7);
+	zassert_true(ret == 0 || ret == -EALREADY,
+		     "Cannot enable %d (%d)", VLAN_TAG_7, ret);
+
+	/* Anything shorter than the 18 byte VLAN header, but still long
+	 * enough to pass the plain Ethernet header check, must be dropped.
+	 * The 16 and 17 byte cases are the interesting ones as there the
+	 * VLAN tag itself is fully attacker controlled.
+	 */
+	for (size_t frame_len = sizeof(struct net_eth_hdr);
+	     frame_len < sizeof(struct net_eth_vlan_hdr); frame_len++) {
+		recv_truncated_vlan_frame(frame_len);
+	}
+}
+
 ZTEST_SUITE(net_vlan, NULL, setup, NULL, NULL, NULL);

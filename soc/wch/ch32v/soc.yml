@@ -14,6 +14,10 @@ family:
   - name: qingke-v3a
     socs:
     - name: ch32v103
+  - name: qingke_v3c
+    socs:
+    - name: ch570
+    - name: ch572
   - name: qingke-v4b
     socs:
     - name: ch32v203

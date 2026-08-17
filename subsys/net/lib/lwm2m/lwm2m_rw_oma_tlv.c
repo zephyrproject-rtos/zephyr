@@ -222,7 +222,7 @@ static int oma_tlv_get(struct oma_tlv *tlv, struct lwm2m_input_context *in,
 	uint8_t len_pos = 1U;
 	size_t tlv_len;
 	uint16_t tmp_offset;
-	uint8_t buf[2];
+	uint8_t buf[2] = {0};
 	int ret;
 
 	tmp_offset = in->offset;

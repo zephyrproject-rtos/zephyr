@@ -30,6 +30,12 @@
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3A) */
 
+#if defined(CONFIG_SOC_SERIES_QINGKE_V3C)
+#define CH57x       1
+#define MCU_PACKAGE 0
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3C) */
+
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4B)
 #define CH32V20x    1
 #define CH32V20x_D6 1

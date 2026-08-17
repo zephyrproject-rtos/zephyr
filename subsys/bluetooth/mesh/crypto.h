@@ -40,14 +40,14 @@ int bt_mesh_aes_cmac_raw_key(const uint8_t key[16], struct bt_mesh_sg *sg, size_
 int bt_mesh_sha256_hmac_raw_key(const uint8_t key[32], struct bt_mesh_sg *sg, size_t sg_len,
 			uint8_t mac[32]);
 
-int bt_mesh_s1(const char *m, size_t m_len, uint8_t salt[16]);
+int bt_mesh_s1(const void *m, size_t m_len, uint8_t salt[16]);
 
 static inline int bt_mesh_s1_str(const char *m, uint8_t salt[16])
 {
 	return bt_mesh_s1(m, strlen(m), salt);
 }
 
-int bt_mesh_s2(const char *m, size_t m_len, uint8_t salt[32]);
+int bt_mesh_s2(const void *m, size_t m_len, uint8_t salt[32]);
 
 int bt_mesh_k1(const uint8_t *ikm, size_t ikm_len, const uint8_t salt[16], const char *info,
 	       uint8_t okm[16]);
@@ -59,7 +59,8 @@ int bt_mesh_k3(const uint8_t n[16], uint8_t out[8]);
 
 int bt_mesh_k4(const uint8_t n[16], uint8_t out[1]);
 
-int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32], uint8_t *p, uint8_t out[32]);
+int bt_mesh_k5(const uint8_t *n, size_t n_len, const uint8_t salt[32], const char *p,
+	       uint8_t out[32]);
 
 int bt_mesh_id128(const uint8_t n[16], const char *s, enum bt_mesh_key_type type,
 		  struct bt_mesh_key *out);

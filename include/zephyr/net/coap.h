@@ -30,6 +30,10 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 
+#if defined(CONFIG_COAP_OSCORE)
+struct coap_oscore_context;
+#endif /* defined(CONFIG_COAP_OSCORE) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,6 +55,7 @@ enum coap_option_num {
 	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
 	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
 	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
+	COAP_OPTION_OSCORE = 9,          /**< OSCORE (RFC 8613) */
 	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
@@ -334,6 +339,13 @@ struct coap_observer {
 	uint8_t token[8];
 	/** Extended token length */
 	uint8_t tkl;
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+	/**
+	 * Not-NULL if the observer is OSCORE protected
+	 * @kconfig_dep{CONFIG_COAP_OSCORE}
+	 */
+	struct coap_oscore_context *oscore_ctx;
+#endif
 };
 
 /**
@@ -352,6 +364,13 @@ struct coap_packet {
 	 * @kconfig_dep{CONFIG_COAP_KEEP_USER_DATA}
 	 */
 	void *user_data;
+#endif
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+	/**
+	 * Not-NULL if the packet was received OSCORE protected
+	 * @kconfig_dep{CONFIG_COAP_OSCORE}
+	 */
+	struct coap_oscore_context *oscore_ctx;
 #endif
 };
 
@@ -404,7 +423,13 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct net_sockaddr addr; /**< Remote address */
+	/** CoAP remote address storage */
+	union {
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr addr; /**< Remote address. Use the addr_storage instead. */
+/** @endcond */
+		struct net_sockaddr_storage addr_storage; /**< Remote address storage */
+	};
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
@@ -1037,6 +1062,24 @@ void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
 			const struct net_sockaddr *addr);
 
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+/**
+ * @brief Indicates that the remote device referenced by @a addr, with
+ * @a request, wants to observe a resource. As well as indicates if the
+ * remote device is sending OSCORE protected.
+ *
+ * @kconfig_dep{CONFIG_COAP_OSCORE}
+ *
+ * @param observer Observer to be initialized
+ * @param request Request on which the observer will be based
+ * @param addr Address of the remote device
+ * @param oscore_ctx OSCORE context to be used for the observer
+ */
+void coap_observer_init_oscore(struct coap_observer *observer, const struct coap_packet *request,
+			       const struct net_sockaddr *addr,
+			       struct coap_oscore_context *oscore_ctx);
+#endif /* CONFIG_COAP_OSCORE */
+
 /**
  * @brief After the observer is initialized, associate the observer
  * with an resource.
@@ -1314,6 +1357,25 @@ struct coap_transmission_parameters coap_get_transmission_parameters(void);
  * @param params Pointer to the transmission parameters structure.
  */
 void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
+
+/**
+ * @brief Check if a CoAP packet contains unsupported critical options.
+ *
+ * This function checks if a parsed CoAP packet contains any critical options
+ * that this build does not support. Per RFC 7252 Section 5.4.1, unrecognized
+ * critical options must cause the message to be rejected.
+ *
+ * Currently checks for:
+ * - OSCORE option (9) when CONFIG_COAP_OSCORE is not enabled
+ *
+ * @param cpkt Parsed CoAP packet to check
+ * @param opt Pointer to store the option number of the first unsupported critical option found
+ *
+ * @retval 0 No unsupported critical options found
+ * @retval -ENOTSUP Unsupported critical option found, option number stored in *opt
+ * @retval -EINVAL Invalid input parameters
+ */
+int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt);
 
 /**
  * @brief Returns the token (if any) in the CoAP TCP packet.

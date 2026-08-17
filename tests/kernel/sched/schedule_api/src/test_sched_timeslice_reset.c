@@ -31,6 +31,7 @@ K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /* Reference timestamp (in ticks) for each measurement */
 static uint64_t elapsed_slice;
 static int thread_idx;
+static struct k_thread t[NUM_THREAD];
 
 static void thread_time_slice(void *p1, void *p2, void *p3)
 {
@@ -92,7 +93,6 @@ ZTEST(threads_scheduling, test_slice_reset)
 #ifdef CONFIG_TIMESLICING
 	uint32_t t32;
 	k_tid_t tid[NUM_THREAD];
-	struct k_thread t[NUM_THREAD];
 	int old_prio = k_thread_priority_get(k_current_get());
 
 	thread_idx = 0;

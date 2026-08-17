@@ -5,7 +5,7 @@
  */
 
 /* STM32N6 USBPHYC driver */
-#define DT_DRV_COMPAT st_stm32_usbphyc /* Unused; defined for grep-ability */
+#define DT_DRV_COMPAT st_stm32n6_usbphyc /* Unused; defined for grep-ability */
 
 #include <soc.h>
 

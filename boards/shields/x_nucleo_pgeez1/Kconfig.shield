@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_NUCLEO_PGEEZ1
+	def_bool $(shields_list_contains,x_nucleo_pgeez1)

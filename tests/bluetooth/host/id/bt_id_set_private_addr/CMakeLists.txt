@@ -1,13 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 project(bt_id_set_private_addr)
-
-# Suppress the format-zero-length error if GNUC is used
-if(CMAKE_C_COMPILER_ID MATCHES "GNU")
-add_compile_options(-Wno-error=format-zero-length -Wno-format-zero-length)
-endif()
 
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 

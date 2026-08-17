@@ -161,12 +161,12 @@
 		 * through the SAHB alias as cm55 does not have
 		 * instruction-cached execution for external flash.
 		 */
-		flash0_sahb: flash0_sahb@70000000 {
+		flash0_sahb: flash0_sahb@60000000 {
 			compatible = "soc-nv-flash";
-			reg = <0x70000000 DT_SIZE_M(64)>;
+			reg = <0x60000000 DT_SIZE_M(64)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x70000000 DT_SIZE_M(64)>;
+			ranges = <0x0 0x60000000 DT_SIZE_M(64)>;
 			write-block-size = <16>;
 			erase-block-size = <65536>;
 

@@ -12,7 +12,7 @@ if RTC_EMUL
 
 config RTC_EMUL_INIT_DATETIME
 	bool "Initialize emulated RTC time from host wall-clock"
-	depends on NATIVE_LIBC
+	depends on ARCH_POSIX
 	help
 	  Seed the emulated RTC with the host's current wall-clock time.
 

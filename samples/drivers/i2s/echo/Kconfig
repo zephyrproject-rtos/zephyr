@@ -9,6 +9,13 @@ config I2C
 	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c) \
 		|| $(dt_compat_on_bus,$(DT_COMPAT_ADI_MAX9867),i2c)
 
+config SAMPLE_FREQ
+	int "Sample rate"
+	default 44100
+	help
+	  Audio sample frequency in Hz. The selected frequency must be supported
+	  by the audio codec.
+
 config TOGGLE_ECHO_EFFECT_SW0
 	bool "Toggle echo effect when pressing sw0"
 	depends on $(dt_alias_enabled,sw0)

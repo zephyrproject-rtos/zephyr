@@ -255,12 +255,12 @@ SECTION_FUNC(TEXT, arch_user_string_nlen)
 
 	/* This code might page fault */
 strlen_loop:
+	cmp	0xc(%ebp), %eax		/* Max length reached? */
+	je	strlen_done
 z_x86_user_string_nlen_fault_start:
 	cmpb	$0x0, (%edx, %eax, 1)	/* *(EDX + EAX) == 0? Could fault. */
 
 z_x86_user_string_nlen_fault_end:
-	je	strlen_done
-	cmp	0xc(%ebp), %eax		/* Max length reached? */
 	je	strlen_done
 	inc	%eax			/* EAX++ and loop again */
 	jmp	strlen_loop

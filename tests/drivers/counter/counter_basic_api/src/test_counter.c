@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, Nordic Semiconductor ASA
- * Copyright 2024, 2025 NXP
+ * Copyright 2024-2026 NXP
  * Copyright (c) 2025 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -225,6 +225,12 @@ static const struct device *const devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_MSPM0_TIMER
 	DEVS_FOR_DT_COMPAT(ti_mspm0_timer_counter)
+#endif
+#ifdef CONFIG_COUNTER_CRSAS_MA2
+	DEVS_FOR_DT_COMPAT(arm_crsas_ma2_counter)
+#endif
+#ifdef CONFIG_COUNTER_CRSAS_MA2_TIMER
+	DEVS_FOR_DT_COMPAT(arm_crsas_ma2_timer)
 #endif
 };
 
@@ -555,6 +561,56 @@ static bool alarm_capable(const struct device *dev)
 	if (err != 0) {
 		goto out_stop;
 	}
+
+out_stop:
+	(void)counter_stop(dev);
+
+	return err == 0;
+}
+
+/* The cancel test below configures absolute alarms. Some counters (for example
+ * the NXP wake timer) only support relative alarms and return -ENOTSUP for
+ * COUNTER_ALARM_CFG_ABSOLUTE. Probe whether a device accepts an absolute alarm
+ * so such devices can be skipped instead of hard-failing the test.
+ */
+static bool absolute_alarm_capable(const struct device *dev)
+{
+	struct counter_alarm_cfg cfg = {
+		.flags = COUNTER_ALARM_CFG_ABSOLUTE,
+		.callback = alarm_capable_handler,
+		.user_data = NULL,
+	};
+	uint32_t ticks;
+	int err;
+
+	if (counter_get_num_of_channels(dev) < 1U) {
+		return false;
+	}
+
+	err = counter_start(dev);
+	if (err != 0) {
+		return false;
+	}
+
+	err = counter_get_value(dev, &ticks);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+	/* Aim ahead of the current value so the alarm is not seen as late. */
+	cfg.ticks = counter_us_to_ticks(dev, 1000U);
+	if (cfg.ticks == 0U) {
+		cfg.ticks = 1U;
+	}
+	cfg.ticks += ticks;
+	cfg.ticks %= counter_get_top_value(dev);
+
+	err = counter_set_channel_alarm(dev, 0, &cfg);
+	if (err != 0) {
+		goto out_stop;
+	}
+
+	err = counter_cancel_channel_alarm(dev, 0);
 
 out_stop:
 	(void)counter_stop(dev);
@@ -924,8 +980,14 @@ static bool ms_period_capable(const struct device *dev)
 	uint32_t freq_khz;
 	uint32_t max_time_ms;
 
+	freq_khz = counter_get_frequency(dev);
+
+	if (freq_khz == 0) {
+		return false;
+	}
+
 	/* Assume 2 ms counter period can be set for frequency below 1 kHz*/
-	if (counter_get_frequency(dev) < 1000) {
+	if (freq_khz < 1000) {
 		return true;
 	}
 
@@ -1241,6 +1303,13 @@ static void test_cancelled_alarm_does_not_expire_instance(const struct device *d
 
 static bool reliable_cancel_capable(const struct device *dev)
 {
+	/* This test configures absolute alarms; skip devices whose driver does
+	 * not support them (returns -ENOTSUP) instead of reporting a failure.
+	 */
+	if (!absolute_alarm_capable(dev)) {
+		return false;
+	}
+
 	/* Test performed only for NRF_RTC instances. Other probably will fail.
 	 */
 #if defined(CONFIG_COUNTER_NRF_RTC) || defined(CONFIG_COUNTER_NRF_TIMER)

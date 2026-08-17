@@ -23,6 +23,8 @@ LOG_MODULE_REGISTER(pwm_ite_it51xxx, CONFIG_PWM_LOG_LEVEL);
 #define PWM_CTX_MIN     100
 #define PWM_FREQ        IT51XXX_EC_FREQ
 #define PWM_CH_SPS_MASK GENMASK(1, 0)
+#define IT51XXX_DIMMING_CH_MASK     (BIT(PWM_CHANNEL_0) | BIT(PWM_CHANNEL_1) | BIT(PWM_CHANNEL_7))
+#define IS_DIMMING_SUPPORTED_CH(ch) (BIT(ch) & IT51XXX_DIMMING_CH_MASK)
 
 /* 0x00/0x10/0x20/0x30/0x40/0x50/0x60/0x70: PWM channel 0~7 duty cycle low byte */
 #define REG_PWM_CH_DC_L  0x00
@@ -35,6 +37,14 @@ LOG_MODULE_REGISTER(pwm_ite_it51xxx, CONFIG_PWM_LOG_LEVEL);
 #define PWM_CH_INVP      BIT(0)
 /* 0x05/0x15/0x25/0x35/0x45/0x55/0x65/0x75: PWM channel 0~7 select prescaler source */
 #define REG_PWM_CH_SPS   0x05
+/* 0x08/0x18/0x78: PWM channel 0/1/7 dimming control 0 */
+#define REG_PWM_CH_DIM_CONTROL_0 0x08
+#define PWM_CH_DIMMING_EN        BIT(0)
+/* 0x09/0x19/0x79: PWM channel 0/1/7 dimming control 1 */
+#define REG_PWM_CH_DIM_CONTROL_1 0x09
+#define PWM_CH_DIM_MAX_DC        (BIT(4) | BIT(5))
+#define PWM_CH_DIM_DC_DECREASE   (BIT(2) | BIT(3))
+#define PWM_CH_DIM_DC_INCREASE   (BIT(0) | BIT(1))
 
 /* 0x84/0x88/0x8C: PWM prescaler 4/6/7 clock low byte */
 #define REG_PWM_PXC_L(prs_sel)   (0x04 * (prs_sel))
@@ -58,6 +68,14 @@ struct pwm_it51xxx_cfg {
 	uintptr_t base_prs;
 	/* Select PWM prescaler that output to PWM channel */
 	int prs_sel;
+	/* Dimming mode enabled flag */
+	bool enable_dimming;
+	/* Setting pwm max duty cycle of dimming mode (only support pwm0/1/7) */
+	int max_dimming_duty;
+	/* Setting pwm duty cycle increase step of dimming mode (only support pwm0/1/7) */
+	int dimming_duty_increase;
+	/* Setting pwm duty cycle decrease step of dimming mode (only support pwm0/1/7) */
+	int dimming_duty_decrease;
 	/* PWM alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
 };
@@ -110,6 +128,53 @@ static int pwm_it51xxx_get_cycles_per_sec(const struct device *dev, uint32_t cha
 	return 0;
 }
 
+static int pwm_it51xxx_set_dimming_mode(const struct device *dev)
+{
+	const struct pwm_it51xxx_cfg *config = dev->config;
+	const uintptr_t base_ch = config->base_ch;
+	const uintptr_t base_prs = config->base_prs;
+	int prs_sel = config->prs_sel;
+	uint8_t reg_val;
+
+	reg_val = sys_read8(base_ch + REG_PWM_CH_DIM_CONTROL_0);
+	if (reg_val & PWM_CH_DIMMING_EN) {
+		/*
+		 * To avoid flicker in dimming mode,
+		 * if registers are already setup then return.
+		 */
+		return 0;
+	}
+
+	/* PWM channel clock source gating before configuring */
+	pwm_enable(dev, 0);
+
+	/* Select clock source from 32768Hz to prescaler */
+	reg_val = sys_read8(base_prs + REG_PWM_PXCSS_L(prs_sel));
+	sys_write8(reg_val & ~PWM_PCFS_EC, base_prs + REG_PWM_PXCSS_L(prs_sel));
+
+	/* Set PxC[15:0] value 0000h results in a divisor 1 */
+	sys_write8(0x0, base_prs + REG_PWM_PXC_L(prs_sel));
+	sys_write8(0x0, base_prs + REG_PWM_PXC_H(prs_sel));
+
+	/* Set dimming mode duty cycle and duty-steps */
+	reg_val = sys_read8(base_ch + REG_PWM_CH_DIM_CONTROL_1);
+	reg_val &= ~(PWM_CH_DIM_MAX_DC | PWM_CH_DIM_DC_DECREASE |
+		     PWM_CH_DIM_DC_INCREASE);
+	reg_val |= (uint8_t)((config->max_dimming_duty << 4) |
+			     (config->dimming_duty_decrease << 2) |
+			     (config->dimming_duty_increase));
+	sys_write8(reg_val, base_ch + REG_PWM_CH_DIM_CONTROL_1);
+
+	/* Enable PWM channel dimming mode */
+	reg_val = sys_read8(base_ch + REG_PWM_CH_DIM_CONTROL_0);
+	sys_write8(reg_val | PWM_CH_DIMMING_EN, base_ch + REG_PWM_CH_DIM_CONTROL_0);
+
+	/* PWM channel clock source not gating */
+	pwm_enable(dev, 1);
+
+	return 0;
+}
+
 static int pwm_it51xxx_set_cycles(const struct device *dev, uint32_t channel,
 				  uint32_t period_cycles, uint32_t pulse_cycles, pwm_flags_t flags)
 {
@@ -121,6 +186,28 @@ static int pwm_it51xxx_set_cycles(const struct device *dev, uint32_t channel,
 	uint32_t actual_freq = 0xffffffff, target_freq, deviation, dc_val;
 	uint64_t pwm_clk_src;
 	uint8_t reg_val;
+
+	/* If the dimming mode is enabled on this PWM channel */
+	if (config->enable_dimming) {
+		/* Run dimming mode */
+		if (flags & PWM_IT51XXX_DIMMING_MODE) {
+			return pwm_it51xxx_set_dimming_mode(dev);
+		}
+
+		/* Or run pwm mode */
+		reg_val = sys_read8(base_ch + REG_PWM_CH_DIM_CONTROL_0);
+		if (reg_val & PWM_CH_DIMMING_EN) {
+			/*
+			 * To avoid flicker in pwm mode, disable clock
+			 * source only during mode switch from dimming.
+			 */
+			pwm_enable(dev, 0);
+
+			/* Disable PWM channel dimming mode */
+			sys_write8(reg_val & ~PWM_CH_DIMMING_EN,
+				   base_ch + REG_PWM_CH_DIM_CONTROL_0);
+		}
+	}
 
 	/* Select PWM inverted polarity (ex. active-low pulse) */
 	if (flags & PWM_POLARITY_INVERTED) {
@@ -295,12 +382,20 @@ static DEVICE_API(pwm, pwm_it51xxx_api) = {
 
 /* Device Instance */
 #define PWM_IT51XXX_INIT(inst)                                                                     \
+	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(inst, max_dimming_duty) ||                             \
+			     IS_DIMMING_SUPPORTED_CH(DT_INST_PROP(inst, channel)),                 \
+		     "PWM dimming mode properties only support on PWM 0, 1, or 7!");               \
+                                                                                                   \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
                                                                                                    \
 	static const struct pwm_it51xxx_cfg pwm_it51xxx_cfg_##inst = {                             \
 		.base_ch = DT_INST_REG_ADDR_BY_IDX(inst, 0),                                       \
 		.base_prs = DT_INST_REG_ADDR_BY_IDX(inst, 1),                                      \
 		.prs_sel = DT_PROP(DT_INST(inst, ite_it51xxx_pwm), prescaler_cx),                  \
+		.enable_dimming = DT_INST_NODE_HAS_PROP(inst, max_dimming_duty),                   \
+		.max_dimming_duty = DT_INST_PROP_OR(inst, max_dimming_duty, 0),                    \
+		.dimming_duty_increase = DT_INST_PROP_OR(inst, dimming_duty_increase, 0),          \
+		.dimming_duty_decrease = DT_INST_PROP_OR(inst, dimming_duty_decrease, 0),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 	};                                                                                         \
                                                                                                    \

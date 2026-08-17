@@ -5,6 +5,9 @@
 
 if BOARD_QEMU_CORTEX_M0
 
+configdefault QEMU_ICOUNT_SHIFT
+	default 6
+
 config NRF_RTC_TIMER
 	default n if SYS_CLOCK_EXISTS
 

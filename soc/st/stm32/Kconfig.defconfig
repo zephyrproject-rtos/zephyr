@@ -228,4 +228,9 @@ config HEAP_MEM_POOL_ADD_SIZE_CRYPTO_STM32
 
 endif # CRYPTO_STM32
 
+# All STM32 targets expect a 1024 bytes header when MCUboot is embedded.
+# All STM32 targets in TF-M expect a 1024 bytes header, BL2 being embedded or not.
+configdefault ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT || BUILD_WITH_TFM
+
 endif # SOC_FAMILY_STM32

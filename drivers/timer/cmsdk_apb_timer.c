@@ -11,7 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include "timer_cmsdk_apb.h"
 
 #define TIMER_NODE DT_CHOSEN(zephyr_system_timer)

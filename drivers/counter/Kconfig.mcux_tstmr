@@ -13,3 +13,15 @@ config COUNTER_MCUX_TSTMR
 	  TSTMR is a 56-bit, free-running up-counter; its frequency is
 	  SoC-specific (see the clock-frequency devicetree property). It does
 	  not provide compare, alarm, top-value, or interrupt functionality.
+
+config COUNTER_MCUX_TSTMR_SYSCTR_BACKEND
+	bool
+	default y
+	depends on COUNTER_MCUX_TSTMR && DT_HAS_NXP_SYSCTR_ENABLED
+	help
+	  Selected automatically when the TSTMR driver is built on a SoC that
+	  also has an nxp,sysctr node enabled.  On these SoCs the TSTMR is a
+	  read-only view of the shared SYS_CTR hardware, so the driver needs
+	  to access SYS_CTR_CONTROL registers to enable and settle the counter.
+	  When this symbol is not set (standalone TSTMR without SYS_CTR, e.g.
+	  MCXW or i.MX8ULP) those register accesses are compiled out entirely.

@@ -39,6 +39,7 @@ class RelationshipType(StrEnum):
     GENERATED_FROM = "GENERATED_FROM"
     HAS_PREREQUISITE = "HAS_PREREQUISITE"
     STATIC_LINK = "STATIC_LINK"
+    VARIANT_OF = "VARIANT_OF"
 
     @classmethod
     def from_value(cls, value: RelationshipType | str) -> RelationshipType:
@@ -110,6 +111,7 @@ class SBOMFile:
         path: Absolute file path on disk.
         relative_path: File path relative to the owning component's base directory.
         hashes: File hashes keyed by hash algorithm name.
+        size: File size in bytes.
         concluded_license: Concluded license expression for the file.
         license_info_in_file: License identifiers detected in the file.
         copyright_text: Copyright text detected for the file.
@@ -121,6 +123,7 @@ class SBOMFile:
     path: str
     relative_path: str = ""
     hashes: dict[str, str] = field(default_factory=dict)
+    size: int | None = None
     concluded_license: str = NOASSERTION
     license_info_in_file: list[str] = field(default_factory=list)
     copyright_text: str = NOASSERTION
@@ -152,6 +155,7 @@ class SBOMComponent:
         copyright_text: Copyright text for the component.
         external_references: Structured external references such as CPEs and package URLs.
         supplier: Supplier or vendor name.
+        comment: Free-form note describing the component's role in the SBOM.
         target_build_file: Main build artifact when the component represents a build target.
         metadata: Additional data not represented by the common model fields.
     """
@@ -170,6 +174,7 @@ class SBOMComponent:
     copyright_text: str = NOASSERTION
     external_references: list[ExternalReference] = field(default_factory=list)
     supplier: str = ""
+    comment: str = ""
     target_build_file: SBOMFile | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 

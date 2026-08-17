@@ -10,6 +10,15 @@
 	soc {
 		compatible = "st,stm32wba55", "st,stm32wba", "simple-bus";
 
+		power@46020800 {
+			wakeup-controller {
+				wkup@2 {
+					wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
+						     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
+				};
+			};
+		};
+
 		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
 			#address-cells = <1>;
@@ -18,6 +27,7 @@
 			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLL1_P SAI1_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@40015404 {
@@ -36,13 +46,5 @@
 				status = "disabled";
 			};
 		};
-	};
-};
-
-&pwr {
-	wkup-pin@2 {
-		reg = <0x2>;
-		wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_EVT_SRC_0>,
-			     <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_1>;
 	};
 };

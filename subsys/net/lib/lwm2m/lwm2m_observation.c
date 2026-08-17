@@ -764,7 +764,7 @@ static void engine_observe_node_init(struct observe_node *obs, const uint8_t *to
 	}
 
 	LOG_DBG("token:'%s' addr:%s", sprint_token(token, tkl),
-		lwm2m_sprint_ip_addr(&ctx->remote_addr));
+		lwm2m_sprint_ip_addr(net_sad(&ctx->remote_addr_storage)));
 }
 
 static void remove_observer_path_from_list(struct lwm2m_ctx *ctx, struct observe_node *obs,
@@ -915,7 +915,7 @@ static int engine_add_observer(struct lwm2m_message *msg, const uint8_t *token, 
 
 		LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]", msg->path.obj_id,
 			msg->path.obj_inst_id, msg->path.res_id, msg->path.level,
-			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
+			lwm2m_sprint_ip_addr(net_sad(&msg->ctx->remote_addr_storage)));
 
 		lwm2m_engine_observer_refresh_notified_values(obs);
 
@@ -1007,7 +1007,7 @@ static int engine_add_composite_observer(struct lwm2m_message *msg, const uint8_
 		}
 
 		LOG_DBG("OBSERVER Composite DUPLICATE [%s]",
-			lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
+			lwm2m_sprint_ip_addr(net_sad(&msg->ctx->remote_addr_storage)));
 
 		lwm2m_engine_observer_refresh_notified_values(obs);
 

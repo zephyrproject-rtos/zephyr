@@ -369,8 +369,6 @@ static void eth_iface_init(struct net_if *iface)
 		return;
 	}
 
-	net_lldp_set_lldpdu(iface);
-
 	ctx->init_done = true;
 
 #if defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)

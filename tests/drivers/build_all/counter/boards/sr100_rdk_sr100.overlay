@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	interrupt-parent = <&nvic>;
+
+	test_timer: timers@dead0000 {
+		compatible = "arm,crsas-ma2-timer";
+		reg = <0xdead0000 0x1000>;
+		clocks = <&gcr 0x1>;
+		interrupts = <42 0>;
+	};
+
+	test_counter: timers@dead2000 {
+		compatible = "arm,crsas-ma2-counter";
+		reg = <0xdead2000 0x1000>;
+		clocks = <&gcr 0x2>;
+	};
+};

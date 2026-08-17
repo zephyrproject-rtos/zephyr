@@ -65,6 +65,6 @@
 	 *   kINPUTMUX_TrigIn3ToQdc0Phasea  = 0x3700001b
 	 *   kINPUTMUX_TrigIn10ToQdc0Phaseb = 0x36c00022
 	 */
-	inputmux-connections = <&inputmux0 0 0x3700001b>,
-			       <&inputmux0 0 0x36c00022>;
+	mux-states = <&inputmux0 0 0x3700001b>,
+		     <&inputmux0 0 0x36c00022>;
 };

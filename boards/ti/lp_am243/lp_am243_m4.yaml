@@ -1,0 +1,8 @@
+identifier: lp_am243/am2434/m4
+name: TI AM243x LaunchPad (M4 Core)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: ti

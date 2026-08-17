@@ -148,6 +148,7 @@ int wifi_nm_unregister_mgd_iface(struct wifi_nm_instance *nm, struct net_if *ifa
 	for (int i = 0; i < CONFIG_WIFI_NM_MAX_MANAGED_INTERFACES; i++) {
 		if (nm->mgd_ifaces[i].iface == iface) {
 			nm->mgd_ifaces[i].iface = NULL;
+			nm->mgd_ifaces[i].type = 0;
 			k_mutex_unlock(&wifi_nm_lock);
 			return 0;
 		}

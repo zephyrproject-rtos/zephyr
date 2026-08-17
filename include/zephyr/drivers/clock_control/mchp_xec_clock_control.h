@@ -13,6 +13,7 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_MCHP_XEC_H_
 
+#include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
 
@@ -22,35 +23,42 @@
  * @{
  */
 
+/** @brief Structure for interfacing with clock control API */
+union clock_mchp_xec_subsys {
+	/** @brief Raw 32-bit value */
+	uint32_t val;
+
+	/** @brief bitfield view */
+	struct {
+		/** @brief Encoded PCR data */
+		uint32_t pcr_data: 24;
+		/** @brief Clock ID */
+		uint32_t bus: 8;
+	} bits;
+};
+
 /** @cond INTERNAL_HIDDEN */
 
-/*
- * Set/clear Microchip XEC peripheral sleep enable.
- * SoC layer contains the chip specific sleep index and positions
+/* @brief set or clear Microchip XEC peripheral PCR sleep enable
+ *
+ * @param slp_idx is the peripheral's sleep enable zero based index (0 through 4)
+ * @param slp_pos is the bit position in the 32-bit sleep enable register
+ * @param slp_en is 0 to clear(disable) clock gating and non-zero to enable clock gating
+ * @return 0 success or -EINVAL on error
  */
-int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos,
-				uint8_t slp_en);
+int z_mchp_xec_pcr_periph_sleep(uint8_t slp_idx, uint8_t slp_pos, uint8_t slp_en);
 
-int z_mchp_xec_pcr_periph_reset(uint8_t slp_idx, uint8_t slp_pos);
+/* @brief Reset a single peripheral similar to chip reset
+ *
+ * @param rst_idx is the peripheral's reset enable register index (0 through 4).
+ * @param rst_pos is the bit position in the 32-bit sleep enable register
+ * @return 0 success or -EINVAL on error
+ * @note This routine lock and unlocks IRQs to safely touch multiple PCR registers. The reset
+ * index and bit position are the same as the peripheral's sleep index and bit position.
+ */
+int z_mchp_xec_pcr_periph_reset(uint8_t rst_idx, uint8_t rst_pos);
 
 /** @endcond */
-
-#if defined(CONFIG_PM)
-/**
- * @brief Enable system sleep for the XEC clock controller.
- *
- * @param is_deep True to request deep sleep, false for light sleep.
- * @kconfig_dep{CONFIG_PM}
- */
-void mchp_xec_clk_ctrl_sys_sleep_enable(bool is_deep);
-
-/**
- * @brief Disable system sleep for the XEC clock controller.
- *
- * @kconfig_dep{CONFIG_PM}
- */
-void mchp_xec_clk_ctrl_sys_sleep_disable(void);
-#endif
 
 /** @} */
 

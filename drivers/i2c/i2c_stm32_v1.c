@@ -514,7 +514,10 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
+	k_sem_give(&data->bus_mutex);
+
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;
@@ -522,7 +525,7 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("i2c: PM runtime failure: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 

@@ -1,0 +1,11 @@
+common:
+  tags:
+    - dma
+    - drivers
+  harness: ztest
+tests:
+  boards.esp32.dma_desc_bounds:
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    integration_platforms:
+      - esp32s3_devkitc/esp32s3/procpu

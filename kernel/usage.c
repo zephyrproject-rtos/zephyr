@@ -251,11 +251,21 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 	}
 
 	key = k_spin_lock(&usage_lock);
+	struct _cpu *cpu = _current_cpu;
 
 	if (!thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = true;
 		thread->base.usage.num_windows++;
 		thread->base.usage.current = 0;
+
+		if (thread == cpu->current) {
+			uint32_t now = usage_now();
+			uint32_t cycles = now - cpu->usage0;
+
+			sched_cpu_update_usage(cpu, cycles);
+
+			cpu->usage0 = now;
+		}
 	}
 
 	k_spin_unlock(&usage_lock, key);
@@ -278,10 +288,13 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 		thread->base.usage.track_usage = false;
 
 		if (thread == cpu->current) {
-			uint32_t cycles = usage_now() - cpu->usage0;
+			uint32_t now = usage_now();
+			uint32_t cycles = now - cpu->usage0;
 
 			sched_thread_update_usage(thread, cycles);
 			sched_cpu_update_usage(cpu, cycles);
+
+			cpu->usage0 = now;
 		}
 	}
 

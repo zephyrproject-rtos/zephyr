@@ -21,7 +21,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
 #include <driverlib/interrupt.h>

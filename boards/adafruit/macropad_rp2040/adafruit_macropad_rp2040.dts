@@ -224,6 +224,10 @@ zephyr_udc0: &usbd {
 	status = "okay";
 };
 
+&vreg {
+	status = "okay";
+};
+
 &pio1 {
 	status = "okay";
 

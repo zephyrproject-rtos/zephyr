@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor_clock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 int sensor_clock_get_cycles(uint64_t *cycles)
 {

@@ -295,32 +295,33 @@ static int transport_l2_open(struct net_if *iface)
 static int transport_send_udp(int socket, int port, void *buf, int length,
 			      struct net_sockaddr *addr)
 {
-	struct net_sockaddr m_addr;
+	struct net_sockaddr_storage m_addr_storage;
+	struct net_sockaddr *m_addr = net_sad(&m_addr_storage);
 	net_socklen_t addrlen;
 	int cnt;
 
 	if (!addr) {
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
-			m_addr.sa_family = NET_AF_INET;
-			net_sin(&m_addr)->sin_port = net_htons(port);
+			m_addr->sa_family = NET_AF_INET;
+			net_sin(m_addr)->sin_port = net_htons(port);
 			if (transport_is_pdelay_msg(buf)) {
-				net_sin(&m_addr)->sin_addr.s_addr = pdelay_mcast_addr_ipv4.s_addr;
+				net_sin(m_addr)->sin_addr.s_addr = pdelay_mcast_addr_ipv4.s_addr;
 			} else {
-				net_sin(&m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
+				net_sin(m_addr)->sin_addr.s_addr = mcast_addr_ipv4.s_addr;
 			}
 
 		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL)) {
-			m_addr.sa_family = NET_AF_INET6;
-			net_sin6(&m_addr)->sin6_port = net_htons(port);
+			m_addr->sa_family = NET_AF_INET6;
+			net_sin6(m_addr)->sin6_port = net_htons(port);
 			if (transport_is_pdelay_msg(buf)) {
-				memcpy(&net_sin6(&m_addr)->sin6_addr, &pdelay_mcast_addr_ipv6,
+				memcpy(&net_sin6(m_addr)->sin6_addr, &pdelay_mcast_addr_ipv6,
 				       sizeof(struct net_in6_addr));
 			} else {
-				memcpy(&net_sin6(&m_addr)->sin6_addr, &mcast_addr_ipv6,
+				memcpy(&net_sin6(m_addr)->sin6_addr, &mcast_addr_ipv6,
 				       sizeof(struct net_in6_addr));
 			}
 		}
-		addr = &m_addr;
+		addr = m_addr;
 	}
 
 	addrlen = IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL) ? sizeof(struct net_sockaddr_in)
@@ -463,7 +464,8 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length);
 	}
 
-	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length, &msg->addr);
+	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length,
+				  net_sad(&msg->addr));
 }
 
 static void transport_init_recv_msghdr(struct ptp_msg *msg, struct net_msghdr *msghdr,

@@ -18,7 +18,7 @@
 #if defined(CONFIG_X86) && defined(CONFIG_X86_SSE)
 #define K_FP_OPTS (K_FP_REGS | K_SSE_REGS)
 #elif defined(CONFIG_X86) || defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
-	defined(CONFIG_SPARC)
+	defined(CONFIG_SPARC) || defined(CONFIG_RISCV)
 #define K_FP_OPTS K_FP_REGS
 #else
 #error "Architecture not supported for this test"
@@ -38,7 +38,7 @@ static void usr_fp_thread_entry_1(void *p1, void *p2, void *p3)
 	k_yield();
 }
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 #define K_FLOAT_DISABLE_SYSCALL_RETVAL 0
 #else
@@ -62,6 +62,18 @@ static void usr_fp_thread_entry_2(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Test enabling and disabling floating point context preservation
+ *
+ * @details Create an FP-capable thread with the K_FP_OPTS thread options and
+ * verify the options are set, then exercise k_float_disable() on it. On
+ * architectures that support disabling another thread's FP context the options
+ * are cleared; on ARM (Cortex-M/R) disabling a thread other than the current
+ * one is rejected with -EINVAL; on architectures without support the call
+ * returns -ENOTSUP.
+ *
+ * @ingroup kernel_fpsharing_tests
+ */
 ZTEST(k_float_disable, test_k_float_disable_common)
 {
 	test_ret = TC_PASS;
@@ -102,7 +114,8 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 	zassert_true(
 		(usr_fp_thread.base.user_options & K_FP_OPTS) != 0,
 		"usr_fp_thread FP options cleared");
-#elif defined(CONFIG_ARM64) || (defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
+#elif defined(CONFIG_ARM64) || defined(CONFIG_RISCV) || \
+	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 	zassert_true((k_float_disable(&usr_fp_thread) == 0),
 		"k_float_disable() failure");
 
@@ -118,6 +131,16 @@ ZTEST(k_float_disable, test_k_float_disable_common)
 #endif
 }
 
+/**
+ * @brief Test disabling floating point context preservation from user mode
+ *
+ * @details Create an FP-capable user thread that disables its own floating
+ * point context preservation through the k_float_disable() system call, and
+ * verify the call reports the architecture-defined result (success where
+ * supported, -ENOTSUP otherwise).
+ *
+ * @ingroup kernel_fpsharing_tests
+ */
 ZTEST(k_float_disable, test_k_float_disable_syscall)
 {
 	test_ret = TC_PASS;
@@ -145,7 +168,7 @@ ZTEST(k_float_disable, test_k_float_disable_syscall)
 	/* Yield will swap-in usr_fp_thread */
 	k_yield();
 
-#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || \
+#if defined(CONFIG_ARM64) || defined(CONFIG_ARM) || defined(CONFIG_RISCV) || \
 	(defined(CONFIG_X86) && defined(CONFIG_LAZY_FPU_SHARING))
 
 	/* Verify K_FP_OPTS are now cleared by the user thread itself */
@@ -268,8 +291,26 @@ static void sup_fp_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+#endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
+
+/**
+ * @brief Verify k_float_disable() is rejected when called from an ISR
+ *
+ * @details Create an FP-capable supervisor thread with the K_FP_REGS thread
+ * option, then call k_float_disable() on that thread from interrupt context.
+ * The call targets a thread other than the current one, so it must fail with
+ * -EINVAL, and the target thread's K_FP_REGS option must be left untouched.
+ *
+ * The test is skipped on platforms other than ARM with dynamic interrupts,
+ * since it needs a dynamically connected interrupt to run code in ISR context.
+ *
+ * @ingroup kernel_fpsharing_tests
+ *
+ * @see k_float_disable()
+ */
 ZTEST(k_float_disable, test_k_float_disable_irq)
 {
+#if defined(CONFIG_ARM) && defined(CONFIG_DYNAMIC_INTERRUPTS)
 	test_ret = TC_PASS;
 
 	k_thread_priority_set(k_current_get(), PRIORITY);
@@ -290,13 +331,10 @@ ZTEST(k_float_disable, test_k_float_disable_irq)
 	bool ok = test_ret == TC_PASS;
 
 	zassert_true(ok, "");
-}
 #else
-ZTEST(k_float_disable, test_k_float_disable_irq)
-{
 	TC_PRINT("This is not an ARM system with DYNAMIC_INTERRUPTS.\n");
 	ztest_test_skip();
-}
 #endif /* CONFIG_ARM && CONFIG_DYNAMIC_INTERRUPTS */
+}
 
 ZTEST_SUITE(k_float_disable, NULL, NULL, NULL, NULL, NULL);

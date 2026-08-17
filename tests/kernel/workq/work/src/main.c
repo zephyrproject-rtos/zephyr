@@ -302,7 +302,14 @@ ZTEST(work, test_null_queue)
 	zassert_equal(rc, -EINVAL);
 }
 
-/* Basic single-CPU check submitting with a non-blocking handler. */
+/**
+ * @brief Verify submitting a work item to a started queue runs its handler.
+ *
+ * @details
+ * Basic single-CPU check submitting with a non-blocking handler.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_simple_queue)
 {
 	int rc;
@@ -410,7 +417,14 @@ ZTEST(work, test_smp_simple_queue)
 	zassert_equal(rc, 0);
 }
 
-/* Basic single-CPU check submitting with a blocking handler */
+/**
+ * @brief Verify flushing a work item blocks until its handler completes.
+ *
+ * @details
+ * Basic single-CPU check submitting with a blocking handler
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_sync_queue)
 {
 	int rc;
@@ -445,9 +459,15 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
 	zassert_equal(coophi_counter(), 1);
 }
 
-/* Verify that if a work item is submitted while it is being run by a
+/**
+ * @brief Verify a work item handler can resubmit the work item.
+ *
+ * @details
+ * Verify that if a work item is submitted while it is being run by a
  * queue thread it gets submitted to the queue it's running on, to
  * prevent reentrant invocation, at least on a single CPU.
+ *
+ * @ingroup kernel_workqueue_tests
  */
 ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 {
@@ -524,7 +544,13 @@ ZTEST(work_1cpu, test_1cpu_queued_flush)
 	zassert_false(k_work_flush(&common_work1, &work_sync));
 }
 
-/* Single CPU submit a work item and wait for flush after it's started.
+/**
+ * @brief Verify flushing a running work item waits for it to finish.
+ *
+ * @details
+ * Single CPU submit a work item and wait for flush after it's started.
+ *
+ * @ingroup kernel_workqueue_tests
  */
 ZTEST(work_1cpu, test_1cpu_running_flush)
 {
@@ -588,8 +614,14 @@ ZTEST(work_1cpu, test_1cpu_delayed_flush)
 	zassert_equal(rc, 0);
 }
 
-/* Single CPU cancel before work item is unqueued should complete
+/**
+ * @brief Verify cancelling a work item that is still queued.
+ *
+ * @details
+ * Single CPU cancel before work item is unqueued should complete
  * immediately.
+ *
+ * @ingroup kernel_workqueue_tests
  */
 ZTEST(work_1cpu, test_1cpu_queued_cancel)
 {
@@ -611,7 +643,14 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel)
 	zassert_equal(coophi_counter(), 0);
 }
 
-/* Single CPU cancel before work item is unqueued should not wait. */
+/**
+ * @brief Verify cancelling a queued work item and waiting for completion.
+ *
+ * @details
+ * Single CPU cancel before work item is unqueued should not wait.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 {
 	int rc;
@@ -639,8 +678,14 @@ ZTEST(work_1cpu, test_1cpu_queued_cancel_sync)
 	zassert_equal(coophi_counter(), 0);
 }
 
-/* Single CPU cancel before scheduled work item is queued should
+/**
+ * @brief Verify cancelling a delayable work item before it expires.
+ *
+ * @details
+ * Single CPU cancel before scheduled work item is queued should
  * complete immediately.
+ *
+ * @ingroup kernel_workqueue_tests
  */
 ZTEST(work_1cpu, test_1cpu_delayed_cancel)
 {
@@ -742,7 +787,14 @@ static void test_running_cancel_cb(struct k_timer *timer)
 	handler_release();
 }
 
-/* Single CPU test cancellation after work starts. */
+/**
+ * @brief Verify cancelling a work item whose handler is running.
+ *
+ * @details
+ * Single CPU test cancellation after work starts.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_running_cancel)
 {
 	struct test_running_cancel_timer *ctx = &test_running_cancel_ctx;
@@ -936,7 +988,14 @@ static void test_drain_wait_cb(struct k_timer *timer)
 	ctx->submit_rc = k_work_submit_to_queue(&coophi_queue, &ctx->work);
 }
 
-/* Single CPU submit an item and wait for it to drain. */
+/**
+ * @brief Verify draining a work queue waits for queued items to finish.
+ *
+ * @details
+ * Single CPU submit an item and wait for it to drain.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_drain_wait)
 {
 	struct test_drain_wait_timer *ctx = &test_drain_wait_ctx;
@@ -980,7 +1039,14 @@ ZTEST(work_1cpu, test_1cpu_drain_wait)
 	zassert_equal(ctx->submit_rc, -EBUSY);
 }
 
-/* Single CPU submit item, drain with plug, test, then unplug. */
+/**
+ * @brief Verify submission is blocked while a queue is plugged for drain.
+ *
+ * @details
+ * Single CPU submit item, drain with plug, test, then unplug.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_plugged_drain)
 {
 	int rc;
@@ -1037,7 +1103,14 @@ ZTEST(work_1cpu, test_1cpu_plugged_drain)
 	zassert_equal(coophi_counter(), 2);
 }
 
-/* Single CPU test delayed submission */
+/**
+ * @brief Verify scheduling a delayable work item runs it after the delay.
+ *
+ * @details
+ * Single CPU test delayed submission
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_basic_schedule)
 {
 	int rc;
@@ -1186,7 +1259,14 @@ ZTEST(work_1cpu, test_1cpu_immed_schedule)
 	zassert_equal(rc, 0);
 }
 
-/* Single CPU test that delayed work can be rescheduled. */
+/**
+ * @brief Verify rescheduling a delayable work item updates its delay.
+ *
+ * @details
+ * Single CPU test that delayed work can be rescheduled.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_basic_reschedule)
 {
 	int rc;
@@ -1382,7 +1462,14 @@ ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 	k_sem_init(&sync_sem, 0, 1);
 }
 
-/* Basic functionality with the system work queue. */
+/**
+ * @brief Verify submitting a work item to the system work queue.
+ *
+ * @details
+ * Basic functionality with the system work queue.
+ *
+ * @ingroup kernel_workqueue_tests
+ */
 ZTEST(work_1cpu, test_1cpu_system_queue)
 {
 	int rc;
@@ -1535,9 +1622,12 @@ static void order_handler(struct k_work *work)
 	}
 }
 
-/* Verify work items are processed in submission order. */
 /**
  * @brief Verify a work queue processes work items in submission order
+ *
+ * @details
+ * Verify work items are processed in submission order.
+ *
  * @ingroup kernel_workqueue_tests
  */
 ZTEST(work_1cpu, test_1cpu_queue_order)

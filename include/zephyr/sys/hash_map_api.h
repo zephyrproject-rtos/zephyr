@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
-#define ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_
+#ifndef ZEPHYR_INCLUDE_SYS_HASH_MAP_API_H_
+#define ZEPHYR_INCLUDE_SYS_HASH_MAP_API_H_
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -237,4 +237,4 @@ struct sys_hashmap_data {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SYS_HASHMAP_API_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_HASH_MAP_API_H_ */

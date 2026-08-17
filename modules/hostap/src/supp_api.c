@@ -1518,6 +1518,17 @@ int supplicant_disconnect(const struct device *dev __unused, struct net_if *ifac
 
 enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
 {
+	/*
+	 * MGMT_FRAME_PROTECTION_DEFAULT is not an enum mfp_options member, so
+	 * it has to be checked before the switch. It marks a network with no
+	 * explicit ieee80211w setting, whose effective value is only known
+	 * after resolving it against the global "pmf" setting, the key
+	 * management and the driver capabilities (see wpas_get_ssid_pmf()).
+	 */
+	if (supp_mfp_option == MGMT_FRAME_PROTECTION_DEFAULT) {
+		return WIFI_MFP_UNKNOWN;
+	}
+
 	switch (supp_mfp_option) {
 	case NO_MGMT_FRAME_PROTECTION:
 		return WIFI_MFP_DISABLE;
@@ -1622,7 +1633,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 			}
 		}
 #endif
-		status->mfp = get_mfp(ssid->ieee80211w);
+		/*
+		 * Resolve a network without an explicit ieee80211w setting
+		 * (MGMT_FRAME_PROTECTION_DEFAULT) the same way the supplicant
+		 * does when associating.
+		 */
+		status->mfp = get_mfp(wpas_get_ssid_pmf(wpa_s, ssid));
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
 

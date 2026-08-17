@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_enet_qos_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 #include <zephyr/net/mdio.h>
 #include <zephyr/drivers/mdio.h>

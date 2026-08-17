@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
@@ -378,6 +379,18 @@
 			status = "disabled";
 		};
 
+		aes: aes@40014000 {
+			compatible = "realtek,bee-aes";
+			reg = <0x40014000 0x7c>;
+			status = "disabled";
+		};
+
+		sha256: sha256@4002b000 {
+			compatible = "realtek,bee-sha256";
+			reg = <0x4002b000 0x220>;
+			status = "disabled";
+		};
+
 		trng: trng@400c2400 {
 			compatible = "realtek,bee-trng";
 			reg = <0x400c2400 0x68>;
@@ -425,6 +438,16 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		adc: adc@40010000 {
+			compatible = "realtek,bee-adc";
+			reg = <0x40010000 0x60>;
+			interrupts = <18 0>;
+			clocks = <&cctl APB_CLK(ADC)>;
+			channels = <9>;
+			status = "disabled";
+			#io-channel-cells = <1>;
+		};
 	};
 
 	clocks {
@@ -443,6 +466,4 @@
 
 &systick {
 	external-clock-source;
-	/* zephyr,min-timeout-cycles: 32 cycles @ 32kHz = 1ms (1 tick) */
-	zephyr,min-timeout-cycles = <32>;
 };

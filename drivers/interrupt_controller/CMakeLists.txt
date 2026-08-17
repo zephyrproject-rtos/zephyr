@@ -22,6 +22,8 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/arch/common/include)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT intc_arcv2_irq_unit.c)
+zephyr_library_sources_ifdef(CONFIG_BCM2835_ARMCTRL_IC intc_bcm2835_armctrl.c)
+zephyr_library_sources_ifdef(CONFIG_BCM2836_L1_INTC intc_bcm2836_l1.c)
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL intc_cavs.c)
 zephyr_library_sources_ifdef(CONFIG_CLIC intc_clic.S)
 zephyr_library_sources_ifdef(CONFIG_CLIC intc_clic.c)

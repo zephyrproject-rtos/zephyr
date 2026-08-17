@@ -60,6 +60,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	struct ud *br_user_data = user_data;
 	struct eth_bridge_iface_context *ctx;
 	enum virtual_interface_caps caps;
+	const struct device *dev;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
 		return;
@@ -70,7 +71,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	ctx = net_if_get_device(iface)->data;
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
 
 	br_user_data->cb(ctx, br_user_data->user_data);
 }
@@ -97,11 +102,17 @@ struct net_if *eth_bridge_get_by_index(int index)
 
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
+	const struct device *dev = net_if_get_device(br);
+	struct eth_bridge_iface_context *ctx;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	bool found = false;
 	int count = 0;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(eth_ctx != NULL);
+
+	ctx = dev->data;
 
 #if defined(CONFIG_NET_DSA)
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
@@ -137,6 +148,8 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		/* Calculate how many interfaces are added to this bridge */
 		if (ctx->eth_iface[i] != NULL) {
 			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
+
+			NET_ASSERT(tmp != NULL);
 
 			if (tmp->bridge == br) {
 				count++;
@@ -194,10 +207,16 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 
 int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
+	const struct device *dev = net_if_get_device(br);
+	struct eth_bridge_iface_context *ctx;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	bool found = false;
 	int count = 0;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(eth_ctx != NULL);
+
+	ctx = dev->data;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
@@ -225,6 +244,8 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 		/* Calculate how many interfaces are added to this bridge */
 		if (ctx->eth_iface[i] != NULL) {
 			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
+
+			NET_ASSERT(tmp != NULL);
 
 			if (tmp->bridge == br) {
 				count++;
@@ -346,9 +367,15 @@ static void unique_linkaddr(uint8_t *linkaddr, size_t len, uint8_t id)
 
 static void bridge_iface_init(struct net_if *iface)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
 	struct virtual_interface_context *vctx = net_if_l2_data(iface);
 	char name[MAX_BRIDGE_NAME_LEN];
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(vctx != NULL);
+
+	ctx = dev->data;
 
 	k_mutex_init(&ctx->lock);
 
@@ -525,10 +552,15 @@ static struct net_pkt *bridge_resolve_local_dst(struct net_if *bridge, struct ne
 static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 						  struct net_pkt *pkt)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
 	struct net_if *orig_iface;
 	struct net_pkt *send_pkt;
 	int fwd_iface_num = 0;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
 
 	/* Resolve the destination link address of locally originated IPv4
 	 * traffic before flooding, otherwise the Ethernet layer defaults it to
@@ -613,7 +645,12 @@ int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)
 
 static enum net_verdict bridge_iface_recv(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
 
 	if (DEBUG_RX) {
 		char str[sizeof("RX bridge xx")];

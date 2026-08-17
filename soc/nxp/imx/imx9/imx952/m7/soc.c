@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/cache.h>
+#include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/drivers/firmware/scmi/nxp/cpu.h>
 #include <zephyr/drivers/firmware/scmi/power.h>
@@ -17,6 +18,33 @@ void soc_early_init_hook(void)
 	sys_cache_instr_enable();
 #endif
 }
+
+static int soc_init(void)
+{
+	int ret = 0;
+
+#if defined(CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS)
+	struct scmi_nxp_cpu_sleep_mode_config cpu_cfg = {0};
+
+	/*
+	 * SLEEP_HOLD_EN is enabled by default, which gates SysTick.
+	 * Set CPU sleep mode to RUN to clear it and allow SysTick to run.
+	 */
+	cpu_cfg.cpu_id = CPU_IDX_M7P;
+	cpu_cfg.sleep_mode = CPU_SLEEP_MODE_RUN;
+
+	ret = scmi_nxp_cpu_sleep_mode_set(&cpu_cfg);
+#endif /* CONFIG_NXP_SCMI_CPU_DOMAIN_HELPERS */
+
+	return ret;
+}
+
+/*
+ * Because platform is using ARM SCMI, drivers like scmi, mbox etc. are
+ * initialized during PRE_KERNEL_1. Common init hooks is not able to use.
+ * SoC early init and board early init could be run during PRE_KERNEL_2 instead.
+ */
+SYS_INIT(soc_init, PRE_KERNEL_2, 0);
 
 #ifdef CONFIG_PM
 void pm_state_before(void)

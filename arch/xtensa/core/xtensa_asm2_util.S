@@ -243,13 +243,38 @@ xtensa_switch:
 #ifdef CONFIG_USERSPACE
 	entry a1, 32
 
-	s32i a4, a1, 0
 	s32i a5, a1, 4
 	s32i a6, a1, 8
 	s32i a7, a1, 12
 
+	/* Pointer to incoming thread in A6 */
 	rsr a6, ZSR_CPU
 	l32i a6, a6, ___cpu_t_current_OFFSET
+
+#if defined(CONFIG_XTENSA_MPU) || defined(CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP)
+	/* With MMU, SWAP_PAGE_TABLE is pretty lightweight so there is
+	 * no need for all these extra code to skip swapping.
+	 */
+
+	/* Pointer to outgoing thread in A7 */
+	mov a7, a3
+	addi a7, a7, -___thread_t_switch_handle_OFFSET
+
+	/* Load pointer to memory domain for both
+	 * incoming (in A5) and outgoing (in A7) threads.
+	 */
+	l32i a5, a6, _thread_offset_to_mem_domain
+	l32i a7, a7, _thread_offset_to_mem_domain
+
+	/* If both threads are using the same memory domain,
+	 * skip swapping page table or MPU entries as they
+	 * are the same.
+	 */
+	beq a5, a7, __switch_swap_same_domain
+#endif /* CONFIG_XTENSA_MPU || CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP */
+
+	s32i a4, a1, 0
+
 #ifdef CONFIG_XTENSA_MMU
 #ifdef CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP
 	call4 xtensa_swap_update_page_tables
@@ -261,10 +286,14 @@ xtensa_switch:
 	call4 xtensa_mpu_thread_map_write
 #endif
 
+	l32i a4, a1, 0
+
+#if defined(CONFIG_XTENSA_MPU) || defined(CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP)
+__switch_swap_same_domain:
+#endif /* CONFIG_XTENSA_MPU || CONFIG_XTENSA_MMU_FLUSH_AUTOREFILL_DTLBS_ON_SWAP */
 	l32i a7, a1, 12
 	l32i a6, a1, 8
 	l32i a5, a1, 4
-	l32i a4, a1, 0
 #else
 	entry a1, 16
 #endif

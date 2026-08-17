@@ -85,6 +85,8 @@ config ETH_DWMAC_MMU
 config ETH_DWC_ETHER_1000_CORE_EDFE
 	bool
 	depends on ETH_DWC_ETHER_1000_CORE
+	depends on !SOC_SERIES_STM32F1X
+	default y if PTP_CLOCK_DWC_MAC
 	help
 	  Increases the descriptor size to 32 bytes.
 
@@ -134,9 +136,6 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
-# Currently only for the 1000 core
-if ETH_DWC_ETHER_1000_CORE
-
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
@@ -168,7 +167,7 @@ config ETH_DWC_ETHER_RX_HW_CHECKSUM_EN
 	depends on NET_CHECKSUM_OFFLOAD
 	default y
 
-endif # ETH_DWC_ETHER_1000_CORE
+rsource "Kconfig.ptp"
 
 endif # ETH_DWC_ETHER_QOS_CORE || ETH_DWC_ETHER_1000_CORE
 

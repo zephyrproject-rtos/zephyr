@@ -55,10 +55,10 @@ struct net_conn {
 	sys_snode_t node;
 
 	/** Remote socket address */
-	struct net_sockaddr remote_addr;
+	struct net_sockaddr_storage remote_addr;
 
 	/** Local socket address */
-	struct net_sockaddr local_addr;
+	struct net_sockaddr_storage local_addr;
 
 	/** Callback to be called when matching net packet is received */
 	net_conn_cb_t cb;

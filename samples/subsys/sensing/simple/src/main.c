@@ -7,7 +7,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sensing/sensing.h>
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);

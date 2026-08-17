@@ -1,0 +1,12 @@
+# I2C EEPROM Target configuration options
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_TMP103_TARGET
+	bool "I2C Target TMP103 driver"
+	default y
+	depends on DT_HAS_ZEPHYR_I2C_TARGET_TMP103_ENABLED
+	select I2C_TARGET_REGSET_LIB
+	help
+	  Enable virtual I2C Target TMP103 driver

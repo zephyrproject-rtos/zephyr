@@ -41,8 +41,6 @@
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(21, 25)>;
 			pcrs = <MCHP_XEC_SCR_ENCODE(3, 11)>;
 			status = "disabled";
-			#address-cells = <1>;
-			#size-cells = <0>;
 		};
 
 		bbled3: bbled@4000bb00 {

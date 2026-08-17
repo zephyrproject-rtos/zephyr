@@ -24,7 +24,7 @@ config MCUX_OS_TIMER_PM_POWERED_OFF
 
 config MCUX_OS_TIMER_MIN_DELAY
 	int "Minimum delay cycles for OS timer match value"
-	default 1000
+	default 50
 	help
 	  Timer hardware requires a minimum setup time to reliably trigger
 	  interrupts. If a match value is set too close to the current timer

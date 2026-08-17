@@ -1108,7 +1108,15 @@ static int adxl367_init(const struct device *dev)
 
 #ifdef CONFIG_ADXL367_TRIGGER
 #define ADXL367_CFG_IRQ(inst) \
-		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),		\
+		(							\
+			.interrupt = GPIO_DT_SPEC_INST_GET(inst, int1_gpios),	\
+			.int_map_reg = ADXL367_INTMAP1_LOWER,		\
+		),							\
+		(							\
+			.interrupt = GPIO_DT_SPEC_INST_GET(inst, int2_gpios),	\
+			.int_map_reg = ADXL367_INTMAP2_LOWER,		\
+		))
 #else
 #define ADXL367_CFG_IRQ(inst)
 #endif /* CONFIG_ADXL367_TRIGGER */
@@ -1154,7 +1162,8 @@ static int adxl367_init(const struct device *dev)
 		.bus_init = adxl367_spi_init,				\
 		.spi = SPI_DT_SPEC_INST_GET(inst, ADXL367_SPI_CFG),		\
 		ADXL367_CONFIG(inst, chipid)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		COND_CODE_1(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+				    DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
 		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 
@@ -1177,7 +1186,8 @@ static int adxl367_init(const struct device *dev)
 		.bus_init = adxl367_i2c_init,				\
 		.i2c = I2C_DT_SPEC_INST_GET(inst),			\
 		ADXL367_CONFIG(inst, chipid)					\
-		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+		COND_CODE_1(UTIL_OR(DT_INST_NODE_HAS_PROP(inst, int1_gpios),	\
+				    DT_INST_NODE_HAS_PROP(inst, int2_gpios)),	\
 		(ADXL367_CFG_IRQ(inst)), ())				\
 	}
 

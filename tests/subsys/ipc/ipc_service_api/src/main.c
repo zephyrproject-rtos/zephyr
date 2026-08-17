@@ -171,12 +171,13 @@ static bool hold_rx_supported(void)
 	       IS_ENABLED(CONFIG_IPC_SERVICE_BACKEND_RPMSG);
 }
 
-static void register_endpoint(struct test_context *ctx, const char *name)
+static void register_endpoint(struct test_context *ctx, const char *name, int priority)
 {
 	int ret;
 
 	ctx->ep_cfg.name = name;
 	ctx->ep_cfg.priv = ctx;
+	ctx->ep_cfg.prio = priority;
 	ctx->ep_cfg.cb.bound = ep_bound;
 	ctx->ep_cfg.cb.unbound = ep_unbound;
 	ctx->ep_cfg.cb.received = ep_received;
@@ -215,7 +216,7 @@ static void setup_impl(void)
 
 	k_msleep(10);
 	for (size_t i = 0; i < ep_cnt; i++) {
-		register_endpoint(&test_ctx[i], ep_name[i]);
+		register_endpoint(&test_ctx[i], ep_name[i], i);
 		wait_for_remote_ready(&test_ctx[i]);
 	}
 }
@@ -284,7 +285,41 @@ ZTEST(ipc_service_api, test_deregister_endpoint)
 	ret = ipc_service_send(&ctx->ep, &cmd, sizeof(cmd));
 	zassert_equal(ret, -ENOENT, "Send after deregister should return -ENOENT, got %d", ret);
 
-	register_endpoint(ctx, ep_name[0]);
+	register_endpoint(ctx, ep_name[0], 0);
+}
+
+ZTEST(ipc_service_api, test_remote_deregister_endpoint)
+{
+	int ret;
+	struct api_test_msg cmd = {.cmd = API_TEST_CMD_DEREGISTER};
+	struct api_test_msg ping = {.cmd = API_TEST_CMD_PING};
+	struct api_test_msg rsp = {.cmd = API_TEST_CMD_PONG};
+	struct test_context *ctx = ep0();
+
+	if (!IS_ENABLED(CONFIG_IPC_SERVICE_API_TEST_DEREGISTER)) {
+		ztest_test_skip();
+		return;
+	}
+
+	ctx->unbound = false;
+	test_context_reset_rx(ctx);
+
+	ret = ipc_service_send(&ctx->ep, &cmd, sizeof(cmd));
+	zassert_equal(ret, sizeof(cmd), "DEREGISTER request send failed: %d", ret);
+
+	zassert_true(wait_for_flag(&ctx->unbound, 100),
+		     "Timed out waiting for unbound after remote deregister");
+	zassert_false(ctx->bound, "Endpoint should be unbound");
+
+	k_msleep(1);
+
+	register_endpoint(ctx, ep_name[0], 0);
+
+	ret = ipc_service_send(&ctx->ep, &ping, sizeof(ping));
+	zassert_equal(ret, sizeof(ping), "PING after re-register failed: %d", ret);
+
+	ret = wait_for_msg(ctx, &rsp, sizeof(rsp), 100);
+	zassert_ok(ret, "No PONG after remote-initiated deregister and re-bind");
 }
 
 ZTEST(ipc_service_api, test_get_tx_buffer_size)
@@ -705,5 +740,170 @@ ZTEST(ipc_service_api, test_send_critical)
 		zassert_ok(ret, "No PONG response after ISR send");
 	}
 }
+
+#ifdef CONFIG_IPC_SERVICE_API_TEST_ISR_SEND
+
+static volatile bool isr_send_done;
+static volatile int isr_send_ret;
+
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+static K_SEM_DEFINE(isr_send_sem, 0, 1);
+#endif
+
+static void isr_send_signal_done(void)
+{
+	isr_send_done = true;
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	k_sem_give(&isr_send_sem);
+#endif
+}
+
+static void isr_send_wait_done(void)
+{
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	int ret = k_sem_take(&isr_send_sem, K_MSEC(1000));
+
+	zassert_ok(ret, "Timed out waiting for ISR send");
+#else
+	zassert_true(wait_for_flag(&isr_send_done, 1000), "Timed out waiting for ISR send");
+#endif
+}
+
+static struct api_test_msg isr_send_cmd;
+
+static void isr_send_timer_handler(struct k_timer *timer)
+{
+	ARG_UNUSED(timer);
+
+	zassert_true(k_is_in_isr(), "Timer handler should run in ISR context");
+
+	isr_send_ret = ipc_service_send(&ep0()->ep, &isr_send_cmd, sizeof(isr_send_cmd));
+	isr_send_signal_done();
+}
+
+static K_TIMER_DEFINE(isr_send_timer, isr_send_timer_handler, NULL);
+
+ZTEST(ipc_service_api, test_isr_send)
+{
+	int ret;
+	struct api_test_msg rsp = {.cmd = API_TEST_CMD_PONG};
+	struct test_context *ctx = ep0();
+
+	test_context_reset_rx(ctx);
+	isr_send_done = false;
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	k_sem_reset(&isr_send_sem);
+#endif
+
+	isr_send_cmd = (struct api_test_msg){.cmd = API_TEST_CMD_PING};
+
+	k_timer_start(&isr_send_timer, K_MSEC(1), K_NO_WAIT);
+	isr_send_wait_done();
+
+	zassert_equal(isr_send_ret, sizeof(isr_send_cmd), "ipc_service_send from ISR failed: %d",
+		      isr_send_ret);
+
+	ret = wait_for_msg(ctx, &rsp, sizeof(rsp), 100);
+	zassert_ok(ret, "No PONG response after ISR ipc_service_send");
+}
+
+static struct api_test_msg isr_nocopy_expected_rsp;
+
+static void isr_nocopy_timer_handler(struct k_timer *timer)
+{
+	int ret;
+	void *tx_buf;
+	uint32_t tx_size = 0;
+	struct api_test_msg *msg;
+
+	ARG_UNUSED(timer);
+
+	zassert_true(k_is_in_isr(), "Timer handler should run in ISR context");
+
+	ret = ipc_service_get_tx_buffer(&ep0()->ep, &tx_buf, &tx_size, K_NO_WAIT);
+	zassert_ok(ret, "ipc_service_get_tx_buffer from ISR failed: %d", ret);
+	zassert_true(tx_size >= sizeof(struct api_test_msg), "TX buffer too small: %u", tx_size);
+
+	msg = tx_buf;
+	msg->cmd = API_TEST_CMD_ECHO;
+	memset(msg->data, 0xab, sizeof(msg->data));
+
+	isr_nocopy_expected_rsp = *msg;
+	isr_nocopy_expected_rsp.cmd = API_TEST_CMD_ECHO_RSP;
+
+	isr_send_ret = ipc_service_send_nocopy(&ep0()->ep, tx_buf, sizeof(*msg));
+	isr_send_signal_done();
+}
+
+static K_TIMER_DEFINE(isr_nocopy_timer, isr_nocopy_timer_handler, NULL);
+
+ZTEST(ipc_service_api, test_isr_send_nocopy)
+{
+	int ret;
+	struct test_context *ctx = ep0();
+
+	if (!nocopy_supported(ctx)) {
+		ztest_test_skip();
+		return;
+	}
+
+	test_context_reset_rx(ctx);
+	isr_send_done = false;
+#if IS_ENABLED(CONFIG_MULTITHREADING)
+	k_sem_reset(&isr_send_sem);
+#endif
+
+	k_timer_start(&isr_nocopy_timer, K_MSEC(1), K_NO_WAIT);
+	isr_send_wait_done();
+
+	zassert_equal(isr_send_ret, sizeof(struct api_test_msg),
+		      "ipc_service_send_nocopy from ISR failed: %d", isr_send_ret);
+
+	ret = wait_for_msg(ctx, &isr_nocopy_expected_rsp, sizeof(isr_nocopy_expected_rsp), 100);
+	zassert_ok(ret, "No ECHO_RSP after ISR ipc_service_send_nocopy");
+}
+
+#endif /* CONFIG_IPC_SERVICE_API_TEST_ISR_SEND */
+
+#ifdef CONFIG_IPC_SERVICE_API_TEST_PRIORITY
+static struct test_context *priority_ctx[TEST_EP_COUNT];
+static int priority_count;
+
+static void priority_cb(const void *data, size_t len, struct test_context *ctx)
+{
+	priority_ctx[priority_count++] = ctx;
+}
+
+ZTEST(ipc_service_api, test_endpoint_priority)
+{
+	int ret;
+	struct api_test_msg cmd = {.cmd = API_TEST_CMD_PING};
+	static struct k_spinlock lock;
+
+	recv_override = priority_cb;
+
+	K_SPINLOCK(&lock) {
+		ret = ipc_service_send(&ep0()->ep, &cmd, sizeof(cmd));
+		zassert_equal(ret, sizeof(cmd), "Send failed: %d", ret);
+
+		ret = ipc_service_send(&ep1()->ep, &cmd, sizeof(cmd));
+		zassert_equal(ret, sizeof(cmd), "Send failed: %d", ret);
+
+		k_busy_wait(1000);
+	}
+
+	k_msleep(10);
+	zassert_equal(priority_count, TEST_EP_COUNT, "Expected %u priority contexts, got %u",
+		      TEST_EP_COUNT, priority_count);
+	zassert_equal(priority_ctx[0], ep1(), "Expected %p, got %p", ep1(), priority_ctx[0]);
+	zassert_equal(priority_ctx[1], ep0(), "Expected %p, got %p", ep0(), priority_ctx[1]);
+
+	for (int i = 0; i < TEST_EP_COUNT; i++) {
+		zassert_equal(priority_ctx[i]->ep_cfg.prio, TEST_EP_COUNT - i - 1,
+			      "Expected priority %u, got %u", TEST_EP_COUNT - i - 1,
+			      priority_ctx[i]->ep_cfg.prio);
+	}
+}
+#endif
 
 ZTEST_SUITE(ipc_service_api, NULL, suite_setup, suite_before, NULL, NULL);

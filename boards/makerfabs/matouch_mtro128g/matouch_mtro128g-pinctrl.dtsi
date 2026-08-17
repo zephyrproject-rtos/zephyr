@@ -1,0 +1,86 @@
+/*
+ * Copyright (c) 2026 Sahaj Sarup
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+&pinctrl {
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_GPIO43>;
+			output-high;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_GPIO44>;
+			bias-pull-up;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_GPIO17>,
+				 <I2C0_SCL_GPIO18>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/*Touch*/
+	i2c1_default: i2c1_default {
+		group1 {
+			pinmux = <I2C1_SDA_GPIO38>,
+				 <I2C1_SCL_GPIO39>;
+			bias-pull-up;
+			drive-open-drain;
+			output-high;
+		};
+	};
+
+	/*HSPI LCD*/
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_MISO_GPIO12>,
+				 <SPIM2_SCLK_GPIO14>,
+				 <SPIM2_CSEL_GPIO15>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO13>;
+			output-low;
+		};
+	};
+
+	/*uSD*/
+	spim3_default: spim3_default {
+		group1 {
+			pinmux = <SPIM3_MISO_GPIO41>,
+				 <SPIM3_SCLK_GPIO42>,
+				 <SPIM3_CSEL_GPIO1>;
+		};
+
+		group2 {
+			pinmux = <SPIM3_MOSI_GPIO2>;
+			output-low;
+		};
+	};
+
+	/*Backlight*/
+	ledc0_default: ledc0_default {
+		group1 {
+			pinmux = <LEDC_CH0_GPIO7>;
+			output-enable;
+		};
+	};
+
+	pcnt0_default: pcnt0_default {
+		group1 {
+			pinmux = <PCNT0_CH0SIG_GPIO9>,
+				 <PCNT0_CH0CTRL_GPIO10>;
+			bias-pull-up;
+		};
+	};
+};

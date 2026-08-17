@@ -103,10 +103,7 @@ static void z_init_static_threads(void)
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
 		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
 
-		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
-			thread_schedule_new(thread_data->init_thread,
-					    init_delay);
-		}
+		thread_schedule_new(thread_data->init_thread, init_delay);
 	}
 	k_sched_unlock();
 }
@@ -324,9 +321,11 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #ifdef CONFIG_SMP
-	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
-		z_smp_init();
-	}
+	/* Start the secondary CPUs; CPUs whose devicetree node carries
+	 * zephyr,deferred-start are skipped and left for a run-time
+	 * k_smp_cpu_start()/k_smp_cpu_resume().
+	 */
+	z_smp_init();
 	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
 
@@ -335,7 +334,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 
 #ifdef CONFIG_BOOTARGS
-	extern int main(int, char **);
+	extern int main(int argc, char **argv);
 	extern char **sys_boot_prepare_main_args(int *argc);
 
 	int argc = 0;

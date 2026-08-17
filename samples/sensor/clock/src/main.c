@@ -6,7 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor_clock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/counter.h>
 #include <stdio.h>
 

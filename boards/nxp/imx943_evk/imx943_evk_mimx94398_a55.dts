@@ -101,6 +101,8 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy2>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	zephyr,mac-address-prefix = [00 04 9f];
 	status = "okay";
 };
 
@@ -109,6 +111,8 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy3>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	zephyr,mac-address-prefix = [00 04 9f];
 	status = "okay";
 };
 
@@ -117,6 +121,8 @@
 	pinctrl-names = "default";
 	phy-handle = <&phy4>;
 	phy-connection-type = "rgmii";
+	zephyr,random-mac-address;
+	zephyr,mac-address-prefix = [00 04 9f];
 	status = "okay";
 };
 
@@ -201,5 +207,11 @@
 	pinctrl-0 = <&flexcan2_default>;
 	pinctrl-names = "default";
 	phys = <&can_phy2>;
+	status = "okay";
+};
+
+&lpspi3 {
+	pinctrl-0 = <&lpspi3_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };

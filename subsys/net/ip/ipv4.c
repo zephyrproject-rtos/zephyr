@@ -133,11 +133,11 @@ int net_ipv4_finalize(struct net_pkt *pkt, uint8_t next_header_proto)
 
 	ipv4_hdr->len   = net_htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
+	ipv4_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt), NET_IF_CHECKSUM_IPV4_HEADER)) {
 		uint16_t chksum = 0;
 
-		ipv4_hdr->chksum = 0;
 		ret = net_calc_chksum_ipv4(pkt, &chksum);
 		if (ret < 0) {
 			return ret;

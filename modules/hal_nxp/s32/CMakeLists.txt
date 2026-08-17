@@ -3,7 +3,7 @@
 # Set the SoC specific drivers and configuration to build
 set(SOC_BASE ${CONFIG_SOC})
 
-add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/drivers/${SOC_SERIES} hal_nxp/s32/drivers)
+add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/drivers/${CONFIG_SOC_SERIES} hal_nxp/s32/drivers)
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/s32/soc/${SOC_BASE} hal_nxp/s32/soc)
 
 if(CONFIG_HAS_MCUX)

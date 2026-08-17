@@ -4,6 +4,7 @@ Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 SPDX-License-Identifier: Apache-2.0
 -->
 {% extends "base.html" %}
+{% from "macros.html" import copy_button %}
 
 {% block head %}
 
@@ -33,7 +34,8 @@ SPDX-License-Identifier: Apache-2.0
 
 <div class="row rst-content mb-3">
   <div class="col">
-    <code class="literal p-1">{{file_path}}</code>
+    <code id="filePath" class="literal p-1">{{file_path}}</code>
+    {{ copy_button("filePath") }}
   </div>
 </div>
 

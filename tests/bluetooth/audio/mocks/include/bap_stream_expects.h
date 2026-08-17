@@ -19,19 +19,19 @@
 #include "bap_stream.h"
 #include "expects_util.h"
 
-static inline void expect_bt_bap_stream_ops_configured_called(
+static inline void expect_bt_bap_stream_ops_codec_configured_called(
 	unsigned int expected_count,
 	struct bt_bap_stream *streams[],
 	void *pref[])
 {
-	const char *func_name = "bt_bap_stream_ops.configured";
+	const char *func_name = "bt_bap_stream_ops.codec_configured";
 
 	zexpect_call_count(func_name,
-		expected_count, mock_bap_stream_configured_cb_fake.call_count);
+		expected_count, mock_bap_stream_codec_configured_cb_fake.call_count);
 
-	for (unsigned int i = 0; i < mock_bap_stream_configured_cb_fake.call_count; i++) {
+	for (unsigned int i = 0; i < mock_bap_stream_codec_configured_cb_fake.call_count; i++) {
 		zexpect_equal_ptr(streams[i],
-			mock_bap_stream_configured_cb_fake.arg0_history[i],
+			mock_bap_stream_codec_configured_cb_fake.arg0_history[i],
 			"'%s()' was called with incorrect 'stream[%i]' value",
 			func_name, i);
 	}
@@ -42,18 +42,18 @@ static inline void expect_bt_bap_stream_ops_configured_called(
 	}
 }
 
-static inline void expect_bt_bap_stream_ops_qos_set_called(
+static inline void expect_bt_bap_stream_ops_qos_configured_called(
 	unsigned int expected_count,
 	struct bt_bap_stream *streams[])
 {
-	const char *func_name = "bt_bap_stream_ops.qos_set";
+	const char *func_name = "bt_bap_stream_ops.qos_configured";
 
 	zexpect_call_count(func_name,
-		expected_count, mock_bap_stream_qos_set_cb_fake.call_count);
+		expected_count, mock_bap_stream_qos_configured_cb_fake.call_count);
 
-	for (unsigned int i = 0; i < mock_bap_stream_qos_set_cb_fake.call_count; i++) {
+	for (unsigned int i = 0; i < mock_bap_stream_qos_configured_cb_fake.call_count; i++) {
 		zexpect_equal_ptr(streams[i],
-			mock_bap_stream_qos_set_cb_fake.arg0_history[i],
+			mock_bap_stream_qos_configured_cb_fake.arg0_history[i],
 			"'%s()' was called with incorrect '%s[%i]'", func_name, "stream", i);
 	}
 }

@@ -7,3 +7,12 @@ config CAN_MCAN
 	bool
 	help
 	  Enable the Bosch M_CAN CAN IP module driver backend.
+
+config CAN_MCAN_FIXED_MRAM_LAYOUT
+	bool # hidden
+	help
+	  Always use 64 bytes deep RX/TX buffer elements regardless of whether CONFIG_CAN_FD_MODE is
+	  enabled.
+
+	  Drivers for Bosch M_CAN IP instances using fixed Message RAM layout (without TXESC/RXESC
+	  registers) must select this.

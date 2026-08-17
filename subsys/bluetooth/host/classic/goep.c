@@ -22,7 +22,7 @@
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/goep.h>
 
-#include "host/conn_internal.h"
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "obex_internal.h"

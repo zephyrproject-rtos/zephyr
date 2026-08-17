@@ -1001,7 +1001,7 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
@@ -1012,7 +1012,7 @@
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "st,stm32-mdio", "snps,dwmac-mdio";
+				compatible = "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1085,6 +1085,7 @@
 			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
 			status = "disabled";
 
 			sai1_a: sai1a@42005804 {

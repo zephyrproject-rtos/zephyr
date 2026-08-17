@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_SYS_MATH_EXTRAS_IMPL_H_
+#define ZEPHYR_INCLUDE_SYS_MATH_EXTRAS_IMPL_H_
+
 /**
  * @file
  * @brief Inline implementation of functions declared in math_extras.h.
@@ -318,3 +321,5 @@ static inline void i128_multiply_i64_i64(int64_t a, int64_t b, int128_t *result)
 #undef use_builtin
 
 /** @endcond */
+
+#endif /* ZEPHYR_INCLUDE_SYS_MATH_EXTRAS_IMPL_H_ */

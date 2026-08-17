@@ -493,7 +493,7 @@ static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 
 #if defined(CONFIG_HCI_NXP_RX_THREAD)
 
-K_MSGQ_DEFINE(rx_msgq, sizeof(struct hci_data), CONFIG_HCI_NXP_RX_MSG_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(rx_msgq, struct hci_data, CONFIG_HCI_NXP_RX_MSG_QUEUE_SIZE);
 
 static void bt_rx_thread(void *p1, void *p2, void *p3)
 {

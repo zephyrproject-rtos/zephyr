@@ -604,7 +604,7 @@ static void reset(void)
 	printk("\n\nResetting...\n\n");
 
 	if (broadcast_sink_conn != NULL) {
-		err = bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_LOCALHOST_TERM_CONN);
+		err = bt_conn_disconnect(broadcast_sink_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 
 		if (err != 0) {
 			printk("bt_conn_disconnect failed with %d\n", err);

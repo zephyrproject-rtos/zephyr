@@ -20,8 +20,6 @@ All the features of Renesas R-Car V4H SoC are described in the product page `Ren
 Supported Features
 ==================
 
-We support Zephyr running on Cortex R52 processor that is provided for RTOS purpose.
-
 .. zephyr:board-supported-hw::
 
 Connections and IOs
@@ -37,23 +35,32 @@ Here is information about serial ports provided on Sparrow Hawk board :
 +--------------------------+--------------------+--------------------+-------------+---------------------------+
 |    Software interface    | Physical Interface | Hardware Interface | Converter   |    Usage Note             |
 +==========================+====================+====================+=============+===========================+
-| /tty/USBx, COMn (lower)  | CN4 USB Port       |       HSCIF0       | FT2232H     | Used by U-Boot and Linux  |
+| /tty/USBx, COMn (lower)  | CN4 USB Port       |       HSCIF0       | FT2232H     | U-Boot/Linux, A76 Zephyr  |
 +--------------------------+--------------------+--------------------+-------------+---------------------------+
-| /tty/USBy, COMm (higher) | CN4 USB Port       |       HSCIF1       | FT2232H     | Default for Zephyr        |
+| /tty/USBy, COMm (higher) | CN4 USB Port       |       HSCIF1       | FT2232H     | Default for R52 Zephyr    |
 +--------------------------+--------------------+--------------------+-------------+---------------------------+
 
 .. note::
-   By default, Zephyr console output is assigned to HSCIF1 with 921600 8N1 without
-   hardware flow control.
+   The A76 Zephyr console uses HSCIF0. The R52 Zephyr console uses HSCIF1.
+   Both use 921600 8N1 without hardware flow control in the Zephyr board definitions.
 
 Programming and Debugging
 *************************
 
-You can build the applications as usual. This is the example for Hello World:
+You can build the applications as usual. These are examples for Hello World:
+
+For Cortex-R52:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: sparrowhawk_rcar_v4h/r8a779g0/r52
+   :goals: build
+
+For Cortex-A76:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: sparrowhawk_rcar_v4h/r8a779g0/a76
    :goals: build
 
 Configuring a Console
@@ -113,6 +120,8 @@ This assumes that you have already installed a TFTP server in the host PC.
 Put the image bin file ``build/zephyr/zephyr.bin`` inside TFTP root directory. Run these
 U-Boot commands:
 
+For Cortex-R52:
+
 .. code-block:: console
 
    => setenv ipaddr <board.ip>
@@ -120,10 +129,21 @@ U-Boot commands:
    => tftp 0x40040000 zephyr.bin
    => rproc init; rproc load 0:3 0x40040000 0x200000; rproc start 0
 
+For Cortex-A76:
+
+.. code-block:: console
+
+   => setenv ipaddr <board.ip>
+   => setenv serverip <tftp.server.ip>
+   => tftp 0x48000000 zephyr.bin
+   => booti 0x48000000 - ${fdtcontroladdr}
+
 Method 2: Using serial to transfer Zephyr image
 -----------------------------------------------
 
 Some terminal software support transferring file via serial using Kermit protocol. Use this U-Boot commands:
+
+For Cortex-R52:
 
 .. code-block:: console
 
@@ -134,7 +154,16 @@ Some terminal software support transferring file via serial using Kermit protoco
    ## Start Addr      = 0x40040000
    => rproc init; rproc load 0:3 0x40040000 0x200000; rproc start 0
 
-You should see Zephyr boot log in the terminal of HSCIF1:
+For Cortex-A76:
+
+.. code-block:: console
+
+   => loadb 0x48000000 921600
+   ## Ready for binary (kermit) download to 0x48000000 at 921600 bps...
+   (Transfer zephyr.bin after this line)
+   ## Total Size      = 0x00009f2c = 40748 Bytes
+   ## Start Addr      = 0x48000000
+   => booti 0x48000000 - ${fdtcontroladdr}
 
 .. code-block:: console
 

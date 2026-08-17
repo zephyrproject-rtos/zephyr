@@ -308,6 +308,11 @@ SECTIONS
     *(.rtc_timer_data_in_rtc_mem .rtc_timer_data_in_rtc_mem.*)
     _rtc_reserved_end = ABSOLUTE(.);
   } GROUP_LINK_IN(rtc_reserved_seg)
+  _rtc_reserved_length = (_rtc_reserved_end - _rtc_reserved_start);
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
+#else
+  _rtc_reserved_length = 0;
 #endif
 
   /* Get size of rtc slow data based on rtc_data_location alias */

@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Guilherme Costa
+# SPDX-License-Identifier: Apache-2.0
+
+description: Quectel EG21-G modem
+
+compatible: "quectel,eg21-g"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-reset-gpios:
+    type: phandle-array
+
+  mdm-dtr-gpios:
+    type: phandle-array
+
+  mdm-wdisable-gpios:
+    type: phandle-array
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

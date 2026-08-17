@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_ADI_AXI_SYSID
+	bool "Analog Devices AXI System ID ROM (read-only OTP)"
+	default y
+	depends on DT_HAS_ADI_AXI_SYSID_ENABLED
+	help
+	  Enable the read-only OTP driver for the Analog Devices AXI
+	  System ID core. The core exposes an FPGA build-information ROM
+	  (board / product / git data) that is presented through the
+	  standard OTP API.

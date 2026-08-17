@@ -1,0 +1,641 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MAX30009 Bio-Impedance Analog Front-End (AFE).
+
+  When setting the enumerated properties below, include the binding constants
+  header and use the MAX30009_DT_* macros for readability:
+
+  #include <zephyr/dt-bindings/sensor/max30009.h>
+
+include: sensor-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Interrupt (INT) pin. The MAX30009 INT output is active low and open-drain
+      by default; the property value should describe the signal presented to the SoC.
+
+  fifo-watermark:
+    type: int
+    description: |
+      Specify the FIFO watermark level in frame count.
+      Default value is the reset value.
+    default: 129
+    min: 1
+    max: 256
+
+  fifo-a-full-type:
+    type: boolean
+    description: |
+      A_FULL_TYPE sets the A_FULL interrupt behavior. When cleared, A_FULL
+      reasserts every sample while the almost-full condition persists; when set,
+      A_FULL asserts once and does not reassert until the FIFO is read and a new
+      almost-full condition occurs. Cleared at reset.
+
+  fifo-rollover:
+    type: boolean
+    description: |
+      FIFO_RO enables FIFO roll-over. When set, the FIFO keeps pushing samples
+      once full and overwrites the oldest data (write and read pointers both
+      advance); when cleared, new samples are dropped until the FIFO is read.
+      Disabled at reset.
+
+  # Clock and PLL configuration (PLL_CONFIG registers, 0x17-0x1A)
+  ref-clk-source:
+    type: int
+    default: 0
+    enum:
+      - 0 # internal
+      - 1 # external
+    description: |
+      PLL reference clock source (REF_CLK_SEL). "internal" selects one of the
+      on-chip slow oscillators; "external" selects the clock driven on the FCLK
+      pin. Defaults to "internal", matching the device reset state.
+
+  clk-freq-sel:
+    type: int
+    default: 32768
+    enum:
+      - 32000
+      - 32768
+    description: |
+      PLL reference clock frequency in Hz (CLK_FREQ_SEL). When ref-clk-source is
+      "internal" this selects which on-chip oscillator is used; when "external"
+      it must match the frequency of the clock supplied on FCLK. Defaults to
+      32768 Hz.
+
+  clk-fine-tune:
+    type: int
+    default: 0
+    min: 0
+    max: 31
+    description: |
+      Fine-tune trim for the internal slow oscillator (CLK_FINE_TUNE, 5-bit
+      two's-complement code, 0.2% per LSB). Defaults to 0 (no shift).
+
+  pll-multiplier:
+    type: int
+    default: 444
+    min: 427
+    max: 875
+    description: |
+      PLL feedback multiplier M, programmed into MDIV as M = MDIV + 1. Choose M
+      so PLL_CLK = M x REF_CLK lands in 14-28 MHz. Defaults to 444 (the MDIV
+      reset value of 443).
+
+  # BioZ clock dividers and oversampling (PLL_CONFIG 0x17, BIOZ_CONFIG1 0x20)
+  bioz-adc-clk-div:
+    type: int
+    default: 512
+    enum:
+      - 512
+      - 1024
+    description: |
+      BioZ ADC clock divider (NDIV), dividing PLL_CLK to derive the BioZ ADC
+      sample clock. Defaults to 512 (the NDIV reset value).
+
+  bioz-synth-clk-div:
+    type: int
+    default: 1
+    enum:
+      - 1
+      - 2
+      - 4
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+    description: |
+      BioZ frequency-synthesis clock divider (KDIV), dividing PLL_CLK to derive
+      the DDS DAC clock. Defaults to 1 (the KDIV reset value).
+
+  bioz-adc-osr:
+    type: int
+    default: 8
+    enum:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+      - 256
+      - 512
+      - 1024
+    description: |
+      BioZ ADC oversampling ratio (BIOZ_ADC_OSR) for the I and Q ADCs. Defaults
+      to 8 (the reset value).
+
+  bioz-dac-osr:
+    type: int
+    default: 32
+    enum:
+      - 32
+      - 64
+      - 128
+      - 256
+    description: |
+      BioZ DDS DAC oversampling ratio (BIOZ_DAC_OSR). Defaults to 32 (the reset
+      value).
+
+  bioz-i-en:
+    type: boolean
+    description: |
+      Enable the in-phase (I) BioZ drive and receive channel (BIOZ_I_EN). Also
+      turns on the PLL and bandgap bias. Disabled at reset (channel off when
+      this property is omitted).
+
+  bioz-q-en:
+    type: boolean
+    description: |
+      Enable the quadrature-phase (Q) BioZ drive and receive channel
+      (BIOZ_Q_EN). Also turns on the PLL and bandgap bias. Disabled at reset
+      (channel off when this property is omitted).
+
+  bioz-bg-en:
+    type: boolean
+    description: |
+      Enable the BioZ bandgap bias. Disabled
+      at reset (channel off when this property is omitted).
+
+  # BioZ digital filters and threshold detect (BIOZ_CONFIG2, 0x21)
+  bioz-dhpf:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DHPF_BYPASS
+      - 1 # MAX30009_DT_DHPF_0_00025_SR
+      - 2 # MAX30009_DT_DHPF_0_002_SR
+    description: |
+      BioZ digital high-pass filter cutoff (BIOZ_DHPF[1:0]), expressed as a
+      register code with the cutoff given relative to the BioZ sample rate.
+      Defaults to 0 (bypass, the reset value).
+
+  bioz-dlpf:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DLPF_BYPASS
+      - 1 # MAX30009_DT_DLPF_0_005_SR
+      - 2 # MAX30009_DT_DLPF_0_02_SR
+      - 3 # MAX30009_DT_DLPF_0_08_SR
+      - 4 # MAX30009_DT_DLPF_0_25_SR
+    description: |
+      BioZ digital low-pass filter cutoff (BIOZ_DLPF[2:0]), expressed as a
+      register code with the cutoff given relative to the BioZ sample rate.
+      Defaults to 0 (bypass, the reset value).
+
+  en-bioz-thresh:
+    type: boolean
+    description: |
+      Enable the BioZ threshold detector (EN_BIOZ_THRESH), comparing the
+      bioz-cmp-selected data against bioz-high-threshold and bioz-low-threshold.
+      Disabled at reset.
+
+  bioz-cmp:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_CMP_I
+      - 1 # MAX30009_DT_CMP_Q
+      - 2 # MAX30009_DT_CMP_Z
+    description: |
+      BioZ comparator selection (BIOZ_CMP[1:0]). 0=I, 1=Q, 2=Z. Defaults to 0 (I channel).
+
+  bioz-drv-mode:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DRV_MODE_CURRENT
+      - 1 # MAX30009_DT_DRV_MODE_VOLTAGE
+      - 2 # MAX30009_DT_DRV_MODE_HBRIDGE
+      - 3 # MAX30009_DT_DRV_MODE_STANDBY
+    description: |
+      Stimulus type driven onto the electrodes by the BioZ transmit channel
+      (BIOZ_DRV_MODE[1:0]). Defaults to 0 (current drive, the reset value).
+
+  bioz-idrv-rge:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_IDRV_RGE_552_5K
+      - 1 # MAX30009_DT_IDRV_RGE_110_5K
+      - 2 # MAX30009_DT_IDRV_RGE_5_525K
+      - 3 # MAX30009_DT_IDRV_RGE_276_25R
+    description: |
+      Internal current-range resistor (BIOZ_IDRV_RGE), setting the current
+      magnitude when bioz-ext-res is disabled.
+
+  bioz-vdrv-mag:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_VDRV_MAG_50MV
+      - 1 # MAX30009_DT_VDRV_MAG_100MV
+      - 2 # MAX30009_DT_VDRV_MAG_250MV
+      - 3 # MAX30009_DT_VDRV_MAG_500MV
+    description: |
+      In voltage drive mode, BIOZ_VDRV_MAG sets the voltage amplitude at DRVR,
+      which is connected to EL1. BIOZ_IDRV_RGE is ignored. In current drive mode,
+      BIOZ_VDRV_MAG and BIOZ_IDRV_RGE set the current magnitude.
+
+  bioz-ext-res:
+    type: boolean
+    description: |
+      Enable external resistor (REXT) for BioZ current magnitude setting. When
+      disabled (0), internal range resistors set by BIOZ_IDRV_RGE and BIOZ_VDRV_MAG
+      are used. When enabled (1), REXT and BIOZ_VDRV_MAG set the current magnitude.
+
+  loff-rapid:
+    type: boolean
+    description: |
+      LOFF_RAPID bypasses the approximately 128ms window delay for DC lead-off detection.
+
+  bioz-fast-start-en:
+    type: boolean
+    description: |
+      BIOZ_FAST_START_EN enables the fast-start mode, which connects
+      the BIP and BIN inputs to VMID_RX through 10kΩ resistors after enabling the I or Q channel.
+
+  bioz-fast-manual:
+    type: boolean
+    description: |
+      BIOZ_FAST_MANUAL is used to turn on the fast-start mode manually.
+
+  bioz-ahpf:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_AHPF_100HZ
+      - 1 # MAX30009_DT_AHPF_200HZ
+      - 2 # MAX30009_DT_AHPF_500HZ
+      - 3 # MAX30009_DT_AHPF_1KHZ
+      - 4 # MAX30009_DT_AHPF_2KHZ
+      - 5 # MAX30009_DT_AHPF_5KHZ
+      - 6 # MAX30009_DT_AHPF_10KHZ
+      - 7 # MAX30009_DT_AHPF_BYPASS
+      - 8 # MAX30009_DT_AHPF_42_4M
+      - 9 # MAX30009_DT_AHPF_21_2M
+      - 10 # MAX30009_DT_AHPF_8_4M
+      - 11 # MAX30009_DT_AHPF_4_2M
+      - 12 # MAX30009_DT_AHPF_2_2M
+      - 13 # MAX30009_DT_AHPF_848K
+      - 14 # MAX30009_DT_AHPF_848K_ALT
+      - 15 # MAX30009_DT_AHPF_BYPASS_ALT
+    description: |
+      BioZ analog high-pass filter cutoff (BIOZ_AHPF[1:0]), expressed as a
+      register code with the cutoff given relative to the BioZ sample rate.
+      Defaults to 0 (bypass, the reset value).
+
+  bioz-ina-mode:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_INA_MODE_HIGH_POWER
+      - 1 # MAX30009_DT_INA_MODE_LOW_POWER
+    description: |
+      BioZ INA mode (BIOZ_INA_MODE) configures the instrumentation amplifier
+      for either high power (low noise) or low power operation.
+      Defaults to 0 (high power mode, the reset value).
+
+  bioz-dm-dis:
+    type: boolean
+    description: |
+      BIOZ_DM_DIS disables the receive channel demodulators.
+
+  bioz-gain:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_GAIN_1X
+      - 1 # MAX30009_DT_GAIN_2X
+      - 2 # MAX30009_DT_GAIN_5X
+      - 3 # MAX30009_DT_GAIN_10X
+    description: |
+      BIOZ_GAIN set the combined gain of the BioZ receive channel's INA and PGAs.
+      Defaults to 0 (1x gain, the reset value).
+
+  bioz-ext-cap:
+    type: boolean
+    description: |
+      BIOZ_EXT_CAP selects the external capacitor (CEXT) connected between
+      the DRVXC and DRVSJ.
+
+  bioz-dc-restore:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DC_RESTORE_OPEN
+      - 1 # MAX30009_DT_DC_RESTORE_CLOSED
+    description: |
+      BIOZ_DC_RESTORE controls the DC restore switch in the current-generator.
+
+  bioz-amp-rge:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_AMP_RGE_LOW
+      - 1 # MAX30009_DT_AMP_RGE_MEDIUM_LOW
+      - 2 # MAX30009_DT_AMP_RGE_MEDIUM_HIGH
+      - 3 # MAX30009_DT_AMP_RGE_HIGH
+    description: |
+      Selects the output stage option for the voltage-drive amplifier
+      and current-drive amplifier within the BioZ transmit channel.
+
+  bioz-amp-bw:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_AMP_BW_LOW
+      - 1 # MAX30009_DT_AMP_BW_MEDIUM_LOW
+      - 2 # MAX30009_DT_AMP_BW_MEDIUM_HIGH
+      - 3 # MAX30009_DT_AMP_BW_HIGH
+    description: |
+      BIOZ_AMP_BW sets the gain bandwidth of the BioZ transmit channel's
+      voltage-drive and current-drive amplifiers. Defaults to 0 (low bandwidth).
+
+  bioz-low-threshold:
+    type: int
+    default: 0
+    min: 0
+    max: 255
+    description: |
+      BioZ under-range threshold (BIOZ_LO_THRESH[7:0], 8-bit register code),
+      compared against the symmetric band +/-32 x code. Only active when
+      en-bioz-thresh is set. Defaults to 0 (the reset value).
+
+  bioz-high-threshold:
+    type: int
+    default: 255
+    min: 0
+    max: 255
+    description: |
+      BioZ over-range threshold (BIOZ_HI_THRESH[7:0], 8-bit register code),
+      compared against the symmetric band +/-2048 x code. Only active when
+      en-bioz-thresh is set. Defaults to 255 (the reset value).
+
+  bioz-stby-on:
+    type: boolean
+    description: |
+      BIOZ_STBY_ON keeps the receive channel's amplifiers, demodulators, and ADCs
+      enabled while the transmit channel is in standby (bioz-drv-mode = 3),
+      allowing faster wake-up. Disabled at reset.
+
+  bioz-q-clk-phase:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_Q_CLK_PHASE_NORMAL
+      - 1 # MAX30009_DT_Q_CLK_PHASE_I
+    description: |
+      BIOZ_Q_CLK_PHASE sets the Q channel demodulator clock phase relative to the
+      stimulus. 0 = quadrature phase (normal); 1 = in phase. Defaults to 0 (the
+      reset value).
+
+  bioz-i-clk-phase:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_I_CLK_PHASE_NORMAL
+      - 1 # MAX30009_DT_I_CLK_PHASE_Q
+    description: |
+      BIOZ_I_CLK_PHASE sets the I channel demodulator clock phase relative to the
+      stimulus. 0 = in phase (normal); 1 = quadrature phase. Defaults to 0 (the
+      reset value).
+
+  bioz-ina-chop-en:
+    type: boolean
+    description: |
+      BIOZ_INA_CHOP_EN enables chopping in the BioZ receive channel's
+      instrumentation amplifier; the chopping frequency is BIOZ_ADC_CLK / 2. INA
+      chopping is recommended except when F_BIOZ = BIOZ_ADC_CLK / 2. Disabled at
+      reset.
+
+  bioz-ch-fsel:
+    type: boolean
+    description: |
+      BIOZ_CH_FSEL selects the BioZ receive PGA/AAF chopping frequency: disabled
+      (0) is BIOZ_ADC_CLK / 8, enabled (1) is BIOZ_ADC_CLK / 4. Set to 1 when
+      F_BIOZ = BIOZ_ADC_CLK / 8. Disabled at reset.
+
+  bmux-rsel:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_BMUX_RSEL_5100R
+      - 1 # MAX30009_DT_BMUX_RSEL_900R
+      - 2 # MAX30009_DT_BMUX_RSEL_600R
+      - 3 # MAX30009_DT_BMUX_RSEL_280R
+    description: |
+      BMUX_RSEL selects the resistive calibration load across DRVP/BIP and
+      DRVN/BIN for non-GSR applications (BMUX_RSEL[1:0]), applied only when
+      bmux-bist-en is set. Defaults to 0 (5100 ohm, the reset value).
+
+  bmux-bist-en:
+    type: boolean
+    description: |
+      BMUX_BIST_EN connects the built-in self-test resistor (value from
+      bmux-rsel) between DRVP/BIP and DRVN/BIN for non-GSR applications. Disabled
+      at reset.
+
+  connect-cal-only:
+    type: boolean
+    description: |
+      CONNECT_CAL_ONLY, when set with mux-en and cal-en, connects only the
+      CAL1-CAL4 pins and disconnects the ELx pins. Disabled at reset.
+
+  mux-en:
+    type: boolean
+    description: |
+      MUX_EN enables the BioZ input/output MUX connections to the ELx and/or CALx
+      pins. When disabled all ELx and CALx pins are disconnected. Disabled at
+      reset.
+
+  cal-en:
+    type: boolean
+    description: |
+      CAL_EN connects the calibration pins (CAL1=DRVP, CAL2=BIP, CAL3=BIN,
+      CAL4=DRVN) to measure the external calibration resistor when mux-en is set,
+      disconnecting the electrode pins. Disabled at reset.
+
+  # BioZ mux configuration (BIOZ_MUX_CONFIGURATION2, 0x42)
+  bmux-gsr-rsel:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_BMUX_GSR_RSEL_25_7K
+      - 1 # MAX30009_DT_BMUX_GSR_RSEL_101K
+      - 2 # MAX30009_DT_BMUX_GSR_RSEL_505K
+      - 3 # MAX30009_DT_BMUX_GSR_RSEL_1000K
+    description: |
+      BMUX_GSR_RSEL selects the resistive calibration load across DRVP/BIP and
+      DRVN/BIN for GSR applications (BMUX_GSR_RSEL[1:0]), applied only when
+      gsr-load-en is set. Defaults to 0 (25.7 kohm, the reset value).
+
+  gsr-load-en:
+    type: boolean
+    description: |
+      GSR_LOAD_EN connects the built-in GSR load resistor (value from
+      bmux-gsr-rsel) between DRVP/BIP and DRVN/BIN. Disabled at reset.
+
+  en-ext-inload:
+    type: boolean
+    description: |
+      EN_EXT_INLOAD enables the external guard-trace-drive circuit, which outputs
+      the buffered voltage from BIP and BIN onto the EL2A and EL3A pins. Disabled
+      at reset.
+
+  en-int-inload:
+    type: boolean
+    description: |
+      EN_INT_INLOAD enables the circuit that compensates for input capacitive
+      loading on BIN and BIP. Disabled at reset.
+
+  # BioZ mux configuration (BIOZ_MUX_CONFIGURATION3, 0x43)
+  bip-assign:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_BIP_ASSIGN_EL1
+      - 1 # MAX30009_DT_BIP_ASSIGN_EL2A
+      - 2 # MAX30009_DT_BIP_ASSIGN_EL2B
+    description: |
+      BIP_ASSIGN selects the electrode pin for the BioZ positive input (BIP) when
+      mux-en is set (BIP_ASSIGN[1:0]); ignored when cal-en is set. Defaults to 0
+      (EL1, the reset value).
+
+  bin-assign:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_BIN_ASSIGN_EL4
+      - 1 # MAX30009_DT_BIN_ASSIGN_EL3A
+      - 2 # MAX30009_DT_BIN_ASSIGN_EL3B
+    description: |
+      BIN_ASSIGN selects the electrode pin for the BioZ negative input (BIN) when
+      mux-en is set (BIN_ASSIGN[1:0]); ignored when cal-en is set. Defaults to 0
+      (EL4, the reset value).
+
+  drvp-assign:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DRVP_ASSIGN_EL1
+      - 1 # MAX30009_DT_DRVP_ASSIGN_EL2A
+      - 2 # MAX30009_DT_DRVP_ASSIGN_EL2B
+    description: |
+      DRVP_ASSIGN selects the electrode pin for the BioZ positive drive (DRVP) in
+      current mode when mux-en is set (DRVP_ASSIGN[1:0]); ignored when cal-en is
+      set, and forced to EL1 in voltage or H-bridge mode. EL1 has the lowest
+      on-resistance; assign DRVP to EL1 for currents of 64 uA or greater. Defaults
+      to 0 (EL1, the reset value).
+
+  drvn-assign:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_DRVN_ASSIGN_EL4
+      - 1 # MAX30009_DT_DRVN_ASSIGN_EL3A
+      - 2 # MAX30009_DT_DRVN_ASSIGN_EL3B
+    description: |
+      DRVN_ASSIGN selects the electrode pin for the BioZ negative drive (DRVN) in
+      current mode when mux-en is set (DRVN_ASSIGN[1:0]); ignored when cal-en is
+      set, and forced to EL4 in voltage or H-bridge mode. EL4 has the lowest
+      on-resistance; assign DRVN to EL4 for currents of 64 uA or greater. Defaults
+      to 0 (EL4, the reset value).
+
+  # DC leads configuration (DC_LEADS_CONFIG, 0x50)
+  en-lon-det:
+    type: boolean
+    description: |
+      EN_LON_DET enables ultra-low-power DC lead-on detection on BIP and BIN. Only
+      functions when BioZ is disabled (bioz-i-en = bioz-q-en = 0). Disabled at
+      reset.
+
+  en-loff-det:
+    type: boolean
+    description: |
+      EN_LOFF_DET enables DC lead-off detection on BIP and BIN. Only functions
+      when BioZ is enabled (bioz-i-en or bioz-q-en set). Disabled at reset.
+
+  en-ext-loff:
+    type: boolean
+    description: |
+      EN_EXT_LOFF applies DC lead-off detection externally through EL2B and EL3B
+      for AC-coupled BioZ inputs on EL2A/EL3A, instead of the internal BIP/BIN
+      nodes. Disabled at reset.
+
+  en-drv-oor:
+    type: boolean
+    description: |
+      EN_DRV_OOR enables the DRVN voltage monitor that detects drive-electrode
+      lead-off via an out-of-range AC voltage (DRV_OOR status). Disabled at reset.
+
+  loff-ipol:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_LOFF_IPOL_NON_INVERTED
+      - 1 # MAX30009_DT_LOFF_IPOL_INVERTED
+    description: |
+      LOFF_IPOL sets the polarity of the matched DC lead-off current sources.
+      Defaults to 0 (non-inverted, the reset value).
+
+  loff-imag:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_LOFF_IMAG_0NA
+      - 1 # MAX30009_DT_LOFF_IMAG_5NA
+      - 2 # MAX30009_DT_LOFF_IMAG_10NA
+      - 3 # MAX30009_DT_LOFF_IMAG_20NA
+      - 4 # MAX30009_DT_LOFF_IMAG_50NA
+      - 5 # MAX30009_DT_LOFF_IMAG_100NA
+    description: |
+      LOFF_IMAG selects the DC lead-off current amplitude (LOFF_IMAG[2:0]).
+      Defaults to 0 (current sources disabled, the reset value).
+
+  # DC lead detect threshold (DC_LEAD_DETECT_THRESHOLD, 0x51)
+  loff-thresh:
+    type: int
+    default: 0
+    min: 0
+    max: 15
+    description: |
+      LOFF_THRESH selects the DC lead-off comparator voltage threshold around
+      VMID_RX (LOFF_THRESH[3:0], 4-bit code from VMID_RX +/-215 mV at 0 to
+      +/-665 mV at 15, 30 mV per step). Defaults to 0 (the reset value).
+
+  # Lead bias configuration (LEAD_BIAS_CONFIG1, 0x58)
+  rbias-value:
+    type: int
+    default: 0
+    enum:
+      - 0 # MAX30009_DT_RBIAS_50M
+      - 1 # MAX30009_DT_RBIAS_100M
+      - 2 # MAX30009_DT_RBIAS_200M
+    description: |
+      RBIAS_VALUE selects the BioZ input lead bias resistance between BIP/BIN and
+      VMID_RX (RBIAS_VALUE[1:0]), applied when en-rbias-bip or en-rbias-bin is
+      set. Defaults to 0 (50 Mohm, the reset value).
+
+  en-rbias-bip:
+    type: boolean
+    description: |
+      EN_RBIAS_BIP connects BIP to VMID_RX through the resistor selected by
+      rbias-value. Disabled at reset.
+
+  en-rbias-bin:
+    type: boolean
+    description: |
+      EN_RBIAS_BIN connects BIN to VMID_RX through the resistor selected by
+      rbias-value. Disabled at reset.

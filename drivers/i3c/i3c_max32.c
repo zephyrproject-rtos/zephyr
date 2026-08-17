@@ -1050,9 +1050,11 @@ static int max32_i3c_do_daa(const struct device *dev)
 					target->dynamic_addr = dyn_addr;
 					target->bcr = rx_buf[6];
 					target->dcr = rx_buf[7];
-					/* attach it to the list */
-					sys_slist_append(&data->common.attached_dev.devices.i3c,
-							 &target->node);
+					int aret = i3c_attach_i3c_device(target);
+
+					if (aret != 0 && aret != -EALREADY) {
+						LOG_ERR("Failed to attach target");
+					}
 				} else {
 					/* No more free device descriptors */
 					LOG_DBG("No more free device descriptors.");
@@ -1067,7 +1069,14 @@ static int max32_i3c_do_daa(const struct device *dev)
 				target->dynamic_addr = dyn_addr;
 				target->bcr = rx_buf[6];
 				target->dcr = rx_buf[7];
+
+				int aret = i3c_attach_i3c_device(target);
+
+				if (aret != 0 && aret != -EALREADY) {
+					LOG_ERR("Failed to attach target");
+				}
 			}
+
 			/* Mark the address as I3C device */
 			i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
 

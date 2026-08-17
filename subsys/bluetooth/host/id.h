@@ -11,7 +11,7 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include "keys.h"
 

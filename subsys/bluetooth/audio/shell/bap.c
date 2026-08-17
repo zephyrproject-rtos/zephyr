@@ -51,7 +51,7 @@
 #include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 #include "audio.h"
@@ -826,32 +826,16 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
 {
-	if (stream->conn) {
-		uint8_t conn_index = bt_conn_index(stream->conn);
+	struct bt_bap_ep_info ep_info;
+	__maybe_unused int err;
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
-			const struct bt_bap_ep *snk_ep = snks[conn_index][i];
+	__ASSERT(stream != NULL, "Invalid stream");
+	__ASSERT(stream->ep != NULL, "Invalid stream ep");
 
-			if (snk_ep != NULL && stream->ep == snk_ep) {
-				return BT_AUDIO_DIR_SINK;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	__ASSERT(err == 0, "Failed to get EP info: %d", err);
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
-			const struct bt_bap_ep *src_ep = srcs[conn_index][i];
-
-			if (src_ep != NULL && stream->ep == src_ep) {
-				return BT_AUDIO_DIR_SOURCE;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-	}
-
-	__ASSERT(false, "Invalid stream");
-	return 0;
+	return ep_info.dir;
 }
 
 static void print_remote_codec_cap(const struct bt_conn *conn,
@@ -2786,7 +2770,11 @@ static void audio_recv(struct bt_bap_stream *stream,
 	if (sh_stream->rx.lc3_decoder != NULL) {
 		const uint8_t frame_blocks_per_sdu = sh_stream->lc3_frame_blocks_per_sdu;
 		const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
+		const bool valid_sdu = (info->flags & BT_ISO_FLAGS_VALID) != 0U;
 		const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+		const uint16_t expected_sdu_size =
+			octets_per_frame * chan_cnt * frame_blocks_per_sdu;
+		const bool valid_sdu_len = expected_sdu_size == buf->len;
 		struct lc3_data *data;
 
 		/* Allocate a context that holds both the buffer and the stream so that we can
@@ -2800,17 +2788,20 @@ static void audio_recv(struct bt_bap_stream *stream,
 		}
 		(void)memset(data, 0, sizeof(*data));
 
-		if ((info->flags & BT_ISO_FLAGS_VALID) == 0) {
+		if (!valid_sdu || !valid_sdu_len) {
 			data->do_plc = true;
-		} else if (buf->len != (octets_per_frame * chan_cnt * frame_blocks_per_sdu)) {
-			if (buf->len != 0U) {
-				bt_shell_error(
-					"Expected %u frame blocks with %u channels of size %u, but "
-					"length is %u",
-					frame_blocks_per_sdu, chan_cnt, octets_per_frame, buf->len);
+
+			if (valid_sdu && !valid_sdu_len &&
+			    sh_stream->rx.last_sdu_invalid_len != buf->len) {
+				bt_shell_error("Expected %u frame blocks with %u channels of size "
+					       "%u (total %u), but length is %u",
+					       frame_blocks_per_sdu, chan_cnt, octets_per_frame,
+					       expected_sdu_size, buf->len);
 			}
 
-			data->do_plc = true;
+			sh_stream->rx.last_sdu_invalid_len = buf->len;
+		} else {
+			sh_stream->rx.last_sdu_invalid_len = 0U; /* clear */
 		}
 
 		data->buf = net_buf_ref(buf);
@@ -3142,12 +3133,12 @@ static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST)
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured_cb(struct bt_bap_stream *stream,
+				       const struct bt_bap_qos_cfg_pref *pref)
 {
-	ARG_UNUSED(pref);
-
 	bt_shell_print("Stream %p configured", stream);
+
+	print_qos_pref(pref);
 }
 
 static void stream_released_cb(struct bt_bap_stream *stream)
@@ -3213,7 +3204,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.recv = audio_recv,
 #endif /* CONFIG_BT_AUDIO_RX */
 #if defined(CONFIG_BT_BAP_UNICAST)
-	.configured = stream_configured_cb,
+	.codec_configured = stream_codec_configured_cb,
 	.released = stream_released_cb,
 	.enabled = stream_enabled_cb,
 	.metadata_updated = stream_metadata_updated_cb,

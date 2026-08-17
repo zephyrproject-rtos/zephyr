@@ -18,7 +18,7 @@
 #include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
 

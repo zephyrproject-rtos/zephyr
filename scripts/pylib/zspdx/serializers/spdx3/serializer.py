@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+import importlib
 import logging
 import os
 import re
@@ -27,6 +28,7 @@ from zspdx.serializers.helpers import (
     normalize_spdx_name,
 )
 from zspdx.spdxids import get_unique_file_id
+from zspdx.version import SPDX_VERSION_3_0, SPDX_VERSION_3_1
 
 _logger = logging.getLogger(__name__)
 
@@ -50,9 +52,24 @@ class SPDX3Serializer:
     # does not provide an absolute URI of its own.
     _DEFAULT_BUILD_TYPE = "urn:spdx.dev:zephyr-cmake"
 
-    def __init__(self, sbom_graph: SBOMGraph, spdx_version=None):
+    def __init__(self, sbom_graph: SBOMGraph, spdx_version=SPDX_VERSION_3_0):
         self.sbom_data = sbom_graph
-        self.spdx_version = spdx_version  # Not used for SPDX 3.0, but kept for API consistency
+        self.spdx_version = spdx_version
+
+        # Select the SPDX 3.x Python bindings matching the requested spec version.
+        # v3.1 is a strict superset of v3.0.1 with identical public class names, so
+        # only the binding module (which drives the emitted JSON-LD @context) and the
+        # specVersion string differ; the rest of the serializer stays version-agnostic.
+        if spdx_version == SPDX_VERSION_3_0:
+            self.spec_version = "3.0.1"
+            bindings = "v3_0_1"
+        elif spdx_version == SPDX_VERSION_3_1:
+            self.spec_version = "3.1.0"
+            bindings = "v3_1"
+        else:
+            raise ValueError(f"Unsupported SPDX version: {spdx_version}")
+        global spdx
+        spdx = getattr(importlib.import_module("spdx_python_model"), bindings)
 
         # Track SPDX 3.0 elements
         self.elements = []  # All SPDX3 elements (packages, files, relationships, etc.)
@@ -68,6 +85,8 @@ class SPDX3Serializer:
         # Shared objects
         self.tool = None  # Tool element for createdUsing
         self.creator_agent = None  # SoftwareAgent for createdBy
+        self.author_agent = None  # Organization for createdBy (the SBOM author)
+        self.organizations = {}  # organization name -> shared Organization element
         self.creation_info = None
         self.documents = {}  # doc_name -> SpdxDocument
 
@@ -153,7 +172,15 @@ class SPDX3Serializer:
             # Create the tool (for createdUsing)
             self.tool = spdx.Tool()
             self.tool._id = self._shorten_id(f"{namespace}/tools/west-spdx")
-            self.tool.name = "West SPDX Tool"
+            self.tool.name = self.sbom_data.metadata.get("tool_name") or "West SPDX Tool"
+            # SPDX 3.0 has no Tool version field; record it as a packageUrl external
+            # identifier, mirroring how the Build profile tools carry their version.
+            tool_version = self.sbom_data.metadata.get("tool_version")
+            if tool_version:
+                ext_id = spdx.ExternalIdentifier()
+                ext_id.externalIdentifierType = spdx.ExternalIdentifierType.packageUrl
+                ext_id.identifier = f"pkg:generic/zephyr-spdx-builder@{tool_version}"
+                self.tool.externalIdentifier.append(ext_id)
             self.elements.append(self.tool)
 
         if self.creation_info is None:
@@ -164,16 +191,45 @@ class SPDX3Serializer:
             self.creation_info.createdBy.append(self.creator_agent._id)
             # createdUsing references the Tool that created this SPDX document (optional)
             self.creation_info.createdUsing.append(self.tool._id)
-            self.creation_info.specVersion = "3.0.1"
+            self.creation_info.specVersion = self.spec_version
             self.elements.append(self.creation_info)
 
             # Now set the tool's and agent's creationInfo
             self.tool.creationInfo = self.creation_info._id
             self.creator_agent.creationInfo = self.creation_info._id
 
+            # Credit the organization author alongside the automated agent, so the
+            # SBOM declares a real author. Reuses the shared Organization element,
+            # which package suppliers also reference.
+            organization = self.sbom_data.metadata.get("creator_organization")
+            self.author_agent = self._get_organization(organization)
+            if self.author_agent:
+                self.creation_info.createdBy.append(self.author_agent._id)
+
         # Build profile elements; no-ops when no build information was collected.
         self._create_build_tools()
         self._create_build_object()
+
+    def _get_organization(self, name: str):
+        """Return a shared Organization element for ``name``, creating it once.
+
+        Organizations are deduplicated by name so a supplier that is also the SBOM
+        author (or supplies many packages) is emitted as a single Agent that every
+        reference points at. Returns ``None`` when ``name`` is empty.
+        """
+        if not name:
+            return None
+        agent = self.organizations.get(name)
+        if agent is None:
+            namespace = self.sbom_data.namespace_prefix.rstrip("/")
+            slug = normalize_spdx_name(name).lower().replace(" ", "-")
+            agent = spdx.Organization()
+            agent._id = self._shorten_id(f"{namespace}/agents/{slug}")
+            agent.name = name
+            agent.creationInfo = self.creation_info._id
+            self.elements.append(agent)
+            self.organizations[name] = agent
+        return agent
 
     # ---- SPDX 3.0 Build profile -------------------------------------------------
 
@@ -527,12 +583,18 @@ class SPDX3Serializer:
         package.name = component.name
         package.creationInfo = self.creation_info._id
         package.software_primaryPurpose = self._purpose_to_spdx3(component.purpose)
+        if component.comment:
+            package.comment = component.comment
 
         # Version
         if component.version:
             package.software_packageVersion = component.version
         elif component.revision:
             package.software_packageVersion = component.revision
+
+        supplier_agent = self._get_organization(component.supplier)
+        if supplier_agent:
+            package.suppliedBy = supplier_agent._id
 
         # Download location
         if component.url:
@@ -603,6 +665,9 @@ class SPDX3Serializer:
                 hash_obj.hashValue = hash_value
                 file_element.verifiedUsing.append(hash_obj)
 
+        if self.spdx_version == SPDX_VERSION_3_1 and file_obj.size is not None:
+            file_element.software_artifactSize = file_obj.size
+
         # License information will be added via relationships after file creation
 
         self.elements.append(file_element)
@@ -630,6 +695,7 @@ class SPDX3Serializer:
             "BUILD_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "DEV_TOOL_OF": (spdx.RelationshipType.usesTool, True),
             "TEST_TOOL_OF": (spdx.RelationshipType.usesTool, True),
+            "VARIANT_OF": (spdx.RelationshipType.hasVariant, True),
             "OTHER": (spdx.RelationshipType.other, False),
         }
         return type_map.get(rel_type, (spdx.RelationshipType.other, False))
@@ -886,6 +952,12 @@ class SPDX3Serializer:
             element_ids.add(self.tool._id)
         if self.creator_agent:
             element_ids.add(self.creator_agent._id)
+        if self.author_agent:
+            element_ids.add(self.author_agent._id)
+        for component in components:
+            supplier_agent = self.organizations.get(component.supplier)
+            if supplier_agent:
+                element_ids.add(supplier_agent._id)
         data_license = self._create_license_expression("CC0-1.0")
         if data_license:
             element_ids.add(data_license._id)

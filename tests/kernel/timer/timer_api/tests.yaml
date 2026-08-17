@@ -4,6 +4,39 @@ tests:
       - kernel
       - timer
       - userspace
+  kernel.timer.sloppy_idle:
+    tags:
+      - kernel
+      - timer
+    # No board enables CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE, so this variant is
+    # what exercises sys_clock_no_timeout(). Only platforms whose driver
+    # tolerates the option are listed: the rest stop their time base while the
+    # CPU still runs, and each is added here by the commit converting it.
+    platform_allow:
+      - native_sim
+      - qemu_riscv32
+      - qemu_x86
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE=y
+  kernel.timer.sloppy_idle_pm:
+    tags:
+      - kernel
+      - timer
+    # sys_clock_idle_enter() is only reached from the PM idle path, so this is
+    # the variant that covers the driver stopping its clock there and
+    # sys_clock_idle_exit() bringing it back.
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    extra_args:
+      - DTC_OVERLAY_FILE=pm.overlay
+    extra_configs:
+      - CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE=y
+      - CONFIG_TEST_PROVIDE_PM_HOOKS=y
+      - CONFIG_PM=y
   kernel.timer.no_multitheading:
     tags:
       - kernel

@@ -66,6 +66,14 @@
 #define REG_FIFO_CONFIG3_FIFO_ACCEL_EN(val) (((val) & BIT_MASK(1)) << 1)
 #define REG_FIFO_CONFIG3_FIFO_EN(val)       ((val) & BIT_MASK(1))
 
+/* FIFO_CONFIG4 (0x22): enable per-packet hardware timestamp insertion */
+#define FIFO_CONFIG4                            0x22
+#define REG_FIFO_CONFIG4_TMST_FSYNC_EN(val)    (((val) & BIT_MASK(1)) << 1)
+
+/* TMST_WOM_CONFIG (0x23): timestamp resolution */
+#define TMST_WOM_CONFIG                         0x23
+#define REG_TMST_WOM_CONFIG_TMST_RESOL(val)    (((val) & BIT_MASK(1)) << 5)
+
 /* Misc. Defines */
 #define WHO_AM_I_ICM45686 0xE9
 

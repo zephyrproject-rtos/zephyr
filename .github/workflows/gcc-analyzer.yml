@@ -1,0 +1,194 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# GCC static analyzer (-fanalyzer) scan, reported to the Security dashboard.
+#
+
+name: GCC Static Analyzer
+
+on:
+  schedule:
+    # Run at 04:00 UTC on every day.
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.profile }})
+    if: github.repository_owner == 'zephyrproject-rtos'
+    runs-on:
+      group: zephyr-runner-v2-linux-x64-4xlarge
+    container:
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
+      options: '--entrypoint /bin/bash'
+    timeout-minutes: 720
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - profile: kernel
+            twister-args: >-
+              -p qemu_x86 -p qemu_cortex_m3
+              -T tests/kernel -T tests/lib -T tests/arch
+
+          - profile: connectivity
+            twister-args: >-
+              -p qemu_x86
+              -T tests/net -T tests/bluetooth
+
+          - profile: subsys
+            twister-args: >-
+              -p qemu_x86
+              -T tests/subsys -T tests/drivers
+
+    env:
+      ZEPHYR_TOOLCHAIN_VARIANT: zephyr
+      USE_CCACHE: "0"
+
+    steps:
+      - name: Apply container owner mismatch workaround
+        run: |
+          # FIXME: The owner UID of the GITHUB_WORKSPACE directory may not
+          #        match the container user UID because of the way GitHub
+          #        Actions runner is implemented. Remove this workaround when
+          #        GitHub comes up with a fundamental fix for this problem.
+          git config --global --add safe.directory ${GITHUB_WORKSPACE}
+
+      - name: Clone cached Zephyr repository
+        continue-on-error: true
+        run: |
+          git clone --shared /repo-cache/zephyrproject/zephyr .
+          git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Zephyr environment
+        uses: ./.github/actions/zephyr-ci-env
+        with:
+          group-filter: '+ci,+optional,+testing'
+          run-checks: 'true'
+
+      - name: Install Python packages
+        run: |
+          pip install -r scripts/requirements-actions.txt --require-hashes
+
+      - name: Build with the GCC analyzer
+        run: |
+          export ZEPHYR_BASE=${PWD}
+
+          # As with the CodeQL scan, a partially built tree is still worth
+          # reporting on: a board that fails to configure must not cost us the
+          # findings from everything that did compile.
+          set +e
+          ./scripts/twister \
+            --build-only \
+            --inline-logs --force-color -v \
+            --outdir twister-out-gcc-sca \
+            -j 16 \
+            -xZEPHYR_SCA_VARIANT=gcc \
+            -xUSE_CCACHE=0 \
+            "-xGCC_SCA_OPTS=-fdiagnostics-format=sarif-file;-Wno-error;-Wno-analyzer-too-complex" \
+            ${{ matrix.twister-args }}
+          status=$?
+          set -e
+
+          if [ ${status} -ne 0 ]; then
+            echo "::warning title=Incomplete analyzer build::twister exited ${status} for" \
+                 "profile '${{ matrix.profile }}'; reporting on the translation units that" \
+                 "did compile. Coverage for this profile is incomplete."
+          fi
+
+      - name: Merge analyzer output
+        run: |
+          # GCC leaves one SARIF file per translation unit in each build
+          # directory, so this collapses thousands of files -- most of them
+          # empty -- into one report with repository-relative paths.
+          python3 scripts/ci/gcc_sca_sarif.py twister-out-gcc-sca \
+            --source-root "${PWD}" \
+            -o results-${{ matrix.profile }}.sarif
+
+      - name: Upload profile SARIF
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gcc-sca-sarif-${{ matrix.profile }}
+          if-no-files-found: error
+          retention-days: 7
+          path: results-${{ matrix.profile }}.sarif
+
+  upload:
+    name: Upload to code scanning
+    needs: analyze
+    # Report whatever finished. One profile timing out should not cost the
+    # findings from the others.
+    if: always() && github.repository_owner == 'zephyrproject-rtos'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download profile SARIF
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: gcc-sca-sarif-*
+          merge-multiple: true
+          path: sarif-in
+
+      - name: Merge profiles into one report
+        id: merge
+        run: |
+          set -eu
+          if ! ls sarif-in/*.sarif >/dev/null 2>&1; then
+            echo "::warning title=No analyzer results::every profile failed before" \
+                 "producing a report; nothing to upload"
+            echo "found=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # The merge is idempotent, so the same script folds the per-profile
+          # reports together and drops findings duplicated across profiles --
+          # shared code is recompiled by each one.
+          python3 scripts/ci/gcc_sca_sarif.py sarif-in \
+            --source-root "${PWD}" \
+            -o results.sarif
+          echo "found=true" >> $GITHUB_OUTPUT
+
+      - name: Write job summary
+        if: steps.merge.outputs.found == 'true'
+        run: python3 scripts/ci/sarif_summary.py results.sarif
+
+      - name: Upload SARIF to code scanning
+        if: steps.merge.outputs.found == 'true'
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        with:
+          sarif_file: results.sarif
+          # Keeps these alerts in their own lane in the dashboard, so they
+          # neither collide with nor get closed by the CodeQL and Eclair runs.
+          category: gcc-static-analyzer
+
+      - name: Upload SARIF as artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gcc-sca-sarif
+          if-no-files-found: ignore
+          retention-days: 30
+          path: results.sarif

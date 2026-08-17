@@ -48,6 +48,9 @@ family:
           - name: efm32gg12b810f1024gm64
   - name: silabs_s2
     series:
+      - name: efr32bg21
+        socs:
+          - name: efr32bg21b010f1024im32
       - name: efr32mg21
         socs:
           - name: efr32mg21a020f1024im32

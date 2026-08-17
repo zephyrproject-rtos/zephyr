@@ -5,6 +5,7 @@
  *
  */
 
+#include <zephyr/init.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/logging/log.h>
 #include <libmctp.h>

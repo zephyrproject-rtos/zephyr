@@ -91,9 +91,40 @@ def _columns(line: str) -> int:
     return len(line.expandtabs(TAB_WIDTH))
 
 
+def _continues(line: str) -> bool:
+    """
+    True if 'line' continues onto the next one via a trailing backslash. The
+    backslash must be the final character: a backslash before trailing
+    whitespace escapes that whitespace rather than continuing the line.
+    """
+    return line.endswith("\\")
+
+
 def _is_continuation(lines: list[str], i: int) -> bool:
     """True if line 'i' continues the previous line via a trailing backslash."""
-    return i > 0 and lines[i - 1].rstrip().endswith("\\")
+    return i > 0 and _continues(lines[i - 1])
+
+
+def _stmt_start(lines: list[str], i: int) -> int:
+    """
+    First line index of the statement that line 'i' belongs to, walking back over
+    backslash continuations (the inverse of _stmt_end).
+    """
+    j = i
+    while j > 0 and _continues(lines[j - 1]):
+        j -= 1
+    return j
+
+
+def _stmt_end(lines: list[str], i: int) -> int:
+    """
+    Last line index of the statement starting at line 'i', following trailing
+    backslash continuations (e.g. a multi-line 'if' condition).
+    """
+    j = i
+    while j < len(lines) - 1 and _continues(lines[j]):
+        j += 1
+    return j
 
 
 def _comment_start(line: str) -> int:
@@ -292,11 +323,17 @@ def _blank_requirements(
             start = _decl_unit_start(lines, i) if kw == "if" else i
             if start > 0:
                 before[start] = ("if-blank", f"add a blank line before '{kw}'")
-            if i < n - 1:
-                after[i] = ("if-blank", f"add a blank line after '{kw}'")
+            # The blank line goes after the whole statement: an 'if' condition
+            # may span several lines via backslash continuations.
+            end = _stmt_end(lines, i)
+            if end < n - 1:
+                after[end] = ("if-blank", f"add a blank line after '{kw}'")
         elif i not in help_body and _is_entry(line):
             start = _decl_unit_start(lines, i)
-            if start > 0 and not OPENERS_RE.match(lines[start - 1]):
+            # No blank line is needed right after a block opener. The preceding
+            # line may be a continuation, so test the opener at the start of that
+            # statement, not the (possibly continued) line directly above.
+            if start > 0 and not OPENERS_RE.match(lines[_stmt_start(lines, start - 1)]):
                 before.setdefault(start, ("decl-blank", "add a blank line before this declaration"))
     return before, after
 

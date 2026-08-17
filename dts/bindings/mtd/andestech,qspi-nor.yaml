@@ -10,7 +10,9 @@ description:
   Properties supporting Zephyr qspi-nor flash driver control of
   flash memories using the standard M25P80-based command set.
 
-include: "jedec,spi-nor-common.yaml"
+include:
+  - "jedec,spi-nor-common.yaml"
+  - "spi-device.yaml"
 
 properties:
   wp-gpios:

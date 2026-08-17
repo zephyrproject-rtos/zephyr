@@ -181,17 +181,18 @@ static int eusart_err_check(const struct device *dev)
 
 	if (flags & EUSART_IF_RXOF) {
 		err |= UART_ERROR_OVERRUN;
+		EUSART_IntClear(config->eusart, EUSART_IF_RXOF);
 	}
 
 	if (flags & EUSART_IF_PERR) {
 		err |= UART_ERROR_PARITY;
+		EUSART_IntClear(config->eusart, EUSART_IF_PERR);
 	}
 
 	if (flags & EUSART_IF_FERR) {
 		err |= UART_ERROR_FRAMING;
+		EUSART_IntClear(config->eusart, EUSART_IF_FERR);
 	}
-
-	EUSART_IntClear(config->eusart, EUSART_IF_RXOF | EUSART_IF_PERR | EUSART_IF_FERR);
 
 	return err;
 }
@@ -252,9 +253,12 @@ static int eusart_irq_tx_complete(const struct device *dev)
 	const struct eusart_config *config = dev->config;
 	uint32_t flags = EUSART_IntGet(config->eusart);
 
-	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
+	if (flags & EUSART_IF_TXC) {
+		EUSART_IntClear(config->eusart, EUSART_IF_TXC);
+		return 1;
+	}
 
-	return !!(flags & EUSART_IF_TXC);
+	return 0;
 }
 
 static int eusart_irq_tx_ready(const struct device *dev)

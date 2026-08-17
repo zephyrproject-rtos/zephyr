@@ -6,6 +6,7 @@ config NATIVE_LINUX_LEDS
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_LEDS_ENABLED
 	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Enable a native_sim LED driver backed by Linux sysfs LEDs.
 	  Each DT `native-linux-leds` child node provides a Linux LED name (as

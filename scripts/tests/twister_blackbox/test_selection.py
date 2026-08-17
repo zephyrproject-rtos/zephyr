@@ -106,7 +106,7 @@ class TestTestSelection:
         result = twister_main(args)
 
         captured = capsys.readouterr()
-        assert result != 0
+        assert result == 0
         assert 'No testsuites found' in captured.err
 
 

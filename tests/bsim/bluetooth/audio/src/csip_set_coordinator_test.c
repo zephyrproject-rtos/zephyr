@@ -19,12 +19,14 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(csip_set_coordinator_test);
 
 #ifdef CONFIG_BT_CSIP_SET_COORDINATOR
 
@@ -54,7 +56,7 @@ static void csip_set_coordinator_lock_set_cb(int err);
 
 static void csip_set_coordinator_lock_release_cb(int err)
 {
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	if (err != 0) {
 		FAIL("Release sets failed (%d)\n", err);
@@ -66,7 +68,7 @@ static void csip_set_coordinator_lock_release_cb(int err)
 
 static void csip_set_coordinator_lock_set_cb(int err)
 {
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	if (err != 0) {
 		FAIL("Lock sets failed (%d)\n", err);
@@ -82,7 +84,7 @@ static void csip_discover_cb(struct bt_conn *conn,
 {
 	uint8_t conn_index;
 
-	printk("%s\n", __func__);
+	LOG_DBG("");
 
 	if (err != 0 || set_count == 0U) {
 		FAIL("Discover failed (%d)\n", err);
@@ -96,10 +98,10 @@ static void csip_discover_cb(struct bt_conn *conn,
 		const uint8_t set_size = member->insts[i].info.set_size;
 		const uint8_t lockable = member->insts[i].info.lockable;
 
-		printk("CSIS[%zu]: %p\n", i, &member->insts[i]);
-		printk("\tRank: %u\n", rank);
-		printk("\tSet Size: %u\n", set_size);
-		printk("\tLockable: %u\n", lockable);
+		LOG_DBG("CSIS[%zu]: %p", i, &member->insts[i]);
+		LOG_DBG("\tRank: %u", rank);
+		LOG_INF("\tSet Size: %u", set_size);
+		LOG_DBG("\tLockable: %u", lockable);
 
 		if ((expect_rank && rank == 0U) || (!expect_rank && rank != 0U)) {
 			FAIL("Unexpected rank: %u %u", expect_rank, rank);
@@ -131,12 +133,12 @@ static void csip_discover_cb(struct bt_conn *conn,
 static void csip_lock_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst,
 				 bool locked)
 {
-	printk("inst %p %s\n", inst, locked ? "locked" : "released");
+	LOG_INF("inst %p %s", inst, locked ? "locked" : "released");
 }
 
 static void csip_sirk_changed_cb(struct bt_csip_set_coordinator_csis_inst *inst)
 {
-	printk("Inst %p SIRK changed\n", inst);
+	LOG_INF("Inst %p SIRK changed", inst);
 
 	SET_FLAG(flag_sirk_changed);
 }
@@ -146,7 +148,7 @@ static void csip_size_changed_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	printk("Inst %p size changed: %u\n", inst, inst->info.set_size);
+	LOG_INF("Inst %p size changed: %u", inst, inst->info.set_size);
 
 	SET_FLAG(flag_size_changed);
 }
@@ -160,10 +162,10 @@ static void csip_set_coordinator_ordered_access_cb(
 	if (err != 0) {
 		FAIL("Ordered access failed with err %d\n", err);
 	} else if (locked) {
-		printk("Ordered access procedure locked member %p\n", member);
+		LOG_INF("Ordered access procedure locked member %p", member);
 		ordered_access_locked = true;
 	} else {
-		printk("Ordered access procedure finished\n");
+		LOG_INF("Ordered access procedure finished");
 		ordered_access_unlocked = true;
 	}
 }
@@ -185,7 +187,7 @@ static bool csip_set_coordinator_oap_cb(const struct bt_csip_set_coordinator_set
 	ARG_UNUSED(set_info);
 
 	for (size_t i = 0U; i < count; i++) {
-		printk("Ordered access for members[%zu]: %p\n", i, members[i]);
+		LOG_DBG("Ordered access for members[%zu]: %p", i, members[i]);
 	}
 
 	return true;
@@ -207,10 +209,10 @@ static bool csip_found(struct bt_data *data, void *user_data)
 	    bt_csip_set_coordinator_is_set_member(primary_inst->info.sirk, data)) {
 		const bt_addr_le_t *addr = user_data;
 
-		printk("Found CSIP advertiser with address %s\n", bt_addr_le_str(addr));
+		LOG_INF("Found CSIP advertiser with address %s", bt_addr_le_str(addr));
 
 		if (is_discovered(addr)) {
-			printk("Set member already found\n");
+			LOG_INF("Set member already found");
 			/* Stop parsing */
 			return false;
 		}
@@ -219,10 +221,10 @@ static bool csip_found(struct bt_data *data, void *user_data)
 		members_found++;
 
 		if (primary_inst == NULL || primary_inst->info.set_size == 0U) {
-			printk("Found member %u\n", members_found);
+			LOG_INF("Found member %u", members_found);
 		} else {
-			printk("Found member (%u / %u)\n", members_found,
-			       primary_inst->info.set_size);
+			LOG_INF("Found member (%u / %u)", members_found,
+				primary_inst->info.set_size);
 		}
 
 		/* Stop parsing */
@@ -263,8 +265,8 @@ static void ordered_access(const struct bt_csip_set_coordinator_set_member **mem
 {
 	int err;
 
-	printk("Performing ordered access, expecting %s\n",
-	       expect_locked ? "locked" : "unlocked");
+	LOG_INF("Performing ordered access, expecting %s",
+		expect_locked ? "locked" : "unlocked");
 
 	if (expect_locked) {
 		ordered_access_locked = false;
@@ -312,7 +314,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Audio Client: Bluetooth initialized\n");
+	LOG_INF("Audio Client: Bluetooth initialized");
 
 	err = bt_csip_set_coordinator_register_cb(&cbs);
 	if (err != 0) {
@@ -337,11 +339,11 @@ static void connect_set(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 
 	WAIT_FOR_COND(members_found == 1U);
 
-	printk("Stopping scan\n");
+	LOG_INF("Stopping scan");
 	err = bt_le_scan_stop();
 	if (err != 0) {
 		FAIL("Could not stop scan");
@@ -356,7 +358,7 @@ static void connect_set(void)
 
 		return;
 	}
-	printk("Connecting to %s\n", bt_conn_dst_str(conns[0]));
+	LOG_INF("Connecting to %s", bt_conn_dst_str(conns[0]));
 
 	WAIT_FOR_FLAG(flag_connected);
 	connected_member_count++;
@@ -396,7 +398,7 @@ static void connect_set(void)
 
 	for (uint8_t i = 1U; i < members_found; i++) {
 		UNSET_FLAG(flag_connected);
-		printk("Connecting to member[%d] (%s)", i, bt_addr_le_str(&addr_found[i]));
+		LOG_INF("Connecting to member[%d] (%s)", i, bt_addr_le_str(&addr_found[i]));
 		err = bt_conn_le_create(&addr_found[i], BT_CONN_LE_CREATE_CONN,
 					BT_LE_CONN_PARAM_DEFAULT, &conns[i]);
 		if (err != 0) {
@@ -405,11 +407,11 @@ static void connect_set(void)
 			return;
 		}
 
-		printk("Connected to %s\n", bt_conn_dst_str(conns[i]));
+		LOG_INF("Connected to %s", bt_conn_dst_str(conns[i]));
 		WAIT_FOR_FLAG(flag_connected);
 		connected_member_count++;
 
-		printk("Doing discovery on member[%u]", i);
+		LOG_INF("Doing discovery on member[%u]", i);
 		discover_csis(conns[i]);
 	}
 }
@@ -419,7 +421,7 @@ static void disconnect_set(void)
 	for (uint8_t i = 0U; i < connected_member_count; i++) {
 		int err;
 
-		printk("Disconnecting member[%u] (%s)", i, bt_addr_le_str(&addr_found[i]));
+		LOG_INF("Disconnecting member[%u] (%s)", i, bt_addr_le_str(&addr_found[i]));
 		err = bt_conn_disconnect(conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		(void)memset(&set_members[i], 0, sizeof(set_members[i]));
 		if (err != 0) {
@@ -446,7 +448,7 @@ static void test_main(void)
 	}
 
 	if (primary_inst->info.lockable) {
-		printk("Locking set\n");
+		LOG_INF("Locking set");
 		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
 						   &primary_inst->info);
 		if (err != 0) {
@@ -464,7 +466,7 @@ static void test_main(void)
 	k_sleep(K_MSEC(1000U)); /* Simulate doing stuff */
 
 	if (primary_inst->info.lockable) {
-		printk("Releasing set\n");
+		LOG_INF("Releasing set");
 		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
 						      &primary_inst->info);
 		if (err != 0) {
@@ -484,7 +486,7 @@ static void test_main(void)
 		set_locked = false;
 		set_unlocked = false;
 
-		printk("Locking set\n");
+		LOG_INF("Locking set");
 		err = bt_csip_set_coordinator_lock(locked_members, connected_member_count,
 						   &primary_inst->info);
 		if (err != 0) {
@@ -498,7 +500,7 @@ static void test_main(void)
 	k_sleep(K_MSEC(1000U)); /* Simulate doing stuff */
 
 	if (primary_inst->info.lockable) {
-		printk("Releasing set\n");
+		LOG_INF("Releasing set");
 		err = bt_csip_set_coordinator_release(locked_members, connected_member_count,
 						      &primary_inst->info);
 		if (err != 0) {

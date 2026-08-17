@@ -31,6 +31,7 @@
 #include <zephyr/dt-bindings/sensor/apds9253.h>
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
+#include <zephyr/dt-bindings/sensor/icm566xx.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1651,4 +1652,43 @@ test_i2c_icm40627: icm40627@d6 {
 	gyro-hz = <100>;
 	accel-fs = <16>;
 	gyro-fs = <2000>;
+};
+
+test_i2c_max30009: max30009@d7 {
+	compatible = "adi,max30009";
+	reg = <0xd7>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_adxl313: adxl313@d8 {
+	compatible = "adi,adxl313";
+	reg = <0xd8>;
+};
+
+test_i2c_icm56686: icm56686@d9 {
+	compatible = "invensense,icm56686";
+	reg = <0xd9>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
+};
+
+test_i2c_ltc4286: ltc4286@da {
+	compatible = "adi,ltc4286";
+	reg = <0xda>;
+	reboot-gpios = <&test_gpio 0 0>;
+	op-status-gpios = <&test_gpio 0 0>;
+	oc-status-gpios = <&test_gpio 0 0>;
+	comp-out-gpios = <&test_gpio 0 0>;
+	fault-out-gpios = <&test_gpio 0 0>;
+	power-good-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };

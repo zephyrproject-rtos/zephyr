@@ -84,6 +84,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt);
 static bool is_destination_local(struct net_pkt *pkt);
 static void tcp_out(struct tcp *conn, uint8_t flags);
 static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
+static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos, size_t len);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
 size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
@@ -1585,27 +1586,21 @@ err:
 	tcp_pkt_unref(rst);
 }
 
-static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
-		       uint32_t seq)
+static int tcp_out_ext(struct tcp *conn, uint8_t flags, size_t data_len, uint32_t seq)
 {
-	size_t alloc_len = sizeof(struct tcphdr);
 	struct net_pkt *pkt;
 	int ret = 0;
 
-	if (conn->send_options.mss_found) {
-		alloc_len += sizeof(uint32_t);
-	}
-
-	pkt = tcp_pkt_alloc(conn, alloc_len);
-	if (!pkt) {
+	/* The allocation adds the IP and TCP header estimate on top of the
+	 * requested length, so the headers written below and the copied
+	 * payload share the same buffer. The whole segment ends up in a
+	 * single net_buf when it fits in one buffer, larger segments span
+	 * multiple fragments.
+	 */
+	pkt = tcp_pkt_alloc(conn, data_len);
+	if (pkt == NULL) {
 		ret = -ENOBUFS;
 		goto out;
-	}
-
-	if (data) {
-		/* Append the data buffer to the pkt */
-		net_pkt_append_buffer(pkt, data->buffer);
-		data->buffer = NULL;
 	}
 
 	ret = ip_header_add(conn, pkt);
@@ -1624,6 +1619,19 @@ static int tcp_out_ext(struct tcp *conn, uint8_t flags, struct net_pkt *data,
 		ret = net_tcp_set_mss_opt(conn, pkt);
 		if (ret < 0) {
 			tcp_pkt_unref(pkt);
+			goto out;
+		}
+	}
+
+	if (data_len > 0) {
+		/* Copy the payload right after the headers, without
+		 * consuming the send queue: the queued data is dropped
+		 * only when the peer acknowledges it.
+		 */
+		ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, data_len);
+		if (ret < 0) {
+			tcp_pkt_unref(pkt);
+			ret = -ENOBUFS;
 			goto out;
 		}
 	}
@@ -1661,7 +1669,7 @@ out:
 
 static void tcp_out(struct tcp *conn, uint8_t flags)
 {
-	(void)tcp_out_ext(conn, flags, NULL /* no data */, conn->seq + conn->unacked_len);
+	(void)tcp_out_ext(conn, flags, 0 /* no data */, conn->seq + conn->unacked_len);
 }
 
 static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
@@ -1736,10 +1744,12 @@ out:
 	return ret;
 }
 
+/* Copy len bytes of data from the "from" packet at offset pos to the current
+ * cursor position of the "to" packet, without consuming the copied data.
+ */
 static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos,
 			size_t len)
 {
-	net_pkt_cursor_init(to);
 	net_pkt_cursor_init(from);
 
 	if (pos) {
@@ -1855,7 +1865,6 @@ static int tcp_send_data(struct tcp *conn)
 {
 	int ret = 0;
 	int len;
-	struct net_pkt *pkt;
 
 	len = MIN(tcp_unsent_len(conn), conn_mss(conn));
 	if (len < 0) {
@@ -1868,21 +1877,7 @@ static int tcp_send_data(struct tcp *conn)
 		goto out;
 	}
 
-	pkt = tcp_pkt_alloc(conn, len);
-	if (!pkt) {
-		NET_ERR("[%p] packet allocation failed, len=%d", conn, len);
-		ret = -ENOBUFS;
-		goto out;
-	}
-
-	ret = tcp_pkt_peek(pkt, &conn->send_data, conn->unacked_len, len);
-	if (ret < 0) {
-		tcp_pkt_unref(pkt);
-		ret = -ENOBUFS;
-		goto out;
-	}
-
-	ret = tcp_out_ext(conn, PSH | ACK, pkt, conn->seq + conn->unacked_len);
+	ret = tcp_out_ext(conn, PSH | ACK, (size_t)len, conn->seq + conn->unacked_len);
 	if (ret == 0) {
 		conn->unacked_len += len;
 
@@ -1893,13 +1888,9 @@ static int tcp_send_data(struct tcp *conn)
 			net_stats_update_tcp_sent(conn->iface, len);
 			net_stats_update_tcp_seg_sent(conn->iface);
 		}
+	} else if (ret == -ENOBUFS) {
+		NET_ERR("[%p] packet allocation failed, len=%d", conn, len);
 	}
-
-	/* The data we want to send, has been moved to the send queue so we
-	 * can unref the head net_pkt. If there was an error, we need to remove
-	 * the packet anyway.
-	 */
-	tcp_pkt_unref(pkt);
 
 	conn_send_data_dump(conn);
 
@@ -1990,10 +1981,10 @@ static void tcp_resend_data(struct k_work *work)
 
 	switch (conn->state) {
 	case TCP_SYN_SENT:
-		(void)tcp_out_ext(conn, SYN, NULL, conn->seq - 1);
+		(void)tcp_out_ext(conn, SYN, 0, conn->seq - 1);
 		break;
 	case TCP_SYN_RECEIVED:
-		(void)tcp_out_ext(conn, SYN | ACK, NULL, conn->seq - 1);
+		(void)tcp_out_ext(conn, SYN | ACK, 0, conn->seq - 1);
 		break;
 	case TCP_ESTABLISHED:
 	case TCP_CLOSE_WAIT:
@@ -2020,7 +2011,7 @@ static void tcp_resend_data(struct k_work *work)
 	case TCP_FIN_WAIT_1:
 	case TCP_CLOSING:
 	case TCP_LAST_ACK:
-		(void)tcp_out_ext(conn, FIN | ACK, NULL, conn->seq - 1);
+		(void)tcp_out_ext(conn, FIN | ACK, 0, conn->seq - 1);
 		break;
 	default:
 		goto out;
@@ -2170,7 +2161,7 @@ static void tcp_send_keepalive_probe(struct k_work *work)
 	k_work_reschedule_for_queue(&tcp_work_q, &conn->keepalive_timer,
 				    K_SECONDS(conn->keep_intvl));
 
-	(void)tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
+	(void)tcp_out_ext(conn, ACK, 0, conn->seq + conn->unacked_len - 1);
 }
 #endif /* CONFIG_NET_TCP_KEEPALIVE */
 
@@ -2181,7 +2172,7 @@ static void tcp_send_zwp(struct k_work *work)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	(void)tcp_out_ext(conn, ACK, NULL, conn->seq + conn->unacked_len - 1);
+	(void)tcp_out_ext(conn, ACK, 0, conn->seq + conn->unacked_len - 1);
 
 	tcp_derive_rto(conn);
 
@@ -2415,6 +2406,30 @@ static uint32_t seq_scale(uint32_t seq)
 }
 
 static uint8_t unique_key[16]; /* MD5 128 bits as described in RFC6528 */
+static bool unique_key_valid;
+
+/* The secret key must not be known to an off-path attacker, otherwise the
+ * ISN can be computed from the four-tuple alone. RFC 6528 ch 3
+ */
+static int tcp_init_isn_key(void)
+{
+	int ret = 0;
+
+	k_mutex_lock(&tcp_lock, K_FOREVER);
+
+	if (!unique_key_valid) {
+		ret = sys_csrand_get(unique_key, sizeof(unique_key));
+		if (ret == 0) {
+			unique_key_valid = true;
+		} else {
+			NET_ERR("Cannot generate secret key for TCP ISN");
+		}
+	}
+
+	k_mutex_unlock(&tcp_lock);
+
+	return ret;
+}
 
 static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
 			       struct net_in6_addr *daddr,
@@ -2436,12 +2451,6 @@ static uint32_t tcpv6_init_isn(struct net_in6_addr *saddr,
 
 	uint8_t hash[16];
 	size_t hash_len;
-	static bool once;
-
-	if (!once) {
-		sys_csrand_get(unique_key, sizeof(unique_key));
-		once = true;
-	}
 
 	memcpy(buf.key, unique_key, sizeof(buf.key));
 
@@ -2471,15 +2480,8 @@ static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
 
 	uint8_t hash[16];
 	size_t hash_len;
-	static bool once;
-
-	if (!once) {
-		sys_csrand_get(unique_key, sizeof(unique_key));
-		once = true;
-	}
 
 	memcpy(buf.key, unique_key, sizeof(unique_key));
-
 
 	psa_hash_compute(PSA_ALG_SHA_256, (const unsigned char *)&buf, sizeof(buf),
 			 hash, sizeof(hash), &hash_len);
@@ -2491,12 +2493,13 @@ static uint32_t tcpv4_init_isn(struct net_in_addr *saddr,
 
 #define tcpv6_init_isn(...) (0UL)
 #define tcpv4_init_isn(...) (0UL)
+#define tcp_init_isn_key() (-ENOTSUP)
 
 #endif /* CONFIG_NET_TCP_ISN_RFC6528 */
 
 static uint32_t tcp_init_isn(struct net_sockaddr *saddr, struct net_sockaddr *daddr)
 {
-	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528)) {
+	if (IS_ENABLED(CONFIG_NET_TCP_ISN_RFC6528) && tcp_init_isn_key() == 0) {
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    saddr->sa_family == NET_AF_INET6) {
 			return tcpv6_init_isn(&net_sin6(saddr)->sin6_addr,
@@ -2523,7 +2526,8 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 	struct tcp *conn = NULL;
 	struct net_context *context = NULL;
 	net_sa_family_t af = net_pkt_family(pkt);
-	struct net_sockaddr local_addr = { 0 };
+	struct net_sockaddr_storage local_addr_storage = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
 
 	ret = net_context_get(af, NET_SOCK_STREAM, NET_IPPROTO_TCP, &context);
@@ -2561,19 +2565,22 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	net_sin(&context->local)->sin_family = af;
 
-	local_addr.sa_family = net_context_get_family(context);
+	local_addr->sa_family = net_context_get_family(context);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) &&
 	    net_context_get_family(context) == NET_AF_INET6) {
-		net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr,
+		net_ipaddr_copy(&net_sin6(local_addr)->sin6_addr,
 				&conn->src.sin6.sin6_addr);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_context_get_family(context) == NET_AF_INET) {
-		net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+		net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
 				&conn->src.sin.sin_addr);
 	}
 
-	ret = net_context_bind(context, &local_addr, sizeof(local_addr));
+	ret = net_context_bind(context, local_addr,
+			       local_addr->sa_family == NET_AF_INET6 ?
+			       sizeof(struct net_sockaddr_in6) :
+			       sizeof(struct net_sockaddr_in));
 	if (ret < 0) {
 		NET_DBG("[%p] Cannot bind accepted context, connection reset", conn);
 		net_context_put(context);
@@ -2603,19 +2610,19 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
 	      IS_ENABLED(CONFIG_NET_TEST))) {
-		conn->seq = tcp_init_isn(&local_addr, &context->remote);
+		conn->seq = tcp_init_isn(local_addr, &context->remote);
 	}
 
 	conn->isn = conn->seq;
 
 	NET_DBG("[%p] local: %s, remote: %s", conn,
-		net_sprint_addr(local_addr.sa_family,
-				(const void *)&net_sin(&local_addr)->sin_addr),
+		net_sprint_addr(local_addr->sa_family,
+				(const void *)&net_sin(local_addr)->sin_addr),
 		net_sprint_addr(context->remote.sa_family,
 				(const void *)&net_sin(&context->remote)->sin_addr));
 
 	ret = net_conn_register(NET_IPPROTO_TCP, NET_SOCK_STREAM, af,
-				&context->remote, &local_addr,
+				&context->remote, local_addr,
 				net_ntohs(conn->dst.sin.sin_port),/* local port */
 				net_ntohs(conn->src.sin.sin_port),/* remote port */
 				context, tcp_recv, context,
@@ -4011,7 +4018,7 @@ static int tcp_start_handshake(struct tcp *conn)
 	k_mutex_lock(&conn->lock, K_FOREVER);
 	tcp_check_sock_options(conn);
 	conn->send_options.mss_found = true;
-	ret = tcp_out_ext(conn, SYN, NULL /* no data */, conn->seq);
+	ret = tcp_out_ext(conn, SYN, 0 /* no data */, conn->seq);
 	if (ret < 0) {
 		k_mutex_unlock(&conn->lock);
 		return ret;
@@ -4205,7 +4212,8 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 		   void *user_data)
 {
 	struct tcp *conn = context->tcp;
-	struct net_sockaddr local_addr = { };
+	struct net_sockaddr_storage local_addr_storage = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	uint16_t local_port, remote_port;
 
 	if (!conn) {
@@ -4219,9 +4227,9 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 	}
 
 	conn->accept_cb = cb;
-	local_addr.sa_family = net_context_get_family(context);
+	local_addr->sa_family = net_context_get_family(context);
 
-	switch (local_addr.sa_family) {
+	switch (local_addr->sa_family) {
 		struct net_sockaddr_in *in;
 		struct net_sockaddr_in6 *in6;
 
@@ -4230,7 +4238,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 			return -EINVAL;
 		}
 
-		in = (struct net_sockaddr_in *)&local_addr;
+		in = (struct net_sockaddr_in *)local_addr;
 
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in->sin_addr,
@@ -4249,7 +4257,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 			return -EINVAL;
 		}
 
-		in6 = (struct net_sockaddr_in6 *)&local_addr;
+		in6 = (struct net_sockaddr_in6 *)local_addr;
 
 		if (net_context_is_local_addr_set(context)) {
 			net_ipaddr_copy(&in6->sin6_addr,
@@ -4276,10 +4284,10 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 
 	return net_conn_register(net_context_get_proto(context),
 				 net_context_get_type(context),
-				 local_addr.sa_family,
+				 local_addr->sa_family,
 				 context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 				 &context->remote : NULL,
-				 &local_addr,
+				 local_addr,
 				 remote_port, local_port,
 				 context, tcp_recv, context,
 				 &context->conn_handler);
@@ -4603,19 +4611,23 @@ static void test_cb_register(net_sa_family_t family, enum net_sock_type type,
 			     uint16_t local_port, net_conn_cb_t cb)
 {
 	struct net_conn_handle *conn_handle = NULL;
-	const struct net_sockaddr addr = { .sa_family = family, };
+	struct net_sockaddr_storage addr_storage = { 0 };
+	struct net_sockaddr *addr = net_sad(&addr_storage);
+	int ret;
 
-	int ret = net_conn_register(proto,
-				    type,
-				    family,
-				    &addr,	/* remote address */
-				    &addr,	/* local address */
-				    local_port,
-				    remote_port,
-				    NULL,
-				    cb,
-				    NULL,	/* user_data */
-				    &conn_handle);
+	addr->sa_family = family;
+
+	ret = net_conn_register(proto,
+				type,
+				family,
+				addr,	/* remote address */
+				addr,	/* local address */
+				local_port,
+				remote_port,
+				NULL,
+				cb,
+				NULL,	/* user_data */
+				&conn_handle);
 	if (ret < 0) {
 		NET_ERR("net_conn_register(): %d", ret);
 	}

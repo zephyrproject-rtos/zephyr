@@ -21,8 +21,10 @@
 #ifndef SOC_INFINEON_CAT1B_COMMON_INFINEON_HPPASS_CSG_H_
 #define SOC_INFINEON_CAT1B_COMMON_INFINEON_HPPASS_CSG_H_
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <zephyr/device.h>
+#include <zephyr/spinlock.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -116,6 +118,66 @@ int ifx_hppass_csg_register_combined_cmp_cb(const struct device *dev,
  * @retval -EINVAL @p dev is NULL or @p slice is out of range.
  */
 int mfd_infineon_hppass_csg_route_dac_to_adc(const struct device *dev, int slice);
+
+/**
+ * @brief Enter the CSG comparator critical section.
+ *
+ * Takes the MFD parent's spinlock, which serializes comparator child
+ * drivers against one another and against the combined comparator ISR.
+ * State shared across slices (the per-slice callback pairs and the
+ * CSG-wide @c CMP_INTR / @c CMP_INTR_MASK registers) can then be updated
+ * coherently, including the read-modify-write of @c CMP_INTR_MASK that
+ * would otherwise be torn by a thread switch mid-update.
+ *
+ * Locks do not nest; the returned key must be passed to a single
+ * @ref ifx_hppass_csg_cmp_unlock.  Intended for thread context only.
+ *
+ * @param dev CSG MFD parent device.
+ *
+ * @return Spinlock key to pass to @ref ifx_hppass_csg_cmp_unlock.
+ */
+k_spinlock_key_t ifx_hppass_csg_cmp_lock(const struct device *dev);
+
+/**
+ * @brief Leave the critical section entered by @ref ifx_hppass_csg_cmp_lock.
+ *
+ * @param dev CSG MFD parent device.
+ * @param key Key returned by the paired @ref ifx_hppass_csg_cmp_lock.
+ */
+void ifx_hppass_csg_cmp_unlock(const struct device *dev, k_spinlock_key_t key);
+
+/**
+ * @brief Enable or disable a slice's comparator interrupt in CMP_INTR_MASK.
+ *
+ * @c CMP_INTR_MASK is shared across all CSG slices.  Call with the CSG
+ * spinlock held via @ref ifx_hppass_csg_cmp_lock so the read-modify-write
+ * is not torn by a concurrent slice update.
+ *
+ * @param dev    CSG MFD parent device.
+ * @param slice  Slice index.
+ * @param enable @c true to unmask the slice's comparator interrupt,
+ *               @c false to mask it.
+ *
+ * @retval 0       on success.
+ * @retval -EINVAL on invalid arguments.
+ */
+int ifx_hppass_csg_set_cmp_intr_mask(const struct device *dev, uint8_t slice,
+				     bool enable);
+
+/**
+ * @brief Clear a slice's latched comparator interrupt in CMP_INTR.
+ *
+ * @c CMP_INTR is write-1-to-clear; this clears only the slice's bit.  Call
+ * with the CSG spinlock held via @ref ifx_hppass_csg_cmp_lock so the clear
+ * stays coherent with any related software pending state.
+ *
+ * @param dev   CSG MFD parent device.
+ * @param slice Slice index.
+ *
+ * @retval 0       on success.
+ * @retval -EINVAL on invalid arguments.
+ */
+int ifx_hppass_csg_clear_cmp_intr(const struct device *dev, uint8_t slice);
 
 #ifdef __cplusplus
 }

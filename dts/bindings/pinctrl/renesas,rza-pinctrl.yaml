@@ -78,7 +78,6 @@ child-binding:
 
       renesas,filter:
         type: int
-        default: 0
         description: |
           Digital Noise Filter configuration for a pin which shall be defined
           using RZA_FILTER_SET() helper macro in pinctrl_rza.h to specify

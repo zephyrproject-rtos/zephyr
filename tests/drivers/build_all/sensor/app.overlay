@@ -191,6 +191,11 @@
 
 #include "i3c.dtsi"
 		};
+
+		native_linux_temp {
+			compatible = "zephyr,native-linux-temp";
+			path = "/tmp/native-linux-temp";
+		};
 	};
 };
 

@@ -40,7 +40,7 @@ LOG_MODULE_REGISTER(ipm_stm32_ipcc, CONFIG_IPM_LOG_LEVEL);
 #define IPCC_EnableTransmitChannel(hipcc, ch)	\
 			LL_C1_IPCC_EnableTransmitChannel(hipcc, 1 << ch)
 #define IPCC_DisableReceiveChannel(hipcc, ch)	\
-			LL_C2_IPCC_DisableReceiveChannel(hipcc, 1 << ch)
+			LL_C1_IPCC_DisableReceiveChannel(hipcc, 1 << ch)
 #define IPCC_DisableTransmitChannel(hipcc, ch)	\
 			LL_C1_IPCC_DisableTransmitChannel(hipcc, 1 << ch)
 

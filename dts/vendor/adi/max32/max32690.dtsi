@@ -214,6 +214,17 @@
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
 		};
 
+		i2s0: i2s@40060000 {
+			compatible = "adi,max32-i2s";
+			reg = <0x40060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>,
+			       <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
+			dma-names = "tx", "rx";
+			status = "disabled";
+		};
+
 		wut0: timer@40006400 {
 			compatible = "adi,max32-timer";
 			reg = <0x40006400 0x200>;

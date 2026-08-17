@@ -10,7 +10,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
 
@@ -368,6 +368,29 @@ void arch_busy_wait(uint32_t usec_to_wait)
 	}
 }
 #endif
+
+#ifdef CONFIG_PM
+static uint64_t cyc_deep_sleep_total;
+static uint32_t cyc_enter_deep_sleep;
+
+void ite_ec_clock_capture_low_freq_timer(void)
+{
+	cyc_enter_deep_sleep = ~read_timer_obser(FREE_RUN_TIMER);
+}
+
+void ite_ec_clock_compensate_system_timer(void)
+{
+	uint32_t now = ~read_timer_obser(FREE_RUN_TIMER);
+	uint32_t cyc_elapsed_in_deep = now - cyc_enter_deep_sleep;
+
+	cyc_deep_sleep_total += cyc_elapsed_in_deep;
+}
+
+uint64_t ite_ec_clock_get_sleep_ticks(void)
+{
+	return k_cyc_to_ticks_floor64(cyc_deep_sleep_total);
+}
+#endif /* CONFIG_PM */
 
 static int sys_clock_driver_init(void)
 {

@@ -9,7 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>

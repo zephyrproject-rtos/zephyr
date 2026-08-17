@@ -340,6 +340,7 @@ int wifi_credentials_delete_by_ssid(const char *ssid, size_t ssid_len)
 	idx = lookup_idx(ssid, ssid_len);
 	if (idx == -1) {
 		LOG_DBG("WiFi credentials entry was not found");
+		ret = -ENOENT;
 		goto exit;
 	}
 

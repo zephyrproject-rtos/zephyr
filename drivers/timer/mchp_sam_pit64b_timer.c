@@ -12,7 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(pit64b, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 

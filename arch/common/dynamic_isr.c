@@ -9,7 +9,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/__assert.h>
 
-void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
+void __weak z_isr_install(unsigned int irq, void (*routine)(const void *parameter),
 			  const void *param)
 {
 	unsigned int table_idx;
@@ -37,7 +37,7 @@ void __weak z_isr_install(unsigned int irq, void (*routine)(const void *),
  */
 int __weak arch_irq_connect_dynamic(unsigned int irq,
 				    unsigned int priority,
-				    void (*routine)(const void *),
+				    void (*routine)(const void *arg),
 				    const void *parameter,
 				    uint32_t flags)
 {

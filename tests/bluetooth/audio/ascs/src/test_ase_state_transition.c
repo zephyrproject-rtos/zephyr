@@ -149,7 +149,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_idle_to_codec_configured)
 	enum bt_audio_dir dir = BT_AUDIO_DIR_SINK;
 
 	expect_bt_ascs_cb_config_called(1, &conn, NULL, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_qos_configured)
@@ -166,7 +166,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_qos_conf
 
 	/* Verification */
 	expect_bt_ascs_cb_qos_called(1, &stream, NULL);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -201,7 +201,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_enabling_to_qos_configured)
 
 	/* Verification */
 	expect_bt_ascs_cb_disable_called(1, &stream);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(1, &stream);
 }
 
@@ -239,7 +239,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_codec_co
 
 	expect_bt_ascs_cb_config_called(0, NULL, NULL, NULL, NULL);
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_qos_configured)
@@ -256,7 +256,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_qos_config
 
 	/* Verification */
 	expect_bt_ascs_cb_qos_called(1, &stream, NULL);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -276,7 +276,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_qos_configured_to_codec_conf
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SINK;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_client_codec_configured_to_releasing)
@@ -397,7 +397,7 @@ ZTEST_F(test_sink_ase_state_transition, test_client_streaming_to_qos_configured)
 
 	expect_bt_ascs_cb_disable_called(1, &stream);
 	expect_bt_bap_stream_ops_stopped_called(1, &stream, &reason);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(1, &stream);
 }
 
@@ -419,7 +419,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_idle_to_codec_configured)
 
 	/* Verification */
 	expect_bt_ascs_cb_config_called(0, NULL, NULL, NULL, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_server_codec_configured_to_codec_configured)
@@ -445,7 +445,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_codec_configured_to_codec_co
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SINK;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_server_codec_configured_to_releasing)
@@ -492,7 +492,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_qos_configured_to_codec_conf
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SINK;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_sink_ase_state_transition, test_server_qos_configured_to_releasing)
@@ -582,7 +582,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_enabling_to_qos_configured)
 
 	/* Verification */
 	expect_bt_ascs_cb_disable_called(1, &stream);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(1, &stream);
 }
 
@@ -662,7 +662,7 @@ ZTEST_F(test_sink_ase_state_transition, test_server_streaming_to_qos_configured)
 
 	expect_bt_ascs_cb_disable_called(1, &stream);
 	expect_bt_bap_stream_ops_stopped_called(1, &stream, &reason);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(1, &stream);
 }
 
@@ -733,7 +733,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_idle_to_codec_configured)
 	enum bt_audio_dir dir = BT_AUDIO_DIR_SOURCE;
 
 	expect_bt_ascs_cb_config_called(1, &conn, NULL, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_client_codec_configured_to_qos_configured)
@@ -750,7 +750,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_codec_configured_to_qos_co
 
 	/* Verification */
 	expect_bt_ascs_cb_qos_called(1, &stream, NULL);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -845,7 +845,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_codec_configured_to_codec_
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SOURCE;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_client_qos_configured_to_qos_configured)
@@ -862,7 +862,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_qos_configured_to_qos_conf
 
 	/* Verification */
 	expect_bt_ascs_cb_qos_called(1, &stream, NULL);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -882,7 +882,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_qos_configured_to_codec_co
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SOURCE;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_client_codec_configured_to_releasing)
@@ -1024,7 +1024,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_enabling_to_disabling_to_q
 
 	/* Verification */
 	expect_bt_ascs_cb_stop_called(1, &stream);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -1053,7 +1053,7 @@ ZTEST_F(test_source_ase_state_transition, test_client_streaming_to_disabling_to_
 
 	/* Verification */
 	expect_bt_ascs_cb_stop_called(1, &stream);
-	expect_bt_bap_stream_ops_qos_set_called(1, &stream);
+	expect_bt_bap_stream_ops_qos_configured_called(1, &stream);
 	expect_bt_bap_stream_ops_disabled_called(0, NULL);
 }
 
@@ -1075,7 +1075,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_idle_to_codec_configured)
 
 	/* Verification */
 	expect_bt_ascs_cb_config_called(0, NULL, NULL, NULL, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_server_codec_configured_to_codec_configured)
@@ -1101,7 +1101,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_codec_configured_to_codec_
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SOURCE;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_server_codec_configured_to_releasing)
@@ -1148,7 +1148,7 @@ ZTEST_F(test_source_ase_state_transition, test_server_qos_configured_to_codec_co
 	const enum bt_audio_dir dir = BT_AUDIO_DIR_SOURCE;
 
 	expect_bt_ascs_cb_reconfig_called(1, &stream, &dir, NULL);
-	expect_bt_bap_stream_ops_configured_called(1, &stream, NULL);
+	expect_bt_bap_stream_ops_codec_configured_called(1, &stream, NULL);
 }
 
 ZTEST_F(test_source_ase_state_transition, test_server_qos_configured_to_releasing)

@@ -10,7 +10,7 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <fsl_rtc.h>
 #include <zephyr/logging/log.h>
 

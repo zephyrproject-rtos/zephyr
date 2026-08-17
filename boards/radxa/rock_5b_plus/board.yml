@@ -1,0 +1,8 @@
+board:
+  name: rock_5b_plus
+  full_name: ROCK 5B+
+  vendor: radxa
+  socs:
+  - name: rk3588
+    variants:
+    - name: smp

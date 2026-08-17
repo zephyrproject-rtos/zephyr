@@ -1011,6 +1011,14 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
+ * @brief Type definition of ADC API function for getting a reference
+ *        voltage in millivolts.
+ * See adc_ref_get() for related public helper.
+ */
+typedef int (*adc_api_ref_get)(const struct device *dev, enum adc_reference ref,
+			       uint16_t *vref_mv);
+
+/**
  * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
@@ -1040,9 +1048,22 @@ __subsystem struct adc_driver_api {
 	/**
 	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
 	 *
-	 * Set to 0 if internal reference is not supported.
+	 * Set to 0 if internal reference is not supported. Used as the
+	 * fallback for @ref ADC_REF_INTERNAL when @c ref_get is NULL.
 	 */
 	uint16_t ref_internal;
+	/**
+	 * @driver_ops_optional Get the current voltage for a selected
+	 * reference in millivolts.
+	 *
+	 * When NULL, @ref adc_ref_get falls back to @c ref_internal for
+	 * @ref ADC_REF_INTERNAL and returns @c -ENOTSUP for other
+	 * references. When implemented, return the live/runtime value
+	 * (for example a cached measurement); return @c -ENODATA when the
+	 * reference is supported but no millivolt value is known yet, or
+	 * @c -ENOTSUP when the reference is not supported by the device.
+	 */
+	adc_api_ref_get ref_get;
 };
 
 /** @} */
@@ -1293,19 +1314,72 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
 #endif /* CONFIG_ADC_STREAM */
 
 /**
+ * @brief Get the voltage for a selected ADC reference.
+ *
+ * Returns the millivolt scale associated with @p ref for @p dev. When the
+ * driver provides @c ref_get, that callback is used. Otherwise,
+ * @ref ADC_REF_INTERNAL falls back to the static @c ref_internal field
+ * and other references return @c -ENOTSUP.
+ *
+ * Drivers that implement @c ref_get are responsible for any DT /
+ * @c ref_internal fallback for @ref ADC_REF_INTERNAL.
+ *
+ * @param[in]  dev      Pointer to the device structure for the driver instance.
+ * @param[in]  ref      Reference whose millivolt scale is requested.
+ * @param[out] vref_mv  Destination for the reference voltage in millivolts.
+ *
+ * @retval 0          On success; @p vref_mv holds the voltage in millivolts.
+ * @retval -EINVAL    If @p vref_mv is NULL.
+ * @retval -ENOTSUP   If the reference is not supported / no value source exists.
+ * @retval -ENODATA   If the reference is supported but no millivolt value is known.
+ */
+static inline int adc_ref_get(const struct device *dev, enum adc_reference ref,
+			      uint16_t *vref_mv)
+{
+	const struct adc_driver_api *api;
+
+	if (vref_mv == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(adc, dev);
+
+	if (api->ref_get != NULL) {
+		return api->ref_get(dev, ref, vref_mv);
+	}
+
+	if (ref != ADC_REF_INTERNAL) {
+		return -ENOTSUP;
+	}
+
+	*vref_mv = api->ref_internal;
+	return (*vref_mv == 0U) ? -ENODATA : 0;
+}
+
+/**
  * @brief Get the internal reference voltage.
  *
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
- * measured in millivolts.
+ * measured in millivolts. This is a convenience wrapper around
+ * @ref adc_ref_get.
+ *
+ * Drivers that implement @c ref_get may update the value over time
+ * (for example after hardware calibration); this does not change the
+ * function signature.
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @return a positive value is the reference voltage value.  Returns
+ * @return A positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
 static inline uint16_t adc_ref_internal(const struct device *dev)
 {
-	return DEVICE_API_GET(adc, dev)->ref_internal;
+	uint16_t vref_mv;
+	int ret;
+
+	ret = adc_ref_get(dev, ADC_REF_INTERNAL, &vref_mv);
+
+	return ret == 0 ? vref_mv : 0U;
 }
 
 /**
@@ -1315,8 +1389,8 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
  * ADC measurement to a physical voltage.
  *
  * @param ref_mv the reference voltage used for the measurement, in
- * millivolts.  This may be from adc_ref_internal() or a known
- * external reference.
+ * millivolts.  This may be from adc_ref_get(), adc_ref_internal() or
+ * a known external reference.
  *
  * @param gain the ADC gain configuration used to sample the input
  *
@@ -1392,19 +1466,20 @@ static inline int adc_raw_to_microvolts(int32_t ref_mv, enum adc_gain gain, uint
  * @see adc_raw_to_x_fn
  */
 static inline int adc_raw_to_x_dt_chan(adc_raw_to_x_fn conv_func,
-					    const struct adc_dt_spec *spec,
-					    const struct adc_channel_cfg *channel_cfg,
-					    int32_t *valp)
+				       const struct adc_dt_spec *spec,
+				       const struct adc_channel_cfg *channel_cfg,
+				       int32_t *valp)
 {
 	int32_t vref_mv;
+	uint16_t vref_mv_u16;
 	uint8_t resolution;
 
 	if (!spec->channel_cfg_dt_node_exists) {
 		return -ENOTSUP;
 	}
 
-	if (channel_cfg->reference == ADC_REF_INTERNAL) {
-		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	if (adc_ref_get(spec->dev, channel_cfg->reference, &vref_mv_u16) == 0) {
+		vref_mv = (int32_t)vref_mv_u16;
 	} else {
 		vref_mv = spec->vref_mv;
 	}

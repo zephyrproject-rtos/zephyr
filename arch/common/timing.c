@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/timing/timing.h>
 
 void arch_timing_init(void)

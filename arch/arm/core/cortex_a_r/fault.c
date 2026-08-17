@@ -331,9 +331,12 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 #endif
 	/* Print fault information*/
 	EXCEPTION_DUMP("***** PREFETCH ABORT *****");
-	if (FAULT_DUMP_VERBOSE) {
-		reason = dump_fault(fs, ifar);
-	}
+#if FAULT_DUMP_VERBOSE
+	reason = dump_fault(fs, ifar);
+#else
+	ARG_UNUSED(fs);
+	ARG_UNUSED(ifar);
+#endif
 
 	/* Simplify exception codes if requested */
 	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
@@ -415,9 +418,12 @@ bool z_arm_fault_data(struct arch_esf *esf)
 
 	/* Print fault information*/
 	EXCEPTION_DUMP("***** DATA ABORT *****");
-	if (FAULT_DUMP_VERBOSE) {
-		reason = dump_fault(fs, dfar);
-	}
+#if FAULT_DUMP_VERBOSE
+	reason = dump_fault(fs, dfar);
+#else
+	ARG_UNUSED(fs);
+	ARG_UNUSED(dfar);
+#endif
 
 	/* Simplify exception codes if requested */
 	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {

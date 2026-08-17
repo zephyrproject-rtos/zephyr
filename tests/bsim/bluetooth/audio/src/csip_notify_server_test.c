@@ -15,12 +15,14 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(csip_notify_server_test);
 
 extern enum bst_result_t bst_result;
 
@@ -32,7 +34,7 @@ static bool is_peer_subscribed(struct bt_conn *conn)
 
 	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_CSIS_SET_LOCK);
 	if (!attr) {
-		printk("No BT_UUID_PACS_SNK attribute found\n");
+		LOG_INF("No BT_UUID_CSIS_SET_LOCK attribute found");
 		return false;
 	}
 
@@ -45,7 +47,7 @@ static void csip_set_member_lock_changed_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(svc_inst);
 
-	printk("Client %p %s the lock\n", conn, locked ? "locked" : "released");
+	LOG_INF("Client %p %s the lock", conn, locked ? "locked" : "released");
 }
 
 static struct bt_csip_set_member_cb csip_cb = {
@@ -63,32 +65,32 @@ static void test_main(void)
 	};
 	struct bt_le_ext_adv *ext_adv;
 
-	printk("Enabling Bluetooth\n");
+	LOG_INF("Enabling Bluetooth");
 	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
 	}
 
-	printk("Registering CSIP Set Member\n");
+	LOG_INF("Registering CSIP Set Member");
 
 	err = bt_cap_acceptor_register(&csip_params, &svc_inst);
 	if (err != 0) {
-		printk("Failed to register csip\n");
+		LOG_ERR("Failed to register csip");
 		return;
 	}
 
 	setup_connectable_adv(&ext_adv);
 
-	printk("Waiting to be connected\n");
+	LOG_INF("Waiting to be connected");
 	WAIT_FOR_FLAG(flag_connected);
-	printk("Connected\n");
-	printk("Waiting to be subscribed\n");
+	LOG_INF("Connected");
+	LOG_INF("Waiting to be subscribed");
 
 	while (!is_peer_subscribed(default_conn)) {
 		(void)k_sleep(K_MSEC(10U));
 	}
-	printk("Subscribed\n");
+	LOG_INF("Subscribed");
 
 	err = bt_csip_set_member_lock(svc_inst, true, false);
 	if (err != 0) {
@@ -97,9 +99,9 @@ static void test_main(void)
 	}
 
 	/* Now wait for client to disconnect */
-	printk("Wait for client disconnect\n");
+	LOG_INF("Wait for client disconnect");
 	WAIT_FOR_UNSET_FLAG(flag_connected);
-	printk("Client disconnected\n");
+	LOG_INF("Client disconnected");
 
 	/* Trigger changes while device is disconnected */
 	err = bt_csip_set_member_lock(svc_inst, false, false);
@@ -108,7 +110,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Start Advertising\n");
+	LOG_INF("Start Advertising");
 	err = bt_le_ext_adv_start(ext_adv, BT_LE_EXT_ADV_START_DEFAULT);
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);

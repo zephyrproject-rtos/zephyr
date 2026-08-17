@@ -405,6 +405,21 @@ MODEM_CMD_DEFINE(on_cmd_cwnetmode)
 	}
 }
 
+MODEM_CMD_DEFINE(on_cmd_cwautoconn)
+{
+	struct st67_driver_data *st67_data =
+		CONTAINER_OF(data, struct st67_driver_data, cmd_handler_data);
+
+	if (argc < 1) {
+		LOG_ERR("Cannot read auto-connect state");
+		return -EINVAL;
+	}
+
+	st67_data->is_auto_connect_enabled = strtol(argv[0], NULL, 10) != 0;
+
+	return 0;
+}
+
 MODEM_CMD_DEFINE(on_cmd_wifi_scan_done)
 {
 	struct st67_driver_data *st67_data =
@@ -761,9 +776,11 @@ static void st67_init_work(struct k_work *work)
 	struct st67_driver_data *st67_data = CONTAINER_OF(work, struct st67_driver_data, init_work);
 
 	static const struct setup_cmd cmds[] = {
+		SETUP_CMD_NOHANDLE("AT+CWMODE=1,1\r\n"),
 		SETUP_CMD("AT+CIPSTAMAC?\r\n", "+CIPSTAMAC:", on_cmd_cipstamac, 1U, ""),
 		SETUP_CMD_NOHANDLE(ST67W611M1_CWLAPOPT_CMD),
 		SETUP_CMD("AT+CWNETMODE?\r\n", "+CWNETMODE:", on_cmd_cwnetmode, 1U, ""),
+		SETUP_CMD("AT+CWAUTOCONN?\r\n", "+CWAUTOCONN:", on_cmd_cwautoconn, 1U, ""),
 	};
 	ret = modem_cmd_handler_setup_cmds(
 		&st67_data->mctx.iface, &st67_data->mctx.cmd_handler, cmds, ARRAY_SIZE(cmds),
@@ -771,6 +788,16 @@ static void st67_init_work(struct k_work *work)
 	if (ret < 0) {
 		LOG_ERR("Init failed: %d", ret);
 		return;
+	}
+
+	/* Only write auto-connect when it differs as the module persists it to flash. */
+	if (st67_data->is_auto_connect_enabled != IS_ENABLED(CONFIG_ST67W611M1_WIFI_AUTO_CONNECT)) {
+		ret = st67_send_at_cmd(st67_data, NULL, 0, ST67W611M1_CWAUTOCONN_SET_CMD,
+				       ST67W611M1_AT_CMD_TIMEOUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to set auto-connect: %d", ret);
+			return;
+		}
 	}
 
 	k_sem_give(&st67_data->sem_st67_init_over);

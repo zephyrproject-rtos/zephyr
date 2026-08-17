@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_H_
-#define ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_H_
+#ifndef ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_ACCESS_H_
+#define ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_ACCESS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,4 +105,4 @@ void *sys_memcpy_from_word_granular_access(void *d, const void *s, size_t n);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_WORD_GRANULAR_ACCESS_H_ */

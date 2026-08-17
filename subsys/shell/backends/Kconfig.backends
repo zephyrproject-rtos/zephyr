@@ -537,6 +537,14 @@ config SHELL_BACKEND_TELNET
 	help
 	  Enable TELNET backend.
 
+	  Security warning: this backend exposes the full Zephyr shell over an
+	  unauthenticated, unencrypted TCP port. Anyone able to reach the device
+	  on the network gets the same control as a local console user, which
+	  typically includes flash erase/write, reboot, settings modification
+	  and secret exfiltration through any shell-exposed subsystem. It is
+	  strongly discouraged in production unless the network path itself is
+	  trusted.
+
 if SHELL_BACKEND_TELNET
 
 config SHELL_TELNET_INIT_PRIORITY

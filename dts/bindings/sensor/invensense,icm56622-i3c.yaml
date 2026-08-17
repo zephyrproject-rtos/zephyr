@@ -1,0 +1,67 @@
+# # Copyright (c) 2025 Croxel Inc.
+# # SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM56622 High-precision 6-axis motion tracking device.
+    When setting the accel-pm, accel-range, accel-odr, gyro-pm, gyro-range,
+    gyro-odr properties in devicetree, you may include icm566xx.h
+    and use the macros defined there.
+
+compatible: "invensense,icm56622"
+
+properties:
+  accel-fs:
+    type: int
+    default: 1
+    description: |
+      Specify the accelerometer range in g.
+      Default is power-up configuration.
+    enum:
+      - 1 # ICM566XX_DT_ACCEL_FS_16
+      - 2 # ICM566XX_DT_ACCEL_FS_8
+      - 3 # ICM566XX_DT_ACCEL_FS_4
+      - 4 # ICM566XX_DT_ACCEL_FS_2
+
+  gyro-fs:
+    type: int
+    default: 1
+    description: |
+      Specify the gyro range in degrees per second.
+      Default is power-up configuration.
+    enum:
+      - 1 # ICM566XX_DT_GYRO_FS_2000
+      - 2 # ICM566XX_DT_GYRO_FS_1000
+      - 3 # ICM566XX_DT_GYRO_FS_500
+      - 4 # ICM566XX_DT_GYRO_FS_250
+      - 5 # ICM566XX_DT_GYRO_FS_125
+      - 6 # ICM566XX_DT_GYRO_FS_62_5
+      - 7 # ICM566XX_DT_GYRO_FS_31_25
+      - 8 # ICM566XX_DT_GYRO_FS_15_625
+
+include: ["i3c-device.yaml", "invensense,icm566xx-common.yaml"]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/icm566xx.h>
+
+    &arduino_i3c {
+        status = "okay";
+        clock-frequency = <400000>;
+
+        icm56622: icm56622@680000046a00000011 {
+                compatible = "invensense,icm56622";
+                reg = <0x68 0x0 0x0>;
+                assigned-address = <0x6a>;
+                int-gpios = <&arduino_header 8 GPIO_ACTIVE_HIGH>;
+
+                accel-fs = <1>;
+                accel-odr = <13>;
+                accel-lpf = <1>;
+                accel-pwr-mode = <2>;
+
+                gyro-fs = <1>;
+                gyro-odr = <13>;
+                gyro-lpf = <1>;
+                gyro-pwr-mode = <2>;
+        };
+    };

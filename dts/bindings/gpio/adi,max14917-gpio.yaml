@@ -10,7 +10,6 @@ properties:
     const: 2
   ngpios:
     type: int
-    required: true
     const: 8
     description: Number of gpios supported
   vddok-gpios:

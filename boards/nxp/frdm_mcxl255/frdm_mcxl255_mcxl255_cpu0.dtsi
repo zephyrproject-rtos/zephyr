@@ -95,6 +95,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
 &aon_lpuart0 {
 	status = "disabled";
 	current-speed = <115200>;
@@ -112,6 +119,14 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
 };
 
 &rtc {

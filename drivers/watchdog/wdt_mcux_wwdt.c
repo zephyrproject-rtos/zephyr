@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/pm/device.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>

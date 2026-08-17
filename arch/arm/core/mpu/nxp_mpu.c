@@ -534,46 +534,6 @@ static inline int is_in_region(uint32_t r_index, uint32_t start, uint32_t size)
 }
 
 /**
- * @brief update configuration of an active memory partition
- */
-void arm_core_mpu_mem_partition_config_update(
-	struct z_arm_mpu_partition *partition,
-	k_mem_partition_attr_t *new_attr)
-{
-	/* Find the partition. ASSERT if not found. */
-	uint8_t i;
-	uint8_t reg_index = get_num_regions();
-
-	for (i = static_regions_num; i < get_num_regions(); i++) {
-		if (!is_enabled_region(i)) {
-			continue;
-		}
-
-		uint32_t base = mpu_region_get_base(i);
-
-		if (base != partition->start) {
-			continue;
-		}
-
-		uint32_t size = mpu_region_get_size(i);
-
-		if (size != partition->size) {
-			continue;
-		}
-
-		/* Region found */
-		reg_index = i;
-		break;
-	}
-	__ASSERT(reg_index != get_num_regions(),
-		 "Memory domain partition not found\n");
-
-	/* Modify the permissions */
-	partition->attr = *new_attr;
-	mpu_configure_region(reg_index, partition);
-}
-
-/**
  * @brief get the maximum number of available (free) MPU region indices
  *        for configuring dynamic MPU partitions
  */

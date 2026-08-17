@@ -85,7 +85,7 @@ extern struct fido2_transport usb_hid_transport;
 
 static K_MUTEX_DEFINE(tx_mutex);
 
-K_MSGQ_DEFINE(hid_rx_msgq, CTAPHID_PACKET_SIZE, 8, 4);
+K_MSGQ_DEFINE_STATIC(hid_rx_msgq, CTAPHID_PACKET_SIZE, 8, 4);
 
 static struct k_work_q hid_rx_work_q;
 static K_THREAD_STACK_DEFINE(hid_rx_work_q_stack, FIDO2_HID_RX_WORKQ_STACK_SIZE);

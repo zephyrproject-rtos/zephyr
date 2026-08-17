@@ -1,0 +1,32 @@
+description: |
+  Zephyr I2C target TMP103
+
+  Creates an I2C target device that mimics a TMP103 temperature sensor,
+  optionally backed by a real temperature sensor implementing the
+  SENSOR_CHAN_DIE_TEMP channel.
+
+  Can be used by a Linux host with the tmp103 driver.
+
+compatible: "zephyr,i2c-target-tmp103"
+
+include: regset-target-base.yaml
+
+properties:
+  size:
+    min: 4
+    max: 4
+    default: 4
+
+  sensor:
+    type: phandle
+    description: Sensor device to use as data source.
+
+examples:
+  - |
+    zephyr_i2c: &i2c2 {
+            tmp103: tmp103@30 {
+                    reg = <0x30>;
+                    compatible = "zephyr,i2c-target-tmp103";
+                    sensor = <&die_temp>;
+            };
+    };

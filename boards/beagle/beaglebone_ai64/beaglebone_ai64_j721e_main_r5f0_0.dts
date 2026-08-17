@@ -72,7 +72,3 @@
 	pinctrl-names = "default";
 	current-speed = <115200>;
 };
-
-&systick_timer {
-	status = "okay";
-};

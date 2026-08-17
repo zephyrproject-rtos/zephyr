@@ -55,7 +55,7 @@
 #          find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 #       the 'foo.conf' must be specified using '-DEXTRA_CONF_FILE=foo.conf'
 
-cmake_minimum_required(VERSION 3.20.5)
+cmake_minimum_required(VERSION 3.28.0)
 
 # Function for watching print variables.
 # Watching the variables allows package_helper to monitor and print variables

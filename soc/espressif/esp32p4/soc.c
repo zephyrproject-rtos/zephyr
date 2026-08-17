@@ -35,6 +35,28 @@
 extern void esp_reset_reason_init(void);
 extern FUNC_NORETURN void z_cstart(void);
 
+/*
+ * The ESP32-P4 clock generator only produces a discrete set of CPU
+ * frequencies, and the set differs by silicon revision: pre-v3 (v1.3) parts
+ * support 90/180/360 MHz, while the v3.x family supports 100/200/400 MHz.
+ * A devicetree clock-frequency outside the selected revision's set builds
+ * cleanly but will not boot, so validate set membership at compile time.
+ */
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define ESP32P4_CPU_FREQ_VALID(hz)                                                        \
+	((hz) == 90000000 || (hz) == 180000000 || (hz) == 360000000)
+#define ESP32P4_CPU_FREQ_MSG "ESP32-P4 rev v1.3 CPU frequency must be 90, 180, or 360 MHz"
+#else
+#define ESP32P4_CPU_FREQ_VALID(hz)                                                        \
+	((hz) == 100000000 || (hz) == 200000000 || (hz) == 400000000)
+#define ESP32P4_CPU_FREQ_MSG "ESP32-P4 rev v3.x CPU frequency must be 100, 200, or 400 MHz"
+#endif
+
+BUILD_ASSERT(ESP32P4_CPU_FREQ_VALID(DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency)),
+	     ESP32P4_CPU_FREQ_MSG);
+BUILD_ASSERT(ESP32P4_CPU_FREQ_VALID(DT_PROP(DT_PATH(cpus, cpu_1), clock_frequency)),
+	     ESP32P4_CPU_FREQ_MSG);
+
 #if defined(CONFIG_NOCACHE_MEMORY)
 void nocache_region_init(void)
 {

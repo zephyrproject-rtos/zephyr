@@ -459,8 +459,8 @@ static void test_target_latency_out_of_range(struct test_ase_control_params_fixt
 		0x01U,          /* Opcode = Config Codec */
 		0x01U,          /* Number_of_ASEs */
 		0x01U,          /* ASE_ID[0] */
-		0x00U,          /* Response_Code[0] = Success */
-		0x00U,          /* Reason[0] */
+		0x09U,          /* Response_Code[0] = Invalid codec configuration */
+		0x08U,          /* Reason[0] = Reason Latency */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
@@ -471,17 +471,11 @@ static void test_target_latency_out_of_range(struct test_ase_control_params_fixt
 
 ZTEST_F(test_ase_control_params, test_target_latency_out_of_range_0x00)
 {
-	/* TODO: Remove once resolved */
-	Z_TEST_SKIP_IFNDEF(BUG_55794);
-
 	test_target_latency_out_of_range(fixture, 0x00);
 }
 
 ZTEST_F(test_ase_control_params, test_target_latency_out_of_range_0x04)
 {
-	/* TODO: Remove once resolved */
-	Z_TEST_SKIP_IFNDEF(BUG_55794);
-
 	test_target_latency_out_of_range(fixture, 0x04);
 }
 
@@ -503,8 +497,8 @@ static void test_target_phy_out_of_range(struct test_ase_control_params_fixture 
 		0x01U,          /* Opcode = Config Codec */
 		0x01U,          /* Number_of_ASEs */
 		0x01U,          /* ASE_ID[0] */
-		0x00U,          /* Response_Code[0] = Success */
-		0x00U,          /* Reason[0] */
+		0x09U,          /* Response_Code[0] = Invalid codec configuration */
+		0x05U,          /* Reason[0] = Reason PHY */
 	};
 
 	fixture->ase_cp->write(&fixture->conn, fixture->ase_cp, buf, sizeof(buf), 0, 0);
@@ -515,17 +509,11 @@ static void test_target_phy_out_of_range(struct test_ase_control_params_fixture 
 
 ZTEST_F(test_ase_control_params, test_target_phy_out_of_range_0x00)
 {
-	/* TODO: Remove once resolved */
-	Z_TEST_SKIP_IFNDEF(BUG_55794);
-
 	test_target_phy_out_of_range(fixture, 0x00);
 }
 
 ZTEST_F(test_ase_control_params, test_target_phy_out_of_range_0x04)
 {
-	/* TODO: Remove once resolved */
-	Z_TEST_SKIP_IFNDEF(BUG_55794);
-
 	test_target_phy_out_of_range(fixture, 0x04);
 }
 

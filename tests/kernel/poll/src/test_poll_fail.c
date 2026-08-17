@@ -184,7 +184,7 @@ ZTEST_USER(poll_api, test_poll_signal_check_obj)
  */
 ZTEST_USER(poll_api, test_poll_signal_check_signal)
 {
-	unsigned int result;
+	int result;
 
 	k_poll_signal_init(&signal_err);
 
@@ -208,7 +208,7 @@ ZTEST_USER(poll_api, test_poll_signal_check_signal)
  */
 ZTEST_USER(poll_api, test_poll_signal_check_result)
 {
-	int signaled;
+	unsigned int signaled;
 
 	k_poll_signal_init(&signal_err);
 

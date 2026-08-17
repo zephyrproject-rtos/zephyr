@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # Wrapper macro around string(TIMESTAMP ...), that returns the time
 # in either local time or UTC, depending on CONFIG_BINDESC_BUILD_TIME_USE_LOCAL_TIME.

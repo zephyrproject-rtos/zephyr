@@ -1028,8 +1028,8 @@ static int dmic_stm32_dfsdm_pm_action(const struct device *dev, enum pm_device_a
                                                                                                    \
 	PINCTRL_DT_DEFINE(flt);                                                                    \
                                                                                                    \
-	K_MSGQ_DEFINE(dmic_stm32_dfsdm_msgq_##flt, sizeof(void *),                                 \
-		      CONFIG_DMIC_STM32_DFSDM_QUEUE_SIZE, 4);                                      \
+	K_MSGQ_DEFINE_STATIC_TYPE(dmic_stm32_dfsdm_msgq_##flt, void *,                             \
+				  CONFIG_DMIC_STM32_DFSDM_QUEUE_SIZE);                             \
                                                                                                    \
 	IF_ENABLED(DT_NODE_HAS_PROP(flt, dmas),                                                    \
 		(static int32_t __aligned(32)                                                      \

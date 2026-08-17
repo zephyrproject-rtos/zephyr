@@ -16,6 +16,8 @@
 /**
  * @brief Interfaces for haptic drivers.
  * @defgroup haptics_interface Haptics
+ * @since 4.0
+ * @version 0.3.0
  * @ingroup io_interfaces
  * @{
  *

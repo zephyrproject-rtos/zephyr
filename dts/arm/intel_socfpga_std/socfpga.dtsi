@@ -139,7 +139,7 @@
 		};
 
 		gmac0: ethernet@ff700000 {
-			compatible = "snps,ethernet-cyclonev";
+			compatible = "snps,ethernet-cyclonev", "snps,dwmac";
 			reg = <0xff700000 0x2000>;
 			interrupts = <0 115 4 IRQ_DEFAULT_PRIORITY>;
 			emac-index = <0>;
@@ -147,7 +147,7 @@
 		};
 
 		gmac1: ethernet@ff702000 {
-			compatible = "snps,ethernet-cyclonev";
+			compatible = "snps,ethernet-cyclonev", "snps,dwmac";
 			reg = <0xff702000 0x2000>;
 			interrupts = <0 120 4 IRQ_DEFAULT_PRIORITY>;
 			emac-index = <1>;

@@ -59,8 +59,7 @@ static void mgmt_run_callbacks(const struct mgmt_event_entry * const mgmt_event)
 static K_MUTEX_DEFINE(net_mgmt_event_lock);
 /* event structure used to prevent increasing the stack usage on the caller thread */
 static struct mgmt_event_entry new_event;
-K_MSGQ_DEFINE(event_msgq, sizeof(struct mgmt_event_entry),
-	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC_TYPE(event_msgq, struct mgmt_event_entry, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE);
 
 static struct k_work_q *mgmt_work_q = COND_CODE_1(CONFIG_NET_MGMT_EVENT_SYSTEM_WORKQUEUE,
 	(&k_sys_work_q), (&mgmt_work_q_obj));

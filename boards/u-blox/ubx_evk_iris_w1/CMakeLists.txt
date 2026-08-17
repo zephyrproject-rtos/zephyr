@@ -1,6 +1,6 @@
 #
 # Copyright 2022-2025 NXP
-# Copyright (c) 2025 u-blox AG
+# Copyright (c) 2026 u-blox AG
 # SPDX-License-Identifier: Apache-2.0
 #
 
@@ -9,10 +9,15 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
   dt_node_has_status(xtal32_status PATH ${xtal32} STATUS okay)
   zephyr_compile_definitions(BOARD_FLASH_SIZE=${CONFIG_FLASH_SIZE}*1024)
 
-  if(BOARD_REVISION STREQUAL "macronix")
-    zephyr_library_sources(macronix_flash_config.c)
-  elseif(BOARD_REVISION STREQUAL "fidelix")
+  # Pass flash variant define to C sources (e.g. FLASH_MACRONIX_16MB)
+  string(TOUPPER "FLASH_${BOARD_REVISION}" FLASH_VARIANT_DEFINE)
+  zephyr_library_compile_definitions(${FLASH_VARIANT_DEFINE})
+
+  # Select vendor-specific flash config source
+  if(BOARD_REVISION STREQUAL "fidelix" OR BOARD_REVISION STREQUAL "fidelix_16mb")
     zephyr_library_sources(fidelix_flash_config.c)
+  elseif(BOARD_REVISION STREQUAL "macronix" OR BOARD_REVISION STREQUAL "macronix_16mb")
+    zephyr_library_sources(macronix_flash_config.c)
   else()
     message(FATAL_ERROR "Unsupported board revision: ${BOARD_REVISION}")
   endif()

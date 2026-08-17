@@ -54,5 +54,15 @@
 				status = "disabled";
 			};
 		};
+
+		/* NOTE: only available on packages with 48+ pins */
+		vrefbuf: vrefbuf@40010030 {
+			compatible = "st,stm32-vrefbuf";
+			reg = <0x40010030 0x40>;
+			clocks = <&rcc STM32_CLOCK(APB1_2, 0)>;
+			resets = <&rctl STM32_RESET(APB1H, 0)>;
+			ref-voltages = <2048000>, <2500000>;
+			status = "disabled";
+		};
 	};
 };

@@ -15,6 +15,10 @@
 	};
 };
 
+&autanalog {
+	status = "okay";
+};
+
 &adc0 {
 	status = "okay";
 	#address-cells = <1>;

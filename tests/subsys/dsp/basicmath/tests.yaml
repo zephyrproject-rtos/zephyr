@@ -26,3 +26,16 @@ tests:
     toolchain_allow: arcmwdt
     platform_allow: nsim/nsim_em11d
     extra_args: CONF_FILE=prj_arc.conf
+  zdsp.basicmath.powerquad:
+    filter: dt_compat_enabled("nxp,powerquad")
+    integration_platforms:
+      - lpcxpresso55s69/lpc55s69/cpu0
+    platform_exclude:
+      # For RT595, PowerQuad can't access flexspi0, but can access flexspi1
+      - mimxrt595_evk/mimxrt595s/cm33
+      # For RT685, PowerQuad can't access flexspi memory
+      - mimxrt685_evk/mimxrt685s/cm33
+    tags: zdsp
+    extra_configs:
+      - CONFIG_DSP_BACKEND_POWERQUAD=y
+      - CONFIG_DSP_BACKEND_POWERQUAD_SUPPORT_Q31=y

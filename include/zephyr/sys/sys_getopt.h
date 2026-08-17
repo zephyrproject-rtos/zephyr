@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_GETOPT_H_
-#define ZEPHYR_INCLUDE_SYS_GETOPT_H_
+#ifndef ZEPHYR_INCLUDE_SYS_SYS_GETOPT_H_
+#define ZEPHYR_INCLUDE_SYS_SYS_GETOPT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -127,4 +127,4 @@ int sys_getopt_long_only(int nargc, char *const *nargv, const char *options,
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SYS_GETOPT_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_SYS_GETOPT_H_ */

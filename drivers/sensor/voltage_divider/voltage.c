@@ -127,7 +127,7 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		/* Power up ADC */
 		ret = pm_device_runtime_get(config->voltage.port.dev);
 		if (ret != 0) {
-			LOG_ERR("failed to power up ADC (%d)", ret);
+			LOG_ERR_PM_DEVICE_RUNTIME_GET(config->voltage.port.dev, ret);
 			return ret;
 		}
 		break;
@@ -140,7 +140,7 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		/* Power down ADC */
 		ret = pm_device_runtime_put(config->voltage.port.dev);
 		if (ret != 0) {
-			LOG_ERR("failed to Power down ADC (%d)", ret);
+			LOG_ERR_PM_DEVICE_RUNTIME_PUT(config->voltage.port.dev, ret);
 			return ret;
 		}
 		break;

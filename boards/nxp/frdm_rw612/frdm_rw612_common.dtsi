@@ -440,3 +440,7 @@ nxp_pmod_touch_panel_i2c: &arduino_i2c {
 	exit-latency-us = <13460>;
 	min-residency-us = <1690>;
 };
+
+&powerquad {
+	status = "okay";
+};

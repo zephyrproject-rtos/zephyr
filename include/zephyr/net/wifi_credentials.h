@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Library for storing and loading Wi-Fi credentials.
+ * @ingroup wifi_credentials
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_CREDENTIALS_H_
 
@@ -25,26 +31,26 @@ extern "C" {
  */
 
 
-/* this entry contains a BSSID */
+/** This entry contains a BSSID */
 #define WIFI_CREDENTIALS_FLAG_BSSID        BIT(0)
-/* this entry is to be preferred over others */
+/** This entry is to be preferred over others */
 #define WIFI_CREDENTIALS_FLAG_FAVORITE     BIT(1)
-/* this entry can use the 2.4 GHz band */
+/** This entry can use the 2.4 GHz band */
 #define WIFI_CREDENTIALS_FLAG_2_4GHz       BIT(2)
-/* this entry can use the 5 GHz band */
+/** This entry can use the 5 GHz band */
 #define WIFI_CREDENTIALS_FLAG_5GHz         BIT(3)
-/* this entry can use the 6 GHz band */
+/** This entry can use the 6 GHz band */
 #define WIFI_CREDENTIALS_FLAG_6GHz         BIT(4)
-/* this entry requires management frame protection */
+/** This entry requires management frame protection */
 #define WIFI_CREDENTIALS_FLAG_MFP_REQUIRED BIT(5)
-/* this entry disables management frame protection */
+/** This entry disables management frame protection */
 #define WIFI_CREDENTIALS_FLAG_MFP_DISABLED BIT(6)
-/* this entry has anonymous identity configured */
+/** This entry has anonymous identity configured */
 #define WIFI_CREDENTIALS_FLAG_ANONYMOUS_IDENTITY  BIT(7)
-/* this entry has key password configured */
+/** This entry has key password configured */
 #define WIFI_CREDENTIALS_FLAG_KEY_PASSWORD  BIT(8)
 
-/* Maximum length of the password */
+/** Maximum length of the password */
 #define WIFI_CREDENTIALS_MAX_PASSWORD_LEN                                                          \
 	MAX(WIFI_PSK_MAX_LEN, CONFIG_WIFI_CREDENTIALS_SAE_PASSWORD_LENGTH)
 
@@ -169,6 +175,9 @@ int wifi_credentials_get_by_ssid_personal(const char *ssid, size_t ssid_len,
 /**
  * @brief Set credentials for given SSID.
  *
+ * @note Storing credentials for an SSID that is already stored overwrites the existing
+ *       entry rather than adding a second one. Only distinct SSIDs consume storage slots.
+ *
  * @param[in] ssid		SSID to look for
  * @param[in] ssid_len		length of SSID
  * @param[in] type		Wi-Fi security type
@@ -207,6 +216,9 @@ int wifi_credentials_get_by_ssid_personal_struct(const char *ssid, size_t ssid_l
 
 /**
  * @brief Set credentials for given SSID by struct.
+ *
+ * @note Storing credentials for an SSID that is already stored overwrites the existing
+ *       entry rather than adding a second one. Only distinct SSIDs consume storage slots.
  *
  * @param[in] creds		credentials Pointer to struct from which credentials are loaded
  *

@@ -13,8 +13,7 @@ LOG_MODULE_REGISTER(input, CONFIG_INPUT_LOG_LEVEL);
 
 #ifdef CONFIG_INPUT_MODE_THREAD
 
-K_MSGQ_DEFINE(input_msgq, sizeof(struct input_event),
-	      CONFIG_INPUT_QUEUE_MAX_MSGS, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(input_msgq, struct input_event, CONFIG_INPUT_QUEUE_MAX_MSGS);
 
 #endif
 

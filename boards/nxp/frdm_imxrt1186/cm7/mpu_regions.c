@@ -46,14 +46,11 @@
 			REGION_CUSTOMED_MEMORY_SIZE(MEMORY_REGION_SIZE_KB(PERIPHERAL_SIZE))
 
 static const struct arm_mpu_region mpu_regions[] = {
-	/*
-	 * Add "UNMAPPED" region to deny access to whole address space to
-	 * workaround speculative prefetch.
-	 * Refer to Arm errata 1013783-B for more details.
-	 */
-	MPU_REGION_ENTRY("UNMAPPED", 0,
-			{REGION_4G | MPU_RASR_XN_Msk | P_NA_U_NA_Msk}),
-
+/*
+ * The catch-all no-access region for unmapped addresses (Arm
+ * Cortex-M7 erratum 1013783) is programmed by the MPU driver,
+ * see CONFIG_ARM_MPU_CM7_UNMAPPED_REGION.
+ */
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(itcm))
 	MPU_REGION_ENTRY("ITCM", REGION_ITCM_BASE_ADDRESS,
 			 REGION_FLASH_ATTR(REGION_ITCM_SIZE)),

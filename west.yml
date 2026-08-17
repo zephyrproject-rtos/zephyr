@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: a554a31806bc308d954fdb43143d260902da9b1e
+      revision: ab16e67b49cfe45826e70d68b720ee5751e77664
       path: modules/hal/adi
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 6de5c882b3ea55c3a57cff5ab6debfc8ef2fff7f
+      revision: de0ef89150684ebbdbf17aa1219dac3790bbfd49
       groups:
         - hal
     - name: hal_espressif
-      revision: 150e0c1bd24fd568864ae50fa690e9ec526022a4
+      revision: 3d4d922a4d2994f844790ec031a584ec71240485
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -188,7 +188,7 @@ manifest:
       groups:
         - hal
     - name: hal_infineon
-      revision: c73313ab49840fee98cb347034526aaab62122a6
+      revision: 13e4b3cd70fb2d862a37e55665f03af09fe74201
       path: modules/hal/infineon
       groups:
         - hal
@@ -198,22 +198,22 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 1f2976a52e03c453a2d2fb86754664ba75275c61
+      revision: 550371954d33f7f5f17b3eb2f7ecc46ca3fa1b62
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 39a63673760940e58ee4241238a0642f3c9d39a8
+      revision: 4387c79cebd31927fb1ea7d64bee11728ae8041f
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 6e993ab4d923575a69c91fa40897d87c5d779708
+      revision: 0f411a85da7d17a612d54450f608f4d30cdb971f
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 85d250e97c9319df6c8311f17d6d7eec9e6578e5
+      revision: 5978c2877c25d9b8d19c6e363cf7e5f478ca7cdd
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,17 +229,17 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: ba5032a9e47b6ad9e9488665c1e990ed0f434734
+      revision: 29d365ccfbceb9f42ce666d75463fbe2c83b8e29
       groups:
         - hal
     - name: hal_renesas
       path: modules/hal/renesas
-      revision: 29d0d3b9c7f9e3929839c74a6cb10c487c24994f
+      revision: f2eb9bc7352f4dadae08e9f5f16b05bb26779b87
       groups:
         - hal
     - name: hal_rpi_pico
       path: modules/hal/rpi_pico
-      revision: 562b41e10a1d8b1a761b253b107c5c6a84cf4535
+      revision: 266394b0f23dff8f77c54f67f89d62cee246f21d
       groups:
         - hal
     - name: hal_sifli
@@ -248,7 +248,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 759584f0b08f3cc99443a293a59b4a492687c67e
+      revision: 8d871343cd8f4518a69dfc96a31a2963c1f59f35
       path: modules/hal/silabs
       groups:
         - hal
@@ -258,12 +258,12 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 9b6fb9e0ee432d12a31b6327a3690d243b74d178
+      revision: 33576ef05e529cad803f210cc95b52b607757c96
       path: modules/hal/stm32
       groups:
         - hal
     - name: hal_tdk
-      revision: fa54cb65535b0ed69564423c9e0bf4e7ee47dcb1
+      revision: 0f209bd0a4b6511c8c6ffddda75da1fe6988df8f
       path: modules/hal/tdk
       groups:
         - hal
@@ -288,7 +288,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 614d7dd1cdb4dd61b8fda5a504d63297497b05ac
+      revision: 60224c27bed1466287f0246ac04c902b92331c29
       path: modules/hal/xtensa
       groups:
         - hal
@@ -324,12 +324,12 @@ manifest:
       revision: bbedf2656086a93a8468a1c98168a6b36631ce9a
       path: modules/lib/gui/lvgl
     - name: mbedtls
-      revision: 098e120afb51877ed814bdc04443890ae12e0642
+      revision: c43f34b93797e81fd0257c30004dcd0ae332ae51
       path: modules/crypto/mbedtls
       groups:
         - crypto
     - name: mcuboot
-      revision: c38f7a10c14ae8b95c0296cd10320907c28e02c7
+      revision: 7ad67106c3253d03ae4bd8ab48e6bdf7bc46f43e
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -347,15 +347,15 @@ manifest:
       revision: 5499fd4c9a478f8139eeb07a82c3b4468d6067f7
       path: modules/lib/nanopb
     - name: net-tools
-      revision: c3431f482ea8a7b570fa4573aa5d35875b7f2a23
+      revision: 2104d8a33fe104559ff5c22793247926a714985e
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 253d42e4c124aecd7b51afa4782140270e890a7d
+      revision: c84230d0329a2ce5e449bbd556d6854861a6eee7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
-      revision: 21184a8f89f101538ad54c3b64a1d9c4da23bdb8
+      revision: 0aaa9aa812877cb6bc020df8260d0607a3f0ec1a
       path: modules/lib/nrf_wifi
     - name: open-amp
       revision: 01032a8a7bdfdd541686f5dfa3671e602b9fcbff
@@ -377,6 +377,9 @@ manifest:
       groups:
         - testing
         - tee
+    - name: reqmgmt
+      path: doc/reqmgmt
+      revision: c6803e9b4e9bf9ae7fad3c7cd85dbf35d0d09ede
     - name: segger
       revision: 50892fdbcf2f570e67baa72b8894a66b16946f72
       path: modules/debug/segger
@@ -389,17 +392,17 @@ manifest:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: fa92349590a54959ee2efc21b668e5afdb144726
+      revision: 000d24cb5e411a1d68f05b5a98ffd9a5cfdc17c2
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: b7025fb97b53370ac4a2c216698e0784916fa135
+      revision: 4d431cbbb451d13359534c63bf67e2d315ca37de
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: f2f7a8edd109825de35b0c239c8fbb77b06f24a2
+      revision: 2e7df188dc130c02eac4aa608f27f3b232681ccc
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
@@ -410,7 +413,7 @@ manifest:
       revision: 9164bd18dcd88ff9d9ef98279501fc1093571017
       path: modules/lib/zcbor
     - name: zephyr-xenlib
-      revision: fa1fcd1d925f0ba82afaee81b323a9035e0c1269
+      revision: 7f0884563f865a2a223f26dd0d847fb0faad397d
       path: modules/lib/zephyr-xenlib
   # zephyr-keep-sorted-stop
 

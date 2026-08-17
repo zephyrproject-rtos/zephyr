@@ -42,8 +42,14 @@ int wifi_credentials_store_entry(size_t idx, const void *buf, size_t buf_len)
 	psa_status_t ret;
 	psa_key_attributes_t key_attributes = {0};
 	psa_key_id_t key_id;
+	psa_key_id_t entry_key_id = idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN;
 
-	psa_set_key_id(&key_attributes, idx + ZEPHYR_PSA_WIFI_CREDENTIALS_KEY_ID_RANGE_BEGIN);
+	ret = psa_destroy_key(entry_key_id);
+	if (ret != PSA_SUCCESS && ret != PSA_ERROR_INVALID_HANDLE) {
+		LOG_ERR("psa_destroy_key failed, err: %d", ret);
+	}
+
+	psa_set_key_id(&key_attributes, entry_key_id);
 	psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_EXPORT);
 	psa_set_key_lifetime(&key_attributes, PSA_KEY_LIFETIME_PERSISTENT);
 	psa_set_key_algorithm(&key_attributes, PSA_ALG_NONE);

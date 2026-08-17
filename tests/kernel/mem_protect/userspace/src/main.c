@@ -787,7 +787,8 @@ ZTEST(userspace_domain, test_domain_add_thread_drop_to_user)
 	drop_user(&alt_bool);
 }
 
-/* @brief Test adding application memory partition to memory domain
+/**
+ * @brief Test adding application memory partition to memory domain
  *
  * @details Show that adding a partition to a domain and then dropping to user
  * mode works as expected.
@@ -838,7 +839,8 @@ ZTEST(userspace_domain_ctx, test_domain_add_thread_context_switch)
 	spawn_user(&alt_bool);
 }
 
-/* Show that adding a partition to a domain and then switching to another
+/**
+ * Show that adding a partition to a domain and then switching to another
  * user thread in the same domain works as expected.
  *
  * @ingroup kernel_memprotect_tests
@@ -925,7 +927,8 @@ static struct k_sem recycle_sem;
  * @details Test recycle valid/invalid kernel object, see if
  * perms_count changes as expected.
  *
- * @see k_object_recycle(), k_object_find()
+ * @see k_object_recycle()
+ * @see k_object_find()
  *
  * @ingroup kernel_memprotect_tests
  */
@@ -1010,7 +1013,7 @@ static inline void z_vrfy_check_syscall_context(void)
 }
 #include <zephyr/syscalls/check_syscall_context_mrsh.c>
 
-ZTEST_USER(userspace, test_syscall_context)
+ZTEST_USER(userspace, test_userspace_syscall_context)
 {
 	check_syscall_context();
 }

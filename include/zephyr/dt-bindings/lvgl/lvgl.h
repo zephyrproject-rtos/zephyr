@@ -18,8 +18,8 @@
  * @ingroup input_interface
  * @brief Predefined LVGL keys for use in Devicetree.
  *
- * Used in the @c lvgl-codes property of a <tt>zephyr,lvgl-keypad-input</tt> node to map input event
- * codes to LVGL keys. Values mirror <tt>enum _lv_key_t</tt> from LVGL's @c lv_group.h.
+ * Used in the @c lvgl-codes property of a @dtcompatible{zephyr,lvgl-keypad-input} node to map input
+ * event codes to LVGL keys. Values mirror <tt>enum _lv_key_t</tt> from LVGL's @c lv_group.h.
  *
  * Example devicetree usage:
  *

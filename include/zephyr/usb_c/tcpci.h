@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Registers and fields definitions for TypeC Port Controller Interface
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains register addresses, fields and masks used to retrieve specific data from
  * registry values. They may be used by all TCPC drivers compliant to the TCPCI specification.
@@ -213,6 +214,7 @@
 	((((drp) << 6) & TCPC_REG_ROLE_CTRL_DRP_MASK) |                                            \
 	 (((rp) << 4) & TCPC_REG_ROLE_CTRL_RP_MASK) |                                              \
 	 (((cc2) << 2) & TCPC_REG_ROLE_CTRL_CC2_MASK) | ((cc1) & TCPC_REG_ROLE_CTRL_CC1_MASK))
+/** Macro to extract the dual-role port bit from register value */
 #define TCPC_REG_ROLE_CTRL_DRP(reg) (((reg) & TCPC_REG_ROLE_CTRL_DRP_MASK) >> 6)
 /** Macro to extract the enum tc_rp_value from register value */
 #define TCPC_REG_ROLE_CTRL_RP(reg)  (((reg) & TCPC_REG_ROLE_CTRL_RP_MASK) >> 4)
@@ -406,6 +408,7 @@
 #define TCPC_REG_DEV_CAP_1_SRC_RESISTOR_RP_3P0_1P5_DEF     2
 /** Mask for power roles supported */
 #define TCPC_REG_DEV_CAP_1_POWER_ROLE_MASK                 GENMASK(7, 5)
+/** Macro to extract the supported power roles from register value */
 #define TCPC_REG_DEV_CAP_1_POWER_ROLE(reg)                 \
 	(((reg) & TCPC_REG_DEV_CAP_1_POWER_ROLE_MASK) >> 5)
 /** Value for support both source and sink only (no DRP) */
