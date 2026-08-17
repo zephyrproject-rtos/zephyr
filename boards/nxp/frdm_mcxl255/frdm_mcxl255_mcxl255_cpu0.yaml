@@ -24,4 +24,5 @@ supported:
   - wuc
   - adc
   - counter
+  - flash
 vendor: nxp
