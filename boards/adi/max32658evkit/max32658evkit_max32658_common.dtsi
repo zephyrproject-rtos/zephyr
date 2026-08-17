@@ -102,13 +102,8 @@
 	};
 };
 
-&wut0 {
-	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
-};
-
 &wut1 {
 	status = "okay";
-	clock-source = <ADI_MAX32_PRPH_CLK_SRC_INRO>;
 	wakeup-source;
 
 	counter_wut1: counter {
