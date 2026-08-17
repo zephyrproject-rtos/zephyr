@@ -1,24 +1,30 @@
 /*
- * Copyright (c) 2024-2025 Nordic Semiconductor
+ * Copyright (c) 2024-2026 Nordic Semiconductor
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
 #include "babblekit/testcase.h"
 
+#include "bstests.h"
 #include "common.h"
 #include "iso_tx.h"
 
@@ -42,6 +48,10 @@ static struct bt_iso_chan iso_chans[CONFIG_BT_ISO_MAX_CHAN];
 static struct bt_le_scan_recv_info broadcaster_info;
 static bt_addr_le_t broadcaster_addr;
 static uint8_t broadcaster_num_bis;
+static uint16_t last_buf_len;
+static uint32_t last_ts;
+static size_t pass_cnt;
+static size_t rx_cnt;
 
 /** Log data as d_0 d_1 d_2 ... d_(n-2) d_(n-1) d_(n) to show the 3 first and 3 last octets
  *
@@ -88,11 +98,6 @@ static void iso_recv(struct bt_iso_chan *chan, const struct bt_iso_recv_info *in
 	}
 
 	if (info->flags & BT_ISO_FLAGS_VALID) {
-		static uint16_t last_buf_len;
-		static uint32_t last_ts;
-		static size_t pass_cnt;
-		static size_t rx_cnt;
-
 		rx_cnt++;
 		LOG_DBG("[%zu]: Incoming data channel %p len %u", rx_cnt, chan, buf->len);
 		iso_log_data(buf->data, buf->len);
@@ -321,6 +326,19 @@ static void sync_big(struct bt_le_per_adv_sync *sync, uint8_t cnt, struct bt_iso
 	WAIT_FOR_FLAG(flag_iso_connected);
 }
 
+static void reset_bluetooth(void)
+{
+	int err;
+
+	LOG_INF("Resetting Bluetooth");
+
+	err = bt_disable();
+	TEST_ASSERT(err == 0, "Failed to disable: %d", err);
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(err == 0, "Failed to re-enable: %d", err);
+}
+
 static void test_main(void)
 {
 	struct bt_le_per_adv_sync *sync;
@@ -341,11 +359,70 @@ static void test_main(void)
 	TEST_PASS("Test passed");
 }
 
+static void test_main_disable(void)
+{
+	struct bt_le_per_adv_sync *sync;
+	struct bt_iso_big *big;
+
+	init();
+
+	/* Perform this loop twice; once before the disable and once after the disable with a
+	 * disable between
+	 */
+	for (enum disable_states i = 0; i < DISABLE_STATE_COUNT; i++) {
+		LOG_INF("Running iteration %d", i);
+
+		scan_and_sync_pa(&sync);
+		WAIT_FOR_FLAG(flag_biginfo);
+		sync_big(sync, MIN(broadcaster_num_bis, CONFIG_BT_ISO_MAX_CHAN), &big);
+
+		LOG_INF("Waiting for data");
+		WAIT_FOR_FLAG(flag_data_received);
+		bk_sync_send();
+
+		if (i == DISABLE_STATE_BROADCASTER) {
+			LOG_INF("Waiting for sync lost");
+			WAIT_FOR_FLAG_UNSET(flag_iso_connected);
+		} else if (i == DISABLE_STATE_SYNC_RECEIVER) {
+			reset_bluetooth();
+		} else if (i == DISABLE_STATE_BOTH) {
+			LOG_INF("Waiting for sync lost");
+			WAIT_FOR_FLAG_UNSET(flag_iso_connected);
+			reset_bluetooth();
+		}
+
+		/* Clear data */
+		UNSET_FLAG(flag_broadcaster_found);
+		UNSET_FLAG(flag_iso_connected);
+		UNSET_FLAG(flag_data_received);
+		UNSET_FLAG(flag_pa_synced);
+		UNSET_FLAG(flag_biginfo);
+
+		/* After a disable, all syncs are removed */
+		sync = NULL;
+		big = NULL;
+
+		/* Reset RX validation fields */
+		last_buf_len = 0U;
+		last_ts = 0U;
+		rx_cnt = 0U;
+
+		/* send signal to broadcaster that we are ready for next step */
+		bk_sync_send();
+	}
+
+	TEST_PASS("Disable test passed");
+}
 static const struct bst_test_instance test_def[] = {
 	{
 		.test_id = "receiver",
 		.test_descr = "receiver",
 		.test_main_f = test_main,
+	},
+	{
+		.test_id = "receiver_disable",
+		.test_descr = "Receiver test for broadcaster that resets",
+		.test_main_f = test_main_disable,
 	},
 	BSTEST_END_MARKER,
 };
