@@ -484,7 +484,9 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.PeriphBurst = stm32_dma_get_pburst(config,
 							stream->source_periph);
 
-#if !defined(CONFIG_SOC_SERIES_STM32H7X) && !defined(CONFIG_SOC_SERIES_STM32MP1X)
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP1X) && \
+	!defined(CONFIG_SOC_SERIES_STM32MP13X)
 	if (config->channel_direction != MEMORY_TO_MEMORY) {
 		if (config->dma_slot >= 8) {
 			LOG_ERR("dma slot error.");
