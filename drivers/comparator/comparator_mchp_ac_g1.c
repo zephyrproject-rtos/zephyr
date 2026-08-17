@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,29 +125,6 @@ static void comparator_print_channel_cfg(const struct comparator_mchp_channel_cf
 	LOG_DBG("Event Output Enabled : %s", cfg->event_output_enable ? "Yes" : "No");
 	LOG_DBG("========================================");
 }
-
-/* Print all the comparator register values */
-static void comparator_print_reg(const struct device *dev)
-{
-	LOG_DBG("=============== Comparator Registers ===============");
-	LOG_DBG("%-20s: 0x%02x", "AC_CTRLA", AC_REG->AC_CTRLA);
-	LOG_DBG("%-20s: 0x%02x", "AC_CTRLB", AC_REG->AC_CTRLB);
-	LOG_DBG("%-20s: 0x%04x", "AC_EVCTRL", AC_REG->AC_EVCTRL);
-	LOG_DBG("%-20s: 0x%02x", "AC_INTENCLR", AC_REG->AC_INTENCLR);
-	LOG_DBG("%-20s: 0x%02x", "AC_INTENSET", AC_REG->AC_INTENSET);
-	LOG_DBG("%-20s: 0x%02x", "AC_INTFLAG", AC_REG->AC_INTFLAG);
-	LOG_DBG("%-20s: 0x%02x", "AC_STATUSA", AC_REG->AC_STATUSA);
-	LOG_DBG("%-20s: 0x%02x", "AC_STATUSB", AC_REG->AC_STATUSB);
-	LOG_DBG("%-20s: 0x%02x", "AC_DBGCTRL", AC_REG->AC_DBGCTRL);
-	LOG_DBG("%-20s: 0x%02x", "AC_WINCTRL", AC_REG->AC_WINCTRL);
-	LOG_DBG("%-20s: 0x%02x", "AC_SCALER[0]", AC_REG->AC_SCALER[0]);
-	LOG_DBG("%-20s: 0x%02x", "AC_SCALER[1]", AC_REG->AC_SCALER[1]);
-	LOG_DBG("%-20s: 0x%08x", "AC_COMPCTRL[0]", (uint32_t)AC_REG->AC_COMPCTRL[0]);
-	LOG_DBG("%-20s: 0x%08x", "AC_COMPCTRL[1]", (uint32_t)AC_REG->AC_COMPCTRL[1]);
-	LOG_DBG("%-20s: 0x%08x", "AC_SYNCBUSY", (uint32_t)AC_REG->AC_SYNCBUSY);
-	LOG_DBG("%-20s: 0x%04x", "AC_CALIB", AC_REG->AC_CALIB);
-	LOG_DBG("===================================================");
-}
 #endif /* CONFIG_COMPARATOR_LOG_LEVEL_DBG */
 
 /* Wait for synchronization */
@@ -269,11 +246,13 @@ static int ac_configure_channel(const struct device *dev)
 		AC_REG->AC_COMPCTRL[channel_id] |=
 			AC_COMPCTRL_HYSTEN(channel_config->hysteresis_enable ? 1 : 0);
 
+#if !defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
 		/* Set hysterisis */
 		if (channel_config->hysteresis_enable == true) {
 			AC_REG->AC_COMPCTRL[channel_id] |=
 				AC_COMPCTRL_HYST(channel_config->hysteresis_level);
 		}
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 	}
 
 	/* Set Comparator speed */
@@ -455,7 +434,6 @@ static int comparator_mchp_init(const struct device *dev)
 	struct comparator_mchp_dev_data *const dev_data = dev->data;
 	int ret;
 	uint8_t channel_id = dev_cfg->channel_config.channel_id;
-	uint32_t sw0_reg;
 
 	dev_data->interrupt_status = COMPARATOR_INT_STATUS_NONE;
 
@@ -486,10 +464,12 @@ static int comparator_mchp_init(const struct device *dev)
 	AC_REG->AC_CTRLA = AC_CTRLA_SWRST_Msk;
 	ac_wait_sync(AC_REG, AC_SYNCBUSY_SWRST_Msk);
 
+#if !defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
 	/* Configure calibration */
-	sw0_reg = ((fuses_sw0_fuses_registers_t *)SW0_ADDR)->FUSES_SW0_WORD_0;
+	uint32_t sw0_reg = ((fuses_sw0_fuses_registers_t *)SW0_ADDR)->FUSES_SW0_WORD_0;
 	dev_cfg->regs->AC_CALIB =
 		(sw0_reg & FUSES_SW0_WORD_0_AC_BIAS0_Msk) >> FUSES_SW0_WORD_0_AC_BIAS0_Pos;
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 	/* Configure ISR */
 	dev_cfg->config_func(dev);
