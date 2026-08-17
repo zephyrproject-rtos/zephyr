@@ -3,4 +3,5 @@
    :show-listing:
    :glob: */*
 
-   Samples that demonstrate some board-specific features on STM32 boards.
+   Samples that demonstrate board-specific or SoC-specific features
+   available on STMicroelectronics hardware.
