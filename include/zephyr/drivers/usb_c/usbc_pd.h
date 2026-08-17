@@ -962,9 +962,13 @@ enum pd_ctrl_msg_type {
 	/** Get_Country_Codes Message */
 	PD_CTRL_GET_COUNTRY_CODES       = 21,
 	/** Get_Sink_Cap_Extended Message */
-	PD_CTRL_GET_SINK_CAP_EXT        = 22
+	PD_CTRL_GET_SINK_CAP_EXT        = 22,
+	/** Get_Source_Info Message */
+	PD_CTRL_GET_SOURCE_INFO         = 23,
+	/** Get_Revision Message */
+	PD_CTRL_GET_REVISION            = 24,
 
-	/** 23-31 Reserved */
+	/** 25-31 Reserved */
 };
 
 /**
@@ -993,6 +997,14 @@ enum pd_data_msg_type {
 
 	/** Enter USB message */
 	PD_DATA_ENTER_USB       = 8,
+	/** EPR_Request Message */
+	PD_DATA_EPR_REQUEST     = 9,
+	/** EPR_Mode Message */
+	PD_DATA_EPR_MODE        = 10,
+	/** Source_Info Message */
+	PD_DATA_SOURCE_INFO     = 11,
+	/** Revision Message */
+	PD_DATA_REVISION        = 12,
 	/** Vendor Defined Message */
 	PD_DATA_VENDOR_DEF      = 15,
 };
@@ -1032,8 +1044,21 @@ enum pd_ext_msg_type {
 	PD_EXT_COUNTRY_INFO             = 13,
 	/** Country_Info Message */
 	PD_EXT_COUNTRY_CODES            = 14,
+	/** Sink_Capabilities_Extended Message */
+	PD_EXT_SINK_CAP                 = 15,
+	/** Extended_Control Message */
+	PD_EXT_EXTENDED_CONTROL         = 16,
+	/** EPR_Source_Capabilities Message */
+	PD_EXT_EPR_SOURCE_CAP           = 17,
+	/** EPR_Sink_Capabilities Message */
+	PD_EXT_EPR_SINK_CAP             = 18,
 
-	/*8 15-31 Reserved */
+	/** 19-29 Reserved */
+
+	/** Vendor_Defined_Extended Message */
+	PD_EXT_VENDOR_DEFINED           = 30,
+
+	/** 31 Reserved */
 };
 
 /**
