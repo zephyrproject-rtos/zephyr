@@ -6,6 +6,21 @@
 
 #include <nxp/lpc/LPC54628J512ET180-pinctrl.h>
 
+/*
+ * LPC546xx erratum SDIO.1 requires the four unused upper SD data functions
+ * (SD_D4-SD_D7) to be muxed with a pull-up even in 4-bit mode, or SD data
+ * transfers fail. This 180-ball package (ET180) does not bond a pad for these
+ * signals, so route them to the internal-only pads PIO4_29-31/PIO5_0 - the pads
+ * the NXP SDK uses for exactly this - which satisfies the controller without
+ * consuming a usable pin. These pads are not in the package pinctrl header (no
+ * ball), so their mux values are defined here (IOCON offset = port * 32 + pin,
+ * SDIF function = 2).
+ */
+#define SDIF_SD_D4_PIO4_29 IOCON_MUX(157, IOCON_TYPE_D, 2)
+#define SDIF_SD_D5_PIO4_30 IOCON_MUX(158, IOCON_TYPE_D, 2)
+#define SDIF_SD_D6_PIO4_31 IOCON_MUX(159, IOCON_TYPE_D, 2)
+#define SDIF_SD_D7_PIO5_0  IOCON_MUX(160, IOCON_TYPE_D, 2)
+
 &pinctrl {
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
 		group0 {
@@ -19,6 +34,40 @@
 		group0 {
 			pinmux = <USB0_VBUS_PIO0_22>;
 			slew-rate = "standard";
+		};
+	};
+
+	/* SD/MMC full-size card slot (J7): 4-bit data + native power-enable. */
+	pinmux_sdif: pinmux_sdif {
+		group0 {
+			pinmux = <SD_CLK_PIO2_3>,
+				 <SD_CMD_PIO2_4>,
+				 <SDIF_SD_D0_PIO2_6>,
+				 <SDIF_SD_D1_PIO2_7>,
+				 <SDIF_SD_D2_PIO2_8>,
+				 <SDIF_SD_D3_PIO2_9>,
+				 <SD_POW_EN_PIO2_5>;
+			slew-rate = "fast";
+		};
+
+		group1 {
+			pinmux = <SD_CARD_DET_N_PIO2_10>;
+			slew-rate = "standard";
+			bias-pull-up;
+		};
+
+		/*
+		 * Unused upper data lines, muxed to internal-only pads with
+		 * pull-ups to satisfy erratum SDIO.1 (see the note at the top of
+		 * this file) without consuming a usable pin.
+		 */
+		group2 {
+			pinmux = <SDIF_SD_D4_PIO4_29>,
+				 <SDIF_SD_D5_PIO4_30>,
+				 <SDIF_SD_D6_PIO4_31>,
+				 <SDIF_SD_D7_PIO5_0>;
+			slew-rate = "fast";
+			bias-pull-up;
 		};
 	};
 };
