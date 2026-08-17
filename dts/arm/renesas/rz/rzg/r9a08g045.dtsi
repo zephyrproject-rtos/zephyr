@@ -1255,11 +1255,10 @@
 		/* CM33 <-> CA55 */
 		mbox1: mhu@50400020 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <1>;
+			unit = <1>;
 			reg = <0x50400020 0x20>;
-			tx-mask = <0x00000002>; /* Channel 1 is for TX */
-			rx-mask = <0x00000001>; /* Channel 0 is for RX */
-			channels-count = <2>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
 			interrupts = <58 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
@@ -1269,11 +1268,10 @@
 		/* CM33 <-> CM33_FPU */
 		mbox3: mhu@50400060 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <3>;
+			unit = <3>;
 			reg = <0x50400060 0x20>;
-			tx-mask = <0x00000002>; /* Channel 1 is for TX */
-			rx-mask = <0x00000001>; /* Channel 0 is for RX */
-			channels-count = <2>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
 			interrupts = <59 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
@@ -1283,11 +1281,10 @@
 		/* CM33 <-> CA55 */
 		mbox4: mhu@50400080 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <4>;
+			unit = <4>;
 			reg = <0x50400080 0x20>;
-			tx-mask = <0x00000002>; /* Channel 1 is for TX */
-			rx-mask = <0x00000001>; /* Channel 0 is for RX */
-			channels-count = <2>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
 			interrupts = <60 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
@@ -1297,11 +1294,10 @@
 		/* CM33 <-> CM33_FPU */
 		mbox5: mhu@504000a0 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <5>;
+			unit = <5>;
 			reg = <0x504000a0 0x20>;
-			tx-mask = <0x00000002>; /* Channel 1 is for TX */
-			rx-mask = <0x00000001>; /* Channel 0 is for RX */
-			channels-count = <2>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
 			interrupts = <61 2>;
 			interrupt-names = "mhuns";
 			#mbox-cells = <1>;
