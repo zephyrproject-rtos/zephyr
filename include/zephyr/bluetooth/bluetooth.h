@@ -1525,7 +1525,26 @@ struct bt_le_ext_adv_info {
 	/** Advertising Set ID */
 	uint8_t                    sid;
 
-	/** Current local advertising address used. */
+	/** @brief Current local advertising address used.
+	 *
+	 *  The address the set advertises with, whether that is an identity
+	 *  address, a static random address, an RPA or an NRPA. For a set
+	 *  advertising with an RPA this is the RPA itself, not the identity
+	 *  address it resolves to. The value is determined when the
+	 *  advertising parameters are set, so it is only meaningful once
+	 *  bt_le_ext_adv_create() or bt_le_ext_adv_update_param() has
+	 *  succeeded, and reads as @ref BT_ADDR_LE_ANY before that.
+	 *
+	 *  The pointer is valid for as long as the advertising set object
+	 *  itself, i.e. until bt_le_ext_adv_delete(), and tracks the set
+	 *  across reconfiguration and private address rotation. Copy the
+	 *  address if it is needed beyond that.
+	 *
+	 *  @note If the set was configured to let the controller resolve the
+	 *  address against its resolving list, the controller may substitute a
+	 *  locally generated RPA that the host cannot observe. The configured
+	 *  fallback address is reported in that case.
+	 */
 	const bt_addr_le_t         *addr;
 
 	/** Extended advertising state. */

@@ -127,7 +127,7 @@ ZTEST(bt_id_set_adv_private_addr, test_set_adv_private_address_with_valid_ref_pr
 	zassert_true(atomic_test_bit(adv_param.flags, BT_ADV_RANDOM_ADDR_PENDING),
 		     "Flags were not correctly set");
 
-	zassert_mem_equal(&adv_param.random_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&adv_param.adv_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 #endif
 
