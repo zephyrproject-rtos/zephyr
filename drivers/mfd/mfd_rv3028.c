@@ -97,7 +97,8 @@ void mfd_rv3028_set_irq_handler(const struct device *dev, const struct device *c
 	child->child_isr = handler;
 }
 
-#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || defined(CONFIG_COUNTER)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || defined(CONFIG_COUNTER) ||          \
+	defined(CONFIG_RTC_RV3028_TIMESTAMP)
 static void mfd_rv3028_fire_child_callback(struct mfd_rv3028_data *data, enum child_dev child_idx)
 {
 	struct mfd_rv3028_child *child = &data->children[child_idx];
@@ -131,14 +132,21 @@ static void mfd_rv3028_work_cb(struct k_work *work)
 		status &= ~(RV3028_STATUS_AF);
 		mfd_rv3028_fire_child_callback(data, RV3028_DEV_RTC_ALARM);
 	}
-	if (status & RV3028_STATUS_EVF) {
-		status &= ~(RV3028_STATUS_EVF);
-		mfd_rv3028_fire_child_callback(data, RV3028_DEV_EVI);
-	}
 #else
 	status &= ~(RV3028_STATUS_AF);
-	status &= ~(RV3028_STATUS_EVF);
 #endif /* CONFIG_RTC_ALARM */
+
+#ifdef CONFIG_RTC_RV3028_TIMESTAMP
+	/* clear flag only if callback is set, this enable pending functions in child */
+	if (status & RV3028_STATUS_EVF) {
+		if (data->children[RV3028_DEV_EVI].child_isr != NULL) {
+			status &= ~(RV3028_STATUS_EVF);
+			mfd_rv3028_fire_child_callback(data, RV3028_DEV_EVI);
+		}
+	}
+#else
+	status &= ~(RV3028_STATUS_EVF);
+#endif /* CONFIG_RTC_RV3028_TIMESTAMP */
 
 #ifdef CONFIG_RTC_UPDATE
 	if (status & RV3028_STATUS_UF) {
@@ -171,7 +179,8 @@ static void mfd_rv3028_work_cb(struct k_work *work)
 	}
 
 	if ((status & RV3028_STATUS_AF) || (status & RV3028_STATUS_UF) ||
-	    (status & RV3028_STATUS_EVF) || (status & RV3028_STATUS_TF)) {
+	    (status & RV3028_STATUS_TF) ||
+	    ((status & RV3028_STATUS_EVF) && (data->children[RV3028_DEV_EVI].child_isr != NULL))) {
 		/* Another interrupt occurred while servicing this one */
 		k_work_submit(&data->work);
 	}
