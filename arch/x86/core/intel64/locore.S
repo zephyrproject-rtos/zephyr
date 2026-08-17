@@ -15,7 +15,7 @@
 #include <zephyr/arch/cpu.h>
 #include <zephyr/kernel/mm.h>
 #ifdef CONFIG_HW_SHADOW_STACK
-#include <x86_shstk.h>
+#include <zephyr/x86_shstk.h>
 #endif
 
 /*
