@@ -19,3 +19,13 @@
 	interrupt-parent = <&gic>;
 	interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 };
+
+&i2c2 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 123 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
+
+&i2c3 {
+	interrupt-parent = <&gic>;
+	interrupts = <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+};
