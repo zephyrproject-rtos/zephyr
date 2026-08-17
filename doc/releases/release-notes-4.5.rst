@@ -653,6 +653,9 @@ New APIs and options
 
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
+  * New ``uint32-or-uint64`` binding property type, which accepts a value
+    encoded as 1 cell (32-bit unsigned) or 2 cells (64-bit unsigned, high
+    word first) and produces a scalar ``DT_PROP`` integer macro
 
 * Display
 
