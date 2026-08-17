@@ -1,5 +1,6 @@
 /**
  * Copyright (c) 2023 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -140,6 +141,96 @@ static void gatt_discover(void)
 
 	LOG_DBG("sc handle: %d", gatt_handles[SC]);
 	LOG_DBG("ccc handle: %d", gatt_handles[CCC]);
+}
+
+void central_reboot_subscribe_bond(void)
+{
+	int err;
+	struct bt_conn_auth_info_cb bt_conn_auth_info_cb = {
+		.pairing_failed = pairing_failed,
+		.pairing_complete = pairing_complete,
+	};
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(!err, "bt_enable failed (%d)", err);
+
+	err = bt_conn_auth_info_cb_register(&bt_conn_auth_info_cb);
+	TEST_ASSERT(!err, "bt_conn_auth_info_cb_register failed.");
+
+	err = settings_load();
+	TEST_ASSERT(!err, "settings_load failed (%d)", err);
+
+	scan_connect_to_first_result();
+	wait_connected();
+
+	/* Subscribe before there is a bond to persist the configuration
+	 * against.
+	 */
+	gatt_discover();
+	subscribe();
+
+	set_security(BT_SECURITY_L2);
+
+	TAKE_FLAG(flag_pairing_complete);
+	TAKE_FLAG(flag_bonded);
+
+	disconnect();
+	wait_disconnected();
+	clear_g_conn();
+
+	TEST_PASS("PASS");
+}
+
+/* Attribute handles of the Service Changed characteristic value and its CCC.
+ * The GATT service is the first service in the attribute table, so these are
+ * fixed and can be used without a new discovery after the reboot.
+ */
+#define SC_VALUE_HANDLE 0x0003
+#define SC_CCC_HANDLE   0x0004
+
+static void bond_addr_cb(const struct bt_bond_info *info, void *user_data)
+{
+	bt_addr_le_t *addr = user_data;
+
+	bt_addr_le_copy(addr, &info->addr);
+}
+
+void central_reboot_resubscribe(void)
+{
+	int err;
+	bt_addr_le_t peer = *BT_ADDR_LE_ANY;
+
+	err = bt_enable(NULL);
+	TEST_ASSERT(!err, "bt_enable failed (%d)", err);
+
+	err = settings_load();
+	TEST_ASSERT(!err, "settings_load failed (%d)", err);
+
+	bt_foreach_bond(BT_ID_DEFAULT, bond_addr_cb, &peer);
+	TEST_ASSERT(!bt_addr_le_eq(&peer, BT_ADDR_LE_ANY), "no bond restored");
+
+	/* Re-arm the subscription without writing the CCC, like a client that
+	 * believes it is still subscribed. This must happen before connecting,
+	 * since the server sends the Service Changed indication as soon as the
+	 * connection is established.
+	 */
+	subscribe_params.ccc_handle = SC_CCC_HANDLE;
+	subscribe_params.value_handle = SC_VALUE_HANDLE;
+	subscribe_params.value = BT_GATT_CCC_INDICATE;
+	subscribe_params.notify = sc_indicated;
+
+	err = bt_gatt_resubscribe(BT_ID_DEFAULT, &peer, &subscribe_params);
+	TEST_ASSERT(!err, "bt_gatt_resubscribe failed (%d)", err);
+
+	scan_connect_to_first_result();
+	wait_connected();
+
+	set_security(BT_SECURITY_L2);
+
+	/* wait for service change indication */
+	WAIT_FOR_FLAG(flag_indicated);
+
+	TEST_PASS("PASS");
 }
 
 void central(void)
