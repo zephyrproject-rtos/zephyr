@@ -1,0 +1,24 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Same bus as b_u585i_iot02a_mspi_qspi_psram.overlay, but the device is
+ * described entirely in devicetree (generic mode, no chip-variant), which
+ * compiles the chip table out of the driver. Compile-only, see there.
+ */
+
+#include "b_u585i_iot02a_mspi_qspi_psram.overlay"
+
+&qspi_psram {
+	/delete-property/ chip-variant;
+	read-command = <0xeb>;
+	write-command = <0x38>;
+	command-length = "INSTR_1_BYTE";
+	address-length = "ADDR_3_BYTE";
+	rx-dummy = <6>;
+	ce-break-config = <1024 8>;
+};

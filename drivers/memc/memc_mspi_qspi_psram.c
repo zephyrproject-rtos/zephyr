@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(memc_mspi_qspi_psram, CONFIG_MEMC_LOG_LEVEL);
  * Indices 0..N must match the chip-variant enum order in the DT binding.
  * GENERIC is the value used when no chip-variant is specified in DT; the
  * driver then uses standard QPI init commands but reads all transfer
- * parameters (read_cmd, write_cmd, rx-dummy, cmd/addr length, CE timing)
+ * parameters (read/write command, rx-dummy, cmd/addr length, CE timing)
  * from DT properties.
  */
 enum qspi_psram_variant {
@@ -55,15 +55,18 @@ struct qspi_psram_chip_params {
 	uint32_t size_bits;           /* Capacity in bits, 0 in generic mode   */
 	uint8_t  enter_qpi_cmd;       /* SPI command to enter QPI mode         */
 	uint8_t  exit_qpi_cmd;        /* QPI command to exit back to SPI mode  */
-	uint8_t  read_cmd;            /* QPI fast-read command                 */
-	uint8_t  write_cmd;           /* QPI write command                     */
+	uint8_t  qspi_read_cmd;       /* Fast-read command in 4-line QPI mode  */
+	uint8_t  qspi_write_cmd;      /* Write command in 4-line QPI mode      */
+	uint8_t  spi_read_cmd;        /* Fast-read command in 1-line SPI mode  */
+	uint8_t  spi_write_cmd;       /* Write command in 1-line SPI mode      */
 	uint8_t  reset_en_cmd;        /* Reset Enable command                  */
 	uint8_t  reset_cmd;           /* Reset command                         */
 	uint8_t  read_id_cmd;         /* Read ID command (returns MF/KGD/EID)  */
 	uint8_t  kgd_value;           /* Expected KGD byte in Read ID response */
 	uint8_t  cmd_length;          /* Command length enum index (DT binding) */
 	uint8_t  addr_length;         /* Address length enum index (DT binding) */
-	uint8_t  default_rx_dummy;    /* Recommended read dummy cycles         */
+	uint8_t  qspi_rx_dummy;       /* Read dummy cycles in 4-line QPI mode  */
+	uint8_t  spi_rx_dummy;        /* Read dummy cycles in 1-line SPI mode  */
 	uint8_t  default_tx_dummy;    /* Recommended write dummy cycles        */
 	uint16_t ce_max_burst_bytes;  /* Max bytes per CE cycle (mem_boundary) */
 	uint32_t ce_refresh_us;       /* Max CE assertion time in us           */
@@ -103,15 +106,18 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.size_bits          = 64U * 1024U * 1024U,
 		.enter_qpi_cmd      = 0x35,
 		.exit_qpi_cmd       = 0xF5,
-		.read_cmd           = 0xEB,
-		.write_cmd          = 0x38,
+		.qspi_read_cmd      = 0xEB,
+		.qspi_write_cmd     = 0x38,
+		.spi_read_cmd       = 0x0B,
+		.spi_write_cmd      = 0x02,
 		.reset_en_cmd       = 0x66,
 		.reset_cmd          = 0x99,
 		.read_id_cmd        = 0x9F,
 		.kgd_value          = 0x5D,
 		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
 		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.default_rx_dummy   = 6,
+		.qspi_rx_dummy      = 6,
+		.spi_rx_dummy       = 8,
 		.default_tx_dummy   = 0,
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 8,
@@ -126,15 +132,18 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.size_bits          = 32U * 1024U * 1024U,
 		.enter_qpi_cmd      = 0x35,
 		.exit_qpi_cmd       = 0xF5,
-		.read_cmd           = 0xEB,
-		.write_cmd          = 0x38,
+		.qspi_read_cmd      = 0xEB,
+		.qspi_write_cmd     = 0x38,
+		.spi_read_cmd       = 0x0B,
+		.spi_write_cmd      = 0x02,
 		.reset_en_cmd       = 0x66,
 		.reset_cmd          = 0x99,
 		.read_id_cmd        = 0x9F,
 		.kgd_value          = 0x5D,
 		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
 		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.default_rx_dummy   = 6,
+		.qspi_rx_dummy      = 6,
+		.spi_rx_dummy       = 8,
 		.default_tx_dummy   = 0,
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 4,
@@ -149,15 +158,18 @@ static const struct qspi_psram_chip_params chip_table[] = {
 		.size_bits          = 64U * 1024U * 1024U,
 		.enter_qpi_cmd      = 0x35,
 		.exit_qpi_cmd       = 0xF5,
-		.read_cmd           = 0xEB,
-		.write_cmd          = 0x38,
+		.qspi_read_cmd      = 0xEB,
+		.qspi_write_cmd     = 0x38,
+		.spi_read_cmd       = 0x0B,
+		.spi_write_cmd      = 0x02,
 		.reset_en_cmd       = 0x66,
 		.reset_cmd          = 0x99,
 		.read_id_cmd        = 0x9F,
 		.kgd_value          = 0x5D,
 		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
 		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.default_rx_dummy   = 6,
+		.qspi_rx_dummy      = 6,
+		.spi_rx_dummy       = 8,
 		.default_tx_dummy   = 0,
 		.ce_max_burst_bytes = 1024,
 		.ce_refresh_us      = 4,
@@ -487,9 +499,12 @@ static int qspi_psram_force_spi_mode(const struct device *psram,
  */
 static int qspi_psram_check_dt_cfg(const struct memc_mspi_qspi_psram_config *cfg)
 {
-	if (cfg->tar_dev_cfg.io_mode != MSPI_IO_MODE_QUAD) {
-		LOG_ERR("Only MSPI_IO_MODE_QUAD supported, got %d", cfg->tar_dev_cfg.io_mode);
-		return -EIO;
+	/* These parts have four data lines: 1-1-1 (SPI) or 4-4-4 (QPI), nothing else */
+	if (cfg->tar_dev_cfg.io_mode != MSPI_IO_MODE_SINGLE &&
+	    cfg->tar_dev_cfg.io_mode != MSPI_IO_MODE_QUAD) {
+		LOG_ERR("mspi-io-mode %d not supported, use SINGLE or QUAD",
+			cfg->tar_dev_cfg.io_mode);
+		return -ENOTSUP;
 	}
 
 	if (cfg->tar_dev_cfg.data_rate != MSPI_DATA_RATE_SINGLE) {
@@ -526,6 +541,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	struct memc_mspi_qspi_psram_data *data = psram->data;
 	struct qspi_psram_chip_params generic_params;
 	const struct qspi_psram_chip_params *chip;
+	const bool quad = (cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_QUAD);
 	uint32_t mem_size;
 	int ret;
 
@@ -591,28 +607,34 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		return -EIO;
 	}
 
-	/* Switch chip to QPI mode (SPI command, single-wire) */
-	ret = qspi_psram_command_write(psram, chip->enter_qpi_cmd, 0,
-				       (uint8_t *)&data->dummy, 0);
-	k_busy_wait(QSPI_PSRAM_QPI_ENTER_DELAY_US);
-	if (ret) {
-		LOG_ERR("Failed to enter QPI mode");
-		return -EIO;
+	/*
+	 * In SPI mode the chip stays as it comes out of reset; QPI needs the
+	 * mode switch command, sent single-wire.
+	 */
+	if (quad) {
+		ret = qspi_psram_command_write(psram, chip->enter_qpi_cmd, 0,
+					       (uint8_t *)&data->dummy, 0);
+		k_busy_wait(QSPI_PSRAM_QPI_ENTER_DELAY_US);
+		if (ret) {
+			LOG_ERR("Failed to enter QPI mode");
+			return -EIO;
+		}
 	}
 
 	/*
 	 * Build the runtime device config from DT target values.
 	 * For known chip variants: override read/write commands and CE timing
-	 * with datasheet values from chip_table, ignoring whatever was in DT.
-	 * For generic mode: all transfer parameters come from DT as-is.
+	 * with the datasheet values for the selected bus width, ignoring
+	 * whatever was in DT. For generic mode: all transfer parameters come
+	 * from DT as-is.
 	 */
 	data->dev_cfg = cfg->tar_dev_cfg;
 	if (cfg->chip != NULL) {
-		data->dev_cfg.read_cmd      = chip->read_cmd;
-		data->dev_cfg.write_cmd     = chip->write_cmd;
+		data->dev_cfg.read_cmd      = quad ? chip->qspi_read_cmd : chip->spi_read_cmd;
+		data->dev_cfg.write_cmd     = quad ? chip->qspi_write_cmd : chip->spi_write_cmd;
 		data->dev_cfg.cmd_length    = chip->cmd_length;
 		data->dev_cfg.addr_length   = chip->addr_length;
-		data->dev_cfg.rx_dummy      = chip->default_rx_dummy;
+		data->dev_cfg.rx_dummy      = quad ? chip->qspi_rx_dummy : chip->spi_rx_dummy;
 		data->dev_cfg.tx_dummy      = chip->default_tx_dummy;
 		data->dev_cfg.mem_boundary  = chip->ce_max_burst_bytes;
 		data->dev_cfg.time_to_break = chip->ce_refresh_us;
@@ -621,7 +643,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg);
 	if (ret) {
-		LOG_ERR("Failed to set QPI target mode");
+		LOG_ERR("Failed to apply the target device config");
 		return -EIO;
 	}
 
@@ -657,7 +679,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		qspi_psram_release(psram);
 	}
 
-	LOG_INF("QPI PSRAM initialised, %u KB", mem_size / 1024);
+	LOG_INF("PSRAM initialised in %s mode, %u KB", quad ? "QPI" : "SPI", mem_size / 1024);
 
 	return 0;
 }

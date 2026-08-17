@@ -1,0 +1,62 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Build coverage for the generic QPI PSRAM driver on the STM32 OCTOSPI MSPI
+ * controller. The board carries an octal APS6408L on this bus, not a QPI
+ * part, so this configuration is compile-only: it describes an ESP-PSRAM64H
+ * class device by chip-variant and lets the driver supply the rest.
+ */
+
+/delete-node/ &octospi1;
+
+&sram1 {
+	status = "disabled";
+};
+
+/ {
+	aliases {
+		psram0 = &qspi_psram;
+	};
+
+	soc {
+		octospi1: spi@420d1400 {
+			compatible = "st,stm32-ospi-controller";
+			reg = <0x420d1400 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <76 0>;
+			clock-names = "ospix", "ospi-ker", "ospi-mgr";
+			clocks = <&rcc STM32_CLOCK(AHB2_2, 4)>,
+				 <&rcc STM32_SRC_SYSCLK OCTOSPI_SEL(0)>,
+				 <&rcc STM32_CLOCK(AHB2, 21)>;
+			clock-frequency = <DT_FREQ_M(80)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pb11
+				     &octospim_p1_io0_pf8 &octospim_p1_io1_pf9
+				     &octospim_p1_io2_pf7 &octospim_p1_io3_pf6>;
+			pinctrl-names = "default";
+			/* Release nCS every 128 bytes, well inside the 8 us tCEM */
+			st,csbound = <7>;
+			status = "okay";
+
+			qspi_psram: psram@0 {
+				compatible = "qspi-psram";
+				reg = <0>;
+				chip-variant = "ESP64H";
+				/*
+				 * Not needed by the driver, which knows the capacity
+				 * of the named part; the sample sizes its test area
+				 * from this property.
+				 */
+				size = <DT_SIZE_M(64)>;
+				mspi-max-frequency = <DT_FREQ_M(80)>;
+				mspi-io-mode = "MSPI_IO_MODE_QUAD";
+				memmap-config = <1 0 0 0>;
+			};
+		};
+	};
+};

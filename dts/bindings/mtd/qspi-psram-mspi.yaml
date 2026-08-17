@@ -11,11 +11,11 @@ description: |
 
   1. Known chip variant (chip-variant is set):
      The driver takes every device parameter from its internal table:
-     read/write commands, command and address length, rx/tx dummy cycles,
-     CE refresh interval and maximum burst size. None of these have to be
-     given in devicetree, and neither is size. Besides the MSPI bus
-     properties (reg, mspi-max-frequency, mspi-io-mode) only chip-variant
-     is needed.
+     read/write commands for the selected mspi-io-mode, command and
+     address length, rx/tx dummy cycles, CE refresh interval and maximum
+     burst size. None of these have to be given in devicetree, and neither
+     is size. Besides the MSPI bus properties (reg, mspi-max-frequency,
+     mspi-io-mode) only chip-variant is needed.
      Supported chip variants: ESP-PSRAM64H, ISSI IS66WVS4M8BLL, IS66WVS8M8BLL.
 
   2. Generic mode (chip-variant is omitted):
@@ -54,11 +54,14 @@ properties:
       parameters must be specified in DT instead.
 
   mspi-io-mode:
-    const: "MSPI_IO_MODE_QUAD"
     description: |
-      Must be MSPI_IO_MODE_QUAD; the driver refuses to probe with anything
-      else. Left optional to match the other MSPI device bindings, so an
-      omitted value is reported at init rather than at build time.
+      Bus width the device is operated in. MSPI_IO_MODE_QUAD (QPI, 4-4-4)
+      is what these parts are meant for and gives the full bandwidth;
+      MSPI_IO_MODE_SINGLE (SPI, 1-1-1) is also supported and uses the
+      serial read/write commands. Other modes are rejected at init. Whether
+      memory mapping is available in a given mode is up to the MSPI
+      controller. Left optional to match the other MSPI device bindings;
+      note that an omitted value means MSPI_IO_MODE_SINGLE.
 
   mspi-data-rate:
     const: "MSPI_DATA_RATE_SINGLE"
@@ -68,13 +71,15 @@ properties:
 
   read-command:
     description: |
-      QPI fast-read command byte sent by the MSPI controller in DMA/memory-mapped mode.
+      Read command byte sent by the MSPI controller in DMA/memory-mapped
+      mode; it has to match mspi-io-mode (e.g. 0xEB in QPI, 0x0B in SPI).
       Generic mode only, where the driver rejects a missing value; ignored
       and overridden from the internal chip table when chip-variant is set.
 
   write-command:
     description: |
-      QPI write command byte sent by the MSPI controller in DMA/memory-mapped mode.
+      Write command byte sent by the MSPI controller in DMA/memory-mapped
+      mode; it has to match mspi-io-mode (e.g. 0x38 in QPI, 0x02 in SPI).
       Generic mode only, where the driver rejects a missing value; ignored
       and overridden from the internal chip table when chip-variant is set.
 
@@ -95,7 +100,8 @@ properties:
   rx-dummy:
     description: |
       Read dummy cycles. Use the value from the chip datasheet for the
-      chosen operating frequency (typically 6 at or below 80 MHz).
+      chosen read command and operating frequency (typically 6 for the QPI
+      fast read at or below 80 MHz, 8 for the SPI fast read 0x0B).
       Generic mode only, where leaving it at 0 disables the dummy phase and
       is warned about at init; ignored when chip-variant is set (the chip
       table holds the datasheet value).
