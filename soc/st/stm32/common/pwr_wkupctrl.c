@@ -106,6 +106,33 @@ struct wkup_pin_desc {
 	uint8_t src_select;
 };
 
+static void ll_pwr_set_wake_up_line_polarity_low(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_SetWakeUpLinePolarityLow(ll_wkup_line);
+#else
+	LL_PWR_SetWakeUpPinPolarityLow(ll_wkup_line);
+#endif
+}
+
+static void ll_pwr_set_wake_up_line_polarity_high(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_SetWakeUpLinePolarityHigh(ll_wkup_line);
+#else
+	LL_PWR_SetWakeUpPinPolarityHigh(ll_wkup_line);
+#endif
+}
+
+static void ll_pwr_enable_wake_up_line(uint32_t ll_wkup_line)
+{
+#if defined(CONFIG_SOC_SERIES_STM32U3X)
+	LL_PWR_EnableWakeUpLine(ll_wkup_line);
+#else
+	LL_PWR_EnableWakeUpPin(ll_wkup_line);
+#endif
+}
+
 /**
  * @brief Searches for the descriptor of a given wake-up pin.
  *
@@ -142,6 +169,8 @@ static const struct wkup_pin_desc *search_pin_descriptor(uint32_t port_idx, gpio
 
 static uint32_t wakeup_line_to_ll_val(uint8_t line_idx)
 {
+	uint32_t ll_wkup_line1;
+
 	/*
 	 * Across all series, LL_PWR_WAKEUP_PIN<n> is defined as an alias
 	 * for bit "WKUPEN<n>" or equivalent. WKUP1 seems "guaranteed" to
@@ -165,10 +194,14 @@ static uint32_t wakeup_line_to_ll_val(uint8_t line_idx)
 		"Invalid wake-up line index %d", line_idx);
 
 #if defined(CONFIG_STM32_HAL2)
-	return LL_PWR_WAKEUP_PIN_1 << (line_idx - 1U);
+	ll_wkup_line1 = LL_PWR_WAKEUP_PIN_1;
+#elif defined(CONFIG_SOC_SERIES_STM32U3X)
+	ll_wkup_line1 = LL_PWR_WAKEUP_LINE1;
 #else /* CONFIG_STM32_HAL2 */
-	return LL_PWR_WAKEUP_PIN1 << (line_idx - 1U);
+	ll_wkup_line1 = LL_PWR_WAKEUP_PIN1;
 #endif /* CONFIG_STM32_HAL2 */
+
+	return ll_wkup_line1 << (line_idx - 1U);
 }
 
 static void configure_wkup_pin_pupd(const struct wkup_pin_desc *pin_desc, uint32_t port_idx,
@@ -341,17 +374,17 @@ int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flag
 
 	if (flags & GPIO_ACTIVE_LOW) {
 		/* Falling-edge / low-level sensitivity */
-		LL_PWR_SetWakeUpPinPolarityLow(ll_wakeup_line);
+		ll_pwr_set_wake_up_line_polarity_low(ll_wakeup_line);
 	} else {
 		/* Rising-edge / high-level sensitivity */
-		LL_PWR_SetWakeUpPinPolarityHigh(ll_wakeup_line);
+		ll_pwr_set_wake_up_line_polarity_high(ll_wakeup_line);
 	}
 #endif /* !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl) */
 
 	configure_wkup_pin_pupd(pin_desc, port_idx, pin, flags & (GPIO_PULL_UP | GPIO_PULL_DOWN));
 	configure_wkup_line_source(pin_desc->line_idx, pin_desc->src_select);
 
-	LL_PWR_EnableWakeUpPin(ll_wakeup_line);
+	ll_pwr_enable_wake_up_line(ll_wakeup_line);
 
 	return 0;
 }
