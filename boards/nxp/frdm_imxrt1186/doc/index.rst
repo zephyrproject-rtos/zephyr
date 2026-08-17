@@ -246,6 +246,11 @@ The CM7 core is enabled to execute code in three memory options:
    This allows for larger code size but may be slower than ITCM execution.
    When booting CM7 from Flash the TRDC execution permissions has to be set by CM33 core.
 
+3. **HyperRAM**: The CM7 code is copied from flash to external HyperRAM and executed from there.
+   This allows for larger code size but may be slower than ITCM execution.  Be aware, the CM33
+   default data placement ``zephyr,sram`` is in HyperRAM.  Ensure the CM33 and CM7 are not using overlapping
+   regions in HyperRAM.  One option given below moves the CM33 data to DTCM.
+
 Configuring CM7 Execution memory
 ================================
 
@@ -272,6 +277,11 @@ When building with west, you can specify this option on the command line:
      -D<remote_app_name>_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/frdm_imxrt1186/cm7_flash_boot.overlay \
      -DCONFIG_CM7_BOOT_FROM_FLASH=y -D<remote_app_name>_CONFIG_CM7_BOOT_FROM_FLASH=y
 
+   # For HyperRAM execution
+   west build -b frdm_imxrt1186/mimxrt1186/cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/frdm_imxrt1186/cm7_code_hyperram.overlay \
+     -DEXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/frdm_imxrt1186/cm33_sram_dtcm.overlay
+
 Flash Boot Overlay
 ==================
 
@@ -284,6 +294,32 @@ the flash memory properly. The overlay file is located at:
 
 This overlay configures the CM7 core to use the flash memory for code execution instead of ITCM.
 
+HyperRAM Execution Overlay
+==========================
+
+When executing the CM7 core from HyperRAM, you need to apply a device tree overlay.  An example
+overlay file is located at:
+
+.. code-block:: none
+
+   boards/nxp/frdm_imxrt1186/cm7_code_hyperram.overlay
+
+The MPU attributes for the board also need to be changed in this file:
+
+.. code-block:: none
+
+   boards/nxp/frdm_imxrt1186/cm7/mpu_regions.c
+
+Changing the line below enables execution from the HyperRAM region by setting the flash attribute:
+
+.. code-block:: none
+
+   #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
+        MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
+   -                        ARM_MPU_SRAM_REGION_ATTR(REGION_HYPER_RAM_SIZE)),
+   +                        REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
+   #endif
+
 Memory Usage
 ============
 
@@ -294,7 +330,7 @@ Performance Considerations
 ==========================
 
 * **from ITCM**: Provides faster execution due to the low-latency internal ITCM memory.
-* **from external memory**: External flash may be slower due to memory access times,
+* **from external memory**: External flash or HyperRAM may be slower due to memory access times,
     but allows for larger code size.
 
 Dual Core samples Debugging
