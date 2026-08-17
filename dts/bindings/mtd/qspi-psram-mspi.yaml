@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
 # SPDX-License-Identifier: Apache-2.0
 
-description: >
+description: |
   Generic QPI PSRAM device on MSPI bus.
 
   Two mutually exclusive operating modes are supported. Pick one - the
@@ -34,7 +34,7 @@ include: [mspi-device.yaml]
 properties:
   size:
     type: int
-    description: >
+    description: |
       Memory capacity in bits (e.g. 67108864 for 64 Mbit).
       Required in generic mode; when chip-variant is set the capacity of that
       part is known to the driver and any value given here is ignored.
@@ -45,7 +45,7 @@ properties:
       - "ESP64H"          # Espressif ESP-PSRAM64H  64 Mbit (8 MB)
       - "IS66WVS4M8BLL"   # ISSI IS66WVS4M8BLL      32 Mbit (4 MB)
       - "IS66WVS8M8BLL"   # ISSI IS66WVS8M8BLL      64 Mbit (8 MB)
-    description: >
+    description: |
       Selects the PSRAM chip variant. The driver then takes all device
       parameters from its internal table and overrides whatever DT holds
       for them, so none of read-command, write-command, command-length,
@@ -54,44 +54,46 @@ properties:
       parameters must be specified in DT instead.
 
   mspi-io-mode:
-    description: >
+    const: "MSPI_IO_MODE_QUAD"
+    description: |
       Must be MSPI_IO_MODE_QUAD; the driver refuses to probe with anything
       else. Left optional to match the other MSPI device bindings, so an
       omitted value is reported at init rather than at build time.
 
   mspi-data-rate:
-    description: >
+    const: "MSPI_DATA_RATE_SINGLE"
+    description: |
       Must be MSPI_DATA_RATE_SINGLE, the default; this device family is
       single data rate only and the driver rejects anything else.
 
   read-command:
-    description: >
+    description: |
       QPI fast-read command byte sent by the MSPI controller in DMA/memory-mapped mode.
       Generic mode only, where the driver rejects a missing value; ignored
       and overridden from the internal chip table when chip-variant is set.
 
   write-command:
-    description: >
+    description: |
       QPI write command byte sent by the MSPI controller in DMA/memory-mapped mode.
       Generic mode only, where the driver rejects a missing value; ignored
       and overridden from the internal chip table when chip-variant is set.
 
   command-length:
-    description: >
+    description: |
       Length of the read/write command in bytes.
       Generic mode only, where the driver rejects a missing value; ignored
       when chip-variant is set (the chip table holds INSTR_1_BYTE for all
       supported variants).
 
   address-length:
-    description: >
+    description: |
       Length of the address phase in bytes.
       Generic mode only, where the driver rejects a missing value; ignored
       when chip-variant is set (the chip table holds ADDR_3_BYTE for all
       supported variants).
 
   rx-dummy:
-    description: >
+    description: |
       Read dummy cycles. Use the value from the chip datasheet for the
       chosen operating frequency (typically 6 at or below 80 MHz).
       Generic mode only, where leaving it at 0 disables the dummy phase and
@@ -101,7 +103,7 @@ properties:
   enter-qpi-cmd:
     type: int
     default: 0x35
-    description: >
+    description: |
       SPI command to switch the chip into QPI (quad) mode.
       Default 0x35 is the de-facto standard for most QPI PSRAM vendors.
       Only used in generic mode (chip-variant not set); for known variants
@@ -110,7 +112,7 @@ properties:
   exit-qpi-cmd:
     type: int
     default: 0xF5
-    description: >
+    description: |
       QPI command to return the chip to SPI mode.
       Default 0xF5 is the de-facto standard.
       Only used in generic mode (chip-variant not set).
@@ -118,7 +120,7 @@ properties:
   reset-en-cmd:
     type: int
     default: 0x66
-    description: >
+    description: |
       Reset Enable command (sent before reset-cmd).
       Default 0x66 is the de-facto standard.
       Only used in generic mode (chip-variant not set).
@@ -126,7 +128,7 @@ properties:
   reset-cmd:
     type: int
     default: 0x99
-    description: >
+    description: |
       Reset command.
       Default 0x99 is the de-facto standard.
       Only used in generic mode (chip-variant not set).
@@ -134,7 +136,7 @@ properties:
   read-id-cmd:
     type: int
     default: 0x9F
-    description: >
+    description: |
       Read ID command. The driver reads 3 bytes (MF / KGD / EID) at address 0.
       Default 0x9F is the de-facto standard.
       In generic mode KGD verification is skipped; the command is still

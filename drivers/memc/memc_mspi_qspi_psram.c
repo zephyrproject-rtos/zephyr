@@ -14,9 +14,69 @@
 #include <zephyr/drivers/memc.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/mspi/devicetree.h>
-#include "memc_mspi_qspi_psram.h"
 
 LOG_MODULE_REGISTER(memc_mspi_qspi_psram, CONFIG_MEMC_LOG_LEVEL);
+
+/**
+ * @brief Supported QPI PSRAM chip variants.
+ *
+ * Indices 0..N must match the chip-variant enum order in the DT binding.
+ * GENERIC is the value used when no chip-variant is specified in DT; the
+ * driver then uses standard QPI init commands but reads all transfer
+ * parameters (read_cmd, write_cmd, rx-dummy, cmd/addr length, CE timing)
+ * from DT properties.
+ */
+enum qspi_psram_variant {
+	QSPI_PSRAM_VARIANT_ESP64H,
+	QSPI_PSRAM_VARIANT_IS66WVS4M8BLL,
+	QSPI_PSRAM_VARIANT_IS66WVS8M8BLL,
+	QSPI_PSRAM_VARIANT_GENERIC, /* must be last */
+};
+
+/*
+ * DT enum indices for command-length and address-length (mspi-device.yaml).
+ * Used to populate chip_params without depending on the DT binding headers.
+ */
+#define QSPI_PSRAM_CMD_LEN_1BYTE   1   /* "INSTR_1_BYTE" */
+#define QSPI_PSRAM_ADDR_LEN_3BYTE  3   /* "ADDR_3_BYTE"  */
+
+/**
+ * @brief Per-chip parameters sourced from the device datasheet.
+ *
+ * These values are fixed for a given chip and are not user-configurable.
+ * The driver applies them during initialization, overriding the matching
+ * DT properties (read/write command, cmd/addr length, dummy cycles and
+ * ce-break-config), so none of them has to be given in devicetree.
+ *
+ * Entries are held in one table indexed by enum qspi_psram_variant, of which
+ * a build only carries the parts its devicetree names.
+ */
+struct qspi_psram_chip_params {
+	uint32_t size_bits;           /* Capacity in bits, 0 in generic mode   */
+	uint8_t  enter_qpi_cmd;       /* SPI command to enter QPI mode         */
+	uint8_t  exit_qpi_cmd;        /* QPI command to exit back to SPI mode  */
+	uint8_t  read_cmd;            /* QPI fast-read command                 */
+	uint8_t  write_cmd;           /* QPI write command                     */
+	uint8_t  reset_en_cmd;        /* Reset Enable command                  */
+	uint8_t  reset_cmd;           /* Reset command                         */
+	uint8_t  read_id_cmd;         /* Read ID command (returns MF/KGD/EID)  */
+	uint8_t  kgd_value;           /* Expected KGD byte in Read ID response */
+	uint8_t  cmd_length;          /* Command length enum index (DT binding) */
+	uint8_t  addr_length;         /* Address length enum index (DT binding) */
+	uint8_t  default_rx_dummy;    /* Recommended read dummy cycles         */
+	uint8_t  default_tx_dummy;    /* Recommended write dummy cycles        */
+	uint16_t ce_max_burst_bytes;  /* Max bytes per CE cycle (mem_boundary) */
+	uint32_t ce_refresh_us;       /* Max CE assertion time in us           */
+};
+
+/* Frequency used for initial SPI-mode register access before entering QPI */
+#define QSPI_PSRAM_SPI_INIT_FREQ    24000000U
+
+/* Minimum delay after software reset before first access (tRST) */
+#define QSPI_PSRAM_RESET_DELAY_US   200U
+
+/* Settling time after the mode switch command before the chip answers in QPI */
+#define QSPI_PSRAM_QPI_ENTER_DELAY_US 100U
 
 /* Expands to `1 ||` for every enabled node that selects the given variant */
 #define QSPI_PSRAM_VARIANT_USED_OR(n, variant)                                    \
@@ -186,7 +246,7 @@ static int qspi_psram_command_write(const struct device *psram, uint8_t cmd,
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id,
 			      (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI write transaction failed: %d/%u", ret, __LINE__);
+		LOG_ERR("MSPI write transaction failed: %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -219,7 +279,7 @@ static int qspi_psram_command_read(const struct device *psram, uint8_t cmd,
 	ret = mspi_transceive(cfg->bus, &cfg->dev_id,
 			      (const struct mspi_xfer *)&data->trans);
 	if (ret) {
-		LOG_ERR("MSPI read transaction failed: %d/%u", ret, __LINE__);
+		LOG_ERR("MSPI read transaction failed: %d", ret);
 		return -EIO;
 	}
 	return 0;
@@ -234,14 +294,14 @@ static int qspi_psram_reset(const struct device *psram,
 	ret = qspi_psram_command_write(psram, chip->reset_en_cmd, 0,
 				       (uint8_t *)&data->dummy, 0);
 	if (ret) {
-		LOG_ERR("Failed to send Reset Enable/%u", __LINE__);
+		LOG_ERR("Failed to send Reset Enable");
 		return ret;
 	}
 
 	ret = qspi_psram_command_write(psram, chip->reset_cmd, 0,
 				       (uint8_t *)&data->dummy, 0);
 	if (ret) {
-		LOG_ERR("Failed to send Reset/%u", __LINE__);
+		LOG_ERR("Failed to send Reset");
 		return ret;
 	}
 
@@ -271,7 +331,7 @@ static int qspi_psram_verify_id(const struct device *psram,
 	data->dev_cfg.addr_length = saved_addr_length;
 
 	if (ret) {
-		LOG_ERR("Failed to read chip ID/%u", __LINE__);
+		LOG_ERR("Failed to read chip ID");
 		return ret;
 	}
 
@@ -285,8 +345,7 @@ static int qspi_psram_verify_id(const struct device *psram,
 	}
 
 	if (id[1] != chip->kgd_value) {
-		LOG_ERR("KGD mismatch: expected 0x%02X got 0x%02X/%u",
-			chip->kgd_value, id[1], __LINE__);
+		LOG_ERR("KGD mismatch: expected 0x%02X got 0x%02X", chip->kgd_value, id[1]);
 		return -EIO;
 	}
 
@@ -340,7 +399,7 @@ static int qspi_psram_pm_action(const struct device *psram,
 		if (data->memmap_cfg.enable) {
 			ret = mspi_memmap_config(cfg->bus, &cfg->dev_id, &data->memmap_cfg);
 			if (ret) {
-				LOG_ERR("Failed to re-enable memory mapping/%u", __LINE__);
+				LOG_ERR("Failed to re-enable memory mapping");
 			}
 		}
 #endif
@@ -355,7 +414,7 @@ static int qspi_psram_pm_action(const struct device *psram,
 			memmap_off.enable = false;
 			ret = mspi_memmap_config(cfg->bus, &cfg->dev_id, &memmap_off);
 			if (ret) {
-				LOG_ERR("Failed to disable memory mapping/%u", __LINE__);
+				LOG_ERR("Failed to disable memory mapping");
 				break;
 			}
 		}
@@ -394,7 +453,7 @@ static int qspi_psram_force_spi_mode(const struct device *psram,
 	qpi_cfg.io_mode = MSPI_IO_MODE_QUAD;
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id, MSPI_DEVICE_CONFIG_ALL, &qpi_cfg)) {
-		LOG_ERR("Failed to select 4-line mode for the QPI exit/%u", __LINE__);
+		LOG_ERR("Failed to select 4-line mode for the QPI exit");
 		return -EIO;
 	}
 	data->dev_cfg = qpi_cfg;
@@ -412,7 +471,7 @@ static int qspi_psram_force_spi_mode(const struct device *psram,
 
 	if (mspi_dev_config(cfg->bus, &cfg->dev_id,
 			    MSPI_DEVICE_CONFIG_ALL, &cfg->spi_init_cfg)) {
-		LOG_ERR("Failed to restore SPI mode after QPI exit/%u", __LINE__);
+		LOG_ERR("Failed to restore SPI mode after QPI exit");
 		return -EIO;
 	}
 	data->dev_cfg = cfg->spi_init_cfg;
@@ -429,14 +488,12 @@ static int qspi_psram_force_spi_mode(const struct device *psram,
 static int qspi_psram_check_dt_cfg(const struct memc_mspi_qspi_psram_config *cfg)
 {
 	if (cfg->tar_dev_cfg.io_mode != MSPI_IO_MODE_QUAD) {
-		LOG_ERR("Only MSPI_IO_MODE_QUAD supported, got %d/%u",
-			cfg->tar_dev_cfg.io_mode, __LINE__);
+		LOG_ERR("Only MSPI_IO_MODE_QUAD supported, got %d", cfg->tar_dev_cfg.io_mode);
 		return -EIO;
 	}
 
 	if (cfg->tar_dev_cfg.data_rate != MSPI_DATA_RATE_SINGLE) {
-		LOG_ERR("Only MSPI_DATA_RATE_SINGLE supported, got %d/%u",
-			cfg->tar_dev_cfg.data_rate, __LINE__);
+		LOG_ERR("Only MSPI_DATA_RATE_SINGLE supported, got %d", cfg->tar_dev_cfg.data_rate);
 		return -EIO;
 	}
 
@@ -446,15 +503,13 @@ static int qspi_psram_check_dt_cfg(const struct memc_mspi_qspi_psram_config *cfg
 	}
 
 	if (cfg->tar_dev_cfg.read_cmd == 0 || cfg->tar_dev_cfg.write_cmd == 0) {
-		LOG_ERR("Generic mode requires read-command and write-command in DT/%u",
-			__LINE__);
+		LOG_ERR("Generic mode requires read-command and write-command in DT");
 		return -EINVAL;
 	}
 
 	/* 0 means INSTR_DISABLED / ADDR_DISABLED */
 	if (cfg->tar_dev_cfg.cmd_length == 0 || cfg->tar_dev_cfg.addr_length == 0) {
-		LOG_ERR("Generic mode requires command-length and address-length in DT/%u",
-			__LINE__);
+		LOG_ERR("Generic mode requires command-length and address-length in DT");
 		return -EINVAL;
 	}
 
@@ -493,7 +548,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	}
 
 	if (!device_is_ready(cfg->bus)) {
-		LOG_ERR("MSPI controller not ready/%u", __LINE__);
+		LOG_ERR("MSPI controller not ready");
 		return -ENODEV;
 	}
 
@@ -503,7 +558,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	 */
 	mem_size = (cfg->chip != NULL) ? (chip->size_bits / 8) : cfg->mem_size;
 	if (mem_size == 0) {
-		LOG_ERR("Generic mode requires size in DT/%u", __LINE__);
+		LOG_ERR("Generic mode requires size in DT");
 		return -EINVAL;
 	}
 	data->mem_size = mem_size;
@@ -520,19 +575,19 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	 */
 	ret = qspi_psram_force_spi_mode(psram, chip);
 	if (ret) {
-		LOG_ERR("Failed to force SPI mode/%u", __LINE__);
+		LOG_ERR("Failed to force SPI mode");
 		return ret;
 	}
 
 	ret = qspi_psram_reset(psram, chip);
 	if (ret) {
-		LOG_ERR("Failed to reset PSRAM/%u", __LINE__);
+		LOG_ERR("Failed to reset PSRAM");
 		return -EIO;
 	}
 
 	ret = qspi_psram_verify_id(psram, chip);
 	if (ret) {
-		LOG_ERR("PSRAM ID verification failed/%u", __LINE__);
+		LOG_ERR("PSRAM ID verification failed");
 		return -EIO;
 	}
 
@@ -541,7 +596,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 				       (uint8_t *)&data->dummy, 0);
 	k_busy_wait(QSPI_PSRAM_QPI_ENTER_DELAY_US);
 	if (ret) {
-		LOG_ERR("Failed to enter QPI mode/%u", __LINE__);
+		LOG_ERR("Failed to enter QPI mode");
 		return -EIO;
 	}
 
@@ -566,21 +621,21 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
 			      MSPI_DEVICE_CONFIG_ALL, &data->dev_cfg);
 	if (ret) {
-		LOG_ERR("Failed to set QPI target mode/%u", __LINE__);
+		LOG_ERR("Failed to set QPI target mode");
 		return -EIO;
 	}
 
 #if CONFIG_MSPI_MEMMAP
 	if (cfg->tar_memmap_cfg.enable) {
 		if (cfg->tar_memmap_cfg.size > mem_size) {
-			LOG_ERR("memmap-config size %u exceeds device size %u/%u",
-				cfg->tar_memmap_cfg.size, mem_size, __LINE__);
+			LOG_ERR("memmap-config size %u exceeds device size %u",
+				cfg->tar_memmap_cfg.size, mem_size);
 			return -EINVAL;
 		}
 
 		ret = mspi_memmap_config(cfg->bus, &cfg->dev_id, &cfg->tar_memmap_cfg);
 		if (ret) {
-			LOG_ERR("Failed to enable memory mapping/%u", __LINE__);
+			LOG_ERR("Failed to enable memory mapping");
 			return -EIO;
 		}
 		data->memmap_cfg = cfg->tar_memmap_cfg;
@@ -592,7 +647,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		ret = mspi_scramble_config(cfg->bus, &cfg->dev_id,
 					   &cfg->tar_scramble_cfg);
 		if (ret) {
-			LOG_ERR("Failed to enable scrambling/%u", __LINE__);
+			LOG_ERR("Failed to enable scrambling");
 			return -EIO;
 		}
 	}
@@ -681,19 +736,22 @@ static DEVICE_API(memc, memc_mspi_qspi_psram_api) = {
 						 software_multiperipheral, false),       \
 		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),    \
 		.chip               = QSPI_PSRAM_CHIP_PARAMS(n),                         \
-		.enter_qpi_cmd      = DT_INST_PROP_OR(n, enter_qpi_cmd, 0x35),           \
-		.exit_qpi_cmd       = DT_INST_PROP_OR(n, exit_qpi_cmd, 0xF5),            \
-		.reset_en_cmd       = DT_INST_PROP_OR(n, reset_en_cmd, 0x66),            \
-		.reset_cmd          = DT_INST_PROP_OR(n, reset_cmd, 0x99),               \
-		.read_id_cmd        = DT_INST_PROP_OR(n, read_id_cmd, 0x9F),             \
+		.enter_qpi_cmd      = DT_INST_PROP(n, enter_qpi_cmd),                    \
+		.exit_qpi_cmd       = DT_INST_PROP(n, exit_qpi_cmd),                     \
+		.reset_en_cmd       = DT_INST_PROP(n, reset_en_cmd),                     \
+		.reset_cmd          = DT_INST_PROP(n, reset_cmd),                        \
+		.read_id_cmd        = DT_INST_PROP(n, read_id_cmd),                      \
 	};                                                                               \
+	                                                                                 \
 	static struct memc_mspi_qspi_psram_data                                          \
 	memc_mspi_qspi_psram_data_##n = {                                                \
 		.lock  = Z_SEM_INITIALIZER(                                              \
 				memc_mspi_qspi_psram_data_##n.lock, 0, 1),               \
 		.dummy = 0,                                                              \
 	};                                                                               \
+	                                                                                 \
 	PM_DEVICE_DT_INST_DEFINE(n, qspi_psram_pm_action);                               \
+	                                                                                 \
 	DEVICE_DT_INST_DEFINE(n,                                                         \
 			      memc_mspi_qspi_psram_init,                                 \
 			      PM_DEVICE_DT_INST_GET(n),                                  \
