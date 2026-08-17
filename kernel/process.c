@@ -354,6 +354,12 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 #ifdef CONFIG_SIGNAL
 	z_sig_process_drop(proc);
 #endif /* CONFIG_SIGNAL */
+#ifdef CONFIG_PROCESS_VM
+	if (proc->vm != NULL) {
+		z_process_vm_teardown(proc->vm);
+		proc->vm = NULL;
+	}
+#endif /* CONFIG_PROCESS_VM */
 #ifdef CONFIG_USERSPACE
 	k_object_uninit(proc);
 	z_process_perms_all_clear(proc);
@@ -962,7 +968,7 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 		found += n;
 #ifdef CONFIG_SIGNAL
 		for (int i = 0; i < n; i++) {
-			int err = k_sig_queue(targets[i], signo, (union k_sig_val){0});
+			int err = z_sig_queue_thread(targets[i], signo);
 
 			if (err == -EINVAL) {
 				return -EINVAL;
@@ -1043,7 +1049,7 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 	if (pended) {
 		return ret;
 	}
-	return k_sig_queue(tid, signo, (union k_sig_val){0});
+	return z_sig_queue_thread(tid, signo);
 #else
 	ARG_UNUSED(pended);
 	ARG_UNUSED(ret);

@@ -530,6 +530,7 @@ static int thread_pool_draw(struct k_thread **th)
 }
 
 int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
+				    bool trusted,
 				    uint32_t stack_size, uint32_t guard_size,
 				    k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio,
 				    uint32_t options, k_timeout_t delay)
@@ -559,7 +560,7 @@ int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
 	}
 
 #ifdef CONFIG_USERSPACE
-	if (k_is_in_user_syscall()) {
+	if (k_is_in_user_syscall() && !trusted) {
 		k_tid_t z_vrfy_k_thread_create(struct k_thread * new_thread,
 					       k_thread_stack_t * stack, size_t stack_size,
 					       k_thread_entry_t entry, void *p1, void *p2, void *p3,
@@ -626,6 +627,20 @@ int sys_thread_create_paused(struct k_thread **th, k_thread_stack_t *stack, uint
 	/* kernel-mode only: there is no system call for deferred-start creation */
 	return thread_create_clone(th, stack, stack_size, guard_size, entry, p1, p2, p3, prio,
 				   options, SYS_CLONE_PAUSED);
+}
+
+int sys_thread_create_paused_trusted(struct k_thread **th, k_thread_stack_t *stack,
+				     uint32_t stack_size, uint32_t guard_size,
+				     k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio,
+				     uint32_t options)
+{
+	/*
+	 * Kernel-generated arguments (pool-drawn objects): skip the
+	 * user-syscall revalidation even when called mid-syscall, so the
+	 * kernel may construct e.g. a forked child's supervisor bootstrap.
+	 */
+	return z_sys_thread_create_common(th, stack, true, stack_size, guard_size, entry, p1, p2, p3,
+					prio, options, K_FOREVER);
 }
 
 #ifdef CONFIG_USERSPACE

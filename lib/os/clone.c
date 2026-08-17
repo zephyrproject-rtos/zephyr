@@ -40,14 +40,16 @@ static inline int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t
 
 /* pooled creation (thread.c); stubbed when there is no pool to draw from */
 #ifdef CONFIG_SYS_THREAD
-int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack, uint32_t stack_size,
-			       uint32_t guard_size, k_thread_entry_t entry, void *p1, void *p2,
-			       void *p3, int prio, uint32_t options, k_timeout_t delay);
+int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack, bool trusted,
+			       uint32_t stack_size, uint32_t guard_size, k_thread_entry_t entry,
+			       void *p1, void *p2, void *p3, int prio, uint32_t options,
+			       k_timeout_t delay);
 #else
 static inline int z_sys_thread_create_common(struct k_thread **th, k_thread_stack_t *stack,
-					     uint32_t stack_size, uint32_t guard_size,
-					     k_thread_entry_t entry, void *p1, void *p2, void *p3,
-					     int prio, uint32_t options, k_timeout_t delay)
+					     bool trusted, uint32_t stack_size,
+					     uint32_t guard_size, k_thread_entry_t entry, void *p1,
+					     void *p2, void *p3, int prio, uint32_t options,
+					     k_timeout_t delay)
 {
 	return -EINVAL;
 }
@@ -59,7 +61,7 @@ static int clone_thread(const struct sys_clone_args *args, k_pid_t *child)
 	k_tid_t tid;
 
 	if (args->thread == NULL) {
-		ret = z_sys_thread_create_common(&tid, args->stack, args->stack_size,
+		ret = z_sys_thread_create_common(&tid, args->stack, false, args->stack_size,
 						 args->guard_size, args->entry, args->p1, args->p2,
 						 args->p3, args->prio, args->options, K_FOREVER);
 		if (ret < 0) {
@@ -121,10 +123,6 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 		return -EINVAL;
 	}
 	if ((args->flags & SYS_CLONE_VM_COPY) != 0U) {
-		/* the fork model: no entry point, the child resumes in place */
-		if (args->entry != NULL) {
-			return -EINVAL;
-		}
 		return z_sys_clone_vm_copy(args, child);
 	}
 	if (args->entry == NULL) {

@@ -271,6 +271,10 @@ struct k_process {
 	/** Permission-principal index; every member thread holds it */
 	int16_t perm_index;
 #endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_PROCESS_VM
+	/** Cloned address-space context (system layer), or NULL */
+	void *vm;
+#endif /* CONFIG_PROCESS_VM */
 	/** @endcond */
 };
 

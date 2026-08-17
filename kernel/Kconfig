@@ -272,7 +272,8 @@ if THREAD_CANCEL
 config THREAD_CANCEL_TLS
 	bool "Mirror the pending-cancellation flag in thread-local storage"
 	default y
-	depends on THREAD_LOCAL_STORAGE
+	# the target's TLS block is not reachable through the caller's address space
+	depends on THREAD_LOCAL_STORAGE && !PROCESS_VM
 	help
 	  Keep a copy of each thread's pending-cancellation flag in its thread-local
 	  storage, where the thread can read it without a system call. Cancellation

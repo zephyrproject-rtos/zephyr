@@ -889,6 +889,19 @@ config ARCH_HAS_TRUSTED_EXECUTION
 config ARCH_HAS_STACK_PROTECTION
 	bool
 
+config ARCH_HAS_PROCESS_VM
+	bool
+	help
+	  Set by an architecture that implements z_mem_domain_clone_remap()
+	  for CONFIG_PROCESS_VM.
+
+config ARCH_HAS_FORK_RESUME
+	bool
+	help
+	  Set by an architecture that implements arch_fork_frame_init() and
+	  arch_fork_resume(): the forked child's first run returns to user
+	  mode from its parent's captured syscall frame.
+
 config ARCH_HAS_USERSPACE
 	bool
 

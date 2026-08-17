@@ -632,43 +632,409 @@ SYS_INIT(process_sys_init, PRE_KERNEL_1, 1);
  * (per-domain page tables mapping fresh frames at the caller's addresses),
  * there is nothing to duplicate onto.
  */
+#ifdef CONFIG_PROCESS_VM
+#include <zephyr/kernel/mm.h>
+
+#define VM_CLONE_MAX_RANGES (CONFIG_MAX_DOMAIN_PARTITIONS + 1)
+
+struct vm_clone_range {
+	uintptr_t start;
+	size_t size;
+	void *copy;
+};
+
+struct vm_clone_ctx {
+	struct k_mem_domain domain;
+	sys_dnode_t free_node;
+	struct vm_clone_range ranges[VM_CLONE_MAX_RANGES];
+	size_t nframes;
+#ifdef CONFIG_ARCH_HAS_FORK_RESUME
+	/* staged parent syscall frame the child's first run resumes from */
+	void *fork_frame;
+#endif /* CONFIG_ARCH_HAS_FORK_RESUME */
+};
+
+/* one child-domain context per pool record; freed to a graveyard at record free */
+static struct vm_clone_ctx vm_ctx_slab[SYS_PROCESS_MIN];
+/* arch domain state is not reclaimable: a slot's domain is initialized once */
+static bool vm_ctx_domain_ready[SYS_PROCESS_MIN];
+static sys_dlist_t vm_ctx_free = SYS_DLIST_STATIC_INIT(&vm_ctx_free);
+static bool vm_ctx_ready;
+
+static void vm_ctx_init(void)
+{
+	if (!vm_ctx_ready) {
+		for (size_t i = 0; i < ARRAY_SIZE(vm_ctx_slab); i++) {
+			sys_dlist_append(&vm_ctx_free, &vm_ctx_slab[i].free_node);
+		}
+		vm_ctx_ready = true;
+	}
+}
+
+/*
+ * A process's VM is torn down from the exit path, under the scheduler lock,
+ * where the heap is off limits: the copied frames are freed later, from the
+ * next fork's caller context, like the other graveyards above.
+ */
+static sys_dlist_t vm_graveyard = SYS_DLIST_STATIC_INIT(&vm_graveyard);
+
+static void vm_graveyard_drain(void)
+{
+	sys_dnode_t *n;
+
+	do {
+		struct vm_clone_ctx *ctx = NULL;
+
+		K_SPINLOCK(&pool_lock) {
+			n = sys_dlist_get(&vm_graveyard);
+			if (n != NULL) {
+				ctx = CONTAINER_OF(n, struct vm_clone_ctx, free_node);
+			}
+		}
+		if (ctx == NULL) {
+			break;
+		}
+		for (size_t i = 0; i < ctx->nframes; i++) {
+			k_free(ctx->ranges[i].copy);
+		}
+		ctx->nframes = 0;
+		K_SPINLOCK(&pool_lock) {
+			sys_dlist_append(&vm_ctx_free, &ctx->free_node);
+		}
+	} while (true);
+}
+
+static size_t page_up(size_t v)
+{
+	return ROUND_UP(v, CONFIG_MMU_PAGE_SIZE);
+}
+
+static int vm_clone_range(struct vm_clone_ctx *ctx, uintptr_t start, size_t size)
+{
+	void *frames;
+	int ret;
+
+	if (ctx->nframes >= ARRAY_SIZE(ctx->ranges)) {
+		return -ENOMEM;
+	}
+
+	frames = k_aligned_alloc(CONFIG_MMU_PAGE_SIZE, page_up(size));
+	if (frames == NULL) {
+		return -ENOMEM;
+	}
+
+	memcpy(frames, (void *)start, size);
+
+	ret = z_mem_domain_clone_remap(&ctx->domain, (void *)start, page_up(size),
+				       k_mem_phys_addr(frames));
+	if (ret != 0) {
+		k_free(frames);
+		return ret;
+	}
+
+	ctx->ranges[ctx->nframes++] = (struct vm_clone_range){
+		.start = start,
+		.size = size,
+		.copy = frames,
+	};
+
+	return 0;
+}
+
+
+static void vm_domain_empty(struct k_mem_domain *d)
+{
+	while (true) {
+		struct k_mem_partition *part = NULL;
+
+		for (uint8_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			if (d->partitions[i].size != 0U) {
+				part = &d->partitions[i];
+				break;
+			}
+		}
+		if ((part == NULL) || (k_mem_domain_remove_partition(d, part) != 0)) {
+			break;
+		}
+	}
+}
+
 static int process_vm_clone(struct k_process *parent, struct k_process *proc)
 {
-	ARG_UNUSED(parent);
-	ARG_UNUSED(proc);
+	struct k_mem_domain *src = _current->mem_domain_info.mem_domain;
+	struct vm_clone_ctx *ctx;
+	sys_dnode_t *n;
+	int ret;
 
-	return -ENOSYS;
+	ARG_UNUSED(parent);
+
+	if (src == NULL) {
+		return -EINVAL;
+	}
+
+	vm_graveyard_drain();
+	K_SPINLOCK(&pool_lock) {
+		vm_ctx_init();
+		n = sys_dlist_get(&vm_ctx_free);
+	}
+	if (n == NULL) {
+		return -EAGAIN;
+	}
+	ctx = CONTAINER_OF(n, struct vm_clone_ctx, free_node);
+	ctx->nframes = 0;
+
+	if (vm_ctx_domain_ready[ctx - vm_ctx_slab]) {
+		vm_domain_empty(&ctx->domain);
+	} else {
+		ret = k_mem_domain_init(&ctx->domain, 0, NULL);
+		if (ret != 0) {
+			goto err_return_ctx;
+		}
+		vm_ctx_domain_ready[ctx - vm_ctx_slab] = true;
+	}
+
+	/* mirror every parent partition into the child (perms + shared frames) */
+	for (uint8_t i = 0; i < src->num_partitions; i++) {
+		struct k_mem_partition *part = &src->partitions[i];
+
+		if (part->size == 0U) {
+			continue;
+		}
+		ret = k_mem_domain_add_partition(&ctx->domain, part);
+		if (ret != 0) {
+			goto err_return_ctx;
+		}
+	}
+
+	/* the child's leader runs on the caller's stack range, copied */
+	{
+		struct k_mem_partition stack = {
+			.start = _current->stack_info.start,
+			.size = page_up(_current->stack_info.size),
+			.attr = K_MEM_PARTITION_P_RW_U_RW,
+		};
+
+		ret = k_mem_domain_add_partition(&ctx->domain, &stack);
+		if (ret != 0) {
+			goto err_return_ctx;
+		}
+	}
+
+	/* now that user perms are set in the child tables, remap onto copies */
+	for (uint8_t i = 0; i < src->num_partitions; i++) {
+		struct k_mem_partition *part = &src->partitions[i];
+
+		if ((part->size == 0U) || !K_MEM_PARTITION_IS_WRITABLE(part->attr)) {
+			continue;
+		}
+		ret = vm_clone_range(ctx, part->start, part->size);
+		if (ret != 0) {
+			goto err_free_frames;
+		}
+	}
+	ret = vm_clone_range(ctx, _current->stack_info.start, _current->stack_info.size);
+	if (ret != 0) {
+		goto err_free_frames;
+	}
+
+	proc->vm = ctx;
+
+	return 0;
+
+err_free_frames:
+	for (size_t i = 0; i < ctx->nframes; i++) {
+		k_free(ctx->ranges[i].copy);
+	}
+err_return_ctx:
+	K_SPINLOCK(&pool_lock) {
+		sys_dlist_append(&vm_ctx_free, &ctx->free_node);
+	}
+
+	return ret;
 }
+
+void z_process_vm_teardown(void *vm)
+{
+	struct vm_clone_ctx *ctx = vm;
+
+	/* the exit path, under the scheduler lock: the heap is off limits here */
+	K_SPINLOCK(&pool_lock) {
+		sys_dlist_append(&vm_graveyard, &ctx->free_node);
+	}
+}
+
+struct k_mem_domain *z_process_vm_domain(void *vm)
+{
+	struct vm_clone_ctx *ctx = vm;
+
+	return &ctx->domain;
+}
+#endif /* CONFIG_PROCESS_VM */
+
+#if defined(CONFIG_PROCESS_VM) && defined(CONFIG_ARCH_HAS_FORK_RESUME)
+/* lib/os/thread.c: pool create that skips user-syscall revalidation */
+int sys_thread_create_paused_trusted(struct k_thread **th, k_thread_stack_t *stack,
+				     uint32_t stack_size, uint32_t guard_size,
+				     k_thread_entry_t entry, void *p1, void *p2, void *p3, int prio,
+				     uint32_t options);
+
+static void fork_child_entry(void *p1, void *p2, void *p3)
+{
+	struct vm_clone_ctx *ctx = _current->process->vm;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* first run of a forked child: enter the parent's captured context */
+	arch_fork_resume(ctx->fork_frame);
+}
+#endif /* CONFIG_PROCESS_VM && CONFIG_ARCH_HAS_FORK_RESUME */
 
 /* the fork tier of sys_clone(); the dispatch has validated args */
 int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
 {
+#ifdef CONFIG_PROCESS_VM
 	int ret;
+	k_tid_t tid;
+	bool fork_resume = false;
+	k_thread_entry_t entry = args->entry;
 	struct k_process *proc;
+	struct k_process *parent = _current->process;
 
-	ARG_UNUSED(args);
+	if (entry == NULL) {
+		/*
+		 * The fork model: the child's first run returns to user mode
+		 * from the parent's captured syscall frame. Only meaningful
+		 * for a user-mode caller mid-syscall.
+		 */
+		if (!IS_ENABLED(CONFIG_ARCH_HAS_FORK_RESUME) ||
+		    (_current->syscall_frame == NULL)) {
+			return -ENOTSUP;
+		}
+		fork_resume = true;
+#ifdef CONFIG_ARCH_HAS_FORK_RESUME
+		entry = fork_child_entry;
+#endif /* CONFIG_ARCH_HAS_FORK_RESUME */
+	}
 
 	proc = record_alloc();
 	if (proc == NULL) {
 		return -EAGAIN;
 	}
 
-	ret = process_vm_clone(_current->process, proc);
+	ret = process_vm_clone(parent, proc);
 	if (ret < 0) {
 		(void)z_process_record_free(proc);
 		return ret;
 	}
 
 	/*
-	 * The remainder of the fork model (blocked on process_vm_clone):
-	 * create the child's leader on the copied stack, seed it with a
-	 * longjmp trampoline into the jmp_buf sys_fork() captured, and start
-	 * it; both sides then return from sys_fork() - the parent with the
-	 * child's handle, the child with NULL.
+	 * The child's leader runs on the COPIED stack: k_process_init() adopts
+	 * it, we move it into the cloned domain, inherit the parent's object
+	 * permissions, then start it. In the fork model the leader is created
+	 * as a supervisor thread whose first run stages into the parent's
+	 * captured syscall frame (fork_child_entry -> arch_fork_resume) and
+	 * becomes a user thread there; an explicit entry starts normally.
 	 */
-	(void)z_process_record_free(proc);
+#ifdef CONFIG_ARCH_HAS_FORK_RESUME
+	if (fork_resume) {
+		/*
+		 * The child leader boots in supervisor mode to run the fork
+		 * resume trampoline, then resumes into user mode and issues
+		 * syscalls from there, so it needs a user-capable stack (on
+		 * x86, the privilege stack the trampoline and every later
+		 * syscall run on). A trusted create with K_USER would enter
+		 * user mode at the trampoline instead of running it, so
+		 * allocate the user-capable stack up front and create the
+		 * leader, kernel-side, on it.
+		 */
+		k_thread_stack_t *cstack = NULL;
+		uint32_t cstack_size = CONFIG_MMU_PAGE_SIZE;
 
-	return -ENOSYS;
+		ret = sys_thread_stack_alloc(&cstack, &cstack_size, 0, K_USER);
+		if (ret == 0) {
+			ret = sys_thread_create_paused_trusted(&tid, cstack, cstack_size, 0, entry,
+							       args->p1, args->p2, args->p3,
+							       k_thread_priority_get(k_current_get()),
+							       K_INHERIT_PERMS);
+			if (ret < 0) {
+				(void)sys_thread_stack_destroy(cstack);
+			} else {
+				/* drawn for the leader: it lives and dies with it */
+				z_kobj_bind_stack(cstack);
+			}
+		}
+	} else
+#endif /* CONFIG_ARCH_HAS_FORK_RESUME */
+	{
+		ret = sys_thread_create_paused(&tid, NULL, CONFIG_MMU_PAGE_SIZE, 0, entry,
+					       args->p1, args->p2, args->p3,
+					       k_thread_priority_get(k_current_get()),
+					       K_USER | K_INHERIT_PERMS);
+	}
+	if (ret < 0) {
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+
+#ifdef CONFIG_SIGNAL
+	/* a copy of the caller, its signal mask included */
+	tid->base.sig.mask = _current->base.sig.mask;
+#endif /* CONFIG_SIGNAL */
+
+	(void)k_mem_domain_add_thread(z_process_vm_domain(proc->vm), tid);
+
+	ret = k_process_init(proc, &tid, 1);
+	if (ret < 0) {
+		k_thread_abort(tid);
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+	/* the leader is bound and numbered: its thread number becomes the pid */
+	process_id_assign(proc);
+
+	z_process_perms_inherit(parent, proc);
+	k_object_access_grant(tid, tid);
+	k_object_access_grant(tid->stack_obj, tid);
+
+#ifdef CONFIG_ARCH_HAS_FORK_RESUME
+	if (fork_resume) {
+		struct vm_clone_ctx *ctx = proc->vm;
+
+		ctx->fork_frame = arch_fork_frame_init(tid, _current->syscall_frame);
+		/* the child is a user thread from its first instruction on */
+		tid->base.user_options |= K_USER;
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+		/*
+		 * The child's TLS is the parent's address: the clone already
+		 * copied that region (the child resumes on the parent's stack
+		 * address, and TLS lives above it), so captured TLS-variable
+		 * addresses and register-relative accesses agree, as fork
+		 * demands. Kernel mode never dereferences user TLS in this
+		 * configuration - PROCESS_VM excludes CURRENT_THREAD_USE_TLS,
+		 * whose kernel-mode reads would alias the parent's physical
+		 * memory through the shared kernel tables.
+		 */
+		tid->tls = _current->tls;
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+	}
+#endif /* CONFIG_ARCH_HAS_FORK_RESUME */
+
+	if (child != NULL) {
+		*child = tid;
+	}
+
+	if ((args->flags & SYS_CLONE_PAUSED) == 0U) {
+		k_thread_start(tid);
+	}
+
+	return 0;
+#else
+	ARG_UNUSED(args);
+	ARG_UNUSED(child);
+	return -ENOTSUP;
+#endif /* CONFIG_PROCESS_VM */
 }
 
 #ifdef CONFIG_SYS_THREAD

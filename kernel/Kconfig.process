@@ -19,6 +19,19 @@ config PROCESS
 
 if PROCESS
 
+config PROCESS_VM
+	bool "Per-process virtual address space duplication (experimental)"
+	depends on PROCESS && USERSPACE && ARCH_HAS_PROCESS_VM
+	# kernel-mode reads of the TLS-cached current thread would alias the
+	# parent's physical memory through the shared kernel page tables
+	depends on !CURRENT_THREAD_USE_TLS
+	select SYS_THREAD
+	help
+	  Enable address-space duplication for the fork() model: a cloned
+	  child receives copies of the calling process's writable memory at
+	  the same virtual addresses. Requires architecture support
+	  (z_mem_domain_clone_remap()). Experimental.
+
 config MAX_PROCESS_BYTES
 	int "Bytes to use to track process permissions to kernel objects"
 	default 1

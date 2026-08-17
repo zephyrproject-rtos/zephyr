@@ -252,7 +252,7 @@ static bool z_sig_match(const struct k_sig_set *match, uint8_t *pos, k_tid_t tid
 
 static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int code,
 			      struct k_timer *timer, k_pid_t child_pid, int child_status,
-			      struct k_process *proc)
+			      struct k_process *proc, bool resolved)
 {
 	if ((signo < 0) || (signo > SIGNAL_SET_SIZE)) {
 		LOG_DBG("invalid signo %d", signo);
@@ -271,7 +271,8 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 	}
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
-	if ((proc == NULL) && (timer == NULL) && (code != K_SI_MSGQ) && (code != K_SI_ASYNCIO) &&
+	if (!resolved && (proc == NULL) && (timer == NULL) && (code != K_SI_MSGQ) &&
+	    (code != K_SI_ASYNCIO) &&
 	    (k_object_validate(k_object_find(pid), K_OBJ_THREAD, _OBJ_INIT_TRUE) < 0)) {
 		/*
 		 * Only allow signals from threads granted access. Timer-generated
@@ -369,10 +370,16 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 }
 
 #ifdef CONFIG_PROCESS
+int z_sig_queue_thread(k_tid_t tid, int signo)
+{
+	return z_sig_queue_common(tid, signo, (union k_sig_val){0}, K_SI_QUEUE, NULL, NULL, 0, NULL,
+				  true);
+}
+
 int z_sig_queue_process(struct k_process *proc, int signo)
 {
 	return z_sig_queue_common(NULL, signo, (union k_sig_val){0}, K_SI_QUEUE, NULL, NULL, 0,
-				  proc);
+				  proc, true);
 }
 
 /*
@@ -409,7 +416,7 @@ void z_sig_process_drop(struct k_process *proc)
 
 int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL);
+	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL, false);
 }
 
 #ifdef CONFIG_PROCESS
@@ -418,28 +425,28 @@ int z_sig_queue_chld(k_tid_t tid, struct k_process *proc, k_pid_t child_pid, int
 {
 	return z_sig_queue_common(tid, K_SIG_CHLD, (union k_sig_val){0},
 				  exited ? K_SI_CLD_EXITED : K_SI_CLD_KILLED, NULL, child_pid,
-				  child_status, proc);
+				  child_status, proc, proc != NULL);
 }
 #endif /* CONFIG_PROCESS */
 
 #ifdef CONFIG_MSGQ_NOTIFY
 int z_sig_queue_msgq(k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_MSGQ, NULL, NULL, 0, NULL);
+	return z_sig_queue_common(pid, signo, value, K_SI_MSGQ, NULL, NULL, 0, NULL, false);
 }
 #endif /* CONFIG_MSGQ_NOTIFY */
 
 #ifdef CONFIG_SYS_AIO
 int z_sig_queue_aio(k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_ASYNCIO, NULL, NULL, 0, NULL);
+	return z_sig_queue_common(pid, signo, value, K_SI_ASYNCIO, NULL, NULL, 0, NULL, false);
 }
 #endif /* CONFIG_SYS_AIO */
 
 #ifdef CONFIG_TIMER_SIGNAL
 int z_sig_queue_timer(struct k_timer *timer, k_pid_t pid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(pid, signo, value, K_SI_TIMER, timer, NULL, 0, NULL);
+	return z_sig_queue_common(pid, signo, value, K_SI_TIMER, timer, NULL, 0, NULL, false);
 }
 
 void z_sig_purge_timer(struct k_timer *timer)

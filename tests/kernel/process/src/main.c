@@ -434,8 +434,8 @@ ZTEST(kernel_process, test_spawn_invalid)
 	zassert_equal(sys_clone(&args, NULL), -EINVAL);
 	args.flags = SYS_CLONE_VM_COPY;
 	args.entry = NULL;
-	zassert_equal(sys_clone(&args, NULL), -ENOSYS);
-	zassert_equal(sys_fork(NULL), -ENOSYS);
+	zassert_equal(sys_clone(&args, NULL), -ENOTSUP);
+	zassert_equal(sys_fork(NULL), -ENOTSUP);
 }
 
 #if (CONFIG_SYS_PROCESS_MAX >= 4) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
