@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor/ism330dhcx.h>
 
 #include "ism330dhcx.h"
 
@@ -138,6 +139,8 @@ static int ism330dhcx_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 		return -EIO;
 	}
 
+	data->gyro_fs = fs;
+
 	return 0;
 }
 
@@ -148,6 +151,8 @@ static int ism330dhcx_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	if (ism330dhcx_gy_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
 	}
+
+	data->gyro_freq = ism330dhcx_odr_to_freq_val(odr);
 
 	return 0;
 }
@@ -282,6 +287,82 @@ static int ism330dhcx_attr_set(const struct device *dev,
 	}
 
 	return 0;
+}
+
+/*
+ * INTERNAL_FREQ_FINE holds the oscillator deviation as a signed count of 0.15%
+ * steps (datasheet chapter 9.24), scaling the configured rate to the real one.
+ */
+static void ism330dhcx_real_odr_get(const struct device *dev, uint16_t freq,
+					  struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+	int64_t freq_uhz = (int64_t)freq * (1000000 + 1500 * (int64_t)data->freq_fine);
+
+	val->val1 = (int32_t)(freq_uhz / 1000000);
+	val->val2 = (int32_t)(freq_uhz % 1000000);
+}
+
+static int ism330dhcx_accel_get_config(const struct device *dev,
+				       enum sensor_attribute attr,
+				       struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+
+	switch ((int)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_g_to_ms2(ism330dhcx_accel_fs_map[data->accel_fs], val);
+		return 0;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		val->val1 = data->accel_freq;
+		val->val2 = 0;
+		return 0;
+	case SENSOR_ATTR_ISM330DHCX_REAL_ODR:
+		ism330dhcx_real_odr_get(dev, data->accel_freq, val);
+		return 0;
+	default:
+		LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
+static int ism330dhcx_gyro_get_config(const struct device *dev,
+				      enum sensor_attribute attr,
+				      struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+
+	switch ((int)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_degrees_to_rad(ism330dhcx_gyro_fs_map[data->gyro_fs], val);
+		return 0;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		val->val1 = data->gyro_freq;
+		val->val2 = 0;
+		return 0;
+	case SENSOR_ATTR_ISM330DHCX_REAL_ODR:
+		ism330dhcx_real_odr_get(dev, data->gyro_freq, val);
+		return 0;
+	default:
+		LOG_DBG("Gyro attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
+static int ism330dhcx_attr_get(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return ism330dhcx_accel_get_config(dev, attr, val);
+	case SENSOR_CHAN_GYRO_XYZ:
+		return ism330dhcx_gyro_get_config(dev, attr, val);
+	default:
+		LOG_WRN("attr_get() not supported on this channel.");
+		return -ENOTSUP;
+	}
 }
 
 static int ism330dhcx_sample_fetch_accel(const struct device *dev)
@@ -665,6 +746,7 @@ static int ism330dhcx_channel_get(const struct device *dev,
 
 static DEVICE_API(sensor, ism330dhcx_api_funcs) = {
 	.attr_set = ism330dhcx_attr_set,
+	.attr_get = ism330dhcx_attr_get,
 #if CONFIG_ISM330DHCX_TRIGGER
 	.trigger_set = ism330dhcx_trigger_set,
 #endif
@@ -727,11 +809,23 @@ static int ism330dhcx_init_chip(const struct device *dev)
 	}
 
 	LOG_DBG("gyro odr is %d", cfg->gyro_odr);
-	ism330dhcx->gyro_freq = ism330dhcx_odr_to_freq_val(cfg->gyro_odr);
 	if (ism330dhcx_gyro_set_odr_raw(dev, cfg->gyro_odr) < 0) {
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
+
+	/* Factory trim, constant for the life of the part: read it once here so
+	 * that querying the effective output data rate costs no bus traffic.
+	 */
+	uint8_t freq_fine;
+
+	if (ism330dhcx_odr_cal_reg_get(ism330dhcx->ctx, &freq_fine) < 0) {
+		LOG_DBG("failed to read internal frequency trim");
+		return -EIO;
+	}
+
+	ism330dhcx->freq_fine = (int8_t)freq_fine;
+	LOG_DBG("internal frequency trim is %d", ism330dhcx->freq_fine);
 
 	/* Set FIFO bypass mode */
 	if (ism330dhcx_fifo_mode_set(ism330dhcx->ctx, ISM330DHCX_BYPASS_MODE) < 0) {
