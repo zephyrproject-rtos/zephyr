@@ -2368,7 +2368,7 @@ int dns_resolve_name_internal(struct dns_resolve_context *ctx,
 	k_timeout_t tout;
 	struct net_buf *dns_data = NULL;
 	struct net_buf *dns_qname = NULL;
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	struct net_sockaddr *sa = net_sad(&addr);
 	int ret, i = -1;
 	bool mdns_query = false;
@@ -2811,7 +2811,7 @@ static bool dns_servers_exists(struct dns_resolve_context *ctx,
 {
 	if (servers) {
 		for (int i = 0; i < SERVER_COUNT && servers[i]; i++) {
-			struct net_sockaddr_storage addr;
+			struct net_sockaddr_storage addr = { 0 };
 			struct net_sockaddr *sa = net_sad(&addr);
 
 			if (!net_ipaddr_parse(servers[i], strlen(servers[i]), sa)) {

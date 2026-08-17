@@ -126,7 +126,7 @@ static int tcp_recv_data(struct net_socket_service_event *pev)
 	int i, ret = 0;
 	int family, sock, sock_error = 0;
 	int default_error = EIO;
-	struct net_sockaddr_storage addr_incoming_conn;
+	struct net_sockaddr_storage addr_incoming_conn = { 0 };
 	net_socklen_t optlen = sizeof(int);
 	net_socklen_t addrlen = sizeof(addr_incoming_conn);
 
