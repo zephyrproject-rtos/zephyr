@@ -396,7 +396,6 @@ static void sip_svc_callback(struct sip_svc_controller *ctrl, uint32_t trans_id,
 			     struct sip_svc_response *response)
 {
 	struct sip_svc_id_map_item *trans_id_item;
-	uint64_t data_addr;
 	uint64_t c_idx;
 	int err;
 
@@ -432,14 +431,11 @@ static void sip_svc_callback(struct sip_svc_controller *ctrl, uint32_t trans_id,
 
 		((sip_svc_cb_fn)(trans_id_item->arg1))(ctrl->clients[c_idx].token, response);
 	} else {
-		LOG_INF("Resp data is released as the client channel is closed");
-		/* Free response memory space if callback is skipped.*/
-		data_addr =
-			(((uint64_t)trans_id_item->arg2) << 32) | ((uint64_t)trans_id_item->arg3);
-
-		if (data_addr) {
-			k_free((char *)data_addr);
-		}
+		/* The channel is closed: the caller owns the response buffer
+		 * and is responsible for releasing it, so it must not be
+		 * freed here.
+		 */
+		LOG_INF("Resp callback is skipped as the client channel is closed");
 	}
 
 	/* Free trans id */
@@ -549,6 +545,7 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	struct sip_svc_response response;
 	uint32_t trans_id;
 	uint64_t data_addr;
+	uint64_t c_idx;
 	size_t data_size;
 	int ret;
 
@@ -601,6 +598,9 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 		return -ENOENT;
 	}
 
+	c_idx = (uint64_t)trans_id_item->arg6;
+	__ASSERT(c_idx < ctrl->num_clients, "c_idx shouldn't be greater than ctrl->num_clients");
+
 	/* Get caller provided memory space to put response */
 	data_addr = (((uint64_t)trans_id_item->arg3) | ((uint64_t)trans_id_item->arg2) << 32);
 
@@ -619,10 +619,15 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	response.resp_data_size = data_size;
 	response.priv_data = trans_id_item->arg5;
 
-	/* Copy async cmd response into caller given memory space */
-	if (data_addr) {
+	/* Copy async cmd response into caller given memory space, but only
+	 * while the client channel is open: after close the caller no longer
+	 * owns the response buffer and may have freed it.
+	 */
+	k_mutex_lock(&ctrl->data_mutex, K_FOREVER);
+	if (ctrl->clients[c_idx].state == SIP_SVC_CLIENT_ST_OPEN && data_addr) {
 		memcpy((char *)data_addr, ctrl->async_resp_data, data_size);
 	}
+	k_mutex_unlock(&ctrl->data_mutex);
 
 	sip_svc_callback(ctrl, trans_id, &response);
 
@@ -745,7 +750,6 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -ENOBUFS;
 	}
-	++ctrl->clients[c_idx].active_trans_cnt;
 
 	if (!ctrl->tid) {
 		LOG_ERR("Thread not spawned during init");
@@ -754,6 +758,8 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 		k_mutex_unlock(&ctrl->data_mutex);
 		return -EHOSTDOWN;
 	}
+
+	++ctrl->clients[c_idx].active_trans_cnt;
 
 	LOG_INF("Wakeup sip_svc thread");
 	k_thread_resume(ctrl->tid);
@@ -900,7 +906,6 @@ static int sip_svc_subsys_init(void)
 			sip_svc_id_mgr_delete(ctrl->client_id_pool);
 			sip_svc_id_map_delete(ctrl->trans_id_map);
 			k_free(msgq_buf);
-			k_free(ctrl->clients);
 			k_free(ctrl->async_resp_data);
 
 			for (uint32_t i = 0; i < ctrl->num_clients; i++) {
@@ -909,6 +914,7 @@ static int sip_svc_subsys_init(void)
 					sip_svc_id_mgr_delete(client->trans_idx_pool);
 				}
 			}
+			k_free(ctrl->clients);
 			return ret;
 		}
 
