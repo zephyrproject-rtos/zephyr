@@ -27,6 +27,12 @@ description: |
      those except rx-dummy and the CE timing are checked at init and the
      driver refuses to probe without them.
 
+  Some MSPI controllers expect their child node to carry a controller
+  specific compatible in addition to this one; the STM32 OCTOSPI/XSPI
+  controllers for example need "st,psram-device" and take the device size
+  from the size property. List this compatible first so the node is
+  described by this binding.
+
 compatible: "qspi-psram"
 
 include: [mspi-device.yaml]

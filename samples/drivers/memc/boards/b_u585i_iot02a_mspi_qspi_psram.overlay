@@ -44,13 +44,19 @@
 			status = "okay";
 
 			qspi_psram: psram@0 {
-				compatible = "qspi-psram";
+				/*
+				 * st,psram-device is what the STM32 MSPI controller
+				 * looks for on its child; the node is still described
+				 * by the qspi-psram binding.
+				 */
+				compatible = "qspi-psram", "st,psram-device";
 				reg = <0>;
 				chip-variant = "ESP64H";
 				/*
-				 * Not needed by the driver, which knows the capacity
-				 * of the named part; the sample sizes its test area
-				 * from this property.
+				 * The driver knows the capacity of the named part;
+				 * the STM32 controller programs its device size from
+				 * this property, and the sample sizes its test area
+				 * from it as well.
 				 */
 				size = <DT_SIZE_M(64)>;
 				mspi-max-frequency = <DT_FREQ_M(80)>;
