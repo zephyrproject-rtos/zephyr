@@ -22,39 +22,24 @@
 		};
 	};
 
-	mhu1_shm: memory@62f01008 {
-		compatible = "mmio-sram";
-		reg = <0x62f01008 0x8>;
-	};
-
-	mhu3_shm: memory@62f01018 {
-		compatible = "mmio-sram";
-		reg = <0x62f01018 0x8>;
-	};
-
-	mhu4_shm: memory@62f01020 {
-		compatible = "mmio-sram";
-		reg = <0x62f01020 0x8>;
-	};
-
-	mhu5_shm: memory@62f01028 {
-		compatible = "mmio-sram";
-		reg = <0x62f01028 0x8>;
+	/* Memory region for MBOX (MHU) driver */
+	mhu_shmem: memory-region@62f01000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x62f01000 0x1000>;
+		zephyr,memory-region = "mhu_shmem";
 	};
 
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
+		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
 		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
 	};
 };
 
 &mbox1 {
-	shared-memory = <&mhu1_shm>;
 	status = "okay";
 };
 
 &mbox3 {
-	shared-memory = <&mhu3_shm>;
 	status = "okay";
 };
