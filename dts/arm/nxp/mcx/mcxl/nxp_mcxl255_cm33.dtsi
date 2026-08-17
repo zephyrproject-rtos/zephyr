@@ -23,6 +23,11 @@
 			ranges = <0x0 0x50000000 0x10000000>;
 		};
 
+		fmu: flash-controller@50095000 {
+			reg = <0x50095000 0x1000>;
+			ranges = <0x0 0x0 DT_SIZE_K(512)>;
+		};
+
 		aon_peripheral: aon_peripheral@b0000000 {
 			ranges = <0x0 0xb0000000 0x10000000>;
 		};
@@ -95,11 +100,11 @@
 	flash: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0 DT_SIZE_K(512)>;
+		ranges = <0x0 0x0 DT_SIZE_K(512)>;
 		erase-block-size = <DT_SIZE_K(8)>;
 		write-block-size = <16>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x0 DT_SIZE_K(512)>;
 	};
 };
 

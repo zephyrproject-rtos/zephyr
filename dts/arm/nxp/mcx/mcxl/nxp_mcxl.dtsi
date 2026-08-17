@@ -65,6 +65,19 @@
 	};
 };
 
+&fmu {
+	compatible = "nxp,msf1";
+	interrupts = <12 0>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+	status = "disabled";
+
+	uuid: uuid@1100800 {
+		compatible = "nxp,lpc-uid";
+		reg = <0x1100800 0x10>;
+	};
+};
+
 &peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
@@ -192,20 +205,6 @@
 		reg = <0x92000 0x1000>;
 		interrupts = <18 0>;
 		#wakeup-ctrl-cells = <1>;
-	};
-
-	fmu: flash-controller@95000 {
-		compatible = "nxp,msf1";
-		reg = <0x95000 0x1000>;
-		interrupts = <12 0>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "disabled";
-
-		uuid: uuid@1100800 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x1100800 0x10>;
-		};
 	};
 
 	lpuart0: lpuart@9f000 {

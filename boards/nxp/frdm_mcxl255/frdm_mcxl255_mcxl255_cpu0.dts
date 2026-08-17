@@ -37,27 +37,27 @@
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(160)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@38000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00038000 DT_SIZE_K(160)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@60000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x00060000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };
