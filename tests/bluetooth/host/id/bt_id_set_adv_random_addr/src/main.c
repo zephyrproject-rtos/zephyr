@@ -91,7 +91,7 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled)
 	zassert_true(atomic_test_bit(adv_param.flags, BT_ADV_RANDOM_ADDR_PENDING),
 		     "Flags were not correctly set");
 
-	zassert_mem_equal(&adv_param.random_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&adv_param.adv_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 }
 
@@ -133,6 +133,6 @@ ZTEST(bt_id_set_adv_random_addr, test_ext_adv_enabled_hci_set_adv_set_random_add
 	zassert_equal(cp.handle, adv_param.handle, "Incorrect handle value was set");
 	zassert_mem_equal(&cp.bdaddr, BT_RPA_ADDR, sizeof(bt_addr_t),
 			  "Incorrect address was set");
-	zassert_mem_equal(&adv_param.random_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
+	zassert_mem_equal(&adv_param.adv_addr, BT_RPA_LE_ADDR, sizeof(bt_addr_le_t),
 			  "Incorrect address was set");
 }
