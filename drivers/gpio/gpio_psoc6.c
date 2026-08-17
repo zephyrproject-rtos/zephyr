@@ -69,7 +69,13 @@ static int gpio_psoc6_config(const struct device *dev,
 					CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
 			}
 
-			pin_val = (flags & GPIO_LINE_OPEN_DRAIN) ? 1 : 0;
+			if (flags & GPIO_OUTPUT_INIT_HIGH) {
+				pin_val = 1;
+			} else if (flags & GPIO_OUTPUT_INIT_LOW) {
+				pin_val = 0;
+			} else {
+				pin_val = (flags & GPIO_LINE_OPEN_DRAIN) ? 1 : 0;
+			}
 		} else {
 			drv_mode = CY_GPIO_DM_STRONG_IN_OFF;
 
