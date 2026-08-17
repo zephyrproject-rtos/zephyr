@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/lpc/nxp_lpc546xx.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "lpcxpresso54628-pinctrl.dtsi"
 
 / {
@@ -25,6 +26,23 @@
 		led1 = &led2;
 		led2 = &led3;
 		usart-0 = &flexcomm0;
+		sw0 = &user_button;
+	};
+
+	/*
+	 * SW5 is the only usable push button. The ISP buttons SW2/SW3/SW4 are
+	 * wired to P0_6/P0_5/P0_4, which this board uses as EMC_D4/EMC_D3/EMC_D2
+	 * for the SDRAM, so they cannot be read as GPIO while the EMC is active
+	 * and are intentionally not exposed here.
+	 */
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		user_button: button_0 {
+			label = "User button SW5";
+			gpios = <&gpio1 1 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
 	};
 
 	leds {
