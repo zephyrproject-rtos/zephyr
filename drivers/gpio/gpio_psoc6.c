@@ -48,9 +48,21 @@ static int gpio_psoc6_config(const struct device *dev,
 
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
-			drv_mode = (flags & GPIO_LINE_OPEN_DRAIN) ?
-				CY_GPIO_DM_OD_DRIVESLOW_IN_OFF :
-				CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				if (flags & GPIO_PULL_DOWN) {
+					return -ENOTSUP;
+				}
+				drv_mode = (flags & GPIO_PULL_UP) ?
+					CY_GPIO_DM_PULLUP_IN_OFF :
+					CY_GPIO_DM_OD_DRIVESLOW_IN_OFF;
+			} else {
+				if (flags & GPIO_PULL_UP) {
+					return -ENOTSUP;
+				}
+				drv_mode = (flags & GPIO_PULL_DOWN) ?
+					CY_GPIO_DM_PULLDOWN_IN_OFF :
+					CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
+			}
 
 			pin_val = (flags & GPIO_LINE_OPEN_DRAIN) ? 1 : 0;
 		} else {
