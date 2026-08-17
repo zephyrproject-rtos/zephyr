@@ -39,4 +39,58 @@ config FIDO2_HID_RX_WORKQ_STACK_SIZE
 	  Stack size for the dedicated USB HID RX workqueue used to
 	  process incoming CTAPHID reports.
 
+config FIDO2_TRANSPORT_BLE
+	bool "CTAP over BLE"
+	depends on BT_PERIPHERAL
+	select BT_DIS
+	select BT_DIS_MANUF_NAME
+	select BT_DIS_MODEL_NUMBER
+	select BT_DIS_FW_REV
+	help
+	  Enable FIDO2 communication over BLE (CTAP).
+
+config FIDO2_BLE_REQUIRE_AUTHENTICATED_LINK
+	bool "Require authenticated BLE pairing"
+	depends on FIDO2_TRANSPORT_BLE
+	depends on BT_SMP
+	help
+	  Require Bluetooth Security Level 3 instead of the minimum
+	  encrypted Security Level 2.
+
+config FIDO2_BLE_RX_WORKQ_STACK_SIZE
+	int "BLE RX workqueue stack size"
+	default 4096
+	range 1024 16384
+	depends on FIDO2_TRANSPORT_BLE
+	help
+	  Stack size for the dedicated BLE RX workqueue used to
+	  process incoming CTAPHID reports.
+
+config FIDO2_BLE_CONTROL_POINT_LENGTH
+	int "Maximum FIDO BLE Control Point write length"
+	range 20 512
+	default 20
+	depends on FIDO2_TRANSPORT_BLE
+	help
+	  Maximum size, in bytes, of a single write to the FIDO BLE
+	  Control Point characteristic. Values greater than 20 require
+	  a correspondingly large negotiated ATT MTU and Bluetooth buffers.
+
+config FIDO2_BLE_RX_QUEUE_DEPTH
+	int "FIDO BLE receive queue depth"
+	range 1 32
+	default 8
+	depends on FIDO2_TRANSPORT_BLE
+	help
+	  Number of Control Point fragments that can wait for processing.
+
+config FIDO2_BLE_TX_FRAME_COUNT
+	int "FIDO BLE transmit frame count"
+	range 1 8
+	default 4
+	depends on FIDO2_TRANSPORT_BLE
+	help
+	  Number of complete FIDO BLE frames that can be queued for
+	  asynchronous transmission.
+
 endmenu
