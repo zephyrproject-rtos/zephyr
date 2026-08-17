@@ -46,6 +46,11 @@ static int gpio_psoc6_config(const struct device *dev,
 	uint32_t drv_mode;
 	uint32_t pin_val;
 
+	if (pin >= (sizeof(cfg->common.port_pin_mask) * 8U) ||
+	    (cfg->common.port_pin_mask & BIT(pin)) == 0U) {
+		return -EINVAL;
+	}
+
 	if (flags & GPIO_OUTPUT) {
 		if (flags & GPIO_SINGLE_ENDED) {
 			if (flags & GPIO_LINE_OPEN_DRAIN) {
