@@ -260,9 +260,8 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 
 		if (thread == cpu->current) {
 			uint32_t now = usage_now();
-			uint32_t cycles = now - cpu->usage0;
 
-			sched_cpu_update_usage(cpu, cycles);
+			sched_cpu_update_usage(cpu, now - cpu->usage0);
 
 			cpu->usage0 = now;
 		}
@@ -436,9 +435,8 @@ int z_thread_stats_reset(struct k_obj_core *obj_core)
 	/* Update the current CPU stats. */
 
 	uint32_t now = usage_now();
-	uint32_t cycles = now - _current_cpu->usage0;
 
-	sched_cpu_update_usage(_current_cpu, cycles);
+	sched_cpu_update_usage(_current_cpu, now - _current_cpu->usage0);
 
 	_current_cpu->usage0 = now;
 
