@@ -846,6 +846,34 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		return -EINVAL;
 	}
 
+	if (unicast_group->has_been_connected) {
+		LOG_DBG("Cannot modify a unicast_group where a CIS has been connected");
+		return -EINVAL;
+	}
+
+	/* Update the stream and group parameters */
+	for (size_t i = 0U; i < param->params_count; i++) {
+		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
+		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
+		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
+
+		if (rx_param != NULL) {
+			struct bt_bap_iso *bap_iso =
+				CONTAINER_OF(rx_param->stream->iso, struct bt_bap_iso, chan);
+
+			unicast_group_set_iso_stream_param(unicast_group, bap_iso, rx_param->qos,
+							   BT_AUDIO_DIR_SOURCE);
+		}
+
+		if (tx_param != NULL) {
+			struct bt_bap_iso *bap_iso =
+				CONTAINER_OF(tx_param->stream->iso, struct bt_bap_iso, chan);
+
+			unicast_group_set_iso_stream_param(unicast_group, bap_iso, tx_param->qos,
+							   BT_AUDIO_DIR_SINK);
+		}
+	}
+
 	return 0;
 }
 

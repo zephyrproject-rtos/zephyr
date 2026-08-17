@@ -643,6 +643,11 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 			enum bt_bap_ep_state state;
 
 			proc_param = &active_proc->proc_param.initiator[i];
+
+			if (proc_param->in_progress) {
+				continue;
+			}
+
 			cap_stream = proc_param->stream;
 			bap_stream = &cap_stream->bap_stream;
 
