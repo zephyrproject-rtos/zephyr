@@ -527,7 +527,7 @@ New Boards
 
    * :zephyr:board:`adafruit_feather_adalogger_rp2040` (``adafruit_feather_adalogger_rp2040``)
    * :zephyr:board:`adafruit_feather_canbus_rp2040` (``adafruit_feather_canbus_rp2040``)
-   * :zephyr:board:`adafruit_feather_esp32` (``adafruit_feather_esp32``)
+   * :zephyr:board:`adafruit_feather_esp32_v2` (``adafruit_feather_esp32_v2``)
    * :zephyr:board:`adafruit_feather_rfm95_rp2040` (``adafruit_feather_rfm95_rp2040``)
    * :zephyr:board:`adafruit_feather_rp2040` (``adafruit_feather_rp2040``)
    * :zephyr:board:`adafruit_itsybitsy_rp2040` (``adafruit_itsybitsy_rp2040``)
