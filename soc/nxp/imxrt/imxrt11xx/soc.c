@@ -870,11 +870,6 @@ static int imxrt_init(void)
 #endif
 #endif
 
-#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
-	sys_cache_data_disable();
-	sys_cache_instr_disable();
-#endif
-
 	return 0;
 }
 
