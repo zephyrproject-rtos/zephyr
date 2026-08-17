@@ -224,3 +224,48 @@ int arch_coprocessors_disable(struct k_thread *thread)
 	return -ENOTSUP;
 #endif
 }
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * A forked child resumes through the same path every arm64 thread is born
+ * on: the context switch restores callee_saved (including sp_el0 and the
+ * captured x19..x28) and "returns" to z_arm64_exit_exc, which pops the
+ * child's initial ESF - a copy of the parent's syscall frame with x0 zeroed
+ * (the child's fork return) and an EL0 SPSR - and erets straight into user
+ * mode at the fork call site. No dedicated resume stub is needed.
+ */
+void *arch_fork_frame_init(struct k_thread *child, void *parent_ssf)
+{
+	/*
+	 * The birth frame sits at the top of the whole stack, where a user
+	 * thread would only run it until arch_user_mode_enter() moves SP_EL1
+	 * to the privileged portion. The child skips that step, so its frame
+	 * goes on the privileged portion right away.
+	 */
+	uintptr_t stack_el1 = (uintptr_t)child->stack_obj + ARCH_THREAD_STACK_RESERVED;
+	struct arch_esf *esf = Z_STACK_PTR_TO_FRAME(struct arch_esf, stack_el1);
+	const struct arch_esf *pesf = parent_ssf;
+
+	*esf = *pesf;
+	esf->x0 = 0;
+	child->callee_saved.sp_elx = (uint64_t)esf;
+
+	(void)memcpy(&child->callee_saved.x19, _current->arch.fork_x,
+		     sizeof(_current->arch.fork_x));
+#ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
+	child->callee_saved.sp_el0 = pesf->sp;
+#else
+	child->callee_saved.sp_el0 = read_sysreg(sp_el0);
+#endif /* CONFIG_ARM64_SAFE_EXCEPTION_STACK */
+
+	return esf;
+}
+
+FUNC_NORETURN void arch_fork_resume(void *frame)
+{
+	/* never reached: the child's birth context IS the resume (see above) */
+	ARG_UNUSED(frame);
+	k_panic();
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_PROCESS_VM */

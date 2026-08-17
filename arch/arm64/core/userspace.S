@@ -117,6 +117,23 @@ SECTION_FUNC(TEXT, z_arm64_do_syscall)
 	/* Use the ESF as SSF */
 	mov	x6, sp
 
+#ifdef CONFIG_PROCESS_VM
+	/* Callee-saved registers still hold the caller's values here (the C
+	 * convention preserves them through the kernel, so the exit path
+	 * never restores them); capture them so fork() can seed the child's
+	 * resume context with the caller's complete register state.
+	 */
+	get_cpu	x9
+	ldr	x9, [x9, #___cpu_t_current_OFFSET]
+	ldr	x10, =__thread_fork_x_OFFSET
+	add	x9, x9, x10
+	stp	x19, x20, [x9, #0]
+	stp	x21, x22, [x9, #16]
+	stp	x23, x24, [x9, #32]
+	stp	x25, x26, [x9, #48]
+	stp	x27, x28, [x9, #64]
+#endif /* CONFIG_PROCESS_VM */
+
 	/* Recover the syscall ID */
 	ldr	x8, [sp, ___esf_t_x8_x9_OFFSET]
 

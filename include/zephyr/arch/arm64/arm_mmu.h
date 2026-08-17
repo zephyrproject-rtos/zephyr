@@ -306,6 +306,9 @@ struct arm_mmu_ptables {
 /* Execution-allowed attributes */
 #define K_MEM_PARTITION_P_RX_U_RX ((k_mem_partition_attr_t) \
 			{MT_P_RX_U_RX})
+/* True if the partition grants write access (used by CONFIG_PROCESS_VM) */
+#define K_MEM_PARTITION_IS_WRITABLE(attr) (((attr).attrs & MT_RW) != 0)
+
 /* Typedef for the k_mem_partition attribute */
 typedef struct { uint32_t attrs; } k_mem_partition_attr_t;
 

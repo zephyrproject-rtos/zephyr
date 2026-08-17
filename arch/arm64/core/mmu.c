@@ -1581,6 +1581,28 @@ static int reset_map(struct arm_mmu_ptables *ptables, const char *name,
 	return ret;
 }
 
+#ifdef CONFIG_PROCESS_VM
+/*
+ * Repoint the mappings of [virt, virt+size) in @a domain at fresh physical
+ * memory starting at @a phys, as writable user memory. private_map()
+ * privatizes the leaf translation tables first, so the remap is local to
+ * this domain (unlike a raw entry rewrite). The domain is not live on any
+ * CPU when this runs (a forking child before its first start).
+ */
+int z_mem_domain_clone_remap(struct k_mem_domain *domain, void *virt, size_t size, uintptr_t phys)
+{
+	struct arm_mmu_ptables *ptables = &domain->arch.ptables;
+
+	if ((((uintptr_t)virt | size | phys) % CONFIG_MMU_PAGE_SIZE) != 0U) {
+		return -EINVAL;
+	}
+
+	/* private_map() takes xlat_lock internally (add_map / privatize_page_range) */
+	return private_map(ptables, "vm-clone", phys, (uintptr_t)virt, size,
+			   MT_P_RW_U_RW | MT_NORMAL);
+}
+#endif /* CONFIG_PROCESS_VM */
+
 int arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				  uint32_t partition_id)
 {

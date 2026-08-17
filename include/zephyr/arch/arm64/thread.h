@@ -79,6 +79,10 @@ struct _thread_arch {
 	uint64_t stack_limit;
 #endif
 	uint8_t exception_depth;
+#ifdef CONFIG_PROCESS_VM
+	/* caller's x19..x28 captured at syscall entry (fork frame seed) */
+	uint64_t fork_x[10];
+#endif /* CONFIG_PROCESS_VM */
 	/* Keep large structures at the end to avoid offset issues */
 #ifdef CONFIG_FPU_SHARING
 	struct z_arm64_fp_context saved_fp_context;
