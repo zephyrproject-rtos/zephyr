@@ -22,6 +22,7 @@
 #include <zephyr/fff.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 #include <zephyr/ztest_test.h>
@@ -29,6 +30,9 @@
 
 #include "audio/bap_endpoint.h"
 #include "test_common.h"
+
+BUILD_ASSERT(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT % 2 == 0,
+	     "Tests expect an even number of streams");
 
 struct cap_initiator_test_unicast_group_fixture {
 	struct bt_cap_unicast_group_param *group_param;
@@ -49,20 +53,22 @@ static void *cap_initiator_test_unicast_group_setup(void)
 
 static void cap_initiator_test_unicast_group_before(void *f)
 {
-
+	const size_t max_pair_params =
+		(size_t)(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT / 2);
 	struct cap_initiator_test_unicast_group_fixture *fixture = f;
 	struct bt_cap_unicast_group_stream_pair_param *pair_params;
 	struct bt_cap_unicast_group_stream_param *stream_params;
 	struct bt_cap_stream *cap_streams;
 	size_t pair_cnt = 0U;
+	size_t pair_idx = 0U;
 	size_t str_cnt = 0U;
 
 	memset(f, 0, sizeof(struct cap_initiator_test_unicast_group_fixture));
 
 	fixture->group_param = calloc(sizeof(struct bt_cap_unicast_group_param), 1);
 	zassert_not_null(fixture->group_param);
-	pair_params = calloc(sizeof(struct bt_cap_unicast_group_stream_pair_param),
-			     DIV_ROUND_UP(CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT, 2U));
+	pair_params =
+		calloc(sizeof(struct bt_cap_unicast_group_stream_pair_param), max_pair_params);
 	zassert_not_null(pair_params);
 	stream_params = calloc(sizeof(struct bt_cap_unicast_group_stream_param),
 			       CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT);
@@ -75,18 +81,33 @@ static void cap_initiator_test_unicast_group_before(void *f)
 
 	*fixture->qos_cfg = BT_BAP_QOS_CFG_UNFRAMED(10000u, 40u, 2u, 10u, 40000u); /* 16_2_1 */
 
-	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT) {
+	while (str_cnt < CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT &&
+	       pair_cnt < max_pair_params) {
 		stream_params[str_cnt].stream = &cap_streams[str_cnt];
 		stream_params[str_cnt].qos_cfg = fixture->qos_cfg;
 
-		if (str_cnt & 1) {
-			pair_params[pair_cnt].tx_param = &stream_params[str_cnt];
-		} else {
-			pair_params[pair_cnt].rx_param = &stream_params[str_cnt];
-		}
+		if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK) &&
+		    IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+			if (str_cnt & 1) {
+				pair_params[pair_idx].tx_param = &stream_params[str_cnt];
+			} else {
+				pair_params[pair_idx].rx_param = &stream_params[str_cnt];
+			}
 
-		str_cnt++;
-		pair_cnt = str_cnt / 2U;
+			str_cnt++;
+			pair_idx = str_cnt / 2U;
+			pair_cnt = DIV_ROUND_UP(str_cnt, 2U);
+		} else if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+			pair_params[pair_cnt].tx_param = &stream_params[str_cnt];
+			str_cnt++;
+			pair_idx++;
+			pair_cnt++;
+		} else { /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
+			pair_params[pair_cnt].rx_param = &stream_params[str_cnt];
+			str_cnt++;
+			pair_idx++;
+			pair_cnt++;
+		}
 	}
 
 	fixture->cap_streams = cap_streams;
@@ -112,7 +133,12 @@ static void cap_initiator_test_unicast_group_after(void *f)
 	group_param = fixture->group_param;
 
 	free(fixture->cap_streams);
-	free(group_param->params[0].rx_param);
+	/* rx_param and tx_param point to the same allocated array, so only free one of them */
+	if (group_param->params[0].rx_param != NULL) {
+		free(group_param->params[0].rx_param);
+	} else if (group_param->params[0].tx_param != NULL) {
+		free(group_param->params[0].tx_param);
+	}
 	free(group_param->params);
 	free(group_param);
 	free(fixture->qos_cfg);
@@ -152,6 +178,10 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 {
 	int err = 0;
 
+	if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+		ztest_test_skip();
+	}
+
 	if (fixture->group_param->params[0].rx_param->stream == NULL) {
 		ztest_test_skip();
 	}
@@ -165,6 +195,10 @@ static ZTEST_F(cap_initiator_test_unicast_group,
 	       test_initiator_unicast_group_create_inval_null_tx_stream)
 {
 	int err = 0;
+
+	if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+		ztest_test_skip();
+	}
 
 	if (fixture->group_param->params[0].tx_param->stream == NULL) {
 		ztest_test_skip();
@@ -235,6 +269,10 @@ static ZTEST_F(cap_initiator_test_unicast_group, test_initiator_unicast_group_ad
 		.rx_param = &stream_param,
 	};
 	int err = 0;
+
+	if (!IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)) {
+		ztest_test_skip();
+	}
 
 	err = bt_cap_unicast_group_create(fixture->group_param, &fixture->unicast_group);
 	zassert_equal(err, 0, "Unexpected return value %d", err);
