@@ -6,7 +6,6 @@ config UART_BRIDGE
 	default y
 	depends on DT_HAS_ZEPHYR_UART_BRIDGE_ENABLED
 	select UART_INTERRUPT_DRIVEN
-	select RING_BUFFER
 	help
 	  Enable the UART bridge driver.
 
