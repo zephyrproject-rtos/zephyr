@@ -105,6 +105,10 @@
 	status = "okay";
 };
 
+&clk_ertco {
+	status = "okay";
+};
+
 &dma0 {
 	status = "okay";
 };

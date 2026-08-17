@@ -60,6 +60,10 @@
 	status = "okay";
 };
 
+&clk_ertco {
+	status = "okay";
+};
+
 &trng {
 	status = "okay";
 };
