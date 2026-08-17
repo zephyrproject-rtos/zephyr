@@ -18,6 +18,7 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,crc = &crc;
+		zephyr,code-partition = &slot0_partition;
 	};
 
 	aliases {

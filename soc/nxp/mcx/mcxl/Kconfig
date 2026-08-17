@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MCXL
@@ -8,6 +8,17 @@ config SOC_FAMILY_MCXL
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_VTOR
 	select CLOCK_CONTROL_FIXED_RATE_CLOCK
+
+config NXP_MCXL_FLASH_ACCESS_UNRESTRICTED
+	bool "Unlock TRDC MBC flash access (unrestricted RWX)"
+	depends on SOC_FAMILY_MCXL
+	default y
+	help
+	  When enabled, soc_reset_hook() programs the TRDC Memory Block
+	  Controller (MBC0) to grant full read/write/execute access to all
+	  flash blocks for all security levels before any application code
+	  runs.  This overrides the restrictive flash access control policy
+	  that the ROM bootloader sets up on boot.
 
 config SOC_MCXL255_CPU0
 	select CPU_CORTEX_M33
