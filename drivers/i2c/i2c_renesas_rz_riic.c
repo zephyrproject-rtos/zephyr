@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(renesas_rz_riic);
 #define RZ_RIIC_MASTER_DIV_TIME_NS (1000000000.0)
 
 struct i2c_rz_riic_config {
+	DEVICE_MMIO_ROM; /* Must be first */
 	const struct pinctrl_dev_config *pin_config;
 	const i2c_master_api_t *fsp_api;
 	double rise_time_s;
@@ -33,6 +34,7 @@ struct i2c_rz_riic_config {
 };
 
 struct i2c_rz_riic_data {
+	DEVICE_MMIO_RAM; /* Must be first */
 	i2c_master_ctrl_t *fsp_ctrl;
 	i2c_master_cfg_t *fsp_cfg;
 	riic_master_extended_cfg_t *riic_master_ext_cfg;
@@ -386,6 +388,8 @@ static int i2c_rz_riic_init(const struct device *dev)
 	k_mutex_init(&data->bus_mutex);
 	k_sem_init(&data->complete_sem, 0, 1);
 
+	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
+
 	switch (data->fsp_cfg->rate) {
 	case I2C_MASTER_RATE_STANDARD:
 	case I2C_MASTER_RATE_FAST:
@@ -657,6 +661,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \
 	static const struct i2c_rz_riic_config i2c_rz_riic_config_##index = {                      \
+		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(index)),                                          \
 		.pin_config = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
 		.fsp_api = &g_i2c_master_on_iic,                                                   \
 		.rise_time_s = DT_INST_PROP(index, rise_time_ns) / RZ_RIIC_MASTER_DIV_TIME_NS,     \
@@ -681,7 +686,7 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
                                                                                                    \
 	I2C_DEVICE_DT_INST_DEFINE(index, i2c_rz_riic_init_##index, NULL,                           \
 				  &i2c_rz_riic_data_##index, &i2c_rz_riic_config_##index,          \
-				  PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY,                          \
+				  POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,                           \
 				  &i2c_rz_riic_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(I2C_RZ_RIIC_INIT)
