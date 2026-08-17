@@ -88,6 +88,8 @@ struct sip_svc_controller {
 #endif
 	/* Mutex for protecting database access */
 	struct k_mutex data_mutex;
+	/* Semaphore used to wake up the sip_svc thread */
+	struct k_sem wake_sem;
 	/* msgq for sending sip_svc_request to sip_svc thread */
 	struct k_msgq req_msgq;
 	/* sip_svc thread object */
