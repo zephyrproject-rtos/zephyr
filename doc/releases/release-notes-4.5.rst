@@ -464,6 +464,21 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* FIDO2
+
+  * Added Bluetooth LE transport support for FIDO2 with the following new
+    Kconfig options:
+
+    * :kconfig:option:`CONFIG_FIDO2_TRANSPORT_BLE`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_REQUIRE_AUTHENTICATED_LINK`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_RX_WORKQ_STACK_SIZE`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_RX_QUEUE_DEPTH`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_TX_FRAME_COUNT`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_KEEPALIVE_INTERVAL_MS`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_RX_TIMEOUT_MS`
+    * :kconfig:option:`CONFIG_FIDO2_BLE_TX_RETRY_DELAY_MS`
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`

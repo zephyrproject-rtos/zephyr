@@ -39,4 +39,93 @@ config FIDO2_HID_RX_WORKQ_STACK_SIZE
 	  Stack size for the dedicated USB HID RX workqueue used to
 	  process incoming CTAPHID reports.
 
+menuconfig FIDO2_TRANSPORT_BLE
+	bool "CTAP over Bluetooth LE"
+	depends on BT_PERIPHERAL
+	depends on BT_GATT_ENFORCE_SUBSCRIPTION
+	depends on BT_SMP
+	depends on BT_DIS
+	depends on BT_DIS_MANUF_NAME
+	depends on BT_DIS_MODEL_NUMBER
+	depends on BT_DIS_FW_REV
+	imply BT_BONDING_REQUIRED
+	help
+	  Enable FIDO2 communication over Bluetooth LE (CTAP).
+
+if FIDO2_TRANSPORT_BLE
+
+config FIDO2_BLE_REQUIRE_AUTHENTICATED_LINK
+	bool "Require authenticated Bluetooth LE pairing"
+	help
+	  Require Bluetooth Security Level 3 instead of the minimum
+	  encrypted Security Level 2.
+
+config FIDO2_BLE_RX_WORKQ_STACK_SIZE
+	int "Bluetooth LE RX workqueue stack size"
+	default 4096
+	range 1024 16384
+	help
+	  Stack size for the dedicated Bluetooth LE RX workqueue used to
+	  process incoming FIDO Bluetooth LE fragments.
+
+config FIDO2_BLE_CONTROL_POINT_LENGTH
+	int "Maximum FIDO Control Point write length"
+	range 20 512
+	default 20
+	help
+	  Maximum size, in bytes, of a single write to the FIDO Control
+	  Point characteristic over Bluetooth LE. Values greater than 20 require a
+	  correspondingly large negotiated ATT MTU and Bluetooth buffers.
+
+config FIDO2_BLE_RX_QUEUE_DEPTH
+	int "Receive Bluetooth LE queue depth"
+	range 1 32
+	default 8
+	help
+	  Number of Control Point fragments that can wait for processing.
+
+config FIDO2_BLE_TX_FRAME_COUNT
+	int "FIDO Bluetooth LE transmit frame count"
+	range 2 8
+	default 4
+	help
+	  Number of complete FIDO frames that can be queued for
+	  asynchronous transmission over Bluetooth LE.
+
+config FIDO2_BLE_KEEPALIVE_INTERVAL_MS
+	int "FIDO2 Bluetooth LE keepalive interval"
+	range 10 500
+	default 500
+	help
+	  Interval, in milliseconds, between KEEPALIVE notifications sent
+	  while the authenticator is processing a request or waiting for
+	  user presence.
+
+	  The maximum and default value correspond to the CTAP Bluetooth LE
+	  kKeepAliveMillis value of 500 milliseconds.
+
+config FIDO2_BLE_RX_TIMEOUT_MS
+	int "RX reassembly timeout in milliseconds"
+	default 1500
+	range 1500 10000
+	help
+	  Minimum time in milliseconds to wait for the next fragment of an
+	  incomplete FIDO Bluetooth LE message. The effective timeout is at
+	  least the current Bluetooth LE connection interval.
+
+	  The default corresponds to the CTAP Bluetooth LE
+	  kMaxCommandTransmitDelayMillis value.
+
+config FIDO2_BLE_TX_RETRY_DELAY_MS
+	int "TX retry delay in milliseconds"
+	default 5
+	range 1 100
+	help
+	  Minimum delay in milliseconds before retrying a Bluetooth LE
+	  notification that could not be submitted due to a transient error.
+	  The effective delay is at least the current Bluetooth LE connection
+	  interval.
+
+endif # FIDO2_TRANSPORT_BLE
+
 endmenu

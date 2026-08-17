@@ -32,7 +32,7 @@ extern "C" {
 struct fido2_transport;
 
 /** @brief FIDO BLE service UUID value. */
-#define FIDO2_BLE_SERVICE_UUID_VAL 0xFFFD
+#define FIDO2_BLE_SERVICE_UUID_VAL 0xFFFDU
 
 /** @brief FIDO Pairing mode bit position. */
 #define FIDO2_BLE_SERVICE_DATA_PAIRING_MODE BIT(7)
