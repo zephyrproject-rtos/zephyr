@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/drivers/misc/nxp_rtxxx_dsp_ctrl/nxp_rtxxx_dsp_ctrl.h>
-#include <zephyr/dt-bindings/misc/nxp_rtxxx_dsp_ctrl.h>
 
 #include <fsl_device_registers.h>
 #include <fsl_dsp.h>
@@ -17,14 +16,8 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 
-struct nxp_rtxxx_dsp_ctrl_region {
-	void *base;
-	int32_t length;
-};
-
 struct nxp_rtxxx_dsp_ctrl_config {
 	volatile uint32_t *reg_dspstall;
-	struct nxp_rtxxx_dsp_ctrl_region regions[NXP_RTXXX_DSP_REGION_MAX];
 };
 
 static void dsp_ctrl_enable(const struct device *dev)
@@ -43,36 +36,30 @@ static void dsp_ctrl_disable(const struct device *dev)
 	*cfg->reg_dspstall = 1;
 }
 
-static int dsp_ctrl_load_section(const struct device *dev, const void *base, size_t length,
-				 enum nxp_rtxxx_dsp_ctrl_section_type section)
+static int dsp_ctrl_load(const struct device *dev,
+			 const struct nxp_rtxxx_dsp_ctrl_segment *segments, size_t count)
 {
-	if (section >= NXP_RTXXX_DSP_REGION_MAX) {
+	ARG_UNUSED(dev);
+
+	if (segments == NULL) {
 		return -EINVAL;
 	}
 
-	const struct nxp_rtxxx_dsp_ctrl_config *cfg =
-		(const struct nxp_rtxxx_dsp_ctrl_config *)dev->config;
+	for (size_t i = 0; i < count; i++) {
+		/*
+		 * Custom memcpy implementation is needed because the DSP TCMs can be accessed
+		 * only by 32 bits.
+		 */
+		const volatile uint32_t *src = (const volatile uint32_t *)segments[i].lma;
+		volatile uint32_t *dst = (volatile uint32_t *)segments[i].vma;
 
-	if (cfg->regions[section].base == NULL) {
-		return -EINVAL;
-	}
+		for (size_t remaining = segments[i].size; remaining > 0;) {
+			*dst++ = *src++;
 
-	if (length > cfg->regions[section].length) {
-		return -ENOMEM;
-	}
-
-	/*
-	 * Custom memcpy implementation is needed because the DSP TCMs can be accessed
-	 * only by 32 bits.
-	 */
-	const uint32_t *src = (const uint32_t *)base;
-	uint32_t *dst = cfg->regions[section].base;
-
-	for (size_t remaining = length; remaining > 0; remaining -= sizeof(uint32_t)) {
-		*dst++ = *src++;
-
-		if (remaining < sizeof(uint32_t)) {
-			break;
+			if (remaining < sizeof(uint32_t)) {
+				break;
+			}
+			remaining -= sizeof(uint32_t);
 		}
 	}
 
@@ -80,19 +67,14 @@ static int dsp_ctrl_load_section(const struct device *dev, const void *base, siz
 }
 
 static struct nxp_rtxxx_dsp_ctrl_api nxp_rtxxx_dsp_ctrl_api = {
-	.load_section = dsp_ctrl_load_section,
+	.load = dsp_ctrl_load,
 	.enable = dsp_ctrl_enable,
 	.disable = dsp_ctrl_disable
 };
 
-#define NXP_RTXXX_DSP_SECTION(child_node_id, n)                                                    \
-	[DT_PROP(child_node_id, type)] = {.base = (void *)DT_REG_ADDR(child_node_id),              \
-					  .length = DT_REG_SIZE(child_node_id)},
-
 #define NXP_RTXXX_DSP_CTRL(n, dspstall)                                                            \
 	static const struct nxp_rtxxx_dsp_ctrl_config nxp_rtxxx_dsp_ctrl_##n##_config = {          \
-		.reg_dspstall = (dspstall),                                                        \
-		.regions = {DT_INST_FOREACH_CHILD_VARGS(n, NXP_RTXXX_DSP_SECTION, n)}};            \
+		.reg_dspstall = (dspstall)};                                                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, nxp_rtxxx_dsp_ctrl_##n##_init, NULL, NULL,                        \
 			      &nxp_rtxxx_dsp_ctrl_##n##_config, PRE_KERNEL_1,                      \
