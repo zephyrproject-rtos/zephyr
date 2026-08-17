@@ -58,13 +58,13 @@ static inline uint32_t gpio_ifx_valid_mask(uint8_t ngpios)
 static void gpio_ifx_select_input_drive_mode(gpio_flags_t flags, uint32_t *drive_mode)
 {
 	if ((flags & GPIO_PULL_UP) && (flags & GPIO_PULL_DOWN)) {
-		*drive_mode = CY_GPIO_DM_PULLUP_DOWN;
+		*drive_mode = CY_GPIO_DM_PULLUP_DOWN_IN_OFF;
 	} else if (flags & GPIO_PULL_UP) {
-		*drive_mode = CY_GPIO_DM_PULLUP;
+		*drive_mode = CY_GPIO_DM_PULLUP_IN_OFF;
 	} else if (flags & GPIO_PULL_DOWN) {
-		*drive_mode = CY_GPIO_DM_PULLDOWN;
+		*drive_mode = CY_GPIO_DM_PULLDOWN_IN_OFF;
 	} else {
-		*drive_mode = CY_GPIO_DM_HIGHZ;
+		*drive_mode = CY_GPIO_DM_ANALOG;
 	}
 }
 
@@ -88,7 +88,7 @@ static int gpio_ifx_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive
 			LOG_WRN("Pull-up/pull-down flags ignored"
 				" in push-pull output mode");
 		}
-		*drive_mode = CY_GPIO_DM_STRONG;
+		*drive_mode = CY_GPIO_DM_STRONG_IN_OFF;
 		return 0;
 	}
 
@@ -96,16 +96,15 @@ static int gpio_ifx_select_output_drive_mode(gpio_flags_t flags, uint32_t *drive
 		if (flags & GPIO_PULL_DOWN) {
 			return -ENOTSUP;
 		}
-		*drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP : CY_GPIO_DM_OD_DRIVESLOW;
+		*drive_mode = (flags & GPIO_PULL_UP) ? CY_GPIO_DM_PULLUP_IN_OFF
+						     : CY_GPIO_DM_OD_DRIVESLOW_IN_OFF;
 	} else {
-		/* Open-source */
 		if (flags & GPIO_PULL_UP) {
 			return -ENOTSUP;
 		}
-		*drive_mode =
-			(flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN : CY_GPIO_DM_OD_DRIVESHIGH;
+		*drive_mode = (flags & GPIO_PULL_DOWN) ? CY_GPIO_DM_PULLDOWN_IN_OFF
+						       : CY_GPIO_DM_OD_DRIVESHIGH_IN_OFF;
 	}
-
 	return 0;
 }
 
@@ -161,6 +160,14 @@ static int gpio_ifx_configure(const struct device *dev, gpio_pin_t pin, gpio_fla
 
 	default:
 		return -ENOTSUP;
+	}
+
+	if (flags & GPIO_INPUT) {
+#ifdef CONFIG_SOC_FAMILY_INFINEON_PSOC4
+		drive_mode &= ~CY_GPIO_DM_VAL_IBUF_DISABLE_MASK;
+#else
+		drive_mode |= CY_GPIO_DM_HIGHZ;
+#endif
 	}
 
 #ifdef CY_PDL_TZ_ENABLED
