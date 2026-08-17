@@ -80,7 +80,7 @@
 		clk_inro: clk_inro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(8)>;
+			clock-frequency = <DT_FREQ_K(131)>;
 			status = "disabled";
 		};
 
