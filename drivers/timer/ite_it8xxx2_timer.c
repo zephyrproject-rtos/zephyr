@@ -396,11 +396,34 @@ static int timer_init(enum ext_timer_idx ext_timer,
 	return 0;
 }
 
-bool ite_ec_timer_block_idle(void)
+bool ite_it8xxx2_timer_block_idle(void)
 {
 	return (IT8XXX2_EXT_CNTOX(EVENT_TIMER) < IDLE_BLOCK_TIMER_TICKS) ||
 	       (IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER) < IDLE_BLOCK_TIMER_TICKS);
 }
+
+#ifdef CONFIG_PM
+static uint64_t cyc_deep_sleep_total;
+static uint32_t cyc_enter_deep_sleep;
+
+void ite_ec_clock_capture_low_freq_timer(void)
+{
+	cyc_enter_deep_sleep = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+}
+
+void ite_ec_clock_compensate_system_timer(void)
+{
+	uint32_t now = ~(IT8XXX2_EXT_CNTOX(FREE_RUN_TIMER));
+	uint32_t cyc_elapsed_in_deep = now - cyc_enter_deep_sleep;
+
+	cyc_deep_sleep_total += cyc_elapsed_in_deep;
+}
+
+uint64_t ite_ec_clock_get_sleep_ticks(void)
+{
+	return k_cyc_to_ticks_floor64(cyc_deep_sleep_total);
+}
+#endif /* CONFIG_PM */
 
 static int sys_clock_driver_init(void)
 {

@@ -81,6 +81,8 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 	uint8_t hi;
 	int ret;
 
+	NET_ASSERT(ctx != NULL);
+
 	if (!ctx->is_ready_to_serve) {
 		goto quit;
 	}
@@ -194,9 +196,17 @@ static enum net_verdict ppp_recv(struct net_if *iface,
 
 static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ppp_api *api = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
 	struct ppp_context *ctx = net_if_l2_data(iface);
+	const struct ppp_api *api;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(ctx != NULL);
+
+	api = dev->api;
+
+	NET_ASSERT(api != NULL);
 
 	if (CONFIG_NET_L2_PPP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		net_pkt_hexdump(pkt, "send L2");
@@ -227,7 +237,7 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	ret = net_l2_send(api->send, net_if_get_device(iface), iface, pkt);
+	ret = net_l2_send(api->send, dev, iface, pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);
 		ppp_update_tx_stats(iface, pkt, ret);
@@ -240,6 +250,8 @@ static int ppp_send(struct net_if *iface, struct net_pkt *pkt)
 static enum net_l2_flags ppp_flags(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	return ctx->ppp_l2_flags;
 }
@@ -257,10 +269,17 @@ static void ppp_open_async(struct ppp_context *ctx)
 
 static int ppp_up(struct net_if *iface)
 {
-	const struct ppp_api *ppp = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ppp_api *ppp;
+
+	NET_ASSERT(dev != NULL);
+
+	ppp = dev->api;
+
+	NET_ASSERT(ppp != NULL);
 
 	if (ppp->start) {
-		ppp->start(net_if_get_device(iface));
+		ppp->start(dev);
 	}
 
 	return 0;
@@ -327,8 +346,15 @@ static int ppp_lcp_lower_down(struct ppp_context *ctx)
 /* Bring down network interface by terminating all protocols */
 static int ppp_down(struct net_if *iface)
 {
-	const struct ppp_api *ppp = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
 	struct ppp_context *ctx = net_if_l2_data(iface);
+	const struct ppp_api *ppp;
+
+	NET_ASSERT(dev != NULL);
+
+	ppp = dev->api;
+
+	NET_ASSERT(ppp != NULL);
 
 	if (net_if_is_carrier_ok(iface)) {
 		/* Terminate protocols and close LCP */
@@ -344,7 +370,7 @@ static int ppp_down(struct net_if *iface)
 
 	if (ppp->stop) {
 		/* Inform L2 PPP device that PPP link is down */
-		ppp->stop(net_if_get_device(iface));
+		ppp->stop(dev);
 	}
 
 	return 0;
@@ -354,6 +380,8 @@ static int ppp_enable(struct net_if *iface, bool state)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	int ret;
+
+	NET_ASSERT(ctx != NULL);
 
 	/* Set the desired network interface state */
 	ctx->is_enabled = state;
@@ -381,6 +409,9 @@ uint32_t ppp_peer_async_control_character_map(struct net_if *iface)
 	__ASSERT(net_if_l2(iface) == &NET_L2_GET_NAME(PPP), "Not PPP L2");
 #endif /* !CONFIG_ZTEST */
 	ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
+
 	if (ctx->phase < PPP_NETWORK) {
 		return NET_PPP_DEFAULT_ASYNC_MAP;
 	}
@@ -516,8 +547,8 @@ static void tx_handler(void *p1, void *p2, void *p3)
 	}
 }
 
-static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				     struct net_if *iface)
+static void net_ppp_mgmt_evt_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				     size_t info_length __unused, void *user_data __unused)
 {
 	struct ppp_context *ctx;
 
@@ -547,10 +578,15 @@ static void net_ppp_mgmt_evt_handler(struct net_mgmt_event_callback *cb, uint64_
 	}
 }
 
+NET_MGMT_REGISTER_EVENT_HANDLER(net_ppp_mgmt_events, NET_EVENT_IF_UP | NET_EVENT_IF_DOWN,
+				net_ppp_mgmt_evt_handler, NULL);
+
 void net_ppp_init(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
 	uint8_t count = 0;
+
+	NET_ASSERT(ctx != NULL);
 
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
@@ -564,11 +600,6 @@ void net_ppp_init(struct net_if *iface)
 #if defined(CONFIG_NET_SHELL)
 	k_sem_init(&ctx->shell.wait_echo_reply, 0, K_SEM_MAX_LIMIT);
 #endif
-
-	net_mgmt_init_event_callback(&ctx->mgmt_evt_cb, net_ppp_mgmt_evt_handler,
-				     (NET_EVENT_IF_UP | NET_EVENT_IF_DOWN));
-
-	net_mgmt_add_event_callback(&ctx->mgmt_evt_cb);
 
 	STRUCT_SECTION_FOREACH(ppp_protocol_handler, proto) {
 		if (proto->protocol == PPP_LCP) {

@@ -182,13 +182,30 @@ zephyr_udc0: &usbotg_fs {
 		spi-bus-width = <4>;
 		writeoc = "PP_1_1_4";
 
-		partitions {
-			compatible = "fixed-partitions";
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		ext_flash: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
-			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(8)>;
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				slot0_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 DT_SIZE_M(8)>;
+				};
 			};
 		};
 	};

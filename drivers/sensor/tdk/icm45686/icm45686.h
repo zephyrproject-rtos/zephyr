@@ -82,6 +82,8 @@ struct icm45686_encoded_header {
 	uint8_t events: 3;
 	uint8_t channels: 7;
 	uint16_t fifo_count;
+	uint8_t accel_odr;
+	uint8_t gyro_odr;
 };
 
 struct icm45686_encoded_data {

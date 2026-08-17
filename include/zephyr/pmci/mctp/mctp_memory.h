@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief MCTP memory management functions
+ * @ingroup mctp
  */
 
 #ifndef ZEPHYR_MCTP_MEMORY_H_

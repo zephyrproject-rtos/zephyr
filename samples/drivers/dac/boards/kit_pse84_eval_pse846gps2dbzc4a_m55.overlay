@@ -16,6 +16,10 @@
 	};
 };
 
+&autanalog {
+	status = "okay";
+};
+
 &dac0 {
 	status = "okay";
 	clocks = <&peri0_group2_8bit_0>;

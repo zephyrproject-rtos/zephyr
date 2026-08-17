@@ -45,6 +45,10 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       zephyr_library_compile_definitions(DEBUG_PRINT)
     endif()
 
+    if(CONFIG_UOSCORE_NVM_SUPPORT)
+      zephyr_library_compile_definitions(OSCORE_NVM_SUPPORT)
+    endif()
+
     zephyr_library_sources(
       ${UOSCORE_UEDHOC_SRC_DIR}/oscore/aad.c
       ${UOSCORE_UEDHOC_SRC_DIR}/oscore/coap2oscore.c
@@ -61,6 +65,10 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/oscore_aad_array.c
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/oscore_enc_structure.c
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/oscore_info.c
+    )
+
+    zephyr_library_sources_ifdef(CONFIG_UOSCORE_NVM_SUPPORT
+      ${CMAKE_CURRENT_LIST_DIR}/uoscore_nvm.c
     )
 
     zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)

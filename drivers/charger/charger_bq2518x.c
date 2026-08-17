@@ -54,6 +54,8 @@ enum bq2518x_device_id {
 #define BQ2518X_VBAT_MSK                         GENMASK(6, 0)
 #define BQ2518X_ICHG_CHG_DIS                     BIT(7)
 #define BQ2518X_ICHG_MSK                         GENMASK(6, 0)
+#define BQ2518X_CHARGE_CTRL0_TERMINATION_MASK    GENMASK(5, 4)
+#define BQ2518X_CHARGE_CTRL0_TERMINATION_OFFSET  4
 #define BQ2518X_CHARGE_CTRL1_DISCHARGE_OFFSET    6
 #define BQ2518X_CHARGE_CTRL1_UNDERVOLTAGE_OFFSET 3
 #define BQ2518X_CHARGE_CTRL1_CHG_STATUS_INT_MASK BIT(2)
@@ -91,6 +93,7 @@ struct bq2518x_config {
 	uint8_t reg_ic_ctrl;
 	uint8_t reg_charge_control1;
 	uint8_t reg_sys_regulation;
+	uint8_t termination_current;
 };
 
 struct bq2518x_data {
@@ -439,6 +442,18 @@ static int bq2518x_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Setup charge termination threshold */
+	ret = i2c_reg_read_byte_dt(&cfg->i2c, BQ2518X_CHARGE_CTRL0, &val);
+	if (ret < 0) {
+		return ret;
+	}
+	val &= ~BQ2518X_CHARGE_CTRL0_TERMINATION_MASK;
+	val |= cfg->termination_current;
+	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_CHARGE_CTRL0, val);
+	if (ret < 0) {
+		return ret;
+	}
+
 	/* Setup battery discharge limits */
 	ret = i2c_reg_write_byte_dt(&cfg->i2c, BQ2518X_CHARGE_CTRL1, cfg->reg_charge_control1);
 	if (ret < 0) {
@@ -505,7 +520,8 @@ static int bq2518x_init(const struct device *dev)
 			BQ2518X_CHARGE_CTRL1_ILIM_INT_MASK | BQ2518X_CHARGE_CTRL1_VINDPM_INT_MASK, \
 		.reg_sys_regulation = DT_INST_ENUM_IDX(inst, vsys_target_regulation)               \
 				      << BQ2518X_SYS_REG_CTRL_OFFSET,                              \
-	};                                                                                         \
+		.termination_current = DT_INST_ENUM_IDX(inst, termination_current_percent)         \
+				       << BQ2518X_CHARGE_CTRL0_TERMINATION_OFFSET};                \
 	static struct bq2518x_data _device_id##_data_##inst;                                       \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, bq2518x_init, NULL, &_device_id##_data_##inst,                 \

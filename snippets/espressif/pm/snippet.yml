@@ -1,0 +1,9 @@
+# Copyright 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: espressif-pm
+description: Enables RTC timer wakeup and counter support for light sleep.
+append:
+  EXTRA_CONF_FILE: espressif-pm.conf
+  EXTRA_DTC_OVERLAY_FILE: espressif-pm.overlay

@@ -114,7 +114,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 
 	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
 		ret = -EBUSY;
-		goto exit;
+		goto out;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
@@ -122,7 +122,7 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
-exit:
+out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
 }

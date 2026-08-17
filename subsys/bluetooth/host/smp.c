@@ -1015,7 +1015,7 @@ static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static void bt_smp_br_connected(struct bt_l2cap_chan *chan)
@@ -1043,8 +1043,9 @@ static void bt_smp_br_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_br_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * Bluetooth workqueue, so canceling the timeout work should always
+	 * succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
@@ -2060,7 +2061,7 @@ static void smp_send(struct bt_smp *smp, struct net_buf *buf,
 		return;
 	}
 
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 }
 
 static int smp_error(struct bt_smp *smp, uint8_t reason)
@@ -4786,7 +4787,7 @@ static uint8_t smp_keypress_notif(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	/* Reset SMP timeout, like the spec says. */
-	k_work_reschedule(&smp->work, SMP_TIMEOUT);
+	bt_work_reschedule(&smp->work, SMP_TIMEOUT);
 
 	if (smp_auth_cb->passkey_display_keypress) {
 		smp_auth_cb->passkey_display_keypress(conn, type);
@@ -4978,8 +4979,9 @@ static void bt_smp_disconnected(struct bt_l2cap_chan *chan)
 	LOG_DBG("chan %p cid 0x%04x", chan,
 		CONTAINER_OF(chan, struct bt_l2cap_le_chan, chan)->tx.cid);
 
-	/* Channel disconnected callback is always called from a work handler
-	 * so canceling of the timeout work should always succeed.
+	/* The channel disconnected callback and timeout work both run on the
+	 * Bluetooth workqueue, so canceling the timeout work should always
+	 * succeed.
 	 */
 	(void)k_work_cancel_delayable(&smp->work);
 
@@ -5186,12 +5188,39 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		return -ENOENT;
 	}
 
-	/* Copy signing count */
-	cnt = sys_cpu_to_le32(keys->remote_csrk.cnt);
-	memcpy(net_buf_tail(buf) - sizeof(sig), &cnt, sizeof(cnt));
+	cnt = sys_get_le32(sig);
+
+	/* The Signing Algorithm is performed with the received counter
+	 * value, and replay protection is done by rejecting counter values
+	 * that have already been used (Core Spec v6.2, Vol 3, Part C,
+	 * Section 10.4.2, the last version to specify data signing before
+	 * its removal in v6.3). Values greater than the expected next one
+	 * are accepted, since the peer may consume counter values for
+	 * signed PDUs that never end up being received, e.g. when it
+	 * retries a failed send with a fresh signature or disconnects with
+	 * signed PDUs still queued.
+	 */
+	if (cnt < keys->remote_csrk.cnt) {
+		LOG_WRN("Rejecting already used sign counter %u from %s", cnt,
+			bt_conn_dst_str(conn));
+		return -EBADMSG;
+	}
+
+	/* Fail closed when the received counter is the final possible
+	 * value: accepting it would wrap the next expected value around
+	 * to zero, re-opening the replay window for every previously used
+	 * counter value. The counter space of the CSRK is then exhausted,
+	 * and signing can only resume once a new pairing distributes a
+	 * fresh CSRK.
+	 */
+	if (cnt == UINT32_MAX) {
+		LOG_WRN("Sign counter of remote CSRK for %s exhausted",
+			bt_conn_dst_str(conn));
+		return -EOVERFLOW;
+	}
 
 	LOG_DBG("Sign data len %zu key %s count %u", buf->len - sizeof(sig),
-		bt_hex(keys->remote_csrk.val, 16), keys->remote_csrk.cnt);
+		bt_hex(keys->remote_csrk.val, 16), cnt);
 
 	err = smp_sign_buf(keys->remote_csrk.val, buf->data,
 			   buf->len - sizeof(sig));
@@ -5205,7 +5234,24 @@ int bt_smp_sign_verify(struct bt_conn *conn, struct net_buf *buf)
 		return -EBADMSG;
 	}
 
-	keys->remote_csrk.cnt++;
+	keys->remote_csrk.cnt = cnt + 1U;
+
+	/* The sign counter is bound to the lifetime of the CSRK, not to a
+	 * single power cycle. Without persisting each accepted value, a
+	 * reboot would restore the counter stored at pairing time, making
+	 * previously captured Signed Write Commands verify (replay) again.
+	 *
+	 * Fail closed if the new value cannot be persisted, so that no
+	 * command gets executed unless it is also protected from replay.
+	 * The incremented in-memory value is kept, since the peer has
+	 * already consumed this counter value and expects the next one.
+	 */
+	err = bt_keys_store(keys);
+	if (err != 0) {
+		LOG_ERR("Unable to store updated sign counter for %s",
+			bt_conn_dst_str(conn));
+		return err;
+	}
 
 	return 0;
 }
@@ -5220,6 +5266,19 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	if (!keys) {
 		LOG_ERR("Unable to find local CSRK for %s", bt_addr_le_str(&conn->le.dst));
 		return -ENOENT;
+	}
+
+	/* Fail closed when the counter space is exhausted, instead of
+	 * wrapping around and reusing counter values, which the peer
+	 * would reject as replays. The final possible value is never used
+	 * for signing, since a receiver cannot accept it without its own
+	 * next expected value wrapping (see bt_smp_sign_verify()). A new
+	 * pairing needs to distribute a fresh CSRK to resume signing.
+	 */
+	if (keys->local_csrk.cnt == UINT32_MAX) {
+		LOG_ERR("Sign counter of local CSRK for %s exhausted",
+			bt_conn_dst_str(conn));
+		return -EOVERFLOW;
 	}
 
 	/* Reserve space for data signature */
@@ -5239,6 +5298,21 @@ int bt_smp_sign(struct bt_conn *conn, struct net_buf *buf)
 	}
 
 	keys->local_csrk.cnt++;
+
+	/* Persist the new counter value so that a reboot does not lead to
+	 * reuse of an already used value, which the peer would reject.
+	 *
+	 * On failure the increment is reverted: the PDU is not sent in
+	 * that case, so the counter value has not been consumed and must
+	 * be used for the next attempt to stay in sync with the peer.
+	 */
+	err = bt_keys_store(keys);
+	if (err != 0) {
+		LOG_ERR("Unable to store updated sign counter for %s",
+			bt_conn_dst_str(conn));
+		keys->local_csrk.cnt--;
+		return err;
+	}
 
 	return 0;
 }

@@ -67,7 +67,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -116,7 +116,7 @@ jobs:
         run: python3 scripts/ci/sarif_summary.py results-${{ matrix.sanitizer }}.sarif
 
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@99df26d4f13ea111d4ec1a7dddef6063f76b97e9 # v4.37.0
+        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
         with:
           sarif_file: results-${{ matrix.sanitizer }}.sarif
           # One category per sanitizer. They report disjoint rule sets, and a

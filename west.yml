@@ -147,7 +147,7 @@ manifest:
       groups:
         - fs
     - name: hal_adi
-      revision: a554a31806bc308d954fdb43143d260902da9b1e
+      revision: ab16e67b49cfe45826e70d68b720ee5751e77664
       path: modules/hal/adi
       groups:
         - hal
@@ -168,11 +168,11 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: 6de5c882b3ea55c3a57cff5ab6debfc8ef2fff7f
+      revision: de0ef89150684ebbdbf17aa1219dac3790bbfd49
       groups:
         - hal
     - name: hal_espressif
-      revision: aff3c2c094b32bd2d87fe9211a1b0d0a1d7aa198
+      revision: 3d4d922a4d2994f844790ec031a584ec71240485
       path: modules/hal/espressif
       west-commands: west/west-commands.yml
       groups:
@@ -198,22 +198,22 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 1f2976a52e03c453a2d2fb86754664ba75275c61
+      revision: 550371954d33f7f5f17b3eb2f7ecc46ca3fa1b62
       path: modules/hal/microchip
       groups:
         - hal
     - name: hal_nordic
-      revision: 12e1c277b98ef765732e2b2a476076e5bb6c16f4
+      revision: 4387c79cebd31927fb1ea7d64bee11728ae8041f
       path: modules/hal/nordic
       groups:
         - hal
     - name: hal_nuvoton
-      revision: 6e993ab4d923575a69c91fa40897d87c5d779708
+      revision: 0f411a85da7d17a612d54450f608f4d30cdb971f
       path: modules/hal/nuvoton
       groups:
         - hal
     - name: hal_nxp
-      revision: 53946adb08b54449391c1c0c73cdd094d92a3b6e
+      revision: 5978c2877c25d9b8d19c6e363cf7e5f478ca7cdd
       path: modules/hal/nxp
       groups:
         - hal
@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: c20e7ee9744a1b9b5f05b99260930a7f196b9b12
+      revision: 29d365ccfbceb9f42ce666d75463fbe2c83b8e29
       groups:
         - hal
     - name: hal_renesas
@@ -248,7 +248,7 @@ manifest:
       groups:
         - hal
     - name: hal_silabs
-      revision: 759584f0b08f3cc99443a293a59b4a492687c67e
+      revision: 8d871343cd8f4518a69dfc96a31a2963c1f59f35
       path: modules/hal/silabs
       groups:
         - hal
@@ -258,7 +258,7 @@ manifest:
       groups:
         - hal
     - name: hal_stm32
-      revision: 729ba54f3c17a3a298d665ce4b86f2b8f9d3726e
+      revision: 33576ef05e529cad803f210cc95b52b607757c96
       path: modules/hal/stm32
       groups:
         - hal
@@ -288,7 +288,7 @@ manifest:
       groups:
         - hal
     - name: hal_xtensa
-      revision: 614d7dd1cdb4dd61b8fda5a504d63297497b05ac
+      revision: 60224c27bed1466287f0246ac04c902b92331c29
       path: modules/hal/xtensa
       groups:
         - hal
@@ -329,7 +329,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: c38f7a10c14ae8b95c0296cd10320907c28e02c7
+      revision: 7ad67106c3253d03ae4bd8ab48e6bdf7bc46f43e
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -347,12 +347,12 @@ manifest:
       revision: 5499fd4c9a478f8139eeb07a82c3b4468d6067f7
       path: modules/lib/nanopb
     - name: net-tools
-      revision: c3431f482ea8a7b570fa4573aa5d35875b7f2a23
+      revision: 2104d8a33fe104559ff5c22793247926a714985e
       path: tools/net-tools
       groups:
         - tools
     - name: nrf_hw_models
-      revision: 581cc8c8d922b062101ab2cc252c4b4699b0dae9
+      revision: c84230d0329a2ce5e449bbd556d6854861a6eee7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: nrf_wifi
       revision: 0aaa9aa812877cb6bc020df8260d0607a3f0ec1a
@@ -377,6 +377,9 @@ manifest:
       groups:
         - testing
         - tee
+    - name: reqmgmt
+      path: doc/reqmgmt
+      revision: c6803e9b4e9bf9ae7fad3c7cd85dbf35d0d09ede
     - name: segger
       revision: 50892fdbcf2f570e67baa72b8894a66b16946f72
       path: modules/debug/segger
@@ -394,12 +397,12 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: b7025fb97b53370ac4a2c216698e0784916fa135
+      revision: 4d431cbbb451d13359534c63bf67e2d315ca37de
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 163bdeb4681ebadf5781a8b8714a709ed77aaf27
+      revision: 2e7df188dc130c02eac4aa608f27f3b232681ccc
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee

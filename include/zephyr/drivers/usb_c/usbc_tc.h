@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief USB Type-C Cable and Connector API used for USB-C drivers
+ * @ingroup usb_type_c
  *
  * The information in this file was taken from the USB Type-C
  * Cable and Connector Specification Release 2.1

@@ -26,13 +26,14 @@ properties:
       PHY_INTERFACE_MODE_RGMII_ID or PHY_INTERFACE_MODE_RGMII_TXID.
   ti,interface-type:
     type: string
+    required: true
     description: Which type of phy connection the phy is set up for
-    default: "rgmii"
     enum:
       - "rgmii"
       - "rgmii-id"
       - "rgmii-rxid"
       - "rgmii-txid"
+      - "gmii"
   default-speeds:
     default: ["10BASE Half-Duplex", "10BASE Full-Duplex", "100BASE Half-Duplex",
               "100BASE Full-Duplex", "1000BASE Half-Duplex", "1000BASE Full-Duplex"]

@@ -632,6 +632,7 @@ static void nbr_lookup_ok(void)
 static void *ipv6_setup(void)
 {
 	struct net_if_addr *ifaddr = NULL, *ifaddr2;
+	struct net_in6_addr solicited_node_mcast;
 	struct net_if *iface = TEST_NET_IF;
 	struct net_if *iface2 = NULL;
 	struct net_if_ipv6 *ipv6;
@@ -666,6 +667,14 @@ static void *ipv6_setup(void)
 
 	ifaddr2 = net_if_ipv6_addr_lookup(&my_addr, &iface2);
 	zassert_true(ifaddr2 == ifaddr, "Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
+
+	/* As the address was added by hand above, the solicited-node multicast
+	 * group that net_if_ipv6_addr_add() would have joined (RFC 4291 ch 2.8)
+	 * needs to be joined manually too.
+	 */
+	net_ipv6_addr_create_solicited_node(&my_addr, &solicited_node_mcast);
+	zassert_ok(net_ipv6_mld_join(iface, &solicited_node_mcast),
+		   "Cannot join solicited node multicast group");
 
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
@@ -1123,7 +1132,7 @@ static void ra_message(void)
 	/* Check if RDNSS was added correctly. */
 	ctx = dns_resolve_get_default();
 	zassert_equal(ctx->state, DNS_RESOLVE_CONTEXT_ACTIVE);
-	dns_server = (struct net_sockaddr_in6 *)&ctx->servers[0].dns_server;
+	dns_server = net_sin6(net_sad(&ctx->servers[0].dns_server_addr));
 	zassert_equal(dns_server->sin6_family, dns_addr.sin6_family);
 	zassert_equal(dns_server->sin6_port, dns_addr.sin6_port);
 	zassert_mem_equal(&dns_server->sin6_addr, &dns_addr.sin6_addr,

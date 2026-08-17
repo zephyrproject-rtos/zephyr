@@ -33,6 +33,10 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 #define COAP_OSCORE_OPTION 9
 
 #if defined(CONFIG_COAP_OSCORE)
+
+#include <oscore.h>
+#include "oscore/nvm.h"
+
 /*
  * Shared OSCORE test infrastructure.
  *
@@ -40,26 +44,45 @@ LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
  * fresh client and server context from it so sender sequence numbers start from
  * zero. A second, non-OSCORE-required ("mixed") service exercises the code paths
  * that differ between required and mixed services.
+ *
+ * Server contexts are added to the CoAP OSCORE pool; the simulated client is an
+ * external peer and drives uoscore (coap2oscore/oscore2coap) directly.
  */
 
 static const uint8_t oscore_master_secret[] = {
 	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
 	0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
 };
+static const uint8_t oscore_alt_master_secret[] = {
+	0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+	0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x11,
+};
 static const uint8_t oscore_master_salt[] = {
 	0x9E, 0x7C, 0xA9, 0x22, 0x23, 0x78, 0x63, 0x40,
 };
 static const uint8_t oscore_client_id[] = {0x01};
 static const uint8_t oscore_server_id[] = {0x02};
+static const uint8_t oscore_shared_id_context[] = {0xA0, 0xA1, 0xA2};
+/* A second client/server identity pair for the multi-client tests. Distinct
+ * Sender/Recipient IDs derive independent keys, so each client's traffic is only
+ * decryptable with its own context (RFC 8613 Section 3.2).
+ */
+static const uint8_t oscore_client_b_id[] = {0x03};
+static const uint8_t oscore_server_b_id[] = {0x04};
 
 static const uint8_t oscore_notify_payload[] = "notify-payload";
 static const uint8_t oscore_deferred_payload[] = "deferred-response";
 static const uint8_t oscore_mixed_payload[] = "mixed-response";
 static const uint8_t oscore_secure_payload[] = "encrypted-response";
 
-static int oscore_make_ctx(const uint8_t *sender_id, size_t sender_id_len,
-			   const uint8_t *recipient_id, size_t recipient_id_len,
-			   struct coap_oscore_context **ctx)
+/* Simulated client's uoscore context, reused across tests to avoid large stacks. */
+static struct context oscore_client_uctx;
+/* Second simulated client, used by the multi-client tests. */
+static struct context oscore_client_b_uctx;
+
+static int oscore_make_server_ctx_detailed(const uint8_t *sender_id, size_t sender_id_len,
+					   const uint8_t *recipient_id, size_t recipient_id_len,
+					   bool fresh, struct coap_oscore_context **ctx)
 {
 	struct coap_oscore_init_params params = {
 		.master_secret = oscore_master_secret,
@@ -72,10 +95,39 @@ static int oscore_make_ctx(const uint8_t *sender_id, size_t sender_id_len,
 		.master_salt_len = sizeof(oscore_master_salt),
 		.aead_alg = COAP_OSCORE_AEAD_AES_CCM_16_64_128,
 		.hkdf = COAP_OSCORE_HKDF_SHA_256,
-		.fresh_master_secret_salt = true,
+		.fresh_master_secret_salt = fresh,
 	};
 
-	return coap_oscore_context_init(&params, ctx);
+	return coap_oscore_context_add(&params, ctx);
+}
+
+static int oscore_make_server_ctx(const uint8_t *sender_id, size_t sender_id_len,
+				  const uint8_t *recipient_id, size_t recipient_id_len,
+				  struct coap_oscore_context **ctx)
+{
+	return oscore_make_server_ctx_detailed(sender_id, sender_id_len, recipient_id,
+					       recipient_id_len, true, ctx);
+}
+
+/* Initialize the simulated client directly through uoscore (external peer). */
+static int oscore_make_client_ctx(const uint8_t *sender_id, size_t sender_id_len,
+				  const uint8_t *recipient_id, size_t recipient_id_len, bool fresh,
+				  struct context *ctx)
+{
+	struct oscore_init_params params = {
+		.master_secret = {.len = sizeof(oscore_master_secret),
+				  .ptr = (uint8_t *)oscore_master_secret},
+		.sender_id = {.len = sender_id_len, .ptr = (uint8_t *)sender_id},
+		.recipient_id = {.len = recipient_id_len, .ptr = (uint8_t *)recipient_id},
+		.id_context = {.len = 0, .ptr = NULL},
+		.master_salt = {.len = sizeof(oscore_master_salt),
+				.ptr = (uint8_t *)oscore_master_salt},
+		.aead_alg = OSCORE_AES_CCM_16_64_128,
+		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = fresh,
+	};
+
+	return oscore_context_init(&params, ctx) == ok ? 0 : -EINVAL;
 }
 
 static net_socklen_t oscore_addr_len(const struct net_sockaddr *addr)
@@ -130,16 +182,15 @@ static int oscore_build_request(struct coap_packet *req, uint8_t *buf, size_t bu
 	return 0;
 }
 
-static int oscore_send_protected(int sock, struct coap_oscore_context *ctx,
-				 const struct net_sockaddr_in6 *dst, const struct coap_packet *req)
+static int oscore_send_protected(int sock, struct context *ctx, const struct net_sockaddr_in6 *dst,
+				 const struct coap_packet *req)
 {
 	uint8_t protected[COAP_BUF_SIZE];
 	uint32_t protected_len = sizeof(protected);
 	int ret;
 
-	ret = coap_oscore_protect(req->data, req->offset, protected, &protected_len, ctx);
-	if (ret < 0) {
-		return ret;
+	if (coap2oscore(req->data, req->offset, protected, &protected_len, ctx) != ok) {
+		return -EBADMSG;
 	}
 
 	ret = zsock_sendto(sock, protected, protected_len, 0, (const struct net_sockaddr *)dst,
@@ -171,12 +222,11 @@ static int oscore_recv(int sock, int timeout_ms, uint8_t *buf, size_t buf_len)
 }
 
 /* Receive, parse and OSCORE-verify a response, returning the decrypted inner packet. */
-static int oscore_recv_verify(int sock, int timeout_ms, struct coap_oscore_context *ctx,
-			      uint8_t *inner_buf, uint32_t *inner_len, struct coap_packet *inner)
+static int oscore_recv_verify(int sock, int timeout_ms, struct context *ctx, uint8_t *inner_buf,
+			      uint32_t *inner_len, struct coap_packet *inner)
 {
 	uint8_t recv_buf[COAP_BUF_SIZE];
 	struct coap_packet outer;
-	uint8_t oscore_error = 0;
 	int len;
 	int ret;
 
@@ -194,9 +244,41 @@ static int oscore_recv_verify(int sock, int timeout_ms, struct coap_oscore_conte
 		return -ENOMSG;
 	}
 
-	ret = coap_oscore_verify(recv_buf, outer.offset, inner_buf, inner_len, ctx, &oscore_error);
+	if (oscore2coap(recv_buf, outer.offset, inner_buf, inner_len, ctx) != ok) {
+		return -EBADMSG;
+	}
+
+	return coap_packet_parse(inner, inner_buf, *inner_len, NULL, 0);
+}
+
+/* Verify captured OSCORE bytes with a specific client context, without consuming
+ * the socket. Used to prove per-client isolation: a response protected for one
+ * client must not decrypt with another client's context.
+ */
+static int oscore_verify_raw(const uint8_t *raw, int raw_len, struct context *ctx,
+			     uint8_t *inner_buf, uint32_t *inner_len, struct coap_packet *inner)
+{
+	uint8_t recv_buf[COAP_BUF_SIZE];
+	struct coap_packet outer;
+	int ret;
+
+	if (raw_len <= 0 || raw_len > (int)sizeof(recv_buf)) {
+		return -EINVAL;
+	}
+
+	memcpy(recv_buf, raw, raw_len);
+
+	ret = coap_packet_parse(&outer, recv_buf, raw_len, NULL, 0);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (!coap_oscore_msg_has_oscore(&outer)) {
+		return -ENOMSG;
+	}
+
+	if (oscore2coap(recv_buf, outer.offset, inner_buf, inner_len, ctx) != ok) {
+		return -EBADMSG;
 	}
 
 	return coap_packet_parse(inner, inner_buf, *inner_len, NULL, 0);
@@ -205,12 +287,6 @@ static int oscore_recv_verify(int sock, int timeout_ms, struct coap_oscore_conte
 /* Secure (OSCORE-required) service*/
 static uint16_t oscore_secure_service_port = 56839;
 static struct coap_oscore_context *oscore_secure_service_ctx;
-
-/* Provider invoked by the CoAP server when OSCORE processing is needed. */
-static struct coap_oscore_context *oscore_secure_service_provider(void)
-{
-	return oscore_secure_service_ctx;
-}
 
 static int oscore_secure_get(struct coap_resource *resource, struct coap_packet *request,
 			     struct net_sockaddr *addr, net_socklen_t addr_len)
@@ -253,11 +329,6 @@ static int oscore_secure_get(struct coap_resource *resource, struct coap_packet 
 /* Mixed (non-OSCORE-required) service. */
 static uint16_t oscore_mixed_service_port = 56840;
 static struct coap_oscore_context *oscore_mixed_service_ctx;
-
-static struct coap_oscore_context *oscore_mixed_service_provider(void)
-{
-	return oscore_mixed_service_ctx;
-}
 
 /* State captured by the separate-response handler for a later (deferred) reply. */
 struct oscore_saved_request {
@@ -448,11 +519,9 @@ static int oscore_mixed_get(struct coap_resource *resource, struct coap_packet *
 	return 0;
 }
 
-COAP_SERVICE_DEFINE_OSCORE(oscore_secure_service, NULL, &oscore_secure_service_port, 0,
-			   oscore_secure_service_provider, true);
+COAP_SERVICE_DEFINE_OSCORE(oscore_secure_service, NULL, &oscore_secure_service_port, 0, true);
 
-COAP_SERVICE_DEFINE_OSCORE(oscore_mixed_service, NULL, &oscore_mixed_service_port, 0,
-			   oscore_mixed_service_provider, false);
+COAP_SERVICE_DEFINE_OSCORE(oscore_mixed_service, NULL, &oscore_mixed_service_port, 0, false);
 
 static const char *const oscore_observe_path[] = {"observe", NULL};
 static const char *const oscore_separate_path[] = {"separate", NULL};
@@ -506,6 +575,14 @@ COAP_RESOURCE_DEFINE(oscore_separate_mixed_resource, oscore_mixed_service,
 			}
 );
 /* clang-format on */
+
+/*
+ * nvm_read_ssn()/nvm_write_ssn() are declared in oscore/nvm.h behind
+ * OSCORE_NVM_SUPPORT, which is only defined when building the uoscore library.
+ * Re-declare them here so the test can seed and inspect the persisted SSN.
+ */
+enum err nvm_write_ssn(const struct nvm_key_t *nvm_key, uint64_t ssn);
+enum err nvm_read_ssn(const struct nvm_key_t *nvm_key, uint64_t *ssn);
 
 /* Test OSCORE option number is correctly defined */
 ZTEST(coap_oscore, test_oscore_option_number)
@@ -591,13 +668,18 @@ ZTEST(coap_oscore, test_oscore_exchange_cache)
 	};
 	uint8_t token1[] = {0x01, 0x02, 0x03, 0x04};
 	uint8_t token2[] = {0x05, 0x06, 0x07, 0x08};
+	struct coap_oscore_context *ctx;
+
+	zassert_ok(oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id),
+					  oscore_client_id, sizeof(oscore_client_id), &ctx),
+		   "Should create context");
 
 	/* Initialize cache */
 	memset(cache, 0, sizeof(cache));
 
 	/* Test: Add entry to cache */
 	int ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr1, sizeof(addr1),
-					   token1, sizeof(token1));
+					   token1, sizeof(token1), ctx);
 	zassert_ok(ret, "Should add exchange entry");
 
 	/* Test: Find the entry */
@@ -609,9 +691,13 @@ ZTEST(coap_oscore, test_oscore_exchange_cache)
 	zassert_equal(entry->tkl, sizeof(token1), "Token length should match");
 	zassert_mem_equal(entry->token, token1, sizeof(token1), "Token should match");
 
+	/* Active exchanges retain the context until their references are released. */
+	zassert_equal(coap_oscore_context_remove(ctx), -EAGAIN,
+		      "Context with active exchanges must not be removable");
+
 	/* Test: Add another entry with different address */
 	ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr2, sizeof(addr2), token2,
-				       sizeof(token2));
+				       sizeof(token2), ctx);
 	zassert_ok(ret, "Should add second exchange entry");
 
 	/* Test: Find second entry */
@@ -621,7 +707,7 @@ ZTEST(coap_oscore, test_oscore_exchange_cache)
 
 	/* Test: Update existing entry */
 	ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr1, sizeof(addr1), token1,
-				       sizeof(token1));
+				       sizeof(token1), ctx);
 	zassert_ok(ret, "Should update exchange entry");
 
 	entry = coap_oscore_exchange_find(cache, (struct net_sockaddr *)&addr1, sizeof(addr1),
@@ -640,6 +726,11 @@ ZTEST(coap_oscore, test_oscore_exchange_cache)
 	entry = coap_oscore_exchange_find(cache, (struct net_sockaddr *)&addr2, sizeof(addr2),
 					  token2, sizeof(token2));
 	zassert_not_null(entry, "Second entry should still exist");
+
+	/* Release remaining reference and return the context to the pool. */
+	coap_oscore_exchange_remove(cache, (struct net_sockaddr *)&addr2, sizeof(addr2), token2,
+				    sizeof(token2));
+	zassert_ok(coap_oscore_context_remove(ctx), "Should remove context");
 }
 
 ZTEST(coap_oscore, test_oscore_exchange_expiry)
@@ -652,14 +743,23 @@ ZTEST(coap_oscore, test_oscore_exchange_expiry)
 	};
 	uint8_t token[] = {0x01, 0x02, 0x03, 0x04};
 	int ret;
+	struct coap_oscore_context *ctx;
+
+	zassert_ok(oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id),
+					  oscore_client_id, sizeof(oscore_client_id), &ctx),
+		   "Should create context");
 
 	/* Initialize cache */
 	memset(cache, 0, sizeof(cache));
 
 	/* Add non-Observe exchange */
 	ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr, sizeof(addr), token,
-				       sizeof(token));
+				       sizeof(token), ctx);
 	zassert_ok(ret, "Should add exchange");
+
+	/* Active exchanges retain the context until expiry/removal drops references. */
+	zassert_equal(coap_oscore_context_remove(ctx), -EAGAIN,
+		      "Context with an active exchange must not be removable");
 
 	/* Entry should be found initially */
 	struct coap_oscore_exchange *entry;
@@ -675,6 +775,9 @@ ZTEST(coap_oscore, test_oscore_exchange_expiry)
 	entry = coap_oscore_exchange_find(cache, (struct net_sockaddr *)&addr, sizeof(addr), token,
 					  sizeof(token));
 	zassert_is_null(entry, "Expired entry should be cleared");
+
+	/* Expiry released the reference; the context returns to the pool. */
+	zassert_ok(coap_oscore_context_remove(ctx), "Should remove context");
 }
 
 ZTEST(coap_oscore, test_oscore_exchange_cache_eviction)
@@ -687,11 +790,16 @@ ZTEST(coap_oscore, test_oscore_exchange_cache_eviction)
 	};
 	uint8_t token[] = {0x01, 0x02, 0x03, 0x04};
 	int ret;
+	struct coap_oscore_context *ctx;
 
 	zassert(CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE >= 2,
 		"Cache size must be at least 2 for eviction test");
 	zassert(CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE < 0xFF,
 		"Cache size must be less than 0xFF for eviction test");
+
+	zassert_ok(oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id),
+					  oscore_client_id, sizeof(oscore_client_id), &ctx),
+		   "Should create context");
 
 	/* Initialize cache */
 	memset(cache, 0, sizeof(cache));
@@ -704,7 +812,7 @@ ZTEST(coap_oscore, test_oscore_exchange_cache_eviction)
 		token[0] = i + 1;
 
 		ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr, sizeof(addr),
-					       token, sizeof(token));
+					       token, sizeof(token), ctx);
 		zassert_ok(ret, "Should add entry %d", i);
 
 		/* Small delay to ensure different timestamps */
@@ -732,7 +840,7 @@ ZTEST(coap_oscore, test_oscore_exchange_cache_eviction)
 	token[0] = 0xFF;
 
 	ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&new_addr, sizeof(new_addr),
-				       token, sizeof(token));
+				       token, sizeof(token), ctx);
 	zassert_equal(ret, -ENOMEM, "Should prevent adding new entry when cache is full");
 
 	/* Verify new entry does not exist */
@@ -759,6 +867,18 @@ ZTEST(coap_oscore, test_oscore_exchange_cache_eviction)
 						  token, sizeof(token));
 		zassert_not_null(entry, "No entry should have been evicted");
 	}
+
+	/* Drain all references so the context returns to the pool. */
+	for (int i = 0; i < CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE; i++) {
+		struct net_sockaddr_in6 addr = addr_base;
+
+		addr.sin6_addr.s6_addr[15] = i + 1;
+		token[0] = i + 1;
+
+		coap_oscore_exchange_remove(cache, (struct net_sockaddr *)&addr, sizeof(addr),
+					    token, sizeof(token));
+	}
+	zassert_ok(coap_oscore_context_remove(ctx), "Should remove context");
 }
 
 /* A secure service returns an OSCORE protected response. */
@@ -769,7 +889,7 @@ ZTEST(coap_oscore, test_oscore_e2e_response_encrypted)
 	uint32_t inner_len = sizeof(innerbuf);
 	uint8_t token[] = {0x11, 0x22, 0x33, 0x44};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_packet req;
 	struct coap_packet inner;
 	const uint8_t *payload;
@@ -777,11 +897,11 @@ ZTEST(coap_oscore, test_oscore_e2e_response_encrypted)
 	int sock;
 	int ret;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_secure_service);
@@ -809,8 +929,97 @@ ZTEST(coap_oscore, test_oscore_e2e_response_encrypted)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_secure_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
+	oscore_secure_service_ctx = NULL;
+}
+
+/* An end-to-end exchange using RFC 8613-legal key material outside the common
+ * 16-byte Master Secret / 8-byte Master Salt case: a 32-byte Master Secret and an
+ * absent (empty) Master Salt. Confirms the wrapper accepts variable/optional
+ * lengths and that uoscore derives matching keys on both sides.
+ */
+ZTEST(coap_oscore, test_oscore_e2e_variable_key_lengths)
+{
+	static const uint8_t secret32[] = {
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+		0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
+		0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+	};
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len = sizeof(innerbuf);
+	uint8_t token[] = {0x55, 0x66, 0x77, 0x88};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_ctx = &oscore_client_uctx;
+	struct coap_packet req;
+	struct coap_packet inner;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	int sock;
+	int ret;
+
+	/* Server context: 32-byte secret, no Master Salt. */
+	struct coap_oscore_init_params server_params = {
+		.master_secret = secret32,
+		.master_secret_len = sizeof(secret32),
+		.sender_id = oscore_server_id,
+		.sender_id_len = sizeof(oscore_server_id),
+		.recipient_id = oscore_client_id,
+		.recipient_id_len = sizeof(oscore_client_id),
+		.master_salt = NULL,
+		.master_salt_len = 0,
+		.aead_alg = COAP_OSCORE_AEAD_AES_CCM_16_64_128,
+		.hkdf = COAP_OSCORE_HKDF_SHA_256,
+		.fresh_master_secret_salt = true,
+	};
+
+	ret = coap_oscore_context_add(&server_params, &oscore_secure_service_ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	/* Simulated client context derived from the same material. */
+	struct oscore_init_params client_params = {
+		.master_secret = {.len = sizeof(secret32), .ptr = (uint8_t *)secret32},
+		.sender_id = {.len = sizeof(oscore_client_id), .ptr = (uint8_t *)oscore_client_id},
+		.recipient_id = {.len = sizeof(oscore_server_id),
+				 .ptr = (uint8_t *)oscore_server_id},
+		.id_context = {.len = 0, .ptr = NULL},
+		.master_salt = {.len = 0, .ptr = NULL},
+		.aead_alg = OSCORE_AES_CCM_16_64_128,
+		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
+	};
+
+	zassert_equal(oscore_context_init(&client_params, client_ctx), ok,
+		      "Client context init failed");
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0x2002, "e2e", -1);
+	zassert_ok(ret, "Failed to build request (%d)", ret);
+
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send request (%d)", ret);
+
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_equal(ret, 0, "OSCORE response verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
+		      "Unexpected inner response code");
+
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload");
+	zassert_equal(payload_len, sizeof(oscore_secure_payload) - 1, "Unexpected payload length");
+	zassert_mem_equal(payload, oscore_secure_payload, payload_len, "Unexpected payload");
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
 	oscore_secure_service_ctx = NULL;
 }
 
@@ -826,8 +1035,8 @@ ZTEST(coap_oscore, test_oscore_required_rejects_plaintext)
 	int sock;
 	int ret;
 
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_secure_service);
@@ -854,7 +1063,8 @@ ZTEST(coap_oscore, test_oscore_required_rejects_plaintext)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
-	coap_oscore_context_free(oscore_secure_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
 	oscore_secure_service_ctx = NULL;
 }
 
@@ -871,7 +1081,7 @@ ZTEST(coap_oscore, test_oscore_mixed_sync_and_plaintext)
 	uint32_t inner_len = sizeof(innerbuf);
 	uint8_t token[] = {0xA1, 0xA2, 0xA3, 0xA4};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_mixed_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_packet req;
 	struct coap_packet inner;
 	struct coap_packet rsp;
@@ -880,11 +1090,11 @@ ZTEST(coap_oscore, test_oscore_mixed_sync_and_plaintext)
 	int sock;
 	int ret;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_mixed_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_mixed_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_mixed_service);
@@ -931,8 +1141,8 @@ ZTEST(coap_oscore, test_oscore_mixed_sync_and_plaintext)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_mixed_service), "Failed to stop mixed service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_mixed_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_mixed_service_ctx),
+		   "Should remove server context");
 	oscore_mixed_service_ctx = NULL;
 }
 
@@ -948,17 +1158,17 @@ ZTEST(coap_oscore, test_oscore_observe_notifications_encrypted)
 	uint32_t inner_len;
 	uint8_t token[] = {0xC1, 0xC2, 0xC3, 0xC4};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_packet req;
 	struct coap_packet inner;
 	int sock;
 	int ret;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_secure_service);
@@ -1010,14 +1220,14 @@ ZTEST(coap_oscore, test_oscore_observe_notifications_encrypted)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_secure_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
 	oscore_secure_service_ctx = NULL;
 }
 
 /*
  * A plaintext observer registered on a mixed service must get plaintext
- * notifications: observer->is_oscore gates the protection.
+ * notifications: observer->oscore_ctx gates the protection.
  */
 ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 {
@@ -1030,8 +1240,8 @@ ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 	int sock;
 	int ret;
 
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_mixed_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_mixed_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_mixed_service);
@@ -1079,7 +1289,8 @@ ZTEST(coap_oscore, test_oscore_observe_plaintext_not_encrypted)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_mixed_service), "Failed to stop mixed service");
-	coap_oscore_context_free(oscore_mixed_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_mixed_service_ctx),
+		   "Should remove server context");
 	oscore_mixed_service_ctx = NULL;
 }
 
@@ -1096,7 +1307,7 @@ ZTEST(coap_oscore, test_oscore_empty_ack_and_deferred)
 	uint32_t inner_len = sizeof(innerbuf);
 	uint8_t token[] = {0xE1, 0xE2, 0xE3, 0xE4};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_oscore_exchange *entry;
 	struct coap_packet req;
 	struct coap_packet ack;
@@ -1108,11 +1319,11 @@ ZTEST(coap_oscore, test_oscore_empty_ack_and_deferred)
 
 	oscore_deferred.valid = false;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_secure_service);
@@ -1165,8 +1376,8 @@ ZTEST(coap_oscore, test_oscore_empty_ack_and_deferred)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_secure_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
 	oscore_secure_service_ctx = NULL;
 }
 
@@ -1180,7 +1391,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_required_dropped)
 	uint8_t recvbuf[COAP_BUF_SIZE];
 	uint8_t token[] = {0xF1, 0xF2, 0xF3, 0xF4};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_oscore_exchange *entry;
 	struct coap_packet req;
 	int sock;
@@ -1188,11 +1399,11 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_required_dropped)
 
 	oscore_deferred.valid = false;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_secure_service);
@@ -1227,8 +1438,8 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_required_dropped)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_secure_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
 	oscore_secure_service_ctx = NULL;
 }
 
@@ -1243,7 +1454,7 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_mixed_plaintext)
 	uint8_t recvbuf[COAP_BUF_SIZE];
 	uint8_t token[] = {0x1A, 0x2B, 0x3C, 0x4D};
 	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_mixed_service_port);
-	struct coap_oscore_context *client_ctx;
+	struct context *client_ctx = &oscore_client_uctx;
 	struct coap_oscore_exchange *entry;
 	struct coap_packet req;
 	struct coap_packet rsp;
@@ -1252,11 +1463,11 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_mixed_plaintext)
 
 	oscore_deferred.valid = false;
 
-	ret = oscore_make_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
-			      sizeof(oscore_server_id), &client_ctx);
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
 	zassert_ok(ret, "Client context init failed (%d)", ret);
-	ret = oscore_make_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
-			      sizeof(oscore_client_id), &oscore_mixed_service_ctx);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_mixed_service_ctx);
 	zassert_ok(ret, "Server context init failed (%d)", ret);
 
 	ret = coap_service_start(&oscore_mixed_service);
@@ -1294,8 +1505,8 @@ ZTEST(coap_oscore, test_oscore_deferred_after_expiry_mixed_plaintext)
 
 	zassert_ok(zsock_close(sock), "Failed to close socket");
 	zassert_ok(coap_service_stop(&oscore_mixed_service), "Failed to stop mixed service");
-	coap_oscore_context_free(client_ctx);
-	coap_oscore_context_free(oscore_mixed_service_ctx);
+	zassert_ok(coap_oscore_context_remove(oscore_mixed_service_ctx),
+		   "Should remove server context");
 	oscore_mixed_service_ctx = NULL;
 }
 
@@ -1314,11 +1525,16 @@ ZTEST(coap_oscore, test_oscore_empty_ack_does_not_clear_exchange)
 	uint8_t token[] = {0xAA, 0xBB, 0xCC, 0xDD};
 	struct coap_oscore_exchange *entry;
 	int ret;
+	struct coap_oscore_context *ctx;
+
+	zassert_ok(oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id),
+					  oscore_client_id, sizeof(oscore_client_id), &ctx),
+		   "Should create context");
 
 	memset(cache, 0, sizeof(cache));
 
 	ret = coap_oscore_exchange_add(cache, (struct net_sockaddr *)&addr, sizeof(addr), token,
-				       sizeof(token));
+				       sizeof(token), ctx);
 	zassert_ok(ret, "Should add exchange entry");
 
 	/* Empty ACK removal uses a zero-length token; it must not match. */
@@ -1327,7 +1543,782 @@ ZTEST(coap_oscore, test_oscore_empty_ack_does_not_clear_exchange)
 	entry = coap_oscore_exchange_find(cache, (struct net_sockaddr *)&addr, sizeof(addr), token,
 					  sizeof(token));
 	zassert_not_null(entry, "tkl=0 removal must not clear the real (tkl>0) entry");
+
+	/* Release the surviving entry and return the context to the pool. */
+	coap_oscore_exchange_remove(cache, (struct net_sockaddr *)&addr, sizeof(addr), token,
+				    sizeof(token));
+	zassert_ok(coap_oscore_context_remove(ctx), "Should remove context");
 }
+
+/*
+ * SSN is persisted to NVM so nvm state is updated.
+ */
+ZTEST(coap_oscore, test_oscore_ssn_persisted_to_nvm)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token[] = {0xC1, 0xC2, 0xC3, 0xC4};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_ctx = &oscore_client_uctx;
+	struct coap_packet req;
+	struct coap_packet inner;
+	int sock;
+	int ret;
+	struct nvm_key_t nvm_key = {
+		.sender_id = {.len = sizeof(oscore_client_id), .ptr = (uint8_t *)oscore_client_id},
+		.recipient_id = {.len = sizeof(oscore_server_id),
+				 .ptr = (uint8_t *)oscore_server_id},
+		.id_context = {.len = 0, .ptr = NULL},
+	};
+	uint64_t stored_ssn = 0;
+
+	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
+	 * and to make the stored value deterministic across runs.
+	 */
+	zassert_equal(nvm_write_ssn(&nvm_key, 0), ok, "Failed to seed SSN in NVM");
+
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), false, client_ctx);
+	zassert_ok(ret, "Client context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &oscore_secure_service_ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	/* Register the observation. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0x4001, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request (%d)", ret);
+
+	/* Initial notification must be OSCORE-protected. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Initial notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Initial notification must carry the Observe option");
+
+	/* Asynchronous notification must be OSCORE-protected. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Async notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Async notification must carry the Observe option");
+
+	/* Deregister and drain the final response. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0x4002, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Deregister response verify/parse failed (%d)", ret);
+
+	/* No further notifications once the observation is gone. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify after deregister failed (%d)", ret);
+	ret = oscore_recv(sock, SHORT_TIMEOUT, innerbuf, sizeof(innerbuf));
+	zassert_equal(ret, -ETIMEDOUT, "No notification expected after deregister (%d)", ret);
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
+	oscore_secure_service_ctx = NULL;
+
+	zassert_equal(nvm_read_ssn(&nvm_key, &stored_ssn), ok, "Failed to read SSN from NVM");
+	LOG_INF("SSN after request: %" PRIu64, stored_ssn);
+	zassert_true(stored_ssn > 0, "Client SSN should be persisted and incremented");
+}
+
+/* RFC 8613 Appendix B.1.2: after a reboot with a reused context the server has lost its
+ * recipient replay window and must re-synchronize it with an Echo challenge before
+ * accepting requests again.
+ */
+ZTEST(coap_oscore, test_oscore_replay_window_echo_resync)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token1[] = {0xD1, 0xD2, 0xD3, 0xD4};
+	uint8_t token2[] = {0xE1, 0xE2, 0xE3, 0xE4};
+	uint8_t echo_val[16];
+	uint16_t echo_len;
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_ctx = &oscore_client_uctx;
+	struct coap_packet req;
+	struct coap_packet inner;
+	struct coap_option echo_opt;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	int sock;
+	int ret;
+	/* The non-fresh context here is the server, so seed under its key
+	 * (sender = server ID, recipient = client ID).
+	 */
+	struct nvm_key_t nvm_key = {
+		.sender_id = {.len = sizeof(oscore_server_id), .ptr = (uint8_t *)oscore_server_id},
+		.recipient_id = {.len = sizeof(oscore_client_id),
+				 .ptr = (uint8_t *)oscore_client_id},
+		.id_context = {.len = 0, .ptr = NULL},
+	};
+	uint64_t stored_ssn = 0;
+
+	/* Seed a prior SSN so the reused (non-fresh) context can initialize from NVM
+	 * and to make the stored value deterministic across runs.
+	 */
+	zassert_equal(nvm_write_ssn(&nvm_key, stored_ssn), ok, "Failed to seed SSN in NVM");
+
+	/* Fresh client, but a server whose reused context lost its replay window
+	 * (fresh_master_secret_salt = false => starts in the ECHO_REBOOT state).
+	 */
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_ctx);
+	zassert_ok(ret, "Client context init failed (%d)", ret);
+	ret = oscore_make_server_ctx_detailed(oscore_server_id, sizeof(oscore_server_id),
+					      oscore_client_id, sizeof(oscore_client_id), false,
+					      &oscore_secure_service_ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	/* First request after reboot: the server answers with a protected 4.01 carrying an
+	 * Echo option instead of the resource response.
+	 */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token1, sizeof(token1), 0x5001, "e2e", -1);
+	zassert_ok(ret, "Failed to build first request (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send first request (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Echo challenge verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "Echo challenge must be 4.01 Unauthorized, got %u",
+		      coap_header_get_code(&inner));
+
+	ret = coap_find_options(&inner, COAP_OPTION_ECHO, &echo_opt, 1);
+	zassert_equal(ret, 1, "Echo challenge must carry an Echo option (%d)", ret);
+	zassert_true(echo_opt.len > 0 && echo_opt.len <= sizeof(echo_val),
+		     "Unexpected Echo option length %u", echo_opt.len);
+	echo_len = echo_opt.len;
+	memcpy(echo_val, echo_opt.value, echo_len);
+
+	/* Resend the request echoing the challenge value back to prove freshness. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token2, sizeof(token2), 0x5002, "e2e", -1);
+	zassert_ok(ret, "Failed to build echo request (%d)", ret);
+	ret = coap_packet_append_option(&req, COAP_OPTION_ECHO, echo_val, echo_len);
+	zassert_ok(ret, "Failed to append Echo option (%d)", ret);
+	ret = oscore_send_protected(sock, client_ctx, &dst, &req);
+	zassert_ok(ret, "Failed to send echo request (%d)", ret);
+
+	/* Replay window re-synchronized: the resource response is now delivered. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client_ctx, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Resynchronized response verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
+		      "Expected 2.05 Content after resync, got %u", coap_header_get_code(&inner));
+
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload");
+	zassert_equal(payload_len, sizeof(oscore_secure_payload) - 1, "Unexpected payload length");
+	zassert_mem_equal(payload, oscore_secure_payload, payload_len, "Unexpected payload");
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(oscore_secure_service_ctx),
+		   "Should remove server context");
+	oscore_secure_service_ctx = NULL;
+}
+
+/*
+ * Two clients with distinct Recipient IDs are served concurrently from the
+ * context pool. The server selects the context by the request KID (RFC 8613
+ * Section 8.2), so each client's response only decrypts with its own context.
+ */
+ZTEST(coap_oscore, test_oscore_multi_client_dispatch)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t rawbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token_a[] = {0x11, 0x22, 0x33, 0x44};
+	uint8_t token_b[] = {0x55, 0x66, 0x77, 0x88};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_a = &oscore_client_uctx;
+	struct context *client_b = &oscore_client_b_uctx;
+	struct coap_oscore_context *ctx_a = NULL;
+	struct coap_oscore_context *ctx_b = NULL;
+	struct coap_packet req;
+	struct coap_packet inner;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	int sock_a;
+	int sock_b;
+	int len;
+	int ret;
+
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_a);
+	zassert_ok(ret, "Client A context init failed (%d)", ret);
+	ret = oscore_make_client_ctx(oscore_client_b_id, sizeof(oscore_client_b_id),
+				     oscore_server_b_id, sizeof(oscore_server_b_id), true,
+				     client_b);
+	zassert_ok(ret, "Client B context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx_a);
+	zassert_ok(ret, "Server context A init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_b_id, sizeof(oscore_server_b_id),
+				     oscore_client_b_id, sizeof(oscore_client_b_id), &ctx_b);
+	zassert_ok(ret, "Server context B init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock_a = oscore_client_socket();
+	zassert_true(sock_a >= 0, "Failed to create socket A (%d)", -errno);
+	sock_b = oscore_client_socket();
+	zassert_true(sock_b >= 0, "Failed to create socket B (%d)", -errno);
+
+	/* Client A: the server must answer using context A. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_a, sizeof(token_a), 0x9001, "e2e", -1);
+	zassert_ok(ret, "Failed to build request A (%d)", ret);
+	ret = oscore_send_protected(sock_a, client_a, &dst, &req);
+	zassert_ok(ret, "Failed to send request A (%d)", ret);
+
+	len = oscore_recv(sock_a, LONG_TIMEOUT, rawbuf, sizeof(rawbuf));
+	zassert_true(len > 0, "Timed out waiting for response A (%d)", len);
+
+	/* Isolation: client B's context must not decrypt client A's response. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_verify_raw(rawbuf, len, client_b, innerbuf, &inner_len, &inner);
+	zassert_not_equal(ret, 0, "Client B must not decrypt client A's response");
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_verify_raw(rawbuf, len, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A response verify/parse failed (%d)", ret);
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload A");
+	zassert_mem_equal(payload, oscore_secure_payload, sizeof(oscore_secure_payload) - 1,
+			  "Unexpected payload A");
+
+	/* Client B: the server must answer using context B. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_b, sizeof(token_b), 0x9002, "e2e", -1);
+	zassert_ok(ret, "Failed to build request B (%d)", ret);
+	ret = oscore_send_protected(sock_b, client_b, &dst, &req);
+	zassert_ok(ret, "Failed to send request B (%d)", ret);
+
+	len = oscore_recv(sock_b, LONG_TIMEOUT, rawbuf, sizeof(rawbuf));
+	zassert_true(len > 0, "Timed out waiting for response B (%d)", len);
+
+	/* Isolation: client A's context must not decrypt client B's response. */
+	inner_len = sizeof(innerbuf);
+	ret = oscore_verify_raw(rawbuf, len, client_a, innerbuf, &inner_len, &inner);
+	zassert_not_equal(ret, 0, "Client A must not decrypt client B's response");
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_verify_raw(rawbuf, len, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B response verify/parse failed (%d)", ret);
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload B");
+	zassert_mem_equal(payload, oscore_secure_payload, sizeof(oscore_secure_payload) - 1,
+			  "Unexpected payload B");
+
+	zassert_ok(zsock_close(sock_a), "Failed to close socket A");
+	zassert_ok(zsock_close(sock_b), "Failed to close socket B");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(ctx_a), "Should remove server context A");
+	zassert_ok(coap_oscore_context_remove(ctx_b), "Should remove server context B");
+}
+
+/*
+ * Two contexts share Recipient ID and ID Context, forcing trial decryption.
+ * The first candidate has different key material and must fail; the later
+ * candidate must still decrypt the same wire request successfully.
+ */
+ZTEST(coap_oscore, test_oscore_multi_client_trial_decrypt_same_identity)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len = sizeof(innerbuf);
+	uint8_t token[] = {0x31, 0x32, 0x33, 0x34};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client = &oscore_client_uctx;
+	struct coap_oscore_context *ctx_bad = NULL;
+	struct coap_oscore_context *ctx_good = NULL;
+	struct coap_packet req;
+	struct coap_packet inner;
+	const uint8_t *payload;
+	uint16_t payload_len;
+	struct oscore_init_params client_params = {
+		.master_secret = {.len = sizeof(oscore_master_secret),
+				  .ptr = (uint8_t *)oscore_master_secret},
+		.sender_id = {.len = sizeof(oscore_client_id), .ptr = (uint8_t *)oscore_client_id},
+		.recipient_id = {.len = sizeof(oscore_server_id),
+				 .ptr = (uint8_t *)oscore_server_id},
+		.id_context = {.len = sizeof(oscore_shared_id_context),
+			       .ptr = (uint8_t *)oscore_shared_id_context},
+		.master_salt = {.len = sizeof(oscore_master_salt),
+				.ptr = (uint8_t *)oscore_master_salt},
+		.aead_alg = OSCORE_AES_CCM_16_64_128,
+		.hkdf = OSCORE_SHA_256,
+		.fresh_master_secret_salt = true,
+	};
+	struct coap_oscore_init_params bad_params = {
+		.master_secret = oscore_alt_master_secret,
+		.master_secret_len = sizeof(oscore_alt_master_secret),
+		.sender_id = oscore_server_id,
+		.sender_id_len = sizeof(oscore_server_id),
+		.recipient_id = oscore_client_id,
+		.recipient_id_len = sizeof(oscore_client_id),
+		.master_salt = oscore_master_salt,
+		.master_salt_len = sizeof(oscore_master_salt),
+		.id_context = oscore_shared_id_context,
+		.id_context_len = sizeof(oscore_shared_id_context),
+		.aead_alg = COAP_OSCORE_AEAD_AES_CCM_16_64_128,
+		.hkdf = COAP_OSCORE_HKDF_SHA_256,
+		.fresh_master_secret_salt = true,
+	};
+	struct coap_oscore_init_params good_params = {
+		.master_secret = oscore_master_secret,
+		.master_secret_len = sizeof(oscore_master_secret),
+		.sender_id = oscore_server_id,
+		.sender_id_len = sizeof(oscore_server_id),
+		.recipient_id = oscore_client_id,
+		.recipient_id_len = sizeof(oscore_client_id),
+		.master_salt = oscore_master_salt,
+		.master_salt_len = sizeof(oscore_master_salt),
+		.id_context = oscore_shared_id_context,
+		.id_context_len = sizeof(oscore_shared_id_context),
+		.aead_alg = COAP_OSCORE_AEAD_AES_CCM_16_64_128,
+		.hkdf = COAP_OSCORE_HKDF_SHA_256,
+		.fresh_master_secret_salt = true,
+	};
+	int sock;
+	int ret;
+
+	zassert_equal(oscore_context_init(&client_params, client), ok,
+		      "Client context init failed");
+
+	/* Insert failing candidate first so successful context is later in the pool. */
+	ret = coap_oscore_context_add(&bad_params, &ctx_bad);
+	zassert_ok(ret, "Bad server context init failed (%d)", ret);
+	ret = coap_oscore_context_add(&good_params, &ctx_good);
+	zassert_ok(ret, "Good server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0xA101, "e2e", -1);
+	zassert_ok(ret, "Failed to build request (%d)", ret);
+	ret = oscore_send_protected(sock, client, &dst, &req);
+	zassert_ok(ret, "Failed to send request (%d)", ret);
+
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Response verify/parse failed (%d)", ret);
+	zassert_equal(coap_header_get_code(&inner), COAP_RESPONSE_CODE_CONTENT,
+		      "Expected 2.05 Content, got %u", coap_header_get_code(&inner));
+
+	payload = coap_packet_get_payload(&inner, &payload_len);
+	zassert_not_null(payload, "Missing decrypted payload");
+	zassert_equal(payload_len, sizeof(oscore_secure_payload) - 1, "Unexpected payload length");
+	zassert_mem_equal(payload, oscore_secure_payload, payload_len, "Unexpected payload");
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(ctx_bad), "Should remove server context bad");
+	zassert_ok(coap_oscore_context_remove(ctx_good), "Should remove server context good");
+}
+
+/*
+ * A protected request whose KID matches no context in the pool is rejected with
+ * a plaintext 4.01 Unauthorized (RFC 8613 Section 8.2), never silently accepted.
+ */
+ZTEST(coap_oscore, test_oscore_multi_client_unknown_kid_rejected)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t recvbuf[COAP_BUF_SIZE];
+	uint8_t token[] = {0x21, 0x22, 0x23, 0x24};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *unknown = &oscore_client_b_uctx;
+	struct coap_oscore_context *ctx_a = NULL;
+	struct coap_packet req;
+	struct coap_packet rsp;
+	int sock;
+	int ret;
+
+	/* The server only knows client A; the wire request carries an unknown KID. */
+	ret = oscore_make_client_ctx(oscore_client_b_id, sizeof(oscore_client_b_id),
+				     oscore_server_b_id, sizeof(oscore_server_b_id), true, unknown);
+	zassert_ok(ret, "Unknown client context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx_a);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0xA001, "e2e", -1);
+	zassert_ok(ret, "Failed to build request (%d)", ret);
+	ret = oscore_send_protected(sock, unknown, &dst, &req);
+	zassert_ok(ret, "Failed to send request (%d)", ret);
+
+	ret = oscore_recv(sock, LONG_TIMEOUT, recvbuf, sizeof(recvbuf));
+	zassert_true(ret > 0, "Timed out waiting for response (%d)", ret);
+	ret = coap_packet_parse(&rsp, recvbuf, ret, NULL, 0);
+	zassert_ok(ret, "Failed to parse response (%d)", ret);
+	zassert_false(coap_oscore_msg_has_oscore(&rsp), "Error response must be plaintext");
+	zassert_equal(coap_header_get_code(&rsp), COAP_RESPONSE_CODE_UNAUTHORIZED,
+		      "Expected 4.01 Unauthorized, got %u", coap_header_get_code(&rsp));
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(ctx_a), "Should remove server context");
+}
+
+/*
+ * Two clients observe the same resource concurrently. A single
+ * coap_resource_notify() fans out one notification per observer, each protected
+ * with that observer's own context (observer->oscore_ctx).
+ */
+ZTEST(coap_oscore, test_oscore_multi_client_observe_notifications)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token_a[] = {0xC1, 0xC2, 0xC3, 0xC4};
+	uint8_t token_b[] = {0xB1, 0xB2, 0xB3, 0xB4};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_a = &oscore_client_uctx;
+	struct context *client_b = &oscore_client_b_uctx;
+	struct coap_oscore_context *ctx_a = NULL;
+	struct coap_oscore_context *ctx_b = NULL;
+	struct coap_packet req;
+	struct coap_packet inner;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_a);
+	zassert_ok(ret, "Client A context init failed (%d)", ret);
+	ret = oscore_make_client_ctx(oscore_client_b_id, sizeof(oscore_client_b_id),
+				     oscore_server_b_id, sizeof(oscore_server_b_id), true,
+				     client_b);
+	zassert_ok(ret, "Client B context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx_a);
+	zassert_ok(ret, "Server context A init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_b_id, sizeof(oscore_server_b_id),
+				     oscore_client_b_id, sizeof(oscore_client_b_id), &ctx_b);
+	zassert_ok(ret, "Server context B init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock_a = oscore_client_socket();
+	zassert_true(sock_a >= 0, "Failed to create socket A (%d)", -errno);
+	sock_b = oscore_client_socket();
+	zassert_true(sock_b >= 0, "Failed to create socket B (%d)", -errno);
+
+	/* Both clients register an observation. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_a, sizeof(token_a), 0xB001, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request A (%d)", ret);
+	ret = oscore_send_protected(sock_a, client_a, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request A (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_a, LONG_TIMEOUT, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A initial notification failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Client A initial notification must carry the Observe option");
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_b, sizeof(token_b), 0xB002, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request B (%d)", ret);
+	ret = oscore_send_protected(sock_b, client_b, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request B (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B initial notification failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Client B initial notification must carry the Observe option");
+
+	/* One notify fans out one protected notification per observer. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_a, LONG_TIMEOUT, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Client A notification must carry the Observe option");
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B notification verify/parse failed (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Client B notification must carry the Observe option");
+
+	/* Deregister both and drain the final responses. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_a, sizeof(token_a), 0xB003, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request A (%d)", ret);
+	ret = oscore_send_protected(sock_a, client_a, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request A (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_a, LONG_TIMEOUT, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A deregister response failed (%d)", ret);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_b, sizeof(token_b), 0xB004, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request B (%d)", ret);
+	ret = oscore_send_protected(sock_b, client_b, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request B (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B deregister response failed (%d)", ret);
+
+	zassert_ok(zsock_close(sock_a), "Failed to close socket A");
+	zassert_ok(zsock_close(sock_b), "Failed to close socket B");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(ctx_a), "Should remove server context A");
+	zassert_ok(coap_oscore_context_remove(ctx_b), "Should remove server context B");
+}
+
+/*
+ * Deregistering one client's observation must not disturb the other's: after
+ * client A cancels, a notify reaches only client B.
+ */
+ZTEST(coap_oscore, test_oscore_multi_client_observe_independent_deregister)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token_a[] = {0xC1, 0xC2, 0xC3, 0xC4};
+	uint8_t token_b[] = {0xB1, 0xB2, 0xB3, 0xB4};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client_a = &oscore_client_uctx;
+	struct context *client_b = &oscore_client_b_uctx;
+	struct coap_oscore_context *ctx_a = NULL;
+	struct coap_oscore_context *ctx_b = NULL;
+	struct coap_packet req;
+	struct coap_packet inner;
+	int sock_a;
+	int sock_b;
+	int ret;
+
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client_a);
+	zassert_ok(ret, "Client A context init failed (%d)", ret);
+	ret = oscore_make_client_ctx(oscore_client_b_id, sizeof(oscore_client_b_id),
+				     oscore_server_b_id, sizeof(oscore_server_b_id), true,
+				     client_b);
+	zassert_ok(ret, "Client B context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx_a);
+	zassert_ok(ret, "Server context A init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_b_id, sizeof(oscore_server_b_id),
+				     oscore_client_b_id, sizeof(oscore_client_b_id), &ctx_b);
+	zassert_ok(ret, "Server context B init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock_a = oscore_client_socket();
+	zassert_true(sock_a >= 0, "Failed to create socket A (%d)", -errno);
+	sock_b = oscore_client_socket();
+	zassert_true(sock_b >= 0, "Failed to create socket B (%d)", -errno);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_a, sizeof(token_a), 0xB101, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request A (%d)", ret);
+	ret = oscore_send_protected(sock_a, client_a, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request A (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_a, LONG_TIMEOUT, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A initial notification failed (%d)", ret);
+
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_b, sizeof(token_b), 0xB102, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request B (%d)", ret);
+	ret = oscore_send_protected(sock_b, client_b, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request B (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B initial notification failed (%d)", ret);
+
+	/* Client A cancels its observation. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_a, sizeof(token_a), 0xB103, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request A (%d)", ret);
+	ret = oscore_send_protected(sock_a, client_a, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request A (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_a, LONG_TIMEOUT, client_a, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client A deregister response failed (%d)", ret);
+
+	/* Only client B still observes. */
+	ret = coap_resource_notify(&oscore_observe_resource);
+	zassert_ok(ret, "coap_resource_notify failed (%d)", ret);
+
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B must still receive notifications (%d)", ret);
+	zassert_true(coap_get_option_int(&inner, COAP_OPTION_OBSERVE) >= 0,
+		     "Client B notification must carry the Observe option");
+
+	ret = oscore_recv(sock_a, SHORT_TIMEOUT, innerbuf, sizeof(innerbuf));
+	zassert_equal(ret, -ETIMEDOUT, "Deregistered client A must not receive notifications (%d)",
+		      ret);
+
+	/* Client B cancels; drain the final response. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token_b, sizeof(token_b), 0xB104, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request B (%d)", ret);
+	ret = oscore_send_protected(sock_b, client_b, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request B (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock_b, LONG_TIMEOUT, client_b, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Client B deregister response failed (%d)", ret);
+
+	zassert_ok(zsock_close(sock_a), "Failed to close socket A");
+	zassert_ok(zsock_close(sock_b), "Failed to close socket B");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+	zassert_ok(coap_oscore_context_remove(ctx_a), "Should remove server context A");
+	zassert_ok(coap_oscore_context_remove(ctx_b), "Should remove server context B");
+}
+
+/*
+ * A context referenced by an active observer is retained: coap_oscore_context_remove()
+ * returns -EAGAIN until the observer is deregistered and its reference released.
+ */
+ZTEST(coap_oscore, test_oscore_context_refcount_blocks_removal_with_observer)
+{
+	uint8_t reqbuf[COAP_BUF_SIZE];
+	uint8_t innerbuf[COAP_BUF_SIZE];
+	uint32_t inner_len;
+	uint8_t token[] = {0xC1, 0xC2, 0xC3, 0xC4};
+	struct net_sockaddr_in6 dst = oscore_loopback_dst(oscore_secure_service_port);
+	struct context *client = &oscore_client_uctx;
+	struct coap_oscore_context *ctx = NULL;
+	struct coap_packet req;
+	struct coap_packet inner;
+	int sock;
+	int ret;
+
+	ret = oscore_make_client_ctx(oscore_client_id, sizeof(oscore_client_id), oscore_server_id,
+				     sizeof(oscore_server_id), true, client);
+	zassert_ok(ret, "Client context init failed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx);
+	zassert_ok(ret, "Server context init failed (%d)", ret);
+
+	ret = coap_service_start(&oscore_secure_service);
+	zassert_ok(ret, "Failed to start service (%d)", ret);
+
+	sock = oscore_client_socket();
+	zassert_true(sock >= 0, "Failed to create socket (%d)", -errno);
+
+	/* Register a protected observation: the observer takes a reference. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0xB201, "observe", 0);
+	zassert_ok(ret, "Failed to build observe request (%d)", ret);
+	ret = oscore_send_protected(sock, client, &dst, &req);
+	zassert_ok(ret, "Failed to send observe request (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Initial notification failed (%d)", ret);
+
+	/* The referenced context cannot be removed yet. */
+	zassert_equal(coap_oscore_context_remove(ctx), -EAGAIN,
+		      "Context with an active observer must not be removable");
+
+	/* Deregister: the observer releases its reference. */
+	ret = oscore_build_request(&req, reqbuf, sizeof(reqbuf), COAP_TYPE_CON, COAP_METHOD_GET,
+				   token, sizeof(token), 0xB202, "observe", 1);
+	zassert_ok(ret, "Failed to build deregister request (%d)", ret);
+	ret = oscore_send_protected(sock, client, &dst, &req);
+	zassert_ok(ret, "Failed to send deregister request (%d)", ret);
+	inner_len = sizeof(innerbuf);
+	ret = oscore_recv_verify(sock, LONG_TIMEOUT, client, innerbuf, &inner_len, &inner);
+	zassert_ok(ret, "Deregister response failed (%d)", ret);
+
+	/* Now the context is free to be removed. */
+	zassert_ok(coap_oscore_context_remove(ctx), "Context should be removable after deregister");
+
+	zassert_ok(zsock_close(sock), "Failed to close socket");
+	zassert_ok(coap_service_stop(&oscore_secure_service), "Failed to stop service");
+}
+
+/*
+ * The context pool is bounded by CONFIG_COAP_OSCORE_MAX_CONTEXTS: once full,
+ * adding another client's context fails with -ENOMEM, and freeing a slot lets
+ * the next client in.
+ */
+ZTEST(coap_oscore, test_oscore_context_pool_exhaustion)
+{
+	static const uint8_t client_c_id[] = {0x05};
+	static const uint8_t server_c_id[] = {0x06};
+	struct coap_oscore_context *ctx_a = NULL;
+	struct coap_oscore_context *ctx_b = NULL;
+	struct coap_oscore_context *ctx_c = NULL;
+	int ret;
+
+	zassert_equal(CONFIG_COAP_OSCORE_MAX_CONTEXTS, 2,
+		      "This test assumes a pool of exactly two contexts");
+
+	ret = oscore_make_server_ctx(oscore_server_id, sizeof(oscore_server_id), oscore_client_id,
+				     sizeof(oscore_client_id), &ctx_a);
+	zassert_ok(ret, "First context add should succeed (%d)", ret);
+	ret = oscore_make_server_ctx(oscore_server_b_id, sizeof(oscore_server_b_id),
+				     oscore_client_b_id, sizeof(oscore_client_b_id), &ctx_b);
+	zassert_ok(ret, "Second context add should succeed (%d)", ret);
+
+	/* Pool full: a third distinct client cannot be served. */
+	ret = oscore_make_server_ctx(server_c_id, sizeof(server_c_id), client_c_id,
+				     sizeof(client_c_id), &ctx_c);
+	zassert_equal(ret, -ENOMEM, "Third context add must fail when the pool is full (%d)", ret);
+	zassert_is_null(ctx_c, "Failed add must not return a context");
+
+	/* Freeing a slot lets the next client in. */
+	zassert_ok(coap_oscore_context_remove(ctx_a), "Should remove first context");
+	ret = oscore_make_server_ctx(server_c_id, sizeof(server_c_id), client_c_id,
+				     sizeof(client_c_id), &ctx_c);
+	zassert_ok(ret, "Context add should succeed after freeing a slot (%d)", ret);
+
+	zassert_ok(coap_oscore_context_remove(ctx_b), "Should remove second context");
+	zassert_ok(coap_oscore_context_remove(ctx_c), "Should remove third context");
+}
+
 #else
 static uint16_t coap_service_port = 56839;
 static const uint8_t plain_payload[] = "encrypted-response";

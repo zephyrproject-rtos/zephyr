@@ -18,6 +18,10 @@ tests:
       - CONFIG_NVME=n
     platform_allow:
       - qemu_x86_64
+  drivers.disk.memc_ram:
+    filter: dt_compat_enabled("zephyr,memc-ram-disk") and CONFIG_DISK_DRIVER_MEMC_RAM
+    integration_platforms:
+      - nrf7120dk/nrf7120/cpuapp
   drivers.disk.nvme:
     platform_allow:
       - qemu_x86_64
@@ -89,3 +93,19 @@ tests:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
     platform_allow:
       - ek_ra8p1/r7ka8p1kflcac/cm85
+
+  drivers.disk.virtio_blk:
+    extra_args: FILE_SUFFIX=virtio_blk
+    extra_configs:
+      - CONFIG_DISK_DRIVER_RAM=n
+      - CONFIG_DISK_DRIVER_VIRTIO_BLK=y
+    platform_allow:
+      - qemu_x86_64
+  drivers.disk.virtio_blk.blk4096:
+    extra_args: FILE_SUFFIX=virtio_blk
+    extra_configs:
+      - CONFIG_DISK_DRIVER_RAM=n
+      - CONFIG_DISK_DRIVER_VIRTIO_BLK=y
+      - CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE=4096
+    platform_allow:
+      - qemu_x86_64

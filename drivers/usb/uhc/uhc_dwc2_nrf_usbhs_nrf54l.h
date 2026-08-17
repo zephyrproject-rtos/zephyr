@@ -19,7 +19,9 @@ struct nrf_usbhs_nrf54l_config {
 
 struct nrf_usbhs_nrf54l_data {
 	struct k_event events;
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	struct onoff_manager *pclk24m_mgr;
+#endif
 	struct onoff_client pclk24m_cli;
 };
 
@@ -62,12 +64,19 @@ static inline int usbhs_pre_init(const struct device *dev)
 	}
 
 	/* Setup the PCLK24M clock */
-
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	data->pclk24m_mgr = z_nrf_clock_control_get_onoff(CLOCK_CONTROL_NRF_SUBSYS_HF24M);
+#endif
 
 	sys_notify_init_spinwait(&data->pclk24m_cli.notify);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_request(data->pclk24m_mgr, &data->pclk24m_cli);
+#else
+	err = nrf_clock_control_request(DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m),
+					NULL,
+					&data->pclk24m_cli);
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to start PCLK24M %d", err);
 		return err;
@@ -126,7 +135,13 @@ static inline int usbhs_shutdown(const struct device *dev)
 	/* Disable the DWC2 core */
 	wrapper->ENABLE = 0;
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	err = onoff_cancel_or_release(data->pclk24m_mgr, &data->pclk24m_cli);
+#else
+	err = nrf_clock_control_cancel_or_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_xo24m),
+						  NULL,
+						  &data->pclk24m_cli);
+#endif
 	if (err < 0) {
 		LOG_ERR("Failed to stop PCLK24M %d", err);
 		return err;

@@ -173,3 +173,37 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
+  drivers.uart.async_api.esp.pm:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c3_devkitc
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+      - esp32s3_devkitc/esp32s3/procpu
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+  drivers.uart.async_api.esp.pm.periph_pd:
+    filter: CONFIG_SERIAL_SUPPORT_ASYNC
+    harness: ztest
+    harness_config:
+      fixture: gpio_loopback
+    depends_on: gpio
+    extra_args:
+      - SNIPPET=espressif-pm
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+    extra_configs:
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y

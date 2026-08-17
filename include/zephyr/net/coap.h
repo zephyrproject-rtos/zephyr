@@ -30,6 +30,10 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 
+#if defined(CONFIG_COAP_OSCORE)
+struct coap_oscore_context;
+#endif /* defined(CONFIG_COAP_OSCORE) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -337,10 +341,10 @@ struct coap_observer {
 	uint8_t tkl;
 #if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
 	/**
-	 * True if the observer is OSCORE protected
+	 * Not-NULL if the observer is OSCORE protected
 	 * @kconfig_dep{CONFIG_COAP_OSCORE}
 	 */
-	bool is_oscore;
+	struct coap_oscore_context *oscore_ctx;
 #endif
 };
 
@@ -363,10 +367,10 @@ struct coap_packet {
 #endif
 #if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
 	/**
-	 * True if the packet was received OSCORE protected
+	 * Not-NULL if the packet was received OSCORE protected
 	 * @kconfig_dep{CONFIG_COAP_OSCORE}
 	 */
-	bool is_oscore;
+	struct coap_oscore_context *oscore_ctx;
 #endif
 };
 
@@ -419,7 +423,13 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct net_sockaddr addr; /**< Remote address */
+	/** CoAP remote address storage */
+	union {
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr addr; /**< Remote address. Use the addr_storage instead. */
+/** @endcond */
+		struct net_sockaddr_storage addr_storage; /**< Remote address storage */
+	};
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
@@ -1063,10 +1073,11 @@ void coap_observer_init(struct coap_observer *observer,
  * @param observer Observer to be initialized
  * @param request Request on which the observer will be based
  * @param addr Address of the remote device
- * @param is_oscore True if the remote device is sending OSCORE protected
+ * @param oscore_ctx OSCORE context to be used for the observer
  */
 void coap_observer_init_oscore(struct coap_observer *observer, const struct coap_packet *request,
-			       const struct net_sockaddr *addr, bool is_oscore);
+			       const struct net_sockaddr *addr,
+			       struct coap_oscore_context *oscore_ctx);
 #endif /* CONFIG_COAP_OSCORE */
 
 /**

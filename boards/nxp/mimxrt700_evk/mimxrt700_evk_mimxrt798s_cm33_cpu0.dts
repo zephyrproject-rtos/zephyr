@@ -143,6 +143,14 @@
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
 /*
  * RT700-EVK board cm33_cpu0 uses OS timer as the kernel timer
  * In case we need to switch to SYSTICK timer, then
@@ -552,4 +560,10 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 &crc {
 	status = "okay";
+};
+
+&micfil {
+	status = "okay";
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
 };

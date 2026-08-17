@@ -23,8 +23,8 @@
 #include <zephyr/bluetooth/classic/sdp.h>
 
 #include "avctp_internal.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_AVCTP_LOG_LEVEL
@@ -64,7 +64,7 @@ static void avctp_tx_raise(int msec)
 		return;
 	}
 	LOG_DBG("kick TX");
-	k_work_schedule(&avctp_tx_work, K_MSEC(msec));
+	bt_work_schedule(&avctp_tx_work, K_MSEC(msec));
 }
 
 static void bt_avctp_clear_tx(struct bt_avctp *session)

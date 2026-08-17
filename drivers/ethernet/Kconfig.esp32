@@ -5,7 +5,7 @@
 
 menuconfig ETH_ESP32
 	bool "ESP32 Ethernet driver"
-	default y if !PTP_CLOCK
+	default y
 	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32P4
 	depends on DT_HAS_ESPRESSIF_ESP32_ETH_ENABLED
 	help
@@ -45,5 +45,16 @@ config ETH_ESP32_DMA_TX_BUFFER_NUM
 	  Number of DMA transmit buffers. Each buffer's size is
 	  ETH_ESP32_DMA_BUFFER_SIZE. Larger number of buffers could
 	  increase throughput somehow.
+
+config PTP_CLOCK_ESP32
+	bool "ESP32 Ethernet PTP clock driver"
+	default y
+	depends on PTP_CLOCK
+	depends on DT_HAS_SNPS_DWMAC_PTP_CLOCK_ENABLED
+	help
+	  Enable the IEEE 1588 PTP clock provided by the Ethernet MAC.
+	  The MAC timestamps transmitted and received frames in
+	  hardware and exposes a free running clock that can be set,
+	  offset and rate adjusted.
 
 endif # ETH_ESP32

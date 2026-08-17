@@ -7,6 +7,7 @@
 #include <mem.h>
 #include <freq.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
@@ -14,6 +15,10 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus: cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -139,6 +144,79 @@
 		status = "disabled";
 		#mux-control-cells = <1>;
 		#mux-state-cells = <2>;
+	};
+
+	freqme0: freqme@11000 {
+		compatible = "nxp,freqme";
+		reg = <0x11000 0x10>;
+		interrupts = <71 0>;
+		clocks = <&syscon MCUX_FREQME_CLK>;
+		status = "disabled";
+
+		reference-sources {
+			ref-cpu-ahb {
+				default-source;
+				mux-states = <&inputmux0 0
+					      NXP_FREQME_MCXN_REF_CPU_AHB_CLK>;
+				clocks = <&syscon MCUX_CPU_AHB_CLK>;
+			};
+
+			ref-fro-hf {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_REF_FRO_HF>;
+				clocks = <&syscon MCUX_FRO_HF_CLK>;
+			};
+
+			ref-fro-12m {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_REF_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+
+			ref-osc32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_REF_OSC32K>;
+				clock-frequency = <32768>;
+			};
+		};
+
+		target-sources {
+			/*
+			 * Targets without a clocks / clock-frequency provider are
+			 * MEASURE only (no WINDOW auto-derive): CLK_IN / CLK_IN0 /
+			 * CLK_IN1 are external input pins.
+			 */
+			tar-fro-12m {
+				default-source;
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_FRO_12M>;
+				clocks = <&syscon MCUX_FRO_12M_CLK>;
+			};
+
+			tar-fro-hf {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_FRO_HF>;
+				clocks = <&syscon MCUX_FRO_HF_CLK>;
+			};
+
+			tar-clk-in {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN>;
+			};
+
+			tar-osc32k {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_OSC32K>;
+				clock-frequency = <32768>;
+			};
+
+			tar-cpu-ahb {
+				mux-states = <&inputmux0 0
+					      NXP_FREQME_MCXN_TAR_CPU_AHB_CLK>;
+				clocks = <&syscon MCUX_CPU_AHB_CLK>;
+			};
+
+			tar-clk-in0 {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN0>;
+			};
+
+			tar-clk-in1 {
+				mux-states = <&inputmux0 0 NXP_FREQME_MCXN_TAR_CLK_IN1>;
+			};
+		};
 	};
 
 	porta: pinmux@116000 {
@@ -897,7 +975,7 @@
 		enet_mdio: mdio {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "nxp,enet-qos-mdio";
+			compatible = "snps,dwmac-mdio";
 			status = "disabled";
 		};
 	};
@@ -1350,12 +1428,29 @@
 		status = "disabled";
 	};
 
+	powerquad: powerquad@bf000 {
+		compatible = "nxp,powerquad";
+		reg = <0xbf000 0x1000>;
+		clocks = <&syscon MCUX_POWERQUAD_CLK>;
+		status = "disabled";
+	};
+
 	tsi0: tsi@50000 {
 		compatible = "nxp,tsi-input";
 		reg = <0x50000 0x1000>;
 		interrupts = <101 0>;
 		clocks = <&syscon MCUX_TSI_CLK>;
 		status = "disabled";
+	};
+
+	crypto@54000 {
+		compatible = "nxp,els";
+		reg = <0x54000 0x200>;
+		clocks = <&syscon MCUX_ELS_CLK>;
+
+		trng: rng {
+			compatible = "nxp,els-trng";
+		};
 	};
 };
 

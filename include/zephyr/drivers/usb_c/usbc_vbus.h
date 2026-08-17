@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief USB-C VBUS device APIs
+ * @ingroup usbc_vbus_api
  *
  * This file contains the USB-C VBUS device APIs.
  * All USB-C VBUS measurement and control device drivers should

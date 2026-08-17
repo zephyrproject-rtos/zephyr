@@ -76,7 +76,7 @@ Installing the documentation processors
 
 Our documentation processing has been tested to run with:
 
-* Doxygen version 1.15.0
+* Doxygen version 1.17.0
 * Graphviz 2.43
 * Latexmk version 4.83
 * All Python dependencies listed in the repository file
@@ -338,6 +338,22 @@ Alternatively, the documentation can be built with the ``make html-live``
 it locally, and watch the documentation directory for changes. When changes are
 observed, it will automatically rebuild the documentation and refresh the hosted
 files.
+
+Building the Doxygen documentation standalone
+*********************************************
+
+The ``doxygen`` build target can be used to only build the Doxygen (API) documentation, which is
+much faster than building the full documentation set::
+
+   cd ~/zephyrproject/zephyr/doc
+   make doxygen
+
+The output can be found in ``_build/doxygen/html``.
+
+In the regular documentation build, references made from Doxygen comments to the main
+documentation (e.g. ``@kconfig{}``, ``@dtcompatible{}`` or ``@rstref{}``, see
+:ref:`doxygen_sphinx_xrefs`) are automatically resolved into hyperlinks. In a standalone Doxygen
+build, they are left as plain text since the rest of the documentation is not available.
 
 Linking external Doxygen projects against Zephyr
 ************************************************

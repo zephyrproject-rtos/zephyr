@@ -545,6 +545,7 @@ Base OS:
     - printk
     - libraries.fdtable.fdtable
     - libraries.p4wq
+    - utilities
 
 BeagleBoard Platforms:
   status: maintained
@@ -671,6 +672,7 @@ Bluetooth Classic:
     - bluetooth
     - bluetooth.classic
     - sample.bluetooth
+    - sample.bluetooth.classic
 
 Bluetooth Controller:
   status: maintained
@@ -837,6 +839,7 @@ Bluetooth Mesh:
     - HaavardRei
     - omkar3141
     - KyraLengfeld
+    - ludvigsj
   files:
     - doc/services/connectivity/bluetooth/api/mesh/
     - include/zephyr/bluetooth/mesh/
@@ -931,6 +934,7 @@ Bouffalolab Platforms:
     - boards/aithinker/ai_*/
     - boards/doiting/
     - boards/thirdreality/
+    - boards/pine64/pinecone/
     - boards/sipeed/m0sense/
     - boards/sipeed/m1s_dock/
     - boards/sipeed/maix_m0s_dock/
@@ -1327,6 +1331,8 @@ Demand Paging:
   tests:
     - kernel.demand_paging
     - sample.demand_paging
+  labels:
+    - "area: Demand Paging"
 
 Device Driver Model:
   status: maintained
@@ -2424,6 +2430,23 @@ Documentation Infrastructure:
   tests:
     - drivers.mspi
     - sample.drivers.mspi
+
+"Drivers: MUX":
+  status: maintained
+  maintainers:
+    - FelixWang47831
+  files:
+    - drivers/mux/
+    - dts/bindings/mux/
+    - dts/bindings/arm/nxp,mcux-xbar.yaml
+    - include/zephyr/drivers/mux.h
+    - include/zephyr/devicetree/mux.h
+    - tests/drivers/mux/
+    - doc/hardware/peripherals/mux.rst
+  labels:
+    - "area: MUX"
+  tests:
+    - drivers.mux
 
 "Drivers: Mbox":
   status: odd fixes
@@ -3659,6 +3682,7 @@ Kernel:
     - libraries.p4wq
     - sample.kernel
     - linker.linker_generator
+    - utilities
 
 Key-Value Storage Systems:
   status: maintained
@@ -4067,6 +4091,7 @@ Microchip SmartFusion2 platform:
   collaborators:
     - AntonVynohradov
   files:
+    - boards/microchip/m2s_hello_fpga_kit/
     - boards/microchip/m2s010_mkr_kit/
     - drivers/clock_control/*smartfusion2*
     - dts/arm/microchip/smartfusion2*/
@@ -4171,12 +4196,12 @@ NXP Platform Drivers:
   status: maintained
   maintainers:
     - zejiang0jason
-    - mmahadevan108
+    - butok
   collaborators:
-    - manuargue
+    - iuliana-prodan
     - dbaluta
     - Holt-Sun
-    - butok
+    - mmahadevan108
   files-regex:
     - ^drivers/.*nxp.*
     - ^drivers/.*mcux.*
@@ -4272,9 +4297,10 @@ NXP Platforms (MCU):
   status: maintained
   maintainers:
     - iuliana-prodan
-    - mmahadevan108
-  collaborators:
     - butok
+    - zejiang0jason
+  collaborators:
+    - mmahadevan108
   files:
     - boards/nxp/mimxrt*/
     - boards/nxp/frdm*/
@@ -4333,7 +4359,7 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/lpc*/
         - soc/nxp/lpc/
-        - dts/arm/nxp/lpc/nxp_lpc*
+        - dts/arm/nxp/lpc/
     - name: NXP MCU Xtensa
       collaborators:
         - iuliana-prodan
@@ -4393,6 +4419,7 @@ NXP Platforms (MCU):
       files:
         - boards/nxp/lpcxpresso11u68/
         - soc/nxp/lpc/lpc11u6x/
+        - dts/arm/nxp/lpc/lpc11u6x/
       files-regex:
         - .*lpc11u6.*
     - name: NXP MCU KE1xF
@@ -4526,6 +4553,7 @@ Networking:
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
+    - doc/services/connectivity/networking/api/mcp.rst
     - doc/services/connectivity/networking/api/ocpp.rst
     - doc/services/connectivity/networking/api/ptp.rst
     - doc/services/connectivity/networking/api/wifi.rst
@@ -4537,6 +4565,7 @@ Networking:
     - doc/services/connectivity/networking/eth_*.rst
     - include/zephyr/net/gptp.h
     - include/zephyr/net/ieee802154*.h
+    - include/zephyr/net/mcp/
     - include/zephyr/net/ptp.h
     - include/zephyr/net/wifi*.h
     - include/zephyr/net/dhcpv4*.h
@@ -4548,6 +4577,7 @@ Networking:
     - samples/net/sockets/coap_*/
     - samples/net/sockets/*http*/
     - samples/net/lwm2m_client/
+    - samples/net/mcp/
     - samples/net/ocpp/
     - samples/net/wifi/
     - samples/net/dhcpv4_client/
@@ -4558,12 +4588,14 @@ Networking:
     - subsys/net/lib/config/ieee802154*
     - subsys/net/lib/http/
     - subsys/net/lib/lwm2m/
+    - subsys/net/lib/mcp/
     - subsys/net/lib/ocpp/
     - subsys/net/lib/ptp/
     - subsys/net/lib/tls_credentials/
     - subsys/net/lib/dhcpv4/
     - tests/net/dhcpv4/
     - tests/net/ieee802154/
+    - tests/net/lib/mcp/
     - tests/net/lib/ocpp/
     - tests/net/lib/http*/
     - tests/net/wifi/
@@ -5178,6 +5210,34 @@ QNX Hypervisor Platforms:
   labels:
     - "platform: Quicklogic"
 
+RISCV Platforms:
+  status: maintained
+  maintainers:
+    - fkokosinski
+  collaborators:
+    - kgugala
+    - tgorochowik
+    - katsuster
+    - mgielda
+    - npitre
+    - VynDragon
+    - ycsin
+    - maass-hamburg
+    - lstnl
+    - meijemac
+    - AFOliveira
+  files:
+    - boards/enjoydigital/litex_vexriscv/
+    - boards/lowrisc/opentitan_earlgrey/
+    - boards/qemu/riscv*/
+    - boards/sifive/
+    - boards/sparkfun/red_v_things_plus/
+    - boards/starfive/
+    - dts/bindings/riscv/
+    - dts/riscv/
+  labels:
+    - "platforms: RISCV"
+
 RISCV arch:
   status: maintained
   maintainers:
@@ -5197,12 +5257,6 @@ RISCV arch:
     - AFOliveira
   files:
     - arch/riscv/
-    - boards/enjoydigital/litex_vexriscv/
-    - boards/lowrisc/opentitan_earlgrey/
-    - boards/qemu/riscv*/
-    - boards/sifive/
-    - boards/sparkfun/red_v_things_plus/
-    - boards/starfive/
     - cmake/compiler/*/target_riscv.cmake
     - doc/hardware/arch/risc-v.rst
     - drivers/interrupt_controller/Kconfig.riscv_*
@@ -5210,14 +5264,9 @@ RISCV arch:
     - drivers/interrupt_controller/intc_riscv_*
     - dts/bindings/interrupt-controller/riscv,*
     - dts/bindings/riscv/
-    - dts/riscv/
     - include/zephyr/arch/riscv/
     - include/zephyr/drivers/interrupt_controller/riscv_*
     - samples/drivers/interrupt_controller/intc_riscv_aia*/
-    - soc/common/riscv-privileged/
-    - soc/qemu/virt_riscv/
-    - soc/sifive/
-    - soc/starfive/
     - tests/arch/riscv/
   labels:
     - "area: RISCV"
@@ -5254,8 +5303,6 @@ RX arch:
     - arch/rx/
     - include/zephyr/arch/rx/
     - dts/rx/
-    - boards/qemu/rx/
-    - soc/renesas/rx/
     - tests/arch/rx/
     - include/zephyr/drivers/misc/renesas_rx_external_interrupt/
   labels:
@@ -6071,6 +6118,11 @@ TI MSPM Platforms:
   collaborators:
     - d-philpot
     - Aman-Lachhiramka-ti
+    - Alex9360
+    - SanjayyyV
+    - karthi012
+    - Girinandha-M
+    - santhosh-c-c
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
@@ -6932,13 +6984,13 @@ West:
   maintainers:
     - mmahadevan108
     - zejiang0jason
+    - axelnxp
   collaborators:
     - manuargue
     - PetervdPerk-NXP
     - bperseghetti
     - JiafeiPan
     - MaochenWang1
-    - axelnxp
     - Holt-Sun
     - lucien-nxp
   files:
@@ -7391,9 +7443,22 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files: []
   labels:
     - "area: TF-M"
+
+"West project: reqmgmt":
+  status: maintained
+  maintainers:
+    - tobiaskaestner
+    - parphane
+  collaborators:
+    - nashif
+    - kartben
+  files: []
+  labels:
+    - "area: ReqMgmt"
 
 "West project: segger":
   status: odd fixes
@@ -7414,6 +7479,7 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files: []
   labels:
     - "area: TF-M"
@@ -7467,6 +7533,7 @@ West:
     - ithinuel
     - valeriosetti
     - JordanYates
+    - tpambor
   files:
     - modules/trusted-firmware-m/
     - samples/tfm_integration/
@@ -7568,10 +7635,10 @@ Xilinx Platforms:
   status: maintained
   maintainers:
     - michalsimek
+    - kedareswararao
   collaborators:
     - henrikbrixandersen
     - ibirnbaum
-    - kedareswararao
     - neeliajay
     - venodela
   files:

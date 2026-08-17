@@ -7,6 +7,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/dma.h>
@@ -15,6 +16,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/policy.h>
+#include <stm32_cache.h>
 
 #ifdef CONFIG_I2C_STM32_BUS_RECOVERY
 #include "i2c_bitbang.h"
@@ -32,6 +34,41 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_common);
 #endif
 
 #include "i2c_stm32.h"
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+bool i2c_stm32_xfer_will_use_dma(const struct i2c_stm32_config *cfg, void *buf, size_t len, bool tx)
+{
+	uintptr_t dest_addr = (uintptr_t)buf;
+
+	if (tx) {
+		if (cfg->tx_dma.dev_dma == NULL) {
+			return false;
+		}
+
+		if (stm32_buf_in_nocache(dest_addr, len)) {
+			return true;
+		}
+
+		return sys_cache_data_flush_range(buf, len) == 0;
+	}
+
+	if (cfg->rx_dma.dev_dma == NULL) {
+		return false;
+	}
+
+	if (stm32_buf_in_nocache(dest_addr, len)) {
+		return true;
+	}
+
+#if defined(CONFIG_CACHE_MANAGEMENT) && defined(CONFIG_DCACHE)
+	if (((dest_addr | len) % CONFIG_DCACHE_LINE_SIZE) == 0) {
+		return true;
+	}
+#endif /* CONFIG_CACHE_MANAGEMENT && CONFIG_DCACHE */
+
+	return false;
+}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void i2c_stm32_combined_isr(void *arg)
@@ -184,8 +221,9 @@ int i2c_stm32_recover_bus(const struct device *dev)
 		.set_sda = i2c_stm32_bitbang_set_sda,
 		.get_sda = i2c_stm32_bitbang_get_sda,
 	};
-	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	uint32_t device_config = data->dev_config;
 	int error = 0;
+	int ret2;
 
 	LOG_ERR("attempting to recover bus");
 
@@ -222,10 +260,21 @@ int i2c_stm32_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
-	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
-		goto restore;
+	/* Use Fast speed (highest supported by bitbang) if not standard speed (bitbang default) */
+	switch (I2C_SPEED_GET(device_config)) {
+	case I2C_SPEED_STANDARD:
+		break;
+	case I2C_SPEED_DT:
+		if (config->bitrate == I2C_BITRATE_STANDARD) {
+			break;
+		}
+		__fallthrough;
+	default:
+		error = i2c_bitbang_configure(&bitbang_ctx, I2C_SPEED_SET(I2C_SPEED_FAST));
+		if (error != 0) {
+			LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+			goto restore;
+		}
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
@@ -234,15 +283,22 @@ int i2c_stm32_recover_bus(const struct device *dev)
 	}
 
 restore:
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	ret2 = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret2 != 0) {
+		return (error != 0) ? error : ret2;
+	}
 
 	/* Re-initialize the I2C peripheral after GPIO-based bus recovery.
 	 * pinctrl_apply_state() restores the pin configuration, but the
 	 * peripheral registers remain in a faulted state. Re-running
 	 * runtime_configure() restores the peripheral to a working state.
 	 */
-	if (i2c_stm32_runtime_configure(dev, bitrate_cfg) != 0) {
-		LOG_ERR("failed to restore I2C peripheral after bus recovery");
+	ret2 = i2c_stm32_runtime_configure(dev, device_config);
+	if (ret2 != 0) {
+		LOG_ERR("failed to restore I2C peripheral after bus recovery: %d", ret2);
+		if (error == 0) {
+			return ret2;
+		}
 	}
 
 #ifndef CONFIG_I2C_RTIO
@@ -314,10 +370,6 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 
 #define I2C_STM32_INIT(index)									\
 	I2C_STM32_IRQ_HANDLER_DECL(index);							\
-												\
-	BUILD_ASSERT(!IS_ENABLED(CONFIG_I2C_STM32_V2_DMA) ||					\
-		     (DT_INST_DMAS_HAS_NAME(index, tx) == DT_INST_DMAS_HAS_NAME(index, rx)),	\
-		     "STM32 I2C requires either none or both of rx and tx DMAs are used");	\
 												\
 	IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_i2c_v2), (				\
 	static const uint32_t i2c_timings_##index[] = DT_INST_PROP_OR(index, timings, {});	\

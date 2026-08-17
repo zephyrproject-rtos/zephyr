@@ -365,6 +365,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		}
 
 		adjusted_size = STACK_ELEMENT_DATA_SIZE(size);
+		if (adjusted_size < size) {
+			/* The size adjustment above overflowed, which would
+			 * hand out an allocation smaller than requested.
+			 */
+			k_free(dyn);
+			return NULL;
+		}
+
 		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
 						     adjusted_size);
 		if (dyn->data == NULL) {
@@ -402,7 +410,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		dyn->kobj.data.stack_size = adjusted_size;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 	} else {
-		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
+		size_t total_size = obj_size_get(otype) + size;
+
+		if (total_size < size) {
+			k_free(dyn);
+			return NULL;
+		}
+
+		dyn->data = z_thread_aligned_alloc(align, total_size);
 		if (dyn->data == NULL) {
 			k_free(dyn);
 			return NULL;

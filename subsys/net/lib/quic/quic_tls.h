@@ -26,7 +26,12 @@
 #define TLS13_LABEL_S_HS_TRAFFIC   "s hs traffic"
 #define TLS13_LABEL_C_AP_TRAFFIC   "c ap traffic"
 #define TLS13_LABEL_S_AP_TRAFFIC   "s ap traffic"
+/* RFC 8446 Section 7.1: "ext binder" is for externally provisioned PSKs
+ * (TLS_CREDENTIAL_PSK) and "res binder" for PSKs that came from a session
+ * ticket. The label is selected by the provenance of the PSK in use.
+ */
 #define TLS13_LABEL_EXT_BINDER     "ext binder"
+#define TLS13_LABEL_RES_BINDER     "res binder"
 #define TLS13_LABEL_FINISHED       "finished"
 #define TLS13_LABEL_RES_MASTER     "res master"
 #define TLS13_LABEL_RESUMPTION     "resumption"

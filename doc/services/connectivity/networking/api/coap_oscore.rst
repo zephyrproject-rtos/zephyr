@@ -1,7 +1,7 @@
 .. _coap_oscore_interface:
 
-OSCORE Support (RFC 8613)
-#########################
+OSCORE Support (:rfc:`8613`)
+############################
 
 .. contents::
     :local:
@@ -31,6 +31,9 @@ Additional OSCORE configuration options:
 - :kconfig:option:`CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE`: Number of OSCORE exchanges to track per service
 - :kconfig:option:`CONFIG_COAP_OSCORE_EXCHANGE_LIFETIME_MS`: Lifetime of tracked OSCORE exchanges used to protect
    deferred (separate) responses
+- :kconfig:option:`CONFIG_COAP_OSCORE_CONTEXT_REUSE`: Enable OSCORE support for context reuse across reboots
+- :kconfig:option:`CONFIG_COAP_OSCORE_MASTER_SECRET_MAX_LEN`: Maximum OSCORE Master Secret length in bytes
+- :kconfig:option:`CONFIG_COAP_OSCORE_MASTER_SALT_MAX_LEN`: Maximum OSCORE Master Salt length in bytes
 
 Configuration
 =============
@@ -52,38 +55,36 @@ Server Usage
 
 To enable OSCORE on a CoAP service, define the service with
 :c:macro:`COAP_SERVICE_DEFINE_OSCORE` (or :c:macro:`COAPS_SERVICE_DEFINE_OSCORE`
-for DTLS). The macro statically allocates the per-service OSCORE exchange cache
-and binds a *context provider* callback that returns the security context to
-use. The context is created through the Zephyr OSCORE API; applications do not
-include the underlying uoscore-uedhoc headers directly:
+for DTLS). The macro statically allocates the per-service OSCORE exchange cache.
+Security contexts are created separately through the Zephyr OSCORE API and added
+to a shared pool; applications do not include the underlying uoscore-uedhoc
+headers directly. Incoming requests are matched to the correct context by their
+Recipient ID and ID Context, so a single service can serve multiple clients, each
+with its own context:
 
 .. code-block:: c
 
    #include <zephyr/net/coap_oscore.h>
    #include <zephyr/net/coap_service.h>
 
-   /* Key material must remain valid for the lifetime of the context. */
-   static const uint8_t master_secret[16] = { /* ... */ };
-   static const uint8_t master_salt[8] = { /* ... */ };
-   static const uint8_t sender_id[] = { /* ... */ };
-   static const uint8_t recipient_id[] = { /* ... */ };
-
    static struct coap_oscore_context *my_oscore_ctx;
-
-   /* Provider invoked by the CoAP server when OSCORE processing is needed. */
-   static struct coap_oscore_context *my_oscore_provider(void)
-   {
-       return my_oscore_ctx;
-   }
 
    static uint16_t my_service_port = 5683;
 
-   /* Second argument "true" requires OSCORE for all requests. */
+   /* Final argument "true" requires OSCORE for all requests. */
    COAP_SERVICE_DEFINE_OSCORE(my_service, NULL, &my_service_port,
-                              COAP_SERVICE_AUTOSTART, my_oscore_provider, true);
+                              COAP_SERVICE_AUTOSTART, true);
 
    int my_service_oscore_init(void)
    {
+       /* coap_oscore_context_add() copies the key material, so these
+        * buffers need not outlive the call and can live on the stack.
+        */
+       const uint8_t master_secret[16] = { /* ... */ };
+       const uint8_t master_salt[8] = { /* ... */ };
+       const uint8_t sender_id[] = { /* ... */ };
+       const uint8_t recipient_id[] = { /* ... */ };
+
        struct coap_oscore_init_params params = {
            .master_secret = master_secret,
            .master_secret_len = sizeof(master_secret),
@@ -98,25 +99,28 @@ include the underlying uoscore-uedhoc headers directly:
            .fresh_master_secret_salt = true,
        };
 
-       /* Derive the context once its key material is available. Until the
-        * provider returns non-NULL, the service behaves as OSCORE-disabled.
+       /* Add the context to the shared pool once its key material is
+        * available. Call once per client identity (Recipient ID).
         */
-       return coap_oscore_context_init(&params, &my_oscore_ctx);
+       return coap_oscore_context_add(&params, &my_oscore_ctx);
    }
 
 The number of contexts that can be allocated at once is controlled by
 :kconfig:option:`CONFIG_COAP_OSCORE_MAX_CONTEXTS`. Release a context with
-``coap_oscore_context_free()`` once it is no longer referenced by any client or
-service.
+``coap_oscore_context_remove()``. Contexts are reference-counted: while an
+in-flight request, an active exchange, or an observer still references a context,
+``coap_oscore_context_remove()`` returns ``-EAGAIN`` and the context is retained.
+Retry the removal once those references have been released.
 
-When a service is OSCORE-enabled (its context provider returns a context):
+When a service is OSCORE-enabled (created with an ``OSCORE`` macro and at least one context is added
+to the pool):
 
 1. **Incoming requests**: The server automatically verifies and decrypts OSCORE-protected
-   requests (RFC 8613 Section 8.2). Resource handlers receive decrypted CoAP messages
+   requests (:rfc:`8613` Section 8.2). Resource handlers receive decrypted CoAP messages
    with Inner options visible.
 
 2. **Outgoing responses**: The server automatically OSCORE-protects responses and
-   notifications that originate from an OSCORE exchange (RFC 8613 Section 8.3).
+   notifications that originate from an OSCORE exchange (:rfc:`8613` Section 8.3).
    Whether a given outgoing message must be protected is decided as follows:
 
    - **Synchronous responses**, produced while the request is being handled, are matched
@@ -134,7 +138,7 @@ When a service is OSCORE-enabled (its context provider returns a context):
       cache entry has expired will result in a plaintext response.
 
 3. **Error handling**: OSCORE verification errors are sent as simple CoAP responses
-    **without** OSCORE processing (RFC 8613 Section 8.2):
+    **without** OSCORE processing (:rfc:`8613` Section 8.2):
     - COSE decode failure → 4.02 Bad Option
     - Security context not found → 4.01 Unauthorized
     - Decryption failure → 4.00 Bad Request
@@ -156,23 +160,7 @@ When a service is OSCORE-enabled (its context provider returns a context):
 Known Limitations
 ============================
 
-1. **Single Context**: The current implementation does not support per-client OSCORE
-   contexts within a service. Each service can use only one OSCORE context at a time,
-   so all clients share that context. This is sufficient for many use cases, but it
-   does not allow separate contexts per client.
-2. **Context Reuse Across Reboots**: Only freshly derived security contexts are
-   supported, i.e. contexts created with ``fresh_master_secret_salt = true`` where the
-   Master Secret / Master Salt combination is unique at every boot (for example, derived
-   via EDHOC). Applications that cannot guarantee a fresh context at every boot
-   must not enable OSCORE for the time being.
-3. **Reboot Replay Recovery (Echo)**: The Echo-based freshness exchange for restored
-   contexts (RFC 8613 Appendix B.1.2, RFC 9175) is not implemented. When uoscore reports
-   the first request after a reboot, the server rejects it with 4.01 Unauthorized instead
-   of answering with an Echo challenge, so a client cannot automatically re-synchronize.
-   This is fail-closed meaning no unprotected or replayed request is accepted but a
-   reused or restored context cannot recover after a reboot without re-establishing the
-   context out of band.
-4. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
+1. **Mixed-Service Expired-Exchange Plaintext**: On a mixed service (one that serves
    both OSCORE and non-OSCORE clients), a response whose exchange cache entry has
    expired can no longer be matched to its OSCORE state and is sent as plaintext. This
    affects both synchronous and deferred (separate) responses (see
@@ -185,7 +173,7 @@ Known Limitations
 Security Context Derivation
 ============================
 
-OSCORE security contexts are derived from a small set of parameters (RFC 8613 Section 3):
+OSCORE security contexts are derived from a small set of parameters (:rfc:`8613` Section 3):
 
 **Required parameters**:
 
@@ -214,21 +202,19 @@ Security Considerations
 2. **Master secret protection**: Master secrets must be stored securely (e.g., in
    secure storage or derived from EDHOC).
 
-3. **Replay window**: The uoscore library maintains a replay window to detect and reject
-   replayed requests. This does not protect against replays across reboots, so the SSN
-   must be persisted to non-volatile memory if the same master secret is reused after a
-   reboot.
-
-4. **Fresh master secrets**: If master secrets are not re-derived after reboot (e.g.,
-   using EDHOC), the sender sequence number must be persisted to non-volatile memory
-   to prevent reuse.
+3. **Persistence across reboots**: If the same master secret is reused after a reboot
+   (i.e., master secrets are not re-derived, e.g., via EDHOC), the sender sequence
+   number must be persisted to non-volatile memory to prevent nonce reuse, which would
+   break confidentiality and integrity. The receiver's replay window does not need to
+   be persisted: it is kept in memory and, after a reboot, is re-synchronized using the
+   Echo option as described in :rfc:`8613` Appendix B.1.2.
 
 Handling OSCORE When Not Supported
 -----------------------------------
 
 When OSCORE support is not enabled (:kconfig:option:`CONFIG_COAP_OSCORE` is not set),
 the Zephyr CoAP stack implements fail-closed behavior for the OSCORE option per
-RFC 7252 Section 5.4.1:
+:rfc:`7252` Section 5.4.1:
 
 **Server behavior** (when ``CONFIG_COAP_OSCORE=n``):
 

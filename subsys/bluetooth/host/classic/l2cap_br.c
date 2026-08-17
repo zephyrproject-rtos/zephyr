@@ -21,10 +21,10 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
-#include "host/buf_view.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
-#include "host/keys.h"
+#include <host/buf_view.h>
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
+#include <host/keys.h>
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
@@ -370,6 +370,13 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
 
+	if (chan->chan.conn == NULL || chan->chan.conn->state != BT_CONN_CONNECTED) {
+		/* The ACL connection is already gone; there is nothing left
+		 * for the timeout to act on.
+		 */
+		return;
+	}
+
 	LOG_WRN("chan %p timeout", chan);
 
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
@@ -521,29 +528,29 @@ static void l2cap_br_start_timer(struct bt_l2cap_br_chan *br_chan, enum l2cap_br
 	if (type == BT_L2CAP_BR_TIMER_RET) {
 		if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
 			k_work_cancel_delayable(&br_chan->monitor_work);
-			k_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+			bt_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 			LOG_DBG("Start ret timer");
 		} else {
 			if (!restart) {
 				return;
 			}
 
-			k_work_reschedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+			bt_work_reschedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 			LOG_DBG("Restart ret timer");
 		}
 	} else {
 		if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
 			k_work_cancel_delayable(&br_chan->ret_work);
-			k_work_schedule(&br_chan->monitor_work,
-					K_MSEC(br_chan->tx.monitor_timeout));
+			bt_work_schedule(&br_chan->monitor_work,
+					 K_MSEC(br_chan->tx.monitor_timeout));
 			LOG_DBG("Start monitor timer");
 		} else {
 			if (!restart) {
 				return;
 			}
 
-			k_work_reschedule(&br_chan->monitor_work,
-					  K_MSEC(br_chan->tx.monitor_timeout));
+			bt_work_reschedule(&br_chan->monitor_work,
+					   K_MSEC(br_chan->tx.monitor_timeout));
 			LOG_DBG("Restart monitor timer");
 		}
 	}
@@ -792,7 +799,7 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 
 	/* Restart the timer */
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
-		k_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+		bt_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 	}
 
 	LOG_DBG("chan %p retransmission timeout", br_chan);
@@ -856,7 +863,7 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 
 	/* Restart the timer */
 	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
-		k_work_schedule(&br_chan->monitor_work, K_MSEC(br_chan->tx.monitor_timeout));
+		bt_work_schedule(&br_chan->monitor_work, K_MSEC(br_chan->tx.monitor_timeout));
 	}
 
 	LOG_DBG("chan %p monitor timeout", br_chan);
@@ -905,8 +912,9 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
 	 * The fixed signal channel is only removed when disconnected and the
-	 * disconnected handler is always called from the workqueue itself so
-	 * canceling from there should always succeed.
+	 * disconnected handler is always called from the Bluetooth workqueue,
+	 * which the RTX work also runs on, so canceling from there should
+	 * always succeed.
 	 */
 	k_work_init_delayable(&ch->rtx_work, l2cap_br_rtx_timeout);
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1043,7 +1051,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&chan->rtx_work, timeout);
+	bt_work_reschedule(&chan->rtx_work, timeout);
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1222,6 +1230,19 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 	return NULL;
 }
 
+static bool l2cap_br_retransmit_is_required(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		if (tx_win->retransmit) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
@@ -1235,11 +1256,13 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME)) {
-		return true;
+		if (sys_slist_peek_head(&br_chan->_pdu_outstanding) != NULL) {
+			return true;
+		}
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
-		return true;
+		return l2cap_br_retransmit_is_required(br_chan);
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
@@ -4849,8 +4872,9 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel.
-		 * Disconnected callback is always called from system workqueue
-		 * so this should always succeed.
+		 * Disconnected callback is always called from the Bluetooth
+		 * workqueue, which the RTX work also runs on, so this should
+		 * always succeed.
 		 */
 		(void)k_work_cancel_delayable(&br_chan->rtx_work);
 		br_chan->ident = 0;
@@ -5085,7 +5109,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 		break;
 	case BT_L2CAP_BR_PENDING:
 		br_chan->ident = ident;
-		k_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
+		bt_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
 		l2cap_br_chan_cleanup(chan);
@@ -6493,7 +6517,7 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 
 	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
 	if (err == 0) {
-		k_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+		bt_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
 	}
 
 	return err;

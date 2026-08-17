@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #include <string.h>
 
 #include <zephyr/modem/chat.h>
+#include <zephyr/sys/__assert.h>
 
 #include "modem_workqueue.h"
 
@@ -249,6 +250,15 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 	LOG_DBG("%s: step: %u", chat->script->name, chat->script_chat_it);
 
 	script_chat = &chat->script->script_chats[chat->script_chat_it];
+
+#if defined(CONFIG_MODEM_CHAT_COMMANDS_CONDITIONAL)
+	if ((script_chat->run_check != NULL) && !script_chat->run_check(chat->user_data)) {
+		/* Current chat should be skipped, reschedule work immediately to run next step */
+		LOG_DBG("skipping: %.*s", script_chat->request_size, script_chat->request);
+		modem_work_schedule(&chat->script_send_timeout_work, K_NO_WAIT);
+		return;
+	}
+#endif
 
 	/* Continue script */
 	if (modem_chat_script_chat_has_request(chat)) {
@@ -902,6 +912,8 @@ bool modem_chat_is_running(struct modem_chat *chat)
 int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script)
 {
 	bool script_is_running;
+
+	__ASSERT_NO_MSG(script != NULL);
 
 	if (chat->pipe == NULL) {
 		return -EPERM;

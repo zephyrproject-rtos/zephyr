@@ -286,3 +286,7 @@
 		status = "okay";
 	};
 };
+
+&trng {
+	status = "okay";
+};

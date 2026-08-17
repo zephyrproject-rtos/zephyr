@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	interrupt-parent = <&nvic>;
+
+	test_wdog: watchdog@dead0000 {
+		compatible = "arm,crsas-ma2-watchdog";
+		reg = <0xdead0000 0x2000>;
+		clocks = <&gcr 0x1>;
+		interrupts = <0xf 0x1 0xe 0x1>;
+	};
+};

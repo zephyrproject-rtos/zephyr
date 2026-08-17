@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(mdns_resp_test);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/udp.h>
 #include <zephyr/ztest.h>
 
 #include "dns_pack.h"
@@ -124,6 +125,62 @@ static int igmp_report_count;
 static struct service_info services[EXT_RECORDS_NUM];
 static struct dns_sd_rec records[EXT_RECORDS_NUM];
 
+/*
+ * Multi-homed mDNS test topology
+ *
+ *   iface1 (default route)
+ *   iface2 (query ingress)
+ *
+ * A/AAAA answers must come from iface2 (per-socket BINDTODEVICE), not from
+ * net_if_ipv6_select_src_iface() toward the querier.
+ */
+static struct net_in6_addr mh_iface2_gua = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					    0x28, 0x61, 0x82, 0x56, 0x28, 0x61, 0x82, 0x56 } } };
+						/* 2001:db8::2861:8256:2861:8256 */
+static struct net_in6_addr mh_iface2_ll = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x2 } } }; /* fe80::2 */
+static struct net_in6_addr mh_querier_ll = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					      0, 0, 0, 0, 0, 0, 0, 0x99 } } }; /* fe80::99 */
+static struct net_in6_addr mh_iface1_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0, 0, 0, 0, 0, 0, 0, 0 } } };
+						    /* 2001:db8::/64 */
+static struct net_in6_addr mh_iface2_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0x28, 0x61, 0x82, 0x56, 0, 0, 0, 0 } } };
+						    /* 2001:db8:0:2861:8256::/96 */
+
+/* Capture the first mDNS response pkt while mh_capture_active (see sender_iface). */
+static bool mh_capture_active;
+static K_SEM_DEFINE(mh_response_sem, 0, 1);
+static struct net_pkt *mh_response_pkt;
+
+static void mh_reset_capture(void)
+{
+	mh_capture_active = false;
+
+	if (mh_response_pkt != NULL) {
+		net_pkt_unref(mh_response_pkt);
+		mh_response_pkt = NULL;
+	}
+
+	while (k_sem_take(&mh_response_sem, K_NO_WAIT) == 0) {
+		/* NOP */
+	}
+}
+
+static bool mh_mdns_udp_pkt(struct net_pkt *pkt)
+{
+	struct net_udp_hdr *udp;
+
+	if (!IS_ENABLED(CONFIG_NET_UDP) || net_pkt_family(pkt) != NET_AF_INET6) {
+		return false;
+	}
+
+	udp = net_udp_get_hdr(pkt, NULL);
+
+	return udp != NULL &&
+	       (net_ntohs(udp->src_port) == 5353U || net_ntohs(udp->dst_port) == 5353U);
+}
+
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -178,7 +235,13 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 		hdr = NET_IPV6_HDR(pkt);
 
 		if (net_ipv6_addr_cmp_raw(hdr->dst, mdns_server_ipv6_addr)) {
-			if (responses_count < MAX_RESP_PKTS) {
+			/* Multi-homed test: grab the outgoing mDNS response separately. */
+			if (mh_capture_active && mh_response_pkt == NULL &&
+			    mh_mdns_udp_pkt(pkt)) {
+				net_pkt_ref(pkt);
+				mh_response_pkt = pkt;
+				k_sem_give(&mh_response_sem);
+			} else if (responses_count < MAX_RESP_PKTS) {
 				net_pkt_ref(pkt);
 				response_pkts[responses_count++] = pkt;
 				k_sem_give(&wait_data);
@@ -363,6 +426,8 @@ static void cleanup(void *d)
 			free_service(&services[i]);
 		}
 	}
+
+	mh_reset_capture();
 }
 
 static void send_msg(const uint8_t *data, size_t len)
@@ -986,30 +1051,6 @@ ZTEST(test_mdns_responder, test_ipv6_group_ref_not_leaked_on_cycles)
 		      "(%ld -> %ld)", ref_before, ref_after);
 }
 
-/* Reproduces the state the connection-manager reporter observed: the mDNS
- * IPv4 group is still marked "joined" when NET_EVENT_IF_UP is delivered (the
- * link bounce did not clear it). A plain net_ipv4_igmp_join() is then a no-op
- * (igmp.c returns early when the address is already joined), so no membership
- * report reaches an IGMP-snooping switch and the responder stops receiving
- * queries even though the local state looks fine. Recovery must force a fresh
- * report in this case.
- */
-ZTEST(test_mdns_responder, test_ipv4_igmp_report_when_already_joined_on_if_up)
-{
-	zassert_true(ipv4_group_joined(iface1),
-		     "IPv4 mDNS group should be joined at start");
-
-	/* Group stays joined; only an IF_UP event is delivered (no down). */
-	igmp_report_count = 0;
-
-	net_mgmt_event_notify(NET_EVENT_IF_UP, iface1);
-	k_sleep(K_MSEC(200));
-
-	zassert_true(igmp_report_count > 0,
-		     "No IGMP report was re-emitted when the group was already joined "
-		     "on interface up");
-}
-
 /* Same, but for a carrier loss (Ethernet cable unplugged/replugged) without an
  * administrative down.
  */
@@ -1258,5 +1299,141 @@ ZTEST(test_mdns_responder, test_excluded_listener_slot_marked_closed)
 	}
 }
 #endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
+
+/*
+ * Parse the mDNS response and verify every AAAA answer belongs to expect
+ * (the interface that received the query) and not to forbid.
+ */
+static void mh_check_aaaa_on_iface(struct net_pkt *pkt, struct net_if *expect,
+				   struct net_if *forbid)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	struct net_in6_addr resp_addr;
+	uint16_t ancount;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+
+	ancount = net_ntohs(resp_header.ancount);
+	zassert_true(ancount > 0, "Expected at least one answer");
+
+	for (uint16_t i = 0; i < ancount; i++) {
+		skip_labels(pkt);
+		zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)),
+			   "net_pkt read failed");
+		zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA,
+			      "Expected AAAA answer only");
+		zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+			      "Invalid AAAA length");
+		zassert_ok(net_pkt_read(pkt, &resp_addr, sizeof(resp_addr)),
+			   "net_pkt read failed");
+		zassert_not_null(net_if_ipv6_addr_lookup_by_iface(expect, &resp_addr),
+				 "AAAA should belong to query iface");
+		zassert_is_null(net_if_ipv6_addr_lookup_by_iface(forbid, &resp_addr),
+				"AAAA must not come from other iface");
+	}
+}
+
+/*
+ * Inject a raw IPv6/UDP mDNS query on iface as if received from the network.
+ * The packet is handed to net_recv_data() on that interface.
+ */
+static void mh_send_query(struct net_if *iface, const struct net_in6_addr *src,
+			  const struct net_in6_addr *dst, const uint8_t *data, size_t len)
+{
+	struct net_pkt *pkt;
+	uint8_t v6_buf[40];
+	uint16_t payload_len = len + NET_UDPH_LEN;
+
+	pkt = net_pkt_alloc_with_buffer(iface, NET_IPV6UDPH_LEN + len, NET_AF_UNSPEC, 0, K_FOREVER);
+	zassert_not_null(pkt, "PKT is null");
+
+	memset(v6_buf, 0, sizeof(v6_buf));
+	v6_buf[0] = 0x60;
+	memcpy(&v6_buf[8], src->s6_addr, 16);
+	memcpy(&v6_buf[24], dst->s6_addr, 16);
+	v6_buf[6] = NET_IPPROTO_UDP;
+	v6_buf[7] = 255;
+
+	zassert_ok(net_pkt_write(pkt, v6_buf, 4), "pkt write for v6 start failed");
+	zassert_ok(net_pkt_write_be16(pkt, payload_len), "pkt write for v6 payload len failed");
+	zassert_ok(net_pkt_write(pkt, &v6_buf[6], sizeof(v6_buf) - 6),
+		   "pkt write for v6 rest failed");
+	zassert_ok(net_pkt_write_be16(pkt, 5353), "pkt write for UDP src port failed");
+	zassert_ok(net_pkt_write_be16(pkt, 5353), "pkt write for UDP dst port failed");
+	zassert_ok(net_pkt_write_be16(pkt, payload_len), "pkt write for UDP length failed");
+	zassert_ok(net_pkt_write_be16(pkt, 0), "pkt write for UDP checksum failed");
+	zassert_ok(net_pkt_write(pkt, data, len), "net_pkt_write() for data failed");
+	zassert_ok(net_recv_data(iface, pkt), "net_recv_data() failed");
+}
+
+/*
+ * On a multi-homed host, mDNS AAAA answers must use an address from the
+ * interface that received the query (socket BINDTODEVICE / recv iface),
+ * not net_if_ipv6_select_src_iface() toward the querier.
+ *
+ * Layout:
+ *   - iface1: default route, 2001:db8::/64
+ *   - iface2: on-link /96, hosts the querier (fe80::99) and the GUA to advertise
+ *
+ * Query is injected on iface2; response AAAA must come from iface2, not iface1.
+ */
+ZTEST(test_mdns_responder, test_multihomed_aaaa_on_recv_iface)
+{
+	/* DNS query: zephyr.local, type AAAA, class IN */
+	static const uint8_t hostname_query[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c,
+		0x00, 0x00, 0x1c, 0x00, 0x01
+	};
+	struct net_in6_addr mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0xfb } } }; /* ff02::fb */
+	struct net_if *iface2 = net_if_get_by_index(2);
+	struct net_if_addr *ifaddr;
+	int res;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "iface2 missing");
+
+	mh_response_pkt = NULL;
+	mh_capture_active = true;
+	test_started = true;
+
+	/* iface1: upstream /64; made default so src selection would prefer it. */
+	(void)net_if_ipv6_prefix_add(iface1, &mh_iface1_prefix, 64,
+				     NET_IPV6_ND_INFINITE_LIFETIME);
+	/* iface2: on-link /96 and the addresses the responder should advertise. */
+	(void)net_if_ipv6_prefix_add(iface2, &mh_iface2_prefix, 96,
+				     NET_IPV6_ND_INFINITE_LIFETIME);
+
+	ifaddr = net_if_ipv6_addr_add(iface2, &mh_iface2_ll, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Failed to add iface2 LL");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	ifaddr = net_if_ipv6_addr_add(iface2, &mh_iface2_gua, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Failed to add iface2 GUA");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_ipv6_nbr_add(iface2, &mh_querier_ll, net_if_get_link_addr(iface2), false,
+			 NET_IPV6_NBR_STATE_STATIC);
+
+	net_if_set_default(iface1);
+	net_if_up(iface2);
+	k_sleep(K_MSEC(500));
+
+	/* Query arrives on iface2 from link-local querier fe80::99. */
+	mh_send_query(iface2, &mh_querier_ll, &mcast, hostname_query, sizeof(hostname_query));
+
+	res = k_sem_take(&mh_response_sem, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive mDNS response on iface2");
+
+	mh_check_aaaa_on_iface(mh_response_pkt, iface2, iface1);
+
+	mh_reset_capture();
+}
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

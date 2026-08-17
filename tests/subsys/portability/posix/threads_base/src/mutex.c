@@ -223,6 +223,43 @@ ZTEST(mutex, test_mutex_timedlock)
 	zassert_ok(pthread_mutex_destroy(&mutex));
 }
 
+static void *static_init_contender(void *arg)
+{
+	pthread_mutex_t *m = arg;
+
+	/* The main thread holds the mutex, so a non-blocking lock must fail. */
+	zassert_equal(EBUSY, pthread_mutex_trylock(m));
+	return NULL;
+}
+
+/**
+ * @brief Verify a statically-initialized mutex works without pthread_mutex_init()
+ *
+ * @details A PTHREAD_MUTEX_INITIALIZER mutex must auto-initialize on first use
+ *          and provide mutual exclusion, exercising the lazy-init path in
+ *          to_posix_mutex().
+ */
+ZTEST(mutex, test_mutex_static_initializer)
+{
+	static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
+	pthread_t th;
+
+	/* First lock triggers auto-initialization. */
+	zassert_ok(pthread_mutex_lock(&m));
+
+	/* A second thread must observe the mutex as held. */
+	zassert_ok(pthread_create(&th, NULL, static_init_contender, &m));
+	zassert_ok(pthread_join(th, NULL));
+
+	zassert_ok(pthread_mutex_unlock(&m));
+
+	/* Usable again after being released. */
+	zassert_ok(pthread_mutex_lock(&m));
+	zassert_ok(pthread_mutex_unlock(&m));
+
+	zassert_ok(pthread_mutex_destroy(&m));
+}
+
 static void before(void *arg)
 {
 	ARG_UNUSED(arg);

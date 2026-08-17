@@ -87,13 +87,14 @@ jobs:
         run: |
           git worktree add --detach ../base-branch origin/${BASE_REF}
           echo "BASE_ROOT=$(readlink -f ../base-branch)" >> $GITHUB_ENV
-          cd ../base-branch
-          west update
-          # Use the PR branch's doc build configuration to ensure consistent
-          # coverage generation between branches (plus, the target may not exist in base)
-          cp ${GITHUB_WORKSPACE}/doc/CMakeLists.txt ${GITHUB_WORKSPACE}/doc/Makefile doc/
-          make -C doc doxygen-coverage-json
-          cp doc/_build/doc-coverage.json ${GITHUB_WORKSPACE}/base-coverage.json
+          # Build the base tree's API documentation with the PR branch's doc build
+          # system, by pointing ZEPHYR_BASE at the base worktree and running the build
+          # from the PR checkout. Everything the Doxygen configuration refers to is
+          # ZEPHYR_BASE-relative, so both coverage reports are produced by an identical
+          # configuration, while the scanned sources come from the base branch.
+          ZEPHYR_BASE=$(readlink -f ../base-branch) \
+            make -C doc doxygen-coverage-json BUILDDIR=_build-base
+          mv doc/_build-base/doc-coverage.json base-coverage.json
 
       - name: Check for undocumented new API
         run: |

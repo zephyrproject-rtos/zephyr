@@ -108,7 +108,7 @@ static void imx_mu_isr(const struct device *dev)
 	int32_t i;
 	bool all_registers_full;
 
-	status_reg = base->SR >>= MU_SR_RFn_SHIFT;
+	status_reg = base->SR >> MU_SR_RFn_SHIFT;
 
 	for (id = CONFIG_IPM_IMX_MAX_ID_VAL; id >= 0; id--) {
 		if (status_reg & 0x1U) {

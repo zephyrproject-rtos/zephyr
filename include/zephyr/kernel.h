@@ -6806,6 +6806,8 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 /** Poll for data becoming available in a FIFO. */
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a LIFO. */
+#define K_POLL_TYPE_LIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 /** Poll for data becoming available in a message queue. */
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
 /** Poll for data becoming available in a pipe. */
@@ -6839,6 +6841,8 @@ enum k_poll_modes {
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 /** Data became available in a FIFO. */
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a LIFO. */
+#define K_POLL_STATE_LIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 /** Data became available in a message queue. */
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
 /** Data became available in a pipe. */
@@ -6931,6 +6935,8 @@ struct k_poll_event {
 		struct k_sem *sem, *_typed_K_POLL_TYPE_SEM_AVAILABLE;
 		/** FIFO being polled. */
 		struct k_fifo *fifo, *_typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/** LIFO being polled. */
+		struct k_lifo *lifo, *_typed_K_POLL_TYPE_LIFO_DATA_AVAILABLE;
 		/** Queue being polled. */
 		struct k_queue *queue, *_typed_K_POLL_TYPE_DATA_AVAILABLE;
 		/** Message queue being polled. */
@@ -7158,11 +7164,11 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
-#if !defined(CONFIG_ASSERT_NO_FILE_INFO)
-#define __EXCEPT_LOC() __ASSERT_PRINT("@ %s:%d\n", __FILE__, __LINE__)
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __EXCEPT_LOC() printk("@ %s:%d\n", __FILE__, __LINE__)
 #else
 #define __EXCEPT_LOC()
-#endif
+#endif /* CONFIG_PRINTK */
 
 /* NOTE: This is the implementation for arches that do not implement
  * ARCH_EXCEPT() to generate a real CPU exception.
@@ -7325,7 +7331,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @return -EINVAL if null pointers or invalid cpu, otherwise 0
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 

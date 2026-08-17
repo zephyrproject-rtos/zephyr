@@ -66,7 +66,13 @@ if(CONFIG_ENTROPY_VIRTIO)
 endif()
 
 if(CONFIG_INPUT_VIRTIO)
-  set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-pci,addr=05.0,id=input0)
+  if(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-keyboard-pci,addr=05.0,id=input0)
+  elseif(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_TABLET)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-pci,addr=05.0,id=input0)
+  else()
+    message(WARNING "No virtio input device type selected; QEMU_VIRTIO_INPUT_FLAGS will be empty")
+  endif()
 endif()
 
 set(QEMU_BOARD_FLAGS

@@ -391,6 +391,12 @@ void __weak rt5xx_clock_init(void)
 	CLOCK_EnableClock(kCLOCK_Smartdma);
 #endif
 
+#if CONFIG_DSP_BACKEND_POWERQUAD
+	/* Power up PowerQuad SRAM */
+	POWER_DisablePD(kPDRUNCFG_PPD_PQ_SRAM);
+	POWER_ApplyPD();
+#endif
+
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 	/* Set up dividers. */

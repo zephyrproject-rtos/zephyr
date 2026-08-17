@@ -22,6 +22,7 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			device_type = "cpu";
+			clocks = <&hfpll>;
 			clock-frequency = <DT_FREQ_M(256)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -37,6 +38,7 @@
 			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
+			clocks = <&hfpll>;
 			clock-frequency = <DT_FREQ_M(256)>;
 			riscv,isa-base = "rv32e";
 			riscv,isa-extensions = "e", "m", "c", "zicsr";
@@ -149,43 +151,60 @@
 		};
 #endif
 
-		cpuapp_sram: memory@20000000 {
+		sram: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(1016)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x20000000 0xfe000>;
 
-			ram00_sram: memory@0 {
+			cpuapp_sram: memory@0 {
 				compatible = "mmio-sram";
-				reg = <0x0 DT_SIZE_K(512)>;
+				reg = <0x0 (DT_SIZE_K(1016) - 0x20)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(512)>;
+				ranges = <0x0 0x0 (DT_SIZE_K(1016) - 0x20)>;
+
+				ram00_sram: memory@0 {
+					compatible = "mmio-sram";
+					reg = <0x0 DT_SIZE_K(512)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges = <0x0 0x0 DT_SIZE_K(512)>;
+				};
+
+				ram01_sram: memory@80000 {
+					compatible = "mmio-sram";
+					reg = <0x80000 DT_SIZE_K(256)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges = <0x0 0x80000 DT_SIZE_K(256)>;
+				};
+
+				ram02_sram: memory@c0000 {
+					compatible = "mmio-sram";
+					reg = <0xc0000 DT_SIZE_K(128)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
+				};
+
+				ram03_sram: memory@e0000 {
+					compatible = "mmio-sram";
+					reg = <0xe0000 (DT_SIZE_K(120) - 0x20)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+					ranges = <0x0 0xe0000 (DT_SIZE_K(120) - 0x20)>;
+				};
 			};
 
-			ram01_sram: memory@80000 {
-				compatible = "mmio-sram";
-				reg = <0x80000 DT_SIZE_K(256)>;
+			vtf_region_default: memory@fdfe0 {
+				compatible = "zephyr,memory-region", "mmio-sram";
+				reg = <0xfdfe0 0x20>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x80000 DT_SIZE_K(256)>;
-			};
-
-			ram02_sram: memory@c0000 {
-				compatible = "mmio-sram";
-				reg = <0xc0000 DT_SIZE_K(128)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges = <0x0 0xc0000 DT_SIZE_K(128)>;
-			};
-
-			ram03_sram: memory@e0000 {
-				compatible = "mmio-sram";
-				reg = <0xe0000 DT_SIZE_K(120)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				ranges = <0x0 0xe0000 DT_SIZE_K(120)>;
+				ranges = <0x0 0xfdfe0 0x20>;
+				zephyr,memory-region = "NRF_VTF_REGION";
 			};
 		};
 
@@ -312,6 +331,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			gpio2: gpio@50400 {
@@ -529,6 +549,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			spi21: spi@c7000 {
@@ -563,6 +584,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			spi22: spi@c8000 {
@@ -597,6 +619,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			egu20: egu@c9000 {
@@ -825,6 +848,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			spi24: spi@ee000 {
@@ -859,6 +883,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			dppic30: dppic@102000 {
@@ -908,6 +933,7 @@
 				status = "disabled";
 				endtx-stoptx-supported;
 				frame-timeout-supported;
+				dmaend-supported;
 			};
 
 			comp: comp@106000 {
@@ -957,14 +983,14 @@
 				xo: xo {
 					compatible = "nordic,nrf-clock-xo";
 					status = "disabled";
-					clock-frequency = <0x1e84800>;
+					clock-frequency = <DT_FREQ_M(32)>;
 					#clock-cells = <0>;
 				};
 
 				xo24m: xo24m {
 					compatible = "nordic,nrf-clock-xo24m";
 					status = "disabled";
-					clock-frequency = <0x16e3600>;
+					clock-frequency = <DT_FREQ_M(24)>;
 					#clock-cells = <0>;
 				};
 			};
@@ -1069,16 +1095,6 @@
 	wifi: wifi {
 		compatible = "nordic,nrf7120-wifi";
 		status = "disabled";
-
-		wifi-max-tx-pwr-2g-dsss = <21>;
-		wifi-max-tx-pwr-2g-mcs0 = <16>;
-		wifi-max-tx-pwr-2g-mcs7 = <16>;
-		wifi-max-tx-pwr-5g-low-mcs0 = <13>;
-		wifi-max-tx-pwr-5g-low-mcs7 = <13>;
-		wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
-		wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
-		wifi-max-tx-pwr-5g-high-mcs0 = <12>;
-		wifi-max-tx-pwr-5g-high-mcs7 = <12>;
 
 		wlan0: wlan0 {
 			compatible = "nordic,wlan";

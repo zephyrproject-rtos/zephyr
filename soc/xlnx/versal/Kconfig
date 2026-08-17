@@ -23,6 +23,24 @@ config SOC_VERSAL_RPU_OCM_BOOT
 		($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)) >= 0xFF000000)
 	select ARM_MPU_SKIP_ARCH_INIT
 
+config SOC_VERSAL_RPU_REMOTEPROC
+	bool "Support host-side remoteproc loading and attachment"
+	depends on SOC_VERSAL_RPU
+	depends on OPENAMP_RSC_TABLE
+	help
+	  Place the resource table in a linker memory region named RPROC. Also
+	  place the metadata used by the AMD-Xilinx R5 remoteproc driver to
+	  attach to an already running RPU at the beginning of that region.
+
+config SOC_VERSAL_RPU_REMOTEPROC_DATA_LMA
+	bool "Store initialized data load image in the RPROC region"
+	depends on SOC_VERSAL_RPU_REMOTEPROC
+	depends on XIP
+	help
+	  Use RPROC as the load region for initialized runtime data. Enable
+	  this when the ROM region containing the RPU code cannot also hold
+	  the data load image, such as a split TCM-code and OCM-data layout.
+
 if SOC_VERSAL_RPU_OCM_BOOT
 
 config KERNEL_ENTRY

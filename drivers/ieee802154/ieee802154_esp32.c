@@ -79,6 +79,14 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	 * the end of a valid frame is replaced with RSSI and LQI values.
 	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
+	/* raw[0] is the PHR; reject a length that cannot hold the FCS before
+	 * subtracting it.
+	 */
+	if (raw[0] < IEEE802154_FCS_LENGTH) {
+		LOG_ERR("Invalid frame length %u", raw[0]);
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		len = raw[0];
 	} else {
@@ -86,7 +94,10 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	}
 
 #ifdef CONFIG_NET_BUF_DATA_SIZE
-	__ASSERT_NO_MSG(len <= CONFIG_NET_BUF_DATA_SIZE);
+	if (len > CONFIG_NET_BUF_DATA_SIZE) {
+		LOG_ERR("Frame too long: %u", len);
+		return;
+	}
 #endif
 
 	payload = raw + 1;
@@ -458,41 +469,54 @@ static int esp32_stop(const struct device *dev)
 	return 0;
 }
 
-/* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
+static void esp32_ed_scan_work_handler(struct k_work *work)
+{
+	energy_scan_done_cb_t callback = esp32_data.energy_scan_done;
+	int8_t power;
+
+	ARG_UNUSED(work);
+
+	if (callback == NULL) {
+		LOG_WRN("No callback available");
+		return;
+	}
+
+	power = esp32_data.ed_scan_power;
+	esp32_data.energy_scan_done = NULL;
+	callback(net_if_get_device(esp32_data.iface), power);
+}
+
+/* Override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
 void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 {
-	energy_scan_done_cb_t callback;
-	const struct device *dev;
-
 	if (esp32_data.energy_scan_done == NULL) {
 		return;
 	}
 
-	callback = esp32_data.energy_scan_done;
-	esp32_data.energy_scan_done = NULL;
-	dev = net_if_get_device(esp32_data.iface);
-	callback(dev, power);
+	/* Defer the user callback so the caller stays responsive. */
+	esp32_data.ed_scan_power = power;
+	k_work_submit(&esp32_data.ed_scan_work);
 }
 
 static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_scan_done_cb_t done_cb)
 {
 	ARG_UNUSED(dev);
 
-	int err = 0;
-
-	if (esp32_data.energy_scan_done == NULL) {
-		esp32_data.energy_scan_done = done_cb;
-
-		/* The duration of energy detection, in symbol unit (16 us) */
-		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
-			esp32_data.energy_scan_done = NULL;
-			err = -EBUSY;
-		}
-	} else {
-		err = -EALREADY;
+	if (esp32_data.energy_scan_done) {
+		return -EALREADY;
 	}
 
-	return err;
+	esp32_data.energy_scan_done = done_cb;
+
+	/* Duration in symbol units (16 us); the channel noise floor is reported
+	 * asynchronously via esp_ieee802154_energy_detect_done().
+	 */
+	if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
+		esp32_data.energy_scan_done = NULL;
+		return -EBUSY;
+	}
+
+	return 0;
 }
 
 static int esp32_configure(const struct device *dev, enum ieee802154_config_type type,
@@ -536,6 +560,7 @@ static int esp32_init(const struct device *dev)
 
 	k_sem_init(&data->cca_wait, 0, 1);
 	k_sem_init(&data->tx_wait, 0, 1);
+	k_work_init(&data->ed_scan_work, esp32_ed_scan_work_handler);
 
 	if (esp_ieee802154_enable() != 0) {
 		LOG_ERR("IEEE 802154 enabling failed!");

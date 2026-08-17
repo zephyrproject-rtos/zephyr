@@ -22,9 +22,9 @@
 #include <zephyr/bluetooth/classic/bip.h>
 #include <zephyr/bluetooth/classic/avrcp_cover_art.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
-#include "host/l2cap_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
+#include <host/l2cap_internal.h>
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 

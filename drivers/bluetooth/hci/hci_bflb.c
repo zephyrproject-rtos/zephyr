@@ -49,7 +49,7 @@
 #define bflb_controller_init(prio)     btble_controller_init(prio)
 #define bflb_controller_deinit()       btble_controller_deinit()
 
-#elif defined(CONFIG_BT_BFLB_BL61X)
+#elif defined(CONFIG_BT_BFLB_BL61X) || defined(CONFIG_BT_BFLB_BL616CL)
 
 #include <btble_lib_api.h>
 #include <btblecontroller_port.h>

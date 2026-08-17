@@ -26,7 +26,7 @@ jobs:
           path: zephyr
 
       - name: Setup Zephyr project
-        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        uses: zephyrproject-rtos/action-zephyr-setup@be8136a8bba01580485d98b7ad2d32477c36a49a # v1.0.15
         with:
           app-path: zephyr
           toolchains: 'arm-zephyr-eabi'

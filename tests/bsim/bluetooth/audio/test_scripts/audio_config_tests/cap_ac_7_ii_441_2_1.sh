@@ -4,7 +4,6 @@
 
 source $(dirname "$0")/_ac_common.sh
 
-# ASSERTION FAIL [err == ((isoal_status_t) 0x00)] @
-# zephyr/subsys/bluetooth/controller/hci/hci_driver.c:489
-# https://github.com/zephyrproject-rtos/zephyr/issues/83586
+# ISO receive lost
+# https://github.com/zephyrproject-rtos/zephyr/issues/84303
 # ac_config=7_ii ac_tx_preset=441_2_1 ac_rx_preset=441_2_1 ac_acc_cnt=2 Execute_cap_unicast_ac $@

@@ -164,3 +164,12 @@ bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream)
 {
 	return cap_stream_is_streaming(&test_stream->stream);
 }
+
+void bap_unicast_stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	LOG_INF("Disconnected stream %p with reason %u", stream, reason);
+
+	UNSET_FLAG(test_stream->stopping);
+}

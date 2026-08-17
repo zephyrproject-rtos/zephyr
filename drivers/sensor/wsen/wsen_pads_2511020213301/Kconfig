@@ -5,6 +5,7 @@ menuconfig WSEN_PADS_2511020213301
 	bool "WSEN-PADS-2511020213301 absolute pressure and temperature sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_PADS_2511020213301_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_PADS),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_PADS),spi)
 	select HAS_WESENSORS

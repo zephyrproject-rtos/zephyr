@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief RPMsgFS initialize function declaration
+ * @ingroup file_system_api
  */
 
 #ifndef ZEPHYR_INCLUDE_FS_RPMSGFS_H_

@@ -78,13 +78,13 @@ extern "C" {
  * The value of 8 correspond to page 0 in the LE Controller supported features.
  * 24 bytes are required for all subsequent supported feature pages.
  */
-#define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE                         \
-	(BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE +                      \
-	 COND_CODE_1(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE, \
-		(CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE      \
-			* BT_HCI_LE_BYTES_PER_FEATURE_PAGE),        \
-		(0U)))
-
+ #if defined(CONFIG_BT_LE_EXTENDED_FEAT_SET)
+ #define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE \
+	 (BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE + \
+	  (CONFIG_BT_LE_MAX_LOCAL_SUPPORTED_FEATURE_PAGE * BT_HCI_LE_BYTES_PER_FEATURE_PAGE))
+ #else
+ #define BT_LE_LOCAL_SUPPORTED_FEATURES_SIZE BT_HCI_LE_BYTES_PAGE_0_FEATURE_PAGE
+ #endif
 /**
  * @struct bt_le_ext_adv
  * @brief Opaque type representing an advertiser.
@@ -795,7 +795,7 @@ enum bt_le_adv_opt {
 	 * Coding Selection. If these conditions are not met, it will default to
 	 * no required coding scheme.
 	 *
-	 * @kconfig_dep{BT_EXT_ADV_CODING_SELECTION}
+	 * @kconfig_dep{CONFIG_BT_EXT_ADV_CODING_SELECTION}
 	 */
 	BT_LE_ADV_OPT_REQUIRE_S2_CODING = BIT(20),
 
@@ -812,7 +812,7 @@ enum bt_le_adv_opt {
 	 * Coding Selection. If these conditions are not met, it will default to
 	 * no required coding scheme.
 	 *
-	 * @kconfig_dep{BT_EXT_ADV_CODING_SELECTION}
+	 * @kconfig_dep{CONFIG_BT_EXT_ADV_CODING_SELECTION}
 	 */
 	BT_LE_ADV_OPT_REQUIRE_S8_CODING = BIT(21),
 
@@ -1214,8 +1214,8 @@ struct bt_le_per_adv_param {
 /**
  * Helper to declare periodic advertising parameters inline
  *
- * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
- * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
+ * @param _int_min     Minimum periodic advertising interval, N * 1.25 ms
+ * @param _int_max     Maximum periodic advertising interval, N * 1.25 ms
  * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
@@ -1229,8 +1229,8 @@ struct bt_le_per_adv_param {
 /**
  * Helper to declare periodic advertising parameters inline
  *
- * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
- * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
+ * @param _int_min     Minimum periodic advertising interval, N * 1.25 ms
+ * @param _int_max     Maximum periodic advertising interval, N * 1.25 ms
  * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
@@ -1473,6 +1473,8 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
  * Delete advertising set. This will free up the advertising set and make it
  * possible to create a new advertising set if the limit @kconfig{CONFIG_BT_EXT_ADV_MAX_ADV_SET}
  * was reached.
+ *
+ * @param adv Advertising set object.
  *
  * @return Zero on success or (negative) error code otherwise.
  */

@@ -812,7 +812,7 @@ static void spi_stm32_cs_control(const struct device *dev, bool on __maybe_unuse
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
 	const struct spi_stm32_config *cfg = dev->config;
 
-	if (cfg->use_subghzspi_nss) {
+	if (cfg->is_subghzspi) {
 		if (on) {
 			LL_PWR_SelectSUBGHZSPI_NSS();
 		} else {
@@ -2071,26 +2071,21 @@ static DEVICE_API(spi, api_funcs) = {
 	.release = spi_stm32_release,
 };
 
-static bool spi_stm32_is_subghzspi(const struct device *dev)
-{
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
-	const struct spi_stm32_config *cfg = dev->config;
-
-	return cfg->use_subghzspi_nss;
-#else
-	ARG_UNUSED(dev);
-	return false;
-#endif /* st_stm32_spi_subghz */
-}
-
 static int spi_stm32_pinctrl_apply(const struct device *dev, uint8_t id)
 {
 	const struct spi_stm32_config *config = dev->config;
 	int err;
 
-	if (spi_stm32_is_subghzspi(dev)) {
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz)
+	if (config->is_subghzspi) {
+		/*
+		 * Skip call to pinctrl_apply_state() for SUBGHZSPI.
+		 * The function would error out because that node
+		 * lacks pinctrl, but this is known and expected.
+		 */
 		return 0;
 	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz) */
 
 	/* Move pins to requested state */
 	err = pinctrl_apply_state(config->pcfg, id);
@@ -2282,9 +2277,8 @@ static int spi_stm32_init(const struct device *dev)
 			DT_INST_STRING_UPPER_TOKEN(id, st_spi_data_width)),	\
 		.ioswp = DT_INST_PROP(id, ioswp),				\
 		STM32_SPI_IRQ_HANDLER_FUNC(id)					\
-		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_subghz),	\
-			   (.use_subghzspi_nss =				\
-				DT_INST_PROP_OR(id, use_subghzspi_nss, false),))\
+		IF_ENABLED(DT_INST_NODE_HAS_COMPAT(id, st_stm32_spi_subghz),	\
+			   (.is_subghzspi = true,))				\
 		IF_ENABLED(DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi), (		\
 			.midi_clocks = DT_INST_PROP(id, midi_clock),		\
 			.mssi_clocks = DT_INST_PROP(id, mssi_clock),		\

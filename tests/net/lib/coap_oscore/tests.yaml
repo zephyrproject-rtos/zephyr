@@ -4,10 +4,30 @@ tests:
     min_flash: 192
     tags: net
     depends_on: netif
+    filter: dt_label_with_parent_compat_enabled("storage_partition", "fixed-partitions")
+            or dt_label_compat_enabled("storage_partition", "zephyr,mapped-partition")
     extra_configs:
       - CONFIG_COAP_OSCORE_MAX_CONTEXTS=2
       - CONFIG_COAP_OSCORE_EXCHANGE_CACHE_SIZE=4
       - CONFIG_COAP_OSCORE_EXCHANGE_LIFETIME_MS=60000
+      - CONFIG_COAP_OSCORE_MASTER_SECRET_MAX_LEN=32
+      - CONFIG_COAP_OSCORE_CONTEXT_REUSE=y
+      - CONFIG_FLASH=y
+      - CONFIG_FLASH_MAP=y
+      - CONFIG_NVS=y
+      - CONFIG_SETTINGS=y
+      - CONFIG_SETTINGS_NVS=y
+
+  net.coap.oscore_master_salt_zero_storage:
+    min_ram: 64
+    min_flash: 192
+    tags: net
+    depends_on: netif
+    extra_args:
+      - COAP_OSCORE_SALT_ONLY=ON
+    extra_configs:
+      - CONFIG_COAP_OSCORE_MASTER_SALT_MAX_LEN=0
+      - CONFIG_COAP_OSCORE_MAX_CONTEXTS=2
 
   net.coap.oscore_no_oscore:
     min_ram: 48

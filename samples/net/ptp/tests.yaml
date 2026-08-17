@@ -16,6 +16,7 @@ tests:
       - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m7
       - qemu_x86
+      - esp32p4x_function_ev_board/esp32p4/hpcore
     depends_on: eth
     integration_platforms:
       - nucleo_h563zi

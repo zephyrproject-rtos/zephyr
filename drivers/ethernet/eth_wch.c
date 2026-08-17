@@ -728,14 +728,14 @@ static const struct ethernet_api eth_api = {
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	ETH_WCH_IRQ_HANDLER_DECL(inst)                                                             \
 	static const struct eth_wch_config eth_wch_config_##inst = {                               \
-		.regs = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst)),                          \
+		.regs = (ETH_TypeDef *)DT_INST_REG_ADDR(inst),                                     \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, phy_handle)),                       \
-		.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), mac)),       \
-		.clk_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), mac, id),                   \
-		.clk_tx_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), tx)),     \
-		.clk_tx_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), tx, id),                 \
-		.clk_rx_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), rx)),     \
-		.clk_rx_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), rx, id),                 \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, mac)),                  \
+		.clk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, mac, id),                              \
+		.clk_tx_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, tx)),                \
+		.clk_tx_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, tx, id),                            \
+		.clk_rx_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, rx)),                \
+		.clk_rx_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, rx, id),                            \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 		.connection_type = DT_INST_PROP(inst, phy_connection_type),                        \
 		.internal_phy_pllmul_idx = DT_INST_ENUM_IDX(inst, internal_phy_pllmul),            \

@@ -5,29 +5,34 @@ config TESTED_SPI_MODE
 	int "SPI mode"
 	default 0
 	help
-		SPI mode value (clock polarity and phase) used in the test.
-		0: CPOL 0 (Active high), CPHA 0 (leading)
-		1: CPOL 0 (Active high), CPHA 1 (trailing)
-		2: CPOL 1 (Active low), CPHA 0 (leading)
-		3: CPOL 1 (Active low), CPHA 1 (trailing)
+	  SPI mode value (clock polarity and phase) used in the test.
+	  0: CPOL 0 (Active high), CPHA 0 (leading)
+	  1: CPOL 0 (Active high), CPHA 1 (trailing)
+	  2: CPOL 1 (Active low), CPHA 0 (leading)
+	  3: CPOL 1 (Active low), CPHA 1 (trailing)
+
+config TEST_INCORRECT_SCK_STATE
+	bool "Incorrect SCK state"
+	help
+	  Setting this option will set SCK to the opposite state than CPOL just before transceive.
 
 config PREALLOC_BUFFERS
 	bool "Preallocate buffers"
 	default y
 	help
-		Preallocate buffers used for transaction
-		using `memory-region` property.
+	  Preallocate buffers used for transaction
+	  using `memory-region` property.
 
 config SPI_CONTROLLER_PERIPHERAL_WORKQUEUE_STACK_SIZE
 	int "Test workqueue stack size"
 	default 1024
 	help
-	    Stack size for thread used to perform async API checks
+	  Stack size for thread used to perform async API checks
 
 config SPI_CONTROLLER_PERIPHERAL_WORKQUEUE_PRIORITY
 	int "Test workqueue priority"
 	default 10
 	help
-	    Priority for the work queue used for async testing
+	  Priority for the work queue used for async testing
 
 source "Kconfig.zephyr"

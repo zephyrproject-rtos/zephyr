@@ -1,5 +1,6 @@
 /** @file
  * @brief Wi-Fi Network manager API
+ * @ingroup wifi_nm
  *
  * This file contains the Wi-Fi network manager API. These APIs are used by the
  * any network management application to register as a Wi-Fi network manager.

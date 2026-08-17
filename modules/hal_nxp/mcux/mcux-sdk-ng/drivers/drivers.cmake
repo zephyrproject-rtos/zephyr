@@ -12,6 +12,7 @@ elseif(CONFIG_ARCH STREQUAL "arm")
   zephyr_library_sources(${MCUX_SDK_NG_DIR}/drivers/common/fsl_common_arm.c)
 endif()
 
+set_variable_ifdef(CONFIG_DSP_BACKEND_POWERQUAD    CONFIG_MCUX_COMPONENT_driver.powerquad)
 set_variable_ifdef(CONFIG_GPIO_MCUX_IGPIO       CONFIG_MCUX_COMPONENT_driver.igpio)
 set_variable_ifdef(CONFIG_ADC_MCUX_LPADC        CONFIG_MCUX_COMPONENT_driver.lpadc)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_CTIMER   CONFIG_MCUX_COMPONENT_driver.ctimer)
@@ -121,10 +122,10 @@ set_variable_ifdef(CONFIG_WDT_MCUX_COP          CONFIG_MCUX_COMPONENT_driver.cop
 set_variable_ifdef(CONFIG_HAS_MCUX_RDC          CONFIG_MCUX_COMPONENT_driver.rdc)
 set_variable_ifdef(CONFIG_UART_MCUX_IUART       CONFIG_MCUX_COMPONENT_driver.iuart)
 set_variable_ifdef(CONFIG_ADC_MCUX_12B1MSPS_SAR CONFIG_MCUX_COMPONENT_driver.adc_12b1msps_sar)
-set_variable_ifdef(CONFIG_HWINFO_MCUX_SRC       CONFIG_MCUX_COMPONENT_driver.src)
+set_variable_ifdef(CONFIG_HWINFO_NXP_SRC       CONFIG_MCUX_COMPONENT_driver.src)
 set_variable_ifdef(CONFIG_DT_HAS_NXP_WUU_ENABLED CONFIG_MCUX_COMPONENT_driver.wuu)
-set_variable_ifdef(CONFIG_HWINFO_MCUX_SIM       CONFIG_MCUX_COMPONENT_driver.sim)
-set_variable_ifdef(CONFIG_HWINFO_MCUX_RCM       CONFIG_MCUX_COMPONENT_driver.rcm)
+set_variable_ifdef(CONFIG_HWINFO_NXP_SIM       CONFIG_MCUX_COMPONENT_driver.sim)
+set_variable_ifdef(CONFIG_HWINFO_NXP_RCM       CONFIG_MCUX_COMPONENT_driver.rcm)
 set_variable_ifdef(CONFIG_IPM_MCUX              CONFIG_MCUX_COMPONENT_driver.mailbox)
 set_variable_ifdef(CONFIG_MBOX_NXP_MAILBOX      CONFIG_MCUX_COMPONENT_driver.mailbox)
 set_variable_ifdef(CONFIG_COUNTER_MCUX_SNVS     CONFIG_MCUX_COMPONENT_driver.snvs_hp)
@@ -181,6 +182,7 @@ set_variable_ifdef(CONFIG_CRC_DRIVER_NXP        CONFIG_MCUX_COMPONENT_driver.crc
 set_variable_ifdef(CONFIG_CRC_DRIVER_NXP_LPC    CONFIG_MCUX_COMPONENT_driver.lpc_crc)
 set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FC CONFIG_MCUX_COMPONENT_driver.cmu_fc)
 set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_CMU_FM CONFIG_MCUX_COMPONENT_driver.cmu_fm)
+set_variable_ifdef(CONFIG_CLOCK_MONITOR_NXP_FREQME CONFIG_MCUX_COMPONENT_driver.lpc_freqme)
 set_variable_ifdef(CONFIG_PHY_NXP_T1S           CONFIG_MCUX_COMPONENT_driver.tenbaset_phy)
 set_variable_ifdef(CONFIG_AUXDISPLAY_NXP_SLCD CONFIG_MCUX_COMPONENT_driver.slcd)
 
@@ -230,7 +232,7 @@ if(CONFIG_DT_HAS_NXP_SPC_ENABLED AND CONFIG_SOC_FAMILY_MCXW)
   set(CONFIG_MCUX_COMPONENT_driver.spc ON)
 endif()
 
-if(CONFIG_DT_HAS_NXP_CMC_ENABLED OR CONFIG_HWINFO_MCUX_MCX_CMC)
+if(CONFIG_DT_HAS_NXP_CMC_ENABLED OR CONFIG_HWINFO_NXP_CMC)
   if(CONFIG_SOC_FAMILY_MCXN OR CONFIG_SOC_FAMILY_MCXA OR CONFIG_SOC_FAMILY_MCXL)
     set(CONFIG_MCUX_COMPONENT_driver.mcx_cmc ON)
   else() # KW, MCXW
@@ -279,7 +281,7 @@ endif()
 
 if(CONFIG_SOC_MK82F25615 OR CONFIG_SOC_MK64F12 OR CONFIG_SOC_MK66F18 OR
     CONFIG_SOC_MKE14F16 OR CONFIG_SOC_MKE16F16 OR CONFIG_SOC_MKE18F16 OR
-    CONFIG_SOC_MK22F12)
+    CONFIG_SOC_MK22F12 OR CONFIG_SOC_SERIES_MCXE24X)
   set(CONFIG_MCUX_COMPONENT_driver.sysmpu ON)
 endif()
 
@@ -348,7 +350,7 @@ if(CONFIG_SOC_SERIES_IMXRT7XX)
   if(CONFIG_DT_HAS_NXP_PMC_TMPSNS_ENABLED)
     set(CONFIG_MCUX_COMPONENT_driver.romapi ON)
   endif()
-  set_variable_ifdef(CONFIG_HWINFO_MCUX_RSTCTL   CONFIG_MCUX_COMPONENT_driver.reset)
+  set_variable_ifdef(CONFIG_HWINFO_NXP_RSTCTL   CONFIG_MCUX_COMPONENT_driver.reset)
 endif()
 
 if(CONFIG_SOC_SERIES_RW6XX)

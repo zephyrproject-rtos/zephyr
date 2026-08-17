@@ -96,6 +96,15 @@ properties:
       bus in communication with the flash chip. The default value is the one
       that was previously hard-coded in the flash_mspi_nor driver.
 
+  erase-block-size:
+    type: int
+    default: 4096
+    description: |
+      Minimum address and size alignment, in bytes, required by flash erase
+      operations. This is normally 4096 bytes for NOR flash, but this property
+      is provided for devices that support a different erase. The value must
+      be a power of two and a multiple of the minimum supported erase size.
+
   use-4byte-addressing:
     type: boolean
     description: |

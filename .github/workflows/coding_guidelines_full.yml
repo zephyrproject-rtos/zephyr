@@ -134,7 +134,7 @@ jobs:
           eclair_licman -c 57350
 
       - name: Upload SARIF as artifact
-        if: always() && github.event_name == 'push'
+        if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: sarif
@@ -149,10 +149,3 @@ jobs:
           if [ -s results_${GITHUB_SHA}.sarif ]; then
             python3 scripts/ci/sarif_summary.py results_${GITHUB_SHA}.sarif
           fi
-
-      # disabled for now
-      # - name: Upload Analysis Results
-      #   if: always()
-      #   uses: github/codeql-action/upload-sarif@v4
-      #   with:
-      #     sarif_file: results.sarif

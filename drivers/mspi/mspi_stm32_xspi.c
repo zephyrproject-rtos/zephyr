@@ -101,9 +101,33 @@ static XSPI_RegularCmdTypeDef mspi_stm32_xspi_prepare_cmd(uint8_t cfg_mode, uint
 		cmd_tmp.DataMode = HAL_XSPI_DATA_4_LINES;
 		break;
 
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		cmd_tmp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_XSPI_ADDRESS_4_LINES;
+		cmd_tmp.DataMode = HAL_XSPI_DATA_4_LINES;
+		break;
+
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		cmd_tmp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
+		cmd_tmp.DataMode = HAL_XSPI_DATA_4_LINES;
+		break;
+
 	case MSPI_IO_MODE_DUAL:
 		cmd_tmp.InstructionMode = HAL_XSPI_INSTRUCTION_2_LINES;
 		cmd_tmp.AddressMode = HAL_XSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_XSPI_DATA_2_LINES;
+		break;
+
+	case MSPI_IO_MODE_DUAL_1_2_2:
+		cmd_tmp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_XSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_XSPI_DATA_2_LINES;
+		break;
+
+	case MSPI_IO_MODE_DUAL_1_1_2:
+		cmd_tmp.InstructionMode = HAL_XSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_XSPI_ADDRESS_1_LINE;
 		cmd_tmp.DataMode = HAL_XSPI_DATA_2_LINES;
 		break;
 
@@ -1476,8 +1500,7 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 				.ClockMode = HAL_XSPI_CLOCK_MODE_0,                               \
 				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),            \
 				.MemorySize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26) - 1,       \
-				.MemoryType = CONCAT(HAL_XSPI_MEMTYPE_,                           \
-						MSPI_STM32_INST_MEMTYPE_TOKEN(index)),            \
+				.MemoryType =  MSPI_STM32_HAL_MEMTYPE(index),                     \
 				.MemoryMode = HAL_XSPI_SINGLE_MEM,                                \
 				.FreeRunningClock = HAL_XSPI_FREERUNCLK_DISABLE,                  \
 			},                                                                        \

@@ -539,9 +539,9 @@ test_spi_max30009: max30009@41 {
 	int-gpios = <&test_gpio 0 0>;
 };
 
-test_spi_icm56686: icm56686@0 {
+test_spi_icm56686: icm56686@42 {
 	compatible = "invensense,icm56686";
-	reg = <0>;
+	reg = <0x42>;
 	spi-max-frequency = <1000000>;
 	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 

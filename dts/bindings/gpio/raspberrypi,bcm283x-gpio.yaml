@@ -9,7 +9,6 @@ include: [gpio-controller.yaml, base.yaml]
 
 properties:
   ngpios:
-    required: true
     const: 8
 
   "#gpio-cells":

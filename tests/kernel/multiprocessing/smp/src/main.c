@@ -186,7 +186,9 @@ static void child_fn(void *p1, void *p2, void *p3)
  * @ingroup kernel_smp_tests
  *
  * @details Verify whether thread running on other core is
- * parent thread from child thread
+ * parent thread from child thread. Relies on the SMP initialization having
+ * brought up the secondary CPUs so that a child thread can run on a different
+ * core than its parent.
  */
 ZTEST(smp, test_cpu_id_threads)
 {
@@ -682,6 +684,27 @@ ZTEST(smp, test_get_cpu)
 
 	k_thread_abort(thread_id);
 	k_thread_join(thread_id, K_FOREVER);
+}
+
+/**
+ * @brief Verify the number of active CPUs honors the configured maximum
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details The maximum number of CPUs is configurable via
+ * CONFIG_MP_MAX_NUM_CPUS. Verify that the number of CPUs the kernel brought up
+ * and reports through arch_num_cpus() is at least one and never exceeds the
+ * configured maximum.
+ *
+ * @see arch_num_cpus()
+ */
+ZTEST(smp, test_num_cpus)
+{
+	unsigned int num_cpus = arch_num_cpus();
+
+	zassert_between_inclusive(num_cpus, 1, CONFIG_MP_MAX_NUM_CPUS,
+				  "active CPUs (%u) outside the configured range [1, %d]",
+				  num_cpus, CONFIG_MP_MAX_NUM_CPUS);
 }
 
 #ifdef CONFIG_TRACE_SCHED_IPI

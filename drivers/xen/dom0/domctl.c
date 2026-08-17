@@ -67,7 +67,7 @@ int xen_domctl_getvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt)
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_getvcpucontext,
 		.domain = domid,
-		.u.vcpucontext.vcpu = 0,
+		.u.vcpucontext.vcpu = vcpu,
 	};
 
 	set_xen_guest_handle(domctl.u.vcpucontext.ctxt, ctxt);
@@ -80,7 +80,7 @@ int xen_domctl_setvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt)
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_setvcpucontext,
 		.domain = domid,
-		.u.vcpucontext.vcpu = 0,
+		.u.vcpucontext.vcpu = vcpu,
 	};
 
 	set_xen_guest_handle(domctl.u.vcpucontext.ctxt, ctxt);
@@ -324,9 +324,9 @@ int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 		return -EINVAL;
 	}
 
-	domctl.cmd = XEN_DOMCTL_createdomain,
-	domctl.domain = *domid,
-	domctl.u.createdomain = *config,
+	domctl.cmd = XEN_DOMCTL_createdomain;
+	domctl.domain = *domid;
+	domctl.u.createdomain = *config;
 
 	ret = do_domctl(&domctl);
 	*domid = domctl.domain;

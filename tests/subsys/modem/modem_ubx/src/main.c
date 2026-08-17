@@ -294,9 +294,9 @@ ZTEST(modem_ubx, test_rsp_filters_out_bytes_before_payload)
 	uint8_t buf[256];
 	size_t buf_len = 0;
 
-	memcpy(buf, atcmd, sizeof(atcmd));
+	memcpy(&buf[buf_len], atcmd, sizeof(atcmd));
 	buf_len += sizeof(atcmd);
-	memcpy(buf + buf_len, &test_rsp, UBX_FRAME_SZ(test_rsp.payload_size));
+	memcpy(&buf[buf_len], &test_rsp, UBX_FRAME_SZ(test_rsp.payload_size));
 	buf_len += UBX_FRAME_SZ(test_rsp.payload_size);
 
 	script_runner_start(&test_script_runner, 0);
@@ -326,7 +326,7 @@ ZTEST(modem_ubx, test_rsp_incomplete_packet_discarded)
 	uint8_t buf[256];
 	size_t buf_len = 0;
 
-	memcpy(buf, &test_rsp, UBX_FRAME_SZ(test_rsp.payload_size) - 5);
+	memcpy(&buf[buf_len], &test_rsp, UBX_FRAME_SZ(test_rsp.payload_size) - 5);
 	buf_len += UBX_FRAME_SZ(test_rsp.payload_size) - 5;
 
 	script_runner_start(&test_script_runner, 0);
@@ -436,7 +436,7 @@ ZTEST(modem_ubx, test_rsp_filters_out_non_matches)
 	/** We're passing a valid packet, but not what we're expecting. We
 	 * should not get an event out of this one.
 	 */
-	memcpy(buf, &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));
+	memcpy(&buf[buf_len], &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));
 	buf_len += UBX_FRAME_SZ(test_rsp_non_match.payload_size);
 
 	script_runner_start(&test_script_runner, 0);
@@ -452,7 +452,7 @@ ZTEST(modem_ubx, test_rsp_filters_out_non_matches)
 	/** Now we're passing two valid packets, on the same event: one which
 	 * does not match, one which matches. We should get the latter.
 	 */
-	memcpy(buf, &test_rsp_match, UBX_FRAME_SZ(test_rsp_match.payload_size));
+	memcpy(&buf[buf_len], &test_rsp_match, UBX_FRAME_SZ(test_rsp_match.payload_size));
 	buf_len += UBX_FRAME_SZ(test_rsp_match.payload_size);
 
 	modem_backend_mock_put(&mock, (uint8_t *)buf, buf_len);
@@ -484,7 +484,7 @@ ZTEST(modem_ubx, test_rsp_match_with_payload)
 	/** We're passing a valid packet, but not what we're expecting. We
 	 * should not get an event out of this one.
 	 */
-	memcpy(buf, &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));
+	memcpy(&buf[buf_len], &test_rsp_non_match, UBX_FRAME_SZ(test_rsp_non_match.payload_size));
 	buf_len += UBX_FRAME_SZ(test_rsp_non_match.payload_size);
 
 	script_runner_start(&test_script_runner, 0);
@@ -500,7 +500,7 @@ ZTEST(modem_ubx, test_rsp_match_with_payload)
 	/** Now we're passing two valid packets, on the same event: one which
 	 * does not match, one which matches. We should get the latter.
 	 */
-	memcpy(buf, &test_rsp_match, UBX_FRAME_SZ(test_rsp_match.payload_size));
+	memcpy(&buf[buf_len], &test_rsp_match, UBX_FRAME_SZ(test_rsp_match.payload_size));
 	buf_len += UBX_FRAME_SZ(test_rsp_match.payload_size);
 
 	modem_backend_mock_put(&mock, (uint8_t *)buf, buf_len);
@@ -522,6 +522,9 @@ ZTEST(modem_ubx, test_unsol_matches_trigger_cb)
 {
 	static struct ubx_frame ack_frame = UBX_FRAME_ACK_INITIALIZER(0x01, 0x02);
 	static struct ubx_frame nak_frame = UBX_FRAME_NAK_INITIALIZER(0x01, 0x02);
+
+	script_runner_start(&test_script_runner, 0);
+	test_thread_yield();
 
 	zassert_false(atomic_test_bit(&callback_called, MODEM_UBX_UTEST_ON_ACK_RECEIVED_BIT));
 	zassert_false(atomic_test_bit(&callback_called, MODEM_UBX_UTEST_ON_NAK_RECEIVED_BIT));

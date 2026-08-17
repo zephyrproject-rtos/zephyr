@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief Helper functions to use by the TCPCI-compliant drivers
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains generic TCPCI functions that may be used by the drivers to TCPCI-compliant
  * devices that want to implement vendor-specific functionality without the need to reimplement the

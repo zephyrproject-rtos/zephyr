@@ -366,15 +366,14 @@
 
 &sercom6 {
 	compatible = "microchip,sercom-g1-spi";
-
 	dipo = <3>;
 	dopo = <0>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
-
 	pinctrl-0 = <&sercom6_spi_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 12 0x10>, <&dmac 13 0x11>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 

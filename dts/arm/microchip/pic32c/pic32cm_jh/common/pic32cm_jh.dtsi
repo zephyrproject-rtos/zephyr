@@ -49,6 +49,14 @@
 			reg = <0x00806020 0x8>;
 		};
 
+		hwinfo: device_id@80a00c {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0080a00c 0x4>,
+			      <0x0080a040 0x4>,
+			      <0x0080a044 0x4>,
+			      <0x0080a048 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 		};
@@ -121,6 +129,20 @@
 			max-timeout-window = <0x4000>;	/* 16384 milliseconds */
 			max-timeout-window-mode = <0x8000>;	/* 32768 milliseconds */
 			min-window-limit = <0x8>;	/* 8 milliseconds */
+			status = "disabled";
+		};
+
+		rtc: rtc@40002400 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x40002400 0x48>;
+			interrupts = <2 0>;
+			interrupt-names = "rtc-irq";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1>;
+			alarms-count = <1>;
+			cal-constant = <1048576>;
 			status = "disabled";
 		};
 

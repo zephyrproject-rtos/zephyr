@@ -164,6 +164,27 @@
 &wifi {
 	status = "okay";
 	nordic,wifi-xo-freq-offset = <0x0>;
+
+	/* Transmit power ceilings for the nRF7120 DK RF front-end. */
+	wifi-max-tx-pwr-2g-dsss = <21>;
+	wifi-max-tx-pwr-2g-mcs0 = <16>;
+	wifi-max-tx-pwr-2g-mcs7 = <16>;
+	wifi-max-tx-pwr-5g-low-mcs0 = <13>;
+	wifi-max-tx-pwr-5g-low-mcs7 = <13>;
+	wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
+	wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
+	wifi-max-tx-pwr-5g-high-mcs0 = <12>;
+	wifi-max-tx-pwr-5g-high-mcs7 = <12>;
+
+	/*
+	 * Net antenna gain of the DK RF path, i.e. antenna gain less path loss.
+	 * The DK is characterised at 0 dB; a custom board must measure and
+	 * override these. Edge ceilings default to 31 dBm, no restriction.
+	 */
+	nordic,wifi-ant-gain-2g = <0>;
+	nordic,wifi-ant-gain-5g-band1 = <0>;
+	nordic,wifi-ant-gain-5g-band2 = <0>;
+	nordic,wifi-ant-gain-5g-band3 = <0>;
 };
 
 &audio_auxpll {

@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RTS5817
+	bool "RTS5817 SPI Controller Driver"
+	depends on DT_HAS_REALTEK_RTS5817_SPI_ENABLED
+	select PINCTRL
+	select SPI_DW
+	default y
+	help
+	  This option enables the SPI controller wrapper driver for RTS5817.
+	  The wrapper sits on top of the DesignWare SSI core (spi_dw) and
+	  drives DMA-based transfers via the master control register block.
+
+if SPI_RTS5817
+
+config SPI_RTS5817_INTERRUPT
+	bool "RTS5817 SPI interrupt mode"
+	default y
+	help
+	  Enables interrupt support for RTS5817 SPI controller wrapper driver.
+
+config HEAP_MEM_POOL_ADD_SIZE_SPI_RTS5817
+	int "The heap that RTS5817 SPI controller drivers need"
+	default 4096
+	help
+	  The RTS5817 SPI controller driver uses dynamic memory allocation with
+	  k_aligned_alloc(), so the value should >= maximum spi buffer size
+	  according to your application.
+
+config SPI_RTS5817_INIT_PRIORITY
+	int "RTS5817 SPI wrapper init priority"
+	default 51
+	help
+	  Initialization priority for the RTS5817 SPI wrapper. Must be greater
+	  than CONFIG_SPI_INIT_PRIORITY so the underlying snps,designware-spi
+	  device is ready (clocks enabled, MMIO mapped) before the wrapper
+	  accesses the DW register block.
+
+endif

@@ -12,11 +12,18 @@
 
 	counter0_1 {
 		status = "okay";
-		clocks = <&peri0_group1_16bit_0>;
+		/*
+		 * Use the highest group1 16-bit divider channel. The console
+		 * UART's legacy CAT1 HAL dynamically allocates the lowest free
+		 * group1 16-bit divider (peri0_group1_16bit_0) for its baud
+		 * clock, which would otherwise clobber the counter's divider
+		 * and run it at ~923 kHz instead of the configured 10 kHz.
+		 */
+		clocks = <&peri0_group1_16bit_3>;
 	};
 };
 
-&peri0_group1_16bit_0 {
+&peri0_group1_16bit_3 {
 	status = "okay";
 	clock-div = <9599>;
 };

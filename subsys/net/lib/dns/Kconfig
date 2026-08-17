@@ -21,15 +21,12 @@ config DNS_RESOLVER_AUTO_INIT
 
 config MDNS_RESOLVER
 	bool "MDNS support"
-	select NET_MGMT
-	select NET_MGMT_EVENT
 	help
 	  This option enables multicast DNS client side support.
 	  See RFC 6762 for details.
 
 	  When the mDNS responder is not enabled, the resolver joins the mDNS
-	  multicast groups itself and needs the network management events to
-	  rejoin them if an interface goes down and comes back up.
+	  multicast groups itself.
 
 config LLMNR_RESOLVER
 	bool "LLMNR support [DEPRECATED]"
@@ -237,8 +234,6 @@ config MDNS_RESPONDER
 	bool "mDNS responder"
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
-	select NET_MGMT
-	select NET_MGMT_EVENT
 	select NET_SOCKETS
 	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE
@@ -327,6 +322,8 @@ config MDNS_RESPONDER_PROBE
 	select NET_CONNECTION_MANAGER
 	select MDNS_RESOLVER
 	select DNS_RESOLVER
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	select EXPERIMENTAL
 	help
 	  Note that for probing to work, the mDNS and DNS resolver need to
@@ -373,6 +370,24 @@ config MDNS_RESPONDER_DNS_SD_SERVICE_TYPE_ENUMERATION
 	  Chapter 9. By doing so, Zephyr network services are discoverable
 	  using e.g. 'avahi-browse -t -r _services._dns-sd._udp.local'.
 
+config MDNS_RESPONDER_ANNOUNCE_DNS_SD
+	bool "Include DNS-SD service records in mDNS announcements"
+	depends on MDNS_RESPONDER_PROBE
+	help
+	  RFC 6762 Section 8.3 requires the startup announcement to contain
+	  all of a responder's newly registered resource records, not just
+	  address records -- this covers the shared PTR record and unique
+	  SRV/TXT records for every DNS-SD service registered via
+	  DNS_SD_REGISTER_SERVICE() (and any records set through
+	  mdns_responder_set_ext_records()).
+
+	  Enable this for full RFC 6762 compliance. Leave disabled to keep
+	  announcements limited to address records only (smaller, less
+	  frequent traffic on startup) -- clients that actively query for
+	  services (e.g. avahi-browse) are unaffected either way, since
+	  normal query/response handling already answers DNS-SD queries
+	  regardless of this option.
+
 endif # MDNS_RESPONDER_DNS_SD
 
 module = MDNS_RESPONDER
@@ -394,8 +409,6 @@ config LLMNR_RESPONDER
 	select DEPRECATED
 	select NET_IPV4_IGMP if NET_IPV4
 	select NET_IPV6_MLD if NET_IPV6
-	select NET_MGMT
-	select NET_MGMT_EVENT
 	select NET_SOCKETS
 	select NET_SOCKETS_SERVICE
 	depends on NET_HOSTNAME_ENABLE

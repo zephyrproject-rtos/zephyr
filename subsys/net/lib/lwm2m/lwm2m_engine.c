@@ -138,12 +138,13 @@ int lwm2m_open_socket(struct lwm2m_ctx *client_ctx)
 		/* open socket */
 
 		if (IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) && client_ctx->use_dtls) {
-			client_ctx->sock_fd = zsock_socket(client_ctx->remote_addr.sa_family,
-							   NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
+			client_ctx->sock_fd = zsock_socket(
+				client_ctx->remote_addr_storage.ss_family,
+				NET_SOCK_DGRAM, NET_IPPROTO_DTLS_1_2);
 		} else {
 			client_ctx->sock_fd =
-				zsock_socket(client_ctx->remote_addr.sa_family, NET_SOCK_DGRAM,
-					     NET_IPPROTO_UDP);
+				zsock_socket(client_ctx->remote_addr_storage.ss_family,
+					     NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 		}
 
 		if (client_ctx->sock_fd < 0) {
@@ -702,11 +703,12 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	static uint8_t in_buf[NET_IPV6_MTU];
 	net_socklen_t from_addr_len;
 	ssize_t len;
-	static struct net_sockaddr from_addr;
+	static struct net_sockaddr_storage from_addr;
+	struct net_sockaddr *from_sa = net_sad(&from_addr);
 
 	from_addr_len = sizeof(from_addr);
 	len = zsock_recvfrom(client_ctx->sock_fd, in_buf, sizeof(in_buf) - 1, ZSOCK_MSG_DONTWAIT,
-			     &from_addr, &from_addr_len);
+			     from_sa, &from_addr_len);
 
 	if (len < 0) {
 		if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -726,7 +728,7 @@ static int socket_recv_message(struct lwm2m_ctx *client_ctx)
 	}
 
 	in_buf[len] = 0U;
-	lwm2m_udp_receive(client_ctx, in_buf, len, &from_addr);
+	lwm2m_udp_receive(client_ctx, in_buf, len, from_sa);
 
 	return 0;
 }
@@ -1215,16 +1217,17 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 		goto error;
 	}
 
-	if ((client_ctx->remote_addr).sa_family == NET_AF_INET) {
+	if ((client_ctx->remote_addr_storage).ss_family == NET_AF_INET) {
 		addr_len = sizeof(struct net_sockaddr_in);
-	} else if ((client_ctx->remote_addr).sa_family == NET_AF_INET6) {
+	} else if ((client_ctx->remote_addr_storage).ss_family == NET_AF_INET6) {
 		addr_len = sizeof(struct net_sockaddr_in6);
 	} else {
 		ret = -EPROTONOSUPPORT;
 		goto error;
 	}
 
-	if (zsock_connect(client_ctx->sock_fd, &client_ctx->remote_addr, addr_len) < 0) {
+	if (zsock_connect(client_ctx->sock_fd,
+			  net_sad(&client_ctx->remote_addr_storage), addr_len) < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto error;

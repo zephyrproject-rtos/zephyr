@@ -6,6 +6,7 @@
 /**
  * @file
  * @brief USB-C Power Delivery API used for USB-C drivers
+ * @ingroup usb_power_delivery
  *
  * The information in this file was taken from the USB PD
  * Specification Revision 3.0, Version 2.0
@@ -318,6 +319,7 @@ extern "C" {
  *	  See Table 6-1 Message Header
  */
 union pd_header {
+	/** PD Header fields */
 	struct {
 		/** Type of message */
 		uint16_t message_type : 5;
@@ -334,6 +336,7 @@ union pd_header {
 		/** Extended Message */
 		uint16_t extended : 1;
 	};
+	/** Raw PD Header value */
 	uint16_t raw_value;
 };
 
@@ -349,6 +352,7 @@ union pd_header {
  *	  See Table 6-3 Extended Message Header
  */
 union pd_ext_header {
+	/** Extended Message Header fields */
 	struct {
 		/** Number of total bytes in data block */
 		uint16_t data_size : 9;
@@ -425,6 +429,7 @@ enum pdo_type {
  *	  See Table 6-9 Fixed Supply PDO - Source
  */
 union pd_fixed_supply_pdo_source {
+	/** Fixed Supply PDO Source fields */
 	struct {
 		/** Maximum Current in 10mA units */
 		uint32_t max_current : 10;
@@ -472,6 +477,7 @@ enum pd_frs_type {
  *	  See Table 6-14 Fixed Supply PDO - Sink
  */
 union pd_fixed_supply_pdo_sink {
+	/** Fixed Supply PDO Sink fields */
 	struct {
 		/** Operational Current in 10mA units */
 		uint32_t operational_current : 10;
@@ -531,6 +537,7 @@ union pd_fixed_supply_pdo_sink {
  *	  See Table 6-11 Variable Supply (non-Battery) PDO - Source
  */
 union pd_variable_supply_pdo_source {
+	/** Variable Supply PDO Source fields */
 	struct {
 		/** Maximum Current in 10mA units */
 		uint32_t max_current : 10;
@@ -550,6 +557,7 @@ union pd_variable_supply_pdo_source {
  *	  See Table 6-15 Variable Supply (non-Battery) PDO - Sink
  */
 union pd_variable_supply_pdo_sink {
+	/** Variable Supply PDO Sink fields */
 	struct {
 		/** operational Current in 10mA units */
 		uint32_t operational_current : 10;
@@ -597,6 +605,7 @@ union pd_variable_supply_pdo_sink {
  *	  See Table 6-12 Battery Supply PDO - Source
  */
 union pd_battery_supply_pdo_source {
+	/** Battery Supply PDO Source fields */
 	struct {
 		/** Maximum Allowable Power in 250mW units */
 		uint32_t max_power : 10;
@@ -616,6 +625,7 @@ union pd_battery_supply_pdo_source {
  *	  See Table 6-16 Battery Supply PDO - Sink
  */
 union pd_battery_supply_pdo_sink {
+	/** Battery Supply PDO Sink fields */
 	struct {
 		/** Operational Power in 250mW units */
 		uint32_t operational_power : 10;
@@ -663,6 +673,7 @@ union pd_battery_supply_pdo_sink {
  *	  See Table 6-13 Programmable Power Supply APDO - Source
  */
 union pd_augmented_supply_pdo_source {
+	/** Augmented Supply PDO Source fields */
 	struct {
 		/** Maximum Current in 50mA increments */
 		uint32_t max_current : 7;
@@ -696,6 +707,7 @@ union pd_augmented_supply_pdo_source {
  *	  See Table 6-17 Programmable Power Supply APDO - Sink
  */
 union pd_augmented_supply_pdo_sink {
+	/** Augmented Supply PDO Sink fields */
 	struct {
 		/** Maximum Current in 50mA increments */
 		uint32_t max_current : 7;

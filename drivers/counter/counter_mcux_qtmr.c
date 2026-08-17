@@ -19,6 +19,7 @@
 #include <zephyr/irq.h>
 #include <fsl_qtmr.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/barrier.h>
 
 LOG_MODULE_REGISTER(mcux_qtmr, CONFIG_COUNTER_LOG_LEVEL);
@@ -34,6 +35,7 @@ struct mcux_qtmr_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	TMR_Type *base;
+	unsigned int irqn;
 	clock_name_t clock_source;
 	qtmr_channel_selection_t channel;
 	qtmr_config_t qtmr_config;
@@ -54,6 +56,8 @@ struct mcux_qtmr_data {
 #endif /* CONFIG_COUNTER_CAPTURE */
 	qtmr_status_flags_t interrupt_mask;
 	uint32_t freq;
+	uint32_t guard_period;
+	atomic_t irq_pending;
 };
 
 #ifdef CONFIG_COUNTER_CAPTURE
@@ -138,8 +142,17 @@ static void mcux_qtmr_isr(const struct device *timers[])
 			struct mcux_qtmr_data *data = timers[ch]->data;
 
 			uint32_t channel_status = QTMR_GetStatus(config->base, ch);
+			bool sw_pending = (atomic_clear(&data->irq_pending) != 0);
 
-			if ((channel_status & data->interrupt_mask) != 0) {
+			/* A late alarm forced through NVIC_SetPendingIRQ has no
+			 * hardware compare flag set. Synthesize the compare event
+			 * so the handler runs the alarm callback immediately.
+			 */
+			if (sw_pending) {
+				channel_status |= kQTMR_Compare1Flag;
+			}
+
+			if (((channel_status & data->interrupt_mask) != 0) || sw_pending) {
 				mcux_qtmr_timer_handler(timers[ch], channel_status);
 			}
 		}
@@ -212,8 +225,13 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 {
 	const struct mcux_qtmr_config *config = dev->config;
 	struct mcux_qtmr_data *data = dev->data;
-	uint32_t current;
-	uint32_t ticks;
+	uint32_t top_val = config->info.max_top_value;
+	uint32_t flags = alarm_cfg->flags;
+	uint32_t now;
+	uint32_t target;
+	uint32_t guard;
+	bool irq_on_late;
+	int err = 0;
 
 	if (chan_id != 0) {
 		LOG_ERR("Invalid channel id");
@@ -230,18 +248,30 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	}
 #endif /* CONFIG_COUNTER_CAPTURE */
 
+	now = QTMR_GetCurrentTimerCount(config->base, config->channel);
+	target = alarm_cfg->ticks;
+
+	if (flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+		__ASSERT_NO_MSG(data->guard_period < top_val);
+		guard = data->guard_period;
+		irq_on_late = !!(flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE);
+	} else {
+		/*
+		 * If the relative value is smaller than half the counter range
+		 * there is a risk of programming the compare register too late.
+		 * In that case late detection is applied and, when late, the
+		 * alarm is expired immediately instead of after a full wrap.
+		 */
+		irq_on_late = target < (top_val / 2U);
+		guard = irq_on_late ? (top_val - top_val / 2U) : 0U;
+		target += now;
+	}
+
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 
-	current = QTMR_GetCurrentTimerCount(config->base, config->channel);
-	ticks = alarm_cfg->ticks;
-
-	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
-		ticks += current;
-	}
-
-	/* this timer always counts up. */
-	config->base->CHANNEL[config->channel].COMP1 = ticks;
+	/* this timer always counts up (16-bit compare register). */
+	config->base->CHANNEL[config->channel].COMP1 = (uint16_t)target;
 
 	/* Clear any stale compare flag to prevent alarm firing immediately */
 	QTMR_ClearStatusFlags(config->base, config->channel, kQTMR_Compare1Flag);
@@ -250,7 +280,36 @@ static int mcux_qtmr_set_alarm(const struct device *dev, uint8_t chan_id,
 	QTMR_EnableInterrupts(config->base, config->channel,
 			      kQTMR_Compare1InterruptEnable);
 
-	return 0;
+	/*
+	 * Late detection (counter counts up, wraps at 16 bits): re-read the
+	 * counter after programming the compare register. If it has already
+	 * advanced past the target by fewer than guard ticks, the alarm is
+	 * late and would otherwise only expire after a full 16-bit wrap.
+	 */
+	if (guard != 0U &&
+	    (uint16_t)((uint16_t)QTMR_GetCurrentTimerCount(config->base, config->channel) -
+		       (uint16_t)target) < guard) {
+		if (flags & COUNTER_ALARM_CFG_ABSOLUTE) {
+			err = -ETIME;
+		}
+
+		if (irq_on_late) {
+			/*
+			 * The shared QTMR ISR is driven by hardware status
+			 * flags, so mark this channel software-pending before
+			 * forcing the interrupt.
+			 */
+			atomic_set(&data->irq_pending, 1);
+			NVIC_SetPendingIRQ(config->irqn);
+		} else {
+			QTMR_DisableInterrupts(config->base, config->channel,
+					       kQTMR_Compare1InterruptEnable);
+			data->interrupt_mask &= ~kQTMR_Compare1InterruptEnable;
+			data->alarm_callback = NULL;
+		}
+	}
+
+	return err;
 }
 
 static int mcux_qtmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
@@ -276,6 +335,32 @@ static uint32_t mcux_qtmr_get_pending_int(const struct device *dev)
 	const struct mcux_qtmr_config *config = dev->config;
 
 	return QTMR_GetStatus(config->base, config->channel);
+}
+
+static uint32_t mcux_qtmr_get_guard_period(const struct device *dev, uint32_t flags)
+{
+	struct mcux_qtmr_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	return data->guard_period;
+}
+
+static int mcux_qtmr_set_guard_period(const struct device *dev, uint32_t ticks,
+				      uint32_t flags)
+{
+	const struct mcux_qtmr_config *config = dev->config;
+	struct mcux_qtmr_data *data = dev->data;
+
+	ARG_UNUSED(flags);
+
+	if (ticks >= config->info.max_top_value) {
+		return -EINVAL;
+	}
+
+	data->guard_period = ticks;
+
+	return 0;
 }
 
 static int mcux_qtmr_set_top_value(const struct device *dev,
@@ -505,6 +590,8 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 	.get_pending_int = mcux_qtmr_get_pending_int,
 	.get_top_value = mcux_qtmr_get_top_value,
 	.get_freq = mcux_qtmr_get_freq,
+	.get_guard_period = mcux_qtmr_get_guard_period,
+	.set_guard_period = mcux_qtmr_set_guard_period,
 #ifdef CONFIG_COUNTER_CAPTURE
 	.capture_configure = mcux_qtmr_capture_configure,
 	.enable_capture = mcux_qtmr_enable_capture,
@@ -522,6 +609,7 @@ static DEVICE_API(counter, mcux_qtmr_driver_api) = {
 												\
 	static const struct mcux_qtmr_config mcux_qtmr_config_ ## n = {				\
 		.base = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),					\
+		.irqn = DT_IRQN(DT_INST_PARENT(n)),						\
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),			\
 		.clock_subsys = MCUX_QTMR_CLK_SUBSYS(n),				\
 		.info = {									\

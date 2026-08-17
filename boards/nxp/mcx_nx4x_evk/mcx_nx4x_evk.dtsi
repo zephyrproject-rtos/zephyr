@@ -315,6 +315,10 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 	status = "okay";
 };
 
+&powerquad {
+	status = "okay";
+};
+
 &tsi0 {
 	pinctrl-0 = <&pinmux_tsi>;
 	pinctrl-names = "default";

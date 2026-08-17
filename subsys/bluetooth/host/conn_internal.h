@@ -184,6 +184,9 @@ struct bt_conn_iso {
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
+	/* Expected SDU size of current parsing data `conn->rx` */
+	uint16_t sdu_len;
+
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 
@@ -236,8 +239,7 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
-	bt_conn_state_t		state;
-	uint16_t rx_len;
+	bt_conn_state_t state;
 	struct net_buf		*rx;
 
 	/* Pending TX that are awaiting the NCP event. len(tx_pending) == in_ll */
@@ -437,14 +439,6 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
 
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer);
-
-/** Connection parameters for ISO connections */
-struct bt_iso_create_param {
-	uint8_t			id;
-	uint8_t			num_conns;
-	struct bt_conn		**conns;
-	struct bt_iso_chan	**chans;
-};
 
 int bt_conn_iso_init(void);
 

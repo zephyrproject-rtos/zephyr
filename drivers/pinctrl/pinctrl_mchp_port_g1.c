@@ -118,6 +118,9 @@ static void pinctrl_set_flags(const pinctrl_soc_pin_t *pin)
 				 * set the corresponding bit in PORT_OUT reg
 				 */
 				pRegister->PORT_OUT |= (1 << pin_num);
+			} else {
+				/* Pull-down: drive the OUT latch low */
+				pRegister->PORT_OUT &= ~(1 << pin_num);
 			}
 			pRegister->PORT_PINCFG[pin_num] |= PORT_PINCFG_PULLEN(1);
 		} else {
