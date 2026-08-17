@@ -401,6 +401,40 @@ ZTEST(smbus_api, test_host_notify_cb_register)
 	zassert_equal(ret, 0, "smbus_configure(restore) failed: %d", ret);
 }
 
+/* SMBALERT# test */
+static void smbalert_cb_handler(const struct device *dev, struct smbus_callback *cb, uint8_t addr)
+{
+	ARG_UNUSED(cb);
+
+	LOG_INF("%s: SMBALERT# fired, addr=0x%02x", dev->name, addr);
+}
+
+ZTEST(smbus_api, test_smbalert_cb_register)
+{
+	struct smbus_callback cb = {
+		.handler = smbalert_cb_handler,
+		.addr = SMBUS_TEST_TARGET_ADDR,
+	};
+	int ret;
+	uint32_t config = 0;
+
+	ret = smbus_configure(host, SMBUS_MODE_CONTROLLER | SMBUS_MODE_SMBALERT);
+	zassert_equal(ret, 0, "smbus_configure(SMBALERT) failed: %d", ret);
+
+	ret = smbus_get_config(host, &config);
+	zassert_equal(ret, 0, "smbus_get_config failed: %d", ret);
+	zassert_true(config & SMBUS_MODE_SMBALERT, "SMBALERT bit not reflected in config");
+
+	ret = smbus_smbalert_set_cb(host, &cb);
+	zassert_equal(ret, 0, "smbus_smbalert_set_cb failed: %d", ret);
+
+	ret = smbus_smbalert_remove_cb(host, &cb);
+	zassert_equal(ret, 0, "smbus_smbalert_remove_cb failed: %d", ret);
+
+	ret = smbus_configure(host, SMBUS_MODE_CONTROLLER);
+	zassert_equal(ret, 0, "smbus_configure(restore) failed: %d", ret);
+}
+
 /* Generic API-contract / error paths */
 ZTEST(smbus_api, test_get_config_null)
 {
