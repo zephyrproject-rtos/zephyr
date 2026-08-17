@@ -710,6 +710,13 @@ struct hl78xx_data {
 	struct hl78xx_devices devices;
 
 	struct kselacq_syntax kselacq_data;
+	/**
+	 * When set, hl78xx_rat_cfg() must not re-apply the configured Auto-RAT
+	 * PRL over a deliberately cleared one. The application sets this while
+	 * the modem is being moved to NB-NTN, where the PRL is cleared on
+	 * purpose and must survive the restart that latches the RAT change.
+	 */
+	bool autorat_inhibit;
 	struct hl78xx_runtime_band runtime_band;
 	struct hl78xx_at_cmd_capture_ctx at_cmd_capture;
 
