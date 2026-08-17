@@ -47,9 +47,34 @@
 	};
 
 	soc {
+		ecc_rom: rom@20000 {
+			reg = <0x20000 0x18000>;
+		};
+
 		sram: memory@100000 {
 			compatible = "mmio-sram";
 			reg = <0x00100000 DT_SIZE_K(128)>;
+		};
+
+		nfc_sram: sram@600000 {
+			compatible = "mmio-sram";
+			reg = <0x00600000 0x2400>;
+		};
+
+		nfc_io: nfc-io@10000000 {
+			reg = <0x10000000 0x8000000>;
+		};
+
+		ebi: ebi@40000000 {
+			compatible = "microchip,ebi-g1-memc";
+			#address-cells = <2>;
+			#size-cells = <1>;
+			smc = <&hsmc>;
+			reg = <0x40000000 0x18000000>;
+			ranges = <0x0 0x0 0x40000000 0x8000000
+				  0x1 0x0 0x48000000 0x10000000>;
+			clocks = <&pmc PMC_TYPE_CORE PMC_MCK5>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@e0014000 {
@@ -139,6 +164,35 @@
 		syscwp: syscwp@e001d900 {
 			compatible = "syscon";
 			reg = <0xe001d900 0x8>;
+		};
+
+		hsmc: hsmc@e0808000 {
+			compatible = "microchip,smc-g1-memc";
+			reg = <0xe0808000 0x1000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 20>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			nfc: nand-controller@e0808000 {
+				compatible = "microchip,nfc-g1-flash";
+				reg = <0xe0808000 0x1000>;
+				nfc-sram = <&nfc_sram>;
+				nfc-io = <&nfc_io>;
+				ecc-engine = <&pmecc>;
+				status = "disabled";
+			};
+
+			pmecc: ecc-engine@e0808070 {
+				compatible = "microchip,pmecc-g1-flash";
+				reg = <0xe0808070 0x490>,
+				      <0xe0808500 0x200>;
+				ecc-rom = <&ecc_rom>;
+				max-strength = <32>;
+				status = "disabled";
+			};
 		};
 
 		mcan0: mcan@e0828000 {

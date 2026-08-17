@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Microchip Technology Inc.
+# Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 config FLASH_MCHP_NVMCTRL_G1
@@ -37,3 +37,34 @@ config FLASH_MCHP_NVMCTRL_G3
 	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	help
 	  Enable Microchip's G3 Non-Volatile Memory Controller for Flash operations.
+
+config FLASH_MCHP_NAND_G1
+	bool "Microchip NAND Flash driver G1"
+	default y
+	depends on DT_HAS_MICROCHIP_NAND_G1_FLASH_ENABLED
+	select GPIO
+	help
+	  Enable driver for Microchip NAND Flash G1.
+
+config FLASH_MCHP_NFC_G1
+	bool "Microchip NAND Flash Controller (NFC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_NFC_G1_FLASH_ENABLED
+	help
+	  Enable driver for Microchip NAND Flash Controller G1.
+
+config FLASH_MCHP_NFC_G1_DMA
+	bool "NFC G1 driver DMA support"
+	default y
+	depends on FLASH_MCHP_NFC_G1
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_NFC_G1_FLASH),dmas)
+	select DMA
+	help
+	  NFC G1 driver DMA support.
+
+config FLASH_MCHP_PMECC_G1
+	bool "Microchip Programmable Multibit Error Correcting Code (PMECC) G1"
+	default y
+	depends on DT_HAS_MICROCHIP_PMECC_G1_FLASH_ENABLED
+	help
+	  Enable driver for Microchip Programmable Multibit Error Correcting Code G1.

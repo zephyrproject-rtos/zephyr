@@ -1,0 +1,228 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip External Bus Interface (EBI) G1.
+
+  SAM EBI includes the following hardware peripheral:
+    - module name="EBI" id="0" version="0"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      pinctrl_nand_default: nand-default {
+        group1 {
+          pinmux = <PIN_PD9__D0>,
+                   <PIN_PD10__D1>,
+                   <PIN_PD11__D2>,
+                   <PIN_PC21__D3>,
+                   <PIN_PC22__D4>,
+                   <PIN_PC23__D5>,
+                   <PIN_PC24__D6>,
+                   <PIN_PD2__D7>,
+                   <PIN_PD3__NANDRDY>,
+                   <PIN_PD4__GPIO>,
+                   <PIN_PD5__NWE_NWR0_NANDWE>,
+                   <PIN_PD6__NRD_NANDOE>,
+                   <PIN_PD7__A21_NANDALE>,
+                   <PIN_PD8__A22_NANDCLE>;
+          bias-disable;
+        };
+      };
+
+      &ebi {
+        pinctrl-names = "default";
+        pinctrl-0 = <&pinctrl_nand_default>;
+        status = "okay";
+
+        cs3: cs@58000000 {
+          reg = <0x3 0x0 0x800000>;
+          status = "okay";
+
+          smc-tdf-mode;
+          smc-write-mode = "nwe";
+          smc-read-mode = "nrd";
+          smc-bus-width = "8-bit";
+          smc-setup-timing = <4 0 0 0>;
+          smc-pulse-timing = <10 20 10 20>;
+          smc-cycle-timing = <20 20>;
+        };
+      };
+
+    The above example configure a NAND Flash with default timing mode.
+    TDF mode is enabled (and the maximum clock cycle 15 will be set by default).
+    The NWE and NRD signals are used to contril write and read operations.
+    For SAMA7G54, the clock source of EBI is MCK1 with frenqucy 200MHz,
+    so one clock cycle is 1 s / 200MHz = 5 ns
+    Setup timing:
+      NWE setup time is 4 * 5 ns = 20 ns
+      NCS and NRD setup time is 0 ns
+    Pulse timing:
+      NWE pulse time is 10 * 5 ns = 50 ns
+      NCS pulse time in write access is 20 * 5 ns = 100 ns
+      NRD pulse time is 10 * 5 ns = 50 ns
+      NCS pulse time in read access is 20 * 5 ns = 100 ns
+    Cycle timing:
+      Total write cycle time is 20 * 5 ns = 100 ns
+      Total read cycle time is 20 * 5 ns = 100 ns
+
+compatible: "microchip,ebi-g1-memc"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  smc:
+    type: phandle
+    required: true
+    description: |
+      Hold a phandle reference to the smc controller.
+
+  "#address-cells":
+    required: true
+    const: 2
+
+  "#size-cells":
+    required: true
+    const: 1
+
+child-binding:
+  description: |
+    Child device nodes are representing devices connected to the EBI/SMC bus.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: |
+        The device's EBI Chip Select number and address.
+
+    smc-write-mode:
+      type: string
+      required: true
+      description: |
+        Selection of the Control Signal for Write Operation.
+        ncs - The Write operation is controller by the NCS signal
+        nwe - The Write operation is controlled by the NWE signal
+      enum:
+        - "ncs"
+        - "nwe"
+
+    smc-read-mode:
+      type: string
+      required: true
+      description: |
+        Selection of the Control Signal for Read Operation.
+        ncs - The Read operation is controlled by the NCS signal
+        nrd - The Read operation is controlled by the NRD signal
+      enum:
+        - "ncs"
+        - "nrd"
+
+    smc-bus-width:
+      type: string
+      required: true
+      description: |
+        Data bus width.
+      enum:
+        - "8-bit"
+        - "16-bit"
+
+    smc-tdf-mode:
+      type: boolean
+      description: |
+        TDF Optimization Enable.
+
+    smc-tdf-cycles:
+      type: int
+      default: 15
+      description: |
+        The number of clock cycles required by the external device to release
+        the data after the rising edge of the read controlling signal.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    smc-setup-timing:
+      type: array
+      required: true
+      description: |
+        Array[0] is NWE_SETUP[5:0], defines the NWE signal setup length.
+        Array[1] is NCS_WR_SETUP[5:0], defines the NCS signal setup length in write access.
+        Array[2] is NRD_SETUP[5:0], defines the NRD signal setup length.
+        Array[3] is NCS_RD_SETUP[5:0], defines the NCS signal setup length in read access.
+        Setup length = (128 * SETUP[5] + SETUP[4:0]) clock cycles
+
+    smc-pulse-timing:
+      type: array
+      required: true
+      description: |
+        Array[0] is NWE_PULSE[6:0], defines the NWE signal pulse length.
+        Array[1] is NCS_WR_PULSE[6:0], defines the NCS signal pulse length in write access.
+        Array[2] is NRD_PULSE[6:0], defines the NRD signal pulse length.
+        Array[3] is NCS_RD_PULSE[6:0], defines the NCS signal pulse length in read access.
+        Pulse length = (256 * PULSE[6] + PULSE[5:0]) clock cycles.
+
+    smc-cycle-timing:
+      type: array
+      required: true
+      description: |
+        Array[0] is NWE_CYCLE[8:0], defines the total write cycle length.
+        Array[1] is NRD_CYCLE[8:0], defines the total read cycle length.
+        Cycle length = (CYCLE[8:7] * 256) + CYCLE[6:0] clock cycles.
+
+    nfc-timings-nfsel:
+      type: boolean
+      description: |
+        NAND Flash Selection.
+
+    nfc-timings-twb:
+      type: int
+      description: |
+        WEN High to REN to Busy
+        Write Enable rising edge to Ready/Busy falling edge timing.
+        Write Enable to Read/Busy = (TWB[3] * 64) + TWB[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-trr:
+      type: int
+      description: |
+        Ready to REN Low Delay
+        Ready/Busy signal to Read Enable falling edge timing.
+        Read to REN = (TRR[3] * 64) + TRR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-ocms:
+      type: boolean
+      description: |
+        Off Chip Memory Scrambling Enable.
+
+    nfc-timings-tar:
+      type: int
+      description: |
+        ALE to REN Low Delay
+        Address Latch Enable falling edge to Read Enable falling edge timing.
+        Address Latch Enable to Read Enable = (TAR[3] * 64) + TAR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-tadl:
+      type: int
+      description: |
+        ALE to Data Start
+        Last address latch cycle to the first rising edge of WEN for data input.
+        Last address latch to first rising edge of WEN = (TADL[3] * 64) + TADL[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    nfc-timings-tclr:
+      type: int
+      description: |
+        CLE to REN Low Delay
+        Command Latch Enable falling edge to Read Enable falling edge timing.
+        Latch Enable Falling to Read Enable Falling = (TCLR[3] * 64) + TCLR[2:0] clock cycles.
+      enum: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]

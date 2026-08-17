@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Microchip Static Memory Controller (SMC) G1.
+
+  SAM SMC includes the following hardware peripheral:
+    - module name="SMC" id="6105" version="312"
+    - module name="SMC" id="11036" version="304"
+
+examples:
+  - |
+    Example devicetree configuration:
+
+      &smc {
+        status = "okay";
+      };
+
+compatible: "microchip,smc-g1-memc"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
