@@ -115,6 +115,19 @@ z_x86_syscall_entry_stub:
 	movq	$0, %gs:__x86_tss64_t_usp_OFFSET
 #endif
 
+	/* Callee-saved registers: the C convention preserves them through the
+	 * kernel so the exit path never restores them, but fork() needs the
+	 * caller's complete register state to seed the child's resume.
+	 */
+	pushq	$0	/* pad: keeps the fxsave area 16-byte aligned */
+	pushq	%rbx
+	pushq	%rbp
+	pushq	%r12
+	pushq	%r13
+	pushq	%r14
+	pushq	%r15
+	pushq	$0	/* rax: syscall return stash (signal delivery) */
+
 	sti			/* re-enable interrupts */
 
 	/* call_id is in RAX. bounds-check it, must be less than
@@ -172,7 +185,7 @@ _id_ok:
 	je	_do_sig_restore
 
 	/* Store RAX (syscall return value) into privileged stack */
-	movq	%rax, (__struct_x86_ssf_rdi_OFFSET + 8)(%rsp)
+	movq	%rax, (__struct_x86_ssf_rax_OFFSET + 8)(%rsp)
 
 	/* Pass privileged stack to z_sig_handle() */
 	movq	%rsp, %rdi
@@ -210,7 +223,7 @@ _do_sig_restore:
 
 _do_sig_return:
 	/* Restore RAX (syscall return value) from privileged stack */
-	movq	(__struct_x86_ssf_rdi_OFFSET + 8)(%rsp), %rax
+	movq	(__struct_x86_ssf_rax_OFFSET + 8)(%rsp), %rax
 
 _skip_z_sig_handle:
 #endif
@@ -228,6 +241,12 @@ _skip_z_sig_handle:
 	 * values to successfully 'sysretq'.
 	 */
 	addq	$8, %rsp	/* Discard ssf */
+
+	/* Entered by z_x86_fork_resume() with RSP at a copied frame and RAX
+	 * holding the child's return value.
+	 */
+.global z_x86_syscall_exit
+z_x86_syscall_exit:
 	popq	%rcx	/* Restore return address for 'sysretq' */
 	popq	%r11	/* Restore RFLAGS for 'sysretq' */
 	popq	%r10
@@ -238,6 +257,8 @@ _skip_z_sig_handle:
 	fxrstor	(%rsp)
 	addq	$X86_FXSAVE_SIZE, %rsp
 	popq	%rdi
+	/* rax stash + callee-saved + pad: never restored from the frame */
+	addq	$64, %rsp
 
 #ifdef CONFIG_X86_KPTI
 	/* Lock IRQs as we are using per-cpu memory areas and the
@@ -285,6 +306,32 @@ _bad_syscall:
 	movq	%rax, %rdi
 	movq	$K_SYSCALL_BAD, %rax
 	jmp	_id_ok
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * FUNC_NORETURN void z_x86_fork_resume(void *frame)
+ *
+ * Enter user mode resuming a fork-copied syscall frame: the child returns
+ * from the fork syscall its parent made, with RAX = 0. Runs in supervisor
+ * mode; the frame was staged at the top of this thread's privilege stack by
+ * arch_fork_frame_init(), so the common syscall exit path unwinds it exactly
+ * like a live syscall. Callee-saved registers are loaded here because the
+ * exit path never restores them (the C convention preserved them for a real
+ * syscall; a forked child has no such history).
+ */
+.global z_x86_fork_resume
+z_x86_fork_resume:
+	cli
+	movq	%rdi, %rsp
+	movq	__struct_x86_ssf_rbx_OFFSET(%rsp), %rbx
+	movq	__struct_x86_ssf_rbp_OFFSET(%rsp), %rbp
+	movq	__struct_x86_ssf_r12_OFFSET(%rsp), %r12
+	movq	__struct_x86_ssf_r13_OFFSET(%rsp), %r13
+	movq	__struct_x86_ssf_r14_OFFSET(%rsp), %r14
+	movq	__struct_x86_ssf_r15_OFFSET(%rsp), %r15
+	xorq	%rax, %rax	/* the child's fork returns 0 */
+	jmp	z_x86_syscall_exit
+#endif /* CONFIG_PROCESS_VM */
 
 /*
  * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

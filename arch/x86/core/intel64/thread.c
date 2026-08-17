@@ -89,3 +89,27 @@ int arch_coprocessors_disable(struct k_thread *thread)
 
 	return -ENOTSUP;
 }
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * Stage a copy of the parent's syscall frame at the top of the child's
+ * privilege stack - exactly where a live syscall would have built it, so
+ * fxsave alignment and the exit path's unwind match by construction.
+ */
+void *arch_fork_frame_init(struct k_thread *child, void *parent_ssf)
+{
+	struct x86_ssf *dst = (struct x86_ssf *)((char *)child->arch.psp - sizeof(struct x86_ssf));
+
+	(void)memcpy(dst, parent_ssf, sizeof(*dst));
+
+	return dst;
+}
+
+FUNC_NORETURN void z_x86_fork_resume(void *frame);
+
+FUNC_NORETURN void arch_fork_resume(void *frame)
+{
+	z_x86_fork_resume(frame);
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_PROCESS_VM */

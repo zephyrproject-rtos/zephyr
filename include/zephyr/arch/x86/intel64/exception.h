@@ -63,6 +63,22 @@ struct x86_ssf {
 	unsigned long rsi;
 	char fxsave[X86_FXSAVE_SIZE];
 	unsigned long rdi;
+	/* Syscall return value stash (signal delivery), zeroed at entry */
+	unsigned long rax;
+	/*
+	 * Callee-saved registers. The C calling convention preserves them
+	 * through the kernel, so the return path never restores them; they
+	 * are captured so fork() can seed the child's resume context with
+	 * the caller's complete register state.
+	 */
+	unsigned long r15;
+	unsigned long r14;
+	unsigned long r13;
+	unsigned long r12;
+	unsigned long rbp;
+	unsigned long rbx;
+	/* keeps the fxsave area 16-byte aligned (even number of slots) */
+	unsigned long pad;
 	unsigned long rsp;
 };
 

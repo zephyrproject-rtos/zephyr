@@ -13,6 +13,9 @@
 
 /* Exports */
 GTEXT(z_x86_syscall_entry_stub)
+#ifdef CONFIG_PROCESS_VM
+GTEXT(z_x86_fork_resume)
+#endif
 GTEXT(z_x86_userspace_enter)
 GTEXT(arch_user_string_nlen)
 GTEXT(z_x86_user_string_nlen_fault_start)
@@ -217,6 +220,16 @@ _id_ok:
 	xor	%edi, %edi
 	mov	_k_syscall_table(%edi, %esi, 4), %ebx
 
+#ifdef CONFIG_PROCESS_VM
+	/* The pushed argument slots already bank the caller's registers; ESI
+	 * (the syscall id register) is the one live value fork needs that has
+	 * no slot, so stash it per-thread for the child's resume context.
+	 */
+	movl	$_kernel, %eax
+	movl	_kernel_offset_to_current(%eax), %eax
+	movl	%esi, _thread_offset_to_fork_esi(%eax)
+#endif /* CONFIG_PROCESS_VM */
+
 	/* Run the handler, which is some entry in _k_syscall_table */
 	call	*%ebx
 
@@ -291,7 +304,12 @@ _skip_z_sig_handle:
 
 	/* EAX now contains return value. Pop or xor everything else to prevent
 	 * information leak from kernel mode.
+	 *
+	 * Entered by z_x86_fork_resume() with ESP at a staged frame and EAX
+	 * holding the child's return value.
 	 */
+.global z_x86_syscall_exit
+z_x86_syscall_exit:
 	pop	%edx		/* old arg1 value, discard it */
 	pop	%edx
 	pop	%ecx
@@ -311,6 +329,32 @@ _bad_syscall:
 	mov	$K_SYSCALL_BAD, %esi
 	jmp	_id_ok
 
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * FUNC_NORETURN void z_x86_fork_resume(void *frame)
+ *
+ * Enter user mode resuming a fork-copied syscall frame: the child returns
+ * from the fork syscall its parent made, with EAX = 0. The frame was staged
+ * at the top of this thread's privilege stack by arch_fork_frame_init(), in
+ * the exact layout the syscall exit path unwinds (argument slots, ssf slot,
+ * then the iret frame). EBP is preserved in-register by the exit path, and
+ * ESI holds the syscall id per the calling convention, so both are loaded
+ * here from the staged state.
+ */
+SECTION_FUNC(TEXT, z_x86_fork_resume)
+	cli
+	movl	4(%esp), %esp
+
+	/* user EBP from its argument slot; ESI from the per-thread stash */
+	movl	20(%esp), %ebp
+	movl	$_kernel, %eax
+	movl	_kernel_offset_to_current(%eax), %eax
+	movl	_thread_offset_to_fork_esi(%eax), %esi
+
+	xor	%eax, %eax	/* the child's fork returns 0 */
+	jmp	z_x86_syscall_exit
+#endif /* CONFIG_PROCESS_VM */
 
 /*
  * size_t arch_user_string_nlen(const char *s, size_t maxsize, int *err_arg)

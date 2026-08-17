@@ -217,6 +217,10 @@ struct _thread_arch {
 	 * Un-set for supervisor threads.
 	 */
 	char *psp;
+#ifdef CONFIG_PROCESS_VM
+	/* caller's ESI (the syscall id register) captured at syscall entry */
+	uint32_t fork_esi;
+#endif /* CONFIG_PROCESS_VM */
 
 #if defined(CONFIG_SYSCALL_RETURN_HOOK)
 	/* Last syscall return value, saved/restored across signal delivery. */

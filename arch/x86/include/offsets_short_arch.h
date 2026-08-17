@@ -19,6 +19,11 @@
 #define _thread_offset_to_psp \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_psp_OFFSET)
 
+#ifdef CONFIG_PROCESS_VM
+#define _thread_offset_to_fork_esi \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_fork_esi_OFFSET)
+#endif /* CONFIG_PROCESS_VM */
+
 #ifdef CONFIG_SYSCALL_RETURN_HOOK
 #define _thread_offset_to_sig_eax \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_sig_eax_OFFSET)

@@ -1806,6 +1806,50 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	return ret;
 }
 
+#ifdef CONFIG_PROCESS_VM
+/*
+ * Repoint the mappings of [virt, virt+size) in @a domain at fresh physical
+ * memory starting at @a phys, preserving each page's existing permission
+ * flags. The domain is not live on any CPU when this runs (a forking child
+ * before its first start), so no TLB shootdown is required.
+ */
+int z_mem_domain_clone_remap(struct k_mem_domain *domain, void *virt, size_t size, uintptr_t phys)
+{
+	const pentry_t addr_mask = paging_levels[PTE_LEVEL].mask;
+	int ret = 0;
+
+	CHECKIF((((uintptr_t)virt | size) % CONFIG_MMU_PAGE_SIZE) != 0U) {
+		return -EINVAL;
+	}
+
+	K_SPINLOCK(&x86_mmu_lock) {
+		for (size_t off = 0; off < size; off += CONFIG_MMU_PAGE_SIZE) {
+			uint8_t *page = (uint8_t *)virt + off;
+			pentry_t old_val;
+			pentry_t new_val;
+			int level;
+
+			pentry_get(&level, &old_val, domain->arch.ptables, page);
+			if ((level != PTE_LEVEL) || ((old_val & MMU_P) == 0U)) {
+				ret = -EFAULT;
+				break;
+			}
+
+			/* keep the flag bits, swap only the physical address */
+			new_val = (old_val & ~addr_mask) | ((phys + off) & addr_mask);
+
+			ret = page_map_set(domain->arch.ptables, page, new_val, NULL, addr_mask,
+					   0U);
+			if (ret != 0) {
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PROCESS_VM */
+
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				     uint32_t partition_id)
 {

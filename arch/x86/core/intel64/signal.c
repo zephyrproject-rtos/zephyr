@@ -13,7 +13,7 @@ void arch_sig_pre(struct k_thread *thread, void *arg)
 	struct arch_sig_ctx *const backup = &thread->base.sig.user;
 
 	/* Backup the original RAX, RFLAGS, RSP, and RIP */
-	backup->rax = sf->rdi;
+	backup->rax = sf->rax;
 	backup->rflags = sf->rflags;
 	backup->rsp = sf->rsp;
 	backup->rip = sf->rip;
@@ -35,7 +35,7 @@ void arch_sig_post(struct k_thread *thread, void *arg)
 	struct arch_sig_ctx *const backup = &thread->base.sig.user;
 
 	/* Restore the original RAX, RFLAGS, RIP */
-	sf->rdi = backup->rax;
+	sf->rax = backup->rax;
 	sf->rflags = backup->rflags;
 	sf->rsp = backup->rsp;
 	sf->rip = backup->rip;

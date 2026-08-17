@@ -41,6 +41,9 @@ GEN_OFFSET_SYM(_cpu_arch_t, fpu_owner);
 
 #ifdef CONFIG_USERSPACE
 GEN_OFFSET_SYM(_thread_arch_t, psp);
+#ifdef CONFIG_PROCESS_VM
+GEN_OFFSET_SYM(_thread_arch_t, fork_esi);
+#endif
 #ifdef CONFIG_SYSCALL_RETURN_HOOK
 GEN_OFFSET_SYM(_thread_arch_t, sig_eax);
 

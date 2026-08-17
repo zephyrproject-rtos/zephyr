@@ -68,6 +68,13 @@ GEN_ABSOLUTE_SYM(__X86_CPUBOOT_SIZEOF, sizeof(x86_cpuboot_t));
 /* the save frame every system call pushes, read back by the return hook and by a fork */
 GEN_OFFSET_STRUCT(x86_ssf, rsp);
 GEN_OFFSET_STRUCT(x86_ssf, rdi);
+GEN_OFFSET_STRUCT(x86_ssf, rax);
+GEN_OFFSET_STRUCT(x86_ssf, r15);
+GEN_OFFSET_STRUCT(x86_ssf, r14);
+GEN_OFFSET_STRUCT(x86_ssf, r13);
+GEN_OFFSET_STRUCT(x86_ssf, r12);
+GEN_OFFSET_STRUCT(x86_ssf, rbp);
+GEN_OFFSET_STRUCT(x86_ssf, rbx);
 GEN_ABSOLUTE_SYM(__X86_SSF_SIZEOF, sizeof(struct x86_ssf));
 
 #ifdef CONFIG_SYSCALL_RETURN_HOOK

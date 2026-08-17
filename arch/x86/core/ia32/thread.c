@@ -146,3 +146,43 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_X86_SSE */
 #endif /* CONFIG_EAGER_FPU_SHARING */
 }
+
+#ifdef CONFIG_PROCESS_VM
+/*
+ * Stage a copy of the parent's syscall state at the top of the child's
+ * privilege stack, in the exact layout the syscall exit path unwinds:
+ * [eax][edx][ecx][ebx][edi][ebp][ssf][EIP][CS][EFLAGS][ESP][SS]. The
+ * parent's ssf points at its iret frame (EIP slot); the argument slots
+ * holding its caller-context registers sit directly below the ssf slot.
+ */
+void *arch_fork_frame_init(struct k_thread *child, void *parent_ssf)
+{
+	uint32_t *p = parent_ssf;         /* &parent frame's EIP slot */
+	uint32_t *dst = (uint32_t *)((char *)child->arch.psp - (12 * sizeof(uint32_t)));
+
+	dst[0] = p[-7];                   /* eax (discarded by the exit path) */
+	dst[1] = p[-6];                   /* edx */
+	dst[2] = p[-5];                   /* ecx */
+	dst[3] = p[-4];                   /* ebx */
+	dst[4] = p[-3];                   /* edi */
+	dst[5] = p[-2];                   /* ebp */
+	dst[6] = 0;                       /* ssf slot (discarded) */
+	dst[7] = p[0];                    /* EIP */
+	dst[8] = p[1];                    /* CS */
+	dst[9] = p[2];                    /* EFLAGS */
+	dst[10] = p[3];                   /* ESP */
+	dst[11] = p[4];                   /* SS */
+
+	child->arch.fork_esi = _current->arch.fork_esi;
+
+	return dst;
+}
+
+FUNC_NORETURN void z_x86_fork_resume(void *frame);
+
+FUNC_NORETURN void arch_fork_resume(void *frame)
+{
+	z_x86_fork_resume(frame);
+	CODE_UNREACHABLE;
+}
+#endif /* CONFIG_PROCESS_VM */
