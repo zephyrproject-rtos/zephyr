@@ -6,7 +6,7 @@ common:
     - native_sim
     - qemu_x86
 tests:
-  libraries.heap_stats_log:{}
+  libraries.heap_stats_log: {}
 
   libraries.heap_stats_log.no_thread_name:
     extra_configs:
