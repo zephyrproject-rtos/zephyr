@@ -141,6 +141,10 @@
 	status = "okay";
 };
 
+&fmu {
+	status = "okay";
+};
+
 &wwdt0 {
 	status = "okay";
 };

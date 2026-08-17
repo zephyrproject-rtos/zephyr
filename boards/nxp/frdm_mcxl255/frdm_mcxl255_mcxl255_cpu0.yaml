@@ -17,4 +17,5 @@ supported:
   - rtc
   - crc
   - watchdog
+  - flash
 vendor: nxp
