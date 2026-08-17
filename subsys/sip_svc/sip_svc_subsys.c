@@ -539,6 +539,37 @@ static int sip_svc_request_handler(struct sip_svc_controller *ctrl)
 	return -EINPROGRESS;
 }
 
+static void sip_svc_fail_pending_async_jobs(struct sip_svc_controller *ctrl, int error)
+{
+	struct sip_svc_response response;
+	uint32_t trans_id;
+	int i;
+
+	response.header = SIP_SVC_PROTO_HEADER(error, 0);
+	response.a0 = error;
+	response.a1 = 0;
+	response.a2 = 0;
+	response.a3 = 0;
+	response.resp_data_addr = 0;
+	response.resp_data_size = 0;
+	response.priv_data = NULL;
+
+	for (i = 0; i < ctrl->trans_id_map->size; i++) {
+		trans_id = ctrl->trans_id_map->items[i].id;
+		if (trans_id == SIP_SVC_ID_INVALID) {
+			continue;
+		}
+
+		response.priv_data = ctrl->trans_id_map->items[i].arg5;
+		sip_svc_callback(ctrl, trans_id, &response);
+
+		__ASSERT(ctrl->active_job_cnt != 0, "ctrl->active_job_cnt cannot be zero here");
+		--ctrl->active_job_cnt;
+	}
+
+	ctrl->active_async_job_cnt = 0;
+}
+
 static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 {
 	struct sip_svc_id_map_item *trans_id_item;
@@ -586,8 +617,20 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	ret = sip_svc_plat_async_res_res(ctrl->dev, &res, ctrl->async_resp_data, &data_size,
 					 &trans_id);
 
-	if (ret != 0) {
+	if (ret == -EINPROGRESS) {
+		/* No response yet, keep polling */
 		return -EINPROGRESS;
+	}
+
+	if (ret != 0) {
+		/* Terminal error from the platform (e.g. SMC_STATUS_ERROR or
+		 * SMC_STATUS_REJECT): the platform cannot identify the failed
+		 * job, so complete every pending async job with the error to
+		 * avoid leaving callers waiting forever.
+		 */
+		LOG_ERR("Terminal error while polling async responses: %d", ret);
+		sip_svc_fail_pending_async_jobs(ctrl, ret);
+		return 0;
 	}
 
 	/* get caller information based on trans id */
@@ -607,6 +650,11 @@ static int sip_svc_async_response_handler(struct sip_svc_controller *ctrl)
 	/* Check caller provided memory space to avoid overflow */
 	if (data_size > ((size_t)trans_id_item->arg4)) {
 		data_size = ((size_t)trans_id_item->arg4);
+	}
+
+	/* Clamp to the polling buffer size to avoid over-reading it */
+	if (data_size > ctrl->resp_size) {
+		data_size = ctrl->resp_size;
 	}
 
 	response.header =
