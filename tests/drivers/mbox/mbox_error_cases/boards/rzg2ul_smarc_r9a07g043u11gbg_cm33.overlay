@@ -30,7 +30,7 @@
 
 	mbox-consumer {
 		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
+		mboxes = <&mbox1 0>, <&mbox1 4>, <&mbox4 0>, <&mbox4 3>;
 		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
 	};
 };
@@ -39,6 +39,6 @@
 	status = "okay";
 };
 
-&mbox3 {
+&mbox4 {
 	status = "okay";
 };
