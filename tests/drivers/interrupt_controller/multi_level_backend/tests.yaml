@@ -31,6 +31,7 @@ tests:
   drivers.interrupt_controller.intc_multi_level_backend.isr_table_placement:
     extra_configs:
       - CONFIG_TEST_ISR_TABLE_PLACEMENT=y
+      - CONFIG_MULTI_LEVEL_INTERRUPTS_DUMP_INTLIST=y
       - CONFIG_2ND_LVL_INTR_01_OFFSET=10
       - CONFIG_3RD_LVL_ISR_TBL_OFFSET=192
       - CONFIG_3RD_LVL_INTR_00_OFFSET=5

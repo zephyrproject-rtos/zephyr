@@ -1515,6 +1515,22 @@ if(CONFIG_GEN_ISR_TABLES)
     COMMAND_EXPAND_LISTS
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
+
+  if(CONFIG_MULTI_LEVEL_INTERRUPTS_DUMP_INTLIST)
+    # Decoded view of the intlist (level/line decomposition, table slot and
+    # aggregator window map), read from the same pre-link ELF as isr_tables.c.
+    add_custom_command(
+      OUTPUT isr_intlist.txt
+      COMMAND ${PYTHON_EXECUTABLE}
+      ${ZEPHYR_BASE}/scripts/build/dump_isr_intlist.py
+      --kernel $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
+      --intlist-section .intList
+      --intlist-section intList
+      --output isr_intlist.txt
+      DEPENDS ${ZEPHYR_LINK_STAGE_EXECUTABLE}
+      )
+    add_custom_target(isr_intlist ALL DEPENDS isr_intlist.txt)
+  endif()
 endif()
 
 if(CONFIG_SYMTAB)
@@ -1748,6 +1764,10 @@ else()
                             $<TARGET_PROPERTY:linker,no_check_sections>)
   set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} linker_zephyr_final_script_target)
+  if(TARGET isr_intlist)
+    # Keep the intlist dump current when only the final ELF is built
+    add_dependencies(${ZEPHYR_FINAL_EXECUTABLE} isr_intlist)
+  endif()
 
   # Use the pass2 elf as the final elf
   set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})

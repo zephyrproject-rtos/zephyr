@@ -163,4 +163,16 @@ rsource "Kconfig.multilevel.aggregator_template"
 aggregator = 7
 rsource "Kconfig.multilevel.aggregator_template"
 
+config MULTI_LEVEL_INTERRUPTS_DUMP_INTLIST
+	bool "Write the decoded interrupt list to isr_intlist.txt"
+	depends on !ISR_TABLES_LOCAL_DECLARATION
+	help
+	  Write zephyr/isr_intlist.txt in the build directory each time
+	  the ISR tables are generated from the pre-link image. It lists
+	  every interrupt connected at build time with its encoded IRQ
+	  number, level, local IRQ, level 1 line, flags, ISR table slot
+	  (vector table index for direct ISRs), handler and argument,
+	  followed by the ISR table slot range of each aggregator and the
+	  number of interrupts placed in it.
+
 endif
