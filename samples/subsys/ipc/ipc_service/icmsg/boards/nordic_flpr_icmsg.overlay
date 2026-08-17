@@ -5,7 +5,7 @@
  */
 
 &ipc0 {
-	compatible = "zephyr,ipc-icbmsg";
-	tx-blocks = <16>;
-	rx-blocks = <18>;
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 };

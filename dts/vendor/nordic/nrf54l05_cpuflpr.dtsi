@@ -7,6 +7,7 @@
 #include <nordic/nrf54l05.dtsi>
 #include <riscv/nordic/nrf54l_05_10_15_cpuflpr.dtsi>
 
+/* 59 (APP RAM) + 4 (IPC memory) + 32 (FLPR RAM) + 1 (FLPR hibernation) = 96KB */
 / {
 	soc {
 		cpuflpr_sram: memory@2000fc00 {
@@ -15,6 +16,32 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			ranges = <0x0 0x2000fc00 DT_SIZE_K(32)>;
+		};
+
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_tx: memory@2000ec00 {
+				reg = <0x2000ec00 DT_SIZE_K(2)>;
+			};
+
+			sram_rx: memory@2000f400 {
+				reg = <0x2000f400 DT_SIZE_K(2)>;
+			};
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
+			mbox-names = "rx", "tx";
+			tx-blocks = <15>;
+			rx-blocks = <15>;
+			status = "okay";
 		};
 	};
 };

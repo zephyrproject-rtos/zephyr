@@ -4,24 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "nrf54h20dk_nrf54h20_cpuapp_common.dtsi"
-
-/delete-node/ &ipc0;
-
-ipc0: &cpuapp_cpuflpr_ipc {
-	status = "okay";
-};
-
-/ {
-	aliases {
-		dut-ipc = &cpuapp_cpuflpr_ipc;
-	};
-};
-
-&cpuflpr_vevif {
-	status = "okay";
-};
-
-&cpuapp_bellboard {
-	status = "okay";
-};
+#include "nrf54h20dk_nrf54h20_cpuflpr_common.dtsi"
