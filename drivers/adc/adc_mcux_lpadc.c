@@ -60,6 +60,8 @@ struct mcux_lpadc_config {
 	void (*irq_config_func)(const struct device *dev);
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *ref_supplies;
+	const struct device *bandgap_supply;
+	uint8_t bandgap_input;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	int32_t ref_supply_val;
@@ -101,6 +103,7 @@ struct mcux_lpadc_data {
 	uint16_t sample_max_raw;
 	uint8_t channels_count;
 	bool use_dma;
+	uint32_t bandgap_channels;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_lock_active;
 #endif
@@ -303,6 +306,34 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	}
 
 	cmd->channelNumber = channel_num;
+
+	if (config->bandgap_supply != NULL) {
+		const uint32_t channel_mask = BIT(channel_cfg->channel_id);
+		const bool was_bandgap_channel = (data->bandgap_channels & channel_mask) != 0U;
+		const bool is_bandgap_channel =
+			channel_cfg->input_positive == config->bandgap_input;
+
+		if (is_bandgap_channel && !was_bandgap_channel) {
+			if (data->bandgap_channels == 0U) {
+				err = regulator_enable(config->bandgap_supply);
+				if (err < 0) {
+					return err;
+				}
+			}
+
+			data->bandgap_channels |= channel_mask;
+		} else if (!is_bandgap_channel && was_bandgap_channel) {
+			if (data->bandgap_channels == channel_mask) {
+				err = regulator_disable(config->bandgap_supply);
+				if (err < 0) {
+					return err;
+				}
+			}
+
+			data->bandgap_channels &= ~channel_mask;
+		}
+	}
+
 	return 0;
 }
 
@@ -821,6 +852,8 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	const struct device *regulator = config->ref_supplies;
+	const struct device *bandgap_supply = config->bandgap_supply;
+	struct mcux_lpadc_data *data = dev->data;
 	int err;
 
 	switch (action) {
@@ -834,6 +867,13 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 
 			/* Re-enable the BUF21 buffer (cleared at suspend). */
 			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
+		}
+
+		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+			err = regulator_enable(bandgap_supply);
+			if (err < 0) {
+				return err;
+			}
 		}
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
@@ -856,6 +896,13 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 
 		if (regulator != NULL) {
 			err = regulator_disable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+			err = regulator_disable(bandgap_supply);
 			if (err < 0) {
 				return err;
 			}
@@ -1057,6 +1104,13 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #define LPADC_PM_DEVICE_GET		NULL
 #endif
 
+#define LPADC_BANDGAP_SUPPLY_INIT(node_id)							\
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, bandgap_supply),					\
+		(.bandgap_supply = DEVICE_DT_GET(DT_PHANDLE(node_id, bandgap_supply)),		\
+		 .bandgap_input = DT_PROP(node_id, zephyr_input_positive),), ())
+
+#define LPADC_BANDGAP_SUPPLY_COUNT(node_id) + DT_NODE_HAS_PROP(node_id, bandgap_supply)
+
 #define LPADC_MCUX_INIT(n)									\
 												\
 	static void mcux_lpadc_config_func_##n(const struct device *dev);			\
@@ -1074,6 +1128,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.ref_supplies = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
 					    (DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(n),		\
 					    nxp_references))), (NULL)),				\
+		DT_FOREACH_CHILD(DT_DRV_INST(n), LPADC_BANDGAP_SUPPLY_INIT)			\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),				\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),		\
 		.ref_supply_val = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, nxp_references),		\
@@ -1116,6 +1171,8 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 	}											\
 												\
 	BUILD_ASSERT((DT_INST_PROP_OR(n, power_level, 0) >= 0) &&				\
-		     (DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");
+		     (DT_INST_PROP_OR(n, power_level, 0) <= 3), "power_level: wrong value");	\
+	BUILD_ASSERT((0 DT_FOREACH_CHILD(DT_DRV_INST(n), LPADC_BANDGAP_SUPPLY_COUNT)) <= 1,	\
+		     "Only one LPADC channel may define bandgap-supply");
 
 DT_INST_FOREACH_STATUS_OKAY(LPADC_MCUX_INIT)
