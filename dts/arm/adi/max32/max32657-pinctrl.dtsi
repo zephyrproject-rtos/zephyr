@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,11 @@
 
 	/omit-if-no-ref/ uart0_tx_p0_9: uart0_tx_p0_9 {
 		pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+	};
+
+	/omit-if-no-ref/ rtc_clk_in_p0_12: rtc_clk_in_p0_12 {
+		pinmux = <MAX32_PINMUX(0, 12, GPIO)>;
+		input-enable;
 	};
 
 	/omit-if-no-ref/ sqwout_p0_13: sqwout_p0_13 {
@@ -153,6 +158,12 @@
 
 	/omit-if-no-ref/ uart0_tx_p0_9_sleep: uart0_tx_p0_9_sleep {
 		pinmux = <MAX32_PINMUX(0, 9, AF1)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ rtc_clk_in_p0_12_sleep: rtc_clk_in_p0_12_sleep {
+		pinmux = <MAX32_PINMUX(0, 12, GPIO)>;
+		input-enable;
 		low-power-enable;
 	};
 
