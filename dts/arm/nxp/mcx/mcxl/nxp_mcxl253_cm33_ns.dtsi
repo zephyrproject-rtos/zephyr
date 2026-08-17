@@ -20,6 +20,11 @@
 		aon_peripheral: aon_peripheral@a0000000 {
 			ranges = <0x0 0xa0000000 0x10000000>;
 		};
+
+		fmu: flash-controller@40095000 {
+			reg = <0x40095000 0x1000>;
+			ranges = <0x0 0x0 DT_SIZE_K(128)>;
+		};
 	};
 };
 
