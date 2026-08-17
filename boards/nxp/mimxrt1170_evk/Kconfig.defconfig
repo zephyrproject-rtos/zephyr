@@ -12,6 +12,11 @@ config EXTERNAL_MEM_CONFIG_DATA
 config NXP_IMX_EXTERNAL_SDRAM
 	default y if CPU_CORTEX_M7
 
+# The cm7 MPU region table fully covers all memory the firmware uses,
+# so enable the catch-all unmapped region (Cortex-M7 erratum 1013783).
+config ARM_MPU_CM7_UNMAPPED_REGION
+	default y if CPU_CORTEX_M7
+
 if SECOND_CORE_MCUX && CPU_CORTEX_M4
 
 config BUILD_OUTPUT_INFO_HEADER
