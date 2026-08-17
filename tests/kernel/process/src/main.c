@@ -314,6 +314,28 @@ ZTEST(kernel_process, test_spawn)
 	/* a timed wait: the wake must leave no timeout behind for the next pend */
 	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_SECONDS(10)));
 
+#ifdef CONFIG_SIGNAL
+	/* a kernel caller's explicit mask is honored verbatim, KILL included */
+	struct sys_clone_args pargs = {
+		.flags = SYS_CLONE_PAUSED,
+		.entry = spawn_entry_exit,
+		.p1 = (void *)(intptr_t)4,
+		.thread = &spawn_thread_b,
+		.stack = spawn_stack_b,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+	struct k_sig_set spawn_fill;
+
+	k_sig_fillset(&spawn_fill);
+	pargs.sigmask = &spawn_fill;
+	zassert_ok(sys_clone(&pargs, NULL));
+	zassert_equal(k_sig_ismember(&spawn_thread_b.base.sig.mask, K_SIG_KILL), 1);
+	zassert_equal(k_sig_ismember(&spawn_thread_b.base.sig.mask, K_SIG_STOP), 1);
+	k_thread_start(&spawn_thread_b);
+	zassert_ok(k_waitpid(&spawn_thread_b, NULL, NULL, 0, K_FOREVER));
+#endif /* CONFIG_SIGNAL */
+
 	/* the thread tier: a member of this process, not a new process */
 	k_pid_t seen = NULL;
 	k_tid_t member = NULL;
@@ -991,8 +1013,19 @@ ZTEST(kernel_process, test_k_clone)
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
+#ifdef CONFIG_SIGNAL
+	/* a kernel caller's explicit mask is honored verbatim, KILL included */
+	struct k_sig_set fill;
+
+	k_sig_fillset(&fill);
+	bad.sigmask = &fill;
+#endif /* CONFIG_SIGNAL */
 	zassert_ok(k_clone(&bad, &child));
 	zassert_equal(child, &child_b);
+#ifdef CONFIG_SIGNAL
+	zassert_equal(k_sig_ismember(&child->base.sig.mask, K_SIG_KILL), 1);
+	zassert_equal(k_sig_ismember(&child->base.sig.mask, K_SIG_STOP), 1);
+#endif /* CONFIG_SIGNAL */
 	k_thread_start(child);
 	zassert_ok(k_thread_join(child, K_SECONDS(5)));
 	zassert_equal(seen, k_getpid());

@@ -20,6 +20,7 @@ extern "C" {
 struct k_condvar;
 struct k_mutex;
 struct k_thread;
+struct k_sig_set;
 
 /**
  * @brief Create the child stopped
@@ -65,6 +66,13 @@ struct sys_clone_args {
 	int prio;
 	/** Initial thread options (e.g. K_USER) */
 	uint32_t options;
+	/**
+	 * Initial signal mask of the created thread, or NULL for the
+	 * thread-creation inheritance rules. As with k_sig_mask(), a
+	 * user-mode request cannot mask K_SIG_KILL or K_SIG_STOP; a
+	 * kernel-mode caller may. Requires CONFIG_SIGNAL.
+	 */
+	const struct k_sig_set *sigmask;
 };
 
 /**

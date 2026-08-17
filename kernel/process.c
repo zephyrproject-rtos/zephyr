@@ -1286,6 +1286,9 @@ int z_impl_k_clone(const struct k_clone_args *args, k_tid_t *child)
 	if (thread_tier != (args->process == NULL)) {
 		return -EINVAL;
 	}
+	if ((args->sigmask != NULL) && !IS_ENABLED(CONFIG_SIGNAL)) {
+		return -EINVAL;
+	}
 
 	tid = k_thread_create(args->thread, args->stack, args->stack_size, args->entry, args->p1,
 			      args->p2, args->p3, args->prio, args->options, K_FOREVER);
@@ -1297,6 +1300,19 @@ int z_impl_k_clone(const struct k_clone_args *args, k_tid_t *child)
 			return ret;
 		}
 	}
+
+#ifdef CONFIG_SIGNAL
+	if (args->sigmask != NULL) {
+		tid->base.sig.mask = *args->sigmask;
+#ifdef CONFIG_USERSPACE
+		if (k_is_in_user_syscall()) {
+			/* as k_sig_mask(): user-mode requests cannot mask KILL or STOP */
+			tid->base.sig.mask.sig[0] &=
+				~(BIT64(K_SIG_KILL - 1) | BIT64(K_SIG_STOP - 1));
+		}
+#endif /* CONFIG_USERSPACE */
+	}
+#endif /* CONFIG_SIGNAL */
 
 	if (child != NULL) {
 		*child = tid;
@@ -1315,11 +1331,20 @@ static inline int z_vrfy_k_clone(const struct k_clone_args *args, k_tid_t *child
 	struct k_clone_args copy;
 	size_t total_size, stack_obj_size;
 	struct k_object *stack_object;
+#ifdef CONFIG_SIGNAL
+	struct k_sig_set mask_copy;
+#endif /* CONFIG_SIGNAL */
 
 	K_OOPS(k_usermode_from_copy(&copy, args, sizeof(copy)));
 	if (child != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_WRITE(child, sizeof(*child)));
 	}
+#ifdef CONFIG_SIGNAL
+	if (copy.sigmask != NULL) {
+		K_OOPS(k_usermode_from_copy(&mask_copy, copy.sigmask, sizeof(mask_copy)));
+		copy.sigmask = &mask_copy;
+	}
+#endif /* CONFIG_SIGNAL */
 
 	if (copy.process != NULL) {
 		K_OOPS(K_SYSCALL_OBJ_NEVER_INIT(copy.process, K_OBJ_PROCESS));

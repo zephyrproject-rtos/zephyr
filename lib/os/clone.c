@@ -69,6 +69,27 @@ static int clone_thread(const struct sys_clone_args *args, k_pid_t *child)
 #endif /* CONFIG_USERSPACE */
 	}
 
+#ifdef CONFIG_SIGNAL
+	if (args->sigmask != NULL) {
+		tid->base.sig.mask = *args->sigmask;
+#ifdef CONFIG_USERSPACE
+		if (k_is_in_user_syscall()) {
+			/* as k_sig_mask(): user-mode requests cannot mask KILL or STOP */
+			tid->base.sig.mask.sig[0] &=
+				~(BIT64(K_SIG_KILL - 1) | BIT64(K_SIG_STOP - 1));
+		}
+#endif /* CONFIG_USERSPACE */
+#ifdef CONFIG_THREAD_CANCEL
+		/* the reserved cancel bit in a requested mask is the cancellation state */
+		if (k_sig_ismember(&tid->base.sig.mask, K_SIG_CANCEL) != 0) {
+			tid->base.user_options |= K_CANCEL_DISABLED;
+		} else {
+			tid->base.user_options &= ~K_CANCEL_DISABLED;
+		}
+#endif /* CONFIG_THREAD_CANCEL */
+	}
+#endif /* CONFIG_SIGNAL */
+
 	if (child != NULL) {
 		*child = tid;
 	}
@@ -84,6 +105,9 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 {
 	if ((args == NULL) ||
 	    ((args->flags & ~(SYS_CLONE_PAUSED | SYS_CLONE_THREAD)) != 0U)) {
+		return -EINVAL;
+	}
+	if ((args->sigmask != NULL) && !IS_ENABLED(CONFIG_SIGNAL)) {
 		return -EINVAL;
 	}
 	if (args->entry == NULL) {
@@ -114,11 +138,20 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 	struct sys_clone_args copy;
 	size_t total_size, stack_obj_size;
 	struct k_object *stack_object;
+#ifdef CONFIG_SIGNAL
+	struct k_sig_set mask_copy;
+#endif /* CONFIG_SIGNAL */
 
 	K_OOPS(k_usermode_from_copy(&copy, args, sizeof(copy)));
 	if (child != NULL) {
 		K_OOPS(K_SYSCALL_MEMORY_WRITE(child, sizeof(*child)));
 	}
+#ifdef CONFIG_SIGNAL
+	if (copy.sigmask != NULL) {
+		K_OOPS(k_usermode_from_copy(&mask_copy, copy.sigmask, sizeof(mask_copy)));
+		copy.sigmask = &mask_copy;
+	}
+#endif /* CONFIG_SIGNAL */
 
 	if (copy.thread == NULL) {
 		/* pool-drawn thread: no caller objects to validate */

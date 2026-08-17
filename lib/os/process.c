@@ -689,6 +689,19 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 		return ret;
 	}
 
+#ifdef CONFIG_SIGNAL
+	if (args->sigmask != NULL) {
+		tid->base.sig.mask = *args->sigmask;
+#ifdef CONFIG_USERSPACE
+		if (k_is_in_user_syscall()) {
+			/* as k_sig_mask(): user-mode requests cannot mask KILL or STOP */
+			tid->base.sig.mask.sig[0] &=
+				~(BIT64(K_SIG_KILL - 1) | BIT64(K_SIG_STOP - 1));
+		}
+#endif /* CONFIG_USERSPACE */
+	}
+#endif /* CONFIG_SIGNAL */
+
 	if (child != NULL) {
 		*child = tid;
 	}

@@ -34,6 +34,7 @@ typedef struct k_process_group *k_pgrp_t;
 /** @brief Session handle */
 typedef struct k_session *k_session_t;
 
+struct k_sig_set;
 struct k_thread;
 
 /**
@@ -75,6 +76,13 @@ struct k_clone_args {
 	uint32_t options;
 	/** Process record led by the new thread; NULL with @ref K_CLONE_THREAD */
 	struct k_process *process;
+	/**
+	 * Initial signal mask of the new thread, or NULL for the
+	 * thread-creation inheritance rules. As with k_sig_mask(), a
+	 * user-mode request cannot mask K_SIG_KILL or K_SIG_STOP; a
+	 * kernel-mode caller may. Requires @kconfig{CONFIG_SIGNAL}.
+	 */
+	const struct k_sig_set *sigmask;
 };
 
 #if defined(CONFIG_PROCESS) || defined(__DOXYGEN__)

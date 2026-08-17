@@ -8423,9 +8423,10 @@ __syscall int k_process_init(struct k_process *proc, const k_tid_t *threads,
  * @ref K_CLONE_THREAD the thread becomes the leader of a new process
  * initialized into the caller-provided record @a args->process, as
  * k_process_init(); with @ref K_CLONE_THREAD it joins the calling process
- * instead. The thread is started unless @ref K_CLONE_PAUSED is given. The
- * kernel never allocates: every object is the caller's. sys_clone() layers
- * pooled resources and numbering over this primitive.
+ * instead. An optional signal mask is seeded before the thread first runs,
+ * and the thread is started unless @ref K_CLONE_PAUSED is given. The kernel
+ * never allocates: every object is the caller's. sys_clone() layers pooled
+ * resources and numbering over this primitive.
  *
  * @param args creation arguments
  * @param child filled with the new thread's handle (the process handle for a
