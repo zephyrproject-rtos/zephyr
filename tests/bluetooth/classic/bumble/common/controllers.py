@@ -6,12 +6,14 @@
 import asyncio
 import logging
 import secrets
+import socket
 import sys
 
 import bumble.logging
 from bt_sim_controller import bt_sim_controller as Controller
 from bt_sim_link import bt_sim_local_link
 from bumble.transport import open_transport
+from bumble.transport.tcp_server import open_tcp_server_transport_with_socket
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +64,38 @@ def validate_bd_address(bd_address: str) -> bool:
     return True
 
 
+async def open_controller_transport(transport_name: str):
+    """Open a controller transport.
+
+    A ``tcp-server:<host>:0`` transport is bound to a port chosen by the
+    kernel, so several controller processes can start concurrently without
+    racing for a free port. It needs an explicit host: Bumble's ``_`` and an
+    empty host mean every interface, and a simulated controller should not be
+    reachable from the network.
+
+    Args:
+        transport_name: Transport connection string
+
+    Returns:
+        Tuple of (transport, port); port is None unless this is a TCP server
+    """
+    scheme, _, spec = transport_name.partition(':')
+    if scheme != 'tcp-server':
+        return await open_transport(transport_name), None
+
+    host, _, port = spec.rpartition(':')
+    if int(port) != 0:
+        return await open_transport(transport_name), int(port)
+
+    if host in ('_', ''):
+        raise ValueError("tcp-server port 0 needs an explicit host, e.g. 127.0.0.1")
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind((host, 0))
+    transport = await open_tcp_server_transport_with_socket(sock)
+    return transport, sock.getsockname()[1]
+
+
 async def create_controller(
     index: int, transport_name: str, link, bd_addresses: set, custom_bd_address: str = None
 ):
@@ -76,7 +110,7 @@ async def create_controller(
     Returns:
         Tuple of (transport, controller)
     """
-    transport = await open_transport(transport_name)
+    transport, port = await open_controller_transport(transport_name)
 
     if custom_bd_address:
         if not validate_bd_address(custom_bd_address):
@@ -96,8 +130,11 @@ async def create_controller(
         public_address=public_address,
     )
 
-    port = transport_name.split(":")[-1]
     logger.info(f"HCI{index} BD Address {public_address} port {port}")
+    # Ready line for whoever started this process: the transport is listening
+    # by now, and this is the only way to learn a kernel-chosen port. Logging
+    # goes to stderr, so stdout carries nothing but these lines.
+    print(f"HCI{index} {public_address} {port if port is not None else '-'}", flush=True)
 
     return transport, controller
 
