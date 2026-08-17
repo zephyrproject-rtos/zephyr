@@ -818,7 +818,6 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 	size_t skip = 0;
 	bool done = false;
 	struct k_thread *targets[8];
-	struct k_process *scopes[8];
 
 	/*
 	 * Resolve deliverable threads (one per member process) under the lock
@@ -857,22 +856,26 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 			}
 #ifdef CONFIG_SIGNAL
 			tgt = process_sig_target(proc, signo);
+			if (tgt == NULL) {
+				/* every member masked: pend at process scope,
+				 * under the lock so reap cannot race the queue
+				 */
+				if (z_sig_queue_process(proc, signo) == 0) {
+					ret = 0;
+				}
+				continue;
+			}
 #else
 			tgt = SYS_DLIST_PEEK_HEAD_CONTAINER(&proc->threads, tgt, process_node);
 #endif /* CONFIG_SIGNAL */
-			/* NULL target: every member masked, pend at process scope */
-			targets[n] = tgt;
-			scopes[n] = (tgt == NULL) ? proc : NULL;
-			n++;
+			targets[n++] = tgt;
 		}
 		k_spin_unlock(&process_lock, key);
 
 		found += n;
 #ifdef CONFIG_SIGNAL
 		for (int i = 0; i < n; i++) {
-			int err = (targets[i] == NULL)
-					  ? z_sig_queue_process(scopes[i], signo)
-					  : k_sig_queue(targets[i], signo, (union k_sig_val){0});
+			int err = k_sig_queue(targets[i], signo, (union k_sig_val){0});
 
 			if (err == -EINVAL) {
 				return -EINVAL;
@@ -910,6 +913,9 @@ static inline int z_vrfy_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 int z_impl_k_kill(k_pid_t pid, int signo)
 {
 	bool found = false;
+	bool live = false;
+	bool pended = false;
+	int ret = 0;
 #ifdef CONFIG_SIGNAL
 	k_tid_t tid = NULL;
 #endif /* CONFIG_SIGNAL */
@@ -917,12 +923,23 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 
 	K_SPINLOCK(&process_lock) {
 		proc = (pid == NULL) ? process_self() : process_ctx_resolve_locked(pid);
-		if (proc != NULL) {
-			found = true;
-#ifdef CONFIG_SIGNAL
-			tid = process_sig_target(proc, signo);
-#endif /* CONFIG_SIGNAL */
+		if (proc == NULL) {
+			K_SPINLOCK_BREAK;
 		}
+		found = true;
+		live = !sys_dlist_is_empty(&proc->threads);
+#ifdef CONFIG_SIGNAL
+		if ((signo != 0) && live) {
+			tid = process_sig_target(proc, signo);
+			if (tid == NULL) {
+				/* every member masked: pend at process scope,
+				 * under the lock so reap cannot race the queue
+				 */
+				ret = z_sig_queue_process(proc, signo);
+				pended = true;
+			}
+		}
+#endif /* CONFIG_SIGNAL */
 	}
 
 	if (!found) {
@@ -932,16 +949,17 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 		/* existence check only; zombies exist until reaped */
 		return 0;
 	}
-#ifdef CONFIG_SIGNAL
-	if (tid == NULL) {
+	if (!live) {
 		return -ESRCH;
 	}
-	if (tid == NULL) {
-		/* every member has the signal masked: pend at process scope */
-		return z_sig_queue_process(proc, signo);
+#ifdef CONFIG_SIGNAL
+	if (pended) {
+		return ret;
 	}
 	return k_sig_queue(tid, signo, (union k_sig_val){0});
 #else
+	ARG_UNUSED(pended);
+	ARG_UNUSED(ret);
 	return -ENOTSUP;
 #endif /* CONFIG_SIGNAL */
 }
@@ -1364,12 +1382,17 @@ static void sigchld_notifier(void *p1, void *p2, void *p3)
 		exited = K_WIFEXITED(status);
 		parent = child->parent;
 		target = (parent == NULL) ? NULL : process_sig_target(parent, K_SIG_CHLD);
+		if ((target == NULL) && (parent != NULL)) {
+			/* pend at the parent's process scope, under the lock
+			 * so reap cannot race the queue
+			 */
+			(void)z_sig_queue_chld(NULL, parent, pid, status, exited);
+		}
 		k_spin_unlock(&process_lock, key);
 
-		if ((target != NULL) || (parent != NULL)) {
+		if (target != NULL) {
 			/* best effort: the target may exit, or the queue may be full */
-			(void)z_sig_queue_chld(target, (target == NULL) ? parent : NULL, pid,
-					       status, exited);
+			(void)z_sig_queue_chld(target, NULL, pid, status, exited);
 		}
 	}
 }
