@@ -394,6 +394,10 @@ if(CONFIG_SOC_FAMILY_MCXA)
   endif()
 endif()
 
+if(CONFIG_SOC_FAMILY_MCXL)
+  set_variable_ifdef(CONFIG_SOC_FLASH_MCUX CONFIG_MCUX_COMPONENT_driver.romapi)
+endif()
+
 if(CONFIG_SOC_FAMILY_MCXN AND (NOT CONFIG_SOC_MCXN947) AND (NOT CONFIG_SOC_MCXN547))
   set_variable_ifdef(CONFIG_SOC_FLASH_MCUX CONFIG_MCUX_COMPONENT_driver.romapi_flashiap)
 endif()
