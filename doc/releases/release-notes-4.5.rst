@@ -649,6 +649,20 @@ New APIs and options
   * :c:enumerator:`PIXEL_FORMAT_YUYV`
   * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
 
+* FIDO2
+
+  * :c:func:`fido2_up_reset`
+  * :c:macro:`FIDO2_BLE_SERVICE_UUID_VAL`
+  * :c:macro:`FIDO2_BLE_SERVICE_DATA_PAIRING_MODE`
+  * :kconfig:option:`CONFIG_FIDO2_TRANSPORT_BLE`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_REQUIRE_AUTHENTICATED_LINK`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_RX_WORKQ_STACK_SIZE`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_RX_QUEUE_DEPTH`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_TX_FRAME_COUNT`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_KEEPALIVE_INTERVAL_MS`
+  * :kconfig:option:`CONFIG_FIDO2_BLE_RX_TIMEOUT_MS`
+
 * Fuel Gauge
 
   * :c:func:`fuel_gauge_set_buffer_prop` and the optional
