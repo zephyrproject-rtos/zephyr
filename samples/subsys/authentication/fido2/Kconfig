@@ -1,5 +1,69 @@
 # Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# Copyright (c) 2026 Jan-Philipp Schmale <jan-philipp.schmale@teratron.de>
 # SPDX-License-Identifier: Apache-2.0
+
+mainmenu "FIDO2 Sample Application"
+
+config SAMPLE_ENABLE_BT
+	bool "Enable Bluetooth in the FIDO2 sample"
+	help
+	  Enable Bluetooth LE support and the FIDO2 Bluetooth LE transport
+	  in the FIDO2 sample.
+
+if SAMPLE_ENABLE_BT
+
+configdefault BT
+	default y
+
+configdefault FIDO2_TRANSPORT_BLE
+	default y
+
+configdefault BT_PERIPHERAL
+	default y
+
+configdefault BT_SMP
+	default y
+
+configdefault BT_SETTINGS
+	default y
+
+configdefault BT_DEVICE_NAME
+	default "Zephyr FIDO2"
+
+configdefault BT_DIS
+	default y
+
+configdefault BT_DIS_FW_REV
+	default y
+
+configdefault BT_DIS_MANUF_NAME_STR
+	default "Zephyr Project"
+
+configdefault BT_DIS_MODEL_NUMBER_STR
+	default "FIDO2 Bluetooth LE Sample"
+
+configdefault BT_DIS_FW_REV_STR
+	default "0.1"
+
+configdefault BT_RX_STACK_SIZE
+	default 2048
+
+configdefault FIDO2_BLE_RX_WORKQ_STACK_SIZE
+	default 1024
+
+configdefault BT_PERIPHERAL_PREF_MIN_INT
+	default 24
+
+configdefault BT_PERIPHERAL_PREF_MAX_INT
+	default 40
+
+configdefault BT_PERIPHERAL_PREF_LATENCY
+	default 0
+
+configdefault BT_PERIPHERAL_PREF_TIMEOUT
+	default 400
+
+endif # SAMPLE_ENABLE_BT
 
 source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
