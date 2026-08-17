@@ -65,6 +65,8 @@
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #include <zephyr/dt-bindings/clock/stm32l5_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+#include <zephyr/dt-bindings/clock/stm32mp1_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -92,7 +94,7 @@
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
 #else
-#include <zephyr/dt-bindings/clock/stm32_clock.h>
+#error "Unsupported STM32 SoC series"
 #endif
 
 /** Common clock control device node for all STM32 chips */
