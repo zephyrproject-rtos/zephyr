@@ -57,6 +57,11 @@ ZTEST(bt_id_set_adv_random_addr, test_no_ext_adv)
 	expect_not_called_net_buf_simple_add();
 
 	zassert_ok(err, "Unexpected error code '%d' was returned", err);
+
+	zassert_equal(adv_param.adv_addr.type, BT_ADDR_LE_RANDOM,
+		      "Incorrect address type was set");
+	zassert_mem_equal(&adv_param.adv_addr.a, BT_RPA_ADDR, sizeof(bt_addr_t),
+			  "Incorrect address was set");
 }
 
 /*
