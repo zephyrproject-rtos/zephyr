@@ -153,11 +153,11 @@
 			};
 		};
 
-		pinctrl: pin-controller@400f0000 {
+		pinctrl: pin-controller@400cc000 {
 			compatible = "ti,mspm0-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x400f0000 0x6000>;
+			reg = <0x400cc000 0x6000>;
 
 			gpioa: gpio@400f0000 {
 				compatible = "ti,mspm0-gpio";
