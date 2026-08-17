@@ -889,6 +889,10 @@
 		compatible = "nxp,spc";
 		reg = <0xcb000 0x1000>;
 		wakeup-delay = <0x7d>;
+
+		bandgap_buffer: bandgap-buffer {
+			compatible = "nxp,spc-bandgap-buffer";
+		};
 	};
 
 	wuu: system-modules@92000 {
