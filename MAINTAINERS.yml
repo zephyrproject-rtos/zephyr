@@ -4109,7 +4109,7 @@ Microchip RISC-V Platforms:
   labels:
     - "platform: Microchip RISC-V"
 
-Microchip SAM Platforms:
+Microchip SAM MCU Platforms:
   status: maintained
   maintainers:
     - nandojve
@@ -4122,17 +4122,33 @@ Microchip SAM Platforms:
     - stephanosio
   files:
     - boards/atmel/
-    - boards/microchip/sam/
+    - boards/microchip/sam/sam_*/
     - dts/arm/atmel/
-    - dts/arm/microchip/sam/
+    - dts/arm/microchip/sam/sam_*/
     - soc/atmel/
-    - soc/microchip/sam/sama*/
+    - soc/microchip/sam/sam_*/
     - drivers/*/*sam*
     - dts/bindings/*/atmel,*
     - include/zephyr/*/*/*sam*
     - include/zephyr/*/*/*atmel*
   labels:
-    - "platform: Microchip SAM"
+    - "platform: Microchip SAM MCU"
+
+Microchip SAM MPU Platforms:
+  status: maintained
+  maintainers:
+    - TonyHan11
+  collaborators:
+    - MCHP-MPU-Solutions-SHA
+    - nandojve
+  files:
+    - boards/microchip/sam/sama*/
+    - dts/arm/microchip/sam/sam9/
+    - dts/arm/microchip/sam/sama*/
+    - soc/microchip/sam/common/
+    - soc/microchip/sam/sama*/
+  labels:
+    - "platform: Microchip SAM MPU"
 
 Microchip SmartFusion2 platform:
   status: maintained
