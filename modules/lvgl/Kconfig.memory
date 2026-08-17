@@ -68,7 +68,7 @@ config LV_Z_MEMORY_POOL_ZEPHYR_REGION_NAME
 	  Name of the Zephyr memory-region where LVGL memory pool is placed.
 
 config LV_Z_VDB_SIZE
-	int "Rendering buffer size"
+	int "Rendering buffer size" if !LV_Z_BUFFER_ALLOC_DISPLAY
 	default 100 if LV_Z_FULL_REFRESH
 	default 100 if LV_Z_DIRECT_RENDERING
 	range 100 100 if LV_Z_FULL_REFRESH || LV_Z_DIRECT_RENDERING
@@ -76,21 +76,27 @@ config LV_Z_VDB_SIZE
 	range 1 100
 	help
 	  Size of the buffer used for rendering screen content as a percentage
-	  of total display size.
+	  of total display size. It does not apply when the driver supplies
+	  the buffers, which are always full screen.
 
 config LV_Z_DOUBLE_VDB
 	bool "Use two rendering buffers"
+	default y if LV_Z_BUFFER_ALLOC_DISPLAY
 	help
-	  Use two buffers to render and flush data in parallel
+	  Use two buffers to render and flush data in parallel, so LVGL draws
+	  the next frame while the current one is on screen. When the driver
+	  supplies the buffers, it has to own two of them.
 
 choice LV_Z_RENDERING_MODE
 	prompt "Rendering Mode"
+	default LV_Z_FULL_REFRESH if LV_Z_BUFFER_ALLOC_DISPLAY
 	default LV_Z_PARTIAL_REFRESH
 	help
 	  Select the rendering mode for LVGL.
 
 config LV_Z_PARTIAL_REFRESH
 	bool "Partial Refresh Mode"
+	depends on !LV_Z_BUFFER_ALLOC_DISPLAY
 	help
 	  Use the buffer(s) to render to the display using buffers smaller
 	  than the size of the display. Use of buffers at least 1/10 display
@@ -118,6 +124,10 @@ config LV_Z_FULL_REFRESH
 	  performance for display controllers that require a framebuffer
 	  to be present in system memory, since the controller can render
 	  the LVGL framebuffer directly.
+
+	  Always selected with LV_Z_BUFFER_ALLOC_DISPLAY, where the driver
+	  presents a whole buffer: a partial render would leave the regions
+	  it did not draw showing an older frame.
 
 endchoice
 
@@ -183,6 +193,14 @@ config LV_Z_BUFFER_ALLOC_DYNAMIC
 	help
 	  Rendering buffers are dynamically allocated based on the actual
 	  display parameters
+
+config LV_Z_BUFFER_ALLOC_DISPLAY
+	bool "Supplied by the display driver"
+	depends on DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
+	help
+	  Render straight into the framebuffers the display driver owns, so
+	  flushing a frame swaps a buffer instead of copying one. The buffers
+	  are whole frames, so the screen is rendered whole.
 
 endchoice
 

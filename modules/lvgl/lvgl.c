@@ -146,6 +146,97 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 }
 #endif
 
+#ifdef CONFIG_LV_Z_BUFFER_ALLOC_DISPLAY
+
+static int lvgl_display_px_bytes(enum display_pixel_format format, uint32_t *px_bytes)
+{
+	switch (format) {
+	case PIXEL_FORMAT_ARGB_8888:
+	case PIXEL_FORMAT_XRGB_8888:
+		*px_bytes = 4;
+		break;
+	case PIXEL_FORMAT_RGB_888:
+	case PIXEL_FORMAT_BGR_888:
+		*px_bytes = 3;
+		break;
+	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_RGB_565X:
+		*px_bytes = 2;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static int lvgl_use_display_buffers(lv_display_t *display)
+{
+	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
+	uint32_t disp_px_bytes;
+	uint32_t buf_size;
+	size_t buf0_size = 0;
+	size_t buf1_size = 0;
+	void *buf0;
+	void *buf1 = NULL;
+
+	if (lvgl_display_px_bytes(data->cap.current_pixel_format, &disp_px_bytes) < 0) {
+		LOG_ERR("Display pixel format %u cannot back a render buffer",
+			data->cap.current_pixel_format);
+		return -ENOTSUP;
+	}
+
+	/* A wider colour depth would render past the end of the buffer. */
+	if (disp_px_bytes != DIV_ROUND_UP(CONFIG_LV_Z_BITS_PER_PIXEL, 8)) {
+		LOG_ERR("LVGL colour depth %u does not match the display's %u bytes per pixel",
+			CONFIG_LV_Z_BITS_PER_PIXEL, disp_px_bytes);
+		return -EINVAL;
+	}
+
+	/* LVGL rounds every row up to its stride alignment, so a frame is
+	 * wider in memory than the visible pixels alone.
+	 */
+	buf_size = ROUND_UP(data->cap.x_resolution * disp_px_bytes, LV_DRAW_BUF_STRIDE_ALIGN) *
+		   data->cap.y_resolution;
+
+	/* By index, so the pair is fixed rather than following whichever
+	 * buffer the driver is currently drawing into.
+	 */
+	buf0 = display_get_framebuffer(data->display_dev, 0, &buf0_size);
+	if (buf0 == NULL) {
+		LOG_ERR("Display driver does not expose a framebuffer");
+		return -ENOTSUP;
+	}
+
+#ifdef CONFIG_LV_Z_DOUBLE_VDB
+	if (data->cap.framebuffer_count > 1U) {
+		buf1 = display_get_framebuffer(data->display_dev, 1, &buf1_size);
+	}
+#endif
+
+	/* A frame is written whole, so a buffer shorter than one is fatal. A
+	 * driver that does not report a size is taken at its word.
+	 */
+	if ((buf0_size != 0 && buf0_size < buf_size) ||
+	    (buf1 != NULL && buf1_size != 0 && buf1_size < buf_size)) {
+		LOG_ERR("Display framebuffers are smaller than a %u byte frame", buf_size);
+		return -EINVAL;
+	}
+
+	/* LVGL only enforces its alignment on buffers it allocates itself. */
+	if (!IS_ALIGNED(buf0, LV_DRAW_BUF_ALIGN) ||
+	    (buf1 != NULL && !IS_ALIGNED(buf1, LV_DRAW_BUF_ALIGN))) {
+		LOG_ERR("Display framebuffers are not aligned to %u bytes", LV_DRAW_BUF_ALIGN);
+		return -EINVAL;
+	}
+
+	lv_display_set_buffers(display, buf0, buf1, buf_size, RENDER_MODE);
+
+	return 0;
+}
+
+#endif /* CONFIG_LV_Z_BUFFER_ALLOC_DISPLAY */
+
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 
 static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int disp_idx)
@@ -166,7 +257,7 @@ static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int di
 #endif
 }
 
-#else
+#elif !defined(CONFIG_LV_Z_BUFFER_ALLOC_DISPLAY)
 
 static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 {
@@ -399,7 +490,12 @@ int lvgl_init(void)
 			return -ENOTSUP;
 		}
 
-#ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
+#if defined(CONFIG_LV_Z_BUFFER_ALLOC_DISPLAY)
+		err = lvgl_use_display_buffers(lv_displays[i]);
+		if (err < 0) {
+			return err;
+		}
+#elif defined(CONFIG_LV_Z_BUFFER_ALLOC_STATIC)
 		lvgl_allocate_rendering_buffers_static(lv_displays[i], i);
 #else
 		err = lvgl_allocate_rendering_buffers(lv_displays[i]);
