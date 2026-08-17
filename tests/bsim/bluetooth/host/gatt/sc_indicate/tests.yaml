@@ -13,6 +13,7 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_prj_conf
       tests_scripts:
         - test_scripts/sc_indicate.sh
+        - test_scripts/sc_indicate_reboot.sh
   bluetooth.host.gatt.sc_indicate_privacy:
     extra_args:
       - EXTRA_CONF_FILE=overlay-privacy.conf
@@ -21,3 +22,4 @@ tests:
       bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_overlay-privacy_conf
       tests_scripts:
         - test_scripts/sc_indicate_privacy.sh
+        - test_scripts/sc_indicate_reboot_privacy.sh
