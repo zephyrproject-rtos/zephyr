@@ -626,7 +626,7 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 	SMBUS_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @brief Configure operation of a SMBus host controller.
+ * @brief Configure operation of an SMBus host controller.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
@@ -644,7 +644,7 @@ static inline int z_impl_smbus_configure(const struct device *dev,
 }
 
 /**
- * @brief Get configuration of a SMBus host controller.
+ * @brief Get configuration of an SMBus host controller.
  *
  * This routine provides a way to get current configuration. It is allowed to
  * call the function before smbus_configure, because some SMBus ports can be
@@ -678,7 +678,7 @@ static inline int z_impl_smbus_get_config(const struct device *dev,
 }
 
 /**
- * @brief Add SMBUSALERT callback for a SMBus host controller.
+ * @brief Add SMBALERT callback for an SMBus host controller.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
@@ -701,7 +701,7 @@ static inline int smbus_smbalert_set_cb(const struct device *dev,
 }
 
 /**
- * @brief Remove SMBUSALERT callback from a SMBus host controller.
+ * @brief Remove SMBALERT callback from an SMBus host controller.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
@@ -724,7 +724,7 @@ static inline int smbus_smbalert_remove_cb(const struct device *dev,
 }
 
 /**
- * @brief Add Host Notify callback for a SMBus host controller.
+ * @brief Add Host Notify callback for an SMBus host controller.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
@@ -747,7 +747,7 @@ static inline int smbus_host_notify_set_cb(const struct device *dev,
 }
 
 /**
- * @brief Remove Host Notify callback from a SMBus host controller.
+ * @brief Remove Host Notify callback from an SMBus host controller.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
@@ -770,9 +770,9 @@ static inline int smbus_host_notify_remove_cb(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Quick operation
+ * @brief Perform an SMBus Quick operation
  *
- * This routine provides a generic interface to perform SMBus Quick
+ * This routine provides a generic interface to perform an SMBus Quick
  * operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -805,9 +805,9 @@ static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
 }
 
 /**
- * @brief Perform SMBus Byte Write operation
+ * @brief Perform an SMBus Byte Write operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Byte Write operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -835,9 +835,9 @@ static inline int z_impl_smbus_byte_write(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Byte Read operation
+ * @brief Perform an SMBus Byte Read operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Byte Read operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -865,9 +865,9 @@ static inline int z_impl_smbus_byte_read(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Byte Data Write operation
+ * @brief Perform an SMBus Byte Data Write operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Byte Data Write operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -897,9 +897,9 @@ static inline int z_impl_smbus_byte_data_write(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Byte Data Read operation
+ * @brief Perform an SMBus Byte Data Read operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Byte Data Read operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -929,9 +929,9 @@ static inline int z_impl_smbus_byte_data_read(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Word Data Write operation
+ * @brief Perform an SMBus Word Data Write operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Word Data Write operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -961,9 +961,9 @@ static inline int z_impl_smbus_word_data_write(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Word Data Read operation
+ * @brief Perform an SMBus Word Data Read operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Word Data Read operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -993,9 +993,9 @@ static inline int z_impl_smbus_word_data_read(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Process Call operation
+ * @brief Perform an SMBus Process Call operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Process Call operation, which means Write 2 bytes following by
  * Read 2 bytes.
  *
@@ -1027,9 +1027,9 @@ static inline int z_impl_smbus_pcall(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Block Write operation
+ * @brief Perform an SMBus Block Write operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Block Write operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -1064,9 +1064,9 @@ static inline int z_impl_smbus_block_write(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Block Read operation
+ * @brief Perform an SMBus Block Read operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Block Read operation.
  *
  * @param dev Pointer to the device structure for the SMBus driver instance.
@@ -1097,9 +1097,9 @@ static inline int z_impl_smbus_block_read(const struct device *dev,
 }
 
 /**
- * @brief Perform SMBus Block Process Call operation
+ * @brief Perform an SMBus Block Process Call operation
  *
- * This routine provides a generic interface to perform SMBus
+ * This routine provides a generic interface to perform an SMBus
  * Block Process Call operation. This operation is basically
  * Block Write followed by Block Read.
  *
