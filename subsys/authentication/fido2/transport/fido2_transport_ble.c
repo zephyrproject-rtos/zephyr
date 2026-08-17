@@ -11,13 +11,13 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 
-#include <zephyr/authentication/fido2/fido2_ble_internal.h>
+#include "fido2_transport_ble.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
-#define FIDO2_BLE_KEEPALIVE_INTERVAL_MS 500U
-#define FIDO2_BLE_KEEPALIVE_PROCESSING  0x01U
-#define FIDO2_BLE_KEEPALIVE_UP_NEEDED   0x02U
+#define FIDO2_BLE_KEEPALIVE_INTERVAL_MS 500
+#define FIDO2_BLE_KEEPALIVE_PROCESSING  0x01
+#define FIDO2_BLE_KEEPALIVE_UP_NEEDED   0x02
 
 /**
  * @brief Runtime state for the FIDO2 BLE transport.
@@ -96,7 +96,7 @@ static void keepalive_stop(uint32_t cid)
 	bool stop;
 
 	k_mutex_lock(&keepalive_mutex, K_FOREVER);
-	stop = (cid == 0U) || ((uint32_t)atomic_get(&transport_ctx.keepalive_cid) == cid);
+	stop = (cid == 0) || ((uint32_t)atomic_get(&transport_ctx.keepalive_cid) == cid);
 	if (stop) {
 		atomic_clear(&transport_ctx.keepalive_active);
 		k_timer_stop(&transport_ctx.keepalive_timer);
@@ -129,9 +129,12 @@ static int message_received(struct bt_conn *conn, const uint8_t *data, size_t le
 
 static void cancel_received(void)
 {
-	if (atomic_get(&transport_ctx.initialized) && (transport_ctx.cancel_cb != NULL)) {
-		transport_ctx.cancel_cb();
+	if (!atomic_get(&transport_ctx.initialized) ||
+	    !atomic_get(&transport_ctx.transaction_active) || (transport_ctx.cancel_cb == NULL)) {
+		return;
 	}
+
+	transport_ctx.cancel_cb();
 }
 
 static bool transaction_active(void)
@@ -159,18 +162,19 @@ static void notifications_changed(uint32_t cid, bool enabled)
 	}
 }
 
+static const struct fido2_ble_framing_callbacks framing_callbacks = {
+	.message_received = message_received,
+	.cancel_received = cancel_received,
+	.transaction_active = transaction_active,
+};
+static const struct fido2_ble_gatt_callbacks gatt_callbacks = {
+	.fragment_received = fido2_ble_framing_submit_fragment,
+	.disconnected = connection_disconnected,
+	.notifications_changed = notifications_changed,
+};
+
 static int fido2_ble_init(fido2_transport_recv_cb_t recv_cb, fido2_transport_cancel_cb_t cancel_cb)
 {
-	static const struct fido2_ble_framing_callbacks framing_callbacks = {
-		.message_received = message_received,
-		.cancel_received = cancel_received,
-		.transaction_active = transaction_active,
-	};
-	static const struct fido2_ble_gatt_callbacks gatt_callbacks = {
-		.fragment_received = fido2_ble_framing_submit_fragment,
-		.disconnected = connection_disconnected,
-		.notifications_changed = notifications_changed,
-	};
 	int err;
 
 	if ((recv_cb == NULL) || (cancel_cb == NULL)) {
@@ -218,7 +222,7 @@ static int fido2_ble_send(uint32_t cid, const uint8_t *data, size_t len)
 	struct bt_conn *conn;
 	int err;
 
-	if ((data == NULL) || (len == 0U)) {
+	if ((data == NULL) || (len == 0)) {
 		return -EINVAL;
 	}
 
@@ -297,19 +301,19 @@ static void fido2_ble_shutdown(void)
 	fido2_transport_cancel_cb_t cancel_cb;
 	bool active;
 
-	if (!atomic_cas(&transport_ctx.initialized, 1, 0)) {
+	if (!atomic_get(&transport_ctx.initialized)) {
 		return;
 	}
 
-	/* Stop producers before clearing callbacks or releasing an active transaction. */
-	keepalive_stop(0U);
-	fido2_ble_gatt_shutdown();
+	/* Stop current transport activity and clean up the active transaction. */
+	keepalive_stop(0);
+
 	fido2_ble_framing_shutdown();
+	fido2_ble_gatt_shutdown();
 
 	cancel_cb = transport_ctx.cancel_cb;
 	active = atomic_cas(&transport_ctx.transaction_active, 1, 0);
-	transport_ctx.recv_cb = NULL;
-	transport_ctx.cancel_cb = NULL;
+
 	atomic_clear(&transport_ctx.keepalive_cid);
 
 	if (active && (cancel_cb != NULL)) {

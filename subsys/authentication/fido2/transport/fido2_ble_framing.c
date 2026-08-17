@@ -8,27 +8,26 @@
 #include <limits.h>
 #include <string.h>
 
-#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
-#include <zephyr/authentication/fido2/fido2_ble_internal.h>
+#include "fido2_transport_ble.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
-#define FIDO2_BLE_ERR_INVALID_CMD 0x01U
-#define FIDO2_BLE_ERR_INVALID_LEN 0x03U
-#define FIDO2_BLE_ERR_INVALID_SEQ 0x04U
-#define FIDO2_BLE_ERR_REQ_TIMEOUT 0x05U
-#define FIDO2_BLE_ERR_BUSY        0x06U
-#define FIDO2_BLE_ERR_OTHER       0x7FU
+#define FIDO2_BLE_ERR_INVALID_CMD 0x01
+#define FIDO2_BLE_ERR_INVALID_LEN 0x03
+#define FIDO2_BLE_ERR_INVALID_SEQ 0x04
+#define FIDO2_BLE_ERR_REQ_TIMEOUT 0x05
+#define FIDO2_BLE_ERR_BUSY        0x06
+#define FIDO2_BLE_ERR_OTHER       0x7F
 
-#define FIDO2_BLE_RX_TIMEOUT_MS          1500U
-#define FIDO2_BLE_TX_RETRY_DELAY_MS      5U
-#define FIDO2_BLE_TX_SHUTDOWN_TIMEOUT_MS 1000U
+#define FIDO2_BLE_RX_TIMEOUT_MS          1500
+#define FIDO2_BLE_TX_RETRY_DELAY_MS      5
+#define FIDO2_BLE_TX_SHUTDOWN_TIMEOUT_MS 1000
 
 BUILD_ASSERT(FIDO2_BLE_MAX_MESSAGE_SIZE <= UINT16_MAX,
 	     "FIDO BLE messages use a 16-bit length field");
@@ -64,6 +63,44 @@ struct fido2_ble_tx_frame {
 };
 
 /**
+ * @brief Runtime state for FIDO BLE RX fragmentation and reassembly
+ */
+struct fido2_ble_rx_state {
+	/** Referenced connection that owns the current reassembly. */
+	struct bt_conn *conn;
+	/** true while a fragmented command is being reassembled. */
+	bool active;
+	/** Command identifier from the initial fragment. */
+	uint8_t command;
+	/** Total payload length declared by the initial fragment. */
+	uint16_t expected_length;
+	/** Number of payload bytes received so far. */
+	uint16_t received_length;
+	/** Sequence number required for the next continuation fragment. */
+	uint8_t expected_sequence;
+	/** Buffer containing the reassembled command payload. */
+	uint8_t data[FIDO2_BLE_MAX_MESSAGE_SIZE];
+};
+
+/**
+ * @brief Runtime state for FIDO BLE TX fragmentation and reassembly
+ */
+struct fido2_ble_tx_state {
+	/** Frame currently being transmitted. */
+	struct fido2_ble_tx_frame *active;
+	/** true after the command's initial fragment has been submitted. */
+	bool initial_sent;
+	/** true while a GATT notification completion callback is pending. */
+	bool in_flight;
+	/** Number of payload bytes already submitted. */
+	size_t offset;
+	/** Sequence number to use for the next continuation fragment. */
+	uint8_t sequence;
+	/** Scratch buffer for the next GATT notification fragment. */
+	uint8_t fragment[CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH];
+};
+
+/**
  * @brief Runtime state for FIDO BLE framing and reassembly.
  */
 struct fido2_ble_framing_context {
@@ -71,42 +108,12 @@ struct fido2_ble_framing_context {
 	struct fido2_ble_framing_callbacks callbacks;
 	/** Set while the framing layer accepts RX and TX work. */
 	atomic_t initialized;
-	/** Ensures the dedicated RX work queue is started only once. */
-	atomic_t work_queue_started;
 	/** Set while shutdown is draining asynchronous work. */
 	atomic_t stopping;
 	/** Receive-side state for reassembling one FIDO BLE command. */
-	struct {
-		/** Referenced connection that owns the current reassembly. */
-		struct bt_conn *conn;
-		/** true while a fragmented command is being reassembled. */
-		bool active;
-		/** Command identifier from the initial fragment. */
-		uint8_t command;
-		/** Total payload length declared by the initial fragment. */
-		uint16_t expected_length;
-		/** Number of payload bytes received so far. */
-		uint16_t received_length;
-		/** Sequence number required for the next continuation fragment. */
-		uint8_t expected_sequence;
-		/** Buffer containing the reassembled command payload. */
-		uint8_t data[FIDO2_BLE_MAX_MESSAGE_SIZE];
-	} rx;
+	struct fido2_ble_rx_state rx;
 	/** Transmit-side state for fragmenting one queued FIDO BLE command. */
-	struct {
-		/** Frame currently being transmitted. */
-		struct fido2_ble_tx_frame *active;
-		/** true after the command's initial fragment has been submitted. */
-		bool initial_sent;
-		/** true while a GATT notification completion callback is pending. */
-		bool in_flight;
-		/** Number of payload bytes already submitted. */
-		size_t offset;
-		/** Sequence number to use for the next continuation fragment. */
-		uint8_t sequence;
-		/** Scratch buffer for the next GATT notification fragment. */
-		uint8_t fragment[CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH];
-	} tx;
+	struct fido2_ble_tx_state tx;
 };
 
 static struct fido2_ble_framing_context framing_ctx;
@@ -126,11 +133,19 @@ static struct k_work_delayable rx_timeout_work;
 static struct k_work_delayable tx_work;
 static K_MUTEX_DEFINE(rx_mutex);
 static K_MUTEX_DEFINE(tx_mutex);
+static K_MUTEX_DEFINE(rx_submit_mutex);
 
 static void tx_schedule(k_timeout_t delay)
 {
-	if (atomic_get(&framing_ctx.initialized) && !atomic_get(&framing_ctx.stopping)) {
-		(void)k_work_reschedule(&tx_work, delay);
+	int err;
+
+	if (!atomic_get(&framing_ctx.initialized) || atomic_get(&framing_ctx.stopping)) {
+		return;
+	}
+
+	err = k_work_reschedule(&tx_work, delay);
+	if (err < 0) {
+		LOG_ERR("Failed to schedule FIDO BLE TX work: %d", err);
 	}
 }
 
@@ -140,7 +155,7 @@ static void tx_frame_release(struct fido2_ble_tx_frame *frame)
 		return;
 	}
 
-	bt_conn_unref(frame->conn);
+	bt_conn_drop(&frame->conn);
 	k_mem_slab_free(&fido2_ble_tx_slab, frame);
 }
 
@@ -151,8 +166,8 @@ static struct fido2_ble_tx_frame *tx_active_remove_locked(void)
 	framing_ctx.tx.active = NULL;
 	framing_ctx.tx.initial_sent = false;
 	framing_ctx.tx.in_flight = false;
-	framing_ctx.tx.offset = 0U;
-	framing_ctx.tx.sequence = 0U;
+	framing_ctx.tx.offset = 0;
+	framing_ctx.tx.sequence = 0;
 
 	return frame;
 }
@@ -218,8 +233,8 @@ static void tx_work_handler(struct k_work *work)
 	if (framing_ctx.tx.active == NULL) {
 		framing_ctx.tx.active = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT);
 		framing_ctx.tx.initial_sent = false;
-		framing_ctx.tx.offset = 0U;
-		framing_ctx.tx.sequence = 0U;
+		framing_ctx.tx.offset = 0;
+		framing_ctx.tx.sequence = 0;
 	}
 
 	frame = framing_ctx.tx.active;
@@ -237,7 +252,7 @@ static void tx_work_handler(struct k_work *work)
 	}
 
 	mtu = bt_gatt_get_mtu(frame->conn);
-	if (mtu <= 3U) {
+	if (mtu <= 3) {
 		failed = tx_active_remove_locked();
 		k_mutex_unlock(&tx_mutex);
 		tx_frame_release(failed);
@@ -246,8 +261,8 @@ static void tx_work_handler(struct k_work *work)
 	}
 
 	max_fragment_len =
-		MIN((uint16_t)CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH, (uint16_t)(mtu - 3U));
-	if (max_fragment_len < 3U) {
+		MIN((uint16_t)CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH, (uint16_t)(mtu - 3));
+	if (max_fragment_len < 3) {
 		failed = tx_active_remove_locked();
 		k_mutex_unlock(&tx_mutex);
 		tx_frame_release(failed);
@@ -264,26 +279,29 @@ static void tx_work_handler(struct k_work *work)
 		/* Initial fragments carry command, 16-bit payload length, then payload bytes. */
 		framing_ctx.tx.fragment[0] = (uint8_t)frame->command;
 		sys_put_be16((uint16_t)frame->len, &framing_ctx.tx.fragment[1]);
-		chunk_len = MIN(frame->len, (size_t)(max_fragment_len - 3U));
-		if (chunk_len != 0U) {
-			memcpy(&framing_ctx.tx.fragment[3], frame->data, chunk_len);
+		chunk_len = MIN(frame->len, (size_t)(max_fragment_len - 3));
+		if (chunk_len != 0) {
+			(void)memcpy(&framing_ctx.tx.fragment[3], frame->data, chunk_len);
 		}
-		fragment_len = (uint16_t)(3U + chunk_len);
+		fragment_len = (uint16_t)(3 + chunk_len);
 		next_offset = chunk_len;
 		framing_ctx.tx.initial_sent = true;
 	} else {
 		/* Continuation fragments carry a 7-bit sequence number followed by payload. */
-		chunk_len = MIN(frame->len - old_offset, (size_t)(max_fragment_len - 1U));
+		chunk_len = MIN(frame->len - old_offset, (size_t)(max_fragment_len - 1));
 		framing_ctx.tx.fragment[0] = old_sequence;
-		memcpy(&framing_ctx.tx.fragment[1], &frame->data[old_offset], chunk_len);
-		fragment_len = (uint16_t)(1U + chunk_len);
+		(void)memcpy(&framing_ctx.tx.fragment[1], &frame->data[old_offset], chunk_len);
+		fragment_len = (uint16_t)(1 + chunk_len);
 		next_offset = old_offset + chunk_len;
-		next_sequence = (old_sequence + 1U) & 0x7FU;
+		next_sequence = (old_sequence + 1) & 0x7F;
 	}
 
 	framing_ctx.tx.offset = next_offset;
 	framing_ctx.tx.sequence = next_sequence;
+
+	k_sem_reset(&fido2_ble_tx_complete);
 	framing_ctx.tx.in_flight = true;
+
 	k_mutex_unlock(&tx_mutex);
 
 	err = fido2_ble_gatt_notify(frame->conn, framing_ctx.tx.fragment, fragment_len,
@@ -331,7 +349,7 @@ int fido2_ble_framing_send(struct bt_conn *conn, enum fido2_ble_command command,
 		return -ENOTCONN;
 	}
 
-	if ((data == NULL) && (len != 0U)) {
+	if ((data == NULL) && (len != 0)) {
 		return -EINVAL;
 	}
 
@@ -354,11 +372,16 @@ int fido2_ble_framing_send(struct bt_conn *conn, enum fido2_ble_command command,
 
 	/* Copy the complete command so callers may release their payload after this returns. */
 	frame->conn = bt_conn_ref(conn);
+	if (frame->conn == NULL) {
+		k_mem_slab_free(&fido2_ble_tx_slab, frame);
+		return -ENOTCONN;
+	}
+
 	frame->command = command;
 	frame->len = len;
 	frame->cancelled = false;
-	if (len != 0U) {
-		memcpy(frame->data, data, len);
+	if (len != 0) {
+		(void)memcpy(frame->data, data, len);
 	}
 
 	k_fifo_put(&fido2_ble_tx_fifo, frame);
@@ -381,7 +404,7 @@ static struct bt_conn *rx_clear_locked(void)
 {
 	struct bt_conn *conn = framing_ctx.rx.conn;
 
-	memset(&framing_ctx.rx, 0, sizeof(framing_ctx.rx));
+	(void)memset(&framing_ctx.rx, 0, sizeof(framing_ctx.rx));
 
 	return conn;
 }
@@ -441,21 +464,21 @@ static void process_initial_locked(struct bt_conn *conn, const uint8_t *data, ui
 	uint16_t payload_len;
 	uint8_t command;
 
-	if (len < 3U) {
+	if (len < 3) {
 		send_error(conn, FIDO2_BLE_ERR_INVALID_LEN);
 		return;
 	}
 
 	command = data[0];
 	expected_len = sys_get_be16(&data[1]);
-	payload_len = len - 3U;
+	payload_len = len - 3;
 
 	/*
 	 * CANCEL is a zero-length control command. Handle it immediately so it can abort
 	 * reassembly or the active CTAP operation; the command itself has no response.
 	 */
 	if (command == FIDO2_BLE_CMD_CANCEL) {
-		if ((expected_len != 0U) || (payload_len != 0U)) {
+		if ((expected_len != 0) || (payload_len != 0)) {
 			send_error(conn, FIDO2_BLE_ERR_INVALID_LEN);
 			return;
 		}
@@ -477,7 +500,7 @@ static void process_initial_locked(struct bt_conn *conn, const uint8_t *data, ui
 	}
 
 	if ((expected_len > sizeof(framing_ctx.rx.data)) || (payload_len > expected_len) ||
-	    ((command == FIDO2_BLE_CMD_MSG) && (expected_len == 0U))) {
+	    ((command == FIDO2_BLE_CMD_MSG) && (expected_len == 0))) {
 		send_error(conn, FIDO2_BLE_ERR_INVALID_LEN);
 		return;
 	}
@@ -488,9 +511,9 @@ static void process_initial_locked(struct bt_conn *conn, const uint8_t *data, ui
 	framing_ctx.rx.command = command;
 	framing_ctx.rx.expected_length = expected_len;
 	framing_ctx.rx.received_length = payload_len;
-	framing_ctx.rx.expected_sequence = 0U;
-	if (payload_len != 0U) {
-		memcpy(framing_ctx.rx.data, &data[3], payload_len);
+	framing_ctx.rx.expected_sequence = 0;
+	if (payload_len != 0) {
+		(void)memcpy(framing_ctx.rx.data, &data[3], payload_len);
 	}
 
 	if (framing_ctx.rx.received_length == framing_ctx.rx.expected_length) {
@@ -523,20 +546,18 @@ static void process_continuation_locked(struct bt_conn *conn, const uint8_t *dat
 		return;
 	}
 
-	payload_len = len - 1U;
+	payload_len = len - 1;
 	remaining_len = framing_ctx.rx.expected_length - framing_ctx.rx.received_length;
-	if (payload_len > remaining_len) {
+	if ((payload_len == 0) || (payload_len > remaining_len)) {
 		rx_reset_locked();
 		send_error(conn, FIDO2_BLE_ERR_INVALID_LEN);
 		return;
 	}
 
-	if (payload_len != 0U) {
-		memcpy(&framing_ctx.rx.data[framing_ctx.rx.received_length], &data[1], payload_len);
-	}
+	(void)memcpy(&framing_ctx.rx.data[framing_ctx.rx.received_length], &data[1], payload_len);
 
 	framing_ctx.rx.received_length += payload_len;
-	framing_ctx.rx.expected_sequence = (framing_ctx.rx.expected_sequence + 1U) & 0x7FU;
+	framing_ctx.rx.expected_sequence = (framing_ctx.rx.expected_sequence + 1) & 0x7F;
 
 	if (framing_ctx.rx.received_length == framing_ctx.rx.expected_length) {
 		dispatch_complete_locked(conn);
@@ -557,7 +578,7 @@ static void process_fragment(struct bt_conn *conn, const uint8_t *data, uint16_t
 
 	k_mutex_lock(&rx_mutex, K_FOREVER);
 	/* Bit 7 distinguishes command-bearing initial fragments from continuation fragments. */
-	if ((data[0] & BIT(7)) != 0U) {
+	if ((data[0] & BIT(7)) != 0) {
 		process_initial_locked(conn, data, len);
 	} else {
 		process_continuation_locked(conn, data, len);
@@ -599,6 +620,15 @@ static void rx_timeout_handler(struct k_work *work)
 	}
 }
 
+static void rx_queue_purge(void)
+{
+	struct fido2_ble_rx_fragment fragment;
+
+	while (k_msgq_get(&fido2_ble_rx_msgq, &fragment, K_NO_WAIT) == 0) {
+		bt_conn_unref(fragment.conn);
+	}
+}
+
 int fido2_ble_framing_submit_fragment(struct bt_conn *conn, const void *data, uint16_t len)
 {
 	struct fido2_ble_rx_fragment fragment;
@@ -612,32 +642,43 @@ int fido2_ble_framing_submit_fragment(struct bt_conn *conn, const void *data, ui
 		return -EMSGSIZE;
 	}
 
+	k_mutex_lock(&rx_submit_mutex, K_FOREVER);
+
 	if (!atomic_get(&framing_ctx.initialized) || atomic_get(&framing_ctx.stopping)) {
-		return -ESHUTDOWN;
+		err = -ESHUTDOWN;
+		goto out_unlock;
 	}
 
 	if (!fido2_ble_gatt_conn_is_ready(conn)) {
-		return -ENOTCONN;
+		err = -ENOTCONN;
+		goto out_unlock;
 	}
 
 	/* Hold a connection reference while the fragment waits in the asynchronous RX queue. */
 	fragment.conn = bt_conn_ref(conn);
 	fragment.len = len;
-	memcpy(fragment.data, data, len);
+	(void)memcpy(fragment.data, data, len);
 
 	err = k_msgq_put(&fido2_ble_rx_msgq, &fragment, K_NO_WAIT);
 	if (err != 0) {
 		bt_conn_unref(fragment.conn);
-		return -ENOMEM;
+		err = -ENOMEM;
+		goto out_unlock;
 	}
 
 	err = k_work_submit_to_queue(&rx_work_q, &rx_work);
 	if (err < 0) {
 		LOG_ERR("Failed to submit FIDO BLE RX work: %d", err);
-		return err;
+		rx_queue_purge();
+		goto out_unlock;
 	}
 
-	return 0;
+	err = 0;
+
+out_unlock:
+	k_mutex_unlock(&rx_submit_mutex);
+
+	return err;
 }
 
 void fido2_ble_framing_connection_closed(struct bt_conn *conn)
@@ -676,8 +717,10 @@ void fido2_ble_framing_connection_closed(struct bt_conn *conn)
 	k_mutex_unlock(&tx_mutex);
 	tx_frame_release(frame);
 
-	while ((frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT)) != NULL) {
+	frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT);
+	while (frame != NULL) {
 		tx_frame_release(frame);
+		frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT);
 	}
 }
 
@@ -688,78 +731,94 @@ int fido2_ble_framing_init(const struct fido2_ble_framing_callbacks *callbacks)
 		return -EINVAL;
 	}
 
-	if (!atomic_cas(&framing_ctx.work_queue_started, 0, 1)) {
+	if (!atomic_cas(&framing_ctx.initialized, 0, 1)) {
 		return -EALREADY;
 	}
 
 	framing_ctx.callbacks = *callbacks;
+
 	atomic_clear(&framing_ctx.stopping);
+
 	k_sem_reset(&fido2_ble_tx_complete);
 	k_msgq_purge(&fido2_ble_rx_msgq);
 
-	/* Reassembly uses a private cooperative work queue to keep GATT callbacks short. */
 	k_work_init(&rx_work, rx_work_handler);
 	k_work_init_delayable(&rx_timeout_work, rx_timeout_handler);
 	k_work_init_delayable(&tx_work, tx_work_handler);
-	k_work_queue_start(&rx_work_q, rx_work_q_stack, K_THREAD_STACK_SIZEOF(rx_work_q_stack),
-			   K_PRIO_COOP(4), NULL);
-	k_thread_name_set(rx_work_q.thread_id, "fido2_ble_rx");
 
-	atomic_set(&framing_ctx.initialized, 1);
+	k_work_queue_start(&rx_work_q, rx_work_q_stack, K_THREAD_STACK_SIZEOF(rx_work_q_stack),
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO + 1), NULL);
+
+	k_thread_name_set(rx_work_q.thread_id, "fido2_ble_rx");
 
 	return 0;
 }
 
 void fido2_ble_framing_shutdown(void)
 {
-	struct fido2_ble_rx_fragment fragment;
 	struct fido2_ble_tx_frame *frame;
 	struct bt_conn *rx_conn;
 	struct k_work_sync sync;
 	bool wait_for_tx;
 	int err;
 
-	if (!atomic_cas(&framing_ctx.initialized, 1, 0)) {
+	if (!atomic_get(&framing_ctx.initialized)) {
 		return;
 	}
 
-	atomic_set(&framing_ctx.stopping, 1);
+	/*
+	 * Serialize shutdown against new RX submissions. Once stopping is
+	 * set, no new fragments may be queued until cleanup has completed.
+	 */
+	k_mutex_lock(&rx_submit_mutex, K_FOREVER);
+
+	if (!atomic_cas(&framing_ctx.stopping, 0, 1)) {
+		k_mutex_unlock(&rx_submit_mutex);
+		return;
+	}
+
 	(void)k_work_cancel_delayable_sync(&rx_timeout_work, &sync);
 	(void)k_work_flush(&rx_work, &sync);
 
-	while (k_msgq_get(&fido2_ble_rx_msgq, &fragment, K_NO_WAIT) == 0) {
-		bt_conn_unref(fragment.conn);
-	}
+	rx_queue_purge();
 
 	k_mutex_lock(&rx_mutex, K_FOREVER);
 	rx_conn = rx_clear_locked();
 	k_mutex_unlock(&rx_mutex);
+
 	if (rx_conn != NULL) {
 		bt_conn_unref(rx_conn);
 	}
 
 	(void)k_work_cancel_delayable_sync(&tx_work, &sync);
-	while ((frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT)) != NULL) {
+
+	frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT);
+	while (frame != NULL) {
 		tx_frame_release(frame);
+		frame = k_fifo_get(&fido2_ble_tx_fifo, K_NO_WAIT);
 	}
 
-	/* An in-flight notification owns the fragment buffer until its completion callback runs. */
 	k_mutex_lock(&tx_mutex, K_FOREVER);
+
 	wait_for_tx = framing_ctx.tx.in_flight;
+
 	if (framing_ctx.tx.active != NULL) {
 		framing_ctx.tx.active->cancelled = true;
 	}
+
 	if (wait_for_tx) {
-		k_sem_reset(&fido2_ble_tx_complete);
 		frame = NULL;
 	} else {
 		frame = tx_active_remove_locked();
 	}
+
 	k_mutex_unlock(&tx_mutex);
+
 	tx_frame_release(frame);
 
 	if (wait_for_tx) {
 		err = k_sem_take(&fido2_ble_tx_complete, K_MSEC(FIDO2_BLE_TX_SHUTDOWN_TIMEOUT_MS));
+
 		if (err != 0) {
 			LOG_WRN("Timed out waiting for FIDO BLE notification completion");
 		}
@@ -767,16 +826,10 @@ void fido2_ble_framing_shutdown(void)
 		k_mutex_lock(&tx_mutex, K_FOREVER);
 		frame = tx_active_remove_locked();
 		k_mutex_unlock(&tx_mutex);
+
 		tx_frame_release(frame);
 	}
 
-	err = k_work_queue_drain(&rx_work_q, true);
-	if (err >= 0) {
-		err = k_work_queue_stop(&rx_work_q, K_FOREVER);
-	}
-	if (err != 0) {
-		LOG_WRN("Failed to stop FIDO BLE RX work queue: %d", err);
-	}
-
-	memset(&framing_ctx.callbacks, 0, sizeof(framing_ctx.callbacks));
+	atomic_clear(&framing_ctx.stopping);
+	k_mutex_unlock(&rx_submit_mutex);
 }

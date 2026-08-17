@@ -4,33 +4,107 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_AUTHENTICATION_FIDO2_FIDO2_BLE_INTERNAL_H_
-#define ZEPHYR_SUBSYS_AUTHENTICATION_FIDO2_FIDO2_BLE_INTERNAL_H_
+/**
+ * @file
+ * @brief FIDO2 Bluetooth Low Energy transport definitions.
+ * @ingroup fido2
+ */
+
+#ifndef FIDO2_TRANSPORT_FIDO2_TRANSPORT_BLE_H_
+#define FIDO2_TRANSPORT_FIDO2_TRANSPORT_BLE_H_
 
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
-#include <zephyr/bluetooth/conn.h>
+#include <zephyr/authentication/fido2/fido2_transport.h>
+#include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
 
-/** Maximum complete FIDO BLE message size accepted by the transport. */
-#define FIDO2_BLE_MAX_MESSAGE_SIZE (CONFIG_FIDO2_CBOR_MAX_SIZE + 1U)
+/** FIDO BLE service UUID. */
+#define BT_UUID_FIDO2_SERVICE BT_UUID_DECLARE_16(FIDO2_BLE_SERVICE_UUID_VAL)
+
+/** FIDO BLE Control Point characteristic UUID value. */
+#define FIDO2_BLE_CONTROL_POINT_UUID_VAL                                                           \
+	BT_UUID_128_ENCODE(0xF1D0FFF1, 0xDEAA, 0xECEE, 0xB42F, 0xC9BA7ED623BB)
+
+/** FIDO BLE Status characteristic UUID value. */
+#define FIDO2_BLE_STATUS_UUID_VAL                                                                  \
+	BT_UUID_128_ENCODE(0xF1D0FFF2, 0xDEAA, 0xECEE, 0xB42F, 0xC9BA7ED623BB)
+
+/** FIDO BLE Control Point Length characteristic UUID value. */
+#define FIDO2_BLE_CONTROL_POINT_LENGTH_UUID_VAL                                                    \
+	BT_UUID_128_ENCODE(0xF1D0FFF3, 0xDEAA, 0xECEE, 0xB42F, 0xC9BA7ED623BB)
+
+/** FIDO BLE Service Revision Bitfield characteristic UUID value. */
+#define FIDO2_BLE_REVISION_BITFIELD_UUID_VAL                                                       \
+	BT_UUID_128_ENCODE(0xF1D0FFF4, 0xDEAA, 0xECEE, 0xB42F, 0xC9BA7ED623BB)
+
+/** FIDO BLE Control Point characteristic UUID. */
+#define BT_UUID_FIDO2_BLE_CONTROL_POINT BT_UUID_DECLARE_128(FIDO2_BLE_CONTROL_POINT_UUID_VAL)
+
+/** FIDO BLE Status characteristic UUID. */
+#define BT_UUID_FIDO2_BLE_STATUS BT_UUID_DECLARE_128(FIDO2_BLE_STATUS_UUID_VAL)
+
+/** FIDO BLE Control Point Length characteristic UUID. */
+#define BT_UUID_FIDO2_BLE_CONTROL_POINT_LENGTH                                                     \
+	BT_UUID_DECLARE_128(FIDO2_BLE_CONTROL_POINT_LENGTH_UUID_VAL)
+
+/** FIDO BLE Service Revision Bitfield characteristic UUID. */
+#define BT_UUID_FIDO2_BLE_REVISION_BITFIELD                                                        \
+	BT_UUID_DECLARE_128(FIDO2_BLE_REVISION_BITFIELD_UUID_VAL)
+
+/** Supported FIDO BLE service revision bitfield. */
+#define FIDO2_BLE_REVISION 0x20
+
+/**
+ * Maximum CTAP message size, see CTAP 2.3 § 11.2.9.1.2.
+ *
+ * CTAP2 requests consist of a one-byte command code followed by up to
+ * CONFIG_FIDO2_CBOR_MAX_SIZE bytes of CBOR-encoded command parameters.
+ */
+#define FIDO2_BLE_MAX_MESSAGE_SIZE (CONFIG_FIDO2_CBOR_MAX_SIZE + 1)
+
+/**
+ * @brief Attribute indexes within the statically defined FIDO BLE GATT service.
+ */
+enum fido2_ble_gatt_attr_index {
+	/** Primary service declaration. */
+	FIDO2_BLE_ATTR_SERVICE,
+	/** Control Point characteristic declaration. */
+	FIDO2_BLE_ATTR_CONTROL_POINT_CHRC,
+	/** Control Point characteristic value. */
+	FIDO2_BLE_ATTR_CONTROL_POINT_VALUE,
+	/** Status characteristic declaration. */
+	FIDO2_BLE_ATTR_STATUS_CHRC,
+	/** Status characteristic value. */
+	FIDO2_BLE_ATTR_STATUS_VALUE,
+	/** Status Client Characteristic Configuration descriptor. */
+	FIDO2_BLE_ATTR_STATUS_CCC,
+	/** Control Point Length characteristic declaration. */
+	FIDO2_BLE_ATTR_CONTROL_POINT_LENGTH_CHRC,
+	/** Control Point Length characteristic value. */
+	FIDO2_BLE_ATTR_CONTROL_POINT_LENGTH_VALUE,
+	/** Service Revision Bitfield characteristic declaration. */
+	FIDO2_BLE_ATTR_REVISION_CHRC,
+	/** Service Revision Bitfield characteristic value. */
+	FIDO2_BLE_ATTR_REVISION_VALUE,
+};
 
 /**
  * @brief FIDO BLE framing command identifiers.
  */
 enum fido2_ble_command {
 	/** Echo request or response. */
-	FIDO2_BLE_CMD_PING = 0x81U,
+	FIDO2_BLE_CMD_PING = 0x81,
 	/** Authenticator keepalive notification. */
-	FIDO2_BLE_CMD_KEEPALIVE = 0x82U,
+	FIDO2_BLE_CMD_KEEPALIVE = 0x82,
 	/** CTAP message request or response. */
-	FIDO2_BLE_CMD_MSG = 0x83U,
+	FIDO2_BLE_CMD_MSG = 0x83,
 	/** Request to cancel the currently active operation. */
-	FIDO2_BLE_CMD_CANCEL = 0xBEU,
+	FIDO2_BLE_CMD_CANCEL = 0xBE,
 	/** Transport-level error response. */
-	FIDO2_BLE_CMD_ERROR = 0xBFU,
+	FIDO2_BLE_CMD_ERROR = 0xBF,
 };
 
 /**
@@ -203,4 +277,4 @@ int fido2_ble_framing_submit_fragment(struct bt_conn *conn, const void *data, ui
 int fido2_ble_framing_send(struct bt_conn *conn, enum fido2_ble_command command,
 			   const uint8_t *data, size_t len);
 
-#endif /* ZEPHYR_SUBSYS_AUTHENTICATION_FIDO2_FIDO2_BLE_INTERNAL_H_ */
+#endif /* ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_TRANSPORT_BLE_H_ */

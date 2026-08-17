@@ -41,7 +41,9 @@ config FIDO2_HID_RX_WORKQ_STACK_SIZE
 
 config FIDO2_TRANSPORT_BLE
 	bool "CTAP over BLE"
+	depends on BT
 	depends on BT_PERIPHERAL
+	depends on BT_SMP
 	select BT_DIS
 	select BT_DIS_MANUF_NAME
 	select BT_DIS_MODEL_NUMBER
@@ -64,7 +66,7 @@ config FIDO2_BLE_RX_WORKQ_STACK_SIZE
 	depends on FIDO2_TRANSPORT_BLE
 	help
 	  Stack size for the dedicated BLE RX workqueue used to
-	  process incoming CTAPHID reports.
+	  process incoming FIDO BLE fragments.
 
 config FIDO2_BLE_CONTROL_POINT_LENGTH
 	int "Maximum FIDO BLE Control Point write length"

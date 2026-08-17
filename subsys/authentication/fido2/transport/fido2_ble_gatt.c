@@ -7,9 +7,6 @@
 #include <errno.h>
 #include <string.h>
 
-#include <zephyr/authentication/fido2/fido2_transport_ble.h>
-#include <zephyr/bluetooth/conn.h>
-#include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
@@ -17,11 +14,11 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
 
-#include <zephyr/authentication/fido2/fido2_ble_internal.h>
+#include "fido2_transport_ble.h"
 
 LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 
-#define FIDO2_BLE_INITIAL_CID 1U
+#define FIDO2_BLE_INITIAL_CID 1
 
 #if defined(CONFIG_FIDO2_BLE_REQUIRE_AUTHENTICATED_LINK)
 #define FIDO2_BLE_REQUIRED_SECURITY BT_SECURITY_L3
@@ -36,32 +33,6 @@ LOG_MODULE_DECLARE(fido2, CONFIG_FIDO2_LOG_LEVEL);
 #define FIDO2_BLE_WRITE_PERM        BT_GATT_PERM_WRITE_ENCRYPT
 #define FIDO2_BLE_CCC_PERM          (BT_GATT_PERM_READ_ENCRYPT | BT_GATT_PERM_WRITE_ENCRYPT)
 #endif
-
-/**
- * @brief Attribute indexes within the statically defined FIDO BLE GATT service.
- */
-enum fido2_ble_gatt_attr_index {
-	/** Primary service declaration. */
-	FIDO2_BLE_ATTR_SERVICE,
-	/** Control Point characteristic declaration. */
-	FIDO2_BLE_ATTR_CONTROL_POINT_CHRC,
-	/** Control Point characteristic value. */
-	FIDO2_BLE_ATTR_CONTROL_POINT_VALUE,
-	/** Status characteristic declaration. */
-	FIDO2_BLE_ATTR_STATUS_CHRC,
-	/** Status characteristic value. */
-	FIDO2_BLE_ATTR_STATUS_VALUE,
-	/** Status Client Characteristic Configuration descriptor. */
-	FIDO2_BLE_ATTR_STATUS_CCC,
-	/** Control Point Length characteristic declaration. */
-	FIDO2_BLE_ATTR_CONTROL_POINT_LENGTH_CHRC,
-	/** Control Point Length characteristic value. */
-	FIDO2_BLE_ATTR_CONTROL_POINT_LENGTH_VALUE,
-	/** Service Revision Bitfield characteristic declaration. */
-	FIDO2_BLE_ATTR_REVISION_CHRC,
-	/** Service Revision Bitfield characteristic value. */
-	FIDO2_BLE_ATTR_REVISION_VALUE,
-};
 
 /**
  * @brief Runtime state for the FIDO BLE GATT service.
@@ -125,14 +96,14 @@ static struct bt_conn *conn_detach(struct bt_conn *conn, uint32_t *cid)
 
 	/* Move ownership of the stored connection reference to the caller. */
 	if ((gatt_ctx.conn != NULL) && ((conn == NULL) || (gatt_ctx.conn == conn))) {
-		detached = gatt_ctx.conn;
-		gatt_ctx.conn = NULL;
+		detached = bt_conn_take(&gatt_ctx.conn);
+
 		if (cid != NULL) {
 			*cid = gatt_ctx.cid;
 		}
-		gatt_ctx.cid = 0U;
-	}
 
+		gatt_ctx.cid = 0;
+	}
 	k_mutex_unlock(&conn_mutex);
 
 	return detached;
@@ -245,11 +216,11 @@ static ssize_t control_point_write(struct bt_conn *conn, const struct bt_gatt_at
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHENTICATION);
 	}
 
-	if (offset != 0U) {
+	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if ((len == 0U) || (len > CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH)) {
+	if ((len == 0) || (len > CONFIG_FIDO2_BLE_CONTROL_POINT_LENGTH)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -313,11 +284,11 @@ static ssize_t revision_write(struct bt_conn *conn, const struct bt_gatt_attr *a
 		return BT_GATT_ERR(BT_ATT_ERR_AUTHENTICATION);
 	}
 
-	if (offset != 0U) {
+	if (offset != 0) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	if (len != 1U) {
+	if (len != 1) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
@@ -354,7 +325,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	bool reject;
 	int security_err;
 
-	if ((err != 0U) || !bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
+	if ((err != 0) || !bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
 		return;
 	}
 
@@ -365,7 +336,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	if (!inactive && !reject) {
 		gatt_ctx.conn = bt_conn_ref(conn);
 		gatt_ctx.cid = gatt_ctx.next_cid++;
-		if (gatt_ctx.next_cid == 0U) {
+		if (gatt_ctx.next_cid == 0) {
 			gatt_ctx.next_cid = FIDO2_BLE_INITIAL_CID;
 		}
 	}
@@ -449,6 +420,16 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_conn_unref(detached);
 }
 
+static void gatt_runtime_reset_locked(void)
+{
+	gatt_ctx.cid = 0;
+	gatt_ctx.next_cid = FIDO2_BLE_INITIAL_CID;
+
+	atomic_clear(&gatt_ctx.notifications_enabled);
+	atomic_clear(&gatt_ctx.revision_selected);
+	atomic_clear(&gatt_ctx.security_ready);
+}
+
 int fido2_ble_gatt_init(const struct fido2_ble_gatt_callbacks *callbacks)
 {
 	if ((callbacks == NULL) || (callbacks->fragment_received == NULL) ||
@@ -457,19 +438,19 @@ int fido2_ble_gatt_init(const struct fido2_ble_gatt_callbacks *callbacks)
 	}
 
 	k_mutex_lock(&conn_mutex, K_FOREVER);
+
 	if (atomic_get(&gatt_ctx.initialized)) {
 		k_mutex_unlock(&conn_mutex);
 		return -EALREADY;
 	}
 
-	/* Connection-specific protocol state is reset for the next admitted client. */
 	gatt_ctx.callbacks = *callbacks;
-	gatt_ctx.cid = 0U;
-	gatt_ctx.next_cid = FIDO2_BLE_INITIAL_CID;
-	atomic_clear(&gatt_ctx.notifications_enabled);
-	atomic_clear(&gatt_ctx.revision_selected);
-	atomic_clear(&gatt_ctx.security_ready);
+
+	/* Initialize the connection-specific protocol state. */
+	gatt_runtime_reset_locked();
+
 	atomic_set(&gatt_ctx.initialized, 1);
+
 	k_mutex_unlock(&conn_mutex);
 
 	return 0;
@@ -479,15 +460,21 @@ void fido2_ble_gatt_shutdown(void)
 {
 	struct bt_conn *conn;
 
-	if (!atomic_cas(&gatt_ctx.initialized, 1, 0)) {
+	if (!atomic_get(&gatt_ctx.initialized)) {
 		return;
 	}
 
+	/*
+	 * Detach the current connection before resetting the
+	 * connection-specific protocol state.
+	 */
 	conn = conn_detach(NULL, NULL);
-	atomic_clear(&gatt_ctx.notifications_enabled);
-	atomic_clear(&gatt_ctx.revision_selected);
-	atomic_clear(&gatt_ctx.security_ready);
-	memset(&gatt_ctx.callbacks, 0, sizeof(gatt_ctx.callbacks));
+
+	k_mutex_lock(&conn_mutex, K_FOREVER);
+
+	gatt_runtime_reset_locked();
+
+	k_mutex_unlock(&conn_mutex);
 
 	if (conn != NULL) {
 		(void)bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);

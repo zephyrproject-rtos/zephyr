@@ -31,6 +31,12 @@ extern "C" {
 
 struct fido2_transport;
 
+/** @brief FIDO BLE service UUID value. */
+#define FIDO2_BLE_SERVICE_UUID_VAL 0xFFFD
+
+/** @brief FIDO Pairing mode bit position. */
+#define FIDO2_BLE_SERVICE_DATA_PAIRING_MODE BIT(7)
+
 /** @brief Transport progress status codes. */
 enum fido2_wire_status {
 	/** The authenticator is waiting for a user presence gesture. */

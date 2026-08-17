@@ -726,6 +726,9 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	if (IS_ENABLED(CONFIG_FIDO2_TRANSPORT_USB_HID)) {
 		info.transports |= FIDO2_TRANSPORT_USB;
 	}
+	if (IS_ENABLED(CONFIG_FIDO2_TRANSPORT_BLE)) {
+		info.transports |= FIDO2_TRANSPORT_BLE;
+	}
 
 	info.options.rk = !IS_ENABLED(CONFIG_FIDO2_STORAGE_NONE);
 	info.options.up = true;
