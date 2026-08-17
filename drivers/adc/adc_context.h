@@ -66,6 +66,10 @@ struct adc_context {
 	struct k_poll_signal *signal;
 	bool asynchronous;
 #endif /* CONFIG_ADC_ASYNC */
+#ifdef CONFIG_ADC_THRESHOLD
+	adc_threshold_callback threshold_callback;
+	void *user_data;
+#endif /* CONFIG_ADC_THRESHOLD */
 
 	struct adc_sequence sequence;
 	struct adc_sequence_options options;
@@ -208,6 +212,31 @@ static inline void adc_context_complete(struct adc_context *ctx, int status)
 	}
 	k_sem_give(&ctx->sync);
 }
+
+#ifdef CONFIG_ADC_THRESHOLD
+static inline void adc_context_set_threshold_callback(struct adc_context *ctx,
+						      adc_threshold_callback threshold_callback,
+						      void *user_data)
+{
+
+	if (threshold_callback != NULL) {
+		ctx->threshold_callback = threshold_callback;
+		ctx->user_data = user_data;
+	}
+}
+
+
+static inline void adc_context_on_threshold_event(struct adc_context *ctx, const struct device *dev,
+						  uint8_t channel_id,
+						  uint32_t value)
+{
+	if (ctx->threshold_callback == NULL) {
+		return;
+	}
+
+	ctx->threshold_callback(dev, channel_id, value, ctx->user_data);
+}
+#endif /* CONFIG_ADC_THRESHOLD */
 
 static inline void adc_context_start_read(struct adc_context *ctx,
 					  const struct adc_sequence *sequence)

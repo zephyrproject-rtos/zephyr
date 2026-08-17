@@ -63,23 +63,26 @@ struct iadc_chan_conf {
 	sl_hal_iadc_negative_port_input_t neg_port;
 	uint8_t neg_pin;
 	uint8_t iadc_conf_id;
-	bool initialized;
+	bool compare:1;
+	bool initialized:1;
 };
 
 struct iadc_data {
 	const struct device *dev;
+	uint8_t *buffer;
 	struct adc_context ctx;
 	struct iadc_chan_conf chan_conf[SL_HAL_IADC_CHANNEL_ID_MAX];
 	struct iadc_dma_channel dma;
-	uint8_t adc_config_count; /* Number of ADC configs created (max 2) */
+	size_t data_size;
 	uint32_t clock_rate;
 	uint32_t channels;
 	uint16_t active_channels;
+	uint16_t greater_than_equal_thres;
+	uint16_t less_than_equal_thres;
+	uint8_t adc_config_count; /* Number of ADC configs created (max 2) */
 	uint8_t alignment;
 	uint8_t oversampling;
 	uint8_t digital_averaging;
-	size_t data_size;
-	uint8_t *buffer;
 };
 
 struct iadc_config {
@@ -126,6 +129,7 @@ static void iadc_configure_scan_table_entry(sl_hal_iadc_scan_table_entry_t *entr
 		.negative_port = chan_conf->neg_port,
 		.negative_pin = chan_conf->neg_pin,
 		.config_id = chan_conf->iadc_conf_id,
+		.compare = chan_conf->compare,
 		.include_in_scan = true,
 	};
 }
@@ -228,6 +232,180 @@ static void iadc_dma_cb(const struct device *dma_dev, void *user_data, uint32_t 
 }
 #endif /* CONFIG_ADC_SILABS_IADC_DMA */
 
+#ifdef CONFIG_ADC_THRESHOLD
+static bool iadc_are_diff_channels_used(uint32_t selected_channels, const struct iadc_data *data)
+{
+	while (selected_channels) {
+		uint32_t channel_id = find_lsb_set(selected_channels) - 1;
+
+		if ((channel_id < SL_HAL_IADC_CHANNEL_ID_MAX) &&
+		    data->chan_conf[channel_id].initialized) {
+			if (data->chan_conf[channel_id].neg_port != _IADC_SCAN_PORTNEG_GND) {
+				return true;
+			}
+		}
+		selected_channels &= ~BIT(channel_id);
+	}
+
+	return false;
+}
+
+static int iadc_check_thresholds(int32_t low_th, int32_t high_th, int32_t min_th, int32_t max_th)
+{
+	if (low_th > max_th || low_th < min_th) {
+		LOG_ERR("Lower threshold (%d) out of bounds : [%d, %d]", low_th,
+			max_th, min_th);
+		return -EINVAL;
+	}
+
+	if (high_th > max_th || high_th < min_th) {
+		LOG_ERR("Upper threshold (%d) out of bounds : [%d, %d]", high_th,
+			max_th, min_th);
+		return -EINVAL;
+	}
+
+	if (low_th > high_th) {
+		LOG_ERR("Upper threshold should be higher than lower threshold");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int iadc_set_threshold(const struct device *dev, const struct adc_sequence *sequence)
+{
+	const struct iadc_config *config = dev->config;
+	IADC_TypeDef *iadc = (IADC_TypeDef *)config->base;
+	struct iadc_data *data = dev->data;
+	struct iadc_chan_conf *chan_conf = NULL;
+	uint32_t selected_channels = sequence->channels;
+	uint16_t channel_id = 0U;
+	int32_t lower_threshold;
+	int32_t upper_threshold;
+	int32_t min_threshold;
+	int32_t max_threshold;
+
+	/* Disable compare on all initialized channels */
+	if (sequence->threshold_mode == ADC_THRESHOLD_MODE_DISEABLE) {
+		data->less_than_equal_thres = 0;
+		data->greater_than_equal_thres = 0;
+
+		do {
+			chan_conf = &data->chan_conf[channel_id];
+
+			if (chan_conf->initialized) {
+				chan_conf->compare = false;
+			}
+		} while (++channel_id < SL_HAL_IADC_CHANNEL_ID_MAX);
+
+		sl_hal_iadc_disable_interrupts(iadc, IADC_IEN_SCANCMP);
+
+		LOG_DBG("Threshold monitoring disabled");
+
+		return 0;
+	}
+
+	/* The ADGT and ADLT thresholds always use a 16 bit, left-justified format */
+	switch (data->alignment) {
+	case _IADC_SCANFIFOCFG_ALIGNMENT_RIGHT12:
+		lower_threshold = sequence->lower_threshold << 4;
+		upper_threshold = sequence->upper_threshold << 4;
+		break;
+	case _IADC_SCANFIFOCFG_ALIGNMENT_RIGHT16:
+		lower_threshold = sequence->lower_threshold;
+		upper_threshold = sequence->upper_threshold;
+		break;
+	case _IADC_SCANFIFOCFG_ALIGNMENT_RIGHT20:
+		lower_threshold = sequence->lower_threshold >> 4;
+		upper_threshold = sequence->upper_threshold >> 4;
+		break;
+	default:
+		LOG_ERR("Unsupported resolution");
+		return -EINVAL;
+	}
+
+	if (iadc_are_diff_channels_used(selected_channels, data)) {
+		min_threshold = INT16_MIN;
+		max_threshold = INT16_MAX;
+	} else {
+		min_threshold = 0;
+		max_threshold = UINT16_MAX;
+	}
+
+	int err = iadc_check_thresholds(lower_threshold, upper_threshold,
+					min_threshold, max_threshold);
+
+	if (err != 0) {
+		LOG_ERR("Invalid threshold values");
+		return err;
+	}
+
+	switch (sequence->threshold_mode) {
+	case ADC_THRESHOLD_MODE_LOWER:
+		/*
+		 * Trigger when result <= lower_threshold.
+		 * Use Inside Window mode (ADLT >= ADGT) by setting ADGT to min value.
+		 */
+		data->less_than_equal_thres = (uint16_t) lower_threshold;
+		data->greater_than_equal_thres = (uint16_t) min_threshold;
+		break;
+	case ADC_THRESHOLD_MODE_UPPER:
+		/*
+		 * Trigger when result >= upper_threshold.
+		 * Use Inside Window mode (ADLT >= ADGT) by setting ADLT to max value.
+		 */
+		data->less_than_equal_thres = (uint16_t) max_threshold;
+		data->greater_than_equal_thres = (uint16_t) upper_threshold;
+		break;
+	case ADC_THRESHOLD_MODE_OUTSIDE:
+		/*
+		 * Trigger when result <= lower_threshold OR result >= upper_threshold.
+		 * Use Outside Window mode (ADLT < ADGT).
+		 */
+		data->less_than_equal_thres = (uint16_t) lower_threshold;
+		data->greater_than_equal_thres = (uint16_t) upper_threshold;
+		break;
+	case ADC_THRESHOLD_MODE_INSIDE:
+		/*
+		 * Trigger when lower_threshold <= result <= upper_threshold.
+		 * Use Inside Window mode (ADLT >= ADGT) by swapping them.
+		 */
+		data->less_than_equal_thres = (uint16_t) upper_threshold;
+		data->greater_than_equal_thres = (uint16_t) lower_threshold;
+		break;
+	default:
+		LOG_ERR("Threshold mode not supported");
+		return -EINVAL;
+	}
+
+	/* Enable compare only for selected channels */
+	do {
+		chan_conf = &data->chan_conf[channel_id];
+
+		bool initialized = chan_conf->initialized;
+
+		if (selected_channels & BIT(channel_id)) {
+			if (initialized) {
+				chan_conf->compare = true;
+			} else {
+				LOG_ERR("Channel %u not initialized", channel_id);
+				return -EINVAL;
+			}
+		} else {
+			if (initialized) {
+				chan_conf->compare = false;
+			} else {
+				continue;
+			}
+		}
+	} while (++channel_id < SL_HAL_IADC_CHANNEL_ID_MAX);
+
+	sl_hal_iadc_enable_interrupts(iadc, IADC_IEN_SCANCMP);
+
+	return 0;
+}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 /* Oversampling and resolution are common for both ADC configs
  * because they are not configurable per channel inside a ADC
  * sequence and are common for a sequence.
@@ -249,6 +427,10 @@ static int iadc_set_config(const struct device *dev)
 		.configs[0].dig_avg = data->digital_averaging,
 		.configs[1].dig_avg = data->digital_averaging,
 #endif
+#ifdef CONFIG_ADC_THRESHOLD
+		.greater_than_equal_thres = data->greater_than_equal_thres,
+		.less_than_equal_thres = data->less_than_equal_thres,
+#endif /* CONFIG_ADC_THRESHOLD */
 	};
 	sl_hal_iadc_init_scan_t scan_init = {
 		.data_valid_level = _IADC_SCANFIFOCFG_DVL_VALID4,
@@ -476,6 +658,14 @@ static int start_read(const struct device *dev, const struct adc_sequence *seque
 
 	data->channels = sequence->channels;
 
+#ifdef CONFIG_ADC_THRESHOLD
+	res = iadc_set_threshold(dev, sequence);
+	if (res < 0) {
+		LOG_ERR("Failed to configure threshold monitoring: %d", res);
+		return res;
+	}
+#endif /* CONFIG_ADC_THRESHOLD */
+
 	res = iadc_set_config(data->dev);
 	if (res < 0) {
 		return res;
@@ -549,6 +739,13 @@ static void iadc_isr(void *arg)
 
 		adc_context_on_sampling_done(&data->ctx, dev);
 	}
+
+#ifdef CONFIG_ADC_THRESHOLD
+	if (flags & IADC_IF_SCANCMP) {
+		sample = sl_hal_iadc_read_scan_result(iadc);
+		adc_context_on_threshold_event(&data->ctx, dev, sample.id, sample.data);
+	}
+#endif /* CONFIG_ADC_THRESHOLD */
 
 	if (err) {
 		LOG_ERR("IADC error, flags=%08x", err);
@@ -660,6 +857,19 @@ static int iadc_channel_setup(const struct device *dev, const struct adc_channel
 	return 0;
 }
 
+#ifdef CONFIG_ADC_THRESHOLD
+static int iadc_set_threshold_callback(const struct device *dev,
+				       adc_threshold_callback callback,
+				       void *user_data)
+{
+	struct iadc_data *data = dev->data;
+
+	adc_context_set_threshold_callback(&data->ctx, callback, user_data);
+	return 0;
+}
+
+#endif /* CONFIG_ADC_THRESHOLD */
+
 static int iadc_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	const struct iadc_config *config = dev->config;
@@ -732,7 +942,10 @@ static DEVICE_API(adc, iadc_api) = {
 	.read = iadc_read,
 #ifdef CONFIG_ADC_ASYNC
 	.read_async = iadc_read_async,
-#endif
+#endif /* CONFIG_ADC_ASYNC */
+#ifdef CONFIG_ADC_THRESHOLD
+	.set_threshold_callback = iadc_set_threshold_callback,
+#endif /* CONFIG_ADC_THRESHOLD */
 	.ref_internal = SL_HAL_IADC_DEFAULT_VREF,
 };
 
