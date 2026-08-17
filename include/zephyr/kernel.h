@@ -8451,6 +8451,18 @@ __syscall int k_clone(const struct k_clone_args *args, k_tid_t *child);
 __syscall int k_process_prune(void);
 
 /**
+ * @brief Accumulated CPU cycles of the calling process and its reaped children
+ *
+ * @param self     filled with this process's cycles (live members plus exited
+ *                 members), or NULL
+ * @param children filled with the cycles of reaped children (and their
+ *                 reaped children), or NULL
+ *
+ * @retval 0 on success
+ */
+__syscall int k_process_cpu_stats(uint64_t *self, uint64_t *children);
+
+/**
  * @brief Initialize a process group from caller-provided memory
  *
  * Initializes the non-initialized group cell @a grp (zeroed, or retired) as a

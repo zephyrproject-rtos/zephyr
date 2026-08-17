@@ -344,6 +344,11 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 {
 	k_tid_t leader = proc->leader;
 
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	if (proc->parent != NULL) {
+		proc->parent->child_cycles += proc->self_cycles + proc->child_cycles;
+	}
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 	pgrp_leave_locked(proc);
 	sys_dlist_remove(&proc->active_node);
 #ifdef CONFIG_SIGNAL
@@ -393,6 +398,15 @@ void z_process_exit_thread(struct k_thread *thread)
 		sys_dlist_remove(&thread->process_node);
 		thread->process = NULL;
 		/* proc->leader stays: the identity until reap, never dereferenced */
+#ifdef CONFIG_SCHED_THREAD_USAGE
+		{
+			k_thread_runtime_stats_t st;
+
+			if (k_thread_runtime_stats_get(thread, &st) == 0) {
+				proc->self_cycles += st.total_cycles;
+			}
+		}
+#endif /* CONFIG_SCHED_THREAD_USAGE */
 		last = sys_dlist_is_empty(&proc->threads);
 		if (!last || (proc == &z_proc_idle) || (proc == &z_proc_init) ||
 		    (proc == &z_proc_kth)) {
@@ -1467,6 +1481,60 @@ static inline int z_vrfy_k_process_prune(void)
 	return z_impl_k_process_prune();
 }
 #include <zephyr/syscalls/k_process_prune_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_process_cpu_stats(uint64_t *self, uint64_t *children)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE
+	uint64_t s = 0;
+	uint64_t c = 0;
+
+	K_SPINLOCK(&process_lock) {
+		struct k_process *proc = process_self();
+		struct k_thread *t;
+
+		s = proc->self_cycles;
+		c = proc->child_cycles;
+		SYS_DLIST_FOR_EACH_CONTAINER(&proc->threads, t, process_node) {
+			k_thread_runtime_stats_t st;
+
+			if (k_thread_runtime_stats_get(t, &st) == 0) {
+				s += st.total_cycles;
+			}
+		}
+	}
+
+	if (self != NULL) {
+		*self = s;
+	}
+	if (children != NULL) {
+		*children = c;
+	}
+
+	return 0;
+#else
+	if (self != NULL) {
+		*self = 0;
+	}
+	if (children != NULL) {
+		*children = 0;
+	}
+	return 0;
+#endif /* CONFIG_SCHED_THREAD_USAGE */
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_process_cpu_stats(uint64_t *self, uint64_t *children)
+{
+	if (self != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(self, sizeof(*self)));
+	}
+	if (children != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_WRITE(children, sizeof(*children)));
+	}
+	return z_impl_k_process_cpu_stats(self, children);
+}
+#include <zephyr/syscalls/k_process_cpu_stats_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_SIGNAL
