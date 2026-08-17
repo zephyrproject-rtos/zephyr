@@ -2081,7 +2081,7 @@ int net_dhcpv4_init(void)
 	uint64_t events =
 		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
 		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
-	struct net_sockaddr_storage local_addr_storage;
+	struct net_sockaddr_storage local_addr_storage = { 0 };
 	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
 

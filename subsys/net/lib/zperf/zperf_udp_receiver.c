@@ -352,7 +352,7 @@ static int udp_recv_data(struct net_socket_service_event *pev)
 	int ret = 1;
 	int family, sock_error = 0;
 	int default_error = EIO;
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage addr = { 0 };
 	struct net_sockaddr *sa = net_sad(&addr);
 	net_socklen_t optlen = sizeof(int);
 	net_socklen_t addrlen = sizeof(addr);
