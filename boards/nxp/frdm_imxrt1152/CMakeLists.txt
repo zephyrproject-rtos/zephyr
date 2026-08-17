@@ -4,6 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+include(${ZEPHYR_BASE}/boards/nxp/common/mpu/mpu.cmake)
+
 if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   zephyr_library()
   if(NOT DEFINED CONFIG_BOARD_FRDM_IMXRT1152)
