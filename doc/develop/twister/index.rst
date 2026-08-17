@@ -1263,6 +1263,27 @@ host directory seeded from a template with:
          virtiofs:
            shared: shared
 
+The ``bumble`` sidecar runs linked `Bumble <https://github.com/google/bumble>`_
+virtual Bluetooth controllers for native_sim tests: the guest reaches its
+controller through the HCI user-channel driver (``--bt-dev=<ip:port>``,
+injected by the sidecar), and further Zephyr instances launched by the sidecar
+act as peers on the other controllers. ``{addrN}`` and ``{ctrlN}`` placeholders
+in the device argument strings expand to controller N's Bluetooth device
+address and TCP endpoint:
+
+.. code-block:: yaml
+
+   tests:
+     some.test:
+       harness: ztest
+       sidecar: bumble
+       sidecar_config:
+         bumble:
+           addresses: ["00:00:01:00:00:01", "00:00:01:00:00:02"]
+           devices:
+             - '--peer_bd_address={addr1} -test=central::connect'
+             - '--peer_bd_address={addr0} -test=peripheral::connect'
+
 
 Selecting platform scope
 ************************
