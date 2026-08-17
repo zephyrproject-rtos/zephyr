@@ -704,6 +704,9 @@ static void sip_svc_thread(void *ctrl_ptr, void *arg2, void *arg3)
 	int ret_resp;
 
 	while (1) {
+		/* Block until a new request arrives */
+		k_sem_take(&ctrl->wake_sem, K_FOREVER);
+
 		ret_msgq = -EINPROGRESS;
 		ret_resp = -EINPROGRESS;
 		while (ret_msgq != 0 || ret_resp != 0) {
@@ -715,8 +718,6 @@ static void sip_svc_thread(void *ctrl_ptr, void *arg2, void *arg3)
 				k_usleep(CONFIG_ARM_SIP_SVC_SUBSYS_ASYNC_POLLING_DELAY);
 			}
 		}
-		LOG_INF("Suspend thread, all transactions are completed");
-		k_thread_suspend(ctrl->tid);
 	}
 }
 
@@ -810,7 +811,7 @@ int sip_svc_send(void *ct, uint32_t c_token, struct sip_svc_request *request, si
 	++ctrl->clients[c_idx].active_trans_cnt;
 
 	LOG_INF("Wakeup sip_svc thread");
-	k_thread_resume(ctrl->tid);
+	k_sem_give(&ctrl->wake_sem);
 	k_mutex_unlock(&ctrl->data_mutex);
 
 	return (int)trans_id;
@@ -982,6 +983,8 @@ static int sip_svc_subsys_init(void)
 #endif
 		/* Initialize mutex */
 		k_mutex_init(&ctrl->data_mutex);
+		/* Initialize wakeup semaphore for the sip_svc thread */
+		k_sem_init(&ctrl->wake_sem, 0, 1);
 
 		ctrl->init = true;
 	}
