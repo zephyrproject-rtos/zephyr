@@ -986,6 +986,9 @@ def prop2value(prop: edtlib.Property) -> edtlib.PropertyValType:
     if prop.type == "int":
         return prop.val
 
+    if prop.type == "uint64":
+        return prop.val
+
     if prop.type == "boolean":
         return 1 if prop.val else 0
 

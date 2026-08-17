@@ -1982,6 +1982,16 @@ class Node:
         if prop_type == "int":
             return prop.to_num(signed_aware=True)
 
+        if prop_type == "uint64":
+            nums = prop.to_nums()
+            if len(nums) == 1:
+                return nums[0]
+            elif len(nums) == 2:
+                return (nums[0] << 32) | nums[1]
+            else:
+                _err(f"'{name}' in {node.path} has type 'uint64' but "
+                     f"{len(nums)} cells; expected 1 or 2")
+
         if prop_type == "array":
             return prop.to_nums(signed_aware=True)
 
@@ -3240,7 +3250,7 @@ def _check_prop_by_type(prop_name: str,
         _err(f"missing 'type:' for '{prop_name}' in 'properties' in "
              f"'{binding_path}'")
 
-    ok_types = {"boolean", "int", "array", "uint8-array", "string",
+    ok_types = {"boolean", "int", "uint64", "array", "uint8-array", "string",
                 "string-array", "phandle", "phandles", "phandle-array",
                 "path", "compound"}
 
@@ -3262,23 +3272,23 @@ def _check_prop_by_type(prop_name: str,
 
     # If you change const_types, be sure to update the type annotation
     # for PropertySpec.const.
-    const_types = {"int", "array", "uint8-array", "string", "string-array"}
+    const_types = {"int", "uint64", "array", "uint8-array", "string", "string-array"}
     if const is not None:
         if prop_type not in const_types:
             _err(f"const in '{binding_path}' for property '{prop_name}' "
                  f"has type '{prop_type}', expected one of " +
                  ", ".join(const_types))
 
-        if prop_type in {"int", "array"}:
+        if prop_type in {"int", "uint64", "array"}:
             for subval in const if isinstance(const, list) else [const]:
                 if not _is_plain_int(subval):
                     _err(f"'const: {const}' for '{prop_name}' in "
                          f"'{binding_path}' is not an integer/array")
 
     if min_val is not None or max_val is not None:
-        if prop_type not in {"int", "array"}:
+        if prop_type not in {"int", "uint64", "array"}:
             _err(f"'min:'/'max:' in '{binding_path}' for '{prop_name}' "
-                 "requires 'type: int' or 'type: array', "
+                 "requires 'type: int', 'type: uint64', or 'type: array', "
                  f"but has type '{prop_type}'")
 
         if "enum" in options:
@@ -3360,6 +3370,7 @@ def _check_prop_by_type(prop_name: str,
         # PropertySpec.default.
 
         if (prop_type == "int" and _is_plain_int(default)
+            or prop_type == "uint64" and _is_plain_int(default)
             or prop_type == "string" and isinstance(default, str)):
             return True
 

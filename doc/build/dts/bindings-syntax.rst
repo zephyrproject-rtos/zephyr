@@ -232,7 +232,7 @@ Property entries in ``properties:`` are written in this syntax:
 
    <property name>:
      required: <true | false>
-     type: <string | int | boolean | array | uint8-array | string-array |
+     type: <string | int | uint64 | boolean | array | uint8-array | string-array |
             phandle | phandles | phandle-array | path | compound>
      deprecated: <true | false>
      default: <default>
@@ -242,7 +242,7 @@ Property entries in ``properties:`` are written in this syntax:
        - <item2>
        ...
        - <itemN>
-     const: <string | int | array | uint8-array | string-array>
+     const: <string | int | uint64 | array | uint8-array | string-array>
      min: <int>
      max: <int>
      min-len: <int>
@@ -354,6 +354,15 @@ about the ``phandle*`` type properties.
    * - ``int``
      - exactly one 32-bit value (cell)
      - ``current-speed = <115200>;``
+
+   * - ``uint64``
+     - a 32-bit or 64-bit unsigned integer; multiple properties in the
+       Devicetree Specification have this shape. Encoded as 1 cell (32-bit)
+       or 2 cells (64-bit, high word first).
+       For example, ``<0xABCD1234>`` represents the value ``0xABCD1234``
+       (3,134,984,756 decimal), while ``<0x00000001 0x00000000>`` represents
+       ``0x100000000`` (4,294,967,296 decimal).
+     - ``clock-frequency = <100000000>;`` or ``clock-frequency = <1 0>;``
 
    * - ``boolean``
      - flags that don't take a value when true, and are absent if false

@@ -823,6 +823,102 @@ def test_prop_defaults():
     assert not isinstance(node.props["int"].spec.default, edtlib.HexInt)
     assert not any(isinstance(v, edtlib.HexInt) for v in node.props["array"].spec.default)
 
+def test_uint64_type():
+    '''type: uint64 assembles 1-cell and 2-cell DTS values into a scalar int'''
+
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    node = edt.get_node("/uint64-node")
+
+    # 1-cell value: plain 32-bit integer returned as scalar
+    assert node.props["val-32"].val == 100000000
+    assert node.props["val-32"].spec.type == "uint64"
+
+    # 2-cell value: assembled 64-bit integer (1 << 32) | 0 = 4294967296
+    assert node.props["val-64"].val == 4294967296
+
+    # min/max constraints work on the assembled value
+    assert node.props["val-with-min"].val == 200
+    assert node.props["val-with-max"].val == 0xABCDEF01
+
+    # const works
+    assert node.props["val-const"].val == 999
+
+    # default is used when property is absent from DTS
+    assert node.props["val-with-default"].val == 42
+
+
+def test_uint64_three_cell_error(tmp_path):
+    '''type: uint64 rejects a 3-cell DTS value with a clear error'''
+
+    dts = tmp_path / "bad.dts"
+    dts.write_text("""\
+/dts-v1/;
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+    n {
+        compatible = "vnd,uint64-test";
+        val-32 = <1 2 3>;
+    };
+};
+""")
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(str(dts), ["test-bindings"])
+    msg = str(exc_info.value)
+    assert "uint64" in msg
+    assert "3" in msg
+
+
+def test_uint64_min_max(tmp_path):
+    '''type: uint64 min: constraint is enforced on the assembled value'''
+
+    dts = tmp_path / "bad.dts"
+    dts.write_text("""\
+/dts-v1/;
+/ {
+    #address-cells = <1>;
+    #size-cells = <1>;
+    n {
+        compatible = "vnd,uint64-test";
+        val-with-min = <50>;
+    };
+};
+""")
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(str(dts), ["test-bindings"])
+    assert "min" in str(exc_info.value).lower()
+
+
+def test_uint64_binding_errs(tmp_path):
+    '''Binding validator: min:/max: accepted on uint64; min-len: rejected'''
+
+    def check_binding_err(yaml_content, expected_err):
+        binding_file = tmp_path / "bad-uint64.yaml"
+        binding_file.write_text(yaml_content)
+        with pytest.raises(edtlib.EDTError) as e:
+            edtlib.Binding(str(binding_file), {})
+        assert str(e.value) == expected_err
+
+    path = str(tmp_path / "bad-uint64.yaml")
+
+    # min-len: on uint64 must be rejected
+    check_binding_err(
+        """\
+description: test
+compatible: "bad"
+properties:
+  foo:
+    type: uint64
+    min-len: 1
+""",
+        f"'min-len:'/'max-len:' in '{path}' for 'foo' "
+        f"requires an array type, but has type 'uint64'")
+
+
 def test_prop_enums():
     '''test properties with enum: in the binding'''
 
@@ -1107,7 +1203,7 @@ properties:
     min: 0
 """,
         f"'min:'/'max:' in '{path}' for 'foo' requires "
-        f"'type: int' or 'type: array', but has type 'string'")
+        f"'type: int', 'type: uint64', or 'type: array', but has type 'string'")
 
     # min/max combined with enum
     check_binding_err(
