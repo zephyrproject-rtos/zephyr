@@ -10,9 +10,6 @@ config HEAP_MEM_POOL_ADD_SIZE_ESP_BT
 	help
 	  Additional heap size reserved for Bluetooth driver usage.
 
-configdefault BT_RX_STACK_SIZE
-	default 2048 if BT_SETTINGS
-
 choice ESP_BT_HEAP
 	prompt "Bluetooth heap type"
 	default ESP_BT_HEAP_SYSTEM

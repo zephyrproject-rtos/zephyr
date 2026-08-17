@@ -7,6 +7,11 @@
 #include <ite/it8xxx2.dtsi>
 
 / {
+	pinctrl: pin-controller {
+		compatible = "ite,it8xxx2-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		sram0: memory@80100000 {
 			compatible = "mmio-sram";
@@ -436,11 +441,6 @@
 			interrupt-parent = <&intc>;
 			keyboard-controller;
 			#gpio-cells = <2>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "ite,it8xxx2-pinctrl";
-			status = "okay";
 		};
 
 		pinctrla: pinctrl@f01660 {

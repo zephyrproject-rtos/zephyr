@@ -154,10 +154,6 @@ struct bt_avctp_server {
 	sys_snode_t node;
 };
 
-struct bt_avctp_event_cb {
-	int (*accept)(struct bt_conn *conn, struct bt_avctp **session);
-};
-
 /* Initialize AVCTP layer*/
 void bt_avctp_init(void);
 

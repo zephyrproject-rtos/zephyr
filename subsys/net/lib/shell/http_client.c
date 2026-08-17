@@ -189,7 +189,7 @@ static void http_client_dns_cb(enum dns_resolve_status status, struct dns_addrin
 		return;
 	}
 
-	ctx->sa = *(net_sas(&info->ai_addr));
+	ctx->sa = info->ai_addr_storage;
 	ctx->sa.ss_family = info->ai_family;
 	ctx->err = 0;
 }

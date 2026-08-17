@@ -4,7 +4,6 @@
 
 # This script runs the Babblesim CI UART tests.
 # It can also be run locally.
-# Note it will produce its output in ${ZEPHYR_BASE}/bsim_out/
 
 export ZEPHYR_BASE="${ZEPHYR_BASE:-${PWD}}"
 cd ${ZEPHYR_BASE}

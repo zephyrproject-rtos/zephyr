@@ -867,7 +867,7 @@
 		enet_mdio: mdio {
 			#address-cells = <1>;
 			#size-cells = <0>;
-			compatible = "nxp,enet-qos-mdio";
+			compatible = "snps,dwmac-mdio";
 			status = "disabled";
 		};
 	};
@@ -934,6 +934,14 @@
 		clocks = <&syscon MCUX_CRC_CLK>;
 		resets = <&reset NXP_SYSCON_RESET(0, 14)>;
 		status = "disabled";
+	};
+
+	trng: random@ec000 {
+		compatible = "nxp,kinetis-trng";
+		reg = <0xec000 0x1000>;
+		status = "disabled";
+		interrupts = <113 0>;
+		clocks = <&syscon MCUX_TRNG_CLK>;
 	};
 };
 

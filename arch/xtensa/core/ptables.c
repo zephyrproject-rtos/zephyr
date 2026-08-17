@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/bitarray.h>
 #include <xtensa/corebits.h>
 #include <xtensa_asm2_context.h>
 #include <xtensa_mmu_priv.h>
@@ -242,17 +243,117 @@ static struct k_spinlock xtensa_counter_lock;
 
 #ifdef CONFIG_USERSPACE
 
+#define ASID_DEFAULT 3
+
 /**
- * @brief Number of ASIDs has been allocated.
+ * @brief ASID allocation bitmap and helper functions.
  *
- * Each domain has its own ASID. ASID can go through 1 (kernel) to 255.
- * When a TLB entry matches, the hw will check the ASID in the entry and finds
- * the correspondent position in the RASID register. This position will then be
- * compared with the current ring (CRING) to check the permission.
+ * ASIDs 0-2 are reserved (0 = invalid, 1 = kernel, 2 = reserved, 255
+ * = shared). ASID 3 is the default domain. Usable ASIDs for user
+ * domains are 4 through (XTENSA_MMU_SHARED_ASID - 1).
  *
- * This keeps track of how many ASIDs have been allocated for memory domains.
+ * A bitarray covers the entire 256-entry ASID space so that bit
+ * indices map directly to ASID values with no translation.
+ * Set bit (1) = in use or reserved, clear bit (0) = free.
+ * This matches sys_bitarray_alloc() semantics which finds clear bits.
+ *
+ * A second bitarray (asid_dirty) tracks freed ASIDs that have stale
+ * TLB entries. On free, the ASID is placed in asid_dirty (asid_used
+ * bit stays set). When no free ASIDs remain in asid_used, a single
+ * TLB flush is performed and dirty bits are XORed back into asid_used
+ * (clearing the in-use bits), amortizing the flush cost across many
+ * alloc/free cycles.
+ *
+ * Reserved ASIDs are marked as in-use (set to 1) during
+ * initialization, so they can never be allocated.
  */
-static uint8_t asid_count = 3;
+
+/*
+ * When PTEVADDR is 0x20000000 the self-reference for ASID 'a' lands at
+ * L1 position 128 + a. Positions 256+ map the uncached alias region
+ * (VA 0x40000000), so ASIDs must stay below 128. For other PTEVADDR
+ * values where no overlap exists, the full range up to
+ * XTENSA_MMU_SHARED_ASID - 1 is usable.
+ */
+#define ASID_PTEVADDR_MAX \
+	(256u - (CONFIG_XTENSA_MMU_PTEVADDR >> 22) - 1u)
+#define ASID_LAST_USER   MIN(XTENSA_MMU_SHARED_ASID - 1, ASID_PTEVADDR_MAX)
+
+#define ASID_SPACE 256
+
+static SYS_BITARRAY_DEFINE(asid_used, ASID_SPACE);
+static SYS_BITARRAY_DEFINE(asid_dirty, ASID_SPACE);
+
+/**
+ * @brief Initialize ASID bitmap.
+ *
+ * Marks reserved ASIDs (0 through ASID_DEFAULT, and ASID_LAST_USER+1
+ * through 255) as in-use (bit = 1) so they are never allocated.
+ * Usable ASIDs remain at 0 (free).
+ */
+static void asid_init(void)
+{
+	sys_bitarray_set_region(&asid_used, ASID_DEFAULT + 1, 0);
+	if (ASID_LAST_USER < ASID_SPACE - 1) {
+		sys_bitarray_set_region(&asid_used,
+					ASID_SPACE - 1 - ASID_LAST_USER,
+					ASID_LAST_USER + 1);
+	}
+}
+
+/**
+ * @brief Allocate a free ASID.
+ *
+ * Tries to allocate from asid_used. If no free ASIDs remain,
+ * performs a TLB flush, moves dirty ASIDs back via XOR, clears
+ * dirty, and retries.
+ *
+ * @return The allocated ASID number, or 0 if no ASIDs are available.
+ */
+static uint8_t asid_alloc(void)
+{
+	size_t asid;
+	int ret;
+
+	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
+	if (ret == 0) {
+		return (uint8_t)asid;
+	}
+
+	/* No free ASIDs — flush TLB, reclaim dirty ones */
+	xtensa_tlb_autorefill_invalidate();
+	xtensa_mmu_tlb_ipi();
+
+	sys_bitarray_xor(&asid_used, &asid_dirty, ASID_SPACE, 0);
+	sys_bitarray_clear_region(&asid_dirty, ASID_SPACE, 0);
+
+	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
+	if (ret < 0) {
+		return 0;
+	}
+	return (uint8_t)asid;
+}
+
+/**
+ * @brief Free a previously allocated ASID.
+ *
+ * Places the ASID into the dirty set. It will be reclaimed
+ * (cleared in asid_used) on the next TLB flush triggered by
+ * asid_alloc().
+ *
+ * @param asid The ASID to free.
+ */
+static void asid_free(uint8_t asid)
+{
+	__ASSERT(asid > ASID_DEFAULT && asid <= ASID_LAST_USER,
+		 "ASID %u out of range", asid);
+	if (asid <= ASID_DEFAULT || asid > ASID_LAST_USER) {
+		LOG_ERR("Trying to free a bad or static ASID %u", asid);
+		return;
+	}
+
+	sys_bitarray_set_bit(&asid_dirty, asid);
+}
 
 /** Linked list with all active and initialized memory domains. */
 static sys_slist_t xtensa_domain_list;
@@ -528,6 +629,10 @@ void xtensa_mmu_init(void)
 	xtensa_init_page_tables();
 
 	xtensa_mmu_init_paging();
+
+#ifdef CONFIG_USERSPACE
+	asid_init();
+#endif
 
 	/*
 	 * This is used to determine whether we are faulting inside double
@@ -1300,12 +1405,6 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	k_spinlock_key_t key;
 	int ret;
 
-	/*
-	 * For now, lets just assert if we have reached the maximum number
-	 * of asid we assert.
-	 */
-	__ASSERT(asid_count < (XTENSA_MMU_SHARED_ASID), "Reached maximum of ASID available");
-
 	key = k_spin_lock(&xtensa_mmu_lock);
 	/* If this is the default domain, we don't need
 	 * to create a new set of page tables. We can just
@@ -1314,7 +1413,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 
 	if (domain == &k_mem_domain_default) {
 		domain->arch.ptables = xtensa_kernel_ptables;
-		domain->arch.asid = asid_count;
+		domain->arch.asid = ASID_DEFAULT;
 		goto end;
 	}
 
@@ -1327,7 +1426,13 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 	domain->arch.ptables = ptables;
-	domain->arch.asid = ++asid_count;
+
+	domain->arch.asid = asid_alloc();
+	__ASSERT(domain->arch.asid != 0, "No ASIDs available");
+	if (domain->arch.asid == 0) {
+		ret = -ENOMEM;
+		goto err;
+	}
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
@@ -1389,6 +1494,8 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
 
 	domain->arch.ptables = NULL;
+
+	asid_free(domain->arch.asid);
 
 	sys_slist_find_and_remove(&xtensa_domain_list, &domain->arch.node);
 

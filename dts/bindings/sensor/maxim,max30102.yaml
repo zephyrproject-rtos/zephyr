@@ -25,5 +25,6 @@ properties:
     max-len: 2
 
   led-slot:
+    default: [1, 2, 0, 0]
     min: 0
     max: 2

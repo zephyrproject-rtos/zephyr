@@ -1,0 +1,416 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Board-dependent Wi-Fi RF front-end parameters.
+
+  Unlike the transmit power ceilings, which describe what the radio is
+  allowed to transmit anywhere in a band, these properties describe the
+  antenna fitted to the board and the power the board may transmit at the
+  edges of each band to stay within the spectral emission mask. They are a
+  property of the board layout, of its antenna and of the regulatory domain
+  the board is certified in, not of the SoC, so they belong in the board (or
+  shield) devicetree rather than in the SoC dtsi.
+
+  Note that the sub-band boundaries deliberately differ between the antenna
+  gain and the edge ceiling properties, so the frequency range is given per
+  property rather than shared. The 6 GHz band is split into six sub-bands for
+  antenna gain but only two, UNII-5 and UNII-6, for the edge ceilings.
+
+properties:
+
+  nordic,wifi-ant-gain-2g:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 2.4 GHz band, in dB, in steps of 1 dB.
+      Valid range is -8 to 7. This is the gain of the antenna less the loss
+      of the RF path to it, so a board whose path loses more than its antenna
+      gains states a negative value.
+
+  nordic,wifi-ant-gain-5g-band1:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 5 GHz band 1 (5150 MHz - 5350 MHz), in dB, in steps of 1 dB.
+      Valid range is -8 to 7. This is the gain of the antenna less the loss
+      of the RF path to it, so a board whose path loses more than its antenna
+      gains states a negative value.
+
+  nordic,wifi-ant-gain-5g-band2:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 5 GHz band 2 (5470 MHz - 5730 MHz), in dB, in steps of 1 dB.
+      Valid range is -8 to 7. This is the gain of the antenna less the loss
+      of the RF path to it, so a board whose path loses more than its antenna
+      gains states a negative value.
+
+  nordic,wifi-ant-gain-5g-band3:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 5 GHz band 3 (5730 MHz - 5895 MHz), in dB, in steps of 1 dB.
+      Valid range is -8 to 7. This is the gain of the antenna less the loss
+      of the RF path to it, so a board whose path loses more than its antenna
+      gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band1:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 1 (5935 MHz - 6015 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band2:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 2 (6035 MHz - 6115 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band3:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 3 (6135 MHz - 6215 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band4:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 4 (6235 MHz - 6315 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band5:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 5 (6335 MHz - 6415 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-ant-gain-6g-band6:
+    type: int
+    default: 0
+    description: |
+      Net antenna gain for the 6 GHz band 6 (6435 MHz - 6475 MHz), in dB, in steps of
+      1 dB. Valid range is -8 to 7. This is the gain of the antenna less the
+      loss of the RF path to it, so a board whose path loses more than its
+      antenna gains states a negative value.
+
+  nordic,wifi-2g-lower-edge-ceiling-dsss:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for DSSS/CCK rates at the lower
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-2g-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-2g-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-2g-upper-edge-ceiling-dsss:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for DSSS/CCK rates at the upper
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-2g-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-2g-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the 2.4 GHz band (2412 MHz - 2484 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-1-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the UNII-1 band (5160 MHz - 5240 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-1-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the UNII-1 band (5160 MHz - 5240 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-1-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the UNII-1 band (5160 MHz - 5240 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-1-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the UNII-1 band (5160 MHz - 5240 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2a-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the UNII-2A band (5260 MHz - 5340 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2a-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the UNII-2A band (5260 MHz - 5340 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2a-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the UNII-2A band (5260 MHz - 5340 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2a-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the UNII-2A band (5260 MHz - 5340 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2c-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the UNII-2C band (5480 MHz - 5720 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2c-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the UNII-2C band (5480 MHz - 5720 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2c-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the UNII-2C band (5480 MHz - 5720 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-2c-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the UNII-2C band (5480 MHz - 5720 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-3-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the UNII-3 band (5745 MHz - 5825 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-3-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the UNII-3 band (5745 MHz - 5825 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-3-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the UNII-3 band (5745 MHz - 5825 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-3-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the UNII-3 band (5745 MHz - 5825 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-4-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower
+      edge of the UNII-4 band (5845 MHz - 5885 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-4-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower
+      edge of the UNII-4 band (5845 MHz - 5885 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-4-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper
+      edge of the UNII-4 band (5845 MHz - 5885 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-4-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper
+      edge of the UNII-4 band (5845 MHz - 5885 MHz), in dBm, in steps of 1 dBm.
+      Valid range is 0 to 31, where the default of 31 places no restriction
+      beyond the band's transmit power ceiling.
+
+  nordic,wifi-unii-5-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower edge of the
+      UNII-5 band (5935 MHz - 6415 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-5-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower edge of the
+      UNII-5 band (5935 MHz - 6415 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-5-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper edge of the
+      UNII-5 band (5935 MHz - 6415 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-5-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper edge of the
+      UNII-5 band (5935 MHz - 6415 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-6-lower-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the lower edge of the
+      UNII-6 band (6435 MHz - 6735 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-6-lower-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the lower edge of the
+      UNII-6 band (6435 MHz - 6735 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-6-upper-edge-ceiling-ht:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HT/VHT rates at the upper edge of the
+      UNII-6 band (6435 MHz - 6735 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.
+
+  nordic,wifi-unii-6-upper-edge-ceiling-he:
+    type: int
+    default: 31
+    description: |
+      Maximum transmit power allowed for HE rates at the upper edge of the
+      UNII-6 band (6435 MHz - 6735 MHz), in dBm, in steps of 1 dBm. Valid range is 0 to
+      31, where the default of 31 places no restriction beyond the transmit
+      power ceiling of the band.

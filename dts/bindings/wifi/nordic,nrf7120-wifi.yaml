@@ -10,6 +10,8 @@ compatible: "nordic,nrf7120-wifi"
 include:
   - "wifi-tx-power-2g.yaml"
   - "wifi-tx-power-5g.yaml"
+  - "wifi-tx-power-6g.yaml"
+  - "nordic,wifi-rf-board-params-common.yaml"
 
 properties:
   nordic,wifi-xo-freq-offset:

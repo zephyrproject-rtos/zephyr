@@ -121,17 +121,14 @@ config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
 	bool "Threads"
 	depends on ARCH_SUPPORTS_COREDUMP_THREADS
 	select THREAD_STACK_INFO
-	select DEBUG_THREAD_INFO if !SMP
-	select THREAD_MONITOR if SMP
+	select DEBUG_THREAD_INFO
 	select DEBUG_COREDUMP_THREADS_METADATA
 	help
 	  Dumps the thread struct and stack of all
 	  threads and all data required to debug threads.
 	  On SMP systems all per-CPU ISR stacks are included.
-	  On non-SMP systems DEBUG_THREAD_INFO is also selected, providing
-	  kernel struct offsets for offline GDB thread enumeration.
-	  On SMP systems only THREAD_MONITOR is selected (DEBUG_THREAD_INFO
-	  is not SMP-safe due to the K_CURR_THREAD offset in thread_info.c).
+	  DEBUG_THREAD_INFO provides kernel struct offsets for offline GDB
+	  thread enumeration on both SMP and non-SMP systems.
 
 config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	bool "RAM defined by linker section"
@@ -165,11 +162,24 @@ config DEBUG_COREDUMP_SHELL
 config DEBUG_COREDUMP_THREADS_METADATA
 	bool "Threads metadata"
 	depends on ARCH_SUPPORTS_COREDUMP_THREADS
-	select DEBUG_THREAD_INFO if !SMP
-	select THREAD_MONITOR if SMP
+	select DEBUG_THREAD_INFO
 	help
 	  Core dump will contain the threads metadata section containing
 	  any necessary data to enable debugging threads
+
+config DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX
+	int "Maximum threads snapshotted per SMP coredump"
+	default 64
+	depends on SMP && DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	help
+	  On SMP, coredump snapshots the thread-list pointers while briefly
+	  holding z_thread_monitor_lock, then releases the lock before the slow
+	  per-thread dump I/O so a concurrent k_thread_abort() on another CPU is
+	  not stalled for the whole dump. This bounds how many threads that
+	  snapshot can hold. If the system has more monitored threads than this
+	  value the dump is truncated to the first N. Increase it to capture
+	  every thread on a system with many threads; it costs N pointers of
+	  stack on the fatal path.
 
 config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 	bool "Dump privilege stack of user threads"

@@ -1349,13 +1349,24 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 		set_rx_state();
 
 		mcxw_ctx.rx_ack_frame.channel = mcxw_ctx.channel;
-		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
 		mcxw_ctx.rx_ack_frame.lqi = data_msg->msgData.dataCnf.ppduLinkQuality;
 		mcxw_ctx.rx_ack_frame.rssi = data_msg->msgData.dataCnf.ppduRssi;
 		mcxw_ctx.rx_ack_frame.timestamp =
 			rf_adjust_tstamp_from_phy(data_msg->msgData.dataCnf.timeStamp);
-		memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
-		       mcxw_ctx.rx_ack_frame.length);
+
+		/* ackLength is supplied by the NBU radio firmware and indexes a
+		 * fixed rx_ack_data[IEEE802154_MAX_PHY_PACKET_SIZE] buffer, so
+		 * drop an ACK that does not fit rather than copying past its
+		 * end. A zero length tells mcxw_tx() that no ACK was received.
+		 */
+		if (data_msg->msgData.dataCnf.ackLength > IEEE802154_MAX_PHY_PACKET_SIZE) {
+			LOG_ERR("Invalid ACK length %u", data_msg->msgData.dataCnf.ackLength);
+			mcxw_ctx.rx_ack_frame.length = 0;
+		} else {
+			mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
+			memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
+			       mcxw_ctx.rx_ack_frame.length);
+		}
 
 		waiting_ack_until_us = 0;
 		k_sem_give(&mcxw_ctx.tx_wait);

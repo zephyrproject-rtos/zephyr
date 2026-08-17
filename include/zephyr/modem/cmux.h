@@ -23,6 +23,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
@@ -89,10 +90,16 @@ struct modem_cmux_config {
 #define MODEM_CMUX_HEADER_SIZE			6
 #endif
 
+/* Minimum required size for CMUX RX buffers */
+#define MODEM_CMUX_RX_BUFFER_SIZE_MIN		126
 
-/* Total size of the CMUX work buffers */
-#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
-				     CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+/* Total size of the CMUX work buffers from the MTU */
+#define MODEM_CMUX_WORK_BUFFER_FROM_MTU (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
+					 CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+
+/* Enforce the minimum size required by CMUX */
+#define MODEM_CMUX_WORK_BUFFER_SIZE MAX(MODEM_CMUX_WORK_BUFFER_FROM_MTU, \
+					MODEM_CMUX_RX_BUFFER_SIZE_MIN)
 
 enum modem_cmux_state {
 	MODEM_CMUX_STATE_DISCONNECTED = 0,

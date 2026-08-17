@@ -322,7 +322,6 @@ bool bt_cap_common_proc_is_done(void);
 void bt_cap_common_abort_proc(struct bt_conn *conn, int err);
 bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn);
 bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream);
-void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason);
 struct bt_cap_common_client *bt_cap_common_get_client_by_acl(const struct bt_conn *acl);
 struct bt_cap_common_client *
 bt_cap_common_get_client_by_csis(const struct bt_csip_set_coordinator_csis_inst *csis_inst);
@@ -342,6 +341,7 @@ int cap_initiator_unicast_audio_start(struct bt_cap_common_proc *active_proc,
 int cap_initiator_unicast_audio_stop(struct bt_cap_common_proc *active_proc,
 				     const struct bt_cap_unicast_audio_stop_param *param);
 enum bt_bap_ep_state bt_cap_initiator_stream_get_state(const struct bt_bap_stream *bap_stream);
+void cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc *active_proc);
 
 int cap_commander_broadcast_reception_start(
 	struct bt_cap_common_proc *active_proc,
@@ -352,6 +352,7 @@ int cap_commander_broadcast_reception_stop(
 bool bt_cap_commander_valid_broadcast_reception_stop_param(
 	const struct bt_cap_commander_broadcast_reception_stop_param *param);
 void cap_commander_register_broadcast_assistant_callbacks(void);
+void cap_commander_proc_complete(struct bt_cap_common_proc *active_proc);
 
 /** Completes the handover procedure. This also unlocks the active_proc_mutex. */
 void bt_cap_handover_complete(struct bt_cap_common_proc *active_proc);

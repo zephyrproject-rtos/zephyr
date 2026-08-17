@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strnlen() */
+
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -17,11 +20,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/cbprintf.h>
-
-/* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
- * idea how to make that happen, so lets put it right here.
- */
-size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
  * capable of holding all convertible integral values.
@@ -1178,11 +1176,11 @@ static char *encode_float(double value,
 	}
 
 	/* Round the value to the last digit being printed. */
-	uint64_t round = BIT64(59); /* 0.5 */
+	uint64_t rounding = BIT64(59); /* 0.5 */
 	while (decimals-- != 0) {
-		_ldiv10(&round);
+		_ldiv10(&rounding);
 	}
-	fract += round;
+	fract += rounding;
 	/* Make sure rounding didn't make fract >= 1.0 */
 	if (fract >= BIT64(60)) {
 		_ldiv10(&fract);

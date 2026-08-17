@@ -249,6 +249,7 @@ static struct bt_bap_stream_ops unicast_stream_ops = {
 	.released = unicast_stream_released,
 	.sent = bap_stream_tx_sent_cb,
 	.recv = bap_stream_rx_recv_cb,
+	.disconnected = bap_unicast_stream_disconnected_cb,
 };
 
 static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
@@ -846,6 +847,14 @@ static void cap_initiator_unicast_audio_stop(struct bt_cap_unicast_group *unicas
 	UNSET_FLAG(flag_stopped);
 	LOG_INF("Stopping without releasing");
 
+	/* Mark streams as stopping to not treat lost SDUs as a failure condition */
+	for (size_t i = 0U; i < non_idle_streams_cnt; i++) {
+		struct audio_test_stream *test_stream =
+			audio_test_stream_from_cap_stream(non_idle_streams[i]);
+
+		SET_FLAG(test_stream->stopping);
+	}
+
 	err = bt_cap_initiator_unicast_audio_stop(&param);
 	if (err != 0) {
 		FAIL("Failed to stop unicast audio without release: %d\n", err);
@@ -1140,6 +1149,34 @@ static void test_cap_initiator_unicast_ase_error(void)
 	unicast_group = NULL;
 
 	PASS("CAP initiator unicast ASE error passed\n");
+}
+
+static void test_cap_initiator_unicast_disconnect(void)
+{
+	struct bt_cap_unicast_group *unicast_group;
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	update_security(default_conn);
+
+	discover_cas(default_conn);
+	discover_sink(default_conn);
+	discover_source(default_conn);
+
+	unicast_group_create(&unicast_group);
+
+	unicast_audio_start(unicast_group, false);
+	WAIT_FOR_UNSET_FLAG(flag_connected);
+	WAIT_FOR_FLAG(flag_start_failed);
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	PASS("CAP initiator unicast disconnect passed\n");
 }
 
 static const struct named_lc3_preset *cap_get_named_preset(const char *preset_arg)
@@ -1856,6 +1893,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_cap_initiator_unicast_ase_error,
+	},
+	{
+		.test_id = "cap_initiator_unicast_disconnect",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_disconnect,
 	},
 	{
 		.test_id = "cap_initiator_unicast_inval",

@@ -16,6 +16,7 @@ LOG_MODULE_REGISTER(net_dhcpv6, CONFIG_NET_DHCPV6_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/math_extras.h>
 
 #include "dhcpv6_internal.h"
@@ -798,6 +799,62 @@ static int dhcpv6_send_confirm(struct net_if *iface)
 	};
 
 	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_CONFIRM, &options);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
+/* Release the currently leased address(es)/prefix(es), RFC 8415 ch. 18.2.7. */
+static int dhcpv6_send_release(struct net_if *iface)
+{
+	int ret;
+	struct net_pkt *pkt;
+	struct dhcpv6_options_include options = {
+		.clientid = true,
+		.serverid = true,
+		.elapsed_time = true,
+		.ia_na = iface->config.dhcpv6.params.request_addr,
+		.iaaddr = iface->config.dhcpv6.params.request_addr,
+		.ia_pd = iface->config.dhcpv6.params.request_prefix,
+		.iaprefix = iface->config.dhcpv6.params.request_prefix,
+	};
+
+	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_RELEASE, &options);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+
+	return ret;
+}
+
+/* Decline address(es) that were found to be already in use (e.g. DAD
+ * failure), RFC 8415 ch. 18.2.8.
+ */
+static int dhcpv6_send_decline(struct net_if *iface)
+{
+	int ret;
+	struct net_pkt *pkt;
+	struct dhcpv6_options_include options = {
+		.clientid = true,
+		.serverid = true,
+		.elapsed_time = true,
+		.ia_na = true,
+		.iaaddr = true,
+	};
+
+	pkt = dhcpv6_create_message(iface, DHCPV6_MSG_TYPE_DECLINE, &options);
 	if (pkt == NULL) {
 		return -ENOMEM;
 	}
@@ -1889,6 +1946,203 @@ static int dhcpv6_handle_advertise(struct net_if *iface, struct net_pkt *pkt,
 	return 0;
 }
 
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+/* Derive the /64 sub-prefix advertised on a downstream link from a delegated
+ * prefix. RFC 8415 delegated prefixes are typically shorter than a /64 (e.g.
+ * /56 or /48), so several downstream links can be served from one delegation;
+ * the subnet id (bits between the delegated length and /64) is set to @p index
+ * so each downstream link gets a distinct /64.
+ *
+ * Return 0 on success, -EINVAL if the delegated prefix is too long to be
+ * sub-delegated as a /64 and -ENOSPC if it does not contain a distinct /64
+ * for @p index.
+ */
+static int dhcpv6_derive_downstream_prefix(const struct net_in6_addr *delegated,
+					   uint8_t delegated_len,
+					   uint32_t index,
+					   struct net_in6_addr *out,
+					   uint8_t *out_len)
+{
+	uint8_t bits;
+
+	if (delegated_len > 64U) {
+		/* Advertising a /64 would cover address space outside of the
+		 * delegation, so refuse to do that.
+		 */
+		return -EINVAL;
+	}
+
+	bits = 64U - delegated_len;
+
+	/* The subnet id must fit in the bits between the delegated prefix and
+	 * the /64, otherwise several downstream links would end up with the
+	 * same prefix.
+	 */
+	if (bits < 32U && index >= (1U << bits)) {
+		return -ENOSPC;
+	}
+
+	net_ipv6_addr_copy_raw(out->s6_addr, delegated->s6_addr);
+
+	if (bits > 0U) {
+		uint64_t mask = (bits >= 64U) ? ~0ULL : (((uint64_t)1U << bits) - 1U);
+		uint64_t high = sys_get_be64(out->s6_addr);
+
+		high = (high & ~mask) | ((uint64_t)index & mask);
+		sys_put_be64(high, out->s6_addr);
+	}
+
+	*out_len = 64U;
+
+	return 0;
+}
+
+static struct net_if *dhcpv6_downstream_iface(struct net_if *iface, uint8_t slot)
+{
+	int idx = iface->config.dhcpv6.params.downstream_ifaces[slot];
+	struct net_if *down;
+
+	if (idx == 0) {
+		return NULL;
+	}
+
+	down = net_if_get_by_index(idx);
+	if (down == NULL || down == iface || down->config.ip.ipv6 == NULL) {
+		NET_WARN("Invalid downstream interface %d for prefix delegation",
+			 idx);
+		return NULL;
+	}
+
+	return down;
+}
+
+static void dhcpv6_setup_delegation_one(struct net_if *down,
+					struct net_in6_addr *prefix,
+					uint8_t prefix_len, uint32_t lifetime)
+{
+	struct net_if_ipv6_prefix *ifprefix;
+	struct net_in6_addr addr = { 0 };
+	int ret;
+
+	ifprefix = net_if_ipv6_prefix_lookup(down, prefix, prefix_len);
+	if (ifprefix == NULL) {
+		ifprefix = net_if_ipv6_prefix_add(down, prefix, prefix_len,
+						  lifetime);
+		if (ifprefix == NULL) {
+			NET_ERR("Cannot add delegated prefix to downstream "
+				"iface %d", net_if_get_by_iface(down));
+			return;
+		}
+	}
+
+	/* net_if_ipv6_prefix_add() does not start the lifetime timer, so set
+	 * it here (as the ND prefix input does). Without this the prefix has a
+	 * zero valid lifetime and downstream hosts ignore the advertised PIO.
+	 */
+	if (lifetime == NET_IPV6_ND_INFINITE_LIFETIME) {
+		net_if_ipv6_prefix_set_lf(ifprefix, true);
+	} else {
+		net_if_ipv6_prefix_set_lf(ifprefix, false);
+		net_if_ipv6_prefix_set_timer(ifprefix, lifetime);
+	}
+
+	/* Form the router's own address on the downstream link. */
+	ret = net_ipv6_addr_generate_iid(down, prefix,
+			COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+				    ((uint8_t *)&down->config.ip.ipv6->network_counter),
+				    (NULL)),
+			COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
+				    (sizeof(down->config.ip.ipv6->network_counter)),
+				    (0U)),
+			0U, &addr, net_if_get_link_addr(down));
+	if (ret == 0 &&
+	    net_if_ipv6_addr_lookup_by_iface(down, &addr) == NULL) {
+		(void)net_if_ipv6_addr_add(down, &addr, NET_ADDR_AUTOCONF,
+					   lifetime);
+	}
+
+	(void)net_if_ipv6_prefix_set_advertise(down, prefix, prefix_len, true);
+	(void)net_if_ipv6_router_start(down);
+
+	NET_INFO("Delegated prefix %s/%u advertised on iface %d",
+		 net_sprint_ipv6_addr(prefix), prefix_len,
+		 net_if_get_by_iface(down));
+}
+
+static void dhcpv6_setup_delegation(struct net_if *iface,
+				    struct dhcpv6_iaprefix *iaprefix)
+{
+	uint8_t count = iface->config.dhcpv6.params.downstream_count;
+
+	for (uint8_t slot = 0U; slot < count; slot++) {
+		struct net_in6_addr prefix;
+		uint8_t prefix_len;
+		struct net_if *down;
+		int ret;
+
+		down = dhcpv6_downstream_iface(iface, slot);
+		if (down == NULL) {
+			continue;
+		}
+
+		ret = dhcpv6_derive_downstream_prefix(&iaprefix->prefix,
+						      iaprefix->prefix_len, slot,
+						      &prefix, &prefix_len);
+		if (ret < 0) {
+			NET_WARN("Cannot delegate %s/%u to downstream iface %d "
+				 "(%d), the delegated prefix is too long",
+				 net_sprint_ipv6_addr(&iaprefix->prefix),
+				 iaprefix->prefix_len,
+				 net_if_get_by_iface(down), ret);
+			continue;
+		}
+
+		dhcpv6_setup_delegation_one(down, &prefix, prefix_len,
+					    iaprefix->valid_lifetime);
+	}
+}
+
+static void dhcpv6_teardown_delegation(struct net_if *iface,
+				       const struct net_in6_addr *delegated,
+				       uint8_t delegated_len)
+{
+	uint8_t count = iface->config.dhcpv6.params.downstream_count;
+
+	for (uint8_t slot = 0U; slot < count; slot++) {
+		struct net_in6_addr prefix;
+		uint8_t prefix_len;
+		struct net_if *down;
+
+		down = dhcpv6_downstream_iface(iface, slot);
+		if (down == NULL) {
+			continue;
+		}
+
+		if (dhcpv6_derive_downstream_prefix(delegated, delegated_len,
+						    slot, &prefix,
+						    &prefix_len) < 0) {
+			/* Nothing was delegated onto this interface. */
+			continue;
+		}
+
+		(void)net_if_ipv6_prefix_set_advertise(down, &prefix, prefix_len,
+						       false);
+
+		/* Removing the prefix also removes the autoconfigured router
+		 * address that was generated from it.
+		 */
+		(void)net_if_ipv6_prefix_rm(down, &prefix, prefix_len);
+
+		/* Give up the router role that was taken in
+		 * dhcpv6_setup_delegation_one(), otherwise the interface would
+		 * keep advertising itself as a default router without having a
+		 * prefix to offer.
+		 */
+		(void)net_if_ipv6_router_stop(down);
+	}
+}
+#endif /* CONFIG_NET_IPV6_ND_RA_TX */
+
 static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 			       uint8_t *tid)
 {
@@ -1898,6 +2152,7 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 	int64_t now = k_uptime_get();
 	uint16_t status = 0;
 	bool rediscover = false;
+	bool requesting = false;
 	int ret;
 
 	if (iface->config.dhcpv6.state != NET_DHCPV6_REQUESTING &&
@@ -2031,6 +2286,19 @@ static int dhcpv6_handle_reply(struct net_if *iface, struct net_pkt *pkt,
 		}
 	}
 
+	/* DHCPv6 RFC8415, ch. 18.2.10.1. If the client receives a Reply to a
+	 * Renew or Rebind and any of the IAs carries a NoBinding status, the
+	 * client sends a Request message for those IAs.
+	 */
+	if ((iface->config.dhcpv6.state == NET_DHCPV6_RENEWING ||
+	     iface->config.dhcpv6.state == NET_DHCPV6_REBINDING) &&
+	    (ia_na.status == DHCPV6_STATUS_NO_BINDING ||
+	     ia_pd.status == DHCPV6_STATUS_NO_BINDING)) {
+		NET_DBG("NoBinding on Renew/Rebind, restarting from Request");
+		requesting = true;
+		goto out;
+	}
+
 	/* Valid response received, store received data. */
 	iface->config.dhcpv6.t1 = UINT64_MAX;
 	iface->config.dhcpv6.t2 = UINT64_MAX;
@@ -2091,6 +2359,11 @@ prefix:
 			/* Remove old lease. */
 			net_if_ipv6_prefix_rm(iface, &iface->config.dhcpv6.prefix,
 					      iface->config.dhcpv6.prefix_len);
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+			dhcpv6_teardown_delegation(iface,
+						   &iface->config.dhcpv6.prefix,
+						   iface->config.dhcpv6.prefix_len);
+#endif
 			memset(&iface->config.dhcpv6.prefix, 0, sizeof(struct net_in6_addr));
 			iface->config.dhcpv6.prefix_len = 0;
 			rediscover = true;
@@ -2127,6 +2400,10 @@ prefix:
 			net_dhcpv6_stop(iface);
 			return -EFAULT;
 		}
+
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+		dhcpv6_setup_delegation(iface, &ia_pd.iaprefix);
+#endif
 	}
 
 	if (IS_ENABLED(CONFIG_NET_DHCPV6_OPTION_DNS_ADDRESS)) {
@@ -2138,7 +2415,9 @@ prefix:
 	}
 
 out:
-	if (rediscover) {
+	if (requesting) {
+		dhcpv6_enter_state(iface, NET_DHCPV6_REQUESTING);
+	} else if (rediscover) {
 		dhcpv6_enter_state(iface, NET_DHCPV6_SOLICITING);
 	} else {
 		dhcpv6_enter_state(iface, NET_DHCPV6_BOUND);
@@ -2470,6 +2749,32 @@ static void dhcpv6_timeout(struct k_work *work)
 	}
 }
 
+/* Return true if the address that failed Duplicate Address Detection is the
+ * one the DHCPv6 server leased to us. NET_EVENT_IPV6_DAD_FAILED carries the
+ * offending address in cb->info (needs CONFIG_NET_MGMT_EVENT_INFO, which
+ * NET_DHCPV6_DECLINE_ON_DAD_FAILURE selects). Without a match we must not
+ * decline, otherwise a DAD failure on an unrelated address (e.g. a privacy
+ * extension address) would needlessly tear down our lease.
+ */
+static bool dhcpv6_dad_failed_for_lease(struct net_mgmt_event_callback *cb,
+					struct net_if *iface)
+{
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	if (cb->info == NULL ||
+	    cb->info_length != sizeof(struct net_in6_addr)) {
+		return false;
+	}
+
+	return net_ipv6_addr_cmp((const struct net_in6_addr *)cb->info,
+				 &iface->config.dhcpv6.addr);
+#else
+	ARG_UNUSED(cb);
+	ARG_UNUSED(iface);
+
+	return false;
+#endif
+}
+
 static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       uint64_t mgmt_event, struct net_if *iface)
 {
@@ -2504,6 +2809,23 @@ static void dhcpv6_iface_event_handler(struct net_mgmt_event_callback *cb,
 	} else if (mgmt_event == NET_EVENT_IF_UP) {
 		NET_DBG("Interface %p coming up", iface);
 		dhcpv6_enter_state(iface, NET_DHCPV6_INIT);
+	} else if (IS_ENABLED(CONFIG_NET_DHCPV6_DECLINE_ON_DAD_FAILURE) &&
+		   mgmt_event == NET_EVENT_IPV6_DAD_FAILED) {
+		/* The address the server leased to us collided on the link.
+		 * Tell the server not to hand it out again, RFC 8415
+		 * ch. 18.2.8, and restart negotiation. Ignore DAD failures for
+		 * any other address on the interface.
+		 */
+		if (iface->config.dhcpv6.params.request_addr &&
+		    iface->config.dhcpv6.state == NET_DHCPV6_BOUND &&
+		    dhcpv6_dad_failed_for_lease(cb, iface)) {
+			NET_DBG("DAD failed, declining lease on iface %p", iface);
+			(void)dhcpv6_send_decline(iface);
+			net_if_ipv6_addr_rm(iface, &iface->config.dhcpv6.addr);
+			memset(&iface->config.dhcpv6.addr, 0,
+			       sizeof(struct net_in6_addr));
+			dhcpv6_enter_state(iface, NET_DHCPV6_SOLICITING);
+		}
 	}
 
 	dhcpv6_reschedule();
@@ -2607,6 +2929,23 @@ void net_dhcpv6_stop(struct net_if *iface)
 		NET_DBG("Stopping DHCPv6 on iface %p, state %s", iface,
 			net_dhcpv6_state_name(iface->config.dhcpv6.state));
 
+		/* Politely return the lease to the server before tearing the
+		 * configuration down, RFC 8415 ch. 18.2.7.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DHCPV6_SEND_RELEASE_ON_STOP) &&
+		    iface->config.dhcpv6.state == NET_DHCPV6_BOUND) {
+			(void)dhcpv6_send_release(iface);
+		}
+
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+		if (iface->config.dhcpv6.params.request_prefix &&
+		    iface->config.dhcpv6.prefix_len != 0) {
+			dhcpv6_teardown_delegation(iface,
+						   &iface->config.dhcpv6.prefix,
+						   iface->config.dhcpv6.prefix_len);
+		}
+#endif
+
 		(void)dhcpv6_enter_state(iface, NET_DHCPV6_DISABLED);
 
 		if (IS_ENABLED(CONFIG_NET_DHCPV6_DNS_SERVER_VIA_INTERFACE)) {
@@ -2641,14 +2980,15 @@ void net_dhcpv6_restart(struct net_if *iface)
 
 int net_dhcpv6_init(void)
 {
-	struct net_sockaddr unspec_addr = {0};
+	struct net_sockaddr_storage unspec_addr_storage = {0};
+	struct net_sockaddr *unspec_addr = net_sad(&unspec_addr_storage);
 	int ret;
 
-	net_ipaddr_copy(&net_sin6(&unspec_addr)->sin6_addr,
+	net_ipaddr_copy(&net_sin6(unspec_addr)->sin6_addr,
 			net_ipv6_unspecified_address());
-	unspec_addr.sa_family = NET_AF_INET6;
+	unspec_addr->sa_family = NET_AF_INET6;
 
-	ret = net_udp_register(NET_AF_INET6, NULL, &unspec_addr,
+	ret = net_udp_register(NET_AF_INET6, NULL, unspec_addr,
 			       0, DHCPV6_CLIENT_PORT,
 			       NULL, dhcpv6_input, NULL, NULL);
 	if (ret < 0) {
@@ -2657,7 +2997,9 @@ int net_dhcpv6_init(void)
 	}
 
 	net_mgmt_init_event_callback(&dhcpv6_mgmt_cb, dhcpv6_iface_event_handler,
-				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
+				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP |
+				     (IS_ENABLED(CONFIG_NET_DHCPV6_DECLINE_ON_DAD_FAILURE) ?
+				      NET_EVENT_IPV6_DAD_FAILED : 0));
 
 	return 0;
 }

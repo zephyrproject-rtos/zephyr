@@ -68,10 +68,8 @@
 	status = "okay";
 };
 
-/* system timer */
 &main_timer8 {
 	clksel = <&main_mmr_cfg0 0x81d0 HFOSC0_CLKOUT>;
-	status = "okay";
 };
 
 &main_uart0 {

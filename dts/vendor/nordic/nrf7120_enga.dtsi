@@ -22,6 +22,7 @@
 			compatible = "arm,cortex-m33f";
 			reg = <0>;
 			device_type = "cpu";
+			clocks = <&hfpll>;
 			clock-frequency = <DT_FREQ_M(256)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -37,6 +38,7 @@
 			compatible = "nordic,vpr", "riscv";
 			reg = <1>;
 			device_type = "cpu";
+			clocks = <&hfpll>;
 			clock-frequency = <DT_FREQ_M(256)>;
 			riscv,isa-base = "rv32e";
 			riscv,isa-extensions = "e", "m", "c", "zicsr";
@@ -981,14 +983,14 @@
 				xo: xo {
 					compatible = "nordic,nrf-clock-xo";
 					status = "disabled";
-					clock-frequency = <0x1e84800>;
+					clock-frequency = <DT_FREQ_M(32)>;
 					#clock-cells = <0>;
 				};
 
 				xo24m: xo24m {
 					compatible = "nordic,nrf-clock-xo24m";
 					status = "disabled";
-					clock-frequency = <0x16e3600>;
+					clock-frequency = <DT_FREQ_M(24)>;
 					#clock-cells = <0>;
 				};
 			};
@@ -1093,16 +1095,6 @@
 	wifi: wifi {
 		compatible = "nordic,nrf7120-wifi";
 		status = "disabled";
-
-		wifi-max-tx-pwr-2g-dsss = <21>;
-		wifi-max-tx-pwr-2g-mcs0 = <16>;
-		wifi-max-tx-pwr-2g-mcs7 = <16>;
-		wifi-max-tx-pwr-5g-low-mcs0 = <13>;
-		wifi-max-tx-pwr-5g-low-mcs7 = <13>;
-		wifi-max-tx-pwr-5g-mid-mcs0 = <13>;
-		wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
-		wifi-max-tx-pwr-5g-high-mcs0 = <12>;
-		wifi-max-tx-pwr-5g-high-mcs7 = <12>;
 
 		wlan0: wlan0 {
 			compatible = "nordic,wlan";

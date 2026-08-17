@@ -168,6 +168,28 @@
 		};
 	};
 
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <FLEXSPI0_A_SS0_B_P3_0>,
+				 <FLEXSPI0_A_SCLK_P3_7>,
+				 <FLEXSPI0_A_DQS_P3_6>,
+				 <FLEXSPI0_A_DATA0_P3_8>,
+				 <FLEXSPI0_A_DATA1_P3_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <FLEXSPI0_A_DATA2_P3_10>,
+				 <FLEXSPI0_A_DATA3_P3_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group0 {
 			pinmux = <FLEXIO0_D0_P0_8>,

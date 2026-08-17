@@ -24,6 +24,7 @@
 
 #define PATTERN_SIZE CONFIG_TEST_FLASH_PATTERN_SIZE
 
+
 static const struct device *flash_controller = DEVICE_DT_GET(TEST_FLASH_CONTROLLER_NODE);
 
 static uint8_t pattern[PATTERN_SIZE];
@@ -35,7 +36,7 @@ static const size_t number_of_slots = test_area_size / PATTERN_SIZE;
 
 static int verify_block(off_t pos, uint8_t *expected_data, size_t size)
 {
-	uint8_t buffer[size];
+	static uint8_t buffer[PATTERN_SIZE];
 
 	if (flash_read(flash_controller, pos, buffer, size) != 0) {
 		return -EIO;
@@ -53,6 +54,9 @@ static void *flash_setup(void)
 	bool pattern_available = true;
 
 	TC_PRINT("test_area_size = %zu MB\n", test_area_size >> 20);
+	TC_PRINT("test device = %s\n", flash_controller->name);
+
+	zassert_true(device_is_ready(flash_controller));
 
 	/* Initialize pattern */
 	for (int i = 0; i < sizeof(pattern); i++) {
@@ -115,8 +119,8 @@ ZTEST(flash_interface, test_sequential_alternating_read_pattern)
 	for (int i = 0; i < amount; i++) {
 		if ((i & 255) == 0) {
 			TC_PRINT(
-				"Verifying pattern sequentially on alternating positions (%i/%i)\n",
-				i + 1, amount);
+					"Verifying pattern sequentially on alternating positions (%i/%i)\n",
+					i + 1, amount);
 		}
 		zassert_ok(verify_block(test_area_offset + (slot1 * PATTERN_SIZE), pattern,
 					sizeof(pattern)));

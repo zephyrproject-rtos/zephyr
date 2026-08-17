@@ -1002,7 +1002,7 @@ static int rx_disable(const struct device *dev, bool api)
 	async_rx->stoprx_deferred = false;
 	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		if (!IS_CBWT(dev) && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 			/* The short may have already started the next buffer. Stopping it now
 			 * would overwrite RX.AMOUNT before the pending ENDRX is processed.
 			 * RX remains active until that ISR runs, so ENDRX must be serviced
@@ -3323,7 +3323,7 @@ static int uarte_instance_deinit(const struct device *dev)
 		 },									\
 		 .bounce_buf_len = sizeof(uart##idx##_bounce_buf) / 2,			\
 		 .bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(sizeof(uart##idx##_bounce_buf) / 2,\
-				UARTE_US_TO_BYTES(UARTE_PROP(idx, current_speed))),	\
+				UARTE_PROP(idx, current_speed)),	\
 		 .cbwt_data = &uart##idx##_bounce_data,))
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \

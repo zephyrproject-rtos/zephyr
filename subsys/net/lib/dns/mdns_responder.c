@@ -245,22 +245,15 @@ NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(v6_svc, dns_dispatcher_svc_handler,
 #endif
 
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
-static struct net_mgmt_event_callback mgmt_iface_cb;
 static void cancel_probes(struct mdns_responder_context *ctx);
-static struct net_mgmt_event_callback mgmt_conn_cb;
-#if defined(CONFIG_NET_IPV4)
-static struct net_mgmt_event_callback mgmt4_addr_cb;
-#endif
-#if defined(CONFIG_NET_IPV6)
-static struct net_mgmt_event_callback mgmt6_addr_cb;
-#endif
 #if defined(CONFIG_NET_DHCPV4)
-static struct net_mgmt_event_callback mgmt_dhcpv4_cb;
-struct k_work_delayable announce_timer;
+static void announce_start(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(announce_timer, announce_start);
 #endif
 static struct k_work_q mdns_work_q;
 static K_KERNEL_STACK_DEFINE(mdns_work_q_stack, CONFIG_MDNS_WORKQ_STACK_SIZE);
-struct k_work_delayable init_listener_timer;
+static void do_init_listener(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(init_listener_timer, do_init_listener);
 static int failed_probes;
 static int probe_count;
 static int announce_count;
@@ -335,11 +328,9 @@ static void mark_needs_announce(struct net_if *iface, bool needs_announce)
 		mon_if[i].needs_announce = needs_announce;
 	}
 }
-#endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
-#if defined(CONFIG_MDNS_RESPONDER_PROBE)
-static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
-				     uint64_t mgmt_event, struct net_if *iface)
+static void mdns_iface_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				     size_t info_length __unused, void *user_data __unused)
 
 {
 	if (!mdns_iface_is_enabled(iface)) {
@@ -353,6 +344,8 @@ static void mdns_iface_event_handler(struct net_mgmt_event_callback *cb,
 		mark_needs_announce(iface, true);
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_iface_events, NET_EVENT_IF_UP, mdns_iface_event_handler, NULL);
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
@@ -571,7 +564,8 @@ static int send_response(int sock,
 			 struct net_sockaddr *src_addr,
 			 size_t addrlen,
 			 struct net_buf *query,
-			 enum dns_rr_type qtype)
+			 enum dns_rr_type qtype,
+			 struct net_if *recv_if)
 {
 	struct net_if *iface;
 	net_socklen_t dst_len;
@@ -586,7 +580,12 @@ static int send_response(int sock,
 		return ret;
 	}
 
-	if (family == NET_AF_INET6) {
+	/* Use the interface the query arrived on (per-socket BINDTODEVICE) so
+	 * A/AAAA records advertise addresses on that link.
+	 */
+	if (recv_if != NULL) {
+		iface = recv_if;
+	} else if (family == NET_AF_INET6) {
 		iface = net_if_ipv6_select_src_iface(&net_sin6(src_addr)->sin6_addr);
 	} else {
 		iface = net_if_ipv4_select_src_iface(&net_sin(src_addr)->sin_addr);
@@ -618,7 +617,8 @@ static void send_sd_response(int sock,
 			     net_sa_family_t family,
 			     struct net_sockaddr *src_addr,
 			     size_t addrlen,
-			     struct net_buf *result)
+			     struct net_buf *result,
+			     struct net_if *recv_if)
 {
 	struct net_if *iface;
 	net_socklen_t dst_len;
@@ -667,7 +667,12 @@ static void send_sd_response(int sock,
 		return;
 	}
 
-	if (family == NET_AF_INET6) {
+	/* Use the interface the query arrived on (per-socket BINDTODEVICE) so
+	 * DNS-SD records advertise addresses on that link.
+	 */
+	if (recv_if != NULL) {
+		iface = recv_if;
+	} else if (family == NET_AF_INET6) {
 		iface = net_if_ipv6_select_src_iface(&net_sin6(src_addr)->sin6_addr);
 	} else {
 		iface = net_if_ipv4_select_src_iface(&net_sin(src_addr)->sin_addr);
@@ -783,7 +788,8 @@ static int dns_read(int sock,
 		    struct net_buf *dns_data,
 		    size_t len,
 		    struct net_sockaddr *src_addr,
-		    size_t addrlen)
+		    size_t addrlen,
+		    struct net_if *recv_if)
 {
 	/* Helper struct to track the dns msg received from the server */
 	const char *hostname = net_hostname_get();
@@ -860,10 +866,10 @@ static int dns_read(int sock,
 				family == NET_AF_INET ? "IPv4" : "IPv6", "query",
 				hostname, ".local");
 			send_response(sock, family, src_addr, addrlen,
-				      result, qtype);
+				      result, qtype, recv_if);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
-			send_sd_response(sock, family, src_addr, addrlen, result);
+			send_sd_response(sock, family, src_addr, addrlen, result, recv_if);
 		}
 
 	} while (--queries);
@@ -1034,7 +1040,7 @@ static int send_probe(struct mdns_responder_context *ctx)
 	int ret;
 
 	NET_DBG("%s %s %s to our hostname %s%s iface %d", "mDNS",
-		ctx->dispatcher.local_addr.sa_family == NET_AF_INET ? "IPv4" : "IPv6",
+		ctx->dispatcher.local_addr_storage.ss_family == NET_AF_INET ? "IPv4" : "IPv6",
 		"probe", hostname, ".local", net_if_get_by_iface(ctx->iface));
 
 	ret = 0;
@@ -1042,14 +1048,15 @@ static int send_probe(struct mdns_responder_context *ctx)
 		local_port = sys_rand16_get() | 0x8000;
 		ret++;
 	} while (net_context_port_in_use(NET_IPPROTO_UDP, local_port,
-					 &ctx->dispatcher.local_addr) && ret < PORT_COUNT);
+					 net_sad(&ctx->dispatcher.local_addr_storage)) &&
+		 ret < PORT_COUNT);
 	if (ret >= PORT_COUNT) {
 		NET_ERR("No available port, %s probe fails!", "mDNS");
 		ret = -EIO;
 		goto out;
 	}
 
-	if (ctx->dispatcher.local_addr.sa_family == NET_AF_INET) {
+	if (ctx->dispatcher.local_addr_storage.ss_family == NET_AF_INET) {
 		create_ipv4_addr((struct net_sockaddr_in *)&server);
 	} else {
 		create_ipv6_addr(&server);
@@ -1150,8 +1157,8 @@ static void probing(struct k_work *work)
 		}
 
 		NET_DBG("Cannot send %s mDNS probe (%d, errno %d)",
-			ctx->dispatcher.local_addr.sa_family == NET_AF_INET ? "IPv4" :
-			(ctx->dispatcher.local_addr.sa_family == NET_AF_INET6 ? "IPv6" :
+			ctx->dispatcher.local_addr_storage.ss_family == NET_AF_INET ? "IPv4" :
+			(ctx->dispatcher.local_addr_storage.ss_family == NET_AF_INET6 ? "IPv6" :
 			 ""),
 			ret, errno);
 	}
@@ -1190,25 +1197,28 @@ static void start_announce(struct net_if *iface)
 }
 #endif /* CONFIG_NET_DHCPV4 */
 
-static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+#if defined(CONFIG_NET_IPV4)
+static void mdns_addr_ipv4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+					 size_t info_length, void *user_data __unused)
 {
 	uint32_t probe_delay = sys_rand32_get() % 250;
-	bool probe_started = false;
 	int ret;
+
+	if ((mgmt_event != NET_EVENT_IPV4_ADDR_ADD) && (mgmt_event != NET_EVENT_IPV4_ADDR_DEL)) {
+		return;
+	}
 
 	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
-		ARRAY_FOR_EACH(v4_ctx, i) {
-			if (v4_ctx[i].iface != iface) {
-				continue;
-			}
+	ARRAY_FOR_EACH(v4_ctx, i) {
+		if (v4_ctx[i].iface != iface) {
+			continue;
+		}
 
-			ret = add_address(iface, NET_AF_INET, cb->info, cb->info_length);
+		if (mgmt_event == NET_EVENT_IPV4_ADDR_ADD) {
+			ret = add_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv4", ret);
 				return;
@@ -1220,26 +1230,12 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv4", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv4", "add", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
 			}
-
-			break;
-		}
-
-		return;
-	}
-
-	if (mgmt_event == NET_EVENT_IPV4_ADDR_DEL) {
-		ARRAY_FOR_EACH(v4_ctx, i) {
-			if (v4_ctx[i].iface != iface) {
-				continue;
-			}
-
-			ret = del_address(iface, NET_AF_INET, cb->info, cb->info_length);
+		} else {
+			ret = del_address(iface, NET_AF_INET, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
 					continue;
@@ -1259,28 +1255,43 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv4", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv4", "del", net_if_get_by_iface(iface),
 					&v4_ctx[i]);
 			}
-
-			break;
 		}
 
 		return;
 	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv4_events,
+				NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ADDR_DEL,
+				mdns_addr_ipv4_event_handler, NULL);
 #endif /* defined(CONFIG_NET_IPV4) */
 
 #if defined(CONFIG_NET_IPV6)
-	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		ARRAY_FOR_EACH(v6_ctx, i) {
-			if (v6_ctx[i].iface != iface) {
-				continue;
-			}
+static void mdns_addr_ipv6_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info,
+					 size_t info_length, void *user_data __unused)
+{
+	uint32_t probe_delay = sys_rand32_get() % 250;
+	int ret;
 
-			ret = add_address(iface, NET_AF_INET6, cb->info, cb->info_length);
+	if ((mgmt_event != NET_EVENT_IPV6_ADDR_ADD) && (mgmt_event != NET_EVENT_IPV6_ADDR_DEL)) {
+		return;
+	}
+
+	if (!mdns_iface_is_enabled(iface)) {
+		return;
+	}
+
+	ARRAY_FOR_EACH(v6_ctx, i) {
+		if (v6_ctx[i].iface != iface) {
+			continue;
+		}
+
+		if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
+			ret = add_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0 && ret != -EALREADY) {
 				NET_DBG("Cannot %s %s address (%d)", "add", "IPv6", ret);
 				return;
@@ -1292,26 +1303,12 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv6", "add", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
 			}
-
-			break;
-		}
-
-		return;
-	}
-
-	if (mgmt_event == NET_EVENT_IPV6_ADDR_DEL) {
-		ARRAY_FOR_EACH(v6_ctx, i) {
-			if (v6_ctx[i].iface != iface) {
-				continue;
-			}
-
-			ret = del_address(iface, NET_AF_INET6, cb->info, cb->info_length);
+		} else {
+			ret = del_address(iface, NET_AF_INET6, info, info_length);
 			if (ret < 0) {
 				if (ret == -ENOENT) {
 					continue;
@@ -1331,30 +1328,42 @@ static void mdns_addr_event_handler(struct net_mgmt_event_callback *cb,
 			if (ret < 0) {
 				NET_DBG("Cannot schedule %s probe work (%d)", "IPv6", ret);
 			} else {
-				probe_started = true;
-
 				NET_DBG("%s %s probing scheduled for iface %d ctx %p",
 					"IPv6", "del", net_if_get_by_iface(iface),
 					&v6_ctx[i]);
 			}
-
-			break;
 		}
 
 		return;
 	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_ipv6_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_ADDR_DEL,
+				mdns_addr_ipv6_event_handler, NULL);
 #endif /* defined(CONFIG_NET_IPV6) */
 
 #if defined(CONFIG_NET_DHCPV4)
-	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
-		start_announce(iface);
+static void mdns_addr_dhcpv4_event_handler(uint64_t mgmt_event, struct net_if *iface,
+					   void *info __unused, size_t info_length __unused,
+					   void *user_data __unused)
+{
+	if (!mdns_iface_is_enabled(iface)) {
 		return;
 	}
-#endif /* CONFIG_NET_DHCPV4 */
+
+	if (mgmt_event == NET_EVENT_IPV4_DHCP_BOUND) {
+		start_announce(iface);
+	}
 }
 
-static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_addr_dhcpv4_events, NET_EVENT_IPV4_DHCP_BOUND,
+				mdns_addr_dhcpv4_event_handler, NULL);
+#endif /* CONFIG_NET_DHCPV4 */
+
+static void mdns_conn_event_handler(uint64_t mgmt_event, struct net_if *iface __unused,
+				    void *info __unused, size_t info_length __unused,
+				    void *user_data __unused)
 {
 	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
 		/* Clear the failed probes counter so that we can start
@@ -1363,6 +1372,9 @@ static void mdns_conn_event_handler(struct net_mgmt_event_callback *cb,
 		failed_probes = 0;
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mdns_conn_events, NET_EVENT_L4_DISCONNECTED,
+				mdns_conn_event_handler, NULL);
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
 #if defined(CONFIG_NET_IPV6)
@@ -1442,9 +1454,15 @@ static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct net_sockaddr *addr, size_t addrlen,
 			 struct net_buf *dns_data, size_t len)
 {
+	struct net_if *recv_if = NULL;
 	int ret;
 
-	ret = dns_read(sock, dns_data, len, addr, addrlen);
+	/* Use the bound iface so replies match the link the query arrived on. */
+	if (ctx->ifindex > 0) {
+		recv_if = net_if_get_by_index(ctx->ifindex);
+	}
+
+	ret = dns_read(sock, dns_data, len, addr, addrlen, recv_if);
 	if (ret < 0 && ret != -EINVAL && ret != -ENOENT) {
 		NET_DBG("%s read failed (%d)", "mDNS", ret);
 	}
@@ -1482,14 +1500,14 @@ static int register_dispatcher(struct mdns_responder_context *ctx,
 			return -EINVAL;
 		}
 
-		memcpy(&ctx->dispatcher.local_addr, local,
+		memcpy(&ctx->dispatcher.local_addr_storage, local,
 		       sizeof(struct net_sockaddr_in6));
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local->sa_family == NET_AF_INET) {
 		if (local_len < sizeof(struct net_sockaddr_in)) {
 			return -EINVAL;
 		}
 
-		memcpy(&ctx->dispatcher.local_addr, local,
+		memcpy(&ctx->dispatcher.local_addr_storage, local,
 		       sizeof(struct net_sockaddr_in));
 	} else {
 		return -ENOTSUP;
@@ -1533,7 +1551,7 @@ static int pre_init_listener(void)
 		 * is initialized does not try to send on it.
 		 */
 		v6_ctx[i].sock = -1;
-		v6_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET6;
+		v6_ctx[i].dispatcher.local_addr_storage.ss_family = NET_AF_INET6;
 		v6_ctx[i].dispatcher.svc = &v6_svc;
 
 		k_work_init_delayable(&v6_ctx[i].probe_timer, probing);
@@ -1565,7 +1583,7 @@ static int pre_init_listener(void)
 		 * is initialized does not try to send on it.
 		 */
 		v4_ctx[i].sock = -1;
-		v4_ctx[i].dispatcher.local_addr.sa_family = NET_AF_INET;
+		v4_ctx[i].dispatcher.local_addr_storage.ss_family = NET_AF_INET;
 		v4_ctx[i].dispatcher.svc = &v4_svc;
 
 		k_work_init_delayable(&v4_ctx[i].probe_timer, probing);
@@ -2428,41 +2446,8 @@ static void do_init_listener(struct k_work *work)
 
 static int mdns_responder_init(void)
 {
-	external_records = NULL;
-	external_records_count = 0;
-
 #if defined(CONFIG_MDNS_RESPONDER_PROBE)
 	int ret;
-
-	net_mgmt_init_event_callback(&mgmt_iface_cb, mdns_iface_event_handler, NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt_iface_cb);
-
-	net_mgmt_init_event_callback(&mgmt_conn_cb, mdns_conn_event_handler,
-				     NET_EVENT_L4_DISCONNECTED);
-	net_mgmt_add_event_callback(&mgmt_conn_cb);
-
-#if defined(CONFIG_NET_IPV4)
-	net_mgmt_init_event_callback(&mgmt4_addr_cb, mdns_addr_event_handler,
-				     NET_EVENT_IPV4_ADDR_ADD |
-				     NET_EVENT_IPV4_ADDR_DEL);
-	net_mgmt_add_event_callback(&mgmt4_addr_cb);
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	net_mgmt_init_event_callback(&mgmt6_addr_cb, mdns_addr_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD |
-				     NET_EVENT_IPV6_ADDR_DEL);
-	net_mgmt_add_event_callback(&mgmt6_addr_cb);
-#endif
-
-#define DHCPV4_EVENT_MASK (NET_EVENT_IPV4_DHCP_BOUND)
-#if defined(CONFIG_NET_DHCPV4)
-	net_mgmt_init_event_callback(&mgmt_dhcpv4_cb, mdns_addr_event_handler,
-				     DHCPV4_EVENT_MASK);
-	net_mgmt_add_event_callback(&mgmt_dhcpv4_cb);
-
-	k_work_init_delayable(&announce_timer, announce_start);
-#endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_MDNS_WORKER_PRIO)
@@ -2480,8 +2465,6 @@ static int mdns_responder_init(void)
 
 		k_thread_name_set(mdns_work_q.thread_id, "mdns_work");
 	}
-
-	k_work_init_delayable(&init_listener_timer, do_init_listener);
 
 	return ret;
 #else

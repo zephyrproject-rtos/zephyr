@@ -4,8 +4,11 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(coap_oscore)
 
-file(GLOB app_sources src/*.c)
-target_sources(app PRIVATE ${app_sources})
+if(COAP_OSCORE_SALT_ONLY)
+  target_sources(app PRIVATE src/salt.c)
+else()
+  target_sources(app PRIVATE src/main.c)
+endif()
 target_include_directories(app PRIVATE
   ${ZEPHYR_BASE}/subsys/net/ip
   ${ZEPHYR_BASE}/subsys/net/lib/coap

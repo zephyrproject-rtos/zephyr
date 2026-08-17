@@ -2,6 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_RPI_PICO
-	bool "Raspberry Pi Reset Controller driver"
+	bool "Raspberry Pi reset driver"
 	default y
 	depends on DT_HAS_RASPBERRYPI_PICO_RESET_ENABLED

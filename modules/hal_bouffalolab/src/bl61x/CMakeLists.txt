@@ -22,17 +22,13 @@ endif()
 
 if(CONFIG_WIFI_BFLB)
   # Select MACSW variant
-  if(CONFIG_BFLB_WIFI_BL61X_MACSW_DEFAULT)
-    set(MACSW_LIB libmacsw_bl616_default.a)
+  if(CONFIG_WIFI_BFLB_WIFI6_MACSW_DEFAULT)
     set(MACSW_CFG_LIB libmacsw_config_bl616_default.a)
-  elseif(CONFIG_BFLB_WIFI_BL61X_MACSW_BRIDGE)
-    set(MACSW_LIB libmacsw_bl616_bridge.a)
+  elseif(CONFIG_WIFI_BFLB_WIFI6_MACSW_BRIDGE)
     set(MACSW_CFG_LIB libmacsw_config_bl616_bridge.a)
-  elseif(CONFIG_BFLB_WIFI_BL61X_MACSW_ACK)
-    set(MACSW_LIB libmacsw_bl616_ack.a)
+  elseif(CONFIG_WIFI_BFLB_WIFI6_MACSW_ACK)
     set(MACSW_CFG_LIB libmacsw_config_bl616_ack.a)
-  elseif(CONFIG_BFLB_WIFI_BL61X_MACSW_COEX)
-    set(MACSW_LIB libmacsw_bl616_coex.a)
+  elseif(CONFIG_WIFI_BFLB_WIFI6_MACSW_COEX)
     set(MACSW_CFG_LIB libmacsw_config_bl616_coex.a)
   endif()
 
@@ -53,7 +49,7 @@ if((CONFIG_BT_BFLB_BL61X OR CONFIG_WIFI_BFLB) AND NOT CONFIG_BUILD_ONLY_NO_BLOBS
 
     zephyr_link_libraries(
       ${BLOBS_DIR}/libwl80211_bl616.a
-      ${BLOBS_DIR}/${MACSW_LIB}
+      ${BLOBS_DIR}/libmacsw_bl616.a
       ${BLOBS_DIR}/${MACSW_CFG_LIB}
     )
   endif()

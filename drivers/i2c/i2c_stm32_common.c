@@ -221,8 +221,9 @@ int i2c_stm32_recover_bus(const struct device *dev)
 		.set_sda = i2c_stm32_bitbang_set_sda,
 		.get_sda = i2c_stm32_bitbang_get_sda,
 	};
-	uint32_t bitrate_cfg = i2c_map_dt_bitrate(config->bitrate) | I2C_MODE_CONTROLLER;
+	uint32_t device_config = data->dev_config;
 	int error = 0;
+	int ret2;
 
 	LOG_ERR("attempting to recover bus");
 
@@ -259,10 +260,21 @@ int i2c_stm32_recover_bus(const struct device *dev)
 
 	i2c_bitbang_init(&bitbang_ctx, &bitbang_io, (void *)config);
 
-	error = i2c_bitbang_configure(&bitbang_ctx, bitrate_cfg);
-	if (error != 0) {
-		LOG_ERR("failed to configure I2C bitbang (err %d)", error);
-		goto restore;
+	/* Use Fast speed (highest supported by bitbang) if not standard speed (bitbang default) */
+	switch (I2C_SPEED_GET(device_config)) {
+	case I2C_SPEED_STANDARD:
+		break;
+	case I2C_SPEED_DT:
+		if (config->bitrate == I2C_BITRATE_STANDARD) {
+			break;
+		}
+		__fallthrough;
+	default:
+		error = i2c_bitbang_configure(&bitbang_ctx, I2C_SPEED_SET(I2C_SPEED_FAST));
+		if (error != 0) {
+			LOG_ERR("failed to configure I2C bitbang (err %d)", error);
+			goto restore;
+		}
 	}
 
 	error = i2c_bitbang_recover_bus(&bitbang_ctx);
@@ -271,15 +283,22 @@ int i2c_stm32_recover_bus(const struct device *dev)
 	}
 
 restore:
-	(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	ret2 = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret2 != 0) {
+		return (error != 0) ? error : ret2;
+	}
 
 	/* Re-initialize the I2C peripheral after GPIO-based bus recovery.
 	 * pinctrl_apply_state() restores the pin configuration, but the
 	 * peripheral registers remain in a faulted state. Re-running
 	 * runtime_configure() restores the peripheral to a working state.
 	 */
-	if (i2c_stm32_runtime_configure(dev, bitrate_cfg) != 0) {
-		LOG_ERR("failed to restore I2C peripheral after bus recovery");
+	ret2 = i2c_stm32_runtime_configure(dev, device_config);
+	if (ret2 != 0) {
+		LOG_ERR("failed to restore I2C peripheral after bus recovery: %d", ret2);
+		if (error == 0) {
+			return ret2;
+		}
 	}
 
 #ifndef CONFIG_I2C_RTIO

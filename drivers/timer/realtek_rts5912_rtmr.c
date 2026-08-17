@@ -18,6 +18,7 @@
 
 #include <reg/reg_rtmr.h>
 #include <reg/reg_system.h>
+#include <soc_clock.h>
 
 #define RTS5912_SCCON_REG_BASE ((SYSTEM_Type *)(DT_REG_ADDR(DT_NODELABEL(sccon))))
 
@@ -47,6 +48,11 @@ static uint32_t accumulated_cycles;
 static uint32_t previous_cnt;      /* Record the counter set into RTMR */
 static uint32_t last_announcement; /* Record the last tick announced to system */
 
+#if defined(CONFIG_PM)
+static uint64_t cyc_sleep_compensated;
+static uint32_t cyc_enter_heavy_sleep;
+#endif
+
 static void rtmr_restart(uint32_t counter)
 {
 	RTMR_REG->CTRL = 0ul;
@@ -58,7 +64,8 @@ static uint32_t rtmr_get_counter(void)
 {
 	uint32_t counter = RTMR_REG->CNT;
 
-	if ((counter == 0) && (RTMR_REG->CTRL & RTOSTMR_CTRL_EN_Msk)) {
+	if ((counter == 0) && (RTMR_REG->CTRL & RTOSTMR_CTRL_EN_Msk) &&
+	    !(RTMR_REG->INTSTS & RTOSTMR_INTSTS_STS_Msk)) {
 		counter = previous_cnt;
 	}
 
@@ -198,6 +205,26 @@ uint32_t sys_clock_cycle_get_32(void)
 
 	return ret;
 }
+
+#if defined(CONFIG_PM)
+void rts5912_clock_capture_low_freq_timer(void)
+{
+	cyc_enter_heavy_sleep = sys_clock_cycle_get_32();
+}
+
+void rts5912_clock_compensate_system_timer(void)
+{
+	uint32_t cyc_exit_heavy_sleep = sys_clock_cycle_get_32();
+	uint32_t cyc_elapsed = (cyc_exit_heavy_sleep - cyc_enter_heavy_sleep) & RTMR_COUNTER_MSK;
+
+	cyc_sleep_compensated += cyc_elapsed;
+}
+
+uint64_t rts5912_clock_get_sleep_ticks(void)
+{
+	return cyc_sleep_compensated / CYCLES_PER_TICK;
+}
+#endif /* CONFIG_PM */
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
 

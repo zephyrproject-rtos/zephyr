@@ -13,7 +13,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  # Label changes are delivered as one event per label, so a bulk (un)labeling
+  # spawns several runs at once. Keying the group on the action and the label
+  # keeps those runs apart so they do not cancel each other and leave this
+  # required check reported as "cancelled". The label name is empty for the
+  # push events, which therefore keep sharing a group and still supersede each
+  # other.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}-${{ github.event.action }}-${{ github.event.label.name }}
   cancel-in-progress: true
 
 jobs:

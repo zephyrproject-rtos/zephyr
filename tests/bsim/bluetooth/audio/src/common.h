@@ -145,6 +145,7 @@ struct audio_test_stream {
 	size_t rx_cnt;
 	size_t valid_rx_cnt;
 	atomic_t flag_audio_received;
+	atomic_t stopping;
 	bool last_rx_failed;
 };
 

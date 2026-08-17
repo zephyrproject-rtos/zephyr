@@ -231,6 +231,77 @@
 	};
 };
 
+&flexspi {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexspi>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-bufferable;
+	ahb-cacheable;
+	ahb-read-addr-opt;
+	combination-mode;
+	rx-clock-source = <1>;
+
+	/* WINBOND W25Q64JV flash memory */
+	ext_flash_ctrl: flash-controller@0 {
+		compatible = "nxp,imx-flexspi-nor";
+		status = "okay";
+		size = <DT_SIZE_M(64)>;
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		jedec-id = [ef 40 17];
+		cs-interval-unit = <1>;
+		cs-interval = <2>;
+		cs-hold-time = <3>;
+		cs-setup-time = <3>;
+		data-valid-time = <2>;
+		column-space = <0>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		w25q64: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			erase-block-size = <DT_SIZE_K(4)>;
+			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ext_boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-mcuboot";
+					reg = <0x00000000 DT_SIZE_K(80)>;
+				};
+
+				ext_slot0_partition: partition@14000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-image-0";
+					reg = <0x00014000 DT_SIZE_M(3)>;
+				};
+
+				ext_slot1_partition: partition@314000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-image-1";
+					reg = <0x00314000 DT_SIZE_M(3)>;
+				};
+
+				ext_storage_partition: partition@614000 {
+					compatible = "zephyr,mapped-partition";
+					label = "ext-storage";
+					reg = <0x00614000 DT_SIZE_K(1968)>;
+				};
+			};
+		};
+	};
+};
+
 &enet {
 	status = "okay";
 	pinctrl-0 = <&pinmux_enet_qos>;

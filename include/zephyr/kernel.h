@@ -7164,11 +7164,11 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
-#if !defined(CONFIG_ASSERT_NO_FILE_INFO)
-#define __EXCEPT_LOC() __ASSERT_PRINT("@ %s:%d\n", __FILE__, __LINE__)
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __EXCEPT_LOC() printk("@ %s:%d\n", __FILE__, __LINE__)
 #else
 #define __EXCEPT_LOC()
-#endif
+#endif /* CONFIG_PRINTK */
 
 /* NOTE: This is the implementation for arches that do not implement
  * ARCH_EXCEPT() to generate a real CPU exception.
@@ -7331,7 +7331,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @return -EINVAL if null pointers or invalid cpu, otherwise 0
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 

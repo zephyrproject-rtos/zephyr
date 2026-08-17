@@ -1214,8 +1214,8 @@ struct bt_le_per_adv_param {
 /**
  * Helper to declare periodic advertising parameters inline
  *
- * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
- * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
+ * @param _int_min     Minimum periodic advertising interval, N * 1.25 ms
+ * @param _int_max     Maximum periodic advertising interval, N * 1.25 ms
  * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
@@ -1229,8 +1229,8 @@ struct bt_le_per_adv_param {
 /**
  * Helper to declare periodic advertising parameters inline
  *
- * @param _int_min     Minimum periodic advertising interval, N * 0.625 milliseconds
- * @param _int_max     Maximum periodic advertising interval, N * 0.625 milliseconds
+ * @param _int_min     Minimum periodic advertising interval, N * 1.25 ms
+ * @param _int_max     Maximum periodic advertising interval, N * 1.25 ms
  * @param _options     Periodic advertising properties bitfield, see @ref bt_le_adv_opt
  *                     field.
  */
@@ -1473,6 +1473,8 @@ int bt_le_ext_adv_update_param(struct bt_le_ext_adv *adv,
  * Delete advertising set. This will free up the advertising set and make it
  * possible to create a new advertising set if the limit @kconfig{CONFIG_BT_EXT_ADV_MAX_ADV_SET}
  * was reached.
+ *
+ * @param adv Advertising set object.
  *
  * @return Zero on success or (negative) error code otherwise.
  */

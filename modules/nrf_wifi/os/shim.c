@@ -1081,7 +1081,8 @@ static void *zep_shim_timer_alloc(void)
 	return timer;
 }
 
-static void zep_shim_timer_init(void *timer, void (*callback)(unsigned long), unsigned long data)
+static void zep_shim_timer_init(void *timer, void (*callback)(unsigned long callbk_data),
+				unsigned long data)
 {
 	((struct timer_list *)timer)->function = callback;
 	((struct timer_list *)timer)->data = data;

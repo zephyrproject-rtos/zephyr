@@ -199,8 +199,9 @@ networking do the following:
 Note: If not provisioned (fully erased before flash), device will form
 new OpenThread network and promote itself to leader (Current role: leader).
 To join into already existing OT network, either enable CONFIG_OPENTHREAD_JOINER=y
-and CONFIG_OPENTHREAD_JOINER_AUTOSTART=y and send join request from other
-already joined device with joiner capabilities, or provision it manually
+and CONFIG_OPENTHREAD_JOINER_AUTOSTART=y, set CONFIG_OPENTHREAD_JOINER_PSKD to a
+credential of your own choosing (it has no default) and register that same PSKd
+on the commissioner of the existing network, or provision it manually
 from console:
 
 .. code-block:: console

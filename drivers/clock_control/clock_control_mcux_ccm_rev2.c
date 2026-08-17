@@ -106,12 +106,25 @@ static int mcux_ccm_on(const struct device *dev,
 		CLOCK_EnableClock(kCLOCK_Xbar1 + instance);
 		return 0;
 #endif
+#if defined(CONFIG_EQDC_MCUX) && defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_ENC1_CLK:
+	case IMX_CCM_ENC2_CLK:
+	case IMX_CCM_ENC3_CLK:
+	case IMX_CCM_ENC4_CLK:
+		CLOCK_EnableClock(kCLOCK_Enc1 + instance);
+		return 0;
+#endif
 #ifdef CONFIG_MEMC_MCUX_FLEXSPI
 #ifdef CONFIG_SOC_MIMX9352
 	case IMX_CCM_FLEXSPI_CLK:
 		CLOCK_EnableClock(kCLOCK_Flexspi1);
 		return 0;
 #endif
+#endif
+#if defined(CONFIG_COUNTER_MCUX_TSTMR) && defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_SYSCTR_BASE_CLK:
+		CLOCK_EnableClock(kCLOCK_Syscount);
+		return 0;
 #endif
 	default:
 		(void)instance;
@@ -452,15 +465,33 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#ifdef CONFIG_COUNTER_MCUX_SYSCTR
-#if defined(CONFIG_SOC_SERIES_IMXRT118X)
+#if (defined(CONFIG_COUNTER_MCUX_SYSCTR) || defined(CONFIG_COUNTER_MCUX_TSTMR)) \
+	&& defined(CONFIG_SOC_SERIES_IMXRT118X)
 	case IMX_CCM_SYSCTR_BASE_CLK:
 		*rate = MHZ(24);
 		return 0;
 	case IMX_CCM_SYSCTR_SLOW_CLK:
+#if defined(CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND)
+		/*
+		 * RT1180/RT1189 errata: the SYS_CTR alternate-frequency (slow)
+		 * clock path is unreliable for timestamp reads.  Returning an
+		 * error here forces the misconfiguration to surface at init time
+		 * rather than silently producing inaccurate timestamps.
+		 */
+		return -ENOTSUP;
+#else
 		*rate = 32768U;
 		return 0;
 #endif
+#endif /* CONFIG_COUNTER_MCUX_SYSCTR && CONFIG_SOC_SERIES_IMXRT118X */
+
+#if defined(CONFIG_EQDC_MCUX) && defined(CONFIG_SOC_SERIES_IMXRT118X)
+	case IMX_CCM_ENC1_CLK:
+	case IMX_CCM_ENC2_CLK:
+	case IMX_CCM_ENC3_CLK:
+	case IMX_CCM_ENC4_CLK:
+		clock_root = kCLOCK_Root_Bus_Wakeup;
+		break;
 #endif
 
 	default:

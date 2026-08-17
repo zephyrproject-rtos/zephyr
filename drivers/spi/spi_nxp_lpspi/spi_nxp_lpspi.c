@@ -69,7 +69,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 
 	base->SR = LPSPI_SR_RDF_MASK;
 
-	LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
+	LOG_DBG("RX BUF: %p", ctx->rx_buf);
 
 	while ((rx_fsr = rx_fifo_cur_len(base)) > 0 && spi_context_rx_on(ctx)) {
 		words_read = lpspi_rx_buf_write_words(dev, rx_fsr);

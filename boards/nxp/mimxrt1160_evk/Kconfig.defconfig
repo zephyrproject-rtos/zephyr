@@ -21,8 +21,7 @@ DT_CHOSEN_IMAGE_M4 = nxp,m4-partition
 
 # Adjust the offset of the output image if building for RT11xx SOC
 config BUILD_OUTPUT_ADJUST_LMA
-	default "($(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) + \
-	$(dt_node_reg_addr_hex,/soc/spi@400cc000,1)) - \
+	default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_M4)) - \
 	$(dt_node_reg_addr_hex,/soc/ocram@20200000)"
 
 endif
