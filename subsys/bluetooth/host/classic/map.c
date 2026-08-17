@@ -135,8 +135,9 @@ static bool has_required_app_params(struct net_buf *buf, const struct map_requir
 #define GET_MSG_LISTING_REQUIRED_AP
 
 #define GET_MSG_REQUIRED_HDR                                                                       \
-	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_NAME
-#define GET_MSG_REQUIRED_AP
+	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_NAME,                 \
+		BT_OBEX_HEADER_ID_APP_PARAM
+#define GET_MSG_REQUIRED_AP BT_MAP_APPL_PARAM_TAG_ID_ATTACHMENT, BT_MAP_APPL_PARAM_TAG_ID_CHARSET
 
 #define SET_MSG_STATUS_REQUIRED_HDR                                                                \
 	BT_OBEX_HEADER_ID_CONN_ID, BT_OBEX_HEADER_ID_TYPE, BT_OBEX_HEADER_ID_NAME,                 \
