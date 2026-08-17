@@ -1435,6 +1435,40 @@ int hl78xx_api_func_set_prl(const struct device *dev, const struct kselacq_synta
 int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kselacq_rats);
 
 /**
+ * @brief Inhibit the boot-time Auto-RAT PRL restore.
+ *
+ * hl78xx_rat_cfg() normally re-applies CONFIG_MODEM_HL78XX_AUTORAT_PRL_PROFILES
+ * whenever it finds a cleared PRL, and requests a restart when it does. A caller
+ * that has deliberately cleared the PRL (see HL78XX_KSELACQ_RAT_CLEAR) must set
+ * this inhibit first, or the next restart silently undoes the change.
+ *
+ * The inhibit is not persistent: clear it as soon as the deliberately cleared
+ * PRL is restored, otherwise the modem comes up with no PRL and Auto-RAT off.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
+ *
+ * @param dev Cellular network device instance
+ * @param inhibit true to suppress the restore, false to allow it again
+ * @return 0 if successful, negative errno on failure
+ */
+int hl78xx_api_func_set_autorat_inhibit(const struct device *dev, bool inhibit);
+
+/**
+ * @brief Report whether a modem chat script is currently executing.
+ *
+ * Intended for callers that drive dynamic AT commands from their own work queue
+ * and want to avoid a send that would be rejected with -EBUSY.
+ *
+ * This is a lock-free poll and is inherently racy: a script may start between
+ * the query and the send. It is an optimisation only — callers must still check
+ * the return value of the send itself and retry -EBUSY.
+ *
+ * @param dev Cellular network device instance
+ * @return true if a script is running, or if @p dev is invalid
+ */
+bool hl78xx_api_func_at_is_busy(const struct device *dev);
+
+/**
  * @brief Register or clear a runtime band provider for the driver.
  *
  * When a provider is registered, hl78xx_band_cfg() may use its per-RAT band
@@ -1592,6 +1626,36 @@ static inline int hl78xx_get_sinr_validity(const struct device *dev, bool *is_va
 static inline int hl78xx_set_prl(const struct device *dev, struct kselacq_syntax prl)
 {
 	return hl78xx_api_func_set_prl(dev, prl);
+}
+
+/**
+ * @brief Inhibit or allow the boot-time Auto-RAT PRL restore.
+ *
+ * @kconfig_dep{CONFIG_MODEM_HL78XX_AUTORAT}
+ *
+ * @param dev Pointer to the modem device instance.
+ * @param inhibit true to suppress the restore, false to allow it again.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if the inputs are invalid.
+ */
+static inline int hl78xx_set_autorat_inhibit(const struct device *dev, bool inhibit)
+{
+	return hl78xx_api_func_set_autorat_inhibit(dev, inhibit);
+}
+
+/**
+ * @brief Report whether a modem chat script is currently executing.
+ *
+ * Racy by construction — see hl78xx_api_func_at_is_busy().
+ *
+ * @param dev Pointer to the modem device instance.
+ *
+ * @retval true if a script is running, or if @p dev is invalid.
+ */
+static inline bool hl78xx_at_is_busy(const struct device *dev)
+{
+	return hl78xx_api_func_at_is_busy(dev);
 }
 
 /**

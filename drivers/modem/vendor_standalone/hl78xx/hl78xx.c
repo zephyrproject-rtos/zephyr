@@ -687,9 +687,23 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	}
 	module_status = ATOI(argv[1], 0, "module_status");
 	data->status.boot.status = module_status;
-	/* Check for unexpected restart */
-	if (data->status.boot.is_booted_previously == true &&
-	    module_status == (int)HL78XX_MODULE_READY) {
+
+	/* Only +KSUP: 0 means the module is ready to take commands. Every other
+	 * value (SIM not present, SIMlock, unrecoverable error, ...) is a startup
+	 * failure and must be treated as one on EVERY boot -- the readiness test
+	 * comes first, before the was-it-a-restart question. Keying the failure
+	 * arm off is_booted_previously used to let any status through on the
+	 * first +KSUP of a power cycle and log it as "started successfully".
+	 */
+	if (module_status != (int)HL78XX_MODULE_READY) {
+		LOG_ERR("Modem reported startup failure, +KSUP: %d", module_status);
+		/* Do NOT latch is_booted_previously here: the module never
+		 * reached a usable state, so a later +KSUP: 0 must still be
+		 * treated as a first successful boot rather than a restart.
+		 */
+		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
+	} else if (data->status.boot.is_booted_previously == true) {
+		/* Check for unexpected restart */
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
 		const struct hl78xx_config *config = data->devices.hl78xx->config;
 
@@ -698,15 +712,15 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 		LOG_DBG("Modem unexpected restart detected %d", module_status);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	} else if (data->status.boot.is_booted_previously == true &&
-		   module_status != (int)HL78XX_MODULE_READY) {
-		LOG_DBG("Modem failed to start %d", module_status);
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SUSPEND);
 	} else {
 		data->status.boot.is_booted_previously = true;
 		LOG_DBG("Modem started successfully %d %d", module_status,
 			data->status.boot.is_booted_previously);
 	}
+
+	/* content.value carries the raw status so the application can tell a
+	 * failed startup from a successful one -- they share this event type.
+	 */
 	event.content.value = module_status;
 	event_dispatcher_dispatch(&event);
 	HL78XX_LOG_DBG("Module status: %d", module_status);

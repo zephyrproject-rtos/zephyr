@@ -151,11 +151,18 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
-	/* Check autorat status/configs */
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL) ||
-	    (data->kselacq_data.rat1 == HL78XX_KSELACQ_RAT_CLEAR &&
-	     data->kselacq_data.rat2 == HL78XX_KSELACQ_RAT_CLEAR &&
-	     data->kselacq_data.rat3 == HL78XX_KSELACQ_RAT_CLEAR)) {
+	/* Check autorat status/configs.
+	 *
+	 * autorat_inhibit is set while the application is deliberately running
+	 * the modem with a cleared PRL (NB-NTN). Without this guard the restart
+	 * that latches the RAT change would immediately re-apply the terrestrial
+	 * PRL here and undo it, plus request another restart.
+	 */
+	if (!data->autorat_inhibit &&
+	    (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL) ||
+	     (data->kselacq_data.rat1 == HL78XX_KSELACQ_RAT_CLEAR &&
+	      data->kselacq_data.rat2 == HL78XX_KSELACQ_RAT_CLEAR &&
+	      data->kselacq_data.rat3 == HL78XX_KSELACQ_RAT_CLEAR))) {
 		char cmd_kselq[] = "AT+KSELACQ=0," CONFIG_MODEM_HL78XX_AUTORAT_PRL_PROFILES;
 
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq, strlen(cmd_kselq),

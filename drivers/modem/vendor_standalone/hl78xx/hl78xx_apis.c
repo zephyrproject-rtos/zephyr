@@ -1132,7 +1132,40 @@ int hl78xx_api_func_get_prl(const struct device *dev, struct kselacq_syntax *kse
 
 	return 0;
 }
+
+int hl78xx_api_func_set_autorat_inhibit(const struct device *dev, bool inhibit)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL) {
+		return -EINVAL;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->autorat_inhibit = inhibit;
+	k_mutex_unlock(&data->api_lock);
+
+	LOG_DBG("Auto-RAT PRL restore %s", inhibit ? "inhibited" : "allowed");
+
+	return 0;
+}
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
+
+bool hl78xx_api_func_at_is_busy(const struct device *dev)
+{
+	struct hl78xx_data *data;
+
+	if (dev == NULL || dev->data == NULL) {
+		/* Unknown means busy: never let a caller send blind. */
+		return true;
+	}
+
+	data = (struct hl78xx_data *)dev->data;
+
+	return modem_chat_is_running(&data->chat);
+}
 
 int hl78xx_set_runtime_band_provider(const struct device *dev,
 				     hl78xx_runtime_band_provider_t provider, void *user_data)
