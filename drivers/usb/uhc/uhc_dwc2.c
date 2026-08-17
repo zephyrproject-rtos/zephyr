@@ -611,8 +611,7 @@ static int port_reset(const struct device *dev)
 
 static int port_suspend(const struct device *const dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t hprt;
 
 	hprt = sys_read32((mem_addr_t)&base->hprt);
@@ -646,8 +645,7 @@ static int port_suspend(const struct device *const dev)
 
 static int port_resume(const struct device *const dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	enum uhc_event_type type;
 	uint32_t hprt;
 	int ret;
@@ -1932,9 +1930,8 @@ static int uhc_dwc2_sof_enable(const struct device *const dev)
 
 static int uhc_dwc2_bus_suspend(const struct device *const dev)
 {
-	const struct uhc_dwc2_config *const config = dev->config;
 	struct uhc_dwc2_data *const priv = uhc_get_private(dev);
-	struct usb_dwc2_reg *const base = config->base;
+	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	uint32_t hprt;
 
 	hprt = sys_read32((mem_addr_t)&base->hprt);
