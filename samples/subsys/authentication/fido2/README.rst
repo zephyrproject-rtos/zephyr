@@ -8,8 +8,14 @@ Overview
 ********
 
 This sample turns a Zephyr-supported board into a FIDO2 hardware security
-key. It implements the CTAP2.1 protocol. Currently only USB HID (CTAPHID)
-is supported. The sample can be used for passwordless authentication on
+key. It implements the CTAP2.1 protocol over USB HID (CTAPHID), with optional
+Bluetooth Low Energy (Bluetooth LE) transport support.
+
+The nRF54LM20 board configuration enables both USB HID and Bluetooth LE
+transports, which are available at the same time. The other supported board
+configurations use USB HID only.
+
+The sample can be used for passwordless authentication on
 websites that support WebAuthn, such as `webauthn.io <https://webauthn.io>`_.
 
 Supported operations:
@@ -21,14 +27,34 @@ Supported operations:
 - ``authenticatorGetNextAssertion``
 - ``authenticatorSelection``
 
+Bluetooth Low Energy
+====================
+
+When using Bluetooth LE transport, the client must pair with the authenticator
+before using FIDO2 operations.
+
+For simplicity, the sample remains discoverable and pairable while running.
+Production applications should restrict new pairing to an explicit
+user-initiated pairing mode.
+
+During testing with WebAuthn clients, Bluetooth LE operations can take longer than
+USB HID operations because the Bluetooth LE connection may be disconnected and
+re-established between operations.
+
 Requirements
 ************
 
-A board with USB device support. The sample has been tested with:
+For USB HID, a board with USB device support is required. The sample has been tested with:
 
 - Black Pill STM32H523 (``blackpill_h523ce``)
 - STM32WB55 Core Board (``weact_stm32wb55_core``)
 - ESP32-S3-B (``weact_esp32s3_b/esp32s3/procpu``)
+- nRF54LM20DK (``nrf54lm20dk/nrf54lm20a/cpuapp``)
+
+For Bluetooth LE, a board with Bluetooth peripheral support is required. The sample has
+been tested with:
+
+- nRF54LM20DK (``nrf54lm20dk/nrf54lm20a/cpuapp``)
 
 User presence is confirmed by pressing either the chosen button ``zephyr,fido2-up-button``
 or the button aliased to ``sw0`` as a fallback.

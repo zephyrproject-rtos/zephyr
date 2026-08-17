@@ -1,5 +1,10 @@
 # Copyright (c) 2026 Siratul Islam <email@sirat.me>
+# Copyright (c) 2026 Jan-Philipp Schmale <jan-philipp.schmale@teratron.de>
 # SPDX-License-Identifier: Apache-2.0
+
+mainmenu "FIDO2 Sample Application"
+
+rsource "Kconfig.bt"
 
 source "samples/subsys/usb/common/Kconfig.sample_usbd"
 
