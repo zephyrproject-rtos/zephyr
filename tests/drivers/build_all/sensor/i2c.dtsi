@@ -1692,3 +1692,9 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_tpi1s1385: tpi1s1385@db {
+	compatible = "excelitas,tpi1s1385";
+	reg = <0xdb>;
+	int-gpios = <&test_gpio 0 0>;
+};
