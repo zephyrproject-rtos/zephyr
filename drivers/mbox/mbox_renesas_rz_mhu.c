@@ -13,15 +13,10 @@
 #include <zephyr/logging/log.h>
 
 #include "r_mhu_ns.h"
+#define MHU_MAX_CHANNELS 1
+void mhu_ns_int_isr(void);
 
 LOG_MODULE_REGISTER(mbox_renesas_rz_mhu, CONFIG_MBOX_LOG_LEVEL);
-
-/* Global dummy value required for FSP driver implementation */
-#define MHU_SHM_START_ADDR 0
-const uint32_t *const __mhu_shmem_start = (uint32_t *)MHU_SHM_START_ADDR;
-
-/* FSP interrupt handlers. */
-void mhu_ns_int_isr(void);
 
 static volatile uint32_t callback_msg;
 static void mhu_ns_callback(mhu_callback_args_t *p_args)
@@ -29,56 +24,63 @@ static void mhu_ns_callback(mhu_callback_args_t *p_args)
 	callback_msg = p_args->msg;
 }
 
+/* Structure that handle the context of the ISR */
+typedef struct rz_mhu_irq_ctx {
+	const struct device *dev;
+	uint32_t channel_id;
+} rz_mhu_irq_ctx_t;
+
+/* Structure that handle FSP MHU instances */
+typedef struct rz_mhu_channel {
+	mhu_ns_instance_ctrl_t fsp_ctrl;
+	mhu_cfg_t fsp_cfg;
+} rz_mhu_channel_t;
+
 struct mbox_rz_mhu_config {
 	const mhu_api_t *fsp_api;
 	uint16_t mhu_ch_size;
 	/* Number of supported channels */
 	uint32_t num_channels;
-	/* TX channels mask */
-	uint32_t tx_mask;
-	/* RX channels mask */
-	uint32_t rx_mask;
+	/* Bitmask of available valid channels */
+	uint32_t channel_mask;
 };
 
 struct mbox_rz_mhu_data {
-	const struct device *dev;
-	mhu_ns_instance_ctrl_t *fsp_ctrl;
-	mhu_cfg_t *fsp_cfg;
-	mbox_callback_t cb;
-	void *user_data;
-	uint32_t channel_id;
+	rz_mhu_channel_t *channels;
+	mbox_callback_t cb[MHU_MAX_CHANNELS];
+	void *user_data[MHU_MAX_CHANNELS];
+	/* Bitmask of enabled channels */
+	uint32_t enabled_channel_mask;
 };
 
 /**
- * @brief Return true if the channel of the MBOX device is an inbound channel.
+ * @brief Return true if the channel of the MBOX device is valid.
  */
-static inline bool is_rx_channel_valid(const struct device *dev, uint32_t ch)
+static inline bool is_channel_valid(const struct device *dev, uint32_t ch)
 {
 	const struct mbox_rz_mhu_config *config = dev->config;
 
-	return ((ch < config->num_channels) && (config->rx_mask & BIT(ch)));
-}
-
-/**
- * @brief Return true if the channel of the MBOX device is an outbound channel.
- */
-static inline bool is_tx_channel_valid(const struct device *dev, uint32_t ch)
-{
-	const struct mbox_rz_mhu_config *config = dev->config;
-
-	return ((ch < config->num_channels) && (config->tx_mask & BIT(ch)));
+	return ((ch < config->num_channels) && (config->channel_mask & BIT(ch)));
 }
 
 /**
  * Interrupt handler
  */
-static void mbox_rz_mhu_isr(const struct device *dev)
+static void mbox_rz_mhu_isr(const void *context)
 {
+	const rz_mhu_irq_ctx_t *ctx = context;
+	uint32_t channel_id = ctx->channel_id;
+	const struct device *dev = ctx->dev;
 	struct mbox_rz_mhu_data *data = dev->data;
 	struct mbox_msg msg;
 
+	if (!(data->enabled_channel_mask & BIT(channel_id))) {
+		return;
+	}
+
 	mhu_ns_int_isr();
-	if (data->cb && data->fsp_cfg->p_shared_memory) {
+
+	if (data->cb[channel_id]) {
 		uint32_t local_msg = callback_msg;
 
 		msg.data = &local_msg;
@@ -88,7 +90,7 @@ static void mbox_rz_mhu_isr(const struct device *dev)
 		 */
 		msg.size = sizeof(local_msg);
 
-		data->cb(dev, data->channel_id, data->user_data, &msg);
+		data->cb[channel_id](dev, channel_id, data->user_data[channel_id], &msg);
 	}
 }
 
@@ -105,17 +107,9 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 	/* FSP driver implementation requires the message to be of type uint32_t */
 	uint32_t message = 0;
 
-	if (!is_tx_channel_valid(dev, channel_id)) {
-		if (!is_rx_channel_valid(dev, channel_id)) {
-			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
-			return -EINVAL;
-		}
-
-		/* Channel is a RX channel, but this function only accepts TX */
-		LOG_ERR("Channel ID %d is a RX channel, but only TX channels are allowed",
-			channel_id);
-		return -ENOSYS;
+	if (!is_channel_valid(dev, channel_id)) {
+		LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+		return -EINVAL;
 	}
 
 	if (msg != NULL) {
@@ -136,38 +130,35 @@ static int mbox_rz_mhu_send(const struct device *dev, mbox_channel_id_t channel_
 		message = 0;
 	}
 
-	if (data->fsp_cfg->p_shared_memory) {
-
-#if CONFIG_MBOX_BUSY_WAIT_TIMEOUT_US > 0
-		/* The FSP MHU "msgSend" API continuously polls until the
-		 * previous message is consumed before sending a new one. To avoid
-		 * blocking indefinitely, we need to check if the remote clears the message
-		 * within the allowed time before sending a new one
-		 */
-		if (MHU_SEND_TYPE_MSG == data->fsp_ctrl->send_type) {
-			if (data->fsp_ctrl->p_regs->MSG_INT_STSn != 0) {
-				k_busy_wait(CONFIG_MBOX_BUSY_WAIT_TIMEOUT_US);
-				if (data->fsp_ctrl->p_regs->MSG_INT_STSn != 0) {
-					LOG_ERR("Remote is busy");
-					return -EBUSY;
-				}
-			}
-		} else {
-			if (data->fsp_ctrl->p_regs->RSP_INT_STSn != 0) {
-				k_busy_wait(CONFIG_MBOX_BUSY_WAIT_TIMEOUT_US);
-				if (data->fsp_ctrl->p_regs->RSP_INT_STSn != 0) {
-					LOG_ERR("Remote is busy");
-					return -EBUSY;
-				}
+#if CONFIG_MBOX_RENESAS_RZ_MHU_BUSY_WAIT_TIMEOUT_US > 0
+	/* The FSP MHU "msgSend" API continuously polls until the
+	 * previous message is consumed before sending a new one. To avoid
+	 * blocking indefinitely, we need to check if the remote clears the message
+	 * within the allowed time before sending a new one
+	 */
+	if (MHU_SEND_TYPE_MSG == data->channels[channel_id].fsp_ctrl.send_type) {
+		if (data->channels[channel_id].fsp_ctrl.p_regs->MSG_INT_STSn != 0) {
+			k_busy_wait(CONFIG_MBOX_RENESAS_RZ_MHU_BUSY_WAIT_TIMEOUT_US);
+			if (data->channels[channel_id].fsp_ctrl.p_regs->MSG_INT_STSn != 0) {
+				LOG_ERR("Remote is busy");
+				return -EBUSY;
 			}
 		}
+	} else {
+		if (data->channels[channel_id].fsp_ctrl.p_regs->RSP_INT_STSn != 0) {
+			k_busy_wait(CONFIG_MBOX_RENESAS_RZ_MHU_BUSY_WAIT_TIMEOUT_US);
+			if (data->channels[channel_id].fsp_ctrl.p_regs->RSP_INT_STSn != 0) {
+				LOG_ERR("Remote is busy");
+				return -EBUSY;
+			}
+		}
+	}
 #endif
 
-		/* Send message to shared memory, this will also invoke interrupt on the receiving
-		 * core
-		 */
-		fsp_err = config->fsp_api->msgSend(data->fsp_ctrl, message);
-	}
+	/* Send message to shared memory, this will also invoke interrupt on the receiving
+	 * core
+	 */
+	fsp_err = config->fsp_api->msgSend(&data->channels[channel_id].fsp_ctrl, message);
 
 	if (fsp_err) {
 		LOG_ERR("Message send failed");
@@ -185,17 +176,9 @@ static int mbox_rz_mhu_reg_callback(const struct device *dev, mbox_channel_id_t 
 {
 	struct mbox_rz_mhu_data *data = dev->data;
 
-	if (!is_rx_channel_valid(dev, channel_id)) {
-		if (!is_tx_channel_valid(dev, channel_id)) {
-			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
-			return -EINVAL;
-		}
-
-		/* Channel is a TX channel, but this function only accepts RX */
-		LOG_ERR("Channel ID %d is a TX channel, but only RX channels are allowed",
-			channel_id);
-		return -ENOSYS;
+	if (!is_channel_valid(dev, channel_id)) {
+		LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+		return -EINVAL;
 	}
 
 	if (!cb) {
@@ -203,9 +186,12 @@ static int mbox_rz_mhu_reg_callback(const struct device *dev, mbox_channel_id_t 
 		return -EINVAL;
 	}
 
-	data->cb = cb;
-	data->user_data = user_data;
-	data->channel_id = channel_id;
+	uint32_t lock = irq_lock();
+
+	data->cb[channel_id] = cb;
+	data->user_data[channel_id] = user_data;
+
+	irq_unlock(lock);
 
 	return 0;
 }
@@ -218,15 +204,26 @@ static int mbox_rz_mhu_init(const struct device *dev)
 	const struct mbox_rz_mhu_config *config = dev->config;
 	struct mbox_rz_mhu_data *data = dev->data;
 	fsp_err_t fsp_err = FSP_SUCCESS;
+	uint32_t i;
 
-	fsp_err = config->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
-
-	if (fsp_err) {
-		LOG_ERR("MBOX initialization failed");
-		return -EIO;
+	/* Open all channels inside a MBOX (MHU) device */
+	for (i = 0; i < config->num_channels; i++) {
+		fsp_err = config->fsp_api->open(&data->channels[i].fsp_ctrl,
+						&data->channels[i].fsp_cfg);
+		if (fsp_err) {
+			LOG_ERR("MBOX initialization failed");
+			goto error_close;
+		}
 	}
 
 	return 0;
+
+error_close:
+	while (i > 0) {
+		i--;
+		config->fsp_api->close(&data->channels[i].fsp_ctrl);
+	}
+	return -EIO;
 }
 
 /**
@@ -235,20 +232,23 @@ static int mbox_rz_mhu_init(const struct device *dev)
 static int mbox_rz_mhu_set_enabled(const struct device *dev, mbox_channel_id_t channel_id,
 				   bool enabled)
 {
-	if (!is_rx_channel_valid(dev, channel_id)) {
-		if (!is_tx_channel_valid(dev, channel_id)) {
-			/* Channel is neither RX nor TX */
-			LOG_ERR("Invalid MBOX channel number: %d", channel_id);
-			return -EINVAL;
-		}
+	struct mbox_rz_mhu_data *data = dev->data;
 
-		/* Channel is a TX channel, but this function only accepts RX */
-		LOG_ERR("Channel ID %d is a TX channel, but only RX channels are allowed",
-			channel_id);
-		return -ENOSYS;
+	if (!is_channel_valid(dev, channel_id)) {
+		LOG_ERR("Invalid MBOX channel number: %d", channel_id);
+		return -EINVAL;
 	}
 
-	ARG_UNUSED(enabled);
+	if (enabled == (bool)(data->enabled_channel_mask & BIT(channel_id))) {
+		return -EALREADY;
+	}
+
+	if (enabled) {
+		data->enabled_channel_mask |= BIT(channel_id);
+	} else {
+		data->enabled_channel_mask &= ~BIT(channel_id);
+	}
+
 	return 0;
 }
 
@@ -284,50 +284,62 @@ static DEVICE_API(mbox, mbox_rz_mhu_driver_api) = {
  * ************************* DRIVER REGISTER SECTION ***************************
  */
 
-#define MHU_RZG_IRQ_CONNECT(idx, irq_name, isr)                                                    \
+#define MHU_RZ_IRQ_CONNECT(node_id, prop, i, inst)                                                 \
 	do {                                                                                       \
-		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(idx, irq_name, irq),                               \
-			    DT_INST_IRQ_BY_NAME(idx, irq_name, priority), isr,                     \
-			    DEVICE_DT_INST_GET(idx), 0);                                           \
-		irq_enable(DT_INST_IRQ_BY_NAME(idx, irq_name, irq));                               \
+		IRQ_CONNECT(DT_IRQ_BY_IDX(node_id, i, irq), DT_IRQ_BY_IDX(node_id, i, priority),   \
+			    mbox_rz_mhu_isr, &rz_mhu_irq_ctx_##inst[i], 0);                        \
+		irq_enable(DT_IRQ_BY_IDX(node_id, i, irq));                                        \
 	} while (0)
 
-#define MHU_RZG_CONFIG_FUNC(idx) MHU_RZG_IRQ_CONNECT(idx, mhuns, mbox_rz_mhu_isr);
+#define MHU_RZ_CONFIG_FUNC(inst)                                                                   \
+	DT_INST_FOREACH_PROP_ELEM_SEP_VARGS(inst, interrupt_names, MHU_RZ_IRQ_CONNECT, (;), inst)
 
-#define MHU_RZG_INIT(idx)                                                                          \
-	static const mhu_ns_extended_cfg_t g_mhu_ns##idx##_cfg_extend = {                          \
-		.p_reg = (void *)DT_INST_REG_ADDR(idx),                                            \
+#define RZ_MHU_INSTANCES_BY_IDX(node_id, prop, i, inst)                                            \
+	{                                                                                          \
+		.fsp_ctrl = {},                                                                    \
+		.fsp_cfg = {                                                                       \
+			.channel = DT_PROP(node_id, unit),                                         \
+			.rx_ipl = DT_IRQ_BY_IDX(node_id, i, priority),                             \
+			.rx_irq = DT_IRQ_BY_IDX(node_id, i, irq),                                  \
+			.p_callback = mhu_ns_callback,                                             \
+			.p_context = NULL,                                                         \
+			.p_extend = &g_mhu_ns##inst##_cfg_extend,                                  \
+			.p_shared_memory = (void *)COND_CODE_1(                                    \
+			       DT_NODE_HAS_PROP(node_id, shared_memory),                           \
+			      (DT_REG_ADDR(DT_PHANDLE(node_id, shared_memory))), (NULL)),          \
+				},                                                                 \
+			},
+
+#define RZ_MHU_IRQ_CTX_BY_IDX(node_id, prop, i)                                                    \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.channel_id = i,                                                                   \
+	},
+
+#define MHU_RZ_INIT(inst)                                                                          \
+	static const mhu_ns_extended_cfg_t g_mhu_ns##inst##_cfg_extend = {                         \
+		.p_reg = (void *)DT_INST_REG_ADDR(inst),                                           \
 	};                                                                                         \
-	static mhu_ns_instance_ctrl_t g_mhu_ns##idx##_ctrl;                                        \
-	static mhu_cfg_t g_mhu_ns##idx##_cfg = {                                                   \
-		.channel = DT_INST_PROP(idx, channel),                                             \
-		.rx_ipl = DT_INST_IRQ_BY_NAME(idx, mhuns, priority),                               \
-		.rx_irq = DT_INST_IRQ_BY_NAME(idx, mhuns, irq),                                    \
-		.p_callback = mhu_ns_callback,                                                     \
-		.p_context = NULL,                                                                 \
-		.p_extend = &g_mhu_ns##idx##_cfg_extend,                                           \
-		.p_shared_memory = (void *)COND_CODE_1(DT_INST_NODE_HAS_PROP(idx, shared_memory),  \
-		      (DT_REG_ADDR(DT_INST_PHANDLE(idx, shared_memory))), (NULL)),                 \
-	};                                                                                         \
-	static const struct mbox_rz_mhu_config mbox_rz_mhu_config_##idx = {                        \
+	static rz_mhu_channel_t rz_mhu_channels_##inst[] = {DT_INST_FOREACH_PROP_ELEM_VARGS(       \
+		inst, interrupt_names, RZ_MHU_INSTANCES_BY_IDX, inst)};                            \
+	static rz_mhu_irq_ctx_t rz_mhu_irq_ctx_##inst[] = {                                        \
+		DT_INST_FOREACH_PROP_ELEM(inst, interrupt_names, RZ_MHU_IRQ_CTX_BY_IDX)};          \
+	static const struct mbox_rz_mhu_config mbox_rz_mhu_config_##inst = {                       \
 		.fsp_api = &g_mhu_ns_on_mhu_ns,                                                    \
 		.mhu_ch_size = 4,                                                                  \
-		.num_channels = DT_INST_PROP(idx, channels_count),                                 \
-		.tx_mask = DT_INST_PROP(idx, tx_mask),                                             \
-		.rx_mask = DT_INST_PROP(idx, rx_mask),                                             \
+		.num_channels = DT_INST_PROP(inst, channels_count),                                \
+		.channel_mask = DT_INST_PROP(inst, channel_mask),                                  \
 	};                                                                                         \
-	static struct mbox_rz_mhu_data mbox_rz_mhu_data_##idx = {                                  \
-		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.fsp_ctrl = &g_mhu_ns##idx##_ctrl,                                                 \
-		.fsp_cfg = &g_mhu_ns##idx##_cfg,                                                   \
+	static struct mbox_rz_mhu_data mbox_rz_mhu_data_##inst = {                                 \
+		.channels = rz_mhu_channels_##inst,                                                \
 	};                                                                                         \
-	static int mbox_rz_mhu_init_##idx(const struct device *dev)                                \
+	static int mbox_rz_mhu_init_##inst(const struct device *dev)                               \
 	{                                                                                          \
-		MHU_RZG_CONFIG_FUNC(idx)                                                           \
+		MHU_RZ_CONFIG_FUNC(inst);                                                          \
 		return mbox_rz_mhu_init(dev);                                                      \
 	}                                                                                          \
-	DEVICE_DT_INST_DEFINE(idx, mbox_rz_mhu_init_##idx, NULL, &mbox_rz_mhu_data_##idx,          \
-			      &mbox_rz_mhu_config_##idx, PRE_KERNEL_1,                             \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &mbox_rz_mhu_driver_api)
+	DEVICE_DT_INST_DEFINE(inst, mbox_rz_mhu_init_##inst, NULL, &mbox_rz_mhu_data_##inst,       \
+			      &mbox_rz_mhu_config_##inst, POST_KERNEL, CONFIG_MBOX_INIT_PRIORITY,  \
+			      &mbox_rz_mhu_driver_api)
 
-DT_INST_FOREACH_STATUS_OKAY(MHU_RZG_INIT);
+DT_INST_FOREACH_STATUS_OKAY(MHU_RZ_INIT);
