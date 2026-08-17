@@ -227,6 +227,85 @@ Serial Port
 The i.MX RT1186 SoC has 8 LPUART peripherals. LPUART1/3 is configured for the
 console and is available on the Debug USB connector.
 
+Dual Core Operation
+*******************
+
+The FRDM-IMXRT1186 supports dual core operation with both the Cortex-M33 and Cortex-M7 cores.
+By default, the CM33 core is the boot core and is responsible for initializing the system and
+starting the CM7 core.
+
+CM7 Execution Modes
+===================
+
+The CM7 core is enabled to execute code in three memory options:
+
+1. **ITCM (Default)**: The CM7 code is copied from flash to ITCM (Instruction Tightly Coupled Memory)
+   and executed from there. This provides faster execution but is limited by the ITCM size.
+
+2. **Flash**: The CM7 code is executed directly from flash memory (XIP - eXecute In Place).
+   This allows for larger code size but may be slower than ITCM execution.
+   When booting CM7 from Flash the TRDC execution permissions has to be set by CM33 core.
+
+Configuring CM7 Execution memory
+================================
+
+To configure the memory for CM7 execution, you can use the following Kconfig option:
+
+.. code-block:: none
+
+   CONFIG_CM7_BOOT_FROM_FLASH=n  # For RAM execution, ITCM or HyperRAM (default)
+   CONFIG_CM7_BOOT_FROM_FLASH=y  # For flash execution
+
+When building with west, you can specify this option on the command line:
+
+.. code-block:: bash
+
+   # For ITCM execution (default)
+   west build -b frdm_imxrt1186/mimxrt1186/cm33 samples/drivers/mbox --sysbuild
+
+   # For flash execution
+   west build -b frdm_imxrt1186/mimxrt1186/cm33 samples/drivers/mbox --sysbuild -- \
+     -Dremote_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/frdm_imxrt1186/cm7_flash_boot.overlay \
+     -DCONFIG_CM7_BOOT_FROM_FLASH=y -Dremote_CONFIG_CM7_BOOT_FROM_FLASH=y
+
+   west build -b frdm_imxrt1186/mimxrt1186/cm33 <sample_path> --sysbuild -- \
+     -D<remote_app_name>_EXTRA_DTC_OVERLAY_FILE=${ZEPHYR_BASE}/boards/nxp/frdm_imxrt1186/cm7_flash_boot.overlay \
+     -DCONFIG_CM7_BOOT_FROM_FLASH=y -D<remote_app_name>_CONFIG_CM7_BOOT_FROM_FLASH=y
+
+Flash Boot Overlay
+==================
+
+When executing the CM7 core from flash, you need to apply a device tree overlay to configure
+the flash memory properly. The overlay file is located at:
+
+.. code-block:: none
+
+   boards/nxp/frdm_imxrt1186/cm7_flash_boot.overlay
+
+This overlay configures the CM7 core to use the flash memory for code execution instead of ITCM.
+
+Memory Usage
+============
+
+* **from RAM**: The CM7 code is copied from flash to ITCM or HyperRAM.
+* **from Flash**: The CM7 code is executed directly from flash, which allows for larger code size than ITCM.
+
+Performance Considerations
+==========================
+
+* **from ITCM**: Provides faster execution due to the low-latency internal ITCM memory.
+* **from external memory**: External flash may be slower due to memory access times,
+    but allows for larger code size.
+
+Dual Core samples Debugging
+===========================
+
+The CM33 core is responsible for copying and starting the CM7.
+To debug the CM7 it is useful to put infinite while loop either in reset vector or
+into main function and attach via debugger to CM7 core.
+
+CM7 core can be started again only after reset, so after flashing ensure to reset board.
+
 Programming and Debugging
 **************************
 
