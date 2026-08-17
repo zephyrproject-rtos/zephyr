@@ -2104,7 +2104,7 @@ static uint8_t att_read_group_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 struct write_data {
 	struct bt_conn *conn;
-	uint8_t req;
+	uint8_t op;
 	const void *value;
 	uint16_t len;
 	uint16_t offset;
@@ -2134,12 +2134,12 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 	/* Set command flag if not a request */
-	if (data->req == BT_ATT_OP_WRITE_CMD || data->req == BT_ATT_OP_SIGNED_WRITE_CMD) {
+	if (data->op == BT_ATT_OP_WRITE_CMD || data->op == BT_ATT_OP_SIGNED_WRITE_CMD) {
 		flags |= BT_GATT_WRITE_FLAG_CMD;
-	} else if (data->req == BT_ATT_OP_EXEC_WRITE_REQ) {
+	} else if (data->op == BT_ATT_OP_EXEC_WRITE_REQ) {
 		flags |= BT_GATT_WRITE_FLAG_EXECUTE;
 	} else {
-		__ASSERT(data->req == BT_ATT_OP_WRITE_REQ, "Invalid data->req: %u", data->req);
+		__ASSERT(data->op == BT_ATT_OP_WRITE_REQ, "Invalid data->op: %u", data->op);
 	}
 
 	/* Write attribute value */
@@ -2155,12 +2155,23 @@ static uint8_t write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static uint8_t perform_write(struct bt_att_chan *chan, uint8_t req, uint16_t handle,
+static bool is_gatt_request(uint8_t op)
+{
+	switch (op) {
+	case BT_ATT_OP_WRITE_CMD:
+	case BT_ATT_OP_SIGNED_WRITE_CMD:
+		return false;
+	default:
+		return true;
+	}
+}
+
+static uint8_t perform_write(struct bt_att_chan *chan, uint8_t op, uint16_t handle,
 			     uint16_t offset, const void *value, uint16_t len)
 {
 	struct write_data data;
 
-	if (!bt_gatt_change_aware(chan->att->conn, req ? true : false)) {
+	if (!bt_gatt_change_aware(chan->att->conn, is_gatt_request(op))) {
 		if (!atomic_test_and_set_bit(chan->flags, ATT_OUT_OF_SYNC_SENT)) {
 			return BT_ATT_ERR_DB_OUT_OF_SYNC;
 		} else {
@@ -2175,7 +2186,7 @@ static uint8_t perform_write(struct bt_att_chan *chan, uint8_t req, uint16_t han
 	(void)memset(&data, 0, sizeof(data));
 
 	data.conn = chan->att->conn;
-	data.req = req;
+	data.op = op;
 	data.offset = offset;
 	data.value = value;
 	data.len = len;
