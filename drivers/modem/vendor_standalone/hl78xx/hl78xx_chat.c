@@ -882,6 +882,19 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
 }
+
+void hl78xx_chat_abort_active_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return;
+	}
+
+	/* Safe with no script running: the abort handler checks for that. A
+	 * synchronous caller blocked on the script returns as soon as this is
+	 * processed, releasing tx_lock and the chat.
+	 */
+	modem_chat_script_abort(&data->chat);
+}
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
 {

@@ -1923,6 +1923,54 @@ int iface_status_work_cb(struct hl78xx_data *data, modem_chat_script_callback sc
 	return 0;
 }
 
+#if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
+/**
+ * @brief Bring a DNS context back from a failed initialisation.
+ *
+ * When dns_resolve_init_locked() aborts - a socket that cannot be created or
+ * bound because the modem is not answering, for instance - it leaves the server
+ * slots holding their addresses while the context stays inactive. Every later
+ * dns_resolve_reconfigure() with the same servers then short-circuits on
+ * "servers unchanged" and returns success without re-initialising, and
+ * dns_resolve_close() will not clear it either because that needs an active
+ * context. The resolver is stuck for the rest of the boot even after the modem
+ * has fully recovered.
+ *
+ * dns_resolve_init() is the way out: it skips the "servers unchanged" check and
+ * re-runs initialisation over the recorded servers, reopening their sockets.
+ * The stranded slots still own the sockets the failed attempt opened, so close
+ * those first or they leak out of the modem's socket pool. No query can be in
+ * flight here - the resolver rejects those while the context is not active.
+ */
+static int dns_resolver_force_reinit(struct dns_resolve_context *dnsCtx,
+				     const struct net_sockaddr *dns_servers_sa[])
+{
+	int ret;
+
+	for (size_t i = 0; i < ARRAY_SIZE(dnsCtx->servers); i++) {
+		if (dnsCtx->servers[i].sock >= 0) {
+			(void)zsock_close(dnsCtx->servers[i].sock);
+			dnsCtx->servers[i].sock = -1;
+		}
+	}
+
+	ret = dns_resolve_init(dnsCtx, NULL, dns_servers_sa);
+	if (ret < 0) {
+		LOG_ERR("DNS resolver re-init failed (%d)", ret);
+		return ret;
+	}
+
+	if (dnsCtx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+		LOG_ERR("DNS resolver still inactive after re-init (state %d)", dnsCtx->state);
+		return -EAGAIN;
+	}
+
+	LOG_INF("DNS resolver recovered from a failed initialisation");
+
+	return 0;
+}
+#endif /* CONFIG_DNS_RESOLVER && !CONFIG_DNS_SERVER_IP_ADDRESSES */
+
 int dns_work_cb(const struct device *dev, bool hard_reset)
 {
 #if defined(CONFIG_DNS_RESOLVER) && !defined(CONFIG_DNS_SERVER_IP_ADDRESSES)
@@ -2000,6 +2048,20 @@ int dns_work_cb(const struct device *dev, bool hard_reset)
 	LOG_DBG("Refresh DNS resolver");
 	dnsCtx = dns_resolve_get_default();
 	ret = dns_resolve_reconfigure(dnsCtx, NULL, dns_servers_sa, DNS_SOURCE_MANUAL);
+	if (ret == 0 && dnsCtx->state != DNS_RESOLVE_CONTEXT_ACTIVE) {
+		/* dns_resolve_reconfigure() reports success without doing any
+		 * work when every server it is given is already recorded in the
+		 * context, which is indistinguishable from a real success here.
+		 * An initialisation that aborted part-way leaves exactly that:
+		 * the servers recorded on a context that never came up. Latching
+		 * dns.ready on it would hand the application a resolver that
+		 * fails every query, so revive the context instead.
+		 */
+		LOG_WRN("DNS servers recorded on an inactive resolver (state %d); "
+			"forcing a re-init",
+			dnsCtx->state);
+		ret = dns_resolver_force_reinit(dnsCtx, dns_servers_sa);
+	}
 	if (ret < 0) {
 		LOG_ERR("dns_resolve_reconfigure fail (%d)", ret);
 		retry = true;
