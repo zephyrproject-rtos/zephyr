@@ -1,0 +1,138 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP EVTG (Event Generator) peripheral.
+
+  The EVTG combines up to four inputs (A, B, C, D) through two AND/OR/INVERT
+  (AOI) blocks and an optional flip-flop to produce an event-generator output.
+  Each AOI block ORs up to four product terms, and each product term ANDs the
+  four inputs after a per-input role (pass, invert, ignore or force-0) is
+  applied.
+
+  The inputs are routed from the on-chip INPUTMUX and the output drives the
+  interconnect (for example PWM faults, timer or ADC triggers) or a device pin.
+  This binding only programs the AOI/flip-flop logic; the input and output
+  routing must be set up separately through INPUTMUX and pinctrl.
+
+  One EVTG peripheral instantiates several EVTG instances (EVTG_INST[]). Each
+  instance that is used is described by a child node and is programmed
+  statically by the Zephyr driver at init time from the properties below; the
+  peripheral has no runtime configuration API. The driver enables the EVTG bus
+  clock through the clock controller before programming the instances.
+
+  Example (AOI0 output = A AND B):
+
+      #include <zephyr/dt-bindings/misc/nxp-evtg.h>
+
+      &evtg0 {
+          status = "okay";
+
+          instance@0 {
+              reg = <0>;
+              flip-flop-mode = "bypass";
+              aoi0-term0 = <EVTG_PASS EVTG_PASS EVTG_IGNORE EVTG_IGNORE>;
+          };
+      };
+
+compatible: "nxp,evtg"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: |
+    Static configuration for a single EVTG instance. The driver applies the
+    configuration and programs the instance during initialization.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: EVTG instance index (0-3) within EVTG_INST[].
+
+    flip-flop-mode:
+      type: string
+      default: "bypass"
+      enum:
+        - "bypass"
+        - "rs-trigger"
+        - "t-ff"
+        - "d-ff"
+        - "jk-ff"
+        - "latch"
+      description: |
+        Flip-flop mode applied to the instance (EVTG_CTRL.MODE_SEL). Enum order
+        matches the fsl_evtg evtg_flipflop_mode_t values. "bypass" routes the
+        two AOI expressions directly to the outputs.
+
+    flip-flop-init-output:
+      type: int
+      enum: [0, 1]
+      description: |
+        When present, force the flip-flop initial positive output value
+        (EVTG_CTRL.FF_INIT). Omit to leave the flip-flop output uninitialized.
+
+    input-a-sync:
+      type: boolean
+      description: Synchronize input A to the bus clock (EVTG_CTRL.SYNC_CTRL).
+
+    input-b-sync:
+      type: boolean
+      description: Synchronize input B to the bus clock (EVTG_CTRL.SYNC_CTRL).
+
+    input-c-sync:
+      type: boolean
+      description: Synchronize input C to the bus clock (EVTG_CTRL.SYNC_CTRL).
+
+    input-d-sync:
+      type: boolean
+      description: Synchronize input D to the bus clock (EVTG_CTRL.SYNC_CTRL).
+
+    aoi0-term0:
+      type: array
+      description: |
+        AOI0 product term 0 as four cells giving the role of inputs A, B, C, D.
+        Use EVTG_PASS / EVTG_INVERT / EVTG_IGNORE / EVTG_FORCE0 from
+        dt-bindings/misc/nxp-evtg.h. The AOI output ORs its four product terms;
+        omit a term property to disable that term.
+
+    aoi0-term1:
+      type: array
+      description: AOI0 product term 1; see aoi0-term0.
+
+    aoi0-term2:
+      type: array
+      description: AOI0 product term 2; see aoi0-term0.
+
+    aoi0-term3:
+      type: array
+      description: AOI0 product term 3; see aoi0-term0.
+
+    aoi1-term0:
+      type: array
+      description: AOI1 product term 0; see aoi0-term0.
+
+    aoi1-term1:
+      type: array
+      description: AOI1 product term 1; see aoi0-term0.
+
+    aoi1-term2:
+      type: array
+      description: AOI1 product term 2; see aoi0-term0.
+
+    aoi1-term3:
+      type: array
+      description: AOI1 product term 3; see aoi0-term0.

@@ -176,6 +176,13 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 	}
 #endif
 
+#if defined(CONFIG_NXP_EVTG)
+	if ((uint32_t)sub_system == MCUX_EVTG_CLK) {
+		CLOCK_EnableClock(kCLOCK_Evtg);
+	}
+#endif
+
+
 #if defined(CONFIG_PINCTRL_NXP_PORT)
 	switch ((uint32_t)sub_system) {
 #if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
