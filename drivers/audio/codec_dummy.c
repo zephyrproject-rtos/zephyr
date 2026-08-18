@@ -85,10 +85,10 @@ static int dummy_codec_get_caps(const struct device *dev, struct audio_caps *cap
 	}
 
 	memset(caps, 0, sizeof(*caps));
-	caps->min_total_channels = 2U;
+	caps->min_total_channels = 1U;
 	caps->max_total_channels = 2U;
-	caps->supported_sample_rates = AUDIO_SAMPLE_RATE_48000;
-	caps->supported_bit_widths = AUDIO_BIT_WIDTH_16;
+	caps->supported_sample_rates = (AUDIO_SAMPLE_RATE_768000 << 1) - 1U;
+	caps->supported_bit_widths = (AUDIO_BIT_WIDTH_64 << 1) - 1U;
 	caps->min_num_buffers = 2U;
 	caps->min_frame_interval = 1U;
 	caps->max_frame_interval = UINT32_MAX;
