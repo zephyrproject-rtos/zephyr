@@ -398,8 +398,8 @@ struct pdu_adv_connect_ind {
 	uint8_t init_addr[BDADDR_SIZE];
 	uint8_t adv_addr[BDADDR_SIZE];
 	struct {
-		uint8_t  access_addr[4];
-		uint8_t  crc_init[3];
+		uint8_t  access_addr[PDU_ACCESS_ADDR_SIZE];
+		uint8_t  crc_init[PDU_CRC_SIZE];
 		uint8_t  win_size;
 		uint16_t win_offset;
 		uint16_t interval;
@@ -516,8 +516,8 @@ struct pdu_adv_sync_info {
 	uint8_t  offs_packed[2];
 	uint16_t interval;
 	uint8_t  sca_chm[PDU_CHANNEL_MAP_SIZE];
-	uint8_t  aa[4];
-	uint8_t  crc_init[3];
+	uint8_t  aa[PDU_ACCESS_ADDR_SIZE];
+	uint8_t  crc_init[PDU_CRC_SIZE];
 	uint16_t evt_cntr;
 } __packed;
 
@@ -879,7 +879,7 @@ struct pdu_data_llctrl_cis_rsp {
 } __packed;
 
 struct pdu_data_llctrl_cis_ind {
-	uint8_t  aa[4];
+	uint8_t  aa[PDU_ACCESS_ADDR_SIZE];
 	uint8_t  cis_offset[3];
 	uint8_t  cig_sync_delay[3];
 	uint8_t  cis_sync_delay[3];
