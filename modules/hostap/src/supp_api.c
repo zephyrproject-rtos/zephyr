@@ -1101,9 +1101,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-				snprintk(phase1, sizeof(phase1),
-					 "peapver=%d peaplabel=0 crypto_binding=0",
-					 params->eap_ver);
+				if (params->eap_ver == -1) {
+					snprintk(phase1, sizeof(phase1),
+						"peaplabel=0 crypto_binding=0");
+				} else {
+					snprintk(phase1, sizeof(phase1),
+						"peapver=%d peaplabel=0 crypto_binding=0",
+						params->eap_ver);
+				}
 
 				if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"", resp.network_id,
 						   &phase1[0])) {
