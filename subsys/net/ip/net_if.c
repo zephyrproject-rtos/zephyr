@@ -6599,6 +6599,7 @@ static void init_igmp(struct net_if *iface)
 
 int net_if_up(struct net_if *iface)
 {
+	const struct device *dev;
 	int status = 0;
 
 	NET_DBG("iface %d (%p)", net_if_get_by_iface(iface), iface);
@@ -6610,30 +6611,19 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
+	dev = net_if_get_device(iface);
+	NET_ASSERT(dev);
+
+	/* If the device is not ready it is pointless trying to take it up. */
+	if (!device_is_ready(dev)) {
+		NET_DBG("Device %s (%p) is not ready", dev->name, dev);
+		status = -ENXIO;
+		goto out;
+	}
+
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
-	} else {
-		/* If the L2 does not implement enable(), then the network
-		 * device driver cannot implement start(), in which case
-		 * we can do simple check here and not try to bring interface
-		 * up as the device is not ready.
-		 *
-		 * If the network device driver does implement start(), then
-		 * it could bring the interface up when the enable() is called
-		 * few lines below.
-		 */
-		const struct device *dev;
-
-		dev = net_if_get_device(iface);
-		NET_ASSERT(dev);
-
-		/* If the device is not ready it is pointless trying to take it up. */
-		if (!device_is_ready(dev)) {
-			NET_DBG("Device %s (%p) is not ready", dev->name, dev);
-			status = -ENXIO;
-			goto out;
-		}
 	}
 
 	/* Notify L2 to enable the interface. Note that the interface is still down
