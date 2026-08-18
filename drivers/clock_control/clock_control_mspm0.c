@@ -68,7 +68,24 @@ LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define DT_ULPCLK   DT_NODELABEL(ulpclk)
 
 #if MSPM0_HAS_MCLK_DIV2_DIV4
-#define MSPM0_ULPCLK_DIV (4)
+#define DT_MCLK_DIV_2 DT_NODELABEL(mclk_div_2)
+#define DT_MCLK_DIV_4 DT_NODELABEL(mclk_div_4)
+
+#define MSPM0_MCLK_DIV_2 DT_PROP_OR(DT_MCLK_DIV_2, clk_div, 2)
+#define MSPM0_MCLK_DIV_4 DT_PROP_OR(DT_MCLK_DIV_4, clk_div, 4)
+
+BUILD_ASSERT(MSPM0_MCLK_DIV_2 == 1 || MSPM0_MCLK_DIV_2 == 2, "MCLK_DIV_2 divider must be 1 or 2");
+BUILD_ASSERT(MSPM0_MCLK_DIV_4 == 1 || MSPM0_MCLK_DIV_4 == 2 || MSPM0_MCLK_DIV_4 == 4,
+	     "MCLK_DIV_4 divider must be 1, 2, or 4");
+BUILD_ASSERT(!(MSPM0_MCLK_DIV_2 == 2 && MSPM0_MCLK_DIV_4 == 1),
+	     "MCLK_DIV_4 divider must be >= MCLK_DIV_2 divider");
+
+#define MSPM0_MCLKDIVCFG_VAL                                                                       \
+	((MSPM0_MCLK_DIV_2 == 1) ? ((MSPM0_MCLK_DIV_4 == 1)   ? SYSCTL_MCLKCFG_MCLKDIVCFG_VAL_1_1  \
+				    : (MSPM0_MCLK_DIV_4 == 2) ? SYSCTL_MCLKCFG_MCLKDIVCFG_VAL_1_2  \
+							      : SYSCTL_MCLKCFG_MCLKDIVCFG_VAL_1_4) \
+				 : ((MSPM0_MCLK_DIV_4 == 2) ? SYSCTL_MCLKCFG_MCLKDIVCFG_VAL_2_2    \
+							    : SYSCTL_MCLKCFG_MCLKDIVCFG_VAL_2_4))
 #else
 #define MSPM0_ULPCLK_DIV DT_PROP_OR(DT_ULPCLK, clk_div, 1)
 #endif /* MSPM0_HAS_MCLK_DIV2_DIV4 */
@@ -747,6 +764,27 @@ static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t
 		break;
 	}
 
+#if MSPM0_HAS_MCLK_DIV2_DIV4
+	case MSPM0_CLOCK_ULPCLK:
+	case MSPM0_CLOCK_MCLK_DIV_2:
+	case MSPM0_CLOCK_MCLK_DIV_4: {
+		struct mspm0_sys_clock mclk_subsys = {.clk = MSPM0_CLOCK_MCLK};
+		uint32_t mclk_rate;
+		int ret =
+			clock_mspm0_get_rate(dev, (clock_control_subsys_t)&mclk_subsys, &mclk_rate);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (sys_clock->clk == MSPM0_CLOCK_MCLK_DIV_2) {
+			*rate = mclk_rate / MSPM0_MCLK_DIV_2;
+		} else {
+			*rate = mclk_rate / MSPM0_MCLK_DIV_4;
+		}
+
+		break;
+	}
+#else
 	case MSPM0_CLOCK_ULPCLK: {
 		uint32_t mclk_rate;
 		struct mspm0_sys_clock mclk_subsys = {.clk = MSPM0_CLOCK_MCLK};
@@ -759,6 +797,7 @@ static int clock_mspm0_get_rate(const struct device *dev, clock_control_subsys_t
 		*rate = mclk_rate / MSPM0_ULPCLK_DIV;
 		break;
 	}
+#endif /* MSPM0_HAS_MCLK_DIV2_DIV4 */
 
 #if DT_MFPCLK_OKAY
 	case MSPM0_CLOCK_MFPCLK:
@@ -1525,7 +1564,14 @@ static int clock_mspm0_init_mclk(const struct device *dev)
 	const struct clock_mspm0_config *cfg = dev->config;
 	int ret = 0;
 
-#if !MSPM0_HAS_MCLK_DIV2_DIV4
+#if MSPM0_HAS_MCLK_DIV2_DIV4
+	/* configure MCLKDIVCFG (MCLK2 and MCLK4 dividers) */
+	ret = syscon_update_bits(cfg->sysctl, SYSCTL_MCLKCFG_OFFSET, SYSCTL_MCLKCFG_MCLKDIVCFG,
+				 FIELD_PREP(SYSCTL_MCLKCFG_MCLKDIVCFG, MSPM0_MCLKDIVCFG_VAL));
+	if (ret < 0) {
+		return ret;
+	}
+#else
 	/* configure UDIV */
 	ret = syscon_update_bits(
 		cfg->sysctl, SYSCTL_MCLKCFG_OFFSET, SYSCTL_MCLKCFG_UDIV,
@@ -1533,7 +1579,7 @@ static int clock_mspm0_init_mclk(const struct device *dev)
 	if (ret < 0) {
 		return ret;
 	}
-#endif /* !MSPM0_HAS_MCLK_DIV2_DIV4 */
+#endif /* MSPM0_HAS_MCLK_DIV2_DIV4 */
 
 #if DT_SAME_NODE(DT_MCLK_CLOCKS_CTRL, DT_SYSOSC) && (DT_SYSOSC_FREQ == 4000000)
 	/* configure MDIV */
