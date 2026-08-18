@@ -52,3 +52,17 @@ properties:
       Number of TACH periods the fan generates per revolution. Typical DC
       brushless fans emit a 50% duty cycle, two-period square wave per
       revolution, hence the default of 2.
+
+  clock-frequency:
+    type: int
+    default: 100000
+    description: |
+      Frequency in Hz of the clock the hardware counts while the TACH edges are
+      observed. Nominally 100 kHz, and the default, but the block divides the
+      48 MHz PLL by 480 and that PLL is only specified to 46.56 to 49.44 MHz
+      when it is referenced to the internal silicon oscillator, narrowing to
+      47.5 to 48.5 MHz with an external reference. The driver takes this value
+      as exact, so whatever the real clock differs from it by appears in every
+      reported RPM as a flat multiplicative bias. Set it from a measurement of
+      the divided clock on the part, or leave it at the nominal value and
+      accept the tolerance.
