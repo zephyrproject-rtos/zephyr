@@ -1608,6 +1608,7 @@ Documentation Infrastructure:
     - boards/shields/mikroe_mcp251x_click/
     - boards/shields/mikroe_mcp251xfd_click/
     - boards/shields/tcan4550evm/
+    - cmake/emu/qemu/can.cmake
     - doc/services/connectivity/canbus/
     - doc/hardware/peripherals/can/
     - drivers/can/
