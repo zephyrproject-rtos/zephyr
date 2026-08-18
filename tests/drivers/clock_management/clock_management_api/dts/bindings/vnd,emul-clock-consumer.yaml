@@ -16,60 +16,30 @@ properties:
     required: true
     description: |
       Frequency this consumer expects to read when applying default clock
-      management state
+      management request
 
   shared-freq:
     type: int
     required: true
     description: |
       Frequency this consumer expects to read when applying shared clock
-      management state
+      management request
 
-  locking-freq:
+  ranked-freq:
     type: int
     required: true
     description: |
-      Frequency this consumer expects to read when applying locking clock
-      management state
+      Frequency this consumer expects to read when applying ranked clock
+      management request
 
-  freq-constraints-0:
-    type: array
-    required: true
-    description: |
-      Tuple of 2 values: the minimum frequency to request, and maximum frequency
-      to request
-
-  req-freq-0:
+  freq-req-1:
     type: int
     required: true
     description: |
-      Frequency this consumer expects to read when applying the frequency
-      constraints
-
-  freq-constraints-1:
-    type: array
-    required: true
-    description: |
-      Tuple of 2 values: the minimum frequency to request and maximum frequency
-      to request
+      Frequency this consumer will request for the clock set rate test
 
   req-freq-1:
     type: int
     required: true
     description: |
-      Frequency this consumer expects to read when applying the frequency
-      constraints
-
-  freq-constraints-2:
-    type: array
-    required: true
-    description: |
-      Tuple of 3 values: the minimum frequency to request, maximum frequency
-      to request, and the maximum acceptable rank for the clock request
-
-  req-freq-2:
-    type: int
-    required: true
-    description: |
-      Frequency this consumer expects to read when applying the frequency
-      constraints
+      Expected frequency the consumer will realize when requesting 'freq-req-1'
