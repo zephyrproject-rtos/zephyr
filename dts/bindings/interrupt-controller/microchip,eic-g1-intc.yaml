@@ -15,6 +15,11 @@ description: |
    - GPIO pins that do not support external interrupts.
    - GPIO pins whose EIC line mapping differs from the default mapping.
 
+  An offset given by a *-special-pins-* property is applied within the sixteen
+  EXTINT lines of a port, so a sum that passes line 15 wraps back to line 0.
+  A pad whose line is below its default mapping is therefore reachable through
+  the complement of the distance, and needs no separate sign.
+
   Group g1 EIC supports following hardware peripherals:
     - module name="EIC" id="U2254" version="3.0.0"
 
@@ -102,6 +107,20 @@ properties:
     description: |
       Number of cells in portb-special-pins-1 property
 
+  portb-special-pins-2:
+    type: array
+    default: [0, 0]
+    description: |
+      Each bit in this number denotes a pin number. These pins are derived from datasheet
+      by listing down the eic line and port-pin mapping.
+      The eic line mapping to the pin number requires a manipulation with an offset.
+
+  "#portb-special-pins-2-cells":
+    type: int
+    default: 2
+    description: |
+      Number of cells in portb-special-pins-2 property
+
   portc-special-pins-1:
     type: array
     default: [0, 0]
@@ -155,6 +174,10 @@ properties:
       Number of cells in portd-special-pins-2 property
 
 portb-special-pins-1-cells:
+  - pins_val
+  - offset
+
+portb-special-pins-2-cells:
   - pins_val
   - offset
 
