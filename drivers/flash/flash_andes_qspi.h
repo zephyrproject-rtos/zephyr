@@ -14,6 +14,7 @@
 #define FLASH_ANDES_CMD_PP	0x02    /* Page program */
 #define FLASH_ANDES_CMD_4PP	0x38    /* Quad mode page program*/
 #define FLASH_ANDES_CMD_SE	0x20    /* Sector erase */
+#define FLASH_ANDES_CMD_VOL_SR	0x50    /* Volatile SR Write Enable */
 #define FLASH_ANDES_CMD_BE_32K	0x52    /* Block erase 32KB */
 #define FLASH_ANDES_CMD_BE	0xD8    /* Block erase */
 #define FLASH_ANDES_CMD_CE	0xC7    /* Chip erase */
