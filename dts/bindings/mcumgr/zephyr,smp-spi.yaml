@@ -16,6 +16,8 @@ properties:
   data-ready-gpios:
     type: phandle-array
     required: true
+    min-len: 1
+    max-len: 1
     description: |
       GPIO driven by the SPI peripheral to signal the controller.
 
