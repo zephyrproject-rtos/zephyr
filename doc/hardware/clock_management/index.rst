@@ -32,31 +32,29 @@ clock management API.
 
 Clock producers are described by devicetree nodes, and are considered to be any
 element of a clock tree that takes one (or multiple) frequencies as input and
-produces a frequency as an output. Clock states in devicetree may configure
+produces a frequency as an output. Clock states in devicetree configure
 producers directly, but the clock consumer should never access producers via the
 clock driver API, as this is the responsibility of the clock management
 subsystem.
 
 This approach is required because clock consumers should not have knowledge of
 how their underlying clock states are applied or defined, as the data is often
-hardware specific. Consumers may apply states directly, or request a frequency
-range, which can then be satisfied by one of the defined states. For details on
+hardware specific. Consumers may request states, or request a frequency, which
+can then be satisfied by dynamic clock configuration. For more information on
 the operation of the clock subsystem, see :ref:`clock_subsystem_operation`.
 
 Clock Management Usage
 **********************
 
 In order to interact with the clock tree, clock consumers must define and
-initialize a clock output device. For devices described in devicetree, which
-define clocks within their ``clock-outputs`` property,
-:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT` or similar may be used. For
-software applications consuming a clock,
-:c:macro:`CLOCK_MANAGEMENT_DEFINE_OUTPUT` should be used.
+initialize a clock management data structure. Consumers define data structures
+used by the clock management subsystem using
+:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE`, and initialize the data structure using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET`.
 
-Clock consumers may then initialize their clock output device using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT` or similar for consumer devices
-defined in devicetree, or :c:macro:`CLOCK_MANAGEMENT_GET_OUTPUT` for software
-applications consuming a clock.
+Clock consumers may then access their clock outputs using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a reference to the
+:c:type:`clock_output_t` for the clock output.
 
 Clock output devices can then be used with the clock management API to
 interface with the clock tree, as described below.
@@ -72,62 +70,49 @@ could not be read.
 Consumers can also monitor a clock output rate. To do so, the application must
 first enable :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME`. The application may
 then set a callback of type :c:type:`clock_management_callback_handler_t` using
-:c:func:`clock_management_set_callback`. One callback is supported per consumer.
+:c:func:`clock_management_set_callback`. One callback is supported per clock
+output.
 
-The clock management subsystem will issue a callback directly before applying a
-new clock rate, and directly after the new rate is applied. See
-:c:struct:`clock_management_event` for more details.
+The clock management subsystem will issue a callback while evaluating a new rate,
+directly before applying a new clock rate, and directly after the new rate is
+applied. See :c:struct:`clock_management_event` for more details.
 
-Setting Clock States
-====================
+Requesting Clock States
+=======================
 
-Each clock output defines a set of states. Clock consumers can set these states
-directly, using :c:func:`clock_management_apply_state`. States are described in
-devicetree, and are opaque to the driver/application code consuming the clock.
+Each clock output defines a set of states. Clock consumers can set a range of
+acceptable clock states using :c:func:`clock_management_request_state`. The clock
+management subsystem will then select the best state that satisfies the request,
+and apply it. If no states satisfy the request, a negative error value will be
+returned. States are described in devicetree, and are opaque to the
+driver/application code consuming the clock.
 
-Each clock consumer described in devicetree can set named clock states for each
-clock output. These states are described by the ``clock-state-n`` properties
-present on each consumer. The consumer can access states using macros like
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_STATE`
+Each clock consumer described in devicetree can set named clock requests using
+the ``clock-request-n`` properties, where ``n`` is the index of the request. The
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST` macro can be used to get a reference
+to a named request, which can then be used with
+:c:func:`clock_management_request_state` to set the request.
 
+``clock-request-n`` properties describe an array of allowed states for *any*
+clock output within the system. This allows a consumer to set a request that may
+affect multiple clock outputs.
+
+Once a set of allowed states is set for a clock output, the clock management
+framework will select the lowest "ranked" clock state that satisfies the
+intersection of all allowed state requests for that clock output.
+
+Clock state rank is a parameter set by the user. If two clock states share
+a rank, the first state defined in devicetree will be preferred.
 
 Requesting Clock Rates
 ======================
 
-In some applications, the user may not want to directly configure clock nodes
-within their devicetree. The clock management subsystem allows applications to
-request a clock rate directly as well, by using
-:c:func:`clock_management_req_rate`.  If any states satisfy the frequency range
-request, the state offering the frequency closest to the maximum frequency
-requested. will be applied.  Otherwise if
-:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE` is set, the clock management
-subsystem will perform runtime calculations to apply a rate within the requested
-range. If runtime rate calculation support is disabled, the request will fail if
-no defined states satisfy it.
-
-Clock Ranking
-=============
-
-The clock subsystem also supports a user-specified "rank" that can be applied to
-the devicetree node for any clock producer. Two properties are provided:
-
-* ``clock-ranking``: A fixed ranking value for this clock. Max value of 255.
-
-* ``clock-rank-factor``: Rank factor, scales with frequency according to the
-  following: ``<factor> * <clock-freq> / 255``. Max value of 255.
-
-These properties can be used to guide the framework when selecting a clock
-output. The function :c:func:`clock_management_req_ranked` will apply the clock
-state with the best ranking that fits the bounds of the frequency request.
-Lower ranks are preferred, so a rank of 0 is considered an "ideal" clock
-setting.  When runtime rate calculation is used, the rank is calculated by
-summing the rank for every clock producer that will be used to produce the
-frequency. For fixed states, the ranking is encoded statically.
-
-Ranking is intentionally user specific - the application can define this to
-be a hardware property such as power consumption, or may choose to use it
-arbitrarily to prevent the clock framework from selecting certain clocks as
-inputs.
+In some applications, the user may want to request a specific clock rate. To
+enable support for this, the user should set
+:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE`, and use the API
+:c:func:`clock_management_req_rate`. The clock management subsystem will perform
+runtime calculations to apply the closest clock rate possible based on the
+request.
 
 Devicetree Representation
 =========================
@@ -160,30 +145,24 @@ but may look similar to the following:
         };
     };
 
-At the board level, applications will define clock states for each clock output
-node, which may either directly configure producer clock nodes to realize a
-frequency, or simply define a frequency to request from the parent clock at
-runtime (which will only function if
-:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE` is enabled).
+Clock outputs will then have clock states defined, which directly configure
+producer clock nodes to realize a frequency. Clock states include a ``rank``
+property, which is used to determine which state is "best" when multiple states
+satisfy a request. Lower ranks are preferred.
 
 .. code-block:: devicetree
 
     &clock_output {
         clock_output_state_default: clock-output-state-default {
             compatible = "clock-state";
-            /* Directly configure clock producers */
             clocks = <&clock_div 1>;
-            clock-frequency = <DT_FREQ_M(10)>
+            rank = <1>;
         };
         clock_output_state_sleep: clock-output-state-sleep {
             compatible = "clock-state";
             clocks = <&clock_div 5>;
-            clock-frequency = <DT_FREQ_M(2)>
-        };
-        clock_output_state_runtime: clock-output-state-runtime {
-            compatible = "clock-state";
-            /* Will issue runtime frequency request to parent */
-            clock-frequency = <DT_FREQ_M(1)>;
+            /* Lowest rank- this is the preferred state when multiple states satisfy a request */
+            rank = <0>;
         };
     };
 
@@ -203,10 +182,10 @@ consumer's devicetree might look like so:
         clock-outputs = <&clock_output>;
         clock-output-names = "default";
         /* Default clock state */
-        clock-state-0 = <&clock_output_state_default>;
-        /* Sleep state */
-        clock-state-1 = <&clock_output_state_sleep>;
-        clock-state-names = "default", "sleep";
+        clock-request-0 = <&clock_output_state_default>;
+        /* This request allows either the default or sleep state to be applied */
+        clock-request-1 = <&clock_output_state_default &clock_output_state_sleep>;
+        clock-request-names = "default", "sleep";
     };
 
 Enabling and Disabling Clocks
@@ -238,16 +217,23 @@ reference count set via :c:func:`clock_management_on` will be gated.
 Locking Clock States and Requests
 =================================
 
-When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, requests
-issued via :c:func:`clock_management_req_rate` or
-:c:func:`clock_management_req_ranked` to the same clock by different consumers
-will be aggregated to form a "combined" request for that clock. This means that
-a request may be denied if it is incompatible with the existing set of
-aggregated clock requests. Clock states do not place a request on the clock they
-configure by default- if a clock state should "lock" the clock to prevent the
-frequency changing, it should be defined with the ``locking-state`` boolean
-property.  This can be useful for critical system clocks, such as the core
-clock.
+When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, clocks may
+"lock" a clock by calling :c:func:`clock_management_lock`. This will prevent any
+other clock requests from modifying the clock or its parent settings until the
+lock is released with :c:func:`clock_management_unlock`. This can be useful for
+critical clock consumers, such as the core clock, which should not be modified by other
+consumers. Note that when a clock is locked, clock requests to it from the
+consumer that locked the clock will still be supported.
+
+Clocks can also be locked by adding ``clock-request-n-locking`` to the devicetree
+for the consumer making the request. This will make request ``n`` lock all
+clocks affected by it on behalf of the consumer making the request. Locks will
+be cleared when the consumer switches to a new request.
+
+When :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled, clock state
+requests will be additive. This means that if multiple consumers set a list of
+allowed states, the clock output will be set to the best state that satisfies
+all requests.
 
 Generally when multiple clocks are expected to be reconfigured at runtime,
 :kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` should be enabled to avoid
@@ -260,25 +246,29 @@ Driver Usage
 ============
 
 In order to use the clock management subsystem, a driver must define and
-initialize a :c:struct:`clock_output` for the clock it wishes to interact with.
-The clock output structure can be defined with
-:c:macro:`CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT`, and then accessed with
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`. Note that both these macros also have
+initialize a :c:struct:`clock_management_data` structure, which can be defined
+using :c:macro:`CLOCK_MANAGEMENT_DT_DEFINE` and initialized using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET`. This structure is then passed to the clock
+management API functions to access the clock tree.
+
+Clock outputs can be accessed with the macro
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_OUTPUT`, which will return a reference to the
+:c:type:`clock_output_t` for the clock output. This reference can then be used
+with the clock management subsystem. Note that this macro also has
 versions that allow the driver to access an output by name or index, if
 multiple clocks are present within the ``clock-outputs`` property for the
 device.
 
-In order to configure a clock, the driver may either request a supported
-clock rate range via :c:func:`clock_management_req_rate`, or apply a clock state
-directly via :c:func:`clock_management_apply_state`. For most applications,
-:c:func:`clock_management_apply_state` is recommended, as this allows the application
-to customize the clock properties that are set using devicetree.
-:c:func:`clock_management_req_rate` should only be used in cases where the driver
-knows the frequency range it should use, and cannot accept a frequency outside
-of that range.
+In order to configure a clock, the driver may either request a supported clock
+rate via :c:func:`clock_management_req_rate`, or request a set of states via
+:c:func:`clock_management_request_state`. For most applications,
+:c:func:`clock_management_request_state` is recommended, as this allows the
+application to customize the clock properties that are set using devicetree.
+:c:func:`clock_management_req_rate` should only be used in cases where the
+driver knows the frequency it should use.
 
-Drivers can define states of type :c:type:`clock_management_state_t` using
-:c:macro:`CLOCK_MANAGEMENT_DT_GET_STATE`, or the name/index based versions of this
+Drivers can define requests of type :c:type:`clock_management_request_t` using
+:c:macro:`CLOCK_MANAGEMENT_DT_GET_REQUEST`, or the name/index based versions of this
 macro.
 
 For example, if a peripheral devicetree was defined like so:
@@ -290,11 +280,13 @@ For example, if a peripheral devicetree was defined like so:
         /* Clock outputs */
         clock-outputs = <&periph_hs_clock &periph_lp_clock>;
         clock-output-names = "high-speed", "low-power";
-        /* Default clock state */
-        clock-state-0 = <&hs_clock_default &lp_clock_default>;
-        /* Sleep state */
-        clock-state-1 = <&hs_clock_sleep &lp_clock_sleep>;
-        clock-state-names = "default", "sleep";
+        /* Moves HS_CLOCK to default state. LP_CLOCK can be in either state */
+        clock-request-0 = <&periph_hs_clock_state_default
+                           &periph_lp_clock_state_default
+                           &periph_lp_clock_state_sleep>;
+        /* Moves LP_CLOCK to sleep state */
+        clock-request-1 = <&periph_lp_clock_state_sleep>;
+        clock-request-names = "default", "sleep";
     };
 
 The following C code could be used to apply the default state for the
@@ -315,10 +307,10 @@ The following C code could be used to apply the default state for the
         const struct clock_output *hs_clk;
         /* Reference to low-power clock */
         const struct clock_output *lp_clk;
-        /* high-speed clock default state */
-        const clock_management_state_t hs_default_state;
-        /* low-power sleep state */
-        const clock_management_state_t lp_sleep_state;
+        /* high-speed clock default request */
+        const clock_management_request_t default_request;
+        /* low-power sleep request */
+        const clock_management_request_t sleep_request;
         ...
     };
 
@@ -342,41 +334,41 @@ The following C code could be used to apply the default state for the
     static int mydev_init(const struct device *dev)
     {
         const struct mydev_config *config = dev->config;
+        int ret;
         int hs_clk_rate, lp_clk_rate;
         ...
         /* Set high-speed clock to default state */
-        hs_clock_rate = clock_management_apply_state(config->hs_clk, config->hs_default_state);
-        if (hs_clock_rate < 0) {
-            return hs_clock_rate;
+        ret = clock_management_request_state(config->default_request);
+        if (ret < 0) {
+            return ret;
         }
+        hs_clk_rate = clock_management_get_rate(config->hs_clk);
         /* Register for a callback if high-speed clock changes rate */
         ret = clock_management_set_callback(config->hs_clk, hs_clock_cb, dev);
         if (ret < 0) {
             return ret;
         }
-        /* Set low-speed clock to sleep state */
-        lp_clock_rate = clock_management_apply_state(config->lp_clk, config->lp_sleep_state);
-        if (lp_clock_rate < 0) {
-            return lp_clock_rate;
+        /* Set low-power clock to sleep state */
+        ret = clock_management_request_state(config->sleep_request);
+        if (ret < 0) {
+            return ret;
         }
-        ...
+        lp_clk_rate = clock_management_get_rate(config->lp_clk);
     }
 
     #define MYDEV_DEFINE(i)                                                    \
-        /* Define clock outputs for high-speed and low-power clocks */         \
-        CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT_BY_NAME(i, high_speed);         \
-        CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT_BY_NAME(i, low_power);          \
+        /* Define clock management data structure */                           \
+        CLOCK_MANAGEMENT_DT_INST_DEFINE(i);                                    \
         ...                                                                    \
         static const struct mydev_config mydev_config_##i = {                  \
             ...                                                                \
             /* Initialize clock outputs */                                     \
+            .clk_mgmt = CLOCK_MANAGEMENT_DT_INST_GET(i),                       \
             .hs_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, high_speed),\
             .lp_clk = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT_BY_NAME(i, low_power),\
             /* Read states for high-speed and low-power */                     \
-            .hs_default_state = CLOCK_MANAGEMENT_DT_INST_GET_STATE(i, high_speed,\
-                                                             default),         \
-            .lp_sleep_state = CLOCK_MANAGEMENT_DT_INST_GET_STATE(i, low_power, \
-                                                           sleep),             \
+            .default_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, default), \
+            .sleep_request = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(i, sleep), \
             ...                                                                \
         };                                                                     \
         static struct mydev_data mydev_data##i;                                \
@@ -400,7 +392,6 @@ Devicetree Clock Management Helpers
 ===================================
 
 .. doxygengroup:: devicetree-clock-management
-
 
 .. _clock-producers:
 
@@ -614,7 +605,7 @@ As an example, for the following devicetree:
         clock_output_state_default: clock-output-state-default {
             compatible = "clock-state";
             clocks = <&clock_div 1>;
-            clock-frequency = <DT_FREQ_M(10)>
+            rank = <0>;
         };
     }
 
@@ -625,8 +616,8 @@ As an example, for the following devicetree:
         clock-outputs= <&clock_output>;
         clock-output-names = "default";
         /* Default clock state */
-        clock-state-0 = <&clock_output_state_default>;
-        clock-state-names = "default";
+        clock-request-0 = <&clock_output_state_default>;
+        clock-request-names = "default";
     };
 
 The clock subsystem would expect the following macros be defined:
@@ -873,7 +864,7 @@ to the first UART device:
             compatible = "clock-state";
             /* Select external source, divide by 4 */
             clocks = <&uart_mux 1 &uart_div 4>;
-            clock-frequency = <DT_FREQ_M(4)>;
+            rank = <0>;
         };
     };
 
@@ -882,8 +873,8 @@ to the first UART device:
     };
 
     &uart_dev {
-        clock-state-0 = <&uart_default>;
-        clock-state-names = "default";
+        clock-request-0 = <&uart_default>;
+        clock-request-names = "default";
     };
 
 
@@ -908,79 +899,54 @@ the final rate. This follows the following process:
 If the user requested a rate for the ``uart_output``, the call tree might
 look like so:
 
-.. graphviz::
+.. mermaid::
 
-   digraph G {
-     # Set global styles
-     fontname="Helvetica,Arial,sans-serif";
-     node [fontname="Helvetica,Arial,sans-serif",align="left"];
-     edge [fontname="Helvetica,Arial,sans-serif"];
+    graph TD
+        %% Reading Clock Rates
+        uart_output([uart_output])
+        recalc_rate[clock_recalc_rate]
+        get_rate[clock_management_get_rate]
+        clk_rate_0[clock_management_clk_rate]
+        clk_rate_1[clock_management_clk_rate]
+        clk_rate_2[clock_management_clk_rate]
+        read_parent[Read parent from clock struct]
+        get_parent[clock_get_parent]
+        get_root_rate[clock_get_rate]
+        uart_div([uart_div])
+        uart_mux([uart_mux])
+        fixed_source([fixed_source])
 
-     fontsize=40;
-     label="Reading Clock Rates";
-     labelloc=t;
+        uart_output --> get_rate
+        get_rate --> uart_div
 
-     {
-         # Nodes to describe components of clock tree (producers)
-         node [style=filled, fillcolor=cyan2, shape=ellipse];
-         fixed_source;
-         uart_mux;
-         uart_div;
-         uart_div2 [label="uart_div"]
-     }
-     {
-         # Nodes to describe consumers
-         node [style=filled, fillcolor=gold, shape=ellipse];
-         uart_output;
-     }
-     {
-         # Other nodes are used to describe the calls that act on objects
-         node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-         clock_management_get_rate;
-         "Read parent from clock struct";
-         clock_get_parent;
-         clock_get_rate;
-         clock_management_clk_rate_0 [label="clock_management_clk_rate"];
-         clock_management_clk_rate_1 [label="clock_management_clk_rate"];
-         clock_management_clk_rate_2 [label="clock_management_clk_rate"];
-         clock_recalc_rate_0 [label="clock_recalc_rate"];
-     }
-     {rank=same; uart_output->clock_management_get_rate->clock_management_clk_rate_0
-        [minlen=3, label="walk up tree"];}
-     {rank=same; clock_management_clk_rate_0->clock_management_clk_rate_1->clock_management_clk_rate_2 [minlen=3, label="walk up tree"];}
-     {rank=same; clock_management_clk_rate_2->clock_management_clk_rate_1->clock_management_clk_rate_0 [minlen=3, label="return rate"];}
-     {rank=same; clock_management_clk_rate_0->clock_management_get_rate->uart_output
-        [minlen=3, label="return rate"];}
+        uart_div --> clk_rate_0 --> read_parent --> uart_mux
+        uart_mux --> clk_rate_1 --> get_parent --> fixed_source
+        fixed_source --> clk_rate_2 --> get_root_rate
 
-     clock_management_clk_rate_0->"Read parent from clock struct"->uart_div;
-     clock_management_clk_rate_1->clock_get_parent->uart_mux;
-     clock_management_clk_rate_2->clock_get_rate->fixed_source;
-     clock_management_clk_rate_0->clock_recalc_rate_0->uart_div2;
+        get_root_rate --->|return rate| clk_rate_2
+        clk_rate_2 --> recalc_rate -->|return rate| clk_rate_1
+        clk_rate_1 -->|return rate| clk_rate_0
+        clk_rate_0 -->|return rate| get_rate
 
-     # Lengend for the graph
-     subgraph legend_pad {
-         cluster=true;
-         margin=20;
-         pencolor=white;
-         fontsize=20;
-         label=""
-         subgraph legend {
-             cluster=true;
-             pencolor=black;
-             label="Legend";
-             "Clock Consumers" [style=filled, fillcolor=gold, shape=ellipse];
-             "Clock Management Subsystem" [style="filled, rounded", fillcolor=deepskyblue, shape=rect,
-                                         height=0.5, margin="0.3,0"];
-             "Clock Producers" [style=filled, fillcolor=cyan2, shape=ellipse];
-             "Clock Consumers"->"Clock Management Subsystem"->"Clock Producers" [color=white];
-         }
-     }
-   }
+        classDef consumer fill:#ffd700,stroke:#333,color:#000
+        classDef producer fill:#00ced1,stroke:#333,color:#000
+        classDef subsystem fill:#00bfff,stroke:#333,color:#000
 
-Applying Clock States
-=====================
+        class uart_output consumer
+        class uart_div,uart_mux,fixed_source,uart_div2 producer
+        class get_rate,clk_rate_0,clk_rate_1,clk_rate_2,read_parent,get_parent,get_root_rate,recalc_rate subsystem
 
-When a consumer applies a clock state, the following will happen for each
+Requesting Clock States
+=======================
+
+When a consumer issues a request for clock states, the clock management
+subsystem will examine the bitmask of allowed states for the clock output, and
+take the intersection of all requests for that clock output. From the set of
+states that satisfy all requests, the clock management subsystem will select the
+state with the lowest rank, and apply that state to the clock output. The rank
+of a state is set by the user in devicetree.
+
+When a clock state is applied, the following will happen for each
 clock node specified by the states ``clocks`` property:
 
 * :c:func:`clock_configure_recalc` (or the multiplexer/root clock specific
@@ -997,102 +963,57 @@ clock node specified by the states ``clocks`` property:
 
 This call chain looks like so:
 
-.. graphviz::
+.. mermaid::
 
-   digraph G {
-    # Set global styles
-    fontname="Helvetica,Arial,sans-serif";
-    node [fontname="Helvetica,Arial,sans-serif"];
-    edge [fontname="Helvetica,Arial,sans-serif"];
-    rankdir="LR";
+   graph LR
+       %% Applying a Clock State
+       uart_driver([uart driver])
+       request_state[clock_management_request_state]
+       apply_state[clock_apply_state]
 
-    fontsize=40;
-    label="Applying a Clock State";
-    labelloc=t;
+       uart_driver --> request_state --> apply_state
 
-    {
-        # Nodes to describe components of clock tree (producers)
-        node [style=filled, fillcolor=cyan2, shape=ellipse];
-        uart_mux;
-        uart_div;
-    }
-    {
-        # Nodes to describe consumers
-        node [style=filled, fillcolor=gold, shape=ellipse];
-        "uart driver";
-    }
-    {
-        # Other nodes are used to describe the calls that act on objects
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_tree_configure_mux [label="clock_tree_configure"];
-        clock_tree_configure_div [label="clock_tree_configure"];
-        "uart driver"->"clock_management_apply_state"->"clock_apply_state";
-        "clock_apply_state"->clock_tree_configure_mux;
-    }
-    subgraph mux_apply {
-        label="uart_mux configuration";
-        # Other nodes are used to describe the calls that act on objects
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        fontsize=20;
-        cluster=true;
-        style=rounded;
-        clock_tree_configure_mux->"clock_mux_configure_recalc"->uart_mux;
-        clock_tree_notify_pre_mux [label="clock_notify_children"];
-        clock_tree_configure_mux->clock_tree_notify_pre_mux;
-        clock_configure_mux [label="clock_configure"];
-        clock_tree_configure_mux->clock_configure_mux->uart_mux;
-        clock_tree_notify_post_mux [label="clock_notify_children"];
-        clock_tree_configure_mux->clock_tree_notify_post_mux;
-    }
+       subgraph mux_config[uart_mux configuration]
+           tree_configure_mux[clock_tree_configure]
+           mux_configure_recalc[clock_mux_configure_recalc]
+           notify_pre_mux[clock_notify_children]
+           configure_mux[clock_configure]
+           notify_post_mux[clock_notify_children]
+       end
 
+       subgraph div_config[uart_div configuration]
+           tree_configure_div[clock_tree_configure]
+           configure_recalc[clock_configure_recalc]
+           notify_pre_div[clock_notify_children]
+           configure_div[clock_configure]
+           notify_post_div[clock_notify_children]
+       end
 
-    {
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        "clock_apply_state"->clock_tree_configure_div;
-    }
-    subgraph div_apply {
-        label="uart_div configuration";
-        # Other nodes are used to describe the calls that act on objects
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        fontsize=20;
-        cluster=true;
-        style=rounded;
-        clock_tree_configure_div->"clock_configure_recalc"->uart_div;
-        clock_tree_notify_pre_div [label="clock_notify_children"];
-        clock_tree_configure_div->clock_tree_notify_pre_div;
-        clock_configure_div [label="clock_configure"];
-        clock_tree_configure_div->clock_configure_div->uart_div;
-        clock_tree_notify_post_div [label="clock_notify_children"];
-        clock_tree_configure_div->clock_tree_notify_post_div;
-    }
+       uart_mux([uart_mux])
+       uart_div([uart_div])
 
-    # Lengend for the graph
-    subgraph legend_pad {
-        cluster=true;
-        margin=20;
-        pencolor=white;
-        fontsize=20;
-        label=""
-        subgraph legend {
-            cluster=true;
-            pencolor=black;
-            label="Legend";
-            "Clock Consumers" [style=filled, fillcolor=gold, shape=ellipse];
-            "Clock Management Subsystem" [style="filled, rounded", fillcolor=deepskyblue, shape=rect,
-                                        height=0.5, margin="0.3,0"];
-            "Clock Producers" [style=filled, fillcolor=cyan2, shape=ellipse];
-            "Clock Consumers"->"Clock Management Subsystem"->"Clock Producers" [color=white];
-        }
-    }
-  }
+       apply_state --> tree_configure_mux
+       tree_configure_mux --> mux_configure_recalc --> uart_mux
+       tree_configure_mux --> notify_pre_mux
+       tree_configure_mux --> configure_mux --> uart_mux
+       tree_configure_mux --> notify_post_mux
+
+       apply_state --> tree_configure_div
+       tree_configure_div --> configure_recalc --> uart_div
+       tree_configure_div --> notify_pre_div
+       tree_configure_div --> configure_div --> uart_div
+       tree_configure_div --> notify_post_div
+
+       classDef consumer fill:#ffd700,stroke:#333,color:#000
+       classDef producer fill:#00ced1,stroke:#333,color:#000
+       classDef subsystem fill:#00bfff,stroke:#333,color:#000
+
+       class uart_driver consumer
+       class uart_mux,uart_div producer
+       class request_state,apply_state,tree_configure_mux,mux_configure_recalc,notify_pre_mux,configure_mux,notify_post_mux,tree_configure_div,configure_recalc,notify_pre_div,configure_div,notify_post_div subsystem
 
 Requesting Runtime Rates
 ========================
-
-When requesting a clock rate, the consumer will either apply a pre-defined state
-using :c:func:`clock_configure` if a pre-defined state satisfies the clock
-request, or runtime rate resolution will be used (if
-:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_SET_RATE` is enabled).
 
 For runtime rate resolution, there are two phases: querying the best clock setup
 and applying it.
@@ -1128,104 +1049,66 @@ The call chain of a runtime rate request might look like so (note that in
 this example, ``external_osc`` produces a better rate match than
 ``fixed_source``):
 
-.. graphviz::
+.. mermaid::
 
-   digraph G {
-     # Set global styles
-     fontname="Helvetica,Arial,sans-serif";
-     node [fontname="Helvetica,Arial,sans-serif",align="left"];
-     edge [fontname="Helvetica,Arial,sans-serif"];
+    graph TD
+       %% Runtime Rate Request
+       uart_output([uart_output])
+       req_rate[clock_management_req_rate]
 
-     fontsize=40;
-     label="Runtime Rate Request";
-     labelloc=t;
+       uart_output --> req_rate --> query_phase
+       req_rate --> apply_phase
 
-     {
-         # Nodes to describe components of clock tree (producers)
-         node [style=filled, fillcolor=cyan2, shape=ellipse];
-         fixed_source;
-         external_osc;
-         uart_mux;
-         uart_div;
-     }
-     {
-         # Nodes to describe consumers
-         node [style=filled, fillcolor=gold, shape=ellipse];
-         uart_output;
-     }
-     {
-         # Other nodes are used to describe the calls that act on objects
-         node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-         clock_management_req_rate;
-         clock_management_apply_state;
-         "Read parent from clock struct";
-         read_parent_2 [label="Read parent from clock struct"];
-         clock_best_rate;
-         clock_management_best_parent;
-         clock_management_round_internal1 [label="clock_management_round_internal"];
-         clock_management_round_internal2 [label="clock_management_round_internal"];
-         clock_management_round_internal3 [label="clock_management_round_internal"];
-         clock_root_best_rate;
-         clock_root_best_rate2 [label="clock_root_best_rate"];
-         clock_management_set_internal1 [label="clock_management_set_internal"];
-         clock_best_rate_set [label="clock_best_rate"];
-         clock_set_parent;
-         clock_root_best_rate_set [label="clock_root_best_rate"];
-     }
-     {
-         # Ranked the same so that the splitter node doesn't mess up the alignment of these nodes
-         rank=same;
-         node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"]
-         clock_management_apply_state;
-         clock_management_round_internal0 [label="clock_management_round_internal"];
-         clock_management_set_internal0 [label="clock_management_set_internal"];
-     }
-     {
-         # Other nodes are used to describe the calls that act on objects
-         node [shape=plaintext];
-         "Static state fits constraints?";
-     }
-     uart_output->clock_management_req_rate->"Static state fits constraints?";
-     "Static state fits constraints?"->clock_management_apply_state [label="yes"];
-     # Hidden node to split the arrow after the "no"
-     splitter[shape=point, style="invis"]
-     "Static state fits constraints?"->splitter [label="no"];
-     splitter->clock_management_round_internal0;
-     splitter->clock_management_set_internal0;
-     clock_management_round_internal0->"Read parent from clock struct"->uart_div;
-     clock_management_round_internal0->clock_management_round_internal1 [dir=both, minlen=2];
-     clock_management_round_internal0->clock_best_rate->uart_div;
-     clock_management_round_internal1->clock_management_best_parent->uart_mux;
-     clock_management_best_parent->clock_management_round_internal2 [dir=both, minlen=2];
-     clock_management_best_parent->clock_management_round_internal3 [dir=both, minlen=2];
-     clock_management_round_internal2->clock_root_best_rate->fixed_source;
-     clock_management_round_internal3->clock_root_best_rate2->external_osc;
-     clock_management_set_internal0->read_parent_2->uart_div;
-     clock_management_set_internal0->clock_management_set_internal1 [dir=both, minlen=2];
-     clock_management_set_internal0->clock_best_rate_set->uart_div;
-     clock_management_set_internal1->clock_management_best_parent [minlen=3];
-     clock_management_set_internal1->clock_root_best_rate_set->external_osc;
-     clock_management_set_internal1->clock_set_parent->uart_mux;
 
-     # Lengend for the graph
-     subgraph legend_pad {
-         cluster=true;
-         margin=20;
-         pencolor=white;
-         fontsize=20;
-         label=""
-         subgraph legend {
-             cluster=true;
-             pencolor=black;
-             label="Legend";
-             "Clock Consumers" [style=filled, fillcolor=gold, shape=ellipse];
-             "Clock Management Subsystem" [style="filled, rounded", fillcolor=deepskyblue, shape=rect,
-                                         height=0.5, margin="0.3,0"];
-             "Clock Producers" [style=filled, fillcolor=cyan2, shape=ellipse];
-             "Clock Consumers"->"Clock Management Subsystem"->"Clock Producers" [color=white];
-         }
-     }
-   }
+       subgraph query_phase[Query Phase]
+           round_internal0[clock_management_round_internal]
+           read_parent[Read parent from clock struct]
+           best_rate[clock_best_rate]
+           round_internal1[clock_management_round_internal]
+           best_parent[clock_management_best_parent]
+           round_internal2[clock_management_round_internal]
+           round_internal3[clock_management_round_internal]
+           root_best_rate[clock_root_best_rate]
+           root_best_rate2[clock_root_best_rate]
+       end
+
+       subgraph apply_phase[Apply Phase]
+           set_internal0[clock_management_set_internal]
+           read_parent_2[Read parent from clock struct]
+           best_rate_set[clock_best_rate]
+           set_internal1[clock_management_set_internal]
+           root_best_rate_set[clock_root_best_rate]
+           set_parent[clock_set_parent]
+       end
+
+       uart_div([uart_div])
+       uart_mux([uart_mux])
+       fixed_source([fixed_source])
+       external_osc([external_osc])
+
+       round_internal0 --> read_parent --> uart_div
+       round_internal0 <--> round_internal1
+       round_internal0 --> best_rate --> uart_div
+       round_internal1 --> best_parent --> uart_mux
+       best_parent <--> round_internal2
+       best_parent <--> round_internal3
+       round_internal2 --> root_best_rate --> fixed_source
+       round_internal3 --> root_best_rate2 --> external_osc
+
+       set_internal0 --> read_parent_2 --> uart_div
+       set_internal0 <--> set_internal1
+       set_internal0 --> best_rate_set --> uart_div
+       set_internal1 --> best_parent
+       set_internal1 --> root_best_rate_set --> external_osc
+       set_internal1 --> set_parent --> uart_mux
+
+       classDef consumer fill:#ffd700,stroke:#333,color:#000
+       classDef producer fill:#00ced1,stroke:#333,color:#000
+       classDef subsystem fill:#00bfff,stroke:#333,color:#000
+
+       class uart_output consumer
+       class uart_div,uart_mux,fixed_source,external_osc producer
+       class req_rate,round_internal0,read_parent,best_rate,round_internal1,best_parent,round_internal2,round_internal3,root_best_rate,root_best_rate2,set_internal0,read_parent_2,best_rate_set,set_internal1,root_best_rate_set,set_parent subsystem
 
 Clock Notifications
 ===================
@@ -1246,188 +1129,34 @@ Note that the event type in use only changes how the consumer nodes at the leaf
 of the tree respond.
 
 
-.. graphviz::
+.. mermaid::
 
-   digraph G {
-    # Set global styles
-    fontname="Helvetica,Arial,sans-serif";
-    node [fontname="Helvetica,Arial,sans-serif",align="left"];
-    edge [fontname="Helvetica,Arial,sans-serif"];
+   graph TD
+       %% Clock Notification Chain
+       notify_children[clock_notify_children]
+       check_parent[Check if parent is connected]
+       get_parent[clock_get_parent]
+       validate_parent[clock_mux_validate_parent]
+       notify_children1[clock_notify_children]
+       recalc_rate[clock_recalc_rate]
+       notify_children2[clock_notify_children]
 
-    fontsize=40;
-    label="Clock Notification Chain";
-    labelloc=t;
+       uart_mux([uart_mux])
+       uart_div([uart_div])
+       uart_output([uart_output])
+       fixed_output([fixed_output])
 
-    {
-        # Nodes to describe components of clock tree (producers)
-        node [style=filled, fillcolor=cyan2, shape=ellipse];
-        rank=same
-        uart_mux;
-        uart_div;
-        # Nodes to describe consumers
-        node [style=filled, fillcolor=gold, shape=ellipse];
-        uart_output;
-        fixed_output
-    }
-    {
-        rank=same
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_notify_children;
-        clock_notify_children1 [label="clock_notify_children"];
-        clock_notify_children2 [label="clock_notify_children"];
-    }
-    {
-        rank=same
-        # Other nodes are used to describe the calls that act on objects
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_get_parent;
-        clock_mux_validate_parent;
-        clock_recalc_rate;
+       notify_children --> check_parent --> get_parent --> uart_mux
+       notify_children --> validate_parent --> uart_mux
+       notify_children --> fixed_output
+       notify_children --> notify_children1
+       notify_children1 --> recalc_rate --> uart_div
+       notify_children1 --> notify_children2 --> uart_output
 
-    }
-    {
-        rank=same
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_get_parent;
-        clock_mux_validate_parent;
-    }
-    {
-        node [shape=plaintext];
-        "Check if parent is connected";
-    }
+       classDef consumer fill:#ffd700,stroke:#333,color:#000
+       classDef producer fill:#00ced1,stroke:#333,color:#000
+       classDef subsystem fill:#00bfff,stroke:#333,color:#000
 
-    clock_notify_children->"Check if parent is connected"->clock_get_parent->uart_mux;
-    clock_notify_children->clock_mux_validate_parent->uart_mux;
-    clock_notify_children->fixed_output;
-    clock_notify_children->clock_notify_children1->clock_recalc_rate->uart_div;
-    clock_notify_children1->clock_notify_children2->uart_output [minlen=2];
-
-
-    # Lengend for the graph
-    subgraph legend_pad {
-        cluster=true;
-        margin=20;
-        pencolor=white;
-        fontsize=20;
-        label=""
-        subgraph legend {
-            cluster=true;
-            pencolor=black;
-            label="Legend";
-            "Clock Consumers" [style=filled, fillcolor=gold, shape=ellipse];
-            "Clock Management Subsystem" [style="filled, rounded", fillcolor=deepskyblue, shape=rect,
-                                        height=0.5, margin="0.3,0"];
-            "Clock Producers" [style=filled, fillcolor=cyan2, shape=ellipse];
-            "Clock Consumers"->"Clock Management Subsystem"->"Clock Producers" [color=white];
-        }
-    }
-  }
-
-Runtime Clock Resolution
-========================
-
-The clock management subsystem will automatically calculate the combined
-frequency constraint imposed on a clock output by all its consumers when
-:kconfig:option:`CONFIG_CLOCK_MANAGEMENT_RUNTIME` is enabled. When a parent
-clock is attempting to reconfigure, the clock management subystem wil verify the
-new frequency fits within the consumers' constraints automatically, so clock
-consumers do not need to handle this case. For the case below, assume that
-``uart_output`` has already received a request that sets its frequency
-constraints.
-
-.. graphviz::
-
-   digraph G {
-    # Set global styles
-    fontname="Helvetica,Arial,sans-serif";
-    node [fontname="Helvetica,Arial,sans-serif",align="left"];
-    edge [fontname="Helvetica,Arial,sans-serif"];
-
-    fontsize=40;
-    label="Clock Rate Rejected";
-    labelloc=t;
-
-    {
-        # Nodes to describe components of clock tree (producers)
-        node [style=filled, fillcolor=cyan2, shape=ellipse];
-        rank=same
-        uart_mux;
-        uart_div;
-        # Nodes to describe consumers
-        node [style=filled, fillcolor=gold, shape=ellipse];
-        uart_output;
-        fixed_output
-    }
-    rejectfinal [label="Reject rate", fontcolor="red", shape=plaintext, fillcolor=white];
-    {
-        rank=same
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        "Clock validates rate";
-        clock_notify_children;
-        clock_notify_children1 [label="clock_notify_children"];
-        clock_notify_children2 [label="clock_notify_children"];
-    }
-    {
-        rank=same
-        # Other nodes are used to describe the calls that act on objects
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_get_parent;
-        clock_mux_validate_parent;
-        clock_recalc_rate;
-    }
-    {
-        rank=same
-        node [style="filled,rounded", fillcolor=deepskyblue, shape=rect, height=0.5, margin="0.3,0"];
-        clock_get_parent;
-        clock_mux_validate_parent;
-    }
-    {
-        rank=same;
-        node [shape=plaintext];
-        "Check if parent is connected";
-        reject1 [label="Reject rate", fontcolor="red"];
-        reject2 [label="Reject rate", fontcolor="red"];
-        reject3 [label="Reject rate", fontcolor="red"];
-    }
-
-    clock_notify_children->rejectfinal->"Clock validates rate";
-    "Clock validates rate"->clock_notify_children;
-    clock_notify_children->"Check if parent is connected"->clock_get_parent->uart_mux;
-    clock_notify_children->clock_mux_validate_parent->uart_mux;
-    clock_notify_children->fixed_output;
-    clock_notify_children->clock_notify_children1->clock_recalc_rate->uart_div;
-    clock_notify_children1->clock_notify_children2->uart_output [minlen=2];
-    uart_output->reject1->clock_notify_children2 [constraint=false];
-    clock_notify_children2->reject2->clock_notify_children1;
-    clock_notify_children1->reject3->clock_notify_children;
-
-
-
-    # Lengend for the graph
-    subgraph legend_pad {
-        cluster=true;
-        margin=20;
-        pencolor=white;
-        fontsize=20;
-        label=""
-        subgraph legend {
-            cluster=true;
-            pencolor=black;
-            label="Legend";
-            "Clock Consumers" [style=filled, fillcolor=gold, shape=ellipse];
-            "Clock Management Subsystem" [style="filled, rounded", fillcolor=deepskyblue, shape=rect,
-                                        height=0.5, margin="0.3,0"];
-            "Clock Producers" [style=filled, fillcolor=cyan2, shape=ellipse];
-            "Clock Consumers"->"Clock Management Subsystem"->"Clock Producers" [color=white];
-        }
-    }
-  }
-
-Note that each clock output starts with no constraints set. A consumer must
-make a request to enforce a constraint. A consumer may modify a constraint it
-has set by requesting a new constraint, which may be less restrictive than
-the original setting.
-
-If two clock consumers share a clock output node, and both make conflicting
-requests to the clock output, the first consumer to make a request will be
-given priority, and the second will be rejected.
+       class uart_output,fixed_output consumer
+       class uart_mux,uart_div producer
+       class notify_children,check_parent,get_parent,validate_parent,notify_children1,recalc_rate,notify_children2 subsystem
