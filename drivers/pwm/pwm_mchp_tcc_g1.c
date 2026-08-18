@@ -297,7 +297,19 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 			tcc_set_invert(mchp_pwm_cfg->regs, channel, invert_flag_set);
 		}
 
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
+		/*
+		 * NPWM output is active while COUNT < CC; CC == period leaves one glitch
+		 * tick at the inactive level per period. Full duty (pulse >= period)
+		 * writes CC = period + 1 to avoid it, except when period is already the
+		 * counter max, where period + 1 would wrap to 0 - keep CC == period there.
+		 */
+		uint32_t ccbuf_val = pulse;
+
+		if (pulse >= period) {
+			ccbuf_val = (period < top) ? (period + 1) : period;
+		}
+
+		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(ccbuf_val);
 		PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
 		ret_val = MCHP_PWM_SUCCESS;
 	}
