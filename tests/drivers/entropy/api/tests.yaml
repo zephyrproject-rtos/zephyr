@@ -3,6 +3,9 @@ tests:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     integration_platforms:
       - frdm_mcxn236
+      - lp_mspm0g3507
+      - lp_mspm0g3519
+      - lp_mspm0l2228
     tags:
       - drivers
       - entropy
