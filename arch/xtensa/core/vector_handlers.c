@@ -293,8 +293,26 @@ static ALWAYS_INLINE void isr_enter_hook(void)
 static inline void *return_to(void *interrupted)
 {
 #ifdef CONFIG_MULTITHREADING
-	return _current_cpu->nested <= 1 ?
-		z_get_next_switch_handle(interrupted) : interrupted;
+	if (_current_cpu->nested > 1) {
+		return interrupted;
+	}
+
+#if !defined(CONFIG_SMP) && !defined(CONFIG_SCHED_THREAD_USAGE)
+	/* Fast path for the common case of an ISR that did not make a
+	 * higher-priority thread runnable: when the interrupted thread
+	 * is still the next thread to run, z_get_next_switch_handle()
+	 * would return "interrupted" unchanged, so skip the call.  Not
+	 * valid on SMP (the handle swap must happen under the scheduler
+	 * lock) nor with thread runtime stats (usage accounting must be
+	 * switched even when resuming the same thread).
+	 */
+	if (_kernel.ready_q.cache == _current) {
+		z_check_stack_sentinel();
+		return interrupted;
+	}
+#endif
+
+	return z_get_next_switch_handle(interrupted);
 #else
 	return interrupted;
 #endif /* CONFIG_MULTITHREADING */
