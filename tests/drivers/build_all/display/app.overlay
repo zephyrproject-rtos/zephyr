@@ -703,6 +703,32 @@
 				data-lanes = <4>;
 				pixel-format = <0>;
 			};
+
+			test_ek79007: ek79007@a {
+				status = "okay";
+				compatible = "fitipower,ek79007";
+				reg = <0xa>;
+				reset-gpios = <&test_gpio 0 0>;
+				bl-gpios = <&test_gpio 0 0>;
+				data-lanes = <2>;
+				width = <1024>;
+				height = <600>;
+				pixel-format = <0>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					hsync-len = <10>;
+					hback-porch = <160>;
+					hfront-porch = <160>;
+					vsync-len = <1>;
+					vback-porch = <23>;
+					vfront-porch = <12>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					de-active = <1>;
+					pixelclk-active = <0>;
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {
