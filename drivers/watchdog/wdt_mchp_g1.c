@@ -38,7 +38,11 @@ LOG_MODULE_REGISTER(wdt_mchp_g1, CONFIG_WDT_LOG_LEVEL);
  * left-shifting the number 8 by `n` positions. The result of this macro is 8 * 2^n.
  */
 #define PERIOD_VALUE(n)  (8 << n)
-#define TIMEOUT_VALUE_US 1000
+/* Clocked from the ~1.024 kHz internal ULP oscillator: synchronization takes
+ * milliseconds, measured at 1.12 ms on PIC32CM GC00. A shorter timeout lets
+ * register writes race a still-syncing peripheral and get discarded.
+ */
+#define TIMEOUT_VALUE_US 5000
 #define DELAY_US         2
 
 typedef enum {
