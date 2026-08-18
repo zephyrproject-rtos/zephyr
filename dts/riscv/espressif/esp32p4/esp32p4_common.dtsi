@@ -653,16 +653,27 @@
 			status = "okay";
 		};
 
-		mipi_dsi: mipi-dsi@500a0000 {
-			compatible = "espressif,esp-mipi-dsi";
-			reg = <0x500a0000 0x800 0x500a0800 0x800>;
-			reg-names = "host", "bridge";
+		dsi_display: display-controller@500a0800 {
+			compatible = "espressif,esp-dsi-display";
+			reg = <0x500a0800 0x800>;
+			interrupts = <DW_GDMA_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			dma-channel = <0>;
 			#address-cells = <1>;
-			#size-cells = <0>;
-			data-lanes = <2>;
-			lane-bit-rate-mbps = <1000>;
-			dpi-clock-freq-mhz = <48>;
+			#size-cells = <1>;
 			status = "disabled";
+
+			mipi_dsi: mipi-dsi@500a0000 {
+				compatible = "espressif,esp-mipi-dsi";
+				reg = <0x500a0000 0x800 0x500a0800 0x800>;
+				reg-names = "host", "bridge";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				data-lanes = <2>;
+				phy-clock = <1000000000>;
+				dpi-clock-frequency = <48000000>;
+				status = "disabled";
+			};
 		};
 
 		sdhc: sdhc@50083000 {
