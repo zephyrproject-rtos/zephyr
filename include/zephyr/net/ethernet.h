@@ -948,6 +948,12 @@ typedef void (*net_eth_mcast_addr_cb_t)(struct net_if *iface,
  * address is joined by its first user. A device that has no receive filter
  * passes the group up anyway, so the group is joined in that case too.
  *
+ * A VLAN interface tracks its own multicast addresses, so groups can be
+ * joined and left also while the interface is detached. The groups of an
+ * attached VLAN interface are pushed to the receive filter of its Ethernet
+ * interface, both when they are joined and when the interfaces are
+ * attached, and they are removed from the filter on detach.
+ *
  * This is called by the Ethernet L2 itself when the IP level or a packet
  * socket joins a multicast group. Drivers should not need to call this.
  *
@@ -982,7 +988,9 @@ int net_eth_mcast_addr_rm(struct net_if *iface,
  *
  * @details Drivers that reprogram their whole receive filter when they get
  * an ETHERNET_CONFIG_TYPE_FILTER request can use this to find out what the
- * device should listen to. The callback must not join or leave a group.
+ * device should listen to. The callback must not join or leave a group on
+ * the iterated interface. On another interface it may, as the lock that
+ * protects the addresses is recursive.
  *
  * @param iface Network interface
  * @param cb Callback to call for each multicast address
