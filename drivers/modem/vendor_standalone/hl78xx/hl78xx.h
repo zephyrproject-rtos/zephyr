@@ -317,6 +317,13 @@ struct hl78xx_power_down_status {
 	enum power_down_event current;
 	enum power_down_event previous;
 	bool is_power_down_requested;
+	/** A power down has been announced and owns the state machine.
+	 *
+	 * Set when the power down work runs, cleared once the modem is off.
+	 * Paths that would otherwise start fresh network activity check this so
+	 * they do not compete with the shutdown for the command interface.
+	 */
+	bool shutdown_pending;
 };
 #endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
 

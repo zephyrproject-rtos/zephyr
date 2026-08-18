@@ -2778,34 +2778,15 @@ static int hl78xx_on_await_registered_state_leave(struct hl78xx_data *data)
 	return 0;
 }
 
-static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
+/**
+ * @brief Run everything that may only happen once the PDP context is up.
+ *
+ * Split out of the state-enter path so the retry in the carrier_on timeout
+ * handler resumes at exactly the same point a first-attempt success would.
+ */
+static int hl78xx_carrier_on_pdp_ready(struct hl78xx_data *data)
 {
 	int ret;
-
-#ifdef CONFIG_HL78XX_GNSS
-	/* Check and process any pending GNSS mode entry request */
-	if (hl78xx_gnss_is_pending(data)) {
-		const struct hl78xx_config *config = data->devices.hl78xx->config;
-
-		if (config->variant->carrier_on_gnss_pending &&
-		    config->variant->carrier_on_gnss_pending(data)) {
-			return 0;
-		}
-
-		LOG_INF("Processing pending GNSS mode request (queued before modem ready)");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
-		return 0;
-	}
-	notif_carrier_on(data->devices.hl78xx);
-#endif /* CONFIG_HL78XX_GNSS */
-
-	/* Activate the PDP context */
-	ret = hl78xx_gsm_pdp_activate(data);
-	if (ret) {
-		LOG_ERR("Failed to activate PDP context: %d", ret);
-		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
-		return ret;
-	}
 
 	notif_carrier_on(data->devices.hl78xx);
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
@@ -2841,6 +2822,61 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 	return 0;
 }
 
+static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
+{
+	int ret;
+
+#ifdef CONFIG_HL78XX_GNSS
+	/* Check and process any pending GNSS mode entry request */
+	if (hl78xx_gnss_is_pending(data)) {
+		const struct hl78xx_config *config = data->devices.hl78xx->config;
+
+		if (config->variant->carrier_on_gnss_pending &&
+		    config->variant->carrier_on_gnss_pending(data)) {
+			return 0;
+		}
+
+		LOG_INF("Processing pending GNSS mode request (queued before modem ready)");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
+		return 0;
+	}
+	notif_carrier_on(data->devices.hl78xx);
+#endif /* CONFIG_HL78XX_GNSS */
+
+	/* Activate the PDP context */
+	ret = hl78xx_gsm_pdp_activate(data);
+	if (ret) {
+		LOG_ERR("Failed to activate PDP context: %d", ret);
+		/* Without a context there is nothing to hand the application:
+		 * CGCONTRDP would report the previous cycle's address and the
+		 * DNS refresh would then latch ready on a link that cannot
+		 * carry traffic. Drop the carrier instead - that notifies the
+		 * application the link is down, closes any sockets and re-runs
+		 * the GPRS enable script for a fresh attach, and lets the search
+		 * policy move on to another RAT.
+		 *
+		 * Retrying in place is not an option: a second AT+CGACT=1,1
+		 * costs another 190 s, more than the whole budget the
+		 * application allows the modem to stay powered.
+		 */
+#ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
+		if (data->status.lpm.power_down.shutdown_pending) {
+			/* The activation was cut short by the power down, which
+			 * owns the state machine from here. Dropping to
+			 * CARRIER_OFF would re-run the GPRS enable script and
+			 * take the interface back off the shutdown.
+			 */
+			LOG_INF("PDP activation abandoned for a pending power down");
+			return ret;
+		}
+#endif /* CONFIG_MODEM_HL78XX_POWER_DOWN */
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_CARRIER_OFF);
+		return ret;
+	}
+
+	return hl78xx_carrier_on_pdp_ready(data);
+}
+
 static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 					      ,
@@ -2860,7 +2896,9 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 		return;
 	}
 #endif /* CONFIG_MODEM_HL78XX_PSM */
+#endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
+#ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
 	if (data->status.lpm.restore_pending) {
 		data->status.lpm.restore_pending = false;
 		if (config->variant->carrier_on_dns_complete) {
@@ -3438,6 +3476,8 @@ static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 /* pwroff script moved to hl78xx_chat.c */
 static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 {
+	int ret;
+
 	/**
 	 * Even though you have power switch or etc.., start the power off script first
 	 * to gracefully disconnect from the network
@@ -3445,17 +3485,42 @@ static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 	 * IMSI detach before powering down IS recommended by the AT command manual
 	 *
 	 */
-	return hl78xx_run_pwroff_script_async(data);
+	ret = hl78xx_run_pwroff_script_async(data);
+	if (ret < 0) {
+		LOG_WRN("Power off script could not be started (%d); powering down anyway", ret);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
+		return 0;
+	}
+
+	/* Backstop for a modem that never answers the detach - a GSM PDP
+	 * activation cut short by this shutdown can still be occupying the modem
+	 * itself for another couple of minutes. Nothing else arms a timer in this
+	 * state, so without this the shutdown would have no way to finish and the
+	 * modem would stay powered.
+	 */
+	hl78xx_start_timer(data, K_SECONDS(HL78XX_SCRIPT_TIMEOUT_POWEROFF + 5));
+
+	return 0;
 }
 
 static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum hl78xx_event evt)
 {
 	switch (evt) {
 	case MODEM_HL78XX_EVENT_SCRIPT_SUCCESS:
+		hl78xx_stop_timer(data);
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
+	case MODEM_HL78XX_EVENT_SCRIPT_FAILED:
+	case MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT:
 	case MODEM_HL78XX_EVENT_TIMEOUT:
+		/* The graceful detach did not land. Powering down is not optional
+		 * at this point, so continue to where a successful detach goes
+		 * rather than waiting in a state with nothing left to leave it.
+		 */
+		LOG_WRN("Power off script did not complete; powering down anyway");
+		hl78xx_stop_timer(data);
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_IDLE);
 		break;
 
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
@@ -3469,6 +3534,7 @@ static void hl78xx_init_power_off_event_handler(struct hl78xx_data *data, enum h
 
 static int hl78xx_on_init_power_off_state_leave(struct hl78xx_data *data)
 {
+	hl78xx_stop_timer(data);
 	return 0;
 }
 
@@ -3577,6 +3643,7 @@ static int hl78xx_on_idle_state_leave(struct hl78xx_data *data)
 	}
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	data->status.lpm.power_down.is_power_down_requested = false;
+	data->status.lpm.power_down.shutdown_pending = false;
 	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_EXIT;
 
