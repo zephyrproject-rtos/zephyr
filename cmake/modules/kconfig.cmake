@@ -256,6 +256,14 @@ if(NOT DEFINED KCONFIG_TARGETS)
   set(KCONFIG_TARGETS menuconfig guiconfig hardenconfig traceconfig)
 endif()
 
+# Settings for the hardenconfig target, forwarded to its environment
+# below. See scripts/kconfig/hardenconfig.py.
+zephyr_get(HARDENCONFIG_PROFILE SYSBUILD LOCAL)
+zephyr_get(HARDENCONFIG_EXTRA_SOURCES SYSBUILD LOCAL)
+zephyr_get(HARDENCONFIG_JSON SYSBUILD LOCAL)
+zephyr_get(HARDENCONFIG_SHOW_ALL SYSBUILD LOCAL)
+zephyr_get(HARDENCONFIG_STRICT SYSBUILD LOCAL)
+
 # Create the Kconfig targets. Skipped if KCONFIG_VARIANT_SOURCE is set, because
 # a variant image shall not be configured independently of its source image.
 if(NOT KCONFIG_VARIANT_SOURCE)
@@ -268,6 +276,11 @@ if(NOT KCONFIG_VARIANT_SOURCE)
       ${CMAKE_COMMAND} -E env
       ZEPHYR_BASE=${ZEPHYR_BASE}
       ${COMMON_KCONFIG_ENV_SETTINGS}
+      HARDENCONFIG_PROFILE=${HARDENCONFIG_PROFILE}
+      "HARDENCONFIG_EXTRA_SOURCES=${HARDENCONFIG_EXTRA_SOURCES}"
+      HARDENCONFIG_JSON=${HARDENCONFIG_JSON}
+      HARDENCONFIG_SHOW_ALL=${HARDENCONFIG_SHOW_ALL}
+      HARDENCONFIG_STRICT=${HARDENCONFIG_STRICT}
       SHIELD_AS_LIST='${SHIELD_AS_LIST_ESCAPED}'
       DTS_POST_CPP=${DTS_POST_CPP}
       DTS_ROOT_BINDINGS=${DTS_ROOT_BINDINGS}
@@ -279,6 +292,7 @@ if(NOT KCONFIG_VARIANT_SOURCE)
       USES_TERMINAL
       )
   endforeach()
+
 endif()
 
 # Support assigning Kconfig symbols on the command-line with CMake

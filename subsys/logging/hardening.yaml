@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for logging.
+
+rules:
+  LOG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      The logging subsystem discloses internal operation and any data that subsystems choose to log.
+      On a production device its output is available to whoever holds the port.
+    references: [CWE-532]
