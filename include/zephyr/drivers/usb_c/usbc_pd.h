@@ -969,6 +969,9 @@ enum pd_ctrl_msg_type {
 	PD_CTRL_GET_REVISION            = 24,
 
 	/** 25-31 Reserved */
+
+	/** Number of Control Message types */
+	PD_CTRL_MSG_COUNT
 };
 
 /**
@@ -1007,6 +1010,9 @@ enum pd_data_msg_type {
 	PD_DATA_REVISION        = 12,
 	/** Vendor Defined Message */
 	PD_DATA_VENDOR_DEF      = 15,
+
+	/** Number of Data Message types */
+	PD_DATA_MSG_COUNT
 };
 
 /**
@@ -1059,6 +1065,9 @@ enum pd_ext_msg_type {
 	PD_EXT_VENDOR_DEFINED           = 30,
 
 	/** 31 Reserved */
+
+	/** Number of Extended Message types */
+	PD_EXT_MSG_COUNT
 };
 
 /**

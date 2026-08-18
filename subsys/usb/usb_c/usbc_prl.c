@@ -109,6 +109,89 @@ enum usbc_prl_hr_state_t {
 static const struct smf_state prl_tx_states[PRL_TX_STATE_COUNT];
 static const struct smf_state prl_hr_states[PRL_HR_STATE_COUNT];
 
+/**
+ * @brief Human-readable names for PD Control Message types.
+ *	  Names match Table 6.4 Control Message Types in the PD specification.
+ */
+static const char *const pd_ctrl_msg_names[PD_CTRL_MSG_COUNT] = {
+	[PD_CTRL_GOOD_CRC] = "GoodCRC",
+	[PD_CTRL_GOTO_MIN] = "GotoMin",
+	[PD_CTRL_ACCEPT] = "Accept",
+	[PD_CTRL_REJECT] = "Reject",
+	[PD_CTRL_PING] = "Ping",
+	[PD_CTRL_PS_RDY] = "PS_RDY",
+	[PD_CTRL_GET_SOURCE_CAP] = "Get_Source_Cap",
+	[PD_CTRL_GET_SINK_CAP] = "Get_Sink_Cap",
+	[PD_CTRL_DR_SWAP] = "DR_Swap",
+	[PD_CTRL_PR_SWAP] = "PR_Swap",
+	[PD_CTRL_VCONN_SWAP] = "VCONN_Swap",
+	[PD_CTRL_WAIT] = "Wait",
+	[PD_CTRL_SOFT_RESET] = "Soft_Reset",
+	[PD_CTRL_DATA_RESET] = "Data_Reset",
+	[PD_CTRL_DATA_RESET_COMPLETE] = "Data_Reset_Complete",
+	[PD_CTRL_NOT_SUPPORTED] = "Not_Supported",
+	[PD_CTRL_GET_SOURCE_CAP_EXT] = "Get_Source_Cap_Extended",
+	[PD_CTRL_GET_STATUS] = "Get_Status",
+	[PD_CTRL_FR_SWAP] = "FR_Swap",
+	[PD_CTRL_GET_PPS_STATUS] = "Get_PPS_Status",
+	[PD_CTRL_GET_COUNTRY_CODES] = "Get_Country_Codes",
+	[PD_CTRL_GET_SINK_CAP_EXT] = "Get_Sink_Cap_Extended",
+	[PD_CTRL_GET_SOURCE_INFO] = "Get_Source_Info",
+	[PD_CTRL_GET_REVISION] = "Get_Revision",
+};
+BUILD_ASSERT(ARRAY_SIZE(pd_ctrl_msg_names) == PD_CTRL_MSG_COUNT,
+	     "pd_ctrl_msg_names array size mismatch with pd_ctrl_msg_type enum");
+
+/**
+ * @brief Human-readable names for PD Data Message types.
+ *	  Names match Table 6.5 Data Message Types in the PD specification.
+ */
+static const char *const pd_data_msg_names[PD_DATA_MSG_COUNT] = {
+	[PD_DATA_SOURCE_CAP] = "Source_Capabilities",
+	[PD_DATA_REQUEST] = "Request",
+	[PD_DATA_BIST] = "BIST",
+	[PD_DATA_SINK_CAP] = "Sink_Capabilities",
+	[PD_DATA_BATTERY_STATUS] = "Battery_Status",
+	[PD_DATA_ALERT] = "Alert",
+	[PD_DATA_GET_COUNTRY_INFO] = "Get_Country_Info",
+	[PD_DATA_ENTER_USB] = "Enter_USB",
+	[PD_DATA_EPR_REQUEST] = "EPR_Request",
+	[PD_DATA_EPR_MODE] = "EPR_Mode",
+	[PD_DATA_SOURCE_INFO] = "Source_Info",
+	[PD_DATA_REVISION] = "Revision",
+	[PD_DATA_VENDOR_DEF] = "Vendor_Defined",
+};
+BUILD_ASSERT(ARRAY_SIZE(pd_data_msg_names) == PD_DATA_MSG_COUNT,
+	     "pd_data_msg_names array size mismatch with pd_data_msg_type enum");
+
+/**
+ * @brief Human-readable names for PD Extended Message types.
+ *	  Names match Table 6.47 Extended Message Types in the PD specification.
+ */
+static const char *const pd_ext_msg_names[PD_EXT_MSG_COUNT] = {
+	[PD_EXT_SOURCE_CAP] = "Source_Capabilities_Extended",
+	[PD_EXT_STATUS] = "Status",
+	[PD_EXT_GET_BATTERY_CAP] = "Get_Battery_Cap",
+	[PD_EXT_GET_BATTERY_STATUS] = "Get_Battery_Status",
+	[PD_EXT_BATTERY_CAP] = "Battery_Capabilities",
+	[PD_EXT_GET_MANUFACTURER_INFO] = "Get_Manufacturer_Info",
+	[PD_EXT_MANUFACTURER_INFO] = "Manufacturer_Info",
+	[PD_EXT_SECURITY_REQUEST] = "Security_Request",
+	[PD_EXT_SECURITY_RESPONSE] = "Security_Response",
+	[PD_EXT_FIRMWARE_UPDATE_REQUEST] = "Firmware_Update_Request",
+	[PD_EXT_FIRMWARE_UPDATE_RESPONSE] = "Firmware_Update_Response",
+	[PD_EXT_PPS_STATUS] = "PPS_Status",
+	[PD_EXT_COUNTRY_INFO] = "Country_Info",
+	[PD_EXT_COUNTRY_CODES] = "Country_Codes",
+	[PD_EXT_SINK_CAP] = "Sink_Capabilities_Extended",
+	[PD_EXT_EXTENDED_CONTROL] = "Extended_Control",
+	[PD_EXT_EPR_SOURCE_CAP] = "EPR_Source_Capabilities",
+	[PD_EXT_EPR_SINK_CAP] = "EPR_Sink_Capabilities",
+	[PD_EXT_VENDOR_DEFINED] = "Vendor_Defined_Extended",
+};
+BUILD_ASSERT(ARRAY_SIZE(pd_ext_msg_names) == PD_EXT_MSG_COUNT,
+	     "pd_ext_msg_names array size mismatch with pd_ext_msg_type enum");
+
 static void prl_tx_construct_message(const struct device *dev);
 static void prl_rx_wait_for_phy_message(const struct device *dev);
 static void prl_hr_set_state(const struct device *dev, const enum usbc_prl_hr_state_t state);
@@ -366,6 +449,34 @@ enum pd_rev_type prl_get_rev(const struct device *dev, const enum pd_packet_type
 /** Private Protocol Layer API below */
 
 /**
+ * @brief Get the human-readable name of a PD message, selecting the
+ *	  Control, Data, or Extended lookup table based on the header fields.
+ *
+ * @param msg_type Message type value
+ * @param extended True if the message is an Extended Message
+ * @param num_data_objs Number of data objects in the message
+ * @return String name of the message type
+ */
+static const char *pd_msg_name(uint8_t msg_type, bool extended, uint8_t num_data_objs)
+{
+	if (extended) {
+		/* Extended Message */
+		return (msg_type < ARRAY_SIZE(pd_ext_msg_names) && pd_ext_msg_names[msg_type])
+			       ? pd_ext_msg_names[msg_type]
+			       : "Unknown";
+	} else if (num_data_objs > 0) {
+		/* Data Message */
+		return (msg_type < ARRAY_SIZE(pd_data_msg_names) && pd_data_msg_names[msg_type])
+			       ? pd_data_msg_names[msg_type]
+			       : "Unknown";
+	}
+	/* Control Message */
+	return (msg_type < ARRAY_SIZE(pd_ctrl_msg_names) && pd_ctrl_msg_names[msg_type])
+		       ? pd_ctrl_msg_names[msg_type]
+		       : "Unknown";
+}
+
+/**
  * @brief Alert Handler called by the TCPC driver
  */
 static void alert_handler(const struct device *tcpc, void *port_dev, enum tcpc_alert alert)
@@ -483,6 +594,8 @@ static void prl_tx_construct_message(const struct device *dev)
 	struct usbc_port_data *data = dev->data;
 	struct protocol_layer_tx_t *prl_tx = data->prl_tx;
 	const struct device *tcpc = data->tcpc;
+	uint8_t num_data_objs;
+	int i;
 
 	/* The header is unused for hard reset, etc. */
 	prl_tx->emsg.header.raw_value =
@@ -500,6 +613,17 @@ static void prl_tx_construct_message(const struct device *dev)
 
 	/* Clear PRL_FLAGS_MSG_XMIT flag */
 	atomic_clear_bit(&prl_tx->flags, PRL_FLAGS_MSG_XMIT);
+
+	num_data_objs = prl_tx->emsg.header.number_of_data_objects;
+
+	/* Log the outgoing message */
+	const char *msg_name =
+		pd_msg_name(prl_tx->msg_type, prl_tx->emsg.header.extended, num_data_objs);
+
+	LOG_INF("SEND 0x%04x/%d[%s]", prl_tx->emsg.header.raw_value, num_data_objs, msg_name);
+	for (i = 0; i < num_data_objs; i++) {
+		LOG_INF("\t[%d]%08X ", i, *((uint32_t *)prl_tx->emsg.data + i));
+	}
 
 	/*
 	 * Pass message to PHY Layer. It handles retries in hardware as
@@ -1196,6 +1320,7 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	int8_t msid;
 	uint8_t num_data_objs;
 	uint8_t power_role;
+	int i;
 
 	/* Get the message */
 	if (tcpc_get_rx_pending_msg(tcpc, rx_emsg) <= 0) {
@@ -1211,11 +1336,11 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	power_role = rx_emsg->header.port_power_role;
 
 	/* Dump the received packet content */
-	int p;
+	const char *msg_name = pd_msg_name(msg_type, ext, num_data_objs);
 
-	LOG_INF("RECV %04x/%d ", rx_emsg->header.raw_value, num_data_objs);
-	for (p = 0; p < num_data_objs; p++) {
-		LOG_INF("\t[%d]%08x ", p, *((uint32_t *)rx_emsg->data + p));
+	LOG_INF("RECV 0x%04x/%d[%s]", rx_emsg->header.raw_value, num_data_objs, msg_name);
+	for (i = 0; i < num_data_objs; i++) {
+		LOG_INF("\t[%d]%08X ", i, *((uint32_t *)rx_emsg->data + i));
 	}
 
 	/* Ignore messages sent to the cable from our port partner */
