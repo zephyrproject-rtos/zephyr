@@ -25,14 +25,6 @@ properties:
       Frequency this consumer expects to read when applying sleep
       clock state for fast output
 
-  fast-request-freq:
-    type: int
-    required: true
-    description: |
-      Frequency this consumer will request from the fast output. Consumer
-      expects the resulting frequency from this request to match the
-      requested frequency exactly.
-
   slow-default-freq:
     type: int
     required: true
@@ -46,11 +38,3 @@ properties:
     description: |
       Frequency this consumer expects to read when applying sleep
       clock state for slow output
-
-  slow-request-freq:
-    type: int
-    required: true
-    description: |
-      Frequency this consumer will request from the slow output. Consumer
-      expects the resulting frequency from this request to match the
-      requested frequency exactly.

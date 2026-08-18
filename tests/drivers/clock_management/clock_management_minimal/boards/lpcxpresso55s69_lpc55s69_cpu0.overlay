@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Tenstorrent AI ULC
+ * Copyright (c) 2026 Analog Devices, Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,13 +12,12 @@
 	sys_clk_96mhz: sys-clk-96mhz {
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
-		clock-frequency = <DT_FREQ_M(96)>;
-		locking-state;
 	};
 };
 
 &cpu0 {
-	clock-state-0 = <&sys_clk_96mhz>;
+	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0-locking;
 };
 
 /* Disable the SD controller- we are using its clock for this test */
@@ -35,14 +35,12 @@
 			  &pll0 8 256 0 31 31 0 0 0
 			  &pll1_bypass 0 &clkoutsel 1
 			  &clkoutdiv 8>;
-		clock-frequency = <DT_FREQ_M(16)>;
 	};
 
 	clkout_1mhz: clkout-1mhz {
 		compatible = "clock-state";
 		/* Expect a clock frequency of 1MHz */
 		clocks = <&fro_1m 1 &clkoutsel 4 &clkoutdiv 1>;
-		clock-frequency = <DT_FREQ_M(1)>;
 	};
 
 	clkout_500mhz: clkout-500mhz {
@@ -53,7 +51,6 @@
 			  &pll0 8 256 0 31 31 0 0 0
 			  &pll1_bypass 0 &clkoutsel 1
 			  &clkoutdiv 256>;
-		clock-frequency = <DT_FREQ_K(500)>;
 	};
 };
 
@@ -67,7 +64,6 @@
 			  &pll1 4 128 0 62 31
 			  &pll1_bypass 0 &sdioclksel 5
 			  &sdioclkdiv 2>;
-		clock-frequency = <DT_FREQ_M(48)>;
 	};
 
 	sdioclk_24mhz: sdioclk-24mhz {
@@ -78,7 +74,6 @@
 			  &pll1 4 128 0 62 31
 			  &pll1_bypass 0 &sdioclksel 5
 			  &sdioclkdiv 4>;
-		clock-frequency = <DT_FREQ_M(24)>;
 	};
 
 	sdioclk_12mhz: sdioclk-12mhz {
@@ -86,7 +81,6 @@
 		/* Expect a clock frequency of 12 MHz */
 		clocks = <&fro_hf 1 &sdioclksel 3
 			  &sdioclkdiv 8>;
-		clock-frequency = <DT_FREQ_M(12)>;
 	};
 };
 
@@ -97,15 +91,13 @@
 			compatible = "vnd,emul-clock-consumer";
 			clock-outputs = <&clkout_clock &sdio_clock>;
 			clock-output-names = "slow", "fast";
-			clock-state-0 = <&clkout_16mhz &sdioclk_48mhz>;
+			clock-request-0 = <&clkout_16mhz &sdioclk_48mhz>;
 			slow-default-freq = <DT_FREQ_M(16)>;
 			fast-default-freq = <DT_FREQ_M(48)>;
 			slow-sleep-freq = <DT_FREQ_M(1)>;
 			fast-sleep-freq = <DT_FREQ_M(12)>;
-			clock-state-1 = <&clkout_1mhz &sdioclk_12mhz>;
-			slow-request-freq = <DT_FREQ_K(500)>;
-			fast-request-freq = <DT_FREQ_M(24)>;
-			clock-state-names = "default", "sleep";
+			clock-request-1 = <&clkout_1mhz &sdioclk_12mhz>;
+			clock-request-names = "default", "sleep";
 		};
 	};
 };
