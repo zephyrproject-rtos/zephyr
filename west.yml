@@ -370,7 +370,7 @@ manifest:
         - debug
     - name: picolibc
       path: modules/lib/picolibc
-      revision: 01254932e8e81085817ed61fd858648584ffe37c
+      revision: pull/14/head
     - name: psa-arch-tests
       revision: 588572c0ebd835c7e0929eaf3007d4fbadb47b5b
       path: modules/tee/tf-m/psa-arch-tests
