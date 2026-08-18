@@ -583,8 +583,8 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	struct bt_l2cap_le_chan *ch;
 	int i;
 	uint8_t ident;
-	uint16_t req_psm;
-	uint16_t req_mtu;
+	__maybe_unused uint16_t req_psm;
+	__maybe_unused uint16_t req_mtu;
 
 	if (!chan || !channels) {
 		return -EINVAL;
