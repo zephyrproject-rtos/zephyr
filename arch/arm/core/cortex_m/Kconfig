@@ -506,6 +506,23 @@ config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
+config CORTEX_M_ERRATUM_440977_WORKAROUND
+	bool "Workaround for Cortex-M7 erratum 440977"
+	default y if CPU_CORTEX_M7
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  On Cortex-M7 r0p0/r0p1, a priority-raising BASEPRI/BASEPRI_MAX
+	  write can leave the following instruction open to preemption
+	  (Arm erratum 440977, formerly 837070, fixed in r0p2).
+	  Keep the existing ISB as that instruction, so the critical region
+	  starts after the window closes. An interrupt can still preempt
+	  the ISB, which retains its pipeline-serialization cost.
+	  Unlike Arm's CPSID i/MSR/CPSIE i workaround, this does not
+	  temporarily mask higher-priority interrupts, including zero-latency
+	  interrupts, or change PRIMASK.
+	  Other cores need no barrier after priority-raising writes. This
+	  option may also be disabled on Cortex-M7 r0p2 and newer.
+
 config ARM_FP_CLOBBER_WORKAROUND
 	bool "Frame pointer clobber workaround"
 	depends on USE_SWITCH
