@@ -13,6 +13,7 @@ config REMOTE_BOARD
 	default "ek_ra8p1/r7ka8p1kflcac/cm33" if $(BOARD) = "ek_ra8p1"
 	default "esp32_devkitc/esp32/appcpu" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32_devkitc/esp32/procpu"
 	default "esp32c6_devkitc/esp32c6/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32c6_devkitc/esp32c6/hpcore"
+	default "esp32p4x_function_ev_board/esp32p4/lpcore" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32p4x_function_ev_board/esp32p4/hpcore"
 	default "esp32s3_devkitc/esp32s3/appcpu" if "$(BOARD)/$(BOARD_QUALIFIERS)" = "esp32s3_devkitc/esp32s3/procpu"
 	default "frdm_imxrt1186/mimxrt1186/cm7" if $(BOARD) = "frdm_imxrt1186"
 	default "frdm_mcxn947/mcxn947/cpu1" if $(BOARD) = "frdm_mcxn947"
