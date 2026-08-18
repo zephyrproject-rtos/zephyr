@@ -1540,6 +1540,17 @@ Bluetooth Host
   :kconfig:option:`CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE`, but both stack sizes are
   application-specific and should be validated using stack-usage measurements.
 
+* When :kconfig:option:`CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES` is enabled (the
+  default when possible), the host reads the Central Address Resolution characteristic
+  of a bonded peer once when the bond is created, and :c:func:`bt_le_adv_start`,
+  :c:func:`bt_le_ext_adv_create` and :c:func:`bt_le_ext_adv_update_param` now fail
+  with ``-ENOTSUP`` when :c:enumerator:`BT_LE_ADV_OPT_DIR_ADDR_RPA` is used towards a
+  peer known not to support address resolution. Such a peer cannot resolve the target
+  address, so it would never respond to the advertising. Applications that need to know
+  in advance can read the same answer with :c:func:`bt_le_bond_addr_res_support`, and
+  reach those peers with directed advertising towards their identity address instead.
+  Disabling the option restores the previous behavior.
+
 * Selected Bluetooth Host work items now run on the dedicated Bluetooth RX
   workqueue instead of the system workqueue. Application callbacks reached from
   those work items consequently run in the Bluetooth RX thread. This includes
