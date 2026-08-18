@@ -10,11 +10,12 @@ description: |
   The DSI bridge streams a framebuffer to the DSI host DPI port, so it is
   the display controller for a video-mode panel attached to that host. It
   owns the framebuffers and is the node "zephyr,display" should point at,
-  while the panel node only performs its own initialization.
+  while the panel controller only performs its own initialization.
 
   This is a role of the MIPI DSI peripheral rather than a separate block,
   so the node is a child of the DSI host and carries no registers of its
-  own.
+  own. It is therefore the one child of that bus without a unit address,
+  which keeps the addressed range free for the panels attached to the bus.
 
 compatible: "espressif,esp-dsi-display"
 
@@ -27,6 +28,7 @@ properties:
   dma-channel:
     type: int
     required: true
-    enum: [0, 1, 2, 3]
+    min: 0
+    max: 3
     description: |
       2D-DMA channel that streams the framebuffer to the DSI bridge.

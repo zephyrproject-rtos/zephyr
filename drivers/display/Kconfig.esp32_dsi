@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig DISPLAY_ESP32_DSI
+	bool "ESP32 MIPI DSI display controller"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP_DSI_DISPLAY_ENABLED
+	depends on SOC_SERIES_ESP32P4
+	select ESP_SPIRAM
+	select SHARED_MULTI_HEAP
+	select MIPI_DSI
+	help
+	  Enable driver for the ESP32 MIPI DSI display controller, which
+	  streams the framebuffer to a video mode panel. The framebuffers are
+	  megabytes in size, so they are allocated from external memory.
+
+if DISPLAY_ESP32_DSI
+
+config DISPLAY_ESP32_DSI_FB_NUM
+	int "Framebuffers to allocate in the driver"
+	default 2
+	range 1 2
+	help
+	  Two framebuffers let the driver present a finished frame while the
+	  next one is drawn, so an update is tear-free.
+
+config DISPLAY_ESP32_DSI_INIT_PRIORITY
+	int "ESP32 MIPI DSI display controller init priority"
+	default DISPLAY_INIT_PRIORITY
+	help
+	  Initialization priority of the controller. The host starts the
+	  scanout once a panel attaches, so this only has to place the
+	  controller before the panel.
+
+endif # DISPLAY_ESP32_DSI
