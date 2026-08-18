@@ -152,7 +152,6 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 		 */
 		if (dig_test && ana_test) {
 			(void)config->regs->data_capture;
-			config->regs->iclr = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			config->regs->ctl = (config->regs->ctl &
 					     ~TRNG_MSPM0_DECIMATION_RATE_MASK) |
 					     FIELD_PREP(TRNG_MSPM0_DECIMATION_RATE_MASK,
@@ -180,7 +179,6 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 			config->regs->imask &= ~TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		}
 
-		config->regs->iclr = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		k_sem_give(&data->sem_sync);
 	}
 }
@@ -244,7 +242,6 @@ static int entropy_mspm0_trng_get_entropy_isr(const struct device *dev, uint8_t 
 		/* Check if data is ready by checking IRQ_CAPTURED_RDY */
 		if (config->regs->ris & TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK) {
 			entropy_data = config->regs->data_capture;
-			config->regs->iclr = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 			bytes_read = (length >= TRNG_SAMPLE_SIZE) ? TRNG_SAMPLE_SIZE : length;
 
 			for (uint8_t i = 0; i < bytes_read; i++) {
