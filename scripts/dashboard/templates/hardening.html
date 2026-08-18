@@ -1,0 +1,70 @@
+<!--
+SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+SPDX-License-Identifier: Apache-2.0
+-->
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row rst-content mb-3">
+  <div class="col">
+    <p>
+      Configuration checked against the <code>{{build.hardening.profile}}</code>
+      hardening profile:
+      {% if build.hardening_fail_count %}
+      <span class="result-fail">{{build.hardening_fail_count}} option(s)
+      deviate from the hardening recommendations.</span>
+      {% else %}
+      <span class="result-pass">no deviations from the hardening
+      recommendations.</span>
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+{% if build.hardening_failures %}
+<div class="row">
+  <div class="col hardening-table-container">
+    <table class="table table-hover table-sm" id="hardeningTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th class="text-center">Current</th>
+          <th class="text-center">Recommended</th>
+          <th>Rationale</th>
+          <th>References</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for opt in build.hardening_failures %}
+        <tr>
+          <td class="align-middle">CONFIG_{{opt.name}}</td>
+          <td class="text-center align-middle">
+            {% if opt.current is none %}
+            <i>Not set</i>
+            {% else %}
+            {{opt.current}}
+            {% endif %}
+          </td>
+          <td class="text-center align-middle">{{opt.recommended}}</td>
+          <td class="hardening-rationale">{{opt.rationale}}</td>
+          <td class="hardening-references">
+            {% for ref in opt.references %}
+            <div>
+              {% if ref.url %}
+              <a href="{{ref.url}}">{{ref.id}}</a>
+              {% else %}
+              {{ref.id}}
+              {% endif %}
+            </div>
+            {% endfor %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
