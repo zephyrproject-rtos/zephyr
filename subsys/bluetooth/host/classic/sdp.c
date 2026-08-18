@@ -2352,7 +2352,10 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 	}
 
 	if (param != NULL && session->rec_buf == NULL) {
-		session->rec_buf = net_buf_alloc(param->pool, K_FOREVER);
+		session->rec_buf = net_buf_alloc(param->pool, K_NO_WAIT);
+		if (session->rec_buf == NULL) {
+			LOG_WRN("Unable to allocate a receive buffer");
+		}
 	}
 
 	if (param == NULL || session->rec_buf == NULL) {
@@ -2701,8 +2704,10 @@ static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
 
 	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
 
-	buf = net_buf_alloc(session->param->pool, K_FOREVER);
-	__ASSERT_NO_MSG(buf);
+	buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
+	if (buf == NULL) {
+		LOG_WRN("Unable to allocate a receive buffer");
+	}
 
 	return buf;
 }
