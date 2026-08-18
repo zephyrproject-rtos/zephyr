@@ -12,8 +12,7 @@ config NXP_FLEXSPI_ROM_RAMLOADER
 
 if NXP_FLEXSPI_ROM_RAMLOADER
 
-FLASH_CHOSEN := zephyr,flash
-FLASH_BASE := $(dt_chosen_reg_addr_hex,$(FLASH_CHOSEN))
+FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 FLEXSPI_BASE := $(dt_nodelabel_reg_addr_hex,flexspi,1)
 config BUILD_OUTPUT_ADJUST_LMA
 	default "$(FLEXSPI_BASE) - $(FLASH_BASE)"

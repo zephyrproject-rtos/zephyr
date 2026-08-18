@@ -13,9 +13,6 @@ config HAS_MCUX
 
 if	HAS_MCUX
 
-DT_CHOSEN_MCUX_DTCM := zephyr,dtcm
-DT_CHOSEN_MCUX_ITCM := zephyr,itcm
-
 config MCUX_OPTIMIZED_MEMCPY
 	bool "Use NXP optimized memcpy"
 	depends on !MINIMAL_LIBC
@@ -52,7 +49,7 @@ config MCUX_DATA_QUICK_ACCESS_SRAM
 
 config MCUX_DATA_QUICK_ACCESS_DTCM
 	bool "Place DataQuickAccess in zephyr,dtcm"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_DTCM))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	help
 	  Place DataQuickAccess in the DTCM data section selected by
 	  the zephyr,dtcm devicetree chosen node.
@@ -87,7 +84,7 @@ config MCUX_CODE_QUICK_ACCESS_RAMFUNC
 
 config MCUX_CODE_QUICK_ACCESS_ITCM
 	bool "Place CodeQuickAccess in zephyr,itcm"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_MCUX_ITCM))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_ITCM))
 	help
 	  Place CodeQuickAccess in the ITCM section selected by the
 	  zephyr,itcm devicetree chosen node.

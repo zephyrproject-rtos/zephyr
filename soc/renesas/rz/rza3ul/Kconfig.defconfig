@@ -12,10 +12,6 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default	$(dt_node_int_prop_int,/osc,clock-frequency)
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
-DT_CHOSEN_SRAM_ZEPHYR = zephyr,sram
-
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 
@@ -27,8 +23,8 @@ config FLASH_LOAD_OFFSET
 	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH)))
 
 config BUILD_OUTPUT_ADJUST_LMA
-	default "$(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_ZEPHYR)), \
-	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_SRAM_ZEPHYR)))"
+	default "$(sub_hex, $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION)), \
+	$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM)))"
 
 config BUILD_OUTPUT_ADJUST_LMA_SECTIONS
 	default "*;!.header"

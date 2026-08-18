@@ -9,13 +9,10 @@ menuconfig RETENTION_BOOTLOADER_INFO
 
 if RETENTION_BOOTLOADER_INFO
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_BOOTLOADER_INFO := zephyr,bootloader-info
-
 config RETENTION_BOOTLOADER_INFO_TYPE_MCUBOOT
 	bool "MCUboot"
 	depends on !MCUBOOT && BOOTLOADER_MCUBOOT
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_BOOTLOADER_INFO))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_BOOTLOADER_INFO))
 	select MCUBOOT_BOOTUTIL_LIB
 	help
 	  Adds a bootloader information sharing system for MCUboot and

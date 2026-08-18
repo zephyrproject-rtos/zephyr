@@ -14,10 +14,8 @@ config DEBUG_NRF_ETR
 
 if DEBUG_NRF_ETR
 
-DT_CHOSEN_ZEPHYR_CONSOLE := zephyr,console
-
 config DEBUG_NRF_ETR_BACKEND_UART
-	default y if $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_CONSOLE))
+	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
 	bool "UART backend"
 
 config DEBUG_NRF_ETR_BACKEND_RTT

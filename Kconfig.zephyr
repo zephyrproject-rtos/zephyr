@@ -87,11 +87,7 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_COMPAT_Z_MAPPED_PARTITION := zephyr,mapped-partition
-DT_HAS_MAPPED_PARTITION := $(dt_node_has_compat,$(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION)),$(DT_COMPAT_Z_MAPPED_PARTITION))
+DT_HAS_MAPPED_PARTITION := $(dt_node_has_compat,$(DT_CHOSEN_Z_CODE_PARTITION_PATH),$(DT_COMPAT_ZEPHYR_MAPPED_PARTITION))
 
 if HAS_FLASH_LOAD_OFFSET || $(DT_HAS_MAPPED_PARTITION)
 
@@ -921,7 +917,6 @@ config BUILD_OUTPUT_ADJUST_LMA
 	  To adjust according to a chosen flash partition one can specify a
 	  default as:
 	  DT_CHOSEN_IMAGE_<name> := <name>,<name>-partition
-	  DT_CHOSEN_Z_FLASH := zephyr,flash
 	  config BUILD_OUTPUT_ADJUST_LMA
 	    default "$(dt_chosen_reg_addr_hex,$(DT_CHOSEN_IMAGE_<name>))-\
 	             $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))"
