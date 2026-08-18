@@ -2120,16 +2120,20 @@ static void dns_randomize_source_port(struct dns_resolve_context *ctx,
 
 	/* Give the old socket up first. Its descriptor is then free for the
 	 * replacement, which matters where the descriptor budget is sized for
-	 * exactly the sockets the resolver holds.
+	 * exactly the sockets the resolver holds. Drop the descriptor from the
+	 * shared array before that: unregistering re-registers the socket
+	 * service with this array for the other servers, and a closed
+	 * descriptor must not stay polled, since its number can be reused by
+	 * an unrelated socket.
 	 */
-	(void)dns_dispatcher_unregister(&server->dispatcher);
-
 	ARRAY_FOR_EACH(ctx->fds, j) {
 		if (ctx->fds[j].fd == old_sock) {
 			ctx->fds[j].fd = -1;
 			break;
 		}
 	}
+
+	(void)dns_dispatcher_unregister(&server->dispatcher);
 
 	zsock_close(old_sock);
 	server->sock = -1;
