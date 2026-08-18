@@ -42,6 +42,15 @@ Build System
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
   :kconfig:option:`CONFIG_SOC_FAMILY` and ``SOC_FULL_DIR``.
 
+* The hardening tool's data file :file:`scripts/kconfig/hardened.csv` has been replaced by a
+  YAML database: profiles in :file:`scripts/kconfig/hardening.yaml` and per-subsystem
+  ``hardening.yaml`` fragments next to the Kconfig files they relate to. Downstream forks that
+  patched the CSV should migrate their entries to the new format (see :ref:`hardening`); out-of-tree
+  recommendations no longer require patching the in-tree file at all and can instead be provided
+  via ``-DHARDENCONFIG_EXTRA_SOURCES=``. Note that ``CONFIG_DEBUG_COREDUMP`` was listed in the
+  CSV with a syntax error and was silently skipped; it is now actually checked, so
+  ``hardenconfig`` may report it as a new finding.
+
 Kernel
 ******
 
