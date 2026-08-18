@@ -2565,7 +2565,7 @@ static int flash_stm32_xspi_init(const struct device *dev)
 												\
 	DEVICE_DT_INST_DEFINE(inst, &flash_stm32_xspi_init, NULL,				\
 			      &flash_stm32_xspi_dev_data_##inst, &flash_stm32_xspi_cfg_##inst,	\
-			      POST_KERNEL, CONFIG_FLASH_INIT_PRIORITY,				\
+			      PRE_KERNEL_1, CONFIG_FLASH_INIT_PRIORITY,				\
 			      &flash_stm32_xspi_driver_api);
 
 #define XSPI_STM32_INIT(inst)							\
