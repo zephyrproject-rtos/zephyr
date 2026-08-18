@@ -355,7 +355,12 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	}
 
 	eic_data->lock = irq_lock();
-	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
+	/* Reconfiguring the trigger of the pin that already owns this line is allowed;
+	 * only a different pin claiming a busy line is rejected.
+	 */
+	if (((eic_data->line_busy & BIT(eic_line)) != 0) &&
+	    ((eic_data->lines[eic_line].port != eic_pin_config->port_id) ||
+	     (eic_data->lines[eic_line].pin != pin))) {
 		irq_unlock(eic_data->lock);
 		LOG_ERR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
 		return -EBUSY;
