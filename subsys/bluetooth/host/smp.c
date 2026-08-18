@@ -926,7 +926,7 @@ static void smp_br_id_add_replace(struct bt_keys *keys)
 
 	conflict = bt_id_find_conflict(keys);
 	if (conflict != NULL) {
-		int err;
+		__maybe_unused int err;
 
 		LOG_DBG("Un-pairing old conflicting bond and finalizing new.");
 
@@ -4140,7 +4140,7 @@ static uint8_t smp_id_add_replace(struct bt_smp *smp, struct bt_keys *new_bond)
 
 	if (conflict && IS_ENABLED(CONFIG_BT_ID_UNPAIR_MATCHING_BONDS)) {
 		bool trust_ok;
-		int unpair_err;
+		__maybe_unused int unpair_err;
 
 		trust_ok = update_keys_check(smp, conflict);
 		if (!trust_ok) {
@@ -6036,7 +6036,7 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		if (err && err != -EALREADY) {
 			LOG_WRN("Public key re-generation request failed (%d)", err);
 
-			int mutex_err;
+			__maybe_unused int mutex_err;
 
 			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
 			__ASSERT_NO_MSG(mutex_err == 0);
