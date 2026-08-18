@@ -506,14 +506,18 @@ config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
-config ARM_GCC_FP_WORKAROUND
-	bool "GCC/gas frame pointer workaround"
+config ARM_FP_CLOBBER_WORKAROUND
+	bool "Frame pointer clobber workaround"
+	depends on USE_SWITCH
+	default y if FRAME_POINTER
+	default y if SCHED_SCALABLE
 	help
-	  Enables a two-instruction workaround for a GNU toolchain
-	  buglet in arch_switch() when the kernel must unavoidably be
-	  compiled with -fno-omit-frame-pointer.  Most code doesn't
-	  want this, but in at least one case it's necessary.  See
-	  comment in arm-m-switch.h
+	  Enables a two-instruction workaround for a GNU and clang toolchain
+	  limitation in which inline assembly cannot clobber the frame pointer.
+	  Most code doesn't want this, but it's necessary if the kernel is to
+	  be compiled with -fno-omit-frame-pointer, or if the red-black tree
+	  scheduler queue is used, which requires dynamic stack allocation in
+	  sched.c.
 
 rsource "tz/Kconfig"
 
