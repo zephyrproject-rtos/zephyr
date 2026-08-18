@@ -280,7 +280,7 @@ static void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 		bt_cap_common_abort_proc(conn, -ECONNRESET);
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-		if (active_proc_is_initiator()) {
+		if (bt_cap_common_active_proc_is_initiator()) {
 			/* For Initiator procedures, we may have multiple procedures per connection,
 			 * so loop through and count the ones that we consider "done"
 			 */
@@ -303,7 +303,7 @@ static void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 		}
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 #if defined(CONFIG_BT_CAP_COMMANDER)
-		if (active_proc_is_commander()) {
+		if (bt_cap_common_active_proc_is_commander()) {
 			/* For Commander procedures there is a 1:1 between number of procedures and
 			 * connections, so we always just increment by 1
 			 */
