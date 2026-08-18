@@ -914,10 +914,8 @@ static void discover_cb(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 
 static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 {
-	ARG_UNUSED(conn);
-
 	/* Sinks discovery complete, now discover sources */
-	if (dir == BT_AUDIO_DIR_SINK) {
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC) && dir == BT_AUDIO_DIR_SINK) {
 		dir = BT_AUDIO_DIR_SOURCE;
 		unicast_client_cbs.discover = discover_cb;
 
@@ -925,6 +923,8 @@ static void discover_all(struct bt_conn *conn, int err, enum bt_audio_dir dir)
 		if (err != 0) {
 			bt_shell_error("bt_bap_unicast_client_discover err %d", err);
 		}
+	} else {
+		discover_cb(conn, err, dir);
 	}
 }
 
@@ -979,6 +979,7 @@ static void enable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rs
 		       stream, rsp_code, reason);
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static void start_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		     enum bt_bap_ascs_reason reason)
 {
@@ -992,6 +993,7 @@ static void stop_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_
 	bt_shell_print("stream %p stop operation rsp_code %u reason %u",
 		       stream, rsp_code, reason);
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static void disable_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
 		       enum bt_bap_ascs_reason reason)
@@ -1021,8 +1023,10 @@ static struct bt_bap_unicast_client_cb unicast_client_cbs = {
 	.config = config_cb,
 	.qos = qos_cb,
 	.enable = enable_cb,
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	.start = start_cb,
 	.stop = stop_cb,
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	.disable = disable_cb,
 	.metadata = metadata_cb,
 	.release = release_cb,
@@ -1059,11 +1063,16 @@ static int cmd_discover(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	unicast_client_cbs.discover = discover_all;
-	dir = BT_AUDIO_DIR_SINK;
+	if (IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK)) {
+		dir = BT_AUDIO_DIR_SINK;
+	} else {
+		dir = BT_AUDIO_DIR_SOURCE;
+	}
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "sink")) {
 			unicast_client_cbs.discover = discover_cb;
+			dir = BT_AUDIO_DIR_SINK;
 		} else if (!strcmp(argv[1], "source")) {
 			unicast_client_cbs.discover = discover_cb;
 			dir = BT_AUDIO_DIR_SOURCE;
@@ -1461,6 +1470,7 @@ static int cmd_enable(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
@@ -1481,6 +1491,7 @@ static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 
 static int cmd_connect(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -4268,7 +4279,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(connect, NULL, "Connect the CIS of the stream", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(qos, NULL, "Send QoS configure for Unicast Group", cmd_qos, 1, 0),
 	SHELL_CMD_ARG(enable, NULL, "[context]", cmd_enable, 1, 1),
+#if defined(CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC)
 	SHELL_CMD_ARG(stop, NULL, NULL, cmd_stop, 1, 0),
+#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC */
 	SHELL_CMD_ARG(list, NULL, NULL, cmd_list, 1, 0),
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #if defined(CONFIG_BT_BAP_UNICAST_SERVER)
