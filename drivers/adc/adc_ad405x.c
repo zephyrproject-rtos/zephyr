@@ -401,9 +401,15 @@ static void ad405x_gpio1_callback(const struct device *dev, struct gpio_callback
 		break;
 	case AD405X_DATA_READY:
 #ifdef CONFIG_AD405X_STREAM
-		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+		bool is_streaming = false;
 
-		if (cfg_adc->is_streaming) {
+		if (drv_data->sqe != NULL) {
+			const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+
+			is_streaming = cfg_adc->is_streaming;
+		}
+
+		if (is_streaming) {
 			ad405x_stream_irq_handler(drv_data->dev);
 		} else {
 			k_sem_give(&drv_data->sem_drdy);
@@ -432,9 +438,15 @@ static void ad405x_gpio0_callback(const struct device *dev, struct gpio_callback
 	switch (drv_data->gp0_mode) {
 	case AD405X_DATA_READY:
 #ifdef CONFIG_AD405X_STREAM
-		const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+		bool is_streaming = false;
 
-		if (cfg_adc->is_streaming) {
+		if (drv_data->sqe != NULL) {
+			const struct adc_read_config *cfg_adc = drv_data->sqe->sqe.iodev->data;
+
+			is_streaming = cfg_adc->is_streaming;
+		}
+
+		if (is_streaming) {
 			ad405x_stream_irq_handler(drv_data->dev);
 		} else {
 			k_sem_give(&drv_data->sem_drdy);
