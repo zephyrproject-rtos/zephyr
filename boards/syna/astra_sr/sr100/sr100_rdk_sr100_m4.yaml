@@ -1,0 +1,15 @@
+identifier: sr100_rdk/sr100/m4
+name: Synaptics SR100 RDK
+type: mcu
+arch: arm
+ram: 448
+flash: 1024
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
+vendor: syna
