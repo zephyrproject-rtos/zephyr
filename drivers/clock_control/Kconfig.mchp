@@ -14,6 +14,14 @@ config CLOCK_CONTROL_MCHP_SAM_D5X_E5X
 	help
 	  Enable clock controller driver for Microchip SAM D5X/E5X SoC family.
 
+config CLOCK_CONTROL_MCHP_PIC32CK_SG_GC
+	bool
+	default y
+	depends on DT_HAS_MICROCHIP_PIC32CK_SG_GC_CLOCK_ENABLED
+	select CLOCK_CONTROL_MCHP_COMMON
+	help
+	  Enable clock controller driver for Microchip PIC32CK SG/GC SoC family.
+
 config CLOCK_CONTROL_MCHP_PIC32CM_JH
 	bool
 	default y
