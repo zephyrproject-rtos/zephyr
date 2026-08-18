@@ -31,6 +31,7 @@ config CPU_CORTEX_M
 	# or multi-level controller these operations belong to the SoC layer.
 	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER && \
 		!MULTI_LEVEL_INTERRUPTS
+	select ARCH_HAS_STACK_JUMP
 	select SWAP_NONATOMIC
 	select ARCH_HAS_EXTRA_EXCEPTION_INFO
 	select ARCH_HAS_TIMING_FUNCTIONS if CPU_CORTEX_M_HAS_DWT

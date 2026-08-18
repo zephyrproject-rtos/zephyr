@@ -238,6 +238,32 @@ __syscall int sys_thread_stack_destroy(k_thread_stack_t *stack);
 __syscall int sys_thread_destroy(struct k_thread *th);
 
 /**
+ * @brief Stage a block at the top of the calling thread's stack
+ *
+ * Reserves @p bytes at the lowest addresses of the calling thread's own
+ * stack for data that must survive sys_thread_restart(): the caller's live
+ * frames occupy the top, and the restarted frame grows down from the top
+ * toward the staged block. Kernel-mode only.
+ *
+ * @return the staged block, or NULL if @p bytes does not clear the calling
+ *         frames or the architecture lacks stack-jump support
+ */
+void *sys_thread_stack_stage(size_t bytes);
+
+/**
+ * @brief Restart the calling thread at the base of its own stack
+ *
+ * Abandons every live frame: the stack pointer is reset to the top of the
+ * calling thread's own stack and @p fn is entered with the staged block as
+ * its argument, never to return - the exec() model with the thread and
+ * stack reused in place. Kernel-mode only.
+ *
+ * @retval -ENOTSUP when the architecture lacks stack-jump support
+ *         (on success this function does not return)
+ */
+int sys_thread_restart(void (*fn)(void *), size_t staged_bytes);
+
+/**
  * INTERNAL_HIDDEN @endcond
  */
 

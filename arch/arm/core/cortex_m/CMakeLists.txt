@@ -92,3 +92,4 @@ zephyr_linker_sources_ifdef(CONFIG_SRAM_VECTOR_TABLE
   ram_vector_table.ld
 )
 endif()
+zephyr_library_sources_ifdef(CONFIG_ARCH_HAS_STACK_JUMP stack_jump.S)

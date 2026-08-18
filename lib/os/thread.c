@@ -8,6 +8,7 @@
 #include <ksched.h>
 
 #include <zephyr/internal/syscall_handler.h>
+#include <kernel_internal.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/mm.h>
@@ -906,3 +907,64 @@ static void print_stats(const struct ztest_unit_test *test, void *data)
 
 ZTEST_RULE(sys_thread_rule, record_stats, print_stats);
 #endif /* CONFIG_ZTEST */
+
+#ifdef CONFIG_ARCH_HAS_STACK_JUMP
+/*
+ * The staged block lives at the BASE of the stack: the caller's live frames
+ * occupy the top, so staging there would clobber the very frames doing the
+ * packing. The restarted frame starts at the top and only reaches the
+ * staged data by exhausting the stack.
+ */
+static uintptr_t stack_stage_base(size_t bytes)
+{
+	char probe;
+	k_tid_t th = k_current_get();
+	/* keep clear of the stack sentinel word at the very base */
+	uintptr_t base = ROUND_UP(th->stack_info.start +
+					  (IS_ENABLED(CONFIG_STACK_SENTINEL) ? 16 : 0),
+				  16);
+
+	/* the packing frames must stay clear of the staged block */
+	if ((uintptr_t)&probe < (base + bytes + 512)) {
+		return 0;
+	}
+
+	return base;
+}
+
+void *sys_thread_stack_stage(size_t bytes)
+{
+	return (void *)stack_stage_base(bytes);
+}
+
+int sys_thread_restart(void (*fn)(void *), size_t staged_bytes)
+{
+	uintptr_t base = stack_stage_base(staged_bytes);
+	k_tid_t th = k_current_get();
+	/* the creation-time initial SP: stack_info.size includes the TLS
+	 * block above it, which the restarted frames must not touch
+	 */
+	uintptr_t top = ROUND_DOWN(
+		th->stack_info.start + th->stack_info.size - th->stack_info.delta, 16);
+
+	if (base == 0) {
+		return -EINVAL;
+	}
+
+	arch_stack_jump((void *)top, fn, (void *)base);
+	CODE_UNREACHABLE;
+}
+#else
+void *sys_thread_stack_stage(size_t bytes)
+{
+	ARG_UNUSED(bytes);
+	return NULL;
+}
+
+int sys_thread_restart(void (*fn)(void *), size_t staged_bytes)
+{
+	ARG_UNUSED(fn);
+	ARG_UNUSED(staged_bytes);
+	return -ENOTSUP;
+}
+#endif /* CONFIG_ARCH_HAS_STACK_JUMP */

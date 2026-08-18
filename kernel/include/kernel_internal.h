@@ -152,6 +152,11 @@ extern int z_stack_adjust_initialized;
 extern struct k_thread z_main_thread;
 #endif /* CONFIG_MULTITHREADING */
 
+#ifdef CONFIG_ARCH_HAS_STACK_JUMP
+/* reset SP and enter fn(arg), abandoning every frame below; never returns */
+FUNC_NORETURN void arch_stack_jump(void *sp, void (*fn)(void *), void *arg);
+#endif /* CONFIG_ARCH_HAS_STACK_JUMP */
+
 #ifdef CONFIG_PROCESS
 /* the three kernel-reserved processes: idle, init, and the kthread process */
 extern struct k_process z_proc_idle;

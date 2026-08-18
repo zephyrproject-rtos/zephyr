@@ -55,6 +55,7 @@ config ARM
 config ARM64
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_STACK_JUMP
 	select 64BIT
 	select ARCH_HAS_FWARGS_HANDLER_HOOK
 	select ARCH_SUPPORTS_COREDUMP
@@ -115,6 +116,7 @@ config SPARC
 config X86
 	bool
 	select ARCH_IS_SET
+	select ARCH_HAS_STACK_JUMP
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_SUPPORTS_COREDUMP
 	select ARCH_SUPPORTS_COREDUMP_PRIV_STACKS
@@ -149,6 +151,7 @@ config RISCV
 	bool
 	select ARCH_IS_SET
 	select ARCH_MEM_DOMAIN_APPLY_CURRENT if RISCV_PMP && USERSPACE
+	select ARCH_HAS_STACK_JUMP
 	select ATOMIC_OPERATIONS_C if (!RISCV_ISA_EXT_A && !ATOMIC_OPERATIONS_ARCH)
 	select ATOMIC_OPERATIONS_BUILTIN if RISCV_ISA_EXT_A
 	select ARCH_SUPPORTS_COREDUMP
@@ -888,6 +891,13 @@ config ARCH_HAS_TRUSTED_EXECUTION
 
 config ARCH_HAS_STACK_PROTECTION
 	bool
+
+config ARCH_HAS_STACK_JUMP
+	bool
+	help
+	  Set by an architecture that implements arch_stack_jump(): reset the
+	  calling thread's stack pointer and enter a function that never
+	  returns, abandoning every frame below.
 
 config ARCH_HAS_PROCESS_VM
 	bool

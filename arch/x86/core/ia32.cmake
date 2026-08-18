@@ -41,3 +41,4 @@ zephyr_library_sources_ifdef(
   CONFIG_X86_FP_USE_SOFT_FLOAT
   ia32/soft_float_stubs.c
 )
+zephyr_library_sources_ifdef(CONFIG_ARCH_HAS_STACK_JUMP ia32/stack_jump.S)
