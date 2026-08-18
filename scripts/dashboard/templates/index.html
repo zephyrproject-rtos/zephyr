@@ -46,6 +46,32 @@ SPDX-License-Identifier: Apache-2.0
   </div>
   <div class="col-4">
 
+    {% if build.hardening %}
+    <div class="card mb-4 {% if build.hardening_fail_count %}card-danger{% endif %}">
+      <div class="card-header">
+        Hardening
+        {% if build.hardening_fail_count %}
+        <i class="bi bi-exclamation-circle"></i>
+        {% endif %}
+      </div>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">
+          <div class="bold-lt">Profile</div>
+          <div><code>{{build.hardening.profile}}</code></div>
+        </li>
+        <li class="list-group-item">
+          {% if build.hardening_fail_count %}
+          <div><a href="hardening.html">{{build.hardening_fail_count}}
+          option(s)</a> deviate from the recommendations.</div>
+          {% else %}
+          <div><span class="result-pass">No deviations</span> from the
+          <a href="hardening.html">recommendations</a>.</div>
+          {% endif %}
+        </li>
+      </ul>
+    </div>
+    {% endif %}
+
     <div class="card">
       <div class="card-header">
         Memory Summary

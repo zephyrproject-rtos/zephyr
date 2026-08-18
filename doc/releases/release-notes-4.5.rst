@@ -2265,6 +2265,9 @@ Other notable changes
     ``-DHARDENCONFIG_EXTRA_SOURCES=``. The database is validated in CI against the actual Kconfig
     tree so entries can no longer go stale.
 
+  * The :ref:`build dashboard <dashboard>` gained a Hardening page showing the full hardening
+    report for the build.
+
 * Kernel
 
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on

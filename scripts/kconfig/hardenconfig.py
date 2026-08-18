@@ -15,6 +15,7 @@ same name, e.g. 'west build -t hardenconfig -- -DHARDENCONFIG_PROFILE=base'):
 - HARDENCONFIG_SHOW_ALL: also show passing and non-applicable options
 - HARDENCONFIG_STRICT: exit with an error code if any check fails
 - HARDENCONFIG_JSON: path to additionally write results to, as JSON
+- HARDENCONFIG_QUIET: do not print the text report
 - HARDENCONFIG_EXTRA_SOURCES: semicolon-separated list of additional
   hardening database YAML files; later files may add profiles and rules,
   and override same-named rules, but not redefine existing profiles
@@ -213,8 +214,9 @@ def hardenconfig(kconf: Kconfig) -> None:
     if json_path:
         write_json(report, json_path)
 
-    print(render_text(report, show_all=env_flag('HARDENCONFIG_SHOW_ALL')))
-    print()
+    if not env_flag('HARDENCONFIG_QUIET'):
+        print(render_text(report, show_all=env_flag('HARDENCONFIG_SHOW_ALL')))
+        print()
 
     if env_flag('HARDENCONFIG_STRICT') and report.failures:
         sys.exit(1)
