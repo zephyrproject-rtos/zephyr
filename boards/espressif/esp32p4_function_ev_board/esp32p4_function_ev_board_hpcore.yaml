@@ -10,10 +10,13 @@ testing:
     - heap
 supported:
   - counter
+  - display
   - dma
   - entropy
   - gpio
   - hwinfo
+  - i2c
+  - input
   - netif:eth
   - netif:wifi
   - sdhc
