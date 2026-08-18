@@ -475,6 +475,27 @@ error:
 	return ret;
 }
 
+/* Response window for AT+CGACT=1,1.
+ *
+ * On GSM the HL7812 runs the whole PDP activation inside this one command and
+ * goes completely silent while it does - no responses, not even URCs. A cell
+ * that cannot complete the activation is abandoned by the modem after its own
+ * 180 s timeout (3GPP T3380, 30 s x 5, plus margin), measured to the
+ * millisecond on two separate failures, and only then does it answer ERROR.
+ *
+ * Anything shorter makes the driver give up while the modem is still working
+ * and start sending commands into an interface that cannot receive them. Those
+ * commands are answered minutes later, against whichever script happens to be
+ * running by then, which desynchronises the whole command stream. Waiting the
+ * modem out is what keeps that from happening: the sync path holds tx_lock for
+ * the duration, so every other command fails cleanly with -EBUSY instead of
+ * being queued behind an activation that is still in flight.
+ *
+ * A healthy activation answers in 0.5-3 s, so this window only costs anything
+ * when the attach is genuinely failing.
+ */
+#define HL78XX_PDP_ACTIVATE_TIMEOUT 190
+
 int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 {
 	int ret = 0;
@@ -487,15 +508,31 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 		return 0;
 	}
 
+	/* Match on the full terminal set, not just OK. A refused activation comes
+	 * back as "ERROR" or "+CME ERROR: <n>", and with only OK matched the
+	 * script would sit out its whole window on a verdict the modem has
+	 * already given. Matching them as responses also keeps the outcome
+	 * classified: the script completes, the terminal result is recorded, and
+	 * the caller gets -EIO for a refusal - distinct from -EAGAIN, which then
+	 * means the modem never answered at all.
+	 */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_activate_pdp, strlen(cmd_activate_pdp),
-				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
-				     MDM_CMD_TIMEOUT, false);
+				     hl78xx_get_allow_match(), hl78xx_get_allow_match_size(),
+				     HL78XX_PDP_ACTIVATE_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("GSM PDP activation failed: %d", ret);
+		LOG_ERR("GSM PDP activation failed: %d (%s)", ret,
+			ret == -EIO ? "refused by the network" : "no verdict from the modem");
 		return ret;
 	}
+
+	/* status.gprs[] is left to AT+CGACT?, which runs on every wake. Latching
+	 * it here would suppress a needed re-activation after a +CGEV PDN
+	 * deactivation, and a redundant AT+CGACT=1,1 on a live context is
+	 * answered immediately.
+	 */
 	return 0;
 }
+
 
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
 /* Find APN from profile string based on associated number prefix */
@@ -708,6 +745,16 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 	pd_evt.content.power_down_event = POWER_DOWN_EVENT_ENTER;
 	event_dispatcher_dispatch(&pd_evt);
 
+	/* From here the shutdown owns the modem. A command still in flight would
+	 * otherwise keep the chat when the shutdown work runs and the power off
+	 * script would be refused with -EBUSY - GSM PDP activation in particular
+	 * holds the interface for up to 190 s, far longer than the confirm window
+	 * below. The decision to power down has already been taken, so stop
+	 * waiting on it and let the interface go.
+	 */
+	data->status.lpm.power_down.shutdown_pending = true;
+	hl78xx_chat_abort_active_script(data);
+
 	/* Give the application time to perform graceful teardown (e.g. cloud
 	 * disconnect).
 	 */
@@ -836,6 +883,7 @@ int hl78xx_init_power_down(struct hl78xx_data *data)
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_NONE;
 	data->status.lpm.power_down.previous = POWER_DOWN_EVENT_NONE;
 	data->status.lpm.power_down.is_power_down_requested = false;
+	data->status.lpm.power_down.shutdown_pending = false;
 	return 0;
 }
 
