@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_TI_CDCE9XX
+	bool "TI Low Power Clock Generator CDCE9xx"
+	depends on DT_HAS_TI_CDCE913_ENABLED || \
+				DT_HAS_TI_CDCE925_ENABLED || \
+				DT_HAS_TI_CDCE937_ENABLED || \
+				DT_HAS_TI_CDCE949_ENABLED
+	select I2C
+	help
+	  Driver for TI Low Power Clock Generator CDCE9xx.
+
+config CLOCK_CONTROL_TI_CDCE9XX_PRIORITY
+	int "TI Low Power Clock Generator CDCE9xx Init Priority"
+	default 90
+	depends on CLOCK_CONTROL_TI_CDCE9XX
+	help
+	  TI Low Power Clock Generator CDCE9xx initialization priority
+
+if CLOCK_CONTROL_TI_CDCE9XX
+
+module = CDCE9XX
+module-str = CDCE9XX clock control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CLOCK_CONTROL_TI_CDCE9XX

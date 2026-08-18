@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CDCE925 clock generator driver.
+
+compatible: "ti,cdce925"
+
+include: ["ti,cdce9xx.yaml", i2c-device.yaml]
