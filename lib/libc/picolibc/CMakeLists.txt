@@ -61,3 +61,9 @@ if(NOT CONFIG_PICOLIBC_USE_MODULE)
   endif()
 
 endif()
+
+if(CONFIG_ARCH_POSIX)
+  # Picolibs's assembler is not adding a .note.GNU-stack to tell the linker the stack is not
+  # executable. Let's tell the linker directly it is not.
+  zephyr_link_libraries("-z noexecstack")
+endif()
