@@ -211,16 +211,20 @@ static inline void tcc_sync_wait(void *pwm_reg)
 /**
  *Set the output inversion for a specific PWM channel.
  */
-static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel)
+static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel, bool invert)
 {
 	uint32_t invert_mask = 1 << (channel + TCC_DRVCTRL_INVEN0_Pos);
 
 	tcc_enable(pwm_reg, false);
 	tcc_sync_wait(pwm_reg);
-	PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	if (invert) {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	} else {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL &= ~invert_mask;
+	}
 	tcc_enable(pwm_reg, true);
 	tcc_sync_wait(pwm_reg);
-	LOG_DBG("tcc set invert 0x%x invoked", invert_mask);
+	LOG_DBG("tcc set invert 0x%x to %d invoked", invert_mask, (int)invert);
 
 	return MCHP_PWM_SUCCESS;
 }
@@ -287,10 +291,10 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 	} else {
 
 		bool invert_flag_set = ((flags & PWM_POLARITY_INVERTED) != 0);
-		bool not_inverted = tcc_get_invert_status(mchp_pwm_cfg->regs, channel);
+		bool is_inverted = !tcc_get_invert_status(mchp_pwm_cfg->regs, channel);
 
-		if ((invert_flag_set == true) && (not_inverted == true)) {
-			tcc_set_invert(mchp_pwm_cfg->regs, channel);
+		if (invert_flag_set != is_inverted) {
+			tcc_set_invert(mchp_pwm_cfg->regs, channel, invert_flag_set);
 		}
 
 		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
