@@ -169,16 +169,26 @@ static int recv_data(struct net_socket_service_event *pev)
 	int family, sock_error;
 	int ret = 0, len;
 
+	/* Look up the dispatcher and take its lock while holding the global
+	 * lock. This keeps the lookup atomic with respect to
+	 * dns_dispatcher_unregister(): once it has cleared the slot, no new
+	 * dispatch can start on this context, so its wait on ctx->lock is
+	 * guaranteed to outlast any dispatch that got the context here.
+	 */
+	k_mutex_lock(&lock, K_FOREVER);
+
 	dispatcher = table[pev->event.fd].ctx;
 	if (dispatcher == NULL) {
 		/* The dispatch slot was cleared concurrently, for example the
 		 * server socket was just closed while its poll event was still
 		 * in flight. Nothing to dispatch to, so drop the event.
 		 */
+		k_mutex_unlock(&lock);
 		return 0;
 	}
 
 	k_mutex_lock(&dispatcher->lock, K_FOREVER);
+	k_mutex_unlock(&lock);
 
 	(void)zsock_getsockopt(pev->event.fd, ZSOCK_SOL_SOCKET,
 			       ZSOCK_SO_DOMAIN, &family, &optlen);
@@ -460,11 +470,11 @@ out:
 	k_mutex_unlock(&lock);
 
 	/*
-	 * dispatch_table[sock] was already cleared above, so no new call into
-	 * recv_data() can pick up this ctx. But a call that already read the
-	 * (still non-NULL) pointer may still be in its critical section,
-	 * holding ctx->lock while it finishes dispatching. Wait for it here so
-	 * the caller can safely reuse/reinit ctx once we return.
+	 * recv_data() looks the context up and takes ctx->lock under the
+	 * global lock, so now that dispatch_table[sock] is cleared, no new
+	 * dispatch can pick this ctx up, and any dispatch that already did
+	 * holds ctx->lock. Wait for it here so the caller can safely
+	 * reuse/reinit ctx once we return.
 	 */
 	k_mutex_lock(&ctx->lock, K_FOREVER);
 	k_mutex_unlock(&ctx->lock);
