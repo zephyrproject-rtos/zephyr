@@ -3257,6 +3257,8 @@ Espressif Platforms:
   files:
     - drivers/*/*esp32*.c
     - boards/espressif/
+    - cmake/emu/espressif_qemu.cmake
+    - cmake/emu/espressif_qemu/
     - soc/espressif/
     - dts/*/espressif/
     - dts/bindings/*/*esp32*
