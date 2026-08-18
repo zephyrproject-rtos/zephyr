@@ -6,4 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(modem_ppp_test)
 
 target_sources(app PRIVATE src/main.c ../mock/modem_backend_mock.c)
-include_directories(../mock)
+target_include_directories(app PRIVATE ../mock ${ZEPHYR_BASE}/subsys/modem)
