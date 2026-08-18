@@ -18,3 +18,25 @@ rules:
       Enables the x86 MMU so kernel and thread memory can be protected with per-page permissions,
       including making memory non-executable.
     references: [CWE-119]
+
+  X86_DISABLE_SSBD:
+    value: y
+    rationale: |
+      Keeps loads from executing speculatively ahead of older stores whose addresses are unknown,
+      so user threads cannot use Speculative Store Bypass (Spectre V4) to read stale data through a
+      side channel.
+    references: [CWE-1037]
+
+  X86_ENABLE_EXTENDED_IBRS:
+    value: y
+    rationale: |
+      Turns on Extended IBRS for the lifetime of the system, so branch targets trained by user
+      threads cannot steer the kernel's indirect branches speculatively (Spectre V2).
+    references: [CWE-1037]
+
+  X86_KPTI:
+    value: y
+    rationale: |
+      Removes kernel mappings from the page tables active while user threads run, so
+      Meltdown-style speculative reads from user mode cannot reach kernel RAM.
+    references: [CWE-200]
