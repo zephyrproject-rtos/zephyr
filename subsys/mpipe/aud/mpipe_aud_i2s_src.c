@@ -19,6 +19,13 @@
 
 LOG_MODULE_REGISTER(mpipe_aud_i2s_src, CONFIG_MPIPE_LOG_LEVEL);
 
+/* Capture codec from the I2S RX node's codec phandle, else the audio-codec-capture alias. */
+#if DT_NODE_HAS_PROP(DT_ALIAS(i2s_codec_rx), codec)
+#define AUD_I2S_SRC_CODEC_NODE DT_PHANDLE(DT_ALIAS(i2s_codec_rx), codec)
+#else
+#define AUD_I2S_SRC_CODEC_NODE DT_ALIAS(audio_codec_capture)
+#endif
+
 static int (*src_parent_set_property)(struct mpipe_object *, uint32_t, const void *);
 static int (*src_parent_get_property)(struct mpipe_object *, uint32_t, void *);
 
@@ -300,7 +307,7 @@ int mpipe_aud_i2s_src_init(struct mpipe_aud_i2s_src *aud_i2s_src, uint8_t id)
 	mpipe_aud_buffer_pool_init(src->pool);
 
 	aud_i2s_src->pool.aud_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(i2s_codec_rx));
-	aud_i2s_src->codec_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(audio_codec_capture));
+	aud_i2s_src->codec_dev = DEVICE_DT_GET_OR_NULL(AUD_I2S_SRC_CODEC_NODE);
 	aud_i2s_src->clk_role = MPIPE_AUD_I2S_CONTROLLER_CODEC_TARGET;
 
 	aud_i2s_src->aud_src.get_audio_caps = mpipe_aud_i2s_src_get_audio_caps;

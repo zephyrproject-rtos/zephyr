@@ -21,6 +21,13 @@ LOG_MODULE_REGISTER(mpipe_aud_i2s_codec_sink, CONFIG_MPIPE_LOG_LEVEL);
 #define DEFAULT_PROP_I2S_DEVICE   DEVICE_DT_GET(DT_ALIAS(i2s_codec_tx))
 #define DEFAULT_PROP_CODEC_DEVICE DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 
+/* Codec from the I2S TX node's codec phandle, else the audio_codec node. */
+#if DT_NODE_HAS_PROP(DT_ALIAS(i2s_codec_tx), codec)
+#define AUD_SINK_CODEC_NODE DT_PHANDLE(DT_ALIAS(i2s_codec_tx), codec)
+#else
+#define AUD_SINK_CODEC_NODE DT_NODELABEL(audio_codec)
+#endif
+
 /*
  * Number of buffers to queue into the I2S TX FIFO before issuing the START
  * trigger. The source and sink are clocked at the same rate, so the I2S
@@ -327,7 +334,7 @@ int mpipe_aud_i2s_codec_sink_init(struct mpipe_aud_i2s_codec_sink *aud_i2s_codec
 	mpipe_element_set_name(self, "aud_i2s_codec_sink");
 
 	aud_i2s_codec_sink->i2s_dev = DEVICE_DT_GET_OR_NULL(DT_ALIAS(i2s_codec_tx));
-	aud_i2s_codec_sink->codec_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(audio_codec));
+	aud_i2s_codec_sink->codec_dev = DEVICE_DT_GET_OR_NULL(AUD_SINK_CODEC_NODE);
 
 	aud_i2s_codec_sink->clk_role = MPIPE_AUD_I2S_CONTROLLER_CODEC_TARGET;
 
