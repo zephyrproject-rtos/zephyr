@@ -486,6 +486,31 @@ static int process_boot_init(void)
 			sys_dlist_append(&session_active, &session->cell_node);
 		}
 	}
+#ifdef CONFIG_NATIVE_BUILD
+	/*
+	 * Native binaries are host-linked after the Zephyr link, so the
+	 * post-build topology assembler cannot patch them (it sees a
+	 * relocatable object): assemble the static membership lists here.
+	 */
+	STRUCT_SECTION_FOREACH(k_session, session) {
+		if ((session->flags & K_SESSION_FLAG_STATIC) != 0U) {
+			sys_dlist_init(&session->pgrps);
+		}
+	}
+	STRUCT_SECTION_FOREACH(k_process_group, grp) {
+		if ((grp->session != NULL) &&
+		    ((grp->session->flags & K_SESSION_FLAG_STATIC) != 0U)) {
+			sys_dlist_init(&grp->members);
+			sys_dlist_append(&grp->session->pgrps, &grp->session_node);
+		}
+	}
+	STRUCT_SECTION_FOREACH(k_process, proc) {
+		if ((proc->pgrp != NULL) && (proc->pgrp->session != NULL) &&
+		    ((proc->pgrp->session->flags & K_SESSION_FLAG_STATIC) != 0U)) {
+			sys_dlist_append(&proc->pgrp->members, &proc->pgrp_node);
+		}
+	}
+#endif /* CONFIG_NATIVE_BUILD */
 	for (size_t i = 0; i < RESERVED_NUM; i++) {
 		sys_dlist_append(&session_active, &z_session_reserved[i].cell_node);
 	}

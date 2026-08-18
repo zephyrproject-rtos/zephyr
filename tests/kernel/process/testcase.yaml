@@ -37,6 +37,9 @@ tests:
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
       - CONFIG_USERSPACE=y
+      # SMP platforms' per-CPU statics push the thread-object count
+      # past the default 16-thread permission bitmap
+      - CONFIG_MAX_THREAD_BYTES=3
   kernel.process.heap:
     integration_platforms:
       - qemu_cortex_m3
@@ -53,6 +56,9 @@ tests:
     extra_configs:
       - CONFIG_TEST_USERSPACE=y
       - CONFIG_USERSPACE=y
+      # SMP platforms' per-CPU statics push the thread-object count
+      # past the default 16-thread permission bitmap
+      - CONFIG_MAX_THREAD_BYTES=3
       - CONFIG_SYS_PROCESS_MAX=4
       - CONFIG_HEAP_MEM_POOL_SIZE=8192
       # 6 heap-growth children + the suite's other thread objects exceed the

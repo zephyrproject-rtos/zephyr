@@ -187,11 +187,6 @@ ZTEST(kernel_process, test_setsid)
 	zassert_is_null(sys_setsid());
 }
 
-static K_THREAD_STACK_DEFINE(spawn_stack_a, STATIC_PROC_STACK_SIZE);
-static K_THREAD_STACK_DEFINE(spawn_stack_b, STATIC_PROC_STACK_SIZE);
-static struct k_thread spawn_thread_a;
-static struct k_thread spawn_thread_b;
-
 static K_THREAD_STACK_DEFINE(child_stack_b, STATIC_PROC_STACK_SIZE);
 static struct k_thread child_b;
 
@@ -278,12 +273,12 @@ ZTEST(kernel_process, test_spawn)
 	int ws = 0;
 	int pid;
 	k_pid_t reaped = NULL;
-	k_pid_t child = &spawn_thread_a;
+	k_pid_t child = &child_a;
 	struct sys_clone_args args = {
 		.entry = spawn_entry_exit,
 		.p1 = (void *)(intptr_t)7,
-		.thread = &spawn_thread_a,
-		.stack = spawn_stack_a,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -320,8 +315,8 @@ ZTEST(kernel_process, test_spawn)
 		.flags = SYS_CLONE_PAUSED,
 		.entry = spawn_entry_exit,
 		.p1 = (void *)(intptr_t)4,
-		.thread = &spawn_thread_b,
-		.stack = spawn_stack_b,
+		.thread = &child_b,
+		.stack = child_stack_b,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -330,10 +325,10 @@ ZTEST(kernel_process, test_spawn)
 	k_sig_fillset(&spawn_fill);
 	pargs.sigmask = &spawn_fill;
 	zassert_ok(sys_clone(&pargs, NULL));
-	zassert_equal(k_sig_ismember(&spawn_thread_b.base.sig.mask, K_SIG_KILL), 1);
-	zassert_equal(k_sig_ismember(&spawn_thread_b.base.sig.mask, K_SIG_STOP), 1);
-	k_thread_start(&spawn_thread_b);
-	zassert_ok(k_waitpid(&spawn_thread_b, NULL, NULL, 0, K_FOREVER));
+	zassert_equal(k_sig_ismember(&child_b.base.sig.mask, K_SIG_KILL), 1);
+	zassert_equal(k_sig_ismember(&child_b.base.sig.mask, K_SIG_STOP), 1);
+	k_thread_start(&child_b);
+	zassert_ok(k_waitpid(&child_b, NULL, NULL, 0, K_FOREVER));
 #endif /* CONFIG_SIGNAL */
 
 	/* the thread tier: a member of this process, not a new process */
@@ -359,12 +354,12 @@ ZTEST(kernel_process, test_spawn_waitpid_selectors)
 {
 	int ws = 0;
 	k_pid_t reaped = NULL;
-	k_pid_t child = &spawn_thread_b;
+	k_pid_t child = &child_b;
 	struct sys_clone_args args = {
 		.entry = spawn_entry_exit,
 		.p1 = (void *)(intptr_t)3,
-		.thread = &spawn_thread_b,
-		.stack = spawn_stack_b,
+		.thread = &child_b,
+		.stack = child_stack_b,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -386,8 +381,8 @@ ZTEST(kernel_process, test_spawn_waitpid_selectors)
 	zassert_equal(K_WEXITSTATUS(ws), 3);
 }
 
-static K_THREAD_STACK_DEFINE(spawn_stack_c, STATIC_PROC_STACK_SIZE);
-static struct k_thread spawn_thread_c;
+static K_THREAD_STACK_DEFINE(child_stack_c, STATIC_PROC_STACK_SIZE);
+static struct k_thread child_c;
 
 static void spawn_entry_libc_exit(void *p1, void *p2, void *p3)
 {
@@ -411,14 +406,14 @@ ZTEST(kernel_process, test_spawn_libc_exit)
 
 	struct sys_clone_args args = {
 		.entry = spawn_entry_libc_exit,
-		.thread = &spawn_thread_c,
-		.stack = spawn_stack_c,
+		.thread = &child_c,
+		.stack = child_stack_c,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
 	zassert_ok(sys_clone(&args, NULL));
-	zassert_ok(k_waitpid(&spawn_thread_c, NULL, &ws, 0, K_FOREVER));
+	zassert_ok(k_waitpid(&child_c, NULL, &ws, 0, K_FOREVER));
 	zassert_true(K_WIFEXITED(ws));
 	zassert_equal(K_WEXITSTATUS(ws), 5);
 }
@@ -477,8 +472,6 @@ ZTEST(kernel_process, test_spawn_heap_growth)
 }
 #endif /* CONFIG_SYS_PROCESS_MAX >= 4 && CONFIG_HEAP_MEM_POOL_SIZE > 0 */
 
-static K_THREAD_STACK_DEFINE(pgrp_stack_a, STATIC_PROC_STACK_SIZE);
-static struct k_thread pgrp_thread_a;
 static K_SEM_DEFINE(pgrp_gate, 0, 2);
 
 static void pgrp_child_entry(void *p1, void *p2, void *p3)
@@ -493,11 +486,11 @@ static void pgrp_child_entry(void *p1, void *p2, void *p3)
 
 ZTEST(kernel_process, test_setpgid)
 {
-	k_pid_t child = &pgrp_thread_a;
+	k_pid_t child = &child_a;
 	struct sys_clone_args args = {
 		.entry = pgrp_child_entry,
-		.thread = &pgrp_thread_a,
-		.stack = pgrp_stack_a,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -563,26 +556,24 @@ static void pgrp_sigwait_entry(void *p1, void *p2, void *p3)
 	k_exit(ret == K_SIG_CHLD ? 0 : 1);
 }
 
-static K_THREAD_STACK_DEFINE(pgrp_stack_b, STATIC_PROC_STACK_SIZE);
-static struct k_thread pgrp_thread_b;
 
 ZTEST(kernel_process, test_kill_pgrp)
 {
 	int wsa = 1;
 	int wsb = 1;
-	k_pid_t a = &pgrp_thread_a;
-	k_pid_t b = &pgrp_thread_b;
+	k_pid_t a = &child_a;
+	k_pid_t b = &child_b;
 	struct sys_clone_args args_a = {
 		.entry = pgrp_sigwait_entry,
-		.thread = &pgrp_thread_a,
-		.stack = pgrp_stack_a,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 	struct sys_clone_args args_b = {
 		.entry = pgrp_sigwait_entry,
-		.thread = &pgrp_thread_b,
-		.stack = pgrp_stack_b,
+		.thread = &child_b,
+		.stack = child_stack_b,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -615,8 +606,6 @@ ZTEST(kernel_process, test_kill_pgrp)
  * k_kill() must deliver to the eligible (second) thread, not the leader.
  */
 static K_SEM_DEFINE(elig_ready, 0, 1);
-static K_THREAD_STACK_DEFINE(elig_sib_stack, STATIC_PROC_STACK_SIZE);
-static struct k_thread elig_sib_thread;
 static ZTEST_BMEM volatile k_tid_t elig_recipient;
 static ZTEST_BMEM volatile bool elig_handler_ran;
 
@@ -666,7 +655,7 @@ static void elig_leader(void *p1, void *p2, void *p3)
 	/* the leader (a kernel thread) blocks all signals by default; spawn the
 	 * sibling into this same process and then idle so it is never eligible
 	 */
-	k_thread_create(&elig_sib_thread, elig_sib_stack, STATIC_PROC_STACK_SIZE, elig_sibling,
+	k_thread_create(&child_b, child_stack_b, STATIC_PROC_STACK_SIZE, elig_sibling,
 			NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_sleep(K_FOREVER);
 }
@@ -674,11 +663,11 @@ static void elig_leader(void *p1, void *p2, void *p3)
 ZTEST(kernel_process, test_kill)
 {
 	int ws = 1;
-	k_pid_t child = &pgrp_thread_a;
+	k_pid_t child = &child_a;
 	struct sys_clone_args args = {
 		.entry = elig_leader,
-		.thread = &pgrp_thread_a,
-		.stack = pgrp_stack_a,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -709,10 +698,6 @@ ZTEST(kernel_process, test_kill)
 #endif /* CONFIG_SIGNAL */
 
 #ifdef CONFIG_SIGNAL
-static K_THREAD_STACK_DEFINE(sig_parent_stack, STATIC_PROC_STACK_SIZE);
-static K_THREAD_STACK_DEFINE(sig_child_stack, STATIC_PROC_STACK_SIZE);
-static struct k_thread sig_parent_thread;
-static struct k_thread sig_child_thread;
 
 #define SIGCHLD_OK	   0x51
 #define SIGCHLD_BAD_SPAWN  0x52
@@ -729,12 +714,12 @@ static void sig_parent_entry(void *p1, void *p2, void *p3)
 	int ws;
 	struct k_sig_set set;
 	struct k_sig_info info;
-	k_pid_t child = &sig_child_thread;
+	k_pid_t child = &child_b;
 	struct sys_clone_args args = {
 		.entry = spawn_entry_exit,
 		.p1 = (void *)(intptr_t)9,
-		.thread = &sig_child_thread,
-		.stack = sig_child_stack,
+		.thread = &child_b,
+		.stack = child_stack_b,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -787,14 +772,14 @@ ZTEST(kernel_process, test_sigchld)
 	int ws = 0;
 	struct sys_clone_args args = {
 		.entry = sig_parent_entry,
-		.thread = &sig_parent_thread,
-		.stack = sig_parent_stack,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
 
 	zassert_ok(sys_clone(&args, NULL));
-	zassert_ok(k_waitpid(&sig_parent_thread, NULL, &ws, 0, K_FOREVER));
+	zassert_ok(k_waitpid(&child_a, NULL, &ws, 0, K_FOREVER));
 	zassert_true(K_WIFEXITED(ws));
 	zassert_equal(K_WEXITSTATUS(ws), SIGCHLD_OK, "parent reported 0x%x", K_WEXITSTATUS(ws));
 }
@@ -961,10 +946,6 @@ ZTEST(kernel_process, test_static_topology)
 	zassert_equal(sys_session_id(&topo_session), MIN(MIN(p1, p2), p3));
 }
 
-static K_THREAD_STACK_DEFINE(pi_stack_a, STATIC_PROC_STACK_SIZE);
-static K_THREAD_STACK_DEFINE(pi_stack_b, STATIC_PROC_STACK_SIZE);
-static struct k_thread pi_thread_a;
-static struct k_thread pi_thread_b;
 static struct k_process pi_record;
 static struct k_process pi_record2;
 
@@ -1067,10 +1048,10 @@ static void process_init_two_threads(void)
 	int ws = 0;
 	k_tid_t list[2];
 
-	list[0] = k_thread_create(&pi_thread_a, pi_stack_a, STATIC_PROC_STACK_SIZE, pi_entry_exit,
+	list[0] = k_thread_create(&child_a, child_stack_a, STATIC_PROC_STACK_SIZE, pi_entry_exit,
 				  (void *)(intptr_t)5, NULL, NULL,
 				  K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
-	list[1] = k_thread_create(&pi_thread_b, pi_stack_b, STATIC_PROC_STACK_SIZE, pi_entry_wait,
+	list[1] = k_thread_create(&child_b, child_stack_b, STATIC_PROC_STACK_SIZE, pi_entry_wait,
 				  NULL, NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0,
 				  K_FOREVER);
 
@@ -1094,7 +1075,7 @@ static void process_init_two_threads(void)
 static void process_init_reuse(void)
 {
 	int ws = 0;
-	k_tid_t tid = k_thread_create(&pi_thread_a, pi_stack_a, STATIC_PROC_STACK_SIZE,
+	k_tid_t tid = k_thread_create(&child_a, child_stack_a, STATIC_PROC_STACK_SIZE,
 				      pi_entry_exit, (void *)(intptr_t)6, NULL, NULL,
 				      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_FOREVER);
 
@@ -1113,8 +1094,6 @@ ZTEST(kernel_process, test_process_init)
 	process_init_reuse();
 }
 
-static K_THREAD_STACK_DEFINE(pgi_stack, STATIC_PROC_STACK_SIZE);
-static struct k_thread pgi_thread;
 static K_SEM_DEFINE(pgi_gate, 0, 1);
 static struct k_process_group pgi_cell;
 static struct k_process_group pgi_cell2;
@@ -1131,11 +1110,11 @@ static void pgi_entry(void *p1, void *p2, void *p3)
 
 ZTEST(kernel_process, test_process_group_init)
 {
-	k_pid_t child = &pgi_thread;
+	k_pid_t child = &child_a;
 	struct sys_clone_args args = {
 		.entry = pgi_entry,
-		.thread = &pgi_thread,
-		.stack = pgi_stack,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
@@ -1164,8 +1143,6 @@ ZTEST(kernel_process, test_process_group_init)
 	zassert_ok(k_waitpid(child, NULL, NULL, 0, K_FOREVER));
 }
 
-static K_THREAD_STACK_DEFINE(si_stack, STATIC_PROC_STACK_SIZE);
-static struct k_thread si_thread;
 static K_SEM_DEFINE(si_ready, 0, 1);
 static K_SEM_DEFINE(si_gate, 0, 1);
 static struct k_session si_session;
@@ -1188,11 +1165,11 @@ static void si_entry(void *p1, void *p2, void *p3)
 
 ZTEST(kernel_process, test_session_init)
 {
-	k_pid_t child = &si_thread;
+	k_pid_t child = &child_a;
 	struct sys_clone_args args = {
 		.entry = si_entry,
-		.thread = &si_thread,
-		.stack = si_stack,
+		.thread = &child_a,
+		.stack = child_stack_a,
 		.stack_size = STATIC_PROC_STACK_SIZE,
 		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
 	};
