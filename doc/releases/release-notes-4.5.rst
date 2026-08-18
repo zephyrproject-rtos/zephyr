@@ -230,6 +230,10 @@ New APIs and options
 
   * :kconfig:option:`CONFIG_ARM_MPU_CM7_UNMAPPED_REGION` (Arm Cortex-M7 catch-all MPU region
     for unmapped addresses, erratum 1013783 workaround)
+  * :kconfig:option:`CONFIG_CORTEX_M_ERRATUM_837070_WORKAROUND` (keeps an ISB after
+    priority-raising BASEPRI writes; enabled by default on Arm Cortex-M7, where erratum
+    837070 applies to r0p0/r0p1 cores. Other Cortex-M cores no longer execute barriers in
+    the interrupt lock/unlock fast paths, speeding up kernel hot paths)
   * :kconfig:option:`CONFIG_EXCEPTION_DUMP` (enabled by default, can be disabled to compile
     out the fault handler output on size constrained builds)
 

@@ -121,7 +121,14 @@ SECTION_FUNC(TEXT, z_arm_pendsv)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI_MAX, r0
-    isb /* Make the effect of disabling interrupts be realized immediately */
+#if defined(CONFIG_CORTEX_M_ERRATUM_837070_WORKAROUND)
+    /* On Cortex-M7 r0p0/r0p1 the priority raise may not take effect for
+     * one more instruction (Arm erratum 837070); serialize it.  Other
+     * cores self-synchronize priority-raising BASEPRI writes and need
+     * no barrier.
+     */
+    isb
+#endif
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */

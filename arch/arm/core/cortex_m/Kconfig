@@ -505,6 +505,21 @@ config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
+config CORTEX_M_ERRATUM_837070_WORKAROUND
+	bool "Workaround for Cortex-M7 erratum 837070"
+	default y if CPU_CORTEX_M7
+	depends on ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  On Cortex-M7 r0p0/r0p1, a write to BASEPRI/BASEPRI_MAX that raises
+	  the execution priority might not take effect until one more
+	  instruction has executed (Arm erratum 837070, fixed in r0p2).
+	  This option keeps an ISB after priority-raising BASEPRI writes in
+	  the interrupt locking primitives, so that the CPU cannot enter a
+	  critical section with the old priority mask still in effect.
+	  On all other cores such writes are self-synchronizing and the
+	  barrier is not needed; it may also be disabled on Cortex-M7 r0p2
+	  and newer for a small performance gain.
+
 config ARM_GCC_FP_WORKAROUND
 	bool "GCC/gas frame pointer workaround"
 	help
