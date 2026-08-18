@@ -80,13 +80,11 @@ config PM_STATS
 	help
 	  Enable System Power Management Stats.
 
-DT_POWER_STATE_COMPAT := zephyr,power-state
-
 config PM_S2RAM
 	bool
 	default y
 	depends on ARCH_HAS_SUSPEND_TO_RAM
-	depends on $(dt_compat_any_has_prop,$(DT_POWER_STATE_COMPAT),power-state-name,suspend-to-ram)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_POWER_STATE),power-state-name,suspend-to-ram)
 	help
 	  This option enables the SoC specific implementations of suspend-to-ram (S2RAM)
 	  sleep states if PM is enabled and one or more suspend-to-ram sleep states are
