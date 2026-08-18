@@ -1,0 +1,12 @@
+/*
+ * BLE-only DFU flow companion overlay.
+ * Re-routes the MCUboot console logs back to the primary KitProg3 UART (SCB2)
+ * since the serial recovery transport is disabled.
+ */
+/ {
+	chosen {
+		/delete-property/ zephyr,uart-mcumgr;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
