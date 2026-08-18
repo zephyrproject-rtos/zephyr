@@ -184,6 +184,19 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 	return ret;
 }
 
+/* Locate the TCP header inside a received packet.
+ *
+ * The returned pointer aims into pkt->buffer, at ip_hdr_len + ip_opts_len, and
+ * stays valid only while that fragment keeps its data pointer and its place in
+ * the chain. It does not survive anything that pulls, trims, splices or
+ * replaces buffers, nor handing the packet to another owner. In the receive
+ * path that means tcp_pkt_trim_data(), tcp_pkt_pull(), the k_fifo_put() in
+ * tcp_data_get() and the final net_pkt_unref(); re-derive after those rather
+ * than carrying the old pointer across.
+ *
+ * Note the packet is left in overwrite mode with the cursor parked on the TCP
+ * header, and neither is restored.
+ */
 static struct tcphdr *th_get(struct net_pkt *pkt)
 {
 	size_t ip_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt);
@@ -3464,6 +3477,16 @@ data_recv:
 			int32_t new_len = tcp_compute_new_length(conn, th, len, false);
 
 			if (tcp_pkt_trim_data(conn, pkt, len, (size_t)(len - new_len)) == 0) {
+				/* Trimming replaces pkt->buffer, so the header
+				 * derived on entry no longer points into this
+				 * packet.
+				 */
+				th = th_get(pkt);
+				if (th == NULL) {
+					verdict = NET_DROP;
+					break;
+				}
+
 				len = new_len;
 				goto data_recv;
 			} else {
