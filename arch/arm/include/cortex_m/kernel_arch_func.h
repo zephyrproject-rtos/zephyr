@@ -96,6 +96,13 @@ static ALWAYS_INLINE int arch_swap(unsigned int key)
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
 
+	/* The ISB guarantees the now-unmasked PendSV is recognized here,
+	 * and not a couple of instructions later, which could otherwise
+	 * let the return value load below execute before the context
+	 * switch and read a stale -EAGAIN when the thread resumes.
+	 */
+	__ISB();
+
 	/* Context switch is performed here. Returning implies the
 	 * thread has been context-switched-in again.
 	 */
