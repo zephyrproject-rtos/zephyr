@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * QEMU variant: disable peripherals not modeled by Espressif QEMU.
+ * See boards/espressif/common/qemu.rst and the Espressif QEMU feature matrix.
+ */
+
+#include "esp32c6_devkitc_hpcore.dts"
+
+/ {
+	chosen {
+		/delete-property/ zephyr,ieee802154;
+		/delete-property/ zephyr,bt-hci;
+		/* QEMU does not map an RNG device on esp32c6. */
+		/delete-property/ zephyr,entropy;
+	};
+
+	aliases {
+		/delete-property/ sw0;
+	};
+
+	/delete-node/ gpio_keys;
+};
+
+&wifi {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "disabled";
+};
+
+&ieee802154 {
+	status = "disabled";
+};
+
+/*
+ * ESP32-C6 is not in the public QEMU feature matrix. Trim against the
+ * current esp-develop C6 machine (SHA yes; RNG/AES/LP mailbox no), not a
+ * blind C3 copy.
+ */
+&trng0 {
+	status = "disabled";
+};
+
+&aes {
+	status = "disabled";
+};
+
+&mbox0 {
+	status = "disabled";
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2s {
+	status = "disabled";
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&ledc0 {
+	status = "disabled";
+};
+
+&mcpwm0 {
+	status = "disabled";
+};
+
+&pcnt {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&coretemp {
+	status = "disabled";
+};
+
+&lp_uart {
+	status = "disabled";
+};
