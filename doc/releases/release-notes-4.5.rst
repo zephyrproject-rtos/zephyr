@@ -311,6 +311,11 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
+  * Namespaced equivalents of the interrupt control APIs, preferred for new
+    code; the unprefixed names remain fully supported:
+    :c:func:`k_irq_lock`, :c:func:`k_irq_unlock`, :c:func:`k_irq_enable`,
+    :c:func:`k_irq_disable`, :c:func:`k_irq_is_enabled`,
+    :c:func:`k_irq_connect_dynamic` and :c:func:`k_irq_disconnect_dynamic`
 
 * LoRa
 

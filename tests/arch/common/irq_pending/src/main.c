@@ -32,7 +32,7 @@ static unsigned int connect_disabled_irq_line(void)
 	zassert_true(arch_irq_connect_dynamic(irq, 1, pending_isr, NULL, 0) > 0,
 		     "irq connect dynamic failed");
 
-	irq_disable(irq);
+	k_irq_disable(irq);
 
 	return irq;
 }
@@ -57,14 +57,14 @@ static unsigned int pend_disabled_irq_line(void)
  * @details Control case for test_irq_clear_pending(). Without this the clear
  * test could pass vacuously, having never latched anything to begin with.
  *
- * @see irq_enable()
+ * @see k_irq_enable()
  */
 ZTEST(irq_pending, test_irq_pending_without_clear)
 {
 	unsigned int irq = pend_disabled_irq_line();
 
-	irq_enable(irq);
-	irq_disable(irq);
+	k_irq_enable(irq);
+	k_irq_disable(irq);
 
 	zassert_equal(handler_runs, 1, "latched interrupt was not delivered (%u)", handler_runs);
 }
@@ -86,8 +86,8 @@ ZTEST(irq_pending, test_irq_clear_pending)
 
 	k_irq_clear_pending(irq);
 
-	irq_enable(irq);
-	irq_disable(irq);
+	k_irq_enable(irq);
+	k_irq_disable(irq);
 
 	zassert_equal(handler_runs, 0, "cleared interrupt was still delivered (%u)", handler_runs);
 }
@@ -111,8 +111,8 @@ ZTEST(irq_pending, test_irq_set_pending)
 
 	zassert_equal(handler_runs, 0, "handler ran while the line was disabled");
 
-	irq_enable(irq);
-	irq_disable(irq);
+	k_irq_enable(irq);
+	k_irq_disable(irq);
 
 	zassert_equal(handler_runs, 1,
 		      "software-latched interrupt was not delivered (%u)", handler_runs);
