@@ -27,3 +27,10 @@ properties:
     type: int
     description: Address of the phy controller
     required: true
+
+  ptp-clock:
+    type: phandle
+    description: |
+      IEEE 1588 timestamp clock inside this MAC. When present the driver reports
+      ETHERNET_PTP, returns this device from get_ptp_clock(), and enables per-frame
+      timestamp snapshotting; the referenced driver owns the timebase itself.
