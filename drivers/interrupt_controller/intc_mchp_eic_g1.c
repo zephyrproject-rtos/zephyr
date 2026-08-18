@@ -46,8 +46,10 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 /* Port B */
 #define PORTB_UNSUPPORTED_PINS    DT_INST_PROP(0, portb_unsupported_pins)
 /* The special pins need an offset when calculating the eic line */
-#define PORTB_SPECIAL_PINS        DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
-#define PORTB_SPECIAL_PINS_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS          DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
+#define PORTB_SPECIAL_PINS_OFFSET   DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS_2        DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 0)
+#define PORTB_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 1)
 
 /* Port C */
 #define PORTC_SUPPORTED_PINS        DT_INST_PROP(0, portc_supported_pins)
@@ -173,6 +175,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 
 static const struct eic_mchp_g1_special_pins portb_special_pins[] = {
 	{PORTB_SPECIAL_PINS, PORTB_SPECIAL_PINS_OFFSET, false},
+	{PORTB_SPECIAL_PINS_2, PORTB_SPECIAL_PINS_2_OFFSET, false},
 };
 
 static const struct eic_mchp_g1_special_pins portc_special_pins[] = {

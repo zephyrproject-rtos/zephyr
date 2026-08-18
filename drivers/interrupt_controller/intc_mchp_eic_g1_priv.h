@@ -35,7 +35,7 @@ eic_mchp_g1_line_from_pin(int pin, const struct eic_mchp_g1_special_pins *groups
 			if (groups[i].subtract) {
 				eic_line -= groups[i].offset;
 			} else {
-				eic_line += groups[i].offset;
+				eic_line = (eic_line + groups[i].offset) % EIC_LINES_PER_PORT;
 			}
 			break;
 		}
