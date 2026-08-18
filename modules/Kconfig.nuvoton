@@ -51,6 +51,22 @@ menu "Nuvoton NuMaker drivers"
 		bool "NuMaker PWM"
 		help
 		  Enable Nuvoton PWM HAL module driver
+	config HAS_NUMAKER_BPWM
+		bool "NuMaker BPWM"
+		help
+		  Enable Nuvoton Basic PWM (BPWM) HAL module driver
+	config HAS_NUMAKER_ECAP
+		bool "NuMaker ECAP"
+		help
+		  Enable Nuvoton Enhanced Input Capture (ECAP) HAL module driver
+	config HAS_NUMAKER_I2S
+		bool "NuMaker I2S"
+		help
+		  Enable Nuvoton I2S HAL module driver
+	config HAS_NUMAKER_DMA
+		bool "NuMaker PDMA"
+		help
+		  Enable Nuvoton Peripheral DMA (PDMA) HAL module driver
 	config HAS_NUMAKER_USBD
 		bool "NuMaker USB 1.1 device controller"
 		help
