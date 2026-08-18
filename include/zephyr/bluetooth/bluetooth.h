@@ -664,9 +664,13 @@ enum bt_le_adv_opt {
 	 * This is required if the remote device is privacy-enabled and
 	 * supports address resolution of the target address in directed
 	 * advertisement.
-	 * It is the responsibility of the application to check that the remote
-	 * device supports address resolution of directed advertisements by
-	 * reading its Central Address Resolution characteristic.
+	 * When @kconfig{CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES} is enabled
+	 * the host reads the peer's Central Address Resolution characteristic
+	 * when a bond is created, advertising towards a peer known not to
+	 * support address resolution fails with -ENOTSUP, and the answer can
+	 * be queried with @ref bt_le_bond_addr_res_support. When the support
+	 * is not known, it is the responsibility of the application to check
+	 * it by reading that characteristic.
 	 */
 	BT_LE_ADV_OPT_DIR_ADDR_RPA = BIT(5),
 
@@ -1264,6 +1268,9 @@ struct bt_le_per_adv_param {
  * @return Zero on success or (negative) error code otherwise.
  * @return -ENOMEM No free connection objects available for connectable
  *                 advertiser.
+ * @retval -ENOTSUP @ref BT_LE_ADV_OPT_DIR_ADDR_RPA was used and the peer is
+ *                  known not to support address resolution, as reported by
+ *                  @ref bt_le_bond_addr_res_support.
  * @return -ECONNREFUSED When connectable advertising is requested and there
  *                       is already maximum number of connections established
  *                       in the controller.
