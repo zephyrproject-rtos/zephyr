@@ -833,15 +833,51 @@ static inline void async_timer_start(struct k_work_delayable *work, size_t timeo
 
 #endif
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+static void uart_ns16550_irq_rx_enable(const struct device *dev);
+static void uart_ns16550_irq_tx_enable(const struct device *dev);
+#endif
 static int uart_ns16550_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct uart_ns16550_dev_config * const dev_cfg = dev->config;
+	const struct uart_ns16550_dev_config *const dev_cfg = dev->config;
 	struct uart_ns16550_dev_data *data = dev->data;
 	struct uart_config *uart_cfg = &data->uart_config;
 	int ret = 0;
+	uint8_t c;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
+#if UART_NS16550_RESET_ENABLED
+		/* Assert the UART reset line if it is defined. */
+		if (dev_cfg->reset_spec.dev != NULL) {
+			ret = uart_reset_config(&(dev_cfg->reset_spec));
+			if (ret != 0) {
+				return ret;
+			}
+		}
+#endif
+		/* clear the port */
+		(void)ns16550_read_char(dev, &c);
+		ns16550_outbyte(dev_cfg, FCR(dev), (FCR_RCVRCLR | FCR_XMITCLR));
+		uart_ns16550_configure(dev, uart_cfg);
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		uart_ns16550_irq_rx_enable(dev);
+#if defined(CONFIG_PM)
+		/*
+		 * uart_ns16550_configure() above clears IER, which also disables
+		 * the TX (THRE) interrupt. If a transmission was still in progress
+		 * when we entered S2RAM (e.g. entered via pm_state_force(), which
+		 * bypasses the pm_policy lock this driver takes while TX is active),
+		 * tx_stream_on is still set. Re-arm the TX interrupt so the pending
+		 * data drains and the upper layer's TX-busy state and the leftover
+		 * pm_policy lock get released. Without this the THRE interrupt never
+		 * fires again and the port can no longer transmit.
+		 */
+		if (data->tx_stream_on) {
+			uart_ns16550_irq_tx_enable(dev);
+		}
+#endif /* CONFIG_PM */
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
 		break;
