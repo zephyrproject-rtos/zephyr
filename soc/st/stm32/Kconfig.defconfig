@@ -76,9 +76,6 @@ DT_STM32WB0_RADIO_TIMER_PATH := $(dt_nodelabel_path,radio_timer)
 DT_STM32WB0_TIMER_FREQ := $(dt_node_int_prop_int,$(DT_STM32WB0_RADIO_TIMER_PATH),compensated-timer-freq)
 
 DT_ST_PRESCALER := st,prescaler
-DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
-DT_CHOSEN_Z_SYSTEM_TIMER_PATH := \
-	$(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER))
 DT_STM32_LPTIM_SYSTIMER_PRESCALER := \
 	$(dt_node_int_prop_int,$(DT_CHOSEN_Z_SYSTEM_TIMER_PATH),$(DT_ST_PRESCALER))
 

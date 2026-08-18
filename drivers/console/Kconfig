@@ -104,9 +104,6 @@ config JAILHOUSE_DEBUG_CONSOLE
 	  Useful in board bring-up if there aren't any working serial
 	  drivers.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
-
 config RAM_CONSOLE
 	bool "Use RAM console"
 	select CONSOLE_HAS_DRIVER

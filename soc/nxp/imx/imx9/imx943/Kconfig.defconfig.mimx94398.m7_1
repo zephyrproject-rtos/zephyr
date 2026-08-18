@@ -3,8 +3,6 @@
 
 if SOC_MIMX94398_M7_1
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
 configdefault FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 

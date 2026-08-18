@@ -5,8 +5,6 @@
 
 menu "Synopsys DesignWare MAC driver"
 
-DT_CHOSEN_Z_DTCM := zephyr,dtcm
-
 config ETH_DWC_ETHER_QOS_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE

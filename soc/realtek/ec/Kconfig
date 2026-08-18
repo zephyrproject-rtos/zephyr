@@ -17,7 +17,6 @@ config REALTEK_HEADER_CHIP
 	string
 	default "RTS5912" if SOC_RTS5912
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
 FLASH_BASE := $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_FLASH))
 
 config REALTEK_RTS5912_BOOTROM_HEADER_LOAD_ADDRESS

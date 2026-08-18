@@ -195,9 +195,6 @@ config HAS_SWO
 	help
 	  When enabled, indicates that SoC has an SWO output
 
-DT_CHOSEN_Z_DTCM := zephyr,dtcm
-DT_CHOSEN_Z_ITCM := zephyr,itcm
-
 choice
 	prompt "Vector table memory location"
 	depends on SRAM_VECTOR_TABLE

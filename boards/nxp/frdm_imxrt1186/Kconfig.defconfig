@@ -19,9 +19,6 @@ config ARM_MPU_CM7_UNMAPPED_REGION
 
 if SECOND_CORE_MCUX && BOARD_FRDM_IMXRT1186_MIMXRT1186_CM7
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-
 config FLASH_LOAD_OFFSET
 	depends on CM7_BOOT_FROM_FLASH
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))

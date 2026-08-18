@@ -4,8 +4,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
-
 config TI_DM_TIMER
 	bool "TI Dual-Mode Timer"
 	default y

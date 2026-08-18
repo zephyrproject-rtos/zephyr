@@ -11,9 +11,6 @@ config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 96
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 

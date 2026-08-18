@@ -13,7 +13,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default	$(dt_node_int_prop_int,/osc,clock-frequency)
 
 # Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_CHOSEN_IMAGE_ZEPHYR = zephyr,code-partition
 DT_CHOSEN_SRAM_ZEPHYR = zephyr,sram
 

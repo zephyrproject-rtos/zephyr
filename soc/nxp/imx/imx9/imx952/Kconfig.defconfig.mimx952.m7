@@ -3,8 +3,6 @@
 
 if SOC_MIMX9529_M7
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
 config MCUX_CORE_SUFFIX
 	default "_cm7"
 

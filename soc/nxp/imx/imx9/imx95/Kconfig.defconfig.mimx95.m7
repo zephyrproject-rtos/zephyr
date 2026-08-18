@@ -3,7 +3,6 @@
 
 if SOC_MIMX9596_M7
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 

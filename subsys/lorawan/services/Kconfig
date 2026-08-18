@@ -85,8 +85,6 @@ config LORAWAN_FRAG_TRANSPORT_DECODER_LOWMEM
 
 endchoice # LORAWAN_FRAG_TRANSPORT_DECODER
 
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-
 config LORAWAN_FRAG_TRANSPORT_IMAGE_SIZE
 	int "Total size of firmware image"
 	depends on LORAWAN_FRAG_TRANSPORT
