@@ -2296,34 +2296,36 @@ int net_tcp_get(struct net_context *context)
 	return ret;
 }
 
-static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
-			     enum pkt_addr which)
+static bool tcp_endpoint_cmp(const union tcp_endpoint *ep,
+			     const union tcp_endpoint *ep_pkt)
 {
-	union tcp_endpoint ep_tmp;
-
-	if (tcp_endpoint_set(&ep_tmp, pkt, th_get(pkt), which) < 0) {
-		return false;
-	}
-
-	return !memcmp(ep, &ep_tmp, tcp_endpoint_len(ep->sa.sa_family));
+	/* The length comes from the connection's endpoint, as before, so a
+	 * connection of one address family never matches a packet of another:
+	 * the family byte is part of the compared region.
+	 */
+	return !memcmp(ep, ep_pkt, tcp_endpoint_len(ep->sa.sa_family));
 }
 
-static bool tcp_conn_cmp(struct tcp *conn, struct net_pkt *pkt)
+static struct tcp *tcp_conn_search(struct net_pkt *pkt, struct tcphdr *th)
 {
-	return tcp_endpoint_cmp(&conn->src, pkt, TCP_EP_DST) &&
-		tcp_endpoint_cmp(&conn->dst, pkt, TCP_EP_SRC);
-}
-
-static struct tcp *tcp_conn_search(struct net_pkt *pkt)
-{
+	union tcp_endpoint src_ep, dst_ep;
 	bool found = false;
 	struct tcp *conn;
 	struct tcp *tmp;
 
+	/* Build the packet's endpoints once instead of rebuilding them for
+	 * every connection examined below.
+	 */
+	if (tcp_endpoint_set(&src_ep, pkt, th, TCP_EP_SRC) < 0 ||
+	    tcp_endpoint_set(&dst_ep, pkt, th, TCP_EP_DST) < 0) {
+		return NULL;
+	}
+
 	k_mutex_lock(&tcp_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&tcp_conns, conn, tmp, next) {
-		found = tcp_conn_cmp(conn, pkt);
+		found = tcp_endpoint_cmp(&conn->src, &dst_ep) &&
+			tcp_endpoint_cmp(&conn->dst, &src_ep);
 		if (found) {
 			break;
 		}
@@ -2354,7 +2356,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 		goto out;
 	}
 
-	conn = tcp_conn_search(pkt);
+	conn = tcp_conn_search(pkt, th);
 	if (conn) {
 		goto in;
 	}
@@ -4372,7 +4374,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 	enum net_verdict verdict = NET_DROP;
 
 	if (th && (th_off(th) >= 5)) {
-		struct tcp *conn = tcp_conn_search(pkt);
+		struct tcp *conn = tcp_conn_search(pkt, th);
 
 		if (conn == NULL && SYN == th_flags(th)) {
 			struct net_context *context =
@@ -4454,7 +4456,10 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 {
 	struct net_udp_hdr *uh = net_udp_get_hdr(pkt, NULL);
 	size_t data_len = net_ntohs(uh->len) - sizeof(*uh);
-	struct tcp *conn = tcp_conn_search(pkt);
+	/* The test protocol rides on UDP; th_get() lands on the UDP header,
+	 * whose port fields alias the TCP ones, which is all that is read.
+	 */
+	struct tcp *conn = tcp_conn_search(pkt, th_get(pkt));
 	size_t json_len = 0;
 	struct tp *tp;
 	struct tp_new *tp_new;
