@@ -14,9 +14,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/spinlock.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/drivers/gpio.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
@@ -26,12 +24,20 @@ LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
 #error Only one LPTIMER instance should be enabled
 #endif /* DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 1 */
 
-#define CLK_FREQ         DT_INST_PROP(0, clock_frequency)
-#define LPTIMER_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1 | CY_MCWDT_CTR2)
-#define CYCLES_PER_TICK  (CLK_FREQ / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+/*
+ * Counters 0 and 1 are cascaded into one 32-bit counter with one 32-bit
+ * compare. That needs the cascade to carry on counter0 rollover rather than on
+ * its match, which only CAT1B and CAT1D can select.
+ */
+#if !defined(CY_IP_MXS40SSRSS) && !defined(CY_IP_MXS22SRSS)
+#error The lp-timer needs a C0/C1 cascade carrying on rollover (CAT1B or CAT1D)
+#endif
 
-#define MAX_DELAY UINT32_MAX
-#define MAX_TICKS (MAX_DELAY / CYCLES_PER_TICK)
+#define CLK_FREQ         DT_INST_PROP(0, clock_frequency)
+#define LPTIMER_COUNTERS (CY_MCWDT_CTR0 | CY_MCWDT_CTR1)
+
+BUILD_ASSERT(CLK_FREQ == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	     "lp-timer clock-frequency must match CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC");
 
 static MCWDT_STRUCT_Type *lptimer = (MCWDT_STRUCT_Type *)DT_INST_REG_ADDR(0);
 
@@ -48,112 +54,35 @@ static const cy_stc_mcwdt_config_t lptimer_default_cfg = {.c0Match = 0xFFFF,
 							  .c0c1Cascade = true,
 							  .c1c2Cascade = false};
 
-static uint32_t announced_cycles;
-
-static struct k_spinlock lock;
-
 /*
- * Since we do not have a 32bit counter and compare we use counter0/counter1 as a
- * one shot delay that is entirely reset from scratch each time we update our delay.
- *
- * In order to ensure we can sleep longer than a 16bit counter alone would allow for
- * we can use the cascaded counters to only wake up on the cascaded counter1 but
- * sleeps for this will be multiples of 2 seconds (2^16/32768) = 2.
- *
- * There's some significant caveats, it takes some non-negligble number of lf clock
- * cycles to reset, set the match, and then enable the counters. This is almost
- * guaranteed to cost 2-3 low frequency clock cycles of time.
- *
- * That's ok though actually as the only thing kernel timers guarantee is a minimum delay!
+ * MCWDT_CNTLOW is counter1:counter0 and MCWDT_MATCH is their two compares, so
+ * each is read or written as one 32-bit value. The match is on equality, so a
+ * compare set behind the count is missed until the counter wraps.
  */
-static void lptimer_delay(uint32_t cycles)
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+
+/* A match takes two lf_clk cycles to reach the compare logic. Arming 3 cycles
+ * ahead keeps the count below the compare until then.
+ */
+#define TIMER_CORE_ALARM_LEAD_CYCLES 3
+
+static uint32_t timer_driver_cycle_get(void)
 {
-	bool timeout_status;
+	return MCWDT_CNTLOW(lptimer);
+}
 
-	Cy_MCWDT_Disable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
-	timeout_status =
-		WAIT_FOR(Cy_MCWDT_GetEnabledStatus(lptimer, CY_MCWDT_CTR0) == 0, 10000, NULL);
-	__ASSERT(timeout_status == true, "Timeout after Cy_MCWDT_Disable function call.");
-
-	Cy_MCWDT_ClearInterrupt(lptimer, LPTIMER_COUNTERS);
-
-	/* Per the PDL documentation we reset both counters with a delay between to
-	 * account for the cascading. The PDL recommends > 100us for cascaded counters.
-	 *
-	 * This actually means we delay 210us here to reset in total.
-	 */
-	Cy_MCWDT_ResetCounters(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 105);
-	WAIT_FOR(MCWDT_CNTLOW(lptimer) == 0, 100, NULL);
-	__ASSERT(MCWDT_CNTLOW(lptimer) == 0, "Issue with Cy_MCWDT_ResetCounters function call.");
-
+static void timer_driver_set_compare(uint32_t cycles)
+{
 	MCWDT_MATCH(lptimer) = cycles;
-
-	Cy_MCWDT_SetInterruptMask(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1);
-
-	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR0 | CY_MCWDT_CTR1, 0);
 }
 
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	uint32_t delay_cycles;
-
-	ARG_UNUSED(idle);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	if (ticks == K_TICKS_FOREVER || ticks > MAX_TICKS) {
-		delay_cycles = MAX_DELAY;
-	} else {
-		delay_cycles = MAX(ticks * CYCLES_PER_TICK, 1);
-	}
-
-	lptimer_delay(delay_cycles);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	BUILD_ASSERT(CYCLES_PER_TICK > 0);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	uint32_t current_cycles = MCWDT_CNTHIGH(lptimer);
-	uint32_t delta_cycles = current_cycles - announced_cycles;
-
-	k_spin_unlock(&lock, key);
-
-	return delta_cycles / CYCLES_PER_TICK;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return MCWDT_CNTHIGH(lptimer);
-}
+#include "system_timer_generic.h"
 
 static void lptimer_isr(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
 	Cy_MCWDT_ClearInterrupt(lptimer, LPTIMER_COUNTERS);
 
-	uint32_t cycle_count = MCWDT_CNTHIGH(lptimer);
-	uint32_t delta_cycles = cycle_count - announced_cycles;
-	uint32_t delta_ticks = (delta_cycles / CYCLES_PER_TICK);
-
-	announced_cycles += delta_ticks * CYCLES_PER_TICK;
-
-	k_spin_unlock(&lock, key);
-
-	sys_clock_announce(delta_ticks);
+	timer_core_announce();
 }
 
 static int lptimer_init(void)
@@ -166,22 +95,29 @@ static int lptimer_init(void)
 
 	rslt = (cy_rslt_t)Cy_MCWDT_Init(lptimer, &cfg);
 
-	/* Effectively AND the interrupt lines from counter0/counter1 match
-	 * into the interrupt signaling. Meaning we only interrupt when both
-	 * counters match like a 32bit counter and compare.
-	 */
-	Cy_MCWDT_SetCascadeMatchCombined(lptimer, CY_MCWDT_CASCADE_C0C1, true);
-
 	/* Failing to initialize MCWDT indicates a programming error in the initial configuration */
 	if (rslt != CY_RSLT_SUCCESS) {
 		LOG_WRN("Failed to initialize lp_timer");
 		return -EINVAL;
 	}
 
-	Cy_MCWDT_Enable(lptimer, CY_MCWDT_CTR2, 0);
-	WAIT_FOR(MCWDT_CNTHIGH(lptimer) > 0, 10000, NULL);
+	/* Match on the full 32 bits: counter1 signals only when counter0 matches too. */
+	Cy_MCWDT_SetCascadeMatchCombined(lptimer, CY_MCWDT_CASCADE_C0C1, true);
 
-	lptimer_delay(MAX_DELAY);
+	/* Carry on counter0 rollover, not on its match, so counter1 counts
+	 * 65536-cycle periods whatever the compare holds.
+	 */
+	Cy_MCWDT_SetCascadeCarryOutRollOver(lptimer, CY_MCWDT_CASCADE_C0C1, true);
+
+	/* Counter0 matches a whole 16-bit period before the pair does, so leave
+	 * its interrupt masked.
+	 */
+	Cy_MCWDT_SetInterruptMask(lptimer, CY_MCWDT_CTR1);
+
+	/* 93 us is the PDL's wait for the counters to actually start. */
+	Cy_MCWDT_Enable(lptimer, LPTIMER_COUNTERS, 93);
+
+	timer_core_init();
 
 	return 0;
 }
