@@ -6050,8 +6050,14 @@ int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob)
 		err = k_condvar_wait(&pub_key_gen.condvar,
 				     &pub_key_gen.lock,
 				     K_SECONDS(30));
-		if (err) {
+		if (err != 0) {
 			LOG_WRN("Public key generation timeout");
+
+			__maybe_unused int mutex_err;
+
+			mutex_err = k_mutex_unlock(&pub_key_gen.lock);
+			__ASSERT_NO_MSG(mutex_err == 0);
+
 			return err;
 		}
 
