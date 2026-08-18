@@ -512,14 +512,21 @@ static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 					  uint32_t baud_rate,
 					  uint32_t pclk)
 {
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+	ARG_UNUSED(dev);
+
+	return ((pclk / (baud_rate * 8)) - 1);
+#elif UART_NS16550_DLF_ENABLED
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+
+	/* Calculate baud rate divisor taking fractional parameter into account. */
+	return ((pclk + (baud_rate * (8 - dev_data->dlf))) / baud_rate) >> 4;
+#else
 	ARG_UNUSED(dev);
 	/*
 	 * calculate baud rate divisor. a variant of
 	 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
 	 */
-#ifdef CONFIG_UART_NS16550_BCM283X_AUX
-	return ((pclk / (baud_rate * 8)) - 1);
-#else
 	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
 #endif
 }

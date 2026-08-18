@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(net_sock_packet, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/net_event.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/socket.h>
@@ -592,9 +593,332 @@ int zpacket_getsockopt_ctx(struct net_context *ctx, int level, int optname,
 					    optval, optlen);
 }
 
-int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
-			const void *optval, net_socklen_t optlen)
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+/* Tell the L2 to start or stop listening to a multicast group. Ethernet is
+ * the only link layer that can do this, and it tells whether it managed to,
+ * so that the caller of setsockopt() learns about a group that the interface
+ * cannot serve.
+ */
+static int mcast_membership_l2(struct net_if *iface,
+			       const struct net_linkaddr *addr,
+			       bool add_membership)
 {
+	if (addr->type != NET_LINK_ETHERNET ||
+	    addr->len != sizeof(struct net_eth_addr)) {
+		return -ENOTSUP;
+	}
+
+	if (add_membership) {
+		return net_eth_mcast_addr_add(iface,
+					      (const struct net_eth_addr *)addr->addr);
+	}
+
+	return net_eth_mcast_addr_rm(iface,
+				     (const struct net_eth_addr *)addr->addr);
+}
+
+/* L2 multicast group memberships of the packet sockets. An entry is owned by
+ * the socket that joined the group, so that the memberships can be dropped
+ * when the socket is closed. A socket holds one reference to a group in the
+ * L2 no matter how many times it joined it, and the L2 keeps track of how
+ * many users a group has so that the device is only told when it has to
+ * start or stop listening to it.
+ */
+struct packet_mcast_membership {
+	/** Socket owning this membership, NULL if the entry is free */
+	struct net_context *ctx;
+
+	/** Network interface the group was joined on */
+	struct net_if *iface;
+
+	/** L2 multicast address of the group */
+	struct net_linkaddr addr;
+
+	/** How many times the owner has joined this group */
+	uint16_t count;
+};
+
+static struct packet_mcast_membership
+	mcast_memberships[CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT];
+
+static K_MUTEX_DEFINE(mcast_lock);
+
+static bool mcast_membership_match(const struct packet_mcast_membership *member,
+				   struct net_if *iface,
+				   const struct net_linkaddr *addr)
+{
+	return member->iface == iface && member->addr.len == addr->len &&
+		memcmp(member->addr.addr, addr->addr, addr->len) == 0;
+}
+
+static void mcast_membership_event(struct net_if *iface,
+				   const struct net_linkaddr *addr,
+				   bool add_membership)
+{
+	struct net_event_packet_mcast info;
+
+	memset(&info, 0, sizeof(info));
+	(void)net_linkaddr_copy(&info.addr, addr);
+	info.type = NET_PACKET_MR_MULTICAST;
+
+	net_mgmt_event_notify_with_info(add_membership ?
+					NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD :
+					NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP,
+					iface, &info, sizeof(info));
+}
+
+static int mcast_membership_add(struct net_context *ctx, struct net_if *iface,
+				const struct net_linkaddr *addr)
+{
+	struct packet_mcast_membership *free_entry = NULL;
+	int ret = 0;
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+		if (member->ctx == NULL) {
+			if (free_entry == NULL) {
+				free_entry = member;
+			}
+
+			continue;
+		}
+
+		if (member->ctx == ctx &&
+		    mcast_membership_match(member, iface, addr)) {
+			/* This socket already holds a reference to the group
+			 * in the L2, so only the local count changes.
+			 */
+			if (member->count == UINT16_MAX) {
+				ret = -ENOBUFS;
+			} else {
+				member->count++;
+			}
+
+			k_mutex_unlock(&mcast_lock);
+
+			return ret;
+		}
+	}
+
+	if (free_entry == NULL) {
+		k_mutex_unlock(&mcast_lock);
+
+		return -ENOBUFS;
+	}
+
+	free_entry->ctx = ctx;
+	free_entry->iface = iface;
+	free_entry->count = 1;
+	(void)net_linkaddr_copy(&free_entry->addr, addr);
+
+	/* The lock is released for the L2 call, as the L2 takes a lock of its
+	 * own and then programs the receive filter of the device, which may
+	 * block.
+	 */
+	k_mutex_unlock(&mcast_lock);
+
+	ret = mcast_membership_l2(iface, addr, true);
+	if (ret < 0) {
+		/* The group was not joined, so give the entry back. The L2 is
+		 * told to leave the group as well, as it takes the address
+		 * into use before it programs it and keeps it if the device
+		 * refuses. Leaving a group that was never joined is harmless,
+		 * it just fails with -ENOENT.
+		 */
+		(void)mcast_membership_l2(iface, addr, false);
+
+		k_mutex_lock(&mcast_lock, K_FOREVER);
+
+		if (free_entry->ctx == ctx &&
+		    mcast_membership_match(free_entry, iface, addr)) {
+			free_entry->count--;
+
+			if (free_entry->count == 0) {
+				free_entry->ctx = NULL;
+			}
+		}
+
+		k_mutex_unlock(&mcast_lock);
+
+		return ret;
+	}
+
+	mcast_membership_event(iface, addr, true);
+
+	return 0;
+}
+
+static int mcast_membership_drop(struct net_context *ctx, struct net_if *iface,
+				 const struct net_linkaddr *addr)
+{
+	int ret = -EADDRNOTAVAIL;
+	bool release = false;
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+		if (member->ctx != ctx ||
+		    !mcast_membership_match(member, iface, addr)) {
+			continue;
+		}
+
+		ret = 0;
+		member->count--;
+
+		if (member->count == 0) {
+			member->ctx = NULL;
+			release = true;
+		}
+
+		break;
+	}
+
+	k_mutex_unlock(&mcast_lock);
+
+	if (!release) {
+		return ret;
+	}
+
+	/* The membership is gone as far as this socket is concerned, so the
+	 * event is sent even if the device could not be reprogrammed. Taking
+	 * the entry back would leave a reference that the L2 does not know
+	 * about, as the L2 releases its own before it talks to the device.
+	 */
+	ret = mcast_membership_l2(iface, addr, false);
+
+	mcast_membership_event(iface, addr, false);
+
+	return ret;
+}
+
+static void mcast_membership_drop_all(struct net_context *ctx)
+{
+	/* One entry is released per round so that the L2 is never called with
+	 * the lock held, as it may block while it programs the receive filter
+	 * of the device.
+	 */
+	while (true) {
+		struct net_if *iface = NULL;
+		struct net_linkaddr addr;
+
+		k_mutex_lock(&mcast_lock, K_FOREVER);
+
+		ARRAY_FOR_EACH_PTR(mcast_memberships, member) {
+			if (member->ctx != ctx) {
+				continue;
+			}
+
+			iface = member->iface;
+			(void)net_linkaddr_copy(&addr, &member->addr);
+
+			member->ctx = NULL;
+			member->count = 0;
+			break;
+		}
+
+		k_mutex_unlock(&mcast_lock);
+
+		if (iface == NULL) {
+			break;
+		}
+
+		/* The socket holds one reference to the group no matter how
+		 * many times it joined it, so one leave per entry gives them
+		 * all back.
+		 */
+		(void)mcast_membership_l2(iface, &addr, false);
+
+		mcast_membership_event(iface, &addr, false);
+	}
+}
+
+static int mcast_setsockopt(struct net_context *ctx, int optname,
+			    const void *optval, net_socklen_t optlen)
+{
+	const struct net_packet_mreq *maddr = optval;
+	struct net_linkaddr addr;
+	struct net_linkaddr *lladdr;
+	bool add_membership;
+	struct net_if *iface;
+	int ret;
+
+	if (optname == ZSOCK_PACKET_ADD_MEMBERSHIP) {
+		add_membership = true;
+	} else if (optname == ZSOCK_PACKET_DROP_MEMBERSHIP) {
+		add_membership = false;
+	} else {
+		errno = ENOPROTOOPT;
+		return -1;
+	}
+
+	if (optval == NULL || optlen != sizeof(struct net_packet_mreq)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* Only the membership of one specific multicast group can be
+	 * changed. NET_PACKET_MR_PROMISC and NET_PACKET_MR_ALLMULTI would
+	 * change how the interface filters received frames as a whole, which
+	 * is not a per group change.
+	 */
+	if (maddr->mr_type != NET_PACKET_MR_MULTICAST) {
+		errno = ENOTSUP;
+		return -1;
+	}
+
+	iface = net_if_get_by_index(maddr->mr_ifindex);
+	if (iface == NULL) {
+		errno = ENODEV;
+		return -1;
+	}
+
+	lladdr = net_if_get_link_addr(iface);
+
+	if (maddr->mr_alen != lladdr->len) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	memset(&addr, 0, sizeof(addr));
+
+	if (net_linkaddr_set(&addr, maddr->mr_address,
+			     (uint8_t)maddr->mr_alen) < 0) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	addr.type = lladdr->type;
+
+	if (add_membership) {
+		ret = mcast_membership_add(ctx, iface, &addr);
+	} else {
+		ret = mcast_membership_drop(ctx, iface, &addr);
+	}
+
+	if (ret < 0) {
+		errno = -ret;
+		return -1;
+	}
+
+	return 0;
+}
+#else /* CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP */
+static void mcast_membership_drop_all(struct net_context *ctx)
+{
+	ARG_UNUSED(ctx);
+}
+#endif /* CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP */
+
+int zpacket_setsockopt_ctx(struct net_context *ctx, int level, int optname,
+			   const void *optval, net_socklen_t optlen)
+{
+#if defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+	if (level == ZSOCK_SOL_PACKET) {
+		return mcast_setsockopt(ctx, optname, optval, optlen);
+	}
+#endif
+
 	return sock_fd_op_vtable.setsockopt(ctx, level, optname,
 					    optval, optlen);
 }
@@ -689,6 +1013,8 @@ static int packet_sock_setsockopt_vmeth(void *obj, int level, int optname,
 
 static int packet_sock_close2_vmeth(void *obj, int fd)
 {
+	mcast_membership_drop_all(obj);
+
 	return zsock_close_ctx(obj, fd);
 }
 

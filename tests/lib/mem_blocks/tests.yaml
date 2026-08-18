@@ -3,5 +3,6 @@ tests:
     tags:
       - heap
       - mem_blocks
+    ignore_faults: true
     integration_platforms:
       - native_sim

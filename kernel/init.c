@@ -103,10 +103,7 @@ static void z_init_static_threads(void)
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
 		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
 
-		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
-			thread_schedule_new(thread_data->init_thread,
-					    init_delay);
-		}
+		thread_schedule_new(thread_data->init_thread, init_delay);
 	}
 	k_sched_unlock();
 }

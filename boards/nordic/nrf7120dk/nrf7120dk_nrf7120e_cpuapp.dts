@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf7120e_enga_cpuapp.dtsi>
+#include "nrf7120_7120e_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf7120dk_nrf7120e-cpuapp";
+	model = "Nordic nRF7120 DK nRF7120E Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+#include <nordic/nrf7120e_cpuapp_partition.dtsi>

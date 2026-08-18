@@ -1,0 +1,42 @@
+# Copyright (C) 2020 Samsung Electronics Co., Ltd.
+# Copyright (C) 2023 Meta Platforms
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Microchip XEC I3C controller.
+
+    The MEC SoCs integrate the Synopsys DesignWare DWC_mipi_i3c IP behind an
+    XEC-specific wrapper, so this binding shares the i3c_dw.c driver with
+    snps,designware-i3c. The wrapper adds a HOST_CFG port-select register, and
+    routes the interrupt through the XEC Interrupt Aggregator (ECIA)
+
+compatible: "microchip,xec-i3c"
+
+include:
+  - name: i3c-controller.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    description: |
+      PCR clock specifier: <&pcr regidx bitpos MCHP_XEC_PCR_CLK_I3C>.
+      regidx and bitpos locate this controller's bit in the PCR sleep-enable /
+      clock-required / reset-enable registers. The clock ID selects the 192 MHz
+      I3C domain reported by the XEC clock control driver, which requires a SoC
+      that selects HAS_MCHP_MEC_I3C.
+
+  port-sel:
+    type: int
+    default: 0
+    description: |
+      I3C port selection written to HOST_CFG[2:0]. Selects which SoC pad group
+      the controller drives. Must agree with the pinctrl-0 pin group.

@@ -1,0 +1,6 @@
+board:
+  name: bl704l_dvk
+  full_name: BL704L Development Board
+  vendor: others
+  socs:
+    - name: bl704l20q2iw

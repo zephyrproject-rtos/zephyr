@@ -13,9 +13,9 @@ properties:
     required: true
     description: |
       select type of INA7xx device.
-      1 = INA700
-      2 = INA745/746
-      3 = INA780/781
+      0 = INA700
+      1 = INA745/746
+      2 = INA780/781
     enum:
       - 0
       - 1

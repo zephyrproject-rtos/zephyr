@@ -585,7 +585,7 @@ static void posix_thread_recycle(void)
  *
  * See IEEE 1003.1
  */
-int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadroutine)(void *),
+int pthread_create(pthread_t *th, const pthread_attr_t *_attr, void *(*threadroutine)(void *arg),
 		   void *arg)
 {
 	int err;

@@ -605,7 +605,10 @@ int bt_cap_initiator_unicast_audio_start(const struct bt_cap_unicast_audio_start
  *
  * @param param Update parameters.
  *
- * @return 0 on success or negative error value on failure.
+ * @retval 0 Success
+ * @retval -EBUSY CAP procedure is already in progress
+ * @retval -EINVAL @p param contains invalid parameters
+ * @retval -EALREADY Metadata is already set for all the streams
  */
 int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_update_param *param);
 

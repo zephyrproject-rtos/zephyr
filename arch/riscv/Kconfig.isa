@@ -332,6 +332,7 @@ config RISCV_ISA_EXT_SSAIA
 config RISCV_ISA_EXT_ZK
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zk)
+	select RISCV_ISA_EXT_ZBKB
 	help
 	  (Zk) - Standard Extension for Scalar Cryptography
 
@@ -345,6 +346,7 @@ config RISCV_ISA_EXT_ZK
 config RISCV_ISA_EXT_ZKS
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zks)
+	select RISCV_ISA_EXT_ZBKB
 	help
 	  (Zks) - Standard Extension for ShangMi Suite
 

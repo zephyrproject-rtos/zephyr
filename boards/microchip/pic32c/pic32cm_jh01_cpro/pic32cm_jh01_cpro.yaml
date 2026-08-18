@@ -15,6 +15,7 @@ supported:
   - counter
   - dac
   - dma
+  - flash
   - gpio
   - hwinfo
   - i2c

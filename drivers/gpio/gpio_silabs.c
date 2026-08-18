@@ -474,8 +474,9 @@ static int gpio_silabs_common_init(const struct device *dev)
 		.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(n),                                      \
 		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
 		.common_dev = DEVICE_DT_GET(DT_PARENT(n)),                                         \
-		.em4wu_pin_count = DT_PROP_LEN(n, silabs_wakeup_ints),                             \
-		.em4wu_pins = {DT_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)},       \
+		.em4wu_pin_count = DT_PROP_LEN_OR(n, silabs_wakeup_ints, 0),                       \
+		.em4wu_pins = COND_CODE_1(DT_HAS_PROP(n, silabs_wakeup_ints),                      \
+			({DT_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)}), ({})),    \
 	};                                                                                         \
 	static struct gpio_silabs_port_data gpio_silabs_port_data_##n;                             \
 	DEVICE_DT_DEFINE(n, gpio_silabs_port_init, NULL, &gpio_silabs_port_data_##n,               \

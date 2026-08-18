@@ -104,6 +104,8 @@ Boards
     :kconfig:option:`CONFIG_SOC_SERIES_NRF54L` or
     :kconfig:option:`CONFIG_SOC_SERIES_NRF71`.
 
+* Aesc Silicon ``elemrv`` board is renamed to ``elemrv_flask_n``.
+
 * The Nordic sysbuild Kconfig option ``SB_CONFIG_NRF_HALTIUM_GENERATE_UICR``
   has been renamed to :kconfig:option:`SB_CONFIG_NRF_GENERATE_UICR`.
   Update sysbuild configurations to use the new name.
@@ -166,6 +168,13 @@ Boards
 
 * Boards must now select :kconfig:option:`CONFIG_TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED` if they
   support firmware update via TF-M.
+
+* :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` default activation is removed from STM32 based boards
+  that used to do it.
+  Choosing interrupt-driven vs polling SPI transfers is an application concern, not a board one.
+  Applications that rely on interrupt-driven SPI (for example to use :c:func:`spi_transceive_signal`
+  or :c:func:`spi_transceive_cb` without DMA) on an affected board must now explicitly enable
+  :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` in their own configuration. (:github:`116218`)
 
 Device Drivers and Devicetree
 *****************************
@@ -1109,6 +1118,9 @@ Bluetooth Audio
     :zephyr:code-sample:`bluetooth_cap_handover` and
     :zephyr:code-sample:`bluetooth_cap_initiator` have been moved from
     ``samples/bluetooth/`` to ``samples/bluetooth/audio``.
+  * :c:func:`bt_cap_initiator_unicast_audio_update` now rejects the API call if it would result in
+    no changed states (i.e. the metadata in the parameters are identical to the metadata the server
+    have reported to us), and will return ``-EALREADY``.
 
 * CCP
 
@@ -1243,6 +1255,13 @@ Bluetooth Services
 
 Networking
 **********
+
+* The ``struct dns_server`` type nested in :c:struct:`dns_resolve_context` has been
+  renamed to ``struct dns_server_info``. A C++ class member cannot share the name of
+  its enclosing class, so the old tag made ``<zephyr/net/dns_resolve.h>`` impossible to
+  include from C++. No field was renamed, so accesses such as
+  ``ctx->servers[i].dns_server_addr`` are unaffected; only code that names the type
+  itself, for example in a ``CONTAINER_OF()`` call, needs updating.
 
 * Various IP routing related Kconfig options will have now ``IPV6`` prefix added to
   them. This is done so that we can have IPv4 routing symbols that provide same

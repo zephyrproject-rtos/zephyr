@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Wi-Fi network interfaces provided by an esp-hosted-mcu coprocessor.
+
+  This node names the Wi-Fi interfaces the coprocessor exposes. It carries no
+  registers of its own: the transport is the parent esp-hosted-mcu node, which
+  the driver reaches through it.
+
+compatible: "espressif,esp-hosted-mcu-wifi"
+
+include: ethernet-controller.yaml

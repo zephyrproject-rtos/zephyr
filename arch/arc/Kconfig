@@ -17,11 +17,29 @@ config CPU_ARCEM
 
 config CPU_ARCHS
 	bool
-	select ATOMIC_OPERATIONS_BUILTIN
-	select BARRIER_OPERATIONS_BUILTIN
+	select ATOMIC_OPERATIONS_ARCH if ARC_MWDT_MEM_ORDERING_WORKAROUND
+	select ATOMIC_OPERATIONS_BUILTIN if !ARC_MWDT_MEM_ORDERING_WORKAROUND
+	select BARRIER_OPERATIONS_ARCH if ARC_MWDT_MEM_ORDERING_WORKAROUND
+	select BARRIER_OPERATIONS_BUILTIN if !ARC_MWDT_MEM_ORDERING_WORKAROUND
 	help
 	  This option signifies the use of an ARC HS CPU
 
+config ARC_MWDT_MEM_ORDERING_WORKAROUND
+	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
+	help
+	  Route the atomic and barrier APIs through the ARC backends in
+	  include/zephyr/arch/arc/ instead of the compiler builtins.
+
+	  MWDT lowers every __atomic_* operation to a barrier-free llock/scond
+	  library routine, drops the memory-order argument, and implements
+	  __sync_synchronize() as a bare return, so the builtins provide
+	  atomicity without the ordering that Zephyr's APIs promise. ARC GNU
+	  GCC emits the required dmb instructions itself and is unaffected.
+
+	  This is a temporary workaround. Once MWDT implements memory ordering
+	  for the atomic builtins, revert this symbol together with the two
+	  ARC backend headers so that ARC HS goes back to the builtins.
 
 choice
 	prompt "ARC Instruction Set"

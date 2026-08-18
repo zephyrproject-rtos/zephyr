@@ -41,7 +41,7 @@ static const struct net_eth_addr multicast_eth_addr __unused = {
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
 static struct net_if_mcast_monitor mcast_monitor;
 #endif
 
@@ -188,29 +188,53 @@ static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Drop packet if it has broadcast destination MAC address but the IP
  * address is not multicast or broadcast address. See RFC 1122 ch 3.3.6
+ *
+ * This runs after the Ethernet header has been pulled off the packet, so the
+ * destination MAC address is read from the link address stored in the packet
+ * and the IPv4 header is fetched through the cursor.
  */
-static inline
-enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt,
-						struct net_eth_hdr *hdr)
+static enum net_verdict ethernet_check_ipv4_bcast_addr(struct net_pkt *pkt)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
+	struct net_linkaddr *lladdr = net_pkt_lladdr_dst(pkt);
+	enum net_verdict verdict = NET_OK;
+	struct net_pkt_cursor cur;
+	struct net_ipv4_hdr *hdr;
+
 	if (IS_ENABLED(CONFIG_NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR)) {
 		return NET_OK;
 	}
 
-	if (net_eth_is_addr_broadcast(&hdr->dst) &&
-	    !(net_ipv4_is_addr_mcast_raw(NET_IPV4_HDR(pkt)->dst) ||
-	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt),
-					 NET_IPV4_HDR(pkt)->dst))) {
-		return NET_DROP;
+	if (lladdr->len != sizeof(struct net_eth_addr) ||
+	    !net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr)) {
+		return NET_OK;
 	}
 
-	return NET_OK;
+	net_pkt_cursor_backup(pkt, &cur);
+	net_pkt_cursor_init(pkt);
+
+	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
+	if (hdr == NULL ||
+	    !(net_ipv4_is_addr_mcast_raw(hdr->dst) ||
+	      net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		verdict = NET_DROP;
+	}
+
+	net_pkt_cursor_restore(pkt, &cur);
+
+	return verdict;
 }
 #endif
 
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
-static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
-				      bool is_joined)
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+BUILD_ASSERT(NET_ETH_MCAST_FILTER_COUNT > 0,
+	     "No room for the L2 multicast addresses, increase "
+	     "CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT");
+
+/* Program the multicast address to the receive filter of the device. */
+static int ethernet_mcast_filter_set(struct net_if *iface,
+				     const struct net_eth_addr *mac_addr,
+				     bool is_joined)
 {
 	struct ethernet_config cfg = {
 		.filter = {
@@ -218,7 +242,6 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 			.type = ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
 		},
 	};
-
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api;
 
@@ -228,33 +251,283 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 
 	/* Make sure we're an ethernet device */
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return;
+		return -ENOTSUP;
 	}
 
 	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
-		return;
+		return -ENOTSUP;
 	}
 
 	if (!api || !api->set_config) {
+		return -ENOTSUP;
+	}
+
+	memcpy(&cfg.filter.mac_address, mac_addr, sizeof(cfg.filter.mac_address));
+
+	return api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
+}
+
+/* Protects the L2 multicast addresses of every interface. These cannot be
+ * protected by the interface lock, as the multicast monitors are called with
+ * the monitor lock held while other places take the interface lock before the
+ * monitor lock, for example net_if_config_ipv4_get().
+ */
+static K_MUTEX_DEFINE(mcast_lock);
+
+/* A VLAN interface has no receive filter of its own, the groups belong to
+ * the Ethernet interface it is attached to.
+ */
+static struct net_if *ethernet_mcast_iface(struct net_if *iface)
+{
+	if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_interface(iface)) {
+		return net_eth_get_vlan_main(iface);
+	}
+
+	return iface;
+}
+
+/* Return the interface context if the L2 multicast addresses of the
+ * interface are tracked, NULL otherwise.
+ */
+static struct ethernet_context *ethernet_mcast_ctx(struct net_if *iface)
+{
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return NULL;
+	}
+
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
+		return NULL;
+	}
+
+	return net_if_l2_data(iface);
+}
+
+static struct net_eth_mcast_addr *ethernet_mcast_addr_find(
+	struct ethernet_context *ctx, const struct net_eth_addr *addr)
+{
+	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, maddr) {
+		if (maddr->is_used &&
+		    memcmp(&maddr->addr, addr, sizeof(*addr)) == 0) {
+			return maddr;
+		}
+	}
+
+	return NULL;
+}
+
+int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr)
+{
+	struct net_eth_mcast_addr *maddr, *free_slot = NULL;
+	struct ethernet_context *ctx;
+	bool program = false;
+	int ret = 0;
+
+	if (iface == NULL || addr == NULL) {
+		return -EINVAL;
+	}
+
+	iface = ethernet_mcast_iface(iface);
+	if (iface == NULL) {
+		return -ENOTSUP;
+	}
+
+	ctx = ethernet_mcast_ctx(iface);
+	if (ctx == NULL) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	maddr = ethernet_mcast_addr_find(ctx, addr);
+	if (maddr != NULL) {
+		atomic_inc(&maddr->atomic_ref);
+
+		NET_DBG("iface %d (%p) address %s already joined (ref %ld)",
+			net_if_get_by_iface(iface), iface,
+			net_sprint_ll_addr(addr->addr, sizeof(*addr)),
+			atomic_get(&maddr->atomic_ref));
+		goto out;
+	}
+
+	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, entry) {
+		if (!entry->is_used) {
+			free_slot = entry;
+			break;
+		}
+	}
+
+	if (free_slot == NULL) {
+		/* The address cannot be tracked, so it is not given to the
+		 * device either. Programming it without tracking it would
+		 * break the drivers that reprogram their whole filter from
+		 * net_eth_mcast_addr_foreach(), and the group would be lost
+		 * anyway as soon as another user of the same address leaves.
+		 */
+		NET_ERR("iface %d (%p) out of L2 multicast addresses (%d), "
+			"address %s not joined. Increase "
+			"CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT.",
+			net_if_get_by_iface(iface), iface,
+			NET_ETH_MCAST_FILTER_COUNT,
+			net_sprint_ll_addr(addr->addr, sizeof(*addr)));
+
+		ret = -ENOMEM;
+		goto out;
+	}
+
+	free_slot->is_used = true;
+	free_slot->addr = *addr;
+	atomic_set(&free_slot->atomic_ref, 1);
+	program = true;
+
+	NET_DBG("iface %d (%p) address %s joined", net_if_get_by_iface(iface),
+		iface, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
+
+out:
+	k_mutex_unlock(&mcast_lock);
+
+	/* The device is told about the group only when it is joined by the
+	 * first user, and the filter is programmed with the lock released as
+	 * the driver may block and may want to read the addresses back.
+	 *
+	 * A controller that has no receive filter passes the group up anyway,
+	 * so -ENOTSUP means that there was nothing to program and not that
+	 * the group was not joined. The address is tracked in either case,
+	 * which keeps net_eth_mcast_addr_foreach() telling the truth if the
+	 * device later reprograms its filter from it.
+	 */
+	if (program) {
+		ret = ethernet_mcast_filter_set(iface, addr, true);
+		if (ret == -ENOTSUP) {
+			ret = 0;
+		}
+	}
+
+	return ret;
+}
+
+int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
+{
+	struct net_eth_mcast_addr *maddr;
+	struct ethernet_context *ctx;
+	bool program = false;
+	int ret = 0;
+
+	if (iface == NULL || addr == NULL) {
+		return -EINVAL;
+	}
+
+	iface = ethernet_mcast_iface(iface);
+	if (iface == NULL) {
+		return -ENOTSUP;
+	}
+
+	ctx = ethernet_mcast_ctx(iface);
+	if (ctx == NULL) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	maddr = ethernet_mcast_addr_find(ctx, addr);
+	if (maddr == NULL) {
+		/* The group was never joined, so the device was never told
+		 * about it either and there is nothing to unset.
+		 */
+		ret = -ENOENT;
+		goto out;
+	}
+
+	if (atomic_dec(&maddr->atomic_ref) > 1) {
+		NET_DBG("iface %d (%p) address %s still in use (ref %ld)",
+			net_if_get_by_iface(iface), iface,
+			net_sprint_ll_addr(addr->addr, sizeof(*addr)),
+			atomic_get(&maddr->atomic_ref));
+		goto out;
+	}
+
+	maddr->is_used = false;
+	program = true;
+
+	NET_DBG("iface %d (%p) address %s left", net_if_get_by_iface(iface),
+		iface, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
+
+out:
+	k_mutex_unlock(&mcast_lock);
+
+	/* Like when joining, a device that cannot filter has nothing to unset
+	 * and that is not a failure to leave the group.
+	 */
+	if (program) {
+		ret = ethernet_mcast_filter_set(iface, addr, false);
+		if (ret == -ENOTSUP) {
+			ret = 0;
+		}
+	}
+
+	return ret;
+}
+
+void net_eth_mcast_addr_foreach(struct net_if *iface,
+				net_eth_mcast_addr_cb_t cb, void *user_data)
+{
+	struct ethernet_context *ctx;
+
+	if (iface == NULL || cb == NULL) {
 		return;
 	}
+
+	iface = ethernet_mcast_iface(iface);
+	if (iface == NULL) {
+		return;
+	}
+
+	ctx = ethernet_mcast_ctx(iface);
+	if (ctx == NULL) {
+		return;
+	}
+
+	k_mutex_lock(&mcast_lock, K_FOREVER);
+
+	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, maddr) {
+		if (maddr->is_used) {
+			cb(iface, maddr, user_data);
+		}
+	}
+
+	k_mutex_unlock(&mcast_lock);
+}
+#endif
+
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
+static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
+				      bool is_joined)
+{
+	struct net_eth_addr mac_addr;
 
 	switch (addr->family) {
 #if defined(CONFIG_NET_IPV4)
 	case NET_AF_INET:
-		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &cfg.filter.mac_address);
+		net_eth_ipv4_mcast_to_mac_addr(&addr->in_addr, &mac_addr);
 		break;
 #endif /* CONFIG_NET_IPV4 */
 #if defined(CONFIG_NET_IPV6)
 	case NET_AF_INET6:
-		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &cfg.filter.mac_address);
+		net_eth_ipv6_mcast_to_mac_addr(&addr->in6_addr, &mac_addr);
 		break;
 #endif /* CONFIG_NET_IPV6 */
 	default:
 		return;
 	}
 
-	api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
+	/* Several IP multicast addresses can map to the same link layer
+	 * address, so the group is tracked by the L2 to know when the device
+	 * really has to start or stop listening to it.
+	 */
+	if (is_joined) {
+		(void)net_eth_mcast_addr_add(iface, &mac_addr);
+	} else {
+		(void)net_eth_mcast_addr_rm(iface, &mac_addr);
+	}
 }
 #endif
 
@@ -446,9 +719,7 @@ static enum net_verdict ethernet_ip_recv(struct net_if *iface,
 	ARG_UNUSED(iface);
 
 	if (ptype == NET_ETH_PTYPE_IP) {
-		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
-
-		if (ethernet_check_ipv4_bcast_addr(pkt, hdr) == NET_DROP) {
+		if (ethernet_check_ipv4_bcast_addr(pkt) == NET_DROP) {
 			return NET_DROP;
 		}
 
@@ -1105,7 +1376,7 @@ void ethernet_init(struct net_if *iface)
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
 
-#if defined(CONFIG_NET_NATIVE_IP) && !defined(CONFIG_NET_RAW_MODE)
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
 	if ((caps & ETHERNET_HW_FILTERING) != 0) {
 		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
 	}

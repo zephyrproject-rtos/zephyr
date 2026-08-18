@@ -98,25 +98,6 @@ enum ext_timer_start {
 #define EC_CLOCK            ETPSR_9200K
 #define COUNT_1US           (EC_CLOCK / USEC_PER_SEC)
 
-/*
- * One system (kernel) tick is as how much HW timer counts
- *
- * NOTE: Event and free run timer individually select the same clock source frequency, so they can
- *       use the same HW_CNT_PER_SYS_TICK to transform unit between HW count and system tick. If
- *       clock source frequency is different, then we should define another to transform.
- */
-#define HW_CNT_PER_SYS_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-
-/* Event timer max count is as how much system (kernel) tick */
-#define EVEN_TIMER_MAX_CNT_SYS_TICK (EVENT_TIMER_MAX_CNT / HW_CNT_PER_SYS_TICK)
-
-static struct k_spinlock lock;
-/* Last HW count that we called sys_clock_announce() */
-static volatile uint32_t last_announced_hw_cnt;
-/* Last system (kernel) elapse and ticks */
-static volatile uint32_t last_elapsed;
-static volatile uint32_t last_ticks;
-
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 3, irq);
 #endif
@@ -157,6 +138,38 @@ static void ext_timer_enable(enum ext_timer_idx timer_idx)
 	sys_write8(etnctrl | TIMER_ETNRST | TIMER_ETNEN, timer_base + TIMER_ETNCTRL(timer_idx));
 }
 
+/*
+ * The counter and the alarm are two different timers here. The cycle domain is
+ * the free-running 32-bit timer, counting down and read back inverted, while
+ * the wakeup comes from a separate 24-bit event timer, a one-shot countdown.
+ * That makes it a RELOAD backend whose range is bounded by the event timer
+ * rather than by the counter. Both select the same clock, so the core's cycles
+ * are the event timer's without conversion.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 32
+#define TIMER_CORE_ALARM_MAX_CYCLES EVENT_TIMER_MAX_CNT
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return ~read_timer_obser(FREE_RUN_TIMER);
+}
+
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	ext_timer_disable(EVENT_TIMER);
+
+	/* Set event timer 24-bit count */
+	sys_write32(cycles, timer_base + TIMER_ETNCNTLLR(EVENT_TIMER));
+
+	/* W/C event timer interrupt status */
+	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	ext_timer_enable(EVENT_TIMER);
+}
+
+#include "system_timer_generic.h"
+
 static void evt_timer_isr(const void *unused)
 {
 	ARG_UNUSED(unused);
@@ -165,23 +178,15 @@ static void evt_timer_isr(const void *unused)
 	/* W/C event timer interrupt status */
 	ite_intc_isr_clear(EVENT_TIMER_IRQ);
 
-	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/*
-		 * Get free run observer count from last time announced and transform unit to
-		 * system tick
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The event timer is one-shot, so a ticked kernel re-arms it
+		 * here: the core leaves a reload backend alone, expecting
+		 * hardware that reloads itself.
 		 */
-		uint32_t dticks = (~(read_timer_obser(FREE_RUN_TIMER))-last_announced_hw_cnt) /
-				  HW_CNT_PER_SYS_TICK;
-		last_announced_hw_cnt += (dticks * HW_CNT_PER_SYS_TICK);
-		last_ticks += dticks;
-		last_elapsed = 0;
-
-		sys_clock_announce(dticks);
-	} else {
 		ext_timer_enable(EVENT_TIMER);
-		/* Informs kernel that one system tick has elapsed */
-		sys_clock_announce(MS_TO_COUNT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC, 1));
 	}
+
+	timer_core_announce();
 }
 
 static void free_run_timer_overflow_isr(const void *unused)
@@ -191,90 +196,6 @@ static void free_run_timer_overflow_isr(const void *unused)
 	/* Read to clear terminal count flag */
 	__unused uint8_t rc_tc = sys_read8(timer_base + TIMER_ETNCTRL(FREE_RUN_TIMER));
 	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	uint32_t hw_cnt, next_cycs, now, dcycles;
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Always return for non-tickless kernel system */
-		return;
-	}
-
-	/* Critical section */
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/* Disable event timer */
-	ext_timer_disable(EVENT_TIMER);
-
-	if (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) && ticks == SYS_CLOCK_MAX_WAIT) {
-		/*
-		 * The kernel has no pending timeout, which it signals with
-		 * ticks == SYS_CLOCK_MAX_WAIT. Under sloppy idle no future
-		 * timer interrupt is required, so leave the event timer
-		 * disabled and stop waking up. Without sloppy idle we fall
-		 * through and still schedule the (capped) timeout so the
-		 * uptime tick count stays correct.
-		 */
-		k_spin_unlock(&lock, key);
-		return;
-	}
-	/*
-	 * If ticks <= 1 means the kernel wants the tick announced as soon as possible,
-	 * ideally no more than one system tick in the future. So set event timer count
-	 * to 1 HW tick.
-	 */
-	ticks = CLAMP(ticks, 1, EVEN_TIMER_MAX_CNT_SYS_TICK);
-	next_cycs = (last_ticks + last_elapsed + ticks) * HW_CNT_PER_SYS_TICK;
-	now = ~read_timer_obser(FREE_RUN_TIMER);
-	if (unlikely(next_cycs <= now)) {
-		hw_cnt = 1;
-	} else {
-		dcycles = next_cycs - now;
-		hw_cnt = MIN(dcycles, EVENT_TIMER_MAX_CNT);
-	}
-
-	/* Set event timer 24-bit count */
-	sys_write32(hw_cnt, timer_base + TIMER_ETNCNTLLR(EVENT_TIMER));
-
-	/* W/C event timer interrupt status */
-	ite_intc_isr_clear(EVENT_TIMER_IRQ);
-
-	/* Enable event timer */
-	ext_timer_enable(EVENT_TIMER);
-
-	k_spin_unlock(&lock, key);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Always return 0 for non-tickless kernel system */
-		return 0;
-	}
-
-	/* Critical section */
-	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	/* Get free run observer count from last time announced and transform unit to system tick */
-	uint32_t dticks =
-		(~(read_timer_obser(FREE_RUN_TIMER))-last_announced_hw_cnt) / HW_CNT_PER_SYS_TICK;
-
-	last_elapsed = dticks;
-
-	k_spin_unlock(&lock, key);
-
-	return dticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	uint32_t dticks = ~read_timer_obser(FREE_RUN_TIMER);
-
-	return dticks;
 }
 
 static int timer_init(enum ext_timer_idx ext_timer, enum ext_clk_src_sel clock_source_sel,
@@ -416,13 +337,16 @@ static int sys_clock_driver_init(void)
 	} else {
 		/* Start a event timer in one system tick */
 		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_NOT_RAW_CNT,
-				 MAX((1 * HW_CNT_PER_SYS_TICK), 1), EVENT_TIMER_IRQ,
+				 TIMER_CORE_CYC_PER_TICK, EVENT_TIMER_IRQ,
 				 EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT, EXT_START_TIMER);
 	}
 	if (ret < 0) {
 		LOG_ERR("Init event timer failed");
 		return ret;
 	}
+
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
 
 	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)) {
 		/* Set timer5 and timer6 combinational mode for busy wait */

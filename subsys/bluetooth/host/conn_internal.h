@@ -178,20 +178,26 @@ struct bt_conn_sco {
 };
 
 struct bt_conn_iso {
+#if defined(CONFIG_BT_ISO_UNICAST)
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+#endif /* CONFIG_BT_ISO_UNICAST */
 
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
+#if defined(CONFIG_BT_ISO_RX)
 	/* Expected SDU size of current parsing data `conn->rx` */
 	uint16_t sdu_len;
+#endif /* CONFIG_BT_ISO_RX */
 
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 
+#if defined(CONFIG_BT_ISO_TX)
 	/** Queue from which conn will pull data */
 	struct k_fifo                   txq;
+#endif /* CONFIG_BT_ISO_TX */
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);

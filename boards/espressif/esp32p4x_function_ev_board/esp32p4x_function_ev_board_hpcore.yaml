@@ -11,6 +11,7 @@ supported:
   - gpio
   - hwinfo
   - netif:eth
+  - netif:wifi
   - sdhc
   - spi
   - uart

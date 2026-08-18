@@ -148,6 +148,7 @@ extern "C" {
 #define ip_mreqn     net_ip_mreqn
 #define ip_mreq      net_ip_mreq
 #define ipv6_mreq    net_ipv6_mreq
+#define packet_mreq  net_packet_mreq
 #define in6_pktinfo  net_in6_pktinfo
 #define ifreq        net_ifreq
 
@@ -285,6 +286,13 @@ extern "C" {
 #define IPV6_PREFER_SRC_CGA             ZSOCK_IPV6_PREFER_SRC_CGA
 #define IPV6_PREFER_SRC_NONCGA          ZSOCK_IPV6_PREFER_SRC_NONCGA
 #define IPV6_TCLASS                     ZSOCK_IPV6_TCLASS
+
+#define SOL_PACKET             ZSOCK_SOL_PACKET
+#define PACKET_ADD_MEMBERSHIP  ZSOCK_PACKET_ADD_MEMBERSHIP
+#define PACKET_DROP_MEMBERSHIP ZSOCK_PACKET_DROP_MEMBERSHIP
+#define PACKET_MR_MULTICAST    NET_PACKET_MR_MULTICAST
+#define PACKET_MR_PROMISC      NET_PACKET_MR_PROMISC
+#define PACKET_MR_ALLMULTI     NET_PACKET_MR_ALLMULTI
 
 #define SOMAXCONN ZSOCK_SOMAXCONN
 

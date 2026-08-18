@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Tenstorrent AI ULC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c1 {
+	pinctrl-0 = <&i3c1_scl_pb2 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+	i3c-scl-hz = <1000000>;
+	i2c-scl-hz = <400000>;
+
+	mctp_endpoint0: mctp_endpoint0@20813818000 {
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0000 0x0208 0x13818000>;
+		status = "okay";
+	};
+};
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+};

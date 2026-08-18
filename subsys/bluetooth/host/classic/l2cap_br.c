@@ -788,7 +788,9 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 	uint16_t expected_ack_seq;
 
 	if (!br_chan->chan.conn || br_chan->chan.conn->state != BT_CONN_CONNECTED) {
-		/* ACL connection is broken. */
+		/* The ACL connection may have been disconnected while this
+		 * work item was pending. Nothing to do in that case.
+		 */
 		return;
 	}
 
@@ -852,7 +854,9 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN_MONITOR(work);
 
 	if (!br_chan->chan.conn || br_chan->chan.conn->state != BT_CONN_CONNECTED) {
-		/* ACL connection is broken. */
+		/* The ACL connection may have been disconnected while this
+		 * work item was pending. Nothing to do in that case.
+		 */
 		return;
 	}
 

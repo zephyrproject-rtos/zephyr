@@ -60,7 +60,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 		.events = ZSOCK_POLLIN,
 	};
 
-	LOG_DBG("Client send data: block no %u, size %u", block_no, data_size + TFTP_HEADER_SIZE);
+	LOG_DBG("Client send data: block no %u, size %zu", block_no, data_size + TFTP_HEADER_SIZE);
 
 	do {
 		if (send_count > TFTP_REQ_RETX) {

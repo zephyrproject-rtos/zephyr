@@ -111,6 +111,15 @@ config NET_IF_MCAST_IPV6_ADDR_COUNT
 	default 4 if PTP_DELAY_MECHANISM_P2P && PTP_UDP_IPV6_PROTOCOL
 	default 3
 
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV6
+	int
+	depends on NET_L2_ETHERNET
+	default NET_IF_MCAST_IPV6_ADDR_COUNT
+	help
+	  Every joined IPv6 multicast address needs a link layer multicast
+	  address on an Ethernet interface. This covers the all-nodes group
+	  and the solicited-node group of each address of the interface.
+
 config NET_IF_IPV6_PREFIX_COUNT
 	int "Max number of IPv6 prefixes per network interface"
 	default 2

@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2020 Samsung Electronics Co., Ltd.
  * Copyright (C) 2023 Meta Platforms
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +15,14 @@
 
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
+#include <zephyr/dt-bindings/clock/mchp_xec_pcr.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <soc_ecia.h>
+#include <soc_pcr.h>
 #endif
 
 #define NANO_SEC        1000000000ULL
@@ -356,6 +365,11 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define I3C_HOT_JOIN_ADDR 0x02
 
+/* Microchip XEC wrapper register: HOST_CFG offset from the I3C base.
+ * Outside the Synopsys IP register map.
+ */
+#define MCHP_HOST_CFG_OFS 0x300U
+
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
 
@@ -394,6 +408,15 @@ struct dw_i3c_config {
 
 #if defined(CONFIG_PINCTRL)
 	const struct pinctrl_dev_config *pcfg;
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+	/* Microchip XEC-specific fields */
+	bool is_mchp;
+	uint8_t port_sel; /* HOST_CFG[2:0] port selection */
+	uint8_t enc_pcr;  /* encoded PCR sleep-enable idx/bitpos, from the clocks cells */
+	uint8_t girq_id;  /* ECIA GIRQ number, from girqs[0] */
+	uint8_t girq_pos; /* bit position within that GIRQ, from girqs[0] */
 #endif
 };
 
@@ -1647,6 +1670,15 @@ static int i3c_dw_irq(const struct device *dev)
 	}
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET && CONFIG_I3C_USE_IBI */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+	if (config->is_mchp) {
+		/* The XEC aggregator latches the peripheral interrupt; clear it after the
+		 * IP-level status bits have been handled above.
+		 */
+		soc_ecia_girq_status_clear(config->girq_id, config->girq_pos);
+	}
+#endif
+
 	return 0;
 }
 
@@ -2690,6 +2722,13 @@ static int dw_i3c_init(const struct device *dev)
 		return ret;
 	}
 
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+	if (config->is_mchp) {
+		/* Clear the per-peripheral PCR sleep-enable bit */
+		soc_xec_pcr_sleep_en_clear(config->enc_pcr);
+	}
+#endif
+
 #ifdef CONFIG_I3C_USE_IBI
 	k_sem_init(&data->ibi_sts_sem, 0, 1);
 	k_sem_init(&data->sem_hj, 0, 1);
@@ -2707,6 +2746,13 @@ static int dw_i3c_init(const struct device *dev)
 #endif /* CONFIG_I3C_CONTROLLER */
 	/* reset all */
 	sys_write32(RESET_CTRL_ALL, config->regs + RESET_CTRL);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+	if (config->is_mchp) {
+		/* XEC wrapper: select the pad group this controller drives */
+		sys_write32((uint32_t)config->port_sel, config->regs + MCHP_HOST_CFG_OFS);
+	}
+#endif
 
 	/* get DAT, DCT pointer */
 	data->datstartaddr =
@@ -2948,3 +2994,87 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 
 #define DT_DRV_COMPAT snps_designware_i3c
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_DEVICE_FN);
+
+/* ---------------------------------------------------------------------------
+ * Microchip XEC (microchip,xec-i3c) instance registration.
+ *
+ * The XEC variant is the same DesignWare IP behind a Microchip wrapper, so it
+ * reuses all of the driver logic above. It differs only in:
+ *   - interrupt delivery through the XEC Interrupt Aggregator (ECIA),
+ *   - the HOST_CFG port-select register,
+ *   - the PCR sleep-enable bit, which the XEC clock control driver's on() does
+ *     not clear,
+ *   - the form of the clock_control subsys argument, which on XEC is a pointer
+ *     to a union clock_mchp_xec_subsys rather than a packed integer.
+ * ---------------------------------------------------------------------------
+ */
+#if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_xec_i3c
+
+BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
+	     "microchip,xec-i3c requires an SoC that selects HAS_MCHP_MEC_I3C, otherwise "
+	     "the XEC clock control driver does not report the I3C domain rate");
+
+#define MCHP_I3C_GIRQ(n)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(n, girqs, 0))
+#define MCHP_I3C_GIRQ_POS(n) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(n, girqs, 0))
+
+#define MCHP_I3C_IRQ_HANDLER(n)                                                                    \
+	static void xec_i3c_irq_config_##n(void)                                                   \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), i3c_dw_irq,                 \
+			    DEVICE_DT_INST_GET(n), 0);                                             \
+		soc_ecia_girq_status_clear(MCHP_I3C_GIRQ(n), MCHP_I3C_GIRQ_POS(n));                \
+		soc_ecia_girq_ctrl(MCHP_I3C_GIRQ(n), MCHP_I3C_GIRQ_POS(n), true);                  \
+		irq_enable(DT_INST_IRQN(n));                                                       \
+	}
+
+#define MCHP_I3C_DEVICE(n)                                                                         \
+	MCHP_I3C_IRQ_HANDLER(n)                                                                    \
+	I3C_DW_PINCTRL_DEFINE(n);                                                                  \
+	static const union clock_mchp_xec_subsys xec_i3c_clk_subsys_##n = {                        \
+		.val = MCHP_XEC_PCR_SCR_ENCODE(DT_INST_CLOCKS_CELL(n, regidx),                     \
+					       DT_INST_CLOCKS_CELL(n, bitpos),                     \
+					       DT_INST_CLOCKS_CELL(n, clkid)),                     \
+	};                                                                                         \
+	IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                     \
+		   (static struct i3c_device_desc xec_i3c_device_array_##n[] =                    \
+			    I3C_DEVICE_ARRAY_DT_INST(n);                                         \
+		    static struct i3c_i2c_device_desc xec_i3c_i2c_device_array_##n[] =           \
+			    I3C_I2C_DEVICE_ARRAY_DT_INST(n);))    \
+	static struct dw_i3c_data xec_i3c_data_##n = {                                             \
+		.common.ctrl_config.scl.i3c =                                                      \
+			DT_INST_PROP_OR(n, i3c_scl_hz, I3C_BUS_TYP_I3C_SCL_RATE),                  \
+		.common.ctrl_config.scl.i2c = DT_INST_PROP_OR(n, i2c_scl_hz, 0),                   \
+		.common.ctrl_config.scl_od_min.high_ns = DT_INST_PROP(n, od_thigh_min_ns),         \
+		.common.ctrl_config.scl_od_min.low_ns = DT_INST_PROP(n, od_tlow_min_ns),           \
+	};                                                                                         \
+	static const struct dw_i3c_config xec_i3c_cfg_##n = {                                      \
+		.regs = DT_INST_REG_ADDR(n),                                                       \
+		.clock = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                    \
+		.clock_subsys = (clock_control_subsys_t)(&xec_i3c_clk_subsys_##n),                 \
+		.irq_config_func = &xec_i3c_irq_config_##n,                                        \
+		.is_mchp = true,                                                                   \
+		.port_sel = DT_INST_PROP_OR(n, port_sel, 0),                                       \
+		.enc_pcr = MCHP_XEC_ENC_PCR_SCR(DT_INST_CLOCKS_CELL(n, regidx),                    \
+						DT_INST_CLOCKS_CELL(n, bitpos)),                   \
+		.girq_id = MCHP_I3C_GIRQ(n),                                                       \
+		.girq_pos = MCHP_I3C_GIRQ_POS(n),                                                  \
+		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                     \
+			(.common.dev_list.i3c = xec_i3c_device_array_##n,                        \
+			.common.dev_list.num_i3c = ARRAY_SIZE(xec_i3c_device_array_##n),         \
+			.common.dev_list.i2c = xec_i3c_i2c_device_array_##n,                     \
+			.common.dev_list.num_i2c = ARRAY_SIZE(xec_i3c_i2c_device_array_##n),     \
+			.common.primary_controller_da =                                          \
+				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                 \
+			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                \
+		I3C_DW_PINCTRL_INIT(n)};                                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
+	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &xec_i3c_data_##n,         \
+			      &xec_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,  \
+			      &dw_i3c_api);
+
+DT_INST_FOREACH_STATUS_OKAY(MCHP_I3C_DEVICE);
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c) */
