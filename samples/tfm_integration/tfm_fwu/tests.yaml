@@ -7,7 +7,7 @@ common:
   tags:
     - trusted-firmware-m
     - mcuboot
-  filter: CONFIG_TFM_PARTITION_FIRMWARE_UPDATE
+  filter: CONFIG_TFM_PARTITION_FIRMWARE_UPDATE and CONFIG_TFM_BL2
   integration_platforms:
     - mps2/an521/cpu0/ns
   harness: console
