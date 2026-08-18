@@ -7,4 +7,8 @@ if BOARD_UBX_EVK_IRIS_W1
 configdefault NET_L2_ETHERNET
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
+# IRIS-W1 single-antenna cal data from OpenCPU
+configdefault NXP_OVERRIDE_CALIBRATION_DATA
+	default y if WIFI_NXP
+
 endif # BOARD_UBX_EVK_IRIS_W1
