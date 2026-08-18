@@ -361,12 +361,12 @@ static size_t tcp_data_len(struct net_pkt *pkt, struct tcphdr *th)
 	return len > 0 ? (size_t)len : 0;
 }
 
-static const char *tcp_th(struct net_pkt *pkt, uint32_t *seq_ptr, uint32_t *ack_ptr)
+static const char *tcp_th(struct net_pkt *pkt, struct tcphdr *th,
+			  uint32_t *seq_ptr, uint32_t *ack_ptr)
 {
 #define BUF_SIZE 80
 	static char buf[BUF_SIZE];
 	int len = 0;
-	struct tcphdr *th = th_get(pkt);
 	uint32_t seq, ack;
 
 	buf[0] = '\0';
@@ -1062,14 +1062,15 @@ out:
 	return prefix ? s : (s + 4);
 }
 
-static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt)
+static const char *tcp_conn_state(struct tcp *conn, struct net_pkt *pkt,
+				  struct tcphdr *th)
 {
 #define BUF_SIZE 160
 	static char buf[BUF_SIZE];
 	uint32_t seq = conn->isn, ack = conn->isn_peer;
 
 	snprintk(buf, BUF_SIZE, "%s [%s Seq=%u{%u} Ack=%u{%u}]",
-		 pkt ? tcp_th(pkt, &seq, &ack) : "",
+		 pkt ? tcp_th(pkt, th, &seq, &ack) : "",
 		 tcp_state_to_str(conn->state, false),
 		 conn->seq - seq, conn->seq,
 		 conn->ack - ack, conn->ack);
@@ -1569,7 +1570,7 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		goto err;
 	}
 
-	NET_DBG("%s", tcp_th(rst, NULL, NULL));
+	NET_DBG("%s", tcp_th(rst, th_get(rst), NULL, NULL));
 
 	tcp_send(rst);
 
@@ -2038,7 +2039,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, timewait_timer);
 
 	/* no need to acquire the conn->lock as there is nothing scheduled here */
-	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL));
+	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
@@ -2046,7 +2047,7 @@ static void tcp_timewait_timeout(struct k_work *work)
 static void tcp_establish_timeout(struct tcp *conn)
 {
 	NET_DBG("[%p] Did not receive %s in %dms", conn, "ACK", ACK_TIMEOUT_MS);
-	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL));
+	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
@@ -2063,7 +2064,7 @@ static void tcp_fin_timeout(struct k_work *work)
 	}
 
 	NET_DBG("[%p] Did not receive %s in %dms", conn, "FIN", tcp_max_timeout_ms);
-	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL));
+	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
@@ -2096,7 +2097,7 @@ static void tcp_last_ack_timeout(struct k_work *work)
 	struct tcp *conn = CONTAINER_OF(dwork, struct tcp, fin_timer);
 
 	NET_DBG("[%p] Did not receive %s in %dms", conn, "last ACK", LAST_ACK_TIMEOUT_MS);
-	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL));
+	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, NULL, NULL));
 
 	(void)tcp_conn_close(conn, -ETIMEDOUT);
 }
@@ -3003,7 +3004,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, pkt));
+	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, pkt, th));
 
 	len = tcp_data_len(pkt, th);
 
@@ -3753,7 +3754,7 @@ int net_tcp_put(struct net_context *context, bool force_close)
 
 	k_mutex_lock(&conn->lock, K_FOREVER);
 
-	NET_DBG("[%p] %s", conn, conn ? tcp_conn_state(conn, NULL) : "");
+	NET_DBG("[%p] %s", conn, conn ? tcp_conn_state(conn, NULL, NULL) : "");
 	NET_DBG("[%p] context %p %s", conn, context,
 		({ const char *state = net_context_state(context);
 					state ? state : "<unknown>"; }));
