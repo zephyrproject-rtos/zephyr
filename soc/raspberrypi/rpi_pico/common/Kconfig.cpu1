@@ -1,0 +1,33 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_RPI_PICO_CPU1
+	bool
+	help
+	  Hidden marker selected by every CPU1-side SoC variant. Used to
+	  gate Kconfig options that are only meaningful in CPU0 images,
+	  such as SOC_RPI_PICO_CPU1_ENABLE.
+
+DT_CPU1 := $(dt_nodelabel_path,cpu1)
+DT_CPU1_EN_METHOD_IS_PICO_PCBS := $(dt_node_str_prop_equals,$(DT_CPU1),enable-method,$(DT_COMPAT_RASPBERRYPI_PICO_PCBS))
+
+config SOC_RPI_PICO_CPU1_ENABLE
+	bool "Boot the second CPU core"
+	depends on DT_HAS_RASPBERRYPI_PICO_PCBS_ENABLED \
+		&& $(DT_CPU1_EN_METHOD_IS_PICO_PCBS) \
+		&& !SOC_FAMILY_RPI_PICO_CPU1
+	default y
+	select SOC_LATE_INIT_HOOK
+	help
+	  If enabled, the secondary CPU will be powered up and pointed to its
+	  application entrypoint during SoC late init hook.
+
+if SOC_RPI_PICO_CPU1_ENABLE
+
+config SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR
+	bool "Check VTOR before booting the second core"
+	default y
+	help
+	  Verify that VTOR pointers are valid before booting the second CPU.
+
+endif # SOC_RPI_PICO_CPU1_ENABLE
