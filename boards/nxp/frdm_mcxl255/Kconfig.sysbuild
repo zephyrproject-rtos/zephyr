@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# MCXL255 internal flash access control (FLASH_ACL) configuration
+# currently does not support SWAP modes
+choice MCUBOOT_MODE
+	default MCUBOOT_MODE_OVERWRITE_ONLY
+endchoice
