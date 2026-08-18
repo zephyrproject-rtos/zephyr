@@ -189,6 +189,9 @@ A SoC declared with ``base`` cannot be extended, since it owns nothing to extend
 it is built on instead. Extensions of that SoC do apply, so a CPU cluster added to it from another
 SoC root is available here too, and that root's tree is loaded as well.
 
+When a board pairs SoCs that are independent of each other, rather than being built on one of
+them, declare that in the board's :file:`board.yml` instead, see :ref:`board_porting_requires`.
+
 Use ``base`` only when the SoC carries no configuration. A part that needs its own configuration is
 a SoC in its own right and should be described as one, in the tree of whatever it configures.
 
