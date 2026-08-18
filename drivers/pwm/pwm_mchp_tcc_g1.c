@@ -297,7 +297,25 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 			tcc_set_invert(mchp_pwm_cfg->regs, channel, invert_flag_set);
 		}
 
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
+		/*
+		 * In NPWM (single-slope) mode the output is active while COUNT < CC, so
+		 * CC == period leaves exactly one counter tick per period at the inactive
+		 * level - a glitch measured on hardware as one comparator edge per PWM
+		 * period. The Zephyr PWM API requires pulse == period to mean a constant
+		 * active level, so write period + 1 whenever pulse >= period, which keeps
+		 * COUNT < CC true for the whole period. When period is already the
+		 * counter maximum, CC and PER share the same bit width on this part, so
+		 * period + 1 does not fit and would wrap to 0 (constant inactive, worse
+		 * than the glitch); keep CC == period in that one corner case and accept
+		 * the pre-existing single-tick glitch there.
+		 */
+		uint32_t ccbuf_val = pulse;
+
+		if (pulse >= period) {
+			ccbuf_val = (period < top) ? (period + 1) : period;
+		}
+
+		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(ccbuf_val);
 		PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
 		ret_val = MCHP_PWM_SUCCESS;
 	}
