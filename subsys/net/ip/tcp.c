@@ -352,9 +352,8 @@ static const char *tcp_flags(uint8_t flags)
 	return buf;
 }
 
-static size_t tcp_data_len(struct net_pkt *pkt)
+static size_t tcp_data_len(struct net_pkt *pkt, struct tcphdr *th)
 {
-	struct tcphdr *th = th_get(pkt);
 	size_t tcp_options_len = (th_off(th) - 5) * 4;
 	int len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
@@ -403,7 +402,7 @@ static const char *tcp_th(struct net_pkt *pkt, uint32_t *seq_ptr, uint32_t *ack_
 	}
 
 	len += snprintk(buf + len, BUF_SIZE - len,
-			" Len=%ld", (long)tcp_data_len(pkt));
+			" Len=%ld", (long)tcp_data_len(pkt, th));
 end:
 #undef BUF_SIZE
 	return buf;
@@ -1545,7 +1544,8 @@ void net_tcp_reply_rst(struct net_pkt *pkt)
 		UNALIGNED_PUT(RST, &th_rst->th_flags);
 		UNALIGNED_PUT(th_pkt->th_ack, UNALIGNED_MEMBER_ADDR(th_rst, th_seq));
 	} else {
-		uint32_t ack = net_ntohl(th_pkt->th_seq) + tcp_data_len(pkt);
+		uint32_t ack = net_ntohl(th_pkt->th_seq) +
+			tcp_data_len(pkt, th_pkt);
 
 		if (th_flags(th_pkt) & SYN) {
 			ack++;
@@ -3005,7 +3005,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 
 	NET_DBG("[%p] %s", conn, tcp_conn_state(conn, pkt));
 
-	len = tcp_data_len(pkt);
+	len = tcp_data_len(pkt, th);
 
 	/* first validate the seqnum */
 	if (!tcp_validate_seq(conn, th, len)) {
@@ -4396,7 +4396,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 
 static size_t tp_tcp_recv_cb(struct tcp *conn, struct net_pkt *pkt)
 {
-	ssize_t len = tcp_data_len(pkt);
+	ssize_t len = tcp_data_len(pkt, th_get(pkt));
 	struct net_pkt *up = tcp_pkt_clone(pkt);
 
 	NET_DBG("[%p] pkt: %p, len: %zu", conn, pkt, net_pkt_get_len(pkt));
