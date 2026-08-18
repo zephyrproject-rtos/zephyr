@@ -2086,8 +2086,8 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 			   void *rsp, uint16_t *rsp_len)
 {
 	const struct btp_gatt_cfg_notify_mult_cmd *cp = cmd;
-	const size_t max_cnt = CONFIG_BT_L2CAP_TX_BUF_COUNT;
-	struct bt_gatt_notify_params params[max_cnt];
+	struct bt_gatt_notify_params params[CONFIG_BT_L2CAP_TX_BUF_COUNT];
+	const size_t max_cnt = ARRAY_SIZE(params);
 	struct bt_conn *conn;
 	const size_t min_cnt = 1U;
 	uint16_t cnt;
