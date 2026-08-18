@@ -10,6 +10,7 @@ config ETH_NUMAKER
 	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select DEPRECATED
 	help
 	  This option enables the Ethernet driver for Nuvoton NuMaker family of
 	  processors.
