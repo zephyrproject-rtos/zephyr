@@ -1,0 +1,96 @@
+# Copyright (c) 2026 Carl Zeiss Meditec AG
+# SPDX-License-Identifier: Apache-2.0
+
+properties:
+  input-clock-type:
+    type: string
+    required: true
+    enum:
+      - "crystal"
+      - "vcxo"
+      - "lvcmos"
+
+  input-frequency:
+    type: int
+    required: true
+    min: 8000000
+    max: 160000000
+    description: |
+      Input frequency in Hz to the CDCE9xx (8000000 Hz - 32000000 Hz for the crystal,
+      up to 160000000 Hz for a lvcmos clock).
+
+  xtal-load-pf:
+    type: int
+    min: 0
+    max: 20
+    default: 10
+    description: |
+      Crystal load-capacitor value to fine-tune performance on a board, or to compensate
+      for external influences.
+
+  keep-y1-enabled:
+    type: boolean
+    description: |
+      Ensure that output Y1 is never disabled. Important if the MCU is clocked by this output.
+
+  pdiv1:
+    type: int
+    min: 1
+    max: 1023
+    description: |
+      Divider for output Y1 (input is always input clock)
+
+child-binding:
+  description: |
+    PLL configuration. Each PLL needs at least one output divider child node
+    (see nested child-binding below).
+  properties:
+    clock-mult:
+      type: int
+      min: 1
+      max: 4095
+      required: true
+      description: |
+        N multiplier for this PLL.
+
+    clock-div:
+      type: int
+      min: 1
+      max: 511
+      required: true
+      description: |
+        M divider (pre-divider) for this PLL.
+
+    ssc:
+      type: string
+      enum:
+        - "off"
+        - "down-0.25"
+        - "down-0.5"
+        - "down-0.75"
+        - "down-1"
+        - "down-1.25"
+        - "down-1.5"
+        - "down-2"
+        - "center-0.25"
+        - "center-0.5"
+        - "center-0.75"
+        - "center-1"
+        - "center-1.25"
+        - "center-1.5"
+        - "center-2"
+      default: "off"
+      description: |
+        Spread spectrum clocking configuration for this PLL.
+
+    first-divider:
+      type: int
+      description: |
+        Output divider for the first output (Pdiv2, Pdiv4,...).
+
+    second-divider:
+      type: int
+      description: |
+        Output divider for the first output (Pdiv3, Pdiv5,...).
+
+on-bus: i2c
