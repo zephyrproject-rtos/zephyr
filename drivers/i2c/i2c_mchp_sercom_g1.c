@@ -397,7 +397,12 @@ static int i2c_apply_speed(const struct device *dev, uint32_t config)
 
 	if (!i2c_set_baudrate(dev, f_scl, f_ref)) {
 		LOG_ERR("Failed to set baudrate");
-		return -EIO;
+		/*
+		 * A bitrate the reference clock cannot reach is a bad
+		 * configuration, not a transfer failure: i2c_configure() has
+		 * -EINVAL for exactly this.
+		 */
+		return -EINVAL;
 	}
 
 	return 0;
