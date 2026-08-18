@@ -1,0 +1,43 @@
+common:
+  tags:
+    - applet
+    - llext
+    - userspace
+  depends_on: []
+  min_ram: 64
+  min_flash: 128
+  integration_platforms:
+    - qemu_cortex_a9
+    - qemu_cortex_r5
+    - qemu_cortex_a53
+    - qemu_x86/atom/virt
+    - mps2/an385
+    - mps2/an521/cpu0
+
+sample:
+  name: Applet - Hello World
+  description:  Demonstrates applet subsystem
+
+tests:
+  sample.applet.hello_world:
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello world from applet 'hello world' \\(arg=42\\)"
+  sample.applet.hello_world.llext:
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello world from applet 'hello world' \\(arg=42\\)"
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_APPLET_LLEXT=y
+      - CONFIG_LLEXT_HEAP_SIZE=64
+# Disabling MPU like the LLEXT sample does for compatibility.
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+      - arch:arc:CONFIG_ARC_MPU_ENABLE=n
