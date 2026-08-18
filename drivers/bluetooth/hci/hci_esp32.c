@@ -408,6 +408,8 @@ static uint16_t bt_esp32_get_hw_variant(void)
 	return BT_HCI_VS_HW_VAR_ESP32C5;
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 	return BT_HCI_VS_HW_VAR_ESP32C6;
+#elif defined(CONFIG_SOC_SERIES_ESP32C61)
+	return BT_HCI_VS_HW_VAR_ESP32C61;
 #elif defined(CONFIG_SOC_SERIES_ESP32H2)
 	return BT_HCI_VS_HW_VAR_ESP32H2;
 #else
