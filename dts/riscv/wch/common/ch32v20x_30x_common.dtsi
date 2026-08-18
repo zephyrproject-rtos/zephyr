@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32v20x_30x-reset.h>
 
 / {
 	chosen {
@@ -142,6 +143,7 @@
 			compatible = "wch,usart";
 			reg = <0x40013800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(APB2, 14)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <53>;
 			status = "disabled";
@@ -174,6 +176,11 @@
 			reg = <0x40021000 16>;
 			#clock-cells = <1>;
 			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		rng: rng@40023c00 {
