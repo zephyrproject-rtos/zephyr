@@ -343,7 +343,10 @@ MODEM_CHAT_MATCH_DEFINE(hl78xx_cimi_match, "", "", hl78xx_on_imsi);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmi_match, "", "", hl78xx_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmr_match, "", "", hl78xx_on_cgmr);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_serial_number_match, "+KGSN: ", "", hl78xx_on_serial_number);
-MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", "", hl78xx_on_iccid);
+/* An eUICC answers AT+CCID with "<iccid>,<eid>". Split on the comma so argv[1] is
+ * always the bare ICCID; a single-SIM response simply yields argc 2 instead of 3.
+ */
+MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", ",", hl78xx_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrep_match, "+KSREP: ", ",", hl78xx_on_ksrep);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrat_match, "+KSRAT: ", "", hl78xx_on_ksrat);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_kselacq_match, "+KSELACQ: ", ",", hl78xx_on_kselacq);
