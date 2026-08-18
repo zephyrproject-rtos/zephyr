@@ -9,6 +9,7 @@ System information, synchronization, DMA, and diagnostics.
    :maxdepth: 1
 
    hwinfo.rst
+   board_id.rst
    hwspinlock.rst
    entropy.rst
    edac/index.rst
