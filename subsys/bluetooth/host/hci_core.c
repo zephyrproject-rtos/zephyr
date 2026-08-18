@@ -671,6 +671,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		while (count--) {
 			sys_snode_t *node;
+			unsigned int key;
 
 			/* move the next TX context from the `pending` list to
 			 * the `complete` list.
@@ -685,7 +686,12 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 			k_sem_give(bt_conn_get_pkts(conn));
 
+			/* The `complete` list is consumed from another context,
+			 * which uses the same lock.
+			 */
+			key = irq_lock();
 			sys_slist_append(&conn->tx_complete, node);
+			irq_unlock(key);
 
 			/* align the `pending` value */
 			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
