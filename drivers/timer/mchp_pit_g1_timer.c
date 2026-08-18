@@ -13,7 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/irq.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_TICKLESS_KERNEL)
 BUILD_ASSERT(0, "PIT driver for tickless kernel support DOES NOT implemented yet!");
