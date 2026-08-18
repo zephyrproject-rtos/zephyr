@@ -737,8 +737,12 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	return spi_stm32_shift_fifo(spi, data);
-#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	if (LL_SPI_GetTransferSize(spi) > 0U) {
+		/* Transfer size is set, use FIFO mode. */
+		return spi_stm32_shift_fifo(spi, data);
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	uint32_t dir = ll_get_transfer_direction(spi);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
@@ -789,15 +793,19 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
 	return 0;
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 }
 
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) && !defined(CONFIG_SPI_RTIO)
-	spi_stm32_shift_fifo(spi, data);
-#else /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	if (LL_SPI_GetTransferSize(spi) > 0U) {
+		/* Transfer size is set, use FIFO mode. */
+		spi_stm32_shift_fifo(spi, data);
+		return;
+	}
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+
 	uint32_t dir = ll_get_transfer_direction(spi);
 
 	if (dir != STM32_SPI_HALF_DUPLEX_RX && ll_tx_is_not_full(spi) && data->tx_len != 0U) {
@@ -809,7 +817,6 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	if (dir != STM32_SPI_HALF_DUPLEX_TX && ll_rx_is_not_empty(spi) && data->rx_len != 0U) {
 		data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
 	}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 }
 
 /*
@@ -903,25 +910,28 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 
 	if (transfer_dir == STM32_SPI_FULL_DUPLEX && LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		struct spi_stm32_data *data = dev->data;
-
-#if !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		/* Non-H7 full-duplex master: seed the TX pipeline with the first
-		 * frame and enable RXNE only. Each RXNE ISR reads one received
-		 * frame then sends the next, keeping exactly one frame in flight.
-		 * This eliminates RX overrun without busy-waiting in ISR context.
-		 */
-		data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
-		ll_enable_int_rx_not_empty(spi);
-#else
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (LL_SPI_GetTransferSize(spi) != 0U) {
-			/* H7 full-duplex master: fill the TX FIFO with as many frames as
-			 * possible, up to the FIFO threshold. The DXP ISR will keep the
+			/* H7 with FIFO full-duplex master:
+			 * Fill the TX FIFO with as many frames as possible,
+			 * up to the FIFO threshold. The DXP ISR will keep the
 			 * FIFO full until all data is sent.
 			 */
 			spi_stm32_send_fifo(spi, data);
 			LL_SPI_EnableIT_DXP(spi);
+		} else {
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+			/* Non-H7 or H7 without FIFO full-duplex master:
+			 * Seed the TX pipeline with the first frame and enable RXNE only.
+			 * Each RXNE ISR reads one received frame then sends the next,
+			 * keeping exactly one frame in flight.
+			 * This eliminates RX overrun without busy-waiting in ISR context.
+			 */
+			data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
+			ll_enable_int_rx_not_empty(spi);
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		}
-#endif /* !DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 	} else {
 		if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
 			ll_enable_int_rx_not_empty(spi);
@@ -1687,10 +1697,24 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 				/* SPI needs to be disabled to set the transfer size */
 				ll_disable_spi(spi);
 			}
+
 			LL_SPI_SetTransferSize(spi, (uint32_t)frames);
 		} else {
-			LOG_ERR("Buffer size exceeds maximal supported value");
-			return -EINVAL;
+			LOG_INF("Buffer size exceeds maximal supported value. "
+				"Falling back to non-FIFO mode. "
+				"This may result in performance degradation.");
+
+			if (LL_SPI_GetTransferSize(spi) != 0U || data->fifo_threshold != 1) {
+				if (LL_SPI_IsEnabled(spi)) {
+					/* SPI needs to be disabled to set the transfer size */
+					ll_disable_spi(spi);
+				}
+
+				/* Set transfer size to 0 and set the FIFO threshold to 1 frame */
+				LL_SPI_SetTransferSize(spi, 0U);
+				data->fifo_threshold = 1;
+				LL_SPI_SetFIFOThreshold(spi, table_fifo_threshold[0]);
+			}
 		}
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
