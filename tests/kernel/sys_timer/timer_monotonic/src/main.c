@@ -88,7 +88,7 @@ ZTEST(timer_fn, test_timer)
  */
 ZTEST(timer_fn, test_timer_monotonic_irq_locked)
 {
-	struct k_timer timer;
+	static struct k_timer timer;
 	uint32_t t_before, t_during, t_after;
 	unsigned int key;
 	int iter;
