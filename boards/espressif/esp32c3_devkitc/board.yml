@@ -4,3 +4,5 @@ board:
   vendor: espressif
   socs:
   - name: esp32c3
+    variants:
+    - name: qemu
