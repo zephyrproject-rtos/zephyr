@@ -9,12 +9,14 @@
  * PDU fields sizes
  */
 
+#ifndef ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_PDU_H_
+#define ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_PDU_H_
+
 #define PDU_PREAMBLE_SIZE(phy) (phy&0x3)
 #define PDU_ACCESS_ADDR_SIZE   4
 #define PDU_HEADER_SIZE        2
 #define PDU_MIC_SIZE           4
 #define PDU_CRC_SIZE           3
-#define PDU_CRCINIT_SIZE       3  /* CRC initialization value size */
 #define PDU_OVERHEAD_SIZE(phy) (PDU_PREAMBLE_SIZE(phy) + \
 				PDU_ACCESS_ADDR_SIZE + \
 				PDU_HEADER_SIZE + \
@@ -1282,3 +1284,4 @@ struct pdu_dtm {
 
 /* Direct Test Mode maximum payload size */
 #define PDU_DTM_PAYLOAD_SIZE_MAX 255
+#endif /* ZEPHYR_SUBSYS_BLUETOOTH_CONTROLLER_LL_SW_PDU_H_ */
