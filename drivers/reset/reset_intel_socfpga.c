@@ -12,6 +12,7 @@
 
 /** regwidth 4 for 32 bit register */
 #define RESET_REG_WIDTH 4
+#define RESET_INTEL_SOCFPGA_BUSY_WAIT_US 10U
 
 struct reset_intel_config {
 	DEVICE_MMIO_ROM;
@@ -51,10 +52,12 @@ static void reset_intel_soc_update(const struct device *dev, uint32_t id, bool a
 	if (assert ^ !config->active_low) {
 		if (sys_test_bit(base_address + offset, regbit) == 0) {
 			sys_set_bit(base_address + offset, regbit);
+			k_busy_wait(RESET_INTEL_SOCFPGA_BUSY_WAIT_US);
 		}
 	} else {
 		if (sys_test_bit(base_address + offset, regbit) != 0) {
 			sys_clear_bit(base_address + offset, regbit);
+			k_busy_wait(RESET_INTEL_SOCFPGA_BUSY_WAIT_US);
 		}
 	}
 }
