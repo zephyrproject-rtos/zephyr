@@ -772,6 +772,7 @@ struct wifi_connect_req_params {
 	 * EAP is a framework for network authentication, commonly used in enterprise Wi-Fi.
 	 * This field allows specifying the protocol version if required by the network.
 	 * Applies to Phase 1 (outer authentication).
+	 * A value of -1 will result in version negotiation.
 	 */
 	int eap_ver;
 
