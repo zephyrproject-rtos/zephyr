@@ -1015,9 +1015,24 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 	do {
 		struct net_buf *new;
 
-		new = net_buf_alloc_fixed(pool, timeout);
-		if (!new) {
-			goto error;
+		/* An allocation that does not block cannot have consumed any
+		 * of the caller's timeout, so only work out how much of it is
+		 * left when the pool was empty and we actually have to wait.
+		 * That keeps the clock out of the common path: with K_NO_WAIT
+		 * the deadline handling in net_buf_alloc_len() short circuits
+		 * too, so nothing below here reads it either.
+		 */
+		new = net_buf_alloc_fixed(pool, K_NO_WAIT);
+		if (new == NULL) {
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				goto error;
+			}
+
+			new = net_buf_alloc_fixed(pool,
+						  sys_timepoint_timeout(end));
+			if (new == NULL) {
+				goto error;
+			}
 		}
 
 		if (!first && !current) {
@@ -1046,8 +1061,6 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 			size -= current->size;
 		}
-
-		timeout = sys_timepoint_timeout(end);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_FRAG_CHECK_IF_NOT_IN_USE(new, new->ref + 1);
