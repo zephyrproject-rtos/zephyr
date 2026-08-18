@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESPRESSIF_QEMU
+	bool "Espressif QEMU emulation support"
+	depends on SOC_SERIES_ESP32 || SOC_SERIES_ESP32S3 || \
+		SOC_SERIES_ESP32C3 || SOC_SERIES_ESP32C6
+	depends on !SOC_ESP32_APPCPU && !SOC_ESP32S3_APPCPU
+	depends on !SOC_ESP32C6_LPCORE
+	select ESPRESSIF_QEMU_TARGET
+	select BUILD_OUTPUT_BIN
+	help
+	  Generate a merged SPI flash image and enable the 'west build -t run'
+	  target using Espressif's QEMU fork (https://github.com/espressif/qemu).
+
+	  Enable either with -DCONFIG_ESPRESSIF_QEMU=y on any board whose SoC
+	  is supported, or by building a DevKitC /qemu board variant
+	  (e.g. esp32c3_devkitc/esp32c3/qemu), which is intended for
+	  Twister/CI. The variant targets set this option in defconfig.
+
+	  Requires qemu-system-xtensa (ESP32, ESP32-S3) or qemu-system-riscv32
+	  (ESP32-C3, ESP32-C6) from that fork on PATH, or set ESPRESSIF_QEMU_PATH
+	  / QEMU_BIN_PATH to the directory containing the binary.
+
+	  For Simple Boot builds, a single application image is merged. For
+	  MCUboot/sysbuild builds, the bootloader and signed application are
+	  merged at their partition offsets in the application image. The
+	  MCUboot image itself does not enable the emu/flash-merge path
+	  (CMake skips CONFIG_MCUBOOT builds).
+
+	  On ESP32, the run target supplies an ECO3 eFuse image (CHIP_VER_REV1
+	  and CHIP_VER_REV2) so the guest reports chip revision v3.0 without
+	  enabling CONFIG_ESP32_USE_UNSUPPORTED_REVISION.
