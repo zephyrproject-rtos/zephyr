@@ -38,3 +38,10 @@ config SAMPLE_DISPLAY_DOUBLE_BUFFER
 	depends on SAMPLE_DISPLAY_FULL_FRAME
 	help
 	  Allocates two full-screen buffers.
+
+config SAMPLE_DISPLAY_VSYNC_CALLBACK
+	bool "Use VSYNC callback for tear-free frame pacing"
+	depends on DISPLAY
+	help
+	  When enabled the sample registers a VSYNC event callback and waits
+	  on a semaphore posted from the callback.

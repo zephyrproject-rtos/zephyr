@@ -59,6 +59,24 @@ static void blit_rect(uint8_t *frame, uint16_t frame_w,
 }
 #endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
 
+#ifdef CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK
+static K_SEM_DEFINE(vsync_sem, 0, 1);
+
+static enum display_event_result on_vsync(const struct device *dev,
+					  uint32_t evt,
+					  const struct display_event_data *data,
+					  void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(evt);
+	ARG_UNUSED(data);
+	ARG_UNUSED(user_data);
+
+	k_sem_give(&vsync_sem);
+	return DISPLAY_EVENT_RESULT_CONTINUE;
+}
+#endif /* CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK */
+
 enum corner {
 	TOP_LEFT,
 	TOP_RIGHT,
@@ -392,6 +410,7 @@ int sample_display_draw(void)
 	size_t render_idx = 0;
 	struct display_buffer_descriptor full_desc = {0};
 	uint8_t *full_buf[SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS] = {NULL};
+	uint32_t vsync_handle = 0;
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -541,6 +560,18 @@ int sample_display_draw(void)
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
+	if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK)) {
+		ret = display_register_event_cb(display_dev, on_vsync, NULL,
+						DISPLAY_EVENT_VSYNC, true, &vsync_handle);
+		if (ret < 0) {
+			LOG_WRN("VSYNC callback not supported (%d), falling back to polling",
+				ret);
+			vsync_handle = 0;
+		} else {
+			LOG_INF("VSYNC callback registered (handle %u)", vsync_handle);
+		}
+	}
+
 	/*
 	 * The following writes will only render parts of the image,
 	 * so turn this option on.
@@ -642,7 +673,12 @@ int sample_display_draw(void)
 		}
 
 		++grey_count;
-		k_msleep(grey_scale_sleep);
+
+		if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK) && vsync_handle != 0) {
+			k_sem_take(&vsync_sem, K_FOREVER);
+		} else {
+			k_msleep(grey_scale_sleep);
+		}
 		render_idx = (render_idx + 1) % SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS;
 
 #if CONFIG_TEST
@@ -654,6 +690,10 @@ int sample_display_draw(void)
 	}
 
 end:
+	if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_VSYNC_CALLBACK) && vsync_handle != 0) {
+		(void)display_unregister_event_cb(display_dev, vsync_handle);
+	}
+
 #ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
 	for (size_t i = 0; i < SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS; i++) {
 		k_free(full_buf[i]);
