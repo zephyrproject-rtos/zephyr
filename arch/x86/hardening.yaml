@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the x86 architecture.
+
+rules:
+  X86_DEBUG_INFO:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Adds x86 kernel debugging information and hooks intended for development-time diagnosis.
+    references: [CWE-489]
+
+  X86_MMU:
+    value: y
+    rationale: |
+      Enables the x86 MMU so kernel and thread memory can be protected with per-page permissions,
+      including making memory non-executable.
+    references: [CWE-119]

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Trusted Firmware-M.
+
+rules:
+  TFM_CMAKE_BUILD_TYPE_DEBUG:
+    value: n
+    rationale: |
+      Builds the TF-M secure firmware without optimizations and with debug aids, which is not a
+      supported configuration for protecting secure-world assets.
+
+  TFM_DUMMY_PROVISIONING:
+    value: n
+    rationale: |
+      Provisions TF-M with publicly known dummy keys and identity data, so attestation and anything
+      derived from the provisioned material offers no security.
+    references: [CWE-798]

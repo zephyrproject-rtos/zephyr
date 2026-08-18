@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for DMA drivers.
+
+rules:
+  DMA_INTEL_ADSP_GPDMA_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Extra DMA driver debug output discloses internal transfer state and addresses, and belongs
+      only in development builds.
+    references: [CWE-200]

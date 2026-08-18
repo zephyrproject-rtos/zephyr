@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the shell.
+
+rules:
+  SHELL:
+    value: n
+    profiles: [strict]
+    rationale: |
+      The shell offers interactive inspection and control of the running system to anyone with
+      access to its transport, an intentionally powerful interface that production images should not
+      expose.
+    references: [CWE-489]

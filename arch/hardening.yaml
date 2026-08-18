@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for architecture-generic options.
+
+rules:
+  EXCEPTION_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Prints detailed fault information (register contents, fault addresses) on exceptions, handing
+      an attacker feedback for developing memory-corruption exploits.
+    references: [CWE-209]
+
+  HW_STACK_PROTECTION:
+    value: y
+    rationale: |
+      Uses hardware (MPU/MMU) to catch thread stack overflows at the moment they happen instead of
+      after memory has been corrupted.
+    references: [CWE-121, CWE-787]
+
+  MPU_STACK_GUARD:
+    value: y
+    rationale: |
+      Places an MPU guard region below each thread stack so overflows trigger a fault instead of
+      silently corrupting adjacent memory. Not applicable on hardware without an MPU.
+    references: [CWE-121, CWE-787]

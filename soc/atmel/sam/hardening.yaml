@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Atmel SAM SoCs.
+
+rules:
+  SOC_ATMEL_SAM_DISABLE_ERASE_PIN:
+    value: y
+    rationale: |
+      With the ERASE pin left in system mode, anyone with physical access can wipe the entire flash,
+      including its security settings, by asserting one pin. Disabling it removes this trivial
+      physical attack.
+    references: [CWE-1263]
+
+  SOC_ATMEL_SAM_WAIT_MODE:
+    value: n
+    rationale: |
+      Keeps the CPU clock running in low-power states solely so a JTAG debugger can stay attached;
+      production devices should not be optimized for debugger attachment.
+    references: [CWE-1244]

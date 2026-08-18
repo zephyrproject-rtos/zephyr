@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for tracing.
+
+rules:
+  TRACING:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Kernel tracing streams scheduling and kernel object activity to a host tool, providing
+      detailed observability that has no place in a hardened production image.
+    references: [CWE-200]
