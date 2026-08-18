@@ -88,6 +88,10 @@ enum flash_it51xxx_ex_op {
 	 * Read protection.
 	 */
 	FLASH_IT51XXX_READ_PROTECT,
+	/**
+	 * Lock for eFlash write/read protection.
+	 */
+	FLASH_IT51XXX_WR_PROTECT_LOCK,
 };
 
 /**
@@ -102,6 +106,22 @@ struct flash_it51xxx_ex_op_addr_protection {
 	uint8_t path;
 	/** protection status of the specified region */
 	bool is_protected;
+};
+
+/**
+ * @brief eFlash write/read protection lock request/result
+ */
+struct flash_it51xxx_ex_op_wr_protect_lock {
+	/** Bitmap of protection paths to lock (see PROTECT_PATH_*) */
+	uint8_t path;
+	/**
+	 * Lock status of the specified protection paths
+	 *
+	 * For requests, this field is unused because only locking
+	 * operation is supported. For results, it indicates whether
+	 * the specified protection paths are locked.
+	 */
+	bool is_locked;
 };
 
 /**
