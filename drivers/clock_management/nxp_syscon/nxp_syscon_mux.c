@@ -26,8 +26,15 @@ static int syscon_clock_mux_get_parent(const struct clk *clk_hw)
 {
 	const struct syscon_clock_mux_config *config = clk_hw->hw_data;
 
-	return clock_management_mux_get_parent((uintptr_t)config->reg, config->mask_width,
+	int ret = clock_management_mux_get_parent((uintptr_t)config->reg, config->mask_width,
 					       config->mask_offset, config->parent_cnt);
+	if (ret == -EINVAL) {
+		/* Syscon muxes may be set to an invalid index at reset, this just
+		 * means they are disconnected
+		 */
+		return -ENOTCONN;
+	}
+	return ret;
 }
 
 static int syscon_clock_mux_configure(const struct clk *clk_hw, const void *mux)
