@@ -289,10 +289,23 @@ int mpipe_aud_i2s_codec_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_
 
 	ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
 	if (ret < 0) {
-		LOG_DBG("Failed to write data: %d\n", ret);
-		net_buf_unref(in_buf);
-		*out_buf = NULL;
-		return -EIO;
+		/*
+		 * A TX underrun latches ERROR; PREPARE re-arms it. Recover in place
+		 * and, if the retry still fails, drop only this buffer instead of
+		 * tearing the whole stream down.
+		 */
+		(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
+		aud_i2s_codec_sink->started = false;
+		aud_i2s_codec_sink->count = 0;
+
+		ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
+		if (ret < 0) {
+			LOG_WRN("TX xrun, dropped a buffer (%d)", ret);
+			net_buf_unref(in_buf);
+			*out_buf = NULL;
+			return 0;
+		}
+		LOG_WRN("TX underrun, recovered");
 	}
 
 	if (!aud_i2s_codec_sink->started) {
