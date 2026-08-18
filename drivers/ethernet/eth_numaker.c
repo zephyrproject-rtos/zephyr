@@ -71,6 +71,16 @@ struct eth_numaker_config {
 /* Driver context/data */
 struct eth_numaker_data {
 	synopGMACdevice *gmacdev;
+#if defined(CONFIG_PTP_CLOCK)
+	/*
+	 * One outstanding egress timestamp. A single slot rather than one per descriptor
+	 * because timestamped frames are the PTP event messages -- a handful per second --
+	 * and a second concurrent one simply goes out untimestamped instead of growing a
+	 * ring of references that has to be unwound on every error and reset path.
+	 */
+	struct net_pkt *tx_ts_pkt;
+	DmaDesc *tx_ts_desc;
+#endif
 	struct net_if *iface;
 	uint8_t mac_addr[NU_HWADDR_SIZE];
 	struct k_spinlock rx_frame_buf_lock;
@@ -504,12 +514,60 @@ static void m_numaker_gmacdev_trigger_tx(synopGMACdevice *gmacdev, uint16_t leng
 	synopGMAC_resume_dma_tx(gmacdev);
 }
 
+#if defined(CONFIG_PTP_CLOCK)
+/*
+ * Collect the egress timestamp of the parked frame, if it has been transmitted.
+ *
+ * Must run BEFORE synop_handle_transmit_over(), which reclaims the descriptor and clears
+ * the status word this reads.
+ */
+static void eth_numaker_reap_tx_timestamp(const struct device *dev)
+{
+	struct eth_numaker_data *data = dev->data;
+	struct net_pkt *pkt = data->tx_ts_pkt;
+	DmaDesc *desc = data->tx_ts_desc;
+
+	if (pkt == NULL || desc == NULL) {
+		return;
+	}
+	if (synopGMAC_is_desc_owned_by_dma(desc)) {
+		return; /* still in flight; a later TX interrupt will find it */
+	}
+
+	if (desc->status & DescTxTSStatus) {
+		struct net_ptp_time ts = {
+			.second = desc->timestamphigh,
+			.nanosecond = desc->timestamplow,
+		};
+
+		net_pkt_set_timestamp(pkt, &ts);
+#if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
+		/* Only declared with the timestamp thread, which is what delivers the
+		 * completion to whoever registered a callback. Without it the timestamp is
+		 * still attached to the packet, so a caller holding its own reference can
+		 * read it; there is simply nobody to notify.
+		 */
+		net_if_add_tx_timestamp(pkt);
+#endif
+	}
+	/* Released whether or not TTSS was set: the frame is gone either way, and holding
+	 * the reference for a timestamp the MAC did not capture leaks it.
+	 */
+	data->tx_ts_pkt = NULL;
+	data->tx_ts_desc = NULL;
+	net_pkt_unref(pkt);
+}
+#endif /* CONFIG_PTP_CLOCK */
+
 static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_numaker_data *data = dev->data;
 	synopGMACdevice *gmacdev = data->gmacdev;
 	uint16_t total_len = net_pkt_get_len(pkt);
 	uint8_t *buffer;
+#if defined(CONFIG_PTP_CLOCK)
+	const struct eth_numaker_config *cfg = dev->config;
+#endif
 
 	/* Get exclusive access */
 	if (total_len > NET_ETH_MAX_FRAME_SIZE) {
@@ -527,6 +585,27 @@ static int numaker_eth_tx(const struct device *dev, struct net_pkt *pkt)
 	if (net_pkt_read(pkt, buffer, total_len)) {
 		goto error;
 	}
+
+#if defined(CONFIG_PTP_CLOCK)
+	if (cfg->ptp_clock != NULL && net_pkt_is_tx_timestamping(pkt) &&
+	    data->tx_ts_pkt == NULL) {
+		/*
+		 * Park the packet against the descriptor trigger_tx() is about to use, with
+		 * interrupts locked across both. Outside the lock there is a window where the
+		 * frame completes before the slot is set, and the timestamp would be lost --
+		 * not corrupted, but lost silently, which for a Delay_Req is a path-delay
+		 * measurement that never converges.
+		 */
+		unsigned int key = irq_lock();
+
+		data->tx_ts_pkt = net_pkt_ref(pkt);
+		data->tx_ts_desc = gmacdev->TxNextDesc;
+		m_numaker_gmacdev_trigger_tx(gmacdev, total_len);
+		irq_unlock(key);
+
+		return 0;
+	}
+#endif
 
 	/* Prepare transmit descriptors to give to DMA */
 	m_numaker_gmacdev_trigger_tx(gmacdev, total_len);
@@ -729,6 +808,10 @@ static void eth_numaker_isr(const struct device *dev)
 
 	if (interrupt & synopGMACDmaTxNormal) {
 		LOG_DBG("Finished Normal Transmission");
+#if defined(CONFIG_PTP_CLOCK)
+		/* Before the reclaim below clears the descriptor status. */
+		eth_numaker_reap_tx_timestamp(dev);
+#endif
 		synop_handle_transmit_over(0);
 		/* No-op at this stage for TX INT */
 	}
