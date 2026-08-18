@@ -224,6 +224,10 @@ static int mpipe_aud_i2s_src_acquire_buffer(struct mpipe_buffer_pool *pool, stru
 
 	err = i2s_read(aud_pool->aud_dev, &mem_block, &bytes_used);
 	if (err < 0) {
+		if (err == -EAGAIN) {
+			/* RX drained after a stop/DROP: a flush, not an error. */
+			return -EPIPE;
+		}
 		LOG_ERR("Unable to read an I2S buffer: %d", err);
 		return err;
 	}
