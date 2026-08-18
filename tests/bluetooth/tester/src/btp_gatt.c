@@ -2108,11 +2108,6 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 		return BTP_STATUS_FAILED;
 	}
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
 	(void)memset(params, 0, sizeof(params));
 
 	for (uint16_t i = 0U; i < cnt; i++) {
@@ -2135,6 +2130,11 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 		params[i].len = value->len;
 		params[i].func = notify_cb;
 		params[i].user_data = NULL;
+	}
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_gatt_notify_multiple(conn, cnt, params);
