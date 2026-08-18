@@ -616,20 +616,56 @@ def write_gpio_hogs(node: edtlib.Node) -> None:
         for macro, val in macro2val.items():
             out_dt_define(macro, val)
 
-def write_clocks(node: edtlib.Node) -> None:
-    # Write special macros for clock-output-names and clock-state-names properties.
+def ranked_states(node: edtlib.Node) -> list[edtlib.Node]:
+    # Returns a list of the node's clock-state children, sorted by rank.
+    # If a clock-state child is not referenced by any clock-request-n
+    # property, it is not included in the returned list.
+    referenced_outputs = [child for child in node.children.values() if len(child.required_by) > 0]
+    compat_outputs = [child for child in referenced_outputs if "clock-state" in child.compats]
+    return sorted(compat_outputs, key=lambda x: x.props["rank"].val)
 
-    out_comment("Clock management (clock-output-names, clock-state-names) properties:")
+def write_clocks(node: edtlib.Node) -> None:
+    # Write special macros for clock-output-names, clock-request, and
+    # clock-request-names properties.
+
+    out_comment("Clock management (clock-output-names, clock-request-names) properties:")
+    clock_request_re = re.compile(r"^clock-request-(\d+)$")
 
     for prop_name, prop in node.props.items():
         if prop_name == "clock-output-names":
             for i, clock_name in enumerate(prop.val):
                 prop_name = clock_name.replace("-", "_")
                 out_dt_define(f"{node.z_path_id}_CLOCK_OUTPUT_NAME_{prop_name}_IDX", i)
-        if prop_name == "clock-state-names":
+        if prop_name == "clock-request-names":
             for i, clock_state in enumerate(prop.val):
                 prop_name = clock_state.replace("-", "_")
-                out_dt_define(f"{node.z_path_id}_CLOCK_STATE_NAME_{prop_name}_IDX", i)
+                out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_NAME_{prop_name}_IDX", i)
+        match = clock_request_re.match(prop_name)
+        if match: # clock-request-n property
+            clock_requests = {}
+            for state in prop.val:
+                # Find the clock node that the state is defined for
+                clock_node = state.parent
+                sorted_outputs = ranked_states(clock_node)
+                idx = sorted_outputs.index(state)
+                if clock_node not in clock_requests:
+                    # Add the index of this state as the first acceptable
+                    # state for this clock node, using a bitmask
+                    clock_requests[clock_node] = 1 << idx
+                else:
+                    clock_requests[clock_node] |= 1 << idx
+            request_idx = match.group(1)
+            fn_string = "".join(f"fn(DT_{clock_node.z_path_id}, {clock_requests[clock_node]}) " for clock_node in clock_requests)
+            out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_FOREACH(fn)", fn_string)
+            out_dt_define(f"{node.z_path_id}_CLOCK_REQUEST_{request_idx}_LEN", len(clock_requests))
+    if "clock-output" in node.compats:
+        # Generate a macro with the clock-output states presorted by their
+        # rank. Remove clock-output states are not referenced by any
+        # clock-request-n property. This saves the clock framework
+        # from runtime sorting of these states by rank.
+        sorted_outputs = ranked_states(node)
+        fn_string = "".join(f"fn(DT_{output.z_path_id}) " for output in sorted_outputs)
+        out_dt_define(f"{node.z_path_id}_CLOCK_STATE_SORTED_FOREACH(fn)", fn_string)
 
 
 def write_maps(node: edtlib.Node) -> None:
