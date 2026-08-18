@@ -429,5 +429,15 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 out:
 	k_mutex_unlock(&lock);
 
+	/*
+	 * dispatch_table[sock] was already cleared above, so no new call into
+	 * recv_data() can pick up this ctx. But a call that already read the
+	 * (still non-NULL) pointer may still be in its critical section,
+	 * holding ctx->lock while it finishes dispatching. Wait for it here so
+	 * the caller can safely reuse/reinit ctx once we return.
+	 */
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	k_mutex_unlock(&ctx->lock);
+
 	return ret;
 }
