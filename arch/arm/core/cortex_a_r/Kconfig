@@ -13,6 +13,13 @@
 # CPU_AARCH32_CORTEX_A / if CPU_AARCH32_CORTEX_R blocks so they are not
 # exposed if one selects a different ARM Cortex Family (Cortex-M).
 
+config CPU_ARM926EJ_S
+	bool
+	select CPU_AARCH32_ARM9
+	select ARMV5TEJ
+	help
+	  This option signifies the use of a ARM926EJ-S CPU.
+
 config CPU_CORTEX_A7
 	bool
 	select CPU_AARCH32_CORTEX_A
@@ -39,6 +46,33 @@ config CPU_CORTEX_A32
 	select CPU_HAS_DCACHE
 	help
 	  This option signifies the use of a Cortex-A32 CPU.
+
+if CPU_AARCH32_ARM9
+
+config ARMV5TEJ
+	bool
+	select ARMV5TE
+	help
+	  This option signifies the use of a ARMv5TEJ CPU.
+
+config ARMV5TE
+	bool
+	select ARMV5T
+	help
+	  This option signifies the use of a ARMv5TE CPU.
+
+config ARMV5T
+	bool
+	select ARMV5
+	help
+	  This option signifies the use of a ARMv5T CPU.
+
+config ARMV5
+	bool
+	help
+	  This option signifies the use of a ARMv5 CPU.
+
+endif # CPU_AARCH32_ARM9
 
 if CPU_AARCH32_CORTEX_A
 
@@ -95,6 +129,12 @@ config ARMV7_A_NS
 	help
 	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
 
+endif # CPU_AARCH32_CORTEX_A
+
+if CPU_AARCH32_CORTEX_A || CPU_AARCH32_ARM9
+
+# ARM9 and ARMv7 utilize the same terminology for stack size parameters.
+
 config ARMV7_EXCEPTION_STACK_SIZE
 	int "Undefined Instruction and Abort stack size (in bytes)"
 	default 256
@@ -121,6 +161,8 @@ config ARMV7_SYS_STACK_SIZE
 	  This option specifies the size of the stack used by the system mode.
 
 config RUNTIME_NMI
+	# Attaching an NMI handler at runtime is not yet implemented for ARM9.
+	depends on !CPU_AARCH32_ARM9
 	default y
 
 config GEN_ISR_TABLES
@@ -135,7 +177,7 @@ config DCACHE_LINE_SIZE
 config ICACHE_LINE_SIZE
 	default 32
 
-endif # CPU_AARCH32_CORTEX_A
+endif # CPU_AARCH32_CORTEX_A || CPU_AARCH32_ARM9
 
 config CPU_CORTEX_R4
 	bool
