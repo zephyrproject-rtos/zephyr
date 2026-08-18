@@ -86,6 +86,41 @@ static void print_supported_ethernet_capabilities(
 	}
 #endif
 }
+
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+struct ethernet_mcast_print_data {
+	const struct shell *sh;
+	bool printed;
+};
+
+static void ethernet_mcast_addr_cb(struct net_if *iface,
+				   const struct net_eth_mcast_addr *addr,
+				   void *user_data)
+{
+	struct ethernet_mcast_print_data *data = user_data;
+	const struct shell *sh = data->sh;
+
+	ARG_UNUSED(iface);
+
+	PR("\t%s (%ld)\n",
+	   net_sprint_ll_addr(addr->addr.addr, sizeof(struct net_eth_addr)),
+	   (long)atomic_get(&addr->atomic_ref));
+	data->printed = true;
+}
+
+static void print_ethernet_mcast_addrs(const struct shell *sh, struct net_if *iface)
+{
+	struct ethernet_mcast_print_data data = { .sh = sh };
+
+	PR("Ethernet multicast addresses (max %d):\n", NET_ETH_MCAST_FILTER_COUNT);
+
+	net_eth_mcast_addr_foreach(iface, ethernet_mcast_addr_cb, &data);
+
+	if (!data.printed) {
+		PR("\t<none>\n");
+	}
+}
+#endif /* NET_ETH_MCAST_FILTER_SUPPORTED */
 #endif /* CONFIG_NET_L2_ETHERNET */
 
 #ifdef CONFIG_ETH_PHY_DRIVER
@@ -388,6 +423,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			} else {
 				PR("VLAN tag  : %d (0x%03x)\n", tag, tag);
 			}
+
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+			print_ethernet_mcast_addrs(sh, iface);
+#endif
 		}
 	}
 #endif
@@ -406,6 +445,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			print_phy_link_state(sh, phy_dev);
 		}
 #endif /* CONFIG_ETH_PHY_DRIVER */
+
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+		print_ethernet_mcast_addrs(sh, iface);
+#endif
 	}
 #endif /* CONFIG_NET_L2_ETHERNET */
 
