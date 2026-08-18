@@ -37,6 +37,12 @@ void IRAM_ATTR lp_core_image_init(void)
 		return;
 	}
 
+	if (*(const uint32_t *)data == 0xffffffff) {
+		LOG_ERR("LP core partition at 0x%x is erased; LP image not flashed",
+			lpcore_img_off);
+		return;
+	}
+
 	int ret = ulp_lp_core_load_binary(data, lpcore_img_size);
 
 	if (ret != 0) {
