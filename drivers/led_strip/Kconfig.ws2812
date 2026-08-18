@@ -142,3 +142,16 @@ config WS2812_STRIP_BFLB_WO_ASYNC
 	  This may use a lot of RAM.
 
 endif
+
+config WS2812_STRIP_NRF_PWM
+	bool "WS2812 LED strip nRF PWM driver"
+	default y
+	depends on DT_HAS_WORLDSEMI_WS2812_NRF_PWM_ENABLED
+	select NRFX_PWM
+	help
+	  Enable driver for WS2812 (and compatible) LED strips using the
+	  nRF PWM peripheral's EasyDMA in COMMON decoder mode. One frame is
+	  encoded into 16-bit PWM words and clocked out as a single EasyDMA
+	  burst, so the CPU is uninvolved while the frame is on the wire.
+	  The nrfx PWM instance is selected at runtime from the devicetree
+	  node's reg address.

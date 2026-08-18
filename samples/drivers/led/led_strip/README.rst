@@ -47,9 +47,17 @@ WS2812
 ======
 
 #. Ensure your Zephyr board, and the LED strip share a common ground.
-#. Connect the LED strip control pin (either I2S SDOUT, SPI MOSI or GPIO) from
-   your board to the data input pin of the first WS2812 IC in the strip.
+#. Connect the LED strip control pin (either I2S SDOUT, SPI MOSI, GPIO or, on
+   an nRF SoC, a PWM output) from your board to the data input pin of the
+   first WS2812 IC in the strip.
 #. Power the LED strip at an I/O level compatible with the control pin signals.
+
+On an nRF SoC, the ``worldsemi,ws2812-nrf-pwm`` backend drives the strip
+directly from the nRF PWM peripheral's EasyDMA in COMMON decoder mode, so one
+frame is a single DMA burst with the CPU uninvolved while it is clocked out.
+See :zephyr_file:`samples/drivers/led/led_strip/boards/nrf52840dk_nrf52840.overlay`,
+which claims the otherwise unused ``pwm1`` instance and routes it to Arduino
+header pin D2.
 
 Note about thingy52
 -------------------
