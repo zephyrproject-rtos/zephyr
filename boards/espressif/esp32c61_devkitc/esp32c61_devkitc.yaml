@@ -1,0 +1,17 @@
+identifier: esp32c61_devkitc
+name: ESP32-C61-DevKitC
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - gpio
+  - watchdog
+  - uart
+  - spi
+  - i2c
+  - entropy
+  - pwm
