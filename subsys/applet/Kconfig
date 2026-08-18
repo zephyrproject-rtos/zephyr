@@ -1,0 +1,86 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig APPLET
+	bool "Zephyr Applet"
+	select THREAD_NAME
+	select SCHED_CPU_MASK if SMP
+	select DYNAMIC_OBJECTS if USERSPACE
+	help
+	  Enable the Zephyr applet subsystem.
+
+	  The applet model groups one or more Zephyr threads into a logical
+	  sub-application, called an "applet". An applet may optionally:
+
+	    - Load its code from an ELF binary at runtime (LLEXT)
+	    - Use memory domains for per-applet hardware memory isolation
+	      (requires CONFIG_USERSPACE)
+	    - Run none or all of its threads in unprivileged mode
+
+if APPLET
+
+config APPLET_LLEXT
+	bool "Support LLEXT-backed applets"
+	depends on LLEXT
+	default y if LLEXT
+	help
+	  When enabled, applets can be loaded from ELF binaries via the
+	  LLEXT subsystem. When disabled, only "native" applets (whose threads
+	  run code already linked into the main image) are supported.
+
+config APPLET_NAME_MAX_LEN
+	int "Maximum length of a applet name"
+	default 15
+	range 8 31
+	help
+	  Maximum number of characters in a applet name, not counting the
+	  null terminator. Truncation is silent.
+
+config APPLET_HEAP_SIZE
+	int "Heap (bytes) used for per-thread bookkeeping slots"
+	default 1024
+	help
+	  The applet subsystem allocates one applet_thread slot from a
+	  dedicated kernel heap each time applet_add_thread() is called.
+	  Each slot is roughly the size of a struct k_thread plus a
+	  k_mem_partition, so a 1024-byte heap typically holds 4-6 threads.
+
+	  Increase this value if your application creates many concurrent
+	  applet threads and applet_add_thread() starts returning
+	  -ENOMEM.
+
+config APPLET_THREAD_STACK_SIZE_DEFAULT
+	int "Default applet thread stack size (bytes)"
+	default 2048
+	help
+	  Suggested stack size for an applet thread. The applet subsystem never
+	  allocates stacks itself; applications use this value to size the
+	  stacks they pass to applet_add_thread() and applet_add_thread_sym().
+
+config APPLET_THREAD_PRIORITY_DEFAULT
+	int "Default applet thread scheduling priority"
+	default 5
+	range -16 14
+	help
+	  Scheduling priority applied to a new applet thread when
+	  applet_opts.thread_priority is not overridden.
+
+config APPLET_FATAL_HANDLER
+	bool "Install a fatal error handler for applet threads"
+	help
+	  When enabled, the applet subsystem installs a custom
+	  k_sys_fatal_error_handler() that, depending on the value of
+	  opts.halt_on_fault, does one of the following:
+
+	    - Halts the whole system via `k_fatal_halt()`
+		- Aborts all threads of the offending applet
+	    - Aborts only the offending thread
+
+	  Do not enable this option if your application already provides its
+	  own k_sys_fatal_error_handler().
+
+module = APPLET
+module-str = applet
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # APPLET
