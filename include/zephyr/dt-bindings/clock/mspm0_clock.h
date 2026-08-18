@@ -35,5 +35,9 @@
 #define MSPM0_CLOCK_SYSPLL_CLK1  MSPM0_CLOCK(0xD, 0x0)
 /** @brief System PLL CLK2X output */
 #define MSPM0_CLOCK_SYSPLL_CLK2X MSPM0_CLOCK(0xE, 0x0)
+/** @brief MCLK2 output (MCLK divided by 1 or 2) */
+#define MSPM0_CLOCK_MCLK_DIV_2   MSPM0_CLOCK(0xF, 0x8)
+/** @brief MCLK4 output (MCLK divided by 1, 2, or 4) */
+#define MSPM0_CLOCK_MCLK_DIV_4   MSPM0_CLOCK(0x10, 0x8)
 
 #endif
