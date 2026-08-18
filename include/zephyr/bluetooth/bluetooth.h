@@ -2643,6 +2643,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
+ * @retval -EBUSY The scanner is being started or stopped in a different thread.
  */
 int bt_le_scan_stop(void);
 
