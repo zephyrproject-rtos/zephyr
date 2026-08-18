@@ -397,11 +397,13 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
 		x, y, desc->height, desc->width, desc->pitch);
 
-	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
+	__ASSERT(desc->width == desc->pitch, "Non-contiguous display buffers are not supported");
 	__ASSERT(buf != NULL, "Buffer is not available");
 	__ASSERT(desc->buf_size >= buf_len, "Buffer size too small");
-	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE),
-		 "Buffer width not multiple of %d", UC81XX_PIXELS_PER_BYTE);
+	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE), "Width must be aligned to %u pixels",
+		 UC81XX_PIXELS_PER_BYTE);
+	__ASSERT(!(x % UC81XX_PIXELS_PER_BYTE), "X must be aligned to %u pixels",
+		 UC81XX_PIXELS_PER_BYTE);
 
 	if ((y_end_idx > (config->height - 1)) ||
 	    (x_end_idx > (config->width - 1))) {
