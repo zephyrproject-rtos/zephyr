@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +16,7 @@ LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
 
 #define DT_DRV_COMPAT clock_output
 
+
 /*
  * If runtime clocking is disabled, we have no need to store clock output
  * structures for every consumer, so consumers simply get a pointer to the
@@ -22,16 +24,13 @@ LOG_MODULE_REGISTER(clock_management, CONFIG_CLOCK_MANAGEMENT_LOG_LEVEL);
  * the clock based on if runtime clocking is enabled or not.
  */
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-#define GET_CLK_CORE(clk) (clk->clk_core)
+#define GET_CLK_CORE(_clk) (_clk->clk_core)
 #else
-#define GET_CLK_CORE(clk) ((const struct clk *)clk)
+#define GET_CLK_CORE(_clk) ((const struct clk *)_clk)
 #endif
 
-K_MUTEX_DEFINE(clock_management_mutex);
-
-/** Calculates clock rank factor, which scales with frequency */
-#define CLK_RANK(clk_hw, freq)                                                 \
-	(((clk_hw)->rank) + (((uint32_t)(clk_hw)->rank_factor) * (freq)))
+k_spinlock_key_t spinlock_key;
+struct k_spinlock clock_mgmt_spinlock;
 
 /*
  * Describes a clock setting. This structure records the
@@ -51,14 +50,6 @@ struct clock_setting {
 struct clock_output_state {
 	/* Number of clock nodes to configure */
 	const uint8_t num_clocks;
-	/* Frequency resulting from this setting */
-	const clock_freq_t frequency;
-	/* Rank of this setting */
-	uint32_t rank;
-#if defined(CONFIG_CLOCK_MANAGEMENT_RUNTIME) || defined(__DOXYGEN__)
-	/* Should this state lock the clock configuration? */
-	const bool locking;
-#endif
 	/* Clock configuration settings for each clock */
 	const struct clock_setting clock_settings[];
 };
@@ -67,19 +58,30 @@ struct clock_output_state {
 struct clock_output_data {
 	/* Parent clock of this output node */
 	const struct clk *parent;
-	/* Number of statically defined clock states */
-	const uint8_t num_states;
 	/* Statically defined clock output states */
 	const struct clock_output_state *const *output_states;
+	/* Number of output states */
+	uint8_t num_output_states;
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	/*
+	 * Array with the following contents:
+	 * idx 0: number of active requests
+	 * idx i + 1: number of requests that have marked state i as allowed
+	 */
+	uint8_t *request_states;
+	/* Token for the consumer which has locked the clock */
+	struct clock_management_data **consumer;
 	/* Start of the consumer array (defined by the linker) */
 	struct clock_output *consumer_start;
 	/* End of the consumer array (defined by the linker) */
 	struct clock_output *consumer_end;
-	/* Tracks the constraints placed by all users of this output clock */
-	struct clock_management_rate_req *combined_req;
 #endif
 };
+
+/* Index in the "request_states" array for active request count */
+#define CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX 0
+/* Start of array with the number of requests that have marked state i as allowed */
+#define CLOCK_OUTPUT_REQUEST_COUNT_IDX 1
 
 /* Section used to identify clock types */
 TYPE_SECTION_START_EXTERN(struct clk, clk);
@@ -99,8 +101,7 @@ static uint8_t clock_get_type(const struct clk *clk_hw)
 	 * if a clock is within the clk section, and then just which section it
 	 * lies before
 	 */
-	if (clk_hw >= TYPE_SECTION_START(clk) &&
-	    clk_hw < TYPE_SECTION_END(clk_root)) {
+	if (clk_hw < TYPE_SECTION_END(clk_root)) {
 		return CLK_TYPE_ROOT;
 	} else if (clk_hw < TYPE_SECTION_END(clk_standard)) {
 		return CLK_TYPE_STANDARD;
@@ -111,64 +112,6 @@ static uint8_t clock_get_type(const struct clk *clk_hw)
 	}
 	__builtin_unreachable();
 }
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-
-/**
- * Helper function to add a constraint to an existing set. NOTE: this function
- * assumes the new constraint is compatible with the current set.
- * @param current Current constraint set, updated with new constraint
- * @param new New constraint to add
- */
-static void clock_add_constraint(struct clock_management_rate_req *current,
-				 const struct clock_management_rate_req *new)
-{
-	if (new->min_freq > current->min_freq) {
-		/* Tighter minimum frequency found */
-		current->min_freq = new->min_freq;
-	}
-	if (new->max_freq < current->max_freq) {
-		/* Tighter maximum frequency found */
-		current->max_freq = new->max_freq;
-	}
-	if (new->max_rank < current->max_rank) {
-		/* Tighter maximum rank found */
-		current->max_rank = new->max_rank;
-	}
-}
-
-/**
- * Helper function to remove the constraint currently associated with
- * @p consumer. This function updates the shared constraints for
- * @p clk_hw, without the constraints of @p consumer included
- * @param clk_hw Clock output to remove constraint from
- * @param combined New constraint set without the consumer's constraints
- * @param consumer Consumer whose constraint should be removed
- */
-static void clock_remove_constraint(const struct clk *clk_hw,
-				    struct clock_management_rate_req *combined,
-				    const struct clock_output *consumer)
-{
-	const struct clock_output_data *data = clk_hw->hw_data;
-	/* New combined constraint set. Start with the loosest definition. */
-	combined->min_freq = 0;
-	combined->max_freq = INT32_MAX;
-	combined->max_rank = CLOCK_MANAGEMENT_ANY_RANK;
-
-	for (const struct clock_output *child = data->consumer_start;
-	     child < data->consumer_end; child++) {
-		if (child == consumer) {
-			/*
-			 * This consumer is updating its constraint and should
-			 * not be considered
-			 */
-			continue;
-		}
-		clock_add_constraint(combined, child->req);
-	}
-}
-
-#endif
 
 /**
  * @brief Check the rate of a given clock
@@ -281,15 +224,12 @@ void clock_management_disable_unused(void)
  * @param clk_hw Clock which will have rate reconfigured
  * @param old_freq Current frequency of clock
  * @param new_freq New frequency that clock will configure to
- * @param parent_rank Summed rank of parent clocks. Ignored if @p ev_type is not
- *        CLOCK_MANAGEMENT_QUERY_RATE_CHANGE
  * @param ev_type Type of clock notification event
  * @return 0 if notification chain succeeded, or error if not
  */
 static int clock_notify_children(const struct clk *clk_hw,
 				 clock_freq_t old_freq,
 				 clock_freq_t new_freq,
-				 uint32_t parent_rank,
 				 enum clock_management_event_type ev_type)
 {
 	const struct clock_management_event event = {
@@ -303,34 +243,29 @@ static int clock_notify_children(const struct clk *clk_hw,
 	struct clock_management_callback *cb;
 	const struct clk *child;
 	int ret, parent_idx;
-	uint32_t child_rank;
 	clock_freq_t child_newrate, child_oldrate;
 
 	if (*handle == CLOCK_LIST_END) {
 		/* Base case- clock leaf (output node) */
 		data = clk_hw->hw_data;
-		/* Check if the new rate is permitted given constraints */
-		if (ev_type == CLOCK_MANAGEMENT_QUERY_RATE_CHANGE) {
-			if ((data->combined_req->min_freq > event.new_rate) ||
-			    (data->combined_req->max_freq < event.new_rate) ||
-			    (data->combined_req->max_rank < parent_rank)) {
-				IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME,
-					   (LOG_DBG("Clock %s rejected frequency %d, rank %u",
-					    clk_hw->clk_name, event.new_rate, parent_rank)));
-				return -ENOTSUP;
-			}
-		} else {
-			/* Notify consumers */
-			for (consumer = data->consumer_start;
-			     consumer < data->consumer_end; consumer++) {
-				cb = consumer->cb;
-				if (cb->clock_callback) {
-					ret = cb->clock_callback(&event,
-							   cb->user_data);
-					if (ret) {
-						/* Consumer rejected new rate */
-						return ret;
-					}
+		/* Check if the clock is locked. If so reject reconfiguration */
+		if (*(data->consumer) != NULL) {
+			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+				LOG_DBG("Clock %s is locked",
+					clk_hw->clk_name);
+			))
+			return -EPERM;
+		}
+		/* Notify consumers */
+		for (consumer = data->consumer_start;
+		     consumer < data->consumer_end; consumer++) {
+			cb = consumer->cb;
+			if (cb->clock_callback) {
+				ret = cb->clock_callback(&event,
+						   cb->user_data);
+				if (ret) {
+					/* Consumer rejected new rate */
+					return ret;
 				}
 			}
 		}
@@ -343,7 +278,6 @@ static int clock_notify_children(const struct clk *clk_hw,
 				/* Child is a clock output node, just notify it */
 				child_oldrate = old_freq;
 				child_newrate = new_freq;
-				child_rank = parent_rank;
 			} else if (clock_get_type(child) == CLK_TYPE_STANDARD) {
 				/* Single parent clock, use recalc */
 				child_newrate = clock_recalc_rate(child, new_freq);
@@ -358,7 +292,6 @@ static int clock_notify_children(const struct clk *clk_hw,
 				if (child_oldrate < 0) {
 					return child_oldrate;
 				}
-				child_rank = parent_rank + CLK_RANK(child, child_newrate);
 			} else {
 				/* Multi parent clock, see if it is connected */
 				parent_idx = clock_get_parent(child);
@@ -386,12 +319,10 @@ static int clock_notify_children(const struct clk *clk_hw,
 				/* Clock is connected. Child rate will match parent */
 				child_newrate = new_freq;
 				child_oldrate = old_freq;
-				child_rank = parent_rank + CLK_RANK(child, child_newrate);
 			}
 			/* Notify its children of new rate */
 			ret = clock_notify_children(child, child_oldrate,
-						    child_newrate, child_rank,
-						    ev_type);
+						    child_newrate, ev_type);
 			if (ret < 0) {
 				return ret;
 			}
@@ -409,12 +340,10 @@ static int clock_notify_children(const struct clk *clk_hw,
  * Helper function to handle reconfiguration process for clock
  *
  * @param clk_hw Clock which will have rate reconfigured
- * @param new_rank New rank that clock state reports
  * @param cfg_param Configuration parameter to pass into clock_configure
  * @return 0 if change was applied successfully, or error if not
  */
 static int clock_tree_configure(const struct clk *clk_hw,
-				uint32_t new_rank,
 				const void *cfg_param)
 {
 	clock_freq_t current_rate, new_rate, parent_rate;
@@ -473,13 +402,13 @@ static int clock_tree_configure(const struct clk *clk_hw,
 	}
 
 	/* Validate children can accept rate */
-	ret = clock_notify_children(clk_hw, current_rate, new_rate, new_rank,
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
 				    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 	if (ret < 0) {
 		return ret;
 	}
 	/* Now, notify children rates will change */
-	ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
 				    CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 	if (ret < 0) {
 		return ret;
@@ -490,7 +419,7 @@ static int clock_tree_configure(const struct clk *clk_hw,
 		return ret;
 	}
 	/* Now, notify children rates have changed */
-	ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+	ret = clock_notify_children(clk_hw, current_rate, new_rate,
 				    CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 	if (ret < 0) {
 		return ret;
@@ -519,8 +448,73 @@ int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
 	if (current_rate < 0) {
 		return current_rate;
 	}
-	return clock_notify_children(clk_hw, current_rate, CLK_RANK(clk_hw, new_rate),
-				     new_rate, CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+	return clock_notify_children(clk_hw, current_rate, new_rate,
+				     CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+}
+
+/**
+ * @brief Lock a clock output to block further reconfiguration
+ *
+ * Locks a clock output, preventing any reconfiguration from occurring to the
+ * clock until @ref clock_management_unlock is called by the same clock consumer.
+ * This does not prevent other consumers from issuing requests to the clock, but
+ * they will be denied unless the request can be satisfied within changing the
+ * state the clock has selected.
+ * @param data Clock management data structure for the device
+ * @param clk clock output to lock
+ * @return 0 on success
+ * @return -EBUSY if the clock is already locked by another consumer
+ */
+int clock_management_lock(const struct clock_management_data *data, clock_output_t clk)
+{
+	const struct clock_output_data *clk_data;
+
+	if (!data || clk >= data->num_outputs) {
+		return -EINVAL;
+	}
+	clk_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
+	/* Set the lock token on the clock output */
+	if (*(clk_data->consumer) == data) {
+		/* Clock is already locked by us, no-op */
+		return 0;
+	} else if (*(clk_data->consumer) != NULL) {
+		/* Clock is already locked by another consumer */
+		return -EBUSY;
+	}
+	/* Mark clock as locked */
+	*(clk_data->consumer) = (struct clock_management_data *)data;
+	return 0;
+}
+
+/**
+ * @brief Unlock a clock output to allow further reconfiguration
+ *
+ * Unlocks a clock output, allowing any reconfiguration to occur to the
+ * clock. Should only be called by a consumer that has previously locked the
+ * clock using @ref clock_management_lock.
+ * @param data Clock management data structure for the device
+ * @param clk clock output to unlock
+ * @return 0 on success
+ * @return -EPERM if the clock is not locked by the calling consumer
+ */
+int clock_management_unlock(const struct clock_management_data *data, clock_output_t clk)
+{
+	const struct clock_output_data *clk_data;
+
+	if (!data || clk >= data->num_outputs) {
+		return -EINVAL;
+	}
+	clk_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
+	if (*(clk_data->consumer) == NULL) {
+		/* Clock is already unlocked */
+		return 0;
+	} else if (*(clk_data->consumer) != data) {
+		/* Clock is locked by another consumer */
+		return -EPERM;
+	}
+	/* Mark clock as unlocked */
+	*(clk_data->consumer) = NULL;
+	return 0;
 }
 
 #else /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
@@ -551,7 +545,6 @@ int clock_children_check_rate(const struct clk *clk_hw, clock_freq_t new_rate)
  * @return 0 if change was applied successfully, or error if not
  */
 static int clock_tree_configure(const struct clk *clk_hw,
-				uint32_t new_rank,
 				const void *cfg_param)
 {
 	return -ENOTSUP;
@@ -563,40 +556,31 @@ static int clock_tree_configure(const struct clk *clk_hw,
 
 /* Forwards declaration */
 static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
-						    const struct clock_management_rate_req *req,
-						    uint32_t *best_rank,
-						    bool prefer_rank);
+						    clock_freq_t req_freq);
 
 /**
  * Helper function to find the best parent of a multiplexer for a requested rate.
  * This is needed both in the round_rate and set_rate phases of clock configuration.
  *
  * @param clk_hw Multiplexer to find best parent for
- * @param req Requested clock frequency and ranking bounds
+ * @param req_freq Requested clock frequency
  * @param best_parent Set to best parent found for request
- * @param best_rank Set to best rank found for request
- * @param prefer_rank Controls ranking mode.
  * @return best possible rate on success, or negative value on error
  */
 static clock_freq_t clock_management_best_parent(const struct clk *clk_hw,
-						 const struct clock_management_rate_req *req,
-						 int *best_parent,
-						 uint32_t *best_rank,
-						 bool prefer_rank)
+						 clock_freq_t req_freq,
+						 int *best_parent)
 {
 	int ret;
-	uint32_t best_delta = UINT32_MAX, cand_rank, delta;
+	uint32_t best_delta = UINT32_MAX, delta;
 	clock_freq_t cand_rate, current_rate, best_rate;
 	const struct clk *cand_parent;
 	const struct clk_mux_subsys_data *mux_data = clk_hw->hw_data;
-	bool constraints_possible = false;
 
-	*best_rank = UINT32_MAX;
 	/* Evaluate each parent clock. If one fails for any reason, just skip it */
 	for (int i = 0; i < mux_data->parent_cnt; i++) {
 		cand_parent = mux_data->parents[i];
-		cand_rate = clock_management_round_internal(cand_parent, req,
-							    &cand_rank, prefer_rank);
+		cand_rate = clock_management_round_internal(cand_parent, req_freq);
 		if (cand_rate < 0) {
 			continue; /* Not a candidate */
 		}
@@ -614,31 +598,15 @@ static clock_freq_t clock_management_best_parent(const struct clk *clk_hw,
 		))
 		/* Validate that this rate can work for the children */
 		ret = clock_notify_children(clk_hw, current_rate, cand_rate,
-					    cand_rank, CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
+					    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 		if (ret < 0) {
 			/* Clock won't be able to reconfigure for this rate */
 			continue;
 		}
-		delta = abs(cand_rate - req->max_freq);
-		if (((prefer_rank && (cand_rank < *best_rank)) ||
-		    (!prefer_rank && (delta < best_delta))) &&
-		    (cand_rate >= req->min_freq) && (cand_rate <= req->max_freq)) {
-			/* Clock can hit constraints, and is better ranked/
-			 * more accurate than our current choice
-			 */
-			constraints_possible = true;
+		delta = abs(cand_rate - req_freq);
+		if (delta < best_delta) {
 			best_delta = delta;
 			best_rate = cand_rate;
-			*best_rank = cand_rank;
-			*best_parent = i;
-		} else if (!constraints_possible && (delta < best_delta)) {
-			/* Fallback case- if we haven't found a clock that
-			 * hits the constraints, just select the most accurate
-			 * one for the request
-			 */
-			best_delta = delta;
-			best_rate = cand_rate;
-			*best_rank = cand_rank;
 			*best_parent = i;
 		}
 	}
@@ -650,53 +618,44 @@ static clock_freq_t clock_management_best_parent(const struct clk *clk_hw,
  * @brief Helper function to determine best clock configuration for a request
  *
  * This helper function determines the best clock configuration for a given
- * request, and can select configurations based on their ranking or frequency.
- * When @p prefer_rank is set, the function will select the lowest ranked clock
- * configuration that satisfies the request. Otherwise the function will select
- * the clock configuration that results in a frequency closest to the maximum
- * frequency specified by the @p req parameter.
+ * request. The function will select the clock configuration that results in a
+ * frequency closest to the requested frequency.
  *
  * @param clk_hw Clock to find configuration for
- * @param req Requested clock frequency and ranking bounds
- * @param best_rank Set to best rank found for request
- * @param prefer_rank Controls ranking mode.
+ * @param req_freq Requested clock frequency
+ * @return best possible rate on success, or negative value on error
  */
 static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
-						    const struct clock_management_rate_req *req,
-						    uint32_t *best_rank,
-						    bool prefer_rank)
+						    clock_freq_t req_freq)
 {
 	int ret;
 	clock_freq_t parent_rate, current_rate, best_rate;
-	int best_parent, parent_rank = 0;
+	int best_parent;
 
 	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
 		/* Mux clocks don't support round_rate, we implement it generically */
-		best_rate = clock_management_best_parent(clk_hw, req,
-							&best_parent,
-							&parent_rank,
-							prefer_rank);
+		best_rate = clock_management_best_parent(clk_hw, req_freq,
+							&best_parent);
 	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
 		/* No need to check parents */
 		current_rate = clock_get_rate(clk_hw);
 		if (current_rate < 0) {
 			return current_rate;
 		}
-		best_rate = clock_root_best_rate(clk_hw, req->max_freq, false);
+		best_rate = clock_root_best_rate(clk_hw, req_freq, false);
 		if (best_rate < 0) {
 			/* Clock can't reconfigure, use the current rate */
 			best_rate = current_rate;
 		}
 		ret = clock_notify_children(clk_hw, current_rate, best_rate,
-					    CLK_RANK(clk_hw, best_rate),
 					    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
 	} else {
 		/* Standard clock, check what rate the parent can offer */
-		parent_rate = clock_management_round_internal(GET_CLK_PARENT(clk_hw), req,
-							      &parent_rank, prefer_rank);
+		parent_rate = clock_management_round_internal(GET_CLK_PARENT(clk_hw),
+							     req_freq);
 		if (parent_rate < 0) {
 			return parent_rate;
 		}
@@ -705,20 +664,17 @@ static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
 			return current_rate;
 		}
 		/* Check what rate this clock can offer with its parent offering */
-		best_rate = clock_best_rate(clk_hw, req->max_freq, parent_rate, false);
+		best_rate = clock_best_rate(clk_hw, req_freq, parent_rate, false);
 		if (best_rate < 0) {
 			/* Clock can't reconfigure, use the current rate */
 			best_rate = current_rate;
 		}
 		ret = clock_notify_children(clk_hw, current_rate, best_rate,
-					    parent_rank,
 					    CLOCK_MANAGEMENT_QUERY_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
 	}
-
-	*best_rank = CLK_RANK(clk_hw, best_rate) + parent_rank;
 
 	return best_rate;
 }
@@ -727,30 +683,18 @@ static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
  * @brief Helper function to set best clock configuration for a request
  *
  * This helper function determines the best clock configuration for a given
- * request, and can select configurations based on their ranking or frequency.
- * When @p prefer_rank is set, the function will select the lowest ranked clock
- * configuration that satisfies the request. Otherwise the function will select
- * the clock configuration that results in a frequency closest to the maximum
- * frequency specified by the @p req parameter.
- * This function will apply the configuration to the clock tree, versus
- * the round_internal function which only finds the best configuration.
+ * frequency request and applies it to the clock tree.
  *
  * @param clk_hw Clock to find configuration for
- * @param req Requested clock frequency and ranking bounds
- * @param prefer_rank Controls ranking mode.
+ * @param req_freq Requested clock frequency
+ * @return new rate on success, or negative value on error
  */
 static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
-						 const struct clock_management_rate_req *req,
-						 bool prefer_rank)
+						  clock_freq_t req_freq)
 {
 	int ret;
 	clock_freq_t parent_rate, current_rate, new_rate;
 	int best_parent;
-	uint32_t best_rank; /* Unused */
-	struct clock_management_rate_req set_req = {
-		.min_freq = req->min_freq,
-		.max_rank = req->max_rank,
-	};
 
 	current_rate = clock_management_clk_rate(clk_hw);
 	if (current_rate < 0) {
@@ -758,20 +702,18 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 	}
 	if (clock_get_type(clk_hw) == CLK_TYPE_MUX) {
 		/* Find the best parent and select that one */
-		set_req.min_freq = set_req.max_freq =
-			clock_management_best_parent(clk_hw, req,
-						  &best_parent, &best_rank,
-						  prefer_rank);
-		if (set_req.max_freq < 0) {
-			return set_req.max_freq;
-		}
-		/* Set the parent's rate */
-		new_rate = clock_management_set_internal(GET_CLK_PARENTS(clk_hw)[best_parent],
-						&set_req, prefer_rank);
+		new_rate = clock_management_best_parent(clk_hw, req_freq,
+						       &best_parent);
 		if (new_rate < 0) {
 			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		/* Set the parent's rate */
+		new_rate = clock_management_set_internal(
+				GET_CLK_PARENTS(clk_hw)[best_parent], req_freq);
+		if (new_rate < 0) {
+			return new_rate;
+		}
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
@@ -780,18 +722,17 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 		if (ret < 0) {
 			return ret;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
 	} else if (clock_get_type(clk_hw) == CLK_TYPE_ROOT) {
-		new_rate = clock_management_round_internal(clk_hw, req, &best_rank,
-							   prefer_rank);
+		new_rate = clock_management_round_internal(clk_hw, req_freq);
 		if (new_rate < 0) {
 			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
@@ -801,24 +742,23 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 		if (new_rate < 0) {
 			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
 		}
 	} else {
 		/* Set parent rate, then child rate */
-		parent_rate = clock_management_set_internal(GET_CLK_PARENT(clk_hw), req,
-							    prefer_rank);
+		parent_rate = clock_management_set_internal(GET_CLK_PARENT(clk_hw),
+							   req_freq);
 		if (parent_rate < 0) {
 			return parent_rate;
 		}
-		new_rate = clock_management_round_internal(clk_hw, req,
-						     &best_rank, prefer_rank);
+		new_rate = clock_management_round_internal(clk_hw, req_freq);
 		if (new_rate < 0) {
 			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_PRE_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
@@ -827,7 +767,7 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
 		if (new_rate < 0) {
 			return new_rate;
 		}
-		ret = clock_notify_children(clk_hw, current_rate, new_rate, 0,
+		ret = clock_notify_children(clk_hw, current_rate, new_rate,
 					     CLOCK_MANAGEMENT_POST_RATE_CHANGE);
 		if (ret < 0) {
 			return ret;
@@ -849,38 +789,13 @@ static clock_freq_t clock_management_set_internal(const struct clk *clk_hw,
  * @return best possible rate on success, or negative value on error
  */
 clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
-					bool commit)
+										bool commit)
 {
-	struct clock_management_rate_req req = {
-		.min_freq = rate_req,
-		.max_freq = rate_req,
-		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,
-	};
-
 	if (commit) {
-		return clock_management_set_internal(clk_hw, &req, false);
+		return clock_management_set_internal(clk_hw, rate_req);
 	}
 
-	uint32_t best_rank; /* Unused */
-
-	return clock_management_round_internal(clk_hw, &req, &best_rank, false);
-}
-
-#else
-
-
-static clock_freq_t clock_management_round_internal(const struct clk *clk_hw,
-						    const struct clock_management_rate_req *req,
-						    uint32_t *best_rank,
-						    bool prefer_rank)
-{
-	return -ENOTSUP;
-}
-
-clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t rate_req,
-					bool commit)
-{
-	return -ENOTSUP;
+	return clock_management_round_internal(clk_hw, rate_req);
 }
 
 #endif /* CONFIG_CLOCK_MANAGEMENT_SET_RATE */
@@ -896,30 +811,13 @@ clock_freq_t clock_management_best_rate(const struct clk *clk_hw, clock_freq_t r
 static int clock_apply_state(const struct clk *clk_hw,
 			     const struct clock_output_state *clk_state)
 {
-	const struct clock_output_data *data = clk_hw->hw_data;
-	clock_freq_t new_rate = 0;
 	int ret;
 
-	if (clk_state->num_clocks == 0) {
-		/* Use runtime clock setting */
-		new_rate = clock_management_best_rate(data->parent, clk_state->frequency, true);
-
-		if (new_rate < 0) {
-			return new_rate;
-		}
-		if (new_rate != clk_state->frequency) {
-			return -ENOTSUP;
-		}
-
-		return 0;
-	}
-
-	/* Apply this clock state */
 	for (uint8_t i = 0; i < clk_state->num_clocks; i++) {
 		const struct clock_setting *cfg = &clk_state->clock_settings[i];
 
 		if (IS_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME)) {
-			ret = clock_tree_configure(cfg->clock, clk_state->rank,
+			ret = clock_tree_configure(cfg->clock,
 						   cfg->clock_config_data);
 		} else {
 			ret = clock_configure(cfg->clock, cfg->clock_config_data);
@@ -937,28 +835,29 @@ static int clock_apply_state(const struct clk *clk_hw,
  * @brief Get clock rate for given output
  *
  * Gets output clock rate in Hz for provided clock output.
+ * @param data Clock management data structure for the device
  * @param clk Clock output to read rate of
  * @return -EINVAL if parameters are invalid
  * @return -ENOSYS if clock does not implement get_rate API
  * @return -EIO if clock could not be read
  * @return frequency of clock output in HZ
  */
-int clock_management_get_rate(const struct clock_output *clk)
+int clock_management_get_rate(const struct clock_management_data *data, clock_output_t clk)
 {
-	const struct clock_output_data *data;
+	const struct clock_output_data *output_data;
 	int ret;
 
-	if (!clk) {
+	if (!data || clk >= data->num_outputs) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
 
-	data = GET_CLK_CORE(clk)->hw_data;
+	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 	/* Read rate */
-	ret = clock_management_clk_rate(data->parent);
+	ret = clock_management_clk_rate(output_data->parent);
 
-	k_mutex_unlock(&clock_management_mutex);
+	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
 	return ret;
 }
 
@@ -1017,23 +916,31 @@ static int clock_management_onoff(const struct clk *clk_hw, bool on)
  *
  * Turns a clock output and its sources on. This function will
  * unconditionally enable the clock and its sources.
- * @param clk clock output to turn off
+ * @param data Clock management data structure for the device
+ * @param clk clock output to turn on
+ * @return -EINVAL if parameters are invalid
  * @return -ENOSYS if clock does not implement on_off API
- * @return -EIO if clock could not be turned off
+ * @return -EIO if clock could not be turned on
  * @return -EBUSY if clock cannot be modified at this time
  * @return negative errno for other error turning clock on or off
  * @return 0 on success
  */
-int clock_management_on(const struct clock_output *clk)
+int clock_management_on(const struct clock_management_data *data, clock_output_t clk)
 {
-	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+	const struct clock_output_data *output_data;
 	int ret;
 
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+	if (!data || clk >= data->num_outputs) {
+		return -EINVAL;
+	}
 
-	ret = clock_management_onoff(data->parent, true);
+	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
-	k_mutex_unlock(&clock_management_mutex);
+	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+
+	ret = clock_management_onoff(output_data->parent, true);
+
+	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
 	return ret;
 }
 
@@ -1042,393 +949,283 @@ int clock_management_on(const struct clock_output *clk)
  *
  * Turns a clock output and its sources off. This function will
  * unconditionally disable the output and its sources.
+ * @param data Clock management data structure for the device
  * @param clk clock output to turn off
+ * @return -EINVAL if parameters are invalid
  * @return -ENOSYS if clock does not implement on_off API
  * @return -EIO if clock could not be turned off
  * @return -EBUSY if clock cannot be modified at this time
  * @return negative errno for other error turning clock on or off
  * @return 0 on success
  */
-int clock_management_off(const struct clock_output *clk)
+int clock_management_off(const struct clock_management_data *data, clock_output_t clk)
 {
-	const struct clock_output_data *data = GET_CLK_CORE(clk)->hw_data;
+	const struct clock_output_data *output_data;
 	int ret;
 
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+	if (!data || clk >= data->num_outputs) {
+		return -EINVAL;
+	}
 
-	ret = clock_management_onoff(data->parent, false);
+	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
-	k_mutex_unlock(&clock_management_mutex);
+	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
+
+	ret = clock_management_onoff(output_data->parent, false);
+
+	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
 	return ret;
-
 }
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
 
 /**
  * @brief Request a frequency for the clock output
  *
- * Requests a new rate for a clock output. The clock will select the best state
- * given the constraints provided in @p req. If enabled via
- * `CONFIG_CLOCK_MANAGEMENT_RUNTIME`, existing constraints on the clock will be
- * accounted for when servicing this request. Additionally, if enabled via
- * `CONFIG_CLOCK_MANAGEMENT_SET_RATE`, the clock will dynamically request a new rate
- * from its parent if none of the statically defined states satisfy the request.
- * An error will be returned if the request cannot be satisfied.
+ * Requests a new rate for a clock output. The clock will configure to
+ * the closest available state to the requested frequency. Requires
+ * `CONFIG_CLOCK_MANAGEMENT_SET_RATE` to be set.
+ * @param data Clock management data structure for the device
  * @param clk Clock output to request rate for
- * @param req Rate request for clock output
+ * @param freq Rate request for clock output
  * @return -EINVAL if parameters are invalid
  * @return -ENOENT if request could not be satisfied
  * @return -EPERM if clock is not configurable
  * @return -EIO if configuration of a clock failed
+ * @return -ENOTSUP if clock management set rate is not supported
  * @return frequency of clock output in HZ on success
  */
-int clock_management_req_rate(const struct clock_output *clk,
-			const struct clock_management_rate_req *req)
+int clock_management_req_rate(const struct clock_management_data *data, clock_output_t clk,
+			      clock_freq_t freq)
 {
-	const struct clock_output_data *data;
+	const struct clock_output_data *output_data;
 	clock_freq_t ret = -ENOENT;
-	const struct clock_output_state *best_state = NULL;
-	int best_delta = INT32_MAX;
-	uint32_t best_rank;
-	struct clock_management_rate_req *combined_req;
 
-	if (!clk) {
+	if (!data || clk >= data->num_outputs) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
+	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
 
-	data = GET_CLK_CORE(clk)->hw_data;
-
- #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	struct clock_management_rate_req new_req;
-	/*
-	 * Remove previous constraint associated with this clock output
-	 * from the clock producer.
-	 */
-	clock_remove_constraint(GET_CLK_CORE(clk), &new_req, clk);
-	/*
-	 * Check if the new request is compatible with the
-	 * new shared constraint set
-	 */
-	if ((new_req.min_freq > req->max_freq) ||
-	    (new_req.max_freq < req->min_freq)) {
-		ret = -ENOENT;
-		goto out;
-	}
-	/*
-	 * We now know the new constraint is compatible. Now, save the
-	 * updated constraint set as the shared set for this clock producer.
-	 * We deliberately exclude the constraints of the clock output
-	 * making this request, as the intermediate states of the clock
-	 * producer may not be compatible with the new constraint. If we
-	 * added the new constraint now then the clock would fail to
-	 * reconfigure to an otherwise valid state, because the rates
-	 * passed to clock_notify_children() would be rejected
-	 */
-	memcpy(data->combined_req, &new_req, sizeof(*data->combined_req));
-	/*
-	 * Add this new request to the shared constraint set before using
-	 * the set for clock requests.
-	 */
-	clock_add_constraint(&new_req, req);
-	combined_req = &new_req;
-#else
-	/*
-	 * We don't combine requests in this case, just use the clock
-	 * request directly
-	 */
-	combined_req = (struct clock_management_rate_req *)req;
-#endif
+	output_data = GET_CLK_CORE(data->clock_outputs[clk])->hw_data;
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
-	LOG_DBG("Request for range %u-%u issued to clock %s. Max rank %u",
-		combined_req->min_freq, combined_req->max_freq,
-		GET_CLK_CORE(clk)->clk_name, combined_req->max_rank);
+	LOG_DBG("Request for rate %u issued to clock %s",
+		freq, GET_CLK_CORE(data->clock_outputs[clk])->clk_name);
 #endif
 
-	/*
-	 * Now, check if any of the statically defined clock states are
-	 * valid
-	 */
-	for (uint8_t i = 0; i < data->num_states; i++) {
-		const struct clock_output_state *state =
-			data->output_states[i];
-		int cand_delta;
+	ret = clock_management_round_internal(output_data->parent, freq);
 
-		if ((state->frequency < combined_req->min_freq) ||
-		    (state->frequency > combined_req->max_freq) ||
-		    (state->rank > combined_req->max_rank)) {
-			/* This state does not qualify */
+	if (ret >= 0) {
+		ret = clock_management_set_internal(output_data->parent, freq);
+	}
+
+	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
+	return ret;
+}
+
+#endif
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+
+/**
+ * @brief Helper to apply or remove votes for a clock management request
+ *
+ * This function will apply or remove votes for clock output states based
+ * on the provided request.
+ * @param request Clock management request to apply or remove votes for
+ * @param apply true to apply the request, false to remove it
+ */
+void clock_management_eval_request(const struct clock_management_request *request, bool apply)
+{
+	const struct clk *clk;
+	const struct clock_output_data *output_data;
+	uint8_t num_states;
+	uint8_t *active_request_count;
+	uint8_t *allowed_state_count;
+
+
+	for (uint8_t i = 0; i < request->num_clks; i++) {
+		clk = request->clk_reqs[i].clk;
+		output_data = clk->hw_data;
+		num_states = output_data->num_output_states;
+		active_request_count = output_data->request_states +
+			CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX;
+		allowed_state_count = output_data->request_states +
+			CLOCK_OUTPUT_REQUEST_COUNT_IDX;
+		if (apply) {
+			*active_request_count += 1;
+		} else {
+			*active_request_count -= 1;
+		}
+		for (uint8_t j = 0; j < num_states; j++) {
+			if ((BIT(j) & request->clk_reqs[i].allowed_states) == 0) {
+				/* This state is not allowed for this clock */
+				continue;
+			}
+			if (apply) {
+				/* Add a vote for this state */
+				allowed_state_count[j]++;
+			} else {
+				/* Remove a vote for this state */
+				allowed_state_count[j]--;
+			}
+		}
+	}
+}
+
+#endif
+
+/**
+ * @brief Helper to apply the best clock states for a clock management request
+ *
+ * This helper evaluates each clock in a request and applies the best clock
+ * state based on the votes.
+ * @param data Clock management data structure the request is a member of
+ * @param request Clock management request to evaluate
+ * @param apply true to apply the request, false to remove it
+ * @return 0 on success, or negative value on error
+ */
+int clock_management_best_states(const struct clock_management_data *data,
+			const struct clock_management_request *request, bool apply)
+{
+	const struct clk *clk;
+	const struct clock_output_data *output_data;
+	int ret = 0;
+	uint8_t num_states;
+	uint8_t *active_request_count;
+	uint8_t *allowed_state_count;
+
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	/* Make sure all clocks affected by this request are unlocked */
+	for (uint8_t i = 0; i < request->num_clks; i++) {
+		clk = request->clk_reqs[i].clk;
+		output_data = clk->hw_data;
+		if ((*(output_data->consumer) != NULL) &&
+			(*(output_data->consumer) != data)) {
+			/* Clock is locked by another consumer */
+			return -EPERM;
+		}
+	}
+	for (uint8_t i = 0; i < request->num_clks; i++) {
+		clk = request->clk_reqs[i].clk;
+		output_data = clk->hw_data;
+		/* Unlock the clock */
+		*(output_data->consumer) = NULL;
+	}
+#endif
+
+	for (uint8_t i = 0; i < request->num_clks; i++) {
+		clk = request->clk_reqs[i].clk;
+		output_data = clk->hw_data;
+		num_states = output_data->num_output_states;
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+		active_request_count = output_data->request_states +
+			CLOCK_OUTPUT_ACTIVE_REQUEST_COUNT_IDX;
+		allowed_state_count = output_data->request_states +
+			CLOCK_OUTPUT_REQUEST_COUNT_IDX;
+		if (*active_request_count == 0) {
+			/* No active requests, no need to apply a state */
 			continue;
 		}
-		cand_delta = state->frequency - combined_req->min_freq;
+#endif /* CONFIG_CLOCK_MANAGEMENT_RUNTIME */
 		/*
-		 * If new delta is better than current best delta,
-		 * we found a new best state
+		 * States are already sorted by rank, so the first
+		 * state we find that satisfies all active requests is the best one
 		 */
-		if (best_delta > cand_delta) {
-			/* New best state found */
-			best_delta = cand_delta;
-			best_state = state;
-			best_rank = state->rank;
+		for (uint8_t j = 0; j < num_states; j++) {
+			if (IS_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME) &&
+				(allowed_state_count[j] < *active_request_count)) {
+				/* Not all requests have voted for this state, skip it */
+				continue;
+			} else if (apply && ((BIT(j) & request->clk_reqs[i].allowed_states) == 0)) {
+				/* This state is not allowed for this clock, skip it */
+				continue;
+			}
+			/* If both checks pass, found a valid state */
+			IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_CLK_NAME, (
+				LOG_DBG("Applying state %d for clock %s",
+					j, clk->clk_name);
+			))
+			ret = clock_apply_state(clk, output_data->output_states[j]);
+			if (ret < 0) {
+				/* Failed to apply state, exit */
+				return ret;
+			}
+			/* No need to search further states */
+			break;
 		}
 	}
-	if (best_state != NULL) {
-		/* Apply this clock state */
-		ret = clock_apply_state(GET_CLK_CORE(clk), best_state);
-		if (ret == 0) {
-			ret = best_state->frequency;
-			goto out;
-		}
-	}
-	/* No best setting was found, try runtime clock setting */
-	ret = clock_management_round_internal(data->parent, combined_req,
-					      &best_rank, false);
-out:
-	if (ret >= 0) {
-		/* A frequency was returned, check if it satisfies constraints */
-		if ((combined_req->min_freq > ret) ||
-		    (combined_req->max_freq < ret) ||
-		    (best_rank > combined_req->max_rank)) {
-			ret = -ENOENT;
-		}
-	}
-#ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-	if (best_delta != 0 && ret >= 0) {
-		/* Only set rate if no matching static state exists */
-		ret = clock_management_set_internal(data->parent, combined_req,
-						    false);
-	}
-#endif
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	if (ret >= 0) {
-		/* New clock state applied. Save the new combined constraint set. */
-		memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
-		/* Save the new constraint set for the consumer */
-		memcpy(clk->req, req, sizeof(*clk->req));
-	}
-#endif
 
-	k_mutex_unlock(&clock_management_mutex);
+#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
+	if (request->locking && apply) {
+		for (uint8_t i = 0; i < request->num_clks; i++) {
+			clk = request->clk_reqs[i].clk;
+			output_data = clk->hw_data;
+			/* Lock the clock */
+			*(output_data->consumer) = (struct clock_management_data *)data;
+		}
+	}
+#endif
 	return ret;
 }
 
 /**
- * @brief Request the best ranked clock configuration for a given frequency range
+ * @brief Request a clock state
  *
- * Requests the clock framework select the best ranked clock configuration
- * for a given frequency range. Clock ranks are calculated per clock node
- * by summing the fixed "clock-ranking" property with the "clock-rank-factor"
- * property times the output frequency (divided by 255). A clock configuration's
- * rank is the sum of all the ranks for the clocks used in that configuration.
- * @param clk Clock output to make request for
- * @param req Upper and lower bounds on frequency
- * @return -EINVAL if parameters are invalid
- * @return -ENOENT if request could not be satisfied
- * @return -EPERM if clock is not configurable
- * @return -EIO if configuration of a clock failed
- * @return frequency of clock output in HZ on success
- */
-int clock_management_req_ranked(const struct clock_output *clk,
-				const struct clock_management_rate_req *req)
-{
-	const struct clock_output_data *data;
-	clock_freq_t ret = -ENOENT;
-	const struct clock_output_state *best_state = NULL;
-	uint32_t best_rank = UINT32_MAX;
-	struct clock_management_rate_req *combined_req;
-
-	if (!clk) {
-		return -EINVAL;
-	}
-
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
-
-	data = GET_CLK_CORE(clk)->hw_data;
-
- #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	struct clock_management_rate_req new_req;
-	/*
-	 * Remove previous constraint associated with this clock output
-	 * from the clock producer.
-	 */
-	clock_remove_constraint(GET_CLK_CORE(clk), &new_req, clk);
-	/*
-	 * Check if the new request is compatible with the
-	 * new shared constraint set
-	 */
-	if ((new_req.min_freq > req->max_freq) ||
-	    (new_req.max_freq < req->min_freq)) {
-		ret = -ENOENT;
-		goto out;
-	}
-	/*
-	 * We now know the new constraint is compatible. Now, save the
-	 * updated constraint set as the shared set for this clock producer.
-	 * We deliberately exclude the constraints of the clock output
-	 * making this request, as the intermediate states of the clock
-	 * producer may not be compatible with the new constraint. If we
-	 * added the new constraint now then the clock would fail to
-	 * reconfigure to an otherwise valid state, because the rates
-	 * passed to clock_notify_children() would be rejected
-	 */
-	memcpy(data->combined_req, &new_req, sizeof(*data->combined_req));
-	/*
-	 * Add this new request to the shared constraint set before using
-	 * the set for clock requests.
-	 */
-	clock_add_constraint(&new_req, req);
-	combined_req = &new_req;
-#else
-	/*
-	 * We don't combine requests in this case, just use the clock
-	 * request directly
-	 */
-	combined_req = (struct clock_management_rate_req *)req;
-#endif
-
-#ifdef CONFIG_CLOCK_MANAGEMENT_CLK_NAME
-	LOG_DBG("Request for range %u-%u issued to clock %s. Max rank %u",
-		combined_req->min_freq, combined_req->max_freq,
-		GET_CLK_CORE(clk)->clk_name, combined_req->max_rank);
-#endif
-
-	/*
-	 * Now, check if any of the statically defined clock states are
-	 * valid
-	 */
-	for (uint8_t i = 0; i < data->num_states; i++) {
-		const struct clock_output_state *state =
-			data->output_states[i];
-		if ((state->frequency < combined_req->min_freq) ||
-		    (state->frequency > combined_req->max_freq) ||
-		    (state->rank > combined_req->max_rank)) {
-			/* This state does not qualify */
-			continue;
-		}
-		/*
-		 * If new rank is better than current best rank,
-		 * we found a new best state
-		 */
-		if (best_rank > state->rank) {
-			/* New best state found */
-			best_rank = state->rank;
-			best_state = state;
-		}
-	}
-	if (best_state != NULL) {
-		/* Apply this clock state */
-		ret = clock_apply_state(GET_CLK_CORE(clk), best_state);
-		if (ret == 0) {
-			ret = best_state->frequency;
-			goto out;
-		}
-	}
-	/* No best setting was found, try runtime clock setting */
-	ret = clock_management_round_internal(data->parent, combined_req,
-						&best_rank, true);
-out:
-	if (ret >= 0) {
-		/* A frequency was returned, check if it satisfies constraints */
-		if ((combined_req->min_freq > ret) ||
-		    (combined_req->max_freq < ret) ||
-		    (best_rank > combined_req->max_rank)) {
-			ret = -ENOENT;
-		}
-	}
-#ifdef CONFIG_CLOCK_MANAGEMENT_SET_RATE
-	if (((best_state == NULL) || (best_rank < best_state->rank)) && (ret >= 0)) {
-		/* Only use runtime setting if we found a better state */
-		ret = clock_management_set_internal(data->parent, combined_req, true);
-	}
-#endif
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	if (ret >= 0) {
-		/* New clock state applied. Save the new combined constraint set. */
-		memcpy(data->combined_req, combined_req, sizeof(*data->combined_req));
-		/* Save the new constraint set for the consumer */
-		memcpy(clk->req, req, sizeof(*clk->req));
-	}
-#endif
-	k_mutex_unlock(&clock_management_mutex);
-	return ret;
-}
-
-/**
- * @brief Apply a clock state based on a devicetree clock state identifier
- *
- * Apply a clock state based on a clock state identifier. State identifiers are
- * defined devices that include a "clock-states" devicetree property, and may be
- * retrieved using the @ref DT_CLOCK_MANAGEMENT_STATE macro
- * @param clk Clock output to apply state for
- * @param state Clock management state ID to apply
+ * Request a clock state. This request may apply to multiple clock outputs,
+ * and is defined in devicetree using the "clock-request-n" property.
+ * The request can be retrieved using the @ref CLOCK_MANAGEMENT_DT_GET_REQUEST macro
+ * @param data Clock management data structure for the device
+ * @param request Clock management request to apply
  * @return -EIO if configuration of a clock failed
  * @return -EINVAL if parameters are invalid
  * @return -EPERM if clock is not configurable
- * @return frequency of clock output in HZ on success
+ * @return 0 on success
  */
-int clock_management_apply_state(const struct clock_output *clk,
-			   clock_management_state_t state)
+int clock_management_request_state(const struct clock_management_data *data,
+				   clock_request_t request)
 {
-	const struct clock_output_data *data;
-	const struct clock_output_state *clk_state;
 	int ret;
 
-	if (!clk) {
+	if (!data || request >= data->num_requests) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&clock_management_mutex, K_FOREVER);
-
-	data = GET_CLK_CORE(clk)->hw_data;
-
-	if (state >= data->num_states) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	clk_state = data->output_states[state];
+	spinlock_key = k_spin_lock(&clock_mgmt_spinlock);
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	struct clock_management_rate_req temp;
-	/* Remove old constraint for this consumer */
-	clock_remove_constraint(GET_CLK_CORE(clk), &temp, clk);
-
-	/* Make sure this state fits within other consumer's constraints */
-	if ((temp.min_freq > clk_state->frequency) ||
-	    (temp.max_freq < clk_state->frequency)) {
-		ret = -EINVAL;
-		goto out;
+	if (*data->active_request != CLOCK_MANAGEMENT_NO_REQUEST) {
+		/* A request is already active, remove it first */
+		clock_management_eval_request(data->clock_requests[*data->active_request], false);
+		/* Apply new best state */
+		ret = clock_management_best_states(data,
+			data->clock_requests[*data->active_request], false);
+		/*
+		 * Clear active request, even if we failed to apply new state
+		 * (we already cleared votes for it)
+		 */
+		*data->active_request = CLOCK_MANAGEMENT_NO_REQUEST;
+		if (ret < 0) {
+			goto out;
+		}
 	}
-
-	/* Save new constraint set */
-	memcpy(data->combined_req, &temp, sizeof(*data->combined_req));
-#endif
-
-	ret = clock_apply_state(GET_CLK_CORE(clk), clk_state);
+	/* Apply new request votes */
+	clock_management_eval_request(data->clock_requests[request], true);
+	ret = clock_management_best_states(data, data->clock_requests[request], true);
 	if (ret < 0) {
+		/* Request failed, remove its votes */
+		clock_management_eval_request(data->clock_requests[request], false);
 		goto out;
 	}
-	ret = clk_state->frequency;
-#ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	if (clk_state->locking) {
-		/* Set a constraint based on this clock state */
-		const struct clock_management_rate_req constraint = {
-			.min_freq = clk_state->frequency,
-			.max_freq = clk_state->frequency,
-			.max_rank = clk_state->rank,
-		};
-
-		/* Remove old constraint for this consumer */
-		clock_remove_constraint(GET_CLK_CORE(clk), &temp, clk);
-		/* Add new constraint and save it */
-		clock_add_constraint(&temp, &constraint);
-		memcpy(data->combined_req, &temp, sizeof(*data->combined_req));
-		memcpy(clk->req, &constraint, sizeof(*clk->req));
-	}
-#endif
+	/* Record new request */
+	*data->active_request = request;
 out:
-	k_mutex_unlock(&clock_management_mutex);
+#else
+	/* Just apply new request, no voting occurs */
+	ret = clock_management_best_states(data, data->clock_requests[request], true);
+#endif
+	k_spin_unlock(&clock_mgmt_spinlock, spinlock_key);
 	return ret;
 }
 
@@ -1450,18 +1247,13 @@ out:
 	DT_FOREACH_PROP_ELEM(node, clocks, Z_CLOCK_MANAGEMENT_CLK_DATA_DEFINE);))    \
 	static const struct clock_output_state CLOCK_STATE_NAME(node) = {      \
 		.num_clocks = DT_PROP_LEN_OR(node, clocks, 0),                 \
-		.frequency = DT_PROP(node, clock_frequency),                   \
-		.rank = DT_PROP(node, rank),                                   \
-		IF_ENABLED(DT_NODE_HAS_PROP(node, clocks), (                   \
 		.clock_settings = {                                            \
 			DT_FOREACH_PROP_ELEM_SEP(node, clocks,                 \
 						 CLOCK_SETTINGS_GET, (,))      \
-		},))                                                           \
-		IF_ENABLED(CONFIG_CLOCK_MANAGEMENT_RUNTIME,                    \
-		(.locking = DT_PROP(node, locking_state),))                    \
+		}, \
 	};
 /* This macro gets clock configuration data for a clock state */
-#define CLOCK_STATE_GET(node) &CLOCK_STATE_NAME(node)
+#define CLOCK_STATE_GET(node) &CLOCK_STATE_NAME(node),
 
 #define CLOCK_OUTPUT_LIST_START_NAME(inst)                                     \
 	CONCAT(_clk_output_, DT_INST_DEP_ORD(inst), _list_start)
@@ -1471,17 +1263,15 @@ out:
 
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
 #define CLOCK_OUTPUT_RUNTIME_DEFINE(inst)                                      \
+	static struct clock_management_data *CONCAT(output_consumer, inst); \
+	static uint8_t request_states_##inst[DT_INST_CHILD_NUM(inst) + 1]; \
 	extern struct clock_output CLOCK_OUTPUT_LIST_START_NAME(inst);         \
-	extern struct clock_output CLOCK_OUTPUT_LIST_END_NAME(inst);           \
-	struct clock_management_rate_req combined_req_##inst = {               \
-		.min_freq = 0,                                                 \
-		.max_freq = INT32_MAX,                                         \
-		.max_rank = CLOCK_MANAGEMENT_ANY_RANK,                         \
-	};
+	extern struct clock_output CLOCK_OUTPUT_LIST_END_NAME(inst);
 #define CLOCK_OUTPUT_RUNTIME_INIT(inst)                                        \
+	.consumer = &CONCAT(output_consumer, inst),                            \
+	.request_states = request_states_##inst,                               \
 	.consumer_start = &CLOCK_OUTPUT_LIST_START_NAME(inst),                 \
-	.consumer_end = &CLOCK_OUTPUT_LIST_END_NAME(inst),                     \
-	.combined_req = &combined_req_##inst,
+	.consumer_end = &CLOCK_OUTPUT_LIST_END_NAME(inst),
 #else
 #define CLOCK_OUTPUT_RUNTIME_DEFINE(inst)
 #define CLOCK_OUTPUT_RUNTIME_INIT(inst)
@@ -1489,16 +1279,16 @@ out:
 
 #define CLOCK_OUTPUT_DEFINE(inst)                                              \
 	CLOCK_OUTPUT_RUNTIME_DEFINE(inst)                                      \
-	DT_INST_FOREACH_CHILD(inst, CLOCK_STATE_DEFINE)                        \
+	DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_DEFINE)           \
 	static const struct clock_output_state *const                          \
 	output_states_##inst[] = {                                             \
-		DT_INST_FOREACH_CHILD_SEP(inst, CLOCK_STATE_GET, (,))          \
+		DT_INST_CLOCK_STATE_SORTED_FOREACH(inst, CLOCK_STATE_GET)          \
 	};                                                                     \
 	static const struct clock_output_data                                  \
 	CONCAT(clock_output_, DT_INST_DEP_ORD(inst)) = {                       \
 		.parent = CLOCK_DT_GET(DT_INST_PARENT(inst)),                  \
-		.num_states = DT_INST_CHILD_NUM(inst),                         \
 		.output_states = output_states_##inst,                         \
+		.num_output_states = ARRAY_SIZE(output_states_##inst),       \
 		CLOCK_OUTPUT_RUNTIME_INIT(inst)                                \
 	};                                                                     \
 	LEAF_CLOCK_DT_INST_DEFINE(inst,                                        \
