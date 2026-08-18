@@ -642,22 +642,51 @@ static inline int uc81xx_set_ptl_16(const struct device *dev, uint16_t x, uint16
 }
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8175) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8176)
 static int uc8176_set_cdi(const struct device *dev, bool border)
 {
 	const struct uc81xx_config *config = dev->config;
 	const struct uc81xx_data *data = dev->data;
 	const struct uc81xx_profile *p = config->profiles[data->profile];
-	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 |
-		(p ? (p->cdi & UC8176_CDI_CDI_MASK) : 0);
 
-	if (!p || !p->override_cdi) {
-		return 0;
+	uint8_t interval = UC8176_CDI_DEFAULT_INTERVAL;
+
+	if (p && p->override_cdi) {
+		interval = p->cdi & UC8176_CDI_CDI_MASK;
 	}
+
+	/* Border uses LUTKW */
+	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 | interval;
 
 	if (!border) {
 		/* Floating border */
 		cdi |= UC8176_CDI_VBD1 | UC8176_CDI_VBD0;
+	}
+
+	LOG_DBG("CDI: %#hhx", cdi);
+	return uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CDI, cdi);
+}
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8175)
+static int uc8175_set_cdi(const struct device *dev, bool border)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_data *data = dev->data;
+	const struct uc81xx_profile *p = config->profiles[data->profile];
+
+	uint8_t interval = UC8175_CDI_DEFAULT_INTERVAL;
+
+	if (p && p->override_cdi) {
+		interval = p->cdi & UC8175_CDI_CDI_MASK;
+	}
+
+	/* Border uses LUTW */
+	uint8_t cdi = UC8176_CDI_VBD1 | UC8176_CDI_DDX0 | interval;
+
+	if (!border) {
+		/* Floating border */
+		cdi &= GENMASK(5, 0);
 	}
 
 	LOG_DBG("CDI: %#hhx", cdi);
@@ -673,7 +702,7 @@ static const struct uc81xx_quirks uc8175_quirks = {
 	.auto_copy = false,
 	.pon_after_softstart = false,
 
-	.set_cdi = uc8176_set_cdi,
+	.set_cdi = uc8175_set_cdi,
 	.set_tres = uc81xx_set_tres_8,
 	.set_ptl = uc81xx_set_ptl_8,
 };
@@ -749,9 +778,9 @@ static int uc8151d_set_cdi(const struct device *dev, bool border)
 		      (p->cdi & UC8151D_CDI_MASK);
 	}
 
-	if (!border) {
-		/* Set VBD to floating for no border */
-		cdi = (cdi & ~UC8151D_CDI_VBD_MASK) | UC8151D_CDI_VBD_FLOATING;
+	if (border) {
+		/* Set VBD to LUTKW for border data */
+		cdi = (cdi & ~UC8151D_CDI_VBD_MASK) | UC8151D_CDI_VBD_LUTKW;
 	}
 
 	LOG_DBG("CDI: %#hhx", cdi);
@@ -793,16 +822,22 @@ static int uc8179_set_cdi(const struct device *dev, bool border)
 	const struct uc81xx_config *config = dev->config;
 	const struct uc81xx_data *data = dev->data;
 	const struct uc81xx_profile *p = config->profiles[data->profile];
-	uint8_t cdi[UC8179_CDI_REG_LENGTH] = {
-		UC8179_CDI_BDV1 | UC8179_CDI_N2OCP | UC8179_CDI_DDX0,
-		p ? p->cdi : 0,
-	};
 
-	if (!p || !p->override_cdi) {
-		return 0;
+	uint8_t interval = UC8179_CDI_DEFAULT_INTERVAL;
+
+	if (p && p->override_cdi) {
+		interval = p->cdi & UC8179_CDI_CDI_MASK;
 	}
 
-	cdi[UC8179_CDI_BDZ_DDX_IDX] |= border ? 0 : UC8179_CDI_BDZ;
+	/* Border uses LUTKW, force NEW->OLD auto-copy and NEW/OLD KW operation */
+	uint8_t cdi[UC8179_CDI_REG_LENGTH] = {
+		UC8179_CDI_BDV1 | UC8179_CDI_N2OCP | UC8179_CDI_DDX0,
+		interval,
+	};
+
+	if (!border) {
+		cdi[UC8179_CDI_BDZ_DDX_IDX] |= UC8179_CDI_BDZ;
+	}
 
 	LOG_HEXDUMP_DBG(cdi, sizeof(cdi), "CDI");
 	return uc81xx_write_cmd(dev, UC81XX_CMD_CDI, cdi, sizeof(cdi));
