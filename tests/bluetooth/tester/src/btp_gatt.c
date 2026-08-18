@@ -2090,17 +2090,20 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 	struct bt_gatt_notify_params params[max_cnt];
 	struct bt_conn *conn;
 	const size_t min_cnt = 1U;
+	uint16_t cnt;
 	int err = 0;
 	uint16_t server_db_start_handle = server_db[0].handle;
 
 	if ((cmd_len < sizeof(*cp)) ||
-	    (cmd_len != sizeof(*cp) + (cp->cnt * sizeof(cp->attr_id[0])))) {
+	    (cmd_len != sizeof(*cp) + (sys_le16_to_cpu(cp->cnt) * sizeof(cp->attr_id[0])))) {
 		return BTP_STATUS_FAILED;
 	}
 
-	if (!IN_RANGE(cp->cnt, min_cnt, max_cnt)) {
+	cnt = sys_le16_to_cpu(cp->cnt);
+
+	if (!IN_RANGE(cnt, min_cnt, max_cnt)) {
 		LOG_ERR("Invalid count value %d (range %zu to %zu)",
-			    cp->cnt, min_cnt, max_cnt);
+			 cnt, min_cnt, max_cnt);
 
 		return BTP_STATUS_FAILED;
 	}
@@ -2112,7 +2115,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 
 	(void)memset(params, 0, sizeof(params));
 
-	for (uint16_t i = 0U; i < cp->cnt; i++) {
+	for (uint16_t i = 0U; i < cnt; i++) {
 		const struct bt_gatt_attr *attr;
 		const struct gatt_value *value;
 		uint16_t handle = sys_le16_to_cpu(cp->attr_id[i]);
@@ -2134,7 +2137,7 @@ static uint8_t notify_mult(const void *cmd, uint16_t cmd_len,
 		params[i].user_data = NULL;
 	}
 
-	err = bt_gatt_notify_multiple(conn, cp->cnt, params);
+	err = bt_gatt_notify_multiple(conn, cnt, params);
 	if (err != 0) {
 		LOG_ERR("bt_gatt_notify_multiple failed: %d", err);
 		bt_conn_unref(conn);
