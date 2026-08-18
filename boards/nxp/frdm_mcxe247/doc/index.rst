@@ -179,6 +179,26 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.1.0-5194-ge7d44ce91cb3 ***
    Hello World! frdm_mcxe247/mcxe247
 
+QSPI Flash
+**********
+
+The FRDM-MCXE247 board is populated with an on-board Winbond W25Q64
+(64 Mbit) QSPI NOR flash. Its ``w25q64`` node is enabled in the board
+devicetree, but the QSPI data and clock signals are not connected to the
+flash by default.
+
+.. note::
+   In order to use the on-board QSPI flash, populate resistors R120, R122,
+   R124, R126, R129 and R130, and remove resistors R164 and R165.
+
+Once the rework is done, the flash can be exercised with the MSPI flash
+sample (``samples/drivers/mspi/mspi_flash``):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/mspi/mspi_flash
+   :board: frdm_mcxe247
+   :goals: flash
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MCX E24x Series Microcontrollers Website:
