@@ -318,12 +318,24 @@ static void nan_parse_ssi(const char *event_str, uint8_t *ssi, size_t *ssi_len)
 
 	ssi_hex_len = ssi_end - ssi_start;
 
-	if (ssi_hex_len > 0 && ssi_hex_len % 2 == 0) {
-		*ssi_len = ssi_hex_len / 2;
-		if (*ssi_len > WIFI_NAN_MAX_SSI_LEN) {
-			*ssi_len = WIFI_NAN_MAX_SSI_LEN;
-		}
-		hex2bin(ssi_start, ssi_hex_len, ssi, WIFI_NAN_MAX_SSI_LEN);
+	if (ssi_hex_len == 0 || ssi_hex_len % 2 != 0) {
+		return;
+	}
+
+	if (ssi_hex_len / 2 > WIFI_NAN_MAX_SSI_LEN) {
+		wpa_printf(MSG_WARNING,
+			   "NAN: SSI truncated from %zu to %d bytes (%s)",
+			   ssi_hex_len / 2, WIFI_NAN_MAX_SSI_LEN,
+			   "CONFIG_WIFI_NAN_MAX_SSI_LEN");
+		ssi_hex_len = (size_t)WIFI_NAN_MAX_SSI_LEN * 2;
+	}
+
+	/* hex2bin() converts nothing and returns 0 on a malformed string, so the
+	 * length has to come from its return value rather than from the input.
+	 */
+	*ssi_len = hex2bin(ssi_start, ssi_hex_len, ssi, WIFI_NAN_MAX_SSI_LEN);
+	if (*ssi_len == 0) {
+		wpa_printf(MSG_WARNING, "NAN: malformed SSI hex string");
 	}
 }
 
