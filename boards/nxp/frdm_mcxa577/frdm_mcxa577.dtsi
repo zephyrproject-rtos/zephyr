@@ -360,6 +360,18 @@
 	clock-src = <1>;
 };
 
+zephyr_udc0: &usb0 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <4>;
+	tx-cal-45-dp-ohms = <7>;
+	tx-cal-45-dm-ohms = <7>;
+};
+
 &i3c0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;

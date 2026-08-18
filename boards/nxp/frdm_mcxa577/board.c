@@ -8,6 +8,10 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
+#if CONFIG_UDC_NXP_EHCI
+#define SCG_TRIM_UNLOCK_KEY     0x5a5a0001U
+#define BOARD_XTAL_FREQ_HZ      24000000U
+#endif
 
 /* Core clock frequency: 200MHz from PLL */
 #define CLOCK_INIT_CORE_CLOCK 200000000U
@@ -384,6 +388,29 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kFRO_HF_DIV_to_TSI0);
 	CLOCK_SetClockDiv(kCLOCK_DivTSI0, 4);
 	CLOCK_EnableClock(kCLOCK_GateTSI0);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb0)) && CONFIG_UDC_NXP_EHCI
+	/* Voltage delay for USB LDO ramp-up */
+	SPC0->ACTIVE_VDELAY = 0x0500;
+	SPC0->ACTIVE_CFG &= ~SPC_ACTIVE_CFG_CORELDO_VDD_DS_MASK;
+	SPC0->ACTIVE_CFG |= SPC_ACTIVE_CFG_CORELDO_VDD_LVL(0x3);
+	while (SPC0->SC & SPC_SC_BUSY_MASK) {
+	};
+	/* Unlock SCG trim registers and enable LDO for USB PHY */
+	if (0u == (SCG0->LDOCSR & SCG_LDOCSR_LDOEN_MASK)) {
+		SCG0->TRIM_LOCK = SCG_TRIM_UNLOCK_KEY;
+		SCG0->LDOCSR |= SCG_LDOCSR_LDOEN_MASK;
+		while (0U == (SCG0->LDOCSR & SCG_LDOCSR_VOUT_OK_MASK)) {
+		};
+	}
+	CLOCK_AttachClk(kPHY_CLK_XTAL_to_USBHS);
+	CLOCK_AttachClk(kCLK_IN_to_USBHS_PHY);
+	CLOCK_EnableClock(kCLOCK_GateUSBHS);
+	CLOCK_EnableClock(kCLOCK_GateUSBHS_PHY);
+	CLOCK_SetClockDiv(kCLOCK_DivUSBHS_PHY, 1);
+	CLOCK_EnableUsbhsPhyPllClock(BOARD_XTAL_FREQ_HZ);
+	CLOCK_EnableUsbhsClock();
 #endif
 
 	/* Set SystemCoreClock variable. */
