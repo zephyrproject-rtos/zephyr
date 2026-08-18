@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /*
  * PDU fields sizes
  */
@@ -1282,4 +1281,3 @@ struct pdu_dtm {
 
 /* Direct Test Mode maximum payload size */
 #define PDU_DTM_PAYLOAD_SIZE_MAX 255
-
