@@ -138,6 +138,8 @@ static int ism330dhcx_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 		return -EIO;
 	}
 
+	data->gyro_fs = fs;
+
 	return 0;
 }
 
@@ -148,6 +150,8 @@ static int ism330dhcx_gyro_set_odr_raw(const struct device *dev, uint8_t odr)
 	if (ism330dhcx_gy_data_rate_set(data->ctx, odr) < 0) {
 		return -EIO;
 	}
+
+	data->gyro_freq = ism330dhcx_odr_to_freq_val(odr);
 
 	return 0;
 }
@@ -738,7 +742,6 @@ static int ism330dhcx_init_chip(const struct device *dev)
 	}
 
 	LOG_DBG("gyro odr is %d", cfg->gyro_odr);
-	ism330dhcx->gyro_freq = ism330dhcx_odr_to_freq_val(cfg->gyro_odr);
 	if (ism330dhcx_gyro_set_odr_raw(dev, cfg->gyro_odr) < 0) {
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
