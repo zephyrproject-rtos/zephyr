@@ -41,6 +41,11 @@ enum uc81xx_profile_type {
 	UC81XX_PROFILE_INVALID = UC81XX_NUM_PROFILES,
 };
 
+enum uc81xx_phase {
+	UC81XX_PHASE_NORMAL = 0,
+	UC81XX_PHASE_SWAPPED,
+};
+
 struct uc81xx_profile {
 	struct uc81xx_dt_array pwr;
 
@@ -67,6 +72,7 @@ struct uc81xx_quirks {
 
 	bool auto_copy;
 	bool pon_after_softstart;
+	bool dtm_swap;
 
 	int (*set_cdi)(const struct device *dev, bool border);
 	int (*set_tres)(const struct device *dev);
@@ -93,6 +99,7 @@ struct uc81xx_config {
 struct uc81xx_data {
 	bool blanking_on;
 	enum uc81xx_profile_type profile;
+	enum uc81xx_phase phase;
 };
 
 
@@ -349,6 +356,18 @@ static int uc81xx_update_display(const struct device *dev)
 		return -EIO;
 	}
 
+	const struct uc81xx_config *config = dev->config;
+	struct uc81xx_data *data = dev->data;
+
+	if (config->quirks->dtm_swap) {
+		/*
+		 * UC8253 has an undocumented quirk that swaps DTM1 with DTM2
+		 * on every refresh
+		 */
+		data->phase = (data->phase == UC81XX_PHASE_NORMAL) ? UC81XX_PHASE_SWAPPED
+								   : UC81XX_PHASE_NORMAL;
+	}
+
 	return 0;
 }
 
@@ -436,7 +455,9 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		return -EIO;
 	}
 
-	if (uc81xx_write_cmd(dev, UC81XX_CMD_DTM2, (uint8_t *)buf, buf_len)) {
+	if (uc81xx_write_cmd(dev,
+			     data->phase == UC81XX_PHASE_NORMAL ? UC81XX_CMD_DTM2 : UC81XX_CMD_DTM1,
+			     (const uint8_t *)buf, buf_len)) {
 		return -EIO;
 	}
 
@@ -462,8 +483,10 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		 * data buffer on refresh. Do that manually here if
 		 * needed.
 		 */
-		if (uc81xx_write_cmd(dev, UC81XX_CMD_DTM1,
-				     (uint8_t *)buf, buf_len)) {
+		if (uc81xx_write_cmd(dev,
+				     data->phase == UC81XX_PHASE_NORMAL ? UC81XX_CMD_DTM1
+									: UC81XX_CMD_DTM2,
+				     (const uint8_t *)buf, buf_len)) {
 			return -EIO;
 		}
 	}
@@ -537,6 +560,7 @@ static int uc81xx_controller_init(const struct device *dev)
 
 	data->blanking_on = true;
 	data->profile = UC81XX_PROFILE_INVALID;
+	data->phase = UC81XX_PHASE_NORMAL;
 
 	if (uc81xx_set_profile(dev, UC81XX_PROFILE_FULL)) {
 		return -EIO;
@@ -701,6 +725,7 @@ static const struct uc81xx_quirks uc8175_quirks = {
 
 	.auto_copy = false,
 	.pon_after_softstart = false,
+	.dtm_swap = false,
 
 	.set_cdi = uc8175_set_cdi,
 	.set_tres = uc81xx_set_tres_8,
@@ -715,6 +740,7 @@ static const struct uc81xx_quirks uc8176_quirks = {
 
 	.auto_copy = false,
 	.pon_after_softstart = false,
+	.dtm_swap = false,
 
 	.set_cdi = uc8176_set_cdi,
 	.set_tres = uc81xx_set_tres_16,
@@ -795,6 +821,7 @@ static const struct uc81xx_quirks uc8151d_quirks = {
 
 	.auto_copy = false,    /* Manual copy required */
 	.pon_after_softstart = true,
+	.dtm_swap = false,
 
 	.set_cdi = uc8151d_set_cdi,
 	.set_tres = uc81xx_set_tres_h8v16,
@@ -809,6 +836,7 @@ static const struct uc81xx_quirks uc8253_quirks = {
 
 	.auto_copy = false,
 	.pon_after_softstart = false,
+	.dtm_swap = true,
 
 	.set_cdi = uc8151d_set_cdi,
 	.set_tres = uc81xx_set_tres_h8v16,
@@ -849,6 +877,7 @@ static const struct uc81xx_quirks uc8179_quirks = {
 
 	.auto_copy = true,
 	.pon_after_softstart = false,
+	.dtm_swap = false,
 
 	.set_cdi = uc8179_set_cdi,
 	.set_tres = uc81xx_set_tres_16,
