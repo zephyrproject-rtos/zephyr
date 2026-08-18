@@ -23,3 +23,35 @@ config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	default 65536
 	help
 	  Maximum size of the buffer for rendering rectangles
+
+# Workaround for not being able to have commas in macro arguments
+UINT8_RANGE := 0, $(UINT8_MAX)
+UINT8_MIN_HEX := $(min_hex, $(UINT8_RANGE))
+UINT8_MAX_HEX := $(max_hex, $(UINT8_RANGE))
+UINT8_6PP_HEX := $(div_hex, $(UINT8_MAX), 16)
+
+config SAMPLE_MASK_INTENSITY
+	hex "Maximum intensity in all color channels as bit-mask"
+	default $(UINT8_6PP_HEX) if LED_STRIP_MATRIX
+	default $(UINT8_MAX_HEX)
+	range $(UINT8_MIN_HEX) $(UINT8_MAX_HEX)
+	help
+	  Some displays, particularly those based on LED technology,
+	  require a reduced brightness range per color channel for
+	  safety reasons. This ensures that LED matrix displays do
+	  not draw excessive electrical current and that the luminous
+	  flux they generate does not pose a risk of physical injury
+	  (e.g., glared by direct eye exposure to LEDs).
+
+config SAMPLE_INIT_INTENSITY
+	hex "Initial intensity in all color channels"
+	default $(UINT8_MIN_HEX) if LED_STRIP_MATRIX
+	range $(UINT8_MIN_HEX) $(UINT8_MIN_HEX) if LED_STRIP_MATRIX
+	default $(UINT8_MAX_HEX)
+	range $(UINT8_MAX_HEX) $(UINT8_MAX_HEX)
+	help
+	  Some displays, particularly those based on LED technology,
+	  do not require initialization with a white background. From
+	  an energy efficiency standpoint and to avoid other well known
+	  disruptive effects, the background of this type of displays
+	  should be initialized as black (i.e., with the LEDs turned off).
