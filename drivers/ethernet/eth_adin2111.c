@@ -325,21 +325,21 @@ int eth_adin2111_oa_data_read(const struct device *dev, const uint16_t port_idx)
 							   K_MSEC(CONFIG_ETH_ADIN2111_TIMEOUT));
 			if (!pkt) {
 				LOG_ERR("OA RX: cannot allocate packet space, skipping.");
-				return -ENOMEM;
+				goto update_pos;
 			}
 			/* Skipping CRC32 */
 			ret = net_pkt_write(pkt, ctx->buf, ctx->scur - sizeof(uint32_t));
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Failed to write pkt, scur %d, err %d", ctx->scur, ret);
-				return ret;
+				goto update_pos;
 			}
 			ret = net_recv_data(iface, pkt);
 			if (ret < 0) {
 				net_pkt_unref(pkt);
 				LOG_ERR("Port %u failed to enqueue frame to RX queue, %d",
 					port_idx, ret);
-				return ret;
+				goto update_pos;
 			}
 		}
 update_pos:
