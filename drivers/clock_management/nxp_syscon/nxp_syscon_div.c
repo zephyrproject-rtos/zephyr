@@ -7,6 +7,8 @@
 
 #include <zephyr/drivers/clock_management/clock_driver.h>
 
+#define SYSCON_CLK_HALT_BIT BIT(30)
+
 #define DT_DRV_COMPAT nxp_syscon_clock_div
 
 struct syscon_clock_div_config {
@@ -29,8 +31,13 @@ static clock_freq_t syscon_clock_div_recalc_rate(const struct clk *clk_hw,
 static int syscon_clock_div_configure(const struct clk *clk_hw, const void *div_cfg)
 {
 	const struct syscon_clock_div_config *config = clk_hw->hw_data;
-	uint8_t div_mask = GENMASK((config->mask_width - 1), 0);
+	uint32_t div_mask = GENMASK((config->mask_width - 1), 0) | SYSCON_CLK_HALT_BIT;
 	uint32_t div_val = (((uint32_t)div_cfg) - 1) & div_mask;
+
+	if (((uint32_t)div_cfg) == 0) {
+		/* Set halt bit */
+		div_val |= SYSCON_CLK_HALT_BIT;
+	}
 
 	(*config->reg) = ((*config->reg) & ~div_mask) | div_val;
 
