@@ -50,6 +50,34 @@
 				mclk-frequency = <13000000>;
 			};
 
+			test_i2c_taa3020: taa3020@4e {
+				compatible = "ti,taa3020";
+				status = "okay";
+				reg = <0x4e>;
+				areg-internal-en;
+
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				left@0 {
+					compatible = "ti,taa3020-channel";
+					reg = <0x0>;
+					in-src = "differential";
+					in-type = "line";
+					impedance = "20k";
+					coupling = "dc";
+				};
+
+				right@1 {
+					compatible = "ti,taa3020-channel";
+					reg = <0x1>;
+					in-src = "differential";
+					in-type = "line";
+					impedance = "20k";
+					coupling = "dc";
+				};
+			};
+
 			test_i2c_tas2563: tas2563@4 {
 				compatible = "ti,tas2563";
 				reg = <0x4>;

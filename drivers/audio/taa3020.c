@@ -47,20 +47,12 @@ struct codec_driver_data {
 	struct codec_channel_data channels[4];
 };
 
-static void codec_set_device_page(const struct device *dev, uint8_t page)
-{
-	const struct codec_driver_config *const config = dev->config;
-
-	i2c_reg_write_byte_dt(&config->bus, TAA3020_PAGE_CFG, page);
-}
-
 static void codec_soft_reset(const struct device *dev)
 {
 	const struct codec_driver_config *const config = dev->config;
-	uint8_t val = TAA3020_SW_RESET_SW_RESET;
 
-	codec_set_device_page(dev, 0);
-	i2c_reg_write_byte_dt(&config->bus, TAA3020_SW_RESET, val);
+	i2c_reg_write_byte_dt(&config->bus, TAA3020_PAGE_CFG, 0);
+	i2c_reg_write_byte_dt(&config->bus, TAA3020_SW_RESET, TAA3020_SW_RESET_SW_RESET);
 }
 
 static void codec_set_power(const struct device *dev, bool power_en)
@@ -90,7 +82,7 @@ static void codec_channel_enable(const struct device *dev, uint8_t channel, bool
 	if (enable) {
 		val |= TAA3020_ASI_OUT_CH_EN_CHANNEL(channel);
 	} else {
-		val &= TAA3020_ASI_OUT_CH_EN_CHANNEL(channel);
+		val &= ~TAA3020_ASI_OUT_CH_EN_CHANNEL(channel);
 	}
 	i2c_reg_write_byte_dt(&config->bus, TAA3020_ASI_OUT_CH_EN, val);
 	data->channels[channel].configured = enable;
@@ -367,7 +359,7 @@ static int codec_initialize_internal(const struct device *dev,
 	if (config->areg_internal) {
 		val |= TAA3020_SLEEP_CFG_AREG_SELECT;
 	} else {
-		val &= TAA3020_SLEEP_CFG_AREG_SELECT;
+		val &= ~TAA3020_SLEEP_CFG_AREG_SELECT;
 	}
 
 	i2c_reg_write_byte_dt(&config->bus, TAA3020_SLEEP_CFG, val);
@@ -383,7 +375,6 @@ static int codec_initialize_internal(const struct device *dev,
 		in_ch_en |= TAA3020_IN_CH_EN_CHANNEL(config->channels[i].channel);
 	}
 
-	in_ch_en &= TAA3020_IN_CH_EN_MASK;
 	i2c_reg_write_byte_dt(&config->bus, TAA3020_IN_CH_EN, in_ch_en);
 
 	return 0;
