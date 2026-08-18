@@ -1102,8 +1102,13 @@ struct bt_gatt_ccc_managed_user_data {
 
 	/** @brief CCC attribute changed callback
 	 *
-	 *  @param attr   The attribute that's changed value
-	 *  @param value  New value
+	 *  Called when the cached CCC value changes. While processing CCC writes,
+	 *  the value is the highest subscription value across all connected peers.
+	 *  On disconnect, the callback is invoked only when all subscriptions are
+	 *  disabled.
+	 *
+	 *  @param attr   The CCC attribute whose cached value changed.
+	 *  @param value  New cached value.
 	 */
 	void (*cfg_changed)(const struct bt_gatt_attr *attr, uint16_t value);
 
