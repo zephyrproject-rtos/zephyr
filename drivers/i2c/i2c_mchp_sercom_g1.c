@@ -265,8 +265,19 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 		 * determines both SCL_L and SCL_H with SCL_L = SCL_H
 		 */
 		if (baud_value > (I2C_BAUD_MAX * 2U)) {
-			/* Set baud rate to the maximum possible value */
-			baud_value = I2C_BAUD_MAX;
+			/*
+			 * BAUD is 8 bits, so the reference clock cannot be
+			 * divided down far enough to reach the requested
+			 * bitrate. The same branch catches the unsigned
+			 * subtraction above wrapping, which it does whenever
+			 * the reference is below roughly 12 times the
+			 * bitrate. Clamping here would leave the bus running
+			 * faster than asked for - out of spec, and silently.
+			 */
+			LOG_ERR("I2C bitrate %u Hz is out of range for a %u Hz "
+				"reference clock",
+				bitrate, sys_clock_rate);
+			return false;
 		} else if (baud_value <= 1U) {
 			/* Baud value cannot be 0. Set baud rate to minimum possible */
 			baud_value = 1U;
@@ -284,10 +295,13 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 	 * can not exceed 255+127 = 382
 	 */
 	if (baud_value >= I2C_BAUD_LOW_HIGH_MAX) {
-		/* Set baud rate to the maximum possible value while
-		 * maintaining SCL_L:SCL_H to 2:1
+		/* Same as above: BAUD_LOW + BAUD saturates, so the requested
+		 * bitrate is unreachable rather than merely inexact.
 		 */
-		baud_value = (0xFFUL << 8U) | (0x7FU);
+		LOG_ERR("I2C bitrate %u Hz is out of range for a %u Hz "
+			"reference clock",
+			bitrate, sys_clock_rate);
+		return false;
 	} else if (baud_value <= 3U) {
 		/* Baud value cannot be 0. Set baud rate to minimum possible
 		 * value while maintaining SCL_L:SCL_H to 2:1
