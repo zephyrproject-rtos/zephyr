@@ -11,6 +11,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/printk.h>
+#include <strings.h>
 
 #include <zephyr/bluetooth/conn.h>
 
@@ -176,6 +177,8 @@ static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
 
 	LOG_ERR("SLC error: disconnecting");
 
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CUSTOM_AT_CMD_PENDING);
+
 	err = bt_rfcomm_dlc_disconnect(&hf->rfcomm_dlc);
 	if (err) {
 		LOG_ERR("Fail to disconnect: %d", err);
@@ -183,6 +186,7 @@ static void hfp_hf_send_failed(struct bt_hfp_hf *hf)
 }
 
 static void hfp_hf_send_data(struct bt_hfp_hf *hf);
+static int bt_hfp_ag_get_cme_err(enum at_cme cme_err);
 
 static int hfp_hf_common_finish(struct at_client *at, enum at_result result,
 			  enum at_cme cme_err)
@@ -272,6 +276,7 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 	ret = vsnprintk(buf->data, (net_buf_tailroom(buf) - 1), format, vargs);
 	if (ret < 0) {
 		LOG_ERR("Unable to format variable arguments");
+		net_buf_unref(buf);
 		return ret;
 	}
 	va_end(vargs);
@@ -286,6 +291,155 @@ int hfp_hf_send_cmd(struct bt_hfp_hf *hf, at_resp_cb_t resp,
 
 	return 0;
 }
+
+static int custom_at_cmd_finish(struct at_client *hf_at, enum at_result result,
+			 enum at_cme cme_err)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	int err;
+
+	LOG_DBG("Custom AT command response finished");
+
+	if (result == AT_RESULT_CME_ERROR) {
+		err = bt_hfp_ag_get_cme_err(cme_err);
+	} else if (result == AT_RESULT_ERROR) {
+		err = -ENOTSUP;
+	} else {
+		err = 0;
+	}
+
+	if (bt_hf && bt_hf->custom_at_complete) {
+		bt_hf->custom_at_complete(hf, err);
+	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CUSTOM_AT_CMD_PENDING);
+
+	return 0;
+}
+
+/*
+ * Check whether @p cmd is allowed to be sent via the custom AT command
+ * interface. When CONFIG_BT_HFP_HF_AT_CMD_CHECK is enabled, built-in HFP AT
+ * commands are rejected; otherwise every command is allowed.
+ * @param cmd     AT command string (must start with "AT").
+ * @param cmd_len Length of @p cmd (excluding trailing \r / \n).
+ * @return true if @p cmd is allowed.
+ */
+#define HFP_KNOWN_CMD_ENTRY(s) { .name = s, .len = sizeof(s) - 1U }
+
+static bool hfp_hf_is_at_allowed(const char *cmd, size_t cmd_len)
+{
+#if defined(CONFIG_BT_HFP_HF_AT_CMD_CHECK)
+	static const struct {
+		const char *name;
+		uint8_t len;
+	} known_cmds[] = {
+		HFP_KNOWN_CMD_ENTRY("+BAC"), HFP_KNOWN_CMD_ENTRY("+BCC"),
+		HFP_KNOWN_CMD_ENTRY("+BCS"), HFP_KNOWN_CMD_ENTRY("+BIA"),
+		HFP_KNOWN_CMD_ENTRY("+BIEV"), HFP_KNOWN_CMD_ENTRY("+BIND"),
+		HFP_KNOWN_CMD_ENTRY("+BINP"), HFP_KNOWN_CMD_ENTRY("+BLDN"),
+		HFP_KNOWN_CMD_ENTRY("+BRSF"), HFP_KNOWN_CMD_ENTRY("+BTRH"),
+		HFP_KNOWN_CMD_ENTRY("+BVRA"), HFP_KNOWN_CMD_ENTRY("+CCWA"),
+		HFP_KNOWN_CMD_ENTRY("+CHLD"), HFP_KNOWN_CMD_ENTRY("+CHUP"),
+		HFP_KNOWN_CMD_ENTRY("+CIND"), HFP_KNOWN_CMD_ENTRY("+CLCC"),
+		HFP_KNOWN_CMD_ENTRY("+CLIP"), HFP_KNOWN_CMD_ENTRY("+CMEE"),
+		HFP_KNOWN_CMD_ENTRY("+CMER"), HFP_KNOWN_CMD_ENTRY("+CNUM"),
+		HFP_KNOWN_CMD_ENTRY("+COPS"), HFP_KNOWN_CMD_ENTRY("+NREC"),
+		HFP_KNOWN_CMD_ENTRY("+VGM"), HFP_KNOWN_CMD_ENTRY("+VGS"),
+		HFP_KNOWN_CMD_ENTRY("+VTS"), HFP_KNOWN_CMD_ENTRY("A"),
+		HFP_KNOWN_CMD_ENTRY("D"),
+	};
+	size_t i;
+	size_t cmd_end;
+
+	cmd_end = 2U;
+	while (cmd_end < cmd_len &&
+		   cmd[cmd_end] != '=' && cmd[cmd_end] != '?') {
+		cmd_end++;
+	}
+
+	for (i = 0U; i < ARRAY_SIZE(known_cmds); i++) {
+		if ((cmd_end - 2U) == known_cmds[i].len &&
+			strncasecmp(&cmd[2], known_cmds[i].name, known_cmds[i].len) == 0) {
+			return false;
+		}
+	}
+#else
+	ARG_UNUSED(cmd);
+	ARG_UNUSED(cmd_len);
+#endif /* CONFIG_BT_HFP_HF_AT_CMD_CHECK */
+
+	return true;
+}
+
+#undef HFP_KNOWN_CMD_ENTRY
+
+int bt_hfp_hf_send_at(struct bt_hfp_hf *hf, const char *cmd)
+{
+	int err;
+	size_t cmd_len;
+	size_t i;
+	bool cr_seen;
+
+	if (!hf) {
+		LOG_ERR("No HF connection found");
+		return -ENOTCONN;
+	}
+
+	if (!cmd) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED)) {
+		LOG_ERR("SLC not established");
+		return -ENOTCONN;
+	}
+
+	/* Compute cmd_len excluding trailing "\r"/"\n", rejecting embedded ones. */
+	cmd_len = 0U;
+	cr_seen = false;
+	for (i = 0U; cmd[i] != '\0'; i++) {
+		if ((cmd[i] == '\r') || (cmd[i] == '\n')) {
+			if (!cr_seen) {
+				cmd_len = i;
+				cr_seen = true;
+			}
+		} else if (cr_seen) {
+			/* Embedded "\r"/"\n" is not allowed. */
+			return -EINVAL;
+		}
+	}
+
+	if (!cr_seen) {
+		cmd_len = i;
+	}
+
+	if (cmd_len < 2U) {
+		return -EINVAL;
+	}
+
+	if (cmd[0] != 'A' || cmd[1] != 'T') {
+		return -EINVAL;
+	}
+
+	if (!hfp_hf_is_at_allowed(cmd, cmd_len)) {
+		LOG_ERR("Built-in AT command rejected from custom interface");
+		return -EINVAL;
+	}
+
+	if (atomic_test_and_set_bit(hf->flags, BT_HFP_HF_FLAG_CUSTOM_AT_CMD_PENDING)) {
+		return -EBUSY;
+	}
+
+	err = hfp_hf_send_cmd(hf, NULL, custom_at_cmd_finish, "%.*s",
+						   (int)cmd_len, cmd);
+	if (err < 0) {
+		atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CUSTOM_AT_CMD_PENDING);
+	}
+
+	return err;
+}
+
 
 int brsf_handle(struct at_client *hf_at)
 {
@@ -1929,12 +2083,49 @@ static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 	return NULL;
 }
 
+static int notify_unknown_unsolicited(struct at_client *hf_at,
+				      struct net_buf *buf)
+{
+	struct bt_hfp_hf *hf = CONTAINER_OF(hf_at, struct bt_hfp_hf, at);
+	uint8_t *start = (uint8_t *)hf_at->rsp_buf.data;
+
+	if (!bt_hf || !bt_hf->unsolicited) {
+		return -ENOTSUP;
+	}
+
+	/* Restore the buffer to the start of the command name. */
+	if ((hf_at->rsp_buf.len > 0U) && (start <= buf->data)) {
+		size_t consumed = (size_t)(buf->data - start);
+
+		if (consumed > 0U) {
+			net_buf_push(buf, consumed);
+		}
+	}
+
+	bt_hf->unsolicited(hf, buf);
+
+	/* Drop any remaining data and reset the parser so the next response
+	 * is processed from a clean state.
+	 */
+	net_buf_pull(buf, buf->len);
+	hf_at->cmd_state = AT_CMD_START;
+	hf_at->state = AT_STATE_START;
+
+	return 0;
+}
+
 int unsolicited_cb(struct at_client *hf_at, struct net_buf *buf)
 {
 	const struct unsolicited *handler;
 
 	handler = hfp_hf_unsol_lookup(hf_at);
 	if (!handler) {
+		int err;
+
+		err = notify_unknown_unsolicited(hf_at, buf);
+		if (err == 0) {
+			return 0;
+		}
 		LOG_ERR("Unhandled unsolicited response");
 		return -ENOMSG;
 	}
@@ -4263,6 +4454,8 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	if (bt_hf->disconnected) {
 		bt_hf->disconnected(hf);
 	}
+
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CUSTOM_AT_CMD_PENDING);
 
 	k_work_cancel(&hf->work);
 	k_work_cancel_delayable(&hf->deferred_work);
