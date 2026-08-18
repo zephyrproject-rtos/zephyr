@@ -182,7 +182,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 static int prepare_cb_common(struct lll_prepare_param *p)
 {
 	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
-	uint8_t crc_init[PDU_CRCINIT_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct lll_adv_iso *lll;
 	uint32_t ticks_at_event;
 	uint32_t ticks_at_start;
@@ -491,7 +491,7 @@ static void isr_tx_common(void *param,
 			  radio_isr_cb_t isr_done)
 {
 	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
-	uint8_t crc_init[PDU_CRCINIT_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct pdu_bis *pdu = NULL;
 	uint8_t data_chan_use = 0;
 	struct lll_adv_iso *lll;

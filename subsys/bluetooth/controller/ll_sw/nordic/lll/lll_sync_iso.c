@@ -166,7 +166,7 @@ static int prepare_cb_common(struct lll_prepare_param *p)
 {
 	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	struct lll_sync_iso_stream *stream;
-	uint8_t crc_init[PDU_CRCINIT_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct node_rx_pdu *node_rx;
 	struct lll_sync_iso *lll;
 	uint32_t ticks_at_event;
@@ -573,7 +573,7 @@ static void isr_rx(void *param)
 {
 	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
 	struct lll_sync_iso_stream *stream;
-	uint8_t crc_init[PDU_CRCINIT_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 	struct lll_sync_iso *lll;
 	uint16_t data_chan_id;
 	uint8_t data_chan_use;
