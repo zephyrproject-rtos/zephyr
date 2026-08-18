@@ -45,3 +45,21 @@ properties:
     description: |
       Frequency this consumer expects to read when applying test3 clock
       management state
+
+  freq-req-1:
+    type: int
+    required: true
+    description: |
+     First frequency this consumer will request from the clock subsystem
+
+  freq-req-2:
+    type: int
+    required: true
+    description: |
+     Second frequency this consumer will request from the clock subsystem
+
+  freq-req-3:
+    type: int
+    required: true
+    description: |
+     Third frequency this consumer will request from the clock subsystem
