@@ -80,7 +80,8 @@ K_MEM_SLAB_DEFINE_STATIC_TYPE(tcp_conns_slab, struct tcp,
 static struct k_work_q tcp_work_q;
 static K_KERNEL_STACK_DEFINE(work_q_stack, CONFIG_NET_TCP_WORKQ_STACK_SIZE);
 
-static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt);
+static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
+			       struct tcphdr *th);
 static bool is_destination_local(struct net_pkt *pkt);
 static void tcp_out(struct tcp *conn, uint8_t flags);
 static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
@@ -2383,7 +2384,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 	}
 in:
 	if (conn) {
-		verdict = tcp_in(conn, pkt);
+		verdict = tcp_in(conn, pkt, th);
 	} else {
 		net_tcp_reply_rst(pkt);
 	}
@@ -2964,9 +2965,9 @@ static void tcp_check_sock_options(struct tcp *conn)
 }
 
 /* TCP state machine, everything happens here */
-static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
+static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
+			       struct tcphdr *th)
 {
-	struct tcphdr *th;
 	uint8_t next = 0, fl = 0;
 	bool do_close = false;
 	bool connection_ok = false;
@@ -2980,14 +2981,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 	int close_status = 0;
 	enum net_verdict verdict = NET_DROP;
 
-	if (conn == NULL || pkt == NULL) {
+	if (conn == NULL || pkt == NULL || th == NULL) {
 		NET_ERR("Invalid parameters");
-		return NET_DROP;
-	}
-
-	th = th_get(pkt);
-	if (th == NULL) {
-		NET_ERR("Failed to get TCP header");
 		return NET_DROP;
 	}
 
@@ -4392,7 +4387,7 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 
 		if (conn) {
 			conn->iface = pkt->iface;
-			verdict = tcp_in(conn, pkt);
+			verdict = tcp_in(conn, pkt, th);
 		}
 	}
 
