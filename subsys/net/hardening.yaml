@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for networking.
+
+rules:
+  COAP_TEST_API_ENABLE:
+    value: n
+    rationale: |
+      Exports the CoAP library's internal URI path matcher as a global function for the unit test
+      suite, linking test-only code into the image outside the library's public API.
+    references: [CWE-489]
+
+  NET_CAPTURE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Packet capture, once started from the shell or the net_capture API, copies the frames an
+      interface sends and receives to a remote host over an unencrypted IPIP/UDP tunnel, disclosing
+      that traffic to the capture endpoint and to anyone on the path to it.
+    references: [CWE-200]
+
+  NET_TCP_ISN_RFC6528:
+    value: y
+    rationale: |
+      Derives TCP initial sequence numbers from a hash of the connection's addresses and ports
+      keyed with a secret from the CSPRNG, as in RFC 6528. Without it each ISN comes from
+      sys_rand32_get(), which is not cryptographically secure, so an off-path attacker who predicts
+      it can spoof, reset or inject data into connections.
+    references: [CWE-330]
+
+  NET_ZPERF:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Links the zperf bandwidth tester into the image, which sends traffic at whatever rate and
+      duration its caller requests. With CONFIG_NET_ZPERF_SERVER, a started download session accepts
+      iperf traffic from any host without authentication.
+    references: [CWE-489]
+
+  WIFI_CREDENTIALS_STATIC:
+    value: n
+    rationale: |
+      Compiles a Wi-Fi SSID and passphrase into the image in plaintext, so every device built from
+      that image carries the same network credential, recoverable from any one image or unit.
+    references: [CWE-798]
