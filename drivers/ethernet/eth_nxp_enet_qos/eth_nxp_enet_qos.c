@@ -495,7 +495,6 @@ next:
 	enet_qos_dma_rx_resume(dev);
 
 	LOG_DBG("End RX work normally");
-	return;
 }
 
 static void eth_nxp_enet_qos_isr(const struct device *dev)
