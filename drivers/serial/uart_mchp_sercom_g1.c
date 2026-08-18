@@ -1122,6 +1122,7 @@ static int uart_mchp_init(const struct device *dev)
 	uart_mchp_dev_data_t *const dev_data = dev->data;
 	sercom_registers_t *regs = cfg->regs;
 	bool is_clock_external = cfg->is_clock_external;
+	sercom_usart_registers_t *usart_regs = UART_GET_BASE_ADDR(regs, is_clock_external);
 	int retval = UART_SUCCESS;
 
 	/* Enable the GCLK and MCLK*/
@@ -1133,6 +1134,14 @@ static int uart_mchp_init(const struct device *dev)
 	retval = clock_control_on(cfg->uart_clock.clock_dev, cfg->uart_clock.mclk_sys);
 	if ((retval != UART_SUCCESS) && (retval != -EALREADY)) {
 		return retval;
+	}
+
+	if ((usart_regs->SERCOM_CTRLA & SERCOM_USART_CTRLA_ENABLE_Msk) != 0) {
+		usart_regs->SERCOM_CTRLA &= ~SERCOM_USART_CTRLA_ENABLE_Msk;
+		uart_wait_sync(regs, is_clock_external);
+
+		usart_regs->SERCOM_CTRLA = SERCOM_USART_CTRLA_SWRST_Msk;
+		uart_wait_sync(regs, is_clock_external);
 	}
 
 	uart_disable_interrupts(regs, is_clock_external);
