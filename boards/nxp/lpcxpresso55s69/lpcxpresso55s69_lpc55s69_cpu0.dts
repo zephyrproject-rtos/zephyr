@@ -115,13 +115,13 @@
 
 &flexcomm0 {
 	status = "okay";
-	clock-state-0 = <&fxcom0_96mhz>;
-	clock-state-names = "default";
+	clock-request-0 = <&fxcom0_96mhz>;
+	clock-request-names = "default";
 };
 
 &cpu0 {
-	clock-state-0 = <&sys_clk_144mhz>;
-	clock-state-names = "default";
+	clock-request-0 = <&sys_clk_144mhz>;
+	clock-request-names = "default";
 };
 
 &fxcom0_clock {
@@ -129,7 +129,6 @@
 	fxcom0_96mhz: fxcom0_96mhz {
 		compatible = "clock-state";
 		clocks = <&fcclksel0 3 &frohfdiv 1>;
-		clock-frequency = <DT_FREQ_M(96)>;
 	};
 };
 
@@ -142,8 +141,6 @@
 			  &pll1_pdec 2 &pll1 8 144 0 53 31
 			  &pll1_directo 0 &pll1_bypass 0
 			  &mainclkselb 2>;
-		clock-frequency = <DT_FREQ_M(144)>;
-		locking-state;
 	};
 };
 
@@ -152,13 +149,12 @@
 	fxcom2_96mhz: fxcom2_96mhz {
 		compatible = "clock-state";
 		clocks = <&fcclksel2 3 &frohfdiv 1>;
-		clock-frequency = <DT_FREQ_M(96)>;
 	};
 };
 
 &flexcomm2 {
-	clock-state-0 = <&fxcom2_96mhz>;
-	clock-state-names = "default";
+	clock-request-0 = <&fxcom2_96mhz>;
+	clock-request-names = "default";
 };
 
 &flexcomm4 {

@@ -76,9 +76,11 @@ const pll_setup_t pll1Setup = {
  * @brief Setup core clocks
  */
 #ifdef CONFIG_CLOCK_MANAGEMENT
-CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(0);
+CLOCK_MANAGEMENT_DT_INST_DEFINE(0);
 
-static const struct clock_output *cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+static const struct clock_management_data *core_clock_data =
+	CLOCK_MANAGEMENT_DT_INST_GET(0);
+
 
 static void change_core_clock(uint32_t new_rate)
 {
@@ -116,8 +118,9 @@ static int core_clock_change_cb(const struct clock_management_event *ev, const v
 
 static void core_clock_init(void)
 {
-	clock_management_state_t default_state =
-		CLOCK_MANAGEMENT_DT_INST_GET_STATE(0, default, default);
+	clock_output_t cpu_clock = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(0);
+	clock_request_t default_state =
+		CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(0, default);
 	int new_rate;
 	/* Enable Analog Control module */
 	SYSCON->PRESETCTRLCLR[2] = (1UL << SYSCON_PRESETCTRL2_ANALOG_CTRL_RST_SHIFT);
@@ -125,11 +128,12 @@ static void core_clock_init(void)
 	/* Power up the FRO192M */
 	POWER_DisablePD(kPDRUNCFG_PD_FRO192M);
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	clock_management_set_callback(cpu_clock, core_clock_change_cb, NULL);
+	clock_management_set_callback(core_clock_data, cpu_clock, core_clock_change_cb, NULL);
 #else
 	change_core_clock(SDK_DEVICE_MAXIMUM_CPU_CLOCK_FREQUENCY);
 #endif
-	new_rate = clock_management_apply_state(cpu_clock, default_state);
+	clock_management_request_state(core_clock_data, default_state);
+	new_rate = clock_management_get_rate(core_clock_data, cpu_clock);
 	change_core_clock(new_rate);
 	clock_management_disable_unused();
 }

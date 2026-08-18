@@ -48,8 +48,9 @@ struct mcux_flexcomm_config {
 #endif
 	const struct pinctrl_dev_config *pincfg;
 #ifdef CONFIG_CLOCK_MANAGEMENT
-	const struct clock_output *clock_output;
-	clock_management_state_t clock_state;
+	const struct clock_management_data *clock_data;
+	clock_output_t clock_output;
+	clock_request_t clock_req_default;
 #else
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
@@ -177,7 +178,7 @@ static void mcux_flexcomm_poll_out(const struct device *dev,
 	 * Some clock drivers report this as an error, while others return 0 Hz.
 	 */
 #ifdef CONFIG_CLOCK_MANAGEMENT
-	clock_rate = clock_management_get_rate(config->clock_output);
+	clock_rate = clock_management_get_rate(config->clock_data, config->clock_output);
 	if (clock_rate == 0U) {
 		return;
 	}
@@ -456,7 +457,7 @@ static int mcux_flexcomm_uart_configure(const struct device *dev, const struct u
 
 	/* Get UART clock frequency */
 #ifdef CONFIG_CLOCK_MANAGEMENT
-	clock_freq = clock_management_get_rate(config->clock_output);
+	clock_freq = clock_management_get_rate(config->clock_data, config->clock_output);
 #else
 	clock_control_get_rate(config->clock_dev,
 		config->clock_subsys, &clock_freq);
@@ -1173,10 +1174,10 @@ static int mcux_flexcomm_init_common(const struct device *dev)
 	}
 
 #ifdef CONFIG_CLOCK_MANAGEMENT
-	clock_freq = clock_management_apply_state(config->clock_output,
-					    config->clock_state);
+	clock_management_request_state(config->clock_data, config->clock_req_default);
+	clock_freq = clock_management_get_rate(config->clock_data, config->clock_output);
 #ifdef CONFIG_CLOCK_MANAGEMENT_RUNTIME
-	clock_management_set_callback(config->clock_output,
+	clock_management_set_callback(config->clock_data, config->clock_output,
 				uart_mcux_flexcomm_clock_cb, dev);
 #endif
 #else
@@ -1495,10 +1496,12 @@ static void serial_mcux_flexcomm_##n##_pm_exit(enum pm_state state, uint8_t subs
 #define UART_MCUX_FLEXCOMM_LP_CLK_SUBSYS(n)
 #endif /* FC_UART_IS_WAKEUP */
 #ifdef CONFIG_CLOCK_MANAGEMENT
-#define UART_MCUX_FLEXCOMM_CLK_DEFINE(n) CLOCK_MANAGEMENT_DT_INST_DEFINE_OUTPUT(n)
+#define UART_MCUX_FLEXCOMM_CLK_DEFINE(n) \
+	CLOCK_MANAGEMENT_DT_INST_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_CLK_INIT(n)						\
-	.clock_output = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(n),                       \
-	.clock_state = CLOCK_MANAGEMENT_DT_INST_GET_STATE(n, default, default),
+	.clock_data = CLOCK_MANAGEMENT_DT_INST_GET(n), \
+	.clock_output = CLOCK_MANAGEMENT_DT_INST_GET_OUTPUT(n), \
+	.clock_req_default = CLOCK_MANAGEMENT_DT_INST_GET_REQUEST(n, default),
 #else
 #define UART_MCUX_FLEXCOMM_CLK_DEFINE(n)
 #define UART_MCUX_FLEXCOMM_CLK_INIT(n)						\
