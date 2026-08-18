@@ -30,7 +30,9 @@ spdx-python-model>=0.0.5
 # for ram/rom reports
 anytree
 
-# used by hardenconfig to display the hardening report
+# used by hardenconfig to display the hardening report and resolve
+# CWE references
+cwe2
 tabulate
 
 # intelhex used by mergehex.py
