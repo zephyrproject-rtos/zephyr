@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/clock-monitor/nxp-anactrl.h>
+
+/ {
+	clock-monitor-test {
+		compatible = "test-clock-monitor";
+
+		/*
+		 * anactrl: ANACTRL freq-measure, MEASURE mode only.
+		 * Default: reference = system AHB (~32 MHz), target = 1 MHz FRO.
+		 * switch-target: switch target to 32 kHz OSC32K → expected ~32768 Hz.
+		 */
+		anactrl_fm {
+			monitor = <&anactrl>;
+			measure-expected-hz = <1000000>;
+			measure-tolerance-ppm = <50000>;
+			switch-reference = <NXP_ANACTRL_MCXW2XX_REF_FRO_1M>;
+			switch-target = <NXP_ANACTRL_MCXW2XX_TAR_OSC32K>;
+			switch-target-expected-hz = <32768>;
+		};
+	};
+};
+
+&anactrl {
+	status = "okay";
+};
+
+&inputmux {
+	status = "okay";
+};

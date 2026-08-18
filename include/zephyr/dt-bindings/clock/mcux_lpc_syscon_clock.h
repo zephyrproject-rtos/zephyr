@@ -243,6 +243,17 @@
 /** PowerQuad DSP coprocessor clock identifier. */
 #define MCUX_POWERQUAD_CLK MCUX_LPC_CLK_ID(0x39, 0x00)
 
+/** ANACTRL (analog control) peripheral gate clock identifier (MCXW2xx). */
+#define MCUX_ANALOG_CTRL_CLK MCUX_LPC_CLK_ID(0x3A, 0x00)
+/** 1 MHz FRO clock identifier (MCXW2xx); on/off maps to CLOCK_Enable1MFRO(). */
+#define MCUX_FRO_1M_CLK      MCUX_LPC_CLK_ID(0x3A, 0x01)
+/** 32 kHz oscillator clock identifier (MCXW2xx); on sources OSC32K from the
+ *  internal FRO32K.
+ */
+#define MCUX_OSC32K_CLK      MCUX_LPC_CLK_ID(0x3A, 0x02)
+/** RTC peripheral gate clock identifier (MCXW2xx). */
+#define MCUX_RTC_CLK         MCUX_LPC_CLK_ID(0x3A, 0x03)
+
 /** FRO high-frequency clock (FRO_HF) rate identifier. */
 #define MCUX_FRO_HF_CLK MCUX_LPC_CLK_ID(0x40, 0x00)
 
