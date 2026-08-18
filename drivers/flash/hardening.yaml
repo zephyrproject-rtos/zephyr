@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for flash drivers.
+
+rules:
+  FLASH_SHELL:
+    value: n
+    rationale: |
+      The flash shell reads, writes, erases and copies raw flash on any flash device, enough to dump
+      or corrupt the image and any secrets stored in flash. On Arm MPU targets it also selects
+      CONFIG_MPU_ALLOW_FLASH_WRITE, which removes MPU write protection from the flash region
+      system-wide.
+    references: [CWE-489]

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for filesystems.
+
+rules:
+  FILE_SYSTEM_SHELL:
+    value: n
+    rationale: |
+      The file system shell lists, reads, writes, copies and deletes files on every mounted file
+      system, and its mount command, on by default, also mounts file systems the application leaves
+      unmounted. Stored data becomes readable and modifiable by anyone with shell access.
+    references: [CWE-489]
