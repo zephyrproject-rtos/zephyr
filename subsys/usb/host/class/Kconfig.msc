@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_MSC_CLASS
+	bool "USB host Mass Storage Class support"
+	select DISK_ACCESS
+	help
+	  USB Host Mass Storage Class (MSC) implementation.
+
+if USBH_MSC_CLASS
+
+config USBH_MSC_MAX_INTERFACE
+	int "Maximum number of MSC interfaces"
+	default 4
+	range 1 16
+	help
+	  Maximum number of MSC interfaces that can be supported.
+	  This defines the array size for storing interface descriptors
+
+module = USBH_MSC_CLASS
+module-str = usbh msc
+default-count = 4
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_MSC_CLASS
