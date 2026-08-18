@@ -59,6 +59,22 @@
 			status = "disabled";
 		};
 
+		pwr: power@44020800 {
+			wakeup-controller {
+				wkup@3 {
+					wkup-gpios = <&gpioe 6 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@6 {
+					wkup-gpios = <&gpioc 1 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@7 {
+					wkup-gpios = <&gpiod 2 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+			};
+		};
+
 		spi3: spi@40003c00 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
 			#address-cells = <1>;
