@@ -632,7 +632,8 @@ static void eth_numaker_isr(const struct device *dev)
 		synopGMAC_reset(gmacdev); /* reset the DMA engine and the GMAC ip */
 		synopGMAC_set_mac_address(NUMAKER_GMAC_INTF, data->mac_addr);
 		synopGMAC_dma_bus_mode_init(gmacdev, DmaFixedBurstEnable | DmaBurstLength8 |
-							     DmaDescriptorSkip0);
+							     DmaDescriptorSkip0 |
+							     DmaDescriptor8Words);
 		synopGMAC_dma_control_init(gmacdev, DmaStoreAndForward);
 		synopGMAC_init_rx_desc_base(gmacdev);
 		synopGMAC_init_tx_desc_base(gmacdev);
