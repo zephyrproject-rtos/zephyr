@@ -215,20 +215,18 @@ static size_t tcp_endpoint_len(net_sa_family_t af)
 }
 
 static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
-			    enum pkt_addr src)
+			    struct tcphdr *th, enum pkt_addr src)
 {
 	int ret = 0;
+
+	if (th == NULL) {
+		return -ENOBUFS;
+	}
 
 	switch (net_pkt_family(pkt)) {
 	case NET_AF_INET:
 		if (IS_ENABLED(CONFIG_NET_IPV4)) {
 			struct net_ipv4_hdr *ip = NET_IPV4_HDR(pkt);
-			struct tcphdr *th;
-
-			th = th_get(pkt);
-			if (!th) {
-				return -ENOBUFS;
-			}
 
 			memset(ep, 0, sizeof(*ep));
 
@@ -247,12 +245,6 @@ static int tcp_endpoint_set(union tcp_endpoint *ep, struct net_pkt *pkt,
 	case NET_AF_INET6:
 		if (IS_ENABLED(CONFIG_NET_IPV6)) {
 			struct net_ipv6_hdr *ip = NET_IPV6_HDR(pkt);
-			struct tcphdr *th;
-
-			th = th_get(pkt);
-			if (!th) {
-				return -ENOBUFS;
-			}
 
 			memset(ep, 0, sizeof(*ep));
 
@@ -2309,7 +2301,7 @@ static bool tcp_endpoint_cmp(union tcp_endpoint *ep, struct net_pkt *pkt,
 {
 	union tcp_endpoint ep_tmp;
 
-	if (tcp_endpoint_set(&ep_tmp, pkt, which) < 0) {
+	if (tcp_endpoint_set(&ep_tmp, pkt, th_get(pkt), which) < 0) {
 		return false;
 	}
 
@@ -2342,7 +2334,7 @@ static struct tcp *tcp_conn_search(struct net_pkt *pkt)
 	return found ? conn : NULL;
 }
 
-static struct tcp *tcp_conn_new(struct net_pkt *pkt);
+static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th);
 
 static enum net_verdict tcp_recv(struct net_conn *net_conn,
 				 struct net_pkt *pkt,
@@ -2379,7 +2371,7 @@ static enum net_verdict tcp_recv(struct net_conn *net_conn,
 			goto out;
 		}
 
-		conn = tcp_conn_new(pkt);
+		conn = tcp_conn_new(pkt, th);
 		if (!conn) {
 			NET_ERR("Cannot allocate a new TCP connection");
 			goto in;
@@ -2521,7 +2513,7 @@ static uint32_t tcp_init_isn(struct net_sockaddr *saddr, struct net_sockaddr *da
 /* Create a new tcp connection, as a part of it, create and register
  * net_context
  */
-static struct tcp *tcp_conn_new(struct net_pkt *pkt)
+static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th)
 {
 	struct tcp *conn = NULL;
 	struct net_context *context = NULL;
@@ -2542,13 +2534,13 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt)
 
 	net_context_set_family(conn->context, net_pkt_family(pkt));
 
-	if (tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC) < 0) {
+	if (tcp_endpoint_set(&conn->dst, pkt, th, TCP_EP_SRC) < 0) {
 		net_context_put(context);
 		conn = NULL;
 		goto err;
 	}
 
-	if (tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST) < 0) {
+	if (tcp_endpoint_set(&conn->src, pkt, th, TCP_EP_DST) < 0) {
 		net_context_put(context);
 		conn = NULL;
 		goto err;
@@ -4388,8 +4380,8 @@ static enum net_verdict tcp_input(struct net_conn *net_conn,
 			net_tcp_get(context);
 			net_context_set_family(context, net_pkt_family(pkt));
 			conn = context->tcp;
-			tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC);
-			tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST);
+			tcp_endpoint_set(&conn->dst, pkt, th, TCP_EP_SRC);
+			tcp_endpoint_set(&conn->src, pkt, th, TCP_EP_DST);
 			/* Make an extra reference, the sanity check suite
 			 * will delete the connection explicitly
 			 */
@@ -4518,8 +4510,14 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 				net_context_set_family(context,
 						       net_pkt_family(pkt));
 				conn = context->tcp;
-				tcp_endpoint_set(&conn->dst, pkt, TCP_EP_SRC);
-				tcp_endpoint_set(&conn->src, pkt, TCP_EP_DST);
+				/* This is a UDP packet carrying the test
+				 * protocol; only the port fields are read,
+				 * and those alias the TCP header layout.
+				 */
+				tcp_endpoint_set(&conn->dst, pkt, th_get(pkt),
+						 TCP_EP_SRC);
+				tcp_endpoint_set(&conn->src, pkt, th_get(pkt),
+						 TCP_EP_DST);
 				conn->iface = pkt->iface;
 				tcp_conn_ref(conn);
 			}
