@@ -1210,14 +1210,12 @@ static void prl_rx_wait_for_phy_message(const struct device *dev)
 	pkt_type = rx_emsg->type;
 	power_role = rx_emsg->header.port_power_role;
 
-	/* Dump the received packet content, except for Pings */
-	if (msg_type != PD_CTRL_PING) {
-		int p;
+	/* Dump the received packet content */
+	int p;
 
-		LOG_INF("RECV %04x/%d ", rx_emsg->header.raw_value, num_data_objs);
-		for (p = 0; p < num_data_objs; p++) {
-			LOG_INF("\t[%d]%08x ", p, *((uint32_t *)rx_emsg->data + p));
-		}
+	LOG_INF("RECV %04x/%d ", rx_emsg->header.raw_value, num_data_objs);
+	for (p = 0; p < num_data_objs; p++) {
+		LOG_INF("\t[%d]%08x ", p, *((uint32_t *)rx_emsg->data + p));
 	}
 
 	/* Ignore messages sent to the cable from our port partner */
