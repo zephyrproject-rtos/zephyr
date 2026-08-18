@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the C library.
+
+rules:
+  STDOUT_CONSOLE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Sends printf() and other standard output to the console device instead of discarding it, so
+      diagnostic output left in application or library code reaches anyone with console access.
+    references: [CWE-532]
