@@ -127,7 +127,7 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 					   uint8_t pattern, size_t len)
 {
 	const struct uc81xx_config *config = dev->config;
-	struct display_buffer_descriptor mipi_desc;
+	struct display_buffer_descriptor mipi_desc = {0};
 	int err;
 	uint8_t data[64];
 
@@ -136,6 +136,7 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config,
 				     cmd, NULL, 0);
 	if (err < 0) {
+		mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 		return err;
 	}
 
@@ -155,13 +156,12 @@ static inline int uc81xx_write_cmd_pattern(const struct device *dev,
 					     data, &mipi_desc,
 					     PIXEL_FORMAT_MONO10);
 		if (err < 0) {
-			goto out;
+			break;
 		}
 
 		len -= mipi_desc.buf_size;
 	}
 
-out:
 	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
 	return err;
 }
@@ -249,8 +249,8 @@ static int uc81xx_set_profile(const struct device *dev,
 		 * Enable LUT overrides if a LUT has been provided by
 		 * the user.
 		 */
-		if (p->lutc.len || p->lutww.len || p->lutkw.len ||
-		    p->lutwk.len || p->lutbd.len) {
+		if (p->lutc.len || p->lutww.len || p->lutkw.len || p->lutwk.len || p->lutkk.len ||
+		    p->lutbd.len) {
 			LOG_DBG("Using LUT from registers");
 			psr |= UC81XX_PSR_REG;
 		}
@@ -392,18 +392,14 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 
 	uint16_t x_end_idx = x + desc->width - 1;
 	uint16_t y_end_idx = y + desc->height - 1;
-	size_t buf_len;
-	const uint8_t back_buffer = data->blanking_on ?
-		UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
+	size_t buf_len = desc->width * desc->height / UC81XX_PIXELS_PER_BYTE;
 
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
 		x, y, desc->height, desc->width, desc->pitch);
 
-	buf_len = MIN(desc->buf_size,
-		      desc->height * desc->width / UC81XX_PIXELS_PER_BYTE);
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
 	__ASSERT(buf != NULL, "Buffer is not available");
-	__ASSERT(buf_len != 0U, "Buffer of length zero");
+	__ASSERT(desc->buf_size >= buf_len, "Buffer size too small");
 	__ASSERT(!(desc->width % UC81XX_PIXELS_PER_BYTE),
 		 "Buffer width not multiple of %d", UC81XX_PIXELS_PER_BYTE);
 
@@ -464,12 +460,7 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 		 * data buffer on refresh. Do that manually here if
 		 * needed.
 		 */
-
-		if (config->quirks->set_ptl(dev, x, y, x_end_idx, y_end_idx, desc)) {
-			return -EIO;
-		}
-
-		if (uc81xx_write_cmd(dev, back_buffer,
+		if (uc81xx_write_cmd(dev, UC81XX_CMD_DTM1,
 				     (uint8_t *)buf, buf_len)) {
 			return -EIO;
 		}
@@ -490,15 +481,15 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
-	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
+	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
 				   const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_MONO10) {
+	if (pf == PIXEL_FORMAT_MONO01) {
 		return 0;
 	}
 
@@ -610,7 +601,7 @@ static inline int uc81xx_set_ptl_8(const struct device *dev, uint16_t x, uint16_
 	};
 
 	/* Setup Partial Window and enable Partial Mode */
-	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "PTL");
 
 	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL, (const void *)&ptl, sizeof(ptl));
 }
@@ -643,7 +634,7 @@ static inline int uc81xx_set_ptl_16(const struct device *dev, uint16_t x, uint16
 	};
 
 	/* Setup Partial Window and enable Partial Mode */
-	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "PTL");
 
 	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL, (const void *)&ptl, sizeof(ptl));
 }
@@ -701,7 +692,7 @@ static const struct uc81xx_quirks uc8176_quirks = {
 #endif
 
 #if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8151d) || DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
-static int uc8151d_set_tres(const struct device *dev)
+static int uc81xx_set_tres_h8v16(const struct device *dev)
 {
 	const struct uc81xx_config *config = dev->config;
 	/* Pass pixel coordinates directly; hardware interprets as byte+bit encoding
@@ -718,9 +709,9 @@ static int uc8151d_set_tres(const struct device *dev)
 			       (const void *)&tres, sizeof(tres));
 }
 
-static int uc8151d_set_ptl(const struct device *dev, uint16_t x, uint16_t y,
-			   uint16_t x_end_idx, uint16_t y_end_idx,
-			   const struct display_buffer_descriptor *desc)
+static int uc81xx_set_ptl_h8v16(const struct device *dev, uint16_t x, uint16_t y,
+				uint16_t x_end_idx, uint16_t y_end_idx,
+				const struct display_buffer_descriptor *desc)
 {
 	/* Pass pixel coordinates directly; hardware interprets as byte+bit encoding
 	 * See UC8151D datasheet page 26 (Partial Window command, R90h)
@@ -734,7 +725,7 @@ static int uc8151d_set_ptl(const struct device *dev, uint16_t x, uint16_t y,
 	};
 
 	/* Setup Partial Window and enable Partial Mode */
-	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "ptl");
+	LOG_HEXDUMP_DBG(&ptl, sizeof(ptl), "PTL");
 
 	return uc81xx_write_cmd(dev, UC81XX_CMD_PTL,
 			       (const void *)&ptl, sizeof(ptl));
@@ -775,8 +766,8 @@ static const struct uc81xx_quirks uc8151d_quirks = {
 	.pon_after_softstart = true,
 
 	.set_cdi = uc8151d_set_cdi,
-	.set_tres = uc8151d_set_tres,
-	.set_ptl = uc8151d_set_ptl,
+	.set_tres = uc81xx_set_tres_h8v16,
+	.set_ptl = uc81xx_set_ptl_h8v16,
 };
 #endif
 
@@ -789,8 +780,8 @@ static const struct uc81xx_quirks uc8253_quirks = {
 	.pon_after_softstart = false,
 
 	.set_cdi = uc8151d_set_cdi,
-	.set_tres = uc8151d_set_tres,
-	.set_ptl = uc8151d_set_ptl,
+	.set_tres = uc81xx_set_tres_h8v16,
+	.set_ptl = uc81xx_set_ptl_h8v16,
 };
 #endif
 
