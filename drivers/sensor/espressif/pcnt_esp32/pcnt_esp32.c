@@ -11,6 +11,7 @@
 #include <hal/pcnt_types.h>
 
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <errno.h>
 #include <string.h>
 #include <zephyr/drivers/sensor.h>
@@ -73,9 +74,9 @@ struct pcnt_esp32_config {
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	const int irq_source;
-	const int irq_priority;
-	const int irq_flags;
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+	void (*irq_configure)(void);
+#endif
 	struct pcnt_esp32_unit_config *unit_config;
 	const int unit_len;
 };
@@ -764,13 +765,22 @@ PINCTRL_DT_INST_DEFINE(0);
 
 static struct pcnt_esp32_unit_config unit_config[] = {DT_INST_FOREACH_CHILD(0, UNIT_CONFIG)};
 
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+static void pcnt_esp32_irq_configure(void)
+{
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(0, 0), IRQ_DEFAULT_PRIORITY,
+		    pcnt_esp32_isr, DEVICE_DT_INST_GET(0), ESP_INTR_FLAG_IRAM);
+	irq_enable(DT_INST_IRQN_BY_IDX(0, 0));
+}
+#endif
+
 static struct pcnt_esp32_config pcnt_esp32_config = {
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
 	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, offset),
-	.irq_source = DT_INST_IRQ_BY_IDX(0, 0, irq),
-	.irq_priority = DT_INST_IRQ_BY_IDX(0, 0, priority),
-	.irq_flags = DT_INST_IRQ_BY_IDX(0, 0, flags),
+#ifdef CONFIG_PCNT_ESP32_TRIGGER
+	.irq_configure = pcnt_esp32_irq_configure,
+#endif
 	.unit_config = unit_config,
 	.unit_len = ARRAY_SIZE(unit_config),
 };

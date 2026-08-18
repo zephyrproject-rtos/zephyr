@@ -13,7 +13,6 @@
 #include <esp_timer.h>
 #include <efuse_virtual.h>
 #include <psram.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/sys/printk.h>
 
 extern FUNC_NORETURN void z_prep_c(void);

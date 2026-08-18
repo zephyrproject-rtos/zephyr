@@ -191,6 +191,10 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
         else:
             swt = None
 
+        # Pre-pass: count level-2 sources per CPU line so a lone source can be
+        # placed directly on its line instead of behind a dispatcher.
+        self.__config.note_second_level_lines(intlist["interrupts"])
+
         # Process intlist and write to the tables created
         for irq, flags, sname in intlist["interrupts"]:
             if self.__config.test_isr_direct(flags):

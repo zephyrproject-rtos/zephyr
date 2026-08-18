@@ -9,3 +9,4 @@ tests:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
       - esp32s3_devkitc/esp32s3/procpu
+      - esp32c6_devkitc/esp32c6/hpcore

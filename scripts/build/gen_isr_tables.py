@@ -46,6 +46,11 @@ class gen_isr_config:
     __ISR_FLAG_DIRECT = 1 << 0
     __swt_spurious_handler = "z_irq_spurious"
     __swt_shared_handler = "z_shared_isr"
+    # Shared-line dispatcher of the flat single-aggregator layout
+    # (CONFIG_NUM_2ND_LEVEL_AGGREGATORS == 1): placed in the 1st-level slot of
+    # every CPU line carrying two or more level-2 sources, with the line number
+    # as its argument. Provided by the SoC's 2nd-level interrupt controller.
+    __swt_l2_dispatcher = "z_soc_2nd_lvl_isr"
     __vt_spurious_handler = "z_irq_spurious"
     __vt_irq_handler = "_isr_wrapper"
     __shared_array_name = "z_shared_sw_isr_table"
@@ -89,8 +94,20 @@ class gen_isr_config:
         self.__irq2_offsets = None
         self.__irq3_offsets = None
 
+        # Number of level-2 leaves routed to each L1 line, filled by
+        # note_second_level_lines(). Used only by the flat single-aggregator
+        # layout to keep a lone source off the shared dispatcher (see
+        # get_swt_table_index()).
+        self.__l2_line_counts = {}
+
         if self.check_multi_level_interrupts():
-            self.__max_irq_per = self.get_sym("CONFIG_MAX_IRQ_PER_AGGREGATOR")
+            # Per-level aggregator window sizes, falling back to the common
+            # CONFIG_MAX_IRQ_PER_AGGREGATOR when a per-level symbol is not set.
+            max_irq_common = self.get_sym("CONFIG_MAX_IRQ_PER_AGGREGATOR")
+            self.__max_irq_per = {
+                2: self.get_sym("CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR") or max_irq_common,
+                3: self.get_sym("CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR") or max_irq_common,
+            }
 
             self.__int_bits[0] = self.get_sym("CONFIG_1ST_LEVEL_INTERRUPT_BITS")
             self.__int_bits[1] = self.get_sym("CONFIG_2ND_LEVEL_INTERRUPT_BITS")
@@ -142,6 +159,24 @@ class gen_isr_config:
     @property
     def swt_shared_handler(self):
         return self.__swt_shared_handler
+
+    @property
+    def swt_l2_dispatcher(self):
+        return self.__swt_l2_dispatcher
+
+    def get_l1_dispatcher_line(self, index):
+        """True if _sw_isr_table[index] is the 1st-level slot of a CPU line
+        shared by two or more level-2 sources, in the flat single-aggregator
+        layout. Such a slot gets the l2 dispatcher instead of the spurious
+        handler so the whole static configuration lives in the generated table.
+        """
+        if not self.check_multi_level_interrupts():
+            return False
+        if self.get_sym("CONFIG_NUM_2ND_LEVEL_AGGREGATORS") != 1:
+            return False
+        if index >= self.get_sym("CONFIG_2ND_LVL_ISR_TBL_OFFSET"):
+            return False
+        return self.__l2_line_counts.get(index, 0) >= 2
 
     @property
     def vt_default_handler(self):
@@ -206,15 +241,32 @@ class gen_isr_config:
         # Figure out third level interrupt position
         if irq3:
             list_index = self.get_irq_index(irq2 - 1, 3)
-            irq3_pos = self.get_irq_baseoffset(3) + self.__max_irq_per * list_index + irq3 - 1
+            irq3_pos = self.get_irq_baseoffset(3) + self.__max_irq_per[3] * list_index + irq3 - 1
             self.__log.debug('IRQ_level = 3')
             self.__log.debug('IRQ_Indx = ' + str(irq3))
             self.__log.debug('IRQ_Pos  = ' + str(irq3_pos))
             return irq3_pos - offset
         # Figure out second level interrupt position
         if irq2:
-            list_index = self.get_irq_index(irq1, 2)
-            irq2_pos = self.get_irq_baseoffset(2) + self.__max_irq_per * list_index + irq2 - 1
+            # A single 2nd-level aggregator (CONFIG_NUM_2ND_LEVEL_AGGREGATORS ==
+            # 1) is the interrupt-matrix layout (e.g. the Espressif INTMUX): the
+            # L1 field is the hardware CPU line used only for routing, not a
+            # window selector, and all sources share one window indexed by the
+            # source number. With multiple aggregators the L1 line still selects
+            # the per-line window as before.
+            if self.get_sym("CONFIG_NUM_2ND_LEVEL_AGGREGATORS") == 1:
+                # A CPU line with a single level-2 source needs no software
+                # dispatcher: place that lone source's ISR directly in the
+                # line's 1st-level slot so the CPU vector calls it. Lines
+                # shared by two or more sources keep the source-indexed window.
+                if self.__l2_line_counts.get(irq1, 0) <= 1:
+                    self.__log.debug('IRQ_level = 2 (lone source -> L1 slot)')
+                    self.__log.debug('IRQ_Pos  = ' + str(irq1))
+                    return irq1 - offset
+                list_index = 0
+            else:
+                list_index = self.get_irq_index(irq1, 2)
+            irq2_pos = self.get_irq_baseoffset(2) + self.__max_irq_per[2] * list_index + irq2 - 1
             self.__log.debug('IRQ_level = 2')
             self.__log.debug('IRQ_Indx = ' + str(irq2))
             self.__log.debug('IRQ_Pos  = ' + str(irq2_pos))
@@ -224,6 +276,33 @@ class gen_isr_config:
         self.__log.debug('IRQ_Indx = ' + str(irq1))
         self.__log.debug('IRQ_Pos  = ' + str(irq1))
         return irq1 - offset
+
+    def note_second_level_lines(self, interrupts):
+        """Pre-pass: count level-2 leaves routed to each L1 CPU line.
+
+        Only meaningful for the single 2nd-level aggregator layout
+        (CONFIG_NUM_2ND_LEVEL_AGGREGATORS == 1), where get_swt_table_index()
+        sends a lone source straight to its CPU line's 1st-level slot and keeps
+        shared lines in the source window. Left empty otherwise, so
+        multi-aggregator platforms are unaffected.
+
+        `interrupts` entries carry the encoded IRQ at index 0 and flags at
+        index 1 (both parser tuple shapes agree on this).
+        """
+        self.__l2_line_counts = {}
+        if not self.check_multi_level_interrupts():
+            return
+        if self.get_sym("CONFIG_NUM_2ND_LEVEL_AGGREGATORS") != 1:
+            return
+        for entry in interrupts:
+            irq, flags = entry[0], entry[1]
+            if self.test_isr_direct(flags):
+                continue
+            irq3 = (irq & self.int_lvl_masks[2]) >> (self.int_bits[0] + self.int_bits[1])
+            irq2 = (irq & self.int_lvl_masks[1]) >> self.int_bits[0]
+            if irq2 and not irq3:
+                line = irq & self.int_lvl_masks[0]
+                self.__l2_line_counts[line] = self.__l2_line_counts.get(line, 0) + 1
 
     def get_intlist_snames(self):
         return self.args.intlist_section

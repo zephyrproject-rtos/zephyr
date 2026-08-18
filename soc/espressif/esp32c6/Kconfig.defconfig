@@ -3,7 +3,10 @@
 
 if SOC_SERIES_ESP32C6
 
+# HP core uses the multi-level/INTMUX model (source window at 32 +
+# ETS_MAX_INTR_SOURCE = 77); the LP core keeps the flat model.
 config NUM_IRQS
+	default 109 if SOC_ESP32C6_HPCORE
 	default 32
 
 config PMP_SLOTS
@@ -20,6 +23,36 @@ config MAIN_STACK_SIZE
 	default 2048
 
 endif # SOC_SERIES_ESP32C6
+
+if SOC_ESP32C6_HPCORE
+
+# Multi-level interrupts: L1 = intc (CPU line), L2 = <periph>_intmux (INTMUX
+# source -> CPU line). One flat 2nd-level aggregator spanning every source.
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 77
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+endif # SOC_ESP32C6_HPCORE
 
 if SOC_ESP32C6_LPCORE
 

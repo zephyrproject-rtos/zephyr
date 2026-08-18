@@ -16,11 +16,12 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include "sdhc_helpers.h"
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #include <esp_clk_tree.h>
 #include <esp_private/esp_clk_tree_common.h>
 #include <hal/sdmmc_ll.h>
-#include <esp_intr_alloc.h>
 #include <esp_timer.h>
 #include <hal/gpio_hal.h>
 
@@ -100,9 +101,10 @@ struct sdhc_esp32_config {
 	const int d2_pin;
 	const int d3_pin;
 
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	void (*irq_configure)(void);
+	/* Multilevel-encoded IRQ (irq_disable at deinit/error path). */
+	unsigned int irq;
+
 	uint8_t bus_width_cfg;
 
 	struct sdhc_host_props props;
@@ -1636,7 +1638,7 @@ static int sdhc_esp32_get_host_props(const struct device *dev, struct sdhc_host_
  * may be dropped. We ignore this problem for now, since the there are no other
  * interesting events which can get lost due to this.
  */
-static void IRAM_ATTR sdio_esp32_isr(void *arg)
+static void IRAM_ATTR sdio_esp32_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	const struct sdhc_esp32_config *cfg = dev->config;
@@ -1818,10 +1820,55 @@ static int sdhc_esp32_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	ret = clock_control_on(cfg->clock_dev, cfg->clock_subsys);
+
+	if (ret != 0) {
+		LOG_ERR("Error enabling SDHC clock");
+		return ret;
+	}
+
+	/* Enable clock to peripheral. Use smallest divider first */
+	ret = sdmmc_host_set_clk_div(sdio_hw, 2);
+
+	if (ret != 0) {
+		return err_esp2zep(ret);
+	}
+
+	/* Reset controller */
+	sdhc_esp32_reset(dev);
+
+	sdio_hw->tmout.val = 0xFFFFFFFFU;
+
+	/* Clear interrupt status and set interrupt mask to known state */
+	sdio_hw->rintsts.val = 0xffffffff;
+	sdio_hw->intmask.val = 0;
+	sdio_hw->ctrl.int_enable = 0;
+
+	/* Attach interrupt handler */
+	cfg->irq_configure();
+
+	/* Enable interrupts */
+	sdio_hw->intmask.val = SDMMC_INTMASK_CD | SDMMC_INTMASK_CMD_DONE | SDMMC_INTMASK_DATA_OVER |
+			       SDMMC_INTMASK_RCRC | SDMMC_INTMASK_DCRC | SDMMC_INTMASK_RTO |
+			       SDMMC_INTMASK_DTO | SDMMC_INTMASK_HTO | SDMMC_INTMASK_SBE |
+			       SDMMC_INTMASK_EBE | SDMMC_INTMASK_RESP_ERR |
+			       SDMMC_INTMASK_HLE; /* sdio is enabled only when use */
+
+	sdio_hw->ctrl.int_enable = 1;
+
+	/* Disable generation of Busy Clear Interrupt */
+	sdio_hw->cardthrctl.busy_clr_int_en = 0;
+
+	/* Enable DMA */
+	sdmmc_host_dma_init(sdio_hw);
+
 	/* Initialize transaction handler */
 	ret = sdmmc_host_transaction_handler_init(data);
 
 	if (ret != 0) {
+		k_msgq_purge(data->s_host_ctx.event_queue);
+		/* TODO irq_matrix_disable(cfg->irq, cfg->source); */
+		irq_disable(cfg->irq);
 		return ret;
 	}
 
@@ -1949,23 +1996,30 @@ static DEVICE_API(sdhc, sdhc_api) = {
 #endif
 };
 
+/* clang-format off */
 #define SDHC_ESP32_INIT(n)                                                                         \
                                                                                                    \
 	COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                                         \
 			  (PINCTRL_DT_DEFINE(DT_DRV_INST(n));), (EMPTY))                           \
 	K_MSGQ_DEFINE_STATIC_TYPE(sdhc##n##_queue, struct sdmmc_event, SDMMC_EVENT_QUEUE_LENGTH);  \
                                                                                                    \
+	static void sdhc_esp32_##n##_irq_configure(void)                                           \
+	{                                                                                          \
+		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(n)), IRQ_DEFAULT_PRIORITY, sdio_esp32_isr,       \
+			    DEVICE_DT_INST_GET(n), ESP_INTR_FLAG_IRAM);                            \
+		irq_enable(DT_IRQN(DT_INST_PARENT(n)));                                            \
+	}                                                                                          \
+                                                                                                   \
 	static const struct sdhc_esp32_config sdhc_esp32_##n##_config = {                          \
 		.sdio_hw = (const sdmmc_dev_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                    \
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(n))),                     \
 		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL(DT_INST_PARENT(n), offset), \
-		.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, irq),                            \
-		.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, priority),                     \
-		.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(n), 0, flags),                           \
+		.irq_configure = sdhc_esp32_##n##_irq_configure,                                   \
+		.irq = DT_IRQN(DT_INST_PARENT(n)),                                                 \
 		.slot = DT_REG_ADDR(DT_DRV_INST(n)),                                               \
 		.bus_width_cfg = DT_INST_PROP(n, bus_width),                                       \
 		.pcfg = COND_CODE_1(DT_NUM_PINCTRL_STATES(DT_DRV_INST(n)),                         \
-			  (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),                      \
+				    (PINCTRL_DT_DEV_CONFIG_GET(DT_DRV_INST(n))), NULL),            \
 		.pwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, pwr_gpios, {0}),                           \
 		.clk_pin = DT_INST_PROP_OR(n, clk_pin, GPIO_NUM_NC),                               \
 		.cmd_pin = DT_INST_PROP_OR(n, cmd_pin, GPIO_NUM_NC),                               \
@@ -2003,11 +2057,15 @@ static DEVICE_API(sdhc, sdhc_api) = {
 		.bus_clock = (SDMMC_FREQ_PROBING * 1000),                                          \
 		.power_mode = SDHC_POWER_ON,                                                       \
 		.timing = SDHC_TIMING_LEGACY,                                                      \
-		.s_host_ctx = {.event_queue = &sdhc##n##_queue}};                                  \
+		.s_host_ctx = {                                                                    \
+			.event_queue = &sdhc##n##_queue                                            \
+		}                                                                                  \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, &sdhc_esp32_init, NULL, &sdhc_esp32_##n##_data,                   \
 			      &sdhc_esp32_##n##_config, POST_KERNEL, CONFIG_SDHC_INIT_PRIORITY,    \
 			      &sdhc_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(SDHC_ESP32_INIT)
 

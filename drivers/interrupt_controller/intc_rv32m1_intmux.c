@@ -103,7 +103,7 @@ static int rv32m1_intmux_get_line_state(const struct device *dev,
  */
 
 #define ISR_ENTRY(channel, line) \
-	((channel) * CONFIG_MAX_IRQ_PER_AGGREGATOR + line)
+	((channel) * CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR + line)
 
 static void rv32m1_intmux_isr(const void *arg)
 {

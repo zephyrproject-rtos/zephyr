@@ -13,10 +13,10 @@
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
 
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 
@@ -74,7 +74,7 @@ static uint64_t sys_timer_elapsed_ticks(uint64_t now)
 	return dticks;
 }
 
-static void IRAM_ATTR sys_timer_isr(void *arg)
+static void IRAM_ATTR sys_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 	systimer_ll_clear_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
@@ -225,22 +225,14 @@ void sys_clock_idle_exit(void)
 
 static int sys_clock_driver_init(void)
 {
-	int ret;
 
-	ret = esp_intr_alloc(
-		DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, irq),
-		ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, priority)) |
-			ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(systimer0), 0, flags)) |
-			ESP_INTR_FLAG_IRAM,
-		sys_timer_isr, NULL, NULL);
-
-	if (ret != 0) {
-		return ret;
-	}
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(systimer0)), IRQ_DEFAULT_PRIORITY,
+		    sys_timer_isr, NULL, ESP_INTR_FLAG_IRAM);
+	irq_enable(DT_IRQN(DT_NODELABEL(systimer0)));
 
 	systimer_hal_init(&systimer_hal);
-	systimer_hal_connect_alarm_counter(&systimer_hal,
-		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_COUNTER_OS_TICK);
+	systimer_hal_connect_alarm_counter(&systimer_hal, SYSTIMER_ALARM_OS_TICK_CORE0,
+					   SYSTIMER_COUNTER_OS_TICK);
 
 	systimer_hal_enable_counter(&systimer_hal, SYSTIMER_COUNTER_OS_TICK);
 	systimer_hal_counter_can_stall_by_cpu(&systimer_hal, SYSTIMER_COUNTER_OS_TICK, 0, true);

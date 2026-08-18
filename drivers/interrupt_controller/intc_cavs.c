@@ -133,7 +133,7 @@ static const struct irq_next_level_api cavs_apis = {
 	static const struct cavs_ictl_config cavs_config_##n = {	\
 		.irq_num = DT_INST_IRQN(n),				\
 		.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +	\
-				    CONFIG_MAX_IRQ_PER_AGGREGATOR*n,	\
+				    CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR*n,\
 		.config_func = cavs_config_##n##_irq,			\
 	};								\
 									\

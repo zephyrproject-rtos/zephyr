@@ -303,7 +303,7 @@ struct irqsteer_dispatcher {
 	/* which interrupt line is the dispatcher tied to? */
 	uint32_t irq;
 	/* reference count for all IRQs aggregated by dispatcher */
-	uint8_t irq_refcnt[CONFIG_MAX_IRQ_PER_AGGREGATOR];
+	uint8_t irq_refcnt[CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR];
 };
 
 static struct k_spinlock irqstr_lock;

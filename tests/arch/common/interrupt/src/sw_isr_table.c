@@ -34,11 +34,12 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_idx)
 
 	for (size_t i = 0; i < CONFIG_NUM_2ND_LEVEL_AGGREGATORS; i++) {
 		for (unsigned int local_irq = 0;
-		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
+		     local_irq < CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR; local_irq++) {
 			unsigned int test_irq = irq_to_level_2(local_irq) | parent_irq[i];
 			unsigned int test_isr_offset = z_get_sw_isr_table_idx(test_irq);
 			unsigned int isr_offset =
-				l2_isr_offset + local_irq + (i * CONFIG_MAX_IRQ_PER_AGGREGATOR);
+				l2_isr_offset + local_irq +
+				(i * CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR);
 
 			zassert_equal(isr_offset, test_isr_offset,
 				      "%zu: expected offset: %d, got: %d", i,
@@ -75,7 +76,7 @@ ZTEST(interrupt_feature, test_sw_isr_irq_parent_table_dev)
 		zassert_not_null(parent_dev[i]);
 
 		for (unsigned int local_irq = 0;
-		     local_irq < CONFIG_MAX_IRQ_PER_AGGREGATOR; local_irq++) {
+		     local_irq < CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR; local_irq++) {
 			test_irq = irq_to_level_2(local_irq) | parent_irq[i];
 			test_dev = z_get_sw_isr_device_from_irq(test_irq);
 			zassert_equal_ptr(parent_dev[i], test_dev, "%zu: expected dev: %p, got: %p",

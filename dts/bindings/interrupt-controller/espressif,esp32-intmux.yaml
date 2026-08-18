@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 INTMUX interrupt matrix (level 2).
+
+  Muxes multiple peripheral interrupt sources onto a single CPU interrupt
+  line. Its parent is the CPU-line controller (espressif,esp32-intc); its
+  children are the per-peripheral level-3 aggregators, each identified by
+  their INTMUX source number.
+
+compatible: "espressif,esp32-intmux"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+# First cell must be named "irq": the multilevel DT_IRQN() macros read it as the
+# interrupt number. Here it carries the peripheral INTMUX source.
+interrupt-cells:
+  - irq

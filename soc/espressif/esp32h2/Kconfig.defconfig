@@ -3,8 +3,36 @@
 
 if SOC_SERIES_ESP32H2
 
+# Multi-level interrupts: L1 = intc (CPU line), L2 = <periph>_intmux (INTMUX
+# source -> CPU line). One flat 2nd-level aggregator spanning every INTMUX
+# source (ETS_MAX_INTR_SOURCE = 65). CPU lines occupy table slots 0..31, so the
+# source window starts at 32; NUM_IRQS = 32 + 65.
 config NUM_IRQS
+	default 97
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 65
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
 
 config MAIN_STACK_SIZE
 	default 2048

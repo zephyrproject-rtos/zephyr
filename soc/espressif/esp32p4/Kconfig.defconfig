@@ -6,15 +6,42 @@ if SOC_ESP32P4_HPCORE
 config FPU
 	default y
 
+# Multi-level/INTMUX model. With RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET = 16, CPU
+# lines occupy table slots 16..47, so the source window starts at 48. The
+# aggregator spans 4 status words (sources 0..127); the highest source used on
+# this SoC is 111, so NUM_IRQS = 48 + 128.
 config NUM_IRQS
-	# 32 CPU interrupt lines plus RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET.
-	default 48
+	default 176
 
 config RISCV_MCAUSE_EXCEPTION_MASK
 	default 0xFFF
 
 config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	default 16
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 48
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 48
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 128
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
 
 config RISCV_SOC_CONTEXT_SAVE
 	default y

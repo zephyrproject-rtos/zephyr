@@ -79,6 +79,17 @@ struct _irq_parent_entry {
 #define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
 
 /**
+ * @brief Get the max-IRQs-per-aggregator Kconfig for the given aggregator level
+ *
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return `CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR` if second level aggregator,
+ * `CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR` if third level aggregator
+ */
+#define Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(l)                                                        \
+	CONCAT(CONFIG_MAX_IRQ_PER_, CONCAT(Z_STR_L, l), _LEVEL_AGGREGATOR)
+
+/**
  * INTERNAL_HIDDEN @endcond
  */
 
@@ -101,7 +112,9 @@ struct _irq_parent_entry {
  * @return Software ISR table offset of the interrupt controller
  */
 #define INTC_INST_ISR_TBL_OFFSET(inst)                                                             \
-	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) + (inst * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) +                                             \
+	 (inst * Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(                                                 \
+			 DT_INTC_GET_AGGREGATOR_LEVEL(DT_DRV_INST(inst)))))
 
 /**
  * @brief Get the SW ISR table offset for a child interrupt controller
@@ -115,7 +128,8 @@ struct _irq_parent_entry {
  */
 #define INTC_CHILD_ISR_TBL_OFFSET(node_id)                                                         \
 	(INTC_BASE_ISR_TBL_OFFSET(node_id) +                                                       \
-	 (DT_NODE_CHILD_IDX(node_id) * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+	 (DT_NODE_CHILD_IDX(node_id) *                                                             \
+	  Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(DT_INTC_GET_AGGREGATOR_LEVEL(node_id))))
 
 /**
  * @brief Register an  interrupt controller with the software ISR table

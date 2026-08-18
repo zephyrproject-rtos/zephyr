@@ -20,8 +20,8 @@
  * go through one of the 8 channels in the INTMUX
  * peripheral. There are 32 level 1 interrupts, including 8 INTMUX
  * interrupts. Each INTMUX interrupt can mux at most
- * CONFIG_MAX_IRQ_PER_AGGREGATOR (which happens to be 32) interrupts
- * to its level 1 interrupt.
+ * CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR (which happens to be 32)
+ * interrupts to its level 1 interrupt.
  *
  * See gen_isr_tables.py for details on the Zephyr multi-level IRQ
  * number encoding, which determines how these helpers work.

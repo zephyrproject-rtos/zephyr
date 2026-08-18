@@ -12,6 +12,12 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/pm/pm.h>
 
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+#include <esp_soc_irq.h>
+#include <esp_memory_utils.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#endif
+
 #ifdef CONFIG_RISCV_HAS_PLIC
 #include <zephyr/drivers/interrupt_controller/riscv_plic.h>
 #endif
@@ -67,6 +73,28 @@ int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			     void (*routine)(const void *parameter),
 			     const void *parameter, uint32_t flags)
 {
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+	int rc;
+
+	rc = z_soc_irq_validate(routine, flags);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/*
+	 * Apply the interrupt flags before installing the ISR: z_soc_irq_flags_apply()
+	 * returns every error before it mutates any state, so a failure needs no
+	 * rollback - nothing has been installed yet. This avoids the install-then-undo
+	 * dance and its z_isr_uninstall()/CONFIG_SHARED_INTERRUPTS dependency.
+	 */
+	rc = z_soc_irq_flags_apply(irq, flags);
+	if (rc < 0) {
+		return rc;
+	}
+
+	z_riscv_irq_priority_set(irq, priority, flags);
+#endif
+
 	z_isr_install(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine, parameter);
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
@@ -85,7 +113,16 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 				uint32_t flags)
 {
 	ARG_UNUSED(priority);
+
+#if defined(CONFIG_SOC_FAMILY_ESPRESSIF_ESP32)
+	int rc = z_soc_irq_flags_clear(irq, flags);
+
+	if (rc < 0) {
+		return rc;
+	}
+#else
 	ARG_UNUSED(flags);
+#endif
 
 	return z_isr_uninstall(irq + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, routine,
 			       parameter);
