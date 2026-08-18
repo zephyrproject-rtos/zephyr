@@ -1,0 +1,102 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * QEMU variant: disable peripherals not modeled by Espressif QEMU.
+ * See boards/espressif/common/qemu.rst and the Espressif QEMU feature matrix.
+ */
+
+#include "esp32s3_devkitc_procpu.dts"
+
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+
+	aliases {
+		/delete-property/ sw0;
+	};
+
+	/delete-node/ buttons;
+};
+
+&wifi {
+	status = "disabled";
+};
+
+&esp32_bt_hci {
+	status = "disabled";
+};
+
+&touch {
+	status = "disabled";
+};
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i2c1 {
+	status = "disabled";
+};
+
+&i2s0 {
+	status = "disabled";
+};
+
+&i2s1 {
+	status = "disabled";
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&spi3 {
+	status = "disabled";
+};
+
+&usb_serial {
+	status = "disabled";
+};
+
+&usb_otg {
+	status = "disabled";
+};
+
+&ledc0 {
+	status = "disabled";
+};
+
+&mcpwm0 {
+	status = "disabled";
+};
+
+&mcpwm1 {
+	status = "disabled";
+};
+
+&pcnt {
+	status = "disabled";
+};
+
+&adc0 {
+	status = "disabled";
+};
+
+&adc1 {
+	status = "disabled";
+};
+
+&coretemp {
+	status = "disabled";
+};
+
+&sdhc {
+	status = "disabled";
+};
+
+&lcd_cam {
+	status = "disabled";
+};
