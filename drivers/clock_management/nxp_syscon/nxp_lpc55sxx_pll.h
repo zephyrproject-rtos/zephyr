@@ -30,7 +30,8 @@ struct lpc55sxx_pll1_cfg {
 };
 
 #define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_lpc55sxx_pll0(node_id, prop, idx)		\
-	const struct lpc55sxx_pll0_cfg _CONCAT(_CONCAT(node_id, idx), pll0_regs) = {	\
+	const struct lpc55sxx_pll0_cfg \
+	_CONCAT(pll0_regs, _CONCAT(DT_DEP_ORD(node_id), idx)) = {	\
 		.CTRL = SYSCON_PLL0CTRL_CLKEN_MASK |					\
 			SYSCON_PLL0CTRL_SELI(DT_PHA_BY_IDX(node_id, prop, idx, seli)) | \
 			SYSCON_PLL0CTRL_SELP(DT_PHA_BY_IDX(node_id, prop, idx, selp)) |	\
@@ -45,10 +46,11 @@ struct lpc55sxx_pll1_cfg {
 			DT_PHA_BY_IDX(node_id, prop, idx, sscg1),                       \
 	};
 #define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_lpc55sxx_pll0(node_id, prop, idx)               \
-	&_CONCAT(_CONCAT(node_id, idx), pll0_regs)
+	&_CONCAT(pll0_regs, _CONCAT(DT_DEP_ORD(node_id), idx))
 
 #define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_lpc55sxx_pll1(node_id, prop, idx)		\
-	const struct lpc55sxx_pll1_cfg _CONCAT(_CONCAT(node_id, idx), pll1_regs) = {	\
+	const struct lpc55sxx_pll1_cfg \
+	_CONCAT(pll1_regs, _CONCAT(DT_DEP_ORD(node_id), idx)) = {	\
 		.CTRL = SYSCON_PLL1CTRL_CLKEN_MASK |					\
 			SYSCON_PLL1CTRL_SELI(DT_PHA_BY_IDX(node_id, prop, idx, seli)) | \
 			SYSCON_PLL1CTRL_SELP(DT_PHA_BY_IDX(node_id, prop, idx, selp)) |	\
@@ -57,7 +59,7 @@ struct lpc55sxx_pll1_cfg {
 		.MDEC = SYSCON_PLL1MDEC_MDIV(DT_PHA_BY_IDX(node_id, prop, idx, mdec)),	\
 	};
 #define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_lpc55sxx_pll1(node_id, prop, idx)        \
-	&_CONCAT(_CONCAT(node_id, idx), pll1_regs)
+	&_CONCAT(pll1_regs, _CONCAT(DT_DEP_ORD(node_id), idx))
 
 #define Z_CLOCK_MANAGEMENT_DATA_DEFINE_nxp_lpc55sxx_pll_pdec(node_id, prop, idx)
 #define Z_CLOCK_MANAGEMENT_DATA_GET_nxp_lpc55sxx_pll_pdec(node_id, prop, idx)        \
