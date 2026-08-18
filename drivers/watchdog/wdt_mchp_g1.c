@@ -471,8 +471,12 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	channel_data[mchp_wdt_data->installed_timeout_cnt].window.min =
 		actual_set_timeout.window.min;
 
-	LOG_ERR("Rounded off timeout min to %d\nRounded off timeout max to %d",
-		actual_set_timeout.window.min, actual_set_timeout.window.max);
+	if ((actual_set_timeout.window.min != cfg->window.min) ||
+	    (actual_set_timeout.window.max != cfg->window.max)) {
+		LOG_WRN("timeout rounded: min %u to %u ms, max %u to %u ms", cfg->window.min,
+			actual_set_timeout.window.min, cfg->window.max,
+			actual_set_timeout.window.max);
+	}
 
 	/* this will return the channel id and then increment the
 	 * count which will then be used for the next channel.
