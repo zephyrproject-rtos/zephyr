@@ -9,24 +9,32 @@ The test will apply five clock states for the dummy device, and verify the
 frequency matches an expected value for each state. The states are as
 follows:
 
-* clock-state-0: CLOCK_MANAGEMENT_STATE_DEFAULT, frequency set by "default-freq"
+* clock-request-0: request name "default", frequency set by "default-freq"
   property of consumer node
 
-* clock-state-1: CLOCK_MANAGEMENT_STATE_SLEEP, frequency set by "sleep-freq"
+* clock-request-1: request name "sleep", frequency set by "sleep-freq"
   property of consumer node
 
-* clock-state-2: CLOCK_MANAGEMENT_STATE_TEST1, frequency set by "test1-freq"
+* clock-request-2: request name "test1", frequency set by "test1-freq"
   property of consumer node
 
-* clock-state-3: CLOCK_MANAGEMENT_STATE_TEST2, frequency set by "test2-freq"
+* clock-request-3: request name "test2", frequency set by "test2-freq"
   property of consumer node
 
-* clock-state-4: CLOCK_MANAGEMENT_STATE_TEST3, frequency set by "test3-freq"
+* clock-request-4: request name "test3", frequency set by "test3-freq"
   property of consumer node
 
 Devices should define these states to exercise as many clock node drivers as
 possible. One example might be clocking from a PLL in the default state, a
 high speed internal oscillator in the sleep state, and a low speed external
-oscillator in the test state. Some states should avoid defining explicit
-configuration settings, to verify that runtime clock set_rate APIs work as
-expected.
+oscillator in the test state.
+
+The test will then request several frequencies from the clock subsystem. Each
+of these frequencies should be realized exactly. These requests can be used
+to validate that runtime clock frequency setting is functional
+
+The following requests will be made:
+
+* freq-req-1
+* freq-req-2
+* freq-req-3

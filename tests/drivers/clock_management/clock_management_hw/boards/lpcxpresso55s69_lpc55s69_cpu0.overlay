@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2026, Analog Devices Inc
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,13 +9,12 @@
 	sys_clk_96mhz: sys-clk-96mhz {
 		compatible = "clock-state";
 		clocks = <&ahbclkdiv 1 &fro_hf 1 &mainclksela 3 &mainclkselb 0>;
-		clock-frequency = <DT_FREQ_M(96)>;
-		locking-state;
 	};
 };
 
 &cpu0 {
-	clock-state-0 = <&sys_clk_96mhz>;
+	clock-request-0 = <&sys_clk_96mhz>;
+	clock-request-0-locking;
 };
 
 /* Define clock states for clockout clock */
@@ -25,31 +25,29 @@
 		clocks = <&xtal32m 1 &clk_in_en 1 &pll1clksel 1 &pll1_pdec 2
 			  &pll1_directo 0 &pll1 4 75 0 39 19
 			  &pll1_bypass 0 &clkoutsel 5 &clkoutdiv 2>;
-		clock-frequency = <75000000>;
+		rank = <0>;
 	};
 
 	clkout_sleep: clkout-sleep {
 		compatible = "clock-state";
-		clocks = <&fro_hf 1 &clkoutsel 3 &clkoutdiv 1>;
-		clock-frequency = <96000000>;
+		clocks = <&fro_1m 1 &clkoutsel 4 &clkoutdiv 1>;
+		rank = <1>;
 	};
 
 	clkout_test1: clkout-test1 {
-		/* Should use runtime frequency requests */
 		compatible = "clock-state";
-		clock-frequency = <73000000>;
+		/* Configure PLL0 and switch clkout to use it */
+		clocks = <&xtal32m 1 &clk_in_en 1 &pll0clksel 1 &pll0_pdec 4
+			  &pll0_directo 0 &pll0 4 0 0 4 3 1 2541748224 0
+			  &pll0_bypass 0 &clkoutsel 1 &clkoutdiv 2>;
+		rank = <3>;
 	};
 
 	clkout_test2: clkout-test2 {
-		/* Should use runtime frequency requests */
 		compatible = "clock-state";
-		clock-frequency = <147640000>;
-	};
-
-	clkout_test3: clkout-test3 {
-		/* Should use runtime frequency requests */
-		compatible = "clock-state";
-		clock-frequency = <1000000>;
+		/* Use RTC */
+		clocks = <&xtal32k 1 &rtcosc32ksel 1 &clkoutsel 6>;
+		rank = <4>;
 	};
 };
 
@@ -58,17 +56,20 @@
 		compatible = "vnd,emul-clock-consumer";
 		clock-outputs = <&clkout_clock>;
 		clock-output-names = "default";
-		clock-state-0 = <&clkout_default>;
+		clock-request-0 = <&clkout_default>;
 		default-freq = <75000000>;
-		clock-state-1 = <&clkout_sleep>;
-		sleep-freq = <96000000>;
-		clock-state-2 = <&clkout_test1>;
-		test1-freq = <73000000>;
-		clock-state-3 = <&clkout_test2>;
-		test2-freq = <147640000>;
-		clock-state-4 = <&clkout_test3>;
-		test3-freq = <1000000>;
-		clock-state-names = "default", "sleep", "test1",
-				    "test2", "test3";
+		clock-request-1 = <&clkout_sleep>;
+		sleep-freq = <1000000>;
+		clock-request-2 = <&clkout_test1>;
+		test1-freq = <37875000>;
+		clock-request-3 = <&clkout_test1 &clkout_sleep>;
+		test2-freq = <1000000>;
+		clock-request-4 = <&clkout_test2>;
+		test3-freq = <32768>;
+		freq-req-1 = <75000000>;
+		freq-req-2 = <43252000>;
+		freq-req-3 = <32768>;
+		clock-request-names = "default", "sleep", "test1",
+				      "test2", "test3";
 	};
 };

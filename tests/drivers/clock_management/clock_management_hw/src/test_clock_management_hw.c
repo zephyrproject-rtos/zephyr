@@ -10,53 +10,77 @@ LOG_MODULE_REGISTER(test);
 
 #define CONSUMER_NODE DT_NODELABEL(emul_dev)
 
-CLOCK_MANAGEMENT_DT_DEFINE_OUTPUT_BY_NAME(CONSUMER_NODE, default);
+CLOCK_MANAGEMENT_DT_DEFINE(CONSUMER_NODE);
 
 /* Get references to each clock management state and output */
-static const struct clock_output *dev_out =
-	CLOCK_MANAGEMENT_DT_GET_OUTPUT_BY_NAME(CONSUMER_NODE, default);
-static clock_management_state_t dev_default =
-	CLOCK_MANAGEMENT_DT_GET_STATE(CONSUMER_NODE, default, default);
-static clock_management_state_t dev_sleep =
-	CLOCK_MANAGEMENT_DT_GET_STATE(CONSUMER_NODE, default, sleep);
-static clock_management_state_t dev_test1 =
-	CLOCK_MANAGEMENT_DT_GET_STATE(CONSUMER_NODE, default, test1);
-static clock_management_state_t dev_test2 =
-	CLOCK_MANAGEMENT_DT_GET_STATE(CONSUMER_NODE, default, test2);
-static clock_management_state_t dev_test3 =
-	CLOCK_MANAGEMENT_DT_GET_STATE(CONSUMER_NODE, default, test3);
+static const struct clock_management_data *data =
+	CLOCK_MANAGEMENT_DT_GET(CONSUMER_NODE);
+static clock_output_t consumer_out =
+	CLOCK_MANAGEMENT_DT_GET_OUTPUT(CONSUMER_NODE);
 
-void apply_clock_state(clock_management_state_t state, const char *state_name,
+static clock_request_t default_request =
+	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, default);
+static clock_request_t sleep_request =
+	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, sleep);
+static clock_request_t test1_request =
+	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test1);
+static clock_request_t test2_request =
+	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test2);
+static clock_request_t test3_request =
+	CLOCK_MANAGEMENT_DT_GET_REQUEST(CONSUMER_NODE, test3);
+
+void request_clock_state(clock_request_t request, const char *req_name,
 		       int expected_rate)
 {
 	int ret;
 
-	/* Apply clock state, verify frequencies */
-	TC_PRINT("Try to apply %s clock state\n", state_name);
+	/* Apply clock request, verify frequencies */
+	TC_PRINT("Try to apply %s clock request\n", req_name);
 
-	ret = clock_management_apply_state(dev_out, state);
-	zassert_equal(ret, expected_rate,
-		      "Failed to apply %s clock management state", state_name);
+	ret = clock_management_request_state(data, request);
+	zassert_equal(ret, 0,
+		      "Failed to apply %s clock management state", req_name);
 
 	/* Check rate */
-	ret = clock_management_get_rate(dev_out);
-	TC_PRINT("Consumer %s clock rate: %d\n", state_name, ret);
+	ret = clock_management_get_rate(data, consumer_out);
+	TC_PRINT("Consumer %s clock rate: %d\n", req_name, ret);
 	zassert_equal(ret, expected_rate,
-		      "Consumer has invalid %s clock rate", state_name);
+		      "Consumer has invalid %s clock rate", req_name);
+}
+
+void request_clock_frequency(clock_freq_t freq, const char *req_name)
+{
+	int ret;
+
+	TC_PRINT("Requesting frequency %d for %s\n", freq, req_name);
+
+	ret = clock_management_req_rate(data, consumer_out, freq);
+	zassert_equal(ret, freq, "Consumer did not realize requested frequency");
 }
 
 ZTEST(clock_management_hw, test_apply_states)
 {
-	apply_clock_state(dev_default, "default",
+	request_clock_state(default_request, "default",
 			  DT_PROP(CONSUMER_NODE, default_freq));
-	apply_clock_state(dev_sleep, "sleep",
+	request_clock_state(sleep_request, "sleep",
 			  DT_PROP(CONSUMER_NODE, sleep_freq));
-	apply_clock_state(dev_test1, "test1",
+	request_clock_state(test1_request, "test1",
 			  DT_PROP(CONSUMER_NODE, test1_freq));
-	apply_clock_state(dev_test2, "test2",
+	request_clock_state(test2_request, "test2",
 			  DT_PROP(CONSUMER_NODE, test2_freq));
-	apply_clock_state(dev_test3, "test3",
+	request_clock_state(test3_request, "test3",
 			  DT_PROP(CONSUMER_NODE, test3_freq));
+}
+
+ZTEST(clock_management_hw, test_freq_req)
+{
+	clock_freq_t req1 = DT_PROP(CONSUMER_NODE, freq_req_1);
+	clock_freq_t req2 = DT_PROP(CONSUMER_NODE, freq_req_2);
+	clock_freq_t req3 = DT_PROP(CONSUMER_NODE, freq_req_3);
+
+	request_clock_frequency(req1, "req1");
+	request_clock_frequency(req2, "req2");
+	request_clock_frequency(req3, "req3");
 }
 
 ZTEST_SUITE(clock_management_hw, NULL, NULL, NULL, NULL, NULL);
