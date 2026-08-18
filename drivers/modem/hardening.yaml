@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for modem drivers.
+
+rules:
+  MODEM_CONTEXT_VERBOSE_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Verbose modem logging dumps all data exchanged with the modem, which can include credentials
+      such as APN settings, PINs and server addresses.
+    references: [CWE-532]

@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Bluetooth.
+
+rules:
+  BT_KEYS_LOG_LEVEL_DBG:
+    value: n
+    rationale: |
+      Debug logging of the Bluetooth keys subsystem can write link keys and identity keys to the log
+      output, exposing long-term secrets to anyone able to read the logs.
+    references: [CWE-532]
+
+  BT_LOG_SNIFFER_INFO:
+    value: n
+    rationale: |
+      Emits pairing information in the log output specifically so that sniffers can decrypt the
+      connection, exactly what an attacker with log access needs.
+    references: [CWE-532]
+
+  BT_SMP_ENFORCE_MITM:
+    value: y
+    rationale: |
+      Requires man-in-the-middle protection during Bluetooth pairing whenever the local or remote
+      device is capable of it, preventing silent downgrades to unauthenticated pairing.
+    references: [CWE-757]
+
+  BT_SMP_LOG_LEVEL_DBG:
+    value: n
+    rationale: |
+      Debug logging of the Security Manager Protocol can expose pairing keys and intermediate values
+      of the pairing procedure in the log output.
+    references: [CWE-532]
+
+  BT_STORE_DEBUG_KEYS:
+    value: n
+    rationale: |
+      Persists keys distributed by devices using the well-known debug key pair; such peers offer no
+      confidentiality, and storing their keys treats them as trusted bonds.
+    references: [CWE-798]
+
+  BT_TESTING:
+    value: n
+    rationale: |
+      Exposes Bluetooth stack-internal testing hooks that bypass normal state checks.
+    references: [CWE-489]
+
+  BT_USE_DEBUG_KEYS:
+    value: n
+    rationale: |
+      Pairs using the publicly known debug key pair from the Bluetooth specification instead of a
+      random key pair, so any sniffer can decrypt the pairing and subsequent traffic.
+    references: [CWE-798]

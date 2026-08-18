@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the Arm architecture.
+
+rules:
+  CORTEX_M_DEBUG_MONITOR_HOOK:
+    value: n
+    rationale: |
+      Enables monitor-mode debugging: a breakpoint raises a lowest-priority interrupt instead of
+      halting the core, so the image ships with a handler that lets a debug probe inspect and step
+      it while it runs. Without the hook the exception faults instead.
+    references: [CWE-1244]
+
+  FAULT_DUMP:
+    value: 0
+    profiles: [strict]
+    rationale: |
+      Prints registers and fault state to the console when a fatal error occurs, exposing internal
+      state to anyone with console access; level 0 suppresses the dump entirely.
+    references: [CWE-209]

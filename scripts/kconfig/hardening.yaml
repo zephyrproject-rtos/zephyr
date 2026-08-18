@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Zephyr security hardening database, maintained by the Zephyr Security Working Group.
+#
+# This central file defines the hardening profiles, plus rules for symbols defined in the top-level
+# Kconfig files. Rules for subsystem, driver, architecture and SoC symbols live in 'hardening.yaml'
+# fragments next to the Kconfig files they relate to, and are discovered automatically (see
+# scripts/kconfig/hardeninglib.py).
+#
+# Consumed by 'west build -t hardenconfig' (scripts/kconfig/hardenconfig.py) and validated against
+# scripts/schemas/hardening-schema.yaml. CI (check_compliance.py, KconfigCheck) additionally
+# verifies that every rule references an existing Kconfig symbol and that recommended values are
+# coherent with the symbol's type, so entries cannot silently go stale.
+#
+# Every rule must carry a rationale explaining the recommendation. Rules without an explicit
+# 'profiles:' list belong to the 'base' profile.
+profiles:
+  base:
+    description: |
+      Baseline hardening every production build should satisfy: enable available memory-protection
+      and exploit-mitigation features, and disable inherently insecure options.
+  strict:
+    extends: base
+    description: |
+      Baseline plus removal of debugging, tracing and observability features that enlarge the attack
+      surface or disclose internal state. Some products legitimately keep a subset of these enabled.
+
+rules:
+  BUILD_OUTPUT_STRIPPED:
+    value: y
+    rationale: |
+      Produces a stripped copy of the ELF next to the unstripped one, so a product that distributes
+      or flashes the ELF itself ships no symbol names or debug information for an attacker to work
+      from. Both files are built; deploying the stripped one remains the user's responsibility.
+    references: [CWE-200]
