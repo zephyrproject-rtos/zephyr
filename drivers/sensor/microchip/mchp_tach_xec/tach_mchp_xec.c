@@ -25,32 +25,30 @@
 
 LOG_MODULE_REGISTER(tach_xec, CONFIG_SENSOR_LOG_LEVEL);
 
-/* Frequency of the clock the hardware counts in reading mode 1 */
-#define TACH_XEC_CLOCK_HZ	100000U
-#define TACH_XEC_SEC_PER_MIN	60U
+#define TACH_XEC_SEC_PER_MIN 60U
 
 /*
  * A latched count of 0xffff means the programmed number of TACH edges was not
  * observed before the internal counter saturated, i.e. the fan is stopped,
  * jammed, or turning slower than the block can measure.
  */
-#define TACH_XEC_COUNT_STOPPED	0xffffU
+#define TACH_XEC_COUNT_STOPPED 0xffffU
 
 /*
  * The internal counter is latched either when the programmed number of edges
- * has been seen or when it saturates. Saturation from zero takes
- * 0xffff / 100 kHz = 655.35 ms, so a slightly longer timeout guarantees a
- * reading is available for any fan speed the block supports. Exceeding it
- * means the block is not counting at all.
+ * has been seen or when it saturates. Saturation from zero takes 0xffff
+ * counting clocks - 655.35 ms at the nominal 100 kHz - so a slightly longer
+ * timeout guarantees a reading is available for any fan speed the block
+ * supports. Exceeding it means the block is not counting at all.
  */
-#define TACH_XEC_LATCH_TIMEOUT_MS	700U
+#define TACH_XEC_LATCH_TIMEOUT_MS(hz) (((TACH_XEC_COUNT_STOPPED * MSEC_PER_SEC) / (hz)) + 45U)
 
 /* Byte offset of the read-only latched counter in the control register */
-#define TACH_XEC_COUNTER_REG_OFS	(MCHP_TACH_CONTROL_REG_OFS + 2U)
+#define TACH_XEC_COUNTER_REG_OFS (MCHP_TACH_CONTROL_REG_OFS + 2U)
 
 /* Writable (R/W1C) bits of the status register */
-#define TACH_XEC_STS_RW1C	(MCHP_TACH_STS_EXCEED_LIMIT | MCHP_TACH_STS_TOGGLE |	\
-				 MCHP_TACH_STS_CNT_RDY)
+#define TACH_XEC_STS_RW1C                                                                          \
+	(MCHP_TACH_STS_EXCEED_LIMIT | MCHP_TACH_STS_TOGGLE | MCHP_TACH_STS_CNT_RDY)
 
 struct tach_xec_config {
 	uintptr_t base;
@@ -60,6 +58,10 @@ struct tach_xec_config {
 	uint32_t window_half_periods;
 	/* TACH periods the fan generates per revolution */
 	uint32_t pulses_per_round;
+	/* Frequency in Hz of the clock the block counts, from devicetree */
+	uint32_t clock_hz;
+	/* Longest a latch can legitimately take at that clock, plus margin */
+	uint32_t latch_timeout_ms;
 	uint8_t pcr_scr;
 	/* Interrupt aggregator source this instance is wired to */
 	uint8_t girq;
@@ -93,8 +95,8 @@ struct tach_xec_data {
 
 static void tach_xec_cnt_rdy_int_set(const struct device *dev, bool enable)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 
 	if (enable) {
 		data->control |= MCHP_TACH_CTRL_CNT_RDY_INT_EN;
@@ -115,7 +117,7 @@ static void tach_xec_cnt_rdy_int_set(const struct device *dev, bool enable)
  */
 static void tach_xec_cnt_rdy_int_update(const struct device *dev)
 {
-	struct tach_xec_data * const data = dev->data;
+	struct tach_xec_data *const data = dev->data;
 	bool enable = data->fetch_pending;
 
 #ifdef CONFIG_TACH_XEC_TRIGGER
@@ -143,7 +145,7 @@ static void tach_xec_drdy_signal(struct tach_xec_data *data)
 
 static void tach_xec_process_drdy(const struct device *dev)
 {
-	struct tach_xec_data * const data = dev->data;
+	struct tach_xec_data *const data = dev->data;
 	const struct sensor_trigger *trig = data->drdy_trigger;
 	sensor_trigger_handler_t handler = data->drdy_handler;
 
@@ -160,7 +162,7 @@ static void tach_xec_process_drdy(const struct device *dev)
 static void tach_xec_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	struct tach_xec_data * const data = dev->data;
+	struct tach_xec_data *const data = dev->data;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -173,7 +175,7 @@ static void tach_xec_thread(void *p1, void *p2, void *p3)
 #elif defined(CONFIG_TACH_XEC_TRIGGER_GLOBAL_THREAD)
 static void tach_xec_work_handler(struct k_work *work)
 {
-	struct tach_xec_data * const data = CONTAINER_OF(work, struct tach_xec_data, work);
+	struct tach_xec_data *const data = CONTAINER_OF(work, struct tach_xec_data, work);
 
 	tach_xec_process_drdy(data->dev);
 }
@@ -182,8 +184,8 @@ static void tach_xec_work_handler(struct k_work *work)
 
 static void tach_xec_isr(const struct device *dev)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	uint32_t status = sys_read32(cfg->base + MCHP_TACH_STATUS_REG_OFS);
 
 	if ((status & MCHP_TACH_STS_CNT_RDY) != 0U) {
@@ -206,8 +208,8 @@ static void tach_xec_isr(const struct device *dev)
 
 static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	unsigned int key;
 	int ret;
 
@@ -233,7 +235,7 @@ static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel c
 
 	irq_unlock(key);
 
-	ret = k_sem_take(&data->latched, K_MSEC(TACH_XEC_LATCH_TIMEOUT_MS));
+	ret = k_sem_take(&data->latched, K_MSEC(cfg->latch_timeout_ms));
 
 	/* A registered trigger keeps the interrupt armed past the end of the fetch */
 	key = irq_lock();
@@ -244,7 +246,7 @@ static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel c
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	if (ret != 0) {
-		LOG_ERR("TACH count not latched within %u ms", TACH_XEC_LATCH_TIMEOUT_MS);
+		LOG_ERR("TACH count not latched within %u ms", cfg->latch_timeout_ms);
 
 		return -EIO;
 	}
@@ -255,8 +257,8 @@ static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel c
 static int tach_xec_channel_get(const struct device *dev, enum sensor_channel chan,
 				struct sensor_value *val)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	uint64_t numerator;
 	uint64_t denominator;
 	uint64_t rpm_micro;
@@ -281,7 +283,7 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 	}
 
 	/*
-	 * The latched counter holds the number of 100 kHz clocks spanning the
+	 * The latched counter holds the number of counting clocks spanning the
 	 * programmed number of TACH edges. Measuring that window in half TACH
 	 * periods keeps the arithmetic exact:
 	 *
@@ -290,9 +292,15 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 	 *
 	 * One revolution spans <pulses-per-round> full TACH periods, so
 	 *
-	 *            60 * 100000 * window_half_periods
-	 *   RPM = -------------------------------------------
-	 *          2 * pulses_per_round * (latched_count + 1)
+	 *          60 * clock_frequency * window_half_periods
+	 *   RPM = ---------------------------------------------
+	 *           2 * pulses_per_round * (latched_count + 1)
+	 *
+	 * clock_frequency comes from devicetree and defaults to the nominal
+	 * 100 kHz. The block divides the 48 MHz PLL by 480, and that PLL is
+	 * specified to a few percent, so a board that has measured its own
+	 * clock can cancel what would otherwise be a flat bias on every
+	 * reading.
 	 *
 	 * The counter is latched and cleared in the same clock, and that clock
 	 * does not increment it, so the latched value is one less than the
@@ -305,8 +313,8 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 	 * The result is computed in micro-RPM so the fractional part can be
 	 * reported in val2 instead of being truncated away.
 	 */
-	numerator = (uint64_t)TACH_XEC_SEC_PER_MIN * TACH_XEC_CLOCK_HZ *
-		    cfg->window_half_periods * USEC_PER_SEC;
+	numerator = (uint64_t)TACH_XEC_SEC_PER_MIN * cfg->clock_hz * cfg->window_half_periods *
+		    USEC_PER_SEC;
 	denominator = (uint64_t)cfg->pulses_per_round * (count + 1U) * 2U;
 
 	/* Round to nearest rather than toward zero */
@@ -322,8 +330,8 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 static int tach_xec_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
 				sensor_trigger_handler_t handler)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	unsigned int key;
 
 	/*
@@ -366,8 +374,8 @@ static int tach_xec_trigger_set(const struct device *dev, const struct sensor_tr
 #ifdef CONFIG_PM_DEVICE
 static int tach_xec_pm_action(const struct device *dev, enum pm_device_action action)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	int ret = 0;
 
 	switch (action) {
@@ -395,8 +403,8 @@ static int tach_xec_pm_action(const struct device *dev, enum pm_device_action ac
 
 static int tach_xec_init(const struct device *dev)
 {
-	const struct tach_xec_config * const cfg = dev->config;
-	struct tach_xec_data * const data = dev->data;
+	const struct tach_xec_config *const cfg = dev->config;
+	struct tach_xec_data *const data = dev->data;
 	int ret;
 
 	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -454,61 +462,64 @@ static DEVICE_API(sensor, tach_xec_driver_api) = {
 };
 
 /* Pre-shifted TACH_EDGES control field for a given number of edges */
-#define TACH_XEC_CTRL_EDGES(edges)							\
-	((edges) == 2 ? MCHP_TACH_CTRL_EDGES_2 :					\
-	 ((edges) == 3 ? MCHP_TACH_CTRL_EDGES_3 :					\
-	  ((edges) == 5 ? MCHP_TACH_CTRL_EDGES_5 : MCHP_TACH_CTRL_EDGES_9)))
+#define TACH_XEC_CTRL_EDGES(edges)                                                                 \
+	((edges) == 2 ? MCHP_TACH_CTRL_EDGES_2                                                     \
+		      : ((edges) == 3 ? MCHP_TACH_CTRL_EDGES_3                                     \
+				      : ((edges) == 5 ? MCHP_TACH_CTRL_EDGES_5                     \
+						      : MCHP_TACH_CTRL_EDGES_9)))
 
 /* Half TACH periods spanned by a given number of edges */
-#define TACH_XEC_HALF_PERIODS(edges)							\
+#define TACH_XEC_HALF_PERIODS(edges)                                                               \
 	((edges) == 2 ? 1U : ((edges) == 3 ? 2U : ((edges) == 5 ? 4U : 8U)))
 
-#define TACH_XEC_GIRQ(inst)	MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
-#define TACH_XEC_GIRQ_POS(inst)	MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define TACH_XEC_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define TACH_XEC_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
 
-#define TACH_XEC_DEVICE(inst)								\
-	BUILD_ASSERT((DT_INST_PROP(inst, tach_edges) == 2) ||				\
-		     (DT_INST_PROP(inst, tach_edges) == 3) ||				\
-		     (DT_INST_PROP(inst, tach_edges) == 5) ||				\
-		     (DT_INST_PROP(inst, tach_edges) == 9),				\
-		     "tach-edges must be 2, 3, 5 or 9");				\
-											\
-	BUILD_ASSERT(DT_INST_PROP(inst, pulses_per_round) > 0,				\
-		     "pulses-per-round must be non-zero");				\
-											\
-	static struct tach_xec_data tach_xec_data_##inst;				\
-											\
-	PINCTRL_DT_INST_DEFINE(inst);							\
-											\
-	static void tach_xec_irq_config_##inst(void)					\
-	{										\
-		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority),		\
-			    tach_xec_isr, DEVICE_DT_INST_GET(inst), 0);			\
-		irq_enable(DT_INST_IRQN(inst));						\
-	}										\
-											\
-	static const struct tach_xec_config tach_xec_config_##inst = {			\
-		.base = (uintptr_t)DT_INST_REG_ADDR(inst),				\
-		.ctrl_edges = TACH_XEC_CTRL_EDGES(DT_INST_PROP(inst, tach_edges)),	\
-		.window_half_periods =							\
-			TACH_XEC_HALF_PERIODS(DT_INST_PROP(inst, tach_edges)),		\
-		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),		\
-		.pcr_scr = DT_INST_PROP(inst, pcr_scr),					\
-		.girq = TACH_XEC_GIRQ(inst),						\
-		.girq_pos = TACH_XEC_GIRQ_POS(inst),					\
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
-		.irq_config_func = tach_xec_irq_config_##inst,				\
-	};										\
-											\
-	PM_DEVICE_DT_INST_DEFINE(inst, tach_xec_pm_action);				\
-											\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst,						\
-				     tach_xec_init,					\
-				     PM_DEVICE_DT_INST_GET(inst),			\
-				     &tach_xec_data_##inst,				\
-				     &tach_xec_config_##inst,				\
-				     POST_KERNEL,					\
-				     CONFIG_SENSOR_INIT_PRIORITY,			\
-				     &tach_xec_driver_api);
+#define TACH_XEC_DEVICE(inst)                                                                      \
+	BUILD_ASSERT((DT_INST_PROP(inst, tach_edges) == 2) ||                                      \
+			     (DT_INST_PROP(inst, tach_edges) == 3) ||                              \
+			     (DT_INST_PROP(inst, tach_edges) == 5) ||                              \
+			     (DT_INST_PROP(inst, tach_edges) == 9),                                \
+		     "tach-edges must be 2, 3, 5 or 9");                                           \
+                                                                                                   \
+	BUILD_ASSERT(DT_INST_PROP(inst, pulses_per_round) > 0,                                     \
+		     "pulses-per-round must be non-zero");                                         \
+                                                                                                   \
+	BUILD_ASSERT((DT_INST_PROP(inst, clock_frequency) >= 80000) &&                             \
+			     (DT_INST_PROP(inst, clock_frequency) <= 120000),                      \
+		     "clock-frequency calibrates the nominal 100 kHz clock the "                   \
+		     "block counts, it does not select a different one");                          \
+                                                                                                   \
+	static struct tach_xec_data tach_xec_data_##inst;                                          \
+                                                                                                   \
+	PINCTRL_DT_INST_DEFINE(inst);                                                              \
+                                                                                                   \
+	static void tach_xec_irq_config_##inst(void)                                               \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), tach_xec_isr,         \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
+	}                                                                                          \
+                                                                                                   \
+	static const struct tach_xec_config tach_xec_config_##inst = {                             \
+		.base = (uintptr_t)DT_INST_REG_ADDR(inst),                                         \
+		.ctrl_edges = TACH_XEC_CTRL_EDGES(DT_INST_PROP(inst, tach_edges)),                 \
+		.window_half_periods = TACH_XEC_HALF_PERIODS(DT_INST_PROP(inst, tach_edges)),      \
+		.pulses_per_round = DT_INST_PROP(inst, pulses_per_round),                          \
+		.clock_hz = DT_INST_PROP(inst, clock_frequency),                                   \
+		.latch_timeout_ms =                                                                \
+			TACH_XEC_LATCH_TIMEOUT_MS(DT_INST_PROP(inst, clock_frequency)),            \
+		.pcr_scr = DT_INST_PROP(inst, pcr_scr),                                            \
+		.girq = TACH_XEC_GIRQ(inst),                                                       \
+		.girq_pos = TACH_XEC_GIRQ_POS(inst),                                               \
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.irq_config_func = tach_xec_irq_config_##inst,                                     \
+	};                                                                                         \
+                                                                                                   \
+	PM_DEVICE_DT_INST_DEFINE(inst, tach_xec_pm_action);                                        \
+                                                                                                   \
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, tach_xec_init, PM_DEVICE_DT_INST_GET(inst),             \
+				     &tach_xec_data_##inst, &tach_xec_config_##inst, POST_KERNEL,  \
+				     CONFIG_SENSOR_INIT_PRIORITY, &tach_xec_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(TACH_XEC_DEVICE)
