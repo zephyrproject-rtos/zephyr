@@ -44,8 +44,10 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 /* Port B */
 #define PORTB_UNSUPPORTED_PINS    DT_INST_PROP(0, portb_unsupported_pins)
 /* The special pins need an offset when calculating the eic line */
-#define PORTB_SPECIAL_PINS        DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
-#define PORTB_SPECIAL_PINS_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS          DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
+#define PORTB_SPECIAL_PINS_OFFSET   DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS_2        DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 0)
+#define PORTB_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 1)
 
 /* Port C */
 #define PORTC_SUPPORTED_PINS        DT_INST_PROP(0, portc_supported_pins)
@@ -135,7 +137,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTA_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTA_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTA_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTA_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else {
 			/* Nothing to be done */
 		}
@@ -149,7 +151,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTC_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTC_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else if ((PORTC_SPECIAL_PINS_2 & pin_mask) != 0) {
 			eic_line -= PORTC_SPECIAL_PINS_2_OFFSET;
 		} else {
@@ -181,7 +183,9 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTB_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
-			eic_line += PORTB_SPECIAL_PINS_OFFSET;
+			eic_line = (eic_line + PORTB_SPECIAL_PINS_OFFSET) % EIC_LINES_PER_PORT;
+		} else if ((PORTB_SPECIAL_PINS_2 & pin_mask) != 0) {
+			eic_line = (eic_line + PORTB_SPECIAL_PINS_2_OFFSET) % EIC_LINES_PER_PORT;
 		} else {
 			/* Nothing to be done */
 		}
@@ -190,7 +194,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTC_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTC_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else {
 			/* Nothing to be done */
 		}
@@ -199,7 +203,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTD_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTD_SPECIAL_PINS_2 & pin_mask) != 0) {
-			eic_line += PORTD_SPECIAL_PINS_2_OFFSET;
+			eic_line = (eic_line + PORTD_SPECIAL_PINS_2_OFFSET) % EIC_LINES_PER_PORT;
 		} else if ((PORTD_SPECIAL_PINS_1 & pin_mask) != 0) {
 			eic_line -= PORTD_SPECIAL_PINS_1_OFFSET;
 		} else {
