@@ -189,13 +189,8 @@
 #endif
 #endif /* CONFIG_CPU_CORTEX_M7 */
 
-#if defined(CONFIG_CPU_CORTEX_M7)
-/* Offset to access bus clock registers from M7 (or only) core */
+/* Same offset on both cores: RCC allocates to the CPU that writes it */
 #define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc))
-#elif defined(CONFIG_CPU_CORTEX_M4)
-/* Offset to access bus clock registers from M4 core */
-#define STM32H7_BUS_CLK_REG	DT_REG_ADDR(DT_NODELABEL(rcc)) + 0x60
-#endif
 
 #if IS_ENABLED(STM32_PLL_P_ENABLED)
 BUILD_ASSERT(((STM32_PLL_P_DIVISOR == 1) || (STM32_PLL_P_DIVISOR % 2) == 0),
