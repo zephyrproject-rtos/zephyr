@@ -6,6 +6,8 @@
  *
  * Copyright (c) 2026 NXP
  *
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -23,6 +25,39 @@ LOG_MODULE_REGISTER(sample, LOG_LEVEL_INF);
 #endif
 
 #include "display.h"
+
+/*
+ * Display render context
+ */
+struct render_ctx {
+	const struct device *display_dev;
+	uint8_t *buf;
+	size_t buf_size;
+	uint16_t rect_w;
+	uint16_t rect_h;
+	uint8_t full_bpp;
+	uint16_t frame_w;
+	uint8_t **full_buf;
+	size_t num_full_buffers;
+	size_t full_frame_size;
+	struct display_buffer_descriptor *buf_desc;
+	struct display_buffer_descriptor *full_desc;
+};
+
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+static void blit_rect(uint8_t *frame, uint16_t frame_w,
+		      uint16_t x, uint16_t y, uint16_t w, uint16_t h,
+		      const uint8_t *src, uint8_t bpp_bytes)
+{
+	size_t row_bytes = (size_t)w * bpp_bytes;
+
+	for (uint16_t row = 0; row < h; row++) {
+		memcpy(frame + ((size_t)(y + row) * frame_w + x) * bpp_bytes,
+		       src + (size_t)row * row_bytes,
+		       row_bytes);
+	}
+}
+#endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
 
 enum corner {
 	TOP_LEFT,
@@ -277,6 +312,63 @@ static inline void fill_buffer_mono10(enum corner corner, uint8_t grey,
 	fill_buffer_mono(corner, grey, 0xFFu, 0x00u, buf, buf_size);
 }
 
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+static int alloc_full_framebuffers(uint8_t *full_buf[], size_t count,
+				    size_t frame_size, uint8_t bg_color)
+{
+	for (size_t i = 0; i < count; i++) {
+		full_buf[i] = k_aligned_alloc(CONFIG_SAMPLE_BUFFER_ADDR_ALIGN, frame_size);
+		if (full_buf[i] == NULL) {
+			LOG_ERR("Could not allocate frame buffer %zu (%zu B). "
+				"Increase CONFIG_HEAP_MEM_POOL_ADD_SIZE_SAMPLE.",
+				i, frame_size);
+			return -ENOMEM;
+		}
+		(void)memset(full_buf[i], bg_color, frame_size);
+	}
+	return 0;
+}
+#endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
+
+/*
+ * Renders one static corner rectangle, either into every full-frame buffer
+ * (so all buffers carry the same background before the animation starts) or
+ * directly to the display when full-frame mode is off.
+ */
+static int render_static_corner(const struct render_ctx *ctx, fill_buffer fnc,
+				 enum corner corner, enum display_pixel_format fmt,
+				 uint16_t x, uint16_t y)
+{
+	fnc(corner, 0, ctx->buf, ctx->buf_size, fmt);
+
+	if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_FULL_FRAME)) {
+		for (size_t i = 0; i < ctx->num_full_buffers; i++) {
+			blit_rect(ctx->full_buf[i], ctx->frame_w, x, y,
+				  ctx->rect_w, ctx->rect_h, ctx->buf, ctx->full_bpp);
+		}
+		return 0;
+	}
+
+	return display_write(ctx->display_dev, x, y, ctx->buf_desc, ctx->buf);
+}
+
+/*
+ * Renders the animated bottom-left rectangle for one frame: blits into the
+ * buffer selected by render_idx and submits it, or writes the small buffer
+ * directly when full-frame mode is off.
+ */
+static int render_frame(const struct render_ctx *ctx, uint16_t x, uint16_t y, size_t render_idx)
+{
+	if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_FULL_FRAME)) {
+		blit_rect(ctx->full_buf[render_idx], ctx->frame_w, x, y,
+			  ctx->rect_w, ctx->rect_h, ctx->buf, ctx->full_bpp);
+		return display_write(ctx->display_dev, 0, 0, ctx->full_desc,
+				      ctx->full_buf[render_idx]);
+	}
+
+	return display_write(ctx->display_dev, x, y, ctx->buf_desc, ctx->buf);
+}
+
 int sample_display_draw(void)
 {
 	uint16_t x;
@@ -295,6 +387,11 @@ int sample_display_draw(void)
 	size_t buf_size = 0;
 	fill_buffer fill_buffer_fnc = NULL;
 	int ret = 0;
+	uint8_t full_bpp = 0;
+	size_t full_frame_size = 0;
+	size_t render_idx = 0;
+	struct display_buffer_descriptor full_desc = {0};
+	uint8_t *full_buf[SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS] = {NULL};
 
 	display_dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
 	if (!device_is_ready(display_dev)) {
@@ -418,6 +515,27 @@ int sample_display_draw(void)
 
 	(void)memset(buf, bg_color, buf_size);
 
+	if (IS_ENABLED(CONFIG_SAMPLE_DISPLAY_FULL_FRAME)) {
+		full_bpp = DIV_ROUND_UP(
+			DISPLAY_BITS_PER_PIXEL(capabilities.current_pixel_format),
+			NUM_BITS(uint8_t));
+		full_frame_size = (size_t)capabilities.x_resolution *
+				  capabilities.y_resolution * full_bpp;
+
+		ret = alloc_full_framebuffers(full_buf, SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS,
+					       full_frame_size, bg_color);
+		if (ret < 0) {
+			goto end;
+		}
+
+		full_desc.buf_size        = full_frame_size;
+		full_desc.pitch           = ROUND_UP(capabilities.x_resolution,
+						     CONFIG_SAMPLE_PITCH_ALIGN);
+		full_desc.width           = capabilities.x_resolution;
+		full_desc.height          = capabilities.y_resolution;
+		full_desc.frame_incomplete = false;
+	}
+
 	buf_desc.buf_size = buf_size;
 	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
 	buf_desc.width = capabilities.x_resolution;
@@ -431,19 +549,21 @@ int sample_display_draw(void)
 	 */
 	buf_desc.frame_incomplete = true;
 
-	for (uint16_t idx = 0; idx < capabilities.y_resolution; idx += h_step) {
-		/*
-		 * Tweaking the height value not to draw outside of the display.
-		 * It is required when using a monochrome display whose vertical
-		 * resolution can not be divided by 8.
-		 */
-		if ((capabilities.y_resolution - idx) < h_step) {
-			buf_desc.height = (capabilities.y_resolution - idx);
-		}
-		ret = display_write(display_dev, 0, idx, &buf_desc, buf);
-		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
-			goto end;
+	if (!IS_ENABLED(CONFIG_SAMPLE_DISPLAY_FULL_FRAME)) {
+		for (uint16_t idx = 0; idx < capabilities.y_resolution; idx += h_step) {
+			/*
+			 * Tweaking the height value not to draw outside of the display.
+			 * It is required when using a monochrome display whose vertical
+			 * resolution can not be divided by 8.
+			 */
+			if ((capabilities.y_resolution - idx) < h_step) {
+				buf_desc.height = (capabilities.y_resolution - idx);
+			}
+			ret = display_write(display_dev, 0, idx, &buf_desc, buf);
+			if (ret < 0) {
+				LOG_ERR("Failed to write to display (error %d)", ret);
+				goto end;
+			}
 		}
 	}
 
@@ -451,19 +571,34 @@ int sample_display_draw(void)
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 
-	fill_buffer_fnc(TOP_LEFT, 0, buf, buf_size, capabilities.current_pixel_format);
+	struct render_ctx ctx = {
+		.display_dev = display_dev,
+		.buf = buf,
+		.buf_size = buf_size,
+		.rect_w = rect_w,
+		.rect_h = rect_h,
+		.full_bpp = full_bpp,
+		.frame_w = capabilities.x_resolution,
+		.full_buf = full_buf,
+		.num_full_buffers = SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS,
+		.full_frame_size = full_frame_size,
+		.buf_desc = &buf_desc,
+		.full_desc = &full_desc,
+	};
+
 	x = 0;
 	y = 0;
-	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	ret = render_static_corner(&ctx, fill_buffer_fnc, TOP_LEFT,
+				    capabilities.current_pixel_format, x, y);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
 	}
 
-	fill_buffer_fnc(TOP_RIGHT, 0, buf, buf_size, capabilities.current_pixel_format);
 	x = capabilities.x_resolution - rect_w;
 	y = 0;
-	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	ret = render_static_corner(&ctx, fill_buffer_fnc, TOP_RIGHT,
+				    capabilities.current_pixel_format, x, y);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
@@ -476,10 +611,10 @@ int sample_display_draw(void)
 	 */
 	buf_desc.frame_incomplete = false;
 
-	fill_buffer_fnc(BOTTOM_RIGHT, 0, buf, buf_size, capabilities.current_pixel_format);
 	x = capabilities.x_resolution - rect_w;
 	y = capabilities.y_resolution - rect_h;
-	ret = display_write(display_dev, x, y, &buf_desc, buf);
+	ret = render_static_corner(&ctx, fill_buffer_fnc, BOTTOM_RIGHT,
+				    capabilities.current_pixel_format, x, y);
 	if (ret < 0) {
 		LOG_ERR("Failed to write to display (error %d)", ret);
 		goto end;
@@ -499,7 +634,8 @@ int sample_display_draw(void)
 	while (1) {
 		fill_buffer_fnc(BOTTOM_LEFT, grey_count, buf, buf_size,
 			capabilities.current_pixel_format);
-		ret = display_write(display_dev, x, y, &buf_desc, buf);
+
+		ret = render_frame(&ctx, x, y, render_idx);
 		if (ret < 0) {
 			LOG_ERR("Failed to write to display (error %d)", ret);
 			goto end;
@@ -507,6 +643,8 @@ int sample_display_draw(void)
 
 		++grey_count;
 		k_msleep(grey_scale_sleep);
+		render_idx = (render_idx + 1) % SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS;
+
 #if CONFIG_TEST
 		if (grey_count >= 30) {
 			LOG_INF("Display sample test mode done %s", display_dev->name);
@@ -516,6 +654,12 @@ int sample_display_draw(void)
 	}
 
 end:
+#ifdef CONFIG_SAMPLE_DISPLAY_FULL_FRAME
+	for (size_t i = 0; i < SAMPLE_DISPLAY_NUM_FULL_FRAMEBUFFERS; i++) {
+		k_free(full_buf[i]);
+	}
+#endif /* CONFIG_SAMPLE_DISPLAY_FULL_FRAME */
+
 #if CONFIG_TEST
 	if (ret == 0) {
 		LOG_INF("PROJECT EXECUTION SUCCESSFUL");

@@ -19,7 +19,22 @@ config SAMPLE_PITCH_ALIGN
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int "Sample maximum heap allocated buffer size"
+	default 20971520 if SAMPLE_DISPLAY_DOUBLE_BUFFER
+	default 10485760 if SAMPLE_DISPLAY_FULL_FRAME
 	default 196608 if QEMU_RAMFB_DISPLAY
 	default 65536
 	help
-	  Maximum size of the buffer for rendering rectangles
+	  Maximum size of the buffer for rendering rectangles.
+
+config SAMPLE_DISPLAY_FULL_FRAME
+	bool "Render and submit a complete frame on each update"
+	depends on DISPLAY
+	help
+	  When enabled the sample renders all visible elements into a single
+	  full-screen buffer.
+
+config SAMPLE_DISPLAY_DOUBLE_BUFFER
+	bool "Use two full-frame buffers with VSYNC-driven swap"
+	depends on SAMPLE_DISPLAY_FULL_FRAME
+	help
+	  Allocates two full-screen buffers.
