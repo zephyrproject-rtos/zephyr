@@ -108,6 +108,26 @@ board_finalize_runner_args(esp32 "--esp-monitor-baud=${monitor_baud}")
 
 message(STATUS "Image partition address: ${image_off}")
 
+# Publish the flash layout needed to assemble an Espressif QEMU image. The
+# merge itself happens in cmake/emu/espressif_qemu.cmake: under MCUboot
+# the application is signed by a post-build command that is appended to
+# extra_post_build_commands after this file is processed, so the image can only
+# be assembled once the whole ELF target (including that step) has completed.
+if(CONFIG_ESPRESSIF_QEMU AND CONFIG_BUILD_OUTPUT_BIN AND NOT CONFIG_MCUBOOT)
+  # Pad to the board flash size from DT so the image header and QEMU MTD match.
+  set_property(GLOBAL PROPERTY espressif_qemu_flash_size_mb ${esptoolpy_flashsize})
+  set_property(GLOBAL PROPERTY espressif_qemu_image_off ${image_off})
+
+  if(CONFIG_BOOTLOADER_MCUBOOT)
+    dt_nodelabel(_qemu_boot_path NODELABEL "boot_partition" REQUIRED)
+    dt_reg_addr(_qemu_boot_off PATH ${_qemu_boot_path} REQUIRED)
+    dt_nodelabel(_qemu_slot0_path NODELABEL "slot0_partition" REQUIRED)
+    dt_reg_addr(_qemu_slot0_off PATH ${_qemu_slot0_path} REQUIRED)
+    set_property(GLOBAL PROPERTY espressif_qemu_mcuboot_off ${_qemu_boot_off})
+    set_property(GLOBAL PROPERTY espressif_qemu_slot0_off ${_qemu_slot0_off})
+  endif()
+endif()
+
 # Look for cross references between bootloader sections
 if(CONFIG_MCUBOOT)
     message("check_callgraph using: ${ESP_IDF_PATH}/tools/ci/check_callgraph.py")
