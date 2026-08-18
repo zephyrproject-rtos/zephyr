@@ -2,7 +2,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-description: DSA Device Port
+title: DSA Switch Port
+
+description: Distributed Switch Architecture (DSA) Network Switch Port
 
 compatible: "zephyr,dsa-port"
 

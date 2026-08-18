@@ -1,7 +1,9 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-description: DSA Device
+title: DSA Switch
+
+description: Distributed Switch Architecture (DSA) Network Switch
 
 child-binding:
   include: base.yaml
