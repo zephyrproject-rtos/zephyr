@@ -150,4 +150,36 @@ ZTEST(video_common, test_video_closest_frmival_stepwise)
 	zassert_equal(video_frmival_nsec(&match), video_frmival_nsec(&stepwise.max), "100 / 1");
 }
 
+ZTEST(video_common, test_video_buffer_release_null)
+{
+	int ret;
+
+	ret = video_buffer_release(NULL);
+	zassert_equal(ret, -EINVAL, "expecting -EINVAL when releasing a NULL buffer");
+}
+
+ZTEST(video_common, test_video_buffer_alloc_release)
+{
+	struct video_buffer *vbuf;
+	int ret;
+
+	vbuf = video_buffer_alloc(64, K_NO_WAIT);
+	zassert_not_null(vbuf, "expecting buffer allocation to succeed");
+
+	ret = video_buffer_release(vbuf);
+	zassert_ok(ret, "expecting buffer release to succeed");
+
+	ret = video_buffer_release(vbuf);
+	zassert_equal(ret, -EINVAL, "expecting -EINVAL when releasing a buffer twice");
+}
+
+ZTEST(video_common, test_video_buffer_release_bad_index)
+{
+	struct video_buffer vbuf = {.index = CONFIG_VIDEO_BUFFER_POOL_NUM_MAX};
+	int ret;
+
+	ret = video_buffer_release(&vbuf);
+	zassert_equal(ret, -EINVAL, "expecting -EINVAL for an out-of-range buffer index");
+}
+
 ZTEST_SUITE(video_common, NULL, NULL, NULL, NULL, NULL);
