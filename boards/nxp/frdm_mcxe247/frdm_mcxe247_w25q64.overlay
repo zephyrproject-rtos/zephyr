@@ -1,0 +1,22 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enables the on-board W25Q64 QSPI NOR flash; requires the board rework (see doc). */
+
+/ {
+	aliases {
+		flash0 = &w25q64;
+		mspi0 = &qspi;
+	};
+};
+
+&qspi {
+	status = "okay";
+};
+
+&w25q64 {
+	status = "okay";
+};
