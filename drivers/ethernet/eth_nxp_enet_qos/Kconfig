@@ -14,7 +14,7 @@ if ETH_NXP_ENET_QOS
 
 DT_PROP_NXP_ENET_QOS_UNIQUE_MAC := nxp,unique-mac
 
-config ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS
+config ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS
 	bool "Unique MAC address support"
 	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_QOS),$(DT_PROP_NXP_ENET_QOS_UNIQUE_MAC),True)
 	select HWINFO
