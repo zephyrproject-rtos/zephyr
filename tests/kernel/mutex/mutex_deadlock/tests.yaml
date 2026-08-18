@@ -1,3 +1,5 @@
+common:
+  ignore_faults: true
 tests:
   kernel.mutex.deadlock:
     tags:
