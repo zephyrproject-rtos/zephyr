@@ -14,6 +14,7 @@ supported:
   - hwinfo
   - i2c
   - i2s
+  - input
   - netif:eth
   - netif:wifi
   - pulse_io

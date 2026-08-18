@@ -25,6 +25,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp_hosted_mcu_hci;
 		zephyr,display = &dsi_display;
+		zephyr,touch = &gt911;
 	};
 
 	aliases {
@@ -78,6 +79,17 @@
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 
+	gt911: touch-controller@5d {
+		compatible = "goodix,gt911";
+		status = "okay";
+		reg = <0x5d>;
+		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		screen-width = <1024>;
+		screen-height = <600>;
+		inverted-x;
+		inverted-y;
+	};
 };
 
 &spi2 {
