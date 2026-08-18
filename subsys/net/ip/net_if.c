@@ -6533,11 +6533,6 @@ static void update_operational_state(struct net_if *iface)
 		goto exit;
 	}
 
-	if (!device_is_ready(net_if_get_device(iface))) {
-		new_state = NET_IF_OPER_LOWERLAYERDOWN;
-		goto exit;
-	}
-
 	if (!net_if_is_carrier_ok(iface)) {
 #if defined(CONFIG_NET_L2_VIRTUAL)
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
