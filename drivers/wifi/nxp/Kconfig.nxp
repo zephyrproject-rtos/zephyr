@@ -20,6 +20,7 @@ if WIFI_NXP
 module = WIFI_NXP
 
 config HEAP_MEM_POOL_ADD_SIZE_NXP_WIFI
+	def_int 102400 if WIFI_NM_WPA_SUPPLICANT_P2P
 	def_int 25984 if WIFI_NM_WPA_SUPPLICANT
 	def_int 51200
 
@@ -460,6 +461,14 @@ config NXP_WIFI_SCAN_TASK_STACK_SIZE
 	help
 	  This option specifies the size of the stack used by the wifi scan task.
 
+config NXP_WIFI_P2P_SUPPORT
+	bool "Wi-Fi P2P (Wi-Fi Direct) Support"
+	default y if WIFI_NM_WPA_SUPPLICANT_P2P
+	help
+	  Registers a dedicated Zephyr net_if for Wi-Fi P2P (Wi-Fi Direct).
+	  This enables IP networking over a P2P group interface and allows
+	  P2P shell commands to target the P2P iface directly.
+
 endmenu
 
 menu "Wi-Fi thread priority configurations"
@@ -728,6 +737,26 @@ config NXP_WIFI_UAP_WORKAROUND_STICKY_TIM
 	  enabled this will enable the sticky TIM bit
 	  workaround. A downside of this is that the STA
 	  client of the uAP will not be able to go in IEEE PS.
+
+endif
+
+if NXP_WIFI_P2P_SUPPORT
+
+config NXP_WIFI_P2P_IP_ADDRESS
+	string "NXP P2P AGO mode IP Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_GATEWAY
+	string "Gateway Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_MASK
+	string "Network Mask"
+	default "255.255.255.0"
+
+config NXP_WIFI_P2P_IP_BASE
+	string "NXP P2P AGO base address"
+	default "192.168.20.2"
 
 endif
 
