@@ -16,10 +16,15 @@
 LOG_MODULE_REGISTER(wdt_mchp_g1, CONFIG_WDT_LOG_LEVEL);
 
 #define WDT_LOCK_TIMEOUT              K_MSEC(10)
-#define MAX_INSTALLABLE_TIMEOUT_COUNT (DT_PROP(DT_NODELABEL(wdt), max_installable_timeout_count))
-#define MAX_TIMEOUT_WINDOW            (DT_PROP(DT_NODELABEL(wdt), max_timeout_window))
-#define MAX_TIMEOUT_WINDOW_MODE       (DT_PROP(DT_NODELABEL(wdt), max_timeout_window_mode))
-#define MIN_WINDOW_LIMIT              (DT_PROP(DT_NODELABEL(wdt), min_window_limit))
+/*
+ * DT_INST_PROP, not DT_NODELABEL(wdt): the label is only a convention, not
+ * guaranteed by the binding. only_one_timeout_val_supported_flag below still
+ * relies on the label and is left alone.
+ */
+#define MAX_INSTALLABLE_TIMEOUT_COUNT (DT_INST_PROP(0, max_installable_timeout_count))
+#define MAX_TIMEOUT_WINDOW            (DT_INST_PROP(0, max_timeout_window))
+#define MAX_TIMEOUT_WINDOW_MODE       (DT_INST_PROP(0, max_timeout_window_mode))
+#define MIN_WINDOW_LIMIT              (DT_INST_PROP(0, min_window_limit))
 #define WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED                                                  \
 	(DT_PROP(DT_NODELABEL(wdog), only_one_timeout_val_supported_flag))
 
