@@ -1,0 +1,149 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+#
+# Variables used to access/consume Zephyr-specific `chosen`s as described
+# in the documentation (doc/build/dts/api/api.rst). These variables are
+# provided as a workaround for commas not being allowed inside arguments
+# to Kconfig preprocessor functions.
+#
+# The following Python code can be used to generate this file from the list
+# of `chosen`s in the documentation page:
+#
+#	l = """<list at end of `doc/build/dts/api/api.rst`>"""
+#
+#	m = lambda s: s.strip(" *-")
+#	f = lambda s: s.find("* - zephyr,") != -1
+#	known_chosens = sorted(map(m, filter(f, l.split("\n"))))
+#	for c in sorted(known_chosens):
+#		tk = c.removeprefix("zephyr,").replace("-", "_").upper()
+#		chm = f"DT_CHOSEN_Z_{tk}"
+#		print(f"{chm} := {c}")
+#		print(f"{chm}_PATH := $(dt_chosen_path,$({chm}))")
+#
+# Note: only properties with the `zephyr,` prefix are covered by this file.
+# The documentation page's list may contain chosen properties that another
+# prefix (e.g., `mcuboot,ram-load-dev`) but these should not be consumed
+# from Zephyr, so no convenience variables are generated for them.
+# Vendor-specific properties are also not covered: they should be declared
+# in the vendor's Kconfig files where they are consumed.
+
+# Ignore the PATH lines when checking for sorted order:
+# they should always be right under the respective chosen variable.
+# ignorecase is necessary to avoid false positives in cases like
+# BOOT_MODE vs. BOOTLOADER_INFO: underscores sort after uppercase
+# letters but before lowercase/casefolded: 'L' < '_' < 'l'.
+#
+# zephyr-keep-sorted-start re(.* := zephyr,.*) ignorecase
+DT_CHOSEN_Z_BOOT_MODE := zephyr,boot-mode
+DT_CHOSEN_Z_BOOT_MODE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BOOT_MODE))
+DT_CHOSEN_Z_BOOTLOADER_INFO := zephyr,bootloader-info
+DT_CHOSEN_Z_BOOTLOADER_INFO_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BOOTLOADER_INFO))
+DT_CHOSEN_Z_BT_C2H_UART := zephyr,bt-c2h-uart
+DT_CHOSEN_Z_BT_C2H_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BT_C2H_UART))
+DT_CHOSEN_Z_BT_HCI := zephyr,bt-hci
+DT_CHOSEN_Z_BT_HCI_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BT_HCI))
+DT_CHOSEN_Z_BT_HCI_IPC := zephyr,bt-hci-ipc
+DT_CHOSEN_Z_BT_HCI_IPC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BT_HCI_IPC))
+DT_CHOSEN_Z_BT_MON_UART := zephyr,bt-mon-uart
+DT_CHOSEN_Z_BT_MON_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_BT_MON_UART))
+DT_CHOSEN_Z_CAMERA := zephyr,camera
+DT_CHOSEN_Z_CAMERA_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CAMERA))
+DT_CHOSEN_Z_CANBUS := zephyr,canbus
+DT_CHOSEN_Z_CANBUS_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CANBUS))
+DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
+DT_CHOSEN_Z_CODE_PARTITION_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CODE_PARTITION))
+DT_CHOSEN_Z_CONSOLE := zephyr,console
+DT_CHOSEN_Z_CONSOLE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CONSOLE))
+DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
+DT_CHOSEN_Z_CPU_LOAD_COUNTER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
+DT_CHOSEN_Z_CRC := zephyr,crc
+DT_CHOSEN_Z_CRC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_CRC))
+DT_CHOSEN_Z_DISPLAY := zephyr,display
+DT_CHOSEN_Z_DISPLAY_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_DISPLAY))
+DT_CHOSEN_Z_DTCM := zephyr,dtcm
+DT_CHOSEN_Z_DTCM_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_DTCM))
+DT_CHOSEN_Z_EDAC := zephyr,edac
+DT_CHOSEN_Z_EDAC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_EDAC))
+DT_CHOSEN_Z_ENTROPY := zephyr,entropy
+DT_CHOSEN_Z_ENTROPY_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_ENTROPY))
+DT_CHOSEN_Z_FLASH := zephyr,flash
+DT_CHOSEN_Z_FLASH_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
+DT_CHOSEN_Z_FLASH_CONTROLLER := zephyr,flash-controller
+DT_CHOSEN_Z_FLASH_CONTROLLER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH_CONTROLLER))
+DT_CHOSEN_Z_GDBSTUB_UART := zephyr,gdbstub-uart
+DT_CHOSEN_Z_GDBSTUB_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_GDBSTUB_UART))
+DT_CHOSEN_Z_HDLC_RCP_IF := zephyr,hdlc-rcp-if
+DT_CHOSEN_Z_HDLC_RCP_IF_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_HDLC_RCP_IF))
+DT_CHOSEN_Z_HOST_CMD_ESPI_BACKEND := zephyr,host-cmd-espi-backend
+DT_CHOSEN_Z_HOST_CMD_ESPI_BACKEND_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_HOST_CMD_ESPI_BACKEND))
+DT_CHOSEN_Z_HOST_CMD_SHI_BACKEND := zephyr,host-cmd-shi-backend
+DT_CHOSEN_Z_HOST_CMD_SHI_BACKEND_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_HOST_CMD_SHI_BACKEND))
+DT_CHOSEN_Z_HOST_CMD_SPI_BACKEND := zephyr,host-cmd-spi-backend
+DT_CHOSEN_Z_HOST_CMD_SPI_BACKEND_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_HOST_CMD_SPI_BACKEND))
+DT_CHOSEN_Z_HOST_CMD_UART_BACKEND := zephyr,host-cmd-uart-backend
+DT_CHOSEN_Z_HOST_CMD_UART_BACKEND_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_HOST_CMD_UART_BACKEND))
+DT_CHOSEN_Z_IEEE802154 := zephyr,ieee802154
+DT_CHOSEN_Z_IEEE802154_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IEEE802154))
+DT_CHOSEN_Z_IPC := zephyr,ipc
+DT_CHOSEN_Z_IPC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IPC))
+DT_CHOSEN_Z_IPC_RSC_TABLE := zephyr,ipc_rsc_table
+DT_CHOSEN_Z_IPC_RSC_TABLE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IPC_RSC_TABLE))
+DT_CHOSEN_Z_IPC_RX := zephyr,ipc_rx
+DT_CHOSEN_Z_IPC_RX_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IPC_RX))
+DT_CHOSEN_Z_IPC_SHM := zephyr,ipc_shm
+DT_CHOSEN_Z_IPC_SHM_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IPC_SHM))
+DT_CHOSEN_Z_IPC_TX := zephyr,ipc_tx
+DT_CHOSEN_Z_IPC_TX_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_IPC_TX))
+DT_CHOSEN_Z_ITCM := zephyr,itcm
+DT_CHOSEN_Z_ITCM_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_ITCM))
+DT_CHOSEN_Z_LED_STRIP := zephyr,led-strip
+DT_CHOSEN_Z_LED_STRIP_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_LED_STRIP))
+DT_CHOSEN_Z_LOG_IPC := zephyr,log-ipc
+DT_CHOSEN_Z_LOG_IPC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_LOG_IPC))
+DT_CHOSEN_Z_LOG_UART := zephyr,log-uart
+DT_CHOSEN_Z_LOG_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_LOG_UART))
+DT_CHOSEN_Z_MODEM_UART := zephyr,modem-uart
+DT_CHOSEN_Z_MODEM_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_MODEM_UART))
+DT_CHOSEN_Z_OCM := zephyr,ocm
+DT_CHOSEN_Z_OCM_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_OCM))
+DT_CHOSEN_Z_OPENTHREAD_COUNTER := zephyr,openthread-counter
+DT_CHOSEN_Z_OPENTHREAD_COUNTER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_OPENTHREAD_COUNTER))
+DT_CHOSEN_Z_OSDP_UART := zephyr,osdp-uart
+DT_CHOSEN_Z_OSDP_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_OSDP_UART))
+DT_CHOSEN_Z_OT_UART := zephyr,ot-uart
+DT_CHOSEN_Z_OT_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_OT_UART))
+DT_CHOSEN_Z_PCIE_CONTROLLER := zephyr,pcie-controller
+DT_CHOSEN_Z_PCIE_CONTROLLER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_PCIE_CONTROLLER))
+DT_CHOSEN_Z_PPP_UART := zephyr,ppp-uart
+DT_CHOSEN_Z_PPP_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_PPP_UART))
+DT_CHOSEN_Z_RAM_CONSOLE := zephyr,ram-console
+DT_CHOSEN_Z_RAM_CONSOLE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_RAM_CONSOLE))
+DT_CHOSEN_Z_RTC := zephyr,rtc
+DT_CHOSEN_Z_RTC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_RTC))
+DT_CHOSEN_Z_RTK_SERIAL := zephyr,rtk-serial
+DT_CHOSEN_Z_RTK_SERIAL_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_RTK_SERIAL))
+DT_CHOSEN_Z_SENSOR_CLOCK := zephyr,sensor-clock
+DT_CHOSEN_Z_SENSOR_CLOCK_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SENSOR_CLOCK))
+DT_CHOSEN_Z_SETTINGS_PARTITION := zephyr,settings-partition
+DT_CHOSEN_Z_SETTINGS_PARTITION_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SETTINGS_PARTITION))
+DT_CHOSEN_Z_SHELL_UART := zephyr,shell-uart
+DT_CHOSEN_Z_SHELL_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SHELL_UART))
+DT_CHOSEN_Z_SRAM := zephyr,sram
+DT_CHOSEN_Z_SRAM_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SRAM))
+DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_Z_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER))
+DT_CHOSEN_Z_SYSTEM_TIMER_COMPANION := zephyr,system-timer-companion
+DT_CHOSEN_Z_SYSTEM_TIMER_COMPANION_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER_COMPANION))
+DT_CHOSEN_Z_TFLM_STORAGE := zephyr,tflm-storage
+DT_CHOSEN_Z_TFLM_STORAGE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_TFLM_STORAGE))
+DT_CHOSEN_Z_TOUCH := zephyr,touch
+DT_CHOSEN_Z_TOUCH_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_TOUCH))
+DT_CHOSEN_Z_TRACING_UART := zephyr,tracing-uart
+DT_CHOSEN_Z_TRACING_UART_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_TRACING_UART))
+DT_CHOSEN_Z_UART_MCUMGR := zephyr,uart-mcumgr
+DT_CHOSEN_Z_UART_MCUMGR_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_UART_MCUMGR))
+DT_CHOSEN_Z_UART_PIPE := zephyr,uart-pipe
+DT_CHOSEN_Z_UART_PIPE_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_UART_PIPE))
+DT_CHOSEN_Z_VIDEOENC := zephyr,videoenc
+DT_CHOSEN_Z_VIDEOENC_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_VIDEOENC))
+# zephyr-keep-sorted-stop

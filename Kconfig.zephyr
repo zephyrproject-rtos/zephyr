@@ -5,6 +5,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source "Kconfig.chosens"
 source "Kconfig.constants"
 
 osource "$(APPLICATION_SOURCE_DIR)/VERSION"
