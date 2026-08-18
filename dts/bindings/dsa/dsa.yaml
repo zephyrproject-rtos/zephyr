@@ -9,6 +9,7 @@ child-binding:
   compatible: "zephyr,dsa-port"
 
   include:
+    - name: base.yaml
     - name: pinctrl-device.yaml
     - name: ethernet-controller.yaml
       property-allowlist:
@@ -22,7 +23,6 @@ child-binding:
 
   properties:
     reg:
-      type: array
       required: true
       description: Port number
     ethernet:
