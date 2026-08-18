@@ -262,7 +262,9 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
-		LOG_ERR("EIC Line is already free");
+		/* GPIO_INT_DISABLE on an unarmed pin is a no-op per API contract. */
+		LOG_DBG("EIC line for port %d : %d is already free", eic_pin_config->port_id,
+			eic_pin_config->pin_num);
 		return 0;
 	}
 
