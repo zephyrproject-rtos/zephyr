@@ -1695,9 +1695,8 @@ static void tcp_out(struct tcp *conn, uint8_t flags)
 	(void)tcp_out_ext(conn, flags, 0 /* no data */, conn->seq + conn->unacked_len);
 }
 
-static int tcp_pkt_pull(struct net_pkt *pkt, size_t len)
+static int tcp_pkt_pull(struct net_pkt *pkt, size_t len, size_t total)
 {
-	int total = net_pkt_get_len(pkt);
 	int ret = 0;
 
 	if (len > total) {
@@ -1744,7 +1743,7 @@ static int tcp_pkt_trim_data(struct tcp *conn, struct net_pkt *pkt, size_t data_
 	}
 
 	/* Last, append the valid data part to the new_pkt */
-	ret = tcp_pkt_pull(pkt, hdrlen + trim_len);
+	ret = tcp_pkt_pull(pkt, hdrlen + trim_len, total);
 	if (ret < 0) {
 		goto out;
 	}
@@ -2938,15 +2937,17 @@ static void tcp_out_of_order_data(struct tcp *conn, struct net_pkt *pkt,
 				  size_t data_len, uint32_t seq)
 {
 	size_t headers_len;
+	size_t total_len;
 
 	if (data_len == 0) {
 		return;
 	}
 
-	headers_len = net_pkt_get_len(pkt) - data_len;
+	total_len = net_pkt_get_len(pkt);
+	headers_len = total_len - data_len;
 
 	/* Get rid of protocol headers from the data */
-	if (tcp_pkt_pull(pkt, headers_len) < 0) {
+	if (tcp_pkt_pull(pkt, headers_len, total_len) < 0) {
 		return;
 	}
 
@@ -3381,8 +3382,8 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt,
 			NET_DBG("[%p] len_acked=%u", conn, len_acked);
 
 			if ((conn->send_data_total < len_acked) ||
-					(tcp_pkt_pull(&conn->send_data,
-						      len_acked) < 0)) {
+					(tcp_pkt_pull(&conn->send_data, len_acked,
+						      conn->send_data_total) < 0)) {
 				NET_ERR("[%p] Invalid len_acked=%u "
 					"(total=%zu)", conn, len_acked,
 					conn->send_data_total);
