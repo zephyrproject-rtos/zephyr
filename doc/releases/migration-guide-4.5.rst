@@ -431,6 +431,16 @@ Ethernet
   ``nxp,s32-gmac-mdio``, ``st,stm32-mdio`` and ``wch,mdio`` have been replaced by
   :dtcompatible:`snps,dwmac-mdio`. (:github:`114899`)
 
+* The NXP ENET-QOS Ethernet controller (:dtcompatible:`nxp,enet-qos`) devicetree structure has been
+  flattened to match other similar controllers. The clocks, interrupts, ``pinctrl-0``,
+  ``pinctrl-names``, ``phy-handle`` and MAC address properties now live directly on the parent
+  ``nxp,enet-qos`` node instead of a separate child MAC node. The ``nxp,enet-qos-mac`` compatible
+  and its ``enet_mac`` node have been removed and the :dtcompatible:`nxp,enet-qos-mdio` and
+  :dtcompatible:`nxp,enet-qos-ptp-clock` nodes are now direct children of the controller node. The
+  PTP reference clock has moved onto the parent node's ``clocks`` property using the ``ptp``
+  ``clock-names`` entry. Out-of-tree boards using this controller must move the properties from the
+  old ``enet_mac`` node up to the ``enet`` node. (:github:`115952`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size

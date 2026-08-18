@@ -102,9 +102,11 @@ enum mac_address_source {
 };
 
 struct nxp_enet_qos_mac_config {
-	const struct device *enet_dev;
+	/* Module resources; kept first so ENET_QOS_MODULE_CFG() can resolve the
+	 * base/clock from the MDIO and PTP child devices via their parent.
+	 */
+	struct nxp_enet_qos_config module;
 	const struct device *phy_dev;
-	enet_qos_t *base;
 	struct nxp_enet_qos_hw_info hw_info;
 	void (*irq_config_func)(void);
 	enum mac_address_source mac_addr_source;
