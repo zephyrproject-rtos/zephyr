@@ -354,9 +354,6 @@ arduino_serial: &flexcomm2_lpuart2 {};
 &enet {
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
-};
-
-&enet_mac {
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
 	phy-handle = <&phy>;

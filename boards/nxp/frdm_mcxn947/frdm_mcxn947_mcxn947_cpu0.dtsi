@@ -203,10 +203,6 @@
 	status = "okay";
 };
 
-&enet_mac {
-	status = "okay";
-};
-
 &enet_mdio {
 	status = "okay";
 };

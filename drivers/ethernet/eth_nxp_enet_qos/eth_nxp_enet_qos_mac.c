@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define DT_DRV_COMPAT nxp_enet_qos_mac
+#define DT_DRV_COMPAT nxp_enet_qos
 
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
+#include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
@@ -98,8 +99,7 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 	/* handle link speed and duplex in MAC configuration register */
 	if (state->is_up) {
 		const struct nxp_enet_qos_mac_config *config = dev->config;
-		struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
-		enet_qos_t *base = module_cfg->base;
+		enet_qos_t *base = config->module.base;
 
 		if (PHY_LINK_IS_SPEED_10M(state->speed)) {
 			LOG_DBG("Link Speed reduced to 10MBit");
@@ -146,7 +146,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
-	enet_qos_t *base = config->base;
+	enet_qos_t *base = config->module.base;
 
 	volatile union nxp_enet_qos_tx_desc *tx_desc_ptr = data->tx.descriptors;
 	volatile union nxp_enet_qos_tx_desc *last_desc_ptr;
@@ -309,7 +309,7 @@ static bool software_owns_descriptor(volatile union nxp_enet_qos_rx_desc *desc)
 static void enet_qos_dma_rx_resume(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
-	enet_qos_t *base = config->base;
+	enet_qos_t *base = config->module.base;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	struct nxp_enet_qos_rx_data *rx_data = &data->rx;
 
@@ -503,7 +503,7 @@ static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
 	struct nxp_enet_qos_rx_data *rx_data = &data->rx;
-	enet_qos_t *base = config->base;
+	enet_qos_t *base = config->module.base;
 
 	/* cleared on read */
 	(void)base->MAC_INTERRUPT_STATUS;
@@ -805,13 +805,23 @@ static int eth_nxp_enet_qos_mac_init(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
-	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
-	enet_qos_t *base = module_cfg->base;
+	enet_qos_t *base = config->module.base;
 	uint32_t clk_rate;
 	int ret;
 
+	ret = clock_control_on(config->module.clock_dev, config->module.clock_subsys);
+	if (ret) {
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(config->module.pincfg, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+
 	/* Used to configure timings of the MAC */
-	ret = clock_control_get_rate(module_cfg->clock_dev, module_cfg->clock_subsys, &clk_rate);
+	ret = clock_control_get_rate(config->module.clock_dev, config->module.clock_subsys,
+				     &clk_rate);
 	if (ret) {
 		return ret;
 	}
@@ -912,8 +922,7 @@ static int eth_nxp_enet_qos_set_config(const struct device *dev,
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
-	struct nxp_enet_qos_config *module_cfg = ENET_QOS_MODULE_CFG(config->enet_dev);
-	enet_qos_t *base = module_cfg->base;
+	enet_qos_t *base = config->module.base;
 
 	switch (type) {
 	case ETHERNET_CONFIG_TYPE_MAC_ADDRESS:
@@ -992,10 +1001,17 @@ static const struct ethernet_api api_funcs = {
 		DT_FOREACH_PROP_ELEM(DT_DRV_INST(n), interrupt_names, NXP_ENET_QOS_CONNECT_IRQS)   \
 	}
 #define NXP_ENET_QOS_DRIVER_STRUCTS_INIT(n)                                                        \
+	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static const struct nxp_enet_qos_mac_config enet_qos_##n##_mac_config = {                  \
-		.enet_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                      \
+		.module =                                                                          \
+			{                                                                          \
+				.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                       \
+				.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                \
+				.clock_subsys =                                                    \
+					(void *)DT_INST_CLOCKS_CELL_BY_IDX(n, 0, name),            \
+				.base = (enet_qos_t *)DT_INST_REG_ADDR(n),                         \
+			},                                                                         \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
-		.base = (enet_qos_t *)DT_REG_ADDR(DT_INST_PARENT(n)),                              \
 		.hw_info =                                                                         \
 			{                                                                          \
 				.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,                    \
@@ -1003,7 +1019,7 @@ static const struct ethernet_api api_funcs = {
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
 		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_ENET_QOS,                                          \
-			(.ptp_clock = DEVICE_DT_GET(DT_CHILD(DT_DRV_INST(n), ptp_clock)),)) };     \
+			(.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(n, ptp_clock)),)) };             \
 	static struct nxp_enet_qos_mac_data enet_qos_##n##_mac_data = {                            \
 		.mac_addr.addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                       \
 	};
