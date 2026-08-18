@@ -25,6 +25,7 @@ LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #endif
 
 #if defined(CONFIG_ZPERF_LOOPBACK_SELFTEST)
+#include <zephyr/fatal.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/zperf.h>
 
@@ -33,6 +34,7 @@ LOG_MODULE_REGISTER(zperf, CONFIG_NET_ZPERF_LOG_LEVEL);
 #define SELFTEST_PACKET_SIZE CONFIG_ZPERF_LOOPBACK_SELFTEST_PACKET_SIZE
 #define SELFTEST_RATE_KBPS   CONFIG_ZPERF_LOOPBACK_SELFTEST_RATE_KBPS
 #define SELFTEST_FRAG_PACKET_SIZE CONFIG_ZPERF_LOOPBACK_SELFTEST_FRAG_PACKET_SIZE
+#define SELFTEST_ONLY        CONFIG_ZPERF_LOOPBACK_SELFTEST_ONLY
 
 /* Non-default socket priority applied to every upload so that, when more than
  * one traffic class is configured, traffic is routed through the per-traffic-
@@ -134,6 +136,42 @@ static void selftest_report(const char *proto, struct zperf_results *res)
 
 	printk("ZPERF-RESULT %s_mbps=%u.%03u\n", proto,
 	       (uint32_t)(kbps / 1000U), (uint32_t)(kbps % 1000U));
+
+	/* The payload byte count and the elapsed time behind the throughput
+	 * figure above, which a profiler needs to normalise a run into
+	 * instructions per byte.
+	 *
+	 * Only the single-transfer builds a profiler drives print it. printk()
+	 * is routed through the deferred logging subsystem here
+	 * (CONFIG_LOG_PRINTK), and its buffer is small enough that one more
+	 * message per transfer can push an earlier ZPERF-RESULT line out of it,
+	 * losing a metric from the throughput recording. SELFTEST_ONLY is a
+	 * string literal, so this whole block folds away when no single
+	 * transfer is selected, leaving the default build untouched.
+	 *
+	 * The separate ZPERF-INFO prefix matters too: the regression helper
+	 * reports a key present on only one side of a comparison as missing and
+	 * fails, so these must stay out of the recorded ZPERF-RESULT namespace.
+	 */
+	if (SELFTEST_ONLY[0] != '\0') {
+		printk("ZPERF-INFO %s_bytes=%llu %s_us=%llu\n", proto,
+		       (unsigned long long)res->nb_packets_sent *
+		       (unsigned long long)res->packet_size,
+		       proto, (unsigned long long)res->client_time_in_us);
+	}
+}
+
+/* Whether the transfer reported under the given label is selected by
+ * CONFIG_ZPERF_LOOPBACK_SELFTEST_ONLY. An empty setting selects every transfer,
+ * a setting matching no label selects none, which gives a boot-only run.
+ */
+static bool selftest_selected(const char *label)
+{
+	if (SELFTEST_ONLY[0] == '\0') {
+		return true;
+	}
+
+	return strcmp(SELFTEST_ONLY, label) == 0;
 }
 
 static int selftest_run_udp(int family, const char *label, uint32_t packet_size)
@@ -142,6 +180,10 @@ static int selftest_run_udp(int family, const char *label, uint32_t packet_size)
 	struct zperf_upload_params ul;
 	struct zperf_results res = { 0 };
 	int ret;
+
+	if (!selftest_selected(label)) {
+		return 0;
+	}
 
 	/* Bind the receiver to the loopback address so the client can reach it
 	 * (in particular ::1, which is not the interface's default address).
@@ -171,6 +213,10 @@ static int selftest_run_tcp(int family, const char *label, bool tcp_nodelay)
 	struct zperf_upload_params ul;
 	struct zperf_results res = { 0 };
 	int ret;
+
+	if (!selftest_selected(label)) {
+		return 0;
+	}
 
 	selftest_fill_addr(&dl.addr, family);
 
@@ -253,6 +299,15 @@ static void run_loopback_selftest(void)
 	}
 
 	printk("ZPERF-DONE\n");
+
+	if (IS_ENABLED(CONFIG_ZPERF_LOOPBACK_SELFTEST_HALT_ON_DONE)) {
+		/* Let the console drain before the machine goes away. The sleep
+		 * costs no instructions: the CPU halts and, under QEMU icount,
+		 * virtual time warps to the next timer event.
+		 */
+		k_sleep(K_MSEC(50));
+		k_fatal_halt(K_ERR_KERNEL_PANIC);
+	}
 }
 #endif /* CONFIG_ZPERF_LOOPBACK_SELFTEST */
 
