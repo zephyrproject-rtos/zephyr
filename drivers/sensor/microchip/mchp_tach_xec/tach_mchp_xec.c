@@ -268,7 +268,11 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 
 	count = data->count;
 
-	/* A saturated count is a stopped fan; a zero count cannot be converted */
+	/*
+	 * A saturated count is a stopped fan. A zero count means the window was
+	 * shorter than two clocks, which no input the block can resolve produces,
+	 * so report a stopped fan rather than an implausible speed.
+	 */
 	if ((count == TACH_XEC_COUNT_STOPPED) || (count == 0U)) {
 		val->val1 = 0;
 		val->val2 = 0;
@@ -287,15 +291,23 @@ static int tach_xec_channel_get(const struct device *dev, enum sensor_channel ch
 	 * One revolution spans <pulses-per-round> full TACH periods, so
 	 *
 	 *            60 * 100000 * window_half_periods
-	 *   RPM = ---------------------------------------
-	 *          2 * pulses_per_round * latched_count
+	 *   RPM = -------------------------------------------
+	 *          2 * pulses_per_round * (latched_count + 1)
+	 *
+	 * The counter is latched and cleared in the same clock, and that clock
+	 * does not increment it, so the latched value is one less than the
+	 * number of clocks the window actually spanned. Measured on an
+	 * Assy 6941 with a free running external source on all four inputs:
+	 * 400 readings over two different PLL reference clocks put the offset
+	 * at -1.0 counts, and the input period implied by the four window
+	 * widths only agrees across them once the count is corrected.
 	 *
 	 * The result is computed in micro-RPM so the fractional part can be
 	 * reported in val2 instead of being truncated away.
 	 */
 	numerator = (uint64_t)TACH_XEC_SEC_PER_MIN * TACH_XEC_CLOCK_HZ *
 		    cfg->window_half_periods * USEC_PER_SEC;
-	denominator = (uint64_t)cfg->pulses_per_round * count * 2U;
+	denominator = (uint64_t)cfg->pulses_per_round * (count + 1U) * 2U;
 
 	/* Round to nearest rather than toward zero */
 	rpm_micro = (numerator + (denominator / 2U)) / denominator;
