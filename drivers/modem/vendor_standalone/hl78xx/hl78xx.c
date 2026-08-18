@@ -814,7 +814,11 @@ void hl78xx_on_iccid(struct modem_chat *chat, char **argv, uint16_t argc, void *
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
-	if (argc != 2) {
+	/* argc is 2 for a plain SIM ("+CCID: <iccid>") and 3 for an eUICC, which
+	 * appends its EID ("+CCID: <iccid>,<eid>"). argv[1] is the ICCID either
+	 * way; the EID is not stored.
+	 */
+	if (argc < 2) {
 		return;
 	}
 	HL78XX_LOG_DBG("ICCID: %s %s", argv[0], argv[1]);
