@@ -777,7 +777,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	bool use_filter = false;
 	struct net_buf *buf;
 	uint8_t own_addr_type;
-	uint8_t num_phys;
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
@@ -788,11 +787,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	if (err) {
 		return err;
 	}
-
-	num_phys = (!(bt_dev.create_param.options &
-		      BT_CONN_LE_OPT_NO_1M) ? 1 : 0) +
-		   ((bt_dev.create_param.options &
-		      BT_CONN_LE_OPT_CODED) ? 1 : 0);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
