@@ -41,7 +41,14 @@ LOG_MODULE_REGISTER(wdt_mchp_g1, CONFIG_WDT_LOG_LEVEL);
  * left-shifting the number 8 by `n` positions. The result of this macro is 8 * 2^n.
  */
 #define PERIOD_VALUE(n)  (8 << n)
-#define TIMEOUT_VALUE_US 1000
+/* The watchdog is clocked from the internal ultra low power oscillator, which
+ * on some parts of this family reaches the peripheral at about 1.024 kHz. One
+ * synchronization therefore costs milliseconds, not microseconds: enabling the
+ * watchdog on a PIC32CM GC00 was measured at 1.12 ms. A timeout below that
+ * lets the driver carry on writing registers while the peripheral is still
+ * synchronizing, and those writes are discarded.
+ */
+#define TIMEOUT_VALUE_US 5000
 #define DELAY_US         2
 
 typedef enum {
