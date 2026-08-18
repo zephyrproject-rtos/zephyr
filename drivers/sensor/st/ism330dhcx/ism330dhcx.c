@@ -18,6 +18,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor/ism330dhcx.h>
 
 #include "ism330dhcx.h"
 
@@ -286,6 +287,90 @@ static int ism330dhcx_attr_set(const struct device *dev,
 	}
 
 	return 0;
+}
+
+/* Millionths of a unit, the resolution of sensor_value.val2. */
+#define ISM330DHCX_MICRO_PER_UNIT 1000000
+
+/* One INTERNAL_FREQ_FINE step is 0.15% of the rate, i.e. 1500 millionths. */
+#define ISM330DHCX_FREQ_FINE_STEP_MICRO 1500
+
+/*
+ * INTERNAL_FREQ_FINE holds the oscillator deviation as a signed count of 0.15%
+ * steps (datasheet chapter 9.24), scaling the configured rate to the real one.
+ */
+static void ism330dhcx_real_odr_get(const struct device *dev, uint16_t freq,
+				    struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+	int64_t freq_micro_hz =
+		(int64_t)freq * (ISM330DHCX_MICRO_PER_UNIT +
+				 ISM330DHCX_FREQ_FINE_STEP_MICRO * (int64_t)data->freq_fine);
+
+	val->val1 = (int32_t)(freq_micro_hz / ISM330DHCX_MICRO_PER_UNIT);
+	val->val2 = (int32_t)(freq_micro_hz % ISM330DHCX_MICRO_PER_UNIT);
+}
+
+static int ism330dhcx_accel_get_config(const struct device *dev,
+				       enum sensor_attribute attr,
+				       struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+
+	switch ((int)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_g_to_ms2(ism330dhcx_accel_fs_map[data->accel_fs], val);
+		return 0;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		val->val1 = data->accel_freq;
+		val->val2 = 0;
+		return 0;
+	case SENSOR_ATTR_ISM330DHCX_REAL_ODR:
+		ism330dhcx_real_odr_get(dev, data->accel_freq, val);
+		return 0;
+	default:
+		LOG_DBG("Accel attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
+static int ism330dhcx_gyro_get_config(const struct device *dev,
+				      enum sensor_attribute attr,
+				      struct sensor_value *val)
+{
+	struct ism330dhcx_data *data = dev->data;
+
+	switch ((int)attr) {
+	case SENSOR_ATTR_FULL_SCALE:
+		sensor_degrees_to_rad(ism330dhcx_gyro_fs_map[data->gyro_fs], val);
+		return 0;
+	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		val->val1 = data->gyro_freq;
+		val->val2 = 0;
+		return 0;
+	case SENSOR_ATTR_ISM330DHCX_REAL_ODR:
+		ism330dhcx_real_odr_get(dev, data->gyro_freq, val);
+		return 0;
+	default:
+		LOG_DBG("Gyro attribute not supported.");
+		return -ENOTSUP;
+	}
+}
+
+static int ism330dhcx_attr_get(const struct device *dev,
+			       enum sensor_channel chan,
+			       enum sensor_attribute attr,
+			       struct sensor_value *val)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		return ism330dhcx_accel_get_config(dev, attr, val);
+	case SENSOR_CHAN_GYRO_XYZ:
+		return ism330dhcx_gyro_get_config(dev, attr, val);
+	default:
+		LOG_WRN("attr_get() not supported on this channel.");
+		return -ENOTSUP;
+	}
 }
 
 static int ism330dhcx_sample_fetch_accel(const struct device *dev)
@@ -680,6 +765,7 @@ static int ism330dhcx_channel_get(const struct device *dev,
 
 static DEVICE_API(sensor, ism330dhcx_api_funcs) = {
 	.attr_set = ism330dhcx_attr_set,
+	.attr_get = ism330dhcx_attr_get,
 #if CONFIG_ISM330DHCX_TRIGGER
 	.trigger_set = ism330dhcx_trigger_set,
 #endif
@@ -746,6 +832,19 @@ static int ism330dhcx_init_chip(const struct device *dev)
 		LOG_DBG("failed to set gyroscope sampling rate");
 		return -EIO;
 	}
+
+	/* Factory trim, constant for the life of the part: read it once here so
+	 * that querying the effective output data rate costs no bus traffic.
+	 */
+	uint8_t freq_fine;
+
+	if (ism330dhcx_odr_cal_reg_get(ism330dhcx->ctx, &freq_fine) < 0) {
+		LOG_DBG("failed to read internal frequency trim");
+		return -EIO;
+	}
+
+	ism330dhcx->freq_fine = (int8_t)freq_fine;
+	LOG_DBG("internal frequency trim is %d", ism330dhcx->freq_fine);
 
 	/* Set FIFO bypass mode */
 	if (ism330dhcx_fifo_mode_set(ism330dhcx->ctx, ISM330DHCX_BYPASS_MODE) < 0) {
