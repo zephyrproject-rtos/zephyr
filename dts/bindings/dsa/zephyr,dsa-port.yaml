@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright 2025 NXP
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: DSA Device Port
+
+compatible: "zephyr,dsa-port"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+  - name: ethernet-controller.yaml
+    property-allowlist:
+      - zephyr,random-mac-address
+      - zephyr,mac-address-prefix
+      - local-mac-address
+      - phy-handle
+      - phy-connection-type
+      - ptp-clock
+  - name: nvmem-consumer.yaml
+
+properties:
+  reg:
+    required: true
+    description: Port number
+  ethernet:
+    type: phandle
+    description:
+      A phandle to a valid Ethernet device node. This host
+      device is what the switch port is connected to.
+  dsa-tag-protocol:
+    type: int
+    description:
+      Tag protocol the switch using. The <zephyr/dt-bindings/ethernet/dsa_tag_proto.h>
+      which provides macros should be included to use.
