@@ -45,12 +45,15 @@ struct pwm_numaker_config {
 struct pwm_numaker_capture_data {
 	pwm_capture_callback_handler_t callback;
 	void *user_data;
-	/* Only support either one of PWM_CAPTURE_TYPE_PULSE, PWM_CAPTURE_TYPE_PERIOD */
 	bool pulse_capture;
+	/* PWM_CAPTURE_TYPE_BOTH: measure both phases of one cycle and sum them */
+	bool both_capture;
 	bool single_mode;
 	bool is_busy;
 	uint32_t curr_edge_mode;
 	uint32_t next_edge_mode;
+	/* Second phase, used only for PWM_CAPTURE_TYPE_BOTH */
+	uint32_t rest_edge_mode;
 };
 
 /* Driver context/data */
@@ -151,18 +154,35 @@ static int pwm_numaker_configure_capture(const struct device *dev, uint32_t chan
 		LOG_ERR("Capture already active on this channel %d", pair);
 		return -EBUSY;
 	}
-	if ((flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH) {
-		LOG_ERR("Cannot capture both period and pulse width");
-		return -ENOTSUP;
-	}
-
 	if ((flags & PWM_CAPTURE_MODE_MASK) == PWM_CAPTURE_MODE_CONTINUOUS) {
 		data->capture[pair].single_mode = false;
 	} else {
 		data->capture[pair].single_mode = true;
 	}
 
-	if (flags & PWM_CAPTURE_TYPE_PERIOD) {
+	data->capture[pair].both_capture =
+		(flags & PWM_CAPTURE_TYPE_MASK) == PWM_CAPTURE_TYPE_BOTH;
+
+	if (data->capture[pair].both_capture) {
+		/*
+		 * One cycle has two phases and the hardware latches both edges, so
+		 * measure pulse (active edge to inactive) then the remainder
+		 * (inactive back to active) and sum them for the period. The two
+		 * measurements are consecutive phases of the SAME cycle, so the sum is
+		 * that cycle's period rather than an average of two.
+		 */
+		data->capture[pair].pulse_capture = false;
+
+		if (flags & PWM_POLARITY_INVERTED) {
+			data->capture[pair].curr_edge_mode = EPWM_CAPTURE_INT_FALLING_LATCH;
+			data->capture[pair].next_edge_mode = EPWM_CAPTURE_INT_RISING_LATCH;
+			data->capture[pair].rest_edge_mode = EPWM_CAPTURE_INT_FALLING_LATCH;
+		} else {
+			data->capture[pair].curr_edge_mode = EPWM_CAPTURE_INT_RISING_LATCH;
+			data->capture[pair].next_edge_mode = EPWM_CAPTURE_INT_FALLING_LATCH;
+			data->capture[pair].rest_edge_mode = EPWM_CAPTURE_INT_RISING_LATCH;
+		}
+	} else if (flags & PWM_CAPTURE_TYPE_PERIOD) {
 		data->capture[pair].pulse_capture = false;
 
 		if (flags & PWM_POLARITY_INVERTED) {
@@ -328,7 +348,26 @@ static void pwm_numaker_channel_cap(const struct device *dev, EPWM_T *epwm, uint
 	status = pwm_numaker_get_cap_cycle(
 		epwm, channel, data->capture[channel].curr_edge_mode,
 		data->capture[channel].next_edge_mode, &cycles);
-	if (capture->pulse_capture) {
+	if (capture->both_capture) {
+		uint32_t rest = 0;
+
+		/*
+		 * The second phase of the same cycle. Note this is a SECOND in-ISR wait
+		 * in pwm_numaker_get_cap_cycle(), which polls for the next edge with a
+		 * 500 ms timeout -- so PWM_CAPTURE_TYPE_BOTH doubles the worst-case
+		 * dwell of an already-polling design. That is a property of the existing
+		 * structure rather than something this adds, and a caller that cannot
+		 * afford it can still ask for one type.
+		 */
+		if (status == 0) {
+			status = pwm_numaker_get_cap_cycle(
+				epwm, channel, data->capture[channel].next_edge_mode,
+				data->capture[channel].rest_edge_mode, &rest);
+		}
+		/* period = pulse + remainder, both from the one cycle just measured */
+		capture->callback(dev, channel, cycles + rest, cycles, status,
+				  capture->user_data);
+	} else if (capture->pulse_capture) {
 		/* For PWM_CAPTURE_TYPE_PULSE */
 		capture->callback(dev, channel, 0, cycles, status, capture->user_data);
 	} else {
