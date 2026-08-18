@@ -156,6 +156,10 @@ int hl78xx_run_post_restart_script(struct hl78xx_data *data);
 int hl78xx_run_init_fail_script(struct hl78xx_data *data);
 int hl78xx_run_enable_ksup_urc_script(struct hl78xx_data *data);
 int hl78xx_run_pwroff_script_async(struct hl78xx_data *data);
+/* Stop whatever script currently owns the chat, releasing any synchronous
+ * caller waiting on it.
+ */
+void hl78xx_chat_abort_active_script(struct hl78xx_data *data);
 int hl78xx_run_post_restart_script_async(struct hl78xx_data *data);
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data);
