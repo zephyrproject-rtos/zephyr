@@ -24,6 +24,12 @@ LOG_MODULE_REGISTER(xen_events);
 
 extern shared_info_t *HYPERVISOR_shared_info;
 
+struct event_channel_handle {
+	evtchn_cb_t cb;
+	void *priv;
+};
+typedef struct event_channel_handle evtchn_handle_t;
+
 static evtchn_handle_t event_channels[EVTCHN_2L_NR_CHANNELS];
 static bool events_missed[EVTCHN_2L_NR_CHANNELS];
 
