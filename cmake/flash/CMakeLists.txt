@@ -133,6 +133,50 @@ function(create_runners_yaml)
     endif()
   endforeach()
 
+  # Get runner-specific arguments that are scoped to a single command
+  # (flash, debug, attach, ...), set in the board files via
+  # board_runner_args(<runner> <args>... COMMANDS <command>...).
+  # Only emit this section when at least one runner actually has
+  # command-scoped arguments, so builds without any don't carry a stray key.
+  set(have_command_args FALSE)
+  foreach(runner ${runners})
+    string(MAKE_C_IDENTIFIER ${runner} runner_id)
+    foreach(command flash debug debugserver attach rtt reset)
+      string(TOUPPER ${command} command_upper)
+      get_property(cmd_args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${command_upper}_${runner_id}")
+      if(cmd_args)
+        set(have_command_args TRUE)
+        break()
+      endif()
+    endforeach()
+    if(have_command_args)
+      break()
+    endif()
+  endforeach()
+
+  if(have_command_args)
+    runners_yaml_append("# Runner specific arguments, scoped per command")
+    runners_yaml_append("command_args:")
+    foreach(runner ${runners})
+      string(MAKE_C_IDENTIFIER ${runner} runner_id)
+      set(have_cmd_args FALSE)
+      foreach(command flash debug debugserver attach rtt reset)
+        string(TOUPPER ${command} command_upper)
+        get_property(cmd_args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${command_upper}_${runner_id}")
+        if(cmd_args)
+          if(NOT have_cmd_args)
+            runners_yaml_append("  ${runner}:")
+            set(have_cmd_args TRUE)
+          endif()
+          runners_yaml_append("    ${command}:")
+          foreach(arg ${cmd_args})
+            runners_yaml_append("      - ${arg}")
+          endforeach()
+        endif()
+      endforeach()
+    endforeach()
+  endif()
+
   # Write the final contents.
   file(GENERATE OUTPUT "${runners_yaml}" CONTENT
     $<TARGET_PROPERTY:runners_yaml_props_target,yaml_contents>)

@@ -1305,6 +1305,13 @@ endmacro()
 # create the runner contains:
 #   --some-arg=val1 --another-arg=val2
 #
+# A COMMANDS keyword can be used to scope arguments to specific west
+# commands only:
+#   board_runner_args(runner "--device=FLASH_CORE" COMMANDS flash)
+#   board_runner_args(runner "--device=DEBUG_CORE" COMMANDS debug attach)
+#
+# Supported commands are: flash, debug, debugserver, attach, rtt, reset.
+#
 # Within application CMakeLists.txt files, ensure that all calls to
 # board_runner_args() are part of a macro named app_set_runner_args(),
 # like this, which is defined before calling 'find_package(Zephyr)':
@@ -1320,7 +1327,7 @@ endmacro()
 
 #[=======================================================================[.rst:
 
-.. cmake:signature:: board_runner_args(<runner> <args>...)
+.. cmake:signature:: board_runner_args(<runner> <args>... [COMMANDS <command>...])
 
    This function is intended for board.cmake files and application CMakeLists.txt files.
 
@@ -1333,6 +1340,33 @@ endmacro()
    The build system will then ensure the command line used to create the runner contains::
 
       --some-arg=val1 --another-arg=val2
+
+   By default, arguments apply to every west command that uses the runner
+   (``flash``, ``debug``, ``debugserver``, ``attach``, ``rtt`` and ``reset``).
+   Pass the ``COMMANDS`` keyword followed by one or more command names to scope
+   the arguments so they only apply when the runner is invoked for those
+   commands:
+
+   .. code-block:: cmake
+
+      board_runner_args(runner "--device=SOME_FLASH_CORE" COMMANDS flash)
+      board_runner_args(runner "--device=SOME_DEBUG_CORE" COMMANDS debug attach)
+
+   In the example above, ``--device=SOME_FLASH_CORE`` is only used by
+   ``west flash``, while ``--device=SOME_DEBUG_CORE`` is only used by
+   ``west debug`` and ``west attach``.
+
+   For a given runner, the effective command line is built in this order:
+
+   #. arguments set with :cmake:command:`board_runner_args()` without
+      ``COMMANDS`` (common to every command),
+   #. arguments set with :cmake:command:`board_runner_args()` whose ``COMMANDS``
+      list contains the command being run,
+   #. arguments given on the west command line.
+
+   Command-scoped arguments are therefore applied after the common ones, and
+   command line arguments after both, so for options where the last value wins
+   the later sources take precedence.
 
    Within application CMakeLists.txt files, ensure that all calls to
    :cmake:command:`board_runner_args()` are part of a macro named
@@ -1353,10 +1387,25 @@ endmacro()
 
 #]=======================================================================]
 function(board_runner_args runner)
+  cmake_parse_arguments(BRA "" "" "COMMANDS" ${ARGN})
   string(MAKE_C_IDENTIFIER ${runner} runner_id)
-  # Note the "_EXPLICIT_" here, and see below.
-  set_property(GLOBAL APPEND PROPERTY BOARD_RUNNER_ARGS_EXPLICIT_${runner_id} ${ARGN})
+  if(NOT DEFINED BRA_COMMANDS)
+    # No command scope: arguments are common to every west command.
+    # Note the "_EXPLICIT_" here, and see board_finalize_runner_args().
+    set_property(GLOBAL APPEND PROPERTY
+      BOARD_RUNNER_ARGS_EXPLICIT_${runner_id} ${BRA_UNPARSED_ARGUMENTS})
+  else()
+    # Command scope: arguments only apply to the listed west commands.
+    foreach(command ${BRA_COMMANDS})
+      string(TOUPPER ${command} command_upper)
+      # Note the "_EXPLICIT_" here, and see board_finalize_runner_args().
+      set_property(GLOBAL APPEND PROPERTY
+        BOARD_RUNNER_ARGS_EXPLICIT_${command_upper}_${runner_id}
+        ${BRA_UNPARSED_ARGUMENTS})
+    endforeach()
+  endif()
 endfunction()
+
 
 # This function is intended for internal use by
 # boards/common/runner.board.cmake files.
@@ -1398,9 +1447,30 @@ function(board_finalize_runner_args runner)
     ${BOARD_RUNNER_ARGS_${runner_id}}
     )
 
+  # Consolidate any command-scoped arguments set via
+  # board_runner_args(... COMMANDS <command>...) into their final
+  # per-command property.
+  foreach(command flash debug debugserver attach rtt reset)
+    string(TOUPPER ${command} command_upper)
+    get_property(cmd_explicit GLOBAL PROPERTY
+      "BOARD_RUNNER_ARGS_EXPLICIT_${command_upper}_${runner_id}")
+    if(cmd_explicit OR BOARD_RUNNER_ARGS_${command_upper}_${runner_id})
+      # Note no _EXPLICIT_ here. This property contains the final list.
+      set_property(GLOBAL APPEND PROPERTY
+        BOARD_RUNNER_ARGS_${command_upper}_${runner_id}
+        # Arguments explicitly given with board_runner_args(... COMMANDS ...).
+        ${cmd_explicit}
+        # Arguments given via the CMake cache come last of all.
+        ${BOARD_RUNNER_ARGS_${command_upper}_${runner_id}}
+        )
+    endif()
+  endforeach()
+
+
   # Add the finalized runner to the global property list.
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
+
 
 #[=======================================================================[.rst:
 
