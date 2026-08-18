@@ -60,6 +60,7 @@ void IRAM_ATTR lp_core_image_init(void)
 
 	ulp_lp_core_cfg_t cfg = {
 		.wakeup_source = wakeup_source,
+		.skip_lp_rom_boot = true,
 #if IS_ENABLED(CONFIG_ESP32_ULP_LP_CORE_WAKEUP_SOURCE_LP_TIMER)
 		.lp_timer_sleep_duration_us = CONFIG_ESP32_ULP_LP_CORE_LP_TIMER_SLEEP_DURATION_US,
 #endif
