@@ -2285,7 +2285,11 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&sep->sem_lock, 1, 1);
 	k_work_init_delayable(&sep->_delay_work, avdtp_media_disconnect_work);
-	bt_avdtp_set_state_lock(sep, AVDTP_IDLE);
+	/* The endpoint is not in the `seps` list yet, so it cannot be accessed
+	 * by any other context. Set the state without taking `sep->sem_lock`,
+	 * which would invert the lock order used by the command handlers.
+	 */
+	bt_avdtp_set_state(sep, AVDTP_IDLE);
 
 	sys_slist_append(&seps, &sep->_node);
 	k_sem_give(&avdtp_sem_lock);
