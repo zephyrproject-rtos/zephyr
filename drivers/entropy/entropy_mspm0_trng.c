@@ -174,7 +174,6 @@ static void entropy_mspm0_trng_isr(const struct device *dev)
 			config->regs->imask &= ~TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		}
 
-		config->regs->iclr = TRNG_MSPM0_IIDX_CAPTURED_RDY_MASK;
 		k_sem_give(&data->sem_sync);
 	}
 }
