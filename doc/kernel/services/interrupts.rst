@@ -258,6 +258,12 @@ Defining a regular ISR
 An ISR is defined at runtime by calling :c:macro:`IRQ_CONNECT`. It must
 then be enabled by calling :c:func:`irq_enable`.
 
+.. note::
+    The unprefixed interrupt control APIs such as :c:func:`irq_enable` and
+    :c:func:`irq_lock` are the legacy spelling. New code should use their
+    namespaced equivalents, :c:func:`k_irq_enable`, :c:func:`k_irq_lock` and
+    so on. The unprefixed names remain fully supported.
+
 .. important::
     IRQ_CONNECT() is not a C function and does some inline assembly magic
     behind the scenes. All its arguments must be known at build time.

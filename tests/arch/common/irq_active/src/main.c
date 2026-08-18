@@ -100,7 +100,7 @@ ZTEST(irq_active_tracking, test_irq_active_none_in_thread)
 ZTEST(irq_active_tracking, test_irq_active_in_isr)
 {
 	IRQ_CONNECT(SIMPLE_LINE, SIMPLE_PRIO, simple_isr, NULL, 0);
-	irq_enable(SIMPLE_LINE);
+	k_irq_enable(SIMPLE_LINE);
 
 	trigger_irq(SIMPLE_LINE);
 
@@ -131,8 +131,8 @@ ZTEST(irq_active_tracking, test_irq_active_nested)
 {
 	IRQ_CONNECT(OUTER_LINE, OUTER_PRIO, outer_isr, NULL, 0);
 	IRQ_CONNECT(INNER_LINE, INNER_PRIO, inner_isr, NULL, 0);
-	irq_enable(OUTER_LINE);
-	irq_enable(INNER_LINE);
+	k_irq_enable(OUTER_LINE);
+	k_irq_enable(INNER_LINE);
 
 	trigger_irq(OUTER_LINE);
 
