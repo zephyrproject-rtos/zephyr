@@ -852,6 +852,31 @@ config BT_PBAP_PSE_REPOSITORY_FAVORITES
 
 endif # BT_PBAP_PSE
 
+config BT_OPP
+	bool
+	select BT_GOEP
+	select EXPERIMENTAL
+	help
+	  This option enables the OPP (Object Push Profile) core. [EXPERIMENTAL]
+	  Enabled automatically when BT_OPP_SERVER or BT_OPP_CLIENT is selected.
+
+config BT_OPP_SERVER
+	bool "Bluetooth OPP Push Server [EXPERIMENTAL]"
+	select BT_OPP
+	select EXPERIMENTAL
+	help
+	  Enable the OPP Push Server role. The server can receive objects (vCard,
+	  vCalendar, vNote, vMessage) from a remote OPP Push Client and optionally
+	  serve a default business card via Business Card Pull.
+
+config BT_OPP_CLIENT
+	bool "Bluetooth OPP Push Client [EXPERIMENTAL]"
+	select BT_OPP
+	select EXPERIMENTAL
+	help
+	  Enable the OPP Push Client role. The client can push objects to a remote
+	  OPP Push Server and optionally pull the server's default business card.
+
 config BT_MAP
 	bool
 	select BT_GOEP
