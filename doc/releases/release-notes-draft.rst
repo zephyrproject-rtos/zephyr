@@ -107,3 +107,8 @@ Other notable changes
 ..
   Any more descriptive subsystem or driver changes. Do you really want to write
   a paragraph or is it enough to link to the api/driver/Kconfig/board page above?
+
+* Build system
+
+  * The :ref:`build dashboard <dashboard>` gained a Hardening page showing the full hardening
+    report for the build.

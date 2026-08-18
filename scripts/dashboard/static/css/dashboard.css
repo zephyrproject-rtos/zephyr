@@ -217,6 +217,46 @@ tr.text-secondary > td {
 }
 
 /* ==========================================================================
+ * Hardening Page
+ * ==========================================================================
+ */
+
+.hardening-table-container {
+    overflow-x: auto;
+}
+
+#hardeningTable {
+    width: auto;
+}
+
+/* Fit common symbol names on one line, but let very long ones wrap
+   instead of stretching the column. */
+#hardeningTable td:first-child {
+    min-width: 22rem;
+    max-width: 24rem;
+    overflow-wrap: anywhere;
+}
+
+/* Colors match the Bootstrap danger/success/secondary palette, which is
+   not part of the chopped bootstrap build. */
+
+.result-fail {
+    color: #dc3545;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.result-pass {
+    color: #198754;
+    white-space: nowrap;
+}
+
+.result-na {
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+/* ==========================================================================
  * Memory Report Page
  * ==========================================================================
  */

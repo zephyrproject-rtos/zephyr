@@ -158,16 +158,24 @@ if(NOT ${PAHOLE} STREQUAL PAHOLE-NOTFOUND)
     )
 endif()
 
-add_custom_target(
+# Registered as a shared target so sysbuild forwards it: 'dashboard'
+# generates the main image's dashboard, '<image>_dashboard' the others'.
+zephyr_custom_target_shared(
   dashboard
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/dashboard/dashboard.py
   --output ${CMAKE_BINARY_DIR}/dashboard
   --zephyr-base ${ZEPHYR_BASE}
   --kernel-bin-name ${CONFIG_KERNEL_BIN_NAME}
+  --hardening-report ${PROJECT_BINARY_DIR}/kconfig/hardening.json
   --open
   ${CMAKE_BINARY_DIR}
   DEPENDS ${logical_target_for_zephyr_elf}
   USES_TERMINAL
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
+
+# Generate the hardening report consumed by the dashboard.
+if(TARGET hardenconfig_report)
+  add_dependencies(dashboard hardenconfig_report)
+endif()
