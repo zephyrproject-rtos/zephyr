@@ -441,6 +441,10 @@ Ethernet
   ``clock-names`` entry. Out-of-tree boards using this controller must move the properties from the
   old ``enet_mac`` node up to the ``enet`` node. (:github:`115952`)
 
+* The Kconfig option ``CONFIG_ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS`` has been renamed to
+  :kconfig:option:`CONFIG_ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS`. Configurations setting the old
+  name must be updated to use the new one. (:github:`115952`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size

@@ -11,14 +11,14 @@
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(eth_nxp_enet_qos_mac, CONFIG_ETHERNET_LOG_LEVEL);
+LOG_MODULE_REGISTER(eth_nxp_enet_qos, CONFIG_ETHERNET_LOG_LEVEL);
 
 #include <zephyr/net/phy.h>
 #include <zephyr/kernel/thread_stack.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/clock.h>
 
-#if defined(CONFIG_ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS)
+#if defined(CONFIG_ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS)
 #include <zephyr/sys/crc.h>
 #include <zephyr/drivers/hwinfo.h>
 #endif
@@ -498,7 +498,7 @@ next:
 	return;
 }
 
-static void eth_nxp_enet_qos_mac_isr(const struct device *dev)
+static void eth_nxp_enet_qos_isr(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
@@ -774,7 +774,7 @@ static inline int enet_qos_rx_desc_init(enet_qos_t *base, struct nxp_enet_qos_rx
 	return 0;
 }
 
-#if defined(CONFIG_ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS)
+#if defined(CONFIG_ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS)
 /* Note this is not universally unique, it just is probably unique on a network */
 static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 {
@@ -801,7 +801,7 @@ static inline void nxp_enet_unique_mac(uint8_t *mac_addr)
 #define nxp_enet_unique_mac(arg)
 #endif
 
-static int eth_nxp_enet_qos_mac_init(const struct device *dev)
+static int eth_nxp_enet_qos_init(const struct device *dev)
 {
 	const struct nxp_enet_qos_mac_config *config = dev->config;
 	struct nxp_enet_qos_mac_data *data = dev->data;
@@ -991,7 +991,7 @@ static const struct ethernet_api api_funcs = {
 #define NXP_ENET_QOS_CONNECT_IRQS(node_id, prop, idx)                                              \
 	do {                                                                                       \
 		IRQ_CONNECT(DT_IRQN_BY_IDX(node_id, idx), DT_IRQ_BY_IDX(node_id, idx, priority),   \
-			    eth_nxp_enet_qos_mac_isr, DEVICE_DT_GET(node_id), 0);                  \
+			    eth_nxp_enet_qos_isr, DEVICE_DT_GET(node_id), 0);                      \
 		irq_enable(DT_IRQN_BY_IDX(node_id, idx));                                          \
 	} while (false);
 
@@ -1032,7 +1032,7 @@ static const struct ethernet_api api_funcs = {
 DT_INST_FOREACH_STATUS_OKAY(NXP_ENET_QOS_DRIVER_INIT)
 
 #define NXP_ENET_QOS_MAC_DEVICE_DEFINE(n)                                                          \
-	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_mac_init, NULL,                          \
+	ETH_NET_DEVICE_DT_INST_DEFINE(n, eth_nxp_enet_qos_init, NULL,                              \
 				      &enet_qos_##n##_mac_data, &enet_qos_##n##_mac_config,        \
 				      CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
 
