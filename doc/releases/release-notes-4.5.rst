@@ -415,6 +415,7 @@ New APIs and options
 
   * Audio
 
+    * :c:func:`bt_aics_client_free_instance`
     * :c:func:`bt_ascs_register`
     * :c:func:`bt_ascs_unregister`
     * :c:func:`bt_bap_unicast_client_qos_from_group`
@@ -429,6 +430,7 @@ New APIs and options
     * :c:member:`bt_bap_unicast_group_info.c_to_p_ft`
     * :c:member:`bt_bap_unicast_group_info.p_to_c_ft`
     * :c:member:`bt_bap_unicast_group_info.iso_interval`
+    * :c:func:`bt_vocs_client_free_instance`
 
   * Host
 
