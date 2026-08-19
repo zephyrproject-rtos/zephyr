@@ -70,6 +70,11 @@ Removed APIs and options
 
 * Architectures
 
+   * ARM
+
+      * ``CONFIG_PLATFORM_SPECIFIC_INIT``
+      * ``z_arm_platform_init()``
+
    * x86
 
       * ``CONFIG_SSE``
