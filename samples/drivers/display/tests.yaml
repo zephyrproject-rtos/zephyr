@@ -97,3 +97,4 @@ tests:
       - platform:mimxrt1040_evk/mimxrt1064:SHIELD=rk043fn02h_ct
       - platform:nucleo_u575zi_q/stm32u575xx:SHIELD=x_nucleo_gfx02z1_az2
       - platform:nucleo_f446ze/stm32f446xx:SHIELD=x_nucleo_gfx02z1_az2
+      - platform:rza3m_ek:SHIELD=rtkapplcdms02001be
