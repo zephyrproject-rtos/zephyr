@@ -698,6 +698,35 @@ static int spi_bee_dma_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/*
+	 * Claim the devicetree-assigned channels through the DMA controller's
+	 * allocation bitmap so that dma_request_channel() (e.g. a memory-to-memory
+	 * user on the same controller) can never hand them out again. Using a
+	 * BIT(channel) filter forces exactly the DT channel and fails loudly if it
+	 * is already taken.
+	 */
+	if (data->dma_rx.dma_dev != NULL) {
+		uint32_t ch_filter = BIT(data->dma_rx.dma_channel);
+
+		ret = dma_request_channel(data->dma_rx.dma_dev, &ch_filter);
+		if (ret < 0) {
+			LOG_ERR("SPI RX DMA channel %u already in use",
+				data->dma_rx.dma_channel);
+			return ret;
+		}
+	}
+
+	if (data->dma_tx.dma_dev != NULL) {
+		uint32_t ch_filter = BIT(data->dma_tx.dma_channel);
+
+		ret = dma_request_channel(data->dma_tx.dma_dev, &ch_filter);
+		if (ret < 0) {
+			LOG_ERR("SPI TX DMA channel %u already in use",
+				data->dma_tx.dma_channel);
+			return ret;
+		}
+	}
+
 	/* Configure dma rx config */
 	memset(&data->dma_rx.blk_cfg, 0, sizeof(data->dma_rx.blk_cfg));
 
