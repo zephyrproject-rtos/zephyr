@@ -155,6 +155,9 @@ Removed APIs and options
     * Board revision Kconfig fragments named ``<board>_<revision>.conf``, replaced by
       ``<board>_<revision>_defconfig``
     * Pattern expansion in ``zephyr_code_relocate(FILES ...)``, replaced by ``file(GLOB ...)``
+    * The CMake ``flash``, ``debug``, ``debugserver``, ``attach`` and ``rtt`` targets,
+      replaced by the corresponding ``west`` commands
+    * The ``WEST_DIR`` build system variable
 
 * CAN
 

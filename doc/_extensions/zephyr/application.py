@@ -97,6 +97,14 @@ class ZephyrAppCommandsDirective(Directive):
         if build_dir_fmt and tool != 'west':
             raise self.error('build-dir-fmt is only supported for the west build tool.')
 
+        if tool in ('cmake', 'all'):
+            runner_goals = {'flash', 'debug', 'attach', 'rtt'}.intersection(goals)
+            if runner_goals:
+                raise self.error(
+                    f'goal(s) {sorted(runner_goals)} have no build system target; '
+                    "use the west tool (the default) for these goals."
+                )
+
         if generator not in self.GENERATORS:
             raise self.error(f'Unknown generator {generator}; choose from: {self.GENERATORS}')
 
