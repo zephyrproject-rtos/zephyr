@@ -14,6 +14,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -446,6 +448,42 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 	return -NSI_ERRNO_MID_EINVAL;
 }
 
+/* A link-local IPv4/IPv6 multicast address cannot be bound on a host socket
+ * without a single interface scope, but the single offloaded Zephyr interface
+ * has no such host scope (see nsos_adapt_join_mcast_all()). Rewrite the bind to
+ * the wildcard address, keeping the port, and let group membership do the
+ * filtering. Enable address/port reuse too, since callers like the mDNS
+ * responder bind one socket per interface to the same multicast address and
+ * port, which all collapse onto the same wildcard bind here.
+ */
+static void nsos_adapt_bind_fixup_mcast(int fd, struct sockaddr *addr)
+{
+	int on = 1;
+
+	if (addr->sa_family == AF_INET) {
+		struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+
+		if (!IN_MULTICAST(ntohl(addr_in->sin_addr.s_addr))) {
+			return;
+		}
+
+		addr_in->sin_addr.s_addr = htonl(INADDR_ANY);
+	} else if (addr->sa_family == AF_INET6) {
+		struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)addr;
+
+		if (!IN6_IS_ADDR_MULTICAST(&addr_in6->sin6_addr)) {
+			return;
+		}
+
+		addr_in6->sin6_addr = in6addr_any;
+	} else {
+		return;
+	}
+
+	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+}
+
 int nsos_adapt_bind(int fd, const struct nsos_mid_sockaddr *addr_mid, size_t addrlen_mid)
 {
 	struct sockaddr_storage addr_storage;
@@ -457,6 +495,8 @@ int nsos_adapt_bind(int fd, const struct nsos_mid_sockaddr *addr_mid, size_t add
 	if (ret < 0) {
 		return ret;
 	}
+
+	nsos_adapt_bind_fixup_mcast(fd, addr);
 
 	ret = bind(fd, addr, addrlen);
 	if (ret < 0) {
@@ -778,6 +818,59 @@ static int nsos_adapt_setsockopt_int(int fd, int level, int optname,
 	return 0;
 }
 
+/* In native-sim the single offloaded Zephyr interface maps to host lo, so a
+ * faithful single-interface join would only receive multicast on lo. Join the
+ * group on every host interface instead, so the offloaded listener receives
+ * multicast on the real host links too.
+ */
+static int nsos_adapt_join_mcast_all(int fd, int level, int optname, const void *optval,
+				     size_t optlen)
+{
+	struct if_nameindex *ifs;
+	unsigned int joined = 0;
+	int last_errno = 0;
+
+	ifs = if_nameindex();
+	if (ifs == NULL) {
+		/* fallback - join only on lo */
+		return nsos_adapt_setsockopt_int(fd, level, optname, optval, optlen);
+	}
+
+	for (struct if_nameindex *ife = ifs; ife->if_index != 0; ife++) {
+		int ret;
+
+		if (level == IPPROTO_IPV6) {
+			struct ipv6_mreq mreq;
+
+			memcpy(&mreq, optval, sizeof(mreq));
+			mreq.ipv6mr_interface = ife->if_index;
+			ret = setsockopt(fd, level, optname, &mreq, sizeof(mreq));
+		} else {
+			struct ip_mreqn mreq;
+
+			memcpy(&mreq, optval, sizeof(mreq));
+			mreq.imr_ifindex = ife->if_index;
+			ret = setsockopt(fd, level, optname, &mreq, sizeof(mreq));
+		}
+
+		if (ret < 0) {
+			/* Interface may be down or already joined; keep going. */
+			last_errno = errno;
+			continue;
+		}
+
+		joined++;
+	}
+
+	if_freenameindex(ifs);
+
+	if (joined == 0) {
+		return -nsi_errno_to_mid(last_errno != 0 ? last_errno : EADDRNOTAVAIL);
+	}
+
+	return 0;
+}
+
 int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			  const void *nsos_mid_optval, size_t nsos_mid_optlen)
 {
@@ -864,7 +957,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_MULTICAST_LOOP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IP_ADD_MEMBERSHIP:
-			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+			return nsos_adapt_join_mcast_all(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		}
 		break;
@@ -875,7 +968,7 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IPV6_ADD_MEMBERSHIP:
-			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
+			return nsos_adapt_join_mcast_all(fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IPV6_V6ONLY:
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
