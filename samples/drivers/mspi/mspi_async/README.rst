@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample demonstrates using the :ref:`MSPI API <mspi_api>` on a MSPI
+This sample demonstrates using the :ref:`MSPI API <mspi_api>` on an MSPI
 memory device.  The asynchronous transceive call need to be supported
 either by a software queue or hardware queue from the controller hardware.
 To this sample, however, the implementation should make no difference.
