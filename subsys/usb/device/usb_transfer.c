@@ -14,11 +14,6 @@
 
 LOG_MODULE_REGISTER(usb_transfer, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-struct usb_transfer_sync_priv {
-	int tsize;
-	struct k_sem sem;
-};
-
 struct usb_transfer_data {
 	/** endpoint associated to the transfer */
 	uint8_t ep;
@@ -305,28 +300,37 @@ void usb_cancel_transfers(void)
 
 static void usb_transfer_sync_cb(uint8_t ep, int size, void *priv)
 {
-	struct usb_transfer_sync_priv *pdata = priv;
+	struct k_poll_signal *sig = priv;
 
-	pdata->tsize = size;
-	k_sem_give(&pdata->sem);
+	ARG_UNUSED(ep);
+
+	k_poll_signal_raise(sig, size);
 }
 
 int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags)
 {
-	struct usb_transfer_sync_priv pdata;
+	struct k_poll_signal sig;
+	struct k_poll_event event;
+	unsigned int signaled;
+	int result;
 	int ret;
 
-	k_sem_init(&pdata.sem, 0, 1);
+	/* A poll signal is used rather than a semaphore as it, unlike kernel
+	 * objects, may live on the stack.
+	 */
+	k_poll_signal_init(&sig);
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig);
 
-	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &pdata);
+	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &sig);
 	if (ret) {
 		return ret;
 	}
 
-	/* Semaphore will be released by the transfer completion callback */
-	k_sem_take(&pdata.sem, K_FOREVER);
+	/* The signal will be raised by the transfer completion callback */
+	(void)k_poll(&event, 1, K_FOREVER);
+	k_poll_signal_check(&sig, &signaled, &result);
 
-	return pdata.tsize;
+	return result;
 }
 
 /* Init transfer slots */
