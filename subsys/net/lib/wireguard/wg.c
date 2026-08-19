@@ -689,11 +689,11 @@ static int handle_cookie_reply(struct wg_peer *peer,
 	return 0;
 }
 
-static int handle_transport_data(struct wg_peer *peer,
-				 struct net_sockaddr *peer_addr,
-				 struct net_pkt *pkt,
-				 size_t ip_udp_hdr_len,
-				 size_t data_len)
+ZTESTABLE_STATIC int handle_transport_data(struct wg_peer *peer,
+					   struct net_sockaddr *peer_addr,
+					   struct net_pkt *pkt,
+					   size_t ip_udp_hdr_len,
+					   size_t data_len)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(access, struct msg_transport_data);
 	struct msg_transport_data *msg;
