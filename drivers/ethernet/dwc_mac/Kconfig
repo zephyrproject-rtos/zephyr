@@ -136,6 +136,8 @@ config ETH_DWMAC_RX_REFILL_THREAD_PRIORITY
 	  Priority level of the internal thread which is used to refill
 	  the receive buffer pool.
 
+rsource "Kconfig.mcast"
+
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
