@@ -99,6 +99,6 @@ to reboot because ``zaru.py trace`` dumped the buffer and it's now empty):
 .. code-block:: console
 
    zaru.py reboot
-   zaru.py trace -v --perfetto --output perfetto_zephyr.json
+   zaru.py trace -v --export-tef --output perfetto_zephyr.json
 
 Then, go to http://perfetto.dev, Trace Viewer, and load ``perfetto_zephyr.json``.
