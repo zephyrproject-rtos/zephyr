@@ -527,6 +527,7 @@ config WIFI_NM_WPA_SUPPLICANT_NAN
 config WIFI_NAN_MAX_SSI_LEN
 	int "Maximum length of NAN service specific info"
 	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	range 1 65535
 	default 128
 	help
 	  Maximum NAN Service Specific Info (SSI) payload length in bytes.
