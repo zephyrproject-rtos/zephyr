@@ -90,6 +90,10 @@ Removed APIs and options
 
 * Bluetooth
 
+  * Controller
+
+    * ``CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP``
+
   * Host
 
     * The ``CONFIG_BT_RECV_CONTEXT`` choice and its options ``CONFIG_BT_RECV_WORKQ_SYS``
