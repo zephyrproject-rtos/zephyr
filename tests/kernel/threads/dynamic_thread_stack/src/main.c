@@ -244,6 +244,19 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 	}
 }
 
+/** @brief Reject dynamically allocated kernel stacks with overflowing sizes. */
+ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_size_overflow)
+{
+	k_thread_stack_t *stack;
+
+	if (!IS_ENABLED(CONFIG_DYNAMIC_THREAD_ALLOC)) {
+		ztest_test_skip();
+	}
+
+	stack = k_thread_stack_alloc(SIZE_MAX, 0);
+	zassert_is_null(stack, "overflowing stack size must be rejected");
+}
+
 K_SEM_DEFINE(perm_sem, 0, 1);
 ZTEST_BMEM static volatile bool expect_fault;
 ZTEST_BMEM static volatile unsigned int expected_reason;
