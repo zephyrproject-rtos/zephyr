@@ -624,7 +624,9 @@ def _dt_node_has_prop_generic(node_search_function, search_arg, prop):
     """
     This function takes the 'node_search_function' and uses it to search for
     a node with 'search_arg' and if node exists, then checks if 'prop'
-    exists inside the node and returns "y". Otherwise, it returns "n".
+    exists inside the node. If the property (or the node) is not found,
+    it returns "n". If the property is of type boolean hence always found,
+    it returns "bool". Otherwise, the property is found hence returning "y".
     """
     try:
         node = node_search_function(search_arg)
@@ -635,7 +637,10 @@ def _dt_node_has_prop_generic(node_search_function, search_arg, prop):
         return "n"
 
     if prop in node.props:
-        return "y"
+        if node.props[prop].type == "boolean":
+            return "bool"
+        else:
+            return "y"
 
     return "n"
 
@@ -649,7 +654,17 @@ def dt_node_has_prop(kconf, _, path, prop):
     if doc_mode or edt is None:
         return "n"
 
-    return _dt_node_has_prop_generic(edt.get_node, path, prop)
+    ret = _dt_node_has_prop_generic(edt.get_node, path, prop)
+
+    if ret == "bool":
+        _warn(kconf,
+            "dt_node_has_prop() should not be used with boolean DT property "
+            "'{}' for node '{}'. Use dt_node_bool_prop() instead."
+            .format(prop, path),
+        )
+        return "y"
+
+    return ret
 
 def dt_nodelabel_has_prop(kconf, _, label, prop):
     """
@@ -661,7 +676,17 @@ def dt_nodelabel_has_prop(kconf, _, label, prop):
     if doc_mode or edt is None:
         return "n"
 
-    return _dt_node_has_prop_generic(edt.label2node.get, label, prop)
+    ret = _dt_node_has_prop_generic(edt.label2node.get, label, prop)
+
+    if ret == "bool":
+        _warn(kconf,
+            "dt_nodelabel_has_prop() should not be used with boolean DT "
+            "property '{}' for nodelabel '{}'. Use dt_nodelabel_bool_prop() "
+            "instead.".format(prop, label),
+        )
+        return "y"
+
+    return ret
 
 def dt_node_int_prop(kconf, name, path, prop, unit=None):
     """
@@ -866,9 +891,18 @@ def dt_compat_all_has_prop(kconf, _, compat, prop, value=None):
     if compat not in edt.compat2okay or len(edt.compat2okay[compat]) == 0:
         return "n"
 
+    warned = "n"
     for node in edt.compat2okay[compat]:
         if prop not in node.props:
             return "n"
+        if node.props[prop].type == "boolean" and value is None and warned == "n":
+            _warn(kconf,
+                "dt_compat_all_has_prop() without a target value "
+                "should not be used with boolean DT property '{}'. "
+                "The boolean property always exists for compat {}."
+                .format(prop, compat)
+            )
+            warned = "y"
         if value is None:
             continue
         if isinstance(node.props[prop].val, list):
@@ -893,9 +927,18 @@ def dt_compat_any_has_prop(kconf, _, compat, prop, value=None):
     if compat not in edt.compat2okay:
         return "n"
 
+    warned = "n"
     for node in edt.compat2okay[compat]:
         if prop not in node.props:
             continue
+        if node.props[prop].type == "boolean" and value is None and warned == "n":
+            _warn(kconf,
+                "dt_compat_any_has_prop() without a target value "
+                "should not be used with boolean DT property '{}'. "
+                "The boolean property always exists for compat {}."
+                .format(prop, compat)
+            )
+            warned = "y"
         if value is None:
             return "y"
         if isinstance(node.props[prop].val, list):
@@ -915,10 +958,19 @@ def dt_compat_any_not_has_prop(kconf, _, compat, prop):
     if doc_mode or edt is None:
         return "n"
 
+    warned = "n"
     if compat in edt.compat2okay:
         for node in edt.compat2okay[compat]:
             if prop not in node.props:
                 return "y"
+            if node.props[prop].type == "boolean" and warned == "n":
+                _warn(kconf,
+                    "dt_compat_any_not_has_prop() without a target "
+                    "value should not be used with boolean DT property "
+                    "'{}'. The boolean property always exists for compat {}."
+                    .format(prop, compat)
+                )
+                warned = "y"
 
     return "n"
 
