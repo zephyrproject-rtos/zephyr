@@ -367,8 +367,19 @@ static const char *tcp_flags(uint8_t flags)
 
 static size_t tcp_data_len(struct net_pkt *pkt, struct tcphdr *th)
 {
-	size_t tcp_options_len = (th_off(th) - 5) * 4;
-	int len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
+	size_t tcp_options_len;
+	int len;
+
+	/* An offset below the header size would make the option length
+	 * underflow, and the payload length derived from it is then whatever
+	 * the subtraction wraps to. Such a segment carries no usable data.
+	 */
+	if (th == NULL || th_off(th) < 5) {
+		return 0;
+	}
+
+	tcp_options_len = (th_off(th) - 5) * 4;
+	len = net_pkt_get_len(pkt) - net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ip_opts_len(pkt) - sizeof(*th) - tcp_options_len;
 
 	return len > 0 ? (size_t)len : 0;
@@ -383,6 +394,11 @@ static const char *tcp_th(struct net_pkt *pkt, struct tcphdr *th,
 	uint32_t seq, ack;
 
 	buf[0] = '\0';
+
+	if (th == NULL) {
+		len += snprintk(buf + len, BUF_SIZE - len, "no header");
+		goto end;
+	}
 
 	if (th_off(th) < 5) {
 		len += snprintk(buf + len, BUF_SIZE - len,
