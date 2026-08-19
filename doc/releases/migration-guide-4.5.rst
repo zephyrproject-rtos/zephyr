@@ -261,6 +261,9 @@ Devicetree
   unsigned comparisons or ``BUILD_ASSERT(DT_PROP(node, foo) > 0, ...)`` checks, must be updated
   to use signed types or signed-aware checks (:github:`107271`).
 
+* The deprecated ``facebook``, ``powervr`` and ``toppoly`` devicetree vendor prefixes have been
+  removed. Use ``meta``, ``img`` and ``tpo`` respectively.
+
 Digital Microphone
 ==================
 

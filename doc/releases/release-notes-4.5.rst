@@ -98,6 +98,10 @@ Removed APIs and options
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
 
+* Devicetree
+
+    * ``facebook``, ``powervr`` and ``toppoly`` devicetree vendor prefixes
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
