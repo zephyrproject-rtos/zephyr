@@ -23,6 +23,21 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  libraries.printk.newlib:
+    platform_key:
+      - arch
+    toolchain_exclude:
+      - zephyr/gnu
+      - zephyr/llvm
+    tags:
+      - libc
+      - newlib
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
   libraries.printk.nano32:
     platform_key:
       - arch

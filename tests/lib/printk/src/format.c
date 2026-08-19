@@ -3,6 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <inttypes.h>
+
 #include <zephyr/ztest.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/tc_capture.h>
@@ -270,6 +272,84 @@ ZTEST(lib_printk, test_printk_snprintk_format_specifiers)
 			  "0x%x %p %-2p\n", hex, ptr, (char *)42);
 	buf[count] = '\0';
 	zassert_str_equal(buf, expected, "snprintk failed");
+}
+
+/**
+ * @brief Verify printk() supports the inttypes.h PRI* conversion macros.
+ *
+ * @details
+ * Emits every fixed-width signed, unsigned, octal and hexadecimal
+ * conversion through its PRIdN/PRIiN/PRIoN/PRIuN/PRIxN/PRIXN macro
+ * with a value encoding the width (e.g. 64 prints as "o100" in octal
+ * and "x40" in hex), and verifies the exact expected bytes reach the
+ * console. The values all fit in 32 bits so the expected output does
+ * not depend on the configured formatting engine or libc, except that
+ * the octal conversions are skipped when the engine (cbprintf nano
+ * without picolibc) does not implement %o.
+ *
+ * Test steps:
+ * - Clear the capture buffer.
+ * - Print each fixed-width integer conversion via its PRI* macro.
+ * - Compare the captured output to the expected string.
+ *
+ * Expected result:
+ * - The captured output equals the expected string.
+ *
+ * @see printk()
+ */
+ZTEST(lib_printk, test_printk_inttypes_specifiers)
+{
+	static char captured[BUF_SZ];
+
+	tc_capture_clear();
+
+	printk("d%" PRId8 "\n", INT8_C(8));
+	printk("d%" PRId16 "\n", INT16_C(16));
+	printk("d%" PRId32 "\n", INT32_C(32));
+	printk("d%" PRId64 "\n", INT64_C(64));
+
+	printk("i%" PRIi8 "\n", INT8_C(8));
+	printk("i%" PRIi16 "\n", INT16_C(16));
+	printk("i%" PRIi32 "\n", INT32_C(32));
+	printk("i%" PRIi64 "\n", INT64_C(64));
+
+#if defined(CONFIG_PICOLIBC) || !defined(CONFIG_CBPRINTF_NANO)
+	/*
+	 * The octal conversion comes from the formatting engine: cbprintf
+	 * nano does not implement %o, while a picolibc-backed printk
+	 * supports it regardless of the cbprintf configuration.
+	 */
+	printk("o%" PRIo8 "\n", INT8_C(8));
+	printk("o%" PRIo16 "\n", INT16_C(16));
+	printk("o%" PRIo32 "\n", INT32_C(32));
+	printk("o%" PRIo64 "\n", INT64_C(64));
+#endif
+
+	printk("u%" PRIu8 "\n", UINT8_C(8));
+	printk("u%" PRIu16 "\n", UINT16_C(16));
+	printk("u%" PRIu32 "\n", UINT32_C(32));
+	printk("u%" PRIu64 "\n", UINT64_C(64));
+
+	printk("x%" PRIx8 "\n", UINT8_C(8));
+	printk("x%" PRIx16 "\n", UINT16_C(16));
+	printk("x%" PRIx32 "\n", UINT32_C(32));
+	printk("x%" PRIx64 "\n", UINT64_C(64));
+
+	printk("X%" PRIX8 "\n", UINT8_C(8));
+	printk("X%" PRIX16 "\n", UINT16_C(16));
+	printk("X%" PRIX32 "\n", UINT32_C(32));
+	printk("X%" PRIX64 "\n", UINT64_C(64));
+
+	(void)tc_capture_get(captured, sizeof(captured));
+	zassert_str_equal(captured,
+			  "d8\nd16\nd32\nd64\n"
+			  "i8\ni16\ni32\ni64\n"
+#if defined(CONFIG_PICOLIBC) || !defined(CONFIG_CBPRINTF_NANO)
+			  "o10\no20\no40\no100\n"
+#endif
+			  "u8\nu16\nu32\nu64\n"
+			  "x8\nx10\nx20\nx40\n"
+			  "X8\nX10\nX20\nX40\n");
 }
 
 /**
