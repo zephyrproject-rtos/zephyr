@@ -128,9 +128,39 @@ static void vprintk_core(const char *fmt, va_list ap)
 #endif
 }
 
+/*
+ * User mode has no access to the console hook: buffer locally and hand
+ * the output to the kernel through the k_str_out() syscall.
+ */
+static void vprintk_user(const char *fmt, va_list ap)
+{
+	struct buf_out_context ctx = {
+#ifdef CONFIG_PICOLIBC
+		.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
+					  NULL, NULL, _FDEV_SETUP_WRITE),
+#else
+		0
+#endif
+	};
+
+#ifdef CONFIG_PICOLIBC
+	(void) vfprintf(&ctx.file, fmt, ap);
+#else
+	cbvprintf(buf_char_out, &ctx, fmt, ap);
+#endif
+	if (ctx.buf_count) {
+		buf_flush(&ctx);
+	}
+}
+
 void vprintk_unlocked(const char *fmt, va_list ap)
 {
-	vprintk_core(fmt, ap);
+	if (k_is_user_context()) {
+		/* A user thread cannot hold the printk lock anyway */
+		vprintk_user(fmt, ap);
+	} else {
+		vprintk_core(fmt, ap);
+	}
 }
 EXPORT_SYMBOL(vprintk_unlocked);
 
@@ -140,7 +170,7 @@ void printk_unlocked(const char *fmt, ...)
 
 	va_start(ap, fmt);
 
-	vprintk_core(fmt, ap);
+	vprintk_unlocked(fmt, ap);
 
 	va_end(ap);
 }
@@ -154,23 +184,7 @@ void vprintk(const char *fmt, va_list ap)
 	}
 
 	if (k_is_user_context()) {
-		struct buf_out_context ctx = {
-#ifdef CONFIG_PICOLIBC
-			.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
-						  NULL, NULL, _FDEV_SETUP_WRITE),
-#else
-			0
-#endif
-		};
-
-#ifdef CONFIG_PICOLIBC
-		(void) vfprintf(&ctx.file, fmt, ap);
-#else
-		cbvprintf(buf_char_out, &ctx, fmt, ap);
-#endif
-		if (ctx.buf_count) {
-			buf_flush(&ctx);
-		}
+		vprintk_user(fmt, ap);
 	} else {
 		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
