@@ -21,7 +21,8 @@ remain valid wherever the documentation set is hosted (docs.zephyrproject.org/la
 copies, local builds, downstream distributions, ...).
 
 Placeholders that cannot be resolved are left untouched (they degrade to plain, code-styled text)
-and a Sphinx warning is emitted for each of them.
+and a Sphinx warning is emitted for each of them, except for Kconfig options that exist but are
+not part of the Kconfig reference.
 
 Configuration options
 =====================
@@ -188,6 +189,26 @@ def resolve(inventory: Inventory, stype: str, raw_target: str) -> Xref:
     return Xref(stype, target, item.uri, text)
 
 
+def degrades_silently(xref: Xref, kconfig_names: set[str] | None) -> bool:
+    """Whether an unresolved cross-reference is expected rather than a mistake.
+
+    Only documented Kconfig options are part of the object inventory, and none of them is when
+    Kconfig was not parsed at all.
+
+    Args:
+        xref: Cross-reference that could not be resolved.
+        kconfig_names: Names of all the Kconfig options that exist, or ``None`` if Kconfig was not
+            parsed in this build.
+
+    Returns:
+        Whether the reference may be left unresolved without warning.
+    """
+    if not xref.stype.startswith("kconfig:"):
+        return False
+
+    return kconfig_names is None or xref.target in kconfig_names
+
+
 def render_link(tag: str, xref: Xref, url_base: str) -> str:
     """Render a resolved :class:`Xref` as an HTML anchor.
 
@@ -300,6 +321,8 @@ def doxyxref_resolve(app, exception) -> None:
         logger.warning(f"doxyxref: could not read object inventory {inventory_file}: {e}")
         return
 
+    kconfig_names = getattr(app.env, "kconfig_all_names", None)
+
     for project, project_outdir in (app.config.doxyxref_projects or {}).items():
         html_dir = Path(project_outdir) / "html"
         if not html_dir.is_dir():
@@ -308,7 +331,8 @@ def doxyxref_resolve(app, exception) -> None:
 
         logger.info(f"doxyxref: resolving Sphinx cross-references for project '{project}'...")
         unresolved = process_html_dir(html_dir, inventory, docs_root=outdir)
-        for stype, target in sorted({(xref.stype, xref.target) for xref in unresolved}):
+        reportable = {xref for xref in unresolved if not degrades_silently(xref, kconfig_names)}
+        for stype, target in sorted({(xref.stype, xref.target) for xref in reportable}):
             logger.warning(
                 f"doxyxref: unresolved {stype} cross-reference: '{target}' (project '{project}')",
                 type="doxyxref",
