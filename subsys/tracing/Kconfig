@@ -144,6 +144,12 @@ config TRACING_CTF_TIMESTAMP
 	  Timestamp prefix will be added to the beginning of CTF
 	  event internally.
 
+config TRACING_CTF_CONFIGURABLE_TIMER
+	bool "CTF configurable timestamp function"
+	depends on TRACING_CTF_TIMESTAMP
+	help
+	  Enable configurable timestamp function.
+
 choice TRACING_METHOD_CHOICE
 	prompt "Tracing Method"
 	default TRACING_ASYNC
