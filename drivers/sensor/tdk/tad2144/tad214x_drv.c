@@ -337,7 +337,7 @@ static DEVICE_API(sensor, tad214x_api_funcs) = {
 		.if_mode = IF_SPI, \
 		.bus.spi = SPI_DT_SPEC_INST_GET(inst, \
 						SPI_WORD_SET(8) | \
-						SPI_TRANSFER_MSB, 0), \
+						SPI_TRANSFER_MSB), \
 		.bus_io = &tad214x_bus_io_spi, \
 		TAD214X_CONFIG(inst) \
 	}

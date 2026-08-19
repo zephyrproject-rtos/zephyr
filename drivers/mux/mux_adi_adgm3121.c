@@ -265,8 +265,7 @@ static int mux_adgm3121_init(const struct device *dev)
 	static const struct mux_adgm3121_config mux_adgm3121_spi_cfg_##inst = { \
 		.mode = ADGM3121_MODE_SPI,                                     \
 		.spi = SPI_DT_SPEC_INST_GET(inst,                              \
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8),\
-			0),                                                    \
+			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)),\
 	};                                                                     \
 	DEVICE_DT_INST_DEFINE(inst, mux_adgm3121_init, NULL,                   \
 			      &mux_adgm3121_spi_data_##inst,                   \

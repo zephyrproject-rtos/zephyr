@@ -240,8 +240,7 @@ static DEVICE_API(sensor, pdms_25131308XXX05_driver_api) = {
 		(.bus_cfg = { \
 			.spi = SPI_DT_SPEC_INST_GET( \
 				inst, \
-				PDMS_25131308XXX05_SPI_OPERATION, \
-				0 \
+				PDMS_25131308XXX05_SPI_OPERATION \
 			) \
 		},), \
 		())
