@@ -6,7 +6,7 @@
 import csv
 import os
 
-from kconfiglib import standard_kconfig
+from kconfiglib import expr_value, standard_kconfig
 from tabulate import tabulate
 
 
@@ -56,12 +56,9 @@ def compare_with_hardened_conf(kconf, hardened_kconf_filename):
                     Option(name=name, current=current, recommended=recommended, symbol=symbol)
                 )
     for node in kconf.node_iter():
-        for select in node.selects:
-            if (
-                kconf.syms["EXPERIMENTAL"] in select
-                or kconf.syms["DEPRECATED"] in select
-                or kconf.syms["NOT_SECURE"] in select
-            ):
+        for target, cond, _ in node.selects:
+            # An inactive 'select ... if ...' does not mark the symbol.
+            if target.name in ('EXPERIMENTAL', 'DEPRECATED', 'NOT_SECURE') and expr_value(cond):
                 options.append(
                     Option(
                         name=node.item.name,
