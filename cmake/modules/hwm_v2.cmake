@@ -43,10 +43,27 @@ list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
 list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 
+# Setting HWM_LOAD_ALL_SOCS loads every SoC from every SoC root instead, restoring the legacy
+# behaviour where all SoC namespaces are visible to each other. This is an escape hatch for
+# out-of-tree users who cannot express their dependencies yet, and comes at the cost of the
+# configuration time and memory usage mentioned above.
+if(BOARD_QUALIFIERS)
+  string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
+  list(GET split_board_qualifiers 1 target_soc)
+endif()
+
+if(HWM_LOAD_ALL_SOCS OR NOT BOARD_QUALIFIERS)
+  set(soc_filter --socs)
+else()
+  set(soc_filter --soc ${target_soc})
+  foreach(soc ${LIST_BOARD_SOC_REQUIRES})
+    list(APPEND soc_filter --soc ${soc})
+  endforeach()
+endif()
+
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
-                --archs --socs
-                --cmakeformat={TYPE}\;{NAME}\;{DIR}
+                --archs ${soc_filter} --cmakeformat={TYPE}\;{NAME}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val
@@ -106,14 +123,10 @@ kconfig_gen("soc"  "Kconfig"             "${kconfig_soc_source_dir}"  "Zephyr So
 kconfig_gen("soc"  "Kconfig.soc"         "${kconfig_soc_source_dir}"  "SoC Kconfig")
 kconfig_gen("soc"  "Kconfig.sysbuild"    "${kconfig_soc_source_dir}"  "Sysbuild SoC Kconfig")
 
-# A SoC declared with 'base' in soc.yml owns no Kconfig file, since its configuration is the tree
+# A SoC declared with 'base' in soc.yml owns no Kconfig file, since what gets loaded is the tree
 # of the SoC it is built on. Generate its Kconfig symbol here, selecting the symbol of that SoC,
 # so the board keeps selecting the symbol named after the SoC its board.yml refers to. The SoC's
 # own directory is never sourced, so no configuration can be attached to the symbol.
-if(BOARD_QUALIFIERS)
-  string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
-  list(GET split_board_qualifiers 1 target_soc)
-endif()
 set(soc_based_kconfig "# Generated symbols for SoCs declared with 'base'.\n")
 if(target_soc IN_LIST based_soc_names)
   string(TOUPPER "SOC_${target_soc}" soc_based_symbol)
