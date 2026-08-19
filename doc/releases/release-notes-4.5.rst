@@ -146,6 +146,12 @@ Removed APIs and options
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
     * ``start_11r_roaming``
 
+* Nordic
+
+    * ``owner-id``, ``perm-read``, ``perm-write``, ``perm-execute``, ``perm-secure`` and
+      ``non-secure-callable`` properties of :dtcompatible:`nordic,owned-memory` and
+      :dtcompatible:`nordic,owned-partitions`
+
 * Random
 
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
