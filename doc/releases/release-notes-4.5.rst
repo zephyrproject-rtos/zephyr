@@ -121,6 +121,10 @@ Removed APIs and options
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
     * ``start_11r_roaming``
 
+* Nordic
+
+    * ``CONFIG_GPIO_AS_PINRESET``
+
 * Random
 
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``

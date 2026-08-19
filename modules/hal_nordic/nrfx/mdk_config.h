@@ -451,7 +451,7 @@
 
 /*
  * Inject HAL "NFCT_PINS_AS_GPIOS" definition if user requests to
- * configure the NFCT pins as GPIOS. Do the same with "CONFIG_GPIO_AS_PINRESET"
+ * configure the NFCT pins as GPIOS. Do the same with "gpio-as-nreset"
  * to configure the reset GPIO as nRESET. This way, the HAL will take care of
  * doing the proper configuration sequence during system init.
  */
