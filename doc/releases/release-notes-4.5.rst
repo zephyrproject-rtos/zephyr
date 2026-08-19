@@ -94,6 +94,9 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+    * ``_bt_gatt_ccc``
+    * ``BT_GATT_CCC_INITIALIZER``
+
   * Services
 
     * ``CONFIG_BT_DIS_MANUF``
