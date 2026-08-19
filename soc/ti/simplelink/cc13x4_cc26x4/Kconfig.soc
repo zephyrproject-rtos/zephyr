@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+
+config SOC_SERIES_CC13X4_CC26X4
+	bool
+	select SOC_FAMILY_TI_SIMPLELINK
+	help
+	  Enable support for TI SimpleLink CC13x4/cc26x4 SoCs
+
+config SOC_CC1354P10
+	bool
+	select SOC_SERIES_CC13X4_CC26X4
+	help
+	  CC1354P10
+
+config SOC_SERIES
+	default "cc13x4_cc26x4" if SOC_SERIES_CC13X4_CC26X4
+
+config SOC
+	default "cc1354p10" if SOC_CC1354P10
+
+config HAS_CC13X4_CC26X4_SDK
+	bool
+	help
+	  Enable CC13x4/CC26x4 SDK support
