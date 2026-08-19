@@ -376,6 +376,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -398,6 +404,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers8: timers@40013400 {
@@ -418,6 +430,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
