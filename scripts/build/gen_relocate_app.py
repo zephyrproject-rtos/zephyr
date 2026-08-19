@@ -43,6 +43,7 @@ this will place data and bss inside SRAM2.
 
 import argparse
 import glob
+import os
 import re
 import sys
 import warnings
@@ -616,7 +617,6 @@ def parse_input_string(line):
 # as a list of values.
 # Also, return another dict with program headers for memory regions
 def create_dict_wrt_mem():
-    # need to support wild card *
     rel_dict = dict()
     phdrs = dict()
 
@@ -635,17 +635,18 @@ def create_dict_wrt_mem():
             phdrs[mem_region] = f':{phdr}'
 
         file_name_list = []
-        # Use glob matching on each file in the list
-        for file_glob in file_list:
-            glob_results = glob.glob(file_glob)
-            if not glob_results:
-                warnings.warn("File: " + file_glob + " Not found", stacklevel=2)
-                continue
-            elif len(glob_results) > 1:
-                warnings.warn(
-                    "Regex in file lists is deprecated, please use file(GLOB) instead", stacklevel=2
+        for file_name in file_list:
+            if glob.escape(file_name) != file_name:
+                sys.exit(
+                    f"Error: '{file_name}' looks like a pattern. Patterns are no longer "
+                    "expanded by gen_relocate_app.py; expand them in CMake with "
+                    "file(GLOB ...) and pass the resulting file names to "
+                    "zephyr_code_relocate(FILES ...)."
                 )
-            file_name_list.extend(glob_results)
+            if not os.path.exists(file_name):
+                warnings.warn("File: " + file_name + " Not found", stacklevel=2)
+                continue
+            file_name_list.append(file_name)
         if len(file_name_list) == 0:
             continue
         if mem_region == '':

@@ -62,7 +62,7 @@ for  data copy operations from ROM to required memory type.
 * Inside the ``CMakeLists.txt`` file in the project, mention
   all the files that need relocation.
 
-  ``zephyr_code_relocate(FILES src/*.c LOCATION SRAM2)``
+  ``zephyr_code_relocate(FILES src/main.c LOCATION SRAM2)``
 
   Where the first argument is the file/files and the second
   argument is the memory where it must be placed.
