@@ -49,6 +49,7 @@ extern "C" {
 
 struct coap_service_data {
 	int sock_fd;
+	bool close_requested;
 	struct coap_observer observers[CONFIG_COAP_SERVICE_OBSERVERS];
 	struct coap_pending pending[CONFIG_COAP_SERVICE_PENDING_MESSAGES];
 #if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
