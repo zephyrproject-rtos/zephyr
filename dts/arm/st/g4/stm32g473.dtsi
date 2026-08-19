@@ -5,7 +5,6 @@
  */
 
 #include <st/g4/stm32g491.dtsi>
-#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	soc {
