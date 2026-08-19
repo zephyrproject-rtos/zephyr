@@ -664,6 +664,11 @@
 				#size-cells = <0>;
 				status = "disabled";
 			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		edma0: dma-controller@4020c000 {
