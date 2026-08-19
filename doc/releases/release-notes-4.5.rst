@@ -94,6 +94,12 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* Comparator
+
+    * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
+      ``nxp,enable-sample``, ``nxp,filter-count``, ``nxp,filter-period`` and ``nxp,window-mode``
+      properties of :dtcompatible:`nxp,kinetis-acmp`
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
