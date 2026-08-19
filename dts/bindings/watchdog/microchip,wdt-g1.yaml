@@ -8,6 +8,7 @@ description: |
 
   Group g1 Watchdog driver supports following hardware peripherals:
     - module name="WDT" id="U2251" version="1.1.0"
+    - module name="WDT" id="03611" version="2b0"
 
 compatible: "microchip,wdt-g1"
 
@@ -43,16 +44,26 @@ properties:
     required: true
     description: |
       Defines the maximum timeout window period for the watchdog timer.
+      The value is specified in milliseconds.
+      For example, 0x4000 represents 16384 milliseconds.
 
   max-timeout-window-mode:
     type: int
     required: true
     description: |
       Indicates the maximum timeout period in window mode for the watchdog
-      timer.
+      timer.The value is specified in milliseconds.
+      For example, 0x8000 represents 32768 milliseconds.
 
   min-window-limit:
     type: int
     required: true
     description: |
       Indicates the minimum window limit for the watchdog timer in window mode
+      The value is specified in milliseconds.
+      For example, 0x8 represents 8 milliseconds.
+
+  run-in-standby:
+    type: boolean
+    description: |
+      Enable or disable run-in-standby mode for watchdog timer peripheral.
