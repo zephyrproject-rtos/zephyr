@@ -283,5 +283,74 @@ ZTEST(obj_core, test_obj_core_sem)
 			     K_OBJ_CORE(&sem1), K_OBJ_CORE(&sem2));
 }
 
+struct obj_core_count_data {
+	struct k_obj_core *obj_core;    /* Object core to count */
+	unsigned int count;             /* Number of occurrences found */
+};
+
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	struct obj_core_count_data *count_data = data;
+
+	if (count_data->obj_core == obj_core) {
+		count_data->count++;
+	}
+
+	return 0;
+}
+
+static unsigned int obj_core_count(struct k_obj_type *obj_type, struct k_obj_core *obj_core)
+{
+	struct obj_core_count_data walk_data = {
+		.obj_core = obj_core,
+		.count = 0,
+	};
+
+	k_obj_type_walk_locked(obj_type, obj_core_count_op, &walk_data);
+
+	return walk_data.count;
+}
+
+ZTEST(obj_core, test_obj_core_reinit)
+{
+	struct k_obj_type *obj_type;
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_MUTEX_ID);
+	zassert_not_null(obj_type, "mutex object type not found\n");
+
+	/*
+	 * mutex1 was statically defined and linked at boot; link mutex2
+	 * after it. Re-initializing mutex1 must neither truncate the mutex
+	 * type list (losing mutex2) nor link mutex1's node twice.
+	 */
+
+	k_mutex_init(&mutex2);
+	k_mutex_init(&mutex1);
+	k_mutex_init(&mutex1);
+
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&mutex1)), 1,
+		      "re-initialized mutex not linked exactly once\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&mutex2)), 1,
+		      "mutex list truncated by re-initialization\n");
+
+	/*
+	 * k_fifo_init() links the object core via the split
+	 * K_OBJ_CORE_INIT()/K_OBJ_CORE_LINK() macros rather than
+	 * k_obj_core_init_and_link(); cover that path as well.
+	 */
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_FIFO_ID);
+	zassert_not_null(obj_type, "FIFO object type not found\n");
+
+	k_fifo_init(&fifo2);
+	k_fifo_init(&fifo1);
+	k_fifo_init(&fifo1);
+
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&fifo1)), 1,
+		      "re-initialized FIFO not linked exactly once\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&fifo2)), 1,
+		      "FIFO list truncated by re-initialization\n");
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
