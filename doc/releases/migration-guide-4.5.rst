@@ -53,6 +53,10 @@ Build System
 * Board revision Kconfig fragments named :file:`<board>_<revision>.conf` are no
   longer read. Rename them to :file:`<board>_<revision>_defconfig`.
 
+* ``zephyr_code_relocate(FILES ...)`` no longer expands wildcard patterns, and
+  now fails on one. Expand the pattern with ``file(GLOB ...)`` and pass the
+  resulting file names instead.
+
 Kernel
 ******
 

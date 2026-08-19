@@ -1495,7 +1495,7 @@ endmacro()
 # This function may either be invoked with a list of files, or a library
 # name to relocate.
 #
-# The FILES directive will relocate a list of files (wildcards supported)
+# The FILES directive will relocate a list of files
 # This directive will relocate file1. and file2.c to SRAM:
 # zephyr_code_relocate(FILES file1.c file2.c LOCATION SRAM)
 # Note, files can also be passed as a comma separated list to support using
