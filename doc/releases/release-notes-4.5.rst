@@ -112,6 +112,7 @@ Removed APIs and options
       ``BT_AUTO_PHY_PERIPHERAL`` choices
     * ``_bt_gatt_ccc``
     * ``BT_GATT_CCC_INITIALIZER``
+    * ``CONFIG_BT_CONN_TX_MAX``
 
   * Services
 
