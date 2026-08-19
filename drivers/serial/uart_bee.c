@@ -986,10 +986,34 @@ static int uart_bee_async_init(const struct device *dev)
 		return 0;
 	}
 
-	atomic_set_bit(((struct dma_context *)data->dma_rx.dma_dev->data)->atomic,
-		       data->dma_rx.dma_channel);
-	atomic_set_bit(((struct dma_context *)data->dma_tx.dma_dev->data)->atomic,
-		       data->dma_tx.dma_channel);
+	/*
+	 * Claim the devicetree-assigned channels through the DMA controller's
+	 * allocation bitmap so that dma_request_channel() (e.g. a memory-to-memory
+	 * user on the same controller) can never hand them out again. Using a
+	 * BIT(channel) filter forces exactly the DT channel and fails loudly if it
+	 * is already taken.
+	 */
+	if (data->dma_rx.dma_dev != NULL) {
+		uint32_t ch_filter = BIT(data->dma_rx.dma_channel);
+		int ch = dma_request_channel(data->dma_rx.dma_dev, &ch_filter);
+
+		if (ch < 0) {
+			LOG_ERR("UART RX DMA channel %u already in use",
+				data->dma_rx.dma_channel);
+			return ch;
+		}
+	}
+
+	if (data->dma_tx.dma_dev != NULL) {
+		uint32_t ch_filter = BIT(data->dma_tx.dma_channel);
+		int ch = dma_request_channel(data->dma_tx.dma_dev, &ch_filter);
+
+		if (ch < 0) {
+			LOG_ERR("UART TX DMA channel %u already in use",
+				data->dma_tx.dma_channel);
+			return ch;
+		}
+	}
 
 	/* Disable both UART TX and UART RX DMA requests */
 	uart_bee_dma_rx_disable(dev);
