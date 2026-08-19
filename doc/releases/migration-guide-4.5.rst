@@ -1449,6 +1449,12 @@ WiFi
   rather than ``sizeof(int)`` for the event payload length. Event handlers that only read the
   status value are unaffected, as it remains the first member. (:github:`116704`)
 
+* A Wi-Fi connect request that runs past its timeout now reports
+  :c:enumerator:`WIFI_STATUS_CONN_TIMEOUT` in :c:enumerator:`NET_EVENT_WIFI_CONNECT_RESULT`
+  instead of a raw ``-ETIMEDOUT``. This only concerns the connections handled by the
+  supplicant. Applications that matched on the errno value have to match on the status
+  value instead. (:github:`116704`)
+
 Xen
 ===
 
