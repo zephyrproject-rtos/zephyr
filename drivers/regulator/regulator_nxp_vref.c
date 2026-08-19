@@ -43,6 +43,7 @@ struct regulator_nxp_vref_data {
 	struct regulator_common_data common;
 	uint16_t trim;
 	bool trim_set;
+	regulator_mode_t mode;
 };
 
 struct regulator_nxp_vref_config {
@@ -57,70 +58,36 @@ struct regulator_nxp_vref_config {
 	clock_control_subsys_t clock_subsys;
 };
 
-static int regulator_nxp_vref_enable(const struct device *dev)
-{
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
-
-	volatile uint32_t *const csr = &base->CSR;
-
-	*csr |= VREF_CSR_LPBGEN_MASK;
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-	*csr |= VREF_CSR_LPBG_BUF_EN_MASK;
-#endif
-
-	/* Wait for bandgap startup */
-	k_busy_wait(config->bg_start_time);
-
-	/* Enable high accuracy bandgap */
-	*csr |= VREF_CSR_HCBGEN_MASK;
-
-	/* Monitor until stable */
-	while (!(*csr & VREF_CSR_VREFST_MASK)) {
-		;
-	}
-
-	return 0;
-}
-
-static int regulator_nxp_vref_disable(const struct device *dev)
-{
-	const struct regulator_nxp_vref_config *config = dev->config;
-	VREF_Type *const base = config->base;
-
-	/*
-	 * Disable HC Bandgap, LP Bandgap, Buf21, and (where present) the LP
-	 * Bandgap Buffer to achieve "Off" mode of VREF.
-	 */
-	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK
-#if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
-		       | VREF_CSR_LPBG_BUF_EN_MASK
-#endif
-	);
-
-	return 0;
-}
-
 static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_t mode)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
 	uint32_t csr = base->CSR;
+	struct regulator_nxp_vref_data *data = dev->data;
 
-	if (mode == NXP_VREF_MODE_STANDBY) {
-		csr &= ~(VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
-	} else if (mode == NXP_VREF_MODE_LOW_POWER) {
-		csr &= ~VREF_CSR_HI_PWR_LV_MASK;
-		csr |= VREF_CSR_BUF21EN_MASK;
-	} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
-		csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
-	} else {
-		return -EINVAL;
+	data->mode = mode;
+
+	if( regulator_is_enabled( dev ) ) {
+		if (mode == NXP_VREF_MODE_STANDBY) {
+			csr &= ~(VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
+		} else if (mode == NXP_VREF_MODE_LOW_POWER) {
+			csr &= ~VREF_CSR_HI_PWR_LV_MASK;
+			csr |= VREF_CSR_BUF21EN_MASK;
+		} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
+			csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
+		} else {
+			return -EINVAL;
+		}
+
+		base->CSR = csr;
+
+		k_busy_wait(config->buf_start_delay);
 	}
 
-	base->CSR = csr;
-
-	k_busy_wait(config->buf_start_delay);
+	if (mode != NXP_VREF_MODE_STANDBY && mode != NXP_VREF_MODE_LOW_POWER &&
+	    mode != NXP_VREF_MODE_HIGH_POWER) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -140,6 +107,50 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 		*mode = NXP_VREF_MODE_STANDBY;
 	}
 
+	return 0;
+}
+
+static int regulator_nxp_vref_enable(const struct device *dev)
+{
+	const struct regulator_nxp_vref_config *config = dev->config;
+	VREF_Type *const base = config->base;
+	struct regulator_nxp_vref_data *data = dev->data;
+
+	volatile uint32_t *const csr = &base->CSR;
+
+	CLOCK_EnableClock(kCLOCK_Vref0);
+
+	*csr |= VREF_CSR_LPBGEN_MASK | VREF_CSR_LPBG_BUF_EN_MASK;
+
+	/* Wait for bandgap startup */
+	k_busy_wait(config->bg_start_time);
+
+	/* Enable high accuracy bandgap */
+	*csr |= VREF_CSR_HCBGEN_MASK;
+
+	/* Monitor until stable */
+	while (!(*csr & VREF_CSR_VREFST_MASK)) {
+		;
+	}
+
+	/* disable() clears BUF21EN. Restore the selected regulator mode after
+	 * every enable, including the mode configured by regulator-initial-mode.
+	 */
+	return regulator_nxp_vref_set_mode(dev, data->mode);
+}
+
+static int regulator_nxp_vref_disable(const struct device *dev)
+{
+	const struct regulator_nxp_vref_config *config = dev->config;
+	VREF_Type *const base = config->base;
+
+	/*
+	 * Disable HC Bandgap, LP Bandgap, Buf21, and Lp Bandgap Buffer
+	 * to achieve "Off" mode of VREF
+	 */
+	base->CSR &= ~(VREF_CSR_BUF21EN_MASK | VREF_CSR_HCBGEN_MASK | VREF_CSR_LPBGEN_MASK |
+		       VREF_CSR_LPBG_BUF_EN_MASK);
+	CLOCK_DisableClock(kCLOCK_Vref0);
 	return 0;
 }
 
@@ -184,7 +195,7 @@ static int regulator_nxp_vref_get_voltage(const struct device *dev, int32_t *vol
 	int ret;
 
 	/* Linear range index is the register value */
-	idx = (base->UTRIM & NXP_VREF_TRIM_MASK) >> NXP_VREF_TRIM_SHIFT;
+	idx = (base->UTRIM & VREF_UTRIM_TRIM2V1_MASK) >> VREF_UTRIM_TRIM2V1_SHIFT;
 
 	ret = linear_range_get_value(&utrim_range, idx, volt_uv);
 
@@ -209,6 +220,9 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 	VREF_Type *const base = config->base;
 	int ret;
 
+	regulator_common_data_init(dev);
+	data->mode = NXP_VREF_MODE_STANDBY;
+
 	if (config->clock_dev) {
 		if (!device_is_ready(config->clock_dev)) {
 			LOG_ERR("clock device not ready");
@@ -230,6 +244,7 @@ static int regulator_nxp_vref_configure_hw(const struct device *dev)
 	}
 
 	ret = regulator_nxp_vref_disable(dev);
+	CLOCK_EnableClock(kCLOCK_Vref0);
 	if (ret < 0) {
 		return ret;
 	}
