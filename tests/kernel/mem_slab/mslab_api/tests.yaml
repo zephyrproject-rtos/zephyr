@@ -24,6 +24,10 @@ tests:
       - qemu_riscv64
       - qemu_leon3
       - qemu_or1k
+    # qemu_or1k takes a fatal I-TLB miss on the way out of main with
+    # CONFIG_MULTITHREADING=n. Drop this once #116733 is merged.
+    platform_exclude:
+      - qemu_or1k
     integration_platforms:
       - qemu_cortex_m3
       - qemu_arc/qemu_arc_hs
