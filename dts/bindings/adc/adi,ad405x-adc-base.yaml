@@ -20,7 +20,14 @@ properties:
     type: phandle-array
     description: |
       The CONV signal.
-    required: true
+  pwms:
+    type: phandle-array
+    description: |
+      PWM connected to the AD405x CNV pin for hardware-timed conversion triggering.
+  pwm-names:
+    type: string-array
+    description: |
+      Names for PWM entries. Use "cnv" for the conversion-start PWM.
   "#io-channel-cells":
     const: 1
 

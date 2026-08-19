@@ -7,7 +7,15 @@
 Overview
 ********
 
-This sample application demonstrates how to use ADC stream APIs.
+This sample demonstrates the use of the ADC streaming API.
+
+The sample supports two conversion modes:
+
+* Standard ADC streaming, where conversions are initiated by the ADC driver.
+* External PWM-triggered ADC streaming, where conversions are initiated by an external PWM signal.
+
+The externall PWM mode is enabled when the ADC DeviceTree node contains a ``pwms`` property.
+If no PWM configuration is provided, the sample uses the standard streaming behavior.
 
 Building and Running
 ********************
