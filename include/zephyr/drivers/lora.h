@@ -298,6 +298,13 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
 				  void *user_data);
 
 /**
+ * @brief Callback API for reading the instantaneous RSSI
+ *
+ * @see lora_rssi() for argument descriptions.
+ */
+typedef int (*lora_api_rssi)(const struct device *dev, int16_t *rssi);
+
+/**
  * @typedef lora_api_recv_duty_cycle()
  * @brief Callback API for blocking receive with duty cycling
  *
@@ -349,6 +356,8 @@ __subsystem struct lora_driver_api {
 	lora_api_cad cad;
 	/** @driver_ops_optional @copybrief lora_cad_async */
 	lora_api_cad_async cad_async;
+	/** @driver_ops_optional @copybrief lora_rssi */
+	lora_api_rssi rssi;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle_async */
 	lora_api_recv_duty_cycle_async recv_duty_cycle_async;
 	/** @driver_ops_optional @copybrief lora_recv_duty_cycle */
@@ -523,6 +532,34 @@ static inline int lora_cad_async(const struct device *dev, lora_cad_cb cb,
 	}
 
 	return api->cad_async(dev, cb, user_data);
+}
+
+/**
+ * @brief Read the instantaneous RSSI of the current channel
+ *
+ * Samples the receiver's signal strength once, at the bandwidth configured by
+ * @ref lora_config.
+ *
+ * The radio must already be receiving, set up by @ref lora_recv_async. The
+ * value read outside of receive mode is undefined; the driver does not detect
+ * this.
+ *
+ * @param dev  LoRa device
+ * @param rssi Sampled level in dBm
+ * @return 0 on success
+ * @return -EBUSY if the modem is in use
+ * @return -ENOSYS if the operation is not supported by the driver
+ * @return negative on other errors
+ */
+static inline int lora_rssi(const struct device *dev, int16_t *rssi)
+{
+	const struct lora_driver_api *api = DEVICE_API_GET(lora, dev);
+
+	if (api->rssi == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->rssi(dev, rssi);
 }
 
 /**
