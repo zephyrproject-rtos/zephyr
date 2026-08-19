@@ -1,0 +1,109 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip USB G1 driver
+
+description: |
+  Microchip USB G1 driver bindings.
+
+  Group g1 USB driver supports following hardware peripherals:
+    - module name="USB" id="U2222" version="1.2.0"
+
+compatible: "microchip,usb-g1"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  maximum-speed:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  nvm-calib:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the NVM software calibration area.
+
+      This property provides the base address for the NVM software calibration
+      region. The USB driver reads a calibration word from this memory area
+      and extracts individual calibration fields based on the definitions
+      provided in the calib-mapping property.
+
+  calib-mapping:
+    type: array
+    required: true
+    description: |
+      Configuration for NVM to USB_PADCAL field extraction.
+
+      An array of <dst_bit nvm_bit mask default> tuples defining how to
+      extract and write calibration values. The 'default' value is applied
+      if the NVM entry is unprogrammed (equals the mask).
+
+      Each entry consists of four cells:
+
+        <dst_bit nvm_bit mask default>
+
+      where:
+
+        dst_bit
+          Bit offset of the calibration field in the USB_PADCAL register.
+
+        nvm_bit
+          Bit offset of the calibration value in the NVM calibration word.
+
+        mask
+          Bit mask defining the width of the calibration field.
+
+        default
+          Default value used when the extracted OTP value equals the mask,
+          indicating an invalid or unprogrammed calibration entry.
+
+      Multiple entries may be provided to configure all required USB pad
+      calibration fields.
+
+  calib-mapping-names:
+    type: string-array
+    description: |
+      Descriptive names for calibration entries.
+
+      Optional string array corresponding to calib-mapping entries,
+      intended solely for debugging and documentation.
+
+examples:
+  - |
+    /* clocks: "mclk" (APB) enabled via mclkperiph, "gclk" (48 MHz) enabled
+     * and sourced via gclkperiph. Both are configured separately.
+     */
+
+    usb0: usb@41000000 {
+            compatible = "microchip,usb-g1";
+            reg = <0x41000000 0x1000>;
+            interrupts = <80 0>, <81 0>, <82 0>, <83 0>;
+            interrupt-names = "usb", "sof", "trcpt0", "trcpt1";
+            num-bidir-endpoints = <8>;
+            maximum-speed = "full-speed";
+            clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_USB>,
+                     <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_USB>;
+            clock-names = "mclk", "gclk";
+            nvm-calib = <&nvm_sw_calib_area>;
+            calib-mapping = <0x06 0x20 0x1f 0x05>,
+                            <0x0 0x25 0x1f 0x29>,
+                            <0x12 0x2a 0x07 0x03>;
+            calib-mapping-names = "TRANSN", "TRANSP", "TRIM";
+            pinctrl-0 = <&usb_udc_default>;
+            pinctrl-names = "default";
+            status = "okay";
+    };
