@@ -5344,6 +5344,10 @@
  * @brief Check if any `DT_DRV_COMPAT` node with status `okay` has a given
  *        property.
  *
+ * Don't use this macro with a boolean property, use @ref DT_ANY_INST_HAS_BOOL_STATUS_OKAY
+ * instead. Boolean properties defined for a compatible node always exist, as they are generated
+ * with a value of 0 when not present on a node.
+ *
  * @param prop lowercase-and-underscores property name
  *
  * Example devicetree overlay:
@@ -5390,6 +5394,10 @@
 /**
  * @brief Check if all `DT_DRV_COMPAT` nodes with status `okay` have a given
  *        property. If all nodes are disabled, this will return 1.
+ *
+ * Don't use this macro with a boolean property, use @ref DT_ALL_INST_HAS_BOOL_STATUS_OKAY
+ * instead. Boolean properties defined for a compatible node always exist, as they are generated
+ * with a value of 0 when not present on a node.
  *
  * @param prop lowercase-and-underscores property name
  *
@@ -5438,6 +5446,10 @@
  * @brief Check if any device node with compatible @p compat and status `okay` has a given
  *        property.
  *
+ * Don't use this macro with a boolean property, use @ref DT_ANY_COMPAT_HAS_BOOL_STATUS_OKAY
+ * instead. Boolean properties defined for a compatible node always exist, as they are generated
+ * with a value of 0 when not present on a node.
+ *
  * @param compat lowercase-and-underscores devicetree compatible
  * @param prop lowercase-and-underscores property name
  *
@@ -5485,6 +5497,10 @@
 /**
  * @brief Check if all device nodes with compatible @p compat and status `okay` have a given
  *        property. If all nodes with compatible @p compat are disabled, this will return 1.
+ *
+ * Don't use this macro with a boolean property, use @ref DT_ALL_COMPAT_HAS_BOOL_STATUS_OKAY
+ * instead. Boolean properties defined for a compatible node always exist, as they are generated
+ * with a value of 0 when not present on a node.
  *
  * @param compat lowercase-and-underscores devicetree compatible
  * @param prop lowercase-and-underscores property name
