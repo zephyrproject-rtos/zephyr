@@ -110,6 +110,8 @@ Removed APIs and options
 
     * ``CONFIG_BT_AUTO_PHY_UPDATE``, replaced by the ``BT_AUTO_PHY_CENTRAL`` and
       ``BT_AUTO_PHY_PERIPHERAL`` choices
+    * ``_bt_gatt_ccc``
+    * ``BT_GATT_CCC_INITIALIZER``
 
   * Services
 
