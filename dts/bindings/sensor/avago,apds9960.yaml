@@ -18,48 +18,65 @@ properties:
 
   pled-boost:
     type: int
-    default: 0x01
-    description: Proximity LED Boost Current
+    default: 150
+    description: |
+      Additional LDR current during proximity and gesture LED pulses, as a
+      percentage of the current LDRIVE selects. The default favours range over
+      power; raise it when cover glass attenuates the LED.
     enum:
-      - 0x00 # 100
-      - 0x01 # 150
-      - 0x10 # 200
-      - 0x11 # 300
+      - 100
+      - 150
+      - 200
+      - 300
 
   pgain:
     type: int
-    default: 0x01
-    description: ALS and Color Gain
+    default: 2
+    description: |
+      Proximity gain, as a multiplier. The driver's proximity thresholds are
+      set against the default; raise it to detect objects further away, and
+      lower it if nearby objects saturate the proximity ADC.
     enum:
-      - 0x00 # 1x
-      - 0x01 # 4x
-      - 0x10 # 4x
-      - 0x11 # 8x
+      - 1
+      - 2
+      - 4
+      - 8
 
   again:
     type: int
-    default: 0x01
-    description: ALS and Color Gain
+    default: 4
+    description: |
+      ALS and color gain, as a multiplier. The default leaves the clear channel
+      headroom in ordinary indoor light; raise it for dim environments, and
+      lower it if the clear channel saturates.
     enum:
-      - 0x00 # 1x
-      - 0x01 # 4x
-      - 0x10 # 16x
-      - 0x11 # 64x
+      - 1
+      - 4
+      - 16
+      - 64
 
   ppulse-length:
     type: int
-    default: 0x01
-    description: Proximity Pulse Length
+    default: 8
+    description: |
+      LED-on pulse width during a proximity LDR pulse, in microseconds. The
+      default matches the sensor's reset value and the datasheet's proximity
+      test conditions; longer pulses gather more signal per pulse.
     enum:
-      - 0x00 # 4us
-      - 0x01 # 8us
-      - 0x10 # 16us
-      - 0x11 # 32us
+      - 4
+      - 8
+      - 16
+      - 32
 
   ppulse-count:
     type: int
-    default: 0x8
-    description: Proximity Pulse Count
+    default: 8
+    min: 1
+    max: 64
+    description: |
+      Number of proximity pulses emitted per proximity measurement. The default
+      is the driving condition the datasheet recommends; other counts trade
+      measurement time and average LED current against range.
 
   proximity:
     type: int
