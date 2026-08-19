@@ -152,6 +152,30 @@ struct hl78xx_gnss_data *hl78xx_get_gnss_data(struct hl78xx_data *data)
 	return data_nmea->gnss->data;
 }
 
+void hl78xx_gnss_reset_session_state(struct hl78xx_data *data)
+{
+	struct hl78xx_gnss_data *gnss = hl78xx_get_gnss_data(data);
+
+	if (gnss == NULL) {
+		return;
+	}
+
+	if (gnss->search_state != HL78XX_GNSS_SEARCH_STATE_IDLE || gnss->gnss_start_status ||
+	    gnss->gnss_init_status) {
+		LOG_WRN("Discarding GNSS state from ended modem session "
+			"(search_state=%s start=%d init=%d)",
+			gnss_search_state_str(gnss->search_state), gnss->gnss_start_status,
+			gnss->gnss_init_status);
+	}
+
+	gnss_set_search_state(gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
+	gnss->gnss_init_status = false;
+	gnss->gnss_start_status = false;
+	gnss->exit_to_lte_pending = false;
+	gnss->rrc_check_phase = false;
+	gnss->rrc_retry_count = 0;
+}
+
 bool hl78xx_gnss_check_and_clear_pending(struct hl78xx_data *data)
 {
 	struct hl78xx_gnss_data *gnss = hl78xx_get_gnss_data(data);
@@ -1441,7 +1465,15 @@ int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_HAS_KPSMEV_URC */
 #endif /* CONFIG_MODEM_HL78XX_EDRX */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	if (data->status.phone_functionality.functionality == HL78XX_AIRPLANE) {
+	/* Only take the shortcut on a functionality reading the modem confirmed
+	 * in THIS power session. After a power cycle or restart the cache is a
+	 * guess (this exact shortcut once fired on a cached AIRPLANE while the
+	 * modem was really at CFUN=0, skipping GNSS bring-up entirely). When
+	 * unverified, fall through and command CFUN=4 explicitly — idempotent
+	 * if the modem is already there.
+	 */
+	if (data->status.phone_functionality.valid &&
+	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE) {
 		/* Already in airplane mode */
 		LOG_DBG("Already in airplane mode, starting GNSS immediately");
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
