@@ -94,6 +94,11 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+  * Services
+
+    * ``CONFIG_BT_DIS_MANUF``
+    * ``CONFIG_BT_DIS_MODEL``
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
