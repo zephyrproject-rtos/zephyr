@@ -2180,6 +2180,25 @@ int hl78xx_recover_kbndcfg(struct hl78xx_data *data, const struct hl78xx_script_
 	return 0;
 }
 
+int hl78xx_recover_init_script_retry(struct hl78xx_data *data,
+				     const struct hl78xx_script_failure *failure)
+{
+	ARG_UNUSED(data);
+	ARG_UNUSED(failure);
+
+	/* Nothing to repair — the observed failure is the modem intermittently
+	 * never answering a single init-script command (AT+CCID right after a
+	 * GNSS teardown in particular). A plain re-run of the init script is
+	 * the recovery; resume_state performs it. If the AT channel is
+	 * genuinely wedged the retry times out as well, the attempt budget
+	 * runs out and hl78xx_handle_recovery_unavailable() falls back to the
+	 * reset pulse — exactly the pre-rule behaviour, just no longer the
+	 * first resort.
+	 */
+	LOG_WRN("Init script command unanswered; retrying init script");
+	return 0;
+}
+
 int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
 					const struct hl78xx_script_failure *failure)
 {
