@@ -555,8 +555,7 @@ void soc_early_init_hook(void)
 #endif
 #endif /* CONFIG_SOC_NRF5340_CPUAPP */
 
-#if defined(CONFIG_SOC_DCDC_NRF53X_APP) || \
-	(DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+#if (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_MAIN, true);
 #elif (DT_PROP(DT_NODELABEL(vregmain), regulator_initial_mode) == NRF5X_REG_MODE_LDO)
 	if (NRF_ERRATA_DYNAMIC_CHECK(53, 166)) {
@@ -565,11 +564,10 @@ void soc_early_init_hook(void)
 		*((volatile uint32_t *)0x50300C00) = 0x00009375ul;
 	}
 #endif
-#if defined(CONFIG_SOC_DCDC_NRF53X_NET) || \
-	(DT_PROP(DT_NODELABEL(vregradio), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
+#if (DT_PROP(DT_NODELABEL(vregradio), regulator_initial_mode) == NRF5X_REG_MODE_DCDC)
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_RADIO, true);
 #endif
-#if defined(CONFIG_SOC_DCDC_NRF53X_HV) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vregh))
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(vregh))
 	nrf_regulators_vreg_enable_set(NRF_REGULATORS, NRF_REGULATORS_VREG_HIGH, true);
 #endif
 
