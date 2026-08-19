@@ -3817,6 +3817,40 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			  unsigned int limit);
 
 /**
+ * @brief Deinitialize a semaphore.
+ *
+ * This routine releases @a sem from the kernel object tracking facilities
+ * (see @kconfig{CONFIG_OBJ_CORE_SEM} and
+ * @kconfig{CONFIG_TRACING_OBJECT_TRACKING}). It is required for semaphores
+ * without a permanent lifetime, such as semaphores living on a thread's
+ * stack, before the memory holding the semaphore is reused. It compiles to a
+ * no-op when no tracking facility is enabled.
+ *
+ * The semaphore must not be in use: no thread may be waiting on it. The
+ * semaphore must be initialized again with k_sem_init() before it can be
+ * used.
+ *
+ * @note This routine is intentionally not available from user mode. User
+ * mode cannot initialize semaphores that are not registered kernel objects,
+ * so it cannot create the transient semaphores this routine exists for, and
+ * dynamically allocated semaphores are instead released with
+ * k_object_free() or by revoking their permissions.
+ *
+ * @funcprops \supervisor
+ *
+ * @param sem Address of the semaphore.
+ */
+#if defined(CONFIG_OBJ_CORE_SEM) || defined(CONFIG_TRACING_OBJECT_TRACKING) || \
+	defined(CONFIG_USERSPACE)
+void k_sem_deinit(struct k_sem *sem);
+#else
+static inline void k_sem_deinit(struct k_sem *sem)
+{
+	ARG_UNUSED(sem);
+}
+#endif
+
+/**
  * @brief Take a semaphore.
  *
  * This routine takes @a sem.
