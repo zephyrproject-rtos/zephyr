@@ -251,6 +251,11 @@ static int gpio_bcm2711_pin_interrupt_configure(const struct device *port, gpio_
 	regval &= ~BIT(shift);
 	sys_write32(regval, GPAFEN(data->base, group));
 
+	/* Clear any event latched under the previous detector setting, so it
+	 * is not reported as a new edge.
+	 */
+	sys_write32(BIT(shift), GPEDS(data->base, group));
+
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		if (trig & GPIO_INT_LOW_0) {
 			regval = sys_read32(GPLEN(data->base, group));
