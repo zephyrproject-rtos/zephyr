@@ -85,9 +85,19 @@ int main(void)
 			 * complement value.
 			 */
 			if (adc_channels[i].channel_cfg.differential) {
-				val_mv = (int32_t)((int16_t)buf);
+				if (adc_channels[i].resolution <= 16) {
+					val_mv = (int32_t)((int16_t)buf);
+				} else {
+					val_mv = (int32_t)buf;
+				}
 			} else {
-				val_mv = (int32_t)buf;
+				if (adc_channels[i].resolution <= 8) {
+					val_mv = (int32_t)(buf & 0xFF);
+				} else if (adc_channels[i].resolution <= 16) {
+					val_mv = (int32_t)(buf & 0xFFFF);
+				} else {
+					val_mv = (int32_t)buf;
+				}
 			}
 			printk("%"PRId32, val_mv);
 			err = adc_raw_to_millivolts_dt(&adc_channels[i],
