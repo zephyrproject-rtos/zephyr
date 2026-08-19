@@ -1563,9 +1563,6 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 	BUILD_ASSERT(OSPI_INST_NUM(index) != 0,                                                    \
 		     "Unsupported OSPI instance: DTS node must be octospi1 or octospi2");          \
                                                                                                    \
-	BUILD_ASSERT(MSPI_STM32_HAS_SUPPORTED_CHILD(index),                                        \
-		     "MSPI controller must have a child with compatible st,nor/st,psram-device");  \
-                                                                                                   \
 	MSPI_STM32_VALIDATE_MEMTYPE(MSPI_STM32_MEMTYPE_TOKEN(index));                              \
                                                                                                    \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
