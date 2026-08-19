@@ -116,7 +116,7 @@ enum spi_nand_feature_config {
 	SPI_NAND_FEATURE_CONFIG_ECC_EN = BIT(4),
 };
 
-/* ONFI 5.2, Revision 1.0, Section 6.7.1 */
+/* ONFI 1.0-6.0 Parameter Page Definition */
 struct spi_nand_onfi_parameter_page {
 	/*
 	 * Revision information and features block
@@ -130,17 +130,17 @@ struct spi_nand_onfi_parameter_page {
 	uint16_t feature_support;
 	/** Optional commands supported */
 	uint16_t optional_commands;
-	/** ONFI-JEDEC JTG primary advanced command support */
+	/** ONFI-JEDEC JTG primary advanced command support (ONFI 3.0+) */
 	uint8_t advanced_command_support;
-	/** Training commands supported (Field 0) */
+	/** Training commands supported (Field 0) (ONFI 4.1+) */
 	uint8_t training_command_support0;
-	/** Extended parameter page length */
+	/** Extended parameter page length (ONFI 2.1+) */
 	uint16_t extended_parameter_page_length;
-	/** Number of parameter pages */
+	/** Number of parameter pages (ONFI 2.1+) */
 	uint8_t num_parameter_pages;
-	/** Training commands supported (Field 1) */
+	/** Training commands supported (Field 1) (ONFI 5.1+) */
 	uint8_t training_command_support1;
-	/* Reserved for future use (Block 0) */
+	/** Reserved for future use */
 	uint8_t reserved0[16];
 
 	/*
@@ -153,8 +153,9 @@ struct spi_nand_onfi_parameter_page {
 	char device_model[20];
 	/** JEDEC manufacturer ID */
 	uint8_t jedec_manufacturer_id;
+	/** Date code */
 	uint16_t date_code;
-	/* Reserved for future use (Block 1) */
+	/** Reserved for future use */
 	uint8_t reserved1[13];
 
 	/*
@@ -165,15 +166,17 @@ struct spi_nand_onfi_parameter_page {
 	uint32_t data_bytes_per_page;
 	/** Number of spare bytes per page */
 	uint16_t spare_bytes_per_page;
-	/* Reserved for future use (Block 2) */
-	uint8_t reserved2[6];
+	/** Number of data bytes per partial page (ONFI 1.0 - 2.1, obsolete 2.2 - 4.2) */
+	uint32_t data_bytes_per_partial_page;
+	/** Number of spare bytes per partial page (ONFI 1.0 - 2.1, obsolete 2.2 - 4.2) */
+	uint16_t spare_bytes_per_partial_page;
 	/** Number of pages per block */
 	uint32_t pages_per_block;
 	/** Number of blocks per logical unit (LUN) */
 	uint32_t blocks_per_lun;
 	/** Number of logical units (LUNs) */
 	uint8_t num_lun;
-	/** Number of address cycles (4-7: Column cycles, 0-3 Row cycles) */
+	/** Number of address cycles (Bits 4-7: Column cycles, Bits 0-3: Row cycles) */
 	uint8_t address_cycles;
 	/** Number of bits per cell */
 	uint8_t bits_per_cell;
@@ -187,29 +190,73 @@ struct spi_nand_onfi_parameter_page {
 	uint16_t beginning_blocks_endurance;
 	/** Number of programs per page */
 	uint8_t programs_per_page;
-	/* Reserved for future use (Block 3) */
-	uint8_t reserved3[1];
+	/** Partial program attributes (ONFI 1.0 - 2.1, obsolete 2.2 - 4.2) */
+	uint8_t partial_program_attributes;
 	/** Number of bits ECC correctability */
 	uint8_t ecc_correctability;
 	/** Number of plane address bits */
 	uint8_t plane_address_bits;
 	/** Multi-plane operation attributes */
 	uint8_t multi_plane_attributes;
-	/* Reserved for future use (Block 4) */
-	uint8_t reserved4[1];
-	/** NV-DDR3 timing mode support */
-	uint16_t ddr3_timing_support;
-	/** NV-LPDDR4 timing mode support */
+	/** EZ NAND support (ONFI 2.3 - 4.2) */
+	uint8_t ez_nand_support;
+	/** NV-DDR3 timing mode support (Field 1) (ONFI 5.0 - 5.2) */
+	uint16_t ddr3_timing_support1;
+	/** NV-LPDDR4 timing mode support (ONFI 5.0+) */
 	uint32_t lpddr4_timing_support;
-	/* Reserved for future use (Block 5) */
-	uint8_t reserved5[6];
+	/** Reserved for future use */
+	uint8_t reserved2[6];
 
 	/*
 	 * Electrical parameters block
 	 */
 
-	/** Blob of electrical parameters */
-	uint8_t electrical_parameters[36];
+	/** I/O pin capacitance, maximum (ONFI 1.0 - 4.2) */
+	uint8_t io_pin_capacitance_max;
+	/** SDR timing mode support (ONFI 1.0 - 5.2) */
+	uint16_t sdr_timing_support;
+	/** SDR program cache timing mode support (ONFI 1.0 - 2.1, obsolete 2.2 - 4.2) */
+	uint16_t sdr_program_cache_timing_support;
+	/** tPROG maximum page program time (us) (ONFI 1.0 - 4.2) */
+	uint16_t t_prog_max;
+	/** tBERS maximum block erase time (us) (ONFI 1.0 - 4.2) */
+	uint16_t t_bers_max;
+	/** tR maximum page read time (us) (ONFI 1.0 - 4.2) */
+	uint16_t t_r_max;
+	/** tCCS minimum change column setup time (ns) (ONFI 1.0 - 4.2) */
+	uint16_t t_ccs_min;
+	/** Source synchronous/NV-DDR timing mode support (ONFI 2.0 - 5.2) */
+	uint8_t ddr_timing_support;
+	/** Source synchronous/NV-DDR2 timing mode support (Field 0) (ONFI 2.0 - 5.2) */
+	uint8_t ddr2_timing_support0;
+	/** Source synchronous/NV-DDR/NV-DDR2 features (ONFI 2.0 - 5.2) */
+	uint8_t ddr_ddr2_features;
+	/** CLK input pin capacitance, typical (ONFI 2.0 - 4.2) */
+	uint16_t clk_pin_capacitance_typ;
+	/** I/O pin capacitance, typical (ONFI 2.0 - 4.2) */
+	uint16_t io_pin_capacitance_typ;
+	/** Input pin capacitance, typical (ONFI 2.0 - 4.2) */
+	uint16_t input_pin_capacitance_typ;
+	/** Input pin capacitance, maximum (ONFI 2.0 - 4.2) */
+	uint8_t input_pin_capacitance_max;
+	/** Driver strength support (ONFI 2.0+) */
+	uint8_t driver_strength_support;
+	/** tR maximum multi-plane page read time (us) (ONFI 2.1 - 4.2) */
+	uint16_t t_r_multi_plane_max;
+	/** tADL program page register clear enhancement value (ns) (ONFI 2.2 - 4.2) */
+	uint16_t t_adl;
+	/** tR typical page read time for EZ NAND (us) (ONFI 2.3 - 4.2) */
+	uint16_t t_r_ez_nand_typ;
+	/** NV-DDR2/NV-DDR3 features (ONFI 3.0 - 5.2) */
+	uint8_t ddr2_ddr3_features;
+	/** NV-DDR2/NV-DDR3 warmup cycles (ONFI 3.0 - 5.2) */
+	uint8_t ddr2_ddr3_warmup_cycles;
+	/** NV-DDR3 timing mode support (Field 0) (ONFI 4.0 - 5.2) */
+	uint16_t ddr3_timing_support0;
+	/** NV-DDR2 timing mode support (Field 1) (ONFI 4.0 - 5.2) */
+	uint8_t ddr2_timing_support1;
+	/** Reserved for future use */
+	uint8_t reserved3;
 
 	/*
 	 * Vendor block
@@ -217,13 +264,14 @@ struct spi_nand_onfi_parameter_page {
 
 	/** Vendor specific Revision number */
 	uint16_t vendor_revision;
-	/** Vendor specific information  */
+	/** Vendor specific information */
 	uint8_t vendor_info[88];
 
 	/*
 	 * Validity block
 	 */
 
+	/** 16-bit CRC covering bytes 0-253 */
 	uint16_t integrity_crc;
 } __packed;
 
