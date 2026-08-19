@@ -1,0 +1,70 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_CC13X4_CC26X4
+
+config SOC_SERIES_CC13X4_CC26X4
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_HAS_FPU
+	select ARMV8_M_DSP
+	select CPU_HAS_ARM_MPU
+	select CPU_HAS_DSP
+	select DYNAMIC_INTERRUPTS
+	select CPU_CORTEX_M_HAS_DWT
+	select HAS_CC13X4_CC26X4_SDK
+	select HAS_TI_CCFG if !BOOTLOADER_MCUBOOT
+	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_PM
+	select HAS_POWEROFF
+
+menu "Customer Configuration (CCFG)"
+
+config SOC_SERIES_CC13X4_CC26X4_BOOTLOADER_ENABLE
+	bool "ROM bootloader"
+	help
+	Enable the serial bootloader in ROM on CC13x4/CC26x4 devices.
+	Default disabled per TI production recommendation.
+
+config SOC_SERIES_CC13X4_CC26X4_BOOTLOADER_BACKDOOR_ENABLE
+	bool "ROM bootloader backdoor"
+	depends on SOC_SERIES_CC13X4_CC26X4_BOOTLOADER_ENABLE
+
+config SOC_SERIES_CC13X4_CC26X4_XOSC_CAPARRAY_DELTA
+	hex "Cap array tuning delta"
+	range 0 0xFF
+	default 0xFF
+
+config SOC_SERIES_CC13X4_CC26X4_IDAU_CFG_ENABLE
+	bool "custom TrustZone boundary configuration"
+	help
+	Enables user-defined NSADDR/NSCADDR watermarks for flash and SRAM.
+	When disabled, TI factory boundaries apply.
+
+config SOC_SERIES_CC13X4_CC26X4_TZ_FLASH_NS_BOUNDARY
+	hex "Flash non-secure address boundary"
+	depends on SOC_SERIES_CC13X4_CC26X4_IDAU_CFG_ENABLE
+	range 0x0 0x3FF
+	default 0x0
+	help
+	SET_CCFG_TRUSTZONE_FLASH_CFG_NSADDR_BOUNDARY.
+	0x0 = all flash except lowest 8KB is non-secure.
+
+config SOC_SERIES_CC13X4_CC26X4_TZ_SRAM_NS_BOUNDARY
+	hex "SRAM non-secure address boundary"
+	depends on SOC_SERIES_CC13X4_CC26X4_IDAU_CFG_ENABLE
+	range 0x0 0x1FF
+	default 0x0
+	help
+	SET_CCFG_TRUSTZONE_SRAM_CFG_NSADDR_BOUNDARY.
+	0x0 = all SRAM is non-secure.
+
+config SOC_SERIES_CC13X4_CC26X4_SRAM_PARITY_DISABLE
+	bool "Disable SRAM parity"
+	help
+	Parity is enabled by default. TI recommends keeping it enabled
+	for any application with run-time security requirements.
+
+endmenu
+
+endif # SOC_SERIES_CC13X4_CC26X4
