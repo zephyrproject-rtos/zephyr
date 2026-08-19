@@ -1621,6 +1621,13 @@ MCUboot
 * ``CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH`` has been removed. Use
   :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE` instead.
 
+MCUmgr
+======
+
+* ``CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM`` has been removed. The
+  :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
+  platform; the pre-4.3 board and board revision output is no longer available.
+
 Random
 ======
 
