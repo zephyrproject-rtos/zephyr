@@ -108,6 +108,8 @@ Removed APIs and options
 
     * ``CONFIG_BUILD_NO_GAP_FILL``
     * ``cmake/app/boilerplate.cmake``
+    * Board revision Kconfig fragments named ``<board>_<revision>.conf``, replaced by
+      ``<board>_<revision>_defconfig``
 
 * Comparator
 
