@@ -113,6 +113,7 @@ Removed APIs and options
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
+    * ``prescaler`` property of :dtcompatible:`nxp,lptmr`
 
 * LLEXT
 
