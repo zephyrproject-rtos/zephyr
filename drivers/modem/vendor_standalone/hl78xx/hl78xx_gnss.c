@@ -1635,7 +1635,7 @@ void hl78xx_run_gnss_init_script_event_handler(struct hl78xx_data *data, enum hl
 			LOG_INF("Full functionality restored, returning to LTE mode");
 			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 			data_gnss->exit_to_lte_pending = false;
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
+			hl78xx_enter_lte_restore_state(data);
 		}
 		break;
 
@@ -1877,7 +1877,7 @@ void hl78xx_gnss_search_started_event_handler(struct hl78xx_data *data, enum hl7
 			LOG_INF("Full functionality restored, returning to LTE mode");
 			gnss_set_search_state(data_gnss, HL78XX_GNSS_SEARCH_STATE_IDLE);
 			data_gnss->exit_to_lte_pending = false;
-			hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
+			hl78xx_enter_lte_restore_state(data);
 		}
 		break;
 
