@@ -42,7 +42,14 @@ achieved by running the following command:
 
 .. code-block:: console
 
-   west blobs fetch hal_nxp
+   west blobs fetch hal_nxp -l "mcxw71"
+
+.. note::
+
+   The ``-l`` option takes a Python regular expression that is matched against
+   each blob's path. Passing ``"mcxw71"`` limits the download to the blobs
+   required by this board instead of fetching every NXP blob. Omit the option
+   (``west blobs fetch hal_nxp``) to fetch all NXP blobs.
 
 Programming and Debugging
 *************************
@@ -179,45 +186,30 @@ Two images must be written to the board: one for the host (CM33) and one for the
 
 - To flash the application (CM33) refer to the ``Application Flashing`` section above.
 
-- To flash the ``NBU Flashing``, follow the instructions below:
+- To flash the NBU, follow the instructions below:
 
    * Install ``blhost`` from NXP's website. This is the tool that will allow you to flash the NBU.
    * Enter ISP mode (see ``Entering ISP Mode``).
-   * Use the following command to flash NBU file:
+   * Pick the NBU image for the protocols you need from the board's blobs folder
+     (``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/``), for example a
+     BLE-only image or a dynamic BLE + 802.15.4 image, then flash it:
 
 .. tabs::
 
-   .. group-tab:: BLE NBU - Windows
+   .. group-tab:: Windows
 
       .. code-block:: console
-         :caption: Flash BLE only NBU on Windows
 
-         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble.sb3
+         blhost.exe -p COMxx -- receive-sb-file <nbu-image>
 
-   .. group-tab:: BLE NBU - Linux
-
-      .. code-block:: console
-         :caption: Flash BLE only NBU on Linux
-
-         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble.sb3
-
-   .. group-tab:: DYN NBU - Windows
+   .. group-tab:: Linux
 
       .. code-block:: console
-         :caption: Flash Dynamic NBU (BLE + 15.4) on Windows
 
-         blhost.exe -p COMxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
+         ./blhost -p /dev/ttyxx -- receive-sb-file <nbu-image>
 
-   .. group-tab:: DYN NBU - Linux
-
-      .. code-block:: console
-         :caption: Flash Dynamic NBU (BLE + 15.4) on Linux
-
-         ./blhost -p /dev/ttyxx -- receive-sb-file mcxw71_nbu_ble_15_4_dyn.sb3
-
-Please consider changing ``COMxx`` on Windows or ``ttyxx`` on Linux to the serial port used by your board.
-
-The NBU files can be found in : ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/mcxw71/`` folder.
+Replace ``COMxx``/``ttyxx`` with the serial port used by your board and
+``<nbu-image>`` with the file selected from the ``blobs/mcxw71/`` folder.
 
 For more details:
 
