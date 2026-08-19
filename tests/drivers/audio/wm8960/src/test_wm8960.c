@@ -42,6 +42,55 @@ static void wm8960_before(void *fixture)
 	wm8960_emul_set_reg(wm8960_emul, 0x0F, 0x0000); /* Trigger reset */
 }
 
+/* IFACE2 and its ADCLRC-pin-as-GPIO bit, ADDCTL2 and its LRCM bit. */
+#define TEST_WM8960_IFACE2          0x09
+#define TEST_WM8960_IFACE2_ALRCGPIO 0x0040
+#define TEST_WM8960_ADDCTL2         0x18
+#define TEST_WM8960_ADDCTL2_LRCM    0x0004
+
+/*
+ * A board routing a single frame clock leaves ADCLRC unconnected, so the ADC
+ * must take its frame clock from DACLRC. Only a node that asks for it should
+ * get ALRCGPIO set.
+ */
+ZTEST(wm8960_test, test_wm8960_shared_lrclk)
+{
+	const struct device *shared = DEVICE_DT_GET(DT_NODELABEL(wm8960_shared));
+	const struct emul *shared_emul = EMUL_DT_GET(DT_NODELABEL(wm8960_shared));
+	const struct device *plain = DEVICE_DT_GET(DT_NODELABEL(wm8960_plain));
+	const struct emul *plain_emul = EMUL_DT_GET(DT_NODELABEL(wm8960_plain));
+	struct audio_codec_cfg config = {
+		.dai_type = AUDIO_DAI_TYPE_I2S,
+		.dai_route = AUDIO_ROUTE_PLAYBACK_CAPTURE,
+		.dai_cfg.i2s = {
+			.word_size = 16,
+			.channels = 2,
+			.format = I2S_FMT_DATA_FORMAT_I2S,
+			.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER,
+			.frame_clk_freq = 48000,
+		}};
+
+	zassert_true(device_is_ready(shared), "shared-lrclk codec is not ready");
+	zassert_true(device_is_ready(plain), "plain codec is not ready");
+
+	zassert_equal(audio_codec_configure(shared, &config), 0);
+	zassert_equal(wm8960_emul_get_reg(shared_emul, TEST_WM8960_IFACE2) &
+			      TEST_WM8960_IFACE2_ALRCGPIO,
+		      TEST_WM8960_IFACE2_ALRCGPIO, "shared-lrclk must select ADCLRC as GPIO");
+	zassert_equal(wm8960_emul_get_reg(shared_emul, TEST_WM8960_ADDCTL2) &
+			      TEST_WM8960_ADDCTL2_LRCM,
+		      TEST_WM8960_ADDCTL2_LRCM,
+		      "shared-lrclk must keep the frame clock running for either direction");
+
+	zassert_equal(audio_codec_configure(plain, &config), 0);
+	zassert_equal(wm8960_emul_get_reg(plain_emul, TEST_WM8960_IFACE2) &
+			      TEST_WM8960_IFACE2_ALRCGPIO,
+		      0, "ALRCGPIO must stay clear without shared-lrclk");
+	zassert_equal(wm8960_emul_get_reg(plain_emul, TEST_WM8960_ADDCTL2) &
+			      TEST_WM8960_ADDCTL2_LRCM,
+		      0, "LRCM must stay clear without shared-lrclk");
+}
+
 ZTEST_SUITE(wm8960_test, NULL, wm8960_setup, wm8960_before, NULL, NULL);
 
 ZTEST(wm8960_test, test_wm8960_init)

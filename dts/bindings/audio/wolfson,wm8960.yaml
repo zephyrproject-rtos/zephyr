@@ -16,6 +16,15 @@ properties:
     description: |
       Enable SYSCLK output on GPIO1.
 
+  shared-lrclk:
+    type: boolean
+    description: |
+      Take the ADC frame clock from DACLRC instead of ADCLRC, and keep
+      DACLRC running while only the ADC is enabled. Set this on boards
+      that route a single frame clock to the codec, leaving the ADCLRC
+      pin unconnected. Without it the ADC is never clocked and capture
+      returns silence.
+
   hp-jd:
     type: string
     default: "WM8960_GPIO1"
