@@ -1721,3 +1721,10 @@ Video
   ``uint16_t *idx`` output parameter but instead returns a pointer to the imported
   :c:struct:`video_buffer`, or ``NULL`` on failure. This helps to make the index transparent
   to the application and also makes the buffer accessible from the application.
+
+Twister
+=======
+
+* Faults after tests have passed are now explicitly detected and fail the whole
+  testsuite, if a test produces a fault on purpose then the corresponding test
+  case has to be marked with ``ignore_faults: true`` (:github:`116359`).
