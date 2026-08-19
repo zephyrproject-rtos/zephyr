@@ -976,6 +976,8 @@
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
 					 <&rcc STM32_CLOCK(AHB5, 24)>;
 				interrupts = <179 0>;
+				snps,multicast-filter-bins = <64>;
+				snps,perfect-filter-entries = <4>;
 				status = "disabled";
 
 				mdio: mdio {
