@@ -47,7 +47,7 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
-	struct k_sem sem;
+	struct k_poll_signal sig;
 	int status;
 	uint16_t idx;
 	uint16_t port;
@@ -69,7 +69,7 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 			status = 0;
 		}
 		state->status = status;
-		k_sem_give(&state->sem);
+		k_poll_signal_raise(&state->sig, 0);
 		return;
 	}
 
@@ -126,6 +126,7 @@ static int exec_query(const char *host, int family,
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(CONFIG_NET_SOCKETS_DNS_TIMEOUT));
 	k_timeout_t timeout = K_MSEC(MIN(CONFIG_NET_SOCKETS_DNS_TIMEOUT,
 					 CONFIG_NET_SOCKETS_DNS_BACKOFF_INTERVAL));
+	struct k_poll_event event;
 	int timeout_ms;
 	int st, ret;
 
@@ -138,14 +139,20 @@ again:
 
 	NET_DBG("Timeout %d", timeout_ms);
 
+	/* Reset the signal and event state; the signal may still be raised
+	 * from a previous query. No query is outstanding at this point.
+	 */
+	k_poll_signal_reset(&ai_state->sig);
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &ai_state->sig);
+
 	ret = dns_get_addr_info(host, qtype, &ai_state->dns_id,
 				dns_resolve_cb, ai_state, timeout_ms);
 	if (ret == 0) {
 		/* If the resolver callback is not called for any reason, let the
-		 * semaphore timeout so getaddrinfo() does not hang forever.
-		 * Keep sem timeout slightly longer than the DNS timeout.
+		 * poll timeout so getaddrinfo() does not hang forever.
+		 * Keep the poll timeout slightly longer than the DNS timeout.
 		 */
-		ret = k_sem_take(&ai_state->sem, K_MSEC(timeout_ms + 100));
+		ret = k_poll(&event, 1, K_MSEC(timeout_ms + 100));
 		if (ret == -EAGAIN) {
 			/* Explicitly cancel timed out query before retrying. This
 			 * prevents delayed callbacks from using stack-based state
@@ -158,7 +165,6 @@ again:
 			(void) dns_cancel_addr_info_with_name(host, qtype, ai_state->dns_id);
 
 			if (!sys_timepoint_expired(end)) {
-				k_sem_reset(&ai_state->sem);
 				timeout = recalc_timeout(end, timeout);
 				goto again;
 			}
@@ -278,7 +284,10 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	ai_state.port = net_htons(port);
 	ai_state.ai_arr = res;
 	ai_state.dns_id = 0;
-	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
+	/* A poll signal is used rather than a semaphore as it, unlike kernel
+	 * objects, may live on the stack.
+	 */
+	k_poll_signal_init(&ai_state.sig);
 
 	/* If family is NET_AF_UNSPEC, then we query IPv4 address first
 	 * if IPv4 is enabled in the config.
