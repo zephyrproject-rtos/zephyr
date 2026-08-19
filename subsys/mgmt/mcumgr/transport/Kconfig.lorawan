@@ -81,6 +81,7 @@ endif # MCUMGR_TRANSPORT_LORAWAN_POLL_FOR_DATA
 
 config MCUMGR_TRANSPORT_LORAWAN_FRAGMENTED_UPLINKS
 	bool "Fragment uplink messages"
+	select POLL
 	default y
 	help
 	  Will fragment messages into multiple uplink messages if they are too big to fit into a
