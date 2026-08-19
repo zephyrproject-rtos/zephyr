@@ -352,6 +352,43 @@ ZTEST(obj_core, test_obj_core_reinit)
 		      "FIFO list truncated by re-initialization\n");
 }
 
+ZTEST(obj_core, test_obj_core_cleanup)
+{
+	struct k_obj_type *obj_type;
+
+	/* Objects that reached the end of their life cycle via their
+	 * *_cleanup() function must be unlinked from their type's list.
+	 */
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_MSGQ_ID);
+	zassert_not_null(obj_type, "message queue object type not found\n");
+
+	k_msgq_init(&msgq2, msgq2_buffer, 4, 4);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&msgq2)), 1,
+		      "message queue not linked\n");
+	zassert_equal(k_msgq_cleanup(&msgq2), 0, "msgq cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&msgq2)), 0,
+		      "cleaned up message queue still linked\n");
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_STACK_ID);
+	zassert_not_null(obj_type, "stack object type not found\n");
+
+	k_stack_init(&stack2, stack2_buffer, 8);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&stack2)), 1, "stack not linked\n");
+	zassert_equal(k_stack_cleanup(&stack2), 0, "stack cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&stack2)), 0,
+		      "cleaned up stack still linked\n");
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_TIMER_ID);
+	zassert_not_null(obj_type, "timer object type not found\n");
+
+	k_timer_init(&timer2, NULL, NULL);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&timer2)), 1, "timer not linked\n");
+	zassert_equal(k_timer_cleanup(&timer2), 0, "timer cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&timer2)), 0,
+		      "cleaned up timer still linked\n");
+}
+
 ZTEST(obj_core, test_obj_core_dyn_free)
 {
 #ifdef CONFIG_DYNAMIC_OBJECTS
