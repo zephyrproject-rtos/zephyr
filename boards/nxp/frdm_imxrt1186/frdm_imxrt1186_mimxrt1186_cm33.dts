@@ -55,10 +55,6 @@
 	current-speed = <115200>;
 };
 
-&flexspi {
-	status = "okay";
-};
-
 &flexspi2 {
 	status = "okay";
 };
