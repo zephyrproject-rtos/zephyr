@@ -711,8 +711,8 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 		APDS9960_CONFIG_INTERRUPT(i)                                                       \
 		.pgain = DT_INST_ENUM_IDX(i, pgain) << 1,                                          \
 		.again = DT_INST_ENUM_IDX(i, again),                                               \
-		.ppcount = DT_INST_ENUM_IDX(i, ppulse_length) |                                    \
-			   (DT_INST_PROP(i, ppulse_count) - 1),                                    \
+		.ppcount = (DT_INST_ENUM_IDX(i, ppulse_length) << 6) |                             \
+			   ((DT_INST_PROP(i, ppulse_count) - 1) & 0x3F),                           \
 		.pled_boost = DT_INST_ENUM_IDX(i, pled_boost) << 4,                                \
 		APDS9960_CONFIG_GESTURE(i)                                                         \
 	};                                                                                         \
