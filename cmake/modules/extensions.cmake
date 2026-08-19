@@ -3483,6 +3483,21 @@ function(zephyr_get variable)
       get_property(sysbuild_main_app TARGET sysbuild_cache PROPERTY SYSBUILD_MAIN_APP)
       get_property(sysbuild_local_${var} TARGET sysbuild_cache PROPERTY ${sysbuild_name}_${var})
       get_property(sysbuild_global_${var} TARGET sysbuild_cache PROPERTY ${var})
+
+      foreach(scope sysbuild_local sysbuild_global)
+        string(CONFIGURE "${${scope}_${var}}" test_expansion_value)
+        if(NOT "${${scope}_${var}}" STREQUAL "${test_expansion_value}")
+          # variable contains an unresolved or undefined variable.
+          # Check if it is sysbuild or globally defined, and resolve it.
+          string(REGEX MATCHALL "\\\${[^\\\$]*}" var_references "${sysbuild_global_${var}}")
+          foreach(var ${var_references})
+            # Var name exists in the match pattern `(<pattern>)` and not the out var `ignore`.
+            string(REGEX MATCH "^\\\${\([^}]*\)}$" ignore "${var}")
+            zephyr_get(${CMAKE_MATCH_1} SYSBUILD)
+          endforeach()
+        endif()
+      endforeach()
+
       if(NOT DEFINED sysbuild_local_${var} AND sysbuild_main_app)
         set(sysbuild_local_${var} ${sysbuild_global_${var}})
       endif()
