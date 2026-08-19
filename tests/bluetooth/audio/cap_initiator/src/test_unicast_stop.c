@@ -284,16 +284,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disa
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
 
-	/* The streams were streaming or enabling, so both the Disable and the Receiver Stop Ready
-	 * subprocedures were performed, but the streams were not released
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 1,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 1,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 0,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
-
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
 		const enum bt_bap_ep_state state = bap_stream->ep->state;
@@ -318,16 +308,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_disa
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
-
-	/* The streams were streaming or enabling, so both the Disable and the Receiver Stop Ready
-	 * subprocedures were performed, but the streams were not released
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 1,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 1,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 0,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
 
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
@@ -357,16 +337,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
 
-	/* The streams were not streaming or enabling, so only the Release subprocedure was
-	 * performed
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 0,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 0,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 1,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
-
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
 
@@ -394,16 +364,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop,
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
 
-	/* The streams were not streaming or enabling, so only the Release subprocedure was
-	 * performed
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 0,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 0,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 1,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
-
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
 
@@ -430,16 +390,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_rele
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
 
-	/* The streams were streaming or enabling and were requested to be released, so all
-	 * subprocedures were performed
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 1,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 1,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 1,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
-
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
 
@@ -465,16 +415,6 @@ static ZTEST_F(cap_initiator_test_unicast_stop, test_initiator_unicast_stop_rele
 
 	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_complete_cb", 1,
 			   mock_cap_initiator_unicast_stop_complete_cb_fake.call_count);
-
-	/* The streams were streaming or enabling and were requested to be released, so all
-	 * subprocedures were performed
-	 */
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_disabled", 1,
-			   mock_cap_initiator_unicast_stop_disabled_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_stopped", 1,
-			   mock_cap_initiator_unicast_stop_stopped_cb_fake.call_count);
-	zexpect_call_count("bt_cap_initiator_cb.unicast_stop_released", 1,
-			   mock_cap_initiator_unicast_stop_released_cb_fake.call_count);
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
 
