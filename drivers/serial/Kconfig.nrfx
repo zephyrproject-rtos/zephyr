@@ -73,7 +73,7 @@ config UARTE_NRFX_UARTE_HAS_DMAEND
 config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	bool "Use TIMER to count RX bytes"
 	depends on UART_ASYNC_API
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),frame-timeout-supported)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),frame-timeout-supported,True)
 	depends on !UARTE_NRFX_UARTE_HAS_DMAEND
 	depends on !ARCH_POSIX # Mode not supported on BSIM target
 	select NRFX_GPPI
