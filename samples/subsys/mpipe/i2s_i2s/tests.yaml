@@ -1,0 +1,15 @@
+sample:
+  name: I2S to I2S pipeline sample
+tests:
+  sample.mpipe.i2s_i2s:
+    tags:
+      - mpipe
+      - audio
+      - samples
+    platform_allow:
+      - native_sim/native/64
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Capture started"
