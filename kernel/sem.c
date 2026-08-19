@@ -27,6 +27,7 @@
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/tracing/tracking.h>
 #include <zephyr/sys/check.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
@@ -91,6 +92,50 @@ static inline bool sem_handle_poll_events(struct k_sem *sem)
 	return false;
 #endif /* CONFIG_POLL */
 }
+
+void z_impl_k_sem_deinit(struct k_sem *sem)
+{
+	k_spinlock_key_t key = k_spin_lock(&sem_lock);
+	bool resched = false;
+
+	/* Release any waiters as if the semaphore was reset */
+	resched = z_sched_wake_all(&sem->wait_q, -EAGAIN, NULL);
+
+	/* Invalidate the semaphore. The zeroed limit makes a deinitialized
+	 * semaphore inert.
+	 */
+	sem->count = 0;
+	sem->limit = 0;
+
+	resched = sem_handle_poll_events(sem) || resched;
+
+	if (resched) {
+		z_reschedule(&sem_lock, key);
+	} else {
+		k_spin_unlock(&sem_lock, key);
+	}
+
+#ifdef CONFIG_USERSPACE
+	k_object_uninit(sem);
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_OBJ_CORE_SEM
+	k_obj_core_unlink(K_OBJ_CORE(sem));
+#endif /* CONFIG_OBJ_CORE_SEM */
+
+#ifdef CONFIG_TRACING_OBJECT_TRACKING
+	sys_track_k_sem_deinit(sem);
+#endif /* CONFIG_TRACING_OBJECT_TRACKING */
+}
+
+#ifdef CONFIG_USERSPACE
+static inline void z_vrfy_k_sem_deinit(struct k_sem *sem)
+{
+	K_OOPS(K_SYSCALL_OBJ(sem, K_OBJ_SEM));
+	z_impl_k_sem_deinit(sem);
+}
+#include <zephyr/syscalls/k_sem_deinit_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_sem_give(struct k_sem *sem)
 {

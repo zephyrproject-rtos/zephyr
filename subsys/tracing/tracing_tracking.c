@@ -62,6 +62,21 @@ struct k_spinlock _track_list_k_event_lock;
 		k_spin_unlock(&list##_lock, key);                                                  \
 	} while (false)
 
+/* Iterates in the tracking list and removes an object when found */
+#define SYS_TRACK_LIST_REMOVE(list, obj)                                                           \
+	do {                                                                                       \
+		k_spinlock_key_t key = k_spin_lock(&list##_lock);                                  \
+		__typeof__(list) *_prev = &(list);                                                 \
+		while (*_prev != NULL) {                                                           \
+			if (*_prev == (obj)) {                                                     \
+				*_prev = (obj)->_obj_track_next;                                   \
+				break;                                                             \
+			}                                                                          \
+			_prev = &(*_prev)->_obj_track_next;                                        \
+		}                                                                                  \
+		k_spin_unlock(&list##_lock, key);                                                  \
+	} while (false)
+
 #define SYS_TRACK_STATIC_INIT(type, ...) \
 	do { \
 		STRUCT_SECTION_FOREACH(type, obj) \
@@ -86,6 +101,14 @@ void sys_track_k_sem_init(struct k_sem *sem)
 	if (sem) {
 		SYS_PORT_TRACING_TYPE_MASK(k_sem,
 				SYS_TRACK_LIST_PREPEND(_track_list_k_sem, sem));
+	}
+}
+
+void sys_track_k_sem_deinit(struct k_sem *sem)
+{
+	if (sem) {
+		SYS_PORT_TRACING_TYPE_MASK(k_sem,
+				SYS_TRACK_LIST_REMOVE(_track_list_k_sem, sem));
 	}
 }
 
