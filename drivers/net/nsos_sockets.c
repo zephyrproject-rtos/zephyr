@@ -1292,6 +1292,21 @@ static int nsos_setsockopt_int(struct nsos_socket *sock, int nsos_mid_level, int
 	return 0;
 }
 
+static int nsos_setsockopt_raw(struct nsos_socket *sock, int nsos_mid_level, int nsos_mid_optname,
+			       const void *optval, net_socklen_t optlen)
+{
+	int err;
+
+	err = nsos_adapt_setsockopt(sock->poll.mid.fd, nsos_mid_level, nsos_mid_optname, optval,
+				    optlen);
+	if (err) {
+		errno = nsi_errno_from_mid(-err);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int nsos_setsockopt(void *obj, int level, int optname,
 			   const void *optval, net_socklen_t optlen)
 {
@@ -1427,8 +1442,35 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 		}
 		break;
 
+	case NET_IPPROTO_IP:
+		switch (optname) {
+		case ZSOCK_IP_MULTICAST_LOOP:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IP,
+						   NSOS_MID_IP_MULTICAST_LOOP, optval, optlen);
+		case ZSOCK_IP_ADD_MEMBERSHIP:
+			if (optlen != sizeof(struct net_ip_mreqn)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			return nsos_setsockopt_raw(sock, NSOS_MID_IPPROTO_IP,
+						   NSOS_MID_IP_ADD_MEMBERSHIP, optval, optlen);
+		}
+		break;
+
 	case NET_IPPROTO_IPV6:
 		switch (optname) {
+		case ZSOCK_IPV6_MULTICAST_LOOP:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IPV6,
+						   NSOS_MID_IPV6_MULTICAST_LOOP, optval, optlen);
+		case ZSOCK_IPV6_ADD_MEMBERSHIP:
+			if (optlen != sizeof(struct net_ipv6_mreq)) {
+				errno = EINVAL;
+				return -1;
+			}
+
+			return nsos_setsockopt_raw(sock, NSOS_MID_IPPROTO_IPV6,
+						   NSOS_MID_IPV6_ADD_MEMBERSHIP, optval, optlen);
 		case ZSOCK_IPV6_V6ONLY:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,

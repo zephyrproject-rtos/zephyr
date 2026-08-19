@@ -858,8 +858,25 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 		}
 		break;
 
+	case NSOS_MID_IPPROTO_IP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_IP_MULTICAST_LOOP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_MULTICAST_LOOP,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_IP_ADD_MEMBERSHIP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
+							 nsos_mid_optval, nsos_mid_optlen);
+		}
+		break;
+
 	case NSOS_MID_IPPROTO_IPV6:
 		switch (nsos_mid_optname) {
+		case NSOS_MID_IPV6_MULTICAST_LOOP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_IPV6_ADD_MEMBERSHIP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
+							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IPV6_V6ONLY:
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 							 nsos_mid_optval, nsos_mid_optlen);
