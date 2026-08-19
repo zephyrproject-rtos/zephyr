@@ -1,0 +1,3407 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
+
+&pinctrl {
+	/* PA0 */
+	/omit-if-no-ref/ analog_pa0: analog_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa0: gpio_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault1_pa0: tima_0_fault1_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_sda_pa0: uc1_0_sda_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_0_tx_pa0: uc1_0_tx_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_rx_pa0: uc13_3_rx_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_scl_pa0: uc13_3_scl_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_sclk_pa0: uc13_3_sclk_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pa0: uc12_tx_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc15_0_sda_pa0: uc15_0_sda_pa0 {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA1 */
+	/omit-if-no-ref/ analog_pa1: analog_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa1: gpio_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault0_pa1: tima_1_fault0_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_rx_pa1: uc1_0_rx_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_0_scl_pa1: uc1_0_scl_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_pico_pa1: uc13_3_pico_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_sda_pa1: uc13_3_sda_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_tx_pa1: uc13_3_tx_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pa1: uc12_rx_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc15_0_scl_pa1: uc15_0_scl_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ timg8_0_idx_pa1: timg8_0_idx_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pa1: tima0_0_ccp1_pa1 {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PA28 */
+	/omit-if-no-ref/ analog_pa28: analog_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa28: gpio_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault0_pa28: tima_0_fault0_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_sda_pa28: uc1_0_sda_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_0_tx_pa28: uc1_0_tx_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_cs0_pa28: uc13_3_cs0_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_cts_pa28: uc13_3_cts_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pa28: uc12_tx_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc15_0_sda_pa28: uc15_0_sda_pa28 {
+		pinmux = <MSP_PINMUX(3, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA29 */
+	/omit-if-no-ref/ analog_pa29: analog_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa29: gpio_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pa29: timg4_2_ccp0_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault1_pa29: tima_1_fault1_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_poci_pa29: uc13_3_poci_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_rts_pa29: uc13_3_rts_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc12_rts_pa29: uc12_rts_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pa29: uc1_1_rx_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pa29: uc1_1_scl_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc15_1_scl_pa29: uc15_1_scl_pa29 {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA30 */
+	/omit-if-no-ref/ analog_pa30: analog_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa30: gpio_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pa30: timg4_2_ccp1_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault2_pa30: tima_0_fault2_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_cts_pa30: uc12_cts_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pa30: uc1_1_sda_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pa30: uc1_1_tx_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc15_1_sda_pa30: uc15_1_sda_pa30 {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA2 */
+	/omit-if-no-ref/ analog_pa2: analog_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa2: gpio_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp1_pa2: timg8_0_ccp1_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pa2: tima0_0_ccp1_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pa2: uc12_rx_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc2_cs0_pa2: uc2_cs0_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_poci_pa2: uc13_1_poci_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_rts_pa2: uc13_1_rts_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_poci_pa2: uc13_3_poci_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_rts_pa2: uc13_3_rts_pa2 {
+		pinmux = <MSP_PINMUX(7, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PA3 */
+	/omit-if-no-ref/ analog_pa3: analog_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa3: gpio_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp0_pa3: timg8_0_ccp0_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pa3: tima0_0_ccp1_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pa3: uc1_1_sda_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pa3: uc1_1_tx_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs1_pa3: uc2_cs1_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ comp1_out_pa3: comp1_out_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc15_1_sda_pa3: uc15_1_sda_pa3 {
+		pinmux = <MSP_PINMUX(8, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA4 */
+	/omit-if-no-ref/ analog_pa4: analog_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa4: gpio_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ sysctl_lfclkin_pa4: sysctl_lfclkin_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pa4: tima0_0_ccp1_cmpl_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pa4: uc1_1_rx_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pa4: uc1_1_scl_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc2_poci_pa4: uc2_poci_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_cs0_pa4: uc13_1_cs0_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_cts_pa4: uc13_1_cts_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc15_1_scl_pa4: uc15_1_scl_pa4 {
+		pinmux = <MSP_PINMUX(9, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PA5 */
+	/omit-if-no-ref/ analog_pa5: analog_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa5: gpio_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pa5: timg4_2_ccp0_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp0_pa5: timg4_0_ccp0_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc2_pico_pa5: uc2_pico_pa5 {
+		pinmux = <MSP_PINMUX(10, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PA6 */
+	/omit-if-no-ref/ analog_pa6: analog_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa6: gpio_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pa6: timg4_2_ccp1_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ sysctl_hfclkin_pa6: sysctl_hfclkin_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pa6: tima0_0_ccp2_cmpl_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc2_sclk_pa6: uc2_sclk_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp1_pa6: timg4_0_ccp1_pa6 {
+		pinmux = <MSP_PINMUX(11, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/* PB0 */
+	/omit-if-no-ref/ analog_pb0: analog_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb0: gpio_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_sda_pb0: uc1_0_sda_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_0_tx_pb0: uc1_0_tx_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp0_pb0: timg4_1_ccp0_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pb0: uc12_tx_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_pb0: tima0_1_ccp2_pb0 {
+		pinmux = <MSP_PINMUX(12, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PB1 */
+	/omit-if-no-ref/ analog_pb1: analog_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb1: gpio_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_rx_pb1: uc1_0_rx_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_0_scl_pb1: uc1_0_scl_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp1_pb1: timg4_1_ccp1_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pb1: uc12_rx_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_cmpl_pb1: tima0_1_ccp2_cmpl_pb1 {
+		pinmux = <MSP_PINMUX(13, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PA7 */
+	/omit-if-no-ref/ analog_pa7: analog_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa7: gpio_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp1_pa7: timg4_3_ccp1_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ sysctl_clk_out_pa7: sysctl_clk_out_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ comp0_out_pa7: comp0_out_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pa7: tima0_0_ccp2_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pa7: i2s0_wclk_pa7 {
+		pinmux = <MSP_PINMUX(14, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/* PB2 */
+	/omit-if-no-ref/ analog_pb2: analog_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb2: gpio_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pb2: timg4_2_ccp0_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_pb2: tima0_0_ccp3_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_cs0_pb2: uc13_1_cs0_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_cts_pb2: uc13_1_cts_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pb2: uc1_1_rx_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pb2: uc1_1_scl_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc15_1_scl_pb2: uc15_1_scl_pb2 {
+		pinmux = <MSP_PINMUX(15, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PB3 */
+	/omit-if-no-ref/ analog_pb3: analog_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb3: gpio_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pb3: timg4_2_ccp1_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_cmpl_pb3: tima0_0_ccp3_cmpl_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_poci_pb3: uc13_1_poci_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_rts_pb3: uc13_1_rts_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pb3: uc1_1_sda_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pb3: uc1_1_tx_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc15_1_sda_pb3: uc15_1_sda_pb3 {
+		pinmux = <MSP_PINMUX(16, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PB4 */
+	/omit-if-no-ref/ analog_pb4: analog_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb4: gpio_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pb4: tima0_0_ccp2_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pb4: uc1_1_sda_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pb4: uc1_1_tx_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pb4: uc13_0_cs0_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pb4: uc13_0_cts_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pb4: uc13_1_pico_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pb4: uc13_1_sda_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pb4: uc13_1_tx_pb4 {
+		pinmux = <MSP_PINMUX(17, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PB5 */
+	/omit-if-no-ref/ analog_pb5: analog_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb5: gpio_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pb5: tima0_0_ccp2_cmpl_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pb5: uc1_1_rx_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pb5: uc1_1_scl_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pb5: uc13_0_poci_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pb5: uc13_0_rts_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_poci_pb5: uc13_1_poci_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_rts_pb5: uc13_1_rts_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc2_poci_pb5: uc2_poci_pb5 {
+		pinmux = <MSP_PINMUX(18, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/* PA8 */
+	/omit-if-no-ref/ analog_pa8: analog_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa8: gpio_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pa8: tima0_0_ccp0_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_pa8: tima0_1_ccp0_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_rts_pa8: uc1_0_rts_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pa8: uc1_1_sda_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pa8: uc1_1_tx_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc2_sclk_pa8: uc2_sclk_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc12_rts_pa8: uc12_rts_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pa8: i2s0_wclk_pa8 {
+		pinmux = <MSP_PINMUX(19, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PA9 */
+	/omit-if-no-ref/ analog_pa9: analog_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa9: gpio_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pa9: tima0_0_ccp0_cmpl_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ lfss_rtc_out_pa9: lfss_rtc_out_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_cts_pa9: uc1_0_cts_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pa9: uc1_1_rx_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pa9: uc1_1_scl_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc2_pico_pa9: uc2_pico_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc12_cts_pa9: uc12_cts_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ sysctl_clk_out_pa9: sysctl_clk_out_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ i2s0_mclk_pa9: i2s0_mclk_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_9)>;
+	};
+
+	/omit-if-no-ref/ dftss_tdo_pa9: dftss_tdo_pa9 {
+		pinmux = <MSP_PINMUX(20, MSPM0_PIN_FUNCTION_10)>;
+	};
+
+	/* PA10 */
+	/omit-if-no-ref/ analog_pa10: analog_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa10: gpio_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp0_pa10: timg12_0_ccp0_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pa10: tima0_0_ccp2_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_sda_pa10: uc1_0_sda_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_0_tx_pa10: uc1_0_tx_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc2_poci_pa10: uc2_poci_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc15_0_sda_pa10: uc15_0_sda_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pa10: uc12_tx_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pa10: uc13_1_rx_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pa10: uc13_1_scl_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pa10: uc13_1_sclk_pa10 {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PA11 */
+	/omit-if-no-ref/ analog_pa11: analog_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa11: gpio_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_cmpl_pa11: tima0_1_ccp0_cmpl_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pa11: tima0_0_ccp2_cmpl_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_rx_pa11: uc1_0_rx_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_0_scl_pa11: uc1_0_scl_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc2_sclk_pa11: uc2_sclk_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc15_0_scl_pa11: uc15_0_scl_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pa11: uc12_rx_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ comp0_out_pa11: comp0_out_pa11 {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB6 */
+	/omit-if-no-ref/ analog_pb6: analog_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb6: gpio_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pb6: timg4_2_ccp0_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_pb6: tima0_1_ccp0_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ i2s1_ad0_pb6: i2s1_ad0_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pb6: uc1_1_sda_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pb6: uc1_1_tx_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc12_cts_pb6: uc12_cts_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc2_cs1_pb6: uc2_cs1_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ canfd1_canrx_pb6: canfd1_canrx_pb6 {
+		pinmux = <MSP_PINMUX(23, MSPM0_PIN_FUNCTION_9)>;
+		input-enable;
+	};
+
+	/* PB7 */
+	/omit-if-no-ref/ analog_pb7: analog_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb7: gpio_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pb7: timg4_2_ccp1_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp0_pb7: timg8_1_ccp0_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_cmpl_pb7: tima0_1_ccp0_cmpl_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_ad1_pb7: i2s1_ad1_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pb7: uc1_1_rx_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pb7: uc1_1_scl_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc12_rts_pb7: uc12_rts_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pb7: uc13_0_poci_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pb7: uc13_0_rts_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ canfd1_cantx_pb7: canfd1_cantx_pb7 {
+		pinmux = <MSP_PINMUX(24, MSPM0_PIN_FUNCTION_9)>;
+	};
+
+	/* PB8 */
+	/omit-if-no-ref/ analog_pb8: analog_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb8: gpio_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_idx_pb8: timg8_1_idx_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ comp1_out_pb8: comp1_out_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault1_pb8: tima_1_fault1_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_wclk_pb8: i2s1_wclk_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_cts_pb8: uc1_1_cts_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pb8: uc13_0_rx_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pb8: uc13_0_scl_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pb8: uc13_0_sclk_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pb8: uc13_0_pico_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pb8: uc13_0_sda_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pb8: uc13_0_tx_pb8 {
+		pinmux = <MSP_PINMUX(25, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB9 */
+	/omit-if-no-ref/ analog_pb9: analog_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb9: gpio_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp1_pb9: timg8_1_ccp1_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pb9: tima0_0_ccp0_cmpl_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ i2s1_bclk_pb9: i2s1_bclk_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rts_pb9: uc1_1_rts_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pb9: uc13_0_pico_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pb9: uc13_0_sda_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pb9: uc13_0_tx_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pb9: uc13_0_rx_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pb9: uc13_0_scl_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pb9: uc13_0_sclk_pb9 {
+		pinmux = <MSP_PINMUX(26, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PB10 */
+	/omit-if-no-ref/ analog_pb10: analog_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb10: gpio_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pb10: timg4_2_ccp0_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp0_pb10: timg4_0_ccp0_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ i2s1_mclk_pb10: i2s1_mclk_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_pico_pb10: uc13_2_pico_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_sda_pb10: uc13_2_sda_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_2_tx_pb10: uc13_2_tx_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_pb10: tima0_1_ccp1_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pb10: i2s0_wclk_pb10 {
+		pinmux = <MSP_PINMUX(27, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB11 */
+	/omit-if-no-ref/ analog_pb11: analog_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb11: gpio_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pb11: timg4_2_ccp1_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ sysctl_clk_out_pb11: sysctl_clk_out_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp1_pb11: timg4_0_ccp1_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_rx_pb11: uc13_2_rx_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_2_scl_pb11: uc13_2_scl_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_2_sclk_pb11: uc13_2_sclk_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_cmpl_pb11: tima0_1_ccp1_cmpl_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ i2s0_bclk_pb11: i2s0_bclk_pb11 {
+		pinmux = <MSP_PINMUX(28, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB12 */
+	/omit-if-no-ref/ analog_pb12: analog_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb12: gpio_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault1_pb12: tima_0_fault1_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pb12: uc13_0_pico_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pb12: uc13_0_sda_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pb12: uc13_0_tx_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_cs0_pb12: uc13_2_cs0_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_cts_pb12: uc13_2_cts_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2s0_ad0_pb12: i2s0_ad0_pb12 {
+		pinmux = <MSP_PINMUX(29, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB13 */
+	/omit-if-no-ref/ analog_pb13: analog_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb13: gpio_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp0_pb13: timg12_0_ccp0_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pb13: tima0_0_ccp1_cmpl_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pb13: uc13_0_rx_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pb13: uc13_0_scl_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pb13: uc13_0_sclk_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_poci_pb13: uc13_2_poci_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_2_rts_pb13: uc13_2_rts_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_cs2_poci2_pb13: qspi_cs2_poci2_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2s0_ad1_pb13: i2s0_ad1_pb13 {
+		pinmux = <MSP_PINMUX(30, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB14 */
+	/omit-if-no-ref/ analog_pb14: analog_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb14: gpio_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_idx_pb14: timg8_0_idx_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp1_pb14: timg12_0_ccp1_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pb14: tima0_0_ccp0_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ qspi_cs0_pb14: qspi_cs0_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pb14: uc13_0_poci_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pb14: uc13_0_rts_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ i2s0_mclk_pb14: i2s0_mclk_pb14 {
+		pinmux = <MSP_PINMUX(31, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB15 */
+	/omit-if-no-ref/ analog_pb15: analog_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb15: gpio_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp0_pb15: timg4_3_ccp0_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp0_pb15: timg8_0_ccp0_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_pb15: tima0_1_ccp3_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s0_mclk_pb15: i2s0_mclk_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_io3_pb15: qspi_io3_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pb15: uc13_1_pico_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pb15: uc13_1_sda_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pb15: uc13_1_tx_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pb15: uc12_tx_pb15 {
+		pinmux = <MSP_PINMUX(32, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PB16 */
+	/omit-if-no-ref/ analog_pb16: analog_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb16: gpio_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp1_pb16: timg4_3_ccp1_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp1_pb16: timg8_0_ccp1_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_cmpl_pb16: tima0_1_ccp3_cmpl_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pb16: i2s0_wclk_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_sclk_pb16: qspi_sclk_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pb16: uc13_1_rx_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pb16: uc13_1_scl_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pb16: uc13_1_sclk_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pb16: uc12_rx_pb16 {
+		pinmux = <MSP_PINMUX(33, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+	};
+
+	/* PA12 */
+	/omit-if-no-ref/ analog_pa12: analog_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa12: gpio_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd0_cantx_pa12: canfd0_cantx_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp0_pa12: timg4_0_ccp0_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ sysctl_fcc_in_pa12: sysctl_fcc_in_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ i2s0_bclk_pa12: i2s0_bclk_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_pico_pa12: qspi_pico_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pa12: uc13_0_cs0_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pa12: uc13_0_cts_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_pa12: tima0_1_ccp1_pa12 {
+		pinmux = <MSP_PINMUX(34, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PA13 */
+	/omit-if-no-ref/ analog_pa13: analog_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa13: gpio_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd0_canrx_pa13: canfd0_canrx_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp1_pa13: timg4_0_ccp1_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault1_pa13: tima_1_fault1_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s0_ad0_pa13: i2s0_ad0_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_io2_pa13: qspi_io2_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pa13: uc13_0_rx_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pa13: uc13_0_scl_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pa13: uc13_0_sclk_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pa13: uc13_0_poci_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pa13: uc13_0_rts_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pa13: uc12_tx_pa13 {
+		pinmux = <MSP_PINMUX(35, MSPM0_PIN_FUNCTION_9)>;
+	};
+
+	/* PA14 */
+	/omit-if-no-ref/ analog_pa14: analog_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa14: gpio_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ sysctl_clk_out_pa14: sysctl_clk_out_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_cmpl_pa14: tima0_1_ccp1_cmpl_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_pa14: tima0_0_ccp3_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s0_ad1_pa14: i2s0_ad1_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ qspi_poci_pa14: qspi_poci_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_0_cts_pa14: uc1_0_cts_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pa14: uc13_0_pico_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pa14: uc13_0_sda_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_8)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pa14: uc13_0_tx_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pa14: uc12_rx_pa14 {
+		pinmux = <MSP_PINMUX(36, MSPM0_PIN_FUNCTION_9)>;
+		input-enable;
+	};
+
+	/* PA15 */
+	/omit-if-no-ref/ analog_pa15: analog_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa15: gpio_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_idx_pa15: timg8_0_idx_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pa15: tima0_0_ccp2_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pa15: uc1_1_rx_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pa15: uc1_1_scl_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc15_1_scl_pa15: uc15_1_scl_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_0_rts_pa15: uc1_0_rts_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pa15: i2s0_wclk_pa15 {
+		pinmux = <MSP_PINMUX(37, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PA16 */
+	/omit-if-no-ref/ analog_pa16: analog_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa16: gpio_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pa16: tima0_0_ccp2_cmpl_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ sysctl_fcc_in_pa16: sysctl_fcc_in_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pa16: uc1_1_sda_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pa16: uc1_1_tx_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pa16: uc13_0_poci_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pa16: uc13_0_rts_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc15_1_sda_pa16: uc15_1_sda_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ qspi_cs3_cd_poci3_pa16: qspi_cs3_cd_poci3_pa16 {
+		pinmux = <MSP_PINMUX(38, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/* PA17 */
+	/omit-if-no-ref/ analog_pa17: analog_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa17: gpio_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp0_pa17: timg4_3_ccp0_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_pa17: tima0_0_ccp3_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_sda_pa17: uc1_1_sda_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc1_1_tx_pa17: uc1_1_tx_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pa17: uc13_0_rx_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pa17: uc13_0_scl_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pa17: uc13_0_sclk_pa17 {
+		pinmux = <MSP_PINMUX(39, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PA18 */
+	/omit-if-no-ref/ analog_pa18: analog_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa18: gpio_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_cmpl_pa18: tima0_0_ccp3_cmpl_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pa18: i2s0_wclk_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rx_pa18: uc1_1_rx_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_1_scl_pa18: uc1_1_scl_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pa18: uc13_0_pico_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pa18: uc13_0_sda_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pa18: uc13_0_tx_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_cs0_pa18: uc13_1_cs0_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_cts_pa18: uc13_1_cts_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ qspi_cs1_poci1_pa18: qspi_cs1_poci1_pa18 {
+		pinmux = <MSP_PINMUX(40, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/* PA19 */
+	/omit-if-no-ref/ analog_pa19: analog_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa19: gpio_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ debugss_swdio_pa19: debugss_swdio_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc15_0_sda_pa19: uc15_0_sda_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pa19: uc12_tx_pa19 {
+		pinmux = <MSP_PINMUX(41, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PA20 */
+	/omit-if-no-ref/ analog_pa20: analog_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa20: gpio_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ debugss_swclk_pa20: debugss_swclk_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc15_0_scl_pa20: uc15_0_scl_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc12_rx_pa20: uc12_rx_pa20 {
+		pinmux = <MSP_PINMUX(42, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/* PB17 */
+	/omit-if-no-ref/ analog_pb17: analog_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb17: gpio_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pb17: tima0_0_ccp2_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pb17: uc13_1_pico_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pb17: uc13_1_sda_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pb17: uc13_1_tx_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc2_pico_pb17: uc2_pico_pb17 {
+		pinmux = <MSP_PINMUX(43, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PB18 */
+	/omit-if-no-ref/ analog_pb18: analog_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb18: gpio_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pb18: tima0_0_ccp2_cmpl_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pb18: uc13_1_rx_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pb18: uc13_1_scl_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pb18: uc13_1_sclk_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc2_sclk_pb18: uc2_sclk_pb18 {
+		pinmux = <MSP_PINMUX(44, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PB19 */
+	/omit-if-no-ref/ analog_pb19: analog_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb19: gpio_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp1_pb19: timg4_3_ccp1_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_pb19: tima0_1_ccp2_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc2_poci_pb19: uc2_poci_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc1_0_cts_pb19: uc1_0_cts_pb19 {
+		pinmux = <MSP_PINMUX(45, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/* PA21 */
+	/omit-if-no-ref/ analog_pa21: analog_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa21: gpio_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pa21: timg4_2_ccp0_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pa21: tima0_0_ccp0_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ i2s0_ad0_pa21: i2s0_ad0_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_cts_pa21: uc1_1_cts_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pa21: uc13_1_pico_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pa21: uc13_1_sda_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pa21: uc13_1_tx_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_cs0_pa21: uc13_2_cs0_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_cts_pa21: uc13_2_cts_pa21 {
+		pinmux = <MSP_PINMUX(46, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/* PA22 */
+	/omit-if-no-ref/ analog_pa22: analog_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa22: gpio_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pa22: timg4_2_ccp1_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pa22: tima0_0_ccp0_cmpl_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ i2s0_bclk_pa22: i2s0_bclk_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ sysctl_clk_out_pa22: sysctl_clk_out_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pa22: uc13_1_rx_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pa22: uc13_1_scl_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pa22: uc13_1_sclk_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_poci_pa22: uc13_2_poci_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_2_rts_pa22: uc13_2_rts_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc1_1_rts_pa22: uc1_1_rts_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ dftss_tdi_pa22: dftss_tdi_pa22 {
+		pinmux = <MSP_PINMUX(47, MSPM0_PIN_FUNCTION_9)>;
+		input-enable;
+	};
+
+	/* PB20 */
+	/omit-if-no-ref/ analog_pb20: analog_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb20: gpio_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp0_pb20: timg12_0_ccp0_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pb20: tima0_0_ccp1_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_cmpl_pb20: tima0_1_ccp2_cmpl_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_ad0_pb20: i2s1_ad0_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs2_pb20: uc2_cs2_pb20 {
+		pinmux = <MSP_PINMUX(48, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/* PB21 */
+	/omit-if-no-ref/ analog_pb21: analog_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb21: gpio_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp0_pb21: timg8_0_ccp0_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ canfd1_cantx_pb21: canfd1_cantx_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_pb21: tima0_1_ccp3_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_ad1_pb21: i2s1_ad1_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc14_rx_pb21: uc14_rx_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc14_scl_pb21: uc14_scl_pb21 {
+		pinmux = <MSP_PINMUX(49, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PB22 */
+	/omit-if-no-ref/ analog_pb22: analog_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb22: gpio_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp1_pb22: timg8_0_ccp1_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ canfd1_canrx_pb22: canfd1_canrx_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_cmpl_pb22: tima0_1_ccp3_cmpl_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_wclk_pb22: i2s1_wclk_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc14_sda_pb22: uc14_sda_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc14_tx_pb22: uc14_tx_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pb22: uc13_0_pico_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pb22: uc13_0_sda_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pb22: uc13_0_tx_pb22 {
+		pinmux = <MSP_PINMUX(50, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PB23 */
+	/omit-if-no-ref/ analog_pb23: analog_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb23: gpio_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp0_pb23: timg4_1_ccp0_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_bclk_pb23: i2s1_bclk_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc14_cts_pb23: uc14_cts_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pb23: uc13_0_rx_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pb23: uc13_0_scl_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pb23: uc13_0_sclk_pb23 {
+		pinmux = <MSP_PINMUX(51, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PB24 */
+	/omit-if-no-ref/ analog_pb24: analog_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb24: gpio_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp1_pb24: timg12_0_ccp1_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault2_pb24: tima_1_fault2_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp1_pb24: timg4_1_ccp1_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ i2s1_mclk_pb24: i2s1_mclk_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc14_rts_pb24: uc14_rts_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs3_pb24: uc2_cs3_pb24 {
+		pinmux = <MSP_PINMUX(52, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PA23 */
+	/omit-if-no-ref/ analog_pa23: analog_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa23: gpio_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_pa23: tima0_0_ccp3_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_wclk_pa23: i2s0_wclk_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pa23: uc13_1_pico_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pa23: uc13_1_sda_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pa23: uc13_1_tx_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pa23: uc13_0_cs0_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pa23: uc13_0_cts_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc2_cs3_pa23: uc2_cs3_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_rx_pa23: uc13_2_rx_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_2_scl_pa23: uc13_2_scl_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_2_sclk_pa23: uc13_2_sclk_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp0_pa23: timg4_0_ccp0_pa23 {
+		pinmux = <MSP_PINMUX(53, MSPM0_PIN_FUNCTION_9)>;
+	};
+
+	/* PA24 */
+	/omit-if-no-ref/ analog_pa24: analog_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa24: gpio_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp3_cmpl_pa24: tima0_0_ccp3_cmpl_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_ad1_pa24: i2s0_ad1_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pa24: uc13_1_rx_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pa24: uc13_1_scl_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pa24: uc13_1_sclk_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pa24: uc13_0_poci_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pa24: uc13_0_rts_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs2_pa24: uc2_cs2_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_pico_pa24: uc13_2_pico_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_2_sda_pa24: uc13_2_sda_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_2_tx_pa24: uc13_2_tx_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ timg12_0_ccp1_pa24: timg12_0_ccp1_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/omit-if-no-ref/ timg4_0_ccp1_pa24: timg4_0_ccp1_pa24 {
+		pinmux = <MSP_PINMUX(54, MSPM0_PIN_FUNCTION_9)>;
+	};
+
+	/* PA25 */
+	/omit-if-no-ref/ analog_pa25: analog_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa25: gpio_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pa25: tima0_0_ccp1_cmpl_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_ad0_pa25: i2s0_ad0_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pa25: uc13_0_rx_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pa25: uc13_0_scl_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pa25: uc13_0_sclk_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_rx_pa25: uc13_3_rx_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_scl_pa25: uc13_3_scl_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_sclk_pa25: uc13_3_sclk_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_poci_pa25: uc13_1_poci_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_rts_pa25: uc13_1_rts_pa25 {
+		pinmux = <MSP_PINMUX(55, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/* PB25 */
+	/omit-if-no-ref/ analog_pb25: analog_pb25 {
+		pinmux = <MSP_PINMUX(56, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb25: gpio_pb25 {
+		pinmux = <MSP_PINMUX(56, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault2_pb25: tima_0_fault2_pb25 {
+		pinmux = <MSP_PINMUX(56, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_bclk_pb25: i2s0_bclk_pb25 {
+		pinmux = <MSP_PINMUX(56, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_cts_pb25: uc1_0_cts_pb25 {
+		pinmux = <MSP_PINMUX(56, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/* PB26 */
+	/omit-if-no-ref/ analog_pb26: analog_pb26 {
+		pinmux = <MSP_PINMUX(57, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb26: gpio_pb26 {
+		pinmux = <MSP_PINMUX(57, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pb26: timg4_2_ccp0_pb26 {
+		pinmux = <MSP_PINMUX(57, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ i2s0_mclk_pb26: i2s0_mclk_pb26 {
+		pinmux = <MSP_PINMUX(57, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc1_0_rts_pb26: uc1_0_rts_pb26 {
+		pinmux = <MSP_PINMUX(57, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PB27 */
+	/omit-if-no-ref/ analog_pb27: analog_pb27 {
+		pinmux = <MSP_PINMUX(58, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb27: gpio_pb27 {
+		pinmux = <MSP_PINMUX(58, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pb27: timg4_2_ccp1_pb27 {
+		pinmux = <MSP_PINMUX(58, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PA26 */
+	/omit-if-no-ref/ analog_pa26: analog_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa26: gpio_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp0_pa26: timg4_3_ccp0_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault0_pa26: tima_0_fault0_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ canfd0_cantx_pa26: canfd0_cantx_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pa26: uc13_0_pico_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pa26: uc13_0_sda_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pa26: uc13_0_tx_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pa26: uc13_0_cs0_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pa26: uc13_0_cts_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_pico_pa26: uc13_3_pico_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_sda_pa26: uc13_3_sda_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_tx_pa26: uc13_3_tx_pa26 {
+		pinmux = <MSP_PINMUX(59, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PA27 */
+	/omit-if-no-ref/ analog_pa27: analog_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pa27: gpio_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp1_pa27: timg4_3_ccp1_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ lfss_rtc_out_pa27: lfss_rtc_out_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ canfd0_canrx_pa27: canfd0_canrx_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp0_pa27: timg4_1_ccp0_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ tima_0_fault2_pa27: tima_0_fault2_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_poci_pa27: uc13_3_poci_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_rts_pa27: uc13_3_rts_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs1_pa27: uc2_cs1_pa27 {
+		pinmux = <MSP_PINMUX(60, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PC12 */
+	/omit-if-no-ref/ analog_pc12: analog_pc12 {
+		pinmux = <MSP_PINMUX(61, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc12: gpio_pc12 {
+		pinmux = <MSP_PINMUX(61, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_pc12: tima0_1_ccp0_pc12 {
+		pinmux = <MSP_PINMUX(61, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC13 */
+	/omit-if-no-ref/ analog_pc13: analog_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc13: gpio_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp0_pc13: timg4_1_ccp0_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_pico_pc13: uc13_1_pico_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_sda_pc13: uc13_1_sda_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_tx_pc13: uc13_1_tx_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_rts_pc13: uc12_rts_pc13 {
+		pinmux = <MSP_PINMUX(62, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PC14 */
+	/omit-if-no-ref/ analog_pc14: analog_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc14: gpio_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp1_pc14: timg4_1_ccp1_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_1_rx_pc14: uc13_1_rx_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_1_scl_pc14: uc13_1_scl_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_1_sclk_pc14: uc13_1_sclk_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc12_cts_pc14: uc12_cts_pc14 {
+		pinmux = <MSP_PINMUX(63, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/* PC15 */
+	/omit-if-no-ref/ analog_pc15: analog_pc15 {
+		pinmux = <MSP_PINMUX(64, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc15: gpio_pc15 {
+		pinmux = <MSP_PINMUX(64, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp0_cmpl_pc15: tima0_1_ccp0_cmpl_pc15 {
+		pinmux = <MSP_PINMUX(64, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PB28 */
+	/omit-if-no-ref/ analog_pb28: analog_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb28: gpio_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pb28: tima0_0_ccp0_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_rx_pb28: uc13_3_rx_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_scl_pb28: uc13_3_scl_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_sclk_pb28: uc13_3_sclk_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pb28: uc13_0_cs0_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pb28: uc13_0_cts_pb28 {
+		pinmux = <MSP_PINMUX(65, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/* PB29 */
+	/omit-if-no-ref/ analog_pb29: analog_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb29: gpio_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pb29: tima0_0_ccp0_cmpl_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp0_pb29: timg8_1_ccp0_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_pico_pb29: uc13_3_pico_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_sda_pb29: uc13_3_sda_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_tx_pb29: uc13_3_tx_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pb29: uc13_0_poci_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pb29: uc13_0_rts_pb29 {
+		pinmux = <MSP_PINMUX(66, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PB30 */
+	/omit-if-no-ref/ analog_pb30: analog_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb30: gpio_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pb30: tima0_0_ccp1_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp1_pb30: timg8_1_ccp1_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_cs0_pb30: uc13_3_cs0_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_cts_pb30: uc13_3_cts_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pb30: uc13_0_pico_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pb30: uc13_0_sda_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pb30: uc13_0_tx_pb30 {
+		pinmux = <MSP_PINMUX(67, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PB31 */
+	/omit-if-no-ref/ analog_pb31: analog_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pb31: gpio_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_idx_pb31: timg8_0_idx_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pb31: tima0_0_ccp1_cmpl_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_poci_pb31: uc13_3_poci_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_rts_pb31: uc13_3_rts_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pb31: uc13_0_rx_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pb31: uc13_0_scl_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_5)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pb31: uc13_0_sclk_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_idx_pb31: timg8_1_idx_pb31 {
+		pinmux = <MSP_PINMUX(68, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/* PC16 */
+	/omit-if-no-ref/ analog_pc16: analog_pc16 {
+		pinmux = <MSP_PINMUX(69, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc16: gpio_pc16 {
+		pinmux = <MSP_PINMUX(69, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/* PC17 */
+	/omit-if-no-ref/ analog_pc17: analog_pc17 {
+		pinmux = <MSP_PINMUX(70, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc17: gpio_pc17 {
+		pinmux = <MSP_PINMUX(70, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_pc17: tima0_1_ccp1_pc17 {
+		pinmux = <MSP_PINMUX(70, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC18 */
+	/omit-if-no-ref/ analog_pc18: analog_pc18 {
+		pinmux = <MSP_PINMUX(71, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc18: gpio_pc18 {
+		pinmux = <MSP_PINMUX(71, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_pc18: tima0_1_ccp3_pc18 {
+		pinmux = <MSP_PINMUX(71, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC19 */
+	/omit-if-no-ref/ analog_pc19: analog_pc19 {
+		pinmux = <MSP_PINMUX(72, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc19: gpio_pc19 {
+		pinmux = <MSP_PINMUX(72, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp3_cmpl_pc19: tima0_1_ccp3_cmpl_pc19 {
+		pinmux = <MSP_PINMUX(72, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC20 */
+	/omit-if-no-ref/ analog_pc20: analog_pc20 {
+		pinmux = <MSP_PINMUX(73, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc20: gpio_pc20 {
+		pinmux = <MSP_PINMUX(73, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault2_pc20: tima_1_fault2_pc20 {
+		pinmux = <MSP_PINMUX(73, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC0 */
+	/omit-if-no-ref/ analog_pc0: analog_pc0 {
+		pinmux = <MSP_PINMUX(74, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc0: gpio_pc0 {
+		pinmux = <MSP_PINMUX(74, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp0_pc0: timg8_0_ccp0_pc0 {
+		pinmux = <MSP_PINMUX(74, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_pc0: tima0_0_ccp2_pc0 {
+		pinmux = <MSP_PINMUX(74, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ qspi_cs0_pc0: qspi_cs0_pc0 {
+		pinmux = <MSP_PINMUX(74, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/* PC1 */
+	/omit-if-no-ref/ analog_pc1: analog_pc1 {
+		pinmux = <MSP_PINMUX(75, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc1: gpio_pc1 {
+		pinmux = <MSP_PINMUX(75, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_0_ccp1_pc1: timg8_0_ccp1_pc1 {
+		pinmux = <MSP_PINMUX(75, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp2_cmpl_pc1: tima0_0_ccp2_cmpl_pc1 {
+		pinmux = <MSP_PINMUX(75, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/* PC2 */
+	/omit-if-no-ref/ analog_pc2: analog_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc2: gpio_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pc2: tima0_0_ccp0_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima_1_fault0_pc2: tima_1_fault0_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pc2: uc13_0_rx_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pc2: uc13_0_scl_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pc2: uc13_0_sclk_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ timg4_1_ccp1_pc2: timg4_1_ccp1_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pc2: uc13_0_cs0_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_6)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pc2: uc13_0_cts_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_6)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_cs0_pc2: uc13_3_cs0_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_cts_pc2: uc13_3_cts_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc2_cs0_pc2: uc2_cs0_pc2 {
+		pinmux = <MSP_PINMUX(76, MSPM0_PIN_FUNCTION_8)>;
+	};
+
+	/* PC3 */
+	/omit-if-no-ref/ analog_pc3: analog_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc3: gpio_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_3_ccp1_pc3: timg4_3_ccp1_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pc3: tima0_0_ccp0_cmpl_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pc3: uc13_0_pico_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pc3: uc13_0_sda_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pc3: uc13_0_tx_pc3 {
+		pinmux = <MSP_PINMUX(77, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PC4 */
+	/omit-if-no-ref/ analog_pc4: analog_pc4 {
+		pinmux = <MSP_PINMUX(78, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc4: gpio_pc4 {
+		pinmux = <MSP_PINMUX(78, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pc4: tima0_0_ccp1_pc4 {
+		pinmux = <MSP_PINMUX(78, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC5 */
+	/omit-if-no-ref/ analog_pc5: analog_pc5 {
+		pinmux = <MSP_PINMUX(79, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc5: gpio_pc5 {
+		pinmux = <MSP_PINMUX(79, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pc5: tima0_0_ccp1_cmpl_pc5 {
+		pinmux = <MSP_PINMUX(79, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC21 */
+	/omit-if-no-ref/ analog_pc21: analog_pc21 {
+		pinmux = <MSP_PINMUX(80, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc21: gpio_pc21 {
+		pinmux = <MSP_PINMUX(80, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd1_cantx_pc21: canfd1_cantx_pc21 {
+		pinmux = <MSP_PINMUX(80, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC22 */
+	/omit-if-no-ref/ analog_pc22: analog_pc22 {
+		pinmux = <MSP_PINMUX(81, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc22: gpio_pc22 {
+		pinmux = <MSP_PINMUX(81, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd1_canrx_pc22: canfd1_canrx_pc22 {
+		pinmux = <MSP_PINMUX(81, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/* PC23 */
+	/omit-if-no-ref/ analog_pc23: analog_pc23 {
+		pinmux = <MSP_PINMUX(82, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc23: gpio_pc23 {
+		pinmux = <MSP_PINMUX(82, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_pc23: tima0_1_ccp2_pc23 {
+		pinmux = <MSP_PINMUX(82, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC24 */
+	/omit-if-no-ref/ analog_pc24: analog_pc24 {
+		pinmux = <MSP_PINMUX(83, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc24: gpio_pc24 {
+		pinmux = <MSP_PINMUX(83, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp2_cmpl_pc24: tima0_1_ccp2_cmpl_pc24 {
+		pinmux = <MSP_PINMUX(83, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/* PC6 */
+	/omit-if-no-ref/ analog_pc6: analog_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc6: gpio_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp0_pc6: timg4_2_ccp0_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_pc6: tima0_0_ccp0_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_pico_pc6: uc13_0_pico_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_sda_pc6: uc13_0_sda_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_tx_pc6: uc13_0_tx_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs1_pc6: uc2_cs1_pc6 {
+		pinmux = <MSP_PINMUX(84, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PC7 */
+	/omit-if-no-ref/ analog_pc7: analog_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc7: gpio_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg4_2_ccp1_pc7: timg4_2_ccp1_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp0_cmpl_pc7: tima0_0_ccp0_cmpl_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_rx_pc7: uc13_0_rx_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_scl_pc7: uc13_0_scl_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_4)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_0_sclk_pc7: uc13_0_sclk_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/omit-if-no-ref/ uc2_cs0_pc7: uc2_cs0_pc7 {
+		pinmux = <MSP_PINMUX(85, MSPM0_PIN_FUNCTION_5)>;
+	};
+
+	/* PC8 */
+	/omit-if-no-ref/ analog_pc8: analog_pc8 {
+		pinmux = <MSP_PINMUX(86, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc8: gpio_pc8 {
+		pinmux = <MSP_PINMUX(86, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_pc8: tima0_0_ccp1_pc8 {
+		pinmux = <MSP_PINMUX(86, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cs0_pc8: uc13_0_cs0_pc8 {
+		pinmux = <MSP_PINMUX(86, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_cts_pc8: uc13_0_cts_pc8 {
+		pinmux = <MSP_PINMUX(86, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/* PC9 */
+	/omit-if-no-ref/ analog_pc9: analog_pc9 {
+		pinmux = <MSP_PINMUX(87, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc9: gpio_pc9 {
+		pinmux = <MSP_PINMUX(87, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_0_ccp1_cmpl_pc9: tima0_0_ccp1_cmpl_pc9 {
+		pinmux = <MSP_PINMUX(87, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_0_poci_pc9: uc13_0_poci_pc9 {
+		pinmux = <MSP_PINMUX(87, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_0_rts_pc9: uc13_0_rts_pc9 {
+		pinmux = <MSP_PINMUX(87, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/* PC10 */
+	/omit-if-no-ref/ analog_pc10: analog_pc10 {
+		pinmux = <MSP_PINMUX(88, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc10: gpio_pc10 {
+		pinmux = <MSP_PINMUX(88, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp0_pc10: timg8_1_ccp0_pc10 {
+		pinmux = <MSP_PINMUX(88, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc14_rx_pc10: uc14_rx_pc10 {
+		pinmux = <MSP_PINMUX(88, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc14_scl_pc10: uc14_scl_pc10 {
+		pinmux = <MSP_PINMUX(88, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/* PC11 */
+	/omit-if-no-ref/ analog_pc11: analog_pc11 {
+		pinmux = <MSP_PINMUX(89, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc11: gpio_pc11 {
+		pinmux = <MSP_PINMUX(89, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_ccp1_pc11: timg8_1_ccp1_pc11 {
+		pinmux = <MSP_PINMUX(89, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc14_sda_pc11: uc14_sda_pc11 {
+		pinmux = <MSP_PINMUX(89, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc14_tx_pc11: uc14_tx_pc11 {
+		pinmux = <MSP_PINMUX(89, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/* PC25 */
+	/omit-if-no-ref/ analog_pc25: analog_pc25 {
+		pinmux = <MSP_PINMUX(90, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc25: gpio_pc25 {
+		pinmux = <MSP_PINMUX(90, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ timg8_1_idx_pc25: timg8_1_idx_pc25 {
+		pinmux = <MSP_PINMUX(90, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc14_cts_pc25: uc14_cts_pc25 {
+		pinmux = <MSP_PINMUX(90, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+	};
+
+	/* PC26 */
+	/omit-if-no-ref/ analog_pc26: analog_pc26 {
+		pinmux = <MSP_PINMUX(91, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc26: gpio_pc26 {
+		pinmux = <MSP_PINMUX(91, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd1_cantx_pc26: canfd1_cantx_pc26 {
+		pinmux = <MSP_PINMUX(91, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc14_rts_pc26: uc14_rts_pc26 {
+		pinmux = <MSP_PINMUX(91, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/* PC27 */
+	/omit-if-no-ref/ analog_pc27: analog_pc27 {
+		pinmux = <MSP_PINMUX(92, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc27: gpio_pc27 {
+		pinmux = <MSP_PINMUX(92, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ canfd1_canrx_pc27: canfd1_canrx_pc27 {
+		pinmux = <MSP_PINMUX(92, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/* PC28 */
+	/omit-if-no-ref/ analog_pc28: analog_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc28: gpio_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_rx_pc28: uc13_3_rx_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+	};
+
+	/omit-if-no-ref/ uc13_3_scl_pc28: uc13_3_scl_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_sclk_pc28: uc13_3_sclk_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc12_tx_pc28: uc12_tx_pc28 {
+		pinmux = <MSP_PINMUX(93, MSPM0_PIN_FUNCTION_4)>;
+	};
+
+	/* PC29 */
+	/omit-if-no-ref/ analog_pc29: analog_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_ANALOG)>;
+	};
+
+	/omit-if-no-ref/ gpio_pc29: gpio_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_GPIO)>;
+	};
+
+	/omit-if-no-ref/ tima0_1_ccp1_cmpl_pc29: tima0_1_ccp1_cmpl_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_2)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_pico_pc29: uc13_3_pico_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_3)>;
+	};
+
+	/omit-if-no-ref/ uc13_3_sda_pc29: uc13_3_sda_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-disable;
+	};
+
+	/omit-if-no-ref/ uc13_3_tx_pc29: uc13_3_tx_pc29 {
+		pinmux = <MSP_PINMUX(94, MSPM0_PIN_FUNCTION_3)>;
+	};
+};
