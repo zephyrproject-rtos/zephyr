@@ -1510,6 +1510,12 @@ Random
 
 * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION`` has been removed. It did not have any effect.
 
+Stream Flash
+============
+
+* ``stream_flash_erase_page()`` has been removed. Use :c:func:`flash_area_erase` or
+  :c:func:`flash_erase` instead; there is no Stream Flash API equivalent.
+
 Tools
 *****
 
