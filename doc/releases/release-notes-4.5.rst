@@ -162,6 +162,10 @@ Removed APIs and options
   deprecated in Zephyr 4.3, has been removed. Use
   :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` instead.
 
+* The ``--skip-rebuild`` option of ``west flash``, ``west debug`` and the other commands that
+  invoke a runner, which was deprecated in Zephyr 4.3, has been removed. Use ``--no-rebuild``
+  instead.
+
 Deprecated APIs and options
 ===========================
 

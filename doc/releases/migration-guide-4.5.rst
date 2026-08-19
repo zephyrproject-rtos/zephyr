@@ -1663,6 +1663,10 @@ Stream Flash
 Tools
 *****
 
+* The ``--skip-rebuild`` option of the ``west`` commands that invoke a runner (``flash``,
+  ``debug``, ``debugserver``, ``attach``, ``rtt``, ``reset``, ``robot`` and ``simulate``) has
+  been removed. Use ``--no-rebuild`` instead.
+
 * The ``openocd`` runner now selects a debug adapter by serial number through the
   canonical ``-i``/``--dev-id`` option, like the other runners. The previous
   ``--serial`` option is deprecated and kept as an alias; it maps onto the same
