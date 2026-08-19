@@ -4,13 +4,25 @@
 menuconfig ETH_NXP_IMX_NETC
 	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
 	default y
-	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED || DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED || \
+		DT_HAS_NXP_IMX_NETC_VSI_ENABLED || \
+		MDIO_NXP_IMX_NETC
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
-	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
-	  Supports both the Physical Station Interface (PSI) and the Virtual
-	  Station Interface (VSI).
+	  Enable Ethernet and Network Controller (NETC) support for NXP IMX SoCs.
+	  Supports the Physical Station Interface (PSI), the Virtual Station
+	  Interface (VSI) and the EMDIO controller.
+
+	  When a PSI or VSI node is enabled, this builds the NETC Ethernet
+	  station-interface driver(s). When only the External MDIO (EMDIO)
+	  node is enabled, no Ethernet interface is instantiated: the
+	  option is still selected so that the NETC HAL component and the
+	  SoC/board NETC bring-up (clock roots, MII mode, IERB) run,
+	  allowing the NETC MDIO driver and external PHYs to operate while
+	  an external stack owns the NETC Ethernet controller. The PSI/VSI
+	  driver sources are compiled only when their devicetree nodes are
+	  present, so an EMDIO-only build links neither.
 
 	  Note: the VSI support targets the AMP use case where Zephyr owns a VSI
 	  (a VF) while another OS owns the PSI (the PF). The Zephyr PSI driver
