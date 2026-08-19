@@ -45,6 +45,12 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		} else {
 			if (pins->bias_pull_up || pins->bias_pull_down) {
 				cfg |= BIT(3);
+			} else if (bit0 == CH32V20X_V30X_PINMUX_ADC1_RM) {
+				/* Analog input mode */
+				cfg = 0;
+			} else {
+				/* Floating input mode */
+				cfg |= BIT(2);
 			}
 		}
 
