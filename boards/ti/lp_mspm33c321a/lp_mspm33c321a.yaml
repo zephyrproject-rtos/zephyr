@@ -8,4 +8,6 @@ ram: 256
 flash: 1024
 supported:
   - watchdog
+  - pinctrl
+  - uart
 vendor: ti

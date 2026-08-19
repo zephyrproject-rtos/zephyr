@@ -7,6 +7,7 @@
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
 #include <ti/mspm33c/mspm33c321a-pinctrl.dtsi>
+#include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
 
 / {
 	compatible = "ti,lp-mspm33c321a";
@@ -21,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash_controller;
 		zephyr,crc = &crc;
+		zephyr,console = &unicomm12_uart;
 	};
 };
 
@@ -64,5 +66,16 @@
 };
 
 &wdt0 {
+	status = "okay";
+};
+
+&unicomm12 {
+	status = "okay";
+};
+
+&unicomm12_uart {
+	current-speed = <115200>;
+	pinctrl-0 = <&uc12_tx_pa10 &uc12_rx_pa11>;
+	pinctrl-names = "default";
 	status = "okay";
 };
