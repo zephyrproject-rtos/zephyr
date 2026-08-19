@@ -1,0 +1,15 @@
+common:
+  tags:
+    - printk
+    - userspace
+tests:
+  libraries.printk:
+    integration_platforms:
+      - native_sim
+      - qemu_x86
+      - qemu_arc/qemu_arc_em
+  libraries.printk.sync:
+    extra_configs:
+      - CONFIG_PRINTK_SYNC=y
+    integration_platforms:
+      - qemu_x86
