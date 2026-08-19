@@ -305,12 +305,16 @@ static void gpio_bcm2711_isr(const struct device *port)
 
 	regval &= BIT_MASK(cfg->ngpios) << cfg->offset;
 
-	pins = (uint32_t)(regval >> cfg->offset);
-	gpio_fire_callbacks(&data->cb, port, pins);
-
-	/* Write to clear */
+	/* Clear the latched events before running callbacks: a callback may
+	 * itself generate a new edge on a watched pin (e.g. EDGE_BOTH where
+	 * the handler toggles the output), and a post-callback W1C write
+	 * would race with that new edge.
+	 */
 	sys_write32(FROM_U64(regval, 0), GPEDS(data->base, 0));
 	sys_write32(FROM_U64(regval, 1), GPEDS(data->base, 1));
+
+	pins = (uint32_t)(regval >> cfg->offset);
+	gpio_fire_callbacks(&data->cb, port, pins);
 }
 
 int gpio_bcm2711_init(const struct device *port)
