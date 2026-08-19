@@ -251,6 +251,13 @@ static int gpio_bcm2711_pin_interrupt_configure(const struct device *port, gpio_
 	regval &= ~BIT(shift);
 	sys_write32(regval, GPAFEN(data->base, group));
 
+	/* Clear any pending event left from a prior detector mode, so the
+	 * first ISR after reconfigure reflects a real edge -- not a stale
+	 * one (especially important for EDGE_BOTH, where a stale latch
+	 * would consume one of the two edges the caller expects to see).
+	 */
+	sys_write32(BIT(shift), GPEDS(data->base, group));
+
 	if (mode == GPIO_INT_MODE_LEVEL) {
 		if (trig & GPIO_INT_LOW_0) {
 			regval = sys_read32(GPLEN(data->base, group));
