@@ -1142,6 +1142,7 @@ static inline void i2c_dw_write_byte_non_blocking(const struct device *dev, uint
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (!test_bit_status_tfnt(reg_base)) { /* Tx FIFO must not be full */
+		LOG_ERR("Tx FIFO is full");
 		return;
 	}
 
@@ -1167,6 +1168,8 @@ static int i2c_dw_set_controller_mode(const struct device *dev)
 
 	write_tx_tl(ic_comp_param_1.bits.tx_buffer_depth + 1, reg_base);
 	write_rx_tl(ic_comp_param_1.bits.rx_buffer_depth + 1, reg_base);
+
+	LOG_DBG("I2C: Host registered as Master Device");
 
 	return 0;
 }
