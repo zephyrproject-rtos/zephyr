@@ -46,6 +46,10 @@ Build System
   :kconfig:option:`CONFIG_BUILD_OUTPUT_HEX_GAP_FILL` and
   :kconfig:option:`CONFIG_BUILD_OUTPUT_S19_GAP_FILL`, so simply drop the option.
 
+* :file:`cmake/app/boilerplate.cmake` has been removed. Applications still
+  including it directly must start their :file:`CMakeLists.txt` with
+  ``find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})`` instead.
+
 Kernel
 ******
 
