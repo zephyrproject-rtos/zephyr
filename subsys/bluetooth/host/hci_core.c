@@ -185,7 +185,7 @@ struct cmd_data {
 	struct bt_hci_cmd_state_set *state;
 
 	/** Used by bt_hci_cmd_send_sync. */
-	struct k_sem *sync;
+	struct k_poll_signal *sync;
 };
 
 static struct cmd_data cmd_data[BT_BUF_CMD_TX_COUNT];
@@ -454,7 +454,8 @@ static bool process_pending_cmd(k_timeout_t timeout);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
-	struct k_sem sync_sem;
+	struct k_poll_signal sync_sig;
+	struct k_poll_event sync_event;
 	uint8_t status;
 	int err;
 
@@ -473,12 +474,15 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
-	/* This local sem is just for suspending the current thread until the
-	 * command is processed by the LL. It is given (and we are awaken) by
-	 * the cmd_complete/status handlers.
+	/* This local signal is just for suspending the current thread until
+	 * the command is processed by the LL. It is raised (and we are
+	 * awaken) by the cmd_complete/status handlers. A poll signal is used
+	 * rather than a semaphore as it, unlike kernel objects, may live on
+	 * the stack.
 	 */
-	k_sem_init(&sync_sem, 0, 1);
-	cmd(buf)->sync = &sync_sem;
+	k_poll_signal_init(&sync_sig);
+	k_poll_event_init(&sync_event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sync_sig);
+	cmd(buf)->sync = &sync_sig;
 
 	err = bt_hci_cmd_send(opcode, net_buf_ref(buf));
 	if (err) {
@@ -518,7 +522,7 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 	}
 
 	/* Now that we have sent the command, suspend until the LL replies */
-	err = k_sem_take(&sync_sem, HCI_CMD_TIMEOUT);
+	err = k_poll(&sync_event, 1, HCI_CMD_TIMEOUT);
 	BT_ASSERT_MSG(err == 0,
 		      "Controller unresponsive, command opcode 0x%04x timeout with err %d",
 		      opcode, err);
@@ -2637,7 +2641,7 @@ static void hci_cmd_done(uint16_t opcode, uint8_t status, struct net_buf *evt_bu
 	if (cmd(buf)->sync) {
 		LOG_DBG("sync cmd released");
 		cmd(buf)->status = status;
-		k_sem_give(cmd(buf)->sync);
+		k_poll_signal_raise(cmd(buf)->sync, 0);
 	}
 
 exit:
