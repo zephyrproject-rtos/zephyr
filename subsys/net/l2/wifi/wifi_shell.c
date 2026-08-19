@@ -4662,6 +4662,33 @@ static int validate_srv_proto_type(int type)
 	return 0;
 }
 
+/* Convert an SSI hex string into the caller's buffer */
+static int parse_nan_ssi(const struct shell *sh, const char *arg, uint8_t *ssi, size_t ssi_size,
+			 uint16_t *ssi_len)
+{
+	size_t hex_len = strlen(arg);
+
+	if (hex_len == 0) {
+		*ssi_len = 0;
+		return 0;
+	}
+
+	if (hex_len / 2 + hex_len % 2 > ssi_size) {
+		PR_ERROR("SSI is %zu bytes, max %zu (%s)\n",
+			 hex_len / 2 + hex_len % 2, ssi_size,
+			"CONFIG_WIFI_NAN_MAX_SSI_LEN");
+		return -EINVAL;
+	}
+
+	*ssi_len = hex2bin(arg, hex_len, ssi, ssi_size);
+	if (*ssi_len == 0) {
+		PR_ERROR("Invalid SSI hex string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Parse NAN publish arguments */
 static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *argv[],
 				  struct wifi_nan_params *params)
@@ -4712,17 +4739,13 @@ static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *arg
 			params->publish.freq_list[sizeof(params->publish.freq_list) - 1] = '\0';
 			break;
 		}
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->publish.ssi,
-					      sizeof(params->publish.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->publish.ssi,
+					  sizeof(params->publish.ssi),
+					  &params->publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->publish.ssi_len = ssi_len;
 			break;
-		}
 		case 'u':
 			params->publish.unsolicited = shell_strtol(state->optarg, 10, &ret) != 0;
 			break;
@@ -4805,17 +4828,13 @@ static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, ch
 		case 'n':
 			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->update_publish.ssi,
-					      sizeof(params->update_publish.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->update_publish.ssi,
+					  sizeof(params->update_publish.ssi),
+					  &params->update_publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->update_publish.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4878,17 +4897,13 @@ static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *a
 		case 'f':
 			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->subscribe.ssi,
-					      sizeof(params->subscribe.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->subscribe.ssi,
+					  sizeof(params->subscribe.ssi),
+					  &params->subscribe.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->subscribe.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4974,17 +4989,13 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 				return -EINVAL;
 			}
 			break;
-		case 'd': {
-			size_t ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->transmit.ssi,
-					      sizeof(params->transmit.ssi));
-			if (ssi_len == 0 && strlen(state->optarg) > 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->transmit.ssi,
+					  sizeof(params->transmit.ssi),
+					  &params->transmit.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->transmit.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
