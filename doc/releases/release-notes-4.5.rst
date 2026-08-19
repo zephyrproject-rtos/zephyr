@@ -118,6 +118,17 @@ Removed APIs and options
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
 
+* Mbed TLS
+
+    * ``CONFIG_MBEDTLS_MD``
+    * ``CONFIG_MBEDTLS_LMS``
+    * ``CONFIG_MBEDTLS_TLS_VERSION_1_2``
+    * ``CONFIG_MBEDTLS_DTLS``
+    * ``CONFIG_MBEDTLS_TLS_VERSION_1_3``
+    * ``CONFIG_MBEDTLS_TLS_SESSION_TICKETS``
+    * ``CONFIG_MBEDTLS_CTR_DRBG_ENABLED``
+    * ``CONFIG_MBEDTLS_HMAC_DRBG_ENABLED``
+
 * MCUboot
 
     * ``CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH``, replaced by
