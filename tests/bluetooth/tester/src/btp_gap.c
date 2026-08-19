@@ -66,76 +66,6 @@ static struct bt_le_oob oob_sc_remote = { 0 };
 #define REJECT_LATENCY 0x0000
 #define REJECT_SUPERVISION_TIMEOUT 0x0C80
 
-/**
- * Used to store CAR support status of bonded peer devices not every connected peer.
- * So it is sufficient to have storage enough for CONFIG_BT_MAX_PAIRED.
- * CAR status is only requested from peers that are bonded, because GATT CARR read is
- * triggered in auth_pairing_complete callback.
- * Thus GATT read callback calls add_to_peers_with_car and bond_deleted callback resets the
- * CAR status when bond is deleted.
- */
-static struct {
-	bt_addr_le_t addr;
-	bool supported;
-} peers_with_car[CONFIG_BT_MAX_PAIRED];
-
-static void add_to_peers_with_car(const bt_addr_le_t *addr, bool supported)
-{
-	/* Check if the peer is already in the list, update the supported state */
-	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_eq(addr, &peers_with_car[i].addr)) {
-			peers_with_car[i].supported = supported;
-			return;
-		}
-	}
-
-	/* If the peer is not in the list, add it */
-	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_eq(&peers_with_car[i].addr, &bt_addr_le_any)) {
-			peers_with_car[i].supported = supported;
-			bt_addr_le_copy(&peers_with_car[i].addr, addr);
-			return;
-		}
-	}
-}
-
-static uint8_t read_car_cb(struct bt_conn *conn, uint8_t err,
-			  struct bt_gatt_read_params *params, const void *data,
-			  uint16_t length)
-{
-	struct btp_gap_peer_car_status_ev ev;
-	struct bt_conn_info info;
-	bool supported = false;
-
-	ev.car = 0x00;
-
-	if (!err && data && length == 1) {
-		const uint8_t *tmp = data;
-
-		/* only 0 or 1 are valid values */
-		if (tmp[0] == 1) {
-			supported = true;
-			ev.car = 0x01;
-		}
-	}
-
-	bt_conn_get_info(conn, &info);
-
-	add_to_peers_with_car(info.le.dst, supported);
-
-	bt_addr_le_copy(&ev.address, info.le.dst);
-	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PEER_CAR_RECEIVED, &ev, sizeof(ev));
-
-	return BT_GATT_ITER_STOP;
-}
-
-static struct bt_gatt_read_params read_car_params = {
-	.func = read_car_cb,
-	.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
-	.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
-	.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
-};
-
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
@@ -978,7 +908,6 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 	struct bt_le_adv_param adv_param = BT_LE_ADV_PARAM_INIT(
 		BT_LE_ADV_OPT_CONN, BT_GAP_ADV_FAST_INT_MIN_2, BT_GAP_ADV_FAST_INT_MAX_2, NULL);
 	uint16_t options = sys_le16_to_cpu(cp->options);
-	bool peer_car_supported = false;
 
 	if (bt_addr_le_eq(&cp->address, &bt_addr_le_any)) {
 		LOG_ERR("Invalid peer address");
@@ -1000,15 +929,8 @@ static uint8_t start_directed_advertising(const void *cmd, uint16_t cmd_len,
 			return BTP_STATUS_FAILED;
 		}
 
-		for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-			if (bt_addr_le_eq(&cp->address, &peers_with_car[i].addr) &&
-			    peers_with_car[i].supported) {
-				peer_car_supported = true;
-				break;
-			}
-		}
-
-		if (peer_car_supported == false) {
+		if (bt_le_bond_addr_res_support(BT_ID_DEFAULT, &cp->address) !=
+		    BT_LE_ADDR_RES_SUPPORT_YES) {
 			LOG_WRN("Peer doesn't support CAR");
 			return BTP_STATUS_FAILED;
 		}
@@ -1595,29 +1517,19 @@ void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PAIRING_FAILED, &ev, sizeof(ev));
 }
 
-static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+static void addr_res_support_read(struct bt_conn *conn, enum bt_le_addr_res_support support)
 {
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) && bonded) {
-		/* Read peer's Central Address Resolution if bonded */
-		bt_gatt_read(conn, &read_car_params);
-	}
-}
+	struct btp_gap_peer_car_status_ev ev;
 
-static void bond_deleted(uint8_t id, const bt_addr_le_t *peer)
-{
-	for (int i = 0; i < CONFIG_BT_MAX_PAIRED; i++) {
-		if (bt_addr_le_eq(peer, &peers_with_car[i].addr)) {
-			peers_with_car[i].supported = false;
-			bt_addr_le_copy(&peers_with_car[i].addr, &bt_addr_le_any);
-			return;
-		}
-	}
+	bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
+	ev.car = (support == BT_LE_ADDR_RES_SUPPORT_YES) ? 0x01 : 0x00;
+
+	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_PEER_CAR_RECEIVED, &ev, sizeof(ev));
 }
 
 static struct bt_conn_auth_info_cb auth_info_cb = {
 	.pairing_failed = auth_pairing_failed,
-	.pairing_complete = auth_pairing_complete,
-	.bond_deleted = bond_deleted,
+	.addr_res_support_read = addr_res_support_read,
 };
 
 #if defined(CONFIG_BT_CLASSIC)
