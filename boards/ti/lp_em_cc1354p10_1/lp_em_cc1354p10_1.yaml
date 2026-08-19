@@ -1,0 +1,11 @@
+identifier: lp_em_cc1354p10_1
+name: TI SimpleLink CC1354P10_1 LaunchPad
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+vendor: ti
