@@ -1622,6 +1622,13 @@ Other subsystems
   :c:func:`cpu_load_get_cpu`. Note that :c:func:`cpu_load_get_cpu` returns the load in per mille
   (0...1000) rather than percent; use :c:macro:`CPU_LOAD_PERMILLE_TO_PERCENT` to convert.
 
+Logging
+=======
+
+* The UART dictionary log parsing script ``scripts/logging/dictionary/log_parser_uart.py`` has
+  been removed. Use :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` instead, which
+  takes the port and baud rate after a ``serial`` sub-command.
+
 MCUboot
 =======
 
