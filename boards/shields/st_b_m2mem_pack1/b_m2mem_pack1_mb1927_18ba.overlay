@@ -25,14 +25,11 @@
 		read-command = <0xec13>;
 		write-command = <0x12ed>;
 		command-length = "INSTR_2_BYTE";
-
-		/* TODO:
-		 * mx25uw25645 datasheet: Confirm octal STR read dummy cycles.
-		 * placeholder value mirrors mx25lm51245 (33ba) - should be verified
+		/* The number of dummy cycles for the octal read is taken from
+		 * configuration register 2 of the memory itself, see the
+		 * mxicy,mx25u quirk, so rx-dummy is deliberately not set here.
 		 */
-		rx-dummy = <20>;
-
-		/* TODO: Add jedec-id */
+		jedec-id = [c2 81 39];
 
 		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
 		/* The reset line drives the module LDO enable, so a reset is a
