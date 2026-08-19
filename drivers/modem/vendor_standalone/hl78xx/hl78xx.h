@@ -1299,6 +1299,22 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state);
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt);
 
 /**
+ * @brief Resume LTE service, running the config chain first if this session
+ *        has not been configured yet.
+ *
+ * Enters RUN_INIT_SCRIPT when init_sequence_completed is false (the chain ends
+ * by setting it and falling through to GPRS enable), or RUN_ENABLE_GPRS_SCRIPT
+ * directly when the session is already configured. Use this instead of
+ * entering RUN_ENABLE_GPRS_SCRIPT directly on any path that restores LTE after
+ * a detour (GNSS mode, airplane mode, carrier off): a session that booted
+ * straight into the detour has an unconfigured modem, and registration URCs
+ * from an unconfigured modem are deliberately discarded by hl78xx_on_cxreg().
+ *
+ * @param data Modem data structure.
+ */
+void hl78xx_enter_lte_restore_state(struct hl78xx_data *data);
+
+/**
  * @brief Discard driver state that describes a modem session that has ended.
  *
  * Must be called at every hardware session boundary: cold power-on
