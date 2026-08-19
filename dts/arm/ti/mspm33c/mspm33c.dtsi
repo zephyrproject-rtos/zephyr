@@ -186,6 +186,150 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		unicomm1_0: unicomm1_0@40582000 {
+			reg = <0x40582000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <25 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm1_0_uart: unicomm1_0_uart@40502000 {
+				reg = <0x40502000 DT_SIZE_K(8)>;
+				interrupts = <25 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				status = "disabled";
+			};
+		};
+
+		unicomm1_1: unicomm1_1@40584000 {
+			reg = <0x40584000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <26 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm1_1_uart: unicomm1_1_uart@40504000 {
+				reg = <0x40504000 DT_SIZE_K(8)>;
+				interrupts = <26 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				status = "disabled";
+			};
+		};
+
+		unicomm12: unicomm12@40688000 {
+			reg = <0x40688000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			unicomm-fixed-mode;
+			interrupts = <30 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm12_uart: unicomm12_uart@40608000 {
+				reg = <0x40608000 DT_SIZE_K(8)>;
+				interrupts = <30 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+			};
+		};
+
+		unicomm13_0: unicomm13_0@4068a000 {
+			reg = <0x4068a000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <31 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_0_uart: unicomm13_0_uart@4060a000 {
+				reg = <0x4060a000 DT_SIZE_K(8)>;
+				interrupts = <31 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_1: unicomm13_1@40780000 {
+			reg = <0x40780000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <50 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_1_uart: unicomm13_1_uart@40700000 {
+				reg = <0x40700000 DT_SIZE_K(8)>;
+				interrupts = <50 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_2: unicomm13_2@40782000 {
+			reg = <0x40782000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <51 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_2_uart: unicomm13_2_uart@40702000 {
+				reg = <0x40702000 DT_SIZE_K(8)>;
+				interrupts = <51 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
+
+		unicomm13_3: unicomm13_3@40784000 {
+			reg = <0x40784000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <52 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm13_3_uart: unicomm13_3_uart@40704000 {
+				reg = <0x40704000 DT_SIZE_K(8)>;
+				interrupts = <52 0>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				compatible = "ti,mspm0-uart";
+				is-unicomm-uart;
+				clocks = <&ckm MSPM0_CLOCK_MCLK>;
+				clk-div = <1>;
+				status = "disabled";
+			};
+		};
 	};
 };
 
