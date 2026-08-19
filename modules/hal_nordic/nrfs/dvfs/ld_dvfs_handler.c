@@ -300,11 +300,6 @@ static void dvfs_service_handler_task(void *dummy0, void *dummy1, void *dummy2)
 
 	LOG_DBG("DVFS init done.");
 
-#if defined(CONFIG_NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT)
-	LOG_DBG("Requesting lowest frequency oppoint.");
-	dvfs_service_handler_change_freq_setting(DVFS_FREQ_LOW);
-#endif
-
 	while (1) {
 		k_sem_take(&dvfs_service_idle_sem, K_FOREVER);
 		/* perform background processing */
