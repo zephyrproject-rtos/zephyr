@@ -377,9 +377,9 @@ static int virtnet_dev_init(const struct device *dev)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
+	bool has_devcfg_mac = false;
 	bool has_ctrl_vq = false;
-
-	(void)net_eth_mac_load(&config->mcfg, data->mac);
+	int ret;
 
 	k_mutex_init(&data->ctrl_lock);
 	k_sem_init(&data->ctrl_sem, 0, 1);
@@ -405,9 +405,28 @@ static int virtnet_dev_init(const struct device *dev)
 	}
 #endif /* CONFIG_ETH_VIRTIO_NET_MULTICAST_FILTER */
 
+
+	ret = net_eth_mac_load(&config->mcfg, data->mac);
+
+	/* Without an explicit devicetree MAC configuration, use the address
+	 * the device provides in the config space
+	 */
+	if (ret == -ENODATA && virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_MAC)) {
+		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_MAC, true)) {
+			LOG_WRN("could not enable device MAC address feature bit");
+		} else {
+			has_devcfg_mac = data->virtio_devcfg != NULL;
+		}
+	}
+
 	if (virtio_commit_feature_bits(config->vdev)) {
 		LOG_ERR("could not commit feature bits");
 	}
+
+	if (has_devcfg_mac) {
+		memcpy(data->mac, data->virtio_devcfg->mac, sizeof(data->mac));
+	}
+
 	LOG_DBG("MAC address is %02x:%02x:%02x:%02x:%02x:%02x", data->mac[0], data->mac[1],
 		data->mac[2], data->mac[3], data->mac[4], data->mac[5]);
 
