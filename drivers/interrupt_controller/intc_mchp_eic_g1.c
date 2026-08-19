@@ -262,7 +262,12 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
-		LOG_ERR("EIC Line is already free");
+		/* Disabling an interrupt that is not configured is what
+		 * gpio_pin_interrupt_configure(GPIO_INT_DISABLE) does on a pin nobody
+		 * armed, and the API calls that success. Nothing is wrong here.
+		 */
+		LOG_DBG("EIC line for port %d : %d is already free", eic_pin_config->port_id,
+			eic_pin_config->pin_num);
 		return 0;
 	}
 
