@@ -709,7 +709,7 @@ static DEVICE_API(sensor, apds9960_driver_api) = {
 	static const struct apds9960_config apds9960_config_##i = {                                \
 		.i2c = I2C_DT_SPEC_INST_GET(i),                                                    \
 		APDS9960_CONFIG_INTERRUPT(i)                                                       \
-		.pgain = DT_INST_ENUM_IDX(i, pgain) << 1,                                          \
+		.pgain = DT_INST_ENUM_IDX(i, pgain) << 2,                                          \
 		.again = DT_INST_ENUM_IDX(i, again),                                               \
 		.ppcount = (DT_INST_ENUM_IDX(i, ppulse_length) << 6) |                             \
 			   ((DT_INST_PROP(i, ppulse_count) - 1) & 0x3F),                           \
