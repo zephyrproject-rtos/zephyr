@@ -123,7 +123,7 @@ static int perform_xfer(const struct device *dev, uint8_t cmd)
 		dev_data->packet.cmd = cmd;
 	}
 
-	/* Commands before chip is initialized manually apply a MSPI config
+	/* Commands before chip is initialized manually apply an MSPI config
 	 * which all flash chips support by JEDEC standard. Do not switch
 	 * to device tree config yet.
 	 * If multiple IO lines are used in all the transfer phases
