@@ -85,7 +85,7 @@ int main(void)
 			 * complement value.
 			 */
 			if (adc_channels[i].channel_cfg.differential) {
-				if (adc_channels[i].resolution <= 16) {
+			if (adc_channels[i].resolution <= 16U) {
 					val_mv = (int32_t)((int16_t)buf);
 				} else {
 					val_mv = (int32_t)buf;
