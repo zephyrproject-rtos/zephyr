@@ -1,0 +1,14 @@
+identifier: nano_ch32v305
+name: MuseLab nanoCH32V305
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 128
+supported:
+  - entropy
+  - gpio
+  - uart
+vendor: muselab
