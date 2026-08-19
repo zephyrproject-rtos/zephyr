@@ -15,6 +15,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
 
+#include <zephyr/dt-bindings/clock/ch32-common.h>
+
 #include <hal_ch32fun.h>
 
 /*
@@ -85,9 +87,8 @@ struct clock_control_wch_rcc_config {
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
-	RCC_TypeDef *regs = config->regs;
-	uint8_t id = (uintptr_t)sys;
-	uint32_t reg = (uint32_t)(&regs->WCH_RCC_PCENR_BASE + WCH_RCC_CLOCK_ID_OFFSET(id));
+	uint32_t id = (uintptr_t)sys;
+	uint32_t reg = ((uint32_t)config->regs) + WCH_RCC_CLOCK_ID_OFFSET(id);
 	uint32_t val = sys_read32(reg);
 
 	val |= BIT(WCH_RCC_CLOCK_ID_BIT(id));

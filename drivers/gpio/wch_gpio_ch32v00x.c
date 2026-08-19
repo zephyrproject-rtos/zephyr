@@ -45,7 +45,7 @@ struct gpio_ch32v00x_config {
 	struct gpio_driver_config common;
 	GPIO_TypeDef *regs;
 	const struct device *clock_dev;
-	uint8_t clock_id;
+	uint32_t clock_id;
 };
 
 struct gpio_ch32v00x_data {

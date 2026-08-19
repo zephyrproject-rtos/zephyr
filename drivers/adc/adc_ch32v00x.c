@@ -16,7 +16,7 @@ struct adc_ch32v00x_config {
 	ADC_TypeDef *regs;
 	const struct pinctrl_dev_config *pin_cfg;
 	const struct device *clock_dev;
-	uint8_t clock_id;
+	uint32_t clock_id;
 };
 
 static int adc_ch32v00x_channel_setup(const struct device *dev,

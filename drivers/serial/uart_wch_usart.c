@@ -17,9 +17,9 @@
 struct usart_wch_config {
 	USART_TypeDef *regs;
 	const struct device *clock_dev;
+	uint32_t clock_id;
 	uint32_t current_speed;
 	uint8_t parity;
-	uint8_t clock_id;
 	const struct pinctrl_dev_config *pin_cfg;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(const struct device *dev);
