@@ -37,11 +37,55 @@ struct fd_slot *zvfs_fd_slot_get(int fd);
 struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 
-int zvfs_fd_obj_refcount(void *obj);
-/* number of memory mappings referencing an I/O object (CONFIG_ZVFS_MMAP) */
-int z_zvfs_mmap_obj_refs(const void *obj);
+struct k_process;
+#if defined(CONFIG_ZVFS_FDTABLE) && defined(CONFIG_SYS_PROCESS)
+/* give @a child its own descriptor table: a copy of the caller's */
+int z_zvfs_fds_clone(struct k_process *child, k_tid_t leader);
+/*
+ * Operations on a paused child's table: install the caller's @a parentfd
+ * as the child's @a childfd, dup within the child's table, and close in
+ * the child's table.
+ */
+int z_zvfs_fds_child_set(k_tid_t child, int childfd, int parentfd);
+int z_zvfs_fds_child_dup2(k_tid_t child, int oldfd, int newfd);
+int z_zvfs_fds_child_close(k_tid_t child, int fd);
+/* close every descriptor in the caller's table marked FD_CLOEXEC */
+void zvfs_fds_cloexec(void);
+#else
+static inline int z_zvfs_fds_clone(struct k_process *child, k_tid_t leader)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(leader);
+	return 0;
+}
 
-void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset);
+static inline int z_zvfs_fds_child_set(k_tid_t child, int childfd, int parentfd)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(childfd);
+	ARG_UNUSED(parentfd);
+	return 0;
+}
+
+static inline int z_zvfs_fds_child_dup2(k_tid_t child, int oldfd, int newfd)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(oldfd);
+	ARG_UNUSED(newfd);
+	return 0;
+}
+
+static inline int z_zvfs_fds_child_close(k_tid_t child, int fd)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(fd);
+	return 0;
+}
+
+static inline void zvfs_fds_cloexec(void)
+{
+}
+#endif
 
 /** zvfs_poll_prepare_fd() armed *pev with the fd's wait condition(s) */
 #define ZVFS_POLL_PREPARED 0
@@ -49,11 +93,18 @@ void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset);
 #define ZVFS_POLL_READY    1
 
 struct k_poll_event;
+struct zvfs_flock;
 struct zvfs_pollfd;
 
 int zvfs_poll_prepare_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev,
 			 struct k_poll_event *pev_end);
 int zvfs_poll_update_fd(struct zvfs_pollfd *pfd, struct k_poll_event **pev);
+
+int zvfs_fd_obj_refcount(void *obj);
+/* number of memory mappings referencing an I/O object (CONFIG_ZVFS_MMAP) */
+int z_zvfs_mmap_obj_refs(const void *obj);
+
+void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset);
 
 bool supports_pread_pwrite(uint32_t mode);
 int zvfs_rw_unlocked(int fd, void *buf, size_t sz, bool is_write, const size_t *from_offset);

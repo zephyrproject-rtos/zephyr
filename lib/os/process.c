@@ -21,6 +21,7 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/elastipool.h>
+#include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/sys/process.h>
 #include <zephyr/sys/thread.h>
 #include <kernel_internal.h>
@@ -1020,9 +1021,18 @@ int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
 
 	(void)k_mem_domain_add_thread(z_process_vm_domain(proc->vm), tid);
 
+	/* the child's descriptor table: a copy of the caller's */
+	ret = z_zvfs_fds_clone(proc, tid);
+	if (ret < 0) {
+		k_thread_abort(tid);
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+
 	ret = k_process_init(proc, &tid, 1);
 	if (ret < 0) {
 		k_thread_abort(tid);
+		z_process_fds_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;
 	}
@@ -1132,9 +1142,18 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 		return ret;
 	}
 
+	/* the child's descriptor table: a copy of the caller's */
+	ret = z_zvfs_fds_clone(proc, tid);
+	if (ret < 0) {
+		leader_discard(args, tid);
+		(void)z_process_record_free(proc);
+		return ret;
+	}
+
 	ret = k_process_init(proc, &tid, 1);
 	if (ret < 0) {
 		leader_discard(args, tid);
+		z_process_fds_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;
 	}

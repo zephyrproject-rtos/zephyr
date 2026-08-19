@@ -207,6 +207,25 @@ static inline int z_session_cell_free(struct k_session *session)
 }
 #endif /* CONFIG_SYS_PROCESS */
 
+/*
+ * Per-process descriptor-table providers (zvfs). The exit sweep runs in the
+ * dying thread's own context and may block; the drop runs under the process
+ * lock and only detaches, deferring closes and frees to the provider.
+ */
+#if defined(CONFIG_ZVFS_FDTABLE) && defined(CONFIG_PROCESS)
+void z_process_fds_exit(void);
+void z_process_fds_drop(struct k_process *proc);
+#else
+static inline void z_process_fds_exit(void)
+{
+}
+
+static inline void z_process_fds_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
+#endif /* CONFIG_ZVFS_FDTABLE && CONFIG_PROCESS */
+
 #ifdef CONFIG_USERSPACE
 /* permission-principal index management and the reap-time sweep */
 int16_t z_process_perm_index_alloc(void);

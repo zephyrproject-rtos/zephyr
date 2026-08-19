@@ -275,6 +275,10 @@ struct k_process {
 	/** Cloned address-space context (system layer), or NULL */
 	void *vm;
 #endif /* CONFIG_PROCESS_VM */
+#ifdef CONFIG_ZVFS_FDTABLE
+	/** Per-process descriptor table (system layer); NULL shares the boot table */
+	void *fds;
+#endif /* CONFIG_ZVFS_FDTABLE */
 	/** @endcond */
 };
 

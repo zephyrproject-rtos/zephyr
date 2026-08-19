@@ -1175,7 +1175,12 @@ static void process_init_two_threads(void)
 	zassert_equal(k_process_init(&pi_record2, list, 1), -EBUSY);
 
 	/* both listed threads are members and observe the leader handle as pid */
+	pi_seen_pid_b = NULL;
 	k_thread_start(list[1]);
+	/* b records its pid before a's k_exit() can abort it */
+	while (pi_seen_pid_b == NULL) {
+		k_msleep(1);
+	}
 	k_thread_start(list[0]);
 	zassert_ok(k_waitpid(list[0], NULL, &ws, 0, K_FOREVER));
 	zassert_true(K_WIFEXITED(ws));

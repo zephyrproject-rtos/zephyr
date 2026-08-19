@@ -366,6 +366,7 @@ static void process_free_locked(struct k_process *proc, bool sched_locked)
 	z_process_perm_index_free(proc->perm_index);
 	proc->perm_index = -1;
 #endif /* CONFIG_USERSPACE */
+	z_process_fds_drop(proc);
 	proc->state = K_PROCESS_UNUSED;
 	/* the single pid-retirement point: the leader handle may be reused now */
 	proc->leader = NULL;
@@ -1107,6 +1108,9 @@ static FUNC_NORETURN void process_exit(int wstatus)
 	/* zombification happens in the halt path when the last member exits */
 	proc->state = K_PROCESS_EXITING;
 	k_spin_unlock(&process_lock, key);
+
+	/* POSIX: descriptors close at termination, not reap; may block here */
+	z_process_fds_exit();
 
 	k_thread_abort(k_current_get());
 

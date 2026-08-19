@@ -25,6 +25,8 @@
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/kernel/process.h>
+#include <zephyr/sys/elastipool.h>
 #include <zephyr/sys/fdtable.h>
 #include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/sys/internal/kobject_internal.h>
@@ -71,7 +73,7 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #endif
 };
 
-/* the boot descriptor table, shared by every thread */
+/* the boot descriptor table, shared by every thread without its own */
 static struct fd_slot fd_boot_slots[ZVFS_OPEN_SIZE] = {
 #ifdef CONFIG_ZVFS_RESERVE_STDIO_FDS
 	{.entry = &fdtable[0]},
@@ -82,10 +84,68 @@ static struct fd_slot fd_boot_slots[ZVFS_OPEN_SIZE] = {
 
 static K_MUTEX_DEFINE(fdtable_lock);
 
+#ifdef CONFIG_PROCESS
+#if CONFIG_ZVFS_PROC_OPEN_MAX > 0
+#define ZVFS_PROC_OPEN_SIZE CONFIG_ZVFS_PROC_OPEN_MAX
+/* fd_set bitsets and the description pool are sized by the system limit */
+BUILD_ASSERT(CONFIG_ZVFS_PROC_OPEN_MAX <= ZVFS_OPEN_SIZE,
+	     "per-process descriptor limit exceeds the system-wide table size");
+#else
+#define ZVFS_PROC_OPEN_SIZE ZVFS_OPEN_SIZE
+#endif
+
+/* a process's descriptor table; kernel processes share the boot table */
+struct zvfs_proc_fds {
+	sys_dnode_t node;
+	struct fd_slot slots[ZVFS_PROC_OPEN_SIZE];
+};
+
+static struct k_spinlock fds_graveyard_lock;
+static sys_dlist_t fds_graveyard = SYS_DLIST_STATIC_INIT(&fds_graveyard);
+
+#ifdef CONFIG_SYS_PROCESS
+/* one table per dynamically created process: sized as the process records */
+#define FDS_POOL_MAX (SYS_PROCESS_MIN + CONFIG_SYS_PROCESS_MAX)
+
+__aligned(WB_UP(__alignof(struct zvfs_proc_fds))) static uint8_t
+	fds_pool_storage[ROUND_UP(sizeof(struct zvfs_proc_fds), __alignof(struct zvfs_proc_fds)) *
+			 SYS_PROCESS_MIN];
+SYS_ELASTIPOOL_DEFINE_ADVANCED(fds_pool, sizeof(struct zvfs_proc_fds),
+			       __alignof(struct zvfs_proc_fds), SYS_PROCESS_MIN, FDS_POOL_MAX,
+			       SYS_ELASTIPOOL_KERNEL_HEAP_ALLOC_FN(SYS_PROCESS_MIN, FDS_POOL_MAX),
+			       fds_pool_storage, static);
+#endif /* CONFIG_SYS_PROCESS */
+#endif /* CONFIG_PROCESS */
+
 /* the calling thread's descriptor table */
+static struct fd_slot *fd_slots_n(int *n)
+{
+#ifdef CONFIG_PROCESS
+	/*
+	 * Library-side user-mode callers (fileno, FILE locking) cannot read
+	 * the thread struct or a heap-allocated table; they resolve the boot
+	 * table, as before per-process tables. Syscall paths resolve here in
+	 * kernel mode and see the caller's own table.
+	 */
+	if (!k_is_user_context()) {
+		k_tid_t self = k_current_get();
+		struct k_process *proc = (self == NULL) ? NULL : self->process;
+
+		if ((proc != NULL) && (proc->fds != NULL)) {
+			*n = ZVFS_PROC_OPEN_SIZE;
+			return ((struct zvfs_proc_fds *)proc->fds)->slots;
+		}
+	}
+#endif
+	*n = ZVFS_OPEN_SIZE;
+	return fd_boot_slots;
+}
+
 static struct fd_slot *fd_slots(void)
 {
-	return fd_boot_slots;
+	int unused;
+
+	return fd_slots_n(&unused);
 }
 
 static int fd_entry_ref(struct fd_entry *entry)
@@ -145,7 +205,8 @@ static struct fd_entry *_find_description(void)
 
 static int _find_fd_slot_at_or_above(int minfd)
 {
-	struct fd_slot *slots = fd_slots();
+	int n;
+	struct fd_slot *slots = fd_slots_n(&n);
 	int fd;
 
 	if (minfd < 0) {
@@ -153,7 +214,7 @@ static int _find_fd_slot_at_or_above(int minfd)
 		return -1;
 	}
 
-	for (fd = minfd; fd < ZVFS_OPEN_SIZE; fd++) {
+	for (fd = minfd; fd < n; fd++) {
 		if (slots[fd].entry == NULL) {
 			return fd;
 		}
@@ -255,9 +316,14 @@ int z_impl_zvfs_dup2(int oldfd, int newfd)
 		return -1;
 	}
 
-	if (newfd < 0 || newfd >= ZVFS_OPEN_SIZE) {
-		errno = EBADF;
-		return -1;
+	{
+		int n;
+
+		(void)fd_slots_n(&n);
+		if (newfd < 0 || newfd >= n) {
+			errno = EBADF;
+			return -1;
+		}
 	}
 
 	if (zvfs_fd_entry_get(newfd) != NULL) {
@@ -305,14 +371,15 @@ static int z_vrfy_zvfs_dup2(int oldfd, int newfd)
 
 struct fd_slot *zvfs_fd_slot_get(int fd)
 {
-	struct fd_slot *slots = fd_slots();
+	int n;
+	struct fd_slot *slots = fd_slots_n(&n);
 
-	if ((fd < 0) || (fd >= ZVFS_OPEN_SIZE)) {
+	if ((fd < 0) || (fd >= n)) {
 		errno = EBADF;
 		return NULL;
 	}
 
-	fd = k_array_index_sanitize(fd, ZVFS_OPEN_SIZE);
+	fd = k_array_index_sanitize(fd, n);
 
 	if (slots[fd].entry == NULL) {
 		errno = EBADF;
@@ -354,11 +421,14 @@ static int _check_fd(int fd)
 #if defined(CONFIG_ZTEST) && defined(CONFIG_USERSPACE)
 void *zvfs_test_fd_entry_kobj(int fd)
 {
-	if ((fd < 0) || (fd >= ZVFS_OPEN_SIZE)) {
+	int n;
+	struct fd_slot *slots = fd_slots_n(&n);
+
+	if ((fd < 0) || (fd >= n)) {
 		return NULL;
 	}
 
-	return fd_slots()[k_array_index_sanitize(fd, ZVFS_OPEN_SIZE)].entry;
+	return slots[k_array_index_sanitize(fd, n)].entry;
 }
 #endif
 
@@ -537,6 +607,7 @@ FILE *zvfs_fdopen(int fd, const char *mode)
 
 int zvfs_fileno(FILE *file)
 {
+	int n;
 	struct fd_slot *slots;
 
 	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
@@ -544,8 +615,8 @@ int zvfs_fileno(FILE *file)
 		return -1;
 	}
 
-	slots = fd_slots();
-	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+	slots = fd_slots_n(&n);
+	for (int fd = 0; fd < n; fd++) {
 		if (slots[fd].entry == (struct fd_entry *)file) {
 			return fd;
 		}
@@ -554,6 +625,245 @@ int zvfs_fileno(FILE *file)
 	errno = EBADF;
 	return -1;
 }
+
+#ifdef CONFIG_PROCESS
+#ifdef CONFIG_SYS_PROCESS
+/* mirror zvfs_close() for a descriptor no thread can resolve anymore */
+static void fds_orphan_close(struct fd_slot *slot, int fd)
+{
+	struct fd_entry *entry = slot->entry;
+
+	(void)k_mutex_lock(&entry->lock, K_FOREVER);
+	if (entry->vtable != NULL && entry->vtable->close != NULL && entry->obj != NULL &&
+	    zvfs_fd_obj_refcount(entry->obj) <= 1) {
+		if (entry->mode & ZVFS_MODE_IFSOCK) {
+			(void)entry->vtable->close2(entry->obj, fd);
+		} else {
+			(void)entry->vtable->close(entry->obj);
+		}
+	}
+	k_mutex_unlock(&entry->lock);
+
+	slot->entry = NULL;
+	slot->flags = 0;
+	(void)fd_entry_unref(entry);
+}
+
+static void fds_graveyard_drain(void)
+{
+	while (true) {
+		sys_dnode_t *node = NULL;
+		struct zvfs_proc_fds *t;
+
+		K_SPINLOCK(&fds_graveyard_lock) {
+			node = sys_dlist_get(&fds_graveyard);
+		}
+		if (node == NULL) {
+			break;
+		}
+		t = CONTAINER_OF(node, struct zvfs_proc_fds, node);
+		for (int fd = 0; fd < ZVFS_PROC_OPEN_SIZE; fd++) {
+			if (t->slots[fd].entry != NULL) {
+				fds_orphan_close(&t->slots[fd], fd);
+			}
+		}
+		K_SPINLOCK(&fds_graveyard_lock) {
+			(void)sys_elastipool_free(&fds_pool, t);
+		}
+	}
+}
+
+int z_zvfs_fds_clone(struct k_process *child, k_tid_t leader)
+{
+	int n;
+	struct fd_slot *parent;
+	struct zvfs_proc_fds *t;
+
+	ARG_UNUSED(leader);
+
+	fds_graveyard_drain();
+
+	t = NULL;
+	K_SPINLOCK(&fds_graveyard_lock) {
+		(void)sys_elastipool_alloc(&fds_pool, (void **)&t);
+	}
+	if (t == NULL) {
+		return -ENOMEM;
+	}
+	memset(t, 0, sizeof(*t));
+	sys_dnode_init(&t->node);
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+	parent = fd_slots_n(&n);
+	for (int fd = 0; fd < MIN(n, ZVFS_PROC_OPEN_SIZE); fd++) {
+		struct fd_entry *entry = parent[fd].entry;
+
+		if (entry == NULL) {
+			continue;
+		}
+		/* the child's descriptor shares the description, flags copied */
+		(void)fd_entry_ref(entry);
+		t->slots[fd].entry = entry;
+		t->slots[fd].flags = parent[fd].flags;
+#ifdef CONFIG_USERSPACE
+		k_object_access_grant(entry, leader);
+		if ((entry->obj != NULL) && (k_object_find(entry->obj) != NULL)) {
+			k_object_access_grant(entry->obj, leader);
+		}
+#endif
+	}
+	child->fds = t;
+	k_mutex_unlock(&fdtable_lock);
+
+	return 0;
+}
+
+void zvfs_fds_cloexec(void)
+{
+	int n;
+	struct fd_slot *slots = fd_slots_n(&n);
+
+	/* close every descriptor the caller marked FD_CLOEXEC */
+	for (int fd = 0; fd < n; fd++) {
+		if ((slots[fd].entry != NULL) && ((slots[fd].flags & ZVFS_FD_CLOEXEC) != 0)) {
+			(void)zvfs_close(fd);
+		}
+	}
+}
+#endif /* CONFIG_SYS_PROCESS */
+
+void z_process_fds_exit(void)
+{
+	int n;
+	struct fd_slot *slots = fd_slots_n(&n);
+
+	/* kernel processes share the boot table; it is never swept */
+	if (slots == fd_boot_slots) {
+		return;
+	}
+
+	for (int fd = 0; fd < n; fd++) {
+		if (slots[fd].entry != NULL) {
+			(void)zvfs_close(fd);
+		}
+	}
+}
+
+void z_process_fds_drop(struct k_process *proc)
+{
+	struct zvfs_proc_fds *t = proc->fds;
+
+	if (t == NULL) {
+		return;
+	}
+	proc->fds = NULL;
+
+	/* the caller holds process_lock: closes and frees defer to the drain */
+	K_SPINLOCK(&fds_graveyard_lock) {
+		sys_dlist_append(&fds_graveyard, &t->node);
+	}
+}
+
+#ifdef CONFIG_SYS_PROCESS
+/*
+ * Child-table operations: the child is created paused, so its table has
+ * no concurrent user; the caller's table and the shared pool are covered
+ * by fdtable_lock.
+ */
+static struct zvfs_proc_fds *child_fds(k_tid_t child)
+{
+	struct k_process *proc = (child == NULL) ? NULL : child->process;
+
+	return (proc == NULL) ? NULL : proc->fds;
+}
+
+int z_zvfs_fds_child_set(k_tid_t child, int childfd, int parentfd)
+{
+	int ret = 0;
+	struct zvfs_proc_fds *t = child_fds(child);
+
+	if ((t == NULL) || (childfd < 0) || (childfd >= ZVFS_PROC_OPEN_SIZE)) {
+		return -EBADF;
+	}
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	struct fd_slot *src = zvfs_fd_slot_get(parentfd);
+
+	if (src == NULL) {
+		ret = -EBADF;
+	} else {
+		if (t->slots[childfd].entry != NULL) {
+			fds_orphan_close(&t->slots[childfd], childfd);
+		}
+		(void)fd_entry_ref(src->entry);
+		t->slots[childfd].entry = src->entry;
+		t->slots[childfd].flags = src->flags;
+#ifdef CONFIG_USERSPACE
+		k_object_access_grant(src->entry, child);
+		if ((src->entry->obj != NULL) && (k_object_find(src->entry->obj) != NULL)) {
+			k_object_access_grant(src->entry->obj, child);
+		}
+#endif
+	}
+
+	k_mutex_unlock(&fdtable_lock);
+
+	return ret;
+}
+
+int z_zvfs_fds_child_dup2(k_tid_t child, int oldfd, int newfd)
+{
+	int ret = 0;
+	struct zvfs_proc_fds *t = child_fds(child);
+
+	if ((t == NULL) || (oldfd < 0) || (oldfd >= ZVFS_PROC_OPEN_SIZE) || (newfd < 0) ||
+	    (newfd >= ZVFS_PROC_OPEN_SIZE)) {
+		return -EBADF;
+	}
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	if (t->slots[oldfd].entry == NULL) {
+		ret = -EBADF;
+	} else if (oldfd != newfd) {
+		if (t->slots[newfd].entry != NULL) {
+			fds_orphan_close(&t->slots[newfd], newfd);
+		}
+		(void)fd_entry_ref(t->slots[oldfd].entry);
+		t->slots[newfd].entry = t->slots[oldfd].entry;
+		/* dup2() semantics: the new descriptor's FD_CLOEXEC is clear */
+		t->slots[newfd].flags = 0;
+	}
+
+	k_mutex_unlock(&fdtable_lock);
+
+	return ret;
+}
+
+int z_zvfs_fds_child_close(k_tid_t child, int fd)
+{
+	int ret = 0;
+	struct zvfs_proc_fds *t = child_fds(child);
+
+	if ((t == NULL) || (fd < 0) || (fd >= ZVFS_PROC_OPEN_SIZE)) {
+		return -EBADF;
+	}
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	if (t->slots[fd].entry == NULL) {
+		ret = -EBADF;
+	} else {
+		fds_orphan_close(&t->slots[fd], fd);
+	}
+
+	k_mutex_unlock(&fdtable_lock);
+
+	return ret;
+}
+#endif /* CONFIG_SYS_PROCESS */
+#endif /* CONFIG_PROCESS */
 
 #if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 /*

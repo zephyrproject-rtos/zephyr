@@ -20,6 +20,18 @@ config ZVFS_OPEN_MAX
 	  requirements, ends up being zero, then no file descriptors will be
 	  available.
 
+config ZVFS_PROC_OPEN_MAX
+	int "Per-process open file descriptor limit"
+	depends on ZVFS && PROCESS
+	default 0
+	help
+	  Size of each process's file descriptor table, the limit POSIX's
+	  OPEN_MAX describes. The system-wide table size (ZVFS_OPEN_MAX plus
+	  subsystem contributions) independently bounds the total number of
+	  open file descriptions. 0 sizes each process's table to the
+	  system-wide size. Kernel processes share one boot descriptor table
+	  regardless of this option.
+
 config ZVFS_OPEN_IGNORE_MIN
 	bool "Ignore the minimum fd count requirement"
 	help
