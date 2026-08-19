@@ -32,6 +32,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief Minimum brightness level, range is 0 to 100.
+ */
+#define LED_BRIGHTNESS_MIN 0u
+
+/**
  * @brief Maximum brightness level, range is 0 to 100.
  */
 #define LED_BRIGHTNESS_MAX 100u
