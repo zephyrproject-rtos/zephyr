@@ -50,6 +50,9 @@ Build System
   including it directly must start their :file:`CMakeLists.txt` with
   ``find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})`` instead.
 
+* Board revision Kconfig fragments named :file:`<board>_<revision>.conf` are no
+  longer read. Rename them to :file:`<board>_<revision>_defconfig`.
+
 Kernel
 ******
 
