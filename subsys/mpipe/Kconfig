@@ -1,0 +1,192 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MPIPE
+	bool "Multimedia Pipeline framework"
+	select NET_BUF
+	select ZBUS
+	select ZBUS_RUNTIME_OBSERVERS
+	# For zbus_runtime_channel_init(), which zbus keeps behind this symbol.
+	# mpipe never registers a channel, so the registry code links out.
+	select ZBUS_RUNTIME_CHANNEL_REGISTRATION
+	help
+	  Build a media stream out of self-contained processing elements linked
+	  into a graph, instead of wiring the drivers together by hand.
+
+	  The framework negotiates the data format between neighboring elements,
+	  settles which pool provides the buffers, and moves those buffers along
+	  the graph under a state machine. It allocates nothing at runtime: the
+	  buffers come from pools sized while the pipeline starts, and everything
+	  on the negotiation path is fixed-size and held by value.
+
+	  This enables the framework only. The elements live in plugins, each
+	  behind its own option.
+
+if MPIPE
+
+module = MPIPE
+module-str = mpipe
+source "subsys/logging/Kconfig.template.log_config"
+
+# ---- Framework options ----
+
+config MPIPE_STRUCTURE_MAX_FIELDS
+	int "Maximum fields one caps structure can hold"
+	range 1 255
+	default 5
+	help
+	  Number of capability fields a single caps structure can hold at once.
+	  Size this for the largest union of fields that can meet in one intersection,
+	  not for the number of fields an element sets. An intersection carries through
+	  the fields that only one side constrains, so its result can hold more fields
+	  than either input. Negotiation reports -ENOSPC when a structure runs out of slots.
+
+config MPIPE_THREADS_NUM
+	int "Number of mpipe_thread wrappers used by the whole application"
+	range 0 255
+	default 1
+	help
+	  Size of the pool of thread stacks the framework draws from. A stack
+	  cannot be freed and reallocated with no heap, so it is returned to this
+	  pool when its thread terminates and reused by the next one.
+
+	  Count one for each pipeline that can run at the same time, plus one for
+	  every element that runs its own thread rather than the pipeline's.
+
+config MPIPE_THREAD_STACK_SIZE
+	int "Stack size of a thread"
+	default 1024
+	help
+	  Stack size in bytes of each thread drawn from the pool above.
+
+	  A streaming thread only acquires a buffer and pushes it downstream, so
+	  it is undemanding. Note that capability negotiation runs on whichever
+	  thread drives the state change, not here.
+
+	  A POSIX-architecture build runs its threads on host stacks, so it
+	  cannot validate this value: measure on hardware.
+
+config MPIPE_THREAD_DEFAULT_PRIORITY
+	int "Priority of a thread"
+	default 5
+	help
+	  Zephyr scheduling priority the pooled threads are created with. It
+	  should sit above the work the pipeline feeds, so that a source keeps
+	  producing while downstream elements consume.
+
+config MPIPE_WORKQUEUE
+	bool "Element-level work offload (P4WQ)"
+	select SCHED_DEADLINE
+	help
+	  Enable element-level work offloading via a shared P4WQ
+	  (Pooled Parallel Preemptible Priority-based Work Queue)
+	  thread pool. Elements can submit finite work items (e.g.,
+	  decode, inference) to be processed on pool threads with
+	  configurable priority.
+
+config MPIPE_WORKQUEUE_THREADS_NUM
+	int "Number of threads in mpipe workqueue pool"
+	default 1
+	depends on MPIPE_WORKQUEUE
+	help
+	  Number of threads in the shared P4WQ pool used for
+	  element-level work offload.
+
+config MPIPE_WORKQUEUE_STACK_SIZE
+	int "Stack size for mpipe workqueue pool threads"
+	default 4096
+	depends on MPIPE_WORKQUEUE
+	help
+	  Stack size in bytes for each thread in the mpipe workqueue pool.
+
+config MPIPE_NET_BUF_POOL_COUNT
+	int "Number of buffers in the mpipe shared net_buf pool"
+	default 1
+	help
+	  Number of buffers needed in the shared mpipe net_buf pool across pipelines.
+	  This is sum of the maximum number of in-flight net_buf buffers of each
+	  pipeline at any given time.
+
+config MPIPE_DUMP
+	bool "Pipeline topology dump"
+	help
+	  Render a pipeline as a Graphviz graph for debugging: every element with
+	  its state, its pads, the peer each pad is linked to, and the capability
+	  that pad settled on. An element holding a pad that is linked to nothing
+	  is outlined in red, so a graph that was never fully wired shows it.
+
+	  This is what answers "which element, and in which phase" when a pipeline
+	  does not run. Nothing unwinds a failed state change, so a dump taken
+	  after one shows the element that refused still in its previous state
+	  while the others moved on.
+
+	  The output is plain DOT text, written a line at a time to a sink the
+	  caller supplies - a shell, the console, or a buffer a test asserts on -
+	  so a board's log buffer is not overrun. Feed it to "dot" on the host to
+	  get a picture.
+
+	  Costs a name pointer on every element, plus the rendering code.
+
+config MPIPE_BIN_MAX_CHILDREN
+	int "Maximum number of elements in a bin/pipeline"
+	range 2 64
+	default 10
+	help
+	  Maximum number of child elements that can be added to a single
+	  bin or pipeline. This is used to size the bin's internal arrays for
+	  topological sort during state changes.
+
+config MPIPE_FAKE_SRC
+	bool "Fake source element"
+	help
+	  A source that produces buffers of synthetic data bound to no device.
+
+	  It exists so a graph can be built and run where a real source would
+	  need hardware, which is what the framework's own tests use it for. It
+	  is not meant to be part of an application.
+
+config MPIPE_FAKE_SRC_BUF_SZ
+	int "Buffer size of the fake source element (in bytes)"
+	range 1 1024
+	default 1
+	depends on MPIPE_FAKE_SRC
+	help
+	  Size in bytes of each buffer the fake source produces. The default of
+	  one byte is enough to exercise the flow through a graph; raise it when
+	  a test needs buffers of a realistic size.
+
+config MPIPE_RPC
+	bool "RPC support"
+	help
+	  Build the client-side elements that run their processing on another
+	  core instead of locally.
+
+	  A transform client looks like an ordinary element in the graph, but
+	  forwards each buffer over a transport to a server on the remote core
+	  and waits for the result. The transport itself is not provided here:
+	  the application supplies it through the element's RPC hooks.
+
+# ---- ZBus defaults for MPIPE ----
+# The framework allocates nothing, so the bus underneath it must not either.
+# mpipe_bin.c refuses to build if a dynamic choice wins anyway.
+
+config ZBUS_PREFER_DYNAMIC_ALLOCATION
+	default n
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_STATIC_DATA_SIZE
+	depends on ZBUS_MSG_SUBSCRIBER_BUF_ALLOC_STATIC
+	default 24
+
+config ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_SIZE
+	depends on ZBUS_MSG_SUBSCRIBER
+	default 4
+
+# ---- Plugins and utilities ----
+# Each plugin/utility directory ships its own Kconfig, guarded by its own
+# CONFIG_MPIPE_* option. Adding a new plugin needs no change to this file.
+osource "subsys/mpipe/*/Kconfig"
+
+endif # MPIPE
