@@ -1199,6 +1199,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 
 #ifdef CONFIG_HL78XX_GNSS
 	if (!reset && functionality == HL78XX_FULLY_FUNCTIONAL &&
+	    data->status.phone_functionality.valid &&
 	    data->status.phone_functionality.functionality == HL78XX_AIRPLANE &&
 	    data->status.state != MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT &&
 	    data->status.boot.init_sequence_completed == false) {
@@ -1217,6 +1218,7 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 	if (ret == 0) {
 		data->status.phone_functionality.in_progress = true;
 		data->status.phone_functionality.functionality = functionality;
+		data->status.phone_functionality.valid = true;
 		event.content.value = functionality;
 		event_dispatcher_dispatch(&event);
 	}
