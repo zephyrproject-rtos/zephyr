@@ -382,6 +382,10 @@ static void hl78xx_hl7812_on_ksup_lpm(struct hl78xx_data *data)
 	 */
 	LOG_DBG("Modem restart detected");
 	hl78xx_invalidate_socket_contexts(data);
+	hl78xx_reset_modem_session_state(data);
+#ifdef CONFIG_HL78XX_GNSS
+	hl78xx_gnss_reset_session_state(data);
+#endif /* CONFIG_HL78XX_GNSS */
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
 }
 

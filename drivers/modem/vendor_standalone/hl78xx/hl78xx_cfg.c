@@ -1086,6 +1086,19 @@ void hl78xx_psmev_init(struct hl78xx_data *data)
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
+void hl78xx_reset_modem_session_state(struct hl78xx_data *data)
+{
+	/* See hl78xx.h: cached functionality is unverifiable across a power
+	 * boundary, so mark it invalid rather than guessing a boot value.
+	 * The field itself is parked on FULLY_FUNCTIONAL — the modem's boot
+	 * default, and the conservative value for readers that don't check
+	 * `valid` (it can never falsely report the RF path as free for GNSS).
+	 */
+	data->status.phone_functionality.valid = false;
+	data->status.phone_functionality.in_progress = false;
+	data->status.phone_functionality.functionality = HL78XX_FULLY_FUNCTIONAL;
+}
+
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp)
 {
 	return (rsrp >= CONFIG_MODEM_MIN_ALLOWED_SIGNAL_STRENGTH);
