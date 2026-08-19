@@ -312,15 +312,6 @@ config BT_CONN_FRAG_COUNT
 
 if BT_CONN
 
-config BT_CONN_TX_MAX
-	int "Maximum number of pending TX buffers with a callback [DEPRECATED]"
-	default BT_BUF_ACL_TX_COUNT
-	range BT_BUF_ACL_TX_COUNT $(UINT8_MAX)
-	help
-	  Maximum number of pending TX buffers that have an associated
-	  callback. Normally this can be left to the default value, which
-	  is equal to the number of TX buffers in the controller.
-
 config BT_CONN_PARAM_ANY
 	bool "Accept any values for connection parameters"
 	help

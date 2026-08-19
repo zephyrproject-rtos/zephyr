@@ -79,9 +79,6 @@ configdefault BT_BUF_ACL_TX_COUNT
 configdefault BT_BUF_EVT_RX_COUNT
 	default 20
 
-configdefault BT_CONN_TX_MAX
-	default 15
-
 endif
 
 rsource "*/Kconfig.defconfig"
