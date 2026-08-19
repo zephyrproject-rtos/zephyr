@@ -1444,6 +1444,8 @@ static void bt_gatt_service_init(void)
 	}
 }
 
+static void central_addr_res_pairing_complete(struct bt_conn *conn, bool bonded);
+
 void bt_gatt_init(void)
 {
 	if (atomic_test_and_set_bit(gatt_flags, GATT_INITIALIZED)) {
@@ -1490,6 +1492,21 @@ void bt_gatt_init(void)
 	 */
 	bt_conn_auth_info_cb_register(&gatt_conn_auth_info_cb);
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
+
+	if (IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		static struct bt_conn_auth_info_cb central_addr_res_auth_info_cb = {
+			.pairing_complete = central_addr_res_pairing_complete,
+		};
+		int err;
+
+		/* Read the peer's Central Address Resolution support once a
+		 * bond has been created.
+		 */
+		err = bt_conn_auth_info_cb_register(&central_addr_res_auth_info_cb);
+		if (err != 0) {
+			LOG_ERR("Unable to register pairing callbacks (err %d)", err);
+		}
+	}
 }
 
 static void sc_indicate(uint16_t start, uint16_t end)
@@ -6001,6 +6018,116 @@ void bt_gatt_att_max_mtu_changed(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 	}
 }
 
+/* Central Address Resolution characteristic value (Core 6.3, Vol 3, Part C,
+ * 12.4).
+ */
+#define CENTRAL_ADDR_RES_SUPP 0x01
+
+static uint8_t gatt_central_addr_res_rsp(struct bt_conn *conn, uint8_t err,
+					 struct bt_gatt_read_params *params,
+					 const void *data, uint16_t length)
+{
+	enum bt_le_addr_res_support support = BT_LE_ADDR_RES_SUPPORT_UNKNOWN;
+	struct bt_keys *keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	struct bt_conn_auth_info_cb *listener, *next;
+	bool supported = false;
+	bool known = false;
+
+	if (err == 0 && data != NULL && length == sizeof(uint8_t)) {
+		known = true;
+		supported = (((const uint8_t *)data)[0] == CENTRAL_ADDR_RES_SUPP);
+	} else if (err == BT_ATT_ERR_ATTRIBUTE_NOT_FOUND) {
+		/* An absent characteristic means address resolution is not
+		 * supported (Core 6.3, Vol 3, Part C, 12.4).
+		 */
+		known = true;
+	}
+
+	/* Any other error, or a malformed value, leaves the support unknown,
+	 * to be read again on the next connection.
+	 */
+
+	if (known && keys != NULL) {
+		keys->flags |= BT_KEYS_CENTRAL_ADDR_RES_KNOWN;
+		if (supported) {
+			keys->flags |= BT_KEYS_CENTRAL_ADDR_RES_SUPPORT;
+		}
+
+		LOG_DBG("Peer %sable to resolve the target address of directed advertising",
+			supported ? "" : "un");
+
+		bt_keys_store(keys);
+
+		support = supported ? BT_LE_ADDR_RES_SUPPORT_YES : BT_LE_ADDR_RES_SUPPORT_NO;
+	}
+
+	params->func = NULL;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener, next, node) {
+		if (listener->addr_res_support_read != NULL) {
+			listener->addr_res_support_read(conn, support);
+		}
+	}
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void gatt_read_central_addr_res(struct bt_conn *conn)
+{
+	static struct bt_gatt_read_params central_addr_res_params[CONFIG_BT_MAX_CONN];
+	struct bt_gatt_read_params *params = &central_addr_res_params[bt_conn_index(conn)];
+	struct bt_keys *keys;
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES)) {
+		return;
+	}
+
+	/* The characteristic and the check are LE-specific, and the address
+	 * lookups below use the LE part of the connection object.
+	 */
+	if (conn->type != BT_CONN_TYPE_LE) {
+		return;
+	}
+
+	if (conn->role != BT_HCI_ROLE_PERIPHERAL) {
+		return;
+	}
+
+	if (!bt_le_bond_exists(conn->id, &conn->le.dst)) {
+		return;
+	}
+
+	keys = bt_keys_find_addr(conn->id, &conn->le.dst);
+	if (keys == NULL || (keys->flags & BT_KEYS_CENTRAL_ADDR_RES_KNOWN) != 0) {
+		return;
+	}
+
+	if (params->func != NULL) {
+		/* Read already in progress */
+		return;
+	}
+
+	*params = (struct bt_gatt_read_params){
+		.func = gatt_central_addr_res_rsp,
+		.by_uuid.uuid = BT_UUID_CENTRAL_ADDR_RES,
+		.by_uuid.start_handle = BT_ATT_FIRST_ATTRIBUTE_HANDLE,
+		.by_uuid.end_handle = BT_ATT_LAST_ATTRIBUTE_HANDLE,
+	};
+
+	err = bt_gatt_read(conn, params);
+	if (err != 0) {
+		LOG_WRN("Unable to read Central Address Resolution (err %d)", err);
+		params->func = NULL;
+	}
+}
+
+static void central_addr_res_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	if (bonded) {
+		gatt_read_central_addr_res(conn);
+	}
+}
 void bt_gatt_encrypt_change(struct bt_conn *conn)
 {
 	struct conn_data data;
@@ -6013,6 +6140,9 @@ void bt_gatt_encrypt_change(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_AUTO_RESUBSCRIBE)
 	add_subscriptions(conn);
 #endif	/* CONFIG_BT_GATT_AUTO_RESUBSCRIBE */
+
+	/* Covers bonds that were created before the support was tracked */
+	gatt_read_central_addr_res(conn);
 
 	bt_gatt_foreach_attr(0x0001, 0xffff, update_ccc, &data);
 

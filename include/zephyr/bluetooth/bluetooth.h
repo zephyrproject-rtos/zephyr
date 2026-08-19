@@ -2952,6 +2952,43 @@ void bt_foreach_bond(uint8_t id, void (*func)(const struct bt_bond_info *info,
 					   void *user_data),
 		     void *user_data);
 
+/** A bonded peer's support for address resolution. */
+enum bt_le_addr_res_support {
+	/** The peer has not been asked, or the answer could not be read. */
+	BT_LE_ADDR_RES_SUPPORT_UNKNOWN,
+	/** The peer does not support address resolution. */
+	BT_LE_ADDR_RES_SUPPORT_NO,
+	/**
+	 * The peer supports address resolution.
+	 *
+	 * Support is a static capability: it does not guarantee that the peer has address
+	 * resolution enabled at any given moment.
+	 */
+	BT_LE_ADDR_RES_SUPPORT_YES,
+};
+
+/**
+ * @brief Get a bonded peer's support for address resolution.
+ *
+ * A peer that does not support address resolution is unable to resolve the target address
+ * of a directed advertisement, i.e. it can only be reached by directed advertising that
+ * does not use @ref BT_LE_ADV_OPT_DIR_ADDR_RPA.
+ *
+ * The answer is the value of the peer's Central Address Resolution characteristic, which
+ * the host reads when the bond is created if
+ * @kconfig{CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES} is enabled, with a new attempt on
+ * later connections to the peer as long as the answer is unknown. It is unknown when that
+ * option is disabled, when there is no bond with the peer, or when the characteristic has
+ * not been read yet. The completion of the automatic read is signalled through
+ * @ref bt_conn_auth_info_cb.addr_res_support_read.
+ *
+ * @param id    Local identity handle (typically @ref BT_ID_DEFAULT).
+ * @param peer  Identity address of the bonded peer.
+ *
+ * @return The peer's support for address resolution.
+ */
+enum bt_le_addr_res_support bt_le_bond_addr_res_support(uint8_t id, const bt_addr_le_t *peer);
+
 /**
  * @brief Configure vendor data path
  *
