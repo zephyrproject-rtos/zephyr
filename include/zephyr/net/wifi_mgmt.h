@@ -929,6 +929,14 @@ struct wifi_status {
 		/** Access point status */
 		enum wifi_ap_status ap_status;
 	};
+	/** IEEE 802.11 status code from the last Authentication or (Re)Association
+	 * Response frame, 0 if not available. See IEEE Std 802.11-2020, Table 9-50.
+	 */
+	uint16_t status_code;
+	/** IEEE 802.11 reason code from the last Deauthentication or Disassociation
+	 * frame, 0 if not available. See IEEE Std 802.11-2020, Table 9-90.
+	 */
+	uint16_t reason_code;
 };
 
 /** @brief Wi-Fi interface status */
@@ -2460,12 +2468,34 @@ BUILD_ASSERT(offsetof(struct net_wifi_mgmt_offload, wifi_iface) == 0);
  */
 void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status);
 
+/** Wi-Fi management connect result event with the IEEE 802.11 codes
+ *
+ * Use this instead of wifi_mgmt_raise_connect_result_event() when the raw
+ * IEEE 802.11 status or reason code behind the failure is known.
+ *
+ * @param iface Network interface
+ * @param status Connect result status and codes
+ */
+void wifi_mgmt_raise_connect_result_status_event(struct net_if *iface,
+						 const struct wifi_status *status);
+
 /** Wi-Fi management disconnect result event
  *
  * @param iface Network interface
  * @param status Disconnect result status
  */
 void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status);
+
+/** Wi-Fi management disconnect result event with the IEEE 802.11 codes
+ *
+ * Use this instead of wifi_mgmt_raise_disconnect_result_event() when the raw
+ * IEEE 802.11 reason code behind the disconnection is known.
+ *
+ * @param iface Network interface
+ * @param status Disconnect result status and codes
+ */
+void wifi_mgmt_raise_disconnect_result_status_event(struct net_if *iface,
+						    const struct wifi_status *status);
 
 /** Wi-Fi management interface status event
  *

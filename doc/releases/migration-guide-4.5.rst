@@ -1098,6 +1098,15 @@ WiFi
   that previously disabled the Espressif-specific option must now disable the generic option
   to retain manual DHCPv4 or static IP behavior after STA connection.
 
+* :c:struct:`wifi_status` gained ``status_code`` and ``reason_code`` members carrying the raw
+  IEEE 802.11 codes, so the struct is larger than the ``int`` it used to be. Code that raises
+  or receives :c:enumerator:`NET_EVENT_WIFI_CONNECT_RESULT`,
+  :c:enumerator:`NET_EVENT_WIFI_DISCONNECT_RESULT`,
+  :c:enumerator:`NET_EVENT_WIFI_AP_ENABLE_RESULT` or
+  :c:enumerator:`NET_EVENT_WIFI_AP_DISABLE_RESULT` must use ``sizeof(struct wifi_status)``
+  rather than ``sizeof(int)`` for the event payload length. Event handlers that only read the
+  status value are unaffected, as it remains the first member. (:github:`116704`)
+
 Xen
 ===
 
