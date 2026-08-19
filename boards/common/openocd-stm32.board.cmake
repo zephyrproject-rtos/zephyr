@@ -19,4 +19,20 @@ elseif(CONFIG_SOC_SERIES_STM32F2X OR
   board_runner_args(openocd "--cmd-erase=stm32f2x mass_erase 0")
 endif()
 
+# Extra OpenOCD scripts search path for STM32MP boards.
+#
+# This is useful when using a custom OpenOCD build that has not been
+# installed system-wide (e.g. built in-place from a git checkout): in that
+# case OpenOCD's compiled-in default scripts path does not exist, and its
+# own tcl/ scripts directory (containing board/st/... and target/st/...)
+# must be added to the search path explicitly, in addition to pointing
+# -DOPENOCD at the built binary.
+set(STM32MP_OPENOCD_SCRIPTS "" CACHE PATH
+  "Extra OpenOCD scripts search path, e.g. the tcl/ directory of a \
+non-installed OpenOCD build")
+
+if(STM32MP_OPENOCD_SCRIPTS)
+  set(OPENOCD_DEFAULT_PATH ${STM32MP_OPENOCD_SCRIPTS})
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
