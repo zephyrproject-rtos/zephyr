@@ -37,6 +37,10 @@ class gen_isr_log:
 
 log = gen_isr_log()
 
+# ELF relocation type for RISC-V's R_RISCV_RELATIVE; only these entries need
+# a runtime fixup since they point at load-address-relative data.
+R_RISCV_RELATIVE = 3
+
 
 class gen_isr_config:
     """All the constants and configuration gathered in single class for readability."""
@@ -55,7 +59,7 @@ class gen_isr_config:
     def __bm(bits):
         return (1 << bits) - 1
 
-    def __init__(self, args, syms, log):
+    def __init__(self, args, syms, reloc, log):
         """Initialize the configuration object.
 
         The configuration object initialization takes only arguments as a parameter.
@@ -64,6 +68,7 @@ class gen_isr_config:
         # Store the arguments required for work
         self.__args = args
         self.__syms = syms
+        self.__reloc = reloc
         self.__log = log
 
         # Select the default interrupt vector handler
@@ -236,6 +241,15 @@ class gen_isr_config:
                 return key
         return None
 
+    def get_addr_from_sym(self, sym):
+        for key, value in self.__syms.items():
+            if sym == key:
+                return value
+        return None
+
+    def need_reloc(self, addr):
+        return addr in self.__reloc
+
     def get_sym(self, name):
         return self.__syms.get(name)
 
@@ -251,6 +265,9 @@ class gen_isr_config:
     def check_64b(self):
         return self.check_sym("CONFIG_64BIT")
 
+    def check_relocatable(self):
+        return self.check_sym("CONFIG_PIC_OPTIONS")
+
 
 def get_symbols(obj):
     section = obj.get_section_by_name(".symtab")
@@ -258,6 +275,22 @@ def get_symbols(obj):
         return {sym.name: sym.entry.st_value for sym in section.iter_symbols()}
 
     log.error("Could not find symbol table")
+
+
+def read_rela_sect(obj):
+    rela_dyn = obj.get_section_by_name(".rela.dyn")
+    if rela_dyn is None:
+        log.debug("Cannot find the .rela.dyn section")
+        return {}
+
+    reloc_dict = {}
+    for item in rela_dyn.iter_relocations():
+        offset = item['r_offset']
+        addend = item['r_addend']
+        if item['r_info_type'] == R_RISCV_RELATIVE:
+            reloc_dict[offset] = addend
+
+    return reloc_dict
 
 
 def read_intList_sect(elfobj, snames):
@@ -275,9 +308,12 @@ def read_intList_sect(elfobj, snames):
     if intList_sect is None:
         log.error("Cannot find the intlist section!")
 
+    addr = intList_sect['sh_addr']
     intdata = intList_sect.data()
 
-    return intdata
+    log.debug(f"base address of intList is {addr:#08x}")
+
+    return addr, intdata
 
 
 def parse_args():
@@ -328,15 +364,15 @@ def main():
 
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
-        config = gen_isr_config(args, get_symbols(kernel), log)
-        intlist_data = read_intList_sect(kernel, config.get_intlist_snames())
+        config = gen_isr_config(args, get_symbols(kernel), read_rela_sect(kernel), log)
+        intlist_addr, intlist_data = read_intList_sect(kernel, config.get_intlist_snames())
 
         if config.check_sym("CONFIG_ISR_TABLES_LOCAL_DECLARATION"):
             parser_module = importlib.import_module('gen_isr_tables_parser_local')
             parser = parser_module.gen_isr_parser(intlist_data, config, log)
         else:
             parser_module = importlib.import_module('gen_isr_tables_parser_carrays')
-            parser = parser_module.gen_isr_parser(intlist_data, config, log)
+            parser = parser_module.gen_isr_parser(intlist_data, intlist_addr, config, log)
 
     with open(args.output_source, "w") as fp:
         parser.write_source(fp)
