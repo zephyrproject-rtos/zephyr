@@ -41,7 +41,7 @@
 
 	aliases {
 		led0 = &blue_led;
-		sw0 = &user_button;
+		sw0 = &touch_l1;
 	};
 };
 
@@ -80,4 +80,34 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&usart3_default>;
 	pinctrl-names = "default";
+};
+
+&tkey1 {
+	status = "okay";
+	pinctrl-0 = <&tkey1_default>;
+	pinctrl-names = "default";
+
+	touch_l1: touch_l1 {
+		status = "okay";
+		channel = <9>;
+		zephyr,code = <INPUT_KEY_0>;
+	};
+
+	touch_l2: touch_l2 {
+		status = "okay";
+		channel = <8>;
+		zephyr,code = <INPUT_KEY_1>;
+	};
+
+	touch_r2: touch_r2 {
+		status = "okay";
+		channel = <7>;
+		zephyr,code = <INPUT_KEY_2>;
+	};
+
+	touch_r1: touch_r1 {
+		status = "okay";
+		channel = <5>;
+		zephyr,code = <INPUT_KEY_3>;
+	};
 };
