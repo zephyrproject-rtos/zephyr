@@ -2053,6 +2053,7 @@ out_ibi_disable:
 }
 #endif /* CONFIG_I3C_USE_IBI */
 
+#ifdef CONFIG_I3C_USE_IBI
 static int npcx_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *request)
 {
 	const struct npcx_i3c_config *config = dev->config;
@@ -2145,6 +2146,7 @@ static int npcx_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *r
 
 	return 0;
 }
+#endif /* CONFIG_I3C_USE_IBI */
 
 #ifdef CONFIG_I3C_NPCX_DMA
 static uint16_t npcx_i3c_target_get_mdmafb_count(const struct device *dev)
