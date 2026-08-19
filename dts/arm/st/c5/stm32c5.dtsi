@@ -632,12 +632,6 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
 		};
 
 		timers7: timers@40001400 {
@@ -653,12 +647,6 @@
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
-			};
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
 			};
 		};
 
