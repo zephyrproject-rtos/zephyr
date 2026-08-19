@@ -352,5 +352,37 @@ ZTEST(obj_core, test_obj_core_reinit)
 		      "FIFO list truncated by re-initialization\n");
 }
 
+ZTEST(obj_core, test_obj_core_dyn_free)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_obj_type *obj_type;
+	struct k_obj_core *obj_core;
+	struct k_sem *sem;
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	zassert_not_null(obj_type, "semaphore object type not found\n");
+
+	k_thread_system_pool_assign(k_current_get());
+
+	sem = k_object_alloc(K_OBJ_SEM);
+	zassert_not_null(sem, "unable to allocate semaphore\n");
+
+	k_sem_init(sem, 0, 1);
+	obj_core = K_OBJ_CORE(sem);
+
+	zassert_equal(obj_core_count(obj_type, obj_core), 1, "allocated semaphore not linked\n");
+
+	/* Freeing the semaphore must unlink it from the semaphore type
+	 * list, which would otherwise point into freed memory.
+	 */
+
+	k_object_free(sem);
+
+	zassert_equal(obj_core_count(obj_type, obj_core), 0, "freed semaphore still linked\n");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
