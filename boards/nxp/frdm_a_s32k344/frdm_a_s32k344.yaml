@@ -6,7 +6,7 @@ name: NXP FRDM-A-S32K344
 type: mcu
 arch: arm
 ram: 512
-flash: 4096
+flash: 4048
 toolchain:
   - zephyr
 supported:
