@@ -8,7 +8,7 @@ if SOC_AMD_VERSAL
 
 if SOC_VERSAL_RPU
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config NUM_IRQS
@@ -29,7 +29,7 @@ configdefault DCACHE_LINE_SIZE
 configdefault ICACHE_LINE_SIZE
 	default 64
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config ARM_ARCH_TIMER

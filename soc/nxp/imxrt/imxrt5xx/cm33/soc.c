@@ -17,8 +17,8 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
-#include "fsl_power.h"
-#include "fsl_clock.h"
+#include <fsl_power.h>
+#include <fsl_clock.h>
 #include <fsl_cache.h>
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -28,8 +28,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 #endif
 
 /* Board System oscillator settling time in us */
@@ -389,6 +389,12 @@ void __weak rt5xx_clock_init(void)
 
 	RESET_ClearPeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 	CLOCK_EnableClock(kCLOCK_Smartdma);
+#endif
+
+#if CONFIG_DSP_BACKEND_POWERQUAD
+	/* Power up PowerQuad SRAM */
+	POWER_DisablePD(kPDRUNCFG_PPD_PQ_SRAM);
+	POWER_ApplyPD();
 #endif
 
 	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)

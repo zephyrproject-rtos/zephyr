@@ -11,12 +11,15 @@
 #define THREAD_MID_PRIORITY 3
 #define THREAD_LOW_PRIORITY 5
 
+/** @cond INTERNAL_HIDDEN */
 /* use to pass case type to threads */
 static ZTEST_DMEM int case_type;
 static ZTEST_DMEM int thread_ret = TC_FAIL;
 
-/**TESTPOINT: init via K_MUTEX_DEFINE*/
+/* TESTPOINT: init via K_MUTEX_DEFINE */
 K_MUTEX_DEFINE(kmutex);
+/* only used by test_mutex_define, never re-initialized at run time */
+K_MUTEX_DEFINE(kmutex_define);
 static struct k_mutex tmutex;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
@@ -25,6 +28,7 @@ static K_THREAD_STACK_DEFINE(tstack3, STACK_SIZE);
 static struct k_thread tdata;
 static struct k_thread tdata2;
 static struct k_thread tdata3;
+/** @endcond */
 
 
 
@@ -208,6 +212,69 @@ static void tThread_waiter(void *p1, void *p2, void *p3)
 }
 
 /*test cases*/
+/**
+ * @brief Verify a mutex defined at compile time is ready for use.
+ *
+ * @details
+ * A mutex created with K_MUTEX_DEFINE() must be fully initialized at boot:
+ * unowned and immediately lockable without any run-time initialization
+ * call. The mutex used here is touched by no other test, so it is
+ * exercised exactly as the macro left it.
+ *
+ * Test steps:
+ * - Lock the statically defined mutex with K_NO_WAIT.
+ * - Unlock it.
+ *
+ * Expected result:
+ * - Both operations succeed without any prior k_mutex_init() call.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see K_MUTEX_DEFINE
+ */
+ZTEST(mutex_api, test_mutex_define)
+{
+	/* usable at boot without any run-time initialization */
+	zassert_equal(k_mutex_lock(&kmutex_define, K_NO_WAIT), 0);
+	zassert_equal(k_mutex_unlock(&kmutex_define), 0);
+}
+
+/**
+ * @brief Verify run-time initialization of a mutex.
+ *
+ * @details
+ * k_mutex_init() must succeed and yield an unowned mutex that is
+ * immediately lockable.
+ *
+ * Test steps:
+ * - Initialize a mutex at run time and check the call succeeds.
+ * - Lock it with K_NO_WAIT and unlock it.
+ *
+ * Expected result:
+ * - Initialization returns 0 and the mutex is immediately usable.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init()
+ */
+ZTEST(mutex_api, test_mutex_init)
+{
+	zassert_equal(k_mutex_init(&tmutex), 0);
+	zassert_equal(k_mutex_lock(&tmutex, K_NO_WAIT), 0);
+	zassert_equal(k_mutex_unlock(&tmutex), 0);
+}
+
+/**
+ * @brief Verify reentrant locking with a waiter blocking forever.
+ *
+ * @details
+ * A thread holds the mutex while a second thread blocks on it with K_FOREVER;
+ * the waiter acquires the mutex once it is released. Exercised on both a
+ * run-time initialized mutex and a compile-time K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init()
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -220,6 +287,17 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_forever)
 	k_thread_abort(&tdata);
 }
 
+/**
+ * @brief Verify locking a held mutex with K_NO_WAIT fails immediately.
+ *
+ * @details
+ * While the mutex is held by another thread, a K_NO_WAIT lock attempt must
+ * return without blocking. Exercised on a run-time and a K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
+ */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -229,6 +307,17 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_no_wait)
 	tmutex_test_lock(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify locking a held mutex with a finite timeout times out.
+ *
+ * @details
+ * While the mutex is held, a lock attempt with a finite timeout must fail once
+ * the timeout elapses without the mutex being released.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
+ */
 ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -238,6 +327,17 @@ ZTEST_USER(mutex_api, test_mutex_reent_lock_timeout_fail)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify a timed lock succeeds once the mutex is released in time.
+ *
+ * @details
+ * A lock attempt with a finite timeout must succeed when the holding thread
+ * releases the mutex before the timeout elapses.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/
@@ -247,6 +347,19 @@ ZTEST_USER(mutex_api_1cpu, test_mutex_reent_lock_timeout_pass)
 	tmutex_test_lock_timeout(&kmutex, tThread_entry_lock_no_wait);
 }
 
+/**
+ * @brief Verify basic mutex lock and unlock.
+ *
+ * @details
+ * Lock and then unlock the mutex from a single thread and confirm the
+ * operations succeed, on both a run-time initialized mutex and a compile-time
+ * K_MUTEX_DEFINE() mutex.
+ *
+ * @ingroup kernel_mutex_tests
+ * @see k_mutex_init()
+ * @see k_mutex_lock()
+ * @see k_mutex_unlock()
+ */
 ZTEST_USER(mutex_api_1cpu, test_mutex_lock_unlock)
 {
 	/**TESTPOINT: test k_mutex_init mutex*/

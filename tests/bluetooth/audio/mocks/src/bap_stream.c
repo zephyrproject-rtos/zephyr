@@ -5,6 +5,7 @@
  */
 #include <stdint.h>
 
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
@@ -14,8 +15,8 @@
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \
-	FAKE(mock_bap_stream_configured_cb)                                                        \
-	FAKE(mock_bap_stream_qos_set_cb)                                                           \
+	FAKE(mock_bap_stream_codec_configured_cb)                                                  \
+	FAKE(mock_bap_stream_qos_configured_cb)                                                    \
 	FAKE(mock_bap_stream_enabled_cb)                                                           \
 	FAKE(mock_bap_stream_metadata_updated_cb)                                                  \
 	FAKE(mock_bap_stream_disabled_cb)                                                          \
@@ -29,9 +30,9 @@
 
 struct bt_bap_stream_ops mock_bap_stream_ops;
 
-DEFINE_FAKE_VOID_FUNC(mock_bap_stream_configured_cb, struct bt_bap_stream *,
+DEFINE_FAKE_VOID_FUNC(mock_bap_stream_codec_configured_cb, struct bt_bap_stream *,
 		      const struct bt_bap_qos_cfg_pref *);
-DEFINE_FAKE_VOID_FUNC(mock_bap_stream_qos_set_cb, struct bt_bap_stream *);
+DEFINE_FAKE_VOID_FUNC(mock_bap_stream_qos_configured_cb, struct bt_bap_stream *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_enabled_cb, struct bt_bap_stream *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_metadata_updated_cb, struct bt_bap_stream *);
 DEFINE_FAKE_VOID_FUNC(mock_bap_stream_disabled_cb, struct bt_bap_stream *);
@@ -49,8 +50,8 @@ void mock_bap_stream_init(void)
 	FFF_FAKES_LIST(RESET_FAKE);
 
 #if defined(CONFIG_BT_BAP_UNICAST)
-	mock_bap_stream_ops.configured = mock_bap_stream_configured_cb;
-	mock_bap_stream_ops.qos_set = mock_bap_stream_qos_set_cb;
+	mock_bap_stream_ops.codec_configured = mock_bap_stream_codec_configured_cb;
+	mock_bap_stream_ops.qos_configured = mock_bap_stream_qos_configured_cb;
 	mock_bap_stream_ops.enabled = mock_bap_stream_enabled_cb;
 	mock_bap_stream_ops.metadata_updated = mock_bap_stream_metadata_updated_cb;
 	mock_bap_stream_ops.disabled = mock_bap_stream_disabled_cb;

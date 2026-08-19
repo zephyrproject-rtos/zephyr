@@ -453,7 +453,7 @@ static void can_xmc4xxx_get_state_from_status(const struct device *dev, enum can
 	struct can_xmc4xxx_data *dev_data = dev->data;
 	const struct can_xmc4xxx_config *dev_cfg = dev->config;
 	uint8_t tec = XMC_CAN_NODE_GetTransmitErrorCounter(dev_cfg->can);
-	uint8_t rec = XMC_CAN_NODE_GetTransmitErrorCounter(dev_cfg->can);
+	uint8_t rec = XMC_CAN_NODE_GetReceiveErrorCounter(dev_cfg->can);
 
 	if (err_cnt != NULL) {
 		err_cnt->tx_err_cnt = tec;

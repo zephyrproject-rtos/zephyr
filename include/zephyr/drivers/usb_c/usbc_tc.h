@@ -8,13 +8,14 @@
 /**
  * @file
  * @brief USB Type-C Cable and Connector API used for USB-C drivers
+ * @ingroup usb_type_c
  *
  * The information in this file was taken from the USB Type-C
  * Cable and Connector Specification Release 2.1
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TC_H_
 
 /**
  * @brief Support for USB Type-C cables and connectors
@@ -383,9 +384,9 @@ enum tc_cc_pull {
  *	  Replaced by pd_power_role for SOP packets.
  */
 enum tc_cable_plug {
-	/* Message originated from a DFP or UFP */
+	/** Message originated from a DFP or UFP. */
 	PD_PLUG_FROM_DFP_UFP = 0,
-	/* Message originated from a Cable Plug or VPD */
+	/** Message originated from a Cable Plug or VPD. */
 	PD_PLUG_FROM_CABLE_VPD = 1
 };
 
@@ -472,4 +473,4 @@ enum tc_cc_states {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TC_H_ */

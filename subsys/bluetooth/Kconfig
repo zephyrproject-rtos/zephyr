@@ -48,19 +48,6 @@ config BT_HCI_RAW
 	  This option allows to access Bluetooth controller
 	  from the application with the RAW HCI protocol.
 
-config BT_HCI_RAW_H4
-	bool "RAW HCI H:4 transport"
-	help
-	  This option enables HCI RAW access to work over an H:4
-	  transport, note that it still need to be selected at runtime.
-
-config BT_HCI_RAW_H4_ENABLE
-	bool "RAW HCI H:4 transport enable"
-	depends on BT_HCI_RAW_H4
-	help
-	  This option enables use of H:4 transport for HCI RAW access at
-	  build time.
-
 config BT_HCI_RAW_CMD_EXT
 	bool "RAW HCI Command Extension"
 	help
@@ -98,6 +85,11 @@ rsource "Kconfig.adv"
 
 config BT_CONN
 	bool
+	help
+	  Indicates that support for Bluetooth LE connections (ACL) is enabled.
+	  This internal option is selected automatically by the roles that need
+	  connections, such as BT_PERIPHERAL and BT_CENTRAL, and is not meant to
+	  be set directly.
 
 config BT_MAX_CONN
 	int "Maximum number of simultaneous connections"
@@ -423,6 +415,8 @@ rsource "Kconfig.logging"
 config BT_SHELL
 	bool "Bluetooth shell"
 	select SHELL
+	select SHELL_GETOPT
+	select GETOPT_LONG
 	select BT_PRIVATE_SHELL
 	select BT_TICKER_NEXT_SLOT_GET if BT_LL_SW_SPLIT
 	help

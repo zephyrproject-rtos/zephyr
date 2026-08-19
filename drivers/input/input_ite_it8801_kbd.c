@@ -222,7 +222,5 @@ static const struct input_kbd_matrix_api kbd_it8801_api = {
 	DEVICE_DT_INST_DEFINE(inst, &kbd_it8801_init, PM_DEVICE_DT_INST_GET(inst),                 \
 			      &kbd_it8801_data_##inst, &kbd_it8801_cfg_##inst, POST_KERNEL,        \
 			      CONFIG_MFD_INIT_PRIORITY, NULL);                                     \
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(inst, row_size), 1, 8), "invalid row-size");            \
-	BUILD_ASSERT(IN_RANGE(DT_INST_PROP(inst, col_size), 1, 19), "invalid col-size");
 
 DT_INST_FOREACH_STATUS_OKAY(INPUT_IT8801_INIT)

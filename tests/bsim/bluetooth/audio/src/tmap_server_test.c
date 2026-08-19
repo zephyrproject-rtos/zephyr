@@ -14,12 +14,14 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/bluetooth/gatt.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(tmap_server_test);
 
 #ifdef CONFIG_BT_TMAP
 extern enum bst_result_t bst_result;
@@ -35,18 +37,18 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	/* Initialize TMAP */
 	err = bt_tmap_register(TMAP_ROLE_SUPPORTED);
 	if (err != 0) {
 		FAIL("Failed to register TMAP (err %d)\n", err);
 		return;
 	}
-	printk("TMAP initialized. Start advertising...\n");
+	LOG_INF("TMAP initialized. Start advertising...");
 	setup_connectable_adv(&ext_adv);
 
 	WAIT_FOR_FLAG(flag_connected);
-	printk("Connected!\n");
+	LOG_INF("Connected!");
 
 	PASS("TMAP test passed\n");
 }

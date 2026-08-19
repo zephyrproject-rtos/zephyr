@@ -34,6 +34,8 @@ extern "C" {
 
 /**
  * @defgroup cache_interface Cache Interface
+ * @since 3.3
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -558,7 +560,7 @@ static ALWAYS_INLINE void sys_cache_flush(void *addr, size_t size)
  *
  * @param ptr Pointer to be checked.
  *
- * @return True is pointer is in any coherence regions, false otherwise.
+ * @return True if pointer is in any coherence regions, false otherwise.
  */
 static ALWAYS_INLINE bool sys_cache_is_mem_coherent(void *ptr)
 {

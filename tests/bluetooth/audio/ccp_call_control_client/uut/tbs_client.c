@@ -24,7 +24,7 @@ int bt_tbs_client_register_cb(struct bt_tbs_client_cb *cbs)
 int bt_tbs_client_discover(struct bt_conn *conn)
 {
 	if (tbs_cbs != NULL && tbs_cbs->discover != NULL) {
-		uint8_t tbs_cnt = 0;
+		uint8_t tbs_cnt = 0U;
 
 		IF_ENABLED(CONFIG_BT_TBS_CLIENT_TBS,
 			   (tbs_cnt += CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES));
@@ -35,6 +35,7 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 	return 0;
 }
 
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME)
 int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_index)
 {
 	if (conn == NULL) {
@@ -47,3 +48,19 @@ int bt_tbs_client_read_bearer_provider_name(struct bt_conn *conn, uint8_t inst_i
 
 	return 0;
 }
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_PROVIDER_NAME */
+
+#if defined(CONFIG_BT_TBS_CLIENT_BEARER_UCI)
+int bt_tbs_client_read_bearer_uci(struct bt_conn *conn, uint8_t inst_index)
+{
+	if (conn == NULL) {
+		return -ENOTCONN;
+	}
+
+	if (tbs_cbs != NULL && tbs_cbs->bearer_uci != NULL) {
+		tbs_cbs->bearer_uci(conn, 0, inst_index, "un000");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */

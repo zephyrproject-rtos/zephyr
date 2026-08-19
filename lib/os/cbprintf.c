@@ -46,7 +46,7 @@ static int str_out(int c,
 		*(scp->dp++) = c;
 	}
 
-	return c;
+	return (int) (unsigned char) c;
 }
 
 int fprintfcb(FILE *stream, const char *format, ...)
@@ -63,7 +63,7 @@ int fprintfcb(FILE *stream, const char *format, ...)
 
 int vfprintfcb(FILE *stream, const char *format, va_list ap)
 {
-	return cbvprintf(fputc, stream, format, ap);
+	return cbvprintf((cbprintf_cb)fputc, (void *)stream, format, ap);
 }
 
 int printfcb(const char *format, ...)
@@ -80,7 +80,7 @@ int printfcb(const char *format, ...)
 
 int vprintfcb(const char *format, va_list ap)
 {
-	return cbvprintf(fputc, stdout, format, ap);
+	return cbvprintf((cbprintf_cb)fputc, (void *)stdout, format, ap);
 }
 
 int snprintfcb(char *str, size_t size, const char *format, ...)

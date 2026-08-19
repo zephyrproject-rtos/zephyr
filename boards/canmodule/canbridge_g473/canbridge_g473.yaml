@@ -1,0 +1,16 @@
+identifier: canbridge_g473
+name: CANBRIDGE G473
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 128
+supported:
+  - can
+  - counter
+  - gpio
+  - usb_device
+  - usbd
+vendor: canmodule

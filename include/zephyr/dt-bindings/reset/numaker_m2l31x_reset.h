@@ -4,8 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Peripheral reset identifiers for Nuvoton NuMaker M2L31X
+ * @ingroup reset_controller_nuvoton_m2l31x
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M2L31X_RESET_H
 #define ZEPHYR_INCLUDE_DT_BINDINGS_RESET_NUMAKER_M2L31X_RESET_H
+
+/**
+ * @addtogroup reset_controller_numaker Nuvoton NuMaker reset controller helpers
+ * @{
+ */
+
+/**
+ * @defgroup reset_controller_nuvoton_m2l31x Nuvoton NuMaker M2L31X reset controller helpers
+ * @ingroup reset_controller_numaker
+ *
+ * @brief Peripheral reset-cell identifiers for M2L31X devices.
+ *
+ * Reset identifiers follow the pattern @c NUMAKER_\<PERIPHERAL\>_RST, where @c \<PERIPHERAL\>
+ * is an M2L31X peripheral name (for example, @c NUMAKER_UART0_RST resets UART0). Pass these
+ * identifiers directly to a @c resets property.
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @name Reset module IDs
+ * @brief Register bit positions and reset IDs for Nuvoton M2L31X
+ * @{
+ */
 
 /* Beginning of M2L31 BSP sys_reg.h reset module copy */
 
@@ -151,5 +182,13 @@
 #define NUMAKER_OPA_RST         ((0x80UL<<24) | LPSCC_IPRST0_OPARST_Pos)
 
 /* End of M2L31 BSP sys.h reset module copy */
+
+/** @} */
+
+/** @endcond */
+
+/** @} */
+
+/** @} */
 
 #endif

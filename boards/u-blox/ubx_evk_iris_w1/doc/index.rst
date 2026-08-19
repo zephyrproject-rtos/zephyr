@@ -36,17 +36,33 @@ Hardware
 Flash Memory Configuration
 ==========================
 
-The IRIS-W1 board uses different flash vendors depending on revision:
+The IRIS-W1 board supports multiple flash vendors and sizes, selected via board revision:
 
-- ``@macronix``: Module build up to 2023 week 45
-- ``@fidelix``: Module build 2023 week 46 (2346) onward
++--------------------+----------------------+------+--------------------------------------------+
+| Revision           | Vendor               | Size | Description                                |
++====================+======================+======+============================================+
+| ``@fidelix``       | Fidelix FM25Q64A     | 8MB  | Module build 2023 week 46 onward (default) |
++--------------------+----------------------+------+--------------------------------------------+
+| ``@fidelix_16mb``  | Fidelix FM25Q128A    | 16MB | Fidelix 16MB variant                       |
++--------------------+----------------------+------+--------------------------------------------+
+| ``@macronix``      | Macronix MX25L6433F  | 8MB  | Module build up to 2023 week 45            |
++--------------------+----------------------+------+--------------------------------------------+
+| ``@macronix_16mb`` | Macronix MX25L12845G | 16MB | Macronix 16MB variant                      |
++--------------------+----------------------+------+--------------------------------------------+
 
-To build for a specific flash version:
+To build for a specific flash revision:
 
 .. code-block:: bash
 
-   west build -b ubx_evk_iris_w1@macronix
-   west build -b ubx_evk_iris_w1@fidelix
+   west build -b ubx_evk_iris_w1@fidelix/rw612 samples/hello_world
+   west build -b ubx_evk_iris_w1@fidelix_16mb/rw612 samples/hello_world
+   west build -b ubx_evk_iris_w1@macronix/rw612 samples/hello_world
+   west build -b ubx_evk_iris_w1@macronix_16mb/rw612 samples/hello_world
+
+If no revision is specified, ``fidelix`` (8MB) is used by default.
+
+Each revision uses a dedicated DTS overlay file that defines the flash node
+and partition layout specific to that flash variant.
 
 Supported Features
 ==================
@@ -124,9 +140,36 @@ The required binary blob
 ``<zephyr workspace>/modules/hal/nxp/zephyr/blobs/rw61x_sb_wifi_a2.bin`` will be linked
 with the application image directly, forming a single monolithic image.
 
+
+Board variants
+**************
+
+Ethernet
+========
+
+The EVK-IRIS-W1 board includes an Ethernet RJ45 connector that can be used
+with the ethernet board variant. To use Ethernet functionality, build for the
+board target ``ubx_evk_iris_w1//ethernet``.
+
+.. code-block:: bash
+
+   west build -b ubx_evk_iris_w1@fidelix/rw612/ethernet
+   west build -b ubx_evk_iris_w1@fidelix_16mb/rw612/ethernet
+   west build -b ubx_evk_iris_w1@macronix/rw612/ethernet
+   west build -b ubx_evk_iris_w1@macronix_16mb/rw612/ethernet
+
+.. note::
+
+   Pin conflicts between the Ethernet PHY and the external oscillator require hardware modifications on the board.
+   Refer to the following documents for the required hardware changes:
+
+   - `EVK-IRIS-W1 User Guide <https://www.u-blox.com/docs/UBX-23007837>`_
+   - `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_
+
 Resources
 *********
 
 - `EVK-IRIS-W1 Website <https://www.u-blox.com/en/product/evk-iris-w1>`_
 - `EVK-IRIS-W1 GitHub <https://github.com/u-blox/u-blox-sho-OpenCPU/tree/master/MCUXpresso/IRIS-W1>`_
-- `EVK-IRIS-W1 User Guide <https://content.u-blox.com/sites/default/files/documents/EVK-IRIS-W1_UserGuide_UBX-23007837.pdf>`_
+- `EVK-IRIS-W1 User Guide <https://www.u-blox.com/docs/UBX-23007837>`_
+- `IRIS-W10 SIM <https://content.u-blox.com/sites/default/files/documents/IRIS-W10_SIM_UBX-23003263.pdf>`_

@@ -43,7 +43,7 @@ int bma4xx_init_interrupt(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->gpio_interrupt)) {
-		LOG_ERR("GPIO interrupt not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->gpio_interrupt.port);
 		return -ENODEV;
 	}
 

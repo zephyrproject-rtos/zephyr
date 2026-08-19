@@ -167,6 +167,53 @@ ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_correct_para
 		      "params");
 }
 
+/* Regression tests for AoD 2US CTE type validation.
+ * Bug: valid_conn_cte_tx_params() checked AOD_1US twice instead of checking
+ * both AOD_1US and AOD_2US. This allowed AOD_2US to bypass antenna ID validation.
+ * See BT Core spec 5.2 Vol 4, Part E sec. 7.8.84.
+ */
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_aod_2us_correct_params)
+{
+	int err;
+
+	g_params.cte_types = BT_HCI_LE_AOD_CTE_RSP_2US;
+
+	err = send_set_conn_cte_tx_params(g_conn_handle, &g_params);
+	zassert_equal(err, 0,
+		      "Unexpected error value for set conn CTE TX params with AoD 2US"
+		      " and correct params");
+}
+
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_aod_2us_too_short_pattern)
+{
+	int err;
+	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_SHORT] = { 0 };
+
+	g_params.cte_types = BT_HCI_LE_AOD_CTE_RSP_2US;
+	g_params.switch_pattern_len = SWITCH_PATTERN_LEN_TOO_SHORT;
+	g_params.ant_ids = ant_ids;
+
+	err = send_set_conn_cte_tx_params(g_conn_handle, &g_params);
+	zassert_equal(err, -EIO,
+		      "Unexpected error value for set conn CTE TX params with AoD 2US"
+		      " and switch pattern length below min value");
+}
+
+ZTEST(test_set_conn_cte_tx_params, test_set_conn_cte_tx_params_with_aod_2us_too_long_pattern)
+{
+	int err;
+	uint8_t ant_ids[SWITCH_PATTERN_LEN_TOO_LONG] = { 0 };
+
+	g_params.cte_types = BT_HCI_LE_AOD_CTE_RSP_2US;
+	g_params.switch_pattern_len = SWITCH_PATTERN_LEN_TOO_LONG;
+	g_params.ant_ids = ant_ids;
+
+	err = send_set_conn_cte_tx_params(g_conn_handle, &g_params);
+	zassert_equal(err, -EIO,
+		      "Unexpected error value for set conn CTE TX params with AoD 2US"
+		      " and switch pattern length beyond max value");
+}
+
 static void connection_setup(void *data)
 {
 	g_params.cte_types =

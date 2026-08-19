@@ -505,7 +505,7 @@ static void start_tx_packet(struct smartbond_ep_state *ep_state)
 
 	if (ep_state->ep_addr != EP0_IN &&
 	    remaining > DMA_MIN_TRANSFER_SIZE &&
-	    (uint32_t)(ep_state->buffer) >= CONFIG_SRAM_BASE_ADDRESS &&
+	    (uint32_t)(ep_state->buffer) >= DT_CHOSEN_SRAM_ADDR &&
 	    try_allocate_dma(ep_state, USB_EP_DIR_IN)) {
 		/*
 		 * Whole packet will be put in FIFO by DMA.

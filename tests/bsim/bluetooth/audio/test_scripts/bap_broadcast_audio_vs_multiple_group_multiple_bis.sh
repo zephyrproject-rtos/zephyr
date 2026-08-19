@@ -11,7 +11,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="bap_broadcast_audio_vs_multiple_group_multiple_bis"
+SIMULATION_ID="${BOARD_TS}_bap_broadcast_audio_vs_multiple_group_multiple_bis"
 
 # The test has been ignored for nrf54l15bsim until
 # https://github.com/zephyrproject-rtos/zephyr/issues/98941 has been fixed, as it currently won't

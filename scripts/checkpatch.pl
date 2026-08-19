@@ -1,11 +1,13 @@
 #!/usr/bin/env perl
 # SPDX-License-Identifier: GPL-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 #
 # (c) 2001, Dave Jones. (the file handling bit)
 # (c) 2005, Joel Schopp <jschopp@austin.ibm.com> (the ugly bit)
 # (c) 2007,2008, Andy Whitcroft <apw@uk.ibm.com> (new conditions, test suite)
 # (c) 2008-2010 Andy Whitcroft <apw@canonical.com>
 # (c) 2010-2018 Joe Perches <joe@perches.com>
+# (c) 2026 Aerlync Labs Inc.
 
 use strict;
 use warnings;
@@ -402,6 +404,7 @@ our $Attribute	= qr{
 			____cacheline_aligned|
 			____cacheline_aligned_in_smp|
 			____cacheline_internodealigned_in_smp|
+			__aligned\s*\((?:[^()]*|\([^()]*\))*\)|
 			__weak|
 			__syscall
 		  }x;
@@ -505,6 +508,7 @@ our $signature_tags = qr{(?xi:
 	Reviewed-by:|
 	Reported-by:|
 	Suggested-by:|
+	Assisted-by:|
 	To:|
 	Cc:
 )};
@@ -865,6 +869,7 @@ our $FuncArg = qr{$Typecast{0,1}($LvalOrFunc|$Constant|$String)};
 our $declaration_macros = qr{(?x:
 	(?:$Storage\s+)?(?:[A-Z_][A-Z0-9]*_){0,2}(?:DEFINE|DECLARE)(?:_[A-Z0-9]+){0,6}\s*\(|
 	(?:$Storage\s+)?[HLP]?LIST_HEAD\s*\(|
+	(?:DEVICE_MMIO_)(?:NAMED_)?(?:ROM|RAM)(?!_PTR)|
 	(?:SKCIPHER_REQUEST|SHASH_DESC|AHASH_REQUEST)_ON_STACK\s*\(
 )};
 
@@ -1820,6 +1825,19 @@ sub annotate_values {
 			push(@av_paren_type, $type);
 			$type = 'c';
 
+		} elsif ($perl_version_ok &&
+			 $cur =~ /^((?:$Modifier\s+|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(?:\s|\*)*)(?:$Ident|,|\)|\s*$)/) {
+			# A tagged type whose name is produced by a
+			# function-like macro, e.g. "struct MY_MACRO(NODE)
+			# *spec". Consume the macro's parenthesized argument, and
+			# any trailing pointer '*', as part of the type. This
+			# mirrors how the plain $Type regex absorbs the '*' so it
+			# is not annotated as a binary operator. Requiring a
+			# struct/union/enum tag keeps this from matching a lone
+			# macro that returns a value, e.g. "u32(5) * 2".
+			print "DECLARE($1)\n" if ($dbg_values > 1);
+			$type = 'T';
+
 		} elsif ($cur =~ /^($Type)\s*(?:$Ident|,|\)|\(|\s*$)/) {
 			print "DECLARE($1)\n" if ($dbg_values > 1);
 			$type = 'T';
@@ -2470,9 +2488,12 @@ sub process {
 	$realcnt = 0;
 	$linenr = 0;
 	$fixlinenr = -1;
+	my $prev_blank_removed = 0;
 	foreach my $line (@lines) {
 		$linenr++;
 		$fixlinenr++;
+		my $blank_was_removed = $prev_blank_removed;	#set if prev raw line was a removed blank
+		$prev_blank_removed = 0;
 		my $sline = $line;	#copy of $line
 		$sline =~ s/$;/ /g;	#with comments as spaces
 
@@ -2531,6 +2552,11 @@ sub process {
 
 		} elsif ($realcnt == 1) {
 			$realcnt--;
+		}
+
+		# track when a blank line is deleted (fixes #98976)
+		if ($line =~ /^-\s*$/) {
+			$prev_blank_removed = 1;
 		}
 
 		my $hunk_line = ($realcnt != 0);
@@ -2720,6 +2746,15 @@ sub process {
 					$fixed[$fixlinenr] =
 					    "$ucfirst_sign_off $email";
 				}
+			}
+
+			# Assisted-by uses AGENT_NAME:MODEL_VERSION format, not email
+			if ($sign_off =~ /^Assisted-by:/i) {
+				if ($email !~ /^\S+:\S+/) {
+					WARN("BAD_SIGN_OFF",
+					     "Assisted-by expects 'AGENT_NAME:MODEL_VERSION [TOOL1] [TOOL2]' format\n" . $herecurr);
+				}
+				next;
 			}
 
 			my ($email_name, $email_address, $comment) = parse_email($email);
@@ -3521,39 +3556,40 @@ sub process {
 		}
 
 # check for missing blank lines after declarations
-		if ($sline =~ /^\+\s+\S/ &&			#Not at char 1
+		if (($sline =~ /^\+\s+\S/ ||			#Not at char 1
+		     ($blank_was_removed && $sline =~ /^ \s+\S/)) &&	#or blank was deleted before context line
 			# actual declarations
-		    ($prevline =~ /^\+\s+$Declare\s*$Ident\s*[=,;:\[]/ ||
+		    ($prevline =~ /^[+ ]\s+$Declare\s*$Ident\s*[=,;:\[]/ ||
 			# function pointer declarations
-		     $prevline =~ /^\+\s+$Declare\s*\(\s*\*\s*$Ident\s*\)\s*[=,;:\[\(]/ ||
+		     $prevline =~ /^[+ ]\s+$Declare\s*\(\s*\*\s*$Ident\s*\)\s*[=,;:\[\(]/ ||
 			# foo bar; where foo is some local typedef or #define
-		     $prevline =~ /^\+\s+$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
+		     $prevline =~ /^[+ ]\s+$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
 			# known declaration macros
-		     $prevline =~ /^\+\s+$declaration_macros/) &&
+		     $prevline =~ /^[+ ]\s+$declaration_macros/) &&
 			# for "else if" which can look like "$Ident $Ident"
-		    !($prevline =~ /^\+\s+$c90_Keywords\b/ ||
+		    !($prevline =~ /^[+ ]\s+$c90_Keywords\b/ ||
 			# other possible extensions of declaration lines
 		      $prevline =~ /(?:$Compare|$Assignment|$Operators)\s*$/ ||
 			# not starting a section or a macro "\" extended line
 		      $prevline =~ /(?:\{\s*|\\)$/) &&
 			# looks like a declaration
-		    !($sline =~ /^\+\s+$Declare\s*$Ident\s*[=,;:\[]/ ||
+		    !($sline =~ /^[+ ]\s+$Declare\s*$Ident\s*[=,;:\[]/ ||
 			# function pointer declarations
-		      $sline =~ /^\+\s+$Declare\s*\(\s*\*\s*$Ident\s*\)\s*[=,;:\[\(]/ ||
+		      $sline =~ /^[+ ]\s+$Declare\s*\(\s*\*\s*$Ident\s*\)\s*[=,;:\[\(]/ ||
 			# foo bar; where foo is some local typedef or #define
-		      $sline =~ /^\+\s+(?:volatile\s+)?$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
+		      $sline =~ /^[+ ]\s+(?:volatile\s+)?$Ident(?:\s+|\s*\*\s*)$Ident\s*[=,;\[]/ ||
 			# known declaration macros
-		      $sline =~ /^\+\s+$declaration_macros/ ||
+		      $sline =~ /^[+ ]\s+$declaration_macros/ ||
 			# start of struct or union or enum
-		      $sline =~ /^\+\s+(?:volatile\s+)?(?:static\s+)?(?:const\s+)?(?:union|struct|enum|typedef)\b/ ||
+		      $sline =~ /^[+ ]\s+(?:volatile\s+)?(?:static\s+)?(?:const\s+)?(?:union|struct|enum|typedef)\b/ ||
 			# start or end of block or continuation of declaration
-		      $sline =~ /^\+\s+(?:$|[\{\}\.\#\"\?\:\(\[])/ ||
+		      $sline =~ /^[+ ]\s+(?:$|[\{\}\.\#\"\?\:\(\[])/ ||
 			# bitfield continuation
-		      $sline =~ /^\+\s+$Ident\s*:\s*\d+\s*[,;]/ ||
+		      $sline =~ /^[+ ]\s+$Ident\s*:\s*\d+\s*[,;]/ ||
 			# other possible extensions of declaration lines
-		      $sline =~ /^\+\s+\(?\s*(?:$Compare|$Assignment|$Operators)/) &&
+		      $sline =~ /^[+ ]\s+\(?\s*(?:$Compare|$Assignment|$Operators)/) &&
 			# indentation of previous and current line are the same
-		    (($prevline =~ /\+(\s+)\S/) && $sline =~ /^\+$1\S/)) {
+		    (($prevline =~ /^[+ ](\s+)\S/) && $sline =~ /^[+ ]$1\S/)) {
 			if (WARN("LINE_SPACING",
 				 "Missing a blank line after declarations\n" . $hereprev) &&
 			    $fix) {
@@ -4219,6 +4255,37 @@ sub process {
 			$to =~ s/(\b$Modifier$)/$1 /;
 
 ##			print "2: from<$from> to<$to> ident<$ident>\n";
+			if ($from ne $to && $ident !~ /^$Modifier$/) {
+				if (ERROR("POINTER_LOCATION",
+					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&
+				    $fix) {
+
+					my $sub_from = $match;
+					my $sub_to = $match;
+					$sub_to =~ s/\Q$from\E/$to/;
+					$fixed[$fixlinenr] =~
+					    s@\Q$sub_from\E@$sub_to@;
+				}
+			}
+		}
+		# Same as above, but for a tagged type whose name is produced by
+		# a function-like macro, e.g. "struct MY_MACRO(NODE)*spec". The
+		# macro's parenthesized argument sits between the type and the
+		# '*', so the plain $NonptrType patterns above do not match it.
+		while ($perl_version_ok &&
+		       $line =~ m{(\b(?:$Modifier\b\s*|const\s+)*(?:struct|union|enum)\s+$Ident\s*$balanced_parens(\s*(?:$Modifier\b\s*|\*\s*)+)($Ident))}g) {
+			my ($match, $from, $to, $ident) = ($1, $3, $3, $4);
+
+			# Should start with a space.
+			$to =~ s/^(\S)/ $1/;
+			# Should not end with a space.
+			$to =~ s/\s+$//;
+			# '*'s should not have spaces between.
+			while ($to =~ s/\*\s+\*/\*\*/) {
+			}
+			# Modifiers should have spaces.
+			$to =~ s/(\b$Modifier$)/$1 /;
+
 			if ($from ne $to && $ident !~ /^$Modifier$/) {
 				if (ERROR("POINTER_LOCATION",
 					  "\"foo${from}bar\" should be \"foo${to}bar\"\n" .  $herecurr) &&
@@ -5035,8 +5102,8 @@ sub process {
 		if ($sline =~ /\breturn(?:\s*\(+\s*|\s+)(E[A-Z]+)(?:\s*\)+\s*|\s*)[;:,]/) {
 			my $name = $1;
 			if ($name ne 'EOF' && $name ne 'ERROR') {
-				# only print this warning if not dealing with 'lib/posix/*.c'
-				if ($realfile =~ /.*\/lib\/posix\/*.c/) {
+				# only print this warning if not dealing with 'subsys/portability/posix/*.c'
+				if ($realfile =~ /.*\/subsys\/portability\/posix\/*.c/) {
 					WARN("USE_NEGATIVE_ERRNO",
 						"return of an errno should typically be negative (ie: return -$1)\n" . $herecurr);
 				}

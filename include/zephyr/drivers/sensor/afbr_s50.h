@@ -17,7 +17,7 @@
 /**
  * @brief Broadcom AFBR-S50 3D ToF sensor
  * @defgroup afbr_s50_interface AFBR-S50
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_brcm
  * @{
  */
 

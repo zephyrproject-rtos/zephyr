@@ -20,6 +20,8 @@
 /**
  * @brief Interfaces for LED strips.
  * @defgroup led_strip_interface LED Strip
+ * @since 1.10
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
  *
@@ -126,8 +128,7 @@ static inline int led_strip_update_rgb(const struct device *dev,
 				       struct led_rgb *pixels,
 				       size_t num_pixels)
 {
-	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->api;
+	const struct led_strip_driver_api *api = DEVICE_API_GET(led_strip, dev);
 
 	/* Allow for out-of-tree drivers that do not have this function for 2 Zephyr releases
 	 * until making it mandatory, function added after Zephyr 3.6
@@ -161,8 +162,7 @@ static inline int led_strip_update_channels(const struct device *dev,
 					    uint8_t *channels,
 					    size_t num_channels)
 {
-	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->api;
+	const struct led_strip_driver_api *api = DEVICE_API_GET(led_strip, dev);
 
 	if (api->update_channels == NULL) {
 		return -ENOSYS;
@@ -180,10 +180,7 @@ static inline int led_strip_update_channels(const struct device *dev,
  */
 static inline size_t led_strip_length(const struct device *dev)
 {
-	const struct led_strip_driver_api *api =
-		(const struct led_strip_driver_api *)dev->api;
-
-	return api->length(dev);
+	return DEVICE_API_GET(led_strip, dev)->length(dev);
 }
 
 #ifdef __cplusplus

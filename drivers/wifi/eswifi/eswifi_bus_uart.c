@@ -64,8 +64,13 @@ static void eswifi_iface_uart_isr(const struct device *uart_dev,
 
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(uart->dev) &&
-	       uart_irq_rx_ready(uart->dev)) {
+	uart_irq_update(uart->dev);
+
+	if (uart_irq_rx_ready(uart->dev) <= 0) {
+		return;
+	}
+
+	while (true) {
 		if (!partial_size) {
 			partial_size = ring_buf_put_claim(&uart->rx_rb, &dst,
 							  UINT32_MAX);
@@ -78,7 +83,7 @@ static void eswifi_iface_uart_isr(const struct device *uart_dev,
 
 		rx = uart_fifo_read(uart->dev, dst, partial_size);
 		if (rx <= 0) {
-			continue;
+			break;
 		}
 
 		dst += rx;

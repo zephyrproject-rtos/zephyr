@@ -386,6 +386,76 @@ void test_ipv6_so_bindtodevice(void)
 			     (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
 }
 
+/* A socket bound to a given interface can only be bound to an address that is
+ * assigned to that interface.
+ */
+static void test_so_bindtodevice_addr(int family, struct net_sockaddr *own_addr,
+				      struct net_sockaddr *other_addr,
+				      net_socklen_t addrlen)
+{
+	struct net_ifreq ifreq = { 0 };
+	int sock;
+	int ret;
+
+	sock = zsock_socket(family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket open failed");
+
+	strcpy(ifreq.ifr_name, DEV1_NAME);
+	ret = zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+			       &ifreq, sizeof(ifreq));
+	zassert_equal(ret, 0, "SO_BINDTODEVICE failed, %d", errno);
+
+	ret = zsock_bind(sock, other_addr, addrlen);
+	zassert_equal(ret, -1, "bind to an address of another interface passed");
+	zassert_equal(errno, ENOENT, "bind failed with invalid errno, %d", errno);
+
+	ret = zsock_bind(sock, own_addr, addrlen);
+	zassert_equal(ret, 0, "bind failed, %d", errno);
+
+	ret = zsock_close(sock);
+	zassert_equal(ret, 0, "close failed, %d", errno);
+}
+
+void test_ipv4_so_bindtodevice_addr(void)
+{
+	struct net_sockaddr_in own_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(BIND_PORT),
+		.sin_addr = { { { 192, 0, 1, 1 } } },
+	};
+	struct net_sockaddr_in other_addr = {
+		.sin_family = NET_AF_INET,
+		.sin_port = net_htons(BIND_PORT),
+		.sin_addr = { { { 192, 0, 2, 2 } } },
+	};
+
+	test_so_bindtodevice_addr(NET_AF_INET,
+				  (struct net_sockaddr *)&own_addr,
+				  (struct net_sockaddr *)&other_addr,
+				  sizeof(own_addr));
+}
+
+void test_ipv6_so_bindtodevice_addr(void)
+{
+	struct net_sockaddr_in6 own_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(BIND_PORT),
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x1 } } },
+	};
+	struct net_sockaddr_in6 other_addr = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(BIND_PORT),
+		.sin6_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					0, 0, 0, 0, 0, 0, 0, 0x2 } } },
+	};
+
+	test_so_bindtodevice_addr(NET_AF_INET6,
+				  (struct net_sockaddr *)&own_addr,
+				  (struct net_sockaddr *)&other_addr,
+				  sizeof(own_addr));
+}
+
 #define ADDR_SIZE(family) ((family == NET_AF_INET) ? \
 			   sizeof(struct net_sockaddr_in) : \
 			   sizeof(struct net_sockaddr_in6))
@@ -821,7 +891,7 @@ void test_ipv4_mapped_to_ipv6_server(void)
 	/* Note that we should get IPv6 address here (mapped from IPv4) */
 	zassert_equal(addr.sa_family, NET_AF_INET6, "wrong family");
 	zassert_equal(addrlen, sizeof(struct net_sockaddr_in6),
-		      "wrong addrlen (%d, expecting %d)", addrlen,
+		      "wrong addrlen (%d, expecting %zu)", addrlen,
 		      sizeof(struct net_sockaddr_in6));
 	zassert_mem_equal(&mapped.sin6_addr, &net_sin6(&addr)->sin6_addr,
 			  sizeof(struct net_in6_addr),
@@ -900,12 +970,14 @@ static void *setup(void)
 ZTEST_USER(socket_misc_test_suite, test_ipv4)
 {
 	test_ipv4_so_bindtodevice();
+	test_ipv4_so_bindtodevice_addr();
 	test_ipv4_getpeername();
 }
 
 ZTEST_USER(socket_misc_test_suite, test_ipv6)
 {
 	test_ipv6_so_bindtodevice();
+	test_ipv6_so_bindtodevice_addr();
 	test_ipv6_getpeername();
 }
 

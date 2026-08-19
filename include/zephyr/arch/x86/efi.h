@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_ARCH_X86_INCLUDE_EFI_H_
-#define ZEPHYR_ARCH_X86_INCLUDE_EFI_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_EFI_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_EFI_H_
 
 /* Boot type value (see prep_c.c) */
 #define EFI_BOOT_TYPE 2
@@ -41,4 +41,4 @@ void *efi_get_acpi_rsdp(void);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_ARCH_X86_INCLUDE_EFI_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_EFI_H_ */

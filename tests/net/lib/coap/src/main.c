@@ -61,11 +61,22 @@ static struct coap_resource server_resources[] = {
 };
 
 #define MY_PORT 12345
+
+/* The peer address has to be one that struct net_sockaddr_storage can hold,
+ * as NET_SOCKADDR_MAX_SIZE only covers the enabled families.
+ */
+#if defined(CONFIG_NET_IPV6)
 #define peer_addr { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0, \
 			0, 0, 0, 0, 0, 0, 0, 0x2 } } }
 static struct net_sockaddr_in6 dummy_addr = {
 	.sin6_family = NET_AF_INET6,
 	.sin6_addr = peer_addr };
+#else
+#define peer_addr { { { 192, 0, 2, 2 } } }
+static struct net_sockaddr_in dummy_addr = {
+	.sin_family = NET_AF_INET,
+	.sin_addr = peer_addr };
+#endif
 
 static uint8_t data_buf[2][COAP_BUF_SIZE];
 
@@ -451,6 +462,8 @@ ZTEST(coap, test_match_path_uri)
 		"devnull",
 		NULL
 	};
+	/* Deliberately not NUL terminated, see below. */
+	const char unterminated[] = { '/', 'f', 'o', 'o', 'b' };
 	const char *uri;
 	int r;
 
@@ -481,6 +494,17 @@ ZTEST(coap, test_match_path_uri)
 	uri = "/devnull*";
 	r = _coap_match_path_uri(resource_path, uri, strlen(uri));
 	zassert_false(r, "Matching %s failed", uri);
+
+	r = _coap_match_path_uri(resource_path, unterminated,
+				 sizeof(unterminated));
+	zassert_false(r, "Matching a non-terminated URI failed");
+
+	/* The same length guard is crossed by a URI that does match: with
+	 * len 8, "foobar3a" runs past the end while "foobar3" still matches.
+	 */
+	uri = "/foobar3a";
+	r = _coap_match_path_uri(resource_path, uri, strlen(uri) - 1);
+	zassert_true(r, "Matching %s truncated to 8 bytes failed", uri);
 }
 
 #define BLOCK_WISE_TRANSFER_SIZE_GET 150
@@ -823,13 +847,18 @@ static bool ipaddr_cmp(const struct net_sockaddr *a, const struct net_sockaddr *
 		return false;
 	}
 
+#if defined(CONFIG_NET_IPV6)
 	if (a->sa_family == NET_AF_INET6) {
 		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
 					 &net_sin6(b)->sin6_addr);
-	} else if (a->sa_family == NET_AF_INET) {
+	}
+#endif
+#if defined(CONFIG_NET_IPV4)
+	if (a->sa_family == NET_AF_INET) {
 		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
 					 &net_sin(b)->sin_addr);
 	}
+#endif
 
 	return false;
 }
@@ -2008,7 +2037,7 @@ ZTEST(coap, test_response_matching)
 		struct coap_packet response_pkt = { 0 };
 		struct net_sockaddr from = { 0 };
 		struct coap_reply *match;
-		uint8_t data[64];
+		uint8_t data[64] = { 0 };
 		int ret;
 
 		ret = coap_packet_init(&response_pkt, data, sizeof(data), COAP_VERSION_1,
@@ -2021,11 +2050,11 @@ ZTEST(coap, test_response_matching)
 		if (response->match != NULL) {
 			zassert_not_null(match, "Did not found a response match when expected");
 			zassert_equal_ptr(response->match, match,
-					  "Wrong response match, test %d match %d",
+					  "Wrong response match, test %td match %td",
 					  response - test_responses, match - matches);
 		} else {
 			zassert_is_null(match,
-					"Found unexpected response match, test %d match %d",
+					"Found unexpected response match, test %td match %td",
 					response - test_responses, match - matches);
 		}
 	}

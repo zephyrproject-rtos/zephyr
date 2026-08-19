@@ -9,7 +9,6 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/toolchain.h>
-#include <adsp-vectors.h>
 #include <mem_window.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
@@ -27,6 +26,11 @@
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)
 #define RAM_SIZE (L2_SRAM_SIZE - CONFIG_HP_SRAM_RESERVE - VECTOR_TBL_SIZE)
 
+/** Base address of all the vectors defined in SRAM */
+#define VECBASE_RESET_PADDR_SRAM (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE)
+
+/** Size of vector table */
+#define VECTOR_TBL_SIZE 0x1000
 
 /* L3 region (IMR), located in host memory */
 

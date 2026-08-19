@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,17 @@
  *
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_FLASH_H_
-#define INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_FLASH_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_FLASH_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_FLASH_H_
 
 #ifdef CONFIG_FLASH_MCHP_NVMCTRL_G1
 #include "mchp_nvmctrl_g1.h"
 #endif /* CONFIG_FLASH_MCHP_NVMCTRL_G1 */
+#ifdef CONFIG_FLASH_MCHP_NVMCTRL_G2
+#include "mchp_nvmctrl_g2.h"
+#endif /* CONFIG_FLASH_MCHP_NVMCTRL_G2 */
+#ifdef CONFIG_FLASH_MCHP_NVMCTRL_G3
+#include "mchp_nvmctrl_g3.h"
+#endif /* CONFIG_FLASH_MCHP_NVMCTRL_G3 */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_FLASH_MCHP_FLASH_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FLASH_MCHP_FLASH_H_ */

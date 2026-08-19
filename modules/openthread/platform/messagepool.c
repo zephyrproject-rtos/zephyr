@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/linker/section_tags.h>
 #include <zephyr/logging/log.h>
 
 #include <openthread/platform/messagepool.h>
@@ -24,7 +25,13 @@ BUILD_ASSERT(CONFIG_OPENTHREAD_MESSAGE_BUFFER_SIZE % MAX_ALIGNMENT == 0,
 	     "Invalid message buffer size");
 
 static struct k_mem_slab message_pool;
+
+#ifdef CONFIG_OPENTHREAD_MESSAGE_POOL_CUSTOM_SECTION
+__aligned(MAX_ALIGNMENT) static uint8_t
+	message_pool_buffer[MESSAGE_POOL_SIZE] Z_GENERIC_SECTION(.ot_msg_pool);
+#else
 __aligned(MAX_ALIGNMENT) static uint8_t message_pool_buffer[MESSAGE_POOL_SIZE];
+#endif
 
 void otPlatMessagePoolInit(otInstance *aInstance, uint16_t aMinNumFreeBuffers, size_t aBufferSize)
 {

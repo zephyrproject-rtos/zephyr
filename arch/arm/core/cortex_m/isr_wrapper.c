@@ -76,8 +76,15 @@ void _isr_wrapper(void)
 	 */
 	irq_number -= 16;
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 	const struct _isr_table_entry *entry = &_sw_isr_table[irq_number];
 	(entry->isr)(entry->arg);
+#elif defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+	struct _isr_table_entry entry;
+
+	get_isr_entry(irq_number, &entry);
+	(entry.isr)(entry.arg);
+#endif /* CONFIG_GEN_SW_ISR_TABLE_ARRAY */
 
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	z_soc_irq_eoi(irq_number);

@@ -67,6 +67,8 @@ static inline
 void conn_register_debug(struct net_conn *conn,
 			 uint16_t remote_port, uint16_t local_port)
 {
+	struct net_sockaddr *remote_addr = net_sad(&conn->remote_addr);
+	struct net_sockaddr *local_addr = net_sad(&conn->local_addr);
 	char dst[NET_IPV6_ADDR_LEN];
 	char src[NET_IPV6_ADDR_LEN];
 
@@ -74,11 +76,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == NET_AF_INET6) {
 			snprintk(dst, sizeof(dst), "%s",
-				 net_sprint_ipv6_addr(&net_sin6(&conn->remote_addr)->sin6_addr));
+				 net_sprint_ipv6_addr(&net_sin6(remote_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == NET_AF_INET) {
 			snprintk(dst, sizeof(dst), "%s",
-				 net_sprint_ipv4_addr(&net_sin(&conn->remote_addr)->sin_addr));
+				 net_sprint_ipv4_addr(&net_sin(remote_addr)->sin_addr));
 		} else {
 			snprintk(dst, sizeof(dst), "%s", "?");
 		}
@@ -90,11 +92,11 @@ void conn_register_debug(struct net_conn *conn,
 		if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		    conn->family == NET_AF_INET6) {
 			snprintk(src, sizeof(src), "%s",
-				 net_sprint_ipv6_addr(&net_sin6(&conn->local_addr)->sin6_addr));
+				 net_sprint_ipv6_addr(&net_sin6(local_addr)->sin6_addr));
 		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 			   conn->family == NET_AF_INET) {
 			snprintk(src, sizeof(src), "%s",
-				 net_sprint_ipv4_addr(&net_sin(&conn->local_addr)->sin_addr));
+				 net_sprint_ipv4_addr(&net_sin(local_addr)->sin_addr));
 		} else {
 			snprintk(src, sizeof(src), "%s", "?");
 		}
@@ -166,6 +168,9 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&conn_used, conn, tmp, node) {
+		struct net_sockaddr *conn_local = net_sad(&conn->local_addr);
+		struct net_sockaddr *conn_remote = net_sad(&conn->remote_addr);
+
 		if (conn->proto != proto) {
 			continue;
 		}
@@ -182,21 +187,19 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 			if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			    local_addr->sa_family == NET_AF_INET6 &&
 			    local_addr->sa_family ==
-			    conn->local_addr.sa_family) {
+			    conn->local_addr.ss_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(local_addr)->sin6_addr,
-					    &net_sin6(&conn->local_addr)->
-								sin6_addr)) {
+					    &net_sin6(conn_local)->sin6_addr)) {
 					continue;
 				}
 			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 				   local_addr->sa_family == NET_AF_INET &&
 				   local_addr->sa_family ==
-				   conn->local_addr.sa_family) {
+				   conn->local_addr.ss_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(local_addr)->sin_addr,
-					    &net_sin(&conn->local_addr)->
-								sin_addr)) {
+					    &net_sin(conn_local)->sin_addr)) {
 					continue;
 				}
 			} else {
@@ -206,8 +209,7 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 			continue;
 		}
 
-		if (net_sin(&conn->local_addr)->sin_port !=
-		    net_htons(local_port)) {
+		if (net_sin(conn_local)->sin_port != net_htons(local_port)) {
 			continue;
 		}
 
@@ -219,21 +221,19 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 			if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			    remote_addr->sa_family == NET_AF_INET6 &&
 			    remote_addr->sa_family ==
-			    conn->remote_addr.sa_family) {
+			    conn->remote_addr.ss_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(remote_addr)->sin6_addr,
-					    &net_sin6(&conn->remote_addr)->
-								sin6_addr)) {
+					    &net_sin6(conn_remote)->sin6_addr)) {
 					continue;
 				}
 			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 				   remote_addr->sa_family == NET_AF_INET &&
 				   remote_addr->sa_family ==
-				   conn->remote_addr.sa_family) {
+				   conn->remote_addr.ss_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(remote_addr)->sin_addr,
-					    &net_sin(&conn->remote_addr)->
-								sin_addr)) {
+					    &net_sin(conn_remote)->sin_addr)) {
 					continue;
 				}
 			} else {
@@ -246,8 +246,7 @@ static struct net_conn *conn_find_handler(struct net_if *iface,
 			continue;
 		}
 
-		if (net_sin(&conn->remote_addr)->sin_port !=
-		    net_htons(remote_port)) {
+		if (net_sin(conn_remote)->sin_port != net_htons(remote_port)) {
 			continue;
 		}
 
@@ -315,7 +314,7 @@ static int net_conn_change_remote(struct net_conn *conn,
 
 	if (remote_port) {
 		conn->flags |= NET_CONN_REMOTE_PORT_SPEC;
-		net_sin(&conn->remote_addr)->sin_port = net_htons(remote_port);
+		net_sin(net_sad(&conn->remote_addr))->sin_port = net_htons(remote_port);
 	} else {
 		conn->flags &= ~NET_CONN_REMOTE_PORT_SPEC;
 	}
@@ -369,7 +368,7 @@ static int net_conn_change_local(struct net_conn *conn,
 
 	if (local_port > 0U) {
 		conn->flags |= NET_CONN_LOCAL_PORT_SPEC;
-		net_sin(&conn->local_addr)->sin_port = net_htons(local_port);
+		net_sin(net_sad(&conn->local_addr))->sin_port = net_htons(local_port);
 	} else {
 		conn->flags &= ~NET_CONN_LOCAL_PORT_SPEC;
 	}
@@ -624,12 +623,21 @@ static void conn_raw_socket_deliver(struct net_pkt *pkt, struct net_conn *conn,
 
 	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 	if (raw_pkt == NULL) {
+		if (!is_ip) {
+			net_stats_update_raw_drop(net_pkt_iface(pkt));
+		}
 		NET_WARN("pkt cloning failed, pkt %p not delivered", pkt);
 		goto out;
 	}
 
 	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
+		if (!is_ip) {
+			net_stats_update_raw_drop(net_pkt_iface(pkt));
+		}
 		net_pkt_unref(raw_pkt);
+	} else if (!is_ip) {
+		net_stats_update_raw_recv(net_pkt_iface(pkt),
+					 net_pkt_get_len(raw_pkt));
 	}
 
 out:
@@ -748,7 +756,7 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 		/* Apply protocol-specific matching criteria... */
 
 		if (((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0U) &&
-		    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
+		    !conn_addr_cmp(pkt, ip_hdr, net_sad(&conn->local_addr), false)) {
 			continue; /* wrong local address */
 		}
 
@@ -911,6 +919,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		struct net_sockaddr *conn_local = net_sad(&conn->local_addr);
+		struct net_sockaddr *conn_remote = net_sad(&conn->remote_addr);
+
+		/* Is the candidate connection matching the packet's protocol within the family? */
+		if (conn->proto != proto) {
+			continue; /* wrong protocol */
+		}
+
 		/* Is the candidate connection matching the packet's interface? */
 		if (!is_iface_matching(conn, pkt)) {
 			continue; /* wrong interface */
@@ -930,11 +946,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			/* We might have a match for v4-to-v6 mapping, check more */
 		}
 
-		/* Is the candidate connection matching the packet's protocol within the family? */
-		if (conn->proto != proto) {
-			continue; /* wrong protocol */
-		}
-
 		/* Apply protocol-specific matching criteria... */
 		uint8_t conn_family = conn->family;
 
@@ -945,22 +956,22 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * address and port?
 			 */
 			if ((conn->flags & NET_CONN_REMOTE_PORT_SPEC) != 0 &&
-			    net_sin(&conn->remote_addr)->sin_port != src_port) {
+			    net_sin(conn_remote)->sin_port != src_port) {
 				continue; /* wrong remote port */
 			}
 
 			if ((conn->flags & NET_CONN_LOCAL_PORT_SPEC) != 0 &&
-			    net_sin(&conn->local_addr)->sin_port != dst_port) {
+			    net_sin(conn_local)->sin_port != dst_port) {
 				continue; /* wrong local port */
 			}
 
 			if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) != 0 &&
-			    !conn_addr_cmp(pkt, ip_hdr, &conn->remote_addr, true)) {
+			    !conn_addr_cmp(pkt, ip_hdr, conn_remote, true)) {
 				continue; /* wrong remote address */
 			}
 
 			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0 &&
-			    !conn_addr_cmp(pkt, ip_hdr, &conn->local_addr, false)) {
+			    !conn_addr_cmp(pkt, ip_hdr, conn_local, false)) {
 
 				/* Check if we could do a v4-mapping-to-v6 and the IPv6 socket
 				 * has no IPV6_V6ONLY option set and if the local IPV6 address
@@ -972,7 +983,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 					      pkt_family == NET_AF_INET &&
 					      !conn->v6only &&
 					      net_ipv6_is_addr_unspecified(
-						      &net_sin6(&conn->local_addr)->sin6_addr))) {
+						      &net_sin6(conn_local)->sin6_addr))) {
 						continue; /* wrong local address */
 					}
 				} else {

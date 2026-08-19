@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,8 @@
 #define pse84_s_sau_h
 
 #include <infineon_kconfig.h>
-#include "cmsis_compiler.h"
-#include "cy_device.h"
+#include <cmsis_compiler.h>
+#include <cy_device.h>
 
 #define CY_SAU_REGION_CNT     (3U)
 #define CY_SAU_MAX_REGION_CNT (8U)

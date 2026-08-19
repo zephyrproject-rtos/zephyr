@@ -378,11 +378,6 @@ static void uart_emul_irq_callback_set(const struct device *dev, uart_irq_callba
 	data->irq_cb = cb;
 	data->irq_cb_udata = user_data;
 }
-
-static int uart_emul_irq_update(const struct device *dev)
-{
-	return 1;
-}
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 #ifdef CONFIG_UART_ASYNC_API
@@ -894,7 +889,6 @@ static DEVICE_API(uart, uart_emul_api) = {
 	.irq_rx_ready = uart_emul_irq_rx_ready,
 	.irq_tx_complete = uart_emul_irq_tx_complete,
 	.irq_callback_set = uart_emul_irq_callback_set,
-	.irq_update = uart_emul_irq_update,
 	.irq_is_pending = uart_emul_irq_is_pending,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 #ifdef CONFIG_UART_ASYNC_API

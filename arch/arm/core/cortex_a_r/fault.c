@@ -101,7 +101,7 @@ static uint32_t dump_fault(uint32_t status, uint32_t addr)
 		reason = K_ERR_ARM_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT;
 		EXCEPTION_DUMP("Unsupported Exclusive Access Fault @ 0x%08x", addr);
 		break;
-#elif defined(CONFIG_ARMV7_A)
+#elif defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	case FSR_FS_PERMISSION_FAULT_2ND_LEVEL:
 		reason = K_ERR_ARM_PERMISSION_FAULT_2ND_LEVEL;
 		EXCEPTION_DUMP("2nd Level Permission Fault @ 0x%08x", addr);
@@ -331,9 +331,12 @@ bool z_arm_fault_prefetch(struct arch_esf *esf)
 #endif
 	/* Print fault information*/
 	EXCEPTION_DUMP("***** PREFETCH ABORT *****");
-	if (FAULT_DUMP_VERBOSE) {
-		reason = dump_fault(fs, ifar);
-	}
+#if FAULT_DUMP_VERBOSE
+	reason = dump_fault(fs, ifar);
+#else
+	ARG_UNUSED(fs);
+	ARG_UNUSED(ifar);
+#endif
 
 	/* Simplify exception codes if requested */
 	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {
@@ -415,9 +418,12 @@ bool z_arm_fault_data(struct arch_esf *esf)
 
 	/* Print fault information*/
 	EXCEPTION_DUMP("***** DATA ABORT *****");
-	if (FAULT_DUMP_VERBOSE) {
-		reason = dump_fault(fs, dfar);
-	}
+#if FAULT_DUMP_VERBOSE
+	reason = dump_fault(fs, dfar);
+#else
+	ARG_UNUSED(fs);
+	ARG_UNUSED(dfar);
+#endif
 
 	/* Simplify exception codes if requested */
 	if (IS_ENABLED(CONFIG_SIMPLIFIED_EXCEPTION_CODES) && (reason >= K_ERR_ARCH_START)) {

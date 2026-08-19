@@ -22,12 +22,13 @@
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
@@ -38,17 +39,24 @@
 	status = "okay";
 
 	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x0 DT_SIZE_M(60)>; /* 60MB */
 		};
 
 		slot1_partition: partition@3c00000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x3c00000 DT_SIZE_M(60)>;
 		};
 
 		storage_partition: partition@7800000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x7800000 DT_SIZE_M(8)>;
 		};

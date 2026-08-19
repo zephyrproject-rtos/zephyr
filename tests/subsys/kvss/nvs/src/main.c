@@ -354,9 +354,9 @@ ZTEST_F(nvs, test_nvs_gc_3sectors)
 	const uint16_t max_id = 10;
 	/* 50th write will trigger 1st GC. */
 	uint16_t max_writes = 51;
-	/* 75th write will trigger 2st GC. */
+	/* 75th write will trigger 2nd GC. */
 	uint16_t max_writes_2 = 51 + 25;
-	/* 100th write will trigger 3st GC. */
+	/* 100th write will trigger 3rd GC. */
 	uint16_t max_writes_3 = 51 + 25 + 25;
 	/* 125th write will trigger 4st GC. */
 	uint16_t max_writes_4 = 51 + 25 + 25 + 25;

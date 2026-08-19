@@ -8,7 +8,6 @@
 #include <zephyr/arch/cpu.h>
 #include <kernel_arch_data.h>
 #include <kernel_arch_func.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/x86/multiboot.h>
 #include <x86_mmu.h>
@@ -68,12 +67,61 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	uint8_t apic_id;
 
 	IF_ENABLED(CONFIG_ACPI, ({
-		ACPI_MADT_LOCAL_APIC *lapic = acpi_local_apic_get(cpu_num);
+		/*
+		 * Determine the APIC ID for cpu_num and store it in
+		 * x86_cpu_loapics[].
+		 *
+		 * Lookup policy by build mode:
+		 *   CONFIG_X2APIC=y: try MADT Type 9 first, fallback to Type 0.
+		 *   CONFIG_X2APIC=n: try MADT Type 0 only.
+		 *
+		 * If no usable entry is found, assert and return.
+		 * When Type 9 is used, the ID must be <= 0xFF.
+		 */
+		bool found = false;
 
-		if (lapic != NULL) {
-			/* We update the apic_id, __start will need it. */
-			x86_cpu_loapics[cpu_num] = lapic->Id;
-		} else {
+		/*
+		 * CONFIG_X2APIC=y primary path: try MADT Type 9 first.
+		 * If this lookup succeeds, found becomes true and the later fallback
+		 * block is skipped.
+		 */
+		IF_ENABLED(CONFIG_X2APIC, ({
+			ACPI_MADT_LOCAL_X2APIC *x2apic =
+				acpi_local_x2apic_get(cpu_num);
+
+			if (x2apic != NULL) {
+				/* Guard against silent truncation in 8-bit APIC map. */
+				__ASSERT(x2apic->LocalApicId <= 0xFF,
+					 "x2APIC ID exceeds 8-bit xAPIC range");
+				x86_cpu_loapics[cpu_num] =
+					(uint8_t)x2apic->LocalApicId;
+				found = true;
+			}
+		}));
+
+		/*
+		 * Type 0 lookup.
+		 * - When CONFIG_X2APIC=y, this is the fallback if the Type 9 lookup
+		 *   above did not set found.
+		 * - When CONFIG_X2APIC=n, the Type 9 block above is compiled out, so
+		 *   this becomes the primary lookup.
+		 */
+		if (!found) {
+			ACPI_MADT_LOCAL_APIC *lapic =
+				acpi_local_apic_get(cpu_num);
+
+			if (lapic != NULL) {
+				/* We update the apic_id, __start will need it. */
+				x86_cpu_loapics[cpu_num] = lapic->Id;
+				found = true;
+			}
+		}
+
+		/*
+		 * Common failure path for both CONFIG_X2APIC=y and CONFIG_X2APIC=n.
+		 * If none of the lookup paths found a usable APIC ID, assert and stop.
+		 */
+		if (!found) {
 			/* TODO: kernel need to handle the error scenario if someone config
 			 * CONFIG_MP_MAX_NUM_CPUS more than what platform supported.
 			 */
@@ -111,8 +159,10 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 FUNC_NORETURN void z_x86_cpu_init(struct x86_cpuboot *cpuboot)
 {
 #if defined(CONFIG_ACPI) && !defined(CONFIG_ACRN_COMMON)
-	__ASSERT(z_x86_cpuid_get_current_physical_apic_id() ==
-		 x86_cpu_loapics[cpuboot->cpu_id], "APIC ID miss match!");
+		if (cpuboot->cpu_id != 0U) {
+			__ASSERT(z_x86_cpuid_get_current_physical_apic_id() ==
+			x86_cpu_loapics[cpuboot->cpu_id], "APIC ID mismatch");
+		}
 #endif
 	x86_sse_init(NULL);
 

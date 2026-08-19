@@ -12,7 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/irq.h>
-#include "zephyr/drivers/gpio/gpio_utils.h"
+#include <zephyr/drivers/gpio/gpio_utils.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/dt-bindings/gpio/realtek-gpio.h>
 #include <zephyr/pm/pm.h>

@@ -5,11 +5,15 @@
 
 if(CONFIG_SOC_FAMILY_BFLB)
   zephyr_include_directories(${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include)
-  zephyr_include_directories(${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${SOC_SERIES})
+  zephyr_include_directories(${ZEPHYR_HAL_BOUFFALOLAB_MODULE_DIR}/include/bouffalolab/${CONFIG_SOC_SERIES})
 
-  if(CONFIG_BFLB_FREERTOS_SHIM OR CONFIG_BFLB_BTBLE_PORT_OS_SHIM)
+  if(CONFIG_BFLB_FREERTOS_SHIM OR CONFIG_BFLB_BTBLE_PORT_OS_SHIM OR CONFIG_WIFI_BFLB)
     add_subdirectory(shim)
   endif()
 
+  add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL60X src/bl60x)
+  add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL616CL src/bl616cl)
+  add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL61X src/bl61x)
   add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL70X src/bl70x)
+  add_subdirectory_ifdef(CONFIG_SOC_SERIES_BL70XL src/bl70xl)
 endif() # SOC_FAMILY_BFLB

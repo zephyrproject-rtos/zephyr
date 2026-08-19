@@ -25,10 +25,11 @@ struct z_futex_data;
  *
  * This enumeration needs to be kept in sync with the lists of kernel objects
  * and subsystems in scripts/build/gen_kobject_list.py, as well as the otype_to_str()
- * function in kernel/userspace.c
+ * function in kernel/userspace/userspace.c
  */
 enum k_objects {
-	K_OBJ_ANY,
+	K_OBJ_ANY,         /**< Used for matching any object type */
+	K_OBJ_DRIVER_ANY,  /**< Used for matching any driver object type */
 
 	/** @cond
 	 *  Doxygen should ignore this build-time generated include file
@@ -105,6 +106,28 @@ __syscall void k_object_access_grant(const void *object,
 void k_object_access_revoke(const void *object, struct k_thread *thread);
 
 /**
+ * Revoke access to a kernel object for all other threads
+ *
+ * User threads may grant other threads access to objects they have access to,
+ * including threads they themselves created. In many cases, therefore,
+ * revoking access only from a specified thread is not sufficient. This API
+ * revokes access from all other threads except the current one, so that no
+ * user threads with permissions remain.
+ *
+ * This will also revert public access status, which may have been given to an
+ * object by k_object_access_all_grant() before.
+ *
+ * Note that this function can only be used by kernel threads. Retaining access
+ * by the caller thread therefore makes little difference permission-wise, but
+ * we want to keep one owner so that it is clear that this function never
+ * releases a dynamic object, which would normally happen once it no longer has
+ * any owner.
+ *
+ * @param object Address of kernel object
+ */
+void k_object_access_revoke_others(const void *object);
+
+/**
  * @brief Release an object
  *
  * Allows user threads to drop their own permission on an object
@@ -127,8 +150,9 @@ __syscall void k_object_release(const void *object);
  * as it is possible for such code to derive the addresses of kernel objects
  * and perform unwanted operations on them.
  *
- * It is not possible to revoke permissions on public objects; once public,
- * any thread may use it.
+ * It is not possible to revoke permissions for individual threads on public
+ * objects; once public, any thread may use it. k_object_access_revoke_others()
+ * can be used to revert the public access status of an object.
  *
  * @param object Address of kernel object
  */
@@ -181,6 +205,14 @@ static inline void k_object_access_revoke(const void *object,
 {
 	ARG_UNUSED(object);
 	ARG_UNUSED(thread);
+}
+
+/**
+ * @internal
+ */
+static inline void k_object_access_revoke_others(const void *object)
+{
+	ARG_UNUSED(object);
 }
 
 /**

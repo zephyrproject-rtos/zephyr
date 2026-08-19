@@ -6,10 +6,14 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc55S06_ns.dtsi>
+#include <nxp/lpc/lpc55xxx/nxp_lpc55S06_ns.dtsi>
 #include "lpcxpresso55s06_common.dtsi"
 
 / {
 	model = "NXP LPCXpresso55S06 board";
 	compatible = "nxp,lpc55xxx", "nxp,lpc";
+};
+
+&wwdt0 {
+	status = "okay";
 };

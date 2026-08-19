@@ -20,15 +20,22 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE i2c_handlers.c)
 
 add_subdirectory_ifdef(CONFIG_I2C_TARGET target)
 
+zephyr_library_include_directories_ifdef(CONFIG_I2C_AMEBA ${ZEPHYR_BASE}/drivers/dma)
+
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ i2c_ambiq.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_AMBIQ_IOS i2c_ambiq_ios.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_AMEBA i2c_ameba.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ANDES_ATCIIC100 i2c_andes_atciic100.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_BCM2711 i2c_bcm2711.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_BEE i2c_bee.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_BFLB i2c_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CADENCE i2c_cdns.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC13XX_CC26XX i2c_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC23X0 i2c_cc23x0.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_CC32XX i2c_cc32xx.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_DW i2c_dw.c)
+zephyr_library_sources_ifdef(CONFIG_I2C_ENE_KB106X i2c_ene_kb106x.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ENE_KB1200 i2c_ene_kb1200.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_ESP32 i2c_esp32.c)
 zephyr_library_sources_ifdef(CONFIG_I2C_GD32 i2c_gd32.c)

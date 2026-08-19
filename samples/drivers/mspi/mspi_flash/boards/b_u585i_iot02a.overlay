@@ -35,16 +35,18 @@
 			pinctrl-names = "default";
 			dmas = <&gpdma1 12 41 0x10480>; /* request 41 for OCTOSPI2 */
 			dma-names = "tx_rx";
+			st,dqs-port = <2>;
 			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "mxicy,mx25u", "jedec,mspi-nor";
+				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Megabits */
 				mspi-max-frequency = <DT_FREQ_M(50)>;
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_DUAL"; /* as first step */
 				mspi-hardware-ce-num = <0>;
+				st,mem-type = "macronix";
 				read-command = <0xee11>;                /* ReaD 4Bytes */
 				command-length = "INSTR_2_BYTE";
 				write-command = <0x12ed>; /* WRite 4Bytes */

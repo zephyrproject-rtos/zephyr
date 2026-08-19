@@ -36,6 +36,10 @@
 	pinctrl-names = "default";
 	cs-gpios = <&gpio1 6 GPIO_ACTIVE_LOW>;
 
+	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
@@ -49,4 +53,9 @@ dut_spis: &spi3 {
 	status = "okay";
 	pinctrl-0 = <&spi3_pins>;
 	pinctrl-names = "default";
+};
+
+&dma0 {
+	status = "okay";
+	dma-buf-addr-alignment = <1>;
 };

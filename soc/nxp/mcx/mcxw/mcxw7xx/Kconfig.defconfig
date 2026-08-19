@@ -4,6 +4,24 @@
 
 if SOC_SERIES_MCXW7XX
 
+config MCUX_LPTMR_TIMER
+	default y if PM
+
+# Enable Zephyr cache management for the MCM-controlled LPCAC code cache.
+# The LPCAC is enabled out of reset; this exposes the cache management API
+# (backed by cache_nxp_mcm_lpcac) so consumers such as the flash driver can
+# invalidate the code cache through the standard sys_cache_* interface.
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
+# LPCAC uses a 256-byte per-line, write-through organization (RM LPCAC chapter).
+configdefault ICACHE_LINE_SIZE
+	default 256
+
 config NUM_IRQS
 	default 112 if SOC_MCXW70AC
 	default 77 if SOC_MCXW727C
@@ -66,7 +84,7 @@ config HCI_NXP_RX_THREAD
 
 endif # BT
 
-if IEEE802154
+if IEEE802154 || NXP_IEEE802154_MAC
 
 # Include intercore messaging component
 config NXP_RF_IMU
@@ -82,3 +100,6 @@ config ROM_START_OFFSET
 endif # NXP_MCXW7XX_BOOT_HEADER
 
 endif
+
+config WUC
+	default y if "$(dt_nodelabel_enabled,wuu)"

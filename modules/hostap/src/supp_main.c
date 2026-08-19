@@ -64,7 +64,6 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 	.send_11k_neighbor_request = supplicant_11k_neighbor_request,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	.candidate_scan = supplicant_candidate_scan,
-	.start_11r_roaming = supplicant_11r_roaming,
 #endif
 	.set_power_save = supplicant_set_power_save,
 	.set_twt = supplicant_set_twt,
@@ -95,6 +94,9 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP
 	.dpp_dispatch = supplicant_dpp_dispatch,
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_DPP */
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	.nan_cfg = supplicant_nan_cfg,
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 	.pmksa_flush = supplicant_pmksa_flush,
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	.enterprise_creds = supplicant_add_enterprise_creds,
@@ -107,10 +109,8 @@ static const struct wifi_mgmt_ops mgmt_ops = {
 
 DEFINE_WIFI_NM_INSTANCE(wifi_supplicant, &mgmt_ops);
 
-#define WRITE_TIMEOUT 100 /* ms */
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
+#define WRITE_TIMEOUT        100 /* ms */
 #define INTERFACE_EVENT_MASK (NET_EVENT_IF_ADMIN_UP | NET_EVENT_IF_ADMIN_DOWN)
-#endif
 struct supplicant_context {
 	struct wpa_global *supplicant;
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
@@ -153,6 +153,11 @@ struct k_work_q *get_workq(void)
 /* found in hostap/wpa_supplicant/ctrl_iface_zephyr.c */
 extern int send_data(struct k_fifo *fifo, int sock, const char *buf, size_t len, int flags);
 
+/* Serializes wpa_s->ctrl_conn lifecycle (open/close) against its users in
+ * supp_api.c, so that the NULL checks there cannot race with teardown.
+ */
+extern struct k_mutex wpa_supplicant_mutex;
+
 int zephyr_wifi_send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	struct supplicant_context *ctx;
@@ -180,7 +185,6 @@ out:
 	return ret;
 }
 
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
 static int send_event(const struct wpa_supplicant_event_msg *msg)
 {
 	return zephyr_wifi_send_event(msg);
@@ -196,7 +200,7 @@ static bool is_wanted_interface(struct net_if *iface)
 
 	return true;
 }
-#endif
+
 struct wpa_supplicant *zephyr_get_handle_by_ifname(const char *ifname)
 {
 	struct wpa_supplicant *wpa_s = NULL;
@@ -254,6 +258,38 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 						(void *)txt, len);
 #endif
 	}
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
+	else if (strncmp(txt, "NAN-DISCOVERY-RESULT", 20) == 0) {
+		/* NAN discovery result (subscriber found publisher) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_DISCOVERY_RESULT,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-REPLIED", 11) == 0) {
+		/* NAN replied (publisher received subscribe request) */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_REPLIED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-PUBLISH-TERMINATED", 22) == 0) {
+		/* NAN publish terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-SUBSCRIBE-TERMINATED", 24) == 0) {
+		/* NAN subscribe terminated */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED,
+			(void *)txt, len);
+	} else if (strncmp(txt, "NAN-RECEIVE", 11) == 0) {
+		/* NAN follow-up received event */
+		supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+			NET_EVENT_WIFI_CMD_NAN_RECEIVE,
+			(void *)txt, len);
+	} else {
+		/* Unhandled NAN message */
+		wpa_printf(MSG_DEBUG, "Unhandled NAN event: %.*s",
+			(int)len, txt);
+	}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 }
 
 static const char *zephyr_hostap_msg_ifname_cb(void *ctx)
@@ -304,6 +340,54 @@ static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_t
 #endif
 }
 
+static int supplicant_register_iface_type(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api;
+	struct wifi_nm_instance *nm = wifi_nm_get_instance("wifi_supplicant");
+	uint32_t caps = 0;
+	int ret;
+
+	if (dev == NULL || nm == NULL) {
+		return -EINVAL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	/* Query driver for its static role capabilities.
+	 * If the driver does not implement get_iface_caps, fall back to
+	 * WIFI_TYPE_STA plus WIFI_TYPE_SAP when CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
+	 * is enabled.
+	 */
+	if (off_api != NULL && off_api->wifi_mgmt_api != NULL &&
+	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
+		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
+	}
+	caps &= BIT_MASK(WIFI_TYPE_MAX);
+
+	if (caps == 0) {
+		/* No caps declared: default to STA */
+		caps = BIT(WIFI_TYPE_STA);
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
+			caps |= BIT(WIFI_TYPE_SAP);
+		}
+	}
+
+	/* Register each declared role */
+	for (enum wifi_nm_iface_type type = WIFI_TYPE_STA;
+	     type < WIFI_TYPE_MAX; type++) {
+		if (!(caps & BIT(type))) {
+			continue;
+		}
+		ret = wifi_nm_register_mgd_type_iface(nm, type, iface);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -344,16 +428,16 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		net_if_get_name(iface, ctx->if_name, CONFIG_NET_INTERFACE_NAME_LEN);
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	ret = zephyr_wpa_ctrl_init(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 	if (ret) {
 		LOG_ERR("Failed to initialize supplicant control interface");
 		goto out;
 	}
 
-	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-					      WIFI_TYPE_STA,
-					      iface);
-	if (ret) {
+	ret = supplicant_register_iface_type(iface);
+	if (ret != 0) {
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);
 		goto out;
@@ -371,7 +455,7 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 out:
 	return ret;
 }
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
+
 static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant_event_msg msg;
@@ -438,7 +522,9 @@ static int del_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
+	k_mutex_lock(&wpa_supplicant_mutex, K_FOREVER);
 	zephyr_wpa_ctrl_deinit(wpa_s);
+	k_mutex_unlock(&wpa_supplicant_mutex);
 
 	ret = zephyr_wpa_cli_global_cmd_v("interface_remove %s", ifname);
 	if (ret) {
@@ -470,7 +556,7 @@ free:
 out:
 	return ret;
 }
-#endif
+
 static void iface_work_handler(struct k_work *work)
 {
 	struct supplicant_context *ctx = CONTAINER_OF(work, struct supplicant_context,
@@ -496,10 +582,12 @@ static void submit_iface_work(struct supplicant_context *ctx,
 
 	k_work_submit_to_queue(&ctx->iface_wq, &ctx->iface_work);
 }
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
+
 static void interface_handler(struct net_mgmt_event_callback *cb,
 			      uint64_t mgmt_event, struct net_if *iface)
 {
+	struct supplicant_context *ctx = get_default_context();
+
 	if ((mgmt_event & INTERFACE_EVENT_MASK) != mgmt_event) {
 		return;
 	}
@@ -510,19 +598,35 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
-	if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
-		LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-		add_interface(get_default_context(), iface);
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (wifi_nm_iface_is_sap(iface)) {
+		if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
+			LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
+			zephyr_hostapd_add_iface(&ctx->hostapd);
+			return;
+		}
+
+		if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
+			LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface),
+				iface);
+			zephyr_hostapd_del_iface(&ctx->hostapd);
+			return;
+		}
+		LOG_INF("Wrong network interface mgmt event");
 		return;
 	}
-
+#endif
+	if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
+		LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
+		add_interface(ctx, iface);
+		return;
+	}
 	if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 		LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface), iface);
-		del_interface(get_default_context(), iface);
+		del_interface(ctx, iface);
 		return;
 	}
 }
-#endif
 
 static void iface_cb(struct net_if *iface, void *user_data)
 {
@@ -533,15 +637,20 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
-		return;
-	}
-#endif
-
 	if (!net_if_is_admin_up(iface)) {
 		return;
 	}
+
+#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
+	if (wifi_nm_iface_is_sap(iface)) {
+		ret = zephyr_hostapd_add_iface(&ctx->hostapd);
+		if (ret < 0) {
+			LOG_ERR("Add hostapd interface %d (%p) fail", net_if_get_by_iface(iface),
+				iface);
+		}
+		return;
+	}
+#endif
 
 	ret = add_interface(ctx, iface);
 	if (ret < 0) {
@@ -552,11 +661,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 static int setup_interface_monitoring(struct supplicant_context *ctx, struct net_if *iface)
 {
 	ARG_UNUSED(iface);
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_INF_MON
+
 	net_mgmt_init_event_callback(&ctx->cb, interface_handler,
 				     INTERFACE_EVENT_MASK);
 	net_mgmt_add_event_callback(&ctx->cb);
-#endif
+
 	net_if_foreach(iface_cb, ctx);
 
 	return 0;
@@ -636,6 +745,10 @@ static void event_socket_handler(int sock, void *eloop_ctx, void *user_data)
 			} else if (event_msg.event == EVENT_UNPROT_DISASSOC) {
 				os_free((char *)data->unprot_disassoc.sa);
 				os_free((char *)data->unprot_disassoc.da);
+			} else if (event_msg.event == EVENT_EXTERNAL_AUTH) {
+				os_free((char *)data->external_auth.bssid);
+				os_free((char *)data->external_auth.ssid);
+				os_free((char *)data->external_auth.mld_addr);
 			}
 
 			os_free(event_msg.data);
@@ -697,6 +810,7 @@ static void handler(void)
 
 	memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL;
+	params.wpa_debug_show_keys = IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS);
 
 	ctx->supplicant = wpa_supplicant_init(&params);
 	if (ctx->supplicant == NULL) {

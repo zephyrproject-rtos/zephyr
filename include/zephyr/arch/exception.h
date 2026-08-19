@@ -8,13 +8,24 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 #define ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_
 
+#ifndef _ASMLANGUAGE
+
+#include <stdarg.h>
+#include <zephyr/toolchain.h>
+
+/** @brief Dummy function to trigger exception dump argument type checking. */
+static inline __printf_like(1, 2) void arch_exception_dump_arg_check(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 
 #include <stdbool.h>
 #include <stdarg.h>
 
 /**
- * @typedef exception_dump_hook_t
+ * @typedef arch_exception_dump_hook_t
  * @brief Exception dump output callback.
  *
  * Called for each exception dump print with printf-style format and
@@ -26,7 +37,7 @@
 typedef void (*arch_exception_dump_hook_t)(const char *format, va_list args);
 
 /**
- * @typedef exception_drain_hook_t
+ * @typedef arch_exception_drain_hook_t
  * @brief Exception dump flush callback.
  *
  * Called when exception dump output should be drained or reset.
@@ -87,7 +98,14 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 	}
 }
 
-#if defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
+#if !defined(CONFIG_EXCEPTION_DUMP)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		if (0) {                                                                           \
+			arch_exception_dump_arg_check(format, ##__VA_ARGS__);                      \
+		}                                                                                  \
+	} while (false)
+#elif defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
 #define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
 #elif defined(CONFIG_LOG)
 #define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
@@ -99,12 +117,21 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 
 #else
 
-#if defined(CONFIG_LOG)
+#if !defined(CONFIG_EXCEPTION_DUMP)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		if (0) {                                                                           \
+			arch_exception_dump_arg_check(format, ##__VA_ARGS__);                      \
+		}                                                                                  \
+	} while (false)
+#elif defined(CONFIG_LOG)
 #define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
 #else
 #define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
 #endif
 #endif
+
+#endif /* _ASMLANGUAGE */
 
 #if defined(CONFIG_X86_64)
 #include <zephyr/arch/x86/intel64/exception.h>
@@ -122,12 +149,16 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 #include <zephyr/arch/xtensa/exception.h>
 #elif defined(CONFIG_MIPS)
 #include <zephyr/arch/mips/exception.h>
+#elif defined(CONFIG_OPENRISC)
+#include <zephyr/arch/openrisc/exception.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <zephyr/arch/posix/exception.h>
 #elif defined(CONFIG_SPARC)
 #include <zephyr/arch/sparc/exception.h>
 #elif defined(CONFIG_RX)
 #include <zephyr/arch/rx/exception.h>
+#elif defined(CONFIG_ARCH_IS_SET)
+#error "The selected architecture is missing from this dispatch header"
 #endif
 
 #endif /* ZEPHYR_INCLUDE_ARCH_EXCEPTION_H_ */

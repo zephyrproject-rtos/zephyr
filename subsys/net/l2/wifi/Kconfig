@@ -141,10 +141,10 @@ config WIFI_CERTIFICATE_LIB
 	help
 	  Enable this option to process certificates in enterprise mode.
 
-if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-
 config WIFI_SHELL_RUNTIME_CERTIFICATES
 	bool "Provide Wi-Fi enterprise security certificates at run-time"
+	depends on NET_L2_WIFI_SHELL
+	depends on WIFI_CERTIFICATE_LIB
 	select TLS_CREDENTIALS
 	select TLS_CREDENTIALS_SHELL
 	select BASE64
@@ -163,7 +163,17 @@ config HEAP_MEM_POOL_ADD_SIZE_WIFI_CERT
 
 endif # WIFI_SHELL_RUNTIME_CERTIFICATES
 
-endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+config WIFI_STA_AUTO_DHCPV4
+	bool "Automatically start DHCPv4 after STA connects"
+	depends on NET_DHCPV4
+	default y
+	help
+	  When enabled, the DHCPv4 client is automatically started
+	  by the Wi-Fi driver or supplicant after the STA connection
+	  is established.
+	  If this option is disabled, the application layer is
+	  responsible for either manually starting the DHCPv4 client
+	  or configuring a static IPv4 address.
 
 config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	int "BSS max idle timeout in seconds"

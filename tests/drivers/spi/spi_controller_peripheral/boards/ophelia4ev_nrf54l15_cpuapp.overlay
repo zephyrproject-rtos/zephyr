@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	zephyr,user {
+		sck-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+	};
+};
+
 &pinctrl {
 	spi22_default_alt: spi22_default_alt {
 		group1 {
@@ -58,7 +64,7 @@
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
 		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(16)>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
 	};
 };
 

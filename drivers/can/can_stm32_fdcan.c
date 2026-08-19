@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/counter.h>
@@ -519,7 +519,7 @@ static int can_stm32fd_init(const struct device *dev)
 #ifdef CONFIG_CAN_RX_TIMESTAMP
 	if (stm32fd_cfg->external_timestamp_counter_dev != NULL) {
 		if (!device_is_ready(stm32fd_cfg->external_timestamp_counter_dev)) {
-			LOG_ERR("Timestamp counter device not ready");
+			LOG_ERR_DEVICE_NOT_READY(stm32fd_cfg->external_timestamp_counter_dev);
 			return -ENODEV;
 		}
 
@@ -638,9 +638,7 @@ static const struct can_mcan_ops can_stm32fd_ops = {
 					    &can_stm32fd_ops,			\
 					    &can_stm32fd_cbs_##inst);
 
-#define CAN_STM32FD_DATA_INST(inst)						\
-	static struct can_mcan_data can_mcan_data_##inst =			\
-		CAN_MCAN_DATA_INITIALIZER(NULL);
+#define CAN_STM32FD_DATA_INST(inst) CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);
 
 #define CAN_STM32FD_DEVICE_INST(inst)						\
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_stm32fd_init, NULL,			\

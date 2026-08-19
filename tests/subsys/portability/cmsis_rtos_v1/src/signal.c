@@ -9,7 +9,6 @@
 #include <cmsis_os.h>
 
 #include <zephyr/irq_offload.h>
-#include <zephyr/kernel_structs.h>
 
 #define TIMEOUT		(100)
 #define SIGNAL1		(0x00000020)

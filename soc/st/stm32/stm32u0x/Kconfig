@@ -4,12 +4,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32U0X
+	# Architecture options & CPU model selection
 	select ARM
 	select CPU_CORTEX_M0PLUS
-	select CPU_HAS_ARM_MPU
+	# Hardware options
+	select CPU_CORTEX_M_HAS_SYSTICK
 	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_HAS_ARM_MPU
+	# Software options
+	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
+	select SOC_EARLY_INIT_HOOK
+	# STM32-specific options
 	select HAS_STM32CUBE
 	select HAS_STM32_FLASH_PREFETCH
-	select CPU_CORTEX_M_HAS_SYSTICK
-	select SOC_EARLY_INIT_HOOK
-	select HAS_PM

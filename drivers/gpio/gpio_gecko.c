@@ -23,11 +23,7 @@
 #if DT_NODE_HAS_PROP(id, peripheral_id)
 #define GET_GECKO_GPIO_INDEX(id) DT_INST_PROP(id, peripheral_id)
 #else
-#if defined(CONFIG_SOC_FAMILY_SILABS_S2)
-#define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_PORT_TypeDef)
-#else
 #define GECKO_GPIO_PORT_ADDR_SPACE_SIZE sizeof(GPIO_P_TypeDef)
-#endif
 /* Assumption for calculating gpio index:
  * 1. Address space of the first GPIO port is the address space for GPIO port A
  */
@@ -343,11 +339,7 @@ static void gpio_gecko_common_isr(const struct device *dev)
 		enabled_int = int_status & port_data->int_enabled_mask;
 		if (enabled_int != 0) {
 			int_status &= ~enabled_int;
-#if defined(_SILICON_LABS_32B_SERIES_2)
-			GPIO->IF_CLR = enabled_int;
-#else
 			GPIO->IFC = enabled_int;
-#endif
 			gpio_fire_callbacks(&port_data->callbacks, port_dev,
 					    enabled_int);
 		}
@@ -409,9 +401,7 @@ static int gpio_gecko_common_init(const struct device *dev)
 static int gpio_gecko_port##idx##_init(const struct device *dev); \
 \
 static const struct gpio_gecko_config gpio_gecko_port##idx##_config = { \
-	.common = { \
-		.port_pin_mask = (gpio_port_pins_t)(-1), \
-	}, \
+	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx), \
 	.gpio_index = GET_GECKO_GPIO_INDEX(idx), \
 }; \
 \

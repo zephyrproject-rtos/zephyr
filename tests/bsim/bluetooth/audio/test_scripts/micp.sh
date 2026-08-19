@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-SIMULATION_ID="micp"
+SIMULATION_ID="${BOARD_TS}_micp"
 VERBOSITY_LEVEL=2
 
 cd ${BSIM_OUT_PATH}/bin

@@ -101,6 +101,109 @@ ZTEST(cleanup_api, test_defer_k_sem_give)
 	zexpect_equal(lock.count, 1);
 }
 
+ZTEST(cleanup_api, test_scoped_guard_k_mutex)
+{
+	struct k_mutex lock;
+	int runs = 0;
+
+	zassert_ok(k_mutex_init(&lock));
+
+	scoped_guard(k_mutex, &lock) {
+		runs++;
+		zexpect_equal(lock.lock_count, 1);
+	}
+
+	zexpect_equal(runs, 1);
+	zexpect_equal(lock.lock_count, 0);
+}
+
+ZTEST(cleanup_api, test_scoped_guard_k_sem)
+{
+	struct k_sem lock;
+	int runs = 0;
+
+	zassert_ok(k_sem_init(&lock, 1, 1));
+
+	scoped_guard(k_sem, &lock) {
+		runs++;
+		zexpect_equal(lock.count, 0);
+	}
+
+	zexpect_equal(runs, 1);
+	zexpect_equal(lock.count, 1);
+}
+
+ZTEST(cleanup_api, test_scoped_guard_break)
+{
+	struct k_mutex lock;
+	int runs = 0;
+
+	zassert_ok(k_mutex_init(&lock));
+
+	scoped_guard(k_mutex, &lock) {
+		runs++;
+		zexpect_equal(lock.lock_count, 1);
+		break;
+	}
+
+	zexpect_equal(runs, 1);             /* ran once, break did not re-enter */
+	zexpect_equal(lock.lock_count, 0);  /* break released the guard */
+}
+
+ZTEST(cleanup_api, test_scoped_cond_guard_acquired)
+{
+	struct k_sem lock;
+	int runs = 0;
+
+	zassert_ok(k_sem_init(&lock, 1, 1));
+
+	scoped_cond_guard(k_sem_try, zassert_unreachable(), &lock) {
+		runs++;
+		zexpect_equal(lock.count, 0);
+	}
+
+	zexpect_equal(runs, 1);
+	zexpect_equal(lock.count, 1);
+}
+
+ZTEST(cleanup_api, test_scoped_cond_guard_busy)
+{
+	struct k_sem lock;
+	int runs = 0;
+	bool failed = false;
+
+	/* No tokens available, so the take with K_NO_WAIT must fail */
+	zassert_ok(k_sem_init(&lock, 0, 1));
+
+	scoped_cond_guard(k_sem_try, failed = true, &lock) {
+		runs++;
+	}
+
+	/* The body must be skipped and the fail statement must run */
+	zexpect_equal(runs, 0);
+	zexpect_true(failed);
+	zexpect_equal(lock.count, 0);
+}
+
+ZTEST(cleanup_api, test_scoped_guard_cond_busy_skips)
+{
+	struct k_sem lock;
+	int runs = 0;
+
+	/* No tokens available, so the take with K_NO_WAIT must fail */
+	zassert_ok(k_sem_init(&lock, 0, 1));
+
+	/* Using a conditional guard with the plain scoped_guard must skip the body
+	 * when the lock cannot be acquired, never run it without the lock held.
+	 */
+	scoped_guard(k_sem_try, &lock) {
+		runs++;
+	}
+
+	zexpect_equal(runs, 0);
+	zexpect_equal(lock.count, 0);
+}
+
 ZTEST(cleanup_api, test_defer_k_free)
 {
 	void *my_ptr = k_malloc(10);

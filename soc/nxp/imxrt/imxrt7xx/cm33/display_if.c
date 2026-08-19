@@ -6,8 +6,8 @@
 
 #include <zephyr/devicetree.h>
 #include <zephyr/autoconf.h>
-#include "fsl_power.h"
-#include "fsl_clock.h"
+#include <fsl_power.h>
+#include <fsl_clock.h>
 
 /* Weak so board can override this function */
 void __weak imxrt_pre_init_display_interface(void)

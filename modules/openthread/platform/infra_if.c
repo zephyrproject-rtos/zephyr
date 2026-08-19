@@ -7,10 +7,10 @@
 #include "openthread/platform/infra_if.h"
 #include "icmpv6.h"
 #include "ipv6.h"
+#include "route_ipv6.h"
 #include "openthread_border_router.h"
 #include <common/code_utils.hpp>
 #include <platform-zephyr.h>
-#include <route.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/icmp.h>
@@ -199,14 +199,17 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 							      (struct net_in6_addr *)pio->prefix,
 							      pio->prefix_len, pio->valid_lifetime);
 			i += sizeof(struct net_icmpv6_nd_opt_prefix_info);
-			net_ipv6_addr_generate_iid(
+			if (net_ipv6_addr_generate_iid(
 				ail_iface_ptr, (struct net_in6_addr *)pio->prefix,
 				COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     ((uint8_t *)&ail_iface_ptr->config.ip.ipv6->network_counter),
 				     (NULL)), COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     (sizeof(ail_iface_ptr->config.ip.ipv6->network_counter)),
 				     (0U)), 0U, &addr_to_add_from_pio,
-							       net_if_get_link_addr(ail_iface_ptr));
+				net_if_get_link_addr(ail_iface_ptr)) < 0) {
+				break;
+			}
+
 			ifaddr = net_if_ipv6_addr_lookup(&addr_to_add_from_pio, NULL);
 			if (ifaddr != NULL) {
 				net_if_addr_set_lf(ifaddr, true);
@@ -228,9 +231,11 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 				       sizeof(br_omr_addr->mFields.m8));
 				net_ipv6_nbr_add(ot_iface, &nexthop, net_if_get_link_addr(ot_iface),
 						 false, NET_IPV6_NBR_STATE_STALE);
-				route_added = net_route_add(ot_iface, &rio_prefix, rio->prefix_len,
-							    &nexthop, rio->route_lifetime,
-							    rio->flags.prf);
+				route_added = net_route_ipv6_add(ot_iface, &rio_prefix,
+								 rio->prefix_len,
+								 &nexthop,
+								 rio->route_lifetime,
+								 rio->flags.prf);
 			}
 			break;
 		default:

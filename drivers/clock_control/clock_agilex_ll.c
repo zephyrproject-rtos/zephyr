@@ -6,8 +6,9 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/arch/common/sys_bitops.h>
-#include <zephyr/drivers/clock_control/clock_agilex_ll.h>
 #include <socfpga_system_manager.h>
+
+#include "clock_agilex_ll.h"
 
 /*
  * Intel SoC re-use Arm Trusted Firmware (ATF) driver code in Zephyr.

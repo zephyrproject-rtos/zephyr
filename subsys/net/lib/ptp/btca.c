@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +74,7 @@ static int btca_ds_cmp2(const struct ptp_dataset *a, const struct ptp_dataset *b
 	if (a->receiver.port_number > b->receiver.port_number) {
 		return B_BETTER_TOPOLOGY;
 	}
-	if (a->receiver.port_number > b->receiver.port_number) {
+	if (a->receiver.port_number < b->receiver.port_number) {
 		return A_BETTER_TOPOLOGY;
 	}
 	/* error-2 */

@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_MQTT_H_
-#define ZEPHYR_INCLUDE_SHELL_MQTT_H_
+/**
+ * @file
+ * @brief Header file for the MQTT shell backend.
+ * @ingroup shell_mqtt
+ */
+
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_MQTT_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_MQTT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -19,6 +25,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 #define RX_RB_SIZE CONFIG_SHELL_MQTT_RX_BUF_SIZE
 #define TX_BUF_SIZE CONFIG_SHELL_MQTT_TX_BUF_SIZE
@@ -104,7 +112,20 @@ struct shell_mqtt {
 		SHELL_MQTT_NETWORK_CONNECTED,
 	} network_state;
 };
+/** @endcond */
 
+/**
+ * @defgroup shell_mqtt MQTT shell backend
+ * @ingroup shell_backends
+ * @brief Shell access over an MQTT connection.
+ * @{
+ */
+
+/**
+ * @brief Define an MQTT shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_MQTT_DEFINE(_name)                                                                   \
 	static struct shell_mqtt _name##_shell_mqtt;                                               \
 	struct shell_transport _name = { .api = &shell_mqtt_transport_api,                         \
@@ -134,8 +155,10 @@ const struct shell *shell_backend_mqtt_get_ptr(void);
  */
 bool shell_mqtt_get_devid(char *id, int id_max_len);
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_MQTT_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_MQTT_H_ */

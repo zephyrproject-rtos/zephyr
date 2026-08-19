@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/kernel.h>
 
 #include <zephyr/settings/settings.h>
@@ -24,8 +25,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 struct bt_a2dp *default_a2dp;
 static uint8_t a2dp_sink_sdp_registered;

@@ -10,10 +10,10 @@
 #include <zephyr/bluetooth/audio/csip.h>
 #include <zephyr/types.h>
 
-#define BT_CSIP_CRYPTO_KEY_SIZE   16
-#define BT_CSIP_CRYPTO_SALT_SIZE  16
-#define BT_CSIP_CRYPTO_PRAND_SIZE 3
-#define BT_CSIP_CRYPTO_HASH_SIZE  3
+#define BT_CSIP_CRYPTO_KEY_SIZE   16U
+#define BT_CSIP_CRYPTO_SALT_SIZE  16U
+#define BT_CSIP_CRYPTO_PRAND_SIZE 3U
+#define BT_CSIP_CRYPTO_HASH_SIZE  3U
 
 /**
  * @brief Private Set Unique identifier hash function sih.

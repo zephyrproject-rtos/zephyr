@@ -44,6 +44,33 @@ Programming & Debugging
 
 Setting Up the Debug Interface
 ==============================
+This board supports debugging via the MPLAB VS Code extension, PyOCD, or J-Link.
+Choose the setup that matches your connected debug hardware.
+
+Debug Adapter for MPLAB Setup
+=============================
+
+For instructions on configuring Visual Studio Code debugging with the Microchip
+MPLAB extension, see :ref:`microchip-mplab-vscode-debugging`.
+The following ``launch.json`` configuration can be used to debug this board with
+the MPLAB extension for Visual Studio Code.
+
+.. code-block:: json
+
+   {
+     "version": "0.2.0",
+     "configurations": [
+       {
+         "name": "MPLAB Debug Zephyr : pic32cm_jh01_cpro",
+         "type": "mplab-core-da",
+         "request": "launch",
+         "program": "${workspaceFolder}/zephyr/build/zephyr/zephyr.elf",
+         "tool": "${command:pickTool}",
+         "stopOnEntry": true,
+         "device": "PIC32CM5164JH01100"
+       }
+     ]
+   }
 
 PyOCD Setup
 ===========
@@ -93,6 +120,9 @@ J-Link Setup
    - Connect the other end of the J32 Debug Probe to your **host machine (PC)** via USB.
    - Connect the DEBUG USB port on the board to your host machine to **power up the board**.
 
+Flash Using MPLAB IPE
+=====================
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
 
 Building and Flashing the Application
 =====================================

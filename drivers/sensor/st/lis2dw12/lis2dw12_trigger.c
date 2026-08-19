@@ -482,8 +482,7 @@ int lis2dw12_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt (INT1 or INT2) */
 	if (!gpio_is_ready_dt(&cfg->gpio_int)) {
 		if (cfg->gpio_int.port) {
-			LOG_ERR("%s: device %s is not ready", dev->name,
-						cfg->gpio_int.port->name);
+			LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int.port);
 			return -ENODEV;
 		}
 

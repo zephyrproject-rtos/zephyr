@@ -17,7 +17,6 @@ supported:
   - spi
   - counter
   - watchdog
-  - adc
   - i2s
 vendor: nordic
 sysbuild: true

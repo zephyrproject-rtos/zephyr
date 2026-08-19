@@ -7,7 +7,7 @@
 #define DT_DRV_COMPAT intel_hpet
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/linker/sections.h>
 
@@ -219,30 +219,17 @@ static inline void hpet_timer_comparator_set(uint64_t val)
 /*
  * HPET_INT_LEVEL_TRIGGER is used to set HPET interrupt as level trigger
  * for ARM CPU with NVIC like EHL PSE, whose DTS interrupt setting
- * has no "sense" cell.
+ * has no "flags" cell.
  */
-#if (DT_INST_IRQ_HAS_CELL(0, sense))
+#if (DT_INST_IRQ_HAS_CELL(0, flags))
 #ifdef HPET_INT_LEVEL_TRIGGER
 __WARN("HPET_INT_LEVEL_TRIGGER has no effect, DTS setting is used instead")
 #undef HPET_INT_LEVEL_TRIGGER
 #endif
-#if ((DT_INST_IRQ(0, sense) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
+#if ((DT_INST_IRQ(0, flags) & IRQ_TYPE_LEVEL) == IRQ_TYPE_LEVEL)
 #define HPET_INT_LEVEL_TRIGGER
 #endif
-#endif /* (DT_INST_IRQ_HAS_CELL(0, sense)) */
-
-static __pinned_bss uint64_t last_count;
-static __pinned_bss uint64_t last_tick;
-static __pinned_bss uint32_t last_elapsed;
-
-#ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
-static __pinned_bss unsigned int cyc_per_tick;
-#else
-#define cyc_per_tick			\
-	(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
-
-#define HPET_MAX_TICKS ((int32_t)0x7fffffff)
+#endif /* (DT_INST_IRQ_HAS_CELL(0, flags)) */
 
 #ifdef HPET_INT_LEVEL_TRIGGER
 /**
@@ -258,33 +245,36 @@ static inline void hpet_int_sts_set(uint32_t val)
 }
 #endif
 
-/* ensure the comparator is always set ahead of the current counter value */
-static inline void hpet_timer_comparator_set_safe(uint64_t next)
+/*
+ * Free-running 64-bit counter plus a comparator that matches only on
+ * count == cmp, so a target written after the counter has passed it is lost for
+ * a whole counter period. That is the COMPARE_EXACT backend: the core writes
+ * the comparator through its verify loop, so this driver needs no rearming of
+ * its own and no minimum-delay floor. Under QEMU SMP the shared counter can be
+ * observed reading backwards, handled via TIMER_CORE_COUNTER_NONMONOTONIC.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+#define TIMER_CORE_COUNTER_WIDTH 64
+#if defined(CONFIG_SMP) && defined(CONFIG_QEMU_TARGET)
+#define TIMER_CORE_COUNTER_NONMONOTONIC
+#endif
+
+static inline uint64_t timer_driver_cycle_get(void)
 {
-	hpet_timer_comparator_set(next);
-
-	uint64_t now = hpet_counter_get();
-
-	if (unlikely((int64_t)(next - now) <= 0)) {
-		uint32_t bump = 1;
-
-		do {
-			next = now + bump;
-			bump *= 2;
-			hpet_timer_comparator_set(next);
-			now = hpet_counter_get();
-		} while ((int64_t)(next - now) <= 0);
-	}
+	return hpet_counter_get();
 }
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	hpet_timer_comparator_set(cycles);
+}
+
+#include "system_timer_generic.h"
 
 __isr
 static void hpet_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-
-	k_spinlock_key_t key = sys_clock_lock();
-
-	uint64_t now = hpet_counter_get();
 
 #ifdef HPET_INT_LEVEL_TRIGGER
 	/*
@@ -295,41 +285,15 @@ static void hpet_isr(const void *arg)
 	hpet_int_sts_set(TIMER0_INT_STS);
 #endif
 
-	if (IS_ENABLED(CONFIG_SMP) &&
-	    IS_ENABLED(CONFIG_QEMU_TARGET)) {
-		/* Qemu in SMP mode has observed the clock going
-		 * "backwards" relative to interrupts already received
-		 * on the other CPU, despite the HPET being
-		 * theoretically a global device.
-		 */
-		int64_t diff = (int64_t)(now - last_count);
-
-		if (last_count && diff < 0) {
-			now = last_count;
-		}
-	}
-	uint32_t dticks = (uint32_t)((now - last_count) / cyc_per_tick);
-
-	last_count += (uint64_t)dticks * cyc_per_tick;
-	last_tick += dticks;
-	last_elapsed = 0;
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		uint64_t next = last_count + cyc_per_tick;
-
-		hpet_timer_comparator_set_safe(next);
-	}
-
-	sys_clock_announce_locked(dticks, key);
+	timer_core_announce();
 }
 
-__pinned_func
 static void config_timer0(unsigned int irq)
 {
 	uint32_t val = hpet_timer_conf_get();
 
 	/* 5-bit IRQ field starting at bit 9 */
-	val = (val & ~(0x1f << 9)) | ((irq & 0x1f) << 9);
+	val = (val & ~(0x1fU << 9U)) | (((uint32_t)irq & 0x1fU) << 9U);
 
 #ifdef HPET_INT_LEVEL_TRIGGER
 	/* Set level trigger if selected */
@@ -352,57 +316,59 @@ void smp_timer_init(void)
 	 */
 }
 
-__pinned_func
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
-	ARG_UNUSED(idle);
+	__ASSERT(sys_clock_is_locked(), "system clock lock not held");
 
-#if defined(CONFIG_TICKLESS_KERNEL)
-	uint32_t reg;
-
-	if (ticks == K_TICKS_FOREVER && idle) {
-		reg = hpet_gconf_get();
-		reg &= ~GCONF_ENABLE;
-		hpet_gconf_set(reg);
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	ticks = ticks == K_TICKS_FOREVER ? HPET_MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 0, HPET_MAX_TICKS/2);
-
-	uint64_t cyc = (last_tick + last_elapsed + ticks) * cyc_per_tick;
-
-	hpet_timer_comparator_set_safe(cyc);
-#endif
+	/* Nothing pending: park the comparator where it cannot match, in one
+	 * register write. The counter keeps running, which is what this hook
+	 * requires.
+	 *
+	 * QEMU's HPET model converts the distance to the target into nanoseconds
+	 * in a signed 64-bit value, so an extreme target overflows and the timer
+	 * fires immediately and forever. Cap the distance there. 2^48 cycles is
+	 * over three hundred days at 10 MHz, and stays overflow-free for any
+	 * counter period up to tens of microseconds.
+	 */
+	if (IS_ENABLED(CONFIG_QEMU_TARGET)) {
+		hpet_timer_comparator_set(hpet_counter_get() + BIT64(48));
+	} else {
+		hpet_timer_comparator_set(UINT64_MAX);
+	}
 }
 
-__pinned_func
-uint32_t sys_clock_elapsed(void)
+void sys_clock_idle_enter(uint32_t ticks)
 {
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || cyc_per_tick == 0) {
-		return 0;
+	uint32_t reg;
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL) || ticks != SYS_CLOCK_IDLE_FOREVER) {
+		sys_clock_set_timeout(ticks, false);
+		return;
 	}
 
-	uint64_t now = hpet_counter_get();
-	uint32_t ret = (uint32_t)((now - last_count) / cyc_per_tick);
+	if (IS_ENABLED(CONFIG_SMP)) {
+		/* The HPET counter is shared by every CPU and only this one is
+		 * going idle, so it must keep running for the others: nothing
+		 * to do here.
+		 */
+		return;
+	}
 
-	last_elapsed = ret;
-	return ret;
+	/* Nothing to wake up for and the uptime may drift: stop the main
+	 * counter. There is one CPU here, so nothing else can observe it
+	 * standing still. sys_clock_idle_exit() starts it again and it resumes
+	 * where it stopped, so the comparator stays coherent and only real time
+	 * is lost.
+	 */
+	reg = hpet_gconf_get();
+	reg &= ~GCONF_ENABLE;
+	hpet_gconf_set(reg);
 }
 
-__pinned_func
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)hpet_counter_get();
-}
-
-__pinned_func
-uint64_t sys_clock_cycle_get_64(void)
-{
-	return hpet_counter_get();
-}
-
-__pinned_func
 void sys_clock_idle_exit(void)
 {
 	uint32_t reg;
@@ -423,10 +389,10 @@ static int sys_clock_driver_init(void)
 
 	DEVICE_MMIO_TOPLEVEL_MAP(hpet_regs, K_MEM_CACHE_NONE);
 
-#if DT_INST_IRQ_HAS_CELL(0, sense)
+#if DT_INST_IRQ_HAS_CELL(0, flags)
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
-		    hpet_isr, 0, DT_INST_IRQ(0, sense));
+		    hpet_isr, 0, DT_INST_IRQ(0, flags));
 #else
 	IRQ_CONNECT(DT_INST_IRQN(0),
 		    DT_INST_IRQ(0, priority),
@@ -438,7 +404,6 @@ static int sys_clock_driver_init(void)
 #ifdef CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	hz = (uint32_t)(HPET_COUNTER_CLK_PERIOD / hpet_counter_clk_period_get());
 	z_clock_hw_cycles_per_sec = hz;
-	cyc_per_tick = hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
 #endif
 
 	reg = hpet_gconf_get();
@@ -456,9 +421,7 @@ static int sys_clock_driver_init(void)
 
 	hpet_gconf_set(reg);
 
-	last_tick = hpet_counter_get() / cyc_per_tick;
-	last_count = last_tick * cyc_per_tick;
-	hpet_timer_comparator_set_safe(last_count + cyc_per_tick);
+	timer_core_init();
 
 	return 0;
 }

@@ -4,6 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_TINT_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_TINT_H_
+
 enum intc_rz_tint_trigger {
 	/** Interrupt triggered on falling edge */
 	RZ_TINT_FAILING_EDGE,
@@ -64,3 +67,5 @@ int intc_rz_tint_disable(const struct device *dev);
  * @return 0 on success, or negative value on error
  */
 int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t cb, void *arg);
+
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_RZ_TINT_H_ */

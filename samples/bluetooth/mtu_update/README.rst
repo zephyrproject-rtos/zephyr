@@ -73,6 +73,24 @@ RSSI filtering.
 Building and Running
 ********************
 
+Build and flash each application as follows, replacing ``<board>`` with your target board:
+
+Central:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/mtu_update/central
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+Peripheral:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/mtu_update/peripheral
+   :board: <board>
+   :goals: build flash
+   :compact:
+
 See :zephyr:code-sample-category:`bluetooth` samples for details.
 
 If the devices are close enough, the central should connect to the peripheral

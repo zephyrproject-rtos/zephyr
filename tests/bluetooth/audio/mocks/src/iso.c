@@ -14,6 +14,7 @@
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/fff.h>
 #include <zephyr/net_buf.h>
+#include <zephyr/toolchain.h>
 #include <zephyr/ztest_assert.h>
 
 #include "conn.h"
@@ -29,6 +30,9 @@ DEFINE_FAKE_VALUE_FUNC(int, bt_iso_chan_get_tx_sync, const struct bt_iso_chan *,
 
 int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num)
 {
+	ARG_UNUSED(buf);
+	ARG_UNUSED(seq_num);
+
 	if (chan->ops != NULL && chan->ops->sent != NULL) {
 		chan->ops->sent(chan);
 	}
@@ -39,6 +43,10 @@ int bt_iso_chan_send(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq
 int bt_iso_chan_send_ts(struct bt_iso_chan *chan, struct net_buf *buf, uint16_t seq_num,
 			uint32_t ts)
 {
+	ARG_UNUSED(buf);
+	ARG_UNUSED(seq_num);
+	ARG_UNUSED(ts);
+
 	if (chan->ops != NULL && chan->ops->sent != NULL) {
 		chan->ops->sent(chan);
 	}
@@ -85,11 +93,18 @@ void mock_bt_iso_cleanup(void)
 int bt_iso_setup_data_path(const struct bt_iso_chan *chan, uint8_t dir,
 			   const struct bt_iso_chan_path *path)
 {
+	ARG_UNUSED(chan);
+	ARG_UNUSED(dir);
+	ARG_UNUSED(path);
+
 	return 0;
 }
 
 int bt_iso_remove_data_path(const struct bt_iso_chan *chan, uint8_t dir)
 {
+	ARG_UNUSED(chan);
+	ARG_UNUSED(dir);
+
 	return 0;
 }
 
@@ -160,6 +175,8 @@ int bt_iso_big_create(struct bt_le_ext_adv *padv, struct bt_iso_big_create_param
 		      struct bt_iso_big **out_big)
 {
 	struct bt_iso_big *big;
+
+	ARG_UNUSED(padv);
 
 	zassert_not_null(out_big);
 	zassert_not_null(param);

@@ -1,0 +1,27 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SPI0 and I2S0 share P2.26 through P2.29 on MAX32690EVKIT. */
+&spi0 {
+	status = "disabled";
+};
+
+i2s_rxtx: &i2s0 {
+	status = "okay";
+};
+
+&i2c2 {
+	status = "okay";
+	pinctrl-0 = <&i2c2c_sda_p1_7 &i2c2c_scl_p1_8>;
+	pinctrl-names = "default";
+
+	max9867: max9867@18 {
+		compatible = "adi,max9867";
+		reg = <0x18>;
+		adi,stereo-capacitorless-output;
+		adi,use-line-in;
+	};
+};

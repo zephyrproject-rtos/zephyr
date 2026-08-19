@@ -3,9 +3,20 @@
 
 description: NXP FlexSPI device
 
-include: [spi-device.yaml, "jedec,jesd216.yaml"]
+include: [base.yaml, power.yaml, "jedec,jesd216.yaml"]
 
 properties:
+  reg:
+    required: true
+    description: FlexSPI port number for this device.
+
+  spi-max-frequency:
+    type: int
+    required: true
+    description: |
+      Maximum clock frequency of the FlexSPI serial interface in Hz.
+      Used to configure the FlexSPI root clock (flexspiRootClk).
+
   cs-interval-unit:
     type: int
     default: 1

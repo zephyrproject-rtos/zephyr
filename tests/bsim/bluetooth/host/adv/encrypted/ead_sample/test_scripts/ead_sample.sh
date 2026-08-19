@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="ead_sample"
+simulation_id="${BOARD_TS}_ead_sample"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

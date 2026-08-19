@@ -14,7 +14,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 #include "ieee802154_security.h"
 
 #include <zephyr/net/net_core.h>
@@ -472,6 +472,8 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 
 	ctx = (struct ieee802154_context *)net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	sec_ctx = &ctx->sec_ctx;
@@ -740,6 +742,11 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx, struct net_lin
 
 	/* Let's encrypt/auth only in the end, if needed */
 	authtag_len = level_2_authtag_len[level];
+	if (buf->len < (size_t)(ll_hdr_len + authtag_len)) {
+		NET_ERR("Frame too short to encrypt: len %u < ll_hdr %u + authtag %u",
+			buf->len, ll_hdr_len, authtag_len);
+		goto out;
+	}
 	payload_len = buf->len - ll_hdr_len - authtag_len;
 	if (!ieee802154_encrypt_auth(&ctx->sec_ctx, buf_start, ll_hdr_len,
 				     payload_len, authtag_len, ctx->ext_addr)) {
@@ -885,6 +892,8 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	struct net_pkt *pkt = NULL;
 	uint8_t *p_buf, *p_start;
 
+	NET_ASSERT(ctx != NULL);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	/* It would be costly to compute the size when actual frames are never
@@ -968,6 +977,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	struct ieee802154_address *src;
 	bool ret = false;
 
+	NET_ASSERT(ctx != NULL);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	if (!mhr->fs->fc.security_enabled) {
@@ -994,6 +1005,11 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 	authtag_len = level_2_authtag_len[level];
 	ll_hdr_len = (uint8_t *)mpdu->payload - net_pkt_data(pkt);
+	if (net_pkt_get_len(pkt) < (size_t)(ll_hdr_len + authtag_len)) {
+		NET_ERR("Frame too short: len %zu < ll_hdr %u + authtag %u",
+			net_pkt_get_len(pkt), ll_hdr_len, authtag_len);
+		goto out;
+	}
 	payload_len = net_pkt_get_len(pkt) - ll_hdr_len - authtag_len;
 
 	/* TODO: Handle src short address.

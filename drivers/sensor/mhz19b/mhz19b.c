@@ -265,9 +265,7 @@ static void mhz19b_uart_isr(const struct device *uart_dev, void *user_data)
 		return;
 	}
 
-	if (!uart_irq_update(uart_dev)) {
-		return;
-	}
+	uart_irq_update(uart_dev);
 
 	if (uart_irq_rx_ready(uart_dev)) {
 		data->xfer_bytes += uart_fifo_read(uart_dev, &data->rd_data[data->xfer_bytes],

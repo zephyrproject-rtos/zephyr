@@ -23,3 +23,19 @@ properties:
     description: |
       Minimum time to wait following a hardware reset.
       Ignored if no reset GPIO pin specified.
+
+  initial-soft-reset:
+    type: boolean
+    description: |
+      When set, the driver issues a software reset sequence (RSTEN 0x66
+      followed by RST 0x99) to the flash at initialization, before reading
+      SFDP. This ensures the flash is in a known 3-byte address mode
+      regardless of state left by a previous boot, for example after a
+      warm reset that did not power-cycle the flash device.
+
+  t-reset-recovery:
+    type: int
+    description: |
+      Minimum time in nanoseconds the flash chip needs after a software
+      reset before it is ready to accept new commands. Used when
+      initial-soft-reset is set. If not provided no delay is applied.

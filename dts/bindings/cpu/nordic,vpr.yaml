@@ -16,3 +16,8 @@ properties:
     required: true
     description:
       Bus width of the CPU.
+
+  nordic,vpr-ready-event:
+    type: int
+    description:
+      Event which is set by the VPR core (cpuppr) to indicate that it is running.

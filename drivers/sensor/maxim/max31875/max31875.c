@@ -142,7 +142,7 @@ static int max31875_attr_set(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		ret = max31875_update_config(dev, MAX31875_DATA_FORMAT_SHIFT, value);
+		ret = max31875_update_config(dev, BIT(MAX31875_DATA_FORMAT_SHIFT), value);
 		if (ret < 0) {
 			LOG_ERR("Failed to set attribute!");
 			return ret;
@@ -249,7 +249,7 @@ static int max31875_init(const struct device *dev)
 	struct max31875_data *data = dev->data;
 
 	if (!device_is_ready(cfg->bus.bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 

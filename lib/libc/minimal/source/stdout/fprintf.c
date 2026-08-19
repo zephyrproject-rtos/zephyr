@@ -18,7 +18,7 @@ int fprintf(FILE *ZRESTRICT stream, const char *ZRESTRICT format, ...)
 	int     r;
 
 	va_start(vargs, format);
-	r = cbvprintf(fputc, DESC(stream), format, vargs);
+	r = cbvprintf((cbprintf_cb)fputc, DESC(stream), format, vargs);
 	va_end(vargs);
 
 	return r;
@@ -29,7 +29,7 @@ int vfprintf(FILE *ZRESTRICT stream, const char *ZRESTRICT format,
 {
 	int r;
 
-	r = cbvprintf(fputc, DESC(stream), format, vargs);
+	r = cbvprintf((cbprintf_cb)fputc, DESC(stream), format, vargs);
 
 	return r;
 }
@@ -40,7 +40,7 @@ int printf(const char *ZRESTRICT format, ...)
 	int     r;
 
 	va_start(vargs, format);
-	r = cbvprintf(fputc, DESC(stdout), format, vargs);
+	r = cbvprintf((cbprintf_cb)fputc, DESC(stdout), format, vargs);
 	va_end(vargs);
 
 	return r;
@@ -50,7 +50,7 @@ int vprintf(const char *ZRESTRICT format, va_list vargs)
 {
 	int r;
 
-	r = cbvprintf(fputc, DESC(stdout), format, vargs);
+	r = cbvprintf((cbprintf_cb)fputc, DESC(stdout), format, vargs);
 
 	return r;
 }

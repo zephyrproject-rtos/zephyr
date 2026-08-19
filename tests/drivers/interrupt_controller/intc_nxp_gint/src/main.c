@@ -22,7 +22,7 @@
  * To make the test easy, this test drives the GPIO pin
  * directly, and use GINT to monitor the GPIO pin. When change
  * the GPIO level, GINT can monitor the change on the same pin.
- * With this method, the externel signal is not necessary.
+ * With this method, the external signal is not necessary.
  */
 
 #define GINT_NODE	DT_NODELABEL(gint0)

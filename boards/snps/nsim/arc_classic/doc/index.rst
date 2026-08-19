@@ -26,12 +26,12 @@ available configurations are listed below:
   XY-memory
 * ``nsim/nsim_sem`` - ARC EM core v4.0 with secure features (thus "SEM", i.e. Secure EM) and MPUv4
 * ``nsim/nsim_hs`` - ARCv2 HS core v2.1 with two register banks, FastIRQ's and MPUv3
-* ``nsim/nsim_hs/smp`` - Dual-core ARCv2 HS core v2.1 with two register banks, FastIRQ's and MPUv3
+* ``nsim/nsim_hs_smp`` - Dual-core ARCv2 HS core v2.1 with two register banks, FastIRQ's and MPUv3
 * ``nsim/nsim_vpx5`` - ARCv2 VPX5 core, close to vpx5_integer_full template
 * ``nsim/nsim_hs5x`` - 32-bit ARCv3 HS core with rich set of options
 * ``nsim/nsim_hs6x`` - 64-bit ARCv3 HS core with rich set of options
-* ``nsim/nsim_hs5x/smp/12cores`` - SMP 12 cores 32-bit ARCv3 HS platform
-* ``nsim/nsim_hs6x/smp/12cores`` - SMP 12 cores 64-bit ARCv3 HS platform
+* ``nsim/nsim_hs5x_smp/12cores`` - SMP 12 cores 32-bit ARCv3 HS platform
+* ``nsim/nsim_hs6x_smp/12cores`` - SMP 12 cores 64-bit ARCv3 HS platform
 
 .. _board_arc_nsim_prop_args_files:
 
@@ -58,7 +58,7 @@ I.e. for the single-core ``nsim/nsim_hs5x`` platform there are
 For the multi-core configurations there is only ``.args`` file as the multi-core configuration
 can only be instantiated with help of MDB.
 
-I.e. for the multi-core ``nsim/nsim_hs5x/smp`` platform there is only
+I.e. for the multi-core ``nsim/nsim_hs5x_smp`` platform there is only
 :zephyr_file:`boards/snps/nsim/arc_classic/support/mdb_hs5x_smp.args`.
 
 .. warning::
@@ -188,7 +188,7 @@ platform:
 
       west -v debug --runner mdb-nsim
 
-   it will produce the following output (the ``nsim/nsim_hs5x/smp`` configuration was used for that
+   it will produce the following output (the ``nsim/nsim_hs5x_smp`` configuration was used for that
    example):
 
    .. code-block:: console

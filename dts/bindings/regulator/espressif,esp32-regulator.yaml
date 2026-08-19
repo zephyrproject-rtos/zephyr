@@ -16,6 +16,13 @@ compatible: "espressif,esp32-regulator"
 
 include: base.yaml
 
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
 child-binding:
   include:
     - name: regulator.yaml
@@ -28,46 +35,36 @@ child-binding:
         - regulator-max-microvolt
 
   properties:
+    reg:
+      type: int
+      required: true
+      description: |
+        LDO output channel number (1-4), corresponding to VO1-VO4.
+
     regulator-min-microvolt:
       default: 500000
 
     regulator-max-microvolt:
       default: 3300000
 
-    espressif,ldo-channel:
-      type: int
-      required: true
-      enum:
-        - 1
-        - 2
-        - 3
-        - 4
-      description: |
-        LDO output channel number (1-4), corresponding to VO1-VO4.
-        All channels support eFuse-calibrated output for precise voltage
-        regulation. Refer to the SoC datasheet for channel-specific
-        capabilities and typical usage.
-
 examples:
   - |
     ldo {
       compatible = "espressif,esp32-regulator";
+      #address-cells = <1>;
+      #size-cells = <0>;
 
-      ldo1 {
+      ldo1@1 {
+        reg = <1>;
         regulator-name = "ldo1";
-        regulator-min-microvolt = <500000>;
-        regulator-max-microvolt = <3300000>;
         regulator-boot-on;
         regulator-always-on;
         regulator-init-microvolt = <3300000>;
-        espressif,ldo-channel = <1>;
       };
 
-      ldo2 {
+      ldo2@2 {
+        reg = <2>;
         regulator-name = "ldo2";
-        regulator-min-microvolt = <500000>;
-        regulator-max-microvolt = <3300000>;
         regulator-init-microvolt = <1800000>;
-        espressif,ldo-channel = <2>;
       };
     };

@@ -376,7 +376,7 @@ void k_mem_paging_backing_store_location_free(uintptr_t location);
  * Unlike k_mem_paging_backing_store_location_get() this does not allocate
  * any backing store space. Instead, it returns a location token corresponding
  * to some fixed storage content to be paged in on demand. This is expected
- * to be used in conjonction with CONFIG_LINKER_USE_ONDEMAND_SECTION and the
+ * to be used in conjunction with CONFIG_LINKER_USE_ONDEMAND_SECTION and the
  * K_MEM_MAP_UNPAGED flag to create demand mappings at boot time. This may
  * also be used e.g. to implement file-based mmap().
  *

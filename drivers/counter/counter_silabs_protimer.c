@@ -40,14 +40,14 @@ struct counter_silabs_alarm_data {
 	uint8_t chan_id;
 	uint32_t ticks;
 	const struct device *dev;
-	const void *user_data;
+	void *user_data;
 };
 
 struct counter_silabs_top_data {
 	counter_top_callback_t callback;
 	uint32_t ticks;
 	const struct device *dev;
-	const void *user_data;
+	void *user_data;
 };
 
 struct counter_silabs_data {
@@ -57,34 +57,33 @@ struct counter_silabs_data {
 	sl_rail_multi_timer_t top_timer;
 };
 
-static void top_callback(sl_rail_multi_timer_t *handle, void *data)
+static void top_callback(sl_rail_multi_timer_t *handle, sl_rail_time_t expected_time_of_event,
+			 void *data)
 {
+	ARG_UNUSED(handle);
+	ARG_UNUSED(expected_time_of_event);
 	struct counter_silabs_top_data *top_data = (struct counter_silabs_top_data *)data;
 	struct counter_silabs_data *dev_data = (struct counter_silabs_data *)(top_data->dev)->data;
 
 	if (top_data->callback != NULL) {
-		top_data->callback(
-			top_data->dev,
-			((const struct counter_top_cfg *)top_data->user_data)
-				->user_data);
+		top_data->callback(top_data->dev, top_data->user_data);
 		/* Re-arm overflow at next occurrence of max value (absolute UINT32_MAX) */
 		sl_rail_set_multi_timer(SL_RAIL_EFR32_HANDLE, &dev_data->top_timer,
 					RAIL_TIMER_TOP_VALUE, SL_RAIL_TIME_ABSOLUTE,
-					(sl_rail_multi_timer_callback_t)top_callback,
-					(void *)top_data);
+					top_callback, (void *)top_data);
 	}
 }
 
-static void us_alarm_callback(struct sl_rail_multi_timer *handle, void *data)
+static void us_alarm_callback(struct sl_rail_multi_timer *handle,
+			      sl_rail_time_t expected_time_of_event, void *data)
 {
+	ARG_UNUSED(handle);
 	struct counter_silabs_alarm_data *alarm_data = (struct counter_silabs_alarm_data *)data;
-	/* RAIL time is us, counter ticks are 1:1 us */
-	uint32_t count = sl_rail_get_time(SL_RAIL_EFR32_HANDLE);
+	uint32_t count = expected_time_of_event;
 
 	if (alarm_data->callback != NULL) {
-		alarm_data->callback(
-			alarm_data->dev, alarm_data->chan_id, count,
-			((const struct counter_alarm_cfg *)alarm_data->user_data)->user_data);
+		alarm_data->callback(alarm_data->dev, alarm_data->chan_id, count,
+				     alarm_data->user_data);
 	}
 }
 
@@ -98,8 +97,7 @@ static int counter_silabs_rail_start(const struct device *dev)
 		/* Overflow interrupt: absolute timer at max value (UINT32_MAX) */
 		sl_rail_status_t rail_status = sl_rail_set_multi_timer(
 			SL_RAIL_EFR32_HANDLE, &data->top_timer, RAIL_TIMER_TOP_VALUE,
-			SL_RAIL_TIME_ABSOLUTE, (sl_rail_multi_timer_callback_t)top_callback,
-			(void *)&data->top_data);
+			SL_RAIL_TIME_ABSOLUTE, top_callback, (void *)&data->top_data);
 
 		return (rail_status == 0) ? 0 : -EIO;
 	}
@@ -159,13 +157,12 @@ static int counter_silabs_rail_set_alarm(const struct device *dev, uint8_t chan_
 	dev_data->alarm[chan_id].callback = alarm_cfg->callback;
 	dev_data->alarm[chan_id].chan_id = chan_id;
 	dev_data->alarm[chan_id].dev = dev;
-	dev_data->alarm[chan_id].user_data = alarm_cfg;
+	dev_data->alarm[chan_id].user_data = alarm_cfg->user_data;
 	dev_data->alarm[chan_id].ticks = alarm_cfg->ticks;
 
 	sl_rail_status_t rail_status = sl_rail_set_multi_timer(
 		SL_RAIL_EFR32_HANDLE, &dev_data->alarm_timer[chan_id], time_value, time_mode,
-		(sl_rail_multi_timer_callback_t)us_alarm_callback,
-		(void *)&dev_data->alarm[chan_id]);
+		us_alarm_callback, (void *)&dev_data->alarm[chan_id]);
 	return (rail_status == 0) ? 0 : -EIO;
 }
 
@@ -211,13 +208,12 @@ static int counter_silabs_rail_set_top_value(const struct device *dev,
 	dev_data->top_data.callback = cfg->callback;
 	dev_data->top_data.ticks = cfg->ticks;
 	dev_data->top_data.dev = dev;
-	dev_data->top_data.user_data = cfg;
+	dev_data->top_data.user_data = cfg->user_data;
 
 	if (cfg->callback != NULL) {
 		sl_rail_status_t rail_status = sl_rail_set_multi_timer(
 			SL_RAIL_EFR32_HANDLE, &dev_data->top_timer, cfg->ticks,
-			SL_RAIL_TIME_ABSOLUTE, (sl_rail_multi_timer_callback_t)top_callback,
-			(void *)&dev_data->top_data);
+			SL_RAIL_TIME_ABSOLUTE, top_callback, (void *)&dev_data->top_data);
 		return (rail_status == 0) ? 0 : -EIO;
 	}
 	return 0;

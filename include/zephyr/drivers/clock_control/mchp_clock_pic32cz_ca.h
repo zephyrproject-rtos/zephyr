@@ -5,17 +5,24 @@
  */
 
 /**
- * @file mchp_clock_pic32cz_ca.h
- * @brief Clock control header file for Microchip pic32cz_ca family.
+ * @file
+ * @brief Clock control header file for the Microchip PIC32CZ CA family.
  *
  * This file provides clock driver interface definitions and structures
- * for pic32cz_ca family
+ * for the PIC32CZ CA family.
+ * @ingroup clock_control_mchp_pic32cz_ca
  */
 
 #ifndef INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CZ_CA_H_
 #define INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CZ_CA_H_
 
 #include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
+
+/**
+ * @defgroup clock_control_mchp_pic32cz_ca Microchip PIC32CZ CA
+ * @ingroup clock_control_mchp
+ * @{
+ */
 
 /** @brief External Crystal Oscillator configuration structure */
 struct clock_mchp_subsys_xosc_config {
@@ -200,5 +207,7 @@ struct clock_mchp_subsys_mclkcpu_config {
  * Used for setting a clock rate
  */
 typedef uint32_t *clock_mchp_rate_t;
+
+/** @} */
 
 #endif /* INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_MCHP_CLOCK_PIC32CZ_CA_H_ */

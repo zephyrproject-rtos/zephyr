@@ -31,6 +31,7 @@ HTTP_RESOURCE_DEFINE(static_resource, test_http_service, "/static",
 
 static uint8_t dynamic_buf[TEST_BUF_SIZE];
 static size_t dynamic_len;
+static int dynamic_status;
 
 static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_status status,
 		      const struct http_request_ctx *request_ctx,
@@ -46,6 +47,7 @@ static int dynamic_cb(struct http_client_ctx *client, enum http_transaction_stat
 
 	switch (client->method) {
 	case HTTP_GET:
+		response_ctx->status = dynamic_status;
 		response_ctx->body = dynamic_buf;
 		response_ctx->body_len = dynamic_len;
 		response_ctx->final_chunk = true;
@@ -135,6 +137,7 @@ static int client_fd = -1;
 static uint8_t recv_buf[64];
 static uint8_t response_buf[TEST_BUF_SIZE];
 static size_t resp_offset;
+static int response_status_code;
 
 static void common_request_init(struct http_request *req)
 {
@@ -190,6 +193,7 @@ int test_common_cb(struct http_parser *parser, const char *at, size_t length)
 	memcpy(response_buf + resp_offset, at, length);
 	resp_offset += length;
 
+	response_status_code = parser->status_code;
 	return 0;
 }
 
@@ -213,6 +217,29 @@ ZTEST(http_client, test_http1_client_get_body_cb)
 	test_http1_client_get_cb_common(&http_cb);
 
 	zassert_str_equal(response_buf, LOREM_IPSUM_SHORT, "Wrong body payload");
+}
+
+ZTEST(http_client, test_http1_client_get_body_cb_error_500)
+{
+	struct http_parser_settings http_cb = {
+		.on_body = test_common_cb,
+	};
+	struct http_request req = { 0 };
+	int ret;
+
+	common_request_init(&req);
+	req.method = HTTP_GET;
+	req.url = "/dynamic";
+	req.http_cb = &http_cb;
+
+	dynamic_len = LOREM_IPSUM_STRLEN;
+	memcpy(dynamic_buf, LOREM_IPSUM, LOREM_IPSUM_STRLEN);
+	dynamic_status = 500;
+
+	ret = http_client_req(client_fd, &req, -1, NULL);
+	zassert_true(ret > 0, "http_client_req() failed (%d)", ret);
+	zassert_str_equal(response_buf, LOREM_IPSUM, "Wrong body payload");
+	zassert_equal(response_status_code, 500, "Unexpected HTTP status code");
 }
 
 static bool test_on_header_field;
@@ -355,9 +382,9 @@ ZTEST(http_client, test_http1_client_post_payload_cb)
 	zassert_true(ctx.final, "No final event received");
 	zassert_equal(ctx.status, 200, "Unexpected HTTP status code");
 	zassert_equal(dynamic_len, LOREM_IPSUM_SHORT_STRLEN,
-		      "Invalid payload length uploaded %d", dynamic_len);
+		      "Invalid payload length uploaded %zu", dynamic_len);
 	zassert_mem_equal(dynamic_buf, LOREM_IPSUM_SHORT, dynamic_len,
-			  "Invalid payload uploaded %d", dynamic_len);
+			  "Invalid payload uploaded %zu", dynamic_len);
 }
 
 static void client_tests_before(void *fixture)
@@ -438,7 +465,7 @@ static const char chunked_te_response[] =
 	"0\r\n"
 	"\r\n";
 
-static K_THREAD_STACK_DEFINE(chunked_srv_stack, 1024);
+static K_THREAD_STACK_DEFINE(chunked_srv_stack, 2048 + CONFIG_TEST_EXTRA_STACK_SIZE);
 static struct k_thread chunked_srv_thread;
 static K_SEM_DEFINE(chunked_srv_ready, 0, 1);
 

@@ -2,7 +2,7 @@
    :name: IS31FL319x RGB LED
    :relevant-api: led_interface
 
-   Cycle colors on an RGB LED connected to the IS31FL3194 or IS31FL3197
+   Cycle colors on an RGB LED connected to the IS31FL3193, IS31FL3194 or IS31FL3197
    using the LED API.
 
 Overview
@@ -19,7 +19,7 @@ fade all of the defined LEDs by using the led_write_channels API.
 The sample will then check to see if this device contains an LED
 with a Red, Green and a Blue color defined. If so it will
 fade these colors, in the order Red, Green and Blue, and then it
-will cylcle through and display several different colors.
+will cycle through and display several different colors.
 
 It uses a helper function, that maps the RGB colors into the correct order
 for the actual hardware LED, as some hardware LEDs will be defined in
@@ -37,8 +37,9 @@ Building and Running
 This sample can be built and executed on an Arduino Nicla Sense ME, or
 Arduino Giga with an Arduino Giga Display shield, or on
 any board where the devicetree has an I2C device node with compatible
-:dtcompatible:`issi,is31fl3194` or :dtcompatible:`issi,is31fl3197`
-with the relevant bus controller node also being enabled.
+:dtcompatible:`issi,is31fl3193`, :dtcompatible:`issi,is31fl3194` or
+:dtcompatible:`issi,is31fl3197` with the relevant bus controller node
+also being enabled.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/is31fl319x

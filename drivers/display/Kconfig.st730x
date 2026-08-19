@@ -6,6 +6,8 @@ config ST730X
 	default y
 	depends on DT_HAS_SITRONIX_ST7305_ENABLED || DT_HAS_SITRONIX_ST7306_ENABLED
 	select MIPI_DBI
+	imply DISPLAY_COLOR_PALETTE \
+		if $(dt_compat_any_has_prop,$(DT_COMPAT_SITRONIX_ST7306),color-mode,RBW)
 	help
 	  Enable driver for ST730X series display controllers.
 
@@ -18,9 +20,12 @@ config ST730X_CONV_BUFFER_LINE_CNT
 	help
 	  Size of the conversion buffer in lines.
 
-config ST730X_POWERMODE_LOW
-	bool "Use low power mode"
+config ST730X_DEFAULT_PALETTED
+	bool "ST730X default mode is paletted i4"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_SITRONIX_ST7306),color-mode,RBW)
+	depends on DT_HAS_SITRONIX_ST7306_ENABLED
+	select DISPLAY_COLOR_PALETTE
 	help
-	  Enable this to use lower framerate LPM (Low Power Mode).
+	  Sets paletted i4 mode as the default color mode
 
 endif # ST730X

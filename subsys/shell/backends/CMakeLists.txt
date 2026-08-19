@@ -16,6 +16,11 @@ zephyr_sources_ifdef(
 )
 
 zephyr_sources_ifdef(
+  CONFIG_SHELL_BACKEND_SSH
+  shell_ssh.c
+)
+
+zephyr_sources_ifdef(
   CONFIG_SHELL_BACKEND_TELNET
   shell_telnet.c
 )

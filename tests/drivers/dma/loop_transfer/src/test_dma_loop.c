@@ -3,6 +3,7 @@
 /*
  * Copyright (c) 2016 Intel Corporation.
  * Copyright (c) 2021 Linaro Limited.
+ * Copyright 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,7 @@
 
 #include <zephyr/kernel.h>
 
+#include <zephyr/cache.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device.h>
@@ -32,11 +34,49 @@
 #define SLEEPTIME 250
 
 #define TRANSFER_LOOPS (4)
-#define DMA_DATA_ALIGNMENT DT_INST_PROP_OR(tst_dma0, dma_buf_addr_alignment, 32)
 
+#define DMA_TEST_NODE      DT_PATH(zephyr_user)
+#define DMA_TEST_DEVS_PROP dma_test_devs
+
+#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+/* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
+ * phandle list.
+ */
+#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
+#define DMA_TEST_DEV_GET(idx, _)                                                                   \
+	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
+#define DMA_TEST_DEV0_NODE DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, 0)
+#else
+/* Legacy boards use tst_dmaN devicetree labels and
+ * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
+ */
+#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
+#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
+#define DMA_TEST_DEV0_NODE DT_NODELABEL(tst_dma0)
+#endif
+
+#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+
+static const struct device *const dma_test_devs[] = {
+	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
+};
+
+/*
+ * Place DMA buffers in non-cacheable memory when a D-cache is present, so that
+ * DMA reads and writes are coherent without explicit cache maintenance.
+ * Fall back to ordinary BSS when no D-cache exists or no nocache region is
+ * configured, in which case sys_cache_data_flush/invd_range() are no-ops.
+ */
+#if defined(CONFIG_DCACHE) && defined(CONFIG_NOCACHE_MEMORY)
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE]
+	__used __nocache;
+static __aligned(DMA_DATA_ALIGNMENT) uint8_t
+	rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] __used __nocache;
+#else
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_LOOP_TRANSFER_SIZE];
 static __aligned(DMA_DATA_ALIGNMENT) uint8_t
 	rx_data[TRANSFER_LOOPS][CONFIG_DMA_LOOP_TRANSFER_SIZE] = { { 0 } };
+#endif
 
 volatile uint32_t transfer_count;
 volatile uint32_t done;
@@ -56,6 +96,13 @@ static void test_transfer(const struct device *dev, uint32_t id)
 		dma_block_cfg.source_address = (uint32_t)tx_data;
 		dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+		/*
+		 * Flush tx_data so DMA reads committed data, and invalidate the
+		 * next rx slot so the CPU will not see stale cache lines after
+		 * the DMA writes to it.
+		 */
+		sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+		sys_cache_data_invd_range(rx_data[transfer_count], sizeof(rx_data[0]));
 
 		zassert_ok(dma_config(dev, id, &dma_cfg), "Not able to config transfer %d",
 			   transfer_count + 1);
@@ -140,6 +187,13 @@ static int test_loop(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	/*
+	 * Flush tx_data to memory before DMA reads it, and invalidate the first
+	 * rx slot so the CPU will not observe stale cache lines after the DMA
+	 * writes to it.
+	 */
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_flush_and_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
@@ -163,6 +217,12 @@ static int test_loop(const struct device *dma)
 	}
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
+
+	/*
+	 * Invalidate all rx slots before reading so the CPU sees what the DMA
+	 * wrote, not stale cache lines.
+	 */
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
 
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
@@ -233,6 +293,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_flush_and_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	unsigned int irq_key;
 
@@ -311,6 +373,8 @@ static int test_loop_suspend_resume(const struct device *dma)
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
 
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
+
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
 		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
@@ -373,6 +437,10 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 
 	memset(tx_data, 0, sizeof(tx_data));
 
+	for (int i = 0; i < CONFIG_DMA_LOOP_TRANSFER_SIZE; i++) {
+		tx_data[i] = i;
+	}
+
 	memset(rx_data, 0, sizeof(rx_data));
 
 	if (!device_is_ready(dma)) {
@@ -414,13 +482,21 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	dma_block_cfg.source_address = (uint32_t)tx_data;
 	dma_block_cfg.dest_address = (uint32_t)rx_data[transfer_count];
 #endif
+	sys_cache_data_flush_range(tx_data, sizeof(tx_data));
+	sys_cache_data_flush_and_invd_range(rx_data[0], sizeof(rx_data[0]));
 
 	if (dma_config(dma, chan_id, &dma_cfg)) {
 		TC_PRINT("ERROR: transfer config (%d)\n", chan_id);
 		return TC_FAIL;
 	}
 
-	if (dma_stop(dma, chan_id)) {
+	int res = dma_stop(dma, chan_id);
+
+	if (res == -ENOSYS) {
+		TC_PRINT("Stop not supported.\n");
+		ztest_test_skip();
+	}
+	if (res) {
 		TC_PRINT("ERROR: transfer stop on stopped channel (%d)\n", chan_id);
 		return TC_FAIL;
 	}
@@ -453,6 +529,8 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 
 	TC_PRINT("Each RX buffer should contain the full TX buffer string.\n");
 
+	sys_cache_data_invd_range(rx_data, sizeof(rx_data));
+
 	for (int i = 0; i < TRANSFER_LOOPS; i++) {
 		TC_PRINT("RX data Loop %d\n", i);
 		if (memcmp(tx_data, rx_data[i], CONFIG_DMA_LOOP_TRANSFER_SIZE)) {
@@ -483,32 +561,25 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 	return TC_PASS;
 }
 
-#define DMA_NAME(i, _)	tst_dma ## i
-#define DMA_LIST	LISTIFY(CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS, DMA_NAME, (,))
-
-#define TEST_LOOP(dma_name)                                                                        \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop)                                        \
+/* Generate one set of test cases per DMA controller under test so a failure
+ * or skip on one controller does not prevent the remaining controllers from
+ * running.
+ */
+#define DEFINE_DMA_M2M_LOOP_TESTS(idx, _)                                                          \
+	ZTEST(dma_m2m_loop, test_dma##idx##_m2m_loop)                                              \
 	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop(dma) == TC_PASS));                                         \
+		zassert_true(test_loop(dma_test_devs[idx]) == TC_PASS, "%s failed loop transfer",  \
+			     dma_test_devs[idx]->name);                                            \
+	}                                                                                          \
+	ZTEST(dma_m2m_loop, test_dma##idx##_m2m_loop_suspend_resume)                               \
+	{                                                                                          \
+		zassert_true(test_loop_suspend_resume(dma_test_devs[idx]) == TC_PASS,              \
+			     "%s failed loop suspend resume", dma_test_devs[idx]->name);           \
+	}                                                                                          \
+	ZTEST(dma_m2m_loop, test_dma##idx##_m2m_loop_repeated_start_stop)                          \
+	{                                                                                          \
+		zassert_true(test_loop_repeated_start_stop(dma_test_devs[idx]) == TC_PASS,         \
+			     "%s failed repeated start stop", dma_test_devs[idx]->name);           \
 	}
 
-FOR_EACH(TEST_LOOP, (), DMA_LIST);
-
-#define TEST_LOOP_SUSPEND_RESUME(dma_name)                                                         \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_suspend_resume)                         \
-	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop_suspend_resume(dma) == TC_PASS));                          \
-	}
-
-FOR_EACH(TEST_LOOP_SUSPEND_RESUME, (), DMA_LIST);
-
-#define TEST_LOOP_REPEATED_START_STOP(dma_name)                                                    \
-	ZTEST(dma_m2m_loop, test_ ## dma_name ## _m2m_loop_repeated_start_stop)                    \
-	{                                                                                          \
-		const struct device *dma = DEVICE_DT_GET(DT_NODELABEL(dma_name));                  \
-		zassert_true((test_loop_repeated_start_stop(dma) == TC_PASS));                     \
-	}
-
-FOR_EACH(TEST_LOOP_REPEATED_START_STOP, (), DMA_LIST);
+LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_LOOP_TESTS, ())

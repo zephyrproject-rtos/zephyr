@@ -10,8 +10,8 @@
  * @ingroup nxp_flexio_interface
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
-#define ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_
 
 /**
  * @brief Interfaces for NXP FlexIO.
@@ -46,7 +46,6 @@ struct nxp_flexio_child_res {
 };
 
 /**
- * @typedef nxp_flexio_child_isr_t
  * @brief Callback API to inform API user that FlexIO triggered interrupt
  *
  * The controller calls this from IRQ context whenever one of the child's mapped shifters or timers
@@ -121,4 +120,4 @@ int nxp_flexio_child_attach(const struct device *dev,
  * @}
  */
 
-#endif /* ZEPHYR_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_NXP_FLEXIO_NXP_FLEXIO_H_ */

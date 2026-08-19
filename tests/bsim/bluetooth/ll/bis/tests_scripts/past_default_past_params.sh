@@ -5,12 +5,12 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic PAST Test: Broadcaster is broadcasting Periodic Advertisements (PA).
-# A central device syncronizes to the PA after it is synced,
+# A central device synchronizes to the PA after it is synced,
 # it will connect to the peripheral device.
-# The Peripheral will subcribe to PAST using the default PAST Params
+# The Peripheral will subscribe to PAST using the default PAST Params
 # After connection is established the Central send a Periodic Sync Transfer (PAST)
 # to the peripheral, which then synchronizes to the PA.
-simulation_id="past_basic_default_params"
+simulation_id="${BOARD_TS}_past_basic_default_params"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

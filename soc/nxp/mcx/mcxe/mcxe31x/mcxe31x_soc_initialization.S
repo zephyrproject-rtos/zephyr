@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,9 +14,9 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(soc_reset_hook)
+GTEXT(soc_early_reset_hook)
 
-SECTION_FUNC(TEXT, soc_reset_hook)
+SECTION_FUNC(TEXT, soc_early_reset_hook)
 
 	/*
 	 * On destructive reset, SRAM and TCM memories must be initialized to a known value using a
@@ -107,9 +107,4 @@ DTCM1_LOOP:
 #endif
 
 ECC_END:
-	/* save lr value to r4 */
-	mov r4, lr
-	/* Jump to SystemInit function*/
-	bl SystemInit
-	mov lr, r4
 	bx lr

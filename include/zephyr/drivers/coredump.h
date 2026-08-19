@@ -23,6 +23,8 @@ extern "C" {
 /**
  * @brief Interfaces for coredump pseudo-device.
  * @defgroup coredump_device_interface Coredump pseudo-device
+ * @since 3.2
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */
@@ -56,51 +58,62 @@ struct coredump_mem_region_node {
 typedef void (*coredump_dump_callback_t)(uintptr_t dump_area, size_t dump_area_size);
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{Coredump pseudo-device,coredump_device_interface}
+ * @{
  */
 
-/*
- * Type definition of coredump API function for adding specified
- * data into coredump
+/**
+ * @brief Add the device's data into the core dump being generated.
+ *
+ * Called by the coredump subsystem at dump time so the device can copy the
+ * registered memory regions and callback data into the core dump.
  */
 typedef void (*coredump_device_dump_t)(const struct device *dev);
 
-/*
- * Type definition of coredump API function for registering a memory
- * region
+/**
+ * @brief Register a memory region to be stored in the core dump.
+ * See coredump_device_register_memory() for argument description.
  */
 typedef bool (*coredump_device_register_memory_t)(const struct device *dev,
 	struct coredump_mem_region_node *region);
 
-/*
- * Type definition of coredump API function for unregistering a memory
- * region
+/**
+ * @brief Unregister a memory region from being stored in the core dump.
+ * See coredump_device_unregister_memory() for argument description.
  */
 typedef bool (*coredump_device_unregister_memory_t)(const struct device *dev,
 	struct coredump_mem_region_node *region);
 
-/*
- * Type definition of coredump API function for registering a dump
- * callback
+/**
+ * @brief Register a callback to be invoked at dump time.
+ * See coredump_device_register_callback() for argument description.
  */
 typedef bool (*coredump_device_register_callback_t)(const struct device *dev,
 	coredump_dump_callback_t callback);
 
-/*
- * API which a coredump pseudo-device driver should expose
+/**
+ * @driver_ops{Coredump pseudo-device}
  */
 __subsystem struct coredump_driver_api {
+	/**
+	 * @driver_ops_mandatory Add the device's data into the core dump being generated.
+	 */
 	coredump_device_dump_t              dump;
+	/**
+	 * @driver_ops_mandatory @copybrief coredump_device_register_memory
+	 */
 	coredump_device_register_memory_t   register_memory;
+	/**
+	 * @driver_ops_mandatory @copybrief coredump_device_unregister_memory
+	 */
 	coredump_device_unregister_memory_t unregister_memory;
+	/**
+	 * @driver_ops_mandatory @copybrief coredump_device_register_callback
+	 */
 	coredump_device_register_callback_t register_callback;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Register a region of memory to be stored in core dump at the
@@ -115,10 +128,7 @@ __subsystem struct coredump_driver_api {
 static inline bool coredump_device_register_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->register_memory(dev, region);
+	return DEVICE_API_GET(coredump, dev)->register_memory(dev, region);
 }
 
 /**
@@ -134,10 +144,7 @@ static inline bool coredump_device_register_memory(const struct device *dev,
 static inline bool coredump_device_unregister_memory(const struct device *dev,
 	struct coredump_mem_region_node *region)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->unregister_memory(dev, region);
+	return DEVICE_API_GET(coredump, dev)->unregister_memory(dev, region);
 }
 
 /**
@@ -152,10 +159,7 @@ static inline bool coredump_device_unregister_memory(const struct device *dev,
 static inline bool coredump_device_register_callback(const struct device *dev,
 	coredump_dump_callback_t callback)
 {
-	const struct coredump_driver_api *api =
-		(const struct coredump_driver_api *)dev->api;
-
-	return api->register_callback(dev, callback);
+	return DEVICE_API_GET(coredump, dev)->register_callback(dev, callback);
 }
 
 /**

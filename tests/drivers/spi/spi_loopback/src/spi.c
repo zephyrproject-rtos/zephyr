@@ -1,6 +1,7 @@
 /*
  * Copyright 2025 NXP
  * Copyright (c) 2017 Intel Corporation.
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -676,7 +677,10 @@ ZTEST(spi_loopback, test_spi_write_back)
 /* similar to test_spi_write_back, simulates the real common case of 1 word command */
 ZTEST(spi_loopback, test_spi_same_buf_cmd)
 {
-	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) || IS_ENABLED(CONFIG_DSPI_MCUX_EDMA)) {
+	if (IS_ENABLED(CONFIG_SPI_STM32_DMA) ||
+	    IS_ENABLED(CONFIG_DSPI_MCUX_EDMA) ||
+	    IS_ENABLED(CONFIG_SPI_NRFX_SPIM) ||
+	    IS_ENABLED(CONFIG_SPI_NRFX_SPIM_RTIO)) {
 		ztest_test_skip();
 	}
 
@@ -734,7 +738,7 @@ ZTEST(spi_loopback, test_spi_word_size_7)
 {
 	struct spi_dt_spec *spec = loopback_specs[spec_idx];
 
-	spi_loopback_test_word_size(spec, tx_data, buffer_rx, tx_data,
+	spi_loopback_test_word_size(spec, buffer_tx, buffer_rx, buffer_tx,
 				    sizeof(tx_data), &spec_copies[0], 7);
 }
 
@@ -1002,6 +1006,41 @@ ZTEST(spi_loopback, test_spi_async_call)
 
 	zassert_false(memcmp(large_buffer_tx, large_buffer_rx, BUF3_SIZE),
 			"Large Buffer contents are different");
+}
+
+static void spi_async_cb(const struct device *dev, int cb_result, void *userdata)
+{
+	struct k_sem *sem = (struct k_sem *)userdata;
+
+	zassert_ok(cb_result, "SPI transceive_cb failed with result %d", cb_result);
+	k_sem_give(sem);
+}
+
+ZTEST(spi_loopback, test_spi_transceive_cb)
+{
+	struct spi_dt_spec *spec = loopback_specs[spec_idx];
+	static K_SEM_DEFINE(cb_sem, 0, 1);
+
+	const struct spi_buf_set tx = spi_loopback_setup_xfer(tx_bufs_pool, 1, buffer_tx, BUF_SIZE);
+	const struct spi_buf_set rx = spi_loopback_setup_xfer(rx_bufs_pool, 1, buffer_rx, BUF_SIZE);
+
+	memset(buffer_rx, 0, BUF_SIZE);
+
+	int ret = spi_transceive_cb(spec->bus, &spec->config, &tx, &rx, spi_async_cb, &cb_sem);
+
+	if (ret == -ENOTSUP) {
+		TC_PRINT("spi_transceive_cb not supported, skipping\n");
+		ztest_test_skip();
+		return;
+	}
+
+	zassert_ok(ret, "SPI transceive_cb failed, code %d", ret);
+
+	/* Wait for callback */
+	zassert_ok(k_sem_take(&cb_sem, K_MSEC(2000)), "SPI transceive_cb timeout");
+
+	/* Verify loopback data */
+	spi_loopback_compare_bufs(buffer_tx, buffer_rx, BUF_SIZE, buffer_print_tx, buffer_print_rx);
 }
 #endif
 

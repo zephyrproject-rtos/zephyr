@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "zephyr/devicetree.h"
-#include "zephyr/kernel.h"
-#include "zephyr/sys/byteorder.h"
-#include "zephyr/sys/util.h"
+#include <zephyr/devicetree.h>
+#include <zephyr/kernel.h>
+#include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/drivers/spi.h>

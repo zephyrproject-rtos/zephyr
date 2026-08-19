@@ -7,6 +7,7 @@ config PHY_MICROCHIP_T1S
 	depends on DT_HAS_MICROCHIP_T1S_PHY_ENABLED
 	select MDIO
 	select PHY_OA_TC14_PLCA_LIB
+	select ETH_PHY_API_PLCA
 	help
 	  Enable Microchip's LAN8650/1 Rev.B0/B1 Internal PHYs and
 	  LAN8670/1/2 Rev.C1/C2/D0 PHYs Driver.

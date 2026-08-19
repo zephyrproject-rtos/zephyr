@@ -9,23 +9,29 @@
 
 #include <broadcom/bcm2711.dtsi>
 #include <broadcom/bcm2711-pinctrl.dtsi>
+
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mbox/brcm-bcm2711-mbox.h>
+#include <zephyr/dt-bindings/power/rpi_bcm283x_power.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "Raspberry Pi 4 Model B";
 	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &led_act;
+		led1 = &led_pwr;
+		i2c-1 = &i2c1;
 	};
 
 	chosen {
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
-		zephyr,sram = &sram0;
+		zephyr,sram = &dram0;
 		zephyr,entropy = &rng;
+		zephyr,display = &fb0;
 	};
 
 	leds {
@@ -35,7 +41,78 @@
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>; /* GPIO 42 */
 			label = "ACT";
 		};
+
+		led_pwr: led-pwr {
+			gpios = <&exp_gpio 2 GPIO_ACTIVE_LOW>;
+			label = "PWR";
+		};
 	};
+
+	/*
+	 * The first 2 MiB of LPDDR4 is reserved for VideoCore GPU, which boots
+	 * BCM2711 SoC before control is handed to the ARM core.
+	 */
+	dram0: memory@200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x200000 DT_SIZE_M(8)>;
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* VideoCore shared memory region is mapped downward from 0x40000000. */
+		vc_mem: memory@3f800000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x3f800000 DT_SIZE_M(8)>;
+			zephyr,memory-region = "VC_SHARED_RAM";
+		};
+	};
+
+	firmware: firmware {
+		compatible = "raspberrypi,bcm283x-firmware";
+		mboxes = <&mbox0 BCM2711_MBOX0_CH_ARM_TO_VC>;
+		mbox-names = "vc";
+		shared-memory = <&vc_mem>;
+
+		fb0: framebuffer {
+			compatible = "raspberrypi,bcm2711-framebuffer";
+			pixel-format = <PANEL_PIXEL_FORMAT_ARGB_8888>;
+			width = <640>;
+			height = <480>;
+			red-blue-swap;
+		};
+
+		exp_gpio: gpio {
+			compatible = "raspberrypi,bcm283x-gpio";
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+		};
+	};
+
+	power-domains {
+		usb_hcd: power-domain-usb {
+			compatible = "raspberrypi,bcm283x-power";
+			firmware = <&firmware>;
+			#power-domain-cells = <0>;
+			power-domain-id = <RPI_POWER_DOMAIN_USB_HCD>;
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(1500)>;
+};
+
+&rng {
+	status = "okay";
+};
+
+&mbox0 {
+	status = "okay";
 };
 
 &gpio1 {
@@ -43,8 +120,30 @@
 };
 
 &uart1 {
-	pinctrl-names = "default";
 	pinctrl-0 = <&uart1_gpio14>;
+	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_gpio2>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&eth0 {
+	zephyr,random-mac-address;
+	phy-handle = <&phy1>;
+	status = "okay";
+};
+
+&mdio0 {
+	status = "okay";
+
+	phy1: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+	};
 };

@@ -146,6 +146,10 @@ static int cmd_net_ip_add(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "join", net_sprint_ipv4_addr(&addr), idx, ret);
+			if (ret == -ENOSYS) {
+				PR_INFO("Enable CONFIG_NET_IPV4_IGMP for %s multicast "
+					"group\n", "joining");
+			}
 			return ret;
 		}
 	} else {
@@ -213,6 +217,10 @@ static int cmd_net_ip_del(const struct shell *sh, size_t argc, char *argv[])
 		if (ret < 0) {
 			PR_ERROR("Cannot %s multicast group %s for interface %d (%d)\n",
 				 "leave", net_sprint_ipv4_addr(&addr), idx, ret);
+			if (ret == -ENOSYS) {
+				PR_INFO("Enable CONFIG_NET_IPV4_IGMP for %s multicast "
+					"group\n", "leaving");
+			}
 			return ret;
 		}
 	} else {

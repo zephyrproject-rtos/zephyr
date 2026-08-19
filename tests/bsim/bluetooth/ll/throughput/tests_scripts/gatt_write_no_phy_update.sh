@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="ll-throughput-no-phy-update"
+simulation_id="${BOARD_TS}_ll-throughput-no-phy-update"
 verbosity_level=2
 EXECUTE_TIMEOUT=2400
 

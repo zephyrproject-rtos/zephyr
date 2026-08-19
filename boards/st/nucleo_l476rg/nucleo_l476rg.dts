@@ -20,6 +20,7 @@
 		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,system-timer = &lptim1;
 	};
 
 	leds: leds {
@@ -78,7 +79,7 @@
 	apb2-prescaler = <1>;
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";
@@ -107,13 +108,17 @@ stm32_lp_tick_source: &lptim1 {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+	status = "okay";
 };
 
 &i2c3 {
 	pinctrl-0 = <&i2c3_scl_pc0 &i2c3_sda_pc1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -185,12 +190,13 @@ stm32_lp_tick_source: &lptim1 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Set 32KB of storage at the end of 1024KB flash */
 		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000f8000 DT_SIZE_K(32)>;
 		};

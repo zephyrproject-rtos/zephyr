@@ -6,10 +6,11 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa156.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa156.dtsi>
 #include "frdm_mcxa156-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 #include <freq.h>
 
 / {
@@ -22,6 +23,7 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		pwm-0 = &flexpwm0_pwm0;
 		mcuboot-button0 = &user_button_2;
 		watchdog0 = &wwdt0;
@@ -39,6 +41,8 @@
 		zephyr,uart-mcumgr = &lpuart0;
 		zephyr,canbus = &flexcan0;
 		zephyr,system-timer-companion = &lptmr0;
+		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -67,6 +71,8 @@
 			label = "User SW2";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_0>;
+			/* SW2 wakes via WUU external pin 9. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_9_FALLING_INT>;
 		};
 
 		user_button_3: button_3 {
@@ -158,6 +164,10 @@
 };
 
 &ctimer0 {
+	status = "okay";
+};
+
+&waketimer0 {
 	status = "okay";
 };
 
@@ -301,4 +311,28 @@ zephyr_udc0: &usb {
 			reg = <0x000e4000 DT_SIZE_K(112)>;
 		};
 	};
+};
+
+&eim0 {
+	status = "okay";
+};
+
+&eim0_channel0 {
+	status = "okay";
+};
+
+&erm0 {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
 };

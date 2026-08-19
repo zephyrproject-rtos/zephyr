@@ -43,6 +43,12 @@
 	pinctrl-0 = <&pinmux_pwm0>;
 	pinctrl-names = "default";
 	prescaler = <1>;
-	input-channels = <1>;
-	inputmux-connections = <0>;
+	/* Route SCT input channel 1 via INPUTMUX0.
+	 * connection 0 = kINPUTMUX_SctGpioInAToSct0.
+	 */
+	mux-states = <&inputmux0 1 0>;
+};
+
+&inputmux0 {
+	status = "okay";
 };

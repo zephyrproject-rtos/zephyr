@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /* Server resource IDs */
 #define SERVER_SHORT_SERVER_ID				0

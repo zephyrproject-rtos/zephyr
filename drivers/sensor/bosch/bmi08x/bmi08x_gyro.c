@@ -360,7 +360,7 @@ int bmi08x_gyro_init(const struct device *dev)
 
 	ret = bmi08x_bus_check(dev);
 	if (ret < 0) {
-		LOG_ERR("Bus not ready for '%s'", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return ret;
 	}
 
@@ -466,10 +466,9 @@ BUILD_ASSERT(CONFIG_BMI08X_GYRO_TRIGGER_NONE,
 #define BMI08X_CREATE_INST(inst)                                                                   \
                                                                                                    \
 	IF_ENABLED(CONFIG_BMI08X_GYRO_STREAM,							   \
-		   (BUILD_ASSERT(DT_INST_PROP_OR(inst, fifo_watermark, 0) > 0 &&		   \
-				 DT_INST_PROP_OR(inst, fifo_watermark, 0) < 100,		   \
-				 "FIFO Watermark must be defined for streaming mode, and be "	   \
-				 "within 1 and 99. Please define fifo-watermark accordingly or "   \
+		   (BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, fifo_watermark),			   \
+				 "FIFO Watermark must be defined for streaming mode. "		   \
+				 "Please define fifo-watermark accordingly or "			   \
 				 "disable CONFIG_BMI08X_GYRO_STREAM")));			   \
 												   \
 	RTIO_DEFINE(bmi08x_gyro_rtio_ctx_##inst, 16, 16);                                          \

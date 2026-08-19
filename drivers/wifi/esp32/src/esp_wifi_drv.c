@@ -21,29 +21,44 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #endif
 #include <zephyr/device.h>
 #include <soc.h>
-#include "esp_private/wifi.h"
-#include "esp_event.h"
-#include "esp_rom_sys.h"
-#include "esp_timer.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_wpa.h"
+#include <esp_private/wifi.h>
+#include <esp_event.h>
+#include <esp_rom_sys.h>
+#include <esp_timer.h>
+#include <esp_system.h>
+#include <esp_wifi.h>
+#include <esp_wpa.h>
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+#include <esp_eap_client.h>
+#endif
 #include <esp_mac.h>
-#include "wifi/wifi_event.h"
+#include <wifi/wifi_event.h>
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+#include "esp_wifi_mesh_priv.h"
+#endif
 
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
 #include <esp_private/adc_share_hw_ctrl.h>
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
-#define DHCPV4_MASK (NET_EVENT_IPV4_DHCP_BOUND | NET_EVENT_IPV4_DHCP_STOP)
-
 /* use global iface pointer to support any ethernet driver */
 /* necessary for wifi callback functions */
-static struct net_if *esp32_wifi_iface;
+NET_IF_DT_INST_DECLARE(0, 0);
+#define esp32_wifi_iface NET_IF_DT_INST_GET(0, 0)
 static struct esp32_wifi_runtime esp32_data;
 
+/*
+ * Signalled by the WIFI_EVENT_STA_START handler. Station events run on the
+ * event task, so a caller that starts the station and needs it running (the
+ * connect path) waits on this instead of reading the state right after the
+ * start call returns.
+ */
+static K_SEM_DEFINE(esp32_sta_started_sem, 0, 1);
+
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-static struct net_if *esp32_wifi_iface_ap;
+NET_IF_DT_INST_DECLARE(0, 1);
+#define esp32_wifi_iface_ap NET_IF_DT_INST_GET(0, 1)
 static struct esp32_wifi_runtime esp32_ap_sta_data;
 #endif
 
@@ -77,41 +92,168 @@ struct esp32_wifi_runtime {
 	scan_result_cb_t scan_cb;
 	uint8_t state;
 	uint8_t ap_connection_cnt;
+	struct k_mutex send_lock;
+	struct k_sem tx_done_sem;
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+	struct wifi_enterprise_creds_params enterprise_creds;
+#endif
 };
 
-static struct net_mgmt_event_callback esp32_dhcp_cb;
+/*
+ * Sized for every event the driver and the mesh stack handle, with a little
+ * headroom: the largest of those payloads is 48 bytes (station connected). The
+ * buffer is copied into every queue entry, so the cost is this size plus the
+ * entry header times ESP32_WIFI_EVENT_QUEUE_SIZE; the BUILD_ASSERT below keeps
+ * it honest if a handled event ever grows.
+ *
+ * Some library events carry far more than this (WPS enrollee credentials are
+ * 289 bytes, a DPP configuration object runs to a few kilobytes), but none of
+ * them are handled here and they are too large to copy inline into every queue
+ * entry. Such an event is rejected by esp_event_post() rather than delivered
+ * without its payload.
+ */
+#define ESP32_WIFI_EVENT_DATA_MAX 64
 
-static void wifi_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-			       struct net_if *iface)
+BUILD_ASSERT(sizeof(wifi_event_sta_connected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
+		     sizeof(wifi_event_sta_disconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
+		     sizeof(wifi_event_ap_staconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
+		     sizeof(wifi_event_ap_stadisconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX,
+	     "ESP32_WIFI_EVENT_DATA_MAX is too small for a handled Wi-Fi event payload");
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+BUILD_ASSERT(sizeof(mesh_event_disconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
+		     sizeof(mesh_event_toDS_state_t) <= ESP32_WIFI_EVENT_DATA_MAX,
+	     "ESP32_WIFI_EVENT_DATA_MAX is too small for a handled mesh event payload");
+#endif
+
+struct esp32_wifi_event {
+	esp_event_base_t base;
+	int32_t id;
+	size_t data_size;
+	uint8_t data[ESP32_WIFI_EVENT_DATA_MAX];
+};
+
+K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
+	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
+
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				size_t info_length __unused, void *user_data __unused)
 {
+	if (iface != esp32_wifi_iface) {
+		return;
+	}
+
 	switch (mgmt_event) {
 	case NET_EVENT_IPV4_DHCP_BOUND:
-		wifi_mgmt_raise_connect_result_event(iface, 0);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
 	default:
 		break;
 	}
 }
 
-static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
-{
-	struct esp32_wifi_runtime *data = dev->data;
-	const int pkt_len = net_pkt_get_len(pkt);
-	esp_interface_t ifx = data->state == ESP32_AP_CONNECTED ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, NET_EVENT_IPV4_DHCP_BOUND, wifi_event_handler,
+				NULL);
+#endif /* CONFIG_WIFI_STA_AUTO_DHCPV4 */
 
-	if (data->state != ESP32_STA_CONNECTED && data->state != ESP32_AP_CONNECTED) {
+static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
+			       bool status __unused)
+{
+	struct esp32_wifi_runtime *runtime_data = &esp32_data;
+
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (ifidx == ESP_IF_WIFI_AP) {
+		runtime_data = &esp32_ap_sta_data;
+	}
+#else
+	ARG_UNUSED(ifidx);
+#endif
+
+	k_sem_give(&runtime_data->tx_done_sem);
+}
+
+static int esp32_wifi_start(void)
+{
+	int ret;
+
+	ret = esp_wifi_start();
+	if (ret) {
+		return ret;
+	}
+
+	return esp_wifi_set_tx_done_cb(esp32_wifi_tx_done);
+}
+
+static inline struct esp32_wifi_runtime *esp32_wifi_data_get(struct net_if *iface __maybe_unused)
+{
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (iface == esp32_wifi_iface_ap) {
+		return &esp32_ap_sta_data;
+	}
+#endif
+	__ASSERT(iface == esp32_wifi_iface, "Invalid interface");
+	return &esp32_data;
+}
+
+static int esp32_wifi_send(const struct device *dev __unused, struct net_pkt *pkt)
+{
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(net_pkt_iface(pkt));
+	const size_t pkt_len = net_pkt_get_len(pkt);
+	bool ap_running = (data->state == ESP32_AP_STARTED || data->state == ESP32_AP_CONNECTED ||
+			   data->state == ESP32_AP_DISCONNECTED);
+	bool sta_connected = (data->state == ESP32_STA_CONNECTED);
+	esp_interface_t ifx = ap_running ? ESP_IF_WIFI_AP : ESP_IF_WIFI_STA;
+	k_timepoint_t end;
+	int ret;
+	int err;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/*
+	 * With mesh active this shared interface is the root uplink to the
+	 * router. Mesh traffic goes through the mesh transport, so send frames
+	 * from here out the station regardless of the softAP state. The mesh
+	 * stack owns the link state, so the driver's own station/softAP
+	 * bookkeeping is not updated and must not gate the transmit.
+	 */
+	if (esp_wifi_mesh_is_active()) {
+		ifx = ESP_IF_WIFI_STA;
+		sta_connected = true;
+	}
+#endif
+
+	if (!sta_connected && !ap_running) {
 		return -EIO;
 	}
 
-	/* Read the packet payload */
-	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
+	if (pkt_len > sizeof(data->frame_buf)) {
+		LOG_ERR("Packet too large to send: %zu > %zu", pkt_len, sizeof(data->frame_buf));
+		ret = -EMSGSIZE;
 		goto out;
 	}
 
-	/* Enqueue packet for transmission */
-	if (esp_wifi_internal_tx(ifx, (void *)data->frame_buf, pkt_len) != ESP_OK) {
-		goto out;
+	k_mutex_lock(&data->send_lock, K_FOREVER);
+
+	/* Read the packet payload */
+	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
+		ret = -EIO;
+		goto unlock;
 	}
+
+	k_sem_reset(&data->tx_done_sem);
+	end = sys_timepoint_calc(K_MSEC(CONFIG_ESP32_WIFI_TX_RETRY_TIMEOUT_MS));
+
+	do {
+		err = esp_wifi_internal_tx(ifx, (void *)data->frame_buf, pkt_len);
+	} while (err == ESP_ERR_NO_MEM &&
+		 k_sem_take(&data->tx_done_sem, sys_timepoint_timeout(end)) == 0);
+
+	if (err != ESP_OK) {
+		ret = (err == ESP_ERR_NO_MEM) ? -ENOBUFS : -EIO;
+		goto unlock;
+	}
+
+	k_mutex_unlock(&data->send_lock);
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	data->stats.bytes.sent += pkt_len;
@@ -121,27 +263,23 @@ static int esp32_wifi_send(const struct device *dev, struct net_pkt *pkt)
 	LOG_DBG("pkt sent %p len %d", pkt, pkt_len);
 	return 0;
 
+unlock:
+	k_mutex_unlock(&data->send_lock);
 out:
 
-	LOG_ERR("Failed to send packet");
+	LOG_ERR("Failed to send packet: %d", ret);
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	data->stats.errors.tx++;
 #endif
-	return -EIO;
+	return ret;
 }
 
 static esp_err_t eth_esp32_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	if (esp32_wifi_iface == NULL) {
-		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("network interface unavailable");
-		return -EIO;
-	}
-
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface, len, NET_AF_UNSPEC, 0, K_MSEC(100));
-	if (!pkt) {
+	if (pkt == NULL) {
 		LOG_ERR("Failed to allocate net buffer");
 		esp_wifi_internal_free_rx_buffer(eb);
 		return -EIO;
@@ -176,20 +314,27 @@ pkt_unref:
 	return -EIO;
 }
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+void esp_wifi_mesh_bind_sta_rx(void)
+{
+	/*
+	 * The mesh stack installs its own station receive callback for mesh
+	 * frames. On the root, the station also carries the uplink to the
+	 * router, so restore the driver callback to deliver those frames to the
+	 * station network interface.
+	 */
+	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+}
+#endif
+
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 static esp_err_t wifi_esp32_ap_iface_rx(void *buffer, uint16_t len, void *eb)
 {
 	struct net_pkt *pkt;
 
-	if (esp32_wifi_iface_ap == NULL) {
-		esp_wifi_internal_free_rx_buffer(eb);
-		LOG_ERR("network interface unavailable");
-		return -EIO;
-	}
-
 	pkt = net_pkt_rx_alloc_with_buffer(esp32_wifi_iface_ap, len,
 					   NET_AF_UNSPEC, 0, K_MSEC(100));
-	if (!pkt) {
+	if (pkt == NULL) {
 		esp_wifi_internal_free_rx_buffer(eb);
 		LOG_ERR("Failed to get net buffer");
 		return -EIO;
@@ -230,6 +375,16 @@ static void scan_done_handler(void)
 	wifi_ap_record_t ap_record;
 	struct wifi_scan_result res = { 0 };
 
+	/*
+	 * A NULL scan callback means the scan was triggered internally (for
+	 * example by the mesh stack), not through a user scan request. In that
+	 * case the scan results belong to the internal consumer, so do not
+	 * drain or clear them here.
+	 */
+	if (esp32_data.scan_cb == NULL) {
+		return;
+	}
+
 	while ((ret = esp_wifi_scan_get_ap_record(&ap_record)) == ESP_OK) {
 		memset(&res, 0, sizeof(struct wifi_scan_result));
 
@@ -248,6 +403,9 @@ static void scan_done_handler(void)
 		case WIFI_AUTH_OPEN:
 			res.security = WIFI_SECURITY_TYPE_NONE;
 			break;
+		case WIFI_AUTH_OWE:
+			res.security = WIFI_SECURITY_TYPE_OWE;
+			break;
 		case WIFI_AUTH_WPA2_PSK:
 			res.security = WIFI_SECURITY_TYPE_PSK;
 			break;
@@ -257,8 +415,21 @@ static void scan_done_handler(void)
 		case WIFI_AUTH_WAPI_PSK:
 			res.security = WIFI_SECURITY_TYPE_WAPI;
 			break;
+		case WIFI_AUTH_WPA_ENTERPRISE:
 		case WIFI_AUTH_WPA2_ENTERPRISE:
 			res.security = WIFI_SECURITY_TYPE_EAP;
+			break;
+		case WIFI_AUTH_WPA3_ENTERPRISE:
+			res.security = WIFI_SECURITY_TYPE_EAP;
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
+			break;
+		case WIFI_AUTH_WPA2_WPA3_ENTERPRISE:
+			res.security = WIFI_SECURITY_TYPE_EAP;
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
+			break;
+		case WIFI_AUTH_WPA3_ENT_192:
+			res.security = WIFI_SECURITY_TYPE_EAP;
+			res.wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
 			break;
 		case WIFI_AUTH_WEP:
 			res.security = WIFI_SECURITY_TYPE_WEP;
@@ -271,12 +442,10 @@ static void scan_done_handler(void)
 			break;
 		}
 
-		if (esp32_data.scan_cb) {
-			esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
+		esp32_data.scan_cb(esp32_wifi_iface, 0, &res);
 
-			/* ensure notifications get delivered */
-			k_yield();
-		}
+		/* ensure notifications get delivered */
+		k_yield();
 	}
 
 	if (ret != ESP_FAIL) {
@@ -286,7 +455,7 @@ static void scan_done_handler(void)
 	/* Ensure the hardware releases any records we didn't fetch */
 	esp_wifi_clear_ap_list();
 
-	/* report end of scan event */
+	/* Report end of scan; the internal-scan case already returned above. */
 	esp32_data.scan_cb(esp32_wifi_iface, 0, NULL);
 	esp32_data.scan_cb = NULL;
 }
@@ -295,41 +464,70 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
-#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+	net_if_dormant_off(esp32_wifi_iface);
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
-	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, 0);
+	wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, WIFI_STATUS_CONN_SUCCESS);
 #endif
 }
 
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
+	struct wifi_status result;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link and reconnects on its own. */
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
 
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
-#if defined(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)
+		net_if_dormant_on(esp32_wifi_iface);
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 		net_dhcpv4_stop(esp32_wifi_iface);
 #endif
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, 0);
+		switch (event->reason) {
+		case WIFI_REASON_ASSOC_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_USER_REQUEST;
+			break;
+		case WIFI_REASON_AUTH_LEAVE:
+			result.disconn_reason = WIFI_REASON_DISCONN_AP_LEAVING;
+			break;
+		case WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY:
+			result.disconn_reason = WIFI_REASON_DISCONN_INACTIVITY;
+			break;
+		default:
+			result.disconn_reason = WIFI_REASON_DISCONN_UNSPECIFIED;
+			break;
+		}
+		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, result.status);
 	} else {
-		wifi_mgmt_raise_disconnect_result_event(esp32_wifi_iface, -1);
+		switch (event->reason) {
+		case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+			result.conn_status = WIFI_STATUS_CONN_WRONG_PASSWORD;
+			break;
+		case WIFI_REASON_HANDSHAKE_TIMEOUT:
+		case WIFI_REASON_AUTH_EXPIRE:
+			result.conn_status = WIFI_STATUS_CONN_TIMEOUT;
+			break;
+		case WIFI_REASON_NO_AP_FOUND:
+		case WIFI_REASON_NO_AP_FOUND_W_COMPATIBLE_SECURITY:
+		case WIFI_REASON_NO_AP_FOUND_IN_AUTHMODE_THRESHOLD:
+		case WIFI_REASON_NO_AP_FOUND_IN_RSSI_THRESHOLD:
+			result.conn_status = WIFI_STATUS_CONN_AP_NOT_FOUND;
+			break;
+		case WIFI_REASON_AUTH_FAIL:
+		case WIFI_REASON_MIC_FAILURE:
+		default:
+			result.conn_status = WIFI_STATUS_CONN_FAIL;
+			break;
+		}
+		wifi_mgmt_raise_connect_result_event(esp32_wifi_iface, result.status);
 	}
-
 	LOG_DBG("Disconnect reason: %d", event->reason);
-	switch (event->reason) {
-	case WIFI_REASON_AUTH_EXPIRE:
-	case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_AUTH_FAIL:
-	case WIFI_REASON_HANDSHAKE_TIMEOUT:
-	case WIFI_REASON_MIC_FAILURE:
-		LOG_DBG("STA Auth Error");
-		break;
-	case WIFI_REASON_NO_AP_FOUND:
-		LOG_DBG("AP Not found");
-		break;
-	default:
-		break;
-	}
 
 	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
 	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
@@ -384,7 +582,12 @@ static void esp_wifi_handle_ap_connect_event(void *event_data)
 
 	wifi_mgmt_raise_ap_sta_connected_event(iface, &sta_info);
 
-	if (!(esp32_data.ap_connection_cnt++)) {
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
+	if (esp32_data.ap_connection_cnt++ == 0) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, esp32_rx);
 	}
 }
@@ -407,10 +610,322 @@ static void esp_wifi_handle_ap_disconnect_event(void *event_data)
 	memcpy(sta_info.mac, event->mac, WIFI_MAC_ADDR_LEN);
 	wifi_mgmt_raise_ap_sta_disconnected_event(iface, &sta_info);
 
-	if (!(--esp32_data.ap_connection_cnt)) {
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	if (esp_wifi_mesh_is_active()) {
+		return;
+	}
+#endif
+	if (--esp32_data.ap_connection_cnt == 0) {
 		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
 	}
 }
+
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+static bool esp32_wifi_is_enterprise_security(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_EAP_TLS:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static esp_eap_method_t esp32_wifi_enterprise_method(enum wifi_security_type security)
+{
+	switch (security) {
+	case WIFI_SECURITY_TYPE_EAP_TLS:
+		return ESP_EAP_TYPE_TLS;
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+		return ESP_EAP_TYPE_PEAP;
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+		return ESP_EAP_TYPE_TTLS;
+	default:
+		return ESP_EAP_TYPE_NONE;
+	}
+}
+
+static int esp32_wifi_enterprise_err(const char *what, esp_err_t err)
+{
+	LOG_ERR("%s failed (%d)", what, err);
+	return -EIO;
+}
+
+static void esp32_wifi_clear_enterprise_creds(struct esp32_wifi_runtime *data)
+{
+	uint8_t *certs[] = {
+		data->enterprise_creds.ca_cert,
+		data->enterprise_creds.client_cert,
+		data->enterprise_creds.client_key,
+	};
+
+	for (size_t i = 0; i < ARRAY_SIZE(certs); i++) {
+		k_free(certs[i]);
+	}
+
+	memset(&data->enterprise_creds, 0, sizeof(data->enterprise_creds));
+}
+
+static int esp32_wifi_copy_enterprise_cred(uint8_t **dst, uint32_t *dst_len,
+					   const uint8_t *src, uint32_t src_len)
+{
+	uint8_t *copy;
+
+	*dst = NULL;
+	*dst_len = 0;
+
+	if (src == NULL || src_len == 0) {
+		return 0;
+	}
+
+	copy = k_malloc(src_len);
+	if (copy == NULL) {
+		return -ENOMEM;
+	}
+
+	memcpy(copy, src, src_len);
+	*dst = copy;
+	*dst_len = src_len;
+
+	return 0;
+}
+
+static int esp32_wifi_configure_enterprise_certs(struct esp32_wifi_runtime *data,
+						 struct wifi_connect_req_params *params,
+						 esp_eap_method_t method)
+{
+	esp_err_t err;
+
+	if (params->verify_peer_cert &&
+	    data->enterprise_creds.ca_cert && data->enterprise_creds.ca_cert_len > 0) {
+		err = esp_eap_client_set_ca_cert(data->enterprise_creds.ca_cert,
+						 data->enterprise_creds.ca_cert_len);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise CA certificate", err);
+		}
+	} else {
+		esp_eap_client_clear_ca_cert();
+	}
+
+	if ((method == ESP_EAP_TYPE_TLS ||
+	     params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) &&
+	    data->enterprise_creds.client_cert && data->enterprise_creds.client_key) {
+		err = esp_eap_client_set_certificate_and_key(data->enterprise_creds.client_cert,
+					data->enterprise_creds.client_cert_len,
+					data->enterprise_creds.client_key,
+					data->enterprise_creds.client_key_len,
+					params->key_passwd,
+					params->key_passwd_length);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise client certificate", err);
+		}
+	} else {
+		esp_eap_client_clear_certificate_and_key();
+	}
+
+	return 0;
+}
+
+static int esp32_wifi_configure_enterprise_identity(struct wifi_connect_req_params *params)
+{
+	esp_err_t err;
+
+	if (params->anon_id && params->aid_length > 0) {
+		err = esp_eap_client_set_identity(params->anon_id, params->aid_length);
+	} else if (params->eap_identity && params->eap_id_length > 0) {
+		err = esp_eap_client_set_identity(params->eap_identity, params->eap_id_length);
+	} else {
+		err = ESP_OK;
+	}
+
+	if (err != ESP_OK) {
+		return esp32_wifi_enterprise_err("Set Enterprise identity", err);
+	}
+
+	if (params->eap_identity && params->eap_id_length > 0) {
+		err = esp_eap_client_set_username(params->eap_identity, params->eap_id_length);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise username", err);
+		}
+	}
+
+	if (params->eap_password && params->eap_passwd_length > 0) {
+		err = esp_eap_client_set_password(params->eap_password, params->eap_passwd_length);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise password", err);
+		}
+	}
+
+	return 0;
+}
+
+static int esp32_wifi_configure_enterprise_authmode(struct esp32_wifi_runtime *data,
+						    struct wifi_connect_req_params *params,
+						    wifi_config_t *wifi_config)
+{
+	esp_err_t err;
+
+	switch (params->wpa3_ent_mode) {
+	case WIFI_WPA3_ENTERPRISE_NA:
+		wifi_config->sta.threshold.authmode = WIFI_AUTH_WPA2_ENTERPRISE;
+		wifi_config->sta.pmf_cfg.required = params->mfp == WIFI_MFP_REQUIRED;
+		data->status.security = WIFI_AUTH_WPA2_ENTERPRISE;
+		break;
+	case WIFI_WPA3_ENTERPRISE_SUITEB:
+		LOG_ERR("WPA3 Enterprise Suite-B mode is not supported by "
+			"the ESP32 Wi-Fi driver");
+		return -ENOTSUP;
+	case WIFI_WPA3_ENTERPRISE_ONLY:
+		wifi_config->sta.threshold.authmode = WIFI_AUTH_WPA3_ENTERPRISE;
+		wifi_config->sta.pmf_cfg.capable = true;
+		wifi_config->sta.pmf_cfg.required = true;
+		data->status.security = WIFI_AUTH_WPA3_ENTERPRISE;
+		break;
+	case WIFI_WPA3_ENTERPRISE_SUITEB_192:
+		if (!IS_ENABLED(CONFIG_ESP32_WIFI_SUITE_B_192)) {
+			LOG_ERR("WPA3 Enterprise 192-bit mode requires "
+				"CONFIG_ESP32_WIFI_SUITE_B_192");
+			return -EINVAL;
+		}
+		err = esp_eap_client_set_suiteb_192bit_certification(true);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise "
+				"Suite-B 192-bit mode", err);
+		}
+		wifi_config->sta.threshold.authmode = WIFI_AUTH_WPA3_ENT_192;
+		wifi_config->sta.pmf_cfg.capable = true;
+		wifi_config->sta.pmf_cfg.required = true;
+		data->status.security = WIFI_AUTH_WPA3_ENT_192;
+		break;
+	default:
+		LOG_ERR("WPA3 Enterprise mode not supported");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int esp32_wifi_configure_enterprise(struct esp32_wifi_runtime *data,
+					   struct wifi_connect_req_params *params,
+					   wifi_config_t *wifi_config)
+{
+	esp_eap_method_t method = esp32_wifi_enterprise_method(params->security);
+	esp_err_t err;
+
+	if (method == ESP_EAP_TYPE_NONE) {
+		LOG_ERR("Enterprise authentication method not supported");
+		return -EINVAL;
+	}
+
+	if ((method == ESP_EAP_TYPE_PEAP || method == ESP_EAP_TYPE_TTLS) &&
+	    (!params->eap_identity || params->eap_id_length == 0 ||
+	     !params->eap_password || params->eap_passwd_length == 0)) {
+		LOG_ERR("Enterprise username and password are required");
+		return -EINVAL;
+	}
+
+	if (method == ESP_EAP_TYPE_TLS &&
+	    (!data->enterprise_creds.client_cert || !data->enterprise_creds.client_key)) {
+		LOG_ERR("EAP-TLS requires client certificate and private key");
+		return -EINVAL;
+	}
+
+	if (params->verify_peer_cert && !data->enterprise_creds.ca_cert) {
+		LOG_ERR("Enterprise peer certificate verification requires a CA certificate");
+		return -EINVAL;
+	}
+
+	err = esp_wifi_sta_enterprise_disable();
+	if (err != ESP_OK) {
+		return esp32_wifi_enterprise_err("Disable Enterprise authentication", err);
+	}
+
+	err = esp32_wifi_configure_enterprise_certs(data, params, method);
+	if (err) {
+		return err;
+	}
+
+	err = esp32_wifi_configure_enterprise_identity(params);
+	if (err) {
+		return err;
+	}
+
+	if (method == ESP_EAP_TYPE_TTLS) {
+		err = esp_eap_client_set_ttls_phase2_method(ESP_EAP_TTLS_PHASE2_MSCHAPV2);
+		if (err != ESP_OK) {
+			return esp32_wifi_enterprise_err("Set Enterprise TTLS phase 2 method", err);
+		}
+	}
+
+	err = esp_eap_client_set_eap_methods(method);
+	if (err != ESP_OK) {
+		return esp32_wifi_enterprise_err("Set Enterprise EAP method", err);
+	}
+
+	err = esp32_wifi_configure_enterprise_authmode(data, params, wifi_config);
+	if (err) {
+		return err;
+	}
+
+	wifi_config->sta.ft_enabled = params->ft_used;
+
+	err = esp_wifi_sta_enterprise_enable();
+	if (err != ESP_OK) {
+		return esp32_wifi_enterprise_err("Enable Enterprise authentication", err);
+	}
+
+	return 0;
+}
+
+static int esp32_wifi_enterprise_creds(const struct device *dev,
+						struct net_if *iface,
+						struct wifi_enterprise_creds_params *creds)
+{
+	ARG_UNUSED(iface);
+
+	struct esp32_wifi_runtime *data = dev->data;
+	int ret;
+
+	if (creds == NULL) {
+		return -EINVAL;
+	}
+
+	esp32_wifi_clear_enterprise_creds(data);
+
+	ret = esp32_wifi_copy_enterprise_cred(&data->enterprise_creds.ca_cert,
+					      &data->enterprise_creds.ca_cert_len,
+					      creds->ca_cert, creds->ca_cert_len);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = esp32_wifi_copy_enterprise_cred(&data->enterprise_creds.client_cert,
+					      &data->enterprise_creds.client_cert_len,
+					      creds->client_cert, creds->client_cert_len);
+	if (ret) {
+		goto cleanup;
+	}
+
+	ret = esp32_wifi_copy_enterprise_cred(&data->enterprise_creds.client_key,
+					      &data->enterprise_creds.client_key_len,
+					      creds->client_key, creds->client_key_len);
+	if (ret) {
+		goto cleanup;
+	}
+
+	return 0;
+
+cleanup:
+	esp32_wifi_clear_enterprise_creds(data);
+	return ret;
+}
+#endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
 
 void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *event_data,
 			    size_t event_data_size, uint32_t ticks_to_wait)
@@ -427,11 +942,16 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	switch (event_id) {
 	case WIFI_EVENT_STA_START:
 		esp32_data.state = ESP32_STA_STARTED;
-		net_eth_carrier_on(esp32_wifi_iface);
+		k_sem_give(&esp32_sta_started_sem);
 		break;
 	case WIFI_EVENT_STA_STOP:
 		esp32_data.state = ESP32_STA_STOPPED;
-		net_eth_carrier_off(esp32_wifi_iface);
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
+		net_if_dormant_on(esp32_wifi_iface);
 		break;
 	case WIFI_EVENT_STA_CONNECTED:
 		esp_wifi_handle_sta_connect_event(event_data);
@@ -444,20 +964,40 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 		break;
 	case WIFI_EVENT_AP_START:
 		ap_data->state = ESP32_AP_STARTED;
-		net_eth_carrier_on(iface_ap);
-		wifi_mgmt_raise_ap_enable_result_event(iface_ap, 0);
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
+		net_if_dormant_off(iface_ap);
+		wifi_mgmt_raise_ap_enable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STOP:
 		ap_data->state = ESP32_AP_STOPPED;
-		net_eth_carrier_off(iface_ap);
-		wifi_mgmt_raise_ap_disable_result_event(iface_ap, 0);
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
+		net_if_dormant_on(iface_ap);
+		wifi_mgmt_raise_ap_disable_result_event(iface_ap, WIFI_STATUS_AP_SUCCESS);
 		break;
 	case WIFI_EVENT_AP_STACONNECTED:
 		ap_data->state = ESP32_AP_CONNECTED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		esp_wifi_handle_ap_connect_event(event_data);
 		break;
 	case WIFI_EVENT_AP_STADISCONNECTED:
 		ap_data->state = ESP32_AP_DISCONNECTED;
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		if (esp_wifi_mesh_is_active()) {
+			break;
+		}
+#endif
 		esp_wifi_handle_ap_disconnect_event(event_data);
 		break;
 	default:
@@ -465,8 +1005,110 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	}
 }
 
-static int esp32_wifi_disconnect(const struct device *dev)
+/*
+ * Dispatch library-posted events on this dedicated task so a handler runs on
+ * its own stack and cannot stall or overrun the Wi-Fi library task. A single
+ * queue drained by one task preserves event order.
+ */
+static void esp32_wifi_event_task(void *p1, void *p2, void *p3)
 {
+	struct esp32_wifi_event evt;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	while (true) {
+		k_msgq_get(&esp32_wifi_event_msgq, &evt, K_FOREVER);
+
+		esp_wifi_event_handler(evt.base, evt.id, evt.data_size ? evt.data : NULL,
+				       evt.data_size, 0);
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+		esp_wifi_mesh_dispatch_event(evt.base, evt.id, evt.data_size ? evt.data : NULL);
+#endif
+	}
+}
+
+K_THREAD_DEFINE(esp32_wifi_event_tid, CONFIG_ESP32_WIFI_EVENT_TASK_STACK_SIZE,
+		esp32_wifi_event_task, NULL, NULL, NULL, CONFIG_ESP32_WIFI_EVENT_TASK_PRIORITY, 0,
+		0);
+
+/*
+ * Entry point the Wi-Fi and mesh libraries post events through, and the only
+ * esp_event_post() in a Zephyr build since components/esp_event is not compiled
+ * here. Pulling in a subsystem that expects the real event loop (esp_netif,
+ * coex) would collide with this and need the upstream loop instead.
+ *
+ * Copy the payload, which is only valid for this call, and queue it for the
+ * event task.
+ */
+esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id, const void *event_data,
+			 size_t event_data_size, uint32_t ticks_to_wait)
+{
+	struct esp32_wifi_event evt = {
+		.base = event_base,
+		.id = event_id,
+		.data_size = 0,
+	};
+	k_timeout_t timeout = K_NO_WAIT;
+
+	/*
+	 * Honor the timeout the caller asked for: the libraries post either
+	 * without waiting or, for the few events they must not lose, waiting
+	 * indefinitely. The event task drains this queue, so a post from that
+	 * task never waits, otherwise it would block on itself.
+	 */
+	if (ticks_to_wait != 0 && k_current_get() != esp32_wifi_event_tid) {
+		timeout = (ticks_to_wait == UINT32_MAX) ? K_FOREVER : K_TICKS(ticks_to_wait);
+	}
+
+	if (event_data != NULL && event_data_size > 0) {
+		/*
+		 * Reject rather than deliver a payload-less copy: a handler
+		 * registered for an event that always carries data would
+		 * otherwise be invoked with event_data == NULL. Every event the
+		 * driver and the mesh stack consume fits well inside the buffer
+		 * (the largest is 48 bytes), so this only rejects events nothing
+		 * here handles, such as the WPS enrollee credentials or a DPP
+		 * configuration object, which are far too large to copy inline.
+		 */
+		if (event_data_size > sizeof(evt.data)) {
+			LOG_ERR("event %d payload %zu exceeds %zu, event dropped", event_id,
+				event_data_size, sizeof(evt.data));
+			return ESP_FAIL;
+		}
+
+		memcpy(evt.data, event_data, event_data_size);
+		evt.data_size = event_data_size;
+	}
+
+	/*
+	 * A caller that did not ask to wait has its event dropped when the queue
+	 * is full, which is what the events able to fill it suit: softAP client
+	 * churn and mesh routing updates, superseded by the next event or a
+	 * re-parent. Losing a station or softAP transition leaves the driver
+	 * state stale until the next one, so the depth is sized well above such
+	 * a burst; see CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE.
+	 */
+	if (k_msgq_put(&esp32_wifi_event_msgq, &evt, timeout) != 0) {
+		LOG_ERR("event queue full, event %d dropped (state may desync)", event_id);
+		return ESP_FAIL;
+	}
+
+	return ESP_OK;
+}
+
+static int esp32_wifi_disconnect(const struct device *dev __unused, struct net_if *iface __unused)
+{
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("disconnect rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
+
 	int ret = esp_wifi_disconnect();
 
 	if (ret != ESP_OK) {
@@ -477,16 +1119,48 @@ static int esp32_wifi_disconnect(const struct device *dev)
 	return 0;
 }
 
-static int esp32_wifi_connect(const struct device *dev,
-			    struct wifi_connect_req_params *params)
+static void esp32_wifi_set_bssid(wifi_config_t *wifi_config,
+				 struct wifi_connect_req_params *params)
 {
-	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
+	if (params->bssid[0] != 0 || params->bssid[1] != 0 || params->bssid[2] != 0 ||
+	    params->bssid[3] != 0 || params->bssid[4] != 0 || params->bssid[5] != 0) {
+
+		memcpy(wifi_config->sta.bssid, params->bssid, sizeof(params->bssid));
+		wifi_config->sta.bssid_set = true;
+	}
+}
+
+static void esp32_wifi_set_channel(struct esp32_wifi_runtime *data,
+				   wifi_config_t *wifi_config,
+				   struct wifi_connect_req_params *params)
+{
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		wifi_config->sta.channel = 0U;
+		data->status.channel = 0U;
+	} else {
+		wifi_config->sta.channel = params->channel;
+		data->status.channel = params->channel;
+	}
+}
+
+static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *iface,
+			      struct wifi_connect_req_params *params)
+{
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	wifi_mode_t mode;
 	int ret;
 
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the station link while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("connect rejected: mesh owns the Wi-Fi interface");
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
+		return -EBUSY;
+	}
+#endif
+
 	if (data->state == ESP32_STA_CONNECTING || data->state == ESP32_STA_CONNECTED) {
-		wifi_mgmt_raise_connect_result_event(iface, -1);
+		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
 		return -EALREADY;
 	}
 
@@ -507,16 +1181,24 @@ static int esp32_wifi_connect(const struct device *dev,
 		LOG_ERR("Failed to set Wi-Fi mode (%d)", ret);
 		return -EAGAIN;
 	}
-	ret = esp_wifi_start();
+
+	k_sem_reset(&esp32_sta_started_sem);
+
+	ret = esp32_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
 		return -EAGAIN;
 	}
 
 	if (data->state != ESP32_STA_STARTED) {
-		LOG_ERR("Wi-Fi not in station mode");
-		wifi_mgmt_raise_connect_result_event(iface, -1);
-		return -EIO;
+		(void)k_sem_take(&esp32_sta_started_sem,
+				 K_MSEC(CONFIG_ESP32_WIFI_STA_START_TIMEOUT));
+
+		if (data->state != ESP32_STA_STARTED) {
+			LOG_ERR("Wi-Fi not in station mode");
+			wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_FAIL);
+			return -EIO;
+		}
 	}
 
 	data->state = ESP32_STA_CONNECTING;
@@ -530,17 +1212,48 @@ static int esp32_wifi_connect(const struct device *dev,
 
 	memcpy(wifi_config.sta.ssid, params->ssid, params->ssid_length);
 	wifi_config.sta.ssid[params->ssid_length] = '\0';
+
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+	if (!esp32_wifi_is_enterprise_security(params->security)) {
+		ret = esp_wifi_sta_enterprise_disable();
+		if (ret != ESP_OK) {
+			LOG_ERR("Failed to disable Enterprise authentication (%d)", ret);
+			data->state = ESP32_STA_STARTED;
+			return -EIO;
+		}
+	}
+#endif
+
 	switch (params->security) {
 	case WIFI_SECURITY_TYPE_NONE:
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
 		data->status.security = WIFI_AUTH_OPEN;
 		wifi_config.sta.pmf_cfg.required = false;
 		break;
+#if defined(CONFIG_ESP32_WIFI_ENABLE_WPA3_OWE_STA)
+	case WIFI_SECURITY_TYPE_OWE:
+		memset(wifi_config.sta.password, 0, sizeof(wifi_config.sta.password));
+		wifi_config.sta.owe_enabled = 1;
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_OWE;
+		wifi_config.sta.pmf_cfg.capable = (params->mfp != WIFI_MFP_DISABLE);
+		wifi_config.sta.pmf_cfg.required = (params->mfp == WIFI_MFP_REQUIRED);
+		data->status.security = WIFI_AUTH_OWE;
+		break;
+#endif
 	case WIFI_SECURITY_TYPE_PSK:
 	case WIFI_SECURITY_TYPE_PSK_SHA256:
 		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
 		wifi_config.sta.password[params->psk_length] = '\0';
 		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		wifi_config.sta.pmf_cfg.capable = true;
+		wifi_config.sta.pmf_cfg.required = false;
+		data->status.security = WIFI_AUTH_WPA2_PSK;
+		break;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+		memcpy(wifi_config.sta.password, params->psk, params->psk_length);
+		wifi_config.sta.password[params->psk_length] = '\0';
+		wifi_config.sta.threshold.authmode = WIFI_AUTH_WPA2_PSK;
+		wifi_config.sta.pmf_cfg.capable = true;
 		wifi_config.sta.pmf_cfg.required = false;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
 		break;
@@ -571,10 +1284,30 @@ static int esp32_wifi_connect(const struct device *dev,
 #else
 		LOG_ERR("WPA3 not supported for STA mode. Enable "
 			"CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE");
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 #endif /* CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE */
+	case WIFI_SECURITY_TYPE_EAP_TLS:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_GTC:
+	case WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2:
+	case WIFI_SECURITY_TYPE_EAP_PEAP_TLS:
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+		ret = esp32_wifi_configure_enterprise(data, params, &wifi_config);
+		if (ret) {
+			data->state = ESP32_STA_STARTED;
+			return ret;
+		}
+		break;
+#else
+		LOG_ERR("WPA Enterprise not supported for STA mode. Enable "
+			"CONFIG_ESP32_WIFI_ENTERPRISE");
+		data->state = ESP32_STA_STARTED;
+		return -EINVAL;
+#endif /* CONFIG_ESP32_WIFI_ENTERPRISE */
 	default:
 		LOG_ERR("Authentication method not supported");
+		data->state = ESP32_STA_STARTED;
 		return -EIO;
 	}
 
@@ -583,41 +1316,41 @@ static int esp32_wifi_connect(const struct device *dev,
 	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 #endif
 
-	if (params->bssid[0] != 0 || params->bssid[1] != 0 || params->bssid[2] != 0 ||
-	    params->bssid[3] != 0 || params->bssid[4] != 0 || params->bssid[5] != 0) {
-
-		memcpy(wifi_config.sta.bssid, params->bssid, sizeof(params->bssid));
-		wifi_config.sta.bssid_set = true;
-	}
-
-	if (params->channel == WIFI_CHANNEL_ANY) {
-		wifi_config.sta.channel = 0U;
-		data->status.channel = 0U;
-	} else {
-		wifi_config.sta.channel = params->channel;
-		data->status.channel = params->channel;
-	}
+	esp32_wifi_set_bssid(&wifi_config, params);
+	esp32_wifi_set_channel(data, &wifi_config, params);
 
 	ret = esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config);
 	if (ret) {
 		LOG_ERR("Failed to set Wi-Fi configuration (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EINVAL;
 	}
 
 	ret = esp_wifi_connect();
 	if (ret) {
 		LOG_ERR("Failed to connect to Wi-Fi access point (%d)", ret);
+		data->state = ESP32_STA_STARTED;
 		return -EAGAIN;
 	}
 
 	return 0;
 }
 
-static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *params,
+static int esp32_wifi_scan(const struct device *dev __unused,
+			   struct net_if *iface,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
-	struct esp32_wifi_runtime *data = dev->data;
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	int ret = 0;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack scans on its own while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("scan rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
 
 	if (data->scan_cb != NULL) {
 		LOG_INF("Scan callback in progress");
@@ -652,7 +1385,7 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 		return -EINVAL;
 	}
 
-	ret = esp_wifi_start();
+	ret = esp32_wifi_start();
 	if (ret) {
 		LOG_ERR("Failed to start Wi-Fi driver (%d)", ret);
 		data->scan_cb = NULL;
@@ -669,12 +1402,19 @@ static int esp32_wifi_scan(const struct device *dev, struct wifi_scan_params *pa
 	return 0;
 };
 
-static int esp32_wifi_ap_enable(const struct device *dev,
-			 struct wifi_connect_req_params *params)
+static int esp32_wifi_ap_enable(const struct device *dev __unused, struct net_if *iface,
+				struct wifi_connect_req_params *params)
 {
-	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	esp_err_t err = 0;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the softAP interface while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("ap_enable rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
 
 	/* Build Wi-Fi configuration for AP mode */
 	wifi_config_t wifi_config = {
@@ -702,8 +1442,23 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
 		wifi_config.ap.authmode = WIFI_AUTH_WPA2_PSK;
 		data->status.security = WIFI_AUTH_WPA2_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
 		wifi_config.ap.pmf_cfg.required = false;
 		break;
+	case WIFI_SECURITY_TYPE_WPA_AUTO_PERSONAL:
+#if defined(CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT)
+		strncpy((char *) wifi_config.ap.password, params->psk, params->psk_length);
+		wifi_config.ap.authmode = WIFI_AUTH_WPA2_WPA3_PSK;
+		data->status.security = WIFI_AUTH_WPA2_WPA3_PSK;
+		wifi_config.ap.pmf_cfg.capable = true;
+		wifi_config.ap.pmf_cfg.required = false;
+		wifi_config.ap.sae_pwe_h2e = WPA3_SAE_PWE_BOTH;
+		break;
+#else
+		LOG_ERR("WPA2/WPA3 transition mode not supported for AP. Enable "
+			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
+		return -EINVAL;
+#endif /* CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT */
 	case WIFI_SECURITY_TYPE_SAE:
 	case WIFI_SECURITY_TYPE_SAE_H2E:
 	case WIFI_SECURITY_TYPE_SAE_AUTO:
@@ -731,6 +1486,9 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 			"CONFIG_ESP32_WIFI_SOFTAP_SAE_SUPPORT");
 		return -EINVAL;
 #endif
+	case WIFI_SECURITY_TYPE_OWE:
+		LOG_ERR("OWE is not supported in AP mode");
+		return -ENOTSUP;
 	default:
 		LOG_ERR("Authentication method not supported");
 		return -EINVAL;
@@ -757,7 +1515,7 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 		return -EINVAL;
 	}
 
-	err = esp_wifi_start();
+	err = esp32_wifi_start();
 	if (err) {
 		LOG_ERR("Failed to enable Wi-Fi AP mode");
 		return -EAGAIN;
@@ -771,31 +1529,33 @@ static int esp32_wifi_ap_enable(const struct device *dev,
 	 * this update. See: https://github.com/zephyrproject-rtos/zephyr/issues/101761
 	 */
 #if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_SOFTAP);
-	net_if_carrier_off(iface);
-	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+	esp_read_mac(esp32_data.mac_addr, ESP_MAC_WIFI_SOFTAP);
+	net_if_carrier_off(esp32_wifi_iface);
+	net_if_set_link_addr(esp32_wifi_iface, esp32_data.mac_addr, NET_ETH_ADDR_LEN,
 			     NET_LINK_ETHERNET);
-	net_if_carrier_on(iface);
-#else
-	ARG_UNUSED(iface);
+	net_if_carrier_on(esp32_wifi_iface);
 #endif
 
 	return 0;
 };
 
-static int esp32_wifi_ap_disable(const struct device *dev)
+static int esp32_wifi_ap_disable(const struct device *dev __unused, struct net_if *iface __unused)
 {
-#if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-	struct esp32_wifi_runtime *data = dev->data;
-	struct net_if *iface = net_if_lookup_by_dev(dev);
-#endif
 	int err = 0;
 	wifi_mode_t mode;
+
+#if defined(CONFIG_WIFI_ESP32_MESH)
+	/* The mesh stack owns the softAP interface while it runs. */
+	if (esp_wifi_mesh_is_active()) {
+		LOG_WRN("ap_disable rejected: mesh owns the Wi-Fi interface");
+		return -EBUSY;
+	}
+#endif
 
 	esp_wifi_get_mode(&mode);
 	if (mode == ESP32_WIFI_MODE_APSTA) {
 		err = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
-		err |= esp_wifi_start();
+		err |= esp32_wifi_start();
 	} else {
 		err = esp_wifi_stop();
 	}
@@ -806,19 +1566,21 @@ static int esp32_wifi_ap_disable(const struct device *dev)
 
 	/* Restore interface link address to STA MAC when AP mode is disabled */
 #if !defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-	esp_read_mac(data->mac_addr, ESP_MAC_WIFI_STA);
-	net_if_carrier_off(iface);
-	net_if_set_link_addr(iface, data->mac_addr, NET_ETH_ADDR_LEN,
+	esp_read_mac(esp32_data.mac_addr, ESP_MAC_WIFI_STA);
+	net_if_carrier_off(esp32_wifi_iface);
+	net_if_set_link_addr(esp32_wifi_iface, esp32_data.mac_addr, NET_ETH_ADDR_LEN,
 			     NET_LINK_ETHERNET);
-	net_if_carrier_on(iface);
+	net_if_carrier_on(esp32_wifi_iface);
 #endif
 
 	return 0;
 };
 
-static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status *status)
+static int esp32_wifi_status(const struct device *dev __unused,
+			     struct net_if *iface,
+			     struct wifi_iface_status *status)
 {
-	struct esp32_wifi_runtime *data = dev->data;
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 	wifi_mode_t mode;
 	wifi_config_t conf;
 	wifi_ap_record_t ap_info;
@@ -851,6 +1613,7 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->mfp = WIFI_MFP_DISABLE;
+	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
 	if (esp_wifi_get_mode(&mode) == ESP_OK) {
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
@@ -905,11 +1668,30 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	case WIFI_AUTH_OPEN:
 		status->security = WIFI_SECURITY_TYPE_NONE;
 		break;
+	case WIFI_AUTH_OWE:
+		status->security = WIFI_SECURITY_TYPE_OWE;
+		break;
 	case WIFI_AUTH_WPA2_PSK:
 		status->security = WIFI_SECURITY_TYPE_PSK;
 		break;
 	case WIFI_AUTH_WPA3_PSK:
 		status->security = WIFI_SECURITY_TYPE_SAE;
+		break;
+	case WIFI_AUTH_WPA_ENTERPRISE:
+	case WIFI_AUTH_WPA2_ENTERPRISE:
+		status->security = WIFI_SECURITY_TYPE_EAP;
+		break;
+	case WIFI_AUTH_WPA3_ENTERPRISE:
+		status->security = WIFI_SECURITY_TYPE_EAP;
+		status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_ONLY;
+		break;
+	case WIFI_AUTH_WPA2_WPA3_ENTERPRISE:
+		status->security = WIFI_SECURITY_TYPE_EAP;
+		status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
+		break;
+	case WIFI_AUTH_WPA3_ENT_192:
+		status->security = WIFI_SECURITY_TYPE_EAP;
+		status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_SUITEB_192;
 		break;
 	default:
 		status->security = WIFI_SECURITY_TYPE_UNKNOWN;
@@ -918,10 +1700,24 @@ static int esp32_wifi_status(const struct device *dev, struct wifi_iface_status 
 	return 0;
 }
 
-static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_params *params)
+static int esp32_wifi_set_power_save(const struct device *dev __unused,
+				     struct net_if *iface __unused,
+				     struct wifi_ps_params *params)
 {
 	wifi_config_t config;
+	wifi_mode_t mode;
 	esp_err_t rc;
+
+	rc = esp_wifi_get_mode(&mode);
+	if (rc != ESP_OK) {
+		LOG_ERR("Failed to get Wi-Fi mode, error: %d", rc);
+		return -EIO;
+	}
+
+	if (mode == ESP32_WIFI_MODE_AP || mode == ESP32_WIFI_MODE_NULL) {
+		LOG_ERR("Power save not supported in current Wi-Fi mode: %d", mode);
+		return -ENOTSUP;
+	}
 
 	if (params->enabled == WIFI_PS_DISABLED) {
 		rc = esp_wifi_set_ps(WIFI_PS_NONE);
@@ -959,70 +1755,46 @@ static int esp32_wifi_set_power_save(const struct device *dev, struct wifi_ps_pa
 
 static void esp32_wifi_init(struct net_if *iface)
 {
-	const struct device *dev = net_if_get_device(iface);
-	struct esp32_wifi_runtime *dev_data = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
-
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
-
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
+#endif
+	uint8_t *mac_addr;
 
-	esp32_wifi_iface = iface;
-	dev_data->state = ESP32_STA_STOPPED;
+	net_eth_set_if_type_wifi(iface);
 
-	/* Start interface when we are actually connected with Wi-Fi network */
-	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_STA);
-	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
-	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	if (iface == esp32_wifi_iface_ap) {
+		esp32_ap_sta_data.state = ESP32_AP_STOPPED;
+		mac_addr = esp32_ap_sta_data.mac_addr;
 
-#else
+		esp_read_mac(mac_addr, ESP_MAC_WIFI_SOFTAP);
+		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
 
-	esp32_wifi_iface = iface;
-	dev_data->state = ESP32_STA_STOPPED;
+	} else {
+#endif
+		esp32_data.state = ESP32_STA_STOPPED;
+		mac_addr = esp32_data.mac_addr;
 
-	/* Start interface when we are actually connected with Wi-Fi network */
-	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_STA);
-	esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
-
+		esp_read_mac(mac_addr, ESP_MAC_WIFI_STA);
+		esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_STA, eth_esp32_rx);
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+		wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_STA, esp32_wifi_iface);
+	}
 #endif
 
 	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
+	net_if_set_link_addr(iface, mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
 
 	ethernet_init(iface);
-	net_if_carrier_off(iface);
+	net_if_dormant_on(iface);
 }
-
-#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-static void esp32_wifi_init_ap(struct net_if *iface)
-{
-	const struct device *dev = net_if_get_device(iface);
-	struct esp32_wifi_runtime *dev_data = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
-
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
-
-	struct wifi_nm_instance *nm = wifi_nm_get_instance("esp32_wifi_nm");
-
-	esp32_wifi_iface_ap = iface;
-	dev_data->state = ESP32_AP_STOPPED;
-
-	esp_read_mac(dev_data->mac_addr, ESP_MAC_WIFI_SOFTAP);
-	wifi_nm_register_mgd_type_iface(nm, WIFI_TYPE_SAP, esp32_wifi_iface_ap);
-
-	/* Assign link local address. */
-	net_if_set_link_addr(iface, dev_data->mac_addr, WIFI_MAC_ADDR_LEN, NET_LINK_ETHERNET);
-
-	ethernet_init(iface);
-	net_if_carrier_off(iface);
-}
-#endif
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
-static int esp32_wifi_get_stats(const struct device *dev, struct net_stats_wifi *stats)
+static int esp32_wifi_get_stats(const struct device *dev __unused,
+				struct net_if *iface,
+				struct net_stats_wifi *stats)
 {
-	struct esp32_wifi_runtime *data = dev->data;
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 
 	stats->bytes.received = data->stats.bytes.received;
 	stats->bytes.sent = data->stats.bytes.sent;
@@ -1040,9 +1812,10 @@ static int esp32_wifi_get_stats(const struct device *dev, struct net_stats_wifi 
 	return 0;
 }
 
-static int esp32_wifi_reset_stats(const struct device *dev)
+static int esp32_wifi_reset_stats(const struct device *dev __unused,
+				  struct net_if *iface)
 {
-	struct esp32_wifi_runtime *data = dev->data;
+	struct esp32_wifi_runtime *data = esp32_wifi_data_get(iface);
 
 	memset(&data->stats, 0, sizeof(data->stats));
 
@@ -1057,8 +1830,16 @@ static int esp32_wifi_dev_init(const struct device *dev)
 #endif /* CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3 */
 
 	wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
-	esp_err_t ret = esp_wifi_init(&config);
-	esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
+	esp_err_t ret;
+
+	k_mutex_init(&esp32_data.send_lock);
+	k_sem_init(&esp32_data.tx_done_sem, 0, 1);
+#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+	k_mutex_init(&esp32_ap_sta_data.send_lock);
+	k_sem_init(&esp32_ap_sta_data.tx_done_sem, 0, 1);
+#endif
+
+	ret = esp_wifi_init(&config);
 
 	if (ret == ESP_ERR_NO_MEM) {
 		LOG_ERR("Not enough memory to initialize Wi-Fi.");
@@ -1068,28 +1849,46 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		LOG_ERR("Unable to initialize the Wi-Fi: %d", ret);
 		return -EIO;
 	}
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_AUTO_DHCPV4)) {
-		net_mgmt_init_event_callback(&esp32_dhcp_cb, wifi_event_handler, DHCPV4_MASK);
-		net_mgmt_add_event_callback(&esp32_dhcp_cb);
+
+	ret = esp_wifi_set_mode(ESP32_WIFI_MODE_NULL);
+	if (ret != ESP_OK) {
+		LOG_ERR("Fail to set Wi-Fi mode: %d", ret);
+		return -EIO;
+	}
+
+	/* Start Wi-Fi early to enable coexistence for WiFi/BT operation. */
+	ret = esp32_wifi_start();
+	if (ret != ESP_OK) {
+		LOG_ERR("Unable to start the Wi-Fi: %d", ret);
+		return -EIO;
 	}
 
 	return 0;
 }
 
-static int esp32_wifi_set_config(const struct device *dev, enum ethernet_config_type type,
+static int esp32_wifi_set_config(const struct device *dev __unused,
+				 struct net_if *iface,
+				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
-	struct esp32_wifi_runtime *dev_data = dev->data;
+	struct esp32_wifi_runtime *dev_data = esp32_wifi_data_get(iface);
 
 	if (type == ETHERNET_CONFIG_TYPE_MAC_ADDRESS) {
-		esp_err_t ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
+		wifi_interface_t ifx = ESP_IF_WIFI_STA;
+		esp_err_t ret;
+	#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
+		if (iface == esp32_wifi_iface_ap) {
+			ifx = ESP_IF_WIFI_AP;
+		}
+	#else
+		ret = esp_wifi_set_mode(ESP32_WIFI_MODE_STA);
 
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to set WiFi mode: %d", ret);
 			return -EIO;
 		}
-
-		ret = esp_wifi_set_mac(ESP_IF_WIFI_STA, config->mac_address.addr);
+	#endif
+		ret = esp_wifi_set_mac(ifx, config->mac_address.addr);
 		if (ret != ESP_OK) {
 			LOG_ERR("Failed to set MAC address: %d", ret);
 			return -EIO;
@@ -1111,6 +1910,9 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.ap_disable = esp32_wifi_ap_disable,
 	.iface_status = esp32_wifi_status,
 	.set_power_save = esp32_wifi_set_power_save,
+#if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
+	.enterprise_creds = esp32_wifi_enterprise_creds,
+#endif
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	.get_stats = esp32_wifi_get_stats,
 	.reset_stats = esp32_wifi_reset_stats,
@@ -1123,13 +1925,6 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_iface.send = esp32_wifi_send,
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
-#if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-static const struct net_wifi_mgmt_offload esp32_api_ap = {
-	.wifi_iface.iface_api.init = esp32_wifi_init_ap,
-	.wifi_iface.send = esp32_wifi_send,
-	.wifi_mgmt_api = &esp32_wifi_mgmt,
-};
-#endif
 
 NET_DEVICE_DT_INST_DEFINE(0,
 		esp32_wifi_dev_init, NULL,
@@ -1138,11 +1933,7 @@ NET_DEVICE_DT_INST_DEFINE(0,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
-NET_DEVICE_DT_INST_DEFINE(1,
-		NULL, NULL,
-		&esp32_ap_sta_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api_ap, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+NET_DEVICE_DT_INST_ADD_IFACE(0, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU, 1);
 
 DEFINE_WIFI_NM_INSTANCE(esp32_wifi_nm, &esp32_wifi_mgmt);
 #endif

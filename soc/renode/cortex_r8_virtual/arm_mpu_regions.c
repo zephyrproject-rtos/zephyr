@@ -25,7 +25,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	/* Basic SRAM mapping is all data, R/W + XN */
 	MPU_REGION_ENTRY(
 		"sram",
-		CONFIG_SRAM_BASE_ADDRESS,
+		DT_CHOSEN_SRAM_ADDR,
 		REGION_SRAM_SIZE,
 		{.rasr = P_RW_U_NA_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |

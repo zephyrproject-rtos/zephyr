@@ -53,7 +53,7 @@
 	((uint8_t[]){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, \
 		     0xFF, 0xFF, 0xFF})
 
-#define BAP_RETRY_WAIT K_MSEC(100)
+#define BAP_RETRY_WAIT K_MSEC(100U)
 
 struct unicast_stream {
 	struct audio_test_stream stream;
@@ -69,7 +69,6 @@ struct named_lc3_preset {
 extern struct bt_audio_codec_cfg vs_codec_cfg;
 extern struct bt_audio_codec_cap vs_codec_cap;
 
-void print_hex(const uint8_t *ptr, size_t len);
 void print_codec_cap(const struct bt_audio_codec_cap *codec_cap);
 void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg);
 void print_qos(const struct bt_bap_qos_cfg *qos);
@@ -121,4 +120,6 @@ static inline bool valid_metadata_type(uint8_t type, uint8_t len)
 bool bap_stream_is_streaming(const struct bt_bap_stream *bap_stream);
 bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream);
 bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream);
+void bap_unicast_stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason);
+void bap_common_stream_started_cb(struct bt_bap_stream *stream);
 #endif /* ZEPHYR_TEST_BSIM_BT_AUDIO_TEST_COMMON_ */

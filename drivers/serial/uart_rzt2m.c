@@ -5,8 +5,8 @@
  */
 
 #include "uart_rzt2m.h"
-#include "zephyr/spinlock.h"
-#include "zephyr/sys/printk.h"
+#include <zephyr/spinlock.h>
+#include <zephyr/sys/printk.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/sys/util.h>
@@ -206,13 +206,12 @@ static void uart_rzt2m_irq_callback_set(const struct device *dev, uart_irq_callb
 	data->callback_data = cb_data;
 }
 
-static int uart_rzt2m_irq_update(const struct device *dev)
+static void uart_rzt2m_irq_update(const struct device *dev)
 {
 	const struct rzt2m_device_config *config = dev->config;
 
 	*CFCLR(config->base) = CFCLR_MASK_RDRFC;
 	*FFCLR(config->base) = FFCLR_MASK_DRC;
-	return 1;
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
@@ -255,6 +254,8 @@ static int rzt2m_module_start(const struct device *dev)
 		dummy = *MSTPCRA;
 	} else {
 		LOG_ERR("SCI modules in the secure domain on RZT2M are not supported.");
+		k_spin_unlock(&data->lock, key);
+		irq_unlock(irqkey);
 		return -ENOTSUP;
 	}
 
@@ -336,7 +337,7 @@ static int rzt2m_uart_init(const struct device *dev)
 		return -ENOTSUP;
 	}
 
-	if (data->uart_cfg.baudrate > ARRAY_SIZE(baud_settings)) {
+	if (data->uart_cfg.baudrate >= ARRAY_SIZE(baud_settings)) {
 		LOG_ERR("Selected baudrate variant is not supported: %u.", data->uart_cfg.baudrate);
 		return -ENOTSUP;
 	}

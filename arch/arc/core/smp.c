@@ -12,12 +12,12 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/irq.h>
-#include <zephyr/kernel_structs.h>
 #include <ipi.h>
 #include <zephyr/init.h>
 #include <zephyr/platform/hooks.h>
 #include <arc_irq_offload.h>
 #include <kernel_arch_func.h>
+#include <zephyr/sys/barrier.h>
 
 volatile struct {
 	arch_cpustart_t fn;
@@ -54,12 +54,22 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 	 */
 	arc_cpu_sp = K_KERNEL_STACK_BUFFER(stack) + sz;
 
+	/* Publish _curr_cpu[], arc_cpu_init[] and arc_cpu_sp before the
+	 * secondary core can observe the wake flag.
+	 */
+	barrier_dmem_fence_full();
+
 	arc_cpu_wake_flag = cpu_num;
 
 	/* wait secondary cpu to start */
 	while (arc_cpu_wake_flag != 0U) {
 		;
 	}
+
+	/* The next call reuses arc_cpu_sp, so that store must not become
+	 * visible before this core has observed the acknowledgment.
+	 */
+	barrier_dmem_fence_full();
 }
 
 #ifdef CONFIG_SMP

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,10 @@
 #define pse84_s_system_h
 
 #include <infineon_kconfig.h>
-#include "cy_syspm.h"
-#include "system_edge.h"
-#include "cy_sysclk.h"
-#include "cy_syspm_pdcm.h"
+#include <cy_syspm.h>
+#include <system_edge.h>
+#include <cy_sysclk.h>
+#include <cy_syspm_pdcm.h>
 #include "pse84_s_mpc.h"
 
 #define CY_CFG_PWR_MODE_LP            0x01UL

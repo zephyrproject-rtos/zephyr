@@ -9,7 +9,7 @@
 
 #include <errno.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_spi.h>
 #include <zephyr/logging/log.h>
@@ -18,7 +18,7 @@
 #include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
 
@@ -433,7 +433,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->block_size = data->word_size_bytes;
+		/* The last word is always 32 bits to include the EOT flag.
+		 * There are some special handling in the dma driver that will ensure
+		 * that the last transfer width is 32bit.
+		 */
+		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
 	} else {
 		blk_cfg->block_size = len * data->word_size_bytes;
@@ -922,6 +926,8 @@ static int spi_mcux_init_common(const struct device *dev)
 
 static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
 {
+	int ret;
+
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 		break;
@@ -934,7 +940,10 @@ static int spi_mcux_flexcomm_pm_action(const struct device *dev, enum pm_device_
 		force_reconfig = true;
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
-		spi_mcux_init_common(dev);
+		ret = spi_mcux_init_common(dev);
+		if (ret < 0) {
+			return ret;
+		}
 		break;
 	default:
 		return -ENOTSUP;

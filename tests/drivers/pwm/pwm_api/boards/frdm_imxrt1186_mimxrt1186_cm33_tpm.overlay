@@ -1,0 +1,33 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tpm2;
+	};
+};
+
+/* Add node label for twister test case drivers.pwm.tpm.center */
+pwm_test_center: &tpm2 {
+	status = "okay";
+};
+
+&pinctrl {
+	pinmux_tpm2: pinmux_tpm2 {
+		group0 {
+			pinmux = <&iomuxc_aon_gpio_aon_12_tpm2_ch1>;
+			drive-strength = "normal";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&tpm2 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_tpm2>;
+	pinctrl-names = "default";
+	pwm-mode = <1>;
+};

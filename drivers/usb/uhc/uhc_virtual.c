@@ -67,8 +67,7 @@ struct uhc_vrt_event {
 	struct uvb_packet *pkt;
 };
 
-K_MEM_SLAB_DEFINE(uhc_vrt_slab, sizeof(struct uhc_vrt_event),
-		  16, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(uhc_vrt_slab, struct uhc_vrt_event, 16);
 
 static void vrt_event_submit(const struct device *dev,
 			     const enum uhc_vrt_event_type type,
@@ -635,7 +634,7 @@ static int uhc_vrt_driver_preinit(const struct device *dev)
 	return 0;
 }
 
-static const struct uhc_api uhc_vrt_api = {
+static DEVICE_API(uhc, uhc_vrt_api) = {
 	.lock = uhc_vrt_lock,
 	.unlock = uhc_vrt_unlock,
 	.init = uhc_vrt_init,

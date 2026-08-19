@@ -8,6 +8,13 @@ config WWDT_NUMAKER
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_WWDT_ENABLED
 	help
-	  This option enables the Watchdog driver for Nuvoton NuMaker family of
+	  This option enables the window watchdog driver for Nuvoton NuMaker family of
 	  processors.
-	  Say y if you wish to enable NuMaker WWDT.
+
+config WDT_NUMAKER
+	bool "Nuvoton NUMAKER MCU Watchdog driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_WDT_ENABLED
+	help
+	  This option enables the watchdog driver for Nuvoton NuMaker family of
+	  processors.

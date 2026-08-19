@@ -13,7 +13,7 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <fsl_ecspi.h>
 
 #include "spi_context.h"
@@ -67,7 +67,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		return;
 	}
 
-	transfer.channel = ctx->config->slave;
+	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->slave;
 
 	if (spi_context_rx_buf_on(ctx)) {
 		transfer.rxData = &data->rx_data;
@@ -184,6 +184,10 @@ static int spi_mcux_configure(const struct device *dev,
 
 	master_config.channel =
 		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0 : (ecspi_channel_source_t)spi_cfg->slave;
+	master_config.channelConfig.clockInactiveState =
+		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+		? kECSPI_ClockInactiveStateHigh
+		: kECSPI_ClockInactiveStateLow;
 	master_config.channelConfig.polarity =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_PolarityActiveLow

@@ -16,6 +16,7 @@
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/toolchain.h>
 
 struct ccid_search_param {
 	const struct bt_gatt_attr *attr;
@@ -25,6 +26,8 @@ struct ccid_search_param {
 static uint8_t ccid_attr_cb(const struct bt_gatt_attr *attr, uint16_t handle, void *user_data)
 {
 	struct ccid_search_param *search_param = user_data;
+
+	ARG_UNUSED(handle);
 
 	if (attr->read != NULL) {
 		uint8_t ccid = 0U;
@@ -50,7 +53,7 @@ const struct bt_gatt_attr *bt_ccid_find_attr(uint8_t ccid)
 	};
 
 	bt_gatt_foreach_attr_type(BT_ATT_FIRST_ATTRIBUTE_HANDLE, BT_ATT_LAST_ATTRIBUTE_HANDLE,
-				  BT_UUID_CCID, NULL, 0, ccid_attr_cb, &search_param);
+				  BT_UUID_CCID, NULL, 0U, ccid_attr_cb, &search_param);
 
 	return search_param.attr;
 }

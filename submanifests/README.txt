@@ -7,4 +7,4 @@ See example.yaml.sample for an example.
 For more details about how this works, see this part of the west
 documentation:
 
-https://docs.zephyrproject.org/latest/guides/west/manifest.html#example-2-2-downstream-with-directory-of-manifest-files
+https://docs.zephyrproject.org/latest/develop/west/manifest.html#example-2-2-downstream-with-directory-of-manifest-files

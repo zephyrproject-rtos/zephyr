@@ -1,7 +1,7 @@
-.. _storage_reference:
+.. _storage_services:
 
-Storage
-#######
+Storage & Configuration
+#######################
 
 .. toctree::
    :maxdepth: 1

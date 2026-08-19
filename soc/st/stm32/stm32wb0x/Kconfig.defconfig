@@ -29,6 +29,9 @@ config BT_AUTO_DATA_LEN_UPDATE
 config BT_HCI_ACL_FLOW_CONTROL
 	default n
 
+config BT_STM32WB0
+	select PM_CUSTOM_TICKS_HOOK if PM
+
 endif # BT
 
 endif # SOC_SERIES_STM32WB0X

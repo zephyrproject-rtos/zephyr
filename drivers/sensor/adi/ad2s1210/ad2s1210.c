@@ -706,20 +706,20 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 
 	/* Check if SPI bus is ready */
 	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
 		return -ENODEV;
 	}
 
 	/* Check if sample GPIO port is ready */
 	if (!gpio_is_ready_dt(&config->sample_gpio)) {
-		LOG_ERR("Sample GPIO port not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->sample_gpio.port);
 		return -ENODEV;
 	}
 
 	/* Check if mode GPIO ports are ready (required) */
 	for (uint8_t idx = 0; idx < (uint8_t)AD2S1210_MODE_PIN_MAX_VAL; idx++) {
 		if (!gpio_is_ready_dt(&config->mode_gpios[idx])) {
-			LOG_ERR("Mode GPIO %d port not ready", idx);
+			LOG_ERR_DEVICE_NOT_READY(config->mode_gpios[idx].port);
 			return -ENODEV;
 		}
 	}
@@ -729,7 +729,7 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 	if (config->have_resolution_pins) {
 		for (uint8_t idx = 0; idx < (uint8_t)AD2S1210_RES_PIN_MAX_VAL; idx++) {
 			if (!gpio_is_ready_dt(&config->resolution_gpios[idx])) {
-				LOG_ERR("Resolution GPIO %d port not ready", idx);
+				LOG_ERR_DEVICE_NOT_READY(config->resolution_gpios[idx].port);
 				return -ENODEV;
 			}
 		}
@@ -737,14 +737,14 @@ static int ad2s1210_init(const struct device *dev) /* cppcheck-suppress unusedFu
 
 	/* Check if reset GPIO port is ready */
 	if (config->reset_gpio.port && !gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_ERR("Reset GPIO port not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 		return -ENODEV;
 	}
 
 	/* Check if fault GPIO ports are ready */
 	for (uint8_t idx = 0; idx < (uint8_t)AD2S1210_FAULT_PIN_MAX_VAL; idx++) {
 		if (config->fault_gpios[idx].port && !gpio_is_ready_dt(&config->fault_gpios[idx])) {
-			LOG_ERR("Fault GPIO %d port not ready", idx);
+			LOG_ERR_DEVICE_NOT_READY(config->fault_gpios[idx].port);
 			return -ENODEV;
 		}
 	}

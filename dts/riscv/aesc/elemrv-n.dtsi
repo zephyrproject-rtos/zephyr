@@ -19,6 +19,8 @@
 		gpio0: gpio@f0000000 {
 			compatible = "aesc,gpio";
 			reg = <0xf0000000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <1 1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <12>;
@@ -28,6 +30,14 @@
 		uart0: uart0@f0006000 {
 			compatible = "aesc,uart";
 			reg = <0xf0006000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <5 1>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@f0010000 {
+			compatible = "aesc,pinctrl";
+			reg = <0xf0010000 0x1000>;
 			status = "disabled";
 		};
 	};

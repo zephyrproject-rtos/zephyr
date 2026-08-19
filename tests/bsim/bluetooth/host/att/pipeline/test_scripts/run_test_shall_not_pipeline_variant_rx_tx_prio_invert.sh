@@ -18,7 +18,7 @@
 #
 #  Test procedure:
 #
-#  - DUT is excercised by calling `gatt_write` in a loop.
+#  - DUT is exercised by calling `gatt_write` in a loop.
 #  - Tester does not immediately respond but delays the response
 #    a bit to ensure the LL has time to transport any extra
 #    requests, exposing a bug.
@@ -32,7 +32,7 @@ dut_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_pipeline_dut_prj_conf"
 dut_exe+="_rx_tx_prio_invert_extra_conf"
 tester_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_att_pipeline_tester_prj_conf"
 
-simulation_id="att_pipeline_test_shall_not_pipeline_variant_rx_tx_prio_invert"
+simulation_id="${BOARD_TS}_att_pipeline_test_shall_not_pipeline_variant_rx_tx_prio_invert"
 verbosity_level=2
 sim_length_us=100e6
 

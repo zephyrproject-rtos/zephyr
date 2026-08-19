@@ -19,6 +19,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/barrier.h>
 
 #include <fsl_common.h>
@@ -42,6 +43,8 @@ LOG_MODULE_REGISTER(dma_mcux_edma, CONFIG_DMA_LOG_LEVEL);
 
 struct dma_mcux_edma_config {
 	DEVICE_MMIO_NAMED_ROM(edma_mmio);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	DMAMUX_Type **dmamux_base;
 #endif
@@ -52,6 +55,7 @@ struct dma_mcux_edma_config {
 #if DMA_MCUX_HAS_CHANNEL_GAP
 	uint32_t channel_gap[2];
 #endif
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 	edma_tcd_t (*tcdpool)[CONFIG_DMA_TCD_QUEUE_SIZE];
 };
@@ -118,6 +122,8 @@ struct dma_mcux_edma_data {
 #define EDMA_TCD_CITER(tcd, flag)     ((tcd)->CITER)
 #define EDMA_TCD_CSR(tcd, flag)       ((tcd)->CSR)
 #define EDMA_TCD_DLAST_SGA(tcd, flag) ((tcd)->DLAST_SGA)
+#define EDMA_TCD_SOFF(tcd, flag)      ((tcd)->SOFF)
+#define EDMA_TCD_DOFF(tcd, flag)      ((tcd)->DOFF)
 #if defined(CONFIG_DMA_MCUX_EDMA_V3)
 #define DMA_CSR_DREQ                  DMA_TCD_CSR_DREQ
 #define EDMA_HW_TCD_CH_ACTIVE_MASK    (DMA_CH_CSR_ACTIVE_MASK)
@@ -426,7 +432,7 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 	return ret;
 }
 
-static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
+static inline int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 					      uint32_t channel,
 					      struct dma_config *config,
 					      edma_transfer_type_t transfer_type)
@@ -434,33 +440,53 @@ static int dma_mcux_edma_configure_sg_dynamic(const struct device *dev,
 	edma_handle_t *p_handle = DEV_EDMA_HANDLE(dev, channel);
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 	struct dma_block_config *block_config = config->head_block;
-	int ret = 0;
+	edma_transfer_type_t block_transfer_type;
 
 	/* Dynamic Scatter Gather mode */
 	EDMA_InstallTCDMemory(p_handle, DEV_CFG(dev)->tcdpool[channel],
 			      CONFIG_DMA_TCD_QUEUE_SIZE);
 
 	while (block_config != NULL) {
+
+		if (block_config->dest_addr_adj == DMA_ADDR_ADJ_NO_CHANGE &&
+			block_config->source_addr_adj == DMA_ADDR_ADJ_NO_CHANGE) {
+			block_transfer_type = kEDMA_PeripheralToPeripheral;
+		} else {
+			block_transfer_type = transfer_type;
+		}
+
 		EDMA_PrepareTransfer(&(data->transferConfig),
 				     (void *)block_config->source_address,
 				     config->source_data_size,
 				     (void *)block_config->dest_address,
 				     config->dest_data_size,
 				     config->source_burst_length,
-				     block_config->block_size, transfer_type);
+				     block_config->block_size, block_transfer_type);
 
 		const status_t submit_status =
 			EDMA_SubmitTransfer(p_handle, &(data->transferConfig));
 
 		if (submit_status != kStatus_Success) {
-			LOG_ERR("Error submitting EDMA Transfer: 0x%x",
-				submit_status);
-			ret = -EFAULT;
+			LOG_ERR("Error submitting EDMA Transfer: 0x%x", submit_status);
+			return -EFAULT;
 		}
+
+		EDMA_TcdDisableInterrupts(&DEV_CFG(dev)->tcdpool[channel][p_handle->tcdUsed - 1],
+			kEDMA_MajorInterruptEnable);
+
 		block_config = block_config->next_block;
 	}
 
-	return ret;
+	if (p_handle->tcdUsed > 1) {
+		/* If more than 1 TCD is used, then disable the interrupt */
+		EDMA_DisableChannelInterrupts(p_handle->base, channel, kEDMA_MajorInterruptEnable);
+	}
+
+	/* Enable Major loop interrupt for last entry in SG chain */
+	EDMA_TcdEnableInterrupts(&DEV_CFG(dev)->tcdpool[channel][p_handle->tcdUsed - 1],
+			kEDMA_MajorInterruptEnable);
+
+	return 0;
 }
 
 static int dma_mcux_edma_configure_basic(const struct device *dev,
@@ -508,13 +534,11 @@ static int dma_mcux_edma_configure_hardware(const struct device *dev, uint32_t c
 
 	dma_mcux_edma_configure_muxes(dev, channel, config);
 
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	if (transfer_type == kEDMA_MemoryToMemory && (sg_mode || config->block_count > 1)) {
+	if (transfer_type == kEDMA_MemoryToMemory && !DT_INST_PROP(0, nxp_a_on) &&
+	    (sg_mode || config->block_count > 1)) {
 		LOG_WRN("mem2mem xfer scatter gather not supported");
 		return -ENOTSUP;
 	}
-#endif
 
 	if (sg_mode && config->cyclic) {
 		dma_mcux_edma_configure_sg_loop(dev, channel, config, transfer_type);
@@ -613,15 +637,23 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
 
 	xfer_settings->source_burst_length = config->source_burst_length;
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_block_config *block_config = config->head_block;
-
+	/* Collapse the minor loop into the whole block for m2m transfers that
+	 * are NOT paced by an external always-on DMAMUX (nxp,a-on). When
+	 * always-on is available the DMAMUX keeps triggering each minor loop,
+	 * so the caller-chosen burst length must be preserved. Without it the
+	 * channel is either V3 sw-triggered (one EDMA_TriggerChannelStart per
+	 * start) or V4 with EDMA_StartTransfer setting TCD_CSR[START] only
+	 * once -- in both cases CITER must be 1 to transfer the whole block.
+	 * Also keep the user burst when dma_slot != 0 (peripheral-routed m2m,
+	 * e.g. FlexIO LCDIF expects one minor loop per shifter round).
+	 */
 	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory &&
-	    !config->source_chaining_en) {
+	    !config->source_chaining_en && !DT_INST_PROP(0, nxp_a_on) &&
+	    config->dma_slot == 0) {
+		struct dma_block_config *block_config = config->head_block;
+
 		xfer_settings->source_burst_length = block_config->block_size;
 	}
-#endif
 	xfer_settings->source_data_size = config->source_data_size;
 	xfer_settings->dest_data_size = config->dest_data_size;
 	xfer_settings->direction = config->channel_direction;
@@ -640,7 +672,7 @@ static inline void dma_mcux_edma_reset_channel(const struct device *dev, uint32_
 		EDMA_AbortTransfer(p_handle);
 	}
 
-	EDMA_ResetChannel(DEV_BASE(dev), hw_channel);
+	/* CreateHandle resets the TCD state  */
 	EDMA_CreateHandle(p_handle, DEV_BASE(dev), hw_channel);
 	EDMA_SetCallback(p_handle, nxp_edma_callback, (void *)data);
 }
@@ -704,14 +736,25 @@ static int dma_mcux_edma_start(const struct device *dev, uint32_t channel)
 #endif
 	data->busy = true;
 	EDMA_StartTransfer(DEV_EDMA_HANDLE(dev, channel));
+	/*
+	 * Manually kick the first minor loop on instances where
+	 * EDMA_StartTransfer does not auto-trigger:
+	 *  - V3 builds without an external DMAMUX peripheral.
+	 *  - V4 instances without a CH_MUX register (e.g. MCXE31x, i.MX 8MP).
+	 * V4 instances that have a CH_MUX register self-trigger inside
+	 * EDMA_StartTransfer when CH_MUX == 0, so skip on those to avoid
+	 * a double trigger.
+	 */
+	if (data->transfer_settings.transfer_type == kEDMA_MemoryToMemory) {
 #if defined(CONFIG_DMA_MCUX_EDMA_V3) && \
 	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-
-	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
 		EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
-	}
+#elif defined(CONFIG_DMA_MCUX_EDMA_V4) && defined(FSL_FEATURE_EDMA_HAS_CHANNEL_MUX)
+		if (FSL_FEATURE_EDMA_INSTANCE_HAS_CHANNEL_MUXn((void *)DEV_BASE(dev)) == 0) {
+			EDMA_TriggerChannelStart(DEV_BASE(dev), channel);
+		}
 #endif
+	}
 	return 0;
 }
 
@@ -741,15 +784,11 @@ static int dma_mcux_edma_suspend(const struct device *dev, uint32_t channel)
 {
 	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
 
-#if (defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA_V4)) && \
-	(!defined(FSL_FEATURE_SOC_DMAMUX_COUNT) || (FSL_FEATURE_SOC_DMAMUX_COUNT == 0))
-	struct dma_mcux_channel_transfer_edma_settings *xfer_settings = &data->transfer_settings;
-
-	if (xfer_settings->transfer_type == kEDMA_MemoryToMemory) {
+	if (data->transfer_settings.transfer_type == kEDMA_MemoryToMemory &&
+	    !DT_INST_PROP(0, nxp_a_on)) {
 		/* can't suspend this transfer, effectively a not implemented function */
 		return -ENOSYS;
 	}
-#endif
 
 	if (!data->busy) {
 		return -EINVAL;
@@ -1021,10 +1060,37 @@ static int dma_mcux_edma_init(const struct device *dev)
 	struct dma_mcux_edma_data *data = dev->data;
 
 	edma_config_t userConfig = { 0 };
+	int ret;
 
 	LOG_DBG("INIT NXP EDMA");
 
 	DEVICE_MMIO_NAMED_MAP(dev, edma_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			LOG_ERR("clock controller not ready");
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			LOG_ERR("Failed to enable clock (%d)", ret);
+			return ret;
+		}
+	}
 
 #if defined(FSL_FEATURE_SOC_DMAMUX_COUNT) && FSL_FEATURE_SOC_DMAMUX_COUNT
 	uint8_t i;
@@ -1169,6 +1235,11 @@ static int dma_mcux_edma_init(const struct device *dev)
 	dma_tcdpool##n[DT_INST_PROP(n, dma_channels)][CONFIG_DMA_TCD_QUEUE_SIZE];\
 	static const struct dma_mcux_edma_config dma_config_##n = {		\
 		DEVICE_MMIO_NAMED_ROM_INIT(edma_mmio, DT_DRV_INST(n)),		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			((clock_control_subsys_t)0U)),				\
 		DMAMUX_BASE_INIT(n)						\
 		.dma_requests = DT_INST_PROP(n, dma_requests),			\
 		.dma_channels = DT_INST_PROP(n, dma_channels),			\
@@ -1176,6 +1247,7 @@ static int dma_mcux_edma_init(const struct device *dev)
 		.irq_config_func = dma_imx_config_func_##n,			\
 		.dmamux_reg_offset = DT_INST_PROP(n, dmamux_reg_offset),	\
 		DMA_MCUX_EDMA_CHANNEL_GAP(n)					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.tcdpool = dma_tcdpool##n,					\
 	};									\
 										\

@@ -26,7 +26,7 @@ This measurement is done in a cyclic manner with a certain interval time.
 If someone wants to know the worst case latency of a task with priority <p>
 then the application needs to be running. While it is running we can start
 zyclictest with a priority at least one digit less than the application thread
-probed. For example if our application with the thread of interrest has the
+probed. For example if our application with the thread of interest has the
 priority -10 than we need to start zyclictest with a priority of -11 or less.
 
 Another important argument is the interval time. It's not meant to have an

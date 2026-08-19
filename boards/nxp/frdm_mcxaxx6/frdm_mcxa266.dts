@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa266.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa266.dtsi>
 #include "frdm_mcxa266-pinctrl.dtsi"
 #include "board_common.dtsi"
 #include <freq.h>
@@ -45,6 +45,14 @@
 };
 
 &flexio0 {
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
 	status = "okay";
 };
 

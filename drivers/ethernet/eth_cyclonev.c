@@ -46,13 +46,14 @@ void eth_cyclonev_isr(const struct device *dev);
 int set_mac_conf_status(int instance, uint32_t *mac_config_reg_settings,
 				struct eth_cyclonev_priv *p);
 int eth_cyclonev_probe(const struct device *dev);
-static int eth_cyclonev_start(const struct device *dev);
-static int eth_cyclonev_stop(const struct device *dev);
+static int eth_cyclonev_start(const struct device *dev, struct net_if *iface);
+static int eth_cyclonev_stop(const struct device *dev, struct net_if *iface);
 static void eth_cyclonev_receive(struct eth_cyclonev_priv *p);
 static void eth_cyclonev_tx_release(struct eth_cyclonev_priv *p);
-static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_config_type type,
-				const struct ethernet_config *config);
-static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev);
+static int eth_cyclonev_set_config(const struct device *dev, struct net_if *iface,
+				   enum ethernet_config_type type,
+				   const struct ethernet_config *config);
+static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev, struct net_if *iface);
 
 /** Device config */
 struct eth_cyclonev_config {
@@ -311,7 +312,9 @@ static void eth_cyclonev_iface_init(struct net_if *iface)
  * @retval ret 0 if successful
  */
 
-static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_cyclonev_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
 	struct eth_cyclonev_priv *p = dev->data;
@@ -359,7 +362,8 @@ static int eth_cyclonev_set_config(const struct device *dev, enum ethernet_confi
  * @retval caps Enumerated capabilities of device
  */
 
-static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_cyclonev_caps(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	struct eth_cyclonev_priv *p = dev->data;
 	enum ethernet_hw_caps caps = 0;
@@ -613,7 +617,7 @@ void eth_cyclonev_isr(const struct device *dev)
 
 			cfg_reg_set = sys_read32(GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
-			if (eth_cyclonev_stop(dev) == -1) {
+			if (eth_cyclonev_stop(dev, p->iface) == -1) {
 				LOG_ERR("Couldn't stop device: %s", dev->name);
 				return;
 			}
@@ -621,7 +625,7 @@ void eth_cyclonev_isr(const struct device *dev)
 			set_mac_conf_status(config->emac_index, &cfg_reg_set, p);
 			sys_write32(cfg_reg_set, GMACGRP_MAC_CONFIG_ADDR(p->base_addr));
 
-			eth_cyclonev_start(dev);
+			eth_cyclonev_start(dev, p->iface);
 		}
 	}
 }
@@ -1046,7 +1050,7 @@ int eth_cyclonev_probe(const struct device *dev)
  * @retval 0
  */
 
-static int eth_cyclonev_start(const struct device *dev)
+static int eth_cyclonev_start(const struct device *dev, struct net_if *iface __unused)
 {
 
 	struct eth_cyclonev_priv *p = dev->data;
@@ -1089,7 +1093,7 @@ static int eth_cyclonev_start(const struct device *dev)
  * @retval 0 if successful, -1 otherwise
  */
 
-static int eth_cyclonev_stop(const struct device *dev)
+static int eth_cyclonev_stop(const struct device *dev, struct net_if *iface __unused)
 {
 
 	struct eth_cyclonev_priv *p = dev->data;

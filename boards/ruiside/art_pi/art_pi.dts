@@ -129,12 +129,13 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Flash has 128KB sector size */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
 		};
@@ -220,6 +221,8 @@
 	clock-frequency = <100000>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 
 	gt911: touchscreen@5d {
 		compatible = "goodix,gt911";
@@ -249,24 +252,42 @@
 		reset-cmd;
 		reset-cmd-wait = <2000>;
 
-		partitions {
-			compatible = "fixed-partitions";
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
+		ext_flash: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
-			slot0_partition: partition@0 {
-				label = "image-0";
-				reg = <0x00000000 DT_SIZE_K(2048)>; /* 2MB */
-			};
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 
-			slot1_partition: partition@200000 {
-				label = "image-1";
-				reg = <0x00200000 DT_SIZE_K(2048)>; /* 2MB */
-			};
+				slot0_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-0";
+					reg = <0x00000000 DT_SIZE_K(2048)>; /* 2MB */
+				};
 
-			storage_partition: partition@400000 {
-				label = "storage";
-				reg = <0x00400000 DT_SIZE_K(4096)>; /* 4MB */
+				slot1_partition: partition@200000 {
+					compatible = "zephyr,mapped-partition";
+					label = "image-1";
+					reg = <0x00200000 DT_SIZE_K(2048)>; /* 2MB */
+				};
+
+				storage_partition: partition@400000 {
+					compatible = "zephyr,mapped-partition";
+					label = "storage";
+					reg = <0x00400000 DT_SIZE_K(4096)>; /* 4MB */
+				};
 			};
 		};
 	};

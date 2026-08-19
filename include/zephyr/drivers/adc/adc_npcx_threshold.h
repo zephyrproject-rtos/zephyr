@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _ADC_NPCX_THRESHOLD_H_
-#define _ADC_NPCX_THRESHOLD_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
+#define ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_
 
 #include <zephyr/device.h>
 
@@ -15,22 +15,23 @@ enum adc_npcx_threshold_param_l_h {
 };
 
 enum adc_npcx_threshold_param_type {
-	/* Selects ADC channel to be used for measurement */
+	/** Selects ADC channel to be used for measurement */
 	ADC_NPCX_THRESHOLD_PARAM_CHNSEL,
-	/* Sets relation between measured value and assetion threshold value.*/
+	/** Sets relation between measured value and assertion threshold value */
 	ADC_NPCX_THRESHOLD_PARAM_L_H,
-	/* Sets the threshold value to which measured data is compared. */
+	/** Sets the threshold value to which measured data is compared */
 	ADC_NPCX_THRESHOLD_PARAM_THVAL,
-	/* Sets worker queue thread to be notified */
+	/** Sets worker queue thread to be notified */
 	ADC_NPCX_THRESHOLD_PARAM_WORK,
-
+	/** @cond INTERNAL_HIDDEN */
 	ADC_NPCX_THRESHOLD_PARAM_MAX,
+	/** @endcond */
 };
 
 struct adc_npcx_threshold_param {
-	/* Threshold ocntrol parameter */
+	/** Threshold control parameter */
 	enum adc_npcx_threshold_param_type type;
-	/* Parameter value */
+	/** Parameter value */
 	uint32_t val;
 };
 
@@ -87,4 +88,4 @@ int adc_npcx_threshold_ctrl_set_param(const struct device *dev,
 int adc_npcx_threshold_ctrl_enable(const struct device *dev, uint8_t th_sel,
 				   const bool enable);
 
-#endif /*_ADC_NPCX_THRESHOLD_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_ADC_ADC_NPCX_THRESHOLD_H_ */

@@ -33,6 +33,88 @@
 
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
 
+#define MSPI_STM32_IS_SUPPORTED_CHILD(child) \
+DT_NODE_HAS_COMPAT(child, st_nor) || \
+DT_NODE_HAS_COMPAT(child, st_psram_device)
+
+#define MSPI_STM32_HAS_SUPPORTED_CHILD(index) \
+DT_INST_FOREACH_CHILD_STATUS_OKAY(index, MSPI_STM32_IS_SUPPORTED_CHILD)
+
+/*
+ * Memory device geometry, taken at compile time from the controller's
+ * first status "okay" child node. The STM32 MSPI drivers currently
+ * support a single device per controller (MSPI_MAX_DEVICE == 1).
+ *
+ * MSPI_STM32_INST_MEM_ADDR_BITS() expands to the number of address bits
+ * of the memory device (log2 of its size in bytes), derived from the
+ * child's "size" property (in bits). If the
+ * controller has no enabled child, it expands to @p fallback_bits.
+ *
+ * Note that the HAL encodings differ for each IP:
+ *   XSPI  Init.MemorySize = address bits - 1 (raw DCR1 DEVSIZE)
+ *   OSPI  Init.DeviceSize = address bits     (HAL subtracts 1)
+ *   QSPI  Init.FlashSize  = address bits - 1 (raw DCR FSIZE)
+ */
+#define MSPI_STM32_MEM_SIZE_BITS(child)                                        \
+	DT_PROP_OR(child, size, 0)
+
+#define MSPI_STM32_MEM_ADDR_BITS_ENTRY(child)                                  \
+	(LOG2(MSPI_STM32_MEM_SIZE_BITS(child)) - 3),
+
+#define MSPI_STM32_INST_MEM_ADDR_BITS(index, fallback_bits)                    \
+	COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(index),                      \
+		    (fallback_bits),                                           \
+		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
+					MSPI_STM32_MEM_ADDR_BITS_ENTRY))))
+
+
+#if defined(CONFIG_MSPI_STM32_OSPI)
+
+#define MSPI_STM32_HAL_PREFIX HAL_OSPI_MEMTYPE_
+#define APMEM        APMEMORY
+/* Supported memory types for OSPI */
+#define MSPI_STM32_IS_VALID_MEMTYPE_MICRON        1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEMORY      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX_RAM  1
+#define MSPI_STM32_IS_VALID_MEMTYPE_HYPERBUS      1
+/* Explicitly unsupported */
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEM_16BITS  0
+
+#elif defined(CONFIG_MSPI_STM32_XSPI)
+
+#define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMTYPE_
+
+#define APMEM        APMEM
+#endif
+
+/*
+ * Memory type token ("st,mem-type" on the child node), upper-cased for
+ * pasting onto the HAL memory type macro prefix. Defaults to MICRON,
+ * the hardware reset value of DCR1 MTYP, when the property is absent.
+ */
+#define MSPI_STM32_MEMTYPE_TOKEN_ENTRY(child)                                  \
+	DT_STRING_UPPER_TOKEN_OR(child, st_mem_type, MICRON),
+
+#define MSPI_STM32_INST_MEMTYPE_TOKEN(index)                                   \
+	COND_CODE_0(DT_INST_CHILD_NUM_STATUS_OKAY(index),                      \
+		    (MICRON),                                                  \
+		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
+					MSPI_STM32_MEMTYPE_TOKEN_ENTRY))))
+
+/* Validation helper */
+#define MSPI_STM32_VALIDATE_MEMTYPE(token)                                     \
+	BUILD_ASSERT(                                                          \
+		UTIL_CAT(MSPI_STM32_IS_VALID_MEMTYPE_, token),                 \
+		"Unsupported st,mem-type for selected MSPI driver"             \
+	)
+
+#define MSPI_STM32_MEMTYPE_TOKEN(index) \
+	MSPI_STM32_INST_MEMTYPE_TOKEN(index)
+
+#define MSPI_STM32_HAL_MEMTYPE(index) \
+	CONCAT(MSPI_STM32_HAL_PREFIX, MSPI_STM32_INST_MEMTYPE_TOKEN(index))
+
 typedef void (*irq_config_func_t)(void);
 
 enum mspi_stm32_access_mode {
@@ -48,16 +130,23 @@ struct mspi_stm32_context {
 };
 
 struct mspi_stm32_conf {
-	bool dma_specified;
+	void *base;
 	size_t pclk_len;
 	irq_config_func_t irq_config;
 	struct mspi_cfg mspicfg;
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
+	bool dma_specified;
+	uint32_t ospim_clk_port;
+	uint32_t ospim_dqs_port;
+	uint32_t ospim_ncs_port;
+	uint32_t ospim_io_low_port;
+	uint32_t ospim_io_high_port;
 };
 
 struct stm32_stream {
 	DMA_TypeDef *reg;
+	uintptr_t phys_addr;
 	const struct device *dev;
 	uint32_t channel;
 	struct dma_config cfg;
@@ -87,7 +176,7 @@ struct mspi_stm32_data {
 	struct k_mutex lock;
 	struct k_sem sync;
 	struct mspi_dev_cfg dev_cfg;
-	struct mspi_xip_cfg xip_cfg;
+	struct mspi_memmap_cfg memmap_cfg;
 	struct stm32_stream dma_tx;
 	struct stm32_stream dma_rx;
 	struct stm32_stream dma;
@@ -104,5 +193,23 @@ extern const uint32_t mspi_stm32_table_priority[];
 extern const uint32_t mspi_stm32_table_direction[];
 extern const uint32_t mspi_stm32_table_src_size[];
 extern const uint32_t mspi_stm32_table_dest_size[];
+
+#if defined(CONFIG_MSPI_TIMING)
+struct mspi_stm32_timing_cfg {
+	uint8_t turnaround_cycles; /* Turnaround cycles included in device latency.
+				    * Subtracted from dummy cycles to match STM32
+				    * XSPI requirements.
+				    */
+};
+
+enum mspi_stm32_timing_param {
+	MSPI_TURNAROUND_CYCLES_CFG = BIT(0),
+};
+
+#define MSPI_STM32_TIMING_CONFIG(n)                                                                \
+	{                                                                                          \
+		.turnaround_cycles = DT_INST_PROP_BY_IDX(n, st_timing_config, 0),                  \
+	}
+#endif
 
 #endif /* ZEPHYR_DRIVERS_MSPI_MSPI_STM32_H_ */

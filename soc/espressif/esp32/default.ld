@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Cadence Design Systems, Inc.
  * Copyright (c) 2017 Intel Corporation
- * Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -298,6 +298,8 @@ SECTIONS
   _rtc_slow_reserved_length = 0;
 #endif
   _rtc_reserved_length = _rtc_slow_reserved_length;
+  ASSERT((_rtc_reserved_length <= CONFIG_RESERVE_RTC_MEM),
+         "RTC reserved segment does not fit CONFIG_RESERVE_RTC_MEM.")
 
   /* --- RTC END --- */
 
@@ -396,12 +398,6 @@ SECTIONS
     *libzephyr.a:lldesc.*(.literal .literal.* .text .text.*)
 
     /* [mapping:log] */
-    *(.literal.esp_log_write .text.esp_log_write)
-    *(.literal.esp_log_timestamp .text.esp_log_timestamp)
-    *(.literal.esp_log_early_timestamp .text.esp_log_early_timestamp)
-    *(.literal.esp_log_impl_lock .text.esp_log_impl_lock)
-    *(.literal.esp_log_impl_lock_timeout .text.esp_log_impl_lock_timeout)
-    *(.literal.esp_log_impl_unlock .text.esp_log_impl_unlock)
 
     /* [mapping:spi_flash] */
     *libzephyr.a:spi_flash_chip_boya.*(.literal .literal.* .text .text.*)
@@ -418,6 +414,9 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_app.*(.literal .literal.* .text .text.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.literal .literal.* .text .text.*)
+#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+    *libzephyr.a:spi_flash_dpd_enable.*(.literal .literal.* .text .text.*)
+#endif
     *libzephyr.a:esp_flash_api.*(.literal .text .literal.* .text.*)
     *libzephyr.a:flash_mmap.*(.literal .text .literal.* .text.*)
 
@@ -434,18 +433,39 @@ SECTIONS
     *(.literal.esp_cpu_reset .text.esp_cpu_reset)
     *(.literal.esp_cpu_wait_for_intr .text.esp_cpu_wait_for_intr)
     *(.literal.esp_cpu_compare_and_set .text.esp_cpu_compare_and_set)
-    *(.literal.esp_gpio_reserve_pins .text.esp_gpio_reserve_pins)
-    *(.literal.esp_gpio_is_pin_reserved .text.esp_gpio_is_pin_reserved)
+    *libzephyr.a:esp_gpio_reserve.*(.literal .literal.* .text .text.*)
     *(.literal.rtc_vddsdio_get_config .text.rtc_vddsdio_get_config)
     *(.literal.rtc_vddsdio_set_config .text.rtc_vddsdio_set_config)
     *libzephyr.a:esp_memory_utils.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:gpio_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:gpio.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_oneshot_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_hal_common.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_hal.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:uart_hal_iram.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_sys.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_rom_print.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:clk_utils.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_clk_init.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_sleep.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_cache.*(.literal .literal.* .text .text.*)
     *libzephyr.a:rtc_time.*(.literal .literal.* .text .text.*)
+#if defined(CONFIG_ESP32_PM_SLP_IRAM_OPT)
+    *libzephyr.a:phy_override.*(.literal.phy_get_tsens_value .text.phy_get_tsens_value)
+    *libzephyr.a:sleep_modes.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sleep_modem.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_clk.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_clk_tree.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:sar_periph_ctrl.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:adc_share_hw_ctrl.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_timer_impl_common.*(.literal .literal.* .text .text.*)
+    *libzephyr.a:esp_timer_impl_lac.*(.literal .literal.* .text .text.*)
+#endif
     *libzephyr.a:periph_ctrl.*(.literal .text .literal.* .text.*)
     *libzephyr.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:sar_periph_ctrl_common.*(.literal .text .literal.* .text.*)
     *(.literal.sar_periph_ctrl_power_enable .text.sar_periph_ctrl_power_enable)
 
     *libzephyr.a:esp_system_chip.*(.literal.esp_system_abort .text.esp_system_abort)
@@ -454,7 +474,6 @@ SECTIONS
     *libzephyr.a:flash_brownout_hook.*(.literal .literal.* .text .text.*)
 
     /* [mapping:soc_pm] */
-    *(.literal.GPIO_HOLD_MASK .text.GPIO_HOLD_MASK)
 
     /* [mapping:esp_rom] */
     *libzephyr.a:esp_rom_spiflash.*(.literal .literal.* .text .text.*)
@@ -549,6 +568,9 @@ SECTIONS
   .iram0.data :
   {
     . = ALIGN(16);
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
+    *(.llext_instr_heap)
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     *(.iram.data)
     *(.iram.data*)
   } GROUP_DATA_LINK_IN(IRAM_REGION, ROMABLE_REGION)
@@ -636,12 +658,6 @@ SECTIONS
     *libzephyr.a:lldesc.*(.rodata .rodata.*)
 
     /* [mapping:log] */
-    *(.rodata.esp_log_write)
-    *(.rodata.esp_log_timestamp)
-    *(.rodata.esp_log_early_timestamp)
-    *(.rodata.esp_log_impl_lock)
-    *(.rodata.esp_log_impl_lock_timeout)
-    *(.rodata.esp_log_impl_unlock)
 
     /* [mapping:spi_flash] */
     *libzephyr.a:spi_flash_chip_boya.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -658,6 +674,9 @@ SECTIONS
     *libzephyr.a:flash_qio_mode.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:spi_flash_os_func_app.*(.rodata .rodata.*)
     *libzephyr.a:spi_flash_os_func_noos.*(.rodata .rodata.*)
+#if defined(CONFIG_ESP32_SLEEP_SET_FLASH_DPD)
+    *libzephyr.a:spi_flash_dpd_enable.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+#endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
 
@@ -678,14 +697,15 @@ SECTIONS
     *(.rodata.esp_cpu_reset)
     *(.rodata.esp_cpu_wait_for_intr)
     *(.rodata.esp_cpu_compare_and_set)
-    *(.rodata.esp_gpio_reserve_pins)
-    *(.rodata.esp_gpio_is_pin_reserved)
+    *libzephyr.a:esp_gpio_reserve.*(.rodata .rodata.*)
     *(.rodata.rtc_vddsdio_get_config)
     *(.rodata.rtc_vddsdio_set_config)
     *libzephyr.a:esp_memory_utils.*(.rodata .rodata.*)
+    *libzephyr.a:clk_utils.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk.*(.rodata .rodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.*)
     *(.rodata.sar_periph_ctrl_power_enable)
+    *(.rodata.GPIO_HOLD_MASK)
 
     *libzephyr.a:cache_esp32.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_cache_utils.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -732,6 +752,7 @@ SECTIONS
     *libzephyr.a:cpu_util.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:clk.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:esp_clk.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
+    *libzephyr.a:esp_clk_tree.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:rtc_clk_init.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:rtc_time.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
     *libzephyr.a:cpu_region_protect.*(.rodata .rodata.* .sdata2 .sdata2.* .srodata .srodata.*)
@@ -788,8 +809,9 @@ SECTIONS
     *(.sbss2.*)
     *(.gnu.linkonce.sb2.*)
     *(.dynbss)
-    *(.bss)
-    *(.bss.*)
+
+#include <esp_spiram_relocate_bss.ld.inc>
+
     *(.share.mem)
     *(.gnu.linkonce.b.*)
     *(COMMON)
@@ -819,11 +841,10 @@ SECTIONS
     *(.noinit)
     *(.noinit.*)
 #endif /* CONFIG_ESP32_WIFI_NET_ALLOC_SPIRAM */
-#ifdef CONFIG_LLEXT
-    *(.llext_heap)
-    *(.llext_ext_heap)
+#if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
     *(.llext_metadata_heap)
-#endif /* CONFIG_LLEXT */
+    *(.llext_data_heap)
+#endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
     __dram_noinit_end = ABSOLUTE(.);
     . = ALIGN (4);
   } GROUP_LINK_IN(RAMABLE_REGION_2)
@@ -862,12 +883,17 @@ SECTIONS
     *(.ext_ram.bss*)
     . = ALIGN(16);
 
+#include <esp_spiram_relocate_bss_ext_ram.ld.inc>
+    . = ALIGN(16);
+
     /* Custom modules sections list */
     KEEP(*(.lvgl_buf*))
     . = ALIGN(16);
     KEEP(*(.lvgl_heap*))
     . = ALIGN(16);
     KEEP(*(.mbedtls_heap*))
+    . = ALIGN(16);
+    KEEP(*(.ot_msg_pool*))
     . = ALIGN(16);
 
     _ext_ram_bss_end = ABSOLUTE(.);
@@ -957,8 +983,10 @@ SECTIONS
 
   /* Create an explicit section at the end of all the data that shall be mapped into drom.
    * This is used to calculate the size of the _image_drom_size variable */
-  .flash.rodata_end :
+  .flash.rodata_end : ALIGN(0x10)
   {
+    /* Enforce flash segment size alignment */
+    LONG(0);
     /* This is a symbol marking the flash.rodata end, this
      * can be used for mmu driver to maintain virtual address
      * We don't need to include the noload rodata in this section
@@ -1006,6 +1034,10 @@ SECTIONS
 
     *(.literal .text .literal.* .text.*)
     . = ALIGN(4);
+
+    /* Enforce flash segment size alignment */
+    . = ALIGN(0x10);
+
     _text_end = ABSOLUTE(.);
     _instruction_reserved_end = ABSOLUTE(.);  /* This is a symbol marking the flash.text end, this can be used for mmu driver to maintain virtual address */
     __text_region_end = ABSOLUTE(.);

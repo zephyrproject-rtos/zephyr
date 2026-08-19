@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,7 +60,7 @@ enum bt_avdtp_err_code {
 	/** The format of Multiplexing Service Capability is not correct */
 	BT_AVDTP_BAD_MULTIPLEXING_FORMAT = 0x28,
 	/** Configuration not supported */
-	BT_AVDTP_UNSUPPORTED_CONFIGURAION = 0x29,
+	BT_AVDTP_UNSUPPORTED_CONFIGURATION = 0x29,
 	/** Indicates that the ACP state machine is in an invalid state in order to process the
 	 * signal. This also includes the situation when an INT receives a request for the
 	 * same command that it is currently expecting a response
@@ -192,4 +192,4 @@ struct bt_avdtp_sep {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AVDTP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_AVDTP_H_ */

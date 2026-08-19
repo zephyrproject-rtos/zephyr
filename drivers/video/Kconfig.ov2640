@@ -6,6 +6,8 @@
 config VIDEO_OV2640
 	bool "OV2640 CMOS digital image sensor"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV2640),pwdn-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_OVTI_OV2640),reset-gpios)
 	depends on DT_HAS_OVTI_OV2640_ENABLED
 	default y
 	help

@@ -12,12 +12,33 @@ if MCTP
 
 config MCTP_HEAP_SIZE
 	int "MCTP Heap Size"
-	default 1024
+	default 2048
 	help
 	  MCTP requires a heap for allocating packet buffers. A dedicated
 	  heap is provided to MCTP at startup avoiding the need to specify
 	  libmctp's allocation operations. This setting defines the size of
 	  the dedicated MCTP heap in bytes. Defaults to 1KB for small packets.
+
+	  When multi-packet message reassembly is required, this must be large
+	  enough to hold at least one MCTP context struct plus one reassembly
+	  buffer of CONFIG_MCTP_MAX_MESSAGE_SIZE bytes per active endpoint.
+
+config MCTP_MAX_MESSAGE_SIZE
+	int "Maximum MCTP reassembly message size"
+	default 1024
+	help
+	  Maximum size in bytes of an MCTP message that can be reassembled
+	  from multiple MCTP packets. libmctp allocates a buffer of this size
+	  from the MCTP heap whenever a multi-packet message begins arriving,
+	  so CONFIG_MCTP_HEAP_SIZE must be large enough to hold at least one
+	  such buffer per concurrently-active reassembly context.
+
+config MCTP_LOG_CUSTOM_ZEPHYR
+	bool "Bridge libmctp logs into Zephyr logging"
+	depends on LOG
+	help
+	  Compile support that routes libmctp logs through Zephyr's logging
+	  subsystem using the configured MCTP log level.
 
 config MCTP_UART
 	bool "MCTP UART Binding"
@@ -46,25 +67,66 @@ config MCTP_I2C_GPIO_TARGET
 config MCTP_I3C_CONTROLLER
 	bool "MCTP I3C Controller Binding"
 	depends on I3C_CONTROLLER
-	depends on I3C_USE_IBI
+	select CRC
 	help
 	  Build the MCTP I3C controller binding to use MCTP over Zephyr's I3C
-	  interface and IBI to signal from targets to a request to send messages.
+	  interface. This binding can receive target notifications through IBI
+	  signaling or polling mode.
+
+if MCTP_I3C_CONTROLLER
+
+choice MCTP_I3C_CONTROLLER_DATA_PATH
+	prompt "MCTP I3C Controller data reception method"
+	help
+	  Select how the MCTP I3C controller receives data from targets.
+	  Exactly one method must be selected.
+
+config MCTP_I3C_CONTROLLER_IBI_MODE
+	bool "Use IBI (In-Band Interrupt)"
+	depends on I3C_USE_IBI
+	help
+	  Use In-Band Interrupt signaling for data availability.
+	  This is the preferred method when supported.
+
+config MCTP_I3C_CONTROLLER_POLLING_MODE
+	bool "Use polling mode"
+	help
+	  Periodically poll I3C targets for pending data.
+	  Use this when IBI is not available or not supported.
+
+endchoice
+
+config MCTP_I3C_CONTROLLER_POLL_INTERVAL_MS
+	int "MCTP I3C polling interval (ms)"
+	depends on MCTP_I3C_CONTROLLER_POLLING_MODE
+	default 10
+	range 1 60000
+	help
+	  Polling interval in milliseconds for checking each configured I3C
+	  endpoint for pending data.
+
+endif
 
 config MCTP_I3C_TARGET
 	bool "MCTP I3C Target Binding"
 	depends on I3C_TARGET
-	depends on I3C_USE_IBI
-	depends on I3C_TARGET_BUFFER_MODE
+	select CRC
 	help
 	  Build the MCTP I3C target binding to use MCTP over Zephyr's I3C target
-	  interface and IBI to signal a request to send messages to the bus controller.
+	  interface and optionally IBI to signal a request to send messages to the bus controller.
 
 config MCTP_USB
 	bool "MCTP USB Binding"
 	depends on USB_DEVICE_STACK_NEXT
 	help
 	  Build the MCTP USB binding to use MCTP over Zephyr's USB device interface.
+
+config LIBMCTP_CONTROL_HANDLER_ENABLED
+	bool "libmctp Control Handler"
+	help
+	  Enable the libmctp control handler for MCTP control messages. Applications
+	  may want to enable it if they don't want to handle MCTP control messages
+	  themselves or intercept them before libmctp's control handler.
 
 module = MCTP
 module-str = MCTP

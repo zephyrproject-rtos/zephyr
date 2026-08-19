@@ -25,6 +25,7 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_FLASH_ADI_MAX32_SPIXF flash_max32_spixf_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_AESC flash_aesc.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_AMBIQ flash_ambiq.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI flash_andes_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_ANDES_QSPI_XIP flash_andes_qspi_xip.c)
@@ -32,9 +33,13 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_CAD_QSPI_NOR flash_cadence_qspi_nor.c 
 zephyr_library_sources_ifdef(CONFIG_FLASH_CDNS_NAND flash_cadence_nand.c flash_cadence_nand_ll.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_CAT1 flash_infineon.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_PSOC4 flash_infineon_pdl.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_INTEL_PFLASH_CFI01 flash_intel_pflash_cfi01.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCHP_NVMCTRL_G1 flash_mchp_nvmctrl_g1.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MCHP_NVMCTRL_G2 flash_mchp_nvmctrl_g2.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MCHP_NVMCTRL_G3 flash_mchp_nvmctrl_g3.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_HYPERFLASH flash_mcux_flexspi_hyperflash.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_MX25UM51345G flash_mcux_flexspi_mx25um51345g.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NAND flash_mcux_flexspi_nand.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_FLEXSPI_NOR flash_mcux_flexspi_nor.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MCUX_XSPI flash_mcux_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_MSPI_ATXP032 flash_mspi_atxp032.c)
@@ -51,10 +56,13 @@ zephyr_library_sources_ifdef(CONFIG_FLASH_RENESAS_RZ_QSPI_XSPI flash_renesas_rz_
 zephyr_library_sources_ifdef(CONFIG_FLASH_RPI_PICO flash_rpi_pico.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_S3AXX04 flash_s3axx04.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_SF32LB_MPI_QSPI_NOR flash_sf32lb_mpi_qspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_SOC_LPC84X_IAP soc_flash_lpc84x_iap.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_OSPI flash_stm32_ospi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_QSPI flash_stm32_qspi.c)
 zephyr_library_sources_ifdef(CONFIG_FLASH_STM32_XSPI flash_stm32_xspi.c)
 zephyr_library_sources_ifdef(CONFIG_NORDIC_QSPI_NOR nrf_qspi_nor.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_AMEBA flash_ameba.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_BEE_NOR soc_flash_bee_nor.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_BFLB flash_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC13XX_CC26XX soc_flash_cc13xx_cc26xx.c)
 zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_CC23X0 soc_flash_cc23x0.c)
@@ -92,6 +100,7 @@ zephyr_library_sources_ifdef(CONFIG_SPI_NOR spi_nor.c)
 
 if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
   zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_serial_memory_qspi.c)
+  zephyr_library_sources_ifdef(CONFIG_FLASH_INFINEON_RRAM flash_infineon_rram.c)
 else()
   zephyr_library_sources_ifdef(CONFIG_INFINEON_CAT1_QSPI_FLASH flash_infineon_qspi.c)
 endif()
@@ -222,3 +231,10 @@ endif()
 
 # Do not use prologue and epilogue code that uses library function calls
 zephyr_library_compile_options_ifdef(CONFIG_FLASH_ANDES_QSPI_XIP -mno-save-restore)
+
+if(CONFIG_SOC_FLASH_BFLB)
+# JESD216 Will be used with XIP disabled if it is enabled
+  zephyr_code_relocate_ifdef(CONFIG_SOC_FLASH_BFLB FILES ${CMAKE_CURRENT_LIST_DIR}/jesd216.c
+    LOCATION RAM NOKEEP
+  )
+endif()

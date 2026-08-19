@@ -31,8 +31,8 @@ struct mdio_litex_data {
 };
 
 struct mdio_litex_config {
-	uint32_t w_addr;
-	uint32_t r_addr;
+	mem_addr_t w_addr;
+	mem_addr_t r_addr;
 };
 
 static void mdio_litex_read(const struct mdio_litex_config *dev_cfg, uint16_t *pdata)

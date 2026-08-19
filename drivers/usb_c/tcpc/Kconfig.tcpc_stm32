@@ -8,7 +8,6 @@ config USBC_TCPC_STM32
 	default y
 	depends on DT_HAS_ST_STM32_UCPD_ENABLED
 	select PINCTRL
-	select USE_STM32_LL_UCPD
 	help
 	  Enable USB-C TCPC support on the STM32 G0, G4, L5, and U5 family of
 	  processors.

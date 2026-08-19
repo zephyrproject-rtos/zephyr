@@ -6,13 +6,13 @@
 # Copyright (c) 2023 Google Inc
 # SPDX-License-Identifier: Apache-2.0
 
-config STM32_MEMMAP
-	bool "NOR Flash in MemoryMapped"
+config FLASH_STM32_NOR_MEMMAP
+	bool "External Flash in memory-mapped mode"
 	depends on DT_HAS_ST_STM32_QSPI_NOR_ENABLED || \
 		   DT_HAS_ST_STM32_OSPI_NOR_ENABLED || \
 		   DT_HAS_ST_STM32_XSPI_NOR_ENABLED
 	help
-	  This option enables the MemoryMapped mode for the external NOR flash
+	  Enable the memory-mapped mode for external NOR flash
 	  mounted on STM32 boards.
 
 menuconfig SOC_FLASH_STM32
@@ -117,5 +117,21 @@ config FLASH_STM32_ACCEPT_UNALIGNED_WRITES
 	  the flash's erase value before writing. THIS IS NOT A READ-MODIFY-WRITE type operation! The flash
 	  addresses being written to are expected to be erased before writing to them. Contens of the flash
 	  after unaligned writes depend on the flash hardware details. The operation may fault.
+
+if SOC_SERIES_STM32WBAX
+
+config STM32WBA_FLASH_MNGR_THREAD_STACK_SIZE
+	int "Stack size of the Flash Manager thread for STM32WBAx"
+	default 768
+	help
+	  Flash Manager thread stack size in bytes.
+
+config STM32WBA_FLASH_MNGR_THREAD_PRIO
+	int "Flash Manager thread priority"
+	default 14
+	help
+	  This option sets the cooperative priority of the Flash Manager thread.
+
+endif # SOC_SERIES_STM32WBAX
 
 endif # SOC_FLASH_STM32

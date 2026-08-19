@@ -192,7 +192,13 @@ static void tx_isr(void)
 
 static void int_driven_callback(const struct device *dev, void *user_data)
 {
-	while (uart_irq_is_pending(uart_dev)) {
+	while (true) {
+		uart_irq_update(uart_dev);
+
+		if (uart_irq_is_pending(uart_dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_rx_ready(uart_dev)) {
 			rx_isr();
 		}
@@ -230,7 +236,7 @@ static void bulk_poll_out(struct test_data *data, int wait_base, int wait_range)
 		data->cnt++;
 		uart_poll_out(uart_dev, data->buf[i % BUF_SIZE]);
 		if (wait_base) {
-			int r = sys_rand32_get();
+			uint32_t r = sys_rand32_get();
 
 			k_sleep(K_USEC(wait_base + (r % wait_range)));
 		}
@@ -278,7 +284,7 @@ static void int_async_thread_func(void *p_data, void *base, void *range)
 			uart_irq_tx_enable(uart_dev);
 		}
 
-		int r = sys_rand32_get();
+		uint32_t r = sys_rand32_get();
 
 		k_sleep(K_USEC(wait_base + (r % wait_range)));
 	}

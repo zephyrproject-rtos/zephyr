@@ -6,7 +6,7 @@
  */
 
 #include <zephyr/pm/policy.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/pm/device.h>
 
 const struct pm_state_info *pm_policy_next_state(uint8_t cpu, int32_t ticks)

@@ -9,7 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <fsl_rtwdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
@@ -53,10 +53,8 @@ static int mcux_rtwdog_setup(const struct device *dev, uint8_t options)
 		return -EBUSY;
 	}
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) != 0U) {
-		LOG_ERR("Not support WDT_OPT_PAUSE_IN_SLEEP");
-		return -ENOTSUP;
-	}
+	data->wdog_config.workMode.enableWait = ((options & WDT_OPT_PAUSE_IN_SLEEP) == 0U);
+	data->wdog_config.workMode.enableStop = ((options & WDT_OPT_PAUSE_IN_SLEEP) == 0U);
 
 	data->wdog_config.workMode.enableDebug = ((options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U);
 

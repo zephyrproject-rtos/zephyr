@@ -1,4 +1,8 @@
-/* SPDX-License-Identifier: Apache-2.0 */
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <zephyr/linker/iterable_sections.h>
 
@@ -8,6 +12,10 @@
 
 #if defined(CONFIG_SETTINGS)
 	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
+#if defined(CONFIG_MODEM_CELLULAR)
+	ITERABLE_SECTION_ROM(modem_cellular_board_init, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
 #if defined(CONFIG_SENSING)
@@ -62,6 +70,8 @@
 	ITERABLE_SECTION_ROM(shell_subcmds, Z_LINK_ITERABLE_SUBALIGN)
 
 	ITERABLE_SECTION_ROM(shell_dynamic_subcmds, Z_LINK_ITERABLE_SUBALIGN)
+
+	ITERABLE_SECTION_ROM(shell_remote, Z_LINK_ITERABLE_SUBALIGN)
 
 	ITERABLE_SECTION_ROM(cfb_font, Z_LINK_ITERABLE_SUBALIGN)
 

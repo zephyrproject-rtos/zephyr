@@ -130,6 +130,9 @@
 #define ID_AA64PFR0_SEL2_SHIFT	(36)
 #define ID_AA64PFR0_SEL2_MASK	(0xf)
 
+#define ID_AA64ISAR2_WFXT_SHIFT	(0)
+#define ID_AA64ISAR2_WFXT_MASK	(0xf)
+
 /*
  * TODO: ACTLR is of class implementation defined. All core implementations
  * in armv8a have the same implementation so far w.r.t few controls.
@@ -169,8 +172,8 @@
 #define HCR_API_BIT		BIT(41)	/* Trap pointer authentication instructions */
 
 /* CNTHCTL_EL2: Counter-timer Hypervisor Control register */
-#define CNTHCTL_EL2_EL1PCTEN	BIT(0)	/* Enable EL1 access to physical counter timer */
-#define CNTHCTL_EL2_EL1PCEN	BIT(1)	/* Enable EL1 access to physical counter */
+#define CNTHCTL_EL2_EL1PCTEN	BIT(0)	/* Enable EL1 access to physical counter */
+#define CNTHCTL_EL2_EL1PCEN	BIT(1)	/* Enable EL1 access to physical timer */
 
 /* PAC Key Registers - System register encodings */
 #define APIAKeyLo_EL1		S3_0_C2_C1_0

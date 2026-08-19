@@ -1,5 +1,5 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PINCTRL
@@ -39,6 +39,7 @@ config PINCTRL_KEEP_SLEEP_STATE
 	default y if PM || PM_DEVICE || DEVICE_DEINIT_SUPPORT
 
 # zephyr-keep-sorted-start
+source "drivers/pinctrl/Kconfig.aesc"
 source "drivers/pinctrl/Kconfig.alif"
 source "drivers/pinctrl/Kconfig.ambiq"
 source "drivers/pinctrl/Kconfig.ameba"
@@ -46,12 +47,14 @@ source "drivers/pinctrl/Kconfig.arm_mps2"
 source "drivers/pinctrl/Kconfig.arm_mps3"
 source "drivers/pinctrl/Kconfig.arm_mps4"
 source "drivers/pinctrl/Kconfig.arm_v2m_beetle"
+source "drivers/pinctrl/Kconfig.arm_v2m_musca_b1"
 source "drivers/pinctrl/Kconfig.b91"
 source "drivers/pinctrl/Kconfig.bcm2711"
 source "drivers/pinctrl/Kconfig.bee"
 source "drivers/pinctrl/Kconfig.bflb"
 source "drivers/pinctrl/Kconfig.cc13xx_cc26xx"
 source "drivers/pinctrl/Kconfig.cc23x0"
+source "drivers/pinctrl/Kconfig.em32"
 source "drivers/pinctrl/Kconfig.emsdp"
 source "drivers/pinctrl/Kconfig.ene"
 source "drivers/pinctrl/Kconfig.eos_s3"
@@ -61,6 +64,7 @@ source "drivers/pinctrl/Kconfig.gecko"
 source "drivers/pinctrl/Kconfig.imx"
 source "drivers/pinctrl/Kconfig.infineon"
 source "drivers/pinctrl/Kconfig.it8xxx2"
+source "drivers/pinctrl/Kconfig.lpc84x"
 source "drivers/pinctrl/Kconfig.lpc_iocon"
 source "drivers/pinctrl/Kconfig.max32"
 source "drivers/pinctrl/Kconfig.mchp"
@@ -90,6 +94,8 @@ source "drivers/pinctrl/Kconfig.ti_k3"
 source "drivers/pinctrl/Kconfig.wch_00x_afio"
 source "drivers/pinctrl/Kconfig.wch_20x_30x_afio"
 source "drivers/pinctrl/Kconfig.wch_afio"
+source "drivers/pinctrl/Kconfig.wch_ch570"
+source "drivers/pinctrl/Kconfig.wch_h41x_afio"
 source "drivers/pinctrl/Kconfig.xec"
 source "drivers/pinctrl/Kconfig.xlnx"
 source "drivers/pinctrl/Kconfig.xmc4xxx"

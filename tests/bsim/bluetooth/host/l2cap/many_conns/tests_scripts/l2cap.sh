@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="l2cap_many_conns"
+simulation_id="${BOARD_TS}_l2cap_many_conns"
 
 bsim_exe=./bs_${BOARD_TS}_tests_bsim_bluetooth_host_l2cap_many_conns_prj_conf
 

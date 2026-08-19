@@ -561,6 +561,8 @@ static void pf1550_int_routine_work_handler(struct k_work *work)
 		return;
 	}
 
+	LOG_INF("Online status: %d", data->charger_online);
+	LOG_INF("Charging status: %d", data->charger_status);
 	if (data->charger_status_notifier != NULL) {
 		data->charger_status_notifier(data->charger_status);
 	}

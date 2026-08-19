@@ -10,6 +10,7 @@ config SOC_SERIES_RTS5912
 	select DYNAMIC_INTERRUPTS
 	select SOC_EARLY_INIT_HOOK
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 
 if SOC_SERIES_RTS5912
 
@@ -37,5 +38,11 @@ config SOC_RTS5912_ULPM
 	select HAS_POWEROFF
 	help
 	  Enable support for RTS5912 ULPM PWR wake-up pins.
+
+config SOC_RTS5912_ULPM_POWEROFF_BRAM
+	bool "Poweroff BRAM while in ULPM"
+	default n
+	help
+	  Poweroff BRAM while RTS5912 enter ULPM.
 
 endif # SOC_SERIES_RTS5912

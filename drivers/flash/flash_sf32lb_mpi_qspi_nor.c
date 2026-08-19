@@ -123,6 +123,7 @@ struct flash_sf32lb_mpi_qspi_nor_data {
 	uintptr_t base;
 	uint32_t size;
 	struct sf32lb_dma_dt_spec dma;
+	uint8_t write_buf[SPI_NOR_PAGE_SIZE] __aligned(4);
 	uint8_t lines;
 	uint8_t psclr;
 	bool invert_rx_clk;
@@ -214,16 +215,14 @@ static __ramfunc void qspi_nor_read_fifo(const struct device *dev, uint8_t cmd, 
 
 		/* grab data */
 		for (size_t i = 0U; i < (chunk_len / 4U); i++) {
-			uint32_t dr;
+			uint32_t dr = sys_read32(data->mpi + MPI_DR);
 
-			dr = sys_read32(data->mpi + MPI_DR);
 			memcpy(&cbuf[i * 4U], &dr, 4U);
 		}
 
 		if (chunk_len & 3U) {
-			uint32_t dr;
+			uint32_t dr = sys_read32(data->mpi + MPI_DR);
 
-			dr = sys_read32(data->mpi + MPI_DR);
 			memcpy(&cbuf[chunk_len & ~3U], &dr, chunk_len & 3U);
 		}
 
@@ -248,14 +247,14 @@ static __ramfunc void qspi_nor_write_fifo(const struct device *dev, uint8_t cmd,
 
 		/* push data */
 		for (size_t i = 0U; i < (chunk_len / 4U); i++) {
-			uint32_t dr;
+			uint32_t dr = 0U;
 
 			memcpy(&dr, &cbuf[i * 4U], 4U);
 			sys_write32(dr, data->mpi + MPI_DR);
 		}
 
 		if (chunk_len & 3U) {
-			uint32_t dr;
+			uint32_t dr = 0U;
 
 			memcpy(&dr, &cbuf[chunk_len & ~3U], chunk_len & 3U);
 			sys_write32(dr, data->mpi + MPI_DR);
@@ -290,6 +289,52 @@ static inline void qspi_nor_wrsr2(const struct device *dev, uint8_t *sr)
 	qspi_nor_write_fifo(dev, SPI_NOR_CMD_WRSR2, MPI_CCRX_CMD_WRSR2, 0U, sr, 1U);
 }
 
+static inline bool qspi_nor_range_is_valid(const struct flash_sf32lb_mpi_qspi_nor_data *data,
+					   off_t offset, size_t size)
+{
+	if (offset < 0) {
+		return false;
+	}
+
+	if ((uint64_t)offset > data->size) {
+		return false;
+	}
+
+	return size <= ((uint64_t)data->size - (uint64_t)offset);
+}
+
+static inline bool qspi_nor_addr_add_overflow(uintptr_t addr, size_t size, uintptr_t *end)
+{
+	if (size > (UINTPTR_MAX - addr)) {
+		return true;
+	}
+
+	*end = addr + size;
+
+	return false;
+}
+
+static inline bool qspi_nor_ranges_overlap(uintptr_t a_start, uintptr_t a_end,
+					   uintptr_t b_start, uintptr_t b_end)
+{
+	return (a_start < b_end) && (a_end > b_start);
+}
+
+static inline bool qspi_nor_buf_overlaps_flash(const struct flash_sf32lb_mpi_qspi_nor_data *data,
+					       const void *buf, size_t size)
+{
+	uintptr_t buf_start = (uintptr_t)buf;
+	uintptr_t buf_end;
+	uintptr_t flash_end;
+
+	if ((size == 0U) || qspi_nor_addr_add_overflow(buf_start, size, &buf_end) ||
+	    qspi_nor_addr_add_overflow(data->base, data->size, &flash_end)) {
+		return false;
+	}
+
+	return qspi_nor_ranges_overlap(buf_start, buf_end, data->base, flash_end);
+}
+
 /* API */
 
 static int flash_sf32lb_mpi_qspi_nor_read(const struct device *dev, off_t offset, void *data_,
@@ -297,8 +342,12 @@ static int flash_sf32lb_mpi_qspi_nor_read(const struct device *dev, off_t offset
 {
 	struct flash_sf32lb_mpi_qspi_nor_data *data = dev->data;
 
-	if ((offset + size) > data->size) {
+	if (!qspi_nor_range_is_valid(data, offset, size) || ((data_ == NULL) && (size > 0U))) {
 		return -EINVAL;
+	}
+
+	if (size == 0U) {
+		return 0;
 	}
 
 	memcpy(data_, (void *)(data->base + offset), size);
@@ -311,8 +360,33 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 {
 	struct flash_sf32lb_mpi_qspi_nor_data *data = dev->data;
 	const uint8_t *cdata = data_;
+	uintptr_t src_start = (uintptr_t)data_;
+	uintptr_t src_end;
+	uintptr_t dst_start;
+	uintptr_t dst_end;
+	bool src_overlaps_flash;
 
-	if ((offset + size) > data->size) {
+	if (!qspi_nor_range_is_valid(data, offset, size)) {
+		return -EINVAL;
+	}
+
+	if (size == 0U) {
+		return 0;
+	}
+
+	if ((data_ == NULL) || qspi_nor_addr_add_overflow(src_start, size, &src_end) ||
+	    qspi_nor_addr_add_overflow(data->base, (size_t)offset, &dst_start) ||
+	    qspi_nor_addr_add_overflow(dst_start, size, &dst_end)) {
+		return -EINVAL;
+	}
+
+	src_overlaps_flash = qspi_nor_buf_overlaps_flash(data, data_, size);
+
+	if (src_overlaps_flash && qspi_nor_ranges_overlap(src_start, src_end, dst_start, dst_end)) {
+		if ((src_start == dst_start) && (src_end == dst_end)) {
+			return 0;
+		}
+
 		return -EINVAL;
 	}
 
@@ -322,14 +396,20 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 		struct dma_status status;
 		uint16_t chunk_len;
 		uint32_t cr, ccr1;
+		const uint8_t *dma_data = cdata;
 
-		/* limit to FIFO size, without crossing page boundary */
+		/* limit to page size, without crossing page boundary */
 		chunk_len = MIN(size, SPI_NOR_PAGE_SIZE);
 		if ((offset % SPI_NOR_PAGE_SIZE) + chunk_len > SPI_NOR_PAGE_SIZE) {
 			chunk_len = SPI_NOR_PAGE_SIZE - (offset % SPI_NOR_PAGE_SIZE);
 		}
 
 		key = k_spin_lock(&data->lock);
+
+		if (src_overlaps_flash && qspi_nor_buf_overlaps_flash(data, cdata, chunk_len)) {
+			memcpy(data->write_buf, cdata, chunk_len);
+			dma_data = data->write_buf;
+		}
 
 		/* force flash into write mode */
 		ccr1 = data->ccrx_pp;
@@ -344,9 +424,22 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 		sys_write32(FIELD_PREP(MPI_DLR1_DLEN_Msk, chunk_len - 1U), data->mpi + MPI_DLR1);
 
 		/* trigger DMA transfer */
-		(void)sf32lb_dma_reload_dt(&data->dma, (uintptr_t)cdata, data->mpi + MPI_DR,
+		ret = sf32lb_dma_reload_dt(&data->dma, (uintptr_t)dma_data, data->mpi + MPI_DR,
 					   chunk_len);
-		(void)sf32lb_dma_start_dt(&data->dma);
+		if (ret < 0) {
+			cr &= ~MPI_CR_DMAE;
+			sys_write32(cr, data->mpi + MPI_CR);
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
+
+		ret = sf32lb_dma_start_dt(&data->dma);
+		if (ret < 0) {
+			cr &= ~MPI_CR_DMAE;
+			sys_write32(cr, data->mpi + MPI_CR);
+			k_spin_unlock(&data->lock, key);
+			return ret;
+		}
 
 		/* enable write, send command and wait until ready */
 		qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
@@ -355,7 +448,7 @@ static int flash_sf32lb_mpi_qspi_nor_write(const struct device *dev, off_t offse
 		/* wait for DMA completion (polling) */
 		do {
 			ret = sf32lb_dma_get_status_dt(&data->dma, &status);
-		} while ((ret == 0) && status.busy);
+		} while ((ret == 0) && (status.pending_length != 0U));
 
 		(void)sf32lb_dma_stop_dt(&data->dma);
 
@@ -399,8 +492,6 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		return -EINVAL;
 	}
 
-	qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
-
 	do {
 		uint8_t cmd;
 		uint32_t adj;
@@ -427,6 +518,7 @@ static int flash_sf32lb_mpi_qspi_nor_erase(const struct device *dev, off_t offse
 		}
 
 		key = k_spin_lock(&data->lock);
+		qspi_nor_cinstr(dev, SPI_NOR_CMD_WREN);
 		qspi_nor_cinstr_seq_ready_wait(dev, cmd, ccrx, offset);
 		k_spin_unlock(&data->lock, key);
 

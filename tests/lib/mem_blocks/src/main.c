@@ -21,6 +21,16 @@ SYS_MEM_BLOCKS_DEFINE_STATIC_WITH_EXT_BUF(mem_block_02,
 					  BLK_SZ, NUM_BLOCKS,
 					  mem_block_02_buf);
 
+struct typed_mem_block {
+	uint8_t tag;
+	uint64_t value;
+};
+
+SYS_MEM_BLOCKS_DEFINE_TYPE(mem_block_type, struct typed_mem_block,
+			   NUM_BLOCKS);
+SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(mem_block_static_type,
+				  struct typed_mem_block, NUM_BLOCKS);
+
 static sys_multi_mem_blocks_t alloc_group;
 
 static ZTEST_DMEM volatile int expected_reason = -1;
@@ -213,9 +223,33 @@ static void alloc_free(sys_mem_blocks_t *mem_block,
 #endif
 }
 
+static void check_typed_mem_block(sys_mem_blocks_t *mem_block)
+{
+	void *block;
+	int ret;
+
+	zassert_equal(mem_block->info.num_blocks, NUM_BLOCKS);
+	zassert_equal(BIT(mem_block->info.blk_sz_shift),
+		      NHPOT(WB_UP(sizeof(struct typed_mem_block))));
+
+	ret = sys_mem_blocks_alloc(mem_block, 1, &block);
+	zassert_equal(ret, 0, "sys_mem_blocks_alloc failed (%d)", ret);
+	zassert_true(check_buffer_bound(mem_block, block), "allocated memory is out of bound");
+	zassert_equal((uintptr_t)block % __alignof(struct typed_mem_block), 0);
+
+	ret = sys_mem_blocks_free(mem_block, 1, &block);
+	zassert_equal(ret, 0, "sys_mem_blocks_free failed (%d)", ret);
+}
+
 ZTEST(lib_mem_block, test_mem_block_alloc_free)
 {
 	alloc_free(&mem_block_01, 1, 1);
+}
+
+ZTEST(lib_mem_block, test_mem_block_alloc_free_type)
+{
+	check_typed_mem_block(&mem_block_type);
+	check_typed_mem_block(&mem_block_static_type);
 }
 
 ZTEST(lib_mem_block, test_mem_block_alloc_free_alt_buf)

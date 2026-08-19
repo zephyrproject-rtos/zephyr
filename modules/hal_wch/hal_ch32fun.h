@@ -11,6 +11,10 @@
 #ifndef _CH32FUN_H
 #define _CH32FUN_H
 
+#ifndef asm
+#define asm __asm /* -std-c17 compatibility */
+#endif
+
 #if defined(CONFIG_SOC_SERIES_QINGKE_V2A)
 #define CH32V003 1
 #include <ch32fun.h>
@@ -20,6 +24,17 @@
 #define CH32V00x 1
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V2C) */
+
+#if defined(CONFIG_SOC_SERIES_QINGKE_V3A)
+#define CH32V10x 1
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3A) */
+
+#if defined(CONFIG_SOC_SERIES_QINGKE_V3C)
+#define CH57x       1
+#define MCU_PACKAGE 0
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_QINGKE_V3C) */
 
 #if defined(CONFIG_SOC_SERIES_QINGKE_V4B)
 #define CH32V20x    1
@@ -39,10 +54,15 @@
 #define CH32V30x 1
 #if defined(CONFIG_SOC_CH32V303)
 #define CH32V30x_D8 1
-#elif defined(CONFIG_SOC_CH32V307)
+#elif defined(CONFIG_SOC_CH32V305) || defined(CONFIG_SOC_CH32V307) || defined(CONFIG_SOC_CH32V317)
 #define CH32V30x_D8C 1
 #endif
 #include <ch32fun.h>
 #endif /* defined(CONFIG_SOC_SERIES_QINGKE_V4F) */
+
+#if defined(CONFIG_SOC_SERIES_CH32H41X)
+#define CH32H41x 1
+#include <ch32fun.h>
+#endif /* defined(CONFIG_SOC_SERIES_CH32H41X) */
 
 #endif

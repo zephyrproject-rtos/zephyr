@@ -17,7 +17,7 @@
 
 LOG_MODULE_REGISTER(bap_stream_rx, LOG_LEVEL_INF);
 
-#define LOG_INTERVAL 100
+#define LOG_INTERVAL 100U
 
 static void log_stream_rx(struct bt_bap_stream *stream, const struct bt_iso_recv_info *info,
 			  struct net_buf *buf)
@@ -43,13 +43,12 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 			   struct net_buf *buf)
 {
 	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	static bool last_failed;
 
 	test_stream->rx_cnt++;
 	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
 		if (memcmp(buf->data, mock_iso_data, buf->len) == 0) {
 			test_stream->valid_rx_cnt++;
-			last_failed = false;
+			test_stream->last_rx_failed = false;
 
 			if (test_stream->valid_rx_cnt >= MIN_SEND_COUNT) {
 				SET_FLAG(test_stream->flag_audio_received);
@@ -75,7 +74,8 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 		log_stream_err(test_stream, info, buf);
 
 		if (test_stream->valid_rx_cnt > 1U) {
-			FAIL("Duplicated timestamp received: %u\n", test_stream->last_info.ts);
+			FAIL("Duplicated timestamp received after %u valid RX: %u\n",
+			     test_stream->valid_rx_cnt, test_stream->last_info.ts);
 		}
 	}
 
@@ -83,7 +83,8 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 		log_stream_err(test_stream, info, buf);
 
 		if (test_stream->valid_rx_cnt > 1U) {
-			FAIL("Duplicated PSN received: %u\n", test_stream->last_info.seq_num);
+			FAIL("Duplicated PSN received after %u valid RX: %u\n",
+			     test_stream->valid_rx_cnt, test_stream->last_info.seq_num);
 		}
 	}
 
@@ -93,15 +94,15 @@ void bap_stream_rx_recv_cb(struct bt_bap_stream *stream, const struct bt_iso_rec
 
 		if (test_stream->valid_rx_cnt > 1U &&
 		    !TEST_FLAG(test_stream->flag_audio_received)) {
-			FAIL("ISO receive error\n");
+			FAIL("ISO receive error after %u valid RX\n", test_stream->valid_rx_cnt);
 		}
 	}
 
 	if (info->flags & BT_ISO_FLAGS_LOST) {
 		log_stream_err(test_stream, info, buf);
 
-		if (test_stream->valid_rx_cnt > 1U) {
-			FAIL("ISO receive lost\n");
+		if (!TEST_FLAG(test_stream->stopping) && test_stream->valid_rx_cnt > 1U) {
+			FAIL("ISO receive lost after %u valid RX\n", test_stream->valid_rx_cnt);
 		}
 	}
 }

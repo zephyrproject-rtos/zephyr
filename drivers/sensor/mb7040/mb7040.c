@@ -161,14 +161,14 @@ static int mb7040_init(const struct device *dev)
 	k_sem_init(&data->read_sem, 0, 1);
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C not ready!");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 	/* Initialize status GPIO if present */
 #if MB7040_HAS_STATUS_GPIO
 	if (cfg->status_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&cfg->status_gpio)) {
-			LOG_ERR("Status GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->status_gpio.port);
 			return -ENODEV;
 		}
 

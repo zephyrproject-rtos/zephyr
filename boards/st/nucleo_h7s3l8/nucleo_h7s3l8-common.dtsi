@@ -44,7 +44,7 @@
 
 		user_button: button_0 {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
@@ -56,6 +56,7 @@
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 		spi-flash0 = &mx25uw25645;
+		rtc = &rtc;
 	};
 
 	ext_memory: memory@70000000 {
@@ -77,8 +78,8 @@
 
 &pll {
 	div-m = <12>;
-	mul-n = <200>;
-	div-p = <2>;
+	mul-n = <300>;
+	div-p = <1>;
 	div-q = <2>;
 	div-r = <2>;
 	div-s = <2>;
@@ -102,9 +103,9 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(200)>;
+	clock-frequency = <DT_FREQ_M(600)>;
 	dcpre = <1>;
-	hpre = <1>;
+	hpre = <2>;
 	ppre1 = <2>;
 	ppre2 = <2>;
 	ppre4 = <2>;
@@ -165,6 +166,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -202,6 +205,10 @@
 	};
 };
 
+&xspim {
+	status = "okay";
+};
+
 &xspi2 {
 	pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
 		     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
@@ -232,12 +239,24 @@
 			reg = <0x0 DT_SIZE_M(32)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
-
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usbphyc {
+	/*
+	 * There is no need to change `clocks` because
+	 * we use the default configuration after reset:
+	 *  USBPHYC kernel clock = HSE @ 24 MHz
+	 */
+	status = "okay";
 };

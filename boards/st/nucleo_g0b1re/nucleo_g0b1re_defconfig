@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 # Enable MPU
 CONFIG_ARM_MPU=y
 
@@ -7,6 +10,3 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
-
-# GPIO Controller
-CONFIG_GPIO=y

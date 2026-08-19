@@ -10,12 +10,16 @@
 #include <dt-bindings/pinctrl/rtl8752h-pinctrl.h>
 #include <dt-bindings/clock/rtl8752h-clocks.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/adc/adc.h>
 
 / {
 	chosen {
 		zephyr,flash = &flash;
 		zephyr,flash-controller = &fmc;
 		zephyr,sram = &data_ram_app_0;
+		zephyr,entropy = &trng;
 	};
 
 	cpus {
@@ -106,50 +110,60 @@
 		};
 
 		fmc: flash-controller@40080000 {
-			compatible = "realtek,rtl8752h-flash-controller";
+			compatible = "realtek,bee-nor-flash-controller";
 			reg = <0x40080000 0x12c>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
 
 			flash: flash@800000 {
-				compatible = "soc-nv-flash";
+				compatible = "realtek,bee-nor-flash", "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <4096>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				/* reg and ranges are specified in the SoC-variant dtsi
+				 * (e.g., rtl8752hjf.dtsi).
+				 */
 
 				partitions {
-					compatible = "fixed-partitions";
+					ranges;
 					#address-cells = <1>;
 					#size-cells = <1>;
 
 					rsvd_partition: partition@0 {
+						compatible = "zephyr,mapped-partition";
 						label = "rsvd-image";
 						reg = <0x0 DT_SIZE_K(4)>;
 					};
 
 					oem_cfg_partition: partition@1000 {
+						compatible = "zephyr,mapped-partition";
 						label = "oem-cfg-image";
 						reg = <0x1000 DT_SIZE_K(4)>;
 					};
 
 					ota_header_partition: partition@2000 {
+						compatible = "zephyr,mapped-partition";
 						label = "ota-header-image";
 						reg = <0x2000 DT_SIZE_K(4)>;
 					};
 
 					rom_patch_partition: partition@3000 {
+						compatible = "zephyr,mapped-partition";
 						label = "rom-patch-image";
 						reg = <0x3000 DT_SIZE_K(28)>;
 					};
 
 					fsbl_partition: partition@a000 {
+						compatible = "zephyr,mapped-partition";
 						label = "fsbl-image";
 						reg = <0xa000 DT_SIZE_K(4)>;
 					};
 
 					bt_stack_patch_partition: partition@b000 {
+						compatible = "zephyr,mapped-partition";
 						label = "bt-stack-patch-image";
 						reg = <0xb000 DT_SIZE_K(40)>;
 					};
@@ -169,6 +183,12 @@
 			reg = <0x40001000 0x64>;
 			clocks = <&cctl APB_CLK(GPIO)>;
 			interrupts = <30 0>, <29 0>, <27 0>, <26 0>;
+			status = "disabled";
+		};
+
+		core_wdt: watchdog@40006000 {
+			compatible = "realtek,bee-core-wdt";
+			reg = <0x40006000 0x10>;
 			status = "disabled";
 		};
 
@@ -209,6 +229,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer3: timer@4000203c {
@@ -221,6 +247,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -235,6 +267,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer5: timer@40002064 {
@@ -247,6 +285,12 @@
 			counter {
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
+			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
 			};
 		};
 
@@ -262,6 +306,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		timer7: timer@40003024 {
@@ -275,6 +325,12 @@
 				compatible = "realtek,bee-counter-timer";
 				status = "disabled";
 			};
+
+			pwm {
+				compatible = "realtek,bee-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 		};
 
 		keyscan: keyscan@40005000 {
@@ -283,6 +339,114 @@
 			interrupts = <19 0>;
 			clocks = <&cctl APB_CLK(KEYSCAN)>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@40015000 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40015000 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <16 0>;
+			clocks = <&cctl APB_CLK(I2C0)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40015400 {
+			compatible = "realtek,bee-i2c";
+			reg = <0x40015400 0xa0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <17 0>;
+			clocks = <&cctl APB_CLK(I2C1)>;
+			status = "disabled";
+		};
+
+		rtc_counter: rtc@40000100 {
+			compatible = "realtek,bee-counter-rtc";
+			reg = <0x40000100 0x40>;
+			interrupts = <19 0>;
+			channels = <4>;
+			status = "disabled";
+		};
+
+		qdec: qdec@40004000 {
+			compatible = "realtek,bee-basic-qdec";
+			reg = <0x40004000 0x30>;
+			clocks = <&cctl APB_CLK(QDEC)>;
+			interrupts = <19 0>;
+			status = "disabled";
+		};
+
+		aes: aes@40014000 {
+			compatible = "realtek,bee-aes";
+			reg = <0x40014000 0x7c>;
+			status = "disabled";
+		};
+
+		sha256: sha256@4002b000 {
+			compatible = "realtek,bee-sha256";
+			reg = <0x4002b000 0x220>;
+			status = "disabled";
+		};
+
+		trng: trng@400c2400 {
+			compatible = "realtek,bee-trng";
+			reg = <0x400c2400 0x68>;
+			status = "okay";
+		};
+
+		dma0: dma@400272c0 {
+			compatible = "realtek,bee-dma";
+			reg = <0x400272c0 0x4b0>;
+			interrupts = <20 0>, <21 0>, <22 0>;
+			dma-channels = <3>;
+			clocks = <&cctl APB_CLK(GDMA)>;
+			dma-port = <0>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		spi0: spi@40013000 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013000 0xf0>;
+			interrupts = <14 0>;
+			clocks = <&cctl APB_CLK(SPI0)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi0_slave: spi_slave@40013000 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013000 0xf0>;
+			interrupts = <14 0>;
+			clocks = <&cctl APB_CLK(SPI0)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			is-slave;
+		};
+
+		spi1: spi@40013400 {
+			compatible = "realtek,bee-spi";
+			reg = <0x40013400 0xf0>;
+			interrupts = <15 0>;
+			clocks = <&cctl APB_CLK(SPI1)>;
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		adc: adc@40010000 {
+			compatible = "realtek,bee-adc";
+			reg = <0x40010000 0x60>;
+			interrupts = <18 0>;
+			clocks = <&cctl APB_CLK(ADC)>;
+			channels = <9>;
+			status = "disabled";
+			#io-channel-cells = <1>;
 		};
 	};
 

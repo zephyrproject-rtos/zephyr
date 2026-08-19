@@ -12,6 +12,7 @@
 #include <zephyr/version.h>
 
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/pm/device.h>
 
 #include <esp_bt.h>
 #include <esp_mac.h>
@@ -27,6 +28,10 @@ extern const char *btdm_controller_get_compile_version(void);
 #else
 extern char *ble_controller_get_compile_version(void);
 #define esp32_get_controller_version() ble_controller_get_compile_version()
+#endif
+
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+extern bool r_ble_lll_sleep_should_skip_light_sleep_check(void);
 #endif
 
 #if defined(CONFIG_SOC_SERIES_ESP32)
@@ -162,16 +167,11 @@ static esp_ble_power_type_t handle_to_esp_power_type(uint8_t handle_type, uint16
 
 #define HCI_BT_ESP32_TIMEOUT K_MSEC(2000)
 
-struct bt_esp32_data {
-	bt_hci_recv_t recv;
-};
-
 static K_SEM_DEFINE(hci_send_sem, 0, 1);
 
 static int bt_esp32_vs_send_cmd_complete(const struct device *dev, uint16_t opcode, const void *rsp,
 					 size_t rsp_len)
 {
-	struct bt_esp32_data *hci = dev->data;
 	struct net_buf *buf;
 	struct bt_hci_evt_hdr *evt_hdr;
 	struct bt_hci_evt_cmd_complete *cmd_complete;
@@ -196,7 +196,7 @@ static int bt_esp32_vs_send_cmd_complete(const struct device *dev, uint16_t opco
 
 	LOG_DBG("VS cmd complete: opcode 0x%04x, rsp_len %zu", opcode, rsp_len);
 
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 
 	return 0;
 }
@@ -361,7 +361,6 @@ static int bt_esp32_vs_read_build_info(const struct device *dev)
 	struct bt_hci_evt_hdr *evt_hdr;
 	struct bt_hci_evt_cmd_complete *cmd_complete;
 	struct bt_hci_rp_vs_read_build_info *rp;
-	struct bt_esp32_data *hci = dev->data;
 
 	version = esp32_get_controller_version();
 	if (version == NULL) {
@@ -390,7 +389,7 @@ static int bt_esp32_vs_read_build_info(const struct device *dev)
 
 	LOG_DBG("VS Read Build Info: %s", version);
 
-	hci->recv(dev, buf);
+	bt_hci_recv(dev, buf);
 
 	return 0;
 }
@@ -682,7 +681,6 @@ static struct net_buf *bt_esp_iso_recv(uint8_t *data, size_t remaining)
 static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct bt_esp32_data *hci = dev->data;
 	uint8_t pkt_indicator;
 	struct net_buf *buf = NULL;
 	size_t remaining = len;
@@ -711,9 +709,9 @@ static int hci_esp_host_rcv_pkt(uint8_t *data, uint16_t len)
 	}
 
 	if (buf) {
-		LOG_DBG("Calling bt_recv(%p)", buf);
+		LOG_DBG("Calling bt_hci_recv(%p)", buf);
 
-		hci->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 
 	return 0;
@@ -819,9 +817,8 @@ static int bt_esp32_ble_deinit(void)
 	return 0;
 }
 
-static int bt_esp32_open(const struct device *dev, bt_hci_recv_t recv)
+static int bt_esp32_open(const struct device *dev)
 {
-	struct bt_esp32_data *hci = dev->data;
 	int err;
 
 	k_sem_reset(&hci_send_sem);
@@ -831,8 +828,6 @@ static int bt_esp32_open(const struct device *dev, bt_hci_recv_t recv)
 		return err;
 	}
 
-	hci->recv = recv;
-
 	LOG_DBG("ESP32 BT started");
 
 	return 0;
@@ -840,7 +835,6 @@ static int bt_esp32_open(const struct device *dev, bt_hci_recv_t recv)
 
 static int bt_esp32_close(const struct device *dev)
 {
-	struct bt_esp32_data *hci = dev->data;
 	int err;
 
 	err = bt_esp32_ble_deinit();
@@ -848,12 +842,37 @@ static int bt_esp32_close(const struct device *dev)
 		return err;
 	}
 
-	hci->recv = NULL;
-
 	LOG_DBG("ESP32 BT stopped");
 
 	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int bt_esp32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(CONFIG_ESP32_BT_LE_SLEEP_ENABLE) && defined(CONFIG_ESP32_SOC_PAU_SUPPORTED)
+		if (r_ble_lll_sleep_should_skip_light_sleep_check()) {
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(bt_hci, drv) = {
 	.open = bt_esp32_open,
@@ -862,8 +881,12 @@ static DEVICE_API(bt_hci, drv) = {
 };
 
 #define BT_ESP32_DEVICE_INIT(inst)                                                                 \
-	static struct bt_esp32_data bt_esp32_data_##inst = {};                                     \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &bt_esp32_data_##inst, NULL, POST_KERNEL,          \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
+	static struct bt_hci_driver_data bt_esp32_data_##inst = {};                                \
+	static const struct bt_hci_driver_config bt_esp32_config_##inst =                          \
+		BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst);                                            \
+	PM_DEVICE_DT_INST_DEFINE(inst, bt_esp32_pm_action);                                        \
+	DEVICE_DT_INST_DEFINE(inst, NULL, PM_DEVICE_DT_INST_GET(inst),                             \
+			      &bt_esp32_data_##inst, &bt_esp32_config_##inst,                      \
+			      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &drv)
 
 BT_ESP32_DEVICE_INIT(0)

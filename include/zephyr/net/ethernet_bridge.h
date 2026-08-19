@@ -58,9 +58,6 @@ struct eth_bridge_iface_context {
 	/* Bridge instance id */
 	int id;
 
-	/* Is the bridge interface initialized */
-	bool is_init : 1;
-
 	/* Has user configured the bridge */
 	bool is_setup : 1;
 
@@ -150,6 +147,8 @@ static inline bool net_eth_iface_is_bridged(struct ethernet_context *ctx)
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct eth_bridge_iface_context *br_ctx;
 
+	NET_ASSERT(ctx != NULL);
+
 	if (ctx->bridge == NULL) {
 		return false;
 	}
@@ -172,6 +171,8 @@ static inline bool net_eth_iface_is_bridged(struct ethernet_context *ctx)
 static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
 {
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
+	NET_ASSERT(ctx != NULL);
+
 	return ctx->bridge;
 #else
 	return NULL;
@@ -183,10 +184,12 @@ static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
  *
  * @param iface Pointer to bridged iface
  * @param pkt Pointer to pkt
+ * @param dst_iface Pointer to pointer to destination iface
  *
  * @return net_verdict.
  */
-enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt);
+enum net_verdict eth_bridge_input_process(struct net_if *iface, struct net_pkt *pkt,
+					  struct net_if **dst_iface);
 
 /**
  * @}

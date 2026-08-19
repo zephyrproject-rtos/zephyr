@@ -247,7 +247,7 @@ int tids_2521020222501_init_interrupt(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->interrupt_gpio)) {
-		LOG_ERR("Device %s is not ready", cfg->interrupt_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->interrupt_gpio.port);
 		return -ENODEV;
 	}
 

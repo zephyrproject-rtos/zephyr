@@ -32,12 +32,6 @@ properties:
     description: |
       The SDA pin for the selected port.
 
-  transfer-timeout-ms:
-    type: int
-    default: 500
-    description: |
-      Maximum time allowed for an I2C transfer.
-
   port-num:
     type: int
     required: true
@@ -193,6 +187,12 @@ properties:
       The I2C controller supports two 32-bytes FIFOs,
       FIFO1 supports I2C port 0. FIFO2 only supports one port among
       1~8. The default is I2C port 1.
+
+  fifo-ctrl-offset:
+    type: int
+    description: |
+      The offset of FIFO control register. If this property is present,
+      all I2C channels support FIFO mode in hardware.
 
   push-pull-recovery:
     type: boolean

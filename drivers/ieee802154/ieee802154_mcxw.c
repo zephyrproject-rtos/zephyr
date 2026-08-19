@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/drivers/flash.h>
 #include <zephyr/storage/flash_map.h>
+#include <zephyr/nvmem.h>
 
 #if defined(CONFIG_NET_L2_OPENTHREAD)
 #include <zephyr/net/openthread.h>
@@ -69,10 +70,16 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 #define stop_csl_receiver()
 #endif /* CONFIG_IEEE802154_CSL_ENDPOINT */
 
-/* Hardware parameters partition and offsets */
-#define HW_PARAMS_PARTITION_ID PARTITION_ID(hw_params_partition)
+/* Hardware parameters nvmem */
+#if DT_NODE_HAS_STATUS(DT_NODELABEL(hw_params), okay)
+#define DT_HW_PARAMS         DT_NODELABEL(hw_params)
+#define EUI64_CELL           ieee802154_eui64
+static const struct nvmem_cell eui64_cell = NVMEM_CELL_GET_BY_NAME(DT_HW_PARAMS, EUI64_CELL);
 #define MAC_ADDRESS_OFFSET     0x00
 #define MAC_ADDRESS_LEN        8
+#else
+#error "Node hw_params is disabled"
+#endif
 
 /* ACK guard window (µs) to avoid aborting RX just when waiting for ACK */
 #ifndef ACK_GUARD_US
@@ -81,14 +88,27 @@ static uint16_t rf_compute_csl_phase(uint32_t aTimeUs);
 
 static uint8_t g_eui64[MAC_ADDRESS_LEN];
 
-static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_START;
+static volatile uint32_t rx_on_when_idle = RX_ON_IDLE_STOP;
 
 /* keep RX open shortly after data poll when FP=1 and skip rf_abort while waiting for ACK */
 static uint64_t waiting_ack_until_us;
 
+/**
+ * @brief Current PHY hardware channel
+ *
+ * Tracks the actual channel configured in the PHY hardware.
+ * This may differ from mcxw_ctx.channel during temporary operations
+ * (energy scans, CSL RX slots).
+ *
+ * The main network channel is always stored in mcxw_ctx.channel.
+ */
+static uint8_t phy_channel = DEFAULT_CHANNEL;
+
 /* Private functions */
 static void rf_abort(void);
 static void rf_set_channel(uint8_t channel);
+static int rf_change_channel(uint8_t channel, bool temporary, bool restart_rx);
+static int rf_restore_main_channel(void);
 static void rf_set_tx_power(int8_t tx_power);
 static uint64_t rf_adjust_tstamp_from_phy(uint64_t ts);
 
@@ -98,6 +118,7 @@ static uint32_t rf_adjust_tstamp_from_app(uint32_t time);
 
 static void rf_rx_on_idle(uint32_t newValue);
 static void rf_set_rx_time_poll(uint32_t time_poll);
+static void set_rx_state(void);
 
 static uint8_t ot_phy_ctx = (uint8_t)(-1);
 static struct mcxw_context mcxw_ctx;
@@ -135,30 +156,155 @@ WEAK void app_disallow_device_to_slepp(void)
 {
 }
 
-static const struct flash_area *open_hw_params_partition(void)
+/**
+ * @brief Low-level PHY channel configuration
+ *
+ * Directly configures the PHY hardware channel without any validation
+ * or context updates. This is a helper function that should not be
+ * called directly - use rf_change_channel() instead.
+ *
+ * @param channel Channel to set (11-26, not validated)
+ */
+static void rf_set_channel(uint8_t channel)
 {
-	const struct flash_area *fa = NULL;
-	int ret = flash_area_open(HW_PARAMS_PARTITION_ID, &fa);
+	macToPlmeMessage_t msg;
 
-	if (ret != 0) {
-		LOG_ERR("Failed to open the HW parameters flash partition: %d", ret);
-		return NULL;
-	}
+	msg.msgType = gPlmeSetReq_c;
+	msg.msgData.setReq.PibAttribute = gPhyPibCurrentChannel_c;
+	msg.msgData.setReq.PibAttributeValue = (uint64_t)channel;
 
-	return fa;
+	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 }
 
-static int read_mac_from_flash(const struct flash_area *fa, uint8_t *mac_addr)
+/**
+ * @brief Helper to restart RX if rx_on_when_idle is enabled
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_restart_rx_if_enabled(void)
 {
-	int ret = flash_area_read(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
+	macToPlmeMessage_t msg;
+	phyStatus_t phy_status;
+
+	if (rx_on_when_idle != RX_ON_IDLE_START) {
+		return 0;  /* RX on idle not enabled, nothing to do */
+	}
+
+	msg.msgType = gPlmeSetReq_c;
+	msg.msgData.setReq.PibAttribute = gPhyPibRxOnWhenIdle;
+	msg.msgData.setReq.PibAttributeValue = (uint64_t)RX_ON_IDLE_START;
+
+	phy_status = MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+	if (phy_status != gPhySuccess_c) {
+		LOG_ERR("Failed to restart RX: %d", phy_status);
+		return -EIO;
+	}
+
+	mcxw_ctx.state = RADIO_STATE_RECEIVE;
+	LOG_DBG("RX restarted");
+	return 0;
+}
+
+/**
+ * @brief Centralized channel change function
+ *
+ * This function handles ALL channel changes in the driver:
+ * - Permanent changes (network channel change)
+ * - Temporary changes (CSL RX slots, energy scan)
+ * - PHY/context synchronization
+ * - RX restart if necessary
+ *
+ * @param channel New channel (11-26)
+ * @param temporary true if temporary change (RX slot, energy scan)
+ *                  false if permanent change (network change)
+ * @param restart_rx true to restart RX after channel change
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_change_channel(uint8_t channel, bool temporary, bool restart_rx)
+{
+	if (channel < 11 || channel > 26) {
+		LOG_ERR("Invalid channel: %u", channel);
+		return -EINVAL;
+	}
+
+	LOG_DBG("Channel change: %u -> %u (temp=%d, restart_rx=%d, main=%u)",
+		phy_channel, channel, temporary, restart_rx, mcxw_ctx.channel);
+
+	/* Update main channel if permanent change */
+	if (!temporary) {
+		mcxw_ctx.channel = channel;
+		LOG_DBG("Main channel updated to %u", channel);
+	}
+
+	/* If PHY is already on the correct channel, just restart RX if needed */
+	if (phy_channel == channel) {
+		LOG_DBG("PHY already on channel %u", channel);
+		return restart_rx ? rf_restart_rx_if_enabled() : 0;
+	}
+
+	/* Stop current RX */
+	rf_abort();
+
+	/* Configure new channel in PHY using low-level helper */
+	rf_set_channel(channel);
+	phy_channel = channel;
+
+	LOG_DBG("PHY channel set to %u", channel);
+
+	/* Restart RX if requested */
+	return restart_rx ? rf_restart_rx_if_enabled() : 0;
+}
+
+/**
+ * @brief Restore main channel after temporary operation
+ *
+ * This function is called automatically after:
+ * - CSL RX slot on temporary channel
+ * - Energy scan
+ * - Any temporary operation that changed PHY channel
+ *
+ * @return 0 on success, error code otherwise
+ */
+static int rf_restore_main_channel(void)
+{
+	/* If PHY is on a different channel than main, restore it */
+	if (phy_channel != mcxw_ctx.channel) {
+		LOG_DBG("Restoring main channel %u (PHY was on %u)",
+			mcxw_ctx.channel, phy_channel);
+		return rf_change_channel(mcxw_ctx.channel, false,
+					 rx_on_when_idle == RX_ON_IDLE_START);
+	}
+
+	LOG_DBG("PHY already on main channel %u", mcxw_ctx.channel);
+	return 0;
+}
+
+static int read_mac_from_nvmem(const struct nvmem_cell *cell, uint8_t *mac_addr)
+{
+	int ret = nvmem_cell_read(cell, mac_addr, MAC_ADDRESS_OFFSET, MAC_ADDRESS_LEN);
 
 	if (ret != 0) {
-		LOG_ERR("Failed to read MAC from the HW parameters flash: %d", ret);
+		LOG_ERR("Failed to read MAC from the HW parameters NVMEM: %d", ret);
 		return ret;
 	}
 
 	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
-			"Loaded MAC address from the HW parameters flash:");
+			"Loaded MAC address from the HW parameters NVMEM:");
+	return 0;
+}
+
+static int save_mac_to_nvmem(const struct nvmem_cell *cell, const uint8_t *mac_addr)
+{
+	int ret = nvmem_cell_write(cell, mac_addr, MAC_ADDRESS_OFFSET, MAC_ADDRESS_LEN);
+
+	if (ret != 0) {
+		LOG_ERR("Failed to write MAC address to HW parameters NVMEM: %d", ret);
+		return ret;
+	}
+
+	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
+			"MAC address saved to the HW parameters NVMEM successfully:");
 	return 0;
 }
 
@@ -191,29 +337,8 @@ static void generate_new_mac_address(uint8_t *mac_addr)
 	sys_rand_get(&mac_addr[3], MAC_ADDRESS_LEN - 3);
 }
 
-static int save_mac_to_flash(const struct flash_area *fa, const uint8_t *mac_addr)
-{
-	int ret = flash_area_erase(fa, MAC_ADDRESS_OFFSET, fa->fa_size);
-
-	if (ret != 0) {
-		LOG_ERR("Failed to erase HW parameters flash area: %d", ret);
-		return ret;
-	}
-
-	ret = flash_area_write(fa, MAC_ADDRESS_OFFSET, mac_addr, MAC_ADDRESS_LEN);
-	if (ret != 0) {
-		LOG_ERR("Failed to write MAC address to HW parameters flash: %d", ret);
-		return ret;
-	}
-
-	LOG_HEXDUMP_INF(mac_addr, MAC_ADDRESS_LEN,
-			"MAC address saved to the HW parameters flash successfully:");
-	return 0;
-}
-
 void mcxw_get_eui64(uint8_t *eui64)
 {
-	const struct flash_area *fa = NULL;
 	bool force_regenerate = false;
 
 	__ASSERT_NO_MSG(eui64);
@@ -221,20 +346,14 @@ void mcxw_get_eui64(uint8_t *eui64)
 	/* Initialize g_eui64 to ensure clean state */
 	memset(g_eui64, 0, MAC_ADDRESS_LEN);
 
-	/* Open HW parameters flash partition */
-	fa = open_hw_params_partition();
-	if (fa == NULL) {
+	/* Try to read MAC address from NVMEM */
+	if (read_mac_from_nvmem(&eui64_cell, g_eui64) != 0) {
 		force_regenerate = true;
 	} else {
-		/* Try to read MAC address from flash */
-		if (read_mac_from_flash(fa, g_eui64) != 0) {
+		/* Check if loaded MAC is valid */
+		if (!is_mac_address_valid(g_eui64)) {
+			LOG_INF("Invalid MAC address detected, will regenerate");
 			force_regenerate = true;
-		} else {
-			/* Check if loaded MAC is valid */
-			if (!is_mac_address_valid(g_eui64)) {
-				LOG_INF("Invalid MAC address detected, will regenerate");
-				force_regenerate = true;
-			}
 		}
 	}
 
@@ -243,15 +362,8 @@ void mcxw_get_eui64(uint8_t *eui64)
 		LOG_INF("Generating new MAC address");
 		generate_new_mac_address(g_eui64);
 
-		/* Save to flash if possible */
-		if (fa != NULL) {
-			save_mac_to_flash(fa, g_eui64);
-		}
-	}
-
-	/* Close partition and provide the address */
-	if (fa != NULL) {
-		flash_area_close(fa);
+		/* Save to NVMEM if possible */
+		save_mac_to_nvmem(&eui64_cell, g_eui64);
 	}
 
 	/* Always provide a valid address */
@@ -338,8 +450,8 @@ void mcxw_radio_receive(void)
 
 	mcxw_ctx.state = RADIO_STATE_RECEIVE;
 
-	rf_abort();
-	rf_set_channel(mcxw_ctx.channel);
+	/* Ensure PHY is on correct channel */
+	rf_change_channel(mcxw_ctx.channel, false, false);
 
 	/*
 	 * RX-on-idle management. CSL receiver is managed separately:
@@ -540,7 +652,8 @@ static int mcxw_tx(const struct device *dev, enum ieee802154_tx_mode mode, struc
 	mcxw_radio->tx_frame.sec_processed = net_pkt_ieee802154_frame_secured(pkt);
 	mcxw_radio->tx_frame.hdr_updated = net_pkt_ieee802154_mac_hdr_rdy(pkt);
 
-	rf_set_channel(mcxw_radio->channel);
+	/* Ensure PHY is on correct channel before TX */
+	rf_change_channel(mcxw_radio->channel, false, false);
 
 	msg->msgType = gPdDataReq_c;
 	msg->msgData.dataReq.psduLength = mcxw_radio->tx_frame.length;
@@ -801,7 +914,8 @@ static int mcxw_energy_scan(const struct device *dev, uint16_t duration,
 
 	rf_abort();
 
-	rf_set_channel(mcxw_radio->channel);
+	/* Use centralized channel function */
+	rf_change_channel(mcxw_radio->channel, false, false);
 
 	mcxw_radio->energy_scan_done = done_cb;
 
@@ -929,11 +1043,11 @@ static void mcxw_receive_at(uint8_t channel, uint32_t start, uint32_t duration)
 		set_csl_sample_time();
 	}
 
-	/* Use the channel provided by OT to avoid listening on the wrong channel */
+	/* Use centralized function for temporary channel change */
 	if (channel != mcxw_ctx.channel) {
-		LOG_DBG("RX_SLOT: switching channel %u -> %u", mcxw_ctx.channel, channel);
-		rf_set_channel(channel);
-		mcxw_ctx.channel = channel;
+		LOG_DBG("RX_SLOT: temporary channel %u (main=%u)",
+			channel, mcxw_ctx.channel);
+		rf_change_channel(channel, true, false);
 	}
 
 	start = rf_adjust_tstamp_from_app(start);
@@ -1085,17 +1199,6 @@ static void rf_abort(void)
 	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
 }
 
-static void rf_set_channel(uint8_t channel)
-{
-	macToPlmeMessage_t msg;
-
-	msg.msgType = gPlmeSetReq_c;
-	msg.msgData.setReq.PibAttribute = gPhyPibCurrentChannel_c;
-	msg.msgData.setReq.PibAttributeValue = (uint64_t)channel;
-
-	(void)MAC_PLME_SapHandler(&msg, ot_phy_ctx);
-}
-
 static int mcxw_cca(const struct device *dev)
 {
 	macToPlmeMessage_t msg;
@@ -1120,18 +1223,21 @@ static int mcxw_set_channel(const struct device *dev, uint16_t channel)
 {
 	struct mcxw_context *mcxw_radio = dev->data;
 
-	LOG_DBG("%u", channel);
+	LOG_DBG("Set channel: %u -> %u", mcxw_radio->channel, channel);
 
-	if (channel != mcxw_radio->channel) {
-
-		if (channel < 11 || channel > 26) {
-			return channel < 11 ? -ENOTSUP : -EINVAL;
-		}
-
-		mcxw_radio->channel = channel;
+	if (channel == mcxw_radio->channel) {
+		return 0;
 	}
 
-	return 0;
+	if (channel < 11 || channel > 26) {
+		return channel < 11 ? -ENOTSUP : -EINVAL;
+	}
+
+	/* Use centralized function */
+	/* Permanent change, restart RX if radio is active */
+	bool restart_rx = (mcxw_radio->state == RADIO_STATE_RECEIVE);
+
+	return rf_change_channel(channel, false, restart_rx);
 }
 
 static net_time_t mcxw_get_time_ns(const struct device *dev)
@@ -1240,16 +1346,27 @@ phyStatus_t pd_mac_sap_handler(void *msg, instanceId_t instance)
 
 		mcxw_ctx.tx_frame.length = 0;
 		mcxw_ctx.tx_status = 0;
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 
 		mcxw_ctx.rx_ack_frame.channel = mcxw_ctx.channel;
-		mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
 		mcxw_ctx.rx_ack_frame.lqi = data_msg->msgData.dataCnf.ppduLinkQuality;
 		mcxw_ctx.rx_ack_frame.rssi = data_msg->msgData.dataCnf.ppduRssi;
 		mcxw_ctx.rx_ack_frame.timestamp =
 			rf_adjust_tstamp_from_phy(data_msg->msgData.dataCnf.timeStamp);
-		memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
-		       mcxw_ctx.rx_ack_frame.length);
+
+		/* ackLength is supplied by the NBU radio firmware and indexes a
+		 * fixed rx_ack_data[IEEE802154_MAX_PHY_PACKET_SIZE] buffer, so
+		 * drop an ACK that does not fit rather than copying past its
+		 * end. A zero length tells mcxw_tx() that no ACK was received.
+		 */
+		if (data_msg->msgData.dataCnf.ackLength > IEEE802154_MAX_PHY_PACKET_SIZE) {
+			LOG_ERR("Invalid ACK length %u", data_msg->msgData.dataCnf.ackLength);
+			mcxw_ctx.rx_ack_frame.length = 0;
+		} else {
+			mcxw_ctx.rx_ack_frame.length = data_msg->msgData.dataCnf.ackLength;
+			memcpy(mcxw_ctx.rx_ack_frame.psdu, data_msg->msgData.dataCnf.ackData,
+			       mcxw_ctx.rx_ack_frame.length);
+		}
 
 		waiting_ack_until_us = 0;
 		k_sem_give(&mcxw_ctx.tx_wait);
@@ -1324,7 +1441,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 		} else {
 			mcxw_ctx.tx_status = 0;
 		}
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 
 		k_sem_give(&mcxw_ctx.cca_wait);
 		break;
@@ -1351,7 +1468,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			}
 #endif
 
-			mcxw_ctx.state = RADIO_STATE_RECEIVE;
+			set_rx_state();
 			/* No ack */
 			mcxw_ctx.tx_status = ENOMSG;
 
@@ -1361,6 +1478,9 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 			 * state
 			 */
 			mcxw_ctx.state = RADIO_STATE_SLEEP;
+
+			/* Restore main channel if on temporary channel */
+			rf_restore_main_channel();
 		}
 		break;
 	case gPlmeAbortInd_c:
@@ -1374,7 +1494,7 @@ phyStatus_t plme_mac_sap_handler(void *msg, instanceId_t instance)
 		}
 #endif
 
-		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+		set_rx_state();
 		mcxw_ctx.tx_status = EIO;
 
 		k_sem_give(&mcxw_ctx.tx_wait);
@@ -1479,6 +1599,7 @@ static int mcxw_configure(const struct device *dev, enum ieee802154_config_type 
 		} else {
 			rf_rx_on_idle(RX_ON_IDLE_STOP);
 		}
+		set_rx_state();
 		break;
 
 	case IEEE802154_CONFIG_EVENT_HANDLER:
@@ -1550,7 +1671,12 @@ static int mcxw_init(const struct device *dev)
 	mcxw_radio->energy_scan_done = NULL;
 
 	mcxw_radio->channel = DEFAULT_CHANNEL;
-	rf_set_channel(mcxw_radio->channel);
+
+	/* Initialize PHY channel tracking */
+	phy_channel = DEFAULT_CHANNEL;
+
+	/* Configure PHY to default channel using low-level helper */
+	rf_set_channel(DEFAULT_CHANNEL);
 
 	mcxw_radio->tx_frame.length = 0;
 	/* Make the psdu point to the space after macToPdDataMessage_t in the data buffer */
@@ -1627,6 +1753,15 @@ static void rf_set_rx_time_poll(uint32_t time_poll)
 	msg.msgData.setReq.PibAttributeValue = time_poll;
 
 	MAC_PLME_SapHandler(&msg, ot_phy_ctx);
+}
+
+static void set_rx_state(void)
+{
+	if (rx_on_when_idle) {
+		mcxw_ctx.state = RADIO_STATE_RECEIVE;
+	} else {
+		mcxw_ctx.state = RADIO_STATE_DISABLED;
+	}
 }
 
 static const struct ieee802154_radio_api mcxw71_radio_api = {

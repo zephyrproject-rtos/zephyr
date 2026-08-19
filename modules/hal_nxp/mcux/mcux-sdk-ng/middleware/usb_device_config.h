@@ -8,7 +8,7 @@
 #define __USB_DEVICE_CONFIG_H__
 
 #include <zephyr/devicetree.h>
-#include "usb.h"
+#include <usb.h>
 
 /******************************************************************************
  * Definitions
@@ -120,6 +120,8 @@ BUILD_ASSERT(NUM_INSTS <= 1, "Only one USB device supported");
 #ifdef CONFIG_UDC_ENABLE_SOF
 #define USB_DEVICE_CONFIG_SOF_NOTIFICATIONS (1U)
 #endif
+
+#define USB_DEVICE_CONFIG_DETACH_ENABLE (1U)
 
 #endif
 

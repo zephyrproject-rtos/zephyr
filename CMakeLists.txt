@@ -148,7 +148,6 @@ foreach(var AFLAGS CFLAGS CXXFLAGS CPPFLAGS LDFLAGS)
 endforeach()
 
 zephyr_compile_definitions(
-  KERNEL
   __ZEPHYR__=1
 )
 
@@ -620,6 +619,7 @@ else()
 endif()
 
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
+zephyr_cc_option_ifdef(CONFIG_CALLGRAPH_INFO         -fcallgraph-info)
 
 # If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
 # __FILE__ macro used in __ASSERT*, in the
@@ -865,8 +865,8 @@ else()
     file(WRITE ${syscalls_subdirs_txt} "")
   endif()
 
-  # On other OS'es, using git checkout is reflected on the folder timestamp and hence detected
-  # when using depend on directory level.
+  # On other OS'es, using git checkout (or switch, restore, etc.) is reflected on the folder
+  # timestamp and hence detected when using depend on directory level.
   # Thus CMake only needs to re-run when sub-directories are added / removed, which is indicated
   # by syscalls_subdirs_txt being updated.
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${syscalls_subdirs_txt})
@@ -1045,6 +1045,7 @@ zephyr_constants_library(
   NAME offsets
   SOURCE ${ARCH_DIR}/${ARCH}/core/offsets/offsets.c
   INCLUDES ${ARCH_DIR}/${ARCH}/include
+  INCLUDES ${ARCH_DIR}/common/include
   DEPENDS heap_constants
 )
 set(OFFSETS_LIB offsets)
@@ -1223,27 +1224,6 @@ if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.${APP_SMEM_LD_EXT}")
   set(APP_SMEM_UNALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.${APP_SMEM_LD_EXT}")
 
-  if(CONFIG_LINKER_USE_PINNED_SECTION)
-    set(APP_SMEM_PINNED_ALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_aligned.${APP_SMEM_LD_EXT}")
-    set(APP_SMEM_PINNED_UNALIGNED_LD
-        "${PROJECT_BINARY_DIR}/include/generated/app_smem_pinned_unaligned.${APP_SMEM_LD_EXT}")
-
-    if(NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-      # The libc partition may hold symbols that are required during boot process,
-      # for example, stack guard (if enabled). So the libc partition must be pinned
-      # if not sections are in physical memory at boot, as the paging mechanism is
-      # only initialized post-kernel.
-      set_property(TARGET app_smem APPEND PROPERTY pinned_partitions "z_libc_partition")
-    endif()
-
-    get_property(APP_SMEM_PINNED_PARTITION_LIST TARGET app_smem PROPERTY pinned_partitions)
-    if(APP_SMEM_PINNED_PARTITION_LIST)
-      list(JOIN APP_SMEM_PINNED_PARTITION_LIST "," APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL)
-      set(APP_SMEM_PINNED_PARTITION_LIST_ARG "--pinpartitions=${APP_SMEM_PINNED_PARTITION_LIST_ARG_CSL}")
-    endif()
-  endif()
-
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   if(CONFIG_NEWLIB_LIBC)
@@ -1257,13 +1237,11 @@ if(CONFIG_USERSPACE)
   endif()
 
   add_custom_command(
-    OUTPUT ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD}
+    OUTPUT ${APP_SMEM_UNALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -f ${CMAKE_BINARY_DIR}/compile_commands.json
     -o ${APP_SMEM_UNALIGNED_LD}
-    $<$<BOOL:${APP_SMEM_PINNED_UNALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_UNALIGNED_LD}>
-    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${LIBC_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1280,31 +1258,25 @@ if(CONFIG_USERSPACE)
     ${APP_SMEM_ALIGNED_DEP}
     DEPENDS
     ${APP_SMEM_ALIGNED_LD}
-    ${APP_SMEM_PINNED_ALIGNED_LD}
     )
 
   add_custom_target(
     ${APP_SMEM_UNALIGNED_DEP}
     DEPENDS
     ${APP_SMEM_UNALIGNED_LD}
-    ${APP_SMEM_PINNED_UNALIGNED_LD}
     )
 
   set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
   list(APPEND LINKER_PASS_${ZEPHYR_CURRENT_LINKER_PASS}_DEFINE "LINKER_APP_SMEM_UNALIGNED")
 
-  foreach(dep ${APP_SMEM_UNALIGNED_LD} ${APP_SMEM_PINNED_UNALIGNED_LD})
-    zephyr_linker_include_generated(CMAKE ${dep} PASS LINKER_APP_SMEM_UNALIGNED)
-  endforeach()
+  zephyr_linker_include_generated(CMAKE ${APP_SMEM_UNALIGNED_LD} PASS LINKER_APP_SMEM_UNALIGNED)
 
   add_custom_command(
-    OUTPUT ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD}
+    OUTPUT ${APP_SMEM_ALIGNED_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/build/gen_app_partitions.py
     -e $<TARGET_FILE:${ZEPHYR_LINK_STAGE_EXECUTABLE}>
     -o ${APP_SMEM_ALIGNED_LD}
-    $<$<BOOL:${APP_SMEM_PINNED_ALIGNED_LD}>:--pinoutput=${APP_SMEM_PINNED_ALIGNED_LD}>
-    ${APP_SMEM_PINNED_PARTITION_LIST_ARG}
     ${LIBC_PART}
     $<TARGET_PROPERTY:zephyr_property_target,COMPILE_OPTIONS>
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
@@ -1316,9 +1288,7 @@ if(CONFIG_USERSPACE)
     COMMAND_EXPAND_LISTS
     COMMENT "Generating app_smem_aligned linker section"
     )
-    foreach(dep ${APP_SMEM_ALIGNED_LD} ${APP_SMEM_PINNED_ALIGNED_LD})
-      zephyr_linker_include_generated(CMAKE ${dep} PASS NOT LINKER_APP_SMEM_UNALIGNED)
-    endforeach()
+    zephyr_linker_include_generated(CMAKE ${APP_SMEM_ALIGNED_LD} PASS NOT LINKER_APP_SMEM_UNALIGNED)
 endif()
 
 if(CONFIG_USERSPACE)
@@ -1434,7 +1404,6 @@ if(CONFIG_USERSPACE OR CONFIG_DEVICE_DEPS)
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
-    ${APP_SMEM_PINNED_UNALIGNED_LD}
     zephyr_generated_headers
     )
 
@@ -1835,6 +1804,8 @@ if(CONFIG_BUILD_OUTPUT_HEX OR BOARD_FLASH_RUNNER STREQUAL openocd)
       ${KERNEL_HEX_NAME}
       )
     set(BYPRODUCT_KERNEL_HEX_NAME "${PROJECT_BINARY_DIR}/${KERNEL_HEX_NAME}" CACHE FILEPATH "Kernel hex file" FORCE)
+  else()
+    message(WARNING "Intel HEX output format not supported by toolchain (CONFIG_BUILD_OUTPUT_HEX=y)")
   endif()
 endif()
 
@@ -1857,10 +1828,12 @@ if(CONFIG_BUILD_OUTPUT_BIN)
       ${KERNEL_BIN_NAME}
       )
     set(BYPRODUCT_KERNEL_BIN_NAME "${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME}" CACHE FILEPATH "Kernel binary file" FORCE)
+  else()
+    message(WARNING "Binary output format not supported by toolchain (CONFIG_BUILD_OUTPUT_BIN=y)")
   endif()
 endif()
 
-if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
+if(CONFIG_BUILD_OUTPUT_UF2)
   if(CONFIG_BUILD_OUTPUT_UF2_USE_FLASH_BASE)
     set(code_address "${CONFIG_FLASH_BASE_ADDRESS}")
   else()
@@ -1880,24 +1853,58 @@ if(CONFIG_BUILD_OUTPUT_BIN AND CONFIG_BUILD_OUTPUT_UF2)
   # are typically loaded to RAM
   if(NOT CONFIG_XIP)
     if(CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-      math(EXPR code_address
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        math(EXPR code_address
           "${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
           OUTPUT_FORMAT HEXADECIMAL
-      )
+        )
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+
+        math(EXPR code_address
+          "${ram_addr} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA} + 0"
+          OUTPUT_FORMAT HEXADECIMAL
+        )
+      endif()
     else()
-      set(code_address "${CONFIG_SRAM_BASE_ADDRESS}")
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        set(code_address ${CONFIG_SRAM_BASE_ADDRESS})
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(code_address PATH "${chosen_sram_path}")
+      endif()
     endif()
   endif()
 
-  list(APPEND
-    post_build_commands
-    COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
-            -c
-            -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
-            -b ${code_address}
-            -o ${KERNEL_UF2_NAME}
-            ${KERNEL_BIN_NAME}
-  )
+  if(CONFIG_BUILD_OUTPUT_HEX)
+    # HEX format embeds addresses, so no -b flag is needed.
+    # This method is required for mapped-partition.
+    list(APPEND
+      post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              -c
+              -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              -o ${KERNEL_UF2_NAME}
+              ${KERNEL_HEX_NAME}
+    )
+  elseif(CONFIG_BUILD_OUTPUT_BIN AND NOT "${code_address}" STREQUAL "")
+    # BIN format requires an explicit base address via -b.
+    list(APPEND
+      post_build_commands
+      COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/build/uf2conv.py
+              -c
+              -f ${CONFIG_BUILD_OUTPUT_UF2_FAMILY_ID}
+              -b ${code_address}
+              -o ${KERNEL_UF2_NAME}
+              ${KERNEL_BIN_NAME}
+    )
+  else()
+    message(WARNING
+      "UF2 output requires either a) CONFIG_BUILD_OUTPUT_HEX or b) CONFIG_BUILD_OUTPUT_BIN with a "
+      "known code address. Enable CONFIG_BUILD_OUTPUT_HEX in your board configuration.")
+  endif()
+
   list(APPEND
     post_build_byproducts
     ${KERNEL_UF2_NAME}
@@ -1924,6 +1931,8 @@ if(CONFIG_BUILD_OUTPUT_MOT)
       ${KERNEL_MOT_NAME}
       )
     set(BYPRODUCT_KERNEL_MOT_NAME "${PROJECT_BINARY_DIR}/${KERNEL_MOT_NAME}" CACHE FILEPATH "Kernel mot file" FORCE)
+  else()
+    message(WARNING "Motorola SREC output format not supported by toolchain (CONFIG_BUILD_OUTPUT_MOT=y)")
   endif()
 endif()
 
@@ -1962,7 +1971,6 @@ endif()
 if(CONFIG_BUILD_OUTPUT_S19)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(srec IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to s19 ?
     list(APPEND
       post_build_commands
       COMMAND $<TARGET_PROPERTY:bintools,elfconvert_command>
@@ -1979,13 +1987,14 @@ if(CONFIG_BUILD_OUTPUT_S19)
       ${KERNEL_S19_NAME}
       )
     set(BYPRODUCT_KERNEL_S19_NAME "${PROJECT_BINARY_DIR}/${KERNEL_S19_NAME}" CACHE FILEPATH "Kernel s19 file" FORCE)
+  else()
+    message(WARNING "Motorola S19 output format not supported by toolchain (CONFIG_BUILD_OUTPUT_S19=y)")
   endif()
 endif()
 
 if(CONFIG_BUILD_OUTPUT_VERILOG)
   get_property(elfconvert_formats TARGET bintools PROPERTY elfconvert_formats)
   if(verilog IN_LIST elfconvert_formats)
-    # Should we print a warning if case the tools does not support converting to verilog ?
     list(APPEND
       post_build_commands
       COMMAND
@@ -1999,6 +2008,8 @@ if(CONFIG_BUILD_OUTPUT_VERILOG)
     )
     list(APPEND post_build_byproducts ${KERNEL_VERILOG_NAME})
     set(BYPRODUCT_KERNEL_VERILOG_NAME "${PROJECT_BINARY_DIR}/${KERNEL_VERILOG_NAME}" CACHE FILEPATH "Kernel Verilog file" FORCE)
+  else()
+    message(WARNING "Verilog output format not supported by toolchain (CONFIG_BUILD_OUTPUT_VERILOG=y)")
   endif()
 endif()
 
@@ -2353,7 +2364,7 @@ endif()
 
 if(CONFIG_SOC_DEPRECATED_RELEASE)
   message(WARNING "
-      WARNING:  The SoC '${SOC_NAME}' is deprecated and will be
+      WARNING:  The SoC '${CONFIG_SOC}' is deprecated and will be
       removed in version ${CONFIG_SOC_DEPRECATED_RELEASE}"
   )
 endif()
@@ -2391,22 +2402,13 @@ if(CONFIG_LLEXT_EDK)
   endif()
   set(llext_edk_file ${PROJECT_BINARY_DIR}/${CONFIG_LLEXT_EDK_NAME}.${llext_edk_extension})
 
-  # TODO maybe generate flags for C CXX ASM
-  zephyr_get_compile_definitions_for_lang(C zephyr_defs)
-  zephyr_get_compile_options_for_lang(C zephyr_flags)
-
-  # Filter out non LLEXT and LLEXT_EDK flags - and add required ones
-  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags} llext_filt_flags)
-  llext_filter_zephyr_flags(LLEXT_EDK_REMOVE_FLAGS ${llext_filt_flags} llext_filt_flags)
-
-  set(llext_edk_cflags ${zephyr_defs} -DLL_EXTENSION_BUILD)
-  list(APPEND llext_edk_cflags ${llext_filt_flags})
-  list(APPEND llext_edk_cflags ${LLEXT_APPEND_FLAGS})
-  list(APPEND llext_edk_cflags ${LLEXT_EDK_APPEND_FLAGS})
-
+  # Export current settings for use in LLEXT EDK generation
   build_info(llext-edk file PATH ${llext_edk_file})
-  build_info(llext-edk cflags VALUE ${llext_edk_cflags})
-  build_info(llext-edk include-dirs VALUE "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_INCLUDE_DIRECTORIES>")
+  build_info(llext-edk remove-cflags VALUE ${LLEXT_REMOVE_FLAGS} ${LLEXT_EDK_REMOVE_FLAGS})
+  build_info(llext-edk append-cflags VALUE ${LLEXT_APPEND_FLAGS} ${LLEXT_EDK_APPEND_FLAGS} -DLL_EXTENSION_BUILD)
+
+  # Generate the compiler flag files that will be used by the EDK
+  add_subdirectory(misc/llext_edk)
 
   add_custom_command(
     OUTPUT ${llext_edk_file}
@@ -2424,8 +2426,9 @@ if(CONFIG_LLEXT_EDK)
       ${SYSCALL_LONG_REGISTERS_ARG}
       ${SYSCALL_SPLIT_TIMEOUT_ARG}
     COMMAND ${CMAKE_COMMAND}
+        -DSYSBUILD=${SYSBUILD}
         -P ${ZEPHYR_BASE}/cmake/llext-edk.cmake
-    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved
+    DEPENDS ${logical_target_for_zephyr_elf} ${syscalls_json} build_info_yaml_saved llext_edk_build_props
     COMMAND_EXPAND_LISTS
   )
   add_custom_target(llext-edk DEPENDS ${llext_edk_file})

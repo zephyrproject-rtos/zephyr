@@ -143,6 +143,13 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, icmp.typeerr),
 			 GET_STAT(iface, icmp.chkerr));
 
+#if defined(CONFIG_NET_STATISTICS_IGMP)
+		NET_INFO("IGMP recv      %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, ipv4_igmp.recv),
+			 GET_STAT(iface, ipv4_igmp.sent),
+			 GET_STAT(iface, ipv4_igmp.drop));
+#endif /* CONFIG_NET_STATISTICS_IGMP */
+
 #if defined(CONFIG_NET_STATISTICS_UDP)
 		NET_INFO("UDP recv       %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, udp.recv),
@@ -152,26 +159,60 @@ static inline void stats(struct net_if *iface)
 			 GET_STAT(iface, udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_RAW)
+		NET_INFO("Raw recv       %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, raw.recv),
+			 GET_STAT(iface, raw.sent),
+			 GET_STAT(iface, raw.drop));
+		NET_INFO("Raw bytes recv %llu\tsent\t%llu",
+			 GET_STAT(iface, raw.bytes.received),
+			 GET_STAT(iface, raw.bytes.sent));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_TCP)
-		NET_INFO("TCP bytes recv %llu\tsent\t%llu",
+		NET_INFO("TCP bytes recv %llu\tsent\t%llu\tresent\t%u",
 			 GET_STAT(iface, tcp.bytes.received),
-			 GET_STAT(iface, tcp.bytes.sent));
+			 GET_STAT(iface, tcp.bytes.sent),
+			 GET_STAT(iface, tcp.resent));
 		NET_INFO("TCP seg recv   %u\tsent\t%u\tdrop\t%u",
 			 GET_STAT(iface, tcp.recv),
 			 GET_STAT(iface, tcp.sent),
-			 GET_STAT(iface, tcp.drop));
+			 GET_STAT(iface, tcp.seg_drop));
 		NET_INFO("TCP seg resent %u\tchkerr\t%u\tackerr\t%u",
-			 GET_STAT(iface, tcp.resent),
+			 GET_STAT(iface, tcp.rexmit),
 			 GET_STAT(iface, tcp.chkerr),
 			 GET_STAT(iface, tcp.ackerr));
-		NET_INFO("TCP seg rsterr %u\trst\t%u\tre-xmit\t%u",
+		NET_INFO("TCP seg rsterr %u\trst\t%u",
 			 GET_STAT(iface, tcp.rsterr),
-			 GET_STAT(iface, tcp.rst),
-			 GET_STAT(iface, tcp.rexmit));
+			 GET_STAT(iface, tcp.rst));
 		NET_INFO("TCP conn drop  %u\tconnrst\t%u",
 			 GET_STAT(iface, tcp.conndrop),
 			 GET_STAT(iface, tcp.connrst));
+		NET_INFO("TCP pkt drop   %u", GET_STAT(iface, tcp.drop));
 #endif
+
+#if defined(CONFIG_NET_STATISTICS_DNS)
+		NET_INFO("DNS recv       %u\tsent\t%u\tdrop\t%u",
+			 GET_STAT(iface, dns.recv),
+			 GET_STAT(iface, dns.sent),
+			 GET_STAT(iface, dns.drop));
+#endif /* CONFIG_NET_STATISTICS_DNS */
+
+#if defined(CONFIG_NET_STATISTICS_PKT_FILTER)
+		NET_INFO("Filter drop rx %u"
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK, ("\tIPv4\t%u"))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK, ("\tIPv6\t%u"))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK, ("\tlocal\t%u"))
+			 "\ttx\t%u",
+			 GET_STAT(iface, pkt_filter.rx.drop),
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV4_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.ipv4_drop),))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_IPV6_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.ipv6_drop),))
+			 IF_ENABLED(CONFIG_NET_PKT_FILTER_LOCAL_IN_HOOK,
+				    (GET_STAT(iface, pkt_filter.rx.local_drop),))
+			 GET_STAT(iface, pkt_filter.tx.drop));
+#endif /* CONFIG_NET_STATISTICS_PKT_FILTER */
 
 		NET_INFO("Bytes received %llu", GET_STAT(iface, bytes.received));
 		NET_INFO("Bytes sent     %llu", GET_STAT(iface, bytes.sent));
@@ -195,14 +236,15 @@ static inline void stats(struct net_if *iface)
 
 #if NET_TC_RX_COUNT > 1
 		NET_INFO("RX traffic class statistics:");
-		NET_INFO("TC  Priority\tRecv pkts\tbytes");
+		NET_INFO("TC  Priority\tRecv pkts\tDrop pkts\tbytes");
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
-			NET_INFO("[%d] %s (%u)\t%u\t\t%llu", i,
+			NET_INFO("[%d] %s (%u)\t%u\t\t%u\t\t%llu", i,
 				 priority2str(GET_STAT(iface,
 						       tc.recv[i].priority)),
 				 GET_STAT(iface, tc.recv[i].priority),
 				 GET_STAT(iface, tc.recv[i].pkts),
+				 GET_STAT(iface, tc.recv[i].dropped),
 				 GET_STAT(iface, tc.recv[i].bytes));
 		}
 #endif
@@ -322,6 +364,12 @@ static int net_stats_get(uint64_t mgmt_request, struct net_if *iface,
 		src = GET_STAT_ADDR(iface, udp);
 		break;
 #endif
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	case NET_REQUEST_STATS_CMD_GET_RAW:
+		len_chk = sizeof(struct net_stats_raw);
+		src = GET_STAT_ADDR(iface, raw);
+		break;
+#endif
 #if defined(CONFIG_NET_STATISTICS_TCP)
 	case NET_REQUEST_STATS_CMD_GET_TCP:
 		len_chk = sizeof(struct net_stats_tcp);
@@ -389,6 +437,11 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ICMP,
 
 #if defined(CONFIG_NET_STATISTICS_UDP)
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_UDP,
+				  net_stats_get);
+#endif
+
+#if defined(CONFIG_NET_STATISTICS_RAW)
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_STATS_GET_RAW,
 				  net_stats_get);
 #endif
 

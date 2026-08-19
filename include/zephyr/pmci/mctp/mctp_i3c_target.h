@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I3C_TARGET_H_
-#define ZEPHYR_MCTP_I3C_TARGET_H_
+/**
+ * @file
+ * @brief MCTP bus binding over I3C using IBI signaling, target side.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -24,10 +30,13 @@ struct mctp_binding_i3c_target {
 	const struct device *i3c;
 	struct i3c_target_config i3c_target_cfg;
 	uint8_t endpoint_id;
+	uint8_t dynamic_addr;
 	struct mctp_pktbuf *tx_pkt;
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
 	struct mctp_pktbuf *rx_pkt;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
+	uint8_t tx_ptr;
 	/** @endcond INTERNAL_HIDDEN */
 };
 
@@ -52,6 +61,7 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 			.start = mctp_i3c_target_start,                                            \
 			.tx = mctp_i3c_target_tx,                                                  \
 			.pkt_size = MCTP_I3C_MAX_PKT_SIZE,                                         \
+			.tx_storage = _name.tx_storage,                                            \
 		},                                                                                 \
 		.i3c = DEVICE_DT_GET(DT_PHANDLE(_node_id, i3c)),                                   \
 		.i3c_target_cfg = {                                                                \
@@ -62,4 +72,4 @@ int mctp_i3c_target_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 		.tx_complete = &_name##_tx_complete,                                               \
 	};
 
-#endif /* ZEPHYR_MCTP_I3C_TARGET_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_ */

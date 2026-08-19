@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# MCUXpresso SDK System Counter (SYS_CTR)
+
+config COUNTER_MCUX_SYSCTR
+	bool "MCUX System Counter (SYS_CTR) driver"
+	default y
+	depends on DT_HAS_NXP_SYSCTR_ENABLED
+	help
+	  Enable support for the NXP System Counter (SYS_CTR).
+	  SYS_CTR is a 56-bit free-running up-counter that provides a shared
+	  time base for multiple processor cores. It supports two compare
+	  frames, each capable of generating an interrupt.

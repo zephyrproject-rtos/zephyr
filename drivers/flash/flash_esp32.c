@@ -5,7 +5,10 @@
  */
 
 #define DT_DRV_COMPAT espressif_esp32_flash_controller
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
+
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define FLASH_WRITE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, write_block_size)
 #define FLASH_ERASE_BLK_SZ DT_PROP(SOC_NV_FLASH_NODE, erase_block_size)
@@ -546,7 +549,7 @@ static IRAM_ATTR int flash_esp32_read_async(const struct device *dev, off_t addr
 	if (k_is_in_isr()) {
 		return -EINVAL;
 	}
-	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+	if (k_mutex_lock(&data->lock, K_SECONDS(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
 		return -ETIMEDOUT;
 	}
 	req->op = FLASH_OP_READ;
@@ -570,7 +573,7 @@ static IRAM_ATTR int flash_esp32_write_async(const struct device *dev, off_t add
 	if (k_is_in_isr()) {
 		return -EINVAL;
 	}
-	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+	if (k_mutex_lock(&data->lock, K_SECONDS(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
 		return -ETIMEDOUT;
 	}
 	req->op = FLASH_OP_WRITE;
@@ -593,7 +596,7 @@ static IRAM_ATTR int flash_esp32_erase_async(const struct device *dev, off_t sta
 	if (k_is_in_isr()) {
 		return -EINVAL;
 	}
-	if (k_mutex_lock(&data->lock, K_TIMEOUT_ABS_SEC(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
+	if (k_mutex_lock(&data->lock, K_SECONDS(CONFIG_ESP_FLASH_ASYNC_TIMEOUT))) {
 		return -ETIMEDOUT;
 	}
 	req->op = FLASH_OP_ERASE;
@@ -710,6 +713,17 @@ static const struct flash_parameters *flash_esp32_get_parameters(const struct de
 
 static int flash_esp32_init(const struct device *dev)
 {
+#ifndef CONFIG_MCUBOOT
+	/*
+	 * Switch the main flash chip to OS-aware functions now that the
+	 * scheduler is running. These were left as the no-OS (cache-suspend)
+	 * functions during early boot in esp_flash_config(), because the
+	 * OS-aware path can guard flash access with a mutex. MCUboot runs
+	 * single-threaded and keeps the no-OS functions.
+	 */
+	esp_flash_app_init();
+#endif
+
 #ifdef CONFIG_MULTITHREADING
 	struct flash_esp32_dev_data *const data = dev->data;
 

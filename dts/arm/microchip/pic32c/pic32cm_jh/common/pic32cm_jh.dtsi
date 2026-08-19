@@ -11,6 +11,10 @@
 #include <zephyr/dt-bindings/clock/mchp_pic32cm_jh_clock.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -30,13 +34,19 @@
 	};
 
 	soc {
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			write-block-size = <4>;
-		};
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		nvm_sw_calib_area: nvm-sw-calib-area@806020 {
 			reg = <0x00806020 0x8>;
+		};
+
+		hwinfo: device_id@80a00c {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0080a00c 0x4>,
+			      <0x0080a040 0x4>,
+			      <0x0080a044 0x4>,
+			      <0x0080a048 0x4>;
 		};
 
 		sram0: memory@20000000 {
@@ -100,10 +110,67 @@
 			reg = <0x40000c00 0x400>;
 		};
 
+		supc: supc@40001800 {
+			compatible = "microchip,supc-g1";
+			reg = <0x40001800 0x20>;
+			standby-regulator-sel = <0>;
+			vref-standby-mode = <0>;
+			status = "disabled";
+		};
+
+		wdt: watchdog@40002000 {
+			compatible = "microchip,wdt-g1";
+			reg = <0x40002000 13>;
+			interrupts = <1 0>;
+			interrupt-names = "wdt-ew";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_WDT>;
+			clock-names = "mclk";
+			max-installable-timeout-count = <1>;
+			max-timeout-window = <0x4000>;	/* 16384 milliseconds */
+			max-timeout-window-mode = <0x8000>;	/* 32768 milliseconds */
+			min-window-limit = <0x8>;	/* 8 milliseconds */
+			status = "disabled";
+		};
+
+		rtc: rtc@40002400 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x40002400 0x48>;
+			interrupts = <2 0>;
+			interrupt-names = "rtc-irq";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1>;
+			alarms-count = <1>;
+			cal-constant = <1048576>;
+			status = "disabled";
+		};
+
+		eic: interrupt-controller@40002800 {
+			compatible = "microchip,eic-g1-intc";
+			reg = <0x40002800 0x38>;
+			interrupts = <3 0>;
+			interrupt-names = "extint0-15";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBA_EIC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_EIC>;
+			clock-names = "mclk", "gclk";
+			low-power-mode;
+
+			porta-unsupported-pins = <0xf4000100>; /*8|26|28|29|30|31*/
+			porta-special-pins-1 = <0xb000000 0x4>; /*24|25|27*/
+
+			portb-unsupported-pins = <0x20004300>; /*26|27|28|29*/
+
+			portc-supported-pins = <0xffef>; /*0|1|2|3|5|6|7|8|9|10|1|12|13|14|15*/
+			portc-special-pins-1 = <0xef 0x8>; /*0|1|2|3|5|6|7*/
+			portc-special-pins-2 = <0xff00 0x8>; /*8|9|10|1|12|13|14|15*/
+		};
+
 		pinctrl: pinctrl@41000000 {
 			compatible = "microchip,port-g1-pinctrl";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			reg = <0x41000000 0x180>;
 			ranges = <0x41000000 0x41000000 0x180>;
 
 			porta: gpio@41000000 {
@@ -112,6 +179,29 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				#microchip,pin-cells = <2>;
+			};
+		};
+
+		nvmctrl: flash-controller@41004000 {
+			compatible = "microchip,nvmctrl-g2";
+			reg = <0x41004000 0xa0>;
+			interrupts = <6 0>;
+			interrupt-names = "nvmctrl";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBB_NVMCTRL>;
+			clock-names = "mclk";
+			clock-parent = <&clock>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@0 {
+				compatible = "microchip,flash-g2", "soc-nv-flash";
+				write-block-size = <64>;
+				erase-block-size = <256>;
+				data-flash-start-addr = <0x00400000>;
+				user-row-start-addr = <0x00804000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
@@ -166,6 +256,78 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_SERCOM3>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM3_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		tc0: tc@42003000 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42003000 0x400>;
+			interrupts = <20 0>;
+			interrupt-names = "mc0-1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC0>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC1>;
+			clock-names = "mclk", "gclk", "client_mclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc1: tc@42003400 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42003400 0x400>;
+			interrupts = <21 0>;
+			interrupt-names = "mc0-1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC1>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc2: tc@42003800 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42003800 0x400>;
+			interrupts = <22 0>;
+			interrupt-names = "mc0-1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC2>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC3>;
+			clock-names = "mclk", "gclk", "client_mclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc3: tc@42003c00 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42003c00 0x400>;
+			interrupts = <23 0>;
+			interrupt-names = "mc0-1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC3>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
+			status = "disabled";
+		};
+
+		tc4: tc@42004000 {
+			compatible = "microchip,tc-g1";
+			reg = <0x42004000 0x400>;
+			interrupts = <24 0>;
+			interrupt-names = "mc0-1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TC4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TC4>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			prescaler = <1>;
+			channels = <2>;
 			status = "disabled";
 		};
 

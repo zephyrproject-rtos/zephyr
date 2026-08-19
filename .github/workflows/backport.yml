@@ -14,6 +14,7 @@ jobs:
   backport:
     name: Backport
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     permissions:
       contents: write       # to create/push backport branches
       pull-requests: write  # to create backport PRs
@@ -36,3 +37,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           issue_labels: Backport
           labels_template: '["Backport"]'
+          body_template: "Backport <%= mergeCommitSha %> from #<%= number %>.\n\n_Original PR description:_\n\n---\n\n<%= body %>"

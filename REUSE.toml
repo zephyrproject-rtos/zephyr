@@ -10,7 +10,6 @@ path = [
     "**/*.ecl",
     "**/*.html",
     "**/*.json",
-    "**/*.rst",
     "**/*.yaml",
     "**/*.yml",
     "**/*_defconfig",
@@ -23,4 +22,9 @@ path = [
     # zephyr-keep-sorted-stop
 ]
 SPDX-License-Identifier = "Apache-2.0"
+SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"
+
+[[annotations]]
+path = "**/*.rst"
+SPDX-License-Identifier = "CC-BY-4.0"
 SPDX-FileCopyrightText = "Copyright The Zephyr Project Contributors"

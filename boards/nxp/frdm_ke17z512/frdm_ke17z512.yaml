@@ -16,6 +16,7 @@ toolchain:
 supported:
   - counter
   - gpio
+  - hwinfo
   - adc
   - flash
   - uart
@@ -24,4 +25,5 @@ supported:
   - spi
   - dma
   - watchdog
+  - crc
 vendor: nxp

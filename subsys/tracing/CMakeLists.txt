@@ -7,46 +7,50 @@ zephyr_sources_ifdef(
   tracing_format_common.c
   )
 if(CONFIG_TRACING_CORE)
-zephyr_sources_ifdef(
-  CONFIG_TRACING_SYNC
-  tracing_format_sync.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_SYNC
+    tracing_format_sync.c
+    )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_ASYNC
-  tracing_format_async.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_ASYNC
+    tracing_format_async.c
+    )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_USB
-  tracing_backend_usb.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_BACKEND_USB
+    tracing_backend_usb.c
+    )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_SEMIHOST
-  tracing_backend_semihosting.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_BACKEND_SEMIHOST
+    tracing_backend_semihosting.c
+    )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_UART
-  tracing_backend_uart.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_BACKEND_UART
+    tracing_backend_uart.c
+    )
 
-if(CONFIG_TRACING_BACKEND_POSIX)
-  zephyr_sources(tracing_backend_posix.c)
-  target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
-endif()
+  if(CONFIG_TRACING_BACKEND_POSIX)
+    zephyr_sources(tracing_backend_posix.c)
+    target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
+  endif()
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_RAM
-  tracing_backend_ram.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_BACKEND_RAM
+    tracing_backend_ram.c
+    )
 
-zephyr_sources_ifdef(
-  CONFIG_TRACING_BACKEND_ADSP_MEMORY_WINDOW
-  tracing_backend_adsp_memory_window.c
-  )
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_BACKEND_ADSP_MEMORY_WINDOW
+    tracing_backend_adsp_memory_window.c
+    )
 
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_SHELL
+    tracing_shell.c
+    )
 endif()
 
 zephyr_sources(

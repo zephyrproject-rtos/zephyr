@@ -3,7 +3,7 @@
 
 menuconfig USB_DFU_CLASS
 	bool "USB DFU Class Driver"
-	select MPU_ALLOW_FLASH_WRITE
+	select MPU_ALLOW_FLASH_WRITE if ARM_MPU
 	select POLL
 	depends on IMG_MANAGER
 	select IMG_ERASE_PROGRESSIVELY if (SOC_FLASH_NRF || FLASH_MCUX_FLEXSPI_NOR)

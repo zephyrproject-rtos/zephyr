@@ -65,16 +65,12 @@ static void mtu_exchange_cb(struct bt_conn *conn, uint8_t err,
 
 static void connected_cb(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-	printk("Connected to %s (err 0x%02X)\n", addr, err);
+	printk("Connected to %s (err 0x%02X)\n", bt_conn_dst_str(conn), err);
 
 	__ASSERT(connection == conn, "Unexpected connected callback");
 
 	if (err) {
-		bt_conn_unref(conn);
-		connection = NULL;
+		bt_conn_drop(&connection);
 	}
 
 	connection = bt_conn_ref(conn);
@@ -93,8 +89,7 @@ static void disconnected_cb(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Disconnected (reason 0x%02X)\n", reason);
 
-	bt_conn_unref(conn);
-	connection = NULL;
+	bt_conn_drop(&connection);
 }
 
 static void remote_capabilities_cb(struct bt_conn *conn,

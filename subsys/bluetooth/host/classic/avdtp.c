@@ -20,8 +20,8 @@
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/classic/avdtp.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 
@@ -300,7 +300,7 @@ void bt_avdtp_media_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	}
 
 	LOG_DBG("chan %p", chan);
-	chan->conn = NULL;
+
 	avdtp_cancel_media_disconnect_work(sep);
 
 	avdtp_sep_lock(sep);
@@ -387,7 +387,7 @@ static void avdtp_tx_raise(void)
 {
 	if (!sys_slist_is_empty(&avdtp_tx_list)) {
 		LOG_DBG("kick TX");
-		k_work_submit(&avdtp_tx_work);
+		bt_work_submit(&avdtp_tx_work);
 	}
 }
 
@@ -412,7 +412,7 @@ static void avdtp_tx_rel_buf(struct net_buf *buf, struct net_buf *frag)
 	avdtp_tx_raise();
 }
 
-static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
+static void avdtp_tx_single(struct bt_avdtp *session, struct net_buf *buf)
 {
 	int err;
 
@@ -425,7 +425,7 @@ static void avdtp_tx_signal(struct bt_avdtp *session, struct net_buf *buf)
 	}
 }
 
-static void avdtp_tx_frags(struct bt_avdtp *session, struct net_buf *buf,
+static void avdtp_tx_multi(struct bt_avdtp *session, struct net_buf *buf,
 			   struct avdtp_buf_user_data *user_data)
 {
 	struct net_buf *frag;
@@ -553,12 +553,12 @@ static void avdtp_tx_processor(struct k_work *item)
 
 	/* The buf can be sent directly */
 	if (user_data->frag_count == 1) {
-		avdtp_tx_signal(session, buf);
+		avdtp_tx_single(session, buf);
 		avdtp_tx_raise();
 		return;
 	}
 
-	avdtp_tx_frags(session, buf, user_data);
+	avdtp_tx_multi(session, buf, user_data);
 }
 
 static void avdtp_buf_init_user_data(struct bt_avdtp *session, struct net_buf *buf)
@@ -1310,7 +1310,7 @@ static void avdtp_close_cmd(struct bt_avdtp *session, struct net_buf *buf, uint8
 
 	err = avdtp_send_rsp(session, rsp_buf);
 
-	/* From AVDTP spec, endpoint state should be idle after responsing CLOSE.
+	/* From AVDTP spec, endpoint state should be idle after responding CLOSE.
 	 * But before the sep->chan is released, the sep can't be used from stack
 	 * perspective, so waiting the stream chan released.
 	 */
@@ -1747,10 +1747,8 @@ static int avdtp_send_cmd(struct bt_avdtp *session, struct net_buf *buf, struct 
 
 	avdtp_send_common(session, buf);
 
-	/* Initialize and start timeout timer */
-	k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 	/* Start timeout work */
-	k_work_reschedule(&session->timeout_work, AVDTP_TIMEOUT);
+	bt_work_reschedule(&session->timeout_work, AVDTP_TIMEOUT);
 
 	return 0;
 }
@@ -1820,7 +1818,9 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 	struct bt_avdtp *session = AVDTP_CHAN(chan);
 
 	LOG_DBG("chan %p session %p", chan, session);
-	session->br_chan.chan.conn = NULL;
+
+	k_work_cancel_delayable(&session->timeout_work);
+
 	/* Clear the Pending req if set*/
 	if (session->req) {
 		struct bt_avdtp_req *req = session->req;
@@ -1833,10 +1833,7 @@ void bt_avdtp_l2cap_disconnected(struct bt_l2cap_chan *chan)
 		}
 	}
 
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 	bt_avdtp_clear_tx(session);
@@ -1882,10 +1879,7 @@ void (*rsp_handler[])(struct bt_avdtp *session, struct net_buf *buf, uint8_t msg
 
 static int avdtp_rel_and_return(struct bt_avdtp *session)
 {
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	return 0;
 }
@@ -1931,8 +1925,7 @@ static int bt_avdtp_l2cap_frags_recv(struct bt_avdtp *session, struct net_buf *b
 
 		if (session->reasm_buf != NULL) {
 			LOG_ERR("get start packet during reassembly");
-			net_buf_unref(session->reasm_buf);
-			session->reasm_buf = NULL;
+			net_buf_drop(&session->reasm_buf);
 		}
 
 		if ((AVDTP_MSG_GET(start_hdr->hdr) != BT_AVDTP_CMD) &&
@@ -2044,10 +2037,7 @@ static int avdtp_rel_and_rej(struct bt_avdtp *session, uint8_t sigid, uint8_t ti
 	struct net_buf *rsp_buf;
 	int err;
 
-	if (session->reasm_buf != NULL) {
-		net_buf_unref(session->reasm_buf);
-		session->reasm_buf = NULL;
-	}
+	net_buf_drop(&session->reasm_buf);
 
 	rsp_buf = avdtp_create_pdu(BT_AVDTP_GEN_REJECT, sigid, tid);
 	if (!rsp_buf) {
@@ -2097,8 +2087,7 @@ int bt_avdtp_l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		if (session->reasm_buf != NULL) {
 			LOG_DBG("get single packet during reassembly");
 
-			net_buf_unref(session->reasm_buf);
-			session->reasm_buf = NULL;
+			net_buf_drop(&session->reasm_buf);
 		}
 
 		if (buf->len < sizeof(*single_hdr)) {
@@ -2163,6 +2152,7 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&session->sem_lock, 1, 1);
 	k_work_init(&session->_release_work, avdtp_release_work);
+	k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
 	session->br_chan.chan.ops = &signal_chan_ops;
 	session->br_chan.required_sec_level = BT_SECURITY_L2;
@@ -2225,6 +2215,7 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		/* Locking semaphore initialized to 1 (unlocked) */
 		k_sem_init(&session->sem_lock, 1, 1);
 		k_work_init(&session->_release_work, avdtp_release_work);
+		k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 		session->br_chan.chan.ops = &signal_chan_ops;
 		session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
 		*chan = &session->br_chan.chan;
@@ -2475,7 +2466,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 					*codec_info_element_len = (length - 2);
 					*codec_info_element =
 						net_buf_pull_mem(buf, (*codec_info_element_len));
-					return 0;
+					break;
 				}
 			}
 			break;
@@ -2484,7 +2475,7 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			break;
 		}
 	}
-	return -EINVAL;
+	return (*codec_info_element != NULL) ? 0 : -EINVAL;
 }
 
 static int avdtp_process_configure_command(struct bt_avdtp *session, uint8_t cmd,

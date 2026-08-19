@@ -14,14 +14,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/rfcomm.h>
 #include <zephyr/bluetooth/classic/hfp_hf.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "at.h"
@@ -337,6 +337,11 @@ static void cind_handle_values(struct at_client *hf_at, uint32_t index,
 	int i;
 
 	LOG_DBG("index: %u, name: %s, min: %u, max:%u", index, name, min, max);
+
+	if (index >= ARRAY_SIZE(hf->ind_table)) {
+		LOG_WRN("Invalid indicator index: %u", index);
+		return;
+	}
 
 	for (i = 0; i < ARRAY_SIZE(ag_ind); i++) {
 		if (strcmp(name, ag_ind[i].name) != 0) {
@@ -779,9 +784,9 @@ static void set_call_incoming_flag(struct bt_hfp_hf_call *call, bool incoming)
 	call_count = get_using_call_count(call->hf);
 	if (call_count > 1) {
 		if (incoming) {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_INCOMING_3WAY);
 		} else {
-			atomic_test_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
+			atomic_set_bit(call->flags, BT_HFP_HF_CALL_OUTGOING_3WAY);
 		}
 	} else {
 		atomic_set_bit_to(call->flags, BT_HFP_HF_CALL_INCOMING, incoming);
@@ -1916,7 +1921,7 @@ static const struct unsolicited *hfp_hf_unsol_lookup(struct at_client *hf_at)
 		size_t len = strlen(handlers[i].cmd);
 
 		if ((hf_at->rsp_buf.len >= len) &&
-		    (strncmp(hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
+		    (memcmp(hf_at->rsp_buf.data, handlers[i].cmd, len) == 0)) {
 			return &handlers[i];
 		}
 	}
@@ -4253,14 +4258,35 @@ static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
+	struct net_buf *buf;
 
 	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
 		bt_hf->disconnected(hf);
 	}
 
+	/* Stop the senders before draining the TX queue below: with the flag
+	 * cleared, command senders are rejected with -ENOTCONN instead of
+	 * queueing buffers that nothing will ever send.
+	 */
+	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_CONNECTED);
+
 	k_work_cancel(&hf->work);
 	k_work_cancel_delayable(&hf->deferred_work);
+
+	/* Drop queued TX buffers. Nothing will send them any more, and
+	 * leaving them on the FIFO would leak them from hf_pool for good:
+	 * hfp_hf_create() wipes the FIFO with memset() when the slot is
+	 * reused. Freeing them also unblocks a work handler that is stuck
+	 * in the K_FOREVER allocation in hfp_hf_send_cmd() waiting for the
+	 * exhausted pool to be refilled.
+	 */
+	buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	}
+
 	hf->acl = NULL;
 }
 
@@ -4398,6 +4424,22 @@ static struct bt_hfp_hf *hfp_hf_create(struct bt_conn *conn)
 	hf = &bt_hfp_hf_pool[index];
 	if (hf->acl) {
 		LOG_ERR("HF connection (%p) is established", conn);
+		return NULL;
+	}
+
+	/* The work items are canceled on disconnect, but a handler that was
+	 * already running at that point may still be executing: cancellation
+	 * does not wait for a running handler, and the handlers can block for
+	 * a long time in the K_FOREVER buffer allocation in
+	 * hfp_hf_send_cmd(). Wiping the object under a running handler would
+	 * corrupt the work items and the TX FIFO, so refuse to reuse the
+	 * object until the handlers have finished. This is a transient
+	 * failure: retry once the pending work has drained.
+	 */
+	if ((k_work_busy_get(&hf->work) != 0) ||
+	    (k_work_busy_get(&hf->slc_work) != 0) ||
+	    (k_work_delayable_busy_get(&hf->deferred_work) != 0)) {
+		LOG_WRN("Work of HF %p is still pending or running", hf);
 		return NULL;
 	}
 

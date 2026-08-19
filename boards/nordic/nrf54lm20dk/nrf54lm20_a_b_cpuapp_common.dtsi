@@ -19,6 +19,7 @@
 		zephyr,flash-controller = &rram_controller;
 		zephyr,flash = &cpuapp_rram;
 		zephyr,ieee802154 = &ieee802154;
+		zephyr,usb-bc12 = &usbhs_bc12;
 	};
 
 	aliases {
@@ -106,11 +107,35 @@ temp_sensor: &temp {
 	status = "okay";
 };
 
+&xo {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
+&xo24m {
+	status = "okay";
+};
+
 &ieee802154 {
 	status = "okay";
 };
 
+&usbhs_wrapper {
+	status = "okay";
+};
+
 zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+zephyr_uhc0: &usbhs {
+	status = "okay";
+};
+
+&usbhs_bc12 {
 	status = "okay";
 };
 

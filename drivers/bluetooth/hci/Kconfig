@@ -117,21 +117,11 @@ config BT_BLUENRG_ACI
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
 
-config BT_STM32_IPM
-	bool
-	default y
-	depends on DT_HAS_ST_STM32WB_RF_ENABLED
-	select USE_STM32_HAL_CORTEX
-	select HAS_STM32LIB
-	select BT_HCI_SETUP
-	help
-	  TODO
-
 config BT_STM32WBA
 	bool
 	default y
 	depends on DT_HAS_ST_HCI_STM32WBA_ENABLED
-	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS
+	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR if !BT_HCI_RAW
 	help
@@ -170,6 +160,7 @@ config BT_ESP32
 	depends on DT_HAS_ESPRESSIF_ESP32_BT_HCI_ENABLED
 	depends on ZEPHYR_HAL_ESPRESSIF_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_BT_CTLR
+	select BT_CTLR_LE_ENC_SUPPORT
 	select BT_CTLR_PRIVACY_SUPPORT
 	select BT_CTLR_EXT_SCAN_FP_SUPPORT
 	select BT_CTLR_DATA_LEN_UPDATE_SUPPORT
@@ -180,6 +171,16 @@ config BT_ESP32
 	select BT_CTLR_PHY_2M_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_PHY_CODED_SUPPORT if !SOC_SERIES_ESP32
 	select BT_CTLR_CHAN_SEL_2_SUPPORT if !SOC_SERIES_ESP32
+	select BT_CTLR_ADV_PERIODIC_SUPPORT if !SOC_SERIES_ESP32
+	select BT_CTLR_SYNC_PERIODIC_SUPPORT if !SOC_SERIES_ESP32
+	select BT_CTLR_SYNC_TRANSFER_SENDER_SUPPORT if !SOC_SERIES_ESP32
+	select BT_CTLR_SYNC_TRANSFER_RECEIVER_SUPPORT if !SOC_SERIES_ESP32
+	select BT_CTLR_ADV_PERIODIC_RSP_SUPPORT \
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+	select BT_CTLR_LE_POWER_CONTROL_SUPPORT \
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
+	select BT_CTLR_SUBRATING_SUPPORT \
+		if SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32H2
 	help
 	  Espressif HCI bluetooth interface
 
@@ -240,6 +241,13 @@ config BT_AMBIQ_HCI
 	  Supports Ambiq Bluetooth SoC using SPI as the communication protocol.
 	  HCI packets are sent and received as single Byte transfers.
 
+config BT_AMEBA
+	bool "AMEBA BT HCI driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_BT_HCI_ENABLED
+	help
+	  AMEBA BT HCI driver
+
 config BT_HCI_INIT_PRIORITY
 	int "BT HCI init priority"
 	default 75 if BT_AMBIQ_HCI
@@ -256,7 +264,6 @@ config BT_AIROC
 	bool "AIROC BT connectivity"
 	default y
 	select GPIO                          if BT_H4
-	select UART                          if BT_H4
 	select UART_USE_RUNTIME_CONFIGURE    if BT_H4
 	select BT_HCI_SETUP
 	select BT_HCI_SET_PUBLIC_ADDR
@@ -323,11 +330,11 @@ config BT_DRV_TX_STACK_SIZE
 config BT_DRV_RX_STACK_SIZE
 	int
 	default 640 if (BT_SPI || BT_AMBIQ_HCI)
-	default BT_RX_STACK_SIZE if (BT_H4 || BT_HCI_RAW_H4)
+	default BT_RX_STACK_SIZE if BT_H4
 	default BT_STM32_IPM_RX_STACK_SIZE if BT_STM32_IPM
 	default HCI_NXP_RX_STACK_SIZE if HCI_NXP_RX_THREAD
 	default 1024 if BT_SF32LB
-	default 1024 if BT_BFLB_BL70X
+	default 1024 if BT_BFLB
 	default 512
 	help
 	  Stack size for the HCI driver's RX thread.

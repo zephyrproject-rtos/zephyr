@@ -18,28 +18,30 @@
 #include <zephyr/bluetooth/audio/mcs.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/conn.h>
+#include <zephyr/bluetooth/data.h>
+#include <zephyr/bluetooth/services/ots.h>
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
-#include <zephyr/sys/util.h>
 #include <zephyr/sys/time_units.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
-#include "media_proxy_internal.h"
 #include "mcs_internal.h"
+#include "media_proxy_internal.h"
 #include "mpl_internal.h"
 
 LOG_MODULE_REGISTER(bt_mpl, CONFIG_BT_MPL_LOG_LEVEL);
 
-#define TRACK_STATUS_INVALID 0x00
-#define TRACK_STATUS_VALID 0x01
+#define TRACK_STATUS_INVALID 0x00U
+#define TRACK_STATUS_VALID 0x01U
 
-#define TRACK_POS_WORK_DELAY_MS 1000
+#define TRACK_POS_WORK_DELAY_MS 1000U
 #define TRACK_POS_WORK_DELAY    K_MSEC(TRACK_POS_WORK_DELAY_MS)
 
 #define PLAYBACK_SPEED_PARAM_DEFAULT MEDIA_PROXY_PLAYBACK_SPEED_UNITY
@@ -55,100 +57,100 @@ static struct mpl_tseg seg_2;
 static struct mpl_tseg seg_3;
 
 static struct mpl_tseg seg_1 = {
-	.name_len = 5,
+	.name_len = 5U,
 	.name	  = "Start",
-	.pos	  = 0,
+	.pos	  = 0, /* Will be updated to a value relative to the track duration */
 	.prev	  = NULL,
 	.next	  = &seg_2,
 };
 
 static struct mpl_tseg seg_2 = {
-	.name_len = 6,
+	.name_len = 6U,
 	.name	  = "Middle",
-	.pos	  = 2000,
+	.pos	  = 0, /* Will be updated to a value relative to the track duration */
 	.prev	  = &seg_1,
 	.next	  = &seg_3,
 };
 
 static struct mpl_tseg seg_3 = {
-	.name_len = 3,
+	.name_len = 3U,
 	.name	  = "End",
-	.pos	  = 5000,
+	.pos	  = 0, /* Will be updated to a value relative to the track duration */
 	.prev	  = &seg_2,
 	.next	  = NULL,
 };
 
 static struct mpl_track track_1_2;
 static struct mpl_track track_1_3;
-static struct mpl_track track_1_4;
-static struct mpl_track track_1_5;
+static struct mpl_track track_2_1;
+static struct mpl_track track_2_2;
+static struct mpl_track track_2_3;
+static struct mpl_track track_2_4;
+static struct mpl_track track_2_5;
 
 /* Tracks */
 static struct mpl_track track_1_1 = {
-	.title	     = "Interlude #1 (Song for Alison)",
-	.duration    = 6300,
+	.title	     = "Track 1.1",
+	.duration    = 30000,
 	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_1_2,
 };
 
-
 static struct mpl_track track_1_2 = {
-	.title	     = "Interlude #2 (For Bobbye)",
-	.duration    = 7500,
-	.segment     = NULL,
+	.title	     = "Track 1.2",
+	.duration    = 30000,
+	.segment     = &seg_1,
 	.prev	     = &track_1_1,
 	.next	     = &track_1_3,
 };
 
 static struct mpl_track track_1_3 = {
-	.title	     = "Interlude #3 (Levanto Seventy)",
-	.duration    = 7800,
-	.segment     = NULL,
+	.title	     = "Track 1.3",
+	.duration    = 30000,
+	.segment     = &seg_1,
 	.prev	     = &track_1_2,
-	.next	     = &track_1_4,
-};
-
-static struct mpl_track track_1_4 = {
-	.title	     = "Interlude #4 (Vesper Dreams)",
-	.duration    = 13500,
-	.segment     = NULL,
-	.prev	     = &track_1_3,
-	.next	     = &track_1_5,
-};
-
-static struct mpl_track track_1_5 = {
-	.title	     = "Interlude #5 (Shasti)",
-	.duration    = 7500,
-	.segment     = NULL,
-	.prev	     = &track_1_4,
 	.next	     = NULL,
 };
 
-static struct mpl_track track_2_2;
-static struct mpl_track track_2_3;
-
 static struct mpl_track track_2_1 = {
-	.title	     = "Track 2.1",
-	.duration    = 30000,
-	.segment     = NULL,
+	.title	     = "Interlude #1 (Song for Alison)",
+	.duration    = 6300,
+	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_2_2,
 };
 
+
 static struct mpl_track track_2_2 = {
-	.title	     = "Track 2.2",
-	.duration    = 30000,
-	.segment     = NULL,
+	.title	     = "Interlude #2 (For Bobbye)",
+	.duration    = 7500,
+	.segment     = &seg_1,
 	.prev	     = &track_2_1,
 	.next	     = &track_2_3,
 };
 
 static struct mpl_track track_2_3 = {
-	.title	     = "Track 2.3",
-	.duration    = 30000,
-	.segment     = NULL,
+	.title	     = "Interlude #3 (Levanto Seventy)",
+	.duration    = 7800,
+	.segment     = &seg_1,
 	.prev	     = &track_2_2,
+	.next	     = &track_2_4,
+};
+
+static struct mpl_track track_2_4 = {
+	.title	     = "Interlude #4 (Vesper Dreams)",
+	.duration    = 13500,
+	.segment     = &seg_1,
+	.prev	     = &track_2_3,
+	.next	     = &track_2_5,
+};
+
+static struct mpl_track track_2_5 = {
+	.title	     = "Interlude #5 (Shasti)",
+	.duration    = 7500,
+	.segment     = &seg_1,
+	.prev	     = &track_2_4,
 	.next	     = NULL,
 };
 
@@ -158,7 +160,7 @@ static struct mpl_track track_3_3;
 static struct mpl_track track_3_1 = {
 	.title	     = "Track 3.1",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_3_2,
 };
@@ -166,7 +168,7 @@ static struct mpl_track track_3_1 = {
 static struct mpl_track track_3_2 = {
 	.title	     = "Track 3.2",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_3_1,
 	.next	     = &track_3_3,
 };
@@ -174,7 +176,7 @@ static struct mpl_track track_3_2 = {
 static struct mpl_track track_3_3 = {
 	.title	     = "Track 3.3",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_3_2,
 	.next	     = NULL,
 };
@@ -184,7 +186,7 @@ static struct mpl_track track_4_2;
 static struct mpl_track track_4_1 = {
 	.title	     = "Track 4.1",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = NULL,
 	.next	     = &track_4_2,
 };
@@ -192,7 +194,7 @@ static struct mpl_track track_4_1 = {
 static struct mpl_track track_4_2 = {
 	.title	     = "Track 4.2",
 	.duration    = 30000,
-	.segment     = NULL,
+	.segment     = &seg_1,
 	.prev	     = &track_4_1,
 	.next	     = NULL,
 };
@@ -204,7 +206,7 @@ static struct mpl_group group_4;
 static struct mpl_group group_p;
 
 static struct mpl_group group_1 = {
-	.title  = "Joe Pass - Guitar Interludes",
+	.title  = "Group 1",
 	.track	= &track_1_1,
 	.parent = &group_p,
 	.prev	= NULL,
@@ -212,7 +214,7 @@ static struct mpl_group group_1 = {
 };
 
 static struct mpl_group group_2 = {
-	.title  = "Group 2",
+	.title  = "Joe Pass - Guitar Interludes",
 	.track	= &track_2_2,
 	.parent = &group_p,
 	.prev	= &group_1,
@@ -256,7 +258,7 @@ static struct mpl_mediaplayer media_player = {
 				    MEDIA_PROXY_PLAYING_ORDERS_SUPPORTED_INORDER_REPEAT,
 	.opcodes_supported	  = 0x001fffff, /* All opcodes */
 #ifdef CONFIG_BT_MPL_OBJECTS
-	.search_results_id	  = 0,
+	.search_results_id	  = 0U,
 	.calls = { 0 },
 #endif /* CONFIG_BT_MPL_OBJECTS */
 	.next_track_set           = false
@@ -264,6 +266,7 @@ static struct mpl_mediaplayer media_player = {
 
 static void set_track_position(int32_t position);
 static void set_relative_track_position(int32_t rel_pos);
+static void set_track_segment(struct mpl_track *track);
 static void do_track_change_notifications(struct mpl_mediaplayer *pl);
 static void do_group_change_notifications(struct mpl_mediaplayer *pl);
 
@@ -312,7 +315,7 @@ struct obj_t {
 };
 
 static struct obj_t obj = {
-	.selected_id = 0,
+	.selected_id = 0U,
 	.add_type = MPL_OBJ_NONE,
 	.add_track = NULL,
 	.content = NET_BUF_SIMPLE(CONFIG_BT_MPL_MAX_OBJ_SIZE),
@@ -330,9 +333,8 @@ static int setup_icon_object(void)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_ICON_BITMAP_SIZE);
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_ICON_BITMAP_SIZE);
 	     index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
@@ -348,7 +350,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 	net_buf_simple_reset(obj.content);
 
 	if (seg) {
-		uint32_t tot_size = 0;
+		uint32_t tot_size = 0U;
 
 		while (seg->prev) {
 			seg = seg->prev;
@@ -381,7 +383,7 @@ static uint32_t setup_segments_object(struct mpl_track *track)
 }
 
 /* Set up content buffer for a track object */
-static uint32_t setup_track_object(struct mpl_track *track)
+static uint32_t setup_track_object(void)
 {
 	uint16_t index;
 	uint8_t k;
@@ -392,10 +394,8 @@ static uint32_t setup_track_object(struct mpl_track *track)
 	net_buf_simple_reset(obj.content);
 
 	/* Size may be larger than what fits in 8 bits, use 16-bit for index */
-	for (index = 0, k = 0;
-	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE,
-			 CONFIG_BT_MPL_TRACK_MAX_SIZE);
-	     index++, k++) {
+	for (index = 0U, k = 0U;
+	     index < MIN(CONFIG_BT_MPL_MAX_OBJ_SIZE, CONFIG_BT_MPL_TRACK_MAX_SIZE); index++, k++) {
 		net_buf_simple_add_u8(obj.content, k);
 	}
 
@@ -472,7 +472,7 @@ static uint32_t setup_group_object(struct mpl_group *group)
 }
 
 /* Add the icon object to the OTS */
-static int add_icon_object(struct mpl_mediaplayer *pl)
+static int add_icon_object(void)
 {
 	int ret;
 	struct bt_ots_obj_add_param add_param = {};
@@ -547,7 +547,7 @@ static int add_track_object(struct mpl_track *track)
 	obj.add_track = track;
 	obj.desc = &created_desc;
 
-	obj.desc->size.alloc = obj.desc->size.cur = setup_track_object(track);
+	obj.desc->size.alloc = obj.desc->size.cur = setup_track_object();
 	obj.desc->name = track->title;
 	BT_OTS_OBJ_SET_PROP_READ(obj.desc->props);
 
@@ -691,6 +691,9 @@ static int add_group_and_track_objects(struct mpl_mediaplayer *pl)
 static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 			   uint64_t id)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	LOG_DBG_OBJ_ID("Object Id deleted: ", id);
 
 	return 0;
@@ -699,6 +702,9 @@ static int on_obj_deleted(struct bt_ots *ots, struct bt_conn *conn,
 static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 			    uint64_t id)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
@@ -716,16 +722,16 @@ static void on_obj_selected(struct bt_ots *ots, struct bt_conn *conn,
 		(void)setup_segments_object(media_player.group->track);
 	} else if (id == media_player.group->track->id) {
 		LOG_DBG("Current Track Object ID");
-		(void)setup_track_object(media_player.group->track);
+		(void)setup_track_object();
 	} else if (media_player.next_track_set && id == media_player.next.track->id) {
 		/* Next track, if the next track has been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(media_player.next.track);
+		(void)setup_track_object();
 	} else if (media_player.group->track->next != NULL &&
 		   id == media_player.group->track->next->id) {
 		/* Next track, if next track has not been explicitly set */
 		LOG_DBG("Next Track Object ID");
-		(void)setup_track_object(media_player.group->track->next);
+		(void)setup_track_object();
 	} else if (id == media_player.group->parent->id) {
 		LOG_DBG("Parent Group Object ID");
 		(void)setup_parent_group_object(media_player.group);
@@ -746,6 +752,9 @@ static int on_obj_created(struct bt_ots *ots, struct bt_conn *conn, uint64_t id,
 			  const struct bt_ots_obj_add_param *add_param,
 			  struct bt_ots_obj_created_desc *created_desc)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	/* Objects are always created locally so we do not need to check for MPL_OBJ_FLAG_BUSY */
 
 	LOG_DBG_OBJ_ID("Object Id created: ", id);
@@ -809,6 +818,9 @@ static ssize_t on_object_send(struct bt_ots *ots, struct bt_conn *conn,
 			      uint64_t id, void **data, size_t len,
 			      off_t offset)
 {
+	ARG_UNUSED(ots);
+	ARG_UNUSED(conn);
+
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		/* TODO: Can there be a collision between select and internal */
 		/* activities, like adding new objects? */
@@ -875,6 +887,14 @@ static void do_prev_segment(struct mpl_mediaplayer *pl)
 	}
 
 	LOG_DBG("Segment name after: %s", pl->group->track->segment->name);
+}
+
+static void set_current_track(struct mpl_mediaplayer *pl, struct mpl_track *track)
+{
+	pl->group->track = track;
+	pl->track_pos = 0;
+	set_track_segment(track);
+	do_track_change_notifications(pl);
 }
 
 static void do_next_segment(struct mpl_mediaplayer *pl)
@@ -958,9 +978,7 @@ static void do_prev_track(struct mpl_mediaplayer *pl)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->prev != NULL) {
-		pl->group->track = pl->group->track->prev;
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
+		set_current_track(pl, pl->group->track->prev);
 	} else {
 		/* For previous track, the position is reset to 0 */
 		/* even if we stay at the same track (goto start of */
@@ -981,9 +999,7 @@ static void do_next_track_normal_order(struct mpl_mediaplayer *pl)
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 	if (pl->group->track->next != NULL) {
-		pl->group->track = pl->group->track->next;
-		pl->track_pos = 0;
-		do_track_change_notifications(pl);
+		set_current_track(pl, pl->group->track->next);
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
@@ -1005,13 +1021,10 @@ static void do_next_track_next_track_set(struct mpl_mediaplayer *pl)
 		do_group_change_notifications(pl);
 	}
 
-	pl->group->track = pl->next.track;
-
+	set_current_track(pl, pl->next.track);
 	pl->next.track = NULL;
 	pl->next.group = NULL;
 	pl->next_track_set = false;
-	pl->track_pos = 0;
-	do_track_change_notifications(pl);
 }
 
 static void do_next_track(struct mpl_mediaplayer *pl)
@@ -1040,8 +1053,7 @@ static void do_first_track(struct mpl_mediaplayer *pl, bool group_change)
 
 	/* Notify about new track */
 	if (group_change || track_changed) {
-		media_player.track_pos = 0;
-		do_track_change_notifications(&media_player);
+		set_current_track(pl, pl->group->track);
 	} else {
 		/* For first track, the position is reset to 0 even */
 		/* if we stay at the same track (goto start of track) */
@@ -1061,17 +1073,15 @@ static void do_last_track(struct mpl_mediaplayer *pl)
 
 	if (pl->group->track->next != NULL) {
 		pl->group->track = pl->group->track->next;
-		media_player.track_pos = 0;
-		do_track_change_notifications(&media_player);
-	} else {
+		while (pl->group->track->next != NULL) {
+			pl->group->track = pl->group->track->next;
+		}
 
+		set_current_track(pl, pl->group->track);
+	} else {
 		/* For last track, the position is reset to 0 even */
 		/* if we stay at the same track (goto start of track) */
 		set_track_position(0);
-	}
-
-	while (pl->group->track->next != NULL) {
-		pl->group->track = pl->group->track->next;
 	}
 
 #ifdef CONFIG_BT_MPL_OBJECTS
@@ -1125,8 +1135,7 @@ static void do_goto_track(struct mpl_mediaplayer *pl, int32_t tracknum)
 	/* The track has changed if we have moved more in one direction */
 	/* than in the other */
 	if (count != 0) {
-		media_player.track_pos = 0;
-		do_track_change_notifications(&media_player);
+		set_current_track(&media_player, pl->group->track);
 	} else {
 		/* For goto track, the position is reset to 0 */
 		/* even if we stay at the same track (goto */
@@ -1364,27 +1373,14 @@ static uint8_t inactive_state_command_handler(const struct mpl_cmd *command)
 	case MEDIA_PROXY_OP_FAST_FORWARD:
 	case MEDIA_PROXY_OP_STOP:
 	case MEDIA_PROXY_OP_MOVE_RELATIVE:
+	case MEDIA_PROXY_OP_PREV_TRACK:
+	case MEDIA_PROXY_OP_NEXT_TRACK:
 	case MEDIA_PROXY_OP_PREV_SEGMENT:
 	case MEDIA_PROXY_OP_NEXT_SEGMENT:
 	case MEDIA_PROXY_OP_FIRST_SEGMENT:
 	case MEDIA_PROXY_OP_LAST_SEGMENT:
 	case MEDIA_PROXY_OP_GOTO_SEGMENT:
 		result_code = MEDIA_PROXY_CMD_PLAYER_INACTIVE;
-		break;
-	case MEDIA_PROXY_OP_PREV_TRACK:
-		do_prev_track(&media_player);
-		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
-		break;
-	case MEDIA_PROXY_OP_NEXT_TRACK:
-		/* TODO:
-		 * The case where the next track has been set explicitly breaks somewhat
-		 * with the "next" order hardcoded into the group and track structure
-		 */
-		do_next_track(&media_player);
-
-		/* For next track, the position is kept if the track */
-		/* does not change */
-		mpl_set_state(MEDIA_PROXY_STATE_PAUSED);
 		break;
 	case MEDIA_PROXY_OP_FIRST_TRACK:
 		do_first_track(&media_player, false);
@@ -2035,6 +2031,51 @@ static void set_relative_track_position(int32_t rel_pos)
 	set_track_position((int32_t)pos);
 }
 
+/*
+ * Set segment start positions from the current track duration.
+ *
+ * The current track segment is reset to the first segment object.
+ * The first segment starts at 0, and each following segment is placed at an
+ * equal fraction of the track duration based on the number of segments.
+ */
+static void set_track_segment(struct mpl_track *track)
+{
+	struct mpl_tseg *seg;
+	struct mpl_tseg *first_seg;
+	int32_t segment_count;
+	int32_t step;
+	int32_t pos = 0;
+
+	__ASSERT(track != NULL, "Track cannot be NULL");
+	seg = track->segment;
+	__ASSERT(seg != NULL, "Track segment cannot be NULL");
+
+	/* Start from the first segment, even if the current segment has moved. */
+	first_seg = seg;
+	while (first_seg->prev != NULL) {
+		first_seg = first_seg->prev;
+	}
+	track->segment = first_seg;
+
+	/* Count total segments to calculate one uniform spacing value. */
+	segment_count = 1;
+	seg = first_seg->next;
+	while (seg != NULL) {
+		segment_count++;
+		seg = seg->next;
+	}
+
+	/* Distance between two neighboring segment start positions. */
+	step = track->duration / segment_count;
+	seg = first_seg;
+
+	while (seg != NULL) {
+		seg->pos = pos;
+		pos += step;
+		seg = seg->next;
+	}
+}
+
 static int8_t get_playback_speed(void)
 {
 	return media_player.playback_speed_param;
@@ -2078,12 +2119,10 @@ static void set_current_track_id(uint64_t id)
 			do_group_change_notifications(&media_player);
 
 			/* Group change implies track change (even if same track in other group) */
-			media_player.group->track = track;
-			do_track_change_notifications(&media_player);
+			set_current_track(&media_player, track);
 
 		} else if (media_player.group->track != track) {
-			media_player.group->track = track;
-			do_track_change_notifications(&media_player);
+			set_current_track(&media_player, track);
 		}
 		return;
 	}
@@ -2217,6 +2256,8 @@ static uint32_t get_commands_supported(void)
 
 static bool parse_sci(struct bt_data *data, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
 	LOG_DBG("type: %u len %u", data->type, data->data_len);
 	LOG_HEXDUMP_DBG(data->data, data->data_len, "param:");
 
@@ -2256,7 +2297,7 @@ static void parse_search(const struct mpl_search *search)
 	/* For now, just fake it. */
 
 	if (search_failed) {
-		media_player.search_results_id = 0;
+		media_player.search_results_id = 0U;
 		media_proxy_pl_search_cb(MEDIA_PROXY_SEARCH_FAILURE);
 	} else {
 		/* Use current group as search result for now */
@@ -2293,6 +2334,8 @@ static void pos_work_cb(struct k_work *work)
 {
 	const int32_t pos_diff_cs = TRACK_POS_WORK_DELAY_MS / 10; /* position is in centiseconds*/
 
+	ARG_UNUSED(work);
+
 	if (media_player.state == MEDIA_PROXY_STATE_SEEKING) {
 		/* When seeking, apply the seeking speed factor */
 		set_relative_track_position(pos_diff_cs * media_player.seeking_speed_factor);
@@ -2327,14 +2370,12 @@ int media_proxy_pl_init(void)
 	media_player.content_ctrl_id = (uint8_t)ret;
 
 	/* Set up the media control service */
-	/* TODO: Fix initialization - who initializes what
-	 * https://github.com/zephyrproject-rtos/zephyr/issues/42965
-	 * Temporarily only initializing if service is present
-	 */
 #ifdef CONFIG_BT_MCS
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* The test here is arguably needed as the objects cannot be accessed before bt_mcs_init is
 	 * called, but the set is to avoid the objects being accessed before properly initialized
+	 * MCS has to be registered before we add the objects, as we need the OTS that is registered
+	 * and included by MCS.
 	 */
 	if (atomic_test_and_set_bit(obj.flags, MPL_OBJ_FLAG_BUSY)) {
 		LOG_ERR("Object busy");
@@ -2354,41 +2395,30 @@ int media_proxy_pl_init(void)
 		LOG_ERR("Could not init MCS: %d", ret);
 		return ret;
 	}
-#endif  /* CONFIG_BT_MPL_OBJECTS */
-	/* TODO: If anything below fails we should unregister MCS */
+#endif /* CONFIG_BT_MPL_OBJECTS */
 #else
 	LOG_WRN("MCS not configured");
 #endif /* CONFIG_BT_MCS */
+
+	set_track_segment(media_player.group->track);
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 	/* Initialize the object content buffer */
 	net_buf_simple_init(obj.content, 0);
 
 	/* Icon Object */
-	ret = add_icon_object(&media_player);
-	if (ret < 0) {
-		LOG_ERR("Unable to add icon object, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	ret = add_icon_object();
+	__ASSERT(ret == 0, "Unable to add icon object, error %d", ret);
 
 	/* Add all tracks and groups to OTS */
 	ret = add_group_and_track_objects(&media_player);
-	if (ret < 0) {
-		LOG_ERR("Error adding tracks and groups to OTS, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	__ASSERT(ret == 0, "Error adding tracks and groups to OTS, error %d", ret);
 
 	/* Initial setup of Track Segments Object */
 	/* TODO: Later, this should be done when the tracks are added */
 	/* but for no only one of the tracks has segments .*/
 	ret = add_current_track_segments_object(&media_player);
-	if (ret < 0) {
-		LOG_ERR("Error adding Track Segments Object to OTS, error %d", ret);
-		atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
-		return ret;
-	}
+	__ASSERT(ret == 0, "Error adding Track Segments Object to OTS, error %d", ret);
 
 	atomic_clear_bit(obj.flags, MPL_OBJ_FLAG_BUSY);
 #endif /* CONFIG_BT_MPL_OBJECTS */
@@ -2429,10 +2459,7 @@ int media_proxy_pl_init(void)
 	media_player.calls.get_content_ctrl_id          = get_content_ctrl_id;
 
 	ret = media_proxy_pl_register(&media_player.calls);
-	if (ret < 0) {
-		LOG_ERR("Unable to register player");
-		return ret;
-	}
+	__ASSERT(ret == 0, "Unable to register player");
 
 	k_work_init_delayable(&media_player.pos_work, pos_work_cb);
 

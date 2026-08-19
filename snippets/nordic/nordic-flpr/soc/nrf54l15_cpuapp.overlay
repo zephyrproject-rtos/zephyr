@@ -5,10 +5,10 @@
 
 / {
 	soc {
-		cpuflpr_sram_code_data: memory@20028000 {
+		cpuflpr_sram_code_data: memory@20027c00 {
 			compatible = "mmio-sram";
-			reg = <0x20028000 DT_SIZE_K(96)>;
-			ranges = <0x0 0x20028000 0x18000>;
+			reg = <0x20027c00 DT_SIZE_K(96)>;
+			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
 			status = "reserved";
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -21,8 +21,8 @@
 };
 
 &cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(160)>;
-	ranges = <0x0 0x20000000 0x28000>;
+	reg = <0x20000000 DT_SIZE_K(159)>;
+	ranges = <0x0 0x20000000 DT_SIZE_K(159)>;
 };
 
 &cpuapp_rram {

@@ -10,8 +10,7 @@ Wi-Fi IPv4 and IPv6 Snippet (wifi-ip)
 Overview
 ********
 
-This snippet enables IPv4 and IPv6 Wi-Fi support in supported networking samples.
-The sample execution is postponed until Wi-Fi connectivity is established.
+This snippet enables IPv4 and IPv6 Wi-Fi support.
 
 Use Wi-Fi shell to connect to the Wi-Fi network:
 

@@ -9,8 +9,8 @@
  * @brief OpenRISC public interrupt handling
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_
-#define ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_
+#define ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_
 
 #include <openrisc/openriscregs.h>
 
@@ -85,6 +85,12 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return key != 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	return (openrisc_read_spr(SPR_SR) & SPR_SR_IRQ_MASK) != 0;
+}
+
 /**
  * @brief Enable interrupt on OpenRISC core.
  *
@@ -116,4 +122,4 @@ static ALWAYS_INLINE int arch_irq_is_enabled(unsigned int irq)
 	return (openrisc_read_spr(SPR_PICMR) & BIT(irq)) != 0;
 }
 
-#endif /* ZEPHYR_INCLUDE_ARCH_OR1K_IRQ_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_OPENRISC_IRQ_H_ */

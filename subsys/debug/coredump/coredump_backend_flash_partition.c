@@ -257,6 +257,9 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 
 	/* Read header */
 	ret = data_read(0, (uint8_t *)&hdr, sizeof(hdr), NULL, NULL);
+	if (ret != 0) {
+		goto out;
+	}
 
 	/* Verify header signature */
 	if ((hdr.id[0] != 'C') && (hdr.id[1] != 'D')) {

@@ -120,19 +120,18 @@ uint8_t crc7_be(uint8_t seed, const uint8_t *src, size_t len)
 uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	     bool reversed)
 {
-	uint8_t flag_reversed;
 	int ret;
-
-	if (reversed) {
-		flag_reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
-	}
 
 	struct crc_ctx ctx = {
 		.type = CRC8,
 		.polynomial = polynomial,
 		.seed = initial_value,
-		.reversed = flag_reversed,
+		.reversed = 0,
 	};
+
+	if (reversed) {
+		ctx.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
+	}
 
 	ret = crc_operation(crc_dev, &ctx, src, len);
 	if (ret != 0) {
@@ -194,7 +193,7 @@ uint16_t crc16(uint16_t poly, uint16_t seed, const uint8_t *src, size_t len)
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = CRC16_POLY,
+		.polynomial = poly,
 		.seed = seed,
 		.reversed = 0,
 	};
@@ -216,7 +215,7 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = CRC16_POLY,
+		.polynomial = poly,
 		.seed = seed,
 		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
 	};
@@ -375,5 +374,32 @@ uint32_t crc32_k_4_2_update(uint32_t crc, const uint8_t *const data, const size_
 	}
 
 	return ctx.result;
+}
+#endif
+
+#ifdef CONFIG_CRC32_MPEG2
+uint32_t crc32_mpeg2_update(uint32_t crc, const uint8_t *data, size_t len)
+{
+	int ret;
+
+	struct crc_ctx ctx = {
+		.type = CRC32_MPEG2,
+		.polynomial = CRC32_IEEE_POLY,
+		.seed = crc,
+		.reversed = 0,
+	};
+
+	ret = crc_operation(crc_dev, &ctx, data, len);
+	if (ret != 0) {
+		__ASSERT_MSG_INFO("CRC operation failed: %d", ret);
+		return 0;
+	}
+
+	return ctx.result;
+}
+
+uint32_t crc32_mpeg2(const uint8_t *data, size_t len)
+{
+	return crc32_mpeg2_update(CRC32_MPEG2_INIT_VAL, data, len);
 }
 #endif

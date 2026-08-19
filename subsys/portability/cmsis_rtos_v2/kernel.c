@@ -134,14 +134,16 @@ osStatus_t osDelay(uint32_t ticks)
  */
 osStatus_t osDelayUntil(uint32_t ticks)
 {
-	uint32_t ticks_elapsed;
-
 	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
-	ticks_elapsed = osKernelGetTickCount();
-	k_sleep(K_TICKS(ticks - ticks_elapsed));
+	/* https://github.com/ARM-software/CMSIS_5/issues/277#issuecomment-390646527 */
+	ticks = ticks - osKernelGetTickCount();
+	if (ticks == 0 || ticks >  0x7FFFFFFFU) {
+		return osErrorParameter;
+	}
 
+	k_sleep(K_TICKS(ticks));
 	return osOK;
 }

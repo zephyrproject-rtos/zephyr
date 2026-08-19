@@ -38,57 +38,27 @@ atomic_t total_atomic;
  */
 
 /**
- * @brief Verify atomic functionalities
+ * @brief Verify each atomic operation API mutates and returns the expected value.
+ *
+ * @ingroup kernel_atomic_ops_tests
+ *
  * @details
- * Test Objective:
- * - Test the function of the atomic operation API is correct.
+ * Passing proves that every atomic primitive (compare-and-set, arithmetic,
+ * load/store, bitwise, and single-bit operations on both scalar and pointer
+ * targets, plus the ATOMIC_DEFINE bit-array) performs the documented
+ * read-modify-write semantics: each call returns the prior value of the
+ * target and leaves the target updated to the expected result, including for
+ * negative operands and per-bit operations across the full atomic word width.
  *
- * Test techniques:
- * - Dynamic analysis and testing
- * - Functional and black box testing
- * - Interface testing
+ * Test steps:
+ * - Invoke each atomic API in turn against a known target value.
+ * - For arithmetic operations, exercise both positive and negative operands.
+ * - For bit operations, iterate over every bit position of the atomic word.
+ * - For ATOMIC_DEFINE, set and clear each bit of a multi-word bit array.
  *
- * Prerequisite Conditions:
- * - N/A
- *
- * Input Specifications:
- * - N/A
- *
- * Test Procedure:
- * -# Call the API interface of the following atomic operations in turn,
- * judge the change of function return value and target operands.
- * - atomic_cas()
- * - atomic_ptr_cas()
- * - atomic_add()
- * - atomic_sub()
- * - atomic_inc()
- * - atomic_dec()
- * - atomic_get()
- * - atomic_ptr_get()
- * - atomic_set()
- * - atomic_ptr_set()
- * - atomic_clear()
- * - atomic_ptr_clear()
- * - atomic_or()
- * - atomic_xor()
- * - atomic_and()
- * - atomic_nand()
- * - atomic_test_bit()
- * - atomic_test_and_clear_bit()
- * - atomic_test_and_set_bit()
- * - atomic_clear_bit()
- * - atomic_set_bit()
- * - atomic_set_bit_to()
- * - ATOMIC_DEFINE
- *
- * Expected Test Result:
- * - The change of function return value and target operands is correct.
- *
- * Pass/Fail Criteria:
- * - Successful if check points in test procedure are all passed, otherwise failure.
- *
- * Assumptions and Constraints:
- * - N/A
+ * Expected result:
+ * - Each call returns the target's previous value and the target holds the
+ *   expected post-operation value.
  *
  * @see atomic_cas(), atomic_add(), atomic_sub(),
  * atomic_inc(), atomic_dec(), atomic_get(), atomic_set(),
@@ -249,6 +219,24 @@ ZTEST_USER(atomic, test_atomic)
 		zassert_true(target == (orig | BIT(i)), "atomic_test_and_set_bit");
 	}
 
+	for (i = 0; i < ATOMIC_BITS; i++) {
+		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
+		target = orig;
+		zassert_true(atomic_test_and_set_bit_to(&target, i, false) ==
+				     (IS_BIT_SET(orig, i) != IS_BIT_SET(target, i)),
+			     "atomic_test_and_set_bit_to");
+		zassert_true(target == (orig & ~BIT(i)), "atomic_test_and_set_bit_to");
+	}
+
+	for (i = 0; i < ATOMIC_BITS; i++) {
+		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
+		target = orig;
+		zassert_true(atomic_test_and_set_bit_to(&target, i, true) ==
+				     (IS_BIT_SET(orig, i) != IS_BIT_SET(target, i)),
+			     "atomic_test_and_set_bit_to");
+		zassert_true(target == (orig | BIT(i)), "atomic_test_and_set_bit_to");
+	}
+
 	/* atomic_clear_bit() */
 	for (i = 0; i < ATOMIC_BITS; i++) {
 		orig = ATOMIC_WORD(0x0F0F0F0F0F0F0F0F, 0x0F0F0F0F);
@@ -307,15 +295,26 @@ void atomic_handler(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Verify atomic operation with threads
+ * @brief Verify atomic increments from concurrent threads are not lost.
  *
- * @details Creat two preempt threads with equal priority to
- * atomically access the same atomic value. Because these preempt
- * threads are of equal priority, so enable time slice to make
- * them scheduled. The thread will execute for some time.
- * In this time, the two sub threads will be scheduled separately
- * according to the time slice.
+ * @ingroup kernel_atomic_ops_tests
  *
+ * @details
+ * Passing proves that atomic_inc() is safe under preemptive concurrency: when
+ * multiple equal-priority preemptible threads increment a shared atomic_t while
+ * being time-sliced in and out, no increment is lost to a torn read-modify-write,
+ * so the final value equals the exact total number of increments performed.
+ *
+ * Test steps:
+ * - Enable time slicing so equal-priority preemptible threads are scheduled fairly.
+ * - Start THREADS_NUM threads, each incrementing the shared atomic TEST_CYCLE times
+ *   with a busy-wait between increments to force interleaving across slices.
+ * - Join all threads and disable time slicing.
+ *
+ * Expected result:
+ * - The shared atomic equals TEST_CYCLE * THREADS_NUM.
+ *
+ * @see atomic_inc()
  */
 ZTEST(atomic, test_threads_access_atomic)
 {
@@ -342,16 +341,28 @@ ZTEST(atomic, test_threads_access_atomic)
 }
 
 /**
- * @brief Checks that the value of atomic_t will be the same in case of overflow
- *		if incremented in atomic and non-atomic manner
+ * @brief Verify atomic increment overflow wraps identically to plain increment.
  *
- * @details According to C standard the value of a signed variable
- *	is undefined in case of overflow. This test checks that the value
- *	of atomic_t will be the same in case of overflow if incremented in atomic
- *	and non-atomic manner. This allows us to increment an atomic variable
- *	in a non-atomic manner (as long as it is logically safe)
- *	and expect its value to match the result of the similar atomic increment.
+ * @ingroup kernel_atomic_ops_tests
  *
+ * @details
+ * The C standard leaves signed overflow undefined, but Zephyr's atomic_t must
+ * behave deterministically. Passing proves that incrementing an atomic_t past
+ * its maximum value produces the same wrapped result as an ordinary increment of
+ * an equivalently-typed scalar, both at the signed maximum and at the all-ones
+ * (unsigned wrap to zero) boundary. This guarantees an atomic variable can be
+ * reasoned about with plain arithmetic where it is logically safe to do so.
+ *
+ * Test steps:
+ * - Seed an atomic_t and a matching scalar at the maximum signed value, increment
+ *   both, and compare.
+ * - Seed both at the all-ones value (-1), increment both, and compare.
+ *
+ * Expected result:
+ * - After each increment the atomic value matches the plain-increment result and
+ *   the expected wrapped boundary value.
+ *
+ * @see atomic_inc()
  */
 ZTEST(atomic, test_atomic_overflow)
 {

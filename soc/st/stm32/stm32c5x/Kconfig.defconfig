@@ -5,13 +5,10 @@
 
 if SOC_SERIES_STM32C5X
 
-config ROM_START_OFFSET
-	default 0x400 if BOOTLOADER_MCUBOOT
-
-config ICACHE
+configdefault CACHE_MANAGEMENT
 	default y
 
-config CACHE_MANAGEMENT
+configdefault NET_L2_ETHERNET
 	default y
 
 choice CACHE_TYPE

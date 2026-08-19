@@ -151,7 +151,7 @@ static int unpack_raw_data(uint32_t length, struct buf_ctx *buf,
 		str->data = NULL;
 	}
 
-	NET_DBG("<< bin len:%08x", GET_BINSTR_BUFFER_SIZE(str));
+	NET_DBG("<< bin len:%08zx", GET_BINSTR_BUFFER_SIZE(str));
 
 	return 0;
 }
@@ -272,7 +272,7 @@ static int unpack_binary_data(struct buf_ctx *buf, struct mqtt_binstr *bin)
 		bin->data = NULL;
 	}
 
-	NET_DBG("<< bin len:%08x", GET_BINSTR_BUFFER_SIZE(bin));
+	NET_DBG("<< bin len:%08zx", GET_BINSTR_BUFFER_SIZE(bin));
 
 	return 0;
 }

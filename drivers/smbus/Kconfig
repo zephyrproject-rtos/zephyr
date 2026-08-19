@@ -105,4 +105,6 @@ config SMBUS_STM32_SMBALERT
 
 endif # SMBUS_STM32
 
+source "drivers/smbus/Kconfig.it51xxx"
+
 endif # SMBUS

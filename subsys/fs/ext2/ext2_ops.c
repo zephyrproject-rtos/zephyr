@@ -18,8 +18,7 @@
 
 LOG_MODULE_DECLARE(ext2);
 
-K_MEM_SLAB_DEFINE(file_struct_slab, sizeof(struct ext2_file), CONFIG_EXT2_MAX_FILES,
-		  sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(file_struct_slab, struct ext2_file, CONFIG_EXT2_MAX_FILES);
 
 /* File operations */
 

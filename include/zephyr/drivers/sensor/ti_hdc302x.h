@@ -12,8 +12,8 @@
  * setting the Low power parameters.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_
+#define ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
@@ -21,18 +21,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define TI_HDC302X_STATUS_REG_BIT_ALERT         0x8000
-#define TI_HDC302X_STATUS_REG_BIT_HEATER_ON     0x2000
-#define TI_HDC302X_STATUS_REG_BIT_RH_ALERT      0x0800
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_ALERT    0x0400
-#define TI_HDC302X_STATUS_REG_BIT_RH_HIGH_ALERT 0x0200
-#define TI_HDC302X_STATUS_REG_BIT_RH_LOW_ALERT  0x0100
-
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_HIGH_ALERT 0x0080
-#define TI_HDC302X_STATUS_REG_BIT_TEMP_LOW_ALERT  0x0040
-#define TI_HDC302X_STATUS_REG_BIT_RESET_DETECTED  0x0010
-#define TI_HDC302X_STATUS_REG_BIT_CRC_FAILED      0x0001
 
 enum sensor_attribute_hdc302x {
 	/* Sensor low power Mode
@@ -88,4 +76,4 @@ enum sensor_measurement_interval_hdc302x {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_HDC302X_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_SENSOR_TI_HDC302X_H_ */

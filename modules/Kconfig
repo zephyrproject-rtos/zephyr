@@ -32,6 +32,7 @@ source "modules/Kconfig.microchip"
 source "modules/Kconfig.mspm0"
 source "modules/Kconfig.nuvoton"
 source "modules/Kconfig.open-amp"
+source "modules/Kconfig.rpmsg-lite"
 source "modules/Kconfig.picolibc"
 source "modules/Kconfig.renesas"
 source "modules/Kconfig.rust"
@@ -39,7 +40,6 @@ source "modules/Kconfig.simplelink"
 source "modules/Kconfig.stm32"
 source "modules/Kconfig.syst"
 source "modules/Kconfig.telink"
-source "modules/thrift/Kconfig"
 source "modules/Kconfig.vega"
 source "modules/Kconfig.wurthelektronik"
 source "modules/Kconfig.xtensa"
@@ -100,17 +100,11 @@ comment "loramac-node module not available."
 comment "LoRa Basics Modem module not available."
 	depends on !ZEPHYR_LORA_BASICS_MODEM_MODULE
 
-comment "CANopenNode module not available."
-	depends on !ZEPHYR_CANOPENNODE_MODULE
-
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
 
 comment "CHRE module not available."
 	depends on !ZEPHYR_CHRE_MODULE
-
-comment "THRIFT module not available."
-	depends on !ZEPHYR_THRIFT_MODULE
 
 comment "Segger module not available."
 	depends on !ZEPHYR_SEGGER_MODULE

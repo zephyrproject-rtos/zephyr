@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_UART_H_
-#define ZEPHYR_MCTP_UART_H_
+/**
+ * @file
+ * @brief MCTP bus binding over the Zephyr asynchronous UART interface.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_UART_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_UART_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -49,6 +55,8 @@ struct mctp_binding_uart {
 
 	/* Keep track of all UART bindings */
 	sys_snode_t node;
+
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_PACKET_SIZE(MCTP_BTU))] PKTBUF_STORAGE_ALIGN;
 
 	/** INTERNAL_HIDDEN @endcond */
 };
@@ -94,6 +102,7 @@ int mctp_uart_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 				.name = STRINGIFY(_name), .version = 1,                            \
 						  .pkt_size = MCTP_PACKET_SIZE(MCTP_BTU),          \
 						  .pkt_header = 0, .pkt_trailer = 0,               \
+						  .tx_storage = _name.tx_storage,          \
 						  .start = mctp_uart_start, .tx = mctp_uart_tx,    \
 				},                                                                 \
 				.dev = _dev,                                                       \
@@ -103,4 +112,4 @@ int mctp_uart_tx(struct mctp_binding *binding, struct mctp_pktbuf *pkt);
 				.tx_res = 0,                                                       \
 	};
 
-#endif /* ZEPHYR_MCTP_UART_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_UART_H_ */

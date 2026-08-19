@@ -6,7 +6,7 @@ set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 verbosity_level=2
-simulation_id="$(guess_test_long_name)_rpa_sharing"
+simulation_id="${BOARD_TS}_$(guess_test_long_name)_rpa_sharing"
 EXECUTE_TIMEOUT=240
 
 central_exe_rpa_sharing="\

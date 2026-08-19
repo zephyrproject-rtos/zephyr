@@ -17,16 +17,27 @@ config NRF_FORCE_RAM_ON_REBOOT
 	  Force all RAM blocks to be powered on before triggering soft reset
 	  to prevent this from happening.
 
+config SOC_SERIES_NRF71_TFM_RAM_CTRL_SERVICE
+	bool "TF-M RAM control service"
+	depends on HAS_NORDIC_RAM_CTRL
+	depends on SOC_SERIES_NRF71
+	depends on BUILD_WITH_TFM
+	default y
+	help
+	  Provide a TF-M secure service that lets the non-secure application
+	  drive MEMCONF (which is secure-only): power non-secure RAM up/down in
+	  System ON, and select RAM sections to retain across System OFF.
+
 config NRF_SYS_EVENT
 	bool "nRF system event support"
-	select NRFX_POWER if !NRF_PLATFORM_HALTIUM
+	select NRFX_POWER if !SOC_SERIES_NRF54H && !SOC_SERIES_NRF92
 
 if NRF_SYS_EVENT
 
 config NRF_SYS_EVENT_IRQ_LATENCY
 	bool "Register events to reduce interrupt handling latency"
 	default y
-	depends on HAS_HW_NRF_RRAMC && !TRUSTED_EXECUTION_NONSECURE
+	depends on (HAS_HW_NRF_RRAMC || HAS_HW_NRF_MRAMC) && !TRUSTED_EXECUTION_NONSECURE
 
 config NRF_SYS_EVENT_IRQ_LATENCY_MANUAL
 	def_bool !RISCV
@@ -37,6 +48,7 @@ config NRF_SYS_EVENT_IRQ_LATENCY_MANUAL
 
 config NRF_SYS_EVENT_GRTC_CHAN_CNT
 	int "GRTC channel for RRAMC wake up"
+	depends on !HAS_HW_NRF_MRAMC
 	default 1
 	range 0 16
 	depends on NRF_SYS_EVENT_IRQ_LATENCY
@@ -102,6 +114,55 @@ config DMM_STATS
 	bool "Usage statistics"
 
 endif # HAS_NORDIC_DMM
+
+if SHELL_REMOTE
+
+config SHELL_REMOTE_PPR
+	bool "Remote Shell for PPR"
+	depends on $(dt_nodelabel_enabled,cpuppr_vpr)
+
+config SHELL_REMOTE_FLPR
+	bool "Remote Shell for FLPR"
+	depends on $(dt_nodelabel_enabled,cpuflpr_vpr)
+
+config SHELL_REMOTE_RADIO
+	bool "Remote Shell for Radio core"
+	depends on SOC_NRF54H20_CPUAPP
+
+config SHELL_REMOTE_MULTI_CLI
+	# If more than one remote shell is enabled, enable multiple remote clients.
+	default y if SHELL_REMOTE_PPR && SHELL_REMOTE_FLPR
+	default y if SHELL_REMOTE_PPR && SHELL_REMOTE_RADIO
+	default y if SHELL_REMOTE_FLPR && SHELL_REMOTE_RADIO
+
+endif # SHELL_REMOTE
+
+config GPPI_EXT_ALLOCATOR
+	bool "GPPI external allocator"
+	depends on IPC_SERVICE
+	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	help
+	  Enable GPPI external allocator server role. Server registers an IPC
+	  endpoint used for cross-core GPPI resource allocation.
+
+config GPPI_EXT_ALLOCATOR_CLI
+	bool "GPPI external allocator client"
+	depends on IPC_SERVICE
+	depends on NRFX_GPPI && !NRFX_GPPI_V1
+	depends on RISCV_CORE_NORDIC_VPR
+	default y
+	select NRFX_GPPI_EXT_ALLOCATOR
+	help
+	  Enable GPPI external allocator client role. Client core provides
+	  external GPPI allocation functions that delegate to the server over IPC.
+
+config GPPI_EXT_ALLOCATOR_TIMEOUT
+	int "GPPI external allocator IPC timeout (ms)"
+	default 1000
+	depends on GPPI_EXT_ALLOCATOR || GPPI_EXT_ALLOCATOR_CLI
+	help
+	  Timeout in milliseconds for GPPI external allocator IPC semaphore and
+	  mutex operations.
 
 rsource "vpr/Kconfig"
 rsource "uicr/Kconfig"

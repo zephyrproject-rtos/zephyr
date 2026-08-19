@@ -13,8 +13,8 @@
  * implementation to handle interrupts.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_GIC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_GIC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GIC_H_
 
 /*
  * GIC Register Interface Base Addresses
@@ -317,7 +317,12 @@
 /* GIC special interrupt id */
 #define GIC_INTID_SPURIOUS 1023
 
-/* Fixme: update from platform specific define or dt */
+/**
+ * @brief Max number of supported CPUs in a SMP environment
+ *
+ * Fixme: update from platform specific define or dt
+ * DEPRECATED - Use CONFIG_MP_MAX_NUM_CPUS instead.
+ */
 #define GIC_NUM_CPU_IF CONFIG_MP_MAX_NUM_CPUS
 
 #ifndef _ASMLANGUAGE
@@ -415,4 +420,4 @@ void gic_raise_sgi(unsigned int sgi_id, uint64_t target_aff, uint16_t target_lis
 
 #endif /* !_ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_GIC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_GIC_H_ */

@@ -9,8 +9,8 @@
  * @brief FT8XX memory map
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_
-#define ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -229,4 +229,4 @@ enum ft810_register_address_t {
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_MEMORY_H_ */

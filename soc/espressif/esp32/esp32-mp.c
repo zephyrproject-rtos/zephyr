@@ -8,16 +8,15 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <soc.h>
 #include <esp_cpu.h>
-#include "esp_rom_serial_output.h"
+#include <esp_rom_serial_output.h>
 
-#include "esp_mcuboot_image.h"
-#include "esp_memory_utils.h"
+#include <esp_mcuboot_image.h>
+#include <esp_memory_utils.h>
 #include <zephyr/zsr.h>
 
 #ifdef CONFIG_SMP
@@ -324,7 +323,7 @@ void esp_appcpu_start2(void *entry_point)
 /* AMP support */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 
-#include "bootloader_flash_priv.h"
+#include <bootloader_flash_priv.h>
 
 #define sys_mmap   bootloader_mmap
 #define sys_munmap bootloader_munmap

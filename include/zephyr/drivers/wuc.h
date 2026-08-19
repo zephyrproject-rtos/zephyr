@@ -60,7 +60,7 @@ struct wuc_dt_spec {
  *	         .id = 10
  *	 }
  *
- * The 'wuc' field must still be checked for readiness, e.g. using
+ * The 'dev' field must still be checked for readiness, e.g. using
  * device_is_ready(). It is an error to use this macro unless the node
  * exists, has the given property, and that property specifies a wakeup
  * controller wakeup source id as shown above.
@@ -115,10 +115,10 @@ struct wuc_dt_spec {
 	WUC_DT_SPEC_GET_BY_IDX_OR(node_id, 0, default_value)
 
 /**
- * @brief Static initializer for a @p wuc_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p wuc_dt_spec from a @c DT_DRV_COMPAT
  * instance's Wakeup Controller property at an index.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into "wakeup-ctrls"
  * @return static initializer for a struct wuc_dt_spec for the property
  * @see WUC_DT_SPEC_GET_BY_IDX()
@@ -126,10 +126,10 @@ struct wuc_dt_spec {
 #define WUC_DT_SPEC_INST_GET_BY_IDX(inst, idx) WUC_DT_SPEC_GET_BY_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Static initializer for a @p wuc_dt_spec from a DT_DRV_COMPAT
+ * @brief Static initializer for a @p wuc_dt_spec from a @c DT_DRV_COMPAT
  *	  instance's 'wakeup-ctrls' property at an index, with fallback
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into the 'wakeup-ctrls' property
  * @param default_value fallback value to expand to
  * @return static initializer for a struct wuc_dt_spec for the property,
@@ -143,7 +143,7 @@ struct wuc_dt_spec {
 /**
  * @brief Equivalent to WUC_DT_SPEC_INST_GET_BY_IDX(inst, 0).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return static initializer for a struct wuc_dt_spec for the property
  * @see WUC_DT_SPEC_INST_GET_BY_IDX()
  */
@@ -153,7 +153,7 @@ struct wuc_dt_spec {
  * @brief Equivalent to
  *	  WUC_DT_SPEC_INST_GET_BY_IDX_OR(node_id, 0, default_value).
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value fallback value to expand to
  * @return static initializer for a struct wuc_dt_spec for the property,
  *         or default_value if the node or property do not exist
@@ -221,8 +221,7 @@ __subsystem struct wuc_driver_api {
  * @param dev Pointer to the WUC device structure
  * @param id Wakeup source identifier
  *
- * @retval 0 If successful
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int wuc_enable_wakeup_source(const struct device *dev, uint32_t id)
 {
@@ -234,8 +233,7 @@ static inline int wuc_enable_wakeup_source(const struct device *dev, uint32_t id
  *
  * @param spec Pointer to the WUC devicetree spec structure.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int wuc_enable_wakeup_source_dt(const struct wuc_dt_spec *spec)
 {
@@ -248,8 +246,7 @@ static inline int wuc_enable_wakeup_source_dt(const struct wuc_dt_spec *spec)
  * @param dev Pointer to the WUC device structure.
  * @param id Wakeup source identifier.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int wuc_disable_wakeup_source(const struct device *dev, uint32_t id)
 {
@@ -261,8 +258,7 @@ static inline int wuc_disable_wakeup_source(const struct device *dev, uint32_t i
  *
  * @param spec Pointer to the WUC devicetree spec structure.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int wuc_disable_wakeup_source_dt(const struct wuc_dt_spec *spec)
 {
@@ -275,10 +271,9 @@ static inline int wuc_disable_wakeup_source_dt(const struct wuc_dt_spec *spec)
  * @param dev Pointer to the WUC device structure.
  * @param id Wakeup source identifier.
  *
- * @retval 1 If wakeup was triggered by this source.
- * @retval 0 If wakeup was not triggered by this source.
- * @retval -errno Negative errno code on failure.
- * @retval -ENOSYS if the interface is not implemented.
+ * @return 1 if wakeup was triggered by this source, 0 if not triggered, or a
+ *         negative errno value on failure.
+ * @retval -ENOSYS The interface is not implemented.
  */
 static inline int wuc_check_wakeup_source_triggered(const struct device *dev, uint32_t id)
 {
@@ -293,10 +288,9 @@ static inline int wuc_check_wakeup_source_triggered(const struct device *dev, ui
  *
  * @param spec Pointer to the WUC devicetree spec structure.
  *
- * @retval 1 If wakeup was triggered by this source.
- * @retval 0 If wakeup was not triggered by this source.
- * @retval -errno Negative errno code on failure.
- * @retval -ENOSYS if the interface is not implemented.
+ * @return 1 if wakeup was triggered by this source, 0 if not triggered, or a
+ *         negative errno value on failure.
+ * @retval -ENOSYS The interface is not implemented.
  */
 static inline int wuc_check_wakeup_source_triggered_dt(const struct wuc_dt_spec *spec)
 {
@@ -309,9 +303,8 @@ static inline int wuc_check_wakeup_source_triggered_dt(const struct wuc_dt_spec 
  * @param dev Pointer to the WUC device structure.
  * @param id Wakeup source identifier.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
- * @retval -ENOSYS if the interface is not implemented.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS The interface is not implemented.
  */
 static inline int wuc_clear_wakeup_source_triggered(const struct device *dev, uint32_t id)
 {
@@ -326,9 +319,8 @@ static inline int wuc_clear_wakeup_source_triggered(const struct device *dev, ui
  *
  * @param spec Pointer to the WUC devicetree spec structure.
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code on failure.
- * @retval -ENOSYS if the interface is not implemented.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS The interface is not implemented.
  */
 static inline int wuc_clear_wakeup_source_triggered_dt(const struct wuc_dt_spec *spec)
 {

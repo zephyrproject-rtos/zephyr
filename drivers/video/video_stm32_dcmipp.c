@@ -7,20 +7,19 @@
 #include <errno.h>
 
 #include <stm32_bitops.h>
-#include <zephyr/kernel.h>
-#include <zephyr/irq.h>
-#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/video-controls.h>
-#include <zephyr/dt-bindings/video/video-interfaces.h>
-#include <zephyr/logging/log.h>
 #include <zephyr/drivers/video/stm32_dcmipp.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/video/video.h>
 
-#include "video_ctrls.h"
-#include "video_device.h"
+#include "video_common.h"
 
 #define DT_DRV_COMPAT st_stm32_dcmipp
 
@@ -290,6 +289,7 @@ static const struct stm32_dcmipp_input_fmt {
 } stm32_dcmipp_input_fmt_desc[] = {
 	INPUT_FMT(SBGGR8, RAW8, 8, RAW8), INPUT_FMT(SGBRG8, RAW8, 8, RAW8),
 	INPUT_FMT(SGRBG8, RAW8, 8, RAW8), INPUT_FMT(SRGGB8, RAW8, 8, RAW8),
+	INPUT_FMT(GREY, RAW8, 8, RAW8),
 	INPUT_FMT(SBGGR10P, RAW10, 10, RAW10), INPUT_FMT(SGBRG10P, RAW10, 10, RAW10),
 	INPUT_FMT(SGRBG10P, RAW10, 10, RAW10), INPUT_FMT(SRGGB10P, RAW10, 10, RAW10),
 	INPUT_FMT(SBGGR12P, RAW12, 12, RAW12), INPUT_FMT(SGBRG12P, RAW12, 12, RAW12),
@@ -496,6 +496,7 @@ static const struct stm32_dcmipp_mapping {
 	RAW_BAYER_PACKED(10), RAW_BAYER_PACKED(12), RAW_BAYER_PACKED(14),
 	DUMP_PIPE_FMT(RGB565, RGB565),
 	DUMP_PIPE_FMT(YUYV, YUYV),
+	DUMP_PIPE_FMT(GREY, GREY),
 #if defined(STM32_DCMIPP_HAS_PIXEL_PIPES)
 	/* Pixel pipes format descriptions */
 	PIXEL_PIPE_FMT(RGB565, RGB565_1, 0, (BIT(1) | BIT(2))),

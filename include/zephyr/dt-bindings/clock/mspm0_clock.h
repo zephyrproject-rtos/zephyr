@@ -23,5 +23,7 @@
 #define MSPM0_CLOCK_MFPCLK		MSPM0_CLOCK(0x6, 0x0)
 #define MSPM0_CLOCK_CANCLK		MSPM0_CLOCK(0x7, 0x0)
 #define MSPM0_CLOCK_CLK_OUT		MSPM0_CLOCK(0x8, 0x0)
+/** @brief High frequency clock reference */
+#define MSPM0_CLOCK_HFCLK		MSPM0_CLOCK(0x9, 0x2)
 
 #endif

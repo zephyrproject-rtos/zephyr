@@ -16,11 +16,14 @@
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(vcp_vol_rend_test);
 
 #ifdef CONFIG_BT_VCP_VOL_REND
 extern enum bst_result_t bst_result;
@@ -28,13 +31,13 @@ extern enum bst_result_t bst_result;
 #if defined(CONFIG_BT_VOCS)
 #define VOCS_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
-#define VOCS_DESC_SIZE 0
+#define VOCS_DESC_SIZE 0U
 #endif /* CONFIG_BT_VOCS */
 
 #if defined(CONFIG_BT_AICS)
 #define AICS_DESC_SIZE CONFIG_BT_AICS_MAX_INPUT_DESCRIPTION_SIZE
 #else
-#define AICS_DESC_SIZE 0
+#define AICS_DESC_SIZE 0U
 #endif /* CONFIG_BT_AICS */
 
 static struct bt_vcp_included vcp_included;
@@ -58,6 +61,8 @@ static volatile bool g_cb;
 
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("VCP state cb err (%d)", err);
 		return;
@@ -70,6 +75,8 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t 
 
 static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 {
+	ARG_UNUSED(conn);
+
 	if (err != 0) {
 		FAIL("VCP flags cb err (%d)", err);
 		return;
@@ -81,6 +88,8 @@ static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
 
 static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS state cb err (%d)", err);
 		return;
@@ -92,6 +101,8 @@ static void vocs_state_cb(struct bt_vocs *inst, int err, int16_t offset)
 
 static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS location cb err (%d)", err);
 		return;
@@ -104,6 +115,8 @@ static void vocs_location_cb(struct bt_vocs *inst, int err, uint32_t location)
 static void vocs_description_cb(struct bt_vocs *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("VOCS description cb err (%d)", err);
 		return;
@@ -117,6 +130,8 @@ static void vocs_description_cb(struct bt_vocs *inst, int err,
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
 		return;
@@ -131,6 +146,8 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
 		return;
@@ -145,6 +162,8 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
 		return;
@@ -156,6 +175,8 @@ static void aics_input_type_cb(struct bt_aics *inst, int err,
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
 		return;
@@ -168,6 +189,8 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
 		return;
@@ -210,7 +233,7 @@ static void test_aics_deactivate(void)
 	}
 
 	/* Valid behavior */
-	printk("Deactivating AICS\n");
+	LOG_INF("Deactivating AICS");
 	err = bt_aics_deactivate(vcp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not deactivate AICS (err %d)\n", err);
@@ -218,7 +241,7 @@ static void test_aics_deactivate(void)
 	}
 
 	WAIT_FOR_COND(expected_aics_active == g_aics_active);
-	printk("AICS deactivated\n");
+	LOG_INF("AICS deactivated");
 }
 
 static void test_aics_activate(void)
@@ -234,7 +257,7 @@ static void test_aics_activate(void)
 	}
 
 	/* Valid behavior */
-	printk("Activating AICS\n");
+	LOG_INF("Activating AICS");
 	err = bt_aics_activate(vcp_included.aics[0]);
 	if (err != 0) {
 		FAIL("Could not activate AICS (err %d)\n", err);
@@ -242,7 +265,7 @@ static void test_aics_activate(void)
 	}
 
 	WAIT_FOR_COND(expected_aics_active == g_aics_active);
-	printk("AICS activated\n");
+	LOG_INF("AICS activated");
 }
 
 static void test_aics_state_get(void)
@@ -257,7 +280,7 @@ static void test_aics_state_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS state\n");
+	LOG_INF("Getting AICS state");
 	g_cb = false;
 
 	err = bt_aics_state_get(vcp_included.aics[0]);
@@ -267,7 +290,7 @@ static void test_aics_state_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS state get\n");
+	LOG_INF("AICS state get");
 }
 
 static void aics_gain_setting_get(void)
@@ -282,7 +305,7 @@ static void aics_gain_setting_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS gain setting\n");
+	LOG_INF("Getting AICS gain setting");
 	g_cb = false;
 
 	err = bt_aics_gain_setting_get(vcp_included.aics[0]);
@@ -292,7 +315,7 @@ static void aics_gain_setting_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS gain setting get\n");
+	LOG_INF("AICS gain setting get");
 }
 
 static void aics_type_get(void)
@@ -308,7 +331,7 @@ static void aics_type_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS input type\n");
+	LOG_INF("Getting AICS input type");
 
 	err = bt_aics_type_get(vcp_included.aics[0]);
 	if (err != 0) {
@@ -318,7 +341,7 @@ static void aics_type_get(void)
 
 	/* Expect and wait for input_type from init */
 	WAIT_FOR_COND(expected_input_type == g_aics_input_type);
-	printk("AICS input type get\n");
+	LOG_INF("AICS input type get");
 }
 
 static void aics_status_get(void)
@@ -333,7 +356,7 @@ static void aics_status_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS status\n");
+	LOG_INF("Getting AICS status");
 	g_cb = false;
 
 	err = bt_aics_status_get(vcp_included.aics[0]);
@@ -343,7 +366,7 @@ static void aics_status_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS status get\n");
+	LOG_INF("AICS status get");
 }
 
 static void aics_get_description(void)
@@ -358,7 +381,7 @@ static void aics_get_description(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS description\n");
+	LOG_INF("Getting AICS description");
 	g_cb = false;
 
 	err = bt_aics_description_get(vcp_included.aics[0]);
@@ -368,7 +391,7 @@ static void aics_get_description(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS description get\n");
+	LOG_INF("AICS description get");
 }
 
 static void test_aics_mute(void)
@@ -384,7 +407,7 @@ static void test_aics_mute(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS mute\n");
+	LOG_INF("Setting AICS mute");
 
 	err = bt_aics_mute(vcp_included.aics[0]);
 	if (err != 0) {
@@ -393,7 +416,7 @@ static void test_aics_mute(void)
 	}
 
 	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
-	printk("AICS mute set\n");
+	LOG_INF("AICS mute set");
 }
 
 static void test_aics_unmute(void)
@@ -409,7 +432,7 @@ static void test_aics_unmute(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS unmute\n");
+	LOG_INF("Setting AICS unmute");
 
 	err = bt_aics_unmute(vcp_included.aics[0]);
 	if (err != 0) {
@@ -418,7 +441,7 @@ static void test_aics_unmute(void)
 	}
 
 	WAIT_FOR_COND(expected_input_mute == g_aics_input_mute);
-	printk("AICS unmute set\n");
+	LOG_INF("AICS unmute set");
 }
 
 static void test_aics_automatic_gain_set(void)
@@ -434,7 +457,7 @@ static void test_aics_automatic_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS auto mode\n");
+	LOG_INF("Setting AICS auto mode");
 
 	err = bt_aics_automatic_gain_set(vcp_included.aics[0]);
 	if (err != 0) {
@@ -443,7 +466,7 @@ static void test_aics_automatic_gain_set(void)
 	}
 
 	WAIT_FOR_COND(expected_mode == g_aics_mode);
-	printk("AICS auto mode set\n");
+	LOG_INF("AICS auto mode set");
 }
 
 static void test_aics_manual_gain_set(void)
@@ -459,7 +482,7 @@ static void test_aics_manual_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS manual mode\n");
+	LOG_INF("Setting AICS manual mode");
 
 	err = bt_aics_manual_gain_set(vcp_included.aics[0]);
 	if (err != 0) {
@@ -468,7 +491,7 @@ static void test_aics_manual_gain_set(void)
 	}
 
 	WAIT_FOR_COND(expected_mode == g_aics_mode);
-	printk("AICS manual mode set\n");
+	LOG_INF("AICS manual mode set");
 }
 
 static void test_aics_gain_set(void)
@@ -484,7 +507,7 @@ static void test_aics_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS gain\n");
+	LOG_INF("Setting AICS gain");
 
 	err = bt_aics_gain_set(vcp_included.aics[0], expected_gain);
 	if (err != 0) {
@@ -493,7 +516,7 @@ static void test_aics_gain_set(void)
 	}
 
 	WAIT_FOR_COND(expected_gain == g_aics_gain);
-	printk("AICS gain set\n");
+	LOG_INF("AICS gain set");
 }
 
 static void test_aics_description_set(void)
@@ -515,7 +538,7 @@ static void test_aics_description_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS Description\n");
+	LOG_INF("Setting AICS Description");
 	g_cb = false;
 
 	err = bt_aics_description_set(vcp_included.aics[0], expected_aics_desc);
@@ -526,7 +549,7 @@ static void test_aics_description_set(void)
 
 	WAIT_FOR_COND(g_cb &&
 		      strncmp(expected_aics_desc, g_aics_desc, strlen(expected_aics_desc)) == 0);
-	printk("AICS Description set\n");
+	LOG_INF("AICS Description set");
 }
 
 static void test_aics_standalone(void)
@@ -558,7 +581,7 @@ static void test_vocs_state_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS state\n");
+	LOG_INF("Getting VOCS state");
 	g_cb = false;
 
 	err = bt_vocs_state_get(vcp_included.vocs[0]);
@@ -568,7 +591,7 @@ static void test_vocs_state_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS state get\n");
+	LOG_INF("VOCS state get");
 }
 
 static void test_vocs_location_get(void)
@@ -583,7 +606,7 @@ static void test_vocs_location_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS location\n");
+	LOG_INF("Getting VOCS location");
 	g_cb = false;
 
 	err = bt_vocs_location_get(vcp_included.vocs[0]);
@@ -593,7 +616,7 @@ static void test_vocs_location_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS location get\n");
+	LOG_INF("VOCS location get");
 }
 
 static void test_vocs_description_get(void)
@@ -608,7 +631,7 @@ static void test_vocs_description_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS description\n");
+	LOG_INF("Getting VOCS description");
 	g_cb = false;
 
 	err = bt_vocs_description_get(vcp_included.vocs[0]);
@@ -618,7 +641,7 @@ static void test_vocs_description_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS description get\n");
+	LOG_INF("VOCS description get");
 }
 
 static void test_vocs_location_set(void)
@@ -643,7 +666,7 @@ static void test_vocs_location_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS location\n");
+	LOG_INF("Setting VOCS location");
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], expected_location);
 	if (err != 0) {
@@ -652,7 +675,7 @@ static void test_vocs_location_set(void)
 	}
 
 	WAIT_FOR_COND(expected_location == g_vocs_location);
-	printk("VOCS location set\n");
+	LOG_INF("VOCS location set");
 }
 
 static void test_vocs_state_set(void)
@@ -685,7 +708,7 @@ static void test_vocs_state_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS state\n");
+	LOG_INF("Setting VOCS state");
 
 	err = bt_vocs_state_set(vcp_included.vocs[0], expected_offset);
 	if (err != 0) {
@@ -694,7 +717,7 @@ static void test_vocs_state_set(void)
 	}
 
 	WAIT_FOR_COND(expected_offset == g_vocs_offset);
-	printk("VOCS state set\n");
+	LOG_INF("VOCS state set");
 }
 
 static void test_vocs_description_set(void)
@@ -716,7 +739,7 @@ static void test_vocs_description_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS description\n");
+	LOG_INF("Setting VOCS description");
 	g_cb = false;
 
 	err = bt_vocs_description_set(vcp_included.vocs[0], expected_vocs_desc);
@@ -727,7 +750,7 @@ static void test_vocs_description_set(void)
 
 	WAIT_FOR_COND(g_cb &&
 		      strncmp(expected_vocs_desc, g_vocs_desc, strlen(expected_vocs_desc)) == 0);
-	printk("VOCS description set\n");
+	LOG_INF("VOCS description set");
 }
 
 static void test_vocs_standalone(void)
@@ -823,7 +846,7 @@ static void test_set_step(uint8_t volume_step)
 	}
 
 	/* Valid behavior */
-	printk("Setting VCP step\n");
+	LOG_INF("Setting VCP step");
 
 	err = bt_vcp_vol_rend_set_step(volume_step);
 	if (err != 0) {
@@ -831,14 +854,14 @@ static void test_set_step(uint8_t volume_step)
 		return;
 	}
 
-	printk("VCP step set\n");
+	LOG_INF("VCP step set");
 }
 
 static void test_get_state(void)
 {
 	int err;
 
-	printk("Getting VCP volume state\n");
+	LOG_INF("Getting VCP volume state");
 	g_cb = false;
 
 	err = bt_vcp_vol_rend_get_state();
@@ -848,14 +871,14 @@ static void test_get_state(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VCP volume get\n");
+	LOG_INF("VCP volume get");
 }
 
 static void test_get_flags(void)
 {
 	int err;
 
-	printk("Getting VCP flags\n");
+	LOG_INF("Getting VCP flags");
 	g_cb = false;
 
 	err = bt_vcp_vol_rend_get_flags();
@@ -865,7 +888,7 @@ static void test_get_flags(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VCP flags get\n");
+	LOG_INF("VCP flags get");
 }
 
 static void test_vol_down(uint8_t volume_step)
@@ -873,7 +896,7 @@ static void test_vol_down(uint8_t volume_step)
 	const uint8_t expected_volume = g_volume > volume_step ? g_volume - volume_step : 0;
 	int err;
 
-	printk("Downing VCP volume\n");
+	LOG_INF("Downing VCP volume");
 
 	err = bt_vcp_vol_rend_vol_down();
 	if (err != 0) {
@@ -882,7 +905,7 @@ static void test_vol_down(uint8_t volume_step)
 	}
 
 	WAIT_FOR_COND(expected_volume == g_volume);
-	printk("VCP volume downed\n");
+	LOG_INF("VCP volume downed");
 }
 
 static void test_vol_up(uint8_t volume_step)
@@ -890,7 +913,7 @@ static void test_vol_up(uint8_t volume_step)
 	const uint8_t expected_volume = MIN((uint16_t)g_volume + volume_step, UINT8_MAX);
 	int err;
 
-	printk("Upping VCP volume\n");
+	LOG_INF("Upping VCP volume");
 
 	err = bt_vcp_vol_rend_vol_up();
 	if (err != 0) {
@@ -899,7 +922,7 @@ static void test_vol_up(uint8_t volume_step)
 	}
 
 	WAIT_FOR_COND(expected_volume == g_volume);
-	printk("VCP volume upped\n");
+	LOG_INF("VCP volume upped");
 }
 
 static void test_mute(void)
@@ -907,7 +930,7 @@ static void test_mute(void)
 	const uint8_t expected_mute = BT_VCP_STATE_MUTED;
 	int err;
 
-	printk("Muting VCP\n");
+	LOG_INF("Muting VCP");
 
 	err = bt_vcp_vol_rend_mute();
 	if (err != 0) {
@@ -916,7 +939,7 @@ static void test_mute(void)
 	}
 
 	WAIT_FOR_COND(expected_mute == g_mute);
-	printk("VCP muted\n");
+	LOG_INF("VCP muted");
 }
 
 static void test_unmute_vol_down(uint8_t volume_step)
@@ -925,7 +948,7 @@ static void test_unmute_vol_down(uint8_t volume_step)
 	const uint8_t expected_mute = BT_VCP_STATE_UNMUTED;
 	int err;
 
-	printk("Downing and unmuting VCP\n");
+	LOG_INF("Downing and unmuting VCP");
 
 	err = bt_vcp_vol_rend_unmute_vol_down();
 	if (err != 0) {
@@ -934,7 +957,7 @@ static void test_unmute_vol_down(uint8_t volume_step)
 	}
 
 	WAIT_FOR_COND(expected_volume == g_volume && expected_mute == g_mute);
-	printk("VCP volume downed and unmuted\n");
+	LOG_INF("VCP volume downed and unmuted");
 }
 
 static void test_unmute_vol_up(uint8_t volume_step)
@@ -943,7 +966,7 @@ static void test_unmute_vol_up(uint8_t volume_step)
 	const uint8_t expected_mute = BT_VCP_STATE_UNMUTED;
 	int err;
 
-	printk("Upping and unmuting VCP\n");
+	LOG_INF("Upping and unmuting VCP");
 
 	err = bt_vcp_vol_rend_unmute_vol_up();
 	if (err != 0) {
@@ -952,7 +975,7 @@ static void test_unmute_vol_up(uint8_t volume_step)
 	}
 
 	WAIT_FOR_COND(expected_volume == g_volume && expected_mute == g_mute);
-	printk("VCP volume upped and unmuted\n");
+	LOG_INF("VCP volume upped and unmuted");
 }
 
 static void test_unmute(void)
@@ -960,7 +983,7 @@ static void test_unmute(void)
 	const uint8_t expected_mute = BT_VCP_STATE_UNMUTED;
 	int err;
 
-	printk("Unmuting VCP\n");
+	LOG_INF("Unmuting VCP");
 
 	err = bt_vcp_vol_rend_unmute();
 	if (err != 0) {
@@ -969,7 +992,7 @@ static void test_unmute(void)
 	}
 
 	WAIT_FOR_COND(expected_mute == g_mute);
-	printk("VCP volume unmuted\n");
+	LOG_INF("VCP volume unmuted");
 }
 
 static void test_set_vol(void)
@@ -984,12 +1007,12 @@ static void test_set_vol(void)
 	}
 
 	WAIT_FOR_COND(expected_volume == g_volume);
-	printk("VCP volume set\n");
+	LOG_INF("VCP volume set");
 }
 
 static void test_standalone(void)
 {
-	const uint8_t volume_step = 5;
+	const uint8_t volume_step = 5U;
 	int err;
 
 	err = bt_enable(NULL);
@@ -998,12 +1021,12 @@ static void test_standalone(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	test_register();
 	test_included_get();
 
-	printk("VCP initialized\n");
+	LOG_INF("VCP initialized");
 	test_set_step(volume_step);
 	test_get_state();
 	test_get_flags();
@@ -1039,12 +1062,12 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	test_register();
 	test_included_get();
 
-	printk("VCP initialized\n");
+	LOG_INF("VCP initialized");
 
 	setup_connectable_adv(&ext_adv);
 

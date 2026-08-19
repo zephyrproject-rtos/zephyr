@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_ENUM_MGMT_CALLBACKS_
-#define H_MCUMGR_ENUM_MGMT_CALLBACKS_
+/**
+ * @file
+ * @brief Header file for MCUmgr enumeration management callback definitions.
+ * @ingroup mcumgr_callback_api_enum_mgmt
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_ENUM_MGMT_ENUM_MGMT_CALLBACKS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_ENUM_MGMT_ENUM_MGMT_CALLBACKS_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +60,4 @@ struct enum_mgmt_detail_output {
 }
 #endif
 
-#endif
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_ENUM_MGMT_ENUM_MGMT_CALLBACKS_H_ */

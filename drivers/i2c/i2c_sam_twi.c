@@ -209,9 +209,7 @@ static int i2c_sam_twi_transfer(const struct device *dev,
 	int ret;
 
 	__ASSERT_NO_MSG(msgs);
-	if (!num_msgs) {
-		return 0;
-	}
+
 	k_sem_take(&dev_data->lock, K_FOREVER);
 
 	/* Clear pending interrupts, such as NACK. */

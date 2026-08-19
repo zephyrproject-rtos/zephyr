@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ARCH_INLINES_H_
-#define ZEPHYR_INCLUDE_ARCH_INLINES_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_ARCH_INLINES_H_
+#define ZEPHYR_INCLUDE_ARCH_ARCH_INLINES_H_
 
 #if defined(CONFIG_X86)
 #include <zephyr/arch/x86/arch_inlines.h>
@@ -34,6 +34,8 @@
 #include <zephyr/arch/sparc/arch_inlines.h>
 #elif defined(CONFIG_RX)
 #include <zephyr/arch/rx/arch_inlines.h>
+#elif defined(CONFIG_ARCH_IS_SET)
+#error "The selected architecture is missing from this dispatch header"
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ARCH_INLINES_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARCH_INLINES_H_ */

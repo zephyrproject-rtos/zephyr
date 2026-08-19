@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -12,7 +12,7 @@
 				 <&iomuxc_enet1_mdio_netc_mdio_netc_mdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -30,7 +30,7 @@
 				 <&iomuxc_enet1_td3_eth_rgmii_td_eth0_rgmii_td3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -38,7 +38,7 @@
 				 <&iomuxc_enet1_txc_eth_rgmii_tx_clk_eth0_rgmii_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -62,6 +62,17 @@
 		};
 	};
 
+	lpi2c2_default: lpi2c2_default {
+		group0 {
+			pinmux = <&iomuxc_i2c2_scl_lpi2c_scl_lpi2c2_scl>,
+				 <&iomuxc_i2c2_sda_lpi2c_sda_lpi2c2_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
 	lpi2c4_default: lpi2c4_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io31_lpi2c_scl_lpi2c4_scl>,
@@ -77,6 +88,17 @@
 		group0 {
 			pinmux = <&iomuxc_gpio_io23_lpi2c_scl_lpi2c5_scl>,
 				 <&iomuxc_gpio_io22_lpi2c_sda_lpi2c5_sda>;
+			drive-open-drain;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			input-enable;
+		};
+	};
+
+	lpi2c6_default: lpi2c6_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io03_lpi2c_scl_lpi2c6_scl>,
+				 <&iomuxc_gpio_io02_lpi2c_sda_lpi2c6_sda>;
 			drive-open-drain;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
@@ -150,6 +172,16 @@
 		};
 	};
 
+	flexcan1_default: flexcan1_default {
+		group0 {
+			pinmux = <&iomuxc_pdm_bit_stream0_can_rx_can1_rx>,
+				 <&iomuxc_pdm_clk_can_tx_can1_tx>;
+			bias-pull-down;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
 	flexcan2_default: flexcan2_default {
 		group0 {
 			pinmux = <&iomuxc_gpio_io27_can_rx_can2_rx>,
@@ -168,6 +200,15 @@
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 			input-enable;
+		};
+	};
+
+	flexio1_io2_default: flexio1_io2_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io02_flexio_flexio_bit_flexio1_flexio_bit2>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+			bias-pull-up;
 		};
 	};
 };

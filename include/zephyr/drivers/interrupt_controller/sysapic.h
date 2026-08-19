@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_SYSAPIC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_SYSAPIC_H_
 
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 
@@ -32,4 +32,4 @@ static inline void z_irq_controller_eoi(void)
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_SYSAPIC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_SYSAPIC_H_ */

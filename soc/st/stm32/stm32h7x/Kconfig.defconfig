@@ -15,11 +15,7 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
 
-config ROM_START_OFFSET
-	default 0x400 if BOOTLOADER_MCUBOOT
-	default 0x0   if !BOOTLOADER_MCUBOOT
-
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y if CPU_CORTEX_M7
 
 if LVGL
@@ -28,5 +24,8 @@ config LV_DRAW_DMA2D_HAL_INCLUDE
 	default "stm32h7xx.h"
 
 endif # LVGL
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x6db66082"
 
 endif # SOC_SERIES_STM32H7X

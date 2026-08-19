@@ -56,6 +56,65 @@ Kernel
   generated, these may need an extra ``add_dependencies(${lib} zephyr_generated_headers)``
   entry in cmake, see :github:`106439` for mode details.
 
+* The ``__pinned_*`` attribute family and the
+  ``CONFIG_LINKER_USE_PINNED_SECTION`` /
+  ``CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT`` Kconfig options are gone
+  (:github:`108773`). The kernel image is now always resident in physical
+  memory; demand paging applies only to anonymous mappings created via
+  :c:func:`k_mem_map` and to symbols placed in the ``__ondemand_*`` linker
+  sections via :kconfig:option:`CONFIG_LINKER_USE_ONDEMAND_SECTION`.
+
+  The previous "evictable-by-default" model, where any kernel page not
+  explicitly tagged ``__pinned_*`` could be paged out, was never safe by
+  construction: whether a given build survived depended on the accidental
+  placement of code and data relative to the page-fault dispatch path, not
+  on any guarantee. If you have an application that relies on the old model
+  and it works for you on an existing release, the recommended path is to
+  stay on that release, ideally a :ref:`Long Term Support <release_process_lts>`
+  one, rather than upgrade. Moving to a later version is liable to shift the
+  layout enough (added code, reordered functions, a new compiler) to put an
+  untagged page on the fault-dispatch path and break the system in ways that
+  are hard to diagnose. That latent fragility is exactly why the model is
+  removed rather than carried forward. Applications that do upgrade need the
+  following updates:
+
+  * Drop any ``CONFIG_LINKER_USE_PINNED_SECTION=y`` or
+    ``CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT=n`` lines from board
+    defconfigs and prj.conf overlays.
+
+  * Drop ``__pinned_func``, ``__pinned_data``, ``__pinned_rodata``,
+    ``__pinned_bss``, and ``__pinned_noinit`` attributes from source code.
+    Code that needs to be demand-pageable must use ``__ondemand_func`` /
+    ``__ondemand_rodata`` instead; the contributor is responsible for
+    ensuring such symbols are not reached from the page-fault handler's
+    execution path.
+
+  * Replace any in-assembly use of ``PINNED_TEXT``, ``PINNED_RODATA``,
+    ``PINNED_DATA``, ``PINNED_BSS``, and ``PINNED_NOINIT`` (as the section
+    name argument to ``SECTION_FUNC()`` / ``SECTION_VAR()``) with the plain
+    ``TEXT``, ``RODATA``, ``DATA``, ``BSS``, and ``NOINIT`` aliases.
+
+  * Rename uses of ``K_KERNEL_PINNED_STACK_DEFINE``,
+    ``K_KERNEL_PINNED_STACK_ARRAY_DEFINE``,
+    ``K_KERNEL_PINNED_STACK_ARRAY_DECLARE``,
+    ``K_THREAD_PINNED_STACK_DEFINE``, and
+    ``K_THREAD_PINNED_STACK_ARRAY_DEFINE`` to their non-pinned
+    counterparts (``K_KERNEL_STACK_DEFINE``,
+    ``K_KERNEL_STACK_ARRAY_DEFINE``, ``K_KERNEL_STACK_ARRAY_DECLARE``,
+    ``K_THREAD_STACK_DEFINE``, ``K_THREAD_STACK_ARRAY_DEFINE``).
+
+  * Out-of-tree boards that supplied a custom linker script with pinned
+    sections (``pinned_text`` / ``pinned_rodata`` / ``pinned_data`` /
+    ``pinned_bss`` / ``pinned_noinit``) should fold those input section
+    matches back into the regular text / rodata / data / bss / noinit
+    output sections.
+
+  * Out-of-tree code that relied on the ``lnkr_pinned_*`` linker symbols or
+    on ``lnkr_is_pinned()`` / ``lnkr_is_region_pinned()`` must remove those
+    references. The corresponding ``app_smem_pinned*.ld`` includes and the
+    ``--pinoutput`` / ``--pinpartitions`` options of
+    ``scripts/build/gen_app_partitions.py`` are also gone.
+
 Boards
 ******
 
@@ -1038,6 +1097,7 @@ STM32
     gen_isr_tables.py: error: IRQ 114 (offset=0) exceeds the maximum of 106
 
   Explicitly set :kconfig:option:`CONFIG_NUM_IRQS` to an appropriate value to solve these issues.
+  (:ref:`The following documentation page <setting_configuration_values>` explains how to do it)
 
 Timer
 =====
@@ -1210,12 +1270,24 @@ Bluetooth HCI
 Networking
 **********
 
+Wi-Fi
+=====
+
 * :c:struct:`wifi_channel_info` gained a ``band`` field for set-channel. Behaviour
   is backwards compatible for 2.4 GHz (channels 1–14) and 5 GHz (36–165): omit or
   leave ``band`` as :c:macro:`WIFI_FREQ_BAND_UNKNOWN` and the driver infers the
   band. For 6 GHz, set ``band`` to :c:macro:`WIFI_FREQ_BAND_6_GHZ` (channel
   numbers overlap 1–14 with 2.4 GHz). Recompile so ``sizeof(struct
   wifi_channel_info)`` is correct when calling net_mgmt.
+
+* WPA3 is configured with the choice
+  ``WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION`` (Internal, External, or None).
+  Replace any ``CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3=y`` line in ``prj.conf`` with
+  ``CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT=y`` (or ``_EXT`` /
+  ``_NONE`` as needed). :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3` is
+  now promptless and is selected only when Internal is chosen; do not assign it
+  directly. In C code, prefer :kconfig:option:`CONFIG_WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON`
+  to detect either internal or external WPA3.
 
 * Networking APIs found in
 
@@ -1451,7 +1523,7 @@ Mbed TLS
   TF-M continues to build with Mbed TLS 3.6.5.
   Crypto-wise there are many changes introduced with this change, so it's strongly
   suggested to take a look to the official `Mbed TLS 3.x to TF-PSA-Crypto 1.x migration guide
-  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`.
+  <https://github.com/Mbed-TLS/TF-PSA-Crypto/blob/development/docs/1.0-migration-guide.md>`_.
 
 * ``CONFIG_MBEDTLS_ENTROPY_POLL_ZEPHYR`` has been renamed to
   :kconfig:option:`CONFIG_MBEDTLS_PSA_DRIVER_GET_ENTROPY`.

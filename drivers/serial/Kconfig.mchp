@@ -19,6 +19,10 @@ config UART_MCHP_ASYNC
 	default y
 	depends on UART_ASYNC_API
 	depends on DMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_UART),dmas)
+	help
+	  Enable async/DMA support for UART instances that have dmas property.
+	  Instances without dmas property will return -ENOTSUP for async operations.
 
 endif # UART_MCHP_SERCOM_G1
 
@@ -29,3 +33,13 @@ config UART_MCHP_DBGU_G1
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables UART driver for group (g1) of DBGU peripherals.
+
+config UART_MCHP_UART_G1
+	bool "Microchip SAM UART (uart-g1) driver"
+	default y
+	depends on DT_HAS_MICROCHIP_UART_G1_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables UART driver for group (g1) of UART peripherals.

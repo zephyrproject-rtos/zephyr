@@ -35,8 +35,9 @@ LOG_MODULE_REGISTER(adc_shell);
 #define CMD_HELP_CH_POS \
 	SHELL_HELP("Configure channel positive input", "<positive_input_id>")
 
-#define CMD_HELP_READ \
-	SHELL_HELP("Read adc value", "<channel>")
+#define CMD_HELP_READ                                                                              \
+	SHELL_HELP("Read adc value. Prints periodically if period is provided",                    \
+		   "<channel> [period_ms]")
 
 #define CMD_HELP_RES \
 	SHELL_HELP("Configure resolution", "<resolution>")
@@ -84,6 +85,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ite_it51xxx_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ite_it8xxx2_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(lltc_ltc2451, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(m5stack_m5pm1_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11102, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11103, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(maxim_max11105, ADC_HDL_LIST_ENTRY)
@@ -120,6 +122,12 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(st_stm32f1_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(st_stm32f4_adc, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(telink_b91_adc, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc081c021, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc081c027, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc101c021, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc101c027, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc121c021, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_adc121c027, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads1013, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads1014, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads1015, ADC_HDL_LIST_ENTRY)
@@ -129,7 +137,10 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ti_ads1115, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads1119, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads114s08, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads1220, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads7052, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads7828, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_ads7830, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads7950, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads7951, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_ads7952, ADC_HDL_LIST_ENTRY)
@@ -152,6 +163,7 @@ static struct adc_hdl {
 	DT_FOREACH_STATUS_OKAY(ti_lmp90098, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_lmp90099, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_lmp90100, ADC_HDL_LIST_ENTRY)
+	DT_FOREACH_STATUS_OKAY(ti_mspm0_adc12, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_tla2021, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_tla2022, ADC_HDL_LIST_ENTRY)
 	DT_FOREACH_STATUS_OKAY(ti_tla2024, ADC_HDL_LIST_ENTRY)
@@ -383,6 +395,16 @@ static int cmd_adc_ref(const struct shell *sh, size_t argc, char **argv,
 	return retval;
 }
 
+static void adc_shell_read_bypass_cb(const struct shell *sh, uint8_t *data, size_t len,
+				     void *user_data)
+{
+	ARG_UNUSED(sh);
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	*(bool *)user_data = true;
+}
+
 #define BUFFER_SIZE 1
 static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 {
@@ -410,7 +432,42 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 		shell_print(sh, "read: %i", m_sample_buffer[0]);
 	}
 
-	return retval;
+	if (argc == 2) { /* One-time print; Non-periodic */
+		return retval;
+	}
+
+	/* Periodic print; argc=3 */
+	int period_ms = strtol(argv[2], NULL, 10);
+
+	if (period_ms < 1) {
+		shell_error(sh, "<period_ms> must be at least 1");
+		return -EINVAL;
+	}
+
+	bool stop = false;
+	bool msg_one_shot = true;
+
+	shell_set_bypass(sh, adc_shell_read_bypass_cb, &stop);
+
+	while (!stop) {
+		retval = adc_read(adc->dev, &sequence);
+		if (retval >= 0) {
+			shell_print(sh, "read: %i", m_sample_buffer[0]);
+		} else {
+			break;
+		}
+
+		if (msg_one_shot) {
+			msg_one_shot = false;
+			shell_print(sh, "Hit any key to exit");
+		}
+
+		k_msleep(period_ms);
+	}
+
+	shell_set_bypass(sh, NULL, NULL);
+
+	return stop ? 0 : retval;
 }
 
 static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
@@ -486,7 +543,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_adc_cmds,
 	SHELL_CMD_ARG(channel, &sub_channel_cmds, CMD_HELP_CHANNEL, NULL, 3, 0),
 	SHELL_CMD(gain, &sub_gain_cmds, CMD_HELP_GAIN, NULL),
 	SHELL_CMD_ARG(print, NULL, CMD_HELP_PRINT, cmd_adc_print, 1, 0),
-	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 0),
+	SHELL_CMD_ARG(read, NULL, CMD_HELP_READ, cmd_adc_read, 2, 1),
 	SHELL_CMD(reference, &sub_ref_cmds, CMD_HELP_REF, NULL),
 	SHELL_CMD_ARG(resolution, NULL, CMD_HELP_RES, cmd_adc_reso, 2, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */

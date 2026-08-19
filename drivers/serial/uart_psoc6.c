@@ -275,13 +275,6 @@ static int uart_psoc6_irq_is_pending(const struct device *dev)
 	return (intcause & (CY_SCB_TX_INTR | CY_SCB_RX_INTR));
 }
 
-static int uart_psoc6_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 static void uart_psoc6_irq_callback_set(const struct device *dev,
 					uart_irq_callback_user_data_t cb,
 					void *cb_data)
@@ -320,7 +313,6 @@ static DEVICE_API(uart, uart_psoc6_driver_api) = {
 	.irq_err_enable = uart_psoc6_irq_err_enable,
 	.irq_err_disable = uart_psoc6_irq_err_disable,
 	.irq_is_pending = uart_psoc6_irq_is_pending,
-	.irq_update = uart_psoc6_irq_update,
 	.irq_callback_set = uart_psoc6_irq_callback_set,
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };

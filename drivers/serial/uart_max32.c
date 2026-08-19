@@ -234,7 +234,7 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	if (err < 0) {
 		return -ENOTSUP;
 	}
-	/* incase of success keep configuration */
+	/* in case of success keep configuration */
 	data->conf.parity = uart_cfg->parity;
 
 	/*
@@ -250,7 +250,7 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	if (err < 0) {
 		return -ENOTSUP;
 	}
-	/* incase of success keep configuration */
+	/* in case of success keep configuration */
 	data->conf.stop_bits = uart_cfg->stop_bits;
 
 	/*
@@ -263,7 +263,7 @@ static int api_configure(const struct device *dev, const struct uart_config *uar
 	if (err < 0) {
 		return -ENOTSUP;
 	}
-	/* incase of success keep configuration */
+	/* in case of success keep configuration */
 	data->conf.data_bits = uart_cfg->data_bits;
 
 	/*
@@ -423,7 +423,7 @@ static int api_irq_is_pending(const struct device *dev)
 	return api_irq_rx_ready(dev) || api_irq_tx_ready(dev);
 }
 
-static int api_irq_update(const struct device *dev)
+static void api_irq_update(const struct device *dev)
 {
 	struct max32_uart_data *const data = dev->data;
 	const struct max32_uart_config *const cfg = dev->config;
@@ -440,8 +440,6 @@ static int api_irq_update(const struct device *dev)
 #endif
 		MXC_UART_DisableInt(cfg->regs, ADI_MAX32_UART_INT_TX | ADI_MAX32_UART_INT_TX_OEM);
 	}
-
-	return 1;
 }
 
 static void api_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
@@ -901,7 +899,7 @@ static int api_rx_enable(const struct device *dev, uint8_t *buf, size_t len, int
 	data->async.rx.buf = buf;
 	data->async.rx.len = len;
 
-	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_max32_async_rx_callback;
 	dma_cfg.user_data = (void *)dev;
 	dma_cfg.dma_slot = config->rx_dma.slot;
@@ -1222,7 +1220,7 @@ static DEVICE_API(uart, uart_max32_driver_api) = {
 		.uart_conf.data_bits = DT_INST_ENUM_IDX(_num, data_bits),                          \
 		.uart_conf.stop_bits = DT_INST_ENUM_IDX(_num, stop_bits),                          \
 		.uart_conf.flow_ctrl =                                                             \
-			DT_INST_PROP_OR(index, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),          \
+			DT_INST_PROP_OR(_num, hw_flow_control, UART_CFG_FLOW_CTRL_NONE),           \
 		MAX32_UART_DMA_INIT(_num) IF_ENABLED(                                              \
 			MAX32_UART_USE_IRQ, (.irq_config_func = uart_max32_irq_init_##_num,))};    \
 	static struct max32_uart_data max32_uart_data##_num = {                                    \

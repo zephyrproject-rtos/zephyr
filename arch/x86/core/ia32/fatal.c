@@ -29,7 +29,6 @@ unsigned int z_x86_exception_vector;
 
 __weak void z_debug_fatal_hook(const struct arch_esf *esf) { ARG_UNUSED(esf); }
 
-__pinned_func
 void z_x86_spurious_irq(const struct arch_esf *esf)
 {
 	int vector = z_irq_controller_isr_vector_get();
@@ -41,7 +40,6 @@ void z_x86_spurious_irq(const struct arch_esf *esf)
 	z_x86_fatal_error(K_ERR_SPURIOUS_IRQ, esf);
 }
 
-__pinned_func
 void arch_syscall_oops(void *ssf)
 {
 	struct _x86_syscall_stack_frame *ssf_ptr =
@@ -64,7 +62,6 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 		      Z_X86_OOPS_VECTOR / 16, Z_X86_OOPS_VECTOR, 3);
 
 #if CONFIG_EXCEPTION_DEBUG
-__pinned_func
 FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 					     const struct arch_esf *pEsf)
 {
@@ -76,7 +73,7 @@ FUNC_NORETURN static void generic_exc_handle(unsigned int vector,
 }
 
 #define _EXC_FUNC(vector) \
-__pinned_func \
+\
 FUNC_NORETURN __used static void handle_exc_##vector(const struct arch_esf *pEsf) \
 { \
 	generic_exc_handle(vector, pEsf); \
@@ -121,13 +118,13 @@ EXC_FUNC_CODE(IV_CTRL_PROTECTION_EXCEPTION, 0);
 _EXCEPTION_CONNECT_CODE(z_x86_page_fault_handler, IV_PAGE_FAULT, 0);
 
 #ifdef CONFIG_X86_ENABLE_TSS
-static __pinned_noinit volatile struct arch_esf _df_esf;
+static __noinit volatile struct arch_esf _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
  * and a frame pointer push by the compiler. All df_handler_top does is
  * shuffle some data around with 'mov' statements and then 'iret'.
  */
-static __pinned_noinit char _df_stack[8];
+static __noinit char _df_stack[8];
 
 static FUNC_NORETURN __used void df_handler_top(void);
 
@@ -160,7 +157,6 @@ struct task_state_segment _df_tss = {
 		K_MEM_PHYS_ADDR(POINTER_TO_UINT(&z_x86_kernel_ptables[0]))
 };
 
-__pinned_func
 static __used void df_handler_bottom(void)
 {
 	/* We're back in the main hardware task on the interrupt stack */
@@ -186,7 +182,6 @@ static __used void df_handler_bottom(void)
 	z_x86_fatal_error(reason, (struct arch_esf *)&_df_esf);
 }
 
-__pinned_func
 static FUNC_NORETURN __used void df_handler_top(void)
 {
 	/* State of the system when the double-fault forced a task switch

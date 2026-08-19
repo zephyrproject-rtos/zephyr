@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_
-#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_
+#ifndef ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_
+#define ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
@@ -24,14 +24,16 @@ extern "C" {
  * @defgroup zbus_proxy_agent_ipc_backend Zbus Proxy Agent IPC Backend
  * @ingroup zbus_proxy_agent
  *
+ * @kconfig_dep{CONFIG_ZBUS_PROXY_AGENT_IPC}
+ *
  * @details The IPC backend uses a shared-memory message passing model via
  * `ipc_service`, and therefore transfers fixed-size proxy frames
  * (`struct zbus_proxy_msg`) between domains. This means on-wire transfer size is
  * equal to `sizeof(struct zbus_proxy_msg)` even when `message_size` or
  * `channel_name_len` are smaller. Because this frame size is determined at compile time from
- * `CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE` and
- * `CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE`, all communicating domains must use identical
- * values for these options. The IPC backend validates incoming data against
+ * @kconfig{CONFIG_ZBUS_PROXY_AGENT_MAX_MESSAGE_SIZE} and
+ * @kconfig{CONFIG_ZBUS_PROXY_AGENT_MAX_CHANNEL_NAME_SIZE}, all communicating domains must use
+ * identical values for these options. The IPC backend validates incoming data against
  * `sizeof(struct zbus_proxy_msg)`, so mismatched configuration across domains will cause
  * received messages to be rejected.
  * @{
@@ -118,4 +120,4 @@ extern const struct zbus_proxy_agent_backend_api zbus_proxy_agent_ipc_backend_ap
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_IPC_H_ */
+#endif /* ZEPHYR_INCLUDE_ZBUS_PROXY_AGENT_ZBUS_PROXY_AGENT_IPC_H_ */

@@ -146,31 +146,36 @@ arduino_spi: &spi1 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x0 0xc000>;
 		};
 
 		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0xc000 0x12000>;
 		};
 
 		slot1_partition: partition@1e000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x1e000 0x12000>;
 		};
 
 		scratch_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-scratch";
 			reg = <0x30000 0xa000>;
 		};
 
 		storage_partition: partition@3a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x3a000 0x6000>;
 		};

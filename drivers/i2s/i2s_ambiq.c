@@ -40,6 +40,11 @@ struct i2s_ambiq_data {
 	uint32_t *dma_tcb_tx_buf;
 	uint32_t *dma_tcb_rx_buf;
 	bool pm_policy_state_on;
+	/* Per-instance copies: the HAL holds pointers into these so they
+	 * must not be shared across instances or reused as globals.
+	 */
+	am_hal_i2s_data_format_t i2s_data_format;
+	am_hal_i2s_io_signal_t i2s_io_config;
 
 	enum i2s_state i2s_state;
 };
@@ -75,7 +80,7 @@ static void i2s_ambiq_pm_policy_state_lock_put(const struct device *dev)
 	}
 }
 
-static am_hal_i2s_data_format_t i2s_data_format = {
+static const am_hal_i2s_data_format_t i2s_data_format_default = {
 	.ePhase = AM_HAL_I2S_DATA_PHASE_SINGLE,
 
 	.eChannelLenPhase1 = AM_HAL_I2S_FRAME_WDLEN_16BITS,
@@ -89,7 +94,7 @@ static am_hal_i2s_data_format_t i2s_data_format = {
 	.eDataJust = AM_HAL_I2S_DATA_JUSTIFIED_LEFT,
 };
 
-static am_hal_i2s_io_signal_t i2s_io_config = {
+static const am_hal_i2s_io_signal_t i2s_io_config_default = {
 	.sFsyncPulseCfg = {
 			.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_ONE_SUBFRAME,
 		},
@@ -155,7 +160,9 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 		return 0;
 	}
 
-	data->i2s_hal_cfg.eData = &i2s_data_format;
+	data->i2s_data_format = i2s_data_format_default;
+	data->i2s_io_config = i2s_io_config_default;
+	data->i2s_hal_cfg.eData = &data->i2s_data_format;
 
 	if (i2s_config_in->word_size == 16) {
 		data->i2s_hal_cfg.eData->eChannelLenPhase1 = AM_HAL_I2S_FRAME_WDLEN_16BITS;
@@ -183,41 +190,42 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	switch (i2s_config_in->format) {
 	case I2S_FMT_DATA_FORMAT_I2S:
 		data->i2s_hal_cfg.eData->eDataDelay = 0x1;
-		i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_SHORT:
 		data->i2s_hal_cfg.eData->eDataDelay = 0x1;
-		i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_ONE_BIT_CLOCK;
-		i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType =
+			AM_HAL_I2S_FSYNC_PULSE_ONE_BIT_CLOCK;
+		data->i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	case I2S_FMT_DATA_FORMAT_PCM_LONG:
-		i2s_io_config.sFsyncPulseCfg.eFsyncPulseType =
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType =
 			AM_HAL_I2S_FSYNC_PULSE_HALF_FRAME_PERIOD;
-		i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
+		data->i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	case I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED:
-		i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
-		i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
+		data->i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	case I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED:
 		data->i2s_hal_cfg.eData->eDataJust = AM_HAL_I2S_DATA_JUSTIFIED_RIGHT;
-		i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
-		i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
+		data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType = AM_HAL_I2S_FSYNC_PULSE_CUSTOM;
+		data->i2s_io_config.eFyncCpol = AM_HAL_I2S_IO_FSYNC_CPOL_HIGH;
 		break;
 	default:
 		LOG_ERR("Unsupported data format %d", i2s_config_in->format);
 		return -EINVAL;
 	}
 
-	if (i2s_io_config.sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_CUSTOM) {
+	if (data->i2s_io_config.sFsyncPulseCfg.eFsyncPulseType == AM_HAL_I2S_FSYNC_PULSE_CUSTOM) {
 		if (data->i2s_hal_cfg.eData->eChannelLenPhase1 == AM_HAL_I2S_FRAME_WDLEN_8BITS) {
-			i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 7;
+			data->i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 7;
 		} else if (data->i2s_hal_cfg.eData->eChannelLenPhase1 ==
 			   AM_HAL_I2S_FRAME_WDLEN_16BITS) {
-			i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 15;
+			data->i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 15;
 		} else if (data->i2s_hal_cfg.eData->eChannelLenPhase1 ==
 			   AM_HAL_I2S_FRAME_WDLEN_32BITS) {
-			i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 31;
+			data->i2s_io_config.sFsyncPulseCfg.ui32FsyncPulseWidth = 31;
 		} else {
 			LOG_ERR("Unsupported channel length %d",
 				data->i2s_hal_cfg.eData->eChannelLenPhase1);
@@ -228,14 +236,14 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	if (dir == I2S_DIR_TX) {
 		if ((i2s_config_in->format == I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED) ||
 		    (i2s_config_in->format == I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED)) {
-			i2s_io_config.eTxCpol = AM_HAL_I2S_IO_TX_CPOL_RISING;
+			data->i2s_io_config.eTxCpol = AM_HAL_I2S_IO_TX_CPOL_RISING;
 		}
 		data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_TX;
 		data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_MASTER;
 	} else if (dir == I2S_DIR_RX) {
 		if ((i2s_config_in->format == I2S_FMT_DATA_FORMAT_LEFT_JUSTIFIED) ||
 		    (i2s_config_in->format == I2S_FMT_DATA_FORMAT_RIGHT_JUSTIFIED)) {
-			i2s_io_config.eRxCpol = AM_HAL_I2S_IO_RX_CPOL_RISING;
+			data->i2s_io_config.eRxCpol = AM_HAL_I2S_IO_RX_CPOL_RISING;
 		}
 		data->i2s_hal_cfg.eXfer = AM_HAL_I2S_XFER_RX;
 		data->i2s_hal_cfg.eMode = AM_HAL_I2S_IO_MODE_SLAVE;
@@ -298,7 +306,7 @@ static int i2s_ambiq_configure(const struct device *dev, enum i2s_dir dir,
 	}
 
 	data->i2s_hal_cfg.eASRC = 0;
-	data->i2s_hal_cfg.eIO = &i2s_io_config;
+	data->i2s_hal_cfg.eIO = &data->i2s_io_config;
 
 	LOG_INF("I2S eClock %d, eDiv3 %d\n", data->i2s_hal_cfg.eClock & 0xFF,
 		data->i2s_hal_cfg.eDiv3);
@@ -390,7 +398,13 @@ static int i2s_ambiq_trigger(const struct device *dev, enum i2s_dir dir, enum i2
 			ret = -EIO;
 			break;
 		}
-		data->i2s_state = I2S_STATE_STOPPING;
+		/* Wait for the in-flight DMA buffer to finish before stopping,
+		 * otherwise LRCK and BCLK keep toggling after the trigger.
+		 */
+		k_sem_take(&data->tx_ready_sem, K_FOREVER);
+		am_hal_i2s_dma_transfer_complete(data->i2s_handler);
+		am_hal_i2s_disable(data->i2s_handler);
+		data->i2s_state = I2S_STATE_READY;
 		break;
 
 	case I2S_TRIGGER_START:
@@ -574,7 +588,7 @@ static DEVICE_API(i2s, i2s_ambiq_driver_api) = {
 	static struct i2s_ambiq_data i2s_ambiq_data##n = {                                         \
 		.tx_ready_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.tx_ready_sem, 1, 1),           \
 		.rx_done_sem = Z_SEM_INITIALIZER(i2s_ambiq_data##n.rx_done_sem, 0, 1),             \
-		.inst_idx = n,                                                                     \
+		.inst_idx = DT_INST_IRQN(n) - DT_IRQ(DT_NODELABEL(i2s0), irq),                   \
 		.block_size = 0,                                                                   \
 		.sample_num = 0,                                                                   \
 		.i2s_state = I2S_STATE_NOT_READY,                                                  \

@@ -22,23 +22,29 @@ function(wiseconnect_get_ram_config node_var out_var)
     message(FATAL_ERROR "Unsupported RAM size config: ${size_kb}KB")
   endif()
 endfunction()
+wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
 
 # Keep these values sync with
 # components/device/silabs/si91x/mcu/core/chip/component/siwg917*.slcc
 zephyr_compile_definitions(
   SL_SI91X_ENABLE_LITTLE_ENDIAN
+  SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
   SLI_CODE_CLASSIFICATION_DISABLE
+  SL_SI91X_REQUIRES_INTF_PLL
   SLI_SI91X_MCU_COMMON_FLASH_MODE
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_VER2
   SLI_SI91X_MCU_CONFIG_RADIO_BOARD_BASE_VER
   SLI_SI91X_MCU_ENABLE_FLASH_BASED_EXECUTION
   SLI_SI91X_MCU_ENABLE_IPMU_APIS
   SLI_SI91X_MCU_INTERFACE
+  SLI_SI91X_ENABLE_OS
   SLI_SI917
   SLI_SI917B0
+  SLI_POWER_MANAGER_USE_CRITICAL_IRQ_FOR_PS_API=1
 )
 
 zephyr_include_directories(
+  inc
   ${SISDK}/platform/common/config
   ${SISDK}/platform/common/inc
   ${SISDK}/platform/emlib/inc
@@ -78,10 +84,16 @@ zephyr_include_directories(
   ${WISECONNECT}/components/device/silabs/si91x/wireless/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/inc
   ${WISECONNECT}/components/device/silabs/si91x/wireless/socket/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_hal_si91x/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/inc
+  ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_event_handler/inc
   ${WISECONNECT}/components/protocol/wifi/inc
   ${WISECONNECT}/components/service/network_manager/inc
   ${WISECONNECT}/components/sli_buffer_manager/inc
-  ${WISECONNECT}/components/sli_wifi_command_engine/inc
+  ${WISECONNECT}/components/sli_command_engine/inc
+  ${WISECONNECT}/components/sli_event_engine/inc
+  ${WISECONNECT}/components/sli_queue_manager/inc
+  ${WISECONNECT}/components/sli_routing_utility/inc
   ${WISECONNECT}/components/sli_wifi/inc
   ${WISECONNECT}/resources/defaults
 )
@@ -118,7 +130,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_SILABS_SIWX91X
 )
 
 # FIXME: Replace sli_si91x_clock_manager.c by native Zephyr access to the clocks
-if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_PM)
   zephyr_compile_definitions(
     ULPSS_CLOCK_ROMDRIVER_PRESENT # replace rsi_ulpss_clk.c
     CLOCK_ROMDRIVER_PRESENT # replace rsi_pll.c
@@ -148,13 +160,13 @@ endif()
 
 # FIXME: These services should rely in Zephyr RTC API
 if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X OR CONFIG_RTC_SILABS_SIWX91X OR
-   CONFIG_SILABS_SISDK_SLEEPTIMER OR CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+   CONFIG_SILABS_SISDK_SLEEPTIMER)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/systemlevel/src/rsi_time_period.c
   )
 endif()
 
-zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X
+zephyr_compile_definitions_ifdef(CONFIG_DMA_SILABS_SIWX91X_UDMA
   UDMA_ROMDRIVER_PRESENT # replace rsi_udma.c and rsi_udma_wrapper.c
 )
 
@@ -203,7 +215,8 @@ if(CONFIG_WIFI_SILABS_SIWX91X)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/sl_net/src/sli_net_si91x_utility.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_basic_credentials.c
     ${WISECONNECT}/components/service/network_manager/src/sl_net_basic_profiles.c
-    ${WISECONNECT}/components/service/network_manager/src/sl_net_credentials.c
+    ${WISECONNECT}/components/service/network_manager/src/sli_net_credentials.c
+    ${WISECONNECT}/components/service/network_manager/src/si91x/sl_net_credentials.c
   )
   zephyr_compile_definitions(
     SLI_SI91X_CONFIG_WIFI6_PARAMS
@@ -232,10 +245,7 @@ endif() # CONFIG_WIFI_SILABS_SIWX91X
 
 
 if(CONFIG_SILABS_SIWX91X_NWP)
-  wiseconnect_get_ram_config("sram0" RAM_MEM_CONFIG)
   zephyr_compile_definitions(
-    SLI_SI91X_ENABLE_OS
-    SL_SI91X_SI917_RAM_MEM_CONFIG=${RAM_MEM_CONFIG}
     SL_WIFI_COMPONENT_INCLUDED # Depite de the name, required for everything
   )
   zephyr_include_directories(
@@ -253,18 +263,25 @@ if(CONFIG_SILABS_SIWX91X_NWP)
     ${WISECONNECT}/components/device/silabs/si91x/wireless/ahb_interface/src/sl_si91x_bus.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/host_mcu/si91x/siwx917_soc_ncp_host.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/memory/mem_pool_buffer_quota.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_memory_manager.c
-    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_wifi_power_profile.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_hal_si91x/src/sli_hal_si91x.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/src/sli_si91x_wifi_command_engine.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/sli_si91x_wifi_command_engine/src/sli_si91x_wifi_command_engine_config.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_rsi_utility.c
     ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sl_si91x_driver.c
-    ${WISECONNECT}/components/protocol/wifi/si91x/sl_wifi.c
+    ${WISECONNECT}/components/device/silabs/si91x/wireless/src/sli_si91x_driver.c
+    ${WISECONNECT}/components/protocol/wifi/src/si91x/sl_wifi.c
     ${WISECONNECT}/components/protocol/wifi/src/sli_wifi_callback_framework.c
     ${WISECONNECT}/components/protocol/wifi/src/sl_wifi_callback_framework.c
     ${WISECONNECT}/components/service/network_manager/src/sli_net_common_utility.c
-    ${WISECONNECT}/components/sli_si91x_wifi_event_handler/src/sli_si91x_wifi_event_handler.c
+    ${WISECONNECT}/components/sli_buffer_manager/src/sli_buffer_manager.c
+    ${WISECONNECT}/components/sli_command_engine/src/sli_command_engine.c
+    ${WISECONNECT}/components/sli_event_engine/src/sli_event_engine.c
+    ${WISECONNECT}/components/sli_queue_manager/src/sli_queue_manager.c
+    ${WISECONNECT}/components/sli_routing_utility/src/sli_routing_utility.c
     ${WISECONNECT}/components/sli_wifi/src/sli_wifi.c
+    ${WISECONNECT}/components/sli_wifi/src/sli_wifi_power_profile.c
     ${WISECONNECT}/components/sli_wifi/src/sli_wifi_utility.c
-    ${WISECONNECT}/components/sli_wifi_command_engine/src/sli_wifi_command_engine.c
   )
   zephyr_library_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE
     ${WISECONNECT}/components/device/silabs/si91x/wireless/firmware_upgrade/firmware_upgradation.c
@@ -296,7 +313,7 @@ if(CONFIG_SILABS_SISDK_SLEEPTIMER)
   )
 endif() # CONFIG_SILABS_SISDK_SLEEPTIMER
 
-if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
+if(CONFIG_PM)
   zephyr_library_sources(
     ${WISECONNECT}/components/device/silabs/si91x/mcu/core/chip/src/rsi_ps_ram_func.c
     ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/peripheral_drivers/src/sl_si91x_m4_ps.c
@@ -321,4 +338,4 @@ if(CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR)
     ${ZEPHYR_BASE}/drivers/gpio/gpio_silabs_siwx91x_uulp.c
     LOCATION RAM
   )
-endif() # CONFIG_SOC_SIWX91X_PM_BACKEND_PMGR
+endif() # CONFIG_PM

@@ -6,8 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
-#include <nxp/imxrt/nxp_rt1186.dtsi>
+#include <nxp/imxrt/imxrt118x/nxp_rt1186_cm7.dtsi>
 #include "frdm_imxrt1186.dtsi"
 #include <freq.h>
 
@@ -17,8 +16,6 @@
 
 	chosen {
 		zephyr,sram = &dtcm;
-		zephyr,dtcm = &dtcm;
-		zephyr,itcm = &itcm;
 		zephyr,console = &lpuart3;
 		zephyr,shell-uart = &lpuart3;
 		zephyr,flash = &itcm;

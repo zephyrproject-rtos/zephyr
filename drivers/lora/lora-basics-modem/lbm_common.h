@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 Embeint Inc
+ * Copyright (c) 2026 Jakub Rzeszutko <jakub.rzeszutko@verkada.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +36,8 @@ struct lbm_lora_config_common {
 	/* LBM radio abstraction layer structure */
 	ralf_t ralf;
 	bool force_ldro;
+	/* DIO1 interrupt pin - managed by lbm_common.c to control interrupt enable/disable */
+	struct gpio_dt_spec dio1;
 };
 
 /* Common LBM modem data, must be first element of device data */
@@ -115,6 +118,27 @@ static inline int lbm_optional_gpio_set_dt(const struct gpio_dt_spec *spec, int 
 {
 	if (spec->port != NULL) {
 		return gpio_pin_set_dt(spec, value);
+	}
+	return 0;
+}
+
+/**
+ * @brief Configure the DIO1 interrupt if the pin has been provided
+ *
+ * Drivers that route their interrupt through a single DIO1 line (e.g. SX126x,
+ * LR11xx) populate the common dio1 pin. Other parts (e.g. SX127x) manage
+ * several DIO lines themselves and leave it unset; for those this is a no-op.
+ *
+ * @param spec DIO1 GPIO specification from devicetree
+ * @param flags Interrupt configuration flags
+ *
+ * @return a value from gpio_pin_interrupt_configure_dt()
+ */
+static inline int lbm_optional_dio1_irq_configure_dt(const struct gpio_dt_spec *spec,
+						     gpio_flags_t flags)
+{
+	if (spec->port != NULL) {
+		return gpio_pin_interrupt_configure_dt(spec, flags);
 	}
 	return 0;
 }

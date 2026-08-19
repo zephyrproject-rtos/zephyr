@@ -476,7 +476,7 @@ int npm2100_vbat_init(const struct device *dev)
 	int ret;
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("%s i2c not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

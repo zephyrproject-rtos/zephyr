@@ -13,6 +13,10 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
+	chosen {
+		zephyr,system-timer = &lptim1;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
@@ -85,7 +89,7 @@
 	apb3-prescaler = <1>;
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -195,6 +199,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -202,6 +208,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioh 5 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -296,5 +304,9 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &vbat4 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

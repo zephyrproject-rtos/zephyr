@@ -11,6 +11,15 @@
 K_MEM_SLAB_DEFINE(kmslab, BLK_SIZE, BLK_NUM, BLK_ALIGN);
 static char __aligned(BLK_ALIGN) tslab[BLK_SIZE * BLK_NUM];
 static struct k_mem_slab mslab;
+
+struct typed_mslab_block {
+	uint8_t tag;
+	uint64_t value;
+};
+
+K_MEM_SLAB_DEFINE_TYPE(kmslab_type, struct typed_mslab_block, BLK_NUM);
+K_MEM_SLAB_DEFINE_STATIC_TYPE(kmslab_static_type, struct typed_mslab_block, BLK_NUM);
+
 K_SEM_DEFINE(SEM_HELPERDONE, 0, 1);
 K_SEM_DEFINE(SEM_REGRESSDONE, 0, 1);
 static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
@@ -67,6 +76,19 @@ static void tmslab_alloc_align(void *data)
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, block[i]);
 	}
+}
+
+static void check_typed_slab(struct k_mem_slab *pslab)
+{
+	void *block;
+
+	zassert_equal(pslab->info.block_size, WB_UP(sizeof(struct typed_mslab_block)));
+	zassert_equal(k_mem_slab_num_free_get(pslab), BLK_NUM);
+
+	zassert_true(k_mem_slab_alloc(pslab, &block, K_NO_WAIT) == 0, NULL);
+	zassert_equal((uintptr_t)block % __alignof(struct typed_mslab_block), 0);
+
+	k_mem_slab_free(pslab, block);
 }
 
 static void tmslab_alloc_timeout(void *data)
@@ -204,6 +226,53 @@ ZTEST(mslab_api, test_mslab_kinit)
 }
 
 /**
+ * @brief Verify a memory slab allocates fixed-size blocks from a memory range
+ *
+ * @details Initialize a memory slab over a caller-provided buffer and verify
+ * the defining properties of a memory slab object: every allocated block is a
+ * fixed-size region that lies within the provided memory range, the blocks are
+ * distinct, the slab provides exactly the configured number of blocks, and a
+ * further allocation fails once they are exhausted.
+ *
+ * @ingroup kernel_memory_slab_tests
+ *
+ * @see k_mem_slab_init(), k_mem_slab_alloc(), k_mem_slab_free()
+ */
+ZTEST(mslab_api, test_mslab_object)
+{
+	void *blocks[BLK_NUM];
+	void *extra;
+
+	k_mem_slab_init(&mslab, tslab, BLK_SIZE, BLK_NUM);
+
+	for (int i = 0; i < BLK_NUM; i++) {
+		zassert_equal(k_mem_slab_alloc(&mslab, &blocks[i], K_NO_WAIT), 0,
+			      "failed to allocate block %d", i);
+		/* fixed-size region carved from the provided memory range */
+		zassert_true((char *)blocks[i] >= tslab &&
+			     (char *)blocks[i] + BLK_SIZE <= tslab + sizeof(tslab),
+			     "block %d is outside the slab's memory range", i);
+	}
+
+	/* blocks are distinct */
+	for (int i = 0; i < BLK_NUM; i++) {
+		for (int j = i + 1; j < BLK_NUM; j++) {
+			zassert_not_equal(blocks[i], blocks[j],
+					  "blocks %d and %d overlap", i, j);
+		}
+	}
+
+	/* the slab provides exactly BLK_NUM blocks from the range */
+	zassert_equal(k_mem_slab_num_used_get(&mslab), BLK_NUM);
+	zassert_equal(k_mem_slab_alloc(&mslab, &extra, K_NO_WAIT), -ENOMEM,
+		      "slab should be exhausted after BLK_NUM allocations");
+
+	for (int i = 0; i < BLK_NUM; i++) {
+		k_mem_slab_free(&mslab, blocks[i]);
+	}
+}
+
+/**
  * @brief Verify K_MEM_SLAB_DEFINE() with allocates/frees blocks.
  *
  * @details Initialize 3 memory blocks of block size 8 bytes
@@ -216,6 +285,20 @@ ZTEST(mslab_api, test_mslab_kdefine)
 {
 	zassert_equal(k_mem_slab_num_used_get(&kmslab), 0);
 	zassert_equal(k_mem_slab_num_free_get(&kmslab), BLK_NUM);
+}
+
+/**
+ * @brief Verify K_MEM_SLAB_DEFINE_TYPE() and K_MEM_SLAB_DEFINE_STATIC_TYPE().
+ *
+ * @details Define typed memory slabs and check that they allocate all blocks
+ * with the expected block size, block count, and type alignment.
+ *
+ * @ingroup kernel_memory_slab_tests
+ */
+ZTEST(mslab_api, test_mslab_kdefine_type)
+{
+	check_typed_slab(&kmslab_type);
+	check_typed_slab(&kmslab_static_type);
 }
 
 /**

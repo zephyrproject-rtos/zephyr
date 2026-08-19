@@ -335,7 +335,7 @@ _swap_page_table_\@:
 	/* Since accessing A4-A11 may trigger window overflows so
 	 * we need to setup A0 and A1 correctly before putting
 	 * the function arguments for the next two callx4 into
-	 * A6, A10 and A11. So stach the "context handle" into
+	 * A6, A10 and A11. So stash the "context handle" into
 	 * ZSR_EPC, which is usable for now similar to ZSR_EPS.
 	 */
 	wsr.ZSR_EPC a1
@@ -403,7 +403,7 @@ _xstack_call0_\@:
 #endif
 #endif
 #ifdef CONFIG_XTENSA_MPU
-	call4 xtensa_mpu_map_write
+	call4 xtensa_mpu_thread_map_write
 #endif
 
 _xstack_skip_table_swap_\@:
@@ -472,9 +472,9 @@ _excint_skip_ps_save_to_thread:
 
 #if XCHAL_HAVE_THREADPTR && defined(CONFIG_USERSPACE)
 	/* Clear up the threadptr because it is used
-	 * to check if a thread is runnig on user mode. Since
+	 * to check if a thread is running on user mode. Since
 	 * we are in a interruption we don't want the system
-	 * thinking it is possbly running in user mode.
+	 * thinking it is possibly running in user mode.
 	 */
 	movi.n a0, 0
 	wur.THREADPTR a0
@@ -587,8 +587,7 @@ _do_call_\@:
 	 */
 	beq a6, a1, _restore_\@
 
-#if !defined(CONFIG_KERNEL_COHERENCE) || \
-    (defined(CONFIG_KERNEL_COHERENCE) && defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY))
+#if !defined(CONFIG_KERNEL_COHERENCE)
 	l32i a1, a1, 0
 	l32i a0, a1, ___xtensa_irq_bsa_t_a0_OFFSET
 	addi a1, a1, ___xtensa_irq_bsa_t_SIZEOF
@@ -599,9 +598,7 @@ _do_call_\@:
 	SPILL_ALL_WINDOWS
 #endif
 
-#if defined(CONFIG_KERNEL_COHERENCE) && \
-	defined(CONFIG_USERSPACE) && \
-	!defined(CONFIG_SCHED_CPU_MASK_PIN_ONLY)
+#if defined(CONFIG_KERNEL_COHERENCE) && defined(CONFIG_USERSPACE)
 
 	/* With userspace enabled, we need to swap page table via function calls
 	 * above after returning from syscall handler above in CROSS_STACK_CALL.

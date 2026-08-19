@@ -22,7 +22,7 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 typedef enum __packed {
@@ -178,17 +178,26 @@ struct bt_conn_sco {
 };
 
 struct bt_conn_iso {
+#if defined(CONFIG_BT_ISO_UNICAST)
 	/* Reference to ACL Connection */
 	struct bt_conn          *acl;
+#endif /* CONFIG_BT_ISO_UNICAST */
 
 	/* Reference to the struct bt_iso_chan */
 	struct bt_iso_chan      *chan;
 
+#if defined(CONFIG_BT_ISO_RX)
+	/* Expected SDU size of current parsing data `conn->rx` */
+	uint16_t sdu_len;
+#endif /* CONFIG_BT_ISO_RX */
+
 	/** Stored information about the ISO stream */
 	struct bt_iso_info info;
 
+#if defined(CONFIG_BT_ISO_TX)
 	/** Queue from which conn will pull data */
 	struct k_fifo                   txq;
+#endif /* CONFIG_BT_ISO_TX */
 };
 
 typedef void (*bt_conn_tx_cb_t)(struct bt_conn *conn, void *user_data, int err);
@@ -236,8 +245,7 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
-	bt_conn_state_t		state;
-	uint16_t rx_len;
+	bt_conn_state_t state;
 	struct net_buf		*rx;
 
 	/* Pending TX that are awaiting the NCP event. len(tx_pending) == in_ll */
@@ -438,14 +446,6 @@ bool bt_conn_exists_le(uint8_t id, const bt_addr_le_t *peer);
 /* Add a new LE connection */
 struct bt_conn *bt_conn_add_le(uint8_t id, const bt_addr_le_t *peer);
 
-/** Connection parameters for ISO connections */
-struct bt_iso_create_param {
-	uint8_t			id;
-	uint8_t			num_conns;
-	struct bt_conn		**conns;
-	struct bt_iso_chan	**chans;
-};
-
 int bt_conn_iso_init(void);
 
 /* Cleanup ISO references */
@@ -516,7 +516,9 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state);
 
 void bt_conn_connected(struct bt_conn *conn);
 
-void bt_conn_role_changed(struct bt_conn *conn, uint8_t status);
+void bt_conn_br_role_changed(struct bt_conn *conn, uint8_t status);
+
+void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16_t packet_type);
 
 int bt_conn_le_conn_update(struct bt_conn *conn,
 			   const struct bt_le_conn_param *param);
@@ -524,6 +526,8 @@ int bt_conn_le_conn_update(struct bt_conn *conn,
 void bt_conn_notify_remote_info(struct bt_conn *conn);
 
 void bt_conn_notify_le_param_updated(struct bt_conn *conn);
+
+void bt_conn_notify_le_param_rejected(struct bt_conn *conn, uint8_t hci_err);
 
 void bt_conn_notify_le_data_len_updated(struct bt_conn *conn);
 

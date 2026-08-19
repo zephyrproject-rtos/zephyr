@@ -10,6 +10,7 @@
 
 #include <reg/reg_system.h>
 #include "device_power.h"
+#include "soc_clock.h"
 
 static void realtek_WFI(void)
 {
@@ -37,7 +38,18 @@ static void rts5912_heavy_sleep(void)
 
 	sys_reg->SLPCTRL |= (SYSTEM_SLPCTRL_SLPMDSEL_Msk | SYSTEM_SLPCTRL_GPIOWKEN_Msk);
 
+	rts5912_clock_capture_low_freq_timer();
+
 	realtek_WFI();
+
+	/* If we were running on the PLL before sleep, wait for it to become
+	 * stable and ready before we resume system execution.
+	 */
+	if ((main_clk_src_record & SYSTEM_SYSCLK_SRC_Msk) != 0) {
+		while ((sys_reg->PLLCTRL & SYSTEM_PLLCTRL_RDY_Msk) == 0x00) {
+			; /* Busy-wait on the safe clock until PLL locks */
+		}
+	}
 
 	if ((main_clk_src_record & SYSTEM_SYSCLK_SRC_Msk) == 0) {
 		sys_reg->SYSCLK &= ~SYSTEM_SYSCLK_SRC_Msk; /* Return system clock to 25M */
@@ -45,6 +57,8 @@ static void rts5912_heavy_sleep(void)
 			sys_reg->PLLCTRL &= ~SYSTEM_PLLCTRL_EN_Msk; /* Disable PLL */
 		}
 	}
+
+	rts5912_clock_compensate_system_timer();
 
 	after_rts5912_sleep();
 }

@@ -6,14 +6,45 @@ zephyr_syscall_header(
 )
 
 zephyr_sources(
+  boot_banner.c
   cbprintf_packaged.c
   clock.c
   printk.c
-  sem.c
-  thread_entry.c
   )
 
 if(CONFIG_ZVFS)
+  if(CONFIG_ZVFS_EVENTFD)
+    if(CONFIG_ZVFS_EVENTFD_IGNORE_MIN)
+      set(final_eventfd_size ${CONFIG_ZVFS_EVENTFD_MAX})
+    else()
+      # Import all custom ZVFS_EVENTFD_ size requirements
+      import_kconfig(CONFIG_ZVFS_EVENTFD_ADD_SIZE_ ${DOTCONFIG} eventfd_add_size_keys)
+
+      # Calculate the sum of all "ADD_SIZE" requirements
+      set(eventfd_add_size_sum 0)
+      foreach(add_size ${eventfd_add_size_keys})
+        math(EXPR eventfd_add_size_sum "${eventfd_add_size_sum} + ${${add_size}}")
+      endforeach()
+
+      if(CONFIG_ZVFS_EVENTFD_MAX LESS "${eventfd_add_size_sum}")
+        # Only warn if default value 1 has been modified
+        if(NOT CONFIG_ZVFS_EVENTFD_MAX EQUAL 1)
+          message(WARNING "
+            CONFIG_ZVFS_EVENTFD_MAX is less than requested minimum:
+              ${CONFIG_ZVFS_EVENTFD_MAX} < ${eventfd_add_size_sum}
+            Setting the eventfd count to ${eventfd_add_size_sum}")
+        endif()
+
+        set(final_eventfd_size ${eventfd_add_size_sum})
+      else()
+        # CONFIG_ZVFS_EVENTFD_MAX was greater than the sum of the requirements
+        set(final_eventfd_size ${CONFIG_ZVFS_EVENTFD_MAX})
+      endif()
+    endif()
+
+    zephyr_compile_definitions(ZVFS_EVENTFD_SIZE=${final_eventfd_size})
+  endif()
+
   if(CONFIG_ZVFS_OPEN_IGNORE_MIN)
     set(final_fd_size ${CONFIG_ZVFS_OPEN_MAX})
   else()
@@ -25,6 +56,12 @@ if(CONFIG_ZVFS)
     foreach(add_size ${add_size_keys})
       math(EXPR add_size_sum "${add_size_sum} + ${${add_size}}")
     endforeach()
+
+    # Each eventfd also consumes a file descriptor, so reserve space in the file
+    # descriptor table for the actual (possibly additive) eventfd count.
+    if(CONFIG_ZVFS_EVENTFD)
+      math(EXPR add_size_sum "${add_size_sum} + ${final_eventfd_size}")
+    endif()
 
     if(CONFIG_ZVFS_OPEN_MAX LESS "${add_size_sum}")
       # Only warn if default value 0 has been modified
@@ -47,7 +84,7 @@ endif()
 
 zephyr_sources_ifdef(CONFIG_CBPRINTF_COMPLETE cbprintf_complete.c)
 zephyr_sources_ifdef(CONFIG_CBPRINTF_NANO cbprintf_nano.c)
-add_subdirectory_ifdef(CONFIG_CPU_LOAD_METRIC cpu_load)
+add_subdirectory_ifdef(CONFIG_CPU_LOAD cpu_load)
 
 if(NOT CONFIG_PICOLIBC)
   zephyr_sources(cbprintf.c)
@@ -56,8 +93,6 @@ endif()
 if(CONFIG_ASSERT OR CONFIG_ASSERT_VERBOSE)
 zephyr_sources(assert.c)
 endif()
-
-zephyr_sources_ifdef(CONFIG_USERSPACE mutex.c user_work.c)
 
 zephyr_sources_ifdef(CONFIG_MPSC_PBUF mpsc_pbuf.c)
 
@@ -79,3 +114,12 @@ add_subdirectory_ifdef(CONFIG_ZVFS zvfs)
 zephyr_syscall_header_ifdef(CONFIG_ZVFS_FDTABLE
   ${ZEPHYR_BASE}/include/zephyr/sys/fdtable.h
 )
+
+zephyr_sources_ifdef(CONFIG_BOOTARGS boot_args.c)
+
+zephyr_syscall_header_ifdef(
+  CONFIG_ATOMIC_OPERATIONS_C
+  ${ZEPHYR_BASE}/include/zephyr/sys/atomic_c.h
+)
+
+zephyr_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C atomic_c.c)

@@ -58,6 +58,7 @@ class TwisterConfigParser:
         "extra_dtc_overlay_files": {"type": "list", "default": []},
         "required_applications": {"type": "list"},
         "required_snippets": {"type": "list"},
+        "build": {"type": "bool", "default": True},
         "build_only": {"type": "bool", "default": False},
         "build_on_all": {"type": "bool", "default": False},
         "skip": {"type": "bool", "default": False},
@@ -88,6 +89,7 @@ class TwisterConfigParser:
         "levels": {"type": "list", "default": []},
         "harness": {"type": "str", "default": "test"},
         "harness_config": {"type": "map", "default": {}},
+        "sidecar": {"type": "str", "default": None},
         "seed": {"type": "int", "default": 0},
         "sysbuild": {"type": "bool", "default": False}
     }

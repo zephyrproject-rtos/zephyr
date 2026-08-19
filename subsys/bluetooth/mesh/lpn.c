@@ -20,6 +20,7 @@
 #include "beacon.h"
 #include "foundation.h"
 #include "lpn.h"
+#include "statistic.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_LOW_POWER_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -55,7 +56,7 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 #define FRIEND_REQ_RETRY_TIMEOUT  K_SECONDS(CONFIG_BT_MESH_LPN_RETRY_TIMEOUT)
 
 #define FRIEND_REQ_WAIT           100
-#define FRIEND_REQ_SCAN           (1 * MSEC_PER_SEC)
+#define FRIEND_REQ_SCAN           CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT
 #define FRIEND_REQ_TIMEOUT        (FRIEND_REQ_WAIT + FRIEND_REQ_SCAN)
 
 #define POLL_RETRY_TIMEOUT        100
@@ -75,6 +76,9 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 			  (REQ_ATTEMPTS(lpn) * REQ_RETRY_DURATION(lpn)))
 
 #define CLEAR_ATTEMPTS            3
+
+/* The specification defines no Friend Clear Confirm timeout for the Low Power node. */
+#define FRIEND_CLEAR_TIMEOUT      (1 * MSEC_PER_SEC)
 
 #define LPN_CRITERIA ((CONFIG_BT_MESH_LPN_MIN_QUEUE_SIZE) | \
 		      (CONFIG_BT_MESH_LPN_RSSI_FACTOR << 3) | \
@@ -198,7 +202,7 @@ static void friend_clear_sent(int err, void *user_data)
 	}
 
 	lpn_set_state(BT_MESH_LPN_CLEAR);
-	k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_REQ_TIMEOUT));
+	k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_CLEAR_TIMEOUT));
 }
 
 static const struct bt_mesh_send_cb clear_sent_cb = {
@@ -419,6 +423,10 @@ static void req_send_end(int err, void *user_data)
 
 	lpn->req_attempts++;
 
+	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+		bt_mesh_stat_lpn_timing_update_poll_tx();
+	}
+
 	if (lpn->established || IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 		lpn_set_state(BT_MESH_LPN_RECV_DELAY);
 		/* We start scanning a bit early to eliminate risk of missing
@@ -580,6 +588,9 @@ static void friend_response_received(struct bt_mesh_lpn *lpn)
 
 	k_work_reschedule(&lpn->timer, K_MSEC(timeout));
 	bt_mesh_scan_disable();
+	if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+		bt_mesh_stat_lpn_timing_update_response_rx();
+	}
 }
 
 void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx)
@@ -859,6 +870,9 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 		lpn_set_state(BT_MESH_LPN_ESTABLISHED);
 		k_work_reschedule(&lpn->timer, K_MSEC(POLL_RETRY_TIMEOUT));
 		bt_mesh_scan_disable();
+		if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+			bt_mesh_stat_lpn_timing_update_win_expired();
+		}
 	} else {
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
@@ -940,6 +954,9 @@ static void lpn_timeout(struct k_work *work)
 				  K_MSEC(SCAN_LATENCY + lpn->recv_win + RX_DELAY_CORRECTION(lpn)));
 		lpn_set_state(BT_MESH_LPN_WAIT_UPDATE);
 		bt_mesh_scan_enable();
+		if (IS_ENABLED(CONFIG_BT_MESH_STATISTIC)) {
+			bt_mesh_stat_lpn_timing_update_scan_start();
+		}
 		break;
 	case BT_MESH_LPN_WAIT_UPDATE:
 		update_timeout(lpn);

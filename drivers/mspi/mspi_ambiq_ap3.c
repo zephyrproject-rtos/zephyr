@@ -16,7 +16,7 @@ LOG_LEVEL_SET(CONFIG_MSPI_LOG_LEVEL);
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mspi.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 
 #include "mspi_ambiq.h"
@@ -79,7 +79,7 @@ struct mspi_ambiq_data {
 	struct k_mutex                   lock;
 
 	struct mspi_dev_cfg              dev_cfg;
-	struct mspi_xip_cfg              xip_cfg;
+	struct mspi_memmap_cfg           memmap_cfg;
 	struct mspi_scramble_cfg         scramble_cfg;
 
 	mspi_callback_handler_t          cbs[MSPI_BUS_EVENT_MAX];
@@ -168,6 +168,7 @@ static am_hal_mspi_device_e mspi_set_line(const struct mspi_ambiq_config *cfg,
 	}
 }
 
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 {
 	switch (mem_boundary) {
@@ -197,6 +198,7 @@ static am_hal_mspi_dma_boundary_e mspi_set_mem_boundary(uint32_t mem_boundary)
 		return AM_HAL_MSPI_BOUNDARY_MAX;
 	}
 }
+#endif /* CONFIG_SOC_APOLLO3P_BLUE */
 
 static inline void mspi_context_ce_control(struct mspi_context *ctx, bool on)
 {
@@ -329,8 +331,8 @@ static int mspi_ambiq_deinit(const struct device *controller)
 
 	ret = pm_device_runtime_get(controller);
 	if (ret) {
-		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, failed pm_device_runtime_get.",
-							  __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(MSPI_LOG_HANDLE(controller), controller,
+						   __LINE__);
 		goto e_deinit_return;
 	}
 
@@ -443,8 +445,10 @@ static int mspi_xfer_config(const struct device    *controller,
 
 	hal_dev_cfg.bTurnaround     = (xfer->rx_dummy != 0);
 	hal_dev_cfg.ui8TurnAround   = (uint8_t)xfer->rx_dummy;
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 	hal_dev_cfg.bEnWriteLatency = (xfer->tx_dummy != 0);
 	hal_dev_cfg.ui8WriteLatency = (uint8_t)xfer->tx_dummy;
+#endif
 
 	ret = am_hal_mspi_device_configure(data->mspiHandle, &hal_dev_cfg);
 	if (ret) {
@@ -647,7 +651,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 		ret = pm_device_runtime_get(controller);
 		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
+			LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(cfg->log, controller, __LINE__);
 			goto e_return;
 		}
 	}
@@ -724,6 +728,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				goto e_return;
 			}
 			hal_dev_cfg.eInstrCfg = dev_cfg->cmd_length - 1;
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 			ret = am_hal_mspi_control(data->mspiHandle,
 						  AM_HAL_MSPI_REQ_ISIZE_SET,
 						  &hal_dev_cfg.eInstrCfg);
@@ -733,6 +738,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
+#endif /* CONFIG_SOC_APOLLO3P_BLUE */
 			data->dev_cfg.cmd_length = dev_cfg->cmd_length;
 		}
 
@@ -744,6 +750,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				goto e_return;
 			}
 			hal_dev_cfg.eAddrCfg = dev_cfg->addr_length - 1;
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 			ret = am_hal_mspi_control(data->mspiHandle,
 						  AM_HAL_MSPI_REQ_ASIZE_SET,
 						  &hal_dev_cfg.eAddrCfg);
@@ -753,6 +760,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 				ret = -EHOSTDOWN;
 				goto e_return;
 			}
+#endif /* CONFIG_SOC_APOLLO3P_BLUE */
 			data->dev_cfg.addr_length = dev_cfg->addr_length;
 		}
 
@@ -782,8 +790,10 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 		}
 
 		hal_dev_cfg.eSpiMode           = dev_cfg->cpp;
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 		hal_dev_cfg.bEnWriteLatency    = (dev_cfg->tx_dummy != 0);
 		hal_dev_cfg.ui8WriteLatency    = dev_cfg->tx_dummy;
+#endif
 		hal_dev_cfg.bTurnaround        = (dev_cfg->rx_dummy != 0);
 		hal_dev_cfg.ui8TurnAround      = dev_cfg->rx_dummy;
 
@@ -827,6 +837,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 		hal_dev_cfg.ui8ReadInstr  = (uint8_t)dev_cfg->read_cmd;
 		hal_dev_cfg.ui8WriteInstr = (uint8_t)dev_cfg->write_cmd;
 
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 		hal_dev_cfg.eDMABoundary = mspi_set_mem_boundary(dev_cfg->mem_boundary);
 		if (hal_dev_cfg.eDMABoundary >= AM_HAL_MSPI_BOUNDARY_MAX) {
 			LOG_INST_ERR(cfg->log, "%u, mem_boundary too large.", __LINE__);
@@ -836,6 +847,15 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 		/** ui16DMATimeLimit unit is in 0.1us */
 		hal_dev_cfg.ui16DMATimeLimit = dev_cfg->time_to_break * 10;
+#else
+		if (dev_cfg->mem_boundary != 0 || dev_cfg->time_to_break != 0) {
+			LOG_INST_ERR(cfg->log,
+				     "%u, mem_boundary/time_to_break not supported on this SoC.",
+				     __LINE__);
+			ret = -ENOTSUP;
+			goto e_return;
+		}
+#endif
 
 		ret = am_hal_mspi_disable(data->mspiHandle);
 		if (ret) {
@@ -868,15 +888,15 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 e_return:
 	if (pm_device_runtime_put(controller)) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(cfg->log, controller, __LINE__);
 	}
 	k_mutex_unlock(&data->lock);
 	return ret;
 }
 
-static int mspi_ambiq_xip_config(const struct device       *controller,
-				 const struct mspi_dev_id  *dev_id,
-				 const struct mspi_xip_cfg *xip_cfg)
+static int mspi_ambiq_memmap_config(const struct device          *controller,
+				    const struct mspi_dev_id     *dev_id,
+				    const struct mspi_memmap_cfg *memmap_cfg)
 {
 	struct mspi_ambiq_data         *data = controller->data;
 	am_hal_mspi_request_e           eRequest;
@@ -889,7 +909,7 @@ static int mspi_ambiq_xip_config(const struct device       *controller,
 		return -ESTALE;
 	}
 
-	if (xip_cfg->enable) {
+	if (memmap_cfg->enable) {
 		eRequest = AM_HAL_MSPI_REQ_XIP_EN;
 	} else {
 		eRequest = AM_HAL_MSPI_REQ_XIP_DIS;
@@ -898,11 +918,11 @@ static int mspi_ambiq_xip_config(const struct device       *controller,
 	ret = am_hal_mspi_control(data->mspiHandle, eRequest, NULL);
 	if (ret) {
 		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, fail to set XIP enable:%d.",
-			     __LINE__, xip_cfg->enable);
+			     __LINE__, memmap_cfg->enable);
 		return -EHOSTDOWN;
 	}
 
-	data->xip_cfg = *xip_cfg;
+	data->memmap_cfg = *memmap_cfg;
 	return ret;
 }
 
@@ -977,6 +997,7 @@ static int mspi_ambiq_timing_config(const struct device      *controller,
 				    const uint32_t            param_mask,
 				    void                     *timing_cfg)
 {
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 	struct mspi_ambiq_data       *data        = controller->data;
 	am_hal_mspi_dev_config_t      hal_dev_cfg = data->hal_dev_cfg;
 	struct mspi_ambiq_timing_cfg *time_cfg    = timing_cfg;
@@ -1030,6 +1051,13 @@ static int mspi_ambiq_timing_config(const struct device      *controller,
 
 	data->hal_dev_cfg = hal_dev_cfg;
 	return ret;
+#else
+	ARG_UNUSED(controller);
+	ARG_UNUSED(dev_id);
+	ARG_UNUSED(param_mask);
+	ARG_UNUSED(timing_cfg);
+	return -ENOTSUP;
+#endif /* CONFIG_SOC_APOLLO3P_BLUE */
 }
 
 static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_t ch)
@@ -1051,7 +1079,7 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 
 	data->dev_id = NULL;
 	if (pm_device_runtime_put(controller)) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(cfg->log, controller, __LINE__);
 	}
 	k_mutex_unlock(&data->lock);
 
@@ -1090,10 +1118,12 @@ static int mspi_pio_prepare(const struct device        *controller,
 	trans->bSendAddr    = (xfer->addr_length != 0);
 	trans->bSendInstr   = (xfer->cmd_length != 0);
 	trans->bTurnaround  = (xfer->rx_dummy != 0);
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 	trans->bEnWRLatency = (xfer->tx_dummy != 0);
 	trans->bDCX         = false;
-	trans->bQuadCmd     = false;
 	trans->bContinue    = false;
+#endif
+	trans->bQuadCmd = false;
 
 	if (xfer->cmd_length > AM_HAL_MSPI_INSTR_2_BYTE + 1) {
 		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, invalid cmd_length.",
@@ -1103,6 +1133,7 @@ static int mspi_pio_prepare(const struct device        *controller,
 	if (xfer->cmd_length != 0) {
 		am_hal_mspi_instr_e eInstrCfg = xfer->cmd_length - 1;
 
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_ISIZE_SET, &eInstrCfg);
 		if (ret) {
 			LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
@@ -1110,6 +1141,7 @@ static int mspi_pio_prepare(const struct device        *controller,
 				     __LINE__);
 			return -EHOSTDOWN;
 		}
+#endif
 		data->hal_dev_cfg.eInstrCfg = eInstrCfg;
 	}
 	data->dev_cfg.cmd_length = xfer->cmd_length;
@@ -1123,6 +1155,7 @@ static int mspi_pio_prepare(const struct device        *controller,
 	if (xfer->addr_length != 0) {
 		am_hal_mspi_addr_e eAddrCfg = xfer->addr_length - 1;
 
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
 		ret = am_hal_mspi_control(data->mspiHandle, AM_HAL_MSPI_REQ_ASIZE_SET, &eAddrCfg);
 		if (ret) {
 			LOG_INST_ERR(MSPI_LOG_HANDLE(controller),
@@ -1130,6 +1163,7 @@ static int mspi_pio_prepare(const struct device        *controller,
 				     __LINE__);
 			return -EHOSTDOWN;
 		}
+#endif
 		data->hal_dev_cfg.eAddrCfg = eAddrCfg;
 	}
 	data->dev_cfg.addr_length = xfer->addr_length;
@@ -1420,7 +1454,7 @@ static int mspi_ambiq_init(const struct device *controller)
 static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 	.config             = mspi_ambiq_config,
 	.dev_config         = mspi_ambiq_dev_config,
-	.xip_config         = mspi_ambiq_xip_config,
+	.memmap_config      = mspi_ambiq_memmap_config,
 	.scramble_config    = mspi_ambiq_scramble_config,
 	.timing_config      = mspi_ambiq_timing_config,
 	.get_channel_status = mspi_ambiq_get_channel_status,
@@ -1451,10 +1485,10 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 			struct pinctrl_dev_config Z_PINCTRL_DEV_CONFIG_NAME(node_id) =           \
 				Z_PINCTRL_DEV_CONFIG_INIT(node_id)
 
-#define MSPI_CONFIG(n)                                                                           \
+#define MSPI_CONFIG(n)                                                                       \
 	{                                                                                        \
-		.channel_num           = (DT_INST_REG_ADDR(n) - MSPI_BASE_ADDR) /                \
-					  MSPI_ADDR_INTERVAL,                                    \
+		.channel_num           = (uint8_t)((DT_INST_REG_ADDR(n) -                        \
+						   MSPI_BASE_ADDR) / MSPI_ADDR_INTERVAL),        \
 		.op_mode               = MSPI_OP_MODE_CONTROLLER,                                \
 		.duplex                = MSPI_HALF_DUPLEX,                                       \
 		.max_freq              = MSPI_MAX_FREQ,                                          \
@@ -1463,30 +1497,36 @@ static DEVICE_API(mspi, mspi_ambiq_driver_api) = {
 		.sw_multi_periph       = DT_INST_PROP(n, software_multiperipheral),              \
 	}
 
-#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                               \
-	{                                                                                        \
+#if defined(CONFIG_SOC_APOLLO3P_BLUE)
+#define MSPI_HAL_DEVICE_CONFIG_AP3P_FIELDS                                                         \
 		.ui8WriteLatency       = 0,                                                      \
-		.ui8TurnAround         = 0,                                                      \
-		.eAddrCfg              = 0,                                                      \
-		.eInstrCfg             = 0,                                                      \
-		.ui8ReadInstr          = 0,                                                      \
-		.ui8WriteInstr         = 0,                                                      \
-		.eDeviceConfig         = AM_HAL_MSPI_FLASH_SERIAL_CE0,                           \
-		.eSpiMode              = AM_HAL_MSPI_SPI_MODE_0,                                 \
+		.bEnWriteLatency       = false,                                                  \
+		.ui16DMATimeLimit      = 0,                                                      \
+		.eDMABoundary          = AM_HAL_MSPI_BOUNDARY_NONE,
+#else
+#define MSPI_HAL_DEVICE_CONFIG_AP3P_FIELDS
+#endif
+
+#define MSPI_HAL_DEVICE_CONFIG(n, cmdq, cmdq_size)                                                 \
+	{                                                                                          \
+		.ui8TurnAround = 0,                                                                \
+		.eAddrCfg = 0,                                                                     \
+		.eInstrCfg = 0,                                                                    \
+		.ui8ReadInstr = 0,                                                                 \
+		.ui8WriteInstr = 0,                                                                \
+		.eDeviceConfig = AM_HAL_MSPI_FLASH_SERIAL_CE0,                                     \
+		.eSpiMode = AM_HAL_MSPI_SPI_MODE_0,                                                \
 		.eClockFreq            = MSPI_MAX_FREQ / DT_INST_PROP_OR(n,                      \
 									 clock_frequency,        \
 									 MSPI_MAX_FREQ),         \
-		.bEnWriteLatency       = false,                                                  \
+		MSPI_HAL_DEVICE_CONFIG_AP3P_FIELDS                                               \
 		.bSendAddr             = false,                                                  \
-		.bSendInstr            = false,                                                  \
-		.bTurnaround           = false,                                                  \
-		.bEmulateDDR           = false,                                                  \
-		.ui16DMATimeLimit      = 0,                                                      \
-		.eDMABoundary          = AM_HAL_MSPI_BOUNDARY_NONE,                              \
-		.ui32TCBSize           = cmdq_size,                                              \
-		.pTCB                  = cmdq,                                                   \
-		.scramblingStartAddr   = 0,                                                      \
-		.scramblingEndAddr     = 0,                                                      \
+		.bSendInstr = false,                                                               \
+		.bTurnaround = false,                                                              \
+		.ui32TCBSize = cmdq_size,                                                          \
+		.pTCB = cmdq,                                                                      \
+		.scramblingStartAddr = 0,                                                          \
+		.scramblingEndAddr = 0,                                                            \
 	}
 
 #define AMBIQ_MSPI_DEFINE(n)                                                                     \

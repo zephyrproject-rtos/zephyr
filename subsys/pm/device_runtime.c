@@ -21,6 +21,13 @@ LOG_MODULE_DECLARE(pm_device, CONFIG_PM_DEVICE_LOG_LEVEL);
 #define PM_DOMAIN(_pm) NULL
 #endif
 
+/*
+ * Serializes all pm->base.usage updates for devices without the ISR-safe
+ * flag. The get/put fast paths read and update the usage counter under this
+ * lock, possibly from interrupt context, so the slow paths must not modify
+ * it under the per-device semaphore alone.
+ */
+static struct k_spinlock lock;
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 #ifdef CONFIG_PM_DEVICE_RUNTIME_USE_DEDICATED_WQ
 K_THREAD_STACK_DEFINE(pm_device_runtime_stack, CONFIG_PM_DEVICE_RUNTIME_DEDICATED_WQ_STACK_SIZE);
@@ -32,6 +39,82 @@ static struct k_work_q pm_device_runtime_wq;
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
 
 #define EVENT_MASK		(EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED)
+
+/* Increment the usage counter of a device under the global lock. */
+static void runtime_usecount_inc(struct pm_device *pm)
+{
+	__ASSERT_NO_MSG(pm != NULL);
+
+	K_SPINLOCK(&lock) {
+		pm->base.usage++;
+	}
+}
+
+/* Decrement the usage counter of a device under the global lock. */
+static void runtime_usecount_dec(struct pm_device *pm)
+{
+	__ASSERT_NO_MSG(pm != NULL);
+
+	K_SPINLOCK(&lock) {
+		pm->base.usage--;
+	}
+}
+
+/*
+ * Release one usage reference under the global lock, unless this is the
+ * last reference. Last-user handling needs the per-device semaphore and
+ * is left to the caller.
+ *
+ * @retval true If the reference was released.
+ * @retval false If this is the last reference.
+ */
+static bool runtime_usage_put_fast(struct pm_device *pm)
+{
+	bool released = false;
+
+	__ASSERT_NO_MSG(pm != NULL);
+
+	K_SPINLOCK(&lock) {
+		if (pm->base.usage > 1U) {
+			pm->base.usage--;
+			released = true;
+		}
+	}
+
+	return released;
+}
+
+/*
+ * Release one usage reference under the global lock, with the per-device
+ * semaphore held by the caller.
+ *
+ * @retval 1 If this was the last reference and the device has to be
+ * suspended.
+ * @retval 0 If other references remain and nothing else has to be done.
+ * @retval -EALREADY If the usage counter was already zero.
+ */
+static int runtime_usage_put(struct pm_device *pm)
+{
+	int ret = 0;
+
+	__ASSERT_NO_MSG(pm != NULL);
+	/* Caller must hold the per-device semaphore, except in pre-kernel
+	 * mode where it is never taken (single-threaded boot).
+	 */
+	__ASSERT(k_is_pre_kernel() || (k_sem_count_get(&pm->lock) == 0),
+		 "pm lock not owned");
+
+	K_SPINLOCK(&lock) {
+		if (pm->base.usage == 0U) {
+			ret = -EALREADY;
+		} else {
+			pm->base.usage--;
+			ret = (pm->base.usage == 0U) ? 1 : 0;
+		}
+	}
+
+	return ret;
+}
 
 /**
  * @brief Suspend a device
@@ -65,6 +148,11 @@ static int runtime_suspend(const struct device *dev, bool async,
 		return 0;
 	}
 
+	/* If we are not the last user, return. */
+	if (runtime_usage_put_fast(pm)) {
+		return 0;
+	}
+
 	if (k_is_pre_kernel()) {
 		async = false;
 	} else {
@@ -74,16 +162,14 @@ static int runtime_suspend(const struct device *dev, bool async,
 		}
 	}
 
-	if (pm->base.usage == 0U) {
-		LOG_WRN("Unbalanced suspend");
-		ret = -EALREADY;
+	ret = runtime_usage_put(pm);
+	if (ret <= 0) {
+		if (ret < 0) {
+			LOG_WRN("Unbalanced suspend: %s", dev->name);
+		}
 		goto unlock;
 	}
-
-	pm->base.usage--;
-	if (pm->base.usage > 0U) {
-		goto unlock;
-	}
+	ret = 0;
 
 	if (async) {
 		/* queue suspend */
@@ -99,7 +185,7 @@ static int runtime_suspend(const struct device *dev, bool async,
 		/* suspend now */
 		ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 		if (ret < 0) {
-			pm->base.usage++;
+			runtime_usecount_inc(pm);
 			goto unlock;
 		}
 
@@ -131,7 +217,7 @@ static void runtime_suspend_work(struct k_work *work)
 
 	(void)k_sem_take(&pm->lock, K_FOREVER);
 	if (ret < 0) {
-		pm->base.usage++;
+		runtime_usecount_inc(pm);
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
 	} else {
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
@@ -219,6 +305,21 @@ int pm_device_runtime_get(const struct device *dev)
 	}
 
 	if (!k_is_pre_kernel()) {
+		bool early_exit = false;
+
+		K_SPINLOCK(&lock) {
+			/* If we are not the first user and device is active, return. */
+			if ((pm->base.usage > 0U) && (pm->base.state == PM_DEVICE_STATE_ACTIVE)) {
+				pm->base.usage++;
+				early_exit = true;
+			}
+		}
+
+		if (early_exit == true) {
+			ret = 0;
+			goto end;
+		}
+
 		ret = k_sem_take(&pm->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
 		if (ret < 0) {
 			return -EWOULDBLOCK;
@@ -251,7 +352,7 @@ int pm_device_runtime_get(const struct device *dev)
 		atomic_set_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 
-	pm->base.usage++;
+	runtime_usecount_inc(pm);
 
 #ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	/*
@@ -287,7 +388,7 @@ int pm_device_runtime_get(const struct device *dev)
 
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_RESUME);
 	if (ret < 0) {
-		pm->base.usage--;
+		runtime_usecount_dec(pm);
 		if (domain != NULL) {
 			(void)pm_device_runtime_put(domain);
 			atomic_clear_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_PD_CLAIMED);

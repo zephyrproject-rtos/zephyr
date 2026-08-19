@@ -477,9 +477,9 @@ static bool bdma_stm32_is_valid_memory_address(const uint32_t address, const uin
 }
 
 
-BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
-					     uint32_t id,
-					     struct dma_config *config)
+static int bdma_stm32_configure(const struct device *dev,
+				uint32_t id,
+				struct dma_config *config)
 {
 	const struct bdma_stm32_config *dev_config = dev->config;
 	struct bdma_stm32_channel *channel =
@@ -674,9 +674,9 @@ BDMA_STM32_EXPORT_API int bdma_stm32_configure(const struct device *dev,
 	return ret;
 }
 
-BDMA_STM32_EXPORT_API int bdma_stm32_reload(const struct device *dev, uint32_t id,
-					  uint32_t src, uint32_t dst,
-					  size_t size)
+static int bdma_stm32_reload(const struct device *dev, uint32_t id,
+			     uint32_t src, uint32_t dst,
+			     size_t size)
 {
 	const struct bdma_stm32_config *config = dev->config;
 	BDMA_TypeDef *bdma = (BDMA_TypeDef *)(config->base);
@@ -722,7 +722,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_reload(const struct device *dev, uint32_t i
 	return 0;
 }
 
-BDMA_STM32_EXPORT_API int bdma_stm32_start(const struct device *dev, uint32_t id)
+static int bdma_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct bdma_stm32_config *config = dev->config;
 	BDMA_TypeDef *bdma = (BDMA_TypeDef *)(config->base);
@@ -748,7 +748,7 @@ BDMA_STM32_EXPORT_API int bdma_stm32_start(const struct device *dev, uint32_t id
 	return 0;
 }
 
-BDMA_STM32_EXPORT_API int bdma_stm32_stop(const struct device *dev, uint32_t id)
+static int bdma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct bdma_stm32_config *config = dev->config;
 	struct bdma_stm32_channel *channel = &config->channels[id];
@@ -825,7 +825,7 @@ static int bdma_stm32_init(const struct device *dev)
 	return 0;
 }
 
-BDMA_STM32_EXPORT_API int bdma_stm32_get_status(const struct device *dev,
+static int bdma_stm32_get_status(const struct device *dev,
 				uint32_t id, struct dma_status *stat)
 {
 	const struct bdma_stm32_config *config = dev->config;

@@ -102,22 +102,42 @@
 #define MCO2_PRE(val)		STM32_DT_CLOCK_SELECT((val), 28, 25, CFGR1_REG)
 #define MCO2_SEL(val)		STM32_DT_CLOCK_SELECT((val), 31, 29, CFGR1_REG)
 
-/* MCO prescaler : division factor */
-#define MCO_PRE_DIV_1 1
-#define MCO_PRE_DIV_2 2
-#define MCO_PRE_DIV_3 3
-#define MCO_PRE_DIV_4 4
-#define MCO_PRE_DIV_5 5
-#define MCO_PRE_DIV_6 6
-#define MCO_PRE_DIV_7 7
-#define MCO_PRE_DIV_8 8
-#define MCO_PRE_DIV_9 9
-#define MCO_PRE_DIV_10 10
-#define MCO_PRE_DIV_11 11
-#define MCO_PRE_DIV_12 12
-#define MCO_PRE_DIV_13 13
-#define MCO_PRE_DIV_14 14
-#define MCO_PRE_DIV_15 15
+/** MCO prescaler : division factor */
+#define MCO_PRE_DIV_1		1
+#define MCO_PRE_DIV_2		2
+#define MCO_PRE_DIV_3		3
+#define MCO_PRE_DIV_4		4
+#define MCO_PRE_DIV_5		5
+#define MCO_PRE_DIV_6		6
+#define MCO_PRE_DIV_7		7
+#define MCO_PRE_DIV_8		8
+#define MCO_PRE_DIV_9		9
+#define MCO_PRE_DIV_10		10
+#define MCO_PRE_DIV_11		11
+#define MCO_PRE_DIV_12		12
+#define MCO_PRE_DIV_13		13
+#define MCO_PRE_DIV_14		14
+#define MCO_PRE_DIV_15		15
+
+/** MCO1 clock output */
+#define MCO1_SEL_SYSCLK		0
+#define MCO1_SEL_HSE		1
+#define MCO1_SEL_LSE		2
+#define MCO1_SEL_LSI		3
+#define MCO1_SEL_PSIK		4
+#define MCO1_SEL_HSIK		5
+#define MCO1_SEL_PSIS		6
+#define MCO1_SEL_HSIS		7
+
+/** MCO2 clock output */
+#define MCO2_SEL_SYSCLK		0
+#define MCO2_SEL_HSE		1
+#define MCO2_SEL_LSE		2
+#define MCO2_SEL_LSI		3
+#define MCO2_SEL_PSIK		4
+#define MCO2_SEL_HSIK		5
+#define MCO2_SEL_PSIDIV3	6
+#define MCO2_SEL_HSIDIV3	7
 
 /** @endcond */
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32C5_CLOCK_H_ */

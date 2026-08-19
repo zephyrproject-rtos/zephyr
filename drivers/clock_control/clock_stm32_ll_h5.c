@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_ll_bus.h>
+#include <stm32_ll_crs.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
 #include <stm32_ll_utils.h>
@@ -34,6 +35,11 @@
 #define PLL3_ID		3
 
 #define PLL_FRACN_DIVISOR 8192
+
+#if IS_ENABLED(STM32_PLL_P_ENABLED)
+BUILD_ASSERT((STM32_PLL_P_DIVISOR % 2) == 0,
+	     "STM32H5 PLL1P divisor factor must be even");
+#endif /* STM32_PLL_P_ENABLED */
 
 static uint32_t get_bus_clock(uint32_t clock, uint32_t prescaler)
 {
@@ -517,6 +523,8 @@ static int set_up_plls(void)
 	}
 
 	LL_RCC_PLL1_Disable();
+	while (LL_RCC_PLL1_IsReady() != 0U) {
+	}
 
 	/* Configure PLL source : Can be HSE, HSI, MSIS */
 	if (IS_ENABLED(STM32_PLL_SRC_HSE)) {
@@ -800,6 +808,23 @@ static void set_up_fixed_clock_sources(void)
 	if (IS_ENABLED(STM32_HSI48_ENABLED)) {
 		LL_RCC_HSI48_Enable();
 		while (LL_RCC_HSI48_IsReady() != 1) {
+		}
+
+		if (IS_ENABLED(STM32_HSI48_CRS_USB_SOF)) {
+			/*
+			 * Use SOF from full-speed USB as CRS synchronization source
+			 * as this is the most plausible usecase: XTAL-less USB.
+			 *
+			 * TODO: support arbitrary CRS sync source selection
+			 */
+			LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_CRS);
+#if defined(USB_DRD_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_USB);
+#elif defined(USB_OTG_FS)
+			LL_CRS_SetSyncSignalSource(LL_CRS_SYNC_SOURCE_OTG_FS);
+#endif
+			LL_CRS_EnableFreqErrorCounter();
+			LL_CRS_EnableAutoTrimming();
 		}
 	}
 

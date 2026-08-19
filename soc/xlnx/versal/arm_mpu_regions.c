@@ -28,6 +28,15 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * - 0xFFFC0000 - 0xFFFFFFFF: OCM (256KB, cacheable - overlay)
  */
 
+/* Check if SRAM is located in OCM region */
+#define XLNX_VERSAL_SRAM_IS_OCM \
+	DT_SAME_NODE(DT_CHOSEN(zephyr_sram), DT_NODELABEL(ocm))
+
+/* Calculate OCM region size based on device tree */
+#define XLNX_VERSAL_OCM_NODE DT_NODELABEL(ocm)
+#define XLNX_VERSAL_OCM_REGION_SIZE \
+	REGION_CUSTOMED_MEMORY_SIZE(DT_REG_SIZE(XLNX_VERSAL_OCM_NODE) / 1024U)
+
 /*
  * Calculate MPU region size based on memory size
  * MPU regions must be power-of-2 sized and naturally aligned
@@ -37,7 +46,7 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * define separate memory regions in device tree and they will be mapped
  * as separate MPU regions below.
  */
-#if (CONFIG_SRAM_BASE_ADDRESS != 0)
+#if (DT_CHOSEN_SRAM_ADDR != 0)
 /* Calculate the region size needed to cover from 0x0 to end of SRAM
  * For DDR at 0x40000, we need to cover from 0x0 (TCM) to end of DDR
  * Region must start at 0x0 to include TCM for reset vectors
@@ -47,13 +56,13 @@ extern const uint32_t __rom_region_mpu_size_bits;
  * Zephyr at 0x4000000-0x60000000), you MUST define separate regions
  * in device tree to avoid mapping inaccessible or protected memory.
  */
-#define DDR_END_ADDRESS (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024))
+#define DDR_END_ADDRESS (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE)
 
 /* Check if memory layout is contiguous from 0x0
  * If SRAM_BASE is far from 0 (e.g., > 64MB), it's likely a shared memory
  * design where TCM and DDR are separate regions
  */
-#if (CONFIG_SRAM_BASE_ADDRESS > 0x4000000)
+#if (DT_CHOSEN_SRAM_ADDR > 0x4000000) && !defined(CONFIG_XIP)
 #warning "SRAM base address is > 64MB - ensure TCM is defined separately in " \
 	 "device tree for vector relocation"
 #endif
@@ -85,7 +94,9 @@ extern const uint32_t __rom_region_mpu_size_bits;
 #elif (DDR_END_ADDRESS <= 0x80000000)    /* 2GB */
 #define MEMORY_REGION_SIZE REGION_2G
 #else
+#if !XLNX_VERSAL_SRAM_IS_OCM
 #warning "DDR size exceeds 2GB - limiting MPU region to 2GB."
+#endif
 #define MEMORY_REGION_SIZE REGION_2G
 #endif
 
@@ -104,16 +115,16 @@ extern const uint32_t __rom_region_mpu_size_bits;
 
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0: SRAM mapping (TCM/DDR) - data R/W + XN */
-#if (CONFIG_SRAM_BASE_ADDRESS == 0)
+#if (DT_CHOSEN_SRAM_ADDR == 0)
 	/* Using TCM only - size from device tree */
 	MPU_REGION_ENTRY(
 		"sram",
-		CONFIG_SRAM_BASE_ADDRESS,
+		DT_CHOSEN_SRAM_ADDR,
 		REGION_SRAM_SIZE,
 		{.rasr = P_RW_U_NA_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE |
 			 NOT_EXEC}),
-#elif (CONFIG_SRAM_BASE_ADDRESS <= 0x80000)
+#elif (DT_CHOSEN_SRAM_ADDR <= 0x80000)
 	/* DDR is contiguous with TCM - use single large region */
 	MPU_REGION_ENTRY(
 		"sram",
@@ -152,32 +163,31 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 DEVICE_SHAREABLE |
 			 NOT_EXEC}),
 
-	/* Region 3: OCM overlay - 256KB normal cacheable memory from 0xFFFC0000
-	 * This overlays the peripheral region and marks OCM as cacheable
-	 */
+	/* Region 3: OCM overlay - size from device tree */
 	MPU_REGION_ENTRY(
 		"ocm",
-		0xFFFC0000,
-		REGION_256K,
+		DT_REG_ADDR(XLNX_VERSAL_OCM_NODE),
+		XLNX_VERSAL_OCM_REGION_SIZE,
 		{.rasr = FULL_ACCESS_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 
 	/* Region 4: Interrupt vectors at 0x0
-	 * ARMv7-R requires vectors at 0x0 (HIVECS=0)
+	 * ARMv7-R requires vectors at 0x0 (HIVECS=0).  Use 256 B to cover the
+	 * relocated table plus its literal pool (vector_table.S + pool > 64 B).
 	 */
 	MPU_REGION_ENTRY(
 		"vectors",
 		0x00000000,
-		REGION_64B,
+		REGION_256B,
 		{.rasr = P_RO_U_NA_Msk |
 			 NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE}),
 
-#if (CONFIG_SRAM_BASE_ADDRESS > 0x80000)
+#if (DT_CHOSEN_SRAM_ADDR > 0x80000) && !XLNX_VERSAL_SRAM_IS_OCM
 	/* Region 5: Separate DDR region for non-contiguous memory layouts */
 	MPU_REGION_ENTRY(
 		"ddr",
-		CONFIG_SRAM_BASE_ADDRESS,
-		CALC_REGION_SIZE(CONFIG_SRAM_SIZE * 1024),
+		DT_CHOSEN_SRAM_ADDR,
+		CALC_REGION_SIZE(DT_CHOSEN_SRAM_SIZE),
 		{.rasr = FULL_ACCESS_Msk |
 			 NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE}),
 #endif

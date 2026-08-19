@@ -15,11 +15,11 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Peripheral 3: disconnects after receiving first SDU
 # Peripheral 4: disconnects after receiving first PDU in second SDU
 # Peripheral 5: disconnects after receiving third PDU in third SDU
-# Peripheral 6: disconnects atfer receiving tenth PDU in tenth SDU
+# Peripheral 6: disconnects after receiving tenth PDU in tenth SDU
 #
 # The central and peripherals check that all tx_pool and rx_pool
 # buffers have been returned after the disconnect.
-simulation_id="l2cap_stress_early_disconnect"
+simulation_id="${BOARD_TS}_l2cap_stress_early_disconnect"
 verbosity_level=2
 EXECUTE_TIMEOUT=240
 

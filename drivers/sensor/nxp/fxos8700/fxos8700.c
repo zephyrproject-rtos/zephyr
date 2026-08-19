@@ -516,7 +516,7 @@ static int fxos8700_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
 	if (config->inst_on_bus == FXOS8700_BUS_I2C) {
 		if (!device_is_ready(config->bus_cfg.i2c.bus)) {
-			LOG_ERR("I2C bus device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.i2c.bus);
 			return -ENODEV;
 		}
 	}
@@ -525,7 +525,7 @@ static int fxos8700_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	if (config->inst_on_bus == FXOS8700_BUS_SPI) {
 		if (!device_is_ready(config->bus_cfg.spi.bus)) {
-			LOG_ERR("SPI bus device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->bus_cfg.spi.bus);
 			return -ENODEV;
 		}
 	}
@@ -537,7 +537,7 @@ static int fxos8700_init(const struct device *dev)
 		 */
 
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 			return -ENODEV;
 		}
 

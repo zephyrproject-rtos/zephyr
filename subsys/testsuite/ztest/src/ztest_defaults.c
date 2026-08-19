@@ -31,7 +31,7 @@ EXPORT_SYMBOL(ztest_relative_filename);
  */
 void z_ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)
 {
-	ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
+	(void)ztest_run_test_suites(state, shuffle, suite_iter, case_iter);
 }
 
 /**
@@ -66,6 +66,8 @@ bool z_ztest_should_suite_run(const void *state, struct ztest_suite_node *suite)
  */
 bool z_ztest_should_test_run(const char *suite, const char *test)
 {
+	ARG_UNUSED(suite);
+	ARG_UNUSED(test);
 	return true;
 }
 

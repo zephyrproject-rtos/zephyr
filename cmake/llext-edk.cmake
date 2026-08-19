@@ -3,7 +3,7 @@
 
 # This script generates a tarball containing all headers and flags necessary to
 # build an llext extension. It does so by copying all headers accessible from
-# INTERFACE_INCLUDE_DIRECTORIES and generating a Makefile.cflags file (and a
+# a C compiler command line and generating a Makefile.cflags file (and a
 # cmake.cflags one) with all flags necessary to build the extension.
 #
 # The tarball can be extracted and used in the extension build system to include
@@ -22,7 +22,7 @@
 #  - cmake llext-edk include-dirs
 #  - west topdir
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 # initialize the same paths as the main CMakeLists.txt for consistency
 set(PROJECT_BINARY_DIR ${CMAKE_BINARY_DIR})
@@ -152,14 +152,44 @@ if(CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID)
     "The LLEXT EDK is not compatible with CONFIG_LLEXT_EXPORT_BUILTINS_BY_SLID.")
 endif()
 
+set(build_flags_dir ${PROJECT_BINARY_DIR}/misc/llext_edk)
 set(build_info_file ${PROJECT_BINARY_DIR}/../build_info.yml)
+set(sysbuild_info_file ${PROJECT_BINARY_DIR}/../../build_info.yml)
 yaml_load(FILE ${build_info_file} NAME build_info)
+if(SYSBUILD)
+  yaml_load(FILE ${sysbuild_info_file} NAME sysbuild_info)
+endif()
 
-yaml_get(llext_edk_cflags NAME build_info KEY cmake llext-edk cflags)
+# process C flags
+file(READ ${build_flags_dir}/c_flags.txt llext_edk_c_flags_raw)
+string(STRIP ${llext_edk_c_flags_raw} llext_edk_c_flags)
+string(REPLACE " " ";" llext_edk_cflags "${llext_edk_c_flags}")
+yaml_get(llext_remove_cflags NAME build_info KEY cmake llext-edk remove-cflags)
+yaml_get(llext_append_cflags NAME build_info KEY cmake llext-edk append-cflags)
+foreach(item IN_LIST ${llext_remove_cflags})
+  list(FILTER llext_edk_cflags EXCLUDE REGEX "^${item}$")
+endforeach()
+list(APPEND llext_edk_cflags ${llext_append_cflags})
+
+# process C definitions
+file(READ ${build_flags_dir}/c_defs.txt llext_edk_c_defs_raw)
+string(STRIP ${llext_edk_c_defs_raw} llext_edk_c_defs)
+string(REPLACE " " ";" llext_edk_c_defs "${llext_edk_c_defs}")
+list(PREPEND llext_edk_cflags ${llext_edk_c_defs})
+
+# process C include directories
+file(READ ${build_flags_dir}/c_incs.txt llext_edk_c_incs_raw)
+string(STRIP ${llext_edk_c_incs_raw} llext_edk_c_incs)
+string(REPLACE " " ";" llext_edk_c_incs "${llext_edk_c_incs}")
+list(TRANSFORM llext_edk_c_incs REPLACE "^-I" "")
+
 yaml_get(llext_edk_file NAME build_info KEY cmake llext-edk file)
-yaml_get(INTERFACE_INCLUDE_DIRECTORIES NAME build_info KEY cmake llext-edk include-dirs)
 yaml_get(APPLICATION_SOURCE_DIR NAME build_info KEY cmake application source-dir)
-yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+if(SYSBUILD)
+  yaml_get(WEST_TOPDIR NAME sysbuild_info KEY west topdir)
+else()
+  yaml_get(WEST_TOPDIR NAME build_info KEY west topdir)
+endif()
 
 yaml_get(board_name NAME build_info KEY cmake board name)
 yaml_get(board_qualifiers NAME build_info KEY cmake board qualifiers)
@@ -210,7 +240,7 @@ set(llext_edk_cflags ${new_cflags})
 list(APPEND base_flags ${llext_edk_cflags} ${imacros})
 
 file(MAKE_DIRECTORY ${llext_edk_inc})
-foreach(dir ${INTERFACE_INCLUDE_DIRECTORIES})
+foreach(dir ${llext_edk_c_incs})
     if(NOT EXISTS ${dir})
         continue()
     endif()

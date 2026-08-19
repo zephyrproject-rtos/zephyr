@@ -214,7 +214,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	LOG_DBG("Sending Packet: %p of Length: %u", pkt, total_len);
 	if (total_len > (ETH_TXBUF_SIZE * ETH_TXBUF_NB)) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_ERR("Packet spans all available descriptors");
 		return -ENOBUFS;
 	}
@@ -224,7 +223,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	do {
 		if ((dma_tx_desc_current->Status & ETH_DMATxDesc_OWN) != 0U) {
-			eth_stats_update_errors_tx(data->iface);
 			LOG_ERR("No Descriptors Available");
 			res = -EBUSY;
 			goto error;
@@ -235,7 +233,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 			bytes_remaining > ETH_TXBUF_SIZE ? ETH_TXBUF_SIZE : bytes_remaining;
 		if (net_pkt_read(pkt, (void *)(dma_tx_desc_current->Buffer1Addr), chunk_size) !=
 		    0U) {
-			eth_stats_update_errors_tx(data->iface);
 			LOG_ERR("Could not read descriptor buffer!");
 			res = -ENOBUFS;
 			goto error;
@@ -267,7 +264,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Wait for end of TX buffer transmission */
 	if (k_sem_take(&data->tx_int_sem, K_MSEC(ETH_DMA_TX_TIMEOUT_MS)) != 0) {
-		eth_stats_update_errors_tx(data->iface);
 		LOG_DBG("TX ISR Timeout");
 		res = -EIO;
 		goto error;
@@ -287,17 +283,19 @@ static struct net_pkt *eth_rx(const struct device *dev)
 	ETH_TypeDef *eth = config->regs;
 	struct net_pkt *pkt = NULL;
 
-	if ((dma_rx_desc_current->Status & ETH_DMARxDesc_OWN) != 0U) {
+	uint32_t desc_status = dma_rx_desc_current->Status;
+
+	if ((desc_status & ETH_DMARxDesc_OWN) != 0U) {
 		return NULL; /* Not error, simply packet has not arrived yet */
 	}
 
-	if (((dma_rx_desc_current->Status & ETH_DMARxDesc_ES) != 0U) ||
-	    ((dma_rx_desc_current->Status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
+	if (((desc_status & ETH_DMARxDesc_ES) != 0U) ||
+	    ((desc_status & (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS)) !=
 	     (ETH_DMARxDesc_FS | ETH_DMARxDesc_LS))) {
 		goto release_desc; /* Drop descriptor if it is corrupt, or not a full frame */
 	}
 
-	size_t total_len = ((dma_rx_desc_current->Status & ETH_DMARxDesc_FL) >>
+	size_t total_len = ((desc_status & ETH_DMARxDesc_FL) >>
 			    ETH_DMARXDESC_FRAME_LENGTHSHIFT) -
 			   sizeof(uint32_t); /* This discards CRC (checked by hardware) */
 
@@ -397,7 +395,7 @@ static void eth_isr(const struct device *dev)
 	}
 }
 
-static int eth_wch_start(const struct device *dev)
+static int eth_wch_start(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -410,7 +408,7 @@ static int eth_wch_start(const struct device *dev)
 	return 0;
 }
 
-static int eth_wch_stop(const struct device *dev)
+static int eth_wch_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 	ETH_TypeDef *eth = config->regs;
@@ -468,14 +466,13 @@ static void phy_link_state_changed(const struct device *phy_dev, struct phy_link
 	 * config. The speed can change without receiving a link down
 	 * callback before.
 	 */
-	eth_wch_stop(dev);
+	eth_wch_stop(dev, data->iface);
 	if (state->is_up) {
 		set_mac_config(dev, state);
-		eth_wch_start(dev);
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
+		eth_wch_start(dev, data->iface);
 	}
+
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static int eth_mac_init(const struct device *dev)
@@ -544,7 +541,6 @@ static void eth_wch_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 
 	net_if_carrier_off(iface);
-	net_lldp_set_lldpdu(iface);
 
 	if (device_is_ready(config->phy_dev)) {
 		phy_link_callback_set(config->phy_dev, phy_link_state_changed, (void *)dev);
@@ -553,10 +549,9 @@ static void eth_wch_iface_init(struct net_if *iface)
 	}
 }
 
-static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE
 #if defined(CONFIG_ETH_WCH_HW_CHECKSUM)
 	       | ETHERNET_HW_RX_CHKSUM_OFFLOAD
@@ -576,7 +571,9 @@ static enum ethernet_hw_caps eth_wch_get_capabilities(const struct device *dev)
 		;
 }
 
-static int eth_wch_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_wch_set_config(const struct device *dev,
+			      struct net_if *iface __unused,
+			      enum ethernet_config_type type,
 			      const struct ethernet_config *config)
 {
 	struct eth_wch_data *data = dev->data;
@@ -609,7 +606,7 @@ static int eth_wch_set_config(const struct device *dev, enum ethernet_config_typ
 	return -ENOTSUP;
 }
 
-static const struct device *eth_wch_get_phy(const struct device *dev)
+static const struct device *eth_wch_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct eth_wch_config *config = dev->config;
 
@@ -617,7 +614,8 @@ static const struct device *eth_wch_get_phy(const struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_wch_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_wch_get_stats(const struct device *dev,
+					       struct net_if *iface __unused)
 {
 	struct eth_wch_data *data = dev->data;
 
@@ -730,14 +728,14 @@ static const struct ethernet_api eth_api = {
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
 	ETH_WCH_IRQ_HANDLER_DECL(inst)                                                             \
 	static const struct eth_wch_config eth_wch_config_##inst = {                               \
-		.regs = (ETH_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(inst)),                          \
+		.regs = (ETH_TypeDef *)DT_INST_REG_ADDR(inst),                                     \
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(inst, phy_handle)),                       \
-		.clk_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), mac)),       \
-		.clk_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), mac, id),                   \
-		.clk_tx_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), tx)),     \
-		.clk_tx_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), tx, id),                 \
-		.clk_rx_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(inst), rx)),     \
-		.clk_rx_id = DT_CLOCKS_CELL_BY_NAME(DT_INST_PARENT(inst), rx, id),                 \
+		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, mac)),                  \
+		.clk_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, mac, id),                              \
+		.clk_tx_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, tx)),                \
+		.clk_tx_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, tx, id),                            \
+		.clk_rx_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, rx)),                \
+		.clk_rx_id = DT_INST_CLOCKS_CELL_BY_NAME(inst, rx, id),                            \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                                  \
 		.connection_type = DT_INST_PROP(inst, phy_connection_type),                        \
 		.internal_phy_pllmul_idx = DT_INST_ENUM_IDX(inst, internal_phy_pllmul),            \

@@ -9,6 +9,7 @@
 #include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
 
+#include <stm32_bitops.h>
 #include <stm32_hsem.h>
 #include <stm32_gpio_shared.h>
 
@@ -21,38 +22,90 @@
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/__assert.h>
 
+#include <zephyr/logging/log.h>
+#ifdef CONFIG_GPIO_LOG_LEVEL
+#define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
+#else
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+#endif
+LOG_MODULE_REGISTER(stm32_gpioport_mgr);
+
+/*
+ * Generic macrobatic utilities used later on
+ */
+
+/* `idx` if `mapper(elem)` is 1, else nothing */
+#define ZIDX_IF_MAPPER_RET_1(idx, elem, mapper) COND_CODE_1(mapper(elem), (idx), ())
+
+/* produces a comma-separated list of indices for elements equal to 1 */
+#define ZFILTERED_INDICES(mapper, ...) \
+	LIST_DROP_EMPTY(FOR_EACH_IDX_FIXED_ARG(ZIDX_IF_MAPPER_RET_1, (,), mapper, __VA_ARGS__))
+
+#define LAST_LIST_ELEM_INDEX_INNER(_fi_list, _list_sz) \
+	COND_CODE_0(_list_sz, (-1), (GET_ARG_N(_list_sz, _fi_list)))
+
+/**
+ * Returns the zero-based index of the last `1` in a list which
+ * contains only zeroes and ones after per-element mapping.
+ *
+ * @param mapper Name of a macro `#define MAPPER(e)` that maps an
+ * element `e` from the list to the value `0` or `1`
+ * @param ...    List of elements
+ * @return zero-based index of last `1` in list after mapping,
+ * or `-1` if the list contains only `0`s after mapping
+ */
+#define LAST_LIST_ELEM_INDEX(mapper, ...)				\
+	LAST_LIST_ELEM_INDEX_INNER(					\
+		ZFILTERED_INDICES(mapper, __VA_ARGS__),			\
+		NUM_VA_ARGS(ZFILTERED_INDICES(mapper, __VA_ARGS__)))
+
+/*
+ * End of the generic macrobatics
+ */
+
+/*
+ * Name used for GPIO port devices when not instantiated as implementers
+ * of the GPIO API. This differs from the name expected by DEVICE_DT_GET()
+ * on purpose to ensure "__device_dts_ord_N not found" errors if a caller
+ * tried to obtain a pointer to any GPIO port device, which are private
+ * to this module and its consumers when CONFIG_GPIO_STM32=n.
+ */
+#define DUMMY_GPIO_NAME(node_id)						\
+	CONCAT(dummy_, DT_DEP_ORD(node_id), _, DT_NODE_FULL_NAME_TOKEN(node_id))
+
+#define GET_GPIOPORT_DEVICE_OR_NULL(port)					\
+	COND_CODE_0(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port),			\
+		(NULL),								\
+		(COND_CODE_1(CONFIG_GPIO_STM32,					\
+			(DEVICE_DT_GET(DT_NODELABEL(gpio##port))),		\
+			(DEVICE_GET(DUMMY_GPIO_NAME(DT_NODELABEL(gpio##port)))))))
+
+/* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
+#define LAST_ACTIVE_GPIO_PORT_IDX	\
+	UTIL_INC(LAST_LIST_ELEM_INDEX(STM32_GPIO_PORT_DEVICE_IS_ACTIVE, STM32_GPIO_PORTS_LIST_LWR))
+
+#if !defined(CONFIG_GPIO_STM32)
+/*
+ * Pre-declare dummy devices if they will be used
+ * (i.e., if the STM32 GPIO driver is not enabled).
+ */
+#define DECLARE_DUMMY_DEVICE_IF_ENABLED(port)					\
+	IF_ENABLED(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port),			\
+		(DEVICE_DECLARE(DUMMY_GPIO_NAME(DT_NODELABEL(gpio##port)))))
+FOR_EACH(DECLARE_DUMMY_DEVICE_IF_ENABLED, (;),
+	 GET_ARGS_FIRST_N(LAST_ACTIVE_GPIO_PORT_IDX, STM32_GPIO_PORTS_LIST_LWR));
+#endif /* !CONFIG_GPIO_STM32 */
+
 /**
  * @brief Array containing pointers to each GPIO port.
  *
  * Entries will be NULL if the GPIO port is not enabled.
+ * Entries past the last enabled GPIO port don't exist
+ * (e.g., only 2 entries if GPIOB is last enabled).
  */
 static const struct device *const gpio_ports[] = {
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioa)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiob)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioc)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiod)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioe)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiof)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiog)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioh)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioi)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioj)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiok)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiol)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiom)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpion)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioo)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiop)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioq)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpior)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpios)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiot)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiou)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiov)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiow)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpiox)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioy)),
-	DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpioz)),
+	FOR_EACH(GET_GPIOPORT_DEVICE_OR_NULL, (,),
+		 GET_ARGS_FIRST_N(LAST_ACTIVE_GPIO_PORT_IDX, STM32_GPIO_PORTS_LIST_LWR))
 };
 
 static void ll_gpio_set_pin_pull(GPIO_TypeDef *GPIOx, uint32_t Pin, uint32_t Pull)
@@ -91,111 +144,113 @@ const struct device *stm32_gpioport_get(uint32_t port_index)
 	return device_is_ready(dev) ? dev : NULL;
 }
 
-int stm32_gpioport_configure_pin(
-	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func)
+int stm32_gpioport_configure_pin(const struct device *port,
+				 gpio_pin_t pin,
+				 pinctrl_soc_pin_t config,
+				 bool apply_out_level)
 {
 	const struct gpio_stm32_config *dev_cfg = port->config;
 	GPIO_TypeDef *gpio = (GPIO_TypeDef *)dev_cfg->base;
 	uint32_t pin_ll = stm32_gpiomgr_pinnum_to_ll_val(pin);
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
-	ARG_UNUSED(func);
+	const uint32_t cnfmode = config & STM32_CNFMODE_Msk;
 
-	uint32_t temp = config &
-			      (STM32_MODE_INOUT_MASK << STM32_MODE_INOUT_SHIFT);
+	if (cnfmode == STM32_CNFMODE_INPUT_PUPD) {
+		/* Input with pull-up/down: configure the PU/PD resistor */
+		const uint32_t pupd = config & STM32_PUPD_Msk;
 
-	if (temp == STM32_MODE_INPUT) {
-		temp = config & (STM32_CNF_IN_MASK << STM32_CNF_IN_SHIFT);
-
-		if (temp == STM32_CNF_IN_ANALOG) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ANALOG);
-		} else if (temp == STM32_CNF_IN_FLOAT) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_FLOATING);
+		if (pupd == STM32_PUPD_PULL_UP) {
+			ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_UP);
 		} else {
-			temp = config & (STM32_PUPD_MASK << STM32_PUPD_SHIFT);
-
-			if (temp == STM32_PUPD_PULL_UP) {
-				ll_gpio_set_pin_pull(gpio, pin_ll,
-							       LL_GPIO_PULL_UP);
-			} else {
-				ll_gpio_set_pin_pull(gpio, pin_ll,
-							     LL_GPIO_PULL_DOWN);
-			}
-
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_INPUT);
+			ll_gpio_set_pin_pull(gpio, pin_ll, LL_GPIO_PULL_DOWN);
 		}
-
 	} else {
-		temp = config & (STM32_CNF_OUT_1_MASK << STM32_CNF_OUT_1_SHIFT);
+		/*
+		 * Requested configuration is not Input with pull-up/down.
+		 * It must be Input floating, Analog, GP Output or AF Output.
+		 *
+		 * The only one which requires special handling is GP Output
+		 * where we need to set the level if requested by caller.
+		 *
+		 * If MODE is not INPUT (i.e., it is OUT_MAX_SPEED_nMHZ),
+		 * the requested configuration is AF Output / GP Output
+		 * depending on whether the ALT_FUNCTION bit is set.
+		 */
+		const bool is_gp_output = ((cnfmode & STM32_MODE_Msk) != STM32_MODE_INPUT)
+			&& ((cnfmode & STM32_CNF_OUT_ALT_FUNCTION) == 0);
 
-		if (temp == STM32_CNF_GP_OUTPUT) {
-			LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
-		} else {
-			LL_GPIO_SetPinMode(gpio, pin_ll,
-							LL_GPIO_MODE_ALTERNATE);
-		}
+		if (apply_out_level && is_gp_output) {
+			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
 
-		temp = config & (STM32_CNF_OUT_0_MASK << STM32_CNF_OUT_0_SHIFT);
-
-		if (temp == STM32_CNF_PUSH_PULL) {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll,
-						       LL_GPIO_OUTPUT_PUSHPULL);
-		} else {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll,
-						      LL_GPIO_OUTPUT_OPENDRAIN);
-		}
-
-		temp = config &
-			    (STM32_MODE_OSPEED_MASK << STM32_MODE_OSPEED_SHIFT);
-
-		if (temp == STM32_MODE_OUTPUT_MAX_2) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-							LL_GPIO_SPEED_FREQ_LOW);
-		} else if (temp == STM32_MODE_OUTPUT_MAX_10) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-						     LL_GPIO_SPEED_FREQ_MEDIUM);
-		} else {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll,
-						       LL_GPIO_SPEED_FREQ_HIGH);
+			/* Avoid LL overhead by writing directly to BSRR/BRR */
+			if (odata == 1) {
+				stm32_reg_write(&gpio->BSRR, BIT(pin));
+			} else {
+				stm32_reg_write(&gpio->BRR, BIT(pin));
+			}
 		}
 	}
-#else
-	uint32_t mode, otype, ospeed, pupd;
 
-	mode = config & (STM32_MODER_MASK << STM32_MODER_SHIFT);
-	otype = config & (STM32_OTYPER_MASK << STM32_OTYPER_SHIFT);
-	ospeed = config & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
-	pupd = config & (STM32_PUPDR_MASK << STM32_PUPDR_SHIFT);
+	/* Write CNFMODE value directly to avoid decoding and LL overhead */
+	volatile uint32_t *const crlh = (pin <= 7) ? &gpio->CRL : &gpio->CRH;
+	const uint32_t shift = GPIO_CRL_MODE1_Pos * (pin % 8u);
+
+	stm32_reg_modify_bits(crlh,
+		(GPIO_CRL_CNF0_Msk | GPIO_CRL_MODE0_Msk) << shift,
+		_FLD2VAL(STM32_CNFMODE, config) << shift);
+#else /* CONFIG_SOC_SERIES_STM32F1X */
+	const uint32_t mode = config & STM32_MODER_Msk;
 
 	z_stm32_hsem_lock(CFG_HW_GPIO_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
-	/*
-	 * For STM32L47xx/48xx, register ASCR should be configured to connect
-	 * analog switch of gpio lines to the ADC.
-	 */
-	if (mode == STM32_MODER_ANALOG_MODE) {
-		LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
-	}
-#endif
-
-	LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_SHIFT);
-
-	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_SHIFT);
-
-	ll_gpio_set_pin_pull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
-
 	if (mode == STM32_MODER_ALT_MODE) {
-		if (pin < 8) {
-			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, func);
+		/* Alternate Function mode: configure AF mux */
+		const uint32_t afnum = _FLD2VAL(STM32_AF, config);
+
+		if (pin <= 7) {
+			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, afnum);
 		} else {
-			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, func);
+			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, afnum);
 		}
+		/* Configure output type - it also affects operation in AF mode */
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
+	} else if (mode == STM32_MODER_OUTPUT_MODE) {
+		/* Output mode: configure output type and set level if requested */
+		LL_GPIO_SetPinOutputType(gpio, pin_ll, _FLD2VAL(STM32_OTYPER, config));
+
+		if (apply_out_level) {
+			const uint32_t odata = _FLD2VAL(STM32_ODR, config);
+
+			if (odata == 1) {
+				LL_GPIO_SetOutputPin(gpio, pin_ll);
+			} else {
+				LL_GPIO_ResetOutputPin(gpio, pin_ll);
+			}
+		}
+	} else {
+		/*
+		 * Input/Analog mode: there's usually nothing to do...
+		 */
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && defined(GPIO_ASCR_ASC0)
+		/*
+		 * ...except for STM32L47xx/48xx where register ASCR should be
+		 * configured to connect analog switch of GPIO lines to the ADC.
+		 */
+		if (mode == STM32_MODER_ANALOG_MODE) {
+			LL_GPIO_EnablePinAnalogControl(gpio, pin_ll);
+		}
+#endif /* CONFIG_SOC_SERIES_STM32L4X && defined(GPIO_ASCR_ASC0) */
 	}
+
+	/* Apply generic parameters (identical regardless of mode) */
+	LL_GPIO_SetPinSpeed(gpio, pin_ll, _FLD2VAL(STM32_OSPEEDR, config));
+
+	ll_gpio_set_pin_pull(gpio, pin_ll, _FLD2VAL(STM32_PUPDR, config));
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl)
-	uint32_t piocfgr = (config >> STM32_IORETIME_ADVCFGR_SHIFT) & STM32_IORETIME_ADVCFGR_MASK;
-	uint32_t delayr = (config >> STM32_IODELAY_LENGTH_SHIFT) & STM32_IODELAY_LENGTH_MASK;
+	uint32_t piocfgr = _FLD2VAL(STM32_ADVCFGR, config);
+	uint32_t delayr = _FLD2VAL(STM32_DELAYR, config);
 
 	if (pin <= 7) {
 		LL_GPIO_SetDelayPin_0_7(gpio, pin_ll, delayr);
@@ -207,7 +262,7 @@ int stm32_gpioport_configure_pin(
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32n6_pinctrl) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl)
-	uint32_t hslv = (config >> STM32_HSLVR_SHIFT) & STM32_HSLVR_MASK;
+	uint32_t hslv = _FLD2VAL(STM32_HSLVR, config);
 
 	if (hslv) {
 		LL_GPIO_EnableHighSPeedLowVoltage(gpio, pin_ll);
@@ -216,7 +271,11 @@ int stm32_gpioport_configure_pin(
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h5_pinctrl) */
 
-	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
+	/*
+	 * Configure pin mode last after all other parameters
+	 * have been applied properly.
+	 */
+	LL_GPIO_SetPinMode(gpio, pin_ll, _FLD2VAL(STM32_MODER, config));
 
 	z_stm32_hsem_unlock(CFG_HW_GPIO_SEMID);
 #endif  /* CONFIG_SOC_SERIES_STM32F1X */
@@ -274,33 +333,56 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 #define GPIO_PORT_INIT_PRIORITY CONFIG_KERNEL_INIT_PRIORITY_DEFAULT
 #endif /* CONFIG_GPIO */
 
+#if defined(CONFIG_GPIO_STM32)
+/* Instantiate nodes as proper devices implementing the GPIO API */
+#define DO_DEVICE_DEFINE(__node, __init_fn, __pm, __data, __cfg, __lvl, __prio)	\
+	DEVICE_DT_DEFINE(__node, __init_fn, __pm, __data, __cfg,		\
+			 __lvl, __prio, &gpio_stm32_driver)
+#else /* CONFIG_GPIO_STM32 */
+/*
+ * Perform instantiation using DEVICE_DEFINE() to ensure the resulting
+ * `struct device` does NOT have the name that DEVICE_DT_GET() looks for.
+ * This ensures that naive consumers cause a build failure with the usual
+ * linker error "__device_dts_ord_N not found", as would be the case if we
+ * instantiated the devices from a C source file added to the build only
+ * when CONFIG_GPIO_STM32=y. The downside of this approach is that we lose
+ * all checks associated to devices: dependency tracking, init priority
+ * checking, etc. but given that only enlightened callers will interact with
+ * these devices when CONFIG_GPIO_STM32=n, it should be safe enough...
+ *
+ * Note that in this situation, we instantiate the devices with `api = NULL`.
+ */
+#define DO_DEVICE_DEFINE(__node, __init_fn, __pm, __data, __cfg, __lvl, __prio)	\
+	DEVICE_DEFINE(DUMMY_GPIO_NAME(__node), DEVICE_DT_NAME(__node),		\
+		      __init_fn, __pm, __data, __cfg, __lvl, __prio, NULL)
+#endif /* CONFIG_GPIO_STM32 */
+
 #define GPIO_PORT_DEVICE_INIT(__node, __suffix, __base_addr, __port)		\
 	static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
-		IF_ENABLED(IS_ENABLED(CONFIG_GPIO_STM32), (			\
-		.common = {							\
-			.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),	\
-		},))								\
+		IF_ENABLED(CONFIG_GPIO_STM32,					\
+			(.common = GPIO_COMMON_CONFIG_FROM_DT_NODE(__node),))	\
 		.base = (void *)__base_addr,					\
 		.port = __port,							\
 		IF_ENABLED(DT_NODE_HAS_PROP(__node, clocks),			\
 			   (.pclken = STM32_CLOCK_INFO(0, __node),))		\
 	};									\
 										\
-	static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
+	IF_ENABLED(CONFIG_GPIO_STM32,						\
+		(static struct gpio_stm32_data gpio_stm32_data_## __suffix;))	\
 										\
 	PM_DEVICE_DT_DEFINE(__node, stm32_gpioport_pm_action);			\
 										\
-	DEVICE_DT_DEFINE(__node,						\
+	DO_DEVICE_DEFINE(__node,						\
 			 COND_CODE_1(DT_NODE_HAS_PROP(__node, clocks),		\
 				     (stm32_gpioport_init),			\
 				     (NULL)),					\
 			 PM_DEVICE_DT_GET(__node),				\
-			 &gpio_stm32_data_## __suffix,				\
+			 COND_CODE_1(CONFIG_GPIO_STM32,				\
+				     (&gpio_stm32_data_## __suffix),		\
+				     (NULL)),					\
 			 &gpio_stm32_cfg_## __suffix,				\
 			 PRE_KERNEL_1,						\
-			 GPIO_PORT_INIT_PRIORITY,				\
-			 COND_CODE_1(IS_ENABLED(CONFIG_GPIO_STM32),		\
-				(&gpio_stm32_driver), (NULL)))
+			 GPIO_PORT_INIT_PRIORITY)
 
 #define GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)				\
 	GPIO_PORT_DEVICE_INIT(DT_NODELABEL(gpio##__suffix),			\
@@ -309,7 +391,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			 STM32_PORT##__SUFFIX)
 
 #define GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
-	IF_ENABLED(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio##__suffix)),	\
+	IF_ENABLED(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(__suffix),				\
 		   (GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix)				\

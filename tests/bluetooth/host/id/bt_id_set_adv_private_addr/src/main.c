@@ -23,7 +23,7 @@ DEFINE_FFF_GLOBALS;
 static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
 {
 	memset(&bt_dev, 0x00, sizeof(struct bt_dev));
-	bt_addr_le_copy(&bt_dev.random_addr, &bt_addr_le_none);
+	bt_addr_copy(&bt_dev.random_addr, &bt_addr_none);
 #if defined(CONFIG_BT_RPA_SHARING)
 	bt_addr_copy(&bt_dev.rpa[BT_ID_DEFAULT], BT_ADDR_NONE);
 #endif
@@ -44,7 +44,7 @@ static int bt_rand_custom_fake(void *buf, size_t len)
 
 	/* This will make set_random_address() succeeds and returns 0 */
 	memcpy(buf, &BT_ADDR->val, len);
-	bt_addr_copy(&bt_dev.random_addr.a, BT_ADDR);
+	bt_addr_copy(&bt_dev.random_addr, BT_ADDR);
 
 	return 0;
 }
@@ -55,8 +55,8 @@ static int bt_rpa_create_custom_fake(const uint8_t irk[16], bt_addr_t *rpa)
 	__ASSERT_NO_MSG(rpa != NULL);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(rpa, &BT_RPA_LE_ADDR->a);
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(rpa, BT_RPA_ADDR);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	return 0;
 }

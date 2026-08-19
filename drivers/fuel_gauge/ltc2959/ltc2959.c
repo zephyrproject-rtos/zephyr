@@ -478,7 +478,7 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 
 		break;
 	}
-	case FUEL_GAUGE_VOLTAGE: {
+	case FUEL_GAUGE_VOLTAGE_UV: {
 		uint16_t raw_voltage;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_VOLTAGE_MSB, &raw_voltage);
@@ -491,11 +491,11 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		 * Zephyr's API expects this value in microvolts
 		 * https://docs.zephyrproject.org/latest/doxygen/html/group__fuel__gauge__interface.html
 		 */
-		val->voltage = raw_voltage * LTC2959_VOLT_UV_SF;
+		val->voltage_uv = raw_voltage * LTC2959_VOLT_UV_SF;
 
 		return 0;
 	}
-	case FUEL_GAUGE_CURRENT: {
+	case FUEL_GAUGE_CURRENT_UA: {
 		uint16_t raw_current;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_CURRENT_MSB, &raw_current);
@@ -507,11 +507,11 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		/* Signed 16-bit value from ADC */
 		int16_t current_raw = (int16_t)raw_current;
 
-		val->current = current_raw * cfg->current_lsb_ua;
+		val->current_ua = current_raw * cfg->current_lsb_ua;
 
 		break;
 	}
-	case FUEL_GAUGE_TEMPERATURE: {
+	case FUEL_GAUGE_TEMPERATURE_DK: {
 		uint16_t raw_temp;
 
 		ret = ltc2959_read16(dev, LTC2959_REG_TEMP_MSB, &raw_temp);
@@ -527,10 +527,10 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		 * T(dK) = 8250 * (raw / 65536)
 		 * 65536 = 2 ^ 16, so we can avoid division altogether.
 		 */
-		val->temperature = ((uint32_t)raw_temp * LTC2959_TEMP_K_SF) >> 16;
+		val->temperature_dk = ((uint32_t)raw_temp * LTC2959_TEMP_K_SF) >> 16;
 		break;
 	}
-	case FUEL_GAUGE_REMAINING_CAPACITY: {
+	case FUEL_GAUGE_REMAINING_CAPACITY_UAH: {
 		uint32_t acr;
 
 		ret = ltc2959_read_acr(dev, &acr);
@@ -539,47 +539,47 @@ static int ltc2959_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 			return ret;
 		}
 
-		val->remaining_capacity = ltc2959_counts_to_uah(acr, cfg);
+		val->remaining_capacity_uah = ltc2959_counts_to_uah(acr, cfg);
 		break;
 	}
 	case FUEL_GAUGE_ADC_MODE:
 		ret = ltc2959_get_adc_mode(dev, &val->adc_mode);
 		break;
 
-	case FUEL_GAUGE_HIGH_VOLTAGE_ALARM:
-		ret = ltc2959_get_voltage_threshold_uv(dev, true, &val->high_voltage_alarm);
+	case FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV:
+		ret = ltc2959_get_voltage_threshold_uv(dev, true, &val->high_voltage_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
-		ret = ltc2959_get_voltage_threshold_uv(dev, false, &val->low_voltage_alarm);
+	case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
+		ret = ltc2959_get_voltage_threshold_uv(dev, false, &val->low_voltage_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_HIGH_CURRENT_ALARM:
-		ret = ltc2959_get_current_threshold_ua(dev, true, &val->high_current_alarm);
+	case FUEL_GAUGE_HIGH_CURRENT_ALARM_UA:
+		ret = ltc2959_get_current_threshold_ua(dev, true, &val->high_current_alarm_ua);
 		break;
 
-	case FUEL_GAUGE_LOW_CURRENT_ALARM:
-		ret = ltc2959_get_current_threshold_ua(dev, false, &val->low_current_alarm);
+	case FUEL_GAUGE_LOW_CURRENT_ALARM_UA:
+		ret = ltc2959_get_current_threshold_ua(dev, false, &val->low_current_alarm_ua);
 		break;
 
-	case FUEL_GAUGE_HIGH_TEMPERATURE_ALARM:
-		ret = ltc2959_get_temp_threshold_dK(dev, true, &val->high_temperature_alarm);
+	case FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK:
+		ret = ltc2959_get_temp_threshold_dK(dev, true, &val->high_temperature_alarm_dk);
 		break;
 
-	case FUEL_GAUGE_LOW_TEMPERATURE_ALARM:
-		ret = ltc2959_get_temp_threshold_dK(dev, false, &val->low_temperature_alarm);
+	case FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK:
+		ret = ltc2959_get_temp_threshold_dK(dev, false, &val->low_temperature_alarm_dk);
 		break;
 
-	case FUEL_GAUGE_GPIO_VOLTAGE:
-		ret = ltc2959_get_gpio_voltage_uv(dev, &val->gpio_voltage);
+	case FUEL_GAUGE_GPIO_VOLTAGE_UV:
+		ret = ltc2959_get_gpio_voltage_uv(dev, &val->gpio_voltage_uv);
 		break;
 
-	case FUEL_GAUGE_HIGH_GPIO_ALARM:
-		ret = ltc2959_get_gpio_threshold_uv(dev, true, &val->high_gpio_alarm);
+	case FUEL_GAUGE_HIGH_GPIO_ALARM_UV:
+		ret = ltc2959_get_gpio_threshold_uv(dev, true, &val->high_gpio_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_LOW_GPIO_ALARM:
-		ret = ltc2959_get_gpio_threshold_uv(dev, false, &val->low_gpio_alarm);
+	case FUEL_GAUGE_LOW_GPIO_ALARM_UV:
+		ret = ltc2959_get_gpio_threshold_uv(dev, false, &val->low_gpio_alarm_uv);
 		break;
 
 	case FUEL_GAUGE_CC_CONFIG:
@@ -603,36 +603,36 @@ static int ltc2959_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		ret = ltc2959_set_adc_mode(dev, val.adc_mode);
 		break;
 
-	case FUEL_GAUGE_LOW_VOLTAGE_ALARM:
-		ret = ltc2959_set_voltage_threshold_uv(dev, false, val.low_voltage_alarm);
+	case FUEL_GAUGE_LOW_VOLTAGE_ALARM_UV:
+		ret = ltc2959_set_voltage_threshold_uv(dev, false, val.low_voltage_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_HIGH_VOLTAGE_ALARM:
-		ret = ltc2959_set_voltage_threshold_uv(dev, true, val.high_voltage_alarm);
+	case FUEL_GAUGE_HIGH_VOLTAGE_ALARM_UV:
+		ret = ltc2959_set_voltage_threshold_uv(dev, true, val.high_voltage_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_LOW_CURRENT_ALARM:
-		ret = ltc2959_set_current_threshold_ua(dev, false, val.low_current_alarm);
+	case FUEL_GAUGE_LOW_CURRENT_ALARM_UA:
+		ret = ltc2959_set_current_threshold_ua(dev, false, val.low_current_alarm_ua);
 		break;
 
-	case FUEL_GAUGE_HIGH_CURRENT_ALARM:
-		ret = ltc2959_set_current_threshold_ua(dev, true, val.high_current_alarm);
+	case FUEL_GAUGE_HIGH_CURRENT_ALARM_UA:
+		ret = ltc2959_set_current_threshold_ua(dev, true, val.high_current_alarm_ua);
 		break;
 
-	case FUEL_GAUGE_LOW_TEMPERATURE_ALARM:
-		ret = ltc2959_set_temp_threshold_dK(dev, false, val.low_temperature_alarm);
+	case FUEL_GAUGE_LOW_TEMPERATURE_ALARM_DK:
+		ret = ltc2959_set_temp_threshold_dK(dev, false, val.low_temperature_alarm_dk);
 		break;
 
-	case FUEL_GAUGE_HIGH_TEMPERATURE_ALARM:
-		ret = ltc2959_set_temp_threshold_dK(dev, true, val.high_temperature_alarm);
+	case FUEL_GAUGE_HIGH_TEMPERATURE_ALARM_DK:
+		ret = ltc2959_set_temp_threshold_dK(dev, true, val.high_temperature_alarm_dk);
 		break;
 
-	case FUEL_GAUGE_LOW_GPIO_ALARM:
-		ret = ltc2959_set_gpio_threshold_uv(dev, false, val.low_gpio_alarm);
+	case FUEL_GAUGE_LOW_GPIO_ALARM_UV:
+		ret = ltc2959_set_gpio_threshold_uv(dev, false, val.low_gpio_alarm_uv);
 		break;
 
-	case FUEL_GAUGE_HIGH_GPIO_ALARM:
-		ret = ltc2959_set_gpio_threshold_uv(dev, true, val.high_gpio_alarm);
+	case FUEL_GAUGE_HIGH_GPIO_ALARM_UV:
+		ret = ltc2959_set_gpio_threshold_uv(dev, true, val.high_gpio_alarm_uv);
 		break;
 
 	case FUEL_GAUGE_CC_CONFIG:
@@ -640,8 +640,8 @@ static int ltc2959_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		ret = ltc2959_set_cc_config(dev, val.cc_config);
 		break;
 
-	case FUEL_GAUGE_REMAINING_CAPACITY: {
-		uint32_t counts = ltc2959_uah_to_counts(val.remaining_capacity, cfg);
+	case FUEL_GAUGE_REMAINING_CAPACITY_UAH: {
+		uint32_t counts = ltc2959_uah_to_counts(val.remaining_capacity_uah, cfg);
 
 		if (counts == LTC2959_ACR_CLR) {
 			counts = LTC2959_ACR_CLR - 1;

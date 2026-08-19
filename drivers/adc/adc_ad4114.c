@@ -220,7 +220,7 @@ static int adc_ad4114_start_read(const struct device *dev, const struct adc_sequ
 	const struct adc_ad4114_config *config = dev->config;
 	int ret;
 	uint8_t write_reg[2];
-	uint8_t status;
+	uint8_t status = 0;
 
 	ret = adc_ad4114x_validate_buffer_size(dev, sequence);
 	if (ret < 0) {

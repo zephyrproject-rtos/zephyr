@@ -35,7 +35,7 @@ LOG_MODULE_REGISTER(intc_it8xxx2_v2, LOG_LEVEL_DBG);
 #define IVECT_OFFSET_WITH_IRQ       0x10
 
 /* Interrupt number of INTC module */
-static uint8_t intc_irq;
+static ite_irq_t intc_irq;
 static uint8_t ier_setting[IT8XXX2_INTC_GROUP_CNT];
 
 void ite_intc_save_and_disable_interrupts(void)
@@ -148,13 +148,13 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	group = irq / MAX_REGISR_IRQ_NUM;
 	index = irq % MAX_REGISR_IRQ_NUM;
 
-	if ((flags & IRQ_TYPE_LEVEL_HIGH) || (flags & IRQ_TYPE_EDGE_RISING)) {
+	if (flags & (IRQ_TYPE_LEVEL_HIGH | IRQ_TYPE_EDGE_RISING)) {
 		IT8XXX2_INTC_IPOLR(group) &= ~BIT(index);
 	} else {
 		IT8XXX2_INTC_IPOLR(group) |= BIT(index);
 	}
 
-	if ((flags & IRQ_TYPE_LEVEL_LOW) || (flags & IRQ_TYPE_LEVEL_HIGH)) {
+	if (flags & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH)) {
 		IT8XXX2_INTC_IELMR(group) &= ~BIT(index);
 	} else {
 		IT8XXX2_INTC_IELMR(group) |= BIT(index);
@@ -175,7 +175,7 @@ int __soc_ram_code ite_intc_irq_is_enable(unsigned int irq)
 	return IS_MASK_SET(IT8XXX2_INTC_IER(group), BIT(index));
 }
 
-uint8_t __soc_ram_code ite_intc_get_irq_num(void)
+ite_irq_t __soc_ram_code ite_intc_get_irq_num(void)
 {
 	return intc_irq;
 }

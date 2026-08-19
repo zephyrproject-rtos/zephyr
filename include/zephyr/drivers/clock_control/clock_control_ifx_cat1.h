@@ -5,8 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Clock control definitions for Infineon CAT1 (PSoC 6 family) devices.
+ * @ingroup clock_control_ifx_cat1
+ */
+
 #include <cy_sysclk.h>
 #include <cy_systick.h>
+
+/**
+ * @defgroup clock_control_ifx_cat1 Infineon CAT1
+ * @ingroup clock_control_interface_ext
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(block) ((cy_en_divider_types_t)((block) & 0x03))
 
@@ -43,22 +57,27 @@
 		IFX_CAT1_PERIPHERAL_GROUP_ADJUST((instance), (gr), CY_SYSCLK_DIV_24_5_BIT)
 #endif
 
-/* High frequency clock indices. */
-#define CLK_HF0  (0U)
-#define CLK_HF1  (1U)
-#define CLK_HF2  (2U)
-#define CLK_HF3  (3U)
-#define CLK_HF4  (4U)
-#define CLK_HF5  (5U)
-#define CLK_HF6  (6U)
-#define CLK_HF7  (7U)
-#define CLK_HF8  (8U)
-#define CLK_HF9  (9U)
-#define CLK_HF10 (10U)
-#define CLK_HF11 (11U)
-#define CLK_HF12 (12U)
-#define CLK_HF13 (13U)
+/** @endcond */
 
+/** @name High frequency (HF) clock indices */
+/** @{ */
+#define CLK_HF0  (0U)  /**< HF clock 0. */
+#define CLK_HF1  (1U)  /**< HF clock 1. */
+#define CLK_HF2  (2U)  /**< HF clock 2. */
+#define CLK_HF3  (3U)  /**< HF clock 3. */
+#define CLK_HF4  (4U)  /**< HF clock 4. */
+#define CLK_HF5  (5U)  /**< HF clock 5. */
+#define CLK_HF6  (6U)  /**< HF clock 6. */
+#define CLK_HF7  (7U)  /**< HF clock 7. */
+#define CLK_HF8  (8U)  /**< HF clock 8. */
+#define CLK_HF9  (9U)  /**< HF clock 9. */
+#define CLK_HF10 (10U) /**< HF clock 10. */
+#define CLK_HF11 (11U) /**< HF clock 11. */
+#define CLK_HF12 (12U) /**< HF clock 12. */
+#define CLK_HF13 (13U) /**< HF clock 13. */
+/** @} */
+
+/** @brief CAT1 clock block (source or domain) selector. */
 enum ifx_cat1_clock_block {
 #if defined(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
 	/* The first four items are here for backwards compatibility with old clock APIs */
@@ -381,18 +400,20 @@ enum ifx_cat1_clock_block {
 #endif
 };
 
+/** @brief CAT1 clock descriptor. */
 struct ifx_cat1_clock {
-	enum ifx_cat1_clock_block block; /*!< Clock block type */
-	uint8_t channel;                 /*!< Clock channel number */
-	uint8_t instance;                /*!< Peripheral clock instance number */
-	uint8_t group;                   /*!< Peripheral clock group number */
-	bool reserved;                   /*!< Reserved for future use */
-	const void *funcs;               /*!< Clock-specific functions */
+	enum ifx_cat1_clock_block block; /**< Clock block type. */
+	uint8_t channel;                 /**< Clock channel number. */
+	uint8_t instance;                /**< Peripheral clock instance number. */
+	uint8_t group;                   /**< Peripheral clock group number. */
+	bool reserved;                   /**< Reserved for future use. */
+	const void *funcs;               /**< Clock-specific functions. */
 };
 
+/** @brief CAT1 resource instance descriptor. */
 struct ifx_cat1_resource_inst {
-	uint8_t type;      /* !< The resource block type */
-	uint8_t block_num; /* !< The resource block index */
+	uint8_t type;      /**< The resource block type. */
+	uint8_t block_num; /**< The resource block index. */
 	/**
 	 * The channel number, if the resource type defines multiple channels
 	 * per block instance. Otherwise, 0
@@ -400,79 +421,217 @@ struct ifx_cat1_resource_inst {
 	uint8_t channel_num;
 };
 
+/**
+ * @brief Get the frequency of a clock identified by its Devicetree ordinal.
+ *
+ * @param dt_ord Devicetree ordinal (dependency ordinal) of the clock node.
+ * @param[out] frequency Resulting clock frequency, in Hz.
+ *
+ * @retval 0 on success.
+ * @retval -errno Negative error code on failure.
+ */
 int ifx_cat1_clock_control_get_frequency(uint32_t dt_ord, uint32_t *frequency);
 
-static inline uint32_t ifx_cat1_utils_peri_pclk_get_frequency(en_clk_dst_t clk_dest,
-							      const struct ifx_cat1_clock *_clock)
+/**
+ * @brief Get the frequency of a peripheral clock divider.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @return Clock frequency, in Hz.
+ */
+static inline uint32_t
+ifx_cat1_utils_peri_pclk_get_frequency(en_clk_dst_t clk_dest,
+				       const struct ifx_cat1_clock *peri_clock)
 {
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	return Cy_SysClk_PeriPclkGetFrequency(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
 #else
 	CY_UNUSED_PARAMETER(clk_dest);
 	return Cy_SysClk_PeriphGetFrequency(
-		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel);
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel);
 #endif
 }
 
-static inline cy_rslt_t ifx_cat1_utils_peri_pclk_enable_divider(en_clk_dst_t clk_dest,
-								const struct ifx_cat1_clock *_clock)
+/**
+ * @brief Enable the divider associated with a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @return Result code from the underlying PDL call.
+ */
+static inline cy_rslt_t
+ifx_cat1_utils_peri_pclk_enable_divider(en_clk_dst_t clk_dest,
+					const struct ifx_cat1_clock *peri_clock)
 {
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	return Cy_SysClk_PeriPclkEnableDivider(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
 #else
 	CY_UNUSED_PARAMETER(clk_dest);
 	return Cy_SysClk_PeriphEnableDivider(
-		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel);
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel);
 #endif
 }
 
-static inline cy_rslt_t ifx_cat1_utils_peri_pclk_set_divider(en_clk_dst_t clk_dest,
-							     const struct ifx_cat1_clock *_clock,
-							     uint32_t div)
+/**
+ * @brief Disable the divider associated with a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @return Result code from the underlying PDL call.
+ */
+static inline cy_rslt_t
+ifx_cat1_utils_peri_pclk_disable_divider(en_clk_dst_t clk_dest,
+					 const struct ifx_cat1_clock *peri_clock)
+{
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	return Cy_SysClk_PeriPclkDisableDivider(
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
+#else
+	CY_UNUSED_PARAMETER(clk_dest);
+	return Cy_SysClk_PeriphDisableDivider(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel);
+#endif
+}
+
+/**
+ * @brief Test whether a peripheral clock uses a fractional (x.5-bit) divider.
+ *
+ * The 16.5-bit and 24.5-bit divider types support a fractional part, whereas
+ * the 8-bit and 16-bit types are integer-only. Callers use this to choose
+ * between ifx_cat1_utils_peri_pclk_set_divider() and
+ * ifx_cat1_utils_peri_pclk_set_frac_divider().
+ *
+ * @param peri_clock Clock descriptor.
+ * @return true if the divider type is fractional, false otherwise.
+ */
+static inline bool ifx_cat1_utils_peri_is_fract_div(const struct ifx_cat1_clock *peri_clock)
+{
+	cy_en_divider_types_t type =
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block);
+
+	return (type == CY_SYSCLK_DIV_16_5_BIT) || (type == CY_SYSCLK_DIV_24_5_BIT);
+}
+
+/**
+ * @brief Set the integer divider for a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @param div Integer divider value.
+ * @return Result code from the underlying PDL call.
+ */
+static inline cy_rslt_t
+ifx_cat1_utils_peri_pclk_set_divider(en_clk_dst_t clk_dest,
+				     const struct ifx_cat1_clock *peri_clock, uint32_t div)
 {
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	return Cy_SysClk_PeriPclkSetDivider(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel, div);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel, div);
 #else
 	CY_UNUSED_PARAMETER(clk_dest);
-	return Cy_SysClk_PeriphSetDivider(IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-					  _clock->channel, div);
+	return Cy_SysClk_PeriphSetDivider(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel,
+		div);
 #endif
 }
 
+/**
+ * @brief Set the fractional divider for a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @param div_int Integer part of the divider.
+ * @param div_frac Fractional part of the divider.
+ * @return Result code from the underlying PDL call.
+ */
 static inline cy_rslt_t
 ifx_cat1_utils_peri_pclk_set_frac_divider(en_clk_dst_t clk_dest,
-					  const struct ifx_cat1_clock *_clock, uint32_t div_int,
+					  const struct ifx_cat1_clock *peri_clock, uint32_t div_int,
 					  uint32_t div_frac)
 {
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	return Cy_SysClk_PeriPclkSetFracDivider(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel, div_int, div_frac);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel, div_int, div_frac);
 #else
 	CY_UNUSED_PARAMETER(clk_dest);
 	return Cy_SysClk_PeriphSetFracDivider(
-		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block), _clock->channel, div_int,
-		div_frac);
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel,
+		div_int, div_frac);
 #endif
 }
 
-static inline cy_rslt_t ifx_cat1_utils_peri_pclk_assign_divider(en_clk_dst_t clk_dest,
-								const struct ifx_cat1_clock *_clock)
+/**
+ * @brief Get the integer divider value of a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @return Integer divider value (the actual divide ratio is value + 1).
+ */
+static inline uint32_t ifx_cat1_utils_peri_pclk_get_divider(en_clk_dst_t clk_dest,
+							    const struct ifx_cat1_clock *peri_clock)
+{
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	return Cy_SysClk_PeriPclkGetDivider(
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
+#else
+	CY_UNUSED_PARAMETER(clk_dest);
+	return Cy_SysClk_PeriphGetDivider(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel);
+#endif
+}
+
+/**
+ * @brief Get the fractional divider value of a peripheral clock.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @param[out] div_int Integer part of the divider (divide ratio is div_int + 1).
+ * @param[out] div_frac Fractional part of the divider (in 1/32 steps).
+ */
+static inline void
+ifx_cat1_utils_peri_pclk_get_frac_divider(en_clk_dst_t clk_dest,
+					  const struct ifx_cat1_clock *peri_clock,
+					  uint32_t *div_int, uint32_t *div_frac)
+{
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+	Cy_SysClk_PeriPclkGetFracDivider(
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel, div_int, div_frac);
+#else
+	CY_UNUSED_PARAMETER(clk_dest);
+	Cy_SysClk_PeriphGetFracDivider(
+		IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block), peri_clock->channel,
+		div_int, div_frac);
+#endif
+}
+
+/**
+ * @brief Assign a divider to a peripheral clock destination.
+ *
+ * @param clk_dest Peripheral clock destination.
+ * @param peri_clock Clock descriptor.
+ * @return Result code from the underlying PDL call.
+ */
+static inline cy_rslt_t
+ifx_cat1_utils_peri_pclk_assign_divider(en_clk_dst_t clk_dest,
+					const struct ifx_cat1_clock *peri_clock)
 {
 #if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	return Cy_SysClk_PeriPclkAssignDivider(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
 #else
 	return Cy_SysClk_PeriphAssignDivider(
-		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(_clock->block),
-		_clock->channel);
+		clk_dest, IFX_CAT1_PERIPHERAL_GROUP_GET_DIVIDER_TYPE(peri_clock->block),
+		peri_clock->channel);
 #endif
 }
 
@@ -576,3 +735,5 @@ static inline uint8_t ifx_cat1_utils_peri_pclk_get_hfclk(uint8_t peri_group)
 	return -EINVAL;
 }
 #endif
+
+/** @} */

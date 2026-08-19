@@ -8,6 +8,7 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/types.h>
 
 /*
@@ -23,6 +24,21 @@
 
 #define STM32_GPIO_PORTS_LIST_UPR \
 	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+
+/**
+ * Checks that the node is active AND has compatible handled by STM32 code.
+ * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
+ * an in-SoC GPIO controller, in which case we could try to operate on them
+ * even though we don't actually know how to handle them.
+ *
+ * @param port GPIO port name (lowercase letter)
+ * @return 1 if the GPIO port is active and compatible, 0 otherwise
+ */
+#define STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port)				\
+	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32_gpio, okay),		\
+		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32mp2_gpio, okay))
 
 /*
  * STM32 GPIO port configuration block and data block structures
@@ -42,8 +58,13 @@ struct gpio_stm32_config {
 	struct stm32_pclken pclken;
 };
 
-struct gpio_stm32_data {
 #if defined(CONFIG_GPIO_STM32)
+/*
+ * Fields in the instance data are only useful to the GPIO driver.
+ * If not enabled, we don't create the instance data: don't define
+ * the structure to prevent accidental usage (which would be wrong).
+ */
+struct gpio_stm32_data {
 	struct gpio_driver_data common;
 
 	/*
@@ -51,12 +72,11 @@ struct gpio_stm32_data {
 	 * and need the GPIO port clock to remain enabled.
 	 */
 	gpio_port_pins_t pin_has_clock_enabled;
-#endif /* CONFIG_GPIO_STM32 */
 
 	/* User callbacks list */
 	sys_slist_t cb;
 };
-
+#endif /* CONFIG_GPIO_STM32 */
 
 /**
  * @brief Translate pin to pinval that the LL library needs
@@ -104,11 +124,32 @@ const struct device *stm32_gpioport_get(uint32_t port_index);
  *
  * @param port GPIO port device
  * @param pin Pin to configure
+ * @param config Pin configuration
+ * (Format is documented in `soc/st/stm32/common/pinctrl_soc.h`)
+ * @param apply_out_level Should output level from @p config be applied?
+ * NOTE: output level is never applied (regardless of this parameter) if
+ * @p config does not correspond to General-Purpose Output mode.
  *
  * @return 0 on success, negative errno value otherwise
  */
-int stm32_gpioport_configure_pin(
-	const struct device *port, gpio_pin_t pin, uint32_t config, uint32_t func);
+int stm32_gpioport_configure_pin(const struct device *port,
+				 gpio_pin_t pin,
+				 pinctrl_soc_pin_t config,
+				 bool apply_out_level);
+
+#if defined(CONFIG_STM32_WKUP_PINS)
+/**
+ * @brief Enable and configure the wake-up line associated to a GPIO pin.
+ *
+ * @param port_idx GPIO port index (STM32_PORTx)
+ * @param pin GPIO pin number
+ * @param flags GPIO configuration flags
+ * @retval 0 Success
+ * @retval -ENODEV No wake-up line associated to specified GPIO pin
+ * @retval <0 Unspecified error
+ */
+int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
+#endif /* defined(CONFIG_STM32_WKUP_PINS) */
 
 /*
  * GPIO port device API

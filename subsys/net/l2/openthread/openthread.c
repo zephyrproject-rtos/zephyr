@@ -42,11 +42,11 @@ static struct openthread_state_changed_callback ot_l2_state_changed_cb;
 
 #define PKT_IS_IPv4(_p) ((NET_IPV6_HDR(_p)->vtc & 0xf0) == 0x40)
 
-#ifdef CONFIG_NET_MGMT_EVENT
-static struct net_mgmt_event_callback ip6_addr_cb;
-
-static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
-				    struct net_if *iface)
+#if defined(CONFIG_NET_MGMT_EVENT) && !defined(CONFIG_OPENTHREAD_COPROCESSOR) &&                   \
+	!defined(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)
+static void ipv6_addr_event_handler(uint64_t mgmt_event __maybe_unused, struct net_if *iface,
+				    void *info __maybe_unused, size_t info_length __maybe_unused,
+				    void *user_data __unused)
 {
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(OPENTHREAD)) {
 		return;
@@ -55,14 +55,14 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	struct openthread_context *ot_context = net_if_l2_data(iface);
 
-	if (cb->info == NULL || cb->info_length != sizeof(struct net_in6_addr)) {
+	if (info == NULL || info_length != sizeof(struct net_in6_addr)) {
 		return;
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
-		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
+		add_ipv6_addr_to_ot(ot_context, (const struct net_in6_addr *)info);
 	} else if (mgmt_event == NET_EVENT_IPV6_MADDR_ADD) {
-		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)cb->info);
+		add_ipv6_maddr_to_ot(ot_context, (const struct net_in6_addr *)info);
 	}
 #else
 	NET_WARN("No address info provided with event, "
@@ -70,6 +70,9 @@ static void ipv6_addr_event_handler(struct net_mgmt_event_callback *cb, uint64_t
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 }
 
+NET_MGMT_REGISTER_EVENT_HANDLER(ot_ipv6_addr_events,
+				NET_EVENT_IPV6_ADDR_ADD | NET_EVENT_IPV6_MADDR_ADD,
+				ipv6_addr_event_handler, NULL);
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 #ifndef CONFIG_HDLC_RCP_IF
@@ -84,7 +87,6 @@ void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 {
 	struct openthread_context *ot_context = context;
-	struct openthread_state_changed_cb *entry, *next;
 
 #if defined(CONFIG_OPENTHREAD_INTERFACE_EARLY_UP)
 	bool is_up = otIp6IsEnabled(openthread_get_default_instance());
@@ -140,12 +142,6 @@ static void ot_l2_state_changed_handler(uint32_t flags, void *context)
 	}
 
 #endif /* CONFIG_OPENTHREAD_NAT64_TRANSLATOR */
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&ot_context->state_change_cbs, entry, next, node) {
-		if (entry->state_changed_cb != NULL) {
-			entry->state_changed_cb(flags, ot_context, entry->user_data);
-		}
-	}
 }
 
 static void ot_receive_handler(otMessage *message, void *context)
@@ -190,6 +186,7 @@ static void ot_receive_handler(otMessage *message, void *context)
 			"Packet not compliant with forwarding rules!");
 		goto out;
 	}
+	openthread_border_router_remove_checksums_for_eth_offloading_ipv6(pkt);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
 	NET_DBG("Injecting IPv6 packet to Zephyr net stack");
@@ -338,12 +335,6 @@ static int openthread_l2_init(struct net_if *iface)
 	ot_l2_context->iface = iface;
 
 	if (!IS_ENABLED(CONFIG_OPENTHREAD_COPROCESSOR)) {
-		if (!IS_ENABLED(CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER)) {
-			net_mgmt_init_event_callback(&ip6_addr_cb, ipv6_addr_event_handler,
-						     NET_EVENT_IPV6_ADDR_ADD |
-						     NET_EVENT_IPV6_MADDR_ADD);
-			net_mgmt_add_event_callback(&ip6_addr_cb);
-		}
 		net_if_dormant_on(iface);
 
 		openthread_set_receive_cb(ot_receive_handler, (void *)ot_l2_context);
@@ -355,10 +346,6 @@ static int openthread_l2_init(struct net_if *iface)
 		openthread_border_router_init(ot_l2_context);
 #endif /* CONFIG_OPENTHREAD_ZEPHYR_BORDER_ROUTER */
 
-		/* To keep backward compatibility use the additional state change callback list from
-		 * the ot l2 context and register the callback to the openthread module.
-		 */
-		sys_slist_init(&ot_l2_context->state_change_cbs);
 		openthread_state_changed_callback_register(&ot_l2_state_changed_cb);
 	}
 
@@ -423,78 +410,6 @@ struct openthread_context *openthread_get_default_context(void)
 
 exit:
 	return ot_context;
-}
-
-/* Keep deprecated functions and forward them to the OpenThread platform module */
-int openthread_start(struct openthread_context *ot_context)
-{
-	ARG_UNUSED(ot_context);
-
-	return openthread_run();
-}
-
-void openthread_api_mutex_lock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	openthread_mutex_lock();
-}
-
-int openthread_api_mutex_try_lock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	return openthread_mutex_try_lock();
-}
-
-void openthread_api_mutex_unlock(struct openthread_context *ot_context)
-{
-	/* The mutex is managed internally by the OpenThread module */
-	ARG_UNUSED(ot_context);
-
-	openthread_mutex_unlock();
-}
-
-/* Keep deprecated state change callback registration functions to keep backward compatibility.
- * The callbacks that are registered using these functions are run by the OpenThread module
- * as one of the platform callback. However, they will be not supported in the future after
- * deprecation period, so it is recommended to switch to
- * openthread_state_change_callback_register() instead.
- */
-int openthread_state_changed_cb_register(struct openthread_context *ot_context,
-					 struct openthread_state_changed_cb *cb)
-{
-	CHECKIF(cb == NULL || cb->state_changed_cb == NULL) {
-		return -EINVAL;
-	}
-
-	openthread_mutex_lock();
-	sys_slist_append(&ot_context->state_change_cbs, &cb->node);
-	openthread_mutex_unlock();
-
-	return 0;
-}
-
-int openthread_state_changed_cb_unregister(struct openthread_context *ot_context,
-					   struct openthread_state_changed_cb *cb)
-{
-	bool removed;
-
-	CHECKIF(cb == NULL) {
-		return -EINVAL;
-	}
-
-	openthread_mutex_lock();
-	removed = sys_slist_find_and_remove(&ot_context->state_change_cbs, &cb->node);
-	openthread_mutex_unlock();
-
-	if (!removed) {
-		return -EALREADY;
-	}
-
-	return 0;
 }
 
 NET_L2_INIT(OPENTHREAD_L2, openthread_recv, openthread_send, openthread_enable, openthread_flags);

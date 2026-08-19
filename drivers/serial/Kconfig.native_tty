@@ -4,5 +4,7 @@ config UART_NATIVE_TTY
 	bool "UART driver for interacting with host serial ports"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_TTY_UART_ENABLED
+	select NATIVE_USE_NSI_ERRNO
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select SERIAL_HAS_POST_KERNEL_INIT if UART_INTERRUPT_DRIVEN

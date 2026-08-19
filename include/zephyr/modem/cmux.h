@@ -23,12 +23,13 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_CMUX_
-#define ZEPHYR_MODEM_CMUX_
+#ifndef ZEPHYR_INCLUDE_MODEM_CMUX_H_
+#define ZEPHYR_INCLUDE_MODEM_CMUX_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,6 +74,8 @@ struct modem_cmux_config {
 	bool enable_runtime_power_management;
 	/** Close pipe on power save */
 	bool close_pipe_on_power_save;
+	/** Skip the in-band power-save handshake on both entry and exit */
+	bool no_powersave_handshake;
 	/** Idle timeout for power save */
 	k_timeout_t idle_timeout;
 };
@@ -87,10 +90,16 @@ struct modem_cmux_config {
 #define MODEM_CMUX_HEADER_SIZE			6
 #endif
 
+/* Minimum required size for CMUX RX buffers */
+#define MODEM_CMUX_RX_BUFFER_SIZE_MIN		126
 
-/* Total size of the CMUX work buffers */
-#define MODEM_CMUX_WORK_BUFFER_SIZE (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
-				     CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+/* Total size of the CMUX work buffers from the MTU */
+#define MODEM_CMUX_WORK_BUFFER_FROM_MTU (CONFIG_MODEM_CMUX_MTU + MODEM_CMUX_HEADER_SIZE + \
+					 CONFIG_MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA)
+
+/* Enforce the minimum size required by CMUX */
+#define MODEM_CMUX_WORK_BUFFER_SIZE MAX(MODEM_CMUX_WORK_BUFFER_FROM_MTU, \
+					MODEM_CMUX_RX_BUFFER_SIZE_MIN)
 
 enum modem_cmux_state {
 	MODEM_CMUX_STATE_DISCONNECTED = 0,
@@ -161,7 +170,9 @@ struct modem_cmux_frame {
 	bool pf;
 	uint8_t type;
 	const uint8_t *data;
+	const uint8_t *tx_extra;
 	uint16_t data_len;
+	uint16_t tx_extra_len;
 };
 
 struct modem_cmux_work {
@@ -328,4 +339,4 @@ void modem_cmux_release(struct modem_cmux *cmux);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_CMUX_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_CMUX_H_ */

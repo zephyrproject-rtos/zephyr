@@ -22,6 +22,9 @@
 #define SOFTPERIPH_BASE	DT_REG_ADDR(DT_NODELABEL(softperiph_ram))
 #define SOFTPERIPH_SIZE	DT_REG_SIZE(DT_NODELABEL(softperiph_ram))
 
+#define RAM_BASE DT_REG_ADDR(DT_CHOSEN(zephyr_sram))
+#define RAM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_sram))
+
 static struct arm_mpu_region mpu_regions[] = {
 #ifdef CONFIG_XIP
 	MPU_REGION_ENTRY("FLASH_0",
@@ -30,9 +33,8 @@ static struct arm_mpu_region mpu_regions[] = {
 				CONFIG_FLASH_SIZE * 1024)),
 #endif
 	MPU_REGION_ENTRY("SRAM_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(CONFIG_SRAM_BASE_ADDRESS,
-				CONFIG_SRAM_SIZE * 1024)),
+			 RAM_BASE,
+			 REGION_RAM_ATTR(RAM_BASE, RAM_SIZE)),
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbhs))
 	MPU_REGION_ENTRY("USBHS_CORE", USBHS_BASE,

@@ -92,3 +92,94 @@ npm10xx@8 {
 		compatible = "nordic,npm10xx-charger";
 	};
 };
+
+adp5360@9 {
+	compatible = "adi,adp5360";
+	reg = <0x9>;
+
+	charger {
+		compatible = "adi,adp5360-charger";
+		battery-name = "dummy-charger";
+		device-chemistry = "lithium-ion";
+		constant-charge-current-max-microamp = <20000>;
+		constant-charge-voltage-max-microvolt = <4160000>;
+		charge-term-current-microamp = <5000>;
+	};
+};
+
+sy6974b@a {
+	compatible = "silergy,sy6974b";
+	reg = <0xa>;
+	constant-charge-current-max-microamp = <1500000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+};
+
+bq24295@b {
+	compatible = "ti,bq24295";
+	reg = <0xb>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24296@c {
+	compatible = "ti,bq24296";
+	reg = <0xc>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24296m@d {
+	compatible = "ti,bq24296m";
+	reg = <0xd>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24297@e {
+	compatible = "ti,bq24297";
+	reg = <0xe>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};
+
+bq24298@f {
+	compatible = "ti,bq24298";
+	reg = <0xf>;
+
+	status = "okay";
+
+	constant-charge-current-max-microamp = <512000>;
+	constant-charge-voltage-max-microvolt = <4208000>;
+
+	watchdog-timeout-ms = <0>;
+
+	ce-gpios = <&test_gpio 0 0>;
+};

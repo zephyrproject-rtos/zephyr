@@ -1,7 +1,0 @@
-sample:
-  name: timeaware_gpio
-tests:
-  sample.drivers.misc.timeaware_gpio:
-    tags:
-      - drivers
-    filter: dt_compat_enabled("intel,timeaware-gpio")

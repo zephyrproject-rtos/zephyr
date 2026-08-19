@@ -13,9 +13,11 @@ supported:
   - counter
   - dac
   - dma
+  - hwinfo
   - i2c
   - flash
   - pwm
   - spi
   - watchdog
+  - crc
 vendor: nxp

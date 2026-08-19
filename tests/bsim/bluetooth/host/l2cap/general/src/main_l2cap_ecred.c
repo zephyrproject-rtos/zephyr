@@ -327,38 +327,28 @@ static void register_l2cap_server(void)
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		TEST_FAIL("Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
+		bt_conn_drop(&default_conn);
 		return;
 	}
 
 	default_conn = bt_conn_ref(conn);
-	LOG_DBG("%s", addr);
+	LOG_DBG("%s", bt_conn_dst_str(conn));
 
 	SET_FLAG(is_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("%s (reason 0x%02x)", addr, reason);
+	LOG_DBG("%s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	if (default_conn != conn) {
 		TEST_FAIL("Conn mismatch disconnect %s %s)", default_conn, conn);
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	UNSET_FLAG(is_connected);
 }
 

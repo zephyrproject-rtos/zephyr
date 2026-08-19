@@ -1,4 +1,5 @@
 # Copyright (c) 2023, Nordic Semiconductor ASA
+# Copyright (c) 2026, Analog Devices, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
 description: Analog Devices ADP5360
@@ -10,3 +11,70 @@ include: i2c-device.yaml
 properties:
   reg:
     required: true
+
+  disable-vout-buck-reset:
+    type: boolean
+    description: |
+      Enables the reset pin to be triggered by the buck voltage (VOUT1) monitor.
+
+  enable-vout-buckboost-reset:
+    type: boolean
+    description: |
+      Enables the reset pin to be triggered by the buck boost voltage (VOUT2) monitor.
+
+  set-reset-timeout-1p6sec:
+    type: boolean
+    description: |
+      Sets the reset timeout period to 1.6sec. if unset, timeout is set to 200ms.
+
+  watchdog-timeout-period:
+    type: int
+    default: 0
+    enum:
+      - 0 # 12.5s
+      - 1 # 25.6s
+      - 2 # 50s
+      - 3 # 100s
+    description: |
+      Sets the watchdog timeout period.
+
+  enable-watchdog-timer:
+    type: boolean
+    description: |
+      Enables the watchdog timer on the device to trigger on timeout.
+
+  enable-manual-reset-to-shipment:
+    type: boolean
+    description: |
+      Enables the device to enter shipment mode for 12 seconds upon triggering
+      the manual reset (MR) pin.
+
+  interrupt-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO input pin for sensing Interrupt status flags.
+
+  manual-reset-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO output pin for triggering software device reset via trigger.
+
+  reset-status-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO input pin for sensing device reset status flags.
+
+  charger-en-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO output pin for triggering charger enable via trigger.
+
+  pgood1-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO input pin for sensing device PGOOD1 status flags.
+
+  pgood2-gpios:
+    type: phandle-array
+    description: |
+      MCU GPIO input pin for sensing device PGOOD2 status flags.

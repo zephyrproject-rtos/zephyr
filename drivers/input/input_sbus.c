@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/uart.h>
 
 LOG_MODULE_REGISTER(futaba_sbus, CONFIG_INPUT_LOG_LEVEL);
@@ -25,7 +25,7 @@ struct sbus_input_channel {
 	uint32_t zephyr_code;
 };
 
-const struct uart_config uart_cfg_sbus = {
+static const struct uart_config uart_cfg_sbus = {
 	.baudrate = 100000,
 	.parity = UART_CFG_PARITY_EVEN,
 	.stop_bits = UART_CFG_STOP_BITS_2,
@@ -242,12 +242,14 @@ static void sbus_uart_isr(const struct device *uart_dev, void *user_data)
 		return;
 	}
 
-	if (!uart_irq_update(uart_dev)) {
-		LOG_DBG("Unable to start processing interrupts");
-		return;
-	}
+	while (data->xfer_bytes < SBUS_FRAME_LEN) {
 
-	while (uart_irq_rx_ready(uart_dev) && data->xfer_bytes < SBUS_FRAME_LEN) {
+		uart_irq_update(uart_dev);
+
+		if (uart_irq_rx_ready(uart_dev) <= 0) {
+			break;
+		}
+
 		if (data->in_sync) {
 			if (data->xfer_bytes == 0) {
 				data->last_rx_time = k_uptime_get_32();
@@ -339,8 +341,6 @@ static int input_sbus_init(const struct device *dev)
 }
 
 #define INPUT_CHANNEL_CHECK(input_channel_id)                                                      \
-	BUILD_ASSERT(IN_RANGE(DT_PROP(input_channel_id, channel), 1, 16),                          \
-		     "invalid channel number");                                                    \
 	BUILD_ASSERT(DT_PROP(input_channel_id, type) == INPUT_EV_ABS ||                            \
 			     DT_PROP(input_channel_id, type) == INPUT_EV_KEY ||                    \
 			     DT_PROP(input_channel_id, type) == INPUT_EV_MSC,                      \

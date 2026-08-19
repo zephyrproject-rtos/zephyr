@@ -6,12 +6,8 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
-#include <zephyr/init.h>
-#include <string.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/pm/pm.h>
 #include <zephyr/pm/state.h>
 #include <zephyr/pm/policy.h>
@@ -102,16 +98,9 @@ void pm_system_resume(void)
 	uint8_t id = CPU_ID;
 
 	/*
-	 * This notification is called from the ISR of the event
-	 * that caused exit from kernel idling after PM operations.
-	 *
-	 * Some CPU low power states require enabling of interrupts
-	 * atomically when entering those states. The wake up from
-	 * such a state first executes code in the ISR of the interrupt
-	 * that caused the wake. This hook will be called from the ISR.
-	 * For such CPU LPS states, do post operations and restores here.
-	 * The kernel scheduler will get control after the ISR finishes
-	 * and it may schedule another thread.
+	 * Complete PM resume bookkeeping after the CPU leaves the selected power
+	 * state. If IRQ dispatch is kept blocked across system PM resume, this must
+	 * complete before the idle thread restores its saved interrupt key.
 	 */
 	if (atomic_test_and_clear_bit(z_post_ops_required, id)) {
 #ifdef CONFIG_PM_DEVICE_SYSTEM_MANAGED
@@ -129,6 +118,7 @@ void pm_system_resume(void)
 		sys_clock_idle_exit();
 #endif /* CONFIG_SYS_CLOCK_EXISTS */
 		z_cpus_pm_state[id] = NULL;
+		_kernel.idle = 0;
 	}
 }
 
@@ -211,26 +201,26 @@ bool pm_system_suspend(int32_t kernel_ticks)
 #endif
 
 	exit_latency_ticks = EXIT_LATENCY_US_TO_TICKS(z_cpus_pm_state[id]->exit_latency_us);
-	if ((exit_latency_ticks > 0) && (ticks != K_TICKS_FOREVER)) {
-		/*
-		 * We need to set the timer to interrupt a little bit early to
-		 * accommodate the time required by the CPU to fully wake up.
-		 *
-		 * Since K_TICKS_FOREVER is defined as -1, ensure that -1
-		 * is not passed as the next timeout.
-		 *
-		 */
-		k_spinlock_key_t key = sys_clock_lock();
-
-		sys_clock_set_timeout(MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks), true);
-		sys_clock_unlock(key);
-	}
 
 	/*
-	 * This function runs with interruptions locked but it is
-	 * expected the SoC to unlock them in
-	 * pm_state_exit_post_ops() when returning to active
-	 * state. We don't want to be scheduled out yet, first we need
+	 * Nothing to wake up for is handed over as SYS_CLOCK_IDLE_FOREVER, so a
+	 * driver able to stop its clock outright can do so; recovery is
+	 * sys_clock_idle_exit(). A real deadline is brought forward to
+	 * accommodate the time the CPU needs to fully wake up.
+	 */
+	uint32_t idle_ticks = (ticks == K_TICKS_FOREVER)
+		? SYS_CLOCK_IDLE_FOREVER
+		: (uint32_t)MAX(0, (int64_t)ticks - (int64_t)exit_latency_ticks);
+
+	key = sys_clock_lock();
+	sys_clock_idle_enter(idle_ticks);
+	sys_clock_unlock(key);
+
+	/*
+	 * This function runs with interrupts locked. If a power state is
+	 * entered, the caller owns the original interrupt key and restores
+	 * it after PM resume housekeeping is complete. We don't want to be
+	 * scheduled out yet, first we need
 	 * to send a notification about leaving the idle state. So,
 	 * we lock the scheduler here and unlock just after we have
 	 * sent the notification in pm_system_resume().
@@ -243,6 +233,10 @@ bool pm_system_suspend(int32_t kernel_ticks)
 	/* Enter power state */
 	pm_state_notify(true);
 	atomic_set_bit(z_post_ops_required, id);
+	/* IRQ-locked PM resume is owned by this PM core path, not by wake ISRs. */
+	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
+		_kernel.idle = 0;
+	}
 	pm_state_set(z_cpus_pm_state[id]->state, z_cpus_pm_state[id]->substate_id);
 
 	/* Wake up sequence starts here */

@@ -5,7 +5,6 @@
  */
 #include <zephyr/ztest.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 
 /* Internal APIs */
 #include <kernel_internal.h>

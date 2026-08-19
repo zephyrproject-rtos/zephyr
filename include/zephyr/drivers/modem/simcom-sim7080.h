@@ -1,5 +1,6 @@
 /** @file
  * @brief Simcom SIM7080 modem public API header file.
+ * @ingroup simcom_sim7080_interface
  *
  * Copyright (C) 2021 metraTec GmbH
  *
@@ -11,12 +12,20 @@
 
 #include <zephyr/types.h>
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @defgroup simcom_sim7080_interface SIMCom SIM7080
+ * @brief SIMCom SIM7080 cellular modems.
+ * @ingroup cellular_interface_ext
+ * @{
+ */
 
 /** Maximum Length of GNSS UTC data */
 #define SIM7080_GNSS_DATA_UTC_LEN 20
@@ -29,6 +38,13 @@ extern "C" {
 /** Maximum timeout for DNS queries in milliseconds */
 #define SIM7080_DNS_MAX_TIMEOUT_MS 60000
 
+/** Channel Mask for NB-IoT */
+#define SIM7080_LTE_CHANNEL_MASK_NB1 0x7BEFFU
+/** Channel Mask for CAT-M1 */
+#define SIM7080_LTE_CHANNEL_MASK_M1  0x5FFFFU
+/** Number of LTE channels supported by the modem */
+#define SIM7080_NUM_LTE_CHANNELS     19U
+
 /** Sim7080 modem state */
 enum sim7080_state {
 	SIM7080_STATE_INIT = 0, /**< Initial modem state */
@@ -36,6 +52,37 @@ enum sim7080_state {
 	SIM7080_STATE_NETWORKING, /**< Network active */
 	SIM7080_STATE_GNSS, /**< GNSS active */
 	SIM7080_STATE_OFF, /**< Modem off */
+};
+
+/** Modem radio access technology */
+enum sim7080_rat {
+	SIM7080_RAT_LTE_NB1,  /**< NB-IoT only */
+	SIM7080_RAT_LTE_M1,   /**< LTE CAT M1 only */
+	SIM7080_RAT_LTE_AUTO, /**< Modem automatically selects M1 or NB1 */
+	SIM7080_RAT_GSM,      /**< GSM */
+};
+
+/** Supported LTE channels */
+enum sim7080_lte_chan {
+	SIM7080_LTE_CHAN_B1 = BIT(0),   /**< LTE Band 1 */
+	SIM7080_LTE_CHAN_B2 = BIT(1),   /**< LTE Band 2 */
+	SIM7080_LTE_CHAN_B3 = BIT(2),   /**< LTE Band 3 */
+	SIM7080_LTE_CHAN_B4 = BIT(3),   /**< LTE Band 4 */
+	SIM7080_LTE_CHAN_B5 = BIT(4),   /**< LTE Band 5 */
+	SIM7080_LTE_CHAN_B8 = BIT(5),   /**< LTE Band 8 */
+	SIM7080_LTE_CHAN_B12 = BIT(6),  /**< LTE Band 12 */
+	SIM7080_LTE_CHAN_B13 = BIT(7),  /**< LTE Band 13 */
+	SIM7080_LTE_CHAN_B14 = BIT(8),  /**< LTE Band 14 */
+	SIM7080_LTE_CHAN_B18 = BIT(9),  /**< LTE Band 18 */
+	SIM7080_LTE_CHAN_B19 = BIT(10), /**< LTE Band 19 */
+	SIM7080_LTE_CHAN_B20 = BIT(11), /**< LTE Band 20 */
+	SIM7080_LTE_CHAN_B25 = BIT(12), /**< LTE Band 25 */
+	SIM7080_LTE_CHAN_B26 = BIT(13), /**< LTE Band 26 */
+	SIM7080_LTE_CHAN_B27 = BIT(14), /**< LTE Band 27 */
+	SIM7080_LTE_CHAN_B28 = BIT(15), /**< LTE Band 28 */
+	SIM7080_LTE_CHAN_B66 = BIT(16), /**< LTE Band 66 */
+	SIM7080_LTE_CHAN_B71 = BIT(17), /**< LTE Band 71 */
+	SIM7080_LTE_CHAN_B85 = BIT(18), /**< LTE Band 85 */
 };
 
 /** Sim7080 gnss data structure */
@@ -455,8 +502,149 @@ int mdm_sim7080_dns_set_lookup_params(uint8_t recount, uint16_t timeout);
  */
 void mdm_sim7080_dns_get_lookup_params(uint8_t *recount, uint16_t *timeout);
 
+#if defined(CONFIG_MODEM_SIMCOM_SIM7080_SOCKETS_SOCKOPT_TLS)
+/**
+ * Function to provide bytes to certificate upload functions.
+ *
+ * @param buffer Destination buffer for the certificate data.
+ * @param max_len Maximum number of bytes that can be inserted to the buffer.
+ * @param offset Offset to the start of the certificate in bytes.
+ * @return The number of bytes copied to the buffer or a negative value on error.
+ */
+typedef int (*sim7080_tls_cert_read_func)(uint8_t *buf, size_t max_len, size_t offset);
+
+/**
+ * Import a root certificate to the modem.
+ *
+ * @param cert_name The NULL terminated name of the certificate.
+ * @param read_func Function to read the certificate data.
+ * @param cert_len Length of the certificacte in bytes.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note Certificates need to be X.509 ITU-T encoded. Following formats are
+ *       accepted: .pem, .der, .p7b.
+ * @note The certificate will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the certificate changes.
+ */
+int mdm_sim7080_import_root_ca(const char *cert_name, sim7080_tls_cert_read_func read_func,
+			       size_t cert_len);
+
+/**
+ * Import a client certificate and client key to the modem.
+ *
+ * @param cert_name The NULL terminated name of the client certificate.
+ * @param cert_read_func Function to read the client certificate data.
+ * @param cert_len Length of the client certificacte in bytes.
+ * @param key_name The NULL terminated name of the client key.
+ * @param key_read_func Function to read the client key data.
+ * @param key_len Length of the client key in bytes.
+ * @param passwd The NULL terminated password of the certificate. May be NULL.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note Certificates need to be X.509 ITU-T encoded. Following formats are
+ *       accepted: .pem, .der, .p7b.
+ * @note The certificate will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the certificate changes.
+ */
+int mdm_sim7080_import_client_cert(const char *cert_name, sim7080_tls_cert_read_func cert_read_func,
+				   size_t cert_len, const char *key_name,
+				   sim7080_tls_cert_read_func key_read_func, size_t key_len,
+				   const char *passwd);
+
+/**
+ * Import a dtls psk table to the modem.
+ *
+ * @param psk_name The NULL terminated name of the psk table.
+ * @param read_func Function to read the psk data.
+ * @param cert_len Length of the psk table in bytes.
+ * @return 0 on success. A negative error code otherwise.
+ *
+ * @note The psk table contains pairs of <identity>:<psk>.
+ *       There needs to be exactly one pair per line.
+ *       The psk needs to be given as hex string..
+ *       For example the credentials (Client_identity, 0x01020304)
+ *       needs to be formatted as Client_identity:01020304.
+ *		 Multiple pairs can be included in the same file separated by newlines.
+ * @note The psk table will be stored permanently on the modem under the given name.
+ *       This function only needs to be called only once, except the psk table changes.
+ */
+int mdm_sim7080_import_dtls_psk(const char *psk_name, sim7080_tls_cert_read_func read_func,
+				size_t psk_len);
+
+/**
+ * Configure the certificates that should be used by the socket for tls.
+ *
+ * @param fd The socket file descriptor.
+ * @param root_ca The NULL terminated root certificate name.
+ * @param client_cert The NULL terminated client certificate name. May be NULL.
+ * @return 0 on success. Otherwise a negative error code.
+ *
+ * @note This function needs tp be called before calling zsock_connect.
+ */
+int mdm_sim7080_configure_tls_certs(int fd, const char *root_ca, const char *client_cert);
+
+/**
+ * Configure the passkey table used by dtls.
+ *
+ * @param fd The socket file descriptor.
+ * @param root_ca The NULL terminated passkey table name
+ * @return 0 on success. Otherwise a negative error code.
+ *
+ * @note This function needs tp be called before calling zsock_connect.
+ */
+int mdm_sim7080_configure_dtls_psktable(int fd, const char *psktable);
+#endif
+
+/**
+ * @brief Get the currently selected radio technology.
+ *
+ * @param rat [out] Gets set to the current technology.
+ */
+void mdm_sim7080_get_rat(enum sim7080_rat *rat);
+
+/**
+ * @brief Set the radio technology.
+ *
+ * @param rat The radio technology.
+ * @retval 0 Success.
+ * @retval -EINVAL The selected technology is not available.
+ *
+ * @note This function needs to be called before mdm_sim7080_start_network().
+ *       If networking is already active, the change will not affect the current session.
+ *		 To apply changes, networking has to be restarted.
+ *		 A power cycle may be needed for the modem to forget the last working configuration.
+ */
+int mdm_sim7080_set_rat(enum sim7080_rat rat);
+
+/**
+ * @brief Get the currently used LTE bands.
+ *
+ * @param nb1 [out] Used NB-IoT bands. May be NULL.
+ * @param m1 [out] Used CAT-M1 bands. May be NULL.
+ */
+void mdm_sim7080_get_lte_bands(uint32_t *nb1, uint32_t *m1);
+
+/**
+ * @brief Set the LTE bands to use.
+ *
+ * @param nb1 NB-IoT bands to use. 0 to not change the bands.
+ * @param m1 CAT-M1 bands to use. 0 to not change the bands.
+ * @retval 0 Success.
+ * @retval -EINVAL The band selection is illegal.
+ *
+ * @note This function needs to be called before mdm_sim7080_start_network().
+ *       If networking is already active, the change will not affect the current session.
+ *		 To apply changes, networking has to be restarted.
+ *		 A power cycle may be needed for the modem to forget the last working configuration.
+ * @note Available NB-IoT and CAT-M1 differ. Refer to SIM7080_LTE_CHANNEL_MASK_NB1
+ *       and SIM7080_LTE_CHANNEL_MASK_M1.
+ */
+int mdm_sim7080_set_lte_bands(uint32_t nb1, uint32_t m1);
+
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_MODEM_SIMCOM_SIM7080_H */

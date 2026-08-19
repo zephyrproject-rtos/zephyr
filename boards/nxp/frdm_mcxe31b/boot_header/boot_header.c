@@ -5,7 +5,7 @@
  */
 
 #include "boot_header.h"
-#include "fsl_common.h"
+#include <fsl_common.h>
 
 /******************************************************************************
  *  External references

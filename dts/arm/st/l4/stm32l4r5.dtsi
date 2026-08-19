@@ -50,5 +50,38 @@
 			/delete-property/ health-test-magic;
 			/delete-property/ health-test-config;
 		};
+
+		dfsdm: dfsdm@40016000 {
+			pdm2: filter@2 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <2>;
+				interrupts = <63 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm3: filter@3 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <3>;
+				interrupts = <42 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		sai1: sai1@40015400 {
+			/* L4R/S SAI DMA Request differs from L4P/Q */
+			sai1_a: sai1a@40015404 {
+				dmas = <&dma2 1 36 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+
+			sai1_b: sai1b@40015424 {
+				dmas = <&dma2 2 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+		};
 	};
 };

@@ -330,7 +330,7 @@ static int zperf_init(void)
 			   K_THREAD_STACK_SIZEOF(zperf_work_q_stack),
 			   ZPERF_WORK_Q_THREAD_PRIORITY,
 			   NULL);
-	k_thread_name_set(&zperf_work_q.thread, "zperf_work_q");
+	k_thread_name_set(zperf_work_q.thread_id, "zperf_work_q");
 
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 

@@ -3,35 +3,33 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(riscv_isa_extensions)
-set(riscv_isa_base)
-dt_prop(riscv_isa_extensions PATH "/cpus/cpu@0" PROPERTY "riscv,isa-extensions" REQUIRED)
-dt_prop(riscv_isa_base PATH "/cpus/cpu@0" PROPERTY "riscv,isa-base" REQUIRED)
+include(${ZEPHYR_BASE}/boards/common/qemu_riscv.board.cmake)
 
-set(qemu_riscv_cpu "${riscv_isa_base}")
-foreach(ext IN LISTS riscv_isa_extensions)
-  if(ext)
-    string(APPEND qemu_riscv_cpu ",${ext}=on")
+qemu_riscv_cpu_from_dt(qemu_riscv_cpu)
+qemu_riscv_binary_suffix(QEMU_BINARY_SUFFIX)
+
+if(CONFIG_RISCV_S_MODE)
+  string(APPEND qemu_riscv_cpu ",s=on,u=on,pmp=on,priv_spec=v1.12.0,sv39=on")
+endif()
+
+set(QEMU_CPU_TYPE "${qemu_riscv_cpu}")
+
+if(CONFIG_INPUT_VIRTIO)
+  if(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-keyboard-device,bus=virtio-mmio-bus.3)
+  elseif(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_TABLET)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-device,bus=virtio-mmio-bus.3)
+  else()
+    message(WARNING "No virtio input device type selected; QEMU_VIRTIO_INPUT_FLAGS will be empty")
   endif()
-endforeach()
-
-if(CONFIG_RISCV_PMP)
-  string(APPEND qemu_riscv_cpu ",pmp=on,u=on")
 endif()
 
-if(CONFIG_64BIT)
-  set(QEMU_binary_suffix riscv64)
-else()
-  set(QEMU_binary_suffix riscv32)
-endif()
-
-set(QEMU_CPU_TYPE_${ARCH} "${qemu_riscv_cpu}")
-
-set(QEMU_FLAGS_${ARCH}
+set(QEMU_BOARD_FLAGS
   -machine virt
   -bios none
   -m 256
   -cpu ${qemu_riscv_cpu}
+  ${QEMU_VIRTIO_INPUT_FLAGS}
   )
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

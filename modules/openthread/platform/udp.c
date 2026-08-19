@@ -9,6 +9,7 @@
 #include "openthread/platform/udp.h"
 #include "openthread_border_router.h"
 #include "sockets_internal.h"
+#include <assert.h>
 #include <common/code_utils.hpp>
 #include <errno.h>
 #include <openthread.h>

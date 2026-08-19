@@ -29,28 +29,25 @@ static void netc_eth_phylink_callback(const struct device *pdev, struct phy_link
 				      void *user_data)
 {
 	const struct device *dev = (struct device *)user_data;
-	const struct netc_eth_config *cfg = dev->config;
 	struct netc_eth_data *data = dev->data;
 	status_t result;
 
 	ARG_UNUSED(pdev);
 
 	if (state->is_up) {
-		LOG_INF("ENETC%d Link up", getSiInstance(cfg->si_idx));
 		result = EP_Up(&data->handle, PHY_TO_NETC_SPEED(state->speed),
 			       PHY_TO_NETC_DUPLEX_MODE(state->speed));
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC up");
 		}
-		net_eth_carrier_on(data->iface);
 	} else {
-		LOG_INF("ENETC%d Link down", getSiInstance(cfg->si_idx));
 		result = EP_Down(&data->handle);
 		if (result != kStatus_Success) {
 			LOG_ERR("Failed to set MAC down");
 		}
-		net_eth_carrier_off(data->iface);
 	}
+
+	net_eth_carrier_set(data->iface, state->is_up);
 }
 
 static void netc_eth_iface_init(struct net_if *iface)
@@ -116,27 +113,53 @@ init_common:
 	return netc_eth_init_common(dev);
 }
 
-static const struct device *netc_eth_get_phy(const struct device *dev)
+static const struct device *netc_eth_get_phy(const struct device *dev,
+					     struct net_if *iface __unused)
 {
 	const struct netc_eth_config *cfg = dev->config;
 
 	return cfg->phy_dev;
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+static struct net_stats_eth *netc_eth_psi_get_stats(const struct device *dev, struct net_if *iface)
+{
+	struct netc_eth_data *data = dev->data;
+	netc_port_discard_statistic_t discard;
+
+	/* SI-level stats, including tx_dropped from SITDFCR. */
+	(void)netc_eth_get_stats(dev, iface);
+
+	/*
+	 * The PSI owns the MAC port, so it can also read the port-level RX
+	 * discard counter that no software path or SI counter tracks. It is
+	 * free-running, so assigning it is idempotent.
+	 */
+	if (EP_GetPortDiscardStatistic(&data->handle, false, &discard) == kStatus_Success) {
+		data->stats.error_details.rx_missed_errors = discard.count;
+	}
+
+	return &data->stats;
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
 static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_iface_init,
 						 .get_capabilities = netc_eth_get_capabilities,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+						 .get_stats = netc_eth_psi_get_stats,
+#endif
 						 .get_phy = netc_eth_get_phy,
 						 .set_config = netc_eth_set_config,
-#ifdef NETC_PTP_TIMESTAMPING_SUPPORT
+#ifdef CONFIG_PTP_CLOCK_NXP_NETC
 						 .get_ptp_clock = netc_eth_get_ptp_clock,
 #endif
 						 .send = netc_eth_tx};
 
 #define NETC_PSI_INSTANCE_DEFINE(n)                                                                \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-	NETC_GENERATE_MAC_ADDRESS(n)                                                               \
 	AT_NONCACHEABLE_SECTION_ALIGN(                                                             \
-		static uint8_t eth##n##_tx_buff[CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE],              \
+		static uint8_t eth##n##_tx_buff[CONFIG_ETH_NXP_IMX_TX_RING_LEN]                    \
+					       [CONFIG_ETH_NXP_IMX_TX_RING_BUF_SIZE],             \
 		NETC_BUFF_ALIGN);                                                                  \
 	AT_NONCACHEABLE_SECTION_ALIGN(                                                             \
 		static netc_tx_bd_t eth##n##_txbd_array[CONFIG_ETH_NXP_IMX_TX_RING_NUM]            \
@@ -183,7 +206,8 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		bdr_config->txBdrConfig[0].len = CONFIG_ETH_NXP_IMX_TX_RING_LEN;                   \
 		bdr_config->txBdrConfig[0].dirtyArray = &eth##n##_txdirty_array[0][0];             \
 		bdr_config->txBdrConfig[0].msixEntryIdx = NETC_TX_MSIX_ENTRY_IDX;                  \
-		bdr_config->txBdrConfig[0].enIntr = true;                                          \
+		bdr_config->txBdrConfig[0].enIntr = false;                                         \
+		bdr_config->txBdrConfig[0].enThresIntr = true;                                     \
 	}                                                                                          \
 	static struct netc_eth_data netc_eth##n##_data = {                                         \
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),                            \
@@ -193,7 +217,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 	static const struct netc_eth_config netc_eth##n##_config = {                               \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(port, DT_DRV_INST(n)),                          \
 		DEVICE_MMIO_NAMED_ROM_INIT_BY_NAME(pfconfig, DT_DRV_INST(n)),                      \
-		.generate_mac = netc_eth##n##_generate_mac,                                        \
+		.mac_config = NET_ETH_MAC_DT_INST_CONFIG_INIT(n),                                  \
 		.bdr_init = netc_eth##n##_bdr_init,                                                \
 		.phy_dev = (COND_CODE_1(DT_INST_NODE_HAS_PROP(n, phy_handle),                      \
 					(DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle))), NULL)),   \
@@ -201,6 +225,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		.pseudo_mac = DT_ENUM_HAS_VALUE(DT_DRV_INST(n), phy_connection_type, internal),    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 		.si_idx = (DT_INST_PROP(n, mac_index) << 8) | DT_INST_PROP(n, si_index),           \
+		.msix_entry_num = NETC_MSIX_PSI_EVENTS_COUNT,                                     \
 		IF_ENABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                        \
 			(.msi_device_id = DT_INST_PROP_OR(n, msi_device_id, 0),                    \
 			.msi_dev = (COND_CODE_1(DT_NODE_HAS_PROP(DT_INST_PARENT(n), msi_parent),   \
@@ -209,7 +234,7 @@ static const struct ethernet_api netc_eth_api = {.iface_api.init = netc_eth_ifac
 		IF_DISABLED(CONFIG_ETH_NXP_IMX_NETC_MSI_GIC,                                       \
 			(.tx_intr_msg_data = NETC_TX_INTR_MSG_DATA_START + n,                      \
 			.rx_intr_msg_data = NETC_RX_INTR_MSG_DATA_START + n,))                     \
-		IF_ENABLED(NETC_PTP_TIMESTAMPING_SUPPORT,                                          \
+		IF_ENABLED(CONFIG_PTP_CLOCK_NXP_NETC,                                          \
 			(.ptp_clock = DEVICE_DT_GET_OR_NULL(DT_INST_PHANDLE(n, ptp_clock)),))      \
 	};                                                                                         \
 	ETH_NET_DEVICE_DT_INST_DEFINE(n, netc_eth_init, NULL, &netc_eth##n##_data,                 \

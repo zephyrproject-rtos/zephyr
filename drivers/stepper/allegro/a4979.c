@@ -155,7 +155,7 @@ static int a4979_init(const struct device *dev)
 	/* Configure reset pin if it is available */
 	if (has_reset_pin) {
 		if (!gpio_is_ready_dt(&config->reset_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->reset_pin.port);
 			return -ENODEV;
 		}
 
@@ -169,7 +169,7 @@ static int a4979_init(const struct device *dev)
 	/* Configure enable pin if it is available */
 	if (has_enable_pin) {
 		if (!gpio_is_ready_dt(&config->common.en_pin)) {
-			LOG_ERR("Enable Pin is not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->common.en_pin.port);
 			return -ENODEV;
 		}
 
@@ -182,7 +182,7 @@ static int a4979_init(const struct device *dev)
 
 	/* Configure microstep pin 0 */
 	if (!gpio_is_ready_dt(&config->common.m0_pin)) {
-		LOG_ERR("m0 Pin is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.m0_pin.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->common.m0_pin, GPIO_OUTPUT_INACTIVE);
@@ -193,7 +193,7 @@ static int a4979_init(const struct device *dev)
 
 	/* Configure microstep pin 1 */
 	if (!gpio_is_ready_dt(&config->common.m1_pin)) {
-		LOG_ERR("m1 Pin is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.m1_pin.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->common.m1_pin, GPIO_OUTPUT_INACTIVE);

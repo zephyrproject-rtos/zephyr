@@ -1,4 +1,5 @@
 /* SPDX-License-Identifier: Apache-2.0 */
+/* Copyright (c) 2025 Ambiq Micro Inc. */
 
 #include <arm/armv7-m.dtsi>
 #include <mem.h>
@@ -98,6 +99,7 @@
 		flash: flash-controller@c000 {
 			compatible = "ambiq,flash-controller";
 			reg = <0x0000c000 0x1f4000>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -106,6 +108,11 @@
 			flash0: flash@c000 {
 				compatible = "soc-nv-flash";
 				reg = <0x0000c000 0x1f4000>;
+				ranges = <0x0 0x0000c000 0x1f4000>;
+				erase-block-size = <8192>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
@@ -288,14 +295,24 @@
 			zephyr,pm-device-runtime-auto;
 		};
 
-		spid0: spi@50000100 {
-			compatible = "ambiq,spid";
+		ios0: ios@50000100 {
+			compatible = "ambiq,ios";
 			reg = <0x50000100 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <4 0>;
-			status = "disabled";
-			zephyr,pm-device-runtime-auto;
+			interrupts = <4 0>, <5 0>;
+
+			spi {
+				compatible = "ambiq,spid";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			i2c {
+				compatible = "ambiq,ios-i2c";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		iom0: iom@50004000 {

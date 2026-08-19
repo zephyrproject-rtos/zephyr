@@ -23,18 +23,18 @@
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
 
+LOG_MODULE_REGISTER(bap_scan_delegator_test);
+
 #ifdef CONFIG_BT_BAP_SCAN_DELEGATOR
 extern enum bst_result_t bst_result;
-
-#define PA_SYNC_INTERVAL_TO_TIMEOUT_RATIO 20 /* Set the timeout relative to interval */
-#define PA_SYNC_SKIP              5
 
 CREATE_FLAG(flag_pa_synced);
 CREATE_FLAG(flag_pa_terminated);
@@ -154,15 +154,14 @@ static int pa_sync_past(struct bt_conn *conn,
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
 
-	printk("Subscribing to PAST from %p\n", conn);
+	LOG_INF("Subscribing to PAST from %p", conn);
 	err = bt_le_per_adv_sync_transfer_subscribe(conn, &param);
 	if (err != 0) {
-		printk("Could not do PAST subscribe: %d\n", err);
+		LOG_DBG("Could not do PAST subscribe: %d", err);
 	} else {
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;
@@ -188,16 +187,12 @@ static int pa_sync_no_past(struct sync_state *state,
 	 */
 	err = bt_le_per_adv_sync_create(&param, &state->pa_sync);
 	if (err != 0) {
-		printk("Could not sync per adv: %d\n", err);
+		LOG_DBG("Could not sync per adv: %d", err);
 	} else {
-		char addr_str[BT_ADDR_LE_STR_LEN];
-
-		bt_addr_le_to_str(&recv_state->addr, addr_str, sizeof(addr_str));
-		printk("PA sync pending for addr %s\n", addr_str);
+		LOG_INF("PA sync pending for addr %s", bt_addr_le_str(&recv_state->addr));
 		state->pa_syncing = true;
 		k_work_init_delayable(&state->pa_timer, pa_timer_handler);
-		(void)k_work_reschedule(&state->pa_timer,
-					K_MSEC(param.timeout * 10));
+		(void)k_work_reschedule(&state->pa_timer, K_MSEC(param.timeout * 10U));
 	}
 
 	return err;
@@ -213,7 +208,7 @@ static int pa_sync_term(struct sync_state *state)
 		return -1;
 	}
 
-	printk("Deleting PA sync\n");
+	LOG_INF("Deleting PA sync");
 
 	UNSET_FLAG(flag_pa_terminated);
 
@@ -235,7 +230,9 @@ static void recv_state_updated_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
-	printk("Receive state with ID %u updated\n", recv_state->src_id);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Receive state with ID %u updated", recv_state->src_id);
 
 	state = sync_state_get_by_src_id(recv_state->src_id);
 	if (state == NULL) {
@@ -271,7 +268,7 @@ static int pa_sync_req_cb(struct bt_conn *conn,
 	int err;
 
 	reset_cp_flags();
-	printk("PA Sync request: past_avail %u, pa_interval 0x%04x: %p\n", past_avail, pa_interval,
+	LOG_INF("PA Sync request: past_avail %u, pa_interval 0x%04x: %p", past_avail, pa_interval,
 	       recv_state);
 
 	state = sync_state_get_or_new(recv_state);
@@ -312,7 +309,9 @@ static int pa_sync_term_req_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
-	printk("PA Sync term request for %p\n", recv_state);
+	ARG_UNUSED(conn);
+
+	LOG_INF("PA Sync term request for %p", recv_state);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -329,7 +328,9 @@ static void broadcast_code_cb(struct bt_conn *conn,
 {
 	struct sync_state *state;
 
-	printk("Broadcast code received for %p\n", recv_state);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Broadcast code received for %p", recv_state);
 
 	state = sync_state_get(recv_state);
 	if (state == NULL) {
@@ -349,13 +350,15 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 	struct sync_state *state;
 	bool sync_bis;
 
-	printk("BIS sync request received for %p\n", recv_state);
+	ARG_UNUSED(conn);
+
+	LOG_INF("BIS sync request received for %p", recv_state);
 	for (int i = 0; i < CONFIG_BT_BAP_BASS_MAX_SUBGROUPS; i++) {
 		if (bis_sync_req[i]) {
 			sync_bis = true;
 		}
 
-		printk("  [%d]: 0x%08x\n", i, bis_sync_req[i]);
+		LOG_DBG("  [%d]: 0x%08x", i, bis_sync_req[i]);
 	}
 
 	state = sync_state_get(recv_state);
@@ -379,7 +382,9 @@ static int bis_sync_req_cb(struct bt_conn *conn,
 static int add_source_cb(struct bt_conn *conn,
 	const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
-	printk("Add Source callback: src_id=%u\n", recv_state->src_id);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Add Source callback: src_id=%u", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_added);
 	return 0;
 }
@@ -387,14 +392,18 @@ static int add_source_cb(struct bt_conn *conn,
 static int modify_source_cb(struct bt_conn *conn,
 	   const struct bt_bap_scan_delegator_recv_state *recv_state)
 {
-	printk("Modify Source callback: src_id=%u\n", recv_state->src_id);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Modify Source callback: src_id=%u", recv_state->src_id);
 	SET_FLAG(flag_broadcast_source_modified);
 	return 0;
 }
 
 static int remove_source_cb(struct bt_conn *conn, uint8_t src_id)
 {
-	printk("Remove Source callback: src_id=%u\n", src_id);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Remove Source callback: src_id=%u", src_id);
 
 	if (reject_control_op) {
 		SET_FLAG(flag_remove_source_rejected);
@@ -421,7 +430,7 @@ static void pa_synced_cb(struct bt_le_per_adv_sync *sync,
 {
 	struct sync_state *state;
 
-	printk("PA %p synced\n", sync);
+	LOG_INF("PA %p synced", sync);
 
 	if (info->conn) { /* if from PAST */
 		for (size_t i = 0U; i < ARRAY_SIZE(sync_states); i++) {
@@ -457,7 +466,9 @@ static void pa_term_cb(struct bt_le_per_adv_sync *sync,
 {
 	struct sync_state *state;
 
-	printk("PA %p sync terminated\n", sync);
+	ARG_UNUSED(info);
+
+	LOG_INF("PA %p sync terminated", sync);
 
 	state = sync_state_get_by_pa(sync);
 	if (state == NULL) {
@@ -489,7 +500,6 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 {
 	struct bt_le_per_adv_sync_param sync_create_param = { 0 };
 	const struct bt_le_scan_recv_info *info = user_data;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_uuid_16 adv_uuid;
 	struct sync_state *state;
 	int err;
@@ -512,10 +522,9 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 	}
 
 	g_broadcast_id = sys_get_le24(data->data + BT_UUID_SIZE_16);
-	bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
 
-	printk("Found BAP broadcast source with address %s and ID 0x%06X\n",
-	       addr_str, g_broadcast_id);
+	LOG_INF("Found BAP broadcast source with address %s and ID 0x%06X",
+	       bt_addr_le_str(info->addr), g_broadcast_id);
 
 	state = sync_state_get_or_new(NULL);
 	if (state == NULL) {
@@ -523,7 +532,7 @@ static bool broadcast_source_found(struct bt_data *data, void *user_data)
 		return true;
 	}
 
-	printk("Creating Periodic Advertising Sync\n");
+	LOG_INF("Creating Periodic Advertising Sync");
 	bt_addr_le_copy(&sync_create_param.addr, info->addr);
 	sync_create_param.sid = info->sid;
 	sync_create_param.timeout = 0xa;
@@ -605,7 +614,7 @@ static void add_all_sources(void)
 		if (state->pa_sync != NULL) {
 			int res;
 
-			printk("[%zu]: Adding source\n", i);
+			LOG_INF("[%zu]: Adding source", i);
 
 			res = add_source(state);
 			if (res < 0) {
@@ -613,7 +622,7 @@ static void add_all_sources(void)
 				return;
 			}
 
-			printk("[%zu]: Source added with id %u\n",
+			LOG_INF("[%zu]: Source added with id %u",
 			       i, state->src_id);
 		}
 	}
@@ -663,7 +672,7 @@ static void mod_all_sources(void)
 		if (state->pa_sync != NULL) {
 			int err;
 
-			printk("[%zu]: Modifying source\n", i);
+			LOG_INF("[%zu]: Modifying source", i);
 
 			err = mod_source(state);
 			if (err < 0) {
@@ -671,7 +680,7 @@ static void mod_all_sources(void)
 				return;
 			}
 
-			printk("[%zu]: Source id modifed %u\n",
+			LOG_INF("[%zu]: Source id modified %u",
 			       i, state->src_id);
 		}
 	}
@@ -685,7 +694,7 @@ static int remove_source(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_rem_src(state->src_id);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -704,15 +713,15 @@ static void remove_all_sources(void)
 		if (state->recv_state != NULL) {
 			int err;
 
-			printk("[%zu]: Removing source\n", i);
+			LOG_INF("[%zu]: Removing source", i);
 
 			err = remove_source(state);
-			if (err) {
-				FAIL("[%zu]: Remove source failed (err %d)\n", err);
+			if (err != 0) {
+				FAIL("[%zu]: Remove source failed (err %d)\n", i, err);
 				return;
 			}
 
-			printk("[%zu]: Source removed with id %u\n",
+			LOG_INF("[%zu]: Source removed with id %u",
 			       i, state->src_id);
 		}
 	}
@@ -754,7 +763,7 @@ static void set_all_bis_sync_states(uint32_t bis_sync_req[CONFIG_BT_BAP_BASS_MAX
 		struct sync_state *state = &sync_states[i];
 
 		if (state->recv_state != NULL) {
-			printk("[%zu]: Setting BIS sync state\n", i);
+			LOG_INF("[%zu]: Setting BIS sync state", i);
 			set_bis_sync_state(state, bis_sync_req);
 		}
 	}
@@ -775,7 +784,7 @@ static int sync_broadcast(struct sync_state *state)
 
 	/* We don't actually need to sync to the BIG/BISes */
 	err = bt_bap_scan_delegator_set_bis_sync_state(state->src_id, state->bis_sync_req);
-	if (err) {
+	if (err != 0) {
 		return err;
 	}
 
@@ -792,7 +801,7 @@ static void sync_all_broadcasts(void)
 		if (state->pa_sync != NULL) {
 			int res;
 
-			printk("[%zu]: Setting broadcast sync state\n", i);
+			LOG_INF("[%zu]: Setting broadcast sync state", i);
 
 			res = sync_broadcast(state);
 			if (res < 0) {
@@ -800,7 +809,7 @@ static void sync_all_broadcasts(void)
 				return;
 			}
 
-			printk("[%zu]: Broadcast sync state set\n", i);
+			LOG_INF("[%zu]: Broadcast sync state set", i);
 		}
 	}
 }
@@ -811,15 +820,15 @@ static int common_init(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return err;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	err = bt_bap_scan_delegator_register(&scan_delegator_cb);
-	if (err) {
+	if (err != 0) {
 		FAIL("Scan delegator register failed (err %d)\n", err);
 		return err;
 	}
@@ -838,14 +847,14 @@ static void test_main_client_sync(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(flag_broadcast_source_added);
 	/* Wait for broadcast assistant to request us to sync to PA */
-	printk("Waiting for flag_pa_synced\n");
+	LOG_INF("Waiting for flag_pa_synced");
 	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Mod all sources by modifying the metadata */
@@ -853,18 +862,18 @@ static void test_main_client_sync(void)
 
 	WAIT_FOR_FLAG(flag_broadcast_source_modified);
 	/* Wait for broadcast assistant to tell us to BIS sync */
-	printk("Waiting for flag_bis_sync_requested\n");
+	LOG_INF("Waiting for flag_bis_sync_requested");
 	WAIT_FOR_FLAG(flag_bis_sync_requested);
 
 	/* Set the BIS sync state */
 	sync_all_broadcasts();
 
 	/* Wait for broadcast assistant to send us broadcast code */
-	printk("Waiting for flag_broadcast_code_received\n");
+	LOG_INF("Waiting for flag_broadcast_code_received");
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
 	/* Wait for broadcast assistant to remove source and terminate PA sync */
-	printk("Waiting for flag_pa_terminated\n");
+	LOG_INF("Waiting for flag_pa_terminated");
 	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	WAIT_FOR_FLAG(flag_broadcast_source_removed);
@@ -876,7 +885,7 @@ static void test_main_server_sync_client_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -890,14 +899,14 @@ static void test_main_server_sync_client_rem(void)
 	}
 
 	/* Wait for PA to sync */
-	printk("Waiting for flag_pa_synced\n");
+	LOG_INF("Waiting for flag_pa_synced");
 	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Add PAs as receive state sources */
 	add_all_sources();
 
 	/* Wait for broadcast assistant to send us broadcast code */
-	printk("Waiting for flag_broadcast_code_received\n");
+	LOG_INF("Waiting for flag_broadcast_code_received");
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
 	/* Mod all sources by modifying the metadata */
@@ -914,7 +923,7 @@ static void test_main_server_sync_client_rem(void)
 	/* Disable rejection for subsequent remove source requests */
 	reject_control_op = false;
 	/* For for client to remove source and thus terminate the PA */
-	printk("Waiting for flag_pa_terminated\n");
+	LOG_INF("Waiting for flag_pa_terminated");
 	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Server Sync Client Remove passed\n");
@@ -925,7 +934,7 @@ static void test_main_server_sync_server_rem(void)
 	int err;
 
 	err = common_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("common init failed (err %d)\n", err);
 		return;
 	}
@@ -939,14 +948,14 @@ static void test_main_server_sync_server_rem(void)
 	}
 
 	/* Wait for PA to sync */
-	printk("Waiting for flag_pa_synced\n");
+	LOG_INF("Waiting for flag_pa_synced");
 	WAIT_FOR_FLAG(flag_pa_synced);
 
 	/* Add PAs as receive state sources */
 	add_all_sources();
 
 	/* Wait for broadcast assistant to send us broadcast code */
-	printk("Waiting for flag_broadcast_code_received\n");
+	LOG_INF("Waiting for flag_broadcast_code_received");
 	WAIT_FOR_FLAG(flag_broadcast_code_received);
 
 	/* Mod all sources by modifying the metadata */
@@ -964,7 +973,7 @@ static void test_main_server_sync_server_rem(void)
 	remove_all_sources();
 
 	/* Wait for PA sync to be terminated */
-	printk("Waiting for flag_pa_terminated\n");
+	LOG_INF("Waiting for flag_pa_terminated");
 	WAIT_FOR_FLAG(flag_pa_terminated);
 
 	PASS("BAP Scan Delegator Server Sync Server Remove passed\n");

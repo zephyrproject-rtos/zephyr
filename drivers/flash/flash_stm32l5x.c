@@ -277,30 +277,6 @@ int flash_stm32_write_range(const struct device *dev, unsigned int offset,
 }
 
 #if defined(CONFIG_FLASH_STM32_READOUT_PROTECTION)
-int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
-{
-	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
-	int rc;
-
-	if ((regs->OPTR & mask) == value) {
-		return 0;
-	}
-
-	regs->OPTR = (regs->OPTR & ~mask) | value;
-	regs->NSCR |= FLASH_NSCR_OPTSTRT;
-
-	/* Make sure previous write is completed. */
-	barrier_dsync_fence_full();
-
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		return rc;
-	}
-
-	regs->NSCR |= FLASH_NSCR_OBL_LAUNCH;
-
-	return 0;
-}
 
 uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 {
@@ -309,10 +285,10 @@ uint8_t flash_stm32_get_rdp_level(const struct device *dev)
 	return (regs->OPTR & FLASH_OPTR_RDP_Msk) >> FLASH_OPTR_RDP_Pos;
 }
 
-void flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
+int flash_stm32_set_rdp_level(const struct device *dev, uint8_t level)
 {
-	flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
-				       (uint32_t)level << FLASH_OPTR_RDP_Pos);
+	return flash_stm32_option_bytes_write(dev, FLASH_OPTR_RDP_Msk,
+					      (uint32_t)level << FLASH_OPTR_RDP_Pos);
 }
 #endif /* CONFIG_FLASH_STM32_READOUT_PROTECTION */
 
@@ -382,3 +358,43 @@ void flash_stm32_page_layout(const struct device *dev,
 
 	*layout_size = stm32_flash_layout_size;
 }
+
+#if defined(CONFIG_SOC_SERIES_STM32L5X) || defined(CONFIG_SOC_SERIES_STM32U5X)
+int flash_stm32_option_bytes_write(const struct device *dev, uint32_t mask, uint32_t value)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+	int rc;
+
+	if ((regs->OPTR & mask) == value) {
+		return 0;
+	}
+
+	if ((regs->NSCR & FLASH_NSCR_OPTLOCK) != 0) {
+		return -EIO;
+	}
+
+	/* Update the target value in the Option Register */
+	regs->OPTR = (regs->OPTR & ~mask) | value;
+	regs->NSCR |= FLASH_NSCR_OPTSTRT;
+
+	/* make sure previous write is completed. */
+	barrier_dsync_fence_full();
+
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Force the option byte loading (triggers system reset) */
+	regs->NSCR |= FLASH_NSCR_OBL_LAUNCH;
+
+	return flash_stm32_wait_flash_idle(dev);
+}
+
+uint32_t flash_stm32_option_bytes_read(const struct device *dev)
+{
+	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
+
+	return regs->OPTR;
+}
+#endif /* CONFIG_SOC_SERIES_STM32L5X || CONFIG_SOC_SERIES_STM32U5X */

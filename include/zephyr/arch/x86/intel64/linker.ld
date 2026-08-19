@@ -150,7 +150,6 @@ SECTIONS
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_num_words = _app_smem_size >> 2;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
-	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
 
 /* This should be put here before BSS section, otherwise the .bss.__gcov will
@@ -166,6 +165,12 @@ SECTIONS
 #endif
 	__kernel_ram_start = .;
 	__bss_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
+
 	*(.bss)
 	*(.bss.*)
 	*(COMMON)

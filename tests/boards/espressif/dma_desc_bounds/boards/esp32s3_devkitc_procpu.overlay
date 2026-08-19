@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Hsiu-Chi Tsai
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	status = "okay";
+};
+
+tst_dma0: &dma {};

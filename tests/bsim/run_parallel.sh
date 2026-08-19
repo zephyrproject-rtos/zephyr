@@ -42,7 +42,7 @@ fi
 
 err=0
 i=0
-sh_filter="(/_|run_parallel|compile|generate_coverage_report.sh|/ci\.)"
+sh_filter="(./_|run_parallel|compile|generate_coverage_report.sh|/ci\.)"
 
 if [ -n "${TESTS_FILE}" ]; then
 	#remove comments and empty lines from file

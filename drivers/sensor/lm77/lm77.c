@@ -317,7 +317,7 @@ static int lm77_init(const struct device *dev)
 #endif /* LM77_TRIGGER_SUPPORT */
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2c bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -EINVAL;
 	}
 
@@ -331,12 +331,12 @@ static int lm77_init(const struct device *dev)
 	data->dev = dev;
 	k_work_queue_start(&data->workq, data->stack, K_THREAD_STACK_SIZEOF(data->stack),
 			   CONFIG_LM77_TRIGGER_THREAD_PRIO, NULL);
-	k_thread_name_set(&data->workq.thread, "lm77_trigger");
+	k_thread_name_set(data->workq.thread_id, "lm77_trigger");
 	k_work_init(&data->work, lm77_trigger_work_handler);
 
 	if (config->int_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->int_gpio)) {
-			LOG_ERR("INT GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 			return -EINVAL;
 		}
 

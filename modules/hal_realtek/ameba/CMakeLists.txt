@@ -3,6 +3,8 @@
 
 # west sign
 
+add_subdirectory_ifdef(CONFIG_REALTEK_AMEBA_OS_WRAPPER os_wrapper)
+
 if(CONFIG_BUILD_ONLY_NO_BLOBS OR CONFIG_SOC_AMEBA_NP_DISABLED)
   message(WARNING "
   ---------------------------------------------------------------------------------------

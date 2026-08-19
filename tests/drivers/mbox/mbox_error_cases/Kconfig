@@ -20,4 +20,10 @@ config TEST_REMOTE_BUSY_NOT_SUPPORTED
 	  Value of 'y' means that transmitter is NOT able to detect
 	  if the remote hasn't yet read the last data sent.
 
+config TEST_CHANNEL_IS_BIDIRECTIONAL
+	bool "Channel can be used for both TX and RX"
+	help
+	  When set to 'y' an MBOX channel can be used for both
+	  sending and receiving messages.
+
 source "Kconfig.zephyr"

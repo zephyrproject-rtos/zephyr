@@ -5,8 +5,8 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Basic ISO broadcast test: a broadcaster transmits a BIS and a receiver listens
-# to the BIS, and recevied SDUs are emitted via vendor data path implementation.
-simulation_id="broadcast_iso_vs_dp"
+# to the BIS, and received SDUs are emitted via vendor data path implementation.
+simulation_id="${BOARD_TS}_broadcast_iso_vs_dp"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

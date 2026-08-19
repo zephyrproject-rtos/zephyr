@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/spi.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -474,11 +475,9 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 					      ENC424J600_SFRX_EIRL,
 					      ENC424J600_EIR_LINKIF);
 			if (estat & ENC424J600_ESTAT_PHYLNK) {
-				LOG_INF("Link up");
 				enc424j600_setup_mac(context->dev);
 				net_eth_carrier_on(context->iface);
 			} else {
-				LOG_INF("Link down");
 				net_eth_carrier_off(context->iface);
 			}
 		} else {
@@ -496,14 +495,14 @@ static void enc424j600_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps enc424j600_get_capabilities(const struct device *dev __unused,
+							 struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static int enc424j600_set_config(const struct device *dev,
+				 struct net_if *iface __unused,
 				 enum ethernet_config_type type,
 				 const struct ethernet_config *config)
 {
@@ -559,7 +558,7 @@ static void enc424j600_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static int enc424j600_start_device(const struct device *dev)
+static int enc424j600_start_device(const struct device *dev, struct net_if *iface __unused)
 {
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;
@@ -589,7 +588,7 @@ static int enc424j600_start_device(const struct device *dev)
 	return 0;
 }
 
-static int enc424j600_stop_device(const struct device *dev)
+static int enc424j600_stop_device(const struct device *dev, struct net_if *iface __unused)
 {
 	struct enc424j600_runtime *context = dev->data;
 	uint16_t tmp;
@@ -764,19 +763,27 @@ static int enc424j600_init(const struct device *dev)
 	return 0;
 }
 
-static struct enc424j600_runtime enc424j600_0_runtime = {
-	.tx_rx_sem = Z_SEM_INITIALIZER(enc424j600_0_runtime.tx_rx_sem,
-				       1,  UINT_MAX),
-	.int_sem  = Z_SEM_INITIALIZER(enc424j600_0_runtime.int_sem,
-				      0, UINT_MAX),
-};
+#define ENC424J600_INIT(inst)						\
+	static struct enc424j600_runtime enc424j600_##inst##_runtime = {	\
+		.tx_rx_sem = Z_SEM_INITIALIZER(			\
+			enc424j600_##inst##_runtime.tx_rx_sem,	\
+			1, UINT_MAX),				\
+		.int_sem = Z_SEM_INITIALIZER(			\
+			enc424j600_##inst##_runtime.int_sem,	\
+			0, UINT_MAX),				\
+	};							\
+								\
+	static const struct enc424j600_config enc424j600_##inst##_config = { \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),	\
+		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios),	\
+	};							\
+								\
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst,			\
+		enc424j600_init, NULL,				\
+		&enc424j600_##inst##_runtime,			\
+		&enc424j600_##inst##_config,			\
+		CONFIG_ETH_INIT_PRIORITY,			\
+		&api_funcs,					\
+		NET_ETH_MTU);
 
-static const struct enc424j600_config enc424j600_0_config = {
-	.spi = SPI_DT_SPEC_INST_GET(0, SPI_WORD_SET(8)),
-	.interrupt = GPIO_DT_SPEC_INST_GET(0, int_gpios),
-};
-
-ETH_NET_DEVICE_DT_INST_DEFINE(0,
-		    enc424j600_init, NULL,
-		    &enc424j600_0_runtime, &enc424j600_0_config,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, NET_ETH_MTU);
+DT_INST_FOREACH_STATUS_OKAY(ENC424J600_INIT)

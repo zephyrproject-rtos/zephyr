@@ -88,6 +88,7 @@
 				reg = <0>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 224 0>;
 			};
 
@@ -96,6 +97,7 @@
 				reg = <1>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 225 0>;
 			};
 
@@ -104,6 +106,7 @@
 				reg = <2>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 226 0>;
 			};
 
@@ -112,6 +115,7 @@
 				reg = <3>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 227 0>;
 			};
 
@@ -120,6 +124,7 @@
 				reg = <4>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 228 0>;
 			};
 
@@ -128,6 +133,7 @@
 				reg = <5>;
 				interrupt-controller;
 				#interrupt-cells = <2>;
+				#address-cells = <0>;
 				interrupts-extended = <&nvic 229 0>;
 			};
 		};

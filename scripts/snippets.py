@@ -45,12 +45,17 @@ def _new_append():
 def _new_board2appends():
     return defaultdict(lambda: defaultdict(_new_append))
 
+def _new_dirs():
+    return []
+
 @dataclass
 class Snippet:
     '''Class for keeping track of all the settings discovered for an
     individual snippet.'''
 
     name: str
+    dirs: list[Path] = field(default_factory=_new_dirs)
+    description: str | None = None
     appends: Appends = field(default_factory=_new_append)
     board2appends: dict[str, BoardRevisionAppends] = field(default_factory=_new_board2appends)
 
@@ -59,18 +64,23 @@ class Snippet:
         python object and validated by jsonschema.'''
         def append_value(variable, value):
             if variable in ('SB_EXTRA_CONF_FILE', 'EXTRA_DTC_OVERLAY_FILE', 'EXTRA_CONF_FILE'):
-                path = pathobj.parent / value
-                if not path.is_file():
-                    _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
-                return f'"{path.as_posix()}"'
+                paths = []
+                if not isinstance(value, list):
+                    value = [value]
+                for file in value:
+                    path = pathobj.parent / file
+                    if not path.is_file():
+                        _err(f'snippet file {pathobj}: {variable}: file not found: {path}')
+                    paths.append(f'"{path.as_posix()}"')
+                return paths
             if variable in ('DTS_EXTRA_CPPFLAGS'):
-                return f'"{value}"'
+                return [f'"{value}"']
             _err(f'unknown append variable: {variable}')
 
         for variable, value in snippet_data.get('append', {}).items():
             if (sysbuild is True and variable[0:3] == 'SB_') or \
             (sysbuild is False and variable[0:3] != 'SB_'):
-                self.appends[variable].append(append_value(variable, value))
+                self.appends[variable] += append_value(variable, value)
         for board, settings in snippet_data.get('boards', {}).items():
             if board.startswith('/') and not board.endswith('/'):
                 _err(f"snippet file {pathobj}: board {board} starts with '/', so "
@@ -79,13 +89,15 @@ class Snippet:
                 for variable, value in appenddata.get('append', {}).items():
                     if (sysbuild is True and variable[0:3] == 'SB_') or \
                     (sysbuild is False and variable[0:3] != 'SB_'):
-                        self.board2appends[board][revision][variable].append(
-                            append_value(variable, value))
+                        self.board2appends[board][revision][variable] += \
+                            append_value(variable, value)
             for variable, value in settings.get('append', {}).items():
                 if (sysbuild is True and variable[0:3] == 'SB_') or \
                 (sysbuild is False and variable[0:3] != 'SB_'):
-                    self.board2appends[board][""][variable].append(
-                        append_value(variable, value))
+                    self.board2appends[board][""][variable] += \
+                        append_value(variable, value)
+        self.description = snippet_data.get('description')
+        self.dirs.append(pathobj.parent)
 
 class Snippets(UserDict):
     '''Type for all the information we have discovered about all snippets.

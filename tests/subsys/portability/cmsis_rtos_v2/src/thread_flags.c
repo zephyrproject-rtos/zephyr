@@ -10,7 +10,6 @@
 #include <zephyr/portability/cmsis_types.h>
 
 #include <zephyr/irq_offload.h>
-#include <zephyr/kernel_structs.h>
 
 #define TIMEOUT_TICKS (1000)
 #define FLAG1         (0x00000020)

@@ -10,9 +10,9 @@
 #ifdef CONFIG_TIMESLICING
 
 /* nrf 51 has lower ram, so creating less number of threads */
-#if CONFIG_SRAM_SIZE <= 24
+#if (DT_CHOSEN_SRAM_SIZE / 1024) <= 24
 	#define NUM_THREAD 2
-#elif (CONFIG_SRAM_SIZE <= 32) \
+#elif ((DT_CHOSEN_SRAM_SIZE / 1024) <= 32) \
 	|| defined(CONFIG_SOC_EMSK_EM7D)
 	#define NUM_THREAD 3
 #else
@@ -22,17 +22,24 @@
 #define ITERATION_COUNT 5
 
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
-/* slice size in millisecond */
-#define SLICE_SIZE 200
+/* slice size in milliseconds (kernel slicing API takes ms) */
+#define SLICE_SIZE_MS 200
+/* busy-wait duration: more than one slice so the slicer fires */
+#define BUSY_MS (SLICE_SIZE_MS + 20)
+
+/* Measurement bound is in ticks: slicer-driven preemption lands on
+ * either the configured tick boundary or one tick later (kernel "+1"
+ * round-up in z_add_timeout()).
+ */
+#define SLICE_TICKS k_ms_to_ticks_ceil32(SLICE_SIZE_MS)
+
 #define PERTHREAD_SLICE_TICKS 64
-#define TICK_SLOP 4
-/* busy for more than one slice */
-#define BUSY_MS (SLICE_SIZE + 20)
+
 static struct k_thread t[NUM_THREAD];
 
 static K_SEM_DEFINE(sema1, 0, NUM_THREAD);
-/* elapsed_slice taken by last thread */
-static int64_t elapsed_slice;
+/* Reference timestamp (in ticks) for measuring slice durations */
+static uint64_t elapsed_slice;
 
 static int thread_idx;
 
@@ -44,101 +51,31 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	int thread_parameter = (idx == (NUM_THREAD - 1)) ? '\n' :
 			       (idx + 'A');
 
-	int64_t expected_slice_min = k_ticks_to_ms_floor64(k_ms_to_ticks_ceil32(SLICE_SIZE) - 1);
-	int64_t expected_slice_max = k_ticks_to_ms_ceil64(k_ms_to_ticks_ceil32(SLICE_SIZE) + 1);
-
-	/* Clumsy, but need to handle the precision loss with
-	 * submillisecond ticks.  It's always possible to alias and
-	 * produce a tdelta of "1", no matter how fast ticks are.
-	 */
-	if (expected_slice_max == expected_slice_min) {
-		expected_slice_max = expected_slice_min + 1;
-	}
-
 	while (1) {
-		int64_t tdelta = k_uptime_delta(&elapsed_slice);
+		uint32_t tick_delta = ticks_delta(&elapsed_slice);
+
 		TC_PRINT("%c", thread_parameter);
-		/* Test Fails if thread exceed allocated time slice or
-		 * Any thread is scheduled out of order.
+		/* Threads must run in round-robin order. */
+		zassert_equal(idx, thread_idx,
+			      "out of order: idx=%d thread_idx=%d",
+			      idx, thread_idx);
+		/* Each measured slice falls on either the configured tick
+		 * boundary or the next one (kernel "+1" round-up).
 		 */
-		zassert_true(((tdelta >= expected_slice_min) &&
-			      (tdelta <= expected_slice_max) &&
-			      (idx == thread_idx)), NULL);
+		zassert_between_inclusive(tick_delta, SLICE_TICKS,
+					  SLICE_TICKS + 1,
+					  "tick_delta=%u expected ~%u",
+					  tick_delta, SLICE_TICKS);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 
-		/* Keep the current thread busy for more than one slice,
-		 * even though, when timeslice used up the next thread
-		 * should be scheduled in.
-		 */
-		spin_for_ms(BUSY_MS);
 		k_sem_give(&sema1);
-	}
-}
-
-/* test cases */
-
-/**
- * @brief Check the behavior of preemptive threads when the
- * time slice is disabled and enabled
- *
- * @details Create multiple preemptive threads with same priorities
- * and few with same priorities and enable the time slice.
- * Ensure that each thread is given the time slice period to execute.
- *
- * @ingroup kernel_sched_tests
- */
-ZTEST(threads_scheduling, test_slice_scheduling)
-{
-	k_tid_t tid[NUM_THREAD];
-	int old_prio = k_thread_priority_get(k_current_get());
-	int count = 0;
-
-	thread_idx = 0;
-
-	/* disable timeslice */
-	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
-
-	/* update priority for current thread */
-	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(BASE_PRIORITY));
-
-	/* create threads with equal preemptive priority */
-	for (int i = 0; i < NUM_THREAD; i++) {
-		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
-					 thread_tslice,
-					 INT_TO_POINTER(i), NULL, NULL,
-					 K_PRIO_PREEMPT(BASE_PRIORITY), 0,
-					 K_NO_WAIT);
-	}
-
-	/* enable time slice */
-	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(BASE_PRIORITY));
-
-	while (count < ITERATION_COUNT) {
-		k_uptime_delta(&elapsed_slice);
 
 		/* Keep the current thread busy for more than one slice,
 		 * even though, when timeslice used up the next thread
 		 * should be scheduled in.
 		 */
 		spin_for_ms(BUSY_MS);
-
-		/* relinquish CPU and wait for each thread to complete */
-		for (int i = 0; i < NUM_THREAD; i++) {
-			k_sem_take(&sema1, K_FOREVER);
-		}
-		count++;
 	}
-
-
-	/* test case teardown */
-	for (int i = 0; i < NUM_THREAD; i++) {
-		k_thread_abort(tid[i]);
-	}
-
-	/* disable time slice */
-	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
-
-	k_thread_priority_set(k_current_get(), old_prio);
 }
 
 static volatile int32_t perthread_count;
@@ -150,14 +87,22 @@ static void slice_expired(struct k_thread *thread, void *data)
 {
 	zassert_equal(thread, data, "wrong callback data pointer");
 
+	/* Convert with the driver's real cycles per tick, floor(HW/ticks), not
+	 * the fractional ratio k_cyc_to_ticks_near32() uses (which skews where a
+	 * tick isn't a whole number of cycles). Round, don't truncate, to absorb
+	 * the sub-tick offset between the reference and this reading.
+	 */
 	uint32_t now = k_cycle_get_32();
-	uint32_t dt = k_cyc_to_ticks_near32(now - last_cyc);
+	uint32_t dt = DIV_ROUND_CLOSEST(now - last_cyc, k_ticks_to_cyc_floor32(1));
 
 	zassert_true(perthread_running, "thread didn't start");
-	zassert_true(dt >= (PERTHREAD_SLICE_TICKS - TICK_SLOP),
-		     "slice expired >%d ticks too soon (dt=%d)", TICK_SLOP, dt);
-	zassert_true((dt - PERTHREAD_SLICE_TICKS) <= TICK_SLOP,
-		     "slice expired >%d ticks late (dt=%d)", TICK_SLOP, dt);
+	/* Slice fire lands on either the configured tick boundary or
+	 * the next one due to z_add_timeout()'s "+1" round-up.
+	 */
+	zassert_between_inclusive(dt, PERTHREAD_SLICE_TICKS,
+				  PERTHREAD_SLICE_TICKS + 1,
+				  "slice expired at dt=%u, expected ~%u",
+				  dt, PERTHREAD_SLICE_TICKS);
 
 	last_cyc = now;
 
@@ -181,8 +126,111 @@ static void slice_perthread_fn(void *a, void *b, void *c)
 	}
 }
 
+#endif /* CONFIG_TIMESLICING */
+
+/* test cases */
+
+/**
+ * @brief Check the behavior of preemptive threads when the
+ * time slice is disabled and enabled
+ *
+ * @details Create multiple preemptive threads with same priorities
+ * and few with same priorities and enable the time slice.
+ * Ensure that each thread is given the time slice period to execute.
+ *
+ * Skipped when CONFIG_TIMESLICING is disabled.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_sched_time_slice_set()
+ */
+ZTEST(threads_scheduling, test_slice_scheduling)
+{
+#ifdef CONFIG_TIMESLICING
+	k_tid_t tid[NUM_THREAD];
+	int old_prio = k_thread_priority_get(k_current_get());
+	int count = 0;
+
+	thread_idx = 0;
+
+	/* disable timeslice */
+	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
+
+	/* update priority for current thread */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(BASE_PRIORITY));
+
+	/* align to tick edge */
+	k_usleep(1);
+
+	/* create threads with equal preemptive priority */
+	for (int i = 0; i < NUM_THREAD; i++) {
+		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
+					 thread_tslice,
+					 INT_TO_POINTER(i), NULL, NULL,
+					 K_PRIO_PREEMPT(BASE_PRIORITY), 0,
+					 K_NO_WAIT);
+	}
+
+	/* enable time slice */
+	k_sched_time_slice_set(SLICE_SIZE_MS, K_PRIO_PREEMPT(BASE_PRIORITY));
+	ticks_delta(&elapsed_slice);
+
+	while (count < ITERATION_COUNT) {
+		/* Keep the current thread busy for more than one slice,
+		 * even though, when timeslice used up the next thread
+		 * should be scheduled in.
+		 */
+		spin_for_ms(BUSY_MS);
+
+		/* all threads should have run by now */
+		ticks_delta(&elapsed_slice);
+		for (int i = 0; i < NUM_THREAD; i++) {
+			zassert_equal(k_sem_take(&sema1, K_NO_WAIT), 0,
+				      "not all threads gave their sem");
+		}
+		count++;
+	}
+
+
+	/* test case teardown */
+	for (int i = 0; i < NUM_THREAD; i++) {
+		k_thread_abort(tid[i]);
+	}
+
+	/* disable time slice */
+	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
+
+	k_thread_priority_set(k_current_get(), old_prio);
+#else
+	ztest_test_skip();
+#endif /* CONFIG_TIMESLICING */
+}
+
+/**
+ * @brief Verify a per-thread time slice expires and invokes its callback.
+ *
+ * @details
+ * With CONFIG_TIMESLICE_PER_THREAD, a thread's individual time slice
+ * (k_thread_time_slice_set()) must expire after the configured number of ticks
+ * and invoke the registered expiry callback, which here suspends the thread.
+ * Requires CONFIG_TIMESLICING and CONFIG_TIMESLICE_PER_THREAD; otherwise the
+ * test skips.
+ *
+ * Test steps:
+ * - Create a busy-looping thread and set a per-thread slice with a callback.
+ * - Tick-align and start the thread.
+ * - Wait for the callback (which suspends the thread) and confirm it stopped.
+ *
+ * Expected result:
+ * - The per-thread slice expires, the callback runs, and the thread is suspended.
+ *
+ * @ingroup tests_kernel_sched
+ *
+ * @see k_thread_time_slice_set()
+ */
 ZTEST(threads_scheduling, test_slice_perthread)
 {
+#ifdef CONFIG_TIMESLICING
 	if (!IS_ENABLED(CONFIG_TIMESLICE_PER_THREAD)) {
 		ztest_test_skip();
 		return;
@@ -201,15 +249,7 @@ ZTEST(threads_scheduling, test_slice_perthread)
 
 	k_sem_take(&perthread_sem, K_FOREVER);
 	zassert_false(perthread_running, "thread failed to suspend");
-}
-
-#else /* CONFIG_TIMESLICING */
-ZTEST(threads_scheduling, test_slice_scheduling)
-{
+#else
 	ztest_test_skip();
-}
-ZTEST(threads_scheduling, test_slice_perthread)
-{
-	ztest_test_skip();
-}
 #endif /* CONFIG_TIMESLICING */
+}

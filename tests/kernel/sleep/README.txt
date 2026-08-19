@@ -1,53 +1,52 @@
-Title: cooperative thread  Sleep and Wakeup APIs
+Title: Thread Sleep and Wakeup APIs
 
 Description:
 
-This test verifies that cooperative  sleep and wakeup APIs operate as
-expected.
+This test verifies that the kernel thread sleep and wakeup APIs operate as
+expected. It exercises three behaviors:
+
+1. test_sleep
+   - k_sleep() blocks for the requested duration (within one tick of slop).
+   - k_wakeup() cancels a pending sleep immediately, whether the wakeup is
+     issued from a helper thread, an ISR (via irq_offload()), or the main
+     thread.
+
+2. test_sleep_forever
+   - k_sleep(K_FOREVER) never expires on its own and only returns after an
+     explicit k_wakeup(), reporting K_TICKS_FOREVER.
+
+3. test_usleep
+   - k_usleep() never sleeps for less than the minimum tick granularity. The
+     test loops minimal sleeps to span one second of ticks and checks the
+     aggregate elapsed time against computed lower/upper bounds, retrying to
+     tolerate timing jitter under emulation.
 
 ---------------------------------------------------------------------------
 
-Building and Running Project:
+Building and Running:
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+Build and run with twister, for example on QEMU:
 
-    make run
+    twister -p qemu_x86 -T tests/kernel/sleep
 
----------------------------------------------------------------------------
+Or build and run a single platform directly with west:
 
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b qemu_x86 tests/kernel/sleep
+    west build -t run
 
 ---------------------------------------------------------------------------
 
 Sample Output:
 
-Running test suite sleep
+Running TESTSUITE sleep
 ===================================================================
-starting test - test_sleep
-Kernel objects initialized
-Test thread started: id = 0x00400040
-Helper thread started: id = 0x00400000
-Testing normal expiration of k_sleep()
-Testing: test thread sleep + helper thread wakeup test
-Testing: test thread sleep + isr offload wakeup test
-Testing: test thread sleep + main wakeup test thread
-Testing kernel k_sleep()
-PASS - test_sleep
+START - test_sleep
+ PASS - test_sleep
 ===================================================================
-starting test - test_usleep
-elapsed_ms = 1000
-PASS - test_usleep
+START - test_sleep_forever
+ PASS - test_sleep_forever
 ===================================================================
-Test suite sleep succeeded
+START - test_usleep
+ PASS - test_usleep
 ===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE sleep succeeded

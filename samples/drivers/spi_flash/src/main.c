@@ -46,8 +46,8 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(jedec_spi_nor)
 #define SPI_FLASH_COMPAT jedec_spi_nor
-#elif DT_HAS_COMPAT_STATUS_OKAY(jedec_mspi_nor)
-#define SPI_FLASH_COMPAT jedec_mspi_nor
+#elif DT_HAS_COMPAT_STATUS_OKAY(jedec_nor)
+#define SPI_FLASH_COMPAT jedec_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_qspi_nor)
 #define SPI_FLASH_COMPAT st_stm32_qspi_nor
 #elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32_ospi_nor)
@@ -178,7 +178,7 @@ void multi_sector_test(const struct device *flash_dev)
 
 	/* Full flash erase if SPI_FLASH_TEST_REGION_OFFSET = 0 and
 	 * SPI_FLASH_SECTOR_SIZE = flash size
-	 * Erase 2 sectors for check for erase of consequtive sectors
+	 * Erase 2 sectors for check for erase of consecutive sectors
 	 */
 	rc = flash_erase(flash_dev, SPI_FLASH_TEST_REGION_OFFSET, SPI_FLASH_SECTOR_SIZE * 2);
 	if (rc != 0) {

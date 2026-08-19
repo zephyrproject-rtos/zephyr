@@ -23,20 +23,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(output_dir ${CMAKE_BINARY_DIR}/sca/clang)
 file(MAKE_DIRECTORY ${output_dir})
 
-# Use a dummy file to let clang static analyzer know we can start analyzing
-set_property(GLOBAL APPEND PROPERTY extra_post_build_commands COMMAND
-  ${CMAKE_COMMAND} -E touch ${output_dir}/clang-sca.ready)
-set_property(GLOBAL APPEND PROPERTY extra_post_build_byproducts
-  ${output_dir}/clang-sca.ready)
-
 # Add a cmake target to run the analyzer after the build is done
 add_custom_target(clang-sca ALL
   COMMAND ${CLANG_SCA_EXE} --cdb ${CMAKE_BINARY_DIR}/compile_commands.json -o ${CMAKE_BINARY_DIR}/sca/clang/ --analyze-headers --use-analyzer ${LLVM_TOOLCHAIN_PATH}/bin/clang ${CLANG_SCA_EXTRA_OPTS}
-  DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json ${output_dir}/clang-sca.ready
+  DEPENDS ${CMAKE_BINARY_DIR}/compile_commands.json
 )
 
-# Cleanup dummy file
-add_custom_command(
-  TARGET clang-sca POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E rm ${output_dir}/clang-sca.ready
-)
+# Add a dependency on the final zephyr ELF target so the analyzer runs only
+# after the build is complete. logical_target_for_zephyr_elf is not yet
+# defined when this file is included, so defer the call until the end of
+# the top-level CMakeLists.txt scope.
+cmake_language(DEFER CALL add_dependencies clang-sca ${logical_target_for_zephyr_elf})

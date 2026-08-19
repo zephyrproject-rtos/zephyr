@@ -196,10 +196,6 @@ static int i2c_sc18im_transfer(const struct device *dev,
 {
 	int ret;
 
-	if (num_msgs == 0) {
-		return 0;
-	}
-
 	ret = sc18im704_claim(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to claim I2C bridge (%d)", ret);

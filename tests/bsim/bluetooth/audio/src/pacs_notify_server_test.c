@@ -49,7 +49,7 @@ static struct bt_pacs_cap                    caps_2 = {
 static bool is_peer_subscribed(struct bt_conn *conn)
 {
 	struct bt_gatt_attr *attr;
-	uint8_t nbr_subscribed = 0;
+	uint8_t nbr_subscribed = 0U;
 
 	attr = bt_gatt_find_by_uuid(NULL, 0, BT_UUID_PACS_SNK);
 	if (!attr) {
@@ -99,7 +99,7 @@ static bool is_peer_subscribed(struct bt_conn *conn)
 		nbr_subscribed++;
 	}
 
-	if (nbr_subscribed != 6) {
+	if (nbr_subscribed != 6U) {
 		return false;
 	}
 
@@ -131,8 +131,17 @@ static void trigger_notifications(void)
 	}
 
 	LOG_DBG("Changing Sink PACs");
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, caps);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, caps);
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, caps);
+	if (err != 0) {
+		FAIL("Failed to register sink PAC (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, caps);
+	if (err != 0) {
+		FAIL("Failed to register source PAC (err %d)\n", err);
+		return;
+	}
 
 	LOG_DBG("Changing Sink Location");
 	err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, snk_loc);
@@ -148,11 +157,19 @@ static void trigger_notifications(void)
 
 	LOG_DBG("Changing Supported Contexts Location");
 	supported = supported ^ BT_AUDIO_CONTEXT_TYPE_MEDIA;
-	bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, supported);
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, supported);
+	if (err != 0) {
+		FAIL("Failed to set supported contexts (err %d)\n", err);
+		return;
+	}
 
 	LOG_DBG("Changing Available Contexts");
 	available = available ^ BT_AUDIO_CONTEXT_TYPE_MEDIA;
-	bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, available);
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, available);
+	if (err != 0) {
+		FAIL("Failed to set available contexts (err %d)\n", err);
+		return;
+	}
 }
 
 static void test_main(void)
@@ -175,19 +192,47 @@ static void test_main(void)
 	}
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return;
 	}
 
-	bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_ANY);
-	bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_ANY);
-	bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_ANY);
-	bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_ANY);
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_ANY);
+	if (err != 0) {
+		FAIL("Failed to set sink supported contexts (err %d)\n", err);
+		return;
+	}
 
-	LOG_DBG("Registereding PACS");
-	bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &caps_1);
-	bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &caps_1);
+	err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_ANY);
+	if (err != 0) {
+		FAIL("Failed to set source supported contexts (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SINK, BT_AUDIO_CONTEXT_TYPE_ANY);
+	if (err != 0) {
+		FAIL("Failed to set sink available contexts (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_set_available_contexts(BT_AUDIO_DIR_SOURCE, BT_AUDIO_CONTEXT_TYPE_ANY);
+	if (err != 0) {
+		FAIL("Failed to set source available contexts (err %d)\n", err);
+		return;
+	}
+
+	LOG_DBG("Registering PACS");
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SINK, &caps_1);
+	if (err != 0) {
+		FAIL("Failed to register sink PAC (err %d)\n", err);
+		return;
+	}
+
+	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &caps_1);
+	if (err != 0) {
+		FAIL("Failed to register source PAC (err %d)\n", err);
+		return;
+	}
 
 	err = bt_pacs_set_location(BT_AUDIO_DIR_SINK, BT_AUDIO_LOCATION_FRONT_LEFT);
 	if (err != 0) {
@@ -210,7 +255,7 @@ static void test_main(void)
 	LOG_DBG("Waiting to be subscribed");
 
 	while (!is_peer_subscribed(default_conn)) {
-		(void)k_sleep(K_MSEC(10));
+		(void)k_sleep(K_MSEC(10U));
 	}
 	LOG_DBG("Subscribed");
 
@@ -230,7 +275,10 @@ static void test_main(void)
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);
 
-		bt_le_ext_adv_delete(ext_adv);
+		err = bt_le_ext_adv_delete(ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}
@@ -244,7 +292,10 @@ static void test_main(void)
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);
 
-		bt_le_ext_adv_delete(ext_adv);
+		err = bt_le_ext_adv_delete(ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}
@@ -275,7 +326,10 @@ static void test_main(void)
 	if (err != 0) {
 		FAIL("Failed to start advertising set (err %d)\n", err);
 
-		bt_le_ext_adv_delete(ext_adv);
+		err = bt_le_ext_adv_delete(ext_adv);
+		if (err != 0) {
+			FAIL("Failed to delete extended advertising set (err %d)\n", err);
+		}
 
 		return;
 	}

@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton NuMaker SD host controller
+
+compatible: "nuvoton,numaker-sdhc"
+
+include: [sdhc.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true
+
+  card-detect-from-gpio:
+    type: boolean
+    description: |
+        Use GPIO instead of DAT3 for card detection

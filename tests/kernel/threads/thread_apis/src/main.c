@@ -14,7 +14,6 @@
  */
 
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/kernel.h>
 #include <kernel_internal.h>
 #include <string.h>
@@ -80,7 +79,8 @@ static void customdata_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_thread_tests
  * @brief Test thread custom data get/set from coop thread
  *
- * @see k_thread_custom_data_get(), k_thread_custom_data_set()
+ * @see k_thread_custom_data_get()
+ * @see k_thread_custom_data_set()
  */
 ZTEST(threads_lifecycle_1cpu, test_customdata_get_set_coop)
 {
@@ -102,7 +102,9 @@ static void thread_name_entry(void *p1, void *p2, void *p3)
 /**
  * @ingroup kernel_thread_tests
  * @brief Test thread name get/set from supervisor thread
- * @see k_thread_name_get(), k_thread_name_copy(), k_thread_name_set()
+ * @see k_thread_name_get()
+ * @see k_thread_name_copy()
+ * @see k_thread_name_set()
  */
 ZTEST(threads_lifecycle, test_thread_name_get_set)
 {
@@ -143,7 +145,8 @@ struct k_sem sem;
 /**
  * @ingroup kernel_thread_tests
  * @brief Test thread name get/set from user thread
- * @see k_thread_name_copy(), k_thread_name_set()
+ * @see k_thread_name_copy()
+ * @see k_thread_name_set()
  */
 ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 {
@@ -212,7 +215,8 @@ ZTEST_USER(threads_lifecycle, test_thread_name_user_get_set)
 /**
  * @ingroup kernel_thread_tests
  * @brief Test thread custom data get/set from preempt thread
- * @see k_thread_custom_data_get(), k_thread_custom_data_set()
+ * @see k_thread_custom_data_get()
+ * @see k_thread_custom_data_set()
  */
 ZTEST_USER(threads_lifecycle_1cpu, test_customdata_get_set_preempt)
 {
@@ -258,6 +262,17 @@ static void enter_user_mode_entry(void *p1, void *p2, void *p3)
 				 k_current_get(), NULL, NULL);
 }
 
+/**
+ * @brief Verify a thread can run with user-mode (unprivileged) privileges.
+ *
+ * @details
+ * Create a thread that calls k_thread_user_mode_enter() so it transitions to
+ * user mode, confirming the kernel can create threads with a defined privilege
+ * level.
+ *
+ * @ingroup kernel_thread_tests
+ * @see k_thread_user_mode_enter()
+ */
 ZTEST_USER(threads_lifecycle, test_user_mode)
 {
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,

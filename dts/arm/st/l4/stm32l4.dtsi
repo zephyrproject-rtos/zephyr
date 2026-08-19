@@ -133,10 +133,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
@@ -212,6 +214,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
@@ -256,7 +259,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -326,7 +329,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			interrupts = <35 5>;
+			interrupts = <35 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -504,7 +507,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			status = "disabled";
@@ -514,7 +517,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>, <69 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <7>;
 			status = "disabled";
@@ -527,7 +530,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <65 1>;
+			interrupts = <65 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -539,7 +542,7 @@
 			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
-			interrupts = <66 1>;
+			interrupts = <66 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -559,33 +562,35 @@
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
 			reg = <0x40007000 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <5>; /* 5 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <5>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+				};
 
-			wkup-pin@3 {
-				reg = <0x3>;
-			};
+				wkup@3 {
+					reg = <0x3>;
+				};
 
-			wkup-pin@4 {
-				reg = <0x4>;
-			};
+				wkup@4 {
+					reg = <0x4>;
+				};
 
-			wkup-pin@5 {
-				reg = <0x5>;
+				wkup@5 {
+					reg = <0x5>;
+				};
 			};
 		};
 

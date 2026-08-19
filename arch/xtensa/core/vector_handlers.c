@@ -7,15 +7,16 @@
 #include <string.h>
 #include <xtensa_asm2_context.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/tracing/tracing.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/offsets.h>
 #include <zephyr/zsr.h>
 #include <zephyr/arch/common/exc_handle.h>
 
+#include <xtensa_exc.h>
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
@@ -126,7 +127,7 @@ bool xtensa_is_frame_pointer_valid(_xtensa_irq_stack_frame_raw_t *frame)
 	}
 
 #ifdef CONFIG_USERSPACE
-	/* With usespace, we have privileged stack and normal thread stack within
+	/* With userspace, we have privileged stack and normal thread stack within
 	 * one stack object. So we need to further test whether the frame pointer
 	 * resides in the correct stack based on kernel/user mode.
 	 */
@@ -273,6 +274,19 @@ static ALWAYS_INLINE void usage_stop(void)
 {
 #ifdef CONFIG_SCHED_THREAD_USAGE
 	z_sched_usage_stop();
+#endif
+}
+
+static ALWAYS_INLINE void isr_enter_hook(void)
+{
+#if defined(CONFIG_TRACING_ISR) || defined(CONFIG_SYS_IDLE_HOOKS)
+	/* Xtensa waits for the interrupt with interrupts enabled ("waiti 0"),
+	 * so this ISR can have interrupted the idle thread and may reschedule
+	 * away from it before the idle-exit hook gets a chance to run. Notifying
+	 * here is what lets the CPU load module close the idle window at the
+	 * instant idle actually ended.
+	 */
+	sys_trace_isr_enter();
 #endif
 }
 
@@ -499,33 +513,44 @@ __unused static void xtensa_handle_irq_lvl(int irq_lvl)
 #define DEF_INT_C_HANDLER(l)                                                                       \
 	__unused void *xtensa_int##l##_c(void *interrupted_stack)                                  \
 	{                                                                                          \
+		isr_enter_hook();                                                                  \
 		usage_stop();                                                                      \
 		xtensa_handle_irq_lvl(l);                                                          \
 		return return_to(interrupted_stack);                                               \
 	}
 
-#if MAX_INTR_LEVEL >= 2
+#if MAX_INTR_LEVEL >= 2 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 2)
 DEF_INT_C_HANDLER(2)
 #endif
 
-#if MAX_INTR_LEVEL >= 3
+#if MAX_INTR_LEVEL >= 3 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 3)
 DEF_INT_C_HANDLER(3)
 #endif
 
-#if MAX_INTR_LEVEL >= 4
+#if MAX_INTR_LEVEL >= 4 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 4)
 DEF_INT_C_HANDLER(4)
 #endif
 
-#if MAX_INTR_LEVEL >= 5
+#if MAX_INTR_LEVEL >= 5 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 5)
 DEF_INT_C_HANDLER(5)
 #endif
 
-#if MAX_INTR_LEVEL >= 6
+#if MAX_INTR_LEVEL >= 6 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 6)
 DEF_INT_C_HANDLER(6)
 #endif
 
-#if MAX_INTR_LEVEL >= 7
+#if MAX_INTR_LEVEL >= 7 && (!XCHAL_HAVE_NMI || XCHAL_NMILEVEL != 7)
 DEF_INT_C_HANDLER(7)
+#endif
+
+#if XCHAL_HAVE_NMI
+__unused void *xtensa_nmi_c(void *interrupted_stack)
+{
+	usage_stop();
+	_sw_isr_table[XCHAL_NMI_INTERRUPT].isr(
+		_sw_isr_table[XCHAL_NMI_INTERRUPT].arg);
+	return return_to(interrupted_stack);
+}
 #endif
 
 static inline DEF_INT_C_HANDLER(1)
@@ -662,25 +687,28 @@ void *xtensa_excint1_c(void *esf)
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
 
-		/* We need to distinguish between an ill in xtensa_arch_except,
-		 * e.g for k_panic, and any other ill. For exceptions caused by
-		 * xtensa_arch_except calls, we also need to pass the reason_p
-		 * to xtensa_fatal_error. Since the ARCH_EXCEPT frame is in the
-		 * BSA, the first arg reason_p is stored at the A2 offset.
-		 * We assign EXCCAUSE the unused, reserved code 63; this may be
-		 * problematic if the app or new boards also decide to repurpose
-		 * this code.
-		 *
-		 * Another intentionally ill is from xtensa_arch_kernel_oops.
-		 * Kernel OOPS has to be explicitly raised so we can simply
-		 * set the reason and continue.
+		/* We intentionally use "ill" (illegal instruction) as a trap for custom exceptions.
+		 * So we need to find out if the illegal instruction is legit.
 		 */
 		if (cause == EXCCAUSE_ILLEGAL) {
 			if (pc == (void *)&xtensa_arch_except_epc) {
-				cause = 63;
+				/* For exception caused by xtensa_arch_except(reason_p) call,
+				 * we also need to pass the reason_p to xtensa_fatal_error().
+				 * Since the ARCH_EXCEPT frame is in the BSA, the first arg
+				 * reason_p is stored at the saved A2 register.
+				 *
+				 * Here, we use the custom EXCCAUSE code
+				 * XTENSA_EXCCAUSE_CUSTOM_ZEPHYR_EXCEPTION to indicate
+				 * such condition.
+				 */
+				cause = XTENSA_EXCCAUSE_CUSTOM_ZEPHYR_EXCEPTION;
 				reason = bsa->a2;
 			} else if (pc == (void *)&xtensa_arch_kernel_oops_epc) {
-				cause = 64; /* kernel oops */
+				/* This intentional ill is from xtensa_arch_kernel_oops().
+				 * Kernel OOPS has to be explicitly raised so we can simply
+				 * set the reason and continue.
+				 */
+				cause = XTENSA_EXCCAUSE_CUSTOM_KERNEL_OOPS;
 				reason = K_ERR_KERNEL_OOPS;
 
 				/* A3 contains the second argument to

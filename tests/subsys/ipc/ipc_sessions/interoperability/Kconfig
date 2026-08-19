@@ -15,7 +15,7 @@ config IPC_SERVICE_BACKEND_ICMSG_V1
 	depends on MBOX
 	select IPC_SERVICE_ICMSG_V1
 	help
-	  Chosing this backend results in single endpoint implementation based
+	  Choosing this backend results in single endpoint implementation based
 	  on circular packet buffer.
 
 menuconfig IPC_SERVICE_ICMSG_V1

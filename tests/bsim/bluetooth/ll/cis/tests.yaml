@@ -1,0 +1,114 @@
+common:
+  timeout: 300
+  tags:
+    - bluetooth
+  depends_on: bsim
+  harness: bsim
+  platform_allow:
+    - nrf52_bsim/native
+    - nrf5340bsim/nrf5340/cpunet
+
+tests:
+  bluetooth.ll.cis:
+    extra_overlay_confs:
+      - overlay.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay_conf
+      tests_scripts:
+        - tests_scripts/connected_iso.sh
+
+  bluetooth.ll.cis.acl_first:
+    extra_overlay_confs:
+      - overlay-acl_first.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_first_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_first.sh
+
+  bluetooth.ll.cis.legacy_adv:
+    extra_overlay_confs:
+      - overlay-legacy_adv.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_legacy_adv.sh
+
+  bluetooth.ll.cis.legacy_adv_acl_first:
+    extra_overlay_confs:
+      - overlay-legacy_adv_acl_first.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-legacy_adv_acl_first_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_legacy_adv_acl_first.sh
+
+  bluetooth.ll.cis.acl_group:
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_overlay_confs:
+      - overlay-acl_group.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_group.sh
+
+  bluetooth.ll.cis.acl_group_acl_first:
+    extra_overlay_confs:
+      - overlay-acl_group_acl_first.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_group_acl_first_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_group_acl_first.sh
+
+  bluetooth.ll.cis.peripheral_cis:
+    extra_overlay_confs:
+      - overlay-peripheral_cis.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-peripheral_cis_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_peripheral_cis.sh
+
+  bluetooth.ll.cis.acl_first_ft_per_skip_2_se:
+    extra_overlay_confs:
+      - overlay-acl_first_ft_per_skip_2_se.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_first_ft_per_skip_2_se_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_first_ft_per_skip_2_se.sh
+
+  bluetooth.ll.cis.acl_first_ft_per_skip_4_se:
+    extra_overlay_confs:
+      - overlay-acl_first_ft_per_skip_4_se.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_first_ft_per_skip_4_se_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_first_ft_per_skip_4_se.sh
+
+  bluetooth.ll.cis.acl_first_ft_cen_skip_2_se:
+    extra_overlay_confs:
+      - overlay-acl_first_ft_cen_skip_2_se.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_first_ft_cen_skip_2_se_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_first_ft_cen_skip_2_se.sh
+
+  bluetooth.ll.cis.acl_first_ft_cen_skip_4_se:
+    extra_overlay_confs:
+      - overlay-acl_first_ft_cen_skip_4_se.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_ll_cis_prj_conf_overlay-acl_first_ft_cen_skip_4_se_conf
+      tests_scripts:
+        - tests_scripts/connected_iso_acl_first_ft_cen_skip_4_se.sh

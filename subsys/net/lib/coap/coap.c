@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2025 Ellenby Technologies Inc.
+ * Copyright (c) 2026 Siemens AG
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +16,7 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 
 #include <zephyr/types.h>
@@ -25,6 +28,10 @@ LOG_MODULE_REGISTER(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_mgmt.h>
+
+#if defined(CONFIG_COAP_OSCORE)
+#include "coap_oscore_internal.h"
+#endif /* CONFIG_COAP_OSCORE */
 
 #define COAP_PATH_ELEM_DELIM '/'
 #define COAP_PATH_ELEM_QUERY '?'
@@ -80,6 +87,13 @@ static inline void encode_be16(struct coap_packet *cpkt, uint16_t offset, uint16
 	cpkt->data[offset] = data >> 8;
 	cpkt->data[offset + 1] = (uint8_t)data;
 	cpkt->offset += 2;
+}
+
+__maybe_unused
+static inline void encode_be32(struct coap_packet *cpkt, uint16_t offset, uint32_t data)
+{
+	sys_put_be32(data, &cpkt->data[offset]);
+	cpkt->offset += 4;
 }
 
 static inline void encode_buffer(struct coap_packet *cpkt, uint16_t offset, const uint8_t *data,
@@ -184,6 +198,9 @@ int coap_packet_init(struct coap_packet *cpkt, uint8_t *data, uint16_t max_len,
 	cpkt->offset = 0U;
 	cpkt->max_len = max_len;
 	cpkt->delta = 0U;
+#if defined(CONFIG_COAP_OSCORE)
+	cpkt->oscore_ctx = NULL;
+#endif /* defined(CONFIG_COAP_OSCORE) */
 
 	hdr = (ver & 0x3) << 6;
 	hdr |= (type & 0x3) << 4;
@@ -410,13 +427,11 @@ unsigned int coap_option_value_to_int(const struct coap_option *option)
 	case 1:
 		return option->value[0];
 	case 2:
-		return (option->value[1] << 0) | (option->value[0] << 8);
+		return sys_get_be16(option->value);
 	case 3:
-		return (option->value[2] << 0) | (option->value[1] << 8) |
-			(option->value[0] << 16);
+		return sys_get_be24(option->value);
 	case 4:
-		return (option->value[3] << 0) | (option->value[2] << 8) |
-			(option->value[1] << 16) | (option->value[0] << 24);
+		return sys_get_be32(option->value);
 	default:
 		return 0;
 	}
@@ -772,6 +787,9 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 	cpkt->opt_len = 0U;
 	cpkt->hdr_len = 0U;
 	cpkt->delta = 0U;
+#if defined(CONFIG_COAP_OSCORE)
+	cpkt->oscore_ctx = NULL;
+#endif /* defined(CONFIG_COAP_OSCORE) */
 
 	/* Token lengths 9-15 are reserved. */
 	tkl = cpkt->data[0] & 0x0f;
@@ -919,23 +937,24 @@ int coap_find_options(const struct coap_packet *cpkt, uint16_t code,
 {
 	uint16_t opt_len;
 	uint16_t offset;
+	uint16_t end;
 	uint16_t delta;
 	uint8_t num;
 	int r;
 
-	/* Check if there are options to parse */
-	if (cpkt->hdr_len == cpkt->max_len) {
+	if (cpkt->opt_len == 0U) {
 		return 0;
 	}
 
 	offset = cpkt->hdr_len;
+	end = cpkt->hdr_len + cpkt->opt_len;
 	opt_len = 0U;
 	delta = 0U;
 	num = 0U;
 
-	while (delta <= code && num < veclen) {
+	while (delta <= code && num < veclen && offset < end) {
 		r = parse_option(cpkt->data, offset, &offset,
-				 cpkt->max_len, &delta, &opt_len,
+				 end, &delta, &opt_len,
 				 &options[num]);
 		if (r < 0) {
 			return -EINVAL;
@@ -971,7 +990,7 @@ uint8_t coap_header_get_type(const struct coap_packet *cpkt)
 	return (cpkt->data[0] & 0x30) >> 4;
 }
 
-static uint8_t __coap_header_get_code(const struct coap_packet *cpkt)
+static uint8_t coap_header_get_raw_code(const struct coap_packet *cpkt)
 {
 	if (!cpkt || !cpkt->data) {
 		return 0;
@@ -980,40 +999,8 @@ static uint8_t __coap_header_get_code(const struct coap_packet *cpkt)
 	return cpkt->data[1];
 }
 
-int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code)
+static uint8_t coap_header_code_sanitize(uint8_t code)
 {
-	if (!cpkt || !cpkt->data) {
-		return -EINVAL;
-	}
-
-	cpkt->data[1] = code;
-	return 0;
-}
-
-uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token)
-{
-	uint8_t tkl;
-
-	if (!cpkt || !cpkt->data) {
-		return 0;
-	}
-
-	tkl = cpkt->data[0] & 0x0f;
-	if (tkl > COAP_TOKEN_MAX_LEN) {
-		return 0;
-	}
-
-	if (tkl) {
-		memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
-	}
-
-	return tkl;
-}
-
-uint8_t coap_header_get_code(const struct coap_packet *cpkt)
-{
-	uint8_t code = __coap_header_get_code(cpkt);
-
 	switch (code) {
 	/* Methods are encoded in the code field too */
 	case COAP_METHOD_GET:
@@ -1052,10 +1039,54 @@ uint8_t coap_header_get_code(const struct coap_packet *cpkt)
 	case COAP_RESPONSE_CODE_GATEWAY_TIMEOUT:
 	case COAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED:
 	case COAP_CODE_EMPTY:
+
+	/* RFC 8323 signaling codes */
+	case COAP_SIGNAL_CODE_CSM:
+	case COAP_SIGNAL_CODE_PING:
+	case COAP_SIGNAL_CODE_PONG:
+	case COAP_SIGNAL_CODE_RELEASE:
+	case COAP_SIGNAL_CODE_ABORT:
 		return code;
 	default:
 		return COAP_CODE_EMPTY;
 	}
+}
+
+int coap_header_set_code(const struct coap_packet *cpkt, uint8_t code)
+{
+	if (!cpkt || !cpkt->data) {
+		return -EINVAL;
+	}
+
+	cpkt->data[1] = code;
+	return 0;
+}
+
+uint8_t coap_header_get_token(const struct coap_packet *cpkt, uint8_t *token)
+{
+	uint8_t tkl;
+
+	if (!cpkt || !cpkt->data) {
+		return 0;
+	}
+
+	tkl = cpkt->data[0] & 0x0f;
+	if (tkl > COAP_TOKEN_MAX_LEN) {
+		return 0;
+	}
+
+	if (tkl != 0) {
+		memcpy(token, cpkt->data + BASIC_HEADER_SIZE, tkl);
+	}
+
+	return tkl;
+}
+
+uint8_t coap_header_get_code(const struct coap_packet *cpkt)
+{
+	uint8_t code = coap_header_get_raw_code(cpkt);
+
+	return coap_header_code_sanitize(code);
 }
 
 uint16_t coap_header_get_id(const struct coap_packet *cpkt)
@@ -1166,7 +1197,7 @@ static int method_from_code(const struct coap_resource *resource,
 
 static inline bool is_empty_message(const struct coap_packet *cpkt)
 {
-	return __coap_header_get_code(cpkt) == COAP_CODE_EMPTY;
+	return coap_header_get_raw_code(cpkt) == COAP_CODE_EMPTY;
 }
 
 bool coap_packet_is_request(const struct coap_packet *cpkt)
@@ -1441,7 +1472,7 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 static int update_descriptive_block(struct coap_block_context *ctx,
 				    int block, int size)
 {
-	size_t new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+	size_t new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
 
 	if (block == -ENOENT) {
 		return 0;
@@ -1540,7 +1571,7 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 
 	if (coap_packet_is_request(cpkt)) {
 		r = update_control_block2(ctx, block2, size2);
-		if (r) {
+		if (r != 0) {
 			return r;
 		}
 
@@ -1548,7 +1579,7 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 	}
 
 	r = update_control_block1(ctx, block1, size1);
-	if (r) {
+	if (r != 0) {
 		return r;
 	}
 
@@ -1604,11 +1635,21 @@ int coap_pending_init(struct coap_pending *pending,
 		      const struct net_sockaddr *addr,
 		      const struct coap_transmission_parameters *params)
 {
+	size_t addr_len = net_family2size(addr->sa_family);
+
+	/* An unknown family yields 0 and leaves the address zeroed, which is how
+	 * a request issued over a connected socket is tracked. A family we cannot
+	 * store at all is a caller error.
+	 */
+	if (addr_len > sizeof(pending->addr_storage)) {
+		return -EINVAL;
+	}
+
 	memset(pending, 0, sizeof(*pending));
 
 	pending->id = coap_header_get_id(request);
 
-	memcpy(&pending->addr, addr, sizeof(*addr));
+	memcpy(&pending->addr_storage, addr, addr_len);
 
 	if (params) {
 		pending->params = *params;
@@ -1956,14 +1997,32 @@ bool coap_request_is_observe(const struct coap_packet *request)
 	return coap_get_option_int(request, COAP_OPTION_OBSERVE) == 0;
 }
 
-void coap_observer_init(struct coap_observer *observer,
-			const struct coap_packet *request,
+void coap_observer_init(struct coap_observer *observer, const struct coap_packet *request,
 			const struct net_sockaddr *addr)
 {
 	observer->tkl = coap_header_get_token(request, observer->token);
 
-	memcpy(&observer->addr, addr, net_family2size(addr->sa_family));
+	memcpy(&observer->addr, addr,
+	       min(net_family2size(addr->sa_family), sizeof(observer->addr)));
+
+#if defined(CONFIG_COAP_OSCORE)
+	observer->oscore_ctx = NULL;
+#endif
 }
+
+#if defined(CONFIG_COAP_OSCORE)
+void coap_observer_init_oscore(struct coap_observer *observer, const struct coap_packet *request,
+			       const struct net_sockaddr *addr,
+			       struct coap_oscore_context *oscore_ctx)
+{
+	observer->tkl = coap_header_get_token(request, observer->token);
+
+	memcpy(&observer->addr, addr,
+	       min(net_family2size(addr->sa_family), sizeof(observer->addr)));
+
+	observer->oscore_ctx = oscore_ctx;
+}
+#endif /* CONFIG_COAP_OSCORE */
 
 static inline void coap_observer_raise_event(struct coap_resource *resource,
 					     struct coap_observer *observer,
@@ -1991,6 +2050,18 @@ bool coap_register_observer(struct coap_resource *resource,
 
 	sys_slist_append(&resource->observers, &observer->list);
 
+#if defined(CONFIG_COAP_OSCORE)
+	/* Take the OSCORE context reference the observer holds for its lifetime
+	 * (paired with the release in coap_remove_observer()). A no-op for
+	 * non-OSCORE observers. If the context is already stale, drop the pointer so
+	 * the observer never releases a reference it did not take.
+	 */
+	if (observer->oscore_ctx != NULL &&
+	    coap_oscore_context_inc_refcount(observer->oscore_ctx) != 0) {
+		observer->oscore_ctx = NULL;
+	}
+#endif /* CONFIG_COAP_OSCORE */
+
 	first = resource->age == 0;
 	if (first) {
 		resource->age = COAP_OBSERVE_FIRST_OFFSET;
@@ -2008,45 +2079,19 @@ bool coap_remove_observer(struct coap_resource *resource,
 		return false;
 	}
 
+#if defined(CONFIG_COAP_OSCORE)
+	/* Release the OSCORE context reference taken in coap_register_observer().
+	 * A no-op for non-OSCORE observers.
+	 */
+	if (observer->oscore_ctx != NULL) {
+		coap_oscore_context_dec_refcount(observer->oscore_ctx);
+		observer->oscore_ctx = NULL;
+	}
+#endif /* CONFIG_COAP_OSCORE */
+
 	coap_observer_raise_event(resource, observer, NET_EVENT_COAP_OBSERVER_REMOVED);
 
 	return true;
-}
-
-static bool sockaddr_equal(const struct net_sockaddr *a,
-			   const struct net_sockaddr *b)
-{
-	/* FIXME: Should we consider ipv6-mapped ipv4 addresses as equal to
-	 * ipv4 addresses?
-	 */
-	if (a->sa_family != b->sa_family) {
-		return false;
-	}
-
-	if (a->sa_family == NET_AF_INET) {
-		const struct net_sockaddr_in *a4 = net_sin(a);
-		const struct net_sockaddr_in *b4 = net_sin(b);
-
-		if (a4->sin_port != b4->sin_port) {
-			return false;
-		}
-
-		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
-	}
-
-	if (b->sa_family == NET_AF_INET6) {
-		const struct net_sockaddr_in6 *a6 = net_sin6(a);
-		const struct net_sockaddr_in6 *b6 = net_sin6(b);
-
-		if (a6->sin6_port != b6->sin6_port) {
-			return false;
-		}
-
-		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
-	}
-
-	/* Invalid address family */
-	return false;
 }
 
 struct coap_observer *coap_find_observer(
@@ -2061,9 +2106,8 @@ struct coap_observer *coap_find_observer(
 	for (size_t i = 0; i < len; i++) {
 		struct coap_observer *o = &observers[i];
 
-		if (o->tkl == token_len &&
-		    memcmp(o->token, token, token_len) == 0 &&
-		    sockaddr_equal(net_sad(&o->addr), addr)) {
+		if (o->tkl == token_len && memcmp(o->token, token, token_len) == 0 &&
+		    net_sockaddr_cmp(net_sad(&o->addr), addr)) {
 			return o;
 		}
 	}
@@ -2080,7 +2124,7 @@ struct coap_observer *coap_find_observer_by_addr(
 	for (i = 0; i < len; i++) {
 		struct coap_observer *o = &observers[i];
 
-		if (sockaddr_equal(net_sad(&o->addr), addr)) {
+		if (net_sockaddr_cmp(net_sad(&o->addr), addr)) {
 			return o;
 		}
 	}
@@ -2136,3 +2180,469 @@ void coap_set_transmission_parameters(const struct coap_transmission_parameters 
 {
 	coap_transmission_params = *params;
 }
+
+int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt)
+{
+	if (cpkt == NULL || opt == NULL) {
+		return -EINVAL;
+	}
+
+	/* RFC 8613 Section 2: OSCORE option (9) is critical.
+	 * RFC 7252 Section 5.4.1: Unrecognized critical options must be rejected.
+	 * If OSCORE support is not enabled, treat OSCORE option as unrecognized critical.
+	 */
+#if !defined(CONFIG_COAP_OSCORE)
+	struct coap_option option;
+	int ret;
+
+	ret = coap_find_options(cpkt, COAP_OPTION_OSCORE, &option, 1);
+	if (ret > 0) {
+		/* OSCORE option found but not supported in this build */
+		*opt = COAP_OPTION_OSCORE;
+		return -ENOTSUP;
+	}
+#endif
+
+	return 0;
+}
+
+#if defined(CONFIG_COAP_OVER_RELIABLE_TRANSPORT)
+
+int coap_tcp_packet_init(struct coap_packet *cpkt, uint8_t *data,
+			 uint16_t max_len, uint8_t token_len,
+			 const uint8_t *token, uint8_t code)
+{
+	uint8_t hdr;
+	bool res;
+
+	if (cpkt == NULL || data == NULL || max_len == 0) {
+		return -EINVAL;
+	}
+
+	memset(cpkt, 0, sizeof(*cpkt));
+
+	cpkt->data = data;
+	cpkt->offset = 0U;
+	cpkt->max_len = max_len;
+	cpkt->delta = 0U;
+#if defined(CONFIG_COAP_OSCORE)
+	cpkt->oscore_ctx = NULL;
+#endif /* defined(CONFIG_COAP_OSCORE) */
+
+	/* Assuming packet without options or payload */
+	hdr = 0;
+	hdr |= token_len & 0xF;
+
+	res = append_u8(cpkt, hdr);
+	if (!res) {
+		return -EINVAL;
+	}
+
+	res = append_u8(cpkt, code);
+	if (!res) {
+		return -EINVAL;
+	}
+
+	if (token != NULL && token_len > 0) {
+		res = append(cpkt, token, token_len);
+		if (!res) {
+			return -EINVAL;
+		}
+	}
+
+	/* Header length : (len + tkl) + code + [token] */
+	cpkt->hdr_len = COAP_TCP_BASIC_HEADER_SIZE + token_len;
+
+	return 0;
+}
+
+int coap_tcp_packet_update_len(struct coap_packet *cpkt)
+{
+	uint8_t hdr;
+	uint8_t packet_len = (cpkt->data[0] >> 4) & 0xF;
+	uint8_t token_len = (cpkt->data[0]) & 0xF;
+
+	uint64_t options_and_payload_len = cpkt->offset - COAP_TCP_BASIC_HEADER_SIZE - token_len;
+
+	uint8_t header_len_ext_val;
+	uint8_t needed_ext_len_bytes;
+	uint8_t current_ext_len_bytes;
+
+	if (options_and_payload_len < COAP_TCP_HEADER_LEN_EXT_0B_MAX) {
+		header_len_ext_val = options_and_payload_len;
+		needed_ext_len_bytes = 0;
+	} else if (options_and_payload_len < COAP_TCP_HEADER_LEN_EXT_1B_MAX) {
+		header_len_ext_val = COAP_TCP_HEADER_LEN_EXT_1B;
+		needed_ext_len_bytes = 1;
+	} else if (options_and_payload_len < COAP_TCP_HEADER_LEN_EXT_2B_MAX) {
+		header_len_ext_val = COAP_TCP_HEADER_LEN_EXT_2B;
+		needed_ext_len_bytes = 2;
+	} else {
+		header_len_ext_val = COAP_TCP_HEADER_LEN_EXT_4B;
+		needed_ext_len_bytes = 4;
+	}
+
+	if (packet_len < COAP_TCP_HEADER_LEN_EXT_1B) {
+		current_ext_len_bytes = 0;
+	} else {
+		current_ext_len_bytes = (1 << (packet_len - COAP_TCP_HEADER_LEN_EXT_1B));
+	}
+
+	if (current_ext_len_bytes != needed_ext_len_bytes) {
+		/* + 1 for header byte */
+		size_t dest_offset = 1 + needed_ext_len_bytes;
+		/* + 1 for header byte */
+		size_t src_offset = 1 + current_ext_len_bytes;
+		size_t num_bytes_after_ext_header_len = cpkt->offset - src_offset;
+
+		if (dest_offset + num_bytes_after_ext_header_len > cpkt->max_len) {
+			return -EMSGSIZE;
+		}
+
+		memmove(&cpkt->data[dest_offset], &cpkt->data[src_offset],
+			num_bytes_after_ext_header_len);
+		cpkt->offset += needed_ext_len_bytes - current_ext_len_bytes;
+	}
+
+	/* The offsets are already included up to this point so they need to be removed
+	 * after being added from encoding functions
+	 */
+	switch (header_len_ext_val) {
+	case COAP_TCP_HEADER_LEN_EXT_4B:
+		encode_be32(cpkt, 1,
+			options_and_payload_len - COAP_TCP_HEADER_LEN_EXT_2B_MAX);
+		cpkt->offset -= 4;
+		break;
+	case COAP_TCP_HEADER_LEN_EXT_2B:
+		encode_be16(cpkt, 1,
+			options_and_payload_len - COAP_TCP_HEADER_LEN_EXT_1B_MAX);
+		cpkt->offset -= 2;
+		break;
+	case COAP_TCP_HEADER_LEN_EXT_1B:
+		encode_u8(cpkt, 1,
+			options_and_payload_len - COAP_TCP_HEADER_LEN_EXT_0B_MAX);
+		cpkt->offset -= 1;
+		break;
+	default:
+		break;
+	}
+
+	hdr = (header_len_ext_val << 4) & 0xF0;
+	hdr |= token_len & 0xF;
+	cpkt->data[0] = hdr;
+
+	/* Header/TKL + Extended Header Length + Code + Token*/
+	cpkt->hdr_len = COAP_TCP_BASIC_HEADER_SIZE + needed_ext_len_bytes + token_len;
+
+	return 0;
+}
+
+int coap_tcp_packet_parse(struct coap_packet *cpkt, uint8_t *data,
+			  uint16_t len, struct coap_option *options,
+			  uint8_t opt_num)
+{
+	uint16_t opt_len;
+	uint16_t offset;
+	uint16_t delta;
+	uint8_t num;
+	uint8_t tkl;
+	uint8_t hdr_len;
+	int ret;
+
+	if (cpkt == NULL || data == NULL) {
+		return -EINVAL;
+	}
+
+	if (len < COAP_TCP_BASIC_HEADER_SIZE) {
+		return -EINVAL;
+	}
+
+	if (options != NULL) {
+		memset(options, 0, opt_num * sizeof(struct coap_option));
+	}
+
+	cpkt->data = data;
+	cpkt->offset = len;
+	cpkt->max_len = len;
+	cpkt->opt_len = 0U;
+	cpkt->hdr_len = 0U;
+	cpkt->delta = 0U;
+#if defined(CONFIG_COAP_OSCORE)
+	cpkt->oscore_ctx = NULL;
+#endif /* defined(CONFIG_COAP_OSCORE) */
+
+	tkl = cpkt->data[0] & 0x0f;
+	if (tkl > 8) {
+		return -EBADMSG;
+	}
+
+	hdr_len = (cpkt->data[0] >> 4) & 0x0f;
+	cpkt->hdr_len = COAP_TCP_BASIC_HEADER_SIZE + tkl;
+	if (hdr_len >= COAP_TCP_HEADER_LEN_EXT_1B) {
+		cpkt->hdr_len += 1 << (hdr_len - COAP_TCP_HEADER_LEN_EXT_1B);
+	}
+
+	if (cpkt->hdr_len > len) {
+		return -EBADMSG;
+	}
+
+	/* No options or payload - header only packet */
+	if (cpkt->hdr_len == len) {
+		return 0;
+	}
+
+	offset = cpkt->hdr_len;
+	opt_len = 0U;
+	delta = 0U;
+	num = 0U;
+
+	while (1) {
+		struct coap_option *option;
+
+		option = num < opt_num ? &options[num++] : NULL;
+		ret = parse_option(cpkt->data, offset, &offset, cpkt->max_len,
+				   &delta, &opt_len, option);
+		if (ret < 0) {
+			return -EILSEQ;
+		} else if (ret == 0) {
+			break;
+		}
+	}
+
+	cpkt->opt_len = opt_len;
+	cpkt->delta = delta;
+
+	return 0;
+}
+
+uint8_t coap_tcp_header_get_token(const struct coap_packet *cpkt,
+				  uint8_t *token)
+{
+	uint8_t tkl;
+
+	if (cpkt == NULL || cpkt->data == NULL) {
+		return 0;
+	}
+
+	tkl = cpkt->data[0] & 0x0f;
+	if (tkl > COAP_TOKEN_MAX_LEN) {
+		return 0;
+	}
+
+	if (tkl > 0) {
+		memcpy(token, &cpkt->data[cpkt->hdr_len-tkl], tkl);
+	}
+
+	return tkl;
+}
+
+uint8_t coap_tcp_header_get_code(const struct coap_packet *cpkt)
+{
+	size_t offset_to_code = 1;
+	uint8_t header_ext_len, code;
+
+	if (cpkt == NULL || cpkt->data == NULL) {
+		return 0;
+	}
+
+	header_ext_len = (cpkt->data[0] >> 4) & 0xF;
+
+	if (header_ext_len >= COAP_TCP_HEADER_LEN_EXT_1B) {
+		offset_to_code += (1 << (header_ext_len - COAP_TCP_HEADER_LEN_EXT_1B));
+	}
+
+	code = cpkt->data[offset_to_code];
+
+	return coap_header_code_sanitize(code);
+}
+
+const uint8_t *coap_tcp_packet_get_payload(const struct coap_packet *cpkt,
+					   uint32_t *len)
+{
+	int payload_len;
+
+	if (cpkt == NULL || len == NULL) {
+		return NULL;
+	}
+
+	payload_len = cpkt->max_len - cpkt->hdr_len - cpkt->opt_len;
+	if (payload_len > 1) {
+		*len = payload_len - 1;	/* subtract payload marker length */
+	} else {
+		*len = 0U;
+	}
+
+	return *len == 0 ? NULL :
+		&cpkt->data[cpkt->hdr_len + cpkt->opt_len + 1];
+}
+
+static bool coap_tcp_packet_is_request(const struct coap_packet *cpkt)
+{
+	uint8_t code = coap_tcp_header_get_code(cpkt);
+
+	return (code != COAP_CODE_EMPTY) && !(code & ~COAP_REQUEST_MASK);
+}
+
+
+/* For TCP/BERT, always use 1024-byte units for block numbering per RFC 8323 */
+#define COAP_TCP_BERT_BLOCK_SIZE (1024)
+
+int coap_tcp_append_block2_option(struct coap_packet *cpkt,
+				  struct coap_block_context *ctx)
+{
+	int r, val = 0;
+	uint32_t block_num;
+
+	if (coap_tcp_packet_is_request(cpkt)) {
+		/* For BERT requests, block numbers are based on 1024-byte units.
+		 * ctx->current tracks the number of bytes received so far.
+		 * The block number we request is current/1024 (rounded down).
+		 */
+		block_num = ctx->current / COAP_TCP_BERT_BLOCK_SIZE;
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_NUM(val, block_num);
+	} else {
+		/* For responses, block_num indicates which block this is */
+		block_num = ctx->current / COAP_TCP_BERT_BLOCK_SIZE;
+		SET_BLOCK_SIZE(val, ctx->block_size);
+		SET_MORE(val, ctx->current + COAP_TCP_BERT_BLOCK_SIZE < ctx->total_size);
+		SET_NUM(val, block_num);
+	}
+
+	r = coap_append_option_int(cpkt, COAP_OPTION_BLOCK2, val);
+
+	return r;
+}
+
+static int update_control_block1_tcp(struct coap_block_context *ctx,
+				 int block, int size)
+{
+	size_t new_current;
+
+	if (block == -ENOENT) {
+		return 0;
+	}
+
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
+	if (new_current != ctx->current) {
+		return -EINVAL;
+	}
+
+	if (GET_BLOCK_SIZE(block) > ctx->block_size) {
+		return -EINVAL;
+	}
+
+	ctx->block_size = GET_BLOCK_SIZE(block);
+
+	if (size >= 0) {
+		ctx->total_size = size;
+	}
+
+	return 0;
+}
+
+static int update_control_block2_tcp(struct coap_block_context *ctx,
+				 int block, int size)
+{
+	size_t new_current;
+
+	if (block == -ENOENT) {
+		return 0;
+	}
+
+	if (block < 0) {
+		return -EINVAL;
+	}
+
+	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
+
+	if (GET_MORE(block)) {
+		return -EINVAL;
+	}
+
+	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
+		return -EINVAL;
+	}
+
+	ctx->current = new_current;
+	ctx->block_size = MIN(GET_BLOCK_SIZE(block), ctx->block_size);
+
+	return 0;
+}
+
+int coap_tcp_update_from_block(const struct coap_packet *cpkt,
+			       struct coap_block_context *ctx)
+{
+	int r, block1, block2, size1, size2;
+
+	block1 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
+	block2 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
+	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
+
+	if (coap_tcp_packet_is_request(cpkt)) {
+		r = update_control_block2_tcp(ctx, block2, size2);
+		if (r != 0) {
+			return r;
+		}
+
+		return update_descriptive_block(ctx, block1, size1 == -ENOENT ? 0 : size1);
+	}
+
+	r = update_control_block1_tcp(ctx, block1, size1);
+	if (r != 0) {
+		return r;
+	}
+
+	return update_descriptive_block(ctx, block2, size2 == -ENOENT ? 0 : size2);
+}
+
+static int coap_tcp_next_block_for_option(const struct coap_packet *cpkt,
+					  struct coap_block_context *ctx,
+					  enum coap_option_num option)
+{
+	int block;
+	uint32_t block_len = 0;
+
+	if (option != COAP_OPTION_BLOCK1 && option != COAP_OPTION_BLOCK2) {
+		return -EINVAL;
+	}
+
+	block = coap_get_option_int(cpkt, option);
+
+	if (block < 0) {
+		return block;
+	}
+
+	coap_tcp_packet_get_payload(cpkt, &block_len);
+	/* Check that the package does not exceed the expected size ONLY */
+	if ((ctx->total_size > 0) &&
+	    (ctx->total_size < (ctx->current + block_len))) {
+		return -EMSGSIZE;
+	}
+	ctx->current += block_len;
+
+	if (!GET_MORE(block)) {
+		return 0;
+	}
+
+	return (int)ctx->current;
+}
+
+size_t coap_tcp_next_block(const struct coap_packet *cpkt,
+			   struct coap_block_context *ctx)
+{
+	enum coap_option_num option;
+	int ret;
+
+	option = coap_tcp_packet_is_request(cpkt) ? COAP_OPTION_BLOCK1 : COAP_OPTION_BLOCK2;
+	ret = coap_tcp_next_block_for_option(cpkt, ctx, option);
+
+	return MAX(ret, 0);
+}
+
+#endif /* defined(CONFIG_COAP_OVER_RELIABLE_TRANSPORT) */

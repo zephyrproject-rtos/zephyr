@@ -10,6 +10,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/bitarray.h>
 #include <xtensa/corebits.h>
 #include <xtensa_asm2_context.h>
 #include <xtensa_mmu_priv.h>
@@ -242,17 +243,117 @@ static struct k_spinlock xtensa_counter_lock;
 
 #ifdef CONFIG_USERSPACE
 
+#define ASID_DEFAULT 3
+
 /**
- * @brief Number of ASIDs has been allocated.
+ * @brief ASID allocation bitmap and helper functions.
  *
- * Each domain has its own ASID. ASID can go through 1 (kernel) to 255.
- * When a TLB entry matches, the hw will check the ASID in the entry and finds
- * the correspondent position in the RASID register. This position will then be
- * compared with the current ring (CRING) to check the permission.
+ * ASIDs 0-2 are reserved (0 = invalid, 1 = kernel, 2 = reserved, 255
+ * = shared). ASID 3 is the default domain. Usable ASIDs for user
+ * domains are 4 through (XTENSA_MMU_SHARED_ASID - 1).
  *
- * This keeps track of how many ASIDs have been allocated for memory domains.
+ * A bitarray covers the entire 256-entry ASID space so that bit
+ * indices map directly to ASID values with no translation.
+ * Set bit (1) = in use or reserved, clear bit (0) = free.
+ * This matches sys_bitarray_alloc() semantics which finds clear bits.
+ *
+ * A second bitarray (asid_dirty) tracks freed ASIDs that have stale
+ * TLB entries. On free, the ASID is placed in asid_dirty (asid_used
+ * bit stays set). When no free ASIDs remain in asid_used, a single
+ * TLB flush is performed and dirty bits are XORed back into asid_used
+ * (clearing the in-use bits), amortizing the flush cost across many
+ * alloc/free cycles.
+ *
+ * Reserved ASIDs are marked as in-use (set to 1) during
+ * initialization, so they can never be allocated.
  */
-static uint8_t asid_count = 3;
+
+/*
+ * When PTEVADDR is 0x20000000 the self-reference for ASID 'a' lands at
+ * L1 position 128 + a. Positions 256+ map the uncached alias region
+ * (VA 0x40000000), so ASIDs must stay below 128. For other PTEVADDR
+ * values where no overlap exists, the full range up to
+ * XTENSA_MMU_SHARED_ASID - 1 is usable.
+ */
+#define ASID_PTEVADDR_MAX \
+	(256u - (CONFIG_XTENSA_MMU_PTEVADDR >> 22) - 1u)
+#define ASID_LAST_USER   MIN(XTENSA_MMU_SHARED_ASID - 1, ASID_PTEVADDR_MAX)
+
+#define ASID_SPACE 256
+
+static SYS_BITARRAY_DEFINE(asid_used, ASID_SPACE);
+static SYS_BITARRAY_DEFINE(asid_dirty, ASID_SPACE);
+
+/**
+ * @brief Initialize ASID bitmap.
+ *
+ * Marks reserved ASIDs (0 through ASID_DEFAULT, and ASID_LAST_USER+1
+ * through 255) as in-use (bit = 1) so they are never allocated.
+ * Usable ASIDs remain at 0 (free).
+ */
+static void asid_init(void)
+{
+	sys_bitarray_set_region(&asid_used, ASID_DEFAULT + 1, 0);
+	if (ASID_LAST_USER < ASID_SPACE - 1) {
+		sys_bitarray_set_region(&asid_used,
+					ASID_SPACE - 1 - ASID_LAST_USER,
+					ASID_LAST_USER + 1);
+	}
+}
+
+/**
+ * @brief Allocate a free ASID.
+ *
+ * Tries to allocate from asid_used. If no free ASIDs remain,
+ * performs a TLB flush, moves dirty ASIDs back via XOR, clears
+ * dirty, and retries.
+ *
+ * @return The allocated ASID number, or 0 if no ASIDs are available.
+ */
+static uint8_t asid_alloc(void)
+{
+	size_t asid;
+	int ret;
+
+	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
+	if (ret == 0) {
+		return (uint8_t)asid;
+	}
+
+	/* No free ASIDs — flush TLB, reclaim dirty ones */
+	xtensa_tlb_autorefill_invalidate();
+	xtensa_mmu_tlb_ipi();
+
+	sys_bitarray_xor(&asid_used, &asid_dirty, ASID_SPACE, 0);
+	sys_bitarray_clear_region(&asid_dirty, ASID_SPACE, 0);
+
+	ret = sys_bitarray_alloc(&asid_used, 1, &asid);
+	if (ret < 0) {
+		return 0;
+	}
+	return (uint8_t)asid;
+}
+
+/**
+ * @brief Free a previously allocated ASID.
+ *
+ * Places the ASID into the dirty set. It will be reclaimed
+ * (cleared in asid_used) on the next TLB flush triggered by
+ * asid_alloc().
+ *
+ * @param asid The ASID to free.
+ */
+static void asid_free(uint8_t asid)
+{
+	__ASSERT(asid > ASID_DEFAULT && asid <= ASID_LAST_USER,
+		 "ASID %u out of range", asid);
+	if (asid <= ASID_DEFAULT || asid > ASID_LAST_USER) {
+		LOG_ERR("Trying to free a bad or static ASID %u", asid);
+		return;
+	}
+
+	sys_bitarray_set_bit(&asid_dirty, asid);
+}
 
 /** Linked list with all active and initialized memory domains. */
 static sys_slist_t xtensa_domain_list;
@@ -529,6 +630,10 @@ void xtensa_mmu_init(void)
 
 	xtensa_mmu_init_paging();
 
+#ifdef CONFIG_USERSPACE
+	asid_init();
+#endif
+
 	/*
 	 * This is used to determine whether we are faulting inside double
 	 * exception if this is not zero. Sometimes SoC starts with this not
@@ -570,7 +675,7 @@ __weak void arch_reserved_pages_update(void)
 	uintptr_t page;
 	int idx;
 
-	for (page = CONFIG_SRAM_BASE_ADDRESS, idx = 0;
+	for (page = DT_CHOSEN_SRAM_ADDR, idx = 0;
 	     page < (uintptr_t)z_mapped_start;
 	     page += CONFIG_MMU_PAGE_SIZE, idx++) {
 		k_mem_page_frame_set(&k_mem_page_frames[idx], K_MEM_PAGE_FRAME_RESERVED);
@@ -649,17 +754,20 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
  * @param[in] paddr Physical address to map to.
  * @param[in] attrs Page table attributes (actual hardware attributes).
  * @param[in] is_user True if mapping for user mode, false if kernel mode only.
+ *
+ * @retval true Memory mapped
+ * @retval false Mapping failed
  */
-static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, bool is_user)
+static inline bool __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, bool is_user)
 {
 	bool ret;
 
 	ret = l2_page_table_map(xtensa_kernel_ptables, vaddr, paddr, attrs, is_user);
-	__ASSERT(ret, "Cannot map virtual address (%p)", vaddr);
+	if (!ret) {
+		LOG_ERR("Cannot map virtual address (%p)", vaddr);
+	}
 
-#ifndef CONFIG_USERSPACE
-	ARG_UNUSED(ret);
-#else
+#ifdef CONFIG_USERSPACE
 	if (ret) {
 		sys_snode_t *node;
 		struct arch_mem_domain *domain;
@@ -670,8 +778,12 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
 			ret = l2_page_table_map(domain->ptables, vaddr, paddr, attrs, is_user);
-			__ASSERT(ret, "Cannot map virtual address (%p) for domain %p",
-				 vaddr, domain);
+			if (!ret) {
+				LOG_ERR("Cannot map virtual address (%p) for domain %p",
+					vaddr, domain);
+
+				break;
+			}
 
 			/* We may have made a copy of L2 table containing VECBASE.
 			 * So we need to re-calculate the static TLBs so the correct ones
@@ -682,6 +794,8 @@ static inline void __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 		k_spin_unlock(&z_mem_domain_lock, key);
 	}
 #endif /* CONFIG_USERSPACE */
+
+	return ret;
 }
 
 void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
@@ -725,7 +839,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&xtensa_mmu_lock);
 
 	while (rem_size > 0) {
-		__arch_mem_map((void *)va, pa, attrs, is_user);
+		if (!__arch_mem_map((void *)va, pa, attrs, is_user)) {
+			k_panic();
+		}
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
@@ -1289,12 +1405,6 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	k_spinlock_key_t key;
 	int ret;
 
-	/*
-	 * For now, lets just assert if we have reached the maximum number
-	 * of asid we assert.
-	 */
-	__ASSERT(asid_count < (XTENSA_MMU_SHARED_ASID), "Reached maximum of ASID available");
-
 	key = k_spin_lock(&xtensa_mmu_lock);
 	/* If this is the default domain, we don't need
 	 * to create a new set of page tables. We can just
@@ -1303,7 +1413,7 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 
 	if (domain == &k_mem_domain_default) {
 		domain->arch.ptables = xtensa_kernel_ptables;
-		domain->arch.asid = asid_count;
+		domain->arch.asid = ASID_DEFAULT;
 		goto end;
 	}
 
@@ -1316,7 +1426,13 @@ int arch_mem_domain_init(struct k_mem_domain *domain)
 	}
 
 	domain->arch.ptables = ptables;
-	domain->arch.asid = ++asid_count;
+
+	domain->arch.asid = asid_alloc();
+	__ASSERT(domain->arch.asid != 0, "No ASIDs available");
+	if (domain->arch.asid == 0) {
+		ret = -ENOMEM;
+		goto err;
+	}
 
 	sys_slist_append(&xtensa_domain_list, &domain->arch.node);
 
@@ -1378,6 +1494,10 @@ int arch_mem_domain_deinit(struct k_mem_domain *domain)
 	atomic_clear_bit(l1_page_tables_track, l1_table_to_track_pos(l1_table));
 
 	domain->arch.ptables = NULL;
+
+	asid_free(domain->arch.asid);
+
+	sys_slist_find_and_remove(&xtensa_domain_list, &domain->arch.node);
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
 
@@ -1689,18 +1809,15 @@ static bool page_validate(uint32_t *ptables, uint32_t page, uint8_t ring, bool w
 /**
  * @brief Check if a memory region can be legally accessed.
  *
- * @param[in] ptables Pointer to the level 1 page table.
  * @param[in] addr Start virtual address of the memory region to be checked.
  * @param[in] size Size of the memory region to be checked.
  * @param[in] write True if the access needs to write to this page, false if read only.
- * @param[in] ring Ring value for the access.
+ * @param[in] ring Ring value for the access (RING_USER or RING_KERNEL).
  *
  * @retval 0 Access is legal.
  * @retval -1 Access is not legal and will probably generate page fault.
- *
- * @see arch_buffer_validate
  */
-static int mem_buffer_validate(const void *addr, size_t size, int write, int ring)
+static int mem_buffer_validate(const void *addr, size_t size, int write, uint8_t ring)
 {
 	int ret = 0;
 	uint8_t *virt;
@@ -1723,14 +1840,14 @@ static int mem_buffer_validate(const void *addr, size_t size, int write, int rin
 	return ret;
 }
 
-bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write)
-{
-	return mem_buffer_validate(addr, size, write, RING_KERNEL) == 0;
-}
-
 int arch_buffer_validate(const void *addr, size_t size, int write)
 {
 	return mem_buffer_validate(addr, size, write, RING_USER);
+}
+
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size)
+{
+	return mem_buffer_validate(addr, size, false, RING_KERNEL) == 0;
 }
 
 void xtensa_exc_dtlb_multihit_handle(void *vaddr)

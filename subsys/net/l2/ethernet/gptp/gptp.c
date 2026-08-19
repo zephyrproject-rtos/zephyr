@@ -40,19 +40,39 @@ struct gptp_clock_data gptp_clock;
 
 int gptp_get_port_number(struct net_if *iface)
 {
-	int port = net_eth_get_ptp_port(iface) + 1;
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	int port;
 
-	if (port >= GPTP_PORT_START && port < GPTP_PORT_END) {
+	NET_ASSERT(ctx != NULL);
+
+	port = ctx->gptp_port;
+
+	if (port >= GPTP_PORT_START && port <= GPTP_PORT_END) {
 		return port;
 	}
+	return -ENODEV;
+}
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
-		if (GPTP_PORT_IFACE(port) == iface) {
-			return port;
-		}
+int gptp_set_port_number(struct net_if *iface, uint16_t port)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	const struct device *clk;
+
+	NET_ASSERT(ctx != NULL);
+
+	clk = net_eth_get_ptp_clock(iface);
+	if (clk == NULL) {
+		return -ENODEV;
 	}
 
-	return -ENODEV;
+	if (port < GPTP_PORT_START ||
+	    port >= (GPTP_PORT_START + CONFIG_NET_GPTP_NUM_PORTS)) {
+		return -EINVAL;
+	}
+
+	ctx->gptp_port = port;
+
+	return 0;
 }
 
 bool gptp_is_slave_port(int port)
@@ -69,18 +89,23 @@ static void gptp_compute_clock_identity(int port)
 {
 	struct net_if *iface = GPTP_PORT_IFACE(port);
 	struct gptp_default_ds *default_ds;
+	struct net_linkaddr *ll_addr;
 
 	default_ds = GPTP_DEFAULT_DS();
 
 	if (iface) {
-		default_ds->clk_id[0] = net_if_get_link_addr(iface)->addr[0];
-		default_ds->clk_id[1] = net_if_get_link_addr(iface)->addr[1];
-		default_ds->clk_id[2] = net_if_get_link_addr(iface)->addr[2];
+		ll_addr = net_if_get_link_addr(iface);
+
+		NET_ASSERT(ll_addr != NULL);
+
+		default_ds->clk_id[0] = ll_addr->addr[0];
+		default_ds->clk_id[1] = ll_addr->addr[1];
+		default_ds->clk_id[2] = ll_addr->addr[2];
 		default_ds->clk_id[3] = 0xFF;
 		default_ds->clk_id[4] = 0xFE;
-		default_ds->clk_id[5] = net_if_get_link_addr(iface)->addr[3];
-		default_ds->clk_id[6] = net_if_get_link_addr(iface)->addr[4];
-		default_ds->clk_id[7] = net_if_get_link_addr(iface)->addr[5];
+		default_ds->clk_id[5] = ll_addr->addr[3];
+		default_ds->clk_id[6] = ll_addr->addr[4];
+		default_ds->clk_id[7] = ll_addr->addr[5];
 	}
 }
 
@@ -131,6 +156,11 @@ static bool gptp_handle_critical_msg(struct net_if *iface, struct net_pkt *pkt)
 
 static void gptp_handle_msg(struct net_pkt *pkt)
 {
+	if (GPTP_PACKET_LEN(pkt) < sizeof(struct gptp_hdr)) {
+		NET_DBG("gPTP packet too short (%zu)", GPTP_PACKET_LEN(pkt));
+		return;
+	}
+
 	struct gptp_hdr *hdr = GPTP_HDR(pkt);
 	struct gptp_pdelay_req_state *pdelay_req_state;
 	struct gptp_sync_rcv_state *sync_rcv_state;
@@ -526,8 +556,15 @@ static void gptp_state_machine(void)
 	int port;
 
 	/* Manage port states. */
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
-		struct gptp_port_ds *port_ds = GPTP_PORT_DS(port);
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		struct gptp_port_ds *port_ds;
+
+		/* gptp_add_port() never registers more ports than the per-port
+		 * arrays can hold, so this only makes that bound explicit.
+		 */
+		NET_ASSERT(GPTP_PORT_INDEX(port) < CONFIG_NET_GPTP_NUM_PORTS);
+
+		port_ds = GPTP_PORT_DS(port);
 
 		/* If interface is down, don't move forward */
 		if (net_if_flag_is_set(GPTP_PORT_IFACE(port), NET_IF_UP)) {
@@ -566,7 +603,7 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 	gptp_init_clock_ds();
 
-	for (port = GPTP_PORT_START; port < GPTP_PORT_END; port++) {
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
 		gptp_init_port_ds(port);
 		gptp_change_port_state(port, GPTP_PORT_DISABLED);
 	}
@@ -588,18 +625,14 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
-	uint8_t *num_ports = user_data;
-	const struct device *clk;
+	uint16_t *num_ports = user_data;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
 	}
 
-	/* Check if interface has a PTP clock. */
-	clk = net_eth_get_ptp_clock(iface);
-	if (clk) {
+	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) == 0) {
 		gptp_domain.iface[*num_ports] = iface;
-		net_eth_set_ptp_port(iface, *num_ports);
 		(*num_ports)++;
 	}
 }
@@ -882,7 +915,7 @@ int gptp_get_port_data(struct gptp_domain *domain,
 		return -ENOENT;
 	}
 
-	if (port < GPTP_PORT_START || port >= GPTP_PORT_END) {
+	if (port < GPTP_PORT_START || port > GPTP_PORT_END) {
 		return -EINVAL;
 	}
 

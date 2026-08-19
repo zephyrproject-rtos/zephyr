@@ -148,6 +148,16 @@ config CRC32_K_4_2
 	  CRC32-IEEE used in Ethernet, ZIP files, and other data integrity
 	  applications.
 
+config CRC32_MPEG2
+	bool "CRC-32 (MPEG-2)"
+	depends on CRC_DRIVER_HAS_CRC32_MPEG2
+	default y
+	help
+	  Implements the CRC-32/MPEG-2 algorithm (polynomial 0x04C11DB7,
+	  initial value 0xFFFFFFFF, no input/output reflection, no final
+	  XOR). Used by MPEG-2 transport streams (ISO/IEC 13818-1) and
+	  commonly available in MCU CRC peripherals.
+
 config CRC32_K_4_2_TABLE_256
 	bool "CRC-32K/4.2 Table 256"
 	help

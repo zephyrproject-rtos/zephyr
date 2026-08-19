@@ -17,8 +17,14 @@
 /**
  * @brief Interfaces for cellular modems.
  * @defgroup cellular_interface Cellular
+ * @since 3.6
+ * @version 0.8.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup cellular_interface_ext Device-specific Cellular API extensions
+ * @{
+ * @}
  */
 
 #include <zephyr/types.h>
@@ -141,6 +147,8 @@ enum cellular_event {
 	CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED = BIT(1),
 	/** Result of a communications link check to the modem */
 	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
+	/** Cellular network status changed */
+	CELLULAR_EVENT_NETWORK_STATUS_CHANGED = BIT(3),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
@@ -161,6 +169,52 @@ struct cellular_evt_modem_comms_check_result {
 	bool success; /**< Communications to modem checked successfully */
 };
 
+/** E-UTRAN Global Cell Identifier (GCI) is a 28bit value */
+#define CELLULAR_EUTRAN_CELL_ID_MAX     0xFFFFFFFU
+/** Unknown E-UTRAN Global Cell Identifier (GCI) */
+#define CELLULAR_EUTRAN_CELL_ID_INVALID UINT32_MAX
+
+/** Payload for @ref CELLULAR_EVENT_NETWORK_STATUS_CHANGED */
+struct cellular_evt_network_status {
+	enum cellular_registration_status status; /**< Registration status */
+	enum cellular_access_technology access_tech; /**< Access technology */
+	union {
+		struct {
+			uint16_t mcc; /**< Mobile Country Code */
+			uint16_t mnc; /**< Mobile Network Code */
+			uint32_t tac; /**< Tracking Area Code */
+			uint32_t earfcn; /**< E-UTRAN assigned radio channel */
+			uint32_t gci; /**< E-UTRAN cell ID (0 - CELLULAR_EUTRAN_CELL_ID_MAX) */
+			uint16_t phys_cell_id; /**< Physical cell ID */
+			uint16_t band; /**< Band number (from 3GPP TS 36.101) */
+			int16_t rsrp; /**< Received signal power (dBm) */
+			int8_t rsrq; /**< Received signal quality (dB) */
+		} lte; /**< LTE Cell information */
+	} cell; /**< Generic Cell information */
+};
+
+/**
+ * @brief Cellular link operational statistics.
+ *
+ * Counters are cumulative since boot.
+ */
+struct cellular_stats {
+	/** Cumulative time the modem was not registered, in milliseconds. */
+	uint32_t outage_ms;
+	/** Registered to not-registered transitions. */
+	uint32_t deregistrations;
+	/** Data-link carrier losses. */
+	uint32_t link_drops;
+	/** Control-channel command failures. */
+	uint32_t command_failures;
+	/** `+CME ERROR` responses. */
+	uint32_t command_errors_cme;
+	/** Recovery transitions entered. */
+	uint32_t recoveries;
+	/** CMUX desync/disconnect events. */
+	uint32_t cmux_disconnects;
+};
+
 /**
  * @brief Prototype for cellular event callbacks.
  *
@@ -175,6 +229,12 @@ struct cellular_evt_modem_comms_check_result {
  */
 typedef void (*cellular_event_cb_t)(const struct device *dev, enum cellular_event event,
 				    const void *payload, void *user_data);
+
+/**
+ * @def_driverbackendgroup{Cellular,cellular_interface}
+ * @ingroup cellular_interface
+ * @{
+ */
 
 /** API for configuring networks */
 typedef int (*cellular_api_configure_networks)(const struct device *dev,
@@ -200,6 +260,10 @@ typedef int (*cellular_api_get_registration_status)(const struct device *dev,
 						    enum cellular_access_technology tech,
 						    enum cellular_registration_status *status);
 
+/** API for getting the last reported network (serving cell) status */
+typedef int (*cellular_api_get_network_status)(const struct device *dev,
+					       struct cellular_evt_network_status *status);
+
 /** API for programming APN */
 typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 
@@ -207,16 +271,34 @@ typedef int (*cellular_api_set_apn)(const struct device *dev, const char *apn);
 typedef int (*cellular_api_set_callback)(const struct device *dev, cellular_event_mask_t mask,
 					 cellular_event_cb_t cb, void *user_data);
 
-/** Cellular driver API */
+/** API for reading operational statistics */
+typedef const struct cellular_stats *(*cellular_api_get_stats)(const struct device *dev);
+
+/**
+ * @driver_ops{Cellular}
+ */
 __subsystem struct cellular_driver_api {
+	/** @driver_ops_optional @copybrief cellular_configure_networks */
 	cellular_api_configure_networks configure_networks;
+	/** @driver_ops_optional @copybrief cellular_get_supported_networks */
 	cellular_api_get_supported_networks get_supported_networks;
+	/** @driver_ops_optional @copybrief cellular_get_signal */
 	cellular_api_get_signal get_signal;
+	/** @driver_ops_optional @copybrief cellular_get_modem_info */
 	cellular_api_get_modem_info get_modem_info;
+	/** @driver_ops_optional @copybrief cellular_get_registration_status */
 	cellular_api_get_registration_status get_registration_status;
+	/** @driver_ops_optional @copybrief cellular_get_network_status */
+	cellular_api_get_network_status get_network_status;
+	/** @driver_ops_optional @copybrief cellular_set_apn */
 	cellular_api_set_apn set_apn;
+	/** @driver_ops_optional @copybrief cellular_set_callback */
 	cellular_api_set_callback set_callback;
+	/** @driver_ops_optional @copybrief cellular_get_stats */
+	cellular_api_get_stats get_stats;
 };
+
+/** @} */
 
 /**
  * @brief Configure cellular networks for the device
@@ -234,15 +316,14 @@ __subsystem struct cellular_driver_api {
  * @param networks List of cellular network configurations to apply.
  * @param size Size of list of cellular network configurations.
  *
- * @retval 0 if successful.
- * @retval -EINVAL if any provided cellular network configuration is invalid or unsupported.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Any provided cellular network configuration is invalid or unsupported.
+ * @retval -ENOTSUP API is not supported by cellular network device.
  */
 static inline int cellular_configure_networks(const struct device *dev,
 					      const struct cellular_network *networks, uint8_t size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->configure_networks == NULL) {
 		return -ENOSYS;
@@ -258,15 +339,14 @@ static inline int cellular_configure_networks(const struct device *dev,
  * @param networks Pointer to list of supported cellular network configurations.
  * @param size Size of list of cellular network configurations.
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
  */
 static inline int cellular_get_supported_networks(const struct device *dev,
 						  const struct cellular_network **networks,
 						  uint8_t *size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_supported_networks == NULL) {
 		return -ENOSYS;
@@ -282,15 +362,14 @@ static inline int cellular_get_supported_networks(const struct device *dev,
  * @param type Type of the signal information requested
  * @param value Signal strength destination (one of RSSI, RSRP, RSRQ)
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval -ENODATA if device is not in a state where signal can be polled
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
+ * @retval -ENODATA Device is not in a state where signal can be polled.
  */
 static inline int cellular_get_signal(const struct device *dev,
 				      const enum cellular_signal_type type, int16_t *value)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_signal == NULL) {
 		return -ENOSYS;
@@ -307,16 +386,15 @@ static inline int cellular_get_signal(const struct device *dev,
  * @param info Info string destination
  * @param size Info string size
  *
- * @retval 0 if successful.
- * @retval -ENOTSUP if API is not supported by cellular network device.
- * @retval -ENODATA if modem does not provide info requested
- * @retval <0 Negative errno-code from chat module otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP API is not supported by cellular network device.
+ * @retval -ENODATA Modem does not provide the requested info.
  */
 static inline int cellular_get_modem_info(const struct device *dev,
 					  const enum cellular_modem_info_type type, char *info,
 					  size_t size)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_modem_info == NULL) {
 		return -ENOSYS;
@@ -332,22 +410,48 @@ static inline int cellular_get_modem_info(const struct device *dev,
  * @param tech Which access technology to get status for
  * @param status Registration status for given access technology
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if API is not supported by cellular network device.
- * @retval -ENODATA if modem does not provide info requested
- * @retval <0 Negative errno-code from chat module otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENODATA Modem does not provide the requested info.
  */
 static inline int cellular_get_registration_status(const struct device *dev,
 						   enum cellular_access_technology tech,
 						   enum cellular_registration_status *status)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->get_registration_status == NULL) {
 		return -ENOSYS;
 	}
 
 	return api->get_registration_status(dev, tech, status);
+}
+
+/**
+ * @brief Get the last reported network (serving cell) status
+ *
+ * @details Returns the most recent network status the driver has observed,
+ * as delivered by @ref CELLULAR_EVENT_NETWORK_STATUS_CHANGED. It does not
+ * trigger a fresh query.
+ *
+ * @param dev Cellular network device instance
+ * @param status Destination for the network status snapshot
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -ENODATA No current network status (before the first report, or after
+ * a registration change until the next poll refreshes it).
+ */
+static inline int cellular_get_network_status(const struct device *dev,
+					      struct cellular_evt_network_status *status)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_network_status == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->get_network_status(dev, status);
 }
 
 /**
@@ -359,16 +463,15 @@ static inline int cellular_get_registration_status(const struct device *dev,
  * @param dev Cellular device
  * @param apn Zero-terminated APN string (max length is driver-specific)
  *
- * @retval 0 if successful.
- * @retval -ENOSYS if API is not supported by cellular network device.
- * @retval -EINVAL if APN string invalid or too long.
- * @retval -EALREADY if APN identical to current one, nothing to do
- * @retval -EBUSY if modem is already dialled, APN cannot be changed
- * @retval <0 Negative errno-code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS API is not supported by cellular network device.
+ * @retval -EINVAL APN string invalid or too long.
+ * @retval -EALREADY APN identical to current one, nothing to do.
+ * @retval -EBUSY Modem is already dialled, APN cannot be changed.
  */
 static inline int cellular_set_apn(const struct device *dev, const char *apn)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->set_apn == NULL) {
 		return -ENOSYS;
@@ -385,22 +488,40 @@ static inline int cellular_set_apn(const struct device *dev, const char *apn)
  * @param cb Callback to call when the event occurs, or NULL to unsubscribe
  * @param user_data Pointer to user data that will be passed to the callback
  *
- * @retval 0         Success
- * @retval -ENOSYS   Driver does not support event callbacks
- * @retval -EINVAL   Bad parameters
- * @retval -ENOMEM   No space left for another subscriber
- * @retval <0        Driver-specific error
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Driver does not support event callbacks.
+ * @retval -EINVAL Bad parameters.
+ * @retval -ENOMEM No space left for another subscriber.
  */
 static inline int cellular_set_callback(const struct device *dev, cellular_event_mask_t mask,
 					cellular_event_cb_t cb, void *user_data)
 {
-	const struct cellular_driver_api *api = (const struct cellular_driver_api *)dev->api;
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
 
 	if (api->set_callback == NULL) {
 		return -ENOSYS;
 	}
 
 	return api->set_callback(dev, mask, cb, user_data);
+}
+
+/**
+ * @brief Read operational statistics from the cellular device
+ *
+ * @param dev Cellular network device instance.
+ *
+ * @return Pointer to the device's live statistics, or `NULL` if the device does
+ *         not implement the API.
+ */
+static inline const struct cellular_stats *cellular_get_stats(const struct device *dev)
+{
+	const struct cellular_driver_api *api = DEVICE_API_GET(cellular, dev);
+
+	if (api->get_stats == NULL) {
+		return NULL;
+	}
+
+	return api->get_stats(dev);
 }
 
 #ifdef __cplusplus

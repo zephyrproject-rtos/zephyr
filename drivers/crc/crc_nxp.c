@@ -6,6 +6,8 @@
 #define DT_DRV_COMPAT nxp_crc
 
 #include <zephyr/drivers/crc.h>
+#include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(nxp_crc, CONFIG_CRC_LOG_LEVEL);
@@ -17,6 +19,9 @@ LOG_MODULE_REGISTER(nxp_crc, CONFIG_CRC_LOG_LEVEL);
 
 struct crc_nxp_config {
 	CRC_Type *base;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+	struct reset_dt_spec reset;
 };
 
 struct crc_nxp_data {
@@ -57,7 +62,24 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 
 	switch (ctx->type) {
 	case CRC16:
-		if (ctx->polynomial != CRC16_POLY) {
+		/*
+		 * The CRC engine takes the polynomial in normal (MSBit-first) form
+		 * and performs input/output reflection through reflectIn/reflectOut.
+		 * crc16() passes the normal CRC-16 polynomial (0x8005), while
+		 * crc16_reflect()/crc16_ansi() pass its reflected form (0xA001) with
+		 * both reflect flags set. The reflected form is only accepted when
+		 * both input and output are reflected -- the only case where it can
+		 * be honored by programming the equivalent normal-form polynomial;
+		 * accepting it otherwise would silently compute a different CRC.
+		 */
+		if (ctx->polynomial == CRC16_REFLECT_POLY) {
+			if ((ctx->reversed & (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)) !=
+			    (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)) {
+				return -EINVAL;
+			}
+			/* Program the equivalent normal-form polynomial. */
+			cfg->polynomial = CRC16_POLY;
+		} else if (ctx->polynomial != CRC16_POLY) {
 			return -EINVAL;
 		}
 		cfg->seed &= 0xFFFFU;
@@ -65,6 +87,7 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 		*use32 = false;
 		break;
 	case CRC16_CCITT:
+	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
@@ -74,14 +97,6 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 		break;
 	case CRC16_ANSI:
 		if (ctx->polynomial != CRC16_REFLECT_POLY) {
-			return -EINVAL;
-		}
-		cfg->seed &= 0xFFFFU;
-		cfg->crcBits = kCrcBits16;
-		*use32 = false;
-		break;
-	case CRC16_ITU_T:
-		if (ctx->polynomial != CRC16_CCITT_POLY) {
 			return -EINVAL;
 		}
 		cfg->seed &= 0xFFFFU;
@@ -101,6 +116,14 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 		}
 		cfg->crcBits = kCrcBits32;
 		cfg->complementChecksum = true; /* IEEE requires final XOR */
+		*use32 = true;
+		break;
+	case CRC32_MPEG2:
+		if (ctx->polynomial != CRC32_IEEE_POLY) {
+			return -EINVAL;
+		}
+		cfg->crcBits = kCrcBits32;
+		/* MPEG-2 uses no input/output reflection and no final XOR */
 		*use32 = true;
 		break;
 	default:
@@ -158,7 +181,8 @@ static int crc_nxp_update(const struct device *dev, struct crc_ctx *ctx, const v
 	}
 
 	/* Keep an updated result for streaming verification */
-	if ((ctx->type == CRC32_C) || (ctx->type == CRC32_IEEE)) {
+	if ((ctx->type == CRC32_C) || (ctx->type == CRC32_IEEE) ||
+	    (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);
@@ -176,7 +200,8 @@ static int crc_nxp_finish(const struct device *dev, struct crc_ctx *ctx)
 	}
 
 	/* Read final result */
-	if (((ctx->type == CRC32_C) || (ctx->type == CRC32_IEEE))) {
+	if ((ctx->type == CRC32_C) || (ctx->type == CRC32_IEEE) ||
+	    (ctx->type == CRC32_MPEG2)) {
 		ctx->result = CRC_Get32bitResult(config->base);
 	} else {
 		ctx->result = (uint32_t)CRC_Get16bitResult(config->base);
@@ -195,7 +220,32 @@ static DEVICE_API(crc, crc_nxp_driver_api) = {
 
 static int crc_nxp_init(const struct device *dev)
 {
+	const struct crc_nxp_config *config = dev->config;
 	struct crc_nxp_data *data = dev->data;
+
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		int ret = clock_control_on(config->clock_dev, config->clock_subsys);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			return -ENODEV;
+		}
+
+		int ret = reset_line_deassert_dt(&config->reset);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
 
 	k_sem_init(&data->lock, 1, 1);
 	return 0;
@@ -205,6 +255,12 @@ static int crc_nxp_init(const struct device *dev)
 	static struct crc_nxp_data crc_nxp_data_##inst;                                            \
 	static const struct crc_nxp_config crc_nxp_config_##inst = {                               \
 		.base = (CRC_Type *)DT_INST_REG_ADDR(inst),                                        \
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                      \
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),                       \
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),                   \
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),                 \
+			((clock_control_subsys_t)0U)),                                             \
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),                                     \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(inst, crc_nxp_init, NULL, &crc_nxp_data_##inst,                      \
 			      &crc_nxp_config_##inst, POST_KERNEL,                                 \

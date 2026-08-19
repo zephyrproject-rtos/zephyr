@@ -6,12 +6,6 @@
 
 if BOARD_SPARKFUN_THING_PLUS_MATTER_MGM240P
 
-config CMU_HFXO_FREQ
-	default 40000000
-
-config CMU_LFXO_FREQ
-	default 32768
-
 if SOC_GECKO_USE_RAIL
 
 config FPU

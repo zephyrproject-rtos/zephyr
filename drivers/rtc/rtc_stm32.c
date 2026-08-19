@@ -485,8 +485,11 @@ static int rtc_stm32_init(const struct device *dev)
 
 	int err = 0;
 
+	stm32_backup_domain_enable_access();
+
 	/* Enable RTC bus clock */
 	if (clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]) != 0) {
+		stm32_backup_domain_disable_access();
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
@@ -520,8 +523,6 @@ static int rtc_stm32_init(const struct device *dev)
 		/* Do nothing - loop itself burns enough cycles */
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
-
-	stm32_backup_domain_enable_access();
 
 #if DT_INST_CLOCKS_CELL_BY_IDX(0, 1, bus) == STM32_SRC_HSE
 	/* Must be configured before selecting the RTC clock source */
@@ -861,8 +862,17 @@ static int rtc_stm32_alarm_get_time(const struct device *dev, uint16_t id, uint1
 	}
 
 	memset(timeptr, -1, sizeof(struct rtc_time));
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+		stm32_backup_domain_enable_access();
+	}
+
 	rtc_stm32_alarm_get_alrm_time(id, timeptr);
 	*mask = rtc_stm32_alarm_get_alrm_mask(id);
+
+	if (IS_ENABLED(CONFIG_SOC_SERIES_STM32H7RSX)) {
+		stm32_backup_domain_disable_access();
+	}
 
 	LOG_DBG("get alarm: mday = %d, wday = %d, hour = %d, min = %d, sec = %d, "
 		"mask = 0x%04x", timeptr->tm_mday, timeptr->tm_wday, timeptr->tm_hour,
@@ -911,6 +921,13 @@ static int rtc_stm32_alarm_set_time(const struct device *dev, uint16_t id, uint1
 
 	if ((mask & ~RTC_STM32_SUPPORTED_ALARM_FIELDS) != 0) {
 		LOG_ERR("unsupported alarm %d field mask 0x%04x", id, mask);
+		err = -EINVAL;
+		goto unlock;
+	}
+
+	if ((mask & RTC_ALARM_TIME_MASK_WEEKDAY) && (mask & RTC_ALARM_TIME_MASK_MONTHDAY)) {
+		/* STM32 RTC can match weekday OR monthday but not both at the same time */
+		LOG_ERR("alarm %d cannot match weekday and monthday simultaneously", id);
 		err = -EINVAL;
 		goto unlock;
 	}

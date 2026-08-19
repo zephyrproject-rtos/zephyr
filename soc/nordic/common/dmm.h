@@ -23,7 +23,7 @@ extern "C" {
 
 /** @cond INTERNAL_HIDDEN */
 
-#ifdef CONFIG_DCACHE
+#if defined(CONFIG_DCACHE) && defined(CONFIG_CACHE_MANAGEMENT)
 
 /* Determine if memory region is cacheable. */
 #define DMM_IS_REG_CACHEABLE(node_id)					     \
@@ -42,7 +42,7 @@ extern "C" {
 #define DMM_IS_REG_CACHEABLE(node_id) 0
 #define DMM_REG_ALIGN_SIZE(node_id) (sizeof(uint32_t))
 
-#endif /* CONFIG_DCACHE */
+#endif /* CONFIG_DCACHE && CONFIG_CACHE_MANAGEMENT */
 
 /* Determine required alignment of the data buffers in memory region
  * associated with specified device node.

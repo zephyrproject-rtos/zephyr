@@ -9,6 +9,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 
+#include <ctype.h>
+
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_log.h>
@@ -20,8 +22,12 @@ LOG_MODULE_REGISTER(net_eth_bridge, CONFIG_NET_ETHERNET_BRIDGE_LOG_LEVEL);
 #endif
 #include <zephyr/sys/slist.h>
 #include <zephyr/random/random.h>
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+#include <zephyr/drivers/hwinfo.h>
+#endif
 
 #include "net_private.h"
+#include "arp.h"
 
 #if defined(CONFIG_NET_ETHERNET_BRIDGE_TXRX_DEBUG)
 #define DEBUG_TX 1
@@ -54,6 +60,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	struct ud *br_user_data = user_data;
 	struct eth_bridge_iface_context *ctx;
 	enum virtual_interface_caps caps;
+	const struct device *dev;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
 		return;
@@ -64,7 +71,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	ctx = net_if_get_device(iface)->data;
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
 
 	br_user_data->cb(ctx, br_user_data->user_data);
 }
@@ -91,11 +102,17 @@ struct net_if *eth_bridge_get_by_index(int index)
 
 int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
+	const struct device *dev = net_if_get_device(br);
+	struct eth_bridge_iface_context *ctx;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	bool found = false;
 	int count = 0;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(eth_ctx != NULL);
+
+	ctx = dev->data;
 
 #if defined(CONFIG_NET_DSA)
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET) ||
@@ -131,6 +148,8 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 		/* Calculate how many interfaces are added to this bridge */
 		if (ctx->eth_iface[i] != NULL) {
 			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
+
+			NET_ASSERT(tmp != NULL);
 
 			if (tmp->bridge == br) {
 				count++;
@@ -188,10 +207,16 @@ int eth_bridge_iface_add(struct net_if *br, struct net_if *iface)
 
 int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(br)->data;
+	const struct device *dev = net_if_get_device(br);
+	struct eth_bridge_iface_context *ctx;
 	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 	bool found = false;
 	int count = 0;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(eth_ctx != NULL);
+
+	ctx = dev->data;
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
@@ -220,6 +245,8 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 		if (ctx->eth_iface[i] != NULL) {
 			struct ethernet_context *tmp = net_if_l2_data(ctx->eth_iface[i]);
 
+			NET_ASSERT(tmp != NULL);
+
 			if (tmp->bridge == br) {
 				count++;
 			}
@@ -244,27 +271,113 @@ int eth_bridge_iface_remove(struct net_if *br, struct net_if *iface)
 	return 0;
 }
 
+static void set_laa_unicast(uint8_t *linkaddr)
+{
+	linkaddr[0] |= 0x02;  /* force LAA (locally administered) bit */
+	linkaddr[0] &= ~0x01; /* clear multicast bit */
+}
+
 static void random_linkaddr(uint8_t *linkaddr, size_t len)
 {
 	sys_rand_get(linkaddr, len);
 
-	linkaddr[0] |= 0x02;  /* force LAA bit */
-	linkaddr[0] &= ~0x01; /* clear multicast bit */
+	set_laa_unicast(linkaddr);
 }
 
-static void bridge_iface_init(struct net_if *iface)
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC)
+static bool is_bridge_mac_prefix_valid(const char *prefix)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
-	struct virtual_interface_context *vctx = net_if_l2_data(iface);
-	char name[MAX_BRIDGE_NAME_LEN];
+	for (size_t i = 0; i < sizeof("xx:xx:xx:xx:xx") - 1; i++) {
+		if ((i % 3) == 2) {
+			if (prefix[i] != ':') {
+				return false;
+			}
+		} else if (!isxdigit((unsigned char)prefix[i])) {
+			return false;
+		}
+	}
 
-	if (ctx->is_init) {
+	return prefix[sizeof("xx:xx:xx:xx:xx") - 1] == '\0';
+}
+
+static void prefix_linkaddr(uint8_t *linkaddr, size_t len, uint8_t id)
+{
+	int ret;
+
+	(void)memset(linkaddr, 0, len);
+
+	if (!is_bridge_mac_prefix_valid(CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX)) {
+		NET_DBG("Invalid bridge MAC prefix \"%s\", using random link address",
+			CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX);
+		random_linkaddr(linkaddr, len);
 		return;
 	}
 
-	k_mutex_init(&ctx->lock);
+	ret = net_bytes_from_str(linkaddr, NET_ETH_ADDR_LEN - 1,
+				 CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX);
+	if (ret < 0) {
+		NET_DBG("Cannot parse bridge MAC prefix \"%s\" (%d), using random link address",
+			CONFIG_NET_ETHERNET_BRIDGE_MAC_PREFIX, ret);
+		random_linkaddr(linkaddr, len);
+		return;
+	}
 
-	ctx->iface = iface;
+	linkaddr[NET_ETH_ADDR_LEN - 1] = id;
+
+	/* A bridge MAC address must be unicast. Preserve the configured U/L bit
+	 * so users can provide either a locally administered prefix or their
+	 * assigned OUI.
+	 */
+	linkaddr[0] &= ~0x01;
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC */
+
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+/* Derive a stable MAC address from the hardware device ID so that it stays the
+ * same across reboots. The bridge index is mixed in so that multiple bridge
+ * interfaces get distinct addresses. Falls back to a random address if no
+ * device ID is available.
+ */
+static void unique_linkaddr(uint8_t *linkaddr, size_t len, uint8_t id)
+{
+	uint8_t hwid[16];
+	ssize_t ret;
+
+	ret = hwinfo_get_device_id(hwid, sizeof(hwid));
+	if (ret <= 0) {
+		NET_DBG("No device id available (%d), using random link address",
+			(int)ret);
+		random_linkaddr(linkaddr, len);
+		return;
+	}
+
+	/* Fold the device id into the link address so that a device id shorter
+	 * or longer than the link address still contributes all of its bytes.
+	 */
+	(void)memset(linkaddr, 0, len);
+	for (ssize_t i = 0; i < ret; i++) {
+		linkaddr[i % len] ^= hwid[i];
+	}
+
+	linkaddr[len - 1] ^= id;
+
+	set_laa_unicast(linkaddr);
+}
+#endif /* CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC */
+
+static void bridge_iface_init(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
+	struct virtual_interface_context *vctx = net_if_l2_data(iface);
+	char name[MAX_BRIDGE_NAME_LEN];
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(vctx != NULL);
+
+	ctx = dev->data;
+
+	k_mutex_init(&ctx->lock);
 
 	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
 	net_if_flag_set(iface, NET_IF_IPV4);
@@ -281,16 +394,29 @@ static void bridge_iface_init(struct net_if *iface)
 	/* We need to set the link address here as normally it would be set in
 	 * virtual interface API attach function but we do not use that in
 	 * bridging.
+	 *
+	 * The bridge can own an IP address and terminate/originate traffic of
+	 * its own, so it acts as an Ethernet endpoint. Its link address must be
+	 * a proper 6-byte Ethernet MAC: a locally destined unicast (e.g. an ARP
+	 * reply) is compared against the interface link address with
+	 * net_linkaddr_cmp(), which requires the lengths to match. A longer
+	 * address would make that comparison fail and the frame be dropped as
+	 * "not for me".
 	 */
-	random_linkaddr(vctx->lladdr.addr, sizeof(vctx->lladdr.addr));
+#if defined(CONFIG_NET_ETHERNET_BRIDGE_UNIQUE_MAC)
+	unique_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN, ctx->id);
+#elif defined(CONFIG_NET_ETHERNET_BRIDGE_PREFIX_MAC)
+	prefix_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN, ctx->id);
+#else
+	random_linkaddr(vctx->lladdr.addr, NET_ETH_ADDR_LEN);
+#endif
 
-	vctx->lladdr.len = sizeof(vctx->lladdr.addr);
-	vctx->lladdr.type = NET_LINK_UNKNOWN;
+	vctx->lladdr.len = NET_ETH_ADDR_LEN;
+	vctx->lladdr.type = NET_LINK_ETHERNET;
 
 	net_if_set_link_addr(iface, vctx->lladdr.addr,
 			     vctx->lladdr.len, vctx->lladdr.type);
 
-	ctx->is_init = true;
 	ctx->is_setup = false;
 }
 
@@ -350,16 +476,102 @@ static int bridge_iface_stop(const struct device *dev)
 }
 
 /*
+ * Resolve the destination link-layer address of a locally originated packet on
+ * the bridge interface before it is flooded to the member ports.
+ *
+ * A bridge interface can own an IP address and therefore originate traffic of
+ * its own. For IPv6 the neighbor is resolved in net_ipv6_prepare_for_send() on
+ * the interface the packet is sent on, so the destination link address is
+ * already known by the time it reaches this layer. IPv4 is different: its
+ * destination link address is normally resolved later, in the Ethernet L2 send
+ * routine. But the bridge forwards packets to its member ports with the family
+ * reset to AF_UNSPEC (so the already-built header of *forwarded* frames is not
+ * rebuilt), which also disables that ARP step, leaving the destination
+ * unresolved and thus defaulted to broadcast by the Ethernet layer.
+ *
+ * The member ports cannot resolve on the bridge's behalf either: an ARP reply
+ * is addressed to the bridge link address, so a member port would drop it as
+ * "not for me". Resolve here, on the bridge interface, where the ARP cache is
+ * populated and where a request/reply exchange completes correctly.
+ *
+ * Returns the packet to forward to the member ports: the original packet once
+ * the destination is known, an ARP request packet while resolution is pending,
+ * or NULL if nothing should be sent now (packet queued for later or on error).
+ */
+static struct net_pkt *bridge_resolve_local_dst(struct net_if *bridge, struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_ARP)
+	struct net_pkt *arp_pkt = NULL;
+	int ret;
+
+	/* Only locally originated IPv4 packets need resolving here. Forwarded
+	 * (L2 bridged) frames already carry a complete Ethernet header, ARP
+	 * frames drive their own destination, and packets whose destination is
+	 * already known (broadcast/multicast or a cached neighbor) have a
+	 * non-zero link address.
+	 */
+	if (net_pkt_is_l2_bridged(pkt) ||
+	    net_pkt_ll_proto_type(pkt) != NET_ETH_PTYPE_IP ||
+	    net_pkt_lladdr_dst(pkt)->len > 0) {
+		return pkt;
+	}
+
+	ret = net_arp_prepare(pkt, (struct net_in_addr *)NET_IPV4_HDR(pkt)->dst,
+			      NULL, &arp_pkt);
+	switch (ret) {
+	case NET_ARP_COMPLETE:
+		/* Destination link address is now filled in pkt. */
+		return pkt;
+	case NET_ARP_PKT_REPLACED:
+		/* The original packet was queued inside ARP pending its
+		 * resolution; release our reference and flood the ARP request
+		 * instead so the reply comes back to the bridge.
+		 */
+		net_pkt_unref(pkt);
+		return arp_pkt;
+	case NET_ARP_PKT_QUEUED:
+		/* Appended to an already in-flight request for this address. */
+		net_pkt_unref(pkt);
+		return NULL;
+	default:
+		NET_DBG("DROP: IPv4 ARP prepare failed (%d)", ret);
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+#else
+	ARG_UNUSED(bridge);
+
+	return pkt;
+#endif /* CONFIG_NET_IPV4 && CONFIG_NET_ARP */
+}
+
+/*
  * For direct TX, send pkt to all ifaces.
  * For forward TX (pkt from an original iface), send to all other ifaces.
  */
 static enum net_verdict bridge_iface_send_process(struct net_if *iface,
 						  struct net_pkt *pkt)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
 	struct net_if *orig_iface;
-	struct net_pkt *send_pkt = pkt;
+	struct net_pkt *send_pkt;
 	int fwd_iface_num = 0;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	/* Resolve the destination link address of locally originated IPv4
+	 * traffic before flooding, otherwise the Ethernet layer defaults it to
+	 * broadcast (see bridge_resolve_local_dst).
+	 */
+	pkt = bridge_resolve_local_dst(iface, pkt);
+	if (pkt == NULL) {
+		return NET_OK;
+	}
+
+	send_pkt = pkt;
 
 	lock_bridge(ctx);
 
@@ -433,7 +645,12 @@ int bridge_iface_send(struct net_if *iface, struct net_pkt *pkt)
 
 static enum net_verdict bridge_iface_recv(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct eth_bridge_iface_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct eth_bridge_iface_context *ctx;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
 
 	if (DEBUG_RX) {
 		char str[sizeof("RX bridge xx")];
@@ -476,9 +693,8 @@ static const struct virtual_interface_api bridge_iface_api = {
 };
 
 #define ETH_DEFINE_BRIDGE(x, _)						\
-	static struct eth_bridge_iface_context bridge_context_data_##x = { \
-		.id = x,						\
-	};								\
+	static struct eth_bridge_iface_context bridge_context_data_##x;	\
+									\
 	NET_VIRTUAL_INTERFACE_INIT_INSTANCE(bridge_##x,			\
 					    "BRIDGE_" #x,		\
 					    x,				\
@@ -488,6 +704,11 @@ static const struct virtual_interface_api bridge_iface_api = {
 					    NULL, /* config */		\
 					    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, \
 					    &bridge_iface_api,		\
-					    NET_ETH_MTU)
+					    NET_ETH_MTU)		\
+									\
+	static struct eth_bridge_iface_context bridge_context_data_##x = { \
+		.iface = NET_IF_GET(bridge_##x, x),			\
+		.id = x,						\
+	};
 
 LISTIFY(CONFIG_NET_ETHERNET_BRIDGE_COUNT, ETH_DEFINE_BRIDGE, (;), _);

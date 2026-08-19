@@ -18,3 +18,11 @@ zephyr_sources_ifdef(CONFIG_COAP_SERVER
 zephyr_sources_ifdef(CONFIG_COAP_SERVER_SHELL
   coap_server_shell.c
 )
+
+zephyr_sources_ifdef(CONFIG_COAP_CLIENT_TCP
+  coap_client_tcp.c
+)
+
+zephyr_sources_ifdef(CONFIG_COAP_OSCORE
+  coap_oscore.c
+)

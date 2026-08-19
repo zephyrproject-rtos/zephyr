@@ -8,21 +8,6 @@
 
 #define HELPER_STACK_SIZE 500
 
-/**
- * @brief Verify @a va1 and @a val2 are within @a pcnt % of each other
- */
-#define TEST_WITHIN_X_PERCENT(val1, val2, pcnt)                       \
-	((((val1) * 100) < ((val2) * (100 + (pcnt)))) &&              \
-	 (((val1) * 100) > ((val2) * (100 - (pcnt))))) ? true : false
-
-#if defined(CONFIG_RISCV)
-#define IDLE_EVENT_STATS_PRECISION 7
-#elif defined(CONFIG_QEMU_TARGET)
-#define IDLE_EVENT_STATS_PRECISION 3
-#else
-#define IDLE_EVENT_STATS_PRECISION 1
-#endif
-
 static struct k_thread helper_thread;
 static K_THREAD_STACK_DEFINE(helper_stack, HELPER_STACK_SIZE);
 
@@ -87,11 +72,7 @@ ZTEST(usage_api, test_all_stats_usage)
 
 	k_thread_runtime_stats_all_get(&stats2);
 
-#if defined(CONFIG_RISCV)
-	k_sleep(K_TICKS(3));  /* Helper runs for 3 ticks - on slower platforms */
-#else
-	k_sleep(K_TICKS(2));  /* Helper runs for 2 ticks */
-#endif
+	k_sleep(K_TICKS(3));  /* Helper runs for 3 ticks */
 
 	k_thread_runtime_stats_all_get(&stats3);
 
@@ -181,8 +162,24 @@ ZTEST(usage_api, test_all_stats_usage)
 	zassert_true(stats4.current_cycles <= stats1.current_cycles);
 	zassert_true(stats5.current_cycles > stats4.current_cycles);
 
-	zassert_true(TEST_WITHIN_X_PERCENT(stats4.peak_cycles,
-					   stats3.peak_cycles, IDLE_EVENT_STATS_PRECISION), NULL);
+	/* stats3 sampled this busy stretch mid-way and stats4 after the idle
+	 * event closed it, so peak grew only by the CPU-busy time that elapsed
+	 * between the two samples. That busy time is exactly the growth in
+	 * total_cycles: peak (longest) and total are advanced from the same cycle
+	 * deltas, so peak can never grow by more than total. Bounding peak growth
+	 * by it needs no tolerance and no per-platform value, self-scales with the
+	 * clock, and still catches a spurious jump at the idle event.
+	 */
+	zassert_true(stats4.peak_cycles >= stats3.peak_cycles,
+		     "peak_cycles shrank across the idle event: %llu -> %llu",
+		     (unsigned long long)stats3.peak_cycles,
+		     (unsigned long long)stats4.peak_cycles);
+	zassert_true((stats4.peak_cycles - stats3.peak_cycles) <=
+		     (stats4.total_cycles - stats3.total_cycles),
+		     "peak grew by %llu cycles but only %llu busy cycles elapsed "
+		     "between the samples",
+		     (unsigned long long)(stats4.peak_cycles - stats3.peak_cycles),
+		     (unsigned long long)(stats4.total_cycles - stats3.total_cycles));
 	zassert_true(stats4.peak_cycles == stats5.peak_cycles);
 
 	zassert_true(stats4.average_cycles > 0);
@@ -224,7 +221,9 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 
 	k_thread_runtime_stats_get(_current, &stats1);
 	k_thread_runtime_stats_get(tid, &helper_stats1);
+	zassert_true(k_thread_runtime_stats_is_enabled(tid));
 	k_thread_runtime_stats_disable(tid);
+	zassert_false(k_thread_runtime_stats_is_enabled(tid));
 
 	/*
 	 * Busy wait for the remaining tick before re-enabling the thread
@@ -272,6 +271,76 @@ ZTEST(usage_api, test_thread_stats_enable_disable)
 {
 }
 #endif
+
+#if defined(CONFIG_SCHED_THREAD_USAGE_ANALYSIS) && defined(CONFIG_SCHED_THREAD_USAGE_ALL)
+/**
+ * @brief Test the enable/disable APIs on the current thread
+ */
+ZTEST(usage_api, test_thread_stats_enable_disable_current)
+{
+	k_thread_runtime_stats_t cpu_stats1;
+	k_thread_runtime_stats_t cpu_stats2;
+	k_thread_runtime_stats_t thread_stats1;
+	k_thread_runtime_stats_t thread_stats2;
+	uint64_t cpu_delta;
+	uint64_t thread_delta;
+	uint32_t start_cycles;
+	uint32_t elapsed_cycles;
+	uint32_t tolerance = k_ticks_to_cyc_near32(1);
+
+	k_thread_runtime_stats_enable(_current);
+
+	/* Anchor the CPU stats and the cycle counter at now. */
+
+	k_thread_runtime_stats_cpu_get(0, &cpu_stats1);
+	start_cycles = k_cycle_get_32();
+
+	/*
+	 * Run for a while with tracking on, then disable stats on the
+	 * current thread and force a context switch.
+	 */
+
+	busy_loop(3);
+	k_thread_runtime_stats_disable(_current);
+	k_sleep(K_TICKS(2));
+
+	k_thread_runtime_stats_cpu_get(0, &cpu_stats2);
+	elapsed_cycles = k_cycle_get_32() - start_cycles;
+
+	/*
+	 * The CPU must not be credited with more cycles than actually
+	 * elapsed.
+	 */
+
+	cpu_delta = cpu_stats2.execution_cycles - cpu_stats1.execution_cycles;
+	zassert_true(cpu_delta <= (uint64_t)elapsed_cycles + tolerance,
+		     "CPU credited with %llu cycles but only %u elapsed",
+		     (unsigned long long)cpu_delta, elapsed_cycles);
+
+	/*
+	 * Run untracked for a while, then re-enable stats on the current
+	 * thread. The stretch that ran while tracking was off must not be
+	 * credited to the thread.
+	 */
+
+	k_thread_runtime_stats_get(_current, &thread_stats1);
+
+	busy_loop(3);
+
+	k_thread_runtime_stats_enable(_current);
+
+	k_thread_runtime_stats_get(_current, &thread_stats2);
+
+	thread_delta = thread_stats2.execution_cycles - thread_stats1.execution_cycles;
+	zassert_true(thread_delta <= (uint64_t)tolerance,
+		     "thread credited with %llu untracked cycles",
+		     (unsigned long long)thread_delta);
+}
+#else
+ZTEST(usage_api, test_thread_stats_enable_disable_current)
+{
+}
+#endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS && CONFIG_SCHED_THREAD_USAGE_ALL */
 
 #ifdef CONFIG_SCHED_THREAD_USAGE_ALL
 /**

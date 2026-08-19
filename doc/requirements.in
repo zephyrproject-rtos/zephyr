@@ -8,10 +8,12 @@ sphinxcontrib-svg2pdfconverter
 pygments>=2.9,!=2.19.0
 sphinx-notfound-page
 sphinx-copybutton
+sphinx-design
 sphinx-togglebutton
 sphinx-sitemap
 sphinx-autobuild
 sphinxcontrib.programoutput
+sphinxcontrib.mermaid
 
 # YAML validation. Used by zephyr_module.
 PyYAML>=6.0
@@ -32,3 +34,6 @@ coverxygen!=1.8.2 # See https://github.com/psycofdj/coverxygen/issues/37
 
 # Used by Kconfig extension
 python-dotenv
+
+# Used to export requirements from the reqmgmt module (StrictDoc)
+strictdoc>=0.16.2

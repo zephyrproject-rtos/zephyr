@@ -15,3 +15,5 @@ testing:
 supported:
   - gpio
   - counter
+  - bsim
+  - netif:openthread

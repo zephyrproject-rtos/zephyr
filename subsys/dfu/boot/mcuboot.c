@@ -17,7 +17,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 
-#include "bootutil/bootutil_public.h"
+#include <bootutil/bootutil_public.h>
 #include <zephyr/dfu/mcuboot.h>
 
 #if defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD) || \
@@ -77,7 +77,6 @@ enum IMAGE_INDEXES {
 	defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT)
 /* For RAM LOAD mode, the active image must be fetched from the bootloader */
 #define ACTIVE_SLOT_FLASH_AREA_ID boot_fetch_active_slot()
-#define INVALID_SLOT_ID 255
 #else
 /* Get active partition. zephyr,code-partition chosen node must be defined */
 #define ACTIVE_SLOT_FLASH_AREA_ID DT_PARTITION_ID(DT_CHOSEN(zephyr_code_partition))
@@ -118,7 +117,7 @@ uint8_t boot_fetch_active_slot(void)
 	if (rc <= 0) {
 		LOG_ERR("Failed to fetch active slot: %d", rc);
 
-		return INVALID_SLOT_ID;
+		return BOOT_INVALID_SLOT_ID;
 	}
 
 	LOG_DBG("Active slot: %d", slot);
@@ -206,7 +205,7 @@ uint8_t boot_fetch_active_slot(void)
 		break;
 	}
 
-	return INVALID_SLOT_ID;
+	return BOOT_INVALID_SLOT_ID;
 }
 #else  /* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD ||
 	* CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
@@ -263,8 +262,6 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 		 * slot image header
 		 */
 		const struct flash_area *fa;
-		uint32_t num_sectors = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
-		struct flash_sector sector_data;
 		int rc;
 
 		rc = flash_area_open(area_id, &fa);
@@ -274,6 +271,10 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 		}
 
 		if (mcuboot_swap_type_multi(image) != BOOT_SWAP_TYPE_REVERT) {
+#if CONFIG_IMG_CUSTOM_SECTOR_SIZE == 0
+			uint32_t num_sectors = SWAP_USING_OFFSET_SECTOR_UPDATE_BEGIN;
+			struct flash_sector sector_data;
+
 			/* For swap using offset mode, the image starts in the second sector of
 			 * the upgrade slot, so apply the offset when this is needed, do this by
 			 * getting information on first sector only, this is expected to return an
@@ -286,6 +287,9 @@ size_t boot_get_image_start_offset(uint8_t area_id)
 			} else {
 				off = sector_data.fs_size;
 			}
+#else
+			off = CONFIG_IMG_CUSTOM_SECTOR_SIZE;
+#endif
 		}
 
 		flash_area_close(fa);
@@ -463,7 +467,9 @@ int boot_write_img_confirmed(void)
 		return -EIO;
 	}
 
-	rc = boot_set_next(fa, true, true);
+	if (boot_set_next(fa, true, true) != 0) {
+		rc = -EIO;
+	}
 
 	flash_area_close(fa);
 

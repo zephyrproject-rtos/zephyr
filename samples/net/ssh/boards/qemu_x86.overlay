@@ -1,0 +1,8 @@
+/*
+ * Override flash erase-block-size to accommodate RSA-2048 private keys
+ * in NVS. The default 1024-byte erase blocks are too small for the
+ * ~1190-byte PKCS#1 DER encoding of an RSA-2048 key pair.
+ */
+&flash_sim0 {
+	erase-block-size = <4096>;
+};

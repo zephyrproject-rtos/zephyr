@@ -6,8 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_DUMMY_H_
-#define ZEPHYR_INCLUDE_SHELL_DUMMY_H_
+/**
+ * @file
+ * @brief Header file for the dummy shell backend.
+ * @ingroup shell_dummy
+ */
+
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_DUMMY_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_DUMMY_H_
 
 #include <zephyr/shell/shell.h>
 
@@ -15,6 +21,7 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 extern const struct shell_transport_api shell_dummy_transport_api;
 
 struct shell_dummy {
@@ -34,8 +41,27 @@ struct shell_dummy {
 
 	/** input buffer for simulating user input */
 	char input_buf[CONFIG_SHELL_BACKEND_DUMMY_BUF_SIZE];
-};
 
+	/** Event handler */
+	shell_transport_handler_t handler;
+
+	/** Event handler context. */
+	void *context;
+};
+/** @endcond */
+
+/**
+ * @defgroup shell_dummy Dummy shell backend
+ * @ingroup shell_backends
+ * @brief In-memory shell backend used for testing.
+ * @{
+ */
+
+/**
+ * @brief Define a dummy shell transport instance.
+ *
+ * @param _name Name of the transport instance.
+ */
 #define SHELL_DUMMY_DEFINE(_name)					\
 	static struct shell_dummy _name##_shell_dummy;			\
 	struct shell_transport _name = {				\
@@ -93,8 +119,10 @@ int shell_backend_dummy_push_input(const struct shell *sh, const char *data, siz
  */
 void shell_backend_dummy_clear_input(const struct shell *sh);
 
+/** @} */
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_DUMMY_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_DUMMY_H_ */

@@ -181,17 +181,18 @@ static int eusart_err_check(const struct device *dev)
 
 	if (flags & EUSART_IF_RXOF) {
 		err |= UART_ERROR_OVERRUN;
+		EUSART_IntClear(config->eusart, EUSART_IF_RXOF);
 	}
 
 	if (flags & EUSART_IF_PERR) {
 		err |= UART_ERROR_PARITY;
+		EUSART_IntClear(config->eusart, EUSART_IF_PERR);
 	}
 
 	if (flags & EUSART_IF_FERR) {
 		err |= UART_ERROR_FRAMING;
+		EUSART_IntClear(config->eusart, EUSART_IF_FERR);
 	}
-
-	EUSART_IntClear(config->eusart, EUSART_IF_RXOF | EUSART_IF_PERR | EUSART_IF_FERR);
 
 	return err;
 }
@@ -252,9 +253,12 @@ static int eusart_irq_tx_complete(const struct device *dev)
 	const struct eusart_config *config = dev->config;
 	uint32_t flags = EUSART_IntGet(config->eusart);
 
-	EUSART_IntClear(config->eusart, EUSART_IF_TXC);
+	if (flags & EUSART_IF_TXC) {
+		EUSART_IntClear(config->eusart, EUSART_IF_TXC);
+		return 1;
+	}
 
-	return !!(flags & EUSART_IF_TXC);
+	return 0;
 }
 
 static int eusart_irq_tx_ready(const struct device *dev)
@@ -310,11 +314,6 @@ static void eusart_irq_err_disable(const struct device *dev)
 static int eusart_irq_is_pending(const struct device *dev)
 {
 	return eusart_irq_tx_ready(dev) || eusart_irq_rx_ready(dev);
-}
-
-static int eusart_irq_update(const struct device *dev)
-{
-	return 1;
 }
 
 static void eusart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
@@ -702,8 +701,10 @@ static int eusart_async_rx_buf_rsp(const struct device *dev, uint8_t *buf, size_
 	key = irq_lock();
 
 	if (data->rx_next_buffer) {
+		irq_unlock(key);
 		return -EBUSY;
 	} else if (!data->dma_rx.enabled) {
+		irq_unlock(key);
 		return -EACCES;
 	}
 
@@ -1173,7 +1174,6 @@ static DEVICE_API(uart, eusart_driver_api) = {
 	.irq_err_enable = eusart_irq_err_enable,
 	.irq_err_disable = eusart_irq_err_disable,
 	.irq_is_pending = eusart_irq_is_pending,
-	.irq_update = eusart_irq_update,
 	.irq_callback_set = eusart_irq_callback_set,
 #endif
 #ifdef CONFIG_UART_SILABS_EUSART_ASYNC

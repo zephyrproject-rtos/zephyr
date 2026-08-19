@@ -10,7 +10,7 @@
 
 
 /* COMMON DEFFINITIONS */
-#define STACK_SIZE	500
+#define STACK_SIZE	1024
 #define LIST_LEN 8
 
 static struct k_sem sema;

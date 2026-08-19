@@ -121,6 +121,24 @@ config NET_DHCPV4_INIT_REBOOT
 	  been assigned an address before, it begins in INIT-REBOOT state and
 	  sends a DHCPREQUEST message.
 
+config NET_DHCPV4_INIT_REBOOT_ATTEMPTS
+	int "Number of INIT-REBOOT REQUEST attempts before falling back to DISCOVER"
+	depends on NET_DHCPV4_INIT_REBOOT
+	range 1 $(UINT8_MAX)
+	default 1
+	help
+	  Number of times the DHCPv4 client sends the INIT-REBOOT DHCPREQUEST for
+	  a remembered address before giving up and restarting the configuration
+	  with a full DHCPDISCOVER. INIT-REBOOT is meant as an optimistic fast probe:
+	  on a network change many access points silently drop the foreign-subnet
+	  REQUEST instead of NAKing it, so a low value keeps the resulting
+	  fall-back to DISCOVER quick. Per RFC 2131 4.1 the retransmit backoff is
+	  exponential (4 s, 8 s, 16 s, ...), so each extra attempt roughly doubles
+	  the worst-case delay before DISCOVER: 1 falls back fastest (~4 s), while a
+	  higher value tolerates lost packets on the same network at the cost of a
+	  slower fall-back. To disable INIT-REBOOT entirely, disable
+	  CONFIG_NET_DHCPV4_INIT_REBOOT instead.
+
 config NET_DHCPV4_RESTART_ON_IF_UP
 	bool
 	default n if WIFI_NM_WPA_SUPPLICANT
@@ -227,5 +245,28 @@ config NET_DHCPV4_SERVER_OPTION_ROUTER
 	  gateway address in responses from the DHCP server. This can be
 	  disabled so that the client does not try to forward traffic to our
 	  device.
+
+config NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL
+	bool "DHCP option 114 (RFC 8910 captive portal URI)"
+	help
+	  If enabled, the DHCPv4 server includes option 114 in Offer and
+	  Acknowledgment messages when the client lists option 114 in the
+	  Parameter Request List (option 55). Clients may use this URI for
+	  captive-portal detection on isolated networks (e.g. SoftAP provisioning).
+
+	  The URI is taken from NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI when
+	  that string is non-empty. When the override string is empty, the DHCPv4
+	  server builds http:// plus its own IPv4 on the DHCP interface and path
+	  /generate_204 (RFC 8910 discourages IP literals; use the override when
+	  DNS is available).
+
+config NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL_URI
+	string "Captive portal URI override"
+	depends on NET_DHCPV4_SERVER_OPTION_CAPTIVE_PORTAL
+	default ""
+	help
+	  If non-empty, this exact string is sent as DHCP option 114.
+	  If empty, the DHCPv4 server builds http:// plus its own IPv4 on the
+	  DHCP server interface and path /generate_204.
 
 endif # NET_DHCPV4_SERVER

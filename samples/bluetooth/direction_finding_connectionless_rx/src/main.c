@@ -158,13 +158,9 @@ static bool data_cb(struct bt_data *data, void *user_data)
 static void sync_cb(struct bt_le_per_adv_sync *sync,
 		    struct bt_le_per_adv_sync_synced_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s synced, "
 	       "Interval 0x%04x (%u ms), PHY %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr),
 	       info->interval, info->interval * 5 / 4, phy2str(info->phy));
 
 	k_sem_give(&sem_per_sync);
@@ -173,12 +169,8 @@ static void sync_cb(struct bt_le_per_adv_sync *sync,
 static void term_cb(struct bt_le_per_adv_sync *sync,
 		    const struct bt_le_per_adv_sync_term_info *info)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s sync terminated\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr);
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr));
 
 	if (sync_wait) {
 		sync_terminated = true;
@@ -193,14 +185,12 @@ static void recv_cb(struct bt_le_per_adv_sync *sync,
 		    struct net_buf_simple *buf)
 {
 	static char data_str[ADV_DATA_HEX_STR_LEN_MAX];
-	char le_addr[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
 	bin2hex(buf->data, buf->len, data_str, sizeof(data_str));
 
 	printk("PER_ADV_SYNC[%u]: [DEVICE]: %s, tx_power %i, "
 	       "RSSI %i, CTE %s, data length %u, data: %s\n",
-	       bt_le_per_adv_sync_get_index(sync), le_addr, info->tx_power,
+	       bt_le_per_adv_sync_get_index(sync), bt_addr_le_str(info->addr), info->tx_power,
 	       info->rssi, cte_type2str(info->cte_type), buf->len, data_str);
 }
 
@@ -232,19 +222,16 @@ static void cte_recv_cb(struct bt_le_per_adv_sync *sync,
 static void scan_recv(const struct bt_le_scan_recv_info *info,
 		      struct net_buf_simple *buf)
 {
-	char le_addr[BT_ADDR_LE_STR_LEN];
 	char name[NAME_LEN];
 
 	(void)memset(name, 0, sizeof(name));
 
 	bt_data_parse(buf, data_cb, name);
 
-	bt_addr_le_to_str(info->addr, le_addr, sizeof(le_addr));
-
 	printk("[DEVICE]: %s, AD evt type %u, Tx Pwr: %i, RSSI %i %s C:%u S:%u "
 	       "D:%u SR:%u E:%u Prim: %s, Secn: %s, Interval: 0x%04x (%u ms), "
 	       "SID: %u\n",
-	       le_addr, info->adv_type, info->tx_power, info->rssi, name,
+	       bt_addr_le_str(info->addr), info->adv_type, info->tx_power, info->rssi, name,
 	       (info->adv_props & BT_GAP_ADV_PROP_CONNECTABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_SCANNABLE) != 0,
 	       (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0,

@@ -25,7 +25,7 @@ extern "C" {
  * @defgroup usbd_hid_device USBD HID device API
  * @ingroup usb
  * @since 3.7
- * @version 0.2.0
+ * @version 0.3.0
  * @{
  */
 
@@ -116,6 +116,18 @@ struct hid_device_ops {
 	int (*get_report)(const struct device *dev,
 			  const uint8_t type, const uint8_t id,
 			  const uint16_t len, uint8_t *const buf);
+
+	/**
+	 * This callback is called for the HID Set Report request before the
+	 * actual report payload is received. The callback implementation is
+	 * expected to check the arguments, such as whether the report type is
+	 * supported, and return a nonzero value to indicate an unsupported type
+	 * or an error. If callback is not implemented, then report payload will
+	 * be received unconditionally.
+	 */
+	int (*verify_set_report)(const struct device *dev,
+				 const uint8_t type, const uint8_t id,
+				 const uint16_t len);
 
 	/**
 	 * This callback is called for the HID Set Report request to set a

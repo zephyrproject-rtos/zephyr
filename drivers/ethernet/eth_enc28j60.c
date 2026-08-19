@@ -660,6 +660,10 @@ static int eth_enc28j60_rx(const struct device *dev)
 		/* Get the frame length from the rx status vector,
 		 * minus CRC size at the end which is always present
 		 */
+		if (sys_get_le16(info) <= 4U) {
+			LOG_ERR("Invalid enc28j60 frame length %u", sys_get_le16(info));
+			break;
+		}
 		frm_len = sys_get_le16(info) - 4;
 
 		enc28j60_read_packet(dev, frm_len);
@@ -714,13 +718,8 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 			/* Clear link change interrupt flag by PHIR reg read */
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHIR, &phir);
 			eth_enc28j60_read_phy(dev, ENC28J60_PHY_PHSTAT2, &phstat2);
-			if (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) {
-				LOG_INF("%s: Link up", dev->name);
-				net_eth_carrier_on(context->iface);
-			} else {
-				LOG_INF("%s: Link down", dev->name);
-				net_eth_carrier_off(context->iface);
-			}
+			net_eth_carrier_set(context->iface,
+					    (phstat2 & ENC28J60_BIT_PHSTAT2_LSTAT) != 0);
 		}
 
 		/* We cannot rely on the PKTIF flag because of errata 6. Call
@@ -733,7 +732,8 @@ static void eth_enc28j60_rx_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
@@ -745,6 +745,7 @@ static enum ethernet_hw_caps eth_enc28j60_get_capabilities(const struct device *
 }
 
 static int eth_enc28j60_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
 				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {

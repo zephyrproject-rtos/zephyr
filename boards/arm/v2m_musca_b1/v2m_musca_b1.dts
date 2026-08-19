@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2019 Linaro Limited
+ * Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +11,6 @@
 
 / {
 	compatible = "arm,v2m-musca";
-	#address-cells = <1>;
-	#size-cells = <1>;
 
 	aliases {
 		led0 = &green_led;
@@ -90,7 +89,11 @@
 			#size-cells = <1>;
 			ranges = <0x0 0x50000000 0x10000000>;
 
-			#include "v2m_musca_b1-common.dtsi"
+			pinctrl: pinctrl {
+				compatible = "arm,v2m_musca_b1-pinctrl";
+			};
+
+#include "v2m_musca_b1-common.dtsi"
 		};
 	};
 };
@@ -98,3 +101,10 @@
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
+&uart0 {
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+#include "v2m_musca_b1-pinctrl.dtsi"

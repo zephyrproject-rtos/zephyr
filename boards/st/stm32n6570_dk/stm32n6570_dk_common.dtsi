@@ -6,12 +6,13 @@
 
 #include <st/n6/stm32n657X0.dtsi>
 #include <st/n6/stm32n657x0hxq-pinctrl.dtsi>
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/gpio/raspberrypi-csi-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
 #include "arduino_r3_connector.dtsi"
+#include "stmod_connector.dtsi"
 
 / {
 	chosen {
@@ -25,11 +26,13 @@
 		zephyr,flash-controller = &mx66uw1g45g;
 		zephyr,flash = &ext_flash;
 		zephyr,code-partition = &slot0_partition;
+		mcuboot,image-ram = &axisram1;
 	};
 
 	aliases {
 		led0 = &green_led_1;
 		led1 = &red_led_2;
+		rtc = &rtc;
 		sw0 = &user_button;
 		watchdog0 = &iwdg;
 	};
@@ -105,6 +108,8 @@
 		 <&rcc STM32_SRC_CKPER I2C2_SEL(1)>;
 	pinctrl-0 = <&i2c2_scl_pd14 &i2c2_sda_pd4>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiod 4 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_FAST>;
 
 	gt911: gt911@5d {
@@ -123,6 +128,10 @@
 
 &clk_hsi {
 	hsi-div = <1>;
+	status = "okay";
+};
+
+&clk_lse {
 	status = "okay";
 };
 
@@ -272,6 +281,8 @@ csi_i2c: &i2c1 {
 		 <&rcc STM32_SRC_CKPER I2C1_SEL(1)>;
 	pinctrl-0 = <&i2c1_scl_ph9 &i2c1_sda_pc1>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 9 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
@@ -281,6 +292,8 @@ csi_i2c: &i2c1 {
 		 <&rcc STM32_SRC_CKPER I2C4_SEL(1)>;
 	pinctrl-0 = <&i2c4_scl_pe13 &i2c4_sda_pe14>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioe 13 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioe 14 GPIO_ACTIVE_HIGH>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	status = "okay";
 };
@@ -319,7 +332,8 @@ csi_i2c: &i2c1 {
 &usart2 {
 	clocks = <&rcc STM32_CLOCK(APB1, 17)>,
 		 <&rcc STM32_SRC_CKPER USART2_SEL(1)>;
-	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6>;
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pf6
+		     &usart2_cts_pg5 &usart2_rts_pg14>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
 	status = "okay";
@@ -411,6 +425,7 @@ zephyr_udc0: &usbotg_hs1 {
 		four-byte-opcodes;
 		status = "okay";
 
+		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
@@ -420,28 +435,35 @@ zephyr_udc0: &usbotg_hs1 {
 			reg = <0x0 DT_SIZE_M(128)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 
 			partitions {
-				compatible = "fixed-partitions";
 				#address-cells = <1>;
 				#size-cells = <1>;
+				ranges;
 
 				boot_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
 					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(64)>;
 				};
 
 				slot0_partition: partition@10000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-0";
 					reg = <0x10000 DT_SIZE_K(1536)>;
 				};
 
 				slot1_partition: partition@210000 {
+					compatible = "zephyr,mapped-partition";
 					label = "image-1";
 					reg = <0x210000 DT_SIZE_K(1536)>;
 				};
 
 				storage_partition: partition@410000 {
+					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x410000 DT_SIZE_K(64)>;
 				};
@@ -483,8 +505,19 @@ zephyr_udc0: &usbotg_hs1 {
 	pinctrl-names = "default";
 	phy-connection-type = "rgmii";
 	phy-handle = <&eth_phy>;
-	nvmem-cells = <&mac_address0>;
-	nvmem-cell-names = "mac-address";
+	/*
+	 * An area of OTP is dedicated to holding Ethernet MAC addresses;
+	 * however, it is not programmed during manufacturing. Reading an
+	 * unprogrammed OTP returns all zeroes, which breaks Ethernet if used
+	 * as MAC address. To allow the use of Ethernet even on virgin boards,
+	 * we do not define the nvmem-cell properties below (commented out)
+	 * so that default MAC address source is not the OTP memory.
+	 *
+	 * Once a MAC address has been programmed in OTP, you can enable
+	 * its use by uncommenting the following properties:
+	 */
+	/* nvmem-cells = <&mac_address0>; */
+	/* nvmem-cell-names = "mac-address"; */
 };
 
 &mdio {
@@ -571,5 +604,19 @@ zephyr_jpegenc: &jpeg {
 };
 
 &iwdg {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+};
+
+&gpu2d {
 	status = "okay";
 };

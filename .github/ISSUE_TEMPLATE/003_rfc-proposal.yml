@@ -1,6 +1,5 @@
 name: RFC / Proposal
-description: Submit a Proposal (RFC)
-labels: ["RFC"]
+description: Submit a Request For Comments (RFC)
 type: RFC
 assignees: []
 body:

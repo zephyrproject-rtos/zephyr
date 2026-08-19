@@ -33,17 +33,36 @@ Installation bundle and variables
 The Zephyr SDK bundle supports all major operating systems (Linux, macOS and
 Windows) and is delivered as a compressed file.
 
-There are two types of Zephyr SDK bundles: GNU and LLVM. The GNU SDK bundle
-consists of the GNU toolchains (i.e. Binutils, GCC and GDB) for all supported
-architectures and the host tools, while the LLVM SDK bundle consists of the
-LLVM/Clang toolchain and the host tools.
+To ease distribution, the SDK is pre-packed in three different variants you can download:
 
-The installation process consists of extracting the file and running the
-included setup script. In case user wants to install both GNU and LLVM
-toolchains, one may do so by choosing the desired toolchain types when running
-the setup script, or by downloading and uncompressing both the GNU and LLVM SDK
-bundles into the same directory tree. Additional OS-specific instructions are
-described in the sections below.
+.. list-table:: SDK Bundle Variants
+   :widths: 20 20 60
+   :header-rows: 1
+
+   * - Variant
+     - Host Tools
+     - Toolchains Included
+   * - ``gnu``
+     - Yes
+     - GNU (Binutils, GCC, and GDB) for all supported architectures
+   * - ``llvm``
+     - Yes
+     - LLVM/Clang
+   * - ``minimal``
+     - Yes
+     - None
+
+The installation process consists of extracting the downloaded bundle file and running the included
+setup script.
+
+Independently of which bundle you download, during installation you will be prompted for which of
+the toolchains you want to install, and if it is not found in the local directory where the setup
+script is being executed it will be downloaded during installation.
+It is also possible to download and uncompress both the GNU and LLVM SDK bundles into the same
+directory tree and in that way install both without the need to download either during the setup
+script execution.
+
+Additional OS-specific instructions are described in the sections below.
 
 If no toolchain is selected, the build system looks for Zephyr SDK and uses the toolchain
 from there. You can enforce this by setting the environment variable
@@ -90,9 +109,9 @@ Zephyr SDK installation
           if needed; the `Zephyr SDK Releases`_ page contains all available
           SDK releases.
 
-.. note:: The instructions below are for installing the Zephyr GNU SDK bundle,
+.. note:: The instructions below are for installing using the Zephyr GNU SDK bundle,
           which includes the GNU toolchains for all supported architectures and
-          the host tools. To install the Zephyr LLVM SDK bundle, replace the
+          the host tools. To install using the Zephyr LLVM SDK bundle, replace the
           ``_gnu`` suffix with ``_llvm`` in the SDK bundle file name.
 
 .. note:: If you want to uninstall the SDK, you may simply remove the directory

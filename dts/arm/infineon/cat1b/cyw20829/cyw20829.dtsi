@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,7 +141,7 @@
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x10e>;
 				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 8 8 0 15 15>;
+				bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 				interrupts = <64 4>, <65 4>;
 				interrupt-names = "int0", "int1";
 			};
@@ -390,6 +390,21 @@
 			reg = <0x42000000 0x6186a0>;
 			interrupts = <16 4>;
 			status = "disabled";
+		};
+
+		cryptolite0: crypto@40230000 {
+			compatible = "infineon,mxcryptolite";
+			reg = <0x40230000 0x10000>;
+
+			mxcryptolite_trng: mxcryptolite_trng {
+				compatible = "infineon,mxcryptolite-trng";
+				status = "disabled";
+			};
+
+			mxcryptolite_crypto: mxcryptolite_crypto {
+				compatible = "infineon,mxcryptolite-crypto";
+				status = "disabled";
+			};
 		};
 	};
 };

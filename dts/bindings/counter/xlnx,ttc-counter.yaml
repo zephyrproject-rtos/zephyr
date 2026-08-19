@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AMD/Xilinx TTC timer instance.
+
+  Each node represents one timer within a parent TTC block.
+
+compatible: "xlnx,ttc-counter"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+      Timer index inside the TTC block.
+
+      0 = timer0
+      1 = timer1
+      2 = timer2
+
+  interrupts:
+    required: true
+
+  prescaler:
+    type: int
+    description: |
+      Clock prescaler value (0-15).

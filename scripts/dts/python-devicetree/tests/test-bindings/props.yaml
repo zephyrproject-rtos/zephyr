@@ -15,6 +15,12 @@ properties:
     type: int
     const: 1
 
+  negative:
+    type: int
+
+  negative-array:
+    type: array
+
   array:
     type: array
 

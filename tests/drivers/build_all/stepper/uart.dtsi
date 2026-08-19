@@ -30,11 +30,6 @@ adi_tmc51xx_uart: adi-tmc51xx {
 	tmc51xx_motion_controller: motion-controller {
 		compatible = "adi,tmc51xx-stepper-ctrl";
 
-		/* ADI TMC stallguard settings specific to TMC5160 */
-		activate-stallguard2;
-		stallguard-velocity-check-interval-ms = <100>;
-		stallguard-threshold-velocity = <50000>;
-
 		/* ADI TMC ramp generator as well as current settings */
 		vstart = <10>;
 		a1 = <20>;

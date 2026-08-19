@@ -7,7 +7,7 @@
  * will get redirected to the Zephyr sys_heap.
  */
 
-#include "sl_memory_manager.h"
+#include <sl_memory_manager.h>
 #include <stdlib.h>
 
 void *sl_malloc(size_t size)

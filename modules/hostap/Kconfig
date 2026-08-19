@@ -28,6 +28,14 @@ config ZVFS_OPEN_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
 	int "Number of socket descriptors needed by hostap"
 	default 12
 
+config ZVFS_EVENTFD_ADD_SIZE_WIFI_NM_WPA_SUPPLICANT
+	int "Number of eventfds needed by hostap"
+	default 8
+	help
+	  The WPA supplicant and hostapd allocate several zvfs eventfds, e.g. for
+	  the supplicant event socket and the local/global control interface
+	  socket pairs.
+
 config WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 	bool "Use Zephyr kernel heap for Wi-Fi driver"
 	default y
@@ -39,8 +47,7 @@ config WIFI_NM_WPA_SUPPLICANT_HEAP
 	int "Dedicated memory pool for wpa_supplicant"
 	def_int 66560 if WIFI_NM_HOSTAPD_AP
 	def_int 60000 if WIFI_USAGE_MODE_STA_AP
-	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && WIFI_CREDENTIALS
-	def_int 48000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP
 	def_int 40000 if WIFI_NM_MAX_MANAGED_INTERFACES=2
 	# 30K is mandatory, but might need more for long duration use cases
@@ -51,8 +58,7 @@ if WIFI_NM_WPA_SUPPLICANT_GLOBAL_HEAP
 config HEAP_MEM_POOL_ADD_SIZE_HOSTAP
 	def_int 66560 if WIFI_NM_HOSTAPD_AP
 	def_int 60000 if WIFI_USAGE_MODE_STA_AP
-	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE && WIFI_CREDENTIALS
-	def_int 48000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
+	def_int 55000 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	def_int 80000 if WIFI_NM_WPA_SUPPLICANT_P2P
 	def_int 41808 if WIFI_NM_WPA_SUPPLICANT_AP
 	# 30K is mandatory, but might need more for long duration use cases
@@ -64,11 +70,9 @@ config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	int "Stack size for wpa_supplicant thread"
 	# TODO: Providing higher stack size for Enterprise mode to fix stack
 	# overflow issues. Need to identify the cause for higher stack usage.
-	default 8192 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || WIFI_USAGE_MODE_STA_AP
-	default 7900 if WIFI_NM_WPA_SUPPLICANT_P2P
-	# This is needed to handle stack overflow issues on nRF Wi-Fi drivers.
-	default 6300 if WIFI_NM_WPA_SUPPLICANT_AP
-	default 5800
+	default 8600 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || WIFI_USAGE_MODE_STA_AP
+	default 8000 if WIFI_NM_WPA_SUPPLICANT_P2P
+	default 6300
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
 	int "Stack size for wpa_supplicant iface workqueue"
@@ -82,7 +86,7 @@ config WIFI_NM_WPA_SUPPLICANT_PRIO
 	int "Thread priority of wpa_supplicant"
 	default 0
 
-# Currently we default ZVFS_OPEN_MAX to 16 in lib/posix/Kconfig
+# Currently we default ZVFS_OPEN_MAX to 16 in subsys/portability/posix/Kconfig
 # l2_packet - 1
 # ctrl_iface - 2 * socketpairs = 4(local and global)
 # z_wpa_event_sock - 1 socketpair = 2
@@ -159,8 +163,57 @@ config WIFI_NM_WPA_SUPPLICANT_RRM
 	default y
 endif
 
+config WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO
+	bool "Legacy (non-FIPS) crypto for backward compatibility"
+	default y
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	imply WIFI_NM_WPA_SUPPLICANT_WEP
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Drop CONFIG_FIPS from the supplicant build to re-enable the legacy
+	  and broken crypto call sites. CONFIG_FIPS is not real FIPS validation
+	  (MbedTLS is not FIPS validated); it is just a switch to strip these
+	  algorithms from the default build.
+
+	  Also links hostap rc4.c for group-key unwrap. When PSA_WANT_ALG_MD5
+	  is off, CMake links md5-internal.c and md5.c so EAPOL-Key v1
+	  HMAC-MD5 does not depend on PSA.
+
+	  Implies WIFI_NM_WPA_SUPPLICANT_WEP by default (merged legacy option,
+	  kept for prj.conf compatibility). Set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop.
+
+	  Enabled by default so WPA/TKIP and other legacy AP interop works
+	  out of the box. This is NOT a TKIP-only switch: it disables CONFIG_FIPS
+	  wholesale and brings back the whole legacy crypto surface, including:
+	    - WPA1/TKIP EAPOL-Key descriptor version 1 (HMAC-MD5 4-way MIC and
+	      RC4 group-key unwrap)
+	    - MD5/RC4/DES based paths (e.g. EAP-FAST key export, IKEv2 MD5 PRF,
+	      EAP-PWD MD5)
+
+	  The main reason to enable it is interoperability with legacy
+	  WPA-PSK/TKIP access points still seen in the field and legacy
+	  interop/QuickTrack test cases. TKIP is deprecated and not allowed in
+	  current Wi-Fi Alliance certification programs. Turn this off if you
+	  need a build with legacy algorithms stripped entirely.
+
+	  Enabled by default for now. The default will change to disabled in a
+	  future Zephyr release, which will also disable WEP and TKIP interop
+	  unless LEGACY_CRYPTO is set explicitly.
+
 config WIFI_NM_WPA_SUPPLICANT_WEP
-	bool "WEP (Legacy crypto) support"
+	bool "WEP support (deprecated)"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+	select DEPRECATED
+	select NOT_SECURE
+	help
+	  Deprecated: merged under WIFI_NM_WPA_SUPPLICANT_LEGACY_CRYPTO.
+	  Symbol retained for backward compatibility with existing prj.conf
+	  files that set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP. WEP is enabled by
+	  default via LEGACY_CRYPTO imply; set CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=n
+	  to strip WEP while keeping WPA/TKIP interop. Has no effect unless
+	  LEGACY_CRYPTO is enabled.
 
 choice WIFI_NM_WPA_SUPPLICANT_CRYPTO_BACKEND
 	prompt "WPA supplicant crypto implementation"
@@ -318,10 +371,49 @@ config EAP_TLSV1_3
 
 endif # WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 
-config WIFI_NM_WPA_SUPPLICANT_WPA3
-	bool "WPA3 support"
+choice WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION
+	prompt "WPA3 implementation"
+	default WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
-	default y
+	help
+	  Select how WPA3/SAE is provided. Internal uses the supplicant
+	  bignum-based implementation. External uses an out-of-tree
+	  implementation (e.g. PSA crypto). None disables WPA3.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_NONE
+	bool "None"
+	help
+	  WPA3 is disabled. Only WPA2 and earlier are available.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT
+	bool "Internal"
+	select WIFI_NM_WPA_SUPPLICANT_WPA3
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_EXT
+	bool "External"
+
+endchoice
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3
+	bool
+	help
+	  Internal WPA3/SAE implementation (bignum-based). Selected by
+	  WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT.
+
+config WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON
+	bool
+	default y if WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_INT || \
+		    WIFI_NM_WPA_SUPPLICANT_WPA3_IMPLEMENTATION_EXT
+	help
+	  WPA3/SAE is available (either internal or external implementation).
+	  Use this in code to gate WPA3 functionality regardless of backend.
+
+config WIFI_NM_WPA_SUPPLICANT_OWE
+	bool "OWE support in wpa_supplicant wrapper"
+	depends on WIFI_NM_WPA_SUPPLICANT_WPA3
+	depends on WIFI_NM_WPA_SUPPLICANT_WPA3_COMMON
+	help
+	  OWE support via the wpa_supplicant network manager.
 
 config WIFI_NM_WPA_SUPPLICANT_AP
 	bool "SoftAP mode support based on WPA supplicant"
@@ -360,13 +452,8 @@ config WIFI_NM_WPA_SUPPLICANT_EAPOL
 config WIFI_NM_WPA_SUPPLICANT_CLI
 	bool "CLI support for wpa_supplicant"
 
-config WIFI_NM_WPA_SUPPLICANT_INF_MON
-	bool "Monitor the net mgmt event to add/del interface"
-	default y
-
 config WIFI_NM_HOSTAPD_AP
 	bool "FullAP mode support based on Hostapd"
-	depends on !WIFI_NM_WPA_SUPPLICANT_INF_MON
 
 config WIFI_NM_HOSTAPD_CRYPTO_ENTERPRISE
 	bool "Hostapd crypto enterprise support"
@@ -433,6 +520,22 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 	select MBEDTLS_ECP_NIST_OPTIM
 	select PSA_WANT_ECC_SECP_R1_384
 
+config WIFI_NM_WPA_SUPPLICANT_NAN
+	bool "NAN (Neighbor Awareness Networking) support"
+	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
+config WIFI_NAN_MAX_SSI_LEN
+	int "Maximum length of NAN service specific info"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	default 128
+	help
+	  Maximum NAN Service Specific Info (SSI) payload length in bytes.
+	  This value is stored inline in NAN event and request structures,
+	  so increasing it raises the net_mgmt event queue footprint by
+	  roughly CONFIG_NET_MGMT_EVENT_QUEUE_SIZE times this value.
+	  Users needing larger SSI payloads (e.g. Matter PAF commissioning
+	  with MTU=350) should set this to the required size.
+
 config WIFI_NM_WPA_SUPPLICANT_11AC
 	bool "IEEE 802.11ac VHT support"
 	depends on WIFI_NM_WPA_SUPPLICANT_AP || WIFI_NM_HOSTAPD_AP
@@ -450,7 +553,9 @@ config WPA_CLI
 	  Enable WPA CLI support for wpa_supplicant.
 
 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
-	config MBEDTLS_SSL_MAX_CONTENT_LEN
+	config MBEDTLS_SSL_IN_CONTENT_LEN
+		default 16384
+	config MBEDTLS_SSL_OUT_CONTENT_LEN
 		default 16384
 endif
 
@@ -461,6 +566,16 @@ config WIFI_NM_WPA_SUPPLICANT_ROAMING
 	  Enable roaming support with wpa_supplicant. When current BSS RSSI drops,
 	  STA will try to find an AP with better RSSI. If found, STA will reassociate
 	  to the new AP automatically without losing connection.
+
+config WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY
+	int "Retry count on every roaming method"
+	depends on WIFI_NM_WPA_SUPPLICANT_ROAMING
+	default 1
+	help
+	  Number of times each of 11K and 11V roaming is attempted.
+	  When reaches this count, fall back to next roaming method.
+	  If both reaches this count, fall back to legacy roaming,
+	  which scans full channel.
 
 config WIFI_NM_WPA_SUPPLICANT_SKIP_DHCP_ON_ROAMING
 	bool "Skip DHCP after roaming to new AP"
@@ -617,6 +732,9 @@ config CRYPTO_INTERNAL
 config ECC
 	bool
 
+config OWE
+	bool
+
 config MBO
 	bool
 
@@ -669,6 +787,12 @@ config DPP2
 config DPP3
 	bool
 
+config NAN
+	bool
+
+config NAN_USD
+	bool
+
 config ACS
 	bool
 
@@ -692,7 +816,7 @@ config FIPS
 
 choice WIFI_NM_WPA_SUPPLICANT_NW_SEL
 	prompt "WPA supplicant Network selection criterion"
-	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_THROUGHPUT
+	default WIFI_NM_WPA_SUPPLICANT_NW_SEL_RELIABILITY
 	help
 	  Select the network selection method for the supplicant.
 

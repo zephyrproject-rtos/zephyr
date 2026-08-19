@@ -194,7 +194,7 @@ static int shtcx_init(const struct device *dev)
 	uint16_t product_id;
 
 	if (!device_is_ready(cfg->i2c.bus)) {
-		LOG_ERR("Bus device is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 

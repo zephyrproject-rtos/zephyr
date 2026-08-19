@@ -42,8 +42,8 @@
  *---------------------------------------------------------------------------*/
  
  
-#ifndef ZEPHYR_INCLUDE_CMSIS_RTOS_V1_CMSIS_OS_H_
-#define ZEPHYR_INCLUDE_CMSIS_RTOS_V1_CMSIS_OS_H_
+#ifndef ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS_H_
+#define ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS_H_
  
 /// \note MUST REMAIN UNCHANGED: \b osCMSIS identifies the CMSIS-RTOS API version.
 #define osCMSIS           0x10002      ///< API version (main [31:16] .sub [15:0])
@@ -548,7 +548,7 @@ osStatus osSemaphoreDelete (osSemaphoreId semaphore_id);
 extern const osPoolDef_t os_pool_def_##name
 #else                            // define the object
 #define osPoolDef(name, no, type)   \
-K_MEM_SLAB_DEFINE(os_mem_##name, sizeof(type), no, 4); \
+K_MEM_SLAB_DEFINE_TYPE(os_mem_##name, type, no); \
 const osPoolDef_t os_pool_def_##name = \
 { (no), sizeof(type), &os_mem_##name }
 #endif
@@ -657,7 +657,7 @@ extern const osMailQDef_t os_mailQ_def_##name
 #else                            // define the object
 #define osMailQDef(name, queue_sz, type) \
 struct k_mbox mbox_##name; \
-K_MEM_SLAB_DEFINE(mailq_slab_##name, sizeof(type), queue_sz, 4); \
+K_MEM_SLAB_DEFINE_TYPE(mailq_slab_##name, type, queue_sz); \
 const osMailQDef_t os_mailQ_def_##name =  \
 { (queue_sz), sizeof (type), (&mailq_slab_##name), (&mbox_##name) }
 #endif
@@ -718,4 +718,4 @@ osStatus osMailFree (osMailQId queue_id, void *mail);
 }
 #endif
  
-#endif  /* ZEPHYR_INCLUDE_CMSIS_RTOS_V1_CMSIS_OS_H_ */
+#endif /* ZEPHYR_INCLUDE_PORTABILITY_CMSIS_OS_H_ */

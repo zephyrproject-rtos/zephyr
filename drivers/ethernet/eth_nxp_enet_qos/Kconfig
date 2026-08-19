@@ -2,31 +2,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig ETH_NXP_ENET_QOS
-	bool "NXP ENET QOS Ethernet Module Driver"
+	bool "NXP ENET QOS Ethernet Driver"
 	default y
 	depends on DT_HAS_NXP_ENET_QOS_ENABLED
+	depends on NET_BUF_FIXED_DATA_SIZE
 	select PINCTRL
 	help
-	  Enable NXP ENET Ethernet Module Driver. This driver
-	  handles IP module level tasks.
+	  Enable NXP ENET QOS Ethernet Driver.
 
 if ETH_NXP_ENET_QOS
 
-config ETH_NXP_ENET_QOS_MAC
-	bool "NXP ENET QOS Ethernet MAC Driver"
-	default y
-	depends on DT_HAS_NXP_ENET_QOS_MAC_ENABLED
-	depends on NET_BUF_FIXED_DATA_SIZE
-	help
-	  Enable NXP ENET QOS Ethernet MAC Driver.
+DT_PROP_NXP_ENET_QOS_UNIQUE_MAC := nxp,unique-mac
 
-if ETH_NXP_ENET_QOS_MAC
-
-DT_PROP_NXP_ENET_QOS_MAC_UNIQUE_MAC := nxp,unique-mac
-
-config ETH_NXP_ENET_QOS_MAC_UNIQUE_MAC_ADDRESS
+config ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS
 	bool "Unique MAC address support"
-	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_QOS_MAC),$(DT_PROP_NXP_ENET_QOS_MAC_UNIQUE_MAC),True)
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_ENET_QOS),$(DT_PROP_NXP_ENET_QOS_UNIQUE_MAC),True)
 	select HWINFO
 	select CRC
 	help
@@ -71,5 +61,4 @@ config ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY
 	help
 	  Cooperative priority of the ENET QOS RX thread
 
-endif # ETH_NXP_ENET_QOS_MAC
 endif # ETH_NXP_ENET_QOS

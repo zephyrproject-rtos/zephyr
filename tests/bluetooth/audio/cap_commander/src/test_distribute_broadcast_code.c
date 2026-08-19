@@ -47,7 +47,7 @@ struct cap_commander_test_distribute_broadcast_code_fixture {
 static void cap_commander_test_distribute_broadcast_code_fixture_init(
 	struct cap_commander_test_distribute_broadcast_code_fixture *fixture)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		test_conn_init(&fixture->conns[i]);
 		fixture->conns[i].index = i;
 	}
@@ -58,7 +58,7 @@ static void cap_commander_test_distribute_broadcast_code_fixture_init(
 		ARRAY_SIZE(fixture->broadcast_code_member_params);
 	memcpy(fixture->distribute_broadcast_code_param.broadcast_code, BROADCAST_CODE,
 	       sizeof(BROADCAST_CODE));
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
 		fixture->broadcast_code_member_params[i].member.member = &fixture->conns[i];
 		fixture->broadcast_code_member_params[i].src_id = RANDOM_SRC_ID;
 	}
@@ -82,7 +82,7 @@ static void cap_commander_test_distribute_broadcast_code_before(void *f)
 	memset(f, 0, sizeof(struct cap_commander_test_distribute_broadcast_code_fixture));
 	cap_commander_test_distribute_broadcast_code_fixture_init(fixture);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		err = bt_cap_commander_discover(&fixture->conns[i]);
 		zassert_equal(0, err, "Unexpected return value %d", err);
 	}
@@ -91,14 +91,18 @@ static void cap_commander_test_distribute_broadcast_code_before(void *f)
 static void cap_commander_test_distribute_broadcast_code_after(void *f)
 {
 	struct cap_commander_test_distribute_broadcast_code_fixture *fixture = f;
+	int err;
 
-	bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
-	bt_bap_broadcast_assistant_unregister_cb(&fixture->broadcast_assistant_cb);
+	err = bt_cap_commander_unregister_cb(&mock_cap_commander_cb);
+	zassert_true(err == 0 || err == -EINVAL, "Unexpected error: %d", err);
+	err = bt_bap_broadcast_assistant_unregister_cb(&fixture->broadcast_assistant_cb);
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
 	/* We need to cleanup since the CAP commander remembers state */
-	bt_cap_commander_cancel();
+	err = bt_cap_commander_cancel();
+	zassert_true(err == 0 || err == -EALREADY, "Unexpected error: %d", err);
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->conns); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->conns); i++) {
 		mock_bt_conn_disconnected(&fixture->conns[i], BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	}
 }
@@ -256,7 +260,7 @@ ZTEST_F(cap_commander_test_distribute_broadcast_code,
 		ztest_test_skip();
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(fixture->broadcast_code_member_params); i++) {
 		fixture->broadcast_code_member_params[i].member.member = &fixture->conns[0];
 	}
 

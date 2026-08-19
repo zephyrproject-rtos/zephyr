@@ -3,8 +3,6 @@
 # Copyright (c) 2022 Actinius
 # SPDX-License-Identifier: Apache-2.0
 
-if BOARD_ACTINIUS_ICARUS_SOM_DK
-
 source "boards/actinius/common/Kconfig"
 
 # For the secure version of the board the firmware is linked at the beginning
@@ -17,21 +15,5 @@ source "boards/actinius/common/Kconfig"
 # Apply this configuration below by setting the Kconfig symbols used by
 # the linker according to the information extracted from DT partitions.
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-
-config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-	depends on BOARD_ACTINIUS_ICARUS_SOM_DK_NRF9160 && TRUSTED_EXECUTION_SECURE
-
-if BOARD_ACTINIUS_ICARUS_SOM_DK_NRF9160_NS
-
-config FLASH_LOAD_OFFSET
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-config FLASH_LOAD_SIZE
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-endif # BOARD_ACTINIUS_ICARUS_SOM_DK_NRF9160_NS
-
-endif # BOARD_ACTINIUS_ICARUS_SOM_DK
+config BOARD_ACTINIUS_ICARUS_SOM_DK
+	select USE_DT_CODE_PARTITION if BOARD_ACTINIUS_ICARUS_SOM_DK_NRF9160_NS

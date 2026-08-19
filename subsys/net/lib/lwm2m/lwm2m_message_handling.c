@@ -26,6 +26,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 
 #include <zephyr/init.h>
+#include <zephyr/sys/ringq.h>
 #include <zephyr/net/http/parser_url.h>
 #include <zephyr/net/lwm2m.h>
 #include <zephyr/net/lwm2m_path.h>
@@ -673,7 +674,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup_unlock;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	r = coap_pending_init(msg->pending, &msg->cpkt,
+			      net_sad(&msg->ctx->remote_addr_storage), NULL);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -1034,7 +1036,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 					       last_pkt_block && last_block, opaque_ctx.len,
 					       opaque_ctx.offset);
 			if (ret < 0) {
-				/* -EEXIST will generate Bad Request LWM2M response. */
+				/* -EEXIST will generate Bad Request LwM2M response. */
 				return -EEXIST;
 			}
 
@@ -1266,7 +1268,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 					       res_inst->res_inst_id, write_buf, len, last_block,
 					       total_size, offset);
 			if (ret < 0) {
-				/* -EEXIST will generate Bad Request LWM2M response. */
+				/* -EEXIST will generate Bad Request LwM2M response. */
 				return -EEXIST;
 			}
 
@@ -1398,7 +1400,7 @@ static int lwm2m_read_cached_data(struct lwm2m_message *msg,
 		read_info = &msg->cache_info->read_info[msg->cache_info->entry_size];
 		/* Store original timeseries ring buffer get states for failure handling */
 		read_info->cache_data = cached_data;
-		read_info->original_rb_get = cached_data->rb.get;
+		read_info->original_rb_get = cached_data->fifo.rb.get;
 		msg->cache_info->entry_size++;
 		if (msg->cache_info->entry_limit) {
 			length = MIN(length, msg->cache_info->entry_limit);
@@ -2114,15 +2116,18 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 			free_block_ctx(block_ctx);
 
 			r = init_block_ctx(&msg->path, &block_ctx);
+		}
+
+		if (block_ctx == NULL) {
+			LOG_ERR("Cannot find block context");
+			return r < 0 ? r : -ENOMEM;
+		}
+
+		if (block_num == 0) {
 			/* If we have already parsed the packet, we can handle the block size
 			 * given by the server.
 			 */
 			block_ctx->ctx.block_size = block_size;
-		}
-
-		if (r < 0) {
-			LOG_ERR("Cannot find block context");
-			return r;
 		}
 
 		msg->in.block_ctx = block_ctx;
@@ -2668,7 +2673,8 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 		return -ENOMEM;
 	}
 
-	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	ret = coap_pending_init(msg->pending, &msg->cpkt,
+				net_sad(&msg->ctx->remote_addr_storage), NULL);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -3017,6 +3023,10 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 		sprint_token(reply->token, reply->tkl));
 
 	msg = find_msg(NULL, reply);
+	if (msg == NULL) {
+		LOG_ERR("Orphaned reply %p.", reply);
+		return 0;
+	}
 
 	/* remove observer on COAP_TYPE_RESET */
 	if (type == COAP_TYPE_RESET) {
@@ -3083,7 +3093,7 @@ static bool lwm2m_timeseries_data_rebuild(struct lwm2m_message *msg, int error_c
 
 	/* Put Ring buffer back to original */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		cache_temp->read_info[i].cache_data->rb.get =
+		cache_temp->read_info[i].cache_data->fifo.rb.get =
 			cache_temp->read_info[i].original_rb_get;
 	}
 
@@ -3136,7 +3146,8 @@ msg_init:
 		LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
 			obs->resource_update ? "MANUAL" : "AUTO", path->obj_id, path->obj_inst_id,
 			path->res_id, path->level, sprint_token(obs->token, obs->tkl),
-			lwm2m_sprint_ip_addr(&ctx->remote_addr), (long long)k_uptime_get());
+			lwm2m_sprint_ip_addr(net_sad(&ctx->remote_addr_storage)),
+			(long long)k_uptime_get());
 
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
 		if (!obj_inst) {
@@ -3148,7 +3159,8 @@ msg_init:
 	} else {
 		LOG_DBG("[%s] NOTIFY MSG START: (Composite)) token:'%s' [%s] %lld",
 			obs->resource_update ? "MANUAL" : "AUTO",
-			sprint_token(obs->token, obs->tkl), lwm2m_sprint_ip_addr(&ctx->remote_addr),
+			sprint_token(obs->token, obs->tkl),
+			lwm2m_sprint_ip_addr(net_sad(&ctx->remote_addr_storage)),
 			(long long)k_uptime_get());
 	}
 
@@ -3298,10 +3310,6 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 
 		ret = lwm2m_perform_read_object_instance(msg, obj_inst, &num_read);
 		if (ret == -ENOMEM) {
-			if (num_read > 0) {
-				/* Return what we have read so far */
-				goto put_end;
-			}
 			return ret;
 		}
 	}
@@ -3310,7 +3318,6 @@ int lwm2m_perform_composite_read_op(struct lwm2m_message *msg, uint16_t content_
 		return -ENOENT;
 	}
 
-put_end:
 	/* Add object end mark */
 	if (engine_put_end(&msg->out, &msg->path) < 0) {
 		return -ENOMEM;
@@ -3377,17 +3384,17 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	url[off + len] = '\0';
 
 	/* initialize remote_addr */
-	(void)memset(&client_ctx->remote_addr, 0, sizeof(client_ctx->remote_addr));
+	(void)memset(&client_ctx->remote_addr_storage, 0, sizeof(client_ctx->remote_addr_storage));
 
 	/* try and set IP address directly */
-	client_ctx->remote_addr.sa_family = NET_AF_INET6;
+	client_ctx->remote_addr_storage.ss_family = NET_AF_INET6;
 	ret = net_addr_pton(NET_AF_INET6, url + off,
-			    &((struct net_sockaddr_in6 *)&client_ctx->remote_addr)->sin6_addr);
+			&((struct net_sockaddr_in6 *)&client_ctx->remote_addr_storage)->sin6_addr);
 	/* Try to parse again using NET_AF_INET */
 	if (ret < 0) {
-		client_ctx->remote_addr.sa_family = NET_AF_INET;
+		client_ctx->remote_addr_storage.ss_family = NET_AF_INET;
 		ret = net_addr_pton(NET_AF_INET, url + off,
-				&((struct net_sockaddr_in *)&client_ctx->remote_addr)->sin_addr);
+			&((struct net_sockaddr_in *)&client_ctx->remote_addr_storage)->sin_addr);
 	}
 
 	if (ret < 0) {
@@ -3410,8 +3417,19 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 			goto cleanup;
 		}
 
-		memcpy(&client_ctx->remote_addr, res->ai_addr, sizeof(client_ctx->remote_addr));
-		client_ctx->remote_addr.sa_family = res->ai_family;
+		if (res->ai_addrlen > sizeof(client_ctx->remote_addr_storage)) {
+			LOG_DBG("Resolved address does not fit (%u > %zu)", res->ai_addrlen,
+				sizeof(client_ctx->remote_addr_storage));
+			zsock_freeaddrinfo(res);
+			ret = -EINVAL;
+			goto cleanup;
+		}
+
+		/* net_addr_pton() above may have left a partial address behind. */
+		(void)memset(&client_ctx->remote_addr_storage, 0,
+			     sizeof(client_ctx->remote_addr_storage));
+		memcpy(&client_ctx->remote_addr_storage, res->ai_addr, res->ai_addrlen);
+		client_ctx->remote_addr_storage.ss_family = res->ai_family;
 		zsock_freeaddrinfo(res);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 		/** copy url pointer to be used in socket */
@@ -3425,10 +3443,12 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	}
 
 	/* set port */
-	if (client_ctx->remote_addr.sa_family == NET_AF_INET6) {
-		net_sin6(&client_ctx->remote_addr)->sin6_port = net_htons(parser.port);
-	} else if (client_ctx->remote_addr.sa_family == NET_AF_INET) {
-		net_sin(&client_ctx->remote_addr)->sin_port = net_htons(parser.port);
+	if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET6) {
+		net_sin6(net_sad(&client_ctx->remote_addr_storage))->sin6_port =
+			net_htons(parser.port);
+	} else if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET) {
+		net_sin(net_sad(&client_ctx->remote_addr_storage))->sin_port =
+			net_htons(parser.port);
 	} else {
 		ret = -EPROTONOSUPPORT;
 	}
@@ -3513,11 +3533,11 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 					  sys_slist_t *lwm2m_path_list,
 					  sys_slist_t *lwm2m_path_free_list)
 {
-	uint32_t bytes_available = 0;
+	uint32_t entries = 0;
 
 	/* Check do we have still pending data to send */
 	for (int i = 0; i < cache_temp->entry_size; i++) {
-		if (ring_buf_is_empty(&cache_temp->read_info[i].cache_data->rb)) {
+		if (sys_ringq_empty(&cache_temp->read_info[i].cache_data->fifo)) {
 			/* Skip Empty cached buffers */
 			continue;
 		}
@@ -3528,14 +3548,14 @@ static bool init_next_pending_timeseries_data(struct lwm2m_cache_read_info *cach
 			return false;
 		}
 
-		bytes_available += ring_buf_size_get(&cache_temp->read_info[i].cache_data->rb);
+		entries += sys_ringq_size(&cache_temp->read_info[i].cache_data->fifo);
 	}
 
-	if (bytes_available == 0) {
+	if (entries == 0) {
 		return false;
 	}
 
-	LOG_INF("Allocate a new message for pending data %u", bytes_available);
+	LOG_INF("Allocate a new message for pending data %u", entries);
 	cache_temp->entry_size = 0;
 	cache_temp->entry_limit = 0;
 	return true;

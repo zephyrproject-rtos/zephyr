@@ -326,6 +326,7 @@ The skeleton of the board YAML file is:
 
    board:
      name: <board-name>
+     full_name: <board-full-name>
      vendor: <board-vendor>
      revision:
        format: <major.minor.patch|letter|number|custom>
@@ -355,9 +356,11 @@ If multiple boards are placed in the same board folder, then the file
    boards:
    - name: <board-name-1>
      vendor: <board-vendor>
+     full_name: <board-full-name>
      ...
    - name: <board-name-2>
      vendor: <board-vendor>
+     full_name: <board-full-name>
      ...
    ...
 
@@ -395,7 +398,7 @@ In general, :file:`plank_<qualifiers>.dts` should look like this:
            leds {
                    compatible = "gpio-leds";
                    led0: led_0 {
-                           gpios = < /* GPIO your LED is hooked up to */ >;
+                           gpios = </* GPIO your LED is hooked up to */>;
                            label = "LED 0";
                    };
                    /* ... other LEDs ... */
@@ -448,13 +451,13 @@ respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
 K6X.
 
 Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
-<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`, which is included by both board
-:file:`.dts` files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`
+<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>`, which is included by both board
+:file:`.dts` files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>`
 in turn includes
 :zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
 for Arm v7-M cores.
 
-Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>` is meant to be
+Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>` is meant to be
 generic across K6X-based boards, it leaves many devices disabled by default
 using ``status`` properties.  For example, there is a CAN controller defined as
 follows (with unimportant parts skipped):

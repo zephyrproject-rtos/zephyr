@@ -332,7 +332,7 @@ ZTEST(central_loc, test_conn_update_central_loc_accept)
 /*
  * Central-initiated Connection Parameters Request procedure.
  * Central requests change in LE connection parameters, peripheral’s Host accepts.
- * Parallel CPRs attemtped and rejected/cached
+ * Parallel CPRs attempted and rejected/cached
  *
  * +-----+                    +-------+                    +-----+
  * | UT  |                    | LL_C  |                    | LT  |
@@ -2579,7 +2579,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled  |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    '--------->'           |                           |
@@ -2629,7 +2629,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
 								 .offset5 = 0xffffU };
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
-	/* No APM deferance, accept with error == 0 */
+	/* No APM deference, accept with error == 0 */
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
 
@@ -2728,7 +2728,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM disabled   |                           |
+ *    |    Deferred APM disabled  |                           |
  *    |    '<---------'           |                           |
  *    |    So accepted right away |                           |
  *    |    but with error         |                           |
@@ -2765,7 +2765,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
 	uint8_t error = reject_ext_ind.error_code;
 
 	/* Prepare mocked call to ull_handle_cpr_anchor_point_move */
-	/* No APM deferance, reject with some error code */
+	/* No APM deference, reject with some error code */
 	ztest_returns_value(ull_handle_cpr_anchor_point_move, false);
 	ztest_return_data(ull_handle_cpr_anchor_point_move, status, &error);
 
@@ -2838,12 +2838,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_reject_right_away)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
  *    |                           | LL_CONNECTION_PARAM_RSP   |
@@ -3013,12 +3013,12 @@ ZTEST(periph_rem, test_conn_update_periph_rem_apm_accept_defered)
  *    |                           |    (only apm)             |
  *    |                           |<--------------------------|
  *    |                           |                           |
- *    |    Defered APM            |                           |
+ *    |    Deferred APM            |                           |
  *    |    '<---------'           |                           |
  *    |                           |                           |
  *    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  *    |                           |                           |
- *    |    Defered accept         |                           |
+ *    |    Deferred accept         |                           |
  *    |    but with error         |                           |
  *    |    '--------->'           |                           |
  *    |                           |                           |
@@ -3282,7 +3282,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_2nd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3315,7 +3315,7 @@ ZTEST(periph_loc, test_conn_update_periph_loc_collision_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_3rd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-2,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3568,7 +3568,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_2nd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -3601,7 +3601,7 @@ ZTEST(periph_rem, test_conn_update_periph_rem_accept_reject_2nd_cpr)
 		/* Release Tx */
 		ull_cp_release_tx(&conn_3rd, tx);
 
-		/* There should be no 'extra' procedure on acount of the parallel CPR */
+		/* There should be no 'extra' procedure on account of the parallel CPR */
 		zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt()-1,
 		       "Free CTX buffers %d", llcp_ctx_buffers_free());
 	}
@@ -5030,6 +5030,80 @@ ZTEST(periph_rem_invalid, test_conn_update_periph_rem_invalid_param)
 	conn_update_ind.interval = interval;
 }
 
+/*
+ * Central-initiated Connection Update procedure.
+ * Peripheral accepts a Connection Update with a future instant, and thereby
+ * retains the RX node for the later host notification. Before the instant is
+ * reached, and thus before the retained RX node is consumed, an unexpected LL
+ * Control PDU is received.
+ *
+ * The unexpected PDU is routed to the active remote Connection Update
+ * procedure, which takes the invalid PDU path and completes the procedure. The
+ * retained RX node must be released, and the reference cleared, before the
+ * procedure is completed. Otherwise the retained node reference is leaked and
+ * llcp_rr_check_done() asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(periph_rem_invalid, test_conn_update_periph_rem_unexpected_pdu_awaiting_instant)
+{
+	struct pdu_data_llctrl_length_req length_req = { .max_rx_octets = 251U,
+							 .max_rx_time = 2120U,
+							 .max_tx_octets = 251U,
+							 .max_tx_time = 2120U };
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, valid Connection Update with a future instant, RX node is retained
+	 * by the remote procedure for the later host notification
+	 */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while the instant has not been reached
+	 * and the retained RX node has not been consumed
+	 */
+	lt_tx(LL_LENGTH_REQ, &conn, &length_req);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
+}
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 /*
  * Peripheral-initiated Connection Parameters Request procedure.
@@ -5102,6 +5176,104 @@ ZTEST(periph_rem_invalid, test_conn_param_req_periph_rem_invalid_param)
 
 	/* Restore interval for other tests */
 	conn_update_ind.interval = interval;
+}
+
+/*
+ * Peripheral-initiated Connection Parameters Request procedure.
+ * Peripheral accepts the central's Connection Update with a future instant,
+ * and thereby retains the RX node for the later host notification. Before the
+ * instant is reached, and thus before the retained RX node is consumed, an
+ * unexpected LL Control PDU is received.
+ *
+ * The unexpected PDU is routed to the active local procedure, which takes the
+ * invalid PDU path and completes the procedure. The retained RX node must be
+ * released, and the reference cleared, before the procedure is completed.
+ * Otherwise the retained node reference is leaked and llcp_lr_check_done()
+ * asserts.
+ *
+ * +-----+                    +-------+                    +-----+
+ * | UT  |                    | LL_P  |                    | LT  |
+ * +-----+                    +-------+                    +-----+
+ *    |                           |                           |
+ *    | LE Connection Update      |                           |
+ *    |-------------------------->|                           |
+ *    |                           | LL_CONNECTION_PARAM_REQ   |
+ *    |                           |-------------------------->|
+ *    |                           |                           |
+ *    |                           |  LL_CONNECTION_UPDATE_IND |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    |                           |      LL_<UNEXPECTED_PDU>  |
+ *    |                           |<--------------------------|
+ *    |                           |                           |
+ *    ~~~~~~~~~~~~~~~~~~ TERMINATE CONNECTION ~~~~~~~~~~~~~~~~~
+ *    |                           |                           |
+ */
+ZTEST(periph_rem_invalid, test_conn_update_periph_loc_unexpected_pdu_awaiting_instant)
+{
+	struct pdu_data_llctrl_reject_ind reject_ind = {
+		.error_code = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
+	};
+	struct node_tx *tx;
+	uint8_t err;
+
+	/* Role */
+	test_set_role(&conn, BT_HCI_ROLE_PERIPHERAL);
+
+	/* Connect */
+	ull_cp_state_set(&conn, ULL_CP_CONNECTED);
+
+	/* Initiate a Connection Parameter Request Procedure */
+	err = ull_cp_conn_update(&conn, INTVL_MIN, INTVL_MAX, LATENCY, TIMEOUT, NULL);
+	zassert_equal(err, BT_HCI_ERR_SUCCESS);
+
+	/* Prepare */
+	event_prepare(&conn);
+	conn_param_req.reference_conn_event_count = event_counter(&conn);
+
+	/* Tx Queue should have one LL Control PDU */
+	lt_rx(LL_CONNECTION_PARAM_REQ, &conn, &tx, &conn_param_req);
+	lt_rx_q_is_empty(&conn);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Release Tx */
+	ull_cp_release_tx(&conn, tx);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, valid Connection Update with a future instant, RX node is retained
+	 * by the local procedure for the later host notification
+	 */
+	conn_update_ind.instant = event_counter(&conn) + 6U;
+	lt_tx(LL_CONNECTION_UPDATE_IND, &conn, &conn_update_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Prepare */
+	event_prepare(&conn);
+
+	/* Rx, unexpected LL Control PDU while the instant has not been reached
+	 * and the retained RX node has not been consumed
+	 */
+	lt_tx(LL_REJECT_IND, &conn, &reject_ind);
+
+	/* Done */
+	event_done(&conn);
+
+	/* Termination 'triggered' */
+	zassert_equal(conn.llcp_terminate.reason_final, BT_HCI_ERR_LMP_PDU_NOT_ALLOWED,
+		      "Terminate reason %d", conn.llcp_terminate.reason_final);
+
+	/* Clear termination flag for subsequent test cycle */
+	conn.llcp_terminate.reason_final = 0;
+
+	/* All contexts should have been released */
+	zassert_equal(llcp_ctx_buffers_free(), test_ctx_buffers_cnt(),
+		      "Free CTX buffers %d", llcp_ctx_buffers_free());
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 

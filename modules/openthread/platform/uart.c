@@ -111,7 +111,12 @@ static void uart_callback(const struct device *dev, void *user_data)
 {
 	ARG_UNUSED(user_data);
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			return;
+		}
 
 		if (uart_irq_rx_ready(dev)) {
 			uart_rx_handle(dev);
@@ -274,7 +279,7 @@ otError otPlatUartSend(const uint8_t *aBuf, uint16_t aBufLength)
 		}
 		return OT_ERROR_NONE;
 #else
-		int ret = uart_tx(ot_uart.dev, aBuf, aBufLength, SYS_FOREVER_MS);
+		int ret = uart_tx(ot_uart.dev, aBuf, aBufLength, SYS_FOREVER_US);
 
 		if (ret == 0) {
 			if (is_panic_mode) {

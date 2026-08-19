@@ -6,7 +6,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="eatt_notif"
+simulation_id="${BOARD_TS}_eatt_notif"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 

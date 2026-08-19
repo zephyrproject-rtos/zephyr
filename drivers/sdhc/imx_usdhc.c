@@ -12,9 +12,11 @@
 #include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
+#include "sdhc_helpers.h"
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST   (PINCTRL_STATE_PRIV_START + 2U)
@@ -23,7 +25,6 @@
 LOG_MODULE_REGISTER(usdhc, CONFIG_SDHC_LOG_LEVEL);
 
 #include <fsl_usdhc.h>
-#include <fsl_cache.h>
 #include <zephyr/irq.h>
 
 enum transfer_callback_status {
@@ -69,6 +70,8 @@ struct usdhc_config {
 	bool detect_dat3;
 	bool detect_cd;
 	bool no_180_vol;
+	bool no_330_vol;
+	bool no_300_vol;
 	uint32_t data_timeout;
 	uint32_t read_watermark;
 	uint32_t write_watermark;
@@ -81,6 +84,7 @@ struct usdhc_config {
 	bool mmc_hs200_1_8v;
 	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 };
 
@@ -267,13 +271,23 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 	props->power_delay = cfg->power_delay_ms;
 	/* Read host capabilities */
 	USDHC_GetCapability(base, &caps);
+#if !(defined(FSL_FEATURE_USDHC_HAS_NO_VS18) && FSL_FEATURE_USDHC_HAS_NO_VS18)
 	if (cfg->no_180_vol) {
 		props->host_caps.vol_180_support = false;
 	} else {
 		props->host_caps.vol_180_support = (bool)(caps.flags & kUSDHC_SupportV180Flag);
 	}
-	props->host_caps.vol_300_support = (bool)(caps.flags & kUSDHC_SupportV300Flag);
-	props->host_caps.vol_330_support = (bool)(caps.flags & kUSDHC_SupportV330Flag);
+#endif
+	if (cfg->no_300_vol) {
+		props->host_caps.vol_300_support = false;
+	} else {
+		props->host_caps.vol_300_support = (bool)(caps.flags & kUSDHC_SupportV300Flag);
+	}
+	if (cfg->no_330_vol) {
+		props->host_caps.vol_330_support = false;
+	} else {
+		props->host_caps.vol_330_support = (bool)(caps.flags & kUSDHC_SupportV330Flag);
+	}
 	props->host_caps.suspend_res_support = (bool)(caps.flags & kUSDHC_SupportSuspendResumeFlag);
 	props->host_caps.sdma_support = (bool)(caps.flags & kUSDHC_SupportDmaFlag);
 	props->host_caps.high_spd_support = (bool)(caps.flags & kUSDHC_SupportHighSpeedFlag);
@@ -293,10 +307,18 @@ static void imx_usdhc_init_host_props(const struct device *dev)
  */
 static int imx_usdhc_reset(const struct device *dev)
 {
+	const struct usdhc_config *cfg = dev->config;
+	struct usdhc_data *data = dev->data;
 	USDHC_Type *base = get_base(dev);
 
-	/* Switch to default I/O voltage of 3.3V */
-	imx_usdhc_select_1_8v(base, false);
+	/* Switch to default I/O voltage for this board */
+	if (cfg->no_330_vol && cfg->no_300_vol) {
+		imx_usdhc_select_1_8v(base, true);
+		data->host_io.signal_voltage = SD_VOL_1_8_V;
+	} else {
+		imx_usdhc_select_1_8v(base, false);
+		data->host_io.signal_voltage = SD_VOL_3_3_V;
+	}
 	USDHC_EnableDDRMode(base, false, 0U);
 #if defined(FSL_FEATURE_USDHC_HAS_SDR50_MODE) && (FSL_FEATURE_USDHC_HAS_SDR50_MODE)
 	USDHC_EnableStandardTuning(base, 0, 0, false);
@@ -325,9 +347,9 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 	struct sdhc_io *host_io = &data->host_io;
 	USDHC_Type *base = get_base(dev);
 
-	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, voltage %s", ios->bus_width,
-		ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		ios->signal_voltage == SD_VOL_1_8_V ? "1.8V" : "3.3V");
+	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, timing %s, voltage %s",
+		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
+		sdhc_timing_mode_str(ios->timing), sd_voltage_str(ios->signal_voltage));
 
 	if (clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys, &src_clk_hz)) {
 		return -EINVAL;
@@ -1111,6 +1133,19 @@ static int imx_usdhc_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	if (cfg->reset.dev != NULL) {
+		if (!device_is_ready(cfg->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&cfg->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
+	}
+
 	ret = pinctrl_apply_state(cfg->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
@@ -1159,6 +1194,19 @@ static int imx_usdhc_init(const struct device *dev)
 	data->host_io.driver_type = SD_DRIVER_TYPE_B;
 	data->host_io.signal_voltage = SD_VOL_3_3_V;
 
+	/*
+	 * If the board only supports 1.8V I/O (no 3.3V and no 3.0V), set
+	 * USDHC VSELECT bit immediately so that the data line sampling
+	 * threshold matches the actual I/O voltage. Without this, the USDHC
+	 * in 3.3V mode cannot sample 1.8V signals on the DAT lines.
+	 * This is done here (not via set_io) to avoid the clock gating
+	 * sequence that the voltage switch procedure would trigger.
+	 */
+	if (cfg->no_330_vol && cfg->no_300_vol) {
+		imx_usdhc_select_1_8v(base, true);
+		data->host_io.signal_voltage = SD_VOL_1_8_V;
+	}
+
 	return k_sem_init(&data->transfer_sem, 0, 1);
 }
 
@@ -1174,16 +1222,10 @@ static DEVICE_API(sdhc, usdhc_api) = {
 	.disable_interrupt = imx_usdhc_disable_interrupt,
 };
 
-#ifdef CONFIG_NOCACHE_MEMORY
-#define IMX_USDHC_NOCACHE_TAG __attribute__((__section__(".nocache")));
-#else
-#define IMX_USDHC_NOCACHE_TAG
-#endif
-
 #ifdef CONFIG_IMX_USDHC_DMA_SUPPORT
 #define IMX_USDHC_DMA_BUFFER_DEFINE(n)                                                             \
 	static uint32_t __aligned(32)                                                              \
-	usdhc_##n##_dma_descriptor[CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4] IMX_USDHC_NOCACHE_TAG;
+	usdhc_##n##_dma_descriptor[CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4] __nocache;
 #define IMX_USDHC_DMA_BUFFER_INIT(n)                                                               \
 	.usdhc_dma_descriptor = usdhc_##n##_dma_descriptor,                                        \
 	.dma_descriptor_len = CONFIG_IMX_USDHC_DMA_BUFFER_SIZE / 4,
@@ -1213,6 +1255,8 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.detect_dat3 = DT_INST_PROP(n, detect_dat3),                                       \
 		.detect_cd = DT_INST_PROP(n, detect_cd),                                           \
 		.no_180_vol = DT_INST_PROP(n, no_1_8_v),                                           \
+		.no_330_vol = DT_INST_PROP(n, no_3_3_v),                                           \
+		.no_300_vol = DT_INST_PROP(n, no_3_0_v),                                           \
 		.read_watermark = DT_INST_PROP(n, read_watermark),                                 \
 		.write_watermark = DT_INST_PROP(n, write_watermark),                               \
 		.max_current_330 = DT_INST_PROP(n, max_current_330),                               \
@@ -1222,6 +1266,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
 		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
 		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
 	};                                                                                         \

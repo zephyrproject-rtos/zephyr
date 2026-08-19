@@ -4,8 +4,13 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_OTP_SHELL otp_shell.c)
 
 # zephyr-keep-sorted-start
+zephyr_library_sources_ifdef(CONFIG_OTP_ADI_AXI_SYSID otp_adi_axi_sysid.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_BFLB otp_bflb.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_EMULATOR otp_emulator.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_MCUX_OCOTP otp_mcux_ocotp.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_NXP_OTPC otp_nxp_otpc.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_NXP_RT7XX_OCOTP otp_nxp_rt7xx_ocotp.c)
+zephyr_library_sources_ifdef(CONFIG_OTP_RTS5817 otp_rts5817_ocotp.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_SIFLI_EFUSE otp_sifli_efuse.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_STM32_BSEC otp_bsec_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_OTP_STM32_NVM otp_nvm_stm32.c)

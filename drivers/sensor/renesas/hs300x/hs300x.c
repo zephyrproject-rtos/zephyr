@@ -143,7 +143,7 @@ static int hs300x_init(const struct device *dev)
 	const struct hs300x_config *cfg = dev->config;
 
 	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("I2C dev %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 

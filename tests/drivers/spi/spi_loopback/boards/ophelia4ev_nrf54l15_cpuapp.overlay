@@ -27,8 +27,6 @@
 	};
 };
 
-/delete-node/ &mx25r64;
-
 &spi00 {
 	status = "okay";
 

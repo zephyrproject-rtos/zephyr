@@ -11,7 +11,7 @@
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 #include "bsim_args_runner.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 extern enum bst_result_t bst_result;
 
@@ -123,7 +123,7 @@ static const struct bt_l2cap_chan_ops l2cap_ops = {
 };
 
 static struct bt_l2cap_le_chan dyn_chan;
-static struct bt_l2cap_chan fixed_chan;
+static struct bt_l2cap_le_chan fixed_chan;
 
 static int accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 		  struct bt_l2cap_chan **l2cap_chan)
@@ -142,7 +142,7 @@ static struct bt_l2cap_server server = {
 
 static int l2cap_fixed_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
-	*chan = &fixed_chan;
+	*chan = &fixed_chan.chan;
 
 	**chan = (struct bt_l2cap_chan){
 		.ops = &l2cap_ops,
@@ -191,8 +191,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 {
 	if (err) {
 		TEST_FAIL("Failed to connect (err %d)", err);
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 		return;
 	}
 
@@ -208,8 +207,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 	UNSET_FLAG(is_connected);
 }
 

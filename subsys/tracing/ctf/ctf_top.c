@@ -5,7 +5,6 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
 #include <zephyr/net/net_core.h>
@@ -13,7 +12,13 @@
 #include <zephyr/net/socket_poll.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_pkt.h>
-#include <zephyr/debug/cpu_load.h>
+#include <zephyr/sys/cpu_load.h>
+#include <zephyr/pm/state.h>
+
+struct rtio;
+struct rtio_sqe;
+struct rtio_cqe;
+struct rtio_iodev_sqe;
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
@@ -315,6 +320,10 @@ void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
 
 void sys_trace_isr_enter(void)
 {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
+		cpu_load_on_exit_idle();
+	}
+
 	ctf_top_isr_enter();
 }
 
@@ -333,14 +342,14 @@ void sys_trace_idle(void)
 #ifdef CONFIG_TRACING_IDLE
 	ctf_top_idle();
 #endif
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}
 }
 
 void sys_trace_idle_exit(void)
 {
-	if (IS_ENABLED(CONFIG_CPU_LOAD)) {
+	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_exit_idle();
 	}
 }
@@ -987,7 +996,7 @@ void sys_trace_socket_shutdown_exit(int sock, int ret)
 
 void sys_trace_socket_bind_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1002,7 +1011,7 @@ void sys_trace_socket_bind_exit(int sock, int ret)
 
 void sys_trace_socket_connect_enter(int sock, const struct net_sockaddr *addr, size_t addrlen)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1222,7 +1231,7 @@ void sys_trace_socket_getpeername_enter(int sock)
 void sys_trace_socket_getpeername_exit(int sock,  struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1238,7 +1247,7 @@ void sys_trace_socket_getsockname_enter(int sock)
 void sys_trace_socket_getsockname_exit(int sock, const struct net_sockaddr *addr,
 				       const uint32_t *addrlen, int ret)
 {
-	ctf_net_bounded_string_t addr_str;
+	ctf_net_bounded_string_t addr_str = {"unknown"};
 
 	(void)net_addr_ntop(addr->sa_family, &net_sin(addr)->sin_addr, addr_str.buf,
 			    sizeof(addr_str.buf));
@@ -1357,6 +1366,33 @@ void sys_trace_named_event(const char *name, uint32_t arg0, uint32_t arg1)
 	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
 
 	ctf_named_event(ctf_name, arg0, arg1);
+}
+
+static void _get_init_name(const struct init_entry *entry, ctf_bounded_string_t *name)
+{
+	const struct device *dev = entry->dev;
+
+	if (dev != NULL && dev->name != NULL && dev->name[0] != '\0') {
+		strncpy(name->buf, dev->name, sizeof(name->buf));
+		name->buf[sizeof(name->buf) - 1] = '\0';
+	}
+}
+
+void sys_trace_sys_init_enter(const struct init_entry *entry, int level)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_enter(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level);
+}
+
+void sys_trace_sys_init_exit(const struct init_entry *entry, int level, int result)
+{
+	ctf_bounded_string_t name = {""};
+
+	_get_init_name(entry, &name);
+	ctf_sys_init_exit(name, (uint32_t)(uintptr_t)entry->init_fn, (uint8_t)level,
+			  (int32_t)result);
 }
 
 /* GPIO */
@@ -1616,4 +1652,701 @@ void sys_trace_k_event_wait_blocking(struct k_event *event, uint32_t events, uin
 void sys_trace_k_event_wait_exit(struct k_event *event, uint32_t events, int ret)
 {
 	ctf_top_event_wait_exit((uint32_t)(uintptr_t)event, events, (int32_t)ret);
+}
+
+/* Queue */
+
+void sys_trace_k_queue_init(struct k_queue *queue)
+{
+	ctf_top_queue_init((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_cancel_wait(struct k_queue *queue)
+{
+	ctf_top_queue_cancel_wait((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_queue_insert_enter(struct k_queue *queue, bool alloc)
+{
+	ctf_top_queue_queue_insert_enter((uint32_t)(uintptr_t)queue, (uint8_t)alloc);
+}
+
+void sys_trace_k_queue_queue_insert_blocking(struct k_queue *queue, bool alloc, k_timeout_t timeout)
+{
+	ctf_top_queue_queue_insert_blocking((uint32_t)(uintptr_t)queue, (uint8_t)alloc,
+					    k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_queue_insert_exit(struct k_queue *queue, bool alloc, int32_t ret)
+{
+	ctf_top_queue_queue_insert_exit((uint32_t)(uintptr_t)queue, (uint8_t)alloc, ret);
+}
+
+void sys_trace_k_queue_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_exit(struct k_queue *queue)
+{
+	ctf_top_queue_append_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_alloc_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_append_exit(struct k_queue *queue, int32_t ret)
+{
+	ctf_top_queue_alloc_append_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_prepend_enter(struct k_queue *queue)
+{
+	ctf_top_queue_prepend_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_prepend_exit(struct k_queue *queue)
+{
+	ctf_top_queue_prepend_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_enter(struct k_queue *queue)
+{
+	ctf_top_queue_alloc_prepend_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_alloc_prepend_exit(struct k_queue *queue, int32_t ret)
+{
+	ctf_top_queue_alloc_prepend_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_insert_enter(struct k_queue *queue)
+{
+	ctf_top_queue_insert_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_insert_exit(struct k_queue *queue)
+{
+	ctf_top_queue_insert_exit((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_list_enter(struct k_queue *queue)
+{
+	ctf_top_queue_append_list_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_append_list_exit(struct k_queue *queue, int ret)
+{
+	ctf_top_queue_append_list_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_merge_slist_enter(struct k_queue *queue)
+{
+	ctf_top_queue_merge_slist_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_merge_slist_exit(struct k_queue *queue, int ret)
+{
+	ctf_top_queue_merge_slist_exit((uint32_t)(uintptr_t)queue, ret);
+}
+
+void sys_trace_k_queue_get_enter(struct k_queue *queue, k_timeout_t timeout)
+{
+	ctf_top_queue_get_enter((uint32_t)(uintptr_t)queue,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_get_blocking(struct k_queue *queue, k_timeout_t timeout)
+{
+	ctf_top_queue_get_blocking((uint32_t)(uintptr_t)queue,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_queue_get_exit(struct k_queue *queue, k_timeout_t timeout, void *ret)
+{
+	ctf_top_queue_get_exit((uint32_t)(uintptr_t)queue,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+			       (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_queue_remove_enter(struct k_queue *queue)
+{
+	ctf_top_queue_remove_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_remove_exit(struct k_queue *queue, bool ret)
+{
+	ctf_top_queue_remove_exit((uint32_t)(uintptr_t)queue, (uint8_t)ret);
+}
+
+void sys_trace_k_queue_unique_append_enter(struct k_queue *queue)
+{
+	ctf_top_queue_unique_append_enter((uint32_t)(uintptr_t)queue);
+}
+
+void sys_trace_k_queue_unique_append_exit(struct k_queue *queue, bool ret)
+{
+	ctf_top_queue_unique_append_exit((uint32_t)(uintptr_t)queue, (uint8_t)ret);
+}
+
+void sys_trace_k_queue_peek_head(struct k_queue *queue, void *ret)
+{
+	ctf_top_queue_peek_head((uint32_t)(uintptr_t)queue, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret)
+{
+	ctf_top_queue_peek_tail((uint32_t)(uintptr_t)queue, (uint32_t)(uintptr_t)ret);
+}
+
+/* FIFO */
+
+void sys_trace_k_fifo_init_enter(struct k_fifo *fifo)
+{
+	ctf_top_fifo_init_enter((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_init_exit(struct k_fifo *fifo)
+{
+	ctf_top_fifo_init_exit((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_cancel_wait_enter(struct k_fifo *fifo)
+{
+	ctf_top_fifo_cancel_wait_enter((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_cancel_wait_exit(struct k_fifo *fifo)
+{
+	ctf_top_fifo_cancel_wait_exit((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_put_enter(struct k_fifo *fifo, void *data)
+{
+	ctf_top_fifo_put_enter((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_fifo_put_exit(struct k_fifo *fifo, void *data)
+{
+	ctf_top_fifo_put_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_fifo_alloc_put_enter(struct k_fifo *fifo, void *data)
+{
+	ctf_top_fifo_alloc_put_enter((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_fifo_alloc_put_exit(struct k_fifo *fifo, void *data, int ret)
+{
+	ctf_top_fifo_alloc_put_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)data, ret);
+}
+
+void sys_trace_k_fifo_put_list_enter(struct k_fifo *fifo, void *head, void *tail)
+{
+	ctf_top_fifo_put_list_enter((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)head,
+				    (uint32_t)(uintptr_t)tail);
+}
+
+void sys_trace_k_fifo_put_list_exit(struct k_fifo *fifo, void *head, void *tail)
+{
+	ctf_top_fifo_put_list_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)head,
+				   (uint32_t)(uintptr_t)tail);
+}
+
+void sys_trace_k_fifo_put_slist_enter(struct k_fifo *fifo, sys_slist_t *list)
+{
+	ctf_top_fifo_put_slist_enter((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)list);
+}
+
+void sys_trace_k_fifo_put_slist_exit(struct k_fifo *fifo, sys_slist_t *list)
+{
+	ctf_top_fifo_put_slist_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)list);
+}
+
+void sys_trace_k_fifo_get_enter(struct k_fifo *fifo, k_timeout_t timeout)
+{
+	ctf_top_fifo_get_enter((uint32_t)(uintptr_t)fifo,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_fifo_get_exit(struct k_fifo *fifo, k_timeout_t timeout, void *ret)
+{
+	ctf_top_fifo_get_exit((uint32_t)(uintptr_t)fifo,
+			      k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+			      (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_fifo_peek_head_enter(struct k_fifo *fifo)
+{
+	ctf_top_fifo_peek_head_enter((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_peek_head_exit(struct k_fifo *fifo, void *ret)
+{
+	ctf_top_fifo_peek_head_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_fifo_peek_tail_enter(struct k_fifo *fifo)
+{
+	ctf_top_fifo_peek_tail_enter((uint32_t)(uintptr_t)fifo);
+}
+
+void sys_trace_k_fifo_peek_tail_exit(struct k_fifo *fifo, void *ret)
+{
+	ctf_top_fifo_peek_tail_exit((uint32_t)(uintptr_t)fifo, (uint32_t)(uintptr_t)ret);
+}
+
+/* LIFO */
+
+void sys_trace_k_lifo_init_enter(struct k_lifo *lifo)
+{
+	ctf_top_lifo_init_enter((uint32_t)(uintptr_t)lifo);
+}
+
+void sys_trace_k_lifo_init_exit(struct k_lifo *lifo)
+{
+	ctf_top_lifo_init_exit((uint32_t)(uintptr_t)lifo);
+}
+
+void sys_trace_k_lifo_put_enter(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_put_enter((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_put_exit(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_put_exit((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_alloc_put_enter(struct k_lifo *lifo, void *data)
+{
+	ctf_top_lifo_alloc_put_enter((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data);
+}
+
+void sys_trace_k_lifo_alloc_put_exit(struct k_lifo *lifo, void *data, int ret)
+{
+	ctf_top_lifo_alloc_put_exit((uint32_t)(uintptr_t)lifo, (uint32_t)(uintptr_t)data, ret);
+}
+
+void sys_trace_k_lifo_get_enter(struct k_lifo *lifo, k_timeout_t timeout)
+{
+	ctf_top_lifo_get_enter((uint32_t)(uintptr_t)lifo,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_lifo_get_exit(struct k_lifo *lifo, k_timeout_t timeout, void *ret)
+{
+	ctf_top_lifo_get_exit((uint32_t)(uintptr_t)lifo,
+			      k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+			      (uint32_t)(uintptr_t)ret);
+}
+
+/* Stack */
+
+void sys_trace_k_stack_init(struct k_stack *stack)
+{
+	ctf_top_stack_init((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_alloc_init_enter(struct k_stack *stack)
+{
+	ctf_top_stack_alloc_init_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_alloc_init_exit(struct k_stack *stack, int32_t ret)
+{
+	ctf_top_stack_alloc_init_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_cleanup_enter(struct k_stack *stack)
+{
+	ctf_top_stack_cleanup_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_cleanup_exit(struct k_stack *stack, int ret)
+{
+	ctf_top_stack_cleanup_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_push_enter(struct k_stack *stack)
+{
+	ctf_top_stack_push_enter((uint32_t)(uintptr_t)stack);
+}
+
+void sys_trace_k_stack_push_exit(struct k_stack *stack, int ret)
+{
+	ctf_top_stack_push_exit((uint32_t)(uintptr_t)stack, ret);
+}
+
+void sys_trace_k_stack_pop_enter(struct k_stack *stack, k_timeout_t timeout)
+{
+	ctf_top_stack_pop_enter((uint32_t)(uintptr_t)stack,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_stack_pop_blocking(struct k_stack *stack, k_timeout_t timeout)
+{
+	ctf_top_stack_pop_blocking((uint32_t)(uintptr_t)stack,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_stack_pop_exit(struct k_stack *stack, k_timeout_t timeout, int ret)
+{
+	ctf_top_stack_pop_exit((uint32_t)(uintptr_t)stack,
+			       k_ticks_to_us_floor32((uint32_t)timeout.ticks), ret);
+}
+
+/* Heap */
+
+void sys_trace_k_heap_init(struct k_heap *h)
+{
+	ctf_top_heap_init((uint32_t)(uintptr_t)h);
+}
+
+void sys_trace_k_heap_aligned_alloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_aligned_alloc_enter((uint32_t)(uintptr_t)h,
+					 k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_alloc_helper_blocking(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_alloc_helper_blocking((uint32_t)(uintptr_t)h,
+					   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_aligned_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_aligned_alloc_exit((uint32_t)(uintptr_t)h,
+					k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+					(uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_alloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_alloc_enter((uint32_t)(uintptr_t)h,
+				 k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_alloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_alloc_exit((uint32_t)(uintptr_t)h,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				(uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_calloc_enter(struct k_heap *h, k_timeout_t timeout)
+{
+	ctf_top_heap_calloc_enter((uint32_t)(uintptr_t)h,
+				  k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_calloc_exit(struct k_heap *h, k_timeout_t timeout, void *ret)
+{
+	ctf_top_heap_calloc_exit((uint32_t)(uintptr_t)h,
+				 k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				 (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_free(struct k_heap *h)
+{
+	ctf_top_heap_free((uint32_t)(uintptr_t)h);
+}
+
+void sys_trace_k_heap_realloc_enter(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout)
+{
+	ctf_top_heap_realloc_enter((uint32_t)(uintptr_t)h, (uint32_t)(uintptr_t)ptr,
+				   (uint32_t)bytes, k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_heap_realloc_exit(struct k_heap *h, void *ptr, size_t bytes, k_timeout_t timeout,
+				   void *ret)
+{
+	ctf_top_heap_realloc_exit((uint32_t)(uintptr_t)h, (uint32_t)(uintptr_t)ptr, (uint32_t)bytes,
+				  k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+				  (uint32_t)(uintptr_t)ret);
+}
+
+/* System heap */
+
+void sys_trace_k_heap_sys_k_aligned_alloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_aligned_alloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_aligned_alloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_aligned_alloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_malloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_malloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_malloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_malloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_calloc_enter(struct k_heap *heap)
+{
+	ctf_top_heap_sys_k_calloc_enter((uint32_t)(uintptr_t)heap);
+}
+
+void sys_trace_k_heap_sys_k_calloc_exit(struct k_heap *heap, void *ret)
+{
+	ctf_top_heap_sys_k_calloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ret);
+}
+
+void sys_trace_k_heap_sys_k_free_enter(struct k_heap *heap, struct k_heap **heap_ref)
+{
+	ctf_top_heap_sys_k_free_enter((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)heap_ref);
+}
+
+void sys_trace_k_heap_sys_k_free_exit(struct k_heap *heap, void *heap_ref)
+{
+	ctf_top_heap_sys_k_free_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)heap_ref);
+}
+
+void sys_trace_k_heap_sys_k_realloc_enter(struct k_heap *heap, void *ptr)
+{
+	ctf_top_heap_sys_k_realloc_enter((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ptr);
+}
+
+void sys_trace_k_heap_sys_k_realloc_exit(struct k_heap *heap, void *ptr, void *ret)
+{
+	ctf_top_heap_sys_k_realloc_exit((uint32_t)(uintptr_t)heap, (uint32_t)(uintptr_t)ptr,
+					(uint32_t)(uintptr_t)ret);
+}
+
+/* Pipe */
+
+void sys_trace_k_pipe_init(struct k_pipe *pipe, uint8_t *buffer, size_t size)
+{
+	ctf_top_pipe_init((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)buffer, (uint32_t)size);
+}
+
+void sys_trace_k_pipe_reset_enter(struct k_pipe *pipe)
+{
+	ctf_top_pipe_reset_enter((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_reset_exit(struct k_pipe *pipe)
+{
+	ctf_top_pipe_reset_exit((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_close_enter(struct k_pipe *pipe)
+{
+	ctf_top_pipe_close_enter((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_close_exit(struct k_pipe *pipe)
+{
+	ctf_top_pipe_close_exit((uint32_t)(uintptr_t)pipe);
+}
+
+void sys_trace_k_pipe_write_enter(struct k_pipe *pipe, const uint8_t *data, size_t len,
+				  k_timeout_t timeout)
+{
+	ctf_top_pipe_write_enter((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)data,
+				 (uint32_t)len, k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_write_blocking(struct k_pipe *pipe, k_timeout_t timeout)
+{
+	ctf_top_pipe_write_blocking((uint32_t)(uintptr_t)pipe,
+				    k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_write_exit(struct k_pipe *pipe, int ret)
+{
+	ctf_top_pipe_write_exit((uint32_t)(uintptr_t)pipe, ret);
+}
+
+void sys_trace_k_pipe_read_enter(struct k_pipe *pipe, uint8_t *data, size_t len,
+				 k_timeout_t timeout)
+{
+	ctf_top_pipe_read_enter((uint32_t)(uintptr_t)pipe, (uint32_t)(uintptr_t)data, (uint32_t)len,
+				k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_read_blocking(struct k_pipe *pipe, k_timeout_t timeout)
+{
+	ctf_top_pipe_read_blocking((uint32_t)(uintptr_t)pipe,
+				   k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+}
+
+void sys_trace_k_pipe_read_exit(struct k_pipe *pipe, int ret)
+{
+	ctf_top_pipe_read_exit((uint32_t)(uintptr_t)pipe, ret);
+}
+
+/* RTIO */
+
+void sys_trace_rtio_submit_enter(const struct rtio *r, uint32_t wait_count)
+{
+	ctf_top_rtio_submit_enter((uint32_t)(uintptr_t)r, (uint32_t)wait_count);
+}
+
+void sys_trace_rtio_submit_exit(const struct rtio *r)
+{
+	ctf_top_rtio_submit_exit((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_sqe_acquire_enter(const struct rtio *r)
+{
+	ctf_top_rtio_sqe_acquire_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_sqe_acquire_exit(const struct rtio *r, const struct rtio_sqe *sqe)
+{
+	ctf_top_rtio_sqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)sqe);
+}
+
+void sys_trace_rtio_sqe_cancel(const struct rtio_sqe *sqe)
+{
+	ctf_top_rtio_sqe_cancel((uint32_t)(uintptr_t)sqe);
+}
+
+void sys_trace_rtio_cqe_submit_enter(const struct rtio *r, int result, uint32_t flags)
+{
+	ctf_top_rtio_cqe_submit_enter((uint32_t)(uintptr_t)r, result, (uint32_t)flags);
+}
+
+void sys_trace_rtio_cqe_submit_exit(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_submit_exit((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_acquire_enter(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_acquire_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_acquire_exit(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_acquire_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_cqe_release(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_release((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_cqe_consume_enter(const struct rtio *r)
+{
+	ctf_top_rtio_cqe_consume_enter((uint32_t)(uintptr_t)r);
+}
+
+void sys_trace_rtio_cqe_consume_exit(const struct rtio *r, const struct rtio_cqe *cqe)
+{
+	ctf_top_rtio_cqe_consume_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)cqe);
+}
+
+void sys_trace_rtio_txn_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_txn_next_enter((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_txn_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_txn_next_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_chain_next_enter(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_chain_next_enter((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+void sys_trace_rtio_chain_next_exit(const struct rtio *r, const struct rtio_iodev_sqe *iodev_sqe)
+{
+	ctf_top_rtio_chain_next_exit((uint32_t)(uintptr_t)r, (uint32_t)(uintptr_t)iodev_sqe);
+}
+
+/* PM device runtime */
+
+void sys_trace_pm_device_runtime_get_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_get_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_get_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_get_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_put_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_put_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_put_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_put_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_put_async_enter(const struct device *dev, k_timeout_t delay)
+{
+	ctf_top_pm_device_runtime_put_async_enter((uint32_t)(uintptr_t)dev,
+						  k_ticks_to_us_floor32((uint32_t)delay.ticks));
+}
+
+void sys_trace_pm_device_runtime_put_async_exit(const struct device *dev, k_timeout_t delay,
+						int ret)
+{
+	ctf_top_pm_device_runtime_put_async_exit((uint32_t)(uintptr_t)dev,
+						 k_ticks_to_us_floor32((uint32_t)delay.ticks), ret);
+}
+
+void sys_trace_pm_device_runtime_enable_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_enable_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_enable_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_enable_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+void sys_trace_pm_device_runtime_disable_enter(const struct device *dev)
+{
+	ctf_top_pm_device_runtime_disable_enter((uint32_t)(uintptr_t)dev);
+}
+
+void sys_trace_pm_device_runtime_disable_exit(const struct device *dev, int ret)
+{
+	ctf_top_pm_device_runtime_disable_exit((uint32_t)(uintptr_t)dev, ret);
+}
+
+/* PM system */
+
+void sys_trace_pm_system_suspend_enter(int32_t ticks)
+{
+	ctf_top_pm_system_suspend_enter(ticks);
+}
+
+void sys_trace_pm_system_suspend_exit(int32_t ticks, enum pm_state state)
+{
+	ctf_top_pm_system_suspend_exit(ticks, (uint8_t)state);
+}
+
+/* Syscall */
+
+void sys_trace_syscall_enter(uint32_t id, const char *name)
+{
+	ctf_bounded_string_t ctf_name = {""};
+
+	strncpy(ctf_name.buf, name, CTF_MAX_STRING_LEN);
+	ctf_name.buf[CTF_MAX_STRING_LEN - 1] = '\0';
+
+	ctf_top_syscall_enter(id, ctf_name);
+}
+
+void sys_trace_syscall_exit(uint32_t id)
+{
+	ctf_top_syscall_exit(id);
 }

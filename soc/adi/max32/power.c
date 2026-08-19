@@ -8,7 +8,7 @@
 #include <zephyr/init.h>
 #include <zephyr/platform/hooks.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/pm/device_runtime.h>
+#include <zephyr/cache.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 
 #include <mxc_device.h>
@@ -19,12 +19,11 @@
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
 
-extern uint8_t pm_get_s2ram_retention_mask(void);
+#ifdef CONFIG_PM_S2RAM
+extern int pm_s2ram_suspend(pm_s2ram_system_off_fn_t system_off);
+#endif /* CONFIG_PM_S2RAM */
 
-#if defined(CONFIG_PM_S2RAM) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER)
-static const struct device *idle_timer =
-	DEVICE_DT_GET_OR_NULL(DT_CHOSEN(zephyr_system_timer_companion));
-#endif /* defined(CONFIG_PM_S2RAM) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER) */
+#define SYS_TIMER_COMPANION DT_CHOSEN(zephyr_system_timer_companion)
 
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -46,28 +45,20 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		break;
 	case PM_STATE_STANDBY:
 		LOG_DBG("entering PM state standby");
+#ifdef CONFIG_SOC_FAMILY_MAX32_ERRATA_30282
+		sys_cache_instr_disable();
 		Wrap_MXC_LP_EnterStandbyMode();
+		sys_cache_instr_enable();
+#else
+		Wrap_MXC_LP_EnterStandbyMode();
+#endif /* CONFIG_SOC_FAMILY_MAX32_ERRATA_30282 */
 		break;
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM
 		LOG_DBG("entering PM state suspend to ram");
 
-#ifdef CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
-		if (idle_timer) {
-			/* This does not actually suspend the idle-mode timer; it just decrements
-			 * the pm usage counter so that device can be resumed once the system
-			 * wakes up.
-			 */
-			pm_device_runtime_put(idle_timer);
-		}
-#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
-
-		/* SRAM retention configurable via Kconfig */
-		Wrap_MXC_LP_EnableRetentionReg();
-		Wrap_MXC_LP_EnableSramRetention(pm_get_s2ram_retention_mask());
-
 		/* Suspend to RAM */
-		arch_pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
+		pm_s2ram_suspend(Wrap_MXC_LP_EnterBackupMode);
 #else
 		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
 #endif /* CONFIG_PM_S2RAM */
@@ -99,22 +90,22 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_RAM:
 #ifdef CONFIG_PM_S2RAM
 		max32xx_system_init();
-		Wrap_MXC_LP_DisableSramRetention();
 		Wrap_MXC_LP_ExitBackupMode();
-
-#ifdef CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
-		if (idle_timer) {
-			/* Resume the idle-mode timer */
-			pm_device_runtime_get(idle_timer);
-		}
-#endif /* CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER */
-
+#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_wut)
+		MXC_LP_EnableWUTAlarmWakeup();
+#endif
 		LOG_DBG("exited PM state suspend to ram");
 #else
 		LOG_WRN("PM_STATE_SUSPEND_TO_RAM must be enabled by Kconfig option!");
 #endif /* CONFIG_PM_S2RAM */
 		break;
 	case PM_STATE_STANDBY:
+#if DT_NODE_HAS_COMPAT(SYS_TIMER_COMPANION, adi_max32_rtc_counter)
+		/* For this state wait a little until RTC register being ready
+		 * otherwise seems previous RTC value being read
+		 */
+		k_busy_wait(100);
+#endif
 		LOG_DBG("exited PM state standby");
 		break;
 	default:

@@ -5,6 +5,7 @@
 
 if SOC_SERIES_STM32C0X
 
+
 if PM
 
 config COUNTER
@@ -14,5 +15,20 @@ config COUNTER_RTC_STM32_SUBSECONDS
 	default y if DT_HAS_ST_STM32_RTC_ENABLED
 
 endif # PM
+
+configdefault SHARED_INTERRUPTS
+	# USART3 - USART4 - USART5 - USART6 - LPUART1 : IRQn 29
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart4)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart3) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart5)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart4) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,usart6)
+	default y if $(dt_nodelabel_enabled,usart5) && $(dt_nodelabel_enabled,lpuart1)
+	default y if $(dt_nodelabel_enabled,usart6) && $(dt_nodelabel_enabled,lpuart1)
+	# USART2 - LPUART2 : IRQn 28
+	default y if $(dt_nodelabel_enabled,usart2) && $(dt_nodelabel_enabled,lpuart2)
 
 endif # SOC_SERIES_STM32C0X

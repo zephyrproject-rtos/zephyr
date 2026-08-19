@@ -12,8 +12,18 @@ config SDHC_ESP32
 
 if SDHC_ESP32
 
-# ESP32 DMA needs 32 bit aligned buffers
+# DMA buffers must be cache-line aligned on SoCs with L1 data cache
 config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if DCACHE
 	default 4
+
+config SDHC_ESP32_SDIO
+	bool "SDIO host support (CMD53 data path and card interrupt)"
+	default y if SDIO_STACK
+	help
+	  Enable CMD53 data-phase handling and asynchronous SDIO card
+	  interrupt delivery so the Zephyr SDIO stack can drive an SDIO
+	  peripheral attached to the ESP32 SDMMC controller. CMD52 works
+	  without this option.
 
 endif

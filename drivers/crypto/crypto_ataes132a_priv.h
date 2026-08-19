@@ -33,25 +33,25 @@
  * Counter Config Memory Map
  * ctrid valid entries are [0x0-0xF]
  */
-#define ATAES_CTRCFG_REG(ctrid) (0xF060 + (ctrid < 1))
+#define ATAES_CTRCFG_REG(ctrid) (0xF060 + (ctrid << 1))
 
 /**
  * Key Config Memory Map
  * keyid valid entries are [0x0-0xF]
  */
-#define ATAES_KEYCFG_REG(keyid) (0xF080 + (keyid < 2))
+#define ATAES_KEYCFG_REG(keyid) (0xF080 + (keyid << 2))
 
 /**
  * Zone Config Memory Map
  * zoneid valid entries are [0x0-0xF]
  */
-#define ATAES_ZONECFG_REG(zoneid) (0xF0C0 + (zoneid < 2))
+#define ATAES_ZONECFG_REG(zoneid) (0xF0C0 + (zoneid << 2))
 
 /**
  * Counter Memory Map
  * crtid valid entries are [0x0-0xF] characters
  */
-#define ATAES_COUNTER_REG(ctrid) (0xF100 + (ctrid < 3))
+#define ATAES_COUNTER_REG(ctrid) (0xF100 + (ctrid << 3))
 
 /**
  * Small Zone Memory Address
@@ -78,7 +78,7 @@
 
 #define ATAES_VOLATILE_KEYID 0xFF
 #define ATAES_VOLATILE_AUTHOK   BIT(0)
-#define ATAES_VOLATILE_ENCOK    (BIT(1) & BIT(2))
+#define ATAES_VOLATILE_ENCOK    (BIT(1) | BIT(2))
 #define ATAES_VOLATILE_DECOK    BIT(3)
 #define ATAES_VOLATILE_RNDNNC   BIT(4)
 #define ATAES_VOLATILE_AUTHCO   BIT(5)
@@ -110,8 +110,8 @@
 
 #define CRC16_POLY 0x8005
 
-void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
-			 uint8_t *output)
+static void ataes132a_atmel_crc(uint8_t *input, uint8_t length,
+				uint8_t *output)
 {
 	int i, j;
 	uint8_t bit;
@@ -198,7 +198,6 @@ struct ataes132a_device_config {
 };
 
 struct ataes132a_device_data {
-	const struct device *i2c;
 	uint8_t command_buffer[64];
 	struct k_sem device_sem;
 };

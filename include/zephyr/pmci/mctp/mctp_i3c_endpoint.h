@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I3C_ENDPOINT_H_
-#define ZEPHYR_MCTP_I3C_ENDPOINT_H_
+/**
+ * @file
+ * @brief Internal driver API for MCTP I3C endpoint devices.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_ENDPOINT_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_ENDPOINT_H_
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i3c.h>
@@ -37,4 +43,4 @@ static inline struct mctp_binding_i3c_controller *mctp_i3c_endpoint_binding(cons
 }
 /** @endcond INTERNAL_HIDDEN */
 
-#endif /* ZEPHYR_MCTP_I3C_ENDPOINT_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_ENDPOINT_H_ */

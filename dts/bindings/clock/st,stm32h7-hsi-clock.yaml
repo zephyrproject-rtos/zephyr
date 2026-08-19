@@ -13,8 +13,8 @@ properties:
     required: true
     description: |
       HSI clock divider. Configures the output HSI clock frequency
-    enum:
-      - 1 # hsi_clk = 64MHz
-      - 2 # hsi_clk = 32MHz
-      - 4 # hsi_clk = 16MHz
-      - 8 # hsi_clk = 8MHz
+      1: 64 MHz
+      2: 32 MHz
+      4: 16 MHz
+      8: 8 MHz
+    enum: [1, 2, 4, 8]

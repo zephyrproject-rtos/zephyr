@@ -117,13 +117,13 @@ int at_get_number(struct at_client *at, uint32_t *val)
 
 static bool str_has_prefix(struct at_client *at, const char *prefix)
 {
-	size_t len = strlen(prefix);
+	const size_t len = strlen(prefix);
 
 	if (at->rsp_buf.len < len) {
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, prefix, len) != 0) {
+	if (memcmp(at->rsp_buf.data, prefix, len) != 0) {
 		return false;
 	}
 
@@ -133,19 +133,19 @@ static bool str_has_prefix(struct at_client *at, const char *prefix)
 static int at_parse_result(struct at_client *at, struct net_buf *buf,
 			   enum at_result *result)
 {
-	char *ok = "OK";
-	char *error = "ERROR";
-	size_t ok_len = strlen(ok);
-	size_t error_len = strlen(error);
+	const char *ok = "OK";
+	const char *error = "ERROR";
+	const size_t ok_len = strlen(ok);
+	const size_t error_len = strlen(error);
 
 	/* Map the result and check for end lf */
-	if ((at->rsp_buf.len >= ok_len) && (strncmp(at->rsp_buf.data, ok, ok_len) == 0) &&
+	if ((at->rsp_buf.len >= ok_len) && (memcmp(at->rsp_buf.data, ok, ok_len) == 0) &&
 	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_OK;
 		return 0;
 	}
 
-	if ((at->rsp_buf.len >= error_len) && (strncmp(at->rsp_buf.data, error, error_len) == 0) &&
+	if ((at->rsp_buf.len >= error_len) && (memcmp(at->rsp_buf.data, error, error_len) == 0) &&
 	    (at_check_byte(buf, '\n') == 0)) {
 		*result = AT_RESULT_ERROR;
 		return 0;
@@ -198,15 +198,16 @@ static bool is_stop_byte(char target, char *stop_string)
 
 static bool is_vgm_or_vgs(struct at_client *at)
 {
-	if (at->rsp_buf.len == 0) {
-		return false;
-	}
+	const char *vgm = "VGM";
+	const char *vgs = "VGS";
+	const size_t vgm_len = strlen(vgm);
+	const size_t vgs_len = strlen(vgs);
 
-	if (!strncmp(at->rsp_buf.data, "VGM", strlen("VGM"))) {
+	if ((at->rsp_buf.len >= vgm_len) && (memcmp(at->rsp_buf.data, vgm, vgm_len) == 0)) {
 		return true;
 	}
 
-	if (!strncmp(at->rsp_buf.data, "VGS", strlen("VGS"))) {
+	if ((at->rsp_buf.len >= vgs_len) && (memcmp(at->rsp_buf.data, vgs, vgs_len) == 0)) {
 		return true;
 	}
 
@@ -294,14 +295,14 @@ static int at_state_get_cmd_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_cmer(struct at_client *at)
 {
-	char *cmer = "CME ERROR";
-	size_t len = strlen(cmer);
+	const char *cmer = "CME ERROR";
+	const size_t len = strlen(cmer);
 
 	if (at->rsp_buf.len < len) {
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, cmer, len) == 0) {
+	if (memcmp(at->rsp_buf.data, cmer, len) == 0) {
 		return true;
 	}
 
@@ -331,14 +332,14 @@ static int at_state_get_result_string(struct at_client *at, struct net_buf *buf)
 
 static bool is_ring(struct at_client *at)
 {
-	char *ring = "RING";
-	size_t len = strlen(ring);
+	const char *ring = "RING";
+	const size_t len = strlen(ring);
 
 	if (at->rsp_buf.len < len) {
 		return false;
 	}
 
-	if (strncmp(at->rsp_buf.data, ring, len) == 0) {
+	if (memcmp(at->rsp_buf.data, ring, len) == 0) {
 		return true;
 	}
 

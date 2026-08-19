@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <nxp/kinetis/nxp_k22fn512.dtsi>
+#include <nxp/kinetis/k2x/nxp_k22fn512.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "frdm_k22f-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -40,6 +40,7 @@
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,uart-pipe = &uart1;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -241,4 +242,8 @@ zephyr_uhc0: &usbh {
 			reg = <0x0006b000 DT_SIZE_K(84)>;
 		};
 	};
+};
+
+&crc {
+	status = "okay";
 };

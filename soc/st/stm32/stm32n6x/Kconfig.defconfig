@@ -25,9 +25,6 @@ config STM32_LTDC_FB_SMH_ALIGN
 	default 256 if MEMC_STM32_XSPI_PSRAM && SHARED_MULTI_HEAP && \
 		       STM32_LTDC_FB_USE_SHARED_MULTI_HEAP
 
-config ROM_START_OFFSET
-	default 0x400 if BOOTLOADER_MCUBOOT
-
 if STM32_IOCELL
 
 configdefault OTP
@@ -37,5 +34,9 @@ configdefault NVMEM
 	default y
 
 endif # STM32_IOCELL
+
+# Add LVGL HAL include file for SOC supporting DMA2D
+configdefault LV_DRAW_DMA2D_HAL_INCLUDE
+	default "stm32n6xx.h" if LVGL && DT_HAS_ST_STM32_DMA2D_ENABLED
 
 endif # SOC_SERIES_STM32N6X

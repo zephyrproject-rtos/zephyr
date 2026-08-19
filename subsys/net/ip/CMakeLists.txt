@@ -24,17 +24,22 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 
+# The ICMP API supports offloading, so build it whenever IP is enabled
+# (not only for the native stack), keeping the ping command available on
+# offloaded-only devices.
+zephyr_library_sources_ifdef(CONFIG_NET_IP icmp.c)
+
 if(CONFIG_NET_NATIVE)
 zephyr_library_sources(net_context.c)
 zephyr_library_sources(net_pkt.c)
 zephyr_library_sources(net_tc.c)
-zephyr_library_sources(icmp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IP           connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_6LO          6lo.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_AUTO    ipv4_autoconf.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4         icmpv4.c ipv4.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_ACD     ipv4_acd.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_IGMP    igmp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_NAT     ipv4_nat.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6         icmpv6.c nbr.c
                                                      ipv6.c ipv6_nbr.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV6_MLD     ipv6_mld.c)
@@ -43,12 +48,21 @@ zephyr_library_sources_ifdef(CONFIG_NET_IPV6_FRAGMENT     ipv6_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_IPV4_FRAGMENT     ipv4_fragment.c)
 zephyr_library_sources_ifdef(CONFIG_NET_MGMT_EVENT   net_mgmt.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PMTU         pmtu.c)
-zephyr_library_sources_ifdef(CONFIG_NET_ROUTE        route.c)
+zephyr_library_sources_ifdef(CONFIG_NET_IPV4_ROUTE   route_ipv4.c)
+zephyr_library_sources_ifdef(CONFIG_NET_PMTU_DPLPMTUD dplpmtud.c)
 zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP          tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TEST_PROTOCOL           tp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          udp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
+
+if(CONFIG_NET_IPV4_ROUTE OR CONFIG_NET_IPV6_ROUTE)
+  zephyr_library_sources(route.c)
+endif()
+
+if(CONFIG_NET_IPV6_ROUTE_MCAST OR CONFIG_NET_IPV6_ROUTE)
+  zephyr_library_sources(route_ipv6.c)
+endif()
 
 # Net Connection Socket Adapters
 zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_SOCKETS  connection.c)
@@ -56,7 +70,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET      packet_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN         canbus_socket.c)
 
 if(CONFIG_NET_TCP_ISN_RFC6528 OR CONFIG_NET_IPV6_PE OR CONFIG_NET_IPV6_IID_STABLE)
-  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 endif()
 endif()
 

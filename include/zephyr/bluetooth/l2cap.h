@@ -14,6 +14,8 @@
 /**
  * @brief L2CAP
  * @defgroup bt_l2cap L2CAP
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -443,22 +445,22 @@ struct bt_l2cap_br_endpoint {
 	uint8_t                                 max_transmit;
 	/** Endpoint Retransmission Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_RET_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_RET_TIMEOUT}
 	 * The field should be no more than the field
 	 * `monitor_timeout`.
 	 */
 	uint16_t                                ret_timeout;
 	/** Endpoint Monitor Timeout
 	 * The field is configured by
-	 * `@kconfig{BT_L2CAP_BR_MONITOR_TIMEOUT}`
+	 * @kconfig{CONFIG_BT_L2CAP_BR_MONITOR_TIMEOUT}
 	 */
 	uint16_t                                monitor_timeout;
 	/** Endpoint Maximum PDU payload Size */
 	uint16_t                                mps;
 	/** Endpoint Maximum Window Size
 	 * MAX supported window size is configured by
-	 * `@kconfig{BT_L2CAP_MAX_WINDOW_SIZE}`. The field
-	 * should be no more then `CONFIG_BT_L2CAP_MAX_WINDOW_SIZE`.
+	 * @kconfig{CONFIG_BT_L2CAP_MAX_WINDOW_SIZE}. The field
+	 * should be no more than @kconfig{CONFIG_BT_L2CAP_MAX_WINDOW_SIZE}.
 	 */
 	uint16_t                                max_window;
 	/** Endpoint FCS Type
@@ -504,8 +506,6 @@ struct bt_l2cap_br_window {
 	struct net_buf_simple_state sdu_state;
 	/** @internal Holds the sending buffer. */
 	struct net_buf *sdu;
-	/** @internal Total length of TX SDU */
-	uint16_t sdu_total_len;
 };
 
 /** @brief BREDR L2CAP Channel structure. */
@@ -538,9 +538,6 @@ struct bt_l2cap_br_chan {
 	sys_slist_t                     _pdu_tx_queue;
 
 #if defined(CONFIG_BT_L2CAP_RET_FC) || defined(__DOXYGEN__)
-	/** @internal Total length of TX SDU */
-	uint16_t                        _sdu_total_len;
-
 	/** @internal Holds the remaining length of current sending buffer */
 	size_t                          _pdu_remaining;
 
@@ -647,7 +644,7 @@ struct bt_l2cap_chan_ops {
 	 *  controller.
 	 *
 	 *  @param chan The channel which has made encryption status changed.
-	 *  @param status HCI status of performed security procedure caused
+	 *  @param hci_status HCI status of performed security procedure caused
 	 *  by channel security requirements. The value is populated
 	 *  by HCI layer and set to 0 when success and to non-zero (reference to
 	 *  HCI Error Codes) when security/authentication failed.
@@ -748,7 +745,7 @@ struct bt_l2cap_chan_ops {
 	 */
 	void (*reconfigured)(struct bt_l2cap_chan *chan);
 
-#if defined(CONFIG_BT_L2CAP_SEG_RECV)
+#if defined(CONFIG_BT_L2CAP_SEG_RECV) || defined(__DOXYGEN__)
 	/** @brief Handle L2CAP segments directly
 	 *
 	 *  This is an alternative to @ref bt_l2cap_chan_ops.recv. They cannot

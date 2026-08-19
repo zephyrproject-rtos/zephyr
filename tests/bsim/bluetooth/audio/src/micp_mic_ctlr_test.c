@@ -12,13 +12,16 @@
 #include <zephyr/bluetooth/audio/aics.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/audio/micp.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
 
+LOG_MODULE_REGISTER(micp_mic_ctlr_test);
+
 #ifdef CONFIG_BT_MICP_MIC_CTLR
-#define AICS_DESC_SIZE 64
+#define AICS_DESC_SIZE 64U
 
 extern enum bst_result_t bst_result;
 
@@ -44,6 +47,8 @@ static volatile bool g_cb;
 static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 			  uint8_t mute, uint8_t mode)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS state cb err (%d)", err);
 		return;
@@ -59,6 +64,8 @@ static void aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 				 int8_t minimum, int8_t maximum)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS gain setting cb err (%d)", err);
 		return;
@@ -74,6 +81,8 @@ static void aics_gain_setting_cb(struct bt_aics *inst, int err, uint8_t units,
 static void aics_input_type_cb(struct bt_aics *inst, int err,
 			       uint8_t input_type)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS input type cb err (%d)", err);
 		return;
@@ -86,6 +95,8 @@ static void aics_input_type_cb(struct bt_aics *inst, int err,
 
 static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS status cb err (%d)", err);
 		return;
@@ -99,13 +110,15 @@ static void aics_status_cb(struct bt_aics *inst, int err, bool active)
 static void aics_description_cb(struct bt_aics *inst, int err,
 				char *description)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS description cb err (%d)", err);
 		return;
 	}
 
 	if (strlen(description) > sizeof(g_aics_desc) - 1) {
-		printk("Warning: AICS description (%zu) is larger than buffer (%zu)\n",
+		LOG_WRN("AICS description (%zu) is larger than buffer (%zu)",
 		       strlen(description), sizeof(g_aics_desc) - 1);
 	}
 
@@ -117,6 +130,8 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 
 static void aics_write_cb(struct bt_aics *inst, int err)
 {
+	ARG_UNUSED(inst);
+
 	if (err != 0) {
 		FAIL("AICS write failed (%d)\n", err);
 		return;
@@ -129,6 +144,8 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 				      int err,
 				      uint8_t aics_count)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("MICS could not be discovered (%d)\n", err);
 		return;
@@ -141,6 +158,8 @@ static void micp_mic_ctlr_discover_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					  int err)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr mute write failed (%d)\n", err);
 		return;
@@ -152,6 +171,8 @@ static void micp_mic_ctlr_mute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 					    int err)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr unmute write failed (%d)\n", err);
 		return;
@@ -163,6 +184,8 @@ static void micp_mic_ctlr_unmute_written_cb(struct bt_micp_mic_ctlr *mic_ctlr,
 static void micp_mic_ctlr_mute_cb(struct bt_micp_mic_ctlr *mic_ctlr, int err,
 				  uint8_t mute)
 {
+	ARG_UNUSED(mic_ctlr);
+
 	if (err != 0) {
 		FAIL("mic_ctlr mute read failed (%d)\n", err);
 		return;
@@ -211,7 +234,7 @@ static int test_aics(void)
 	char expected_aics_desc[AICS_DESC_SIZE];
 	struct bt_conn *cached_conn;
 
-	printk("Getting AICS client conn\n");
+	LOG_INF("Getting AICS client conn");
 	err = bt_aics_client_conn_get(micp_included.aics[0], &cached_conn);
 	if (err != 0) {
 		FAIL("Could not get AICS client conn (err %d)\n", err);
@@ -222,7 +245,7 @@ static int test_aics(void)
 		return -ENOTCONN;
 	}
 
-	printk("Getting AICS state\n");
+	LOG_INF("Getting AICS state");
 	g_cb = false;
 	err = bt_aics_state_get(micp_included.aics[0]);
 	if (err != 0) {
@@ -230,9 +253,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("AICS state get\n");
+	LOG_INF("AICS state get");
 
-	printk("Getting AICS gain setting\n");
+	LOG_INF("Getting AICS gain setting");
 	g_cb = false;
 	err = bt_aics_gain_setting_get(micp_included.aics[0]);
 	if (err != 0) {
@@ -240,9 +263,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("AICS gain setting get\n");
+	LOG_INF("AICS gain setting get");
 
-	printk("Getting AICS input type\n");
+	LOG_INF("Getting AICS input type");
 	expected_input_type = BT_AICS_INPUT_TYPE_UNSPECIFIED;
 	g_cb = false;
 	err = bt_aics_type_get(micp_included.aics[0]);
@@ -252,9 +275,9 @@ static int test_aics(void)
 	}
 	/* Expect and wait for input_type from init */
 	WAIT_FOR_COND(g_cb && expected_input_type == g_aics_input_type);
-	printk("AICS input type get\n");
+	LOG_INF("AICS input type get");
 
-	printk("Getting AICS status\n");
+	LOG_INF("Getting AICS status");
 	g_cb = false;
 	err = bt_aics_status_get(micp_included.aics[0]);
 	if (err != 0) {
@@ -262,9 +285,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("AICS status get\n");
+	LOG_INF("AICS status get");
 
-	printk("Getting AICS description\n");
+	LOG_INF("Getting AICS description");
 	g_cb = false;
 	err = bt_aics_description_get(micp_included.aics[0]);
 	if (err != 0) {
@@ -272,9 +295,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("AICS description get\n");
+	LOG_INF("AICS description get");
 
-	printk("Setting AICS mute\n");
+	LOG_INF("Setting AICS mute");
 	expected_input_mute = BT_AICS_STATE_MUTED;
 	g_write_complete = g_cb = false;
 	err = bt_aics_mute(micp_included.aics[0]);
@@ -284,9 +307,9 @@ static int test_aics(void)
 	}
 	WAIT_FOR_COND(g_aics_input_mute == expected_input_mute &&
 		 g_cb && g_write_complete);
-	printk("AICS mute set\n");
+	LOG_INF("AICS mute set");
 
-	printk("Setting AICS unmute\n");
+	LOG_INF("Setting AICS unmute");
 	expected_input_mute = BT_AICS_STATE_UNMUTED;
 	g_write_complete = g_cb = false;
 	err = bt_aics_unmute(micp_included.aics[0]);
@@ -296,9 +319,9 @@ static int test_aics(void)
 	}
 	WAIT_FOR_COND(g_aics_input_mute == expected_input_mute &&
 		 g_cb && g_write_complete);
-	printk("AICS unmute set\n");
+	LOG_INF("AICS unmute set");
 
-	printk("Setting AICS auto mode\n");
+	LOG_INF("Setting AICS auto mode");
 	expected_mode = BT_AICS_MODE_AUTO;
 	g_write_complete = g_cb = false;
 	err = bt_aics_automatic_gain_set(micp_included.aics[0]);
@@ -307,9 +330,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_aics_mode == expected_mode && g_cb && g_write_complete);
-	printk("AICS auto mode set\n");
+	LOG_INF("AICS auto mode set");
 
-	printk("Setting AICS manual mode\n");
+	LOG_INF("Setting AICS manual mode");
 	expected_mode = BT_AICS_MODE_MANUAL;
 	g_write_complete = g_cb = false;
 	err = bt_aics_manual_gain_set(micp_included.aics[0]);
@@ -318,9 +341,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_aics_mode == expected_mode && g_cb && g_write_complete);
-	printk("AICS manual mode set\n");
+	LOG_INF("AICS manual mode set");
 
-	printk("Setting AICS gain\n");
+	LOG_INF("Setting AICS gain");
 	expected_gain = g_aics_gain_max - 1;
 	g_write_complete = g_cb = false;
 	err = bt_aics_gain_set(micp_included.aics[0], expected_gain);
@@ -329,9 +352,9 @@ static int test_aics(void)
 		return err;
 	}
 	WAIT_FOR_COND(g_aics_gain == expected_gain && g_cb && g_write_complete);
-	printk("AICS gain set\n");
+	LOG_INF("AICS gain set");
 
-	printk("Setting AICS Description\n");
+	LOG_INF("Setting AICS Description");
 	strncpy(expected_aics_desc, "New Input Description",
 		sizeof(expected_aics_desc));
 	expected_aics_desc[sizeof(expected_aics_desc) - 1] = '\0';
@@ -345,9 +368,9 @@ static int test_aics(void)
 	WAIT_FOR_COND(g_cb &&
 		      (strncmp(expected_aics_desc, g_aics_desc,
 			       sizeof(expected_aics_desc)) == 0));
-	printk("AICS Description set\n");
+	LOG_INF("AICS Description set");
 
-	printk("AICS passed\n");
+	LOG_INF("AICS passed");
 	return 0;
 }
 
@@ -381,7 +404,11 @@ static void test_main(void)
 
 	bt_le_scan_cb_register(&common_scan_cb);
 
-	bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
+	err = bt_micp_mic_ctlr_cb_register(&micp_mic_ctlr_cbs);
+	if (err != 0) {
+		FAIL("Failed to register MICP callbacks (err %d)\n", err);
+		return;
+	}
 
 	WAIT_FOR_COND(g_bt_init);
 
@@ -390,7 +417,7 @@ static void test_main(void)
 		FAIL("Scanning failed to start (err %d)\n", err);
 		return;
 	}
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 	WAIT_FOR_FLAG(flag_connected);
 
 	discover_mics(&mic_ctlr);
@@ -402,7 +429,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Getting mic_ctlr conn\n");
+	LOG_INF("Getting mic_ctlr conn");
 	err = bt_micp_mic_ctlr_conn_get(mic_ctlr, &cached_conn);
 	if (err != 0) {
 		FAIL("Failed to get mic_ctlr conn (err %d)\n", err);
@@ -413,7 +440,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Getting mic_ctlr mute state\n");
+	LOG_INF("Getting mic_ctlr mute state");
 	g_cb = false;
 	err = bt_micp_mic_ctlr_mute_get(mic_ctlr);
 	if (err != 0) {
@@ -421,10 +448,10 @@ static void test_main(void)
 		return;
 	}
 	WAIT_FOR_COND(g_cb);
-	printk("mic_ctlr mute state received\n");
+	LOG_INF("mic_ctlr mute state received");
 
-	printk("Muting mic_ctlr\n");
-	expected_mute = 1;
+	LOG_INF("Muting mic_ctlr");
+	expected_mute = 1U;
 	g_write_complete = g_cb = false;
 	err = bt_micp_mic_ctlr_mute(mic_ctlr);
 	if (err != 0) {
@@ -432,10 +459,10 @@ static void test_main(void)
 		return;
 	}
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("mic_ctlr muted\n");
+	LOG_INF("mic_ctlr muted");
 
-	printk("Unmuting mic_ctlr\n");
-	expected_mute = 0;
+	LOG_INF("Unmuting mic_ctlr");
+	expected_mute = 0U;
 	g_write_complete = g_cb = false;
 	err = bt_micp_mic_ctlr_unmute(mic_ctlr);
 	if (err != 0) {
@@ -443,9 +470,9 @@ static void test_main(void)
 		return;
 	}
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("mic_ctlr unmuted\n");
+	LOG_INF("mic_ctlr unmuted");
 
-	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0) {
+	if (CONFIG_BT_MICP_MIC_CTLR_MAX_AICS_INST > 0 && g_aics_count > 0U) {
 		if (test_aics()) {
 			return;
 		}

@@ -55,7 +55,7 @@ static int bd8lb600fs_diagnostics_init(const struct device *dev)
 	const struct bd8lb600fs_diagnostics_config *config = dev->config;
 
 	if (!device_is_ready(config->parent_dev)) {
-		LOG_ERR("%s: parent device is not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->parent_dev);
 		return -ENODEV;
 	}
 

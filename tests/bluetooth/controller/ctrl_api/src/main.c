@@ -295,7 +295,7 @@ ZTEST(public, test_int_pause_resume_data_path)
 	zassert_equal_ptr(node, NULL, "");
 
 
-	/*** #4: Asymetric pause/resume ***/
+	/*** #4: Asymmetric pause/resume ***/
 
 	/* Pause data path */
 	llcp_tx_pause_data(&conn, LLCP_TX_QUEUE_PAUSE_DATA_PHY_UPDATE);
@@ -385,7 +385,7 @@ ZTEST(internal, test_int_mem_proc_ctx)
 
 	ctx1 = llcp_proc_ctx_acquire();
 
-	/* Releasing returns the context to the avilable pool */
+	/* Releasing returns the context to the available pool */
 	zassert_not_null(ctx1, NULL);
 }
 

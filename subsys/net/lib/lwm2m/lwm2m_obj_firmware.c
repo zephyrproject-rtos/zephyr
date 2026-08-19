@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
+#include "lwm2m_pull_context.h"
 
 #define FIRMWARE_VERSION_MAJOR 1
 #define FIRMWARE_VERSION_MINOR 0
@@ -44,8 +45,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define DELIVERY_METHOD_PUSH_ONLY		1
 #define DELIVERY_METHOD_BOTH			2
 
-#define PACKAGE_URI_LEN				255
-
 /*
  * Calculate resource instances as follows:
  * start with FIRMWARE_MAX_ID
@@ -57,7 +56,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 static uint8_t update_state[MAX_INSTANCE_COUNT];
 static uint8_t update_result[MAX_INSTANCE_COUNT];
 static uint8_t delivery_method[MAX_INSTANCE_COUNT];
-static char package_uri[MAX_INSTANCE_COUNT][PACKAGE_URI_LEN];
+static char package_uri[MAX_INSTANCE_COUNT][LWM2M_PACKAGE_URI_LEN];
 
 /* A varying number of firmware object exists */
 static struct lwm2m_engine_obj firmware;
@@ -102,7 +101,7 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (state) {
 	case STATE_DOWNLOADING:
 		if (update_state[obj_inst_id] == STATE_IDLE) {
@@ -169,7 +168,7 @@ void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (result) {
 	case RESULT_DEFAULT:
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
@@ -446,7 +445,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	INIT_OBJ_RES_OPT(FIRMWARE_PACKAGE_ID, res[index], i, res_inst[index], j, 1,
 			 false, true, NULL, NULL, NULL, package_write_cb, NULL);
 	INIT_OBJ_RES_LEN(FIRMWARE_PACKAGE_URI_ID, res[index], i, res_inst[index], j, 1,
-		     false, true, package_uri[index], PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
+		     false, true, package_uri[index], LWM2M_PACKAGE_URI_LEN, 0, NULL, NULL, NULL,
 		     package_uri_write_cb, NULL);
 	INIT_OBJ_RES_EXECUTE(FIRMWARE_UPDATE_ID, res[index], i, firmware_update_cb);
 	INIT_OBJ_RES_DATA(FIRMWARE_STATE_ID, res[index], i, res_inst[index], j,
@@ -466,7 +465,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	inst[index].resources = res[index];
 	inst[index].resource_count = i;
 
-	LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
+	LOG_DBG("Create LwM2M firmware instance: %d", obj_inst_id);
 	return &inst[index];
 }
 
@@ -501,7 +500,7 @@ static int lwm2m_firmware_init(void)
 #endif
 		ret = lwm2m_create_obj_inst(LWM2M_OBJECT_FIRMWARE_ID, idx, &obj_inst);
 		if (ret < 0) {
-			LOG_DBG("Create LWM2M instance %d error: %d", idx, ret);
+			LOG_DBG("Create LwM2M instance %d error: %d", idx, ret);
 			break;
 		}
 	}

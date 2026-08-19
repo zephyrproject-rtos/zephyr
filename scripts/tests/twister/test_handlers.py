@@ -30,7 +30,6 @@ from twisterlib.handlers import (
 )
 from twisterlib.statuses import TwisterStatus
 
-# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -863,7 +862,7 @@ TESTDATA_13 = [
         None,
         ['west', 'flash', '--no-rebuild', '-d', '$build_dir',
          '--runner', 'openocd', 'param1', 'param2',
-         '--', '--cmd-pre-init', 'cmsis_dap_serial 12345']
+         '--', '--cmd-pre-init', 'adapter serial 12345']
     ),
     (
         None,
@@ -1485,13 +1484,16 @@ TESTDATA_24 = [
     (TwisterStatus.FAIL, 'Execution error', TwisterStatus.FAIL, 'Execution error'),
     (TwisterStatus.FAIL, 'unexpected eof', TwisterStatus.FAIL, 'unexpected eof'),
     (TwisterStatus.FAIL, 'unexpected byte', TwisterStatus.FAIL, 'unexpected byte'),
-    (TwisterStatus.NONE, None, TwisterStatus.NONE, 'Unknown Error'),
+    (TwisterStatus.FAIL, None, TwisterStatus.FAIL, 'Unknown Error'),
+    (TwisterStatus.PASS, None, TwisterStatus.PASS, None),
+    (TwisterStatus.NONE, None, TwisterStatus.NONE, None),
 ]
 
 @pytest.mark.parametrize(
     '_status, _reason, expected_status, expected_reason',
     TESTDATA_24,
-    ids=['timeout', 'failed', 'unexpected eof', 'unexpected byte', 'unknown']
+    ids=['timeout', 'failed', 'unexpected eof', 'unexpected byte',
+         'failed unknown', 'passed no reason', 'unknown']
 )
 def test_qemuhandler_thread_update_instance_info(
     mocked_instance,

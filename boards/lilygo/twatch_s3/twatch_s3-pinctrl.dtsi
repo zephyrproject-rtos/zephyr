@@ -4,9 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/dt-bindings/pinctrl/esp-pinctrl-common.h>
 #include <zephyr/dt-bindings/pinctrl/esp32s3-pinctrl.h>
-#include <zephyr/dt-bindings/pinctrl/esp32s3-gpio-sigmap.h>
 
 &pinctrl {
 	i2c0_default: i2c0_default {
@@ -24,6 +22,18 @@
 				 <I2C1_SDA_GPIO39>;
 			drive-open-drain;
 			output-high;
+		};
+	};
+
+	spim2_default: spim2_default {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO3>,
+				 <SPIM2_MISO_GPIO4>;
+		};
+
+		group2 {
+			pinmux = <SPIM2_MOSI_GPIO1>;
+			output-low;
 		};
 	};
 

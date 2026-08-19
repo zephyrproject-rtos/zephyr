@@ -46,7 +46,8 @@ LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 static K_MUTEX_DEFINE(lock);
 
 static sys_slist_t dhcpv4_ifaces;
-static struct k_work_delayable timeout_work;
+static void dhcpv4_timeout(struct k_work *work);
+static K_WORK_DELAYABLE_DEFINE(timeout_work, dhcpv4_timeout);
 
 static struct net_mgmt_event_callback mgmt4_if_cb;
 #if defined(CONFIG_NET_IPV4_ACD)
@@ -267,7 +268,8 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		size +=  DHCPV4_OLV_MSG_REQ_IPADDR;
 	}
 
-	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER) {
+	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER ||
+	    type == NET_DHCPV4_MSG_TYPE_REQUEST) {
 		size +=  DHCPV4_OLV_MSG_REQ_LIST + ARRAY_SIZE(min_req_options);
 #if defined(CONFIG_NET_DHCPV4_OPTION_CALLBACKS)
 		size += unique_types_in_callbacks;
@@ -340,7 +342,9 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, uint8_t type,
 		goto fail;
 	}
 
-	if (type == NET_DHCPV4_MSG_TYPE_DISCOVER && !dhcpv4_add_req_options(pkt)) {
+	if ((type == NET_DHCPV4_MSG_TYPE_DISCOVER ||
+	     type == NET_DHCPV4_MSG_TYPE_REQUEST) &&
+	    !dhcpv4_add_req_options(pkt)) {
 		goto fail;
 	}
 
@@ -808,6 +812,20 @@ static uint32_t dhcpv4_manage_timers(struct net_if *iface, int64_t now)
 		/* Failed to get OFFER message, send DISCOVER again */
 		return dhcpv4_send_discover(iface);
 	case NET_DHCPV4_INIT_REBOOT:
+		/* INIT-REBOOT is an optimistic fast probe (RFC2131 3.2). If the
+		 * remembered address is not confirmed within a tight retransmit
+		 * budget (e.g. the interface moved to a different network whose
+		 * server silently drops the foreign-subnet REQUEST), fall back
+		 * to a full DISCOVER instead of burning the whole schedule.
+		 */
+		if (iface->config.dhcpv4.attempts >=
+					DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) {
+			NET_DBG("INIT-REBOOT unanswered, restart with discover");
+			dhcpv4_enter_selecting(iface);
+			return dhcpv4_send_discover(iface);
+		}
+
+		return dhcpv4_send_request(iface);
 	case NET_DHCPV4_REQUESTING:
 		/* Maximum number of renewal attempts failed, so start
 		 * from the beginning.
@@ -896,10 +914,14 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 	struct net_pkt_cursor backup;
 	uint8_t len;
 	uint8_t type;
+	int ret;
 
 	if (length < 3) {
 		NET_ERR("Vendor-specific option parsing, length too short");
-		net_pkt_skip(pkt, length);
+		ret = net_pkt_skip(pkt, length);
+		if (ret < 0) {
+			return ret;
+		}
 		return -EBADMSG;
 	}
 
@@ -922,7 +944,10 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 		length--;
 		if (length < len) {
 			NET_ERR("Vendor-specific option parsing, length too long");
-			net_pkt_skip(pkt, length);
+			ret = net_pkt_skip(pkt, length);
+			if (ret < 0) {
+				return ret;
+			}
 			return -EBADMSG;
 		}
 		net_pkt_cursor_backup(pkt, &backup);
@@ -940,7 +965,10 @@ static int dhcpv4_parse_option_vendor(struct net_pkt *pkt, struct net_if *iface,
 				net_pkt_cursor_restore(pkt, &backup);
 			}
 		}
-		net_pkt_skip(pkt, len);
+		ret = net_pkt_skip(pkt, len);
+		if (ret < 0) {
+			return ret;
+		}
 		length = length - len;
 		if (length <= 0) {
 			NET_DBG("Vendor-specific options_end (no code 255)");
@@ -1488,9 +1516,13 @@ static void dhcpv4_handle_msg_ack(struct net_if *iface)
 static void dhcpv4_handle_msg_nak(struct net_if *iface)
 {
 	switch (iface->config.dhcpv4.state) {
+	case NET_DHCPV4_INIT_REBOOT:
+		LOG_DBG("NAK during INIT-REBOOT, restart config");
+		dhcpv4_enter_selecting(iface);
+		dhcpv4_immediate_timeout(&iface->config.dhcpv4);
+		break;
 	case NET_DHCPV4_DISABLED:
 	case NET_DHCPV4_INIT:
-	case NET_DHCPV4_INIT_REBOOT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
 		if (memcmp(&iface->config.dhcpv4.request_server_addr,
@@ -1556,6 +1588,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 	enum net_dhcpv4_msg_type msg_type = 0;
 	struct dhcp_msg *msg;
 	struct net_if *iface;
+	int ret;
 
 	if (!conn) {
 		NET_DBG("Invalid connection");
@@ -1622,7 +1655,10 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &dhcp_access);
+	ret = net_pkt_acknowledge_data(pkt, &dhcp_access);
+	if (ret < 0) {
+		goto drop;
+	}
 
 	/* SNAME, FILE are not used at the moment, skip it */
 	if (net_pkt_skip(pkt, SIZE_OF_SNAME + SIZE_OF_FILE)) {
@@ -1783,7 +1819,7 @@ const char *net_dhcpv4_state_name(enum net_dhcpv4_state state)
 		"decline,"
 	};
 
-	__ASSERT_NO_MSG(state >= 0 && state < sizeof(name));
+	__ASSERT_NO_MSG(state >= 0 && state < ARRAY_SIZE(name));
 	return name[state];
 }
 
@@ -1800,7 +1836,7 @@ const char *net_dhcpv4_msg_type_name(enum net_dhcpv4_msg_type msg_type)
 		"inform"
 	};
 
-	if (msg_type >= 1 && msg_type <= sizeof(name)) {
+	if (msg_type >= 1 && msg_type <= ARRAY_SIZE(name)) {
 		return name[msg_type - 1];
 	}
 
@@ -1827,6 +1863,13 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		NET_DBG("iface %p state=%s", iface,
 			net_dhcpv4_state_name(iface->config.dhcpv4.state));
 
+		/* A fresh (re)start must not inherit a retransmit count left
+		 * over from a previous binding or an aborted cycle, otherwise
+		 * the backoff starts too high or the client falls straight
+		 * through to DISCOVER.
+		 */
+		iface->config.dhcpv4.attempts = 0U;
+
 		/* We need entropy for both an XID and a random delay
 		 * before sending the initial discover message.
 		 */
@@ -1839,12 +1882,14 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		 */
 		iface->config.dhcpv4.xid = entropy;
 
-		/* Use default */
-		if (first_start) {
-			/* RFC2131 4.4.1 requires we wait a random period
-			 * between 1 and 10 seconds before sending the initial
-			 * discover.
-			 */
+		/* RFC2131 4.4.1 requires we wait a random period between 1 and
+		 * 10 seconds before sending the initial discover. This desync
+		 * delay applies to the initial DISCOVER only; an INIT-REBOOT
+		 * re-REQUEST of a known address is an optimistic fast probe
+		 * (RFC2131 3.2), so skip the delay in that state.
+		 */
+		if (first_start &&
+		    iface->config.dhcpv4.state == NET_DHCPV4_INIT) {
 			timeout = entropy % (CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
 					DHCPV4_INITIAL_DELAY_MIN) + DHCPV4_INITIAL_DELAY_MIN;
 		}
@@ -2009,33 +2054,54 @@ void net_dhcpv4_restart(struct net_if *iface)
 	dhcpv4_start_internal(iface, false);
 }
 
+int net_dhcpv4_set_reboot_hint(struct net_if *iface,
+			       const struct net_in_addr *requested_ip)
+{
+	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT)) {
+		return -ENOTSUP;
+	}
+
+	k_mutex_lock(&lock, K_FOREVER);
+
+	if (iface->config.dhcpv4.state != NET_DHCPV4_DISABLED) {
+		ret = -EBUSY;
+	} else {
+		iface->config.dhcpv4.requested_ip = *requested_ip;
+	}
+
+	k_mutex_unlock(&lock);
+
+	return ret;
+}
+
 int net_dhcpv4_init(void)
 {
 	uint64_t events =
 		IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) ?
 		(NET_EVENT_IF_UP | NET_EVENT_IF_DOWN) : NET_EVENT_IF_DOWN;
-	struct net_sockaddr local_addr;
+	struct net_sockaddr_storage local_addr_storage = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	int ret;
 
 	NET_DBG("");
 
-	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
+	net_ipaddr_copy(&net_sin(local_addr)->sin_addr,
 			net_ipv4_unspecified_address());
-	local_addr.sa_family = NET_AF_INET;
+	local_addr->sa_family = NET_AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
 	 * all dhcpv4 related incoming packets.
 	 */
-	ret = net_udp_register(NET_AF_INET, NULL, &local_addr,
+	ret = net_udp_register(NET_AF_INET, NULL, local_addr,
 			       0, DHCPV4_CLIENT_PORT,
 			       NULL, net_dhcpv4_input, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("UDP callback registration failed");
 		return ret;
 	}
-
-	k_work_init_delayable(&timeout_work, dhcpv4_timeout);
 
 	/* Catch network interface UP or DOWN events and renew the address
 	 * if interface is coming back up again.
@@ -2081,7 +2147,9 @@ bool net_dhcpv4_accept_unicast(struct net_pkt *pkt)
 	}
 
 	net_pkt_cursor_backup(pkt, &backup);
-	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt));
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt)) < 0) {
+		goto out;
+	}
 
 	/* Verify destination UDP port. */
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);

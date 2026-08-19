@@ -8,8 +8,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_
 
 /**
  * @brief Bluetooth APIs
@@ -24,6 +24,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/addr.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/hci_types.h>
 
 #ifdef __cplusplus
@@ -63,7 +64,7 @@ struct bt_br_discovery_result {
 	/** Remote device address */
 	bt_addr_t addr;
 
-	/** RSSI from inquiry */
+	/** RSSI from inquiry in dBm. Range: -127 to +20. */
 	int8_t rssi;
 
 	/** Class of Device */
@@ -180,8 +181,8 @@ int bt_br_oob_get_local(struct bt_br_oob *oob);
  * to first be in connectable state.
  *
  * If the device enters limited discoverable mode, the controller will leave from discoverable
- * mode after the duration of @kconfig{BT_LIMITED_DISCOVERABLE_DURATION} seconds in the limited
- * discoverable mode.
+ * mode after the duration of @kconfig{CONFIG_BT_LIMITED_DISCOVERABLE_DURATION} seconds in the
+ * limited discoverable mode.
  *
  * @param enable Value allowing/disallowing controller to become discoverable.
  * @param limited Value allowing/disallowing controller to enter limited discoverable mode.
@@ -238,7 +239,7 @@ typedef enum bt_br_conn_req_rsp (*bt_br_conn_req_func_t)(const bt_addr_t *addr, 
  *               false, this parameter is ignored.
  *               If @p func is NULL, the conn_req will be accepted internally. The default role
  *               is peripheral. The role switch request can be performed if the
- *               @kconfig{BT_ACCEPT_CONN_AS_CENTRAL} is enabled.
+ *               @kconfig{CONFIG_BT_ACCEPT_CONN_AS_CENTRAL} is enabled.
  *               If @p func is provided, the conn_req will be passed to the callback function
  *               for the application to decide whether to accept or reject the connection, and
  *               the desired role for the connection.
@@ -634,6 +635,19 @@ struct bt_br_bond_info {
 void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *user_data),
 			void *user_data);
 
+/** @brief Write Extended Inquiry Response data.
+ *
+ *  Write the extended inquiry response data to be sent during the
+ *  extended inquiry response procedure.
+ *
+ *  @param eir          Array of bt_data elements to include in the EIR.
+ *  @param eir_count    Number of elements in the @p eir array.
+ *  @param fec_required Whether FEC encoding is required (true/false).
+ *
+ *  @return  Zero for success, non-zero otherwise.
+ */
+int bt_br_write_eir(const struct bt_data *eir, size_t eir_count, bool fec_required);
+
 /**
  * @}
  */
@@ -645,4 +659,4 @@ void bt_br_foreach_bond(void (*func)(const struct bt_br_bond_info *info, void *u
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_CLASSIC_H_ */

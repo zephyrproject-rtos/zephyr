@@ -57,6 +57,12 @@ static inline bool arch_irq_unlocked(unsigned int key)
 	return 0;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static inline bool arch_cpu_irqs_are_enabled(void)
+{
+	return true;
+}
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

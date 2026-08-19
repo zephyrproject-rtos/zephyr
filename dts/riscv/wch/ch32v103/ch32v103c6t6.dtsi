@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Lucy Wong
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <wch/ch32v103/ch32v103.dtsi>
+
+&gpioc {
+	gpio-reserved-ranges = <0 13>;
+	ngpios = <16>;
+};
+
+&gpiod {
+	gpio-reserved-ranges = <2 14>;
+	ngpios = <16>;
+};
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(10)>;
+};
+
+&flash0 {
+	reg = <0x08000000 DT_SIZE_K(32)>;
+	ranges = <0x0 0x08000000 DT_SIZE_K(32)>;
+};

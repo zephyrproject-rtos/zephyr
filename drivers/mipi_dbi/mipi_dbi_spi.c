@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(mipi_dbi_spi, CONFIG_MIPI_DBI_LOG_LEVEL);
  * command_read function to be optimized out when it is not needed.
  */
 #define MIPI_DBI_SPI_READ_REQUIRED DT_INST_FOREACH_STATUS_OKAY(MIPI_DBI_SPI_WRITE_ONLY_ABSENT) 0
-uint32_t var = MIPI_DBI_SPI_READ_REQUIRED;
 
 /* Expands to 1 if the node configures a gpio in the `te-gpios` property */
 #define MIPI_DBI_SPI_TE_GPIOS_PRESENT(n) DT_INST_NODE_HAS_PROP(n, te_gpios) |

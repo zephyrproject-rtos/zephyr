@@ -288,14 +288,14 @@ static int tma525b_init(const struct device *dev)
 	data->dev = dev;
 
 	if (!i2c_is_ready_dt(&config->bus)) {
-		LOG_ERR("I2C controller not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 
 	/* Configure power GPIO if available */
 	if (config->pwr_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->pwr_gpio)) {
-			LOG_ERR("Power GPIO controller not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->pwr_gpio.port);
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->pwr_gpio, GPIO_OUTPUT_INACTIVE);
@@ -308,7 +308,7 @@ static int tma525b_init(const struct device *dev)
 	/* Configure reset GPIO if available */
 	if (config->rst_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->rst_gpio)) {
-			LOG_ERR("Reset GPIO controller not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->rst_gpio.port);
 			return -ENODEV;
 		}
 		ret = gpio_pin_configure_dt(&config->rst_gpio, GPIO_OUTPUT_INACTIVE);
@@ -330,7 +330,7 @@ static int tma525b_init(const struct device *dev)
 
 #ifdef CONFIG_INPUT_TMA525B_INTERRUPT
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("Interrupt GPIO controller not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&config->int_gpio, GPIO_INPUT);

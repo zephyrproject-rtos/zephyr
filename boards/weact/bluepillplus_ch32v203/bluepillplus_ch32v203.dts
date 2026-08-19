@@ -30,18 +30,18 @@
 		};
 	};
 
-	buttons {
+	gpio_keys {
 		compatible = "gpio-keys";
 
-		mode: sw0 {
-			gpios = <&gpioa 0 GPIO_ACTIVE_HIGH>;
+		user_button: button {
+			gpios = <&gpioa 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
 
 	aliases {
 		led0 = &blue_led;
-		sw0 = &mode;
+		sw0 = &user_button;
 	};
 };
 
@@ -68,6 +68,10 @@
 };
 
 &gpioc {
+	status = "okay";
+};
+
+&exti {
 	status = "okay";
 };
 

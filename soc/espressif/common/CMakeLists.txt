@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
 # Make sure the esptool package is available
@@ -14,12 +14,53 @@ endif()
 # Continue to prepare the build environment
 zephyr_include_directories(include)
 
-if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
+if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU_TARGET)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
 endif()
 
-# Get flash size to use in esptool as string
-math(EXPR esptoolpy_flashsize "${CONFIG_FLASH_SIZE} / 0x100000")
+# Generate linker snippets for BSS relocation to PSRAM.
+# The snippet files are always created so that #include directives in the
+# linker scripts resolve regardless of the current configuration.
+set(_bss_inc "${PROJECT_BINARY_DIR}/include/generated/esp_spiram_relocate_bss.ld.inc")
+set(_extram_inc "${PROJECT_BINARY_DIR}/include/generated/esp_spiram_relocate_bss_ext_ram.ld.inc")
+
+set(_relocate_objects "")
+
+if(CONFIG_ESP_SPIRAM AND NOT "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}" STREQUAL "")
+  string(REPLACE " " ";" _tmp "${CONFIG_ESP_SPIRAM_BSS_RELOC_LIBS_AND_OBJS}")
+  foreach(obj IN LISTS _tmp)
+    string(STRIP "${obj}" obj)
+    if(NOT obj STREQUAL "")
+      list(APPEND _relocate_objects "${obj}")
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES _relocate_objects)
+endif()
+
+if(_relocate_objects)
+  set(_exclude "")
+  set(_extram "")
+  foreach(obj IN LISTS _relocate_objects)
+    string(APPEND _exclude "*${obj}:* ")
+    string(APPEND _extram "    *${obj}:(.bss .bss.*)\n")
+  endforeach()
+  string(STRIP "${_exclude}" _exclude)
+
+  file(WRITE "${_bss_inc}"
+    "    *(EXCLUDE_FILE(${_exclude}) .bss)\n"
+    "    *(EXCLUDE_FILE(${_exclude}) .bss.*)\n")
+  file(WRITE "${_extram_inc}" "${_extram}")
+else()
+  file(WRITE "${_bss_inc}"
+    "    *(.bss)\n"
+    "    *(.bss.*)\n")
+  file(WRITE "${_extram_inc}" "")
+endif()
+
+# Get flash size in MB for esptool from the chosen zephyr,flash node
+dt_chosen(dts_flash PROPERTY "zephyr,flash")
+dt_reg_size(flash_size_bytes PATH ${dts_flash})
+math(EXPR esptoolpy_flashsize "${flash_size_bytes} / 0x100000")
 
 # Get UART baudrate from DT
 dt_chosen(dts_shell_uart PROPERTY "zephyr,shell-uart")
@@ -29,7 +70,7 @@ endif()
 
 message("-- Espressif HAL path: ${ESP_IDF_PATH}")
 
-if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE))
+if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
   if(CONFIG_BUILD_OUTPUT_BIN)
     set(ELF2IMAGE_ARG "")
     if(NOT CONFIG_MCUBOOT)
@@ -47,16 +88,15 @@ if((CONFIG_ESP_SIMPLE_BOOT OR CONFIG_MCUBOOT) AND NOT (CONFIG_SOC_ESP32C5_LPCORE
   endif()
 endif()
 
-set_property(TARGET bintools PROPERTY disassembly_flag_inline_source)
+if(CONFIG_ESP_SIMPLE_BOOT AND NOT (CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE))
+  dt_nodelabel(image_part_path NODELABEL "boot_partition")
+else()
+  dt_chosen(image_part_path PROPERTY "zephyr,code-partition")
+endif()
+dt_reg_addr(image_off PATH ${image_part_path})
 
-set(image_off ${CONFIG_FLASH_LOAD_OFFSET})
-
-# If CONFIG_BUILD_OUTPUT_ADJUST_LMA is defined, adjust the image offset
-# to account for the additional load memory address offset.
-# This is useful for cases where the image needs to be loaded at a specific
-# address in flash, such as when using MCUBoot and flashing secondary images.
 if(DEFINED CONFIG_BUILD_OUTPUT_ADJUST_LMA)
-  math(EXPR image_off "${CONFIG_FLASH_LOAD_OFFSET} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}")
+  math(EXPR image_off "${image_off} + ${CONFIG_BUILD_OUTPUT_ADJUST_LMA}" OUTPUT_FORMAT HEXADECIMAL)
 endif()
 
 board_runner_args(esp32 "--esp-app-address=${image_off}")
@@ -77,20 +117,23 @@ if(CONFIG_MCUBOOT)
       ARGS
         --rtl-dirs ${CMAKE_BINARY_DIR}/zephyr
         --elf-file ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
-        find-refs
-        --from-section='.iram0.loader_text'
-        --to-section='.iram0.text'
-        --exit-code)
+        find-reachable-from-loader-func
+        --map ${CMAKE_BINARY_DIR}/zephyr/${KERNEL_MAP_NAME}
+        --roots='do_boot,start_cpu0_image'
+        --outplacers
+        --summary)
 endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
+elseif(CONFIG_SOC_ESP32_APPCPU_TARGET)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE)
+elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_lpcore.ld CACHE INTERNAL "")
 else()
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default.ld CACHE INTERNAL "")
 endif()
 
 zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
+zephyr_sources_ifdef(CONFIG_ESP32_ETM esp_etm_alloc.c)
+zephyr_sources(instr_mem.c)

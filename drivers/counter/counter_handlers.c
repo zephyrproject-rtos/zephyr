@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2026 Meta Platforms
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,14 +118,14 @@ static inline int z_vrfy_counter_get_value(const struct device *dev, uint32_t *t
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_value));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
-	return z_impl_counter_get_value((const struct device *)dev, ticks);
+	return z_impl_counter_get_value(dev, ticks);
 }
 #include <zephyr/syscalls/counter_get_value_mrsh.c>
 
 static inline int z_vrfy_counter_set_value(const struct device *dev, uint32_t ticks)
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, set_value));
-	return z_impl_counter_set_value((const struct device *)dev, ticks);
+	return z_impl_counter_set_value(dev, ticks);
 }
 #include <zephyr/syscalls/counter_set_value_mrsh.c>
 
@@ -133,14 +134,14 @@ static inline int z_vrfy_counter_get_value_64(const struct device *dev, uint64_t
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_value_64));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(ticks, sizeof(*ticks)));
-	return z_impl_counter_get_value_64((const struct device *)dev, ticks);
+	return z_impl_counter_get_value_64(dev, ticks);
 }
 #include <zephyr/syscalls/counter_get_value_64_mrsh.c>
 
 static inline int z_vrfy_counter_set_value_64(const struct device *dev, uint64_t ticks)
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, set_value_64));
-	return z_impl_counter_set_value_64((const struct device *)dev, ticks);
+	return z_impl_counter_set_value_64(dev, ticks);
 }
 #include <zephyr/syscalls/counter_set_value_64_mrsh.c>
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
@@ -154,7 +155,7 @@ static inline int z_vrfy_counter_set_channel_alarm(const struct device *dev, uin
 	K_OOPS(k_usermode_from_copy(&cfg_copy, alarm_cfg, sizeof(cfg_copy)));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
-	return z_impl_counter_set_channel_alarm((const struct device *)dev, (uint8_t)chan_id,
+	return z_impl_counter_set_channel_alarm(dev, (uint8_t)chan_id,
 						(const struct counter_alarm_cfg *)&cfg_copy);
 }
 #include <zephyr/syscalls/counter_set_channel_alarm_mrsh.c>
@@ -162,7 +163,7 @@ static inline int z_vrfy_counter_set_channel_alarm(const struct device *dev, uin
 static inline int z_vrfy_counter_cancel_channel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, cancel_alarm));
-	return z_impl_counter_cancel_channel_alarm((const struct device *)dev, (uint8_t)chan_id);
+	return z_impl_counter_cancel_channel_alarm(dev, (uint8_t)chan_id);
 }
 #include <zephyr/syscalls/counter_cancel_channel_alarm_mrsh.c>
 
@@ -175,7 +176,7 @@ static inline int z_vrfy_counter_set_top_value(const struct device *dev,
 	K_OOPS(k_usermode_from_copy(&cfg_copy, cfg, sizeof(cfg_copy)));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
-	return z_impl_counter_set_top_value((const struct device *)dev,
+	return z_impl_counter_set_top_value(dev,
 					    (const struct counter_top_cfg *)&cfg_copy);
 }
 #include <zephyr/syscalls/counter_set_top_value_mrsh.c>
@@ -204,7 +205,7 @@ static inline int z_vrfy_counter_set_top_value_64(const struct device *dev,
 	K_OOPS(k_usermode_from_copy(&cfg_copy, cfg, sizeof(cfg_copy)));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
-	return z_impl_counter_set_top_value_64((const struct device *)dev,
+	return z_impl_counter_set_top_value_64(dev,
 					       (const struct counter_top_cfg_64 *)&cfg_copy);
 }
 #include <zephyr/syscalls/counter_set_top_value_64_mrsh.c>
@@ -218,7 +219,7 @@ static inline int z_vrfy_counter_set_channel_alarm_64(const struct device *dev, 
 	K_OOPS(k_usermode_from_copy(&cfg_copy, alarm_cfg, sizeof(cfg_copy)));
 	K_OOPS(K_SYSCALL_VERIFY_MSG(cfg_copy.callback == NULL,
 				    "callbacks may not be set from user mode"));
-	return z_impl_counter_set_channel_alarm_64((const struct device *)dev, (uint8_t)chan_id,
+	return z_impl_counter_set_channel_alarm_64(dev, (uint8_t)chan_id,
 						   (const struct counter_alarm_cfg_64 *)&cfg_copy);
 }
 #include <zephyr/syscalls/counter_set_channel_alarm_64_mrsh.c>
@@ -257,7 +258,7 @@ static inline int z_vrfy_counter_set_guard_period(const struct device *dev, uint
 						  uint32_t flags)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
-	return z_impl_counter_set_guard_period((const struct device *)dev, ticks, flags);
+	return z_impl_counter_set_guard_period(dev, ticks, flags);
 }
 #include <zephyr/syscalls/counter_set_guard_period_mrsh.c>
 
@@ -273,7 +274,42 @@ static inline int z_vrfy_counter_set_guard_period_64(const struct device *dev, u
 						     uint32_t flags)
 {
 	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
-	return z_impl_counter_set_guard_period_64((const struct device *)dev, ticks, flags);
+	return z_impl_counter_set_guard_period_64(dev, ticks, flags);
 }
 #include <zephyr/syscalls/counter_set_guard_period_64_mrsh.c>
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
+
+#ifdef CONFIG_COUNTER_CAPTURE
+static inline int z_vrfy_counter_enable_capture(const struct device *dev,
+						uint8_t chan_id)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
+	return z_impl_counter_enable_capture(dev, chan_id);
+}
+#include <zephyr/syscalls/counter_enable_capture_mrsh.c>
+
+static inline int z_vrfy_counter_disable_capture(const struct device *dev,
+						 uint8_t chan_id)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_COUNTER));
+	return z_impl_counter_disable_capture(dev, chan_id);
+}
+#include <zephyr/syscalls/counter_disable_capture_mrsh.c>
+#endif /* CONFIG_COUNTER_CAPTURE */
+
+#ifdef CONFIG_COUNTER_CALIBRATION
+static inline int z_vrfy_counter_set_calibration(const struct device *dev, int32_t calibration)
+{
+	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, set_calibration));
+	return z_impl_counter_set_calibration(dev, calibration);
+}
+#include <zephyr/syscalls/counter_set_calibration_mrsh.c>
+
+static inline int z_vrfy_counter_get_calibration(const struct device *dev, int32_t *calibration)
+{
+	K_OOPS(K_SYSCALL_DRIVER_COUNTER(dev, get_calibration));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(calibration, sizeof(int32_t)));
+	return z_impl_counter_get_calibration(dev, calibration);
+}
+#include <zephyr/syscalls/counter_get_calibration_mrsh.c>
+#endif /* CONFIG_COUNTER_CALIBRATION */

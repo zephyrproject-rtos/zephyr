@@ -61,12 +61,14 @@
 
 /* Add the STM32C031Cx package-specific wake-up pins */
 &pwr {
-	wkup-pin@2 {
-		wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-	};
+	wakeup-controller {
+		wkup@2 {
+			wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+		};
 
-	wkup-pin@6 {
-		wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+		wkup@6 {
+			wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+		};
 	};
 };
 
@@ -123,6 +125,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };

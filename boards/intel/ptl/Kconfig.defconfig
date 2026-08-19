@@ -49,7 +49,7 @@ config DMA_DW_CHANNEL_COUNT
 	default 2
 endif
 
-config UART_NS16550_INTEL_LPSS_DMA
+configdefault UART_NS16550_INTEL_LPSS_DMA
 	default y if $(dt_nodelabel_enabled,uart0_dma) || $(dt_nodelabel_enabled,uart1_dma)
 
 config HAS_COVERAGE_SUPPORT

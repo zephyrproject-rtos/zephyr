@@ -66,7 +66,8 @@ properties:
       This property is required on stm32 devices where the wakeup interrupt signal could be
       configured masked at boot (sm32wl55 for instance), preventing the device to wakeup
       the core from stop mode(s).
-      Valid range: 0 - 31
+    min: 0
+    max: 31
 
   de-enable:
     type: boolean
@@ -80,7 +81,8 @@ properties:
     description: |
       Defines the time between the activation of the DE signal and the beginning of the start bit.
       It is expressed in 16th of a bit time.
-      Valid range: 0 - 31
+    min: 0
+    max: 31
 
   de-deassert-time:
     type: int
@@ -88,7 +90,8 @@ properties:
     description: |
       Defines the time between the end of the stop bit and the deactivation of the DE signal.
       It is expressed in 16th of a bit time.
-      Valid range: 0 - 31
+    min: 0
+    max: 31
 
   de-invert:
     type: boolean

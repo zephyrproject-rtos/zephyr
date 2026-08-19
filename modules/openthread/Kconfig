@@ -45,6 +45,30 @@ config OPENTHREAD_SOURCES
 
 endchoice
 
+config OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION
+	bool "Select vendor radio implementation"
+	depends on !NET_L2_OPENTHREAD
+	help
+	  Use a vendor-specific radio platform abstraction layer instead of the
+	  default Zephyr radio.c implementation. When enabled, the build system
+	  will compile the source file specified by
+	  OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION_FILE in place of the standard
+	  OpenThread radio driver, allowing vendors to provide custom PHY-layer
+	  integration.
+
+config OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION_FILE
+	string "Source file containing vendor-specific radio.c implementation"
+	default ""
+	depends on OPENTHREAD_RADIO_VENDOR_IMPLEMENTATION
+	help
+	  Name of the source file providing the vendor-specific OpenThread radio
+	  platform abstraction. This file must be placed in the
+	  modules/openthread/platform/vendor/ directory and implement the
+	  OpenThread radio API (otPlatRadio* plus platformRadioInit and
+	  platformRadioProcess functions).
+	  It will be compiled instead of the default radio.c driver
+	  during the build.
+
 config OPENTHREAD_MANUAL_START
 	bool "Start OpenThread stack manually"
 	help
@@ -232,7 +256,7 @@ endif # OPENTHREAD_SECURITY_DEFAULT_CONFIG
 
 config OPENTHREAD_MBEDTLS_LIB_NAME
 	string "mbedtls lib name"
-	default "mbedTLS"
+	default "mbedtls_iface"
 	help
 	  This option allows to specify one or more mbedtls library files to be
 	  linked with OpenThread. Separate multiple values with space " ".
@@ -241,7 +265,7 @@ config OPENTHREAD_COPROCESSOR
 	bool "OpenThread Co-Processor"
 	select OPENTHREAD_MANUAL_START
 	select RING_BUFFER
-	select UART_INTERRUPT_DRIVEN
+	select UART_INTERRUPT_DRIVEN if !OPENTHREAD_COPROCESSOR_UART_ASYNC
 	help
 	  Enable Co-Processor in OpenThread stack.
 
@@ -323,6 +347,13 @@ config OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
 	bool "Use platform message management"
 	help
 	  The message pool is managed by platform defined logic.
+
+config OPENTHREAD_MESSAGE_POOL_CUSTOM_SECTION
+	bool "Place message pool buffer in a custom linker section"
+	depends on OPENTHREAD_PLATFORM_MESSAGE_MANAGEMENT
+	help
+	  Place the OpenThread message pool buffer in a custom ".ot_msg_pool"
+	  linker section. This allows relocating it to external memory.
 
 config OPENTHREAD_MAX_STATECHANGE_HANDLERS
 	int "The maximum number of state-changed callback handlers"
@@ -419,7 +450,7 @@ menu "OpenThread Border Router"
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER
 	bool "Adds support for Border Router functionality"
-	select NET_ROUTING
+	select NET_IPV6_FORWARDING
 	help
 	  Enable support for Border Router using Openthread's implementation.
 
@@ -505,6 +536,17 @@ config OPENTHREAD_ZEPHYR_BORDER_ROUTER_IPV4
 	depends on NET_IPV4 && NET_UDP
 	help
 	  This configuration enables IPV4 communication.
+
+config OPENTHREAD_ZEPHYR_BORDER_ROUTER_MDNS_AUTO_NAMING
+	bool "Automatically generate and register the OpenThread mDNS hostname"
+	default y
+	help
+	  When enabled, the OpenThread Border Router automatically generates
+	  and registers a local mDNS hostname on behalf of the application.
+	  Disable this option when the mDNS hostname lifecycle is managed
+	  externally by the application layer (e.g., Matter applications
+	  that assign a device-specific hostname during the commissioning
+	  process).
 
 config OPENTHREAD_ZEPHYR_BORDER_ROUTER_NAT64_TRANSLATOR
 	bool "Border Router NAT64 translator"

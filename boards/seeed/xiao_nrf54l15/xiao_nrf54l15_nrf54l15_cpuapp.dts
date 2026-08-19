@@ -53,6 +53,7 @@
 	};
 
 	aliases {
+		dmic0 = &dmic_dev;
 		imu0 = &lsm6ds3tr_c;
 	};
 };

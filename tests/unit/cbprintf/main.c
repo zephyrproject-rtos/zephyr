@@ -93,6 +93,8 @@
 #define PKG_ALIGN_OFFSET (size_t)0
 #endif
 
+static const char *utf8_str = "\xF0\x9F\xAA\x81";
+
 /* We can't determine at build-time whether int is 64-bit, so assume
  * it is.  If not the values are truncated at build time, and the str
  * pointers will be updated during test initialization.
@@ -408,7 +410,6 @@ ZTEST(prf, test_c)
 ZTEST(prf, test_s)
 {
 	const char *s = "123";
-	static wchar_t ws[] = L"abc";
 	int rc;
 
 	TEST_PRF(&rc, "/%s/", s);
@@ -425,12 +426,16 @@ ZTEST(prf, test_s)
 		return;
 	}
 
+#if __SIZEOF_WCHAR_T__ != 4
+	static wchar_t ws[] = L"abc";
+
 	TEST_PRF(&rc, "%ls", ws);
 	if (ENABLED_USE_LIBC) {
 		PRF_CHECK("abc", rc);
 	} else {
 		PRF_CHECK("%ls", rc);
 	}
+#endif
 }
 
 ZTEST(prf, test_v_c)
@@ -443,7 +448,7 @@ ZTEST(prf, test_v_c)
 	zassert_equal(rc, 1);
 	zassert_equal(buf[0], 'a');
 	if (!ENABLED_USE_LIBC) {
-		zassert_equal(buf[1], 'b', "wth %x", buf[1]);
+		zassert_equal(buf[1], 'b', "with %x", buf[1]);
 	}
 }
 
@@ -1128,6 +1133,12 @@ ZTEST(prf, test_libc_substs)
 	zassert_equal(rc, 20, "rc %d", rc);
 	zassert_equal(lbuf[7], full_flag);
 	zassert_equal(strncmp("000000", lbuf, rc), 0);
+
+	memset(lbuf, full_flag, sizeof(lbuf));
+	rc = snprintfcb(lbuf, len, "%s", utf8_str);
+	zassert_equal(rc, strlen(utf8_str));
+	zassert_equal(lbuf[rc + 1], full_flag);
+	zassert_equal(strncmp(utf8_str, lbuf, rc), 0);
 
 	rc = cbprintf(out_counter, &count, "%020d", 1);
 	zassert_equal(rc, 20, "rc %d", rc);

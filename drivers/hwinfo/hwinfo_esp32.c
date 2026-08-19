@@ -7,7 +7,7 @@
 
 #include <soc/efuse_reg.h>
 #include <soc/reset_reasons.h>
-#include "esp_system.h"
+#include <esp_system.h>
 #include <soc/rtc.h>
 
 #include <zephyr/drivers/hwinfo.h>
@@ -21,7 +21,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 #elif defined(CONFIG_SOC_SERIES_ESP32C5)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SYS0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SYS1_REG);
-#elif defined(CONFIG_SOC_SERIES_ESP32H2)
+#elif defined(CONFIG_SOC_SERIES_ESP32H2) || defined(CONFIG_SOC_SERIES_ESP32P4)
 	uint32_t rdata1 = sys_read32(EFUSE_RD_MAC_SYS_0_REG);
 	uint32_t rdata2 = sys_read32(EFUSE_RD_MAC_SYS_1_REG);
 #elif !defined(CONFIG_SOC_SERIES_ESP32)

@@ -1,0 +1,5 @@
+# Private config options for display_check test
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+source "samples/drivers/display/Kconfig"

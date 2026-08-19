@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (C) 2022, Intel Corporation
  * Description:
- * Example to use LCD disply in Cyclone V SoC DevKit
+ * Example to use LCD display in Cyclone V SoC DevKit
  * Reference: https://datasheetspdf.com/pdf-file/746090/Newhaven/NHD-0216K3Z-NSW-BBW/1
  */
 

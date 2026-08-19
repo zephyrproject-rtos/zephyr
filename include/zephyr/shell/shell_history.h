@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_SHELL_HISTORY_H_
-#define ZEPHYR_INCLUDE_SHELL_HISTORY_H_
+/**
+ * @file
+ * @brief Header file for the shell command history.
+ */
+
+#ifndef ZEPHYR_INCLUDE_SHELL_SHELL_HISTORY_H_
+#define ZEPHYR_INCLUDE_SHELL_SHELL_HISTORY_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
@@ -17,12 +22,13 @@
 extern "C" {
 #endif
 
-
+/** @cond INTERNAL_HIDDEN */
 struct shell_history {
 	struct k_heap *heap;
 	sys_dlist_t list;
 	sys_dnode_t *current;
 };
+/** @endcond */
 
 /**
  * @brief Create shell history instance.
@@ -98,4 +104,4 @@ static inline bool z_shell_history_active(struct shell_history *history)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SHELL_HISTORY_H_ */
+#endif /* ZEPHYR_INCLUDE_SHELL_SHELL_HISTORY_H_ */

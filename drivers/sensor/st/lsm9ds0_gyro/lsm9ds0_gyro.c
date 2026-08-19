@@ -50,6 +50,8 @@ static int lsm9ds0_gyro_set_fs_raw(const struct device *dev, uint8_t fs)
 	}
 
 #if defined(CONFIG_LSM9DS0_GYRO_FULLSCALE_RUNTIME)
+	struct lsm9ds0_gyro_data *data = dev->data;
+
 	data->fs = fs;
 #endif
 
@@ -85,7 +87,7 @@ static inline int lsm9ds0_gyro_set_odr_raw(const struct device *dev,
 
 	return i2c_reg_update_byte_dt(&config->i2c, LSM9DS0_GYRO_REG_CTRL_REG1_G,
 				      LSM9DS0_GYRO_MASK_CTRL_REG1_G_DR,
-				      odr << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_BW);
+				      odr << LSM9DS0_GYRO_SHIFT_CTRL_REG1_G_DR);
 }
 
 #if defined(CONFIG_LSM9DS0_GYRO_SAMPLING_RATE_RUNTIME)
@@ -313,7 +315,7 @@ static int lsm9ds0_gyro_init(const struct device *dev)
 	const struct lsm9ds0_gyro_config * const config = dev->config;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

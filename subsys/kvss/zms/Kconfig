@@ -35,10 +35,17 @@ config ZMS_LOOKUP_CACHE_SIZE
 	int "ZMS lookup cache size"
 	default 128
 	range 1 65536
-	depends on ZMS_LOOKUP_CACHE
+	depends on ZMS_LOOKUP_CACHE && !ZMS_LOOKUP_CACHE_MANUAL
 	help
 	  Number of entries in the ZMS lookup cache.
 	  Every additional entry in cache will use 8 bytes of RAM.
+
+config ZMS_LOOKUP_CACHE_MANUAL
+	bool "ZMS manual lookup cache"
+	depends on ZMS_LOOKUP_CACHE
+	help
+	  Enable manual ZMS cache configuration. This allows to have multiple
+	  ZMS partitions each with its own cache.
 
 config ZMS_DATA_CRC
 	bool "ZMS data CRC"

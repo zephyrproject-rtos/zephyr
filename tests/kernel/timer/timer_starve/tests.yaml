@@ -1,0 +1,29 @@
+common:
+  tags:
+    - kernel
+    - timer
+tests:
+  kernel.timer.starve:
+    # 90 seconds crosses hundreds of narrow-counter wrap periods and
+    # thousands of restart/busy-wait iterations: enough to exercise the
+    # starved-announce and rearm paths in routine CI runs.
+    timeout: 400
+    extra_configs:
+      - CONFIG_APP_STOP_S=90
+    # The Cortex-A9 global timer under the Xilinx QEMU fork hangs this
+    # workload: the count stops advancing from the guest's point of view
+    # and kernel time freezes. Long-standing platform issue, tracked in
+    # https://github.com/zephyrproject-rtos/zephyr/issues/114345; lift
+    # the exclusion when it is resolved.
+    platform_exclude:
+      - qemu_cortex_a9/xc7z007s
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+      - qemu_or1k/qemu_or1k
+  kernel.timer.starve.soak:
+    # The original hour-long soak, for manual runs with --enable-slow.
+    slow: true
+    timeout: 3700
+    integration_platforms:
+      - qemu_x86

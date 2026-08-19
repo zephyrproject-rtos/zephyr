@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Wi-Fi provisioning over BLE"
+
+config WIFI_BLE_PROV_KEEP_BLE_AFTER_CONNECT
+	bool "Keep BLE advertising after Wi-Fi connects"
+	default y
+	help
+	  Keep BLE advertising after Wi-Fi is connected so the device
+	  remains reachable for re-provisioning.
+
+choice WIFI_BLE_PROV_SECURITY
+	prompt "BLE security for provisioning writes"
+	default WIFI_BLE_PROV_SECURITY_NONE
+	help
+	  Security level required to write the provisioning
+	  characteristics.
+
+config WIFI_BLE_PROV_SECURITY_NONE
+	bool "No pairing (plaintext)"
+	help
+	  Credentials are exchanged in plaintext. Evaluation only.
+
+config WIFI_BLE_PROV_SECURITY_ENCRYPT
+	bool "Encrypted link (LESC, no MITM protection)"
+	select BT_SMP
+	select BT_BONDABLE
+	select BT_SMP_ALLOW_UNAUTH_OVERWRITE
+	help
+	  Writes require an encrypted link. No user interaction is
+	  required for pairing.
+
+config WIFI_BLE_PROV_SECURITY_AUTH
+	bool "Authenticated pairing (LESC, passkey on console)"
+	select BT_SMP
+	select BT_BONDABLE
+	select BT_SMP_SC_ONLY
+	help
+	  Writes require authenticated LESC pairing. The device prints
+	  a 6-digit passkey on the console that the central must enter.
+
+endchoice
+
+source "Kconfig.zephyr"

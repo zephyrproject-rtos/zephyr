@@ -11,7 +11,6 @@ properties:
     const: 2
   ngpios:
     type: int
-    required: true
     const: 8
     description: Number of gpios supported
   drdy-gpios:
@@ -40,7 +39,6 @@ properties:
     type: boolean
   spi-addr:
     type: int
-    default: 0
     required: true
     enum:
       - 0

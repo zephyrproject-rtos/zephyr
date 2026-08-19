@@ -10,7 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
 #include <soc.h>
-#include <counter/counter_ace_v1x_art_regs.h>
+#include "counter_ace_v1x_art_regs.h"
 
 static struct k_spinlock lock;
 

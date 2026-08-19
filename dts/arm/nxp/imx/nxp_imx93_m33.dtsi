@@ -138,6 +138,82 @@
 			status = "disabled";
 		};
 
+		lpit1: timer@442f0000 {
+			compatible = "nxp,lpit";
+			reg = <0x442f0000 0x1000>;
+			interrupts = <15 0>;
+			clocks = <&ccm IMX_CCM_LPIT1_CLK 0x0 0>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit1_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit1_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit1_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit1_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		lpit2: timer@424c0000 {
+			compatible = "nxp,lpit";
+			reg = <0x424c0000 0x1000>;
+			interrupts = <64 0>;
+			clocks = <&ccm IMX_CCM_LPIT2_CLK 0x0 0>;
+			max-load-value = <0xffffffff>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			lpit2_channel0: lpit-channel@0 {
+				compatible = "nxp,lpit-channel";
+				reg = <0>;
+			};
+
+			lpit2_channel1: lpit-channel@1 {
+				compatible = "nxp,lpit-channel";
+				reg = <1>;
+			};
+
+			lpit2_channel2: lpit-channel@2 {
+				compatible = "nxp,lpit-channel";
+				reg = <2>;
+			};
+
+			lpit2_channel3: lpit-channel@3 {
+				compatible = "nxp,lpit-channel";
+				reg = <3>;
+			};
+		};
+
+		tstmr1: timer@442c0000 {
+			compatible = "nxp,tstmr";
+			reg = <0x442c0000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
+		tstmr2: timer@42480000 {
+			compatible = "nxp,tstmr";
+			reg = <0x42480000 0x8>;
+			clock-frequency = <DT_FREQ_M(24)>;
+			status = "disabled";
+		};
+
 		iomuxc: iomuxc@443c0000 {
 			compatible = "nxp,imx-iomuxc";
 			reg = <0x443c0000 DT_SIZE_K(64)>;
@@ -192,6 +268,35 @@
 			reg = <0x44390000 DT_SIZE_K(64)>;
 			interrupts = <20 3>;
 			clocks = <&ccm IMX_CCM_LPUART2_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
+		lcdif: display-controller@4ae30000 {
+			compatible = "nxp,imx-lcdifv3";
+			media-axi-clk-rate = <400000000>;
+			media-apb-clk-rate = <133333334>;
+			reg = <0x4ae30000 0x10000>;
+			interrupts = <176 0>;
+			clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+				 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+			status = "disabled";
+		};
+
+		mipi_dsi: dsi@4ae10000 {
+			compatible = "nxp,mipi-dsi-dwc";
+			reg = <0x4ae10000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <177 0>;
+			clocks = <&ccm IMX_CCM_MIPI_PHY_CFG_CLK 0 0>;
+			nxp,dc = <&lcdif>;
+			status = "disabled";
+		};
+
+		media_blk_ctrl: mediamix@4ac10000 {
+			compatible = "nxp,imx93-mediamix";
+			reg = <0x4ac10000 0x1000>;
 			status = "disabled";
 		};
 
@@ -262,6 +367,12 @@
 			status = "disabled";
 			#io-channel-cells = <1>;
 			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
+		};
+
+		video_pll: videopll@44481400 {
+			compatible = "nxp,imx93-video-pll";
+			reg = <0x44481400 0x1000>;
+			status = "disabled";
 		};
 	};
 };

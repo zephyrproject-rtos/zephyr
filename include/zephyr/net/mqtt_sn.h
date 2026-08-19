@@ -193,15 +193,15 @@ struct mqtt_sn_transport {
 	 * @return ENOERR on connection+transmission success, Negative values
 	 *		signal errors.
 	 */
-	int (*sendto)(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
-		      size_t addrlen);
+	int (*sendto)(struct mqtt_sn_transport *transport, void *buf, size_t sz,
+		      const void *dest_addr, size_t addrlen);
 
 	/**
 	 * @brief Will be called by the library when it wants to receive a message.
 	 *
 	 * Implementations should follow recvfrom conventions.
 	 */
-	ssize_t (*recvfrom)(struct mqtt_sn_client *client, void *rx_buf, size_t rx_len,
+	ssize_t (*recvfrom)(struct mqtt_sn_transport *transport, void *rx_buf, size_t rx_len,
 			    void *src_addr, size_t *addrlen);
 
 	/**
@@ -214,7 +214,7 @@ struct mqtt_sn_transport {
 	 * @return Positive number if data is available, or zero if there is none.
 	 * Negative values signal errors.
 	 */
-	int (*poll)(struct mqtt_sn_client *client);
+	int (*poll)(struct mqtt_sn_transport *transport);
 };
 
 #ifdef CONFIG_MQTT_SN_TRANSPORT_UDP
@@ -228,8 +228,15 @@ struct mqtt_sn_transport_udp {
 	/** Socket FD */
 	int sock;
 
-	/** Address of broadcasts */
-	struct net_sockaddr bcaddr;
+	/** Broadcast address storage */
+	union {
+		/** Address of broadcasts */
+		struct net_sockaddr_storage bcaddr_storage;
+/** @cond INTERNAL_HIDDEN */
+		/* Use the bcaddr_storage instead of this one. */
+		struct net_sockaddr bcaddr;
+/** @endcond */
+	};
 	net_socklen_t bcaddrlen;
 };
 
@@ -308,7 +315,7 @@ struct mqtt_sn_client {
 	sys_slist_t topic;
 
 	/** List of found gateways */
-	sys_slist_t gateway;
+	sys_slist_t gateways;
 
 	/** Current state of the MQTT-SN client */
 	int state;
@@ -366,7 +373,7 @@ int mqtt_sn_client_init(struct mqtt_sn_client *client, const struct mqtt_sn_data
 void mqtt_sn_client_deinit(struct mqtt_sn_client *client);
 
 /**
- * @brief Manually add a Gateway, bypasing the normal search process.
+ * @brief Manually add a Gateway, bypassing the normal search process.
  *
  * This function manually creates a gateway that is stored internal to the library.
  *

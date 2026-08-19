@@ -12,7 +12,7 @@ This sample demonstrates the :ref:`EDAC driver API <edac_api>` in a simple EDAC 
 Building and Running
 ********************
 
-The sample can be built as follows for the :ref:`intel_ehl_crb` board:
+The sample can be built as follows for the :zephyr:board:`intel_ehl_crb` board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/edac
@@ -21,9 +21,9 @@ The sample can be built as follows for the :ref:`intel_ehl_crb` board:
    :goals: build
    :compact:
 
-The Zephyr image that's created can be run on the :ref:`intel_ehl_crb` board
+The Zephyr image that's created can be run on the :zephyr:board:`intel_ehl_crb` board
 as per the instructions in the board documentation. Check out the
-:ref:`intel_ehl_crb` for details.
+:zephyr:board:`intel_ehl_crb` for details.
 
 Sample output
 *************

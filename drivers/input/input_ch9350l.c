@@ -10,6 +10,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(input_ch9350l, CONFIG_INPUT_LOG_LEVEL);
@@ -279,7 +280,7 @@ static void ch9350l_input_callback(const struct device *dev_uart, void *user_dat
 	uint8_t frame_size;
 
 	uart_irq_update(dev_uart);
-	if (!uart_irq_rx_ready(dev_uart)) {
+	if (uart_irq_rx_ready(dev_uart) <= 0) {
 		return;
 	}
 
@@ -406,9 +407,9 @@ static int ch9350l_init(struct device const *dev)
 	DEVICE_DT_INST_DEFINE(inst, ch9350l_init, NULL, &ch9350l_data_##inst,			\
 			      &ch9350l_config_##inst, POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY,	\
 			      NULL);								\
-	BUILD_ASSERT((DT_INST_PROP_LEN_OR(inst, kb_code_map, 0) & 0x1) == 0,			\
+	BUILD_ASSERT((DT_INST_PROP_LEN_OR(inst, kb_codemap, 0) & 0x1) == 0,			\
 		"kb-codemap is not of a valid size");						\
-	BUILD_ASSERT((DT_INST_PROP_LEN_OR(inst, mouse_code_map, 0) & 0x1) == 0,			\
+	BUILD_ASSERT((DT_INST_PROP_LEN_OR(inst, mouse_codemap, 0) & 0x1) == 0,			\
 		"mouse-codemap is not of a valid size");
 
 DT_INST_FOREACH_STATUS_OKAY(CH9350L_DEFINE)

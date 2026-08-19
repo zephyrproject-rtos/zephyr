@@ -12,6 +12,11 @@ Built around the powerful and energy-efficient RISC-V instruction set architectu
 its versatile FPGA fabric, BeagleV®-Fire SBC offers unparalleled opportunities for developers,
 hobbyists, and researchers to explore and experiment with RISC-V technology.
 
+Supported Features
+==================
+
+.. zephyr:board-supported-hw::
+
 Building
 ========
 

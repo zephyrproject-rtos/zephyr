@@ -18,9 +18,8 @@ class Flash(WestCommand):
     def __init__(self):
         super().__init__(
             'flash',
-            # Keep this in sync with the string in west-commands.yml.
-            'flash and run a binary on a board',
-            "Permanently reprogram a board's flash with a new binary.",
+            '',
+            description="Reprogram a board's flash with a new binary.",
             accepts_unknown_args=True)
         self.runner_key = 'flash-runner'  # in runners.yaml
 
@@ -28,6 +27,6 @@ class Flash(WestCommand):
         return add_parser_common(self, parser_adder)
 
     def do_run(self, my_args, runner_args):
-        build_dir = get_build_dir(my_args)
+        build_dir = get_build_dir(my_args, config=self.config)
         domains_file = Path(build_dir) / 'domains.yaml'
         do_run_common(self, my_args, runner_args, domain_file=domains_file)

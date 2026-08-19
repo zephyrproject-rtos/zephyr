@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt118x_cm7.dtsi>
+#include <nxp/imxrt/imxrt118x/nxp_rt1189_cm7.dtsi>
 #include "mimxrt1180_evk.dtsi"
 #include <freq.h>
 
@@ -16,14 +16,13 @@
 
 	chosen {
 		zephyr,sram = &dtcm;
-		zephyr,dtcm = &dtcm;
-		zephyr,itcm = &itcm;
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,flash = &itcm;
 		zephyr,console = &lpuart12;
 		zephyr,shell-uart = &lpuart12;
 		zephyr,canbus = &flexcan3;
 		nxp,m7-partition = &slot1_partition;
+		zephyr,edac = &mecc1;
 	};
 
 	hyperram0: memory@4000000 {
@@ -60,7 +59,6 @@
 
 &lpuart12 {
 	status = "okay";
-	current-speed = <115200>;
 };
 
 &lpadc1 {
@@ -137,5 +135,13 @@ zephyr_udc1: &usb2 {
 
 &sema1 {
 	domain-id = <9>;
+	status = "okay";
+};
+
+&mecc1 {
+	status = "okay";
+};
+
+&mecc2 {
 	status = "okay";
 };

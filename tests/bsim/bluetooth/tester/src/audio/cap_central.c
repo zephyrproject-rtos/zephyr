@@ -38,7 +38,6 @@ static void test_cap_central(void)
 	const uint8_t framing = BT_ISO_FRAMING_UNFRAMED;
 	const uint32_t presentation_delay = 40000U;
 	const uint32_t sdu_interval = 10000U;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	const uint16_t max_latency = 10U;
 	const uint16_t max_sdu = 40U;
 	const uint16_t vid = 0x0000; /* shall be 0x0000 for LC3 */
@@ -59,13 +58,12 @@ static void test_cap_central(void)
 
 	bsim_btp_gap_start_discovery(BTP_GAP_DISCOVERY_FLAG_LE);
 	bsim_btp_wait_for_gap_device_found(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
-	LOG_INF("Found remote device %s", addr_str);
+	LOG_INF("Found remote device %s", bt_addr_le_str(&remote_addr));
 
 	bsim_btp_gap_stop_discovery();
 	bsim_btp_gap_connect(&remote_addr, BTP_GAP_ADDR_TYPE_IDENTITY);
 	bsim_btp_wait_for_gap_device_connected(NULL);
-	LOG_INF("Device %s connected", addr_str);
+	LOG_INF("Device %s connected", bt_addr_le_str(&remote_addr));
 
 	bsim_btp_gap_pair(&remote_addr);
 	bsim_btp_wait_for_gap_sec_level_changed(NULL, NULL);
@@ -87,7 +85,7 @@ static void test_cap_central(void)
 
 	bsim_btp_gap_disconnect(&remote_addr);
 	bsim_btp_wait_for_gap_device_disconnected(NULL);
-	LOG_INF("Device %s disconnected", addr_str);
+	LOG_INF("Device %s disconnected", bt_addr_le_str(&remote_addr));
 
 	TEST_PASS("PASSED\n");
 }

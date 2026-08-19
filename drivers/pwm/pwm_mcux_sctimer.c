@@ -16,7 +16,7 @@
 #include <zephyr/drivers/clock_control.h>
 #ifdef CONFIG_PWM_CAPTURE
 #include <zephyr/irq.h>
-#include <fsl_inputmux.h>
+#include <zephyr/drivers/mux.h>
 #endif
 #include <zephyr/logging/log.h>
 
@@ -37,16 +37,27 @@ typedef struct pwm_channel_config {
 } pwm_channel_config_t;
 #endif /* CONFIG_PM_DEVICE */
 
+#ifdef CONFIG_PWM_CAPTURE
+/* One INPUTMUX capture route decoded from the mux-states phandle-array. The
+ * trailing state cell is an inputmux_connection_t applied via the mux
+ * subsystem.
+ */
+struct pwm_sctimer_mux_entry {
+	const struct device *dev;
+	const struct mux_state *state;
+};
+#endif /* CONFIG_PWM_CAPTURE */
+
 struct pwm_mcux_sctimer_config {
 	SCT_Type *base;
 	uint32_t prescale;
+	uint8_t out_init_state;
 	const struct pinctrl_dev_config *pincfg;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 #ifdef CONFIG_PWM_CAPTURE
-	const uint32_t *input_channels;
-	const uint32_t *inputmux_connections;
-	uint8_t input_channel_count;
+	const struct pwm_sctimer_mux_entry *mux_entries;
+	uint8_t mux_entries_count;
 	void (*irq_config_func)(const struct device *dev);
 #endif /* CONFIG_PWM_CAPTURE */
 };
@@ -722,6 +733,7 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	SCTIMER_GetDefaultConfig(&pwm_config);
 
 	pwm_config.prescale_l = config->prescale - 1;
+	pwm_config.outInitState = config->out_init_state;
 
 	status = SCTIMER_Init(config->base, &pwm_config);
 	if (status != kStatus_Success) {
@@ -739,11 +751,20 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	data->configured_chan = 0;
 
 #ifdef CONFIG_PWM_CAPTURE
-	/* set inputmux connections */
-	INPUTMUX_Init(INPUTMUX);
-	for (i = 0; i < config->input_channel_count; i++) {
-		INPUTMUX_AttachSignal(INPUTMUX, config->input_channels[i],
-			config->inputmux_connections[i]);
+	/* Apply the INPUTMUX capture routing through the mux subsystem */
+	for (i = 0; i < config->mux_entries_count; i++) {
+		const struct pwm_sctimer_mux_entry *entry = &config->mux_entries[i];
+
+		if (!device_is_ready(entry->dev)) {
+			LOG_ERR_DEVICE_NOT_READY(entry->dev);
+			return -ENODEV;
+		}
+
+		err = mux_state_apply(entry->dev, entry->state);
+		if (err) {
+			LOG_ERR("failed to apply mux state %d: %d", i, err);
+			return err;
+		}
 	}
 	/* Initialize capture data */
 	data->match_event = EVENT_NOT_SET;
@@ -772,7 +793,9 @@ static int mcux_sctimer_pwm_pm_action(const struct device *dev, enum pm_device_a
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 #ifdef CONFIG_PM_DEVICE
-		SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		if (data->pwm_channel_active) {
+			SCTIMER_StartTimer(config->base, kSCTIMER_Counter_U);
+		}
 #endif /* CONFIG_PM_DEVICE */
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 		if (err < 0 && err != -ENOENT) {
@@ -837,6 +860,7 @@ static DEVICE_API(pwm, pwm_mcux_sctimer_driver_api) = {
 	static const struct pwm_mcux_sctimer_config pwm_mcux_sctimer_config_##n = { \
 		.base = (SCT_Type *)DT_INST_REG_ADDR(n),				\
 		.prescale = DT_INST_PROP(n, prescaler),					\
+		.out_init_state = DT_INST_PROP(n, out_init_state),			\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),			\
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),	\
@@ -851,14 +875,27 @@ static void mcux_sctimer_config_func_##n(const struct device *dev) \
 		    mcux_sctimer_isr, DEVICE_DT_INST_GET(n), 0); \
 	irq_enable(DT_INST_IRQN(n)); \
 }
+#define SCTIMER_MUX_ENTRY(node_id, prop, idx) \
+	{ \
+		.dev   = MUX_STATE_DT_DEV_GET_BY_IDX(node_id, idx), \
+		.state = MUX_STATE_DT_GET_BY_IDX(node_id, idx), \
+	}
+#define SCTIMER_MUX_DEFINE(n) \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states), \
+		    (MUX_STATE_DT_INST_SPEC_DEFINE_ALL(n); \
+		     static const struct pwm_sctimer_mux_entry \
+			    pwm_mcux_sctimer_mux_entries_##n[] = { \
+			    DT_INST_FOREACH_PROP_ELEM_SEP(n, mux_states, \
+							  SCTIMER_MUX_ENTRY, (,))};), ())
 #define SCTIMER_CFG_CAPTURE_INIT(n) \
-	.input_channels = (const uint32_t[]) DT_INST_PROP(n, input_channels), \
-	.inputmux_connections = (const uint32_t[]) DT_INST_PROP(n, inputmux_connections), \
-	.input_channel_count = DT_INST_PROP_LEN(n, input_channels), \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states), \
+		    (.mux_entries = pwm_mcux_sctimer_mux_entries_##n, \
+		     .mux_entries_count = ARRAY_SIZE(pwm_mcux_sctimer_mux_entries_##n),), ()) \
 	.irq_config_func = mcux_sctimer_config_func_##n
 #define SCTIMER_INIT_CFG(n)	SCTIMER_DECLARE_CFG(n, SCTIMER_CFG_CAPTURE_INIT(n))
 #else /* !CONFIG_PWM_CAPTURE */
 #define SCTIMER_CONFIG_FUNC(n)
+#define SCTIMER_MUX_DEFINE(n)
 #define SCTIMER_CFG_CAPTURE_INIT
 #define SCTIMER_INIT_CFG(n)	SCTIMER_DECLARE_CFG(n, SCTIMER_CFG_CAPTURE_INIT)
 #endif /* !CONFIG_PWM_CAPTURE */
@@ -868,6 +905,7 @@ static void mcux_sctimer_config_func_##n(const struct device *dev) \
 	static struct pwm_mcux_sctimer_data pwm_mcux_sctimer_data_##n;			\
 											\
 	SCTIMER_CONFIG_FUNC(n)								\
+	SCTIMER_MUX_DEFINE(n)								\
 	SCTIMER_INIT_CFG(n);								\
 	PM_DEVICE_DT_INST_DEFINE(n, mcux_sctimer_pwm_pm_action);			\
 	DEVICE_DT_INST_DEFINE(n,							\

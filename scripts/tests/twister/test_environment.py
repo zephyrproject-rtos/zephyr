@@ -82,13 +82,6 @@ TESTDATA_1 = [
         None,
         None,
         None,
-        ['--shuffle-tests'],
-        '--shuffle-tests requires --subset'
-    ),
-    (
-        None,
-        None,
-        None,
         ['--shuffle-tests-seed', '0'],
         '--shuffle-tests-seed requires --shuffle-tests'
     ),
@@ -124,7 +117,6 @@ TESTDATA_1 = [
         'device serial without platform',
         'device serial with multiple platforms',
         'device flash with test without device testing',
-        'shuffle-tests without subset',
         'shuffle-tests-seed without shuffle-tests',
         'unrecognised argument',
         'pytest-twister-harness installed'

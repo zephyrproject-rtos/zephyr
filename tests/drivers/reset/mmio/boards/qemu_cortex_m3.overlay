@@ -1,13 +1,22 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&sram0 {
+	reg = <0x20000000 0xfc00>;
+};
+
 / {
-	reset0: reset@20000004 {
+	reset0: reset@2000fc00 {
 		compatible = "reset-mmio";
-		reg = <0x20000004 0x4>;
+		reg = <0x2000fc00 0x4>;
 		num-resets = <16>;
 	};
 
-	reset1: reset@20000008 {
+	reset1: reset@2000fc04 {
 		compatible = "reset-mmio";
-		reg = <0x20000008 0x4>;
+		reg = <0x2000fc04 0x4>;
 		num-resets = <16>;
 		active-low;
 	};

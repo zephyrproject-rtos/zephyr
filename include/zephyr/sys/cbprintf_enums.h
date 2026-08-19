@@ -4,8 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Argument-type tags used by the cbprintf packaging format.
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_ENUMS_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_ENUMS_H_
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief cbprintf package argument type
  *
@@ -43,5 +50,7 @@ enum cbprintf_package_arg_type {
 
 	CBPRINTF_PACKAGE_ARG_TYPE_COUNT = CBPRINTF_PACKAGE_ARG_TYPE_MAX
 };
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_SYS_CBPRINTF_ENUMS_H_ */

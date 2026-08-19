@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Generator, Type, Callable
 
@@ -31,13 +32,29 @@ def twister_harness_config(request: pytest.FixtureRequest) -> TwisterHarnessConf
 def device_object(twister_harness_config: TwisterHarnessConfig) -> Generator[DeviceAdapter, None, None]:
     """Return device object - without run application."""
     device_config: DeviceConfig = twister_harness_config.devices[0]
-    device_type = device_config.type
-    device_class: Type[DeviceAdapter] = DeviceFactory.get_device(device_type)
+    device_class: Type[DeviceAdapter] = DeviceFactory.get_device(device_config.type)
     device_object = device_class(device_config)
     try:
         yield device_object
     finally:  # to make sure we close all running processes execution
         device_object.close()
+
+
+@pytest.fixture(scope='session')
+def device_objects(
+    twister_harness_config: TwisterHarnessConfig
+) -> Generator[list[DeviceAdapter], None, None]:
+    """Return device objects when required devices are more than one - without run application."""
+    device_objects = []
+    try:
+        for device_config in twister_harness_config.devices:
+            device_class: Type[DeviceAdapter] = DeviceFactory.get_device(device_config.type)
+            device_object = device_class(device_config)
+            device_objects.append(device_object)
+        yield device_objects
+    finally:  # to make sure we close all running processes execution
+        for device_object in device_objects:
+            device_object.close()
 
 
 def determine_scope(fixture_name, config):
@@ -59,18 +76,44 @@ def unlaunched_dut(
 
 
 @pytest.fixture(scope=determine_scope)
-def dut(request: pytest.FixtureRequest, device_object: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
-    """Return launched device - with run application."""
-    device_object.initialize_log_files(request.node.name)
+def unlaunched_duts(
+    request: pytest.FixtureRequest, device_objects: list[DeviceAdapter]
+) -> Generator[list[DeviceAdapter], None, None]:
+    """Return device objects - with logs connected, but not run"""
     try:
-        device_object.launch()
-        yield device_object
-    finally:  # to make sure we close all running processes execution
-        device_object.close()
+        for device_object in device_objects:
+            device_object.initialize_log_files(request.node.name)
+        yield device_objects
+    finally:
+        for device_object in device_objects:
+            device_object.close()
 
 
 @pytest.fixture(scope=determine_scope)
-def shell(dut: DeviceAdapter) -> Shell:
+def dut(unlaunched_dut: DeviceAdapter) -> Generator[DeviceAdapter, None, None]:
+    """Return launched device - with run application."""
+    dut = unlaunched_dut
+    dut.launch()
+    yield dut
+
+
+@pytest.fixture(scope=determine_scope)
+def duts(unlaunched_duts: list[DeviceAdapter]) -> Generator[list[DeviceAdapter], None, None]:
+    """Return launched devices - with run application.
+
+    Devices are flashed concurrently to reduce total setup time.
+    If sequential flashing is required, you can override this fixture in your
+    conftest.py and use simple loop to flash devices one by one, e.g.:
+        for dut in duts:
+            dut.launch()
+    """
+    duts = unlaunched_duts
+    with ThreadPoolExecutor(max_workers=len(duts)) as executor:
+        list(executor.map(lambda dut: dut.launch(), duts))
+    yield duts
+
+
+def get_ready_shell(dut: DeviceAdapter) -> Shell:
     """Return ready to use shell interface"""
     shell = Shell(dut, timeout=20.0)
     if prompt := find_in_config(Path(dut.device_config.app_build_dir) / 'zephyr' / '.config',
@@ -85,6 +128,19 @@ def shell(dut: DeviceAdapter) -> Shell:
         time.sleep(0.5)
         dut.clear_buffer()
     return shell
+
+
+@pytest.fixture(scope=determine_scope)
+def shell(dut: DeviceAdapter) -> Shell:
+    """Return ready to use shell interface"""
+    return get_ready_shell(dut)
+
+
+@pytest.fixture(scope=determine_scope)
+def shells(duts: list[DeviceAdapter]) -> list[Shell]:
+    """Return ready to use shell interfaces for multiple devices"""
+    with ThreadPoolExecutor(max_workers=len(duts)) as executor:
+        return list(executor.map(get_ready_shell, duts))
 
 
 @pytest.fixture(scope='session')

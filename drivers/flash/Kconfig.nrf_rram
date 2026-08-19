@@ -10,6 +10,7 @@ menuconfig SOC_FLASH_NRF_RRAM
 	depends on DT_HAS_NORDIC_RRAM_CONTROLLER_ENABLED
 	select NRFX_RRAMC if !BUILD_WITH_TFM
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_DRIVER_FILL
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_NO_EXPLICIT_ERASE
 	select FLASH_NRF_FORCE_ALT
@@ -23,7 +24,7 @@ if SOC_FLASH_NRF_RRAM
 
 config NRF_RRAM_WRITE_BUFFER_SIZE
 	int "Internal write-buffer size"
-	default 32 if !SOC_FLASH_NRF_RADIO_SYNC_NONE
+	default 32 if SOC_FLASH_NRF_RADIO_SYNC_NONE
 	default 1
 	range 0 32
 	help
@@ -103,5 +104,28 @@ config NRF_RRAM_THROTTLING_DATA_BLOCK
 	help
 	  This is the number of data blocks (in number of 128-bit words) for flash write
 	  operations when throttling is enabled.
+
+config NRF_RRAM_FILL_SKIP_IF_FILLED
+	bool "Skip writing fill value to lines that already hold it"
+	help
+	  When enabled, the api->fill callback (used by flash_fill() and,
+	  transitively, flash_flatten() on no-erase devices) scans the target
+	  region in 16-byte write-line granularity and only writes lines that
+	  currently hold something different from the requested fill value.
+	  Consecutive dirty lines are batched into a single underlying write.
+	  The optimisation applies for any fill value, including but not
+	  limited to the device ERASE_VALUE.
+
+	  Useful for upper layers that reflexively re-fill already-uniform
+	  regions (e.g. NVS / ZMS sector rotation, MCUboot re-flattening
+	  previously scrambled slots, FCB GC, settings housekeeping).
+	  Significantly improves write endurance in those workloads at the
+	  cost of a few microseconds of memory-mapped read scan per page.
+
+	  Disabled by default because it changes the worst-case latency profile
+	  of fill operations.
+
+	  NOTE: Feature does not protect against simultaneous writes to the
+	  scanned area.
 
 endif # SOC_FLASH_NRF_RRAM

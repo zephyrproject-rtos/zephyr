@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
-#define INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_
+/**
+ * @file
+ * @brief Iterable sections helpers.
+ * @ingroup iterable_section_apis
+ */
+
+#ifndef ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
+#define ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_
 
 #include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
@@ -17,6 +23,8 @@ extern "C" {
 /**
  * @brief Iterable Sections APIs
  * @defgroup iterable_section_apis Iterable Sections APIs
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup os_services
  * @{
  */
@@ -60,7 +68,7 @@ extern "C" {
  * will return '_<SECNAME>_list_end'.
  *
  * @param[in]  secname type name of iterable section.  For 'struct foobar' this
- * would be TYPE_SECTION_START(foobar)
+ * would be TYPE_SECTION_END(foobar)
  */
 #define TYPE_SECTION_END(secname) _CONCAT(_##secname, _list_end)
 
@@ -111,6 +119,26 @@ extern "C" {
 		     iterator < TYPE_SECTION_END(secname);	\
 	     });						\
 	     iterator++)
+
+/**
+ * @brief Iterate over a specified iterable section for a generic type, in
+ * reverse order.
+ *
+ * @details
+ * Reverse iterator for structure instances gathered by TYPE_SECTION_ITERABLE().
+ * Iteration runs from the last element down to the first. The linker must
+ * provide a _<SECNAME>_list_start symbol and a _<SECNAME>_list_end symbol to
+ * mark the start and the end of the list of struct objects to iterate over.
+ * This is normally done using ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM()
+ * in the linker script.
+ */
+#define TYPE_SECTION_FOREACH_REVERSE(type, secname, iterator)			\
+	TYPE_SECTION_START_EXTERN(type, secname);				\
+	TYPE_SECTION_END_EXTERN(type, secname);					\
+	for (type *iterator = TYPE_SECTION_END(secname);			\
+	     (uintptr_t)iterator > (uintptr_t)TYPE_SECTION_START(secname) &&	\
+	     (iterator = (type *)((uintptr_t)iterator - sizeof(type)), true);	\
+	     )
 
 /**
  * @brief Get element from section for a generic type.
@@ -271,6 +299,35 @@ extern "C" {
 	STRUCT_SECTION_FOREACH_ALTERNATE(struct_type, struct_type, iterator)
 
 /**
+ * @brief Iterate over a specified iterable section (alternate), in reverse
+ * order.
+ *
+ * @details
+ * Reverse iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
+ * Iteration runs from the last element down to the first. The linker must
+ * provide a _<SECNAME>_list_start symbol and a _<SECNAME>_list_end symbol to
+ * mark the start and the end of the list of struct objects to iterate over.
+ * This is normally done using ITERABLE_SECTION_ROM() or ITERABLE_SECTION_RAM()
+ * in the linker script.
+ */
+#define STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(secname, struct_type, iterator) \
+	TYPE_SECTION_FOREACH_REVERSE(struct struct_type, secname, iterator)
+
+/**
+ * @brief Iterate over a specified iterable section, in reverse order.
+ *
+ * @details
+ * Reverse iterator for structure instances gathered by STRUCT_SECTION_ITERABLE().
+ * Iteration runs from the last element down to the first. The linker must
+ * provide a _<struct_type>_list_start symbol and a _<struct_type>_list_end
+ * symbol to mark the start and the end of the list of struct objects to
+ * iterate over. This is normally done using ITERABLE_SECTION_ROM() or
+ * ITERABLE_SECTION_RAM() in the linker script.
+ */
+#define STRUCT_SECTION_FOREACH_REVERSE(struct_type, iterator) \
+	STRUCT_SECTION_FOREACH_ALTERNATE_REVERSE(struct_type, struct_type, iterator)
+
+/**
  * @brief Get element from section.
  *
  * @note There is no protection against reading beyond the section.
@@ -299,4 +356,4 @@ extern "C" {
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_SYS_ITERABLE_SECTIONS_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_ITERABLE_SECTIONS_H_ */

@@ -29,7 +29,6 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 	uint8_t addr_type;
 	const char *str_type;
 	bt_addr_t addr;
-	char str_addr[BT_ADDR_STR_LEN];
 
 	if (argc < 2) {
 		return -EINVAL;
@@ -45,9 +44,8 @@ int cmd_ll_addr_read(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	(void)ll_addr_read(addr_type, addr.val);
-	bt_addr_to_str(&addr, str_addr, sizeof(str_addr));
 
-	shell_print(sh, "Current %s address: %s", str_type, str_addr);
+	shell_print(sh, "Current %s address: %s", str_type, bt_addr_str(&addr));
 
 	return 0;
 }

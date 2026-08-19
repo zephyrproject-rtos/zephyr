@@ -130,8 +130,18 @@ class ZephyrElf:
         self.relocatable = self.elf['e_type'] == 'ET_REL'
         self.edt = edt
         self.devices = []
+        device_end_symbol = device_start_symbol.replace('_list_start', '_list_end')
+        self._device_start_symbol = device_start_symbol
+        self._device_end_symbol = device_end_symbol
         self.ld_consts = self._symbols_find_value(
-            set([device_start_symbol, *Device.required_ld_consts, *DevicePM.required_ld_consts])
+            set(
+                [
+                    device_start_symbol,
+                    device_end_symbol,
+                    *Device.required_ld_consts,
+                    *DevicePM.required_ld_consts,
+                ]
+            )
         )
         self._device_parse_and_link()
 
@@ -246,8 +256,20 @@ class ZephyrElf:
 
         self._object_find_named('__devicedeps_', _on_ordinal)
 
-        # Find all device structs
+        # Find all device structs: real struct device instances are all
+        # allocated consecutively inside the device list section, so any
+        # symbol whose address falls outside
+        # [_device_list_start, _device_list_end) is not a real device.
+        dev_start = self.ld_consts.get(self._device_start_symbol)
+        dev_end = self.ld_consts.get(self._device_end_symbol)
+
         def _on_device(sym):
+            if (
+                dev_start is not None
+                and dev_end is not None
+                and not (dev_start <= sym.entry.st_value < dev_end)
+            ):
+                return
             self.devices.append(Device(self, sym))
 
         self._object_find_named('__device_', _on_device)

@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <argparse.h>
+#include <bsim_args_runner.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
@@ -61,7 +61,7 @@ static ssize_t read_mtu_validation_chrc(struct bt_conn *conn, const struct bt_ga
 	}
 
 	/* If the ATT_MTU is too large, sending a one-less-than-full
-	 * response would exeed the max attribute length limit.
+	 * response would exceed the max attribute length limit.
 	 */
 	__ASSERT(buf_len < (BT_ATT_MAX_ATTRIBUTE_LEN / 2),
 		 "The EATT buffer is too large for this test.");

@@ -12,11 +12,13 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   doc-publish:
     name: Publish Documentation
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     if: |
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success' &&
@@ -25,39 +27,60 @@ jobs:
     steps:
     - name: Download artifacts
       id: download-artifacts
-      uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
+      uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
       with:
         workflow: doc-build.yml
         run_id: ${{ github.event.workflow_run.id }}
         if_no_artifact_found: ignore
 
-    - name: Load PR number
-      if: steps.download-artifacts.outputs.found_artifact == 'true'
-      uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-      with:
-        script: |
-          let fs = require("fs");
-          let pr_number = Number(fs.readFileSync("./pr_num/pr_num"));
-          core.exportVariable("PR_NUM", pr_number);
-
-    - name: Check PR number
+    - name: Load and validate PR number
       if: steps.download-artifacts.outputs.found_artifact == 'true'
       id: check-pr
-      uses: carpentries/actions/check-valid-pr@083bb9952b1414bd2b9e10ecec1717c938aba4c5 # v0.17.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
-        pr: ${{ env.PR_NUM }}
-        sha: ${{ github.event.workflow_run.head_sha }}
+        script: |
+          const fs = require("fs");
+          const head_sha = context.payload.workflow_run.head_sha;
 
-    - name: Validate PR number
-      if: |
-        steps.download-artifacts.outputs.found_artifact == 'true' &&
-        steps.check-pr.outputs.VALID != 'true'
-      run: |
-        echo "ABORT: PR number validation failed!"
-        exit 1
+          function skip(reason) {
+            core.warning(`Documentation not published: ${reason}`);
+            core.setOutput("publish", "false");
+          }
+
+          const pr_num = Number(fs.readFileSync("./pr_num/pr_num", "utf8").trim());
+          if (!Number.isSafeInteger(pr_num) || pr_num <= 0) {
+            skip("the artifact carries a malformed PR number.");
+            return;
+          }
+
+          let pr;
+          try {
+            pr = (await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr_num,
+            })).data;
+          } catch (err) {
+            skip(`PR #${pr_num} could not be retrieved (status ${err.status}).`);
+            return;
+          }
+
+          // The artifact is produced by a workflow running untrusted code, so
+          // make sure the PR number it carries really belongs to the commit the
+          // documentation was built from. A mismatch means either a stale build
+          // (the PR was updated while the documentation was being built, in
+          // which case a newer build is on its way) or a spoofed PR number.
+          if (pr.head.sha !== head_sha) {
+            skip(`documentation was built from ${head_sha}, but PR #${pr_num} ` +
+                 `is now at ${pr.head.sha}.`);
+            return;
+          }
+
+          core.exportVariable("PR_NUM", pr_num);
+          core.setOutput("publish", "true");
 
     - name: Uncompress HTML docs
-      if: steps.download-artifacts.outputs.found_artifact == 'true'
+      if: steps.check-pr.outputs.publish == 'true'
       run: |
         tar xf html-output/html-output.tar.xz -C html-output
         if [ -f api-coverage/api-coverage.tar.xz ]; then
@@ -65,15 +88,15 @@ jobs:
         fi
 
     - name: Configure AWS Credentials
-      if: steps.download-artifacts.outputs.found_artifact == 'true'
-      uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
+      if: steps.check-pr.outputs.publish == 'true'
+      uses: aws-actions/configure-aws-credentials@e6de054238d6b7531b4efff3b6587d9aade6a06c # v6.2.3
       with:
         aws-access-key-id: ${{ vars.AWS_BUILDS_ZEPHYR_PR_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_BUILDS_ZEPHYR_PR_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
     - name: Upload to AWS S3
-      if: steps.download-artifacts.outputs.found_artifact == 'true'
+      if: steps.check-pr.outputs.publish == 'true'
       env:
         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
       run: |

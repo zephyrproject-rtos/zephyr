@@ -10,6 +10,7 @@
 #include <zephyr/input/input.h>
 #include <zephyr/input/input_touch.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/minmax.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(stmpe811, CONFIG_INPUT_LOG_LEVEL);

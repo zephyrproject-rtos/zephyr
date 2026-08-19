@@ -9,6 +9,9 @@ Overview
    SoC Datasheet), see the `nRF54L15 documentation`_ page.
 
 The OPHELIA-IV EV board is an evaluation board of the Ophelia-IV radio module.
+Please use the article number 2621129024001 (EV-Kit Proteus-IV) to order it.
+Alternatively the article number 2621119022001 (MiniEV-board Ophelia-IV) is also
+compatible to that board file.
 
 Hardware
 ********
@@ -40,7 +43,7 @@ Enter the following command to compile ``hello_world`` for the FLPR core:
 
 .. code-block:: console
 
-   west build -p -b ophelia4ev/nrf54l15/cpuflpr --sysbuild
+   west build -p -b ophelia4ev/nrf54l15/cpuflpr samples/hello_world --sysbuild
 
 
 Flashing

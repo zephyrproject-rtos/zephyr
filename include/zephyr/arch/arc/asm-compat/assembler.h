@@ -20,8 +20,8 @@
  *    just the final variant include in code fed to compiler/assembler.
  */
 
-#ifndef __ASM_ARC_ASM_H
-#define __ASM_ARC_ASM_H 1
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASSEMBLER_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASSEMBLER_H_
 
 #ifdef _ASMLANGUAGE
 
@@ -62,8 +62,8 @@
 
 #else	/* !_ASMLANGUAGE */
 
-#error "asm-compat macroses used not in assembler code!"
+#error "asm-compat macros used not in assembler code!"
 
 #endif	/* _ASMLANGUAGE */
 
-#endif
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASSEMBLER_H_ */

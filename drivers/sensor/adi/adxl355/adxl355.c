@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(ADXL355, CONFIG_SENSOR_LOG_LEVEL);
 static int adxl355_bus_is_ready_i2c(const union adxl355_bus *bus)
 {
 	if (!i2c_is_ready_dt(&bus->i2c)) {
-		LOG_ERR("I2C bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(bus->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -47,7 +47,7 @@ static int adxl355_reg_access_i2c(const struct device *dev, bool read, uint8_t r
 static int adxl355_bus_is_ready_spi(const union adxl355_bus *bus)
 {
 	if (!spi_is_ready_dt(&bus->spi)) {
-		LOG_ERR("SPI bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(bus->spi.bus);
 		return -ENODEV;
 	}
 
@@ -1459,7 +1459,6 @@ static int adxl355_pm_action(const struct device *dev, enum pm_device_action act
 						(ADXL355_CFG_IRQ(inst)), ()) }
 
 #define ADXL355_DEFINE(inst)                                                                       \
-	BUILD_ASSERT(DT_INST_PROP(inst, fifo_watermark) <= 96, "FIFO watermark must be <= 96");    \
 	BUILD_ASSERT(DT_INST_PROP(inst, fifo_watermark) % 3 == 0,                                  \
 		     "FIFO watermark must be multiple of 3");                                      \
 	IF_ENABLED(CONFIG_ADXL355_STREAM,						\

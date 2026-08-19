@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/devicetree.h>
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
 
 static const struct arm_mpu_region mpu_regions[] = {
@@ -16,7 +17,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 			 REGION_FLASH_ATTR(REGION_256K)),
 #endif
 	MPU_REGION_ENTRY("SRAM_0",
-			 CONFIG_SRAM_BASE_ADDRESS,
+			 DT_CHOSEN_SRAM_ADDR,
 			 REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 };
 

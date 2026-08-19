@@ -14,6 +14,7 @@ supported:
   - counter
   - dma
   - gpio
+  - hwinfo
   - i2c
   - pwm
   - rtc

@@ -231,7 +231,7 @@ static int rza2m_set_ppoc(const pinctrl_soc_pin_t pin)
 
 		/* Set POC0 and POCSEL0 */
 		reg_32 = sys_read32(RZA2M_PPOC);
-		reg_32 &= ~(RZA2M_PPOC_POC0 & RZA2M_PPOC_POCSEL0);
+		reg_32 &= ~(RZA2M_PPOC_POC0 | RZA2M_PPOC_POCSEL0);
 		reg_32 |= ppoc_val;
 		sys_write32(reg_32, RZA2M_PPOC);
 

@@ -97,16 +97,18 @@
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00000000 DT_SIZE_K(192)>;
 			label = "image-0";
 		};
 
 		storage_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x00030000 DT_SIZE_K(64)>;
 			label = "storage";
 		};

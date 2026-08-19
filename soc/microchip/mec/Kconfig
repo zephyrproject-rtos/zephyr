@@ -6,6 +6,7 @@
 
 config SOC_FAMILY_MICROCHIP_MEC
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select PM_STATE_SET_IRQ_UNLOCKED
 
 if SOC_FAMILY_MICROCHIP_MEC
 
@@ -271,6 +272,12 @@ config SOC_MEC_PROC_CLK_DIV
 	  and main 96 MHz clock (MCK):
 	  HCLK = MCK / PROC_CLK_DIV
 	  Allowed divider values: 1, 3, 4, 16, and 48.
+
+# common I3C IP present
+config HAS_MCHP_MEC_I3C
+	bool
+	help
+	  Hidden symbol selected by SoCs which have I3C support
 
 # Select SoC Part No. and configuration options
 rsource "*/Kconfig"

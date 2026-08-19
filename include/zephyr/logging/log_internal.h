@@ -3,6 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for logging internal functions.
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_INTERNAL_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_INTERNAL_H_
 
@@ -19,6 +25,8 @@ extern "C" {
  * shared between various portions of logging subsystem. Functions are internal
  * not intended to be used outside, including logging backends.
  */
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Structure wrapper to be used for memory section. */
 struct log_mpsc_pbuf {
@@ -162,6 +170,8 @@ static inline bool z_log_is_local_domain(uint8_t domain_id)
  * @return Timestamp.
  */
 log_timestamp_t z_log_timestamp(void);
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

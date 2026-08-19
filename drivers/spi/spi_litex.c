@@ -21,13 +21,13 @@ struct spi_litex_data {
 };
 
 struct spi_litex_cfg {
-	uint32_t control_addr;
-	uint32_t status_addr;
-	uint32_t mosi_addr;
-	uint32_t miso_addr;
-	uint32_t cs_addr;
-	uint32_t loopback_addr;
-	uint32_t clk_divider_addr;
+	mem_addr_t control_addr;
+	mem_addr_t status_addr;
+	mem_addr_t mosi_addr;
+	mem_addr_t miso_addr;
+	mem_addr_t cs_addr;
+	mem_addr_t loopback_addr;
+	mem_addr_t clk_divider_addr;
 	bool clk_divider_exists;
 	int data_width;
 	int max_cs;
@@ -38,7 +38,7 @@ static void spi_set_frequency(const struct device *dev, const struct spi_config 
 	const struct spi_litex_cfg *dev_config = dev->config;
 
 	if (!dev_config->clk_divider_exists) {
-		/* The clk_divider is optional, thats why we check. */
+		/* The clk_divider is optional, that's why we check. */
 		LOG_WRN("No clk_divider found, can't change frequency");
 		return;
 	}

@@ -16,7 +16,7 @@ config FLASH_BASE_ADDRESS
 config USE_DT_CODE_PARTITION
 	default y
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 configdefault MAIN_STACK_SIZE

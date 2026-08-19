@@ -1,0 +1,25 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common fields for i.MX RT ARM PLL clock providers.
+
+  The ARM PLL output frequency is calculated as
+  Fout = Fin * loop-div / (2 * post-div).
+
+include: clock-controller.yaml
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  loop-div:
+    type: int
+    min: 104
+    max: 208
+    description: ARM PLL loop divider
+
+  post-div:
+    type: int
+    enum: [1, 2, 4, 8]
+    description: ARM PLL post divider

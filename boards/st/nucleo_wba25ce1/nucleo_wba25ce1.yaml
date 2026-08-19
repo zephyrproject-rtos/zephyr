@@ -11,12 +11,14 @@ supported:
   - arduino_i2c
   - arduino_spi
   - counter
+  - crypto
   - gpio
   - i2c
   - rng
   - rtc
   - spi
   - watchdog
+  - bluetooth
 ram: 64
 flash: 512
 vendor: st

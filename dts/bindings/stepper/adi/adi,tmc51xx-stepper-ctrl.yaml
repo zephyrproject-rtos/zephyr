@@ -4,11 +4,6 @@
 compatible: "adi,tmc51xx-stepper-ctrl"
 
 include:
-  - name: adi,trinamic-stallguard.yaml
-    property-allowlist:
-      - activate-stallguard2
-      - stallguard-threshold-velocity
-      - stallguard-velocity-check-interval-ms
   - name: adi,trinamic-ramp-generator.yaml
     property-allowlist:
       - vstart

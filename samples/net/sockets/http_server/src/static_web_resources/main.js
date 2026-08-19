@@ -26,7 +26,7 @@ async function postLed(state)
 
 		const response = await fetch("/led", {method : "POST", body : payload});
 		if (!response.ok) {
-			throw new Error(`Response satus: ${response.status}`);
+			throw new Error(`Response status: ${response.status}`);
 		}
 	} catch (error) {
 		console.error(error.message);

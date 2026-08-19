@@ -10,8 +10,8 @@
  * support it.
  */
 
-#ifndef ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_
-#define ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_
+#ifndef ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_
+#define ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_
 
 #include <zephyr/device.h>
 #include <zephyr/net/net_if.h>
@@ -45,6 +45,7 @@ enum {
 	NET_EVENT_CONN_CMD_IF_TIMEOUT_VAL,
 	NET_EVENT_CONN_CMD_IF_FATAL_ERROR_VAL,
 	NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT_VAL,
+	NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION_VAL,
 
 	NET_EVENT_CONN_CMD_MAX
 };
@@ -56,6 +57,7 @@ enum net_event_conn_cmd {
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_TIMEOUT),
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_FATAL_ERROR),
 	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT),
+	NET_MGMT_CMD(NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION),
 };
 
 /** @endcond */
@@ -78,6 +80,11 @@ enum net_event_conn_cmd {
 #define NET_EVENT_CONN_IF_IDLE_TIMEOUT					\
 	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_IDLE_TIMEOUT)
 
+/**
+ * @brief net_mgmt event raised when an interface cannot connect due to a lack of configuration
+ */
+#define NET_EVENT_CONN_IF_NO_CONFIGURATION					\
+	(NET_MGMT_CONN_IF_EVENT | NET_EVENT_CONN_CMD_IF_NO_CONFIGURATION)
 
 /**
  * @brief Per-iface connectivity flags
@@ -138,6 +145,7 @@ enum conn_mgr_if_flag {
  * @retval 0 on success.
  * @retval -ESHUTDOWN if the iface is not admin-up.
  * @retval -ENOTSUP if the iface does not have a connectivity implementation.
+ * @retval -EAGAIN if the iface does not have configuration information to connect
  * @return implementation-specific status code otherwise.
  */
 int conn_mgr_if_connect(struct net_if *iface);
@@ -370,8 +378,8 @@ int conn_mgr_all_if_connect(bool skip_ignored);
  *
  * @param skip_ignored - If true, only affect ifaces that aren't ignored by conn_mgr.
  *			 Otherwise, affect all ifaces.
- * @return 0 if all net_if_up and conn_mgr_if_connect calls returned 0, otherwise the first nonzero
- *	   value returned by either net_if_up or conn_mgr_if_connect.
+ * @return 0 if all net_if_down calls returned 0, otherwise the first nonzero
+ *	   value returned by a net_if_down call.
  */
 int conn_mgr_all_if_disconnect(bool skip_ignored);
 
@@ -383,4 +391,4 @@ int conn_mgr_all_if_disconnect(bool skip_ignored);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_CONN_MGR_CONNECTIVITY_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_CONN_MGR_CONNECTIVITY_H_ */

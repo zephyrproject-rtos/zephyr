@@ -4,22 +4,22 @@
  */
 
 &pinctrl {
-	/omit-if-no-ref/ spi2_pins: spi2 {
-		spi2-pinmux {
-			pinmux = <RZN_PINMUX(PORT_18, 4, 3)>, /* CK2 */
-				 <RZN_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
-				 <RZN_PINMUX(PORT_18, 6, 5)>; /* MISO2 */
+	/omit-if-no-ref/ spi0_pins: spi0 {
+		spi0-pinmux {
+			pinmux = <RZN_PINMUX(PORT_13, 3, 10)>, /* CK0 */
+				 <RZN_PINMUX(PORT_04, 1, 2)>, /* MOSI0 */
+				 <RZN_PINMUX(PORT_13, 2, 10)>; /* MISO0 */
 			drive-strength = "high";
 			slew-rate = "fast";
 		};
 	};
 
-	/omit-if-no-ref/ spi3_pins: spi3 {
-		spi3-pinmux {
-			pinmux = <RZN_PINMUX(PORT_01, 7, 7)>, /* CK3 */
-				 <RZN_PINMUX(PORT_02, 2, 7)>, /* MOSI3 */
-				 <RZN_PINMUX(PORT_02, 0, 6)>, /* MISO3 */
-				 <RZN_PINMUX(PORT_02, 3, 8)>; /* SSL3_0 */
+	/omit-if-no-ref/ spi2_pins: spi2 {
+		spi2-pinmux {
+			pinmux = <RZN_PINMUX(PORT_18, 4, 3)>, /* CK2 */
+				 <RZN_PINMUX(PORT_18, 5, 3)>, /* MOSI2 */
+				 <RZN_PINMUX(PORT_18, 6, 5)>, /* MISO2 */
+				 <RZN_PINMUX(PORT_21, 1, 6)>; /* SSL20 */
 			drive-strength = "high";
 			slew-rate = "fast";
 		};
@@ -30,11 +30,15 @@
 	status = "okay";
 };
 
-&spi2 {
+&spi0 {
 	status = "okay";
-	pinctrl-0 = <&spi2_pins>;
+	pinctrl-0 = <&spi0_pins>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio3 0 GPIO_ACTIVE_LOW>;
+
+	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -45,8 +49,17 @@
 	};
 };
 
-dut_spis: &spi3 {
+dut_spis: &spi2 {
 	status = "okay";
-	pinctrl-0 = <&spi3_pins>;
+	pinctrl-0 = <&spi2_pins>;
 	pinctrl-names = "default";
+
+	dmas = <&dma0 3 RZ_DMA_PERIPH_TO_MEM>,
+	       <&dma0 2 RZ_DMA_MEM_TO_PERIPH>;
+	dma-names = "rx", "tx";
+};
+
+&dma0 {
+	status = "okay";
+	dma-buf-addr-alignment = <1>;
 };

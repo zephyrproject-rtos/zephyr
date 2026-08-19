@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019 Bose Corporation
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,18 @@
 #include <stdio.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(tbs_test);
 
 #ifdef CONFIG_BT_TBS
 extern enum bst_result_t bst_result;
@@ -34,6 +38,8 @@ CREATE_FLAG(call_joined);
 
 static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
+	ARG_UNUSED(conn);
+
 	if (call_index == g_call_index) {
 		SET_FLAG(call_held);
 	}
@@ -42,7 +48,9 @@ static void tbs_hold_call_cb(struct bt_conn *conn, uint8_t call_index)
 static bool tbs_originate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  const char *caller_id)
 {
-	printk("Placing call to remote with id %u to %s\n", call_index, caller_id);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Placing call to remote with id %u to %s", call_index, caller_id);
 	g_call_index = call_index;
 	SET_FLAG(call_placed);
 	return true;
@@ -56,20 +64,26 @@ static bool tbs_authorize_cb(struct bt_conn *conn)
 static void tbs_terminate_call_cb(struct bt_conn *conn, uint8_t call_index,
 				  uint8_t reason)
 {
-	printk("Terminating call with id %u reason: %u", call_index, reason);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Terminating call with id %u reason: %u", call_index, reason);
 	SET_FLAG(call_terminated);
 	UNSET_FLAG(call_placed);
 }
 
 static void tbs_accept_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
-	printk("Accepting call with index %u\n", call_index);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Accepting call with index %u", call_index);
 	SET_FLAG(call_accepted);
 }
 
 static void tbs_retrieve_call_cb(struct bt_conn *conn, uint8_t call_index)
 {
-	printk("Retrieve call with index %u\n", call_index);
+	ARG_UNUSED(conn);
+
+	LOG_INF("Retrieve call with index %u", call_index);
 	SET_FLAG(call_retrieved);
 }
 
@@ -77,8 +91,10 @@ static void tbs_join_calls_cb(struct bt_conn *conn,
 			      uint8_t call_index_count,
 			      const uint8_t *call_indexes)
 {
-	for (size_t i = 0; i < sizeof(call_indexes); i++) {
-		printk("Call index: %u joined\n", call_indexes[i]);
+	ARG_UNUSED(conn);
+
+	for (size_t i = 0U; i < call_index_count; i++) {
+		LOG_INF("Call index: %u joined", call_indexes[i]);
 	}
 	SET_FLAG(call_joined);
 }
@@ -95,16 +111,12 @@ static struct bt_tbs_cb tbs_cbs = {
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (err != 0) {
-		FAIL("Failed to connect to %s (%u)\n", addr, err);
+		FAIL("Failed to connect to %s (%u)\n", bt_conn_dst_str(conn), err);
 		return;
 	}
 
-	printk("Connected to %s\n", addr);
+	LOG_INF("Connected to %s", bt_conn_dst_str(conn));
 
 	default_conn = bt_conn_ref(conn);
 	SET_FLAG(is_connected);
@@ -119,14 +131,14 @@ static int test_provider_name(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 	err = bt_tbs_set_bearer_provider_name(bearer_index, "BabblesimTBS");
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer provider name: %d\n", err);
 		return err;
 	}
 
-	printk("Set bearer provider name test success\n");
+	LOG_INF("Set bearer provider name test success");
 
 	return err;
 }
@@ -135,14 +147,14 @@ static int test_set_signal_strength(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 	err = bt_tbs_set_signal_strength(bearer_index, 6);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer provider name: %d\n", err);
 		return err;
 	}
 
-	printk("Set signal strength test success\n");
+	LOG_INF("Set signal strength test success");
 
 	return err;
 }
@@ -151,14 +163,14 @@ static int test_set_bearer_technology(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
-	err = bt_tbs_set_bearer_technology(bearer_index, BT_TBS_TECHNOLOGY_GSM);
+	LOG_DBG("%s", __func__);
+	err = bt_tbs_set_bearer_technology(bearer_index, BT_BEARER_TECH_GSM);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set bearer technology: %d\n", err);
 		return err;
 	}
 
-	printk("Set bearer technology test success\n");
+	LOG_INF("Set bearer technology test success");
 
 	return err;
 }
@@ -167,14 +179,14 @@ static int test_set_status_flags(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 	err = bt_tbs_set_status_flags(bearer_index, 3);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not set status flags: %d\n", err);
 		return err;
 	}
 
-	printk("Set status flags test success\n");
+	LOG_INF("Set status flags test success");
 
 	return err;
 }
@@ -183,29 +195,29 @@ static int test_answer_terminate(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
-	printk("Placing call\n");
+	LOG_DBG("%s", __func__);
+	LOG_INF("Placing call");
 	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
 		return err;
 	}
 
-	printk("Answering call\n");
+	LOG_INF("Answering call");
 	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not remote answer: %d\n", err);
 		return err;
 	}
 
-	printk("Terminating call\n");
+	LOG_INF("Terminating call");
 	err = bt_tbs_terminate(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
 	}
 
-	printk("Test answer & terminate successful\n");
+	LOG_INF("Test answer & terminate successful");
 
 	return err;
 }
@@ -214,7 +226,7 @@ static int test_hold_retrieve(uint8_t bearer_index)
 {
 	int err;
 
-	printk("%s\n", __func__);
+	LOG_DBG("%s", __func__);
 	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate call: %d\n", err);
@@ -227,28 +239,28 @@ static int test_hold_retrieve(uint8_t bearer_index)
 		return err;
 	}
 
-	printk("Holding call\n");
+	LOG_INF("Holding call");
 	err = bt_tbs_hold(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
 	}
 
-	printk("Retrieving call\n");
+	LOG_INF("Retrieving call");
 	err = bt_tbs_retrieve(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not retrieve call: %d\n", err);
 		return err;
 	}
 
-	printk("Terminating call\n");
+	LOG_INF("Terminating call");
 	err = bt_tbs_terminate(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not terminate call: %d\n", err);
 		return err;
 	}
 
-	printk("Hold & retrieve test successful\n");
+	LOG_INF("Hold & retrieve test successful");
 
 	return err;
 }
@@ -258,42 +270,42 @@ static int test_join(uint8_t bearer_index)
 	int err;
 	uint8_t call_indexes[2];
 
-	printk("%s\n", __func__);
-	printk("Placing first call\n");
+	LOG_DBG("%s", __func__);
+	LOG_INF("Placing first call");
 	err = bt_tbs_originate(bearer_index, "tel:000000000001", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate first call: %d\n", err);
 		return err;
 	}
 
-	printk("Answering first call\n");
+	LOG_INF("Answering first call");
 	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not answer first call: %d\n", err);
 		return err;
 	}
-	printk("First call answered\n");
+	LOG_INF("First call answered");
 
 	call_indexes[0] = (uint8_t)g_call_index;
 
-	printk("Placing second call\n");
+	LOG_INF("Placing second call");
 	err = bt_tbs_originate(bearer_index, "tel:000000000002", &g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not originate second call: %d\n", err);
 		return err;
 	}
 
-	printk("Answering second call\n");
+	LOG_INF("Answering second call");
 	err = bt_tbs_remote_answer(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not answer second call: %d\n", err);
 		return err;
 	}
-	printk("Second call answered\n");
+	LOG_INF("Second call answered");
 
 	call_indexes[1] = (uint8_t)g_call_index;
 
-	printk("Joining calls\n");
+	LOG_INF("Joining calls");
 	err = bt_tbs_join(2, call_indexes);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Could not join calls: %d\n", err);
@@ -312,7 +324,7 @@ static int test_join(uint8_t bearer_index)
 		return err;
 	}
 
-	printk("Join calls test successful\n");
+	LOG_INF("Join calls test successful");
 
 	return err;
 }
@@ -336,8 +348,8 @@ static void init(void)
 		.uri_schemes_supported = "skype",
 		.gtbs = true,
 		.authorization_required = false,
-		.technology = BT_TBS_TECHNOLOGY_3G,
-		.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+		.technology = BT_BEARER_TECH_3G,
+		.optional_opcodes = BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 	};
 	int err;
 
@@ -348,7 +360,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	err = bt_conn_cb_register(&conn_callbacks);
 	if (err != 0) {
@@ -373,7 +385,7 @@ static void init(void)
 		return;
 	}
 
-	printk("Registered GTBS\n");
+	LOG_INF("Registered GTBS");
 
 	for (int i = 0; i < CONFIG_BT_TBS_BEARER_COUNT; i++) {
 		char prov_name[22]; /* Enough to store "Telephone Bearer #255" */
@@ -384,8 +396,9 @@ static void init(void)
 			.gtbs = false,
 			.authorization_required = false,
 			/* Set different technologies per bearer */
-			.technology = (i % BT_TBS_TECHNOLOGY_WCDMA) + 1,
-			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+			.technology = (i % BT_BEARER_TECH_WCDMA) + 1,
+			.optional_opcodes =
+				BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 		};
 
 		snprintf(prov_name, sizeof(prov_name), "Telephone Bearer #%d", i);
@@ -397,7 +410,7 @@ static void init(void)
 			return;
 		}
 
-		printk("Registered TBS[%d] with index %u\n", i, (uint8_t)err);
+		LOG_INF("Registered TBS[%d] with index %u", i, (uint8_t)err);
 	}
 }
 
@@ -413,7 +426,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 
 	WAIT_FOR_COND(is_connected);
 
@@ -424,13 +437,13 @@ static void test_main(void)
 		FAIL("Remote could not answer call: %d\n", err);
 		return;
 	}
-	printk("Remote answered %u\n", g_call_index);
+	LOG_INF("Remote answered %u", g_call_index);
 
 	err = bt_tbs_remote_hold(g_call_index);
 	if (err != BT_TBS_RESULT_CODE_SUCCESS) {
 		FAIL("Remote could not hold call: %d\n", err);
 	}
-	printk("Remote held %u\n", g_call_index);
+	LOG_INF("Remote held %u", g_call_index);
 
 	WAIT_FOR_COND(call_held);
 
@@ -439,7 +452,7 @@ static void test_main(void)
 		FAIL("Remote could not answer call: %d\n", err);
 		return;
 	}
-	printk("Remote retrieved %u\n", g_call_index);
+	LOG_INF("Remote retrieved %u", g_call_index);
 
 	PASS("TBS Passed\n");
 }

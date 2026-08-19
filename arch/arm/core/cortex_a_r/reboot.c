@@ -16,7 +16,7 @@
 #include <zephyr/linker/linker-defs.h>
 #include <zephyr/arch/common/init.h>
 
-#if defined(CONFIG_AARCH32_ARMV8_R)
+#if defined(CONFIG_AARCH32_ARMV8_R) || defined(CONFIG_AARCH32_ARMV8_A)
 
 #define VECTOR_ADDRESS ((uintptr_t)_vector_start)
 
@@ -44,7 +44,7 @@ TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) ||                                     \
-	!defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+	!defined(CONFIG_XIP) && (DT_CHOSEN_SRAM_ADDR != 0)
 	write_sctlr(read_sctlr() & ~HIVECS);
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	(void)arch_early_memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
@@ -53,7 +53,7 @@ void __weak relocate_vector_table(void)
 
 TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_NONNULL)
 
-#endif /* !CONFIG_AARCH32_ARMV8_R */
+#endif /* CONFIG_AARCH32_ARMV8_R || CONFIG_AARCH32_ARMV8_A */
 
 void z_arm_relocate_vector_table(void)
 {

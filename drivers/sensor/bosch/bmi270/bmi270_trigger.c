@@ -144,7 +144,7 @@ static int bmi270_init_int_pin(const struct gpio_dt_spec *pin,
 	}
 
 	if (!device_is_ready(pin->port)) {
-		LOG_DBG("%s not ready", pin->port->name);
+		LOG_ERR_DEVICE_NOT_READY(pin->port);
 		return -ENODEV;
 	}
 
@@ -227,6 +227,16 @@ static int bmi270_anymo_config(const struct device *dev, bool enable)
 	struct bmi270_data *data = dev->data;
 	uint16_t anymo_2;
 	int ret;
+
+	/* Any-motion registers only exist in feature sets that define them
+	 * (e.g. the base config). The default max_fifo feature set leaves these
+	 * pointers NULL; without this guard the writes below would dereference
+	 * NULL and silently program an unintended feature-page address.
+	 */
+	if (cfg->feature->anymo_1 == NULL || cfg->feature->anymo_2 == NULL) {
+		LOG_ERR("any-motion not supported by the configured feature set");
+		return -ENOTSUP;
+	}
 
 	if (enable) {
 		ret = bmi270_feature_reg_write(dev, cfg->feature->anymo_1,

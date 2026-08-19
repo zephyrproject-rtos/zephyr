@@ -538,11 +538,11 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
 #endif /* CONFIG_SMBUS_STATS */
 
 /**
- * @brief Like SMBUS_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * @brief Like SMBUS_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SMBUS_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SMBUS_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by SMBUS_DEVICE_DT_DEFINE().
  */
@@ -556,7 +556,7 @@ static inline void smbus_xfer_stats(const struct device *dev, uint8_t sent,
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
  * for the SMBus controller.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 __syscall int smbus_configure(const struct device *dev, uint32_t dev_config);
@@ -564,10 +564,7 @@ __syscall int smbus_configure(const struct device *dev, uint32_t dev_config);
 static inline int z_impl_smbus_configure(const struct device *dev,
 					 uint32_t dev_config)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
-
-	return api->configure(dev, dev_config);
+	return DEVICE_API_GET(smbus, dev)->configure(dev, dev_config);
 }
 
 /**
@@ -585,9 +582,9 @@ static inline int z_impl_smbus_configure(const struct device *dev,
  * @param dev_config Pointer to return bit-packed 32-bit value of
  * the SMBus controller configuration.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_get_config() is not implemented
+ * @retval -ENOSYS Function smbus_get_config() is not implemented
  * by the driver.
  */
 __syscall int smbus_get_config(const struct device *dev, uint32_t *dev_config);
@@ -595,8 +592,7 @@ __syscall int smbus_get_config(const struct device *dev, uint32_t *dev_config);
 static inline int z_impl_smbus_get_config(const struct device *dev,
 					  uint32_t *dev_config)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->get_config == NULL) {
 		return -ENOSYS;
@@ -611,16 +607,15 @@ static inline int z_impl_smbus_get_config(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_smbalert_set_cb() is not implemented
+ * @retval -ENOSYS Function smbus_smbalert_set_cb() is not implemented
  * by the driver.
  */
 static inline int smbus_smbalert_set_cb(const struct device *dev,
 					struct smbus_callback *cb)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_smbalert_set_cb == NULL) {
 		return -ENOSYS;
@@ -635,19 +630,15 @@ static inline int smbus_smbalert_set_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_smbalert_remove_cb() is not implemented
+ * @retval -ENOSYS Function smbus_smbalert_remove_cb() is not implemented
  * by the driver.
  */
-__syscall int smbus_smbalert_remove_cb(const struct device *dev,
-				       struct smbus_callback *cb);
-
-static inline int z_impl_smbus_smbalert_remove_cb(const struct device *dev,
-						  struct smbus_callback *cb)
+static inline int smbus_smbalert_remove_cb(const struct device *dev,
+					   struct smbus_callback *cb)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_smbalert_remove_cb == NULL) {
 		return -ENOSYS;
@@ -662,16 +653,15 @@ static inline int z_impl_smbus_smbalert_remove_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_host_notify_set_cb() is not implemented
+ * @retval -ENOSYS Function smbus_host_notify_set_cb() is not implemented
  * by the driver.
  */
 static inline int smbus_host_notify_set_cb(const struct device *dev,
 					   struct smbus_callback *cb)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_host_notify_set_cb == NULL) {
 		return -ENOSYS;
@@ -686,19 +676,15 @@ static inline int smbus_host_notify_set_cb(const struct device *dev,
  * @param dev Pointer to the device structure for the SMBus driver instance.
  * @param cb Pointer to a callback structure.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_host_notify_remove_cb() is not implemented
+ * @retval -ENOSYS Function smbus_host_notify_remove_cb() is not implemented
  * by the driver.
  */
-__syscall int smbus_host_notify_remove_cb(const struct device *dev,
-					  struct smbus_callback *cb);
-
-static inline int z_impl_smbus_host_notify_remove_cb(const struct device *dev,
-						     struct smbus_callback *cb)
+static inline int smbus_host_notify_remove_cb(const struct device *dev,
+					      struct smbus_callback *cb)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_host_notify_remove_cb == NULL) {
 		return -ENOSYS;
@@ -718,9 +704,9 @@ static inline int z_impl_smbus_host_notify_remove_cb(const struct device *dev,
  * @param addr Address of the SMBus peripheral device.
  * @param direction Direction Read or Write.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_quick() is not implemented
+ * @retval -ENOSYS Function smbus_quick() is not implemented
  * by the driver.
  */
 __syscall int smbus_quick(const struct device *dev, uint16_t addr,
@@ -729,8 +715,7 @@ __syscall int smbus_quick(const struct device *dev, uint16_t addr,
 static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
 				     enum smbus_direction direction)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_quick == NULL) {
 		return -ENOSYS;
@@ -753,9 +738,9 @@ static inline int z_impl_smbus_quick(const struct device *dev, uint16_t addr,
  * @param addr Address of the SMBus peripheral device.
  * @param byte Byte to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_write() is not implemented
+ * @retval -ENOSYS Function smbus_byte_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_write(const struct device *dev, uint16_t addr,
@@ -764,8 +749,7 @@ __syscall int smbus_byte_write(const struct device *dev, uint16_t addr,
 static inline int z_impl_smbus_byte_write(const struct device *dev,
 					  uint16_t addr, uint8_t byte)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_byte_write == NULL) {
 		return -ENOSYS;
@@ -784,9 +768,9 @@ static inline int z_impl_smbus_byte_write(const struct device *dev,
  * @param addr Address of the SMBus peripheral device.
  * @param byte Byte received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_read() is not implemented
+ * @retval -ENOSYS Function smbus_byte_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_read(const struct device *dev, uint16_t addr,
@@ -795,8 +779,7 @@ __syscall int smbus_byte_read(const struct device *dev, uint16_t addr,
 static inline int z_impl_smbus_byte_read(const struct device *dev,
 					 uint16_t addr, uint8_t *byte)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_byte_read == NULL) {
 		return -ENOSYS;
@@ -816,9 +799,9 @@ static inline int z_impl_smbus_byte_read(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param byte Byte to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_data_write() is not implemented
+ * @retval -ENOSYS Function smbus_byte_data_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_data_write(const struct device *dev, uint16_t addr,
@@ -828,8 +811,7 @@ static inline int z_impl_smbus_byte_data_write(const struct device *dev,
 					       uint16_t addr, uint8_t cmd,
 					       uint8_t byte)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_byte_data_write == NULL) {
 		return -ENOSYS;
@@ -849,9 +831,9 @@ static inline int z_impl_smbus_byte_data_write(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param byte Byte received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_byte_data_read() is not implemented
+ * @retval -ENOSYS Function smbus_byte_data_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_byte_data_read(const struct device *dev, uint16_t addr,
@@ -861,8 +843,7 @@ static inline int z_impl_smbus_byte_data_read(const struct device *dev,
 					      uint16_t addr, uint8_t cmd,
 					      uint8_t *byte)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_byte_data_read == NULL) {
 		return -ENOSYS;
@@ -882,9 +863,9 @@ static inline int z_impl_smbus_byte_data_read(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param word Word (16-bit) to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_word_data_write() is not implemented
+ * @retval -ENOSYS Function smbus_word_data_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_word_data_write(const struct device *dev, uint16_t addr,
@@ -894,8 +875,7 @@ static inline int z_impl_smbus_word_data_write(const struct device *dev,
 					       uint16_t addr, uint8_t cmd,
 					       uint16_t word)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_word_data_write == NULL) {
 		return -ENOSYS;
@@ -915,9 +895,9 @@ static inline int z_impl_smbus_word_data_write(const struct device *dev,
  * @param cmd Command byte which is sent to peripheral device first.
  * @param word Word (16-bit) received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_word_data_read() is not implemented
+ * @retval -ENOSYS Function smbus_word_data_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_word_data_read(const struct device *dev, uint16_t addr,
@@ -927,8 +907,7 @@ static inline int z_impl_smbus_word_data_read(const struct device *dev,
 					      uint16_t addr, uint8_t cmd,
 					      uint16_t *word)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_word_data_read == NULL) {
 		return -ENOSYS;
@@ -950,9 +929,9 @@ static inline int z_impl_smbus_word_data_read(const struct device *dev,
  * @param send_word Word (16-bit) to be sent to the peripheral device.
  * @param recv_word Word (16-bit) received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_pcall() is not implemented
+ * @retval -ENOSYS Function smbus_pcall() is not implemented
  * by the driver.
  */
 __syscall int smbus_pcall(const struct device *dev, uint16_t addr,
@@ -962,8 +941,7 @@ static inline int z_impl_smbus_pcall(const struct device *dev,
 				     uint16_t addr, uint8_t cmd,
 				     uint16_t send_word, uint16_t *recv_word)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_pcall == NULL) {
 		return -ENOSYS;
@@ -984,9 +962,9 @@ static inline int z_impl_smbus_pcall(const struct device *dev,
  * @param count Size of the data block buffer. Maximum 32 bytes.
  * @param buf Data block buffer to be sent to the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_write() is not implemented
+ * @retval -ENOSYS Function smbus_block_write() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_write(const struct device *dev, uint16_t addr,
@@ -996,8 +974,7 @@ static inline int z_impl_smbus_block_write(const struct device *dev,
 					   uint16_t addr, uint8_t cmd,
 					   uint8_t count, uint8_t *buf)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_block_write == NULL) {
 		return -ENOSYS;
@@ -1022,9 +999,9 @@ static inline int z_impl_smbus_block_write(const struct device *dev,
  * @param count Size of the data peripheral sent. Maximum 32 bytes.
  * @param buf Data block buffer received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_read() is not implemented
+ * @retval -ENOSYS Function smbus_block_read() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_read(const struct device *dev, uint16_t addr,
@@ -1034,8 +1011,7 @@ static inline int z_impl_smbus_block_read(const struct device *dev,
 					  uint16_t addr, uint8_t cmd,
 					  uint8_t *count, uint8_t *buf)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_block_read == NULL) {
 		return -ENOSYS;
@@ -1059,9 +1035,9 @@ static inline int z_impl_smbus_block_read(const struct device *dev,
  * @param rcv_count Size of the data peripheral sent.
  * @param rcv_buf Data block buffer received from the peripheral device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If function smbus_block_pcall() is not implemented
+ * @retval -ENOSYS Function smbus_block_pcall() is not implemented
  * by the driver.
  */
 __syscall int smbus_block_pcall(const struct device *dev,
@@ -1074,8 +1050,7 @@ static inline int z_impl_smbus_block_pcall(const struct device *dev,
 					   uint8_t snd_count, uint8_t *snd_buf,
 					   uint8_t *rcv_count, uint8_t *rcv_buf)
 {
-	const struct smbus_driver_api *api =
-		(const struct smbus_driver_api *)dev->api;
+	const struct smbus_driver_api *api = DEVICE_API_GET(smbus, dev);
 
 	if (api->smbus_block_pcall == NULL) {
 		return -ENOSYS;

@@ -14,8 +14,8 @@
  * should be include instead <sys/util_internal.h>
  */
 
-#ifndef ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_
-#define ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_
+#ifndef ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_
+#define ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -745,7 +745,7 @@ extern "C" {
  * @return The results of expanding the macro on each argument, all pasted
  *         together
  */
-#define MACRO_MAP_CAT(...) MACRO_MAP_CAT_(__VA_ARGS__)
+#define MACRO_MAP_CAT(...) Z_MACRO_MAP_CAT_(__VA_ARGS__)
 
 /**
  * @brief Mapping macro that pastes a fixed number of results together
@@ -760,7 +760,7 @@ extern "C" {
  * @return The results of expanding the macro on each argument, all pasted
  *         together
  */
-#define MACRO_MAP_CAT_N(N, ...) MACRO_MAP_CAT_N_(N, __VA_ARGS__)
+#define MACRO_MAP_CAT_N(N, ...) Z_MACRO_MAP_CAT_N_(N, __VA_ARGS__)
 
 /**
  * @}
@@ -770,4 +770,4 @@ extern "C" {
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_SYS_UTIL_MACROS_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_UTIL_MACRO_H_ */

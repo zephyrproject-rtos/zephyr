@@ -93,28 +93,53 @@ static inline uint64_t arch_k_cycle_get_64(void);
 
 /**
  * @def ARCH_THREAD_STACK_RESERVED
+ * @brief Reserved space at the beginning of every thread stack object
+ *
+ * Number of bytes reserved at the lowest addresses of a thread stack
+ * object for architecture or platform data, such as an MPU stack guard
+ * region. This space is not usable as thread stack buffer and is not
+ * included in the stack size requested by the user.
+ *
+ * Optional definition, defaults to 0.
  *
  * @see K_THREAD_STACK_RESERVED
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_RESERVED
+#endif
 
 /**
  * @def ARCH_STACK_PTR_ALIGN
+ * @brief Required alignment of the CPU's stack pointer
  *
  * Required alignment of the CPU's stack pointer register value, dictated by
  * hardware constraints and the ABI calling convention.
  *
  * @see Z_STACK_PTR_ALIGN
  */
+#ifdef __DOXYGEN__
+#define ARCH_STACK_PTR_ALIGN
+#endif
 
 /**
  * @def ARCH_THREAD_STACK_OBJ_ALIGN(size)
+ * @brief Required alignment of the lowest address of a stack object
  *
- * Required alignment of the lowest address of a stack object.
+ * Required alignment of the lowest address of a stack object, taking the
+ * requested stack buffer size into account. For example, memory protection
+ * hardware may require a stack object to be aligned to its own size.
  *
- * Optional definition.
+ * Optional definition. If undefined, stack objects are aligned to
+ * ARCH_STACK_PTR_ALIGN.
+ *
+ * @param size Requested size of the stack buffer
+ * @return Required alignment of the stack object
  *
  * @see Z_THREAD_STACK_OBJ_ALIGN
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_OBJ_ALIGN(size)
+#endif
 
 /**
  * @def ARCH_THREAD_STACK_SIZE_ADJUST(size)
@@ -136,8 +161,14 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *   with an MPU that requires such alignment
  * - Rounded up to ARCH_STACK_PTR_ALIGN
  *
+ * @param size Requested size of the stack buffer
+ * @return Adjusted size of the stack object
+ *
  * @see Z_THREAD_STACK_SIZE_ADJUST
  */
+#ifdef __DOXYGEN__
+#define ARCH_THREAD_STACK_SIZE_ADJUST(size)
+#endif
 
 /**
  * @def ARCH_KERNEL_STACK_RESERVED
@@ -152,11 +183,20 @@ static inline uint64_t arch_k_cycle_get_64(void);
  *
  * @see K_KERNEL_STACK_RESERVED
  */
+#ifdef __DOXYGEN__
+#define ARCH_KERNEL_STACK_RESERVED
+#endif
 
 /**
  * @def ARCH_KERNEL_STACK_OBJ_ALIGN
  * @brief Required alignment of the lowest address of a kernel-only stack.
+ *
+ * @param size Requested size of the stack buffer
+ * @return Alignment of the kernel-only stack object
  */
+#ifdef __DOXYGEN__
+#define ARCH_KERNEL_STACK_OBJ_ALIGN(size)
+#endif
 
 /** @} */
 
@@ -204,11 +244,40 @@ void arch_cpu_idle(void);
  */
 void arch_cpu_atomic_idle(unsigned int key);
 
-/** @} */
-
+/**
+ * @brief Prepare interrupt state before entering a system PM state
+ *
+ * This hook is called with interrupts locked by SoC PM implementations that keep
+ * IRQ dispatch blocked across system PM resume. It should be called immediately
+ * before the low-power instruction. Architectures may use it to allow a pending
+ * wake event to bring the CPU out of the low-power instruction without allowing
+ * regular interrupt handlers to run before PM resume bookkeeping.
+ *
+ * Despite the name, this is not a pm_state_set() boundary hook. SoC code should
+ * call it immediately around the low-power instruction, typically WFI, to
+ * minimize the window of restrictive interrupt masking.
+ *
+ * @return Architecture-specific key to pass to arch_pm_state_set_finish().
+ */
+unsigned int arch_pm_state_set_prepare(void);
 
 /**
- * @addtogroup arch-smp
+ * @brief Restore interrupt state after leaving a system PM state
+ *
+ * This hook restores the interrupt state prepared by arch_pm_state_set_prepare()
+ * back to the locked state expected by the PM core. The original idle-thread
+ * interrupt key is still owned by the idle path and restored after PM resume
+ * bookkeeping is complete.
+ *
+ * @param key Architecture-specific key returned by arch_pm_state_set_prepare().
+ */
+void arch_pm_state_set_finish(unsigned int key);
+
+/** @} */
+
+/**
+ * @defgroup arch-smp Architecture-specific SMP APIs
+ * @ingroup arch-interface
  * @{
  */
 
@@ -279,6 +348,17 @@ static inline void arch_irq_unlock(unsigned int key);
  * call that produced the key argument.
  */
 static inline bool arch_irq_unlocked(unsigned int key);
+
+/**
+ * Probe the current CPU overall interrupt controller lock state without
+ * modifying it.
+ *
+ * Unlike arch_irq_unlocked() which inspects a saved key, this reports the
+ * instantaneous state of the calling CPU's overall interrupt enable.
+ *
+ * @return true if interrupts are currently enabled on the calling CPU.
+ */
+static inline bool arch_cpu_irqs_are_enabled(void);
 
 #ifdef CONFIG_ZERO_LATENCY_IRQS
 
@@ -367,55 +447,143 @@ int arch_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
 
 /**
  * @def ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
+ * @brief Arch-specific hook for statically connecting an interrupt
+ *
+ * Statically populate the interrupt tables at build time such that
+ * @p isr is invoked with @p arg as its argument when interrupt @p irq
+ * fires, with interrupt priority @p pri and architecture-specific
+ * configuration @p flags. All arguments must be usable in a constant
+ * expression context.
+ *
+ * @param irq Interrupt line number
+ * @param pri Interrupt priority
+ * @param isr Interrupt service routine
+ * @param arg Argument passed to the ISR
+ * @param flags Arch-specific IRQ configuration flags
  *
  * @see IRQ_CONNECT()
  */
+#ifdef __DOXYGEN__
+#define ARCH_IRQ_CONNECT(irq, pri, isr, arg, flags)
+#endif
 
-#ifdef CONFIG_PCIE
 /**
  * @def ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+ * @brief Arch-specific hook for connecting a PCIe endpoint interrupt
+ *
+ * As for ARCH_IRQ_CONNECT(), but for an interrupt belonging to the PCIe
+ * endpoint identified by @p bdf, so the architecture may resolve the
+ * final interrupt vector from the endpoint at build or run time.
+ *
+ * @param bdf PCIe endpoint bus/device/function identifier
+ * @param irq Interrupt line number
+ * @param pri Interrupt priority
+ * @param isr Interrupt service routine
+ * @param arg Argument passed to the ISR
+ * @param flags Arch-specific IRQ configuration flags
  *
  * @see PCIE_IRQ_CONNECT()
  */
-#endif /* CONFIG_PCIE */
+#ifdef __DOXYGEN__
+#define ARCH_PCIE_IRQ_CONNECT(bdf, irq, pri, isr, arg, flags)
+#endif
 
 /**
  * @def ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+ * @brief Arch-specific hook for statically connecting a direct interrupt
+ *
+ * As for ARCH_IRQ_CONNECT(), but for an ISR declared with
+ * ARCH_ISR_DIRECT_DECLARE() that is installed to bypass the common
+ * software ISR dispatch for minimum latency. Direct ISRs take no
+ * argument.
+ *
+ * @param irq_p Interrupt line number
+ * @param priority_p Interrupt priority
+ * @param isr_p Direct interrupt service routine
+ * @param flags_p Arch-specific IRQ configuration flags
  *
  * @see IRQ_DIRECT_CONNECT()
  */
+#ifdef __DOXYGEN__
+#define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p)
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_PM()
+ * @brief Arch-specific hook for power management in a direct ISR
+ *
+ * Perform the power management bookkeeping that the common interrupt
+ * dispatch path would otherwise do (such as exiting a low-power idle
+ * state). Direct ISRs that may interrupt the idle loop invoke this
+ * through ISR_DIRECT_PM().
  *
  * @see ISR_DIRECT_PM()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_PM()
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_HEADER()
+ * @brief Arch-specific bookkeeping on direct interrupt entry
+ *
+ * Perform the interrupt-entry bookkeeping that the common interrupt
+ * dispatch path would otherwise do, such as tracking interrupt nesting
+ * and emitting tracing events. Invoked at the top of every direct ISR
+ * through ISR_DIRECT_HEADER().
  *
  * @see ISR_DIRECT_HEADER()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_HEADER()
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_FOOTER(swap)
+ * @brief Arch-specific bookkeeping on direct interrupt exit
+ *
+ * Counterpart to ARCH_ISR_DIRECT_HEADER(): undo the interrupt-entry
+ * bookkeeping and, if @p swap is non-zero, check whether a context
+ * switch is needed on interrupt exit and arrange for it. Invoked at
+ * the end of every direct ISR through ISR_DIRECT_FOOTER().
+ *
+ * @param swap Non-zero if a context switch may be performed on exit
  *
  * @see ISR_DIRECT_FOOTER()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_FOOTER(swap)
+#endif
 
 /**
  * @def ARCH_ISR_DIRECT_DECLARE(name)
+ * @brief Arch-specific hook for declaring a direct interrupt service routine
+ *
+ * Declare a function @p name suitable for installation with
+ * ARCH_IRQ_DIRECT_CONNECT(), wrapping the function body that follows
+ * such that ARCH_ISR_DIRECT_HEADER() and ARCH_ISR_DIRECT_FOOTER() run
+ * around it and any architecture-specific ISR prologue/epilogue (such
+ * as interrupt attributes) is applied. The wrapped body returns
+ * non-zero if a context switch may be performed on interrupt exit.
+ *
+ * @param name Name of the direct interrupt service routine to declare
  *
  * @see ISR_DIRECT_DECLARE()
  */
+#ifdef __DOXYGEN__
+#define ARCH_ISR_DIRECT_DECLARE(name)
+#endif
 
-#ifndef CONFIG_PCIE_CONTROLLER
 /**
  * @brief Arch-specific hook for allocating IRQs
  *
  * Note: disable/enable IRQ relevantly inside the implementation of such
  * function to avoid concurrency issues. Also, an allocated IRQ is assumed
  * to be used thus a following @see arch_irq_is_used() should return true.
+ *
+ * This API is only used when no PCIe controller driver is enabled
+ * (@kconfig{CONFIG_PCIE_CONTROLLER}); with a controller driver, IRQ
+ * allocation is handled by the controller instead.
  *
  * @return The newly allocated IRQ or UINT_MAX on error.
  */
@@ -440,8 +608,6 @@ void arch_irq_set_used(unsigned int irq);
  */
 bool arch_irq_is_used(unsigned int irq);
 
-#endif /* CONFIG_PCIE_CONTROLLER */
-
 /**
  * @def ARCH_EXCEPT(reason_p)
  *
@@ -456,6 +622,9 @@ bool arch_irq_is_used(unsigned int irq);
  *
  * @param reason_p K_ERR_ scoped reason code for the fatal error.
  */
+#ifdef __DOXYGEN__
+#define ARCH_EXCEPT(reason_p)
+#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 /**
@@ -486,10 +655,8 @@ void arch_irq_offload_init(void);
 
 /** @} */
 
-
 /**
- * @defgroup arch-smp Architecture-specific SMP APIs
- * @ingroup arch-interface
+ * @addtogroup arch-smp
  * @{
  */
 #ifdef CONFIG_SMP
@@ -550,6 +717,38 @@ static inline unsigned int arch_num_cpus(void);
 
 /** @} */
 
+
+/**
+ * @addtogroup arch-mmu
+ * @{
+ */
+
+/**
+ * Get the physical address mapped at a virtual address.
+ *
+ * The query is answered from the caller's currently active page tables.
+ * Only mappings that are active in the caller's context are reliably
+ * reported: a virtual address whose mapping is not part of that context
+ * (for example memory belonging to a memory domain that is not currently
+ * active, or per-context data pages such as the scratch page) may be
+ * reported as unmapped or resolve differently. Calling this function on
+ * such addresses is undefined behavior.
+ *
+ * From an implementation standpoint, only the currently installed page
+ * tables need to be consulted, without iterating over other page tables
+ * in the system: anything legitimately queried through this API maps
+ * identically in all of them.
+ *
+ * @param virt Page-aligned virtual address
+ * @param[out] phys Mapped physical address (can be NULL if only checking
+ *                  if virtual address is mapped)
+ *
+ * @retval 0 if mapping is found and valid
+ * @retval -EFAULT if virtual address is not mapped
+ */
+int arch_page_phys_get(void *virt, uintptr_t *phys);
+
+/** @} */
 
 /**
  * @defgroup arch-userspace Architecture-specific userspace APIs
@@ -1323,10 +1522,7 @@ typedef bool (*stack_trace_callback_fn)(void *cookie, unsigned long addr);
 void arch_stack_walk(stack_trace_callback_fn callback_fn, void *cookie,
 		     const struct k_thread *thread, const struct arch_esf *esf);
 
-/**
- * arch-stackwalk
- * @}
- */
+/** @} */
 
 #ifdef __cplusplus
 }

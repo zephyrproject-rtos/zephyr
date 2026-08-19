@@ -227,11 +227,11 @@
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #atmel,assigned-clock-cells = < 2 >;
+ *             #atmel,assigned-clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             atmel,assigned-clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             atmel,assigned-clocks = <&clk1 10 20>, <&clk1 30 40>;
  *     };
  *
  * Bindings fragment for the vnd,clock compatible:
@@ -261,11 +261,11 @@
  *
  *     clk1: clock-controller@... {
  *             compatible = "vnd,clock";
- *             #atmel,assigned-clock-cells = < 2 >;
+ *             #atmel,assigned-clock-cells = <2>;
  *     };
  *
  *     n: node {
- *             atmel,assigned-clocks = < &clk1 10 20 >, < &clk1 30 40 >;
+ *             atmel,assigned-clocks = <&clk1 10 20>, <&clk1 30 40>;
  *             clock-names = "alpha", "beta";
  *     };
  *
@@ -312,7 +312,7 @@
 	DT_ASSIGNED_CLOCKS_HAS_IDX(DT_DRV_INST(inst), idx)
 
 /**
- * @brief Equivalent to DT_CLOCK_HAS_NAME(DT_DRV_INST(inst), name)
+ * @brief Equivalent to ATMEL_SAM0_DT_ASSIGNED_CLOCKS_HAS_NAME(DT_DRV_INST(inst), name)
  * @param inst DT_DRV_COMPAT instance number; may or may not have any
  *             atmel,clock-names property.
  * @param name lowercase-and-underscores clock-names cell value name to check

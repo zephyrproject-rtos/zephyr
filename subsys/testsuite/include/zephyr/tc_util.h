@@ -26,7 +26,7 @@
 #endif
 
 #if defined CONFIG_ARCH_POSIX
-#include "posix_board_if.h"
+#include <posix_board_if.h>
 #endif
 
 /**

@@ -1,20 +1,20 @@
 # SPDX-License-Identifier: Apache-2.0
 if(CONFIG_BUILD_WITH_TFM)
-  set(FLASH_BASE_ADDRESS_S 0x0C000000)
-
   # Flash merged TF-M + Zephyr binary
   set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 
-  if(CONFIG_HAS_FLASH_LOAD_OFFSET)
-    MATH(EXPR TFM_HEX_BASE_ADDRESS_NS "${FLASH_BASE_ADDRESS_S}+${CONFIG_FLASH_LOAD_OFFSET}")
-  else()
-    set(TFM_HEX_BASE_ADDRESS_NS ${TFM_FLASH_BASE_ADDRESS_S})
-  endif()
+  # Flash is set all secure (<build>/tfm/api_ns/regression.sh) before flash programming
+  # hence locate non-secure image from the secure flash base address in HEX file.
+  dt_chosen(chosen_part_path PROPERTY "zephyr,code-partition")
+  dt_reg_addr(chosen_part_addr PATH "${chosen_part_path}")
+  math(EXPR TFM_HEX_BASE_ADDRESS_NS
+    "${chosen_part_addr} - ${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_STM32_INT_FLASH_SECURE_BASE_ADDRESS}"
+  )
 endif()
 
 # keep first
 board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-if(CONFIG_STM32_MEMMAP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
+if(CONFIG_FLASH_STM32_NOR_MEMMAP OR (CONFIG_XIP AND CONFIG_BOOTLOADER_MCUBOOT))
   board_runner_args(stm32cubeprogrammer "--extload=MX25LM51245G_STM32H573I-DK-RevB-SFIx.stldr")
 endif()
 

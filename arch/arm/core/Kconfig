@@ -306,6 +306,9 @@ config ARM_STORE_EXC_RETURN
 	  This is needed when switching between threads that differ in either
 	  FPU usage or security domain.
 
+# Both FP_HARDABI and FP_SOFTABI require FPU sharing support as the compiler
+# may generate code that uses the FPU even if the application does not
+# explicitly use floating point operations.
 choice
 	prompt "Floating point ABI"
 	default FP_HARDABI
@@ -313,6 +316,7 @@ choice
 
 config FP_HARDABI
 	bool "Floating point Hard ABI"
+	select FPU_SHARING
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated and uses FPU-specific calling
@@ -320,6 +324,7 @@ config FP_HARDABI
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
+	select FPU_SHARING
 	help
 	  This option selects the Floating point ABI in which hardware floating
 	  point instructions are generated but soft-float calling conventions.

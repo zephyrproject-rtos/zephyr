@@ -1,7 +1,7 @@
 /*  Bluetooth TBS - Telephone Bearer Service - Client
  *
  * Copyright (c) 2020 Bose Corporation
- * Copyright (c) 2021-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2021-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/assigned_numbers.h>
 #include <zephyr/bluetooth/att.h>
 #include <zephyr/bluetooth/audio/tbs.h>
 #include <zephyr/bluetooth/bluetooth.h>
@@ -92,7 +93,7 @@ static struct bt_tbs_instance *tbs_instance_find(struct bt_tbs_server_inst *serv
 		}
 #endif /* CONFIG_BT_TBS_CLIENT_GTBS */
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
-	for (size_t i = 0; i < server->inst_cnt; i++) {
+	for (size_t i = 0U; i < server->inst_cnt; i++) {
 		if (func(&server->tbs_insts[i], user_data)) {
 			return &server->tbs_insts[i];
 		}
@@ -269,7 +270,7 @@ static void bearer_list_current_calls(struct bt_conn *conn, const struct bt_tbs_
 {
 	struct bt_tbs_client_call calls[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 	char remote_uris[CONFIG_BT_TBS_CLIENT_MAX_CALLS][CONFIG_BT_TBS_MAX_URI_LENGTH + 1];
-	uint8_t cnt = 0;
+	uint8_t cnt = 0U;
 	int err;
 
 	while (buf->len) {
@@ -366,7 +367,7 @@ __maybe_unused static const char *parse_string_value(const void *data, uint16_t 
 	static char string_val[MAX_STR_LEN + 1];
 	const size_t len = MIN(length, max_len);
 
-	if (len != 0) {
+	if (len != 0U) {
 		(void)memcpy(string_val, data, len);
 	}
 
@@ -403,7 +404,7 @@ static void provider_name_notify_handler(struct bt_conn *conn,
 
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
 static void technology_changed(struct bt_conn *conn, int err, uint8_t inst_index,
-			       uint8_t technology)
+			       enum bt_bearer_tech technology)
 {
 	struct bt_tbs_client_cb *listener, *next;
 
@@ -424,9 +425,11 @@ static void technology_notify_handler(struct bt_conn *conn,
 
 	if (length == sizeof(technology)) {
 		(void)memcpy(&technology, data, length);
-		LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+		LOG_DBG("%s (0x%02x)", bt_bearer_tech_str((enum bt_bearer_tech)technology),
+			technology);
 
-		technology_changed(conn, 0, tbs_index(conn, tbs_inst), technology);
+		technology_changed(conn, 0, tbs_index(conn, tbs_inst),
+				   (enum bt_bearer_tech)technology);
 	}
 }
 #endif /* defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY) */
@@ -552,7 +555,7 @@ static void call_state_notify_handler(struct bt_conn *conn,
 				      const void *data, uint16_t length)
 {
 	struct bt_tbs_client_call_state call_states[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
-	uint8_t cnt = 0;
+	uint8_t cnt = 0U;
 	struct net_buf_simple buf;
 
 	LOG_DBG("");
@@ -1025,7 +1028,7 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint8_t technology = 0;
+	uint8_t technology = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1035,7 +1038,8 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 		LOG_HEXDUMP_DBG(data, length, "Data read");
 		if (length == sizeof(technology)) {
 			(void)memcpy(&technology, data, length);
-			LOG_DBG("%s (0x%02x)", bt_tbs_technology_str(technology), technology);
+			LOG_DBG("%s (0x%02x)", bt_bearer_tech_str((enum bt_bearer_tech)technology),
+				technology);
 		} else {
 			LOG_DBG("Invalid length");
 			cb_err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -1044,7 +1048,11 @@ static uint8_t read_technology_cb(struct bt_conn *conn, uint8_t err,
 
 	tbs_client_gatt_read_complete(inst);
 
-	technology_changed(conn, cb_err, inst_index, technology);
+	/* TODO: We should probably verify that the read value is valid before calling
+	 * technology_changed with a non-0 error
+	 */
+
+	technology_changed(conn, cb_err, inst_index, (enum bt_bearer_tech)technology);
 
 	return BT_GATT_ITER_STOP;
 }
@@ -1101,7 +1109,7 @@ static uint8_t read_signal_strength_cb(struct bt_conn *conn, uint8_t err,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint8_t signal_strength = 0;
+	uint8_t signal_strength = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1148,7 +1156,7 @@ static uint8_t read_signal_interval_cb(struct bt_conn *conn, uint8_t err,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint8_t signal_interval = 0;
+	uint8_t signal_interval = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1196,7 +1204,7 @@ static uint8_t read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 
 		tbs_client_gatt_read_complete(inst);
 
-		current_calls_changed(conn, tbs_err, inst_index, 0, NULL);
+		current_calls_changed(conn, tbs_err, inst_index, 0U, NULL);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1216,8 +1224,8 @@ static uint8_t read_current_calls_cb(struct bt_conn *conn, uint8_t err,
 
 	tbs_client_gatt_read_complete(inst);
 
-	if (inst->net_buf.len == 0) {
-		current_calls_changed(conn, 0, inst_index, 0, NULL);
+	if (inst->net_buf.len == 0U) {
+		current_calls_changed(conn, 0, inst_index, 0U, NULL);
 
 		return BT_GATT_ITER_STOP;
 	}
@@ -1249,7 +1257,7 @@ static uint8_t read_ccid_cb(struct bt_conn *conn, uint8_t err,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint8_t ccid = 0;
+	uint8_t ccid = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1284,7 +1292,7 @@ static uint8_t read_status_flags_cb(struct bt_conn *conn, uint8_t err,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint16_t status_flags = 0;
+	uint16_t status_flags = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1346,7 +1354,7 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 						    struct bt_tbs_instance,
 						    read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
-	uint8_t cnt = 0;
+	uint8_t cnt = 0U;
 	struct bt_tbs_client_call_state call_states[CONFIG_BT_TBS_CLIENT_MAX_CALLS];
 	int tbs_err = err;
 
@@ -1377,7 +1385,7 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
-	if (inst->net_buf.len == 0) {
+	if (inst->net_buf.len == 0U) {
 		tbs_client_gatt_read_complete(inst);
 
 		call_state_changed(conn, 0, inst_index, 0, NULL);
@@ -1386,7 +1394,7 @@ static uint8_t read_call_state_cb(struct bt_conn *conn, uint8_t err,
 	}
 
 	/* Finished reading, start parsing */
-	while (inst->net_buf.len != 0) {
+	while (inst->net_buf.len != 0U) {
 		struct bt_tbs_client_call_state *call_state;
 
 		if (cnt == CONFIG_BT_TBS_CLIENT_MAX_CALLS) {
@@ -1432,7 +1440,7 @@ static uint8_t read_optional_opcodes_cb(struct bt_conn *conn, uint8_t err,
 	struct bt_tbs_instance *inst = CONTAINER_OF(params, struct bt_tbs_instance, read_params);
 	uint8_t inst_index = tbs_index(conn, inst);
 	uint8_t cb_err = err;
-	uint16_t optional_opcodes = 0;
+	uint16_t optional_opcodes = 0U;
 
 	LOG_DBG("Index %u", inst_index);
 
@@ -1699,7 +1707,7 @@ static uint8_t discover_func(struct bt_conn *conn,
 		}
 
 		if (sub_params != NULL) {
-			sub_params->value = 0;
+			sub_params->value = 0U;
 			if (chrc->properties & BT_GATT_CHRC_NOTIFY) {
 				sub_params->value = BT_GATT_CCC_NOTIFY;
 			} else if (chrc->properties & BT_GATT_CHRC_INDICATE) {
@@ -1743,7 +1751,7 @@ static struct bt_tbs_instance *get_next_instance(struct bt_conn *conn,
 	if (srv_inst->current_inst != NULL) {
 		inst_index = tbs_index(conn, srv_inst->current_inst);
 		if (inst_index == BT_TBS_GTBS_INDEX) {
-			inst_index = 0;
+			inst_index = 0U;
 		} else {
 			inst_index++;
 		}
@@ -1815,6 +1823,8 @@ static uint8_t primary_discover_tbs_cb(struct bt_conn *conn, const struct bt_gat
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
 
+	ARG_UNUSED(params);
+
 	LOG_DBG("conn %p attr %p", (void *)conn, attr);
 
 	if (attr != NULL) {
@@ -1824,7 +1834,8 @@ static uint8_t primary_discover_tbs_cb(struct bt_conn *conn, const struct bt_gat
 
 		prim_service = (struct bt_gatt_service_val *)attr->user_data;
 
-		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt++];
+		srv_inst->current_inst = &srv_inst->tbs_insts[srv_inst->inst_cnt];
+		srv_inst->inst_cnt++;
 		srv_inst->current_inst->start_handle = attr->handle + 1;
 		srv_inst->current_inst->end_handle = prim_service->end_handle;
 
@@ -1864,6 +1875,8 @@ static uint8_t primary_discover_gtbs_cb(struct bt_conn *conn, const struct bt_ga
 {
 	const uint8_t conn_index = bt_conn_index(conn);
 	struct bt_tbs_server_inst *srv_inst = &srv_insts[conn_index];
+
+	ARG_UNUSED(params);
 
 	LOG_DBG("conn %p attr %p", (void *)conn, attr);
 
@@ -2470,7 +2483,7 @@ int bt_tbs_client_discover(struct bt_conn *conn)
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
 	(void)memset(srv_inst->tbs_insts, 0, sizeof(srv_inst->tbs_insts)); /* reset data */
-	srv_inst->inst_cnt = 0;
+	srv_inst->inst_cnt = 0U;
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 #if defined(CONFIG_BT_TBS_CLIENT_GTBS)
 	(void)memset(&srv_inst->gtbs_inst, 0, sizeof(srv_inst->gtbs_inst)); /* reset data */

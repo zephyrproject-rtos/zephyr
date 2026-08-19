@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief hawkBit legacy header file
+ * @ingroup hawkbit
  */
 
 #ifndef ZEPHYR_INCLUDE_MGMT_HAWKBIT_H_

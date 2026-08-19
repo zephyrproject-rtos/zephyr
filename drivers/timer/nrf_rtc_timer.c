@@ -12,7 +12,7 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nrf_rtc_timer.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/barrier.h>
 #include <haly/nrfy_rtc.h>
 #include <zephyr/irq.h>
@@ -63,7 +63,6 @@ extern void rtc_pretick_rtc1_isr_hook(void);
 
 static volatile uint32_t overflow_cnt;
 static volatile uint64_t anchor;
-static uint64_t last_count;
 static bool sys_busy;
 
 struct z_nrf_rtc_timer_chan_data {
@@ -495,24 +494,46 @@ static inline void anchor_update(uint32_t cc_value)
 
 static void sys_clock_timeout_handler(int32_t chan,
 				      uint64_t expire_time,
+				      void *user_data);
+
+/*
+ * A free-running counter, software-extended to 64 bits by
+ * z_nrf_rtc_timer_read(), plus an absolute compare: a COMPARE_ORDERED backend.
+ * compare_set() raises the interrupt straight away for a target the counter has
+ * already passed, so the core's single write is enough. The arm range is the
+ * driver's own MAX_CYCLES, half the 24-bit counter span, which is set by the
+ * compare register rather than by the extended count the core reads.
+ */
+#define TIMER_CORE_BACKEND_COMPARE_ORDERED
+#define TIMER_CORE_COUNTER_WIDTH 64
+#define TIMER_CORE_ALARM_MAX_CYCLES MAX_CYCLES
+
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return z_nrf_rtc_timer_read();
+}
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	/* A deadline is pending again, so the overflow-trigger helper must
+	 * keep out of the way (see z_nrf_rtc_timer_trigger_overflow()).
+	 */
+	sys_busy = true;
+	compare_set(SYS_CLOCK_CH, cycles, sys_clock_timeout_handler, NULL, false);
+}
+
+#include "system_timer_generic.h"
+
+static void sys_clock_timeout_handler(int32_t chan,
+				      uint64_t expire_time,
 				      void *user_data)
 {
-	uint32_t cc_value = absolute_time_to_cc(expire_time);
-	uint32_t dticks = (uint32_t)(expire_time - last_count) / CYC_PER_TICK;
+	ARG_UNUSED(chan);
+	ARG_UNUSED(user_data);
 
-	last_count += dticks * CYC_PER_TICK;
+	anchor_update(absolute_time_to_cc(expire_time));
 
-	anchor_update(cc_value);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* protection is not needed because we are in the RTC interrupt
-		 * so it won't get preempted by the interrupt.
-		 */
-		compare_set(chan, last_count + CYC_PER_TICK,
-					  sys_clock_timeout_handler, NULL, false);
-	}
-
-	sys_clock_announce(dticks);
+	timer_core_announce();
 }
 
 static bool channel_processing_check_and_clear(int32_t chan)
@@ -664,70 +685,19 @@ bail:
 	return err;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_no_timeout(void)
 {
-	ARG_UNUSED(idle);
-	uint32_t cyc;
-
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		return;
 	}
 
-	if (ticks == K_TICKS_FOREVER) {
-		cyc = MAX_TICKS * CYC_PER_TICK;
-		sys_busy = false;
-	} else {
-		/* Value of ticks can be zero or negative, what means "announce
-		 * the next tick" (the same as ticks equal to 1).
-		 */
-		cyc = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
-		cyc *= CYC_PER_TICK;
-		sys_busy = true;
-	}
-
-	uint32_t unannounced = z_nrf_rtc_timer_read() - last_count;
-
-	/* If we haven't announced for more than half the 24-bit wrap
-	 * duration, then force an announce to avoid loss of a wrap
-	 * event.  This can happen if new timeouts keep being set
-	 * before the existing one triggers the interrupt.
+	/* No timeout pending: push the compare as far out as the counter
+	 * allows and drop the busy flag consumed by the overflow-trigger
+	 * path.
 	 */
-	if (unannounced >= COUNTER_HALF_SPAN) {
-		cyc = 0;
-	}
-
-	/* Get the cycles from last_count to the tick boundary after
-	 * the requested ticks have passed starting now.
-	 */
-	cyc += unannounced;
-	cyc = DIV_ROUND_UP(cyc, CYC_PER_TICK) * CYC_PER_TICK;
-
-	/* Due to elapsed time the calculation above might produce a
-	 * duration that laps the counter.  Don't let it.
-	 * This limitation also guarantees that the anchor will be properly
-	 * updated before every overflow (see anchor_update()).
-	 */
-	if (cyc > MAX_CYCLES) {
-		cyc = MAX_CYCLES;
-	}
-
-	uint64_t target_time = cyc + last_count;
-
-	compare_set(SYS_CLOCK_CH, target_time, sys_clock_timeout_handler, NULL, false);
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	return (z_nrf_rtc_timer_read() - last_count) / CYC_PER_TICK;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)z_nrf_rtc_timer_read();
+	sys_busy = false;
+	compare_set(SYS_CLOCK_CH, z_nrf_rtc_timer_read() + MAX_CYCLES,
+		    sys_clock_timeout_handler, NULL, false);
 }
 
 static void int_event_disable_rtc(void)
@@ -785,12 +755,11 @@ static int sys_clock_driver_init(void)
 		alloc_mask = BIT_MASK(CHAN_COUNT) & ~BIT(SYS_CLOCK_CH);
 	}
 
-	uint32_t initial_timeout = IS_ENABLED(CONFIG_TICKLESS_KERNEL) ?
-		MAX_CYCLES : CYC_PER_TICK;
+	timer_core_init();
 
-	compare_set(SYS_CLOCK_CH, initial_timeout, sys_clock_timeout_handler, NULL, false);
-
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if defined(CONFIG_CLOCK_CONTROL_NRF) ||                                                           \
+	(defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                               \
+	 !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)))
 	static const enum nrf_lfclk_start_mode mode =
 		IS_ENABLED(CONFIG_SYSTEM_CLOCK_NO_WAIT) ?
 			CLOCK_CONTROL_NRF_LF_START_NOWAIT :

@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+description: WCH SDI console
+
+compatible: "wch,sdi-console"
+
+include: base.yaml

@@ -8,17 +8,11 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <openrisc/openriscregs.h>
 
 #define MAX_CYC SPR_TTMR_TP
-
-static struct k_spinlock lock;
-static uint32_t last_count;
-static uint64_t last_ticks;
-static uint32_t last_elapsed;
-static uint32_t cyc_per_tick;
 
 static ALWAYS_INLINE void set_compare(uint32_t time)
 {
@@ -35,100 +29,49 @@ static ALWAYS_INLINE uint32_t get_count(void)
 	return openrisc_read_spr(SPR_TTCR);
 }
 
+/*
+ * A 28-bit free-running count with a compare that matches only TTCR[27:0] == TP,
+ * so a target written at or behind the count is missed until the count wraps,
+ * 13.4 s at 20 MHz. That is the COMPARE_EXACT backend: the core writes the
+ * register through its verify loop.
+ */
+#define TIMER_CORE_COUNTER_WIDTH 28
+#define TIMER_CORE_BACKEND_COMPARE_EXACT
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return get_count();
+}
+
+static inline void timer_driver_set_compare(uint64_t cycles)
+{
+	set_compare((uint32_t)cycles & MAX_CYC);
+}
+
+#include "system_timer_generic.h"
+
 void z_openrisc_timer_isr(void)
 {
 	if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 		sys_trace_isr_enter();
 	}
 
-	const k_spinlock_key_t key = k_spin_lock(&lock);
-
-	const uint32_t current_count = get_count();
-	const uint32_t delta_count = current_count - last_count;
-	const uint32_t delta_ticks = delta_count / cyc_per_tick;
-
-	last_count += delta_ticks * cyc_per_tick;
-	last_ticks += delta_ticks;
-	last_elapsed = 0;
+	const k_spinlock_key_t key = sys_clock_lock();
 
 	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		clear_compare();
-	} else {
-		set_compare((last_count + cyc_per_tick) & MAX_CYC);
 	}
 
-	k_spin_unlock(&lock, key);
-	sys_clock_announce(delta_ticks);
+	timer_core_announce_from(key);
 
 	if (IS_ENABLED(CONFIG_TRACING_ISR)) {
 		sys_trace_isr_exit();
 	}
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
-{
-#if defined(CONFIG_TICKLESS_KERNEL)
-	if (ticks == K_TICKS_FOREVER) {
-		if (idle) {
-			return;
-		}
-
-		ticks = INT32_MAX;
-	}
-
-	/*
-	 * Clamp the max period length to a number of cycles that can fit
-	 * in half the range of a cycle_diff_t for native width divisions
-	 * to be usable elsewhere. The half range gives us extra room to cope
-	 * with the unavoidable IRQ servicing latency.
-	 */
-	ticks = CLAMP(ticks, 0, MAX_CYC / 2 / cyc_per_tick);
-
-	const uint32_t compare =
-		((last_ticks + last_elapsed + (uint32_t)ticks) * cyc_per_tick) & MAX_CYC;
-	const k_spinlock_key_t key = k_spin_lock(&lock);
-
-	set_compare(compare);
-	k_spin_unlock(&lock, key);
-
-#else  /* CONFIG_TICKLESS_KERNEL */
-	ARG_UNUSED(ticks);
-	ARG_UNUSED(idle);
-#endif
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	const k_spinlock_key_t key = k_spin_lock(&lock);
-
-	const uint32_t current_count = get_count();
-	const uint32_t delta_count = current_count - last_count;
-	const uint32_t delta_ticks = delta_count / cyc_per_tick;
-
-	last_elapsed = delta_ticks;
-	k_spin_unlock(&lock, key);
-	return delta_ticks;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return get_count();
-}
-
 static int sys_clock_driver_init(void)
 {
-	cyc_per_tick = (uint32_t)((uint64_t)sys_clock_hw_cycles_per_sec() /
-		(uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC);
-
-	last_ticks = get_count() / cyc_per_tick;
-	last_count = last_ticks * cyc_per_tick;
-	last_elapsed = 0;
-
-	set_compare((last_count + cyc_per_tick) & MAX_CYC);
+	timer_core_init();
 
 	return 0;
 }

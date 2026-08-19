@@ -24,7 +24,7 @@ function Execute_ac() {
     fi
 
 
-    sim_id="${ac_profile}_ac_${ac_config}_${ac_tx_preset}_${ac_rx_preset}"
+    sim_id="${BOARD_TS}_${ac_profile}_ac_${ac_config}_${ac_tx_preset}_${ac_rx_preset}"
 
     printf "\n\n======== Running %s AC_%s with %s %s =========\n\n" \
         "${ac_profile}" "${ac_config}" "${ac_tx_preset_arg}" "${ac_rx_preset_arg}"

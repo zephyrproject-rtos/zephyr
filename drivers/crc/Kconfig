@@ -21,6 +21,7 @@ config CRC_DRIVER_INIT_PRIORITY
 	  CRC driver device initialization priority.
 
 # zephyr-keep-sorted-start
+source "drivers/crc/Kconfig.ambiq"
 source "drivers/crc/Kconfig.nxp"
 source "drivers/crc/Kconfig.renesas_ra"
 source "drivers/crc/Kconfig.sf32lb"
@@ -103,5 +104,10 @@ config CRC_DRIVER_HAS_CRC32_K_4_2
 	bool
 	help
 	  CRC driver has CRC32K/4.2 computation
+
+config CRC_DRIVER_HAS_CRC32_MPEG2
+	bool
+	help
+	  CRC driver has CRC32 MPEG-2 computation
 
 endif # CRC_DEVICE

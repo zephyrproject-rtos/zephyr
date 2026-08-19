@@ -331,10 +331,6 @@ static int i2c_rza2m_riic_validate_msgs(const struct device *dev, struct i2c_msg
 {
 	struct i2c_msg *current, *next;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	current = msgs;
 	current->flags |= I2C_MSG_RESTART;
 	for (int i = 1; i <= num_msgs; i++) {
@@ -416,10 +412,6 @@ static int i2c_rza2m_riic_transfer(const struct device *dev, struct i2c_msg *msg
 {
 	struct i2c_rza2m_riic_data *data = dev->data;
 	int ret = 0;
-
-	if (!num_msgs) {
-		return 0;
-	}
 
 	ret = i2c_rza2m_riic_validate_msgs(dev, msgs, num_msgs);
 	if (ret) {

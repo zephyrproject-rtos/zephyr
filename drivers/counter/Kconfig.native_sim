@@ -5,6 +5,7 @@ config COUNTER_NATIVE_SIM
 	bool "Counter on COUNTER_0"
 	default y
 	depends on DT_HAS_ZEPHYR_NATIVE_SIM_COUNTER_ENABLED
+	select COUNTER_SUPPORTS_CAPTURE
 
 config COUNTER_NATIVE_SIM_FREQUENCY
 	int "native_sim counter frequency in Hz"

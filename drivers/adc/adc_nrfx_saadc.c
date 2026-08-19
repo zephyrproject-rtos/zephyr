@@ -200,6 +200,11 @@ static int reference_set(nrf_saadc_channel_config_t *ch_cfg, enum adc_reference 
 		ch_cfg->reference = NRF_SAADC_REFERENCE_EXTERNAL;
 		break;
 #endif
+#if NRF_SAADC_HAS_REFERENCE_VDD
+	case ADC_REF_VDD_1:
+		ch_cfg->reference = NRF_SAADC_REFERENCE_VDD;
+		break;
+#endif
 	default:
 		LOG_ERR("Selected ADC reference is not valid");
 		return -EINVAL;
@@ -623,7 +628,7 @@ static int adc_nrfx_read(const struct device *dev,
 	adc_context_release(&m_data.ctx, error);
 
 	if (pm_device_runtime_put(dev)) {
-		LOG_ERR("PM put failed");
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev);
 	}
 
 	return error;

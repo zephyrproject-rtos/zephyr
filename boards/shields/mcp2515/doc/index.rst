@@ -219,6 +219,116 @@ For more information about the Keyestudio CAN-BUS shield:
 - `MCP2515 Datasheet`_
 - `MCP2551 Datasheet`_
 
+ElecFreaks CAN-BUS Shield (EF02037)
+***********************************
+
+Overview
+--------
+
+The ElecFreaks CAN BUS shield supports the Microchip MCP2515 stand-alone CAN
+controller and MCP2551 high speed CAN transceiver. The shield has an Arduino
+Uno R3 compatible hardware interface.
+
+.. figure:: elecfreaks_can_bus_ef02037.jpg
+   :align: center
+   :alt: ElecFreaks CAN-BUS Shield (EF02037)
+
+   ElecFreaks CAN-BUS Shield (EF02037) (Credit: ElecFreaks)
+
+The ElecFreaks CAN-BUS Shield can also be found as `CAN-BUS Shield v1.2 by DiyMore`_.
+Both shields are pin and function compatible. Furthermore, the wiring of the MCP2515
+is also compatible with the `CAN-BUS Shield v1.5 by Elecrow`_. On the Elecrow shield,
+three missing 0 Ohm bridges must be manually soldered to ensure that the SPI signals
+are also connected to the Arduino Uno R3 pin header. Although the Elecrow shield has
+a microSD socket, the slot can only be used in systems with a 5V signal level on SPI.
+
+Hardware
+--------
+
+- MCP2515
+
+        - Stand-Alone CAN 2.0B Controller
+        - Up to 1Mb/s baud rate
+        - Standard and extended data and remote frames
+        - 3x Tx Buffers
+        - 2x Rx Buffers
+        - 6x 29-bit Filters
+        - 2x 29-bit Masks
+        - Interrupt output
+        - One shot mode
+        - High speed SPI interface (10 MHz)
+
+- MCP2551
+
+        - Fully compatible with the “ISO 11898” standard
+        - High speed (up to 1 Mbaud)
+
+- Connectivity
+
+        - Industrial standard DB9 terminal (CAN)
+        - Screw terminal block - 2-pin 5.0mm (CAN)
+        - Arduino Uno R3 compatible (SPI)
+
++-------+-----------------------+---------------------------+
+| Name  | Function              | Usage                     |
++=======+=======================+===========================+
+| A0    | I2C-SDA               | Ext. header only          |
++-------+-----------------------+---------------------------+
+| A1    | I2C-SCL               | Ext. header only          |
++-------+-----------------------+---------------------------+
+| A2    | None                  |                           |
++-------+-----------------------+---------------------------+
+| A3    | None                  |                           |
++-------+-----------------------+---------------------------+
+| A4    | None                  |                           |
++-------+-----------------------+---------------------------+
+| A5    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D0    | RX                    | Ext. header only          |
++-------+-----------------------+---------------------------+
+| D1    | TX                    | Ext. header only          |
++-------+-----------------------+---------------------------+
+| D2    | GPIO_ACTIVE_LOW       | MCP2515 - INT             |
++-------+-----------------------+---------------------------+
+| D3    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D4    | SPI-CS                | (MicroSD)                 |
++-------+-----------------------+---------------------------+
+| D5    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D6    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D7    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D8    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D9    | None                  |                           |
++-------+-----------------------+---------------------------+
+| D10   | SPI-CS                | MCP2515                   |
++-------+-----------------------+---------------------------+
+| D11   | SPI-MOSI              | MCP2515 / (MicroSD)       |
++-------+-----------------------+---------------------------+
+| D12   | SPI-MISO              | MCP2515 / (MicroSD)       |
++-------+-----------------------+---------------------------+
+| D13   | SPI-CLK               | MCP2515 / (MicroSD)       |
++-------+-----------------------+---------------------------+
+| D14   | None                  |                           |
++-------+-----------------------+---------------------------+
+| D15   | None                  |                           |
++-------+-----------------------+---------------------------+
+
+
+- Power Supply
+
+        - 5.0VDC
+
+For more information about the ElecFreaks CAN-BUS shield:
+
+- `ElecFreaks Website`_
+- `ElecFreaks Wiki`_
+- `MCP2515 Datasheet`_
+- `MCP2551 Datasheet`_
+
 Adafruit PiCowbell CAN Bus Shield for Pico
 ******************************************
 
@@ -478,6 +588,18 @@ For example:
 
 .. _Keyestudio Wiki:
    https://wiki.keyestudio.com/KS0411_keyestudio_CAN-BUS_Shield
+
+.. _ElecFreaks Website:
+   https://web.archive.org/web/20140716155137/http://www.elecfreaks.com/store/canbus-shield-p-746.html
+
+.. _ElecFreaks Wiki:
+   https://web.archive.org/web/20160331032426/http://www.elecfreaks.com/wiki/index.php?title=CAN-BUS_Shield
+
+.. _CAN-BUS Shield v1.2 by DiyMore:
+   https://www.diymore.cc/products/mcp2515-ef02037-can-bus-shield-controller-board-communication-speed-high-can-v2-0b-module-for-arduino-for-freaduino-diy-kit
+
+.. _CAN-BUS Shield v1.5 by Elecrow:
+   https://www.elecrow.com/canbus-shield-p-1133.html
 
 .. _MCP2515 Datasheet:
    http://ww1.microchip.com/downloads/en/DeviceDoc/MCP2515-Stand-Alone-CAN-Controller-with-SPI-20001801J.pdf

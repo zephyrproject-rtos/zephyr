@@ -2,12 +2,10 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-set(QEMU_binary_suffix or1k)
-set(QEMU_CPU_TYPE_${ARCH} or1k)
+set(QEMU_CPU_TYPE or1k)
 
-set(QEMU_FLAGS_${ARCH}
-  -machine or1k-sim
-  -nographic
+set(QEMU_BOARD_FLAGS
+  -machine virt
 )
 
-board_set_debugger_ifnset(qemu)
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

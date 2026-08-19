@@ -13,6 +13,82 @@ menuconfig NET_IPV6
 
 if NET_IPV6
 
+# Note that the Kconfig symbols without IPV6 are old legacy symbols
+# that are deprecated and replaced by IPv6 specific symbols.
+config NET_ROUTE
+	bool
+	depends on NET_IPV6_NBR_CACHE
+	default y if NET_IPV6_ROUTE
+	help
+	  This symbol is deprecated and is driven by NET_IPV6_ROUTE,
+	  which is the user-visible IPv6 route table option.
+
+config NET_ROUTING
+	bool "IPv6 forwarding between interfaces [DEPRECATED]"
+	depends on NET_ROUTE
+	select DEPRECATED
+	help
+	  This symbol is deprecated, use NET_IPV6_FORWARDING instead.
+
+config NET_MAX_ROUTES
+	int "Max number of routing entries stored [DEPRECATED]."
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+	  This symbol is deprecated, use NET_IPV6_MAX_ROUTES instead.
+
+config NET_MAX_NEXTHOPS
+	int "Max number of next hop entries stored [DEPRECATED]."
+	default NET_MAX_ROUTES
+	depends on NET_ROUTE
+	help
+	  This determines how many entries can be stored in nexthop table.
+	  This symbol is deprecated, use NET_IPV6_MAX_NEXTHOPS instead.
+
+config NET_ROUTE_MCAST
+	bool "Multicast Routing / Forwarding [DEPRECATED]"
+	depends on NET_ROUTE
+	select DEPRECATED
+	help
+	  Activates multicast routing/forwarding.
+	  This symbol is deprecated, use NET_IPV6_ROUTE_MCAST instead.
+
+config NET_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored [DEPRECATED]."
+	default 1
+	depends on NET_ROUTE_MCAST
+	help
+	  This determines how many entries can be stored in multicast
+	  routing table.
+	  This symbol is deprecated, use NET_IPV6_MAX_MCAST_ROUTES instead.
+
+config NET_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry [DEPRECATED]"
+	default 1
+	range 1 8
+	depends on NET_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+	  This symbol is deprecated, use NET_IPV6_MCAST_ROUTE_MAX_IFACES instead.
+
+config NET_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports [DEPRECATED]"
+	depends on NET_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	select DEPRECATED
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
+	  This symbol is deprecated, use NET_IPV6_MCAST_ROUTE_MLD_REPORTS instead.
+
+config NET_ROUTE_SYMBOLS_DEPRECATED
+	bool
+	default y
+	depends on NET_ROUTING || NET_IPV6_ROUTING || NET_ROUTE_MCAST || \
+		   NET_MCAST_ROUTE_MLD_REPORTS
+
 config NET_IF_MAX_IPV6_COUNT
 	int "Max number of IPv6 network interfaces in the system"
 	default NET_VLAN_COUNT if NET_VLAN && NET_VLAN_COUNT > 0
@@ -32,7 +108,17 @@ config NET_IF_UNICAST_IPV6_ADDR_COUNT
 config NET_IF_MCAST_IPV6_ADDR_COUNT
 	int "Max number of multicast IPv6 addresses per network interface"
 	default 8 if NET_L2_OPENTHREAD
+	default 4 if PTP_DELAY_MECHANISM_P2P && PTP_UDP_IPV6_PROTOCOL
 	default 3
+
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV6
+	int
+	depends on NET_L2_ETHERNET
+	default NET_IF_MCAST_IPV6_ADDR_COUNT
+	help
+	  Every joined IPv6 multicast address needs a link layer multicast
+	  address on an Ethernet interface. This covers the all-nodes group
+	  and the solicited-node group of each address of the interface.
 
 config NET_IF_IPV6_PREFIX_COUNT
 	int "Max number of IPv6 prefixes per network interface"
@@ -59,6 +145,21 @@ config NET_IPV6_PMTU_DESTINATION_CACHE_ENTRIES
 	depends on NET_IPV6_PMTU
 	help
 	  How many PMTU entries we can track for each destination address.
+
+config NET_IPV6_PMTU_PTB
+	bool "IPv6 PMTU Discovery using ICMP messages"
+	default y
+	depends on NET_IPV6_PMTU
+	help
+	  Enables IPv6 Path MTU Discovery using
+	  ICMPv6 Packet Too Big messages (see RFC 8201).
+
+config NET_IPV6_PMTU_DPLPMTUD
+	bool "IPv6 PMTU Discovery using datagram messages"
+	depends on NET_UDP
+	depends on NET_IPV6_PMTU
+	help
+	  Enables IPv6 Datagram Packetization Layer Path MTU Discovery (see RFC 8899)
 
 config NET_INITIAL_HOP_LIMIT
 	int "Initial IPv6 hop limit value for unicast packets"
@@ -96,6 +197,90 @@ config NET_IPV6_MAX_NEIGHBORS
 	range 1 254
 	help
 	  The value depends on your network needs.
+
+# Normally the route support is enabled by RPL or similar technology
+# that needs to use the routing infrastructure.
+config NET_IPV6_ROUTE
+	bool "IPv6 unicast route table support"
+	depends on NET_IPV6_NBR_CACHE
+	default y if NET_IPV6_NBR_CACHE
+	help
+	  Enable the IPv6 unicast route table and route-aware destination
+	  selection for locally originated traffic.
+
+	  This option is needed for static IPv6 routes, route lookups from
+	  networking shell commands, and host-side route selection such as
+	  VPN traffic steering. Enable NET_IPV6_FORWARDING as well if the
+	  device must forward packets between interfaces.
+
+config NET_IPV6_FORWARDING
+	bool "IPv6 forwarding between interfaces"
+	default y if NET_ROUTING || NET_IPV6_ROUTING
+	depends on NET_IPV6_ROUTE
+	help
+	  Allow the device to forward IPv6 packets between different network
+	  interfaces and technologies.
+
+	  This is separate from NET_IPV6_ROUTE, which only enables the IPv6
+	  route table for host-side route selection and shell route commands.
+
+config NET_IPV6_ROUTING
+	bool "IPv6 routing between interfaces [DEPRECATED]"
+	depends on NET_IPV6_ROUTE
+	select DEPRECATED
+	help
+	  This symbol is deprecated, use NET_IPV6_FORWARDING instead.
+
+config NET_IPV6_MAX_ROUTES
+	int "Max number of routing entries stored."
+	default NET_MAX_ROUTES if NET_ROUTE_SYMBOLS_DEPRECATED
+	default NET_IPV6_MAX_NEIGHBORS
+	depends on NET_IPV6_ROUTE
+	help
+	  This determines how many entries can be stored in routing table.
+
+config NET_IPV6_MAX_NEXTHOPS
+	int "Max number of next hop entries stored."
+	default NET_MAX_NEXTHOPS if NET_ROUTE_SYMBOLS_DEPRECATED
+	default NET_IPV6_MAX_ROUTES
+	depends on NET_IPV6_ROUTE
+	help
+	  This determines how many entries can be stored in nexthop table.
+
+config NET_IPV6_ROUTE_MCAST
+	bool "Multicast Routing / Forwarding"
+	default NET_ROUTE_MCAST if NET_ROUTE_SYMBOLS_DEPRECATED
+	depends on NET_IPV6_ROUTE
+	help
+	  Activates multicast routing/forwarding
+
+config NET_IPV6_MAX_MCAST_ROUTES
+	int "Max number of multicast routing entries stored."
+	default NET_MAX_MCAST_ROUTES if NET_ROUTE_SYMBOLS_DEPRECATED
+	default 1
+	depends on NET_IPV6_ROUTE_MCAST
+	help
+	  This determines how many entries can be stored in multicast
+	  routing table.
+
+config NET_IPV6_MCAST_ROUTE_MAX_IFACES
+	int "Max number of network interfaces per multicast routing entry"
+	default NET_MCAST_ROUTE_MAX_IFACES if NET_ROUTE_SYMBOLS_DEPRECATED
+	default 1
+	range 1 8
+	depends on NET_IPV6_ROUTE_MCAST
+	help
+	  Determines how many network interfaces can be assigned to a
+	  single multicast route entry.
+
+config NET_IPV6_MCAST_ROUTE_MLD_REPORTS
+	bool "Report multicast routes as a part of MLDv2 reports"
+	default NET_MCAST_ROUTE_MLD_REPORTS if NET_ROUTE_SYMBOLS_DEPRECATED
+	depends on NET_IPV6_ROUTE_MCAST
+	depends on NET_IPV6_MLD
+	help
+	  Determines whether a multicast route entry should be advertised
+	  in MLDv2 reports.
 
 config NET_IPV6_FRAGMENT
 	bool "Support IPv6 fragmentation"
@@ -185,6 +370,22 @@ config NET_IPV6_NS_TIMEOUT
 	  The timeout in milliseconds between attempts to send a Neighbor
 	  Solicitation message.
 
+config NET_IPV6_UNSOLICITED_NA
+	bool "Send unsolicited Neighbor Advertisements"
+	depends on NET_IPV6_NBR_CACHE
+	depends on NET_MGMT_EVENT
+	depends on NET_MGMT_EVENT_INFO
+	help
+	  When enabled, the node multicasts an unsolicited Neighbor Advertisement
+	  (to the all-nodes address, with the Override flag set) for each of its
+	  unicast addresses when the address is added or passes Duplicate Address
+	  Detection, as described in RFC 4861 chapter 7.2.6. This lets neighbors
+	  that still hold an entry for this node correct a stale link-layer
+	  address without waiting for Neighbor Unreachability Detection; it is the
+	  IPv6 counterpart of gratuitous ARP (NET_ARP_GRATUITOUS). Note that a
+	  neighbor which has already dropped its entry ignores the advertisement
+	  (RFC 4861 chapter 7.2.5).
+
 config NET_IPV6_RS_TIMEOUT
 	int "Timeout of Router Solicitation messaging"
 	depends on NET_IPV6_ND
@@ -202,6 +403,44 @@ config NET_IPV6_RA_RDNSS
 	help
 	  Support Router Advertisement Recursive DNS Server option.
 	  See RFC 6106 for details. The value depends on your network needs.
+
+config NET_IPV6_ND_RA_TX
+	bool "Transmit IPv6 Router Advertisements (router role)"
+	depends on NET_IPV6_ND
+	help
+	  Enable the ability for an interface to act as an IPv6 router:
+	  respond to received Router Solicitations and periodically transmit
+	  unsolicited Router Advertisements. The advertisements include a
+	  Prefix Information Option for each prefix that has been marked for
+	  advertisement on the interface (for example a prefix obtained via
+	  DHCPv6 prefix delegation, RFC 8415). This is required in order to
+	  delegate a prefix onto a downstream link so that hosts on that link
+	  can configure addresses via SLAAC.
+
+if NET_IPV6_ND_RA_TX
+
+config NET_IPV6_ND_RA_TX_INTERVAL
+	int "Interval between unsolicited Router Advertisements (seconds)"
+	range 4 1800
+	default 600
+	help
+	  Time in seconds between successive unsolicited Router Advertisement
+	  transmissions on a router interface. Note that the interval is fixed,
+	  it is not randomized between MinRtrAdvInterval and MaxRtrAdvInterval
+	  as described in RFC 4861 ch. 6.2.1, and that no initial burst of
+	  MAX_INITIAL_RTR_ADVERTISEMENTS is sent when the router role is
+	  enabled. Solicited advertisements are sent in addition to these.
+
+config NET_IPV6_ND_RA_TX_ROUTER_LIFETIME
+	int "Router lifetime advertised in Router Advertisements (seconds)"
+	range 0 9000
+	default 1800
+	help
+	  Lifetime in seconds advertised in the Router Advertisement header.
+	  A value of 0 indicates that the node is not to be used as a default
+	  router.
+
+endif # NET_IPV6_ND_RA_TX
 
 choice NET_IPV6_IID_GENERATION
 	prompt "IPv6 Interface Identifier (IID) generation"
@@ -333,11 +572,13 @@ config NET_MAX_6LO_CONTEXTS
 	  network and memory consumption. More 6CO options uses more memory.
 
 if NET_6LO
+
 module = NET_6LO
 module-dep = NET_LOG
 module-str = Log level for 6LoWPAN library
 module-help = Enables 6LoWPAN code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_6LO
 
 module = NET_IPV6
@@ -370,5 +611,12 @@ module-str = Log level for IPv6 neighbor cache
 module-help = Enables IPv6 Neighbor Cache code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+module = NET_IPV6_ROUTE
+module-dep = NET_LOG
+module-str = Log level for IPv6 route management
+module-help = Enables IPv6 routing engine debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_NATIVE_IPV6
+
 endif # NET_IPV6

@@ -11,6 +11,7 @@
 
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
@@ -89,6 +90,7 @@ LOG_MODULE_REGISTER(cst8xx, CONFIG_INPUT_LOG_LEVEL);
 
 /** cst8xx configuration (DT). */
 struct cst8xx_config {
+	struct input_touchscreen_common_config common;
 	struct i2c_dt_spec i2c;
 	const struct gpio_dt_spec rst_gpio;
 #ifdef CONFIG_INPUT_CST8XX_INTERRUPT
@@ -107,6 +109,8 @@ struct cst8xx_config {
 	} lp_profile;
 #endif
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct cst8xx_config);
 
 /** cst8xx data. */
 struct cst8xx_data {
@@ -169,8 +173,7 @@ static int cst8xx_process(const struct device *dev)
 	LOG_DBG("event: %d, row: %d, col: %d", event, row, col);
 
 	if (pressed) {
-		input_report_abs(dev, INPUT_ABS_X, col, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, row, false, K_FOREVER);
+		input_touchscreen_report_pos(dev, col, row, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	} else {
 		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
@@ -327,8 +330,8 @@ static int cst8xx_init(const struct device *dev)
 	}
 #else
 	k_timer_init(&data->timer, cst8xx_timer_handler, NULL);
-	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST8XX_PERIOD),
-		      K_MSEC(CONFIG_INPUT_CST8XX_PERIOD));
+	k_timer_start(&data->timer, K_MSEC(CONFIG_INPUT_CST8XX_PERIOD_MS),
+		      K_MSEC(CONFIG_INPUT_CST8XX_PERIOD_MS));
 #endif
 
 	return ret;
@@ -402,26 +405,15 @@ static int cst8xx_pm_action(const struct device *dev, enum pm_device_action acti
 
 /* clang-format off */
 #define CST8XX_DEFINE(index)                                                                       \
-	IF_ENABLED(CONFIG_PM_DEVICE, (                                                             \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_th) >= 1 &&                                  \
-				DT_INST_PROP(index, scan_th) <= 255,                               \
-				"scan_th must be >= 1 and <= 255");                                \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_freq) >= 1 &&                                \
-				DT_INST_PROP(index, scan_freq) <= 255,                             \
-				"scan_freq must be >= 1 and <= 255");                              \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_win) <= 255,                                 \
-				"scan_win must be <= 255");                                        \
-		BUILD_ASSERT(DT_INST_PROP(index, scan_i_dac) >= 1 &&                               \
-				DT_INST_PROP(index, scan_i_dac) <= 255,                            \
-				"scan_i_dac must be >= 1 and <= 255");                             \
-	))                                                                                         \
+	PM_DEVICE_DT_INST_DEFINE(index, cst8xx_pm_action);                                         \
 	static struct cst8xx_data cst8xx_data_##index;                                             \
 	static const struct cst8xx_config cst8xx_config_##index = {                                \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
 		.rst_gpio = GPIO_DT_SPEC_INST_GET_OR(index, rst_gpios, {}),                        \
 		IF_ENABLED(CONFIG_INPUT_CST8XX_INTERRUPT,                                          \
 				(.int_gpio = GPIO_DT_SPEC_INST_GET(index, irq_gpios),))            \
-				 IF_ENABLED(CONFIG_PM_DEVICE,                                      \
+		IF_ENABLED(CONFIG_PM_DEVICE,                                                      \
 				(.lp_profile = {                                                   \
 					.auto_wake_time_min = DT_INST_PROP(index, auto_wake_time), \
 					.scan_th = DT_INST_PROP(index, scan_th),                   \
@@ -429,11 +421,9 @@ static int cst8xx_pm_action(const struct device *dev, enum pm_device_action acti
 					.scan_freq = DT_INST_PROP(index, scan_freq),               \
 					.scan_i_dac = DT_INST_PROP(index, scan_i_dac),             \
 					.auto_sleep_time_s = DT_INST_PROP(index, auto_sleep_time), \
-			},)) };                                                                    \
-                                                                                                   \
-	PM_DEVICE_DT_INST_DEFINE(index, cst8xx_pm_action);                                         \
-                                                                                                   \
-	DEVICE_DT_INST_DEFINE(index, cst8xx_init, PM_DEVICE_DT_INST_GET(index),                    \
+				},))                                                         \
+	};                                                                           \
+	DEVICE_DT_INST_DEFINE(index, cst8xx_init, PM_DEVICE_DT_INST_GET(index),                \
 			      &cst8xx_data_##index, &cst8xx_config_##index, POST_KERNEL,           \
 			      CONFIG_INPUT_INIT_PRIORITY, NULL);
 

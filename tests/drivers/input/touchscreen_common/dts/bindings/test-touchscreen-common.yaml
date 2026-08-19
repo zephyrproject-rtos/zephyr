@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test binding for the common touchscreen helper
+
+compatible: "test-touchscreen-common"
+
+include: touchscreen-common.yaml

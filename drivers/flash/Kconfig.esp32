@@ -11,11 +11,6 @@ config SOC_FLASH_ESP32
 	help
 	  Enable ESP32 internal flash driver.
 
-config MPU_ALLOW_FLASH_WRITE
-	bool "Add MPU access to write to flash"
-	help
-	  Enable this to allow MPU RWX access to flash memory
-
 if SOC_FLASH_ESP32
 
 config ESP_FLASH_ASYNC
@@ -61,7 +56,7 @@ config ESP_FLASH_ASYNC_IPM
 
 config ESP_FLASH_REMOTE
 	bool "Remote IPM flash driver"
-	default y if (SOC_ESP32_APPCPU || SOC_ESP32S3_APPCPU || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
+	default y if (SOC_ESP32_APPCPU_TARGET || SOC_ESP32C6_LPCORE) && (IPM || MBOX)
 
 config ESP_FLASH_HOST
 	bool "Host functionality flash driver"

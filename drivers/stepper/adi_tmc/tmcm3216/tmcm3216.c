@@ -106,14 +106,14 @@ static int tmcm3216_init(const struct device *dev)
 
 	/* Verify UART/RS485 device is ready */
 	if (!device_is_ready(config->rs485)) {
-		LOG_ERR("RS485 UART device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->rs485);
 		return -ENODEV;
 	}
 
 	/* Configure DE pin if specified */
 	if (config->de_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->de_gpio)) {
-			LOG_ERR("DE GPIO device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->de_gpio.port);
 			return -ENODEV;
 		}
 

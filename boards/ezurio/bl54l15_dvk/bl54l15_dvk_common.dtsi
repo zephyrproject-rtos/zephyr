@@ -13,22 +13,22 @@
 
 		led0: led_0 {
 			gpios = <&gpio2 9 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 0";
+			label = "Blue LED 0";
 		};
 
 		led1: led_1 {
 			gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 1";
+			label = "Blue LED 1";
 		};
 
 		led2: led_2 {
 			gpios = <&gpio2 7 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 2";
+			label = "Blue LED 2";
 		};
 
 		led3: led_3 {
 			gpios = <&gpio1 14 GPIO_ACTIVE_HIGH>;
-			label = "Green LED 3";
+			label = "Blue LED 3";
 		};
 	};
 
@@ -85,7 +85,52 @@
 		sw2 = &button2;
 		sw3 = &button3;
 		watchdog0 = &wdt31;
+		mcuboot-button0 = &button3;
+		mcuboot-led0 = &led2;
 	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map =
+			   /* Shared functions listed in () */
+			   <0 0 &gpio1 13 0>,	/* AN  (button 0, ain6) */
+			   <1 0 &gpio0 4 0>,	/* RST (button 3) */
+			   <2 0 &gpio2 9 0>,	/* CS  (led 0) */
+			   <3 0 &gpio2 1 0>,	/* SCK */
+			   <4 0 &gpio2 4 0>,	/* MISO */
+			   <5 0 &gpio2 2 0>,	/* MOSI */
+			   <6 0 &gpio1 14 0>,	/* PWM (led 3) */
+			   <7 0 &gpio1 10 0>,	/* INT (led 1) */
+			   <8 0 &gpio1 8 0>,	/* UART RX (button 2) */
+			   <9 0 &gpio1 9 0>,	/* UART TX (button 1) */
+			   <10 0 &gpio1 11 0>,	/* SCL  */
+			   <11 0 &gpio1 12 0>;	/* SDA  */
+	};
+
+	qwiic_connector: qwiic-connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 11 0>,	/* 4 - SCL */
+			   <1 0 &gpio1 12 0>;	/* 3 - SDA */
+	};
+};
+
+&i2c22 {
+	pinctrl-0 = <&i2c22_default>;
+	pinctrl-1 = <&i2c22_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&pwm20 {
+	status = "okay";
+	pinctrl-0 = <&pwm20_default>;
+	pinctrl-1 = <&pwm20_sleep>;
+	pinctrl-names = "default", "sleep";
 };
 
 &uart20 {
@@ -95,17 +140,17 @@
 	pinctrl-names = "default", "sleep";
 };
 
+&uart21 {
+	current-speed = <115200>;
+	pinctrl-0 = <&uart21_default>;
+	pinctrl-1 = <&uart21_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
 &uart30 {
 	current-speed = <115200>;
 	pinctrl-0 = <&uart30_default>;
 	pinctrl-1 = <&uart30_sleep>;
-	pinctrl-names = "default", "sleep";
-};
-
-&pwm20 {
-	status = "okay";
-	pinctrl-0 = <&pwm20_default>;
-	pinctrl-1 = <&pwm20_sleep>;
 	pinctrl-names = "default", "sleep";
 };
 

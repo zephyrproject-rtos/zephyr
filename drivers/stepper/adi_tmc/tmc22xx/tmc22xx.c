@@ -95,7 +95,7 @@ static int tmc22xx_stepper_configure_msx_pins(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->common.m0_pin)) {
-		LOG_ERR("MS1 pin not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.m0_pin.port);
 		return -ENODEV;
 	}
 
@@ -106,7 +106,7 @@ static int tmc22xx_stepper_configure_msx_pins(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&config->common.m1_pin)) {
-		LOG_ERR("MS2 pin not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.m1_pin.port);
 		return -ENODEV;
 	}
 
@@ -126,7 +126,7 @@ static int tmc22xx_stepper_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->common.en_pin)) {
-		LOG_ERR("GPIO pins are not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->common.en_pin.port);
 		return -ENODEV;
 	}
 

@@ -15,7 +15,6 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/retention/retention.h>
 #include <zephyr/sys/reboot.h>
 

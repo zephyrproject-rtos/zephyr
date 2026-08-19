@@ -974,6 +974,11 @@ static isoal_sdu_status_t isoal_check_seg_header(struct pdu_iso_sdu_sh *seg_hdr,
 	if (pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE &&
 		pdu_size_remaining >= PDU_ISO_SEG_HDR_SIZE + seg_hdr->len) {
 
+		if ((seg_hdr->sc == 0U) && (seg_hdr->len < PDU_ISO_SEG_TIMEOFFSET_SIZE)) {
+			/* Start segment (sc=0) must contain a time_offset field */
+			return ISOAL_SDU_STATUS_ERRORS;
+		}
+
 		/* Valid if there is sufficient data for the segment header and
 		 * there is sufficient data for the required length of the
 		 * segment
@@ -1283,6 +1288,10 @@ static isoal_status_t isoal_rx_framed_consume(struct isoal_sink *sink,
 
 			if (!sc) {
 				/* time_offset included in header, don't copy offset field to SDU */
+				if (length < PDU_ISO_SEG_TIMEOFFSET_SIZE) {
+					err = ISOAL_STATUS_ERR_UNSPECIFIED;
+					break;
+				}
 				offset = offset + PDU_ISO_SEG_TIMEOFFSET_SIZE;
 				length = length - PDU_ISO_SEG_TIMEOFFSET_SIZE;
 			}

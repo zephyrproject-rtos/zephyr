@@ -357,6 +357,7 @@ void log_frontend_msg(const void *source, const struct log_msg_desc desc, uint8_
 					       ARRAY_SIZE(strl));
 	hdr.log.total_len = total_len + package_len;
 	hdr.log.package_len = package_len;
+	hdr.log.has_data = desc.data_len > 0 ? 1 : 0;
 
 	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
 		STMESP_Type *stm_esp;
@@ -666,28 +667,34 @@ int log_frontend_stmesp_etr_ready(void)
 
 void log_frontend_stmesp_log0(const void *source, uint32_t x)
 {
-	STMESP_Type *port;
-	int err = stmesp_get_port((uint32_t)x + 0x8000, &port);
-	uint16_t source_id = log_source_id(source);
+	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
+		STMESP_Type *port;
+		int err = stmesp_get_port((uint32_t)x +
+			CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &port);
+		uint16_t source_id = log_source_id(source);
 
-	__ASSERT_NO_MSG(err == 0);
-	if (err == 0) {
-		stmesp_data16(port, source_id, true, true,
-			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+		__ASSERT_NO_MSG(err == 0);
+		if (err == 0) {
+			stmesp_data16(port, source_id, true, true,
+				      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+		}
 	}
 }
 
 void log_frontend_stmesp_log1(const void *source, uint32_t x, uint32_t arg)
 {
-	STMESP_Type *port;
-	int err = stmesp_get_port((uint32_t)x + 0x8000, &port);
-	uint16_t source_id = log_source_id(source);
+	if ((EARLY_BUF_SIZE == 0) || etr_rdy) {
+		STMESP_Type *port;
+		int err = stmesp_get_port((uint32_t)x +
+			CONFIG_LOG_FRONTEND_STMESP_TURBO_LOG_BASE, &port);
+		uint16_t source_id = log_source_id(source);
 
-	__ASSERT_NO_MSG(err == 0);
-	if (err == 0) {
-		stmesp_data16(port, source_id, false, true,
-			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
-		stmesp_data32(port, arg, true, true,
-			      IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+		__ASSERT_NO_MSG(err == 0);
+		if (err == 0) {
+			stmesp_data16(port, source_id, false, true,
+				IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+			stmesp_data32(port, arg, true, true,
+				IS_ENABLED(CONFIG_LOG_FRONTEND_STMESP_GUARANTEED_ACCESS));
+		}
 	}
 }

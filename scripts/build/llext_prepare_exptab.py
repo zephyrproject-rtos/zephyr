@@ -125,11 +125,20 @@ class ZephyrElfExptabPreparator:
         # 2) Generate the SLID for all exports
         collided = False
         sorted_exptab = dict()
+        repeated_exptab = []
         for name, export_addr in exports_list:
             slid = llext_slidlib.generate_slid(name, self.ptrsize)
 
             collision = sorted_exptab.get(slid)
             if collision:
+                if name == collision[0] and export_addr == collision[1]:
+                    # This is not a real collision, but the same symbol being exported
+                    # multiple times. In this case, we can just ignore the "collision".
+                    self.log.warning(
+                        f"Duplicate export: name {name}, exported addr 0x{export_addr:X}"
+                    )
+                    repeated_exptab.append((slid, name, export_addr))
+                    continue
                 # Don't abort immediately on collision,
                 # if there are others we want to log them all.
                 self.log.error(
@@ -142,8 +151,14 @@ class ZephyrElfExptabPreparator:
         if collided:
             return 1
 
-        # 3) Sort the export table (order specified above)
-        sorted_exptab = dict(sorted(sorted_exptab.items()))
+        # 3) Merge unique and repeated exports to keep same number of entries with original exptab,
+        # then sort by SLID (order specified above)
+        sorted_exptab = [
+            (slid, name_and_symaddr[0], name_and_symaddr[1])
+            for slid, name_and_symaddr in sorted_exptab.items()
+        ]
+        sorted_exptab.extend(repeated_exptab)
+        sorted_exptab = sorted(sorted_exptab, key=lambda item: item[0])
 
         # 4) Write the updated export table to ELF, and dump
         # to SLID listing if requested by caller
@@ -165,13 +180,13 @@ class ZephyrElfExptabPreparator:
 
             self.log.info("SLID -> export name mapping:")
 
-            for i, (slid, name_and_symaddr) in enumerate(sorted_exptab.items()):
+            for i, (slid, name, symaddr) in enumerate(sorted_exptab):
                 slid_as_str = llext_slidlib.format_slid(slid, self.ptrsize)
-                msg = f"{slid_as_str} -> {name_and_symaddr[0]}"
+                msg = f"{slid_as_str} -> {name}"
                 self.log.info(msg)
                 slidlist_write(msg)
 
-                self.exptab_manipulator[i] = (slid, name_and_symaddr[1])
+                self.exptab_manipulator[i] = (slid, symaddr)
         return 0
 
     def _prepare_exptab_for_str_linking(self):
@@ -281,6 +296,8 @@ class ZephyrElfExptabPreparator:
 
         if res == 0:  # Add the "prepared" flag to export table section
             self._set_prep_done_shdr_flag()
+        else:
+            raise RuntimeError(f"export table preparation failed, ret code: {res}")
 
     def prepare_elf(self):
         res = self._prepare_inner()

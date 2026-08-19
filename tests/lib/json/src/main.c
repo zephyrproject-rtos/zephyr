@@ -420,6 +420,20 @@ static const struct json_mixed_arr_descr test_mixed_arr_null_descr[] = {
 	JSON_MIXED_ARR_DESCR_PRIM(struct test_mixed_arr, status_buf, JSON_TOK_STRING_BUF, count),
 };
 
+struct polymorphic_request {
+	const char *method;
+	const char *id_string;
+	int64_t id_number;
+	int params;
+};
+
+static const struct json_obj_descr polymorphic_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct polymorphic_request, method, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct polymorphic_request, "id", id_string, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM_NAMED(struct polymorphic_request, "id", id_number, JSON_TOK_INT64),
+	JSON_OBJ_DESCR_PRIM(struct polymorphic_request, params, JSON_TOK_NUMBER),
+};
+
 ZTEST(lib_json_test, test_json_encoding)
 {
 	struct test_struct ts = {
@@ -776,7 +790,7 @@ ZTEST(lib_json_test, test_json_float_format)
 			       obj_float_descr, ARRAY_SIZE(obj_float_descr), &ts);
 		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
 		zassert_equal(ts.some_float, encoded[i].num,
-			      "Decoding failed '%s' float: %g exepcted: %g",
+			      "Decoding failed '%s' float: %g expected: %g",
 			      str_encoded, (double)ts.some_float, (double)encoded[i].num);
 	}
 }
@@ -938,7 +952,7 @@ ZTEST(lib_json_test, test_json_double_format)
 					 obj_double_descr, ARRAY_SIZE(obj_double_descr), &ts);
 		zassert_equal(ret, 1, "Decoding failed: %s result: %d", str_encoded, ret);
 		zassert_equal(ts.some_double, encoded[i].num,
-			      "Decoding failed '%s' double: %g exepcted: %g",
+			      "Decoding failed '%s' double: %g expected: %g",
 			      str_encoded, ts.some_double, encoded[i].num);
 	}
 }
@@ -3039,6 +3053,410 @@ ZTEST(lib_json_test, test_debug_string_types)
 
 	zassert_str_equal(decoded.string_value, "test\nvalue", "string_value not unescaped");
 	zassert_str_equal(decoded.string_buf, "buffer\ttab", "string_buf not unescaped");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_as_string)
+{
+	char encoded[] = "{\"method\":\"initialize\",\"id\":\"request123\",\"params\":42}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+
+	zassert_equal(ret, (1 << 0) | (1 << 1) | (1 << 3),
+		      "Expected method, id_string, and params to be decoded, got %d", ret);
+	zassert_str_equal(req.method, "initialize", "Method not decoded correctly");
+	zassert_str_equal(req.id_string, "request123", "String ID not decoded correctly");
+	zassert_equal(req.id_number, 0, "Numeric ID should remain zero");
+	zassert_equal(req.params, 42, "Params not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_as_number)
+{
+	char encoded[] = "{\"method\":\"shutdown\",\"id\":999,\"params\":0}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+
+	zassert_equal(ret, (1 << 0) | (1 << 2) | (1 << 3),
+		      "Expected method, id_number, and params to be decoded, got %d", ret);
+	zassert_str_equal(req.method, "shutdown", "Method not decoded correctly");
+	zassert_is_null(req.id_string, "String ID should remain null");
+	zassert_equal(req.id_number, 999, "Numeric ID not decoded correctly");
+	zassert_equal(req.params, 0, "Params not decoded correctly");
+}
+
+ZTEST(lib_json_test, test_json_polymorphic_id_invalid_type)
+{
+	/* Boolean 'id' should fail to decode as both string and number */
+	char encoded[] = "{\"method\":\"test\",\"id\":true,\"params\":0}";
+	struct polymorphic_request req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), polymorphic_descr,
+			     ARRAY_SIZE(polymorphic_descr), &req);
+	zassert_true(ret < 0, "Parsing should fail for boolean id, got %d", ret);
+}
+
+/*
+ * Test to verify safety behavior: when a complex type (object/array) token
+ * is encountered and parsing fails, the error is returned immediately rather
+ * than attempting fallback to other descriptors. This prevents undefined
+ * behavior from corrupted lexer state.
+ *
+ * Note: Polymorphic decoding is primarily intended for scalar types
+ * (string vs number). This test verifies correct error handling, not
+ * a typical use case.
+ */
+ZTEST(lib_json_test, test_json_polymorphic_complex_type_error_handling)
+{
+	struct nested_data {
+		int value;
+	};
+
+	struct complex_polymorphic {
+		struct nested_data data_obj;
+		const char *data_string;
+	};
+
+	static const struct json_obj_descr nested_data_descr[] = {
+		JSON_OBJ_DESCR_PRIM(struct nested_data, value, JSON_TOK_NUMBER),
+	};
+
+	static const struct json_obj_descr complex_descr[] = {
+		JSON_OBJ_DESCR_OBJECT_NAMED(struct complex_polymorphic, "data", data_obj,
+					    nested_data_descr),
+		JSON_OBJ_DESCR_PRIM_NAMED(struct complex_polymorphic, "data", data_string,
+					  JSON_TOK_STRING),
+	};
+
+	/*
+	 * JSON has object token with invalid nested content. Parser must
+	 * return error immediately, not attempt fallback to string descriptor.
+	 */
+	char encoded[] = "{\"data\":{\"value\":\"not_a_number\"}}";
+	struct complex_polymorphic req = {0};
+	int ret;
+
+	ret = json_obj_parse(encoded, strlen(encoded), complex_descr, ARRAY_SIZE(complex_descr),
+			     &req);
+
+	zassert_true(ret < 0, "Parsing should fail immediately for invalid object, got %d", ret);
+}
+
+/*
+ * Tests for the top-level object-member walker
+ * (json_obj_separate_parse_init / json_obj_next_key_value).
+ */
+
+static bool jkv_key_eq(const struct json_obj_key_value *kv, const char *key)
+{
+	return kv->key != NULL && kv->key_len == strlen(key) &&
+	       memcmp(kv->key, key, kv->key_len) == 0;
+}
+
+static bool jtok_span_eq(const struct json_token *tok, const char *text)
+{
+	size_t len = (size_t)(tok->end - tok->start);
+
+	return len == strlen(text) && memcmp(tok->start, text, len) == 0;
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_empty)
+{
+	char payload[] = "{}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key, "empty object must report end of object");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_single)
+{
+	char payload[] = "{\"a\":1}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"), "key mismatch");
+	zassert_equal(kv.value.type, JSON_TOK_NUMBER, "value type mismatch");
+	zassert_true(jtok_span_eq(&kv.value, "1"), "value span mismatch");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key, "expected end of object");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_multiple)
+{
+	char payload[] = "{\"a\":1,\"b\":\"xy\",\"c\":true}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_equal(kv.value.type, JSON_TOK_NUMBER);
+	zassert_true(jtok_span_eq(&kv.value, "1"));
+
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "b"));
+	zassert_equal(kv.value.type, JSON_TOK_STRING);
+	zassert_true(jtok_span_eq(&kv.value, "xy"));
+
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "c"));
+	zassert_equal(kv.value.type, JSON_TOK_TRUE);
+
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_nested_object_span)
+{
+	char payload[] = "{\"o\":{\"x\":1}}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "o"));
+	zassert_equal(kv.value.type, JSON_TOK_OBJECT_START);
+	zassert_true(jtok_span_eq(&kv.value, "{\"x\":1}"),
+		     "object value must be the full balanced span");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key, "walk must resync to object end after a container");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_nested_array_span)
+{
+	char payload[] = "{\"a\":[1,2,3]}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_equal(kv.value.type, JSON_TOK_ARRAY_START);
+	zassert_true(jtok_span_eq(&kv.value, "[1,2,3]"),
+		     "array value must be the full balanced span");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_deep_nesting_span)
+{
+	char payload[] = "{\"d\":{\"a\":[{\"n\":1}]},\"e\":9}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "d"));
+	zassert_equal(kv.value.type, JSON_TOK_OBJECT_START);
+	zassert_true(jtok_span_eq(&kv.value, "{\"a\":[{\"n\":1}]}"),
+		     "arbitrarily nested value must span the whole balanced container");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "e"), "walk must resync after deep container");
+	zassert_true(jtok_span_eq(&kv.value, "9"));
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_braces_in_string_value)
+{
+	/* A brace/bracket inside a string value must not close the container early. */
+	char payload[] = "{\"o\":{\"k\":\"}]\"},\"b\":1}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "o"));
+	zassert_true(jtok_span_eq(&kv.value, "{\"k\":\"}]\"}"),
+		     "string braces must not truncate the container span");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "b"));
+	zassert_true(jtok_span_eq(&kv.value, "1"));
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_container_not_last_object)
+{
+	char payload[] = "{\"a\":{\"x\":1},\"b\":2}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(jtok_span_eq(&kv.value, "{\"x\":1}"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "b"), "must resync to the member after the object");
+	zassert_true(jtok_span_eq(&kv.value, "2"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_container_not_last_array)
+{
+	char payload[] = "{\"a\":[1,2],\"b\":3}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(jtok_span_eq(&kv.value, "[1,2]"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "b"), "must resync to the member after the array");
+	zassert_true(jtok_span_eq(&kv.value, "3"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_empty_containers)
+{
+	char obj_payload[] = "{\"a\":{}}";
+	char arr_payload[] = "{\"a\":[]}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, obj_payload, strlen(obj_payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(jtok_span_eq(&kv.value, "{}"), "empty object span must be exactly {}");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+
+	zassert_equal(json_obj_separate_parse_init(&obj, arr_payload, strlen(arr_payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(jtok_span_eq(&kv.value, "[]"), "empty array span must be exactly []");
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_unbalanced_container)
+{
+	/* Container value with no matching close must fail on the same call. */
+	char payload[] = "{\"o\":{\"x\":1";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0,
+		     "unbalanced container value must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_string_escapes)
+{
+	char payload[] = "{\"k\":\"a\\\"b\\n\"}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "k"));
+	zassert_equal(kv.value.type, JSON_TOK_STRING);
+	/* Raw span: escape sequences are not processed by the walker. */
+	zassert_true(jtok_span_eq(&kv.value, "a\\\"b\\n"), "escaped string span mismatch");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_whitespace)
+{
+	char payload[] = "  {  \"a\" : 1 , \"b\" : 2 }  ";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(jtok_span_eq(&kv.value, "1"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "b"));
+	zassert_true(jtok_span_eq(&kv.value, "2"));
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_is_null(kv.key);
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_init_not_object)
+{
+	char payload[] = "[1,2]";
+	struct json_obj obj;
+
+	zassert_true(json_obj_separate_parse_init(&obj, payload, strlen(payload)) < 0,
+		     "init must reject a non-object payload");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_missing_colon)
+{
+	char payload[] = "{\"a\" 1}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "missing colon must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_unterminated_string)
+{
+	char payload[] = "{\"a\":\"x}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "unterminated string must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_unbalanced_braces)
+{
+	char payload[] = "{\"a\":1";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_equal(json_obj_next_key_value(&obj, &kv), 0);
+	zassert_true(jkv_key_eq(&kv, "a"));
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "missing '}' must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_mismatched_object_close)
+{
+	/* Object value closed by a bracket: depth is balanced but the pair is not. */
+	char payload[] = "{\"a\":{]}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "'{]' must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_mismatched_array_close)
+{
+	/* Array value closed by a brace: depth is balanced but the pair is not. */
+	char payload[] = "{\"a\":[}}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "'[}' must fail");
+}
+
+ZTEST(lib_json_test, test_json_obj_walk_interleaved_mismatch)
+{
+	/* Array holding an open object closed by the array's bracket. Depth returns
+	 * to zero and neither brace nor bracket count goes negative, so only a
+	 * type-matched scan rejects it.
+	 */
+	char payload[] = "{\"a\":[{]}}";
+	struct json_obj obj;
+	struct json_obj_key_value kv;
+
+	zassert_equal(json_obj_separate_parse_init(&obj, payload, strlen(payload)), 0);
+	zassert_true(json_obj_next_key_value(&obj, &kv) < 0, "'[{]}' must fail");
 }
 
 ZTEST_SUITE(lib_json_test, NULL, NULL, NULL, NULL, NULL);

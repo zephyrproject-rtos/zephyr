@@ -34,8 +34,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #if CONFIG_USB_DC_NXP_LPCIP3511 || CONFIG_UDC_NXP_IP3511
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 #endif
 
 #define SYSTEM_IS_XIP_FLEXSPI()                                                                    \
@@ -327,6 +327,13 @@ __weak void clock_init(void)
 	RESET_PeripheralReset(kACMP0_RST_SHIFT_RSTn);
 	/* Make sure ACMP voltage reference available*/
 	POWER_SetAnalogBuffer(true);
+#endif
+
+#if CONFIG_DSP_BACKEND_POWERQUAD
+	/* Power up PowerQuad SRAM */
+	POWER_DisablePD(kPDRUNCFG_APD_PQ_SRAM);
+	POWER_DisablePD(kPDRUNCFG_PPD_PQ_SRAM);
+	POWER_ApplyPD();
 #endif
 
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(lpadc0), nxp_lpc_lpadc, okay)

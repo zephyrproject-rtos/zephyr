@@ -158,6 +158,13 @@ void board_early_init_hook(void)
 	CLOCK_SetClockDiv(kCLOCK_DivWWDT0, 1u);
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dac0))
+	SPC_EnableActiveModeAnalogModules(SPC0, kSPC_controlDac0);
+	CLOCK_SetClockDiv(kCLOCK_DivDAC0, 1u);
+	CLOCK_AttachClk(kFRO_LF_DIV_to_DAC0);
+	CLOCK_EnableClock(kCLOCK_GateDAC0);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ctimer0))
 	CLOCK_SetClockDiv(kCLOCK_DivCTIMER0, 1u);
 	CLOCK_AttachClk(kFRO_LF_DIV_to_CTIMER0);
@@ -299,6 +306,13 @@ void board_early_init_hook(void)
 
 #endif
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(rtc))
+	/* OSC32k is not available on this device; the RTC is clocked from the
+	 * FRO16K in the VBAT domain.
+	 */
+	CLOCK_SetupFRO16KClocking(kCLKE_16K_SYSTEM | kCLKE_16K_COREMAIN);
+#endif
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(flexio0))
 	CLOCK_SetClockDiv(kCLOCK_DivFLEXIO0, 2u);
 	CLOCK_AttachClk(kFRO_HF_to_FLEXIO0);
@@ -318,6 +332,10 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb))
 	RESET_PeripheralReset(kUSB0_RST_SHIFT_RSTn);
 	CLOCK_EnableUsbfsClock();
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(slcd))
+	RESET_ReleasePeripheralReset(kSLCD0_RST_SHIFT_RSTn);
 #endif
 
 	/* Set SystemCoreClock variable. */

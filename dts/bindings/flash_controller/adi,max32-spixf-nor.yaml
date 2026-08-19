@@ -73,7 +73,7 @@ examples:
         compatible = "adi,max32-spixf-nor";
         reg = <0x0 DT_SIZE_M(8)>; /* 64 Mbits */
         qspi-max-frequency = <80000000>;
-        jedec-id = [c2 37 25];
+        jedec-id = [c2 25 37];
         reset-cmd;
         spi-bus-width = <4>;
         writeoc = "PP_1_1_4";

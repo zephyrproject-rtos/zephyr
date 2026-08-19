@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/nxp_mcxn54x.dtsi>
+#include <nxp/mcx/mcxn/nxp_mcxn54x.dtsi>
 #include "mcx_nx4x_evk.dtsi"
 #include "mcx_n5xx_evk-pinctrl.dtsi"
 
@@ -12,4 +12,8 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
+};
+
+&otpc {
+	status = "okay";
 };

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config NET_LATMON
-	bool "Latency monitoring support"
+	bool "Latency monitoring support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	select NET_SOCKETS
 	depends on NET_TCP
@@ -10,6 +10,7 @@ config NET_LATMON
 	  This option enables the latency monitoring support for Zephyr
 
 if NET_LATMON
+
 config NET_LATMON_PORT
 	int "Latmon - Latmus communication port"
 	default 2306

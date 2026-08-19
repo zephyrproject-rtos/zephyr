@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
 #include <arm/armv7-m.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	chosen {
+		zephyr,entropy = &trng0;
 		zephyr,flash-controller = &msc;
+		silabs,sleeptimer = &rtcc0;
 	};
 
 	cpus {
@@ -20,6 +23,21 @@
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+
+			cpu-power-states = <&pstate_em1 &pstate_em2>;
+			device_type = "cpu";
+		};
+
+		power-states {
+			pstate_em1: em1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "runtime-idle";
+			};
+
+			pstate_em2: em2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+			};
 		};
 	};
 
@@ -27,10 +45,75 @@
 		compatible = "mmio-sram";
 	};
 
+	clocks {
+		clk_lfxo: clk-lfxo {
+			compatible = "silabs,series0-lfxo";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_lfrco: clk-lfrco {
+			compatible = "silabs,series0-lfrco";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			status = "disabled";
+		};
+
+		clk_hfxo: clk-hfxo {
+			compatible = "silabs,series0-hfxo";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk_hfrco: clk-hfrco {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		clk_lfa: clk-lfa {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_lfb: clk-lfb {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_lfe: clk-lfe {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			clocks = <&clk_lfxo>;
+			status = "disabled";
+		};
+
+		clk_hf: clk-hf {
+			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
+			status = "okay";
+		};
+	};
+
 	soc {
+		cmu: cmu@400e4000 {
+			compatible = "silabs,series0-cmu";
+			reg = <0x400e4000 0x200>;
+			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>, <&clk_lfe>,
+				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
+			clock-names = "lfxo", "lfrco", "lfa", "lfb", "lfe", "hfxo", "hfrco", "hf";
+			status = "okay";
+		};
+
 		msc: flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
 			reg = <0x400e0000 0x104>;
+			ranges;
 			interrupts = <25 0>;
 
 			#address-cells = <1>;
@@ -38,6 +121,8 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <4>;
 				erase-block-size = <2048>;
 			};
@@ -99,10 +184,11 @@
 		};
 
 		rtcc0: rtcc@40042000 {
-			compatible = "silabs,gecko-rtcc";
+			compatible = "silabs,rtcc";
 			reg = <0x40042000 0x184>;
-			interrupts = <31 0>;
 			clock-frequency = <32768>;
+			interrupt-names = "rtcc";
+			interrupts = <31 0>;
 			prescaler = <1>;
 			status = "disabled";
 		};
@@ -176,6 +262,13 @@
 			reg = <0x40052400 0x2c>;
 			peripheral-id = <1>;
 			interrupts = <3 0>;
+			status = "disabled";
+		};
+
+		trng0: trng@4001d000 {
+			compatible = "silabs,gecko-trng";
+			reg = <0x4001d000 0x400>;
+			interrupts = <45 0>;
 			status = "disabled";
 		};
 	};

@@ -43,6 +43,11 @@ static int usart_wch_init(const struct device *dev)
 
 	clock_control_on(config->clock_dev, clock_sys);
 
+	err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
+	if (err != 0) {
+		return err;
+	}
+
 	err = clock_control_get_rate(config->clock_dev, clock_sys, &clock_rate);
 	if (err != 0) {
 		return err;
@@ -62,15 +67,11 @@ static int usart_wch_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	regs->BRR = divn;
-	regs->CTLR1 = ctlr1;
+	regs->CTLR1 = 0;
 	regs->CTLR2 = 0;
 	regs->CTLR3 = 0;
-
-	err = pinctrl_apply_state(config->pin_cfg, PINCTRL_STATE_DEFAULT);
-	if (err != 0) {
-		return err;
-	}
+	regs->BRR = divn;
+	regs->CTLR1 = ctlr1;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	config->irq_config_func(dev);
@@ -187,7 +188,7 @@ static int usart_wch_irq_tx_ready(const struct device *dev)
 	const struct usart_wch_config *config = dev->config;
 	USART_TypeDef *regs = config->regs;
 
-	return (regs->STATR & USART_STATR_TXE) > 0;
+	return (regs->STATR & USART_STATR_TXE) != 0 && (regs->CTLR1 & USART_CTLR1_TXEIE) != 0;
 }
 
 static void usart_wch_irq_rx_enable(const struct device *dev)
@@ -266,11 +267,6 @@ static int usart_wch_irq_is_pending(const struct device *dev)
 	return (statr & stat_mask) > 0;
 }
 
-static int usart_wch_irq_update(const struct device *dev)
-{
-	return 1;
-}
-
 static void usart_wch_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				       void *user_data)
 {
@@ -298,7 +294,6 @@ static DEVICE_API(uart, usart_wch_driver_api) = {
 	.irq_err_enable = usart_wch_irq_err_enable,
 	.irq_err_disable = usart_wch_irq_err_disable,
 	.irq_is_pending = usart_wch_irq_is_pending,
-	.irq_update = usart_wch_irq_update,
 	.irq_callback_set = usart_wch_irq_callback_set,
 #endif
 };

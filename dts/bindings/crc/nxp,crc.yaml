@@ -7,7 +7,7 @@ description: NXP CRC (Cyclic Redundancy Check) driver
 
 compatible: "nxp,crc"
 
-include: [base.yaml]
+include: [reset-device.yaml, base.yaml]
 
 properties:
   reg:

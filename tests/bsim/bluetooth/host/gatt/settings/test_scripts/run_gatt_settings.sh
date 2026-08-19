@@ -5,15 +5,18 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="settings"
+simulation_id="${BOARD_TS}_settings"
 verbosity_level=2
 EXECUTE_TIMEOUT=120
 test_exe="./bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 
 cd ${BSIM_OUT_PATH}/bin
 
+SETTINGS_SRV="../results/${simulation_id}/server.log"
+SETTINGS_CLIENT="../results/${simulation_id}/client.log"
+
 # Remove the files used by the custom SETTINGS backend
-TO_DELETE="${simulation_id}_server.log ${simulation_id}_client.log"
+TO_DELETE="${SETTINGS_SRV} ${SETTINGS_CLIENT}"
 echo "remove settings files ${TO_DELETE}"
 rm ${TO_DELETE} || true
 
@@ -27,21 +30,21 @@ Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s="${simulation_id}" -D=8 -sim_le
 # Each device will wait until the previous instance (called 'test round') has
 # finished executing before starting up.
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=0 -testid=server -RealEncryption=1 -argstest 0 6 "server"
+    -s="${simulation_id}" -d=0 -testid=server -RealEncryption=1 -argstest 0 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=1 -testid=server -RealEncryption=1 -argstest 1 6 "server"
+    -s="${simulation_id}" -d=1 -testid=server -RealEncryption=1 -argstest 1 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=2 -testid=server -RealEncryption=1 -argstest 2 6 "server"
+    -s="${simulation_id}" -d=2 -testid=server -RealEncryption=1 -argstest 2 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=3 -testid=server -RealEncryption=1 -argstest 3 6 "server"
+    -s="${simulation_id}" -d=3 -testid=server -RealEncryption=1 -argstest 3 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=4 -testid=server -RealEncryption=1 -argstest 4 6 "server"
+    -s="${simulation_id}" -d=4 -testid=server -RealEncryption=1 -argstest 4 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=5 -testid=server -RealEncryption=1 -argstest 5 6 "server"
+    -s="${simulation_id}" -d=5 -testid=server -RealEncryption=1 -argstest 5 6 "${SETTINGS_SRV}"
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=6 -testid=server -RealEncryption=1 -argstest 6 6 "server"
+    -s="${simulation_id}" -d=6 -testid=server -RealEncryption=1 -argstest 6 6 "${SETTINGS_SRV}"
 
 Execute "$test_exe" -v=${verbosity_level} \
-    -s="${simulation_id}" -d=7 -testid=client -RealEncryption=1 -argstest 0 0 "client"
+    -s="${simulation_id}" -d=7 -testid=client -RealEncryption=1 -argstest 0 0 "${SETTINGS_CLIENT}"
 
 wait_for_background_jobs

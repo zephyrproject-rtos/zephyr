@@ -76,7 +76,7 @@ static int setup_credentials(void)
 {
 	int ret;
 
-	ret = tls_credential_add(TLS_TAG_DEVICE_CERTIFICATE, TLS_CREDENTIAL_SERVER_CERTIFICATE,
+	ret = tls_credential_add(TLS_TAG_DEVICE_CERTIFICATE, TLS_CREDENTIAL_PUBLIC_CERTIFICATE,
 				 public_cert, public_cert_len);
 	if (ret < 0) {
 		LOG_ERR("Failed to add device certificate: %d", ret);
@@ -473,7 +473,7 @@ int main(void)
 
 		mbedtls_memory_buffer_alloc_cur_get(&cur_used, &cur_blocks);
 		mbedtls_memory_buffer_alloc_max_get(&max_used, &max_blocks);
-		LOG_INF("mbedTLS heap usage: MAX %u/%u (%u) CUR %u (%u)", max_used,
+		LOG_INF("Mbed TLS heap usage: MAX %u/%u (%u) CUR %u (%u)", max_used,
 			CONFIG_MBEDTLS_HEAP_SIZE, max_blocks, cur_used, cur_blocks);
 #endif
 

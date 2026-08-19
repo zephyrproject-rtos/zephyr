@@ -59,6 +59,15 @@
 					compatible = "nordic,npm1304-wdt";
 				};
 			};
+
+			npm1012_pmic: pmic@4 {
+				compatible = "nordic,npm10xx";
+				reg = <0x4>;
+
+				npm1012_wdt: watchdog {
+					compatible = "nordic,npm10xx-wdt";
+				};
+			};
 		};
 	};
 };

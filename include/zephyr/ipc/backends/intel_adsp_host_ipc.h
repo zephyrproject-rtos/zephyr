@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_IPC_BACKEND_INTEL_ADSP_IPC_H
-#define ZEPHYR_INCLUDE_IPC_BACKEND_INTEL_ADSP_IPC_H
+#ifndef ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
+#define ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_
 
 #include <intel_adsp_ipc_devtree.h>
 #include <zephyr/kernel.h>
@@ -91,7 +91,7 @@ struct intel_adsp_ipc_data {
 	/** General driver lock. */
 	struct k_spinlock lock;
 
-	/** Pending TX acknowlegement. */
+	/** Pending TX acknowledgment. */
 	bool tx_ack_pending;
 
 	/** Pointer to endpoint configuration. */
@@ -160,4 +160,4 @@ void intel_adsp_ipc_set_suspend_handler(const struct device *dev,
 
 #endif /* CONFIG_PM_DEVICE */
 
-#endif /* ZEPHYR_INCLUDE_IPC_BACKEND_INTEL_ADSP_IPC_H */
+#endif /* ZEPHYR_INCLUDE_IPC_BACKENDS_INTEL_ADSP_HOST_IPC_H_ */

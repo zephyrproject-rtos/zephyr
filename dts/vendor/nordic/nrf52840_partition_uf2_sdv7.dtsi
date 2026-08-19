@@ -24,27 +24,31 @@
 	 */
 
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		reserved_partition_0: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "SoftDevice";
 			read-only;
 			reg = <0x00000000 0x00027000>;
 		};
 
 		code_partition: partition@27000 {
+			compatible = "zephyr,mapped-partition";
 			label = "Application";
 			reg = <0x00027000 0x000c5000>;
 		};
 
 		storage_partition: partition@ec000 {
+			compatible = "zephyr,mapped-partition";
 			label = "Storage";
 			reg = <0x000ec000 0x00008000>;
 		};
 
 		boot_partition: partition@f4000 {
+			compatible = "zephyr,mapped-partition";
 			label = "UF2";
 			read-only;
 			reg = <0x000f4000 0x0000c000>;

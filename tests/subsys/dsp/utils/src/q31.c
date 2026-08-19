@@ -31,7 +31,7 @@
 
 static void test_shift_q31_to_f32(const q31_t data, const uint32_t shift, const float32_t expected)
 {
-	const float32_t shifted_data = Z_SHIFT_Q31_TO_F32(data, shift);
+	const float32_t shifted_data = zdsp_q31_to_f32_shift(data, shift);
 
 	zassert_equal(shifted_data, expected,
 		      "Conversion failed: 0x%08x shifted by %d = %f (expected %f)", data, shift,
@@ -40,7 +40,7 @@ static void test_shift_q31_to_f32(const q31_t data, const uint32_t shift, const 
 
 static void test_shift_q31_to_f64(const q31_t data, const uint32_t shift, const float64_t expected)
 {
-	const float64_t shifted_data = Z_SHIFT_Q31_TO_F64(data, shift);
+	const float64_t shifted_data = zdsp_q31_to_f64_shift(data, shift);
 
 	zassert_equal(shifted_data, expected,
 		      "Conversion failed: 0x%08x shifted by %d = %f (expected %f)", data, shift,

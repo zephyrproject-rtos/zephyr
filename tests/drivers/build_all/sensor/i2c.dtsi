@@ -24,12 +24,14 @@
 #include <zephyr/dt-bindings/sensor/lis2du12.h>
 #include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lis2de12.h>
+#include <zephyr/dt-bindings/sensor/pac194x.h>
 #include <zephyr/dt-bindings/sensor/tmag5273.h>
 #include <zephyr/dt-bindings/sensor/stts22h.h>
 #include <zephyr/dt-bindings/sensor/ina226.h>
 #include <zephyr/dt-bindings/sensor/apds9253.h>
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
+#include <zephyr/dt-bindings/sensor/icm566xx.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1555,4 +1557,138 @@ test_i2c_adxl355: adxl55@cd {
 	compatible = "adi,adxl355";
 	reg = <0xcd>;
 	int1-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_htu21d: htu21d@ce {
+	compatible = "meas,htu21d";
+	reg = <0xce>;
+};
+
+test_i2c_cht8315: cht8315@cf {
+	compatible = "sensylink,cht8315";
+	reg = <0xcf>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_pac194x: pac194x@d0 {
+	compatible = "microchip,pac194x";
+	reg = <0xd0>;
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	microchip,refresh-mode = <PAC_REFRESH_AUTO_NOWAIT>;
+
+	channel@1 {
+		reg = <0x1>;
+		friendly-name = "CPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@2 {
+		reg = <0x2>;
+		friendly-name = "MEM";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_BIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_BIPOLAR_HALF_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VPOWER>;
+	};
+
+	channel@3 {
+		reg = <0x3>;
+		friendly-name = "GPU";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+
+	channel@4 {
+		reg = <0x4>;
+		friendly-name = "NET";
+		microchip,shunt-resistor-micro-ohms = <4000>;
+		microchip,vbus-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,vsense-mode = <PAC_UNIPOLAR_FSR>;
+		microchip,accumulation-mode = <PAC_ACCUM_VBUS>;
+	};
+};
+
+test_i2c_fdc1004: fdc1004@d1 {
+	compatible = "ti,fdc1004";
+	reg = <0xd1>;
+	measure-rate = <100>;
+	ti,capdac = <0 0 0 0>;
+};
+
+test_i2c_htu31d: htu31d@d2 {
+	compatible = "meas,htu31d";
+	reg = <0xd2>;
+};
+
+test_i2c_ms5637: ms5637@d3 {
+	compatible = "meas,ms5637";
+	reg = <0xd3>;
+};
+
+test_i2c_max30102: max30102@d4 {
+	compatible = "maxim,max30102";
+	reg = <0xd4>;
+	acq-mode = "multi-led";
+};
+
+test_i2c_tmp451: tmp451@d5 {
+	compatible = "ti,tmp451";
+	reg = <0xd5>;
+	alert-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_icm40627: icm40627@d6 {
+	compatible = "invensense,icm40627";
+	reg = <0xd6>;
+	int-gpios = <&test_gpio 0 0>;
+	accel-hz = <100>;
+	gyro-hz = <100>;
+	accel-fs = <16>;
+	gyro-fs = <2000>;
+};
+
+test_i2c_max30009: max30009@d7 {
+	compatible = "adi,max30009";
+	reg = <0xd7>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i2c_adxl313: adxl313@d8 {
+	compatible = "adi,adxl313";
+	reg = <0xd8>;
+};
+
+test_i2c_icm56686: icm56686@d9 {
+	compatible = "invensense,icm56686";
+	reg = <0xd9>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
+};
+
+test_i2c_ltc4286: ltc4286@da {
+	compatible = "adi,ltc4286";
+	reg = <0xda>;
+	reboot-gpios = <&test_gpio 0 0>;
+	op-status-gpios = <&test_gpio 0 0>;
+	oc-status-gpios = <&test_gpio 0 0>;
+	comp-out-gpios = <&test_gpio 0 0>;
+	fault-out-gpios = <&test_gpio 0 0>;
+	power-good-gpios = <&test_gpio 0 0>;
+	alert-gpios = <&test_gpio 0 0>;
 };

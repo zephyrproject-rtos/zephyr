@@ -81,6 +81,14 @@ static int fake_stepper_driver_get_micro_step_res_delegate(const struct device *
 	return 0;
 }
 
+static int fake_stepper_ctrl_is_moving_delegate(const struct device *dev, bool *is_moving)
+{
+	ARG_UNUSED(dev);
+	*is_moving = false;
+
+	return 0;
+}
+
 static int fake_stepper_ctrl_set_reference_position_delegate(const struct device *dev,
 							      const int32_t pos)
 {
@@ -126,6 +134,8 @@ static void fake_stepper_reset_rule_before(const struct ztest_unit_test *test, v
 		fake_stepper_driver_set_micro_step_res_delegate;
 	fake_stepper_driver_get_micro_step_res_fake.custom_fake =
 		fake_stepper_driver_get_micro_step_res_delegate;
+
+	fake_stepper_ctrl_is_moving_fake.custom_fake = fake_stepper_ctrl_is_moving_delegate;
 	fake_stepper_ctrl_set_reference_position_fake.custom_fake =
 		fake_stepper_ctrl_set_reference_position_delegate;
 	fake_stepper_ctrl_get_actual_position_fake.custom_fake =
@@ -147,6 +157,7 @@ static int fake_stepper_driver_init(const struct device *dev)
 
 static int fake_stepper_init(const struct device *dev)
 {
+	fake_stepper_ctrl_is_moving_fake.custom_fake = fake_stepper_ctrl_is_moving_delegate;
 	fake_stepper_ctrl_set_reference_position_fake.custom_fake =
 		fake_stepper_ctrl_set_reference_position_delegate;
 	fake_stepper_ctrl_get_actual_position_fake.custom_fake =

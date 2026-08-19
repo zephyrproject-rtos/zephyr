@@ -21,6 +21,14 @@ config IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
 	  When this parameter is set to 'y' the status region of the shared
 	  memory is reset on kernel initialization.
 
+config IPC_SERVICE_BACKEND_RPMSG_SHMEM_INIT_PRIORITY
+	int "Shared memory reset init priority"
+	depends on IPC_SERVICE_BACKEND_RPMSG_SHMEM_RESET
+	default 1
+	help
+	  Initialization priority for shared memory reset performed by the
+	  RPMsg static vrings backend.
+
 config IPC_SERVICE_BACKEND_RPMSG_NUM_ENDPOINTS_PER_INSTANCE
 	int "Max number of registered endpoints per instance"
 	default 2

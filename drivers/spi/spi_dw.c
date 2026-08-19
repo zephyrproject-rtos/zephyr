@@ -31,7 +31,7 @@ LOG_MODULE_REGISTER(spi_dw);
 #endif
 
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/irq.h>
 
 #include "spi_dw.h"
@@ -223,6 +223,20 @@ static int spi_dw_configure(const struct device *dev,
 		LOG_ERR("Max xfer size is %u, word size of %u not allowed",
 			info->max_xfer_size, SPI_WORD_SIZE_GET(config->operation));
 		return -ENOTSUP;
+	}
+
+	/* zero frequency would cause DIV/0 in clk divider calc */
+	if (!config->frequency) {
+		LOG_ERR("(%s): Frequency must not be zero", dev->name);
+		return -EINVAL;
+	}
+
+	/* return error if the expected bus frequency is
+	 * greater than half of the input core clock frequency
+	 */
+	if (config->frequency > (info->clock_frequency / DW_SPI_MIN_SCKDIV)) {
+		LOG_ERR("(%s): Invalid bus frequency", dev->name);
+		return -EINVAL;
 	}
 
 	/* Word size */

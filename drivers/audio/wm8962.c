@@ -706,7 +706,7 @@ static void WM8962_read_all_reg(const struct device *dev, uint16_t endAddress)
 }
 #endif
 
-static const struct audio_codec_api wm8962_driver_api = {.configure = wm8962_configure,
+static DEVICE_API(audio_codec, wm8962_driver_api) = {.configure = wm8962_configure,
 							 .start_output = wm8962_start_output,
 							 .stop_output = wm8962_stop_output,
 							 .set_property = wm8962_set_property,

@@ -96,6 +96,26 @@ config ARM_SCMI_CHAN_SEM_TIMEOUT_USEC
 	  Maximum number of microseconds to wait for a reply from the
 	  scmi platform.
 
+config ARM_SCMI_POLLING_ONLY
+	bool "ARM SCMI polling based only communication flow"
+	help
+	  Force polling based communication flow. This may be needed if
+	  SCMI platform does not support interrupt-driven communication
+	  flow. As polling is not the preferred mode, this option should
+	  be enabled only in that case.
+
+config ARM_SCMI_BASE_HELPERS
+	bool "Helper functions for SCMI base protocol"
+	help
+	  Enable support for SCMI base protocol helper functions.
+
+config ARM_SCMI_RESET_HELPERS
+	bool "Helper functions for SCMI reset protocol"
+	default y
+	depends on DT_HAS_ARM_SCMI_RESET_ENABLED
+	help
+	  Enable support for SCMI reset protocol helper functions.
+
 source "drivers/firmware/scmi/nxp/Kconfig"
 source "drivers/firmware/scmi/shell/Kconfig"
 

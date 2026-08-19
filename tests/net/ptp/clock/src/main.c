@@ -119,12 +119,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
-{
-	return ETHERNET_PTP;
-}
-
-static const struct device *eth_get_ptp_clock(const struct device *dev)
+static const struct device *eth_get_ptp_clock(const struct device *dev,
+					      struct net_if *iface __unused)
 {
 	struct eth_context *context = dev->data;
 
@@ -134,7 +130,6 @@ static const struct device *eth_get_ptp_clock(const struct device *dev)
 static struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
 
-	.get_capabilities = eth_capabilities,
 	.get_ptp_clock = eth_get_ptp_clock,
 	.send = eth_tx,
 };

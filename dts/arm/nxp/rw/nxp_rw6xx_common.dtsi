@@ -266,7 +266,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x106000 0x1000>;
 		interrupts = <14 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK &clkctl1 MCUX_FLEXCOMM0_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM0_CLK>, <&clkctl1 MCUX_FLEXCOMM0_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
@@ -281,7 +281,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x107000 0x1000>;
 		interrupts = <15 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK &clkctl1 MCUX_FLEXCOMM1_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM1_CLK>, <&clkctl1 MCUX_FLEXCOMM1_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
@@ -296,7 +296,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x108000 0x1000>;
 		interrupts = <16 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK &clkctl1 MCUX_FLEXCOMM2_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM2_CLK>, <&clkctl1 MCUX_FLEXCOMM2_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
@@ -311,7 +311,7 @@
 		compatible = "nxp,lpc-flexcomm";
 		reg = <0x109000 0x1000>;
 		interrupts = <17 0>;
-		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK &clkctl1 MCUX_FLEXCOMM3_LP_CLK>;
+		clocks = <&clkctl1 MCUX_FLEXCOMM3_CLK>, <&clkctl1 MCUX_FLEXCOMM3_LP_CLK>;
 		clock-names = "default", "sleep";
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
@@ -319,6 +319,13 @@
 		zephyr,disabling-power-states = <&suspend &standby>;
 		low-power-states = <&suspend>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
+	};
+
+	crc: crc@120000 {
+		compatible = "nxp,lpc-crc";
+		reg = <0x120000 0x1000>;
+		clocks = <&clkctl1 MCUX_CRC_CLK>;
 		status = "disabled";
 	};
 
@@ -365,6 +372,14 @@
 		/* first index is the imu interrupt, the second is the wakeup done interrupt */
 		interrupts = <72 2>, <64 2>;
 		power-domains = <&peripheral_domain>;
+
+		/* New subnode to pass antenna data down to the driver */
+		wifi_antenna: wifi-antenna {
+			antenna-gain-2ghz = <0>;
+			antenna-gain-5ghz-sb1 = <0>;
+			antenna-gain-5ghz-sb2 = <0>;
+			antenna-gain-5ghz-sb3 = <0>;
+		};
 	};
 
 	dma0: dma-controller@104000 {
@@ -374,6 +389,16 @@
 		status = "disabled";
 		#dma-cells = <1>;
 		dma-channels = <33>;
+		power-domains = <&peripheral_domain>;
+	};
+
+	gdma: dma-controller@4014e000 {
+		compatible = "nxp,gdma";
+		reg = <0x4014e000 0x1000>;
+		interrupts = <128 0>;
+		status = "disabled";
+		#dma-cells = <1>;
+		dma-channels = <4>;
 		power-domains = <&peripheral_domain>;
 	};
 
@@ -670,6 +695,13 @@
 			clocks = <&clkctl1 MCUX_ENET_PLL>;
 			power-domains = <&peripheral_domain>;
 		};
+	};
+
+	powerquad: powerquad@150000 {
+		compatible = "nxp,powerquad";
+		reg = <0x150000 0x1000>;
+		clocks = <&clkctl0 MCUX_POWERQUAD_CLK>;
+		status = "disabled";
 	};
 };
 

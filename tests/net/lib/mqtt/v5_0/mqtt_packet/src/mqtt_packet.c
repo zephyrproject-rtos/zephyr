@@ -54,7 +54,7 @@ static void run_packet_tests(struct mqtt_test *tests, size_t count)
 	for (size_t i = 0; i < count; i++) {
 		struct mqtt_test *test = &tests[i];
 
-		TC_PRINT("Test #%u - %s\n", i + 1, test->test_name != NULL ?
+		TC_PRINT("Test #%zu - %s\n", i + 1, test->test_name != NULL ?
 			test->test_name : "");
 
 		test->test_fcn(test);

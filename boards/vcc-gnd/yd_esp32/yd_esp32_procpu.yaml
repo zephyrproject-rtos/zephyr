@@ -13,7 +13,6 @@ supported:
   - uart
   - nvs
   - pwm
-  - dac
   - spi
   - counter
   - entropy

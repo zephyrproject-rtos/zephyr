@@ -9,6 +9,7 @@
 &w25q32jvwj0 {
 	partitions {
 		small_partition: partition@3f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "small";
 			reg = <0x003f0000 DT_SIZE_K(64)>;
 		};

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _CORTEX_M_CPU_H
-#define _CORTEX_M_CPU_H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_CPU_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_CPU_H_
 
 #ifdef _ASMLANGUAGE
 
@@ -116,4 +116,4 @@ typedef struct __cpu_context _cpu_context_t;
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* _CORTEX_M_CPU_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_CPU_H_ */

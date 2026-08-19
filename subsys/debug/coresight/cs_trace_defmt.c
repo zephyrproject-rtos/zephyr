@@ -25,7 +25,7 @@ int cs_trace_defmt_process(const uint8_t *data, size_t len)
 
 	uint8_t aux = data[15];
 	uint8_t d_id;
-	uint8_t cb_id;
+	uint8_t cb_id = 0;
 	bool do_cb = false;
 
 	for (int i = 0; i < 8; i++) {

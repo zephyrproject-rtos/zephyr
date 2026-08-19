@@ -17,14 +17,35 @@
  */
 /** PWM complementary output pin is enabled */
 #define STM32_PWM_COMPLEMENTARY	(1U << 8)
-/**
- * @deprecated Use the PWM complementary `STM32_PWM_COMPLEMENTARY` flag instead.
- */
-#define PWM_STM32_COMPLEMENTARY	(1U << 8)
 
 /** @cond INTERNAL_HIDDEN */
 #define STM32_PWM_COMPLEMENTARY_MASK	0x100
 /** @endcond */
+/** @} */
+
+/**
+ * @name custom PWM flags for input capture prescaler
+ * These flags can be used with the `pwm_configure_capture` API call to set the input capture
+ * prescaler (ICxPSC in TIMx_CCMRx). A prescaler > 1 can only be used with PWM_CAPTURE_TYPE_PERIOD.
+ * @{
+ */
+ /** @cond INTERNAL_HIDDEN */
+#define STM32_PWM_CAPTURE_PSC_POS  9
+#define STM32_PWM_CAPTURE_PSC_MASK (0x3 << STM32_PWM_CAPTURE_PSC_POS)
+/** @endcond */
+
+ /** PWM input capture prescaler is set to 1 (default) */
+#define STM32_PWM_CAPTURE_PSC_1 (0U << STM32_PWM_CAPTURE_PSC_POS)
+
+/** PWM input capture prescaler is set to 2 */
+#define STM32_PWM_CAPTURE_PSC_2 (1U << STM32_PWM_CAPTURE_PSC_POS)
+
+/** PWM input capture prescaler is set to 4 */
+#define STM32_PWM_CAPTURE_PSC_4 (2U << STM32_PWM_CAPTURE_PSC_POS)
+
+/** PWM input capture prescaler is set to 8 */
+#define STM32_PWM_CAPTURE_PSC_8 (3U << STM32_PWM_CAPTURE_PSC_POS)
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PWM_STM32_PWM_H_ */

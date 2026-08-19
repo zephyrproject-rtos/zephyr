@@ -11,6 +11,7 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <espressif/partitions_0x0_amp.dtsi>
+#include <zephyr/dt-bindings/display/panel.h>
 
 / {
 	model = "M5Stack AtomS3 PROCPU";
@@ -76,7 +77,7 @@
 			vdvs = <0x20>;
 			mdac = <0x00>;
 			gamma = <0x01>;
-			colmod = <0x55>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			lcm = <0x0c>;
 			porch-param = [0c 0c 00 33 33];
 			cmd2en-param = [5a 69 02 00];

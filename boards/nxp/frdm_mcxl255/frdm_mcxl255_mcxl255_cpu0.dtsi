@@ -1,12 +1,12 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxl255_cm33.dtsi>
+#include <nxp/mcx/mcxl/nxp_mcxl255_cm33.dtsi>
 #include "frdm_mcxl255-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -17,6 +17,7 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -25,6 +26,10 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		rtc = &rtc;
+		watchdog0 = &wwdt0;
+		spi-0 = &lpspi0;
+		spi-1 = &lpspi1;
 	};
 
 	leds {
@@ -90,6 +95,13 @@
 	pinctrl-names = "default";
 };
 
+&lpuart1 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart1>;
+	pinctrl-names = "default";
+};
+
 &aon_lpuart0 {
 	status = "disabled";
 	current-speed = <115200>;
@@ -97,6 +109,38 @@
 	pinctrl-names = "default";
 };
 
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};
+
+&lpspi1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi1>;
+	pinctrl-names = "default";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
+&rtc {
+	status = "okay";
+};
+
+&crc {
+	status = "okay";
+};
+
 &systick {
+	status = "okay";
+};
+
+&wwdt0 {
 	status = "okay";
 };

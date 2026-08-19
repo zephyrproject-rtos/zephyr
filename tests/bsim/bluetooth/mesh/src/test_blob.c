@@ -8,7 +8,7 @@
 #include "friendship_common.h"
 #include "mesh/adv.h"
 #include "mesh/blob.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #define LOG_MODULE_NAME test_blob
 
@@ -514,7 +514,7 @@ static void test_cli_caps_cancelled(void)
 	}
 
 	if (k_sem_take(&lost_target_sem, K_NO_WAIT)) {
-		FAIL("Lost targets CB did not trigger for all expeted lost targets");
+		FAIL("Lost targets CB did not trigger for all expected lost targets");
 	}
 
 	ASSERT_TRUE(srv1->acked);

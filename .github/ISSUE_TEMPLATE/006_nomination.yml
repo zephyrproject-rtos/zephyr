@@ -1,7 +1,8 @@
-name: Contributor Nomination
-description: Nominate a GitHub user for the Contributor role with triage permissions
+name: Collaborator Nomination
+description: Nominate a GitHub user for the Collaborator role
 labels: [Role Nomination]
 assignees: ['nashif']
+type: Task
 body:
   - type: markdown
     attributes:
@@ -10,11 +11,11 @@ body:
 
         The [TSC Project Roles](https://docs.zephyrproject.org/latest/project/project_roles.html) defines the main roles for the Zephyr Project, including Maintainer, Collaborator, and Contributor.
 
-        By default, anyone who contributes code or documentation is a Contributor, but with the lowest [GitHub Permission Level](https://docs.github.com/en/organizations/managing-access-to-your-organizations-repositories/repository-roles-for-an-organization) of **Read**.
+        The Collaborator role is a significant recognition of a contributor's dedication and impact on the Zephyr project. Collaborators have the ability to review and merge pull requests, manage issues, and contribute to the overall direction of the project.
 
-        Use this form to nominate a user for the **Contributor** role with **Triage** permission, which allows the user to:
-        - Add reviewers to pull requests
-        - Be added as a reviewer by others
+        Use this form to nominate a GitHub user for the Collaborator role. Please provide detailed information about the nominee's contributions to the Zephyr project, including links to pull requests they have authored or reviewed that demonstrate their dedication and impact.
+
+        Reference this nomination when adding yourself to the MAINTAINERS file as a Collaborator.
 
   - type: input
     id: full-name

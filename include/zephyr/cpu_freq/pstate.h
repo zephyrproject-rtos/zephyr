@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SUBSYS_CPU_FREQ_PSTATE_H_
-#define ZEPHYR_SUBSYS_CPU_FREQ_PSTATE_H_
+/**
+ * @file
+ * @ingroup subsys_cpu_freq_pstate
+ * @brief Header file for CPU frequency scaling performance state (P-state).
+ */
+
+#ifndef ZEPHYR_INCLUDE_CPU_FREQ_PSTATE_H_
+#define ZEPHYR_INCLUDE_CPU_FREQ_PSTATE_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,4 +80,4 @@ DT_FOREACH_CHILD_STATUS_OKAY(DT_PATH(performance_states), Z_DECLARE_PSTATE_EXTER
 }
 #endif
 
-#endif /* ZEPHYR_SUBSYS_CPU_FREQ_PSTATE_H_ */
+#endif /* ZEPHYR_INCLUDE_CPU_FREQ_PSTATE_H_ */

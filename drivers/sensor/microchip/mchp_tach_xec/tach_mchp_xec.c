@@ -8,18 +8,15 @@
 #define DT_DRV_COMPAT microchip_xec_tach
 
 #include <errno.h>
-#include <zephyr/kernel.h>
-#include <zephyr/device.h>
+#include <soc.h>
 #include <zephyr/arch/cpu.h>
-#ifdef CONFIG_SOC_SERIES_MEC172X
-#include <zephyr/drivers/clock_control/mchp_xec_clock_control.h>
-#include <zephyr/drivers/interrupt_controller/intc_mchp_xec_ecia.h>
-#endif
+#include <zephyr/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/sensor.h>
-#include <soc.h>
-#include <zephyr/sys/sys_io.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/sys_io.h>
 
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/policy.h>
@@ -30,8 +27,7 @@ struct tach_xec_config {
 	struct tach_regs * const regs;
 	uint8_t girq;
 	uint8_t girq_pos;
-	uint8_t pcr_idx;
-	uint8_t pcr_pos;
+	uint8_t enc_pcr;
 	const struct pinctrl_dev_config *pcfg;
 };
 
@@ -47,7 +43,7 @@ struct tach_xec_data {
 #define TACH_CTRL_EDGES		(CONFIG_TACH_XEC_EDGES << \
 				 MCHP_TACH_CTRL_NUM_EDGES_POS)
 
-int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
+static int tach_xec_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	ARG_UNUSED(chan);
 
@@ -112,17 +108,8 @@ static int tach_xec_channel_get(const struct device *dev,
 static void tach_xec_sleep_clr(const struct device *dev)
 {
 	const struct tach_xec_config * const cfg = dev->config;
-	struct pcr_regs * const pcr = (struct pcr_regs * const)(
-		DT_REG_ADDR_BY_IDX(DT_NODELABEL(pcr), 0));
 
-#ifdef CONFIG_SOC_SERIES_MEC172X
-	pcr->SLP_EN[cfg->pcr_idx] &= ~BIT(cfg->pcr_pos);
-#else
-	uintptr_t addr = (uintptr_t)&pcr->SLP_EN0 + (4u * cfg->pcr_idx);
-	uint32_t pcr_val = sys_read32(addr) & ~BIT(cfg->pcr_pos);
-
-	sys_write32(pcr_val, addr);
-#endif
+	soc_xec_pcr_sleep_en_clear(cfg->enc_pcr);
 }
 
 #ifdef CONFIG_PM_DEVICE
@@ -182,13 +169,15 @@ static DEVICE_API(sensor, tach_xec_driver_api) = {
 	.channel_get = tach_xec_channel_get,
 };
 
+#define DEV_CFG_GIRQ(inst)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+#define DEV_CFG_GIRQ_POS(inst) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, 0))
+
 #define XEC_TACH_CONFIG(inst)						\
 	static const struct tach_xec_config tach_xec_config_##inst = {	\
 		.regs = (struct tach_regs * const)DT_INST_REG_ADDR(inst),	\
-		.girq = DT_INST_PROP_BY_IDX(inst, girqs, 0),		\
-		.girq_pos = DT_INST_PROP_BY_IDX(inst, girqs, 1),	\
-		.pcr_idx = DT_INST_PROP_BY_IDX(inst, pcrs, 0),		\
-		.pcr_pos = DT_INST_PROP_BY_IDX(inst, pcrs, 1),		\
+		.girq = DEV_CFG_GIRQ(inst),		\
+		.girq_pos = DEV_CFG_GIRQ_POS(inst),	\
+		.enc_pcr = DT_INST_PROP(inst, pcr_scr),             \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),		\
 	}
 

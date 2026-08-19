@@ -13,7 +13,13 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  # Label changes are delivered as one event per label, so a bulk (un)labeling
+  # spawns several runs at once. Keying the group on the action and the label
+  # keeps those runs apart so they do not cancel each other and leave this
+  # required check reported as "cancelled". The label name is empty for the
+  # push events, which therefore keep sharing a group and still supersede each
+  # other.
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}-${{ github.event.action }}-${{ github.event.label.name }}
   cancel-in-progress: true
 
 jobs:
@@ -23,18 +29,25 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            scripts/ci/do_not_merge.py
+            scripts/requirements-actions-basic.txt
+          sparse-checkout-cone-mode: false
 
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.12
           cache: pip
-          cache-dependency-path: scripts/requirements-actions.txt
+          cache-dependency-path: scripts/requirements-actions-basic.txt
+
 
       - name: Install Python dependencies
         run: |
-          pip install -r scripts/requirements-actions.txt --require-hashes
+          pip install -r scripts/requirements-actions-basic.txt --require-hashes
 
       - name: Run the check script
         env:

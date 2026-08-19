@@ -12,9 +12,12 @@ config MCUX_LPTMR_TIMER
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
 
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,/soc/lptmr@40040000,clock-frequency) if MCUX_LPTMR_TIMER
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 config NUM_IRQS
 	# must be >= the highest interrupt number used

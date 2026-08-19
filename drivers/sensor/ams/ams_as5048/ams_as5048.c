@@ -135,7 +135,7 @@ static int as5048_init(const struct device *dev)
 	const struct as5048_config *cfg = dev->config;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI device not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -ENODEV;
 	}
 

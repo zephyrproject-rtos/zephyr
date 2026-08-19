@@ -21,6 +21,12 @@
 # 'TargetTools_FOUND', 'TARGETTOOLS_FOUND'
 # True if all required host tools were found.
 
+if(NOT DEFINED ENV{CCACHE_IGNOREOPTIONS})
+  # ccache <4.12 are unable to handle `-specs` correctly
+  # https://github.com/ccache/ccache/issues/1625
+  set(ccache_minimum_version 4.12)
+endif()
+find_package(Ccache ${ccache_minimum_version})
 find_package(HostTools)
 
 if(TargetTools_FOUND)
@@ -30,6 +36,13 @@ endif()
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
+
+if(Ccache_FOUND)
+  set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE})
+  set(CMAKE_C_LINKER_LAUNCHER     ${CCACHE})
+  set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE})
+  set(CMAKE_CXX_LINKER_LAUNCHER   ${CCACHE})
+endif()
 
 # https://cmake.org/cmake/help/latest/variable/CMAKE_SYSTEM_NAME.html:
 #   The name of the operating system for which CMake is to build.

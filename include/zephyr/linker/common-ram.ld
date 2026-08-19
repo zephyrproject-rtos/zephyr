@@ -148,6 +148,10 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(bt_nus_inst, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_FIDO2)
+	ITERABLE_SECTION_RAM(fido2_transport, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #ifdef CONFIG_USERSPACE
 	PLACE_SYMBOL_HERE(_static_kernel_objects_end);
 #endif

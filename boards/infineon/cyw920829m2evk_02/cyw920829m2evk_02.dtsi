@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 		zephyr,console = &uart2;
 		zephyr,shell-uart = &uart2;
 		zephyr,bt-hci = &bluetooth;
+		zephyr,entropy = &mxcryptolite_trng;
 	};
 };
 
@@ -91,5 +92,13 @@ uart2: &scb2 {
 };
 
 &bluetooth {
+	status = "okay";
+};
+
+&mxcryptolite_crypto {
+	status = "okay";
+};
+
+&mxcryptolite_trng {
 	status = "okay";
 };

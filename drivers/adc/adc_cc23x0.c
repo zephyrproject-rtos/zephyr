@@ -126,7 +126,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA (%d)", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(cfg->dma_dev, ret);
 		return;
 	}
 
@@ -180,7 +180,7 @@ static void adc_cc23x0_isr(const struct device *dev)
 
 	ret = pm_device_runtime_put(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to suspend DMA (%d)", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(cfg->dma_dev, ret);
 		return;
 	}
 

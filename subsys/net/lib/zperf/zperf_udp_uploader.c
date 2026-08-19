@@ -24,15 +24,14 @@ static uint8_t sample_packet[sizeof(struct zperf_udp_datagram) +
 static struct zperf_async_upload_context udp_async_upload_ctx;
 #endif /* CONFIG_ZPERF_SESSION_PER_THREAD */
 
-static inline void zperf_upload_decode_stat(const uint8_t *data,
-					    size_t datalen,
+static inline void zperf_upload_decode_stat(const uint8_t *data, size_t datalen,
 					    struct zperf_results *results)
 {
 	struct zperf_server_hdr *stat;
+	uint32_t total_datagrams;
 	uint32_t flags;
 
-	if (datalen < sizeof(struct zperf_udp_datagram) +
-		      sizeof(struct zperf_server_hdr)) {
+	if (datalen < sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_server_hdr)) {
 		NET_WARN("Network packet too short");
 	}
 
@@ -43,27 +42,26 @@ static inline void zperf_upload_decode_stat(const uint8_t *data,
 		NET_WARN("Unexpected response flags");
 	}
 
-	results->nb_packets_rcvd = net_ntohl(UNALIGNED_GET(&stat->datagrams));
 	results->nb_packets_lost = net_ntohl(UNALIGNED_GET(&stat->error_cnt));
-	results->nb_packets_outorder =
-		net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
+	total_datagrams = net_ntohl(UNALIGNED_GET(&stat->datagrams));
+	/* Keep the public result as the number of datagrams actually received. */
+	results->nb_packets_rcvd = total_datagrams >= results->nb_packets_lost
+					   ? total_datagrams - results->nb_packets_lost
+					   : 0U;
+	results->nb_packets_outorder = net_ntohl(UNALIGNED_GET(&stat->outorder_cnt));
 	results->total_len = (((uint64_t)net_ntohl(UNALIGNED_GET(&stat->total_len1))) << 32) +
-		net_ntohl(UNALIGNED_GET(&stat->total_len2));
+			     net_ntohl(UNALIGNED_GET(&stat->total_len2));
 	results->time_in_us = net_ntohl(UNALIGNED_GET(&stat->stop_usec)) +
-		net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
+			      net_ntohl(UNALIGNED_GET(&stat->stop_sec)) * USEC_PER_SEC;
 	results->jitter_in_us = net_ntohl(UNALIGNED_GET(&stat->jitter2)) +
-		net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
+				net_ntohl(UNALIGNED_GET(&stat->jitter1)) * USEC_PER_SEC;
 }
 
-static inline int zperf_upload_fin(int sock,
-				   uint32_t nb_packets,
-				   uint64_t end_time_us,
-				   uint32_t packet_size,
-				   struct zperf_results *results,
+static inline int zperf_upload_fin(int sock, uint32_t nb_packets, uint64_t end_time_us,
+				   uint32_t packet_size, struct zperf_results *results,
 				   bool is_mcast_pkt)
 {
-	uint8_t stats[sizeof(struct zperf_udp_datagram) +
-		      sizeof(struct zperf_server_hdr)] = { 0 };
+	uint8_t stats[sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_server_hdr)] = {0};
 	struct zperf_udp_datagram *datagram;
 	struct zperf_client_hdr_v1 *hdr;
 	uint32_t secs = end_time_us / USEC_PER_SEC;
@@ -79,7 +77,7 @@ static inline int zperf_upload_fin(int sock,
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
 		/* Fill the packet header */
-		datagram->id = net_htonl(-nb_packets);
+		datagram->id = net_htonl(-(nb_packets + 1));
 		datagram->tv_sec = net_htonl(secs);
 		datagram->tv_usec = net_htonl(usecs);
 
@@ -233,6 +231,7 @@ static int udp_upload(int sock, int port,
 {
 	size_t header_size =
 		sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_client_hdr_v1);
+	struct net_sockaddr *peer_addr = net_sad(&param->peer_addr_storage);
 	uint32_t duration_in_ms = param->duration_ms;
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
@@ -321,7 +320,7 @@ static int udp_upload(int sock, int port,
 		/* Fill the packet header */
 		datagram = (struct zperf_udp_datagram *)sample_packet;
 
-		datagram->id = net_htonl(nb_packets);
+		datagram->id = net_htonl(nb_packets + 1);
 		datagram->tv_sec = net_htonl(secs);
 		datagram->tv_usec = net_htonl(usecs);
 
@@ -377,12 +376,12 @@ static int udp_upload(int sock, int port,
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
 
-	if (param->peer_addr.sa_family == NET_AF_INET) {
-		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
+	if (param->peer_addr_storage.ss_family == NET_AF_INET) {
+		if (net_ipv4_is_addr_mcast(&net_sin(peer_addr)->sin_addr)) {
 			is_mcast_pkt = true;
 		}
-	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
-		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
+	} else if (param->peer_addr_storage.ss_family == NET_AF_INET6) {
+		if (net_ipv6_is_addr_mcast(&net_sin6(peer_addr)->sin6_addr)) {
 			is_mcast_pkt = true;
 		}
 	} else {
@@ -392,6 +391,7 @@ static int udp_upload(int sock, int port,
 	if (ret < 0) {
 		return ret;
 	}
+	nb_packets++; /* Account for the FIN packet */
 
 	/* Add result coming from the client */
 	results->nb_packets_sent = nb_packets;
@@ -406,6 +406,7 @@ static int udp_upload(int sock, int port,
 int zperf_udp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result)
 {
+	struct net_sockaddr *peer_addr;
 	int port = 0;
 	int sock;
 	int ret;
@@ -415,17 +416,19 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	if (param->peer_addr.sa_family == NET_AF_INET) {
-		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
-	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
-		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
+	peer_addr = net_sad(&param->peer_addr_storage);
+
+	if (param->peer_addr_storage.ss_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(peer_addr)->sin_port);
+	} else if (param->peer_addr_storage.ss_family == NET_AF_INET6) {
+		port = net_ntohs(net_sin6(peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
-			param->peer_addr.sa_family);
+			param->peer_addr_storage.ss_family);
 		return -EINVAL;
 	}
 
-	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
+	sock = zperf_prepare_upload_sock(peer_addr, param->options.tos,
 					 param->options.priority, 0,
 					 NET_IPPROTO_UDP);
 	if (sock < 0) {
@@ -511,7 +514,7 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
 	struct session *ses;
 	k_tid_t tid;
 
-	ses = get_free_session(&param->peer_addr, SESSION_UDP);
+	ses = get_free_session(net_sad(&param->peer_addr_storage), SESSION_UDP);
 	if (ses == NULL) {
 		NET_ERR("Cannot get a session!");
 		return -ENOENT;

@@ -68,3 +68,27 @@ test_i3c_icm45686: icm45686@700000803e0000004 {
 	assigned-address = <0x7>;
 	int-gpios = <&test_gpio 0 0>;
 };
+
+test_i3c_bmp581: bmp581@800000803e0000004 {
+	compatible = "bosch,bmp581";
+	reg = <0x8 0x00000803 0xe0000004>;
+	assigned-address = <0x8>;
+	int-gpios = <&test_gpio 0 0>;
+};
+
+test_i3c_icm56686: icm56686@680000046a00000011 {
+	compatible = "invensense,icm56686";
+	reg = <0x68 0x0 0x0>;
+	assigned-address = <0x9>;
+	int-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+	accel-fs = <0>;
+	accel-odr = <13>;
+	accel-lpf = <1>;
+	accel-pwr-mode = <2>;
+
+	gyro-fs = <0>;
+	gyro-odr = <13>;
+	gyro-lpf = <1>;
+	gyro-pwr-mode = <2>;
+};

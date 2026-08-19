@@ -9,7 +9,7 @@
  */
 
 #include <zephyr/drivers/can.h>
-#include <zephyr/drivers/can/can_mcan.h>
+#include "can_mcan.h"
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
@@ -231,9 +231,7 @@ static void config_can_##inst##_irq(void)						\
 		CAN_MCAN_DT_CONFIG_INST_GET(inst, &can_sam0_cfg_##inst, &can_sam0_ops,  \
 					    &can_sam0_cbs_##inst);
 
-#define CAN_SAM0_DATA_INST(inst)							\
-	static struct can_mcan_data can_mcan_data_##inst =				\
-		CAN_MCAN_DATA_INITIALIZER(NULL);
+#define CAN_SAM0_DATA_INST(inst) CAN_MCAN_DATA_DEFINE(can_mcan_data_##inst, NULL);
 
 #define CAN_SAM0_DEVICE_INST(inst)							\
 	CAN_DEVICE_DT_INST_DEFINE(inst, can_sam0_init, NULL,				\

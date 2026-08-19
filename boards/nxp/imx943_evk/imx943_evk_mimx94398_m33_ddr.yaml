@@ -13,8 +13,8 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - uart
   - netif:eth
+  - uart
 testing:
   binaries:
     - flash.bin

@@ -12,7 +12,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <soc.h>
 #include <stm32_ll_bus.h>
 #include <stm32_ll_rcc.h>
@@ -151,6 +151,12 @@ static int iwdg_stm32_setup(const struct device *dev, uint8_t options)
 #endif /* CONFIG_SOC_SERIES_STM32WB0X */
 	}
 
+	/*
+	 * Configuring pause-in-sleep from software is not supported.
+	 * In some SoCs, option bits IWDG_STOP/IWDG_STDBY can be programmed to enable
+	 * counter suspension by hardware in low-power states. Refer to your product's
+	 * reference manual for more details.
+	 */
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
 		return -ENOTSUP;
 	}

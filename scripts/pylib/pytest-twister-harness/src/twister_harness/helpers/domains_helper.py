@@ -9,7 +9,6 @@ from pathlib import Path
 from domains import Domains
 
 logger = logging.getLogger(__name__)
-logging.getLogger('pykwalify').setLevel(logging.ERROR)
 
 
 def get_default_domain_name(domains_file: Path | str) -> int:

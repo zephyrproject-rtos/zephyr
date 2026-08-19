@@ -3,6 +3,9 @@
 
 if SOC_SERIES_SR1XX
 
+configdefault CACHE_MANAGEMENT
+	default y
+
 config NUM_IRQS
 	default 128
 

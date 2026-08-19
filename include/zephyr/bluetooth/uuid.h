@@ -13,6 +13,8 @@
 /**
  * @brief UUIDs
  * @defgroup bt_uuid UUIDs
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -1492,7 +1494,7 @@ struct bt_uuid_any {
  */
 #define BT_UUID_HRS_BODY_SENSOR_VAL 0x2a38
 /**
- *  @brief HRS Characteristic Control Point
+ *  @brief HRS Characteristic Body Sensor Location
  */
 #define BT_UUID_HRS_BODY_SENSOR \
 	BT_UUID_DECLARE_16(BT_UUID_HRS_BODY_SENSOR_VAL)
@@ -5135,11 +5137,11 @@ struct bt_uuid_any {
 	BT_UUID_DECLARE_16(BT_UUID_UDI_FOR_MEDICAL_DEVICES_VAL)
 
 /**
- *  @brief Gaming Service UUID value
+ *  @brief Gaming Audio Service UUID value
  */
 #define BT_UUID_GMAS_VAL 0x1858
 /**
- *  @brief Common Audio Service
+ *  @brief Gaming Audio Service
  */
 #define BT_UUID_GMAS	 BT_UUID_DECLARE_16(BT_UUID_GMAS_VAL)
 
@@ -5187,6 +5189,24 @@ struct bt_uuid_any {
  *  @brief Gaming Audio Profile Broadcast Game Receiver Features
  */
 #define BT_UUID_GMAP_BGR_FEAT	  BT_UUID_DECLARE_16(BT_UUID_GMAP_BGR_FEAT_VAL)
+
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode UUID value
+ */
+#define BT_UUID_HIDS_SCI_MODE_VAL 0x2C39
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Mode
+ */
+#define BT_UUID_HIDS_SCI_MODE BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_MODE_VAL)
+
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information UUID value
+ */
+#define BT_UUID_HIDS_SCI_INFO_VAL 0x2C3A
+/**
+ *  @brief HID SCI (Shorter Connection Intervals) Information
+ */
+#define BT_UUID_HIDS_SCI_INFO BT_UUID_DECLARE_16(BT_UUID_HIDS_SCI_INFO_VAL)
 
 /*
  * Protocol UUIDs

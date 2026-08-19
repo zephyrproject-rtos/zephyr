@@ -72,22 +72,35 @@ config SOC_STM32L4A6XX
 config SOC_STM32L4P5XX
 	bool
 	select SOC_SERIES_STM32L4X
+	select SOC_LINE_STM32L4PLUS
 
 config SOC_STM32L4Q5XX
 	bool
 	select SOC_SERIES_STM32L4X
-
-config SOC_STM32L4S5XX
-	bool
-	select SOC_SERIES_STM32L4X
+	select SOC_LINE_STM32L4PLUS
 
 config SOC_STM32L4R5XX
 	bool
 	select SOC_SERIES_STM32L4X
+	select SOC_LINE_STM32L4PLUS
 
 config SOC_STM32L4R9XX
 	bool
 	select SOC_SERIES_STM32L4X
+	select SOC_LINE_STM32L4PLUS
+
+config SOC_STM32L4S5XX
+	bool
+	select SOC_SERIES_STM32L4X
+	select SOC_LINE_STM32L4PLUS
+
+config SOC_LINE_STM32L4PLUS
+	bool
+	help
+	  STM32L4+ SoC series/product line device
+
+	  These products have specific configuration constraints
+	  compared to other SoCs from the STM32L4 series.
 
 config SOC
 	default "stm32l412xx" if SOC_STM32L412XX
@@ -106,6 +119,6 @@ config SOC
 	default "stm32l4a6xx" if SOC_STM32L4A6XX
 	default "stm32l4p5xx" if SOC_STM32L4P5XX
 	default "stm32l4q5xx" if SOC_STM32L4Q5XX
-	default "stm32l4s5xx" if SOC_STM32L4S5XX
 	default "stm32l4r5xx" if SOC_STM32L4R5XX
 	default "stm32l4r9xx" if SOC_STM32L4R9XX
+	default "stm32l4s5xx" if SOC_STM32L4S5XX

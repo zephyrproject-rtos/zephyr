@@ -106,6 +106,12 @@ Major enhancements with this release include:
     create cycle-accurate benchmarks, with automated data collection, overhead compensation, and
     statistical reporting.
 
+**Bluetooth LE Host qualification**
+  This release includes a successfully qualified Bluetooth Low Energy (LE) Host stack, aligned with
+  Bluetooth Core Specification 6.2. The scope of qualification covered core components (GAP, ATT,
+  GATT, L2CAP, SM) and Device Information Service (DIS). A qualified listing and corresponding
+  Design Number (DN) are available here: https://qualification.bluetooth.com/ListingDetails/332380
+
 **Expanded board support**
   This release adds support for 121 :ref:`new boards <boards_added_in_zephyr_4_4>` and 31
   :ref:`new shields <shields_added_in_zephyr_4_4>`.
@@ -186,6 +192,31 @@ Removed APIs and options
     * :kconfig:option:`CONFIG_BT_CTLR_ADV_AUX_SET`, :kconfig:option:`CONFIG_BT_CTLR_ADV_SYNC_SET`
       and :kconfig:option:`CONFIG_BT_CTLR_ADV_DATA_BUF_MAX` no longer require
       :kconfig:option:`CONFIG_BT_CTLR_ADVANCED_FEATURES`
+
+* Kernel
+
+  * :kconfig:option:`CONFIG_LINKER_USE_PINNED_SECTION` and
+    :kconfig:option:`CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT` are removed.
+    The selective kernel-pinning model they enabled was unsafe with any
+    demand-paging eviction algorithm: a CPU exception dispatch could target
+    a thread's privileged stack page that was not in the explicit
+    ``__pinned_*`` set, escalating to #DF on x86 or a nested abort on ARM64
+    if that page had been evicted (:github:`108773`). The Zephyr kernel
+    image is now always resident in physical memory; demand paging applies
+    only to anonymous mappings (:c:func:`k_mem_map`) and explicit
+    ``__ondemand_*`` linker sections.
+
+  * The ``__pinned_func``, ``__pinned_data``, ``__pinned_rodata``,
+    ``__pinned_bss``, and ``__pinned_noinit`` attribute macros are removed,
+    along with their assembly aliases ``PINNED_TEXT``, ``PINNED_RODATA``,
+    ``PINNED_DATA``, ``PINNED_BSS``, and ``PINNED_NOINIT``.
+
+  * The ``K_KERNEL_PINNED_STACK_DEFINE``,
+    ``K_KERNEL_PINNED_STACK_ARRAY_DEFINE``,
+    ``K_KERNEL_PINNED_STACK_ARRAY_DECLARE``,
+    ``K_THREAD_PINNED_STACK_DEFINE``, and
+    ``K_THREAD_PINNED_STACK_ARRAY_DEFINE`` macros are removed. Use their
+    non-pinned counterparts instead.
 
 * Mbed TLS
 
@@ -1822,9 +1853,9 @@ New Samples
 * :zephyr:code-sample:`lp-timer-wakeup`
 * :zephyr:code-sample:`max32664c`
 * :zephyr:code-sample:`mctp_i2c_bus_endpoint`
-* :zephyr:code-sample:`mctp_i2c_bus_owner`
+* PMCI MCTP over I2C+GPIO (``mctp_i2c_bus_owner``)
 * :zephyr:code-sample:`mctp_i3c_bus_endpoint`
-* :zephyr:code-sample:`mctp_i3c_bus_owner`
+* PMCI MCTP over I3C (``mctp_i3c_bus_owner``)
 * :zephyr:code-sample:`mctp-usb-endpoint`
 * :zephyr:code-sample:`msg_queue`
 * :zephyr:code-sample:`mtch9010`

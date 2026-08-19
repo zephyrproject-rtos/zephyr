@@ -32,12 +32,14 @@ ZTEST(libc_strerror, test_strerror)
 	/* consistent behaviour w.r.t. errno with invalid input */
 	errno = 0;
 	expected = "";
+	/* After 1.8.11, picolibc changed this message */
+	const char *alternate = "Unknown error";
 	actual = strerror(-42);
-	zassert_equal(0, strcmp(expected, actual), "mismatch: exp: %s act: %s",
-		      expected, actual);
+	zassert_true((strcmp(expected, actual) == 0) || (strcmp(alternate, actual) == 0),
+		     "mismatch: exp: %s act: %s", expected, actual);
 	actual = strerror(4242);
-	zassert_equal(0, strcmp(expected, actual), "mismatch: exp: %s act: %s",
-		      expected, actual);
+	zassert_true((strcmp(expected, actual) == 0) || (strcmp(alternate, actual) == 0),
+		     "mismatch: exp: %s act: %s", expected, actual);
 	/* do not change errno on failure (for consistence) */
 	zassert_equal(0, errno, "");
 #endif

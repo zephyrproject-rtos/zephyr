@@ -98,6 +98,7 @@ config ESPI_NPCX_i8042_KBC_AUX_VWIRE_IRQ_WORKAROUND
 
 config ESPI_NPCX_VWIRE_ENABLE_SEND_CHECK
 	bool "Check the value was read by host after wire bits changed"
+	default y
 	help
 	  This option enables the function to check whether the host has read the value
 	  after the wire data changes.

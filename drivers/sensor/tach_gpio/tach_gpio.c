@@ -117,7 +117,7 @@ static int tach_gpio_init(const struct device *dev)
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->gpio)) {
-		LOG_DBG("Gpio is not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->gpio.port);
 		return -ENODEV;
 	}
 

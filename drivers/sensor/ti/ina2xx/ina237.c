@@ -360,9 +360,9 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 	(DT_INST_ENUM_IDX(inst, temp_conversion_time_us) << 3) |   \
 	(DT_INST_ENUM_IDX(inst, avg_count))
 
-#define INA237_DT_CAL(inst)                               \
-	CAL_PRECISION_MULTIPLIER(inst) * INA237_CAL_SCALING * \
-	DT_INST_PROP(inst, current_lsb_microamps) *           \
+#define INA2XX_DT_CAL(inst, scaling)             \
+	CAL_PRECISION_MULTIPLIER(inst) * (scaling) * \
+	DT_INST_PROP(inst, current_lsb_microamps) *  \
 	DT_INST_PROP(inst, rshunt_micro_ohms) / 10000000ULL
 
 #define INA237_DRIVER_INIT(inst)                                               \
@@ -373,7 +373,7 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
 			.config = INA237_DT_CONFIG(inst),                                  \
 			.adc_config = INA237_DT_ADC_CONFIG(inst),                          \
-			.cal = INA237_DT_CAL(inst),                                        \
+			.cal = INA2XX_DT_CAL(inst, INA237_CAL_SCALING),                    \
 			.id_reg = &ina237_mfr_id,                                          \
 			.config_reg = &ina237_config,                                      \
 			.adc_config_reg = &ina237_adc_config,                              \
@@ -394,7 +394,7 @@ static DEVICE_API(sensor, ina228_driver_api) = {
 			.bus = I2C_DT_SPEC_INST_GET(inst),                                 \
 			.current_lsb = DT_INST_PROP(inst, current_lsb_microamps),          \
 			.adc_config = INA237_DT_ADC_CONFIG(inst),                          \
-			.cal = (INA237_DT_CAL(inst) * 16),                                 \
+			.cal = INA2XX_DT_CAL(inst, INA228_CAL_SCALING),                    \
 			.id_reg = &ina237_mfr_id,                                          \
 			.config_reg = &ina237_config,                                      \
 			.adc_config_reg = &ina237_adc_config,                              \

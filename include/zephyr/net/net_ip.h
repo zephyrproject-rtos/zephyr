@@ -62,10 +62,10 @@ extern "C" {
 
 /** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
-	NET_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
+	NET_IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt()) */
 	NET_IPPROTO_ICMP = 1,          /**< ICMP protocol   */
 	NET_IPPROTO_IGMP = 2,          /**< IGMP protocol   */
-	NET_IPPROTO_ETH_P_ALL = 3,     /**< Every packet. from linux if_ether.h   */
+	NET_IPPROTO_ETH_P_ALL = 3,     /**< Every packet, from Linux if_ether.h   */
 	NET_IPPROTO_IPIP = 4,          /**< IPIP tunnels    */
 	NET_IPPROTO_TCP = 6,           /**< TCP protocol    */
 	NET_IPPROTO_UDP = 17,          /**< UDP protocol    */
@@ -82,6 +82,7 @@ enum net_ip_protocol_secure {
 	NET_IPPROTO_TLS_1_3 = 259,     /**< TLS 1.3 protocol */
 	NET_IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
 	NET_IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
+	NET_IPPROTO_QUIC = 511,        /**< QUIC protocol     */
 };
 
 /** Socket type */
@@ -221,7 +222,7 @@ struct net_sockaddr_can {
  * The protocol (protocol type) selects for which feature the socket is used.
  *
  * When used with bind(), the nm_pid field of the net_sockaddr_nm can be
- * filled with the calling thread' own id. The nm_pid serves here as the local
+ * filled with the calling thread's own ID. The nm_pid serves here as the local
  * address of this net_mgmt socket. The application is responsible for picking
  * a unique integer value to fill in nm_pid.
  */
@@ -248,7 +249,7 @@ struct net_sockaddr_in6_ptr {
 	net_sa_family_t		sin6_family;   /**< NET_AF_INET6           */
 	uint16_t		sin6_port;     /**< Port number            */
 	struct net_in6_addr    *sin6_addr;     /**< IPv6 address           */
-	uint8_t			sin6_scope_id; /**< interfaces for a scope */
+	uint8_t			sin6_scope_id; /**< Interfaces for a scope */
 };
 
 /** Socket address struct for IPv4 where address is a pointer */
@@ -307,6 +308,12 @@ struct net_cmsghdr {
 	int           cmsg_level;  /**< Originating protocol */
 	int           cmsg_type;   /**< Protocol-specific type */
 	z_max_align_t cmsg_data[]; /**< Flexible array member to force alignment of net_cmsghdr */
+};
+
+/** Linger option struct for the SO_LINGER socket option */
+struct net_linger {
+	int l_onoff;  /**< Whether the linger behaviour is enabled */
+	int l_linger; /**< Linger time in seconds */
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -509,7 +516,7 @@ extern const struct net_in6_addr net_in6addr_loopback;
 /** IPv4 address initializer */
 #define NET_INADDR_ANY_INIT { { { NET_INADDR_ANY } } }
 
-/** IPv6 loopback address initializer */
+/** IPv4 loopback address initializer */
 #define NET_INADDR_LOOPBACK_INIT  { { { 127, 0, 0, 1 } } }
 
 /** Max length of the IPv4 address as a string. Defined by POSIX. */
@@ -640,6 +647,29 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
+/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_MRDS socket option and the
+ * @c ZSOCK_UDP_OPT_CMSG_MRDS ancillary control message.
+ */
+struct net_udp_opt_mrds {
+	/** Maximum reassembled datagram size in bytes. */
+	uint16_t size;
+	/** Maximum number of fragments, or 0 if unspecified. */
+	uint8_t segs;
+};
+
+/** @brief UDP Options Timestamp (TIME), RFC 9868.
+ *
+ * Value type for the @c ZSOCK_UDP_OPT_CMSG_TIME ancillary control message.
+ */
+struct net_udp_opt_time {
+	/** Timestamp value of the sender. */
+	uint32_t tsval;
+	/** Timestamp echo reply (last @c tsval received from the peer). */
+	uint32_t tsecr;
+};
+
 struct net_tcp_hdr {
 	uint16_t src_port;
 	uint16_t dst_port;
@@ -680,7 +710,7 @@ static inline const char *net_addr_type2str(enum net_addr_type type)
 #define NET_IPV6_NEXTHDR_NONE        59
 
 /**
- * This 2 unions are here temporarily, as long as net_context.h will
+ * These 2 unions are here temporarily, as long as net_context.h will
  * be still public and not part of the core only.
  */
 union net_ip_header {
@@ -780,6 +810,30 @@ struct net_ipv6_mreq {
 	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
 };
+
+/**
+ * @brief Struct used when setting a packet socket multicast filtering.
+ */
+struct net_packet_mreq {
+	/** Network interface index */
+	int mr_ifindex;
+
+	/** Packet type (action) */
+	uint16_t mr_type;
+
+	/** Address length */
+	uint16_t mr_alen;
+
+	/** Physical layer address */
+	uint8_t mr_address[NET_LINK_ADDR_MAX_LENGTH];
+};
+
+/**
+ * @brief Packet socket multicast filtering types.
+ */
+#define NET_PACKET_MR_MULTICAST 0 /**< Packet will receive only certain multicast packets */
+#define NET_PACKET_MR_PROMISC   1 /**< Packet will receive all packets */
+#define NET_PACKET_MR_ALLMULTI  2 /**< Packet will receive all multicast packets */
 
 /**
  * @brief Incoming IPv6 packet information.
@@ -1901,9 +1955,22 @@ static inline bool net_ipv6_addr_based_on_ll(const struct net_in6_addr *addr,
  *
  * @return Pointer to socket address (struct sockaddr)
  */
-static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
+static ALWAYS_INLINE struct net_sockaddr *net_sad(const struct net_sockaddr_storage *addr)
 {
 	return (struct net_sockaddr *)addr;
+}
+
+/**
+ * @brief Get net_sockaddr_storage from net_sockaddr. This is a helper so that
+ * the code calling this function can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to socket storage address (struct net_sockaddr_storage)
+ */
+static ALWAYS_INLINE struct net_sockaddr_storage *net_sas(const struct net_sockaddr *addr)
+{
+	return (struct net_sockaddr_storage *)addr;
 }
 
 /**
@@ -1914,7 +1981,7 @@ static inline struct net_sockaddr *net_sad(const struct net_sockaddr_storage *ad
  *
  * @return Pointer to IPv6 socket address
  */
-static inline struct net_sockaddr_in6 *net_sin6(const struct net_sockaddr *addr)
+static ALWAYS_INLINE struct net_sockaddr_in6 *net_sin6(const struct net_sockaddr *addr)
 {
 	return (struct net_sockaddr_in6 *)addr;
 }
@@ -1927,7 +1994,7 @@ static inline struct net_sockaddr_in6 *net_sin6(const struct net_sockaddr *addr)
  *
  * @return Pointer to IPv4 socket address
  */
-static inline struct net_sockaddr_in *net_sin(const struct net_sockaddr *addr)
+static ALWAYS_INLINE struct net_sockaddr_in *net_sin(const struct net_sockaddr *addr)
 {
 	return (struct net_sockaddr_in *)addr;
 }
@@ -1940,7 +2007,7 @@ static inline struct net_sockaddr_in *net_sin(const struct net_sockaddr *addr)
  *
  * @return Pointer to IPv6 socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_in6_ptr *net_sin6_ptr(const struct net_sockaddr_ptr *addr)
 {
 	return (struct net_sockaddr_in6_ptr *)addr;
@@ -1954,7 +2021,7 @@ struct net_sockaddr_in6_ptr *net_sin6_ptr(const struct net_sockaddr_ptr *addr)
  *
  * @return Pointer to IPv4 socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_in_ptr *net_sin_ptr(const struct net_sockaddr_ptr *addr)
 {
 	return (struct net_sockaddr_in_ptr *)addr;
@@ -1968,7 +2035,7 @@ struct net_sockaddr_in_ptr *net_sin_ptr(const struct net_sockaddr_ptr *addr)
  *
  * @return Pointer to linklayer socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_ll_ptr *net_sll_ptr(const struct net_sockaddr_ptr *addr)
 {
 	return (struct net_sockaddr_ll_ptr *)addr;
@@ -1982,7 +2049,7 @@ struct net_sockaddr_ll_ptr *net_sll_ptr(const struct net_sockaddr_ptr *addr)
  *
  * @return Pointer to CAN socket address
  */
-static inline
+static ALWAYS_INLINE
 struct net_sockaddr_can_ptr *net_can_ptr(const struct net_sockaddr_ptr *addr)
 {
 	return (struct net_sockaddr_can_ptr *)addr;
@@ -2109,15 +2176,75 @@ const char *net_ipaddr_parse_mask(const char *str, size_t str_len,
 int net_port_set_default(struct net_sockaddr *addr, uint16_t default_port);
 
 /**
+ * @brief Set the port in the sockaddr structure.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param port Port number to set.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_port_set(struct net_sockaddr *addr, uint16_t port);
+
+/**
+ * @brief Get the port in the sockaddr structure.
+ *
+ * @param addr Pointer to user supplied struct sockaddr.
+ * @param port Pointer to a variable where the port number is returned.
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int net_port_get(struct net_sockaddr *addr, uint16_t *port);
+
+/**
+ * @brief Compare socket addresses.
+ *
+ * @param a First address
+ * @param b Second address
+ *
+ * @return true if a and b are equal, false otherwise.
+ */
+static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct net_sockaddr *b)
+{
+	if (a->sa_family != b->sa_family) {
+		return false;
+	}
+
+	if (a->sa_family == NET_AF_INET) {
+		const struct net_sockaddr_in *a4 = net_sin(a);
+		const struct net_sockaddr_in *b4 = net_sin(b);
+
+		if (a4->sin_port != b4->sin_port) {
+			return false;
+		}
+
+		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
+	}
+
+	if (b->sa_family == NET_AF_INET6) {
+		const struct net_sockaddr_in6 *a6 = net_sin6(a);
+		const struct net_sockaddr_in6 *b6 = net_sin6(b);
+
+		if (a6->sin6_port != b6->sin6_port) {
+			return false;
+		}
+
+		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
+	}
+
+	/* Invalid address family */
+	return false;
+}
+
+/**
  * @brief Compare TCP sequence numbers.
  *
  * @details This function compares TCP sequence numbers,
  *          accounting for wraparound effects.
  *
  * @param seq1 First sequence number
- * @param seq2 Seconds sequence number
+ * @param seq2 Second sequence number
  *
- * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq > seq2
+ * @return < 0 if seq1 < seq2, 0 if seq1 == seq2, > 0 if seq1 > seq2
  */
 static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
 {
@@ -2130,9 +2257,9 @@ static inline int32_t net_tcp_seq_cmp(uint32_t seq1, uint32_t seq2)
  * @details This is convenience function on top of net_tcp_seq_cmp().
  *
  * @param seq1 First sequence number
- * @param seq2 Seconds sequence number
+ * @param seq2 Second sequence number
  *
- * @return True if seq > seq2
+ * @return True if seq1 > seq2
  */
 static inline bool net_tcp_seq_greater(uint32_t seq1, uint32_t seq2)
 {

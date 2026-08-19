@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc55S6x_ns.dtsi>
+#include <nxp/lpc/lpc55xxx/nxp_lpc55S6x_ns.dtsi>
 #include "lpcxpresso55s69.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
@@ -34,6 +34,7 @@
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,entropy = &rng;
+		zephyr,crc = &crc;
 	};
 
 	gpio_keys {
@@ -143,5 +144,9 @@ zephyr_udc0: &usbhs {
 };
 
 &gint1 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

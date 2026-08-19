@@ -25,7 +25,7 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the controller phandle from a
- *        "resets" phandle-array property at an index
+ *        <tt>resets</tt> phandle-array property at an index
  *
  * Example devicetree fragment:
  *
@@ -43,9 +43,9 @@ extern "C" {
  *     DT_RESET_CTLR_BY_IDX(DT_NODELABEL(n), 1)) // DT_NODELABEL(reset2)
  *
  * @param node_id node identifier
- * @param idx logical index into "resets"
+ * @param idx logical index into <tt>resets</tt>
  * @return the node identifier for the reset controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PHANDLE_BY_IDX()
  */
 #define DT_RESET_CTLR_BY_IDX(node_id, idx) \
@@ -55,7 +55,7 @@ extern "C" {
  * @brief Equivalent to DT_RESET_CTLR_BY_IDX(node_id, 0)
  * @param node_id node identifier
  * @return a node identifier for the reset controller at index 0
- *         in "resets"
+ *         in <tt>resets</tt>
  * @see DT_RESET_CTLR_BY_IDX()
  */
 #define DT_RESET_CTLR(node_id) \
@@ -116,7 +116,7 @@ extern "C" {
  * @param node_id node identifier for a node with a resets property
  * @param idx logical index into resets property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_RESET_CELL_BY_IDX(node_id, idx, cell) \
@@ -168,12 +168,11 @@ extern "C" {
 
 /**
  * @brief Get the node identifier for the controller phandle from a
- *        "resets" phandle-array property at an index
+ *        <tt>resets</tt> phandle-array property at an index
  *
  * @param inst instance number
- * @param idx logical index into "resets"
- * @return the node identifier for the reset controller referenced at
- *         index "idx"
+ * @param idx logical index into <tt>resets</tt>
+ * @return the node identifier for the reset controller referenced at index @p idx
  * @see DT_RESET_CTLR_BY_IDX()
  */
 #define DT_INST_RESET_CTLR_BY_IDX(inst, idx) \
@@ -183,7 +182,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_RESET_CTLR_BY_IDX(inst, 0)
  * @param inst instance number
  * @return a node identifier for the reset controller at index 0
- *         in "resets"
+ *         in <tt>resets</tt>
  * @see DT_RESET_CTLR()
  */
 #define DT_INST_RESET_CTLR(inst) \
@@ -204,20 +203,20 @@ extern "C" {
 	DT_RESET_CTLR_BY_NAME(DT_DRV_INST(inst), name)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's reset specifier's cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's reset specifier's cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into resets property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_RESET_CELL_BY_IDX()
  */
 #define DT_INST_RESET_CELL_BY_IDX(inst, idx, cell) \
 	DT_RESET_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's reset specifier's cell value by name
- * @param inst DT_DRV_COMPAT instance number
+ * @brief Get a @c DT_DRV_COMPAT instance's reset specifier's cell value by name
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name lowercase-and-underscores name of a resets element
  *             as defined by the node's reset-names property
  * @param cell lowercase-and-underscores cell name
@@ -229,7 +228,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_RESET_CELL_BY_IDX(inst, 0, cell)
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param cell lowercase-and-underscores cell name
  * @return the value of the cell inside the specifier at index 0
  */
@@ -237,9 +236,9 @@ extern "C" {
 	DT_INST_RESET_CELL_BY_IDX(inst, 0, cell)
 
 /**
- * @brief Get a Reset Controller specifier's id cell at an index
+ * @brief Get a Reset Controller specifier's <tt>id</tt> cell at an index
  *
- * This macro only works for Reset Controller specifiers with cells named "id".
+ * This macro only works for Reset Controller specifiers with cells named <tt>id</tt>.
  * Refer to the node's binding to check if necessary.
  *
  * Example devicetree fragment:
@@ -263,8 +262,8 @@ extern "C" {
  *     DT_RESET_ID_BY_IDX(DT_NODELABEL(n), 0) // 10
  *
  * @param node_id node identifier
- * @param idx logical index into "resets"
- * @return the id cell value at index "idx"
+ * @param idx logical index into <tt>resets</tt>
+ * @return the <tt>id</tt> cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_RESET_ID_BY_IDX(node_id, idx) \
@@ -273,18 +272,18 @@ extern "C" {
 /**
  * @brief Equivalent to DT_RESET_ID_BY_IDX(node_id, 0)
  * @param node_id node identifier
- * @return the id cell value at index 0
+ * @return the <tt>id</tt> cell value at index 0
  * @see DT_RESET_ID_BY_IDX()
  */
 #define DT_RESET_ID(node_id) \
 	DT_RESET_ID_BY_IDX(node_id, 0)
 
 /**
- * @brief Get a DT_DRV_COMPAT instance's Reset Controller specifier's id cell value
+ * @brief Get a @c DT_DRV_COMPAT instance's Reset Controller specifier's <tt>id</tt> cell value
  *        at an index
- * @param inst DT_DRV_COMPAT instance number
- * @param idx logical index into "resets"
- * @return the id cell value at index "idx"
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @param idx logical index into <tt>resets</tt>
+ * @return the <tt>id</tt> cell value at index @p idx
  * @see DT_RESET_ID_BY_IDX()
  */
 #define DT_INST_RESET_ID_BY_IDX(inst, idx) \
@@ -292,8 +291,8 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_INST_RESET_ID_BY_IDX(inst, 0)
- * @param inst DT_DRV_COMPAT instance number
- * @return the id cell value at index 0
+ * @param inst @c DT_DRV_COMPAT instance number
+ * @return the <tt>id</tt> cell value at index 0
  * @see DT_INST_RESET_ID_BY_IDX()
  */
 #define DT_INST_RESET_ID(inst) \

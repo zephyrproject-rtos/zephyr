@@ -77,18 +77,22 @@ that mutex.
     to a priority level that is at or lower than the priority of the idle
     thread disables it.
 
-The owning thread's base priority is saved in the mutex when it obtains the
-lock. Each time a higher priority thread waits on a mutex, the kernel adjusts
-the owning thread's priority. When the owning thread releases the lock (or if
-the high priority waiting thread times out), the kernel restores the thread's
-base priority from the value saved in the mutex.
+A thread's priority prior to any mutex-related boost is saved on the thread
+itself the first time it is raised, and each mutex it holds is tracked in a
+per-thread list. Each time a higher priority thread waits on a mutex, the
+kernel adjusts the owning thread's priority. When the owning thread releases
+a lock (or if the high priority waiting thread times out), the kernel
+rescans the thread's remaining held mutexes and recalculates its priority
+from the highest-priority waiter still pending on any of them, falling back
+to the thread's original priority if none remain. This gives correct
+results regardless of the order in which held mutexes are unlocked.
 
-This works well for priority inheritance as long as only one locked mutex is
-involved. However, if multiple mutexes are involved, sub-optimal behavior will
-be observed if the mutexes are not unlocked in the reverse order to which the
-owning thread's priority was previously raised. Consequently it is recommended
-that a thread lock only a single mutex at a time when multiple mutexes are
-shared between threads of different priorities.
+If the owner of a mutex is itself blocked waiting on another mutex, a
+priority boost is propagated along that ownership chain so that every
+thread blocking progress towards the waiter is raised in turn, up to an
+implementation-defined limit on the number of chain hops walked per lock
+attempt. Owners beyond that limit keep their pre-boost priority until a
+later lock attempt walks the chain again.
 
 Implementation
 **************

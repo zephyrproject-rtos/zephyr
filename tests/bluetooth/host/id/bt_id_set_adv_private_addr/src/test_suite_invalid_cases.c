@@ -127,8 +127,8 @@ static int bt_rpa_create_custom_fake(const uint8_t irk[16], bt_addr_t *rpa)
 	__ASSERT_NO_MSG(rpa != NULL);
 
 	/* This will make set_random_address() succeeds and returns 0 */
-	bt_addr_copy(rpa, &BT_RPA_LE_ADDR->a);
-	bt_addr_copy(&bt_dev.random_addr.a, &BT_RPA_LE_ADDR->a);
+	bt_addr_copy(rpa, BT_RPA_ADDR);
+	bt_addr_copy(&bt_dev.random_addr, BT_RPA_ADDR);
 
 	return 0;
 }

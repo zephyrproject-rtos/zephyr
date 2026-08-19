@@ -204,6 +204,10 @@ static void w6100_rx(const struct device *dev)
 	off = sys_get_be16(tmp);
 
 	w6100_readbuf(dev, off, header, 2);
+	if (sys_get_be16(header) <= 2U) {
+		LOG_ERR("Invalid W6100 header size %u", sys_get_be16(header));
+		return;
+	}
 	rx_len = sys_get_be16(header) - 2;
 
 	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, rx_len,
@@ -262,7 +266,6 @@ static void w6100_update_link_status(const struct device *dev)
 
 	if (IS_BIT_SET(physr, W6100_PHYSR_LNK_BIT)) {
 		if (ctx->state.is_up != true) {
-			LOG_INF("%s: Link up", dev->name);
 			ctx->state.is_up = true;
 			net_eth_carrier_on(ctx->iface);
 		}
@@ -285,7 +288,6 @@ static void w6100_update_link_status(const struct device *dev)
 	}
 
 	if (ctx->state.is_up) {
-		LOG_INF("%s: Link down", dev->name);
 		ctx->state.is_up = false;
 		ctx->state.speed = 0;
 		net_eth_carrier_off(ctx->iface);
@@ -327,7 +329,10 @@ static void w6100_thread(void *p1, void *p2, void *p3)
 			/* Read interrupt */
 			w6100_spi_read(dev, W6100_S0_IR, &ir, 1);
 			w6100_spi_read(dev, W6100_SLIR, &slir, 1);
-			w6100_spi_write(dev, W6100_SLIRCLR, &slir, 1);
+			/* SLIRCLR is write-1-to-clear; nothing to do when slir == 0 */
+			if (slir != 0U) {
+				w6100_spi_write(dev, W6100_SLIRCLR, &slir, 1);
+			}
 
 
 			if (ir) {
@@ -374,10 +379,9 @@ static void w6100_iface_init(struct net_if *iface)
 	k_thread_name_set(&ctx->thread, "eth_w6100");
 }
 
-static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev __unused,
+						    struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_HW_FILTERING
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 		| ETHERNET_PROMISC_MODE
@@ -386,6 +390,7 @@ static enum ethernet_hw_caps w6100_get_capabilities(const struct device *dev)
 }
 
 static int w6100_set_config(const struct device *dev,
+			    struct net_if *iface __unused,
 			    enum ethernet_config_type type,
 			    const struct ethernet_config *config)
 {
@@ -441,7 +446,7 @@ static int w6100_set_config(const struct device *dev,
 	}
 }
 
-static int w6100_hw_start(const struct device *dev)
+static int w6100_hw_start(const struct device *dev, struct net_if *iface __unused)
 {
 	uint8_t mode = S0_MR_MACRAW | BIT(W6100_S0_MR_MF);
 	uint8_t mask = IR_S0;
@@ -455,7 +460,7 @@ static int w6100_hw_start(const struct device *dev)
 	return 0;
 }
 
-static int w6100_hw_stop(const struct device *dev)
+static int w6100_hw_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	uint8_t mask = 0;
 
@@ -466,7 +471,7 @@ static int w6100_hw_stop(const struct device *dev)
 	return 0;
 }
 
-static const struct device *w6100_get_phy(const struct device *dev)
+static const struct device *w6100_get_phy(const struct device *dev, struct net_if *iface __unused)
 {
 	const struct w6100_config *config = dev->config;
 

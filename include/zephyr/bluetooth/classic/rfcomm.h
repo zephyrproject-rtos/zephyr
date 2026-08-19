@@ -7,12 +7,14 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_RFCOMM_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_RFCOMM_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_RFCOMM_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_RFCOMM_H_
 
 /**
  * @brief RFCOMM
  * @defgroup bt_rfcomm RFCOMM
+ * @since 1.6
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -30,6 +32,19 @@ extern "C" {
 #define BT_RFCOMM_HDR_MAX_SIZE 4
 /** RFCOMM FCS Size */
 #define BT_RFCOMM_FCS_SIZE     1
+/** RFCOMM Credits Size */
+#define BT_RFCOMM_CREDITS_SIZE 1
+
+/** @brief RFCOMM Overhead Size
+ *
+ * The overhead size of RFCOMM includes the maximum header size, FCS size, and credits size.
+ *
+ * For the field credits size, in the CFC supported case, the space of credits should be discounted
+ * from the maximum frame size. It is used to avoid the SDU length exceeding the maximum frame size
+ * if the credits field is included.
+ */
+#define BT_RFCOMM_OVERHEAD_SIZE                                                                    \
+	(BT_RFCOMM_HDR_MAX_SIZE + BT_RFCOMM_FCS_SIZE + BT_RFCOMM_CREDITS_SIZE)
 
 /** @brief Helper to calculate needed buffer size for RFCOMM PDUs.
  *         Useful for creating buffer pools.
@@ -38,8 +53,7 @@ extern "C" {
  *
  *  @return Needed buffer size to match the requested RFCOMM PDU MTU.
  */
-#define BT_RFCOMM_BUF_SIZE(mtu)                                                                    \
-	BT_L2CAP_BUF_SIZE(BT_RFCOMM_HDR_MAX_SIZE + BT_RFCOMM_FCS_SIZE + (mtu))
+#define BT_RFCOMM_BUF_SIZE(mtu) BT_L2CAP_BUF_SIZE(BT_RFCOMM_OVERHEAD_SIZE + (mtu))
 
 /* RFCOMM channels (1-30): pre-allocated for profiles to avoid conflicts */
 enum {
@@ -112,7 +126,9 @@ struct bt_rfcomm_dlc {
 
 	struct bt_rfcomm_session  *session;
 	struct bt_rfcomm_dlc_ops  *ops;
-	struct bt_rfcomm_dlc      *_next;
+
+	/** @internal Internally used field for list handling */
+	sys_snode_t                _node;
 
 	bt_security_t              required_sec_level;
 	bt_rfcomm_role_t           role;
@@ -308,4 +324,4 @@ int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn)
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_RFCOMM_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_RFCOMM_H_ */

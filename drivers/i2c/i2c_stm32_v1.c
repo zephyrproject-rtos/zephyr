@@ -117,7 +117,6 @@ static void i2c_stm32_reset(const struct device *dev)
 #endif
 }
 
-
 static void i2c_stm32_controller_finish(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
@@ -303,6 +302,7 @@ static inline void handle_addr(const struct device *dev)
 		LL_I2C_EnableBitPOS(i2c);
 	}
 	LL_I2C_ClearFlag_ADDR(i2c);
+	LL_I2C_EnableIT_BUF(i2c);
 }
 
 static inline void handle_txe(const struct device *dev)
@@ -323,6 +323,10 @@ static inline void handle_txe(const struct device *dev)
 		LL_I2C_TransmitData8(i2c, *data->current.buf);
 		data->current.buf++;
 	} else {
+		/* All bytes sent. Disable the BUF interrupt so the level-triggered
+		 * TXE flag cannot re-fire the ISR while completing the transfer.
+		 */
+		LL_I2C_DisableIT_BUF(i2c);
 		if (data->current.flags & I2C_MSG_STOP) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
@@ -432,7 +436,6 @@ static inline void handle_btf(const struct device *dev)
 	}
 }
 
-
 #if defined(CONFIG_I2C_TARGET)
 static void i2c_stm32_target_event(const struct device *dev)
 {
@@ -505,11 +508,24 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
+	if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
+		return -ENOTSUP;
+	}
+
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
+	k_sem_give(&data->bus_mutex);
+
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
+		return ret;
+	}
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 
@@ -517,9 +533,6 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 
 	LL_I2C_Enable(i2c);
 
-	if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
-		return -ENOTSUP;
-	}
 	LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
 	data->target_attached = true;
 
@@ -555,6 +568,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 		LL_I2C_Disable(i2c);
 	}
 
+	(void)pm_device_runtime_put(dev);
+
 	data->target_attached = false;
 
 	LOG_DBG("i2c: target unregistered");
@@ -586,6 +601,8 @@ void i2c_stm32_event(const struct device *dev)
 		handle_btf(dev);
 	} else if (LL_I2C_IsActiveFlag_TXE(i2c) && data->current.is_write) {
 		handle_txe(dev);
+	} else if (LL_I2C_IsActiveFlag_TXE(i2c) && !data->current.is_write) {
+		LL_I2C_DisableIT_BUF(i2c);
 	} else if (LL_I2C_IsActiveFlag_RXNE(i2c) && !data->current.is_write) {
 		handle_rxne(dev);
 	}
@@ -630,13 +647,23 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
-		data->current.is_err = 1U;
+		/* Address "Spurious Bus Error detection in controller mode"
+		 * erratum, that affects STM32 I2C v1 controller, referenced
+		 * in multiple errata sheets document like:
+		 * - ES0182 (STM32F41x/41x) Rev 18, section 2.10.1
+		 *
+		 * Workaround: clear the BERR flag and let the ongoing
+		 * transfer continue. If a real bus error has occurred,
+		 * the transfer will eventually time out.
+		 */
 #if defined(CONFIG_I2C_TARGET)
-		if (error_cb != NULL) {
-			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			goto end;
 		}
 #endif
-		goto end;
 	}
 
 	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
@@ -662,9 +689,11 @@ int i2c_stm32_error(const struct device *dev)
 end:
 #if defined(CONFIG_I2C_TARGET)
 	if (!data->target_attached || data->controller_active) {
+		i2c_stm32_disable_transfer_interrupts(dev);
 		i2c_stm32_controller_mode_end(dev);
 	}
 #else
+	i2c_stm32_disable_transfer_interrupts(dev);
 	i2c_stm32_controller_mode_end(dev);
 #endif
 	return -EIO;
@@ -673,14 +702,14 @@ end:
 static int32_t i2c_stm32_msg_write(const struct device *dev, struct i2c_msg *msg,
 				   uint8_t *next_msg_flags, uint16_t saddr)
 {
+	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 
 	msg_init(dev, msg, next_msg_flags, saddr, I2C_REQUEST_WRITE);
 
 	i2c_stm32_enable_transfer_interrupts(dev);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, cfg->transfer_timeout) != 0) {
 		LOG_DBG("%s: WRITE timeout", __func__);
 		i2c_stm32_reset(dev);
 		return -EIO;
@@ -701,8 +730,7 @@ static int32_t i2c_stm32_msg_read(const struct device *dev, struct i2c_msg *msg,
 	i2c_stm32_enable_transfer_interrupts(dev);
 	LL_I2C_EnableIT_RX(i2c);
 
-	if (k_sem_take(&data->device_sync_sem,
-		       K_MSEC(CONFIG_I2C_STM32_TRANSFER_TIMEOUT_MSEC)) != 0) {
+	if (k_sem_take(&data->device_sync_sem, cfg->transfer_timeout) != 0) {
 		LOG_DBG("%s: READ timeout", __func__);
 		i2c_stm32_reset(dev);
 		return -EIO;

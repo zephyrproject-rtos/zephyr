@@ -22,6 +22,9 @@ struct modem_backend_mock_transaction {
 
 	/* Next transaction in chain */
 	const struct modem_backend_mock_transaction *next;
+
+	/* Allow breaking the chain by not matching the pattern */
+	const bool optional;
 };
 
 struct modem_backend_mock {

@@ -4,7 +4,7 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="central_hr_peripheral_hr_phy_coded_test"
+simulation_id="${BOARD_TS}_central_hr_peripheral_hr_phy_coded_test"
 test_long_name="$(guess_test_long_name)"
 verbosity_level=2
 EXECUTE_TIMEOUT=60

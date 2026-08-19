@@ -108,14 +108,18 @@
 
 #define _FF_DISK_NAME(node) DT_PROP(node, disk_name),
 
+/* clang-format off */
 #undef FF_VOLUME_STRS
 #define FF_VOLUME_STRS                                                                             \
 	DT_FOREACH_STATUS_OKAY(zephyr_flash_disk, _FF_DISK_NAME)                                   \
 	DT_FOREACH_STATUS_OKAY(zephyr_ram_disk, _FF_DISK_NAME)                                     \
+	DT_FOREACH_STATUS_OKAY(zephyr_memc_ram_disk, _FF_DISK_NAME)                                \
 	DT_FOREACH_STATUS_OKAY(zephyr_sdmmc_disk, _FF_DISK_NAME)                                   \
 	DT_FOREACH_STATUS_OKAY(zephyr_mmc_disk, _FF_DISK_NAME)                                     \
-	DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)                                      \
-	DT_FOREACH_STATUS_OKAY(zephyr_ftl_dhara, _FF_DISK_NAME)
+	IF_ENABLED(CONFIG_SDMMC_STM32, (DT_FOREACH_STATUS_OKAY(st_stm32_sdmmc, _FF_DISK_NAME)))    \
+	DT_FOREACH_STATUS_OKAY(zephyr_ftl_dhara, _FF_DISK_NAME)                                    \
+	DT_FOREACH_STATUS_OKAY(virtio_blk, _FF_DISK_NAME)
+/* clang-format on */
 
 #undef FF_VOLUMES
 #define FF_VOLUMES NUM_VA_ARGS_LESS_1(FF_VOLUME_STRS _)

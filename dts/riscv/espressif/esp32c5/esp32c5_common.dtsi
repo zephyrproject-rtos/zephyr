@@ -43,6 +43,7 @@
 			clock-source = <ESP32_CPU_CLK_SRC_PLL>;
 			clock-frequency = <DT_FREQ_M(240)>;
 			xtal-freq = <DT_FREQ_M(48)>;
+			d-cache-line-size = <32>;
 		};
 
 		power-states {
@@ -90,6 +91,14 @@
 
 	ieee802154: ieee802154 {
 		compatible = "espressif,esp32-ieee802154";
+		status = "disabled";
+	};
+
+	ana_cmpr0: ana_cmpr0 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <0>;
+		interrupts = <GPIO_EXT_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
 		status = "disabled";
 	};
 
@@ -169,7 +178,7 @@
 			mbox0: mbox@3ff8 {
 				compatible = "espressif,mbox-esp32";
 				reg = <0x3ff8 0x8>;
-				status = "disabled";
+				status = "okay";
 				shared-memory = <&ipc_shm>;
 				shared-memory-size = <0x100>;
 				interrupts = <PMU_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
@@ -256,7 +265,7 @@
 		};
 
 		twai0: can@6000b000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000b000 DT_SIZE_K(4)>;
 			interrupts = <TWAI0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -265,7 +274,7 @@
 		};
 
 		twai1: can@6000d000 {
-			compatible = "espressif,esp32-twai";
+			compatible = "espressif,esp32-twaifd";
 			reg = <0x6000d000 DT_SIZE_K(4)>;
 			interrupts = <TWAI1_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
@@ -307,12 +316,15 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 
@@ -407,6 +419,12 @@
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
 			reg = <0x600b1400 DT_SIZE_K(4)>;
+			interrupts = <LP_UART_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			tx-pin = <5>;
+			rx-pin = <4>;
+			rts-pin = <2>;
+			cts-pin = <3>;
 			status = "disabled";
 			current-speed = <115200>;
 		};

@@ -1,6 +1,9 @@
 family:
 - name: lpc
   series:
+  - name: lpc84x
+    socs:
+    - name: lpc845
   - name: lpc11u6x
     socs:
     - name: lpc11u66
@@ -15,6 +18,7 @@ family:
       cpuclusters:
       - name: m4
       - name: m0
+    - name: lpc54628
   - name: lpc55xxx
     socs:
     - name: lpc55s06

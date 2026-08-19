@@ -70,12 +70,19 @@ config NET_PMTU
 	default y
 	depends on NET_IPV6_PMTU || NET_IPV4_PMTU
 
+config NET_PMTU_DPLPMTUD
+	bool
+	default y
+	depends on NET_IPV6_PMTU_DPLPMTUD || NET_IPV4_PMTU_DPLPMTUD
+
 if NET_PMTU
+
 module = NET_PMTU
 module-dep = NET_LOG
 module-str = Log level for PMTU
 module-help = Enables PMTU to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PMTU
 
 config NET_NATIVE_TCP
@@ -102,11 +109,13 @@ config NET_OFFLOADING_SUPPORT
 	  only one option instead of two.
 
 if NET_OFFLOAD
+
 module = NET_OFFLOAD
 module-dep = NET_LOG
 module-str = Log level for offload layer
 module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_OFFLOAD
 
 config NET_RAW_MODE
@@ -117,6 +126,9 @@ config NET_RAW_MODE
 	  any net stack above: core, L2 etc... Basically this will build only
 	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
 	  though any type of net drivers could use it.
+
+DT_CHOSEN_ZEPHYR_UART_PIPE := zephyr,uart-pipe
+DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
 
 choice NET_QEMU_NETWORKING
 	prompt "Qemu networking"
@@ -130,22 +142,26 @@ choice NET_QEMU_NETWORKING
 
 config NET_QEMU_SLIP
 	bool "SLIP"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_UART_PIPE))
 	help
 	  Connect to host or to another Qemu via SLIP.
 
 config NET_QEMU_PPP
 	bool "PPP"
+	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
 	help
 	  Connect to host via PPP.
 
 config NET_QEMU_ETHERNET
 	bool "Ethernet"
+	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu ethernet driver support. One such
 	  driver that Zephyr supports is Intel e1000 ethernet driver.
 
 config NET_QEMU_USER
 	bool "SLIRP"
+	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu's built-in User Networking support. This
 	  is implemented using "slirp", which provides a full TCP/IP stack within
@@ -160,7 +176,22 @@ config NET_QEMU_USER_EXTRA_ARGS
 	help
 	  Extra arguments passed to QEMU when User Networking is enabled. This may
 	  include host / guest port forwarding, device id, Network address
-	  information etc. This string is appended to the QEMU "-net user" option.
+	  information etc. This string is appended to the QEMU "-netdev user" option.
+
+config NET_QEMU_DEVICE_EXTRA_ARGS
+	string "Qemu Networking Device Args"
+	depends on NET_QEMU_USER || NET_QEMU_ETHERNET
+	default ""
+	help
+	  Extra arguments passed to the QEMU networking device.
+	  This string is appended to the QEMU "-device" option.
+	  Typically this is used to set the network MAC address of
+	  Zephyr instance. This option can contain multiple QEMU option
+	  arguments. Each QEMU argument must be separated by comma "," and no
+	  spaces between arguments. Example: "mac=02:03:04:f0:0d:01" or
+	  "mac=02:03:04:f0:0d:01,addr=2.0". The mac option is available
+	  for all networking devices, other options depend on the device,
+	  like "addr=2.0", which can be used to set the pci slot.
 
 if !NET_RAW_MODE
 
@@ -182,6 +213,11 @@ config NET_IP_DSCP_ECN
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
+
+config NET_PKT_ORIG_IFACE
+	bool
+	default y
+	depends on NET_IPV4_ROUTE || NET_IPV6_ROUTE || NET_ETHERNET_BRIDGE
 
 config NET_IPV4_MAPPING_TO_IPV6
 	bool "Support IPv4 mapped on IPv6 addresses"
@@ -249,15 +285,8 @@ config NET_TC_RX_COUNT
 	  Note that if USERSPACE support is enabled, then currently we need to
 	  enable at least 1 RX thread.
 
-config NET_TC_SKIP_FOR_HIGH_PRIO
-	bool "Push high priority packets directly to network driver [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Deprecated, use NET_TC_TX_SKIP_FOR_HIGH_PRIO instead.
-
 config NET_TC_TX_SKIP_FOR_HIGH_PRIO
 	bool "Push high priority packets directly to network driver"
-	default NET_TC_SKIP_FOR_HIGH_PRIO
 	help
 	  If this is set, then high priority (>= NET_PRIORITY_CA) net_pkt will
 	  be pushed directly to network driver and will skip the traffic class
@@ -415,67 +444,6 @@ config NET_MAX_ROUTERS
 	help
 	  The value depends on your network needs.
 
-# Normally the route support is enabled by RPL or similar technology
-# that needs to use the routing infrastructure.
-config NET_ROUTE
-	bool
-	depends on NET_IPV6_NBR_CACHE
-	default y if NET_IPV6_NBR_CACHE
-
-config NET_ROUTING
-	bool "IP routing between interfaces"
-	depends on NET_ROUTE
-	help
-	  Allow IPv6 routing between different network interfaces and
-	  technologies. Currently this has limited use as some entity
-	  would need to populate the routing table. RPL used to do that
-	  earlier but currently there is no RPL support in Zephyr.
-
-config NET_MAX_ROUTES
-	int "Max number of routing entries stored."
-	default NET_IPV6_MAX_NEIGHBORS
-	depends on NET_ROUTE
-	help
-	  This determines how many entries can be stored in routing table.
-
-config NET_MAX_NEXTHOPS
-	int "Max number of next hop entries stored."
-	default NET_MAX_ROUTES
-	depends on NET_ROUTE
-	help
-	  This determines how many entries can be stored in nexthop table.
-
-config NET_ROUTE_MCAST
-	bool "Multicast Routing / Forwarding"
-	depends on NET_ROUTE
-	help
-	  Activates multicast routing/forwarding
-
-config NET_MAX_MCAST_ROUTES
-	int "Max number of multicast routing entries stored."
-	default 1
-	depends on NET_ROUTE_MCAST
-	help
-	  This determines how many entries can be stored in multicast
-	  routing table.
-
-config NET_MCAST_ROUTE_MAX_IFACES
-	int "Max number of network interfaces per multicast routing entry"
-	default 1
-	range 1 8
-	depends on NET_ROUTE_MCAST
-	help
-	  Determines how many network interfaces can be assigned to a
-	  single multicast route entry.
-
-config NET_MCAST_ROUTE_MLD_REPORTS
-	bool "Report multicast routes as a part of MLDv2 reports"
-	depends on NET_ROUTE_MCAST
-	depends on NET_IPV6_MLD
-	help
-	  Determines whether a multicast route entry should be advertised
-	  in MLDv2 reports.
-
 source "subsys/net/ip/Kconfig.tcp"
 
 config NET_TEST_PROTOCOL
@@ -508,12 +476,69 @@ config NET_UDP_MISSING_CHECKSUM
 	  for IPv4 and on reception only, since Zephyr will always compute the
 	  UDP checksum in transmission path.
 
+config NET_UDP_OPTIONS
+	bool "UDP transport options (RFC 9868) [EXPERIMENTAL]"
+	depends on NET_UDP
+	select EXPERIMENTAL
+	help
+	  Enable support for UDP transport options as defined in
+	  RFC 9868. This allows sending and receiving UDP options
+	  in the surplus area of IP datagrams.
+
+config NET_UDP_OPTIONS_DPLPMTUD
+	bool "DPLPMTUD over UDP options (RFC 9869) [EXPERIMENTAL]"
+	depends on NET_UDP_OPTIONS
+	depends on NET_PMTU_DPLPMTUD
+	select EXPERIMENTAL
+	help
+	  Enable Datagram Packetization Layer Path MTU Discovery
+	  (RFC 8899) for plain UDP sockets using UDP options (RFC 9869).
+	  When enabled on a socket, the stack probes the path for the
+	  largest usable datagram size using the Request (REQ) and
+	  Response (RES) UDP options and reports the result via
+	  getsockopt(IP_MTU/IPV6_MTU). It also answers incoming probes by
+	  echoing the REQ token back in a RES option.
+
+config NET_UDP_OPTIONS_DPLPMTUD_PROBE_TIMEOUT_MS
+	int "UDP options DPLPMTUD probe timeout (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 1000
+	help
+	  Time to wait for a probe Response (RES) before a probe is
+	  declared lost and retransmitted (RFC 8899 PROBE_TIMER). UDP has
+	  no round-trip estimate, so a fixed value is used.
+
+config NET_UDP_OPTIONS_DPLPMTUD_RAISE_TIMEOUT_MS
+	int "UDP options DPLPMTUD raise timer (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 600000
+	help
+	  Once the search completes, how long to wait before probing again
+	  to detect a possible increase in the path MTU (RFC 8899
+	  PMTU_RAISE_TIMER). Default is 10 minutes.
+
+config NET_UDP_OPTIONS_DPLPMTUD_ECHO_MIN_INTERVAL_MS
+	int "UDP options DPLPMTUD minimum RES echo interval (ms)"
+	depends on NET_UDP_OPTIONS_DPLPMTUD
+	default 50
+	help
+	  Minimum time between consecutive auto-generated Response (RES)
+	  echoes on a socket acting as a DPLPMTUD responder. The stack
+	  answers a Request (REQ) by sending a RES to the datagram source
+	  address, so an off-path attacker flooding spoofed-source REQs
+	  could otherwise use the socket to reflect traffic (the RES is
+	  never larger than the REQ, so there is no amplification). This
+	  rate limit caps that reflection. Set to 0 to disable the limit,
+	  e.g. on a server that must answer many distinct probers at once.
+
 if NET_UDP
+
 module = NET_UDP
 module-dep = NET_LOG
 module-str = Log level for UDP
 module-help = Enables UDP handler output debug messages
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_UDP
 
 config NET_MAX_CONN
@@ -612,6 +637,17 @@ config NET_CONTEXT_SNDBUF
 	  It is possible to define the maximum socket send buffer per socket.
 	  For TCP sockets, the sndbuf will determine the total size of queued
 	  data in the TCP layer.
+
+config NET_CONTEXT_LINGER
+	bool "Add SO_LINGER support to net_context"
+	depends on NET_TCP
+	help
+	  Allow setting the SO_LINGER option on a TCP socket. When linger is
+	  enabled with a zero timeout, closing the socket aborts the connection
+	  by sending a RST segment instead of performing a graceful FIN close.
+	  When linger is enabled with a non-zero timeout, close() blocks until
+	  the connection has been closed by the stack or the timeout (in
+	  seconds) expires, in which case the connection is aborted with a RST.
 
 config NET_CONTEXT_DSCP_ECN
 	bool "Add support for setting DSCP/ECN IP properties on net_context"
@@ -739,8 +775,7 @@ config NET_BUF_FIXED_DATA_SIZE
 	  as necessary to reach that request.
 
 config NET_BUF_VARIABLE_DATA_SIZE
-	bool "Variable data size buffer [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "Variable data size buffer"
 	help
 	  The buffer is dynamically allocated from runtime requested size.
 
@@ -895,20 +930,15 @@ config NET_INTERFACE_NAME_LEN
 config NET_PKT_TIMESTAMP
 	bool "Network packet timestamp support"
 	help
-	  Enable network packet timestamp support. This is needed for
-	  example in gPTP which needs to know how long it takes to send
-	  a network packet or for timed radio protocols like IEEE 802.15.4
-	  CSL and TSCH.
+	  Enable network packet timestamp support. This enables the timestamp
+	  information storage in network packet.
 
 config NET_PKT_TIMESTAMP_THREAD
 	bool "Create TX timestamp thread"
 	depends on NET_PKT_TIMESTAMP
 	help
-	  Create a TX timestamp thread that will pass the timestamped network
-	  packets to some other module like gPTP for further processing.
-	  If you just want to timestamp network packets and get information
-	  how long the network packets flow in the system, you can disable
-	  the thread support.
+	  Create a TX timestamp thread that allows timestamped network packets
+	  enqueued and handled by registered callback.
 
 config NET_PKT_TIMESTAMP_STACK_SIZE
 	int "Timestamp thread stack size"
@@ -994,11 +1024,13 @@ config NET_PROMISCUOUS_MODE
 	  also needs to read the promiscuous mode data.
 
 if NET_PROMISCUOUS_MODE
+
 module = NET_PROMISC
 module-dep = NET_LOG
 module-str = Log level for promiscuous mode
 module-help = Enables promiscuous mode to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_PROMISCUOUS_MODE
 
 config NET_DISABLE_ICMP_DESTINATION_UNREACHABLE

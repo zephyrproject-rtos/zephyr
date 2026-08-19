@@ -1,6 +1,10 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+# power.yaml provides supply-gpios and vin-supply, which control the
+# VBAT/BUCKVBAT/AFEVBAT supply of the nRF70.
+include: power.yaml
+
 properties:
   iovdd-ctrl-gpios:
     type: phandle-array
@@ -36,3 +40,12 @@ properties:
     description: |
       Duration to wait after enabling IOVDD before attempting communications.
       Default value of 1 comes from the nRF7002 DK/EK switch (TCK106AG): ~600us
+
+  supply-power-up-delay-ms:
+    type: int
+    default: 6
+    description: |
+      Duration to wait after enabling the supply (supply-gpios and/or vin-supply)
+      before asserting BUCKEN.
+      Default value of 6 comes from the nRF7002 datasheet section 14.3.5 Supply
+      sequencing requirements which states Wait >= 6 ms

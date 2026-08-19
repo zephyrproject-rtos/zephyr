@@ -132,7 +132,13 @@ static void dut_async_callback(const struct device *dev, struct uart_event *evt,
 
 static void dut_int_callback(const struct device *dev, void *user_data)
 {
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		zassert_false(uart_irq_tx_ready(dev));
 		if (uart_err_check(dev) != 0) {
 			rx_stopped_cnt++;

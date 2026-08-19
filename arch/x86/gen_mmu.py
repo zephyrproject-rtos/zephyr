@@ -69,15 +69,20 @@ import argparse
 import array
 import ctypes
 import os
+import pickle
 import re
 import struct
 import sys
 import textwrap
+from pathlib import Path
 
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
+
+sys.path.append(str(Path(__file__).parents[2] / "scripts" / "dts" / "python-devicetree" / "src"))
+from devicetree import edtlib  # noqa: F401
 
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
@@ -784,8 +789,17 @@ def main():
     vm_size = syms["CONFIG_KERNEL_VM_SIZE"]
     vm_offset = syms["CONFIG_KERNEL_VM_OFFSET"]
 
-    sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
-    sram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    if isdef("CONFIG_SRAM_DEPRECATED_KCONFIG_SET"):
+        sram_base = syms["CONFIG_SRAM_BASE_ADDRESS"]
+        sram_size = syms["CONFIG_SRAM_SIZE"] * 1024
+    else:
+        edt_pickle_path = str(Path(args.kernel).parents[1] / "zephyr" / 'edt.pickle')
+        with open(edt_pickle_path, "rb") as f:
+            edt = pickle.load(f)
+        chosen_sram = edt.chosen_node("zephyr,sram")
+
+        sram_base = chosen_sram.regs[0].addr
+        sram_size = chosen_sram.regs[0].size
 
     mapped_kernel_base = syms["z_mapped_start"]
     mapped_kernel_size = syms["z_mapped_size"]
@@ -824,9 +838,6 @@ def main():
 
     is_perm_regions = isdef("CONFIG_SRAM_REGION_PERMISSIONS")
 
-    # Are pages in non-boot, non-pinned sections present at boot.
-    is_generic_section_present = isdef("CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT")
-
     if image_size >= vm_size:
         error(f"VM size is too small (have 0x{vm_size:x} need more than 0x{image_size:x})")
 
@@ -841,17 +852,8 @@ def main():
     # Instantiate all the paging structures for the address space
     pt.reserve(vm_base, vm_size)
     # Map the zephyr image
-    if is_generic_section_present:
-        map_flags = map_flags | FLAG_P
-        pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
-    else:
-        # When generic linker sections are not present in physical memory,
-        # the corresponding virtual pages should not be mapped to non-existent
-        # physical pages. So simply identity map them to create the page table
-        # entries but without the present bit set.
-        # Boot and pinned sections (if configured) will be mapped to
-        # physical memory below.
-        pt.map(image_base, image_base, image_size, map_flags | ENTRY_RW)
+    map_flags = map_flags | FLAG_P
+    pt.map(image_base_phys, image_base, image_size, map_flags | ENTRY_RW)
 
     if virt_to_phys_offset != 0:
         # Need to identity map the physical address space
@@ -885,9 +887,6 @@ def main():
     if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
         pt.map_region("lnkr_boot", map_flags | FLAG_P | ENTRY_RW, virt_to_phys_offset)
 
-    if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-        pt.map_region("lnkr_pinned", map_flags | FLAG_P | ENTRY_RW, virt_to_phys_offset)
-
     # Process extra mapping requests
     if args.map:
         map_extra_regions(pt)
@@ -905,28 +904,19 @@ def main():
         else:
             flags = ENTRY_US
 
-        if is_generic_section_present:
-            flags = flags | FLAG_P
+        flags = flags | FLAG_P
 
         pt.set_region_perms("__text_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
-            pt.set_region_perms("lnkr_boot_text", flags | FLAG_P)
+            pt.set_region_perms("lnkr_boot_text", flags)
 
-        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_text", flags | FLAG_P)
-
-        flags = ENTRY_US | ENTRY_XD
-        if is_generic_section_present:
-            flags = flags | FLAG_P
+        flags = ENTRY_US | ENTRY_XD | FLAG_P
 
         pt.set_region_perms("__rodata_region", flags)
 
         if isdef("CONFIG_LINKER_USE_BOOT_SECTION"):
-            pt.set_region_perms("lnkr_boot_rodata", flags | FLAG_P)
-
-        if isdef("CONFIG_LINKER_USE_PINNED_SECTION"):
-            pt.set_region_perms("lnkr_pinned_rodata", flags | FLAG_P)
+            pt.set_region_perms("lnkr_boot_rodata", flags)
 
         if isdef("CONFIG_COVERAGE_GCOV") and isdef("CONFIG_USERSPACE"):
             # If GCOV is enabled, user mode must be able to write to its

@@ -255,7 +255,7 @@ static int adt7310_init(const struct device *dev)
 	int ret;
 
 	if (!spi_is_ready_dt(&cfg->bus)) {
-		LOG_ERR("SPI bus %s not ready", cfg->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
 		return -ENODEV;
 	}
 

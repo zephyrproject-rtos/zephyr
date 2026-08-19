@@ -8,6 +8,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(net_shell);
 
+#include <inttypes.h>
+#include <stdlib.h>
+
 #include <zephyr/net/net_stats.h>
 #include <zephyr/net/ethernet.h>
 
@@ -427,14 +430,14 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 		net_stats_t count = GET_STAT(iface,
 					     tc.recv[i].rx_time.count);
 		if (count == 0) {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t-\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\t-\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
 			   GET_STAT(iface, tc.recv[i].dropped),
 			   GET_STAT(iface, tc.recv[i].bytes));
 		} else {
-			PR("[%d] %s (%u)\t%u\t%u\t\t%llu\t%u us%s\n", i,
+			PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\t%u us%s\n", i,
 			   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 			   GET_STAT(iface, tc.recv[i].priority),
 			   GET_STAT(iface, tc.recv[i].pkts),
@@ -450,7 +453,7 @@ static void print_tc_rx_stats(const struct shell *sh, struct net_if *iface)
 	PR("TC  Priority\tRecv pkts\tDrop pkts\tbytes\n");
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		PR("[%d] %s (%u)\t%u\t%u\t\t%llu\n", i,
+		PR("[%d] %s (%u)\t%u\t\t%u\t\t%llu\n", i,
 		   priority2str(GET_STAT(iface, tc.recv[i].priority)),
 		   GET_STAT(iface, tc.recv[i].priority),
 		   GET_STAT(iface, tc.recv[i].pkts),
@@ -585,6 +588,16 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, udp.chkerr));
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_RAW)
+	PR("Raw recv       %u\tsent\t%u\tdrop\t%u\n",
+	   GET_STAT(iface, raw.recv),
+	   GET_STAT(iface, raw.sent),
+	   GET_STAT(iface, raw.drop));
+	PR("Raw bytes recv %" PRIu64 "\tsent\t%" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, raw.bytes.received),
+	   (uint64_t)GET_STAT(iface, raw.bytes.sent));
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 	PR("TCP bytes recv %llu\tsent\t%llu\tresent\t%u\n",
 	   GET_STAT(iface, tcp.bytes.received),
@@ -628,8 +641,10 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, pkt_filter.tx.drop));
 #endif /* CONFIG_NET_STATISTICS_DNS */
 
-	PR("Bytes received %llu\n", GET_STAT(iface, bytes.received));
-	PR("Bytes sent     %llu\n", GET_STAT(iface, bytes.sent));
+	PR("Bytes received %" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, bytes.received));
+	PR("Bytes sent     %" PRIu64 "\n",
+	   (uint64_t)GET_STAT(iface, bytes.sent));
 	PR("Processing err %u\n", GET_STAT(iface, processing_error));
 
 	print_tc_tx_stats(sh, iface);
@@ -638,7 +653,8 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
 					defined(CONFIG_NET_STATISTICS_USER_API)
 	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		const struct ethernet_api *eth_api;
+		const struct device *dev = net_if_get_device(iface);
+		const struct ethernet_api *eth_api = dev->api;
 		struct net_stats_eth *eth_data = NULL;
 		uint32_t type = ETHERNET_STATS_TYPE_ALL;
 
@@ -648,15 +664,14 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 			type = opts->type;
 		}
 
-		eth_api = net_if_get_device(iface)->api;
 		if (eth_api != NULL) {
 			/* Use get_stats_type if available for type filtering */
 			if (eth_api->get_stats_type != NULL) {
 				eth_data = eth_api->get_stats_type(
-					net_if_get_device(iface), type);
+					dev, iface, type);
 			} else if (eth_api->get_stats != NULL) {
 				eth_data = eth_api->get_stats(
-					net_if_get_device(iface));
+					dev, iface);
 			}
 		}
 
@@ -805,7 +820,12 @@ static int cmd_net_stats(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	if (strcmp(argv[1], "reset") == 0) {
+#if defined(CONFIG_NET_NATIVE)
 		net_stats_reset(NULL);
+#else
+		PR_INFO("Set %s to enable %s support.\n", "CONFIG_NET_NATIVE",
+			"statistics reset");
+#endif
 	} else {
 		/* Pass arguments directly - cmd_net_stats_iface expects index in argv[1] */
 		cmd_net_stats_iface(sh, argc, argv);

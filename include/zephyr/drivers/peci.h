@@ -53,7 +53,7 @@ enum peci_command_code {
 	PECI_CMD_WR_PCI_CFG0         = 0x65,
 	PECI_CMD_WR_PCI_CFG1         = 0x66,
 	PECI_CMD_RD_PKG_CFG0         = 0xA1,
-	PECI_CMD_RD_PKG_CFG1         = 0xA,
+	PECI_CMD_RD_PKG_CFG1         = 0xA2,
 	PECI_CMD_WR_PKG_CFG0         = 0xA5,
 	PECI_CMD_WR_PKG_CFG1         = 0xA6,
 	PECI_CMD_RD_IAMSR0           = 0xB1,
@@ -237,6 +237,8 @@ struct peci_msg {
 	struct peci_buf tx_buffer;
 	/** Pointer to buffer of read data */
 	struct peci_buf rx_buffer;
+	/** eSPI OOB client address */
+	uint8_t oob_addr;
 	/** PECI msg flags */
 	uint8_t flags;
 };
@@ -270,18 +272,14 @@ __subsystem struct peci_driver_api {
  * @param dev Pointer to the device structure for the driver instance.
  * @param bitrate the selected bitrate expressed in Kbps.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int peci_config(const struct device *dev, uint32_t bitrate);
 
 static inline int z_impl_peci_config(const struct device *dev,
 				     uint32_t bitrate)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->config(dev, bitrate);
+	return DEVICE_API_GET(peci, dev)->config(dev, bitrate);
 }
 
 /**
@@ -289,17 +287,13 @@ static inline int z_impl_peci_config(const struct device *dev,
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int peci_enable(const struct device *dev);
 
 static inline int z_impl_peci_enable(const struct device *dev)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->enable(dev);
+	return DEVICE_API_GET(peci, dev)->enable(dev);
 }
 
 /**
@@ -307,17 +301,13 @@ static inline int z_impl_peci_enable(const struct device *dev)
  *
  * @param dev Pointer to the device structure for the driver instance.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int peci_disable(const struct device *dev);
 
 static inline int z_impl_peci_disable(const struct device *dev)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->disable(dev);
+	return DEVICE_API_GET(peci, dev)->disable(dev);
 }
 
 /**
@@ -326,8 +316,7 @@ static inline int z_impl_peci_disable(const struct device *dev)
  * @param dev Pointer to the device structure for the driver instance.
  * @param msg Structure representing a PECI transaction.
  *
- * @retval 0 If successful.
- * @retval <0 Negative errno code if failure.
+ * @return 0 on success, negative errno value on failure.
  */
 
 __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);
@@ -335,10 +324,7 @@ __syscall int peci_transfer(const struct device *dev, struct peci_msg *msg);
 static inline int z_impl_peci_transfer(const struct device *dev,
 				       struct peci_msg *msg)
 {
-	struct peci_driver_api *api;
-
-	api = (struct peci_driver_api *)dev->api;
-	return api->transfer(dev, msg);
+	return DEVICE_API_GET(peci, dev)->transfer(dev, msg);
 }
 
 

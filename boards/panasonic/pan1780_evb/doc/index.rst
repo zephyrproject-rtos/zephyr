@@ -47,7 +47,7 @@ Please use the ``pan1780_evb`` board configuration when
 :ref:`build_an_application` and :ref:`application_run`.
 
 .. target-notes::
-.. _product website: https://industry.panasonic.eu/products/devices/wireless-connectivity/bluetooth-low-energy-modules/pan1780-nrf52840
+.. _product website: https://pideu.panasonic.de/development-hub/pan1780/
 .. _Panasonic Wireless Connectivity Development Hub: https://pideu.panasonic.de/development-hub/
 .. _user guide: https://pideu.panasonic.de/development-hub/pan1780/evaluation_board/user_guide/
 .. _download section: https://pideu.panasonic.de/development-hub/pan1780/downloads/

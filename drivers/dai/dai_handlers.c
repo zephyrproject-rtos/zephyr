@@ -7,12 +7,7 @@
 #include <zephyr/drivers/dai.h>
 #include <zephyr/internal/syscall_handler.h>
 
-/**
- * Maximum size of bespoke objects passed to DAI driver.
- * The objects get allocated temporarily on stack for validation,
- * so size needs to be limited.
- */
-#define DAI_MAX_BESPOKE_CFG_SIZE 256
+#define DAI_MAX_BESPOKE_CFG_SIZE CONFIG_DAI_MAX_BESPOKE_CFG_SIZE
 
 static inline int z_vrfy_dai_probe(const struct device *dev)
 {

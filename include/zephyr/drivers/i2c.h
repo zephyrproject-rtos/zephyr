@@ -29,6 +29,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/rtio/rtio.h>
+#include <zephyr/toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,14 +70,58 @@ extern "C" {
 /** Peripheral to act as Controller. */
 #define I2C_MODE_CONTROLLER		BIT(4)
 
+#if CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED
+
+/** Helper macro for CONFIG_I2C_TRANSFER_TIMEOUT_MS */
+#if CONFIG_I2C_TRANSFER_TIMEOUT_MS
+#define I2C_TRANSFER_TIMEOUT K_MSEC(CONFIG_I2C_TRANSFER_TIMEOUT_MS)
+#else
+#define I2C_TRANSFER_TIMEOUT K_FOREVER
+#endif
+
+/**
+ * @brief Resolve per-instance transfer timeout in milliseconds.
+ *
+ * Returns the raw millisecond value for the given DT instance @p inst:
+ *   1. DT property ``zephyr,transfer-timeout-ms`` on the controller node (per-bus)
+ *   2. ``CONFIG_I2C_TRANSFER_TIMEOUT_MS`` (application-wide Kconfig default)
+ *
+ * A value of 0 means no timeout (infinite wait).
+ */
+#define I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst)                                                      \
+	DT_INST_PROP_OR(inst, zephyr_transfer_timeout_ms, CONFIG_I2C_TRANSFER_TIMEOUT_MS)
+
+/**
+ * @brief Per-instance transfer timeout as a k_timeout_t struct initializer.
+ *
+ * Produces a k_timeout_t brace-initializer for the given DT instance @p inst
+ * using a two-level priority (via @ref I2C_DT_INST_TRANSFER_TIMEOUT_MS):
+ *   1. DT property ``zephyr,transfer-timeout-ms`` on the controller node (per-bus)
+ *   2. ``CONFIG_I2C_TRANSFER_TIMEOUT_MS`` (application-wide Kconfig default)
+ *   3. @ref SYS_FOREVER_MS when the resolved value is 0 (infinite wait)
+ *
+ * Drivers that store the per-bus timeout in a static config struct can use
+ * this macro to initialize the target k_timeout_t value at build time.
+ */
+#define I2C_DT_INST_TRANSFER_TIMEOUT(inst)                                                         \
+	SYS_TIMEOUT_MS_INIT(((I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst) != 0)                          \
+				     ? I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst)                       \
+				     : SYS_FOREVER_MS))
+
+/** Helper macro drivers that do not support infinite timeout */
+#define BUILD_ASSERT_INVALID_I2C_TRANSFER_TIMEOUT() \
+	BUILD_ASSERT(CONFIG_I2C_TRANSFER_TIMEOUT_MS != 0, \
+		     "infinite i2c transfer timeout not unsupported")
+
+#endif /* CONFIG_I2C_TRANSFER_TIMEOUT_SUPPORTED */
+
 /**
  * @brief Complete I2C DT information
- *
- * @param bus is the I2C bus
- * @param addr is the target address
  */
 struct i2c_dt_spec {
+	/** I2C bus */
 	const struct device *bus;
+	/** Target address */
 	uint16_t addr;
 };
 
@@ -202,28 +247,55 @@ struct i2c_msg {
  */
 typedef void (*i2c_callback_t)(const struct device *dev, int result, void *data);
 
-/**
- * @cond INTERNAL_HIDDEN
- *
- * These are for internal use only, so skip these in
- * public documentation.
- */
 struct i2c_target_config;
 
+/**
+ * @def_driverbackendgroup{I2C,i2c_interface}
+ * @{
+ */
+
+/**
+ * @brief Callback API to configure the I2C controller.
+ * See i2c_configure() for argument description.
+ */
 typedef int (*i2c_api_configure_t)(const struct device *dev,
 				   uint32_t dev_config);
+
+/**
+ * @brief Callback API to get the current configuration of the I2C controller.
+ * See i2c_get_config() for argument description.
+ */
 typedef int (*i2c_api_get_config_t)(const struct device *dev,
 				    uint32_t *dev_config);
+
+/**
+ * @brief Callback API to transfer messages on the I2C bus in controller mode.
+ * See i2c_transfer() for argument description.
+ */
 typedef int (*i2c_api_full_io_t)(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
 				 uint16_t addr);
+
+/**
+ * @brief Callback API to register a target device on the I2C controller.
+ * See i2c_target_register() for argument description.
+ */
 typedef int (*i2c_api_target_register_t)(const struct device *dev,
 					struct i2c_target_config *cfg);
+
+/**
+ * @brief Callback API to unregister a target device from the I2C controller.
+ * See i2c_target_unregister() for argument description.
+ */
 typedef int (*i2c_api_target_unregister_t)(const struct device *dev,
 					  struct i2c_target_config *cfg);
 
-#ifdef CONFIG_I2C_CALLBACK
+#if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
+/**
+ * @brief Callback API to transfer messages on the I2C bus asynchronously.
+ * See i2c_transfer_cb() for argument description.
+ */
 typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 struct i2c_msg *msgs,
 				 uint8_t num_msgs,
@@ -232,39 +304,76 @@ typedef int (*i2c_api_transfer_cb_t)(const struct device *dev,
 				 void *userdata);
 #endif /* CONFIG_I2C_CALLBACK */
 
-#ifdef CONFIG_I2C_RTIO
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
+/**
+ * @brief Callback API to submit an RTIO request to the I2C controller.
+ * See i2c_iodev_submit() for argument description.
+ */
 typedef void (*i2c_api_iodev_submit)(const struct device *dev,
 				     struct rtio_iodev_sqe *iodev_sqe);
 #endif /* CONFIG_I2C_RTIO */
 
+/**
+ * @brief Callback API to recover the I2C bus.
+ * See i2c_recover_bus() for argument description.
+ */
 typedef int (*i2c_api_recover_bus_t)(const struct device *dev);
 
+/**
+ * @driver_ops{I2C}
+ */
 __subsystem struct i2c_driver_api {
+	/** @driver_ops_mandatory @copybrief i2c_configure */
 	i2c_api_configure_t configure;
+	/** @driver_ops_optional @copybrief i2c_get_config */
 	i2c_api_get_config_t get_config;
+	/** @driver_ops_mandatory @copybrief i2c_transfer */
 	i2c_api_full_io_t transfer;
+	/** @driver_ops_optional @copybrief i2c_target_register */
 	i2c_api_target_register_t target_register;
+	/** @driver_ops_optional @copybrief i2c_target_unregister */
 	i2c_api_target_unregister_t target_unregister;
-#ifdef CONFIG_I2C_CALLBACK
+#if defined(CONFIG_I2C_CALLBACK) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief i2c_transfer_cb
+	 * @kconfig_dep{CONFIG_I2C_CALLBACK}
+	 */
 	i2c_api_transfer_cb_t transfer_cb;
 #endif
-#ifdef CONFIG_I2C_RTIO
+#if defined(CONFIG_I2C_RTIO) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_optional @copybrief i2c_iodev_submit
+	 * @kconfig_dep{CONFIG_I2C_RTIO}
+	 */
 	i2c_api_iodev_submit iodev_submit;
 #endif
+	/** @driver_ops_optional @copybrief i2c_recover_bus */
 	i2c_api_recover_bus_t recover_bus;
 };
 
+/**
+ * @brief Callback API to instruct the I2C target device to register itself.
+ * See i2c_target_driver_register() for argument description.
+ */
 typedef int (*i2c_target_api_register_t)(const struct device *dev);
+
+/**
+ * @brief Callback API to instruct the I2C target device to unregister itself.
+ * See i2c_target_driver_unregister() for argument description.
+ */
 typedef int (*i2c_target_api_unregister_t)(const struct device *dev);
 
+/**
+ * @driver_ops{I2C Target}
+ */
 __subsystem struct i2c_target_driver_api {
+	/** @driver_ops_mandatory @copybrief i2c_target_driver_register */
 	i2c_target_api_register_t driver_register;
+	/** @driver_ops_mandatory @copybrief i2c_target_driver_unregister */
 	i2c_target_api_unregister_t driver_unregister;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /** Target device responds to 10-bit addressing. */
 #define I2C_TARGET_FLAGS_ADDR_10_BITS	BIT(0)
@@ -282,7 +391,7 @@ __subsystem struct i2c_target_driver_api {
  * @param config the configuration structure associated with the
  * device to which the operation is addressed.
  *
- * @return 0 if the write is accepted, or a negative error code.
+ * @return 0 if the write is accepted, negative errno value on failure.
  */
 typedef int (*i2c_target_write_requested_cb_t)(
 		struct i2c_target_config *config);
@@ -302,8 +411,7 @@ typedef int (*i2c_target_write_requested_cb_t)(
  *
  * @param val the byte received by the controller.
  *
- * @return 0 if more data can be accepted, or a negative error
- * code.
+ * @return 0 if more data can be accepted, negative errno value on failure.
  */
 typedef int (*i2c_target_write_received_cb_t)(
 		struct i2c_target_config *config, uint8_t val);
@@ -325,7 +433,7 @@ typedef int (*i2c_target_write_received_cb_t)(
  * @param val pointer to storage for the first byte of data to return
  * for the read request.
  *
- * @return 0 if more data can be requested, or a negative error code.
+ * @return 0 if more data can be requested, negative errno value on failure.
  */
 typedef int (*i2c_target_read_requested_cb_t)(
 		struct i2c_target_config *config, uint8_t *val);
@@ -347,7 +455,7 @@ typedef int (*i2c_target_read_requested_cb_t)(
  * @param val pointer to storage for the next byte of data to return
  * for the read request.
  *
- * @return 0 if data has been provided, or a negative error code.
+ * @return 0 if data has been provided, negative errno value on failure.
  */
 typedef int (*i2c_target_read_processed_cb_t)(
 		struct i2c_target_config *config, uint8_t *val);
@@ -389,7 +497,7 @@ typedef void (*i2c_target_buf_write_received_cb_t)(
  * @param len pointer to storage for the length of the data to be transferred
  * for the read request.
  *
- * @return 0 if data has been provided, or a negative error code.
+ * @return 0 if data has been provided, negative errno value on failure.
  */
 typedef int (*i2c_target_buf_read_requested_cb_t)(
 		struct i2c_target_config *config, uint8_t **ptr, uint32_t *len);
@@ -502,8 +610,8 @@ struct i2c_target_config {
  *
  * @param spec I2C specification from devicetree
  *
- * @retval true if the I2C bus is ready for use.
- * @retval false if the I2C bus is not ready for use.
+ * @retval true I2C bus is ready for use.
+ * @retval false I2C bus is not ready for use.
  */
 static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
 {
@@ -515,8 +623,8 @@ static inline bool i2c_is_ready_dt(const struct i2c_dt_spec *spec)
  * @brief Check if the current message is a read operation
  *
  * @param msg The message to check
- * @return true if the I2C message is a read operation
- * @return false if the I2C message is a write operation
+ * @retval true The I2C message is a read operation.
+ * @retval false The I2C message is a write operation.
  */
 static inline bool i2c_is_read_op(const struct i2c_msg *msg)
 {
@@ -527,12 +635,24 @@ static inline bool i2c_is_read_op(const struct i2c_msg *msg)
  * @brief Check if the current message includes a stop.
  *
  * @param msg The message to check
- * @return true if the I2C message includes a stop
- * @return false if the I2C message includes a stop
+ * @retval true The I2C message includes a stop.
+ * @retval false The I2C message does not include a stop.
  */
 static inline bool i2c_is_stop_op(const struct i2c_msg *msg)
 {
 	return (msg->flags & I2C_MSG_STOP) == I2C_MSG_STOP;
+}
+
+/**
+ * @brief Check if the current message includes a restart.
+ *
+ * @param msg The message to check
+ * @return true if the I2C message includes a restart
+ * @return false if the I2C message does not include a restart
+ */
+static inline bool i2c_is_restart_op(const struct i2c_msg *msg)
+{
+	return (msg->flags & I2C_MSG_RESTART) == I2C_MSG_RESTART;
 }
 
 /**
@@ -743,10 +863,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 				    __VA_ARGS__)
 
 /**
- * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like I2C_DEVICE_DT_DEINIT_DEFINE() for an instance of a @c DT_DRV_COMPAT compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to I2C_DEVICE_DT_DEINIT_DEFINE().
  *
  * @param ... other parameters as expected by I2C_DEVICE_DT_DEINIT_DEFINE().
  */
@@ -754,10 +874,10 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
 	I2C_DEVICE_DT_DEINIT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
 
 /**
- * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT compatible
+ * @brief Like I2C_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to I2C_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to I2C_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by I2C_DEVICE_DT_DEFINE().
  */
@@ -771,7 +891,7 @@ static inline void i2c_xfer_stats(const struct device *dev, struct i2c_msg *msgs
  * @param dev_config Bit-packed 32-bit value to the device runtime configuration
  * for the I2C controller.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error, failed to configure device.
  */
 __syscall int i2c_configure(const struct device *dev, uint32_t dev_config);
@@ -779,10 +899,7 @@ __syscall int i2c_configure(const struct device *dev, uint32_t dev_config);
 static inline int z_impl_i2c_configure(const struct device *dev,
 				       uint32_t dev_config)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
-
-	return api->configure(dev, dev_config);
+	return DEVICE_API_GET(i2c, dev)->configure(dev, dev_config);
 }
 
 /**
@@ -819,16 +936,16 @@ static inline int i2c_configure_dt(const struct i2c_dt_spec *spec,
  * @param dev_config Pointer to return bit-packed 32-bit value of
  * the I2C controller configuration.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  * @retval -ERANGE Configured I2C frequency is invalid.
- * @retval -ENOSYS If get config is not implemented
+ * @retval -ENOSYS Get config is not implemented.
  */
 __syscall int i2c_get_config(const struct device *dev, uint32_t *dev_config);
 
 static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_config)
 {
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->get_config == NULL) {
 		return -ENOSYS;
@@ -865,7 +982,7 @@ static inline int z_impl_i2c_get_config(const struct device *dev, uint32_t *dev_
  * @param num_msgs Number of messages to transfer.
  * @param addr Address of the I2C target device.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 __syscall int i2c_transfer(const struct device *dev,
@@ -876,9 +993,6 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 				      struct i2c_msg *msgs, uint8_t num_msgs,
 				      uint16_t addr)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
-
 	if (!num_msgs) {
 		return 0;
 	}
@@ -887,7 +1001,7 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
 		msgs[num_msgs - 1].flags |= I2C_MSG_STOP;
 	}
 
-	int res =  api->transfer(dev, msgs, num_msgs, addr);
+	int res =  DEVICE_API_GET(i2c, dev)->transfer(dev, msgs, num_msgs, addr);
 
 	i2c_xfer_stats(dev, msgs, num_msgs);
 
@@ -917,10 +1031,10 @@ static inline int z_impl_i2c_transfer(const struct device *dev,
  * @param cb Function pointer for completion callback.
  * @param userdata Userdata passed to callback.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If transfer async is not implemented
- * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
+ * @retval -ENOSYS Transfer async is not implemented.
+ * @retval -EWOULDBLOCK Device is temporarily busy doing another transfer.
  */
 static inline int i2c_transfer_cb(const struct device *dev,
 				  struct i2c_msg *msgs,
@@ -929,8 +1043,7 @@ static inline int i2c_transfer_cb(const struct device *dev,
 				  i2c_callback_t cb,
 				  void *userdata)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->transfer_cb == NULL) {
 		return -ENOSYS;
@@ -992,8 +1105,7 @@ static inline int i2c_transfer_cb_dt(const struct i2c_dt_spec *spec,
  * @param cb Function pointer for completion callback.
  * @param userdata Userdata passed to callback.
  *
- * @retval 0 if successful
- * @retval <0 negative on error.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int i2c_write_read_cb(const struct device *dev, struct i2c_msg *msgs,
 				 uint8_t num_msgs, uint16_t addr, const void *write_buf,
@@ -1067,10 +1179,10 @@ void z_i2c_transfer_signal_cb(const struct device *dev, int result, void *userda
  * @param addr Address of the I2C target device.
  * @param sig Signal to notify of transfer completion.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If transfer async is not implemented
- * @retval -EWOULDBLOCK If the device is temporarily busy doing another transfer
+ * @retval -ENOSYS Transfer async is not implemented.
+ * @retval -EWOULDBLOCK Device is temporarily busy doing another transfer.
  */
 static inline int i2c_transfer_signal(const struct device *dev,
 				 struct i2c_msg *msgs,
@@ -1078,7 +1190,7 @@ static inline int i2c_transfer_signal(const struct device *dev,
 				 uint16_t addr,
 				 struct k_poll_signal *sig)
 {
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->transfer_cb == NULL) {
 		return -ENOSYS;
@@ -1116,7 +1228,7 @@ static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct i2c_dt_spec *dt_spec = (const struct i2c_dt_spec *)iodev_sqe->sqe.iodev->data;
 	const struct device *dev = dt_spec->bus;
-	const struct i2c_driver_api *api = (const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->iodev_submit == NULL) {
 		rtio_iodev_sqe_err(iodev_sqe, -ENOSYS);
@@ -1177,8 +1289,8 @@ extern const struct rtio_iodev_api i2c_iodev_api;
  *
  * @param i2c_iodev I2C iodev defined with I2C_DT_IODEV_DEFINE
  *
- * @retval true if the I2C bus is ready for use.
- * @retval false if the I2C bus is not ready for use.
+ * @retval true I2C bus is ready for use.
+ * @retval false I2C bus is not ready for use.
  */
 static inline bool i2c_is_ready_iodev(const struct rtio_iodev *i2c_iodev)
 {
@@ -1260,17 +1372,16 @@ static inline int i2c_transfer_dt(const struct i2c_dt_spec *spec,
  *
  * @param dev Pointer to the device structure for an I2C controller
  * driver configured in controller mode.
- * @retval 0 If successful
- * @retval -EBUSY If bus is not clear after recovery attempt.
+ * @retval 0 on success.
+ * @retval -EBUSY Bus is not clear after recovery attempt.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If bus recovery is not implemented
+ * @retval -ENOSYS Bus recovery is not implemented.
  */
 __syscall int i2c_recover_bus(const struct device *dev);
 
 static inline int z_impl_i2c_recover_bus(const struct device *dev)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->recover_bus == NULL) {
 		return -ENOSYS;
@@ -1298,16 +1409,15 @@ static inline int z_impl_i2c_recover_bus(const struct device *dev)
  * @param cfg Config struct with functions and parameters used by the I2C driver
  * to send bus events
  *
- * @retval 0 Is successful
- * @retval -EINVAL If parameters are invalid
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid parameters.
  * @retval -EIO General input / output error.
- * @retval -ENOSYS If target mode is not implemented
+ * @retval -ENOSYS Target mode is not implemented.
  */
 static inline int i2c_target_register(const struct device *dev,
 				     struct i2c_target_config *cfg)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->target_register == NULL) {
 		return -ENOSYS;
@@ -1328,15 +1438,14 @@ static inline int i2c_target_register(const struct device *dev,
  * @param cfg Config struct with functions and parameters used by the I2C driver
  * to send bus events
  *
- * @retval 0 Is successful
- * @retval -EINVAL If parameters are invalid
- * @retval -ENOSYS If target mode is not implemented
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid parameters.
+ * @retval -ENOSYS Target mode is not implemented.
  */
 static inline int i2c_target_unregister(const struct device *dev,
 				       struct i2c_target_config *cfg)
 {
-	const struct i2c_driver_api *api =
-		(const struct i2c_driver_api *)dev->api;
+	const struct i2c_driver_api *api = DEVICE_API_GET(i2c, dev);
 
 	if (api->target_unregister == NULL) {
 		return -ENOSYS;
@@ -1354,18 +1463,15 @@ static inline int i2c_target_unregister(const struct device *dev,
  * @param dev Pointer to the device structure for the I2C target
  * device (not itself an I2C controller).
  *
- * @retval 0 Is successful
- * @retval -EINVAL If parameters are invalid
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid parameters.
  * @retval -EIO General input / output error.
  */
 __syscall int i2c_target_driver_register(const struct device *dev);
 
 static inline int z_impl_i2c_target_driver_register(const struct device *dev)
 {
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
-
-	return api->driver_register(dev);
+	return DEVICE_API_GET(i2c_target, dev)->driver_register(dev);
 }
 
 /**
@@ -1378,17 +1484,14 @@ static inline int z_impl_i2c_target_driver_register(const struct device *dev)
  * @param dev Pointer to the device structure for the I2C target
  * device (not itself an I2C controller).
  *
- * @retval 0 Is successful
- * @retval -EINVAL If parameters are invalid
+ * @retval 0 on success.
+ * @retval -EINVAL Invalid parameters.
  */
 __syscall int i2c_target_driver_unregister(const struct device *dev);
 
 static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
 {
-	const struct i2c_target_driver_api *api =
-		(const struct i2c_target_driver_api *)dev->api;
-
-	return api->driver_unregister(dev);
+	return DEVICE_API_GET(i2c_target, dev)->driver_unregister(dev);
 }
 
 /*
@@ -1406,7 +1509,7 @@ static inline int z_impl_i2c_target_driver_unregister(const struct device *dev)
  * @param num_bytes Number of bytes to write.
  * @param addr Address to the target I2C device for writing.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_write(const struct device *dev, const uint8_t *buf,
@@ -1451,7 +1554,7 @@ static inline int i2c_write_dt(const struct i2c_dt_spec *spec,
  * @param num_bytes Number of bytes to read.
  * @param addr Address of the I2C device being read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_read(const struct device *dev, uint8_t *buf,
@@ -1500,8 +1603,7 @@ static inline int i2c_read_dt(const struct i2c_dt_spec *spec,
  * @param read_buf Pointer to storage for read data
  * @param num_read Number of bytes to read
  *
- * @retval 0 if successful
- * @retval negative on error.
+ * @return 0 on success, negative errno value on failure.
  */
 static inline int i2c_write_read(const struct device *dev, uint16_t addr,
 				 const void *write_buf, size_t num_write,
@@ -1561,7 +1663,7 @@ static inline int i2c_write_read_dt(const struct i2c_dt_spec *spec,
  * @param buf Memory pool that stores the retrieved data.
  * @param num_bytes Number of bytes being read.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_burst_read(const struct device *dev,
@@ -1616,7 +1718,7 @@ static inline int i2c_burst_read_dt(const struct i2c_dt_spec *spec,
  * @param buf Memory pool from which the data is transferred.
  * @param num_bytes Number of bytes being written.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_burst_write(const struct device *dev,
@@ -1673,7 +1775,7 @@ static inline int i2c_burst_write_dt(const struct i2c_dt_spec *spec,
  * @param reg_addr Address of the internal register being read.
  * @param value Memory pool that stores the retrieved register value.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_read_byte(const struct device *dev,
@@ -1719,7 +1821,7 @@ static inline int i2c_reg_read_byte_dt(const struct i2c_dt_spec *spec,
  * @param reg_addr Address of the internal register being written.
  * @param value Value to be written to internal register.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_write_byte(const struct device *dev,
@@ -1766,7 +1868,7 @@ static inline int i2c_reg_write_byte_dt(const struct i2c_dt_spec *spec,
  * @param mask Bitmask for updating internal register.
  * @param value Value for updating internal register.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error.
  */
 static inline int i2c_reg_update_byte(const struct device *dev,

@@ -8,6 +8,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/hwspinlock.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(hwspinlock_nxp_sema42, CONFIG_HWSPINLOCK_LOG_LEVEL);
@@ -15,12 +16,17 @@ LOG_MODULE_REGISTER(hwspinlock_nxp_sema42, CONFIG_HWSPINLOCK_LOG_LEVEL);
 #define DT_DRV_COMPAT nxp_sema42
 
 struct nxp_sema42_config {
-	DEVICE_MMIO_ROM;
+	struct hwspinlock_driver_config common;
+
+	DEVICE_MMIO_NAMED_ROM(base);
 	uint8_t domain_id;
-	uint8_t num_locks;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
+	struct reset_dt_spec reset;
 };
+
+#define DEV_DATA(dev) ((struct nxp_sema42_data *)dev->data)
+#define DEV_CFG(dev)  ((const struct nxp_sema42_config *)dev->config)
 
 /* SEMA42 gate n register address.
  *
@@ -41,7 +47,7 @@ struct nxp_sema42_config {
  */
 static inline mem_addr_t nxp_sema42_gate_addr(const struct device *dev, uint32_t id)
 {
-	return (mem_addr_t)(DEVICE_MMIO_GET(dev) + ((id ^ 3U) & 0x0FU));
+	return (mem_addr_t)(DEVICE_MMIO_NAMED_GET(dev, base) + ((id ^ 3U) & 0x0FU));
 }
 
 static inline uint8_t nxp_sema42_lock_value(const struct device *dev)
@@ -97,13 +103,6 @@ static void nxp_sema42_unlock(const struct device *dev, uint32_t id)
 	sys_write8(0U, gate_addr);
 }
 
-static uint32_t nxp_sema42_get_max_id(const struct device *dev)
-{
-	const struct nxp_sema42_config *cfg = (const struct nxp_sema42_config *)dev->config;
-
-	return (uint32_t)(cfg->num_locks - 1U);
-}
-
 static int nxp_sema42_init(const struct device *dev)
 {
 	const struct nxp_sema42_config *cfg = (const struct nxp_sema42_config *)dev->config;
@@ -117,6 +116,20 @@ static int nxp_sema42_init(const struct device *dev)
 
 		if (ret) {
 			LOG_ERR("Device clock turn on failed");
+			return ret;
+		}
+	}
+
+	if (cfg->reset.dev != NULL) {
+		int ret;
+
+		if (!device_is_ready(cfg->reset.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&cfg->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
 			return ret;
 		}
 	}
@@ -137,20 +150,20 @@ static DEVICE_API(hwspinlock, nxp_sema42_api) = {
 	.trylock = nxp_sema42_trylock,
 	.lock = nxp_sema42_lock,
 	.unlock = nxp_sema42_unlock,
-	.get_max_id = nxp_sema42_get_max_id,
 };
 
 #define NXP_SEMA42_HWSPINLOCK_INIT(inst)							\
-												\
+	HWSPINLOCK_SPINLOCK_ARRAY_DT_INST_DEFINE(inst);						\
 	static const struct nxp_sema42_config _CONCAT(nxp_sema42_config, inst) = {		\
-		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),					\
+		.common = HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST(inst),				\
+		DEVICE_MMIO_NAMED_ROM_INIT(base, DT_DRV_INST(inst)),				\
 		.domain_id = DT_INST_PROP(inst, domain_id),					\
-		.num_locks = DT_INST_PROP_OR(inst, num_locks, 16),				\
 		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),			\
 				(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst))), (NULL)),		\
 		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, clocks),		\
 				((clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, name)),	\
 				((clock_control_subsys_t)0U)),					\
+		.reset = RESET_DT_SPEC_INST_GET_OR(inst, {0}),					\
 	};											\
 												\
 	DEVICE_DT_INST_DEFINE(inst, nxp_sema42_init, NULL, NULL,				\

@@ -3,9 +3,6 @@
 
 if RISCV
 
-config GEN_ISR_TABLES
-	default y if !SOC_ESP32C5_LPCORE && !SOC_ESP32C6_LPCORE
-
 config GEN_SW_ISR_TABLE
 	default y
 
@@ -16,13 +13,10 @@ config ISR_TABLES_LOCAL_DECLARATION_SUPPORTED
 	default n
 
 config DYNAMIC_INTERRUPTS
-	default y if !SOC_ESP32C5_LPCORE && !SOC_ESP32C6_LPCORE
+	default y if !SOC_ESP32C5_LPCORE && !SOC_ESP32C6_LPCORE && !SOC_ESP32P4_LPCORE
 
 config ISR_STACK_SIZE
 	default 2048
-
-config ATOMIC_OPERATIONS_C
-	default y
 
 config XTAL_FREQ_HZ
 	int
@@ -55,16 +49,6 @@ config ROM_START_OFFSET
 
 endif # BOOTLOADER_MCUBOOT
 
-if BT_ESP32
-
-config BT_BUF_ACL_TX_COUNT
-	default 10
-
-config BT_BUF_EVT_RX_COUNT
-	default 20
-
-endif # BT_ESP32
-
 if PM && TICKLESS_KERNEL
 
 choice PM_PREWAKEUP_CONV_MODE
@@ -78,6 +62,9 @@ endif # RISCV
 if XTENSA
 
 # Xtensa default options for ESP32 family
+config HARVARD
+	default y
+
 config XTENSA_RESET_VECTOR
 	default n
 
@@ -115,7 +102,12 @@ config ROM_START_OFFSET
 
 endif # BOOTLOADER_MCUBOOT
 
+endif # XTENSA
+
 if BT_ESP32
+
+configdefault BT_RX_STACK_SIZE
+	default 2048 if BT_SETTINGS
 
 config BT_BUF_ACL_TX_COUNT
 	default 10
@@ -124,5 +116,3 @@ config BT_BUF_EVT_RX_COUNT
 	default 20
 
 endif # BT_ESP32
-
-endif # XTENSA

@@ -28,7 +28,7 @@
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/hci_raw.h>
-#include <version.h>
+#include <zephyr/version.h>
 
 #define LOG_MODULE_NAME gui_hci_uart
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);

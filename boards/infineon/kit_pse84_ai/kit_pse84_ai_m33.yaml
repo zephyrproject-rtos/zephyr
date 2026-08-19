@@ -12,6 +12,7 @@ sysbuild: true
 toolchain:
   - zephyr
 supported:
+  - bluetooth
   - clock_control
   - counter
   - dma
@@ -22,4 +23,8 @@ supported:
   - pwm
   - spi
   - uart
+  - usbd
+  - rtc
   - watchdog
+  - comparator
+  - dmic

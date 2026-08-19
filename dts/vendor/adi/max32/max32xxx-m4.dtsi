@@ -74,6 +74,10 @@
 	status = "okay";
 };
 
+&flash0 {
+	interrupts = <23 0>;
+};
+
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,4 +11,8 @@
 	nxp,timer0-ratio = <15>;
 	/* Lower timer1 ratio to enable shorter TE delay */
 	nxp,timer1-ratio = <0>;
+};
+
+&st7796s {
+	zephyr,pm-device-runtime-auto;
 };

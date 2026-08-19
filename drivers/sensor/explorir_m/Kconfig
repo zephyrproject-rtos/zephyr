@@ -8,6 +8,5 @@ config EXPLORIR_M
 	default y
 	depends on DT_HAS_GSS_EXPLORIR_M_ENABLED
 	depends on UART_INTERRUPT_DRIVEN
-	select UART
 	help
 	  Enable driver for ExplorIR-M CO2 Sensor.

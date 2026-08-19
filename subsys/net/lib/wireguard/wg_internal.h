@@ -229,6 +229,62 @@ struct wg_peer {
 	bool first_valid : 1;
 };
 
+static inline bool wg_allowed_ip_match(const struct wg_allowed_ip *allowed_ip,
+				       net_sa_family_t family,
+				       const uint8_t *addr)
+{
+	uint32_t allowed_addr;
+	uint32_t addr_v4;
+	uint32_t mask;
+
+	if (allowed_ip == NULL || addr == NULL || !allowed_ip->is_valid ||
+	    allowed_ip->addr.family != family) {
+		return false;
+	}
+
+	if (family == NET_AF_INET6) {
+		if (allowed_ip->mask_len > 128U) {
+			return false;
+		}
+
+		return net_ipv6_is_prefix(addr,
+					  allowed_ip->addr.in6_addr.s6_addr,
+					  allowed_ip->mask_len);
+	}
+
+	if (family == NET_AF_INET) {
+		if (allowed_ip->mask_len > 32U) {
+			return false;
+		}
+
+		addr_v4 = sys_get_be32(addr);
+		allowed_addr = net_ntohl(allowed_ip->addr.in_addr.s_addr);
+		mask = allowed_ip->mask_len == 0U ?
+			0U : UINT32_MAX << (32U - allowed_ip->mask_len);
+
+		return (addr_v4 & mask) == (allowed_addr & mask);
+	}
+
+	return false;
+}
+
+static inline bool wg_peer_is_allowed_ip(const struct wg_peer *peer,
+					 net_sa_family_t family,
+					 const uint8_t *addr)
+{
+	if (peer == NULL || addr == NULL) {
+		return false;
+	}
+
+	for (int i = 0; i < CONFIG_WIREGUARD_MAX_SRC_IPS; i++) {
+		if (wg_allowed_ip_match(&peer->allowed_ip[i], family, addr)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static inline bool wg_is_under_load(void)
 {
 	/* TODO: Add proper implementation */
@@ -243,7 +299,7 @@ void wireguard_peer_foreach(wg_peer_cb_t cb, void *user_data);
 static void wg_start_session(struct wg_peer *peer, bool is_initiator);
 static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 					     const char *public_key);
-static struct wg_peer *peer_lookup_by_id(int id);
+ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id);
 static struct wg_peer *peer_lookup_by_receiver(struct wg_iface_context *ctx,
 					       uint32_t receiver);
 static struct wg_peer *peer_lookup_by_handshake(struct wg_iface_context *ctx,
@@ -313,13 +369,13 @@ static void wg_process_response_message(struct wg_iface_context *ctx,
 					struct wg_peer *peer,
 					struct msg_handshake_response *response,
 					struct net_sockaddr *addr);
-static int wg_process_data_message(struct wg_iface_context *ctx,
-				   struct wg_peer *peer,
-				   struct msg_transport_data *data_hdr,
-				   struct net_pkt *pkt,
-				   size_t ip_udp_hdr_len,
-				   struct net_sockaddr *addr);
-static void keypair_destroy(struct wg_keypair *keypair);
+ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
+					     struct wg_peer *peer,
+					     struct msg_transport_data *data_hdr,
+					     struct net_pkt *pkt,
+					     size_t ip_udp_hdr_len,
+					     struct net_sockaddr *addr);
+ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair);
 static void wg_encrypt_packet(uint8_t *dst, const uint8_t *src, size_t src_len,
 			      struct wg_keypair *keypair);
 static int wg_set_interface_private_key(struct wg_iface_context *ctx,
@@ -357,9 +413,9 @@ static int wg_psa_import_x25519_private(psa_key_id_t *key_id,
 					const uint8_t *key_data);
 static int wg_psa_import_x25519_public(psa_key_id_t *key_id,
 				       const uint8_t *key_data);
-static int wg_psa_import_chacha_key(psa_key_id_t *key_id,
-				    const uint8_t *key_data,
-				    psa_key_usage_t usage);
+ZTESTABLE_STATIC int wg_psa_import_chacha_key(psa_key_id_t *key_id,
+					      const uint8_t *key_data,
+					      psa_key_usage_t usage);
 static int wg_psa_export_public_key(uint8_t *public_key, psa_key_id_t key_id);
 static int wg_crypto_init(void);
 #endif /* WG_FUNCTION_PROTOTYPES */

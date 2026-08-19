@@ -934,8 +934,10 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 		body_data = rsp->body_frag_start;
 		body_len = rsp->body_frag_len;
 
-		if ((hb_context->dl.downloaded_size + body_len) > hb_context->response_data_size) {
-			hb_context->response_data_size = hb_context->dl.downloaded_size + body_len;
+		if ((hb_context->dl.downloaded_size + body_len + 1) >
+		    hb_context->response_data_size) {
+			hb_context->response_data_size =
+				hb_context->dl.downloaded_size + body_len + 1;
 			rsp_tmp = k_realloc(hb_context->response_data,
 					    hb_context->response_data_size);
 			if (rsp_tmp == NULL) {
@@ -946,8 +948,8 @@ static void response_json_cb(struct http_response *rsp, enum http_final_call fin
 
 			hb_context->response_data = rsp_tmp;
 		}
-		strncpy(hb_context->response_data + hb_context->dl.downloaded_size, body_data,
-			body_len);
+		memcpy(&hb_context->response_data[hb_context->dl.downloaded_size], body_data,
+		       body_len);
 		hb_context->dl.downloaded_size += body_len;
 	}
 
@@ -1285,7 +1287,7 @@ static void s_http_start(void *o)
 
 	s->hb_context.response_data_size = RESPONSE_BUFFER_SIZE;
 
-	s->hb_context.response_data = k_calloc(s->hb_context.response_data_size, sizeof(uint8_t));
+	s->hb_context.response_data = k_malloc(s->hb_context.response_data_size);
 	if (s->hb_context.response_data == NULL) {
 		cleanup_connection(&s->hb_context.sock);
 		s->hb_context.code_status = HAWKBIT_ALLOC_ERROR;

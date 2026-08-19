@@ -20,4 +20,5 @@ supported:
   - tach
   - uart
   - watchdog
+  - rtc
 vendor: ite

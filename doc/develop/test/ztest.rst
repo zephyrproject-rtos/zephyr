@@ -10,6 +10,270 @@ test structure.
 The framework can be used in two ways, either as a generic framework for
 integration testing, or for unit testing specific modules.
 
+.. contents::
+   :depth: 1
+   :local:
+   :backlinks: top
+
+Quick start - Integration testing
+*********************************
+
+A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
+To make a test application for the **bar** component of **foo**, you should copy the
+sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
+application's purposes.
+
+To build and execute all applicable test scenarios defined in your test application
+use the :ref:`Twister <twister_script>` tool, for example:
+
+.. code-block:: console
+
+    west twister -T tests/foo/bar/
+
+To select just one of the test scenarios, run Twister with ``--scenario`` command:
+
+.. code-block:: console
+
+   west twister --scenario tests/foo/bar/your.test.scenario.name
+
+In the command line above ``tests/foo/bar`` is the path to your test application and
+``your.test.scenario.name`` references a test scenario defined in :file:`tests.yaml`
+file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
+
+See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
+on how Twister deals with Ztest application.
+
+The sample contains the following files:
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
+   :language: CMake
+   :caption: CMakeLists.txt
+   :linenos:
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/tests.yaml
+   :language: yaml
+   :caption: tests.yaml
+   :linenos:
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
+   :language: text
+   :caption: prj.conf
+   :linenos:
+
+.. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
+   :language: c
+   :caption: src/main.c
+   :linenos:
+
+A test application may consist of multiple test suites that
+either can be testing functionality or APIs. Functions implementing a test case
+should follow the guidelines below:
+
+* Test cases function names should be prefixed with **test_**
+* Test cases should be documented using doxygen
+* Test case function names should be unique within the section or component being
+  tested
+
+For example:
+
+.. code-block:: C
+
+   /**
+    * @brief Test Asserts
+    *
+    * This test case verifies the zassert_true macro.
+    */
+   ZTEST(my_suite, test_assert)
+   {
+           zassert_true(1, "1 was false");
+   }
+
+Listing Tests
+=============
+
+Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
+part of a project and test similar functionality, for example an API or a
+feature. The ``twister`` script can parse the test scenarios, suites and cases in all
+test applications or a subset of them, and can generate reports on a granular
+level, i.e. if test cases have passed or failed or if they were blocked or skipped.
+
+Twister parses the source files looking for test case names, so you
+can list all kernel test cases, for example, by running:
+
+.. code-block:: console
+
+   west twister --list-tests -T tests/kernel
+
+Skipping Tests
+==============
+
+Special- or architecture-specific tests cannot run on all
+platforms and architectures, however we still want to count those and
+report them as being skipped.  Because the test inventory and
+the list of tests is extracted from the code, adding
+conditionals inside the test suite is sub-optimal.  Tests that need
+to be skipped for a certain platform or feature need to explicitly
+report a skip using :c:func:`ztest_test_skip` or :c:macro:`Z_TEST_SKIP_IFDEF`. If the test runs,
+it needs to report either a pass or fail.  For example:
+
+.. code-block:: C
+
+   #ifdef CONFIG_TEST1
+   ZTEST(common, test_test1)
+   {
+        zassert_true(1, "true");
+   }
+   #else
+   ZTEST(common, test_test1)
+   {
+        ztest_test_skip();
+   }
+   #endif
+
+   ZTEST(common, test_test2)
+   {
+        Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
+        zassert_equal(1, 0, NULL);
+   }
+
+   ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
+
+.. _ztest_unit_testing:
+
+Quick start - Unit testing
+**************************
+
+Ztest can be used for unit testing. This means that rather than including the
+entire Zephyr OS for testing a single function, you can focus the testing
+efforts into the specific module in question. This will speed up testing since
+only the module will have to be compiled in, and the tested functions will be
+called directly.
+
+To setup unit tests you have to add a CMakeLists.txt, a tests.yaml and a
+prj.conf to the directory containing the unit test source files. The resulting
+binary from this directory is built using -DBOARD=unit_testing. When twister
+is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
+filters out all tests.yaml in which type: unit is not set. Only unit tests
+are executed with a firmware build with BOARD=unit_testing.
+
+.. note::
+   Unit tests are run as **native** applications on the host and are therefore
+   subject to similar :ref:`limitations <posix_arch_limitations>` as documented
+   for the :ref:`POSIX architecture<Posix arch>`. Running unit tests is
+   therefore only supported for Linux. To run unit tests on Windows or macOS
+   it is necessary to use containers or Virtual Machines running a Linux guest.
+   Follow the same instructions as for the
+   :ref:`POSIX Arch dependencies<posix_arch_deps>`.
+
+.. _unit_testing_board:
+
+The ``unit_testing`` board
+==========================
+
+Unit tests are built for the special ``unit_testing`` board
+(:zephyr_file:`subsys/testsuite/boards/unit_testing`). It is not a real piece of
+hardware nor a simulated target: it is a pseudo-board with ``arch: unit`` that
+uses the host toolchain to produce a regular native executable. Selecting it
+with ``-DBOARD=unit_testing`` (which Twister does automatically for scenarios
+marked ``type: unit``) builds and links only the source files you add to the
+``testbinary`` target together with the Ztest unit-test harness.
+
+Crucially, **the Zephyr kernel and operating system are not built at all**.
+There is no boot sequence, no scheduler, no devicetree-driven device
+initialization, and no driver model. The functions under test are compiled into
+the test binary and called directly. Any kernel API or other dependency that the
+module under test relies on must be supplied by the test itself, usually as a
+stub or a :ref:`mock <mocking-fff>`.
+
+.. _unit_testing_vs_native_sim:
+
+Difference from ``native_sim`` and other boards
+-----------------------------------------------
+
+It is easy to confuse the ``unit_testing`` board with
+:zephyr:board:`native_sim`, since both run on the host. They are
+fundamentally different:
+
+* :zephyr:board:`native_sim` builds the
+  **complete Zephyr OS** -- kernel, devicetree, Kconfig, drivers and
+  subsystems -- into a host binary that boots and runs exactly like a Zephyr
+  image on real hardware, only compiled for the host instead of a target SoC.
+  Use it to run full applications and integration tests on the host. Tests for
+  these boards do **not** set ``type: unit``.
+
+* ``unit_testing`` builds **none** of that. It links only the code under test
+  plus Ztest, with everything else stubbed or mocked, and calls the tested
+  functions directly. This makes builds and runs fast and keeps the focus on a
+  single module, at the cost of having to provide stubs for every dependency.
+  These tests must set ``type: unit`` (see :ref:`below <tests_yaml_unit>`).
+
+In short, reach for ``native_sim`` to exercise code in the context of a running
+Zephyr system, and for ``unit_testing`` to test an isolated module without
+pulling in the kernel.
+
+CMakeLists.txt
+==============
+
+In order to declare the unit tests present in a source folder, you need to add
+the relevant source files to the ``testbinary`` target from the CMake
+:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
+example below:
+
+.. code-block:: cmake
+
+   cmake_minimum_required(VERSION 3.28.0)
+
+   project(app)
+   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+   target_sources(testbinary PRIVATE main.c)
+
+Since you won't be including basic kernel data structures that most code
+depends on, you have to provide function stubs in the test. Ztest provides
+some helpers for mocking functions, as demonstrated below.
+
+In a unit test, mock objects can simulate the behavior of complex real objects
+and are used to decide whether a test failed or passed by verifying whether an
+interaction with an object occurred, and if required, to assert the order of
+that interaction.
+
+.. _tests_yaml_unit:
+
+tests.yaml
+==========
+
+You have to set the value for the key "type" to "unit" in the tests.yaml
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+
+prj.conf
+========
+
+For unit tests this contains usually only
+
+.. code-block:: kconfig
+
+   CONFIG_ZTEST=y
+
+If your unit tests require additional libraries (e.g. math-lib) you will have to
+add them either via the CMakeLists.txt or in the tests.yaml:
+
+.. code-block:: yaml
+
+   tests:
+      testscenario.testsuite:
+         tags: your_tag
+         type: unit
+         extra_args:
+            - EXTRA_LDFLAGS="-lm"
+
+Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
+
+
 Creating a test suite
 *********************
 
@@ -38,7 +302,7 @@ Below is an example of a test suite using a predicate:
 
    static bool predicate(const void *global_state)
    {
-   	return ((const struct test_state*)global_state)->x == 5;
+        return ((const struct test_state*)global_state)->x == 5;
    }
 
    ZTEST_SUITE(alternating_suite, predicate, NULL, NULL, NULL, NULL);
@@ -50,9 +314,11 @@ There are 5 macros used to add a test to a suite, they are:
 
 * :c:macro:`ZTEST` ``(suite_name, test_name)`` - Which can be used to add a test by ``test_name`` to a
   given suite by ``suite_name``.
-* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a parameterized test to a given suite by specifying
-  the ``suite_name`` and ``test_name``. You can then access the passed parameter within
-  the body of the test using the ``data`` pointer.
+* :c:macro:`ZTEST_P` ``(suite_name, test_name)`` - Add a value-parameterized test to a given suite.
+  The test body is executed once per registered parameter value. Inside the body, call
+  :c:func:`ztest_get_current_param` or use the :c:macro:`ZTEST_GET_PARAM` typed helper to
+  retrieve the current value. The suite fixture (``data`` argument) is independent from the
+  parameter and is never overwritten. See `Value-parameterized tests`_ for the full API.
 * :c:macro:`ZTEST_USER` ``(suite_name, test_name)`` - Which behaves the same as :c:macro:`ZTEST`, only
   that when :kconfig:option:`CONFIG_USERSPACE` is enabled, then the test will be run in a userspace
   thread.
@@ -74,40 +340,40 @@ This is achieved via fixtures in the following way:
    #include <zephyr/ztest.h>
 
    struct my_suite_fixture {
-   	size_t max_size;
-   	size_t size;
-   	uint8_t buff[1];
+        size_t max_size;
+        size_t size;
+        uint8_t buff[1];
    };
 
    static void *my_suite_setup(void)
    {
-   	/* Allocate the fixture with 256 byte buffer */
-      struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
+        /* Allocate the fixture with 256 byte buffer */
+        struct my_suite_fixture *fixture = malloc(sizeof(struct my_suite_fixture) + 255);
 
-   	zassume_not_null(fixture, NULL);
-   	fixture->max_size = 256;
+        zassume_not_null(fixture, NULL);
+        fixture->max_size = 256;
 
-   	return fixture;
+        return fixture;
    }
 
    static void my_suite_before(void *f)
    {
-   	struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
-   	memset(fixture->buff, 0, fixture->max_size);
-   	fixture->size = 0;
+        struct my_suite_fixture *fixture = (struct my_suite_fixture *)f;
+        memset(fixture->buff, 0, fixture->max_size);
+        fixture->size = 0;
    }
 
    static void my_suite_teardown(void *f)
    {
-      free(f);
+        free(f);
    }
 
    ZTEST_SUITE(my_suite, NULL, my_suite_setup, my_suite_before, NULL, my_suite_teardown);
 
    ZTEST_F(my_suite, test_feature_x)
    {
-   	zassert_equal(0, fixture->size);
-   	zassert_equal(256, fixture->max_size);
+        zassert_equal(0, fixture->size);
+        zassert_equal(256, fixture->max_size);
    }
 
 Using memory allocated by a test fixture in a userspace thread, such as during execution of
@@ -119,31 +385,218 @@ user/kernel space shared memory.
 Advanced features
 *****************
 
+.. _value-parameterized-tests:
+
+Value-parameterized tests
+=========================
+
+Value-parameterized tests allow a single test body to be executed once for each
+value in a supplied list, similar to GoogleTest's ``TEST_P`` / ``INSTANTIATE_TEST_SUITE_P``
+pattern.  The fixture and the parameter are completely independent: the suite's
+``setup()`` return value is always passed as ``data`` and is never overwritten by
+a parameter value.
+
+Declaring a parameterized test body
+------------------------------------
+
+Use :c:macro:`ZTEST_P` in the same way as :c:macro:`ZTEST`.  Inside the body, the ``data``
+pointer carries the suite fixture (identical to :c:macro:`ZTEST_F`).  The current
+parameter value is retrieved through the run-time accessors:
+
+.. code-block:: C
+
+   #include <zephyr/ztest.h>
+
+   struct my_suite_fixture {
+        int initial_value;
+   };
+
+   static void *my_suite_setup(void) {
+        static struct my_suite_fixture f = { .initial_value = 42 };
+        return &f;
+   }
+
+   ZTEST_SUITE(my_suite, NULL, my_suite_setup, NULL, NULL, NULL);
+
+   ZTEST_P(my_suite, test_multiply)
+   {
+        struct my_suite_fixture *f = (struct my_suite_fixture *)data;
+        int factor = ZTEST_GET_PARAM(int);
+
+        /* fixture is always intact, regardless of parameter */
+        zassert_equal(f->initial_value, 42, "fixture corrupted");
+        zassert_true(f->initial_value * factor > 0, "product must be positive");
+   }
+
+Declaring parameter values
+---------------------------
+
+Use :c:macro:`ZTEST_DEFINE_PARAM_VALUES` to create a static value set from
+literal values:
+
+.. code-block:: C
+
+   ZTEST_DEFINE_PARAM_VALUES(small_factors, int, 1, 2, 3);
+
+For values already stored in an array use :c:macro:`ZTEST_DEFINE_PARAM_VALUES_ARRAY`:
+
+.. code-block:: C
+
+   static const int big_factors[] = { 10, 100, 1000 };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(big_factor_vals, big_factors);
+
+For a numeric range use :c:macro:`ZTEST_DEFINE_PARAM_RANGE`, which mirrors
+GoogleTest's ``testing::Range(begin, end [, step])`` semantics.  Values are
+``{begin, begin+step, ...}`` up to but **not** including ``end``.  No backing
+array is allocated, so large ranges have zero RAM overhead:
+
+.. code-block:: C
+
+   /* {0, 2, 4, 6, 8} — 5 values, step is supplied explicitly */
+   ZTEST_DEFINE_PARAM_RANGE(even_vals, int, 0, 10, 2);
+
+   /* {1, 2, 3, 4, 5} — step=1 is the common case */
+   ZTEST_DEFINE_PARAM_RANGE(one_to_five, int, 1, 6, 1);
+
+.. note::
+
+   ``ZTEST_DEFINE_PARAM_RANGE`` requires ``end > begin`` and ``step > 0``,
+   both enforced at compile time via :c:macro:`BUILD_ASSERT`.
+
+For values that must be **computed at runtime** — for instance random numbers,
+hardware sensor readings, or values produced by a custom algorithm — use
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR` or
+:c:macro:`ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP`.  Both accept a
+user-provided generator callback with the signature
+``void gen(size_t index, void *out)`` that writes one value per invocation.
+Like ranges, no backing array is allocated.
+
+The ``_WITH_SETUP`` variant additionally calls a ``void setup(void)`` hook
+**once** before the dispatch loop.  This is the right place to seed a PRNG,
+reset a stateful counter, or open any resource needed by the generator:
+
+.. code-block:: C
+
+   #include <zephyr/random/random.h>
+
+   /* Seed the RNG before the first iteration so failures are reproducible. */
+   static void seed_rng(void)
+   {
+        sys_rand_seed(MY_FUZZ_SEED);
+   }
+
+   static void rand_u32_gen(size_t idx, void *out)
+   {
+        ARG_UNUSED(idx);
+        *(uint32_t *)out = sys_rand32_get();
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR_WITH_SETUP(fuzz_vals, uint32_t, MY_FUZZ_ITERATIONS,
+                                           seed_rng, rand_u32_gen);
+
+When no setup is needed, use the simpler form:
+
+.. code-block:: C
+
+   static void deterministic_gen(size_t idx, void *out)
+   {
+        /* Deterministic but computed at runtime (e.g. based on hardware ID). */
+        *(uint32_t *)out = get_device_seed() ^ (uint32_t)idx;
+   }
+
+   ZTEST_DEFINE_PARAM_GENERATOR(hw_vals, uint32_t, 16U, deterministic_gen);
+
+.. note::
+
+   The ``count_`` argument to both generator macros must be a constant
+   expression (a numeric literal, a ``#define``, or a Kconfig symbol such as
+   ``MY_FUZZ_ITERATIONS``).  Truly dynamic counts are not supported.
+
+Struct-typed parameters work the same way:
+
+.. code-block:: C
+
+   struct point { int x; int y; };
+
+   static const struct point corners[] = { {0,0}, {1,0}, {0,1}, {1,1} };
+   ZTEST_DEFINE_PARAM_VALUES_ARRAY(corner_vals, corners);
+
+   ZTEST_P(my_suite, test_in_unit_square)
+   {
+        const struct point *p = ZTEST_GET_PARAM_PTR(struct point);
+        zassert_true(p->x >= 0 && p->x <= 1 && p->y >= 0 && p->y <= 1,
+                    "point (%d, %d) outside unit square", p->x, p->y);
+   }
+
+Instantiating a parameterized test
+------------------------------------
+
+:c:macro:`ZTEST_INSTANTIATE_TEST_SUITE_P` binds a value set to a test body.  Each
+call creates a separate named instantiation; the same test body may be
+instantiated multiple times with different value sets:
+
+.. code-block:: C
+
+   ZTEST_INSTANTIATE_TEST_SUITE_P(small, my_suite, test_multiply, small_factors);
+   ZTEST_INSTANTIATE_TEST_SUITE_P(big,   my_suite, test_multiply, big_factor_vals);
+
+The first argument (``small`` / ``big``) is an arbitrary unique identifier within
+the compilation unit; it is recorded in the test metadata but does not affect test
+naming as reported by Twister.
+
+Retrieving the current parameter
+----------------------------------
+
+Inside a :c:macro:`ZTEST_P` body the following helpers are available:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Helper
+     - Description
+   * - ``ztest_has_current_param()``
+     - Returns ``true`` when called inside a parameterized invocation.
+   * - ``ztest_get_current_param()``
+     - Returns a ``const void *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM_PTR(type)``
+     - Returns a ``const type *`` pointer to the current value.
+   * - ``ZTEST_GET_PARAM(type)``
+     - Dereferences and returns the current value as ``type``.
+   * - ``ztest_get_current_param_index()``
+     - Returns the zero-based index of the current value within its set.
+   * - ``ztest_get_current_param_size()``
+     - Returns the size in bytes of one parameter element.
+
+Non-parameterized tests (:c:macro:`ZTEST`, :c:macro:`ZTEST_F`) always see
+``ztest_has_current_param()`` return ``false`` and ``ztest_get_current_param()``
+return ``NULL``.
+
 Test result expectations
 ========================
 
 Some tests were made to be broken. In cases where the test is expected to fail or skip due to the
 nature of the code, it's possible to annotate the test as such. For example:
 
-  .. code-block:: C
+.. code-block:: C
 
-    #include <zephyr/ztest.h>
+   #include <zephyr/ztest.h>
 
-    ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
+   ZTEST_SUITE(my_suite, NULL, NULL, NULL, NULL, NULL);
 
-    ZTEST_EXPECT_FAIL(my_suite, test_fail);
-    ZTEST(my_suite, test_fail)
-    {
-      /** This will fail the test */
-      zassert_true(false, NULL);
-    }
+   ZTEST_EXPECT_FAIL(my_suite, test_fail);
+   ZTEST(my_suite, test_fail)
+   {
+     /** This will fail the test */
+     zassert_true(false, NULL);
+   }
 
-    ZTEST_EXPECT_SKIP(my_suite, test_skip);
-    ZTEST(my_suite, test_skip)
-    {
-      /** This will skip the test */
-      zassume_true(false, NULL);
-    }
+   ZTEST_EXPECT_SKIP(my_suite, test_skip);
+   ZTEST(my_suite, test_skip)
+   {
+     /** This will skip the test */
+     zassume_true(false, NULL);
+   }
 
 In this example, the above tests should be marked as failed and skipped respectively. Instead,
 Ztest will mark both as passed due to the expectation.
@@ -169,10 +622,10 @@ etc.:
 
    static void fff_reset_rule_before(const struct ztest_unit_test *test, void *fixture)
    {
-   	ARG_UNUSED(test);
-   	ARG_UNUSED(fixture);
+        ARG_UNUSED(test);
+        ARG_UNUSED(fixture);
 
-   	RESET_FAKE(my_weak_func);
+        RESET_FAKE(my_weak_func);
    }
 
    ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
@@ -214,227 +667,19 @@ function can be written as follows:
         ztest_verify_all_test_suites_ran();
    }
 
+The signature of :c:func:`ztest_run_all` is
+``ztest_run_all(const void *state, bool shuffle, int suite_iter, int case_iter)``:
 
-Quick start - Integration testing
-*********************************
+* ``state`` - Pointer to the global state passed to each suite's ``predicate``.
+* ``shuffle`` - When ``true``, randomize the order in which suites and tests run
+  (requires :kconfig:option:`CONFIG_ZTEST_SHUFFLE`); ``false`` keeps the default
+  alphanumerical order.
+* ``suite_iter`` - Number of times to repeat each test suite.
+* ``case_iter`` - Number of times to repeat each test case.
 
-A simple working base is located at :zephyr_file:`samples/subsys/testsuite/integration`.
-To make a test application for the **bar** component of **foo**, you should copy the
-sample folder to ``tests/foo/bar`` and edit files there adjusting for your test
-application's purposes.
+In the example above each call runs the matching suites once, in order, without
+shuffling.
 
-To build and execute all applicable test scenarios defined in your test application
-use the :ref:`Twister <twister_script>` tool, for example:
-
-.. code-block:: console
-
-    ./scripts/twister -T tests/foo/bar/
-
-To select just one of the test scenarios, run Twister with ``--scenario`` command:
-
-.. code-block:: console
-
-   ./scripts/twister --scenario tests/foo/bar/your.test.scenario.name
-
-In the command line above ``tests/foo/bar`` is the path to your test application and
-``your.test.scenario.name`` references a test scenario defined in :file:`testcase.yaml`
-file, which is like ``sample.testing.ztest`` in the boilerplate test suite sample.
-
-See :ref:`Twister test project diagram <twister_test_project_diagram>` for more details
-on how Twister deals with Ztest application.
-
-The sample contains the following files:
-
-CMakeLists.txt
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/CMakeLists.txt
-   :language: CMake
-   :linenos:
-
-testcase.yaml
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/testcase.yaml
-   :language: yaml
-   :linenos:
-
-prj.conf
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/prj.conf
-   :language: text
-   :linenos:
-
-src/main.c
-
-.. literalinclude:: ../../../samples/subsys/testsuite/integration/src/main.c
-   :language: c
-   :linenos:
-
-.. contents::
-   :depth: 1
-   :local:
-   :backlinks: top
-
-
-
-A test application may consist of multiple test suites that
-either can be testing functionality or APIs. Functions implementing a test case
-should follow the guidelines below:
-
-* Test cases function names should be prefixed with **test_**
-* Test cases should be documented using doxygen
-* Test case function names should be unique within the section or component being
-  tested
-
-For example:
-
-.. code-block:: C
-
-   /**
-    * @brief Test Asserts
-    *
-    * This test case verifies the zassert_true macro.
-    */
-   ZTEST(my_suite, test_assert)
-   {
-           zassert_true(1, "1 was false");
-   }
-
-Listing Tests
-=============
-
-Tests (test applications) in the Zephyr tree consist of many test scenarios that run as
-part of a project and test similar functionality, for example an API or a
-feature. The ``twister`` script can parse the test scenarios, suites and cases in all
-test applications or a subset of them, and can generate reports on a granular
-level, i.e. if test cases have passed or failed or if they were blocked or skipped.
-
-Twister parses the source files looking for test case names, so you
-can list all kernel test cases, for example, by running:
-
-.. code-block:: console
-
-   ./scripts/twister --list-tests -T tests/kernel
-
-Skipping Tests
-==============
-
-Special- or architecture-specific tests cannot run on all
-platforms and architectures, however we still want to count those and
-report them as being skipped.  Because the test inventory and
-the list of tests is extracted from the code, adding
-conditionals inside the test suite is sub-optimal.  Tests that need
-to be skipped for a certain platform or feature need to explicitly
-report a skip using :c:func:`ztest_test_skip` or :c:macro:`Z_TEST_SKIP_IFDEF`. If the test runs,
-it needs to report either a pass or fail.  For example:
-
-.. code-block:: C
-
-   #ifdef CONFIG_TEST1
-   ZTEST(common, test_test1)
-   {
-   	zassert_true(1, "true");
-   }
-   #else
-   ZTEST(common, test_test1)
-   {
-   	ztest_test_skip();
-   }
-   #endif
-
-   ZTEST(common, test_test2)
-   {
-   	Z_TEST_SKIP_IFDEF(CONFIG_BUGxxxxx);
-   	zassert_equal(1, 0, NULL);
-   }
-
-   ZTEST_SUITE(common, NULL, NULL, NULL, NULL, NULL);
-
-.. _ztest_unit_testing:
-
-Quick start - Unit testing
-**************************
-
-Ztest can be used for unit testing. This means that rather than including the
-entire Zephyr OS for testing a single function, you can focus the testing
-efforts into the specific module in question. This will speed up testing since
-only the module will have to be compiled in, and the tested functions will be
-called directly.
-
-To setup unit tests you have to add a CMakeLists.txt, a testcases.yml and a
-prj.conf to the directory containing the unit test source files. The resulting
-binary from this directory is built using -DBOARD=unit_testing. When twister
-is invoked the script zephyr/scripts/pylib/twister/twisterlib/testplan.py
-filters out all testcases.yml in which type: unit is not set. Only unit tests
-are executed with a firmware build with BOARD=unit_testing.
-
-.. note::
-   Unit tests are run as **native** applications on the host and are therefore
-   subject to similar :ref:`limitations <posix_arch_limitations>` as documented
-   for the :ref:`POSIX architecture<Posix arch>`. Running unit tests is
-   therefore only supported for Linux. To run unit tests on Windows or macOS
-   it is necessary to use containers or Virtual Machines running a Linux guest.
-   Follow the same instructions as for the
-   :ref:`POSIX Arch dependencies<posix_arch_deps>`.
-
-CMakeLists.txt
-==============
-
-In order to declare the unit tests present in a source folder, you need to add
-the relevant source files to the ``testbinary`` target from the CMake
-:zephyr_file:`unittest <cmake/modules/unittest.cmake>` component. See a minimal
-example below:
-
-.. code-block:: cmake
-
-   cmake_minimum_required(VERSION 3.20.0)
-
-   project(app)
-   find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
-   target_sources(testbinary PRIVATE main.c)
-
-Since you won't be including basic kernel data structures that most code
-depends on, you have to provide function stubs in the test. Ztest provides
-some helpers for mocking functions, as demonstrated below.
-
-In a unit test, mock objects can simulate the behavior of complex real objects
-and are used to decide whether a test failed or passed by verifying whether an
-interaction with an object occurred, and if required, to assert the order of
-that interaction.
-
-testcases.yaml
-==============
-
-You have to set the value for the key "type" to "unit" in the testcase.yaml
-
-.. code-block:: yaml
-
-   tests:
-      testscenario.testsuite:
-         tags: your_tag
-         type: unit
-
-prj.conf
-========
-
-For unit tests this contains usually only
-
-.. code-block:: kconfig
-
-   CONFIG_ZTEST=y
-
-If your unit tests require additional libraries (e.g. math-lib) you will have to
-add them either via the CMakeLists.txt or in the testcase.yaml:
-
-.. code-block:: yaml
-
-   tests:
-      testscenario.testsuite:
-         tags: your_tag
-         type: unit
-         extra_args:
-            - EXTRA_LDFLAGS="-lm"
-
-Examples of unit tests can be found in the :zephyr_file:`tests/unit/` folder.
 
 Best practices for declaring the test suite
 *******************************************
@@ -507,12 +752,12 @@ the timeout is configured to complete after 10 seconds if those conditions are n
 The last argument of each context is the initial sleep time which will be adjusted throughout
 the test to achieve the highest CPU load.
 
-  .. code-block:: C
+.. code-block:: C
 
-             ztress_set_timeout(K_MSEC(10000));
-             ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
-                            ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
+   ztress_set_timeout(K_MSEC(10000));
+   ZTRESS_EXECUTE(ZTRESS_TIMER(foo_0, user_data_0, 10000, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_1, user_data_1, 10000, 0, Z_TIMEOUT_TICKS(20)),
+                  ZTRESS_THREAD(foo_2, user_data_2, 10000, 1000, Z_TIMEOUT_TICKS(20)));
 
 Configuration
 =============
@@ -590,7 +835,7 @@ file and line numbers, reducing the binary size of the test.
 Example output for a failed macro from
 ``zassume_equal(buf->ref, 2, "Invalid refcount")``:
 
-.. code-block::none
+.. code-block:: none
 
     START - test_get_single_buffer
         Assumption failed at main.c:62: test_get_single_buffer: Invalid refcount (buf->ref not equal to 2)
@@ -621,8 +866,19 @@ Zephyr provides several FFF-based fake drivers which can be used as either stubs
 driver instances are configured via :ref:`devicetree` and :ref:`kconfig`. See the following
 devicetree bindings for more information:
 
- - :dtcompatible:`zephyr,fake-can`
- - :dtcompatible:`zephyr,fake-eeprom`
+.. zephyr-keep-sorted-start
+
+* :dtcompatible:`zephyr,fake-can`
+* :dtcompatible:`zephyr,fake-comp`
+* :dtcompatible:`zephyr,fake-eeprom`
+* :dtcompatible:`zephyr,fake-leds`
+* :dtcompatible:`zephyr,fake-pwm`
+* :dtcompatible:`zephyr,fake-regulator`
+* :dtcompatible:`zephyr,fake-rtc`
+* :dtcompatible:`zephyr,fake-stepper-ctrl`
+* :dtcompatible:`zephyr,fake-stepper-driver`
+
+.. zephyr-keep-sorted-stop
 
 Zephyr also has defined extensions to FFF for simplified declarations of fake functions.
 See :ref:`FFF Extensions <fff-extensions>`.

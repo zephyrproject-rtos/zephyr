@@ -75,11 +75,11 @@
 	prescale-glitch-filter = <10>;
 };
 
-&gpt2 {
-	run-mode = "free-run";
-};
-
 &tpm1 {
 	compatible = "nxp,tpm-timer";
+	status = "okay";
+};
+
+&sys_ctr {
 	status = "okay";
 };

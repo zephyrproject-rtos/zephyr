@@ -29,12 +29,14 @@ class HardwareAdapter(DeviceAdapter):
         super().__init__(device_config)
         self._flashing_timeout: float = device_config.flash_timeout
 
-        self.device_log_path: Path = device_config.build_dir / 'device.log'
+        self.device_log_path: Path = device_config.build_dir / (
+            "device" + (f"{device_config.dut_number}" if device_config.dut_number else "") + ".log"
+        )
         self._log_files.append(self.device_log_path)
 
-    def _generate_flash_command(self) -> None:
+    def _generate_flash_command(self, build_dir: Path) -> None:
         command = [self.device_config.flash_command[0]]
-        command.extend(['--build-dir', str(self.device_config.build_dir)])
+        command.extend(['--build-dir', str(build_dir)])
 
         if self.device_config.id:
             command.extend(['--board-id', self.device_config.id])
@@ -45,8 +47,9 @@ class HardwareAdapter(DeviceAdapter):
 
     def generate_command(self) -> None:
         """Return command to flash."""
+        build_dir = self.device_config.current_build_dir or self.device_config.build_dir
         if self.device_config.flash_command:
-            self._generate_flash_command()
+            self._generate_flash_command(build_dir)
             return
 
         command = [
@@ -54,7 +57,7 @@ class HardwareAdapter(DeviceAdapter):
             self.device_config.west_flash_cmd or 'flash',
             '--no-rebuild',
             '--build-dir',
-            str(self.device_config.build_dir),
+            str(build_dir),
         ]
 
         command_extra_args = []
@@ -88,7 +91,7 @@ class HardwareAdapter(DeviceAdapter):
             elif runner == "esp32":
                 extra_args.append("--esp-device")
                 extra_args.append(board_id)
-            elif runner in ('nrfjprog', 'nrfutil', 'nrfutil_next'):
+            elif "nrf" in runner:
                 extra_args.append('--dev-id')
                 extra_args.append(board_id)
             elif runner == 'openocd' and self.device_config.product in [
@@ -97,13 +100,12 @@ class HardwareAdapter(DeviceAdapter):
             ]:
                 extra_args.append('--cmd-pre-init')
                 extra_args.append(f'hla_serial {board_id}')
-            elif runner == 'openocd' and self.device_config.product == 'EDBG CMSIS-DAP':
-                extra_args.append('--cmd-pre-init')
-                extra_args.append(f'cmsis_dap_serial {board_id}')
-            elif runner == "openocd" and self.device_config.product == "LPC-LINK2 CMSIS-DAP":
+            elif runner == "openocd" and (
+                self.device_config.product in ('EDBG CMSIS-DAP', 'LPC-LINK2 CMSIS-DAP')
+            ):
                 extra_args.append("--cmd-pre-init")
                 extra_args.append(f'adapter serial {board_id}')
-            elif runner == 'jlink' or (
+            elif runner in ('jlink', 'mplab_ipe') or (
                 runner == 'stm32cubeprogrammer' and self.device_config.product != "BOOT-SERIAL"
             ):
                 base_args.append('--dev-id')

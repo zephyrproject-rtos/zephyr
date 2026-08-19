@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa5x.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa5x.dtsi>
 #include "frdm_mcxa577.dtsi"
 
 / {
@@ -20,6 +20,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,crc = &crc;
 	};
 };
 
@@ -36,10 +37,6 @@
 	status = "okay";
 	pinctrl-0 = <&pinmux_t1s>;
 	pinctrl-names = "default";
-};
-
-&enet_mac {
-	status = "okay";
 	phy-connection-type = "internal";
 	zephyr,random-mac-address;
 	phy-handle = <&t1s>;

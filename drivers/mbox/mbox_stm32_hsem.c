@@ -95,16 +95,24 @@ static inline uint32_t stm32_hsem_is_rx_interrupt_active(void)
 #endif /* HSEM_CPU_ID */
 }
 
-static inline bool is_rx_channel_valid(const struct device *dev, uint32_t ch)
+static int validate_rx_channel(uint32_t channel)
 {
 	/* Only support one RX channel */
-	return (ch == MBOX_RX_HSEM_ID);
+	if (channel != MBOX_RX_HSEM_ID) {
+		LOG_ERR("Invalid rx channel %" PRIu32 " (!= %u).", channel, MBOX_RX_HSEM_ID);
+		return -EINVAL;
+	}
+	return 0;
 }
 
-static inline bool is_tx_channel_valid(const struct device *dev, uint32_t ch)
+static int validate_tx_channel(uint32_t channel)
 {
 	/* Only support one TX channel */
-	return (ch == MBOX_TX_HSEM_ID);
+	if (channel != MBOX_TX_HSEM_ID) {
+		LOG_ERR("Invalid tx channel %" PRIu32 " (!= %u).", channel, MBOX_TX_HSEM_ID);
+		return -EINVAL;
+	}
+	return 0;
 }
 
 static void mbox_dispatcher(const struct device *dev)
@@ -127,13 +135,18 @@ static void mbox_dispatcher(const struct device *dev)
 static int mbox_stm32_hsem_send(const struct device *dev, uint32_t channel,
 			 const struct mbox_msg *msg)
 {
+	int ret;
+
+	ARG_UNUSED(dev);
+
 	if (msg) {
 		LOG_ERR("Sending data not supported.");
 		return -EINVAL;
 	}
 
-	if (!is_tx_channel_valid(dev, channel)) {
-		return -EINVAL;
+	ret = validate_tx_channel(channel);
+	if (ret != 0) {
+		return ret;
 	}
 
 	/*
@@ -150,9 +163,11 @@ static int mbox_stm32_hsem_register_callback(const struct device *dev, uint32_t 
 				      mbox_callback_t cb, void *user_data)
 {
 	struct mbox_stm32_hsem_data *data = dev->data;
+	int ret;
 
-	if (!(is_rx_channel_valid(dev, channel))) {
-		return -EINVAL;
+	ret = validate_rx_channel(channel);
+	if (ret != 0) {
+		return ret;
 	}
 
 	data->cb = cb;
@@ -179,8 +194,13 @@ static uint32_t mbox_stm32_hsem_max_channels_get(const struct device *dev)
 
 static int mbox_stm32_hsem_set_enabled(const struct device *dev, uint32_t channel, bool enable)
 {
-	if (!is_rx_channel_valid(dev, channel)) {
-		return -EINVAL;
+	int ret;
+
+	ARG_UNUSED(dev);
+
+	ret = validate_rx_channel(channel);
+	if (ret != 0) {
+		return ret;
 	}
 
 	if (enable) {

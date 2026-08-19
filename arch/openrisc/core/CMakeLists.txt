@@ -11,7 +11,6 @@ zephyr_library_sources(
   exception.S
   fatal.c
   irq_manage.c
-  irq_offload.c
   prep_c.c
   reboot.c
   switch.S
@@ -20,3 +19,4 @@ zephyr_library_sources(
 
 zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
+zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)

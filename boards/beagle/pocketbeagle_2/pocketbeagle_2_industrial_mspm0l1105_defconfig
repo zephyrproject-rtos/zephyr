@@ -1,0 +1,12 @@
+# BeagleBoard.org PocketBeagle 2 Industrial
+#
+# Copyright (c) 2026 BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+CONFIG_CLOCK_CONTROL=y
+
+# Enable Console
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

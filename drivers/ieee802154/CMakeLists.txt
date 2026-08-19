@@ -1,5 +1,22 @@
 # SPDX-License-Identifier: Apache-2.0
 
+if(CONFIG_BUILD_ONLY_NO_BLOBS)
+  message(WARNING "
+  ---------------------------------------------------------------------------
+  Building only the IEEE802154 driver without binary blobs and patches.
+  This is only for building (CI) purposes and will not work on a real device.
+  ---------------------------------------------------------------------------
+  ")
+else()
+  if(CONFIG_DT_HAS_ESPRESSIF_ESP32_IEEE802154_ENABLED)
+    zephyr_blobs_verify(MODULE hal_espressif REQUIRED)
+  endif()
+
+  if(CONFIG_DT_HAS_ST_STM32WBA_IEEE802154_ENABLED)
+    zephyr_blobs_verify(MODULE hal_stm32 REQUIRED)
+  endif()
+endif() # CONFIG_BUILD_ONLY_NO_BLOBS
+
 zephyr_library()
 
 # zephyr-keep-sorted-start
@@ -15,6 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_IEEE802154_MCXW ieee802154_mcxw.c ieee802154
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_NRF5 ieee802154_nrf5.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx_iface.c)
+zephyr_library_sources_ifdef(CONFIG_IEEE802154_SILABS_EFR32 ieee802154_silabs_efr32.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_STM32WBA ieee802154_stm32wba.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_TELINK_B91 ieee802154_b91.c)
 zephyr_library_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)

@@ -12,7 +12,7 @@
  * @brief Public LoRaWAN APIs
  * @defgroup lorawan_api LoRaWAN APIs
  * @since 2.5
- * @version 0.1.0
+ * @version 0.2.0
  * @ingroup connectivity
  * @{
  */
@@ -336,9 +336,13 @@ int lorawan_set_class(enum lorawan_class dev_class);
 /**
  * @brief Set the number of tries used for transmissions
  *
+ * This function must be called after lorawan_start().
+ *
  * @param tries Number of tries to be used
  *
- * @return 0 if successful, negative errno code if failure
+ * @retval 0 successful
+ * @retval -EPERM LoRaWAN stack has not been started
+ * @retval -EINVAL tries is out of range
  */
 int lorawan_set_conf_msg_tries(uint8_t tries);
 
@@ -351,6 +355,13 @@ int lorawan_set_conf_msg_tries(uint8_t tries);
  * be enabled for devices with stable RF conditions (i.e., devices in a mostly
  * static location).
  *
+ * Enabling ADR does not reset the current data rate; a value previously set
+ * via lorawan_set_datarate() remains in use until the network adjusts it
+ * through a LinkADRReq.
+ *
+ * This function must be called after lorawan_start(). Calls before start are
+ * ignored.
+ *
  * @param enable Enable or Disable adaptive data rate.
  */
 void lorawan_enable_adr(bool enable);
@@ -362,10 +373,16 @@ void lorawan_enable_adr(bool enable);
  * can be used for data transmission. Some Network Servers don't use all the channels,
  * in this case, the channels mask must be provided.
  *
+ * This function must be called after lorawan_start(), once the regional
+ * channel plan has been initialized. If called before lorawan_join(), the mask
+ * is used for join channel selection. Join-Accept CFList processing or later
+ * LinkADRReq commands may update the channel state after join.
+ *
  * @param channels_mask Buffer with channels mask to be used.
  * @param channels_mask_size Size of channels mask buffer.
  *
  * @retval 0 successful
+ * @retval -EPERM LoRaWAN stack has not been started
  * @retval -EINVAL channels mask or channels mask size is wrong
  */
 int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size);
@@ -375,9 +392,13 @@ int lorawan_set_channels_mask(uint16_t *channels_mask, size_t channels_mask_size
  *
  * Change the default data rate.
  *
+ * This function must be called after lorawan_start().
+ *
  * @param dr Data rate used for transmissions
  *
- * @return 0 if successful, negative errno code if failure
+ * @retval 0 successful
+ * @retval -EPERM LoRaWAN stack has not been started
+ * @retval -EINVAL data rate is invalid for the active region or ADR is already enabled
  */
 int lorawan_set_datarate(enum lorawan_datarate dr);
 

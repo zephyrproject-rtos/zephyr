@@ -40,7 +40,7 @@ DEFINE_FLAG_STATIC(flag_l2cap_connected);
  * Peripheral 3: disconnects after receiving first SDU
  * Peripheral 4: disconnects after receiving first PDU in second SDU
  * Peripheral 5: disconnects after receiving third PDU in third SDU
- * Peripheral 6: disconnects atfer receiving tenth PDU in tenth SDU
+ * Peripheral 6: disconnects after receiving tenth PDU in tenth SDU
  */
 static unsigned int device_nbr;
 
@@ -157,7 +157,7 @@ static void disconnect_device_no_wait(struct bt_conn *conn, void *data)
 	int err;
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	UNSET_FLAG(is_connected);
 }
@@ -347,27 +347,19 @@ static int l2cap_server_register(bt_security_t sec_level)
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		TEST_FAIL("Failed to connect to %s (%u)", addr, conn_err);
+		TEST_FAIL("Failed to connect to %s (%u)", bt_conn_dst_str(conn), conn_err);
 		return;
 	}
 
-	LOG_DBG("%s", addr);
+	LOG_DBG("%s", bt_conn_dst_str(conn));
 
 	SET_FLAG(is_connected);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("%p %s (reason 0x%02x)", conn, addr, reason);
+	LOG_DBG("%p %s (reason 0x%02x)", conn, bt_conn_dst_str(conn), reason);
 
 	UNSET_FLAG(is_connected);
 	disconnect_counter++;
@@ -385,7 +377,7 @@ static void disconnect_device(struct bt_conn *conn, void *data)
 	SET_FLAG(is_connected);
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	TEST_ASSERT(!err, "Failed to initate disconnect (err %d)", err);
+	TEST_ASSERT(!err, "Failed to initiate disconnect (err %d)", err);
 
 	LOG_DBG("Waiting for disconnection...");
 	WAIT_FOR_FLAG_UNSET(is_connected);
@@ -529,11 +521,7 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	char str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(addr, str, sizeof(str));
-
-	LOG_DBG("Connecting to %s", str);
+	LOG_DBG("Connecting to %s", bt_addr_le_str(addr));
 
 	param = BT_LE_CONN_PARAM_DEFAULT;
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, param, &conn);

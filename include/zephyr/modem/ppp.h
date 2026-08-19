@@ -15,8 +15,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_PPP_
-#define ZEPHYR_MODEM_PPP_
+#ifndef ZEPHYR_INCLUDE_MODEM_PPP_H_
+#define ZEPHYR_INCLUDE_MODEM_PPP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,16 +38,26 @@ typedef void (*modem_ppp_init_iface)(struct net_if *iface);
  * @cond INTERNAL_HIDDEN
  */
 
+enum modem_ppp_state {
+	/* Pipe is attached */
+	MODEM_PPP_STATE_ATTACHED_BIT = 0,
+	/* Link is dead */
+	MODEM_PPP_STATE_DEAD_BIT,
+};
+
 enum modem_ppp_receive_state {
 	/* Searching for start of frame and header */
 	MODEM_PPP_RECEIVE_STATE_HDR_SOF = 0,
 	MODEM_PPP_RECEIVE_STATE_HDR_FF,
+	MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE,
 	MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE,
 	MODEM_PPP_RECEIVE_STATE_HDR_CTRL,
 	/* Writing bytes to network packet */
 	MODEM_PPP_RECEIVE_STATE_WRITING,
 	/* Unescaping next byte before writing to network packet */
 	MODEM_PPP_RECEIVE_STATE_UNESCAPING,
+	/* Receiving an unsolicited "NO CARRIER" event */
+	MODEM_PPP_RECEIVE_STATE_UNSOLICITED_NO_CARRIER,
 };
 
 enum modem_ppp_transmit_state {
@@ -77,6 +87,7 @@ struct modem_ppp {
 
 	/* Receive PPP frame state */
 	enum modem_ppp_receive_state receive_state;
+	uint8_t receive_offset;
 
 	/* Allocated network packet being created */
 	struct net_pkt *rx_pkt;
@@ -164,11 +175,10 @@ int modem_ppp_init_internal(const struct device *dev);
  * @param _dev Cellular device instance for power management or NULL if not used
  * @param _name Name of the statically defined modem_ppp instance
  * @param _init_iface Hook for the PPP L2 network interface init function
- * @param _prio Initialization priority of the PPP L2 net iface
  * @param _mtu Max size of net_pkt data sent and received on PPP L2 net iface
  * @param _buf_size Size of partial PPP frame transmit and receive buffers
  */
-#define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _prio, _mtu, _buf_size)                     \
+#define MODEM_DEV_PPP_DEFINE(_dev, _name, _init_iface, _mtu, _buf_size)                            \
 	extern const struct ppp_api modem_ppp_ppp_api;                                             \
                                                                                                    \
 	static uint8_t _CONCAT(_name, _receive_buf)[_buf_size];                                    \
@@ -185,7 +195,8 @@ int modem_ppp_init_internal(const struct device *dev);
 	};                                                                                         \
                                                                                                    \
 	NET_DEVICE_INIT(_CONCAT(ppp_net_dev_, _name), "modem_ppp_" #_name,                         \
-			modem_ppp_init_internal, NULL, &_name, &_CONCAT(_name, _config), _prio,    \
+			modem_ppp_init_internal, NULL, &_name, &_CONCAT(_name, _config),           \
+			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                                       \
 			&modem_ppp_ppp_api, PPP_L2, NET_L2_GET_CTX_TYPE(PPP_L2), _mtu)
 
 /**
@@ -193,16 +204,16 @@ int modem_ppp_init_internal(const struct device *dev);
  *
  * @see MODEM_DEV_PPP_DEFINE
  */
-#define MODEM_DT_INST_PPP_DEFINE(inst, _name, _init_iface, _prio, _mtu, _buf_size)                 \
-	MODEM_DEV_PPP_DEFINE(DEVICE_DT_INST_GET(inst), _name, _init_iface, _prio, _mtu, _buf_size)
+#define MODEM_DT_INST_PPP_DEFINE(inst, _name, _init_iface, _mtu, _buf_size)                        \
+	MODEM_DEV_PPP_DEFINE(DEVICE_DT_INST_GET(inst), _name, _init_iface, _mtu, _buf_size)
 
 /**
  * @brief Define a modem PPP module without a device and bind it to a network interface.
  *
  * @see MODEM_DEV_PPP_DEFINE
  */
-#define MODEM_PPP_DEFINE(_name, _init_iface, _prio, _mtu, _buf_size)                               \
-	MODEM_DEV_PPP_DEFINE(NULL, _name, _init_iface, _prio, _mtu, _buf_size)
+#define MODEM_PPP_DEFINE(_name, _init_iface, _mtu, _buf_size)                                      \
+	MODEM_DEV_PPP_DEFINE(NULL, _name, _init_iface, _mtu, _buf_size)
 
 /**
  * @}
@@ -212,4 +223,4 @@ int modem_ppp_init_internal(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_PPP_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_PPP_H_ */

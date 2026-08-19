@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
@@ -22,7 +22,6 @@ target_sources(app PRIVATE
   src/test_unicast_stop.c
 
   # UUT files
-  uut/bap_unicast_client.c
   uut/cap_initiator.c
   uut/csip.c
 
@@ -39,6 +38,7 @@ target_sources(app PRIVATE
   ${ZEPHYR_BASE}/lib/uuid/uuid.c
 
   # Mock files
+  ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/bap_unicast_client.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/conn.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/gatt.c
   ${ZEPHYR_BASE}/tests/bluetooth/audio/mocks/src/iso.c

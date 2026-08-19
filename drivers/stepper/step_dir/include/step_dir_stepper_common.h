@@ -15,6 +15,8 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
+
 /**
  * @brief Common step direction stepper config.
  *

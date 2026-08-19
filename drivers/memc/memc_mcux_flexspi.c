@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 NXP
+ * Copyright 2020-2023,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,13 +103,19 @@ bool memc_flexspi_is_running_xip(const struct device *dev)
 	return data->xip;
 }
 
+int memc_flexspi_apply_pinctrl(const struct device *dev, uint8_t id)
+{
+	struct memc_flexspi_data *data = dev->data;
+
+	return pinctrl_apply_state(data->pincfg, id);
+}
+
 int memc_flexspi_update_clock(const struct device *dev,
 		flexspi_device_config_t *device_config,
 		flexspi_port_t port, uint32_t freq_hz)
 {
 	struct memc_flexspi_data *data = dev->data;
 	FLEXSPI_Type *base = get_base(dev);
-	uint32_t key;
 	uint32_t divider, actual_freq, flexspiRootClk_copy, ccm_clock;
 
 	int ret = clock_control_get_rate(data->clock_dev, data->clock_subsys, &ccm_clock);
@@ -137,7 +143,9 @@ int memc_flexspi_update_clock(const struct device *dev,
 	 * - reset the module
 	 * We CANNOT XIP at any point during this process
 	 */
-	key = irq_lock();
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	unsigned int key = irq_lock();
+#endif
 	memc_flexspi_wait_bus_idle(dev);
 	FLEXSPI_Enable(base, false);
 
@@ -166,7 +174,9 @@ int memc_flexspi_update_clock(const struct device *dev,
 	FLEXSPI_Enable(base, true);
 	memc_flexspi_reset(dev);
 
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	irq_unlock(key);
+#endif
 	return 0;
 }
 
@@ -182,7 +192,6 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	struct memc_flexspi_data *data = dev->data;
 	const uint32_t *lut_ptr = lut_array;
 	uint8_t lut_used = 0U;
-	unsigned int key = 0;
 	int ret;
 	uint32_t divider;
 
@@ -251,7 +260,9 @@ int memc_flexspi_set_device_config(const struct device *dev,
 	tmp_config.flexspiRootClk /= (divider + 1);
 
 	/* Lock IRQs before reconfiguring FlexSPI, to prevent XIP */
-	key = irq_lock();
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	unsigned int key = irq_lock();
+#endif
 	FLEXSPI_SetFlashConfig(base, &tmp_config, port);
 
 #if (CONFIG_FLASH_MCUX_FLEXSPI_FORCE_USING_OVRDVAL == 1)
@@ -261,7 +272,9 @@ int memc_flexspi_set_device_config(const struct device *dev,
 
 	FLEXSPI_UpdateLUT(base, data->port_luts[port].lut_offset,
 			  lut_ptr, lut_count);
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
 	irq_unlock(key);
+#endif
 
 	return 0;
 }
@@ -292,6 +305,14 @@ int memc_flexspi_transfer(const struct device *dev,
 		addr_offset += data->size[i];
 	}
 
+	/*
+	 * Lock IRQs while an IP command is active. If an ISR fires and its handler
+	 * code lives in NOR XIP, the CPU stalls on the AHB fetch while TransferBlocking
+	 * can no longer drain the RX FIFO, causing a permanent deadlock.
+	 */
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	unsigned int key = irq_lock();
+#endif
 	if ((seq_off != 0) || (addr_offset != 0)) {
 		/* Adjust device address and sequence index for transfer */
 		memcpy(&tmp, transfer, sizeof(tmp));
@@ -302,6 +323,9 @@ int memc_flexspi_transfer(const struct device *dev,
 		/* Transfer does not need adjustment */
 		status = FLEXSPI_TransferBlocking(base, transfer);
 	}
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	irq_unlock(key);
+#endif
 
 	if (status != kStatus_Success) {
 		LOG_ERR("Transfer error: %d", status);
@@ -330,6 +354,44 @@ void *memc_flexspi_get_ahb_address(const struct device *dev,
 	return ahb_base + offset;
 }
 
+int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint32_t seq_idx,
+			    const uint32_t *lut_ptr, uint8_t lut_count)
+{
+	struct memc_flexspi_data *data = dev->data;
+	uint8_t offset = data->port_luts[port].lut_offset + seq_idx * MEMC_FLEXSPI_CMD_PER_SEQ;
+	FLEXSPI_Type *base = get_base(dev);
+	uint32_t tmp_lut[FLEXSPI_MAX_LUT];
+
+	if (lut_count > FLEXSPI_MAX_LUT) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Copy LUT entries to a stack buffer before calling FLEXSPI_UpdateLUT().
+	 * FLEXSPI_CheckInputLutLocation() rejects any pointer that falls inside the
+	 * FlexSPI AHB window (NOR XIP region). The caller's lut_ptr may point to .rodata
+	 * in NOR flash.
+	 */
+	memcpy(tmp_lut, lut_ptr, lut_count * MEMC_FLEXSPI_CMD_SIZE);
+
+	/* Lock IRQs to prevent ISR-triggered NOR XIP fetches. */
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	unsigned int key = 0;
+
+	if (memc_flexspi_is_running_xip(dev)) {
+		key = irq_lock();
+	}
+#endif
+	FLEXSPI_UpdateLUT(base, offset, tmp_lut, lut_count);
+#if CONFIG_FLASH_MCUX_FLEXSPI_XIP
+	if (memc_flexspi_is_running_xip(dev)) {
+		irq_unlock(key);
+	}
+#endif
+
+	return 0;
+}
+
 static int memc_flexspi_init(const struct device *dev)
 {
 	struct memc_flexspi_data *data = dev->data;
@@ -351,6 +413,7 @@ static int memc_flexspi_init(const struct device *dev)
 			return 0;
 		}
 	}
+
 	/*
 	 * SOCs such as the RT1064 and RT1024 have internal flash, and no pinmux
 	 * settings, continue if no pinctrl state found.

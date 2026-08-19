@@ -39,13 +39,13 @@ static void dns_result_cb(enum dns_resolve_status status,
 		switch (info->ai_family) {
 		case NET_AF_INET:
 			net_addr_ntop(NET_AF_INET,
-				      &net_sin(&info->ai_addr)->sin_addr,
+				      &net_sin(net_sad(&info->ai_addr_storage))->sin_addr,
 				      str, sizeof(str));
 			break;
 
 		case NET_AF_INET6:
 			net_addr_ntop(NET_AF_INET6,
-				      &net_sin6(&info->ai_addr)->sin6_addr,
+				      &net_sin6(net_sad(&info->ai_addr_storage))->sin6_addr,
 				      str, sizeof(str));
 			break;
 
@@ -97,7 +97,7 @@ static void dns_result_cb(enum dns_resolve_status status,
 	PR_WARNING("dns: Unhandled status %d received (errno %d)\n", status, errno);
 }
 
-K_MSGQ_DEFINE(dns_infoq, sizeof(struct dns_addrinfo), CONFIG_NET_SHELL_DNS_RESOLVER_QUEUE_SIZE, 1);
+K_MSGQ_DEFINE_STATIC_TYPE(dns_infoq, struct dns_addrinfo, CONFIG_NET_SHELL_DNS_RESOLVER_QUEUE_SIZE);
 
 static void dns_service_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info,
@@ -142,6 +142,8 @@ static void print_dns_info(const struct shell *sh,
 
 	for (i = 0; i < CONFIG_DNS_RESOLVER_MAX_SERVERS +
 		     DNS_MAX_MCAST_SERVERS; i++) {
+		struct net_sockaddr *server_addr =
+			net_sad(&ctx->servers[i].dns_server_addr);
 		char iface_name[NET_IFNAMSIZ] = { 0 };
 
 		if (ctx->servers[i].if_index > 0) {
@@ -154,12 +156,11 @@ static void print_dns_info(const struct shell *sh,
 			}
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
+		if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET) {
 			PR("\t%s:%u%s%s%s%s%s\n",
 			   net_sprint_ipv4_addr(
-				   &net_sin(&ctx->servers[i].dns_server)->
-				   sin_addr),
-			   net_ntohs(net_sin(&ctx->servers[i].dns_server)->sin_port),
+				   &net_sin(server_addr)->sin_addr),
+			   net_ntohs(net_sin(server_addr)->sin_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -167,12 +168,11 @@ static void print_dns_info(const struct shell *sh,
 					dns_get_source_str(ctx->servers[i].source) : "",
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? ")" : "");
 
-		} else if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
+		} else if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET6) {
 			PR("\t[%s]:%u%s%s%s%s%s\n",
 			   net_sprint_ipv6_addr(
-				   &net_sin6(&ctx->servers[i].dns_server)->
-				   sin6_addr),
-			   net_ntohs(net_sin6(&ctx->servers[i].dns_server)->sin6_port),
+				   &net_sin6(server_addr)->sin6_addr),
+			   net_ntohs(net_sin6(server_addr)->sin6_port),
 			   printable_iface(iface_name, " via ", ""),
 			   printable_iface(iface_name, iface_name, ""),
 			   ctx->servers[i].source != DNS_SOURCE_UNKNOWN ? " (" : "",
@@ -394,7 +394,7 @@ static int cmd_net_dns_list(const struct shell *sh, size_t argc, char *argv[])
 		return 0;
 	}
 #else
-	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_RESOLVER",
+	PR_INFO("Set %s to enable %s support.\n", "CONFIG_DNS_SD",
 		"DNS service discovery");
 #endif
 
@@ -509,14 +509,14 @@ static int cmd_net_dns_service(const struct shell *sh, size_t argc, char *argv[]
 		switch (info.ai_family) {
 		case NET_AF_INET:
 			cp = net_addr_ntop(NET_AF_INET,
-					   &net_sin(&info.ai_addr)->sin_addr,
+					   &net_sin(net_sad(&info.ai_addr_storage))->sin_addr,
 					   str.in4, sizeof(str.in4));
 			PR("AF_INET %s:%u\n", cp ? cp : "<invalid>", port);
 			break;
 
 		case NET_AF_INET6:
 			cp = net_addr_ntop(NET_AF_INET6,
-					   &net_sin6(&info.ai_addr)->sin6_addr,
+					   &net_sin6(net_sad(&info.ai_addr_storage))->sin6_addr,
 					   str.in6, sizeof(str.in6));
 			PR("AF_INET6 [%s]:%u\n", cp ? cp : "<invalid>", port);
 			break;

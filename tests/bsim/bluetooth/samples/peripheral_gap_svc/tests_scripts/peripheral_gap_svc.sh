@@ -2,11 +2,11 @@
 # Copyright 2026 Koppel Electronic
 # SPDX-License-Identifier: Apache-2.0
 
-simulation_id="peripheral_gap_svc_test"
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
+simulation_id="${BOARD_TS}_peripheral_gap_svc_test"
 verbosity_level=2
 EXECUTE_TIMEOUT=60
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 

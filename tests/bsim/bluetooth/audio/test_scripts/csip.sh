@@ -14,7 +14,7 @@ EXECUTE_TIMEOUT=100
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="csip"
+SIMULATION_ID="${BOARD_TS}_csip"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=csip_set_coordinator \

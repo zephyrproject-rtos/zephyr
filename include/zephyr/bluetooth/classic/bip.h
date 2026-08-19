@@ -1,13 +1,13 @@
 /* bip.h - Bluetooth Basic Imaging Profile handling */
 
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_BIP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_BIP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_BIP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_BIP_H_
 
 /**
  * @brief Basic Imaging Profile (BIP)
@@ -384,8 +384,12 @@ enum __packed bt_bip_supported_functions {
  * Main structure representing a BIP session
  */
 struct bt_bip {
+	/** @brief Underlying GOEP transport instance */
+	struct bt_goep_transport goep_transport;
+
 	/** @brief Underlying GOEP instance */
 	struct bt_goep goep;
+
 	/** @brief Role in the connection */
 	enum bt_bip_role role;
 
@@ -1776,7 +1780,7 @@ int bt_bip_get_partial_image_rsp(struct bt_bip_server *server, uint8_t rsp_code,
  * The following OBEX headers should be included for the first request,
  * @ref BT_OBEX_HEADER_ID_CONN_ID, @ref BT_OBEX_HEADER_ID_TYPE,
  * and @ref BT_OBEX_HEADER_ID_APP_PARAM.
- * And the value of type header is @ref BT_BIP_HDR_TYPE_GET_PARTIAL_IMAGE.
+ * And the value of type header is @ref BT_BIP_HDR_TYPE_GET_MONITORING_IMAGE.
  * The application parameter should include ID @ref BT_BIP_APPL_PARAM_TAG_ID_STORE_FLAG.
  *
  * @param client BIP client instance
@@ -2068,4 +2072,4 @@ int bt_bip_add_header_image_handle(struct net_buf *buf, uint16_t len, const uint
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_BIP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_CLASSIC_BIP_H_ */

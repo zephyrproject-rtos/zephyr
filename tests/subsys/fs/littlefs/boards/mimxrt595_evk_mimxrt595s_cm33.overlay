@@ -9,16 +9,19 @@
 &mx25um51345g {
 	partitions {
 		large_partition: partition@3c00000 {
+			compatible = "zephyr,mapped-partition";
 			label = "large";
 			reg = <0x03c00000 DT_SIZE_M(3)>;
 		};
 
 		medium_partition: partition@3f00000 {
+			compatible = "zephyr,mapped-partition";
 			label = "medium";
 			reg = <0x03f00000 DT_SIZE_K(960)>;
 		};
 
 		small_partition: partition@3ff0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "small";
 			reg = <0x03ff0000 DT_SIZE_K(64)>;
 		};

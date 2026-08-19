@@ -27,12 +27,12 @@
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
 
-#if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 #include <cortex_a_r/stack.h>
 #endif
 
 #ifdef CONFIG_ARM_MPU
-extern void z_arm_mpu_init(void);
+extern int z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 extern int z_arm_mmu_init(void);
@@ -110,7 +110,8 @@ FUNC_NORETURN void z_prep_c(void)
 #endif
 	arch_bss_zero();
 	arch_data_copy();
-#if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A)) && defined(CONFIG_INIT_STACKS))
+#if ((defined(CONFIG_ARMV7_R) || defined(CONFIG_ARMV7_A) || \
+	defined(CONFIG_AARCH32_ARMV8_A)) && defined(CONFIG_INIT_STACKS))
 	z_arm_init_stacks();
 #endif
 	z_arm_interrupt_init();

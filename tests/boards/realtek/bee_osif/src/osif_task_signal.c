@@ -13,7 +13,6 @@
 #include <os_sched.h>
 
 #include <zephyr/irq_offload.h>
-#include <zephyr/kernel_structs.h>
 
 #define STACKSZ             512
 #define EXPECTED_NOTIFY_VAL 0x1

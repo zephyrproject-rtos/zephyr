@@ -22,6 +22,7 @@ LOG_MODULE_DECLARE(net_shell);
 #define THREAD_PRIORITY K_PRIO_COOP(2)
 #define MAX_EVENT_INFO_SIZE NET_EVENT_INFO_MAX_SIZE
 #define MONITOR_L2_MASK (NET_EVENT_IF_BASE)
+#define MONITOR_L2_PACKET_MASK (NET_EVENT_PACKET_BASE)
 #define MONITOR_L3_IPV4_MASK (NET_EVENT_IPV4_BASE | NET_MGMT_COMMAND_MASK)
 #define MONITOR_L3_IPV6_MASK (NET_EVENT_IPV6_BASE | NET_MGMT_COMMAND_MASK)
 #define MONITOR_L4_MASK (NET_EVENT_L4_BASE | NET_MGMT_COMMAND_MASK)
@@ -34,6 +35,7 @@ static struct net_mgmt_event_callback l2_ethernet_cb;
 static bool net_event_monitoring;
 static bool net_event_shutting_down;
 static struct net_mgmt_event_callback l2_cb;
+static struct net_mgmt_event_callback l2_packet_cb;
 static struct net_mgmt_event_callback l3_ipv4_cb;
 static struct net_mgmt_event_callback l3_ipv6_cb;
 static struct net_mgmt_event_callback l4_cb;
@@ -49,8 +51,7 @@ struct event_msg {
 	uint8_t data[MAX_EVENT_INFO_SIZE];
 };
 
-K_MSGQ_DEFINE(event_mon_msgq, sizeof(struct event_msg),
-	      CONFIG_NET_MGMT_EVENT_QUEUE_SIZE, sizeof(intptr_t));
+K_MSGQ_DEFINE_STATIC_TYPE(event_mon_msgq, struct event_msg, CONFIG_NET_MGMT_EVENT_QUEUE_SIZE);
 
 static void event_handler(struct net_mgmt_event_callback *cb,
 			  uint64_t mgmt_event, struct net_if *iface)
@@ -137,6 +138,24 @@ static char *get_l2_desc(struct event_msg *msg,
 			 "tag %u enabled", (uint16_t)tag);
 		*desc2 = vlan_buf;
 #endif
+		break;
+	}
+	case NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD:
+	case NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP: {
+		struct net_event_packet_mcast *mcast =
+			(struct net_event_packet_mcast *)msg->data;
+
+		*desc = "packet";
+		*desc2 = msg->event == NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD ?
+			"mcast membership add" : "mcast membership drop";
+
+		if (msg->len >= sizeof(*mcast)) {
+			info = net_sprint_ll_addr_buf(mcast->addr.addr,
+						      mcast->addr.len,
+						      extra_info,
+						      extra_info_len);
+		}
+
 		break;
 	}
 	}
@@ -313,6 +332,18 @@ static char *get_l3_desc(struct event_msg *msg,
 		break;
 	case NET_EVENT_IPV4_ROUTER_DEL:
 		*desc = "IPv4 router";
+		*desc2 = "del";
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_ROUTE_ADD:
+		*desc = "IPv4 route";
+		*desc2 = "add";
+		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
+				     extra_info_len);
+		break;
+	case NET_EVENT_IPV4_ROUTE_DEL:
+		*desc = "IPv4 route";
 		*desc2 = "del";
 		info = net_addr_ntop(NET_AF_INET, msg->data, extra_info,
 				     extra_info_len);
@@ -517,6 +548,10 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 				     MONITOR_L2_MASK);
 	net_mgmt_add_event_callback(&l2_cb);
 
+	net_mgmt_init_event_callback(&l2_packet_cb, event_handler,
+				     MONITOR_L2_PACKET_MASK);
+	net_mgmt_add_event_callback(&l2_packet_cb);
+
 	net_mgmt_init_event_callback(&l3_ipv4_cb, event_handler,
 				     MONITOR_L3_IPV4_MASK);
 	net_mgmt_add_event_callback(&l3_ipv4_cb);
@@ -577,6 +612,7 @@ static void event_mon_handler(const struct shell *sh, void *p2, void *p3)
 	}
 
 	net_mgmt_del_event_callback(&l2_cb);
+	net_mgmt_del_event_callback(&l2_packet_cb);
 	net_mgmt_del_event_callback(&l3_ipv4_cb);
 	net_mgmt_del_event_callback(&l3_ipv6_cb);
 	net_mgmt_del_event_callback(&l4_cb);

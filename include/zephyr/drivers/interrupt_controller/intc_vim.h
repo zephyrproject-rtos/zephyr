@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_INTC_VIM_H_
-#define ZEPHYR_DRIVERS_INTC_VIM_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_
 
 #include <stdint.h>
 
@@ -185,4 +185,4 @@ int z_vim_irq_is_enabled(unsigned int irq);
  */
 void z_vim_arm_enter_irq(int irq);
 
-#endif /* ZEPHYR_DRIVERS_INTC_VIM_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_VIM_H_ */

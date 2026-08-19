@@ -1,33 +1,36 @@
 # Copyright (c) 2018, Yannis Damigos
 # SPDX-License-Identifier: Apache-2.0
 
-description: STM32 USB HS PHY controller
+title: STM32 USB HS PHY controller (USBPHYC)
+
+description: |
+  USB High-Speed PHY controller as found in various STM32 series.
+
+  Control registers are implemented directly in the RCC MMIO interface.
 
 compatible: "st,stm32-usbphyc"
 
 include: phy-controller.yaml
 
 properties:
-  reg:
-    required: true
-
   clocks:
     required: true
-    description: |
-      Clock configuration of USBPHYC
 
-      The first cell is mandatory and corresponds
-      to the clock gate of the USBPHYC. The second
-      cell is optional and corresponds to the mux
-      configuration.
+  clock-names:
+    required: true
+    enum:
+      - "gate"
+      - "mux"
+      - "fsel"
+    description: |
+      Up to three clock cells are accepted:
+      - "gate": clock gate in front of the USBPHYC PLL clock input
+      - "mux": clock mux selecting source used as USBPHYC PLL clock
+      - "fsel": USBPHYC PLL clock frequency selection
+                (applicable only when this is configured at RCC level)
+
+      Refer to the Reference Manual applicable for your product to find
+      which cells should be provided for proper operation.
 
   "#phy-cells":
     const: 0
-
-examples:
-  - |
-    /* In DTS for STM32N6-based board */
-    &usbphyc1 {
-      clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
-               <&rcc STM32_SRC_HSE OTGPHY1CKREF_SEL(1)>;
-    };

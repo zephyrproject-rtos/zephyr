@@ -385,6 +385,11 @@ class Property:
         # and phandles need to be patched in after parsing.
         self._markers: list[list] = []
 
+        # Set of byte offsets where 32-bit cells were parsed from negative
+        # literals (e.g. '(-1)'). Used by to_num/to_nums(signed_aware=True) to
+        # distinguish intentional negative values from large unsigned ones.
+        self._signed_cell_offsets: set[int] = set()
+
     @property
     def type(self) -> Type:
         """
@@ -427,7 +432,7 @@ class Property:
 
         return Type.COMPOUND
 
-    def to_num(self, signed=False) -> int:
+    def to_num(self, signed=False, signed_aware=False) -> int:
         """
         Returns the value of the property as a number.
 
@@ -439,15 +444,24 @@ class Property:
         signed (default: False):
           If True, the value will be interpreted as signed rather than
           unsigned.
+
+        signed_aware (default: False):
+          If True, uses signed interpretation only for cells written as
+          negative literals (e.g. '< (-1) >') in the DTS source. Positive
+          literals and hex values remain unsigned. Takes precedence over
+          'signed' when True.
         """
         if self.type is not Type.NUM:
             _err(f"expected property '{self.name}' on {self.node.path} in "
                  f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < (number) >;', not '{self}'")
 
+        if signed_aware:
+            return int.from_bytes(self.value, "big", signed=0 in self._signed_cell_offsets)
+
         return int.from_bytes(self.value, "big", signed=signed)
 
-    def to_nums(self, signed=False) -> list[int]:
+    def to_nums(self, signed=False, signed_aware=False) -> list[int]:
         """
         Returns the value of the property as a list of numbers.
 
@@ -459,11 +473,23 @@ class Property:
         signed (default: False):
           If True, the values will be interpreted as signed rather than
           unsigned.
+
+        signed_aware (default: False):
+          If True, uses signed interpretation only for cells written as
+          negative literals (e.g. '< (-1) 2 3 >') in the DTS source. Positive
+          literals and hex values remain unsigned. Takes precedence over
+          'signed' when True.
         """
         if self.type not in (Type.NUM, Type.NUMS):
             _err(f"expected property '{self.name}' on {self.node.path} in "
                  f"{self.filename}:{self.lineno} to be assigned with "
                  f"'{self.name} = < (number) (number) ... >;', not '{self}'")
+
+        if signed_aware:
+            return [
+                int.from_bytes(self.value[i:i + 4], "big", signed=i in self._signed_cell_offsets)
+                for i in range(0, len(self.value), 4)
+            ]
 
         return [int.from_bytes(self.value[i:i + 4], "big", signed=signed)
                 for i in range(0, len(self.value), 4)]
@@ -1030,6 +1056,7 @@ class DT:
                 prop_copy.offset_labels = prop.offset_labels.copy()
                 prop_copy._label_offset_lst = prop._label_offset_lst[:]
                 prop_copy._markers = [marker[:] for marker in prop._markers]
+                prop_copy._signed_cell_offsets = prop._signed_cell_offsets.copy()
                 prop_copy.filename = prop.filename
                 prop_copy.lineno = prop.lineno
             node_copy.props = prop_name2prop_copy
@@ -1315,6 +1342,7 @@ class DT:
         # in case the property value is being overridden
         prop.value = b""
         prop._markers = []
+        prop._signed_cell_offsets = set()
 
         while True:
             # Parse labels before the value (e.g., '..., label: < 0 >')
@@ -1382,12 +1410,22 @@ class DT:
             else:
                 # Literal value
                 num = self._eval_prim()
-                try:
-                    prop.value += num.to_bytes(n_bytes, "big")
-                except OverflowError:
+                # A negative result can only come from a parenthesized
+                # expression, e.g. (-1), which is the DTC-specified syntax for
+                # negative constants.  Encode these directly as signed and
+                # record the offset so callers can distinguish (-1) from
+                # 0xFFFFFFFF.  Positive values are always encoded unsigned.
+                if num < 0:
+                    offset = len(prop.value)
                     try:
-                        # Try again as a signed number, in case it's negative
                         prop.value += num.to_bytes(n_bytes, "big", signed=True)
+                    except OverflowError:
+                        self._parse_error(
+                            f"{num} does not fit in {8*n_bytes} bits")
+                    prop._signed_cell_offsets.add(offset)
+                else:
+                    try:
+                        prop.value += num.to_bytes(n_bytes, "big")
                     except OverflowError:
                         self._parse_error(
                             f"{num} does not fit in {8*n_bytes} bits")

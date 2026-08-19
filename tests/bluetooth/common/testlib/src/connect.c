@@ -61,7 +61,7 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp)
 
 	k_condvar_init(&ctx.conn_cb_connected_match);
 
-	/* If multiple threads call into this funciton, they will wait
+	/* If multiple threads call into this function, they will wait
 	 * for their turn here. The Zephyr host does not support
 	 * concurrent connection creation.
 	 */
@@ -76,41 +76,35 @@ int bt_testlib_connect(const bt_addr_le_t *peer, struct bt_conn **connp)
 		LOG_INF("bt_conn_le_create ok conn %u", conn_index);
 
 		k_condvar_wait(&ctx.conn_cb_connected_match, &g_ctx_lock, K_FOREVER);
+	} else if (err == -ENOMEM) {
+		LOG_INF("bt_conn_le_create -ENOMEM: No free connection objects available.");
+	} else {
+		LOG_ERR("bt_conn_le_create err %d", err);
 	}
 
 	g_ctx = NULL;
 	k_mutex_unlock(&g_ctx_lock);
 	k_sem_give(&g_ctx_free);
 
-	/* Merge the error codes. The errors from `bt_conn_le_create`
-	 * are negative, leaving the positive space for the HCI errors
-	 * from `conn_cb_connected`.
+	/* The errors from `bt_conn_le_create` are negative.
+	 * The HCI errors from `conn_cb_connected` are positive.
 	 */
 	__ASSERT_NO_MSG(err <= 0);
 	__ASSERT_NO_MSG(0 <= ctx.conn_cb_connected_err);
 	__ASSERT_NO_MSG(!err || !ctx.conn_cb_connected_err);
-	err = err + ctx.conn_cb_connected_err;
 
-	/* This is just logging. */
-	switch (err) {
-	case -ENOMEM:
-		LOG_INF("bt_conn_le_create -ENOMEM: No free connection objects available.");
-		break;
-	case 0:
-		LOG_INF("conn %u: connected", conn_index);
-		break;
-	case BT_HCI_ERR_UNKNOWN_CONN_ID:
-		LOG_INF("conn %u: timed out", conn_index);
-		break;
-	default:
-		if (err < 0) {
-			LOG_ERR("bt_conn_le_create err %d", err);
+	if (err == 0) {
+		err = ctx.conn_cb_connected_err;
+		if (err == BT_HCI_ERR_SUCCESS) {
+			LOG_INF("conn %u: connected", conn_index);
+		} else if (err == BT_HCI_ERR_UNKNOWN_CONN_ID) {
+			LOG_INF("conn %u: timed out", conn_index);
 		} else {
 			LOG_ERR("conn %u: BT_HCI_ERR_ 0x%02x", conn_index, err);
 		}
 	}
 
-	/* Note: `connp` is never unrefed in this funciton, even in case
+	/* Note: `connp` is never unrefed in this function, even in case
 	 * of errors. This is as documented.
 	 */
 

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,11 +11,17 @@
 
 #include <cy_sysint.h>
 #include <system_cat2.h>/* PSoC4 system init header from PDL */
-#include "cy_pdl.h"
+#include <cy_pdl.h>
+
+int pm_init(void);
 
 /* Minimal early initialization for PSOC4100tp */
 void soc_early_init_hook(void)
 {
 	/* Initializes the system */
 	SystemInit();
+
+#ifdef CONFIG_PM
+	pm_init();
+#endif
 }

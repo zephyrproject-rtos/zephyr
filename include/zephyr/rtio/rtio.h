@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,6 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/mem_blocks.h>
@@ -260,7 +259,13 @@ extern struct k_mem_partition rtio_partition;
  * If CONFIG_USERSPACE is disabled, allocate as plain static:
  *   static
  */
+#if CONFIG_RTIO_BLOCK_POOL_PLACEMENT_DTCM
+#define RTIO_BMEM Z_GENERIC_SECTION(".dtcm_bss") static
+#elif defined(CONFIG_RTIO_BLOCK_POOL_PLACEMENT_NOCACHE)
+#define RTIO_BMEM __nocache static
+#else
 #define RTIO_BMEM COND_CODE_1(CONFIG_USERSPACE, (K_APP_BMEM(rtio_partition) static), (static))
+#endif
 
 /**
  * @brief Allocate as initialized memory if available
@@ -271,14 +276,20 @@ extern struct k_mem_partition rtio_partition;
  * If CONFIG_USERSPACE is disabled, allocate as plain static:
  *   static
  */
+#if CONFIG_RTIO_BLOCK_POOL_PLACEMENT_DTCM
+#define RTIO_DMEM Z_GENERIC_SECTION(".dtcm_data") static
+#elif defined(CONFIG_RTIO_BLOCK_POOL_PLACEMENT_NOCACHE)
+#define RTIO_DMEM __nocache_load static
+#else
 #define RTIO_DMEM COND_CODE_1(CONFIG_USERSPACE, (K_APP_DMEM(rtio_partition) static), (static))
+#endif
 
 /* clang-format off */
 /* @cond ignore */
 #define Z_RTIO_BLOCK_POOL_DEFINE(name, blk_sz, blk_cnt, blk_align)                                 \
 	RTIO_BMEM uint8_t __aligned(WB_UP(blk_align))                                              \
-	CONCAT(_block_pool_, name)[blk_cnt*WB_UP(blk_sz)];                                         \
-	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, WB_UP(blk_sz), blk_cnt,                          \
+	CONCAT(_block_pool_, name)[(blk_cnt) * WB_UP(blk_sz)];                                     \
+	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, WB_UP(blk_sz), (blk_cnt),                        \
 					    CONCAT(_block_pool_, name),	RTIO_DMEM)
 
 /* @endcond */
@@ -815,6 +826,13 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
 #endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	/* Delay submissions are dispatched to the shared timeout iodev, so a thread
+	 * allowed to use this context must also be able to reference it.
+	 */
+	k_object_access_grant(&rtio_timeout_iodev, t);
+#endif
 }
 
 
@@ -834,6 +852,10 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
 
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_revoke(r->consume_sem, t);
+#endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	k_object_access_revoke(&rtio_timeout_iodev, t);
 #endif
 }
 

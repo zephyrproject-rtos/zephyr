@@ -42,7 +42,7 @@ static void thread_entry_prio(void *p1, void *p2, void *p3)
  * priority thread will not preempt the lower priority cooperative
  * thread.
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_priority_cooperative)
 {
@@ -78,7 +78,7 @@ ZTEST(threads_scheduling, test_priority_cooperative)
  * preemptive thread which is of priority higher than current
  * thread. Make sure newly created thread is preempted
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_priority_preemptible)
 {
@@ -118,7 +118,7 @@ ZTEST(threads_scheduling, test_priority_preemptible)
  * higher than current thread. Make sure that the highest priority
  * and longest waiting thread is scheduled first.
  *
- * @ingroup kernel_sched_tests
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling_1cpu, test_priority_preemptible_wait_prio)
 {
@@ -174,12 +174,22 @@ ZTEST(threads_scheduling_1cpu, test_priority_preemptible_wait_prio)
 extern void idle(void *p1, void *p2, void *p3);
 
 /**
- * Validate checking priority values
+ * @brief Verify thread priority validation accepts/rejects the right values.
  *
- * Our test cases don't cover every outcome of whether a priority is valid,
- * do so here.
+ * @details
+ * The kernel's priority-validity check must accept legal application priorities
+ * (and the idle priority only for the idle entry) and reject out-of-range
+ * values. The test runs a table of priority/entry combinations through both
+ * validity checks and confirms each expected accept/reject result.
  *
- * @ingroup kernel_sched_tests
+ * Test steps:
+ * - Iterate a table of {priority, entry, expected-valid} cases.
+ * - For each, check the internal validity predicate and the Z_VALID_PRIO macro.
+ *
+ * Expected result:
+ * - Every case returns its expected validity verdict.
+ *
+ * @ingroup tests_kernel_sched
  */
 ZTEST(threads_scheduling, test_bad_priorities)
 {

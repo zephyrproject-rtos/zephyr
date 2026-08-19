@@ -1,0 +1,23 @@
+identifier: wio_tracker_l1
+name: Wio Tracker L1
+type: mcu
+arch: arm
+ram: 256
+flash: 788
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - ble
+  - counter
+  - display
+  - flash
+  - gnss
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usbd
+  - watchdog
+vendor: seeed

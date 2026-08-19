@@ -38,10 +38,20 @@ endchoice
 config I3C_CONTROLLER
 	bool
 	default y if I3C_DUAL_ROLE || I3C_CONTROLLER_ROLE_ONLY
+	help
+	  Indicates that support for acting as an I3C controller is enabled.
+	  This internal option is derived automatically from the I3C mode
+	  selection (I3C_CONTROLLER_ROLE_ONLY or I3C_DUAL_ROLE) and is not
+	  meant to be set directly.
 
 config I3C_TARGET
 	bool
 	default y if I3C_DUAL_ROLE || I3C_TARGET_ROLE_ONLY
+	help
+	  Indicates that support for acting as an I3C target is enabled.
+	  This internal option is derived automatically from the I3C mode
+	  selection (I3C_TARGET_ROLE_ONLY or I3C_DUAL_ROLE) and is not meant
+	  to be set directly.
 
 config I3C_SHELL
 	bool "I3C Shell"
@@ -166,6 +176,11 @@ config I3C_I2C_NUM_OF_DESC_MEM_SLABS
 endif # I3C_CONTROLLER && I3C_TARGET
 
 if I3C_CONTROLLER
+
+config I3C_CALLBACK
+	bool "I3C asynchronous callback API"
+	help
+	  API and implementations of i3c_transfer_cb and i3c_do_ccc_cb.
 
 config I3C_RTIO
 	bool "I3C RTIO API"

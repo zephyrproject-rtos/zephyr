@@ -54,7 +54,7 @@
  * NODE = p<port>_<pin>_<inst>_<signal>
  *
  * NODE: NODE {
- *	cypress,pins = < &gpio_prt<port> <pin> HSIOM_SEL_<hsiom> >;
+ *	cypress,pins = <&gpio_prt<port> <pin> HSIOM_SEL_<hsiom>>;
  *	flags_1;
  *	  ...
  *	flags_N;
@@ -67,7 +67,7 @@
  * Will become:
  *
  * p5_0_uart5_rx: p5_0_uart5_rx {
- *    cypress,pins = <&gpio_prt5 0x0 0x12 >;
+ *    cypress,pins = <&gpio_prt5 0x0 0x12>;
  * }
  *
  * Flags are optional and should be pass one by one as arguments:
@@ -77,7 +77,7 @@
  * Will become:
  *
  * p5_0_uart5_rx: p5_0_uart5_rx {
- *    cypress,pins = <&gpio_prt5 0x0 0x12 >;
+ *    cypress,pins = <&gpio_prt5 0x0 0x12>;
  *    bias-pull-up;
  *    input-enable;
  * }

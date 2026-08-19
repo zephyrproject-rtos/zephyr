@@ -25,13 +25,10 @@ static K_CONDVAR_DEFINE(exchange_mtu_done);
 static void bt_testlib_att_exchange_mtu_cb(struct bt_conn *conn, uint8_t err,
 					   struct bt_gatt_exchange_params *params)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
 	k_mutex_lock(&exchange_mtu_lock, K_FOREVER);
 
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("MTU exchange %s (%s)", err == 0U ? "successful" : "failed", addr);
+	LOG_DBG("MTU exchange %s (%s)", err == 0U ? "successful" : "failed",
+		bt_conn_dst_str(conn));
 
 	exchange_mtu_err = err;
 

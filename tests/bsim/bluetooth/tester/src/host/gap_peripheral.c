@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(bsim_gap_peripheral, CONFIG_BSIM_BTTESTER_LOG_LEVEL);
 
 static void test_gap_peripheral(void)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_t remote_addr;
 	bt_addr_le_t ev_addr;
 
@@ -35,12 +34,11 @@ static void test_gap_peripheral(void)
 	bsim_btp_gap_start_advertising(0U, 0U, NULL, BT_HCI_OWN_ADDR_PUBLIC);
 
 	bsim_btp_wait_for_gap_device_connected(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
-	LOG_INF("Device %s connected", addr_str);
+	LOG_INF("Device %s connected", bt_addr_le_str(&remote_addr));
 
 	bsim_btp_wait_for_gap_device_disconnected(&ev_addr);
 	TEST_ASSERT(bt_addr_le_eq(&remote_addr, &ev_addr));
-	LOG_INF("Device %s disconnected", addr_str);
+	LOG_INF("Device %s disconnected", bt_addr_le_str(&remote_addr));
 
 	TEST_PASS("PASSED\n");
 }

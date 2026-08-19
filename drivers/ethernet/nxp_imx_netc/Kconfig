@@ -4,18 +4,25 @@
 menuconfig ETH_NXP_IMX_NETC
 	bool "NXP IMX Ethernet and Network Controller (NETC) driver"
 	default y
-	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED
+	depends on DT_HAS_NXP_IMX_NETC_PSI_ENABLED || DT_HAS_NXP_IMX_NETC_VSI_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable Ethernet and Network Controller (NETC) driver for NXP IMX SoCs.
+	  Supports both the Physical Station Interface (PSI) and the Virtual
+	  Station Interface (VSI).
+
+	  Note: the VSI support targets the AMP use case where Zephyr owns a VSI
+	  (a VF) while another OS owns the PSI (the PF). The Zephyr PSI driver
+	  implements neither SR-IOV nor the PSI side of the PSI-to-VSI message
+	  channel, so a Zephyr VSI paired with a Zephyr PSI is not supported. Only
+	  a Zephyr VSI paired with a Linux PSI has been tested.
 
 if ETH_NXP_IMX_NETC
 
-DT_GIC_ITS_COMPAT := arm,gic-v3-its
 DT_NETC_PATH := $(dt_nodelabel_path,netc)
 DT_NETC_INT_PARENT_PATH := $(dt_node_ph_prop_path,$(DT_NETC_PATH),msi-parent)
-DT_NETC_INT_IS_GIC := $(dt_node_has_compat,$(DT_NETC_INT_PARENT_PATH),$(DT_GIC_ITS_COMPAT))
+DT_NETC_INT_IS_GIC := $(dt_node_has_compat,$(DT_NETC_INT_PARENT_PATH),$(DT_COMPAT_ARM_GIC_V3_ITS))
 
 config ETH_NXP_IMX_NETC_MSI_GIC
 	bool
@@ -70,7 +77,7 @@ config ETH_NXP_IMX_TX_RING_LEN
 
 config ETH_NXP_IMX_TX_RING_BUF_SIZE
 	int "TX ring data buffer size"
-	default 1000
+	default 1518
 	range 64 1536
 	help
 	  Size, in bytes, of the TX data buffer. The size must be big enough to
@@ -85,7 +92,7 @@ config ETH_NXP_IMX_RX_RING_NUM
 
 config ETH_NXP_IMX_RX_RING_LEN
 	int "RX ring length"
-	default 16 if NET_L2_PTP && PTP_CLOCK_NXP_NETC
+	default 16 if PTP_CLOCK_NXP_NETC
 	default 8
 	range 8 256
 	help
@@ -98,5 +105,19 @@ config ETH_NXP_IMX_RX_RING_BUF_SIZE
 	help
 	  Size, in bytes, of the RX data buffer. The size must be big enough to
 	  store one complete Ethernet frame, and be a multiple of 8.
+
+if DT_HAS_NXP_IMX_NETC_VSI_ENABLED
+
+config ETH_NXP_IMX_NETC_VSI_READY_POLL_INTERVAL_MS
+	int "VSI readiness-gate poll interval (ms)"
+	default 100
+	range 1 10000
+	help
+	  Interval at which the VSI service thread polls its readiness gates before
+	  the first SI access: the optional SCMI clock-status gate (when the node
+	  has a "clocks" property) and the parent PF's SR-IOV VF-enable bits in
+	  ECAM. Both are fault-free (they never touch the not-yet-decoding SI).
+
+endif # DT_HAS_NXP_IMX_NETC_VSI_ENABLED
 
 endif # ETH_NXP_IMX_NETC

@@ -20,7 +20,7 @@
 
 static uint8_t mac_addr[sizeof(struct net_eth_addr)];
 static struct net_if *eth_if;
-static uint8_t small_buffer[512];
+static uint8_t small_buffer[CONFIG_NET_BUF_DATA_SIZE * 2 + 3];
 
 /************************\
  * FAKE ETHERNET DEVICE *
@@ -713,7 +713,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 	zassert_equal(net_pkt_get_len(dummy_pkt),
 		      PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT -
 		      LARGE_PULL_AMOUNT,
-		      "Large pull failed to set new size (%d vs %d)",
+		      "Large pull failed to set new size (%zu vs %d)",
 		      net_pkt_get_len(dummy_pkt),
 		      PULL_TEST_PKT_DATA_SIZE - PULL_AMOUNT -
 		      LARGE_PULL_AMOUNT);
@@ -721,14 +721,14 @@ ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 	net_pkt_cursor_init(dummy_pkt);
 	net_pkt_pull(dummy_pkt, net_pkt_get_len(dummy_pkt));
 	zassert_equal(net_pkt_get_len(dummy_pkt), 0,
-		      "Full pull failed to set new size (%d)",
+		      "Full pull failed to set new size (%zu)",
 		      net_pkt_get_len(dummy_pkt));
 
 	net_pkt_cursor_init(dummy_pkt);
 	ret = net_pkt_pull(dummy_pkt, 1);
 	zassert_equal(ret, -ENOBUFS, "Did not return error");
 	zassert_equal(net_pkt_get_len(dummy_pkt), 0,
-		      "Empty pull set new size (%d)",
+		      "Empty pull set new size (%zu)",
 		      net_pkt_get_len(dummy_pkt));
 
 	net_pkt_unref(dummy_pkt);
@@ -749,7 +749,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_pull)
 	ret = net_pkt_pull(dummy_pkt, net_pkt_get_len(dummy_pkt) + 1);
 	zassert_equal(ret, -ENOBUFS, "Did not return error");
 	zassert_equal(net_pkt_get_len(dummy_pkt), 0,
-		      "Not empty after full pull (%d)",
+		      "Not empty after full pull (%zu)",
 		      net_pkt_get_len(dummy_pkt));
 
 	net_pkt_unref(dummy_pkt);
@@ -821,7 +821,6 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 	net_pkt_set_family(pkt, NET_AF_INET6);
 	net_pkt_set_captured(pkt, true);
 	net_pkt_set_eof(pkt, true);
-	net_pkt_set_ptp(pkt, true);
 	net_pkt_set_tx_timestamping(pkt, true);
 	net_pkt_set_rx_timestamping(pkt, true);
 	net_pkt_set_forwarding(pkt, true);
@@ -857,9 +856,6 @@ ZTEST(net_pkt_test_suite, test_net_pkt_clone)
 
 	zassert_true(net_pkt_eof(cloned_pkt),
 		     "Cloned pkt eof flag mismatch");
-
-	zassert_true(net_pkt_is_ptp(cloned_pkt),
-		     "Cloned pkt ptp_pkt flag mismatch");
 
 #if CONFIG_NET_PKT_TIMESTAMP
 	zassert_true(net_pkt_is_tx_timestamping(cloned_pkt),
@@ -1004,7 +1000,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 	net_buf_reserve(frag2_dst, 1);
 	net_pkt_append_buffer(pkt_dst, frag2_dst);
 	zassert_equal(net_pkt_available_buffer(pkt_dst), 4, "Wrong space left");
-	zassert_equal(net_pkt_get_len(pkt_dst), 0, "Length missmatch");
+	zassert_equal(net_pkt_get_len(pkt_dst), 0, "Length mismatch");
 
 	/* Copy to net_pkt which contains fragments with reserved bytes */
 	net_pkt_cursor_init(pkt_src);
@@ -1012,7 +1008,7 @@ ZTEST(net_pkt_test_suite, test_net_pkt_headroom_copy)
 	res = net_pkt_copy(pkt_dst, pkt_src, 4);
 	zassert_equal(res, 0, "Pkt copy failed");
 	zassert_equal(net_pkt_available_buffer(pkt_dst), 0, "Wrong space left");
-	zassert_equal(net_pkt_get_len(pkt_dst), 4, "Length missmatch");
+	zassert_equal(net_pkt_get_len(pkt_dst), 4, "Length mismatch");
 
 	net_pkt_cursor_init(pkt_dst);
 	zassert_true(net_pkt_read(pkt_dst, small_buffer, 4) == 0,

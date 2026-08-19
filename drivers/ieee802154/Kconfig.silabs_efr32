@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# Silicon Laboratories EFR32 802.15.4 configuration options
+
+menuconfig IEEE802154_SILABS_EFR32
+	bool "Silabs EFR32 IEEE 802.15.4 Driver"
+	default y
+	depends on DT_HAS_SILABS_EFR32_IEEE802154_ENABLED
+	depends on ZEPHYR_HAL_SILABS_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
+	depends on SOC_GECKO_HAS_RADIO
+	select SOC_GECKO_USE_RAIL
+	select PSA_CRYPTO
+	select SILABS_SISDK_PROTOCOL_CRYPTO
+
+if IEEE802154_SILABS_EFR32
+
+config IEEE802154_SILABS_EFR32_INIT_PRIO
+	int "Silabs EFR32 IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+config IEEE802154_SILABS_EFR32_BG_RX_PRIORITY
+	int "Background RX scheduler priority"
+	range 1 255
+	default 255
+	help
+	  Priority used for the EFR32 802.15.4 background RX scheduler slot.
+	  Background RX is the passive receive state when the device is not
+	  transmitting. In RAIL's multiprotocol scheduler a higher numeric
+	  value means lower priority, so the default 255 keeps background
+	  RX as the lowest-priority activity. Only relevant on multiprotocol
+	  builds (e.g. concurrent BLE + 802.15.4).
+
+config IEEE802154_SILABS_EFR32_TX_PRIORITY_MIN
+	int "TX scheduler priority (initial)"
+	range 1 255
+	default 100
+	help
+	  Priority used for the first attempt of an 802.15.4 TX in RAIL's
+	  multiprotocol scheduler. Smaller numeric values mean higher
+	  priority. Only relevant on multiprotocol builds (e.g. concurrent
+	  BLE + 802.15.4).
+
+config IEEE802154_SILABS_EFR32_SRC_MATCH_SHORT_MAX
+	int "Source-match short-address table size"
+	default OPENTHREAD_MAX_CHILDREN if NET_L2_OPENTHREAD
+	default 16
+	help
+	  Maximum number of short addresses tracked in the driver's soft
+	  source-match table for outgoing-ACK Frame Pending decisions. In
+	  OpenThread builds this defaults to OPENTHREAD_MAX_CHILDREN so the
+	  router can track Frame Pending for every sleepy child.
+
+config IEEE802154_SILABS_EFR32_SRC_MATCH_EXT_MAX
+	int "Source-match extended-address table size"
+	default OPENTHREAD_MAX_CHILDREN if NET_L2_OPENTHREAD
+	default 16
+	help
+	  Maximum number of extended addresses tracked in the driver's soft
+	  source-match table. See IEEE802154_SILABS_EFR32_SRC_MATCH_SHORT_MAX.
+
+endif

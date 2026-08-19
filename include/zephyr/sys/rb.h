@@ -6,6 +6,9 @@
 
 /**
  * @file
+ * @brief Header file for the balanced red/black tree API.
+ * @ingroup rbtree_apis
+ *
  * @defgroup rbtree_apis Balanced Red/Black Tree
  * @ingroup datastructure_apis
  *

@@ -62,7 +62,8 @@ struct bt_mesh_friend {
 	      send_last:1,
 	      pending_req:1,
 	      pending_buf:1,
-	      established:1;
+	      established:1,
+	      pending_cfm:1;
 	int32_t poll_to;
 	uint8_t  num_elem;
 	uint16_t lpn_counter;
@@ -91,12 +92,31 @@ struct bt_mesh_friend {
 	sys_slist_t queue;
 	uint32_t queue_size;
 
-	/* Friend Clear Procedure */
+	/* Friend Clear Procedure / Friend Clear Confirm */
 	struct {
-		uint32_t start;                  /* Clear Procedure start */
-		uint16_t frnd;                   /* Previous Friend's address */
-		uint16_t repeat_sec;             /* Repeat timeout in seconds */
-		struct k_work_delayable timer;   /* Repeat timer */
+		struct k_work_delayable timer;
+		union {
+			/* Friend Clear Procedure context */
+			struct {
+				uint32_t start;       /* Procedure start */
+				uint16_t frnd;        /* Previous Friend's address */
+				uint16_t repeat_sec;  /* Repeat timeout in seconds */
+			};
+			/* Pending Friend Clear Confirm context.
+			 * Delayed to allow the LPN to finish advertising
+			 * its Friend Clear and start scanning.
+			 * Scheduling this timer also cancels any ongoing
+			 * Friend Clear Procedure, which is no longer needed
+			 * since the friendship has been terminated.
+			 */
+			struct {
+				uint16_t net_idx;
+				uint16_t dst;
+				uint16_t lpn_addr;
+				uint16_t lpn_counter;
+				uint8_t ttl;
+			} cfm;
+		};
 	} clear;
 };
 

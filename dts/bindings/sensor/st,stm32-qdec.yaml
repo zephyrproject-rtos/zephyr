@@ -75,23 +75,8 @@ properties:
       15: Fs = F_clk/32, N=8
       Default value is set by hardware at reset
     default: 0
-    enum:
-      - 0  # No filter
-      - 1  # FDIV1_N2
-      - 2  # FDIV1_N4
-      - 3  # FDIV1_N8
-      - 4  # FDIV2_N6
-      - 5  # FDIV2_N8
-      - 6  # FDIV4_N6
-      - 7  # FDIV4_N8
-      - 8  # FDIV8_N6
-      - 9  # FDIV8_N8
-      - 10 # FDIV16_N5
-      - 11 # FDIV16_N6
-      - 12 # FDIV16_N8
-      - 13 # FDIV32_N5
-      - 14 # FDIV32_N6
-      - 15 # FDIV32_N8
+    min: 0
+    max: 15
 
   st,counts-per-revolution:
     type: int

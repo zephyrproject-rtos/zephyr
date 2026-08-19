@@ -10,6 +10,7 @@ menuconfig IIS2ICLX
 	depends on ZEPHYR_HAL_ST_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2ICLX),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_IIS2ICLX),spi)
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS2ICLX),drdy-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_IIS2ICLX
 	help

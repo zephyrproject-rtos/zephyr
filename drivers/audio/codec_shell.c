@@ -4,9 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <zephyr/shell/shell.h>
 #include <zephyr/audio/codec.h>
+#include <zephyr/device.h>
+#include <zephyr/shell/shell.h>
+#include <stdlib.h>
 
 #define CODEC_START_HELP                                                                           \
 	SHELL_HELP("Start output audio playback",                                                  \
@@ -58,6 +59,28 @@ static const struct args_index args_indx = {
 	.value = 4,
 };
 
+static bool device_is_audio_codec(const struct device *dev)
+{
+	return DEVICE_API_IS(audio_codec, dev);
+}
+
+static int codec_shell_get_device(const struct shell *sh, const char *name,
+				  const struct device **dev)
+{
+	*dev = shell_device_get_binding(name);
+	if (*dev == NULL) {
+		shell_error(sh, "Audio Codec device not found");
+		return -ENODEV;
+	}
+
+	if (!device_is_audio_codec(*dev)) {
+		shell_error(sh, "%s is not an audio codec device", (*dev)->name);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int parse_named_int(const char *name, const char *const keystack[], size_t count)
 {
 	char *endptr;
@@ -82,12 +105,13 @@ static int parse_named_int(const char *name, const char *const keystack[], size_
 static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
+	int err;
 
-	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
-		shell_error(sh, "Audio Codec device not found");
-		return -ENODEV;
+	err = codec_shell_get_device(sh, argv[args_indx.device], &dev);
+	if (err != 0) {
+		return err;
 	}
+
 	audio_codec_start_output(dev);
 
 	return 0;
@@ -96,12 +120,13 @@ static int cmd_start(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_stop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
+	int err;
 
-	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
-		shell_error(sh, "Audio Codec device not found");
-		return -ENODEV;
+	err = codec_shell_get_device(sh, argv[args_indx.device], &dev);
+	if (err != 0) {
+		return err;
 	}
+
 	audio_codec_stop_output(dev);
 
 	return 0;
@@ -112,14 +137,14 @@ static int cmd_set_prop(const struct shell *sh, size_t argc, char *argv[])
 	const struct device *dev;
 	int property;
 	int channel;
+	int err;
 	long value;
 	char *endptr;
 	audio_property_value_t property_value;
 
-	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
-		shell_error(sh, "Audio Codec device not found");
-		return -ENODEV;
+	err = codec_shell_get_device(sh, argv[args_indx.device], &dev);
+	if (err != 0) {
+		return err;
 	}
 
 	property = parse_named_int(argv[args_indx.property], codec_property_name,
@@ -160,11 +185,11 @@ static int cmd_set_prop(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_apply_prop(const struct shell *sh, size_t argc, char *argv[])
 {
 	const struct device *dev;
+	int err;
 
-	dev = shell_device_get_binding(argv[args_indx.device]);
-	if (!dev) {
-		shell_error(sh, "Audio Codec device not found");
-		return -ENODEV;
+	err = codec_shell_get_device(sh, argv[args_indx.device], &dev);
+	if (err != 0) {
+		return err;
 	}
 
 	return audio_codec_apply_properties(dev);
@@ -173,7 +198,7 @@ static int cmd_apply_prop(const struct shell *sh, size_t argc, char *argv[])
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
-	const struct device *dev = shell_device_lookup(idx, NULL);
+	const struct device *dev = shell_device_filter(idx, device_is_audio_codec);
 
 	entry->syntax = (dev != NULL) ? dev->name : NULL;
 	entry->handler = NULL;

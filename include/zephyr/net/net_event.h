@@ -54,6 +54,29 @@ enum net_event_if_cmd {
 	NET_MGMT_CMD(NET_EVENT_IF_CMD_ADMIN_UP),
 };
 
+/* Packet socket (L2) events */
+#define NET_PACKET_LAYER	NET_MGMT_LAYER_L2
+#define NET_PACKET_CORE_CODE	NET_MGMT_LAYER_CODE_PACKET
+#define NET_EVENT_PACKET_BASE	(NET_MGMT_EVENT_BIT |			\
+				 NET_MGMT_IFACE_BIT |			\
+				 NET_MGMT_LAYER(NET_PACKET_LAYER) |	\
+				 NET_MGMT_LAYER_CODE(NET_PACKET_CORE_CODE))
+
+enum {
+	NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD_VAL,
+	NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP_VAL,
+
+	NET_EVENT_PACKET_CMD_MAX
+};
+
+BUILD_ASSERT(NET_EVENT_PACKET_CMD_MAX <= NET_MGMT_MAX_COMMANDS,
+	     "Number of events in net_event_packet_cmd exceeds the limit");
+
+enum net_event_packet_cmd {
+	NET_MGMT_CMD(NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD),
+	NET_MGMT_CMD(NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP),
+};
+
 /* IPv6 Events */
 #define NET_IPV6_LAYER		NET_MGMT_LAYER_L3
 #define NET_IPV6_CORE_CODE	NET_MGMT_LAYER_CODE_IPV6
@@ -138,6 +161,8 @@ enum {
 	NET_EVENT_IPV4_CMD_MADDR_DEL_VAL,
 	NET_EVENT_IPV4_CMD_ROUTER_ADD_VAL,
 	NET_EVENT_IPV4_CMD_ROUTER_DEL_VAL,
+	NET_EVENT_IPV4_CMD_ROUTE_ADD_VAL,
+	NET_EVENT_IPV4_CMD_ROUTE_DEL_VAL,
 	NET_EVENT_IPV4_CMD_DHCP_START_VAL,
 	NET_EVENT_IPV4_CMD_DHCP_BOUND_VAL,
 	NET_EVENT_IPV4_CMD_DHCP_STOP_VAL,
@@ -161,6 +186,8 @@ enum net_event_ipv4_cmd {
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_MADDR_DEL),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ROUTER_ADD),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ROUTER_DEL),
+	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ROUTE_ADD),
+	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_ROUTE_DEL),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_DHCP_START),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_DHCP_BOUND),
 	NET_MGMT_CMD(NET_EVENT_IPV4_CMD_DHCP_STOP),
@@ -196,6 +223,7 @@ enum {
 	NET_EVENT_L4_CMD_VPN_DISCONNECTED_VAL,
 	NET_EVENT_L4_CMD_VPN_PEER_ADD_VAL,
 	NET_EVENT_L4_CMD_VPN_PEER_DEL_VAL,
+	NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED_VAL,
 
 	NET_EVENT_L4_CMD_MAX
 };
@@ -219,6 +247,7 @@ enum net_event_l4_cmd {
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_DISCONNECTED),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_PEER_ADD),
 	NET_MGMT_CMD(NET_EVENT_L4_CMD_VPN_PEER_DEL),
+	NET_MGMT_CMD(NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED),
 };
 
 /** @endcond */
@@ -238,6 +267,14 @@ enum net_event_l4_cmd {
 /** Event emitted when the network interface goes up manually. */
 #define NET_EVENT_IF_ADMIN_UP					\
 	(NET_EVENT_IF_BASE | NET_EVENT_IF_CMD_ADMIN_UP)
+
+/** Event emitted when a packet socket multicast group membership is added. */
+#define NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD				\
+	(NET_EVENT_PACKET_BASE | NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_ADD)
+
+/** Event emitted when a packet socket multicast group membership is dropped. */
+#define NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP				\
+	(NET_EVENT_PACKET_BASE | NET_EVENT_PACKET_CMD_MCAST_MEMBERSHIP_DROP)
 
 /** Event emitted when an IPv6 address is added to the system. */
 #define NET_EVENT_IPV6_ADDR_ADD					\
@@ -363,6 +400,14 @@ enum net_event_l4_cmd {
 #define NET_EVENT_IPV4_ROUTER_DEL				\
 	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ROUTER_DEL)
 
+/** Event emitted when an IPv4 route is added to the system. */
+#define NET_EVENT_IPV4_ROUTE_ADD				\
+	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ROUTE_ADD)
+
+/** Event emitted when an IPv4 route is removed from the system. */
+#define NET_EVENT_IPV4_ROUTE_DEL				\
+	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_ROUTE_DEL)
+
 /** Event emitted when an IPv4 DHCP client is started. */
 #define NET_EVENT_IPV4_DHCP_START				\
 	(NET_EVENT_IPV4_BASE | NET_EVENT_IPV4_CMD_DHCP_START)
@@ -442,6 +487,21 @@ enum net_event_l4_cmd {
 #define NET_EVENT_DNS_SERVER_DEL			\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_SERVER_DEL)
 
+/** Event emitted when the DNS server configuration is refreshed.
+ *
+ * Raised on every successful reconfigure, including the case where
+ * the new server set is identical to the existing one (in which
+ * case the per-slot ADD/DEL delta events are intentionally
+ * suppressed to avoid cancelling in-flight queries on DHCP-offer
+ * retransmit and IPv6 RA). Consumers that need a "DNS configuration
+ * is ready again" signal after a network event should listen for
+ * this event rather than NET_EVENT_DNS_SERVER_ADD.
+ *
+ * The event carries a NULL iface payload (system-level event).
+ */
+#define NET_EVENT_DNS_SERVERS_RECONFIGURED		\
+	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_DNS_SERVERS_RECONFIGURED)
+
 /** Event emitted when the system hostname is changed. */
 #define NET_EVENT_HOSTNAME_CHANGED			\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_HOSTNAME_CHANGED)
@@ -469,6 +529,22 @@ enum net_event_l4_cmd {
 /** Event emitted when a VPN peer is removed from the system. */
 #define NET_EVENT_VPN_PEER_DEL				\
 	(NET_EVENT_L4_BASE | NET_EVENT_L4_CMD_VPN_PEER_DEL)
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_PACKET_MCAST_MEMBERSHIP_ADD and
+ *   NET_EVENT_PACKET_MCAST_MEMBERSHIP_DROP
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_packet_mcast {
+	/** L2 multicast address of the group */
+	struct net_linkaddr addr;
+
+	/** Multicast filtering type, one of the NET_PACKET_MR_* values */
+	uint16_t type;
+};
 
 /**
  * @brief Network Management event information structure
@@ -515,6 +591,23 @@ struct net_event_ipv6_route {
 	/** IPv6 address or prefix of the route */
 	struct net_in6_addr addr;
 	/** IPv6 prefix length */
+	uint8_t prefix_len;
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV4_ROUTE_ADD and
+ *   NET_EVENT_IPV4_ROUTE_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv4_route {
+	/** IPv4 address of the next hop */
+	struct net_in_addr nexthop;
+	/** IPv4 address or prefix of the route */
+	struct net_in_addr addr;
+	/** IPv4 prefix length */
 	uint8_t prefix_len;
 };
 

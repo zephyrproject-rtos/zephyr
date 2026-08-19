@@ -47,7 +47,8 @@ def catch_system_exit_exception(func):
                 return exc.code
             if exc.code is None:
                 return 0
-            # if exc.code is not int/None consider it is not zero
+            # if exc.code is non-numeric, log it as a string and exit with error
+            logging.getLogger("twister").error(str(exc.code))
             return 1
 
     return _inner
@@ -156,7 +157,7 @@ class Twister:
 
     def discover_hardware_map(self, env: TwisterEnv) -> HardwareMap:
         """Discover hardware map and return it."""
-        hwm = HardwareMap(env)
+        hwm = HardwareMap(env.options)
         ret = hwm.discover()
         if ret == 0:
             raise SystemExit(0)
@@ -186,10 +187,10 @@ class Twister:
         report = Reporting(tplan, env)
         plan_file = os.path.join(self.options.outdir, "testplan.json")
         if not os.path.exists(plan_file):
-            report.json_report(plan_file, env.version)
+            report.json_report.create(plan_file, env.version)
 
         if self.options.save_tests:
-            report.json_report(self.options.save_tests, env.version)
+            report.json_report.create(self.options.save_tests, env.version)
             raise SystemExit(0)
 
         if self.options.report_summary is not None:
@@ -205,17 +206,6 @@ class Twister:
         runner = TwisterRunner(tplan.instances, tplan.testsuites, env)
         runner.run()
         return runner
-
-    def match_platforms_names(self, hwm: HardwareMap, tplan: TestPlan) -> None:
-        # FIXME: This is a workaround for the fact that the hardware map can be usng
-        # the short name of the platform, while the testplan is using the full name.
-        #
-        # convert platform names coming from the hardware map to the full target
-        # name.
-        # this is needed to match the platform names in the testplan.
-        for d in hwm.duts:
-            if d.platform in tplan.platform_names:
-                d.platform = tplan.get_platform(d.platform).name
 
     def prepare_reports(self, report: Reporting, previous_results_file: str | None) -> None:
         """Prepare reports."""
@@ -312,8 +302,6 @@ class Twister:
             self.verbose(self.tplan)
 
         self.report = self.create_report(self.tplan, self.env)
-
-        self.match_platforms_names(self.hwm, self.tplan)
 
         if self.options.device_testing and not self.options.build_only:
             print("\nDevice testing on:")

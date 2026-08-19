@@ -8,11 +8,13 @@ import argparse
 import collections
 import json
 import logging
+import multiprocessing
 import os
 import platform
 import re
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,7 +24,25 @@ from collections.abc import Iterable
 from itertools import takewhile
 from pathlib import Path, PurePath
 
-import magic
+try:
+    import magic
+except ImportError:
+    if sys.platform != 'win32':
+        raise
+    # python-magic-bin bundles libmagic.dll under <magic_pkg>/libmagic/, but
+    # python-magic's loader.py (ahupp/python-magic@0fb1922d) only searches
+    # PATH and cwd — that subdirectory was never added. Prepend it to PATH so
+    # ctypes.util.find_library() can resolve the DLL.
+    # See: https://github.com/zephyrproject-rtos/zephyr/issues/101181
+    #      https://github.com/ahupp/python-magic/pull/294 (upstream fix pending)
+    from importlib.util import find_spec
+
+    spec = find_spec('magic')
+    if spec and spec.origin:
+        dll_dir = Path(spec.origin).parent / 'libmagic'
+        if dll_dir.is_dir():
+            os.environ['PATH'] = str(dll_dir) + os.pathsep + os.environ.get('PATH', '')
+    import magic
 import unidiff
 import yaml
 from dotenv import load_dotenv
@@ -156,6 +176,16 @@ def get_vendor_prefixes(path, errfn=print) -> set[str]:
 
 def zephyr_doc_detail_builder(doc_subpath: str) -> str:
     return f"See https://docs.zephyrproject.org/latest{doc_subpath} for more details."
+
+
+def get_set_from_file(path) -> set[str]:
+    """
+    Load the contents of a file into a set, one element per line,
+    lines starting with # ignored, content after # ignored, whitespace stripped
+    """
+    with open(path) as f:
+        output = [line.split('#')[0].strip() for line in f.readlines() if not line.startswith('#')]
+    return set(output)
 
 
 class FmtdFailure(Failure):
@@ -444,6 +474,101 @@ class ClangFormatCheck(ComplianceTest):
                 patchset = unidiff.PatchSet.from_string(ex.output, encoding="utf-8")
                 for patch in patchset:
                     self._process_patch_error(file, patch)
+
+
+class StyleCheckMixin:
+    """
+    Shared plumbing for compliance checks that delegate to a stand-alone style
+    checker script (scripts/.../*_style.py). Such a script prints issues as
+    '<file>:<line>:<col>: [<rule>] <message>' and exits 0 (clean) / 1 (issues
+    found) / anything else (the checker itself failed).
+
+    This is a mixin, not a ComplianceTest subclass, so it is not picked up by
+    inheritors(ComplianceTest) and never runs on its own. Concrete checks inherit
+    from both this and ComplianceTest, and call _check_files() from run().
+    """
+
+    # '<file>:<line>:<col>: [<rule>] <message>'
+    _ISSUE_RE = re.compile(r"^.+:(\d+):(\d+): \[([^\]]+)\] (.*)$")
+
+    def _changed_lines(self, file):
+        # Line numbers touched by the change in 'file' within COMMIT_RANGE.
+        diff = git("diff", "-U0", "--no-color", COMMIT_RANGE, "--", file)
+        changed = set()
+        if not diff.strip():
+            return changed
+        for patch in unidiff.PatchSet.from_string(diff):
+            for hunk in patch:
+                for line in hunk:
+                    if line.is_added and line.target_line_no is not None:
+                        changed.add(line.target_line_no)
+                # A pure deletion adds no lines but can still introduce a style
+                # issue on the lines now surrounding the gap (e.g. removing a
+                # blank line between declarations). With -U0 the deletion sits
+                # between target_start and target_start + 1, so flag both.
+                if hunk.removed:
+                    changed.update((hunk.target_start, hunk.target_start + 1))
+        return changed
+
+    def _check_files(self, tool, file_filter):
+        # Run 'tool' on each added/modified file matching 'file_filter' and
+        # report issues on changed lines only. 'tool' is a Path; file_filter is a
+        # predicate on the file path string.
+        for file in get_files(filter="d"):
+            if not file_filter(file):
+                continue
+
+            changed = self._changed_lines(file)
+            if not changed:
+                continue
+
+            result = subprocess.run(
+                [sys.executable, str(tool), file],
+                cwd=GIT_TOP,
+                capture_output=True,
+                text=True,
+            )
+
+            # The script returns 0 (clean) or 1 (issues found); anything else, or
+            # any stderr output, means the checker itself failed (e.g. crashed
+            # before it could set its own error exit code).
+            if result.returncode not in (0, 1) or result.stderr.strip():
+                self.error(
+                    f"{tool.name} failed on '{file}' (exit {result.returncode}):\n{result.stderr}"
+                )
+
+            for line in result.stdout.splitlines():
+                m = self._ISSUE_RE.match(line)
+                if not m:
+                    continue
+                lineno, col, rule, message = int(m[1]), int(m[2]), m[3], m[4]
+                if lineno not in changed:
+                    continue
+                self.fmtd_failure(
+                    "error",
+                    f"{self.name} ({rule})",
+                    file,
+                    lineno,
+                    col=col,
+                    desc=message,
+                )
+
+
+class KconfigFormatCheck(StyleCheckMixin, ComplianceTest):
+    """
+    Checks Kconfig files against the formatting style guidelines using
+    scripts/kconfig/kconfig_style.py. Only issues on lines touched by the change
+    are reported, so pre-existing formatting is not flagged.
+    """
+
+    name = "KconfigFormat"
+    doc = zephyr_doc_detail_builder("/contribute/style/kconfig.html")
+
+    def run(self):
+        self._check_files(
+            ZEPHYR_BASE / "scripts" / "kconfig" / "kconfig_style.py",
+            lambda file: "Kconfig" in Path(file).name,
+        )
 
 
 class DevicetreeBindingsCheck(ComplianceTest):
@@ -839,10 +964,16 @@ class KconfigCheck(ComplianceTest):
                     ).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
-                for board_dir in board.directories:
-                    fp.write(
-                        'source "' + (board_dir / ('Kconfig.' + board.name)).as_posix() + '"\n'
-                    )
+                fp.write(
+                    'source "'
+                    + (board.directories[0] / ('Kconfig.' + board.name)).as_posix()
+                    + '"\n'
+                )
+                if len(board.directories) > 1:
+                    for board_dir in board.directories[1:]:
+                        fp.write(
+                            'osource "' + (board_dir / ('Kconfig.' + board.name)).as_posix() + '"\n'
+                        )
 
         with open(kconfig_file, 'w') as fp:
             for board in v2_boards:
@@ -1358,9 +1489,26 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
         """
         Checks that there are no references to undefined Kconfig symbols within
         the Kconfig files
+
+        kconfiglib warning format:
+            "warning: undefined symbol MY_SYMBOL:\n\n- Referenced at ..."
         """
+        _sym_re = re.compile(r"undefined symbol (\w+)")
+
+        # Load list of configs to ignore for this check
+        undef_kconfig_allowlist_extra = []
+        if path := os.environ.get("UNDEF_KCONFIG_INSIDE_ALLOWLIST_FILE", None):
+            logging.info(f"Loading allowed undefined symbols from {path}")
+            undef_kconfig_allowlist_extra = get_set_from_file(path)
+
+        def is_allowed(warning):
+            m = _sym_re.search(warning)
+            return m is not None and m.group(1) in undef_kconfig_allowlist_extra
+
         undef_ref_warnings = "\n\n\n".join(
-            warning for warning in kconf.warnings if "undefined symbol" in warning
+            warning
+            for warning in kconf.warnings
+            if "undefined symbol" in warning and not is_allowed(warning)
         )
 
         if undef_ref_warnings:
@@ -1431,7 +1579,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
         # Warning: Needs to work with both --perl-regexp and the 're' module
         regex = r"\b" + self.CONFIG_ + r"[A-Z0-9_]+\b(?!\s*##|[$@{(.*])"
 
-        # Skip doc/releases and doc/security/vulnerabilities.rst, which often
+        # Skip doc/releases and doc/security/vulnerabilities, which often
         # reference removed symbols
         grep_stdout = git(
             "grep",
@@ -1444,12 +1592,44 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
             ":!/doc/releases",
             ":!/doc/develop/manifest/external",
             ":!/doc/security/vulnerabilities.rst",
+            ":!/doc/security/vulnerabilities",
             cwd=GIT_TOP,
         )
+
+        self_folder = Path(__file__).resolve().parent
+
+        if hasattr(self, 'UNDEF_KCONFIG_ALLOWLIST'):
+            # Overridden at the class level
+            undef_kconfig_allowlist = self.UNDEF_KCONFIG_ALLOWLIST
+            allowlist_hint = f"{type(self).__name__}.UNDEF_KCONFIG_ALLOWLIST"
+        else:
+            # Load from the text file
+            default_allowlist_file = self_folder / 'undef_kconfig_allowlist.txt'
+            undef_kconfig_allowlist = get_set_from_file(str(default_allowlist_file))
+            allowlist_hint = str(default_allowlist_file)
+
+        # Load extensions to UNDEF_KCONFIG_ALLOWLIST
+        undef_kconfig_allowlist_extra = []
+        if path := os.environ.get("UNDEF_KCONFIG_OUTSIDE_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra UNDEF_KCONFIG_ALLOWLIST values from {path}")
+            undef_kconfig_allowlist_extra = get_set_from_file(path)
+
+        # Load the per-file allowlist: files listed here are skipped entirely
+        default_files_allowlist_file = self_folder / 'undef_kconfig_files_allowlist.txt'
+        undef_kconfig_files_allowlist = get_set_from_file(str(default_files_allowlist_file))
+
+        # Load extensions to the per-file allowlist via environment variable
+        if path := os.environ.get("UNDEF_KCONFIG_FILES_ALLOWLIST_FILE", None):
+            logging.info(f"Loading extra file allowlist entries from {path}")
+            undef_kconfig_files_allowlist |= get_set_from_file(path)
 
         # splitlines() supports various line terminators
         for grep_line in grep_stdout.splitlines():
             path, lineno, line = grep_line.split("\0")
+
+            # Skip files whose CONFIG_ references are explicitly allowlisted
+            if path in undef_kconfig_files_allowlist:
+                continue
 
             # Extract symbol references (might be more than one) within the
             # line
@@ -1457,7 +1637,8 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
                 sym_name = sym_name[len(self.CONFIG_) :]  # Strip CONFIG_
                 if (
                     sym_name not in defined_syms
-                    and sym_name not in self.UNDEF_KCONFIG_ALLOWLIST
+                    and sym_name not in undef_kconfig_allowlist
+                    and sym_name not in undef_kconfig_allowlist_extra
                     and not (sym_name.endswith("_MODULE") and sym_name[:-7] in defined_syms)
                     and not sym_name.startswith("BOARD_REVISION_")
                     and not (sym_name.startswith("DT_HAS_") and sym_name.endswith("_ENABLED"))
@@ -1480,7 +1661,7 @@ Missing SoC names or CONFIG_SOC vs soc.yml out of sync:
 
         self.failure(f"""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_ALLOWLIST in {__file__}.
+positives, then add them to {allowlist_hint}.
 
 If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
@@ -1490,174 +1671,6 @@ More generally, a reference followed by $, @, {{, (, ., *, or ## will never be
 flagged.
 
 {undef_desc}""")
-
-    # Many of these are symbols used as examples. Note that the list is sorted
-    # alphabetically, and skips the CONFIG_ prefix.
-    UNDEF_KCONFIG_ALLOWLIST = {
-        # zephyr-keep-sorted-start re(^\s+")
-        "ALSO_MISSING",
-        "APP_LINK_WITH_",
-        # Application log level is not detected correctly as
-        # the option is defined using a template, so it can't
-        # be grepped
-        "APP_LOG_LEVEL",
-        "APP_LOG_LEVEL_DBG",
-        # The ARMCLANG_STD_LIBC is defined in the
-        # toolchain Kconfig which is sourced based on
-        # Zephyr toolchain variant and therefore not
-        # visible to compliance.
-        "ARMCLANG_STD_LIBC",
-        "BINDESC_",  # Used in documentation as a prefix
-        "BOARD_",  # Used as regex in scripts/utils/board_v1_to_v2.py
-        "BOARD_MPS2_AN521_CPUTEST",  # Used for board and SoC extension feature tests
-        "BOARD_NATIVE_SIM_NATIVE_64_TWO",  # Used for board and SoC extension feature tests
-        "BOARD_NATIVE_SIM_NATIVE_ONE",  # Used for board and SoC extension feature tests
-        "BOARD_UNIT_TESTING",  # Used for tests/unit
-        "BOOT_DIRECT_XIP",  # Used in sysbuild for MCUboot configuration
-        "BOOT_DIRECT_XIP_REVERT",  # Used in sysbuild for MCUboot configuration
-        "BOOT_ENCRYPTION_KEY_FILE",  # Used in sysbuild
-        "BOOT_ENCRYPT_ALG_AES_128",  # Used in sysbuild
-        "BOOT_ENCRYPT_ALG_AES_256",  # Used in sysbuild
-        "BOOT_ENCRYPT_IMAGE",  # Used in sysbuild
-        "BOOT_FIRMWARE_LOADER",  # Used in sysbuild for MCUboot configuration
-        "BOOT_FIRMWARE_LOADER_BOOT_MODE",  # Used in sysbuild for MCUboot configuration
-        "BOOT_IMAGE_EXECUTABLE_RAM_SIZE",  # MCUboot setting
-        "BOOT_IMAGE_EXECUTABLE_RAM_START",  # MCUboot setting
-        "BOOT_MAX_IMG_SECTORS_AUTO",  # Used in sysbuild
-        "BOOT_RAM_LOAD",  # Used in sysbuild for MCUboot configuration
-        "BOOT_RAM_LOAD_REVERT",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SERIAL_BOOT_MODE",  # Used in (sysbuild-based) test/documentation
-        "BOOT_SERIAL_CDC_ACM",  # Used in (sysbuild-based) test
-        "BOOT_SERIAL_ENTRANCE_GPIO",  # Used in (sysbuild-based) test
-        "BOOT_SERIAL_IMG_GRP_HASH",  # Used in documentation
-        "BOOT_SERIAL_UART",  # Used in (sysbuild-based) test
-        "BOOT_SHARE_BACKEND_RETENTION",  # Used in Kconfig text
-        "BOOT_SHARE_DATA",  # Used in Kconfig text
-        "BOOT_SHARE_DATA_BOOTINFO",  # Used in (sysbuild-based) test
-        "BOOT_SIGNATURE_KEY_FILE",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_ECDSA_P256",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_ED25519",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_NONE",  # MCUboot setting used by sysbuild
-        "BOOT_SIGNATURE_TYPE_RSA",  # MCUboot setting used by sysbuild
-        "BOOT_SWAP_USING_MOVE",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_OFFSET",  # Used in sysbuild for MCUboot configuration
-        "BOOT_SWAP_USING_SCRATCH",  # Used in sysbuild for MCUboot configuration
-        # Used in example adjusting MCUboot config, but
-        # symbol is defined in MCUboot itself.
-        "BOOT_UPGRADE_ONLY",
-        "BOOT_VALIDATE_SLOT0",  # Used in (sysbuild-based) test
-        "BOOT_WATCHDOG_FEED",  # Used in (sysbuild-based) test
-        "BT_6LOWPAN",  # Defined in Linux, mentioned in docs
-        "CDC_ACM_PORT_NAME_",
-        "CHRE",  # Optional module
-        "CHRE_LOG_LEVEL_DBG",  # Optional module
-        "CLOCK_STM32_SYSCLK_SRC_",
-        "CMD_CACHE",  # Defined in U-Boot, mentioned in docs
-        "CMU",
-        "COMPILER_RT_RTLIB",
-        "CRC",  # Used in TI CC13x2 / CC26x2 SDK comment
-        "DEEP_SLEEP",  # #defined by RV32M1 in ext/
-        "DESCRIPTION",
-        "DT_HAS_",  # example from doc/build/dts/dt-vs-kconfig.rst
-        "ERR",
-        "ESP_DIF_LIBRARY",  # Referenced in CMake comment
-        "EXPERIMENTAL",
-        "EXTRA_FIRMWARE_DIR",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "FFT",  # Used as an example in cmake/extensions.cmake
-        "FLAG",  # Used as an example
-        "FOO",
-        "FOO_LOG_LEVEL",
-        "FOO_SETTING_1",
-        "FOO_SETTING_2",
-        "HEAP_MEM_POOL_ADD_SIZE_",  # Used as an option matching prefix
-        "HUGETLBFS",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "IAR_BUFFERED_WRITE",
-        "IAR_DATA_INIT",
-        "IAR_LIBCPP",
-        "IAR_SEMIHOSTING",
-        "IAR_ZEPHYR_INIT",
-        # Used in ICMsg tests for intercompatibility
-        # with older versions of the ICMsg.
-        "IPC_SERVICE_ICMSG_BOND_NOTIFY_REPEAT_TO_MS",
-        "LIBGCC_RTLIB",
-        "LLEXT_EXPORT_SYMBOL_GROUP_",  # Used in regexp by
-        # scripts/build/llext_inspect_discarded_groups.py
-        "LLVM_USE_LD",  # Both LLVM_USE_* are in cmake/toolchain/llvm/Kconfig
-        # which are only included if LLVM is selected but
-        # not other toolchains. Compliance check would complain,
-        # for example, if you are using GCC.
-        "LLVM_USE_LLD",
-        "LOG_BACKEND_MOCK_OUTPUT_DEFAULT",  # Referenced in tests/subsys/logging/log_syst
-        "LOG_BACKEND_MOCK_OUTPUT_SYST",  # Referenced in testcase.yaml of log_syst test
-        "LSM6DSO_INT_PIN",
-        "MCUBOOT_ACTION_HOOKS",  # Used in (sysbuild-based) test
-        "MCUBOOT_CLEANUP_ARM_CORE",  # Used in (sysbuild-based) test
-        "MCUBOOT_DOWNGRADE_PREVENTION",  # but symbols are defined in MCUboot itself.
-        "MCUBOOT_LOG_LEVEL_DBG",
-        "MCUBOOT_LOG_LEVEL_INF",
-        "MCUBOOT_LOG_LEVEL_WRN",  # Used in example adjusting MCUboot config,
-        "MCUBOOT_SERIAL",  # Used in (sysbuild-based) test/documentation
-        "MCUMGR_GRP_EXAMPLE_OTHER_HOOK",  # Used in documentation
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_CORE",
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_DEVICE_CORE",
-        # Used in modules/hal_nxp/mcux/mcux-sdk-ng/device/device.cmake.
-        # It is a variable used by MCUX SDK CMake.
-        "MCUX_HW_FPU_TYPE",
-        "MISSING",
-        "MODULES",
-        "MODVERSIONS",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "MYFEATURE",
-        "MY_DRIVER_0",
-        "NORMAL_SLEEP",  # #defined by RV32M1 in ext/
-        "NRF_WIFI_FW_BIN",  # Directly passed from CMakeLists.txt
-        "OPT",
-        "OPT_0",
-        "PEDO_THS_MIN",
-        "PSA_H",  # This is used in config-psa.h as guard for the header file
-        "REG1",
-        "REG2",
-        "RIMAGE_SIGNING_SCHEMA",  # Optional module
-        "SECURITY_LOADPIN",  # Linux, in boards/xtensa/intel_adsp_cavs25/doc
-        "SEL",
-        "SHIFT",
-        "SINGLE_APPLICATION_SLOT",  # Used in sysbuild for MCUboot configuration
-        "SINGLE_APPLICATION_SLOT_RAM_LOAD",  # Used in sysbuild for MCUboot configuration
-        "SOC_NORDIC_BSP_PATH_OVERRIDE",  # Used in modules/hal_nordic/nrfx/CMakeLists.txt
-        "SOC_SDKNG_UNSUPPORTED",  # Used in modules/hal_nxp/mcux/CMakeLists.txt
-        "SOC_SERIES_",  # Used as regex in scripts/utils/board_v1_to_v2.py
-        "SOC_WATCH",  # Issue 13749
-        "SOME_BOOL",
-        "SOME_INT",
-        "SOME_OTHER_BOOL",
-        "SOME_STRING",
-        "SRAM2",  # Referenced in a comment in samples/application_development
-        "STACK_SIZE",  # Used as an example in the Kconfig docs
-        "STD_CPP",  # Referenced in CMake comment
-        "TEST1",
-        "TFM_SPM_BACKEND_IPC",  # Used in TFM sample dummy partition - belongs to TFM
-        "TFM_SPM_BACKEND_SFN",  # Used in TFM sample dummy partition - belongs to TFM
-        # Defined in modules/hal_nxp/mcux/mcux-sdk-ng/basic.cmake.
-        # It is used by MCUX SDK cmake functions to add content
-        # based on current toolchain.
-        "TOOLCHAIN",
-        # The symbol is defined in the toolchain
-        # Kconfig which is sourced based on Zephyr
-        # toolchain variant and therefore not visible
-        # to compliance.
-        "TOOLCHAIN_ARCMWDT_SUPPORTS_THREAD_LOCAL_STORAGE",
-        "TYPE_BOOLEAN",
-        "USB_CONSOLE",
-        "USE_STDC_",
-        "WHATEVER",
-        "ZEPHYR_TRY_MASS_ERASE",  # MCUBoot setting described in sysbuild documentation
-        "ZTEST_FAIL_TEST_",  # regex in tests/ztest/fail/CMakeLists.txt
-        "ZVFS_OPEN_ADD_SIZE_",  # Used as an option matching prefix
-        # zephyr-keep-sorted-stop
-    }
 
 
 class KconfigBasicCheck(KconfigCheck):
@@ -1923,11 +1936,13 @@ class LicenseAndCopyrightCheck(ComplianceTest):
 
         # Only scan text files for now, in the future we may want to leverage REUSE standard's
         # ability to also associate license/copyright info with binary files.
+        filtered_files = []
         for file in changed_files:
             full_path = GIT_TOP / file
             mime_type = magic.from_file(os.fspath(full_path), mime=True)
-            if not mime_type.startswith("text/"):
-                changed_files.remove(file)
+            if mime_type.startswith("text/"):
+                filtered_files.append(file)
+        changed_files = filtered_files
 
         project = Project.from_directory(GIT_TOP)
         report = ProjectSubsetReport.generate(project, changed_files, multiprocessing=False)
@@ -2076,103 +2091,29 @@ def filter_py(root, fnames):
     ]
 
 
-class CMakeStyle(ComplianceTest):
+class CMakeStyle(StyleCheckMixin, ComplianceTest):
     """
-    Checks cmake style added/modified files
+    Checks the CMake style of added/modified files against the Zephyr CMake style
+    guidelines, using scripts/cmake/cmake_style.py. Only issues on lines touched
+    by the change are reported, so pre-existing style is not flagged.
     """
 
     name = "CMakeStyle"
     doc = zephyr_doc_detail_builder("/contribute/style/cmake.html")
 
     def run(self):
-        # Loop through added/modified files
-        for fname in get_files(filter="d"):
-            if fname.endswith(".cmake") or fname.endswith("CMakeLists.txt"):
-                self.check_style(fname)
+        from importlib.util import find_spec
 
-    def check_style(self, fname):
-        SPACE_BEFORE_OPEN_BRACKETS_CHECK = re.compile(r"^\s*if\s+\(")
-        TAB_INDENTATION_CHECK = re.compile(r"^\t+")
+        if any(find_spec(m) is None for m in ("tree_sitter", "tree_sitter_cmake")):
+            self.skip(
+                "cmake_style requires tree-sitter; install it with "
+                "'pip install tree-sitter tree-sitter-cmake'"
+            )
 
-        with open(fname, encoding="utf-8") as f:
-            for line_num, line in enumerate(f.readlines(), start=1):
-                if TAB_INDENTATION_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Use spaces instead of tabs for indentation",
-                    )
-
-                if SPACE_BEFORE_OPEN_BRACKETS_CHECK.match(line):
-                    self.fmtd_failure(
-                        "error",
-                        "CMakeStyle",
-                        fname,
-                        line_num,
-                        "Remove space before '(' in if() statements",
-                    )
-
-
-class Identity(ComplianceTest):
-    """
-    Checks if Emails of author and signed-off messages are consistent.
-    """
-
-    name = "Identity"
-    doc = zephyr_doc_detail_builder("/contribute/guidelines.html#commit-guidelines")
-
-    def run(self):
-        for shaidx in get_shas(COMMIT_RANGE):
-            commit_info = git('show', '-s', '--format=%an%n%ae%n%b', shaidx).split('\n', 2)
-
-            failures = []
-
-            if len(commit_info) == 2:
-                failures.append(f'{shaidx}: Empty commit message body')
-                auth_name, auth_email = commit_info
-                body = ''
-            elif len(commit_info) == 3:
-                auth_name, auth_email, body = commit_info
-            else:
-                self.failure(f'Unable to parse commit message for {shaidx}')
-                continue
-
-            if auth_email.endswith("@users.noreply.github.com"):
-                failures.append(
-                    f"{shaidx}: author email ({auth_email}) must "
-                    "be a real email and cannot end in "
-                    "@users.noreply.github.com"
-                )
-
-            # Returns an array of everything to the right of ':' on each signoff line
-            signoff_lines = re.findall(r"signed-off-by:\s(.*)", body, re.IGNORECASE)
-            if len(signoff_lines) == 0:
-                failures.append(f'{shaidx}: Missing signed-off-by line')
-            else:
-                # Validate all signoff lines' syntax while also searching for commit author
-                found_author_signoff = False
-                for signoff in signoff_lines:
-                    match = re.search(r"(.+) <(.+)>", signoff)
-
-                    if not match:
-                        failures.append(
-                            f"{shaidx}: Signed-off-by line ({signoff}) "
-                            "does not follow the syntax: First "
-                            "Last <email>."
-                        )
-                    elif (auth_name, auth_email) == match.groups():
-                        found_author_signoff = True
-
-                if not found_author_signoff:
-                    failures.append(
-                        f"{shaidx}: author name ({auth_name}) and email ({auth_email}) "
-                        "needs to match one of the signed-off-by entries."
-                    )
-
-            if failures:
-                self.failure('\n'.join(failures))
+        self._check_files(
+            ZEPHYR_BASE / "scripts" / "cmake" / "cmake_style.py",
+            lambda file: file.endswith(".cmake") or Path(file).name == "CMakeLists.txt",
+        )
 
 
 class BinaryFiles(ComplianceTest):
@@ -2196,6 +2137,29 @@ class BinaryFiles(ComplianceTest):
                 self.failure(f"Binary file not allowed: {fname}")
 
 
+class TestMetadataFilename(ComplianceTest):
+    """
+    Check that no newly added sample or test metadata file uses the legacy
+    'sample.yaml' or 'testcase.yaml' name instead of 'tests.yaml'.
+    """
+
+    name = "TestMetadataFilename"
+    doc = "Sample and test metadata must be stored in a file named tests.yaml."
+
+    def run(self):
+        LEGACY_NAMES = ("sample.yaml", "testcase.yaml")
+
+        for file in get_files(filter="A"):
+            name = os.path.basename(file)
+            if name in LEGACY_NAMES:
+                self.failure(
+                    f"New file '{file}' uses the legacy metadata filename "
+                    f"'{name}'. Sample and test metadata must be stored in a "
+                    f"file named 'tests.yaml'. Rename it to "
+                    f"'{os.path.join(os.path.dirname(file), 'tests.yaml')}'."
+                )
+
+
 class ImageSize(ComplianceTest):
     """
     Check that any added image is limited in size.
@@ -2208,7 +2172,7 @@ class ImageSize(ComplianceTest):
         SIZE_LIMIT = 250 << 10
         BOARD_SIZE_LIMIT = 100 << 10
 
-        for file in get_files(filter="d"):
+        for file in get_files(filter="dr"):
             full_path = GIT_TOP / file
             mime_type = magic.from_file(os.fspath(full_path), mime=True)
 
@@ -2223,7 +2187,8 @@ class ImageSize(ComplianceTest):
 
             if size > limit:
                 self.failure(
-                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB"
+                    f"Image file too large: {file} reduce size to less than {limit >> 10}kB.\n"
+                    "See https://docs.zephyrproject.org/latest/contribute/documentation/guidelines.html#recommended-image-formats-based-on-content"
                 )
 
 
@@ -2718,6 +2683,140 @@ class DeviceMmioCheck(ComplianceTest):
                 )
 
 
+def added_lines(fname):
+    """Return the set of line numbers that were added in COMMIT_RANGE.
+
+    Parses ``git diff -U0`` hunk headers to determine which lines are new.
+    Useful for compliance checks that should only flag newly introduced code.
+    """
+    hunk_re = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+    added = set()
+    diff_output = git('diff', '-U0', '--no-ext-diff', COMMIT_RANGE, '--', fname)
+    for line in diff_output.splitlines():
+        m = hunk_re.match(line)
+        if m:
+            start = int(m.group(1))
+            count = int(m.group(2)) if m.group(2) is not None else 1
+            added.update(range(start, start + count))
+    return added
+
+
+class MmuRegionsCheck(ComplianceTest):
+    """
+    Check that mmu_regions.c files do not add new static MMU region entries.
+
+    Only lines added in the current changeset are checked, so pre-existing
+    entries do not block unrelated changes to the same file.
+
+    Device MMIO regions should use the device MMIO API (DEVICE_MMIO_ROM /
+    DEVICE_MMIO_MAP). Memory regions (DRAM, SRAM) should use the
+    zephyr,memory-attr devicetree property instead of static mmu_regions.c
+    entries.
+
+    On arm64 the GIC register banks are mapped by the arch core (see
+    arch/arm64/core/mmu.c), so GIC entries there are redundant and are
+    flagged as well. The GICv3 ITS is a separate node, but it is mapped by
+    its own driver through the device MMIO API, so ITS entries are redundant
+    too. On aarch32 the GIC still has to be mapped in mmu_regions.c, so GIC
+    entries are left untouched there.
+    """
+
+    name = "MmuRegionsCheck"
+    doc = zephyr_doc_detail_builder("/hardware/peripherals/index.html")
+
+    COMPAT_FOREACH_RE = re.compile(r'MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY\s*\(')
+    FLAT_ENTRY_RE = re.compile(r'MMU_REGION_FLAT_ENTRY\s*\(')
+    GIC_RE = re.compile(
+        r'"(?:[Gg][Ii][Cc][^"]*|[Ii][Tt][Ss])|'
+        r'DT_NODELABEL\s*\(\s*(?:gic(?:\b|_)|its\b)|'
+        r'arm_gic|gic[-_]v3[-_]its'
+    )
+    DEVICE_ATTR_RE = re.compile(r'MT_DEVICE|DEVICE_ATTR')
+    # arm64 maps the GIC in the arch core; aarch32 still needs it in the SoC.
+    ARM64_MMU_INCLUDE_RE = re.compile(r'arch/arm64/arm_mmu\.h')
+
+    DESC_COMPAT_ENTRY = (
+        "Driver compat MMU region entry. Use the device MMIO API "
+        "(DEVICE_MMIO_ROM / DEVICE_MMIO_MAP) instead of mapping "
+        "driver peripherals through mmu_regions.c."
+    )
+    DESC_DEVICE_ENTRY = (
+        "Non-GIC device MMU region entry. Drivers should use the "
+        "device MMIO API (DEVICE_MMIO_ROM / DEVICE_MMIO_MAP) instead "
+        "of static MMU region entries. If this is SoC infrastructure "
+        "without a struct device (e.g. clock control, IOMUXC), "
+        "document the reason in a comment."
+    )
+    DESC_MEMORY_ENTRY = (
+        "Non-GIC memory MMU region entry. Use the zephyr,memory-attr "
+        "devicetree property to describe memory regions instead of "
+        "static mmu_regions.c entries."
+    )
+    DESC_GIC_ENTRY = (
+        "Redundant GIC/ITS MMU region entry. On arm64 the GIC register banks "
+        "are mapped automatically by the arch core (arch/arm64/core/mmu.c), "
+        "and GICv3 ITS nodes are mapped by their own driver through the "
+        "device MMIO API, so this entry is no longer needed and should be "
+        "removed."
+    )
+
+    @staticmethod
+    def _extract_entry(text, start):
+        """Extract the full macro invocation starting at 'start'."""
+        depth = 0
+        for i in range(start, len(text)):
+            if text[i] == '(':
+                depth += 1
+            elif text[i] == ')':
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
+        return text[start:]
+
+    def _report(self, fname, text, match, desc):
+        """Emit a formatted failure for a match in text."""
+        line_no = text[: match.start()].count('\n') + 1
+        self.fmtd_failure('warning', 'MmuRegionsCheck', fname, line=line_no, desc=desc)
+
+    def _check_file(self, fname, text, added_set):
+        """Check a single mmu_regions file for redundant entries on added lines."""
+        # On arm64 the GIC is mapped by the arch core, so GIC entries are
+        # redundant there. aarch32 still maps it in the SoC, so leave those.
+        gic_mapped_by_arch = bool(self.ARM64_MMU_INCLUDE_RE.search(text))
+
+        for m in self.COMPAT_FOREACH_RE.finditer(text):
+            line_no = text[: m.start()].count('\n') + 1
+            if line_no in added_set:
+                self._report(fname, text, m, self.DESC_COMPAT_ENTRY)
+
+        for m in self.FLAT_ENTRY_RE.finditer(text):
+            entry = self._extract_entry(text, m.start())
+            line_no = text[: m.start()].count('\n') + 1
+            if line_no not in added_set:
+                continue
+            if self.GIC_RE.search(entry):
+                if gic_mapped_by_arch:
+                    self._report(fname, text, m, self.DESC_GIC_ENTRY)
+                continue
+            if self.DEVICE_ATTR_RE.search(entry):
+                self._report(fname, text, m, self.DESC_DEVICE_ENTRY)
+            else:
+                self._report(fname, text, m, self.DESC_MEMORY_ENTRY)
+
+    def run(self):
+        for fname in get_files(filter='d'):
+            if not (fname.endswith('mmu_regions.c') or fname.endswith('arm_mmu_regions.c')):
+                continue
+
+            added_set = added_lines(fname)
+            if not added_set:
+                continue
+
+            path = GIT_TOP / fname
+            text = path.read_text(encoding='utf-8', errors='ignore')
+            self._check_file(fname, text, added_set)
+
+
 class TextEncoding(ComplianceTest):
     """
     Check that any text file is encoded in ascii or utf-8.
@@ -2845,6 +2944,152 @@ def resolve_path_hint(hint):
         return hint
 
 
+def _run_test(testcase):
+    # Runs a single compliance test. Returns the test instance, whose 'case'
+    # and 'fmtd_failures' attributes hold the results.
+    test = testcase()
+    try:
+        test.run()
+    except EndTest:
+        pass
+    except KeyboardInterrupt:
+        # Let Ctrl-C (SIGINT) abort the whole run instead of being turned into
+        # a failure for the current check.
+        raise
+    except BaseException:
+        test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
+    return test
+
+
+def _run_tests_sequential(testcases):
+    # Runs 'testcases' one after the other. Returns a list of
+    # (testcase, case, fmtd_failures) tuples.
+    results = []
+    for testcase in testcases:
+        print(f"Running {testcase.name:30} tests in {resolve_path_hint(testcase.path_hint)} ...")
+        test = _run_test(testcase)
+        results.append((testcase, test.case, test.fmtd_failures))
+    return results
+
+
+def _init_worker(git_top, commit_range, loglevel):
+    # Recreates the global state set up by _main(): 'spawn' and 'forkserver'
+    # workers do not inherit it, and with 'fork' the inherited logging handler
+    # must be dropped so that init_logs() does not duplicate log output.
+    global GIT_TOP, COMMIT_RANGE
+    GIT_TOP = git_top
+    COMMIT_RANGE = commit_range
+
+    # Ctrl-C is dealt with by the parent process, which terminates the pool.
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+    root_logger = logging.getLogger('')
+    # Iterate over a copy: removeHandler() mutates root_logger.handlers.
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    init_logs(loglevel)
+
+
+def _run_test_in_worker(name):
+    # Runs the compliance test named 'name', capturing its stdout/stderr so
+    # that concurrently running checks do not interleave their output. The
+    # results are returned in picklable form: junitparser's TestCase wraps an
+    # XML element, so it crosses the process boundary as XML.
+    testcase = next(tc for tc in inheritors(ComplianceTest) if tc.name == name)
+
+    # Redirect the file descriptors themselves, not just sys.stdout/sys.stderr,
+    # so that output written directly to them by child processes is captured.
+    with tempfile.TemporaryFile(mode='w+', encoding='utf-8', errors='backslashreplace') as capture:
+        sys.stdout.flush()
+        sys.stderr.flush()
+        stdout_fd = os.dup(1)
+        stderr_fd = os.dup(2)
+        os.dup2(capture.fileno(), 1)
+        os.dup2(capture.fileno(), 2)
+        try:
+            test = _run_test(testcase)
+        finally:
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os.dup2(stdout_fd, 1)
+            os.dup2(stderr_fd, 2)
+            os.close(stdout_fd)
+            os.close(stderr_fd)
+        capture.seek(0)
+        output = capture.read()
+
+    return {
+        'name': name,
+        'case_xml': test.case.tostring(),
+        'fmtd_failures': [
+            {
+                'severity': f.severity,
+                'title': f.title,
+                'file': f.file,
+                'line': f.line,
+                'col': f.col,
+                'desc': f.desc,
+                'end_line': f.end_line,
+                'end_col': f.end_col,
+            }
+            for f in test.fmtd_failures
+        ],
+        'output': output,
+    }
+
+
+def _run_tests_parallel(testcases, jobs, loglevel):
+    # Runs 'testcases' in a pool of 'jobs' worker processes (one per CPU if
+    # 'jobs' is 0). Returns the same tuples as _run_tests_sequential().
+    jobs = jobs or os.cpu_count() or 1
+    jobs = min(jobs, len(testcases)) or 1
+
+    # Start the slowest checks first so that they are not left running alone at
+    # the end. The Kconfig-based checks each parse a full Kconfig tree.
+    testcases = sorted(testcases, key=lambda tc: (not issubclass(tc, KconfigCheck), tc.name))
+    by_name = {tc.name: tc for tc in testcases}
+
+    print(f"Running {len(testcases)} checks using {jobs} parallel workers")
+
+    # Ignore SIGINT while the workers are being started, so that they inherit
+    # SIG_IGN with the 'fork' start method too and Ctrl-C is left for this
+    # process to act on.
+    sigint = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        pool = multiprocessing.Pool(
+            processes=jobs,
+            initializer=_init_worker,
+            initargs=(GIT_TOP, COMMIT_RANGE, loglevel),
+        )
+    finally:
+        signal.signal(signal.SIGINT, sigint)
+
+    results = {}
+    try:
+        for res in pool.imap_unordered(_run_test_in_worker, [tc.name for tc in testcases]):
+            testcase = by_name[res['name']]
+            print(f"Completed {testcase.name:30} tests in {resolve_path_hint(testcase.path_hint)}")
+
+            if res['output']:
+                print(res['output'], end='' if res['output'].endswith('\n') else '\n')
+
+            case = TestCase.fromstring(res['case_xml'])
+            fmtd_failures = [FmtdFailure(**f) for f in res['fmtd_failures']]
+            results[testcase.name] = (testcase, case, fmtd_failures)
+        pool.close()
+    except BaseException:
+        # On Ctrl-C (or any other error), kill the workers straight away
+        # instead of waiting for the checks that are still running.
+        pool.terminate()
+        raise
+    finally:
+        pool.join()
+
+    # Return results in submission order, so that annotations and the JUnit
+    # output are deterministic.
+    return [results[tc.name] for tc in testcases]
+
+
 def parse_args(argv):
     default_range = 'HEAD~1..HEAD'
     # Git root empty tree sha1 (represents a tree with no files)
@@ -2867,7 +3112,7 @@ def parse_args(argv):
         const=f'{empty_tree}..HEAD',
         help="""The full history commit range. Useful for testing purposes.
                 WARNING: Should not be set for checks that perform per-commit actions, such as
-                GitDiffCheck/GitLint/Identity.""",
+                GitDiffCheck/GitLint.""",
     )
     parser.add_argument(
         '-o',
@@ -2913,8 +3158,25 @@ def parse_args(argv):
     parser.add_argument(
         '--annotate', action="store_true", help="Print GitHub Actions-compatible annotations."
     )
+    parser.add_argument(
+        '-p',
+        '--parallel',
+        nargs='?',
+        type=int,
+        const=0,
+        default=None,
+        metavar='N',
+        help='''Run the checks in parallel, using N worker processes (one per
+                CPU if N is 0 or omitted). The default is to run the checks
+                sequentially.''',
+    )
 
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    if args.parallel is not None and args.parallel < 0:
+        parser.error("argument -p/--parallel: N must be >= 0")
+
+    return args
 
 
 def _main(args):
@@ -2960,6 +3222,7 @@ def _main(args):
     included = list(map(lambda x: x.lower(), args.module))
     excluded = list(map(lambda x: x.lower(), args.exclude_module))
 
+    testcases = []
     for testcase in inheritors(ComplianceTest):
         # "Modules" and "testcases" are the same thing. Better flags would have
         # been --tests and --exclude-tests or the like, but it's awkward to
@@ -2972,21 +3235,20 @@ def _main(args):
             print("Skipping " + testcase.name)
             continue
 
-        test = testcase()
-        try:
-            print(f"Running {test.name:30} tests in {resolve_path_hint(test.path_hint)} ...")
-            test.run()
-        except EndTest:
-            pass
-        except BaseException:
-            test.failure(f"An exception occurred in {test.name}:\n{traceback.format_exc()}")
+        testcases.append(testcase)
 
+    if args.parallel is not None:
+        results = _run_tests_parallel(testcases, args.parallel, args.loglevel)
+    else:
+        results = _run_tests_sequential(testcases)
+
+    for testcase, case, fmtd_failures in results:
         # Annotate if required
         if args.annotate:
-            for res in test.fmtd_failures:
-                annotate(res, test.doc)
+            for res in fmtd_failures:
+                annotate(res, testcase.doc)
 
-        suite.add_testcase(test.case)
+        suite.add_testcase(case)
 
     if args.output:
         xml = JUnitXml()
@@ -3047,6 +3309,9 @@ def main(argv=None):
 
     try:
         n_fails = _main(args)
+    except KeyboardInterrupt:
+        # Abort cleanly on Ctrl-C rather than dumping a traceback.
+        sys.exit("Interrupted")
     except BaseException:
         # Catch BaseException instead of Exception to include stuff like
         # SystemExit (raised by sys.exit())

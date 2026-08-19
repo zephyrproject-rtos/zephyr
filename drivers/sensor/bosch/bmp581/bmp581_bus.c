@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "bmp581.h"
 #include "bmp581_bus.h"
 
 int bmp581_prep_reg_read_rtio_async(const struct bmp581_bus *bus,
@@ -15,18 +16,27 @@ int bmp581_prep_reg_read_rtio_async(const struct bmp581_bus *bus,
 	struct rtio_iodev *iodev = bus->rtio.iodev;
 	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(ctx);
 	struct rtio_sqe *read_buf_sqe = rtio_sqe_acquire(ctx);
+	uint8_t reg_addr = reg;
 
 	if (!write_reg_sqe || !read_buf_sqe) {
 		rtio_sqe_drop_all(ctx);
 		return -ENOMEM;
 	}
 
-	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
+	/* SPI reads require bit 7 of the register address to be set */
+	if (bus->rtio.type == BMP581_BUS_TYPE_SPI) {
+		reg_addr |= BMP5_SPI_RD_MASK;
+	}
+
+	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg_addr, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_read(read_buf_sqe, iodev, RTIO_PRIO_NORM, buf, size, NULL);
 	if (bus->rtio.type == BMP581_BUS_TYPE_I2C) {
 		read_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
+	} else if (bus->rtio.type == BMP581_BUS_TYPE_I3C) {
+		read_buf_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP | RTIO_IODEV_I3C_RESTART;
 	}
+	/* SPI does not require setting additional flags to the read-buf SQE */
 
 	/** Send back last SQE so it can be concatenated later. */
 	if (out) {
@@ -42,6 +52,48 @@ int bmp581_prep_reg_write_rtio_async(const struct bmp581_bus *bus,
 {
 	struct rtio *ctx = bus->rtio.ctx;
 	struct rtio_iodev *iodev = bus->rtio.iodev;
+
+	/** More than 7 won't work with tiny-write */
+	if (size > 7) {
+		return -EINVAL;
+	}
+
+	if (bus->rtio.type == BMP581_BUS_TYPE_SPI) {
+		struct rtio_sqe *last_sqe = NULL;
+
+		/*
+		 * BMP581 SPI burst writes consist of address/data pairs:
+		 *
+		 *   address[0], data[0], address[1], data[1], ...
+		 *
+		 * Chain all pairs into one transaction to keep CSB asserted.
+		 */
+		for (size_t i = 0; i < size; i++) {
+			uint8_t frame[] = {
+				(reg + i) & ~BMP5_SPI_RD_MASK,
+				buf[i],
+			};
+
+			last_sqe = rtio_sqe_acquire(ctx);
+			if (!last_sqe) {
+				rtio_sqe_drop_all(ctx);
+				return -ENOMEM;
+			}
+
+			rtio_sqe_prep_tiny_write(last_sqe, iodev, RTIO_PRIO_NORM, frame,
+						 sizeof(frame), NULL);
+			if (i + 1 < size) {
+				last_sqe->flags |= RTIO_SQE_TRANSACTION;
+			}
+		}
+
+		if (out) {
+			*out = last_sqe;
+		}
+
+		return size;
+	}
+
 	struct rtio_sqe *write_reg_sqe = rtio_sqe_acquire(ctx);
 	struct rtio_sqe *write_buf_sqe = rtio_sqe_acquire(ctx);
 
@@ -50,16 +102,13 @@ int bmp581_prep_reg_write_rtio_async(const struct bmp581_bus *bus,
 		return -ENOMEM;
 	}
 
-	/** More than 7 won't work with tiny-write */
-	if (size > 7) {
-		return -EINVAL;
-	}
-
 	rtio_sqe_prep_tiny_write(write_reg_sqe, iodev, RTIO_PRIO_NORM, &reg, 1, NULL);
 	write_reg_sqe->flags |= RTIO_SQE_TRANSACTION;
 	rtio_sqe_prep_tiny_write(write_buf_sqe, iodev, RTIO_PRIO_NORM, buf, size, NULL);
 	if (bus->rtio.type == BMP581_BUS_TYPE_I2C) {
 		write_buf_sqe->iodev_flags |= RTIO_IODEV_I2C_STOP;
+	} else if (bus->rtio.type == BMP581_BUS_TYPE_I3C) {
+		write_buf_sqe->iodev_flags |= RTIO_IODEV_I3C_STOP;
 	}
 
 	/** Send back last SQE so it can be concatenated later. */

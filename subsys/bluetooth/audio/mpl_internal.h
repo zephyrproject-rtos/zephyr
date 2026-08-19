@@ -31,8 +31,7 @@ extern "C" {
  * Set this equal to the minimum speed factor, to ensure only valid speed factors
  * are used when changing to/from zero
  */
-#define MPL_SEEKING_SPEED_FACTOR_STEP  4
-
+#define MPL_SEEKING_SPEED_FACTOR_STEP 4
 
 /* Track segments */
 struct mpl_tseg {

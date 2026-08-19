@@ -404,7 +404,7 @@ void intel_adsp_ipc_set_suspend_handler(const struct device *dev,
  * @param dev IPC device.
  * @param action Power state to be changed to.
  *
- * @return int Returns 0 on success or optionaly error code from the
+ * @return int Returns 0 on success or optionally error code from the
  *             registered ipc_power_control_api callbacks.
  *
  * @note PM lock is taken at the start of each power transition to prevent concurrent calls

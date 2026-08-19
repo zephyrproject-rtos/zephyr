@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Clock control definitions for Nordic nRF devices.
+ * @ingroup clock_control_nrf
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_
 
@@ -11,103 +17,127 @@
 #include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 
+/**
+ * @defgroup clock_control_nrf Nordic nRF
+ * @ingroup clock_control_interface_ext
+ * @{
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
+#if !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
 
 #include <hal/nrf_clock.h>
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 /** @brief Clocks handled by the CLOCK peripheral.
  *
- * Enum shall be used as a sys argument in clock_control API.
+ * Used as the @c sys argument to the clock_control API.
  */
-enum clock_control_nrf_type {
-	CLOCK_CONTROL_NRF_TYPE_HFCLK,
-	CLOCK_CONTROL_NRF_TYPE_LFCLK,
+enum __deprecated clock_control_nrf_type {
+	CLOCK_CONTROL_NRF_TYPE_HFCLK, /**< High-frequency clock. */
+	CLOCK_CONTROL_NRF_TYPE_LFCLK, /**< Low-frequency clock. */
 #if NRF_CLOCK_HAS_HFCLK24M
-	CLOCK_CONTROL_NRF_TYPE_HFCLK24M,
+	CLOCK_CONTROL_NRF_TYPE_HFCLK24M, /**< 24 MHz high-frequency clock. */
 #endif
 #if NRF_CLOCK_HAS_HFCLK192M
-	CLOCK_CONTROL_NRF_TYPE_HFCLK192M,
+	CLOCK_CONTROL_NRF_TYPE_HFCLK192M, /**< 192 MHz high-frequency clock. */
 #endif
 #if NRF_CLOCK_HAS_HFCLKAUDIO
-	CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO,
+	CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO, /**< High-frequency audio clock. */
 #endif
-	CLOCK_CONTROL_NRF_TYPE_COUNT
+	CLOCK_CONTROL_NRF_TYPE_COUNT /**< Number of clock types. */
 };
 
-/* Define can be used with clock control API instead of enum directly to
- * increase code readability.
+/** @name Clock control subsystem identifiers
+ *
+ * These can be used with the clock control API instead of casting the
+ * @ref clock_control_nrf_type enumerators directly, to improve readability.
+ * @{
  */
+/** @brief High-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK) __DEPRECATED_MACRO
+/** @brief Low-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_LF \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK) __DEPRECATED_MACRO
+/** @brief 24 MHz high-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF24M \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK24M) __DEPRECATED_MACRO
+/** @brief 192 MHz high-frequency clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HF192M \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLK192M) __DEPRECATED_MACRO
+/** @brief High-frequency audio clock subsystem. */
 #define CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO \
-	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO)
+	((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_HFCLKAUDIO) __DEPRECATED_MACRO
 
-/** @brief LF clock start modes. */
-enum nrf_lfclk_start_mode {
-	CLOCK_CONTROL_NRF_LF_START_NOWAIT,
-	CLOCK_CONTROL_NRF_LF_START_AVAILABLE,
-	CLOCK_CONTROL_NRF_LF_START_STABLE,
-};
+/** @cond INTERNAL_HIDDEN */
 
 /* Define 32KHz clock source */
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_RC
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_RC
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_RC __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_XTAL
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_SYNTH
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_SYNTH
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_SYNTH __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_LOW_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_LOW_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_LOW_SWING __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_EXT_FULL_SWING
-#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_FULL_SWING
+#define CLOCK_CONTROL_NRF_K32SRC NRF_CLOCK_LFCLK_XTAL_FULL_SWING __DEPRECATED_MACRO
 #endif
 
 /* Define 32KHz clock accuracy */
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_500PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 0
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 0 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_250PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 1
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 1 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_150PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 2
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 2 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_100PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 3
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 3 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_75PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 4
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 4 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_50PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 5
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 5 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_30PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 6
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 6 __DEPRECATED_MACRO
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF_K32SRC_20PPM
-#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7
+#define CLOCK_CONTROL_NRF_K32SRC_ACCURACY 7 __DEPRECATED_MACRO
 #endif
+
+/** @endcond */
+
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
+
+/** @brief LF clock start modes. */
+enum nrf_lfclk_start_mode {
+	CLOCK_CONTROL_NRF_LF_START_NOWAIT,    /**< Return without waiting for the clock. */
+	CLOCK_CONTROL_NRF_LF_START_AVAILABLE, /**< Wait until the clock is available. */
+	CLOCK_CONTROL_NRF_LF_START_STABLE,    /**< Wait until the clock is stable. */
+};
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Force LF clock calibration. */
 void z_nrf_clock_calibration_force_start(void);
 
 /** @brief Return number of calibrations performed.
  *
- * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} or
+ * @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -115,7 +145,8 @@ int z_nrf_clock_calibration_count(void);
 
 /** @brief Return number of attempts when calibration was skipped.
  *
- * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
+ * Valid when @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} or
+ * @kconfig{CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_DEBUG} is set.
  *
  * @return Number of calibrations or -1 if feature is disabled.
  */
@@ -128,13 +159,15 @@ int z_nrf_clock_calibration_skips_count(void);
  */
 bool z_nrf_clock_calibration_is_in_progress(void);
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 /** @brief Get onoff service for given clock subsystem.
  *
  * @param sys Subsystem.
  *
  * @return Service handler or NULL.
  */
-struct onoff_manager *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
+struct onoff_manager __deprecated *z_nrf_clock_control_get_onoff(clock_control_subsys_t sys);
+#endif
 
 /** @brief Permanently enable low frequency clock.
  *
@@ -173,26 +206,39 @@ void z_nrf_clock_bt_ctlr_hf_release(void);
  */
 uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 
-#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
+/** @endcond */
 
-/* Specifies to use the maximum available frequency for a given clock. */
+#endif /* !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) */
+
+/** @brief Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
 
-/* Specifies to use the maximum available accuracy for a given clock. */
+/** @brief Specifies to use the maximum available accuracy for a given clock. */
 #define NRF_CLOCK_CONTROL_ACCURACY_MAX      1
-/* Specifies the required clock accuracy in parts-per-million. */
+/** @brief Specifies the required clock accuracy in parts-per-million. */
 #define NRF_CLOCK_CONTROL_ACCURACY_PPM(ppm) (ppm)
 
-/* Specifies that high precision of the clock is required. */
+/** @brief Specifies that high precision of the clock is required. */
 #define NRF_CLOCK_CONTROL_PRECISION_HIGH    1
-/* Specifies that default precision of the clock is sufficient. */
+/** @brief Specifies that default precision of the clock is sufficient. */
 #define NRF_CLOCK_CONTROL_PRECISION_DEFAULT 0
 
-/* AUXPLL devicetree takes in raw register values, these are the actual frequencies outputted */
+/** @name AUXPLL output frequencies
+ *
+ * The AUXPLL Devicetree takes in raw register values; these are the actual output frequencies.
+ * @{
+ */
+/** @brief Minimum AUXPLL output frequency, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_MIN_HZ        80000000
+/** @brief AUXPLL output frequency for 44.1 kHz audio, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_44K1_HZ 11289591
+/** @brief AUXPLL output frequency for 24 MHz USB, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_USB24M_HZ     24000000
+/** @brief AUXPLL output frequency for 48 kHz audio, in Hz. */
 #define CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ  12287963
+/** @} */
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Internal helper macro to map DT property value to output frequency */
 #define _CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(freq_val)			  \
@@ -205,11 +251,22 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 	 (freq_val) == NRF_AUXPLL_FREQ_DIV_AUDIO_48K ?			  \
 		       CLOCK_CONTROL_NRF_AUXPLL_FREQ_OUT_AUDIO_48K_HZ : 0)
 
-/* Public macro to get output frequency of AUXPLL */
+/** @endcond */
+
+/**
+ * @brief Get the output frequency of an AUXPLL Devicetree node.
+ *
+ * @param node Devicetree node identifier of the AUXPLL.
+ * @return Output frequency in Hz, or 0 if the node has no @c nordic,frequency property.
+ */
 #define CLOCK_CONTROL_NRF_AUXPLL_GET_FREQ(node) \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, nordic_frequency), \
 		(_CLOCK_CONTROL_NRF_AUXPLL_MAP_FREQ(DT_PROP(node, nordic_frequency))), \
 		(0))
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
 
 struct nrf_clock_spec {
 	uint32_t frequency;
@@ -235,6 +292,12 @@ __subsystem struct nrf_clock_control_driver_api {
 				const struct nrf_clock_spec *spec,
 				uint32_t *startup_time_us);
 };
+
+DEVICE_API_EXTENDS(nrf_clock_control, clock_control, std_api);
+
+/**
+ * @endcond
+ */
 
 /**
  * @brief Request a reservation to use a given clock with specified attributes.
@@ -273,10 +336,7 @@ int nrf_clock_control_request(const struct device *dev,
 			      const struct nrf_clock_spec *spec,
 			      struct onoff_client *cli)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->request(dev, spec, cli);
+	return DEVICE_API_GET(nrf_clock_control, dev)->request(dev, spec, cli);
 }
 
 /**
@@ -315,10 +375,7 @@ static inline
 int nrf_clock_control_release(const struct device *dev,
 			      const struct nrf_clock_spec *spec)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->release(dev, spec);
+	return DEVICE_API_GET(nrf_clock_control, dev)->release(dev, spec);
 }
 
 /**
@@ -348,10 +405,7 @@ int nrf_clock_control_cancel_or_release(const struct device *dev,
 					const struct nrf_clock_spec *spec,
 					struct onoff_client *cli)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
-
-	return api->cancel_or_release(dev, spec, cli);
+	return DEVICE_API_GET(nrf_clock_control, dev)->cancel_or_release(dev, spec, cli);
 }
 
 /**
@@ -368,8 +422,7 @@ static inline int nrf_clock_control_resolve(const struct device *dev,
 					    const struct nrf_clock_spec *req_spec,
 					    struct nrf_clock_spec *res_spec)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
+	const struct nrf_clock_control_driver_api *api = DEVICE_API_GET(nrf_clock_control, dev);
 
 	if (api->resolve == NULL) {
 		return -ENOSYS;
@@ -392,8 +445,7 @@ static inline int nrf_clock_control_get_startup_time(const struct device *dev,
 						     const struct nrf_clock_spec *spec,
 						     uint32_t *startup_time_us)
 {
-	const struct nrf_clock_control_driver_api *api =
-		(const struct nrf_clock_control_driver_api *)dev->api;
+	const struct nrf_clock_control_driver_api *api = DEVICE_API_GET(nrf_clock_control, dev);
 
 	if (api->get_startup_time == NULL) {
 		return -ENOSYS;
@@ -429,5 +481,7 @@ void nrf_clock_control_hfxo_release(void);
 #ifdef __cplusplus
 }
 #endif
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_NRF_CLOCK_CONTROL_H_ */

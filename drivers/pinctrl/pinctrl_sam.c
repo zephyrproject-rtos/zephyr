@@ -71,6 +71,14 @@ static void pinctrl_configure_pin(pinctrl_soc_pin_t pin)
 	if (port_func == SAM_PINMUX_FUNC_periph) {
 		soc_pin.flags |= (SAM_PINMUX_PERIPH_GET(pin)
 				  << SOC_GPIO_FUNC_POS);
+	} else if (port_func == SAM_PINMUX_FUNC_extra) {
+		/* Extra-function pins (e.g. ADC analog inputs) need
+		 * high-impedance PIO input so no peripheral output
+		 * driver interferes with the analog signal path.
+		 */
+		soc_pin.flags |= SOC_GPIO_FUNC_IN;
+	} else {
+		/* GPIO function: no peripheral or extra flags needed. */
 	}
 
 	soc_gpio_configure(&soc_pin);

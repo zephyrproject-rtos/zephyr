@@ -1,6 +1,6 @@
 board:
   name: pic64gx_curiosity_kit
-  full_name: pic64gx_curiosity_kit
+  full_name: PIC64GX1000 Curiosity kit
   vendor: microchip
   socs:
   - name: pic64gx1000

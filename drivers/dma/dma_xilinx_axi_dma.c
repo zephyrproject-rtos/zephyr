@@ -13,6 +13,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/cache.h>
 
 #include "dma_xilinx_axi_dma.h"
@@ -126,13 +127,13 @@ LOG_MODULE_REGISTER(dma_xilinx_axi_dma, CONFIG_DMA_LOG_LEVEL);
 
 static inline void dma_xilinx_axi_dma_flush_dcache(void *addr, size_t len)
 {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
 	sys_cache_data_flush_range(addr, len);
 #endif
 }
 static inline void dma_xilinx_axi_dma_invd_dcache(void *addr, size_t len)
 {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
 	sys_cache_data_invd_range(addr, len);
 #endif
 }
@@ -229,12 +230,23 @@ struct dma_xilinx_axi_dma_channel {
 struct dma_xilinx_axi_dma_data {
 	struct dma_context ctx;
 	struct dma_xilinx_axi_dma_channel *channels;
+	/* Set by dma_stop(); dma_configure() performs a DMA soft-reset then clears it. */
+	bool needs_dma_soft_reset;
 
 	__aligned(64) struct dma_xilinx_axi_dma_sg_descriptor
 		descriptors_tx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_TX];
 	__aligned(64) struct dma_xilinx_axi_dma_sg_descriptor
 		descriptors_rx[CONFIG_DMA_XILINX_AXI_DMA_SG_DESCRIPTOR_NUM_RX];
 };
+
+/*
+ * Bits used in the lock key returned by dma_xilinx_axi_dma_lock_irq() when
+ * CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS is selected. Each bit records
+ * whether the corresponding channel's IRQ was enabled before locking, so
+ * dma_xilinx_axi_dma_unlock_irq() can restore the prior state.
+ */
+#define XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED BIT(XILINX_AXI_DMA_TX_CHANNEL_NUM)
+#define XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED BIT(XILINX_AXI_DMA_RX_CHANNEL_NUM)
 
 static inline int dma_xilinx_axi_dma_lock_irq(const struct device *dev, const uint32_t channel_num)
 {
@@ -244,17 +256,20 @@ static inline int dma_xilinx_axi_dma_lock_irq(const struct device *dev, const ui
 	if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS)) {
 		ret = irq_lock();
 	} else if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS)) {
-		/* TX is 0, RX is 1 */
-		ret = irq_is_enabled(data->channels[0].irq) ? 1 : 0;
-		ret |= (irq_is_enabled(data->channels[1].irq) ? 1 : 0) << 1;
+		const struct dma_xilinx_axi_dma_channel *tx_chan =
+			&data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM];
+		const struct dma_xilinx_axi_dma_channel *rx_chan =
+			&data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM];
+
+		ret = irq_is_enabled(tx_chan->irq) ? XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED : 0;
+		ret |= irq_is_enabled(rx_chan->irq) ? XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED : 0;
 
 		LOG_DBG("DMA IRQ state: %x TX IRQN: %" PRIu32 " RX IRQN: %" PRIu32, ret,
-			data->channels[0].irq, data->channels[1].irq);
+			tx_chan->irq, rx_chan->irq);
 
-		irq_disable(data->channels[0].irq);
-		irq_disable(data->channels[1].irq);
+		irq_disable(tx_chan->irq);
+		irq_disable(rx_chan->irq);
 	} else {
-		/* CONFIG_DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ */
 		ret = irq_is_enabled(data->channels[channel_num].irq);
 
 		LOG_DBG("DMA IRQ state: %x ", ret);
@@ -273,18 +288,14 @@ static inline void dma_xilinx_axi_dma_unlock_irq(const struct device *dev,
 	if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_ALL_IRQS)) {
 		irq_unlock(key);
 	} else if (IS_ENABLED(CONFIG_DMA_XILINX_AXI_DMA_LOCK_DMA_IRQS)) {
-		if (key & 0x1) {
-			/* TX was enabled */
-			irq_enable(data->channels[0].irq);
+		if (key & XILINX_AXI_DMA_LOCK_KEY_TX_ENABLED) {
+			irq_enable(data->channels[XILINX_AXI_DMA_TX_CHANNEL_NUM].irq);
 		}
-		if (key & 0x2) {
-			/* RX was enabled */
-			irq_enable(data->channels[1].irq);
+		if (key & XILINX_AXI_DMA_LOCK_KEY_RX_ENABLED) {
+			irq_enable(data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM].irq);
 		}
 	} else {
-		/* CONFIG_DMA_XILINX_AXI_DMA_LOCK_CHANNEL_IRQ */
 		if (key) {
-			/* was enabled */
 			irq_enable(data->channels[channel_num].irq);
 		}
 	}
@@ -381,19 +392,33 @@ dma_xilinx_axi_dma_clean_up_sg_descriptors(const struct device *dev,
 		}
 
 		if (channel_data->completion_callback) {
-			LOG_DBG("Completed packet descriptor %zu with %u bytes!",
-				channel_data->completion_desc_index, channel_data->last_rx_size);
-			if (channel_data->direction == PERIPHERAL_TO_MEMORY) {
+			if (channel_data->direction == MEMORY_TO_PERIPHERAL) {
+				/*
+				 * TX path: fire callback only for the EOF (last
+				 * fragment) descriptor.  Intermediate fragment
+				 * descriptors completing does not mean the whole
+				 * packet is done.
+				 */
+				bool is_eof = (current_descriptor->control &
+					       XILINX_AXI_DMA_SG_DESCRIPTOR_CTRL_EOF_MASK) != 0;
+
+				if (is_eof) {
+					channel_data->completion_callback(
+						dev,
+						channel_data->completion_callback_user_data,
+						XILINX_AXI_DMA_TX_CHANNEL_NUM,
+						retval);
+				}
+			} else {
+				/* RX path: each descriptor = one complete frame. */
 				dma_xilinx_axi_dma_invd_dcache(
 					(void *)current_descriptor->buffer_address,
 					channel_data->last_rx_size);
+				channel_data->completion_callback(
+					dev, channel_data->completion_callback_user_data,
+					XILINX_AXI_DMA_RX_CHANNEL_NUM,
+					retval);
 			}
-			channel_data->completion_callback(
-				dev, channel_data->completion_callback_user_data,
-				channel_data->direction == MEMORY_TO_PERIPHERAL
-					? XILINX_AXI_DMA_TX_CHANNEL_NUM
-					: XILINX_AXI_DMA_RX_CHANNEL_NUM,
-				retval);
 		}
 
 		/* clears the flags such that the DMA does not transfer it twice or errors */
@@ -555,7 +580,7 @@ static int dma_xilinx_axi_dma_start(const struct device *dev, uint32_t channel)
 
 #ifdef CONFIG_DMA_64BIT
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_TAILDESC,
-				     (uint32_t)(((uintptr_t)current_descriptor) & 0xffffffff));
+				     (uint32_t)(((uintptr_t)current_descriptor) & UINT32_MAX));
 	dma_xilinx_axi_dma_write_reg(channel_data, XILINX_AXI_DMA_REG_TAILDESC_MSB,
 				     (uint32_t)(((uintptr_t)current_descriptor) >> 32));
 #else
@@ -593,6 +618,9 @@ static int dma_xilinx_axi_dma_stop(const struct device *dev, uint32_t channel)
 
 	/* commit before returning to caller */
 	barrier_dmem_fence_full();
+
+	/* Flag DMA soft reset on next dma_configure(). */
+	data->needs_dma_soft_reset = true;
 
 	return 0;
 }
@@ -658,9 +686,11 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 		/* Ensure DMA can see contents of TX buffer */
 		dma_xilinx_axi_dma_flush_dcache((void *)buffer_addr, block_size);
 	} else {
-#ifdef CONFIG_DMA_XILINX_AXI_DMA_DISABLE_CACHE_WHEN_ACCESSING_SG_DESCRIPTORS
-		if (((uintptr_t)buffer_addr & (sys_cache_data_line_size_get() - 1)) ||
-		    (block_size & (sys_cache_data_line_size_get() - 1))) {
+#ifdef CONFIG_DMA_XILINX_AXI_DMA_MANUAL_CACHE_COHERENCY
+		const size_t cache_line_mask = sys_cache_data_line_size_get() - 1;
+
+		if (((uintptr_t)buffer_addr & cache_line_mask) ||
+		    (block_size & cache_line_mask)) {
 			LOG_ERR("RX buffer address and block size must be cache line size aligned");
 			dma_xilinx_axi_dma_unlock_irq(dev, channel, irq_key);
 			return -EINVAL;
@@ -673,7 +703,7 @@ static inline int dma_xilinx_axi_dma_transfer_block(const struct device *dev, ui
 	}
 
 #ifdef CONFIG_DMA_64BIT
-	current_descriptor->buffer_address = (uint32_t)buffer_addr & 0xffffffff;
+	current_descriptor->buffer_address = (uint32_t)buffer_addr & UINT32_MAX;
 	current_descriptor->buffer_address_msb = (uint32_t)(buffer_addr >> 32);
 #else
 	current_descriptor->buffer_address = buffer_addr;
@@ -731,18 +761,36 @@ static inline int dma_xilinx_axi_dma_config_reload(const struct device *dev, uin
 		true);
 }
 
-static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t channel,
-					struct dma_config *dma_cfg)
+/* Soft-reset the DMA core if dma_stop() flagged it as needed. */
+static int dma_xilinx_axi_dma_soft_reset_if_needed(struct dma_xilinx_axi_dma_data *data)
 {
-	const struct dma_xilinx_axi_dma_config *cfg = dev->config;
-	struct dma_xilinx_axi_dma_data *data = dev->data;
-	struct dma_block_config *current_block = dma_cfg->head_block;
-	int ret = 0;
-	int block_count = 0;
+	if (!data->needs_dma_soft_reset) {
+		return 0;
+	}
 
-	if (channel >= cfg->channels) {
+	LOG_INF("Soft-resetting the DMA core before re-configure!");
+	dma_xilinx_axi_dma_write_reg(&data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM],
+				     XILINX_AXI_DMA_REG_DMACR,
+				     XILINX_AXI_DMA_REGS_DMACR_RESET);
+	if (!WAIT_FOR(!(dma_xilinx_axi_dma_read_reg(
+					  &data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM],
+					  XILINX_AXI_DMA_REG_DMACR) &
+				XILINX_AXI_DMA_REGS_DMACR_RESET),
+		      XILINX_AXI_DMA_RESET_TIMEOUT_MS * USEC_PER_MSEC, k_msleep(1))) {
+		LOG_ERR("DMA reset timed out!");
+		return -EIO;
+	}
+
+	data->needs_dma_soft_reset = false;
+	return 0;
+}
+
+static int dma_xilinx_axi_dma_validate_config(uint32_t channel, uint32_t num_channels,
+					       const struct dma_config *dma_cfg)
+{
+	if (channel >= num_channels) {
 		LOG_ERR("Invalid channel %" PRIu32 " - must be < %" PRIu32 "!", channel,
-			cfg->channels);
+			num_channels);
 		return -EINVAL;
 	}
 
@@ -761,6 +809,7 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		LOG_ERR("invalid source_addr_adj %" PRIu16, dma_cfg->head_block->source_addr_adj);
 		return -ENOTSUP;
 	}
+
 	if (dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_INCREMENT &&
 	    dma_cfg->head_block->dest_addr_adj != DMA_ADDR_ADJ_NO_CHANGE) {
 		LOG_ERR("invalid dest_addr_adj %" PRIu16, dma_cfg->head_block->dest_addr_adj);
@@ -779,53 +828,100 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 		return -ENOTSUP;
 	}
 
-	LOG_DBG("Configuring %zu DMA descriptors for %s", data->channels[channel].num_descriptors,
-		channel == XILINX_AXI_DMA_TX_CHANNEL_NUM ? "TX" : "RX");
+	return 0;
+}
 
-	/* only configures fields whos default is not 0, as descriptors are in zero-initialized */
-	/* segment */
-	data->channels[channel].populated_desc_index = data->channels[channel].num_descriptors - 1;
-	data->channels[channel].completion_desc_index = 0;
-	for (int i = 0; i < data->channels[channel].num_descriptors; i++) {
-		uintptr_t nextdesc;
-		uint32_t low_bytes;
-#ifdef CONFIG_DMA_64BIT
-		uint32_t high_bytes;
-#endif
-		if (i + 1 < data->channels[channel].num_descriptors) {
-			nextdesc = (uintptr_t)&data->channels[channel].descriptors[i + 1];
-		} else {
-			nextdesc = (uintptr_t)&data->channels[channel].descriptors[0];
-		}
-		/* SG descriptors have 64-byte alignment requirements */
-		/* we check this here, for each descriptor */
-		__ASSERT(
-			nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK == 0,
-			"SG descriptor address %p (offset %u) was not aligned to 64-byte boundary!",
-			(void *)nextdesc, i);
+static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t channel,
+					struct dma_config *dma_cfg)
+{
+	const struct dma_xilinx_axi_dma_config *cfg = dev->config;
+	struct dma_xilinx_axi_dma_data *data = dev->data;
+	struct dma_block_config *current_block = dma_cfg->head_block;
+	int ret = 0;
+	int block_count = 0;
+	int err;
 
-		low_bytes = (uint32_t)(((uint64_t)nextdesc) & 0xffffffff);
-		data->channels[channel].descriptors[i].nxtdesc = low_bytes;
-
-#ifdef CONFIG_DMA_64BIT
-		high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & 0xffffffff);
-		data->channels[channel].descriptors[i].nxtdesc_msb = high_bytes;
-#endif
-		dma_xilinx_axi_dma_flush_dcache((void *)&data->channels[channel].descriptors[i],
-						sizeof(data->channels[channel].descriptors[i]));
+	/* Check all caller-supplied parameters before touching DMA registers. */
+	err = dma_xilinx_axi_dma_validate_config(channel, cfg->channels, dma_cfg);
+	if (err) {
+		return err;
 	}
 
+	/* After dma_stop(), soft-reset the DMA to clear any error bits before re-use. */
+	err = dma_xilinx_axi_dma_soft_reset_if_needed(data);
+
+	if (err) {
+		return err;
+	}
+
+	/*
+	 * Ring reset (memset, index rewind, CURDESC write) is only safe when
+	 * DMA is HALTED (RS=0). When IDLE/RUNNING, skip the reset and preserve
+	 * ring indices so transfer_block() appends at the correct position;
+	 * CURDESC writes are silently ignored by hardware when not HALTED.
+	 */
+	uint32_t dmasr_cfg = dma_xilinx_axi_dma_read_reg(&data->channels[channel],
+							  XILINX_AXI_DMA_REG_DMASR);
+	bool dma_is_halted = (dmasr_cfg & XILINX_AXI_DMA_REGS_DMASR_HALTED) != 0;
+
+	if (dma_is_halted) {
+		/* Zero all descriptors so stale control/buffer fields are cleared. */
+		memset((void *)(uintptr_t)data->channels[channel].descriptors, 0,
+		       data->channels[channel].num_descriptors *
+			       sizeof(struct dma_xilinx_axi_dma_sg_descriptor));
+
+		data->channels[channel].populated_desc_index =
+			data->channels[channel].num_descriptors - 1;
+		data->channels[channel].completion_desc_index = 0;
+
+		/* Build the circular nxtdesc ring links. */
+		for (int i = 0; i < (int)data->channels[channel].num_descriptors; i++) {
+			uintptr_t nextdesc;
+			uint32_t low_bytes;
 #ifdef CONFIG_DMA_64BIT
-	dma_xilinx_axi_dma_write_reg(
-		&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC,
-		(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) & 0xffffffff));
-	dma_xilinx_axi_dma_write_reg(
-		&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC_MSB,
-		(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) >> 32));
-#else
-	dma_xilinx_axi_dma_write_reg(&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC,
-				     (uint32_t)(uintptr_t)&data->channels[channel].descriptors[0]);
+			uint32_t high_bytes;
 #endif
+			if (i + 1 < (int)data->channels[channel].num_descriptors) {
+				nextdesc =
+					(uintptr_t)&data->channels[channel].descriptors[i + 1];
+			} else {
+				nextdesc =
+					(uintptr_t)&data->channels[channel].descriptors[0];
+			}
+
+			__ASSERT(
+				(nextdesc & XILINX_AXI_DMA_SG_DESCRIPTOR_ADDRESS_MASK) == 0,
+				"SG descriptor address %p (offset %u) not 64-byte aligned!",
+				(void *)nextdesc, i);
+
+			low_bytes = (uint32_t)(((uint64_t)nextdesc) & UINT32_MAX);
+			data->channels[channel].descriptors[i].nxtdesc = low_bytes;
+
+#ifdef CONFIG_DMA_64BIT
+			high_bytes = (uint32_t)(((uint64_t)nextdesc >> 32) & UINT32_MAX);
+			data->channels[channel].descriptors[i].nxtdesc_msb = high_bytes;
+#endif
+			dma_xilinx_axi_dma_flush_dcache(
+				(void *)(uintptr_t)&data->channels[channel].descriptors[i],
+				sizeof(data->channels[channel].descriptors[i]));
+		}
+
+		/* Write CURDESC = start of ring (only valid while HALTED). */
+#ifdef CONFIG_DMA_64BIT
+		dma_xilinx_axi_dma_write_reg(
+			&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC,
+			(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) &
+				   UINT32_MAX));
+		dma_xilinx_axi_dma_write_reg(
+			&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC_MSB,
+			(uint32_t)(((uintptr_t)&data->channels[channel].descriptors[0]) >> 32));
+#else
+		dma_xilinx_axi_dma_write_reg(
+			&data->channels[channel], XILINX_AXI_DMA_REG_CURDESC,
+			(uint32_t)(uintptr_t)&data->channels[channel].descriptors[0]);
+#endif
+	}
+
 	data->channels[channel].check_csum_in_isr = false;
 
 	/* the DMA passes the app fields through to the AXIStream-connected device */
@@ -860,7 +956,7 @@ static int dma_xilinx_axi_dma_configure(const struct device *dev, uint32_t chann
 	data->channels[channel].completion_callback = dma_cfg->dma_callback;
 	data->channels[channel].completion_callback_user_data = dma_cfg->user_data;
 
-	LOG_INF("Completed configuration of AXI DMA - Starting transfer!");
+	LOG_DBG("Completed configuration of AXI DMA - Starting transfer!");
 
 	do {
 		ret = ret ||
@@ -907,7 +1003,6 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 {
 	const struct dma_xilinx_axi_dma_config *cfg = dev->config;
 	struct dma_xilinx_axi_dma_data *data = dev->data;
-	bool reset = false;
 
 	if (cfg->channels != XILINX_AXI_DMA_NUM_CHANNELS) {
 		LOG_ERR("Invalid number of configured channels (%" PRIu32
@@ -936,17 +1031,12 @@ static int dma_xilinx_axi_dma_init(const struct device *dev)
 	 */
 	dma_xilinx_axi_dma_write_reg(&data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM],
 				     XILINX_AXI_DMA_REG_DMACR, XILINX_AXI_DMA_REGS_DMACR_RESET);
-	for (int i = 0; i < XILINX_AXI_DMA_RESET_TIMEOUT_MS; i++) {
-		if (dma_xilinx_axi_dma_read_reg(&data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM],
-						XILINX_AXI_DMA_REG_DMACR) &
-		    XILINX_AXI_DMA_REGS_DMACR_RESET) {
-			k_msleep(1);
-		} else {
-			reset = true;
-			break;
-		}
-	}
-	if (!reset) {
+
+	if (!WAIT_FOR(!(dma_xilinx_axi_dma_read_reg(
+				  &data->channels[XILINX_AXI_DMA_RX_CHANNEL_NUM],
+				  XILINX_AXI_DMA_REG_DMACR) &
+			XILINX_AXI_DMA_REGS_DMACR_RESET),
+		      XILINX_AXI_DMA_RESET_TIMEOUT_MS * USEC_PER_MSEC, k_msleep(1))) {
 		LOG_ERR("DMA reset timed out!");
 		return -EIO;
 	}

@@ -126,3 +126,5 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 					      void *rsp, uint16_t *rsp_len);
 uint8_t btp_bap_scan_delegator_add_src(const void *cmd, uint16_t cmd_len,
 				       void *rsp, uint16_t *rsp_len);
+uint8_t btp_bap_set_sink_broadcast_code(const void *cmd, uint16_t cmd_len, void *rsp,
+					uint16_t *rsp_len);

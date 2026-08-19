@@ -273,13 +273,13 @@ int iis328dq_init_interrupt(const struct device *dev)
 	/* setup data ready gpio interrupt (INT1 and INT2) */
 	if (cfg->gpio_int1.port) {
 		if (!gpio_is_ready_dt(&cfg->gpio_int1)) {
-			LOG_ERR("INT_1 pin is not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int1.port);
 			return -EINVAL;
 		}
 	}
 	if (cfg->gpio_int2.port) {
 		if (!gpio_is_ready_dt(&cfg->gpio_int2)) {
-			LOG_ERR("INT_2 pin is not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->gpio_int2.port);
 			return -EINVAL;
 		}
 	}

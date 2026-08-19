@@ -14,10 +14,13 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/services/ots.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(media_controller_test);
 
 #ifdef CONFIG_BT_MCS
 extern enum bst_result_t bst_result;
@@ -73,7 +76,7 @@ static struct media_player *current_player;
 
 static void local_player_instance_cb(struct media_player *player, int err)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Local player instance failed (%d)", err);
 		return;
 	}
@@ -84,7 +87,7 @@ static void local_player_instance_cb(struct media_player *player, int err)
 
 static void discover_player_cb(struct media_player *player, int err)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Discover player failed (%d)\n", err);
 		return;
 	}
@@ -95,7 +98,9 @@ static void discover_player_cb(struct media_player *player, int err)
 
 static void player_name_cb(struct media_player *plr, int err, const char *name)
 {
-	if (err) {
+	ARG_UNUSED(name);
+
+	if (err != 0) {
 		FAIL("Player Name read failed (%d)\n", err);
 		return;
 	}
@@ -110,7 +115,7 @@ static void player_name_cb(struct media_player *plr, int err, const char *name)
 
 static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Icon Object ID read failed (%d)", err);
 		return;
 	}
@@ -126,7 +131,9 @@ static void icon_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void icon_url_cb(struct media_player *plr, int err, const char *url)
 {
-	if (err) {
+	ARG_UNUSED(url);
+
+	if (err != 0) {
 		FAIL("Icon URL read failed (%d)", err);
 		return;
 	}
@@ -140,7 +147,9 @@ static void icon_url_cb(struct media_player *plr, int err, const char *url)
 
 static void track_title_cb(struct media_player *plr, int err, const char *title)
 {
-	if (err) {
+	ARG_UNUSED(title);
+
+	if (err != 0) {
 		FAIL("Track title read failed (%d)", err);
 		return;
 	}
@@ -155,7 +164,9 @@ static void track_title_cb(struct media_player *plr, int err, const char *title)
 
 static void track_duration_cb(struct media_player *plr, int err, int32_t duration)
 {
-	if (err) {
+	ARG_UNUSED(duration);
+
+	if (err != 0) {
 		FAIL("Track duration read failed (%d)", err);
 		return;
 	}
@@ -170,7 +181,7 @@ static void track_duration_cb(struct media_player *plr, int err, int32_t duratio
 
 static void track_position_recv_cb(struct media_player *plr, int err, int32_t position)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Track position read failed (%d)", err);
 		return;
 	}
@@ -186,7 +197,7 @@ static void track_position_recv_cb(struct media_player *plr, int err, int32_t po
 
 static void track_position_write_cb(struct media_player *plr, int err, int32_t position)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Track position write failed (%d)", err);
 		return;
 	}
@@ -202,7 +213,7 @@ static void track_position_write_cb(struct media_player *plr, int err, int32_t p
 
 static void playback_speed_recv_cb(struct media_player *plr, int err, int8_t speed)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Playback speed read failed (%d)", err);
 		return;
 	}
@@ -218,7 +229,7 @@ static void playback_speed_recv_cb(struct media_player *plr, int err, int8_t spe
 
 static void playback_speed_write_cb(struct media_player *plr, int err, int8_t speed)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Playback speed write failed (%d)", err);
 		return;
 	}
@@ -234,7 +245,9 @@ static void playback_speed_write_cb(struct media_player *plr, int err, int8_t sp
 
 static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
 {
-	if (err) {
+	ARG_UNUSED(speed);
+
+	if (err != 0) {
 		FAIL("Seeking speed read failed (%d)", err);
 		return;
 	}
@@ -249,7 +262,7 @@ static void seeking_speed_cb(struct media_player *plr, int err, int8_t speed)
 
 static void track_segments_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Track Segments ID read failed (%d)\n", err);
 		return;
 	}
@@ -265,7 +278,7 @@ static void track_segments_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void current_track_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Current Track Object ID read failed (%d)\n", err);
 		return;
 	}
@@ -281,7 +294,7 @@ static void current_track_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Next Track Object ID read failed (%d)\n", err);
 		return;
 	}
@@ -297,7 +310,7 @@ static void next_track_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Parent Group Object ID read failed (%d)\n", err);
 		return;
 	}
@@ -313,7 +326,7 @@ static void parent_group_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Current Group Object ID read failed (%d)\n", err);
 		return;
 	}
@@ -329,7 +342,7 @@ static void current_group_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void playing_order_recv_cb(struct media_player *plr, int err, uint8_t order)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Playing order read failed (%d)", err);
 		return;
 	}
@@ -345,7 +358,7 @@ static void playing_order_recv_cb(struct media_player *plr, int err, uint8_t ord
 
 static void playing_order_write_cb(struct media_player *plr, int err, uint8_t order)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Playing order write failed (%d)", err);
 		return;
 	}
@@ -361,7 +374,9 @@ static void playing_order_write_cb(struct media_player *plr, int err, uint8_t or
 
 static void playing_orders_supported_cb(struct media_player *plr, int err, uint16_t orders)
 {
-	if (err) {
+	ARG_UNUSED(orders);
+
+	if (err != 0) {
 		FAIL("Playing orders supported read failed (%d)", err);
 		return;
 	}
@@ -376,7 +391,7 @@ static void playing_orders_supported_cb(struct media_player *plr, int err, uint1
 
 static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Media State read failed (%d)", err);
 		return;
 	}
@@ -392,7 +407,9 @@ static void media_state_cb(struct media_player *plr, int err, uint8_t state)
 
 static void command_send_cb(struct media_player *plr, int err, const struct mpl_cmd *cmd)
 {
-	if (err) {
+	ARG_UNUSED(cmd);
+
+	if (err != 0) {
 		FAIL("Command send failed (%d)", err);
 		return;
 	}
@@ -407,7 +424,7 @@ static void command_send_cb(struct media_player *plr, int err, const struct mpl_
 
 static void command_recv_cb(struct media_player *plr, int err, const struct mpl_cmd_ntf *cmd_ntf)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Command failed (%d)", err);
 		return;
 	}
@@ -423,7 +440,7 @@ static void command_recv_cb(struct media_player *plr, int err, const struct mpl_
 
 static void commands_supported_cb(struct media_player *plr, int err, uint32_t opcodes)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Commands supported failed (%d)", err);
 		return;
 	}
@@ -441,7 +458,9 @@ static void commands_supported_cb(struct media_player *plr, int err, uint32_t op
 
 static void search_send_cb(struct media_player *plr, int err, const struct mpl_search *search)
 {
-	if (err) {
+	ARG_UNUSED(search);
+
+	if (err != 0) {
 		FAIL("Search failed (%d)", err);
 		return;
 	}
@@ -456,7 +475,7 @@ static void search_send_cb(struct media_player *plr, int err, const struct mpl_s
 
 static void search_recv_cb(struct media_player *plr, int err, uint8_t result_code)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Search failed (%d), result code: %u", err, result_code);
 		return;
 	}
@@ -472,7 +491,7 @@ static void search_recv_cb(struct media_player *plr, int err, uint8_t result_cod
 
 static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Search Results Object ID read failed (%d)", err);
 		return;
 	}
@@ -488,7 +507,9 @@ static void search_results_id_cb(struct media_player *plr, int err, uint64_t id)
 
 static void content_ctrl_id_cb(struct media_player *plr, int err, uint8_t ccid)
 {
-	if (err) {
+	ARG_UNUSED(ccid);
+
+	if (err != 0) {
 		FAIL("Content control ID read failed (%d)", err);
 		return;
 	}
@@ -505,7 +526,7 @@ void initialize_media(void)
 {
 	int err = media_proxy_pl_init();  /* TODO: Fix direct call to player */
 
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not init mpl: %d", err);
 		return;
 	}
@@ -547,19 +568,19 @@ void initialize_media(void)
 	UNSET_FLAG(local_player_instance);
 
 	err = media_proxy_ctrl_register(&cbs);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not init mpl: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(local_player_instance);
-	printk("media init and local player instance succeeded\n");
+	LOG_INF("media init and local player instance succeeded");
 }
 
-/* Callback after Bluetoot initialization attempt */
+/* Callback after Bluetooth initialization attempt */
 static void bt_ready(int err)
 {
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
@@ -580,7 +601,7 @@ static bool test_verify_media_state_wait_flags(uint8_t expected_state)
 
 	UNSET_FLAG(media_state_read);
 	err = media_proxy_ctrl_get_media_state(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read media state: %d", err);
 		return false;
 	}
@@ -607,7 +628,7 @@ static void test_send_cmd_wait_flags(struct mpl_cmd *cmd)
 	UNSET_FLAG(command_sent_flag);
 	UNSET_FLAG(command_results_flag);
 	err = media_proxy_ctrl_send_command(current_player, cmd);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to send command: %d, opcode: %u",
 		     err, cmd->opcode);
 		return;
@@ -632,7 +653,7 @@ static void test_cp_play(void)
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PLAYING)) {
-		printk("PLAY command succeeded\n");
+		LOG_INF("PLAY command succeeded");
 	}
 }
 
@@ -651,7 +672,7 @@ static void test_cp_pause(void)
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
-		printk("PAUSE command succeeded\n");
+		LOG_INF("PAUSE command succeeded");
 	}
 }
 
@@ -670,7 +691,7 @@ static void test_cp_fast_rewind(void)
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
-		printk("FAST REWIND command succeeded\n");
+		LOG_INF("FAST REWIND command succeeded");
 	}
 }
 
@@ -689,7 +710,7 @@ static void test_cp_fast_forward(void)
 	}
 
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_SEEKING)) {
-		printk("FAST FORWARD command succeeded\n");
+		LOG_INF("FAST FORWARD command succeeded");
 	}
 }
 
@@ -709,7 +730,7 @@ static void test_cp_stop(void)
 
 	/* There is no "STOPPED" state in the spec - STOP goes to PAUSED */
 	if (test_verify_media_state_wait_flags(MEDIA_PROXY_STATE_PAUSED)) {
-		printk("STOP command succeeded\n");
+		LOG_INF("STOP command succeeded");
 	}
 }
 
@@ -725,7 +746,7 @@ static void test_cp_move_relative(void)
 	 */
 	UNSET_FLAG(track_position);
 	err = media_proxy_ctrl_get_track_position(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
 	}
@@ -746,7 +767,7 @@ static void test_cp_move_relative(void)
 
 	UNSET_FLAG(track_position);
 	err = media_proxy_ctrl_get_track_position(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track position: %d\n", err);
 		return;
 	}
@@ -758,7 +779,7 @@ static void test_cp_move_relative(void)
 		return;
 	}
 
-	printk("MOVE RELATIVE command succeeded\n");
+	LOG_INF("MOVE RELATIVE command succeeded");
 }
 
 static void test_cp_prev_segment(void)
@@ -788,7 +809,7 @@ static void test_cp_prev_segment(void)
 		return;
 	}
 
-	printk("PREV SEGMENT command succeeded\n");
+	LOG_INF("PREV SEGMENT command succeeded");
 }
 
 static void test_cp_next_segment(void)
@@ -805,7 +826,7 @@ static void test_cp_next_segment(void)
 		return;
 	}
 
-	printk("NEXT SEGMENT command succeeded\n");
+	LOG_INF("NEXT SEGMENT command succeeded");
 }
 
 static void test_cp_first_segment(void)
@@ -822,7 +843,7 @@ static void test_cp_first_segment(void)
 		return;
 	}
 
-	printk("FIRST SEGMENT command succeeded\n");
+	LOG_INF("FIRST SEGMENT command succeeded");
 }
 
 static void test_cp_last_segment(void)
@@ -839,7 +860,7 @@ static void test_cp_last_segment(void)
 		return;
 	}
 
-	printk("LAST SEGMENT command succeeded\n");
+	LOG_INF("LAST SEGMENT command succeeded");
 }
 
 static void test_cp_goto_segment(void)
@@ -857,7 +878,7 @@ static void test_cp_goto_segment(void)
 		return;
 	}
 
-	printk("GOTO SEGMENT command succeeded\n");
+	LOG_INF("GOTO SEGMENT command succeeded");
 }
 
 /* Helper function to read the current track object ID, including flag handling
@@ -870,7 +891,7 @@ static void test_read_current_track_object_id_wait_flags(void)
 
 	UNSET_FLAG(current_track_object_id_read);
 	err = media_proxy_ctrl_get_current_track_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
 	}
@@ -912,7 +933,7 @@ static void test_cp_prev_track(void)
 		return;
 	}
 
-	printk("PREV TRACK command succeeded\n");
+	LOG_INF("PREV TRACK command succeeded");
 }
 
 static void test_cp_next_track(void)
@@ -940,7 +961,7 @@ static void test_cp_next_track(void)
 		return;
 	}
 
-	printk("NEXT TRACK command succeeded\n");
+	LOG_INF("NEXT TRACK command succeeded");
 }
 
 static void test_cp_first_track(void)
@@ -968,7 +989,7 @@ static void test_cp_first_track(void)
 		return;
 	}
 
-	printk("FIRST TRACK command succeeded\n");
+	LOG_INF("FIRST TRACK command succeeded");
 }
 
 static void test_cp_last_track(void)
@@ -996,7 +1017,7 @@ static void test_cp_last_track(void)
 		return;
 	}
 
-	printk("LAST TRACK command succeeded\n");
+	LOG_INF("LAST TRACK command succeeded");
 }
 
 static void test_cp_goto_track(void)
@@ -1025,7 +1046,7 @@ static void test_cp_goto_track(void)
 		return;
 	}
 
-	printk("GOTO TRACK command succeeded\n");
+	LOG_INF("GOTO TRACK command succeeded");
 }
 
 /* Helper function to read the current group object ID, including flag handling
@@ -1038,7 +1059,7 @@ static void test_read_current_group_object_id_wait_flags(void)
 
 	UNSET_FLAG(current_group_object_id_read);
 	err = media_proxy_ctrl_get_current_group_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
 	}
@@ -1080,7 +1101,7 @@ static void test_cp_prev_group(void)
 		return;
 	}
 
-	printk("PREV GROUP command succeeded\n");
+	LOG_INF("PREV GROUP command succeeded");
 }
 
 static void test_cp_next_group(void)
@@ -1108,7 +1129,7 @@ static void test_cp_next_group(void)
 		return;
 	}
 
-	printk("NEXT GROUP command succeeded\n");
+	LOG_INF("NEXT GROUP command succeeded");
 }
 
 static void test_cp_first_group(void)
@@ -1136,7 +1157,7 @@ static void test_cp_first_group(void)
 		return;
 	}
 
-	printk("FIRST GROUP command succeeded\n");
+	LOG_INF("FIRST GROUP command succeeded");
 }
 
 static void test_cp_last_group(void)
@@ -1164,7 +1185,7 @@ static void test_cp_last_group(void)
 		return;
 	}
 
-	printk("LAST GROUP command succeeded\n");
+	LOG_INF("LAST GROUP command succeeded");
 }
 
 static void test_cp_goto_group(void)
@@ -1193,7 +1214,7 @@ static void test_cp_goto_group(void)
 		return;
 	}
 
-	printk("GOTO GROUP command succeeded\n");
+	LOG_INF("GOTO GROUP command succeeded");
 }
 
 static void test_scp(void)
@@ -1212,14 +1233,14 @@ static void test_scp(void)
 	UNSET_FLAG(search_results_object_id_read);
 	err = media_proxy_ctrl_get_search_results_id(current_player);
 
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read search results object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(search_results_object_id_read);
 
-	if (g_search_results_object_id != 0) {
+	if (g_search_results_object_id != 0U) {
 		FAIL("Search results object ID not zero before search\n");
 		return;
 	}
@@ -1249,7 +1270,7 @@ static void test_scp(void)
 	UNSET_FLAG(search_results_object_id_read);
 
 	err = media_proxy_ctrl_send_search(current_player, &search);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to write to search control point\n");
 		return;
 	}
@@ -1266,18 +1287,18 @@ static void test_scp(void)
 	 * results object ID will have been notified if the search gave results
 	 */
 	WAIT_FOR_FLAG(search_results_object_id_read);
-	if (g_search_results_object_id == 0) {
+	if (g_search_results_object_id == 0U) {
 		FAIL("No search results\n");
 		return;
 	}
 
-	printk("SEARCH operation succeeded\n");
+	LOG_INF("SEARCH operation succeeded");
 }
 
 /* This function tests all commands in the API in sequence for the provided player.
  * (Works by setting the provided player as the "current player".)
  *
- * The order of the sequence follows the order of the characterstics in the
+ * The order of the sequence follows the order of the characteristics in the
  * Media Control Service specification
  */
 void test_media_controller_player(struct media_player *player)
@@ -1287,74 +1308,74 @@ void test_media_controller_player(struct media_player *player)
 
 	UNSET_FLAG(player_name_read);
 	err = media_proxy_ctrl_get_player_name(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read media player name ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(player_name_read);
-	printk("Player Name read succeeded\n");
+	LOG_INF("Player Name read succeeded");
 
 	/* Read icon object id  ******************************************/
 	UNSET_FLAG(icon_object_id_read);
 	err = media_proxy_ctrl_get_icon_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read icon object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(icon_object_id_read);
-	printk("Icon Object ID read succeeded\n");
+	LOG_INF("Icon Object ID read succeeded");
 
 	/* Read icon url *************************************************/
 	UNSET_FLAG(icon_url_read);
 	err =  media_proxy_ctrl_get_icon_url(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read icon url: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(icon_url_read);
-	printk("Icon URL read succeeded\n");
+	LOG_INF("Icon URL read succeeded");
 
 	/* Read track_title ******************************************/
 	UNSET_FLAG(track_title_read);
 	err = media_proxy_ctrl_get_track_title(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track_title: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(track_title_read);
-	printk("Track title read succeeded\n");
+	LOG_INF("Track title read succeeded");
 
 	/* Read track_duration ******************************************/
 	UNSET_FLAG(track_duration_read);
 	err = media_proxy_ctrl_get_track_duration(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track_duration: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(track_duration_read);
-	printk("Track duration read succeeded\n");
+	LOG_INF("Track duration read succeeded");
 
 	/* Read and set track_position *************************************/
 	UNSET_FLAG(track_position);
 	err = media_proxy_ctrl_get_track_position(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track position: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(track_position);
-	printk("Track position read succeeded\n");
+	LOG_INF("Track position read succeeded");
 
 	int32_t pos = g_pos + 1200; /*12 seconds further into the track */
 
 	UNSET_FLAG(track_position);
 	err = media_proxy_ctrl_set_track_position(current_player, pos);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set track position: %d", err);
 		return;
 	}
@@ -1365,24 +1386,24 @@ void test_media_controller_player(struct media_player *player)
 		/* position is the position given in the set command */
 		FAIL("Track position set failed: Incorrect position\n");
 	}
-	printk("Track position set succeeded\n");
+	LOG_INF("Track position set succeeded");
 
 	/* Read and set playback speed *************************************/
 	UNSET_FLAG(playback_speed);
 	err = media_proxy_ctrl_get_playback_speed(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read playback speed: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(playback_speed);
-	printk("Playback speed read succeeded\n");
+	LOG_INF("Playback speed read succeeded");
 
 	int8_t pb_speed = g_pb_speed + 8; /* 2^(8/64) faster than current speed */
 
 	UNSET_FLAG(playback_speed);
 	err = media_proxy_ctrl_set_playback_speed(current_player, pb_speed);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set playback speed: %d", err);
 		return;
 	}
@@ -1391,84 +1412,84 @@ void test_media_controller_player(struct media_player *player)
 	if (g_pb_speed != pb_speed) {
 		FAIL("Playback speed failed: Incorrect playback speed\n");
 	}
-	printk("Playback speed set succeeded\n");
+	LOG_INF("Playback speed set succeeded");
 
 	/* Read seeking speed *************************************/
 	UNSET_FLAG(seeking_speed_read);
 	err = media_proxy_ctrl_get_seeking_speed(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read seeking speed: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(seeking_speed_read);
-	printk("Seeking speed read succeeded\n");
+	LOG_INF("Seeking speed read succeeded");
 
 	/* Read track segments object *****************************************/
 	UNSET_FLAG(track_segments_object_id_read);
 	err = media_proxy_ctrl_get_track_segments_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read track segments object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(track_segments_object_id_read);
-	printk("Track Segments Object ID read succeeded\n");
+	LOG_INF("Track Segments Object ID read succeeded");
 
 	/* Read current track object ******************************************/
 	UNSET_FLAG(current_track_object_id_read);
 	err = media_proxy_ctrl_get_current_track_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read current track object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(current_track_object_id_read);
-	printk("Current Track Object ID read succeeded\n");
+	LOG_INF("Current Track Object ID read succeeded");
 
 	/* Read next track object ******************************************/
 	UNSET_FLAG(next_track_object_id_read);
 	err = media_proxy_ctrl_get_next_track_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read next track object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(next_track_object_id_read);
-	printk("Next Track Object ID read succeeded\n");
+	LOG_INF("Next Track Object ID read succeeded");
 
 	/* Read parent group object ******************************************/
 	UNSET_FLAG(parent_group_object_id_read);
 	err = media_proxy_ctrl_get_parent_group_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read parent group object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(parent_group_object_id_read);
-	printk("Parent Group Object ID read succeeded\n");
+	LOG_INF("Parent Group Object ID read succeeded");
 
 	/* Read current group object ******************************************/
 	UNSET_FLAG(current_group_object_id_read);
 	err = media_proxy_ctrl_get_current_group_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read current group object ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(current_group_object_id_read);
-	printk("Current Group Object ID read succeeded\n");
+	LOG_INF("Current Group Object ID read succeeded");
 
 	/* Read and set playing order *************************************/
 	UNSET_FLAG(playing_order_flag);
 	err = media_proxy_ctrl_get_playing_order(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read playing order: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(playing_order_flag);
-	printk("Playing order read succeeded\n");
+	LOG_INF("Playing order read succeeded");
 
 	uint8_t playing_order;
 
@@ -1480,7 +1501,7 @@ void test_media_controller_player(struct media_player *player)
 
 	UNSET_FLAG(playing_order_flag);
 	err = media_proxy_ctrl_set_playing_order(current_player, playing_order);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to set playing_order: %d", err);
 		return;
 	}
@@ -1489,40 +1510,40 @@ void test_media_controller_player(struct media_player *player)
 	if (g_playing_order != playing_order) {
 		FAIL("Playing order set failed: Incorrect playing_order\n");
 	}
-	printk("Playing order set succeeded\n");
+	LOG_INF("Playing order set succeeded");
 
 	/* Read playing orders supported  *************************************/
 	UNSET_FLAG(playing_orders_supported_read);
 	err = media_proxy_ctrl_get_playing_orders_supported(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read playing orders supported: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(playing_orders_supported_read);
-	printk("Playing orders supported read succeeded\n");
+	LOG_INF("Playing orders supported read succeeded");
 
 	/* Read media state  ***************************************************/
 	UNSET_FLAG(media_state_read);
 	err = media_proxy_ctrl_get_media_state(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read media state: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(media_state_read);
-	printk("Media state read succeeded\n");
+	LOG_INF("Media state read succeeded");
 
 	/* Read content control ID  *******************************************/
 	UNSET_FLAG(ccid_read);
 	err = media_proxy_ctrl_get_content_ctrl_id(current_player);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to read content control ID: %d", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(ccid_read);
-	printk("Content control ID read succeeded\n");
+	LOG_INF("Content control ID read succeeded");
 
 	/* Control point - "state" opcodes */
 
@@ -1586,34 +1607,32 @@ void initialize_bluetooth(void)
 
 	UNSET_FLAG(ble_is_initialized);
 	err = bt_enable(bt_ready);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
 	WAIT_FOR_FLAG(ble_is_initialized);
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	bt_le_scan_cb_register(&common_scan_cb);
 }
 
 void scan_and_connect(void)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to start scanning (err %d\n)", err);
 		return;
 	}
 
-	printk("Scanning started successfully\n");
+	LOG_INF("Scanning started successfully");
 
 	WAIT_FOR_FLAG(flag_connected);
 
-	bt_addr_le_to_str(bt_conn_get_dst(default_conn), addr, sizeof(addr));
-	printk("Connected: %s\n", addr);
+	LOG_INF("Connected: %s", bt_conn_dst_str(default_conn));
 }
 
 void discover_remote_player(void)
@@ -1622,7 +1641,7 @@ void discover_remote_player(void)
 
 	UNSET_FLAG(remote_player_instance);
 	err = media_proxy_ctrl_discover_player(default_conn);
-	if (err) {
+	if (err != 0) {
 		FAIL("Remote player discovery failed (err %d)\n", err);
 		return;
 	}
@@ -1633,12 +1652,12 @@ void discover_remote_player(void)
 /* BabbleSim entry point for local player test */
 void test_media_controller_local_player(void)
 {
-	printk("Media Control local player test application.  Board: %s\n", CONFIG_BOARD);
+	LOG_INF("Media Control local player test application.  Board: %s", CONFIG_BOARD);
 
 	initialize_bluetooth();
 	initialize_media();  /* Sets local_player global variable */
 
-	printk("Local player instance: %p\n", local_player);
+	LOG_INF("Local player instance: %p", local_player);
 
 	test_media_controller_player(local_player);
 
@@ -1651,7 +1670,7 @@ void test_media_controller_remote_player(void)
 {
 	struct bt_le_ext_adv *ext_adv;
 
-	printk("Media Control remote player test application.  Board: %s\n", CONFIG_BOARD);
+	LOG_INF("Media Control remote player test application.  Board: %s", CONFIG_BOARD);
 
 	initialize_bluetooth();
 	initialize_media();
@@ -1661,7 +1680,7 @@ void test_media_controller_remote_player(void)
 	WAIT_FOR_FLAG(flag_connected);
 
 	discover_remote_player(); /* Sets global variable */
-	printk("Remote player instance: %p\n", remote_player);
+	LOG_INF("Remote player instance: %p", remote_player);
 
 	test_media_controller_player(remote_player);
 
@@ -1673,7 +1692,7 @@ void test_media_controller_remote_player(void)
 void test_media_controller_server(void)
 {
 
-	printk("Media Control server test application.  Board: %s\n", CONFIG_BOARD);
+	LOG_INF("Media Control server test application.  Board: %s", CONFIG_BOARD);
 
 	initialize_bluetooth();
 	initialize_media();
@@ -1681,7 +1700,7 @@ void test_media_controller_server(void)
 	/* The server side will also get callbacks, from its local player.
 	 * And if the current player is not set, the callbacks will fail the test.
 	 */
-	printk("Local player instance: %p\n", local_player);
+	LOG_INF("Local player instance: %p", local_player);
 	current_player = local_player;
 
 	scan_and_connect();

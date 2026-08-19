@@ -58,12 +58,12 @@
 
 &enet1g {
 	status = "okay";
+	pinctrl-0 = <&pinmux_enet1g>;
+	pinctrl-names = "default";
 };
 
 &enet1g_mac {
 	status = "okay";
-	pinctrl-0 = <&pinmux_enet1g>;
-	pinctrl-names = "default";
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;
@@ -80,6 +80,7 @@
 		status = "okay";
 		reset-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio5 15 GPIO_ACTIVE_LOW>;
+		ti,interface-type = "rgmii";
 	};
 };
 

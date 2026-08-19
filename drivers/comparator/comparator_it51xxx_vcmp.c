@@ -18,6 +18,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(comparator_it51xxx_vcmp, CONFIG_COMPARATOR_LOG_LEVEL);
 
+#define IT51XXX_MAX_ADC_CHANNEL_SUPPORTED 16
+
 #define VCMP_CHANNEL_ID_REG_MASK GENMASK(2, 0)
 #define VCMP_THRESHOLD           BIT(10)
 #ifdef CONFIG_ADC_IT51XXX_VOL_FULL_SCALE
@@ -44,6 +46,9 @@ const uint8_t vcmp_ctrl_reg[VCMP_CHANNEL_CNT] = {REG_VCMP_VCMP0CTL, REG_VCMP_VCM
 #define VCMP_CMPXRTIS      BIT(6)
 const uint8_t vcmp_status_ctrl_reg[VCMP_CHANNEL_CNT] = {REG_VCMP_VCMP0SCTL, REG_VCMP_VCMP1SCTL,
 							REG_VCMP_VCMP2SCTL};
+
+#define REG_VCMP_CH_SCTL 0x01
+#define VCMP_CMPXCSELM   BIT(5)
 
 /* 0x22, 0x2A, 0x2E: Voltage Comparator 0~2 MSB Threshold Data Buffer (10-bit resolution) */
 #define REG_VCMP_CH_THRDATM 0x02
@@ -312,6 +317,10 @@ static int vcmp_it51xxx_init(const struct device *dev)
 	uint8_t reg_value;
 	int err;
 
+	if (cfg->channel_id >= IT51XXX_MAX_ADC_CHANNEL_SUPPORTED) {
+		return -ENOTSUP;
+	}
+
 	data->adc_ch_cfg.gain = ADC_GAIN_1;
 	data->adc_ch_cfg.reference = ADC_REF_INTERNAL;
 	data->adc_ch_cfg.acquisition_time = ADC_ACQ_TIME_DEFAULT;
@@ -335,6 +344,13 @@ static int vcmp_it51xxx_init(const struct device *dev)
 	}
 
 	/* Select which ADC channel output voltage into comparator */
+	reg_value = sys_read8(base_ch + REG_VCMP_CH_SCTL);
+	if (data->adc_ch_cfg.channel_id > 7) {
+		reg_value |= VCMP_CMPXCSELM;
+	} else {
+		reg_value &= ~VCMP_CMPXCSELM;
+	}
+	sys_write8(reg_value, base_ch + REG_VCMP_CH_SCTL);
 	reg_value = FIELD_PREP(GENMASK(7, 3), sys_read8(base_ch));
 	reg_value |= data->adc_ch_cfg.channel_id & VCMP_CHANNEL_ID_REG_MASK;
 	sys_write8(reg_value, base_ch);

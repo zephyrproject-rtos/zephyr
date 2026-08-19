@@ -15,8 +15,7 @@ static inline uint8_t *usb_pool_data_alloc(struct net_buf *const buf,
 	struct k_heap *const pool = buf_pool->alloc->alloc_data;
 	void *b;
 
-	*size = USB_BUF_ROUND_UP(*size);
-	b = k_heap_aligned_alloc(pool, USB_BUF_ALIGN, *size, timeout);
+	b = k_heap_aligned_alloc(pool, USB_BUF_ALIGN, USB_BUF_ROUND_UP(*size), timeout);
 	if (b == NULL) {
 		*size = 0;
 		return NULL;

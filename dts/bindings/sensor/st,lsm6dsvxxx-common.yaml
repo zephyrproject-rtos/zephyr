@@ -22,6 +22,20 @@ properties:
       The property value should ensure the flags properly describe
       the signal that is presented to the driver.
 
+  int-gpio-config:
+    type: int
+    default: 0
+    description: |
+      Select the interrupt configuration for INT2 gpio.
+
+      The default of 0 is the most common situation to avoid multiple interrupts
+      to be triggered by same event.
+
+      - 0 # LSM6DSVXXX_DT_GPIO_INT_EDGE_TO_ACTIVE
+      - 1 # LSM6DSVXXX_DT_GPIO_INT_LEVEL_ACTIVE
+
+    enum: [0, 1]
+
   drdy-pin:
     type: int
     default: 1

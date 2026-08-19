@@ -7,7 +7,7 @@
 
 #define DT_DRV_COMPAT espressif_esp32_twai
 
-#include <zephyr/drivers/can/can_sja1000.h>
+#include "can_sja1000.h"
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/drivers/clock_control.h>
@@ -170,7 +170,7 @@ static int can_esp32_twai_init(const struct device *dev)
 	int err;
 
 	if (!device_is_ready(twai_config->clock_dev)) {
-		LOG_ERR("clock control device not ready");
+		LOG_ERR_DEVICE_NOT_READY(twai_config->clock_dev);
 		return -ENODEV;
 	}
 

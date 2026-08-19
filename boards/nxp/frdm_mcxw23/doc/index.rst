@@ -206,6 +206,16 @@ OS tick timer.
 
 Limitation: Wakeup pin can't be used as wakeup source in Standby mode.
 
+Bluetooth
+=========
+
+Dynamic BLE TX Power Configuration
+----------------------------------
+
+MCXW23 supports dynamic BLE TX power configuration. However, there is a
+known limitation: when changing the TX power level, advertising must be
+restarted for the new power setting to take effect.
+
 .. include:: ../../common/board-footer.rst.inc
 
 .. _MCXW23 SoC Website:

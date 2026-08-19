@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief C++ helpers for detecting string-pointer arguments in cbprintf().
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_CBPRINTF_CXX_H_
 #define ZEPHYR_INCLUDE_SYS_CBPRINTF_CXX_H_
 #ifdef __cplusplus

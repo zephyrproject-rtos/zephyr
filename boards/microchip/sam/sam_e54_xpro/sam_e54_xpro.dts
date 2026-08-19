@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Microchip Technology Inc.
+ * Copyright (c) 2025-2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@
 		pwm-led0 = &pwm_led0;
 		sw0 = &button0;
 		rtc = &rtc;
+		sdhc0 = &sdhc1;
 	};
 
 	leds {
@@ -156,24 +157,32 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
 			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
 		};
 
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
 			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
 		};
 
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
 			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
 		};
 	};
@@ -208,10 +217,11 @@
 
 		fdpll0 {
 			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
-			fdpll-divider-ratio-int = <19>;
+			fdpll-divider-ratio-int = <119>;
 			fdpll-lock-bypass-en = <1>;
 			fdpll-wakeup-fast-en = <1>;
 			fdpll-src = "xosc1";
+			fdpll-xosc-clock-divider = <5>;
 			fdpll-en = <1>;
 		};
 	};
@@ -356,15 +366,14 @@
 
 &sercom6 {
 	compatible = "microchip,sercom-g1-spi";
-
 	dipo = <3>;
 	dopo = <0>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
-
 	pinctrl-0 = <&sercom6_spi_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 12 0x10>, <&dmac 13 0x11>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
@@ -378,6 +387,26 @@
 	dmas = <&dmac 10 0x12>, <&dmac 11 0x13>;
 	dma-names = "rx", "tx";
 	status = "okay";
+
+	eeprom: eeprom@5e {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x5e>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@9a {
+				reg = <0x9a 6>;
+				#nvmem-cell-cells = <0>;
+			};
+		};
+	};
 };
 
 &tcc0 {
@@ -425,6 +454,47 @@
 &dac {
 	pinctrl-0 = <&dac_default>;
 	pinctrl-names = "default";
+};
+
+&sdhc1 {
+	compatible = "microchip,sdhc-g1";
+	pinctrl-0 = <&sdhc1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	disk {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&gmac {
+	compatible = "microchip,gmac-g1-eth";
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&mdio {
+	compatible = "microchip,gmac-g1-mdio";
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&trng {
+	status = "okay";
 };
 
 ext1_serial: &sercom0 {};

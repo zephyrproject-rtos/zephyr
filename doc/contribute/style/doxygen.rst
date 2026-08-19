@@ -126,6 +126,15 @@ Example:
    For example, device driver emulators typically appear both in "Emulator Interfaces" and "Device
    drivers" groups. See :c:group:`i2c_emul_interface` for an example.
 
+.. important::
+
+   A group with no parent becomes a top-level entry of the :ref:`api_overview`, whose categories
+   are deliberately few. Always give a new group a parent with ``@ingroup``.
+
+   The top-level entries are allowlisted in :zephyr_file:`doc/_doxygen/toplevel_groups.txt` and
+   enforced by :zephyr_file:`scripts/ci/doxygen_toplevel_groups.py`. Adding a new one requires
+   documentation maintainer approval.
+
 .. _doxygen_api_versioning:
 
 API Versioning
@@ -244,17 +253,32 @@ Example:
    :caption: Examples of fully documented functions.
 
    /**
-    * @brief Transmit data through a pipe
+    * @brief Write data to the TX queue from a provided buffer
     *
-    * @param[in] pipe Pipe to transmit through
-    * @param buf Data to transmit
-    * @param size Number of bytes to transmit
+    * @param dev Pointer to the device structure for the driver instance.
+    * @param buf Pointer to a buffer containing the data to transmit.
+    * @param size Number of bytes to write. This value has to be equal or smaller
+    *        than the size of the channel's TX memory block configuration.
     *
-    * @return Number of bytes placed in @p pipe
-    * @retval -EPERM Pipe is closed
-    * @retval -errno Negative error code on error
+    * @retval 0 on success.
+    * @retval -EIO The interface is not in READY or RUNNING state.
+    * @retval -EBUSY Returned without waiting.
+    * @retval -EAGAIN Waiting period timed out.
+    * @retval -ENOMEM No memory in TX slab queue.
+    * @retval -EINVAL Size parameter larger than TX queue memory block.
     */
-   int modem_pipe_transmit(struct modem_pipe *pipe, const uint8_t *buf, size_t size);
+   int i2s_buf_write(const struct device *dev, void *buf, size_t size);
+
+   /**
+    * @brief Add an application callback.
+    *
+    * @param port Pointer to the device structure for the driver instance.
+    * @param callback A valid application's callback structure pointer.
+    *
+    * @return 0 on success, negative errno value on failure.
+    * @retval -ENOSYS Driver does not implement the operation.
+    */
+   int gpio_add_callback(const struct device *port, struct gpio_callback *callback);
 
    /**
     * @brief Helper function for converting struct sensor_value to float.
@@ -285,6 +309,51 @@ For function-like macros, document parameters like you would for functions.
     * @return node's only register block's size
     */
    #define DT_REG_SIZE(node_id) DT_REG_SIZE_BY_IDX(node_id, 0)
+
+.. _doxygen_sphinx_xrefs:
+
+Referencing the main documentation
+**********************************
+
+API documentation can reference content from the main, Sphinx-based documentation using the
+commands described below. In the generated API documentation pages, these references are rendered
+as hyperlinks pointing back to the corresponding page of the main documentation.
+
+``@kconfig{<option>}``
+  Reference a Kconfig option by its full name (including the ``CONFIG_`` prefix). This is the
+  Doxygen counterpart of the :rst:role:`kconfig:option` role.
+
+  Example: ``@kconfig{CONFIG_GPIO}``
+
+``@kconfig_regex{<regex>}``
+  Reference all the Kconfig options matching a regular expression, as a link to the Kconfig search
+  page with the pattern pre-filled. This is the Doxygen counterpart of the
+  :rst:role:`kconfig:option-regex` role. As commas have a special meaning in Doxygen commands, they
+  must be escaped with a backslash.
+
+  Example: ``@kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}``
+
+``@dtcompatible{<compatible>}``
+  Reference a Devicetree binding by its compatible string. This is the Doxygen counterpart of the
+  :rst:role:`dtcompatible` role. As commas have a special meaning in Doxygen commands, they must be
+  escaped with a backslash.
+
+  Example: ``@dtcompatible{zephyr\,input-longpress}``
+
+``@rstref{<target>}`` or ``@rstref{<text> <target>}``
+  Reference any documentation page or section by its reference label (or document name), similar to
+  the Sphinx :rst:role:`ref` role. When no custom text is provided, the title of the referenced
+  page or section is used as the link text.
+
+  Example: ``@rstref{zephyr_licensing}`` or ``@rstref{the licensing page <zephyr_licensing>}``
+
+References are checked when the documentation is built: a reference to a Kconfig option, binding,
+or label that does not exist causes a documentation build warning.
+
+.. note::
+
+   These commands expand to plain text when the Doxygen documentation is built standalone, i.e.
+   without the rest of the documentation. See :ref:`zephyr_doc` for more details.
 
 .. _doxygen_internals:
 

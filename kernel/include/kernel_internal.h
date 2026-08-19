@@ -35,6 +35,43 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 FUNC_NORETURN void z_cstart(void);
 
+/*
+ * Lean kernel-internal init model.
+ *
+ * A subsystem registers a parameterless init function that the boot path runs
+ * at a fixed phase, without the SYS_INIT level/priority machinery (kernel init
+ * order is fixed at compile time). Each entry is emitted into the subsystem's
+ * own translation unit, so it -- and its init -- is linked only when the
+ * subsystem itself is linked, preserving the pay-per-use linkage that SYS_INIT
+ * provides. The entry holds a single function pointer (no device back-pointer
+ * and no priority), so it is half the size of a SYS_INIT init_entry.
+ */
+struct k_kernel_init_pre_entry {
+	void (*init_fn)(void);
+};
+
+struct k_kernel_init_post_entry {
+	void (*init_fn)(void);
+};
+
+/* Register a kernel init function to run before multithreading starts (the
+ * PRE_KERNEL phase), ahead of PRE_KERNEL device init.
+ */
+#define K_KERNEL_INIT_PRE(_fn)                                                 \
+	static const STRUCT_SECTION_ITERABLE(k_kernel_init_pre_entry,          \
+					     _kernel_init_pre_##_fn) = {       \
+		.init_fn = (_fn),                                              \
+	}
+
+/* Register a kernel init function to run after the kernel is up (the
+ * POST_KERNEL phase), before POST_KERNEL device init.
+ */
+#define K_KERNEL_INIT_POST(_fn)                                                \
+	static const STRUCT_SECTION_ITERABLE(k_kernel_init_post_entry,         \
+					     _kernel_init_post_##_fn) = {      \
+		.init_fn = (_fn),                                              \
+	}
+
 extern FUNC_NORETURN void z_thread_entry(k_thread_entry_t entry,
 			  void *p1, void *p2, void *p3);
 
@@ -109,10 +146,12 @@ extern void z_early_rand_get(uint8_t *buf, size_t length);
 extern int z_stack_adjust_initialized;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
+#ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_main_thread;
+#endif /* CONFIG_MULTITHREADING */
 
 
-K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				    CONFIG_ISR_STACK_SIZE);
 K_THREAD_STACK_DECLARE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
 
@@ -122,17 +161,6 @@ extern uint8_t *z_priv_stack_find(k_thread_stack_t *stack);
 
 /* Calculate stack usage. */
 int z_stack_space_get(const uint8_t *stack_start, size_t size, size_t *unused_ptr);
-
-/*
- * Variants of k_heap_free()/k_free() for callers that already hold
- * _sched_spinlock, avoiding recursive locking when waking heap waiters.
- * Woken threads are readied but not rescheduled; the caller must ensure
- * a reschedule happens after releasing the scheduler lock.
- */
-void k_heap_free_sched_locked(struct k_heap *heap, void *mem);
-void k_free_sched_locked(void *ptr);
-int z_msgq_cleanup_sched_locked(struct k_msgq *msgq);
-int z_stack_cleanup_sched_locked(struct k_stack *stack);
 
 #ifdef CONFIG_USERSPACE
 bool z_stack_is_user_capable(k_thread_stack_t *stack);
@@ -210,8 +238,11 @@ bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
  * This function assumes that a wake up event has already been set up by the
  * application.
  *
- * This function is entered with interrupts disabled. It should re-enable
- * interrupts if it had entered a power state.
+ * This function is entered with the idle thread's interrupt lock held. If it
+ * enters a power state, it returns before the idle thread restores the saved
+ * interrupt key. SoC PM code may use architecture helpers around the
+ * low-power instruction, but normal IRQ dispatch must remain blocked until
+ * that final idle-thread restore.
  *
  * @return True if the system suspended, otherwise return false
  */

@@ -6,6 +6,7 @@ menuconfig I2C_STM32
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED || DT_HAS_ST_STM32_I2C_V2_ENABLED
 	select PINCTRL
+	select I2C_TRANSFER_TIMEOUT_SUPPORTED
 	help
 	  Enable I2C support on the STM32 SoCs
 
@@ -15,7 +16,7 @@ config I2C_STM32_V1
 	bool
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V1_ENABLED
-	select I2C_STM32_INTERRUPT if I2C_TARGET
+	select I2C_STM32_INTERRUPT if I2C_TARGET || I2C_RTIO
 	help
 	  Driver variant matching `st,stm32-i2c-v1` compatible.
 
@@ -23,11 +24,9 @@ config I2C_STM32_V2
 	bool
 	default y
 	depends on DT_HAS_ST_STM32_I2C_V2_ENABLED
-	select I2C_STM32_INTERRUPT if I2C_TARGET
+	select I2C_STM32_INTERRUPT if I2C_TARGET || I2C_RTIO
 	help
 	  Driver variant matching `st,stm32-i2c-v2` compatible.
-	  If I2C_TARGET is enabled it selects I2C_STM32_INTERRUPT, since target mode
-	  is only supported by this driver with interrupts enabled.
 
 config I2C_STM32_INTERRUPT
 	bool "STM32 MCU I2C Interrupt Support"
@@ -46,6 +45,8 @@ config I2C_STM32_COMBINED_INTERRUPT
 
 config I2C_STM32_BUS_RECOVERY
 	bool "Bus recovery support"
+	default y if I2C_BUS_RECOVERY
+	depends on GPIO
 	select I2C_BITBANG
 	help
 	  Enable STM32 driver bus recovery support via GPIO bitbanging.
@@ -58,19 +59,19 @@ config I2C_STM32_V2_TIMING
 
 config I2C_STM32_V2_DMA
 	bool "DMA support"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_I2C_V2),dmas)
 	depends on I2C_STM32_V2
 	select DMA
-	select CACHE_MANAGEMENT if CPU_HAS_DCACHE
-	select EXPERIMENTAL
+	select CACHE_MANAGEMENT if DCACHE
 	help
 	  Enable DMA support for the STM32 I2C driver.
 
-config I2C_STM32_TRANSFER_TIMEOUT_MSEC
-	int "STM32 I2C transfer timeout (ms)"
+config I2C_STM32_WAIT_BUS_IDLE_TIMEOUT_USEC
+	int "STM32 I2C bus wait timeout (us)"
 	range 1 $(UINT32_MAX)
-	default 500
+	default 2000
 	help
-	  Time in milliseconds to wait for an I2C transfer to complete before
-	  considering it timed out.
+	  Time in microseconds to wait for the bus to become idle before
+	  starting a new controller session when target mode is attached.
 
 endif # I2C_STM32

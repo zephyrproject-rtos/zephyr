@@ -13,6 +13,10 @@
 / {
 	model = "Realtek RTL87x2G Model A Evaluation Board with RTL8762GKU Daughter Board";
 
+	chosen {
+		zephyr,canbus = &can;
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 
@@ -30,15 +34,23 @@
 	};
 };
 
+&can {
+	pinctrl-0 = <&can_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
 &flash {
 	partitions {
 		/* 0x402d000-0x4100000: Free space for Zephyr */
 		app_partition: partition@2d000 {
+			compatible = "zephyr,mapped-partition";
 			label = "app-image";
 			reg = <0x2d000 DT_SIZE_K(828)>;
 		};
 
 		storage_partition: partition@fc000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0xfc000 DT_SIZE_K(16)>;
 		};

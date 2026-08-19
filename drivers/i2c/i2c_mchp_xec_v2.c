@@ -14,6 +14,9 @@
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -32,7 +35,7 @@ LOG_MODULE_REGISTER(i2c_xec_v2, CONFIG_I2C_LOG_LEVEL);
 
 /* I2C timeout is  10 ms (WAIT_INTERVAL * WAIT_COUNT) */
 #define WAIT_INTERVAL_US     10000U
-#define PIN_WAIT_INTERVAL_US 2000U
+#define PIN_WAIT_INTERVAL_US 10000U
 
 #define STOP_WAIT_COUNT 500
 #define PIN_CFG_WAIT    50
@@ -85,6 +88,15 @@ struct xec_i2c_timing {
 	uint8_t rpt_sta_htm; /* repeated start hold time */
 };
 
+/* PM policy state flags. A bit per source that should block the SoC from
+ * entering suspend-to-idle while the I2C block is busy.
+ */
+enum i2c_xec_pm_policy_state_flag {
+	I2C_XEC_PM_POLICY_STATE_XFER_FLAG,
+	I2C_XEC_PM_POLICY_STATE_TARGET_FLAG,
+	I2C_XEC_PM_POLICY_STATE_FLAG_COUNT,
+};
+
 struct i2c_xec_config {
 	uint32_t base_addr;
 	uint32_t clock_freq;
@@ -92,6 +104,8 @@ struct i2c_xec_config {
 	uint8_t girq_pos;
 	uint8_t enc_pcr;
 	uint8_t port_sel;
+	uint8_t wake_girq_pos;
+	bool wakeup_source;
 	struct gpio_dt_spec sda_gpio;
 	struct gpio_dt_spec scl_gpio;
 	const struct pinctrl_dev_config *pcfg;
@@ -109,10 +123,34 @@ struct i2c_xec_data {
 	uint8_t speed_id;
 	uint8_t i2c_error;
 	struct k_mutex mux;
-	struct i2c_target_config *target_cfg;
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_target_config *targets[XEC_I2C_MAX_TARGETS];
+	uint8_t active_slot;
 	bool target_attached;
 	bool target_read;
+#endif
+#ifdef CONFIG_PM_DEVICE
+	ATOMIC_DEFINE(pm_policy_state_flags, I2C_XEC_PM_POLICY_STATE_FLAG_COUNT);
+#endif
 };
+
+#ifdef CONFIG_PM_DEVICE
+static void i2c_xec_pm_policy_state_lock_get(struct i2c_xec_data *data,
+					     enum i2c_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flags, flag) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+
+static void i2c_xec_pm_policy_state_lock_put(struct i2c_xec_data *data,
+					     enum i2c_xec_pm_policy_state_flag flag)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flags, flag) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static const struct xec_i2c_timing xec_i2c_nl_timing_tbl[] = {
 	{KHZ(100), XEC_I2C_SMB_DATA_TM_100K, XEC_I2C_SMB_IDLE_SC_100K, XEC_I2C_SMB_TMO_SC_100K,
@@ -306,6 +344,47 @@ static void i2c_xec_initial_cfg(const struct device *dev)
 	sys_write32(val, rb + XEC_I2C_CFG_OFS);
 }
 
+#ifdef CONFIG_I2C_TARGET
+/* Find a free OwnAddr slot. Returns slot index or -1 if both occupied. */
+static int find_free_slot(struct i2c_xec_data *data)
+{
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] == NULL) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* Find slot whose registered 7-bit address matches addr7. Returns slot or -1. */
+static int find_slot_by_addr(struct i2c_xec_data *data, uint8_t addr7)
+{
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if ((data->targets[i] != NULL) &&
+		    (data->targets[i]->address == addr7)) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+/* Compose and write the OwnAddr register from both slots. PCR reset clears OA,
+ * so this is invoked from reset_config and from target (un)register.
+ */
+static void program_own_addresses(const struct i2c_xec_config *cfg,
+				  struct i2c_xec_data *data)
+{
+	uint32_t oa = 0;
+
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] != NULL) {
+			oa |= XEC_I2C_OA_SET(i, data->targets[i]->address);
+		}
+	}
+	sys_write32(oa, cfg->base_addr + XEC_I2C_OA_OFS);
+}
+#endif /* CONFIG_I2C_TARGET */
+
 static int i2c_xec_reset_config(const struct device *dev)
 {
 	struct i2c_xec_data *const data = dev->data;
@@ -326,9 +405,7 @@ static int i2c_xec_reset_config(const struct device *dev)
 	i2c_ctl_wr(dev, BIT(XEC_I2C_CR_PIN_POS));
 
 #ifdef CONFIG_I2C_TARGET
-	if (data->target_cfg != NULL) {
-		sys_write32(XEC_I2C_OA_1_SET(data->target_cfg->address), rb + XEC_I2C_OA_OFS);
-	}
+	program_own_addresses(drvcfg, data);
 #endif
 	/* Port number and filter enable MUST be written before enabling controller */
 	i2c_xec_initial_cfg(dev);
@@ -883,6 +960,10 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 
 	k_mutex_lock(&data->mux, K_FOREVER);
 
+#ifdef CONFIG_PM_DEVICE
+	i2c_xec_pm_policy_state_lock_get(data, I2C_XEC_PM_POLICY_STATE_XFER_FLAG);
+#endif
+
 	data->i2c_error = I2C_XEC_OK;
 
 	for (uint8_t i = 0; i < num_msgs; i++) {
@@ -902,6 +983,10 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 		}
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_XFER_FLAG);
+#endif
+
 	k_mutex_unlock(&data->mux);
 
 	return ret;
@@ -912,10 +997,11 @@ static int i2c_xec_v2_transfer(const struct device *dev, struct i2c_msg *msgs, u
 static int target_wr_req_cb(const struct device *dev, const struct i2c_target_callbacks *tcbs)
 {
 	struct i2c_xec_data *const data = dev->data;
+	uint8_t cfg_idx = data->active_slot;
 
 	if ((tcbs != NULL) && (tcbs->write_requested != NULL)) {
 		/* ask the application if it can accept data */
-		return tcbs->write_requested(data->target_cfg);
+		return tcbs->write_requested(data->targets[cfg_idx]);
 	}
 
 	return -ENODATA;
@@ -928,6 +1014,7 @@ static void target_tx_handler(const struct device *dev, const struct i2c_target_
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
 	uint8_t val = XEC_I2C_TARGET_DFLT_DATA_VAL;
+	uint8_t cfg_idx = data->active_slot;
 
 	/* Did the external controller NAK'd the byte we transmitted */
 	if (soc_test_bit8(rb + XEC_I2C_SR_OFS, XEC_I2C_SR_LRB_AD0_POS) != 0) {
@@ -949,7 +1036,7 @@ static void target_tx_handler(const struct device *dev, const struct i2c_target_
 	} else {
 		/* get data to send from application via callback */
 		if ((tcbs != NULL) && (tcbs->read_processed != NULL)) {
-			tcbs->read_processed(data->target_cfg, &val);
+			tcbs->read_processed(data->targets[cfg_idx], &val);
 		}
 
 		sys_write8(val, rb + XEC_I2C_DATA_OFS);
@@ -970,22 +1057,33 @@ static void target_rx_handler(const struct device *dev, const struct i2c_target_
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
 	uint8_t val = sys_read8(rb + XEC_I2C_DATA_OFS);
+	uint8_t cfg_idx = data->active_slot;
 
 	/* if no callback or callback returns non-zero NAK incoming data */
 	if ((tcbs == NULL) || (tcbs->write_received == NULL) ||
-	    (tcbs->write_received(data->target_cfg, val) != 0)) {
+	    (tcbs->write_received(data->targets[cfg_idx], val) != 0)) {
 		/* Clear auto-ACK enable bit. This controller will NAK future bytes */
 		target_config_for_nack(dev);
 	}
 }
 
-static void target_addr_handler(const struct device *dev, const struct i2c_target_callbacks *tcbs)
+static void target_addr_handler(const struct device *dev)
 {
 	struct i2c_xec_data *const data = dev->data;
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
+	const struct i2c_target_callbacks *tcbs = NULL;
+	struct i2c_target_config *tcfg = NULL;
 	uint8_t val = XEC_I2C_TARGET_DFLT_DATA_VAL;
 	uint8_t rx_data = sys_read8(rb + XEC_I2C_DATA_OFS);
+	uint8_t addr7 = (uint8_t)((rx_data >> 1) & XEC_I2C_TARGET_ADDR_MSK);
+	int slot = find_slot_by_addr(data, addr7);
+
+	if (slot >= 0) {
+		data->active_slot = (uint8_t)slot;
+		tcfg = data->targets[slot];
+		tcbs = tcfg->callbacks;
+	}
 
 	if ((rx_data & BIT(I2C_READ_WRITE_POS)) != 0) {
 		/* target transmitter mode */
@@ -993,7 +1091,7 @@ static void target_addr_handler(const struct device *dev, const struct i2c_targe
 
 		/* request data from app otherwise send default data value */
 		if ((tcbs != NULL) && (tcbs->read_requested != NULL)) {
-			tcbs->read_requested(data->target_cfg, &val);
+			tcbs->read_requested(tcfg, &val);
 		}
 
 		/*
@@ -1024,7 +1122,8 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	struct i2c_xec_data *const data = dev->data;
 	const struct i2c_xec_config *drvcfg = dev->config;
 	mm_reg_t rb = drvcfg->base_addr;
-	struct i2c_target_config *tcfg = data->target_cfg;
+	uint8_t cfg_idx = data->active_slot;
+	struct i2c_target_config *tcfg = data->targets[cfg_idx];
 	const struct i2c_target_callbacks *tcbs = NULL;
 	uint32_t status = 0, compl_status = 0, config = 0;
 
@@ -1033,13 +1132,23 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	compl_status = sys_read32(rb + XEC_I2C_CMPL_OFS) & XEC_I2C_CMPL_RW1C_MSK;
 	config = sys_read32(rb + XEC_I2C_CFG_OFS);
 
+	if (tcfg != NULL) {
+		tcbs = tcfg->callbacks;
+	}
+
 	/* Idle interrupt enabled and active? */
 	if (((config & BIT(XEC_I2C_CFG_IDLE_IEN_POS)) != 0) &&
 	    ((compl_status & BIT(XEC_I2C_CMPL_IDLE_POS)) != 0)) {
 		sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_IDLE_IEN_POS);
 
 		if ((status & BIT(XEC_I2C_SR_NBB_POS)) != 0) {
+			if ((tcbs != NULL) && (tcbs->stop != NULL)) {
+				tcbs->stop(tcfg);
+			}
 			restart_target(dev);
+#ifdef CONFIG_PM_DEVICE
+			i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 			goto clear_iag;
 		}
 	}
@@ -1048,27 +1157,32 @@ static void i2c_xec_v2_isr(const struct device *dev)
 		goto clear_iag;
 	}
 
-	if (tcfg != NULL) {
-		tcbs = tcfg->callbacks;
-	}
-
 	/* External STOP or Bus Error: restart target handling */
 	if ((status & (BIT(XEC_I2C_SR_BER_POS) | BIT(XEC_I2C_SR_STO_POS))) != 0) {
 		if ((status & BIT(XEC_I2C_SR_BER_POS)) != 0) {
 			data->i2c_error = I2C_XEC_ERR_BUS;
 		}
 		if ((tcbs != NULL) && (tcbs->stop != NULL)) {
-			tcbs->stop(data->target_cfg);
+			tcbs->stop(tcfg);
 		}
 
 		restart_target(dev);
+#ifdef CONFIG_PM_DEVICE
+		i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 		goto clear_iag;
 	}
 
-	/* Address byte handling. AAT status is only valid if PIN status bit == 0 */
+	/* Address byte handling. AAT status is only valid if PIN status bit == 0.
+	 * target_addr_handler decodes the matched slot itself; do not use the
+	 * stale active_slot from a prior transaction here.
+	 */
 	if ((status & (BIT(XEC_I2C_SR_AAT_POS) | BIT(XEC_I2C_SR_PIN_POS))) ==
 	    BIT(XEC_I2C_SR_AAT_POS)) {
-		target_addr_handler(dev, tcbs);
+#ifdef CONFIG_PM_DEVICE
+		i2c_xec_pm_policy_state_lock_get(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
+		target_addr_handler(dev);
 		goto clear_iag;
 	}
 
@@ -1089,38 +1203,56 @@ static int i2c_xec_v2_target_register(const struct device *dev, struct i2c_targe
 {
 	const struct i2c_xec_config *drvcfg = dev->config;
 	struct i2c_xec_data *const data = dev->data;
+	unsigned int key = 0;
+	int slot = 0;
 	int ret = 0;
 
-	if (config == NULL) {
+	if ((config == NULL) || (config->callbacks == NULL)) {
 		return -EINVAL;
 	}
 
-	if (data->target_attached == true) {
+	if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0U) {
+		return -ENOTSUP;
+	}
+
+	slot = find_free_slot(data);
+	if (slot < 0) {
 		return -EBUSY;
 	}
 
-	/* Wait for any outstanding transactions to complete so that
-	 * the bus is free
-	 */
-	ret = wait_bus_free(dev, WAIT_INTERVAL_US);
-	if (ret != 0) {
-		return ret;
+	if (data->target_attached == false) {
+
+		/* Wait for any outstanding transactions to complete so that
+		 * the bus is free
+		 */
+		ret = wait_bus_free(dev, WAIT_INTERVAL_US);
+		if (ret != 0) {
+			return ret;
+		}
+
+		data->targets[slot] = config;
+
+		ret = i2c_xec_reset_config(dev);
+		if (ret != 0) {
+			data->targets[slot] = NULL;
+			return ret;
+		}
+
+		restart_target(dev);
+		data->target_attached = true;
+
+		/* Clear before enabling girq bit */
+		soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+		soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 1U);
+	} else {
+		/* Second slot: controller already running. Update OA only,
+		 * under irq_lock so the ISR sees a consistent view.
+		 */
+		key = irq_lock();
+		data->targets[slot] = config;
+		program_own_addresses(drvcfg, data);
+		irq_unlock(key);
 	}
-
-	data->target_cfg = config;
-
-	ret = i2c_xec_reset_config(dev);
-	if (ret != 0) {
-		return ret;
-	}
-
-	restart_target(dev);
-
-	data->target_attached = true;
-
-	/* Clear before enabling girq bit */
-	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
-	soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 1U);
 
 	return 0;
 }
@@ -1129,20 +1261,109 @@ static int i2c_xec_v2_target_unregister(const struct device *dev, struct i2c_tar
 {
 	const struct i2c_xec_config *drvcfg = dev->config;
 	struct i2c_xec_data *const data = dev->data;
+	unsigned int key;
+	int slot = -1;
 
 	if (data->target_attached == false) {
 		return -EINVAL;
 	}
 
-	data->target_cfg = NULL;
-	data->target_attached = false;
+	if (config == NULL) {
+		return -EINVAL;
+	}
 
-	soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 0);
-	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+	key = irq_lock();
+	for (int i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		if (data->targets[i] == config) {
+			slot = i;
+			data->targets[i] = NULL;
+			break;
+		}
+	}
+	if (slot < 0) {
+		irq_unlock(key);
+		return -EINVAL;
+	}
+
+	/* Clear that slot's OA bits so it stops matching incoming addresses. */
+	program_own_addresses(drvcfg, data);
+
+	if ((data->targets[0] == NULL) && (data->targets[1] == NULL)) {
+		data->target_attached = false;
+		soc_ecia_girq_ctrl(drvcfg->girq, drvcfg->girq_pos, 0);
+		soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
+	}
+	irq_unlock(key);
+
+#ifdef CONFIG_PM_DEVICE
+	/* Release any pending lock if a target transaction was in flight when
+	 * unregister was called. atomic_test_and_clear makes this a no-op when
+	 * the bus was already idle.
+	 */
+	i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
+#endif
 
 	return 0;
 }
 #endif
+
+#ifdef CONFIG_PM_DEVICE
+static int i2c_xec_v2_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct i2c_xec_config *cfg = dev->config;
+	mm_reg_t rb = cfg->base_addr;
+	bool arm_wake = false;
+	int ret = 0;
+
+#ifdef CONFIG_I2C_TARGET
+	struct i2c_xec_data *const data = dev->data;
+
+	arm_wake = cfg->wakeup_source && data->target_attached;
+#endif
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* Enable I2C START-bit wake. CFG.ENAB and pinctrl
+			 * must stay in their active state - the block samples
+			 * SCL/SDA asynchronously and generate awake event if a
+			 * START bit is detected on the bus.
+			 */
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			sys_write8(BIT(XEC_I2C_WKCR_SBEN_POS), rb + XEC_I2C_WKCR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 1U);
+		} else {
+			/* Disable I2C block */
+			sys_clear_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
+		break;
+
+	case PM_DEVICE_ACTION_RESUME:
+		if (IS_ENABLED(CONFIG_I2C_TARGET) && arm_wake) {
+			/* CFG.ENAB and pinctrl were left untouched on suspend.
+			 * Turn on the clock so the block can complete the in-flight
+			 * AAT (auto-stretching SCL since the wake-up START), then
+			 * disarm the wake hardware. The regular GIRQ13 ISR will
+			 * service the AAT match once the master proceeds.
+			 */
+			soc_ecia_girq_ctrl(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos, 0);
+			sys_write8(0, rb + XEC_I2C_WKCR_OFS);
+			sys_write8(BIT(XEC_I2C_WKSR_SB_POS), rb + XEC_I2C_WKSR_OFS);
+			soc_ecia_girq_status_clear(XEC_I2C_SMB_WK_GIRQ, cfg->wake_girq_pos);
+		} else {
+			/* Enable I2C block */
+			sys_set_bit(rb + XEC_I2C_CFG_OFS, XEC_I2C_CFG_ENAB_POS);
+		}
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(i2c, i2c_xec_v2_driver_api) = {
 	.configure = i2c_xec_v2_configure,
@@ -1164,8 +1385,14 @@ static int i2c_xec_v2_init(const struct device *dev)
 	uint32_t bitrate_cfg = 0;
 
 	data->state = I2C_XEC_STATE_STOPPED;
-	data->target_cfg = NULL;
+
+#ifdef CONFIG_I2C_TARGET
+	for (uint8_t i = 0; i < XEC_I2C_MAX_TARGETS; i++) {
+		data->targets[i] = NULL;
+	}
+	data->active_slot = 0;
 	data->target_attached = false;
+#endif
 
 	ret = pinctrl_apply_state(drvcfg->pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret != 0) {
@@ -1201,6 +1428,13 @@ static int i2c_xec_v2_init(const struct device *dev)
 #define XEC_I2C_GIRQ_POS_DT(inst, idx)                                                             \
 	(uint8_t)MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
 
+/* GIRQ22 source bit: bit 0 = SPI_ASYNC_WAKE, bits 1..5 = SMB controllers 0..4.
+ * Derive the SMB instance from the controller's MMIO offset within its bank
+ * (one 0x400-byte block per controller).
+ */
+#define XEC_I2C_WAKE_GIRQ_POS_DT(inst)                                                             \
+	(uint8_t)((((DT_INST_REG_ADDR(inst)) / XEC_I2C_SMB_INST_SIZE) & 0x7U) + 1U)
+
 #define I2C_XEC_DEVICE(n)                                                                          \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
 	static void i2c_xec_irq_config_func_##n(void);                                             \
@@ -1212,14 +1446,17 @@ static int i2c_xec_v2_init(const struct device *dev)
 		.girq = XEC_I2C_GIRQ_DT(n, 0),                                                     \
 		.girq_pos = XEC_I2C_GIRQ_POS_DT(n, 0),                                             \
 		.enc_pcr = DT_INST_PROP(n, pcr_scr),                                               \
+		.wake_girq_pos = XEC_I2C_WAKE_GIRQ_POS_DT(n),                                      \
+		.wakeup_source = DT_INST_PROP(n, wakeup_source),                                   \
 		.irq_config_func = i2c_xec_irq_config_func_##n,                                    \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
 		.sda_gpio = GPIO_DT_SPEC_INST_GET(n, sda_gpios),                                   \
 		.scl_gpio = GPIO_DT_SPEC_INST_GET(n, scl_gpios),                                   \
 	};                                                                                         \
-	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_init, NULL, &i2c_xec_data_##n,                     \
-				  &i2c_xec_config_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,      \
-				  &i2c_xec_v2_driver_api);                                         \
+	PM_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_pm_action);                                         \
+	I2C_DEVICE_DT_INST_DEFINE(n, i2c_xec_v2_init, PM_DEVICE_DT_INST_GET(n),                    \
+				  &i2c_xec_data_##n, &i2c_xec_config_##n, POST_KERNEL,             \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_xec_v2_driver_api);               \
                                                                                                    \
 	static void i2c_xec_irq_config_func_##n(void)                                              \
 	{                                                                                          \

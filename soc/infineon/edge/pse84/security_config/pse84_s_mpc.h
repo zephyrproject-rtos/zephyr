@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,8 +11,8 @@
 #include <stdint.h>
 
 #include <infineon_kconfig.h>
-#include "cy_device.h"
-#include "cy_mpc.h"
+#include <cy_device.h>
+#include <cy_mpc.h>
 
 cy_rslt_t cy_mpc_init(void);
 

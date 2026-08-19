@@ -59,6 +59,9 @@
 #include <zephyr/linker/sections.h>
 #include <zephyr/device.h>
 #include <zephyr/pm/device.h>
+#ifdef CONFIG_X2APIC
+#include <zephyr/arch/x86/cpuid.h>
+#endif
 #include <string.h>
 
 #include <zephyr/drivers/interrupt_controller/ioapic.h> /* public API declarations */
@@ -68,6 +71,9 @@
 DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
 
 #define IOAPIC_REG DEVICE_MMIO_TOPLEVEL_GET(ioapic_regs)
+
+#define APIC_ID_TO_DEST(id)	(((id) & 0xFF) << 24)
+#define DEFAULT_RTE_DEST	(0xFFU << 24)
 
 /*
  * Destination field (bits[56:63]) defines a set of processors, which is
@@ -81,12 +87,9 @@ DEVICE_MMIO_TOPLEVEL_STATIC(ioapic_regs, DT_DRV_INST(0));
  * In this case, LDR is read-only to system software and supports up to 16
  * logical IDs. (Cluster ID: don't care to IO APIC).
  *
- * In either case, regardless how many CPUs in the system, 0xff implies that
- * it's intended to deliver to all possible 8 local APICs.
  */
-#define DEFAULT_RTE_DEST (0xFFU << 24)
 
-static __pinned_bss uint32_t ioapic_rtes;
+static uint32_t ioapic_rtes;
 
 #ifdef CONFIG_PM_DEVICE
 
@@ -103,7 +106,6 @@ static __pinned_bss uint32_t ioapic_rtes;
  */
 #define SUSPEND_BITS_REQD (ROUND_UP((256 * BITS_PER_IRQ), 32))
 
-__pinned_bss
 uint32_t ioapic_suspend_buf[SUSPEND_BITS_REQD / 32] = {0};
 #endif
 
@@ -166,19 +168,26 @@ int ioapic_init(const struct device *unused)
 #ifdef CONFIG_IOAPIC_MASK_RTE
 	int32_t ix;	/* redirection table index */
 	uint32_t rteValue; /* value to copy into redirection table entry */
+	uint32_t dest_apic_id;
 
+#ifdef CONFIG_X2APIC
+	dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
+		   0 /* dummy vector */;
+#else
+	dest_apic_id = DEFAULT_RTE_DEST;
 	rteValue = IOAPIC_EDGE | IOAPIC_HIGH | IOAPIC_FIXED | IOAPIC_INT_MASK |
 		   IOAPIC_LOGICAL | 0 /* dummy vector */;
+#endif
 
 	for (ix = 0; ix < ioapic_rtes; ix++) {
-		ioApicRedSetHi(ix, DEFAULT_RTE_DEST);
+		ioApicRedSetHi(ix, dest_apic_id);
 		ioApicRedSetLo(ix, rteValue);
 	}
 #endif
 	return 0;
 }
 
-__pinned_func
 uint32_t z_ioapic_num_rtes(void)
 {
 	return ioapic_rtes;
@@ -191,7 +200,6 @@ uint32_t z_ioapic_num_rtes(void)
  *
  * @param irq IRQ number to enable
  */
-__pinned_func
 void z_ioapic_irq_enable(unsigned int irq)
 {
 	IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
@@ -203,7 +211,6 @@ void z_ioapic_irq_enable(unsigned int irq)
  * This routine disables a specified APIC interrupt input line.
  * @param irq IRQ number to disable
  */
-__pinned_func
 void z_ioapic_irq_disable(unsigned int irq)
 {
 	IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
@@ -212,7 +219,6 @@ void z_ioapic_irq_disable(unsigned int irq)
 
 #ifdef CONFIG_PM_DEVICE
 
-__pinned_func
 void store_flags(unsigned int irq, uint32_t flags)
 {
 	/* Currently only the following four flags are modified */
@@ -241,7 +247,6 @@ void store_flags(unsigned int irq, uint32_t flags)
 	}
 }
 
-__pinned_func
 uint32_t restore_flags(unsigned int irq)
 {
 	uint32_t flags = 0U;
@@ -270,7 +275,6 @@ uint32_t restore_flags(unsigned int irq)
 }
 
 
-__pinned_func
 int ioapic_suspend(const struct device *port)
 {
 	int irq;
@@ -292,31 +296,44 @@ int ioapic_suspend(const struct device *port)
 	return 0;
 }
 
-__pinned_func
 int ioapic_resume_from_suspend(const struct device *port)
 {
 	int irq;
 	uint32_t flags;
 	uint32_t rteValue;
+	uint32_t dest_apic_id;
 
 	ARG_UNUSED(port);
+
+#ifdef CONFIG_X2APIC
+	dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+#else
+	dest_apic_id = DEFAULT_RTE_DEST;
+#endif
 
 	for (irq = 0; irq < ioapic_rtes; irq++) {
 		if (_irq_to_interrupt_vector[irq]) {
 			/* Get the saved flags */
 			flags = restore_flags(irq);
+#ifndef CONFIG_X2APIC
 			/* Appending the flags that are never modified */
 			flags = flags | IOAPIC_LOGICAL;
-
+#endif
 			rteValue = (_irq_to_interrupt_vector[irq] &
 					IOAPIC_VEC_MASK) | flags;
 		} else {
 			/* Initialize the other RTEs to sane values */
+#ifdef CONFIG_X2APIC
+			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
+				IOAPIC_FIXED | IOAPIC_INT_MASK |
+				0; /* dummy vector */
+#else
 			rteValue = IOAPIC_EDGE | IOAPIC_HIGH |
 				IOAPIC_FIXED | IOAPIC_INT_MASK |
 				IOAPIC_LOGICAL | 0 ; /* dummy vector*/
+#endif
 		}
-		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
+		ioApicRedSetHi(irq, dest_apic_id);
 		ioApicRedSetLo(irq, rteValue);
 	}
 	return 0;
@@ -326,7 +343,6 @@ int ioapic_resume_from_suspend(const struct device *port)
 * Implements the driver control management functionality
 * the *context may include IN data or/and OUT data
 */
-__pinned_func
 static int ioapic_pm_action(const struct device *dev,
 			    enum pm_device_action action)
 {
@@ -395,12 +411,22 @@ no_vtd:
 #else
 	{
 #endif /* CONFIG_INTEL_VTD_ICTL && !CONFIG_INTEL_VTD_ICTL_XAPIC_PASSTHROUGH */
+
+		uint32_t dest_apic_id;
+
+#ifdef CONFIG_X2APIC
+		dest_apic_id = APIC_ID_TO_DEST(z_x86_cpuid_get_current_physical_apic_id());
+		rteValue = IOAPIC_INT_MASK |
+			(vector & IOAPIC_VEC_MASK) | flags;
+#else
+		dest_apic_id = DEFAULT_RTE_DEST;
 		/* the delivery mode is determined by the flags
 		 * passed from drivers
 		 */
 		rteValue = IOAPIC_INT_MASK | IOAPIC_LOGICAL |
 			(vector & IOAPIC_VEC_MASK) | flags;
-		ioApicRedSetHi(irq, DEFAULT_RTE_DEST);
+#endif
+		ioApicRedSetHi(irq, dest_apic_id);
 		ioApicRedSetLo(irq, rteValue);
 	}
 }
@@ -428,7 +454,6 @@ void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
  *
  * @return register value
  */
-__pinned_func
 static uint32_t __IoApicGet(int32_t offset)
 {
 	uint32_t value; /* value */
@@ -454,7 +479,6 @@ static uint32_t __IoApicGet(int32_t offset)
  * @param offset Register offset (8 bits)
  * @param value Value to set the register
  */
-__pinned_func
 static void __IoApicSet(int32_t offset, uint32_t value)
 {
 	unsigned int key; /* interrupt lock level */
@@ -477,7 +501,6 @@ static void __IoApicSet(int32_t offset, uint32_t value)
  * @param irq INTIN number
  * @return 32 low-order bits
  */
-__pinned_func
 static uint32_t ioApicRedGetLo(unsigned int irq)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
@@ -493,7 +516,6 @@ static uint32_t ioApicRedGetLo(unsigned int irq)
  * @param irq INTIN number
  * @param lower32 Value to be written
  */
-__pinned_func
 static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1); /* register offset */
@@ -509,7 +531,6 @@ static void ioApicRedSetLo(unsigned int irq, uint32_t lower32)
  * @param irq INTIN number
  * @param upper32 Value to be written
  */
-__pinned_func
 static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
 {
 	int32_t offset = IOAPIC_REDTBL + (irq << 1) + 1; /* register offset */
@@ -527,7 +548,6 @@ static void ioApicRedSetHi(unsigned int irq, uint32_t upper32)
  * @param value Value to be written
  * @param mask  Mask of bits to be modified
  */
-__pinned_func
 static void IoApicRedUpdateLo(unsigned int irq,
 				uint32_t value,
 				uint32_t mask)

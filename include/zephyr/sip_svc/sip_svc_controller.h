@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SIP_SVC_CONTROLLER_H_
-#define ZEPHYR_SIP_SVC_CONTROLLER_H_
+#ifndef ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_CONTROLLER_H_
+#define ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_CONTROLLER_H_
 
 /**
  * @note This file should only be included by sip_svc driver.
@@ -120,4 +120,4 @@ struct sip_svc_controller {
 				  sip_max_transactions, sip_resp_size)
 #endif
 
-#endif /* ZEPHYR_SIP_SVC_CONTROLLER_H_ */
+#endif /* ZEPHYR_INCLUDE_SIP_SVC_SIP_SVC_CONTROLLER_H_ */

@@ -87,8 +87,8 @@ struct ctsu_scan_msg {
 	struct st_touch_instance *p_instance;
 };
 
-SYS_MEM_BLOCKS_DEFINE_STATIC(scan_msg_allocator, sizeof(struct ctsu_scan_msg),
-			     CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE, sizeof(uint32_t));
+SYS_MEM_BLOCKS_DEFINE_STATIC_TYPE(scan_msg_allocator, struct ctsu_scan_msg,
+				  CONFIG_INPUT_RENESAS_RA_CTSU_MSG_MEM_BLOCK_SIZE);
 
 static void renesas_ra_callback_adapter(touch_callback_args_t *p_args)
 {
@@ -329,7 +329,7 @@ __maybe_unused static void ctsu_renesas_ra_button_cb(const struct device *dev, v
 	ARG_UNUSED(data);
 	const struct ctsu_device_cfg *cfg = dev->config;
 
-	input_report_key(dev, cfg->event_code, 0, false, K_NO_WAIT);
+	input_report_key(dev, cfg->event_code, 1, false, K_NO_WAIT);
 }
 
 __maybe_unused static void ctsu_renesas_ra_slider_cb(const struct device *dev, void *data)

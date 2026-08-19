@@ -93,15 +93,13 @@ struct udc_ep_caps {
  */
 struct udc_ep_stat {
 	/** Endpoint is enabled */
-	uint32_t enabled : 1;
+	bool enabled;
 	/** Endpoint is halted (returning STALL PID) */
-	uint32_t halted : 1;
+	bool halted;
 	/** Last submitted PID is DATA1 */
-	uint32_t data1 : 1;
-	/** If double buffering is supported, last used buffer is odd */
-	uint32_t odd : 1;
+	bool data1;
 	/** Endpoint is busy */
-	uint32_t busy : 1;
+	bool busy;
 };
 
 /**
@@ -206,7 +204,6 @@ struct udc_buf_info {
 } __packed;
 
 /**
- * @typedef udc_event_cb_t
  * @brief Callback to submit UDC event to higher layer.
  *
  * At the higher level, the event is to be inserted into a message queue.

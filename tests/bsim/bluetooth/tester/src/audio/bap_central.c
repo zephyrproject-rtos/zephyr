@@ -33,7 +33,6 @@ static void test_bap_central(void)
 							       BT_AUDIO_CODEC_CFG_DURATION_10,
 							       BT_AUDIO_LOCATION_FRONT_LEFT, 40, 1);
 
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	const uint8_t cig_id = 0U;
 	const uint8_t cis_id = 0U;
 	const uint32_t sdu_interval = 10000U;
@@ -56,13 +55,12 @@ static void test_bap_central(void)
 
 	bsim_btp_gap_start_discovery(BTP_GAP_DISCOVERY_FLAG_LE);
 	bsim_btp_wait_for_gap_device_found(&remote_addr);
-	bt_addr_le_to_str(&remote_addr, addr_str, sizeof(addr_str));
-	LOG_INF("Found remote device %s", addr_str);
+	LOG_INF("Found remote device %s", bt_addr_le_str(&remote_addr));
 
 	bsim_btp_gap_stop_discovery();
 	bsim_btp_gap_connect(&remote_addr, BTP_GAP_ADDR_TYPE_IDENTITY);
 	bsim_btp_wait_for_gap_device_connected(NULL);
-	LOG_INF("Device %s connected", addr_str);
+	LOG_INF("Device %s connected", bt_addr_le_str(&remote_addr));
 
 	bsim_btp_gap_pair(&remote_addr);
 	bsim_btp_wait_for_gap_sec_level_changed(NULL, NULL);
@@ -95,7 +93,7 @@ static void test_bap_central(void)
 
 	bsim_btp_gap_disconnect(&remote_addr);
 	bsim_btp_wait_for_gap_device_disconnected(NULL);
-	LOG_INF("Device %s disconnected", addr_str);
+	LOG_INF("Device %s disconnected", bt_addr_le_str(&remote_addr));
 
 	TEST_PASS("PASSED\n");
 }

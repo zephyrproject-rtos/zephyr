@@ -21,11 +21,11 @@
 #if defined(CONFIG_BT_VOCS)
 #define BT_VOCS_MAX_DESC_SIZE CONFIG_BT_VOCS_MAX_OUTPUT_DESCRIPTION_SIZE
 #else
-#define BT_VOCS_MAX_DESC_SIZE 1
+#define BT_VOCS_MAX_DESC_SIZE 1U
 #endif /* CONFIG_BT_VOCS */
 
 /* VOCS opcodes */
-#define BT_VOCS_OPCODE_SET_OFFSET                  0x01
+#define BT_VOCS_OPCODE_SET_OFFSET                  0x01U
 
 struct bt_vocs_control {
 	uint8_t opcode;
@@ -66,6 +66,11 @@ struct bt_vocs_client {
 	struct bt_gatt_subscribe_params state_sub_params;
 	struct bt_gatt_subscribe_params location_sub_params;
 	struct bt_gatt_subscribe_params desc_sub_params;
+
+	/* Dedicated discovery params for concurrent CCC auto-discovery */
+	struct bt_gatt_discover_params state_ccc_disc_params;
+	struct bt_gatt_discover_params location_ccc_disc_params;
+	struct bt_gatt_discover_params desc_ccc_disc_params;
 
 	struct bt_vocs_control cp;
 	struct bt_gatt_write_params write_params;

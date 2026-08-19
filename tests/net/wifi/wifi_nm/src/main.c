@@ -47,21 +47,21 @@ static void wifi_iface_init(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct wifi_drv_context *context = dev->data;
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
 	net_if_set_link_addr(iface, context->mac_addr,
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 
-	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	net_eth_set_if_type_wifi(iface);
 
 	ethernet_init(iface);
 }
 
-static int wifi_scan(const struct device *dev, struct wifi_scan_params *params,
-		     scan_result_cb_t cb)
+static int wifi_scan(const struct device *dev, struct net_if *iface,
+		     struct wifi_scan_params *params, scan_result_cb_t cb)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
 	ARG_UNUSED(params);
 	ARG_UNUSED(cb);
 
@@ -106,10 +106,11 @@ ETH_NET_DEVICE_INIT(wlan0, "wifi_test",
 		    &wifi_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, NET_ETH_MTU);
 
-static int wifi_nm_scan(const struct device *dev, struct wifi_scan_params *params,
-			scan_result_cb_t cb)
+static int wifi_nm_scan(const struct device *dev, struct net_if *iface,
+			struct wifi_scan_params *params, scan_result_cb_t cb)
 {
 	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
 	ARG_UNUSED(params);
 	ARG_UNUSED(cb);
 

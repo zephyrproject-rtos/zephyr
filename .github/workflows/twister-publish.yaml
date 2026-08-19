@@ -20,15 +20,16 @@ jobs:
       ELASTICSEARCH_KEY: ${{ secrets.ELASTICSEARCH_KEY }}
       ELASTICSEARCH_SERVER: "https://elasticsearch.zephyrproject.io:443"
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       # Needed for elasticearch and upload script
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.12
           cache: pip
@@ -39,7 +40,7 @@ jobs:
 
       - name: Download Artifacts
         id: download-artifacts
-        uses: dawidd6/action-download-artifact@1f8785ff7a5130826f848e7f72725c85d241860f # v18
+        uses: dawidd6/action-download-artifact@b6e2e70617bc3265edd6dab6c906732b2f1ae151 # v21
         with:
           path: artifacts
           workflow: twister.yml

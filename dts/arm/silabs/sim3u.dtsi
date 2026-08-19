@@ -87,12 +87,15 @@
 		flash: flash-controller@4002e000 {
 			compatible = "silabs,si32-flash-controller";
 			reg = <0x4002e000 0x1000>;
+			ranges;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <2>;
 			};
 		};
@@ -118,6 +121,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a0a0 0xa0>;
+			ngpios = <16>;
 		};
 
 		gpio1: gpio@4002a140 {
@@ -125,6 +129,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a140 0xa0>;
+			ngpios = <16>;
 		};
 
 		gpio2: gpio@4002a1e0 {
@@ -132,6 +137,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a1e0 0xc0>;
+			ngpios = <16>;
 		};
 
 		gpio3: gpio@4002a320 {
@@ -139,6 +145,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a320 0xa0>;
+			ngpios = <16>;
 		};
 	};
 };

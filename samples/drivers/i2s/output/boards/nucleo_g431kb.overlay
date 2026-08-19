@@ -15,6 +15,10 @@
 	div-q = <8>;
 };
 
+&sai1 {
+	status = "okay";
+};
+
 /* MCLK is not enabled */
 /* SAI1_A MCLK (PB8) is not available on the Arduino Nano header */
 &sai1_a {

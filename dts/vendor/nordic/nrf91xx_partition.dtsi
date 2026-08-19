@@ -128,11 +128,47 @@
 		sram0_ns_modem: sram0_ns@0 {
 			/* Modem (shared) memory */
 			reg = <0x0 DT_SIZE_K(40)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x0 0xa000>;
+
+			cpuapp_cpucell_ipc_shm_ctrl: sram0_ns_modem@0 {
+				/* Modem IPC control */
+				reg = <0x0 0x4e8>;
+			};
+
+			cpuapp_cpucell_ipc_shm_heap: sram0_ns_modem@4e8 {
+				/* Modem IPC transmit */
+				reg = <0x4e8 0x2080>;
+			};
+
+			cpucell_cpuapp_ipc_shm_heap: sram0_ns_modem@2568 {
+				/* Modem IPC receive */
+				reg = <0x2568 0x2000>;
+			};
 		};
 
 		sram0_ns_app: sram0_ns@a000 {
 			/* Non-Secure application memory */
 			reg = <0xa000 DT_SIZE_K(128)>;
 		};
+	};
+};
+
+/ {
+	nordic-tz-secure {
+		compatible = "nordic,tz-secure";
+		code-partitions = <&slot0_s_partition>,
+				  <&slot1_s_partition>;
+		data-partitions = <&tfm_ps_partition>,
+				  <&tfm_its_partition>,
+				  <&tfm_otp_partition>;
+	};
+
+	nordic-tz-nonsecure {
+		compatible = "nordic,tz-nonsecure";
+		code-partitions = <&slot0_ns_partition>,
+				  <&slot1_ns_partition>;
+		data-partitions = <&storage_partition>;
 	};
 };

@@ -12,4 +12,7 @@ supported:
   - gpio
   - pinctrl
   - uart
+  - spi
+  - vref
+  - counter
 vendor: ti

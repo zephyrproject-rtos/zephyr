@@ -9,6 +9,7 @@ menuconfig IIS3DHHC
 	depends on DT_HAS_ST_IIS3DHHC_ENABLED
 	depends on ZEPHYR_HAL_ST_MODULE
 	select SPI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DHHC),irq-gpios)
 	select HAS_STMEMSC
 	select USE_STDC_IIS3DHHC
 	help

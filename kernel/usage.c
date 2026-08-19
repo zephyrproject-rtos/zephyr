@@ -123,6 +123,8 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 {
 	k_spinlock_key_t  key;
 	struct _cpu *cpu;
+	uint32_t pending = 0U;
+	bool pending_is_idle = false;
 
 	key = k_spin_lock(&usage_lock);
 	cpu = &_kernel.cpus[cpu_id];
@@ -145,9 +147,24 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 		sched_cpu_update_usage(cpu, cycles);
 
 		cpu->usage0 = now;
+	} else if (cpu->usage->track_usage) {
+		/*
+		 * Getting stats for another CPU. Its counters only advance when
+		 * it context switches or reports on itself, so the time it has
+		 * spent in its current thread since then is not in them yet.
+		 * Fold that in for the returned view only: mutating another
+		 * CPU's accounting here would double count it once that CPU
+		 * updates itself.
+		 *
+		 * Without this, a CPU that ran and then went idle reports all of
+		 * the elapsed time as execution time, i.e. a 100% load.
+		 */
+		pending = usage_now() - cpu->usage0;
+		pending_is_idle = (cpu->current == cpu->idle_thread);
 	}
 
-	stats->total_cycles     = cpu->usage->total;
+	stats->total_cycles     = cpu->usage->total +
+				  (pending_is_idle ? 0U : pending);
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 	stats->current_cycles   = cpu->usage->current;
 	stats->peak_cycles      = cpu->usage->longest;
@@ -161,7 +178,8 @@ void z_sched_cpu_usage(uint8_t cpu_id, struct k_thread_runtime_stats *stats)
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
 	stats->idle_cycles =
-		_kernel.cpus[cpu_id].idle_thread->base.usage.total;
+		_kernel.cpus[cpu_id].idle_thread->base.usage.total +
+		(pending_is_idle ? pending : 0U);
 
 	stats->execution_cycles = stats->total_cycles + stats->idle_cycles;
 
@@ -233,11 +251,21 @@ int k_thread_runtime_stats_enable(k_tid_t  thread)
 	}
 
 	key = k_spin_lock(&usage_lock);
+	struct _cpu *cpu = _current_cpu;
 
 	if (!thread->base.usage.track_usage) {
 		thread->base.usage.track_usage = true;
 		thread->base.usage.num_windows++;
 		thread->base.usage.current = 0;
+
+		if (thread == cpu->current) {
+			uint32_t now = usage_now();
+			uint32_t cycles = now - cpu->usage0;
+
+			sched_cpu_update_usage(cpu, cycles);
+
+			cpu->usage0 = now;
+		}
 	}
 
 	k_spin_unlock(&usage_lock, key);
@@ -260,16 +288,24 @@ int k_thread_runtime_stats_disable(k_tid_t  thread)
 		thread->base.usage.track_usage = false;
 
 		if (thread == cpu->current) {
-			uint32_t cycles = usage_now() - cpu->usage0;
+			uint32_t now = usage_now();
+			uint32_t cycles = now - cpu->usage0;
 
 			sched_thread_update_usage(thread, cycles);
 			sched_cpu_update_usage(cpu, cycles);
+
+			cpu->usage0 = now;
 		}
 	}
 
 	k_spin_unlock(&usage_lock, key);
 
 	return 0;
+}
+
+bool k_thread_runtime_stats_is_enabled(k_tid_t thread)
+{
+	return thread->base.usage.track_usage;
 }
 #endif /* CONFIG_SCHED_THREAD_USAGE_ANALYSIS */
 
@@ -296,7 +332,7 @@ void k_sys_runtime_stats_enable(void)
 
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (uint8_t i = 0; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		_kernel.cpus[i].usage->track_usage = true;
 #ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
 		_kernel.cpus[i].usage->num_windows++;
@@ -330,7 +366,7 @@ void k_sys_runtime_stats_disable(void)
 
 	unsigned int num_cpus = arch_num_cpus();
 
-	for (uint8_t i = 0; i < num_cpus; i++) {
+	for (unsigned int i = 0; i < num_cpus; i++) {
 		cpu = &_kernel.cpus[i];
 		if (cpu->usage0 != 0) {
 			sched_cpu_update_usage(cpu, now - cpu->usage0);

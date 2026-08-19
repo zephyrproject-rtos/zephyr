@@ -1,5 +1,5 @@
 /*
- * Copyright 2020,2023 NXP
+ * Copyright 2020,2023,2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,6 +34,20 @@ void memc_flexspi_wait_bus_idle(const struct device *dev);
  * @retval true if FlexSPI being used for XIP
  */
 bool memc_flexspi_is_running_xip(const struct device *dev);
+
+/**
+ * @brief Apply pinctrl state for the FlexSPI controller
+ *
+ * This is intended for cases where the FlexSPI controller initialization is
+ * skipped (e.g. due to XIP), but board pinmux for additional FlexSPI ports is
+ * still required (e.g. PortB pins).
+ *
+ * @param dev FlexSPI device
+ * @param id Pin control state identifier (e.g. PINCTRL_STATE_DEFAULT)
+ * @return 0 on success, -ENOENT if the state does not exist, or a negative
+ *         errno for other failures
+ */
+int memc_flexspi_apply_pinctrl(const struct device *dev, uint8_t id);
 
 /**
  * @brief Update clock selection of the FlexSPI device
@@ -101,3 +115,16 @@ int memc_flexspi_transfer(const struct device *dev,
  */
 void *memc_flexspi_get_ahb_address(const struct device *dev,
 		flexspi_port_t port, off_t offset);
+
+/**
+ * @brief Allowing external modules to update LUT.
+ *
+ * @param dev: FlexSPI device pointer
+ * @param port: FlexSPI port
+ * @param seq_idx: Sequence index offset within the port's allocated LUT region
+ * @param lut_ptr: LUT array pointer
+ * @param lut_count: Number of LUT entries
+ * @return 0 on success, negative value on failure
+ */
+int memc_flexspi_update_lut(const struct device *dev, flexspi_port_t port, uint32_t seq_idx,
+			    const uint32_t *lut_ptr, uint8_t lut_count);

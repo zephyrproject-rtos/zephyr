@@ -56,8 +56,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #endif /* SUPPORT_RADIO_SECURITY_OT_1_2 */
 
 extern uint32_t llhwc_cmn_is_dp_slp_enabled(void);
+extern bool standby_entered;
 
 static struct stm32wba_802154_data_t stm32wba_802154_data;
+static volatile bool stm32wba_tx_wait_pending;
+static volatile bool stm32wba_tx_abort_on_reset;
 
 /* driver-allocated attribute memory - constant across all driver instances */
 IEEE802154_DEFINE_PHY_SUPPORTED_CHANNELS(drv_attr, 11, 26);
@@ -78,9 +81,9 @@ static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 void stm32wba_802154_tx_ack_started(bool ack_fpb, bool ack_seb);
 static void stm32wba_802154_transmit_done(
 				uint8_t *p_frame,
-				stm32wba_802154_ral_tx_error_t error,
+				stm32wba_802154_ral_error_t error,
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata);
-static void stm32wba_802154_cca_done(uint8_t error);
+static void stm32wba_802154_cca_done(stm32wba_802154_ral_error_t error);
 static void stm32wba_802154_energy_scan_done(int8_t ed_result);
 
 static const struct device *stm32wba_802154_get_device(void)
@@ -117,6 +120,15 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		__ASSERT_NO_MSG(rx_frame->psdu != NULL);
 
+		/* The length is supplied by the radio firmware; reject one that
+		 * cannot hold the FCS before subtracting it.
+		 */
+		if (rx_frame->length < IEEE802154_FCS_LENGTH) {
+			LOG_ERR("Invalid frame length %u", rx_frame->length);
+			rx_frame->psdu = NULL;
+			continue;
+		}
+
 		/* Depending on the net L2 layer, the FCS may be included in length or not */
 		if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 			pkt_len = rx_frame->length;
@@ -125,7 +137,11 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 #if defined(CONFIG_NET_BUF_DATA_SIZE)
-		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		if (pkt_len > CONFIG_NET_BUF_DATA_SIZE) {
+			LOG_ERR("Frame too long: %u", pkt_len);
+			rx_frame->psdu = NULL;
+			continue;
+		}
 #endif
 
 		LOG_DBG("Frame received - sequence nb: %u, length: %u", rx_frame->psdu[2],
@@ -165,19 +181,19 @@ static void stm32wba_802154_rx_thread(void *arg1, void *arg2, void *arg3)
 	}
 }
 
-static void stm32wba_802154_receive_failed(stm32wba_802154_ral_rx_error_t error)
+static void stm32wba_802154_receive_failed(stm32wba_802154_ral_error_t error)
 {
 	const struct device *dev = stm32wba_802154_get_device();
 	enum ieee802154_rx_fail_reason reason;
 
 	switch (error) {
-	case STM32WBA_802154_RAL_RX_ERROR_FCS:
+	case STM32WBA_802154_RAL_ERROR_FCS:
 		reason = IEEE802154_RX_FAIL_INVALID_FCS;
 		break;
-	case STM32WBA_802154_RAL_RX_ERROR_NO_FRAME_RECEIVED:
+	case STM32WBA_802154_RAL_ERROR_NO_FRAME_RECEIVED:
 		reason = IEEE802154_RX_FAIL_NOT_RECEIVED;
 		break;
-	case STM32WBA_802154_RAL_RX_ERROR_DEST_ADDRESS_FILTERED:
+	case STM32WBA_802154_RAL_ERROR_DESTINATION_ADDRESS_FILTERED:
 		reason = IEEE802154_RX_FAIL_ADDR_FILTERED;
 		break;
 	default:
@@ -257,6 +273,14 @@ static int stm32wba_802154_configure_extended(enum ieee802154_stm32wba_config_ty
 
 	case IEEE802154_STM32WBA_CONFIG_RADIO_RESET:
 		LOG_DBG("Setting RADIO_RESET");
+		/* Unblock any waiter and mark current TX as aborted. */
+		stm32wba_tx_abort_on_reset = true;
+		stm32wba_tx_wait_pending = false;
+		stm32wba_802154_data.tx_result = STM32WBA_802154_RAL_ERROR_ABORT;
+		stm32wba_802154_data.tx_psdu_from_tx_done = false;
+		stm32wba_802154_data.ack_frame.psdu = NULL;
+		stm32wba_802154_data.ack_frame.length = 0;
+
 		ret = stm32wba_802154_ral_radio_reset();
 		if (ret != STM32WBA_802154_RAL_ERROR_NONE) {
 			return -EIO;
@@ -566,9 +590,14 @@ static int stm32wba_802154_tx(const struct device *dev,
 	}
 
 	memcpy(stm32wba_802154_data.tx_psdu, payload, payload_len);
+	stm32wba_802154_data.tx_psdu_len = payload_len;
+	stm32wba_802154_data.tx_psdu_from_tx_done = false;
+	stm32wba_tx_abort_on_reset = false;
 
 	/* Reset semaphore in case ACK was received after timeout */
 	k_sem_reset(&stm32wba_802154_data.tx_wait);
+
+	stm32wba_tx_wait_pending = true;
 
 	switch (mode) {
 	case IEEE802154_TX_MODE_DIRECT:
@@ -592,6 +621,7 @@ static int stm32wba_802154_tx(const struct device *dev,
 	}
 
 	if (err != STM32WBA_802154_RAL_ERROR_NONE) {
+		stm32wba_tx_wait_pending = false;
 		LOG_ERR("Cannot send frame");
 		return -EIO;
 	}
@@ -601,26 +631,34 @@ static int stm32wba_802154_tx(const struct device *dev,
 	/* Wait for the callback from the radio driver. */
 	k_sem_take(&stm32wba_802154_data.tx_wait, K_FOREVER);
 
+	stm32wba_tx_wait_pending = false;
+
+	/* Propagate tx_done frame updates whenever callback provides frame bytes. */
+	if (stm32wba_802154_data.tx_psdu_from_tx_done &&
+	    (stm32wba_802154_data.tx_psdu_len <= payload_len)) {
+		memcpy(payload, stm32wba_802154_data.tx_psdu, stm32wba_802154_data.tx_psdu_len);
+	}
+
 	LOG_DBG("Transmit done, result: %d", stm32wba_802154_data.tx_result);
 
 	net_pkt_set_ieee802154_frame_secured(pkt, stm32wba_802154_data.tx_frame_is_secured);
 	net_pkt_set_ieee802154_mac_hdr_rdy(pkt, stm32wba_802154_data.tx_frame_mac_hdr_rdy);
 
 	switch (stm32wba_802154_data.tx_result) {
-	case STM32WBA_802154_RAL_TX_ERROR_NONE:
+	case STM32WBA_802154_RAL_ERROR_NONE:
 		if (stm32wba_802154_data.ack_frame.psdu == NULL) {
 			/* No ACK was requested. */
 			return 0;
 		}
 		/* Handle ACK packet. */
 		return handle_ack(&stm32wba_802154_data);
-	case STM32WBA_802154_RAL_TX_ERROR_NO_MEM:
+	case STM32WBA_802154_RAL_ERROR_NO_BUFS:
 		return -ENOBUFS;
-	case STM32WBA_802154_RAL_TX_ERROR_BUSY_CHANNEL:
+	case STM32WBA_802154_RAL_ERROR_CHANNEL_ACCESS_FAILURE:
 		return -EBUSY;
-	case STM32WBA_802154_RAL_TX_ERROR_NO_ACK:
+	case STM32WBA_802154_RAL_ERROR_NO_ACK:
 		return -ENOMSG;
-	case STM32WBA_802154_RAL_TX_ERROR_ABORTED:
+	case STM32WBA_802154_RAL_ERROR_ABORT:
 	default:
 		return -EIO;
 	}
@@ -730,7 +768,7 @@ static void stm32wba_802154_iface_init(struct net_if *iface)
 		.stm32wba_802154_ral_cbk_tx_ack_started = stm32wba_802154_tx_ack_started,
 	};
 
-	link_layer_register_isr(false);
+	link_layer_register_isr();
 
 #if !defined(CONFIG_NET_L2_CUSTOM_IEEE802154_STM32WBA)
 	ll_sys_thread_init();
@@ -941,6 +979,12 @@ static int stm32wba_802154_configure(const struct device *dev,
 		stm32wba_802154_data.rx_on_when_idle = config->rx_on_when_idle;
 		stm32wba_802154_ral_set_continuous_reception(config->rx_on_when_idle);
 		break;
+#ifdef CONFIG_IEEE802154_STM32WBA_CSMA_CA_ENABLED
+	case IEEE802154_CONFIG_CSMA_CA_BACKOFFS:
+		LOG_DBG("Setting MAX_CSMA_BACKOFF: %u", config->csma_ca_backoffs);
+		stm32wba_802154_ral_set_max_csma_backoff(config->csma_ca_backoffs);
+		break;
+#endif
 #if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
 	case IEEE802154_CONFIG_FRAME_COUNTER_IF_LARGER:
 		stm32wba_802154_ral_set_mac_frame_counter_if_larger(config->frame_counter);
@@ -995,7 +1039,7 @@ static int stm32wba_802154_attr_get(const struct device *dev,
 static void stm32wba_802154_receive_done(uint8_t *p_buffer,
 					 stm32wba_802154_ral_receive_done_metadata_t *p_metadata)
 {
-	if ((p_buffer == NULL) || (p_metadata->error != STM32WBA_802154_RAL_RX_ERROR_NONE)) {
+	if ((p_buffer == NULL) || (p_metadata->error != STM32WBA_802154_RAL_ERROR_NONE)) {
 		stm32wba_802154_receive_failed(p_metadata->error);
 		return;
 	}
@@ -1033,10 +1077,22 @@ void stm32wba_802154_tx_ack_started(bool ack_fpb, bool ack_seb)
 
 static void stm32wba_802154_transmit_done(
 				uint8_t *p_frame,
-				stm32wba_802154_ral_tx_error_t error,
+				stm32wba_802154_ral_error_t error,
 				const stm32wba_802154_ral_transmit_done_metadata_t *p_metadata)
 {
 	ARG_UNUSED(p_frame);
+
+	/* Ignore stale completion after reset, or completion with no active waiter. */
+	if (stm32wba_tx_abort_on_reset || !stm32wba_tx_wait_pending) {
+		return;
+	}
+
+	if (p_frame != NULL) {
+		memcpy(stm32wba_802154_data.tx_psdu, p_frame, stm32wba_802154_data.tx_psdu_len);
+		stm32wba_802154_data.tx_psdu_from_tx_done = true;
+	} else {
+		stm32wba_802154_data.tx_psdu_from_tx_done = false;
+	}
 
 	stm32wba_802154_data.tx_result = error;
 	stm32wba_802154_data.tx_frame_is_secured = p_metadata->is_secured;
@@ -1056,9 +1112,9 @@ static void stm32wba_802154_transmit_done(
 	k_sem_give(&stm32wba_802154_data.tx_wait);
 }
 
-static void stm32wba_802154_cca_done(uint8_t error)
+static void stm32wba_802154_cca_done(stm32wba_802154_ral_error_t error)
 {
-	if (error == STM32WBA_802154_RAL_RX_ERROR_NONE) {
+	if (error == STM32WBA_802154_RAL_ERROR_NONE) {
 		stm32wba_802154_data.channel_free = true;
 	}
 
@@ -1104,9 +1160,9 @@ static int radio_pm_action(const struct device *dev, enum pm_device_action actio
 		LL_AHB5_GRP1_EnableClock(LL_AHB5_GRP1_PERIPH_RADIO);
 #if defined(CONFIG_PM_S2RAM)
 		if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_ENABLED) {
-			if (LL_PWR_IsActiveFlag_SB() == 1U) {
+			if (standby_entered) {
 				/* Restore NVIC configuration for radio */
-				link_layer_register_isr(true);
+				link_layer_register_isr();
 				ll_sys_dp_slp_exit();
 			}
 		}

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_
-#define ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_
+#define ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_
 
 /**
  * @file
@@ -76,6 +76,19 @@
 
 #include <zephyr/toolchain/common.h>
 #include <stdbool.h>
+
+/* common.h defines ALWAYS_INLINE as inline __attribute__((always_inline)).
+ * IAR emits Go004 ("function cannot be inlined") for ALWAYS_INLINE functions
+ * when optimization is disabled (e.g. debug builds). This is expected and
+ * unavoidable. Override the macro here to silence Go004 at each call site
+ * via the C99 _Pragma operator, removing the need for per-function guard
+ * pairs throughout the codebase.
+ */
+#ifndef CONFIG_COVERAGE
+#undef ALWAYS_INLINE
+#define ALWAYS_INLINE \
+	_Pragma("diag_suppress=Go004") inline __attribute__((always_inline))
+#endif
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
@@ -425,4 +438,4 @@ do {                                                                    \
 #endif
 
 #endif /* !_LINKER */
-#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_ */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_IAR_ICCARM_H_ */

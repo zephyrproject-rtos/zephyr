@@ -47,6 +47,18 @@ static const char *const colors[] = {
 	IS_ENABLED(CONFIG_LOG_DBG_COLOR_BLUE) ? LOG_COLOR_CODE_BLUE : NULL,   /* dbg */
 };
 
+static const bool func_prefix_used = IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) ||
+				     IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG);
+static const bool func_on_lut[] = {
+	false,
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF),
+	IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG),
+};
+
 static uint32_t freq;
 static log_timestamp_t timestamp_div;
 
@@ -152,9 +164,9 @@ static int timestamp_print(const struct log_output *output,
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		length = print_formatted(output, "[%08lu] ", timestamp);
+		length = print_formatted(output, "[%010lu] ", timestamp);
 #else
-		length = print_formatted(output, "[%016llu] ", timestamp);
+		length = print_formatted(output, "[%020llu] ", timestamp);
 #endif
 	} else if (freq != 0U) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
@@ -670,8 +682,8 @@ void log_output_process(const struct log_output *output,
 	cbprintf_cb cb;
 
 	if (!raw_string) {
-		prefix_offset = prefix_print(output, flags, 0, timestamp,
-					     domain, source, tid, core_id, level);
+		prefix_offset = prefix_print(output, flags, func_prefix_used && func_on_lut[level],
+					     timestamp, domain, source, tid, core_id, level);
 		cb = out_func;
 	} else {
 		prefix_offset = 0;

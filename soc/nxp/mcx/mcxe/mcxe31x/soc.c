@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include <zephyr/device.h>
 #include <zephyr/init.h>
 #include <zephyr/cache.h>
+#include <fsl_power.h>
 #include "soc.h"
 
 /**
@@ -29,6 +30,8 @@
  */
 void soc_early_init_hook(void)
 {
+	SystemInit();
+
 #ifdef CONFIG_SOC_MCXE31B
 	enable_sram_extra_latency(true);
 #else
@@ -37,4 +40,12 @@ void soc_early_init_hook(void)
 	/* Enable I/DCache */
 	sys_cache_instr_enable();
 	sys_cache_data_enable();
+}
+
+void soc_late_init_hook(void)
+{
+	if (POWER_ExitFromStandbyMode()) {
+		/* Re-latch IO controls before application output after standby reset. */
+		DCM_GPR->DCMRWF1 |= (uint32_t)DCM_GPR_DCMRWF1_STANDBY_IO_CONFIG_MASK;
+	}
 }

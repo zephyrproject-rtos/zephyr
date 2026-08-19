@@ -372,6 +372,8 @@ void z_shell_fprintf(const struct shell *sh, enum shell_vt100_color color,
 void z_shell_vfprintf(const struct shell *sh, enum shell_vt100_color color,
 		      const char *fmt, va_list args);
 
+void z_shell_cbpprintf(const struct shell *sh, enum shell_vt100_color color, void *package);
+
 /**
  * @brief Flushes the shell backend receive buffer.
  *

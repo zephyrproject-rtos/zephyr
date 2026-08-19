@@ -18,6 +18,7 @@
 #include <zephyr/sys/bitarray.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/math_extras.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/timing/timing.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/logging/log.h>
@@ -532,7 +533,10 @@ static int map_anon_page(void *addr, uint32_t flags)
 		int ret;
 
 		pf = k_mem_paging_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy */
+			return -ENOMEM;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -702,18 +706,18 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	 */
 	pos = addr;
 	ret = arch_page_phys_get(pos - CONFIG_MMU_PAGE_SIZE, NULL);
+	__ASSERT(ret != 0,
+		 "%s: cannot find preceding guard page for (%p, %zu)",
+		 __func__, addr, size);
 	if (ret == 0) {
-		__ASSERT(ret == 0,
-			 "%s: cannot find preceding guard page for (%p, %zu)",
-			 __func__, addr, size);
 		goto out;
 	}
 
 	ret = arch_page_phys_get(pos + size, NULL);
+	__ASSERT(ret != 0,
+		 "%s: cannot find succeeding guard page for (%p, %zu)",
+		 __func__, addr, size);
 	if (ret == 0) {
-		__ASSERT(ret == 0,
-			 "%s: cannot find succeeding guard page for (%p, %zu)",
-			 __func__, addr, size);
 		goto out;
 	}
 
@@ -1020,7 +1024,7 @@ size_t k_mem_region_align(uintptr_t *aligned_addr, size_t *aligned_size,
 	return addr_offset;
 }
 
-#if defined(CONFIG_LINKER_USE_BOOT_SECTION) || defined(CONFIG_LINKER_USE_PINNED_SECTION)
+#ifdef CONFIG_LINKER_USE_BOOT_SECTION
 static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 				       bool pin)
 {
@@ -1051,7 +1055,7 @@ static void mark_linker_section_pinned(void *start_addr, void *end_addr,
 		}
 	}
 }
-#endif /* CONFIG_LINKER_USE_BOOT_SECTION) || CONFIG_LINKER_USE_PINNED_SECTION */
+#endif /* CONFIG_LINKER_USE_BOOT_SECTION */
 
 #ifdef CONFIG_LINKER_USE_ONDEMAND_SECTION
 static void z_paging_ondemand_section_map(void)
@@ -1099,28 +1103,17 @@ void z_mem_manage_init(void)
 	arch_reserved_pages_update();
 #endif /* CONFIG_ARCH_HAS_RESERVED_PAGE_FRAMES */
 
-#ifdef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	/* All pages composing the Zephyr image are mapped at boot in a
-	 * predictable way. This can change at runtime.
+	/* The entire Zephyr image is mapped and pinned at boot. Demand
+	 * paging applies only to anonymous mappings created via k_mem_map()
+	 * and to memory placed in explicit __ondemand_* linker sections;
+	 * the kernel image itself is never a candidate for eviction.
 	 */
 	VIRT_FOREACH(K_MEM_KERNEL_VIRT_START, K_MEM_KERNEL_VIRT_SIZE, addr)
 	{
 		pf = k_mem_phys_to_page_frame(K_MEM_BOOT_VIRT_TO_PHYS(addr));
 		frame_mapped_set(pf, addr);
-
-		/* TODO: for now we pin the whole Zephyr image. Demand paging
-		 * currently tested with anonymously-mapped pages which are not
-		 * pinned.
-		 *
-		 * We will need to setup linker regions for a subset of kernel
-		 * code/data pages which are pinned in memory and
-		 * may not be evicted. This will contain critical CPU data
-		 * structures, and any code used to perform page fault
-		 * handling, page-ins, etc.
-		 */
 		k_mem_page_frame_set(pf, K_MEM_PAGE_FRAME_PINNED);
 	}
-#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
 	/* Pin the boot section to prevent it from being swapped out during
@@ -1128,11 +1121,6 @@ void z_mem_manage_init(void)
 	 */
 	mark_linker_section_pinned(lnkr_boot_start, lnkr_boot_end, true);
 #endif /* CONFIG_LINKER_USE_BOOT_SECTION */
-
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-	/* Pin the page frames correspondng to the pinned symbols */
-	mark_linker_section_pinned(lnkr_pinned_start, lnkr_pinned_end, true);
-#endif /* CONFIG_LINKER_USE_PINNED_SECTION */
 
 	/* Any remaining pages that aren't mapped, reserved, or pinned get
 	 * added to the free pages list
@@ -1169,16 +1157,6 @@ void z_mem_manage_init(void)
 	page_frames_initialized = true;
 #endif
 	k_spin_unlock(&z_mm_lock, key);
-
-#ifndef CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT
-	/* If BSS section is not present in memory at boot,
-	 * it would not have been cleared. This needs to be
-	 * done now since paging mechanism has been initialized
-	 * and the BSS pages can be brought into physical
-	 * memory to be cleared.
-	 */
-	arch_bss_zero();
-#endif /* CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT */
 }
 
 void z_mem_manage_boot_finish(void)
@@ -1290,7 +1268,7 @@ static K_MUTEX_DEFINE(z_mm_paging_lock);
 #endif
 
 static void virt_region_foreach(void *addr, size_t size,
-				void (*func)(void *))
+				void (*func)(void *vaddr))
 {
 	k_mem_assert_virtual_region(addr, size);
 
@@ -1412,7 +1390,6 @@ static int do_mem_evict(void *addr)
 		goto out;
 	}
 
-	__ASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
@@ -1715,7 +1692,13 @@ static bool do_page_fault(void *addr, bool pin)
 	if (pf == NULL) {
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy.
+			 * Fail the fault so it is reported as fatal.
+			 */
+			result = false;
+			goto out;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -1723,7 +1706,13 @@ static bool do_page_fault(void *addr, bool pin)
 		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
-	__ASSERT(ret == 0, "failed to prepare page frame");
+	if (ret != 0) {
+		/* Backing store is full. Fail the fault so it is
+		 * reported as fatal.
+		 */
+		result = false;
+		goto out;
+	}
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
@@ -1770,8 +1759,14 @@ static void do_page_in(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, false);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing would defer the failure to an arbitrary later
+		 * access.
+		 */
+		LOG_ERR("cannot page in address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_page_in(void *addr, size_t size)
@@ -1787,8 +1782,15 @@ static void do_mem_pin(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, true);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing with the memory not actually pinned would
+		 * defer the failure to an arbitrary later access, possibly
+		 * from a context that cannot handle a page fault.
+		 */
+		LOG_ERR("cannot pin address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_pin(void *addr, size_t size)

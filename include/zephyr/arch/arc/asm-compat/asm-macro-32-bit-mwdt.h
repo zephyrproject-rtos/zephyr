@@ -5,6 +5,9 @@
  * ALU/Memory instructions pseudo-mnemonics for ARCv2 and ARC32 ISA
  */
 
+#ifndef ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_32_BIT_MWDT_H_
+#define ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_32_BIT_MWDT_H_
+
 .macro MOVR, d, s
 	mov\&$suffix d, s
 .endm
@@ -91,3 +94,5 @@
 .macro CMPR, op1, op2
 	cmp op1, op2
 .endm
+
+#endif /* ZEPHYR_INCLUDE_ARCH_ARC_ASM_COMPAT_ASM_MACRO_32_BIT_MWDT_H_ */

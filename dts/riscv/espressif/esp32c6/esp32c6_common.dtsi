@@ -296,12 +296,15 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 
@@ -396,6 +399,12 @@
 		lp_uart: uart@600b1400 {
 			compatible = "espressif,esp32-lpuart";
 			reg = <0x600b1400 DT_SIZE_K(4)>;
+			interrupts = <LP_UART_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			tx-pin = <5>;
+			rx-pin = <4>;
+			rts-pin = <2>;
+			cts-pin = <3>;
 			status = "disabled";
 			current-speed = <115200>;
 		};

@@ -13,7 +13,6 @@ supported:
   - gpio
   - watchdog
 testing:
-  default: true
   ignore_tags:
     - net
 vendor: arm

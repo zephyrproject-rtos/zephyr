@@ -1069,14 +1069,8 @@ Status
        -
 
      * - :ref:`i2c_api`
-       - * ``master / slave`` => TBD
-       - NXP publishes the `I2C Specification`_ and has selected ``controller /
-         target`` as replacement terms, but the timing to publish an announcement
-         or new specification is TBD. Zephyr will update I2C when replacement
-         terminology is confirmed by a public announcement or updated
-         specification.
-
-         See :github:`Zephyr issue 27033 <27033>`.
+       - * ``master / slave`` => ``controller / target``
+       - Refer to `I2C Specification`_ for new terminology.
 
      * - :ref:`i2s_api`
        - * ``master / slave`` => TBD
@@ -1100,7 +1094,7 @@ Status
   .. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
   .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
   .. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
-  .. _OSHWA Resolution to Redefine SPI Signal Names: https://www.oshwa.org/a-resolution-to-redefine-spi-signal-names/
+  .. _OSHWA Resolution to Redefine SPI Signal Names: https://oshwa.org/resources/a-resolution-to-redefine-spi-signal-names/
   .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
   .. _CAN in Automation Inclusive Language: https://can-newsletter.org/canopen/categories/
   .. _eSPI Specification: https://downloadmirror.intel.com/27055/327432%20espi_base_specification%20R1-5.pdf

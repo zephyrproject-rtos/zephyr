@@ -135,6 +135,11 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 			LOG_ERR("McGroupStatusReq not implemented");
 			return;
 		case MULTICAST_CMD_MC_GROUP_SETUP: {
+			/* 1 (id) + 4 (McAddr) + 16 (McKeyE) + 4 (FCountMin) + 4 (FCountMax) */
+			if ((len - rx_pos) < 29U) {
+				LOG_ERR("McGroupSetupReq too short");
+				return;
+			}
 			uint8_t id = rx_buf[rx_pos++] & 0x03;
 			McChannelParams_t channel = {
 				.IsRemotelySetup = true,
@@ -257,10 +262,10 @@ static void multicast_package_callback(uint8_t port, uint8_t flags, int16_t rssi
 
 	if (tx_pos > 0) {
 		/* Random delay 2+-1 seconds according to RP002-1.0.3, chapter 2.3 */
-		uint32_t delay = 1 + sys_rand32_get() % 3;
+		uint32_t delay_ms = MSEC_PER_SEC + (sys_rand32_get() % (2 * MSEC_PER_SEC));
 
 		lorawan_services_schedule_uplink(LORAWAN_PORT_MULTICAST_SETUP, tx_buf, tx_pos,
-						 delay);
+						 delay_ms);
 	}
 }
 

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_LLEXT_LOADER_H
-#define ZEPHYR_LLEXT_LOADER_H
+#ifndef ZEPHYR_INCLUDE_LLEXT_LOADER_H_
+#define ZEPHYR_INCLUDE_LLEXT_LOADER_H_
 
 #include <zephyr/llext/elf.h>
 #include <stddef.h>
@@ -122,7 +122,7 @@ struct llext_loader {
 	 * @param[in] ldr Loader
 	 * @param[in] pos Position to obtain a pointer to
 	 *
-	 * @returns a pointer into the buffer or `NULL` if not supported
+	 * @returns a pointer into the buffer or `NULL` if not supported or pointer out of bounds.
 	 */
 	void *(*peek)(struct llext_loader *ldr, size_t pos);
 
@@ -190,4 +190,4 @@ static inline void llext_finalize(struct llext_loader *l)
 }
 #endif
 
-#endif /* ZEPHYR_LLEXT_LOADER_H */
+#endif /* ZEPHYR_INCLUDE_LLEXT_LOADER_H_ */

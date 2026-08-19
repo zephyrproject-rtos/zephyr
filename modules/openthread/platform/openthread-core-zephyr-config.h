@@ -236,7 +236,7 @@
  */
 #define OPENTHREAD_CONFIG_MULTIPLE_INSTANCE_NUM CONFIG_OPENTHREAD_MULTIPLE_INSTANCE_NUM
 
-/* Zephyr does not use OpenThread's heap. mbedTLS will use heap memory allocated
+/* Zephyr does not use OpenThread's heap. Mbed TLS will use heap memory allocated
  * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
  */
 
@@ -390,6 +390,17 @@
 #ifdef CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #define OPENTHREAD_CONFIG_CLI_MAX_LINE_LENGTH CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH
 #endif /* CONFIG_OPENTHREAD_CLI_MAX_LINE_LENGTH */
+
+/**
+ * @def OPENTHREAD_CONFIG_CLI_LINK_METRICS_ENH_ACK_VERBOSE_ENABLE
+ *
+ * Enable unsolicited CLI output of Link Metrics data received in
+ * Enhanced-ACK frames.
+ *
+ */
+#ifdef CONFIG_OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
+#define OPENTHREAD_CONFIG_CLI_LINK_METRICS_ENH_ACK_VERBOSE_ENABLE 1
+#endif /* CONFIG_OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE */
 
 /**
  * @def OPENTHREAD_CONFIG_CLI_PROMPT_ENABLE

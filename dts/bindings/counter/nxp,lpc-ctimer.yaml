@@ -5,7 +5,7 @@ description: NXP MCUX Standard Timer/Counter
 
 compatible: "nxp,lpc-ctimer"
 
-include: base.yaml
+include: [base.yaml, pinctrl-device.yaml, mux-consumer.yaml]
 
 properties:
   reg:
@@ -33,3 +33,19 @@ properties:
     type: int
     required: true
     description: prescale value
+
+  mux-states:
+    type: phandle-array
+    description: |
+      CTIMER capture input routing. Optional; only needed when counter
+      capture is used. Each entry is <&inputmuxN index connection>:
+        - &inputmuxN is the INPUTMUX mux controller providing the route
+        - index is the CAPTSEL destination index (0..3)
+        - connection is an inputmux_connection_t value from
+          fsl_inputmux_connections.h
+      Example (route CT_INP15 to CTIMER2 CAPTSEL[0] via INPUTMUX0):
+        mux-states = <&inputmux0 0 0x06000010>;
+
+counter-capture-cells:
+  - channel
+  - flags

@@ -187,6 +187,9 @@ Here is an example. We'll assume the ``remotes`` given above.
        - name: proj3
          url: https://github.com/user/project-three
          revision: abcde413a111
+       - name: proj4
+         url: https://github.com/user/project-four
+         revision: pull/69/head # GitHub Pull Request
 
 In this manifest:
 
@@ -263,7 +266,7 @@ next.
        ``revision`` value from the ``defaults`` subsection will be used if
        present.
 
-       A project revision can be a branch, tag, or SHA.
+       A project revision can be any fetchable git reference: branch, tag, SHA, pull request,...
 
        The default ``revision`` is ``master`` if not otherwise specified.
 
@@ -680,6 +683,67 @@ The value of the configuration option overrides any data in the manifest file.
 You can think of this as if the ``manifest.group-filter`` configuration option
 is appended to the ``manifest: group-filter:`` list from YAML, with "last entry
 wins" semantics.
+
+Practical Example: Reducing Workspace Downloads
+-----------------------------------------------
+
+By default, ``west update`` fetches all active projects defined
+in the manifest. Large workspaces may include optional modules,
+vendor HALs, experimental components, or platform-specific
+dependencies and vulnerabilities that are not required for every workflow.
+
+Project groups can be used to control which grouped projects
+are considered active during ``west`` operations.
+
+For example, consider the following manifest fragment:
+
+.. code-block:: yaml
+
+  manifest:
+    projects:
+      - name: hal_nordic
+        groups:
+          - nordic
+      - name: hal_stm32
+        groups:
+          - stm32
+      - name: experimental_lib
+        groups:
+          - optional
+
+A workspace targeting Nordic devices can disable the
+``stm32`` and ``optional`` groups before running
+``west update``:
+
+.. code-block:: shell
+
+   west config manifest.group-filter -- "-stm32,-optional"
+
+After configuring the filter, running:
+
+.. code-block:: shell
+
+   west update
+
+This skips projects that belong only to disabled groups.
+
+.. note::
+
+   Project groups only affect projects explicitly assigned
+   to matching groups in the manifest. Projects without
+   matching group definitions remain active regardless of
+   the configured ``manifest.group-filter`` value.
+
+.. note::
+
+   Changing ``manifest.group-filter`` does not automatically
+   remove repositories already cloned into the workspace.
+   It affects whether projects are considered active during
+   subsequent ``west`` operations.
+
+This workflow can help reduce unnecessary downloads and
+simplify workspace management in large multi-project
+environments.
 
 .. _west-project-group-examples:
 

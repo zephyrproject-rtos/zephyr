@@ -12,9 +12,11 @@ supported:
   - adc
   - watchdog
   - counter
+  - crc
   - gpio
   - spi
   - i2c
+  - i2c_target
   - rtc
   - hwinfo
   - clock_control

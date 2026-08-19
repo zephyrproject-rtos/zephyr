@@ -20,8 +20,6 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_eeprom_write, const struct device *, off_t, co
 
 DECLARE_FAKE_VALUE_FUNC(size_t, fake_eeprom_size, const struct device *);
 
-size_t fake_eeprom_size_delegate(const struct device *dev);
-
 #ifdef __cplusplus
 }
 #endif

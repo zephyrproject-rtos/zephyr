@@ -25,7 +25,7 @@ int sdmmc_read_status(struct sd_card *card)
 	cmd.opcode = SD_SEND_STATUS;
 	cmd.arg = 0;
 	if (!card->host_props.is_spi) {
-		cmd.arg = (card->relative_addr << 16U);
+		cmd.arg = ((uint32_t)card->relative_addr << 16U);
 	}
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R2);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
@@ -440,7 +440,7 @@ int sdmmc_select_card(struct sd_card *card)
 	int ret;
 
 	cmd.opcode = SD_SELECT_CARD;
-	cmd.arg = ((card->relative_addr) << 16U);
+	cmd.arg = ((uint32_t)card->relative_addr << 16U);
 	cmd.response_type = SD_RSP_TYPE_R1;
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
@@ -465,7 +465,7 @@ int card_app_command(struct sd_card *card, int relative_card_address)
 	int ret;
 
 	cmd.opcode = SD_APP_CMD;
-	cmd.arg = relative_card_address << 16U;
+	cmd.arg = (uint32_t)relative_card_address << 16U;
 	cmd.response_type = (SD_RSP_TYPE_R1 | SD_SPI_RSP_TYPE_R1);
 	cmd.retries = CONFIG_SD_CMD_RETRIES;
 	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
@@ -578,6 +578,7 @@ int card_read_blocks(struct sd_card *card, uint8_t *rbuf, uint32_t start_block, 
 		sector = 0;
 		buf_offset = rbuf;
 		while (sector < num_blocks) {
+			rlen = MIN(rlen, num_blocks - sector);
 			/* Read from disk to card buffer */
 			ret = card_read(card, card->card_buffer, sector + start_block, rlen);
 			if (ret) {
@@ -743,6 +744,7 @@ int card_write_blocks(struct sd_card *card, const uint8_t *wbuf, uint32_t start_
 		sector = 0;
 		buf_offset = wbuf;
 		while (sector < num_blocks) {
+			wlen = MIN(wlen, num_blocks - sector);
 			/* Copy data into card buffer */
 			memcpy(card->card_buffer, buf_offset, wlen * card->block_size);
 			/* Write card buffer to disk */

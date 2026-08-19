@@ -67,10 +67,13 @@
 };
 
 &fdcan1 {
+	/* NOTE: FDCAN is enabled by default on the Linux side.
+	 * It must be disabled there before enabling it here.
+	 */
 	pinctrl-0 = <&fdcan1_rx_pg12 &fdcan1_tx_pg11>;
 	pinctrl-names = "default";
 	phys = <&transceiver0>;
-	status = "okay";
+	status = "disabled";
 };
 
 &mailbox {
@@ -103,6 +106,8 @@
 	/* Pin conflict with i3c4. Enable only with i3c4 disabled */
 	pinctrl-0 = <&i2c8_scl_pz4 &i2c8_sda_pz3>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioz 4 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpioz 3 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 

@@ -290,6 +290,7 @@ GNSS_AUX_DATA_CALLBACK_DEFINE(GNSS_DEVICE, gnss_aux_data_cb);
 
 #endif /* CONFIG_HL78XX_GNSS */
 
+#ifdef CONFIG_HL78XX_EVT_MONITOR
 static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_entry *context)
 {
 	switch (event->type) {
@@ -515,6 +516,22 @@ static void evnt_listener(struct hl78xx_evt *event, struct hl78xx_evt_monitor_en
 		break;
 	}
 }
+#endif /* CONFIG_HL78XX_EVT_MONITOR */
+
+#ifdef CONFIG_HL78XX_AT_MONITOR
+static void cereg_monitor_handler(const struct hl78xx_at_notification *notif,
+				  struct hl78xx_at_monitor_entry *monitor_context)
+{
+	ARG_UNUSED(monitor_context);
+
+	if (notif->argc < 2) {
+		return;
+	}
+
+	LOG_INF("CEREG event: registration status %s argc=%u", notif->argv[1],
+		(unsigned int)notif->argc);
+}
+#endif /* CONFIG_HL78XX_AT_MONITOR */
 
 static void hl78xx_on_ok(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -562,8 +579,13 @@ static int resolve_broker_addr(struct net_sockaddr_in *broker)
 }
 
 MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", hl78xx_on_ok);
-
+#ifdef CONFIG_HL78XX_EVT_MONITOR
 HL78XX_EVT_MONITOR(listener_evt, evnt_listener);
+#endif /* CONFIG_HL78XX_EVT_MONITOR */
+#ifdef CONFIG_HL78XX_AT_MONITOR
+HL78XX_AT_MONITOR(cereg_monitor, "+CEREG: ", cereg_monitor_handler);
+#endif /* CONFIG_HL78XX_AT_MONITOR */
+
 #if defined(CONFIG_HL78XX_GNSS) && defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
 static void k_work_wake_fn(struct k_work *work)
 {
@@ -593,7 +615,7 @@ static int app_collect_and_log_modem_info(void)
 	char operator[MDM_MODEL_LENGTH] = {0};
 	char imei[MDM_IMEI_LENGTH] = {0};
 	char serial_number[MDM_SERIAL_NUMBER_LENGTH] = {0};
-	enum hl78xx_cell_rat_mode tech;
+	enum hl78xx_cell_rat_mode tech = HL78XX_RAT_MODE_NONE;
 	enum cellular_registration_status status;
 	int16_t signal_strength = 0;
 	uint32_t current_baudrate = 0;
@@ -617,14 +639,18 @@ static int app_collect_and_log_modem_info(void)
 	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MANUFACTURER, manufacturer,
 				sizeof(manufacturer));
 	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_FW_VERSION, fw_ver, sizeof(fw_ver));
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, apn, sizeof(apn));
+	if (hl78xx_get_network_info(modem, HL78XX_NETWORK_INFO_APN, apn, sizeof(apn)) < 0) {
+		apn[0] = '\0';
+	}
 	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_SERIAL_NUMBER, serial_number,
 			      sizeof(serial_number));
 	cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, imei, sizeof(imei));
 
 #ifdef CONFIG_MODEM_HL78XX_AUTORAT
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_RAT,
-			      (enum cellular_access_technology *)&tech, sizeof(tech));
+	if (hl78xx_get_network_info(modem, HL78XX_NETWORK_INFO_CURRENT_RAT, &tech, sizeof(tech)) <
+	    0) {
+		tech = HL78XX_RAT_MODE_NONE;
+	}
 #endif /* CONFIG_MODEM_HL78XX_AUTORAT */
 
 	cellular_get_registration_status(modem, hl78xx_rat_to_access_tech(tech), &status);
@@ -633,8 +659,10 @@ static int app_collect_and_log_modem_info(void)
 #else
 	cellular_get_signal(modem, CELLULAR_SIGNAL_RSRP, &signal_strength);
 #endif
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_NETWORK_OPERATOR, operator,
-			      sizeof(operator));
+	if (hl78xx_get_network_info(modem, HL78XX_NETWORK_INFO_NETWORK_OPERATOR_LONG_ALPHA,
+				    operator, sizeof(operator)) < 0) {
+		operator[0] = '\0';
+	}
 	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_CURRENT_BAUD_RATE, &current_baudrate,
 			      sizeof(current_baudrate));
 
@@ -669,7 +697,9 @@ static int app_collect_and_log_modem_info(void)
 		return ret;
 	}
 
-	hl78xx_get_modem_info(modem, HL78XX_MODEM_INFO_APN, apn, sizeof(apn));
+	if (hl78xx_get_network_info(modem, HL78XX_NETWORK_INFO_APN, apn, sizeof(apn)) < 0) {
+		apn[0] = '\0';
+	}
 	hl78xx_modem_cmd_send(modem, sample_cmd, strlen(sample_cmd), &ok_match, 1);
 	LOG_INF("New APN: %s", (strlen(apn) > 0) ? apn : "\"\"");
 

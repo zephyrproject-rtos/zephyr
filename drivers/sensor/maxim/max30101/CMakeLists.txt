@@ -1,4 +1,4 @@
-# Makefile - MAX30101 heart rate sensor
+# Makefile - MAX30101/MAX30102 heart rate and pulse oximeter sensor series
 #
 # Copyright (c) 2017, NXP
 # Copyright (c) 2025, CATIE

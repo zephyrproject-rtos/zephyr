@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/nxp_mcxn94x.dtsi>
+#include <nxp/mcx/mcxn/nxp_mcxn94x.dtsi>
 #include "mcx_nx4x_evk.dtsi"
 #include "mcx_n9xx_evk-pinctrl.dtsi"
 
@@ -14,5 +14,13 @@
 };
 
 &dac2 {
+	status = "okay";
+};
+
+&enet_ptp_clock {
+	status = "okay";
+};
+
+&otpc {
 	status = "okay";
 };

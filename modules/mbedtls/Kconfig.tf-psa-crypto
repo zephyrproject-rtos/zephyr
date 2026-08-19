@@ -8,6 +8,20 @@ config TF_PSA_CRYPTO_CONFIG_FILE
 	  Specify the configuration header file to be used when building
 	  TF-PSA-Crypto. The default one can be tweaked with Kconfig.
 
+if TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
+
+config TF_PSA_CRYPTO_DRIVER_CONFIG_FILE
+	string
+	help
+	  Optional driver configuration header to be included at the end of
+	  TF_PSA_CRYPTO_CONFIG_FILE. This file is intended to be used to supply
+	  configuration options needed by the driver dispatch interface.
+
+config TF_PSA_CRYPTO_DRIVER_CONFIG
+	def_bool TF_PSA_CRYPTO_DRIVER_CONFIG_FILE != ""
+
+endif # TF_PSA_CRYPTO_CONFIG_FILE = "config-tf-psa-crypto.h"
+
 config TF_PSA_CRYPTO_USER_CONFIG_FILE
 	string "User configuration file for TF-PSA-Crypto"
 	help
@@ -18,9 +32,20 @@ config TF_PSA_CRYPTO_USER_CONFIG_FILE
 config TF_PSA_CRYPTO_USER_CONFIG
 	def_bool TF_PSA_CRYPTO_USER_CONFIG_FILE != ""
 
+config TF_PSA_CRYPTO_DISPATCH_DIR
+	string
+	default "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/dispatch"
+
 config MBEDTLS_ECP_NIST_OPTIM
 	bool "NIST curves optimization"
+	default y
 	depends on PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_BASIC
+	help
+	  Enable specific 'modulo p' routines for each NIST prime. Depending on the
+	  prime and architecture, makes operations 4 to 8 times faster on the
+	  corresponding curve.
+
+	  The cost is a small amount of flash for the reduction tables.
 
 comment "Supported ciphers and cipher modes"
 
@@ -97,6 +122,15 @@ config MBEDTLS_HMAC_DRBG_C
 
 comment "Other configurations"
 
+config MBEDTLS_MEMORY_BUFFER_ALLOC_C
+	bool "Buffer memory allocator"
+	default y
+	help
+	  Enable the buffer allocator implementation that makes use of a (stack)
+	  based buffer to 'allocate' dynamic memory. (replaces calloc() and free() calls)
+
+if MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
 config MBEDTLS_MEMORY_DEBUG
 	bool "mbed TLS memory debug activation"
 	help
@@ -104,9 +138,47 @@ config MBEDTLS_MEMORY_DEBUG
 	  prints (to stderr) all (fatal) messages on memory allocation
 	  issues. Enables function for 'debug output' of allocated memory.
 
+endif # MBEDTLS_MEMORY_BUFFER_ALLOC_C
+
+config MBEDTLS_ENABLE_HEAP
+	bool "Global heap for mbed TLS"
+	select MBEDTLS_MEMORY_BUFFER_ALLOC_C
+	help
+	  This option enables the mbedtls to use a dedicated heap. This setting must
+	  be global so that various applications and libraries in Zephyr do not
+	  try to do this themselves as there can be only one heap defined
+	  in mbedtls. If this is enabled, and MBEDTLS_INIT is enabled then the
+	  Zephyr will, during the device startup, initialize the heap automatically.
+
+	  When disabled, mbedtls uses the system default heap.
+
+if MBEDTLS_ENABLE_HEAP
+
+config MBEDTLS_HEAP_SIZE
+	int "Heap size for mbed TLS"
+	default 15360 if OPENTHREAD_COMMISSIONER || OPENTHREAD_JOINER
+	default 1024 if OPENTHREAD_CRYPTO_PSA
+	default 512
+	help
+	  The mbedtls routines will use this heap if enabled.
+	  See the MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details.
+	  Default value for the heap size is not set as it depends on the
+	  application. For streaming communication with arbitrary (HTTPS)
+	  servers on the Internet, 32KB + overheads (up to another 20KB) may
+	  be needed. For some dedicated and specific usage of mbedtls API, the
+	  1000 bytes might be ok.
+
+config MBEDTLS_HEAP_CUSTOM_SECTION
+	bool "Use a custom section for the Mbed TLS heap"
+	help
+	  Place Mbed TLS heap in custom section, with tag ".mbedtls_heap".
+	  This can be used by custom linker scripts to relocate the Mbed TLS
+	  heap to a custom location, such as another SRAM region or external memory.
+
+endif # MBEDTLS_ENABLE_HEAP
+
 config MBEDTLS_CIPHER
 	bool "Generic cipher layer"
-	default y if PSA_WANT_ALG_CMAC
 
 config MBEDTLS_MD_C
 	bool "Generic message digest layer"
@@ -161,9 +233,11 @@ config MBEDTLS_PEM_WRITE_C
 
 config MBEDTLS_HAVE_ASM
 	bool "Use of assembly code"
-	default y if !ARM
+	# Enabled by default on ARMv7-M and ARMv8-M mainline cores because it brings performance improvement and footprint reduction.
+	# Disabled on other ARM architectures (e.g., ARMv6-M) because the footprint increases.
+	default y if !ARM || ARMV7_M_ARMV8_M_MAINLINE
 	help
-	  Enable use of assembly code in mbedTLS. This improves the performances
+	  Enable use of assembly code in Mbed TLS. This improves the performance
 	  of asymmetric cryptography, however this might have an impact on the
 	  code size.
 
@@ -193,9 +267,9 @@ config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
 	depends on OPENTHREAD
 	default y if !NET_SOCKETS_SOCKOPT_TLS
 	help
-	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  Enable some OpenThread specific Mbed TLS optimizations that allows to
 	  save some RAM/ROM when OpenThread is used. Note, that when application
-	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  aims to use other Mbed TLS services on top of OpenThread (e.g. secure
 	  sockets), it's advised to disable this option.
 
 config MBEDTLS_PK_PARSE_C
@@ -226,7 +300,8 @@ config MBEDTLS_PKCS5_C
 choice MBEDTLS_PSA_CRYPTO_RNG_SOURCE
 	prompt "PSA crypto random source"
 	depends on MBEDTLS_PSA_CRYPTO_C
-	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG  if CSPRNG_ENABLED && !ENTROPY_NEEDS_PRNG
+	default MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG if (CSPRNG_ENABLED && !ENTROPY_NEEDS_PRNG) \
+						   || !PSA_CRYPTO_PROVIDER_MBEDTLS
 	default MBEDTLS_PSA_CRYPTO_LEGACY_RNG
 
 config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG
@@ -280,13 +355,11 @@ config MBEDTLS_PSA_CRYPTO_EXTERNAL_RNG_ALLOW_NON_CSPRNG
 config MBEDTLS_PSA_CRYPTO_C
 	bool "Platform Security Architecture cryptography API"
 	depends on !BUILD_WITH_TFM
-	select CSPRNG_NEEDED
+	select CSPRNG_NEEDED if PSA_CRYPTO_PROVIDER_MBEDTLS
 
 config MBEDTLS_PSA_CRYPTO_CLIENT
-	bool
-	default y
-	depends on BUILD_WITH_TFM || MBEDTLS_PSA_CRYPTO_C
-	select PSA_CRYPTO_CLIENT
+	def_bool y
+	depends on PSA_CRYPTO
 
 config MBEDTLS_LMS_C
 	bool "Support LMS signature schemes"
@@ -294,6 +367,19 @@ config MBEDTLS_LMS_C
 	select PSA_WANT_ALG_SHA_256
 
 if MBEDTLS_PSA_CRYPTO_C
+
+config MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
+	bool "Assume exclusive buffers for PSA Crypto operations"
+	default y
+	help
+	  Assume all buffers passed to PSA functions are owned exclusively by the
+	  PSA function and are not stored in shared memory.
+
+	  Enabling this can improve performance by avoiding internal buffer
+	  copies. However, the application must ensure that buffers do not
+	  overlap. For some algorithms and modes, additional constraints may
+	  apply (for example, input sizes may need to be a multiple of the
+	  block size).
 
 config MBEDTLS_PSA_P256M_DRIVER_ENABLED
 	bool "P256-M driver"
@@ -361,12 +447,13 @@ config MBEDTLS_NIST_KW_C
 config MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
 	bool "Legacy crypto support (private)"
 	help
-	  Legacy crypto is now private inside TF-PSA-Crypto and they should
-	  no more be directly accessed. However there might be code that still
-	  needs to be transitioned and in this case enabling this Kconfig
-	  allows internal headers related to legacy crypto to be made public.
-	  The long term goal is to get rid of this support so all the code
-	  should be transitioned to the PSA Crypto API as soon as possible.
+	  Legacy crypto is now private inside TF-PSA-Crypto and should not be
+	  used from new code. Enable this only while transitioning callers that
+	  still need legacy declarations: with MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS
+	  defined, those APIs are reachable via mbedtls/private/*.h (under the
+	  TF-PSA-Crypto builtin include path exported by the mbedtls target).
+	  The long term goal is to remove this option once all users are on the
+	  PSA Crypto API.
 
 config TF_PSA_CRYPTO_PQCP_MLDSA_ENABLED
 	bool "mldsa-native from the PQCP (post-quantum code package) driver [EXPERIMENTAL]"

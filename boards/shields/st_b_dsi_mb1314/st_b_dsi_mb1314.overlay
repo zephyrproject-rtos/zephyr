@@ -9,6 +9,7 @@
 / {
 	chosen {
 		zephyr,display = &zephyr_lcd_controller;
+		zephyr,touch = &ft3267;
 	};
 };
 
@@ -18,7 +19,7 @@
 		       11 /* DataLaneHS2LPTime */
 		       21 /* DataLaneLP2HSTime */
 		       0 /* DataLaneMaxReadTime */
-		       7 /* StopWaitTime */ >;
+		       7 /* StopWaitTime */>;
 
 	host-timeouts = <1 /* TimeoutCkdiv */
 			 0 /* HighSpeedTransmissionTimeout */
@@ -28,7 +29,7 @@
 			 0 /* HighSpeedWriteTimeout */
 			 0 /* HighSpeedWritePrespMode */
 			 0 /* LowPowerWriteTimeout */
-			 0 /* BTATimeout */ >;
+			 0 /* BTATimeout */>;
 
 	vs-active-high;
 	hs-active-high;
@@ -75,4 +76,16 @@
 	def-back-color-red = <0x0>;
 	def-back-color-green = <0x0>;
 	def-back-color-blue = <0x0>;
+};
+
+&qsh_030_i2c {
+	ft3267: ft3267@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&dsi_lcd_qsh_030 4 GPIO_ACTIVE_LOW>;
+		inverted-y;
+		screen-width = <390>;
+		screen-height = <390>;
+		status = "okay";
+	};
 };

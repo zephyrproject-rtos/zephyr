@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_ADP5360
+	bool "ADI ADP5360 battery charger driver"
+	default y
+	depends on DT_HAS_ADI_ADP5360_CHARGER_ENABLED
+	select MFD
+	help
+	  Enable the ADI ADP5360 battery charger driver.
+
+if CHARGER_ADP5360
+
+config CHARGER_ADP5360_INIT_PRIORITY
+	int "Charger ADP5360 Init Priority"
+	default 89
+	help
+	  Init priority for the Analog Devices ADP5360 Charger Subsystem.
+
+endif #CHARGER_ADP5360

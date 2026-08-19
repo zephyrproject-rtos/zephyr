@@ -140,7 +140,12 @@ bool gdb_mem_can_write(const uintptr_t addr, const size_t len, uint8_t *align)
 
 size_t gdb_bin2hex(const uint8_t *buf, size_t buflen, char *hex, size_t hexlen)
 {
-	if ((hexlen + 1) < buflen * 2) {
+	/* The loop below writes exactly 2 * buflen characters (indices
+	 * 0 .. 2*buflen-1). The previous `(hexlen + 1) < buflen * 2` check was
+	 * off by one and admitted hexlen == 2*buflen-1, writing one past the
+	 * destination.
+	 */
+	if (hexlen < buflen * 2) {
 		return 0;
 	}
 
@@ -254,6 +259,13 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 		(*len)++;
 	}
 
+	if (*len >= (buf_len - 1)) {
+		LOG_DBG("Packet too large. Got %u but only has %u", *len, (buf_len - 1));
+		/* NACK packet */
+		z_gdb_putchar('-');
+		return -2;
+	}
+
 	buf[*len] = '\0';
 
 	/* Get checksum now */
@@ -276,11 +288,7 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 	/* ACK packet */
 	z_gdb_putchar('+');
 
-	if (*len >= (buf_len - 1)) {
-		return -2;
-	} else {
-		return 0;
-	}
+	return 0;
 }
 
 /* Read memory byte-by-byte */

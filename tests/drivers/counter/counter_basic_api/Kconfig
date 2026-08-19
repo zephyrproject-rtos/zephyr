@@ -30,4 +30,17 @@ config TEST_PROCESSING_LIMIT_US
 	help
 	  Processing limit in us
 
+config TEST_COUNTER_SHORT_RELATIVE_ALARM_ITERATIONS
+	int "Iterations for the short relative alarm test (slow counters)"
+	range 1 1000
+	default 10
+	help
+	  Number of set-alarm/wait iterations performed by
+	  test_short_relative_alarm for low-frequency (< 1000 Hz) counter
+	  instances only; high-frequency counters always use the full 100
+	  iterations. Each iteration busy-waits a few counter ticks, so on a
+	  slow counter (e.g. a 1 Hz RTC) a large value makes the test run for
+	  minutes and risk the test timeout. The default keeps slow-counter
+	  coverage while bounding runtime.
+
 source "Kconfig.zephyr"

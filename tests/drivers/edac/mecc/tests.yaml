@@ -1,0 +1,20 @@
+common:
+  arch_allow:
+    - arm
+  platform_allow:
+    - mimxrt1180_evk/mimxrt1189/cm33
+    - mimxrt1180_evk/mimxrt1189/cm7
+  depends_on:
+    - mecc
+  tags:
+    - edac
+    - mecc
+
+tests:
+  edac.mecc.production:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=n
+
+  edac.mecc.injection:
+    extra_configs:
+      - CONFIG_EDAC_ERROR_INJECT=y

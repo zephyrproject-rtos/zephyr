@@ -12,7 +12,7 @@
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/logging/log_link.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
@@ -677,6 +677,39 @@ static struct log_msg *msg_alloc(struct mpsc_pbuf_buffer *buffer, uint32_t wlen)
 			: K_MSEC(CONFIG_LOG_BLOCK_IN_THREAD_TIMEOUT_MS));
 }
 
+static inline bool process_lock_required_for_clean_output(int owner_cpu, int curr_cpu)
+{
+	return owner_cpu != curr_cpu;
+}
+
+static bool process_lock_acquire_if_needed(k_spinlock_key_t *key)
+{
+#ifdef CONFIG_SMP
+	int curr_cpu = arch_curr_cpu()->id;
+#else
+	int curr_cpu = 0;
+#endif
+	int owner_cpu = atomic_get(&process_lock_owner_cpu);
+
+	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) ||
+	    !process_lock_required_for_clean_output(owner_cpu, curr_cpu)) {
+		return false;
+	}
+
+	*key = k_spin_lock(&process_lock);
+	atomic_set(&process_lock_owner_cpu, curr_cpu);
+
+	return true;
+}
+
+static void process_lock_release_if_needed(bool lock_acquired, k_spinlock_key_t key)
+{
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
+		atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
+		k_spin_unlock(&process_lock, key);
+	}
+}
+
 struct log_msg *z_log_msg_alloc(uint32_t wlen)
 {
 	return msg_alloc(&log_buffer, wlen);
@@ -685,28 +718,16 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen)
 static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 {
 	union log_msg_generic *m = (union log_msg_generic *)msg;
-	bool lock_acquired = false;
+	bool lock_acquired;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-		k_spinlock_key_t key;
-#ifdef CONFIG_SMP
-		int curr_cpu = arch_curr_cpu()->id;
-#else
-		int curr_cpu = 0;
-#endif
+		k_spinlock_key_t key = {0};
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) &&
-		    atomic_cas(&process_lock_owner_cpu, LOG_NO_CPU_OWNER, curr_cpu)) {
-			key = k_spin_lock(&process_lock);
-			lock_acquired = true;
-		}
+		lock_acquired = process_lock_acquire_if_needed(&key);
 
 		msg_process(m);
 
-		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE_CLEAN_OUTPUT) && lock_acquired) {
-			atomic_set(&process_lock_owner_cpu, LOG_NO_CPU_OWNER);
-			k_spin_unlock(&process_lock, key);
-		}
+		process_lock_release_if_needed(lock_acquired, key);
 
 		return;
 	}
@@ -867,7 +888,6 @@ bool z_log_msg_pending(void)
 
 void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len)
 {
-	struct log_msg *log_msg = (struct log_msg *)data;
 	size_t wlen = DIV_ROUND_UP(ROUND_UP(len, Z_LOG_MSG_ALIGNMENT), sizeof(int));
 	struct mpsc_pbuf_buffer *mpsc_pbuffer = link->mpsc_pbuf ? link->mpsc_pbuf : &log_buffer;
 	struct log_msg *local_msg = msg_alloc(mpsc_pbuffer, wlen);
@@ -877,10 +897,10 @@ void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len
 		return;
 	}
 
-	log_msg->hdr.desc.valid = 0;
-	log_msg->hdr.desc.busy = 0;
-	log_msg->hdr.desc.domain += link->ctrl_blk->domain_offset;
 	memcpy((void *)local_msg, data, len);
+	local_msg->hdr.desc.valid = 0;
+	local_msg->hdr.desc.busy = 0;
+	local_msg->hdr.desc.domain += link->ctrl_blk->domain_offset;
 	msg_commit(mpsc_pbuffer, local_msg);
 }
 
@@ -957,11 +977,19 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	uint32_t links_active_mask = 0xFFFFFFFF;
 	uint8_t domain_offset = 0;
 	uint32_t activate_mask = z_log_init(false, false);
-	/* If some backends are not activated yet set periodical thread wake up
-	 * to poll backends for readiness. Period is set arbitrary.
-	 * If all backends are ready periodic wake up is not needed.
-	 */
-	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
+	k_timeout_t timeout;
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) || (activate_mask != 0)) {
+		/* When multidomain is enabled, start in periodic polling
+		 * mode to check for link readiness.
+		 * If some backends are not activated yet, set periodical thread wake up
+		 * to poll backends for readiness. Period is set arbitrarily.
+		 */
+		timeout = K_MSEC(50);
+	} else {
+		/* If all backends are ready, periodic wake up is not needed. */
+		timeout = K_FOREVER;
+	}
 	bool processed_any = false;
 	thread_set(k_current_get());
 
@@ -971,7 +999,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	while (true) {
 		if (activate_mask) {
 			activate_mask = activate_foreach_backend(activate_mask);
-			if (!activate_mask) {
+			if (!activate_mask && !IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
 				/* Periodic wake up no longer needed since all
 				 * backends are ready.
 				 */
@@ -983,6 +1011,12 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && links_active_mask) {
 			links_active_mask =
 				z_log_links_activate(links_active_mask, &domain_offset);
+			if (!links_active_mask && !activate_mask) {
+				/* Periodic wake up no longer needed since all
+				 * backends and links are ready.
+				 */
+				timeout = K_FOREVER;
+			}
 		}
 
 

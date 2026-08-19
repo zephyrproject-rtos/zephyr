@@ -3,15 +3,15 @@
 # Copyright 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
+
 # Simple selfchecking test for openthread, based on the echo client / server sample apps
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
 # will check how many packets the echo client has got back as expected, and if over a threshold
 # it considers the test passed
 
-simulation_id="echo_test_ot"
+simulation_id="${BOARD_TS}_echo_test_ot"
 verbosity_level=2
-
-source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 EXECUTE_TIMEOUT=100
 

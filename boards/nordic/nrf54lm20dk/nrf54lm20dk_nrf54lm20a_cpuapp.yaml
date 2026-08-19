@@ -21,4 +21,5 @@ supported:
   - pwm
   - spi
   - usbd
+  - usbh
   - watchdog

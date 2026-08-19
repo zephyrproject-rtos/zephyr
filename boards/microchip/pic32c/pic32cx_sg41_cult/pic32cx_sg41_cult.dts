@@ -80,25 +80,32 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
-
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
 			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
 		};
 
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
 			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
 		};
 
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
 			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
 		};
 	};
@@ -133,10 +140,11 @@
 
 		fdpll0 {
 			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
-			fdpll-divider-ratio-int = <19>;
+			fdpll-divider-ratio-int = <119>;
 			fdpll-lock-bypass-en = <1>;
 			fdpll-wakeup-fast-en = <1>;
 			fdpll-src = "xosc1";
+			fdpll-xosc-clock-divider = <5>;
 			fdpll-en = <1>;
 		};
 	};
@@ -248,6 +256,8 @@
 	txpo = <0>;
 	pinctrl-0 = <&sercom4_uart_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 1 0xc>, <&dmac 2 0xd>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
@@ -305,4 +315,18 @@
 		reg = <0>;
 		rate = <1000>;
 	};
+};
+
+&sercom0 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom0_spi_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&portc 24 GPIO_ACTIVE_LOW>;
+	dmas = <&dmac 3 0x4>, <&dmac 4 0x5>;
+	dma-names = "rx", "tx";
+	status = "okay";
 };

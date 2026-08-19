@@ -12,7 +12,7 @@ rsource "*/Kconfig.defconfig"
 config CLOCK_CONTROL
 	default y
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 endif # SOC_FAMILY_ENSEMBLE

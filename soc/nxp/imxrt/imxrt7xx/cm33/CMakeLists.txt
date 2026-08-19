@@ -1,5 +1,5 @@
 #
-# Copyright 2024 NXP
+# Copyright 2024-2026 NXP
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,3 +28,11 @@ zephyr_library_include_directories(
   )
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+
+# Route the SEGGER RTT control block and buffers through the existing
+# CONFIG_NOCACHE_MEMORY region so they're MPU-marked non-cacheable. This
+# avoids the "JLinkRTTViewer finds the block but shows zero bytes" failure
+# mode caused by D-cache holding stale buffer writes.
+if(CONFIG_USE_SEGGER_RTT AND CONFIG_NOCACHE_MEMORY)
+  zephyr_linker_sources(NOCACHE_SECTION rtt_nocache.ld)
+endif()

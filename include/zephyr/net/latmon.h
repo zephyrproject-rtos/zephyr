@@ -39,7 +39,7 @@ typedef int (*net_latmon_measure_t)(uint32_t *delta);
  *
  * @details This function starts the latency monitor, which measures
  * latency using the provided callback function to calculate deltas. Samples
- * are sent to the connected Latmus client.
+ * are sent to the connected Latmus service.
  *
  * @param latmus A valid socket descriptor connected to latmus
  * @param measure_func A callback function to execute the delta calculation.
@@ -47,10 +47,10 @@ typedef int (*net_latmon_measure_t)(uint32_t *delta);
 void net_latmon_start(int latmus, net_latmon_measure_t measure_func);
 
 /**
- * @brief Wait for a connection from a Latmus client.
+ * @brief Wait for a connection from the Latmus service.
  *
- * @details This function blocks until a Latmus client connects to the
- * specified socket. Once connected, the client's IP address is stored
+ * @details This function blocks until the Latmus service connects to the
+ * specified socket. Once connected, the Latmus service's IP address is stored
  * in the provided `ip` structure.
  *
  * @param socket A valid socket descriptor for listening.

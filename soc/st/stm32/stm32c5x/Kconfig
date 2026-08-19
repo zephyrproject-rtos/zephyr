@@ -4,14 +4,21 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32C5X
+	# Architecture options & CPU model selection
 	select ARM
+	select ARMV8_M_DSP
 	select CPU_CORTEX_M33
+	# Hardware options
+	select CPU_CORTEX_M_HAS_DWT
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_FPU
-	select ARMV8_M_DSP
-	select CPU_CORTEX_M_HAS_DWT
-	select HAS_STM32CUBE
-	select STM32_HAL2
+	select CPU_HAS_ICACHE
 	select HAS_SWO
+	# Software options
+	select HAS_PM
 	select HAS_POWEROFF
 	select SOC_EARLY_INIT_HOOK
+	# STM32-specific options
+	select HAS_STM32CUBE
+	select STM32_HAL2
+	select HAS_STM32_UNCACHED_ACCESS_ONLY_OTP

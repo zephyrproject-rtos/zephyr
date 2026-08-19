@@ -12,7 +12,7 @@
 				 <&iomuxc_eth4_mdio_gpio2_netc_emdio_netc_emdio>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -32,7 +32,7 @@
 				 <&iomuxc_eth0_txd3_netc_swt_eth_txd_netc_swt_eth0_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -40,7 +40,7 @@
 				 <&iomuxc_eth0_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth0_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -60,7 +60,7 @@
 				 <&iomuxc_eth1_txd3_netc_swt_eth_txd_netc_swt_eth1_txd3>;
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
@@ -68,7 +68,7 @@
 				 <&iomuxc_eth1_tx_clk_netc_swt_eth_tx_clk_netc_swt_eth1_tx_clk>;
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -76,13 +76,13 @@
 		eth2_default_group1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		eth2_default_group2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -90,13 +90,13 @@
 		group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -104,13 +104,13 @@
 		eth4_default_group_1: group1 {
 			bias-pull-down;
 			slew-rate = "slightly_fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 
 		eth4_default_group_2: group2 {
 			bias-pull-down;
 			slew-rate = "fast";
-			drive-strength = "x6";
+			drive-strength = "x4";
 		};
 	};
 
@@ -201,6 +201,17 @@
 				 <&iomuxc_sai1_txd0_sai_tx_data_sai1_tx_data0>,
 				 <&iomuxc_sai1_txfs_sai_tx_sync_sai1_tx_sync>;
 			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	lpspi3_default: lpspi3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io08_lpspi_pcs_lpspi3_pcs0>,
+				 <&iomuxc_gpio_io09_lpspi_sin_lpspi3_sin>,
+				 <&iomuxc_gpio_io10_lpspi_sout_lpspi3_sout>,
+				 <&iomuxc_gpio_io11_lpspi_sck_lpspi3_sck>;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};

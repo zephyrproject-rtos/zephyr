@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef BT_MESH_SOL_PDU_RPL_SRV_H__
-#define BT_MESH_SOL_PDU_RPL_SRV_H__
+/**
+ * @file
+ * @brief Header file for the Bluetooth Mesh Solicitation PDU RPL Configuration Server model API.
+ * @ingroup bt_mesh_sol_pdu_rpl_srv
+ */
+
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_SOL_PDU_RPL_SRV_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_SOL_PDU_RPL_SRV_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,4 +41,4 @@ extern const struct bt_mesh_model_cb _bt_mesh_sol_pdu_rpl_srv_cb;
 #ifdef __cplusplus
 }
 #endif
-#endif /* BT_MESH_SOL_PDU_RPL_SRV_H__ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_SOL_PDU_RPL_SRV_H_ */

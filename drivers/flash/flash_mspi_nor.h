@@ -25,6 +25,9 @@ extern "C" {
 #if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(initial_soft_reset)
 #define WITH_SOFT_RESET 1
 #endif
+#if DT_ANY_INST_HAS_BOOL_STATUS_OKAY(has_dpd)
+#define WITH_DPD 1
+#endif
 
 #define CMD_EXTENSION_NONE    0
 #define CMD_EXTENSION_SAME    1
@@ -72,12 +75,13 @@ struct flash_mspi_nor_config {
 	const struct device *bus;
 	uint32_t packet_data_limit;
 	uint32_t flash_size;
+	uint32_t erase_block_size;
 	uint16_t page_size;
 	struct mspi_dev_id mspi_id;
 	struct mspi_dev_cfg mspi_nor_cfg;
 	struct mspi_dev_cfg mspi_control_cfg;
-#if defined(CONFIG_MSPI_XIP)
-	struct mspi_xip_cfg xip_cfg;
+#if defined(CONFIG_MSPI_MEMMAP)
+	struct mspi_memmap_cfg memmap_cfg;
 #endif
 #if defined(WITH_SUPPLY_GPIO)
 	struct gpio_dt_spec supply;
@@ -88,6 +92,11 @@ struct flash_mspi_nor_config {
 #endif
 	uint32_t reset_recovery_us;
 	uint32_t transfer_timeout;
+#if defined(WITH_DPD)
+	uint32_t t_enter_dpd_us;
+	uint32_t t_exit_dpd_us;
+	uint32_t t_dpdd_us;
+#endif
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	struct flash_pages_layout layout;
 #endif
@@ -106,6 +115,7 @@ struct flash_mspi_nor_config {
 	bool multi_io_cmd        : 1;
 	bool single_io_addr      : 1;
 	bool initial_soft_reset  : 1;
+	bool has_dpd             : 1;
 	enum mspi_xfer_mode control_xfer_mode;
 	enum mspi_xfer_mode data_xfer_mode;
 };
@@ -120,6 +130,9 @@ struct flash_mspi_nor_data {
 	struct flash_mspi_nor_cmd_info cmd_info;
 	struct flash_mspi_nor_switch_info switch_info;
 	const struct mspi_dev_cfg *last_applied_cfg;
+#if defined(WITH_DPD)
+	uint32_t enter_dpd_cycle;
+#endif
 	bool chip_initialized;
 	const struct mspi_dev_cfg *read_cfg;
 	struct mspi_dev_cfg mspi_dev_read_cfg;

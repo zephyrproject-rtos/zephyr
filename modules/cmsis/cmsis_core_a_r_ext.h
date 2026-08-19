@@ -29,7 +29,7 @@
 #define FSR_FS_ALIGNMENT_FAULT				(33)
 #define FSR_FS_DEBUG_EVENT				(34)
 #define FSR_FS_UNSUPPORTED_EXCLUSIVE_ACCESS_FAULT	(53)
-#elif defined(CONFIG_ARMV7_A)
+#elif defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 
 /**
  * N.B.: these FSR encodings are only valid when the

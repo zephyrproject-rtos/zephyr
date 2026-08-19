@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Antmicro <www.antmicro.com>
+ * Copyright (c) 2024-2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/barrier.h>
+#include <zephyr/sys/util.h>
 #include <errno.h>
 
 LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
@@ -26,11 +27,16 @@ LOG_MODULE_REGISTER(virtio, CONFIG_VIRTIO_LOG_LEVEL);
 #define VIRTQ_DESC_NEXT_SENTINEL 0xffff
 
 /* According to the spec 2.7.5.2 the maximum size of descriptor chain is 4GB */
-#define MAX_DESCRIPTOR_CHAIN_LENGTH ((uint64_t)1 << 32)
+#define MAX_DESCRIPTOR_CHAIN_LENGTH BIT64(32)
 
 int virtq_create(struct virtq *v, size_t size)
 {
-	__ASSERT(IS_POWER_OF_TWO(size), "size of virtqueue must be a power of 2");
+	/*
+	 * A size of 0 denotes a queue the driver enumerates but does not use
+	 * (e.g. the virtiofs high priority queue). Such a queue is set up empty
+	 * and is never operated on, so only a non-zero size must be a power of 2.
+	 */
+	__ASSERT(size == 0 || IS_POWER_OF_TWO(size), "size of virtqueue must be a power of 2");
 	__ASSERT(size <= KB(32), "size of virtqueue must be at most 32KB");
 	/*
 	 * For sizes and alignments see table in spec 2.7. We are supporting only modern virtio, so
@@ -42,20 +48,24 @@ int virtq_create(struct virtq *v, size_t size)
 	size_t used_ring_size = 8 * size + 6;
 	size_t shared_size =
 		descriptor_table_size + available_ring_size + used_ring_pad + used_ring_size;
-	size_t v_size = shared_size + sizeof(struct virtq_receive_callback_entry) * size;
+	size_t recv_cbs_pad = WB_UP(shared_size) - shared_size;
+	size_t recv_cbs_size = recv_cbs_pad + sizeof(struct virtq_receive_callback_entry) * size;
+	size_t v_size = shared_size + recv_cbs_size + size * sizeof(stack_data_t);
 
 	uint8_t *v_area = k_aligned_alloc(16, v_size);
 
-	if (!v_area) {
+	if (v_area == NULL) {
 		LOG_ERR("unable to allocate virtqueue");
 		return -ENOMEM;
 	}
 
+	memset(v, 0, sizeof(*v));
 	v->num = size;
 	v->desc = (struct virtq_desc *)v_area;
 	v->avail = (struct virtq_avail *)((uint8_t *)v->desc + descriptor_table_size);
 	v->used = (struct virtq_used *)((uint8_t *)v->avail + available_ring_size + used_ring_pad);
-	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size);
+	v->recv_cbs = (struct virtq_receive_callback_entry *)((uint8_t *)v->used + used_ring_size +
+							      recv_cbs_pad);
 
 	/*
 	 * At the beginning of the descriptor table, the available ring and the used ring have to be
@@ -65,9 +75,10 @@ int virtq_create(struct virtq *v, size_t size)
 	 */
 	memset(v_area, 0, v_size);
 
-	v->last_used_idx = 0;
+	/* pointer-aligned as recv_cbs starts WB_UP()-aligned and holds pointer pairs */
+	stack_data_t *stack_buf = (stack_data_t *)(v_area + shared_size + recv_cbs_size);
 
-	k_stack_alloc_init(&v->free_desc_stack, size);
+	k_stack_init(&v->free_desc_stack, stack_buf, size);
 	for (uint16_t i = 0; i < size; i++) {
 		k_stack_push(&v->free_desc_stack, i);
 	}
@@ -79,18 +90,27 @@ int virtq_create(struct virtq *v, size_t size)
 void virtq_free(struct virtq *v)
 {
 	k_free(v->desc);
-	k_stack_cleanup(&v->free_desc_stack);
 }
 
-static int virtq_add_available(struct virtq *v, uint16_t desc_idx)
+static void virtq_add_available(struct virtq *v, uint16_t desc_idx)
 {
-	uint16_t new_idx_le = sys_cpu_to_le16(sys_le16_to_cpu(v->avail->idx) % v->num);
+	uint16_t idx = sys_le16_to_cpu(v->avail->idx);
 
-	v->avail->ring[new_idx_le] = sys_cpu_to_le16(desc_idx);
+	v->avail->ring[idx & (v->num - 1)] = sys_cpu_to_le16(desc_idx);
 	barrier_dmem_fence_full();
-	v->avail->idx = sys_cpu_to_le16(sys_le16_to_cpu(v->avail->idx) + 1);
+	v->avail->idx = sys_cpu_to_le16(idx + 1);
+}
 
-	return 0;
+static void virtq_return_desc_chain(struct virtq *v, uint16_t head, uint16_t count)
+{
+	uint16_t curr = head;
+
+	for (uint16_t i = 0; i < count; i++) {
+		uint16_t next = sys_le16_to_cpu(v->desc[curr].next);
+
+		virtq_add_free_desc(v, curr);
+		curr = next;
+	}
 }
 
 int virtq_add_buffer_chain(
@@ -98,6 +118,10 @@ int virtq_add_buffer_chain(
 	uint16_t device_readable_count, virtq_receive_callback cb, void *cb_opaque,
 	k_timeout_t timeout)
 {
+	if (bufs_size == 0) {
+		return -EINVAL;
+	}
+
 	uint64_t total_len = 0;
 
 	for (int i = 0; i < bufs_size; i++) {
@@ -109,49 +133,36 @@ int virtq_add_buffer_chain(
 		return -EINVAL;
 	}
 
-	k_spinlock_key_t key = k_spin_lock(&v->lock);
-
-	if (v->free_desc_n < bufs_size && !K_TIMEOUT_EQ(timeout, K_FOREVER)) {
-		/* we don't have enough free descriptors to push all buffers to the queue */
-		k_spin_unlock(&v->lock, key);
-		return -EBUSY;
-	}
-
 	uint16_t prev_desc = VIRTQ_DESC_NEXT_SENTINEL;
 	uint16_t head = VIRTQ_DESC_NEXT_SENTINEL;
 
 	for (uint16_t buf_n = 0; buf_n < bufs_size; buf_n++) {
 		uint16_t desc;
+		/* popped outside the queue lock as k_stack_pop() may block */
+		int ret = virtq_get_free_desc(v, &desc, timeout);
 
-		/*
-		 * we've checked before that we have enough free descriptors
-		 * and the queue is locked, so popping from stack is guaranteed
-		 * to succeed and we don't have to check its return value
-		 */
-		virtq_get_free_desc(v, &desc, timeout);
-
-		uint16_t desc_le = sys_cpu_to_le16(desc);
+		if (ret != 0) {
+			virtq_return_desc_chain(v, head, buf_n);
+			return ret;
+		}
 
 		if (head == VIRTQ_DESC_NEXT_SENTINEL) {
 			head = desc;
 		}
-		v->desc[desc_le].addr = k_mem_phys_addr(bufs[buf_n].addr);
-		v->desc[desc_le].len = bufs[buf_n].len;
-		if (buf_n < device_readable_count) {
-			v->desc[desc_le].flags = 0;
-		} else {
-			v->desc[desc_le].flags = VIRTQ_DESC_F_WRITE;
-		}
+
+		uint16_t flags = buf_n < device_readable_count ? 0 : VIRTQ_DESC_F_WRITE;
+
 		if (buf_n < bufs_size - 1) {
-			v->desc[desc_le].flags |= VIRTQ_DESC_F_NEXT;
+			flags |= VIRTQ_DESC_F_NEXT;
 		} else {
-			v->desc[desc_le].next = 0;
+			v->desc[desc].next = 0;
 		}
+		v->desc[desc].addr = sys_cpu_to_le64(k_mem_phys_addr(bufs[buf_n].addr));
+		v->desc[desc].len = sys_cpu_to_le32(bufs[buf_n].len);
+		v->desc[desc].flags = sys_cpu_to_le16(flags);
 
 		if (prev_desc != VIRTQ_DESC_NEXT_SENTINEL) {
-			uint16_t prev_desc_le = sys_cpu_to_le16(prev_desc);
-
-			v->desc[prev_desc_le].next = desc_le;
+			v->desc[prev_desc].next = sys_cpu_to_le16(desc);
 		}
 
 		prev_desc = desc;
@@ -160,8 +171,9 @@ int virtq_add_buffer_chain(
 	v->recv_cbs[head].cb = cb;
 	v->recv_cbs[head].opaque = cb_opaque;
 
-	virtq_add_available(v, head);
+	k_spinlock_key_t key = k_spin_lock(&v->lock);
 
+	virtq_add_available(v, head);
 	k_spin_unlock(&v->lock, key);
 
 	return 0;
@@ -175,7 +187,9 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 
 	if (ret == 0) {
 		*desc_idx = (uint16_t)desc;
-		v->free_desc_n--;
+		K_SPINLOCK(&v->lock) {
+			v->free_desc_n--;
+		}
 	}
 
 	return ret;
@@ -184,5 +198,7 @@ int virtq_get_free_desc(struct virtq *v, uint16_t *desc_idx, k_timeout_t timeout
 void virtq_add_free_desc(struct virtq *v, uint16_t desc_idx)
 {
 	k_stack_push(&v->free_desc_stack, desc_idx);
-	v->free_desc_n++;
+	K_SPINLOCK(&v->lock) {
+		v->free_desc_n++;
+	}
 }

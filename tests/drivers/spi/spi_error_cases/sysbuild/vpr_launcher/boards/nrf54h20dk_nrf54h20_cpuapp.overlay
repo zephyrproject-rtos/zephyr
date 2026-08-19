@@ -3,14 +3,121 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "../../../boards/nrf54h20dk_nrf54h20_common.dtsi"
+
+&gpio1 {
+	status = "reserved";
+};
+
+&gpio0 {
+	status = "reserved";
+};
+
+&gpio6 {
+	status = "reserved";
+};
+
+&gpio7 {
+	status = "reserved";
+};
+
+&pinctrl {
+	spi130_default_alt: spi130_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 8)>;
+		};
+	};
+
+	spi130_sleep_alt: spi130_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 0, 0)>,
+				<NRF_PSEL(SPIM_MISO, 0, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 0, 8)>;
+			low-power-enable;
+		};
+	};
+
+	spis131_default_alt: spis131_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 0, 1)>,
+				<NRF_PSEL(SPIS_MISO, 0, 7)>,
+				<NRF_PSEL(SPIS_MOSI, 0, 9)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+		};
+	};
+
+	spis131_sleep_alt: spis131_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 0, 1)>,
+				<NRF_PSEL(SPIS_MISO, 0, 7)>,
+				<NRF_PSEL(SPIS_MOSI, 0, 9)>,
+				<NRF_PSEL(SPIS_CSN, 0, 11)>;
+			low-power-enable;
+		};
+	};
+
+	spis120_default_alt: spis120_default_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 6, 0)>,
+				<NRF_PSEL(SPIS_MISO, 6, 3)>,
+				<NRF_PSEL(SPIS_MOSI, 6, 4)>,
+				<NRF_PSEL(SPIS_CSN, 6, 9)>;
+		};
+	};
+
+	spis120_sleep_alt: spis120_sleep_alt {
+		group1 {
+			psels = <NRF_PSEL(SPIS_SCK, 6, 0)>,
+				<NRF_PSEL(SPIS_MISO, 6, 3)>,
+				<NRF_PSEL(SPIS_MOSI, 6, 4)>,
+				<NRF_PSEL(SPIS_CSN, 6, 9)>;
+			low-power-enable;
+		};
+	};
+
+	spi120_default: spi120_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_MISO, 7, 6)>;
+		};
+
+		group2 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			nordic,drive-mode = <NRF_DRIVE_E0E1>;
+		};
+	};
+
+	spi120_sleep: spi120_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 7, 3)>,
+				<NRF_PSEL(SPIM_MISO, 7, 6)>,
+				<NRF_PSEL(SPIM_MOSI, 7, 7)>;
+			low-power-enable;
+		};
+	};
+};
 
 &spi130 {
 	status = "reserved";
+	pinctrl-0 = <&spi130_default_alt>;
+	pinctrl-1 = <&spi130_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
 };
 
-&dut_spis {
+&spi131 {
 	status = "reserved";
+	pinctrl-0 = <&spis131_default_alt>;
+	pinctrl-1 = <&spis131_sleep_alt>;
+	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+};
+
+&spis120 {
+	status = "reserved";
+	pinctrl-0 = <&spis120_default_alt>;
+	pinctrl-1 = <&spis120_sleep_alt>;
+	pinctrl-names = "default", "sleep";
+	interrupt-parent = <&cpuflpr_clic>;
 };

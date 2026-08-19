@@ -17,6 +17,31 @@
 #define GPIO_PORT_OR_NULL(node_id)                                                                 \
 	COND_CODE_1(DT_NODE_EXISTS(node_id), ((GPIO_PRT_Type *)DT_REG_ADDR(node_id)), (NULL))
 
+/* On PSE84, the SMIF flash data/clock pins are routed through dedicated
+ * GPIO ports inside the SMIF blocks rather than regular IOSS GPIO ports.
+ * PDL's Cy_GPIO_Pin_*FastInit detects these base
+ * addresses (CY_GPIO_IS_SMIF_GPIO) and dispatches HSIOM/CFG writes to the
+ * SMIF GPIO sub-block, so they can be driven by the standard pinctrl
+ * path.
+ *
+ * Slots IFX_SMIF{0,1}_PORT{0,1,2} in gpio_ports[] hold the SMIF port
+ * bases on PSE84 and are absent on other SoCs (slots are unreferenced
+ * there).
+ */
+#if defined(CONFIG_SOC_SERIES_PSE84)
+#include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
+
+#define IFX_PINCTRL_SMIF_PORT_ENTRIES                                                          \
+	[IFX_SMIF0_PORT0] = (GPIO_PRT_Type *)SMIF_INST0_PRT0,                                  \
+	[IFX_SMIF0_PORT1] = (GPIO_PRT_Type *)SMIF_INST0_PRT1,                                  \
+	[IFX_SMIF0_PORT2] = (GPIO_PRT_Type *)SMIF_INST0_PRT2,                                  \
+	[IFX_SMIF1_PORT0] = (GPIO_PRT_Type *)SMIF_INST1_PRT0,                                  \
+	[IFX_SMIF1_PORT1] = (GPIO_PRT_Type *)SMIF_INST1_PRT1,                                  \
+	[IFX_SMIF1_PORT2] = (GPIO_PRT_Type *)SMIF_INST1_PRT2,
+#else
+#define IFX_PINCTRL_SMIF_PORT_ENTRIES
+#endif
+
 /* @brief Array containing pointers to each GPIO port.
  *
  * Entries will be NULL if the GPIO port is not enabled.
@@ -32,7 +57,9 @@ static GPIO_PRT_Type *const gpio_ports[] = {
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt14)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt15)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt16)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt17)),
 	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt18)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt19)),
-	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21))};
+	GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt20)), GPIO_PORT_OR_NULL(DT_NODELABEL(gpio_prt21)),
+	IFX_PINCTRL_SMIF_PORT_ENTRIES
+};
 
 /* @brief This function returns gpio drive mode, according to.
  * bias and drive mode params defined in pinctrl node.
@@ -45,6 +72,13 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 	uint32_t flags_masked;
 
 	flags_masked = ((flags & SOC_GPIO_FLAGS_MASK) >> SOC_GPIO_FLAGS_POS);
+
+#if defined(CY_IP_MXS22IOSS)
+	/* CFGOUT3: peripheral-controlled OE with Hi-Z pull-up; takes priority over bias flags. */
+	if (flags_masked & SOC_GPIO_CFGOUT3) {
+		return CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ;
+	}
+#endif /* CY_IP_MXS22IOSS */
 
 	if (flags_masked & SOC_GPIO_OPENDRAIN) {
 		/* drive_open_drain */
@@ -85,7 +119,7 @@ static uint32_t soc_gpio_get_drv_mode(uint32_t flags)
 	return drv_mode;
 }
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CY_IP_MXS22IOSS)
 static uint32_t soc_gpio_get_drv_strength(uint32_t flags)
 {
 	uint32_t drv_strength_idx = 0;
@@ -135,6 +169,14 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 		Cy_GPIO_Pin_FastInit(gpio_ports[port_num], pin_num, drv_mode, 1, hsiom);
 #endif /* defined(CY_PDL_TZ_ENABLED) */
 
+#if defined(CY_IP_MXS22IOSS)
+		if (drv_mode == CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ) {
+			uint32_t pin_loc = pin_num << CY_GPIO_DRIVE_MODE_OFFSET;
+
+			GPIO_PRT_CFG(gpio_ports[port_num]) |= (GPIO_PRT_CFG_IN_EN0_Msk << pin_loc);
+		}
+#endif /* CY_IP_MXS22IOSS */
+
 		/* Force output to enable pulls */
 		switch (drv_mode) {
 		case CY_GPIO_DM_PULLUP:
@@ -148,9 +190,22 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 			break;
 		}
 
-#if defined(CONFIG_SOC_SERIES_PSE84)
+#if defined(CY_IP_MXS22IOSS)
 		Cy_GPIO_SetDriveSel(gpio_ports[port_num], pin_num,
 				    soc_gpio_get_drv_strength(pins[i].pincfg));
+
+		/* CFGOUT3 internal pull-up: value from DT, 0 = disabled. */
+		if (drv_mode == CY_GPIO_DM_CFGOUT3_STRONG_PULLUP_HIGHZ) {
+			uint32_t flags_masked =
+				((pins[i].pincfg & SOC_GPIO_FLAGS_MASK) >> SOC_GPIO_FLAGS_POS);
+			uint32_t pullup_val = (flags_masked & SOC_GPIO_CFGOUT3_PULLUP_MASK) >>
+					      SOC_GPIO_CFGOUT3_PULLUP_POS;
+
+			if (pullup_val != 0U) {
+				Cy_GPIO_SetPullupResistance(gpio_ports[port_num], pin_num,
+							    pullup_val);
+			}
+		}
 #endif
 	}
 

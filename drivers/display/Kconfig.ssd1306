@@ -6,13 +6,29 @@
 menuconfig SSD1306
 	bool "SSD1306 display driver"
 	default y
-	depends on DT_HAS_SOLOMON_SSD1306_ENABLED || DT_HAS_SOLOMON_SSD1309_ENABLED || DT_HAS_SINOWEALTH_SH1106_ENABLED
+	depends on DT_HAS_SOLOMON_SSD1306_ENABLED \
+		|| DT_HAS_SOLOMON_SSD1306B_ENABLED || DT_HAS_SOLOMON_SSD1315_ENABLED \
+		|| DT_HAS_SOLOMON_SSD1309_ENABLED || DT_HAS_SOLOMON_SSD1305_ENABLED \
+		|| DT_HAS_SINOWEALTH_SH1106_ENABLED || DT_HAS_SINOWEALTH_SH1107_ENABLED \
+		|| DT_HAS_CHIPWEALTH_CH1115_ENABLED || DT_HAS_CHIPWEALTH_CH1116_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306B),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1306B),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1315),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1315),spi)
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1309),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1309),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1305),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SOLOMON_SSD1305),spi)
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1106),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1107),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1107),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_CHIPWEALTH_CH1115),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPWEALTH_CH1115),spi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_CHIPWEALTH_CH1116),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPWEALTH_CH1116),spi)
 	help
 	  Enable driver for SSD1306 display driver.
 

@@ -321,12 +321,12 @@ static int rtc_mc146818_alarm_set_time(const struct device *dev, uint16_t id, ui
 	if (mask & RTC_ALARM_TIME_MASK_MINUTE) {
 		mfd_mc146818_std_write(config->mfd, RTC_ALARM_MIN, timeptr->tm_min);
 	} else {
-		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, RTC_ALARM_DC);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_MIN, RTC_ALARM_DC);
 	}
 	if (mask & RTC_ALARM_TIME_MASK_HOUR) {
 		mfd_mc146818_std_write(config->mfd, RTC_ALARM_HOUR, timeptr->tm_hour);
 	} else {
-		mfd_mc146818_std_write(config->mfd, RTC_ALARM_SEC, RTC_ALARM_DC);
+		mfd_mc146818_std_write(config->mfd, RTC_ALARM_HOUR, RTC_ALARM_DC);
 	}
 
 	mfd_mc146818_std_write(config->mfd, RTC_DATA,
@@ -529,7 +529,7 @@ static DEVICE_API(rtc, rtc_mc146818_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(0),					\
 				DT_INST_IRQ(0, priority),			\
 				rtc_mc146818_isr, DEVICE_DT_INST_GET(n),	\
-				DT_INST_IRQ(0, sense));				\
+				DT_INST_IRQ(0, flags));				\
 										\
 		irq_enable(DT_INST_IRQN(0));					\
 										\

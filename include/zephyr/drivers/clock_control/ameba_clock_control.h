@@ -10,6 +10,7 @@
  *
  * This header selects the SoC-specific clock Devicetree bindings for
  * Ameba family SoCs based on the active SoC series configuration.
+ * @ingroup clock_control_ameba
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CLOCK_CONTROL_AMEBA_CLOCK_CONTROL_H_
@@ -20,7 +21,8 @@ extern "C" {
 #endif
 
 /**
- * @name Ameba SoC clock Devicetree bindings
+ * @defgroup clock_control_ameba Realtek Ameba
+ * @ingroup clock_control_interface_ext
  * @{
  */
 

@@ -52,9 +52,9 @@ ZTEST(fcb_test_with_2sectors_set, test_fcb_append_fill)
 		zassert_true(rc == 0, "fcb_append_finish call failure");
 	}
 	zassert_true(elem_cnts[0] > 0,
-		     "appendend count should be greater than zero");
+		     "appended count should be greater than zero");
 	zassert_true(elem_cnts[0] == elem_cnts[1],
-		     "appendend counts should equal to each other");
+		     "appended counts should equal to each other");
 
 	(void)memset(&aa_together_cnts, 0, sizeof(aa_together_cnts));
 	rc = fcb_walk(fcb, NULL, fcb_test_cnt_elems_cb, &aa_together);

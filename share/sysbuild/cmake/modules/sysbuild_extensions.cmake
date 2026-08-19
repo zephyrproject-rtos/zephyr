@@ -174,17 +174,18 @@ function(sysbuild_cache)
                     RESULT_VARIABLE compare_res
     )
     if(NOT compare_res EQUAL 0)
-      zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+      file(COPY_FILE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
                        ${${SB_CACHE_APPLICATION}_CACHE_FILE}
       )
       ExternalProject_Get_Property(${SB_CACHE_APPLICATION} BINARY_DIR)
       file(TOUCH_NOCREATE ${BINARY_DIR}/CMakeCache.txt)
     endif()
   else()
-    zephyr_file_copy(${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
+    file(COPY_FILE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp
                      ${${SB_CACHE_APPLICATION}_CACHE_FILE} ONLY_IF_DIFFERENT
     )
   endif()
+  file(REMOVE ${${SB_CACHE_APPLICATION}_CACHE_FILE}.tmp)
 
 endfunction()
 
@@ -324,6 +325,7 @@ function(ExternalZephyrProject_Add)
     CMAKE_VERBOSE_MAKEFILE
     WEST_PYTHON        # Temporary export. Waiting for #87083 and extensions.cmake to be cleaned up.
     Python3_EXECUTABLE # Temporary export. Waiting for #87083 and extensions.cmake to be cleaned up.
+    ZEPHYR_BASE
   )
 
   set(sysbuild_cache_file ${CMAKE_BINARY_DIR}/${ZBUILD_APPLICATION}_sysbuild_cache.txt)
@@ -543,6 +545,11 @@ function(ExternalZephyrVariantProject_Add)
     endif()
   endforeach()
 
+  # Add the variant image CMake module path to replace the normal Zephyr module path
+  list(APPEND shared_cmake_vars_argument
+    "-DCMAKE_MODULE_PATH:PATH=${CMAKE_SOURCE_DIR}/cmake/zephyr/variant"
+  )
+
   set(list_separator ",")
 
   include(ExternalProject)
@@ -588,10 +595,6 @@ function(ExternalZephyrVariantProject_Add)
   set(${ZBUILD_APPLICATION}_KCONFIG_VARIANT_SOURCE
       ${CMAKE_BINARY_DIR}/${ZBUILD_SOURCE_APP}/zephyr/.config
       CACHE INTERNAL "Application config file" FORCE
-  )
-
-  set(${ZBUILD_APPLICATION}_KCONFIG_TARGETS "KCONFIG_TARGETS-NOTFOUND"
-      CACHE INTERNAL "Disable Kconfig targets" FORCE
   )
 
   set(${ZBUILD_APPLICATION}_SNIPPET ${ZBUILD_SNIPPET}
@@ -897,6 +900,50 @@ endfunction()
 
 function(set_config_int image setting value)
   set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=${value}\n")
+endfunction()
+
+# Usage:
+#   sysbuild_mcuboot_resolve_signature_key_files(<out_var> <key_files>)
+#
+# Normalize a BOOT_SIGNATURE_KEY_FILE value -- a single path or a comma-separated
+# list -- for forwarding to an image: strip surrounding whitespace from each
+# entry and warn on (and skip) an empty entry (a stray comma). Entries are
+# forwarded verbatim for each consumer to resolve, and stay comma-separated
+# (';' would not survive set_config_string() or -D overrides).
+function(sysbuild_mcuboot_resolve_signature_key_files out_var key_files)
+  string(REPLACE "," ";" key_list "${key_files}")
+  set(resolved "")
+  # IN LISTS keeps empty elements (unlike unquoted expansion, which drops them),
+  # so a stray/leading/trailing/double comma is warned about below instead of
+  # silently collapsing the key set.
+  foreach(key_path IN LISTS key_list)
+    string(STRIP "${key_path}" key_path)
+    if(key_path STREQUAL "")
+      message(WARNING
+        "Empty entry in a BOOT_SIGNATURE_KEY_FILE list (\"${key_files}\"); "
+        "check for a stray, leading, or trailing comma."
+      )
+      continue()
+    endif()
+    list(APPEND resolved "${key_path}")
+  endforeach()
+  string(REPLACE ";" "," resolved "${resolved}")
+  set(${out_var} "${resolved}" PARENT_SCOPE)
+endfunction()
+
+# Usage:
+#   sysbuild_mcuboot_application_signature_key_file(<out_var> <key_files>)
+#
+# Set <out_var> to the key the application is signed with: the first entry of
+# the resolved <key_files> list (the MCUboot bootloader embeds the public half
+# of every entry; the application is signed with exactly one).
+function(sysbuild_mcuboot_application_signature_key_file out_var key_files)
+  sysbuild_mcuboot_resolve_signature_key_files(resolved "${key_files}")
+  if(NOT resolved STREQUAL "")
+    string(REPLACE "," ";" resolved "${resolved}")
+    list(GET resolved 0 resolved)
+  endif()
+  set(${out_var} "${resolved}" PARENT_SCOPE)
 endfunction()
 
 # Usage:

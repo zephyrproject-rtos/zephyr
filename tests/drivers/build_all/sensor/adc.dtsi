@@ -104,8 +104,8 @@ test_omron_d6f_p0010: test-omron-d6f-p0010 {
 	io-channels = <&test_adc 0>;
 };
 
-test_tdk_ntcg163jf103ft1: tdk-ntcg163jf103ft1 {
-	compatible = "tdk,ntcg163jf103ft1";
+test_tdk_ntcgxx3jx103x: tdk-ntcgxx3jx103x {
+	compatible = "tdk,ntcgxx3jx103x";
 	io-channels = <&test_adc 0>;
 	pullup-uv = <3300000>;
 	pullup-ohm = <0>;
@@ -152,4 +152,11 @@ test_als_pt19: test_als-pt19 {
 	compatible = "everlight,als-pt19";
 	io-channels = <&test_adc 0>;
 	load-resistor = <10000>;
+};
+
+test_nordic_nrf_vbat: test_nordic_nrf_vbat {
+	status = "okay";
+	compatible = "nordic,nrf-vbat";
+	io-channels = <&test_adc 0>;
+	invert-voltage;
 };

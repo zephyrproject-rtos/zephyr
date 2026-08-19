@@ -3,16 +3,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-  set(template_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-pse8xxgp)
-else()
-  set(template_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-cat1)
-endif()
+set(template_dir ${ZEPHYR_HAL_INFINEON_MODULE_DIR}/mtb-template-cat1)
 
 set(cat1a_dir ${template_dir}/files/templates/cat1a)
 set(cat1b_dir ${template_dir}/files/templates/cat1b)
 set(cat1c_dir ${template_dir}/files/templates/cat1c)
-set(edge_dir ${template_dir}/files)
 
 # Add support for PSOC6 (CAT1A)
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1A)
@@ -39,22 +34,4 @@ if(CONFIG_SOC_FAMILY_INFINEON_CAT1C)
   zephyr_include_directories(${cat1c_dir}/COMPONENT_MTB/HEADER_FILES)
   zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M0PLUS ${cat1c_dir}/COMPONENT_MTB/COMPONENT_CM0P/system_cm0plus.c)
   zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M7 ${cat1c_dir}/COMPONENT_MTB/COMPONENT_CM7/system_cm7.c)
-endif()
-
-# Add support for psoce84 (EDGE)
-if(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-  zephyr_include_directories(${edge_dir})
-  zephyr_include_directories(${edge_dir}/devices/include)
-
-  zephyr_library_sources(${edge_dir}/system_edge.c)
-  if(CONFIG_CPU_CORTEX_M33)
-    if(CONFIG_TRUSTED_EXECUTION_NONSECURE)
-      zephyr_library_sources(${edge_dir}/COMPONENT_CM33/COMPONENT_NON_SECURE_DEVICE/ns_system_pse84.c)
-    else()
-      zephyr_library_sources(${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE/s_system_pse84.c)
-      zephyr_include_directories(${edge_dir}/COMPONENT_CM33/COMPONENT_SECURE_DEVICE)
-    endif()
-  endif()
-  zephyr_library_sources_ifdef(CONFIG_CPU_CORTEX_M55
-    ${edge_dir}/COMPONENT_CM55/COMPONENT_NON_SECURE_DEVICE/ns_system_pse84.c)
 endif()

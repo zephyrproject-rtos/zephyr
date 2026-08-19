@@ -115,6 +115,13 @@ config STACK_USAGE
 	  Generate an extra file that specifies the maximum amount of stack used,
 	  on a per-function basis.
 
+config CALLGRAPH_INFO
+	bool "Generate call graph information"
+	help
+	  Generate an extra .ci file for each compilation unit, that specifies all
+	  calls known to GCC at complile time on a per-function basis. Calls are
+	  specified in the VCG format.
+
 config STACK_SENTINEL
 	bool "Stack sentinel"
 	select THREAD_STACK_INFO
@@ -163,6 +170,8 @@ config PRINTK_BUFFER_SIZE
 
 config EARLY_CONSOLE
 	bool "Send stdout at the earliest stage possible"
+	default y
+	depends on !SERIAL_HAS_POST_KERNEL_INIT
 	help
 	  This option will enable stdout as early as possible, for debugging
 	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
@@ -198,7 +207,7 @@ config ASSERT_LEVEL
 config SPIN_VALIDATE
 	bool "Spinlock validation"
 	depends on MULTITHREADING
-	depends on MP_MAX_NUM_CPUS <= 4
+	depends on MP_MAX_NUM_CPUS <= 4 || (64BIT && MP_MAX_NUM_CPUS <= 8)
 	default y if !FLASH || FLASH_SIZE > 32
 	help
 	  There's a spinlock validation framework available when asserts are
@@ -328,12 +337,18 @@ config EXCEPTION_STACK_TRACE
 #
 config DEBUG_THREAD_INFO
 	bool "Thread awareness support"
-	depends on !SMP
 	select THREAD_MONITOR
 	select THREAD_NAME
 	help
 	  This option exports an array of offsets to kernel structs to allow
 	  for debugger RTOS plugins to determine the state of running threads.
+	  On SMP, thread_info.c's K_CURR_THREAD offset by itself only reflects
+	  cpus[0].current; CPU_STRIDE and NUM_CPUS are also exported so a
+	  debugger plugin that knows about them can read every CPU's current
+	  thread (cpus[i].current = K_CURR_THREAD + i * CPU_STRIDE). A plugin
+	  that doesn't know about them simply keeps seeing cpus[0] only, same
+	  as before -- these two entries are additions, not a change to the
+	  meaning of any existing one.
 
 rsource "coredump/Kconfig"
 rsource "symtab/Kconfig"
@@ -360,31 +375,3 @@ config CS_TRACE_DEFMT
 	help
 	  Module is decoding data which is formatted using Coresight
 	  Trace Formatter, e.g. when data is put into ETR (Embedded Trace Router).
-
-config CPU_LOAD
-	select TRACING
-	depends on CPU_CORTEX_M || RISCV || CPU_CORTEX_A
-	depends on !SMP
-	bool "CPU load measurement"
-
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
-
-config CPU_LOAD_USE_COUNTER
-	bool "Use counter"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_CPU_LOAD_COUNTER))
-	default y
-	select COUNTER
-	help
-	  Use counter for tracking CPU idle time.
-
-config CPU_LOAD_LOG_PERIODICALLY
-	int "Report period (in milliseconds)"
-	depends on LOG
-	default 0
-	help
-	  Specifies how often CPU load shall be logged. 0 means that there is no logging.
-
-module = CPU_LOAD
-module-str = cpu_load
-source "subsys/logging/Kconfig.template.log_config"

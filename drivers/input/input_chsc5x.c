@@ -68,7 +68,7 @@ static void chsc5x_work_handler(struct k_work *work)
 	uint16_t row, col;
 	bool is_pressed;
 	int ret;
-	const uint8_t write_buffer[] = {
+	static const uint8_t write_buffer[] = {
 		CHSC5X_BASE_ADDR1,
 		CHSC5X_BASE_ADDR2,
 		CHSC5X_BASE_ADDR3,
@@ -112,7 +112,7 @@ static int chsc5x_verify_ic(const struct device *dev)
 {
 	const struct chsc5x_config *cfg = dev->config;
 	int ret;
-	const uint8_t write_buffer[] = {
+	static const uint8_t write_buffer[] = {
 		CHSC5X_BASE_ADDR1,
 		CHSC5X_BASE_ADDR2,
 		CHSC5X_BASE_ADDR3,
@@ -121,7 +121,7 @@ static int chsc5x_verify_ic(const struct device *dev)
 	uint8_t read_buffer[4];
 
 	if (!i2c_is_ready_dt(&cfg->i2c)) {
-		LOG_ERR("I2C bus %s not ready", cfg->i2c.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->i2c.bus);
 		return -ENODEV;
 	}
 
@@ -158,7 +158,7 @@ static int chsc5x_reset(const struct device *dev)
 
 	if (config->reset_gpio.port != NULL) {
 		if (!gpio_is_ready_dt(&config->reset_gpio)) {
-			LOG_ERR("GPIO port %s not ready", config->reset_gpio.port->name);
+			LOG_ERR_DEVICE_NOT_READY(config->reset_gpio.port);
 			return -ENODEV;
 		}
 
@@ -198,7 +198,7 @@ static int chsc5x_pm_action(const struct device *dev, enum pm_device_action acti
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND: {
-		const uint8_t write_buffer[] = {
+		static const uint8_t write_buffer[] = {
 			CHSC5X_BASE_ADDR1,
 			CHSC5X_BASE_ADDR2,
 			CHSC5X_BASE_ADDR3,
@@ -237,7 +237,7 @@ static int chsc5x_init(const struct device *dev)
 	}
 
 	if (!gpio_is_ready_dt(&config->int_gpio)) {
-		LOG_ERR("GPIO port %s not ready", config->int_gpio.port->name);
+		LOG_ERR_DEVICE_NOT_READY(config->int_gpio.port);
 		return -ENODEV;
 	}
 

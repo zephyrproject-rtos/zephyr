@@ -279,7 +279,7 @@ void llcp_lr_rx(struct ll_conn *conn, struct proc_ctx *ctx, memq_link_t *link,
 	 * (see comment in ull_llcp_conn_upd.c::lp_cu_st_wait_instant() for more details)
 	 *
 	 * The workaround/fix for this is to only store an RX node for retention if
-	 * 'we havent already' got one
+	 * 'we haven't already' got one
 	 */
 	if (!ctx->node_ref.rx) {
 		/* Store RX node and link */

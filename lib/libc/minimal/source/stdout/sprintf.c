@@ -42,7 +42,7 @@ int snprintf(char *ZRESTRICT str, size_t len,
 	p.len = (int) len;
 
 	va_start(vargs, format);
-	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf((cbprintf_cb)sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
@@ -60,7 +60,7 @@ int sprintf(char *ZRESTRICT str, const char *ZRESTRICT format, ...)
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
 	va_start(vargs, format);
-	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf((cbprintf_cb)sprintf_out, (void *) (&p), format, vargs);
 	va_end(vargs);
 
 	*(p.ptr) = 0;
@@ -81,7 +81,7 @@ int vsnprintf(char *ZRESTRICT str, size_t len,
 	p.ptr = str;
 	p.len = (int) len;
 
-	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf((cbprintf_cb)sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;
@@ -96,7 +96,7 @@ int vsprintf(char *ZRESTRICT str, const char *ZRESTRICT format,
 	p.ptr = str;
 	p.len = (int) 0x7fffffff; /* allow up to "maxint" characters */
 
-	r = cbvprintf(sprintf_out, (void *) (&p), format, vargs);
+	r = cbvprintf((cbprintf_cb)sprintf_out, (void *) (&p), format, vargs);
 
 	*(p.ptr) = 0;
 	return r;

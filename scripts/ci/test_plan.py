@@ -27,18 +27,19 @@ except ImportError:
 if "ZEPHYR_BASE" not in os.environ:
     exit("$ZEPHYR_BASE environment variable undefined.")
 
-# These are globaly used variables. They are assigned in __main__ and are visible in further methods
-# however, pylint complains that it doesn't recognized them when used (used-before-assignment).
+# These are globally used variables. They are assigned in __main__ and are
+# visible in further methods however, pylint complains that it doesn't
+# recognized them when used (used-before-assignment).
 zephyr_base = Path(os.environ['ZEPHYR_BASE'])
 repository_path = zephyr_base
 repo_to_scan = Repo(zephyr_base)
 args = None
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
-logging.getLogger("pykwalify.core").setLevel(50)
 
 sys.path.append(os.path.join(zephyr_base, 'scripts'))
+sys.path.append(os.path.join(zephyr_base, 'scripts', 'pylib', 'twister'))
 import list_boards  # noqa: E402
-from pylib.twister.twisterlib.statuses import TwisterStatus  # noqa: E402
+from twisterlib.statuses import TwisterStatus  # noqa: E402
 
 
 def _get_match_fn(globs, regexes):
@@ -315,19 +316,24 @@ class Filters:
             scope_found = False
             while not scope_found and d:
                 head, tail = os.path.split(d)
-                if os.path.exists(os.path.join(d, "testcase.yaml")) or os.path.exists(
-                    os.path.join(d, "sample.yaml")
-                ):
+                test_defs = [
+                    "sample.yaml",
+                    "testcase.yaml",
+                    "tests.yaml",
+                ]
+                if any(os.path.exists(os.path.join(d, td)) for td in test_defs):
                     tests.add(d)
                     # Modified file is treated as resolved, since a matching scope was found
                     self.resolved_files.append(f)
                     scope_found = True
                 elif tail == "common":
                     # Look for yamls in directories collocated with common
-                    testcase_yamls = glob.iglob(head + '/**/testcase.yaml', recursive=True)
-                    sample_yamls = glob.iglob(head + '/**/sample.yaml', recursive=True)
 
-                    yamls_found = [*testcase_yamls, *sample_yamls]
+                    yamls_found = [
+                        y
+                        for pattern in test_defs
+                        for y in glob.iglob(f"{head}/**/{pattern}", recursive=True)
+                    ]
                     if yamls_found:
                         for yaml in yamls_found:
                             tests.add(os.path.dirname(yaml))

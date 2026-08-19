@@ -52,7 +52,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* Zephyr Kernel Objects */
 
-static void ot_plat_ble_thread(void *, void *, void *);
+static void ot_plat_ble_thread(void *unused1, void *unused2, void *unused3);
 static uint8_t ot_plat_ble_msg_buf[PLAT_BLE_MSG_DATA_MAX];
 
 static K_SEM_DEFINE(ot_plat_ble_init_semaphore, 0, 1);
@@ -311,7 +311,6 @@ otError otPlatBleGapDisconnect(otInstance *aInstance)
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	struct bt_conn_info info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	uint16_t mtu;
 	otError error = OT_ERROR_NONE;
 
@@ -324,8 +323,6 @@ static void connected(struct bt_conn *conn, uint8_t err)
 	} else if (bt_conn_get_info(conn, &info)) {
 		LOG_WRN("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 		if (error != OT_ERROR_NONE) {
 			LOG_WRN("Error retrieving mtu: %s", otThreadErrorToString(error));
@@ -342,8 +339,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	LOG_INF("Disconnected, reason 0x%02x %s", reason, bt_hci_err_to_str(reason));
 
 	if (ot_plat_ble_connection) {
-		bt_conn_unref(ot_plat_ble_connection);
-		ot_plat_ble_connection = NULL;
+		bt_conn_drop(&ot_plat_ble_connection);
 
 		error = ot_plat_ble_queue_msg(NULL, PLAT_BLE_MSG_DISCONNECT, 0);
 		if (error != OT_ERROR_NONE) {
@@ -361,15 +357,12 @@ static void le_param_updated(struct bt_conn *conn, uint16_t interval, uint16_t l
 			     uint16_t timeout)
 {
 	struct bt_conn_info info;
-	char addr[BT_ADDR_LE_STR_LEN];
 	uint16_t mtu;
 	otError error = OT_ERROR_NONE;
 
 	if (bt_conn_get_info(conn, &info)) {
 		LOG_INF("Could not parse connection info");
 	} else {
-		bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 		error = otPlatBleGattMtuGet(ble_openthread_instance, &mtu);
 
 		if (error != OT_ERROR_NONE) {

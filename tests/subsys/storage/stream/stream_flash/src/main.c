@@ -344,6 +344,54 @@ static int bad_write(const struct device *dev, off_t off, const void *data, size
 	return -EINVAL;
 }
 
+/* Forwarders that delegate to the real flash driver API for callbacks not under test.
+ */
+static int forward_erase(const struct device *dev, off_t off, size_t len)
+{
+	ARG_UNUSED(dev);
+	return api->erase(fdev, off, len);
+}
+
+static const struct flash_parameters *forward_get_parameters(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return api->get_parameters(fdev);
+}
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static void forward_page_layout(const struct device *dev,
+				const struct flash_pages_layout **lay,
+				size_t *lay_size)
+{
+	ARG_UNUSED(dev);
+	api->page_layout(fdev, lay, lay_size);
+}
+#endif
+
+/* Fake flash APIs used by test_stream_flash_buffered_write_callback. The instances must live in
+ * the flash driver API iterable section (declared via DEVICE_API) so that DEVICE_API_GET passes
+ * its class assertion when the test routes flash_* calls through a fake device.
+ */
+static DEVICE_API(flash, fake_api_fake_write) = {
+	.read = bad_read,
+	.write = fake_write,
+	.erase = forward_erase,
+	.get_parameters = forward_get_parameters,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = forward_page_layout,
+#endif
+};
+
+static DEVICE_API(flash, fake_api_bad_write) = {
+	.read = bad_read,
+	.write = bad_write,
+	.erase = forward_erase,
+	.get_parameters = forward_get_parameters,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = forward_page_layout,
+#endif
+};
+
 ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 {
 	int rc;
@@ -384,16 +432,13 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	zassert_equal(ctx.buf_bytes, BUF_LEN, "Expected bytes to be left in buffer");
 
 	struct device fake_dev = *ctx.fdev;
-	struct flash_driver_api fake_api = *(struct flash_driver_api *)ctx.fdev->api;
 	struct stream_flash_ctx bad_ctx = ctx;
 	struct stream_flash_ctx cmp_ctx;
 
-	fake_api.read = bad_read;
 	/* Using fake write here because after previous write, with faked callback failure,
 	 * the flash is already written and real flash_write would cause failure.
 	 */
-	fake_api.write = fake_write;
-	fake_dev.api = &fake_api;
+	fake_dev.api = &fake_api_fake_write;
 	bad_ctx.fdev = &fake_dev;
 	/* Trigger erase attempt */
 	cmp_ctx = bad_ctx;
@@ -405,7 +450,7 @@ ZTEST(lib_stream_flash, test_stream_flash_buffered_write_callback)
 	/* Pretend flashed context and attempt write write block - 1 bytes to trigger unaligned
 	 * write; the write needs to fail so that we could check that context does not get modified.
 	 */
-	fake_api.write = bad_write;
+	fake_dev.api = &fake_api_bad_write;
 	bad_ctx.callback = NULL;
 	bad_ctx.buf_bytes = 0;
 	cmp_ctx = bad_ctx;

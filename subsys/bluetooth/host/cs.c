@@ -106,8 +106,7 @@ static void free_reassembly_buf(struct net_buf **buf)
 		LOG_WRN("The buffer was not in the list");
 	}
 
-	net_buf_unref(*buf);
-	*buf = NULL;
+	net_buf_drop(buf);
 }
 
 /** @brief Gets the reassembly buffer identified by the connection handle
@@ -859,18 +858,12 @@ void bt_hci_le_cs_subevent_result(struct net_buf *buf)
 		goto abort;
 	}
 
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	return;
 
 abort:
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	reassembly_buf = get_reassembly_buf(conn_handle, false);
 	if (reassembly_buf) {
@@ -950,18 +943,12 @@ void bt_hci_le_cs_subevent_result_continue(struct net_buf *buf)
 		free_reassembly_buf(&reassembly_buf);
 	}
 
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	return;
 
 abort:
-	if (conn) {
-		bt_conn_unref(conn);
-		conn = NULL;
-	}
+	bt_conn_drop(&conn);
 
 	if (reassembly_buf) {
 		free_reassembly_buf(&reassembly_buf);

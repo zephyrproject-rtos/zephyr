@@ -149,8 +149,8 @@ static void ls0xx_vcom_toggle(void *a, void *b, void *c)
 		}
 		/* Sleep before giving semaphore based on errors in testing */
 		k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
-	    k_sem_give(&ls0xx_bus_sem);
 		spi_release_dt(&config->bus);
+		k_sem_give(&ls0xx_bus_sem);
 		k_msleep(config->serial_vcom_int);
 #endif /* DT_INST_NODE_HAS_PROP(0, extcomin_gpios) */
 	}
@@ -173,8 +173,8 @@ static int ls0xx_clear(const struct device *dev)
 		err = -EBUSY;
 	}
 	k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
-	k_sem_give(&ls0xx_bus_sem);
 	spi_release_dt(&config->bus);
+	k_sem_give(&ls0xx_bus_sem);
 
 	return err;
 }
@@ -230,8 +230,8 @@ static int ls0xx_update_display(const struct device *dev,
 		err = -EBUSY;
 	}
 	k_sleep(K_TICKS(LS0XX_BUS_RETURN_DELAY_TICKS));
-	k_sem_give(&ls0xx_bus_sem);
 	spi_release_dt(&config->bus);
+	k_sem_give(&ls0xx_bus_sem);
 
 	return err;
 }

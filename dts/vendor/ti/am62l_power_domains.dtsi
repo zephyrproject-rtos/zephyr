@@ -8,6 +8,12 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		main_adc0_pd: power-domain@0 {
+			compatible = "arm,scmi-power-domain";
+			reg = <0>;
+			#power-domain-cells = <0>;
+		};
+
 		main_uart0_pd: power-domain@59 {
 			compatible = "arm,scmi-power-domain";
 			reg = <89>;
@@ -68,6 +74,24 @@
 			#power-domain-cells = <0>;
 		};
 
+		main_epwm0_pd: power-domain@28 {
+			compatible = "arm,scmi-power-domain";
+			reg = <40>;
+			#power-domain-cells = <0>;
+		};
+
+		main_epwm1_pd: power-domain@29 {
+			compatible = "arm,scmi-power-domain";
+			reg = <41>;
+			#power-domain-cells = <0>;
+		};
+
+		main_epwm2_pd: power-domain@2a {
+			compatible = "arm,scmi-power-domain";
+			reg = <42>;
+			#power-domain-cells = <0>;
+		};
+
 		main_spi3_pd: power-domain@4b {
 			compatible = "arm,scmi-power-domain";
 			reg = <75>;
@@ -95,6 +119,72 @@
 		main_i2c3_pd: power-domain@38 {
 			compatible = "arm,scmi-power-domain";
 			reg = <56>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer0_pd: power-domain@f {
+			compatible = "arm,scmi-power-domain";
+			reg = <15>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer1_pd: power-domain@10 {
+			compatible = "arm,scmi-power-domain";
+			reg = <16>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer2_pd: power-domain@11 {
+			compatible = "arm,scmi-power-domain";
+			reg = <17>;
+			#power-domain-cells = <0>;
+		};
+
+		main_timer3_pd: power-domain@12 {
+			compatible = "arm,scmi-power-domain";
+			reg = <18>;
+			#power-domain-cells = <0>;
+		};
+
+		main_mmcsd0_pd: power-domain@1c {
+			compatible = "arm,scmi-power-domain";
+			reg = <28>;
+			#power-domain-cells = <0>;
+		};
+
+		main_mmcsd1_pd: power-domain@1a {
+			compatible = "arm,scmi-power-domain";
+			reg = <26>;
+			#power-domain-cells = <0>;
+		};
+
+		main_mmcsd2_pd: power-domain@1b {
+			compatible = "arm,scmi-power-domain";
+			reg = <27>;
+			#power-domain-cells = <0>;
+		};
+
+		main_ecap0_pd: power-domain@16 {
+			compatible = "arm,scmi-power-domain";
+			reg = <22>;
+			#power-domain-cells = <0>;
+		};
+
+		main_ecap1_pd: power-domain@17 {
+			compatible = "arm,scmi-power-domain";
+			reg = <23>;
+			#power-domain-cells = <0>;
+		};
+
+		main_ecap2_pd: power-domain@18 {
+			compatible = "arm,scmi-power-domain";
+			reg = <24>;
+			#power-domain-cells = <0>;
+		};
+
+		wkup_rtc0_pd: power-domain@3b {
+			compatible = "arm,scmi-power-domain";
+			reg = <59>;
 			#power-domain-cells = <0>;
 		};
 	};

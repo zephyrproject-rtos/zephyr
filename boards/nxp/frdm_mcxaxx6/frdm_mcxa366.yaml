@@ -23,10 +23,15 @@ supported:
   - watchdog
   - counter
   - dma
+  - dac
   - i3c
   - opamp
   - entropy
   - can
   - arduino_gpio
   - usbd
+  - edac
+  - pwm
+  - rtc
+  - crc
 vendor: nxp

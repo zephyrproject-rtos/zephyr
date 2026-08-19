@@ -47,6 +47,9 @@ struct test_conn_data {
 	/* If true, the implementation should time out on connect. */
 	bool timeout;
 
+	/* If true, the implementation does not have configuration information to connect */
+	bool missing_connection_config;
+
 	/* If nonzero, the implementation should fail to connect and raise this fatal error. */
 	int fatal_error;
 

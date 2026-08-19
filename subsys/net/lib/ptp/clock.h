@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,8 +116,20 @@ int ptp_clock_management_msg_process(struct ptp_port *port, struct ptp_msg *msg)
  *
  * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.
  * @param[in] egress  Timestamp of the message transmission to the local node in nanoseconds.
+ * @param[in] ingress_ts_valid True if ingress timestamp comes from RX HW timestamping.
  */
-void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
+void ptp_clock_synchronize(uint64_t ingress, uint64_t egress, bool ingress_ts_valid);
+
+/**
+ * @brief Function synchronizing local PTP Hardware Clock using an explicit path delay.
+ *
+ * @param[in] ingress Timestamp of the message reception from the remote node in nanoseconds.
+ * @param[in] egress  Timestamp of the message transmission to the local node in nanoseconds.
+ * @param[in] mean_delay Mean path delay to use for this synchronization sample.
+ * @param[in] ingress_ts_valid True if ingress timestamp comes from RX HW timestamping.
+ */
+void ptp_clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
+				      ptp_timeinterval mean_delay, bool ingress_ts_valid);
 
 /**
  * @brief Function updating PTP Clock path delay.
@@ -125,6 +138,25 @@ void ptp_clock_synchronize(uint64_t ingress, uint64_t egress);
  * @param[in] ingress Timestamp of the message reception on the remote node in nanoseconds.
  */
 void ptp_clock_delay(uint64_t egress, uint64_t ingress);
+
+/**
+ * @brief Function updating PTP Port peer-to-peer link delay.
+ *
+ * Computes two-step peer delay as specified by IEEE 1588-2019 11.4.2 d):
+ * ((t4 - t1) - (t3 - t2) - correction_resp - correction_fup - delay_asymmetry) / 2.
+ *
+ * @param[in,out] port PTP Port whose meanLinkDelay is updated.
+ * @param[in] t1 Timestamp of Pdelay_Req transmission by the local port in nanoseconds.
+ * @param[in] t2 Timestamp of Pdelay_Req reception by the peer in nanoseconds.
+ * @param[in] t3 Timestamp of Pdelay_Resp transmission by the peer in nanoseconds.
+ * @param[in] t4 Timestamp of Pdelay_Resp reception by the local port in nanoseconds.
+ * @param[in] correction_resp Correction field from Pdelay_Resp.
+ * @param[in] correction_fup Correction field from Pdelay_Resp_Follow_Up.
+ *
+ * @return 0 on successful update, negative errno otherwise.
+ */
+int ptp_clock_pdelay(struct ptp_port *port, int64_t t1, int64_t t2, int64_t t3, int64_t t4,
+		     ptp_timeinterval correction_resp, ptp_timeinterval correction_fup);
 /**
  * @brief Function for getting list of PTP Ports for the PTP Clock instance.
  *

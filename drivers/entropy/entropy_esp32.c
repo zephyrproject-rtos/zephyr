@@ -8,7 +8,7 @@
 
 #include <string.h>
 #include <soc/rtc.h>
-#include <soc/wdev_reg.h>
+#include <hal/rng_ll.h>
 #include <esp_system.h>
 #include <soc.h>
 #include <esp_cpu.h>
@@ -18,7 +18,7 @@
 
 LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 
-#include "hal/rtc_timer_hal.h"
+#include <hal/rtc_timer_hal.h>
 
 #if defined CONFIG_SOC_SERIES_ESP32S3
 /* If APB clock is 80 MHz, the maximum sampling frequency is around 45 KHz */
@@ -35,6 +35,16 @@ LOG_MODULE_REGISTER(entropy, CONFIG_ENTROPY_LOG_LEVEL);
 #elif defined CONFIG_SOC_SERIES_ESP32H2
 /* Same reasoning as for ESP32C6, but the CPU frequency on ESP32H2 is 96MHz instead of 160 MHz */
 #define APB_CYCLE_WAIT_NUM (96 * 16)
+#elif defined CONFIG_SOC_SERIES_ESP32P4
+/* On ESP32P4 (ECO5+), the RNG has been tested at around 75 KHz reading
+ * frequency. Scaled by the default CPU frequency, which is 360 MHz on
+ * rev 1.3 and 400 MHz on rev 3.x.
+ */
+#if defined(CONFIG_SOC_ESP32P4_REV_1_3)
+#define APB_CYCLE_WAIT_NUM (360 * 14)
+#else
+#define APB_CYCLE_WAIT_NUM (400 * 14)
+#endif
 #else
 #define APB_CYCLE_WAIT_NUM (16)
 #endif
@@ -58,7 +68,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 	for (size_t i = 0; i < sizeof(result); i++) {
 		do {
 			ccount = esp_cpu_get_cycle_count();
-			result ^= REG_READ(WDEV_RND_REG);
+			result ^= rng_ll_read_data();
 		} while (ccount - last_ccount < cpu_to_apb_freq_ratio * APB_CYCLE_WAIT_NUM);
 #if SOC_RTC_TIMER_SUPPORTED
 		uint32_t current_rtc_timer_counter = (rtc_timer_hal_get_cycle_count(0) & 0xFF);
@@ -67,7 +77,7 @@ static inline uint32_t entropy_esp32_get_u32(void)
 #endif
 	}
 	last_ccount = ccount;
-	return result ^ REG_READ(WDEV_RND_REG);
+	return result ^ rng_ll_read_data();
 }
 
 static int entropy_esp32_get_entropy(const struct device *dev, uint8_t *buf,
@@ -99,6 +109,8 @@ static int entropy_esp32_init(const struct device *dev)
 	}
 
 	clock_control_on(clock_dev, clock_subsys);
+
+	rng_ll_enable();
 
 	return 0;
 }

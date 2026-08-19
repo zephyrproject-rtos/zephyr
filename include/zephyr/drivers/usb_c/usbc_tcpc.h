@@ -6,14 +6,15 @@
 /**
  * @file
  * @brief USBC Type-C Port Controller device APIs
+ * @ingroup usb_type_c_port_controller_api
  *
  * This file contains the USB Type-C Port Controller device APIs.
  * All Type-C Port Controller device drivers should implement the
  * APIs described in this file.
  */
 
-#ifndef ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_
-#define ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_
+#define ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_
 
 /**
  * @brief USB Type-C Port Controller API
@@ -112,6 +113,7 @@ struct tcpc_chip_info {
 	/** Firmware version number */
 	uint64_t fw_version_number;
 
+	/** Minimum required firmware version, as a string or a number. */
 	union {
 		/** Minimum Required firmware version string */
 		uint8_t min_req_fw_version_string[8];
@@ -520,7 +522,7 @@ static inline int tcpc_is_cc_only_one_rd(enum tc_cc_voltage_state cc1, enum tc_c
  */
 static inline int tcpc_init(const struct device *dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->init != NULL, "Callback pointer should not be NULL");
 
@@ -541,7 +543,7 @@ static inline int tcpc_init(const struct device *dev)
 static inline int tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state *cc1,
 			      enum tc_cc_voltage_state *cc2)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_cc == NULL) {
 		return -ENOSYS;
@@ -562,7 +564,7 @@ static inline int tcpc_get_cc(const struct device *dev, enum tc_cc_voltage_state
  */
 static inline int tcpc_select_rp_value(const struct device *dev, enum tc_rp_value rp)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->select_rp_value == NULL) {
 		return -ENOSYS;
@@ -583,7 +585,7 @@ static inline int tcpc_select_rp_value(const struct device *dev, enum tc_rp_valu
  */
 static inline int tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *rp)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_rp_value == NULL) {
 		return -ENOSYS;
@@ -603,7 +605,7 @@ static inline int tcpc_get_rp_value(const struct device *dev, enum tc_rp_value *
  */
 static inline int tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->set_cc != NULL, "Callback pointer should not be NULL");
 
@@ -624,7 +626,7 @@ static inline int tcpc_set_cc(const struct device *dev, enum tc_cc_pull pull)
 static inline void tcpc_set_vconn_cb(const struct device *dev, tcpc_vconn_control_cb_t vconn_cb,
 				     const struct device *usbc_dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->set_vconn_cb != NULL, "Callback pointer should not be NULL");
 
@@ -646,7 +648,7 @@ static inline void tcpc_set_vconn_discharge_cb(const struct device *dev,
 					       tcpc_vconn_discharge_cb_t cb,
 					       const struct device *usbc_dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->set_vconn_discharge_cb != NULL, "Callback pointer should not be NULL");
 
@@ -668,7 +670,7 @@ static inline void tcpc_set_vconn_discharge_cb(const struct device *dev,
  */
 static inline int tcpc_vconn_discharge(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->vconn_discharge == NULL) {
 		return -ENOSYS;
@@ -692,7 +694,7 @@ static inline int tcpc_vconn_discharge(const struct device *dev, bool enable)
  */
 static inline int tcpc_set_vconn(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_vconn == NULL) {
 		return -ENOSYS;
@@ -717,7 +719,7 @@ static inline int tcpc_set_vconn(const struct device *dev, bool enable)
 static inline int tcpc_set_roles(const struct device *dev, enum tc_power_role power_role,
 				 enum tc_data_role data_role)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_roles == NULL) {
 		return -ENOSYS;
@@ -741,7 +743,7 @@ static inline int tcpc_set_roles(const struct device *dev, enum tc_power_role po
  */
 static inline int tcpc_get_rx_pending_msg(const struct device *dev, struct pd_msg *buf)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->get_rx_pending_msg != NULL, "Callback pointer should not be NULL");
 
@@ -761,7 +763,7 @@ static inline int tcpc_get_rx_pending_msg(const struct device *dev, struct pd_ms
  */
 static inline int tcpc_set_rx_enable(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_rx_enable == NULL) {
 		return -ENOSYS;
@@ -781,7 +783,7 @@ static inline int tcpc_set_rx_enable(const struct device *dev, bool enable)
  */
 static inline int tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_polarity polarity)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->set_cc_polarity != NULL, "Callback pointer should not be NULL");
 
@@ -800,7 +802,7 @@ static inline int tcpc_set_cc_polarity(const struct device *dev, enum tc_cc_pola
  */
 static inline int tcpc_transmit_data(const struct device *dev, struct pd_msg *msg)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->transmit_data == NULL) {
 		return -ENOSYS;
@@ -820,7 +822,7 @@ static inline int tcpc_transmit_data(const struct device *dev, struct pd_msg *ms
  */
 static inline int tcpc_dump_std_reg(const struct device *dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->dump_std_reg == NULL) {
 		return -ENOSYS;
@@ -845,7 +847,7 @@ static inline int tcpc_dump_std_reg(const struct device *dev)
 static inline int tcpc_set_alert_handler_cb(const struct device *dev,
 					    tcpc_alert_handler_cb_t handler, void *data)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	__ASSERT(api->set_alert_handler_cb != NULL, "Callback pointer should not be NULL");
 
@@ -866,7 +868,7 @@ static inline int tcpc_set_alert_handler_cb(const struct device *dev,
 static inline int tcpc_get_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					   uint32_t *status)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_status_register == NULL) {
 		return -ENOSYS;
@@ -890,7 +892,7 @@ static inline int tcpc_get_status_register(const struct device *dev, enum tcpc_s
 static inline int tcpc_clear_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					     uint32_t mask)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->clear_status_register == NULL) {
 		return -ENOSYS;
@@ -914,7 +916,7 @@ static inline int tcpc_clear_status_register(const struct device *dev, enum tcpc
 static inline int tcpc_mask_status_register(const struct device *dev, enum tcpc_status_reg reg,
 					    uint32_t mask)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->mask_status_register == NULL) {
 		return -ENOSYS;
@@ -935,7 +937,7 @@ static inline int tcpc_mask_status_register(const struct device *dev, enum tcpc_
  */
 static inline int tcpc_set_debug_accessory(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_debug_accessory == NULL) {
 		return -ENOSYS;
@@ -955,7 +957,7 @@ static inline int tcpc_set_debug_accessory(const struct device *dev, bool enable
  */
 static inline int tcpc_set_debug_detach(const struct device *dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_debug_detach == NULL) {
 		return -ENOSYS;
@@ -976,7 +978,7 @@ static inline int tcpc_set_debug_detach(const struct device *dev)
  */
 static inline int tcpc_set_drp_toggle(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_drp_toggle == NULL) {
 		return -ENOSYS;
@@ -996,7 +998,7 @@ static inline int tcpc_set_drp_toggle(const struct device *dev, bool enable)
  */
 static inline int tcpc_get_snk_ctrl(const struct device *dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_snk_ctrl == NULL) {
 		return -ENOSYS;
@@ -1015,7 +1017,7 @@ static inline int tcpc_get_snk_ctrl(const struct device *dev)
  */
 static inline int tcpc_set_snk_ctrl(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_snk_ctrl == NULL) {
 		return -ENOSYS;
@@ -1035,7 +1037,7 @@ static inline int tcpc_set_snk_ctrl(const struct device *dev, bool enable)
  */
 static inline int tcpc_get_src_ctrl(const struct device *dev)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_src_ctrl == NULL) {
 		return -ENOSYS;
@@ -1054,7 +1056,7 @@ static inline int tcpc_get_src_ctrl(const struct device *dev)
  */
 static inline int tcpc_set_src_ctrl(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_src_ctrl == NULL) {
 		return -ENOSYS;
@@ -1076,7 +1078,7 @@ static inline int tcpc_set_src_ctrl(const struct device *dev, bool enable)
  */
 static inline int tcpc_set_bist_test_mode(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_bist_test_mode == NULL) {
 		return -ENOSYS;
@@ -1097,7 +1099,7 @@ static inline int tcpc_set_bist_test_mode(const struct device *dev, bool enable)
  */
 static inline int tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_info *chip_info)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->get_chip_info == NULL) {
 		return -ENOSYS;
@@ -1118,7 +1120,7 @@ static inline int tcpc_get_chip_info(const struct device *dev, struct tcpc_chip_
  */
 static inline int tcpc_set_low_power_mode(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->set_low_power_mode == NULL) {
 		return -ENOSYS;
@@ -1140,7 +1142,7 @@ static inline int tcpc_set_low_power_mode(const struct device *dev, bool enable)
  */
 static inline int tcpc_sop_prime_enable(const struct device *dev, bool enable)
 {
-	const struct tcpc_driver_api *api = (const struct tcpc_driver_api *)dev->api;
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
 
 	if (api->sop_prime_enable == NULL) {
 		return -ENOSYS;
@@ -1157,4 +1159,4 @@ static inline int tcpc_sop_prime_enable(const struct device *dev, bool enable)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_DRIVERS_USBC_USBC_TCPC_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_USB_C_USBC_TCPC_H_ */

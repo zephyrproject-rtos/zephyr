@@ -20,4 +20,12 @@ Requirements
 Building and Running
 ********************
 
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/peripheral_gatt_write
+   :board: <board>
+   :goals: build flash
+   :compact:
+
 See :zephyr:code-sample-category:`bluetooth` samples for details.

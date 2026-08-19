@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		/*
+		 * Check signal with J22-5(GPIO_IO02 pad, I2C6_SDA_3V3) and
+		 * J22-8(GND) connecting to oscilloscope
+		 */
+		pwm-test = &flexio1_pwm;
+	};
+};
+
+&flexio1 {
+	status = "okay";
+
+	flexio1_pwm: flexio1_pwm {
+		compatible = "nxp,flexio-pwm";
+		status = "okay";
+		#pwm-cells = <3>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&flexio1_io2_default>;
+
+		pwm_0 {
+			pin-id = <2>;
+			prescaler = <1>;
+		};
+	};
+};

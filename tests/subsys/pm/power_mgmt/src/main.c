@@ -27,6 +27,7 @@ static bool idle_entered;
 static bool testing_device_runtime;
 static bool testing_device_order;
 static bool testing_force_state;
+static bool exit_post_ops_called;
 
 enum pm_state forced_state;
 static const struct device *device_dummy;
@@ -175,6 +176,11 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 	ARG_UNUSED(state);
 
+	if (!IS_ENABLED(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)) {
+		zassert_equal(_kernel.idle, 0,
+			      "PM state set ran before idle wake sentinel was cleared");
+	}
+
 	enum pm_device_state device_power_state;
 
 #ifndef CONFIG_PM_DEVICE_SYSTEM_MANAGED
@@ -237,10 +243,9 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(state);
 	ARG_UNUSED(substate_id);
 
-	/* pm_system_suspend is entered with irq locked
-	 * unlock irq before leave pm_system_suspend
-	 */
-	irq_unlock(0);
+	exit_post_ops_called = true;
+	zassert_false(arch_cpu_irqs_are_enabled(),
+		      "PM exit post ops ran with interrupts enabled");
 }
 
 /* Our PM policy handler */
@@ -355,6 +360,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 
 	pm_notifier_register(&notifier);
 	enter_low_power = true;
+	exit_post_ops_called = false;
 
 	ret = pm_device_runtime_disable(device_dummy);
 	zassert_true(ret == 0, "Failed to disable device runtime PM");
@@ -362,6 +368,7 @@ ZTEST(power_management_1cpu, test_power_state_trans)
 	/* give way to idle thread */
 	k_sleep(SLEEP_TIMEOUT);
 	zassert_true(leave_idle);
+	zassert_true(exit_post_ops_called);
 
 	ret = pm_device_runtime_enable(device_dummy);
 	zassert_true(ret == 0, "Failed to enable device runtime PM");

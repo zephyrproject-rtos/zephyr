@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 #include "tftp_client.h"
 
 #define ADDRLEN(sa) \
-	(sa.sa_family == NET_AF_INET ? \
+	(sa->sa_family == NET_AF_INET ? \
 		sizeof(struct net_sockaddr_in) : sizeof(struct net_sockaddr_in6))
 
 /*
@@ -60,7 +60,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 		.events = ZSOCK_POLLIN,
 	};
 
-	LOG_DBG("Client send data: block no %u, size %u", block_no, data_size + TFTP_HEADER_SIZE);
+	LOG_DBG("Client send data: block no %u, size %zu", block_no, data_size + TFTP_HEADER_SIZE);
 
 	do {
 		if (send_count > TFTP_REQ_RETX) {
@@ -196,8 +196,9 @@ static int send_request(int sock, struct tftpc *client,
 			remote_file);
 
 		/* Send the request to the server */
-		ret = zsock_sendto(sock, client->tftp_buf, req_size, 0, &client->server,
-				   ADDRLEN(client->server));
+		ret = zsock_sendto(sock, client->tftp_buf, req_size, 0,
+				   net_sad(&client->server_addr),
+				   ADDRLEN(net_sad(&client->server_addr)));
 		if (ret < 0) {
 			break;
 		}
@@ -216,11 +217,12 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Receive data from the TFTP Server. */
-		struct net_sockaddr from_addr;
+		struct net_sockaddr_storage from_addr;
+		struct net_sockaddr *from_sa = net_sad(&from_addr);
 		net_socklen_t from_addr_len = sizeof(from_addr);
 
 		ret = zsock_recvfrom(sock, client->tftp_buf, TFTPC_MAX_BUF_SIZE, 0,
-				     &from_addr, &from_addr_len);
+				     from_sa, &from_addr_len);
 		if (ret < TFTP_HEADER_SIZE) {
 			req_size = make_request(client->tftp_buf, request,
 						remote_file, mode);
@@ -228,7 +230,7 @@ static int send_request(int sock, struct tftpc *client,
 		}
 
 		/* Limit communication to the specific address:port */
-		if (zsock_connect(sock, &from_addr, from_addr_len) < 0) {
+		if (zsock_connect(sock, from_sa, from_addr_len) < 0) {
 			ret = -errno;
 			LOG_ERR("connect failed, err %d", ret);
 			break;
@@ -258,7 +260,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 		return -EINVAL;
 	}
 
-	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	sock = zsock_socket(client->server_addr.ss_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;
@@ -383,7 +385,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 		return -EINVAL;
 	}
 
-	sock = zsock_socket(client->server.sa_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	sock = zsock_socket(client->server_addr.ss_family, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
 	if (sock < 0) {
 		LOG_ERR("Failed to create UDP socket: %d", errno);
 		return -errno;

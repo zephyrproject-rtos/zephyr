@@ -84,8 +84,8 @@ static const uint8_t zero_key[WG_PUBLIC_KEY_LEN];
 static K_MUTEX_DEFINE(lock);
 
 static struct wg_peer peers[CONFIG_WIREGUARD_MAX_PEER];
-static sys_slist_t peer_list;
-static sys_slist_t active_peers;
+ZTESTABLE_STATIC sys_slist_t peer_list;
+ZTESTABLE_STATIC sys_slist_t active_peers;
 
 static struct wg_context {
 	struct k_work_delayable wg_periodic_timer;
@@ -478,7 +478,8 @@ static void crypto_init(struct wg_context *ctx)
 
 static int wireguard_init(void)
 {
-	struct net_sockaddr local_addr = { 0 };
+	struct net_sockaddr_storage local_addr_storage = { 0 };
+	struct net_sockaddr *local_addr = net_sad(&local_addr_storage);
 	const struct device *dev;
 	struct wg_context *ctx;
 	uint16_t port;
@@ -512,20 +513,20 @@ static int wireguard_init(void)
 	crypto_init(ctx);
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		local_addr.sa_family = NET_AF_INET6;
+		local_addr->sa_family = NET_AF_INET6;
 
 		/* Note that if IPv4 is enabled, then v4-to-v6-mapping option
 		 * is set and the system will use the IPv6 socket to provide
 		 * IPv4 connectivity.
 		 */
 	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		local_addr.sa_family = NET_AF_INET;
+		local_addr->sa_family = NET_AF_INET;
 	}
 
 	if (CONFIG_WIREGUARD_PORT > 0) {
 		port = CONFIG_WIREGUARD_PORT;
 	} else {
-		port = get_port(&local_addr);
+		port = get_port(local_addr);
 		if (port == 0) {
 			port = WG_DEFAULT_PORT;
 		}
@@ -533,9 +534,9 @@ static int wireguard_init(void)
 		NET_INFO("Wireguard service port %d", port);
 	}
 
-	ret = net_udp_register(local_addr.sa_family,
+	ret = net_udp_register(local_addr->sa_family,
 			       NULL,
-			       &local_addr,
+			       local_addr,
 			       0,
 			       port,
 			       NULL,
@@ -788,7 +789,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 	ip_hdr = net_pkt_vpn_ip_hdr(pkt);
 	udp_hdr = net_pkt_vpn_udp_hdr(pkt);
 
-	if (net_pkt_family(pkt) == NET_AF_INET) {
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == NET_AF_INET) {
 		if (len < NET_IPV4UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
@@ -813,7 +814,7 @@ static enum net_verdict wg_ctrl_recv(struct net_if *iface, struct net_pkt *pkt)
 		net_sin(my_addr)->sin_port = udp_hdr->udp->dst_port;
 		net_sin(my_addr)->sin_family = NET_AF_INET;
 
-	} else if (net_pkt_family(pkt) == NET_AF_INET6) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == NET_AF_INET6) {
 		if (len < NET_IPV6UDPH_LEN + sizeof(struct wg_msg_hdr)) {
 			NET_DBG("DROP: Too short Wireguard header");
 			goto drop;
@@ -1068,6 +1069,54 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 	return 0;
 }
 
+static int wg_validate_allowed_ip_tx(struct wg_iface_context *ctx,
+				     struct wg_peer *peer,
+				     struct net_pkt *pkt)
+{
+	size_t pkt_len = net_pkt_get_len(pkt);
+
+	if (pkt_len == 0U) {
+		return 0;
+	}
+
+	if (net_pkt_family(pkt) == NET_AF_INET6) {
+		if (pkt_len < sizeof(struct net_ipv6_hdr)) {
+			vpn_stats_update_invalid_packet_len(ctx);
+			return -EINVAL;
+		}
+
+		if (wg_peer_is_allowed_ip(peer, NET_AF_INET6,
+					  NET_IPV6_HDR(pkt)->dst)) {
+			return 0;
+		}
+
+		NET_DBG("Destination %s not found in allowed list",
+			net_sprint_ipv6_addr((const struct in6_addr *)
+					     NET_IPV6_HDR(pkt)->dst));
+	} else if (net_pkt_family(pkt) == NET_AF_INET) {
+		if (pkt_len < sizeof(struct net_ipv4_hdr)) {
+			vpn_stats_update_invalid_packet_len(ctx);
+			return -EINVAL;
+		}
+
+		if (wg_peer_is_allowed_ip(peer, NET_AF_INET,
+					  NET_IPV4_HDR(pkt)->dst)) {
+			return 0;
+		}
+
+		NET_DBG("Destination %s not found in allowed list",
+			net_sprint_ipv4_addr((const struct in_addr *)
+					     NET_IPV4_HDR(pkt)->dst));
+	} else {
+		vpn_stats_update_invalid_ip_family(ctx);
+		return -EAFNOSUPPORT;
+	}
+
+	vpn_stats_update_denied_ip(ctx);
+
+	return -ENETUNREACH;
+}
+
 static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct wg_iface_context *ctx = net_if_get_device(iface)->data;
@@ -1111,19 +1160,24 @@ static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 		}
 
 		NET_DBG("Peer %d found for iface %d", peer->id, net_if_get_by_iface(iface));
+	}
 
-		/* If the peer is not yet active, then we need to start the
-		 * handshake with the peer.
-		 */
-		if (peer->last_tx == 0) {
-			peer->send_handshake = true;
-			memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
-			start_handshake(ctx, peer);
+	ret = wg_validate_allowed_ip_tx(ctx, peer, pkt);
+	if (ret < 0) {
+		return ret;
+	}
 
-			peer->last_tx = sys_clock_tick_get_32();
+	/* If the peer is not yet active, then we need to start the
+	 * handshake with the peer.
+	 */
+	if (peer->last_tx == 0) {
+		peer->send_handshake = true;
+		memcpy(&peer->endpoint, &peer->cfg_endpoint, sizeof(peer->endpoint));
+		start_handshake(ctx, peer);
 
-			return -EAGAIN;
-		}
+		peer->last_tx = sys_clock_tick_get_32();
+
+		return -EAGAIN;
 	}
 
 	keypair = &peer->session.keypair.current;
@@ -1550,7 +1604,11 @@ static int create_packet(struct net_if *iface,
 	}
 
 	if (packet_len > 0) {
-		net_pkt_write(*pkt, packet, packet_len);
+		ret = net_pkt_write(*pkt, packet, packet_len);
+		if (ret < 0) {
+			NET_DBG("Cannot write packet data");
+			goto out;
+		}
 	}
 
 	net_pkt_cursor_init(*pkt);
@@ -1756,7 +1814,7 @@ static struct wg_peer *peer_lookup_by_pubkey(struct wg_iface_context *ctx,
 	return NULL;
 }
 
-static struct wg_peer *peer_lookup_by_id(int id)
+ZTESTABLE_STATIC struct wg_peer *peer_lookup_by_id(int id)
 {
 	struct wg_peer *peer, *next;
 

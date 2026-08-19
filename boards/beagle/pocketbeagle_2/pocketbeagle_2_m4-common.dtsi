@@ -8,9 +8,6 @@
 #include "pocketbeagle_2_m4-pinctrl.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2";
-	compatible = "beagle,pocketbeagle_2_m4";
-
 	chosen {
 		/* Split and place TEXT and DATA in I-RAM and D-RAM respectively. `sram_icode`
 		 * is a section in internal SRAM, not an external flash.

@@ -7,7 +7,6 @@
 
 #include <sample_usbd.h>
 
-#include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <zephyr/kernel.h>
@@ -92,7 +91,6 @@ int main(void)
 		k_msleep(5);
 	}
 
-	mctp_set_alloc_ops(malloc, free, realloc);
 	mctp_ctx = mctp_init();
 	__ASSERT_NO_MSG(mctp_ctx != NULL);
 

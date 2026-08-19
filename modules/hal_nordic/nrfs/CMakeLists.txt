@@ -34,6 +34,7 @@ if(CONFIG_NRFS)
         zephyr_library_sources_ifdef(CONFIG_NRFS_SWEXT_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_swext.c)
         zephyr_library_sources_ifdef(CONFIG_NRFS_TEMP_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_temp.c)
         zephyr_library_sources_ifdef(CONFIG_NRFS_VBUS_DETECTOR_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_usb.c)
+        zephyr_library_sources_ifdef(CONFIG_NRFS_GSWDT_SERVICE_ENABLED ${SRC_DIR}/services/nrfs_gswdt.c)
         zephyr_library_sources(${SRC_DIR}/internal/nrfs_dispatcher.c)
         add_subdirectory_ifdef(CONFIG_NRFS_DVFS_LOCAL_DOMAIN dvfs)
 

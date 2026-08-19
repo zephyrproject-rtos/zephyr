@@ -17,7 +17,7 @@
 
 #include "pcm1681.h"
 
-LOG_MODULE_REGISTER(pcm1681);
+LOG_MODULE_REGISTER(pcm1681, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 union pcm1681_bus_spec {
 	struct i2c_dt_spec i2c;
@@ -338,7 +338,7 @@ static int pcm1681_apply_properties(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api pcm1681_api = {
+static DEVICE_API(audio_codec, pcm1681_api) = {
 	.configure = pcm1681_configure,
 	.start_output = pcm1681_start_output,
 	.stop_output = pcm1681_stop_output,

@@ -14,8 +14,8 @@
  * ISR tail-fixup logic, and expose a small interface to the scheduler and
  * fault handlers.
  */
-#ifndef _ZEPHYR_ARCH_ARM_M_SWITCH_H
-#define _ZEPHYR_ARCH_ARM_M_SWITCH_H
+#ifndef ZEPHYR_INCLUDE_ARCH_ARM_ARM_M_SWITCH_H_
+#define ZEPHYR_INCLUDE_ARCH_ARM_ARM_M_SWITCH_H_
 
 #include <stdint.h>
 #include <zephyr/kernel_structs.h>
@@ -179,7 +179,7 @@ static inline void arm_m_exc_tail(void)
 	 * normally called from context switch at the end, but will
 	 * toss an exception, which we can't allow (without hardship)
 	 * on the path from here to interrupt exit.  It will mess up
-	 * our bookeeping around EXC_RETURN, so do it early.
+	 * our bookkeeping around EXC_RETURN, so do it early.
 	 */
 	void z_check_stack_sentinel(void);
 	void *isr_lr = (void *)*arm_m_exc_lr_ptr;
@@ -355,4 +355,4 @@ static ALWAYS_INLINE void arch_switch(void *switch_to, void **switched_from)
 }
 #endif
 
-#endif /* _ZEPHYR_ARCH_ARM_M_SWITCH_H */
+#endif /* ZEPHYR_INCLUDE_ARCH_ARM_ARM_M_SWITCH_H_ */

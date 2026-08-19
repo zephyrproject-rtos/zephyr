@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxe31b.dtsi>
+#include <nxp/mcx/mcxe/nxp_mcxe31b.dtsi>
 #include "frdm_mcxe31b-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -24,6 +24,7 @@
 		sw0 = &user_button;
 		rtc = &counter_rtc;
 		watchdog0 = &swt_0;
+		accel0 = &fxls8974;
 	};
 
 	chosen {
@@ -179,6 +180,26 @@
 	status = "okay";
 };
 
+&lpspi_0 {
+	pinctrl-0 = <&pinmux_lpspi_0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+/*
+ * SAI0 on header J1: D0 = PTB2, BCLK = PTC12, SYNC = PTC13. The
+ * transmitter drives all three pads and each pad's input buffer feeds
+ * the receiver back (see pinmux_sai_0), so the receiver runs fully
+ * asynchronous from the looped-back clocks and TX->RX loopback needs
+ * no external wiring.
+ */
+&sai_0 {
+	pinctrl-0 = <&pinmux_sai_0>;
+	pinctrl-names = "default";
+	nxp,tx-channel = <1>;
+	status = "okay";
+};
+
 &gpioc_l {
 	status = "okay";
 };
@@ -260,6 +281,14 @@
 	status = "okay";
 };
 
+&mc_rgm {
+	status = "okay";
+};
+
+&uid {
+	status = "okay";
+};
+
 &adc_0 {
 	status = "okay";
 };
@@ -286,6 +315,19 @@ lpuart2: &lpuart_2 {};
 		rs-gpios = <&gpioc_l 8 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&pinmux_flexio_lcd>;
 		pinctrl-names = "default";
+	};
+};
+
+&lpi2c_0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c_0>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
 	};
 };
 

@@ -507,6 +507,27 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # SHELL_BACKEND_RPMSG
 
+config SHELL_BACKEND_SSH
+	bool "SSH backend."
+	depends on SSH
+	default y
+	help
+	  Enable SSH (secure shell) backend.
+
+if SHELL_BACKEND_SSH
+
+config SHELL_PROMPT_SSH
+	string "Displayed prompt name"
+	default "zephyr:~$ "
+	help
+	  Displayed prompt name for SSH backend.
+
+module = SHELL_SSH
+module-str = SSH shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # SHELL_BACKEND_SSH
+
 config SHELL_BACKEND_TELNET
 	bool "TELNET backend."
 	depends on NET_TCP
@@ -515,6 +536,14 @@ config SHELL_BACKEND_TELNET
 	select NET_SOCKETS
 	help
 	  Enable TELNET backend.
+
+	  Security warning: this backend exposes the full Zephyr shell over an
+	  unauthenticated, unencrypted TCP port. Anyone able to reach the device
+	  on the network gets the same control as a local console user, which
+	  typically includes flash erase/write, reboot, settings modification
+	  and secret exfiltration through any shell-exposed subsystem. It is
+	  strongly discouraged in production unless the network path itself is
+	  trusted.
 
 if SHELL_BACKEND_TELNET
 

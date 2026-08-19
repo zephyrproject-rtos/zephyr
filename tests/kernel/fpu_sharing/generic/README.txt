@@ -2,77 +2,68 @@ Title: Shared Floating Point Support
 
 Description:
 
-The Shared Floating Point Support test uses two tasks to:
+The Shared Floating Point Support test uses two threads to:
 
   1) load and store floating point registers and check for corruption
   2) independently compute pi and check for any errors
 
-This tests the ability of tasks to safely share floating point hardware
-resources, even when switching occurs preemptively (note that both sets of
-tests run concurrently even though they report their progress at different
-times).
+This tests the ability of threads to safely share floating point hardware
+resources, even when switching occurs preemptively (both sets of tests run
+concurrently even though they report their progress at different times).
+The test utilizes semaphores, round robin scheduling, and floating point
+support.
 
-The demonstration utilizes semaphores, round robin scheduling, and floating
-point support.
+The fpu_sharing_generic suite runs two cases:
 
---------------------------------------------------------------------------------
+1. test_load_store
+   - Repeatedly load and store the floating point registers and verify no
+     corruption occurs across context switches.
 
-Building and Running Project:
+2. test_pi
+   - Independently compute pi in a separate thread and verify the result
+     stays correct across context switches.
 
-This project outputs to the console.  It can be built and executed
-on QEMU as follows:
+---------------------------------------------------------------------------
 
-    make run
+Building and Running:
 
---------------------------------------------------------------------------------
+Build and run with twister, for example on QEMU:
 
-Troubleshooting:
+    twister -p qemu_x86 -T tests/kernel/fpu_sharing/generic
 
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
+Or build and run a single platform directly with west (the x86 build uses
+the dedicated prj_x86.conf):
 
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+    west build -b qemu_x86 tests/kernel/fpu_sharing/generic -- -DCONF_FILE=prj_x86.conf
+    west build -t run
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 Advanced:
 
-Depending upon the board's speed, the frequency of test output may range from
-every few seconds to every few minutes. The speed of the test can be controlled
-through the variable PI_NUM_ITERATIONS (default 700000). Lowering this value
-will increase the test's speed, but at the expense of the calculation's
-precision.
+Depending upon the board's speed, the frequency of test output may range
+from every few seconds to every few minutes. The speed of the test can be
+controlled through PI_NUM_ITERATIONS (see the per-arch defaults in
+testcase.yaml). Lowering this value increases the test's speed, at the
+expense of the calculation's precision:
 
-    make run PI_NUM_ITERATIONS=100000
+    west build -b qemu_x86 tests/kernel/fpu_sharing/generic \
+        -- -DCONF_FILE=prj_x86.conf -DPI_NUM_ITERATIONS=100000
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------------
 
 Sample Output:
 
-*** Booting Zephyr OS build zephyr-v2.2.0-845-g8b769de30317  ***
-Running test suite fpu_sharing
+Running TESTSUITE fpu_sharing_generic
 ===================================================================
-starting test - test_load_store
+START - test_load_store
 Load and store OK after 0 (high) + 63 (low) tests
 Load and store OK after 100 (high) + 6540 (low) tests
-Load and store OK after 200 (high) + 12965 (low) tests
-Load and store OK after 300 (high) + 19366 (low) tests
-Load and store OK after 400 (high) + 25756 (low) tests
-Load and store OK after 500 (high) + 32128 (low) tests
-PASS - test_load_store
+ PASS - test_load_store
 ===================================================================
-starting test - test_pi
+START - test_pi
 Pi calculation OK after 50 (high) + 10 (low) tests (computed 3.141598)
 Pi calculation OK after 150 (high) + 31 (low) tests (computed 3.141598)
-Pi calculation OK after 250 (high) + 51 (low) tests (computed 3.141598)
-Pi calculation OK after 350 (high) + 72 (low) tests (computed 3.141598)
-Pi calculation OK after 450 (high) + 92 (low) tests (computed 3.141598)
-PASS - test_pi
+ PASS - test_pi
 ===================================================================
-Test suite fpu_sharing succeeded
-===================================================================
-PROJECT EXECUTION SUCCESSFUL
+TESTSUITE fpu_sharing_generic succeeded

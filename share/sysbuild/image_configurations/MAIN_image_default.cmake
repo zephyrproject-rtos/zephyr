@@ -6,8 +6,12 @@
 # on the main Zephyr image.
 
 set_config_bool(${ZCMAKE_APPLICATION} CONFIG_BOOTLOADER_MCUBOOT "${SB_CONFIG_BOOTLOADER_MCUBOOT}")
+
+sysbuild_mcuboot_application_signature_key_file(
+  application_signature_key_file "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}"
+)
 set_config_string(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_SIGNATURE_KEY_FILE
-                  "${SB_CONFIG_BOOT_SIGNATURE_KEY_FILE}"
+                  "${application_signature_key_file}"
 )
 set_config_string(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE
                   "${SB_CONFIG_BOOT_ENCRYPTION_KEY_FILE}"
@@ -34,16 +38,17 @@ if(SB_CONFIG_BOOTLOADER_MCUBOOT)
     set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP y)
   elseif(SB_CONFIG_MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT)
     set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP_WITH_REVERT y)
-  elseif(SB_CONFIG_MCUBOOT_MODE_RAM_LOAD)
-    # RAM load mode requires XIP be disabled and flash size be set to 0
-    set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD y)
-    set_config_bool(${ZCMAKE_APPLICATION} CONFIG_XIP n)
-    set_config_int(${ZCMAKE_APPLICATION} CONFIG_FLASH_SIZE 0)
-  elseif(SB_CONFIG_MCUBOOT_MODE_RAM_LOAD_WITH_REVERT)
-    # RAM load mode requires XIP be disabled and flash size be set to 0
-    set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT y)
-    set_config_bool(${ZCMAKE_APPLICATION} CONFIG_XIP n)
-    set_config_int(${ZCMAKE_APPLICATION} CONFIG_FLASH_SIZE 0)
+  elseif(SB_CONFIG_MCUBOOT_MODE_RAM_LOAD OR SB_CONFIG_MCUBOOT_MODE_RAM_LOAD_WITH_REVERT)
+    if(SB_CONFIG_MCUBOOT_MODE_RAM_LOAD)
+      set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD y)
+    elseif(SB_CONFIG_MCUBOOT_MODE_RAM_LOAD_WITH_REVERT)
+      set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT y)
+    endif()
+    if(NOT SB_CONFIG_MCUBOOT_RAMLOAD_ALLOW_XIP)
+      # RAM load mode requires XIP be disabled and flash size be set to 0
+      set_config_bool(${ZCMAKE_APPLICATION} CONFIG_XIP n)
+      set_config_int(${ZCMAKE_APPLICATION} CONFIG_FLASH_SIZE 0)
+    endif()
   elseif(SB_CONFIG_MCUBOOT_MODE_SINGLE_APP_RAM_LOAD)
     set_config_bool(${ZCMAKE_APPLICATION} CONFIG_MCUBOOT_BOOTLOADER_MODE_SINGLE_APP_RAM_LOAD y)
   elseif(SB_CONFIG_MCUBOOT_MODE_FIRMWARE_UPDATER)

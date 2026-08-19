@@ -21,7 +21,7 @@ zephyr_library_sources(
     lwm2m_rd_client.c
     )
 
-# LWM2M Object Support
+# LwM2M Object Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
     lwm2m_obj_connmon.c
     )
@@ -97,6 +97,9 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_HUMIDITY_SENSOR
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_PRESSURE_SENSOR
     ipso_pressure_sensor.c
     )
+zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_TIME
+    ipso_time.c
+    )
 zephyr_library_sources_ifdef(CONFIG_LWM2M_IPSO_LIGHT_CONTROL
     ipso_light_control.c
     )
@@ -138,4 +141,4 @@ zephyr_library_sources_ifdef(CONFIG_LWM2M_SHELL
 
 zephyr_linker_sources(SECTIONS iterables.ld)
 
-zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)

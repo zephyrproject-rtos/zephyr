@@ -68,10 +68,6 @@ LOG_MODULE_REGISTER(bt_ctlr_hci_driver);
 
 #define DT_DRV_COMPAT zephyr_bt_hci_ll_sw_split
 
-struct hci_driver_data {
-	bt_hci_recv_t recv;
-};
-
 static struct k_sem sem_recv;
 static struct k_fifo recv_fifo;
 
@@ -115,7 +111,6 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 				 const struct isoal_emitted_sdu      *sdu)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	const struct hci_driver_data *data = dev->data;
 	struct bt_hci_iso_sdu_ts_hdr *sdu_hdr;
 	uint16_t packet_status_flag;
 	struct bt_hci_iso_hdr *hdr;
@@ -200,7 +195,7 @@ isoal_status_t sink_sdu_emit_hci(const struct isoal_sink             *sink_ctx,
 		net_buf_push_u8(buf, BT_HCI_H4_ISO);
 
 		/* send fragment up the chain */
-		data->recv(dev, buf);
+		bt_hci_recv(dev, buf);
 	}
 
 	return ISOAL_STATUS_OK;
@@ -270,8 +265,6 @@ static inline uint8_t bt_hci_evt_get_flags(uint8_t evt)
  */
 static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
 {
-	const struct hci_driver_data *data = dev->data;
-
 	if (buf->data[0] == BT_HCI_H4_EVT) {
 		struct bt_hci_evt_hdr *hdr = (void *)(buf->data + 1);
 		uint8_t evt_flags = bt_hci_evt_get_flags(hdr->evt);
@@ -283,7 +276,7 @@ static int bt_recv_prio(const struct device *dev, struct net_buf *buf)
 		}
 	}
 
-	return data->recv(dev, buf);
+	return bt_hci_recv_err(dev, buf);
 }
 
 static struct net_buf *process_prio_evt(struct node_rx_pdu *node_rx,
@@ -434,10 +427,6 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 #else /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 static void node_rx_recv(const struct device *dev)
 {
-#if defined(CONFIG_BT_CONN) || defined(CONFIG_BT_CTLR_ADV_ISO)
-	const struct hci_driver_data *data = dev->data;
-#endif /* CONFIG_BT_CONN || CONFIG_BT_CTLR_ADV_ISO */
-
 	struct node_rx_pdu *node_rx;
 	bool iso_received = false;
 
@@ -479,7 +468,7 @@ static void node_rx_recv(const struct device *dev)
 
 			LOG_DBG("Num Complete: 0x%04x:%u", handle, num_cmplt);
 
-			data->recv(dev, buf);
+			bt_hci_recv(dev, buf);
 			k_yield();
 
 #else /* !CONFIG_BT_CONN && !CONFIG_BT_CTLR_ADV_ISO */
@@ -512,9 +501,7 @@ static void node_rx_recv(const struct device *dev)
 
 static int bt_recv(const struct device *dev, struct net_buf *buf)
 {
-	const struct hci_driver_data *data = dev->data;
-
-	return data->recv(dev, buf);
+	return bt_hci_recv_err(dev, buf);
 }
 #endif /* !CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
@@ -778,7 +765,6 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 static void recv_thread(void *p1, void *p2, void *p3)
 {
 	const struct device *dev = p1;
-	const struct hci_driver_data *data = dev->data;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) || !defined(CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE)
 	enum {
@@ -878,7 +864,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 				LOG_DBG("Packet in: type:%u len:%u", frag->data[0],
 					frag->len);
 
-				data->recv(dev, frag);
+				bt_hci_recv(dev, frag);
 			} else {
 				net_buf_unref(frag);
 			}
@@ -904,7 +890,10 @@ static int cmd_handle(const struct device *dev, struct net_buf *buf)
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 
-		if ((err == 0) && (node_rx != NULL)) {
+		if (err != 0) {
+			LOG_ERR("bt_recv_failed: %d", err);
+			net_buf_unref(evt);
+		} else if (node_rx != NULL) {
 			LOG_DBG("RX node enqueue");
 			node_rx->hdr.user_meta = hci_get_class(node_rx);
 			k_fifo_put(&recv_fifo, node_rx);
@@ -929,6 +918,11 @@ static int acl_handle(const struct device *dev, struct net_buf *buf)
 #else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		if (err != 0) {
+			LOG_ERR("Failed to send event: %d", err);
+			net_buf_unref(evt);
+		}
 	}
 
 	return err;
@@ -950,6 +944,11 @@ static int iso_handle(const struct device *dev, struct net_buf *buf)
 #else /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
 		err = bt_recv(dev, evt);
 #endif /* CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE */
+
+		if (err != 0) {
+			LOG_ERR("Failed to send event: %d", err);
+			net_buf_unref(evt);
+		}
 	}
 
 	return err;
@@ -997,9 +996,8 @@ static int hci_driver_send(const struct device *dev, struct net_buf *buf)
 	return err;
 }
 
-static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
+static int hci_driver_open(const struct device *dev)
 {
-	struct hci_driver_data *data = dev->data;
 	uint32_t err;
 
 	DEBUG_INIT();
@@ -1012,8 +1010,6 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 		LOG_ERR("LL initialization failed: %d", err);
 		return err;
 	}
-
-	data->recv = recv;
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	k_poll_signal_init(&hbuf_signal);
@@ -1044,7 +1040,6 @@ static int hci_driver_open(const struct device *dev, bt_hci_recv_t recv)
 static int hci_driver_close(const struct device *dev)
 {
 	int err;
-	struct hci_driver_data *data = dev->data;
 
 	/* Resetting the LL stops all roles */
 	err = ll_deinit();
@@ -1058,9 +1053,6 @@ static int hci_driver_close(const struct device *dev)
 	/* Abort RX thread */
 	k_thread_abort(&recv_thread_data);
 
-	/* Clear the (host) receive callback */
-	data->recv = NULL;
-
 	return 0;
 }
 
@@ -1071,8 +1063,10 @@ static DEVICE_API(bt_hci, hci_driver_api) = {
 };
 
 #define BT_HCI_CONTROLLER_INIT(inst) \
-	static struct hci_driver_data data_##inst; \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &data_##inst, NULL, POST_KERNEL, \
+	static struct bt_hci_driver_data data_##inst; \
+	static const struct bt_hci_driver_config config_##inst = \
+						BT_DT_HCI_DRIVER_CONFIG_INST_GET(inst); \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &data_##inst, &config_##inst, POST_KERNEL, \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &hci_driver_api)
 
 /* Only a single instance is supported */

@@ -412,8 +412,6 @@ static void prov_failed(uint8_t err)
 
 static void prov_msg_recv(void)
 {
-	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
-
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
 		LOG_ERR("Incorrect FCS");
 		return;
@@ -427,6 +425,7 @@ static void prov_msg_recv(void)
 		return;
 	}
 
+	k_work_reschedule(&link.prot_timer, bt_mesh_prov_protocol_timeout_get());
 	link.cb->recv(&bt_mesh_pb_adv, link.cb_data, link.rx.buf);
 }
 

@@ -9,9 +9,9 @@
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <ipi.h>
 #include "boot.h"
-#include "zephyr/cache.h"
-#include "zephyr/kernel/thread_stack.h"
-#include "zephyr/toolchain/gcc.h"
+#include <zephyr/cache.h>
+#include <zephyr/kernel/thread_stack.h>
+#include <zephyr/toolchain/gcc.h>
 #include <zephyr/platform/hooks.h>
 
 #define INV_MPID	UINT32_MAX
@@ -20,7 +20,7 @@
 #define SGI_MMCFG_IPI	1
 #define SGI_FPU_IPI	2
 
-K_KERNEL_PINNED_STACK_ARRAY_DECLARE(z_interrupt_stacks,
+K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks,
 				   CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_ISR_STACK_SIZE);
 
@@ -70,24 +70,29 @@ BUILD_ASSERT(offsetof(struct boot_params, voting) == BOOT_PARAM_VOTING_OFFSET);
 
 volatile struct boot_params arm_cpu_boot_params = {
 	.mpid = -1,
-	.irq_sp = (char *)(z_interrupt_stacks + CONFIG_ISR_STACK_SIZE),
-	.fiq_sp = (char *)(z_arm_fiq_stack + CONFIG_ARMV7_FIQ_STACK_SIZE),
-	.abt_sp = (char *)(z_arm_abort_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE),
-	.udf_sp = (char *)(z_arm_undef_stack + CONFIG_ARMV7_EXCEPTION_STACK_SIZE),
-	.svc_sp = (char *)(z_arm_svc_stack + CONFIG_ARMV7_SVC_STACK_SIZE),
-	.sys_sp = (char *)(z_arm_sys_stack + CONFIG_ARMV7_SYS_STACK_SIZE),
+	.irq_sp = (char *)z_interrupt_stacks[0] + K_KERNEL_STACK_RESERVED + CONFIG_ISR_STACK_SIZE,
+	.fiq_sp =
+		(char *)z_arm_fiq_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_FIQ_STACK_SIZE,
+	.abt_sp = (char *)z_arm_abort_stack[0] + K_KERNEL_STACK_RESERVED +
+		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
+	.udf_sp = (char *)z_arm_undef_stack[0] + K_KERNEL_STACK_RESERVED +
+		  CONFIG_ARMV7_EXCEPTION_STACK_SIZE,
+	.svc_sp =
+		(char *)z_arm_svc_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_SVC_STACK_SIZE,
+	.sys_sp =
+		(char *)z_arm_sys_stack[0] + K_KERNEL_STACK_RESERVED + CONFIG_ARMV7_SYS_STACK_SIZE,
 };
 
 const uint32_t cpu_node_list[] = {
-	DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))};
+	DT_FOREACH_CPU_STATUS_OKAY_SEP(DT_REG_ADDR, (,))};
 
-/* cpu_map saves the maping of core id and mpid */
+/* cpu_map saves the mapping of core id and mpid */
 static uint32_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 	[0 ... (CONFIG_MP_MAX_NUM_CPUS - 1)] = INV_MPID
 };
 
 #ifdef CONFIG_ARM_MPU
-extern void z_arm_mpu_init(void);
+extern int z_arm_mpu_init(void);
 extern void z_arm_configure_static_mpu_regions(void);
 #elif defined(CONFIG_ARM_AARCH32_MMU)
 extern int z_arm_mmu_init(void);
@@ -106,7 +111,7 @@ void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz, arch_cpustart_
 
 	cpu_count = ARRAY_SIZE(cpu_node_list);
 	__ASSERT(cpu_count == CONFIG_MP_MAX_NUM_CPUS,
-		"The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
+		 "The count of CPU Cores nodes in dts is not equal to CONFIG_MP_MAX_NUM_CPUS\n");
 
 	for (i = 0, j = 0; i < cpu_count; i++) {
 		if (cpu_node_list[i] == primary_core_mpid) {

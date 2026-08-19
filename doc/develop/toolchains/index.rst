@@ -17,7 +17,10 @@ Guides on how to set up toolchains for Zephyr development.
    gnu_arm_embedded.rst
    iar_arm_toolchain.rst
    intel_oneapi_toolkit.rst
+   xc32_toolchain.rst
 
    host.rst
    other_x_compilers.rst
    custom_cmake.rst
+
+   eld.rst

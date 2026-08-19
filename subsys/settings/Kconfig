@@ -50,11 +50,10 @@ config SETTINGS_ENCODE_LEN
 	bool
 
 DT_CHOSEN_ZEPHYR_SETTINGS_PARTITION := zephyr,settings-partition
-DT_ZEPHYR_RETENTION := zephyr,retention
 
 config SETTINGS_SUPPORTED_RETENTION
 	bool
-	default y if RETENTION && $(dt_chosen_has_compat,$(DT_CHOSEN_ZEPHYR_SETTINGS_PARTITION),$(DT_ZEPHYR_RETENTION))
+	default y if RETENTION && $(dt_chosen_has_compat,$(DT_CHOSEN_ZEPHYR_SETTINGS_PARTITION),$(DT_COMPAT_ZEPHYR_RETENTION))
 
 choice SETTINGS_BACKEND
 	prompt "Storage back-end"

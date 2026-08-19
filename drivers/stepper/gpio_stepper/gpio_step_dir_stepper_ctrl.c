@@ -166,7 +166,7 @@ static int gpio_step_dir_stepper_ctrl_set_microstep_interval(const struct device
 		return -EINVAL;
 	}
 
-	if (microstep_interval_ns < 2 * data->step_width_ns) {
+	if (!data->dual_edge && (microstep_interval_ns < 2 * data->step_width_ns)) {
 		LOG_ERR("Step interval too small for configured step width");
 		return -EINVAL;
 	}
@@ -239,8 +239,13 @@ static int gpio_step_dir_stepper_init(const struct device *dev)
 	struct gpio_step_dir_stepper_ctrl_data *data = dev->data;
 	int ret;
 
-	if (!gpio_is_ready_dt(&config->step_pin) || !gpio_is_ready_dt(&config->dir_pin)) {
-		LOG_ERR("GPIO pins are not ready");
+	if (!gpio_is_ready_dt(&config->step_pin)) {
+		LOG_ERR_DEVICE_NOT_READY(config->step_pin.port);
+		return -ENODEV;
+	}
+
+	if (!gpio_is_ready_dt(&config->dir_pin)) {
+		LOG_ERR_DEVICE_NOT_READY(config->dir_pin.port);
 		return -ENODEV;
 	}
 
@@ -263,7 +268,7 @@ static int gpio_step_dir_stepper_init(const struct device *dev)
 			data->step_width_ns = drv_config->step_width_ns;
 			data->dual_edge = drv_config->dual_edge;
 		} else {
-			LOG_ERR("Stepper driver device not ready");
+			LOG_ERR_DEVICE_NOT_READY(config->stepper_driver);
 			return -ENODEV;
 		}
 	} else {

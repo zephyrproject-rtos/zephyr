@@ -41,7 +41,7 @@ struct native_pty_config {
 struct native_pty_status {
 	int out_fd;       /* File descriptor used for output */
 	int in_fd;        /* File descriptor used for input */
-	bool on_stdinout; /* This UART is connected to a PTY and not STDIN/OUT */
+	bool on_stdinout; /* This UART is connected to STDIN/OUT and not a PTY */
 	bool stdin_disconnected;
 
 	bool auto_attach;      /* For PTY, attach a terminal emulator automatically */
@@ -108,14 +108,20 @@ static void np_uart_irq_rx_enable(const struct device *dev);
 static void np_uart_irq_rx_disable(const struct device *dev);
 static int np_uart_irq_rx_ready(const struct device *dev);
 static int np_uart_irq_is_pending(const struct device *dev);
-static int np_uart_irq_update(const struct device *dev);
 static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data);
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int np_uart_configure(const struct device *dev, const struct uart_config *cfg);
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
+
 static DEVICE_API(uart, np_uart_driver_api) = {
 	.poll_out = np_uart_poll_out,
 	.poll_in = np_uart_poll_in,
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+	.configure = np_uart_configure,
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 #ifdef CONFIG_UART_ASYNC_API
 	.callback_set = np_uart_callback_set,
 	.tx = np_uart_tx,
@@ -135,7 +141,6 @@ static DEVICE_API(uart, np_uart_driver_api) = {
 	.irq_rx_disable   = np_uart_irq_rx_disable,
 	.irq_rx_ready     = np_uart_irq_rx_ready,
 	.irq_is_pending   = np_uart_irq_is_pending,
-	.irq_update       = np_uart_irq_update,
 	.irq_callback_set = np_uart_irq_callback_set,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
@@ -662,13 +667,6 @@ static int np_uart_irq_is_pending(const struct device *dev)
 		np_uart_irq_tx_ready(dev);
 }
 
-static int np_uart_irq_update(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 1;
-}
-
 static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 				     void *cb_data)
 {
@@ -679,6 +677,19 @@ static void np_uart_irq_callback_set(const struct device *dev, uart_irq_callback
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_USE_RUNTIME_CONFIGURE
+static int np_uart_configure(const struct device *dev,
+			     const struct uart_config *cfg)
+{
+	ARG_UNUSED(dev);
+
+	if (cfg == NULL) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_UART_USE_RUNTIME_CONFIGURE */
 
 #define NATIVE_PTY_SET_AUTO_ATTACH_CMD(inst, cmd)      \
 	native_pty_status_##inst.auto_attach_cmd = cmd;

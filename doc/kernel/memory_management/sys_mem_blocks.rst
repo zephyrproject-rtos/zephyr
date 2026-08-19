@@ -35,7 +35,8 @@ A memory blocks allocator has the following key properties:
 * The **number of blocks** available for allocation.
   It must be greater than zero.
 
-* A **buffer** that provides the memory for the memory slab's blocks.
+* A **buffer** that provides the backing store from which the memory blocks
+  allocator will allocate blocks.
   It must be at least "block size" times "number of blocks" bytes long.
 
 * A **blocks bitmap** to keep track of which block has been allocated.
@@ -72,10 +73,10 @@ the content of the buffer.
 Multi Memory Blocks Allocator Group
 ***********************************
 
-The Multi Memory Blocks Allocator Group utility functions provide
-a convenient to manage a group of allocators. A custom allocator
-choosing function is used to choose which allocator to use among
-this group.
+The Multi Memory Blocks Allocator Group utility functions are used
+to conveniently manage a group of allocators. A custom function may
+be written to choose which allocator managed by this group should
+be used for block allocation.
 
 An allocator group should be initialized at runtime via
 :c:func:`sys_multi_mem_blocks_init`. Each allocator can then be
@@ -84,7 +85,7 @@ added via :c:func:`sys_multi_mem_blocks_add_allocator`.
 To allocate memory blocks from group,
 :c:func:`sys_multi_mem_blocks_alloc` is called with an opaque
 "configuration" parameter. This parameter is passed directly to
-the allocator choosing function so that an appropriate allocator
+the allocator choice function so that an appropriate allocator
 can be chosen. After an allocator is chosen, memory blocks are
 allocated via :c:func:`sys_mem_blocks_alloc`.
 
@@ -119,8 +120,8 @@ Similarly, you can define a memory blocks allocator in private scope:
    SYS_MEM_BLOCKS_DEFINE_STATIC(static_allocator, 64, 4, 4);
 
 A pre-defined buffer can also be provided to the allocator where
-the buffer can be placed separately. Note that the alignment of
-the buffer needs to be done at its definition.
+the buffer can be placed separately. Note that the buffer **must**
+have its alignment specified when it is defined.
 
 .. code-block:: c
 
@@ -168,7 +169,7 @@ The following code demonstrates how to initialize an allocator group:
 
    sys_mem_blocks_t *choice_fn(struct sys_multi_mem_blocks *group, void *cfg)
    {
-       ...
+       ... /* choose which allocator in the group to use based on cfg */
    }
 
    SYS_MEM_BLOCKS_DEFINE(allocator0, 64, 4, 4);

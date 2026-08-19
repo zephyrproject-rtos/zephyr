@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(crc_example, CONFIG_LOG_DEFAULT_LEVEL);
 /* The devicetree node identifier for the "crc" */
 #define CRC_NODE DT_CHOSEN(zephyr_crc)
 
-/* Pre-select CRC variant and constants via Kconfig */
+/* Preselect CRC variant and constants via Kconfig */
 #if defined(CONFIG_SAMPLE_CRC_VARIANT_CRC8)
 #if !IS_ENABLED(CONFIG_CRC_DRIVER_HAS_CRC8)
 #error "Selected CRC8 but driver/platform does not support it"
@@ -50,7 +50,7 @@ LOG_MODULE_REGISTER(crc_example, CONFIG_LOG_DEFAULT_LEVEL);
 #error "Selected CRC32-C but platform does not support it"
 #endif
 #define CRC_SAMPLE_TYPE     CRC32_C
-#define CRC_SAMPLE_POLY     CRC32_C_POLY
+#define CRC_SAMPLE_POLY     CRC32C_POLY
 #define CRC_SAMPLE_SEED     CRC32_C_INIT_VAL
 #define CRC_SAMPLE_REVERSED (CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT)
 #define CRC_SAMPLE_NAME     "CRC32-C"

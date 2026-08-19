@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #include <string.h>
 
 #include <zephyr/modem/chat.h>
+#include <zephyr/sys/__assert.h>
 
 #include "modem_workqueue.h"
 
@@ -33,6 +34,48 @@ static char log_buffer[CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE];
 
 static void modem_chat_log_received_command(struct modem_chat *chat)
 {
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	uint16_t log_buffer_pos = 0;
+	uint16_t separators_pos = 0;
+	uint16_t argv_len;
+
+	for (uint16_t i = 0; i < chat->argc; i++) {
+		if ((i > 1) && (chat->raw_log_separators_len > separators_pos)) {
+			if ((log_buffer_pos + 1) >= sizeof(log_buffer)) {
+				LOG_WRN("raw log buffer overrun");
+				break;
+			}
+
+			log_buffer[log_buffer_pos] = (char)chat->raw_log_separators[separators_pos];
+			log_buffer_pos++;
+			separators_pos++;
+		}
+
+		argv_len = (uint16_t)strlen(chat->argv[i]);
+
+		if (sizeof(log_buffer) < (log_buffer_pos + argv_len + 1)) {
+			LOG_WRN("raw log buffer overrun");
+			break;
+		}
+
+		memcpy(&log_buffer[log_buffer_pos], chat->argv[i], argv_len);
+		log_buffer_pos += argv_len;
+	}
+
+	while (chat->raw_log_separators_len > separators_pos) {
+		if ((log_buffer_pos + 1) >= sizeof(log_buffer)) {
+			LOG_WRN("raw log buffer overrun");
+			break;
+		}
+
+		log_buffer[log_buffer_pos] = (char)chat->raw_log_separators[separators_pos];
+		log_buffer_pos++;
+		separators_pos++;
+	}
+
+	log_buffer[log_buffer_pos] = '\0';
+	LOG_DBG("raw: %s", log_buffer);
+#else
 	uint16_t log_buffer_pos = 0;
 	uint16_t argv_len;
 
@@ -57,6 +100,7 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 	log_buffer[log_buffer_pos] = '\0';
 
 	LOG_DBG("%s", log_buffer);
+#endif
 }
 
 #else
@@ -207,6 +251,15 @@ static void modem_chat_script_next(struct modem_chat *chat, bool initial)
 
 	script_chat = &chat->script->script_chats[chat->script_chat_it];
 
+#if defined(CONFIG_MODEM_CHAT_COMMANDS_CONDITIONAL)
+	if ((script_chat->run_check != NULL) && !script_chat->run_check(chat->user_data)) {
+		/* Current chat should be skipped, reschedule work immediately to run next step */
+		LOG_DBG("skipping: %.*s", script_chat->request_size, script_chat->request);
+		modem_work_schedule(&chat->script_send_timeout_work, K_NO_WAIT);
+		return;
+	}
+#endif
+
 	/* Continue script */
 	if (modem_chat_script_chat_has_request(chat)) {
 		LOG_DBG("sending: %.*s", script_chat->request_size, script_chat->request);
@@ -274,32 +327,32 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 {
 	const struct modem_chat_script_chat *script_chat =
 		&chat->script->script_chats[chat->script_chat_it];
-
-	uint8_t *request_part;
-	uint16_t request_size;
-	uint16_t request_part_size;
+	uint32_t total_size = script_chat->request_size + chat->delimiter_size;
+	struct modem_pipe_data_fragment frags[2];
+	size_t num_frags;
 	int ret;
 
-	switch (chat->script_send_state) {
-	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
-		request_part = (uint8_t *)(&script_chat->request[chat->script_send_pos]);
-		request_size = script_chat->request_size;
-		break;
-
-	case MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER:
-		request_part = (uint8_t *)(&chat->delimiter[chat->script_send_pos]);
-		request_size = chat->delimiter_size;
-		break;
-
-	default:
-		return false;
+	if (chat->script_send_pos < script_chat->request_size) {
+		/* Still sending the request */
+		frags[0].data = &script_chat->request[chat->script_send_pos];
+		frags[0].size = script_chat->request_size - chat->script_send_pos;
+		frags[1].data = (uint8_t *)chat->delimiter;
+		frags[1].size = chat->delimiter_size;
+		num_frags = 2;
+	} else {
+		/* Purely into the delimiter */
+		frags[0].data = &chat->delimiter[chat->script_send_pos - script_chat->request_size];
+		frags[0].size = total_size - chat->script_send_pos;
+		/* Set for LOG_ERR below */
+		frags[1].size = 0;
+		num_frags = 1;
 	}
 
-	request_part_size = request_size - chat->script_send_pos;
-	ret = modem_pipe_transmit(chat->pipe, request_part, request_part_size);
+	ret = modem_pipe_transmit_chain(chat->pipe, frags, num_frags);
 	if (ret < 1) {
 		if (ret < 0) {
-			LOG_ERR("Failed to %s %u bytes. (%d)", "transmit", request_part_size, ret);
+			LOG_ERR("Failed to %s %zu bytes. (%d)", "transmit",
+				frags[0].size + frags[1].size, ret);
 		}
 		return false;
 	}
@@ -307,7 +360,7 @@ static bool modem_chat_send_script_request_part(struct modem_chat *chat)
 	chat->script_send_pos += (uint16_t)ret;
 
 	/* Return true if all data was sent */
-	return request_size <= chat->script_send_pos;
+	return total_size <= chat->script_send_pos;
 }
 
 static void modem_chat_script_send_handler(struct k_work *item)
@@ -318,26 +371,17 @@ static void modem_chat_script_send_handler(struct k_work *item)
 		return;
 	}
 
-	switch (chat->script_send_state) {
-	case MODEM_CHAT_SCRIPT_SEND_STATE_IDLE:
+	if (chat->script_send_state == MODEM_CHAT_SCRIPT_SEND_STATE_IDLE) {
 		return;
-
-	case MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST:
-		if (!modem_chat_send_script_request_part(chat)) {
-			return;
-		}
-
-		modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER);
-		__fallthrough;
-
-	case MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER:
-		if (!modem_chat_send_script_request_part(chat)) {
-			return;
-		}
-
-		modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_IDLE);
-		break;
 	}
+
+	if (!modem_chat_send_script_request_part(chat)) {
+		/* Request still in progress */
+		return;
+	}
+
+	/* Request transmission complete */
+	modem_chat_set_script_send_state(chat, MODEM_CHAT_SCRIPT_SEND_STATE_IDLE);
 
 	if (modem_chat_script_chat_has_matches(chat)) {
 		modem_chat_script_set_response_matches(chat);
@@ -387,6 +431,10 @@ static void modem_chat_parse_reset(struct modem_chat *chat)
 	chat->delimiter_match_len = 0;
 	chat->argc = 0;
 	chat->parse_match = NULL;
+
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	chat->raw_log_separators_len = 0;
+#endif
 }
 
 /* Exact match is stored at end of receive buffer */
@@ -661,6 +709,15 @@ static void modem_chat_process_byte(struct modem_chat *chat, uint8_t byte)
 
 	/* Check if separator reached */
 	if (modem_chat_parse_is_separator(chat) == true) {
+
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+		if (chat->raw_log_separators_len < ARRAY_SIZE(chat->raw_log_separators)) {
+			chat->raw_log_separators[chat->raw_log_separators_len] =
+				chat->receive_buf[chat->receive_buf_len - 1];
+			chat->raw_log_separators_len++;
+		}
+#endif
+
 		/* Check if argument is empty */
 		if (chat->parse_arg_len == 0) {
 			/* Save empty argument */
@@ -839,8 +896,10 @@ int modem_chat_init(struct modem_chat *chat, const struct modem_chat_config *con
 
 int modem_chat_attach(struct modem_chat *chat, struct modem_pipe *pipe)
 {
-	chat->pipe = pipe;
-	modem_chat_parse_reset(chat);
+	if (chat->pipe != pipe) {
+		chat->pipe = pipe;
+		modem_chat_parse_reset(chat);
+	}
 	modem_pipe_attach(chat->pipe, modem_chat_pipe_callback, chat);
 	return 0;
 }
@@ -854,17 +913,18 @@ int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat
 {
 	bool script_is_running;
 
+	__ASSERT_NO_MSG(script != NULL);
+
 	if (chat->pipe == NULL) {
 		return -EPERM;
 	}
 
 	/* Validate script */
-	if (script->script_chats == NULL ||
-	   (script->script_chats_size == 0
-	    && script->script_chats != modem_chat_empty_script_chats) ||
-	   (script->abort_matches_size == 0
-	    && script->abort_matches != NULL
-	    && script->abort_matches != modem_chat_empty_matches)) {
+	if (script == NULL || script->script_chats == NULL ||
+	    (script->script_chats_size == 0 &&
+	     script->script_chats != modem_chat_empty_script_chats) ||
+	    (script->abort_matches_size == 0 && script->abort_matches != NULL &&
+	     script->abort_matches != modem_chat_empty_matches)) {
 		return -EINVAL;
 	}
 

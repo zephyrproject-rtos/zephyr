@@ -5,6 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L /* for strnlen() */
+
 #include <ctype.h>
 #include <errno.h>
 #include <inttypes.h>
@@ -17,11 +20,6 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/cbprintf.h>
-
-/* newlib doesn't declare this function unless __POSIX_VISIBLE >= 200809.  No
- * idea how to make that happen, so lets put it right here.
- */
-size_t strnlen(const char *s, size_t maxlen);
 
 /* Provide typedefs used for signed and unsigned integral types
  * capable of holding all convertible integral values.
@@ -1178,11 +1176,11 @@ static char *encode_float(double value,
 	}
 
 	/* Round the value to the last digit being printed. */
-	uint64_t round = BIT64(59); /* 0.5 */
+	uint64_t rounding = BIT64(59); /* 0.5 */
 	while (decimals-- != 0) {
-		_ldiv10(&round);
+		_ldiv10(&rounding);
 	}
-	fract += round;
+	fract += rounding;
 	/* Make sure rounding didn't make fract >= 1.0 */
 	if (fract >= BIT64(60)) {
 		_ldiv10(&fract);
@@ -1351,7 +1349,7 @@ static int outs(cbprintf_cb __out,
 		const char *ep)
 {
 	size_t count = 0;
-	cbprintf_cb_local out = __out;
+	cbprintf_cb out = __out;
 
 	while ((sp < ep) || ((ep == NULL) && *sp)) {
 		int rc = out((int)*sp, ctx);
@@ -1372,7 +1370,7 @@ int z_cbvprintf_impl(cbprintf_cb __out, void *ctx, const char *fp,
 	char buf[CONVERTED_BUFLEN];
 	size_t count = 0;
 	sint_value_type sint;
-	cbprintf_cb_local out = __out;
+	cbprintf_cb out = __out;
 
 	const bool tagged_ap = (flags & Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS)
 			       == Z_CBVPRINTF_PROCESS_FLAG_TAGGED_ARGS;

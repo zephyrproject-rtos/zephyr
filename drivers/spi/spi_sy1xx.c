@@ -16,10 +16,11 @@ LOG_MODULE_REGISTER(spi_sy1xx);
 #include <zephyr/device.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <udma.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "zephyr/sys/byteorder.h"
+#include <zephyr/sys/byteorder.h>
 
 /* SPI udma command interface definitions */
 #define SPI_CMD_OFFSET (4)

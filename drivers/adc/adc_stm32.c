@@ -382,7 +382,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 }
 #endif /* CONFIG_ADC_STM32_DMA */
 
-static int check_buffer(const struct adc_sequence *sequence,
+static int __maybe_unused check_buffer(const struct adc_sequence *sequence,
 			     uint8_t active_channels)
 {
 	size_t needed_buffer_size;
@@ -593,34 +593,43 @@ static void adc_stm32_calibration_delay(const struct device *dev)
 /* Number of ADC measurement during calibration procedure */
 #define ADC_CALIBRATION_STEPS (8U)
 
-static void adc_stm32_calibration_measure(ADC_TypeDef *adc, uint32_t *calibration_factor)
+static void adc_stm32_calibration_measure(ADC_TypeDef *adc,
+					  uint32_t calib_type)
 {
 	uint32_t calib_step;
-	uint32_t calib_factor_avg = 0;
+	int32_t calib_factor_avg;
 	uint8_t done = 0;
 
+	LL_ADC_StartCalibration(adc, calib_type);
 	do {
+		calib_factor_avg = 0;
+
 		for (calib_step = 0; calib_step < ADC_CALIBRATION_STEPS; calib_step++) {
 			LL_ADC_REG_StartConversion(adc);
 			while (LL_ADC_REG_IsConversionOngoing(adc) != 0UL) {
 			}
 
-			calib_factor_avg += LL_ADC_REG_ReadConversionData32(adc);
+			calib_factor_avg += (int32_t)LL_ADC_REG_ReadConversionData32(adc);
 		}
 
 		/* Compute the average data */
 		calib_factor_avg /= ADC_CALIBRATION_STEPS;
 
-		if ((calib_factor_avg == 0) && (LL_ADC_IsCalibrationOffsetEnabled(adc) == 0UL)) {
-			/* If average is 0 and offset is disabled
+		if (calib_type == LL_ADC_DIFFERENTIAL_ENDED) {
+			calib_factor_avg -= 0x7FF;
+		}
+
+		if ((calib_factor_avg <= 0) && (LL_ADC_IsCalibrationOffsetEnabled(adc) == 0UL)) {
+			/* If average is below 0 and offset is disabled
 			 * set offset and repeat measurements
 			 */
 			LL_ADC_EnableCalibrationOffset(adc);
 		} else {
-			*calibration_factor = (uint32_t)(calib_factor_avg);
+			LL_ADC_SetCalibrationFactor(adc, calib_type, (uint32_t)calib_factor_avg);
 			done = 1;
 		}
 	} while (done == 0);
+	LL_ADC_StopCalibration(adc);
 }
 #endif
 
@@ -684,17 +693,7 @@ static void adc_stm32_calibration_start(const struct device *dev, __maybe_unused
 #elif defined(CONFIG_SOC_SERIES_STM32H7X)
 	LL_ADC_StartCalibration(adc, LL_ADC_CALIB_OFFSET, calib_type);
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
-	uint32_t calibration_factor;
-
-	/* Start ADC calibration */
-	LL_ADC_StartCalibration(adc, STM32_IN_ADC_SINGLE_ENDED);
-	/* Disable additional offset before calibration start */
-	LL_ADC_DisableCalibrationOffset(adc);
-
-	adc_stm32_calibration_measure(adc, &calibration_factor);
-
-	LL_ADC_SetCalibrationFactor(adc, STM32_IN_ADC_SINGLE_ENDED, calibration_factor);
-	LL_ADC_StopCalibration(adc);
+	adc_stm32_calibration_measure(adc, calib_type);
 #elif !DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
 #error "Missing calibration for this series"
 #endif
@@ -749,11 +748,30 @@ static int adc_stm32_calibrate(const struct device *dev, bool force)
 		return err;
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) || \
-	defined(CONFIG_SOC_SERIES_STM32N6X)
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
 	adc_stm32_calibration_delay(dev);
 	adc_stm32_calibration_start(dev, true);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) */
+#elif defined(CONFIG_SOC_SERIES_STM32N6X)
+	uint32_t offset_required_single_end;
+
+	adc_stm32_calibration_delay(dev);
+	LL_ADC_DisableCalibrationOffset(adc);
+	adc_stm32_calibration_start(dev, true);
+
+	offset_required_single_end = LL_ADC_IsCalibrationOffsetEnabled(adc);
+
+	if (config->differential_channels_used) {
+		adc_stm32_calibration_start(dev, false);
+
+		/* If calibration offset was enabled by differential-ended
+		 * calibration, single-ended mode should be recalibrated with
+		 * calibration offset enabled.
+		 */
+		if (offset_required_single_end != LL_ADC_IsCalibrationOffsetEnabled(adc)) {
+			adc_stm32_calibration_start(dev, true);
+		}
+	}
+#endif
 
 #if defined(CONFIG_SOC_SERIES_STM32H7X) && \
 	defined(CONFIG_CPU_CORTEX_M7)
@@ -1012,7 +1030,7 @@ static int adc_stm32_preselection_setup(const struct device *dev, uint32_t chann
 #endif /* STM32H72X_ADC */
 
 	if (!config->has_channel_preselection ||
-	    (stm32_reg_read(pcsel_reg) & channel) == channel) {
+	    (stm32_reg_read(pcsel_reg) & BIT(channel_id)) == BIT(channel_id)) {
 		/* Nothing to configure */
 		return 0;
 	}
@@ -1222,11 +1240,18 @@ static int start_read(const struct device *dev,
 		return err;
 	}
 
+#ifndef CONFIG_ADC_STREAM
+	/*
+	 * In streaming mode the application does not provide a buffer in the
+	 * sequence: sample data is written to a buffer allocated from the RTIO
+	 * mempool inside the ISR. Skip the sequence buffer validation here.
+	 */
 	err = check_buffer(sequence, data->channel_count);
 	if (err) {
 		LOG_ERR("ADC buffer error");
 		return err;
 	}
+#endif /* !CONFIG_ADC_STREAM */
 
 #ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(dev, sequence->oversampling);
@@ -1445,7 +1470,11 @@ static void adc_context_on_complete(struct adc_context *ctx, int status)
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION
 	if (config->has_channel_preselection) {
 		/* Reset channel preselection register */
-		LL_ADC_SetChannelPreselection(adc, 0);
+#ifdef STM32H72X_ADC
+		stm32_reg_write(&adc->PCSEL_RES0, 0U);
+#else /* STM32H72X_ADC */
+		stm32_reg_write(&adc->PCSEL, 0U);
+#endif /* STM32H72X_ADC */
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION */
 #endif /* CONFIG_ADC_STM32_INJECTED_CHANNELS */
@@ -1580,7 +1609,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Reg is used and value does not match */
-			LOG_ERR("Multiple sampling times not supported");
+			LOG_ERR("Multiple sampling times not supported. "
+				"Previously configured sampling time remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif
@@ -1612,7 +1643,9 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 							     (uint32_t)acq_time_index);
 		} else {
 			/* Both regs are used, value does not match any of them */
-			LOG_ERR("Only two different sampling times supported");
+			LOG_ERR("Only two different sampling times supported. "
+				"Previously configured sampling times remain reserved until the "
+				"next ADC read.");
 			return -EINVAL;
 		}
 #endif
@@ -1629,13 +1662,15 @@ static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, b
 {
 	const uint32_t mode = differential ? LL_ADC_DIFFERENTIAL_ENDED : STM32_IN_ADC_SINGLE_ENDED;
 	const uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+	uint32_t current_mode = LL_ADC_GetChannelSingleDiff(adc, channel);
 	int err;
 
 	/* The ADC must be disabled to change the single ended / differential mode setting. The
 	 * disable / re-enable cycle can take some time, so avoid doing this if the channel is
 	 * already set to the correct mode.
 	 */
-	if (LL_ADC_GetChannelSingleDiff(adc, channel) == mode) {
+	if ((current_mode != 0U && mode == LL_ADC_DIFFERENTIAL_ENDED) ||
+	    (current_mode == 0U && mode == STM32_IN_ADC_SINGLE_ENDED)) {
 		return 0;
 	}
 
@@ -1655,13 +1690,17 @@ static int adc_stm32_channel_setup(const struct device *dev,
 				   const struct adc_channel_cfg *channel_cfg)
 {
 	const struct adc_stm32_cfg *config = (const struct adc_stm32_cfg *)dev->config;
+	struct adc_stm32_data *data = dev->data;
 	__maybe_unused ADC_TypeDef *adc = config->base;
-	__maybe_unused int err;
+	int err = 0;
+
+	adc_context_lock(&data->ctx, false, NULL);
 
 	if (!config->has_differential_support) {
 		if (channel_cfg->differential) {
 			LOG_ERR("Differential channels not supported on this ADC");
-			return -EINVAL;
+			err = -EINVAL;
+			goto release;
 		}
 	}
 #if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
@@ -1670,52 +1709,58 @@ static int adc_stm32_channel_setup(const struct device *dev,
 		 * to cause a differential calibration to be performed during init.
 		 */
 		LOG_ERR("Differential calibration not done, cannot use differential mode");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	err = set_channel_differential_mode(adc, channel_cfg->channel_id,
 					    channel_cfg->differential);
 	if (err != 0) {
 		LOG_ERR("Error setting differential channel");
-		return err;
+		goto release;
 	}
 #endif
 
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	if (channel_cfg->reference != ADC_REF_INTERNAL) {
 		LOG_ERR("Invalid channel reference");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 	if (adc_stm32_sampling_time_setup(dev, channel_cfg->channel_id,
 					  channel_cfg->acquisition_time) != 0) {
 		LOG_ERR("Invalid sampling time");
-		return -EINVAL;
+		err = -EINVAL;
+		goto release;
 	}
 
 #if ANY_ADC_HAS_CHANNEL_PRESELECTION && defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
 	err = adc_stm32_preselection_setup(dev, channel_cfg->channel_id);
 	if (err < 0) {
 		LOG_ERR("Error setting preselection register");
-		return err;
+		goto release;
 	}
 #endif /* ANY_ADC_HAS_CHANNEL_PRESELECTION && CONFIG_ADC_STM32_INJECTED_CHANNELS */
 
 #ifdef CONFIG_SOC_SERIES_STM32H5X
-	if (adc == ADC1) {
-		if (channel_cfg->channel_id == 0) {
-			LL_ADC_EnableChannel0_GPIO(adc);
-		}
+	if (channel_cfg->channel_id == 0) {
+		/* To read channel 0 of either ADC on H5, Option bit 0 of ADC1 must be set. */
+		LL_ADC_EnableChannel0_GPIO(ADC1);
 	}
 #endif
 
 	LOG_DBG("Channel setup succeeded!");
 
-	return 0;
+release:
+	adc_context_release(&data->ctx, err);
+
+	return err;
 }
 
 #if defined(CONFIG_SOC_SERIES_STM32C0X) ||                                                     \

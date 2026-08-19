@@ -44,13 +44,16 @@ static uint32_t last_elapsed;
 
 #define CYCLE_DIFF_MAX (~(uint32_t)0)
 
-#define CYCLES_MAX_1 ((uint64_t)INT32_MAX * (uint64_t)CYC_PER_TICK)
-#define CYCLES_MAX_2 ((uint64_t)CYCLE_DIFF_MAX)
-#define CYCLES_MAX_3 MIN(CYCLES_MAX_1, CYCLES_MAX_2)
-#define CYCLES_MAX_4 (CYCLES_MAX_3 / 2 + CYCLES_MAX_3 / 4)
-#define CYCLES_MAX_5 (CYCLES_MAX_4 + LSB_GET(CYCLES_MAX_4))
-
-#define CYCLES_MAX CYCLES_MAX_5
+/*
+ * Maximum number of cycles to wait between two sys_clock_announce() reports:
+ * the elapsed cycle count must fit in CYCLE_DIFF_MAX before it is divided down
+ * to ticks. Reserve 1/4 of the range as headroom for the unavoidable IRQ
+ * servicing latency so a late report still fits, then add the LSB so the value
+ * clears a run of low set bits for a nicer literal in the generated assembly.
+ */
+#define CYCLES_MAX_1 ((uint64_t)CYCLE_DIFF_MAX)
+#define CYCLES_MAX_2 (CYCLES_MAX_1 / 2 + CYCLES_MAX_1 / 4)
+#define CYCLES_MAX   (CYCLES_MAX_2 + LSB_GET(CYCLES_MAX_2))
 
 #if PRESCALER == 0
 #define PRES_VAL TMR_PRES_1
@@ -109,13 +112,9 @@ uint32_t sys_clock_elapsed(void)
 	return delta_ticks;
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	if (idle && ticks == K_TICKS_FOREVER) {
 		return;
 	}
 
@@ -123,7 +122,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 	uint32_t next_cycle;
 	uint32_t count;
 
-	if (ticks == INT32_MAX) {
+	if (ticks == SYS_CLOCK_MAX_WAIT) {
 		next_cycle = (last_tick * CYC_PER_TICK) + CYCLES_MAX;
 	} else if (ticks == 0) {
 		next_cycle = MXC_TMR_GetCount(regs) + (CYC_PER_TICK * 3 / 2);

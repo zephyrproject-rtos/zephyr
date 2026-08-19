@@ -14,7 +14,7 @@
 #include <zephyr/random/random.h>
 
 #ifdef CONFIG_HPET_TIMER
-#include "sedi_driver_hpet.h"
+#include <sedi_driver_hpet.h>
 
 #define HPET_USE_CUSTOM_REG_ACCESS_FUNCS
 
@@ -23,7 +23,6 @@
 
 #define HPET_CMP_MIN_DELAY		(5)
 
-__pinned_func
 static inline void hpet_timer_comparator_set(uint64_t next)
 {
 	sedi_hpet_set_comparator(HPET_0, next);

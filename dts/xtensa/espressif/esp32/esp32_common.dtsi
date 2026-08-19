@@ -76,22 +76,6 @@
 		status = "disabled";
 	};
 
-	eth: eth {
-		compatible = "espressif,esp32-eth";
-		interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-		interrupt-parent = <&intc>;
-		clocks = <&clock ESP32_EMAC_MODULE>;
-		status = "disabled";
-	};
-
-	mdio: mdio {
-		compatible = "espressif,esp32-mdio";
-		clocks = <&clock ESP32_EMAC_MODULE>;
-		status = "disabled";
-		#address-cells = <1>;
-		#size-cells = <0>;
-	};
-
 	pinctrl: pin-controller {
 		compatible = "espressif,esp32-pinctrl";
 		status = "okay";
@@ -151,6 +135,12 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x50000000 DT_SIZE_K(8)>;
 			zephyr,memory-region = "RTC_SLOW_RAM";
+		};
+
+		instr_mem: memory@40080000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x40080000 DT_SIZE_K(168)>;
+			zephyr,memory-region = "IRAM";
 		};
 
 		icache0: icache0@400d0000 {
@@ -215,12 +205,15 @@
 			reg = <0x3ff42000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <4096>;
 				write-block-size = <4>;
-				/* Flash size is specified in SOC/SIP dtsi */
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
 			};
 		};
 
@@ -582,6 +575,23 @@
 			reg = <0x3ff01000 0x1000>;
 			clocks = <&clock ESP32_AES_MODULE>;
 			status = "okay";
+		};
+
+		eth: eth@3ff69000 {
+			compatible = "espressif,esp32-eth", "snps,dwmac";
+			reg = <0x3ff69000 0x2000>, <0x3ff6a000 0x1000>, <0x3ff69000 0x800>;
+			reg-names = "base", "mac", "dma";
+			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_EMAC_MODULE>;
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
 		};
 	};
 };

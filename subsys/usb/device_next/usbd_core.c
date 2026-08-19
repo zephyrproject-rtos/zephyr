@@ -28,8 +28,7 @@ LOG_MODULE_REGISTER(usbd_core, CONFIG_USBD_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbd_stack, CONFIG_USBD_THREAD_STACK_SIZE);
 static struct k_thread usbd_thread_data;
 
-K_MSGQ_DEFINE(usbd_msgq, sizeof(struct udc_event),
-	      CONFIG_USBD_MAX_UDC_MSG, sizeof(uint32_t));
+K_MSGQ_DEFINE_STATIC_TYPE(usbd_msgq, struct udc_event, CONFIG_USBD_MAX_UDC_MSG);
 
 static int usbd_event_carrier(const struct device *dev,
 			      const struct udc_event *const event)
@@ -76,9 +75,8 @@ static void event_handler_ep_request(struct usbd_context *const uds_ctx)
 		}
 
 		if (ret) {
-			LOG_ERR("Unrecoverable error %d, ep 0x%02x, buf %p",
+			LOG_DBG("Transfer result %d, ep 0x%02x, buf %p",
 				ret, bi->ep, (void *)buf);
-			usbd_msg_pub_simple(uds_ctx, USBD_MSG_STACK_ERROR, ret);
 		}
 	}
 }

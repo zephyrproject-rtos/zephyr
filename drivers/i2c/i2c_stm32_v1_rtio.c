@@ -67,25 +67,27 @@ static void i2c_stm32_generate_start_condition(I2C_TypeDef *i2c)
 static void i2c_stm32_controller_mode_end(const struct device *dev, int status)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
+	bool disable_i2c = true;
 
 	i2c_stm32_disable_transfer_interrupts(dev);
 
 #if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
+
 	data->controller_active = false;
 	if (data->target_attached) {
 		i2c_stm32_enable_transfer_interrupts(dev);
 		LL_I2C_AcknowledgeNextData(i2c, LL_I2C_ACK);
-		return;
+		disable_i2c = false;
 	}
 #endif
 
-	LL_I2C_Disable(i2c);
-	if ((data->xfer_len == 0U) && i2c_rtio_complete(ctx, status)) {
-		i2c_stm32_start(dev);
+	if (disable_i2c) {
+		LL_I2C_Disable(i2c);
 	}
+
+	i2c_stm32_rtio_complete(dev, status);
 }
 
 static void handle_sb(const struct device *dev)
@@ -162,6 +164,7 @@ static void handle_addr(const struct device *dev)
 		LL_I2C_EnableBitPOS(i2c);
 	}
 	LL_I2C_ClearFlag_ADDR(i2c);
+	LL_I2C_EnableIT_BUF(i2c);
 }
 
 static void handle_txe(const struct device *dev)
@@ -182,6 +185,11 @@ static void handle_txe(const struct device *dev)
 		LL_I2C_TransmitData8(i2c, *data->xfer_buf);
 		data->xfer_buf++;
 	} else {
+		/* All bytes sent. Disable the BUF interrupt so the level-triggered
+		 * TXE flag cannot re-fire the ISR while completing the transfer.
+		 */
+		LL_I2C_DisableIT_BUF(i2c);
+
 		if ((data->xfer_flags & I2C_MSG_STOP) != 0) {
 			LL_I2C_GenerateStopCondition(i2c);
 		}
@@ -363,6 +371,10 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return -EBUSY;
 	}
 
+	if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
+		return -ENOTSUP;
+	}
+
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
@@ -371,13 +383,16 @@ int i2c_stm32_target_register(const struct device *dev, struct i2c_target_config
 		return ret;
 	}
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
+		return ret;
+	}
+
 	data->target_cfg = config;
 
 	LL_I2C_Enable(i2c);
 
-	if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
-		return -ENOTSUP;
-	}
 	LL_I2C_SetOwnAddress1(i2c, config->address << 1U, LL_I2C_OWNADDRESS1_7BIT);
 	data->target_attached = true;
 
@@ -410,6 +425,8 @@ int i2c_stm32_target_unregister(const struct device *dev, struct i2c_target_conf
 	LL_I2C_ClearFlag_ADDR(i2c);
 	LL_I2C_Disable(i2c);
 
+	(void)pm_device_runtime_put(dev);
+
 	data->target_attached = false;
 
 	LOG_DBG("i2c: target unregistered");
@@ -439,10 +456,16 @@ void i2c_stm32_event(const struct device *dev)
 		handle_addr(dev);
 	} else if (LL_I2C_IsActiveFlag_BTF(i2c)) {
 		handle_btf(dev);
-	} else if (LL_I2C_IsActiveFlag_TXE(i2c) && ((data->xfer_flags & I2C_MSG_READ) == 0)) {
-		handle_txe(dev);
-	} else if (LL_I2C_IsActiveFlag_RXNE(i2c) && ((data->xfer_flags & I2C_MSG_READ) != 0)) {
-		handle_rxne(dev);
+	} else {
+		bool is_write = (data->xfer_flags & I2C_MSG_READ) == 0;
+
+		if (LL_I2C_IsActiveFlag_TXE(i2c) && is_write) {
+			handle_txe(dev);
+		} else if (LL_I2C_IsActiveFlag_TXE(i2c) && !is_write) {
+			LL_I2C_DisableIT_BUF(i2c);
+		} else if (LL_I2C_IsActiveFlag_RXNE(i2c) && !is_write) {
+			handle_rxne(dev);
+		}
 	}
 }
 
@@ -483,6 +506,25 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
+		/* Address "Spurious Bus Error detection in controller mode"
+		 * erratum, that affects STM32 I2C v1 controller, referenced
+		 * in multiple errata sheets document like:
+		 * - ES0182 (STM32F41x/41x) Rev 18, section 2.10.1
+		 *
+		 * Workaround: clear the BERR flag and let the ongoing
+		 * transfer continue. If a real bus error has occurred,
+		 * the transfer will eventually time out.
+		 */
+#if defined(CONFIG_I2C_TARGET)
+		if (error_cb != NULL) {
+			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+		}
+		goto error;
+#endif
+	}
+
+	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
+		LL_I2C_ClearFlag_OVR(i2c);
 #if defined(CONFIG_I2C_TARGET)
 		if (error_cb != NULL) {
 			error_cb(data->target_cfg, I2C_ERROR_GENERIC);
@@ -504,8 +546,8 @@ error:
 
 }
 
-int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
-			uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			uint16_t i2c_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;

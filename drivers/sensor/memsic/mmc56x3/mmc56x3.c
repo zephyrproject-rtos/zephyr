@@ -357,7 +357,7 @@ static int mmc56x3_chip_configure(const struct device *dev, struct mmc56x3_confi
 	}
 
 	if (new_config->auto_sr != config->auto_sr) {
-		ret = mmc56x3_chip_set_auto_self_reset(dev, config->auto_sr);
+		ret = mmc56x3_chip_set_auto_self_reset(dev, new_config->auto_sr);
 	}
 
 	return ret;

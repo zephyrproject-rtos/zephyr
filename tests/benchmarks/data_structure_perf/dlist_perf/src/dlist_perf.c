@@ -44,7 +44,7 @@ ZTEST(dlist_perf, test_dlist_container)
 	int i, count;
 	struct container_node *cnode, *s_cnode;
 
-	/* Initialize an user-defiend structure of contains dlist node */
+	/* Initialize a user-defined structure of contains dlist node */
 	struct container_node data_node[NODE_SIZE] = {
 		{ .value = 0 },
 		{ .value = 1 },

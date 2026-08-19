@@ -48,7 +48,7 @@ if(CONFIG_NRF_PERIPHCONF_SECTION AND NOT SYSBUILD)
   message(WARNING "CONFIG_NRF_PERIPHCONF_SECTION is enabled, but Sysbuild is not being used. "
                   "The global peripheral configuration will not be applied unless artifacts "
                   "are generated manually/externally. To enable automatic generation, build with "
-                  "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
+                  "Sysbuild and ensure that SB_CONFIG_NRF_GENERATE_UICR=y."
   )
 endif()
 
@@ -56,6 +56,6 @@ if(CONFIG_NRF_MPCCONF_SECTION AND NOT SYSBUILD)
   message(WARNING "CONFIG_NRF_MPCCONF_SECTION is enabled, but Sysbuild is not being used. "
                   "The MPC configuration will not be applied unless artifacts "
                   "are generated manually/externally. To enable automatic generation, build with "
-                  "Sysbuild and ensure that SB_CONFIG_NRF_HALTIUM_GENERATE_UICR=y."
+                  "Sysbuild and ensure that SB_CONFIG_NRF_GENERATE_UICR=y."
   )
 endif()

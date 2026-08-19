@@ -267,7 +267,7 @@ ZTEST(opamp_stm32, test_init_opamp)
 
 	const uint32_t trim_mode = LL_OPAMP_GetTrimmingMode(OPAMP_LL_DEV);
 #if DT_PROP(OPAMP_NODE, st_enable_self_calibration)
-	/* Calibration is running at driver initalization step (POST_KERNEL).
+	/* Calibration is running at driver initialization step (POST_KERNEL).
 	 * Verify that OPAMP is configured to be user calibrated
 	 */
 	zassert_equal(trim_mode, LL_OPAMP_TRIMMING_USER,

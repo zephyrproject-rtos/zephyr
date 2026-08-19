@@ -188,7 +188,7 @@ void BL702_Delay_MS(uint32_t cnt)
 /* Wireless MAC address shims */
 
 static uint8_t wireless_mac_addr[8];
-static int8_t wireless_default_tx_power;
+static int8_t wireless_default_tx_power = 10; /* dBm */
 
 int bl_wireless_mac_addr_set(uint8_t mac[8])
 {
@@ -456,6 +456,11 @@ void srandom(unsigned int seed)
 {
 	ARG_UNUSED(seed);
 	/* TRNG-based, no seeding needed */
+}
+
+int bl_rand(void)
+{
+	return (int)sys_rand32_get();
 }
 
 /* Stack info for blob */

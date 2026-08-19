@@ -10,11 +10,13 @@
 #include <soc.h>
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
+#include <stm32_cache.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/cache.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
@@ -34,6 +36,115 @@ LOG_MODULE_REGISTER(i2c_ll_stm32_v2_rtio);
 #define STM32_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period) \
 	__LL_I2C_CONVERT_TIMINGS(prescaler, setup_time, hold_time, sclh_period, scll_period)
 #endif /* CONFIG_STM32_HAL2 */
+
+#ifdef CONFIG_I2C_STM32_V2_DMA
+static bool using_dma(struct i2c_stm32_data *dev_data)
+{
+	return dev_data->use_dma;
+}
+
+static int configure_start_dma(struct stream const *dma, struct dma_config *dma_cfg,
+			       struct dma_block_config *blk_cfg)
+{
+	if (!device_is_ready(dma->dev_dma)) {
+		LOG_ERR("DMA device not ready");
+		return -ENODEV;
+	}
+
+	dma_cfg->head_block = blk_cfg;
+	dma_cfg->block_count = 1;
+
+	int ret = dma_config(dma->dev_dma, dma->dma_channel, dma_cfg);
+
+	if (ret != 0) {
+		LOG_ERR("Problem setting up DMA: %d", ret);
+		return ret;
+	}
+
+	ret = dma_start(dma->dev_dma, dma->dma_channel);
+	if (ret != 0) {
+		LOG_ERR("Problem starting DMA: %d", ret);
+		return ret;
+	}
+
+	return 0;
+}
+
+static int dma_xfer_start(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+	I2C_TypeDef *i2c = cfg->i2c;
+	int ret;
+
+	if ((data->xfer_flags & I2C_MSG_READ) != 0U) {
+		/* Save DMA receive buffer to later invalidate cache before reading received data */
+		data->dma_buf = data->xfer_buf;
+		data->dma_len = data->xfer_len;
+
+		data->dma_blk_cfg.source_address = LL_I2C_DMA_GetRegAddr(
+			cfg->i2c, LL_I2C_DMA_REG_DATA_RECEIVE);
+		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->dma_blk_cfg.dest_address = (uint32_t)data->xfer_buf;
+		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->dma_blk_cfg.block_size = data->xfer_len;
+
+		ret = configure_start_dma(&cfg->rx_dma, &data->dma_rx_cfg, &data->dma_blk_cfg);
+		if (ret != 0) {
+			return ret;
+		}
+
+		LL_I2C_EnableDMAReq_RX(i2c);
+	} else {
+		data->dma_blk_cfg.source_address = (uint32_t)data->xfer_buf;
+		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->dma_blk_cfg.dest_address = LL_I2C_DMA_GetRegAddr(
+			cfg->i2c, LL_I2C_DMA_REG_DATA_TRANSMIT);
+		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
+		data->dma_blk_cfg.block_size = data->xfer_len;
+
+		ret = configure_start_dma(&cfg->tx_dma, &data->dma_tx_cfg, &data->dma_blk_cfg);
+		if (ret != 0) {
+			return ret;
+		}
+
+		LL_I2C_EnableDMAReq_TX(i2c);
+	}
+
+	return 0;
+}
+
+static void dma_finish(const struct device *dev)
+{
+	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
+
+	if ((data->xfer_flags & I2C_MSG_READ) != 0U) {
+		dma_stop(cfg->rx_dma.dev_dma, cfg->rx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_RX(cfg->i2c);
+
+		if ((data->dma_len != 0U) &&
+		    !stm32_buf_in_nocache((uintptr_t)data->dma_buf, data->dma_len)) {
+			sys_cache_data_invd_range(data->dma_buf, data->dma_len);
+		}
+	} else {
+		dma_stop(cfg->tx_dma.dev_dma, cfg->tx_dma.dma_channel);
+		LL_I2C_DisableDMAReq_TX(cfg->i2c);
+	}
+}
+#else /* CONFIG_I2C_STM32_V2_DMA */
+static bool using_dma(struct i2c_stm32_data *data __unused)
+{
+	return false;
+}
+static int dma_xfer_start(const struct device *dev __unused)
+{
+	return 0;
+}
+static void dma_finish(const struct device *dev __unused)
+{
+}
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 static void i2c_stm32_disable_transfer_interrupts(const struct device *dev)
 {
@@ -62,7 +173,12 @@ static void i2c_stm32_enable_transfer_interrupts(const struct device *dev)
 static void i2c_stm32_controller_mode_end(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
+	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (using_dma(data)) {
+		dma_finish(dev);
+	}
 
 	i2c_stm32_disable_transfer_interrupts(dev);
 
@@ -71,8 +187,6 @@ static void i2c_stm32_controller_mode_end(const struct device *dev)
 	}
 
 #if defined(CONFIG_I2C_TARGET)
-	struct i2c_stm32_data *data = dev->data;
-
 	data->controller_active = false;
 	if (!data->target_attached) {
 		LL_I2C_Disable(i2c);
@@ -100,7 +214,7 @@ static void i2c_stm32_target_event(const struct device *dev)
 		 * If 7-bit mode is enabled, find the correct cfg based on
 		 * the I2C address sent by bus controller.
 		 */
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		if ((data->target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
 			target_cfg = data->target_cfg;
 		} else {
 			uint8_t target_address;
@@ -231,7 +345,11 @@ int i2c_stm32_target_register(const struct device *dev,
 	}
 
 	/* Mark device as active */
-	(void)pm_device_runtime_get(dev);
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
+		return ret;
+	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32F7X)
 	if (pm_device_wakeup_is_capable(dev)) {
@@ -245,7 +363,7 @@ int i2c_stm32_target_register(const struct device *dev,
 
 	if (!data->target_cfg) {
 		data->target_cfg = config;
-		if (data->target_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if ((data->target_cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
 			LL_I2C_SetOwnAddress1(i2c, config->address, LL_I2C_OWNADDRESS1_10BIT);
 			LOG_DBG("i2c: target #1 registered with 10-bit address");
 		} else {
@@ -257,11 +375,13 @@ int i2c_stm32_target_register(const struct device *dev,
 
 		LOG_DBG("i2c: target #1 registered");
 	} else {
-		data->target2_cfg = config;
-
-		if (data->target2_cfg->flags == I2C_TARGET_FLAGS_ADDR_10_BITS)	{
+		if ((config->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) != 0) {
+			(void)pm_device_runtime_put(dev);
 			return -EINVAL;
 		}
+
+		data->target2_cfg = config;
+
 		LL_I2C_SetOwnAddress2(i2c, config->address << 1U,
 				      LL_I2C_OWNADDRESS2_NOMASK);
 		LL_I2C_EnableOwnAddress2(i2c);
@@ -306,7 +426,8 @@ int i2c_stm32_target_unregister(const struct device *dev,
 
 	/* Return if there is a target remaining */
 	if (data->target_cfg || data->target2_cfg) {
-		LOG_DBG("i2c: target#%c still registered", data->target_cfg?'1':'2');
+		(void)pm_device_runtime_put(dev);
+		LOG_DBG("i2c: target#%c still registered", data->target_cfg ? '1' : '2');
 		return 0;
 	}
 
@@ -369,7 +490,6 @@ void i2c_stm32_event(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
@@ -380,20 +500,20 @@ void i2c_stm32_event(const struct device *dev)
 	}
 #endif
 
-	if (data->burst_len != 0U) {
-		/* Send next byte */
+	if (!using_dma(data) && (data->burst_len != 0U)) {
 		if (LL_I2C_IsActiveFlag_TXIS(i2c)) {
+			/* Send next byte */
 			LL_I2C_TransmitData8(i2c, *data->xfer_buf);
-		}
-
-		/* Receive next byte */
-		if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
+			data->xfer_buf++;
+			data->xfer_len--;
+			data->burst_len--;
+		} else if (LL_I2C_IsActiveFlag_RXNE(i2c)) {
+			/* Receive next byte */
 			*data->xfer_buf = LL_I2C_ReceiveData8(i2c);
+			data->xfer_buf++;
+			data->xfer_len--;
+			data->burst_len--;
 		}
-
-		data->xfer_buf++;
-		data->xfer_len--;
-		data->burst_len--;
 	}
 
 	/* NACK received */
@@ -413,14 +533,18 @@ void i2c_stm32_event(const struct device *dev)
 		LL_I2C_DisableReloadMode(i2c);
 		i2c_stm32_controller_mode_end(dev);
 
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-			return;
-		}
+		i2c_stm32_rtio_complete(dev, ret);
+		return;
 	}
 
-	if (LL_I2C_IsActiveFlag_TC(i2c) ||
-	    LL_I2C_IsActiveFlag_TCR(i2c)) {
+	if (LL_I2C_IsEnabledIT_TC(i2c) &&
+	    (LL_I2C_IsActiveFlag_TC(i2c) || LL_I2C_IsActiveFlag_TCR(i2c))) {
+		if (using_dma(data) && (data->burst_len != 0U)) {
+			data->xfer_len -= data->burst_len;
+			data->xfer_buf += data->burst_len;
+			data->burst_len = 0U;
+		}
+
 		__ASSERT_NO_MSG(data->burst_len == 0U);
 
 		if (data->xfer_len != 0U) {
@@ -432,10 +556,12 @@ void i2c_stm32_event(const struct device *dev)
 		if ((data->burst_flags & I2C_MSG_STOP) != 0) {
 			LL_I2C_GenerateStopCondition(i2c);
 		} else {
-			i2c_stm32_disable_transfer_interrupts(dev);
-			if (i2c_rtio_complete(ctx, ret)) {
-				i2c_stm32_start(dev);
+			if (using_dma(data)) {
+				dma_finish(dev);
 			}
+
+			i2c_stm32_disable_transfer_interrupts(dev);
+			i2c_stm32_rtio_complete(dev, ret);
 		}
 	}
 }
@@ -443,12 +569,11 @@ void i2c_stm32_event(const struct device *dev)
 int i2c_stm32_error(const struct device *dev)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	struct i2c_rtio *ctx = data->ctx;
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
 #if defined(CONFIG_I2C_TARGET)
+	struct i2c_stm32_data *data = dev->data;
 	i2c_target_error_cb_t error_cb = NULL;
 
 	if (data->target_attached && !data->controller_active &&
@@ -467,6 +592,27 @@ int i2c_stm32_error(const struct device *dev)
 		ret = -EIO;
 	}
 
+	/* Address "Spurious Bus Error detection in controller mode"
+	 * erratum, that affects STM32 I2C v2 controller, referenced
+	 * in multiple errata sheets document like:
+	 * - ES0392 (STM32H74x/75x), Rev 15, section 2.19.4
+	 *
+	 * Workaround: clear the BERR flag and let the ongoing
+	 * transfer continue. If a real bus error has occurred,
+	 * the transfer will eventually time out.
+	 */
+	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
+		LL_I2C_ClearFlag_BERR(i2c);
+#if defined(CONFIG_I2C_TARGET)
+		if (!data->controller_active) {
+			if (error_cb != NULL) {
+				error_cb(data->target_cfg, I2C_ERROR_GENERIC);
+			}
+			ret = -EIO;
+		}
+#endif
+	}
+
 #if defined(CONFIG_I2C_TARGET)
 	if (data->target_attached && !data->controller_active) {
 		return ret;
@@ -475,21 +621,26 @@ int i2c_stm32_error(const struct device *dev)
 
 	if (ret) {
 		i2c_stm32_controller_mode_end(dev);
-		if (i2c_rtio_complete(ctx, ret)) {
-			i2c_stm32_start(dev);
-		}
+		i2c_stm32_rtio_complete(dev, ret);
 	}
 
 	return ret;
 }
 
-int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
-	uint8_t *buf, size_t buf_len, uint16_t i2c_addr)
+int i2c_stm32_msg_start(const struct device *dev, uint8_t flags, uint8_t *buf, size_t buf_len,
+			uint16_t i2c_addr)
 {
 	const struct i2c_stm32_config *cfg = dev->config;
 	struct i2c_stm32_data *data = dev->data;
 	I2C_TypeDef *i2c = cfg->i2c;
 	uint32_t transfer;
+	bool generate_start = true;
+
+#if defined(CONFIG_I2C_STM32_V2_DMA)
+	/* i2c_stm32_xfer_will_use_dma() flushes cache on write message if needed */
+	data->use_dma = i2c_stm32_xfer_will_use_dma(cfg, buf, buf_len,
+						    (flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE);
+#endif /* CONFIG_I2C_STM32_V2_DMA */
 
 	data->xfer_buf = buf;
 	data->xfer_len = buf_len;
@@ -498,6 +649,7 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 	if (LL_I2C_IsEnabledReloadMode(i2c)) {
 		__ASSERT_NO_MSG((flags & I2C_MSG_RESTART) == 0U);
 		i2c_stm32_reload_burst(dev);
+		generate_start = false;
 		goto out;
 	}
 
@@ -541,14 +693,24 @@ int i2c_stm32_msg_start(const struct device *dev, uint8_t flags,
 
 	LL_I2C_Enable(i2c);
 
-	LL_I2C_GenerateStartCondition(i2c);
-
 out:
+	if (using_dma(data) && dma_xfer_start(dev) != 0) {
+		i2c_stm32_controller_mode_end(dev);
+		return -EIO;
+	}
+
 	i2c_stm32_enable_transfer_interrupts(dev);
-	if ((flags & I2C_MSG_READ) != 0) {
-		LL_I2C_EnableIT_RX(i2c);
-	} else {
-		LL_I2C_EnableIT_TX(i2c);
+
+	if (!using_dma(data)) {
+		if ((flags & I2C_MSG_READ) != 0) {
+			LL_I2C_EnableIT_RX(i2c);
+		} else {
+			LL_I2C_EnableIT_TX(i2c);
+		}
+	}
+
+	if (generate_start) {
+		LL_I2C_GenerateStartCondition(i2c);
 	}
 
 	return 0;
@@ -564,13 +726,13 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 	uint32_t presc = 1U;
 	uint32_t timing = 0U;
 
-	/*  Look for an adequate preset timing value */
+	/* Look for an adequate preset timing value */
 	for (uint32_t i = 0; i < cfg->n_timings; i++) {
 		const struct i2c_config_timing *preset = &cfg->timings[i];
 		uint32_t speed = i2c_map_dt_bitrate(preset->i2c_speed);
 
-		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config))
-		   && (preset->periph_clock == clock)) {
+		if ((I2C_SPEED_GET(speed) == I2C_SPEED_GET(data->dev_config)) &&
+		    (preset->periph_clock == clock)) {
 			/*  Found a matching periph clock and i2c speed */
 			LL_I2C_SetTiming(i2c, preset->timing_setting);
 			return 0;
@@ -593,7 +755,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		break;
 	default:
 		LOG_ERR("i2c: speed above \"fast\" requires manual timing configuration, "
-				"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
+			"see \"timings\" property of st,stm32-i2c-v2 devicetree binding");
 		return -EINVAL;
 	}
 
@@ -606,7 +768,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		uint32_t sdadel = i2c_hold_time_min / ns_presc;
 		uint32_t scldel = i2c_setup_time_min / ns_presc;
 
-		if ((sclh - 1) > 255 ||  (scll - 1) > 255) {
+		if ((sclh - 1) > 255 || (scll - 1) > 255) {
 			++presc;
 			continue;
 		}
@@ -617,7 +779,7 @@ int i2c_stm32_configure_timing(const struct device *dev, uint32_t clock)
 		}
 
 		timing = STM32_I2C_CONVERT_TIMINGS(presc - 1,
-					scldel - 1, sdadel, sclh - 1, scll - 1);
+						   scldel - 1, sdadel, sclh - 1, scll - 1);
 		break;
 	} while (presc < 16);
 

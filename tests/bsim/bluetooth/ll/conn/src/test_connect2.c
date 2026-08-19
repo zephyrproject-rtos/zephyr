@@ -116,10 +116,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	printk("Peripheral disconnected (reason 0x%02x)\n", reason);
 
-	if (default_conn) {
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
-	}
+	bt_conn_drop(&default_conn);
 }
 
 static int start_advertising(void)

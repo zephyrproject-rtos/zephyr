@@ -15,7 +15,6 @@ import scl
 from twisterlib.error import ConfigurationError
 from twisterlib.testplan import TwisterConfigParser
 
-# pylint: disable=no-name-in-module
 from . import ZEPHYR_BASE
 
 
@@ -57,7 +56,7 @@ def test_testsuite_config_files():
     data.load()
 
     with mock.patch('warnings.warn') as warn_mock:
-        # Load and validate the specific scenario from testcases.yaml
+        # Load and validate the specific scenario from tests.yaml
         scenario = data.get_scenario("test_config.main")
         assert scenario
 

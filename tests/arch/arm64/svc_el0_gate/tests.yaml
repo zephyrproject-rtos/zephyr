@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  ignore_faults: true
+tests:
+  arch.arm64.svc_el0_gate:
+    tags: kernel userspace arm64
+    platform_allow:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp
+    integration_platforms:
+      - qemu_cortex_a53
+      - qemu_cortex_a53/qemu_cortex_a53/smp

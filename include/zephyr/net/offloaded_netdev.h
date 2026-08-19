@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_
-#define ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_
+#ifndef ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_
+#define ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
@@ -76,8 +76,14 @@ BUILD_ASSERT(offsetof(struct offloaded_if_api, iface_api) == 0);
  */
 static inline bool net_off_is_wifi_offloaded(struct net_if *iface)
 {
-	const struct offloaded_if_api *api = (const struct offloaded_if_api *)
-		net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct offloaded_if_api *api;
+
+	NET_ASSERT(dev != NULL);
+
+	api = (const struct offloaded_if_api *)dev->api;
+
+	NET_ASSERT(api != NULL);
 
 	return api->get_type && api->get_type() == L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
@@ -90,4 +96,4 @@ static inline bool net_off_is_wifi_offloaded(struct net_if *iface)
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_OFFLOADED_NETDEV_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_OFFLOADED_NETDEV_H_ */

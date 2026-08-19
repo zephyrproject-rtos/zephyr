@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/cache.h>
 #include <zephyr/drivers/regulator.h>
+#include "sdhc_helpers.h"
 
 #include "rcar_mmc_registers.h"
 
@@ -974,45 +975,6 @@ static int rcar_mmc_request(const struct device *dev, struct sdhc_command *cmd,
 	return ret;
 }
 
-/* convert sd_voltage to string */
-static inline const char *const rcar_mmc_get_signal_voltage_str(enum sd_voltage voltage)
-{
-	static const char *const sig_vol_str[] = {
-		[0] = "Unset",		 [SD_VOL_3_3_V] = "3.3V", [SD_VOL_3_0_V] = "3.0V",
-		[SD_VOL_1_8_V] = "1.8V", [SD_VOL_1_2_V] = "1.2V",
-	};
-
-	if (voltage >= 0 && voltage < ARRAY_SIZE(sig_vol_str)) {
-		return sig_vol_str[voltage];
-	} else {
-		return "Unknown";
-	}
-}
-
-/* convert sdhc_timing_mode to string */
-static inline const char *const rcar_mmc_get_timing_str(enum sdhc_timing_mode timing)
-{
-	static const char *const timing_str[] = {
-		[0] = "Unset",
-		[SDHC_TIMING_LEGACY] = "LEGACY",
-		[SDHC_TIMING_HS] = "HS",
-		[SDHC_TIMING_SDR12] = "SDR12",
-		[SDHC_TIMING_SDR25] = "SDR25",
-		[SDHC_TIMING_SDR50] = "SDR50",
-		[SDHC_TIMING_SDR104] = "SDR104",
-		[SDHC_TIMING_DDR50] = "DDR50",
-		[SDHC_TIMING_DDR52] = "DDR52",
-		[SDHC_TIMING_HS200] = "HS200",
-		[SDHC_TIMING_HS400] = "HS400",
-	};
-
-	if (timing >= 0 && timing < ARRAY_SIZE(timing_str)) {
-		return timing_str[timing];
-	} else {
-		return "Unknown";
-	}
-}
-
 /* change voltage of MMC */
 static int rcar_mmc_change_voltage(const struct mmc_rcar_cfg *cfg, struct sdhc_io *host_io,
 				   struct sdhc_io *ios)
@@ -1399,11 +1361,9 @@ static int rcar_mmc_set_io(const struct device *dev, struct sdhc_io *ios)
 	data = dev->data;
 	host_io = &data->host_io;
 
-	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, "
-		"timing %s, voltage %s",
+	LOG_DBG("SDHC I/O: bus width %d, clock %dHz, card power %s, timing %s, voltage %s",
 		ios->bus_width, ios->clock, ios->power_mode == SDHC_POWER_ON ? "ON" : "OFF",
-		rcar_mmc_get_timing_str(ios->timing),
-		rcar_mmc_get_signal_voltage_str(ios->signal_voltage));
+		sdhc_timing_mode_str(ios->timing), sd_voltage_str(ios->signal_voltage));
 
 	/* Set host clock */
 	ret = rcar_mmc_set_clk_rate(dev, ios);

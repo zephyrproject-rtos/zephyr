@@ -5,17 +5,23 @@
 
 #include <string.h>
 #include <zephyr/drivers/hwinfo.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
 #include <zephyr/sys/byteorder.h>
 
 /*
- * All BFLB SoCs (BL602, BL702, BL702L, BL616) store a factory-programmed
+ * Most BFLB SoCs (BL602, BL702, BL702L, BL616) store a factory-programmed
  * MAC address in efuse at offset 0x14 (low 32 bits) and 0x18. The MAC is stored
  * in little-endian order and must be byte-swapped to network (big-endian)
  * order so the OUI occupies the first three bytes.
  */
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+#define EFUSE_WIFI_MAC_LOW_OFFSET	0x04
+#define EFUSE_WIFI_MAC_HIGH_OFFSET	0x08
+#else
 #define EFUSE_WIFI_MAC_LOW_OFFSET	0x14
 #define EFUSE_WIFI_MAC_HIGH_OFFSET	0x18
+#endif
+
 /* BL70x/L parity slot */
 #define EFUSE_DATA_0_EF_KEY_SLOT_5_W2	0x74
 
@@ -37,12 +43,12 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 		return -ENODEV;
 	}
 
-	err = syscon_read_reg(efuse, EFUSE_WIFI_MAC_LOW_OFFSET, &mac_low);
+	err = otp_read(efuse, EFUSE_WIFI_MAC_LOW_OFFSET, &mac_low, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}
 
-	err = syscon_read_reg(efuse, EFUSE_WIFI_MAC_HIGH_OFFSET, &mac_high);
+	err = otp_read(efuse, EFUSE_WIFI_MAC_HIGH_OFFSET, &mac_high, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}
@@ -62,7 +68,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 	parity_cl =  (DEVICE_ID_LENGTH_EFUSE * BITS_PER_BYTE)
 		- (sys_count_bits(id, DEVICE_ID_LENGTH_EFUSE) & EFUSE_WIFI_MAC_PARITY_MSK);
 	/* BL70x/L stores parity elsewhere */
-	err = syscon_read_reg(efuse, EFUSE_DATA_0_EF_KEY_SLOT_5_W2, &mac_high);
+	err = otp_read(efuse, EFUSE_DATA_0_EF_KEY_SLOT_5_W2, &mac_high, sizeof(uint32_t));
 	if (err != 0) {
 		return err;
 	}

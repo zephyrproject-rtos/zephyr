@@ -1,0 +1,6 @@
+board:
+  name: uiapduino_pro_micro_ch32v003
+  full_name: UIAPduino Pro Micro CH32V003
+  vendor: uiap
+  socs:
+    - name: ch32v003

@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 if(SHIELD STREQUAL "npm1300_ek")
   set(EXTRA_DTC_OVERLAY_FILE npm1300.overlay)

@@ -309,8 +309,7 @@ __subsystem struct biometric_driver_api {
  * @param dev Pointer to the biometric device
  * @param caps Pointer to capabilities structure to populate
  *
- * @retval 0 Success
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int biometric_get_capabilities(const struct device *dev,
 					 struct biometric_capabilities *caps);
@@ -318,12 +317,9 @@ __syscall int biometric_get_capabilities(const struct device *dev,
 static inline int z_impl_biometric_get_capabilities(const struct device *dev,
 						    struct biometric_capabilities *caps)
 {
-	const struct biometric_driver_api *api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(caps != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
 
 	return api->get_capabilities(dev, caps);
 }
@@ -335,10 +331,9 @@ static inline int z_impl_biometric_get_capabilities(const struct device *dev,
  * @param attr The attribute to set
  * @param val The value to set
  *
- * @retval 0 Success
- * @retval -ENOSYS Not supported by device
- * @retval -EINVAL Invalid attribute or value
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Not supported by device.
+ * @retval -EINVAL Invalid attribute or value.
  */
 __syscall int biometric_attr_set(const struct device *dev, enum biometric_attribute attr,
 				 int32_t val);
@@ -346,11 +341,7 @@ __syscall int biometric_attr_set(const struct device *dev, enum biometric_attrib
 static inline int z_impl_biometric_attr_set(const struct device *dev, enum biometric_attribute attr,
 					    int32_t val)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
 	if (api->attr_set == NULL) {
 		return -ENOSYS;
@@ -366,10 +357,9 @@ static inline int z_impl_biometric_attr_set(const struct device *dev, enum biome
  * @param attr The attribute to get
  * @param val Pointer to store the attribute value
  *
- * @retval 0 Success
- * @retval -ENOSYS Not supported by device
- * @retval -EINVAL Invalid attribute
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Not supported by device.
+ * @retval -EINVAL Invalid attribute.
  */
 __syscall int biometric_attr_get(const struct device *dev, enum biometric_attribute attr,
 				 int32_t *val);
@@ -377,12 +367,9 @@ __syscall int biometric_attr_get(const struct device *dev, enum biometric_attrib
 static inline int z_impl_biometric_attr_get(const struct device *dev, enum biometric_attribute attr,
 					    int32_t *val)
 {
-	const struct biometric_driver_api *api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(val != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
 
 	if (api->attr_get == NULL) {
 		return -ENOSYS;
@@ -401,22 +388,15 @@ static inline int z_impl_biometric_attr_get(const struct device *dev, enum biome
  * @param dev Biometric device
  * @param template_id Template ID to assign (1-based: valid range is 1 to max_templates)
  *
- * @retval 0 on success
- * @retval -EINVAL Invalid template_id or enrollment in progress
- * @retval -ENOSPC No space for new template
- * @retval -errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Invalid template_id or enrollment in progress.
+ * @retval -ENOSPC No space for new template.
  */
 __syscall int biometric_enroll_start(const struct device *dev, uint16_t template_id);
 
 static inline int z_impl_biometric_enroll_start(const struct device *dev, uint16_t template_id)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
-
-	return api->enroll_start(dev, template_id);
+	return DEVICE_API_GET(biometric, dev)->enroll_start(dev, template_id);
 }
 
 /**
@@ -431,10 +411,9 @@ static inline int z_impl_biometric_enroll_start(const struct device *dev, uint16
  * @param result Optional pointer to capture result structure for progress/quality info.
  *               Pass NULL if not needed.
  *
- * @retval 0 Sample successfully captured
- * @retval -EINVAL No enrollment started or already have enough samples
- * @retval -ETIMEDOUT Timeout waiting for sample
- * @retval -errno Other negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL No enrollment started or already have enough samples.
+ * @retval -ETIMEDOUT Timeout waiting for sample.
  */
 __syscall int biometric_enroll_capture(const struct device *dev, k_timeout_t timeout,
 				       struct biometric_capture_result *result);
@@ -442,13 +421,7 @@ __syscall int biometric_enroll_capture(const struct device *dev, k_timeout_t tim
 static inline int z_impl_biometric_enroll_capture(const struct device *dev, k_timeout_t timeout,
 						  struct biometric_capture_result *result)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
-
-	return api->enroll_capture(dev, timeout, result);
+	return DEVICE_API_GET(biometric, dev)->enroll_capture(dev, timeout, result);
 }
 
 /**
@@ -458,22 +431,15 @@ static inline int z_impl_biometric_enroll_capture(const struct device *dev, k_ti
  *
  * @param dev Biometric device
  *
- * @retval 0 on success
- * @retval -EINVAL Insufficient samples
- * @retval -ENOSPC No space to store template
- * @retval -errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Insufficient samples.
+ * @retval -ENOSPC No space to store template.
  */
 __syscall int biometric_enroll_finalize(const struct device *dev);
 
 static inline int z_impl_biometric_enroll_finalize(const struct device *dev)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
-
-	return api->enroll_finalize(dev);
+	return DEVICE_API_GET(biometric, dev)->enroll_finalize(dev);
 }
 
 /**
@@ -483,20 +449,15 @@ static inline int z_impl_biometric_enroll_finalize(const struct device *dev)
  *
  * @param dev Biometric device
  *
- * @retval 0 on success
- * @retval -EALREADY No enrollment in progress
- * @retval -ENOSYS Not supported by device
- * @retval -errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EALREADY No enrollment in progress.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_enroll_abort(const struct device *dev);
 
 static inline int z_impl_biometric_enroll_abort(const struct device *dev)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
 	if (api->enroll_abort == NULL) {
 		return -ENOSYS;
@@ -516,11 +477,10 @@ static inline int z_impl_biometric_enroll_abort(const struct device *dev)
  * @param data Pointer to template data
  * @param size Size of template data in bytes
  *
- * @retval 0 Success
- * @retval -EINVAL Invalid template data
- * @retval -ENOSPC Storage full
- * @retval -ENOSYS Not supported by device
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Invalid template data.
+ * @retval -ENOSPC Storage full.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_template_store(const struct device *dev, uint16_t id, const uint8_t *data,
 				       size_t size);
@@ -528,12 +488,9 @@ __syscall int biometric_template_store(const struct device *dev, uint16_t id, co
 static inline int z_impl_biometric_template_store(const struct device *dev, uint16_t id,
 						  const uint8_t *data, size_t size)
 {
-	const struct biometric_driver_api *api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(data != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
 
 	if (api->template_store == NULL) {
 		return -ENOSYS;
@@ -553,11 +510,10 @@ static inline int z_impl_biometric_template_store(const struct device *dev, uint
  * @param data Pointer to buffer for template data
  * @param size Size of data buffer
  *
- * @retval >=0 Number of bytes written
- * @retval -EINVAL Invalid template_id or buffer too small
- * @retval -ENOENT Template not found
- * @retval -ENOSYS Not supported by device
- * @retval -errno Negative errno code on failure
+ * @return Number of bytes written on success, negative errno value on failure.
+ * @retval -EINVAL Invalid template_id or buffer too small.
+ * @retval -ENOENT Template not found.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_template_read(const struct device *dev, uint16_t id, uint8_t *data,
 				      size_t size);
@@ -565,12 +521,9 @@ __syscall int biometric_template_read(const struct device *dev, uint16_t id, uin
 static inline int z_impl_biometric_template_read(const struct device *dev, uint16_t id,
 						 uint8_t *data, size_t size)
 {
-	const struct biometric_driver_api *api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(data != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
 
 	if (api->template_read == NULL) {
 		return -ENOSYS;
@@ -585,22 +538,15 @@ static inline int z_impl_biometric_template_read(const struct device *dev, uint1
  * @param dev Pointer to the biometric device
  * @param id Template ID to delete
  *
- * @retval 0 Success
- * @retval -EINVAL Invalid template_id
- * @retval -ENOENT Template not found
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EINVAL Invalid template_id.
+ * @retval -ENOENT Template not found.
  */
 __syscall int biometric_template_delete(const struct device *dev, uint16_t id);
 
 static inline int z_impl_biometric_template_delete(const struct device *dev, uint16_t id)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
-
-	return api->template_delete(dev, id);
+	return DEVICE_API_GET(biometric, dev)->template_delete(dev, id);
 }
 
 /**
@@ -608,19 +554,14 @@ static inline int z_impl_biometric_template_delete(const struct device *dev, uin
  *
  * @param dev Pointer to the biometric device
  *
- * @retval 0 Success
- * @retval -ENOSYS Not supported by device
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_template_delete_all(const struct device *dev);
 
 static inline int z_impl_biometric_template_delete_all(const struct device *dev)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
 	if (api->template_delete_all == NULL) {
 		return -ENOSYS;
@@ -637,9 +578,8 @@ static inline int z_impl_biometric_template_delete_all(const struct device *dev)
  * @param max_count Maximum number of IDs array can hold
  * @param actual_count Pointer to store actual number of IDs returned
  *
- * @retval 0 Success
- * @retval -ENOSYS Not supported by device
- * @retval -errno Negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Not supported by device.
  */
 __syscall int biometric_template_list(const struct device *dev, uint16_t *ids, size_t max_count,
 				      size_t *actual_count);
@@ -647,13 +587,10 @@ __syscall int biometric_template_list(const struct device *dev, uint16_t *ids, s
 static inline int z_impl_biometric_template_list(const struct device *dev, uint16_t *ids,
 						 size_t max_count, size_t *actual_count)
 {
-	const struct biometric_driver_api *api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
-	__ASSERT_NO_MSG(dev != NULL);
 	__ASSERT_NO_MSG(ids != NULL);
 	__ASSERT_NO_MSG(actual_count != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
 
 	if (api->template_list == NULL) {
 		return -ENOSYS;
@@ -676,10 +613,9 @@ static inline int z_impl_biometric_template_list(const struct device *dev, uint1
  * @param result Optional pointer to match result structure for detailed info.
  *               Pass NULL if only match/no-match status is needed.
  *
- * @retval 0 Match successful
- * @retval -ETIMEDOUT Timeout waiting for sample
- * @retval -ENOENT No match found
- * @retval -errno Other negative errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ETIMEDOUT Timeout waiting for sample.
+ * @retval -ENOENT No match found.
  */
 __syscall int biometric_match(const struct device *dev, enum biometric_match_mode mode,
 			      uint16_t template_id, k_timeout_t timeout,
@@ -689,13 +625,7 @@ static inline int z_impl_biometric_match(const struct device *dev, enum biometri
 					 uint16_t template_id, k_timeout_t timeout,
 					 struct biometric_match_result *result)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
-
-	return api->match(dev, mode, template_id, timeout, result);
+	return DEVICE_API_GET(biometric, dev)->match(dev, mode, template_id, timeout, result);
 }
 
 /**
@@ -706,21 +636,16 @@ static inline int z_impl_biometric_match(const struct device *dev, enum biometri
  * @param dev Biometric device
  * @param state Desired LED state
  *
- * @retval 0 on success
- * @retval -ENOSYS Not supported by device
- * @retval -EINVAL Invalid state
- * @retval -errno code on failure
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOSYS Not supported by device.
+ * @retval -EINVAL Invalid state.
  */
 __syscall int biometric_led_control(const struct device *dev, enum biometric_led_state state);
 
 static inline int z_impl_biometric_led_control(const struct device *dev,
 					       enum biometric_led_state state)
 {
-	const struct biometric_driver_api *api;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	api = (const struct biometric_driver_api *)dev->api;
+	const struct biometric_driver_api *api = DEVICE_API_GET(biometric, dev);
 
 	if (api->led_control == NULL) {
 		return -ENOSYS;

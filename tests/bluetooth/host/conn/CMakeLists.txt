@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
 
@@ -24,6 +24,7 @@ target_sources(testbinary
     PRIVATE
     src/main.c
 
+    ${ZEPHYR_BASE}/subsys/bluetooth/common/addr.c
     ${ZEPHYR_BASE}/subsys/bluetooth/host/conn.c
     ${ZEPHYR_BASE}/subsys/logging/log_minimal.c
     ${ZEPHYR_BASE}/lib/net_buf/buf.c

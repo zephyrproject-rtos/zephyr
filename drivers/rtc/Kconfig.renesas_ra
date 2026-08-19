@@ -10,3 +10,12 @@ config RTC_RENESAS_RA
 	select USE_RA_FSP_RTC
 	help
 	  Enable Renesas RA RTC Driver.
+
+config RTC_RENESAS_RA_ALWAYS_SET_CLOCK_SOURCE
+	bool "Force RTC clock source setup during init"
+	depends on RTC_RENESAS_RA
+	default y if TEST
+	help
+	  Always configure the RTC clock source during initialization, regardless of reset type.
+	  This is intended for testing only where warm‑start detection is unreliable.
+	  Do not use in production, as it may unnecessarily reinitialize the RTC.

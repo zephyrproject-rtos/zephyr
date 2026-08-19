@@ -1,12 +1,12 @@
 /*
- * Copyright 2025 NXP
+ * Copyright 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa366.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa366.dtsi>
 #include "frdm_mcxa366-pinctrl.dtsi"
 #include "board_common.dtsi"
 #include <freq.h>
@@ -59,7 +59,25 @@
 	status = "okay";
 };
 
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
+	status = "okay";
+};
+
 zephyr_udc0: &usb {
 	status = "okay";
 	num-bidir-endpoints = <8>;
+};
+
+/* SLCD configuration */
+&slcd {
+	status = "okay";
+	pin-list = <16 17 18 19 20 21 22 23 24 25 26 27>;
+	com-list = <28 29 30 31>;
+	blink-rate = <1>;
+	pinctrl-0 = <&pinmux_slcd>;
+	pinctrl-names = "default";
 };

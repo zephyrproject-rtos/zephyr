@@ -54,10 +54,16 @@ extern "C" {
  * put the two values somewhere else, though it would make
  * SYS_HEAP_DEFINE a little hairy to write.
  */
+/* Forward declaration; full definition in <zephyr/sys/bitarray.h>. */
+struct sys_bitarray;
+
 struct sys_heap {
 	struct z_heap *heap;
 	void *init_mem;
 	size_t init_bytes;
+#ifdef CONFIG_SYS_HEAP_KASAN
+	struct sys_bitarray *kasan_ba;
+#endif
 };
 
 struct z_heap_stress_result {
@@ -69,6 +75,8 @@ struct z_heap_stress_result {
 
 /**
  * @defgroup low_level_heap_allocator Low Level Heap Allocator
+ * @since 2.3
+ * @version 1.0.0
  * @ingroup heaps
  * @{
  */
@@ -255,7 +263,7 @@ static inline bool sys_heap_validate(struct sys_heap *heap)
  * @param alloc_fn Callback to perform an allocation.  Passes back the @a
  *              arg parameter as a context handle.
  * @param free_fn Callback to perform a free of a pointer returned from
- *             @a alloc.  Passes back the @a arg parameter as a
+ *             @a alloc_fn.  Passes back the @a arg parameter as a
  *             context handle.
  * @param arg Context handle to pass back to the callbacks
  * @param total_bytes Size of the byte array the heap was initialized in

@@ -110,6 +110,18 @@ By default, :c:func:`zms_mount` returns an error if the partition cannot be moun
 For recovery-oriented use cases, :c:func:`zms_mount_force` can be used to automatically
 wipe and reinitialize the partition when the first mount attempt fails.
 
+Mount flags
+-----------
+
+ZMS mount behavior can be controlled with optional flags in ``zms_fs.mount_flags``.
+
+- Default behavior (no optional flags set, ``mount_flags = 0``): if the partition is erased and no valid
+  ZMS header is found, :c:func:`zms_mount` formats the partition by creating the
+  initial ZMS header.
+- ``ZMS_MOUNT_FLAG_NO_FORMAT``: if the partition is erased and no valid ZMS
+  header is found, :c:func:`zms_mount` does not format the partition and returns
+  ``-ENOTSUP``.
+
 To mount the filesystem the following elements in the :c:struct:`zms_fs` structure must be initialized:
 
 .. code-block:: c
@@ -124,6 +136,9 @@ To mount the filesystem the following elements in the :c:struct:`zms_fs` structu
 		uint32_t sector_size;
 		/** Number of sectors in the file system */
 		uint32_t sector_count;
+
+		/** Optional mount behavior flags (enum zms_mount_flags) */
+		uint32_t mount_flags;
 
 		/** Flash device runtime structure */
 		const struct device *flash_device;
@@ -305,6 +320,21 @@ Only 3 sectors are available for writes with a capacity of 944 bytes each,
 which makes it possible to store 11 key-value pairs in each sector (:math:`\frac{944}{64 + 16}`).
 Total data that could be stored in this partition for this case is :math:`11 \times 3 \times 64 = 2112 \text{ bytes}`.
 
+.. only:: html
+
+  .. raw:: html
+     :file: zms-calculator-common.html
+
+.. _zms_available_space_calculator:
+
+Available space calculator
+==========================
+
+.. only:: html
+
+  .. raw:: html
+     :file: available-space-calculator.html
+
 Wear leveling
 *************
 
@@ -378,6 +408,16 @@ Where:
 
 ``WR_MIN``: Number of writes of the set of data per minute
 
+.. _zms_device_lifetime_calculator:
+
+Device lifetime calculator
+==========================
+
+.. only:: html
+
+  .. raw:: html
+     :file: device-lifetime-calculator.html
+
 Features
 ********
 
@@ -402,6 +442,8 @@ Version 1
 - Supports multiple ATE formats to satisfy the requirements of different applications
 - Supports forced mount recovery via :c:func:`zms_mount_force` (automatic partition wipe
   and reinitialization on mount failure)
+- Supports a lookup cache to speed up repeated ID lookups with optional per-instance cache
+  configuration to customize the cache size on a per-partition basis
 
 Future features
 ===============
@@ -483,6 +525,27 @@ Cache size
 - If you use ZMS through :ref:`Settings <settings_api>`, you have to take into account that each Settings entry is
   divided into two ZMS entries. The recommendation for the cache size is to make it at least
   twice the number of Settings entries.
+
+Manual per-instance cache
+=========================
+
+When :kconfig:option:`CONFIG_ZMS_LOOKUP_CACHE_MANUAL` is enabled, each :c:struct:`zms_fs`
+instance can provide its own lookup cache buffer instead of using the global
+:kconfig:option:`CONFIG_ZMS_LOOKUP_CACHE_SIZE` setting.
+
+Call :c:func:`zms_set_lookup_cache` before :c:func:`zms_mount` to assign the cache buffer for
+that instance. If no buffer is assigned, the lookup cache remains disabled for that
+:c:struct:`zms_fs` instance.
+
+.. code-block:: c
+
+	static struct zms_fs zms_a;
+	static struct zms_fs zms_b;
+	static uint64_t zms_a_cache[512];
+	static uint64_t zms_b_cache[32];
+
+	zms_set_lookup_cache(&zms_a, zms_a_cache, ARRAY_SIZE(zms_a_cache));
+	zms_set_lookup_cache(&zms_b, zms_b_cache, ARRAY_SIZE(zms_b_cache));
 
 ID size
 =======

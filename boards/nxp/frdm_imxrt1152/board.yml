@@ -1,0 +1,6 @@
+board:
+  name: frdm_imxrt1152
+  full_name: FRDM-IMXRT1152
+  vendor: nxp
+  socs:
+    - name: mimxrt1152

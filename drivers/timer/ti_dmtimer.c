@@ -9,17 +9,27 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/syscon.h>
 
 #include "ti_dmtimer.h"
 
 #define DT_DRV_COMPAT ti_am654_timer
 
-#define TIMER_IRQ_NUM   DT_INST_IRQN(0)
-#define TIMER_IRQ_PRIO  DT_INST_IRQ(0, priority)
-#define TIMER_IRQ_FLAGS DT_INST_IRQ(0, flags)
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(ti_am654_timer, CONFIG_KERNEL_LOG_LEVEL);
+
+#define SYSTEM_TIMER_NODE DT_CHOSEN(zephyr_system_timer)
+
+#define TIMER_IRQ_NUM   DT_IRQN(SYSTEM_TIMER_NODE)
+#define TIMER_IRQ_PRIO  DT_IRQ(SYSTEM_TIMER_NODE, priority)
+#define TIMER_IRQ_FLAGS DT_IRQ(SYSTEM_TIMER_NODE, flags)
+
+#define CLKSEL_SYSCON DT_PHANDLE(SYSTEM_TIMER_NODE, clksel)
+#define CLKSEL_OFFSET DT_PHA(SYSTEM_TIMER_NODE, clksel, offset)
+#define CLKSEL_VALUE  DT_PHA(SYSTEM_TIMER_NODE, clksel, value)
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -42,7 +52,7 @@ struct ti_dm_timer_data {
 	uint32_t last_cycle;
 };
 
-static const struct device *systick_timer_dev;
+static const struct device *systick_timer_dev = DEVICE_DT_GET(SYSTEM_TIMER_NODE);
 
 #define TI_DM_TIMER_MASK(reg)  TI_DM_TIMER_##reg##_MASK
 #define TI_DM_TIMER_SHIFT(reg) TI_DM_TIMER_##reg##_SHIFT
@@ -95,7 +105,7 @@ static void ti_dmtimer_isr(void *param)
 	sys_clock_announce(delta_ticks);
 }
 
-void sys_clock_set_timeout(int32_t ticks, bool idle)
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
 	ARG_UNUSED(idle);
 
@@ -106,8 +116,7 @@ void sys_clock_set_timeout(int32_t ticks, bool idle)
 		return;
 	}
 
-	ticks = (ticks == K_TICKS_FOREVER) ? MAX_TICKS : ticks;
-	ticks = CLAMP(ticks, 1, (int32_t)MAX_TICKS);
+	ticks = CLAMP(ticks, 1, MAX_TICKS);
 
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
@@ -157,7 +166,14 @@ static int sys_clock_driver_init(void)
 {
 	struct ti_dm_timer_data *data;
 
-	systick_timer_dev = DEVICE_DT_GET(DT_DRV_INST(0));
+#if DT_NODE_HAS_STATUS_OKAY(CLKSEL_SYSCON)
+	int rv;
+
+	rv = syscon_write_reg(DEVICE_DT_GET(CLKSEL_SYSCON), CLKSEL_OFFSET, CLKSEL_VALUE);
+	if (rv != 0) {
+		LOG_WRN("failed to set timer's source via clksel");
+	}
+#endif
 
 	data = systick_timer_dev->data;
 

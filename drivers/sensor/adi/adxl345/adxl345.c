@@ -468,7 +468,7 @@ static int adxl345_init(const struct device *dev)
 	uint8_t dev_id, full_res;
 
 	if (!adxl345_bus_is_ready(dev)) {
-		LOG_ERR("bus not ready");
+		LOG_ERR_DEVICE_NOT_READY(dev);
 		return -ENODEV;
 	}
 
@@ -652,12 +652,6 @@ static int adxl345_pm_action(const struct device *dev,
 		     DT_INST_NODE_HAS_PROP(inst, fifo_watermark),				   \
 		     "Streaming requires fifo-watermark property. Please set it in the"		   \
 		     "device-tree node properties");						   \
-	BUILD_ASSERT(COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, fifo_watermark),			   \
-				 ((DT_INST_PROP(inst, fifo_watermark) > 0) &&			   \
-				  (DT_INST_PROP(inst, fifo_watermark) < 32)),			   \
-				 (true)),							   \
-		     "fifo-watermark must be between 1 and 32. Please set it in "		   \
-		     "the device-tree node properties");					   \
 												   \
 	IF_ENABLED(CONFIG_ADXL345_STREAM, (ADXL345_RTIO_DEFINE(inst)));				   \
 	static struct adxl345_dev_data adxl345_data_##inst = {					   \

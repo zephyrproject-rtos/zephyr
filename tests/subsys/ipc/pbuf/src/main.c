@@ -77,7 +77,7 @@ ZTEST(test_pbuf, test_rw)
 	/* Read the packet. */
 	ret = pbuf_read(&pb, read_buf, ret);
 	zassert_equal(ret, MSGA_SZ);
-	/* Check data corectness. */
+	/* Check data correctness. */
 	zassert_mem_equal(read_buf, write_buf, ret);
 
 	/* Get the number of bytes stored. */
@@ -86,7 +86,7 @@ ZTEST(test_pbuf, test_rw)
 	/* Read the packet. */
 	ret = pbuf_read(&pb, read_buf, ret);
 	zassert_equal(ret, MSGB_SZ);
-	/* Check data corectness. */
+	/* Check data correctness. */
 	zassert_mem_equal(read_buf, write_buf+MSGA_SZ, ret);
 
 	/* Get the number of bytes stored. */
@@ -99,10 +99,10 @@ ZTEST(test_pbuf, test_rw)
 	/* Get the number of bytes stored. */
 	ret = pbuf_read(&pb, NULL, 0);
 	zassert_equal(ret, MPS);
-	/* Read  max packet size with wrapp around. */
+	/* Read  max packet size with wrap around. */
 	ret = pbuf_read(&pb, read_buf, ret);
 	zassert_equal(ret, MPS);
-	/* Check data corectness. */
+	/* Check data correctness. */
 	zassert_mem_equal(write_buf, read_buf, MPS);
 }
 

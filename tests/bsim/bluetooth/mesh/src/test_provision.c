@@ -11,7 +11,7 @@
 #include "mesh/net.h"
 #include "mesh/crypto.h"
 #include "mesh/prov.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include <bs_pc_backchannel.h>
 #include <time_machine.h>
 

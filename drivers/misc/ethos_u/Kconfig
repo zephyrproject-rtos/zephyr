@@ -6,6 +6,7 @@ choice
 	depends on ETHOS_U
 	default ETHOS_U_ARM if DT_HAS_ARM_ETHOS_U_ENABLED
 	default ETHOS_U_NUMAKER if DT_HAS_NUVOTON_NUMAKER_NPU_ENABLED
+	default ETHOS_U_INFINEON if DT_HAS_INFINEON_EDGE_NPU_ENABLED
 	default ETHOS_U_RENESAS if DT_HAS_RENESAS_RA_NPU_ENABLED
 
 config ETHOS_U_ARM
@@ -17,6 +18,11 @@ config ETHOS_U_NUMAKER
 	bool "Nuvoton NuMaker Ethos-U NPU driver"
 	help
 	  Enables Nuvoton NuMaker frontend of Arm Ethos-U NPU driver
+
+config ETHOS_U_INFINEON
+	bool "Infineon PSE84 Ethos-U NPU driver"
+	help
+	  Enables Infineon PSE84 frontend of Arm Ethos-U NPU driver.
 
 config ETHOS_U_RENESAS
 	bool "Renesas RA Ethos-U NPU driver"

@@ -454,6 +454,27 @@
 		pinmuxs = <&pinctrlm 5 IT8XXX2_ALT_FUNC_1>;
 	};
 
+	/* SHI tri-state alternate function */
+	/omit-if-no-ref/ shi_mosi_gpm0_sleep: shi_mosi_gpm0_sleep {
+		pinmuxs = <&pinctrlm 0 IT8XXX2_ALT_DEFAULT>;
+		bias-high-impedance;
+	};
+
+	/omit-if-no-ref/ shi_miso_gpm1_sleep: shi_miso_gpm1_sleep {
+		pinmuxs = <&pinctrlm 1 IT8XXX2_ALT_DEFAULT>;
+		bias-high-impedance;
+	};
+
+	/omit-if-no-ref/ shi_clk_gpm4_sleep: shi_clk_gpm4_sleep {
+		pinmuxs = <&pinctrlm 4 IT8XXX2_ALT_DEFAULT>;
+		bias-high-impedance;
+	};
+
+	/omit-if-no-ref/ shi_cs_gpm5_sleep: shi_cs_gpm5_sleep {
+		pinmuxs = <&pinctrlm 5 IT8XXX2_ALT_DEFAULT>;
+		bias-high-impedance;
+	};
+
 	/* Tachometer alternate function */
 	/omit-if-no-ref/ tach0a_gpd6_default: tach0a_gpd6_default {
 		pinmuxs = <&pinctrld 6 IT8XXX2_ALT_FUNC_1>;

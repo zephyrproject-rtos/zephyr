@@ -35,6 +35,7 @@ static int16_t last_response_code;
 static uint32_t messages_needing_response[2];
 static uint8_t last_token[2][COAP_TOKEN_MAX_LEN];
 static const uint8_t empty_token[COAP_TOKEN_MAX_LEN] = {0};
+static uint8_t saved_observe_token[COAP_TOKEN_MAX_LEN];
 K_SEM_DEFINE(sem1, 0, 1);
 K_SEM_DEFINE(sem2, 0, 1);
 
@@ -74,6 +75,22 @@ static struct net_sockaddr_in mcast_address = {
 	.sin_family = NET_AF_INET,
 	.sin_addr = {{{224, 0, 1, 187}}},
 };
+
+static const struct net_sockaddr_in recv_src_address = {
+	.sin_family = NET_AF_INET,
+	.sin_port = 0x1600,
+	.sin_addr = {{{192, 0, 2, 1}}},
+};
+
+static void fill_recv_src_addr(struct net_sockaddr *src_addr, net_socklen_t *addrlen)
+{
+	zassert_not_null(src_addr, "Unexpected NULL source address");
+	zassert_not_null(addrlen, "Unexpected NULL source address length");
+	zassert_true(*addrlen >= sizeof(recv_src_address), "Source address buffer too small");
+
+	memcpy(src_addr, &recv_src_address, sizeof(recv_src_address));
+	*addrlen = sizeof(recv_src_address);
+}
 
 static uint16_t get_next_pending_message_id(void)
 {
@@ -140,6 +157,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max
 	restore_token(ack_data);
 
 	memcpy(buf, ack_data, sizeof(ack_data));
+
+	fill_recv_src_addr(src_addr, addrlen);
 
 	clear_socket_events(sock, ZSOCK_POLLIN);
 
@@ -273,9 +292,91 @@ static ssize_t z_impl_zsock_sendto_custom_fake_err(int sock, void *buf, size_t l
 	return -1;
 }
 
+static ssize_t z_impl_zsock_sendto_custom_fake_connected(int sock, void *buf, size_t len,
+							 int flags,
+							 const struct net_sockaddr *dest_addr,
+							 net_socklen_t addrlen)
+{
+	/* The request was issued without a destination address (connected
+	 * transport). Every send, including ACK/RST replies, must reuse the
+	 * connected send path rather than a source address that recvfrom() did
+	 * not populate.
+	 */
+	zassert_equal(addrlen, 0, "Connected socket send must not carry an address");
+	zassert_is_null(dest_addr, "Connected socket send must not carry an address");
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_check_reply_addr(
+	int sock, void *buf, size_t len, int flags,
+	const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+{
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+
+	/* ACK/RST replies must be addressed to the source of the received
+	 * packet when the transport reported one.
+	 */
+	if (type == COAP_TYPE_ACK || type == COAP_TYPE_RESET) {
+		zassert_equal(addrlen, sizeof(recv_src_address),
+			      "Reply not addressed to received source");
+		zassert_mem_equal(dest_addr, &recv_src_address, sizeof(recv_src_address),
+				  "Reply not addressed to received source");
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_check_req_addr(
+	int sock, void *buf, size_t len, int flags,
+	const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
+{
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+
+	/* recvfrom() reported no source, so an ACK/RST reply must fall back to
+	 * the address the request was sent to, not a zeroed one.
+	 */
+	if (type == COAP_TYPE_ACK || type == COAP_TYPE_RESET) {
+		zassert_equal(addrlen, sizeof(struct net_sockaddr_in),
+			      "Reply not addressed to request address");
+		zassert_mem_equal(dest_addr, &dst_address, sizeof(struct net_sockaddr_in),
+				  "Reply not addressed to request address");
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_response(int sock, void *buf, size_t max_len,
 							  int flags, struct net_sockaddr *src_addr,
 							  net_socklen_t *addrlen)
+{
+	uint16_t last_message_id = 0;
+
+	static uint8_t ack_data[] = {0x48, 0x45, 0x00, 0x00, 0x00, 0x00,
+				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+	last_message_id = get_next_pending_message_id();
+
+	ack_data[2] = (uint8_t)(last_message_id >> 8);
+	ack_data[3] = (uint8_t)last_message_id;
+	restore_token(ack_data);
+
+	memcpy(buf, ack_data, sizeof(ack_data));
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return sizeof(ack_data);
+}
+
+/* CON response like z_impl_zsock_recvfrom_custom_fake_response, but modelling a
+ * connected transport that does not report a per-packet source address.
+ * src_addr/addrlen are deliberately left untouched.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_connected(int sock, void *buf, size_t max_len,
+							   int flags, struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
 {
 	uint16_t last_message_id = 0;
 
@@ -311,6 +412,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
+	fill_recv_src_addr(src_addr, addrlen);
+
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
 
 	return sizeof(ack_data);
@@ -331,6 +434,9 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t
 	rst_data[3] = (uint8_t)last_message_id;
 
 	memcpy(buf, rst_data, sizeof(rst_data));
+
+	fill_recv_src_addr(src_addr, addrlen);
+
 	clear_socket_events(sock, ZSOCK_POLLIN);
 
 	return sizeof(rst_data);
@@ -366,6 +472,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_unmatching(int sock, void *buf,
 
 	memcpy(buf, ack_data, sizeof(ack_data));
 
+	fill_recv_src_addr(src_addr, addrlen);
+
 	clear_socket_events(sock, ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
@@ -389,6 +497,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo(int sock, void *buf, size_
 	restore_token(ack_data);
 
 	memcpy(buf, ack_data, sizeof(ack_data));
+
+	fill_recv_src_addr(src_addr, addrlen);
 
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_echo;
@@ -417,6 +527,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_echo_next_req(int sock, void *b
 	restore_token(ack_data);
 
 	memcpy(buf, ack_data, sizeof(ack_data));
+
+	fill_recv_src_addr(src_addr, addrlen);
 
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_echo_next_req;
@@ -675,6 +787,63 @@ ZTEST(coap_client, test_separate_response_ack_fail)
 	zassert_equal(last_response_code, -ENETDOWN, "");
 }
 
+ZTEST(coap_client, test_separate_response_connected)
+{
+	struct coap_client_request req = short_request;
+
+	req.user_data = &sem1;
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_connected;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_connected;
+
+	/* addr == NULL models a connected transport that does not report a
+	 * per-packet source address on recvfrom(). The empty ACK sent for the
+	 * CON response must therefore be sent on the connected socket, which
+	 * z_impl_zsock_sendto_custom_fake_connected asserts.
+	 */
+	zassert_ok(coap_client_req(&client, 0, NULL, &req, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_separate_response_reply_to_source)
+{
+	struct coap_client_request req = short_request;
+
+	req.user_data = &sem1;
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_check_reply_addr;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_response;
+
+	/* Connectionless transport: recvfrom() reports the source, so the empty
+	 * ACK for the CON response must be addressed to that source.
+	 */
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_separate_response_req_addr_no_src)
+{
+	struct coap_client_request req = short_request;
+
+	req.user_data = &sem1;
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_check_req_addr;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_connected;
+
+	/* The request provides a destination address, but recvfrom() reports no
+	 * source (connected socket used with an explicit peer). The ACK must
+	 * fall back to the request's address rather than a bogus one.
+	 */
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
 ZTEST(coap_client, test_multiple_requests)
 {
 	struct coap_client_request req1 = short_request;
@@ -824,6 +993,130 @@ ZTEST(coap_client, test_observe)
 	coap_client_cancel_requests(&client);
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -ECANCELED, "");
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+/* Captures the token from the first outgoing packet (subscribe), then falls through to the
+ * normal sendto fake.
+ */
+static ssize_t
+z_impl_zsock_sendto_custom_fake_observe_subscribe(int sock, void *buf, size_t len, int flags,
+						  const struct net_sockaddr *dest_addr,
+						  net_socklen_t addrlen)
+{
+	memcpy(saved_observe_token, (uint8_t *)buf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake;
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static void verify_deregister_packet(void *buf, size_t len, uint8_t expected_type)
+{
+	struct coap_packet pkt = {0};
+	struct coap_option obs_opt = {0};
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	int ret;
+
+	ret = coap_packet_parse(&pkt, buf, len, NULL, 0);
+	zassert_ok(ret, "Failed to parse deregister packet");
+
+	zassert_equal(coap_header_get_type(&pkt), expected_type, "Unexpected CON/NON type");
+
+	ret = coap_find_options(&pkt, COAP_OPTION_OBSERVE, &obs_opt, 1);
+	zassert_equal(ret, 1, "Observe option missing in deregister");
+	zassert_equal(coap_option_value_to_int(&obs_opt), 1,
+		      "Observe option must be 1 (deregister)");
+
+	coap_header_get_token(&pkt, token);
+	zassert_mem_equal(token, saved_observe_token, COAP_TOKEN_MAX_LEN,
+			  "Deregister token must match original observe token");
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_deregister_con(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_deregister_packet(buf, len, COAP_TYPE_CON);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_deregister_non(int sock, void *buf, size_t len,
+							      int flags,
+							      const struct net_sockaddr *dest_addr,
+							      net_socklen_t addrlen)
+{
+	verify_deregister_packet(buf, len, COAP_TYPE_NON_CON);
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+ZTEST(coap_client, test_observe_deregister_con)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {{
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		}},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Wait for subscription confirmation */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Deregister: CON packet with Observe=1 and same token; server ACKs with 2.05 */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_con;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_deregister_non)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = false,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.options = {{
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		}},
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_subscribe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* NON: sendto does not trigger POLLIN; manually deliver a subscription notification */
+	set_socket_events(client.fd, ZSOCK_POLLIN);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT);
+
+	/* Deregister: NON packet with Observe=1 and same token; released immediately */
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_deregister_non;
+	zassert_ok(coap_client_deregister_observe(&client, &req));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 }

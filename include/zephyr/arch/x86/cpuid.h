@@ -6,6 +6,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_X86_CPUID_H_
 #define ZEPHYR_INCLUDE_ARCH_X86_CPUID_H_
 
+#include <stdint.h>
+
 #ifndef _ASMLANGUAGE
 #ifdef __cplusplus
 extern "C" {

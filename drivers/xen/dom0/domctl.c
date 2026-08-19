@@ -4,11 +4,12 @@
  *
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/domctl.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/dom0/domctl.h>
 #include <zephyr/xen/generic.h>
-#include <zephyr/xen/public/domctl.h>
-#include <zephyr/xen/public/xen.h>
 
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
@@ -66,7 +67,7 @@ int xen_domctl_getvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt)
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_getvcpucontext,
 		.domain = domid,
-		.u.vcpucontext.vcpu = 0,
+		.u.vcpucontext.vcpu = vcpu,
 	};
 
 	set_xen_guest_handle(domctl.u.vcpucontext.ctxt, ctxt);
@@ -79,7 +80,7 @@ int xen_domctl_setvcpucontext(int domid, int vcpu, vcpu_guest_context_t *ctxt)
 	xen_domctl_t domctl = {
 		.cmd = XEN_DOMCTL_setvcpucontext,
 		.domain = domid,
-		.u.vcpucontext.vcpu = 0,
+		.u.vcpucontext.vcpu = vcpu,
 	};
 
 	set_xen_guest_handle(domctl.u.vcpucontext.ctxt, ctxt);
@@ -279,6 +280,30 @@ int xen_domctl_bind_pt_irq(int domid, uint32_t machine_irq, uint8_t irq_type,
 	return do_domctl(&domctl);
 }
 
+int xen_domctl_unbind_pt_irq(int domid, const struct xen_domctl_pt_irq *irq)
+{
+	xen_domctl_t domctl = {
+		.domain = domid,
+		.cmd = XEN_DOMCTL_unbind_pt_irq,
+	};
+	struct xen_domctl_bind_pt_irq *bind = &(domctl.u.bind_pt_irq);
+
+	if (irq == NULL) {
+		return -EINVAL;
+	}
+
+	if (irq->irq_type != PT_IRQ_TYPE_SPI) {
+		/* TODO: implement other types */
+		return -ENOTSUP;
+	}
+
+	bind->irq_type = irq->irq_type;
+	bind->machine_irq = irq->machine_irq;
+	bind->u.spi.spi = irq->spi;
+
+	return do_domctl(&domctl);
+}
+
 int xen_domctl_max_vcpus(int domid, int max_vcpus)
 {
 	xen_domctl_t domctl = {
@@ -299,9 +324,9 @@ int xen_domctl_createdomain(int *domid, struct xen_domctl_createdomain *config)
 		return -EINVAL;
 	}
 
-	domctl.cmd = XEN_DOMCTL_createdomain,
-	domctl.domain = *domid,
-	domctl.u.createdomain = *config,
+	domctl.cmd = XEN_DOMCTL_createdomain;
+	domctl.domain = *domid;
+	domctl.u.createdomain = *config;
 
 	ret = do_domctl(&domctl);
 	*domid = domctl.domain;

@@ -5,13 +5,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Consistent Overhead Byte Stuffing (COBS) encoding API.
+ * @ingroup cobs
+ */
+
 #ifndef ZEPHYR_INCLUDE_DATA_COBS_H_
 #define ZEPHYR_INCLUDE_DATA_COBS_H_
 
 #include <stddef.h>
 #include <sys/types.h>
 #include <zephyr/sys/util.h>
+
+#if defined(CONFIG_NET_BUF)
 #include <zephyr/net_buf.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,6 +28,18 @@ extern "C" {
 
 
 /**
+ * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
+ * @ingroup utilities
+ * @{
+ *
+ * @brief COBS encoding and decoding functions with custom delimiter support
+ *
+ * Provides functions for COBS encoding/decoding with configurable delimiters.
+ * The implementation handles both standard zero-delimited COBS and custom
+ * delimiter variants.
+ */
+
+ /**
  * @name COBS Encoder/Decoder Flags
  * @anchor COBS_FLAGS
  *
@@ -65,18 +86,6 @@ extern "C" {
  */
 
 /**
- * @defgroup cobs COBS (Consistent Overhead Byte Stuffing)
- * @ingroup utilities
- * @{
- *
- * @brief COBS encoding and decoding functions with custom delimiter support
- *
- * Provides functions for COBS encoding/decoding with configurable delimiters.
- * The implementation handles both standard zero-delimited COBS and custom
- * delimiter variants.
- */
-
-/**
  * @brief Calculate maximum encoded buffer size
  *
  * @param decoded_size  Size of input data to be encoded
@@ -93,6 +102,8 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
 	}
 }
 
+#if defined(CONFIG_NET_BUF) || defined(__DOXYGEN__)
+
 /**
  * @brief COBS encoding
  *
@@ -105,6 +116,8 @@ static inline size_t cobs_max_encoded_len(size_t decoded_size, uint32_t flags)
  * @retval 0        Success
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or parameters
+ *
+ * @kconfig_dep{CONFIG_NET_BUF}
  */
 
 int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
@@ -121,8 +134,12 @@ int cobs_encode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
  * @retval 0        Success
  * @retval -ENOMEM  Insufficient destination space
  * @retval -EINVAL  Invalid COBS structure or parameters
+ *
+ * @kconfig_dep{CONFIG_NET_BUF}
  */
 int cobs_decode(struct net_buf *src, struct net_buf *dst, uint32_t flags);
+
+#endif /* defined(CONFIG_NET_BUF) || defined(__DOXYGEN__) */
 
 /**
  * @brief Callback function type for streaming COBS encoder/decoder

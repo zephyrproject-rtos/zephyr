@@ -15,6 +15,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/fs/fs_sys.h>
 #include <zephyr/sys/check.h>
+#include <zephyr/sys/minmax.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(fs, CONFIG_FS_LOG_LEVEL);
@@ -195,6 +196,19 @@ int fs_open(struct fs_file_t *zfp, const char *file_name, fs_mode_t flags)
 		rc = mp->fs->truncate(zfp, 0);
 		if (rc < 0) {
 			LOG_ERR("file truncation failed (%d)", rc);
+			/* The backend file was opened successfully above, so we
+			 * must close it here to avoid leaking the backend file
+			 * handle and any associated resources. fs_close() cannot
+			 * do this for the caller because we clear zfp->mp below.
+			 */
+			if (mp->fs->close != NULL) {
+				int close_rc = mp->fs->close(zfp);
+
+				if (close_rc < 0) {
+					LOG_ERR("failed file close after truncate failure (%d)",
+						close_rc);
+				}
+			}
 			zfp->mp = NULL;
 			return rc;
 		}

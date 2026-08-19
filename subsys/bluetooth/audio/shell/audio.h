@@ -14,16 +14,18 @@
 #define AUDIO_SHELL_AUDIO_H
 
 #include <errno.h>
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/kernel.h>
@@ -31,16 +33,15 @@
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/clock.h>
-#include <zephyr/sys/printk.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 #include "common/bt_shell_private.h"
 #include "host/shell/bt.h"
 
-#define SHELL_PRINT_INDENT_LEVEL_SIZE 2
+#define SHELL_PRINT_INDENT_LEVEL_SIZE 2U
 #define MAX_CODEC_FRAMES_PER_SDU      4U
 
 extern struct bt_csip_set_member_svc_inst *svc_inst;
@@ -64,8 +65,6 @@ size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_a
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
 #include <zephyr/bluetooth/audio/cap.h>
 
-unsigned long bap_get_stats_interval(void);
-
 #if defined(CONFIG_LIBLC3)
 #include "lc3.h"
 
@@ -77,11 +76,10 @@ unsigned long bap_get_stats_interval(void);
 #define LC3_MAX_NUM_SAMPLES_STEREO (LC3_MAX_NUM_SAMPLES_MONO * 2U)
 #endif /* CONFIG_LIBLC3 */
 
-#define LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
-#define CONTEXT                                                                                    \
+#define DEFAULT_LOCATION BT_AUDIO_LOCATION_FRONT_LEFT
+#define DEFAULT_CONTEXT                                                                            \
 	(BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL |                \
-	 BT_AUDIO_CONTEXT_TYPE_MEDIA |                                                             \
-	 COND_CODE_1(IS_ENABLED(CONFIG_BT_GMAP), (BT_AUDIO_CONTEXT_TYPE_GAME), (0)))
+	 BT_AUDIO_CONTEXT_TYPE_MEDIA)
 
 const struct named_lc3_preset *gmap_get_named_preset(bool is_unicast, enum bt_audio_dir dir,
 						     const char *preset_arg);
@@ -125,7 +123,6 @@ struct shell_stream {
 			size_t left_read_idx;
 			/* Indicates where to read right USB data in the ring buffer */
 			size_t right_read_idx;
-			size_t right_ring_buf_fail_cnt;
 #endif /* CONFIG_USBD_AUDIO2_CLASS */
 #endif /* CONFIG_LIBLC3 */
 		} tx;
@@ -134,6 +131,7 @@ struct shell_stream {
 #if defined(CONFIG_BT_AUDIO_RX)
 		struct {
 			struct bt_iso_recv_info last_info;
+			uint16_t last_sdu_invalid_len;
 			size_t empty_sdu_pkts;
 			size_t valid_sdu_pkts;
 			size_t lost_pkts;
@@ -173,7 +171,8 @@ void bap_usb_get_frame(struct shell_stream *sh_stream, enum bt_audio_location ch
 size_t bap_usb_get_frame_size(const struct shell_stream *sh_stream);
 
 struct broadcast_source {
-	bool is_cap;
+	bool is_cap: 1;
+	bool handover_in_progress: 1;
 	union {
 		struct bt_bap_broadcast_source *bap_source;
 		struct bt_cap_broadcast_source *cap_source;
@@ -220,6 +219,7 @@ struct scan_delegator_sync_state {
 	struct bt_le_per_adv_sync *pa_sync;
 	struct bt_conn *conn;
 	struct k_work_delayable pa_timer;
+	uint32_t bis_sync_req_bitfield;
 	uint32_t broadcast_id;
 	uint16_t pa_interval;
 	bool active;
@@ -233,6 +233,7 @@ struct scan_delegator_sync_state {
 #define BAP_UNICAST_AC_MAX_SRC    (2U * BAP_UNICAST_AC_MAX_CONN)
 #define BAP_UNICAST_AC_MAX_PAIR   MAX(BAP_UNICAST_AC_MAX_SNK, BAP_UNICAST_AC_MAX_SRC)
 #define BAP_UNICAST_AC_MAX_STREAM (BAP_UNICAST_AC_MAX_SNK + BAP_UNICAST_AC_MAX_SRC)
+#define BAP_BROADCAST_AC_MAX_STREAMS 2U
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
@@ -246,8 +247,7 @@ struct scan_delegator_sync_state {
 		     CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT),                                  \
 		    (0))
 
-extern struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
-								    UNICAST_CLIENT_STREAM_COUNT)];
+extern struct shell_stream unicast_streams[CONFIG_BT_ISO_MAX_CHAN];
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 
@@ -267,11 +267,30 @@ extern struct named_lc3_preset default_sink_preset;
 extern struct named_lc3_preset default_source_preset;
 
 int cap_ac_unicast(const struct shell *sh, const struct cap_unicast_ac_param *param);
+
+#if defined(CONFIG_BT_CAP_INITIATOR)
+#define CAP_UNICAST_CLIENT_STREAM_COUNT ARRAY_SIZE(unicast_streams)
+
+extern struct bt_cap_unicast_audio_start_stream_param
+	cap_initiator_audio_start_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_group_stream_param
+	cap_initiator_unicast_group_stream_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_group_stream_pair_param
+	cap_initiator_unicast_group_pair_params[CAP_UNICAST_CLIENT_STREAM_COUNT];
+extern struct bt_cap_unicast_audio_start_param cap_initiator_unicast_audio_start_param;
+extern struct bt_cap_unicast_group_param cap_initiator_unicast_group_param;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_UNICAST_CLIENT */
 #endif /* CONFIG_BT_BAP_UNICAST */
 
 #if defined(CONFIG_BT_BAP_BROADCAST_ASSISTANT)
 extern struct broadcast_assistant_recv_state broadcast_assistant_recv_states[CONFIG_BT_MAX_CONN];
+
+#if defined(CONFIG_BT_CAP_COMMANDER)
+extern struct bt_cap_commander_broadcast_reception_stop_param cap_commander_reception_stop_param;
+extern struct bt_cap_commander_broadcast_reception_stop_member_param
+	cap_commander_reception_stop_member_params[CONFIG_BT_MAX_CONN];
+#endif /* CONFIG_BT_CAP_COMMANDER */
 #endif /* CONFIG_BT_BAP_BROADCAST_ASSISTANT */
 #if defined(CONFIG_BT_BAP_SCAN_DELEGATOR)
 extern struct scan_delegator_sync_state
@@ -294,6 +313,14 @@ static inline void print_qos(const struct bt_bap_qos_cfg *qos)
 	bt_shell_print("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u rtn %u pd %u",
 		       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->pd);
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE || CONFIG_BT_BAP_UNICAST */
+}
+
+static inline void print_qos_pref(const struct bt_bap_qos_cfg_pref *pref)
+{
+	bt_shell_print("QoS Preference: unframed %ssupported, PHY 0x%02x RTN %u latency %u (ms), "
+		       "pd_min %u (us), pd_max %u (us), pref_pd_min %u (us), pref_pd_max %u (us)",
+		       pref->unframed_supported ? "" : "not ", pref->phy, pref->rtn, pref->latency,
+		       pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
 }
 
 struct print_ltv_info {
@@ -336,21 +363,26 @@ static void print_ltv_array(size_t indent, const uint8_t *ltv_data, size_t ltv_d
 	}
 }
 
+static inline void print_context(size_t indent, enum bt_audio_context context)
+{
+	/* There can be up to 16 bits set in the field */
+	for (size_t i = 0U; i < 16U; i++) {
+		const uint16_t bit_val = BIT(i);
+
+		if ((context & bit_val) != 0U) {
+			bt_shell_print("%*s%-18s (0x%04X)", indent, "",
+				       bt_audio_context_bit_to_str(bit_val), bit_val);
+		}
+	}
+}
+
 static inline void print_codec_meta_pref_context(size_t indent, enum bt_audio_context context)
 {
 	bt_shell_print("%*sPreferred audio contexts:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16; i++) {
-		const uint16_t bit_val = BIT(i);
-
-		if (context & bit_val) {
-			bt_shell_print("%*s%s (0x%04X)", indent, "",
-				       bt_audio_context_bit_to_str(bit_val), bit_val);
-		}
-	}
+	print_context(indent, context);
 }
 
 static inline void print_codec_meta_stream_context(size_t indent, enum bt_audio_context context)
@@ -359,15 +391,39 @@ static inline void print_codec_meta_stream_context(size_t indent, enum bt_audio_
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0U; i < 16; i++) {
-		const uint16_t bit_val = BIT(i);
+	print_context(indent, context);
+}
 
-		if (context & bit_val) {
-			bt_shell_print("%*s%s (0x%04X)", indent, "",
-				       bt_audio_context_bit_to_str(bit_val), bit_val);
-		}
-	}
+static inline void print_supported_stream_context(enum bt_audio_context snk_context,
+						  enum bt_audio_context src_context)
+{
+	const size_t indent = SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	bt_shell_print("Supported audio contexts:");
+
+	bt_shell_print("%*sSink:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, snk_context);
+
+	bt_shell_print("%*sSource:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, src_context);
+}
+
+static inline void print_available_stream_context(enum bt_audio_context snk_context,
+						  enum bt_audio_context src_context)
+{
+	const size_t indent = SHELL_PRINT_INDENT_LEVEL_SIZE;
+
+	bt_shell_print("Available audio contexts:");
+
+	bt_shell_print("%*sSink:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, snk_context);
+
+	bt_shell_print("%*sSource:", indent, "");
+
+	print_context(indent + SHELL_PRINT_INDENT_LEVEL_SIZE, src_context);
 }
 
 static inline void print_codec_meta_program_info(size_t indent, const uint8_t *program_info,
@@ -479,7 +535,7 @@ static inline void print_codec_cap_freq(size_t indent, enum bt_audio_codec_cap_f
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 16 bits set in the field */
-	for (size_t i = 0; i < 16; i++) {
+	for (size_t i = 0U; i < 16U; i++) {
 		const uint16_t bit_val = BIT(i);
 
 		if (freq & bit_val) {
@@ -496,7 +552,7 @@ static inline void print_codec_cap_frame_dur(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
-	for (size_t i = 0; i < 8; i++) {
+	for (size_t i = 0U; i < 8U; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (frame_dur & bit_val) {
@@ -513,7 +569,7 @@ static inline void print_codec_cap_chan_count(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 	/* There can be up to 8 bits set in the field */
-	for (size_t i = 0; i < 8; i++) {
+	for (size_t i = 0U; i < 8U; i++) {
 		const uint8_t bit_val = BIT(i);
 
 		if (chan_count & bit_val) {
@@ -675,6 +731,23 @@ static inline void print_codec_cfg_frame_dur(size_t indent,
 		       bt_audio_codec_cfg_frame_dur_to_frame_dur_us(frame_dur), (uint8_t)frame_dur);
 }
 
+static inline void print_audio_location(size_t indent, enum bt_audio_location location)
+{
+	if (location == BT_AUDIO_LOCATION_MONO_AUDIO) {
+		bt_shell_print("%*s Mono", indent, "");
+	} else {
+		/* There can be up to 32 bits set in the field */
+		for (size_t i = 0U; i < 32U; i++) {
+			const uint32_t bit_val = BIT(i);
+
+			if ((location & bit_val) != 0) {
+				bt_shell_print("%*s%-24s (0x%08X)", indent, "",
+					       bt_audio_location_bit_to_str(bit_val), bit_val);
+			}
+		}
+	}
+}
+
 static inline void print_codec_cfg_chan_allocation(size_t indent,
 						   enum bt_audio_location chan_allocation)
 {
@@ -682,19 +755,14 @@ static inline void print_codec_cfg_chan_allocation(size_t indent,
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-	if (chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO) {
-		bt_shell_print("%*s Mono", indent, "");
-	} else {
-		/* There can be up to 32 bits set in the field */
-		for (size_t i = 0; i < 32; i++) {
-			const uint8_t bit_val = BIT(i);
+	print_audio_location(indent, chan_allocation);
+}
 
-			if (chan_allocation & bit_val) {
-				bt_shell_print("%*s%s (0x%08X)", indent, "",
-					       bt_audio_location_bit_to_str(bit_val), bit_val);
-			}
-		}
-	}
+static inline void print_dir_audio_location(enum bt_audio_dir dir, enum bt_audio_location location)
+{
+	bt_shell_print("%s location:", bt_audio_dir_to_str(dir));
+
+	print_audio_location(SHELL_PRINT_INDENT_LEVEL_SIZE, location);
 }
 
 static inline void print_codec_cfg_octets_per_frame(size_t indent, uint16_t octets_per_frame)
@@ -715,7 +783,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
 
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
 	bt_shell_print("%*sCodec specific configuration:", indent, "");
 
 	indent += SHELL_PRINT_INDENT_LEVEL_SIZE;
@@ -762,7 +829,6 @@ static inline void print_codec_cfg(size_t indent, const struct bt_audio_codec_cf
 
 	/* Reduce for metadata*/
 	indent -= SHELL_PRINT_INDENT_LEVEL_SIZE;
-#endif /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
 	bt_shell_print("%*sCodec specific metadata:", indent, "");
@@ -842,12 +908,27 @@ int cap_ac_broadcast(const struct shell *sh, size_t argc, char **argv,
 extern struct shell_stream broadcast_source_streams[CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT];
 extern struct broadcast_source default_source;
 extern struct named_lc3_preset default_broadcast_source_preset;
+
+#if defined(CONFIG_BT_CAP_INITIATOR)
+#define MAX_CAP_BROADCAST_STREAMS                                                                  \
+	MAX(BAP_BROADCAST_AC_MAX_STREAMS,                                                          \
+	    COND_CODE_1(CONFIG_BT_CAP_HANDOVER, (CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT), (0)))
+BUILD_ASSERT(CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT >= MAX_CAP_BROADCAST_STREAMS,
+	     "CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT needs to be equal to or greater than "
+	     "MAX_CAP_BROADCAST_STREAMS");
+
+extern struct bt_cap_initiator_broadcast_stream_param
+	cap_initiator_broadcast_stream_params[MAX_CAP_BROADCAST_STREAMS];
+
+extern struct bt_cap_initiator_broadcast_subgroup_param cap_initiator_broadcast_subgroup_param;
+extern struct bt_cap_initiator_broadcast_create_param cap_initiator_broadcast_create_param;
+#endif /* CONFIG_BT_CAP_INITIATOR */
 #endif /* CONFIG_BT_BAP_BROADCAST_SOURCE */
 
 static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_bis *bis,
 					      void *user_data)
 {
-	size_t indent = 2 * SHELL_PRINT_INDENT_LEVEL_SIZE;
+	size_t indent = 2U * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id *codec_id = user_data;
 
 	bt_shell_print("%*sBIS index: 0x%02X", indent, "", bis->index);
@@ -889,11 +970,13 @@ static inline bool print_base_subgroup_bis_cb(const struct bt_bap_base_subgroup_
 static inline bool print_base_subgroup_cb(const struct bt_bap_base_subgroup *subgroup,
 					  void *user_data)
 {
-	size_t indent = 1 * SHELL_PRINT_INDENT_LEVEL_SIZE;
+	size_t indent = 1U * SHELL_PRINT_INDENT_LEVEL_SIZE;
 	struct bt_bap_base_codec_id codec_id;
 	struct bt_audio_codec_cfg codec_cfg;
 	uint8_t *data;
 	int ret;
+
+	ARG_UNUSED(user_data);
 
 	bt_shell_print("Subgroup %p:", subgroup);
 

@@ -24,4 +24,22 @@
  */
 void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf);
 
+/** @brief Trace when extended advertising report reassembly timed out
+ *
+ *  Weak-function interface called when the host reassembly timer expires for
+ *  a fragmented extended advertising report chain.
+ *
+ *  @kconfig_dep{CONFIG_BT_TESTING}
+ */
+void bt_testing_trace_ext_adv_reassembly_timeout(void);
+
+/** @brief Trace when a fragmented extended advertising report is delivered
+ *
+ *  Weak-function interface called when a fragmented extended advertising report
+ *  chain has been fully reassembled and delivered to the application.
+ *
+ *  @kconfig_dep{CONFIG_BT_TESTING}
+ */
+void bt_testing_trace_ext_adv_reassembly_complete(void);
+
 #endif /* ZEPHYR_INCLUDE_BLUETOOTH_TESTING_H_ */

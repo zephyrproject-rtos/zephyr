@@ -20,8 +20,11 @@
 #define BAD_DRIVER	"bad_driver"
 #define DUMMY_DEINIT    "dummy_deinit"
 
-#define MY_DRIVER_A     "my_driver_A"
-#define MY_DRIVER_B     "my_driver_B"
+#define MY_DRIVER_A        "my_driver_A"
+#define MY_DRIVER_B        "my_driver_B"
+#define CHILD_DRIVER       "my_child_driver"
+#define GRANDCHILD_DRIVER  "my_grandchild_driver"
+#define SIBLING_DRIVER     "my_sibling_driver"
 
 #define FAKEDEFERDRIVER0	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e7000000))
 #define FAKEDEFERDRIVER1	DEVICE_DT_GET(DT_PATH(fakedeferdriver_e8000000))
@@ -30,6 +33,7 @@
 #define FAKEDRIVER0_NODEID    DT_PATH(fakedriver_e0000000)
 #define FAKEDRIVER0_NODELABEL "fake_driver_label"
 
+/** @cond INTERNAL_HIDDEN */
 /* A device without init call */
 DEVICE_DEFINE(dummy_noinit, DUMMY_NOINIT, NULL, NULL, NULL, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
@@ -49,6 +53,7 @@ static int fakedeferdriver_init(const struct device *dev);
 
 DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);
+/** @endcond */
 
 /**
  * @brief Test cases to verify device objects
@@ -76,7 +81,8 @@ DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, 
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST(device, test_dummy_device)
 {
@@ -106,7 +112,8 @@ ZTEST(device, test_dummy_device)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_dynamic_name)
 {
@@ -124,7 +131,8 @@ ZTEST_USER(device, test_dynamic_name)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_bogus_dynamic_name)
 {
@@ -141,7 +149,8 @@ ZTEST_USER(device, test_bogus_dynamic_name)
  *
  * Validates device binding for device object when given dynamic name is null.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_null_dynamic_name)
 {
@@ -159,7 +168,6 @@ ZTEST_USER(device, test_null_dynamic_name)
 #endif
 }
 
-__pinned_bss
 static struct init_record {
 	bool pre_kernel;
 	bool is_in_isr;
@@ -167,10 +175,8 @@ static struct init_record {
 	bool could_yield;
 } init_records[4];
 
-__pinned_data
 static struct init_record *rp = init_records;
 
-__pinned_func
 static int add_init_record(bool pre_kernel)
 {
 	rp->pre_kernel = pre_kernel;
@@ -181,13 +187,11 @@ static int add_init_record(bool pre_kernel)
 	return 0;
 }
 
-__pinned_func
 static int pre1_fn(void)
 {
 	return add_init_record(true);
 }
 
-__pinned_func
 static int pre2_fn(void)
 {
 	return add_init_record(true);
@@ -295,6 +299,19 @@ SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
 SYS_INIT_NAMED(init4, init_fn, APPLICATION, 99);
 SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
 
+/**
+ * @brief Test registering multiple initialization functions
+ *
+ * @ingroup kernel_device_tests
+ *
+ * @details Register the same initialization function multiple times with
+ * SYS_INIT() and SYS_INIT_NAMED() at the same initialization level but
+ * different priorities, and verify that every registered entry is invoked
+ * during system initialization.
+ *
+ * @see SYS_INIT()
+ * @see SYS_INIT_NAMED()
+ */
 ZTEST(device, test_sys_init_multiple)
 {
 	zassert_equal(sys_init_counter, 6, "");
@@ -479,8 +496,104 @@ ZTEST(device, test_device_api)
 	dev = device_get_binding(MY_DRIVER_B);
 	zexpect_true(DEVICE_API_IS(abstract, dev));
 
+	/* Child, grandchild, and sibling all extend abstract */
+	dev = device_get_binding(CHILD_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
+	dev = device_get_binding(GRANDCHILD_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
+	dev = device_get_binding(SIBLING_DRIVER);
+	zexpect_true(DEVICE_API_IS(abstract, dev));
+
 	dev = device_get_binding(DUMMY_NOINIT);
 	zexpect_false(DEVICE_API_IS(abstract, dev));
+}
+
+ZTEST(device, test_device_api_extends)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(CHILD_DRIVER);
+
+	/* Both APIs should return true */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_child, dev));
+
+	/* Child is not a grandchild or sibling */
+	zassert_false(DEVICE_API_IS(abstract_grandchild, dev));
+	zassert_false(DEVICE_API_IS(abstract_sibling, dev));
+
+	ret = abstract_do_this(dev, 2, 3);
+	zexpect_equal(ret, 6);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 3);
+
+	ret = abstract_child_do_these(dev);
+	zexpect_equal(ret, 9);
+}
+
+ZTEST(device, test_device_api_extends_grandchild)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(GRANDCHILD_DRIVER);
+
+	/* All three levels should return true */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_child, dev));
+	zassert_true(DEVICE_API_IS(abstract_grandchild, dev));
+
+	/* Should not match sibling */
+	zassert_false(DEVICE_API_IS(abstract_sibling, dev));
+
+	/* Parent (abstract) API works: 2 + 3 + 1 = 6 */
+	ret = abstract_do_this(dev, 2, 3);
+	zexpect_equal(ret, 6);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 4);
+
+	/* Child API works: do_that(4) then do_this(4,4) = 4+4+1 = 9 */
+	ret = abstract_child_do_these(dev);
+	zexpect_equal(ret, 9);
+
+	/* Grandchild API: do_these(9) + val(10) = 19 */
+	ret = abstract_grandchild_do_all(dev, 10);
+	zexpect_equal(ret, 19);
+}
+
+ZTEST(device, test_device_api_extends_sibling)
+{
+	const struct device *dev;
+	unsigned int baz;
+	int ret;
+
+	dev = device_get_binding(SIBLING_DRIVER);
+
+	/* Sibling is an abstract device */
+	zassert_true(DEVICE_API_IS(abstract, dev));
+	zassert_true(DEVICE_API_IS(abstract_sibling, dev));
+
+	/* Sibling is NOT a child or grandchild */
+	zassert_false(DEVICE_API_IS(abstract_child, dev));
+	zassert_false(DEVICE_API_IS(abstract_grandchild, dev));
+
+	/* Parent API works: 7 % 3 = 1 */
+	ret = abstract_do_this(dev, 7, 3);
+	zexpect_equal(ret, 1);
+
+	abstract_do_that(dev, &baz);
+	zexpect_equal(baz, 5);
+
+	/* Sibling-specific API: 5 * 10 = 50 */
+	ret = abstract_sibling_do_other(dev, 5);
+	zexpect_equal(ret, 50);
 }
 
 ZTEST_USER(device, test_deferred_init_user)

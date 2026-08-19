@@ -7,25 +7,24 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <soc.h>
 #include <esp_log.h>
 #include <esp_cpu.h>
-#include "esp_rom_serial_output.h"
+#include <esp_rom_serial_output.h>
 
-#include "esp_mcuboot_image.h"
-#include "esp_memory_utils.h"
-#include "hw_init.h"
+#include <esp_mcuboot_image.h>
+#include <esp_memory_utils.h>
+#include <hw_init.h>
 
 #define TAG "amp"
 
 /* AMP support */
 #ifdef CONFIG_SOC_ENABLE_APPCPU
 
-#include "bootloader_flash_priv.h"
+#include <bootloader_flash_priv.h>
 
 #define sys_mmap   bootloader_mmap
 #define sys_munmap bootloader_munmap

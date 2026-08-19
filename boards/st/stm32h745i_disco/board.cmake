@@ -3,18 +3,18 @@
 # Copyright (c) 2024 Tomas Jurena <jurena@utb.cz>
 
 # keep first
-if(CONFIG_STM32_MEMMAP)
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
-board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H745I-DISCO.stldr")
+if(CONFIG_FLASH_STM32_NOR_MEMMAP)
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--extload=MT25TL01G_STM32H745I-DISCO.stldr")
 else()
-board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+  board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
 endif()
 
 board_runner_args(jlink "--device=STM32H745XI" "--speed=4000")
 if(CONFIG_BOARD_STM32H745I_DISCO_STM32H745XX_M7)
-board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)
+  board_runner_args(openocd --target-handle=_CHIPNAME.cpu0)
 elseif(CONFIG_BOARD_STM32H745I_DISCO_STM32H745XX_M4)
-board_runner_args(openocd --target-handle=_CHIPNAME.cpu1)
+  board_runner_args(openocd --target-handle=_CHIPNAME.cpu1)
 endif()
 
 # keep first

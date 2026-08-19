@@ -11,9 +11,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/data/json.h>
 
-#include "mbedtls/pk.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/x509_csr.h"
+#include <mbedtls/pk.h>
+#include <mbedtls/x509.h>
+#include <mbedtls/x509_csr.h>
 
 #include "psa_crypto.h"
 #include "util_app_log.h"
@@ -93,7 +93,7 @@ err:
  * private key needs to be supplied, the public key can be derived using
  * the supplied private key value.
  *
- * @param key_id        The permament identifier for the generated key.
+ * @param key_id        The permanent identifier for the generated key.
  * @param key_usage     The usage policy for the key.
  * @param key_data      Pointer to the 32-byte private key data.
  */

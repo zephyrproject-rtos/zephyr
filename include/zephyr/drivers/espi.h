@@ -26,8 +26,10 @@ extern "C" {
 
 /**
  * @brief Interfaces for Enhanced Serial Peripheral Interface (eSPI)
- *        controllers.
+ *        target hardware.
  * @defgroup espi_interface ESPI
+ * @since 2.0
+ * @version 1.0.0
  * @ingroup io_interfaces
  * @{
  */
@@ -97,7 +99,7 @@ enum espi_io_mode {
 /**
  * @brief eSPI channel.
  *
- * Identifies each eSPI logical channel supported by eSPI controller
+ * Identifies each eSPI logical channel supported by eSPI target hardware.
  * Each channel allows independent traffic, but the assignment of channel
  * type to channel number is fixed.
  *
@@ -126,22 +128,22 @@ enum espi_bus_event {
 	 */
 	ESPI_BUS_RESET                      = BIT(0),
 
-	/** Indicates the eSPI HW has received channel enable notification from eSPI host,
-	 * once the eSPI channel is signaled as ready to the eSPI host,
+	/** Indicates the eSPI HW has received channel enable notification from eSPI controller,
+	 * once the eSPI channel is signaled as ready to the eSPI controller,
 	 * eSPI drivers should convey the eSPI channel ready to eSPI driver client via this event.
 	 */
 	ESPI_BUS_EVENT_CHANNEL_READY        = BIT(1),
 
-	/** Indicates the eSPI HW has received a virtual wire message from eSPI host.
+	/** Indicates the eSPI HW has received a virtual wire message from eSPI controller.
 	 * eSPI drivers should convey the eSPI virtual wire latest status.
 	 */
 	ESPI_BUS_EVENT_VWIRE_RECEIVED       = BIT(2),
 
-	/** Indicates the eSPI HW has received a Out-of-band packet from eSPI host.
+	/** Indicates the eSPI HW has received a Out-of-band packet from eSPI controller.
 	 */
 	ESPI_BUS_EVENT_OOB_RECEIVED         = BIT(3),
 
-	/** Indicates the eSPI HW has received a peripheral eSPI host event.
+	/** Indicates the eSPI HW has received a peripheral eSPI host controller.
 	 * eSPI drivers should convey the peripheral type.
 	 */
 	ESPI_BUS_PERIPHERAL_NOTIFICATION    = BIT(4),
@@ -168,6 +170,10 @@ enum espi_pc_event {
 #define ESPI_PERIPHERAL_INDEX_0  0ul
 #define ESPI_PERIPHERAL_INDEX_1  1ul
 #define ESPI_PERIPHERAL_INDEX_2  2ul
+
+/* eSPI specification defines eSPI target and eSPI controller terms
+ * note that sometimes eSPI controller is also referred as eSPI host
+ */
 
 #define ESPI_TARGET_TO_CONTROLLER   0ul
 #define ESPI_CONTROLLER_TO_TARGET   1ul
@@ -200,7 +206,7 @@ enum espi_pc_event {
 enum espi_virtual_peripheral {
 	/** UART peripheral */
 	ESPI_PERIPHERAL_UART,
-	/** 8042 Keyboard Controller peripheral */
+	/** 8042 Keyboard peripheral */
 	ESPI_PERIPHERAL_8042_KBC,
 	/** Host I/O peripheral */
 	ESPI_PERIPHERAL_HOST_IO,
@@ -220,6 +226,51 @@ enum espi_virtual_peripheral {
 	ESPI_PERIPHERAL_EC_HOST_CMD,
 #endif /* CONFIG_ESPI_PERIPHERAL_EC_HOST_CMD */
 };
+
+/**
+ * @brief eSPI interrupt flags.
+ *
+ * eSPI interrupt flags.
+ */
+enum espi_interrupt_flags {
+	/** Enables eSPI bus reset interrupts and channel negotiation changes */
+	ESPI_BUS_EVENTS = BIT(0),
+	/** Enables eSPI VW received interrupt */
+	ESPI_VIRTUAL_WIRE_CHANNEL_EVENTS = BIT(1),
+	/** Enables eSPI OOB received interrupt */
+	ESPI_OOB_CHANNEL_EVENTS = BIT(2),
+	/** Enables eSPI Flash operations interrupt */
+	ESPI_FLASH_CHANNEL_EVENTS = BIT(3),
+
+	/** Enables UART interrupt if HW supports it */
+	ESPI_PERIPHERAL_UART_EVENTS = BIT(4),
+	/** Enables Port80 eSPI interrupt if HW supports it */
+	ESPI_PERIPHERAL_DEBUG_PORT80_EVENTS = BIT(5),
+	/** Enables 8042 interrupt if HW supports it */
+	ESPI_PERIPHERAL_8042_KBC_EVENTS = BIT(6),
+	/** Enables all ACPI eSPI host interface interrupt if HW supports it */
+	ESPI_PERIPHERAL_HOST_IO_EVENTS = BIT(7),
+	/** Enables eSPI shared memory interrupt if HW supports it */
+	ESPI_PERIPHERAL_SHARED_MEMORY_EVENTS = BIT(8),
+};
+
+/** Selects all eSPI generic interrupts
+ *
+ *  Note this does not include UART tunneled over eSPI interrupts
+ *  Since this is usually desired by eSPI driver clients
+ */
+#define ESPI_INT_ALL_MASK  (ESPI_BUS_EVENTS | ESPI_VIRTUAL_WIRE_CHANNEL_EVENTS | \
+			ESPI_OOB_CHANNEL_EVENTS | ESPI_FLASH_CHANNEL_EVENTS | \
+			ESPI_PERIPHERAL_DEBUG_PORT80_EVENTS | ESPI_PERIPHERAL_8042_KBC_EVENTS | \
+			ESPI_PERIPHERAL_HOST_IO_EVENTS | ESPI_PERIPHERAL_SHARED_MEMORY_EVENTS)
+
+/** Selects only eSPI bus HW interrupts */
+#define ESPI_INT_BUS_ONLY_MASK (ESPI_BUS_EVENTS | ESPI_VIRTUAL_WIRE_CHANNEL_EVENTS | \
+			ESPI_OOB_CHANNEL_EVENTS | ESPI_FLASH_CHANNEL_EVENTS)
+
+/** Disables all eSPI HW events */
+#define ESPI_INT_NONE_MASK	0U
+
 
 /**
  * @brief eSPI cycle types supported over eSPI peripheral channel
@@ -359,6 +410,7 @@ enum lpc_peripheral_opcode {
 	/**
 	 * Enable host subsystem interrupt (custom)
 	 * @kconfig_dep{CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE}
+	 * @deprecated Use @ref espi_interrupt_config instead
 	 */
 	ECUSTOM_HOST_SUBS_INTERRUPT_EN = ECUSTOM_START_OPCODE,
 	/**
@@ -387,7 +439,7 @@ enum lpc_peripheral_opcode {
 /**
  * @brief Event data format for KBC events.
  *
- * Event data (@ref espi_event.evt_data) for Keyboard Controller (8042)
+ * Event data (@ref espi_event.evt_data) for Keyboard (8042)
  * events, allowing to manipulate the raw event data as a bit field.
  */
 struct espi_evt_data_kbc {
@@ -415,6 +467,13 @@ struct espi_evt_data_acpi {
 	/** Reserved field for future use */
 	uint32_t reserved: 16;
 };
+
+/** ACPI event: Input Buffer Full. Host wrote a data register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_DATA    0
+/** ACPI event: Input Buffer Full. Host wrote command register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_TO_EC_CMD     1U
+/** ACPI event: Output Buffer Empty: Host read data EC put in EC-to-Host register */
+#define ESPI_EVENT_DATA_ACPI_TYPE_HOST_RD_EC_TO_HOST 2U
 
 /**
  * @brief Event data format for Private Channel (PVT) events.
@@ -534,7 +593,6 @@ struct espi_flash_packet {
 struct espi_callback;
 
 /**
- * @typedef espi_callback_handler_t
  * @brief Define the application callback handler function signature.
  *
  * @param dev Device struct for the eSPI device.
@@ -605,10 +663,16 @@ typedef int (*espi_api_flash_write)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
 typedef int (*espi_api_flash_erase)(const struct device *dev,
 				    struct espi_flash_packet *pckt);
+
 /* Callbacks and traffic intercept */
 typedef int (*espi_api_manage_callback)(const struct device *dev,
 					struct espi_callback *callback,
 					bool set);
+
+/* eSPI interrupt control */
+typedef int (*espi_api_interrupt_configure)(const struct device *dev,
+					    uint32_t espi_interrupt_flags,
+					    uint32_t espi_interrupt_vendor);
 
 __subsystem struct espi_driver_api {
 	espi_api_config config;
@@ -625,6 +689,7 @@ __subsystem struct espi_driver_api {
 	espi_api_flash_write flash_write;
 	espi_api_flash_erase flash_erase;
 	espi_api_manage_callback manage_callback;
+	espi_api_interrupt_configure interrupt_config;
 };
 
 /**
@@ -632,9 +697,9 @@ __subsystem struct espi_driver_api {
  */
 
 /**
- * @brief Configure operation of a eSPI controller.
+ * @brief Configure operation of a eSPI hardware.
  *
- * This routine provides a generic interface to override eSPI controller
+ * This routine provides a generic interface to override eSPI hardware
  * capabilities.
  *
  * If this eSPI controller is acting as target, the values set here
@@ -646,10 +711,10 @@ __subsystem struct espi_driver_api {
  * eSPI target then send via SET_CONFIGURATION command.
  *
  * @code
- * +---------+   +---------+     +------+          +---------+   +---------+
- * |  eSPI   |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
- * |  target |   | driver  |     |  bus |          |  driver |   |  host   |
- * +--------+   +---------+     +------+          +---------+   +---------+
+ * +---------+   +---------+     +------+          +---------+   +-------------+
+ * |  eSPI   |   |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI       |
+ * |  target |   | driver  |     |  bus |          |  driver |   |  controller |
+ * +---------+   +---------+     +------+          +---------+   +-------------+
  *     |              |            |                   |             |
  *     | espi_config  | Set eSPI   |       Set eSPI    | espi_config |
  *     +--------------+ ctrl regs  |       cap ctrl reg| +-----------+
@@ -674,20 +739,17 @@ __subsystem struct espi_driver_api {
  * @param dev Pointer to the device structure for the driver instance.
  * @param cfg the device runtime configuration for the eSPI controller.
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error, failed to configure device.
- * @retval -EINVAL invalid capabilities, failed to configure device.
- * @retval -ENOTSUP capability not supported by eSPI target.
+ * @retval -EINVAL Invalid capabilities, failed to configure device.
+ * @retval -ENOTSUP Capability not supported by eSPI target.
  */
 __syscall int espi_config(const struct device *dev, struct espi_cfg *cfg);
 
 static inline int z_impl_espi_config(const struct device *dev,
 				     struct espi_cfg *cfg)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->config(dev, cfg);
+	return DEVICE_API_GET(espi, dev)->config(dev, cfg);
 }
 
 /**
@@ -708,10 +770,7 @@ __syscall bool espi_get_channel_status(const struct device *dev,
 static inline bool z_impl_espi_get_channel_status(const struct device *dev,
 						  enum espi_channel ch)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->get_channel_status(dev, ch);
+	return DEVICE_API_GET(espi, dev)->get_channel_status(dev, ch);
 }
 
 /**
@@ -723,8 +782,8 @@ static inline bool z_impl_espi_get_channel_status(const struct device *dev,
  * @param req Address of structure representing a memory,
  *            I/O or message read request.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI controller doesn't support raw packets and instead
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI controller doesn't support raw packets and instead
  *         low memory transactions are handled by controller hardware directly.
  * @retval -EIO General input / output error, failed to send over the bus.
  */
@@ -734,8 +793,7 @@ __syscall int espi_read_request(const struct device *dev,
 static inline int z_impl_espi_read_request(const struct device *dev,
 					   struct espi_request_packet *req)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->read_request) {
 		return -ENOTSUP;
@@ -753,8 +811,8 @@ static inline int z_impl_espi_read_request(const struct device *dev,
  * @param req Address of structure representing a memory, I/O or
  *            message write request.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI controller doesn't support raw packets and instead
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI controller doesn't support raw packets and instead
  *         low memory transactions are handled by controller hardware directly.
  * @retval -EIO General input / output error, failed to send over the bus.
  */
@@ -764,8 +822,7 @@ __syscall int espi_write_request(const struct device *dev,
 static inline int z_impl_espi_write_request(const struct device *dev,
 					    struct espi_request_packet *req)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->write_request) {
 		return -ENOTSUP;
@@ -786,9 +843,9 @@ static inline int z_impl_espi_write_request(const struct device *dev,
  * @param op Enum representing opcode for peripheral type and read request.
  * @param data Parameter to be read from to the LPC peripheral.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI peripheral is off or not supported.
- * @retval -EINVAL for unimplemented lpc opcode, but in range.
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI peripheral is off or not supported.
+ * @retval -EINVAL For unimplemented lpc opcode, but in range.
  */
 __syscall int espi_read_lpc_request(const struct device *dev,
 				    enum lpc_peripheral_opcode op,
@@ -798,8 +855,7 @@ static inline int z_impl_espi_read_lpc_request(const struct device *dev,
 					       enum lpc_peripheral_opcode op,
 					       uint32_t *data)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->read_lpc_request) {
 		return -ENOTSUP;
@@ -819,9 +875,9 @@ static inline int z_impl_espi_read_lpc_request(const struct device *dev,
  * @param op Enum representing an opcode for peripheral type and write request.
  * @param data Represents the parameter passed to the LPC peripheral.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP if eSPI peripheral is off or not supported.
- * @retval -EINVAL for unimplemented lpc opcode, but in range.
+ * @retval 0 on success.
+ * @retval -ENOTSUP eSPI peripheral is off or not supported.
+ * @retval -EINVAL For unimplemented lpc opcode, but in range.
  */
 __syscall int espi_write_lpc_request(const struct device *dev,
 				     enum lpc_peripheral_opcode op,
@@ -831,8 +887,7 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
 						enum lpc_peripheral_opcode op,
 						uint32_t *data)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->write_lpc_request) {
 		return -ENOTSUP;
@@ -851,10 +906,10 @@ static inline int z_impl_espi_write_lpc_request(const struct device *dev,
  * @param signal The signal to be sent to eSPI controller.
  * @param level The level of signal requested. LOW (0) or HIGH (1).
  *
- * @retval 0 If successful.
+ * @retval 0 on success.
  * @retval -EIO General input / output error, failed to send over the bus.
- * @retval -EINVAL invalid signal.
- * @retval -ETIMEDOUT timeout waiting for eSPI controller to process the VW.
+ * @retval -EINVAL Invalid signal.
+ * @retval -ETIMEDOUT Timeout waiting for eSPI controller to process the VW.
  */
 __syscall int espi_send_vwire(const struct device *dev,
 			      enum espi_vwire_signal signal,
@@ -864,10 +919,7 @@ static inline int z_impl_espi_send_vwire(const struct device *dev,
 					 enum espi_vwire_signal signal,
 					 uint8_t level)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->send_vwire(dev, signal, level);
+	return DEVICE_API_GET(espi, dev)->send_vwire(dev, signal, level);
 }
 
 /**
@@ -890,10 +942,7 @@ static inline int z_impl_espi_receive_vwire(const struct device *dev,
 					    enum espi_vwire_signal signal,
 					    uint8_t *level)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
-
-	return api->receive_vwire(dev, signal, level);
+	return DEVICE_API_GET(espi, dev)->receive_vwire(dev, signal, level);
 }
 
 /**
@@ -913,8 +962,7 @@ __syscall int espi_send_oob(const struct device *dev,
 static inline int z_impl_espi_send_oob(const struct device *dev,
 				       struct espi_oob_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->send_oob) {
 		return -ENOTSUP;
@@ -940,8 +988,7 @@ __syscall int espi_receive_oob(const struct device *dev,
 static inline int z_impl_espi_receive_oob(const struct device *dev,
 					  struct espi_oob_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->receive_oob) {
 		return -ENOTSUP;
@@ -969,8 +1016,7 @@ __syscall int espi_read_flash(const struct device *dev,
 static inline int z_impl_espi_read_flash(const struct device *dev,
 					 struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_read) {
 		return -ENOTSUP;
@@ -998,8 +1044,7 @@ __syscall int espi_write_flash(const struct device *dev,
 static inline int z_impl_espi_write_flash(const struct device *dev,
 					  struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_write) {
 		return -ENOTSUP;
@@ -1009,7 +1054,7 @@ static inline int z_impl_espi_write_flash(const struct device *dev,
 }
 
 /**
- * @brief Sends a write request packet for shared flash.
+ * @brief Sends an erase request packet for shared flash.
  *
  * This routine provides an interface to send a request to erase the flash
  * components shared between the eSPI controller and eSPI targets.
@@ -1027,8 +1072,7 @@ __syscall int espi_flash_erase(const struct device *dev,
 static inline int z_impl_espi_flash_erase(const struct device *dev,
 					  struct espi_flash_packet *pckt)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->flash_erase) {
 		return -ENOTSUP;
@@ -1041,60 +1085,62 @@ static inline int z_impl_espi_flash_erase(const struct device *dev,
  * Callback model
  *
  * @code
- *+-------+                  +-------------+   +------+     +---------+
- *|  App  |                  | eSPI driver |   |  HW  |     |eSPI Host|
- *+---+---+                  +-------+-----+   +---+--+     +----+----+
- *    |                              |             |             |
- *    |   espi_init_callback         |             |             |
- *    +----------------------------> |             |             |
- *    |   espi_add_callback          |             |
- *    +----------------------------->+             |
- *    |                              |             |  eSPI reset |  eSPI host
- *    |                              |    IRQ      +<------------+  resets the
- *    |                              | <-----------+             |  bus
- *    |<-----------------------------|             |             |
- *    | Report eSPI bus reset        | Processed   |             |
- *    |                              | within the  |             |
- *    |                              | driver      |             |
- *    |                              |             |             |
- *    |                              |             |  VW CH ready|  eSPI host
- *    |                              |    IRQ      +<------------+  enables VW
- *    |                              | <-----------+             |  channel
- *    |                              |             |             |
- *    |                              | Processed   |             |
- *    |                              | within the  |             |
- *    |                              | driver      |             |
- *    |                              |             |             |
- *    |                              |             | Memory I/O  |  Peripheral
- *    |                              |             <-------------+  event
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | Report peripheral event      |             |             |
- *    | and data for the event       |             |             |
- *    |                              |             |             |
- *    |                              |             | SLP_S5      |  eSPI host
- *    |                              |             <-------------+  send VWire
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | App enables/configures       |             |             |
- *    | discrete regulator           |             |             |
- *    |                              |             |             |
- *    |   espi_send_vwire_signal     |             |             |
- *    +------------------------------>------------>|------------>|
- *    |                              |             |             |
- *    |                              |             | HOST_RST    |  eSPI host
- *    |                              |             <-------------+  send VWire
- *    |                              +<------------+             |
- *    +<-----------------------------+ callback    |             |
- *    | App reset host-related       |             |             |
- *    | data structures              |             |             |
- *    |                              |             |             |
- *    |                              |             |   C10       |  eSPI host
- *    |                              |             +<------------+  send VWire
- *    |                              <-------------+             |
- *    <------------------------------+             |             |
- *    | App executes                 |             |             |
- *    + power mgmt policy            |             |             |
+ *+-------------+            +-------------+   +--------+     +------------+
+ *|  Zephyr App |            | eSPI driver |   |  eSPI  |     |   eSPI     |
+ *|       on    |            |             |   | target |     | controller |
+ *| eSPI target |            |             |   |   HW   |     |            |
+ *+---+---------+            +-------+-----+   +---+----+     +----+-------+
+ *    |                              |             |               |
+ *    |   espi_init_callback         |             |               |
+ *    +----------------------------> |             |               |
+ *    |   espi_add_callback          |             |               |
+ *    +----------------------------->+             |               |
+ *    |                              |             |  eSPI reset   |  eSPI controller
+ *    |                              |    IRQ      +<--------------+  resets the
+ *    |                              | <-----------+               |  bus
+ *    |<-----------------------------|             |               |
+ *    | Report eSPI bus reset        | Processed   |               |
+ *    |                              | within the  |               |
+ *    |                              | driver      |               |
+ *    |                              |             |               |
+ *    |                              |             |  VW CH ready  |  eSPI controller
+ *    |                              |    IRQ      +<--------------+  enables VW
+ *    |                              | <-----------+               |  channel
+ *    |                              |             |               |
+ *    |                              | Processed   |               |
+ *    |                              | within the  |               |
+ *    |                              | driver      |               |
+ *    |                              |             |               |
+ *    |                              |             | Memory I/O    |  Peripheral
+ *    |                              |             <---------------+  event
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | Report peripheral event      |             |               |
+ *    | and data for the event       |             |               |
+ *    |                              |             |               |
+ *    |                              |             | SLP_S5        |  eSPI controller
+ *    |                              |             <---------------+  send VWire
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | App enables/configures       |             |               |
+ *    | discrete regulator           |             |               |
+ *    |                              |             |               |
+ *    |   espi_send_vwire_signal     |             |               |
+ *    +------------------------------>------------>|-------------->|
+ *    |                              |             |               |
+ *    |                              |             | HOST_RST      |  eSPI controller
+ *    |                              |             <---------------+  send VWire
+ *    |                              +<------------+               |
+ *    +<-----------------------------+ callback    |               |
+ *    | App reset host-related       |             |               |
+ *    | data structures              |             |               |
+ *    |                              |             |               |
+ *    |                              |             |   C10         |  eSPI controller
+ *    |                              |             +<--------------+  send VWire
+ *    |                              <-------------+               |
+ *    <------------------------------+             |               |
+ *    | App executes                 |             |               |
+ *    + power mgmt policy            |             |               |
  * @endcode
  */
 
@@ -1132,8 +1178,7 @@ static inline void espi_init_callback(struct espi_callback *callback,
 static inline int espi_add_callback(const struct device *dev,
 				    struct espi_callback *callback)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;
@@ -1161,8 +1206,7 @@ static inline int espi_add_callback(const struct device *dev,
 static inline int espi_remove_callback(const struct device *dev,
 				       struct espi_callback *callback)
 {
-	const struct espi_driver_api *api =
-		(const struct espi_driver_api *)dev->api;
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
 
 	if (!api->manage_callback) {
 		return -ENOTSUP;
@@ -1171,6 +1215,71 @@ static inline int espi_remove_callback(const struct device *dev,
 	return api->manage_callback(dev, callback, false);
 }
 
+/**
+ * @brief Control eSPI interrupts.
+ *
+ * This routine provides a method for eSPI driver clients to enable/disable
+ * eSPI driver blocks interrupts.
+ *
+ * If the eSPI driver does not enable interrupts during driver initialization,
+ * eSPI driver clients need to enable interrupts explicitly after eSPI configuration and
+ * and after eSPI bus reset event.
+ *
+ * @code
+ * +---------+        +---------+     +------+          +---------+   +---------+
+ * |  eSPI   |        |  eSPI   |     | eSPI |          |  eSPI   |   |  eSPI   |
+ * |  target |        | driver  |     |  bus |          |  driver |   |  host   |
+ * +--------+        +---------+     +------+          +---------+   +---------+
+ *     |                   |            |                   |             |
+ *     |                   +- eSPI---|  |                   |             |
+ *     +                   +<- init--|  |                   |             |
+ *     |                   |            |                   |             |
+ *     |                   |            |                   |             |
+ *     | espi_config       | Set eSPI   |                   |             |
+ *     +-------------------+ ctrl regs  |                   |             |
+ *     |                   +-------+    |                   |             |
+ *     |                   |<------+    |                   |             |
+ *     |                   |            |                   |             |
+ *     | interrupt_config  |            |                   |             |
+ *     +-------------------+            |                   |             |
+ *     |                   |            |                   |             |  eSPI host
+ *     |                   |            |    VW  packet     +<------------+  sends VW
+ *     |                   |    ISR     | <-----------------+             |
+ *     |  VWIRE_RECEIVED   |<-----------|                   |             |
+ *     +<------------------+            +                   +             +
+ *     |                   |            |                   |             |
+ *     |                   |            |                   |             |  eSPI host
+ *     |                   |            |    eSPI reset     +<------------+  resets the
+ *     |                   |    ISR     | <-----------------+             |  bus
+ *     |      callback     |<-----------|                   |             |
+ *     +<------------------+            +                   +             +
+ *     |                   |            |                   |             |
+ *     | interrupt_config  |            |                   |             |
+ *     +-------------------+            |                   |             |
+ * @endcode
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param espi_flags the bitmap to select generic eSPI interrupt events.
+ * @param espi_vendor_flags the bitmap to select any vendor-specific eSPI interrupt events.
+ *
+ * Note: For both cases a 1 enables the corresponding interrupt event, and 0 disables it.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error, failed to configure device.
+ * @retval -EINVAL invalid capabilities, failed to configure device.
+ * @retval -ENOTSUP capability not supported by eSPI target.
+ */
+static inline int espi_interrupt_config(const struct device *dev, uint32_t espi_flags,
+					uint32_t espi_vendor_flags)
+{
+	const struct espi_driver_api *api = DEVICE_API_GET(espi, dev);
+
+	if (!api->interrupt_config) {
+		return -ENOTSUP;
+	}
+
+	return api->interrupt_config(dev, espi_flags, espi_vendor_flags);
+}
 #ifdef __cplusplus
 }
 #endif

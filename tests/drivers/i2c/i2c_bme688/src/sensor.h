@@ -27,7 +27,7 @@
 #define RESET_DEVICE 0xB6
 #define SENSOR_MEMORY_SIZE_IN_BYTES 255
 
-/* Calibration coeffcients */
+/* Calibration coefficients */
 #define TEMP_PAR_T1_REGISTER_ADDRESS_LSB 0xE9
 #define TEMP_PAR_T1_REGISTER_ADDRESS_MSB 0xEA
 #define TEMP_PAR_T2_REGISTER_ADDRESS_LSB 0x8A

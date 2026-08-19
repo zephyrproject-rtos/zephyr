@@ -7,6 +7,10 @@
 #include <adi/max32/max32xxx.dtsi>
 #include <zephyr/dt-bindings/dma/max32690_dma.h>
 
+&cpu1 {
+	status = "okay";
+};
+
 &clk_ipo {
 	clock-frequency = <DT_FREQ_M(120)>;
 };
@@ -208,6 +212,17 @@
 			reg = <0x40065000 0x1000>;
 			status = "disabled";
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 19>;
+		};
+
+		i2s0: i2s@40060000 {
+			compatible = "adi,max32-i2s";
+			reg = <0x40060000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			dmas = <&dma0 0 MAX32_DMA_SLOT_I2S_TX>,
+			       <&dma0 1 MAX32_DMA_SLOT_I2S_RX>;
+			dma-names = "tx", "rx";
+			status = "disabled";
 		};
 
 		wut0: timer@40006400 {

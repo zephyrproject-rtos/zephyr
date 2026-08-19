@@ -5,6 +5,8 @@
  *
  */
 
+#include <stdlib.h>
+#include <string.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/kernel.h>
 #include <zephyr/shell/shell.h>
@@ -124,7 +126,38 @@ static int cmd_llext_list(const struct shell *sh, size_t argc, char *argv[])
 	return llext_iterate(llext_shell_list_cb, &sl);
 }
 
-static uint8_t llext_buf[CONFIG_LLEXT_SHELL_MAX_SIZE] __aligned(Z_KERNEL_STACK_OBJ_ALIGN);
+#define LLEXT_SHELL_MAX_LOADED 4
+
+static struct {
+	char name[LLEXT_MAX_NAME_LEN + 1];
+	uint8_t *buf;
+} llext_shell_bufs[LLEXT_SHELL_MAX_LOADED];
+
+static int llext_shell_track_buf(const char *name, uint8_t *buf)
+{
+	for (int i = 0; i < LLEXT_SHELL_MAX_LOADED; i++) {
+		if (llext_shell_bufs[i].buf == NULL) {
+			strncpy(llext_shell_bufs[i].name, name, LLEXT_MAX_NAME_LEN);
+			llext_shell_bufs[i].name[LLEXT_MAX_NAME_LEN] = '\0';
+			llext_shell_bufs[i].buf = buf;
+			return 0;
+		}
+	}
+	return -ENOMEM;
+}
+
+static void llext_shell_release_buf(const char *name)
+{
+	for (int i = 0; i < LLEXT_SHELL_MAX_LOADED; i++) {
+		if (llext_shell_bufs[i].buf != NULL &&
+		    strcmp(llext_shell_bufs[i].name, name) == 0) {
+			free(llext_shell_bufs[i].buf);
+			llext_shell_bufs[i].buf = NULL;
+			llext_shell_bufs[i].name[0] = '\0';
+			return;
+		}
+	}
+}
 
 static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 {
@@ -142,7 +175,34 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOMEM;
 	}
 
+	if (llext_by_name(name) != NULL) {
+		shell_print(sh, "Extension %s already loaded\n", name);
+		return -EEXIST;
+	}
+
+	uint8_t *llext_buf = aligned_alloc(Z_KERNEL_STACK_OBJ_ALIGN, CONFIG_LLEXT_SHELL_MAX_SIZE);
+
+	if (llext_buf == NULL) {
+		shell_print(sh, "Failed to allocate %d byte load buffer\n",
+			    CONFIG_LLEXT_SHELL_MAX_SIZE);
+		return -ENOMEM;
+	}
+
+	if (llext_shell_track_buf(name, llext_buf) != 0) {
+		shell_print(sh, "Too many extensions loaded, max %d; unload one first\n",
+			    LLEXT_SHELL_MAX_LOADED);
+		free(llext_buf);
+		return -ENOMEM;
+	}
+
 	size_t llext_buf_len = hex2bin(argv[2], hex_len, llext_buf, CONFIG_LLEXT_SHELL_MAX_SIZE);
+
+	if (llext_buf_len == 0) {
+		shell_print(sh, "Invalid hex input for extension %s\n", name);
+		llext_shell_release_buf(name);
+		return -EINVAL;
+	}
+
 	struct llext_buf_loader buf_loader = LLEXT_BUF_LOADER(llext_buf, llext_buf_len);
 	struct llext_loader *ldr = &buf_loader.loader;
 
@@ -158,6 +218,7 @@ static int cmd_llext_load_hex(const struct shell *sh, size_t argc, char *argv[])
 		shell_print(sh, "Successfully loaded extension %s, addr %p\n", ext->name, ext);
 	} else {
 		shell_print(sh, "Failed to load extension %s, return code %d\n", name, res);
+		llext_shell_release_buf(name);
 	}
 
 	return 0;
@@ -173,6 +234,7 @@ static int cmd_llext_unload(const struct shell *sh, size_t argc, char *argv[])
 	}
 
 	llext_unload(&ext);
+	llext_shell_release_buf(argv[1]);
 	shell_print(sh, "Unloaded extension %s\n", argv[1]);
 
 	return 0;

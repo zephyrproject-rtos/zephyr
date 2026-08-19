@@ -37,7 +37,7 @@
 
 /* Virtual base address for the kernel; with CONFIG_MMU this is not necessarily
  * the same as its physical location, although an identity mapping for RAM
- * is still supported by setting CONFIG_KERNEL_VM_BASE=CONFIG_SRAM_BASE_ADDRESS.
+ * is still supported by setting CONFIG_KERNEL_VM_BASE=DT_CHOSEN_SRAM_ADDR.
  */
 #ifdef K_MEM_IS_VM_KERNEL
 #define KERNEL_BASE_ADDR  (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET)

@@ -40,8 +40,12 @@
 #define ROM_END_OFFSET 0
 #endif
 
-#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION) && defined(CONFIG_XIP)
+#if defined(CONFIG_FLASH_USES_MAPPED_PARTITION)
+#if defined(CONFIG_XIP)
 #define ROM_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition)))
+#else
+#define ROM_ADDR RAM_ADDR
+#endif
 #define ROM_SIZE (DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition)) - ROM_END_OFFSET)
 #else
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
@@ -57,9 +61,13 @@
 #endif
 #endif /* defined(CONFIG_FLASH_USES_MAPPED_PARTITION) */
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+#define RAM_ADDR DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
+
+#if defined(CONFIG_CUSTOM_SECTION_ALIGN)
+_region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
+#else
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */
@@ -71,8 +79,9 @@ _region_min_align = CONFIG_MMU_PAGE_SIZE;
 /* If building without MPU/MMU support, use default 4-byte alignment. */
 _region_min_align = 4;
 #endif
+#endif
 
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && !defined(CONFIG_CUSTOM_SECTION_ALIGN)
   #define MPU_ALIGN(region_size) \
     . = ALIGN(_region_min_align); \
     . = ALIGN(1 << LOG2CEIL(region_size))
@@ -128,6 +137,14 @@ SECTIONS
 
     SECTION_PROLOGUE(rom_start,,)
     {
+#if !defined(CONFIG_XIP) && !defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* Start of boot-mapped kernel image. Placed before rom_start contents
+         * so that the vector table page is included in the mapped + pinned range
+         * tracked by z_mem_manage_init(), preventing it from being added to
+         * the free page list.
+         */
+        z_mapped_start = .;
+#endif
 
 /* Located in generated directory. This file is populated by calling
  * zephyr_linker_sources(ROM_START ...). This typically contains the vector
@@ -147,7 +164,10 @@ SECTIONS
     {
         . = ALIGN(_region_min_align);
         __text_region_start = .;
-#ifndef CONFIG_XIP
+#if !defined(CONFIG_XIP) && defined(CONFIG_ROMSTART_RELOCATION_ROM)
+        /* rom_start is in a separate memory region; the vector table is not
+         * in SRAM, so z_mapped_start can begin at .text.
+         */
         z_mapped_start = .;
 #endif
 
@@ -337,7 +357,7 @@ GROUP_START(OCM)
 		*(.ocm_bss)
 		*(".ocm_bss.*")
 		__ocm_bss_end = .;
-	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_CHOSEN(zephyr_ocm)))
 
 	SECTION_PROLOGUE(_OCM_DATA_SECTION_NAME,,SUBALIGN(4))
 	{
@@ -345,7 +365,7 @@ GROUP_START(OCM)
 		*(.ocm_data)
 		*(".ocm_data.*")
 		__ocm_data_end = .;
-	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME(DT_CHOSEN(zephyr_ocm)))
+	} GROUP_LINK_IN(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_CHOSEN(zephyr_ocm)))
 
   __ocm_end = .;
   __ocm_size = __ocm_end - __ocm_start;
@@ -389,6 +409,11 @@ GROUP_END(OCM)
          */
         . = ALIGN(4);
         __bss_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
 
         *(.bss)
         *(".bss.*")

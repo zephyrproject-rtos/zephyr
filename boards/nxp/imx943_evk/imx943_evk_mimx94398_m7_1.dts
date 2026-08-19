@@ -51,3 +51,7 @@
 &gpt_hw_timer3 {
 	status = "okay";
 };
+
+&tstmr2 {
+	status = "okay";
+};

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc55S36_ns.dtsi>
+#include <nxp/lpc/lpc55xxx/nxp_lpc55S36_ns.dtsi>
 #include "lpcxpresso55s36-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -24,6 +24,7 @@
 		zephyr,shell-uart = &flexcomm0;
 		zephyr,canbus = &can0;
 		zephyr,flash-controller = &iap;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -227,4 +228,36 @@ zephyr_udc0: &usbfs {
 	status = "okay";
 	pinctrl-0 = <&pinmux_hscmp0>;
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&powerquad {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&ctimer1 {
+	status = "okay";
+};
+
+&ctimer2 {
+	status = "okay";
+};
+
+&ctimer3 {
+	status = "okay";
+};
+
+&ctimer4 {
+	status = "okay";
 };

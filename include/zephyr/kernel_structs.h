@@ -17,8 +17,8 @@
  *    included.
  */
 
-#ifndef ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
-#define ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_
+#define ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_
 
 #if !defined(_ASMLANGUAGE)
 #include <zephyr/sys/atomic.h>
@@ -30,6 +30,9 @@
 #include <zephyr/kernel/stats.h>
 #include <zephyr/kernel/obj_core.h>
 #include <zephyr/sys/rb.h>
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+#include <zephyr/sys/min_heap_ref.h>
+#endif
 #endif
 
 #define K_NUM_THREAD_PRIO (CONFIG_NUM_PREEMPT_PRIORITIES + CONFIG_NUM_COOP_PRIORITIES + 1)
@@ -297,14 +300,39 @@ struct _timeout;
 typedef void (*_timeout_func_t)(struct _timeout *t);
 
 struct _timeout {
+	/*
+	 * Backend-specific queue representation. The handler pointer (fn) is
+	 * common to all backends and kept as the trailing member; everything
+	 * above it is owned by the selected timeout backend (see
+	 * kernel/include/timeout_q.h).
+	 */
+#if defined(CONFIG_TIMEOUT_BACKEND_MINHEAP)
+	/*
+	 * Min-heap backend: absolute expiry tick plus the heap position
+	 * handle. heap_handle.idx == 0 means the timeout is not queued
+	 * (idle, popped for announcing, or aborted).
+	 */
+	int64_t abs_ticks;
+	struct min_heap_handle heap_handle;
+#else
+	/*
+	 * Delta-list and timer-wheel backends: a list node plus dticks (a
+	 * delta to the predecessor for the delta list; an encoded slot
+	 * position for the wheel). The wheel adds a flags field recording
+	 * which wheel tier the timeout currently occupies.
+	 */
 	sys_dnode_t node;
-	_timeout_func_t fn;
+#if defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
+	uint32_t flags;
+#endif
 #ifdef CONFIG_TIMEOUT_64BIT
 	/* Can't use k_ticks_t for header dependency reasons */
 	int64_t dticks;
 #else
 	int32_t dticks;
 #endif
+#endif /* CONFIG_TIMEOUT_BACKEND_MINHEAP */
+	_timeout_func_t fn;
 };
 
 typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
@@ -315,4 +343,4 @@ typedef void (*k_thread_timeslice_fn_t)(struct k_thread *thread, void *data);
 
 #endif /* _ASMLANGUAGE */
 
-#endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_KERNEL_STRUCTS_H_ */

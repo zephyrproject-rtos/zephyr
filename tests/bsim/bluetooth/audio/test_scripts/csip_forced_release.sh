@@ -13,7 +13,7 @@ EXECUTE_TIMEOUT=120
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="csip_forced_release"
+SIMULATION_ID="${BOARD_TS}_csip_forced_release"
 
 printf "\n\n======== Running test with forced release of lock ========\n\n"
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \

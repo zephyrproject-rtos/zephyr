@@ -19,6 +19,7 @@ include(CheckCXXCompilerFlag)
 # 1.3. generate_inc_*
 # 1.4. board_*
 # 1.5. Misc.
+# 1.6. Heap KASAN helpers
 # 2. Kconfig-aware extensions
 # 2.1 Misc
 # 3. CMake-generic extensions
@@ -38,7 +39,6 @@ include(CheckCXXCompilerFlag)
 # 7 Linkable loadable extensions (llext)
 # 7.1 llext_* configuration functions
 # 7.2 add_llext_* build control functions
-# 7.3 llext helper functions
 # 8. Script mode handling
 
 ########################################################
@@ -740,6 +740,53 @@ function(generate_inc_file_for_target
   generate_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name} ${ARGN})
 endfunction()
 
+function(generate_shell_aliases_inc_file
+    source_file    # The source file to be converted to array element
+    generated_file # The generated file
+    )
+  add_custom_command(
+    OUTPUT ${generated_file}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/gen_shell_aliases.py
+    --max-command-len ${CONFIG_SHELL_CMD_BUFF_SIZE}
+    ${source_file}
+    > ${generated_file}
+    DEPENDS ${source_file}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_gen_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    gen_target      # The generated file target we depend on
+    )
+  generate_shell_aliases_inc_file(${source_file} ${generated_file})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # dependency between the two targets
+
+  add_dependencies(${target} ${gen_target})
+endfunction()
+
+function(generate_shell_aliases_inc_file_for_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to array element
+    generated_file  # The generated file
+    )
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # 'custom_target' for it and setting up a dependency between the two
+  # targets
+
+  # But first create a unique name for the custom target
+  generate_unique_target_name_from_filename(${generated_file} generated_target_name)
+
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  generate_shell_aliases_inc_file_for_gen_target(${target} ${source_file} ${generated_file} ${generated_target_name})
+endfunction()
+
 # 1.4. board_*
 #
 # This section is for extensions related to Zephyr board handling.
@@ -1261,6 +1308,7 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    Subsequent calls to zephyr_linker_sources with the same file(s) will remove
 #    these from the original location. Only the last call is considered.
 # <location> is one of
+#    BSS           Inside the bss output section.
 #    NOINIT        Inside the noinit output section.
 #    RWDATA        Inside the data output section.
 #    RODATA        Inside the rodata output section.
@@ -1276,18 +1324,13 @@ endfunction(zephyr_check_compiler_flag_hardcoded)
 #    DTCM_SECTION  Inside the dtcm data section.
 #    SECTIONS      Near the end of the file. Don't use this when linking into
 #                  RAMABLE_REGION, use RAM_SECTIONS instead.
-#    PINNED_RODATA Similar to RODATA but pinned in memory.
-#    PINNED_RAM_SECTIONS
-#                  Similar to RAM_SECTIONS but pinned in memory.
-#    PINNED_DATA_SECTIONS
-#                  Similar to DATA_SECTIONS but pinned in memory.
 # <sort_key> is an optional key to sort by inside of each location. The key must
 #    be alphanumeric, and the keys are sorted alphabetically. If no key is
 #    given, the key 'default' is used. Keys are case-sensitive.
 #
-# Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
+# Use BSS, NOINIT, RWDATA, and RODATA unless they don't work for your use case.
 #
-# When placing into NOINIT, RWDATA, RODATA, ROM_START, RAMFUNC_SECTION,
+# When placing into BSS, NOINIT, RWDATA, RODATA, ROM_START, RAMFUNC_SECTION,
 # NOCACHE_SECTION, DTCM_SECTION or ITCM_SECTION the contents of the files will
 # be placed inside an output section, so assume the section definition is
 # already present, e.g.:
@@ -1322,6 +1365,7 @@ function(zephyr_linker_sources location)
   set(data_sections_path "${snippet_base}/snippets-data-sections.ld")
   set(text_sections_path "${snippet_base}/snippets-text-sections.ld")
   set(rom_start_path     "${snippet_base}/snippets-rom-start.ld")
+  set(bss_path           "${snippet_base}/snippets-bss.ld")
   set(noinit_path        "${snippet_base}/snippets-noinit.ld")
   set(rwdata_path        "${snippet_base}/snippets-rwdata.ld")
   set(rodata_path        "${snippet_base}/snippets-rodata.ld")
@@ -1329,10 +1373,6 @@ function(zephyr_linker_sources location)
   set(nocache_path       "${snippet_base}/snippets-nocache-section.ld")
   set(itcm_path          "${snippet_base}/snippets-itcm-section.ld")
   set(dtcm_path          "${snippet_base}/snippets-dtcm-section.ld")
-
-  set(pinned_ram_sections_path  "${snippet_base}/snippets-pinned-ram-sections.ld")
-  set(pinned_data_sections_path "${snippet_base}/snippets-pinned-data-sections.ld")
-  set(pinned_rodata_path        "${snippet_base}/snippets-pinned-rodata.ld")
 
   # Clear destination files if this is the first time the function is called.
   get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
@@ -1343,6 +1383,7 @@ function(zephyr_linker_sources location)
     file(WRITE ${data_sections_path} "")
     file(WRITE ${text_sections_path} "")
     file(WRITE ${rom_start_path} "")
+    file(WRITE ${bss_path} "")
     file(WRITE ${noinit_path} "")
     file(WRITE ${rwdata_path} "")
     file(WRITE ${rodata_path} "")
@@ -1350,9 +1391,6 @@ function(zephyr_linker_sources location)
     file(WRITE ${nocache_path} "")
     file(WRITE ${itcm_path} "")
     file(WRITE ${dtcm_path} "")
-    file(WRITE ${pinned_ram_sections_path} "")
-    file(WRITE ${pinned_data_sections_path} "")
-    file(WRITE ${pinned_rodata_path} "")
     set_property(GLOBAL PROPERTY snippet_files_cleared true)
   endif()
 
@@ -1369,6 +1407,8 @@ function(zephyr_linker_sources location)
     set(snippet_path "${text_sections_path}")
   elseif("${location}" STREQUAL "ROM_START")
     set(snippet_path "${rom_start_path}")
+  elseif("${location}" STREQUAL "BSS")
+    set(snippet_path "${bss_path}")
   elseif("${location}" STREQUAL "NOINIT")
     set(snippet_path "${noinit_path}")
   elseif("${location}" STREQUAL "RWDATA")
@@ -1395,12 +1435,6 @@ function(zephyr_linker_sources location)
               "location.")
     endif()
     set(snippet_path "${dtcm_path}")
-  elseif("${location}" STREQUAL "PINNED_RAM_SECTIONS")
-    set(snippet_path "${pinned_ram_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_DATA_SECTIONS")
-    set(snippet_path "${pinned_data_sections_path}")
-  elseif("${location}" STREQUAL "PINNED_RODATA")
-    set(snippet_path "${pinned_rodata_path}")
   else()
     message(fatal_error "Must choose valid location for linker snippet.")
   endif()
@@ -1547,6 +1581,31 @@ function(zephyr_code_relocate)
   endif()
   if(CODE_REL_PHDR)
     set(CODE_REL_LOCATION "${CODE_REL_LOCATION}\ :${CODE_REL_PHDR}")
+  endif()
+  # Disable LTO for relocated files. LTO changes section names (e.g. .text
+  # becomes .gnu.debuglto_.text) which breaks gen_relocate_app.py section
+  # parsing. See issue #69730.
+  if(CODE_REL_FILES AND NOT no_genex STREQUAL CODE_REL_FILES)
+    # File list contains generator expressions - LTO cannot be disabled
+    # statically. Warn so the developer is aware LTO remains active for
+    # these files and the section name mangling issue (#69730) may still
+    # occur.
+    message(WARNING "zephyr_code_relocate(): file list contains generator "
+      "expressions, LTO cannot be disabled for these files. "
+      "Avoid combining CONFIG_LTO with CONFIG_CODE_DATA_RELOCATION when "
+      "using generator expressions (see issue #69730).")
+  elseif(CODE_REL_FILES)
+    set_source_files_properties(${file_list} PROPERTIES
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
+  elseif(CODE_REL_LIBRARY)
+    # DEFER is required here: library targets such as drivers__serial are
+    # created later in the CMake configure step (after the SoC CMakeLists.txt
+    # runs), so the target does not exist yet when zephyr_code_relocate() is
+    # called. cmake_language(DEFER CALL ...) defers the set_property() call
+    # until the end of the current directory scope, by which point all targets
+    # have been created.
+    cmake_language(DEFER CALL set_property TARGET ${CODE_REL_LIBRARY} APPEND PROPERTY
+      COMPILE_OPTIONS $<TARGET_PROPERTY:compiler,prohibit_lto>)
   endif()
   # Each code relocation directive is placed on an independent line, instead of
   # using set_property(APPEND) to produce a ";"-separated CMake list. This way,
@@ -1962,6 +2021,107 @@ function(zephyr_constants_library)
 endfunction()
 
 ########################################################
+# 1.6. Heap KASAN helpers
+########################################################
+#
+# Heap KASAN is opt-in: instrument the code that uses sys_heap; must not be
+# applied to heap implementation sources.
+
+# Internal: full set of -fsanitize + -D macro-redirect flags for heap KASAN.
+macro(_zephyr_heap_kasan_flags VAR)
+  set(${VAR})
+  get_property(_heap_kasan_compiler_flags TARGET compiler PROPERTY heap_kasan)
+  list(APPEND ${VAR} ${_heap_kasan_compiler_flags})
+  # real calls instead of inlined __builtin_memcpy / __builtin_memset etc.
+  list(APPEND ${VAR}
+    -U_FORTIFY_SOURCE
+    -Dmemset=__asan_memset
+    -Dmemcpy=__asan_memcpy
+    -Dmemmove=__asan_memmove
+    -Dstrcpy=__asan_strcpy
+    -Dstrncpy=__asan_strncpy
+    -Dstrcat=__asan_strcat
+    -Dstrncat=__asan_strncat
+    -Dsprintf=__asan_sprintf
+    -Dsnprintf=__asan_snprintf
+    -Dvsprintf=__asan_vsprintf
+    -Dvsnprintf=__asan_vsnprintf
+  )
+  if(CONFIG_SYS_HEAP_KASAN_EXTENSIONS)
+    # POSIX/GNU feature macros so extension prototypes are visible after -D redirect.
+    list(APPEND ${VAR}
+      -D_POSIX_C_SOURCE=200809L
+      -D_GNU_SOURCE
+      -Dstrlcpy=__asan_strlcpy
+      -Dstrlcat=__asan_strlcat
+      -Dmemccpy=__asan_memccpy
+      -Dmempcpy=__asan_mempcpy
+      -Dstpcpy=__asan_stpcpy
+      -Dstpncpy=__asan_stpncpy
+      -Dfgets=__asan_fgets
+    )
+  endif()
+endmacro()
+
+# Internal: apply heap KASAN COMPILE_OPTIONS to each source file in _srcs.
+function(_zephyr_heap_kasan_apply_to_sources _target _srcs)
+  _zephyr_heap_kasan_flags(_flags)
+  foreach(_src IN LISTS _srcs)
+    set_property(SOURCE "${_src}"
+      TARGET_DIRECTORY ${_target}
+      APPEND PROPERTY COMPILE_OPTIONS ${_flags}
+    )
+  endforeach()
+endfunction()
+
+# Instrument all sources of <target> with heap KASAN compiler flags.
+# <target>: CMake target name (e.g. 'app').
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_target_enable_heap_kasan(app)
+function(zephyr_target_enable_heap_kasan target)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+  get_property(_srcs TARGET ${target} PROPERTY SOURCES)
+  _zephyr_heap_kasan_apply_to_sources(${target} "${_srcs}")
+endfunction()
+
+# Instrument sources under <dir> with heap KASAN compiler flags.
+# <dir>: directory to match, relative to CMAKE_CURRENT_SOURCE_DIR.
+# Must be called after all sources have been added to the target.
+# Usage: zephyr_heap_kasan_enable_directory(src)
+function(zephyr_heap_kasan_enable_directory dir)
+  if(NOT CONFIG_SYS_HEAP_KASAN)
+    return()
+  endif()
+
+  set(_target ${ZEPHYR_CURRENT_LIBRARY})
+
+  cmake_path(ABSOLUTE_PATH dir
+    BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    NORMALIZE OUTPUT_VARIABLE _abs_dir)
+
+  set(_matching)
+  get_property(_srcs TARGET ${_target} PROPERTY SOURCES)
+  foreach(_src IN LISTS _srcs)
+    cmake_path(ABSOLUTE_PATH _src
+      BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+      NORMALIZE OUTPUT_VARIABLE _abs_src)
+    cmake_path(IS_PREFIX _abs_dir "${_abs_src}" NORMALIZE _under_dir)
+    if(_under_dir)
+      list(APPEND _matching "${_src}")
+    endif()
+  endforeach()
+
+  if(NOT _matching)
+    message(WARNING "heap_kasan_enable_directory: no sources matched under '${_abs_dir}'")
+  endif()
+
+  _zephyr_heap_kasan_apply_to_sources(${_target} "${_matching}")
+endfunction()
+
+
+########################################################
 # 2. Kconfig-aware extensions
 ########################################################
 #
@@ -2063,7 +2223,7 @@ endfunction()
 
 # 3.1. *_ifdef
 #
-# Functions for conditionally executing CMake functions with oneliners
+# Functions for conditionally executing CMake functions with one-liners
 # e.g.
 #
 # if(CONFIG_FFT)
@@ -3058,48 +3218,30 @@ endfunction()
 # Usage:
 #   zephyr_file_copy(<oldname> <newname> [ONLY_IF_DIFFERENT])
 #
-# Zephyr file copy extension.
-# This function is similar to CMake function
-# 'file(COPY_FILE <oldname> <newname> [ONLY_IF_DIFFERENT])'
-# introduced with CMake 3.21.
-#
-# Because the minimal required CMake version with Zephyr is 3.20, this function
-# is not guaranteed to be available.
-#
-# When using CMake version 3.21 or newer 'zephyr_file_copy()' simply calls
-# 'file(COPY_FILE...)' directly.
-# When using CMake version 3.20, the implementation will execute using CMake
-# for running command line tool in a subprocess for identical functionality.
+# Deprecated: this function only existed because 'file(COPY_FILE ...)' was
+# not available with CMake 3.20; call 'file(COPY_FILE ...)' directly instead.
 function(zephyr_file_copy oldname newname)
+  message(DEPRECATION
+          "zephyr_file_copy() is deprecated, use file(COPY_FILE ...) instead."
+  )
   set(options ONLY_IF_DIFFERENT)
   cmake_parse_arguments(ZEPHYR_FILE_COPY "${options}" "" "" ${ARGN})
 
-  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21.0)
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_options ONLY_IF_DIFFERENT)
-    endif()
-    file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
-  else()
-    if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
-      set(copy_file_command copy_if_different)
-    else()
-      set(copy_file_command copy)
-    endif()
-    execute_process(
-      COMMAND ${CMAKE_COMMAND} -E ${copy_file_command} ${oldname} ${newname}
-    )
+  if(ZEPHYR_FILE_COPY_ONLY_IF_DIFFERENT)
+    set(copy_file_options ONLY_IF_DIFFERENT)
   endif()
+  file(COPY_FILE ${oldname} ${newname} ${copy_file_options})
 endfunction()
 
 # Usage:
 #   zephyr_file_suffix(<filename> SUFFIX <suffix>)
 #
 # Zephyr file add suffix extension.
-# This function will check the provied filename or list of filenames to see if they have a
+# This function will check the provided filename or list of filenames to see if they have a
 # `_<suffix>` extension to them and if so, updates the supplied variable/list with the new
 # path/paths.
 #
-# <filename>: Variable (singlular or list) of absolute path filename(s) which should be checked
+# <filename>: Variable (singular or list) of absolute path filename(s) which should be checked
 #             and updated if there is a filename which has the <suffix> present.
 # <suffix>: The suffix to test for and append to the end of the provided filename.
 #
@@ -3825,7 +3967,7 @@ endfunction()
 #   build_info(<tag>... VALUE <value>...)
 #   build_info(<tag>... PATH  <path>...)
 #
-# This function populates the build_info.yml info file with exchangable build
+# This function populates the build_info.yml info file with exchangeable build
 # information related to the current build.
 #
 # Example:
@@ -3838,7 +3980,7 @@ endfunction()
 # of the build info file.
 #
 # <tag>...: One of the pre-defined valid CMake keys supported by build info or vendor-specific.
-#           See 'scripts/schemas/build-schema.yml' CMake section for valid tags.
+#           See 'scripts/schemas/build-schema.yaml' CMake section for valid tags.
 # VALUE <value>... : value(s) to place in the build_info.yml file.
 # PATH  <path>... : path(s) to place in the build_info.yml file. All paths are converted to CMake
 #                   style. If no conversion is required, for example when paths are already
@@ -3866,7 +4008,7 @@ function(build_info)
 
   yaml_context(EXISTS NAME build_info result)
   if(NOT result)
-    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yml NAME build_info_schema)
+    yaml_load(FILE ${ZEPHYR_BASE}/scripts/schemas/build-schema.yaml NAME build_info_schema)
     if(EXISTS ${CMAKE_BINARY_DIR}/build_info.yml)
       yaml_load(FILE ${CMAKE_BINARY_DIR}/build_info.yml NAME build_info)
     else()
@@ -3892,14 +4034,14 @@ function(build_info)
     set(type VALUE)
   else()
     set(schema_check ${keys})
-    list(TRANSFORM schema_check PREPEND "mapping;")
-    yaml_get(check NAME build_info_schema KEY mapping cmake ${schema_check})
+    list(TRANSFORM schema_check PREPEND "properties;")
+    yaml_get(check NAME build_info_schema KEY properties cmake ${schema_check})
     if(check MATCHES ".*-NOTFOUND")
       message(FATAL_ERROR "${CMAKE_CURRENT_FUNCTION}(...) called with invalid tag: ${keys}")
     endif()
 
-    yaml_get(type NAME build_info_schema KEY mapping cmake ${schema_check} type)
-    if(type MATCHES "seq|sequence")
+    yaml_get(type NAME build_info_schema KEY properties cmake ${schema_check} type)
+    if(type MATCHES "array")
       set(type LIST)
     else()
       set(type VALUE)
@@ -4823,7 +4965,8 @@ function(zephyr_dt_import)
       COMMAND_ERROR_IS_FATAL ANY
     )
 
-    zephyr_file_copy(${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(COPY_FILE ${gen_dts_cmake_temp} ${gen_dts_cmake_output} ONLY_IF_DIFFERENT)
+    file(REMOVE ${gen_dts_cmake_temp})
   endif()
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${gen_dts_cmake_script})
 
@@ -5308,10 +5451,20 @@ function(zephyr_linker_section)
     # If KVMA is set and the Kernel virtual memory settings reqs are met, we
     # substitute the VMA setting with the specified KVMA value.
     if(CONFIG_MMU)
-      math(EXPR KERNEL_MEM_VM_OFFSET
-           "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET})\
-            - (${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_SRAM_OFFSET})"
-      )
+      if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+        math(EXPR KERNEL_MEM_VM_OFFSET
+          "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET}) \
+           - (${CONFIG_SRAM_BASE_ADDRESS} + ${CONFIG_SRAM_OFFSET})"
+        )
+      else()
+        dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+        dt_reg_addr(ram_addr PATH "${chosen_sram_path}")
+
+        math(EXPR KERNEL_MEM_VM_OFFSET
+          "(${CONFIG_KERNEL_VM_BASE} + ${CONFIG_KERNEL_VM_OFFSET}) \
+           - (${ram_addr} + ${CONFIG_SRAM_OFFSET})"
+        )
+      endif()
 
       if(NOT (${KERNEL_MEM_VM_OFFSET} EQUAL 0))
         set(SECTION_VMA ${SECTION_KVMA})
@@ -5962,11 +6115,24 @@ function(add_llext_target target_name)
   set(llext_pkg_output ${LLEXT_OUTPUT})
   set(source_files ${LLEXT_SOURCES})
 
+  # Convert the LLEXT_REMOVE_FLAGS list to a regular expression, and use it to
+  # filter out these flags from the Zephyr target settings
+  list(TRANSFORM LLEXT_REMOVE_FLAGS
+       REPLACE "(.+)" "^\\1$"
+       OUTPUT_VARIABLE llext_remove_flags_regexp
+  )
+  list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
+  if("${llext_remove_flags_regexp}" STREQUAL "")
+    # an empty regexp would match anything, we actually need the opposite
+    # so set it to match empty strings
+    set(llext_remove_flags_regexp "^$")
+  endif()
   set(zephyr_flags
       "$<TARGET_PROPERTY:zephyr_interface,INTERFACE_COMPILE_OPTIONS>"
   )
-  llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS ${zephyr_flags}
-      zephyr_filtered_flags)
+  set(zephyr_filtered_flags
+      "$<FILTER:${zephyr_flags},EXCLUDE,${llext_remove_flags_regexp}>"
+  )
 
   # Compile the source file using current Zephyr settings but a different
   # set of flags to obtain the desired llext object type.
@@ -5987,8 +6153,20 @@ function(add_llext_target target_name)
     # output a relocatable file. The output file suffix is changed so
     # the result looks like the object file it actually is.
     add_executable(${llext_lib_target} EXCLUDE_FROM_ALL ${source_files})
-    target_link_options(${llext_lib_target} PRIVATE
-      $<TARGET_PROPERTY:linker,partial_linking>)
+    if("${LINKER}" STREQUAL "lld")
+      # lld does not group sections by type in -r mode; an explicit grouping
+      # script is required to prevent section interleaving that would cause
+      # the LLEXT loader to see overlapping file-offset regions.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>
+        -T ${ZEPHYR_BASE}/cmake/linker/llext_relocatable.ld)
+    else()
+      # GNU ld naturally groups sections by type; no grouping script is needed.
+      # Applying the script would cause xt-ld and similar linkers to assign
+      # non-zero VMAs to sections, breaking the LLEXT Xtensa relocation handler.
+      target_link_options(${llext_lib_target} PRIVATE
+        $<TARGET_PROPERTY:linker,partial_linking>)
+    endif()
     set_target_properties(${llext_lib_target} PROPERTIES
       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/llext
       SUFFIX ${CMAKE_C_OUTPUT_EXTENSION})
@@ -6097,6 +6275,10 @@ function(add_llext_target target_name)
             $<TARGET_PROPERTY:bintools,elfconvert_flag_strip_unneeded>
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xt.*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.xtensa.info
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.exidx*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.ARM.extab*
+            $<TARGET_PROPERTY:bintools,elfconvert_flag_section_remove>.rel.ARM.extab*
             $<TARGET_PROPERTY:bintools,elfconvert_flag_infile>${llext_pkg_input}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_outfile>${llext_pkg_output}
             $<TARGET_PROPERTY:bintools,elfconvert_flag_final>
@@ -6201,38 +6383,6 @@ function(add_llext_command)
   )
 endfunction()
 
-# 7.3 llext helper functions
-
-# Usage:
-#   llext_filter_zephyr_flags(<filter> <flags> <outvar>)
-#
-# Filter out flags from a list of flags. The filter is a list of regular
-# expressions that will be used to exclude flags from the input list.
-#
-# The resulting generator expression will be stored in the variable <outvar>.
-#
-# Example:
-#   llext_filter_zephyr_flags(LLEXT_REMOVE_FLAGS zephyr_flags zephyr_filtered_flags)
-#
-function(llext_filter_zephyr_flags filter flags outvar)
-  list(TRANSFORM ${filter}
-       REPLACE "(.+)" "^\\1$"
-       OUTPUT_VARIABLE llext_remove_flags_regexp
-  )
-  list(JOIN llext_remove_flags_regexp "|" llext_remove_flags_regexp)
-  if("${llext_remove_flags_regexp}" STREQUAL "")
-    # an empty regexp would match anything, we actually need the opposite
-    # so set it to match empty strings
-    set(llext_remove_flags_regexp "^$")
-  endif()
-
-  set(zephyr_filtered_flags
-      "$<FILTER:${flags},EXCLUDE,${llext_remove_flags_regexp}>"
-  )
-
-  set(${outvar} ${zephyr_filtered_flags} PARENT_SCOPE)
-endfunction()
-
 ########################################################
 # 8. Script mode handling
 ########################################################
@@ -6261,13 +6411,5 @@ if(CMAKE_SCRIPT_MODE_FILE)
 
   function(set_target_properties)
     # This silence the error: 'set_target_properties command is not scriptable'
-  endfunction()
-
-  # Build info creates a custom target for handling of build info.
-  # build_info is not needed in script mode but still called by Zephyr CMake
-  # modules. Therefore disable build_info(...) in when including
-  # extensions.cmake in script mode.
-  function(build_info)
-    # This silence the error: 'Unknown CMake command "yaml_context"'
   endfunction()
 endif()

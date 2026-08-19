@@ -112,6 +112,16 @@
 				};
 			};
 
+			test_i2c_m5pm1: pmic@6e {
+				compatible = "m5stack,m5pm1";
+				reg = <0x6e>;
+
+				test_i2c_m5pm1_adc: adc {
+					compatible = "m5stack,m5pm1-adc";
+					#io-channel-cells = <1>;
+				};
+			};
+
 			test_i2c_tla2021: tla2021@a {
 				compatible = "ti,tla2021";
 				reg = <0xa>;
@@ -127,6 +137,66 @@
 			test_i2c_tla2024: tla2024@c {
 				compatible = "ti,tla2024";
 				reg = <0xc>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_tla2528: tla2528@d {
+				compatible = "ti,tla2528";
+				reg = <0xd>;
+				#io-channel-cells = <1>;
+
+				test_i2c_tla2528_adc: adc {
+					compatible = "ti,tla2528-adc";
+					status = "okay";
+					#io-channel-cells = <1>;
+				};
+			};
+
+			test_i2c_ads7828: ads7828@48 {
+				compatible = "ti,ads7828";
+				reg = <0x48>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_ads7830: ads7830@49 {
+				compatible = "ti,ads7830";
+				reg = <0x49>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc081c021: adc081c021@50 {
+				compatible = "ti,adc081c021";
+				reg = <0x50>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc081c027: adc081c027@51 {
+				compatible = "ti,adc081c027";
+				reg = <0x51>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc101c021: adc101c021@52 {
+				compatible = "ti,adc101c021";
+				reg = <0x52>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc101c027: adc101c027@53 {
+				compatible = "ti,adc101c027";
+				reg = <0x53>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc121c021: adc121c021@54 {
+				compatible = "ti,adc121c021";
+				reg = <0x54>;
+				#io-channel-cells = <1>;
+			};
+
+			test_i2c_adc121c027: adc121c027@55 {
+				compatible = "ti,adc121c027";
+				reg = <0x55>;
 				#io-channel-cells = <1>;
 			};
 		};
@@ -510,12 +580,43 @@
 				#io-channel-cells = <1>;
 			};
 
+			test_spi_ads1220: ads1220@30 {
+				compatible = "ti,ads1220";
+				reg = <0x24>;
+				spi-max-frequency = <4000000>;
+				drdy-gpios = <&test_gpio 0 0>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				channel@0 {
+					reg = <0>;
+					zephyr,gain = "ADC_GAIN_1";
+					zephyr,reference = "ADC_REF_INTERNAL";
+					zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				};
+			};
+
 			test_spi_max2253x: max2253x@30 {
 				compatible = "maxim,max2253x";
 				reg = <0x30>;
 				spi-max-frequency = <0>;
 				#io-channel-cells = <1>;
 				int-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+			};
+
+			test_spi_ad4190_8: ad4190-8@31 {
+				compatible = "adi,ad4190-8-adc";
+				reg = <0x31>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_ad4195_8: ad4195-8@32 {
+				compatible = "adi,ad4195-8-adc";
+				reg = <0x32>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 		};
 	};

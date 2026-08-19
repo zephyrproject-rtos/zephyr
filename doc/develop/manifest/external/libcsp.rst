@@ -21,7 +21,7 @@ libcsp is licensed under the MIT license.
 Usage with Zephyr
 *****************
 
-To use libcsp with Zephyr, you first need to add the following snipet to your ``west.yaml``:
+To use libcsp with Zephyr, you first need to add the following snippet to your ``west.yaml``:
 
 .. code-block:: yaml
 

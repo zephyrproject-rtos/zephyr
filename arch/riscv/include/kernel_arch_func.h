@@ -35,11 +35,15 @@ extern "C" {
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
-#ifdef CONFIG_THREAD_LOCAL_STORAGE
+#if defined(CONFIG_THREAD_LOCAL_STORAGE) && !defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 	__asm__ volatile ("li tp, 0");
 #endif
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
+#ifdef CONFIG_RISCV_S_MODE
+	csr_write(sscratch, &_kernel.cpus[0]);
+#else
 	csr_write(mscratch, &_kernel.cpus[0]);
+#endif
 #endif
 #ifdef CONFIG_SMP
 	_kernel.cpus[0].arch.hartid = csr_read(mhartid);
@@ -47,7 +51,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 #endif
 #if ((CONFIG_MP_MAX_NUM_CPUS) > 1)
 	unsigned int cpu_node_list[] = {
-		DT_FOREACH_CHILD_STATUS_OKAY_SEP(DT_PATH(cpus), DT_REG_ADDR, (,))
+		DT_FOREACH_CPU_STATUS_OKAY_SEP(DT_REG_ADDR, (,))
 	};
 	unsigned int cpu_num, hart_x;
 
@@ -59,7 +63,7 @@ static ALWAYS_INLINE void arch_kernel_init(void)
 		hart_x++;
 	}
 #endif
-#ifdef CONFIG_RISCV_PMP
+#if defined(CONFIG_RISCV_PMP) && !defined(CONFIG_RISCV_S_MODE)
 	z_riscv_pmp_init();
 #endif
 #ifdef CONFIG_CUSTOM_STACK_GUARD
@@ -110,6 +114,7 @@ int z_irq_do_offload(void);
 #ifdef CONFIG_FPU_SHARING
 void arch_flush_local_fpu(void);
 void arch_flush_fpu_ipi(unsigned int cpu);
+void z_riscv_fpu_flush_thread(struct k_thread *thread);
 #endif
 
 #ifndef CONFIG_MULTITHREADING

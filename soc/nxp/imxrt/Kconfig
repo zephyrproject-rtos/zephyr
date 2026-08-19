@@ -39,7 +39,7 @@ choice BOOT_DEVICE
 	default BOOT_FLEXSPI_NOR
 
 config BOOT_XSPI_NOR
-	bool "XPI serial NOR"
+	bool "XSPI serial NOR"
 	depends on DT_HAS_NXP_XSPI_ENABLED
 
 FLEXSPI_COMPAT := nxp,imx-flexspi
@@ -56,11 +56,11 @@ SEMC_COMPAT := nxp,imx-semc
 
 config BOOT_SEMC_NOR
 	bool "SEMC parallel NOR"
-	depends on $(dt_has_compat, $(SEMC_COMPAT))
+	depends on $(dt_has_compat,$(SEMC_COMPAT))
 
 config BOOT_SEMC_NAND
 	bool "SEMC parallel NAND"
-	depends on $(dt_has_compat, $(SEMC_COMPAT))
+	depends on $(dt_has_compat,$(SEMC_COMPAT))
 
 endchoice # BOOT_DEVICE
 
@@ -147,15 +147,15 @@ config NXP_IMX_EXTERNAL_HYPERRAM
 	  HYPERRAM memory space.
 
 config SECOND_CORE_MCUX
-	bool "Dual core operation on the RT11xx series"
-	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X || SOC_SERIES_IMXRT7XX
+	bool "Dual core operation on the RT multi-core series"
+	depends on SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT7XX || \
+		(SOC_SERIES_IMXRT118X && !SOC_MIMXRT1182 && !SOC_MIMXRT1181)
 	help
 	  Indicates the second core will be enabled, and the part will run
-	  in dual core mode. Enables dual core operation on the RT11xx series,
-	  by booting an image targeting the Cortex-M4 from the Cortex-M7 CPU.
-	  The M4 image will be loaded from flash into RAM based off a
-	  generated header specifying the VMA and LMA of each memory section
-	  to load
+	  in dual core mode. The primary core boots an image targeting the
+	  secondary core. The second core image will be loaded from flash
+	  into RAM based off a generated header specifying the VMA and LMA
+	  of each memory section to load.
 
 config SECOND_CORE_MCUX_REMOTE_DIR
 	string "Directory to with output image header from second core"
@@ -163,6 +163,15 @@ config SECOND_CORE_MCUX_REMOTE_DIR
 	help
 	  Sets the remote directory to include the output image header data
 	  from when launching a second core image
+
+config SOC_IMXRT118X_SECOND_CORE_KICKOFF
+	bool "Second core kickoff on the RT11xx series"
+	default y
+	depends on SECOND_CORE_MCUX && SOC_SERIES_IMXRT118X
+	help
+	  Indicates the second core will be started by the primary core at its system
+	  initialization. Otherwise, secondary core kickoff can be done independently
+	  at application level later.
 
 if SOC_SERIES_IMXRT10XX || SOC_SERIES_IMXRT11XX || SOC_SERIES_IMXRT118X
 

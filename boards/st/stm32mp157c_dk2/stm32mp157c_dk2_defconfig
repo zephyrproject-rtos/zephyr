@@ -1,5 +1,5 @@
-# enable GPIO
-CONFIG_GPIO=y
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
 
 # Enable MPU
 CONFIG_ARM_MPU=y

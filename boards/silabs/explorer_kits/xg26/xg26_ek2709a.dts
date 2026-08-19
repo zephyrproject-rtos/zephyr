@@ -14,6 +14,8 @@
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,ieee802154 = &ieee802154;
+		zephyr,openthread-counter = &protimer;
 	};
 };
 
@@ -21,9 +23,19 @@
 	status = "okay";
 };
 
+&ieee802154 {
+	status = "okay";
+	hfxo = <&hfxo>;
+	sleep-clock = <&lfxo>;
+};
+
 &hfxo {
 	ctune = <140>;
 	precision = <50>;
+	status = "okay";
+};
+
+&protimer {
 	status = "okay";
 };
 

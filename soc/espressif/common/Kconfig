@@ -1,11 +1,14 @@
 # Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-config FLASH_SIZE
-	int
-
-config FLASH_BASE_ADDRESS
-	hex
+config ESP32_ETM
+	bool
+	depends on ESP32_SOC_ETM_SUPPORTED
+	help
+	  Espressif Event Task Matrix (ETM) channel allocator. The ETM
+	  routes a peripheral event to a peripheral task in hardware. This
+	  symbol is selected by drivers that need such routing and is not
+	  meant to be enabled directly.
 
 config ESP32_USE_UNSUPPORTED_REVISION
 	bool "Use unsupported ESP32 revision (Rev 0/1)"
@@ -26,10 +29,12 @@ config ESP_SIMPLE_BOOT
 
 config ESP32_TIMER_TASK_STACK_SIZE
 	int "Stack size of the high resolution ESP Timer"
-	default 4096
+	default 1536
 	help
 	  Set the stack size for the internal high resolution ESP Timer
-	  used in Wi-Fi and BLE peripherals.
+	  used in Wi-Fi and BLE peripherals. Registered timer callbacks
+	  run in this task's context, including Wi-Fi, BLE, mesh, PHY and
+	  coexistence callbacks that dispatch here.
 
 config ESP32_TIMER_TASK_PRIO
 	int "Task priority of the high resolution ESP Timer"
@@ -69,3 +74,7 @@ rsource "Kconfig.spiram"
 rsource "Kconfig.esptool"
 rsource "Kconfig.flash"
 rsource "Kconfig.lcd_cam"
+
+if PM && TICKLESS_KERNEL
+rsource "Kconfig.pm"
+endif

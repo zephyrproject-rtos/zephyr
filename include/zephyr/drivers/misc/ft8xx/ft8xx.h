@@ -10,8 +10,8 @@
  * @ingroup ft8xx_interface
  */
 
-#ifndef ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_H_
-#define ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_H_
 
 #include <stdint.h>
 #include <zephyr/device.h>
@@ -43,7 +43,6 @@ struct ft8xx_touch_transform {
 };
 
 /**
- * @typedef ft8xx_int_callback
  * @brief Callback API to inform API user that FT8xx triggered interrupt
  *
  * This callback is called from IRQ context.
@@ -131,4 +130,4 @@ void ft8xx_register_int(const struct device *dev,
 }
 #endif
 
-#endif /* ZEPHYR_DRIVERS_MISC_FT8XX_FT8XX_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_FT8XX_FT8XX_H_ */

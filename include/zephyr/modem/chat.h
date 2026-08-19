@@ -12,8 +12,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_CHAT_
-#define ZEPHYR_MODEM_CHAT_
+#ifndef ZEPHYR_INCLUDE_MODEM_CHAT_H_
+#define ZEPHYR_INCLUDE_MODEM_CHAT_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +29,16 @@ extern "C" {
  */
 
 struct modem_chat;
+
+/**
+ * @brief Callback called to determine if a chat command should be run
+ *
+ * @param user_data Free to use user data set during modem_chat_init()
+ *
+ * @retval true Chat command should be run
+ * @retval false Chat command should be skipped
+ */
+typedef bool (*modem_chat_run_check)(void *user_data);
 
 /**
  * @brief Callback called when matching chat is received
@@ -47,41 +57,45 @@ typedef void (*modem_chat_match_callback)(struct modem_chat *chat, char **argv, 
 struct modem_chat_match {
 	/** Match array */
 	const uint8_t *match;
-	/** Size of match */
-	uint8_t match_size;
 	/** Separators array */
 	const uint8_t *separators;
+	/** Callback run on a match */
+	modem_chat_match_callback callback;
+	/** Size of match */
+	uint8_t match_size;
 	/** Size of separators array */
 	uint8_t separators_size;
 	/** Set if modem chat instance shall use wildcards when matching */
 	bool wildcards;
 	/** Set if script shall not continue to next step in case of match */
 	bool partial;
-	/** Type of modem chat instance */
-	modem_chat_match_callback callback;
 };
 
 #define MODEM_CHAT_MATCH(_match, _separators, _callback)                                           \
 	{                                                                                          \
-		.match = (uint8_t *)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),         \
+		.match = (uint8_t *)(_match),                                                      \
 		.separators = (uint8_t *)(_separators),                                            \
-		.separators_size = (uint8_t)(sizeof(_separators) - 1), .wildcards = false,         \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
+		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
+		.wildcards = false,                                                                \
 		.callback = _callback,                                                             \
 	}
 
 #define MODEM_CHAT_MATCH_WILDCARD(_match, _separators, _callback)                                  \
 	{                                                                                          \
-		.match = (uint8_t *)(_match), .match_size = (uint8_t)(sizeof(_match) - 1),         \
+		.match = (uint8_t *)(_match),                                                      \
 		.separators = (uint8_t *)(_separators),                                            \
-		.separators_size = (uint8_t)(sizeof(_separators) - 1), .wildcards = true,          \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
+		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
+		.wildcards = true,                                                                 \
 		.callback = _callback,                                                             \
 	}
 
 #define MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, _wildcards, _partial)         \
 	{                                                                                          \
 		.match = (uint8_t *)(_match),                                                      \
-		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
 		.separators = (uint8_t *)(_separators),                                            \
+		.match_size = (uint8_t)(sizeof(_match) - 1),                                       \
 		.separators_size = (uint8_t)(sizeof(_separators) - 1),                             \
 		.wildcards = _wildcards,                                                           \
 		.partial = _partial,                                                               \
@@ -118,8 +132,18 @@ struct modem_chat_script_chat {
 	uint16_t response_matches_size;
 	/** Timeout before chat script may continue to next step in milliseconds */
 	uint16_t timeout;
+#if defined(CONFIG_MODEM_CHAT_COMMANDS_CONDITIONAL) || defined(__DOXYGEN__)
+	/** Callback that returns whether @a request should be run or skipped */
+	modem_chat_run_check run_check;
+#endif
 };
 
+/**
+ * @brief Command that expects a single response
+ *
+ * @param _request Command string to send
+ * @param _response_match Expected response, as created by @ref MODEM_CHAT_MATCH or variant
+ */
 #define MODEM_CHAT_SCRIPT_CMD_RESP(_request, _response_match)                                      \
 	{                                                                                          \
 		.request = (uint8_t *)(_request),                                                  \
@@ -129,6 +153,12 @@ struct modem_chat_script_chat {
 		.timeout = 0,                                                                      \
 	}
 
+/**
+ * @brief Command that can handle multiple responses
+ *
+ * @param _request Command string to send
+ * @param _response_matches Accepted responses, as created by @ref MODEM_CHAT_MATCHES_DEFINE
+ */
 #define MODEM_CHAT_SCRIPT_CMD_RESP_MULT(_request, _response_matches)                               \
 	{                                                                                          \
 		.request = (uint8_t *)(_request),                                                  \
@@ -138,6 +168,12 @@ struct modem_chat_script_chat {
 		.timeout = 0,                                                                      \
 	}
 
+/**
+ * @brief Command that does not expect any response
+ *
+ * @param _request Command string to send
+ * @param _timeout_ms Duration to wait in milliseconds before continuing the script
+ */
 #define MODEM_CHAT_SCRIPT_CMD_RESP_NONE(_request, _timeout_ms)                                     \
 	{                                                                                          \
 		.request = (uint8_t *)(_request),                                                  \
@@ -147,6 +183,63 @@ struct modem_chat_script_chat {
 		.timeout = _timeout_ms,                                                            \
 	}
 
+/**
+ * @brief Command that expects a single response, conditionally run
+ *
+ * @param _request Command string to send
+ * @param _response_match Expected response, as created by @ref MODEM_CHAT_MATCH or variant
+ * @param _run_check Callback that controls whether the command is run or not
+ */
+#define MODEM_CHAT_SCRIPT_CMD_RESP_COND(_request, _response_match, _run_check)                     \
+	{                                                                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = &_response_match,                                              \
+		.response_matches_size = 1,                                                        \
+		.timeout = 0,                                                                      \
+		.run_check = _run_check                                                            \
+	}
+
+/**
+ * @brief Command that can handle multiple responses, conditionally run
+ *
+ * @param _request Command string to send
+ * @param _response_matches Accepted responses, as created by @ref MODEM_CHAT_MATCHES_DEFINE
+ * @param _run_check Callback that controls whether the command is run or not
+ */
+#define MODEM_CHAT_SCRIPT_CMD_RESP_MULT_COND(_request, _response_matches, _run_check)              \
+	{                                                                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = _response_matches,                                             \
+		.response_matches_size = ARRAY_SIZE(_response_matches),                            \
+		.timeout = 0,                                                                      \
+		.run_check = _run_check                                                            \
+	}
+
+/**
+ * @brief Command that does not expect any response, conditionally run
+ *
+ * @param _request Command string to send
+ * @param _timeout_ms Duration to wait in milliseconds before continuing the script
+ * @param _run_check Callback that controls whether the command is run or not
+ */
+#define MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND(_request, _timeout_ms, _run_check)                    \
+	{                                                                                          \
+		.request = (uint8_t *)(_request),                                                  \
+		.request_size = (uint16_t)(sizeof(_request) - 1),                                  \
+		.response_matches = NULL,                                                          \
+		.response_matches_size = 0,                                                        \
+		.timeout = _timeout_ms,                                                            \
+		.run_check = _run_check                                                            \
+	}
+
+/**
+ * @brief Define a static const @ref modem_chat_script_chat array
+ *
+ * @param _sym Name of the created array
+ * @param ... Arbitrary number of @ref MODEM_CHAT_SCRIPT_CMD_RESP and variant macros
+ */
 #define MODEM_CHAT_SCRIPT_CMDS_DEFINE(_sym, ...)                                                   \
 	const static struct modem_chat_script_chat _sym[] = {__VA_ARGS__}
 
@@ -212,8 +305,6 @@ enum modem_chat_script_send_state {
 	MODEM_CHAT_SCRIPT_SEND_STATE_IDLE,
 	/* Sending request */
 	MODEM_CHAT_SCRIPT_SEND_STATE_REQUEST,
-	/* Sending delimiter */
-	MODEM_CHAT_SCRIPT_SEND_STATE_DELIMITER,
 };
 
 /**
@@ -221,6 +312,7 @@ enum modem_chat_script_send_state {
  * @warning Do not modify any members of this struct directly
  */
 struct modem_chat {
+	/** @cond INTERNAL_HIDDEN */
 	/* Pipe used to send and receive data */
 	struct modem_pipe *pipe;
 
@@ -233,16 +325,16 @@ struct modem_chat {
 	uint16_t receive_buf_len;
 
 	/* Work buffer */
-	uint8_t work_buf[32];
+	uint8_t work_buf[CONFIG_MODEM_CHAT_WORK_BUFFER_SIZE];
 	uint16_t work_buf_len;
 
 	/* Chat delimiter */
-	uint8_t *delimiter;
+	const uint8_t *delimiter;
 	uint16_t delimiter_size;
 	uint16_t delimiter_match_len;
 
 	/* Array of bytes which are discarded out by parser */
-	uint8_t *filter;
+	const uint8_t *filter;
 	uint16_t filter_size;
 
 	/* Parsed arguments */
@@ -280,6 +372,10 @@ struct modem_chat {
 	uint16_t parse_match_len;
 	uint16_t parse_arg_len;
 	uint16_t parse_match_type;
+#if defined(CONFIG_MODEM_CHAT_LOG_RAW_RX)
+	uint8_t raw_log_separators[CONFIG_MODEM_CHAT_LOG_BUFFER_SIZE];
+	uint16_t raw_log_separators_len;
+#endif
 
 	/* Process received data */
 	struct k_work receive_work;
@@ -289,6 +385,7 @@ struct modem_chat {
 	struct modem_stats_buffer receive_buf_stats;
 	struct modem_stats_buffer work_buf_stats;
 #endif
+	/** @endcond */
 };
 
 /**
@@ -302,11 +399,11 @@ struct modem_chat_config {
 	/** Size of receive buffer should be longest line + longest match */
 	uint16_t receive_buf_size;
 	/** Delimiter */
-	uint8_t *delimiter;
+	const uint8_t *delimiter;
 	/** Size of delimiter */
 	uint8_t delimiter_size;
 	/** Bytes which are discarded by parser */
-	uint8_t *filter;
+	const uint8_t *filter;
 	/** Size of filter */
 	uint8_t filter_size;
 	/** Array of pointers used to point to parsed arguments */
@@ -318,6 +415,61 @@ struct modem_chat_config {
 	/** Elements in array of unsolicited matches */
 	uint16_t unsol_matches_size;
 };
+
+/**
+ * @brief Get the modem chat script command index at callback time.
+ *
+ * @warning This function must only be called from the modem chat script
+ * callback. The modem chat instance may execute in a different context from
+ * other callers, making access to the script execution state unsafe outside
+ * the callback.
+ *
+ * When called after a script completes successfully, the returned index is
+ * equal to the number of commands in the script and does not identify a valid
+ * command.
+ *
+ * @param chat Non-NULL modem chat instance associated with the callback.
+ *
+ * @return Script command index at callback time.
+ */
+static inline uint16_t modem_chat_callback_script_chat_index(const struct modem_chat *chat)
+{
+	return chat->script_chat_it;
+}
+
+/**
+ * @brief Get the modem chat script command that was active at callback time.
+ *
+ * @warning This function must only be called from the modem chat script
+ * callback. The modem chat instance may execute in a different context from
+ * other callers, making access to the script execution state unsafe outside
+ * the callback.
+ *
+ * @warning The returned pointer is guaranteed to remain valid only for the
+ * duration of the callback. The caller must not retain or dereference the
+ * pointer after the callback returns. Outside the callback, only the owner of
+ * the script and its command array can determine their lifetime.
+ *
+ * When the script completes successfully, there is no current command and
+ * this function returns NULL.
+ *
+ * @param chat Non-NULL modem chat instance associated with the callback.
+ *
+ * @return Pointer to the script command that was active when the callback was
+ *         invoked.
+ * @retval NULL if no current script command is available.
+ */
+static inline const struct modem_chat_script_chat *
+modem_chat_callback_script_chat(const struct modem_chat *chat)
+{
+	const struct modem_chat_script *script = chat->script;
+
+	if ((script == NULL) || (chat->script_chat_it >= script->script_chats_size)) {
+		return NULL;
+	}
+
+	return &script->script_chats[chat->script_chat_it];
+}
 
 /**
  * @brief Initialize modem pipe chat instance
@@ -549,4 +701,4 @@ void modem_chat_script_set_timeout(struct modem_chat_script *script, uint32_t ti
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_CHAT_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_CHAT_H_ */

@@ -9,8 +9,8 @@
 #include <zephyr/fs/fs.h>
 #include <nsi_errno.h>
 
-#include "cmdline.h"
-#include "soc.h"
+#include <cmdline.h>
+#include <soc.h>
 
 #include "fuse_fs_access_bottom.h"
 
@@ -127,7 +127,7 @@ static int ffa_create_top(const char *path, uint64_t *fh)
 
 	*fh = handle;
 
-	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_WRITE);
+	err = fs_open(&files[handle], path, FS_O_CREATE | FS_O_RDWR);
 	if (err != 0) {
 		release_file_handle(handle);
 		*fh = INVALID_FILE_HANDLE;

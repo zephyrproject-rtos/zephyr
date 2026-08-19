@@ -1,0 +1,56 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - flash
+tests:
+  boards.nrf.rram.throttling:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_configs:
+      - CONFIG_SOC_FLASH_NRF_THROTTLING=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+  boards.nrf.rram.skip_if_filled:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_configs:
+      - CONFIG_SOC_FLASH_NRF_THROTTLING=y
+      - CONFIG_NRF_RRAM_FILL_SKIP_IF_FILLED=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54l15dk/nrf54l10/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+  # Drive every flash op through write_op() (radio-sync ticker path) by
+  # bringing up BLE LL with non-connectable advertising. Validates the
+  # defensive nrf_rramc_config_set() at the start of every radio time slot
+  # introduced together with hoisting RRAMC write-mode programming out of
+  # rram_write(). Uses the same WRITE_BUFFER_SIZE that MCUboot pins on
+  # nrf54l15 (boot/zephyr/boards/nrf54l15dk_nrf54l15_cpuapp.conf), see the
+  # overlay file for why the Kconfig default of 1 cannot be used.
+  boards.nrf.rram.radio_sync:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_args: EXTRA_CONF_FILE=overlay-radio_sync.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp
+  boards.nrf.rram.radio_sync_skip:
+    harness: ztest
+    harness_config:
+      fixture: external_flash
+    extra_args: EXTRA_CONF_FILE=overlay-radio_sync_skip.conf
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp

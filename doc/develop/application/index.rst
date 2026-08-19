@@ -341,7 +341,7 @@ Zephyr's :zephyr:code-sample-category:`samples` as a starting point is likely to
 
    .. code-block:: cmake
 
-      cmake_minimum_required(VERSION 3.20.0)
+      cmake_minimum_required(VERSION 3.28.0)
 
       find_package(Zephyr)
       project(my_zephyr_app)
@@ -1161,6 +1161,7 @@ will be needed when submitting to Zephyr.
 The contents of ``my_custom_board`` should follow the same guidelines for any
 Zephyr board, and provide the following files::
 
+    board.yml
     my_custom_board_defconfig
     my_custom_board.dts
     my_custom_board.yaml

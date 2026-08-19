@@ -33,8 +33,7 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	__ASSERT_NO_MSG(default_conn == conn);
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 
 	UNSET_FLAG(flag_is_connected);
 	gatt_clear_flags();
@@ -82,7 +81,6 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 static void scan_connect_to_first_result_device_found(const bt_addr_le_t *addr, int8_t rssi,
 						      uint8_t type, struct net_buf_simple *ad)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	int err;
 
 	/* We're only interested in connectable events */
@@ -90,9 +88,8 @@ static void scan_connect_to_first_result_device_found(const bt_addr_le_t *addr, 
 		TEST_FAIL("Unexpected advertisement type.");
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 	printk("Got scan result, connecting.. dst %s, RSSI %d\n",
-	       addr_str, rssi);
+	       bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	__ASSERT(!err, "Err bt_le_scan_stop %d", err);
@@ -132,7 +129,7 @@ void disconnect(struct bt_conn *conn)
 	int err;
 
 	err = bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-	__ASSERT(!err, "Failed to initate disconnection (err %d)", err);
+	__ASSERT(!err, "Failed to initiate disconnection (err %d)", err);
 
 	printk("Waiting for disconnection...\n");
 	WAIT_FOR_FLAG_UNSET(flag_is_connected);

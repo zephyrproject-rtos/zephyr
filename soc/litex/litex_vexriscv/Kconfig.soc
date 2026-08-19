@@ -1,10 +1,16 @@
-# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES
+	default "litex_vexriscv" if SOC_SERIES_LITEX_VEXRISCV
+
+config SOC_SERIES_LITEX_VEXRISCV
+	bool
+	select SOC_FAMILY_LITEX
 
 config SOC_LITEX_VEXRISCV
 	bool
-	help
-	  LiteX VexRiscv system implementation
+	select SOC_SERIES_LITEX_VEXRISCV
 
 config SOC
 	default "litex_vexriscv" if SOC_LITEX_VEXRISCV

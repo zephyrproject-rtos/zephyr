@@ -40,6 +40,16 @@ struct nordic_vpr_launcher_config {
 #endif
 };
 
+/* Determine if all code that will be copied is 8 byte aligned. If yes then optimized
+ * copying can be used. Macro ends with && so it must be followed by an additional
+ * condition.
+ */
+#define ALIGNED_SIZE_AND_CODE(inst) \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, execution_memory), (                                \
+		((DT_REG_SIZE(DT_INST_PHANDLE(inst, execution_memory)) & BIT_MASK(3)) == 0) &&     \
+		((DT_REG_ADDR(DT_INST_PHANDLE(inst, execution_memory)) & BIT_MASK(3)) == 0) &&     \
+		((DT_REG_ADDR(DT_INST_PHANDLE(inst, source_memory)) & BIT_MASK(3)) == 0) &&))
+
 static int nordic_vpr_launcher_init(const struct device *dev)
 {
 	const struct nordic_vpr_launcher_config *config = dev->config;
@@ -53,7 +63,16 @@ static int nordic_vpr_launcher_init(const struct device *dev)
 	if (config->size > 0U) {
 		LOG_DBG("Loading VPR (%p) from %p to %p (%zu bytes)", config->vpr,
 			(void *)config->src_addr, (void *)config->exec_addr, config->size);
+#if (DT_INST_FOREACH_STATUS_OKAY(ALIGNED_SIZE_AND_CODE) !defined(CONFIG_SPEED_OPTIMIZATIONS))
+		uint64_t *src = (uint64_t *)config->src_addr;
+		uint64_t *dst = (uint64_t *)config->exec_addr;
+
+		for (size_t i = 0; i < config->size / sizeof(uint64_t); i++) {
+			dst[i] = src[i];
+		}
+#else
 		memcpy((void *)config->exec_addr, (void *)config->src_addr, config->size);
+#endif
 #if defined(CONFIG_DCACHE)
 		LOG_DBG("Writing back cache with loaded VPR (from %p %zu bytes)",
 			(void *)config->exec_addr, config->size);

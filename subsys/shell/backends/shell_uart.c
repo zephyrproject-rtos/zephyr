@@ -24,10 +24,27 @@ LOG_MODULE_REGISTER(shell_uart);
 #define RX_POLL_PERIOD K_NO_WAIT
 #endif
 
+#ifndef CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT
+#define CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT 0
+#endif
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 NET_BUF_POOL_DEFINE(smp_shell_rx_pool, CONFIG_MCUMGR_TRANSPORT_SHELL_RX_BUF_COUNT,
 		    SMP_SHELL_RX_BUF_SIZE, 0, NULL);
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
+
+static int rx_enable(const struct device *dev, struct shell_uart_async *sh_uart,
+		     uint8_t *buf, size_t len)
+{
+	int err = uart_rx_enable(dev, buf, len, CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_TIMEOUT);
+
+	if (err == 0) {
+		sh_uart->rx_enabled = true;
+		sh_uart->pending_rx_req = 0;
+	}
+
+	return err;
+}
 
 static void async_callback(const struct device *dev, struct uart_event *evt, void *user_data)
 {
@@ -62,7 +79,21 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 		uart_async_rx_on_buf_rel(&sh_uart->async_rx, evt->data.rx_buf.buf);
 		break;
 	case  UART_RX_DISABLED:
+	{
+		uint8_t *buf = uart_async_rx_buf_req(&sh_uart->async_rx);
+		size_t len;
+		int err;
+
+		sh_uart->rx_enabled = false;
+		if (buf) {
+			len = uart_async_rx_get_buf_len(&sh_uart->async_rx);
+			err = rx_enable(dev, sh_uart, buf, len);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
+		}
+
 		break;
+	}
 	default:
 		break;
 	};
@@ -188,7 +219,7 @@ static void uart_tx_handle(const struct device *dev, struct shell_uart_int_drive
 		ARG_UNUSED(err);
 	} else {
 		uart_irq_tx_disable(dev);
-		sh_uart->tx_busy = 0;
+		atomic_set(&sh_uart->tx_busy, 0);
 	}
 
 	sh_uart->common.handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_uart->common.context);
@@ -227,11 +258,6 @@ static void irq_init(struct shell_uart_int_driven *sh_uart)
 	}
 }
 
-static int rx_enable(const struct device *dev, uint8_t *buf, size_t len)
-{
-	return uart_rx_enable(dev, buf, len, 10000);
-}
-
 static void async_init(struct shell_uart_async *sh_uart)
 {
 	const struct device *dev = sh_uart->common.dev;
@@ -256,7 +282,7 @@ static void async_init(struct shell_uart_async *sh_uart)
 	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 
-	err = rx_enable(dev, buf, uart_async_rx_get_buf_len(async_rx));
+	err = rx_enable(dev, sh_uart, buf, uart_async_rx_get_buf_len(async_rx));
 	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 }
@@ -292,6 +318,7 @@ static int init(const struct shell_transport *transport,
 	int ret;
 
 	common->dev = (const struct device *)config;
+
 	common->handler = evt_handler;
 	common->context = context;
 
@@ -327,6 +354,9 @@ static void irq_uninit(struct shell_uart_int_driven *sh_uart)
 
 static void async_uninit(struct shell_uart_async *sh_uart)
 {
+	const struct device *dev = sh_uart->common.dev;
+
+	(void)uart_rx_disable(dev);
 }
 
 static void polling_uninit(struct shell_uart_polling *sh_uart)
@@ -446,41 +476,67 @@ static int async_read(struct shell_uart_async *sh_uart,
 	uint8_t *buf;
 	size_t blen;
 	struct uart_async_rx *async_rx = &sh_uart->async_rx;
+	bool buf_available = false;
 
-	blen = uart_async_rx_data_claim(async_rx, &buf, length);
+	*cnt = 0;
+
 #ifdef CONFIG_MCUMGR_TRANSPORT_SHELL
 	struct smp_shell_data *const smp = &sh_uart->common.smp;
-	size_t sh_cnt = 0;
 
-	for (size_t i = 0; i < blen; i++) {
-		if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
-			((uint8_t *)data)[sh_cnt++] = buf[i];
+	do {
+		blen = uart_async_rx_data_claim(async_rx, &buf, length - *cnt);
+		if (blen == 0) {
+			break;
 		}
+
+		for (size_t i = 0; i < blen; i++) {
+			if (smp_shell_rx_bytes(smp, &buf[i], 1) == 0) {
+				((uint8_t *)data)[(*cnt)++] = buf[i];
+			}
+		}
+
+		buf_available = uart_async_rx_data_consume(async_rx, blen);
+	} while (*cnt == 0);
+
+	if (*cnt == 0 && uart_async_rx_data_claim(async_rx, &buf, 1) > 0) {
+		uart_async_rx_data_consume(async_rx, 0);
+		sh_uart->common.handler(SHELL_TRANSPORT_EVT_RX_RDY,
+					sh_uart->common.context);
 	}
 #else
-	size_t sh_cnt = blen;
-
-	memcpy(data, buf, blen);
+	blen = uart_async_rx_data_claim(async_rx, &buf, length);
+	if (blen > 0) {
+		memcpy(data, buf, blen);
+	}
+	*cnt = blen;
+	buf_available = uart_async_rx_data_consume(async_rx, blen);
 #endif
-	bool buf_available = uart_async_rx_data_consume(async_rx, sh_cnt);
-	*cnt = sh_cnt;
 
-	if (sh_uart->pending_rx_req && buf_available) {
-		uint8_t *buf = uart_async_rx_buf_req(async_rx);
-		size_t len = uart_async_rx_get_buf_len(async_rx);
+	if (!buf_available) {
+		return 0;
+	}
+
+	buf = uart_async_rx_buf_req(async_rx);
+	blen = uart_async_rx_get_buf_len(async_rx);
+
+	__ASSERT_NO_MSG(buf != NULL);
+
+	if (!sh_uart->rx_enabled) {
+		/* If it is too late and RX is disabled then re-enable it. */
+		return rx_enable(sh_uart->common.dev, sh_uart, buf, blen);
+	}
+
+	if (sh_uart->pending_rx_req) {
 		int err;
 
-		__ASSERT_NO_MSG(buf != NULL);
 		atomic_dec(&sh_uart->pending_rx_req);
-		err = uart_rx_buf_rsp(sh_uart->common.dev, buf, len);
-		/* If it is too late and RX is disabled then re-enable it. */
+		err = uart_rx_buf_rsp(sh_uart->common.dev, buf, blen);
 		if (err < 0) {
-			if (err == -EACCES) {
-				sh_uart->pending_rx_req = 0;
-				err = rx_enable(sh_uart->common.dev, buf, len);
-			} else {
-				return err;
-			}
+			/* Release allocated buffer. UART will be enabled after UART_RX_DISABLED. */
+			uart_async_rx_on_rdy(async_rx, buf, 0);
+			uart_async_rx_on_buf_rel(async_rx, buf);
+			sh_uart->pending_rx_req = 0;
+			return (err == -EACCES) ? 0 : err;
 		}
 	}
 

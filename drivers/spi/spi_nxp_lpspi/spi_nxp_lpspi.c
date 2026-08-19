@@ -69,7 +69,7 @@ static inline void lpspi_handle_rx_irq(const struct device *dev)
 
 	base->SR = LPSPI_SR_RDF_MASK;
 
-	LOG_DBG("RX FIFO: %d, RX BUF: %p", rx_fsr, ctx->rx_buf);
+	LOG_DBG("RX BUF: %p", ctx->rx_buf);
 
 	while ((rx_fsr = rx_fifo_cur_len(base)) > 0 && spi_context_rx_on(ctx)) {
 		words_read = lpspi_rx_buf_write_words(dev, rx_fsr);
@@ -116,7 +116,7 @@ static inline void lpspi_fill_tx_fifo(const struct device *dev, const uint8_t *b
 	}
 
 	lpspi_data->words_clocked += fill_len;
-	LOG_DBG("Filled TX FIFO to %d words (%d bytes)", fill_len, offset);
+	LOG_DBG("Filled TX FIFO to %zu words (%zu bytes)", fill_len, offset);
 }
 
 /* just fills TX fifo with the specified amount of NOPS */
@@ -131,7 +131,7 @@ static void lpspi_fill_tx_fifo_nop(const struct device *dev, size_t fill_len)
 	}
 
 	lpspi_data->words_clocked += fill_len;
-	LOG_DBG("Filled TX fifo with %d NOPs", fill_len);
+	LOG_DBG("Filled TX fifo with %zu NOPs", fill_len);
 }
 
 /* handles refilling the TX fifo from empty */
@@ -460,7 +460,7 @@ static DEVICE_API(spi, lpspi_driver_api) = {
 
 static int lpspi_init(const struct device *dev)
 {
-	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	LPSPI_Type *base;
 	struct lpspi_data *data = dev->data;
 	int err = 0;
 
@@ -468,6 +468,8 @@ static int lpspi_init(const struct device *dev)
 	if (err) {
 		return err;
 	}
+
+	base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
 
 	/* Starting config should be master with active low CS, to make sure
 	 * the CS lines are configured properly at init for the most common use

@@ -276,6 +276,32 @@ static inline void net_stats_update_udp_chkerr(struct net_if *iface)
 #define net_stats_update_udp_chkerr(iface)
 #endif /* CONFIG_NET_STATISTICS_UDP */
 
+#if defined(CONFIG_NET_STATISTICS_RAW) && defined(CONFIG_NET_NATIVE)
+/* Raw packet socket stats */
+static inline void net_stats_update_raw_sent(struct net_if *iface,
+					     uint32_t bytes)
+{
+	UPDATE_STAT(iface, stats.raw.bytes.sent += bytes);
+	UPDATE_STAT(iface, stats.raw.sent++);
+}
+
+static inline void net_stats_update_raw_recv(struct net_if *iface,
+					     uint32_t bytes)
+{
+	UPDATE_STAT(iface, stats.raw.bytes.received += bytes);
+	UPDATE_STAT(iface, stats.raw.recv++);
+}
+
+static inline void net_stats_update_raw_drop(struct net_if *iface)
+{
+	UPDATE_STAT(iface, stats.raw.drop++);
+}
+#else
+#define net_stats_update_raw_sent(iface, bytes)
+#define net_stats_update_raw_recv(iface, bytes)
+#define net_stats_update_raw_drop(iface)
+#endif /* CONFIG_NET_STATISTICS_RAW */
+
 #if defined(CONFIG_NET_STATISTICS_TCP) && defined(CONFIG_NET_NATIVE_TCP)
 /* TCP stats */
 static inline void net_stats_update_tcp_sent(struct net_if *iface, uint32_t bytes)

@@ -16,7 +16,7 @@ and capacitive touch screen.
    Prior versions are utilizing an OTM8009a controller and shall
    use shield name without postfix, that is: ``st_b_lcd40_dsi1_mb1166``
 
-.. figure:: image.jpg
+.. figure:: st_b_lcd40_dsi1_mb1166.jpg
    :alt: B-LCD40-DSI1 MB1166 Image
    :align: center
 

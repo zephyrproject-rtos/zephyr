@@ -47,6 +47,37 @@ static const struct device *uart_bridge_get_peer(const struct device *dev,
 	}
 }
 
+static void uart_bridge_line_ctrl_update(const struct device *dev,
+					 const struct device *peer_dev)
+{
+	if (!IS_ENABLED(CONFIG_UART_LINE_CTRL)) {
+		return;
+	}
+
+	static const uint32_t lines[] = {
+		UART_LINE_CTRL_DTR,
+		UART_LINE_CTRL_RTS,
+	};
+
+	for (uint8_t i = 0; i < ARRAY_SIZE(lines); i++) {
+		int ret;
+		uint32_t val;
+
+		ret = uart_line_ctrl_get(dev, lines[i], &val);
+		if (ret) {
+			if (ret != -ENOSYS && ret != -ENOTSUP) {
+				LOG_ERR("%s: line ctrl get failed: %d", dev->name, ret);
+			}
+			continue;
+		}
+
+		ret = uart_line_ctrl_set(peer_dev, lines[i], val);
+		if (ret && ret != -ENOSYS && ret != -ENOTSUP) {
+			LOG_ERR("%s: line ctrl set failed: %d", peer_dev->name, ret);
+		}
+	}
+}
+
 void uart_bridge_settings_update(const struct device *dev,
 				 const struct device *bridge_dev)
 {
@@ -75,6 +106,8 @@ void uart_bridge_settings_update(const struct device *dev,
 			ret);
 		return;
 	}
+
+	uart_bridge_line_ctrl_update(dev, peer_dev);
 
 	LOG_INF("uart settings: baudrate=%d parity=%d dev=%s",
 		cfg.baudrate, cfg.parity, bridge_dev->name);
@@ -184,7 +217,13 @@ static void interrupt_handler(const struct device *dev, void *user_data)
 {
 	const struct device *bridge_dev = user_data;
 
-	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
+	while (true) {
+		uart_irq_update(dev);
+
+		if (uart_irq_is_pending(dev) <= 0) {
+			break;
+		}
+
 		if (uart_irq_rx_ready(dev)) {
 			uart_bridge_handle_rx(dev, bridge_dev);
 		}
@@ -232,9 +271,6 @@ static int uart_bridge_init(const struct device *dev)
 }
 
 #define UART_BRIDGE_INIT(n)							\
-	BUILD_ASSERT(DT_INST_PROP_LEN(n, peers) == 2,				\
-		     "uart-bridge peers property must have exactly 2 members");	\
-										\
 	static const struct uart_bridge_config uart_bridge_cfg_##n = {		\
 		.peer_dev = {DT_INST_FOREACH_PROP_ELEM_SEP(			\
 			n, peers, DEVICE_DT_GET_BY_IDX, (,))},			\

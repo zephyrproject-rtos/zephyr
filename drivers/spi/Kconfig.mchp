@@ -1,6 +1,25 @@
 # Copyright (c) 2026 Microchip Technology Inc.
 # SPDX-License-Identifier: Apache-2.0
 
+config SPI_MCHP_FLEXCOM_G1
+	bool "Microchip FLEXCOM SPI driver"
+	default y
+	depends on DT_HAS_MICROCHIP_FLEXCOM_G1_SPI_ENABLED
+	select PINCTRL
+	select GPIO
+	help
+	  Enable support for the Microchip FLEXCOM SPI driver.
+
+config SPI_MCHP_FLEXCOM_DMA_DRIVEN
+	bool "Microchip FLEXCOM SPI DMA Mode"
+	default y
+	depends on SPI_MCHP_FLEXCOM_G1
+	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_FLEXCOM_G1_SPI),dmas)
+	select DMA
+	help
+	  This enables DMA driven transfers for the SPI peripheral.
+	  Requires DMA controller and dmas property in device tree.
+
 config SPI_MCHP_SERCOM
 	bool
 	help

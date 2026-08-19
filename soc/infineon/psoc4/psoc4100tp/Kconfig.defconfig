@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -10,5 +10,13 @@ config NUM_IRQS
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+if PM
+
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if !WDT_INFINEON_CAT1
+endchoice
+
+endif # PM
 
 endif # SOC_SERIES_PSOC4100TP

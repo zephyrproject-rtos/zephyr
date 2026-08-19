@@ -83,6 +83,20 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 #define TEST_IRQ_DYN_LINE 5
 #endif
 
+/**
+ * @brief Test dynamic ISR installation, enable and disable
+ *
+ * @ingroup kernel_interrupt_tests
+ *
+ * @details Install a dynamic ISR at run time with arch_irq_connect_dynamic(),
+ * confirm the interrupt is initially disabled (its handler has not run), enable
+ * the line, trigger it and confirm the handler runs with the configured
+ * parameter, then disable the line again.
+ *
+ * @see arch_irq_connect_dynamic()
+ * @see irq_enable()
+ * @see irq_disable()
+ */
 ZTEST(interrupt_feature, test_isr_dynamic)
 {
 	int vector_num;
@@ -92,7 +106,7 @@ ZTEST(interrupt_feature, test_isr_dynamic)
 				 (void *)ISR_DYN_ARG, 0);
 
 #if defined(CONFIG_X86_64)
-/* The isr table for x86_64 is visiable, so check it up here */
+/* The isr table for x86_64 is visible, so check it up here */
 extern void (*x86_irq_funcs[])(const void *);
 extern const void *x86_irq_args[];
 

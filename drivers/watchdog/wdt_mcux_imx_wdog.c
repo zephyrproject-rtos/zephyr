@@ -9,7 +9,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/sys/device_mmio.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <fsl_wdog.h>
 
 #define LOG_LEVEL CONFIG_WDT_LOG_LEVEL

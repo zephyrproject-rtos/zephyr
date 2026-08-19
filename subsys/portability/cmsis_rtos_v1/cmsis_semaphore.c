@@ -8,8 +8,8 @@
 #include <cmsis_os.h>
 #include <string.h>
 
-K_MEM_SLAB_DEFINE(cmsis_semaphore_slab, sizeof(struct k_sem),
-		CONFIG_CMSIS_SEMAPHORE_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cmsis_semaphore_slab, struct k_sem,
+		       CONFIG_CMSIS_SEMAPHORE_MAX_COUNT);
 
 /**
  * @brief Create and Initialize a semaphore object.

@@ -19,9 +19,13 @@
 
 #include "hal/debug.h"
 
-#if defined(NRF54L_SERIES)
+#if defined(NRF_ECB00) /* In some devices NRF_ECB was renamed NRF_ECB00 */
 #define NRF_ECB                   NRF_ECB00
 #define ECB_IRQn                  ECB00_IRQn
+#endif /* NRF_ECB00 */
+
+#if defined(ECB_INTENSET_ERROR_Msk)
+/* 54 and newer devices have renamed some of this peripheral's registers */
 #define ECB_INTENSET_ERRORECB_Msk ECB_INTENSET_ERROR_Msk
 #define ECB_INTENSET_ENDECB_Msk   ECB_INTENSET_END_Msk
 #define TASKS_STARTECB            TASKS_START
@@ -30,6 +34,9 @@
 #define EVENTS_ERRORECB           EVENTS_ERROR
 #define NRF_ECB_TASK_STARTECB     NRF_ECB_TASK_START
 #define NRF_ECB_TASK_STOPECB      NRF_ECB_TASK_STOP
+#endif /* ECB_INTENSET_ERROR_Msk */
+
+#ifdef EASYVDMA_PRESENT
 #define ECBDATAPTR                IN.PTR
 
 struct ecb_job_ptr {
@@ -42,17 +49,17 @@ struct ecb_job_ptr {
 
 /* Product Specification recommends a value of 11, but prior work had used 7 */
 #define ECB_JOB_PTR_ATTRIBUTE 7U
-#endif /* NRF54L_SERIES */
+#endif /* EASYVDMA_PRESENT */
 
 struct ecb_param {
 	uint8_t key[16];
 	uint8_t clear_text[16];
 	uint8_t cipher_text[16];
 
-#if defined(NRF54L_SERIES)
+#ifdef EASYVDMA_PRESENT
 	struct ecb_job_ptr in[2];
 	struct ecb_job_ptr out[2];
-#endif /* NRF54L_SERIES */
+#endif /* EASYVDMA_PRESENT */
 } __packed;
 
 static void do_ecb(struct ecb_param *ep)
@@ -60,7 +67,7 @@ static void do_ecb(struct ecb_param *ep)
 	do {
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 
-#if defined(NRF54L_SERIES)
+#ifdef EASYVDMA_PRESENT
 		NRF_ECB->KEY.VALUE[3] = sys_get_be32(&ep->key[0]);
 		NRF_ECB->KEY.VALUE[2] = sys_get_be32(&ep->key[4]);
 		NRF_ECB->KEY.VALUE[1] = sys_get_be32(&ep->key[8]);
@@ -82,9 +89,9 @@ static void do_ecb(struct ecb_param *ep)
 
 		NRF_ECB->IN.PTR = (uint32_t)ep->in;
 		NRF_ECB->OUT.PTR = (uint32_t)ep->out;
-#else /* !NRF54L_SERIES */
+#else /* EASYVDMA_PRESENT */
 		NRF_ECB->ECBDATAPTR = (uint32_t)ep;
-#endif /* !NRF54L_SERIES */
+#endif /* EASYVDMA_PRESENT */
 
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
@@ -92,14 +99,11 @@ static void do_ecb(struct ecb_param *ep)
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-			k_busy_wait(10);
-#else
+			Z_SPIN_DELAY(10);
 			/* FIXME: use cpu_sleep(), but that will need interrupt
 			 *        wake up source and hence necessary appropriate
 			 *        code.
 			 */
-#endif
 		}
 		nrf_ecb_task_trigger(NRF_ECB, NRF_ECB_TASK_STOPECB);
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
@@ -153,7 +157,7 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 	}
 
 	/* setup the encryption h/w */
-#if defined(NRF54L_SERIES)
+#ifdef EASYVDMA_PRESENT
 	NRF_ECB->KEY.VALUE[3] = sys_get_be32(&e->in_key_be[0]);
 	NRF_ECB->KEY.VALUE[2] = sys_get_be32(&e->in_key_be[4]);
 	NRF_ECB->KEY.VALUE[1] = sys_get_be32(&e->in_key_be[8]);
@@ -178,9 +182,9 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 
 	NRF_ECB->IN.PTR = (uint32_t)in;
 	NRF_ECB->OUT.PTR = (uint32_t)out;
-#else /* !NRF54L_SERIES */
+#else /* EASYVDMA_PRESENT */
 	NRF_ECB->ECBDATAPTR = (uint32_t)e;
-#endif /* !NRF54L_SERIES */
+#endif /* EASYVDMA_PRESENT */
 	NRF_ECB->EVENTS_ENDECB = 0;
 	NRF_ECB->EVENTS_ERRORECB = 0;
 	nrf_ecb_int_enable(NRF_ECB, ECB_INTENSET_ERRORECB_Msk
@@ -196,12 +200,12 @@ void ecb_encrypt_nonblocking(struct ecb *e)
 
 static void isr_ecb(const void *arg)
 {
-#if defined(NRF54L_SERIES)
+#ifdef EASYVDMA_PRESENT
 	struct ecb *e = (void *)((uint8_t *)NRF_ECB->ECBDATAPTR -
 				 sizeof(struct ecb));
-#else /* !NRF54L_SERIES */
+#else /* EASYVDMA_PRESENT */
 	struct ecb *e = (void *)NRF_ECB->ECBDATAPTR;
-#endif /* !NRF54L_SERIES */
+#endif /* EASYVDMA_PRESENT */
 
 	ARG_UNUSED(arg);
 
@@ -291,11 +295,7 @@ int ecb_ut(void)
 	e->context = &context;
 	ecb_encrypt_nonblocking(e);
 	do {
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-		k_busy_wait(10);
-#else
 		cpu_sleep();
-#endif
 	} while (!context.done);
 
 	if (context.status != 0U) {

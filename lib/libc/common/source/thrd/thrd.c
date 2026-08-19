@@ -15,15 +15,35 @@
 struct thrd_trampoline_arg {
 	thrd_start_t func;
 	void *arg;
+	struct k_sem sem;
 };
+
+static void *thrd_trampoline(void *arg)
+{
+	struct thrd_trampoline_arg *ta = arg;
+	thrd_start_t func = ta->func;
+	void *real_arg = ta->arg;
+
+	k_sem_give(&ta->sem);
+
+	return INT_TO_POINTER(func(real_arg));
+}
 
 int thrd_create(thrd_t *thr, thrd_start_t func, void *arg)
 {
-	typedef void *(*pthread_func_t)(void *arg);
+	int ret;
+	struct thrd_trampoline_arg ta;
 
-	pthread_func_t pfunc = (pthread_func_t)func;
+	ta.func = func;
+	ta.arg = arg;
+	k_sem_init(&ta.sem, 0, 1);
 
-	switch (pthread_create(thr, NULL, pfunc, arg)) {
+	ret = pthread_create(thr, NULL, thrd_trampoline, &ta);
+	if (ret == 0) {
+		k_sem_take(&ta.sem, K_FOREVER);
+	}
+
+	switch (ret) {
 	case 0:
 		return thrd_success;
 	case EAGAIN:

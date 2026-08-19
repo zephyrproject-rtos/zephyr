@@ -12,6 +12,7 @@
 
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/assigned_numbers.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/bap_lc3_preset.h>
@@ -21,17 +22,21 @@
 #include <zephyr/bluetooth/audio/pacs.h>
 #include <zephyr/bluetooth/audio/gmap.h>
 #include <zephyr/bluetooth/bluetooth.h>
+#include <zephyr/bluetooth/data.h>
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/uuid.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_stream_rx.h"
 #include "bap_stream_tx.h"
 #include "bstests.h"
 #include "common.h"
 #include "bap_common.h"
+
+LOG_MODULE_REGISTER(gmap_ugt_test);
 
 #if defined(CONFIG_BT_CAP_ACCEPTOR)
 extern enum bst_result_t bst_result;
@@ -40,7 +45,7 @@ extern enum bst_result_t bst_result;
 #define LOCATION (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define GMAP_UGG_DEV_ID 0 /* GMAP UGG shall be ID 0 for these tests */
 
-static uint8_t csis_rank = 1;
+static uint8_t csis_rank = 1U;
 
 static struct bt_audio_codec_cap codec_cap =
 	BT_AUDIO_CODEC_CAP_LC3(BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_ANY,
@@ -49,7 +54,7 @@ static struct bt_audio_codec_cap codec_cap =
 static const struct bt_bap_qos_cfg_pref unicast_qos_pref =
 	BT_BAP_QOS_CFG_PREF(true, BT_GAP_LE_PHY_2M, 0U, 60U, 10000U, 60000U, 10000U, 60000U);
 
-#define UNICAST_CHANNEL_COUNT_1 BIT(0)
+#define UNICAST_CHANNEL_COUNT_1 BIT(0U)
 
 static struct audio_test_stream
 	unicast_streams[CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT + CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT];
@@ -63,7 +68,7 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 	struct bt_bap_ep_info ep_info;
 	int err;
 
-	printk("Enabled: stream %p\n", stream);
+	LOG_INF("Enabled: stream %p", stream);
 
 	err = bt_bap_ep_get_info(stream->ep, &ep_info);
 	if (err != 0) {
@@ -84,26 +89,9 @@ static void unicast_stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+	bap_common_stream_started_cb(stream);
 
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-	UNSET_FLAG(test_stream->flag_audio_received);
-
-	printk("Started stream %p\n", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	} else if (bap_stream_rx_can_recv(stream)) {
+	if (bap_stream_rx_can_recv(stream)) {
 		expect_rx = true;
 	}
 
@@ -112,7 +100,7 @@ static void unicast_stream_started_cb(struct bt_bap_stream *stream)
 
 static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 {
-	printk("Stopped stream %p with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stopped stream %p with reason 0x%02X", stream, reason);
 
 	if (bap_stream_tx_can_send(stream)) {
 		int err;
@@ -137,7 +125,7 @@ static struct bt_csip_set_member_svc_inst *csip_set_member;
 
 static struct bt_bap_stream *unicast_stream_alloc(void)
 {
-	for (size_t i = 0; i < ARRAY_SIZE(unicast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(unicast_streams); i++) {
 		struct bt_bap_stream *stream =
 			bap_stream_from_audio_test_stream(&unicast_streams[i]);
 
@@ -155,19 +143,19 @@ static int unicast_server_config(struct bt_conn *conn, const struct bt_bap_ep *e
 				 struct bt_bap_qos_cfg_pref *const pref,
 				 struct bt_bap_ascs_rsp *rsp)
 {
-	printk("ASE Codec Config: conn %p ep %p dir %u\n", conn, ep, dir);
+	LOG_INF("ASE Codec Config: conn %p ep %p dir %u", conn, ep, dir);
 
 	print_codec_cfg(codec_cfg);
 
 	*stream = unicast_stream_alloc();
 	if (*stream == NULL) {
-		printk("No streams available\n");
+		LOG_INF("No streams available");
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_NO_MEM, BT_BAP_ASCS_REASON_NONE);
 
 		return -ENOMEM;
 	}
 
-	printk("ASE Codec Config stream %p\n", *stream);
+	LOG_INF("ASE Codec Config stream %p", *stream);
 
 	*pref = unicast_qos_pref;
 
@@ -179,7 +167,9 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 				   struct bt_bap_qos_cfg_pref *const pref,
 				   struct bt_bap_ascs_rsp *rsp)
 {
-	printk("ASE Codec Reconfig: stream %p\n", stream);
+	ARG_UNUSED(dir);
+
+	LOG_INF("ASE Codec Reconfig: stream %p", stream);
 
 	print_codec_cfg(codec_cfg);
 
@@ -194,7 +184,9 @@ static int unicast_server_reconfig(struct bt_bap_stream *stream, enum bt_audio_d
 static int unicast_server_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 			      struct bt_bap_ascs_rsp *rsp)
 {
-	printk("QoS: stream %p qos %p\n", stream, qos);
+	ARG_UNUSED(rsp);
+
+	LOG_INF("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
 
@@ -206,7 +198,7 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 	struct bt_bap_ascs_rsp *rsp = (struct bt_bap_ascs_rsp *)user_data;
 
 	if (!BT_AUDIO_METADATA_TYPE_IS_KNOWN(data->type)) {
-		printk("Invalid metadata type %u or length %u\n", data->type, data->data_len);
+		LOG_ERR("Invalid metadata type %u or length %u", data->type, data->data_len);
 		*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_METADATA_REJECTED, data->type);
 
 		return -EINVAL;
@@ -218,14 +210,16 @@ static bool data_func_cb(struct bt_data *data, void *user_data)
 static int unicast_server_enable(struct bt_bap_stream *stream, const uint8_t meta[],
 				 size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
+	LOG_INF("Enable: stream %p meta_len %zu", stream, meta_len);
 
 	return bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
 }
 
 static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Start: stream %p\n", stream);
+	ARG_UNUSED(rsp);
+
+	LOG_INF("Start: stream %p", stream);
 
 	return 0;
 }
@@ -233,28 +227,34 @@ static int unicast_server_start(struct bt_bap_stream *stream, struct bt_bap_ascs
 static int unicast_server_metadata(struct bt_bap_stream *stream, const uint8_t meta[],
 				   size_t meta_len, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Metadata: stream %p meta_len %zu\n", stream, meta_len);
+	LOG_INF("Metadata: stream %p meta_len %zu", stream, meta_len);
 
 	return bt_audio_data_parse(meta, meta_len, data_func_cb, rsp);
 }
 
 static int unicast_server_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Disable: stream %p\n", stream);
+	ARG_UNUSED(rsp);
+
+	LOG_INF("Disable: stream %p", stream);
 
 	return 0;
 }
 
 static int unicast_server_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Stop: stream %p\n", stream);
+	ARG_UNUSED(rsp);
+
+	LOG_INF("Stop: stream %p", stream);
 
 	return 0;
 }
 
 static int unicast_server_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
-	printk("Release: stream %p\n", stream);
+	ARG_UNUSED(rsp);
+
+	LOG_INF("Release: stream %p", stream);
 
 	return 0;
 }
@@ -296,7 +296,7 @@ static void set_location(void)
 		}
 	}
 
-	printk("Location successfully set\n");
+	LOG_INF("Location successfully set");
 }
 
 static int set_supported_contexts(void)
@@ -306,7 +306,7 @@ static int set_supported_contexts(void)
 	if (IS_ENABLED(CONFIG_BT_PAC_SNK)) {
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SINK, CONTEXT);
 		if (err != 0) {
-			printk("Failed to set sink supported contexts (err %d)\n", err);
+			LOG_ERR("Failed to set sink supported contexts (err %d)", err);
 
 			return err;
 		}
@@ -315,13 +315,13 @@ static int set_supported_contexts(void)
 	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
 		err = bt_pacs_set_supported_contexts(BT_AUDIO_DIR_SOURCE, CONTEXT);
 		if (err != 0) {
-			printk("Failed to set source supported contexts (err %d)\n", err);
+			LOG_ERR("Failed to set source supported contexts (err %d)", err);
 
 			return err;
 		}
 	}
 
-	printk("Supported contexts successfully set\n");
+	LOG_INF("Supported contexts successfully set");
 
 	return 0;
 }
@@ -342,7 +342,7 @@ static void set_available_contexts(void)
 		return;
 	}
 
-	printk("Available contexts successfully set\n");
+	LOG_INF("Available contexts successfully set");
 }
 
 static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role role,
@@ -355,10 +355,10 @@ static void gmap_discover_cb(struct bt_conn *conn, int err, enum bt_gmap_role ro
 		return;
 	}
 
-	printk("GMAP discovered for conn %p:\n\trole 0x%02x\n\tugg_feat 0x%02x\n\tugt_feat "
-	       "0x%02x\n\tbgs_feat 0x%02x\n\tbgr_feat 0x%02x\n",
-	       conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
-	       features.bgr_feat);
+	LOG_INF("GMAP discovered for conn %p:\trole 0x%02x\tugg_feat 0x%02x\tugt_feat "
+		"0x%02x\tbgs_feat 0x%02x\tbgr_feat 0x%02x",
+		conn, role, features.ugg_feat, features.ugt_feat, features.bgs_feat,
+		features.bgr_feat);
 
 	if ((role & BT_GMAP_ROLE_UGG) == 0) {
 		FAIL("Remote GMAP device is not a UGG\n");
@@ -388,7 +388,7 @@ static void discover_gmas(struct bt_conn *conn)
 
 	err = bt_gmap_discover(conn);
 	if (err != 0) {
-		printk("Failed to discover GMAS: %d\n", err);
+		LOG_ERR("Failed to discover GMAS: %d", err);
 		return;
 	}
 
@@ -397,7 +397,7 @@ static void discover_gmas(struct bt_conn *conn)
 
 static void wait_for_data(void)
 {
-	printk("Waiting for data\n");
+	LOG_INF("Waiting for data");
 
 	ARRAY_FOR_EACH_PTR(unicast_streams, test_stream) {
 		if (bap_stream_rx_can_recv(&test_stream->stream.bap_stream) &&
@@ -406,7 +406,7 @@ static void wait_for_data(void)
 		}
 	}
 
-	printk("Data received\n");
+	LOG_INF("Data received");
 	/* let initiator know we have received what we wanted */
 	backchannel_sync_send(GMAP_UGG_DEV_ID);
 }
@@ -447,11 +447,11 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	err = bt_pacs_register(&pacs_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Could not register PACS (err %d)\n", err);
 		return;
 	}
@@ -542,11 +542,12 @@ static void test_main(void)
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "rank") == 0) {
-			csis_rank = strtoul(argv[++argn], NULL, 10);
+			argn++;
+			csis_rank = strtoul(argv[argn], NULL, 10);
 		} else {
 			FAIL("Invalid arg: %s\n", arg);
 		}

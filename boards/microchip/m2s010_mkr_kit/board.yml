@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: m2s010_mkr_kit
+  full_name: Microchip M2S010 MKR Kit
+  vendor: microchip
+  socs:
+    - name: m2s010

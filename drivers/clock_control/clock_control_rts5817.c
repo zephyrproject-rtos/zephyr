@@ -7,13 +7,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/rts5817_clock.h>
-#include "zephyr/arch/common/sys_io.h"
-#include "zephyr/device.h"
+#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/device.h>
 #include <errno.h>
 #include <stdint.h>
 #include "clock_control_rts5817_control.h"
 #include "clock_control_rts5817_gpll.h"
-#include "zephyr/devicetree.h"
+#include <zephyr/devicetree.h>
 
 #define DT_DRV_COMPAT realtek_rts5817_clock
 

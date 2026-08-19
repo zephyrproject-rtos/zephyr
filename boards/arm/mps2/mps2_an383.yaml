@@ -13,6 +13,6 @@ supported:
   - netif:serial-net
   - gpio
   - watchdog
-testing:
-  default: true
 vendor: arm
+ram: 4096
+flash: 4096

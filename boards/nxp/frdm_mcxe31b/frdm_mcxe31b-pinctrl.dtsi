@@ -49,6 +49,16 @@
 		};
 	};
 
+	pinmux_lpi2c_0: pinmux_lpi2c_0 {
+		group1 {
+			pinmux = <(PTD13_LPI2C0_SDA_I | PTD13_LPI2C0_SDA_O)>,
+				 <(PTD14_LPI2C0_SCL_I | PTD14_LPI2C0_SCL_O)>;
+			input-enable;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+
 	pinmux_lpi2c_1: pinmux_lpi2c_1 {
 		group1 {
 			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,
@@ -56,6 +66,40 @@
 			input-enable;
 			output-enable;
 			bias-pull-up;
+		};
+	};
+
+	pinmux_lpspi_0: pinmux_lpspi_0 {
+		group1 {
+			pinmux = <PTE1_LPSPI0_SCK_O>,
+				 <PTE2_LPSPI0_SOUT_O>,
+				 <PTE6_LPSPI0_PCS2_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_LPSPI0_SIN_I>;
+			input-enable;
+		};
+	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group1 {
+			pinmux = <PTE15_FXIO_D2_O>;
+			output-enable;
+		};
+	};
+
+	pinmux_flexio_spi: pinmux_flexio_spi {
+		group1 {
+			pinmux = <PTE1_FXIO_D2_O>,
+				 <PTE2_FXIO_D13_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTE0_FXIO_D3_I>;
+			input-enable;
 		};
 	};
 
@@ -88,6 +132,25 @@
 		group3 {
 			pinmux = <PTB0_FXIO_D14_O>;
 			output-enable;
+		};
+	};
+
+	pinmux_sai_0: pinmux_sai_0 {
+		group1 {
+			/* Each entry combines the pad's output mux with its
+			 * own IMCR input path (input buffer enabled), so the
+			 * receiver samples the transmitter's data, bit clock
+			 * and frame sync directly on-pad — TX->RX loopback
+			 * without external wiring:
+			 * PTB2  D0   out (MSCR34 SSS=6)  + RX D0   in (IMCR316)
+			 * PTC12 BCLK out (MSCR76 SSS=7)  + RX BCLK in (IMCR315)
+			 * PTC13 SYNC out (MSCR77 SSS=7)  + RX SYNC in (IMCR321)
+			 */
+			pinmux = <NXP_SIUL2_PINMUX(0, 0, 34, 6, 316, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 76, 7, 315, 1)>,
+				 <NXP_SIUL2_PINMUX(0, 0, 77, 7, 321, 1)>;
+			output-enable;
+			input-enable;
 		};
 	};
 };

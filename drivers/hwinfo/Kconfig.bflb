@@ -5,7 +5,7 @@ config HWINFO_BFLB
 	bool "Bouffalo Lab hwinfo driver"
 	default y
 	depends on SOC_FAMILY_BFLB
-	depends on SYSCON_BFLB_EFUSE
+	depends on OTP_BFLB
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable Bouffalo Lab hwinfo driver.

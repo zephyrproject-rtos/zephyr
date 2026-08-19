@@ -17,5 +17,3 @@
 &gpioc {
 	gpio-reserved-ranges = <3 1>, <6 2>;
 };
-
-&gpiod {};

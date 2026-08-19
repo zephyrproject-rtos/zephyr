@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Process Mission
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_lpcore_n16.dtsi>
+#include <espressif/partitions_0x2000_default_16M.dtsi>
+
+/ {
+	model = "Waveshare ESP32-P4-WIFI6-Dev-Kit LP Core";
+	compatible = "espressif,esp32p4";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	/* SoC default GPIO14/15 are wired to the ESP32-C6 SDIO interface;
+	 * use GPIO5/GPIO4 (40-pin header pins 9/11) for the console instead.
+	 */
+	tx-pin = <5>;
+	rx-pin = <4>;
+};

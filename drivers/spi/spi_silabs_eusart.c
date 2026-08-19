@@ -15,7 +15,7 @@
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_silabs.h>
 #include <zephyr/drivers/pinctrl.h>
@@ -270,7 +270,6 @@ static int spi_silabs_eusart_pm_action(const struct device *dev, enum pm_device_
 	case PM_DEVICE_ACTION_SUSPEND:
 		pinctrl_apply_state(eusart_config->pcfg, PINCTRL_STATE_SLEEP);
 
-		EUSART_Enable(eusart_config->base, eusartDisable);
 		ret = clock_control_off(eusart_config->clock_dev,
 					(clock_control_subsys_t)&eusart_config->clock_cfg);
 		if (ret == -EALREADY) {
@@ -290,6 +289,7 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 				       int status)
 {
 	const struct device *spi_dev = (const struct device *)user_data;
+	const struct spi_silabs_eusart_config *config = spi_dev->config;
 	struct spi_silabs_eusart_data *data = spi_dev->data;
 	struct spi_context *instance_ctx = &data->ctx;
 
@@ -305,6 +305,7 @@ static void spi_silabs_dma_rx_callback(const struct device *dev, void *user_data
 	}
 
 	spi_context_cs_control(instance_ctx, false);
+	EUSART_Enable(config->base, eusartDisable);
 	spi_silabs_eusart_pm_policy_put(spi_dev);
 	spi_context_complete(instance_ctx, spi_dev, status);
 }
@@ -598,6 +599,7 @@ force_transaction_close:
 	dma_stop(data->dma_chan_rx.dma_dev, data->dma_chan_rx.chan_nb);
 	dma_stop(data->dma_chan_tx.dma_dev, data->dma_chan_tx.chan_nb);
 	spi_context_cs_control(ctx, false);
+	EUSART_Enable(eusart_config->base, eusartDisable);
 	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 #else
@@ -624,6 +626,7 @@ static int spi_silabs_eusart_xfer_polling(const struct device *dev,
 	spi_context_cs_control(ctx, false);
 	spi_context_complete(ctx, dev, 0);
 
+	EUSART_Enable(eusart_config->base, eusartDisable);
 	spi_silabs_eusart_pm_policy_put(dev);
 	return ret;
 }

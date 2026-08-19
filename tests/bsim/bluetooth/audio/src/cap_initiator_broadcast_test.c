@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2025 Nordic Semiconductor ASA
+ * Copyright (c) 2022-2026 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
@@ -35,10 +35,12 @@
 #include "bstests.h"
 #include "common.h"
 
+LOG_MODULE_REGISTER(cap_initiator_broadcast_test);
+
 #if defined(CONFIG_BT_CAP_INITIATOR) && defined(CONFIG_BT_BAP_BROADCAST_SOURCE)
 CREATE_FLAG(flag_source_started);
 
-#define CAP_AC_MAX_STREAM       2
+#define CAP_AC_MAX_STREAM       2U
 #define LOCATION                (BT_AUDIO_LOCATION_FRONT_LEFT | BT_AUDIO_LOCATION_FRONT_RIGHT)
 #define CONTEXT                 (BT_AUDIO_CONTEXT_TYPE_MEDIA)
 #define BROADCAST_STREAM_CNT    MIN(CAP_AC_MAX_STREAM, CONFIG_BT_BAP_BROADCAST_SRC_STREAM_COUNT)
@@ -99,19 +101,7 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 
 static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	int err;
-
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-
-	printk("Stream %p started\n", stream);
-
-	err = bap_stream_tx_register(stream);
-	if (err != 0) {
-		FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-		return;
-	}
+	bap_common_stream_started_cb(stream);
 
 	k_sem_give(&sem_broadcast_stream_started);
 }
@@ -120,7 +110,7 @@ static void broadcast_stream_stopped_cb(struct bt_bap_stream *stream, uint8_t re
 {
 	int err;
 
-	printk("Stream %p stopped with reason 0x%02X\n", stream, reason);
+	LOG_INF("Stream %p stopped with reason 0x%02X", stream, reason);
 
 	err = bap_stream_tx_unregister(stream);
 	if (err != 0) {
@@ -139,14 +129,14 @@ static struct bt_bap_stream_ops broadcast_stream_ops = {
 
 static void broadcast_source_started_cb(struct bt_cap_broadcast_source *broadcast_source)
 {
-	printk("Broadcast source %p started\n", broadcast_source);
+	LOG_INF("Broadcast source %p started", broadcast_source);
 	SET_FLAG(flag_source_started);
 }
 
 static void broadcast_source_stopped_cb(struct bt_cap_broadcast_source *broadcast_source,
 					uint8_t reason)
 {
-	printk("Broadcast source %p stopped with reason 0x%02X\n", broadcast_source, reason);
+	LOG_INF("Broadcast source %p stopped with reason 0x%02X", broadcast_source, reason);
 	UNSET_FLAG(flag_source_started);
 }
 
@@ -164,12 +154,12 @@ static void init(void)
 		return;
 	}
 
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 	bap_stream_tx_init();
 
 	(void)memset(broadcast_source_streams, 0, sizeof(broadcast_source_streams));
 
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
 		broadcast_streams[i] =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		bt_cap_stream_ops_register(broadcast_streams[i], &broadcast_stream_ops);
@@ -182,8 +172,9 @@ static void init(void)
 			.uri_schemes_supported = "tel,skype",
 			.gtbs = true,
 			.authorization_required = false,
-			.technology = BT_TBS_TECHNOLOGY_3G,
-			.supported_features = BT_TBS_FEATURE_HOLD | BT_TBS_FEATURE_JOIN,
+			.technology = BT_BEARER_TECH_3G,
+			.optional_opcodes =
+				BT_TBS_OPTIONAL_OPCODE_HOLD | BT_TBS_OPTIONAL_OPCODE_JOIN,
 		};
 
 		err = bt_tbs_register_bearer(&gtbs_param);
@@ -193,7 +184,7 @@ static void init(void)
 			return;
 		}
 
-		printk("Registered GTBS\n");
+		LOG_INF("Registered GTBS");
 	}
 
 	err = bt_cap_initiator_register_cb(&broadcast_cbs);
@@ -215,7 +206,7 @@ static void setup_extended_adv_data(struct bt_cap_broadcast_source *source,
 	int err;
 
 	err = bt_rand(&broadcast_id, BT_AUDIO_BROADCAST_ID_SIZE);
-	if (err) {
+	if (err != 0) {
 		FAIL("Unable to generate broadcast ID: %d\n", err);
 		return;
 	}
@@ -255,19 +246,19 @@ static void stop_and_delete_extended_adv(struct bt_le_ext_adv *adv)
 
 	/* Stop extended advertising */
 	err = bt_le_per_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to stop periodic advertising: %d\n", err);
 		return;
 	}
 
 	err = bt_le_ext_adv_stop(adv);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to stop extended advertising: %d\n", err);
 		return;
 	}
 
 	err = bt_le_ext_adv_delete(adv);
-	if (err) {
+	if (err != 0) {
 		FAIL("Failed to delete extended advertising: %d\n", err);
 		return;
 	}
@@ -375,7 +366,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 	struct bt_cap_initiator_broadcast_create_param create_param;
 	int err;
 
-	for (size_t i = 0; i < ARRAY_SIZE(broadcast_streams); i++) {
+	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_streams); i++) {
 		stream_params[i].stream =
 			cap_stream_from_audio_test_stream(&broadcast_source_streams[i]);
 		stream_params[i].data_len = ARRAY_SIZE(bis_codec_data);
@@ -392,7 +383,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 	create_param.packing = BT_ISO_PACKING_SEQUENTIAL;
 	create_param.encryption = false;
 
-	printk("Creating broadcast source with %zu broadcast_streams\n",
+	LOG_INF("Creating broadcast source with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 
 	err = bt_cap_initiator_broadcast_audio_create(&create_param, broadcast_source);
@@ -401,13 +392,7 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 		return;
 	}
 
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = create_param.qos->sdu;
-	}
-
-	printk("Broadcast source created with %zu broadcast_streams\n",
+	LOG_INF("Broadcast source created with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 
 	stream_count = ARRAY_SIZE(broadcast_streams);
@@ -444,7 +429,7 @@ static void test_broadcast_audio_start(struct bt_cap_broadcast_source *broadcast
 		return;
 	}
 
-	printk("Broadcast source created with %zu broadcast_streams\n",
+	LOG_INF("Broadcast source created with %zu broadcast_streams",
 	       ARRAY_SIZE(broadcast_streams));
 }
 
@@ -493,7 +478,7 @@ static void test_broadcast_audio_update_inval(struct bt_cap_broadcast_source *br
 		return;
 	}
 
-	printk("Broadcast metadata updated\n");
+	LOG_INF("Broadcast metadata updated");
 }
 
 static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcast_source)
@@ -502,7 +487,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	/* TODO: We do not have a way to get the CCID value of GTBS, but for now set to 0x00 as we
 	 * know that it is the first content control service initialized
 	 */
-	const uint16_t gtbs_ccid = 0x00;
+	const uint16_t gtbs_ccid = 0x00U;
 #endif /* CONFIG_BT_TBS */
 	const uint8_t new_metadata[] = {
 		BT_AUDIO_CODEC_DATA(BT_AUDIO_METADATA_TYPE_STREAM_CONTEXT,
@@ -513,7 +498,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 	};
 	int err;
 
-	printk("Updating broadcast metadata\n");
+	LOG_INF("Updating broadcast metadata");
 
 	err = bt_cap_initiator_broadcast_audio_update(broadcast_source, new_metadata,
 						      ARRAY_SIZE(new_metadata));
@@ -522,7 +507,7 @@ static void test_broadcast_audio_update(struct bt_cap_broadcast_source *broadcas
 		return;
 	}
 
-	printk("Broadcast metadata updated\n");
+	LOG_INF("Broadcast metadata updated");
 }
 
 static void test_broadcast_audio_stop_inval(void)
@@ -552,7 +537,7 @@ static void test_broadcast_audio_tx_sync(void)
 		}
 
 		if (info.seq_num != 0) {
-			printk("stream[%zu]: %p seq_num: %u\n", i, cap_stream, info.seq_num);
+			LOG_DBG("stream[%zu]: %p seq_num: %u", i, cap_stream, info.seq_num);
 		} else {
 			FAIL("stream[%zu]: %p seq_num was 0\n", i, cap_stream);
 			return;
@@ -564,7 +549,7 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 {
 	int err;
 
-	printk("Stopping broadcast source\n");
+	LOG_INF("Stopping broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 	if (err != 0) {
@@ -573,14 +558,15 @@ static void test_broadcast_audio_stop(struct bt_cap_broadcast_source *broadcast_
 	}
 
 	/* Wait for all to be stopped */
-	printk("Waiting for broadcast_streams to be stopped\n");
+	LOG_INF("Waiting for broadcast_streams to be stopped");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stream_stopped, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_UNSET_FLAG(flag_source_started);
 
-	printk("Broadcast source stopped\n");
+	LOG_INF("Broadcast source stopped");
 
 	/* Verify that it cannot be stopped twice */
 	err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
@@ -608,7 +594,7 @@ static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcas
 {
 	int err;
 
-	printk("Deleting broadcast source\n");
+	LOG_INF("Deleting broadcast source");
 
 	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
 	if (err != 0) {
@@ -616,7 +602,7 @@ static void test_broadcast_audio_delete(struct bt_cap_broadcast_source *broadcas
 		return;
 	}
 
-	printk("Broadcast source deleted\n");
+	LOG_INF("Broadcast source deleted");
 
 	/* Verify that it cannot be deleted twice */
 	err = bt_cap_initiator_broadcast_audio_delete(broadcast_source);
@@ -647,15 +633,17 @@ static void test_main_cap_initiator_broadcast(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
 
 	/* Wait for other devices to have received the data they wanted */
-	printk("Waiting for broadcast stop signal");
+	LOG_INF("Waiting for broadcast stop signal");
 	backchannel_sync_wait_all();
 
 	test_broadcast_audio_tx_sync();
@@ -693,9 +681,11 @@ static void test_main_cap_initiator_broadcast_inval(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -739,9 +729,11 @@ static void test_main_cap_initiator_broadcast_update(void)
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__maybe_unused int err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -822,20 +814,16 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	}
 
 	stream_count = param->stream_cnt;
-	for (size_t i = 0U; i < stream_count; i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = create_param.qos->sdu;
-	}
 
 	test_broadcast_audio_start(broadcast_source, adv);
 	setup_extended_adv_data(broadcast_source, adv);
 	start_broadcast_adv(adv);
 
 	/* Wait for all to be started */
-	printk("Waiting for broadcast_streams to be started\n");
+	LOG_INF("Waiting for broadcast_streams to be started");
 	for (size_t i = 0U; i < stream_count; i++) {
-		k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		err = k_sem_take(&sem_broadcast_stream_started, K_FOREVER);
+		__ASSERT_NO_MSG(err == 0);
 	}
 
 	WAIT_FOR_FLAG(flag_source_started);
@@ -907,11 +895,12 @@ static const struct named_lc3_preset *cap_get_named_preset(const char *preset_ar
 
 static void test_args(int argc, char *argv[])
 {
-	for (size_t argn = 0; argn < argc; argn++) {
+	for (size_t argn = 0U; argn < argc; argn++) {
 		const char *arg = argv[argn];
 
 		if (strcmp(arg, "preset") == 0) {
-			const char *preset_arg = argv[++argn];
+			argn++;
+			const char *preset_arg = argv[argn];
 
 			named_preset = cap_get_named_preset(preset_arg);
 			if (named_preset == NULL) {

@@ -149,7 +149,7 @@ def endpoint_bootstrap(request, shell: Shell, dut: DeviceAdapter, leshan: Leshan
         # Allow engine to start & stop once.
         time.sleep(2)
 
-        # Write bootsrap server information and PSK keys
+        # Write bootstrap server information and PSK keys
         shell.exec_command(f'lwm2m write 0/0/0 -s coaps://{addr}:{BOOTSTRAP_COAPS_PORT}')
         shell.exec_command('lwm2m write 0/0/1 -b 1')
         shell.exec_command('lwm2m write 0/0/2 -u8 0')

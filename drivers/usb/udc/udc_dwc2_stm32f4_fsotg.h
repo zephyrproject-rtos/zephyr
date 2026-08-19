@@ -1,0 +1,96 @@
+/*
+ * SPDXFileCopyrightText: Copyright (c) 2023 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_DRIVERS_USB_UDC_DWC2_STM32F4_FSOTG_H
+#define ZEPHYR_DRIVERS_USB_UDC_DWC2_STM32F4_FSOTG_H
+
+#include <zephyr/sys/sys_io.h>
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <usb_dwc2_hw.h>
+
+struct usb_dw_stm32_clk {
+	const struct device *const dev;
+	const struct stm32_pclken *const pclken;
+	size_t pclken_len;
+};
+
+static inline int stm32f4_fsotg_enable_clk(const struct usb_dw_stm32_clk *const clk)
+{
+	int ret;
+
+	if (!device_is_ready(clk->dev)) {
+		return -ENODEV;
+	}
+
+	if (clk->pclken_len > 1) {
+		uint32_t clk_rate;
+
+		ret = clock_control_configure(clk->dev,
+					      (void *)&clk->pclken[1],
+					      NULL);
+		if (ret) {
+			return ret;
+		}
+
+		ret = clock_control_get_rate(clk->dev,
+					     (void *)&clk->pclken[1],
+					     &clk_rate);
+		if (ret) {
+			return ret;
+		}
+
+		if (clk_rate != MHZ(48)) {
+			return -ENOTSUP;
+		}
+	}
+
+	return clock_control_on(clk->dev, (void *)&clk->pclken[0]);
+}
+
+static inline int stm32f4_fsotg_enable_phy(const struct device *dev)
+{
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t ggpio_reg = (mem_addr_t)&base->ggpio;
+
+	sys_set_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
+
+	return 0;
+}
+
+static inline int stm32f4_fsotg_disable_phy(const struct device *dev)
+{
+	struct usb_dwc2_reg *const base = dwc2_get_base(dev);
+	mem_addr_t ggpio_reg = (mem_addr_t)&base->ggpio;
+
+	sys_clear_bits(ggpio_reg, USB_DWC2_GGPIO_STM32_PWRDWN | USB_DWC2_GGPIO_STM32_VBDEN);
+
+	return 0;
+}
+
+#define QUIRK_STM32F4_FSOTG_DEFINE(n)						\
+	static const struct stm32_pclken pclken_##n[] = STM32_DT_INST_CLOCKS(n);\
+										\
+	static const struct usb_dw_stm32_clk stm32f4_clk_##n = {		\
+		.dev = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),			\
+		.pclken = pclken_##n,						\
+		.pclken_len = DT_INST_NUM_CLOCKS(n),				\
+	};									\
+										\
+	static int stm32f4_fsotg_enable_clk_##n(const struct device *dev)	\
+	{									\
+		return stm32f4_fsotg_enable_clk(&stm32f4_clk_##n);		\
+	}									\
+										\
+	const struct dwc2_vendor_quirks dwc2_vendor_quirks_##n = {		\
+		.pre_enable = stm32f4_fsotg_enable_clk_##n,			\
+		.post_enable = stm32f4_fsotg_enable_phy,			\
+		.disable = stm32f4_fsotg_disable_phy,				\
+		.irq_clear = NULL,						\
+	};
+
+
+DT_INST_FOREACH_STATUS_OKAY(QUIRK_STM32F4_FSOTG_DEFINE)
+
+#endif /* ZEPHYR_DRIVERS_USB_UDC_DWC2_STM32F4_FSOTG_H */

@@ -8,9 +8,14 @@
 #include <st/u5/stm32u575Xi.dtsi>
 #include <st/u5/stm32u575zitxq-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
+#include "st_zio_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
+	chosen {
+		zephyr,system-timer = &lptim1;
+	};
+
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -106,6 +111,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -113,19 +120,20 @@
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiof 1 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {
-	pinctrl-0 = <&spi1_nss_pa4 &spi1_sck_pa5
-		     &spi1_miso_pa6 &spi1_mosi_pa7>;
+	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 	status = "okay";
 };
 
 &dac1 {
-	/* CAUTION: DAC on PA4 may conflict with SPI1 NSS on same pin */
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -213,7 +221,7 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
 	status = "okay";

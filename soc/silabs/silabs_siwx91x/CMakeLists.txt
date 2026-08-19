@@ -5,7 +5,12 @@ include(west)
 add_subdirectory(siwg917)
 
 # Necessary to not overwrite NWP Firmware
-math(EXPR FLASH_LOAD_ADDRESS "(${CONFIG_FLASH_BASE_ADDRESS}) + (${CONFIG_FLASH_LOAD_OFFSET})")
+if(CONFIG_FLASH_USES_MAPPED_PARTITION)
+  dt_chosen(code_partition PROPERTY "zephyr,code-partition")
+  dt_reg_addr(FLASH_LOAD_ADDRESS PATH "${code_partition}")
+else()
+  math(EXPR FLASH_LOAD_ADDRESS "(${CONFIG_FLASH_BASE_ADDRESS}) + (${CONFIG_FLASH_LOAD_OFFSET})")
+endif()
 
 set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
     COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/siwx91x_isp_prepare.py

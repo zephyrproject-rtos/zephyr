@@ -17,10 +17,17 @@ import sys
 import textwrap
 from collections import defaultdict
 from pathlib import Path
+from typing import NamedTuple
 
 import dts_binding_types
 import gen_helpers
+import yaml
 from devicetree import edtlib
+
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 ZEPHYR_BASE = Path(__file__).parents[2]
 
@@ -246,6 +253,17 @@ class TypeLookup:
 def main():
     args = parse_args()
     setup_logging(args.verbose)
+
+    if args.turbo_mode:
+        # The dummy output only needs each binding's path and compatible;
+        # loading them without full edtlib parsing (and skipping the driver
+        # sources and property type gathering altogether) keeps this several
+        # times faster than a regular run.
+        bindings = load_bindings_turbo(args.dts_roots, args.dts_folders, args.dts_files)
+        vnd_lookup = VndLookup(args.vendor_prefixes, bindings)
+        dump_content(bindings, None, vnd_lookup, None, None, args.out_dir, True)
+        return
+
     bindings = load_bindings(args.dts_roots, args.dts_folders, args.dts_files)
     base_binding = load_base_binding()
     driver_sources = load_driver_sources()
@@ -285,8 +303,8 @@ def setup_logging(verbose):
     logging.basicConfig(format='%(filename)s:%(levelname)s: %(message)s',
                         level=log_level)
 
-def load_bindings(dts_roots, dts_folders, dts_files):
-    # Get a list of edtlib.Binding objects from searching 'dts_roots'.
+def collect_binding_files(dts_roots, dts_folders, dts_files):
+    # Get the list of candidate binding files from searching 'dts_roots'.
 
     if not dts_roots:
         sys.exit('no DTS roots; use --dts-root to specify at least one')
@@ -302,6 +320,12 @@ def load_bindings(dts_roots, dts_folders, dts_files):
         binding_files.extend(glob.glob(f'{folders}/*.yaml', recursive=False))
     binding_files.extend(dts_files)
 
+    return binding_files
+
+def load_bindings(dts_roots, dts_folders, dts_files):
+    # Get a list of edtlib.Binding objects from searching 'dts_roots'.
+
+    binding_files = collect_binding_files(dts_roots, dts_folders, dts_files)
     bindings = edtlib.bindings_from_paths(binding_files, ignore_errors=True)
 
     num_total = len(bindings)
@@ -314,6 +338,54 @@ def load_bindings(dts_roots, dts_folders, dts_files):
 
     logger.info('found %d bindings (ignored %d) in this dts_roots list: %s',
                 len(bindings), num_total - len(bindings), dts_roots)
+
+    return bindings
+
+class TurboBinding(NamedTuple):
+    # Minimal stand-in for edtlib.Binding holding the only two attributes
+    # the turbo-mode output needs.
+    path: str
+    compatible: str
+
+def load_bindings_turbo(dts_roots, dts_folders, dts_files):
+    # Turbo-mode variant of load_bindings(). Only each binding's path and
+    # compatible are needed, so the YAML files are parsed directly: creating
+    # full edtlib.Binding objects, which recursively resolve and merge
+    # included files, is much slower.
+    #
+    # Like edtlib.bindings_from_paths() with ignore_errors=True, files without
+    # a top-level 'compatible' (include-only files such as base.yaml) are
+    # skipped, as are files with no description at all: a description must
+    # either be given in the file itself or come from an included file
+    # (edtlib checks the merged result, but resolving includes is exactly the
+    # costly work turbo mode avoids, so the presence of 'include' is used as
+    # an approximation).
+
+    binding_files = collect_binding_files(dts_roots, dts_folders, dts_files)
+
+    bindings = []
+    for path in binding_files:
+        try:
+            with open(path, encoding='utf-8') as f:
+                raw = yaml.load(f, Loader=SafeLoader)
+        except (OSError, yaml.YAMLError):
+            continue
+
+        if not isinstance(raw, dict):
+            continue
+
+        compatible = raw.get('compatible')
+        if not isinstance(compatible, str):
+            continue
+
+        if 'description' not in raw and 'include' not in raw:
+            continue
+
+        if compatible_vnd(compatible) != 'vnd':
+            bindings.append(TurboBinding(path, compatible))
+
+    logger.info('turbo mode: found %d bindings in this dts_roots list: %s',
+                len(bindings), dts_roots)
 
     return bindings
 
@@ -395,7 +467,7 @@ def dump_content(bindings, base_binding, vnd_lookup, type_lookup, driver_sources
 
     setup_bindings_dir(bindings, out_dir)
     if turbo_mode:
-        write_dummy_index(bindings, out_dir)
+        write_dummy_index(bindings, vnd_lookup, out_dir)
     else:
         write_bindings_rst(vnd_lookup, type_lookup, out_dir)
         write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir)
@@ -422,13 +494,21 @@ def setup_bindings_dir(bindings, out_dir):
                 path.unlink()
 
 
-def write_dummy_index(bindings, out_dir):
+def write_dummy_index(bindings, vnd_lookup, out_dir):
     # Write out_dir / bindings.rst, with dummy anchors
 
     # header
     content = '\n'.join((
         '.. _devicetree_binding_index:',
-        '.. _dt_vendor_zephyr:',
+        ''
+    ))
+
+    content += '\n'.join(
+        f'.. _dt_vendor_{vnd}:' for vnd in vnd_lookup.vnd2bindings if isinstance(vnd, str)
+    )
+
+    content += '\n'.join((
+        '',
         '',
         'Dummy bindings index',
         '####################',
@@ -881,15 +961,32 @@ def print_property_table(prop_specs, string_io, deprecated=False):
         if prop_spec.required:
             details += '\n\nThis property is **required**.'
 
-        if prop_spec.default:
+        if prop_spec.default is not None:
             details += f'\n\nDefault value: ``{format_value(prop_spec.default)}``'
 
-        if prop_spec.const:
+        if prop_spec.const is not None:
             details += f'\n\nConstant value: ``{format_value(prop_spec.const)}``'
-        elif prop_spec.enum:
+
+        if prop_spec.enum is not None:
             details += ('\n\nLegal values: ' +
                         ', '.join(f'``{format_value(val)}``' for val in
                                   prop_spec.enum))
+
+        if prop_spec.min is not None and prop_spec.max is not None:
+            details += (f'\n\nValue range: ``{format_value(prop_spec.min)}`` to '
+                        f'``{format_value(prop_spec.max)}``')
+        elif prop_spec.min is not None:
+            details += f'\n\nMinimum value: ``{format_value(prop_spec.min)}``'
+        elif prop_spec.max is not None:
+            details += f'\n\nMaximum value: ``{format_value(prop_spec.max)}``'
+
+        if prop_spec.min_len is not None and prop_spec.max_len is not None:
+            details += (f'\n\nLength range: ``{format_value(prop_spec.min_len)}`` to '
+                        f'``{format_value(prop_spec.max_len)}``')
+        elif prop_spec.min_len is not None:
+            details += f'\n\nMinimum length: ``{format_value(prop_spec.min_len)}``'
+        elif prop_spec.max_len is not None:
+            details += f'\n\nMaximum length: ``{format_value(prop_spec.max_len)}``'
 
         if prop_spec.name in DETAILS_IN_IMPORTANT_PROPS:
             details += (f'\n\nSee {zref("dt-important-props")} for more '

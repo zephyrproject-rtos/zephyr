@@ -1127,6 +1127,7 @@ ZTEST(onoff_api, test_sync_basic)
 	rc = onoff_sync_lock(&srv, &key);
 	zassert_equal(rc, -1,
 		      "init req");
+	(void)onoff_sync_finalize(&srv, key, NULL, rc, false);
 }
 
 ZTEST(onoff_api, test_sync_error)
@@ -1177,6 +1178,7 @@ ZTEST(onoff_api, test_sync_error)
 	rc = onoff_sync_lock(&srv, &key);
 	zassert_equal(rc, 1,
 		      "init rel");
+	(void)onoff_sync_finalize(&srv, key, NULL, rc, false);
 }
 
 

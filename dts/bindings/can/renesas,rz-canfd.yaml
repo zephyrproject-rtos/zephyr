@@ -21,6 +21,7 @@ properties:
   rx-max-filters:
     type: int
     required: true
+    min: 1
+    max: 128
     description: |
       To determine the maximum rx filters can be added on this CAN device.
-      Valid range: 1 - 128

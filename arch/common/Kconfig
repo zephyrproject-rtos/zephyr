@@ -6,7 +6,7 @@
 
 config SEMIHOST
 	bool "Semihosting support for ARM, RISC-V and Xtensa targets"
-	depends on ARM || ARM64 || RISCV || (XTENSA && !SIMULATOR_XTENSA)
+	depends on ARCH_HAS_SEMIHOST
 	help
 	  Semihosting is a mechanism that enables code running on an ARM, RISC-V
 	  or Xtensa target to communicate and use the Input/Output facilities on
@@ -24,17 +24,36 @@ config ISR_TABLE_SHELL
 	help
 	  This option enables a shell command to dump the ISR tables.
 
+config ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
+	bool "Word granular access instruction memory support"
+	select WORD_GRANULAR_ACCESS
+	help
+	  This option enables support for access to byte addressable and word granular
+	  access instruction memory.
+
 config ARCH_SUPPORTS_ROM_OFFSET
 	bool
-	default y
-	depends on  (ARM || X86 || ARM64 || RISCV || ARC)
 	help
 	  Hidden option to enable support for ROM offset within the linker
 	  script, which will place a block of 0x0 of size
 	  CONFIG_ROM_START_OFFSET at the start of the ROM region.
 
+config EXCEPTION_DUMP
+	bool "Exception dump"
+	default y
+	help
+	  Print the register, fault cause and stack trace information
+	  collected by the architecture fault handlers.
+
+	  Disabling this removes the dump call sites and their format
+	  strings from the image. This is useful for size constrained
+	  builds such as bootloaders, where the dump would otherwise be
+	  compiled in unconditionally whenever LOG is disabled, because
+	  the printk fallback has no level filtering of its own.
+
 config EXCEPTION_DUMP_HOOK
 	bool "Exceptions printing hooks"
+	depends on EXCEPTION_DUMP
 	help
 	  Enables hook for configuring an additional method for delivering
 	  exeption prints through similar interface as printk or LOG.
@@ -192,3 +211,4 @@ config ARM_PACBTI_NONE
 	This option instructs the compiler to generate code without branch protection or return
 	address signing
 endchoice
+source "arch/common/acpi/Kconfig"

@@ -9,7 +9,6 @@
 #ifndef ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 #define ZEPHYR_ARCH_ARC_INCLUDE_SWAP_MACROS_H_
 
-#include <zephyr/kernel_structs.h>
 #include <offsets_short.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/arch/cpu.h>
@@ -418,12 +417,19 @@ fpu_skip_load :
 	_save_callee_saved_regs
 	/* Save old thread into switch handle which is required by z_sched_switch_spin.
 	 * NOTE: we shouldn't save anything related to old thread context after this point!
-	 * TODO: we should add SMP write-after-write data memory barrier here, as we want all
-	 * previous writes completed before setting switch_handle which is polled by other cores
-	 * in z_sched_switch_spin in case of SMP. Though it's not likely that this issue
-	 * will reproduce in real world as there is some gap before reading switch_handle and
-	 * reading rest of the data we've stored before.
+	 *
+	 * On SMP we must ensure that all of the callee-saved register stores above
+	 * (and the stack-pointer store into k_thread) are globally visible BEFORE
+	 * switch_handle is published. switch_handle is polled lock-free by other
+	 * cores in z_sched_switch_spin(); ARC HS is weakly ordered (in-order issue
+	 * but micro-arch store buffering/queuing), so without a store-store barrier
+	 * a remote core can observe a non-NULL switch_handle and start restoring
+	 * this thread's context before the register/SP saves have landed, leading
+	 * to corrupted callee-saved state on the incoming thread.
 	 */
+#ifdef CONFIG_SMP
+	dmb ARC_DMB_STORE
+#endif
 	STR r2, r2, ___thread_t_switch_handle_OFFSET
 .endm
 

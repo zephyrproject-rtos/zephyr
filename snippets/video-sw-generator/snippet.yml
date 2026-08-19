@@ -1,3 +1,6 @@
 name: video-sw-generator
+description: |
+  Instantiates a software video source generating a test pattern as the
+  zephyr,camera chosen node.
 append:
   EXTRA_DTC_OVERLAY_FILE: video-sw-generator.overlay

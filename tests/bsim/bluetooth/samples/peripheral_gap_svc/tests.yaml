@@ -1,0 +1,17 @@
+tests:
+  tests.bsim.bluetooth.samples.peripheral_gap_svc:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    harness: bsim
+    sysbuild: true
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_samples_peripheral_gap_svc_prj_conf
+    required_applications:
+      - application: sample.bluetooth.peripheral_gap_svc.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/peripheral_gap_svc

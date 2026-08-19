@@ -9,6 +9,7 @@
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/gpio/dvp-20pin-connector.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
 	aliases {
@@ -17,12 +18,15 @@
 		led2 = &blue_led;
 		sw0 = &user_button_2;
 		sw1 = &user_button_3;
+		wakeup-button = &user_button_2;
 		sdhc0 = &usdhc0;
 		mcuboot-button0 = &user_button_2;
 	};
 
 	chosen {
 		zephyr,edac = &erm0;
+		zephyr,system-timer-companion = &lptmr0;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -54,7 +58,9 @@
 			label = "User SW2";
 			gpios = <&gpio0 23 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 			zephyr,code = <INPUT_KEY_0>;
-			status = "disabled";
+			/* SW2 wakes via WUU external pin 5. */
+			wakeup-ctrls = <&wuu NXP_WUU_PIN_5_FALLING_INT>;
+			status = "okay";
 		};
 
 		user_button_3: button_1 {
@@ -233,13 +239,13 @@ arduino_serial: &flexcomm2_lpuart2 {};
 	};
 };
 
-/*
- * MCXN947 board uses OS timer as the kernel timer
- * In case we need to switch to SYSTICK timer, then
- * replace &os_timer with &systick
+/* The MCXN947 can use ostimer as the kernel timer.
+ * We enable it in the dts, and which specific timer
+ * to use as the system timer can be controlled through
+ * Kconfig option based on application requirements.
  */
 &os_timer {
-	status = "disabled";
+	status = "okay";
 };
 
 &systick {
@@ -260,25 +266,28 @@ arduino_serial: &flexcomm2_lpuart2 {};
 
 &flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Partition sizes must be aligned
 		 * to the flash memory sector size of 8KB.
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(80)>;
 		};
 
 		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00014000 DT_SIZE_K(984)>;
 		};
 
 		slot1_partition: partition@10a000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
 			reg = <0x0010a000 DT_SIZE_K(984)>;
 		};
@@ -320,6 +329,9 @@ arduino_serial: &flexcomm2_lpuart2 {};
 			reg = <0x0 DT_SIZE_M(8)>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
@@ -342,9 +354,6 @@ arduino_serial: &flexcomm2_lpuart2 {};
 &enet {
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
-};
-
-&enet_mac {
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
 	phy-handle = <&phy>;
@@ -356,6 +365,10 @@ arduino_serial: &flexcomm2_lpuart2 {};
 		reg = <0>;
 		status = "disabled";
 	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
 };
 
 &flexpwm1_pwm0 {
@@ -427,3 +440,15 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
 
 dvp_20pin_interface: &video_sdma {};
+
+&crc {
+	status = "okay";
+};
+
+&powerquad {
+	status = "okay";
+};
+
+&otpc {
+	status = "okay";
+};

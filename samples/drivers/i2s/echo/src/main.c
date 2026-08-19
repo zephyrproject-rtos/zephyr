@@ -21,19 +21,20 @@
 #define I2S_TX_NODE  DT_NODELABEL(i2s_tx)
 #endif
 
+#define RAM_SIZE (DT_CHOSEN_SRAM_ADDR / 1024)
+
 /* Reduce echo delay when running on low ram devices */
-#if CONFIG_SRAM_SIZE <= 48
+#if RAM_SIZE <= 48
 #define ECHO_DELAY 30
 #else
 #define ECHO_DELAY 10
 #endif
 
-#define SAMPLE_FREQUENCY    44100
 #define SAMPLE_BIT_WIDTH    16
 #define BYTES_PER_SAMPLE    sizeof(int16_t)
 #define NUMBER_OF_CHANNELS  2
 /* Such block length provides an echo with the delay of 100ms or 33.33ms */
-#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / ECHO_DELAY) * NUMBER_OF_CHANNELS)
+#define SAMPLES_PER_BLOCK   ((CONFIG_SAMPLE_FREQ / ECHO_DELAY) * NUMBER_OF_CHANNELS)
 #define INITIAL_BLOCKS      2
 #define TIMEOUT             1000
 
@@ -145,7 +146,10 @@ static void process_block_data(void *mem_block, uint32_t number_of_samples)
 	if (echo_enabled) {
 		for (int i = 0; i < number_of_samples; ++i) {
 			int16_t *sample = &((int16_t *)mem_block)[i];
-			*sample += echo_block[i];
+			/* Attenuate both paths by 6 dB before mixing. */
+			int32_t mixed_sample = ((int32_t)*sample / 2) + echo_block[i];
+
+			*sample = CLAMP(mixed_sample, INT16_MIN, INT16_MAX);
 			echo_block[i] = (*sample) / 2;
 		}
 
@@ -268,17 +272,26 @@ int main(void)
 #elif DT_NODE_HAS_STATUS(DT_NODELABEL(audio_codec), okay)
 	const struct device *const codec_dev = DEVICE_DT_GET(DT_NODELABEL(audio_codec));
 	struct audio_codec_cfg audio_cfg;
+	int ret;
 
 	audio_cfg.dai_route = AUDIO_ROUTE_PLAYBACK_CAPTURE;
 	audio_cfg.dai_type = AUDIO_DAI_TYPE_I2S;
 	audio_cfg.dai_cfg.i2s.word_size = SAMPLE_BIT_WIDTH;
 	audio_cfg.dai_cfg.i2s.channels = NUMBER_OF_CHANNELS;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER;
-	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
+#ifdef CONFIG_SAMPLE_USE_CODEC_CLOCK
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
+#else
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
+#endif
+	audio_cfg.dai_cfg.i2s.frame_clk_freq = CONFIG_SAMPLE_FREQ;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
-	audio_codec_configure(codec_dev, &audio_cfg);
+	ret = audio_codec_configure(codec_dev, &audio_cfg);
+	if (ret < 0) {
+		printk("Failed to configure codec: %d\n", ret);
+		return ret;
+	}
 	k_msleep(1000);
 #endif
 
@@ -305,16 +318,13 @@ int main(void)
 	config.word_size = SAMPLE_BIT_WIDTH;
 	config.channels = NUMBER_OF_CHANNELS;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
-	/*
-	 * On MAX32655FTHR, MAX9867 MCLK is connected to external 12.2880 crystal
-	 * thus using target mode
-	 */
-#if CONFIG_BOARD_MAX32655FTHR_MAX32655_M4
-	config.options = I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET;
+
+#if defined(CONFIG_SAMPLE_USE_CODEC_CLOCK)
+	config.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
 #else
-	config.options = I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_CONTROLLER;
+	config.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 #endif
-	config.frame_clk_freq = SAMPLE_FREQUENCY;
+	config.frame_clk_freq = CONFIG_SAMPLE_FREQ;
 	config.mem_slab = &mem_slab;
 	config.block_size = BLOCK_SIZE;
 	config.timeout = TIMEOUT;
@@ -338,7 +348,7 @@ int main(void)
 
 		while (k_sem_take(&toggle_transfer, K_NO_WAIT) != 0) {
 			void *mem_block;
-			uint32_t block_size;
+			size_t block_size;
 			int ret;
 
 			ret = i2s_read(i2s_dev_rx, &mem_block, &block_size);

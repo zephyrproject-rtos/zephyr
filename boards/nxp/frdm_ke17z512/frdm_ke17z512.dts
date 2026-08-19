@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/kinetis/nxp_ke17z512.dtsi>
+#include <nxp/kinetis/ke1xz/nxp_ke17z512.dtsi>
 #include "frdm_ke17z512-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -23,6 +23,7 @@
 		zephyr,uart-mcumgr = &lpuart2;
 		zephyr,console = &lpuart2;
 		zephyr,shell-uart = &lpuart2;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -131,9 +132,15 @@
 	exit-latency-us = <13>;
 };
 
-&lpuart2 {
-	dmas = <&edma 5 6>, <&edma 6 7>;
+&lpuart0 {
+	dmas = <&edma 2 2>, <&edma 3 3>;
 	dma-names = "rx", "tx";
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart0_default>;
+	pinctrl-names = "default";
+};
+
+&lpuart2 {
 	status = "okay";
 	pinctrl-0 = <&lpuart2_default>;
 	pinctrl-names = "default";
@@ -179,15 +186,24 @@
 	pinctrl-names = "default";
 };
 
+&sosc_clk {
+	status = "okay";
+	clock-frequency = <DT_FREQ_M(8)>;
+};
+
+&soscdiv2_clk {
+	clock-div = <1>;
+};
+
 &ftm2 {
 	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	#pwm-cells = <3>;
-	clocks = <&scg KINETIS_SCG_SIRC_CLK>;
+	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
 	prescaler = <128>;
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
-	clock-source = "system";
+	clock-source = "fixed";
 };
 
 &flash0 {
@@ -236,5 +252,9 @@
 };
 
 &wdog {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

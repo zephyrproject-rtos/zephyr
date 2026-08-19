@@ -13,6 +13,9 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 extern void ambiq_power_init(void);
 void soc_early_init_hook(void)
 {
+	/* Configure and enable cache for proper interrupt timing */
+	am_hal_cachectrl_config(&am_hal_cachectrl_defaults);
+	am_hal_cachectrl_enable();
 
 	/* Initialize for low power in the power control block */
 	am_hal_pwrctrl_low_power_init();

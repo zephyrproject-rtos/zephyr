@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+sample:
+  name: UDP coredump via shell
+tests:
+  sample.debug.coredump_udp_demo_shell:
+    build_only: true
+    platform_allow: versalnet_apu
+    tags: debug coredump
+    extra_configs:
+      - CONFIG_NET_NAMESPACE_COMPAT_MODE=n

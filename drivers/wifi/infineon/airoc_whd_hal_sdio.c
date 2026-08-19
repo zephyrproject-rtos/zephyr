@@ -11,6 +11,7 @@
 #include <bus_protocols/whd_bus_sdio_protocol.h>
 #include <bus_protocols/whd_bus.h>
 #include <bus_protocols/whd_sdio.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sd/sd.h>
 
 LOG_MODULE_DECLARE(infineon_airoc_wifi, CONFIG_WIFI_LOG_LEVEL);
@@ -58,7 +59,7 @@ int airoc_wifi_init_primary(const struct device *dev, whd_interface_t *interface
 #endif
 
 	if (airoc_wifi_power_on(dev)) {
-		LOG_ERR("airoc_wifi_power_on retuens fail");
+		LOG_ERR("airoc_wifi_power_on returns fail");
 		return -ENODEV;
 	}
 
@@ -279,7 +280,7 @@ whd_result_t whd_bus_sdio_register_oob_intr(whd_driver_t whd_driver)
 		return WHD_HAL_ERROR;
 	}
 
-	/* Configure OOB pin as output */
+	/* Configure OOB pin as input */
 	ret = gpio_pin_configure_dt(host_oob_pin, GPIO_INPUT);
 	if (ret != 0) {
 		WPRINT_WHD_ERROR((

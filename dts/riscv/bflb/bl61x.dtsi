@@ -20,6 +20,21 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+
+		interrupts = <61 0>, <62 0>, <72 0>;
+		interrupt-names = "dm", "bt", "ble";
+		interrupt-parent = <&clic>;
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -68,15 +83,15 @@
 		clk_aupll: clk-aupll {
 			#clock-cells = <1>;
 			compatible = "bflb,pll";
-			clocks = <&clk_rc32m>;
+			clocks = <&clk_crystal>;
 			top-frequency = <BL61X_AUPLL_TOP_FREQ>;
-			status = "disabled";
+			status = "okay";
 		};
 
 		clk_root: clk-root {
 			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
-			clocks = <&clk_wifipll BL61X_WIFIPLL_ID_DIV1>;
+			clocks = <&clk_aupll BL61X_AUPLL_ID_DIV1>;
 			divider = <1>;
 			status = "okay";
 		};
@@ -97,10 +112,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -111,7 +122,8 @@
 			compatible = "xuantie,e907", "riscv";
 			reg = <0>;
 			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei",
+					       "xtheadba", "xtheadbb", "xtheadbs", "xtheadcmo";
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
@@ -154,7 +166,7 @@
 		};
 
 		gpios: gpio@20000000 {
-			compatible = "bflb,bl61x-gpio";
+			compatible = "bflb,bl61x_808-gpio";
 			reg = <0x20000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -352,15 +364,45 @@
 			};
 		};
 
-		flashctrl: flash-controller@2000b000 {
-			compatible = "bflb,flash-controller";
+		can0: can@2000aa00 {
+			compatible = "bflb,bl61x-can";
+			reg = <0x2000aa00 0x100>;
+			status = "disabled";
+
+			interrupts = <46 1>;
+			interrupt-parent = <&clic>;
+		};
+
+		sf_ctrl: sf@2000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x2000b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
 
 			interrupts = <29 1>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: flash-controller@a0000000 {
+				compatible = "bflb,sf-bank";
+				reg = <0xa0000000 DT_SIZE_M(64)>;
+				ranges = <0x0 0xa0000000 DT_SIZE_M(64)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: memory-controller@a4000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "SF_BANK2";
+				reg = <0xa4000000 DT_SIZE_M(64)>;
+				ranges = <0x0 0xa4000000 DT_SIZE_M(64)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@2000c000 {
@@ -409,8 +451,12 @@
 		};
 
 		retram: memory@20010000 {
-			compatible = "mmio-sram";
+			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20010000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "RETRAM";
 		};
 
 		memc: memc@20052000 {
@@ -427,20 +473,84 @@
 			size = <512>;
 		};
 
-		sram0: memory@62fc0000 {
-			compatible = "mmio-sram";
-			reg = <0x62fc0000 DT_SIZE_K(320)>;
+		sdhc0: sdhc@20060000 {
+			compatible = "bflb,sdhc";
+			reg = <0x20060000 0x200>;
+			status = "disabled";
+
+			interrupts = <33 1>;
+			interrupt-parent = <&clic>;
 		};
 
-		sram1: memory@63010000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x63010000 DT_SIZE_K(160)>;
-			zephyr,memory-region = "ITCM";
+		wifi0: wifi@24b08000 {
+			compatible = "bflb,wifi6";
+			reg = <0x24b08000 0x1000>;
+			interrupts = <70 1>, <79 1>;
+			interrupt-names = "wifi", "wifi-ipc";
+			interrupt-parent = <&clic>;
+			status = "disabled";
+
+			pwr-table-11b = <20 20 20 20>;
+			pwr-table-11g = <18 18 18 18 18 18 16 16>;
+			pwr-table-11n-ht20 = <18 18 18 18 18 16 15 15>;
+			pwr-table-11n-ht40 = <18 18 18 18 18 16 15 14>;
+			pwr-table-11ac-vht20 = <18 18 18 18 18 16 15 15 15 14>;
+			pwr-table-11ac-vht40 = <18 18 18 18 18 16 15 14 14 13>;
+			pwr-table-11ac-vht80 = <18 18 18 18 18 15 14 13 13 12>;
+			pwr-table-11ax-he20 = <18 18 18 18 18 16 15 15 15 14 13 13>;
+			pwr-table-11ax-he40 = <18 18 18 18 18 16 15 14 14 13 12 12>;
+			pwr-table-11ax-he80 = <18 18 18 18 18 15 14 13 13 12 11 11>;
+			pwr-table-11ax-he160 = <18 18 18 18 18 15 14 13 12 11 10 10>;
+			pwr-offset = <16 16 16 16 16 16 16 16 16 16 16 16 16 16>;
+			pwr-offset-lp = <16 16 16 16 16 16 16 16 16 16 16 16 16 16>;
+			xtal-capcode-in = <36>;
+			xtal-capcode-out = <36>;
+			tcal-channels = <2412 2427 2442 2457 2472>;
+			tcal-channel-os = <180 168 163 160 157>;
+			tcal-channel-os-low = <199 186 170 165 160>;
+			tcal-troom-os = <255>;
+			tcal-linear-or-follow = <1>;
+			tcap-tsen = <253 252 20 39 39 40 41 42 43 44>;
+			tcap-capcode = <28 29 30 31 32 33 34 35 36 37 38>;
+		};
+
+		/* All contiguous fast RAM
+		 * It is kept tightly coupled by the CPU's internal cache
+		 */
+		all_ram: memory@62fc0000 {
+			compatible = "mmio-sram";
+			reg = <0x62fc0000 DT_SIZE_K(480)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x62fc0000 DT_SIZE_K(480)>;
+
+			/* OCRAM is slightly faster */
+			ocram: memory@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(320)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(320)>;
+				status = "disabled";
+			};
+
+			/* WRAM is slightly slower, it can be used by the RF systems */
+			wram: memory@50000 {
+				compatible = "mmio-sram";
+				reg = <0x50000 DT_SIZE_K(160)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x50000 DT_SIZE_K(160)>;
+				status = "disabled";
+			};
 		};
 
 		psram: memory@a8000000 {
 			compatible = "zephyr,memory-region";
 			reg = <0xa8000000 DT_SIZE_M(128)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xa8000000 DT_SIZE_M(128)>;
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
 		};

@@ -40,4 +40,6 @@ supported:
   - usbd
   - video
   - watchdog
+  - edac
+  - crc
 vendor: nxp

@@ -18,6 +18,7 @@
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/debug/debug_nrf_etr.h>
 #include <zephyr/drivers/serial/uart_async_rx.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/printk.h>
 #include <dmm.h>
 #include <nrfx_tbm.h>
@@ -74,11 +75,9 @@ LOG_MODULE_REGISTER(cs_etr_tbm);
 	} while (0)
 
 static const uint32_t wsize_mask = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
-static const uint32_t wsize_inc = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int) - 1;
+static atomic_t wsize_inc;
 
-static bool in_sync;
 static int oosync_cnt;
-static volatile bool tbm_full;
 static volatile uint32_t base_wr_idx;
 static uint32_t etr_rd_idx;
 /* Counts number of new messages completed in the current formatter frame decoding. */
@@ -95,7 +94,9 @@ static uint32_t *frame_buf = IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) ?
 				frame_buf_decode : frame_buf0;
 
 K_KERNEL_STACK_DEFINE(etr_stack, CONFIG_DEBUG_NRF_ETR_STACK_SIZE);
+#ifndef CONFIG_DEBUG_NRF_ETR_SHELL
 static struct k_thread etr_thread;
+#endif
 
 BUILD_ASSERT((DT_REG_SIZE(ETR_BUFFER_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
 BUILD_ASSERT((DT_REG_ADDR(ETR_BUFFER_NODE) % CONFIG_DCACHE_LINE_SIZE) == 0);
@@ -144,8 +145,17 @@ static const char *const hw_evts[] = {
 	(CONFIG_DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_SIZE * \
 	CONFIG_DEBUG_NRF_ETR_SHELL_ASYNC_RX_BUFFER_COUNT)
 
-static void etr_timer_handler(struct k_timer *timer);
-K_TIMER_DEFINE(etr_timer, etr_timer_handler, NULL);
+static void etr_backoff_work_handler(struct k_work *work);
+static struct k_work_delayable etr_dwork;
+
+static inline void etr_shell_schedule_backoff(void)
+{
+	int err = k_work_schedule(&etr_dwork, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF));
+
+	(void)err;
+	__ASSERT(err >= 0, "k_work_schedule failed %d", err);
+}
+
 static uint8_t rx_buf[RX_BUF_SIZE] DMM_MEMORY_SECTION(UART_NODE);
 static struct uart_async_rx async_rx;
 static atomic_t pending_rx_req;
@@ -237,7 +247,21 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 			err = k_sem_take(&uart_sem, K_FOREVER);
 			__ASSERT_NO_MSG(err >= 0);
 
-			memcpy(tx_buf, buf, size);
+			/* When shell is used then function might be called with shell buffer which
+			 * is not 32-bit aligned.
+			 */
+			if (size == sizeof(frame_buf0) &&
+			    (!IS_ENABLED(CONFIG_DEBUG_NRF_ETR_SHELL) ||
+			      IS_ALIGNED(buf, sizeof(uint32_t)))) {
+				/* If full 16 byte frame is used we can optimize copying. */
+				uint64_t *tx_buf64 = (uint64_t *)tx_buf;
+				uint64_t *buf64 = (uint64_t *)buf;
+
+				tx_buf64[0] = buf64[0];
+				tx_buf64[1] = buf64[1];
+			} else {
+				memcpy(tx_buf, buf, size);
+			}
 
 			err = uart_tx(uart_dev, tx_buf, size, SYS_FOREVER_US);
 			__ASSERT_NO_MSG(err >= 0);
@@ -253,13 +277,13 @@ static int log_output_func(uint8_t *buf, size_t size, void *ctx)
 	return size;
 }
 
-static uint8_t log_output_buf[CORESIGHT_TRACE_FRAME_SIZE];
+static uint8_t log_output_buf[CORESIGHT_TRACE_FRAME_SIZE] __aligned(sizeof(uint32_t));
 LOG_OUTPUT_DEFINE(log_output, log_output_func, log_output_buf, sizeof(log_output_buf));
 
 /** @brief Process a log message. */
-static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
+static int log_message_process(struct log_frontend_stmesp_demux_log *packet)
 {
-	uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
+	static const uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
 			 LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	uint64_t ts = packet->timestamp;
 	uint8_t level = packet->hdr.level;
@@ -268,18 +292,28 @@ static void log_message_process(struct log_frontend_stmesp_demux_log *packet)
 	const uint8_t *package = packet->data;
 	const char *sname = &packet->data[plen];
 	size_t sname_len = strlen(sname) + 1;
-	uint16_t dlen = packet->hdr.total_len - (plen + sname_len);
+	int16_t dlen = packet->hdr.total_len - (plen + sname_len);
 	uint8_t *data = dlen ? &packet->data[plen + sname_len] : NULL;
+	struct cbprintf_package_desc *desc = (struct cbprintf_package_desc *)package;
+
+	/* When ETR is overloaded glitches may appear, detect faulty packets and skip them. */
+	if ((level > LOG_LEVEL_DBG) ||
+	    ((dlen != 0) && (packet->hdr.has_data == 0)) ||
+	    ((dlen == 0) && (packet->hdr.has_data == 1)) ||
+	    (desc->ro_str_cnt != 0) || (desc->rw_str_cnt != 0)) {
+		return -EBADMSG;
+	}
 
 	log_output_process(&log_output, ts, dname, sname, NULL,
 			   0, level, package, data, dlen, flags);
+	return 0;
 }
 
 /** @brief Process a trace point message. */
-static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *packet)
+static int trace_point_process(struct log_frontend_stmesp_demux_trace_point *packet)
 {
-	static const uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP |
-				      LOG_OUTPUT_FLAG_LEVEL;
+	static const uint32_t flags = LOG_OUTPUT_FLAG_COLORS | LOG_OUTPUT_FLAG_LEVEL |
+			 LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	static const char *tp = "%d";
 	static const char *tp_d32 = "%d %08x";
 	const char *dname = stm_m_name[packet->major];
@@ -300,9 +334,14 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 		const char *source =
 			log_frontend_stmesp_demux_sname_get(packet->major, packet->source_id);
 
+		/* When ETR is overloaded glitches may appear, detect and skip faulty packets. */
+		if (level > LOG_LEVEL_DBG) {
+			return -EBADMSG;
+		}
+
 		log_output_process(&log_output, packet->timestamp, dname, source, NULL, 0, level,
 				   (const uint8_t *)tp_log, NULL, 0, flags);
-		return;
+		return 0;
 	} else if (packet->has_data) {
 		uint32_t id = (uint32_t)packet->id - CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE;
 		static const union cbprintf_package_hdr desc = {
@@ -311,18 +350,20 @@ static void trace_point_process(struct log_frontend_stmesp_demux_trace_point *pa
 
 		log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0, 1,
 				   (const uint8_t *)tp_d32_p, NULL, 0, flags);
-		return;
+		return 0;
 	}
 
+	uint32_t id = (uint32_t)packet->id - CONFIG_LOG_FRONTEND_STMESP_TP_CHAN_BASE;
 	static const union cbprintf_package_hdr desc = {.desc = {.len = 3 /* hdr + fmt + id */}};
-	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, packet->id};
+	uint32_t tp_p[] = {(uint32_t)desc.raw, (uint32_t)tp, id};
 
 	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0,
 			   1, (const uint8_t *)tp_p, NULL, 0, flags);
+	return 0;
 }
 
 /** @brief Process a HW event message. */
-static void hw_event_process(struct log_frontend_stmesp_demux_hw_event *packet)
+static int hw_event_process(struct log_frontend_stmesp_demux_hw_event *packet)
 {
 	static const uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 	static const char *tp = "%s";
@@ -334,21 +375,26 @@ static void hw_event_process(struct log_frontend_stmesp_demux_hw_event *packet)
 
 	log_output_process(&log_output, packet->timestamp, dname, sname, NULL, 0,
 			   1, (const uint8_t *)tp_p, NULL, 0, flags);
+	return 0;
 }
 
-static void message_process(union log_frontend_stmesp_demux_packet packet)
+static int message_process(union log_frontend_stmesp_demux_packet packet)
 {
+	int rv;
+
 	switch (packet.generic_packet->type) {
 	case LOG_FRONTEND_STMESP_DEMUX_TYPE_TRACE_POINT:
-		trace_point_process(packet.trace_point);
+		rv = trace_point_process(packet.trace_point);
 		break;
 	case LOG_FRONTEND_STMESP_DEMUX_TYPE_HW_EVENT:
-		hw_event_process(packet.hw_event);
+		rv = hw_event_process(packet.hw_event);
 		break;
 	default:
-		log_message_process(packet.log);
+		rv = log_message_process(packet.log);
 		break;
 	}
+
+	return rv;
 }
 
 /** @brief Function called when potential STPv2 stream data drop is detected.
@@ -363,22 +409,10 @@ static void sync_loss(void)
 		mipi_stp_decoder_sync_loss();
 		log_frontend_stmesp_demux_reset();
 		oosync_cnt++;
-		in_sync = false;
 	}
 }
 
-/** @brief Indicate that STPv2 decoder is synchronized.
- *
- * That occurs when ASYNC opcode is found.
- */
-static void on_resync(void)
-{
-	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-		in_sync = true;
-	}
-}
-
-static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
+static bool decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
 			     union mipi_stp_decoder_data data,
 			     uint64_t *ts, bool marked)
 {
@@ -436,23 +470,25 @@ static void decoder_cb_debug(enum mipi_stp_decoder_ctrl_type type,
 		DBG("OTHER\n");
 		break;
 	}
+
+	return true;
 }
 
-static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
+static bool decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 		       union mipi_stp_decoder_data data, uint64_t *ts,
 		       bool marked)
 {
 	int rv = 0;
+	bool valid = true;
 
-	decoder_cb_debug(type, data, ts, marked);
+	(void)decoder_cb_debug(type, data, ts, marked);
 
 	if (!IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-		return;
+		return true;
 	}
 
 	switch (type) {
 	case STP_DECODER_ASYNC:
-		on_resync();
 		break;
 	case STP_DECODER_MAJOR:
 		log_frontend_stmesp_demux_major(data.id);
@@ -463,7 +499,9 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 	case STP_DATA8:
 		if (marked) {
 			rv = log_frontend_stmesp_demux_packet_start((uint32_t *)&data.data, ts);
-			new_msg_cnt += rv;
+			if (rv > 0) {
+				new_msg_cnt += rv;
+			}
 		} else {
 			log_frontend_stmesp_demux_data((char *)&data.data, 1);
 		}
@@ -472,7 +510,9 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 		if (marked) {
 			if (ts) {
 				rv = log_frontend_stmesp_demux_log0((uint16_t)data.data, ts);
-				new_msg_cnt += rv;
+				if (rv > 0) {
+					new_msg_cnt += rv;
+				}
 			} else {
 				log_frontend_stmesp_demux_source_id((uint16_t)data.data);
 			}
@@ -483,16 +523,15 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 	case STP_DATA32:
 		if (marked) {
 			rv = log_frontend_stmesp_demux_packet_start((uint32_t *)&data.data, ts);
-			new_msg_cnt += rv;
+			if (rv > 0) {
+				new_msg_cnt += rv;
+			}
 		} else {
 			log_frontend_stmesp_demux_data((char *)&data.data, 4);
 			if (ts) {
 				log_frontend_stmesp_demux_timestamp(*ts);
 			}
 		}
-		break;
-	case STP_DATA64:
-		log_frontend_stmesp_demux_data((char *)&data.data, 8);
 		break;
 	case STP_DECODER_FLAG:
 		if (ts) {
@@ -513,16 +552,26 @@ static void decoder_cb(enum mipi_stp_decoder_ctrl_type type,
 		}
 		break;
 	}
-	case STP_DECODER_MERROR: {
-		sync_loss();
+	case STP_DECODER_NULL:
 		break;
-	}
+	case STP_DECODER_VERSION:
+		break;
 	default:
+		/* Any unexpected data is considered as sync loss. */
+		valid = false;
 		break;
 	}
 
-	/* Only -ENOMEM is accepted failure. */
-	__ASSERT_NO_MSG((rv >= 0) || (rv == -ENOMEM));
+	/* Only -ENOMEM or -EBADMSG are accepted failure. */
+	__ASSERT((rv >= 0) || (rv == -ENOMEM) || (rv == -EBADMSG), "rv:%d", rv);
+	/* -EBADMSG indicates corruption. */
+	if (rv == -EBADMSG) {
+		valid = false;
+	}
+	if (!valid) {
+		sync_loss();
+	}
+	return valid;
 }
 
 static void deformatter_cb(uint32_t id, const uint8_t *data, size_t len)
@@ -539,13 +588,14 @@ static uint32_t get_wr_idx(void)
 {
 	uint32_t cnt = nrfx_tbm_count_get();
 
-	if (tbm_full && (cnt < wsize_mask)) {
+	if (wsize_inc && (cnt < wsize_mask)) {
 		/* TBM full event is generated when max value is reached and not when
 		 * overflow occurs. We cannot increment base_wr_idx just after the
 		 * event but only when counter actually wraps.
 		 */
-		base_wr_idx += wsize_inc;
-		tbm_full = false;
+		uint32_t inc = atomic_set(&wsize_inc, 0);
+
+		base_wr_idx += inc;
 	}
 
 	return cnt + base_wr_idx;
@@ -579,9 +629,11 @@ static void process_frame(uint8_t *buf, uint32_t pending)
 	DBG("\n");
 }
 
-static void process_messages(void)
+static int process_messages(void)
 {
 	static union log_frontend_stmesp_demux_packet curr_msg;
+	int cnt = 0;
+	int rv;
 
 	/* Process any new messages. curr_msg remains the same if panic
 	 * interrupts currently ongoing processing (curr_msg is not NULL then).
@@ -593,14 +645,22 @@ static void process_messages(void)
 			curr_msg = log_frontend_stmesp_demux_claim();
 		}
 		if (curr_msg.generic_packet) {
-			message_process(curr_msg);
+			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+				(void)pm_device_runtime_get(uart_dev);
+			}
+			rv = message_process(curr_msg);
 			log_frontend_stmesp_demux_free(curr_msg);
 			curr_msg.generic_packet = NULL;
+			if (rv < 0) {
+				return rv;
+			}
+			cnt++;
 		} else {
 			break;
 		}
 	}
 	new_msg_cnt = 0;
+	return cnt;
 }
 
 /** @brief Dump frame over UART (using polling or async API). */
@@ -625,13 +685,22 @@ static void dump_frame(uint8_t *buf)
  *
  * Data is processed in 16 bytes packages. Each package is a STPv2 frame which
  * contain data generated by STM stimulus ports.
- *
+
+ * @param dry_run If true, do not process the message, return immediately if message is found.
+ * @return True if a message is found when @p dry_run is true, false otherwise.
  */
-static void process(void)
+static bool process(bool dry_run)
 {
 	static const uint32_t *const etr_buf = (uint32_t *)(DT_REG_ADDR(ETR_BUFFER_NODE));
 	static uint32_t sync_cnt = CONFIG_DEBUG_NRF_ETR_SYNC_PERIOD;
 	uint32_t pending;
+	bool processed = false;
+	int rv;
+
+	/* Attempt to process any pending message that was found during the dry run. */
+	if (!dry_run && IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
+		processed = process_messages() > 0;
+	}
 
 	/* If function is called in panic mode then it may interrupt ongoing
 	 * processing. This must be carefully handled as function decodes data
@@ -665,23 +734,39 @@ static void process(void)
 				 * then assume overwrite and sync loss.
 				 */
 				sync_loss();
+			} else {
+				process_frame((uint8_t *)frame_buf, pending);
 			}
-
-			process_frame((uint8_t *)frame_buf, pending);
 			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE)) {
-				process_messages();
+				if (new_msg_cnt && dry_run) {
+					return true;
+				}
+				rv = process_messages();
+				if (rv < 0) {
+					sync_loss();
+				} else if (rv > 0) {
+					processed = true;
+				}
 			}
 		} else {
+			processed = true;
+			if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+				(void)pm_device_runtime_get(uart_dev);
+			}
 			dump_frame((uint8_t *)frame_buf);
 			frame_buf = (!use_blocking && (frame_buf == frame_buf0)) ?
 						frame_buf1 : frame_buf0;
 		}
 	}
 
-	/* Fill the buffer to ensure that all logs are processed on time. */
-	if (pending < MIN_DATA) {
-		log_frontend_stmesp_dummy_write();
+	if (processed && IS_ENABLED(CONFIG_DEBUG_NRF_ETR_BACKEND_UART)) {
+		(void)pm_device_runtime_put(uart_dev);
 	}
+
+	/* Fill the buffer to ensure that all logs are processed on time. */
+	log_frontend_stmesp_dummy_write();
+
+	return false;
 }
 
 static int decoder_init(void)
@@ -734,7 +819,7 @@ void debug_nrf_etr_flush(void)
 
 	/* Repeat arbitrary number of times to ensure that all that is flushed. */
 	while (cnt--) {
-		process();
+		(void)process(false);
 	}
 
 	irq_unlock(k);
@@ -756,7 +841,7 @@ static void etr_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	}
 
 	while (1) {
-		process();
+		(void)process(false);
 
 		uint64_t now = k_uptime_get();
 
@@ -822,11 +907,11 @@ static void tbm_event_handler(nrf_tbm_event_t event)
 	ARG_UNUSED(event);
 
 	if (event == NRF_TBM_EVENT_FULL) {
-		tbm_full = true;
+		wsize_inc += DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int);
 	}
 
 #ifdef CONFIG_DEBUG_NRF_ETR_SHELL
-	k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
+	k_event_post(&etr_shell.ctx->signal_event, SHELL_SIGNAL_LOG_MSG);
 #else
 	k_wakeup(&etr_thread);
 #endif
@@ -848,7 +933,9 @@ int etr_process_init(void)
 		use_blocking = (err != 0);
 		k_sem_init(&uart_sem, 1, 1);
 	}
-	static const nrfx_tbm_config_t config = {.size = wsize_mask};
+	static const nrfx_tbm_config_t config = {
+		.size = DT_REG_SIZE(ETR_BUFFER_NODE) / sizeof(int)
+	};
 
 	nrfx_tbm_init(&config, tbm_event_handler);
 	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(tbm)), DT_IRQ(DT_NODELABEL(tbm), priority),
@@ -862,7 +949,8 @@ int etr_process_init(void)
 		SHELL_DEFAULT_BACKEND_CONFIG_FLAGS;
 
 	shell_init(&etr_shell, NULL, cfg_flags, true, level);
-	k_timer_start(&etr_timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	k_work_init_delayable(&etr_dwork, etr_backoff_work_handler);
+	etr_shell_schedule_backoff();
 	if (IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DECODE) || IS_ENABLED(CONFIG_DEBUG_NRF_ETR_DEBUG)) {
 		err = decoder_init();
 		if (err < 0) {
@@ -880,6 +968,10 @@ int etr_process_init(void)
 
 #define NRF_ETR_INIT_PRIORITY UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))
 
+#ifdef CONFIG_DEBUG_NRF_ETR_SHELL
+BUILD_ASSERT(CONFIG_KERNEL_INIT_PRIORITY_DEFAULT < NRF_ETR_INIT_PRIORITY);
+#endif
+
 SYS_INIT(etr_process_init, POST_KERNEL, NRF_ETR_INIT_PRIORITY);
 
 #if defined(CONFIG_NORDIC_VPR_LAUNCHER) && defined(CONFIG_LOG_FRONTEND_STMESP_FSC)
@@ -892,12 +984,18 @@ BUILD_ASSERT(CONFIG_NORDIC_VPR_LAUNCHER_INIT_PRIORITY > NRF_ETR_INIT_PRIORITY);
 
 #ifdef CONFIG_DEBUG_NRF_ETR_SHELL
 
-static void etr_timer_handler(struct k_timer *timer)
+static void etr_backoff_work_handler(struct k_work *work)
 {
-	if (pending_data() >= MIN_DATA) {
-		k_poll_signal_raise(&etr_shell.ctx->signals[SHELL_SIGNAL_LOG_MSG], 0);
+	ARG_UNUSED(work);
+
+	/* Periodically start processing of pending ETR data. Wake shell thread only
+	 * if a message is found. ETR buffer contains dummy data which is added to
+	 * ensure that the no logging message stuck in the FIFO and is not processed.
+	 */
+	if (process(true)) {
+		k_event_post(&etr_shell.ctx->signal_event, SHELL_SIGNAL_LOG_MSG);
 	} else {
-		k_timer_start(timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
+		etr_shell_schedule_backoff();
 	}
 }
 
@@ -905,8 +1003,8 @@ bool z_shell_log_backend_process(const struct shell_log_backend *backend)
 {
 	ARG_UNUSED(backend);
 
-	process();
-	k_timer_start(&etr_timer, K_MSEC(CONFIG_DEBUG_NRF_ETR_BACKOFF), K_NO_WAIT);
+	(void)process(false);
+	etr_shell_schedule_backoff();
 
 	return false;
 }
@@ -961,18 +1059,18 @@ static int etr_shell_read(const struct shell_transport *transport, void *data, s
 
 	*cnt = blen;
 	if (pending_rx_req && buf_available) {
-		uint8_t *buf = uart_async_rx_buf_req(&async_rx);
-		size_t len = uart_async_rx_get_buf_len(&async_rx);
 		int err;
 
+		buf = uart_async_rx_buf_req(&async_rx);
+		blen = uart_async_rx_get_buf_len(&async_rx);
 		__ASSERT_NO_MSG(buf != NULL);
 		atomic_dec(&pending_rx_req);
-		err = uart_rx_buf_rsp(uart_dev, buf, len);
+		err = uart_rx_buf_rsp(uart_dev, buf, blen);
 		/* If it is too late and RX is disabled then re-enable it. */
 		if (err < 0) {
 			if (err == -EACCES) {
 				pending_rx_req = 0;
-				err = rx_enable(buf, len);
+				err = rx_enable(buf, blen);
 			} else {
 				return err;
 			}
@@ -1037,7 +1135,7 @@ static struct shell_transport transport = {
 	.ctx = NULL,
 };
 
-static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];
+static uint8_t shell_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE] __aligned(sizeof(uint32_t));
 Z_SHELL_DEFINE(etr_shell, CONFIG_DEBUG_NRF_ETR_SHELL_PROMPT, &transport, shell_out_buffer, NULL,
 	       SHELL_FLAG_OLF_CRLF);
 #endif /* CONFIG_DEBUG_NRF_ETR_SHELL */

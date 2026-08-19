@@ -7,7 +7,6 @@
 
 import glob
 import os
-import signal
 import sys
 from pathlib import Path
 
@@ -170,6 +169,7 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
 
         command = (self.gdb +
                    ['-ex', "set confirm off",
+                    '-ex', "set pagination off",
                     '-ex', f"target extended-remote {self.gdb_serial}"] +
                     self.connect_rst_enable_arg +
                    ['-ex', "monitor swdp_scan",
@@ -179,13 +179,6 @@ class BlackMagicProbeRunner(ZephyrBinaryRunner):
                     '-ex', "quit",
                     '-silent'])
         self.check_call(command)
-
-    def check_call_ignore_sigint(self, command):
-        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            self.check_call(command)
-        finally:
-            signal.signal(signal.SIGINT, previous)
 
     def bmp_attach(self, command, **kwargs):
         if self.elf_file is None:

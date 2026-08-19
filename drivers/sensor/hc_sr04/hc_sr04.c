@@ -15,8 +15,6 @@ LOG_MODULE_REGISTER(HC_SR04, CONFIG_SENSOR_LOG_LEVEL);
 
 #define HC_SR04_MM_PER_MS     171
 
-static const uint32_t hw_cycles_per_ms = sys_clock_hw_cycles_per_sec() / 1000;
-
 struct hcsr04_data {
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
@@ -28,7 +26,13 @@ struct hcsr04_data {
 struct hcsr04_config {
 	struct gpio_dt_spec trigger_gpios;
 	struct gpio_dt_spec echo_gpios;
+	k_timeout_t echo_timeout;
 };
+
+static inline uint32_t hw_cycles_per_ms(void)
+{
+	return sys_clock_hw_cycles_per_sec() / 1000U;
+}
 
 static void hcsr04_gpio_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins);
 
@@ -37,7 +41,7 @@ static int hcsr04_configure_gpios(const struct hcsr04_config *cfg)
 	int ret;
 
 	if (!gpio_is_ready_dt(&cfg->trigger_gpios)) {
-		LOG_ERR("GPIO '%s' not ready", cfg->trigger_gpios.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->trigger_gpios.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&cfg->trigger_gpios, GPIO_OUTPUT_LOW);
@@ -48,7 +52,7 @@ static int hcsr04_configure_gpios(const struct hcsr04_config *cfg)
 	}
 
 	if (!gpio_is_ready_dt(&cfg->echo_gpios)) {
-		LOG_ERR("GPIO '%s' not ready", cfg->echo_gpios.port->name);
+		LOG_ERR_DEVICE_NOT_READY(cfg->echo_gpios.port);
 		return -ENODEV;
 	}
 	ret = gpio_pin_configure_dt(&cfg->echo_gpios, GPIO_INPUT);
@@ -143,7 +147,7 @@ static int hcsr04_sample_fetch(const struct device *dev, enum sensor_channel cha
 		return ret;
 	}
 
-	if (k_sem_take(&data->sem, K_MSEC(10)) != 0) {
+	if (k_sem_take(&data->sem, cfg->echo_timeout) != 0) {
 		LOG_ERR("Echo signal was not received");
 		return -EIO;
 	}
@@ -160,8 +164,7 @@ static int hcsr04_channel_get(const struct device *dev, enum sensor_channel chan
 		return -ENOTSUP;
 	}
 
-	distance_mm = HC_SR04_MM_PER_MS * atomic_get(&data->echo_high_cycles) /
-			hw_cycles_per_ms;
+	distance_mm = HC_SR04_MM_PER_MS * atomic_get(&data->echo_high_cycles) / hw_cycles_per_ms();
 	return sensor_value_from_milli(val, distance_mm);
 }
 
@@ -180,6 +183,7 @@ static DEVICE_API(sensor, hcsr04_driver_api) = {
 	static struct hcsr04_config hcsr04_config_##index = {                         \
 		.trigger_gpios = GPIO_DT_SPEC_INST_GET(index, trigger_gpios),         \
 		.echo_gpios = GPIO_DT_SPEC_INST_GET(index, echo_gpios),               \
+		.echo_timeout = K_MSEC(DT_INST_PROP(index, echo_timeout_ms)),     \
 	};                                                                            \
                                                                                       \
 	SENSOR_DEVICE_DT_INST_DEFINE(index, &hcsr04_init, NULL, &hcsr04_data_##index, \

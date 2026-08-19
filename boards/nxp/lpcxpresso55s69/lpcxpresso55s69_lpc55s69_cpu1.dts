@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/lpc/nxp_lpc55S6x_ns.dtsi>
+#include <nxp/lpc/lpc55xxx/nxp_lpc55S6x_ns.dtsi>
 #include "lpcxpresso55s69.dtsi"
 
 / {
@@ -22,6 +22,7 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,entropy = &rng;
+		zephyr,crc = &crc;
 	};
 };
 
@@ -66,5 +67,9 @@
 };
 
 &gint1 {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };

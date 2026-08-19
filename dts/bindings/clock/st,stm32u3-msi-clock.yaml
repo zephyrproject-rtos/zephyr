@@ -25,12 +25,5 @@ properties:
         range 5 around 12 MHz from 24MHz oscillator
         range 6 around 6 MHz
         range 7 around 3 MHz
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-      - 7
+    min: 0
+    max: 7

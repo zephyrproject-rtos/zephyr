@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Embeint Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config MODEM_MOCK_BACKEND_LIMIT
+	int "Mock backend TX limit for test"
+	default 8
+
+config MODEM_CHAT_TEST_COMMANDS_CONDITIONAL
+	bool "Force MODEM_CHAT_COMMANDS_CONDITIONAL for testing"
+	select MODEM_CHAT_COMMANDS_CONDITIONAL
+
+source "Kconfig.zephyr"

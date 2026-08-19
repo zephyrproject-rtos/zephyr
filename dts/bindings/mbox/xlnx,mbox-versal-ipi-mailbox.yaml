@@ -60,7 +60,7 @@ examples:
     /* Example definition */
 
     mailbox@ff300000 {
-      compatible = "xlnx,versal-ipi-mailbox";
+      compatible = "xlnx,mbox-versal-ipi-mailbox";
       interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL_HIGH>;
       reg = <0x0 0xff300000 0x0 0x1000>,
             <0x0 0xff990000 0x0 0x1ff>;
@@ -71,7 +71,7 @@ examples:
 
       /* buffered IPI */
       child_1: mailbox@ff340000 {
-        compatible = "xlnx,versal-ipi-dest-mailbox";
+        compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
         reg = <0x0 0xff340000 0x0 0x1000>,
               <0x0 0xff990400 0x0 0x1ff>;
         reg-names = "ctrl", "msg";
@@ -81,7 +81,7 @@ examples:
 
       /* bufferless IPI */
       child_2: mailbox@ff370000 {
-        compatible = "xlnx,versal-ipi-dest-mailbox";
+        compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
         reg = <0x0 0xff370000 0x0 0x1000>;
         reg-names = "ctrl";
         xlnx,ipi-id = <7>;

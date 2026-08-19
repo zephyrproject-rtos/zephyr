@@ -15,9 +15,12 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
+  - arduino_gpio
+  - arduino_spi
   - can
   - counter
   - dma
+  - entropy
   - flash
   - gpio
   - i2c
@@ -29,4 +32,5 @@ supported:
   - usbd
   - video
   - watchdog
+  - crc
 vendor: nxp

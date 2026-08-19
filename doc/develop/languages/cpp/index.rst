@@ -129,7 +129,7 @@ To interact with each other, C and C++ must share code through header
 files: data structures, macros, static functions,...  While C and C++
 have a large overlap, they're different languages with `known
 incompatibilities`_. C is not just a C++ subset. Standard levels (e.g.:
-"C+11") add another level of complexity as new features are often
+"C++11") add another level of complexity as new features are often
 inspired by and copied from the other language but many years later and
 with subtle differences. Making things more complex, compilers often
 offer early prototypes of features before they become

@@ -6,10 +6,12 @@ config SOC_SERIES_ESP32S3
 	select DYNAMIC_INTERRUPTS
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ARCH_SUPPORTS_COREDUMP
+	select ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM
 	select CLOCK_CONTROL
 	select PINCTRL
 	select HAS_ESPRESSIF_HAL
 	select CPU_HAS_FPU
+	select CPU_HAS_DCACHE
 	select HAS_PM
 	select HAS_POWEROFF
 
@@ -162,7 +164,7 @@ config ESP32S3_DATA_CACHE_WRAP
 
 config MAC_BB_PD
 	bool "Power down MAC and baseband of Wi-Fi and Bluetooth when PHY is disabled"
-	depends on SOC_SERIES_ESP32S3 && TICKLESS_KERNEL
+	depends on SOC_SERIES_ESP32S3 && TICKLESS_KERNEL && PM
 	help
 	  If enabled, the MAC and baseband of Wi-Fi and Bluetooth will be powered
 	  down when PHY is disabled. Enabling this setting reduces power consumption
@@ -170,5 +172,7 @@ config MAC_BB_PD
 	  2KB (Bluetooth only) or 5.3KB (Wi-Fi + Bluetooth).
 
 endmenu  # Cache config
+
+rsource "Kconfig.caps"
 
 endif # SOC_SERIES_ESP32S3

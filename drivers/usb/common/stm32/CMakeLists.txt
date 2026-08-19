@@ -18,17 +18,20 @@ if(CONFIG_STM32_USB_COMMON)
   # might be useful since there is no (easy) way to detect
   # whether or not they are required; however, the linker
   # should ultimately discard their code if not needed.
-  if(CONFIG_SOC_SERIES_STM32F4X OR CONFIG_SOC_SERIES_STM32H7X)
+  # The drivers are written carefully such that they don't
+  # trigger build errors if built when not actually needed.
+  if(CONFIG_STM32_HAS_EMBEDDED_FS_ULPI_OFF_QUIRK)
     zephyr_library_sources(phy_embeddedfs_ulpi_off.c)
   endif()
-  if(CONFIG_SOC_SERIES_STM32F7X OR CONFIG_SOC_SERIES_STM32H7X)
-    zephyr_library_sources(phy_ulpi_itf.c)
-  endif()
+  zephyr_library_sources_ifdef(CONFIG_STM32_PHY_EXTERNAL_ULPI phy_ulpi_itf.c)
 
   # Embedded HS PHY drivers
   if(CONFIG_STM32_PHY_USBPHYC)
-    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32F7X phy_usbphyc_f7.c)
-    zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_STM32N6X phy_usbphyc_n6.c)
+    # Note: "st,stm32-usbphyc" is never alongside series-specific compatibles
+    # on USBPHYC nodes as each compatible indicates a different programming model.
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32F7_USBPHYC_ENABLED phy_usbphyc_f7.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32N6_USBPHYC_ENABLED phy_usbphyc_n6.c)
+    zephyr_library_sources_ifdef(CONFIG_DT_HAS_ST_STM32_USBPHYC_ENABLED phy_usbphyc_rcc.c)
   endif()
   zephyr_library_sources_ifdef(CONFIG_STM32_PHY_U5OTGHSPHY phy_u5otghs.c)
 endif()

@@ -235,14 +235,14 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 	tmp &= ~BIT(pin);
 	sys_write32(tmp, cfg->base_reg + GLB_GPIO_CFGCTL34_OFFSET);
 
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
 	is_odd = pin & 1U;
 	cfg_address = cfg->base_reg + GLB_GPIO_CFG_OFFSET(pin);
+#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
+	/* Pins 23-28 have all of their configuration, other than input / output registers and
+	 * function registers, moved to 32-37 when SF2 is internal. SF2 uses reg[0:5] / reg[16:21],
+	 * and 23-28 use the 32-27 ones.
+	 */
 	if (pin >= GPIO_BFLB_BL70X_PSRAM_START && pin <= GPIO_BFLB_BL70X_PSRAM_END) {
-		if ((flags & GPIO_INPUT) != 0) {
-			LOG_ERR("BL70x pins 23 to 28 are not capable of input");
-			return -EINVAL;
-		}
 		if (sys_read32(GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET)
 			& (1 << (pin - GPIO_BFLB_BL70X_PSRAM_START))) {
 			cfg_address = cfg->base_reg + GLB_GPIO_CFGCTL0_OFFSET
@@ -251,9 +251,6 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 			is_odd = (pin + GPIO_BFLB_BL70X_PIN_OFFSET) & 1U;
 		}
 	}
-#else
-	is_odd = pin & 1U;
-	cfg_address = cfg->base_reg + GLB_GPIO_CFG_OFFSET(pin);
 #endif
 	pincfg = sys_read32(cfg_address);
 	pincfg &= ~(GPIO_BFLB_PIN_MSK << (GPIO_BFLB_2ND_GPIO_POS * is_odd));
@@ -297,7 +294,6 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 
 	/* GPIO mode */
 #if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
-	/* but function goes in the right place */
 	if (pin >= GPIO_BFLB_BL70X_PSRAM_START && pin <= GPIO_BFLB_BL70X_PSRAM_END) {
 		tmp = sys_read32(cfg->base_reg + GLB_GPIO_CFG_OFFSET(pin));
 		tmp &= ~(GPIO_BFLB_FUNC_MSK
@@ -330,12 +326,6 @@ static int gpio_bflb_config(const struct device *dev, gpio_pin_t pin,
 int gpio_bflb_init(const struct device *dev)
 {
 	const struct gpio_bflb_config * const cfg = dev->config;
-
-#if defined(CONFIG_SOC_SERIES_BL70X) && !DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(psram))
-	/* Pins 23-28 are output-only (no high-Z). Route them through the PSRAM IO pads. */
-	sys_write32(GLB_CFG_GPIO_USE_PSRAM_IO_MSK,
-		    GLB_BASE + GLB_GPIO_USE_PSRAM__IO_OFFSET);
-#endif
 
 	cfg->irq_config_func(dev);
 

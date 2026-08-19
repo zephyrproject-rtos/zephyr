@@ -7,17 +7,15 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 
-static int board_init(void)
+void board_late_init_hook(void)
 {
 
 	/* Set led1 inactive since the Arduino bootloader leaves it active */
 	const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 
 	if (!gpio_is_ready_dt(&led1)) {
-		return -ENODEV;
+		return;
 	}
 
-	return gpio_pin_configure_dt(&led1, GPIO_OUTPUT_INACTIVE);
+	(void)gpio_pin_configure_dt(&led1, GPIO_OUTPUT_INACTIVE);
 }
-
-SYS_INIT(board_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

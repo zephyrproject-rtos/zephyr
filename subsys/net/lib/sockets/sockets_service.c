@@ -23,6 +23,8 @@ enum SOCKET_SERVICE_THREAD_STATUS {
 };
 static enum SOCKET_SERVICE_THREAD_STATUS thread_status;
 
+#define SOCKET_SERVICE_CLOSE INT16_MIN
+
 static K_MUTEX_DEFINE(lock);
 static K_CONDVAR_DEFINE(wait_start);
 
@@ -51,6 +53,14 @@ static void cleanup_svc_events(const struct net_socket_service_desc *svc)
 	}
 }
 
+static void register_svc_close_events(const struct net_socket_service_desc *svc)
+{
+	for (int i = 0; i < svc->pev_len; i++) {
+		NET_DBG("Requesting %d to close", svc->pev[i].event.fd);
+		svc->pev[i].event.events = SOCKET_SERVICE_CLOSE;
+	}
+}
+
 int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc,
 				       struct zsock_pollfd *fds, int len,
 				       void *user_data)
@@ -72,7 +82,11 @@ int z_impl_net_socket_service_register(const struct net_socket_service_desc *svc
 		goto out;
 	}
 
-	cleanup_svc_events(svc);
+	if ((fds != NULL) || (user_data != NET_SOCKET_SERVICE_CLOSE_SOCKETS)) {
+		cleanup_svc_events(svc);
+	} else {
+		register_svc_close_events(svc);
+	}
 
 	if (fds != NULL) {
 		if (len > svc->pev_len) {
@@ -131,6 +145,7 @@ static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *
 {
 	int ret = 0;
 	int fd = pev->fd;
+	short events = pev->events;
 
 	/* Mark the global fd non pollable so that we do not
 	 * call the callback second time.
@@ -140,8 +155,10 @@ static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *
 	/* Synchronous call */
 	net_socket_service_callback(event);
 
-	/* Restore the fd so that new data can be re-triggered */
-	pev->fd = fd;
+	/* Re-arm only if the callback did not reconfigure this event. */
+	if ((event->event.fd == fd) && (event->event.events == events)) {
+		pev->fd = fd;
+	}
 
 	return ret;
 }
@@ -154,6 +171,12 @@ static int trigger_work(struct zsock_pollfd *pev)
 	svc = find_svc_and_event(pev, &event);
 	if (svc == NULL) {
 		return -ENOENT;
+	}
+
+	/* An earlier callback may have reconfigured this event. */
+	if (event->event.events != pev->events) {
+		pev->fd = -1;
+		return 0;
 	}
 
 	event->svc = svc;
@@ -226,7 +249,16 @@ restart:
 	/* Copy individual events to the big array */
 	STRUCT_SECTION_FOREACH(net_socket_service_desc, svc) {
 		for (int j = 0; j < svc->pev_len; j++) {
-			ctx.events[get_idx(svc) + j] = svc->pev[j].event;
+			struct zsock_pollfd *event = &svc->pev[j].event;
+
+			if ((event->fd >= 0) && (event->events == SOCKET_SERVICE_CLOSE)) {
+				/* Perform close action */
+				NET_DBG("Closing %d", event->fd);
+				zsock_close(event->fd);
+				event->fd = -1;
+				event->events = 0;
+			}
+			ctx.events[get_idx(svc) + j] = *event;
 		}
 	}
 

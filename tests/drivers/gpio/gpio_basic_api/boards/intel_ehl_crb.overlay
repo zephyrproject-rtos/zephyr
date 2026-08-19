@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-/* By default, EHL_CRB on SBL, SBL locks all gpio registeration configuration.
+/* By default, EHL_CRB on SBL, SBL locks all gpio registration configuration.
  * Please follow up do the following changes:
  * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> GPIO Skip -> Disable
  * GPIO Settings -> GPIO_GPP_B -> GPP_B04 -> PadMode -> GPIO control of the pad

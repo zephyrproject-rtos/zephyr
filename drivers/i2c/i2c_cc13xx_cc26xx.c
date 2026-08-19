@@ -120,10 +120,6 @@ static int i2c_cc13xx_cc26xx_transfer(const struct device *dev, struct i2c_msg *
 	struct i2c_cc13xx_cc26xx_data *data = dev->data;
 	int ret = 0;
 
-	if (num_msgs == 0) {
-		return 0;
-	}
-
 	/* Always a start condition in the first message */
 	msgs[0].flags |= I2C_MSG_RESTART;
 

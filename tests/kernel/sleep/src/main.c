@@ -51,21 +51,10 @@ static struct k_thread helper_thread_data;
 static bool test_failure = true;     /* Assume the test will fail */
 
 /**
- * @brief Test sleep and wakeup APIs
- *
- * @defgroup kernel_sleep_tests Sleep Tests
- *
+ * @brief Kernel thread sleep and wakeup tests
+ * @defgroup tests_kernel_sleep Sleep Tests
  * @ingroup all_tests
- *
- * This module tests the following sleep and wakeup scenarios:
- * 1. k_sleep() without cancellation
- * 2. k_sleep() cancelled via k_wakeup()
- * 3. k_sleep() cancelled via k_wakeup()
- * 4. k_sleep() cancelled via k_wakeup()
- * 5. k_sleep() - no cancellation exists
- *
  * @{
- * @}
  */
 static void test_objects_init(void)
 {
@@ -184,11 +173,37 @@ static void helper_thread(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test sleep functionality
+ * @brief Verify that k_sleep() sleeps for the requested time and that
+ *        k_wakeup() cancels a pending sleep immediately.
  *
- * @ingroup kernel_sleep_tests
+ * @details
+ * A cooperative test thread performs a sequence of one-second sleeps while a
+ * helper thread, an ISR (via irq_offload()) and the main thread each wake it
+ * early. The test validates both the timekeeping and the cancellation paths of
+ * the sleep primitives:
+ * - An uncancelled k_sleep() must block for at least the requested duration and
+ *   no more than one tick of slop.
+ * - A k_wakeup() targeting a sleeping thread must return it to the ready queue
+ *   without waiting for the timeout to expire, regardless of whether the wakeup
+ *   originates from a thread, an ISR, or the main thread.
  *
- * @see k_sleep(), k_wakeup(), k_uptime_get_32()
+ * Test steps:
+ * - Create a cooperative test thread and a higher-priority helper thread.
+ * - Let the test thread run one uncancelled k_sleep(K_SECONDS(1)) and confirm
+ *   the elapsed time matches the request within TICK_MARGIN.
+ * - Have the helper thread, an irq_offload() ISR, and the main thread each
+ *   call k_wakeup() on the test thread mid-sleep and confirm each sleep returns
+ *   within TICK_MARGIN.
+ * - Run one final uncancelled k_sleep() on the main thread and validate its
+ *   duration.
+ *
+ * Expected result:
+ * - Uncancelled sleeps elapse for the requested duration (within slop).
+ * - Every k_wakeup() cancels the sleep promptly and test_failure stays false.
+ *
+ * @see k_sleep()
+ * @see k_wakeup()
+ * @see k_uptime_get_32()
  */
 ZTEST(sleep, test_sleep)
 {
@@ -247,6 +262,28 @@ static void forever_thread_entry(void *p1, void *p2, void *p3)
 	k_sem_give(&test_thread_sem);
 }
 
+/**
+ * @brief Verify that k_sleep(K_FOREVER) blocks until an explicit wakeup and
+ *        returns K_TICKS_FOREVER.
+ *
+ * @details
+ * A user-mode thread calls k_sleep(K_FOREVER), which must never expire on its
+ * own. The thread only becomes runnable again after the main thread issues a
+ * k_wakeup(). On return, k_sleep() must report K_TICKS_FOREVER to indicate the
+ * sleep was cancelled rather than timed out.
+ *
+ * Test steps:
+ * - Create a user-mode thread that calls k_sleep(K_FOREVER).
+ * - Yield so the thread reaches the sleeping state.
+ * - Call k_wakeup() on the thread from the main thread.
+ * - In the woken thread, assert the return value equals K_TICKS_FOREVER.
+ *
+ * Expected result:
+ * - The thread stays asleep until woken and k_sleep() returns K_TICKS_FOREVER.
+ *
+ * @see k_sleep()
+ * @see k_wakeup()
+ */
 ZTEST(sleep, test_sleep_forever)
 {
 	test_objects_init();
@@ -265,6 +302,70 @@ ZTEST(sleep, test_sleep_forever)
 	k_sem_take(&test_thread_sem, K_FOREVER);
 }
 
+static volatile int32_t wakeup_remaining;
+
+static void early_wake_thread_entry(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* Sleep for a long duration; the main thread wakes us well before it
+	 * elapses. Capture the remaining time reported by k_sleep().
+	 */
+	wakeup_remaining = k_sleep(K_SECONDS(10));
+	k_sem_give(&test_thread_sem);
+}
+
+/**
+ * @brief Verify k_sleep() reports the remaining time when woken early
+ *
+ * @details Put a thread to sleep for a long, finite duration and wake it with
+ * k_wakeup() before that duration elapses. k_sleep() must return the amount of
+ * time that was still remaining, which is non-zero and does not exceed the
+ * originally requested duration.
+ *
+ * Test steps:
+ * - Start a thread that sleeps for 10 seconds and stores k_sleep()'s return.
+ * - Yield so the thread begins sleeping, let ~100 ms pass, then wake it with
+ *   k_wakeup().
+ * - Inspect the stored return value.
+ *
+ * Expected result:
+ * - k_sleep() returns a value greater than zero and less than the requested
+ *   10000 ms, i.e. it reports the time that was still remaining.
+ *
+ * @see k_sleep()
+ * @see k_wakeup()
+ */
+ZTEST(sleep, test_sleep_wakeup_returns_remaining)
+{
+	test_objects_init();
+	wakeup_remaining = 0;
+
+	test_thread_id = k_thread_create(&test_thread_data,
+					 test_thread_stack,
+					 THREAD_STACK,
+					 early_wake_thread_entry,
+					 0, 0, NULL, TEST_THREAD_PRIORITY,
+					 0, K_NO_WAIT);
+
+	/* Allow early_wake_thread_entry to start. */
+	k_yield();
+
+	/* Let part of the sleep elapse, then wake it well before 10 seconds. */
+	k_msleep(100);
+	k_wakeup(test_thread_id);
+	k_sem_take(&test_thread_sem, K_FOREVER);
+
+	zassert_true(wakeup_remaining > 0,
+		     "k_sleep() reported %d ms remaining; expected > 0",
+		     wakeup_remaining);
+	zassert_true(wakeup_remaining < 10000,
+		     "k_sleep() reported %d ms remaining; expected less than the "
+		     "requested 10000", wakeup_remaining);
+}
+
 /*test case main entry*/
 static void *sleep_setup(void)
 {
@@ -275,3 +376,7 @@ static void *sleep_setup(void)
 
 ZTEST_SUITE(sleep, NULL, sleep_setup,
 		ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);
+
+/**
+ * @}
+ */

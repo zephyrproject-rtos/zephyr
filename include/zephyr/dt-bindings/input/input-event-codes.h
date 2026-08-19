@@ -56,8 +56,8 @@
 #define INPUT_KEY_BACKSLASH 43          /**< Backslash Key */
 #define INPUT_KEY_BACKSPACE 14          /**< Backspace Key */
 #define INPUT_KEY_BLUETOOTH 237         /**< Bluetooth Key */
-#define INPUT_KEY_BRIGHTNESSDOWN 224    /**< Brightness Up Key */
-#define INPUT_KEY_BRIGHTNESSUP 225      /**< Brightneess Down Key */
+#define INPUT_KEY_BRIGHTNESSDOWN 224    /**< Brightness Down Key */
+#define INPUT_KEY_BRIGHTNESSUP 225      /**< Brightness Up Key */
 #define INPUT_KEY_C 46                  /**< C Key */
 #define INPUT_KEY_CAPSLOCK 58           /**< Caps Lock Key */
 #define INPUT_KEY_CLOSECD 160           /**< Close CD Key */
@@ -67,6 +67,7 @@
 #define INPUT_KEY_CONNECT 218           /**< Connect Key */
 #define INPUT_KEY_D 32                  /**< D Key */
 #define INPUT_KEY_DELETE 111            /**< Delete Key */
+#define INPUT_KEY_DOLLAR 0x1b2          /**< Dollar Key */
 #define INPUT_KEY_DOT 52                /**< Dot Key */
 #define INPUT_KEY_DOWN 108              /**< Down Key */
 #define INPUT_KEY_E 18                  /**< E Key */
@@ -76,6 +77,7 @@
 #define INPUT_KEY_ENTER 28              /**< Enter Key */
 #define INPUT_KEY_EQUAL 13              /**< Equal Key */
 #define INPUT_KEY_ESC 1                 /**< Escape Key */
+#define INPUT_KEY_EURO 0x1b3            /**< Euro Key */
 #define INPUT_KEY_F 33                  /**< F Key */
 #define INPUT_KEY_F1 59                 /**< F1 Key */
 #define INPUT_KEY_F10 68                /**< F10 Key */

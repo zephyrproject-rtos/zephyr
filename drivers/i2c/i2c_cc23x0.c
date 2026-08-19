@@ -179,10 +179,6 @@ static int i2c_cc23x0_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	const struct i2c_cc23x0_config *config = dev->config;
 	int ret = 0;
 
-	if (num_msgs == 0) {
-		return 0;
-	}
-
 	k_sem_take(&data->lock, K_FOREVER);
 
 	i2c_cc23x0_pm_policy_state_lock_get();

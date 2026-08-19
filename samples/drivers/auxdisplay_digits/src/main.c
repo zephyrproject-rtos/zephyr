@@ -16,7 +16,12 @@
 LOG_MODULE_REGISTER(auxdisplay_sample, LOG_LEVEL_DBG);
 
 #define AUXDISPLAY_NODE        DT_NODELABEL(auxdisplay_0)
+#if DT_NODE_HAS_COMPAT(AUXDISPLAY_NODE, gpio_7_segment)
 #define AUXDISPLAY_DIGIT_COUNT DT_PROP_LEN(AUXDISPLAY_NODE, digit_gpios)
+#else
+#define AUXDISPLAY_DIGIT_COUNT (DT_PROP(DT_NODELABEL(slcd_panel), columns) * \
+	DT_PROP(DT_NODELABEL(slcd_panel), rows))
+#endif
 
 static const struct device *const dev = DEVICE_DT_GET(AUXDISPLAY_NODE);
 static uint8_t data[AUXDISPLAY_DIGIT_COUNT * 2];
@@ -31,10 +36,32 @@ int main(void)
 		return -ENODEV;
 	}
 
-	/* Light up all segments */
+	/* Light up all segments with '.'. */
 	for (i = 0; i < AUXDISPLAY_DIGIT_COUNT; i++) {
 		data[i * 2] = '8';
 		data[i * 2 + 1] = '.';
+	}
+	rc = auxdisplay_write(dev, data, strlen(data));
+	if (rc != 0) {
+		LOG_ERR("Failed to write data: %d", rc);
+		return rc;
+	}
+
+	k_msleep(500);
+
+	/* Reset the cursor. */
+	rc = auxdisplay_cursor_position_set(dev, AUXDISPLAY_POSITION_ABSOLUTE, 0, 0);
+	if (rc != 0) {
+		LOG_ERR("Failed to set cursor: %d", rc);
+		return rc;
+	}
+
+	k_msleep(500);
+
+	/* Display '1' on all positions with ':'. */
+	for (i = 0; i < AUXDISPLAY_DIGIT_COUNT; i++) {
+		data[i * 2] = '1';
+		data[i * 2 + 1] = ':';
 	}
 	rc = auxdisplay_write(dev, data, strlen(data));
 	if (rc != 0) {

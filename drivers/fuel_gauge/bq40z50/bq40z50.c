@@ -189,10 +189,10 @@ static int bq40z50_set_prop(const struct device *dev, fuel_gauge_prop_t prop,
 					sizeof(val.sbs_remaining_capacity_alarm));
 		break;
 
-	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
+	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS:
 		ret = bq40z50_i2c_write(dev, BQ40Z50_REMAININGTIMEALARM,
-					(uint8_t *)&val.sbs_remaining_time_alarm,
-					sizeof(val.sbs_remaining_time_alarm));
+					(uint8_t *)&val.sbs_remaining_time_alarm_mins,
+					sizeof(val.sbs_remaining_time_alarm_mins));
 		break;
 
 	case FUEL_GAUGE_SBS_MODE:
@@ -225,18 +225,18 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 	uint16_t tmp_val = 0;
 
 	switch (prop) {
-	case FUEL_GAUGE_AVG_CURRENT:
+	case FUEL_GAUGE_AVG_CURRENT_UA:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_AVERAGECURRENT, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mA to uA */
-		val->avg_current = (int16_t)tmp_val * 1000;
+		val->avg_current_ua = (int16_t)tmp_val * 1000;
 		break;
 
-	case FUEL_GAUGE_CURRENT:
+	case FUEL_GAUGE_CURRENT_UA:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_CURRENT, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mA to uA */
-		val->current = (int16_t)tmp_val * 1000;
+		val->current_ua = (int16_t)tmp_val * 1000;
 		break;
 
 	case FUEL_GAUGE_CHARGE_CUTOFF:
@@ -251,24 +251,24 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->cycle_count = tmp_val;
 		break;
 
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_FULLCHARGECAPACITY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mAh to uAh */
-		val->full_charge_capacity = tmp_val * 1000;
+		val->full_charge_capacity_uah = tmp_val * 1000;
 		break;
 
-	case FUEL_GAUGE_REMAINING_CAPACITY:
+	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_REMAININGCAPACITY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mAh to uAh */
-		val->remaining_capacity = tmp_val * 1000;
+		val->remaining_capacity_uah = tmp_val * 1000;
 		break;
 
-	case FUEL_GAUGE_RUNTIME_TO_EMPTY:
+	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_RUNTIMETOEMPTY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->runtime_to_empty = tmp_val;
+		val->runtime_to_empty_mins = tmp_val;
 		break;
 
 	case FUEL_GAUGE_SBS_MFR_ACCESS:
@@ -277,29 +277,29 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->sbs_mfr_access_word = tmp_val;
 		break;
 
-	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_ABSOLUTESTATEOFCHARGE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_BYTE);
-		val->absolute_state_of_charge = tmp_val;
+		val->absolute_state_of_charge_pct = tmp_val;
 		break;
 
-	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE:
+	case FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_RELATIVESTATEOFCHARGE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_BYTE);
-		val->relative_state_of_charge = tmp_val;
+		val->relative_state_of_charge_pct = tmp_val;
 		break;
 
-	case FUEL_GAUGE_TEMPERATURE:
+	case FUEL_GAUGE_TEMPERATURE_DK:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_TEMPERATURE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->temperature = tmp_val;
+		val->temperature_dk = tmp_val;
 		break;
 
-	case FUEL_GAUGE_VOLTAGE:
+	case FUEL_GAUGE_VOLTAGE_UV:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_VOLTAGE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* change mV to uV */
-		val->voltage = tmp_val * 1000;
+		val->voltage_uv = tmp_val * 1000;
 		break;
 
 	case FUEL_GAUGE_SBS_MODE:
@@ -308,18 +308,18 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->sbs_mode = tmp_val;
 		break;
 
-	case FUEL_GAUGE_CHARGE_CURRENT:
+	case FUEL_GAUGE_CHARGE_CURRENT_UA:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_CHARGINGCURRENT, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* change mA to uA */
-		val->chg_current = (int16_t)tmp_val * 1000;
+		val->chg_current_ua = (int16_t)tmp_val * 1000;
 		break;
 
-	case FUEL_GAUGE_CHARGE_VOLTAGE:
+	case FUEL_GAUGE_CHARGE_VOLTAGE_UV:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_CHARGINGVOLTAGE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* change mV to uV */
-		val->chg_voltage = tmp_val * 1000;
+		val->chg_voltage_uv = tmp_val * 1000;
 		break;
 
 	case FUEL_GAUGE_STATUS:
@@ -335,10 +335,10 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->design_cap = tmp_val;
 		break;
 
-	case FUEL_GAUGE_DESIGN_VOLTAGE:
+	case FUEL_GAUGE_DESIGN_VOLTAGE_MV:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_DESIGNVOLTAGE, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->design_volt = tmp_val;
+		val->design_volt_mv = tmp_val;
 		break;
 
 	case FUEL_GAUGE_SBS_ATRATE:
@@ -347,16 +347,16 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->sbs_at_rate = (int16_t)tmp_val;
 		break;
 
-	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL:
+	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_ATRATETIMETOFULL, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->sbs_at_rate_time_to_full = tmp_val;
+		val->sbs_at_rate_time_to_full_mins = tmp_val;
 		break;
 
-	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY:
+	case FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_ATRATETIMETOEMPTY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->sbs_at_rate_time_to_empty = tmp_val;
+		val->sbs_at_rate_time_to_empty_mins = tmp_val;
 		break;
 
 	case FUEL_GAUGE_SBS_ATRATE_OK:
@@ -371,10 +371,10 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->sbs_remaining_capacity_alarm = tmp_val;
 		break;
 
-	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM:
+	case FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_REMAININGTIMEALARM, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
-		val->sbs_remaining_time_alarm = tmp_val;
+		val->sbs_remaining_time_alarm_mins = tmp_val;
 		break;
 
 	case FUEL_GAUGE_STATE_OF_HEALTH:

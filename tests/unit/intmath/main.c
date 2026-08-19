@@ -8,7 +8,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/test_toolchain.h>
 
-/* Built-time math test.  Zephyr code depends on a standard C ABI with
+/* Build-time math test.  Zephyr code depends on a standard C ABI with
  * 2's complement signed math.  As this isn't technically guaranteed
  * by the compiler or language standard, validate it explicitly here.
  */

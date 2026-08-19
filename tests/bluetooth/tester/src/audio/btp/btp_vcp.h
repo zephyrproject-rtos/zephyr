@@ -10,64 +10,64 @@
 
 #include <zephyr/bluetooth/addr.h>
 
-#define BTP_VCP_READ_SUPPORTED_COMMANDS		0x01
+#define BTP_VCP_READ_SUPPORTED_COMMANDS		0x01U
 struct btp_vcp_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_DISCOVER		0x02
+#define BTP_VCP_VOL_CTLR_DISCOVER		0x02U
 struct btp_vcp_discover_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_STATE_READ		0x03
+#define BTP_VCP_VOL_CTLR_STATE_READ		0x03U
 struct btp_vcp_state_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_FLAGS_READ		0x04
+#define BTP_VCP_VOL_CTLR_FLAGS_READ		0x04U
 struct btp_vcp_flags_read_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_VOL_DOWN		0x05
+#define BTP_VCP_VOL_CTLR_VOL_DOWN		0x05U
 struct btp_vcp_ctlr_vol_down_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_VOL_UP			0x06
+#define BTP_VCP_VOL_CTLR_VOL_UP			0x06U
 struct btp_vcp_ctlr_vol_up_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_UNMUTE_VOL_DOWN	0x07
+#define BTP_VCP_VOL_CTLR_UNMUTE_VOL_DOWN	0x07U
 struct btp_vcp_ctlr_unmute_vol_down_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_UNMUTE_VOL_UP		0x08
+#define BTP_VCP_VOL_CTLR_UNMUTE_VOL_UP		0x08U
 struct btp_vcp_ctlr_unmute_vol_up_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_SET_VOL		0x09
+#define BTP_VCP_VOL_CTLR_SET_VOL		0x09U
 struct btp_vcp_ctlr_set_vol_cmd {
 	bt_addr_le_t address;
 	uint8_t volume;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_UNMUTE			0x0a
+#define BTP_VCP_VOL_CTLR_UNMUTE			0x0AU
 struct btp_vcp_ctlr_unmute_cmd {
 	bt_addr_le_t address;
 } __packed;
 
-#define BTP_VCP_VOL_CTLR_MUTE			0x0b
+#define BTP_VCP_VOL_CTLR_MUTE			0x0BU
 struct btp_vcp_ctlr_mute_cmd {
 	bt_addr_le_t address;
 } __packed;
 
 /* VCP events */
-#define BTP_VCP_DISCOVERED_EV			0x80
+#define BTP_VCP_DISCOVERED_EV			0x80U
 struct btp_vcp_discovered_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;
@@ -94,7 +94,7 @@ struct btp_vcp_discovered_ev {
 	} aics_handles;
 } __packed;
 
-#define BTP_VCP_STATE_EV			0x81
+#define BTP_VCP_STATE_EV			0x81U
 struct btp_vcp_state_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;
@@ -102,14 +102,14 @@ struct btp_vcp_state_ev {
 	uint8_t mute;
 } __packed;
 
-#define BTP_VCP_FLAGS_EV			0x82
+#define BTP_VCP_FLAGS_EV			0x82U
 struct btp_vcp_volume_flags_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;
 	uint8_t flags;
 } __packed;
 
-#define BTP_VCP_PROCEDURE_EV			0x83
+#define BTP_VCP_PROCEDURE_EV			0x83U
 struct btp_vcp_procedure_ev {
 	bt_addr_le_t address;
 	uint8_t att_status;

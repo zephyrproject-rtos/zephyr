@@ -38,7 +38,7 @@ int lvgl_init_input_devices(void);
 #define LVGL_INPUT_DEFINE(input_device, lvgl_device, identifier, type, msgq_size, process_evt_cb)  \
 	INPUT_CALLBACK_DEFINE_NAMED(input_device, process_evt_cb, (void *)lvgl_device,             \
 				    process_evt_cb_##identifier);                                  \
-	K_MSGQ_DEFINE(lvgl_input_msgq_##type##_##identifier, sizeof(lv_indev_data_t), msgq_size, 4)
+	K_MSGQ_DEFINE_STATIC_TYPE(lvgl_input_msgq_##type##_##identifier, lv_indev_data_t, msgq_size)
 
 #define LVGL_INPUT_INST_DEFINE(inst, type, msgq_size, process_evt_cb)                              \
 	LVGL_INPUT_DEFINE(LVGL_INPUT_DEVICE(inst), DEVICE_DT_INST_GET(inst), inst, type,           \

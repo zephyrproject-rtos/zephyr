@@ -105,7 +105,7 @@ void uvc_test_shutdown(void *f)
 	zassert_ok(ret, "Failed to shutdown device support");
 
 	ret = uvc_device_shutdown(uvc_dev);
-	zassert_ok(ret, "Failed to shutodwn UVC device class");
+	zassert_ok(ret, "Failed to shutdown UVC device class");
 
 	LOG_INF("Device support disabled");
 

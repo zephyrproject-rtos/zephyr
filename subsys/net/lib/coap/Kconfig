@@ -1,6 +1,7 @@
 # CoAP implementation for Zephyr
 
 # Copyright (c) 2017 Intel Corporation
+# Copyright (c) 2026 Siemens AG
 # SPDX-License-Identifier: Apache-2.0
 
 config COAP
@@ -101,13 +102,27 @@ config COAP_KEEP_USER_DATA
 	help
 	  This option enables keeping application-specific user data
 
-config COAP_CLIENT
-	bool "CoAP client support [EXPERIMENTAL]"
+config COAP_OVER_RELIABLE_TRANSPORT
+	bool "CoAP over reliable transports (RFC8323) [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	help
+	  Enables the implementation support of RFC8323
+	  (CoAP (Constrained Application Protocol) over TCP, TLS, and WebSockets)
+
+config COAP_CLIENT
+	bool "CoAP client support"
+	select ZVFS
+	select ZVFS_EVENTFD
 	help
 	  This option enables the API for CoAP-client for sending CoAP requests
 
 if COAP_CLIENT
+
+config ZVFS_EVENTFD_ADD_SIZE_COAP_CLIENT
+	int "Number of eventfds needed by the CoAP client"
+	default 1
+	help
+	  The CoAP client allocates one zvfs eventfd to wake up its poll loop.
 
 config COAP_CLIENT_THREAD_PRIORITY
 	int "Coap client thread priority"
@@ -181,9 +196,43 @@ config COAP_CLIENT_MULTICAST
 
 endif # COAP_CLIENT
 
+if COAP_OVER_RELIABLE_TRANSPORT
+
+config COAP_CLIENT_TCP
+	bool "CoAP TCP client support"
+	help
+	  This option enables the CoAP client for reliable transports
+	  (TCP/TLS) as specified in RFC 8323.
+
+config COAP_CLIENT_TCP_REQUEST_TIMEOUT
+	int "Timeout for TCP CoAP requests in milliseconds"
+	default 30000
+	range 1000 300000
+	help
+	  Timeout for TCP-based CoAP requests. Unlike UDP, TCP requests
+	  have a single timeout with no retransmission. Default is 30 seconds
+	  as recommended by RFC 8323. Range is 1-300 seconds.
+
+config COAP_CLIENT_TCP_EXCHANGE_LIFETIME
+	int "Exchange lifetime for TCP CoAP in milliseconds"
+	default 247000
+	range 60000 600000
+	help
+	  Maximum lifetime of a TCP CoAP exchange from initial request to
+	  final response. Default is 247 seconds as per RFC 8323.
+	  Used to determine when request contexts can be safely released.
+
+config COAP_CLIENT_TCP_BLOCKWISE_REUSE_TOKEN
+	bool "Reuse the request token when requesting further blocks"
+	help
+	  This config exists for compatibility reasons when communicating with
+	  other CoAP libraries (e.g., go-coap) that expect token reuse during
+	  blockwise transfers.
+
+endif # COAP_OVER_RELIABLE_TRANSPORT
+
 config COAP_SERVER
-	bool "CoAP server support [EXPERIMENTAL]"
-	select EXPERIMENTAL
+	bool "CoAP server support"
 	select NET_SOCKETS
 	select ZVFS
 	select ZVFS_EVENTFD
@@ -191,6 +240,12 @@ config COAP_SERVER
 	  This option enables the API for CoAP-services to register resources.
 
 if COAP_SERVER
+
+config ZVFS_EVENTFD_ADD_SIZE_COAP_SERVER
+	int "Number of eventfds needed by the CoAP server"
+	default 1
+	help
+	  The CoAP server allocates one zvfs eventfd to wake up its poll loop.
 
 config COAP_SERVER_STACK_SIZE
 	int "CoAP server thread stack size"
@@ -282,6 +337,8 @@ config COAP_SERVER_SHELL
 	  Enable CoAP service shell commands.
 
 endif
+
+rsource "Kconfig.oscore"
 
 module = COAP
 module-dep = NET_LOG

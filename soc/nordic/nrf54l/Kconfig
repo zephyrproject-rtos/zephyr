@@ -8,7 +8,6 @@ config SOC_SERIES_NRF54L
 	select HAS_NRFX
 	select HAS_NORDIC_DRIVERS
 	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
-	select NRF_PLATFORM_LUMOS
 
 config SOC_SERIES_NRF54LX
 	select DEPRECATED
@@ -60,8 +59,6 @@ config SOC_NRF54LM20A_CPUAPP
 
 config SOC_NRF54LM20B_CPUAPP
 	select SOC_NRF54L_CPUAPP_COMMON
-	select SOC_COMPATIBLE_NRF54LM20A
-	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
 	select ARMV8_M_DSP
 	select CPU_HAS_ARM_MPU
 	select CPU_HAS_ARM_SAU
@@ -93,6 +90,11 @@ config SOC_NRF54LX_DISABLE_FICR_TRIMCNF
 	  Disable trimming of the device. When the device is trimmed it
 	  will copy all the trimming values from FICR into the target
 	  addresses.
+
+config SOC_NRF54LX_SKIP_TAMPC_SETUP
+	bool "Skip TAMPC setup"
+	help
+	  With this option, Tamper controller setup is omitted during system initialization.
 
 config SOC_NRF54LX_SKIP_GLITCHDETECTOR_DISABLE
 	bool "Skip disabling glitch detector"

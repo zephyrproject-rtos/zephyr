@@ -6,7 +6,9 @@
 
 /dts-v1/;
 #include <microchip/pic32c/pic32cz_ca/pic32cz_ca90/pic32cz8110ca90208.dtsi>
+#include "pic32cz_ca90_cult-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
 	model = "PIC32CZ CA90 Curiosity Ultra";
@@ -15,6 +17,9 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &nvmctrl;
+		zephyr,console = &sercom1;
+		zephyr,shell-uart = &sercom1;
 	};
 
 	aliases {
@@ -57,13 +62,36 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
-		storage_partition: partition@7fc000 {
+		/* 128kB for boot partition */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(128)>;
+		};
+
+		/* 3.75MB for slot0 partition */
+		slot0_partition: partition@4000000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x04000000 DT_SIZE_K(3840)>;
+		};
+
+		/* 3.75MB for slot1 partition */
+		slot1_partition: partition@43c0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x043c0000 DT_SIZE_K(3840)>;
+		};
+
+		/* 512kB for storage partition */
+		storage_partition: partition@4780000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x0007fc000 0x4000>;
+			reg = <0x04780000 DT_SIZE_K(512)>;
 		};
 	};
 };
@@ -162,4 +190,44 @@
 
 &portc {
 	status = "okay";
+};
+
+&sercom1 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	stop-bits = "1";
+	rxpo = <3>;
+	txpo = <0>;
+	pinctrl-0 = <&sercom1_uart_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dmac {
+	status = "okay";
+};
+
+&sercom9 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom9_i2c_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 2 0x17>, <&dmac 3 0x18>;
+	dma-names = "rx", "tx";
+	status = "okay";
+
+	eeprom: eeprom@56 {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x56>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
 };

@@ -5,9 +5,9 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/toolchain.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <wait_q.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/init.h>
@@ -16,7 +16,7 @@
 static struct k_obj_type obj_type_condvar;
 #endif /* CONFIG_OBJ_CORE_CONDVAR */
 
-static struct k_spinlock lock;
+static struct k_spinlock condvar_lock;
 
 int z_impl_k_condvar_init(struct k_condvar *condvar)
 {
@@ -43,20 +43,15 @@ int z_vrfy_k_condvar_init(struct k_condvar *condvar)
 
 int z_impl_k_condvar_signal(struct k_condvar *condvar)
 {
-	k_spinlock_key_t key = k_spin_lock(&lock);
+	k_spinlock_key_t key = k_spin_lock(&condvar_lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, signal, condvar);
 
-	struct k_thread *thread = z_unpend_first_thread(&condvar->wait_q);
-
-	if (unlikely(thread != NULL)) {
+	if (z_sched_wake(&condvar->wait_q, 0, NULL)) {
 		SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_condvar, signal, condvar, K_FOREVER);
-
-		arch_thread_return_value_set(thread, 0);
-		z_ready_thread(thread);
-		z_reschedule(&lock, key);
+		z_reschedule(&condvar_lock, key);
 	} else {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&condvar_lock, key);
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, signal, condvar, 0);
@@ -75,29 +70,25 @@ int z_vrfy_k_condvar_signal(struct k_condvar *condvar)
 
 int z_impl_k_condvar_broadcast(struct k_condvar *condvar)
 {
-	struct k_thread *pending_thread;
 	k_spinlock_key_t key;
 	int woken = 0;
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&condvar_lock);
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, broadcast, condvar);
 
 	/* wake up any threads that are waiting to write */
-	for (pending_thread = z_unpend_first_thread(&condvar->wait_q); pending_thread != NULL;
-		 pending_thread = z_unpend_first_thread(&condvar->wait_q)) {
+	while (z_sched_wake(&condvar->wait_q, 0, NULL)) {
 		woken++;
-		arch_thread_return_value_set(pending_thread, 0);
-		z_ready_thread(pending_thread);
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, broadcast, condvar, woken);
 
 
 	if (woken == 0) {
-		k_spin_unlock(&lock, key);
+		k_spin_unlock(&condvar_lock, key);
 	} else {
-		z_reschedule(&lock, key);
+		z_reschedule(&condvar_lock, key);
 	}
 
 	return woken;
@@ -120,18 +111,26 @@ int z_impl_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_condvar, wait, condvar, timeout);
 
 	if (unlikely(K_TIMEOUT_EQ(timeout, K_NO_WAIT))) {
-		k_mutex_unlock(mutex);
+		/* No wait: per POSIX semantics, the mutex must remain locked when
+		 * k_condvar_wait() returns. Returning -EAGAIN immediately without
+		 * touching the mutex preserves the calling-thread-holds-mutex
+		 * invariant.
+		 */
 		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, wait, condvar, timeout, ret);
 		return ret;
 	}
 
-	key = k_spin_lock(&lock);
+	key = k_spin_lock(&condvar_lock);
 	k_mutex_unlock(mutex);
 
-	ret = z_pend_curr(&lock, key, &condvar->wait_q, timeout);
-	if (ret == 0) {
-		k_mutex_lock(mutex, K_FOREVER);
-	}
+	ret = z_pend_curr(&condvar_lock, key, &condvar->wait_q, timeout);
+
+	/* Always re-acquire the mutex before returning, even on timeout.
+	 * This matches POSIX semantics: the mutex must be locked by the
+	 * calling thread when pthread_cond_wait() returns, regardless of
+	 * whether it was signaled or timed out.
+	 */
+	k_mutex_lock(mutex, K_FOREVER);
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_condvar, wait, condvar, timeout, ret);
 
@@ -149,23 +148,5 @@ int z_vrfy_k_condvar_wait(struct k_condvar *condvar, struct k_mutex *mutex,
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_OBJ_CORE_CONDVAR
-static int init_condvar_obj_core_list(void)
-{
-	/* Initialize condvar object type */
-
-	z_obj_type_init(&obj_type_condvar, K_OBJ_TYPE_CONDVAR_ID,
-			offsetof(struct k_condvar, obj_core));
-
-	/* Initialize and link statically defined condvars */
-
-	STRUCT_SECTION_FOREACH(k_condvar, condvar) {
-		k_obj_core_init_and_link(K_OBJ_CORE(condvar),
-					 &obj_type_condvar);
-	}
-
-	return 0;
-}
-
-SYS_INIT(init_condvar_obj_core_list, PRE_KERNEL_1,
-	 CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+K_OBJ_TYPE_DEFINE(obj_type_condvar, k_condvar, K_OBJ_TYPE_CONDVAR_ID, NULL);
 #endif /* CONFIG_OBJ_CORE_CONDVAR */

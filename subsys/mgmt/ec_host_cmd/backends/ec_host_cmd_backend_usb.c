@@ -38,7 +38,7 @@ BUILD_ASSERT((CONFIG_EC_HOST_CMD_HANDLER_BUFFER_ALIGN % UDC_BUF_ALIGN) == 0, "Bu
 
 /* Timeout for receiving entire request. */
 #define OUT_TRANSFER_TIMEOUT_MS 100
-/* Timeout for sending response, starting from notifing host that it is ready. */
+/* Timeout for sending response, starting from notifying host that it is ready. */
 #define IN_TRANSFER_TIMEOUT_MS  200
 
 enum ec_host_cmd_usb_irq_type {
@@ -65,12 +65,12 @@ enum ec_host_cmd_usb_state {
 
 	/*
 	 * Receiving ongoing. The first part of the host command request has been received,
-	 * potentialy waiting for the rest.
+	 * potentially waiting for the rest.
 	 */
 	USB_EC_HOST_CMD_STATE_RECEIVING,
 
 	/*
-	 * The host command request has been fully received and the command is being proccessed.
+	 * The host command request has been fully received and the command is being processed.
 	 * The host command handler always has to send a respond, even if the request is invalid.
 	 */
 	USB_EC_HOST_CMD_STATE_PROCESSING,
@@ -254,7 +254,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 		}
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
-			net_buf_unref(ctx->usb_rx_buf);
+			net_buf_drop(&ctx->usb_rx_buf);
 			k_work_reschedule(&ctx->reset_work, K_NO_WAIT);
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
 			return 0;
@@ -334,7 +334,7 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 		ret = usbd_ep_enqueue(c_data, ctx->usb_rx_buf);
 		if (ret) {
 			LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-			net_buf_unref(ctx->usb_rx_buf);
+			net_buf_drop(&ctx->usb_rx_buf);
 			k_work_schedule(&ctx->reset_work, K_NO_WAIT);
 			return 0;
 		}
@@ -390,7 +390,7 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	if (ret) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
 		LOG_ERR("Failed to enqueue EP OUT: %d", ret);
-		net_buf_unref(ctx->usb_rx_buf);
+		net_buf_drop(&ctx->usb_rx_buf);
 		return;
 	}
 	ctx->state = USB_EC_HOST_CMD_STATE_READY_TO_RX;

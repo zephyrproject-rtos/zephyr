@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,9 +16,9 @@
 #include "soc.h"
 #include <cy_sysint.h>
 #include <system_edge.h>
-#include "cy_pdl.h"
+#include <cy_pdl.h>
 
-#include "pse84_boot.h"
+#include <pse84_boot.h>
 
 static void systeminit_enable_clocks(void)
 {
@@ -29,14 +29,6 @@ static void systeminit_enable_clocks(void)
 	(void)Cy_SysClk_ClkHfSetDivider(11U, CY_SYSCLK_CLKHF_NO_DIVIDE);
 	(void)Cy_SysClk_ClkHfEnable(11U);
 
-	/* enable HF3 and HF4 for SMIF */
-	(void)Cy_SysClk_ClkHfSetSource(3U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
-	(void)Cy_SysClk_ClkHfSetDivider(3U, CY_SYSCLK_CLKHF_NO_DIVIDE);
-	(void)Cy_SysClk_ClkHfEnable(3U);
-
-	(void)Cy_SysClk_ClkHfSetSource(4U, CY_SYSCLK_CLKHF_IN_CLKPATH0);
-	(void)Cy_SysClk_ClkHfSetDivider(4U, CY_SYSCLK_CLKHF_NO_DIVIDE);
-	(void)Cy_SysClk_ClkHfEnable(4U);
 }
 
 static void systeminit_enable_peri(void)
@@ -87,12 +79,22 @@ void soc_early_init_hook(void)
 	systeminit_enable_clocks();
 	systeminit_enable_peri();
 
+#ifdef CONFIG_FLASH_INFINEON_SMIF_HW_INIT
+	/* Initialize power domain and peripheral group slave for SMIF init */
+	Cy_System_EnablePD1();
+	Cy_SysClk_PeriGroupSlaveInit(CY_MMIO_SMIF0_PERI_NR, CY_MMIO_SMIF0_GROUP_NR,
+				     CY_MMIO_SMIF0_SLAVE_NR, CY_MMIO_SMIF0_CLK_HF_NR);
+#endif
+
 	/* Initializes the system */
 	SystemInit();
 }
 
 void soc_late_init_hook(void)
 {
+	/* SAU Init */
+	cy_sau_init();
+
 #if defined(CONFIG_SOC_PSE84_M55_ENABLE)
 	ifx_pse84_cm55_startup();
 #endif

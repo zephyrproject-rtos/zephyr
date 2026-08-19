@@ -55,9 +55,9 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			flash0: flash@0 {
+			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(16)>;
+				reg = <0x8000000 DT_SIZE_K(16)>;
 			};
 		};
 
@@ -130,6 +130,7 @@
 			clocks = <&rcc CH32V00X_CLOCK_I2C1>;
 			interrupt-parent = <&pfic>;
 			interrupts = <30>, <31>;
+			status = "disabled";
 		};
 
 		usart1: uart@40013800 {
@@ -155,6 +156,25 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <22>, <23>, <24>, <25>, <26>, <27>, <28>;
 			dma-channels = <7>;
+		};
+
+		tim1: counter@40012c00 {
+			compatible = "wch,adtm";
+			reg = <0x40012c00 16>;
+			prescaler = <1>;
+			channels = <4>;
+			clocks = <&rcc CH32V00X_CLOCK_TIM1>;
+			interrupt-parent = <&pfic>;
+			interrupts = <34>, <35>, <36>, <37>;
+			interrupt-names = "brk", "up", "trg", "cc";
+			status = "disabled";
+
+			pwm1: pwm {
+				compatible = "wch,adtm-pwm";
+				pwm-controller;
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
 		tim2: counter@40000000 {

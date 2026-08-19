@@ -24,14 +24,14 @@ config WINSTREAM_CONSOLE
 	def_bool y
 endif
 
-config CACHE_MANAGEMENT
-	def_bool y
+configdefault CACHE_MANAGEMENT
+	default y
 
 choice CACHE_TYPE
 	default SOC_CACHE
 endchoice
 
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 64
 
 endif # SOC_FAMILY_INTEL_ADSP

@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_SMP_CLIENT_
-#define H_SMP_CLIENT_
+/**
+ * @file
+ * @brief Header file for the MCUmgr SMP client API.
+ * @ingroup mcumgr_smp_client
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_CLIENT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_CLIENT_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/net_buf.h>
@@ -140,4 +146,4 @@ int smp_client_send_cmd(struct smp_client_object *smp_client, struct net_buf *nb
 }
 #endif
 
-#endif /* H_SMP_CLIENT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_SMP_SMP_CLIENT_H_ */

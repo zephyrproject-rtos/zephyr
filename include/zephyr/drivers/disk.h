@@ -42,7 +42,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Possible Cmd Codes for disk_ioctl()
+ * @brief Possible Cmd Codes for @ref disk_access_ioctl()
  */
 
 /** Get the number of sectors in the disk  */
@@ -80,7 +80,7 @@ extern "C" {
 #define DISK_IOCTL_GET_CARD_CID			8
 
 /**
- * @brief Possible return bitmasks for disk_status()
+ * @brief Possible return bitmasks for @ref disk_access_status()
  */
 
 /** Disk status okay */

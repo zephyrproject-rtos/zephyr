@@ -17,11 +17,11 @@
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 
-#include "common/bt_str.h"
-#include "common/assert.h"
+#include <common/bt_str.h>
+#include <common/assert.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "sdp_internal.h"
 
@@ -1758,10 +1758,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		sys_slist_remove(&session->reqs, NULL, &param->_node);
 		/* Invalidate cached param in context */
 		session->param = NULL;
-		if (session->rec_buf != NULL) {
-			net_buf_unref(session->rec_buf);
-			session->rec_buf = NULL;
-		}
+		net_buf_drop(&session->rec_buf);
 		/* Reset continuation state in current context */
 		(void)memset(&session->cstate, 0, sizeof(session->cstate));
 		/* Clear total length */
@@ -1785,11 +1782,16 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 	}
 }
 
-static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
-				  struct net_buf *buf, uint16_t *total)
+static int sdp_client_get_total(struct bt_sdp_client *session, struct net_buf *buf, uint16_t *total,
+				uint16_t *removed)
 {
-	uint16_t pulled;
+	struct net_buf_simple_state state;
+	int err;
 	uint8_t seq;
+	uint32_t len;
+
+	*total = 0;
+	*removed = 0;
 
 	/*
 	 * Pull value of total octets of all attributes available to be
@@ -1798,35 +1800,60 @@ static uint16_t sdp_client_get_total(struct bt_sdp_client *session,
 	 * was sent. For subsequent calls related to the same SSA request input
 	 * buf and in/out function parameters stays neutral.
 	 */
-	if (session->cstate.length == 0U) {
-		seq = net_buf_pull_u8(buf);
-		pulled = 1U;
-		switch (seq) {
-		case BT_SDP_SEQ8:
-			*total = net_buf_pull_u8(buf);
-			pulled += 1U;
-			break;
-		case BT_SDP_SEQ16:
-			*total = net_buf_pull_be16(buf);
-			pulled += 2U;
-			break;
-		case BT_SDP_SEQ32:
-			*total = net_buf_pull_be32(buf);
-			pulled += 4U;
-			break;
-		default:
-			LOG_WRN("Sequence type 0x%02x not handled", seq);
-			*total = 0U;
-			break;
-		}
-
-		LOG_DBG("Total %u octets of all attributes", *total);
-	} else {
-		pulled = 0U;
-		*total = 0U;
+	if (session->cstate.length != 0U) {
+		return 0;
 	}
 
-	return pulled;
+	net_buf_simple_save(&buf->b, &state);
+
+	if (buf->len < sizeof(seq)) {
+		LOG_WRN("Buffer size %u too small for sequence type", buf->len);
+		err = -EMSGSIZE;
+		goto failed;
+	}
+
+	seq = net_buf_pull_u8(buf);
+	if (((seq & BT_SDP_TYPE_DESC_MASK) != BT_SDP_SEQ_UNSPEC) ||
+	    ((seq & BT_SDP_SIZE_DESC_MASK) < BT_SDP_SIZE_INDEX_OFFSET)) {
+		LOG_WRN("Sequence type 0x%02x not valid", seq);
+		err = -EINVAL;
+		goto failed;
+	}
+
+	if (buf->len < BIT((seq & BT_SDP_SIZE_DESC_MASK) - BT_SDP_SIZE_INDEX_OFFSET)) {
+		LOG_WRN("Malformed packet");
+		err = -EMSGSIZE;
+		goto failed;
+	}
+
+	switch (seq) {
+	case BT_SDP_SEQ8:
+		*total = net_buf_pull_u8(buf);
+		break;
+	case BT_SDP_SEQ16:
+		*total = net_buf_pull_be16(buf);
+		break;
+	case BT_SDP_SEQ32:
+		len = net_buf_pull_be32(buf);
+		if (len > UINT16_MAX) {
+			LOG_WRN("Sequence length exceeds uint16_t max");
+			err = -E2BIG;
+			goto failed;
+		}
+		*total = len;
+		break;
+	default:
+		LOG_ERR("seq has been checked, should not reach here");
+		CODE_UNREACHABLE;
+	}
+
+	*removed = state.len - buf->len;
+	LOG_DBG("Total %u octets of all attributes", *total);
+	return 0;
+
+failed:
+	net_buf_simple_restore(&buf->b, &state);
+	return err;
 }
 
 static uint16_t get_ss_record_len(struct net_buf *buf)
@@ -2470,6 +2497,8 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	struct bt_sdp_pdu_cstate *cstate;
 	uint16_t frame_len;
 	uint16_t total;
+	uint16_t removed;
+	int err;
 
 	/* Check the buffer len for the frame_len field */
 	if (buf->len < sizeof(frame_len)) {
@@ -2510,8 +2539,6 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	 */
 	if (frame_len == 0 && cstate->length != 0) {
 		/* Notify current received data */
-		int err;
-
 		err = sdp_client_ssa_sa_notify(session);
 		if (err != 0) {
 			LOG_ERR("Failed to notify received data: %d", err);
@@ -2530,7 +2557,19 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	}
 
 	/* Get total value of all attributes to be collected */
-	frame_len -= sdp_client_get_total(session, buf, &total);
+	err = sdp_client_get_total(session, buf, &total, &removed);
+	if (err != 0) {
+		LOG_ERR("Failed to get total value: %d", err);
+		return err;
+	}
+
+	if (frame_len < removed) {
+		LOG_ERR("Invalid frame length");
+		return -EINVAL;
+	}
+
+	frame_len -= removed;
+
 	/*
 	 * If total is not 0, there are two valid cases,
 	 * Case 1, the continuation state length is 0, the frame_len should equal total,
@@ -2700,10 +2739,7 @@ static void sdp_client_clean_after_disconnect(struct bt_sdp_client *session)
 	session->tid = 0U;
 	session->param = NULL;
 	memset(&session->cstate, 0, sizeof(session->cstate));
-	if (session->rec_buf) {
-		net_buf_unref(session->rec_buf);
-		session->rec_buf = NULL;
-	}
+	net_buf_drop(&session->rec_buf);
 	session->total_len = 0U;
 	session->recv_len = 0U;
 }
@@ -2741,10 +2777,7 @@ static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 		sys_slist_find_and_remove(&session->reqs, &param->_node);
 	}
 
-	if (session->rec_buf) {
-		net_buf_unref(session->rec_buf);
-		session->rec_buf = NULL;
-	}
+	net_buf_drop(&session->rec_buf);
 
 	sdp_client_clean_after_disconnect(session);
 }
@@ -3164,7 +3197,7 @@ static int bt_sdp_parse_attribute(struct net_buf_simple *buf, struct bt_sdp_attr
 	int err;
 	uint8_t *src;
 
-	if (buf->len < (sizeof(uint8_t) + sizeof(attr->id))) {
+	if (buf->len < (sizeof(uint8_t) + sizeof(attr->id) + sizeof(type))) {
 		LOG_WRN("Malformed packet");
 		return -EBADMSG;
 	}
@@ -3499,7 +3532,7 @@ static int sdp_attr_parse(struct net_buf_simple *buf,
 	}
 
 	/* The following is a data ele sequence, so recursively parse */
-	if ((buf->len > 0) && sdp_attr_is_seq(buf->data[0])) {
+	if (sdp_attr_is_seq(type) && (buf->len > 0) && sdp_attr_is_seq(buf->data[0])) {
 		LOG_DBG("Recursively parse");
 
 		return sdp_attr_parse(buf, func, user_data, nest_level + 1);

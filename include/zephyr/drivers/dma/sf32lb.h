@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_
-#define INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_
+#define ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_
 
 #include <stdint.h>
 
@@ -133,9 +133,8 @@ static inline void sf32lb_dma_config_init_dt(const struct sf32lb_dma_dt_spec *sp
  * @param spec SF32LB DMA DT spec
  * @param config DMA configuration
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If the configuration is not supported.
- * @retval -errno Other negative errno code failure (see dma_config()).
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP The configuration is not supported.
  */
 static inline int sf32lb_dma_config_dt(const struct sf32lb_dma_dt_spec *spec,
 				       struct dma_config *config)
@@ -148,8 +147,7 @@ static inline int sf32lb_dma_config_dt(const struct sf32lb_dma_dt_spec *spec,
  *
  * @param spec SF32LB DMA DT spec
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code failure (see dma_start()).
+ * @return 0 on success, negative errno value on failure. (see @ref dma_start()).
  */
 static inline int sf32lb_dma_start_dt(const struct sf32lb_dma_dt_spec *spec)
 {
@@ -161,8 +159,7 @@ static inline int sf32lb_dma_start_dt(const struct sf32lb_dma_dt_spec *spec)
  *
  * @param spec SF32LB DMA DT spec
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code failure (see dma_stop()).
+ * @return 0 on success, negative errno value on failure. (see @ref dma_stop()).
  */
 static inline int sf32lb_dma_stop_dt(const struct sf32lb_dma_dt_spec *spec)
 {
@@ -177,8 +174,7 @@ static inline int sf32lb_dma_stop_dt(const struct sf32lb_dma_dt_spec *spec)
  * @param dst Destination address
  * @param size Transfer size
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code failure (see dma_reload()).
+ * @return 0 on success, negative errno value on failure. (see @ref dma_reload()).
  */
 static inline int sf32lb_dma_reload_dt(const struct sf32lb_dma_dt_spec *spec, uintptr_t src,
 				       uintptr_t dst, size_t size)
@@ -192,8 +188,7 @@ static inline int sf32lb_dma_reload_dt(const struct sf32lb_dma_dt_spec *spec, ui
  * @param spec SF32LB DMA DT spec
  * @param[out] status Status output
  *
- * @retval 0 If successful.
- * @retval -errno Negative errno code failure (see dma_get_status()).
+ * @return 0 on success, negative errno value on failure. (see @ref dma_get_status()).
  */
 static inline int sf32lb_dma_get_status_dt(const struct sf32lb_dma_dt_spec *spec,
 					   struct dma_status *status)
@@ -203,4 +198,4 @@ static inline int sf32lb_dma_get_status_dt(const struct sf32lb_dma_dt_spec *spec
 
 /** @} */
 
-#endif /* INCLUDE_ZEPHYR_DRIVERS_DMA_SF32LB_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_SF32LB_H_ */

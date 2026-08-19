@@ -40,6 +40,20 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 
+		dlink_ldo: dlink_ldo@401e1000 {
+			compatible = "syscon";
+			reg = <0x401e1000 0x30>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
+		dlink_sys: dlink_sys@401e2000 {
+			compatible = "syscon";
+			reg = <0x401e2000 0x200>;
+			reg-io-width = <4>;
+			status = "okay";
+		};
+
 		clks: clks@40100300 {
 			compatible = "realtek,rts5817-clock";
 			reg = <0x40100300 0x100>,
@@ -91,6 +105,145 @@
 			interrupts = <IRQ_NUM_UART1 0>;
 			clocks = <&clks RTS_FP_CLK_UART1>;
 			resets = <&reset SYS_FORCE_RST_UART1>;
+			status = "disabled";
+		};
+
+		regulator: regulator {
+			compatible = "realtek,rts5817-regulator";
+			syscon-ldo = <&dlink_ldo>;
+			syscon-sys = <&dlink_sys>;
+			status = "disabled";
+
+			dvdds {
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <1200000>;
+				regulator-always-on;
+			};
+
+			svio {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <1800000>;
+				ocp-enable;
+			};
+
+			sva {
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-init-microvolt = <3000000>;
+				ocp-enable;
+			};
+		};
+
+		ocotp: ocotp@401b0000 {
+			compatible = "realtek,rts5817-ocotp";
+			reg = <0x401b0000 0x800>;
+			otp-size = <0x300>;
+			clocks = <&clks RTS_FP_CLK_PUF>;
+			resets = <&reset SYS_FORCE_RST_PUF>;
+			syscon-ldo = <&dlink_ldo>;
+			status = "disabled";
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				config_flag_otp: config_flag@0 {
+					reg = <0x0 0x4>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				rint_otp: rint@f {
+					reg = <0xf 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				dvdds_1v1_otp: dvdds_1v1@12 {
+					reg = <0x12 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				sva_3v0_otp: sva_3v0@13 {
+					reg = <0x13 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				svio_1v8_otp: svio_1v8@14 {
+					reg = <0x14 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				svio_3v0_otp: svio_3v0@15 {
+					reg = <0x15 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+
+				rc_cal_otp: rc_cal@1f {
+					reg = <0x1f 0x1>;
+					#nvmem-cell-cells = <0>;
+					read-only;
+				};
+			};
+		};
+
+		/*
+		 * Note: The interrupts in snps,designware-spi is actually invalid,
+		 * adding this attribute to the node is only to ensure compilation.
+		 */
+		spi_dw0: spi@40003000 {
+			compatible = "snps,designware-spi";
+			reg = <0x40003000 0x100>;
+			clocks = <&clks RTS_FP_CLK_SPI_SSOR>;
+			clock-frequency = <DT_FREQ_M(120)>;
+			interrupt-parent = <&nvic>;
+			interrupts = <30 0>;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi_dw1: spi@40004200 {
+			compatible = "snps,designware-spi";
+			reg = <0x40004200 0x100>;
+			clocks = <&clks RTS_FP_CLK_SPI_SSI_M>;
+			clock-frequency = <DT_FREQ_M(120)>;
+			interrupt-parent = <&nvic>;
+			interrupts = <31 0>;
+			fifo-depth = <16>;
+			max-xfer-size = <16>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi0: spi@40002000 {
+			compatible = "realtek,rts5817-spi";
+			reg = <0x40002000 0x100>;
+			dw-spi-dev = <&spi_dw0>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_SENSOR_SPI 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@40004000 {
+			compatible = "realtek,rts5817-spi";
+			reg = <0x40004000 0x100>;
+			dw-spi-dev = <&spi_dw1>;
+			interrupt-parent = <&nvic>;
+			interrupts = <IRQ_NUM_SPI_MASTER 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

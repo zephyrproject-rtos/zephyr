@@ -1,0 +1,38 @@
+# Copyright (c) 2025 Netfeasa Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "CoAP client sample application"
+
+config NET_SAMPLE_COAP_CLIENT_PEER
+	string "CoAP server peer"
+	help
+	  Peer address of the CoAP server. The value may be an IPv4 literal,
+	  an IPv6 literal, or a hostname. If no port is specified, UDP port
+	  5683 is used.
+	  Syntax examples:
+	     192.0.2.1:5683
+	     192.0.2.42
+	     [2001:db8::1]:5683
+	     [2001:db8::2]
+	     example.com:5683
+	     example.com
+
+config NET_SAMPLE_COAP_CLIENT_REPLY_TIMEOUT_MS
+	int "CoAP reply timeout in milliseconds"
+	default 0
+	range 0 600000
+	help
+	  Time to wait for a CoAP reply before giving up.
+	  Set to 0 to wait forever.
+
+config NET_SAMPLE_COAP_CLIENT_BLOCKWISE_MAX_RETRIES
+	int "Maximum block-wise retries after timeout"
+	default 0
+	range 0 10
+	help
+	  Number of times to retry a block-wise GET request when waiting for
+	  the next block times out. This only has an effect when
+	  NET_SAMPLE_COAP_CLIENT_REPLY_TIMEOUT_MS is non-zero.
+
+source "samples/net/common/Kconfig"
+source "Kconfig.zephyr"

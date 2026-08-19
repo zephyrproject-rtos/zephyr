@@ -8,20 +8,21 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/syscon.h>
+#include <zephyr/drivers/otp.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-
+#include <soc.h>
 #include <bouffalolab/bl61x/bflb_soc.h>
 #include <bouffalolab/bl61x/aon_reg.h>
+#include <bouffalolab/bl61x/cci_reg.h>
 #include <bouffalolab/bl61x/glb_reg.h>
 #include <bouffalolab/bl61x/hbn_reg.h>
 #include <bouffalolab/bl61x/mcu_misc_reg.h>
 #include <bouffalolab/bl61x/pds_reg.h>
-#include <bouffalolab/bl61x/sf_ctrl_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
 #define CLK_SRC_IS(clk, src)                                                                       \
@@ -47,6 +48,8 @@ LOG_MODULE_REGISTER(clock_control_bl61x, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 #define CRYSTAL_ID_FREQ_40000000	3
 #define CRYSTAL_ID_FREQ_26000000	4
 #define CRYSTAL_VALUES_CNT		5
+
+#define BL61X_TARGET_BASIC_CLOCK	MHZ(40)
 
 #define CRYSTAL_FREQ_TO_ID(freq) CONCAT(CRYSTAL_ID_FREQ_, freq)
 
@@ -99,9 +102,6 @@ struct clock_control_bl61x_bclk_config {
 struct clock_control_bl61x_flashclk_config {
 	enum bl61x_clkid	source;
 	uint8_t			divider;
-	uint8_t			bank1_read_delay;
-	bool			bank1_clock_invert;
-	bool			bank1_rx_clock_invert;
 };
 
 struct clock_control_bl61x_config {
@@ -339,6 +339,100 @@ static const bl61x_pll_config *const bl61x_pll_configs_500M[CRYSTAL_VALUES_CNT] 
 &wifipll_32M_500M, &wifipll_24M_500M, &wifipll_38P4M_500M, &wifipll_40M_500M, &wifipll_26M_500M
 };
 
+static const bl61x_pll_config aupll_32M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 3,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0xA000,
+	.aupllPostDiv = 8,
+};
+
+static const bl61x_pll_config aupll_38P4M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 3,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0x8555,
+	.aupllPostDiv = 8,
+};
+
+static const bl61x_pll_config aupll_40M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 3,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0x8000,
+	.aupllPostDiv = 8,
+};
+
+static const bl61x_pll_config aupll_24M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 3,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0xD554,
+	.aupllPostDiv = 8,
+};
+
+static const bl61x_pll_config aupll_26M = {
+	.pllRefdivRatio = 2,
+	.pllIntFracSw = 1,
+	.pllIcp1u = 1,
+	.pllIcp5u = 0,
+	.pllRz = 5,
+	.pllCz = 2,
+	.pllC3 = 2,
+	.pllR4Short = 0,
+	.pllC4En = 1,
+	.pllSelSampleClk = 1,
+	.pllVcoSpeed = 3,
+	.pllSdmCtrlHw = 0,
+	.pllSdmBypass = 0,
+	.pllSdmin = 0xC4EC,
+	.aupllPostDiv = 8,
+};
+
+static const bl61x_pll_config *const bl61x_aupll_configs[CRYSTAL_VALUES_CNT] = {
+&aupll_32M, &aupll_24M, &aupll_38P4M, &aupll_40M, &aupll_26M
+};
+
 static void clock_control_bl61x_clock_at_least_us(uint32_t us)
 {
 	for (uint32_t i = 0; i < us * CLK_AT_LEAST_MUL; i++) {
@@ -402,7 +496,7 @@ static int clock_control_bl61x_init_crystal(void)
 /* /!\ on bl61x hclk is only for CLIC
  * FCLK is the core clock
  */
-static int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
+static __bflb_critfunc int clock_bflb_set_root_clock_dividers(uint32_t hclk_div, uint32_t bclk_div)
 {
 	uint32_t tmp;
 	uint32_t old_rootclk;
@@ -493,6 +587,16 @@ static void clock_control_bl61x_deinit_wifipll(void)
 	tmp &= GLB_PU_WIFIPLL_UMSK;
 	tmp &= GLB_PU_WIFIPLL_SFREG_UMSK;
 	sys_write32(tmp, GLB_BASE + GLB_WIFI_PLL_CFG0_OFFSET);
+}
+
+static void clock_control_bl61x_deinit_aupll(void)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp &= CCI_PU_AUPLL_UMSK;
+	tmp &= CCI_PU_AUPLL_SFREG_UMSK;
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
 }
 
 /* RC32M : 0
@@ -658,14 +762,6 @@ static void clock_control_bl61x_init_wifipll(const bl61x_pll_config *const *conf
 					     uint32_t top_frequency)
 {
 	uint32_t tmp;
-	uint32_t old_rootclk;
-
-	old_rootclk = clock_bflb_get_root_clock();
-
-	/* security RC32M */
-	if (old_rootclk > 1) {
-		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_RC32M);
-	}
 
 	clock_control_bl61x_deinit_wifipll();
 
@@ -683,7 +779,6 @@ static void clock_control_bl61x_init_wifipll(const bl61x_pll_config *const *conf
 	tmp |= GLB_REG_PLL_EN_MSK;
 	sys_write32(tmp, GLB_BASE + GLB_SYS_CFG0_OFFSET);
 
-	clock_bflb_set_root_clock(old_rootclk);
 	clock_bflb_settle();
 }
 
@@ -741,12 +836,12 @@ static int clock_control_bl61x_clock_trim_32M(void)
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 
 
-	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim);
+	err = otp_read(efuse, EFUSE_RC32M_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
 	}
-	err = syscon_read_reg(efuse, EFUSE_RC32M_TRIM_EP_OFFSET, &trim_ep);
+	err = otp_read(efuse, EFUSE_RC32M_TRIM_EP_OFFSET, &trim_ep, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
@@ -781,7 +876,7 @@ static int clock_control_bl61x_clock_trim_32M(void)
 }
 
 /* source for most clocks, either XTAL or RC32M */
-static uint32_t clock_control_bl61x_get_xclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl61x_get_xclk(const struct device *dev)
 {
 	uint32_t tmp;
 
@@ -804,7 +899,7 @@ static uint32_t clock_control_bl61x_mtimer_get_xclk_src_div(const struct device 
 }
 
 /* Almost always CPU, AXI bus, SRAM Memory, Cache, use HCLK query instead */
-static uint32_t clock_control_bl61x_get_fclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl61x_get_fclk(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
 	uint32_t tmp;
@@ -824,9 +919,9 @@ static uint32_t clock_control_bl61x_get_fclk(const struct device *dev)
 	} else if (tmp == BL61X_WIFIPLL_ID_DIV3_4) {
 		return BFLB_MUL_CLK(MHZ(240), data->wifipll.top_frequency, BL61X_WIFIPLL_TOP_FREQ);
 	} else if (tmp == BL61X_AUPLL_ID_DIV1) {
-		/* TODO AUPLL DIV 1 */
+		return data->aupll.top_frequency;
 	} else if (tmp == BL61X_AUPLL_ID_DIV2) {
-		/* TODO AUPLL DIV 2 */
+		return data->aupll.top_frequency / 2;
 	} else {
 		return 0;
 	}
@@ -834,7 +929,7 @@ static uint32_t clock_control_bl61x_get_fclk(const struct device *dev)
 }
 
 /* CLIC, should be same as FCLK ideally */
-static uint32_t clock_control_bl61x_get_hclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl61x_get_hclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t clock_f;
@@ -846,7 +941,7 @@ static uint32_t clock_control_bl61x_get_hclk(const struct device *dev)
 }
 
 /* most peripherals clock */
-static uint32_t clock_control_bl61x_get_bclk(const struct device *dev)
+static __ramfunc uint32_t clock_control_bl61x_get_bclk(const struct device *dev)
 {
 	uint32_t tmp;
 	uint32_t source_clock;
@@ -899,7 +994,167 @@ static void clock_control_bl61x_setup_wifipll(const struct device *dev)
 
 }
 
-static void clock_control_bl61x_init_root_as_wifipll(const struct device *dev)
+static void clock_control_bl61x_set_aupll_source(uint32_t source)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG1_OFFSET);
+	if (source == 1) {
+		tmp &= CCI_AUPLL_REFCLK_SEL_UMSK;
+	} else {
+		tmp = (tmp & CCI_AUPLL_REFCLK_SEL_UMSK) | (3U << CCI_AUPLL_REFCLK_SEL_POS);
+	}
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG1_OFFSET);
+}
+
+static void clock_control_bl61x_init_aupll_setup(const bl61x_pll_config *const config,
+						  uint32_t top_frequency)
+{
+	uint32_t tmp;
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG1_OFFSET);
+	tmp = (tmp & CCI_AUPLL_POSTDIV_UMSK)
+		| (config->aupllPostDiv << CCI_AUPLL_POSTDIV_POS);
+	tmp = (tmp & CCI_AUPLL_REFDIV_RATIO_UMSK)
+		| (config->pllRefdivRatio << CCI_AUPLL_REFDIV_RATIO_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG1_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG2_OFFSET);
+	tmp = (tmp & CCI_AUPLL_INT_FRAC_SW_UMSK)
+		| (config->pllIntFracSw << CCI_AUPLL_INT_FRAC_SW_POS);
+	tmp = (tmp & CCI_AUPLL_ICP_1U_UMSK)
+		| (config->pllIcp1u << CCI_AUPLL_ICP_1U_POS);
+	tmp = (tmp & CCI_AUPLL_ICP_5U_UMSK)
+		| (config->pllIcp5u << CCI_AUPLL_ICP_5U_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG2_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG3_OFFSET);
+	tmp = (tmp & CCI_AUPLL_RZ_UMSK)
+		| (config->pllRz << CCI_AUPLL_RZ_POS);
+	tmp = (tmp & CCI_AUPLL_CZ_UMSK)
+		| (config->pllCz << CCI_AUPLL_CZ_POS);
+	tmp = (tmp & CCI_AUPLL_C3_UMSK)
+		| (config->pllC3 << CCI_AUPLL_C3_POS);
+	tmp = (tmp & CCI_AUPLL_R4_SHORT_UMSK)
+		| (config->pllR4Short << CCI_AUPLL_R4_SHORT_POS);
+	tmp = (tmp & CCI_AUPLL_C4_EN_UMSK)
+		| (config->pllC4En << CCI_AUPLL_C4_EN_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG3_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG4_OFFSET);
+	tmp = (tmp & CCI_AUPLL_SEL_SAMPLE_CLK_UMSK)
+		| (config->pllSelSampleClk << CCI_AUPLL_SEL_SAMPLE_CLK_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG4_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG5_OFFSET);
+	tmp = (tmp & CCI_AUPLL_VCO_SPEED_UMSK)
+		| (config->pllVcoSpeed << CCI_AUPLL_VCO_SPEED_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG5_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG6_OFFSET);
+	tmp = (tmp & CCI_AUPLL_SDM_BYPASS_UMSK)
+		| (config->pllSdmBypass << CCI_AUPLL_SDM_BYPASS_POS);
+	tmp = (tmp & CCI_AUPLL_SDMIN_UMSK)
+		| (BFLB_MUL_CLK(config->pllSdmin, top_frequency, BL61X_AUPLL_TOP_FREQ)
+		<< CCI_AUPLL_SDMIN_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG6_OFFSET);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp |= CCI_PU_AUPLL_SFREG_MSK;
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+
+	clock_control_bl61x_clock_at_least_us(3);
+
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp |= CCI_PU_AUPLL_MSK;
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+
+	clock_control_bl61x_clock_at_least_us(3);
+
+	/* 'SDM reset' */
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_SDM_RSTB_UMSK)
+		| (1U << CCI_AUPLL_SDM_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	clock_control_bl61x_clock_at_least_us(8);
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_SDM_RSTB_UMSK)
+		| (0 << CCI_AUPLL_SDM_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	clock_control_bl61x_clock_at_least_us(8);
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_SDM_RSTB_UMSK)
+		| (1U << CCI_AUPLL_SDM_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+
+	/* 'pll reset' */
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_FBDV_RSTB_UMSK)
+		| (1U << CCI_AUPLL_FBDV_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	clock_control_bl61x_clock_at_least_us(8);
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_FBDV_RSTB_UMSK)
+		| (0 << CCI_AUPLL_FBDV_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	clock_control_bl61x_clock_at_least_us(8);
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+	tmp = (tmp & CCI_AUPLL_FBDV_RSTB_UMSK)
+		| (1U << CCI_AUPLL_FBDV_RSTB_POS);
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG0_OFFSET);
+
+	/* enable PLL outputs */
+	tmp = sys_read32(CCI_BASE + CCI_AUDIO_PLL_CFG8_OFFSET);
+	tmp |= CCI_AUPLL_EN_DIV1_MSK;
+	tmp |= CCI_AUPLL_EN_DIV2_MSK;
+	tmp |= CCI_AUPLL_EN_DIV2P5_MSK;
+	tmp |= CCI_AUPLL_EN_DIV5_MSK;
+	tmp |= CCI_AUPLL_EN_DIV6_MSK;
+	sys_write32(tmp, CCI_BASE + CCI_AUDIO_PLL_CFG8_OFFSET);
+
+	clock_control_bl61x_clock_at_least_us(50);
+}
+
+static void clock_control_bl61x_init_aupll(const bl61x_pll_config *const *config,
+					   enum bl61x_clkid source, uint32_t crystal_id,
+					   uint32_t top_frequency)
+{
+	uint32_t tmp;
+
+	clock_control_bl61x_deinit_aupll();
+
+	if (source == BL61X_CLKID_CLK_CRYSTAL) {
+		clock_control_bl61x_set_aupll_source(1);
+		clock_control_bl61x_init_aupll_setup(config[crystal_id], top_frequency);
+	} else {
+		clock_control_bl61x_set_aupll_source(0);
+		clock_control_bl61x_init_aupll_setup(config[CRYSTAL_ID_FREQ_32000000],
+						     top_frequency);
+	}
+
+	tmp = sys_read32(GLB_BASE + GLB_SYS_CFG0_OFFSET);
+	tmp |= GLB_REG_PLL_EN_MSK;
+	sys_write32(tmp, GLB_BASE + GLB_SYS_CFG0_OFFSET);
+
+	clock_bflb_settle();
+}
+
+static void clock_control_bl61x_setup_aupll(const struct device *dev)
+{
+	struct clock_control_bl61x_data *data = dev->data;
+	const struct clock_control_bl61x_config *config = dev->config;
+
+	clock_control_bl61x_init_aupll(bl61x_aupll_configs, data->aupll.source,
+				       config->crystal_id, data->aupll.top_frequency);
+
+	clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_AUPLL_DIV1_POS);
+	clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_AUPLL_DIV2_POS);
+	clock_control_bl61x_ungate_pll(GLB_CGEN_PSRAMB_AUPLL_DIV1_POS);
+	clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_AUPLL_DIV6_POS);
+	clock_control_bl61x_ungate_pll(GLB_CGEN_TOP_AUPLL_DIV5_POS);
+}
+
+static __bflb_critfunc void clock_control_bl61x_init_root_as_wifipll(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
 
@@ -914,7 +1169,20 @@ static void clock_control_bl61x_init_root_as_wifipll(const struct device *dev)
 	}
 }
 
-static void clock_control_bl61x_init_root_as_crystal(const struct device *dev)
+static __bflb_critfunc void clock_control_bl61x_init_root_as_aupll(const struct device *dev)
+{
+	struct clock_control_bl61x_data *data = dev->data;
+
+	clock_control_bl61x_select_PLL(data->root.pll_select);
+
+	if (data->aupll.source == bl61x_clkid_clk_crystal) {
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_PLL_XTAL);
+	} else {
+		clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_PLL_RC32M);
+	}
+}
+
+static __bflb_critfunc void clock_control_bl61x_init_root_as_crystal(const struct device *dev)
 {
 	clock_bflb_set_root_clock(BFLB_MAIN_CLOCK_XTAL);
 }
@@ -923,42 +1191,39 @@ static __ramfunc void clock_control_bl61x_update_flash_clk(const struct device *
 {
 	struct clock_control_bl61x_data *data = dev->data;
 	volatile uint32_t tmp;
+	uint32_t clk;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_DIV_UMSK;
 	tmp &= GLB_SF_CLK_EN_UMSK;
-	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
-
-	tmp = *(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET);
-	tmp |= SF_CTRL_SF_IF_READ_DLY_EN_MSK;
-	tmp &= ~SF_CTRL_SF_IF_READ_DLY_N_MSK;
-	tmp |= (data->flashclk.bank1_read_delay << SF_CTRL_SF_IF_READ_DLY_N_POS);
-	if (data->flashclk.bank1_clock_invert) {
-		tmp &= ~SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	} else {
-		tmp |= SF_CTRL_SF_CLK_OUT_INV_SEL_MSK;
-	}
-	if (data->flashclk.bank1_rx_clock_invert) {
-		tmp |= SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	} else {
-		tmp &= ~SF_CTRL_SF_CLK_SF_RX_INV_SEL_MSK;
-	}
-	*(volatile uint32_t *)(SF_CTRL_BASE + SF_CTRL_0_OFFSET) = tmp;
 
 	tmp = *(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET);
 	tmp &= GLB_SF_CLK_SEL_UMSK;
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
 	if (data->flashclk.source == bl61x_clkid_clk_wifipll) {
+		clk = clock_control_bl61x_get_hclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
 	} else if (data->flashclk.source == bl61x_clkid_clk_crystal) {
+		clk = clock_control_bl61x_get_xclk(dev);
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 1U << GLB_SF_CLK_SEL2_POS;
 	} else {
+		clk = clock_control_bl61x_get_bclk(dev);
 		/* If using RC32M or BCLK, use BCLK */
 		tmp |= 2U << GLB_SF_CLK_SEL_POS;
 	}
+
+	/* If flash controller will manage flash, set to standard speed
+	 * and let it set the divider.
+	 */
+#if defined(CONFIG_SOC_FLASH_BFLB)
+	clk = DIV_ROUND_CLOSEST(clk, BL61X_TARGET_BASIC_CLOCK);
+	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+#else
+	tmp |= (data->flashclk.divider - 1) << GLB_SF_CLK_DIV_POS;
+#endif
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_SF_CFG0_OFFSET) = tmp;
 
@@ -976,7 +1241,7 @@ static int clock_control_bl61x_clock_trim_32K(void)
 	uint32_t trim, trim_parity;
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 
-	err = syscon_read_reg(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim);
+	err = otp_read(efuse, EFUSE_RC32K_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (err < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", err);
 		return err;
@@ -1064,7 +1329,7 @@ static int clock_control_bl61x_update_f32k(const struct device *dev)
 	return 0;
 }
 
-static int clock_control_bl61x_update_clocks(const struct device *dev)
+static __bflb_critfunc int clock_control_bl61x_update_clocks(const struct device *dev)
 {
 	struct clock_control_bl61x_data *data = dev->data;
 	uint32_t tmp;
@@ -1119,11 +1384,22 @@ static int clock_control_bl61x_update_clocks(const struct device *dev)
 		clock_control_bl61x_deinit_wifipll();
 	}
 
+	if (data->aupll.enabled) {
+		clock_control_bl61x_setup_aupll(dev);
+	} else {
+		clock_control_bl61x_deinit_aupll();
+	}
+
 	if (data->root.source == bl61x_clkid_clk_wifipll) {
 		if (!data->wifipll.enabled) {
 			return -EINVAL;
 		}
 		clock_control_bl61x_init_root_as_wifipll(dev);
+	} else if (data->root.source == bl61x_clkid_clk_aupll) {
+		if (!data->aupll.enabled) {
+			return -EINVAL;
+		}
+		clock_control_bl61x_init_root_as_aupll(dev);
 	} else if (data->root.source == bl61x_clkid_clk_crystal) {
 		if (!data->crystal_enabled) {
 			return -EINVAL;
@@ -1206,8 +1482,6 @@ static void clock_control_bl61x_gate_all_peripherals(void)
 	sys_write32(tmp, GLB_BASE + GLB_CGEN_CFG0_OFFSET);
 
 	tmp = 0;
-	/* Enable GPIP clock routing */
-	tmp |= (1U << 1);
 	/* Enable SEC clock routing */
 	tmp |= (1U << 3);
 	tmp |= (1U << 4);
@@ -1236,7 +1510,9 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG0_OFFSET);
 
 	regval = sys_read32(GLB_BASE + GLB_CGEN_CFG1_OFFSET);
-	/* enable ADC clock routing */
+	/* Enable WO clock routing */
+	regval |= (1U << 0);
+	/* enable ADC / GPIP clock routing */
 	regval |= (1U << 2);
 	/* enable SEC clock routing */
 	regval |= (1U << 3);
@@ -1268,9 +1544,15 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval = sys_read32(GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 	/* enable PSRAM clock routing */
 	regval |= (1U << 18);
+	/* enable SDH clock routing */
+	regval |= (1 << 22);
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 
-	clock_control_bl61x_uart_set_clock(true, 0, 2);
+	/*
+	 * BCLK / 4 = 20 MHz. Must divide evenly into standard CAN bitrates:
+	 * the BL61x CAN controller core clock is the UART clock / 2.
+	 */
+	clock_control_bl61x_uart_set_clock(true, 0, 3);
 }
 
 static int clock_control_bl61x_on(const struct device *dev, clock_control_subsys_t sys)
@@ -1300,6 +1582,16 @@ static int clock_control_bl61x_on(const struct device *dev, clock_control_subsys
 			ret = clock_control_bl61x_update_clocks(dev);
 			if (ret < 0) {
 				data->wifipll.enabled = false;
+			}
+		}
+	} else if ((enum bl61x_clkid)sys == bl61x_clkid_clk_aupll) {
+		if (data->aupll.enabled) {
+			ret = 0;
+		} else {
+			data->aupll.enabled = true;
+			ret = clock_control_bl61x_update_clocks(dev);
+			if (ret < 0) {
+				data->aupll.enabled = false;
 			}
 		}
 	} else if ((int)sys == BFLB_FORCE_ROOT_RC32M) {
@@ -1364,6 +1656,16 @@ static int clock_control_bl61x_off(const struct device *dev, clock_control_subsy
 			ret = clock_control_bl61x_update_clocks(dev);
 			if (ret < 0) {
 				data->wifipll.enabled = true;
+			}
+		}
+	} else if ((enum bl61x_clkid)sys == bl61x_clkid_clk_aupll) {
+		if (!data->aupll.enabled) {
+			ret = 0;
+		} else {
+			data->aupll.enabled = false;
+			ret = clock_control_bl61x_update_clocks(dev);
+			if (ret < 0) {
+				data->aupll.enabled = true;
 			}
 		}
 	}
@@ -1524,10 +1826,6 @@ static struct clock_control_bl61x_data clock_control_bl61x_data = {
 #else
 		.source = bl61x_clkid_clk_rc32m,
 #endif
-		.bank1_read_delay = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), read_delay),
-		.bank1_clock_invert = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), clock_invert),
-		.bank1_rx_clock_invert =
-			DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), rx_clock_invert),
 		.divider = DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, flash), divider),
 	},
 
@@ -1563,9 +1861,6 @@ BUILD_ASSERT(DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32k)), "RC
 BUILD_ASSERT(CLK_SRC_IS(f32k, xtal32k)
 	? DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, xtal32k)) : 1,
 	"XTAL32K must be enabled to use it");
-
-BUILD_ASSERT(!DT_NODE_HAS_STATUS_OKAY(DT_INST_CLOCKS_CTLR_BY_NAME(0, aupll_top)),
-	     "Audio PLL is unsupported");
 
 BUILD_ASSERT(DT_PROP(DT_INST_CLOCKS_CTLR_BY_NAME(0, rc32m),
 		     clock_frequency) == BFLB_RC32M_FREQUENCY, "RC32M must be 32M");

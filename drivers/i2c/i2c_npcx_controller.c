@@ -88,9 +88,6 @@ LOG_MODULE_REGISTER(i2c_npcx, CONFIG_I2C_LOG_LEVEL);
 /* Timeout for SCL held to low by slave device . (SMBus spec. unit:ms). */
 #define I2C_MIN_TIMEOUT 25
 
-/* Default maximum time we allow for an I2C transfer (unit:ms) */
-#define I2C_TRANS_TIMEOUT K_MSEC(100)
-
 /* Valid bit fields in SMBST register */
 #define NPCX_VALID_SMBST_MASK ~(BIT(NPCX_SMBST_XMIT) | BIT(NPCX_SMBST_MASTER))
 
@@ -395,9 +392,10 @@ static int i2c_ctrl_recovery(const struct device *dev)
 
 static int i2c_ctrl_wait_completion(const struct device *dev)
 {
+	const struct i2c_ctrl_config *const config = dev->config;
 	struct i2c_ctrl_data *const data = dev->data;
 
-	if (k_sem_take(&data->sync_sem, I2C_TRANS_TIMEOUT) == 0) {
+	if (k_sem_take(&data->sync_sem, config->transfer_timeout) == 0) {
 		return data->trans_err;
 	} else {
 		return -ETIMEDOUT;
@@ -1234,6 +1232,7 @@ static int i2c_ctrl_init(const struct device *dev)
 		.base = DT_INST_REG_ADDR(inst),                                                    \
 		.irq = DT_INST_IRQN(inst),                                                         \
 		.clk_cfg = NPCX_DT_CLK_CFG_ITEM(inst),                                             \
+		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(inst),                            \
 		IF_ENABLED(CONFIG_I2C_TARGET, (                                                    \
 			.smb_wui = NPCX_DT_WUI_ITEM_BY_NAME(inst, smb_wui),                        \
 			.wakeup_source = DT_INST_PROP_OR(inst, wakeup_source, 0)                   \

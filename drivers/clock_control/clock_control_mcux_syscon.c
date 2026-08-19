@@ -18,10 +18,89 @@ LOG_MODULE_REGISTER(clock_control);
 static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 					    clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	switch ((uint32_t)sub_system) {
+	case MCUX_USB0_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb0);
+		break;
+	case MCUX_USB1_CLK:
+		CLOCK_EnableClock(kCLOCK_Usb1);
+		break;
+	case MCUX_USBPHY_REF_CLK:
+		CLOCK_EnableClock(kCLOCK_UsbphyRef);
+		break;
+	case MCUX_EDMA0_CLK:
+		CLOCK_EnableClock(kCLOCK_Dma0);
+		break;
+	case MCUX_EDMA1_CLK:
+		CLOCK_EnableClock(kCLOCK_Dma1);
+		break;
+	case MCUX_ACMP0_CLK:
+		CLOCK_EnableClock(kCLOCK_Acmp0);
+		break;
+	case MCUX_LCDIF_CLK:
+		CLOCK_EnableClock(kCLOCK_Lcdif);
+		break;
+	case MCUX_GPIO0_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio0);
+		break;
+	case MCUX_GPIO1_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio1);
+		break;
+	case MCUX_GPIO2_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio2);
+		break;
+	case MCUX_GPIO3_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio3);
+		break;
+	case MCUX_GPIO4_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio4);
+		break;
+	case MCUX_GPIO5_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio5);
+		break;
+	case MCUX_GPIO6_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio6);
+		break;
+	case MCUX_GPIO7_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio7);
+		break;
+	case MCUX_GPIO8_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio8);
+		break;
+	case MCUX_GPIO9_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio9);
+		break;
+	case MCUX_GPIO10_CLK:
+		CLOCK_EnableClock(kCLOCK_Gpio10);
+		break;
+	case MCUX_IOCON0_CLK:
+		CLOCK_EnableClock(kCLOCK_Iopctl0);
+		break;
+	case MCUX_IOCON1_CLK:
+		CLOCK_EnableClock(kCLOCK_Iopctl1);
+		break;
+	case MCUX_IOCON2_CLK:
+		CLOCK_EnableClock(kCLOCK_Iopctl2);
+		break;
+	default:
+		break;
+	}
+#endif
+
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
+#if (FSL_FEATURE_SOC_LPC_CAN_COUNT > 1)
+	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
+		CLOCK_EnableClock(kCLOCK_Mcan0);
+	}
+	if ((uint32_t)sub_system == MCUX_MCAN1_CLK) {
+		CLOCK_EnableClock(kCLOCK_Mcan1);
+	}
+#else
 	if ((uint32_t)sub_system == MCUX_MCAN_CLK) {
 		CLOCK_EnableClock(kCLOCK_Mcan);
 	}
+#endif
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 #if defined(CONFIG_COUNTER_NXP_MRT)
 	if ((uint32_t)sub_system == MCUX_MRT_CLK) {
@@ -41,6 +120,59 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if defined(CONFIG_MIPI_DBI_NXP_LCDIC)
 	if ((uint32_t)sub_system == MCUX_LCDIC_CLK) {
 		CLOCK_EnableClock(kCLOCK_Lcdic);
+	}
+#endif
+
+#if defined(CONFIG_CRC_DRIVER_NXP)
+	if ((uint32_t)sub_system == MCUX_CRC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Crc0);
+	}
+#endif
+
+#if defined(CONFIG_CRC_DRIVER_NXP_LPC)
+	if ((uint32_t)sub_system == MCUX_CRC_CLK) {
+		CLOCK_EnableClock(kCLOCK_Crc);
+	}
+#endif
+
+#if defined(CONFIG_EQDC_MCUX)
+	if ((uint32_t)sub_system == MCUX_EQDC_CLK ||
+	    (uint32_t)sub_system == MCUX_EQDC0_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateQDC0);
+	}
+#if (defined(FSL_FEATURE_SOC_EQDC_COUNT) && (FSL_FEATURE_SOC_EQDC_COUNT > 1))
+	if ((uint32_t)sub_system == MCUX_EQDC1_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateQDC1);
+	}
+#endif /* FSL_FEATURE_SOC_EQDC_COUNT > 1 */
+#endif /* CONFIG_EQDC_MCUX */
+
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) ||                          \
+	defined(CONFIG_SOC_FAMILY_MCXL) || defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	if ((uint32_t)sub_system == MCUX_FREQME_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+		CLOCK_EnableClock(kCLOCK_GateFREQME);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+		CLOCK_EnableClock(kCLOCK_Freqme);
+#else /* CONFIG_SOC_SERIES_IMXRT7XX */
+		CLOCK_EnableClock(kCLOCK_Freqme0);
+#endif
+	}
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+	/* Enable the FRO_HF / FRO_12M / external clock outputs via SYSCON
+	 * CLOCK_CTRL when they are turned on (the board clock init does not);
+	 * these feed the Frequency Measure mux among other consumers.
+	 */
+	if ((uint32_t)sub_system == MCUX_FRO_HF_CLK) {
+		CLOCK_SetupClockCtrl(kCLOCK_FRO_HF_ENA);
+	}
+	if ((uint32_t)sub_system == MCUX_FRO_12M_CLK) {
+		CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
+	}
+	if ((uint32_t)sub_system == MCUX_EXT_CLK) {
+		CLOCK_SetupClockCtrl(kCLOCK_CLKIN_ENA_FM_USBH_LPT);
 	}
 #endif
 
@@ -208,7 +340,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
 	if ((uint32_t)sub_system == MCUX_TSI_CLK) {
+#if defined(CONFIG_SOC_FAMILY_MCXA)
+		CLOCK_EnableClock(kCLOCK_GateTSI0);
+#else
 		CLOCK_EnableClock(kCLOCK_Tsi);
+#endif
 	}
 #endif
 
@@ -222,7 +358,11 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	CLOCK_EnableClock(kCLOCK_Pdm);
+#else
 	CLOCK_EnableClock(kCLOCK_Micfil);
+#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sema42))
@@ -299,7 +439,7 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if defined(CONFIG_WDT_MCUX_WWDT)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(wwdt))
 	if ((uint32_t)sub_system == MCUX_WWDT0_CLK) {
-#if defined(CONFIG_SOC_FAMILY_MCXA)
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 		CLOCK_EnableClock(kCLOCK_GateWWDT0);
 #elif defined(CONFIG_SOC_SERIES_MCXW2XX) || defined(CONFIG_SOC_FAMILY_LPC)
 		CLOCK_EnableClock(kCLOCK_Wwdt);
@@ -319,12 +459,35 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #endif
 #endif /* defined(CONFIG_WDT_MCUX_WWDT) */
 
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
+	if ((uint32_t)sub_system == MCUX_SLCD_CLK) {
+		CLOCK_EnableClock(kCLOCK_GateSLCD0);
+	}
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_powerquad)
+	if ((uint32_t)sub_system == MCUX_POWERQUAD_CLK) {
+		CLOCK_EnableClock(kCLOCK_PowerQuad);
+	}
+#endif
+
 	return 0;
 }
 
 static int mcux_lpc_syscon_clock_control_off(const struct device *dev,
 					     clock_control_subsys_t sub_system)
 {
+#if defined(CONFIG_EQDC_MCUX)
+	if ((uint32_t)sub_system == MCUX_EQDC_CLK ||
+	    (uint32_t)sub_system == MCUX_EQDC0_CLK) {
+		CLOCK_DisableClock(kCLOCK_GateQDC0);
+	}
+#if (defined(FSL_FEATURE_SOC_EQDC_COUNT) && (FSL_FEATURE_SOC_EQDC_COUNT > 1))
+	if ((uint32_t)sub_system == MCUX_EQDC1_CLK) {
+		CLOCK_DisableClock(kCLOCK_GateQDC1);
+	}
+#endif /* FSL_FEATURE_SOC_EQDC_COUNT > 1 */
+#endif
 	return 0;
 }
 
@@ -335,6 +498,41 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	uint32_t clock_name = (uint32_t)sub_system;
 
 	switch (clock_name) {
+
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXN) ||                          \
+	defined(CONFIG_SOC_FAMILY_MCXL)
+	case MCUX_FRO_HF_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_FroHf);
+		break;
+	case MCUX_FRO_12M_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_Fro12M);
+		break;
+#endif
+#if defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
+	case MCUX_FRO_HF_DIV_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_FroHfDiv);
+		break;
+#endif
+#if defined(CONFIG_SOC_FAMILY_MCXN)
+	case MCUX_CPU_AHB_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
+	case MCUX_EXT_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_ExtClk);
+		break;
+#endif
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	/* RT700 clock sources also used by FREQME: FRO1 (192 MHz) as the
+	 * measured target and the system OSC (24 MHz crystal) as the reference
+	 * timebase.
+	 */
+	case MCUX_FRO_HF_CLK:
+		*rate = CLOCK_GetFroClkFreq(1U);
+		break;
+	case MCUX_EXT_CLK:
+		*rate = CLOCK_GetSysOscFreq();
+		break;
+#endif
 
 #if defined(CONFIG_I2C_MCUX_FLEXCOMM) || defined(CONFIG_SPI_MCUX_FLEXCOMM) ||                      \
 	defined(CONFIG_UART_MCUX_FLEXCOMM) || defined(CONFIG_I2S_MCUX_FLEXCOMM)
@@ -503,8 +701,17 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 
 #if defined(CONFIG_CAN_NXP_LPC_MCAN)
 	case MCUX_MCAN_CLK:
+#if (FSL_FEATURE_SOC_LPC_CAN_COUNT > 1)
+		*rate = CLOCK_GetMCanClkFreq(0);
+#else
 		*rate = CLOCK_GetMCanClkFreq();
+#endif
 		break;
+#if (FSL_FEATURE_SOC_LPC_CAN_COUNT > 1)
+	case MCUX_MCAN1_CLK:
+		*rate = CLOCK_GetMCanClkFreq(1);
+		break;
+#endif
 #endif /* defined(CONFIG_CAN_NXP_LPC_MCAN) */
 
 #if defined(CONFIG_COUNTER_MCUX_CTIMER) || defined(CONFIG_PWM_MCUX_CTIMER)
@@ -558,25 +765,51 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
+	case MCUX_SYSTEM_CLK:
+		*rate = CLOCK_GetFreq(kCLOCK_CoreSysClk);
+		break;
+
 #if defined(CONFIG_I3C_MCUX)
 	case MCUX_I3C_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(0);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(0);
 #elif CONFIG_SOC_FAMILY_MCXA
 		*rate = CLOCK_GetI3CFClkFreq();
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#if (FSL_FEATURE_SOC_I3C_COUNT == 2)
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 2)
 	case MCUX_I3C2_CLK:
 #if CONFIG_SOC_FAMILY_MCXN
 		*rate = CLOCK_GetI3cClkFreq(1);
+#elif CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(1);
 #else
 		*rate = CLOCK_GetI3cClkFreq();
 #endif
 		break;
-#endif /* (FSL_FEATURE_SOC_I3C_COUNT == 2) */
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 2) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 3)
+	case MCUX_I3C3_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(2);
+#else
+		*rate = CLOCK_GetI3cClkFreq(2);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 3) */
+#if (FSL_FEATURE_SOC_I3C_COUNT >= 4)
+	case MCUX_I3C4_CLK:
+#if CONFIG_SOC_SERIES_MCXAXX7
+		*rate = CLOCK_GetI3CFClkFreq(3);
+#else
+		*rate = CLOCK_GetI3cClkFreq(3);
+#endif
+		break;
+#endif /* (FSL_FEATURE_SOC_I3C_COUNT >= 4) */
 
 #endif /* CONFIG_I3C_MCUX */
 
@@ -648,6 +881,12 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif
 
+#ifdef CONFIG_PTP_CLOCK_NXP_ENET_QOS
+	case MCUX_ENET_QOS_PTP_CLK:
+		*rate = CLOCK_GetEnetPtpRefClkFreq();
+		break;
+#endif
+
 #ifdef CONFIG_ETH_NXP_ENET
 	case MCUX_ENET_CLK:
 #ifdef CONFIG_SOC_SERIES_RW6XX
@@ -670,11 +909,22 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetAdcClkFreq(0);
 #endif
 		break;
-#if (FSL_FEATURE_SOC_LPADC_COUNT == 2)
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 2)
 	case MCUX_LPADC2_CLK:
 		*rate = CLOCK_GetAdcClkFreq(1);
 		break;
 #endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 3)
+	case MCUX_LPADC3_CLK:
+		*rate = CLOCK_GetAdcClkFreq(2);
+		break;
+#endif
+#if (FSL_FEATURE_SOC_LPADC_COUNT >= 4)
+	case MCUX_LPADC4_CLK:
+		*rate = CLOCK_GetAdcClkFreq(3);
+		break;
+#endif
+
 #endif /* CONFIG_ADC_MCUX_LPADC */
 
 #if defined(CONFIG_CAN_MCUX_FLEXCAN)
@@ -766,6 +1016,15 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		break;
 #endif /* defined(CONFIG_SPI_NXP_LPSPI) */
 
+#if (defined(CONFIG_SPI_NXP_LPSPI) && defined(CONFIG_SOC_FAMILY_MCXL))
+	case MCUX_LPSPI0_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(0);
+		break;
+	case MCUX_LPSPI1_CLK:
+		*rate = CLOCK_GetLpspiClkFreq(1);
+		break;
+#endif /* defined(CONFIG_SPI_NXP_LPSPI) && defined(CONFIG_SOC_FAMILY_MCXL) */
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
 	case MCUX_MICFIL_CLK:
 		*rate = CLOCK_GetMicfilClkFreq();
@@ -781,7 +1040,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 		*rate = CLOCK_GetWdtClkFreq(0);
 #elif defined(CONFIG_SOC_MCXA577)
 		*rate = CLOCK_GetWwdt0ClkFreq();
-#elif defined(CONFIG_SOC_FAMILY_MCXA)
+#elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 		*rate = CLOCK_GetWwdtClkFreq();
 #else
 		*rate = CLOCK_GetWdtClkFreq();
@@ -802,6 +1061,21 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 #endif
 		break;
 #endif
+#endif
+
+#if DT_HAS_COMPAT_STATUS_OKAY(nxp_slcd)
+	case MCUX_SLCD_CLK:
+		*rate = 16384U; /* Fix 16.384kHz */
+		break;
+#endif
+
+#if defined(CONFIG_EQDC_MCUX)
+	case MCUX_EQDC_CLK:
+	case MCUX_EQDC0_CLK:
+	case MCUX_EQDC1_CLK:
+		/* EQDC is clocked from the AHB/bus clock on MCXA */
+		*rate = CLOCK_GetFreq(kCLOCK_BusClk);
+		break;
 #endif
 	}
 
@@ -838,6 +1112,14 @@ static int SYSCON_SET_FUNC_ATTR mcux_lpc_syscon_clock_control_set_subsys_rate(
 	uint32_t clock_rate = (uintptr_t)rate;
 
 	switch (clock_name) {
+#if defined(CONFIG_SOC_SERIES_IMXRT7XX)
+	case MCUX_USB0_CLK:
+		return CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M, clock_rate) ? 0 : -EINVAL;
+	case MCUX_USB1_CLK:
+		return 0;
+	case MCUX_USBPHY_REF_CLK:
+		return CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usbphy480M, clock_rate) ? 0 : -EINVAL;
+#endif
 	case MCUX_FLEXSPI_CLK:
 #if defined(CONFIG_MEMC)
 		/* The SOC is using the FlexSPI for XIP. Therefore,

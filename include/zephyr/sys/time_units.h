@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_TIME_UNITS_H_
-#define ZEPHYR_INCLUDE_TIME_UNITS_H_
+#ifndef ZEPHYR_INCLUDE_SYS_TIME_UNITS_H_
+#define ZEPHYR_INCLUDE_SYS_TIME_UNITS_H_
 
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/util.h>
@@ -170,7 +170,7 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
  * GNU extension; 2. everything in this file is designed to be computed
  * at compile time anyway.
  */
-#define z_tmcvt_divisor(a, b) ((a)/(b) ? (a)/(b) : 01u)
+#define z_tmcvt_divisor(a, b) ((a)/(b) ? (a)/(b) : 1U)
 
 /*
  * Compute the offset needed to round the result correctly when
@@ -2101,4 +2101,4 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 } /* extern "C" */
 #endif
 
-#endif /* ZEPHYR_INCLUDE_TIME_UNITS_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_TIME_UNITS_H_ */

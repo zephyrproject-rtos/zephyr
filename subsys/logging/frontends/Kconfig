@@ -60,6 +60,7 @@ config LOG_FRONTEND_STMESP_FLUSH_COUNT
 
 config LOG_FRONTEND_STMESP_EARLY_BUF_SIZE
 	int "Buffer size to store early messages"
+	default 1024 if DEBUG_NRF_ETR
 	default 0
 	help
 	  Frontend cannot write to STM if it is used with ETR buffer unless ETR is

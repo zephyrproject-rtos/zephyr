@@ -72,7 +72,7 @@
  *  A user-initiated temperature conversion
  *  does not affect the internal 64-second update cycle.
  */
-#define DS3231_BITS_CTRL_CONV BIT(6)
+#define DS3231_BITS_CTRL_CONV BIT(5)
 
 /* Rate selectors */
 /* RS2 | RS1 | SQW FREQ

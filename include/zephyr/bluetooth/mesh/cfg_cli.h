@@ -239,7 +239,7 @@ struct bt_mesh_cfg_cli_cb {
 	 *  @param addr        Address of the sender.
 	 *  @param status      Status Code for requesting message.
 	 *  @param elem_addr   The unicast address of the element.
-	 *  @param app_idx     The sub address.
+	 *  @param app_idx     The application key index.
 	 *  @param mod_id      The model ID within the element.
 	 */
 	void (*mod_app_status)(struct bt_mesh_cfg_cli *cli, uint16_t addr,

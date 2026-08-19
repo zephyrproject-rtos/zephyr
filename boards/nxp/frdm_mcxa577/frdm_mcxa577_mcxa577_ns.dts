@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa5x_ns.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa5x_ns.dtsi>
 #include "frdm_mcxa577.dtsi"
 
 / {
@@ -20,6 +20,7 @@
 		zephyr,flash-controller = &fmu;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,crc = &crc;
 	};
 
 	reserved-memory {

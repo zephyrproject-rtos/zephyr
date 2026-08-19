@@ -1253,10 +1253,8 @@ static int mcux_i3c_do_daa(const struct device *dev)
 
 			LOG_DBG("DAA: Rcvd PID 0x%04x%08x", vendor_id, part_no);
 
-			ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-							   &config->common.dev_list, pid,
-							   false, false,
-							   &target, &dyn_addr);
+			ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target,
+							   &dyn_addr);
 			if (ret != 0) {
 				goto out_daa;
 			}
@@ -1265,6 +1263,12 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			target->dynamic_addr = dyn_addr;
 			target->bcr = rx_buf[6];
 			target->dcr = rx_buf[7];
+
+			int aret = i3c_attach_i3c_device(target);
+
+			if (aret != 0 && aret != -EALREADY) {
+				LOG_ERR("Failed to attach target");
+			}
 
 			/* Mark the address as I3C device */
 			i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
@@ -1277,7 +1281,7 @@ static int mcux_i3c_do_daa(const struct device *dev)
 			 */
 			if ((target->static_addr != 0U) && (dyn_addr != target->static_addr)) {
 				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
-							 dyn_addr);
+							 target->static_addr);
 			}
 
 			/* Emit process DAA again to send the address to the device */
@@ -2027,7 +2031,9 @@ static int mcux_i3c_init(const struct device *dev)
 	}
 
 	/* Perform bus initialization */
-	ret = i3c_bus_init(dev, &config->common.dev_list);
+	if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
+		ret = i3c_bus_init(dev, &config->common.dev_list);
+	}
 
 err_out:
 	return ret;
@@ -2153,6 +2159,7 @@ static DEVICE_API(i3c, mcux_i3c_driver_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(mcux_i3c_device_array_##id),	\
 		.common.dev_list.i2c = mcux_i3c_i2c_device_array_##id,			\
 		.common.dev_list.num_i2c = ARRAY_SIZE(mcux_i3c_i2c_device_array_##id),	\
+		.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(id),		\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),			\
 		.disable_open_drain_high_pp =					\
 			DT_INST_PROP(id, disable_open_drain_high_pp),		\

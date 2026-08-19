@@ -449,7 +449,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 			if (rc == MGMT_ERR_EOK) {
 				handler_found = true;
 			} else {
-				/* Server shuold not send error response for response */
+				/* Server should not send error response for response */
 				valid_hdr = false;
 			}
 

@@ -3,6 +3,7 @@
 
 config SOC_SERIES_IT51XXX
 	select HAS_PM
+	select PM_STATE_SET_IRQ_UNLOCKED
 	select ARCH_HAS_CUSTOM_CPU_IDLE
 	select ARCH_HAS_CUSTOM_CPU_ATOMIC_IDLE
 	select SOC_PREP_HOOK
@@ -16,6 +17,7 @@ config SOC_IT51XXX
 
 config SOC_IT51XXX_CPU_IDLE_GATING
 	bool
+	default y if I2C_ITE_IT51XXX && I2C_TARGET
 	help
 	  This option determines whether the entering CPU idle mode can be
 	  gated by individual drivers. When this option is disabled, CPU idle
@@ -47,5 +49,28 @@ config SOC_IT515XX_SHA256_DLM_OFFSET
 config ILM_MAX_SIZE
 	int "ILM Size in kB"
 	default 4
+
+config SOC_IT51XXX_SIGNATURE_FLAG
+	hex "Hardware mirror signature flag"
+	range 0x0 0xFF
+	default 0xB4
+	help
+	  Hardware mirror signature flag.
+
+config SOC_IT51XXX_CMP_RANGE_ADDR
+	hex "Comparison range address"
+	range 0x0 0xFF
+	default 0xAA
+	help
+	  Specifies the comparison range address [17:10] between e-flash and SPI
+	  flash. When bit[5] of SOC_IT51XXX_SIGNATURE_FLAG is set (1'b1), this
+	  option must be 0xAA.
+
+config SOC_IT51XXX_SIGNATURE_DATA_EXTENSION
+	bool "Custom signature extension"
+	help
+	  Enable project-specific signature extension data appended to the vector
+	  table. When enabled, signature_custom.S is included into the SoC vector
+	  layout. The custom signature extension starts at offset 0x50.
 
 endif # SOC_SERIES_IT51XXX

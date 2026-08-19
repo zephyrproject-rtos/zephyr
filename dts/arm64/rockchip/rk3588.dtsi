@@ -18,7 +18,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		a55_cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
@@ -26,25 +26,53 @@
 			reg = <0x000>;
 		};
 
-		cpu@100 {
+		a55_cpu1: cpu@100 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x100>;
 		};
 
-		cpu@200 {
+		a55_cpu2: cpu@200 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x200>;
 		};
 
-		cpu@300 {
+		a55_cpu3: cpu@300 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			enable-method = "psci";
 			reg = <0x300>;
+		};
+
+		a76_cpu0: cpu@400 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x400>;
+		};
+
+		a76_cpu1: cpu@500 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x500>;
+		};
+
+		a76_cpu2: cpu@600 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x600>;
+		};
+
+		a76_cpu3: cpu@700 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a76";
+			enable-method = "psci";
+			reg = <0x700>;
 		};
 	};
 

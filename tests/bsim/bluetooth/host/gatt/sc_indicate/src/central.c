@@ -175,18 +175,28 @@ void central(void)
 	scan_connect_to_first_result();
 	wait_connected();
 
+	/* Subscribe to SC CCC before pairing. For the privacy-enabled test case
+	 * (CONFIG_BT_PRIVACY=y), the peripheral stores the SC configuration using
+	 * the central's current RPA on its side.
+	 */
+	gatt_discover();
+	subscribe();
+
 	set_security(BT_SECURITY_L2);
 
 	TAKE_FLAG(flag_pairing_complete);
 	TAKE_FLAG(flag_bonded);
 
-	/* subscribe to the service changed indication */
-	gatt_discover();
-	subscribe();
-
 	disconnect();
 	wait_disconnected();
 	clear_g_conn();
+
+#if defined(CONFIG_BT_PRIVACY)
+	/* Wait for the RPA to rotate so the second connection uses
+	 * a different random address.
+	 */
+	k_sleep(K_SECONDS(CONFIG_BT_RPA_TIMEOUT + 1));
+#endif
 
 	scan_connect_to_first_result();
 	wait_connected();

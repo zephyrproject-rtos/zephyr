@@ -87,11 +87,11 @@ struct bt_ias_client_cb {
 /** @brief Set alert level
  *
  *  @param conn Bluetooth connection object
- *  @param bt_ias_alert_lvl Level of alert to write
+ *  @param level Level of alert to write
  *
  *  @return Zero in case of success and error code in case of error.
  */
-int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl);
+int bt_ias_client_alert_write(struct bt_conn *conn, enum bt_ias_alert_lvl level);
 
 /** @brief Discover Immediate Alert Service
  *

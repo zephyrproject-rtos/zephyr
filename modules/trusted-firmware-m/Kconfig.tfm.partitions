@@ -3,8 +3,6 @@
 # Copyright (c) 2021 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if BUILD_WITH_TFM
-
 config TFM_PARTITION_PROTECTED_STORAGE
 	bool "Secure partition 'Protected Storage'"
 	depends on TFM_PARTITION_PLATFORM # Specifically TFM_SP_PLATFORM_NV_COUNTER service
@@ -64,10 +62,15 @@ config TFM_PARTITION_PLATFORM
 	  options are handled by the build system in the trusted-firmware-m
 	  repository.
 
+config TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED
+	bool
+	help
+	  Indicates that a board supports the Firmware Update partition.
+
 config TFM_PARTITION_FIRMWARE_UPDATE
 	bool "Include the secure partition 'Firmware Update'"
+	depends on TFM_PARTITION_FIRMWARE_UPDATE_SUPPORTED
 	select TFM_MCUBOOT_DATA_SHARING
-	default n
 	help
 	  Setting this option will cause '-DTFM_PARTITION_FIRMWARE_UPDATE'
 	  to be passed to the TF-M build system. Look at 'config_default.cmake'
@@ -89,5 +92,3 @@ config TFM_PARTITION_LOG_LEVEL_ERROR
 config TFM_PARTITION_LOG_LEVEL_SILENCE
 	bool "Off"
 endchoice
-
-endif # BUILD_WITH_TFM

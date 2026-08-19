@@ -81,9 +81,9 @@ LOG_MODULE_REGISTER(SI7210, CONFIG_SENSOR_LOG_LEVEL);
 #define SI7210_OTPREG_2000G_SCALE_A0	0x27
 #define SI7210_OTPREG_2000G_SCALE_A1	0x28
 #define SI7210_OTPREG_2000G_SCALE_A2	0x29
-#define SI7210_OTPREG_2000G_SCALE_A3	0x30
-#define SI7210_OTPREG_2000G_SCALE_A4	0x31
-#define SI7210_OTPREG_2000G_SCALE_A5	0x32
+#define SI7210_OTPREG_2000G_SCALE_A3	0x2A
+#define SI7210_OTPREG_2000G_SCALE_A4	0x2B
+#define SI7210_OTPREG_2000G_SCALE_A5	0x2C
 
 enum si7210_scale {
 	si7210_scale_200G,
@@ -450,7 +450,7 @@ static int si7210_init(const struct device *dev)
 	int rc;
 
 	if (!device_is_ready(config->bus.bus)) {
-		LOG_ERR("I2C bus %s not ready!", config->bus.bus->name);
+		LOG_ERR_DEVICE_NOT_READY(config->bus.bus);
 		return -ENODEV;
 	}
 

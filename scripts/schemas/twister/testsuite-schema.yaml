@@ -45,16 +45,25 @@ $defs:
       extra_sections: {}
       expect_reboot:
         type: boolean
+      build:
+        type: boolean
       required_applications:
         type: array
         items:
           type: object
           properties:
+            application:
+              type: string
             name:
+              # deprecated: use 'application' instead
+              type: string
+            path:
               type: string
             platform:
               type: string
-          required: [name]
+          anyOf:
+            - required: [application]
+            - required: [name]
           additionalProperties: false
       required_snippets:
         type: array
@@ -81,6 +90,17 @@ $defs:
         type: boolean
       harness:
         type: string
+      sidecar:
+        type: string
+      sidecar_config:
+        # Per-sidecar configuration, namespaced by the sidecar name so several
+        # sidecars can define keys without colliding; only the block matching
+        # the scenario's `sidecar:` value is consumed. The concrete per-sidecar
+        # properties are filled in at load time from the registered sidecars
+        # (see twisterlib.sidecars.sidecar_config_schema), so a new sidecar does
+        # not have to edit this file. This placeholder validates the shape for
+        # any consumer that loads the schema directly.
+        type: object
       harness_config:
         type: object
         properties:
@@ -102,8 +122,7 @@ $defs:
             type: string
           type:
             type: string
-          fixture:
-            type: string
+          fixture: {}
           ordered:
             type: boolean
           pytest_root:
@@ -117,6 +136,22 @@ $defs:
           pytest_dut_scope:
             type: string
             enum: ["function", "class", "module", "package", "session"]
+          required_devices:
+            type: array
+            items:
+              type: object
+              properties:
+                platform:
+                  type: string
+                fixture:
+                  type: array
+                  items:
+                    type: string
+                application:
+                  type: string
+                path:
+                  type: string
+              additionalProperties: false
           ctest_args:
             type: array
             items:
@@ -144,6 +179,10 @@ $defs:
             additionalProperties: false
           bsim_exe_name:
             type: string
+          tests_scripts:
+            type: array
+            items:
+              type: string
           ztest_suite_repeat:
             type: integer
           ztest_test_repeat:

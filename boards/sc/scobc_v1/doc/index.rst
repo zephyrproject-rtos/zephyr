@@ -69,7 +69,7 @@ for the board:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: scobc_v1
+   :board: scobc_v1/versal_rpu
    :goals: flash
    :flash-args: --pdi /path/to/your.pdi
 

@@ -5,9 +5,9 @@
 
 menuconfig ETH_E1000
 	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
-	default y
+	default y if !NET_QEMU_SLIP
 	depends on DT_HAS_INTEL_E1000_ENABLED
-	depends on PCIE
+	select PCIE
 	help
 	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
 
@@ -29,6 +29,7 @@ config ETH_E1000_VERBOSE_DEBUG
 config ETH_E1000_PTP_CLOCK
 	bool "PTP clock driver support [EXPERIMENTAL]"
 	depends on PTP_CLOCK
+	select NET_L2_PTP_TIMESTAMPING
 	select EXPERIMENTAL
 	default y
 	help

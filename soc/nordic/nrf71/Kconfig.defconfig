@@ -15,12 +15,15 @@ config CORTEX_M_SYSTICK
 config CACHE_NRF_CACHE
 	default y
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
+
+config ROM_START_OFFSET
+	default 0x800 if BOOTLOADER_MCUBOOT && !BUILD_WITH_TFM
 
 endif # ARM
 
@@ -41,5 +44,8 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config MSPI_DW_DDR
 	default n
+
+config MSPI_DMA
+	default y
 
 endif # SOC_SERIES_NRF71

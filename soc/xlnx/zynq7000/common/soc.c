@@ -38,20 +38,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      MT_STRONGLY_ORDERED | MPERM_R | MPERM_W),
 	/* ARM Arch timer, GIC are covered by the MPCore mapping */
 
-/* GEMs */
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem0))
-	MMU_REGION_FLAT_ENTRY("gem0",
-			      DT_REG_ADDR(DT_NODELABEL(gem0)),
-			      DT_REG_SIZE(DT_NODELABEL(gem0)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gem1))
-	MMU_REGION_FLAT_ENTRY("gem1",
-			      DT_REG_ADDR(DT_NODELABEL(gem1)),
-			      DT_REG_SIZE(DT_NODELABEL(gem1)),
-			      MT_DEVICE | MATTR_SHARED | MPERM_R | MPERM_W),
-#endif
-
 DT_FOREACH_STATUS_OKAY(xlnx_xps_gpio_1_00_a, AXI_GPIO_MMU_ENTRY)
 
 };

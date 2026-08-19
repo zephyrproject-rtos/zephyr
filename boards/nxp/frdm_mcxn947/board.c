@@ -8,9 +8,12 @@
 #include <fsl_clock.h>
 #include <fsl_spc.h>
 #include <soc.h>
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+#include <fsl_vbat.h>
+#endif
 #if CONFIG_USB_DC_NXP_EHCI
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x04U)
@@ -114,15 +117,17 @@ void board_early_init_hook(void)
 	flexspi_clock_safe_config();
 #endif
 
-	/* Set up PLL0 */
-	const pll_setup_t pll0Setup = {
-		.pllctrl = SCG_APLLCTRL_SOURCE(1U) | SCG_APLLCTRL_SELI(27U) |
-			   SCG_APLLCTRL_SELP(13U),
-		.pllndiv = SCG_APLLNDIV_NDIV(8U),
-		.pllpdiv = SCG_APLLPDIV_PDIV(1U),
-		.pllmdiv = SCG_APLLMDIV_MDIV(50U),
-		.pllRate = 150000000U
-	};
+	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
+
+	/* Set up PLL0 from the 24 MHz system oscillator. This keeps the CPU
+	 * clock at 150 MHz while giving ENET PTP a crystal-backed reference.
+	 */
+	const pll_setup_t pll0Setup = {.pllctrl = SCG_APLLCTRL_SOURCE(0U) | SCG_APLLCTRL_SELI(27U) |
+						  SCG_APLLCTRL_SELP(13U),
+				       .pllndiv = SCG_APLLNDIV_NDIV(4U),
+				       .pllpdiv = SCG_APLLPDIV_PDIV(1U),
+				       .pllmdiv = SCG_APLLMDIV_MDIV(50U),
+				       .pllRate = 150000000U};
 	/* Configure PLL0 to the desired values */
 	CLOCK_SetPLL0Freq(&pll0Setup);
 	/* PLL0 Monitor is disabled */
@@ -133,8 +138,6 @@ void board_early_init_hook(void)
 
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
-
-	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1))
 	/* < Set up PLL1 */
@@ -254,6 +257,11 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	/* Attach PLL0 (150 MHz) to the ENET QoS PTP reference clock. */
+	CLOCK_AttachClk(kPLL0_to_ENETPTPREF);
+	CLOCK_SetClkDiv(kCLOCK_DivEnetptprefClk, 1u);
+#endif
 	CLOCK_EnableClock(kCLOCK_Enet);
 	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
 	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
@@ -311,12 +319,12 @@ void board_early_init_hook(void)
 	CLOCK_EnableClock(kCLOCK_Smartdma);
 	RESET_PeripheralReset(kSMART_DMA_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(video_sdma))
-	/* Drive CLKOUT from main clock, divided by 25 to yield 6MHz clock
+	/* Drive CLKOUT from main clock, divided by 6 to yield 25MHz clock
 	 * The camera will use this clock signal to generate
 	 * PCLK, HSYNC, and VSYNC
 	 */
 	CLOCK_AttachClk(kMAIN_CLK_to_CLKOUT);
-	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 25U);
+	CLOCK_SetClkDiv(kCLOCK_DivClkOut, 6U);
 #endif
 #endif
 
@@ -407,6 +415,9 @@ void board_early_init_hook(void)
 	CLOCK_SetupClockCtrl(kCLOCK_FRO12MHZ_ENA);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x1
 	CLOCK_SetupClk16KClocking(kCLOCK_Clk16KToVsys);
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
+	VBAT_EnableFRO16k(VBAT0, true);
+#endif
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x2
 	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToVsys);
 #elif DT_PROP(DT_NODELABEL(lptmr0), clk_source) == 0x3

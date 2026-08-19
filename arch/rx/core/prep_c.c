@@ -22,7 +22,7 @@
 #include <zephyr/arch/common/xip.h>
 #include <zephyr/arch/common/init.h>
 
-K_KERNEL_PINNED_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MAX_NUM_CPUS,
+K_KERNEL_STACK_ARRAY_DEFINE(z_initialization_process_stacks, CONFIG_MP_MAX_NUM_CPUS,
 				   CONFIG_INITIALIZATION_STACK_SIZE);
 /**
  * @brief Prepare to and run C code

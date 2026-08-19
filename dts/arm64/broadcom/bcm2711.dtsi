@@ -13,13 +13,39 @@
 
 / {
 	cpus {
+		clock-frequency = <DT_FREQ_M(540)>;
+		enable-method = "spin-table";
+		i-cache-line-size = <64>;
+		d-cache-line-size = <64>;
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-a72";
 			reg = <0>;
+			cpu-release-addr = <0x0 0x000000d8>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <1>;
+			cpu-release-addr = <0x0 0x000000e0>;
+		};
+
+		cpu2: cpu@2 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <2>;
+			cpu-release-addr = <0x0 0x000000e8>;
+		};
+
+		cpu3: cpu@3 {
+			device_type = "cpu";
+			compatible = "arm,cortex-a72";
+			reg = <3>;
+			cpu-release-addr = <0x0 0x000000f0>;
 		};
 	};
 
@@ -43,6 +69,12 @@
 			clock-frequency = <DT_FREQ_M(48)>;
 			#clock-cells = <0>;
 		};
+
+		clk_vpu: clk-vpu {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(500)>;
+			#clock-cells = <0>;
+		};
 	};
 
 	soc {
@@ -64,12 +96,23 @@
 		rng: rng@fe104000 {
 			compatible = "brcm,iproc-rng200";
 			reg = <0xfe104000 0x28>;
-			status = "okay";
+			status = "disabled";
+		};
+
+		mbox0: mbox@fe00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0xfe00b880 0x40>;
+			interrupts = <GIC_SPI 33 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			#mbox-cells = <1>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@fe200000 {
 			compatible = "brcm,bcm2711-pinctrl";
 			reg = <0xfe200000 0xf4>;
+			ngpios = <58>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 
@@ -109,11 +152,12 @@
 		};
 
 		uart1: uart@fe215040 {
-			compatible = "brcm,bcm2711-aux-uart";
+			compatible = "brcm,bcm283x-aux-uart", "ns16550";
 			reg = <0xfe215040 0x40>;
-			clock-frequency = <DT_FREQ_M(500)>;
+			reg-shift = <2>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
+			clock-frequency = <DT_FREQ_M(500)>;
 			status = "disabled";
 		};
 
@@ -155,6 +199,95 @@
 			interrupt-names = "uart5";
 			clocks = <&clk_uart>;
 			status = "disabled";
+		};
+
+		i2c0: i2c@fe205000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205000 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@fe804000 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe804000 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c3: i2c@fe205600 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205600 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c4: i2c@fe205800 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205800 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c5: i2c@fe205a00 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205a00 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+
+		i2c6: i2c@fe205c00 {
+			compatible = "brcm,bcm2711-i2c";
+			reg = <0xfe205c00 0x200>;
+			interrupts = <GIC_SPI 117 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&clk_vpu>;
+			status = "disabled";
+		};
+	};
+
+	axi {
+		#address-cells = <2>;
+		#size-cells = <1>;
+
+		eth0: ethernet@fd580000 {
+			compatible = "brcm,genet";
+			reg = <0x0 0xfd580000 0x10000>;
+			interrupts = <GIC_SPI 158 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			mdio0: mdio@e14 {
+				compatible = "brcm,genet-mdio";
+				reg = <0xe14 0x8>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 	};
 };

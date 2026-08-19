@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ dut: &scb4 {
 	status = "okay";
 	current-speed = <115200>;
 
-	clocks = <&peri0_group4_8bit_1>;
+	clocks = <&peri0_group4_16bit_0>;
 
 	pinctrl-0 = <&p4_3_scb4_uart_tx &p4_2_scb4_uart_rx>;
 	pinctrl-names = "default";
@@ -31,7 +31,7 @@ dut: &scb4 {
 	input-enable;
 };
 
-&peri0_group4_8bit_1 {
+&peri0_group4_16bit_0 {
 	status = "okay";
-	clock-div = <109>;
+	clock-div = <103>;
 };

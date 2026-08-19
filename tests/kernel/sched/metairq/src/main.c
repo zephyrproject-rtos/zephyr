@@ -189,6 +189,29 @@ void join_participant_threads(void)
 	JOIN_PARTICIPANT_THREAD(coop_thread2_id);
 }
 
+/**
+ * @brief Verify a meta-IRQ returns to the cooperative thread it preempted.
+ *
+ * @details
+ * A meta-IRQ thread may preempt a running cooperative thread, but on completion
+ * the scheduler must resume that same cooperative thread rather than switching to
+ * another ready cooperative thread. The meta-IRQ unblocks a long-running
+ * low-priority coop thread, then unblocks a higher-priority coop thread before
+ * the first finishes; execution must continue in the low-priority thread and run
+ * the high-priority one only afterwards.
+ *
+ * Test steps:
+ * - Start a meta-IRQ thread and two cooperative threads (low and high priority).
+ * - The meta-IRQ unblocks the low-priority coop thread, sleeps, then unblocks the
+ *   high-priority coop thread mid-run.
+ * - Observe the order in which the coop threads complete.
+ *
+ * Expected result:
+ * - The preempted low-priority coop thread resumes first; the high-priority coop
+ *   thread runs after it, confirming the meta-IRQ returns to its preemptee.
+ *
+ * @ingroup tests_kernel_sched
+ */
 ZTEST(suite_preempt_metairq, test_preempt_metairq)
 {
 	create_participant_threads();

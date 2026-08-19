@@ -21,7 +21,7 @@ void *user_data_received;
 #define POLL_AND_CHECK_SIGNAL(signal, event, expected_event, timeout)                              \
 	({                                                                                         \
 		do {                                                                               \
-			(void)k_poll(&(event), 1, timeout);                                        \
+			zassert_ok(k_poll(&(event), 1, timeout));                                  \
 			unsigned int signaled;                                                     \
 			int result;                                                                \
 			k_poll_signal_check(&(signal), &signaled, &result);                        \
@@ -78,14 +78,29 @@ static void *stepper_ctrl_setup(void)
 static void stepper_ctrl_before(void *f)
 {
 	struct stepper_ctrl_fixture *fixture = f;
-	(void)stepper_ctrl_set_reference_position(fixture->dev, 0);
+	bool moving;
+
+	zassert_ok(stepper_ctrl_set_reference_position(fixture->dev, 0));
+
+	zassert_ok(stepper_ctrl_is_moving(fixture->dev, &moving));
+	zassert_false(moving, "%s should not report moving", fixture->dev->name);
 
 	k_poll_signal_reset(&stepper_signal);
 
 	user_data_received = NULL;
 }
 
-ZTEST_SUITE(stepper_ctrl, NULL, stepper_ctrl_setup, stepper_ctrl_before, NULL, NULL);
+static void stepper_ctrl_after(void *f)
+{
+	struct stepper_ctrl_fixture *fixture = f;
+
+	k_poll_signal_reset(&stepper_signal);
+	zassert_ok(stepper_ctrl_stop(fixture->dev));
+	POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_ctrl_event, STEPPER_CTRL_EVENT_STOPPED,
+			      K_MSEC(CONFIG_STEPPER_STOP_SIGNAL_WAIT_TIME_MS));
+}
+
+ZTEST_SUITE(stepper_ctrl, NULL, stepper_ctrl_setup, stepper_ctrl_before, stepper_ctrl_after, NULL);
 
 ZTEST_F(stepper_ctrl, test_set_micro_step_interval_invalid_zero)
 {
@@ -259,7 +274,7 @@ ZTEST_F(stepper_ctrl, test_run_negative_direction)
 ZTEST_F(stepper_ctrl, test_stop)
 {
 	/* Run the stepper in positive direction */
-	(void)stepper_ctrl_run(fixture->dev, STEPPER_CTRL_DIRECTION_POSITIVE);
+	zassert_ok(stepper_ctrl_run(fixture->dev, STEPPER_CTRL_DIRECTION_POSITIVE));
 
 	/* Stop the stepper */
 	int ret = stepper_ctrl_stop(fixture->dev);
@@ -267,7 +282,8 @@ ZTEST_F(stepper_ctrl, test_stop)
 
 	if (ret == 0) {
 		POLL_AND_CHECK_SIGNAL(stepper_signal, stepper_ctrl_event,
-				      STEPPER_CTRL_EVENT_STOPPED, K_NO_WAIT);
+				      STEPPER_CTRL_EVENT_STOPPED,
+				      K_MSEC(CONFIG_STEPPER_STOP_SIGNAL_WAIT_TIME_MS));
 		zassert_equal(user_data_received, fixture->dev, "User data not received");
 
 		/* Check if the stepper is stopped */

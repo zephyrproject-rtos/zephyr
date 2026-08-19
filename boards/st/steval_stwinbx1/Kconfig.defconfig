@@ -16,10 +16,6 @@ config BT_HCI_ACL_FLOW_CONTROL
 
 endif # BT
 
-config SPI_STM32_INTERRUPT
-	default y
-	depends on SPI
-
 source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
 
 endif # BOARD_STEVAL_STWINBX1

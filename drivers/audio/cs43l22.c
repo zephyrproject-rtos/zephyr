@@ -8,7 +8,7 @@
 #include <zephyr/audio/codec.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(cirrus_cs43l22);
+LOG_MODULE_REGISTER(cirrus_cs43l22, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #define DT_DRV_COMPAT cirrus_cs43l22
 
@@ -250,7 +250,7 @@ static int cs43l22_set_property(const struct device *dev, audio_property_t prope
 
 }
 
-static const struct audio_codec_api cs43l22_api = {
+static DEVICE_API(audio_codec, cs43l22_api) = {
 	.configure = cs43l22_configure,
 	.start_output = cs43l22_start_output,
 	.stop_output = cs43l22_stop_output,

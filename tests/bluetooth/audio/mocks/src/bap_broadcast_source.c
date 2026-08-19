@@ -8,7 +8,7 @@
 #include <zephyr/bluetooth/audio/bap.h>
 
 #include "bap_broadcast_source.h"
-#include "zephyr/fff.h"
+#include <zephyr/fff.h>
 
 /* List of fakes used by this unit tester */
 #define FFF_FAKES_LIST(FAKE)                                                                       \

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/util.h>
-#include <kernel_internal.h>
+#include <wait_q.h>
 
 typedef void * (sys_heap_allocator_t)(struct sys_heap *heap, size_t align, size_t bytes);
 
@@ -67,23 +67,20 @@ void k_free(void *ptr)
 
 		SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_heap_sys, k_free, *heap_ref, heap_ref);
 
-		k_heap_free(*heap_ref, ptr);
+		/*
+		 * Bypass k_heap_free() as z_unpend_all() and its scheduler
+		 * locking is unnecessary here, similar to z_alloc_helper()
+		 * bypassing k_heap_alloc() to go directly to sys_heap_*().
+		 */
+		struct k_heap *heap = *heap_ref;
+		k_spinlock_key_t key = k_spin_lock(&heap->lock);
 
-		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, *heap_ref, heap_ref);
-	}
-}
+		__ASSERT(z_waitq_head(&heap->wait_q) == NULL,
+			 "unexpected heap waiters");
+		sys_heap_free(&heap->heap, ptr);
+		k_spin_unlock(&heap->lock, key);
 
-/* See k_heap_free_sched_locked() */
-void k_free_sched_locked(void *ptr)
-{
-	struct k_heap **heap_ref;
-
-	if (ptr != NULL) {
-		heap_ref = ptr;
-		--heap_ref;
-		ptr = heap_ref;
-
-		k_heap_free_sched_locked(*heap_ref, ptr);
+		SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_heap_sys, k_free, heap, ptr);
 	}
 }
 
@@ -91,6 +88,11 @@ void k_free_sched_locked(void *ptr)
 
 K_HEAP_DEFINE(_system_heap, Z_HEAP_MIN_SIZE_FOR(K_HEAP_MEM_POOL_SIZE));
 #define _SYSTEM_HEAP (&_system_heap)
+
+#if defined(CONFIG_SYS_HEAP_KASAN_SYSTEM)
+#include <zephyr/sys/heap_kasan.h>
+K_HEAP_KASAN_ENABLE(_system_heap, Z_HEAP_MIN_SIZE_FOR(K_HEAP_MEM_POOL_SIZE));
+#endif
 
 void *k_aligned_alloc(size_t align, size_t size)
 {
@@ -217,3 +219,11 @@ void *z_thread_malloc(size_t size)
 {
 	return z_thread_alloc_helper(0, size, sys_heap_noalign_alloc);
 }
+
+/*
+ * There is no guarantee that functions in kheap.c are being used,
+ * meaning the linker may not pull it in at all. Yet we need the
+ * static heaps to be initialized and that is done in that file.
+ * Make sure it is pulled in at least for that; the rest will be GC'd.
+ */
+static void *const __used kheap_ref = k_heap_init;

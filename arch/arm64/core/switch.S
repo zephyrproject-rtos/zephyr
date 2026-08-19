@@ -198,13 +198,20 @@ fpu_sve_trap:
 	/* Demux the SVC call */
 	and	x1, x0, #0xff
 
+	/*
+	 * The IRQ offload entry must never be reached from EL0: it jumps to a
+	 * caller-supplied address at EL1. The runtime-except entry stays
+	 * reachable from EL0 so user threads can raise kernel oopses and
+	 * stack-check failures (z_arm64_do_kernel_oops() sanitizes the
+	 * user-supplied reason), and the system call entry is the regular
+	 * syscall path. Verify which exception level the SVC was taken from.
+	 */
+	ldr	x2, [sp, ___esf_t_spsr_elr_OFFSET]
+	tst	x2, #SPSR_MODE_MASK
+	beq	svc_from_user
+
 	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
 	beq	oops
-
-#ifdef CONFIG_USERSPACE
-	cmp	x1, #_SVC_CALL_SYSTEM_CALL
-	beq	z_arm64_do_syscall
-#endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	cmp	x1, #_SVC_CALL_IRQ_OFFLOAD
@@ -242,6 +249,15 @@ offload:
 	/* Exit through regular IRQ exit path */
 	b	z_arm64_irq_done
 #endif
+	b	inv
+
+svc_from_user:
+#ifdef CONFIG_USERSPACE
+	cmp	x1, #_SVC_CALL_SYSTEM_CALL
+	beq	z_arm64_do_syscall
+#endif
+	cmp	x1, #_SVC_CALL_RUNTIME_EXCEPT
+	beq	oops
 	b	inv
 
 oops:

@@ -3,22 +3,16 @@
 
 if SOC_SERIES_ESP32
 
-config FLASH_SIZE
-	default $(dt_node_reg_size_int,/soc/flash-controller@3ff42000/flash@0,0)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_node_reg_addr_hex,/soc/flash-controller@3ff42000/flash@0)
-
 config BOOTLOADER_MCUBOOT
 	default y if SOC_ESP32_APPCPU
 
 config MAIN_STACK_SIZE
 	default 2048
 
-if SMP
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x1c5f21b0"
 
-config SCHED_IPI_SUPPORTED
-	default y
+if SMP
 
 config SCHED_CPU_MASK
 	default y if SCHED_SIMPLE

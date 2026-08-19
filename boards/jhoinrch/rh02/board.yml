@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: rh02
+  full_name: RH02
+  vendor: jhoinrch
+  socs:
+    - name: stm32f072xb

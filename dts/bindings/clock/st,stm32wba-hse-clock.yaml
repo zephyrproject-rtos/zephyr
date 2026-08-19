@@ -18,4 +18,5 @@ properties:
     type: int
     description: |
         HSE clock trimming
-        Valid range: 0 - 63
+    min: 0
+    max: 63

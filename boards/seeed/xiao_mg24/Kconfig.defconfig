@@ -18,10 +18,6 @@ endif # SOC_GECKO_USE_RAIL
 
 if BT
 
-# Used to enable RF switch and selection
-config GPIO_HOGS
-	default y
-
 config FPU
 	default y
 

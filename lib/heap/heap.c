@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/heap_listener.h>
@@ -16,6 +17,13 @@ LOG_MODULE_REGISTER(os_heap, CONFIG_SYS_HEAP_LOG_LEVEL);
 #include <sanitizer/msan_interface.h>
 #endif
 
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+#include <zephyr/random/random.h>
+#endif
+
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+#include "heap_sanitizer.h"
+#endif
 
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
@@ -26,22 +34,20 @@ static inline void increase_allocated_bytes(struct z_heap *h, size_t num_bytes)
 #endif
 
 #ifdef CONFIG_SYS_HEAP_CANARIES
-#define HEAP_CANARY_MAGIC 0x5A6B7C8D9EAFB0C1ULL
-#define HEAP_CANARY_POISON 0xDEADBEEFDEADBEEFULL
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+#define HEAP_CANARY_MAGIC(h) h->canary_base
+#else
+#define HEAP_CANARY_MAGIC(h) 0x5A6B7C8DU
+#endif
+#define HEAP_CANARY_POISON 0xDEADBEEFU
 
 /*
- * Compute a per-chunk canary from its address and size.  This is
- * sufficient to detect accidental corruption but is not cryptographically
- * secure — a determined attacker who knows the heap layout could forge
- * a valid canary.  A stronger scheme (e.g. SipHash with a random key)
- * could replace this if needed.
+ * Compute a per-chunk canary from its address and size as well as the
+ * base canary to detect misplaced canaries.
  */
-static inline uint64_t compute_canary(struct z_heap *h, chunkid_t c)
+static inline uint32_t compute_canary(struct z_heap *h, chunkid_t c)
 {
-	uintptr_t addr = (uintptr_t)&chunk_buf(h)[c];
-	chunksz_t size = chunk_size(h, c);
-
-	return (addr ^ size) ^ HEAP_CANARY_MAGIC;
+	return ((c >> 16) | (c << 16)) ^ chunk_size(h, c) ^ HEAP_CANARY_MAGIC(h);
 }
 
 static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
@@ -51,8 +57,8 @@ static inline void set_chunk_canary(struct z_heap *h, chunkid_t c)
 
 static inline void verify_chunk_canary(struct z_heap *h, chunkid_t c, void *mem)
 {
-	uint64_t expected = compute_canary(h, c);
-	uint64_t found = chunk_trailer(h, c)->canary;
+	uint32_t expected = compute_canary(h, c);
+	uint32_t found = chunk_trailer(h, c)->canary;
 
 	if (found != expected) {
 		if (found == HEAP_CANARY_POISON) {
@@ -258,6 +264,10 @@ static void free_chunk(struct z_heap *h, chunkid_t c)
 		verify_chunk_canary(h, lc, chunk_mem(h, lc));
 	}
 
+	if (SYS_HEAP_HARDENING_FULL) {
+		poison_chunk_canary(h, c);
+	}
+
 	free_list_add(h, c);
 }
 
@@ -280,6 +290,10 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 	}
 	struct z_heap *h = heap->heap;
 	chunkid_t c = mem_to_chunkid(h, mem);
+
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, mem);
+	}
 
 	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
 		LOG_ERR("heap corruption (double free?) at %p", mem);
@@ -320,11 +334,6 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		k_panic();
 	}
 
-	if (SYS_HEAP_HARDENING_FULL) {
-		verify_chunk_canary(h, c, mem);
-		poison_chunk_canary(h, c);
-	}
-
 	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
 		LOG_ERR("heap validation failed");
 		k_panic();
@@ -340,6 +349,9 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 				  chunk_usable_bytes(h, c) - mem_align_gap(h, mem));
 #endif
 
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+		   (heap_sanitizer_on_free(heap, mem,
+				      chunk_usable_bytes(h, c) - mem_align_gap(h, mem))));
 	free_chunk(h, c);
 }
 
@@ -452,6 +464,7 @@ void *sys_heap_alloc(struct sys_heap *heap, size_t bytes)
 				   chunk_usable_bytes(h, c));
 #endif
 
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
 	return mem;
 }
@@ -541,6 +554,7 @@ void *sys_heap_aligned_alloc(struct sys_heap *heap, size_t align, size_t bytes)
 #endif
 
 	IF_ENABLED(CONFIG_MSAN, (__msan_allocated_memory(mem, bytes)));
+	IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS, (heap_sanitizer_on_alloc(heap, mem, bytes)));
 	return mem;
 }
 
@@ -553,6 +567,9 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	chunksz_t chunks_need = bytes_to_chunksz(h, bytes, align_gap);
 
+	if (SYS_HEAP_HARDENING_FULL) {
+		verify_chunk_canary(h, c, ptr);
+	}
 	if (SYS_HEAP_HARDENING_BASIC && !chunk_used(h, c)) {
 		LOG_ERR("heap corruption (not in use?) at %p", ptr);
 		k_panic();
@@ -566,9 +583,6 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	    right_chunk(h, left_chunk(h, c)) != c) {
 		LOG_ERR("heap corruption (left neighbor?) at %p", ptr);
 		k_panic();
-	}
-	if (SYS_HEAP_HARDENING_FULL) {
-		verify_chunk_canary(h, c, ptr);
 	}
 	if (SYS_HEAP_HARDENING_EXTREME && !z_heap_full_check(h)) {
 		LOG_ERR("heap validation failed");
@@ -673,7 +687,15 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 		return NULL;
 	}
 
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	size_t old_usable = sys_heap_usable_size(heap, ptr);
+#endif
+
 	if (inplace_realloc(heap, ptr, bytes)) {
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_free(heap, ptr, old_usable)));
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, bytes)));
 		return ptr;
 	}
 
@@ -683,6 +705,14 @@ void *sys_heap_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/*
+		 * The copy reads the source block's whole usable region, which
+		 * a sanitizer backend keeps poisoned past the user-requested
+		 * size. Re-grant access to the full region for the duration of
+		 * the copy; the free below re-poisons it.
+		 */
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
@@ -703,8 +733,16 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 
 	__ASSERT((align & (align - 1)) == 0, "align must be a power of 2");
 
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	size_t old_usable = sys_heap_usable_size(heap, ptr);
+#endif
+
 	if ((align == 0 || ((uintptr_t)ptr & (align - 1)) == 0) &&
 	    inplace_realloc(heap, ptr, bytes)) {
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_free(heap, ptr, old_usable)));
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, bytes)));
 		return ptr;
 	}
 
@@ -717,6 +755,14 @@ void *sys_heap_aligned_realloc(struct sys_heap *heap, void *ptr,
 	if (ptr2 != NULL) {
 		size_t prev_size = sys_heap_usable_size(heap, ptr);
 
+		/*
+		 * The copy reads the source block's whole usable region, which
+		 * a sanitizer backend keeps poisoned past the user-requested
+		 * size. Re-grant access to the full region for the duration of
+		 * the copy; the free below re-poisons it.
+		 */
+		IF_ENABLED(CONFIG_SYS_HEAP_SANITIZER_HOOKS,
+			   (heap_sanitizer_on_alloc(heap, ptr, prev_size)));
 		memcpy(ptr2, ptr, min(prev_size, bytes));
 		sys_heap_free(heap, ptr);
 	}
@@ -737,6 +783,9 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 
 	/* Reserve the end marker chunk's header */
 	__ASSERT(bytes > heap_footer_bytes(bytes), "heap size is too small");
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	const size_t orig_bytes = bytes; /* preserve for heap_sanitizer_on_init */
+#endif
 	bytes -= heap_footer_bytes(bytes);
 
 	/* Round the start up, the end down */
@@ -773,6 +822,10 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 		h->buckets[i].next = 0;
 	}
 
+#ifdef CONFIG_SYS_HEAP_CANARIES_RANDOM
+	sys_rand_get(&h->canary_base, sizeof(h->canary_base));
+#endif
+
 	/* chunk containing our struct z_heap */
 	set_chunk_size(h, 0, chunk0_size);
 	set_left_chunk_size(h, 0, 0);
@@ -791,4 +844,8 @@ void sys_heap_init(struct sys_heap *heap, void *mem, size_t bytes)
 	set_chunk_used(h, heap_sz, true);
 
 	free_list_add(h, chunk0_size);
+
+#ifdef CONFIG_SYS_HEAP_SANITIZER_HOOKS
+	heap_sanitizer_on_init(heap, mem, orig_bytes);
+#endif
 }

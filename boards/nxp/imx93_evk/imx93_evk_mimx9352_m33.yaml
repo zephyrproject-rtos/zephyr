@@ -11,9 +11,9 @@ toolchain:
 ram: 128
 flash: 128
 supported:
-  - gpio
-  - uart
-  - pwm
   - adc
+  - gpio
   - i2c
+  - pwm
+  - uart
 vendor: nxp

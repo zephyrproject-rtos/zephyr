@@ -6,21 +6,24 @@
 
 /**
  * @file
- * @brief Devicetree bindings for the Analog Devices ADXL355 accelerometer
- *
+ * @brief Devicetree binding constants for the Analog Devices ADXL355 accelerometer.
+ * @ingroup adxl355_interface
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_ADXL355_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_SENSOR_ADXL355_H_
 
 /**
- * @defgroup adxl355 ADXL355 DT Options
- * @ingroup sensor_interface
+ * @defgroup adxl355_interface ADXL355
+ * @ingroup sensor_interface_ext_adi
+ * @brief Analog Devices ADXL355 3-axis accelerometer
  * @{
  */
 
 /**
- * @defgroup adxl355_odr Output Rate options
+ * @name Output Rate options
+ *
+ * Values for the `odr` devicetree property.
  * @{
  */
 /** Output data rate: 4000 Hz */
@@ -48,7 +51,9 @@
 /** @} */
 
 /**
- * @defgroup adxl355_range Select range options
+ * @name Select range options
+ *
+ * Values for the `range` devicetree property.
  * @{
  */
 /** Select ±2 g measurement range */
@@ -60,7 +65,9 @@
 /** @} */
 
 /**
- * @defgroup adxl355_hpf_corner High Pass Filter corner options
+ * @name High Pass Filter corner options
+ *
+ * Values for the `hpf-corner` devicetree property.
  * @{
  */
 /** High-pass filter disabled */
@@ -80,7 +87,9 @@
 /** @} */
 
 /**
- * @defgroup adxl355_ext_clk External Clock options
+ * @name External Clock options
+ *
+ * Values for the `ext-clk` devicetree property.
  * @{
  */
 /** External clock disabled */
@@ -90,7 +99,9 @@
 /** @} */
 
 /**
- * @defgroup adxl355_ext_sync External Sync options
+ * @name External Sync options
+ *
+ * Values for the `ext-sync` devicetree property.
  * @{
  */
 /** Internal synchronization */

@@ -27,7 +27,7 @@
  */
 
 #include <soc.h>
-#include <autoconf.h>
+#include <zephyr/autoconf.h>
 #include <inttypes.h>
 #include <zephyr/ztest.h>
 #include <zephyr/device.h>

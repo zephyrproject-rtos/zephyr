@@ -24,9 +24,20 @@ When writing Kconfig files, follow these basic formatting rules:
 * **Comments**: Format comments as ``# Comment`` rather than ``#Comment``.
 * **Conditional blocks**: Insert an empty line before/after each top-level
   ``if`` and ``endif`` statement.
+* **End of file**: End the file with exactly one newline.
 
 For guidance on using statements like ``select``, see
 :ref:`kconfig_tips_and_tricks` for more information.
+
+These formatting rules are enforced in CI by the ``KconfigFormat`` compliance
+check. You can check your Kconfig files locally with the
+``scripts/kconfig/kconfig_style.py`` script, which reports any style issues
+(a directory is searched recursively for Kconfig files):
+
+.. code-block:: console
+
+   ./scripts/kconfig/kconfig_style.py path/to/Kconfig
+   ./scripts/kconfig/kconfig_style.py drivers/sensor/
 
 Symbol Naming and Structure
 ***************************

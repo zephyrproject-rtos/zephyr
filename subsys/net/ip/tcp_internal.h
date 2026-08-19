@@ -374,6 +374,11 @@ static inline int net_tcp_put(struct net_context *context, bool force_close)
 
 #define NET_TCP_MAX_OPT_SIZE  8
 
+#if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_NATIVE_TCP)
+/** @brief Test hook to intercept TCP TX packets. Only for unit tests. */
+extern int (*tcp_send_cb)(struct net_pkt *pkt);
+#endif
+
 #if defined(CONFIG_NET_NATIVE_TCP)
 void net_tcp_init(void);
 #else
@@ -426,6 +431,27 @@ static inline int net_tcp_get_option(struct net_context *context,
 	ARG_UNUSED(option);
 	ARG_UNUSED(value);
 	ARG_UNUSED(len);
+
+	return -EPROTONOSUPPORT;
+}
+#endif
+
+/**
+ * @brief Get the number of bytes queued for TCP TX that have not yet been acknowledged
+ *
+ * @param context Network context
+ * @param outq_bytes Destination for the queued byte count
+ *
+ * @return 0 on success
+ */
+#if defined(CONFIG_NET_NATIVE_TCP)
+int net_tcp_get_outq(struct net_context *context, int *outq_bytes);
+#else
+static inline int net_tcp_get_outq(struct net_context *context,
+				   int *outq_bytes)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(outq_bytes);
 
 	return -EPROTONOSUPPORT;
 }

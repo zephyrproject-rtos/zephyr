@@ -21,6 +21,11 @@ config USE_INFINEON_ADC
 	help
 	  Enable Analog-to-Digital Converter (ADC) HAL module driver for Infineon devices
 
+config USE_INFINEON_LPCOMP
+	bool
+	help
+	  Enable Low Power Comparator (LPComp) HAL module driver for Infineon devices
+
 config USE_INFINEON_HPPASS_SAR_ADC
 	bool
 	help
@@ -99,6 +104,36 @@ config USE_INFINEON_TRNG
 	help
 	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
 
+config USE_INFINEON_MXCRYPTO_TRNG
+	bool
+	help
+	  Enable Infineon MXCRYPTO PDL TRNG hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTO_AES
+	bool
+	help
+	  Enable Infineon MXCRYPTO PDL AES (ECB/CBC/CTR/CCM/GCM) hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTO_SHA
+	bool
+	help
+	  Enable Infineon MXCRYPTO PDL SHA (SHA-224/256/384/512) hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTOLITE_TRNG
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL TRNG hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTOLITE_AES
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL AES-128 (ECB/CBC/CTR/CCM) hardware accelerator sources
+
+config USE_INFINEON_MXCRYPTOLITE_SHA256
+	bool
+	help
+	  Enable Infineon MXCRYPTOLITE PDL SHA-256 hardware accelerator sources
+
 config USE_INFINEON_UART
 	bool
 	help
@@ -121,6 +156,11 @@ config USE_INFINEON_FLASH
 	help
 	  Enable Flash HAL module driver for Infineon devices
 
+config USE_INFINEON_FLASH_RRAM
+	bool
+	help
+	  Enable Flash RRAM module driver for Infineon devices
+
 config USE_INFINEON_SMIF
 	bool
 	help
@@ -130,5 +170,6 @@ endif # SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE || SOC_FAMILY_PSOC6
 
 config USE_INFINEON_ABSTRACTION_RTOS
 	bool "Abstraction RTOS component (Zephyr support)"
+	select EVENTS
 	help
 	  Enable Abstraction RTOS component with Zephyr support

@@ -241,6 +241,73 @@ follows:
 
 Connect J10 pin 1-2., the DAC output is available on TP9.
 
+Building and Running for NXP FRDM-MCXA266
+============================================
+The sample can be built and executed for the :zephyr:board:`frdm_mcxa266` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_mcxa266
+   :goals: build flash
+   :gen-args: -DCONFIG_DAC_SAMPLE_RUN=y
+   :compact:
+
+DAC output is available on connector J1 pin 4.
+Because the DAC output pin conflicts with LPUART2 TX, the overlay switches the
+console to LPUART3. The J5 Pin 3 and 4 are LPUART3 Rx and Tx pins.
+
+Building and Running for NXP FRDM-MCXA346
+============================================
+The sample can be built and executed for the :zephyr:board:`frdm_mcxa346` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_mcxa346
+   :goals: build flash
+   :gen-args: -DCONFIG_DAC_SAMPLE_RUN=y
+   :compact:
+
+DAC output is available on connector J1 pin 4.
+Because the DAC output pin conflicts with LPUART2 TX, the overlay switches the
+console to LPUART3. The J5 Pin 3 and 4 are LPUART3 Rx and Tx pins.
+
+Building and Running for NXP FRDM-MCXA366
+============================================
+The sample can be built and executed for the :zephyr:board:`frdm_mcxa366` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_mcxa366
+   :goals: build flash
+   :gen-args: -DCONFIG_DAC_SAMPLE_RUN=y
+   :compact:
+
+DAC output is available on connector J1 pin 4.
+Because the DAC output pin conflicts with LPUART2 TX, the overlay switches the
+console to LPUART3. The J5 Pin 3 and 4 are LPUART3 Rx and Tx pins.
+
+Building and Running for FRDM-IMXRT1186
+=======================================
+The sample can be built and executed for the :zephyr:board:`frdm_imxrt1186` as
+follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_imxrt1186/mimxrt1186/cm33
+   :goals: flash
+   :compact:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/dac
+   :board: frdm_imxrt1186/mimxrt1186/cm7
+   :goals: flash
+   :compact:
+
+Connect J37 pin 1-2., the DAC output is available on TP14.
+
 Sample output
 =============
 

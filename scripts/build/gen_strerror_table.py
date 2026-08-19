@@ -33,7 +33,7 @@ def gen_strerror_table(input, output):
         for line in inf.readlines():
             # Select items of the form below (note: ERRNO is numeric)
             # #define SYMBOL ERRNO /**< MSG */
-            pat = r'^#define[\s]+(E[A-Z_]*)[\s]+([1-9][0-9]*)[\s]+/\*\*<[\s]+(.*)[\s]+\*/[\s]*$'
+            pat = r'^#define[\s]+(E[A-Z0-9_]*)[\s]+([1-9][0-9]*)[\s]+/\*\*<[\s]+(.*)[\s]+\*/[\s]*$'
             match = re.match(pat, line)
 
             if not match:

@@ -252,6 +252,9 @@ struct mqtt_topic_alias {
 
 	/** Topic name size. */
 	uint16_t topic_size;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -406,6 +409,9 @@ struct mqtt_common_ack_properties {
 		/** User Property property was present. */
 		bool has_user_prop;
 	} rx;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -570,7 +576,7 @@ struct mqtt_publish_param {
 /** @brief Parameters for subscribe/unsubscribe message. */
 struct mqtt_subscription_list {
 	/** Array containing topics along with QoS for each. */
-	struct mqtt_topic *list;
+	const struct mqtt_topic *list;
 
 	/** Number of topics in the subscription list */
 	uint16_t list_count;
@@ -624,6 +630,9 @@ struct mqtt_disconnect_param {
 			bool has_server_reference;
 		} rx;
 	} prop;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -658,6 +667,9 @@ struct mqtt_auth_param {
 			bool has_user_prop;
 		} rx;
 	} prop;
+#elif defined(CONFIG_CPP)
+	/* C++ does not allow empty structs, add an extra 1 byte. */
+	uint8_t c;
 #endif /* CONFIG_MQTT_VERSION_5_0 */
 };
 
@@ -858,7 +870,15 @@ struct mqtt_transport {
 
 #if defined(CONFIG_SOCKS)
 	struct {
-		struct net_sockaddr addr;
+		/** SOCKS5 proxy address storage */
+		union {
+			/** SOCKS5 proxy address */
+			struct net_sockaddr_storage addr_storage;
+/** @cond INTERNAL_HIDDEN */
+			/* Use the addr_storage instead of this one. */
+			struct net_sockaddr addr;
+/** @endcond */
+		};
 		net_socklen_t addrlen;
 	} proxy;
 #endif

@@ -178,9 +178,21 @@ When building with either :ref:`minimal <c_library_minimal>` or :ref:`Picolibc<c
 you will build your code in a more similar way as when building for the embedded target,
 you will be able to test your code interacting with that C library,
 and there will be no conflicts with the :ref:`POSIX OS abstraction<posix_support>` shim,
-but, accessing the host for test purposes from your embedded code will be more
-difficult, and you will have a limited choice of
-:ref:`drivers and backends to chose from<native_sim_peripherals_c_compat>`.
+but, accessing the host for test purposes from your embedded code will be more difficult.
+
+.. _native_sim_peripherals_c_compat:
+
+Peripherals and backends C library compatibility
+================================================
+
+While most native_sim drivers and backends support any C library, the drivers listed below have
+limited compatibility:
+
+.. csv-table:: Drivers/backends limited to some libCs
+   :header: "Driver class", "Driver name", "Driver Kconfig", "libC choices"
+
+   "Bluetooth", ":ref:`Userchan <nsim_bt_host_cont>`", ":kconfig:option:`CONFIG_BT_USERCHAN`", "Host and pico libC"
+   "USB", ":ref:`USB native posix <nsim_per_usb>`", ":kconfig:option:`CONFIG_USB_NATIVE_POSIX`", "Host libC"
 
 Cross-compiling native_sim
 **************************
@@ -318,6 +330,39 @@ Here are more details on the peripherals that are currently provided with this b
       An UART driver for interacting with host-attached serial port devices
       (eg. USB to UART dongles). For more information refer to the section
       `TTY UART`_.
+
+**Digital microphone (DMIC)**
+  A file-backed DMIC driver is available for native_sim. It reads PCM sample
+  data from a binary file on the host file system and presents it through the
+  Zephyr DMIC API, which is useful for testing audio capture pipelines.
+
+  By default the input file path is taken from
+  :kconfig:option:`CONFIG_AUDIO_DMIC_NATIVE_SIM_FILE_PATH`. Each DMIC instance
+  exposes its own command line override in the form
+  ``--<device>_file=<path>``. For the default native_sim instance this is
+  ``--dmic0_file=<path>``.
+
+  If the configured host input file does not exist, the driver prints a warning
+  from the native simulator runner side and provides zeroes (silence).
+
+**Inter-IC sound (I2S)**
+  A file-backed I2S driver is which can be configured
+  for RX, TX, or both directions. It reads or writes PCM sample data from
+  or to files on the host file system through the Zephyr I2S API. This is
+  useful for testing stream handling and loopback scenarios.
+
+  By default the RX and TX file paths are taken from
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_RX_FILE_PATH` and
+  :kconfig:option:`CONFIG_I2S_NATIVE_SIM_TX_FILE_PATH`. Each I2S instance
+  exposes its own command line overrides in the form of
+  ``--<device>_rx=<path>`` and ``--<device>_tx=<path>``. For example, the
+  default bidirectional native_sim instance uses ``--i2s_rxtx_rx=<path>`` and
+  ``--i2s_rxtx_tx=<path>``.
+
+  If an RX input file cannot be opened, the driver prints a warning from the
+  native simulator runner side and feeds silence for that stream run. If a TX
+  output file cannot be opened, the driver prints a warning and discards TX
+  data for that stream run.
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -510,6 +555,44 @@ Here are more details on the peripherals that are currently provided with this b
 
   SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
+**LED device**
+  Implements a Zephyr LED device backed by a Linux LED. You configure which
+  Linux LED to use by setting the DT ``path`` property to the name of the LED
+  as it shows in ``/sys/class/leds``.
+
+  .. code-block:: dts
+
+      leds {
+        compatible = "zephyr,native-linux-leds";
+
+        led0: led_0 {
+          /* /sys/class/leds/tpacpi::lid_logo_dot/brightness */
+          path = "tpacpi::lid_logo_dot";
+        };
+        led1: led_1 {
+          /* /sys/class/leds/tpacpi::power/brightness */
+          path = "tpacpi::power";
+        };
+      };
+
+.. _native_linux_temp_sensor:
+
+**Temperature sensor**
+  A sensor driver is available for reading a temperature value from a file on
+  the Linux host through the Zephyr sensor API. It can be enabled with
+  :kconfig:option:`CONFIG_NATIVE_LINUX_TEMP` and configured with the devicetree
+  binding :dtcompatible:`zephyr,native-linux-temp`.
+
+  Linux hwmon temperature files typically expose values in millidegrees Celsius,
+  for example ``/sys/class/hwmon/hwmon0/temp1_input``.
+
+  .. code-block:: dts
+
+     temp_sensor: host_temp {
+       compatible = "zephyr,native-linux-temp";
+       path = "/sys/class/hwmon/hwmon0/temp1_input";
+     };
+
 .. _native_ptty_uart:
 
 PTY UART
@@ -701,40 +784,21 @@ and ``libfuse3-dev:i386`` for 32-bit builds, and ``libfuse3-dev`` for 64-bit bui
 Similarly ``libfuse-dev:i386`` and ``libfuse-dev`` provide the 32 and 64-bit FUSE v2 library
 and headers.
 
-.. _native_sim_peripherals_c_compat:
+.. _native_mount_fs:
 
-Peripherals and backends C library compatibility
-************************************************
+Host filesystem mount
+*********************
 
-Today, some native_sim peripherals and backends are, so far, only available when compiling with the
-host libC (:kconfig:option:`CONFIG_EXTERNAL_LIBC`):
+Enabling :kconfig:option:`CONFIG_FILE_SYSTEM_NATIVE_MOUNT` allows mounting a path from the host
+filesystem into Zephyr's filesystem hierarchy. This allows Zephyr to access, and modify, host files
+and folders like any other embedded mount point.
 
-.. csv-table:: Drivers/backends vs libC choice
-   :header: Driver class, driver name, driver kconfig, libC choices
+To mount a host directory, pass the ``-volume`` option to the executable on the command line:
 
-     ADC, ADC emul, :kconfig:option:`CONFIG_ADC_EMUL`, All
-     Bluetooth, :ref:`Userchan <nsim_bt_host_cont>`, :kconfig:option:`CONFIG_BT_USERCHAN`, Host and pico libC
-     CAN, CAN native Linux, :kconfig:option:`CONFIG_CAN_NATIVE_LINUX`, All
-     Console backend, :ref:`POSIX arch console <nsim_back_console>`, :kconfig:option:`CONFIG_POSIX_ARCH_CONSOLE`, All
-     Display, :ref:`Display SDL <nsim_per_disp_sdl>`, :kconfig:option:`CONFIG_SDL_DISPLAY`, All
-     Entropy, :ref:`Native simulator entropy <nsim_per_entr>`, :kconfig:option:`CONFIG_FAKE_ENTROPY_NATIVE_SIM`, All
-     EEPROM, EEPROM simulator, :kconfig:option:`CONFIG_EEPROM_SIMULATOR`, All
-     EEPROM, EEPROM emulator, :kconfig:option:`CONFIG_EEPROM_EMULATOR`, All
-     Ethernet, :ref:`Eth native_tap <nsim_per_ethe>`, :kconfig:option:`CONFIG_ETH_NATIVE_TAP`, All
-     Flash, :ref:`Flash simulator <nsim_per_flash_simu>`, :kconfig:option:`CONFIG_FLASH_SIMULATOR`, All
-     FUSE, :ref:`Host based filesystem access <native_fuse_flash>`, :kconfig:option:`CONFIG_FUSE_FS_ACCESS`, All
-     GPIO, GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL`, All
-     GPIO, SDL GPIO emulator, :kconfig:option:`CONFIG_GPIO_EMUL_SDL`, All
-     HWINFO, HWINFO native, :kconfig:option:`CONFIG_HWINFO_NATIVE`, All
-     I2C, I2C emulator, :kconfig:option:`CONFIG_I2C_EMUL`, All
-     Input, Input SDL touch, :kconfig:option:`CONFIG_INPUT_SDL_TOUCH`, All
-     Input, Linux evdev, :kconfig:option:`CONFIG_NATIVE_LINUX_EVDEV`, All
-     Logger backend, :ref:`Native backend <nsim_back_logger>`, :kconfig:option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`, All
-     Offloaded sockets, :ref:`nsim_per_offloaded_sockets`, :kconfig:option:`CONFIG_NET_NATIVE_OFFLOADED_SOCKETS`, All
-     RTC, RTC emul, :kconfig:option:`CONFIG_RTC_EMUL`, All
-     Serial, :ref:`UART native PTY <native_ptty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_PTY`, All
-     Serial, :ref:`UART native TTY <native_tty_uart>`, :kconfig:option:`CONFIG_UART_NATIVE_TTY`, All
-     SPI, SPI emul, :kconfig:option:`CONFIG_SPI_EMUL`, All
-     System tick, Native_sim timer, :kconfig:option:`CONFIG_NATIVE_SIM_TIMER`, All
-     Tracing, :ref:`Posix tracing backend <nsim_back_trace>`, :kconfig:option:`CONFIG_TRACING_BACKEND_POSIX`, All
-     USB, :ref:`USB native posix <nsim_per_usb>`, :kconfig:option:`CONFIG_USB_NATIVE_POSIX`, Host libC
+.. code-block:: console
+
+   $ zephyr.exe -volume=/host/dir:/zephyr/dir
+
+The option follows Docker volume mount syntax: ``HOST-DIR:ZEPHYR-DIR[:ro]``. An optional ``:ro``
+suffix mounts the volume as read-only. The option can be provided multiple times to mount several
+host directories.

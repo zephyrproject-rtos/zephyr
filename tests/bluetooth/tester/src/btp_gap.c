@@ -139,21 +139,9 @@ static struct bt_gatt_read_params read_car_params = {
 static void le_connected(struct bt_conn *conn, uint8_t err)
 {
 	struct btp_gap_device_connected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
-	(void)memset(addr_str, 0, sizeof(addr_str));
-
-	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		(void)bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		(void)bt_addr_to_str(bt_conn_get_dst_br(conn), addr_str, sizeof(addr_str));
-	} else {
-		LOG_WRN("Unsupported transport");
-		return;
-	}
-
-	LOG_DBG("%s: 0x%02x", addr_str, err);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), err);
 
 	if (err) {
 		return;
@@ -187,27 +175,18 @@ static void le_connected(struct bt_conn *conn, uint8_t err)
 static void le_disconnected(struct bt_conn *conn, uint8_t reason)
 {
 	struct btp_gap_device_disconnected_ev ev;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	if (bt_conn_is_type(conn, BT_CONN_TYPE_LE)) {
-		const bt_addr_le_t *addr;
-
-		addr = bt_conn_get_dst(conn);
-		(void)bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-		bt_addr_le_copy(&ev.address, addr);
+		bt_addr_le_copy(&ev.address, bt_conn_get_dst(conn));
 	} else if (IS_ENABLED(CONFIG_BT_CLASSIC) && bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
-		const bt_addr_t *br_addr;
-
-		br_addr = bt_conn_get_dst_br(conn);
-		(void)bt_addr_to_str(br_addr, addr_str, sizeof(addr_str));
 		ev.address.type = BTP_BR_ADDRESS_TYPE;
-		bt_addr_copy(&ev.address.a, br_addr);
+		bt_addr_copy(&ev.address.a, bt_conn_get_dst_br(conn));
 	} else {
 		LOG_WRN("Unsupported transport");
 		return;
 	}
 
-	LOG_DBG("%s: 0x%02x", addr_str, reason);
+	LOG_DBG("%s: 0x%02x", bt_conn_dst_str(conn), reason);
 
 	tester_event(BTP_SERVICE_ID_GAP, BTP_GAP_EV_DEVICE_DISCONNECTED, &ev, sizeof(ev));
 }
@@ -426,10 +405,6 @@ static void oob_data_request(struct bt_conn *conn,
 		return;
 	}
 
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(info.le.dst, addr, sizeof(addr));
-
 	switch (oob_info->type) {
 	case BT_CONN_OOB_LE_SC:
 	{
@@ -440,7 +415,7 @@ static void oob_data_request(struct bt_conn *conn,
 
 		LOG_DBG("Set %s OOB SC data for %s, ",
 			oob_config_str(oob_info->lesc.oob_config),
-			addr);
+			bt_addr_le_str(info.le.dst));
 
 		struct bt_le_oob_sc_data *oobd_local =
 			oob_info->lesc.oob_config != BT_CONN_OOB_REMOTE_ONLY ?
@@ -461,9 +436,8 @@ static void oob_data_request(struct bt_conn *conn,
 
 		if (oobd_local &&
 		    !bt_addr_le_eq(info.le.local, &oob_sc_local.addr)) {
-			bt_addr_le_to_str(info.le.local, addr, sizeof(addr));
 			LOG_DBG("No OOB data available for local %s",
-				addr);
+				bt_addr_le_str(info.le.local));
 			bt_conn_auth_cancel(conn);
 			return;
 		}
@@ -482,7 +456,8 @@ static void oob_data_request(struct bt_conn *conn,
 			break;
 		}
 
-		LOG_DBG("Legacy OOB TK requested from remote %s", addr);
+		LOG_DBG("Legacy OOB TK requested from remote %s",
+			bt_addr_le_str(info.le.dst));
 
 		err = bt_le_oob_set_legacy_tk(conn, oob_legacy_tk);
 		if (err < 0) {
@@ -1739,7 +1714,7 @@ static uint8_t pair(const void *cmd, uint16_t cmd_len,
 
 	err = bt_conn_set_security(conn, BT_SECURITY_L2);
 	/*
-	 * If the error code is `-EBUSY`, it means the pairing/enryption is ongoing.
+	 * If the error code is `-EBUSY`, it means the pairing/encryption is ongoing.
 	 * Just ignore the error.
 	 */
 	if ((err < 0) && (err != -EBUSY)) {
@@ -1761,7 +1736,7 @@ static uint8_t pair_v2(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *r
 
 	/* TODO: Only supports mode 4 */
 	if ((cp->mode != BTP_GAP_PAIR_V2_MODE_4) && (cp->mode != BTP_GAP_PAIR_V2_MODE_ANY)) {
-		LOG_WRN("Unsupport mode %d", cp->mode);
+		LOG_WRN("Unsupported mode %d", cp->mode);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -2249,6 +2224,41 @@ static uint8_t padv_configure(const void *cmd, uint16_t cmd_len,
 
 	return BTP_STATUS_SUCCESS;
 }
+
+#if defined(CONFIG_BT_PER_ADV_RSP)
+static uint8_t pawr_configure(const void *cmd, uint16_t cmd_len, void *rsp, uint16_t *rsp_len)
+{
+	uint32_t options = BT_LE_PER_ADV_OPT_NONE;
+	const struct btp_gap_pawr_configure_cmd *cp = cmd;
+	struct btp_gap_padv_configure_rp *rp = rsp;
+
+	if ((cp->flags & BTP_GAP_PADV_INCLUDE_TX_POWER) != 0) {
+		options |= BT_LE_PER_ADV_OPT_USE_TX_POWER;
+	}
+
+	struct bt_le_ext_adv *ext_adv = tester_gap_ext_adv_get(0);
+	struct bt_le_per_adv_param param = {
+		.interval_min = sys_le16_to_cpu(cp->interval_min),
+		.interval_max = sys_le16_to_cpu(cp->interval_max),
+		.options = options,
+		.num_subevents = cp->num_subevents,
+		.subevent_interval = cp->subevent_interval,
+		.response_slot_delay = cp->response_slot_delay,
+		.response_slot_spacing = cp->response_slot_spacing,
+		.num_response_slots = cp->num_response_slots,
+	};
+
+	if (tester_gap_padv_configure(ext_adv, &param) != 0) {
+		return BTP_STATUS_FAILED;
+	}
+
+	rp->current_settings = sys_cpu_to_le32(current_settings);
+
+	*rsp_len = sizeof(*rp);
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* CONFIG_BT_PER_ADV_RSP */
 
 int tester_gap_padv_start(struct bt_le_ext_adv *ext_adv)
 {
@@ -3303,6 +3313,13 @@ static const struct btp_handler handlers[] = {
 		.func = padv_padv_sync_transfer_recv,
 	},
 #endif /* defined(CONFIG_BT_PER_ADV_SYNC_TRANSFER_RECEIVER) */
+#if defined(CONFIG_BT_PER_ADV_RSP)
+	{
+		.opcode = BTP_GAP_PAWR_CONFIGURE,
+		.expect_len = sizeof(struct btp_gap_pawr_configure_cmd),
+		.func = pawr_configure,
+	},
+#endif /* defined(CONFIG_BT_PER_ADV_RSP) */
 #endif /* defined(CONFIG_BT_PER_ADV) */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 #if defined(CONFIG_BT_RPA_TIMEOUT_DYNAMIC)

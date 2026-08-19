@@ -9,7 +9,7 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/cache.h>
-#include "ameba_system.h"
+#include <ameba_system.h>
 
 void z_arm_reset(void);
 

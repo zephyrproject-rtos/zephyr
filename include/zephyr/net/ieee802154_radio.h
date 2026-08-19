@@ -577,6 +577,10 @@ enum ieee802154_rx_fail_reason {
 	IEEE802154_RX_FAIL_INVALID_FCS,
 	/** Address did not match */
 	IEEE802154_RX_FAIL_ADDR_FILTERED,
+	/** No buffer available */
+	IEEE802154_RX_FAIL_NO_BUFS,
+	/** Aborted */
+	IEEE802154_RX_FAIL_ABORT,
 	/** General reason */
 	IEEE802154_RX_FAIL_OTHER
 };
@@ -1113,6 +1117,13 @@ enum ieee802154_config_type {
 	 */
 	IEEE802154_CONFIG_RX_ON_WHEN_IDLE,
 
+	/** The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a
+	 * channel access failure.
+	 *
+	 * @note requires IEEE802154_HW_CSMA capability.
+	 */
+	IEEE802154_CONFIG_CSMA_CA_BACKOFFS,
+
 	/** Number of types defined in ieee802154_config_type. */
 	IEEE802154_CONFIG_COMMON_COUNT,
 
@@ -1164,6 +1175,9 @@ struct ieee802154_config {
 
 		/** see @ref IEEE802154_CONFIG_EVENT_HANDLER */
 		ieee802154_event_cb_t event_handler;
+
+		/** see @ref IEEE802154_CONFIG_CSMA_CA_BACKOFFS */
+		uint8_t csma_ca_backoffs;
 
 		/**
 		 * @brief see @ref IEEE802154_CONFIG_MAC_KEYS
@@ -1563,8 +1577,6 @@ struct ieee802154_radio_api {
 	 * @param channel the number of the channel to be set in CPU byte order
 	 *
 	 * @retval 0 channel was successfully set
-	 * @retval -EALREADY The previous channel is the same as the requested
-	 * channel.
 	 * @retval -EINVAL The given channel is not within the range of valid
 	 * channels of the driver's current channel page, see the
 	 * IEEE802154_ATTR_PHY_SUPPORTED_CHANNEL_RANGES driver attribute.

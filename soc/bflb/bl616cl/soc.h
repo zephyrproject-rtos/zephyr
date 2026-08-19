@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief Board configuration macros
+ *
+ * This header file is used to specify and describe board-level aspects
+ */
+
+#ifndef _SOC__H_
+#define _SOC__H_
+
+#include <zephyr/sys/util.h>
+
+#ifndef _ASMLANGUAGE
+
+/* Add include for DTS generated information */
+#include <zephyr/devicetree.h>
+/* Add include for soc function attributes */
+#include "soc_function_attributes.h"
+
+#endif /* !_ASMLANGUAGE */
+
+#endif /* _SOC__H_ */

@@ -107,7 +107,7 @@ static int mcux_igpio_configure(const struct device *dev,
 		reg &= ~IOMUXC_SW_PAD_CTL_PAD_PUE_MASK;
 	}
 #elif defined(CONFIG_SOC_SERIES_IMXRT11XX)
-	if (config->pin_muxes[pin].pue_mux) {
+	if (config->pin_muxes[cfg_idx].pue_mux) {
 		/* PUE type register layout (GPIO_AD pins) */
 		if ((flags & GPIO_SINGLE_ENDED) != 0) {
 			/* Set ODE bit */
@@ -176,7 +176,7 @@ static int mcux_igpio_configure(const struct device *dev,
 	if ((flags & GPIO_PULL_UP) != 0) {
 		reg |= (0x1 << MCUX_IMX_BIAS_PULL_UP_SHIFT);
 	}
-	if ((flag & GPIO_PULL_DOWN) != 0) {
+	if ((flags & GPIO_PULL_DOWN) != 0) {
 		return -ENOTSUP;
 	}
 #else
@@ -396,10 +396,7 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 									\
 	static const struct mcux_igpio_config mcux_igpio_##n##_config = {\
 		DEVICE_MMIO_NAMED_ROM_INIT(igpio_mmio, DT_DRV_INST(n)),	\
-		.common = {						\
-			.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(\
-				n, DT_INST_PROP(n, ngpios)),\
-		},							\
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),		\
 		MCUX_IGPIO_PIN_INIT(n)					\
 	};								\
 									\
@@ -416,13 +413,19 @@ static DEVICE_API(gpio, mcux_igpio_driver_api) = {
 									\
 	static int mcux_igpio_##n##_init(const struct device *dev)	\
 	{								\
+		GPIO_Type *base;					\
+									\
+		DEVICE_MMIO_NAMED_MAP(dev, igpio_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
+									\
+		base = get_base(dev);					\
+		base->IMR = 0U;						\
+		base->ISR = 0xFFFFFFFFU;				\
+									\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 0),			\
-		   (MCUX_IGPIO_IRQ_INIT(n, 0);))		\
+		   (MCUX_IGPIO_IRQ_INIT(n, 0);))			\
 									\
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, 1),			\
 			   (MCUX_IGPIO_IRQ_INIT(n, 1);))		\
-									\
-		DEVICE_MMIO_NAMED_MAP(dev, igpio_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
 									\
 		return 0;						\
 	}

@@ -1,0 +1,19 @@
+identifier: beagleconnect_freedom@C7/cc1352p7
+name: BeagleConnect Freedom C7
+type: mcu
+arch: arm
+ram: 144
+flash: 704
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - hwinfo
+  - adc
+  - pwm
+  - flash
+vendor: beagle

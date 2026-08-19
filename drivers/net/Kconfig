@@ -9,10 +9,14 @@ if NET_DRIVERS
 #
 # PPP options
 #
+
+DT_CHOSEN_ZEPHYR_PPP_UART := zephyr,ppp-uart
+
 menuconfig NET_PPP
 	bool "Point-to-point (PPP) UART based driver"
 	depends on NET_L2_PPP
 	depends on NET_NATIVE
+	depends on NET_TEST || $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_PPP_UART))
 	select RING_BUFFER
 	select CRC
 
@@ -249,6 +253,7 @@ menuconfig NET_NATIVE_OFFLOADED_SOCKETS
 	depends on ARCH_POSIX
 	depends on NET_SOCKETS_OFFLOAD
 	select NATIVE_USE_NSI_ERRNO
+	select NATIVE_USE_NSI_FCNTL
 	help
 	  Offloaded sockets for Native Simulator utilize host BSD sockets API (like socket(),
 	  connect(), send(), recvfrom(), etc.) in order to provide networking capability.

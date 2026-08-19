@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_RTIO_WORKQ_H_
-#define ZEPHYR_INCLUDE_RTIO_WORKQ_H_
+#ifndef ZEPHYR_INCLUDE_RTIO_WORK_H_
+#define ZEPHYR_INCLUDE_RTIO_WORK_H_
 
 #include <stdint.h>
 #include <zephyr/device.h>
@@ -77,4 +77,4 @@ uint32_t rtio_work_req_used_count_get(void);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RTIO_WORKQ_H_ */
+#endif /* ZEPHYR_INCLUDE_RTIO_WORK_H_ */

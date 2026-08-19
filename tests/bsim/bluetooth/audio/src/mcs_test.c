@@ -8,10 +8,12 @@
 #include <zephyr/autoconf.h>
 #include <zephyr/bluetooth/audio/media_proxy.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(mcs_test);
 
 #ifdef CONFIG_BT_MCS
 extern enum bst_result_t bst_result;
@@ -21,22 +23,22 @@ static void test_main(void)
 	struct bt_le_ext_adv *ext_adv;
 	int err;
 
-	printk("Media Control Server test application.  Board: %s\n", CONFIG_BOARD);
+	LOG_INF("Media Control Server test application.  Board: %s", CONFIG_BOARD);
 
 	/* Initialize media player */
 	err = media_proxy_pl_init();
-	if (err) {
+	if (err != 0) {
 		FAIL("Initializing MPL failed (err %d)", err);
 		return;
 	}
 
 	/* Initialize Bluetooth, get connected */
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
-	printk("Bluetooth initialized\n");
+	LOG_INF("Bluetooth initialized");
 
 	setup_connectable_adv(&ext_adv);
 
@@ -50,7 +52,10 @@ static void test_main(void)
 		if (err != 0) {
 			FAIL("Failed to start advertising set (err %d)\n", err);
 
-			bt_le_ext_adv_delete(ext_adv);
+			err = bt_le_ext_adv_delete(ext_adv);
+			if (err != 0) {
+				FAIL("Failed to delete extended advertising set (err %d)\n", err);
+			}
 
 			return;
 		}

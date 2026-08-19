@@ -115,9 +115,10 @@ static bool pwm_period_check_and_set(const struct device *dev,
 
 	/* If any other channel is driven by the PWM peripheral, the period
 	 * that is currently set cannot be changed, as this would influence
-	 * the output for that channel.
+	 * the output for that channel, unless previous period was set to 0
+	 * for 100% duty cycle.
 	 */
-	if ((data->pwm_needed & ~BIT(channel)) != 0) {
+	if (((data->pwm_needed & ~BIT(channel)) != 0) && (data->period_cycles != 0)) {
 		LOG_ERR("Incompatible period.");
 		return false;
 	}
@@ -334,6 +335,10 @@ static int pwm_resume(const struct device *dev)
 		bool inverted = initially_inverted & BIT(i);
 
 		seq_values_ptr_get(dev)[i] = PWM_NRFX_CH_VALUE(0, inverted);
+
+#if NRF_PWM_HAS_IDLEOUT
+		nrfy_pwm_channel_idle_set(data->pwm.p_reg, i, inverted);
+#endif
 	}
 
 	return 0;

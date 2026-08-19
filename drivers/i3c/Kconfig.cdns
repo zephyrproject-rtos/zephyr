@@ -27,4 +27,13 @@ config I3C_CADENCE_IDLE_TIMEOUT_US
 	  It needs to wait for it to be back in the idle state before it can
 	  start another transfer.
 
+config I3C_CADENCE_TRANSFER_TIMEOUT_MARGIN_US
+	int "I3C Transfer Timeout Margin (us)"
+	default 10000
+	help
+	  Extra margin in microseconds added on top of the calculated
+	  transfer time when computing the transfer completion timeout.
+	  The base timeout is derived from the number of bits to be
+	  transferred and the SCL frequency.
+
 endif # I3C_CADENCE

@@ -56,6 +56,8 @@ static const struct pm_state_info residency_info[] =
 	PM_STATE_INFO_LIST_FROM_DT_CPU(DT_NODELABEL(cpu0));
 static size_t residency_info_len = DT_NUM_CPU_POWER_STATES(DT_NODELABEL(cpu0));
 
+BUILD_ASSERT(DT_NUM_CPU_POWER_STATES(DT_NODELABEL(cpu0)) > 0, "No CPU power states defined");
+
 static void pm_latency_check(void)
 {
 	int64_t latency;

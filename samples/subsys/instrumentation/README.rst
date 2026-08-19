@@ -7,7 +7,7 @@
 Overview
 ********
 
-This sample shows the instrumentation subsystem tracing and profiling
+This sample shows the :ref:`instrumentation subsystem <instrumentation>` tracing and profiling
 features. It basically consists of two threads in a ping-pong mode, taking
 turns to execute loops that spend some CPU cycles.
 
@@ -44,9 +44,11 @@ collect and visualize traces and profiling info using the instrumentation CLI
 tool, :zephyr_file:`scripts/instrumentation/zaru.py`.
 
 .. note::
-   Please note, that this subsystem uses the ``retained_mem`` driver, hence it's necessary
-   to add the proper devicetree overlay for the target board. See
+   Please note, that dynamic trigger configuration requires the ``retained_mem`` driver, hence
+   it's necessary to add the proper devicetree overlay for the target board. See
    :zephyr_file:`./samples/subsys/instrumentation/boards/mps2_an385.overlay` for an example.
+   For build-time configuration, use :kconfig:option:`CONFIG_INSTRUMENTATION_TRIGGER_FUNCTION` and
+   :kconfig:option:`CONFIG_INSTRUMENTATION_STOPPER_FUNCTION`.
 
 Connect the board's UART port to the host device and
 run the :zephyr_file:`scripts/instrumentation/zaru.py` script on the host.

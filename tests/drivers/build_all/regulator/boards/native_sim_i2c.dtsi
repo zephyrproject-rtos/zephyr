@@ -59,16 +59,20 @@ npm1300@2 {
 	};
 };
 
-apd356x@3 {
+adp5360@3 {
 	compatible = "adi,adp5360";
 	reg = <0x3>;
 
 	regulators {
 		compatible = "adi,adp5360-regulator";
 
-		BUCK {};
+		BUCK {
+			regulator-init-microvolt = <1300000>;
+		};
 
-		BUCKBOOST {};
+		BUCKBOOST {
+			regulator-init-microvolt = <3300000>;
+		};
 	};
 };
 
@@ -129,6 +133,30 @@ axp2101@7 {
 		DLDO1 {};
 
 		DLDO2 {};
+	};
+};
+
+m5pm1@6e {
+	compatible = "m5stack,m5pm1";
+	reg = <0x6e>;
+
+	regulators {
+		compatible = "m5stack,m5pm1-regulator";
+
+		dcdc_3v3 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+		};
+
+		ldo_3v3 {
+			regulator-min-microvolt = <3300000>;
+			regulator-max-microvolt = <3300000>;
+		};
+
+		boost_5v {
+			regulator-min-microvolt = <5000000>;
+			regulator-max-microvolt = <5000000>;
+		};
 	};
 };
 

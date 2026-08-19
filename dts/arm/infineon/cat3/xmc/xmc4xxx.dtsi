@@ -26,8 +26,11 @@
 		reg = <0x58001000 0x1400>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		flash0: flash@8000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
 			compatible = "infineon,xmc4xxx-nv-flash", "soc-nv-flash";
 			write-block-size = <256>;
 		};
@@ -246,17 +249,14 @@
 			status = "disabled";
 		};
 
-		ethernet@5000c000 {
+		eth: ethernet@5000c000 {
+			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
 			reg = <0x5000c000 0x3fff>;
-
-			eth: ethernet {
-				compatible = "infineon,xmc4xxx-ethernet";
-				interrupts = <108 1>;
-				status = "disabled";
-			};
+			interrupts = <108 1>;
+			status = "disabled";
 
 			mdio: mdio {
-				compatible = "infineon,xmc4xxx-mdio";
+				compatible = "snps,dwmac-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;

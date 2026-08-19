@@ -212,7 +212,7 @@ void riscv_clic_irq_priority_set(uint32_t irq, uint32_t pri, uint32_t flags)
 #endif
 
 	/* Set the IRQ operates in machine mode, non-vectoring and the trigger type. */
-	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(3)}};
+	union CLICINTATTR clicattr = {.b = {.mode = 0x3, .shv = 0x0, .trg = flags & BIT_MASK(2)}};
 
 #ifdef CONFIG_LEGACY_CLIC_MEMORYMAP_ACCESS
 	write_clic8(dev, CLIC_INTATTR(irq), clicattr.w);

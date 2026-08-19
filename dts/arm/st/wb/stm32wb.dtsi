@@ -153,10 +153,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <4096>;
 				/* maximum erase time(ms) for a 4K sector */
@@ -179,6 +181,12 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
+					vref_sc1_otp: vref-sc1@30 {
+						reg = <0x30 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
 					ts_cal1_otp: ts-cal1@a8 {
 						reg = <0xa8 0x2>;
 						#nvmem-cell-cells = <0>;
@@ -193,6 +201,12 @@
 
 					ts_cal2_otp: ts-cal2@ca {
 						reg = <0xca 0x2>;
+						#nvmem-cell-cells = <0>;
+						read-only;
+					};
+
+					vref_sc0_otp: vref-sc0@f0 {
+						reg = <0xf0 0x2>;
 						#nvmem-cell-cells = <0>;
 						read-only;
 					};
@@ -231,6 +245,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x48000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
@@ -287,7 +302,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -346,7 +361,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			interrupts = <34 5>;
+			interrupts = <34 0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -357,7 +372,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
-			interrupts = <35 5>;
+			interrupts = <35 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
@@ -495,7 +510,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <47 1>;
+			interrupts = <47 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -504,7 +519,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			dma-offset = <0>;
@@ -515,7 +530,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <55 0 56 0 57 0 58 0 59 0 60 0 61 0>;
+			interrupts = <55 0>, <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <61 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <7>;
 			dma-offset = <7>;
@@ -553,7 +568,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xa0001000 0x400>, <0x90000000 DT_SIZE_M(256)>;
-			interrupts = <0x32 0x0>;
+			interrupts = <50 0>;
 			clocks = <&rcc STM32_CLOCK(AHB3, 8)>;
 			status = "disabled";
 		};
@@ -566,7 +581,7 @@
 			status = "disabled";
 		};
 
-		aes1: aes@50060000 {
+		aes1: crypto@50060000 {
 			compatible = "st,stm32-aes";
 			reg = <0x50060000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
@@ -579,29 +594,48 @@
 			compatible = "st,stm32-vrefbuf";
 			reg = <0x40010030 0xd0>;
 			ref-voltages = <2048000>, <2500000>;
+			st,has-active-scale-change;
+			nvmem-cells = <&vref_sc0_otp>, <&vref_sc1_otp>;
 			status = "disabled";
 		};
 
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
 			reg = <0x58000400 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <5>; /* 5 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <5>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@4 {
-				reg = <0x4>;
-				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@2 {
+					reg = <0x2>;
+					/* Available only on STM32WB55xG */
+				};
+
+				wkup@3 {
+					reg = <0x3>;
+					/* Available only on STM32WB55xG */
+				};
+
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@5 {
+					reg = <0x5>;
+					/* Available only on STM32WB55xG */
+				};
 			};
 		};
 
@@ -649,6 +683,9 @@
 		compatible = "st,stm32wb-rf";
 		clocks = <&rcc STM32_CLOCK(AHB3, 20)>,
 			 <&rcc STM32_SRC_LSE RFWKP_SEL(1)>;
+		interrupt-parent = <&nvic>;
+		interrupts = <44 0>, <45 0>;
+		interrupt-names = "rx", "tx";
 	};
 
 	smbus1: smbus1 {

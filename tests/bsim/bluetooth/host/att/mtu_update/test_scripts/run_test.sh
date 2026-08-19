@@ -5,7 +5,7 @@
 set -eu
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="mtu_update"
+simulation_id="${BOARD_TS}_mtu_update"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

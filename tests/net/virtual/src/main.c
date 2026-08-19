@@ -155,7 +155,8 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
+					      struct net_if *iface __unused)
 {
 	return 0;
 }
@@ -317,7 +318,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	    net_if_get_by_iface(iface));
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_test, 0), iface)) {
+		if (iface == NET_IF_GET(eth_test, 0)) {
 			if (!eth_interfaces[0]) {
 				/* Just use the first interface */
 				eth_interfaces[0] = iface;
@@ -571,7 +572,7 @@ ZTEST(net_virtual, test_virtual_01_attach_and_detach)
 
 	ret = net_virtual_interface_attach(iface,
 					   NULL);
-	zassert_equal(ret, 0, "Cannot deattach %d from %d (%d)",
+	zassert_equal(ret, 0, "Cannot detach %d from %d (%d)",
 		      net_if_get_by_iface(iface),
 		      net_if_get_by_iface(eth_interfaces[0]),
 		      ret);
@@ -639,7 +640,7 @@ ZTEST(net_virtual, test_virtual_02_real_iface_down)
 
 	ret = net_virtual_interface_attach(iface,
 					   NULL);
-	zassert_equal(ret, 0, "Cannot deattach %d from %d (%d)",
+	zassert_equal(ret, 0, "Cannot detach %d from %d (%d)",
 		      net_if_get_by_iface(iface),
 		      net_if_get_by_iface(eth_interfaces[0]),
 		      ret);
@@ -739,7 +740,7 @@ ZTEST(net_virtual, test_virtual_05_set_peer)
 		      ret);
 
 	ret = net_virtual_interface_attach(iface, NULL);
-	zassert_equal(ret, 0, "Cannot deattach %d from %d (%d)",
+	zassert_equal(ret, 0, "Cannot detach %d from %d (%d)",
 		      net_if_get_by_iface(iface),
 		      net_if_get_by_iface(eth_interfaces[0]),
 		      ret);
@@ -804,7 +805,7 @@ ZTEST(net_virtual, test_virtual_08_detach)
 
 	ret = net_virtual_interface_attach(iface, NULL);
 	zassert_true((ret == 0) || (ret == -EALREADY),
-		     "Cannot deattach %d from %d (%d)",
+		     "Cannot detach %d from %d (%d)",
 		     net_if_get_by_iface(iface),
 		     net_if_get_by_iface(eth_interfaces[0]),
 		     ret);

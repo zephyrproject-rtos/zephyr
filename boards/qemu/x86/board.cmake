@@ -3,13 +3,9 @@
 
 set(SUPPORTED_EMU_PLATFORMS qemu)
 
-if(NOT CONFIG_REBOOT)
-  set(REBOOT_FLAG -no-reboot)
-endif()
-
 if(CONFIG_X86_64)
-  set(QEMU_binary_suffix x86_64)
-  set(QEMU_CPU_TYPE_${ARCH} qemu64,+x2apic)
+  set(QEMU_BINARY_SUFFIX x86_64)
+  set(QEMU_CPU_TYPE qemu64,+x2apic)
   if("${CONFIG_MP_MAX_NUM_CPUS}" STREQUAL "1")
     # icount works with 1 CPU so we can enable it here.
     # FIXME: once this works across configs, remove this line and set
@@ -17,18 +13,22 @@ if(CONFIG_X86_64)
     list(APPEND QEMU_EXTRA_FLAGS -icount shift=5,align=off,sleep=off -rtc clock=vm)
   endif()
 else()
-  set(QEMU_CPU_TYPE_${ARCH} qemu32,+nx,+pae)
+  set(QEMU_CPU_TYPE qemu32,+nx,+pae)
+endif()
+
+if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+  math(EXPR RAM_SIZE "${CONFIG_SRAM_SIZE} / 1024" OUTPUT_FORMAT HEXADECIMAL)
+else()
+  dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+  dt_reg_size(RAM_SIZE PATH "${chosen_sram_path}")
+  math(EXPR RAM_SIZE "${RAM_SIZE} / 1024 / 1024" OUTPUT_FORMAT HEXADECIMAL)
 endif()
 
 if(CONFIG_XIP)
   # Extra 4MB to emulate flash area
-  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024 + 4")
-elseif(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
-       AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-  # Flash is at 4MB-8MB, so need this to be large enough
-  math(EXPR QEMU_MEMORY_SIZE_MB "8")
+  math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE} + 4")
 else()
-  math(EXPR QEMU_MEMORY_SIZE_MB "${CONFIG_SRAM_SIZE} / 1024")
+  math(EXPR QEMU_MEMORY_SIZE_MB "${RAM_SIZE}")
 endif()
 
 set(QEMU_CPU_FLAGS "")
@@ -65,28 +65,27 @@ if(CONFIG_ENTROPY_VIRTIO)
   set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-pci)
 endif()
 
-set(QEMU_FLAGS_${ARCH}
+if(CONFIG_INPUT_VIRTIO)
+  if(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-keyboard-pci,addr=05.0,id=input0)
+  elseif(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_TABLET)
+    set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-tablet-pci,addr=05.0,id=input0)
+  else()
+    message(WARNING "No virtio input device type selected; QEMU_VIRTIO_INPUT_FLAGS will be empty")
+  endif()
+endif()
+
+set(QEMU_BOARD_FLAGS
   -m ${QEMU_MEMORY_SIZE_MB}
-  -cpu ${QEMU_CPU_TYPE_${ARCH}}${QEMU_CPU_FLAGS}
+  -cpu ${QEMU_CPU_TYPE}${QEMU_CPU_FLAGS}
   -machine q35
   -device isa-debug-exit,iobase=0xf4,iosize=0x04
   ${QEMU_VIRTIO_ENTROPY_FLAGS}
-  ${REBOOT_FLAG}
+  ${QEMU_VIRTIO_INPUT_FLAGS}
   )
 
 if(NOT CONFIG_ACPI)
-  list(APPEND QEMU_FLAGS_${ARCH} -machine acpi=off)
+  list(APPEND QEMU_BOARD_FLAGS -machine acpi=off)
 endif()
 
-# TODO: Support debug
-# board_set_debugger_ifnset(qemu)
-# debugserver: QEMU_EXTRA_FLAGS += -s -S
-# debugserver: qemu
-
-if(CONFIG_BOARD_QEMU_X86_TINY AND CONFIG_DEMAND_PAGING
-   AND NOT CONFIG_LINKER_GENERIC_SECTIONS_PRESENT_AT_BOOT)
-  # This is to map the flash so it is accessible.
-  math(EXPR QEMU_FLASH_SIZE_KB "${CONFIG_FLASH_SIZE} * 1024")
-  set(X86_EXTRA_GEN_MMU_ARGUMENTS
-      --map ${CONFIG_FLASH_BASE_ADDRESS},${QEMU_FLASH_SIZE_KB},W)
-endif()
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

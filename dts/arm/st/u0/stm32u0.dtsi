@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -122,10 +123,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
@@ -199,6 +202,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x50000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@50000000 {
 				compatible = "st,stm32-gpio";
@@ -314,7 +318,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 7>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -382,7 +386,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+			interrupts = <9 0>, <10 0>, <10 0>, <11 0>, <11 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			dma-offset = <0>;
@@ -444,7 +448,7 @@
 			status = "disabled";
 		};
 
-		aes: aes@40026000 {
+		aes: crypto@40026000 {
 			compatible = "st,stm32-aes";
 			reg = <0x40026000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 16)>;
@@ -486,6 +490,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -509,6 +519,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -530,6 +546,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -615,25 +637,25 @@
 		};
 
 		lptim1: timers@40007c00 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 31)>;
 			resets = <&rctl STM32_RESET(APB1L, 31)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <17 1>;
+			interrupts = <17 0>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};
 
 		lptim2: timers@40009400 {
-			compatible = "st,stm32-lptim";
+			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
 			clocks = <&rcc STM32_CLOCK(APB1, 30)>;
 			resets = <&rctl STM32_RESET(APB1L, 30)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40009400 0x400>;
-			interrupts = <18 1>;
+			interrupts = <18 0>;
 			interrupt-names = "combined";
 			status = "disabled";
 		};

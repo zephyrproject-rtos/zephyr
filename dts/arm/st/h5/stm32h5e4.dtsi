@@ -13,7 +13,7 @@
 
 / {
 	soc {
-		compatible = "st,stm32h5ef", "st,stm32h5", "simple-bus";
+		compatible = "st,stm32h5e4", "st,stm32h5", "simple-bus";
 
 		pinctrl: pin-controller@42020000 {
 			gpioh: gpio@42021c00 {
@@ -74,8 +74,9 @@
 		adc3: adc@4202d800 {
 			compatible = "st,stm32-adc";
 			reg = <0x4202d800 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 24)>;
-			clock-names = "adcx";
+			clocks = <&rcc STM32_CLOCK(AHB2, 24)>,
+				 <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
+			clock-names = "adcx", "adc_ker";
 			interrupts = <149 0>;
 			vref-mv = <3300>;
 			#io-channel-cells = <1>;
@@ -94,12 +95,20 @@
 			compatible = "st,stm32-xspi";
 			reg = <0x47002400 0x400>, <0x70000000 DT_SIZE_M(256)>;
 			interrupts = <150 0>;
-			clock-names = "xspix", "xspi-ker", "xspi-mgr";
+			clock-names = "xspix", "xspi-ker";
 			clocks = <&rcc STM32_CLOCK(AHB4, 21)>,
-				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>,
-				 <&rcc STM32_CLOCK(AHB4, 22)>;
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		xspim: xspim@47003400 {
+			compatible = "st,stm32-xspim";
+			reg = <0x47003400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB4, 22)>;
+			io-port-1 = <&xspi1>;
+			io-port-2 = <&xspi2>;
 			status = "disabled";
 		};
 
@@ -115,6 +124,49 @@
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
 			status = "disabled";
 		};
+
+		ltdc: display-controller@40016c00 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016c00 0x1000>;
+			interrupts = <145 0>, <146 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
+				 <&rcc STM32_SRC_PLL3_R LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 27)>;
+			status = "disabled";
+		};
+
+		jpeg: codec@5002b000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x5002b000 0x1000>;
+			interrupts = <135 0>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 23)>;
+			resets = <&rctl STM32_RESET(AHB1, 23)>;
+			status = "disabled";
+		};
+
+		/delete-node/ usb@40016000;
+
+		usbotg_fs: otgfs@42080000 {
+			compatible = "st,stm32-otgfs";
+			reg = <0x42080000 0x40000>;
+			interrupts = <74 0>;
+			interrupt-names = "otgfs";
+			num-bidir-endpoints = <6>;
+			ram-size = <1280>;
+			maximum-speed = "full-speed";
+			clocks = <&rcc STM32_CLOCK(AHB2, 15)>,
+				 <&rcc STM32_SRC_HSI48 OTGFS_SEL(0)>;
+			phys = <&otgfs_phy>;
+			status = "disabled";
+		};
+	};
+
+	/delete-node/ usbphy;
+
+	otgfs_phy: otgfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 
@@ -135,10 +187,13 @@
 	io-channels = <&adc3 14>;
 };
 
+&vddcore {
+	io-channels = <&adc3 15>;
+};
+
 &xspi1 {
 	/* OCTOSPI instance has a XSPI IO manager */
-	clock-names = "xspix", "xspi-ker", "xspi-mgr";
+	clock-names = "xspix", "xspi-ker";
 	clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
-		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>,
-		 <&rcc STM32_CLOCK(AHB4, 22)>;
+		 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
 };

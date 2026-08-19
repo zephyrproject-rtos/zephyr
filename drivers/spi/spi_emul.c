@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(spi_emul_ctlr);
 #include <zephyr/device.h>
 #include <zephyr/drivers/emul.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/drivers/spi_emul.h>
 
 /** Working data for the device */

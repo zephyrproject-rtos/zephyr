@@ -54,3 +54,17 @@ properties:
       Minimum low clock pulse length (ns) in Open-Drain mode.
       The default value is from Section 4.3.11.2 & Table 49 of the I3C
       Basic Specification v1.2 (16-Dec-2024).
+
+  disable-bus-init:
+    type: boolean
+    description: |
+      If true, the I3C bus initialization (i3c_bus_init) will not be
+      performed during driver initialization. This allows the application
+      to perform bus initialization at a later time.
+
+  disable-hj-at-init:
+    type: boolean
+    description: |
+      If true, Hot-Join ACKs will not be enabled at the end of bus
+      initialization. Hot-Join events will be NACKed until the
+      application explicitly enables them.

@@ -9,8 +9,8 @@
 #include <fsl_spc.h>
 #include <soc.h>
 #if CONFIG_USB_DC_NXP_EHCI
-#include "usb_phy.h"
-#include "usb.h"
+#include <usb_phy.h>
+#include <usb.h>
 
 /* USB PHY configuration */
 #define BOARD_USB_PHY_D_CAL     (0x04U)
@@ -115,14 +115,18 @@ void board_early_init_hook(void)
 	 */
 	flexspi_clock_safe_config();
 #endif
+	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
-	/* Set up PLL0 */
-	const pll_setup_t pll0Setup = {.pllctrl = SCG_APLLCTRL_SOURCE(1U) | SCG_APLLCTRL_SELI(27U) |
+	/* Set up PLL0 from the 24 MHz system oscillator. This keeps the CPU
+	 * clock at 150 MHz while giving ENET PTP a crystal-backed reference.
+	 */
+	const pll_setup_t pll0Setup = {.pllctrl = SCG_APLLCTRL_SOURCE(0U) | SCG_APLLCTRL_SELI(27U) |
 						  SCG_APLLCTRL_SELP(13U),
-				       .pllndiv = SCG_APLLNDIV_NDIV(8U),
+				       .pllndiv = SCG_APLLNDIV_NDIV(4U),
 				       .pllpdiv = SCG_APLLPDIV_PDIV(1U),
 				       .pllmdiv = SCG_APLLMDIV_MDIV(50U),
 				       .pllRate = 150000000U};
+
 	/* Configure PLL0 to the desired values */
 	CLOCK_SetPLL0Freq(&pll0Setup);
 	/* PLL0 Monitor is disabled */
@@ -133,8 +137,6 @@ void board_early_init_hook(void)
 
 	/* Set AHBCLKDIV divider to value 1 */
 	CLOCK_SetClkDiv(kCLOCK_DivAhbClk, 1U);
-
-	CLOCK_SetupExtClocking(BOARD_XTAL0_CLK_HZ);
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai0)) || DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(sai1)) ||  \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(micfil))
@@ -249,6 +251,12 @@ void board_early_init_hook(void)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	/* Attach PLL0 (150 MHz) to the ENET QoS PTP reference clock. */
+	CLOCK_AttachClk(kPLL0_to_ENETPTPREF);
+	CLOCK_SetClkDiv(kCLOCK_DivEnetptprefClk, 1u);
+#endif
+
 	CLOCK_EnableClock(kCLOCK_Enet);
 	SYSCON0->PRESETCTRL2 = SYSCON_PRESETCTRL2_ENET_RST_MASK;
 	SYSCON0->PRESETCTRL2 &= ~SYSCON_PRESETCTRL2_ENET_RST_MASK;
@@ -454,6 +462,12 @@ void board_early_init_hook(void)
 	CLOCK_SetClkDiv(kCLOCK_DivMicfilFClk, 1U);
 	CLOCK_AttachClk(kPLL1_CLK0_to_MICFILF);
 	CLOCK_EnableClock(kCLOCK_Micfil);
+#endif
+
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(ewm0))
+	CLOCK_SetupOsc32KClocking(kCLOCK_Osc32kToWake);
+	CLOCK_AttachClk(kXTAL32K2_to_EWM0);
+	CLOCK_EnableClock(kCLOCK_Ewm0);
 #endif
 
 	/* Set SystemCoreClock variable. */

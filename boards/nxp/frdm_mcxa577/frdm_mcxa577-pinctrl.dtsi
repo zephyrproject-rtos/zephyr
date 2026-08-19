@@ -5,6 +5,16 @@
 
 #include <nxp/mcx/MCXA577VPN-pinctrl.h>
 
+/* P2_30 and P2_31 exist on the MCXA577VPN 169-ball BGA (balls L7 and L8)
+ * but are not yet present in the upstream hal/nxp pinctrl header.
+ */
+#ifndef P2_30
+#define P2_30 A15X_MUX('2', 30, 0)
+#endif
+#ifndef P2_31
+#define P2_31 A15X_MUX('2', 31, 0)
+#endif
+
 &pinctrl {
 	pinmux_lpuart0: pinmux_lpuart0 {
 		group0 {
@@ -110,6 +120,132 @@
 				 <TENBASET1S_ED_P1_1>;
 			slew-rate = "fast";
 			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN2_P1_4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_P1_18>,
+				 <CAN0_RXD_P1_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_i3c0: pinmux_i3c0 {
+		group0 {
+			pinmux = <I3C0_SDA_P0_20>,
+				 <I3C0_SCL_P0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group1 {
+			pinmux = <I3C0_PUR_P0_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <FLEXSPI0_A_SS0_B_P3_0>,
+				 <FLEXSPI0_A_SCLK_P3_7>,
+				 <FLEXSPI0_A_DQS_P3_6>,
+				 <FLEXSPI0_A_DATA0_P3_8>,
+				 <FLEXSPI0_A_DATA1_P3_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <FLEXSPI0_A_DATA2_P3_10>,
+				 <FLEXSPI0_A_DATA3_P3_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_flexio_lcd: pinmux_flexio_lcd {
+		group0 {
+			pinmux = <FLEXIO0_D0_P0_8>,
+				 <FLEXIO0_D1_P0_9>,
+				 <FLEXIO0_D2_P0_10>,
+				 <FLEXIO0_D3_P0_11>,
+				 <FLEXIO0_D4_P0_12>,
+				 <FLEXIO0_D5_P0_13>,
+				 <FLEXIO0_D6_P0_22>,
+				 <FLEXIO0_D7_P0_23>,
+				 <FLEXIO0_D8_P2_0>,
+				 <FLEXIO0_D9_P2_1>,
+				 <FLEXIO0_D10_P2_2>,
+				 <FLEXIO0_D11_P3_3>,
+				 <FLEXIO0_D12_P3_4>,
+				 <FLEXIO0_D13_P2_5>,
+				 <FLEXIO0_D14_P2_6>,
+				 <FLEXIO0_D15_P4_7>,
+				 <P2_24>,
+				 <P2_30>,
+				 <P2_31>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <FLEXIO0_D26_P2_18>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <FLEXIO0_D27_P2_19>;
+			slew-rate = "slow";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
+	pinmux_flexio_pwm: pinmux_flexio_pwm {
+		group0 {
+			pinmux = <FLEXIO0_D14_P2_6>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	pinmux_tsi: pinmux_tsi {
+		group0 {
+			pinmux = <TSI0_CH0_P5_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
 			input-enable;
 		};
 	};

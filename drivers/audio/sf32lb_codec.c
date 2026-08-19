@@ -1445,7 +1445,7 @@ end:
 	return r;
 }
 
-static const struct audio_codec_api codec_driver_api = {
+static DEVICE_API(audio_codec, codec_driver_api) = {
 	.configure = codec_configure,
 	.start_output = codec_start_output,
 	.stop_output = codec_stop_output,

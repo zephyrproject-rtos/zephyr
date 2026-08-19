@@ -304,10 +304,10 @@ static int sam_hsmci_send_cmd(Hsmci *hsmci, struct sdhc_command *cmd, uint32_t c
 	}
 
 	/* RSPR is just a FIFO, index is of no consequence */
-	cmd->response[3] = hsmci->HSMCI_RSPR[0];
-	cmd->response[2] = hsmci->HSMCI_RSPR[0];
-	cmd->response[1] = hsmci->HSMCI_RSPR[0];
 	cmd->response[0] = hsmci->HSMCI_RSPR[0];
+	cmd->response[1] = hsmci->HSMCI_RSPR[0];
+	cmd->response[2] = hsmci->HSMCI_RSPR[0];
+	cmd->response[3] = hsmci->HSMCI_RSPR[0];
 	return 0;
 }
 
@@ -484,10 +484,10 @@ static int sam_hsmci_request_inner(const struct device *dev, struct sdhc_command
 	Hsmci *hsmci = config->base;
 	uint32_t sr;
 	uint32_t size;
-	uint32_t transfer_count;
+	uint32_t transfer_count = 0;
 	uint32_t cmdr = 0;
 	int ret;
-	bool is_write, byte_mode;
+	bool is_write = false, byte_mode = false;
 
 	LOG_DBG("%s(opcode=%d, arg=%08x, data=%08x, rsptype=%d)", __func__, cmd->opcode, cmd->arg,
 		(uint32_t)sd_data, cmd->response_type & SDHC_NATIVE_RESPONSE_MASK);

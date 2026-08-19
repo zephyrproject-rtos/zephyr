@@ -13,3 +13,14 @@ config SPI_NUMAKER
 	  This option enables the SPI driver for Nuvoton NuMaker family of
 	  processors.
 	  Say y if you wish to enable NuMaker SPI.
+
+config SPI_NUMAKER_USCI
+	bool "Nuvoton NuMaker MCU USCI SPI driver"
+	default y
+	select HAS_NUMAKER_SPI
+	select PINCTRL
+	depends on DT_HAS_NUVOTON_NUMAKER_USCI_SPI_ENABLED
+	help
+	  This option enables the USCI SPI driver for Nuvoton NuMaker family of
+	  processors.
+	  Say y if you wish to enable NuMaker USCI SPI.

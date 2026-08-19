@@ -166,7 +166,7 @@ the project out directory under ``include/generated/``:
   API call, but the sensor subsystem is not enabled, the weak verifier
   will be invoked instead.
 
-* An unmarshalling function is defined in ``include/generated/<name>_mrsh.c``
+* An unmarshalling function is defined in ``include/generated/zephyr/syscalls/<name>_mrsh.c``
 
 The body of the API is created in the generated system header. Using the
 example of :c:func:`k_sem_init()`, this API is declared in
@@ -382,6 +382,13 @@ user threads will never have access to. The implementation functions get passed
 the copy and not the original data sent by the user. The
 :c:func:`k_usermode_to_copy()` and :c:func:`k_usermode_from_copy()` APIs exist for
 this purpose.
+
+C strings passed from user mode need similar care, since their length is not
+known in advance and the terminating ``NUL`` must be located without reading
+past memory the caller can access. The :c:func:`k_usermode_string_copy()` and
+:c:func:`k_usermode_string_alloc_copy()` helpers safely validate and copy a
+user-supplied string into kernel-controlled memory before it is used by the
+implementation function.
 
 There is one exception in place, with respect to large data buffers which are
 only used to provide a memory area that is either only written to, or whose

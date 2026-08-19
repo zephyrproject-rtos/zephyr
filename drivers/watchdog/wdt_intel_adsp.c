@@ -32,7 +32,7 @@
 
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/math/ilog2.h>
 
 #include "wdt_dw.h"
@@ -109,9 +109,7 @@ static int intel_adsp_wdt_install_timeout(const struct device *dev,
 		return ret;
 	}
 
-	if (config->flags & WDT_FLAG_RESET_CPU_CORE) {
-		dev_data->allow_reset = true;
-	}
+	dev_data->allow_reset = (config->flags & WDT_FLAG_RESET_MASK) != WDT_FLAG_RESET_NONE;
 
 	return 0;
 }
@@ -164,7 +162,7 @@ static int intel_adsp_wdt_init(const struct device *dev)
 
 #if WDT_INTEL_ADSP_INTERRUPT_SUPPORT
 	IRQ_CONNECT(DT_IRQN(DEV_NODE), DT_IRQ(DEV_NODE, priority), intel_adsp_wdt_isr,
-		    DEVICE_DT_GET(DEV_NODE), DT_IRQ(DEV_NODE, sense));
+		    DEVICE_DT_GET(DEV_NODE), DT_IRQ(DEV_NODE, flags));
 	irq_enable(DT_IRQN(DEV_NODE));
 #endif
 

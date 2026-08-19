@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxa5x.dtsi>
+#include <nxp/mcx/mcxa/nxp_mcxa5x.dtsi>
 #include "frdm_mcxa577.dtsi"
 
 / {
@@ -20,5 +20,15 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
+		zephyr,edac = &erm0;
+		zephyr,crc = &crc;
+		zephyr,canbus = &flexcan0;
+		zephyr,system-timer-companion = &lptmr0;
 	};
+};
+
+&dac0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dac0>;
+	pinctrl-names = "default";
 };

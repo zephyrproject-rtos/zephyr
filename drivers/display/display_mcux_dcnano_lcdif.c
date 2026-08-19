@@ -6,8 +6,10 @@
 
 #define DT_DRV_COMPAT nxp_dcnano_lcdif
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -29,7 +31,10 @@ LOG_MODULE_REGISTER(display_mcux_dcnano_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 struct mcux_dcnano_lcdif_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	const struct gpio_dt_spec backlight_gpio;
+	struct reset_dt_spec reset;
 	lcdif_dpi_config_t dpi_config;
 	/* Pointer to start of first framebuffer */
 	uint8_t *fb_ptr;
@@ -141,19 +146,57 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 
 	capabilities->y_resolution = config->dpi_config.panelHeight;
 	capabilities->x_resolution = config->dpi_config.panelWidth;
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
+	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888 |
+		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_BGR_888 | PIXEL_FORMAT_ABGR_8888 |
+		PIXEL_FORMAT_RGBA_8888 | PIXEL_FORMAT_BGRA_8888);
+#else
 	capabilities->supported_pixel_formats = (PIXEL_FORMAT_RGB_565 | PIXEL_FORMAT_ARGB_8888);
+#endif
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+
 	switch (data->fb_config.format) {
 	case kLCDIF_PixelFormatRGB565:
 		capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
 		break;
 #if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
+	case kLCDIF_PixelFormatRGB888:
+		switch (data->fb_config.inOrder) {
+		case kLCDIF_PixelInputOrderARGB:
+			capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
+			break;
+		case kLCDIF_PixelInputOrderABGR:
+			capabilities->current_pixel_format = PIXEL_FORMAT_BGR_888;
+			break;
+		default:
+			/* Other LCDIF formats don't have a Zephyr enum yet */
+			break;
+		}
+		break;
 	case kLCDIF_PixelFormatARGB8888:
+		switch (data->fb_config.inOrder) {
+		case kLCDIF_PixelInputOrderARGB:
+			capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
+			break;
+		case kLCDIF_PixelInputOrderABGR:
+			capabilities->current_pixel_format = PIXEL_FORMAT_ABGR_8888;
+			break;
+		case kLCDIF_PixelInputOrderRGBA:
+			capabilities->current_pixel_format = PIXEL_FORMAT_RGBA_8888;
+			break;
+		case kLCDIF_PixelInputOrderBGRA:
+			capabilities->current_pixel_format = PIXEL_FORMAT_BGRA_8888;
+			break;
+		default:
+			/* Other LCDIF formats don't have a Zephyr enum yet */
+			break;
+		}
+		break;
 #else
 	case kLCDIF_PixelFormatXRGB8888:
-#endif
 		capabilities->current_pixel_format = PIXEL_FORMAT_ARGB_8888;
 		break;
+#endif
 	default:
 		/* Other LCDIF formats don't have a Zephyr enum yet */
 		return;
@@ -196,11 +239,39 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	case PIXEL_FORMAT_ARGB_8888:
 #if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
 		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderARGB;
 #else
 		data->fb_config.format = kLCDIF_PixelFormatXRGB8888;
 #endif
 		data->pixel_bytes = 4;
 		break;
+#if DT_INST_ENUM_HAS_VALUE(0, version, dc8000)
+	case PIXEL_FORMAT_RGB_888:
+		data->fb_config.format = kLCDIF_PixelFormatRGB888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderARGB;
+		data->pixel_bytes = 3;
+		break;
+	case PIXEL_FORMAT_BGR_888:
+		data->fb_config.format = kLCDIF_PixelFormatRGB888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderABGR;
+		data->pixel_bytes = 3;
+		break;
+	case PIXEL_FORMAT_ABGR_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderABGR;
+		data->pixel_bytes = 4;
+		break;
+	case PIXEL_FORMAT_RGBA_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderRGBA;
+		data->pixel_bytes = 4;
+		break;
+	case PIXEL_FORMAT_BGRA_8888:
+		data->fb_config.format = kLCDIF_PixelFormatARGB8888;
+		data->fb_config.inOrder = kLCDIF_PixelInputOrderBGRA;
+		data->pixel_bytes = 4;
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -212,6 +283,16 @@ static int mcux_dcnano_lcdif_set_pixel_format(const struct device *dev,
 	data->pitch_bytes = ROUND_UP((config->dpi_config.panelWidth * data->pixel_bytes),
 						MCUX_DCNANO_LCDIF_FB_PITCH_ALIGN);
 	data->fb_bytes = data->pitch_bytes * config->dpi_config.panelHeight;
+
+	/* Update frame buffer pointer. */
+	for (int i = 0; i < CONFIG_MCUX_DCNANO_LCDIF_FB_NUM; i++) {
+		/* Record pointers to each driver framebuffer */
+		data->fb[i] = config->fb_ptr + (data->fb_bytes * i);
+	}
+	data->active_fb = config->fb_ptr;
+
+	/* Clear the framebuffer since the frame size may be larger. */
+	memset(config->fb_ptr, 0, data->fb_bytes * CONFIG_MCUX_DCNANO_LCDIF_FB_NUM);
 
 	return 0;
 }
@@ -235,9 +316,33 @@ static int mcux_dcnano_lcdif_init(const struct device *dev)
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 	int ret;
 
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
 	ret = gpio_pin_configure_dt(&config->backlight_gpio, GPIO_OUTPUT_ACTIVE);
 	if (ret) {
 		return ret;
+	}
+
+	if (config->reset.dev != NULL) {
+		if (!device_is_ready(config->reset.dev)) {
+			LOG_ERR("reset controller not ready");
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset);
+		if (ret != 0) {
+			LOG_ERR("Failed to deassert reset line (%d)", ret);
+			return ret;
+		}
 	}
 
 	/* Convert pixel format from devicetree to the format used by HAL */
@@ -296,9 +401,9 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	DT_INST_PROP(n, height)
 
 /* Place the frame buffer in secondary RAM if specified, otherwise use default RAM */
-#define MCUX_DCNANO_LCDIF_FB_PLACEMENT(n)					\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ext_ram),				\
-	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, ext_ram)))), \
+#define MCUX_DCNANO_LCDIF_FB_PLACEMENT(n)						\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ext_ram),					\
+	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(n, ext_ram)))),	\
 	())
 
 /* Use 4 Bpp to calculate the largest possible framebuffer size. */
@@ -354,7 +459,13 @@ static DEVICE_API(display, mcux_dcnano_lcdif_api) = {
 	struct mcux_dcnano_lcdif_config mcux_dcnano_lcdif_config_##n = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),			\
 		.irq_config_func = mcux_dcnano_lcdif_config_func_##n,		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),	\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),	\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),	\
+			((clock_control_subsys_t)0U)),				\
 		.backlight_gpio = GPIO_DT_SPEC_INST_GET(n, backlight_gpios),	\
+		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),			\
 		.dpi_config = {							\
 			.panelWidth = DT_INST_PROP(n, width),			\
 			.panelHeight = DT_INST_PROP(n, height),			\

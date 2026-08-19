@@ -67,16 +67,15 @@ static void phy_link_state_changed(const struct device *pdev,
 	ARG_UNUSED(pdev);
 
 	if (state->is_up) {
-		LOG_DBG("Link up");
 		nxp_s32_eth_configure_port(cfg->port_idx, state->speed);
 		net_eth_carrier_on(ctx->iface);
 	} else {
-		LOG_DBG("Link down");
 		net_eth_carrier_off(ctx->iface);
 	}
 }
 
-static const struct device *nxp_s32_eth_get_phy(const struct device *dev)
+static const struct device *nxp_s32_eth_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct nxp_s32_eth_config *cfg = dev->config;
 
@@ -185,10 +184,11 @@ static void nxp_s32_eth_iface_init(struct net_if *iface)
 			cfg->phy_dev);
 		return;
 	}
-	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 
 	/* Do not start the interface until PHY link is up */
 	net_if_carrier_off(iface);
+
+	phy_link_callback_set(cfg->phy_dev, &phy_link_state_changed, (void *)dev);
 
 	for (int i = 0; i < NETC_MSIX_EVENTS_COUNT; i++) {
 		msix = &cfg->msix[i];

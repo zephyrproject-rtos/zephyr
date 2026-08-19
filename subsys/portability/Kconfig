@@ -7,4 +7,6 @@ source "subsys/portability/cmsis_rtos_v1/Kconfig"
 
 source "subsys/portability/cmsis_rtos_v2/Kconfig"
 
+source "subsys/portability/posix/Kconfig"
+
 endmenu

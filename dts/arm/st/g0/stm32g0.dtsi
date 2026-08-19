@@ -121,10 +121,12 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
-
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 				/* maximum erase time(ms) for a 2K sector */
@@ -197,6 +199,7 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x50000000 0x2000>;
+			ranges;
 
 			gpioa: gpio@50000000 {
 				compatible = "st,stm32-gpio";
@@ -272,7 +275,7 @@
 			compatible = "st,stm32-window-watchdog";
 			reg = <0x40002c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
-			interrupts = <0 2>;
+			interrupts = <0 0>;
 			status = "disabled";
 		};
 
@@ -301,7 +304,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40007c00 0x400>;
-			interrupts = <17 1>;
+			interrupts = <17 0>;
 			interrupt-names = "wakeup";
 			status = "disabled";
 		};
@@ -505,7 +508,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0>;
+			interrupts = <9 0>, <10 0>, <10 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <5>;
 			dma-offset = <0>;
@@ -527,41 +530,46 @@
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
 			reg = <0x40007000 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <6>; /* 6 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <6>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-				wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>,
-					     <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioa 4 STM32_PWR_WKUP_PIN_NOT_MUXED>,
+						     <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			/* wkup-pin@3 only available for g0b0/1 and g0c1 variants */
+				wkup@3 {
+					reg = <0x3>;
+					/* Available only on STM32G0B0/G0B1/G0C1 */
+				};
 
-			wkup-pin@4 {
-				reg = <0x4>;
-				wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@5 {
-				reg = <0x5>;
-				wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@5 {
+					reg = <0x5>;
+					wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@6 {
-				reg = <0x6>;
-				wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@6 {
+					reg = <0x6>;
+					wkup-gpios = <&gpiob 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 			};
 		};
 

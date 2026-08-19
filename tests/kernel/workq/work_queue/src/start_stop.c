@@ -25,7 +25,7 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 {
 	size_t i;
 	struct k_work work;
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work works[NUM_TEST_ITEMS];
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
@@ -58,7 +58,7 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 
 ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
 {
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work_queue_config cfg = {
 		.name = "test_work_q",
 		.no_yield = true,
@@ -100,7 +100,7 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
 	size_t i;
 	struct k_thread thread;
 	struct k_work work;
-	struct k_work_q work_q = {0};
+	struct k_work_q work_q = {};
 	struct k_work works[NUM_TEST_ITEMS];
 	struct k_sem ret_sem;
 
@@ -134,6 +134,76 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
 	/* Take the semaphore the other thread released once done running the queue */
 	rc = k_sem_take(&ret_sem, K_MSEC(1));
 	zassert_equal(rc, 0);
+}
+
+/**
+ * @brief Verify a work queue's dedicated thread runs at the configured priority
+ *
+ * @details Start a work queue with a specific priority and verify the queue's
+ * dedicated thread runs at that priority, as reported by
+ * k_thread_priority_get() on the queue's thread.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start(), k_work_queue_thread_get()
+ */
+ZTEST(workqueue_api, test_k_work_queue_priority)
+{
+	struct k_work_q work_q = {};
+	struct k_work_queue_config cfg = {
+		.name = "prio_work_q",
+	};
+	const int prio = K_PRIO_PREEMPT(6);
+
+	k_work_queue_start(&work_q, work_q_stack, K_THREAD_STACK_SIZEOF(work_q_stack),
+			   prio, &cfg);
+
+	zassert_equal(k_thread_priority_get(k_work_queue_thread_get(&work_q)), prio,
+		      "work queue thread priority was not configured at start");
+
+	zassert_true(k_work_queue_drain(&work_q, true) >= 0, "Failed to drain & plug");
+	zassert_ok(k_work_queue_stop(&work_q, K_FOREVER), "Failed to stop work queue");
+}
+
+static void remaining_noop_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+}
+
+/**
+ * @brief Verify querying the remaining delay of a delayable work item
+ *
+ * @details Schedule a delayable work item for a future delay and verify
+ * k_work_delayable_remaining_get() reports a remaining time within the
+ * scheduled delay; an unscheduled (or cancelled) item reports zero remaining
+ * time.
+ *
+ * @ingroup kernel_workqueue_tests
+ * @see k_work_schedule(), k_work_delayable_remaining_get()
+ */
+ZTEST(workqueue_api, test_k_work_delayable_remaining)
+{
+	static struct k_work_delayable dwork;
+	k_ticks_t remaining;
+
+	k_work_init_delayable(&dwork, remaining_noop_handler);
+
+	/* Not scheduled yet: no remaining time. */
+	zassert_equal(k_work_delayable_remaining_get(&dwork), 0,
+		      "unscheduled delayable should report no remaining time");
+
+	zassert_true(k_work_schedule(&dwork, K_MSEC(200)) >= 0,
+		     "failed to schedule delayable work");
+
+	remaining = k_work_delayable_remaining_get(&dwork);
+	zassert_true(remaining > 0 && remaining <= k_ms_to_ticks_ceil32(200) + 1,
+		     "remaining time %lld out of the expected range",
+		     (long long)remaining);
+
+	zassert_true(k_work_cancel_delayable(&dwork) >= 0, "failed to cancel work");
+
+	/* After cancellation: no remaining time. */
+	zassert_equal(k_work_delayable_remaining_get(&dwork), 0,
+		      "cancelled delayable should report no remaining time");
 }
 
 ZTEST_SUITE(workqueue_api, NULL, NULL, NULL, NULL, NULL);

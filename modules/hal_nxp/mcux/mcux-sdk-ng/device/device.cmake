@@ -54,7 +54,7 @@ if(CONFIG_SOC_SERIES_IMXRT10XX OR CONFIG_SOC_SERIES_IMXRT11XX)
   set(CONFIG_MCUX_COMPONENT_device.boot_header ON)
 endif()
 
-if(NOT (CONFIG_SOC_MIMX94398_M33 OR CONFIG_SOC_MIMX94398_M7_0 OR CONFIG_SOC_MIMX94398_M7_1))
+if(NOT (CONFIG_SOC_MIMX94398_M33 OR CONFIG_SOC_MIMX94398_M7_0 OR CONFIG_SOC_MIMX94398_M7_1 OR CONFIG_SOC_MIMX9529_M7))
   set(CONFIG_MCUX_COMPONENT_device.system ON)
 endif()
 set(CONFIG_MCUX_COMPONENT_device.CMSIS ON)
@@ -76,6 +76,15 @@ endif()
 # Include fsl_dsp.c for ARM domains (applicable to i.MX RTxxx devices)
 if(CONFIG_ARM)
   set(CONFIG_MCUX_COMPONENT_driver.dsp ON)
+endif()
+
+# i.MX943 device headers unconditionally include "fsl_elec_spec.h", which lives
+# in the device drivers/ folder. That folder is only added to the include path
+# when a drivers/ component is selected; Cortex-A cores do not pull in
+# driver.reset (see above), so enable elec_spec for the whole device to keep
+# the include path valid on every core.
+if(CONFIG_SOC_MIMX94398)
+  set(CONFIG_MCUX_COMPONENT_driver.elec_spec ON)
 endif()
 
 # load device variables
@@ -101,6 +110,8 @@ elseif(CONFIG_CPU_CORTEX_M3)
   set(CONFIG_MCUX_HW_CORE cm3)
 elseif(CONFIG_CPU_CORTEX_M33)
   set(CONFIG_MCUX_HW_CORE cm33)
+elseif (CONFIG_CPU_CORTEX_M55)
+  set(CONFIG_MCUX_HW_CORE cm55)
 elseif(CONFIG_CPU_CORTEX_M4)
   if(CONFIG_CPU_HAS_FPU)
     set(CONFIG_MCUX_HW_CORE cm4f)
@@ -114,7 +125,7 @@ elseif(CONFIG_XTENSA)
 endif()
 
 if(CONFIG_CPU_HAS_FPU)
-  if(CONFIG_CPU_CORTEX_M33 OR CONFIG_CPU_CORTEX_M7)
+  if(CONFIG_CPU_CORTEX_M33 OR CONFIG_CPU_CORTEX_M7 OR CONFIG_CPU_CORTEX_M55)
     if(CONFIG_CPU_HAS_FPU_DOUBLE_PRECISION)
       set(CONFIG_MCUX_HW_FPU_TYPE fpv5_dp)
     else()

@@ -14,7 +14,11 @@
 /* -------------------------------------------------------------------------- */
 #include <zephyr/irq.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/logging/log.h>
 #include <soc.h>
+
+LOG_MODULE_REGISTER(nxp_nbu, CONFIG_SOC_LOG_LEVEL);
 
 /* -------------------------------------------------------------------------- */
 /*                                  Definitions                               */
@@ -35,6 +39,24 @@
 
 #if DT_INST_NODE_HAS_PROP(0, rfmc_xo_isel)
 #define NBU_RFMC_XO_ISEL_VALUE DT_INST_PROP(0, rfmc_xo_isel)
+#endif
+
+/* Check if TX power is supported*/
+#if DT_INST_NODE_HAS_PROP(0, max_tx_power_dbm)
+#define NBU_MAX_TX_POWER_DBM DT_INST_PROP(0, max_tx_power_dbm)
+#endif
+
+#if DT_INST_NODE_HAS_PROP(0, max_tx_power_support) && defined(NBU_MAX_TX_POWER_DBM)
+#define TX_POWER_SUPPORTED_LEN DT_INST_PROP_LEN(0, max_tx_power_support)
+
+#define IS_EQUAL_TO_SUPPORTED(node_id, prop, idx)                                                  \
+	(NBU_MAX_TX_POWER_DBM == DT_INST_PROP_BY_IDX(0, prop, idx))
+
+#define IS_TX_POWER_VALID()                                                                        \
+	(DT_INST_FOREACH_PROP_ELEM_SEP(0, max_tx_power_support, IS_EQUAL_TO_SUPPORTED, (||)))
+
+/* Validation only if supported values exists */
+BUILD_ASSERT(IS_TX_POWER_VALID(), "max-tx-power-dbm must be one of the supported values");
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -79,7 +101,19 @@ void nxp_nbu_init(void)
 	IRQ_CONNECT(NBU_WAKE_UP_IRQ_N, NBU_WAKE_UP_IRQ_P, nbu_wakeup_done_handler, 0, 0);
 #endif
 #if (DT_INST_PROP(0, wakeup_source)) && CONFIG_PM
+#if DT_INST_NODE_HAS_PROP(0, wakeup_ctrls)
+	{
+		const struct wuc_dt_spec wuc = WUC_DT_SPEC_INST_GET(0);
+		int ret = wuc_enable_wakeup_source_dt(&wuc);
+
+		if (ret != 0) {
+			LOG_ERR("nbu: failed to enable wuc wakeup source (%d)", ret);
+			return;
+		}
+	}
+#else
 	NXP_ENABLE_WAKEUP_SIGNAL(NBU_RX_IRQ_N);
+#endif
 #endif
 #if DT_INST_NODE_HAS_PROP(0, pinctrl_0)
 	/* NBU HDI pin configuration */

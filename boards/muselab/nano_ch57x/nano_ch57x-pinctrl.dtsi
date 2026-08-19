@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: 2026 SMILE (smile.eu)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch570-pinctrl.h>
+
+&pinctrl {
+	uart_default: uart_default {
+		group1 {
+			pinmux = <UART_TXD_PA3_0>;
+			output-high;
+			drive-push-pull;
+			output-capacity = "5mA-level";
+		};
+
+		group2 {
+			pinmux = <UART_RXD_PA2_0>;
+			bias-pull-up;
+		};
+	};
+};

@@ -7,7 +7,6 @@
 #define ZEPHYR_SOC_INTEL_ADSP_MEMORY_H_
 
 #include <zephyr/devicetree.h>
-#include <adsp-vectors.h>
 
 #define L2_SRAM_BASE (DT_REG_ADDR(DT_NODELABEL(sram0)))
 #define L2_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram0)))
@@ -16,6 +15,12 @@
 #define LP_SRAM_SIZE (DT_REG_SIZE(DT_NODELABEL(sram1)))
 
 #define ROM_JUMP_ADDR (LP_SRAM_BASE + 0x10)
+
+/** Base address of all the vectors defined in SRAM */
+#define VECBASE_RESET_PADDR_SRAM (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE)
+
+/** Size of vector table */
+#define VECTOR_TBL_SIZE 0x1000
 
 /* Linker-usable RAM region */
 #define RAM_BASE (L2_SRAM_BASE + CONFIG_HP_SRAM_RESERVE + VECTOR_TBL_SIZE)

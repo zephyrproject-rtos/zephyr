@@ -1,7 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 # enable uart driver
 CONFIG_SERIAL=y
 
-# enable GPIO
+# Enable GPIO for hogs
 CONFIG_GPIO=y
 
 # console

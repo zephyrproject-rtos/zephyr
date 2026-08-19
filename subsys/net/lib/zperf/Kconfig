@@ -97,4 +97,15 @@ config NET_ZPERF_RAW_TX_MAX_HDR_SIZE
 	  Maximum size of the custom header that can be prepended to raw TX
 	  packets. The header is provided as hex bytes by the user.
 
+config NET_ZPERF_TCP_RECEIVER_BUF_SIZE
+	int "TCP receiver buffer size (bytes)"
+	default 1500
+	range $(inc,$(UINT8_MAX)) $(UINT16_MAX)
+	depends on NET_ZPERF_SERVER
+	help
+	  Size of the receive buffer used by the zperf TCP receiver per
+	  recv() call. A larger buffer allows more data to be read from the
+	  socket in a single call, which can increase the TCP window size
+	  and improve throughput on fast connections.
+
 endif

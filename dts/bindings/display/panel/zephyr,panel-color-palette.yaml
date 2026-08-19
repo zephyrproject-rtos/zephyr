@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common color palette settings for display panels.
+
+compatible: "zephyr,panel-color-palette"
+
+properties:
+  colors:
+    type: array
+    description: |
+      List of 32-bit ARGB8888 colors.
+
+      Each value corresponds to ARGB8888(r, g, b, a)
+      with A in the most significant byte.
+
+examples:
+  - |
+    color-palette {
+      compatible = "zephyr,panel-color-palette";
+      colors = <ARGB8888(255, 0, 0, 255)   /* red */
+                ARGB8888(0, 255, 0, 128)   /* green, 50% alpha */
+                PANEL_COLOR_PALETTE_NULL   /* Empty entry */
+                ARGB8888(0, 0, 255, 255)>; /* blue */
+    };

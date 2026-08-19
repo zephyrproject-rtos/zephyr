@@ -165,6 +165,14 @@ static ALWAYS_INLINE void disable_fiq(void)
 #define sev()	__asm__ volatile("sev" : : : "memory")
 #define wfe()	__asm__ volatile("wfe" : : : "memory")
 #define wfi()	__asm__ volatile("wfi" : : : "memory")
+#define wfet(v)	__asm__ volatile("msr S0_3_C1_C0_0, %0" :: "r"(v) : "memory")
+#define wfit(v)	__asm__ volatile("msr S0_3_C1_C0_1, %0" :: "r"(v) : "memory")
+
+static inline bool is_wfxt_implemented(void)
+{
+	return ((read_id_aa64isar2_el1() >> ID_AA64ISAR2_WFXT_SHIFT)
+		& ID_AA64ISAR2_WFXT_MASK) != 0;
+}
 
 static inline bool is_el_implemented(unsigned int el)
 {
@@ -212,6 +220,19 @@ static inline bool is_sve_implemented(void)
 {
 	return (((read_id_aa64pfr0_el1() >> ID_AA64PFR0_SVE_SHIFT) & ID_AA64PFR0_SVE_MASK) != 0U);
 }
+
+#if defined(CONFIG_ARM64_PMUV3)
+MAKE_REG_HELPER(id_aa64dfr0_el1);
+MAKE_REG_HELPER(pmcr_el0);
+MAKE_REG_HELPER(pmccntr_el0);
+MAKE_REG_HELPER(pmcntenset_el0);
+MAKE_REG_HELPER(pmcntenclr_el0);
+MAKE_REG_HELPER(pmovsclr_el0);
+MAKE_REG_HELPER(pmuserenr_el0);
+MAKE_REG_HELPER(pmselr_el0);
+MAKE_REG_HELPER(pmxevtyper_el0);
+MAKE_REG_HELPER(pmxevcntr_el0);
+#endif /* CONFIG_ARM64_PMUV3 */
 
 #ifdef CONFIG_ARM_PAC
 /* PAC Key Register Helpers */

@@ -19,6 +19,7 @@
 		zephyr,code-partition = &slot0_partition;
 
 		zephyr,bt-hci = &hci_spi;
+		zephyr,system-timer = &lptim1;
 	};
 
 	leds {
@@ -137,7 +138,7 @@
 	};
 };
 
-stm32_lp_tick_source: &lptim1 {
+&lptim1 {
 	clocks = <&rcc STM32_CLOCK(APB3, 11)>,
 		 <&rcc STM32_SRC_LSE LPTIM1_SEL(3)>;
 	status = "okay";
@@ -205,6 +206,8 @@ stm32_lp_tick_source: &lptim1 {
 &i2c2 {
 	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiof 0 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -304,9 +307,9 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * Following flash partition is dedicated to the use of steval_stwinbx1
@@ -314,26 +317,27 @@ zephyr_udc0: &usbotg_fs {
 		 * Set the partitions with first MB to make use of the whole Bank1
 		 */
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(416)>;
 		};
 
 		slot1_partition: partition@78000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image-1";
-			reg = <0x00078000 DT_SIZE_K(416)>;
+			reg = <0x00078000 DT_SIZE_K(424)>;
 		};
 
-		scratch_partition: partition@e0000 {
-			label = "image-scratch";
-			reg = <0x000e0000 DT_SIZE_K(64)>;
-		};
+		/* Range [0xe2000..0xf0000] is unused. */
 
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000f0000 DT_SIZE_K(64)>;
 		};

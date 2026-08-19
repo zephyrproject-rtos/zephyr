@@ -6,7 +6,7 @@ set -eu
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-simulation_id="security_bond_overwrite_denied"
+simulation_id="${BOARD_TS}_security_bond_overwrite_denied"
 verbosity_level=2
 central_exe="${BSIM_OUT_PATH}/bin/bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
 peripheral_exe="${central_exe}"

@@ -177,3 +177,27 @@ static void VNAME(u64_ctz)(void)
 	zassert_equal(u64_count_trailing_zeros(0x8000000080000000ull), 31);
 	zassert_equal(u64_count_trailing_zeros(0xc000000000000000ull), 62);
 }
+
+static void VNAME(i128_mul)(void)
+{
+	int128_t i128;
+	i128_multiply_i64_i64(1, 2, &i128);
+	zassert_equal(i128.high, 0);
+	zassert_equal(i128.low, 2);
+
+	i128_multiply_i64_i64(-1, 2, &i128);
+	zassert_equal(i128.high, UINT64_MAX);
+	zassert_equal(i128.low, -2);
+
+	i128_multiply_i64_i64(UINT64_MAX, UINT64_MAX, &i128);
+	zassert_equal(i128.high, 0);
+	zassert_equal(i128.low, 1);
+
+	i128_multiply_i64_i64(10, UINT32_MAX/4, &i128);
+	zassert_equal(i128.high, 0);
+	zassert_equal(i128.low, 0x27FFFFFF6);
+
+	i128_multiply_i64_i64(10, UINT64_MAX/4, &i128);
+	zassert_equal(i128.high, 2);
+	zassert_equal(i128.low, 0x7ffffffffffffff6);
+}

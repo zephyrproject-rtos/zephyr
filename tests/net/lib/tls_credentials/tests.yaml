@@ -1,0 +1,35 @@
+common:
+  tags:
+    - net
+    - tls
+    - mbedtls
+tests:
+  net.tls_credentials.volatile:
+    depends_on: netif
+  net.tls_credentials.volatile.parse_crt:
+    depends_on: netif
+    extra_args: EXTRA_CONF_FILE="parse_crt.conf"
+  net.tls_credentials.protected_storage.tf-m:
+    filter: CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+    extra_args: EXTRA_CONF_FILE="ps_tf-m.conf"
+    tags:
+      - tfm
+  net.tls_credentials.protected_storage.tf-m.parse_crt:
+    filter: CONFIG_TFM_PARTITION_PROTECTED_STORAGE
+    extra_args: EXTRA_CONF_FILE="ps_tf-m.conf;parse_crt.conf"
+    tags:
+      - tfm
+  net.tls_credentials.protected_storage.secure_storage:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+    extra_args: EXTRA_CONF_FILE="ps_secure_storage.conf"
+    platform_exclude: &secure_storage_platform_exclude
+      - qemu_x86/atom # storing 1324 bytes fails
+      - mps2/an385 # stack overflow
+    tags:
+      - secure_storage.psa
+  net.tls_credentials.protected_storage.secure_storage.parse_crt:
+    filter: CONFIG_SECURE_STORAGE and not CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_NONE
+    extra_args: EXTRA_CONF_FILE="ps_secure_storage.conf;parse_crt.conf"
+    platform_exclude: *secure_storage_platform_exclude
+    tags:
+      - secure_storage.psa

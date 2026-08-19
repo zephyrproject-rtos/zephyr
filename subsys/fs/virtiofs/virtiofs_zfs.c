@@ -32,11 +32,11 @@ struct virtiofs_dir {
 	uint64_t offset;
 };
 
-K_MEM_SLAB_DEFINE_STATIC(
-	file_struct_slab, sizeof(struct virtiofs_file), CONFIG_VIRTIOFS_MAX_FILES, sizeof(void *)
+K_MEM_SLAB_DEFINE_STATIC_TYPE(
+	file_struct_slab, struct virtiofs_file, CONFIG_VIRTIOFS_MAX_FILES
 );
-K_MEM_SLAB_DEFINE_STATIC(
-	dir_struct_slab, sizeof(struct virtiofs_dir), CONFIG_VIRTIOFS_MAX_FILES, sizeof(void *)
+K_MEM_SLAB_DEFINE_STATIC_TYPE(
+	dir_struct_slab, struct virtiofs_dir, CONFIG_VIRTIOFS_MAX_FILES
 );
 
 static int zephyr_mode_to_posix(int m)
@@ -288,7 +288,7 @@ static ssize_t virtio_zfs_write(struct fs_file_t *filp, const void *src, size_t 
 	while (nbytes > 0) {
 		/*
 		 * max write size is limited to max_write from fuse_init_out received during fs
-		 * initalization, so we have to split bigger writes into multiple smaller ones.
+		 * initialization, so we have to split bigger writes into multiple smaller ones.
 		 * If we try to write more the recent virtiofsd it will return 12 (Not enough
 		 * space), but the older one will assert, rendering fs unusable until restart.
 		 */

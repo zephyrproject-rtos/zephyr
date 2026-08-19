@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Device Power Management API.
+ * @ingroup subsys_pm_device
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_DEVICE_H_
 #define ZEPHYR_INCLUDE_PM_DEVICE_H_
 
@@ -19,6 +25,8 @@ extern "C" {
 /**
  * @brief Device Power Management API
  * @defgroup subsys_pm_device Device
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup subsys_pm
  * @{
  */
@@ -177,9 +185,8 @@ enum pm_device_action {
  * @param dev Device instance.
  * @param action Requested action.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If the requested action is not supported.
- * @retval Errno Other negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Requested action is not supported.
  */
 typedef int (*pm_device_action_cb_t)(const struct device *dev,
 				     enum pm_device_action action);
@@ -486,13 +493,13 @@ const char *pm_device_state_str(enum pm_device_state state);
  * @param dev Device instance.
  * @param action Device pm action.
  *
- * @retval 0 If successful.
- * @retval -ENOTSUP If requested state is not supported.
- * @retval -EALREADY If device is already at the requested state.
- * @retval -EBUSY If device is changing its state.
- * @retval -ENOSYS If device does not support PM.
- * @retval -EPERM If device has power state locked.
- * @retval Errno Other negative errno on failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Requested action is not supported from the device's
+ *         current state.
+ * @retval -EALREADY Device is already in the state implied by the requested action.
+ * @retval -EBUSY Device is changing its state.
+ * @retval -ENOSYS Device does not support PM.
+ * @retval -EPERM Device has power state locked.
  */
 int pm_device_action_run(const struct device *dev,
 		enum pm_device_action action);
@@ -518,8 +525,8 @@ void pm_device_children_action_run(const struct device *dev,
  * @param dev Device instance.
  * @param state Pointer where device power state will be stored.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If device does not implement power management.
+ * @retval 0 on success.
+ * @retval -ENOSYS Device does not implement power management.
  */
 int pm_device_state_get(const struct device *dev,
 			enum pm_device_state *state);
@@ -587,8 +594,8 @@ void pm_device_busy_clear(const struct device *dev);
 /**
  * @brief Check if any device is busy.
  *
- * @retval false If no device is busy
- * @retval true If one or more devices are busy
+ * @retval false No device is busy.
+ * @retval true One or more devices are busy.
  */
 bool pm_device_is_any_busy(void);
 
@@ -597,8 +604,8 @@ bool pm_device_is_any_busy(void);
  *
  * @param dev Device instance.
  *
- * @retval false If the device is not busy
- * @retval true If the device is busy
+ * @retval false Device is not busy.
+ * @retval true Device is busy.
  */
 bool pm_device_is_busy(const struct device *dev);
 
@@ -612,8 +619,8 @@ bool pm_device_is_busy(const struct device *dev);
  * @param dev Device instance.
  * @param enable @c true to enable or @c false to disable
  *
- * @retval true If the wakeup source was successfully enabled.
- * @retval false If the wakeup source was not successfully enabled.
+ * @retval true Wakeup source was successfully enabled.
+ * @retval false Wakeup source was not successfully enabled.
  */
 bool pm_device_wakeup_enable(const struct device *dev, bool enable);
 
@@ -622,8 +629,8 @@ bool pm_device_wakeup_enable(const struct device *dev, bool enable);
  *
  * @param dev Device instance.
  *
- * @retval true if the wakeup source is enabled.
- * @retval false if the wakeup source is not enabled.
+ * @retval true Wakeup source is enabled.
+ * @retval false Wakeup source is not enabled.
  */
 bool pm_device_wakeup_is_enabled(const struct device *dev);
 
@@ -632,8 +639,8 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval true If the device is wake up capable.
- * @retval false If the device is not wake up capable.
+ * @retval true Device is wake up capable.
+ * @retval false Device is not wake up capable.
  */
 bool pm_device_wakeup_is_capable(const struct device *dev);
 
@@ -642,8 +649,8 @@ bool pm_device_wakeup_is_capable(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval true If device is on a switchable power domain.
- * @retval false If device is not on a switchable power domain.
+ * @retval true Device is on a switchable power domain.
+ * @retval false Device is not on a switchable power domain.
  */
 bool pm_device_on_power_domain(const struct device *dev);
 
@@ -655,10 +662,10 @@ bool pm_device_on_power_domain(const struct device *dev);
  * @param dev Device to be added to the power domain.
  * @param domain Power domain.
  *
- * @retval 0 If successful.
- * @retval -EALREADY If device is already part of the power domain.
- * @retval -ENOSYS If the application was built without power domain support.
- * @retval -ENOSPC If there is no space available in the power domain to add the device.
+ * @retval 0 on success.
+ * @retval -EALREADY Device is already part of the power domain.
+ * @retval -ENOSYS Application was built without power domain support.
+ * @retval -ENOSPC No space available in the power domain to add the device.
  */
 int pm_device_power_domain_add(const struct device *dev,
 			       const struct device *domain);
@@ -671,9 +678,9 @@ int pm_device_power_domain_add(const struct device *dev,
  * @param dev Device to be removed from the power domain.
  * @param domain Power domain.
  *
- * @retval 0 If successful.
- * @retval -ENOSYS If the application was built without power domain support.
- * @retval -ENOENT If device is not in the given domain.
+ * @retval 0 on success.
+ * @retval -ENOSYS Application was built without power domain support.
+ * @retval -ENOENT Device is not in the given domain.
  */
 int pm_device_power_domain_remove(const struct device *dev,
 				  const struct device *domain);
@@ -683,9 +690,9 @@ int pm_device_power_domain_remove(const struct device *dev,
  *
  * @param dev Device instance.
  *
- * @retval true If device is currently powered, or is assumed to be powered
- * (i.e. it does not support PM or is not under a PM domain)
- * @retval false If device is not currently powered
+ * @retval true Device is currently powered, or is assumed to be powered
+ * (i.e. it does not support PM or is not under a PM domain).
+ * @retval false Device is not currently powered.
  */
 bool pm_device_is_powered(const struct device *dev);
 
@@ -709,8 +716,7 @@ bool pm_device_is_powered(const struct device *dev);
  *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
- * @retval 0 On success.
- * @retval -errno Error code from @a action_cb on failure.
+ * @return 0 on success, negative errno value on failure.
  */
 int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action_cb);
 
@@ -728,9 +734,8 @@ int pm_device_driver_init(const struct device *dev, pm_device_action_cb_t action
  *
  * @param dev Device instance.
  * @param action_cb Device PM control callback function.
- * @retval 0 if success.
- * @retval -EBUSY Device is not SUSPENDED nor OFF
- * @retval -errno code if failure.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EBUSY Device is not SUSPENDED nor OFF.
  */
 int pm_device_driver_deinit(const struct device *dev, pm_device_action_cb_t action_cb);
 #else

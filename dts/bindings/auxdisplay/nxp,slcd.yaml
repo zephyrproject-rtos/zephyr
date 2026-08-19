@@ -1,0 +1,46 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP MCUX Segment LCD (SLCD) controller used as segment-style
+  auxiliary display.
+
+compatible: "nxp,slcd"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pin-list:
+    type: array
+    description: |
+      The list of front plane PINs of the controller that are used to control the
+      segments/indicators. Set the value according to actual hardware pin-mux. For
+      example, <12 13 14 15 8 9 10 11> means the panel has 8 front plane pins in
+      total, and the controller uses pin 12~15 to control the panel's pin 0~3, and
+      uses pin 8~11 to control the panel's pin 4~7.
+
+  com-list:
+    type: array
+    description: |
+      The list of back plane PINs of the controller that are used to control the
+      segments/indicators. Set the value according to actual hardware pin-mux, similar
+      to pin-list.
+
+  blink-rate:
+    type: int
+    default: 1
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      SLCD blink rate selection (0-7). Maps to slcd_blink_rate_t values.
+      - 0: kSLCD_BlinkRate00 - LCD clock/((2^11)) or LCD clock/((2^12))
+      - 1: kSLCD_BlinkRate01 - LCD clock/((2^12)) or LCD clock/((2^13))
+      - 2: kSLCD_BlinkRate02 - LCD clock/((2^13)) or LCD clock/((2^14))
+      - 3: kSLCD_BlinkRate03 - LCD clock/((2^14)) or LCD clock/((2^15))
+      - 4: kSLCD_BlinkRate04 - LCD clock/((2^15)) or LCD clock/((2^16))
+      - 5: kSLCD_BlinkRate05 - LCD clock/((2^16)) or LCD clock/((2^17))
+      - 6: kSLCD_BlinkRate06 - LCD clock/((2^17)) or LCD clock/((2^18))
+      - 7: kSLCD_BlinkRate07 - LCD clock/((2^18)) or LCD clock/((2^19))
+      Default is 1 (kSLCD_BlinkRate01).

@@ -67,7 +67,7 @@ static int sock_dispatch_socket(struct dispatcher_context *ctx,
 		return -1;
 	}
 
-	/* Reassing FD with new obj and entry. */
+	/* Reassign FD with new obj and entry. */
 	fd = ctx->fd;
 	zvfs_finalize_typed_fd(fd, obj, (const struct fd_op_vtable *)vtable, ZVFS_MODE_IFSOCK);
 

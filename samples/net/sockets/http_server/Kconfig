@@ -17,6 +17,7 @@ config NET_SAMPLE_HTTP_SERVER_SERVICE_PORT
 config NET_SAMPLE_HTTPS_SERVICE
 	bool "Enable https service"
 	depends on NET_SOCKETS_SOCKOPT_TLS || TLS_CREDENTIALS
+	default y if HTTP_SERVER_VERSION_3
 	select PSA_CRYPTO
 
 if NET_SAMPLE_HTTPS_SERVICE
@@ -27,9 +28,10 @@ config NET_SAMPLE_HTTPS_SERVER_SERVICE_PORT
 	depends on NET_SAMPLE_HTTPS_SERVICE
 
 config NET_SAMPLE_HTTPS_USE_ALPN
-	bool "Allow HTTP2 connectivity with web browsers by using ALPN"
+	bool "Allow HTTP2 & HTTP3 connectivity with web browsers by using ALPN"
 	select MBEDTLS_SSL_ALPN
 	select HTTP_SERVER_TLS_USE_ALPN
+	default y if HTTP_SERVER_VERSION_3
 	help
 	  Web browsers only use HTTP/2 over HTTPS, and use ALPN to determine if a
 	  server supports HTTP/2. If this option is enabled, web browsers can use

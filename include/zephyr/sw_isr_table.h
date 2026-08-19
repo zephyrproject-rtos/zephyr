@@ -41,14 +41,18 @@ struct _isr_table_entry {
 	void (*isr)(const void *);
 };
 
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 /* The software ISR table itself, an array of these structures indexed by the
  * irq line
  */
 extern
 #ifndef CONFIG_DYNAMIC_INTERRUPTS
-const
-#endif
-struct _isr_table_entry _sw_isr_table[];
+	const
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
+	struct _isr_table_entry _sw_isr_table[];
+#elif defined(CONFIG_GEN_SW_ISR_TABLE_SWITCH)
+extern void __sw_isr_table get_isr_entry(int irq_number, struct _isr_table_entry *entry);
+#endif /* CONFIG_GEN_SW_ISR_TABLE_ARRAY */
 
 struct _irq_parent_entry {
 	const struct device *dev;
@@ -295,11 +299,11 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 #define IRQ_TABLE_SIZE (CONFIG_NUM_IRQS - CONFIG_GEN_IRQ_START_VECTOR)
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-void z_isr_install(unsigned int irq, void (*routine)(const void *),
+void z_isr_install(unsigned int irq, void (*routine)(const void *parameter),
 		   const void *param);
 
 #ifdef CONFIG_SHARED_INTERRUPTS
-int z_isr_uninstall(unsigned int irq, void (*routine)(const void *),
+int z_isr_uninstall(unsigned int irq, void (*routine)(const void *parameter),
 		    const void *param);
 #endif /* CONFIG_SHARED_INTERRUPTS */
 #endif

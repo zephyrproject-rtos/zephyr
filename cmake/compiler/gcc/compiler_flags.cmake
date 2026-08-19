@@ -177,6 +177,22 @@ set_property(TARGET compiler-cpp PROPERTY no_rtti "-fno-rtti")
 # gcc flags for coverage generation
 set_compiler_property(PROPERTY coverage -fprofile-arcs -ftest-coverage -fno-inline)
 
+# gcc flags for heap KASAN instrumentation.
+set_compiler_property(PROPERTY heap_kasan
+  -fsanitize=kernel-address
+  --param=asan-instrumentation-with-call-threshold=0
+  --param=asan-globals=0
+  --param=asan-stack=0
+  --param=asan-instrument-reads=0
+  -fno-tree-loop-distribute-patterns)
+# ARC and OpenRISC require an explicit shadow offset with kernel-address.
+if(CONFIG_ARC OR CONFIG_OPENRISC)
+  set_compiler_property(APPEND PROPERTY heap_kasan -fasan-shadow-offset=0)
+endif()
+
+# Flag to disable heap KASAN instrumentation on a specific source file.
+set_compiler_property(PROPERTY no_heap_kasan -fno-sanitize=kernel-address)
+
 # Security canaries.
 set_compiler_property(PROPERTY security_canaries -fstack-protector)
 set_compiler_property(PROPERTY security_canaries_strong -fstack-protector-strong)
@@ -185,10 +201,19 @@ set_compiler_property(PROPERTY security_canaries_explicit -fstack-protector-expl
 
 # Only a valid option with GCC 7.x and above, so let's do check and set.
 if(CONFIG_STACK_CANARIES_TLS)
-  check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=tls)
-  check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
+  if(CONFIG_STACK_CANARIES_TLS_PREPEND)
+    # The canary is at a fixed offset from the TLS base register (see
+    # STACK_CANARIES_TLS_GUARD_REG and STACK_CANARIES_TLS_GUARD_OFFSET).
+    check_set_compiler_property(APPEND PROPERTY security_canaries "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_strong "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_all "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+    check_set_compiler_property(APPEND PROPERTY security_canaries_explicit "SHELL:-mstack-protector-guard=tls -mstack-protector-guard-reg=${CONFIG_STACK_CANARIES_TLS_GUARD_REG} -mstack-protector-guard-offset=${CONFIG_STACK_CANARIES_TLS_GUARD_OFFSET}")
+  else()
+    check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_strong -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_all -mstack-protector-guard=tls)
+    check_set_compiler_property(APPEND PROPERTY security_canaries_explicit -mstack-protector-guard=tls)
+  endif()
 else()
   check_set_compiler_property(APPEND PROPERTY security_canaries -mstack-protector-guard=global)
   check_set_compiler_property(APPEND PROPERTY security_canaries_global -mstack-protector-guard=global)

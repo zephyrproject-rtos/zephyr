@@ -1,0 +1,43 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Bee Real-Time Clock (RTC) Counter.
+
+  The Bee RTC provides timekeeping and alarm functionality.
+  It supports configurable source clock frequency and prescaler settings.
+
+compatible: "realtek,bee-counter-rtc"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: RTC alarm interrupt.
+
+  channels:
+    type: int
+    required: true
+    description: Number of RTC channels.
+
+  src-clk-freq:
+    type: int
+    default: 32000
+    description: |
+      Frequency of the RTC source clock in Hz.
+      Default is 32000. Set to 32768 if using an external crystal.
+    enum:
+      - 32000
+      - 32768
+
+  prescaler:
+    type: int
+    default: 1
+    description: |
+      Clock prescaler divider, range from 1 to 4096.
+      The RTC counter clock = src-clk-freq / prescaler.
+      Default is 1 (no division).

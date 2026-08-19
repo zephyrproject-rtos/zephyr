@@ -1309,7 +1309,7 @@ ZTEST(settings_mgmt, test_delete)
 	zassert_true(set_called, "Expected setting set function to be called");
 	zassert_false(get_called, "Did not expect setting get function to be called");
 	zassert_false(get_called, "Did not expect setting get function to be called");
-	zassert_false(export_called, "Did not expext setting export function to be called");
+	zassert_false(export_called, "Did not expect setting export function to be called");
 	zassert_true(commit_called, "Expected setting commit function to be called");
 
 	/* Clean up test */

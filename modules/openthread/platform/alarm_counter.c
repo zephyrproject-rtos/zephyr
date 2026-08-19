@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/alarm-micro.h>
+#include <openthread/platform/radio.h>
 #include <openthread-system.h>
 
 #include "platform-zephyr.h"
@@ -28,7 +29,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 void alarm_milli_set_time_offset_ms(int32_t offset_ms);
 
 static bool timer_us_fired;
+#if defined(CONFIG_OPENTHREAD_PLATFORM_PKT_TXTIME)
 static int32_t time_offset_us;
+#endif
 
 /* Wrap logic: split delays longer than one counter period into multiple alarms */
 typedef struct wrap_timer_data wrap_timer_data_t;
@@ -75,6 +78,8 @@ static inline uint32_t set_alarm_wrapped_duration(uint64_t remaining_ticks)
 static void alarm_handler(const struct device *dev, uint8_t chan_id, uint32_t ticks,
 			  void *user_data)
 {
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(user_data);
 
 	if (!is_alarm_finished()) {
 		struct counter_alarm_cfg cntr_alarm_cfg;
@@ -86,7 +91,7 @@ static void alarm_handler(const struct device *dev, uint8_t chan_id, uint32_t ti
 		cntr_alarm_cfg.ticks = wrap_data.tick_value;
 		cntr_alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
 		cntr_alarm_cfg.callback = alarm_handler;
-		cntr_alarm_cfg.user_data = user_data;
+		cntr_alarm_cfg.user_data = NULL;
 		counter_set_channel_alarm(dev, chan_id, &cntr_alarm_cfg);
 	} else {
 		counter_cancel_channel_alarm(dev, chan_id);
@@ -153,7 +158,7 @@ void otPlatAlarmMicroStartAt(otInstance *aInstance, uint32_t aT0, uint32_t aDt)
 		}
 		cntr_alarm_cfg.flags = 0;
 		cntr_alarm_cfg.callback = alarm_handler;
-		cntr_alarm_cfg.user_data = &cntr_alarm_cfg;
+		cntr_alarm_cfg.user_data = NULL;
 		counter_set_channel_alarm(alarm_counter, 0, &cntr_alarm_cfg);
 	}
 }

@@ -1,0 +1,6 @@
+board:
+  name: fs_i6s
+  full_name: FlySky FS-i6S
+  vendor: flysky
+  socs:
+    - name: stm32f072xb

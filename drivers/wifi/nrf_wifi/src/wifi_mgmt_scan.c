@@ -36,7 +36,9 @@ static enum nrf_wifi_band nrf_wifi_map_zep_band_to_rpu(enum wifi_frequency_bands
 	}
 }
 
-int nrf_wifi_disp_scan_zep(const struct device *dev, struct wifi_scan_params *params,
+int nrf_wifi_disp_scan_zep(const struct device *dev,
+			   struct net_if *iface __unused,
+			   struct wifi_scan_params *params,
 			   scan_result_cb_t cb)
 {
 	enum nrf_wifi_status status = NRF_WIFI_STATUS_FAIL;
@@ -298,6 +300,10 @@ static inline enum wifi_security_type drv_to_wifi_mgmt(int drv_security_type)
 		return WIFI_SECURITY_TYPE_WAPI;
 	case NRF_WIFI_EAP:
 		return WIFI_SECURITY_TYPE_EAP;
+	case NRF_WIFI_WPA3_AUTO:
+		return WIFI_SECURITY_TYPE_SAE_AUTO;
+	case NRF_WIFI_WPA3_FT_SAE:
+		return WIFI_SECURITY_TYPE_FT_SAE;
 	default:
 		return WIFI_SECURITY_TYPE_UNKNOWN;
 	}
@@ -412,7 +418,8 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
 	if (!rpu_ctx_zep->rpu_ctx) {
 		LOG_DBG("%s: RPU context not initialized", __func__);
-		goto out;
+		k_mutex_unlock(&vif_ctx_zep->vif_lock);
+		return;
 	}
 
 	frame_length = nrf_wifi_osal_nbuf_data_size(nwb);
@@ -428,14 +435,13 @@ void nrf_wifi_rx_bcn_prb_resp_frm(void *vif_ctx,
 				      frame_length);
 	}
 
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+
 	bcn_prb_resp_info.rssi = MBM_TO_DBM(val);
 	bcn_prb_resp_info.frequency = frequency;
 	bcn_prb_resp_info.frame_length = frame_length;
 
 	wifi_mgmt_raise_raw_scan_result_event(vif_ctx_zep->zep_net_if_ctx,
 					      &bcn_prb_resp_info);
-
-out:
-	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 }
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */

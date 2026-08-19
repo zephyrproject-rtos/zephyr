@@ -97,10 +97,11 @@ class ApiOverview(SphinxDirective):
                 version = sect.get_para()[0].get_valueOf_()
 
         if since:
+            # Some @since values already carry a patch component (e.g. "1.14.0");
+            # normalize to a "major.minor.0" release tag to avoid "v1.14.0.0".
+            release = ".".join(since.strip().split(".")[:2]) + ".0"
             since_url = nodes.inline()
-            reference = nodes.reference(
-                text=f"v{since.strip()}.0", refuri=f"{github_uri}/v{since.strip()}.0"
-            )
+            reference = nodes.reference(text=f"v{release}", refuri=f"{github_uri}v{release}")
             reference.attributes["internal"] = True
             since_url += reference
         else:

@@ -449,12 +449,12 @@ struct adc_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
 		    (ADC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
-/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get ADC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance by name.
  *
  * @see ADC_DT_SPEC_GET_BY_NAME()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  *
  * @return Static initializer for an adc_dt_spec structure.
@@ -465,7 +465,7 @@ struct adc_dt_spec {
 /**
  * @brief Like ADC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  * @param default_value Fallback value to expand to.
  *
@@ -566,12 +566,12 @@ struct adc_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
 		    (ADC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
-/** @brief Get ADC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get ADC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance.
  *
  * @see ADC_DT_SPEC_GET_BY_IDX()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  *
  * @return Static initializer for an adc_dt_spec structure.
@@ -582,7 +582,7 @@ struct adc_dt_spec {
 /**
  * @brief Like ADC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  * @param default_value Fallback value to expand to.
  *
@@ -623,7 +623,7 @@ struct adc_dt_spec {
  *
  * @see ADC_DT_SPEC_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  *
  * @return Static initializer for an adc_dt_spec structure.
  */
@@ -634,7 +634,7 @@ struct adc_dt_spec {
  *
  * @see ADC_DT_SPEC_GET_OR()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value Fallback value to expand to.
  *
  * @return Static initializer for a struct adc_dt_spec for the property,
@@ -967,6 +967,12 @@ struct adc_decoder_api {
 };
 
 /**
+ * @def_driverbackendgroup{ADC,adc_interface}
+ * @ingroup adc_interface
+ * @{
+ */
+
+/**
  * @brief Type definition of ADC API function for configuring a channel.
  * See adc_channel_setup() for argument descriptions.
  */
@@ -1005,22 +1011,62 @@ typedef int (*adc_api_read_async)(const struct device *dev,
 				  struct k_poll_signal *async);
 
 /**
- * @brief ADC driver API
- *
- * This is the mandatory API any ADC driver needs to expose.
+ * @brief Type definition of ADC API function for getting a reference
+ *        voltage in millivolts.
+ * See adc_ref_get() for related public helper.
+ */
+typedef int (*adc_api_ref_get)(const struct device *dev, enum adc_reference ref,
+			       uint16_t *vref_mv);
+
+/**
+ * @driver_ops{ADC}
  */
 __subsystem struct adc_driver_api {
+	/** @driver_ops_mandatory @copybrief adc_channel_setup */
 	adc_api_channel_setup channel_setup;
+	/** @driver_ops_mandatory @copybrief adc_read */
 	adc_api_read          read;
-#ifdef CONFIG_ADC_ASYNC
+#if defined(CONFIG_ADC_ASYNC) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory @copybrief adc_read_async
+	 * @kconfig_dep{CONFIG_ADC_ASYNC}
+	 */
 	adc_api_read_async    read_async;
 #endif
-#ifdef CONFIG_ADC_STREAM
+#if defined(CONFIG_ADC_STREAM) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory Submit a stream request.
+	 * @kconfig_dep{CONFIG_ADC_STREAM}
+	 */
 	adc_api_submit    submit;
+	/**
+	 * @driver_ops_optional @copybrief adc_get_decoder
+	 * @kconfig_dep{CONFIG_ADC_STREAM}
+	 */
 	adc_api_get_decoder get_decoder;
 #endif
-	uint16_t ref_internal;	/* mV */
+	/**
+	 * @driver_ops_mandatory Internal reference voltage, in millivolts.
+	 *
+	 * Set to 0 if internal reference is not supported. Used as the
+	 * fallback for @ref ADC_REF_INTERNAL when @c ref_get is NULL.
+	 */
+	uint16_t ref_internal;
+	/**
+	 * @driver_ops_optional Get the current voltage for a selected
+	 * reference in millivolts.
+	 *
+	 * When NULL, @ref adc_ref_get falls back to @c ref_internal for
+	 * @ref ADC_REF_INTERNAL and returns @c -ENOTSUP for other
+	 * references. When implemented, return the live/runtime value
+	 * (for example a cached measurement); return @c -ENODATA when the
+	 * reference is supported but no millivolt value is known yet, or
+	 * @c -ENOTSUP when the reference is not supported by the device.
+	 */
+	adc_api_ref_get ref_get;
 };
+
+/** @} */
 
 /**
  * @brief Configure an ADC channel.
@@ -1268,17 +1314,72 @@ static inline int z_impl_adc_get_decoder(const struct device *dev,
 #endif /* CONFIG_ADC_STREAM */
 
 /**
+ * @brief Get the voltage for a selected ADC reference.
+ *
+ * Returns the millivolt scale associated with @p ref for @p dev. When the
+ * driver provides @c ref_get, that callback is used. Otherwise,
+ * @ref ADC_REF_INTERNAL falls back to the static @c ref_internal field
+ * and other references return @c -ENOTSUP.
+ *
+ * Drivers that implement @c ref_get are responsible for any DT /
+ * @c ref_internal fallback for @ref ADC_REF_INTERNAL.
+ *
+ * @param[in]  dev      Pointer to the device structure for the driver instance.
+ * @param[in]  ref      Reference whose millivolt scale is requested.
+ * @param[out] vref_mv  Destination for the reference voltage in millivolts.
+ *
+ * @retval 0          On success; @p vref_mv holds the voltage in millivolts.
+ * @retval -EINVAL    If @p vref_mv is NULL.
+ * @retval -ENOTSUP   If the reference is not supported / no value source exists.
+ * @retval -ENODATA   If the reference is supported but no millivolt value is known.
+ */
+static inline int adc_ref_get(const struct device *dev, enum adc_reference ref,
+			      uint16_t *vref_mv)
+{
+	const struct adc_driver_api *api;
+
+	if (vref_mv == NULL) {
+		return -EINVAL;
+	}
+
+	api = DEVICE_API_GET(adc, dev);
+
+	if (api->ref_get != NULL) {
+		return api->ref_get(dev, ref, vref_mv);
+	}
+
+	if (ref != ADC_REF_INTERNAL) {
+		return -ENOTSUP;
+	}
+
+	*vref_mv = api->ref_internal;
+	return (*vref_mv == 0U) ? -ENODATA : 0;
+}
+
+/**
  * @brief Get the internal reference voltage.
  *
  * Returns the voltage corresponding to @ref ADC_REF_INTERNAL,
- * measured in millivolts.
+ * measured in millivolts. This is a convenience wrapper around
+ * @ref adc_ref_get.
  *
- * @return a positive value is the reference voltage value.  Returns
+ * Drivers that implement @c ref_get may update the value over time
+ * (for example after hardware calibration); this does not change the
+ * function signature.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return A positive value is the reference voltage value.  Returns
  * zero if reference voltage information is not available.
  */
 static inline uint16_t adc_ref_internal(const struct device *dev)
 {
-	return DEVICE_API_GET(adc, dev)->ref_internal;
+	uint16_t vref_mv;
+	int ret;
+
+	ret = adc_ref_get(dev, ADC_REF_INTERNAL, &vref_mv);
+
+	return ret == 0 ? vref_mv : 0U;
 }
 
 /**
@@ -1288,8 +1389,8 @@ static inline uint16_t adc_ref_internal(const struct device *dev)
  * ADC measurement to a physical voltage.
  *
  * @param ref_mv the reference voltage used for the measurement, in
- * millivolts.  This may be from adc_ref_internal() or a known
- * external reference.
+ * millivolts.  This may be from adc_ref_get(), adc_ref_internal() or
+ * a known external reference.
  *
  * @param gain the ADC gain configuration used to sample the input
  *
@@ -1365,19 +1466,20 @@ static inline int adc_raw_to_microvolts(int32_t ref_mv, enum adc_gain gain, uint
  * @see adc_raw_to_x_fn
  */
 static inline int adc_raw_to_x_dt_chan(adc_raw_to_x_fn conv_func,
-					    const struct adc_dt_spec *spec,
-					    const struct adc_channel_cfg *channel_cfg,
-					    int32_t *valp)
+				       const struct adc_dt_spec *spec,
+				       const struct adc_channel_cfg *channel_cfg,
+				       int32_t *valp)
 {
 	int32_t vref_mv;
+	uint16_t vref_mv_u16;
 	uint8_t resolution;
 
 	if (!spec->channel_cfg_dt_node_exists) {
 		return -ENOTSUP;
 	}
 
-	if (channel_cfg->reference == ADC_REF_INTERNAL) {
-		vref_mv = (int32_t)adc_ref_internal(spec->dev);
+	if (adc_ref_get(spec->dev, channel_cfg->reference, &vref_mv_u16) == 0) {
+		vref_mv = (int32_t)vref_mv_u16;
 	} else {
 		vref_mv = spec->vref_mv;
 	}
@@ -1477,13 +1579,9 @@ static inline bool adc_is_ready_dt(const struct adc_dt_spec *spec)
 }
 
 /**
- * @}
- */
-
-/**
  * @brief Get the decoder name for the current driver
  *
- * This function depends on `DT_DRV_COMPAT` being defined.
+ * This function depends on @c DT_DRV_COMPAT being defined.
  */
 #define ADC_DECODER_NAME() UTIL_CAT(DT_DRV_COMPAT, __adc_decoder_api)
 
@@ -1561,6 +1659,10 @@ extern const struct rtio_iodev_api __adc_iodev_api;
 		.trigger_cnt = ARRAY_SIZE(_CONCAT(__trigger_array_, name)),			\
 	};											\
 	RTIO_IODEV_DEFINE(name, &__adc_iodev_api, &_CONCAT(__adc_read_config_, name))
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

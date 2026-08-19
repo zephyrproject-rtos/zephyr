@@ -7,6 +7,7 @@ CPU Frequency Scaling
    :maxdepth: 1
 
    policies/index.rst
+   thermal_cap.rst
 
 Overview
 ********
@@ -39,6 +40,13 @@ A P-state policy should include one or more metrics to base decisions. Examples 
 include percent CPU load, SoC temperature, etc.
 
 For an example of a metric in use, see the :ref:`on_demand <on_demand_policy>` policy.
+
+Thermal Cap
+***********
+
+The optional :ref:`cpu_freq_thermal_cap` constrains the highest-performance P-state allowed by the
+active policy based on temperature trip points. It is a constraint layer, not a P-state policy,
+used to reduce excess heat generation and protect the SoC from thermal stress.
 
 P-state Drivers
 ***************

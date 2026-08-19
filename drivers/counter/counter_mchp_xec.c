@@ -23,6 +23,7 @@
  */
 
 #include <zephyr/irq.h>
+#include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(counter_mchp_xec, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -38,6 +39,7 @@ struct counter_xec_config {
 	uint16_t prescaler;
 	uint8_t girq_id;
 	uint8_t girq_bit;
+	uint8_t enc_pcr;
 };
 
 struct counter_xec_data {
@@ -46,17 +48,12 @@ struct counter_xec_data {
 	void *user_data;
 };
 
-#define COUNTER_XEC_REG_BASE(_dev)			\
-	((struct btmr_regs *)					\
-	 ((const struct counter_xec_config * const)	\
-	  _dev->config)->base_address)
+#define COUNTER_XEC_REG_BASE(_dev)                                                                 \
+	((struct btmr_regs *)((const struct counter_xec_config *const)_dev->config)->base_address)
 
-#define COUNTER_XEC_CONFIG(_dev)			\
-	(((const struct counter_xec_config * const)	\
-	  _dev->config))
+#define COUNTER_XEC_CONFIG(_dev) (((const struct counter_xec_config *const)_dev->config))
 
-#define COUNTER_XEC_DATA(_dev)				\
-	((struct counter_xec_data *)dev->data)
+#define COUNTER_XEC_DATA(_dev) ((struct counter_xec_data *)dev->data)
 
 static int counter_xec_start(const struct device *dev)
 {
@@ -151,7 +148,6 @@ static int counter_xec_set_alarm(const struct device *dev, uint8_t chan_id,
 	return 0;
 }
 
-
 static int counter_xec_cancel_alarm(const struct device *dev, uint8_t chan_id)
 {
 	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
@@ -187,8 +183,7 @@ static uint32_t counter_xec_get_top_value(const struct device *dev)
 	return counter->PRLD;
 }
 
-static int counter_xec_set_top_value(const struct device *dev,
-				     const struct counter_top_cfg *cfg)
+static int counter_xec_set_top_value(const struct device *dev, const struct counter_top_cfg *cfg)
 {
 	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
@@ -252,11 +247,7 @@ static void counter_xec_isr(const struct device *dev)
 
 	counter->STS = MCHP_BTMR_STS_ACTIVE;
 
-#if defined(CONFIG_SOC_MEC172X_NSZ)
-	mchp_soc_ecia_girq_src_clr(counter_cfg->girq_id, counter_cfg->girq_bit);
-#else
-	MCHP_GIRQ_SRC(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
-#endif
+	soc_ecia_girq_status_clear(counter_cfg->girq_id, counter_cfg->girq_bit);
 
 	LOG_DBG("%p Counter ISR", dev);
 
@@ -275,14 +266,14 @@ static void counter_xec_isr(const struct device *dev)
 }
 
 static DEVICE_API(counter, counter_xec_api) = {
-		.start = counter_xec_start,
-		.stop = counter_xec_stop,
-		.get_value = counter_xec_get_value,
-		.set_alarm = counter_xec_set_alarm,
-		.cancel_alarm = counter_xec_cancel_alarm,
-		.set_top_value = counter_xec_set_top_value,
-		.get_pending_int = counter_xec_get_pending_int,
-		.get_top_value = counter_xec_get_top_value,
+	.start = counter_xec_start,
+	.stop = counter_xec_stop,
+	.get_value = counter_xec_get_value,
+	.set_alarm = counter_xec_set_alarm,
+	.cancel_alarm = counter_xec_cancel_alarm,
+	.set_top_value = counter_xec_set_top_value,
+	.get_pending_int = counter_xec_get_pending_int,
+	.get_top_value = counter_xec_get_top_value,
 };
 
 static int counter_xec_init(const struct device *dev)
@@ -290,64 +281,60 @@ static int counter_xec_init(const struct device *dev)
 	struct btmr_regs *counter = COUNTER_XEC_REG_BASE(dev);
 	const struct counter_xec_config *counter_cfg = COUNTER_XEC_CONFIG(dev);
 
+	soc_xec_pcr_sleep_en_clear(counter_cfg->enc_pcr);
+
 	counter_xec_stop(dev);
 
 	counter->CTRL &= ~MCHP_BTMR_CTRL_COUNT_UP;
 	counter->CTRL |= (counter_cfg->prescaler << MCHP_BTMR_CTRL_PRESCALE_POS) &
-		MCHP_BTMR_CTRL_PRESCALE_MASK;
+			 MCHP_BTMR_CTRL_PRESCALE_MASK;
 
 	/* Set preload and actually pre-load the counter */
 	counter->PRLD = counter_cfg->info.max_top_value;
 	counter->CNT = counter_cfg->info.max_top_value;
 
-#if defined(CONFIG_SOC_MEC172X_NSZ)
-	mchp_soc_ecia_girq_src_en(counter_cfg->girq_id, counter_cfg->girq_bit);
-#else
-	MCHP_GIRQ_ENSET(counter_cfg->girq_id) = BIT(counter_cfg->girq_bit);
-#endif
+	soc_ecia_girq_ctrl(counter_cfg->girq_id, counter_cfg->girq_bit, 1);
 
 	counter_cfg->config_func();
 
 	return 0;
 }
 
-#define COUNTER_XEC_INIT(inst)						\
-	static void counter_xec_irq_config_##inst(void);		\
-									\
-	static struct counter_xec_data counter_xec_dev_data_##inst;	\
-									\
-	static struct counter_xec_config counter_xec_dev_config_##inst = { \
-		.info = {						\
-			.max_top_value = DT_INST_PROP(inst, max_value),	\
-			.freq = DT_INST_PROP(inst, clock_frequency) /	\
-			(1 << DT_INST_PROP(inst, prescaler)),		\
-			.flags = 0,					\
-			.channels = 1,					\
-		},							\
-									\
-		.config_func = counter_xec_irq_config_##inst,		\
-		.base_address = DT_INST_REG_ADDR(inst),			\
-		.prescaler = DT_INST_PROP(inst, prescaler),		\
-		.girq_id = DT_INST_PROP_BY_IDX(0, girqs, 0),		\
-		.girq_bit = DT_INST_PROP_BY_IDX(0, girqs, 1),		\
-	};								\
-									\
-	DEVICE_DT_INST_DEFINE(inst,					\
-			    counter_xec_init,				\
-			    NULL,					\
-			    &counter_xec_dev_data_##inst,		\
-			    &counter_xec_dev_config_##inst,		\
-			    POST_KERNEL,				\
-			    CONFIG_COUNTER_INIT_PRIORITY,		\
-			    &counter_xec_api);				\
-									\
-	static void counter_xec_irq_config_##inst(void)			\
-	{								\
-		IRQ_CONNECT(DT_INST_IRQN(inst),				\
-			    DT_INST_IRQ(inst, priority),		\
-			    counter_xec_isr,				\
-			    DEVICE_DT_INST_GET(inst), 0);		\
-		irq_enable(DT_INST_IRQN(inst));				\
+#define DEV_CFG_GIRQ(inst, idx)     MCHP_XEC_ECIA_GIRQ(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+#define DEV_CFG_GIRQ_POS(inst, idx) MCHP_XEC_ECIA_GIRQ_POS(DT_INST_PROP_BY_IDX(inst, girqs, idx))
+
+#define COUNTER_XEC_INIT(inst)                                                                     \
+	static void counter_xec_irq_config_##inst(void);                                           \
+                                                                                                   \
+	static struct counter_xec_data counter_xec_dev_data_##inst;                                \
+                                                                                                   \
+	static struct counter_xec_config counter_xec_dev_config_##inst = {                         \
+		.info =                                                                            \
+			{                                                                          \
+				.max_top_value = DT_INST_PROP(inst, max_value),                    \
+				.freq = DT_INST_PROP(inst, clock_frequency) /                      \
+					DT_INST_PROP(inst, prescaler),                             \
+				.flags = 0,                                                        \
+				.channels = 1,                                                     \
+			},                                                                         \
+                                                                                                   \
+		.config_func = counter_xec_irq_config_##inst,                                      \
+		.base_address = DT_INST_REG_ADDR(inst),                                            \
+		.prescaler = DT_INST_PROP(inst, prescaler),                                        \
+		.girq_id = DEV_CFG_GIRQ(0, 0),                                                     \
+		.girq_bit = DEV_CFG_GIRQ_POS(0, 0),                                                \
+		.enc_pcr = DT_INST_PROP(0, pcr_src),                                               \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, counter_xec_init, NULL, &counter_xec_dev_data_##inst,          \
+			      &counter_xec_dev_config_##inst, POST_KERNEL,                         \
+			      CONFIG_COUNTER_INIT_PRIORITY, &counter_xec_api);                     \
+                                                                                                   \
+	static void counter_xec_irq_config_##inst(void)                                            \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN(inst), DT_INST_IRQ(inst, priority), counter_xec_isr,      \
+			    DEVICE_DT_INST_GET(inst), 0);                                          \
+		irq_enable(DT_INST_IRQN(inst));                                                    \
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(COUNTER_XEC_INIT)

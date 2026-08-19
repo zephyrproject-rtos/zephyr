@@ -98,7 +98,7 @@ int ism330dhcx_spi_init(const struct device *dev)
 	const struct ism330dhcx_config *cfg = dev->config;
 
 	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR("SPI bus is not ready");
+		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
 		return -ENODEV;
 	};
 

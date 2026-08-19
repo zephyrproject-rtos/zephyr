@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(cat1_spi);
 
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/kernel.h>
 
 #include <cyhal_scb_common.h>

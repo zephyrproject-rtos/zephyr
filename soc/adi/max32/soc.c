@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,8 +30,9 @@ BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_code_rv32_partition),
 struct k_timer max32_soc_timer;
 void max32_soc_timer_callback(struct k_timer *timer_id)
 {
-	/* Allow the system to enter standby */
+	/* Allow the system to enter standby and backup mode */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 }
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
@@ -43,26 +44,43 @@ bool z_arm_on_enter_cpu_idle(void)
 }
 #endif
 
-#define RV32_CPU              DT_NODELABEL(cpu1)
-#define DO_RV32_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(RV32_CPU, default))
+#define CPU1_CPU              DT_NODELABEL(cpu1)
+#define DO_CPU1_DEBUG_PINCTRL (DT_PINCTRL_HAS_NAME(CPU1_CPU, default))
 
-#if CONFIG_MAX32_SECONDARY_RV32 && DO_RV32_DEBUG_PINCTRL
+#if (CONFIG_MAX32_SECONDARY_RV32 || CONFIG_MAX32_SECONDARY_M4) && DO_CPU1_DEBUG_PINCTRL
 
-PINCTRL_DT_DEFINE(RV32_CPU);
+PINCTRL_DT_DEFINE(CPU1_CPU);
 
-static const struct pinctrl_dev_config *rv32_pcfg = PINCTRL_DT_DEV_CONFIG_GET(RV32_CPU);
+static const struct pinctrl_dev_config *cpu1_pcfg = PINCTRL_DT_DEV_CONFIG_GET(CPU1_CPU);
 
 #endif
 
-#if defined(CONFIG_MAX32_SECONDARY_RV32) &&                \
+#if (defined(CONFIG_MAX32_SECONDARY_RV32) &&                \
 	defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) &&  \
-	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
+	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)) || \
+	(defined(CONFIG_MAX32_SECONDARY_M4) &&                \
+	defined(CONFIG_MAX32_SECONDARY_M4_STARTUP_DELAY) &&  \
+	(CONFIG_MAX32_SECONDARY_M4_STARTUP_DELAY > 0))
 
-static ALWAYS_INLINE void soc_max32_rv32_delay(int n)
+static ALWAYS_INLINE void soc_max32_secondary_delay(int n)
 {
 	while (n--) {
 		__asm__ volatile("nop");
 	}
+}
+
+#endif
+
+#if defined(CONFIG_SOC_FAMILY_MAX32_HALT_AFTER_BOOTLOADER_SUPPORT)
+
+void soc_early_reset_hook(void)
+{
+	__asm__ volatile (
+		"mov r0, 8\n\t"
+		"ldr r0, [r0]\n\t"
+		"nop\n\t"
+		"nop\n\t"
+	);
 }
 
 #endif
@@ -79,28 +97,41 @@ void soc_early_init_hook(void)
 
 	/* Temporarily prevent  the system from entering standby to prevent debug lockout */
 #if defined(CONFIG_MAX32_STANDBY_DELAY) && (CONFIG_MAX32_STANDBY_DELAY > 0)
-	/* Prevent the system from entering standby mode */
+	/* Prevent the system from entering standby and backup mode */
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 
 	/* Start a one-shot timer to put the pm lock */
 	k_timer_init(&max32_soc_timer, max32_soc_timer_callback, NULL);
 	k_timer_start(&max32_soc_timer, K_MSEC(CONFIG_MAX32_STANDBY_DELAY), K_NO_WAIT);
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
-#ifdef CONFIG_MAX32_SECONDARY_RV32
-
-#if DO_RV32_DEBUG_PINCTRL
-	pinctrl_apply_state(rv32_pcfg, PINCTRL_STATE_DEFAULT);
+#if (CONFIG_MAX32_SECONDARY_RV32 || CONFIG_MAX32_SECONDARY_M4) && DO_CPU1_DEBUG_PINCTRL
+	pinctrl_apply_state(cpu1_pcfg, PINCTRL_STATE_DEFAULT);
 #endif
+
+#ifdef CONFIG_MAX32_SECONDARY_RV32
 
 #if defined(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY) && \
 	(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY > 0)
-	soc_max32_rv32_delay(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY);
+	soc_max32_secondary_delay(CONFIG_MAX32_SECONDARY_RV32_STARTUP_DELAY);
 #endif
 
 	MXC_FCR->urvbootaddr = DT_REG_ADDR(DT_CHOSEN(zephyr_code_rv32_partition));
 	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 	MXC_GCR->rst1 |= MXC_F_GCR_RST1_CPU1;
+#endif /* CONFIG_MAX32_SECONDARY_RV32 */
+
+
+#ifdef CONFIG_MAX32_SECONDARY_M4
+
+#if defined(CONFIG_MAX32_SECONDARY_M4_STARTUP_DELAY) && \
+	(CONFIG_MAX32_SECONDARY_M4_STARTUP_DELAY > 0)
+	soc_max32_secondary_delay(CONFIG_MAX32_SECONDARY_M4_STARTUP_DELAY);
+#endif
+
+	MXC_GCR->gp0 = DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition));
+	MXC_SYS_ClockEnable(MXC_SYS_PERIPH_CLOCK_CPU1);
 #endif /* CONFIG_MAX32_SECONDARY_RV32 */
 }
 

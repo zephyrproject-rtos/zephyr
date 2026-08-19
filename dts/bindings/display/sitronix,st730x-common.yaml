@@ -8,7 +8,8 @@ description: |
     These displays have extreme clarity and contrast, and refresh rate up to 51 Hz.
     They use a unusual data format that requires conversion from standard ones, and
     necessitate rounding X axis values to 12, including width which sometimes need
-    to be rounded to the next multiple of 12 to fill the display.
+    to be rounded to the next multiple of 12 to fill the display in the case where the width
+    can not be divided by both 12 and 8.
 
 include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
 
@@ -110,6 +111,8 @@ properties:
       - [3-2]: Gate scan mode: 00: 2 line interval, 01: 1 line interval, 10: frame interval
       - [1-0]: Panel layout: 00: 2 line interlace, 01: 1 line interlace, 10: no interlacing
 
+      For this driver, the column dot inversion should likely be set to 1-Dot inversion.
+
   hpm-gate-waveform:
     type: uint8-array
     default: [0xE5, 0xF6, 0x05, 0x46, 0x77, 0x77, 0x77, 0x77, 0x76, 0x45]
@@ -131,3 +134,7 @@ properties:
   inversion-on:
     type: boolean
     description: Turn on display color inverting
+
+  low-power-mode:
+    type: boolean
+    description: Use low power mode instead of high power mode

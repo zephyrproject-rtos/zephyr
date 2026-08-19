@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
-#define ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_
+#ifndef ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_
+#define ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_
 
 /**
  * @brief Volume Control Profile (VCP)
@@ -45,7 +45,7 @@ extern "C" {
 #if defined(CONFIG_BT_VCP_VOL_REND)
 #define BT_VCP_VOL_REND_VOCS_CNT CONFIG_BT_VCP_VOL_REND_VOCS_INSTANCE_COUNT
 #else
-#define BT_VCP_VOL_REND_VOCS_CNT 0
+#define BT_VCP_VOL_REND_VOCS_CNT 0U
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
 /**
@@ -55,7 +55,7 @@ extern "C" {
 #if defined(CONFIG_BT_VCP_VOL_REND)
 #define BT_VCP_VOL_REND_AICS_CNT CONFIG_BT_VCP_VOL_REND_AICS_INSTANCE_COUNT
 #else
-#define BT_VCP_VOL_REND_AICS_CNT 0
+#define BT_VCP_VOL_REND_AICS_CNT 0U
 #endif /* CONFIG_BT_VCP_VOL_REND */
 
 /**
@@ -66,9 +66,9 @@ extern "C" {
  * The Change_Counter operand value does not match the Change_Counter field value of the Volume
  * State characteristic.
  */
-#define BT_VCP_ERR_INVALID_COUNTER             0x80
+#define BT_VCP_ERR_INVALID_COUNTER             0x80U
 /** An invalid opcode has been used in a control point procedure. */
-#define BT_VCP_ERR_OP_NOT_SUPPORTED            0x81
+#define BT_VCP_ERR_OP_NOT_SUPPORTED            0x81U
 /** @} */
 
 /**
@@ -76,9 +76,9 @@ extern "C" {
  * @{
  */
 /** The volume state is unmuted */
-#define BT_VCP_STATE_UNMUTED                   0x00
+#define BT_VCP_STATE_UNMUTED                   0x00U
 /** The volume state is muted */
-#define BT_VCP_STATE_MUTED                     0x01
+#define BT_VCP_STATE_MUTED                     0x01U
 /** @} */
 
 /**
@@ -592,4 +592,4 @@ int bt_vcp_vol_ctlr_mute(struct bt_vcp_vol_ctlr *vol_ctlr);
  * @}
  */
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_SERVICES_VCP_H_ */
+#endif /* ZEPHYR_INCLUDE_BLUETOOTH_AUDIO_VCP_H_ */

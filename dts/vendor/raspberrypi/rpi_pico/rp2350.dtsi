@@ -200,11 +200,14 @@
 
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@10000000 {
 				compatible = "soc-nv-flash";
 				write-block-size = <1>;
 				erase-block-size = <DT_SIZE_K(4)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
@@ -408,7 +411,7 @@
 		vreg: vreg@40100000 {
 			compatible = "raspberrypi,core-supply-regulator";
 			reg = <0x40100000 0x200>;
-			status = "okay";
+			status = "disabled";
 			raspberrypi,brown-out-detection;
 		};
 
@@ -484,7 +487,7 @@
 			mbox: mbox {
 				compatible = "raspberrypi,pico-mbox";
 				interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-				interrupt-names = "mbox0";
+				interrupt-names = "mbox";
 				fifo-depth = <4>;
 				#mbox-cells = <0>;
 				status = "disabled";
@@ -512,6 +515,6 @@
 
 	die_temp: dietemp {
 		compatible = "raspberrypi,pico-temp";
-		status = "disabled";
+		status = "okay";
 	};
 };

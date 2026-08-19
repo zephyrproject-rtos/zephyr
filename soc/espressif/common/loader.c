@@ -6,6 +6,7 @@
 
 #include <soc.h>
 #include <hal/mmu_hal.h>
+#include <hal/mmu_ll.h>
 #include <hal/mmu_types.h>
 #include <hal/cache_types.h>
 #include <hal/cache_ll.h>
@@ -38,6 +39,10 @@
 #include <soc/pcr_reg.h>
 #endif
 
+#if CONFIG_SOC_SERIES_ESP32P4
+#include <soc/hp_sys_clkrst_reg.h>
+#endif /* CONFIG_SOC_SERIES_ESP32P4 */
+
 #include <esp_flash_internal.h>
 #include <bootloader_flash.h>
 #include <bootloader_flash_priv.h>
@@ -51,12 +56,12 @@
 #include <soc/system_reg.h>
 #endif
 
-#include "memory.h"
-#include "hw_init.h"
-#include "soc_init.h"
-#include "soc_random.h"
+#include <memory.h>
+#include <hw_init.h>
+#include <soc_init.h>
+#include <soc_random.h>
 
-#if defined(CONFIG_SOC_ESP32S3_APPCPU) || defined(CONFIG_SOC_ESP32_APPCPU)
+#if defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #error "APPCPU does not need this file!"
 #endif
 
@@ -85,7 +90,7 @@
 
 #define HDR_ATTR __attribute__((section(".entry_addr"))) __attribute__((used))
 
-#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
+#if !defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 #if DT_NODE_EXISTS(DT_CHOSEN(zephyr_code_partition))
 #define PART_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #else
@@ -95,12 +100,18 @@
 #define PART_OFFSET PARTITION_OFFSET(slot0_appcpu_partition)
 #endif
 
+/* Image entry point: start.S on RISC-V, the C function below on Xtensa. */
 void __start(void);
 static HDR_ATTR void (*_entry_point)(void) = &__start;
 
 esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 extern uint32_t _image_irom_start, _image_irom_size, _image_irom_vaddr;
 extern uint32_t _image_drom_start, _image_drom_size, _image_drom_vaddr;
+
+#ifdef CONFIG_MCUBOOT
+extern uint32_t _loader_bss_start[];
+extern uint32_t _loader_bss_end[];
+#endif
 
 #ifndef CONFIG_MCUBOOT
 
@@ -132,9 +143,15 @@ void map_rom_segments(int core, struct rom_segments *map)
 	unsigned int segments = 0;
 	unsigned int ram_segments = 0;
 
+	if (esp_rom_flash_read(offset, &bootloader_image_hdr, sizeof(esp_image_header_t), true) !=
+	    0) {
+		ESP_EARLY_LOGE(TAG, "Failed to read image header at %x", offset);
+		abort();
+	}
+
 	offset += sizeof(esp_image_header_t);
 
-	while (segments++ < 16) {
+	while (segments++ < ESP_IMAGE_MAX_SEGMENTS) {
 
 		if (esp_rom_flash_read(offset, &segment_hdr,
 					      sizeof(esp_image_segment_header_t), true) != 0) {
@@ -142,21 +159,27 @@ void map_rom_segments(int core, struct rom_segments *map)
 			abort();
 		}
 
-		if (IS_LAST(segment_hdr)) {
-			/* Total segment count = (segments - 1) */
+		if (IS_LAST(segment_hdr) || (segment_hdr.data_len & 3) != 0 ||
+		    segment_hdr.data_len > (SOC_DROM_HIGH - SOC_DROM_LOW)) {
+			/* End of valid segments: either the marker or garbage past
+			 * the legitimate image (e.g. residue from a previously
+			 * flashed larger image when flash wasn't erased). The DROM
+			 * mapping window bounds the largest possible legitimate
+			 * segment.
+			 */
 			break;
 		}
 
 		if (segment_hdr.load_addr) {
 			ESP_EARLY_LOGI(TAG, "%s\t: lma=%08xh vma=%08xh size=%05xh (%6d)",
-				       IS_LAST(segment_hdr)       ? "---"
+				       segment_hdr.load_addr == map->drom_map_addr ? "DROM"
+				       : segment_hdr.load_addr == map->irom_map_addr ? "IROM"
 				       : IS_DRAM(segment_hdr)     ? "DRAM"
 				       : IS_IRAM(segment_hdr)     ? "IRAM"
-				       : IS_IROM(segment_hdr)     ? "IROM"
-				       : IS_DROM(segment_hdr)     ? "DROM"
 				       : IS_RTC_IRAM(segment_hdr) ? "RTC_IRAM"
 				       : IS_RTC_DRAM(segment_hdr) ? "RTC_DRAM"
-				       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA" : "???",
+				       : IS_RTC_DATA(segment_hdr) ? "RTC_DATA"
+								  : "???",
 				       offset + sizeof(esp_image_segment_header_t),
 				       segment_hdr.load_addr, segment_hdr.data_len,
 				       segment_hdr.data_len);
@@ -184,7 +207,7 @@ void map_rom_segments(int core, struct rom_segments *map)
 			checksum = true;
 		}
 	}
-	if (segments == 0 || segments == 16) {
+	if (segments == 0 || segments > ESP_IMAGE_MAX_SEGMENTS) {
 		ESP_EARLY_LOGE(TAG, "Error parsing segments");
 		abort();
 	}
@@ -201,6 +224,11 @@ void map_rom_segments(int core, struct rom_segments *map)
 #if CONFIG_SOC_SERIES_ESP32
 	Cache_Read_Disable(core);
 	Cache_Flush(core);
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* Only disable the L2 (external memory) cache for MMU remapping;
+	 * L1 is internal and does not need to be disabled.
+	 */
+	cache_hal_disable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
 	cache_hal_disable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
@@ -209,7 +237,16 @@ void map_rom_segments(int core, struct rom_segments *map)
 	 * so the new app only has the mappings it creates.
 	 */
 	if (core == 0) {
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+		/*
+		 * P4 has separate MMU for flash (SPI_MEM_C) and PSRAM (SPI_MEM_S).
+		 * Only unmap flash MMU here. PSRAM MMU is not initialized yet
+		 * and accessing its registers without full PSRAM init hangs the CPU.
+		 */
+		mmu_ll_unmap_all(MMU_LL_FLASH_MMU_ID);
+#else
 		mmu_hal_unmap_all();
+#endif
 	}
 
 #if CONFIG_SOC_SERIES_ESP32
@@ -258,11 +295,23 @@ void map_rom_segments(int core, struct rom_segments *map)
 #if CONFIG_SOC_SERIES_ESP32
 	/* Application will need to do Cache_Flush(1) and Cache_Read_Enable(1) */
 	Cache_Read_Enable(core);
+#elif defined(CONFIG_SOC_SERIES_ESP32P4)
+	/*
+	 * Invalidate L1+L2 cache for the IROM/DROM range before re-enabling.
+	 * Required after MMU remap because the ROM bootloader may have left
+	 * stale lines in L1 D-cache for these virtual addresses.
+	 */
+	cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+				 app_drom_vaddr_align, map->drom_size);
+	cache_ll_invalidate_addr(CACHE_LL_LEVEL_ALL, CACHE_TYPE_ALL, CACHE_LL_ID_ALL,
+				 app_irom_vaddr_align, map->irom_size);
+	cache_hal_enable(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
 #else
 	cache_hal_enable(1, CACHE_TYPE_ALL);
 #endif /* CONFIG_SOC_SERIES_ESP32 */
 
-#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2)
+#if !defined(CONFIG_SOC_SERIES_ESP32) && !defined(CONFIG_SOC_SERIES_ESP32S2) &&                    \
+	!defined(CONFIG_SOC_SERIES_ESP32P4)
 	/* Configure the Cache MMU size for instruction and rodata in flash. */
 	uint32_t cache_mmu_irom_size =
 		((map->irom_size + CONFIG_MMU_PAGE_SIZE - 1) / CONFIG_MMU_PAGE_SIZE) *
@@ -274,58 +323,13 @@ void map_rom_segments(int core, struct rom_segments *map)
 }
 #endif /* !CONFIG_MCUBOOT */
 
-void __start(void)
+/* Common boot path, entered once the arch-specific entry has zeroed .bss. */
+static void boot_start(void)
 {
-#ifdef CONFIG_RISCV_GP
-	/* Set up stack FIRST - before any other operations */
-	__asm__ __volatile__("li sp, %0" ::"i"(DRAM_STACK_START));
-
-	/* Disable interrupts before setting up the vector table */
-	csr_read_clear(mstatus, MSTATUS_MIE);
-
-	__asm__ __volatile__("la t0, _vector_table\n"
-			     "csrw mtvec, t0\n");
-
-#if SOC_INT_CLIC_SUPPORTED
-	/* CLIC: mtvt points to the hardware-vectored interrupt table.
-	 * mtvec mode bits are hardwired to 3 (CLIC) on ESP32-C5.
-	 */
-	__asm__ __volatile__("la t0, _mtvt_table\n"
-			     "csrw 0x307, t0\n"); /* mtvt CSR */
+#ifdef CONFIG_MCUBOOT
+	memset(&_loader_bss_start, 0,
+		(size_t)((uint8_t *)_loader_bss_end - (uint8_t *)_loader_bss_start));
 #endif
-
-	/* Configure the global pointer register
-	 * (This should be the first thing startup does, as any other piece of code could be
-	 * relaxed by the linker to access something relative to __global_pointer$)
-	 */
-	__asm__ __volatile__(".option push\n"
-			     ".option norelax\n"
-			     "la gp, __global_pointer$\n"
-			     ".option pop");
-
-	arch_bss_zero();
-
-#else /* xtensa */
-
-	extern uint32_t _init_start;
-
-	/* Move the exception vector table to IRAM. */
-	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
-
-	arch_bss_zero();
-
-	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
-
-	/* Disable normal interrupts. */
-	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
-
-	/* Initialize the architecture CPU pointer.  Some of the
-	 * initialization code wants a valid arch_curr_cpu() before
-	 * arch_kernel_init() is invoked.
-	 */
-	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
-
-#endif /* CONFIG_RISCV_GP */
 
 /* Initialize hardware only during 1st boot  */
 #if defined(CONFIG_MCUBOOT) || defined(CONFIG_ESP_SIMPLE_BOOT)
@@ -354,3 +358,40 @@ void __start(void)
 	__esp_platform_mcuboot_start();
 #endif
 }
+
+#ifdef CONFIG_RISCV
+
+/* Entered from start.S, which has set up gp, the stack and the vector table. */
+void start_riscv(void)
+{
+	arch_bss_zero();
+
+	boot_start();
+}
+
+#else /* xtensa */
+
+void __start(void)
+{
+	extern uint32_t _init_start;
+
+	/* Move the exception vector table to IRAM. */
+	__asm__ __volatile__("wsr %0, vecbase" : : "r"(&_init_start));
+
+	arch_bss_zero();
+
+	__asm__ __volatile__("" : : "g"(&__bss_start) : "memory");
+
+	/* Disable normal interrupts. */
+	__asm__ __volatile__("wsr %0, PS" : : "r"(PS_INTLEVEL(XCHAL_EXCM_LEVEL) | PS_UM | PS_WOE));
+
+	/* Initialize the architecture CPU pointer.  Some of the
+	 * initialization code wants a valid arch_curr_cpu() before
+	 * arch_kernel_init() is invoked.
+	 */
+	__asm__ __volatile__("wsr %0, " ZSR_CPU_STR "; rsync" : : "r"(&_kernel.cpus[0]));
+
+	boot_start();
+}
+
+#endif /* CONFIG_RISCV */

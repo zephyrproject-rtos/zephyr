@@ -636,6 +636,46 @@ It can be used through the ``west flash`` command to flash Zephyr applications.
 
 For advanced usage via the GUI or CLI, check out the `STM32CubeProgrammer User Manual`_.
 
+.. _runner_xsdb:
+
+XSDB Flash & Debug Host Tools
+*****************************
+
+The AMD XSDB utility (Xilinx Software Command-line Tool for Debug) is the
+command-line tool used to program and debug many AMD adaptive SoC and FPGA
+platforms.
+It is **not** included in the Zephyr SDK: install `AMD Vitis`_ (or the equivalent
+AMD toolchain distribution for your platform) and ensure the ``xsdb``
+executable is on your system :ref:`PATH <env_vars>`.
+
+Boards that select the ``xsdb`` west runner normally ship a board-specific
+``support/xsdb.cfg`` next to the board definition. See your board's documentation
+for required boot artifacts (PDI, bitstream, FSBL, etc.).
+
+Supported west commands include ``flash``, ``debug``, and ``debugserver``.
+
+For this runner, ``west debug`` and ``west debugserver`` both start the same
+native XSDB interactive session. Unlike GDB-based runners (where
+``debugserver`` starts a remote stub for an IDE), the xsdb runner always
+launches XSDB directly, loads the application through the board ``xsdb.cfg``,
+and leaves you at the XSDB prompt.
+
+.. code-block:: console
+
+   west flash --runner xsdb
+
+   west debug --runner xsdb
+
+   west debugserver --runner xsdb
+
+.. note::
+
+   This is the same class of dependency as other proprietary host tools in this
+   chapter (for example :ref:`J-Link <jlink-debug-host-tools>` or
+   :ref:`STM32CubeCLT <stm32cubeclt-host-tools>`): Zephyr integrates with the
+   tool via the west runner; obtaining and licensing the toolchain is the user's
+   responsibility.
+
 .. _runner_uf2:
 
 UF2 Uploader
@@ -658,6 +698,21 @@ using the ``--device`` option:
 
 For more about the UF2 format and its tooling, see `USB Flashing Format (UF2)`_.
 
+.. _runner_rtkprog:
+
+Realtek Alternate Flash Programmer (rtkprog)
+********************************************
+
+``rtkprog`` is an open source implementation of the protocol needed to flash Realtek Bee family SoCs via UART.
+
+.. code-block:: console
+
+   west flash --runner rtkprog
+
+.. _rtkprog Source Code: https://github.com/a-labs-io/rtkprog
+.. _rtkprog Python package: https://pypi.org/p/rtkprog
+
+
 .. _runner_mpcli:
 
 Realtek Bee Flash Programmer (MPCli) Host Tools
@@ -679,6 +734,19 @@ at: `Realtek Supported Boards`_
 .. code-block:: console
 
    west flash [--runner mpcli] --port /dev/ttyX
+
+
+.. _iar-debug-host-tools:
+.. _runner_iar:
+
+IAR EW & C-Spy Host Tools
+*************************
+
+IAR provides Embedded Workbench and CSpyBat for debugging and flashing. The iar runner works with
+EWARM 10.10 or newer.
+
+.. _AMD Vitis:
+   https://www.amd.com/en/products/software/adaptive-socs-and-fpgas/vitis.html
 
 .. _J-Link Software and Documentation Pack:
    https://www.segger.com/downloads/jlink/#J-LinkSoftwareAndDocumentationPack

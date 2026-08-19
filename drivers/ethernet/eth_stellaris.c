@@ -263,7 +263,6 @@ static void eth_stellaris_isr(const struct device *dev)
 
 	if (isr_val & BIT_MACRIS_TXER) {
 		LOG_ERR("Transmit Frame Error");
-		eth_stats_update_errors_tx(dev_data->iface);
 		dev_data->tx_err = true;
 		k_sem_give(&dev_data->tx_sem);
 	}
@@ -303,7 +302,8 @@ static void eth_stellaris_init(struct net_if *iface)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_stellaris_stats(const struct device *dev)
+static struct net_stats_eth *eth_stellaris_stats(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	struct eth_stellaris_runtime *dev_data = dev->data;
 

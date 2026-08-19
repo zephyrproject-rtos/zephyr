@@ -24,6 +24,13 @@ config NET_L2_ETHERNET_RESERVE_HEADER
 	  header in a separate net_buf. In RX side the Ethernet header
 	  is always part of the first net_buf.
 
+config NET_L2_ETHERNET_EXTRA_TX_PKT_HEADROOM
+	bool "Reserve extra space in first net_buf in TX"
+	select NET_L2_ETHERNET_RESERVE_HEADER
+	help
+	  If enabled, this allows the Ethernet driver to reserve extra
+	  space in the first net_buf before the Ethernet header.
+
 config NET_L2_ETHERNET_MGMT
 	bool "Ethernet network management interface"
 	select NET_MGMT
@@ -32,6 +39,25 @@ config NET_L2_ETHERNET_MGMT
 	  Enable support net_mgmt Ethernet interface which can be used to
 	  configure at run-time Ethernet drivers and L2 settings.
 
+
+config NET_L2_ETHERNET_MCAST_FILTER_COUNT
+	int "Minimum number of L2 multicast addresses per network interface"
+	default 0
+	range 0 255
+	help
+	  Minimum number of link layer multicast addresses that one Ethernet
+	  network interface can listen to at the same time. The addresses are
+	  tracked by the Ethernet L2 so that a driver is asked to change its
+	  receive filter only when a group is joined by its first user or left
+	  by its last one. Both the IP level multicast groups and the packet
+	  socket multicast memberships are stored here, and several IP
+	  multicast addresses can map to the same link layer address.
+
+	  Every subsystem that needs the addresses states how many of them it
+	  can use with its own NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_ option.
+	  Those are summed up at build time, and the larger of that sum and
+	  this option is used, so this only needs to be set when an
+	  application needs more addresses than the subsystems asked for.
 
 config NET_L2_ETHERNET_ACCEPT_MISMATCH_L3_L2_ADDR
 	bool "Accept mismatched L3 and L2 addresses"
@@ -130,6 +156,7 @@ config NET_ETHERNET_FORWARD_UNRECOGNISED_ETHERTYPE
 config NET_QBV
 	bool "Qbv support"
 	depends on PTP_CLOCK
+	select NET_L2_ETHERNET_MGMT
 	help
 	  Enable Qbv support, Qbv is Enhancements for Scheduled Traffic (EST), one
 	  feature of TSN. It provides time "slots" for specific classes of traffic

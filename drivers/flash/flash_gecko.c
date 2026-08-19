@@ -5,7 +5,6 @@
  */
 
 #define DT_DRV_COMPAT silabs_gecko_flash_controller
-#define SOC_NV_FLASH_NODE DT_INST(0, soc_nv_flash)
 
 #include <stddef.h>
 #include <string.h>
@@ -15,13 +14,18 @@
 #include <em_msc.h>
 #include <zephyr/drivers/flash.h>
 #include <soc.h>
+#include "flash_priv.h"
+
+#define SOC_NV_FLASH_NODE SOC_NV_FLASH_CHILD_NODE(0)
 
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(flash_gecko);
 
 struct flash_gecko_data {
+#ifdef CONFIG_MULTITHREADING
 	struct k_sem mutex;
+#endif
 };
 
 
@@ -34,6 +38,29 @@ static bool write_range_is_valid(off_t offset, uint32_t size);
 static bool read_range_is_valid(off_t offset, uint32_t size);
 static int erase_flash_block(off_t offset, size_t size);
 static void flash_gecko_write_protection(bool enable);
+
+static inline void flash_gecko_lock(const struct device *dev)
+{
+#ifdef CONFIG_MULTITHREADING
+	struct flash_gecko_data *const dev_data = dev->data;
+
+	k_sem_take(&dev_data->mutex, K_FOREVER);
+
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline void flash_gecko_unlock(const struct device *dev)
+{
+#ifdef CONFIG_MULTITHREADING
+	struct flash_gecko_data *const dev_data = dev->data;
+
+	k_sem_give(&dev_data->mutex);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
 
 static int flash_gecko_read(const struct device *dev, off_t offset,
 			    void *data,
@@ -55,7 +82,6 @@ static int flash_gecko_read(const struct device *dev, off_t offset,
 static int flash_gecko_write(const struct device *dev, off_t offset,
 			     const void *data, size_t size)
 {
-	struct flash_gecko_data *const dev_data = dev->data;
 	MSC_Status_TypeDef msc_ret;
 	void *address;
 	int ret = 0;
@@ -68,7 +94,7 @@ static int flash_gecko_write(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	k_sem_take(&dev_data->mutex, K_FOREVER);
+	flash_gecko_lock(dev);
 	flash_gecko_write_protection(false);
 
 	address = (uint8_t *)CONFIG_FLASH_BASE_ADDRESS + offset;
@@ -78,7 +104,7 @@ static int flash_gecko_write(const struct device *dev, off_t offset,
 	}
 
 	flash_gecko_write_protection(true);
-	k_sem_give(&dev_data->mutex);
+	flash_gecko_unlock(dev);
 
 	return ret;
 }
@@ -86,7 +112,6 @@ static int flash_gecko_write(const struct device *dev, off_t offset,
 static int flash_gecko_erase(const struct device *dev, off_t offset,
 			     size_t size)
 {
-	struct flash_gecko_data *const dev_data = dev->data;
 	int ret;
 
 	if (!read_range_is_valid(offset, size)) {
@@ -107,13 +132,13 @@ static int flash_gecko_erase(const struct device *dev, off_t offset,
 		return 0;
 	}
 
-	k_sem_take(&dev_data->mutex, K_FOREVER);
+	flash_gecko_lock(dev);
 	flash_gecko_write_protection(false);
 
 	ret = erase_flash_block(offset, size);
 
 	flash_gecko_write_protection(true);
-	k_sem_give(&dev_data->mutex);
+	flash_gecko_unlock(dev);
 
 	return ret;
 }
@@ -202,9 +227,11 @@ static int flash_gecko_get_size(const struct device *dev, uint64_t *size)
 
 static int flash_gecko_init(const struct device *dev)
 {
-	struct flash_gecko_data *const dev_data = dev->data;
 
+#ifdef CONFIG_MULTITHREADING
+	struct flash_gecko_data *const dev_data = dev->data;
 	k_sem_init(&dev_data->mutex, 1, 1);
+#endif
 
 	MSC_Init();
 

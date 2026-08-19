@@ -9,8 +9,8 @@
 #include <string.h>
 #include "wrapper.h"
 
-K_MEM_SLAB_DEFINE(cmsis_rtos_msgq_cb_slab, sizeof(struct cmsis_rtos_msgq_cb),
-		  CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
+K_MEM_SLAB_DEFINE_TYPE(cmsis_rtos_msgq_cb_slab, struct cmsis_rtos_msgq_cb,
+		       CONFIG_CMSIS_V2_MSGQ_MAX_COUNT);
 
 static const osMessageQueueAttr_t init_msgq_attrs = {
 	.name = "ZephyrMsgQ",

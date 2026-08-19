@@ -111,10 +111,10 @@ struct dac_channel_cfg {
  * @return Static initializer for an dac_channel_cfg structure.
  */
 #define DAC_CHANNEL_CFG_DT(node_id) { \
+	.channel_id       = DT_REG_ADDR(node_id),                      \
 	.resolution       = DT_PROP_OR(node_id, zephyr_resolution, 0), \
 	.buffered         = DT_PROP(node_id, zephyr_buffered),         \
 	.internal         = DT_PROP(node_id, zephyr_internal),         \
-	.channel_id       = DT_REG_ADDR(node_id),                      \
 }
 
 /**
@@ -254,12 +254,12 @@ struct dac_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_NAME(node_id, io_channels, name), \
 		    (DAC_DT_SPEC_GET_BY_NAME(node_id, name)), (default_value))
 
-/** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get DAC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance by name.
  *
  * @see DAC_DT_SPEC_GET_BY_NAME()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  *
  * @return Static initializer for an dac_dt_spec structure.
@@ -271,7 +271,7 @@ struct dac_dt_spec {
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_NAME(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param name Channel name.
  * @param default_value Fallback value to expand to.
  *
@@ -365,12 +365,12 @@ struct dac_dt_spec {
 	COND_CODE_1(DT_PROP_HAS_IDX(node_id, io_channels, idx), \
 		    (DAC_DT_SPEC_GET_BY_IDX(node_id, idx)), (default_value))
 
-/** @brief Get DAC io-channel information from a DT_DRV_COMPAT devicetree
+/** @brief Get DAC io-channel information from a @c DT_DRV_COMPAT devicetree
  *         instance.
  *
  * @see DAC_DT_SPEC_GET_BY_IDX()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  *
  * @return Static initializer for an dac_dt_spec structure.
@@ -381,7 +381,7 @@ struct dac_dt_spec {
 /**
  * @brief Like DAC_DT_SPEC_INST_GET_BY_IDX(), with a fallback to a default value.
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param idx Channel index.
  * @param default_value Fallback value to expand to.
  *
@@ -422,7 +422,7 @@ struct dac_dt_spec {
  *
  * @see DAC_DT_SPEC_GET()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  *
  * @return Static initializer for an dac_dt_spec structure.
  */
@@ -433,7 +433,7 @@ struct dac_dt_spec {
  *
  * @see DAC_DT_SPEC_GET_OR()
  *
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @param default_value Fallback value to expand to.
  *
  * @return Static initializer for a struct dac_dt_spec for the property,
@@ -443,38 +443,35 @@ struct dac_dt_spec {
 	DAC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{DAC,dac_interface}
+ * @{
  */
 
-/*
- * Type definition of DAC API function for configuring a channel.
+/**
+ * @brief Type definition of DAC API function for configuring a channel.
  * See dac_channel_setup() for argument descriptions.
  */
 typedef int (*dac_api_channel_setup)(const struct device *dev,
 				     const struct dac_channel_cfg *channel_cfg);
 
-/*
- * Type definition of DAC API function for setting a write request.
+/**
+ * @brief Type definition of DAC API function for setting a write request.
  * See dac_write_value() for argument descriptions.
  */
 typedef int (*dac_api_write_value)(const struct device *dev,
 				    uint8_t channel, uint32_t value);
 
-/*
- * DAC driver API
- *
- * This is the mandatory API any DAC driver needs to expose.
+/**
+ * @driver_ops{DAC}
  */
 __subsystem struct dac_driver_api {
+	/** @driver_ops_mandatory @copybrief dac_channel_setup */
 	dac_api_channel_setup channel_setup;
+	/** @driver_ops_mandatory @copybrief dac_write_value */
 	dac_api_write_value   write_value;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Configure a DAC channel.
@@ -495,10 +492,7 @@ __syscall int dac_channel_setup(const struct device *dev,
 static inline int z_impl_dac_channel_setup(const struct device *dev,
 					   const struct dac_channel_cfg *channel_cfg)
 {
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->channel_setup(dev, channel_cfg);
+	return DEVICE_API_GET(dac, dev)->channel_setup(dev, channel_cfg);
 }
 
 /**
@@ -535,10 +529,7 @@ __syscall int dac_write_value(const struct device *dev, uint8_t channel,
 static inline int z_impl_dac_write_value(const struct device *dev,
 						uint8_t channel, uint32_t value)
 {
-	const struct dac_driver_api *api =
-				(const struct dac_driver_api *)dev->api;
-
-	return api->write_value(dev, channel, value);
+	return DEVICE_API_GET(dac, dev)->write_value(dev, channel, value);
 }
 
 /**
@@ -601,7 +592,7 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 }
 
 /**
- * @brief Convert a raw DAC value to microvolts.
+ * @brief Convert a microvolts value to a raw DAC value.
  *
  * @see dac_x_to_raw_fn
  */

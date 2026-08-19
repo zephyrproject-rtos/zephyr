@@ -26,7 +26,7 @@ LOG_MODULE_REGISTER(can_stm32, CONFIG_CAN_LOG_LEVEL);
 
 #define CAN_STM32_NUM_FILTER_BANKS (14)
 #define CAN_STM32_MAX_FILTER_ID \
-	(CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS + CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS * 2)
+	(CONFIG_CAN_STM32_BXCAN_MAX_EXT_ID_FILTERS + CONFIG_CAN_STM32_BXCAN_MAX_STD_ID_FILTERS)
 
 #define CAN_STM32_FIRX_STD_IDE_POS   (3U)
 #define CAN_STM32_FIRX_STD_RTR_POS   (4U)
@@ -607,7 +607,7 @@ static int can_stm32_init(const struct device *dev)
 
 	if (cfg->common.phy != NULL) {
 		if (!device_is_ready(cfg->common.phy)) {
-			LOG_ERR("CAN transceiver not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->common.phy);
 			return -ENODEV;
 		}
 	}
@@ -821,6 +821,11 @@ static int can_stm32_send(const struct device *dev, const struct can_frame *fram
 		LOG_DBG("Using TX mailbox 2");
 		mailbox = &can->sTxMailBox[2];
 		mb = &data->mb2;
+	} else {
+		CODE_UNREACHABLE;
+		/* We should never end up here */
+		k_mutex_unlock(&data->inst_mutex);
+		return -EIO;
 	}
 
 	mb->tx_callback = callback;

@@ -41,10 +41,8 @@ void scanned_cb(struct bt_le_ext_adv *adv, struct bt_le_ext_adv_scanned_info *in
 	/* Check if the scan request comes from a new address */
 	if (bt_addr_le_cmp(&old_addr, &new_addr)) {
 		int64_t new_time, diff, time_diff_ms, rpa_timeout_ms;
-		char addr_str[BT_ADDR_LE_STR_LEN];
 
-		bt_addr_le_to_str(info->addr, addr_str, sizeof(addr_str));
-		printk("Scanned request from new address : %s\n", addr_str);
+		printk("Scanned request from new address : %s\n", bt_addr_le_str(info->addr));
 
 		/* Ensure the RPA rotation occurs within +-10% of CONFIG_BT_RPA_TIMEOUT */
 		new_time = k_uptime_get();

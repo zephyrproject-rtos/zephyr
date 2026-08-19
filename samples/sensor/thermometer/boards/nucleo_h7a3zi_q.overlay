@@ -17,6 +17,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_sda_pb7 &i2c1_scl_pb6>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	compatible = "st,stm32-i2c-v2";
 	status = "okay";
 

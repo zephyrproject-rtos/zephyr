@@ -32,6 +32,10 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	if (!net_eth_is_vlan_interface(iface)) {
+		return;
+	}
+
 	if (!ud->first) {
 		ud->first = iface;
 		return;

@@ -14,11 +14,15 @@
 		reg = <0x52150000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 		status = "disabled";
 
 		flash0: flash@12000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x12000000 DT_SIZE_K(256)>;
+			ranges = <0x0 0x12000000 DT_SIZE_K(256)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			write-block-size = <512>;
 			erase-block-size = <512>;
 		};

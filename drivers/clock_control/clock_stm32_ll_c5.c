@@ -31,6 +31,7 @@
 #define PSIREF_24000000	LL_RCC_PSIREF_24MHZ
 #define PSIREF_16000000	LL_RCC_PSIREF_16MHZ
 #define PSIREF_8000000	LL_RCC_PSIREF_8MHZ
+#define PSIREF_0	0	/* Dummy value in case STM32_HSE_FREQ is defined to 0 */
 
 #define psi_ref(v) CONCAT(PSIREF_, v)
 
@@ -152,7 +153,7 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_PSIK) && IS_ENABLED(STM32_PSIK_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
-	    (src_clk == STM32_SRC_CK48)) {
+	    ((src_clk == STM32_SRC_CK48) && IS_ENABLED(STM32_CK48_ENABLED))) {
 		return 0;
 	}
 

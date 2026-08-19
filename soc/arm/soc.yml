@@ -13,6 +13,9 @@ family:
       - name: cpu1
   - name: mps3
     socs:
+    - name: an536
+      cpuclusters:
+      - name: cpu0
     - name: corstone300
     - name: corstone310
   - name: mps4
@@ -34,6 +37,7 @@ family:
     - name: v8a
     - name: v9a
     - name: a320
+    - name: v8a_aarch32
   - name: fvp_aemv8r
     socs:
     - name: fvp_aemv8r_aarch64

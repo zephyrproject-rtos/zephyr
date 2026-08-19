@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf54h20dk_nrf54h20_cpurad_common.dtsi"
+
+/delete-node/ &ipc0;
+
+/ {
+	soc {
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_tx: memory@2f0bf800 {
+				reg = <0x2f0bf800 DT_SIZE_K(2)>;
+			};
+
+			sram_rx: memory@2f0bf000 {
+				reg = <0x2f0bf000 DT_SIZE_K(2)>;
+			};
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icmsg";
+			dcache-alignment = <32>;
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			mboxes = <&cpuapp_bellboard 18>, <&cpurad_bellboard 12>;
+			mbox-names = "tx", "rx";
+			status = "okay";
+		};
+	};
+};

@@ -650,7 +650,7 @@
 
 		emac0: ethernet@40480000 {
 			reg = <0x40480000 0x4000>;
-			compatible = "nxp,s32-gmac";
+			compatible = "nxp,s32-gmac", "snps,dwmac";
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
 			interrupt-names = "common", "tx", "rx", "safety";
 			status = "disabled";
@@ -658,7 +658,7 @@
 
 		mdio0: mdio@40480200 {
 			reg = <0x40480200 0x8>;
-			compatible = "nxp,s32-gmac-mdio";
+			compatible = "snps,dwmac-mdio";
 			clocks = <&clock NXP_S32_AIPS_PLAT_CLK>;
 			#address-cells = <1>;
 			#size-cells = <0>;

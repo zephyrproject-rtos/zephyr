@@ -23,7 +23,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "bs_pc_backchannel.h"
 
 #define CLIENT_CLIENT_CHAN 0
@@ -70,7 +70,7 @@ static int gatt_write(struct bt_conn *conn, uint16_t handle, const uint8_t *writ
 	UNSET_FLAG(gatt_write_flag);
 
 	/* `bt_gatt_write` is used instead of `bt_gatt_subscribe` and
-	 * `bt_gatt_unsubscribe` to bypass subscribtion checks of GATT client
+	 * `bt_gatt_unsubscribe` to bypass subscription checks of GATT client
 	 */
 	err = bt_gatt_write(conn, &params);
 	if (err) {
@@ -108,11 +108,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
 	int err;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-
-	LOG_DBG("Device found: %s (RSSI %d)", addr_str, rssi);
+	LOG_DBG("Device found: %s (RSSI %d)", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -122,23 +119,21 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		TEST_FAIL("Could not connect to peer: %s (err %d)", addr_str, err);
+		TEST_FAIL("Could not connect to peer: %s (err %d)", bt_addr_le_str(addr), err);
 	}
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	const bt_addr_le_t *addr;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	addr = bt_conn_get_dst(conn);
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
 	if (err) {
-		TEST_FAIL("Failed to connect to %s (err %d)", addr_str, err);
+		TEST_FAIL("Failed to connect to %s (err %d)", bt_addr_le_str(addr), err);
 	}
 
-	LOG_DBG("Connected: %s", addr_str);
+	LOG_DBG("Connected: %s", bt_addr_le_str(addr));
 
 	if (conn == default_conn) {
 		SET_FLAG(connected_flag);
@@ -147,11 +142,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr_str, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	SET_FLAG(disconnected_flag);
 
@@ -159,21 +150,16 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr_str, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 		SET_FLAG(security_updated_flag);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr_str, level, err);
+		LOG_DBG("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
 	}
 }
 
@@ -226,7 +212,7 @@ static void connect_pair_subscribe(void)
 
 	/* confirm to server that we subscribed */
 	backchannel_sync_send(SERVER_CLIENT_CHAN, SERVER_ID);
-	/* wait for server to check that the subscribtion is well registered */
+	/* wait for server to check that the subscription is well registered */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 }
 
@@ -237,7 +223,7 @@ static void connect_unsubscribe(void)
 	WAIT_FOR_FLAG(connected_flag);
 	UNSET_FLAG(connected_flag);
 
-	/* wait for server to check that the subscribtion has not been restored */
+	/* wait for server to check that the subscription has not been restored */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 
 	LOG_DBG("Trying to unsubscribe without being paired...");
@@ -269,7 +255,7 @@ static void connect_restore_sec(void)
 
 	/* notify the end of security update to server */
 	backchannel_sync_send(SERVER_CLIENT_CHAN, SERVER_ID);
-	/* wait for server to check that the subscribtion has been restored */
+	/* wait for server to check that the subscription has been restored */
 	backchannel_sync_wait(SERVER_CLIENT_CHAN, SERVER_ID);
 
 	/* wait for server to check that the subscription no longer exist */

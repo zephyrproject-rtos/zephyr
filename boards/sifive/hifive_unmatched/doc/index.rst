@@ -47,14 +47,14 @@ Load applications on DDR and run as follows:
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: hifive_unleashed//s7
+         :board: hifive_unmatched//s7
          :goals: flash
 
    .. group-tab:: U74
 
       .. zephyr-app-commands::
          :zephyr-app: samples/hello_world
-         :board: hifive_unmatched///u74
+         :board: hifive_unmatched//u74
          :goals: flash
 
 Debugging

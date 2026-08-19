@@ -31,8 +31,7 @@ import tempfile
 import serial
 from colorama import Fore, Style
 from elftools.elf.elffile import ELFFile
-from west.app.main import WestApp
-from west.configuration import Configuration, config
+from west.configuration import Configuration
 from west.util import west_topdir
 
 STATUS_REPLY_PATTERN = r"(0|1)\s(0|1)\s(0|1)"
@@ -92,7 +91,7 @@ def generate_reverse_symbol_lookup(addr_to_symbol):
     """Generate a reverse symbol lookup dict.
 
     Given a dict of ELF symbols indexed by the symbol address, return the same
-    dict but indexed by the symbols intead of by the symbol address, allowing
+    dict but indexed by the symbols instead of by the symbol address, allowing
     a reverse lookup, i.e. look up for a symbol address given a symbol.
     """
 
@@ -118,23 +117,6 @@ def get_zephyr_build_dir(args, die_if_not_set=False):
     finally:
         sys.path.pop(0)
 
-    # WestApp class only populates the config attributes if run() method is
-    # called. Since run() is used effectively to run commands -- which is not
-    # the purpose here, a new derivated class which populates the config
-    # attributes when initialized is defined below. Without config being
-    # populated method get_build_dir() won't correctly find/guess the Zephyr
-    # build dir and will simply return a default at best.
-    class WestAppNoRun(WestApp):
-        def __init__(self):
-            super().__init__()
-
-            self.config = Configuration(topdir=west_topdir())
-            self.config._copy_to_configparser(config)
-
-    # Init config attributes, so get_build_dir() works fine.
-    # pylint: disable=unused-variable
-    west_app = WestAppNoRun()  # noqa: F841
-
     # Although get_build_dir() checks args to see if build_dir is provided,
     # returning it if provided, it neither checks if the build_dir exists nor
     # checks if it is a valid Zephyr build dir, hence the checks below.
@@ -147,7 +129,11 @@ def get_zephyr_build_dir(args, die_if_not_set=False):
             return pathlib.Path(args.build_dir)
 
     # If build_dir is not given by the user, try to guess it.
-    build_dir = get_build_dir(args, die_if_none=False)
+    build_dir = get_build_dir(
+        args,
+        die_if_none=False,
+        config=Configuration(topdir=west_topdir()),
+    )
 
     if build_dir is None and die_if_not_set:
         sys.exit("Could not determine build dir. Please provide one via '--build-dir'.")
@@ -703,11 +689,7 @@ def get_traces_in_trace_event_format(tmpdir, elf, demangle, verbose=False):
     named_thread_list = []
     for trace in ge:
         event_type, func, tid, cpu, _, ts, tn = trace.values()
-
-        # Use 4 LSB in tid (address) as the final thread ID just to ease
-        # displaying it in Perfetto. Hardly there will be a collision.
         tid = int(tid, 0)
-        tid = tid & 0xFFFF
 
         # Set phase type according with the Event
         if event_type == "entry":
@@ -1065,7 +1047,7 @@ def trace(args):
     # 'data' (binary) file and 'metadata' file written in the TSDL, hence it's not possible to
     # specify an alternative path for 'data' or 'metadata' files. Thus here a temporary dir is
     # created and a copy of the 'metadata' is copied to it together with the binary stream extracted
-    # from the target, which is saved as 'data' file. The tempory dir is then passed to the
+    # from the target, which is saved as 'data' file. The temporary dir is then passed to the
     # babeltrace methods.
     with tempfile.TemporaryDirectory() as tmpdir:
         if args.verbose:

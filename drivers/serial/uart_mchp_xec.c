@@ -318,6 +318,15 @@ static int uart_xec_pm_action(const struct device *dev, enum pm_device_action ac
 		soc_set_bit8(ub + XEC_UART_LD_ACT_OFS, XEC_UART_LD_ACTIVATE_POS);
 		break;
 	case PM_DEVICE_ACTION_SUSPEND:
+		/* Drain any in-flight TX before suspend the UART. The
+		 * poll_out path returns once the byte is in THR, but the
+		 * byte may still be in the shift register. Spin only if there
+		 * is something to drain.
+		 */
+		while ((sys_read8(ub + XEC_UART_LSR_OFS) & XEC_UART_LSR_TEMT) !=
+		       XEC_UART_LSR_TEMT) {
+		}
+
 		/* Enable UART wake interrupt */
 		soc_clear_bit8(ub + XEC_UART_LD_ACT_OFS, XEC_UART_LD_ACTIVATE_POS);
 		if ((dev_cfg->wakeup_source) && (dev_cfg->wakerx_gpio.port != NULL)) {
@@ -755,9 +764,8 @@ static int uart_xec_irq_is_pending(const struct device *dev)
 
 /* Update cached contents of IIR
  * param:  dev UART device struct
- * return: Always 1
  */
-static int uart_xec_irq_update(const struct device *dev)
+static void uart_xec_irq_update(const struct device *dev)
 {
 	const struct uart_xec_device_config *const dev_cfg = dev->config;
 	struct uart_xec_dev_data *dev_data = dev->data;
@@ -768,7 +776,6 @@ static int uart_xec_irq_update(const struct device *dev)
 
 	k_spin_unlock(&dev_data->lock, key);
 
-	return 1;
 }
 
 /* Set the callback function pointer for IRQ.

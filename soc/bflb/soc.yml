@@ -17,6 +17,17 @@ family:
     - name: bl618m05q2i
     - name: bl618m50q2i
     - name: bl618m65q2i
+  - name: bl616cl
+    socs:
+    - name: bl616cl3240
+    - name: bl616cl3250
+    - name: bl616cl3260
+    - name: bl616cl4845
+    - name: bl616cl4855
+    - name: bl616cl4865
+    - name: bl616cl4846
+    - name: bl616cl4856
+    - name: bl616cl4866
   - name: bl70x
     socs:
     - name: bl702sa0q2i
@@ -29,6 +40,12 @@ family:
   - name: bl70xl
     socs:
     - name: bl702l10q2i
-    - name: bl704l10q2i
     - name: bl704l22q2h
+    - name: bl704l10q2iw
+    - name: bl704l20q2iw
+    - name: bl702la0q2i
+  - name: bl808
+    socs:
+    - name: bl808c09q2i
+    - name: bl808d09q2i
 vendor: bflb

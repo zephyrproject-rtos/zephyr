@@ -5,6 +5,7 @@
  *
  */
 
+#include <zephyr/init.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/sys_heap.h>
 #include <libmctp.h>
@@ -16,7 +17,7 @@ static struct {
 	struct sys_heap heap;
 } mctp_heap;
 
-static void *mctp_heap_alloc(size_t bytes)
+void *mctp_heap_alloc(size_t bytes)
 {
 	k_spinlock_key_t key = k_spin_lock(&mctp_heap.lock);
 
@@ -27,7 +28,7 @@ static void *mctp_heap_alloc(size_t bytes)
 	return ptr;
 }
 
-static void mctp_heap_free(void *ptr)
+void mctp_heap_free(void *ptr)
 {
 	k_spinlock_key_t key = k_spin_lock(&mctp_heap.lock);
 
@@ -36,22 +37,26 @@ static void mctp_heap_free(void *ptr)
 	k_spin_unlock(&mctp_heap.lock, key);
 }
 
-static void *mctp_heap_realloc(void *ptr, size_t bytes)
+static void *mctp_heap_msg_alloc(size_t bytes, void *ctx)
 {
-	k_spinlock_key_t key = k_spin_lock(&mctp_heap.lock);
+	ARG_UNUSED(ctx);
 
-	void *new_ptr = sys_heap_realloc(&mctp_heap.heap, ptr, bytes);
+	return mctp_heap_alloc(bytes);
+}
 
-	k_spin_unlock(&mctp_heap.lock, key);
+static void mctp_heap_msg_free(void *ptr, void *ctx)
+{
+	ARG_UNUSED(ctx);
 
-	return new_ptr;
+	mctp_heap_free(ptr);
 }
 
 
 static int mctp_heap_init(void)
 {
 	sys_heap_init(&mctp_heap.heap, MCTP_MEM, sizeof(MCTP_MEM));
-	mctp_set_alloc_ops(mctp_heap_alloc, mctp_heap_free, mctp_heap_realloc);
+	mctp_set_alloc_ops(mctp_heap_alloc, mctp_heap_free,
+			   mctp_heap_msg_alloc, mctp_heap_msg_free);
 	return 0;
 }
 

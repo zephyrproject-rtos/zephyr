@@ -24,10 +24,7 @@ static void uart_fifo_callback(const struct device *dev, void *user_data)
 	ARG_UNUSED(user_data);
 
 	/* Verify uart_irq_update() */
-	if (!uart_irq_update(dev)) {
-		TC_PRINT("retval should always be 1\n");
-		return;
-	}
+	uart_irq_update(dev);
 
 	/* Verify uart_irq_tx_ready() */
 	/* Note that TX IRQ may be disabled, but uart_irq_tx_ready() may

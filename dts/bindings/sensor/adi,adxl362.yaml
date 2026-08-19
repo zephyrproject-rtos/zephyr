@@ -50,7 +50,8 @@ properties:
     type: int
     description: |
       Specify the FIFO watermark level in frame count.
-      Valid range: 0 - 511
+    min: 0
+    max: 511
 
 examples:
   - |

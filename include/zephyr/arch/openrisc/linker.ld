@@ -38,8 +38,8 @@
 #define ROM_SIZE (CONFIG_FLASH_SIZE * 1024)
 #endif
 
-#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
-#define RAM_BASE CONFIG_SRAM_BASE_ADDRESS
+#define RAM_BASE DT_CHOSEN_SRAM_ADDR
+#define RAM_SIZE DT_CHOSEN_SRAM_SIZE
 
 #define _EXCEPTION_SECTION_NAME	exception
 
@@ -57,13 +57,14 @@ MEMORY
 
 ENTRY(CONFIG_KERNEL_ENTRY)
 
-PROVIDE (__memory_base = CONFIG_SRAM_BASE_ADDRESS);
-PROVIDE (__memory_size = CONFIG_SRAM_SIZE * 1024);
-PROVIDE (__stack = CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE - 1) * 1024);
+PROVIDE (__memory_base = RAM_BASE);
+PROVIDE (__memory_size = RAM_SIZE);
+PROVIDE (__stack = RAM_BASE + (RAM_SIZE - 1024));
 
 SECTIONS
 {
 #include <zephyr/linker/rel-sections.ld>
+#include <zephyr/linker/llext-sections.ld>
 
     SECTION_PROLOGUE(.plt,,)
 	{
@@ -189,6 +190,12 @@ SECTIONS
 		 */
 		 . = ALIGN(4);
 		 __bss_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
+
 		 *(.dynbss)
 		 *(.sbss)
 		 *(.sbss.*)

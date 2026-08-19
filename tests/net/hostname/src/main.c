@@ -360,7 +360,8 @@ ZTEST(net_hostname, test_hostname_get)
 	zassert_mem_equal(hostname, config_hostname,
 			  sizeof(CONFIG_NET_HOSTNAME) - 1, "");
 
-	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE)) {
+	if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE) &&
+	    !IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)) {
 		char mac[6];
 		int ret;
 
@@ -378,8 +379,13 @@ ZTEST(net_hostname, test_hostname_set)
 		int ret;
 
 		ret = net_hostname_set_postfix("foobar", sizeof("foobar") - 1);
-		zassert_equal(ret, -EALREADY,
-			      "Could set hostname postfix (%d)", ret);
+		if (IS_ENABLED(CONFIG_NET_HOSTNAME_UNIQUE_UPDATE)) {
+			zassert_equal(ret, 0,
+				      "Could not update hostname postfix (%d)", ret);
+		} else {
+			zassert_equal(ret, -EALREADY,
+				      "Could set hostname postfix (%d)", ret);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_HOSTNAME_DYNAMIC)) {

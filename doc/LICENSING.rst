@@ -10,6 +10,8 @@ are not covered by the `Apache 2.0 License`_. In some places
 there is no LICENSE file or way to put a LICENSE file there, so we describe the
 licensing in this document.
 
+.. zephyr-keep-sorted-start re(^\w) ignorecase
+
 Bootstrap JavaScript and CSS Files
 ----------------------------------
 
@@ -20,18 +22,6 @@ Bootstrap JavaScript and CSS Files
 
   * :zephyr_file:`scripts/dashboard/static/js/bootstrap-chop.js`
   * :zephyr_file:`scripts/dashboard/static/css/bootstrap-chop.css`
-
-Continuous Integration Scripts
-------------------------------
-
-* *Origin:* Linux Kernel
-* *Licensing:* `GPLv2 License`_
-* *Impact:* These files are used in Continuous Integration (CI) and never linked into the firmware.
-* *Files:*
-
-  * :zephyr_file:`scripts/checkpatch.pl`
-  * :zephyr_file:`scripts/checkstack.pl`
-  * :zephyr_file:`scripts/spelling.txt`
 
 Coccinelle Scripts
 ------------------
@@ -55,6 +45,37 @@ Coccinelle Scripts
     * :zephyr_file:`scripts/coccinelle/returnvar.cocci`
     * :zephyr_file:`scripts/coccinelle/semicolon.cocci`
 
+Continuous Integration Scripts
+------------------------------
+
+* *Origin:* Linux Kernel
+* *Licensing:* `GPLv2 License`_
+* *Impact:* These files are used in Continuous Integration (CI) and never linked into the firmware.
+* *Files:*
+
+  * :zephyr_file:`scripts/checkpatch.pl`
+  * :zephyr_file:`scripts/checkstack.pl`
+  * :zephyr_file:`scripts/spelling.txt`
+
+ENE KB1200_EVB Board OpenOCD Configuration
+------------------------------------------
+
+* *Licensing:* `GPLv2 License`_
+* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the
+  :zephyr:board:`kb1200_evb` board. It is never linked into the firmware.
+* *Files:*
+
+  * :zephyr_file:`boards/ene/kb1200_evb/support/openocd.cfg`
+
+FUSE Interface Definition Header File
+--------------------------------------
+
+* *Licensing:* `BSD-2-clause`_
+* *Impact:* This header is used in Zephyr build only if :kconfig:option:`CONFIG_FUSE_CLIENT` is enabled.
+* *Files*:
+
+  * :zephyr_file:`subsys/fs/fuse_client/fuse_abi.h`
+
 GCOV Coverage Header File
 -------------------------
 
@@ -66,15 +87,64 @@ GCOV Coverage Header File
 
   * :zephyr_file:`subsys/testsuite/coverage/coverage.h`
 
-ENE KB1200_EVB Board OpenOCD Configuration
-------------------------------------------
+Godot Documentation Theme Files
+-------------------------------
 
-* *Licensing:* `GPLv2 License`_
-* *Impact:* This file is used by `OpenOCD`_ when programming and debugging the
-  :zephyr:board:`kb1200_evb` board. It is never linked into the firmware.
+* *Origin:* `Godot Engine documentation <https://github.com/godotengine/godot-docs>`_
+* *Licensing:* `CC-BY-3.0`_
+* *Impact:* These files customize the Sphinx Read the Docs theme used to render the documentation
+  and were used as a starting point for Zephyr's own theme. They are never linked into a firmware.
 * *Files:*
 
-  * :zephyr_file:`boards/ene/kb1200_evb/support/openocd.cfg`
+  * :zephyr_file:`doc/_static/css/custom.css`
+  * :zephyr_file:`doc/_static/css/dark.css`
+  * :zephyr_file:`doc/_static/css/light.css`
+  * :zephyr_file:`doc/_static/js/custom.js`
+
+noUiSlider Library
+------------------
+
+* *Origin:* `noUiSlider <https://refreshless.com/nouislider/>`_ (Léon Gersen and contributors)
+* *Licensing:* `MIT License`_
+* *Impact:* These files are used in the documentation to provide the flash/RAM range sliders in the
+  board catalog and are never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_extensions/zephyr/domain/static/js/nouislider.min.js`
+  * :zephyr_file:`doc/_extensions/zephyr/domain/static/css/nouislider.min.css`
+
+OpenThread Spinel HDLC RCP Host Interface Files
+-----------------------------------------------
+
+* *Origin:* OpenThread
+* *Licensing:* `BSD-3-clause`_
+* *Impact:* These files are only linked into the firmware if :kconfig:option:`CONFIG_HDLC_RCP_IF` is
+  enabled.
+* *Files*:
+
+  * :zephyr_file:`modules/openthread/platform/hdlc_interface.hpp`
+  * :zephyr_file:`modules/openthread/platform/radio_spinel.cpp`
+  * :zephyr_file:`modules/openthread/platform/hdlc_interface.cpp`
+
+Popper.js Library
+-----------------
+
+* *Origin:* `Popper.js <https://popper.js.org/>`_ (Federico Zivolo and contributors)
+* *Licensing:* `MIT License`_
+* *Impact:* This file is used by Tippy.js to position tooltips in the documentation's Doxygen
+  tooltip extension and is never linked into a firmware.
+* *Files:*
+
+  * :zephyr_file:`doc/_extensions/zephyr/doxytooltip/static/tippy/popper.min.js`
+
+Python Devicetree library test files
+------------------------------------
+
+* *Licensing:* `BSD-3-clause`_
+* *Impact:* These are only used for testing and never linked with the firmware.
+* *Files*:
+
+  * Various yaml files under ``scripts/dts/python-devicetree/tests``
 
 Thread-Metric RTOS Test Suite Source Files
 ------------------------------------------
@@ -97,36 +167,16 @@ Thread-Metric RTOS Test Suite Source Files
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_preemptive_scheduling_test.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_synchronization_processing_test.c`
 
-OpenThread Spinel HDLC RCP Host Interface Files
------------------------------------------------
+Tippy.js Library
+----------------
 
-* *Origin:* OpenThread
-* *Licensing:* `BSD-3-clause`_
-* *Impact:* These files are only linked into the firmware if :kconfig:option:`CONFIG_HDLC_RCP_IF` is
-  enabled.
-* *Files*:
+* *Origin:* `Tippy.js <https://atomiks.github.io/tippyjs/>`_ (atomiks)
+* *Licensing:* `MIT License`_
+* *Impact:* This file is used by the documentation's Doxygen tooltip extension to render tooltips
+  and is never linked into a firmware.
+* *Files:*
 
-  * :zephyr_file:`modules/openthread/platform/hdlc_interface.hpp`
-  * :zephyr_file:`modules/openthread/platform/radio_spinel.cpp`
-  * :zephyr_file:`modules/openthread/platform/hdlc_interface.cpp`
-
-Python Devicetree library test files
-------------------------------------
-
-* *Licensing:* `BSD-3-clause`_
-* *Impact:* These are only used for testing and never linked with the firmware.
-* *Files*:
-
-  * Various yaml files under ``scripts/dts/python-devicetree/tests``
-
-FUSE Interface Definition Header File
---------------------------------------
-
-* *Licensing:* `BSD-2-clause`_
-* *Impact:* This header is used in Zephyr build only if :kconfig:option:`CONFIG_FUSE_CLIENT` is enabled.
-* *Files*:
-
-  * :zephyr_file:`subsys/fs/fuse_client/fuse_abi.h`
+  * :zephyr_file:`doc/_extensions/zephyr/doxytooltip/static/tippy/tippy-bundle.umd.min.js`
 
 WireGuard VPN Files
 -------------------
@@ -145,6 +195,8 @@ WireGuard VPN Files
   * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/hchacha20.h`
   * :zephyr_file:`subsys/net/lib/wireguard/crypto/refc/hchacha20.c`
 
+.. zephyr-keep-sorted-stop
+
 .. _Apache 2.0 License:
    https://github.com/zephyrproject-rtos/zephyr/blob/main/LICENSE
 
@@ -159,6 +211,9 @@ WireGuard VPN Files
 
 .. _BSD-2-clause:
    https://opensource.org/license/bsd-2-clause
+
+.. _CC-BY-3.0:
+   https://creativecommons.org/licenses/by/3.0/
 
 .. _Coccinelle:
    https://coccinelle.gitlabpages.inria.fr/website/

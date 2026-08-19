@@ -47,6 +47,11 @@ config TEST_TYPE_VER_CHECK_SPECIFIC
 	help
 	  Test board version snippet application with specific board version
 
+config TEST_TYPE_FILE_LIST
+	bool "Test Type: File list"
+	help
+	  Test list support for snippet conf and overlay files.
+
 endchoice
 
 # Test values set by the snippet config overlays and tested by the test logic
@@ -78,3 +83,16 @@ config TEST_VER_CHECK_SPECIFIC_VERSION_APPLIED
 	bool "Test version check with board version snippet applied"
 	help
 	  This option's value should be set by the ver_check snippet.
+
+# Used for testing board file list variables
+config TEST_BOARD1
+	bool "Test value set by the snippet file list board 1 config overlay"
+	help
+	  This option's value should be overridden by the snippet config
+	  overlays.
+
+config TEST_BOARD2
+	bool "Test value set by the snippet file list board 2 config overlay"
+	help
+	  This option's value should be overridden by the snippet config
+	  overlays.

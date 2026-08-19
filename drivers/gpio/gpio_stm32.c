@@ -23,7 +23,6 @@
 #include <zephyr/drivers/interrupt_controller/gpio_intc_stm32.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
-#include <zephyr/drivers/misc/stm32_wkup_pins/stm32_wkup_pins.h>
 #include <zephyr/dt-bindings/gpio/stm32-gpio.h>
 
 #include "stm32_hsem.h"
@@ -52,64 +51,75 @@ static void gpio_stm32_isr(gpio_port_pins_t pin, void *arg)
 /**
  * @brief Common gpio flags to custom flags
  */
-static int gpio_stm32_flags_to_conf(gpio_flags_t flags, uint32_t *pincfg)
+static int gpio_stm32_flags_to_conf(gpio_flags_t flags, pinctrl_soc_pin_t *pincfg)
 {
-	uint32_t cfg;
+	gpio_flags_t pupd = flags & (GPIO_PULL_UP | GPIO_PULL_DOWN);
+	pinctrl_soc_pin_t cfg;
 
 	if ((flags & GPIO_OUTPUT) != 0) {
 		/* Output only or Output/Input */
-
 		cfg = STM32_PINCFG_MODE_OUTPUT;
 
-		if ((flags & GPIO_SINGLE_ENDED) != 0) {
-			if (flags & GPIO_LINE_OPEN_DRAIN) {
-				cfg |= STM32_PINCFG_OPEN_DRAIN;
-			} else  {
-				/* Output can't be open source */
-				return -ENOTSUP;
-			}
-		} else {
+		if ((flags & GPIO_SINGLE_ENDED) == 0) {
 			cfg |= STM32_PINCFG_PUSH_PULL;
-		}
-
-		if ((flags & GPIO_PULL_UP) != 0) {
-			cfg |= STM32_PINCFG_PULL_UP;
-		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			cfg |= STM32_PINCFG_PULL_DOWN;
-		}
-
-	} else if  ((flags & GPIO_INPUT) != 0) {
-		/* Input */
-
-		cfg = STM32_PINCFG_MODE_INPUT;
-
-		if ((flags & GPIO_PULL_UP) != 0) {
-			cfg |= STM32_PINCFG_PULL_UP;
-		} else if ((flags & GPIO_PULL_DOWN) != 0) {
-			cfg |= STM32_PINCFG_PULL_DOWN;
+		} else if ((flags & GPIO_LINE_OPEN_DRAIN) != 0) {
+			cfg |= STM32_PINCFG_OPEN_DRAIN;
 		} else {
-			cfg |= STM32_PINCFG_FLOATING;
+			/* Open Source - not supported */
+			return -ENOTSUP;
+		}
+
+		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
+			cfg |= STM32_ODR_1;
+		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
+			cfg |= STM32_ODR_0;
+		} else {
+			/* No output level specified */
+		}
+
+		if (IS_ENABLED(CONFIG_SOC_SERIES_STM32F1X)) {
+			/*
+			 * STM32F1 series does not support PU/PD in Output mode.
+			 *
+			 * The GPIO driver has historically ignored PU/PD in this
+			 * situation: keep ignoring it for backwards compatibility
+			 * even though we ought to return -ENOTSUP here instead.
+			 *
+			 * Clear PU/PD flags possibly provided by the caller such
+			 * that the code below does nothing - OR'ing PU/PD flags
+			 * in the configuration would mess things up because that
+			 * bit is shared with ODR on STM32F1.
+			 */
+			LOG_WRN("STM32F1: ignoring GPIO_PULL_UP/DOWN on OUTPUT pin");
+			pupd = 0;
+		}
+	} else if ((flags & GPIO_INPUT) != 0) {
+		/* Input */
+		if (pupd != 0) {
+			cfg = STM32_PINCFG_MODE_INPUT_PUPD;
+		} else {
+			cfg = STM32_PINCFG_MODE_INPUT_FLOAT;
 		}
 	} else {
-		/* Deactivated: Analog */
+		/* Deactivated: Analog/Hi-Z (PU/PD not supported) */
+		if (pupd != 0) {
+			return -ENOTSUP;
+		}
+
 		cfg = STM32_PINCFG_MODE_ANALOG;
 	}
 
-#if !defined(CONFIG_SOC_SERIES_STM32F1X)
-	switch (flags & (STM32_GPIO_SPEED_MASK << STM32_GPIO_SPEED_SHIFT)) {
-	case STM32_GPIO_VERY_HIGH_SPEED:
-		cfg |= STM32_OSPEEDR_VERY_HIGH_SPEED;
-		break;
-	case STM32_GPIO_HIGH_SPEED:
-		cfg |= STM32_OSPEEDR_HIGH_SPEED;
-		break;
-	case STM32_GPIO_MEDIUM_SPEED:
-		cfg |= STM32_OSPEEDR_MEDIUM_SPEED;
-		break;
-	default:
-		cfg |= STM32_OSPEEDR_LOW_SPEED;
-		break;
+	if (pupd == GPIO_PULL_UP) {
+		cfg |= STM32_PINCFG_PULL_UP;
+	} else if (pupd == GPIO_PULL_DOWN) {
+		cfg |= STM32_PINCFG_PULL_DOWN;
+	} else {
+		/* No pull-up/down */
 	}
+
+#if !defined(CONFIG_SOC_SERIES_STM32F1X)
+	cfg |= _VAL2FLD(STM32_OSPEEDR,
+			(flags >> STM32_GPIO_SPEED_SHIFT) & STM32_GPIO_SPEED_MASK);
 #endif /* !CONFIG_SOC_SERIES_STM32F1X */
 
 	*pincfg = cfg;
@@ -282,7 +292,8 @@ static int gpio_stm32_config(const struct device *dev,
 			     gpio_pin_t pin, gpio_flags_t flags)
 {
 	int err;
-	uint32_t pincfg;
+	bool apply_out_level;
+	pinctrl_soc_pin_t pincfg;
 	struct gpio_stm32_data *data = dev->data;
 
 	/* figure out if we can map the requested GPIO
@@ -303,19 +314,21 @@ static int gpio_stm32_config(const struct device *dev,
 		data->pin_has_clock_enabled |= BIT(pin);
 	}
 
-	if ((flags & GPIO_OUTPUT) != 0) {
-		if ((flags & GPIO_OUTPUT_INIT_HIGH) != 0) {
-			gpio_stm32_port_set_bits_raw(dev, BIT(pin));
-		} else if ((flags & GPIO_OUTPUT_INIT_LOW) != 0) {
-			gpio_stm32_port_clear_bits_raw(dev, BIT(pin));
-		}
+	if ((flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) != 0) {
+		/* Output level was specified by caller: apply it */
+		apply_out_level = true;
+	} else {
+		/* No output level specified: leave it unmodified */
+		apply_out_level = false;
 	}
 
-	stm32_gpioport_configure_pin(dev, pin, pincfg, 0);
+	stm32_gpioport_configure_pin(dev, pin, pincfg, apply_out_level);
 
 #ifdef CONFIG_STM32_WKUP_PINS
 	if (flags & STM32_GPIO_WKUP) {
 #ifdef CONFIG_POWEROFF
+		const struct gpio_stm32_config *cfg = dev->config;
+
 		/*
 		 * On some series, wake-up pins must have a specific configuration
 		 * to work properly. The following per-series checks validate that
@@ -334,19 +347,17 @@ static int gpio_stm32_config(const struct device *dev,
 			return -EINVAL;
 		}
 
-		struct gpio_dt_spec gpio_dt_cfg = {
-			.port = dev,
-			.pin = pin,
-			.dt_flags = (gpio_dt_flags_t)flags,
-		};
-
-		err = stm32_pwr_wkup_pin_cfg_gpio(&gpio_dt_cfg);
-		if (err < 0) {
-			LOG_ERR("Could not configure GPIO %s pin %d as a wake-up source",
-					gpio_dt_cfg.port->name, gpio_dt_cfg.pin);
+		err = stm32_gpiomgr_enable_wakeup_pin(cfg->port, pin, flags);
+		if (err == -ENODEV) {
+			LOG_ERR("No wake-up pin found associated to GPIO%c pin %d",
+				('A' + cfg->port), pin);
+			return -EINVAL;
+		} else if (err < 0) {
+			LOG_ERR("Failed to configure GPIO%c pin %d as wake-up source",
+				('A' + cfg->port), pin);
 			return err;
 		}
-#else
+#else /* CONFIG_POWEROFF */
 		LOG_DBG("STM32_GPIO_WKUP flag has no effect when CONFIG_POWEROFF=n");
 #endif /* CONFIG_POWEROFF */
 	}

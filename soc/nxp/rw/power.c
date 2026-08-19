@@ -18,11 +18,11 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/timer/nxp_os_timer.h>
 #include <zephyr/platform/hooks.h>
-#include "fsl_power.h"
+#include <fsl_power.h>
 
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
+LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 
 /* Active mode */
 #define POWER_MODE0		0
@@ -149,11 +149,13 @@ static void restore_mpu_state(void)
 static void config_wakeup_gpio_pins(void)
 {
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin0))
-	pin_cfg = IOMUX_GPIO_IDX(24) | IOMUX_TYPE(IOMUX_GPIO);
+	pin_cfg = IOMUX_GPIO_IDX(24) | IOMUX_TYPE(IOMUX_GPIO) |
+		  IOMUX_PAD_PULL(DT_ENUM_IDX(DT_NODELABEL(pin0), wakeup_level) ? 0x2 : 0x1);
 	pinctrl_configure_pins(&pin_cfg, 1, 0);
 #endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pin1))
-	pin_cfg = IOMUX_GPIO_IDX(25) | IOMUX_TYPE(IOMUX_GPIO);
+	pin_cfg = IOMUX_GPIO_IDX(25) | IOMUX_TYPE(IOMUX_GPIO) |
+		  IOMUX_PAD_PULL(DT_ENUM_IDX(DT_NODELABEL(pin1), wakeup_level) ? 0x2 : 0x1);
 	pinctrl_configure_pins(&pin_cfg, 1, 0);
 #endif
 }

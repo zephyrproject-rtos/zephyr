@@ -44,6 +44,14 @@ properties:
       Maximum supported I2C bitrate in Hz, with the default set to I2C_BITRATE_FAST_PLUS.
       This property may be overlayed if the device supports higher or lower speeds.
 
+  scl-gpios:
+    type: phandle-array
+    description: SCL line (GPIO) used for bus recovery
+
+  sda-gpios:
+    type: phandle-array
+    description: SDA line (GPIO) used for bus recovery
+
   target-digital-noise-filter:
     type: int
     enum: [0, 1, 2, 3, 4]

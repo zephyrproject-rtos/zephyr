@@ -67,7 +67,6 @@ static struct k_thread drv_stack_data;
 
 static struct udc_ep_config ep_cfg_out[CFG_EPOUT_CNT + CFG_EP_ISOOUT_CNT + 1];
 static struct udc_ep_config ep_cfg_in[CFG_EPIN_CNT + CFG_EP_ISOIN_CNT + 1];
-static bool udc_nrf_ctrl_data_in_finished;
 static bool udc_nrf_setup_set_addr, udc_nrf_fake_setup;
 static uint8_t udc_nrf_address;
 const static struct device *udc_nrf_dev;
@@ -1185,12 +1184,18 @@ static void nrf_usbd_legacy_transfer_out_drop(nrf_usbd_common_ep_t ep)
 }
 
 struct udc_nrf_config {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	clock_control_subsys_t clock;
+#else
+	const struct device *clk_dev;
+#endif
 	nrfx_power_config_t pwr;
 	nrfx_power_usbevt_config_t evt;
 };
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 static struct onoff_manager *hfxo_mgr;
+#endif
 static struct onoff_client hfxo_cli;
 
 static void udc_event_xfer_in_next(const struct device *dev, const uint8_t ep)
@@ -1253,20 +1258,8 @@ static void udc_event_xfer_in(const struct device *dev, const uint8_t ep)
 	if (ep == USB_CONTROL_EP_IN) {
 		__ASSERT(udc_get_buf_info(buf)->data, "EP0IN buf is not data");
 
-		udc_nrf_ctrl_data_in_finished = true;
-
 		/* STALL any further IN tokens, allow status stage */
 		NRF_USBD->TASKS_EP0STATUS = 1;
-
-		/* Software won't know when status stage finishes, if we have
-		 * status OUT pending, just complete it.
-		 */
-		ep_cfg = udc_get_ep_cfg(dev, USB_CONTROL_EP_OUT);
-		buf = udc_buf_get(ep_cfg);
-		if (buf != NULL) {
-			__ASSERT(udc_get_buf_info(buf)->status, "EP0OUT buf is not status");
-			udc_submit_ep_event(dev, buf, 0);
-		}
 	}
 }
 
@@ -1294,14 +1287,6 @@ static void udc_event_xfer_out_next(const struct device *dev, const uint8_t ep)
 
 				/* Allow receiving first OUT Data Stage packet */
 				NRF_USBD->TASKS_EP0RCVOUT = 1;
-			}
-
-			if (bi->status) {
-				if (udc_nrf_ctrl_data_in_finished) {
-					udc_submit_ep_event(dev, buf, 0);
-				}
-
-				return;
 			}
 		}
 
@@ -1331,8 +1316,6 @@ static void udc_event_xfer_out(const struct device *dev, const uint8_t ep)
 static int udc_event_xfer_setup(const struct device *dev)
 {
 	struct usb_setup_packet setup;
-
-	udc_nrf_ctrl_data_in_finished = false;
 
 	setup.bmRequestType = NRF_USBD->BMREQUESTTYPE;
 	setup.bRequest = NRF_USBD->BREQUEST;
@@ -1689,6 +1672,10 @@ static int udc_nrf_host_wakeup(const struct device *dev)
 
 static int udc_nrf_enable(const struct device *dev)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK192M) || defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK) || \
+	defined(CONFIG_CLOCK_CONTROL_NRF_XO)
+	const struct udc_nrf_config *cfg = dev->config;
+#endif
 	unsigned int key;
 	int ret;
 
@@ -1705,7 +1692,12 @@ static int udc_nrf_enable(const struct device *dev)
 	}
 
 	sys_notify_init_spinwait(&hfxo_cli.notify);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	ret = onoff_request(hfxo_mgr, &hfxo_cli);
+#elif defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK192M) || defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK) || \
+	defined(CONFIG_CLOCK_CONTROL_NRF_XO)
+	ret = nrf_clock_control_request(cfg->clk_dev, NULL, &hfxo_cli);
+#endif
 	if (ret < 0) {
 		LOG_ERR("Failed to start HFXO %d", ret);
 		return ret;
@@ -1721,6 +1713,10 @@ static int udc_nrf_enable(const struct device *dev)
 
 static int udc_nrf_disable(const struct device *dev)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK192M) || defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK) || \
+	defined(CONFIG_CLOCK_CONTROL_NRF_XO)
+	const struct udc_nrf_config *cfg = dev->config;
+#endif
 	int ret;
 
 	nrf_usbd_legacy_disable();
@@ -1735,7 +1731,12 @@ static int udc_nrf_disable(const struct device *dev)
 		return -EIO;
 	}
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	ret = onoff_cancel_or_release(hfxo_mgr, &hfxo_cli);
+#elif defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK192M) || defined(CONFIG_CLOCK_CONTROL_NRF_HFCLK) || \
+	defined(CONFIG_CLOCK_CONTROL_NRF_XO)
+	ret = nrf_clock_control_cancel_or_release(cfg->clk_dev, NULL, &hfxo_cli);
+#endif
 	if (ret < 0) {
 		LOG_ERR("Failed to stop HFXO %d", ret);
 		return ret;
@@ -1748,7 +1749,9 @@ static int udc_nrf_init(const struct device *dev)
 {
 	const struct udc_nrf_config *cfg = dev->config;
 
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	hfxo_mgr = z_nrf_clock_control_get_onoff(cfg->clock);
+#endif
 
 	if (vbus_present) {
 		udc_submit_event(udc_nrf_dev, UDC_EVT_VBUS_READY, 0);
@@ -1758,9 +1761,15 @@ static int udc_nrf_init(const struct device *dev)
 	/* Use CLOCK/POWER priority for compatibility with other series where
 	 * USB events are handled by CLOCK interrupt handler.
 	 */
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	IRQ_CONNECT(USBREGULATOR_IRQn,
 		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
 		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
+#else
+	IRQ_CONNECT(USBREGULATOR_IRQn,
+		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority),
+		    nrfx_isr, nrfx_usbreg_irq_handler, 0);
+#endif
 #endif
 
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority),
@@ -1848,6 +1857,7 @@ static int udc_nrf_driver_init(const struct device *dev)
 	data->caps.rwup = true;
 	data->caps.mps0 = UDC_NRF_MPS0;
 	data->caps.can_detect_vbus = true;
+	data->caps.out_ack = true;
 
 	return 0;
 }
@@ -1863,9 +1873,17 @@ static void udc_nrf_unlock(const struct device *dev)
 }
 
 static const struct udc_nrf_config udc_nrf_cfg = {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	.clock = COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF192M),
 			     (CLOCK_CONTROL_NRF_SUBSYS_HF)),
+#else
+	.clk_dev = DEVICE_DT_GET_ONE(COND_CODE_1(NRF_CLOCK_HAS_HFCLK192M,
+						 (nordic_nrf_clock_hfclk192m),
+						 (COND_CODE_1(NRF_CLOCK_HAS_HFCLK,
+							      (nordic_nrf_clock_hfclk),
+							      (nordic_nrf_clock_xo))))),
+#endif
 	.pwr = {
 		.dcdcen = (DT_PROP(DT_INST(0, nordic_nrf5x_regulator), regulator_initial_mode)
 			   == NRF5X_REG_MODE_DCDC),

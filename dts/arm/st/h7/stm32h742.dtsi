@@ -14,6 +14,8 @@
 		flash-controller@52002000 {
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				write-block-size = <32>;
 				erase-block-size = <DT_SIZE_K(128)>;
 				/* maximum erase time for a 128K sector */
@@ -59,6 +61,15 @@
 				st,backup-regs = <32>;
 				status = "disabled";
 			};
+		};
+
+		jpeg: codec@52003000 {
+			compatible = "st,stm32-jpeg";
+			reg = <0x52003000 0x1000>;
+			interrupts = <121 0>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 5)>;
+			resets = <&rctl STM32_RESET(AHB3, 5)>;
+			status = "disabled";
 		};
 	};
 

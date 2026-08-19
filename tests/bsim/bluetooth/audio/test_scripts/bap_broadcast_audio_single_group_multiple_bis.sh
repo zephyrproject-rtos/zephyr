@@ -11,7 +11,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 cd ${BSIM_OUT_PATH}/bin
 
-SIMULATION_ID="bap_broadcast_audio_single_group_multiple_bis"
+SIMULATION_ID="${BOARD_TS}_bap_broadcast_audio_single_group_multiple_bis"
 
 Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_prj_conf \
   -v=${VERBOSITY_LEVEL} -s=${SIMULATION_ID} -d=0 -testid=broadcast_source \

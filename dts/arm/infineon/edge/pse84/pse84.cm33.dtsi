@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,47 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
 			clock-frequency = <200000000>;
+			cpu-power-states = <&sleep &deepsleep>;
 		};
 	};
+
+	power-states {
+		sleep: sleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <0>;
+		};
+
+		deepsleep: deepsleep {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <100>;
+			exit-latency-us = <20>;
+		};
+
+		deepsleep_off: deepsleep_off {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <1>;
+			status = "disabled";
+		};
+
+		hibernate: hibernate {
+			compatible = "zephyr,power-state";
+			power-state-name = "soft-off";
+			substate-id = <0>;
+			status = "disabled";
+		};
+	};
+};
+
+&lpcomp0 {
+	interrupts = <45 4>;
 };
 
 &nvic {

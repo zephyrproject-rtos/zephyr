@@ -628,6 +628,8 @@ SECTION_FUNC(TEXT, arch_user_string_nlen)
     movs r3, #0		/* r3 is the counter */
 
 strlen_loop:
+    cmp r3, r1
+    beq strlen_done
 z_arm_user_string_nlen_fault_start:
     /* r0 contains the string. r5 = *(r0 + r3]). This could fault. */
     ldrb r5, [r0, r3]
@@ -635,9 +637,6 @@ z_arm_user_string_nlen_fault_start:
 z_arm_user_string_nlen_fault_end:
 #if defined(CONFIG_CPU_AARCH32_CORTEX_R)
     cmp r5, #0
-    beq strlen_done
-
-    cmp r3, r1
     beq strlen_done
 
     adds r3, #1
@@ -649,9 +648,6 @@ z_arm_user_string_nlen_fault_end:
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     cbz	r5, strlen_done
 #endif
-    cmp	r3, r1
-    beq.n strlen_done
-
     adds r3, #1
     b.n	strlen_loop
 #endif

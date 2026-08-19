@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_NET_LWM2M_SEND_SCHEDULER_H_
-#define ZEPHYR_NET_LWM2M_SEND_SCHEDULER_H_
+#ifndef ZEPHYR_INCLUDE_NET_LWM2M_SEND_SCHEDULER_H_
+#define ZEPHYR_INCLUDE_NET_LWM2M_SEND_SCHEDULER_H_
 
 #include <stdbool.h>
 #include <zephyr/net/lwm2m.h>
@@ -43,4 +43,4 @@ bool lwm2m_send_sched_cache_filter(const struct lwm2m_obj_path *path,
  */
 void lwm2m_send_sched_handle_registration_event(void);
 
-#endif /* ZEPHYR_NET_LWM2M_SEND_SCHEDULER_H_ */
+#endif /* ZEPHYR_INCLUDE_NET_LWM2M_SEND_SCHEDULER_H_ */

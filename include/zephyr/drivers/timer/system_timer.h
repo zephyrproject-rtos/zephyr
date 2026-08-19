@@ -23,8 +23,29 @@
 extern "C" {
 #endif
 
-#define SYS_CLOCK_MAX_WAIT (IS_ENABLED(CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE) \
-			    ? K_TICKS_FOREVER : INT_MAX)
+/*
+ * Maximum number of ticks the kernel will ever ask a timer driver to wait
+ * before the next sys_clock_announce(). It is half of the unsigned tick
+ * range so that the elapsed-tick count the driver eventually announces is
+ * guaranteed to fit in the (unsigned) sys_clock_announce() argument. The
+ * other half is left as slack to absorb a late announce (e.g. interrupt
+ * latency, or a timeout that fires slightly past its deadline) without
+ * overflowing that argument. The kernel caps the value passed to
+ * sys_clock_set_timeout() to this, so a driver need not clamp against the
+ * announce range and only has to honour its own cycle-count limits.
+ */
+#define SYS_CLOCK_MAX_WAIT (UINT32_MAX / 2)
+
+/**
+ * @brief Tick count meaning "nothing needs to wake the CPU up"
+ *
+ * Passed to sys_clock_idle_enter() when no wakeup is expected. It is above
+ * SYS_CLOCK_MAX_WAIT, the longest wait the kernel ever asks for, so it cannot
+ * be taken for one. K_TICKS_FOREVER is not usable here: it is (int64_t)-1 with
+ * CONFIG_TIMEOUT_64BIT and UINT32_MAX without it, so comparing an unsigned tick
+ * count against it means different things in the two configurations.
+ */
+#define SYS_CLOCK_IDLE_FOREVER UINT32_MAX
 
 /**
  * @brief System Clock APIs
@@ -109,6 +130,20 @@ static inline void sys_clock_unlock(k_spinlock_key_t key)
 }
 #endif
 
+#if defined(CONFIG_TEST) || defined(CONFIG_ASSERT)
+/**
+ * @brief Check whether the system clock lock is currently held.
+ *
+ * Analog of z_spin_is_locked() for the timer lock exposed via
+ * sys_clock_lock().  Intended for assertions in timer driver callbacks
+ * (sys_clock_set_timeout, sys_clock_elapsed, sys_clock_idle_exit) that
+ * rely on the kernel having taken the lock before calling them.
+ *
+ * @return true if the system clock lock is held.
+ */
+bool sys_clock_is_locked(void);
+#endif
+
 /**
  * @brief Set system clock timeout
  *
@@ -120,24 +155,16 @@ static inline void sys_clock_unlock(k_spinlock_key_t key)
  * is that one tick announcement should occur within one tick BEFORE
  * the specified expiration (that is, passing ticks==1 means "announce
  * the next tick", this convention was chosen to match legacy usage).
- * Similarly a ticks value of zero (or even negative) is legal and
- * treated identically: it simply indicates the kernel would like the
- * next tick announcement as soon as possible.
+ * Similarly a ticks value of zero is legal: it simply indicates the
+ * kernel would like the next tick announcement as soon as possible.
  *
- * Note that ticks can also be passed the special value K_TICKS_FOREVER,
- * indicating that no future timer interrupts are expected or required
- * and that the system is permitted to enter an indefinite sleep even
- * if this could cause rollover of the internal counter (i.e. the
- * system uptime counter is allowed to be wrong
+ * No tick count carries a meaning of its own.  The driver arms what it is
+ * asked for, clamping to what its hardware can hold and announcing the ticks
+ * that did elapse.
  *
- * Note also that it is conventional for the kernel to pass INT_MAX
- * for ticks if it wants to preserve the uptime tick count but doesn't
- * have a specific event to await.  The intent here is that the driver
- * will schedule any needed timeout as far into the future as
- * possible.  For the specific case of INT_MAX, the next call to
- * sys_clock_announce() may occur at any point in the future, not just
- * at INT_MAX ticks.  But the correspondence between the announced
- * ticks and real-world time must be correct.
+ * The two conditions a driver used to infer from the tick value now have
+ * their own entry points: sys_clock_no_timeout() for "no timeout is pending"
+ * and sys_clock_idle_enter() for "the CPU is going to sleep".
  *
  * A final note about SMP: note that the call to sys_clock_set_timeout()
  * is made on any CPU, and reflects the next timeout desired globally.
@@ -151,10 +178,12 @@ static inline void sys_clock_unlock(k_spinlock_key_t key)
  * lock held.
  *
  * @param ticks Timeout in tick units
- * @param idle Hint to the driver that the system is about to enter
- *        the idle state immediately after setting the timeout
+ * @param idle Deprecated, and always false when the kernel calls this
+ *        function: idle entry is notified through sys_clock_idle_enter(),
+ *        whose fallback passes true here.  Scheduled for removal in a future
+ *        release; new code must ignore it.
  */
-void sys_clock_set_timeout(int32_t ticks, bool idle);
+void sys_clock_set_timeout(uint32_t ticks, bool idle);
 
 /**
  * @brief Timer idle exit notification
@@ -190,7 +219,7 @@ void sys_clock_idle_exit(void);
  * @param ticks Elapsed time, in ticks
  * @param key Lock key obtained from sys_clock_lock().
  */
-void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
+void sys_clock_announce_locked(uint32_t ticks, k_spinlock_key_t key);
 
 /**
  * @brief Announce time progress to the kernel (legacy wrapper)
@@ -202,7 +231,7 @@ void sys_clock_announce_locked(int32_t ticks, k_spinlock_key_t key);
  *
  * @param ticks Elapsed time, in ticks
  */
-static inline void sys_clock_announce(int32_t ticks)
+static inline void sys_clock_announce(uint32_t ticks)
 {
 	sys_clock_announce_locked(ticks, sys_clock_lock());
 }
@@ -228,6 +257,56 @@ uint32_t sys_clock_elapsed(void);
  * check if the system timer has the capability of being disabled.
  */
 void sys_clock_disable(void);
+
+/**
+ * @brief Notify the timer driver that no timeout is pending.
+ *
+ * Called by the kernel in place of sys_clock_set_timeout() when the timeout
+ * queue is empty and @kconfig{CONFIG_SYSTEM_CLOCK_SLOPPY_IDLE} is enabled.
+ * No tick announcement is forthcoming and the system does not care about
+ * precise uptime keeping, so the driver may do something to save resources:
+ * mask the wakeup, program the longest interval the hardware can hold, or
+ * both.  Normal operation resumes at the next sys_clock_set_timeout().
+ *
+ * The CPU keeps running, so sys_clock_cycle_get_32() and
+ * sys_clock_cycle_get_64() must keep counting: a thread can still call
+ * k_cycle_get_32() or k_busy_wait().  A driver whose cycle counter is driven
+ * by the timer it would stop can therefore only mask the interrupt.  One
+ * whose cycle counter lives in a different clock or power domain may stop
+ * more.  Stopping the time base belongs in sys_clock_idle_enter().
+ *
+ * Unlike sys_clock_disable(), this is not a teardown.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is asked for the
+ * longest wait it can express, UINT32_MAX ticks.  That is numerically what
+ * K_TICKS_FOREVER was here, so a driver that has not migrated and still keys
+ * on that value stops its clock as it always did.
+ */
+void sys_clock_no_timeout(void);
+
+/**
+ * @brief Notify the timer driver that the CPU is entering low-power idle.
+ *
+ * Called from the power-management idle path when the CPU is about to sleep.
+ * A driver that hands off to a low-power wakeup timer, or otherwise
+ * reconfigures itself for sleep, does so here.  sys_clock_idle_exit() undoes
+ * it on the way out.  A driver with no low-power handling does not need to
+ * implement this hook.
+ *
+ * The hook is optional.  Without it, sys_clock_set_timeout() is called with
+ * its deprecated idle argument set to true, which keeps a driver keying its
+ * low-power handling on that argument working.  It goes with the argument, by
+ * which time a platform using the power management facility is expected to
+ * have implemented sys_clock_idle_enter() itself.
+ *
+ * @param ticks Ticks until the next expected wakeup, or SYS_CLOCK_IDLE_FOREVER
+ *        when nothing needs to wake the CPU and the uptime accounting is
+ *        allowed to drift, in which case the driver may stop its time base.
+ *        Only the calling CPU is going idle: a driver whose time base is
+ *        shared between CPUs must ensure only the last CPU going idle stops
+ *        the clock.
+ */
+void sys_clock_idle_enter(uint32_t ticks);
 
 /**
  * @brief Hardware cycle counter

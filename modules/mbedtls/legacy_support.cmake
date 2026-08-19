@@ -2,43 +2,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# Copy header files related to legacy crypto to the build folder in a path
-# that does not contain "private" in the name. This allows legacy includes
-# like "#include <mbedtls/ecp.h>" to still work. This is a temporary
-# fix in order not to break external modules (ex: hostap) which are
-# still referencing legacy includes. However these files are private now
-# and all the users of legacy Mbed TLS should transition to PSA API as soon
-# as possible!
 if(CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS)
   message(WARNING "
     Enabling CONFIG_MBEDTLS_DECLARE_PRIVATE_IDENTIFIERS is discouraged as it
     gives access to Mbed TLS crypto functions which are internal and may be removed
     or modified at any time. Please transition to the PSA Crypto API."
   )
-  set(MBEDTLS_PRIVATE_INCLUDE_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/mbedtls/private")
-  set(legacy_headers
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/aes.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/bignum.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cipher.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/cmac.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/ecdsa.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/ecp.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/pkcs5.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/error_common.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/sha256.h
-    ${MBEDTLS_PRIVATE_INCLUDE_PATH}/rsa.h
-  )
-  file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/mbedtls/)
   if(CONFIG_MCUBOOT)
-    set(MBEDTLS_BUILTIN_SRC_PATH "${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src")
-    set(legacy_headers
-      ${MBEDTLS_BUILTIN_SRC_PATH}/rsa_alt_helpers.h
+    # MCUBoot bootutil includes rsa_alt_helpers.h by basename; the header lives
+    # next to builtin RSA sources under drivers/builtin/src.
+    target_include_directories(mbedtls_iface INTERFACE
+      ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/src
     )
-    file(COPY ${legacy_headers} DESTINATION ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/)
   endif()
-  target_include_directories(mbedTLS INTERFACE
-    ${CMAKE_BINARY_DIR}/legacy-mbedtls-headers/
-  )
 endif()
 
 set(MBEDTLS_EXPORT_REMOVED_HEADERS  OFF)
@@ -71,7 +47,7 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
   # but compile to empty without these symbols.  Manually define what
   # enable_builtins.h would have set so the implementations are compiled
   # (PRIVATE on builtin) and the declarations are visible to consumers
-  # (INTERFACE on mbedTLS).
+  # (INTERFACE on Mbed TLS).
   #
   # These symbols are flagged as removed by the tf-psa-crypto config
   # validation in tf_psa_crypto_config.c.  The builtin target already
@@ -91,7 +67,7 @@ if(CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT)
       MBEDTLS_ECP_DP_CURVE25519_ENABLED
       MBEDTLS_ECP_DP_CURVE448_ENABLED
     )
-    target_compile_definitions(mbedTLS INTERFACE
+    target_compile_definitions(mbedtls_iface INTERFACE
       MBEDTLS_ECP_C
       MBEDTLS_BIGNUM_C
       MBEDTLS_ECP_DP_SECP256R1_ENABLED
@@ -129,7 +105,7 @@ endif()
 
 if(MBEDTLS_EXPORT_REMOVED_HEADERS)
   target_include_directories(builtin PRIVATE ${MBEDTLS_REMOVED_MODULES_PATH})
-  target_include_directories(mbedTLS INTERFACE
+  target_include_directories(mbedtls_iface INTERFACE
     ${MBEDTLS_REMOVED_MODULES_PATH}
   )
 endif()

@@ -74,17 +74,17 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
-	nwp: nwp {
+	nwp: nwp@41050000 {
 		compatible = "silabs,siwx91x-nwp";
-		stack-size = <10240>;
+		reg = <0x41050000 0x1000>, <0x46008000 0x1000>;
+		reg-names = "ta", "m4";
 		interrupt-parent = <&nvic>;
-		interrupts = <30 0>, <74 0>;
-		interrupt-names = "nwp_stack", "nwp_irq";
-		antenna-selection = "ext-gpios";
+		interrupts = <74 0>;
+		interrupt-names = "nwp_irq";
+		antenna-selection = "internal";
 		support-1p8v;
 		enable-xtal-correction;
-		qspi-80mhz-clk;
-		clock-frequency = <120000000>;
+		clock-frequency = <DT_FREQ_M(80)>;
 		status = "okay";
 
 		bt_hci0: bt_hci {
@@ -117,6 +117,7 @@
 		flashctrl0: flash-controller@12000000 {
 			compatible = "silabs,siwx91x-flash-controller";
 			reg = <0x12000000 0x200>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -185,6 +186,8 @@
 			compatible = "silabs,siwx91x-rng";
 			reg = <0x45090000 0x8>;
 			clocks = <&clock0 SIWX91X_CLK_RNG>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 		};
 
 		egpio0: egpio@46130000 {
@@ -292,6 +295,8 @@
 			interrupts = <13 0>;
 			interrupt-names = "i2c2";
 			clocks = <&clock0 SIWX91X_CLK_ULP_I2C>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -303,6 +308,8 @@
 			interrupts = <42 0>;
 			interrupt-names = "i2c0";
 			clocks = <&clock0 SIWX91X_CLK_I2C0>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
@@ -314,11 +321,13 @@
 			interrupts = <61 0>;
 			interrupt-names = "i2c1";
 			clocks = <&clock0 SIWX91X_CLK_I2C1>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 
 		ulpdma: dma@24078000 {
-			compatible = "silabs,siwx91x-dma";
+			compatible = "silabs,udma";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x24078000 0x82c>;
@@ -334,7 +343,7 @@
 		};
 
 		dma0: dma@44030000 {
-			compatible = "silabs,siwx91x-dma";
+			compatible = "silabs,udma";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x44030000 0x82c>;
@@ -417,6 +426,8 @@
 			interrupts = <46 0>;
 			interrupt-names = "gspi";
 			clocks = <&clock0 SIWX91X_CLK_GSPI>;
+			dmas = <&gpdma 0 11>, <&gpdma 1 10>;
+			dma-names = "tx", "rx";
 			power-domains = <&siwx91x_soc_pd>;
 			zephyr,pm-device-runtime-auto;
 			status = "disabled";
@@ -463,6 +474,8 @@
 			silabs,adc-sampling-rate = <100000>;
 			clocks = <&clock0 SIWX91X_CLK_ADC>;
 			#io-channel-cells = <1>;
+			power-domains = <&siwx91x_soc_pd>;
+			zephyr,pm-device-runtime-auto;
 			status = "disabled";
 		};
 	};

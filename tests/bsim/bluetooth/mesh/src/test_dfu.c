@@ -8,7 +8,7 @@
 #include "mesh/dfu_slot.h"
 #include "mesh/dfu.h"
 #include "mesh/blob.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "dfu_blob_common.h"
 
 #define LOG_MODULE_NAME test_dfu
@@ -55,7 +55,13 @@ static int dfu_targets_cnt;
 static bool dfu_fail_confirm;
 static bool recover;
 static bool expect_fail;
+static int expected_stop_phase_param;
 static enum bt_mesh_dfu_phase expected_stop_phase;
+
+static void expected_stop_phase_found(char *argv, int offset)
+{
+	expected_stop_phase = (enum bt_mesh_dfu_phase)expected_stop_phase_param;
+}
 
 static void test_args_parse(int argc, char *argv[])
 {
@@ -75,7 +81,8 @@ static void test_args_parse(int argc, char *argv[])
 			.descript = "Request target to fail confirm step"
 		},
 		{
-			.dest = &expected_stop_phase,
+			.dest = &expected_stop_phase_param,
+			.call_when_found = expected_stop_phase_found,
 			.type = 'i',
 			.name = "{none, start, verify, verify-ok, verify-fail, apply}",
 			.option = "expected-phase",
@@ -1642,7 +1649,7 @@ static const struct bst_test_instance test_dfu[] = {
 	TEST_CASE(dist, dfu_self_update, "Distributor performs DFU with self update"),
 	TEST_CASE(dist, dfu_slot_create, "Distributor creates image slots"),
 	TEST_CASE(dist, dfu_slot_create_recover,
-		      "Distributor recovers created image slots from persitent storage"),
+		      "Distributor recovers created image slots from persistent storage"),
 	TEST_CASE(dist, dfu_slot_delete_all, "Distributor deletes all image slots"),
 	TEST_CASE(dist, dfu_slot_check_delete_all,
 		      "Distributor checks if all slots are removed from persistent storage"),

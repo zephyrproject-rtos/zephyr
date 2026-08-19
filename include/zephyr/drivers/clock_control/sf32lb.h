@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Clock control helpers for Core Devices SF32LB devices.
+ * @ingroup clock_control_sf32lb
+ */
+
 #ifndef _INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_SF32LB_H_
 #define _INCLUDE_ZEPHYR_DRIVERS_CLOCK_CONTROL_SF32LB_H_
 
@@ -14,9 +20,8 @@
 #include <zephyr/drivers/clock_control.h>
 
 /**
- * @brief Clock Control (SF32LB specifics)
- * @defgroup clock_control_sf32lb Clock Control (SF32LB specifics)
- * @ingroup clock_control_interface
+ * @defgroup clock_control_sf32lb Core Devices SF32LB
+ * @ingroup clock_control_interface_ext
  * @{
  */
 

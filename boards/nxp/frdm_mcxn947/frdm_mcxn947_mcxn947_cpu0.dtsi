@@ -10,7 +10,7 @@
  */
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxn94x.dtsi>
+#include <nxp/mcx/mcxn/nxp_mcxn94x.dtsi>
 #include "frdm_mcxn947.dtsi"
 
 / {
@@ -179,11 +179,12 @@
 	status = "okay";
 
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_M(8)>;
 		};
@@ -199,10 +200,6 @@
 };
 
 &enet {
-	status = "okay";
-};
-
-&enet_mac {
 	status = "okay";
 };
 
@@ -299,3 +296,7 @@ zephyr_udc0: &usb1 {
 &tsi0 {
 	status = "okay";
 };
+
+m2_hci_bt_uart: &flexcomm2_lpuart2 {};
+
+m2_wifi_sdio: &usdhc0 {};

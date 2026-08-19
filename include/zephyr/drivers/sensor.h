@@ -20,7 +20,7 @@
  * @ingroup io_interfaces
  * @{
  *
- * @defgroup sensor_interface_ext Device-specific Sensor API extensions
+ * @defgroup sensor_interface_ext Device-specific Sensor API extensions and Devicetree constants.
  * @{
  * @}
  */
@@ -33,6 +33,7 @@
 #include <zephyr/dsp/types.h>
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
@@ -151,8 +152,10 @@ enum sensor_channel {
 	SENSOR_CHAN_VOC,
 	/** Gas sensor resistance in ohms. */
 	SENSOR_CHAN_GAS_RES,
-	/** Flow rate in litres per minute */
+	/** Flow rate in liters per minute */
 	SENSOR_CHAN_FLOW_RATE,
+	/** Flow volume in liters */
+	SENSOR_CHAN_VOLUME,
 
 	/** Voltage, in volts **/
 	SENSOR_CHAN_VOLTAGE,
@@ -232,6 +235,9 @@ enum sensor_channel {
 	/** Raw quadrature decoder count, in counts */
 	SENSOR_CHAN_ENCODER_COUNT,
 
+	/** Number of revolutions for quadrature decoder */
+	SENSOR_CHAN_ENCODER_REVOLUTIONS,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 
@@ -251,6 +257,42 @@ enum sensor_channel {
 	 */
 	SENSOR_CHAN_MAX = INT16_MAX,
 };
+
+/**
+ * @brief checks if a given channel is a 3-axis channel
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
+ *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
+	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
+	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
+
+/**
+ * @brief checks if a given channel is an Accelerometer
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_ACCEL_X, or
+ *         @ref SENSOR_CHAN_ACCEL_Y, or @ref SENSOR_CHAN_ACCEL_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_ACCEL(chan)                                          \
+	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_ACCEL_X ||   \
+	 (chan) == SENSOR_CHAN_ACCEL_Y || (chan) == SENSOR_CHAN_ACCEL_Z)
+
+/**
+ * @brief checks if a given channel is a Gyroscope
+ *
+ * @param[in] chan The channel to check
+ * @retval true if @p chan is any of @ref SENSOR_CHAN_GYRO_XYZ, @ref SENSOR_CHAN_GYRO_X, or
+ *         @ref SENSOR_CHAN_GYRO_Y, or @ref SENSOR_CHAN_GYRO_Z
+ * @retval false otherwise
+ */
+#define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
+	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
+	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
 
 /**
  * @brief Sensor trigger types.
@@ -413,7 +455,6 @@ enum sensor_attribute {
 };
 
 /**
- * @typedef sensor_trigger_handler_t
  * @brief Callback API upon firing of a trigger
  *
  * @param dev Pointer to the sensor device
@@ -810,8 +851,7 @@ static inline int z_impl_sensor_attr_set(const struct device *dev,
 					 enum sensor_attribute attr,
 					 const struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->attr_set == NULL) {
 		return -ENOSYS;
@@ -842,8 +882,7 @@ static inline int z_impl_sensor_attr_get(const struct device *dev,
 					 enum sensor_attribute attr,
 					 struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->attr_get == NULL) {
 		return -ENOSYS;
@@ -878,8 +917,7 @@ static inline int sensor_trigger_set(const struct device *dev,
 				     const struct sensor_trigger *trig,
 				     sensor_trigger_handler_t handler)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	if (api->trigger_set == NULL) {
 		return -ENOSYS;
@@ -910,10 +948,7 @@ __syscall int sensor_sample_fetch(const struct device *dev);
 
 static inline int z_impl_sensor_sample_fetch(const struct device *dev)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, SENSOR_CHAN_ALL);
+	return DEVICE_API_GET(sensor, dev)->sample_fetch(dev, SENSOR_CHAN_ALL);
 }
 
 /**
@@ -943,10 +978,7 @@ __syscall int sensor_sample_fetch_chan(const struct device *dev,
 static inline int z_impl_sensor_sample_fetch_chan(const struct device *dev,
 						  enum sensor_channel type)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->sample_fetch(dev, type);
+	return DEVICE_API_GET(sensor, dev)->sample_fetch(dev, type);
 }
 
 /**
@@ -978,10 +1010,7 @@ static inline int z_impl_sensor_channel_get(const struct device *dev,
 					    enum sensor_channel chan,
 					    struct sensor_value *val)
 {
-	const struct sensor_driver_api *api =
-		(const struct sensor_driver_api *)dev->api;
-
-	return api->channel_get(dev, chan, val);
+	return DEVICE_API_GET(sensor, dev)->channel_get(dev, chan, val);
 }
 
 #if defined(CONFIG_SENSOR_ASYNC_API) || defined(__DOXYGEN__)
@@ -1011,42 +1040,6 @@ struct __attribute__((__packed__)) sensor_data_generic_header {
 };
 
 /**
- * @brief checks if a given channel is a 3-axis channel
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_GYRO_XYZ, or
- *         @ref SENSOR_CHAN_MAGN_XYZ, or @ref SENSOR_CHAN_POS_DXYZ
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_3_AXIS(chan)                                                                \
-	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_GYRO_XYZ ||                      \
-	 (chan) == SENSOR_CHAN_MAGN_XYZ || (chan) == SENSOR_CHAN_POS_DXYZ)
-
-/**
- * @brief checks if a given channel is an Accelerometer
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_ACCEL_XYZ, @ref SENSOR_CHAN_ACCEL_X, or
- *         @ref SENSOR_CHAN_ACCEL_Y, or @ref SENSOR_CHAN_ACCEL_Z
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_IS_ACCEL(chan)                                          \
-	((chan) == SENSOR_CHAN_ACCEL_XYZ || (chan) == SENSOR_CHAN_ACCEL_X ||   \
-	 (chan) == SENSOR_CHAN_ACCEL_Y || (chan) == SENSOR_CHAN_ACCEL_Z)
-
-/**
- * @brief checks if a given channel is a Gyroscope
- *
- * @param[in] chan The channel to check
- * @retval true if @p chan is any of @ref SENSOR_CHAN_GYRO_XYZ, @ref SENSOR_CHAN_GYRO_X, or
- *         @ref SENSOR_CHAN_GYRO_Y, or @ref SENSOR_CHAN_GYRO_Z
- * @retval false otherwise
- */
-#define SENSOR_CHANNEL_IS_GYRO(chan)                                           \
-	((chan) == SENSOR_CHAN_GYRO_XYZ || (chan) == SENSOR_CHAN_GYRO_X ||     \
-	 (chan) == SENSOR_CHAN_GYRO_Y || (chan) == SENSOR_CHAN_GYRO_Z)
-
-/**
  * @brief Get the sensor's decoder API
  *
  * @param[in] dev The sensor device
@@ -1060,7 +1053,7 @@ __syscall int sensor_get_decoder(const struct device *dev,
 static inline int z_impl_sensor_get_decoder(const struct device *dev,
 					    const struct sensor_decoder_api **decoder)
 {
-	const struct sensor_driver_api *api = (const struct sensor_driver_api *)dev->api;
+	const struct sensor_driver_api *api = DEVICE_API_GET(sensor, dev);
 
 	__ASSERT_NO_MSG(api != NULL);
 
@@ -1138,7 +1131,7 @@ static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx
 /**
  * @brief Blocking one shot read of samples from a sensor into a buffer
  *
- * Using @p cfg, read data from the device by using the provided RTIO context
+ * Using @p iodev, read data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will be given the provided buffer. The call
  * will wait for the read to complete before returning to the caller.
  *
@@ -1181,7 +1174,7 @@ static inline int sensor_read(const struct rtio_iodev *iodev, struct rtio *ctx, 
 /**
  * @brief One shot non-blocking read with pool allocated buffer
  *
- * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
+ * Using @p iodev, read one snapshot of data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
  * mempool when the time comes to service the read.
  *
@@ -1212,7 +1205,6 @@ static inline int sensor_read_async_mempool(const struct rtio_iodev *iodev, stru
 }
 
 /**
- * @typedef sensor_processing_callback_t
  * @brief Callback function used with the helper processing function.
  *
  * @see sensor_processing_with_callback
@@ -1410,6 +1402,44 @@ static inline float sensor_value_to_float(const struct sensor_value *val)
 }
 
 /**
+ * @brief Helper function for converting struct sensor_value to fixed-point.
+ *
+ * @param val A pointer to a fixed-point value in Qm.n format.
+ * @param inp A pointer to a sensor_value struct.
+ * @param m Number of integer bits.
+ * @param n Number of fractional bits.
+ * @param is_signed Indicates whether the fixed-point value is signed or unsigned.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_to_fixed_point(uint32_t *val, struct sensor_value *inp, uint8_t m,
+					      uint8_t n, bool is_signed)
+{
+	uint8_t num_bits = m + n + (is_signed ? 1U : 0U);
+
+	if (m > 31 || !IN_RANGE(n, 1, 32) || !IN_RANGE(num_bits, 1, 32)) {
+		return -EINVAL;
+	}
+
+	int64_t raw = ((int64_t)inp->val1 << n) + ((int64_t)inp->val2 << n) / 1000000LL;
+
+	if (is_signed) {
+		if (!IN_RANGE(raw, -(int64_t)BIT(num_bits - 1), (int64_t)BIT_MASK(num_bits - 1))) {
+			return -ERANGE;
+		}
+
+		*val = (uint32_t)(raw & BIT64_MASK(num_bits));
+	} else {
+		if (!IN_RANGE(raw, 0, (int64_t)BIT64_MASK(num_bits))) {
+			return -ERANGE;
+		}
+
+		*val = (uint32_t)raw;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Helper function for converting double to struct sensor_value.
  *
  * @param val A pointer to a sensor_value struct.
@@ -1449,6 +1479,39 @@ static inline int sensor_value_from_float(struct sensor_value *val, float inp)
 
 	val->val1 = val1;
 	val->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for converting fixed-point to struct sensor_value.
+ *
+ * @param val A pointer to a sensor_value struct.
+ * @param inp Fixed-point value in Qm.n format.
+ * @param m Number of integer bits.
+ * @param n Number of fractional bits.
+ * @param is_signed Indicates whether the fixed-point value is signed or unsigned.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_from_fixed_point(struct sensor_value *val, uint32_t inp, uint8_t m,
+						uint8_t n, bool is_signed)
+{
+	uint8_t num_bits = m + n + (is_signed ? 1U : 0U);
+
+	if (m > 31 || !IN_RANGE(n, 1, 32) || !IN_RANGE(num_bits, 1, 32)) {
+		return -EINVAL;
+	}
+
+	inp &= BIT64_MASK(num_bits);
+
+	int64_t inp_int64 = is_signed ? sign_extend_64((uint64_t)inp, m + n) : (int64_t)inp;
+
+	val->val1 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
+
+	inp_int64 -= ((int64_t)val->val1 << n);
+	inp_int64 *= 1000000LL;
+
+	val->val2 = arithmetic_shift_right(inp_int64 + (inp_int64 < 0 ? BIT64_MASK(n) : 0), n);
 
 	return 0;
 }
@@ -1528,11 +1591,11 @@ struct sensor_info {
 	SENSOR_INFO_DT_DEFINE(node_id);
 
 /**
- * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a DT_DRV_COMPAT
+ * @brief Like SENSOR_DEVICE_DT_DEFINE() for an instance of a @c DT_DRV_COMPAT
  * compatible
  *
  * @param inst instance number. This is replaced by
- * <tt>DT_DRV_COMPAT(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
+ * <tt>DT_DRV_INST(inst)</tt> in the call to SENSOR_DEVICE_DT_DEFINE().
  *
  * @param ... other parameters as expected by SENSOR_DEVICE_DT_DEFINE().
  */
@@ -1624,13 +1687,132 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 }
 
 /**
+ * @brief Helper function for adding two struct sensor_value.
+ *
+ * @param inp1 The first addend.
+ * @param inp2 The second addend.
+ * @param out Resulting sum.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_value *inp2,
+				   struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 + (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 + inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for subtracting two struct sensor_value.
+ *
+ * @param inp1 The minuend.
+ * @param inp2 The subtrahend.
+ * @param out Resulting difference.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 - (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 - inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for multiplying two struct sensor_value.
+ *
+ * @param inp1 The first factor.
+ * @param inp2 The second factor.
+ * @param out Resulting product.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 * inp2->val1;
+	int64_t val2 = (int64_t)inp1->val1 * inp2->val2 + (int64_t)inp1->val2 * inp2->val1 +
+		       ((int64_t)inp1->val2 * inp2->val2) / 1000000LL;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for scaling a struct sensor_value.
+ *
+ * @param inp A pointer to a sensor_value struct.
+ * @param scalar An integer scalar.
+ * @param out Scaled output.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
+				     struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp->val1 * scalar;
+	int64_t val2 = (int64_t)inp->val2 * scalar;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
  * @}
  */
 
 /**
  * @brief Get the decoder name for the current driver
  *
- * This function depends on `DT_DRV_COMPAT` being defined.
+ * This function depends on @c DT_DRV_COMPAT being defined.
  */
 #define SENSOR_DECODER_NAME() UTIL_CAT(DT_DRV_COMPAT, __decoder_api)
 

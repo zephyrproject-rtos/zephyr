@@ -44,14 +44,14 @@
 };
 
 sdhc: &sdmmc2 {
-	compatible = "st,stm32-sdio";
+	compatible = "st,stm32-sdmmc";
 	interrupts = <124 0>;
 	interrupt-names = "event";
 	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15
 		     &sdmmc2_d2_pg11 &sdmmc2_d3_pb4
 		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pd7>;
 	pinctrl-names = "default";
-	sdhi-on-gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
+	pwr-gpios = <&gpiog 4 GPIO_ACTIVE_HIGH>;
 	power-delay-ms = <50>;
 	min-bus-freq = <DT_FREQ_K(400)>;
 	max-bus-freq = <DT_FREQ_M(208)>;

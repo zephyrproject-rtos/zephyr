@@ -582,7 +582,21 @@ static int fs_mgmt_file_upload(struct smp_streamer *ctxt)
 
 		rc = fs_write(&fs_mgmt_ctxt.file, file_data.value, file_data.len);
 
-		if (rc < 0) {
+		if (rc > 0 && rc < file_data.len) {
+			/* Write all data failed, try again with data offset */
+			int retry_rc;
+
+			retry_rc = fs_write(&fs_mgmt_ctxt.file, &file_data.value[rc],
+					    (file_data.len - rc));
+
+			if (retry_rc > 0) {
+				rc += retry_rc;
+			} else {
+				rc = retry_rc;
+			}
+		}
+
+		if (rc < 0 || rc < file_data.len) {
 			ok = smp_add_cmd_err(zse, MGMT_GROUP_ID_FS,
 					     FS_MGMT_ERR_FILE_WRITE_FAILED);
 			(void)fs_mgmt_cleanup();

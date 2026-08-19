@@ -125,5 +125,10 @@
 			interrupts = <97 0>;
 			status = "disabled";
 		};
+
+		hash: crypto@420c0400 {
+			st,has-sha384-algorithm;
+			st,has-sha512-algorithm;
+		};
 	};
 };

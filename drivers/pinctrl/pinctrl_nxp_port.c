@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 NXP
+ * Copyright 2022-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,25 +14,24 @@
 
 LOG_MODULE_REGISTER(pinctrl_nxp_port, CONFIG_PINCTRL_LOG_LEVEL);
 
-/* Port register addresses. */
-static PORT_Type *ports[] = {
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porta)),
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portb)),
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portc)),
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 3
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portd)),
-#endif
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 4
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(porte)),
-#endif
-#if DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) > 5
-	(PORT_Type *)DT_REG_ADDR(DT_NODELABEL(portf)),
-#endif
-};
+#define PORT_ADDR_OR_NULL(label) \
+	COND_CODE_1(DT_NODE_HAS_STATUS(DT_NODELABEL(label), okay), \
+	((PORT_Type *)DT_REG_ADDR(DT_NODELABEL(label))), \
+	(NULL))
 
 #define PIN(mux) (((mux) & 0xFC00000) >> 22)
 #define PORT(mux) (((mux) & 0xF0000000) >> 28)
 #define PINCFG(mux) ((mux) & Z_PINCTRL_NXP_PORT_PCR_MASK)
+
+/* Port register addresses. */
+static PORT_Type *ports[] = {
+	PORT_ADDR_OR_NULL(porta),
+	PORT_ADDR_OR_NULL(portb),
+	PORT_ADDR_OR_NULL(portc),
+	PORT_ADDR_OR_NULL(portd),
+	PORT_ADDR_OR_NULL(porte),
+	PORT_ADDR_OR_NULL(portf),
+};
 
 struct pinctrl_mcux_config {
 	const struct device *clock_dev;

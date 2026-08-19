@@ -66,8 +66,7 @@ static void test_address(bt_addr_le_t *addr)
 	}
 
 	printk("Ad set %d: Old addr %s, new addr %s\n", adv_index,
-	       bt_testlib_addr_to_str(&adv_set_data[adv_index].old_addr),
-	       bt_testlib_addr_to_str(addr));
+	       bt_addr_le_str(&adv_set_data[adv_index].old_addr), bt_addr_le_str(addr));
 
 	/*	For the first 2 rpa rotations, either of the first 2 adv sets returns false.
 	 *	Hence first 2 adv sets continue with old rpa in first 2 rpa rotations.
@@ -75,7 +74,6 @@ static void test_address(bt_addr_le_t *addr)
 	 *	Hence last 2 adv sets continue with old rpa in next 2 rpa rotations.
 	 */
 	if ((adv_set_data[adv_index].rpa_rotations % CONFIG_BT_EXT_ADV_MAX_ADV_SET)  < 2) {
-
 		if (adv_index < 2) {
 			if (!bt_addr_le_eq(addr, &adv_set_data[adv_index].old_addr)) {
 				TEST_FAIL("Adv sets should continue with old rpa");

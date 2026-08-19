@@ -105,9 +105,6 @@ ZTEST(threads_lifecycle_1cpu, test_threads_abort_repeat)
 	ztest_test_pass();
 }
 
-bool abort_called;
-void *block;
-
 static void delayed_thread_entry(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -123,6 +120,11 @@ static void delayed_thread_entry(void *p1, void *p2, void *p3)
  * @ingroup kernel_thread_tests
  * @brief Test abort on delayed thread before it has started
  * execution
+ *
+ * @details Create a thread with a 100ms start delay and abort it while
+ * it is still waiting to start. Sleep past the original start deadline
+ * and verify the thread never ran: a broken abort would have let the
+ * thread start and set execute_flag.
  *
  * @see k_thread_abort()
  */
@@ -150,9 +152,15 @@ ZTEST(threads_lifecycle_1cpu, test_delayed_thread_abort)
 
 	k_thread_abort(tid);
 
+	/* Sleep past the thread's original 100ms start deadline. A working
+	 * abort keeps execute_flag at 0; a broken abort would let the thread
+	 * start and set it to 1.
+	 */
+	k_msleep(100);
+
 	/* Test point: Test abort of thread before its execution*/
-	zassert_false(execute_flag == 1, "Delayed thread is has executed"
-		      " before cancellation");
+	zassert_true(execute_flag == 0, "Delayed thread has executed"
+		     " after its start deadline despite being aborted");
 
 	/* Restore the priority */
 	k_thread_priority_set(k_current_get(), current_prio);
@@ -191,7 +199,7 @@ extern struct k_sem offload_sem;
  *
  * @brief Show that threads can be aborted from interrupt context by itself
  *
- * @details Spwan a thread, then enter ISR context in child thread and abort
+ * @details Spawn a thread, then enter ISR context in child thread and abort
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
@@ -245,7 +253,7 @@ static void entry_aborted_thread(void *p1, void *p2, void *p3)
  *
  * @brief Show that threads can be aborted from interrupt context
  *
- * @details Spwan a thread, then enter ISR context in main thread and abort
+ * @details Spawn a thread, then enter ISR context in main thread and abort
  * the child thread. Check if ISR completed and target thread was aborted.
  *
  * @see k_thread_abort()
@@ -263,7 +271,7 @@ ZTEST(threads_lifecycle, test_abort_from_isr_not_self)
 	/* wait for thread started */
 	k_sem_take(&sem_abort, K_FOREVER);
 
-	/* Simulate taking an interrupt which kills spwan thread */
+	/* Simulate taking an interrupt which kills spawn thread */
 	irq_offload(offload_func, (void *)tid);
 
 	zassert_true(isr_finished, "ISR did not complete");

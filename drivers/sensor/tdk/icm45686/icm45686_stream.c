@@ -148,6 +148,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
 			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
 			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
+	buf->header.accel_odr = cfg->settings.accel.odr;
+	buf->header.gyro_odr = cfg->settings.gyro.odr;
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
@@ -504,6 +506,26 @@ void icm45686_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 				icm45686_stream_result(dev, err);
 				return;
 			}
+
+			/* Enable per-packet hardware timestamp insertion (20-byte hires packets).
+			 * Use 16μs resolution so that batches up to ~500ms fit in the signed
+			 * 16-bit delta used for correlation in the decoder.
+			 */
+			val = REG_FIFO_CONFIG4_TMST_FSYNC_EN(true);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG4, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to enable FIFO timestamp: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
+
+			val = REG_TMST_WOM_CONFIG_TMST_RESOL(1); /* 16μs */
+			err = icm45686_reg_write_rtio(&data->bus, TMST_WOM_CONFIG, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to set timestamp resolution: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
 		}
 	}
 	(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
@@ -524,7 +546,7 @@ int icm45686_stream_init(const struct device *dev)
 
 	if (cfg->int_gpio.port) {
 		if (!gpio_is_ready_dt(&cfg->int_gpio)) {
-			LOG_ERR("Interrupt GPIO not ready");
+			LOG_ERR_DEVICE_NOT_READY(cfg->int_gpio.port);
 			return -ENODEV;
 		}
 
@@ -555,7 +577,7 @@ int icm45686_stream_init(const struct device *dev)
 
 		int_pin_config.int_polarity = INTX_CONFIG2_INTX_POLARITY_HIGH;
 		int_pin_config.int_mode = INTX_CONFIG2_INTX_MODE_PULSE;
-		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_OD;
+		int_pin_config.int_drive = INTX_CONFIG2_INTX_DRIVE_PP;
 		err = icm456xx_set_pin_config_int(&data->driver, INV_IMU_INT1, &int_pin_config);
 
 		if (err) {

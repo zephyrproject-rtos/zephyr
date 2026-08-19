@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -244,3 +244,18 @@ family:
       cpuclusters:
       - name: m33
       - name: m55
+
+runners:
+  run_once:
+    '--erase':
+    - run: first
+      runners:
+      - all
+      groups:
+      # Qualifiers are matched as regexes, so a single pattern covers every
+      # pse8xx part number. The m33/ns, m33 and m55 cores of a die are flashed together,
+      # so grouping them here makes --erase run once, before the first core.
+      - qualifiers:
+        - pse8[0-9a-z]+/m33/ns
+        - pse8[0-9a-z]+/m33
+        - pse8[0-9a-z]+/m55

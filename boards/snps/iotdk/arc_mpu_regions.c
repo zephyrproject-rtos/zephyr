@@ -35,8 +35,8 @@ static struct arc_mpu_region mpu_regions[] = {
 #endif
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",
-			CONFIG_SRAM_BASE_ADDRESS,
-			CONFIG_SRAM_SIZE * 1024,
+			DT_CHOSEN_SRAM_ADDR,
+			DT_CHOSEN_SRAM_SIZE,
 			REGION_KERNEL_RAM_ATTR |
 			AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE),
 	MPU_REGION_ENTRY("FLASH_0",

@@ -1,0 +1,7 @@
+# Example shell aliases file
+#
+
+stacks="kernel thread stacks"
+scan="wifi scan"
+connect="wifi connect"
+iface="net iface"

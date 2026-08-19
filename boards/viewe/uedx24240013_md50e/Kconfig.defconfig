@@ -1,0 +1,26 @@
+# Copyright (c) 2026 VIEWE Display Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UEDX24240013_MD50E
+
+config KERNEL_MEM_POOL
+	default y
+
+if DISPLAY
+
+if LVGL
+
+configdefault LV_COLOR_16_SWAP
+	default y
+
+config LV_Z_VDB_SIZE
+	default 20
+
+endif # LVGL
+
+config REGULATOR
+	default y
+
+endif # DISPLAY
+
+endif # BOARD_UEDX24240013_MD50E

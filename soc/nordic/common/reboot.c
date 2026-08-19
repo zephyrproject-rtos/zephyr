@@ -36,6 +36,9 @@ void sys_arch_reboot(int type)
 #if defined(NRF_MEMORY_RAM2_SIZE)
 	ram_size += NRF_MEMORY_RAM2_SIZE;
 #endif
+#if defined(NRF_MEMORY_RAM3_SIZE)
+	ram_size += NRF_MEMORY_RAM3_SIZE;
+#endif
 
 	/* Power on all RAM blocks */
 	nrfx_ram_ctrl_power_enable_set(ram_start, ram_size, true);

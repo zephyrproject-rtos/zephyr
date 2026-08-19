@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,7 +40,7 @@ extern "C" {
  */
 #define SOC_GPIO_DEFAULT        (0)
 #define SOC_GPIO_FLAGS_POS      (0)
-#define SOC_GPIO_FLAGS_MASK     (0x1FF << SOC_GPIO_FLAGS_POS)
+#define SOC_GPIO_FLAGS_MASK     (0x1FFF << SOC_GPIO_FLAGS_POS)
 #define SOC_GPIO_PULLUP_POS     (0)
 #define SOC_GPIO_PULLUP         (1 << SOC_GPIO_PULLUP_POS)
 #define SOC_GPIO_PULLDOWN_POS   (1)
@@ -63,6 +63,12 @@ extern "C" {
 
 #define SOC_GPIO_DRIVESTRENGTH_POS (6)
 #define SOC_GPIO_DRIVESTRENGTH     (0x7 << SOC_GPIO_DRIVESTRENGTH_POS)
+
+/* CFGOUT3: peripheral-controlled OE with Hi-Z pull-up; takes priority over bias flags. */
+#define SOC_GPIO_CFGOUT3_POS (9)
+#define SOC_GPIO_CFGOUT3     (1 << SOC_GPIO_CFGOUT3_POS)
+#define SOC_GPIO_CFGOUT3_PULLUP_POS  (10)
+#define SOC_GPIO_CFGOUT3_PULLUP_MASK (0x7 << SOC_GPIO_CFGOUT3_PULLUP_POS)
 
 /** Type for CAT1 Soc pin. */
 typedef struct {
@@ -100,7 +106,10 @@ typedef struct {
 	 (DT_PROP(node_id, drive_open_source) << SOC_GPIO_OPENSOURCE_POS) |                        \
 	 (DT_PROP(node_id, drive_push_pull) << SOC_GPIO_PUSHPULL_POS) |                            \
 	 (DT_PROP(node_id, input_enable) << SOC_GPIO_INPUTENABLE_POS) |                            \
-	 (DT_PROP(node_id, bias_high_impedance) << SOC_GPIO_HIGHZ_POS)) |                          \
+	 (DT_PROP(node_id, bias_high_impedance) << SOC_GPIO_HIGHZ_POS) |                           \
+	 (DT_PROP(node_id, infineon_cfgout3_mode) << SOC_GPIO_CFGOUT3_POS) |                       \
+	 (DT_ENUM_IDX_OR(node_id, infineon_cfgout3_pullup_ohms, 0)                                 \
+	  << SOC_GPIO_CFGOUT3_PULLUP_POS)) |                                                       \
 		(DT_ENUM_IDX_OR(node_id, drive_strength, CY_GPIO_DRIVE_1_2)                        \
 		 << SOC_GPIO_DRIVESTRENGTH_POS)
 

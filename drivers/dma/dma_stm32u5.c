@@ -319,10 +319,13 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 		}
 		status = DMA_STATUS_COMPLETE;
 	} else {
-		LOG_ERR("Transfer Error.");
-		stream->busy = false;
-		dma_stm32_dump_stream_irq(dev, id);
-		dma_stm32_clear_stream_irq(dev, id);
+		/* Let HAL DMA handle flags on its own */
+		if (!stream->hal_override) {
+			LOG_ERR("Transfer Error.");
+			stream->busy = false;
+			dma_stm32_dump_stream_irq(dev, id);
+			dma_stm32_clear_stream_irq(dev, id);
+		}
 		status = -EIO;
 	}
 
@@ -333,7 +336,7 @@ static void dma_stm32_irq_handler(const struct device *dev, uint32_t id)
 
 static int dma_stm32_get_priority(uint8_t priority, uint32_t *ll_priority)
 {
-	if (priority > ARRAY_SIZE(table_priority)) {
+	if (priority >= ARRAY_SIZE(table_priority)) {
 		LOG_ERR("Priority error. %d", priority);
 		return -EINVAL;
 	}
@@ -623,7 +626,6 @@ static int dma_stm32_configure(const struct device *dev,
 #endif /* CONFIG_STM32_HAL2 */
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-
 #if defined(CONFIG_SOC_SERIES_STM32H7RSX)
 	if (dma == HPDMA1) {
 		/* Overwrite the config in case of HPDMA */
@@ -723,21 +725,41 @@ static int dma_stm32_suspend(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
-	const struct dma_stm32_stream *stream = &config->streams[id];
 
 	if (id >= config->max_streams) {
 		return -EINVAL;
 	}
 
-	/* Suspend the channel and wait for suspend Flag set */
+	/* Request channel suspension */
 	LL_DMA_SuspendChannel(STM32_DMA_GET_CHANNEL(dma, id));
-	/* It's not enough to wait for the SUSPF bit with LL_DMA_IsActiveFlag_SUSP */
-	do {
-		k_busy_wait(800); /* A delay is needed (800us is valid) */
-	} while (LL_DMA_IsActiveFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id)) != 1 &&
-			stream->busy == true);
 
-	/* Do not Reset the channel to allow resuming later */
+	/*
+	 * Wait until the channel becomes effectively suspended (SUSPF).
+	 * Also handle the case where the channel was/has become idle:
+	 * the suspension request has no effect on idle channels and
+	 * SUSPF will never be set in such cases.
+	 *
+	 * Note that this function is isr-ok so we MUST NOT rely on
+	 * metadata updated by the ISR (such as stream->busy); only
+	 * the hardware status flags are trustworthy here.
+	 */
+	do {
+		/*
+		 * It's not enough to wait for the SUSPF bit with
+		 * LL_DMA_IsActiveFlag_SUSP - a delay is needed.
+		 */
+		k_busy_wait(800);
+	} while (!LL_DMA_IsActiveFlag_SUSP(STM32_DMA_GET_CHANNEL(dma, id))
+		 && !LL_DMA_IsActiveFlag_IDLE(STM32_DMA_GET_CHANNEL(dma, id)));
+
+	/*
+	 * Don't bother clearing the suspension request if the channel was idle
+	 * (and has thus NOT been suspended) as only dma_resume() and dma_stop()
+	 * are allowed to be called by the DMA API on "suspended" channels, and
+	 * both of these functions will clear the suspension request.
+	 *
+	 * Obviously, also don't reset the channel to allow resuming it later.
+	 */
 	return 0;
 }
 
@@ -800,6 +822,24 @@ static int dma_stm32_init(const struct device *dev)
 		LOG_ERR("clock op failed\n");
 		return -EIO;
 	}
+
+#if defined(CONFIG_SOC_SERIES_STM32N6X) && defined(CONFIG_ARM_SECURE_FIRMWARE)
+	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
+
+	if (dma == HPDMA1) {
+		/* HPDMA supports per-channel CID configuration.
+		 * Configure each channel to use CID1 as do other
+		 * bus masters (see soc/st/stm32/stm32n6x/soc.c).
+		 * Without this configuration, transfers would appear
+		 * to complete but silently fail to move any data.
+		 */
+		for (uint32_t i = 0; i < config->max_streams; i++) {
+			LL_DMA_SetStaticIsolation(dma, dma_stm32_id_to_stream(i),
+						  LL_DMA_CHANNEL_STATIC_CID_1);
+			LL_DMA_EnableIsolation(dma, dma_stm32_id_to_stream(i));
+		}
+	}
+#endif /* CONFIG_SOC_SERIES_STM32N6X && CONFIG_ARM_SECURE_FIRMWARE */
 
 	config->config_irq(dev);
 

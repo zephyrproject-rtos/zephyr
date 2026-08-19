@@ -222,7 +222,7 @@ static int oma_tlv_get(struct oma_tlv *tlv, struct lwm2m_input_context *in,
 	uint8_t len_pos = 1U;
 	size_t tlv_len;
 	uint16_t tmp_offset;
-	uint8_t buf[2];
+	uint8_t buf[2] = {0};
 	int ret;
 
 	tmp_offset = in->offset;
@@ -944,7 +944,7 @@ static int lwm2m_multi_resource_tlv_parse(struct lwm2m_message *msg,
 	}
 
 	while (pos < multi_resource_tlv->length &&
-	       (len2 = oma_tlv_get(&tlv_resource_instance, &msg->in, true))) {
+	       (len2 = oma_tlv_get(&tlv_resource_instance, &msg->in, true)) > 0) {
 		if (tlv_resource_instance.type != OMA_TLV_TYPE_RESOURCE_INSTANCE) {
 			LOG_ERR("Multi resource id not supported %u %d", tlv_resource_instance.id,
 				tlv_resource_instance.length);
@@ -1027,7 +1027,7 @@ int do_write_op_tlv(struct lwm2m_message *msg)
 			}
 
 			while (pos < tlv.length &&
-			       (len2 = oma_tlv_get(&tlv2, &msg->in, true))) {
+			       (len2 = oma_tlv_get(&tlv2, &msg->in, true)) > 0) {
 				if (tlv2.type == OMA_TLV_TYPE_RESOURCE) {
 					ret = write_tlv_resource(msg, &tlv2);
 					if (ret) {

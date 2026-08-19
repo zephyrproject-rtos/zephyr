@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright 2021 Yonatan Schachter
+# SPDX-FileCopyrightText: Copyright 2023 Ian Wakely
+# SPDX-FileCopyrightText: Copyright 2026 Sayed Naser Moravej
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_W6100_EVB_PICO
+	select SOC_RP2040

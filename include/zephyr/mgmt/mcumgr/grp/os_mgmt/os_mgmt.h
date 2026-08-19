@@ -6,8 +6,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_OS_MGMT_
-#define H_OS_MGMT_
+/**
+ * @file
+ * @brief Header file for the MCUmgr OS management group API.
+ * @ingroup mcumgr_os_mgmt
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_
 
 /**
  * @brief MCUmgr OS Management API
@@ -136,4 +142,4 @@ struct os_mgmt_info_append {
  * @}
  */
 
-#endif /* H_OS_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_OS_MGMT_OS_MGMT_H_ */

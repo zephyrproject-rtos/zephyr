@@ -37,7 +37,7 @@ ZTEST_USER_F(bq40z50, test_get_some_props_failed_returns_bad_status)
 		/* Second invalid property */
 		FUEL_GAUGE_PROP_MAX,
 		/* Valid property */
-		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_VOLTAGE_UV,
 	};
 	union fuel_gauge_prop_val vals[ARRAY_SIZE(props)];
 
@@ -99,30 +99,30 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	/* Validate what props are supported by the driver */
 
 	fuel_gauge_prop_t props[] = {
-		FUEL_GAUGE_AVG_CURRENT,
-		FUEL_GAUGE_CURRENT,
+		FUEL_GAUGE_AVG_CURRENT_UA,
+		FUEL_GAUGE_CURRENT_UA,
 		FUEL_GAUGE_CHARGE_CUTOFF,
 		FUEL_GAUGE_CYCLE_COUNT,
-		FUEL_GAUGE_FULL_CHARGE_CAPACITY,
-		FUEL_GAUGE_REMAINING_CAPACITY,
-		FUEL_GAUGE_RUNTIME_TO_EMPTY,
+		FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH,
+		FUEL_GAUGE_REMAINING_CAPACITY_UAH,
+		FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS,
 		FUEL_GAUGE_SBS_MFR_ACCESS,
-		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE,
-		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE,
-		FUEL_GAUGE_TEMPERATURE,
-		FUEL_GAUGE_VOLTAGE,
+		FUEL_GAUGE_ABSOLUTE_STATE_OF_CHARGE_PCT,
+		FUEL_GAUGE_RELATIVE_STATE_OF_CHARGE_PCT,
+		FUEL_GAUGE_TEMPERATURE_DK,
+		FUEL_GAUGE_VOLTAGE_UV,
 		FUEL_GAUGE_SBS_MODE,
-		FUEL_GAUGE_CHARGE_CURRENT,
-		FUEL_GAUGE_CHARGE_VOLTAGE,
+		FUEL_GAUGE_CHARGE_CURRENT_UA,
+		FUEL_GAUGE_CHARGE_VOLTAGE_UV,
 		FUEL_GAUGE_STATUS,
 		FUEL_GAUGE_DESIGN_CAPACITY,
-		FUEL_GAUGE_DESIGN_VOLTAGE,
+		FUEL_GAUGE_DESIGN_VOLTAGE_MV,
 		FUEL_GAUGE_SBS_ATRATE,
-		FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL,
-		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY,
+		FUEL_GAUGE_SBS_ATRATE_TIME_TO_FULL_MINS,
+		FUEL_GAUGE_SBS_ATRATE_TIME_TO_EMPTY_MINS,
 		FUEL_GAUGE_SBS_ATRATE_OK,
 		FUEL_GAUGE_SBS_REMAINING_CAPACITY_ALARM,
-		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM,
+		FUEL_GAUGE_SBS_REMAINING_TIME_ALARM_MINS,
 		FUEL_GAUGE_STATE_OF_HEALTH,
 	};
 
@@ -131,57 +131,57 @@ ZTEST_USER_F(bq40z50, test_get_props__returns_ok)
 	zassert_ok(fuel_gauge_get_props(fixture->dev, props, vals, ARRAY_SIZE(props)));
 	/* Check properties for valid ranges */
 #if CONFIG_EMUL
-	zassert_equal(vals[0].avg_current, 1 * 1000);
-	zassert_equal(vals[1].current, 1 * 1000);
+	zassert_equal(vals[0].avg_current_ua, 1 * 1000);
+	zassert_equal(vals[1].current_ua, 1 * 1000);
 	/* Not testing props[2]. This is the charger cutoff and has a boolean.*/
 	zassert_equal(vals[3].cycle_count, 1);
-	zassert_equal(vals[4].full_charge_capacity, 1 * 1000);
-	zassert_equal(vals[5].remaining_capacity, 1 * 1000);
-	zassert_equal(vals[6].runtime_to_empty, 65535);
+	zassert_equal(vals[4].full_charge_capacity_uah, 1 * 1000);
+	zassert_equal(vals[5].remaining_capacity_uah, 1 * 1000);
+	zassert_equal(vals[6].runtime_to_empty_mins, 65535);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
-	zassert_equal(vals[8].absolute_state_of_charge, 100);
-	zassert_equal(vals[9].relative_state_of_charge, 100);
-	zassert_equal(vals[10].temperature, 2980);
-	zassert_equal(vals[11].voltage, 1 * 1000);
+	zassert_equal(vals[8].absolute_state_of_charge_pct, 100);
+	zassert_equal(vals[9].relative_state_of_charge_pct, 100);
+	zassert_equal(vals[10].temperature_dk, 2980);
+	zassert_equal(vals[11].voltage_uv, 1 * 1000);
 	zassert_equal(vals[12].sbs_mode, 0);
-	zassert_equal(vals[13].chg_current, 1 * 1000);
-	zassert_equal(vals[14].chg_voltage, 1 * 1000);
+	zassert_equal(vals[13].chg_current_ua, 1 * 1000);
+	zassert_equal(vals[14].chg_voltage_uv, 1 * 1000);
 	/* Not testing props[15]. This property is the status and only has only status bits */
 	zassert_equal(vals[16].design_cap, 1);
-	zassert_equal(vals[17].design_volt, 14400);
+	zassert_equal(vals[17].design_volt_mv, 14400);
 	zassert_equal(vals[18].sbs_at_rate, 0);
-	zassert_equal(vals[19].sbs_at_rate_time_to_full, 65535);
-	zassert_equal(vals[20].sbs_at_rate_time_to_empty, 65535);
+	zassert_equal(vals[19].sbs_at_rate_time_to_full_mins, 65535);
+	zassert_equal(vals[20].sbs_at_rate_time_to_empty_mins, 65535);
 	zassert_equal(vals[21].sbs_at_rate_ok, 0);
 	zassert_equal(vals[22].sbs_remaining_capacity_alarm, 300);
-	zassert_equal(vals[23].sbs_remaining_time_alarm, 10);
+	zassert_equal(vals[23].sbs_remaining_time_alarm_mins, 10);
 	zassert_equal(vals[24].state_of_health, 100);
 #else
 	/* When having a real device, check for the valid ranges */
-	zassert_between_inclusive(vals[0].avg_current, -32767 * 1000, 32768 * 1000);
-	zassert_between_inclusive(vals[1].current, -32767 * 1000, 32768 * 1000);
+	zassert_between_inclusive(vals[0].avg_current_ua, -32767 * 1000, 32768 * 1000);
+	zassert_between_inclusive(vals[1].current_ua, -32767 * 1000, 32768 * 1000);
 	/* Not testing props[2]. This is the charger cutoff and has a boolean.*/
 	zassert_between_inclusive(vals[3].cycle_count, 0, 65535);
-	zassert_between_inclusive(vals[4].full_charge_capacity, 0, 65535 * 1000);
-	zassert_between_inclusive(vals[5].remaining_capacity, 0, 65535 * 1000);
-	zassert_between_inclusive(vals[6].runtime_to_empty, 0, 65535);
+	zassert_between_inclusive(vals[4].full_charge_capacity_uah, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[5].remaining_capacity_uah, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[6].runtime_to_empty_mins, 0, 65535);
 	/* Not testing props[7]. This is the manufacturer access and has only status bits */
-	zassert_between_inclusive(vals[8].absolute_state_of_charge, 0, 100);
-	zassert_between_inclusive(vals[9].relative_state_of_charge, 0, 100);
-	zassert_between_inclusive(vals[10].temperature, 0, 65535);
-	zassert_between_inclusive(vals[11].voltage, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[8].absolute_state_of_charge_pct, 0, 100);
+	zassert_between_inclusive(vals[9].relative_state_of_charge_pct, 0, 100);
+	zassert_between_inclusive(vals[10].temperature_dk, 0, 65535);
+	zassert_between_inclusive(vals[11].voltage_uv, 0, 65535 * 1000);
 	zassert_between_inclusive(vals[12].sbs_mode, 0, 65535 * 1000);
-	zassert_between_inclusive(vals[13].chg_current, 0, 65535 * 1000);
-	zassert_between_inclusive(vals[14].chg_voltage, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[13].chg_current_ua, 0, 65535 * 1000);
+	zassert_between_inclusive(vals[14].chg_voltage_uv, 0, 65535 * 1000);
 	/* Not testing props[15]. This property is the status and only has only status bits */
 	zassert_between_inclusive(vals[16].design_cap, 0, 65535);
-	zassert_between_inclusive(vals[17].design_volt, 0, 18000);
+	zassert_between_inclusive(vals[17].design_volt_mv, 0, 18000);
 	zassert_between_inclusive(vals[18].sbs_at_rate, -32768, 32767);
-	zassert_between_inclusive(vals[19].sbs_at_rate_time_to_full, 0, 65535);
-	zassert_between_inclusive(vals[20].sbs_at_rate_time_to_empty, 0, 65535);
+	zassert_between_inclusive(vals[19].sbs_at_rate_time_to_full_mins, 0, 65535);
+	zassert_between_inclusive(vals[20].sbs_at_rate_time_to_empty_mins, 0, 65535);
 	/* Not testing props[21]. This is the sbs_at_rate_ok property and has a boolean.*/
 	zassert_between_inclusive(vals[22].sbs_remaining_capacity_alarm, 0, 1000);
-	zassert_between_inclusive(vals[23].sbs_remaining_time_alarm, 0, 30);
+	zassert_between_inclusive(vals[23].sbs_remaining_time_alarm_mins, 0, 30);
 	zassert_between_inclusive(vals[24].state_of_health, 0, 100);
 #endif
 }

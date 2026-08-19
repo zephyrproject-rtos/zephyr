@@ -8,6 +8,8 @@
 #ifndef LIB_LIBC_ARCMWDT_INCLUDE_SIGNAL_H_
 #define LIB_LIBC_ARCMWDT_INCLUDE_SIGNAL_H_
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

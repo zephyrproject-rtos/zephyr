@@ -7,7 +7,7 @@ import sys
 # Xtensa Vector Table linker generator
 #
 # Takes a pre-processed (gcc -dM) core-isa.h file as its first
-# argument, and emits a GNU linker section declartion which will
+# argument, and emits a GNU linker section declaration which will
 # correctly load the exception vectors and literals as long as their
 # code is declared using standard conventions (see below).
 #

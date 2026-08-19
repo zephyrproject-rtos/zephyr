@@ -7,9 +7,12 @@
 #define ZEPHYR_KERNEL_INCLUDE_KSWAP_H_
 
 #include <ksched.h>
+#include <run_q.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/barrier.h>
 #include <kernel_arch_func.h>
+#include <timeslicing.h>
+#include <usage.h>
 
 #ifdef CONFIG_STACK_SENTINEL
 extern void z_check_stack_sentinel(void);
@@ -81,24 +84,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 	struct k_thread *new_thread, *old_thread;
 
 #ifdef CONFIG_SPIN_VALIDATE
-	/* Make sure the key acts to unmask interrupts, if it doesn't,
-	 * then we are context switching out of a nested lock
-	 * (i.e. breaking the lock of someone up the stack) which is
-	 * forbidden!  The sole exception are dummy threads used
-	 * during initialization (where we start with interrupts
-	 * masked and switch away to begin scheduling) and the case of
-	 * a dead current thread that was just aborted (where the
-	 * damage was already done by the abort anyway).
-	 *
-	 * (Note that this is disabled on ARM64, where system calls
-	 * can sometimes run with interrupts masked in ways that don't
-	 * represent lock state.  See #35307)
-	 */
-# ifndef CONFIG_ARM64
-	__ASSERT(arch_irq_unlocked(key) ||
-		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
-		 "Context switching while holding lock!");
-# endif /* CONFIG_ARM64 */
+	z_assert_can_swap(key, lock);
 #endif /* CONFIG_SPIN_VALIDATE */
 
 	old_thread = _current;
@@ -142,21 +128,28 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_current_thread_set(new_thread);
 
 #ifdef CONFIG_TIMESLICING
-		z_reset_time_slice(new_thread);
+		z_time_slice_reset(new_thread);
 #endif /* CONFIG_TIMESLICING */
 
 #ifdef CONFIG_SPIN_VALIDATE
-		z_spin_lock_set_owner(&_sched_spinlock);
+		z_spin_lock_transfer_owner(&_sched_spinlock);
 #endif /* CONFIG_SPIN_VALIDATE */
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 
 #ifdef CONFIG_SMP
 		/* Now add _current back to the run queue, once we are
-		 * guaranteed to reach the context switch in finite
-		 * time.  See z_sched_switch_spin().
+		 * guaranteed to reach the context switch in finite time.  See
+		 * z_sched_switch_spin().  The current thread can never live in
+		 * the run queue until we are inexorably on the context switch
+		 * path on SMP, otherwise there is a deadlock condition where a
+		 * set of CPUs pick a cycle of threads to run and wait for them
+		 * all to context switch forever.
 		 */
-		z_requeue_current(old_thread);
+		if (z_is_thread_queued(old_thread)) {
+			runq_add(old_thread);
+		}
+		signal_pending_ipi();
 #endif /* CONFIG_SMP */
 		void *newsh = new_thread->switch_handle;
 
@@ -212,12 +205,7 @@ static inline int z_swap_irqlock(unsigned int key)
 	z_check_stack_sentinel();
 
 #ifdef CONFIG_SPIN_VALIDATE
-	/* Refer to comment in do_swap() above for details */
-# ifndef CONFIG_ARM64
-	__ASSERT(arch_irq_unlocked(key) ||
-		 _current->base.thread_state & (_THREAD_DUMMY | _THREAD_DEAD),
-		 "Context switching while holding lock!");
-# endif /* CONFIG_ARM64 */
+	z_assert_can_swap(key, NULL);
 #endif /* CONFIG_SPIN_VALIDATE */
 
 	ret = arch_swap(key);

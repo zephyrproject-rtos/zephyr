@@ -21,7 +21,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "bs_pc_backchannel.h"
 
 #define GOOD_CLIENT_CHAN 0
@@ -108,15 +108,11 @@ static void stop_adv(struct bt_le_ext_adv *adv)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (err) {
-		TEST_FAIL("Failed to connect to %s (err %d)", addr_str, err);
+		TEST_FAIL("Failed to connect to %s (err %d)", bt_conn_dst_str(conn), err);
 	}
 
-	LOG_DBG("Connected: %s", addr_str);
+	LOG_DBG("Connected: %s", bt_conn_dst_str(conn));
 
 	default_conn = bt_conn_ref(conn);
 
@@ -126,11 +122,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr_str, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(conn);
 	default_conn = NULL;
@@ -141,15 +133,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr_str, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 		SET_FLAG(security_updated_flag);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr_str, level, err);
+		LOG_DBG("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
 	}
 }
 
@@ -172,17 +160,17 @@ static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 	WAIT_FOR_FLAG(security_updated_flag);
 	UNSET_FLAG(security_updated_flag);
 
-	/* wait for confirmation of subscribtion from good client */
+	/* wait for confirmation of subscription from good client */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that subscribtion request did not fail */
+	/* check that subscription request did not fail */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Good client did not subscribed");
 	}
 
 	stop_adv(adv);
 
-	/* confirm to good client that the subscribtion has been well registered */
+	/* confirm to good client that the subscription has been well registered */
 	backchannel_sync_send(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 }
 
@@ -196,12 +184,12 @@ static void connect_wait_unsubscribtion(struct bt_le_ext_adv *adv)
 
 	stop_adv(adv);
 
-	/* check that subscribtion is restored for bad client */
+	/* check that subscription is restored for bad client */
 	if (!is_peer_subscribed(default_conn)) {
-		TEST_FAIL("Subscribtion has not been restored for bad client");
+		TEST_FAIL("Subscription has not been restored for bad client");
 	}
 
-	/* confirm to bad client that the subscribtion had not been restored */
+	/* confirm to bad client that the subscription had not been restored */
 	backchannel_sync_send(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
 	/* wait for confirmation that bad client requested unsubscribtion */
 	backchannel_sync_wait(BAD_CLIENT_CHAN, BAD_CLIENT_ID);
@@ -227,14 +215,14 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 	/* wait for good client end of security update */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
-	/* check that subscribtion hasn't been restored */
+	/* check that subscription hasn't been restored */
 	if (is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Good client is subscribed");
 	}
 
-	/* confirm to good client that the subscribtion has been well restored */
+	/* confirm to good client that the subscription has been well restored */
 	backchannel_sync_send(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
-	/* wait for confimation of unsubscribtion from good client */
+	/* wait for confirmation of unsubscribtion from good client */
 	backchannel_sync_wait(GOOD_CLIENT_CHAN, GOOD_CLIENT_ID);
 
 	/* check that unsubscribtion request from good client has been registered */

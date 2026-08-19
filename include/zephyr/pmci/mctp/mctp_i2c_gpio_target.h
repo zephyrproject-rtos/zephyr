@@ -5,8 +5,14 @@
  *
  */
 
-#ifndef ZEPHYR_MCTP_I2C_GPIO_TARGET_H_
-#define ZEPHYR_MCTP_I2C_GPIO_TARGET_H_
+/**
+ * @file
+ * @brief MCTP bus binding over I2C with GPIO signaling, target side.
+ * @ingroup mctp
+ */
+
+#ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
+#define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
 
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -29,11 +35,13 @@ struct mctp_binding_i2c_gpio_target {
 	uint8_t reg_addr;
 	bool rxtx;
 	uint8_t rx_idx;
+	uint8_t rx_exp_len;
 	struct mctp_pktbuf *rx_pkt;
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
 	uint8_t tx_idx;
 	struct mctp_pktbuf *tx_pkt;
+	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I2C_GPIO_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
 	/** INTERNAL_HIDDEN @endcond */
 };
 
@@ -77,6 +85,7 @@ int mctp_i2c_gpio_target_unregister(struct mctp_binding_i2c_gpio_target *b);
 			.start = mctp_i2c_gpio_target_start,                                       \
 			.tx = mctp_i2c_gpio_target_tx,                                             \
 			.pkt_size = MCTP_I2C_GPIO_MAX_PKT_SIZE,                                    \
+			.tx_storage = _name.tx_storage,                                            \
 		},                                                                                 \
 		.i2c = DEVICE_DT_GET(DT_PHANDLE(_node_id, i2c)),                                   \
 		.i2c_target_cfg = {                                                                \
@@ -89,4 +98,4 @@ int mctp_i2c_gpio_target_unregister(struct mctp_binding_i2c_gpio_target *b);
 		.tx_complete = &_name##_tx_complete,                                               \
 	};
 
-#endif /* ZEPHYR_MCTP_I2C_GPIO_TARGET_H_ */
+#endif /* ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_ */

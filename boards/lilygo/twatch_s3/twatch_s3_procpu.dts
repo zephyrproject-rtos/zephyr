@@ -9,6 +9,8 @@
 #include "twatch_s3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
 	model = "T-Watch S3 PROCPU";
@@ -21,6 +23,7 @@
 		rtc = &pfc8563_rtc;
 		pwm-led0 = &backlight_pwm;
 		fuel-gauge0 = &fuel_gauge;
+		lora0 = &lora0;
 	};
 
 	chosen {
@@ -55,7 +58,7 @@
 			y-offset = <80>;
 			mdac = <0xc8>;
 			ram-param = [00 e0];
-			colmod = <0x55>;
+			pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
 			porch-param = [0c 0c 00 33 33];
 			gctrl = <0x35>;
 			vcom = <0x28>;
@@ -94,6 +97,27 @@
 	channel0@0 {
 		reg = <0x0>;
 		timer = <0>;
+	};
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+
+	lora0: lora@0 {
+		compatible = "semtech,sx1262";
+		reg = <0>;
+		reset-gpios = <&gpio0 8 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+		busy-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+		dio1-gpios = <&gpio0 9 GPIO_ACTIVE_HIGH>;
+		dio2-tx-enable;
+		dio3-tcxo-voltage = <SX126X_DIO3_TCXO_3V0>;
+		tcxo-power-startup-delay-ms = <5>;
+		spi-max-frequency = <4000000>;
 	};
 };
 
@@ -274,6 +298,7 @@
 
 &flash0 {
 	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 };
 
 &timer0 {
@@ -281,5 +306,9 @@
 };
 
 &ipm0 {
+	status = "okay";
+};
+
+&wifi {
 	status = "okay";
 };

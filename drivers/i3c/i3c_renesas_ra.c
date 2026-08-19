@@ -210,7 +210,6 @@ static int i3c_renesas_ra_device_index_request(const struct device *dev, uint8_t
 static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 						i3c_slave_info_t const *daa_rx)
 {
-	const struct i3c_renesas_ra_config *config = dev->config;
 	struct i3c_renesas_ra_data *data = dev->data;
 	struct i3c_device_desc *target;
 	int target_index = -1;
@@ -223,9 +222,7 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 	fsp_err_t fsp_err = FSP_SUCCESS;
 
 	/* Find device in the device list, assign a dynamic address */
-	ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-					   &config->common.dev_list, pid, false, false, &target,
-					   &dyn_addr);
+	ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target, &dyn_addr);
 	if (ret) {
 		LOG_DBG("Assign new DA error");
 		goto add_phase_exit;
@@ -236,6 +233,12 @@ static void i3c_renesas_ra_handle_address_phase(const struct device *dev,
 		target->dynamic_addr = dyn_addr;
 		target->bcr = daa_rx->bcr;
 		target->dcr = daa_rx->dcr;
+
+		int aret = i3c_attach_i3c_device(target);
+
+		if (aret != 0 && aret != -EALREADY) {
+			LOG_ERR("Failed to attach target");
+		}
 	}
 
 	/* Request index for this target */
@@ -1098,7 +1101,8 @@ static int i3c_renesas_ra_init(const struct device *dev)
 	}
 
 	/* Check I3C is controller mode and target device exist in device tree */
-	if (config->common.dev_list.num_i3c > 0) {
+	if (config->common.dev_list.num_i3c > 0 &&
+	    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret) {
@@ -1205,6 +1209,7 @@ static DEVICE_API(i3c, i3c_renesas_ra_api) = {
 		.common.dev_list.i2c = i3c##index##_renesas_ra_i2c_dev_list,                       \
 		.common.dev_list.num_i2c = ARRAY_SIZE(i3c##index##_renesas_ra_i2c_dev_list),       \
 		.common.primary_controller_da = DT_INST_PROP_OR(index, primary_controller_da, 0),  \
+		.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(index),                        \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
 		.pclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(index, pclk)),               \
 		.tclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(index, tclk)),               \

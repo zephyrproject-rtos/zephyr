@@ -121,6 +121,17 @@ DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd',
                                  '-t', TEST_TARGET]
 
 
+RESET_ALL_EXPECTED_CALL = [TEST_PYOCD,
+                           'reset',
+                           '-da', TEST_DAPARG,
+                           '-t', TEST_TARGET,
+                           '-u', TEST_DEV_ID,
+                           '-f', TEST_FREQUENCY] + TEST_TOOL_OPTS + TEST_FLASH_OPTS
+RESET_DEF_EXPECTED_CALL = ['pyocd',
+                           'reset',
+                           '-t', TEST_TARGET]
+
+
 #
 # Fixtures
 #
@@ -196,6 +207,18 @@ def test_debugserver(require, cc, pyocd_args, expected, pyocd):
     cc.assert_called_once_with(expected)
 
 
+@pytest.mark.parametrize('pyocd_args,expected', [
+    (TEST_ALL_KWARGS, RESET_ALL_EXPECTED_CALL),
+    (TEST_DEF_KWARGS, RESET_DEF_EXPECTED_CALL)
+])
+@patch('runners.pyocd.PyOcdBinaryRunner.check_call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_reset(require, cc, pyocd_args, expected, pyocd):
+    pyocd(pyocd_args).run('reset')
+    assert require.called
+    cc.assert_called_once_with(expected)
+
+
 #
 # Test cases for runners created via command line arguments.
 #
@@ -242,6 +265,20 @@ def test_debug_args(require, rsc, bc, pyocd_args, expectedv, pyocd):
 @patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
 def test_debugserver_args(require, cc, bc, pyocd_args, expected, pyocd):
     pyocd(pyocd_args).run('debugserver')
+    assert require.called
+    bc.assert_called_once_with(RC_BUILD_DIR)
+    cc.assert_called_once_with(expected)
+
+
+@pytest.mark.parametrize('pyocd_args, expected', [
+    (TEST_ALL_PARAMS, RESET_ALL_EXPECTED_CALL),
+    (TEST_DEF_PARAMS, RESET_DEF_EXPECTED_CALL),
+])
+@patch('runners.pyocd.BuildConfiguration')
+@patch('runners.pyocd.PyOcdBinaryRunner.check_call')
+@patch('runners.core.ZephyrBinaryRunner.require', side_effect=require_patch)
+def test_reset_args(require, cc, bc, pyocd_args, expected, pyocd):
+    pyocd(pyocd_args).run('reset')
     assert require.called
     bc.assert_called_once_with(RC_BUILD_DIR)
     cc.assert_called_once_with(expected)

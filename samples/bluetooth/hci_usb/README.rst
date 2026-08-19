@@ -18,4 +18,12 @@ Requirements
 
 Building and Running
 ********************
-See :zephyr:code-sample-category:`bluetooth` samples for details.
+
+Build and flash the sample as follows, replacing ``<board>`` with your target
+board (e.g. :zephyr:board:`nrf52840dk`):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_usb
+   :board: <board>
+   :goals: build flash
+   :compact:

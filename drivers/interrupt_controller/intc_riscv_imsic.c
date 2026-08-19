@@ -8,6 +8,9 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#if defined(CONFIG_RISCV_AIA)
+#include <zephyr/drivers/interrupt_controller/riscv_aia.h>
+#endif
 #include <zephyr/drivers/interrupt_controller/riscv_imsic.h>
 #include <zephyr/arch/riscv/icsr.h>
 #include <zephyr/arch/riscv/irq.h>
@@ -173,19 +176,21 @@ static int imsic_irq_init(void)
 
 SYS_INIT(imsic_irq_init, POST_KERNEL, CONFIG_INTC_INIT_PRIORITY);
 
-/* Include for irq_from_level_2() */
-#include <zephyr/irq_multilevel.h>
-
 /*
  * MEXT interrupt handler: claim EIID from IMSIC and dispatch to registered ISR
  *
- * With 1:1 mapping, EIID equals IRQ number directly.
+ * With 1:1 mapping, EIID equals the local APLIC source number. The AIA
+ * coordinator dispatches it through the second-level ISR table.
  */
 static void imsic_mext_isr(const void *arg)
 {
 	const struct device *dev = arg;
-	const struct imsic_cfg *cfg = dev->config;
 
+#if defined(CONFIG_RISCV_AIA)
+	ARG_UNUSED(dev);
+#else
+	const struct imsic_cfg *cfg = dev->config;
+#endif
 	LOG_DBG("MEXT ISR entered");
 
 	uint32_t eiid = riscv_imsic_claim();
@@ -194,18 +199,18 @@ static void imsic_mext_isr(const void *arg)
 		return; /* Spurious or already claimed */
 	}
 
-	/* 1:1 mapping: EIID is the IRQ number */
-	uint32_t irq = eiid;
-
-	LOG_DBG("MEXT claimed EIID/IRQ %u", irq);
-
-	/* Bounds check */
-	if (irq >= cfg->nr_irqs) {
-		LOG_ERR("IRQ %u out of range (>= %u)", irq, cfg->nr_irqs);
+	LOG_DBG("MEXT claimed EIID %u", eiid);
+#if defined(CONFIG_RISCV_AIA)
+	riscv_aia_dispatch_eiid(eiid);
+#else
+	if (eiid >= cfg->nr_irqs) {
+		LOG_ERR("EIID %u out of range (>= %u)", eiid, cfg->nr_irqs);
 		z_irq_spurious(NULL);
+		return;
 	}
 
-	_sw_isr_table[irq].isr(_sw_isr_table[irq].arg);
+	_sw_isr_table[eiid].isr(_sw_isr_table[eiid].arg);
+#endif
 }
 
 #ifdef CONFIG_SMP

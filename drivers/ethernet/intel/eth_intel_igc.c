@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(eth_intel_igc, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/sys/crc.h>
 #include "../eth.h"
 #include "eth_intel_igc_priv.h"
+#include "eth_intel_plat.h"
 
 #define DT_DRV_COMPAT intel_igc_mac
 
@@ -409,16 +410,12 @@ static void eth_intel_igc_set_mac_filter(const struct device *dev,
 	eth_intel_igc_set_mac_addr(data->base, index, mac_addr, config);
 }
 
-static void eth_intel_igc_phylink_cb(const struct device *phy, struct phy_link_state *state,
-				     void *user_data)
+static void eth_intel_igc_phylink_cb(const struct device *phy __unused,
+				     struct phy_link_state *state, void *user_data)
 {
-	struct eth_intel_igc_mac_data *data = (struct eth_intel_igc_mac_data *)user_data;
+	struct net_if *iface = (struct net_if *)user_data;
 
-	if (state->is_up) {
-		net_eth_carrier_on(data->iface);
-	} else {
-		net_eth_carrier_off(data->iface);
-	}
+	net_eth_carrier_set(iface, state->is_up);
 }
 
 static void eth_intel_igc_intr_enable(const struct device *dev)
@@ -462,8 +459,10 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 
 	eth_intel_igc_set_mac_filter(dev, DEST_ADDR, data->mac_addr, 0, 0);
 
+	net_if_carrier_off(iface);
+
 	if (device_is_ready(cfg->phy)) {
-		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)data);
+		phy_link_callback_set(cfg->phy, eth_intel_igc_phylink_cb, (void *)iface);
 	} else {
 		LOG_ERR("PHY device is not ready");
 		return;
@@ -472,14 +471,17 @@ static void eth_intel_igc_iface_init(struct net_if *iface)
 	eth_intel_igc_intr_enable(dev);
 }
 
-static enum ethernet_hw_caps eth_intel_igc_get_caps(const struct device *dev)
+static enum ethernet_hw_caps eth_intel_igc_get_caps(const struct device *dev,
+						    struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_LINK_1000BASE;
 }
 
-static int eth_intel_igc_set_config(const struct device *dev, enum ethernet_config_type type,
+static int eth_intel_igc_set_config(const struct device *dev,
+				    struct net_if *iface __unused,
+				    enum ethernet_config_type type,
 				    const struct ethernet_config *eth_cfg)
 {
 	struct eth_intel_igc_mac_data *data = dev->data;
@@ -493,7 +495,8 @@ static int eth_intel_igc_set_config(const struct device *dev, enum ethernet_conf
 	return -ENOTSUP;
 }
 
-static const struct device *eth_intel_igc_get_phy(const struct device *dev)
+static const struct device *eth_intel_igc_get_phy(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
 
@@ -501,7 +504,8 @@ static const struct device *eth_intel_igc_get_phy(const struct device *dev)
 }
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev)
+static struct net_stats_eth *eth_intel_igc_get_stats(const struct device *dev,
+						     struct net_if *iface __unused)
 {
 	struct eth_intel_igc_mac_data *data = dev->data;
 	const struct eth_intel_igc_mac_cfg *cfg = dev->config;
@@ -630,7 +634,7 @@ static int eth_intel_igc_tx_data(const struct device *dev, struct net_pkt *pkt)
 		queue = cfg->num_queues - 1;
 	}
 
-	for (struct net_buf *frag = pkt->frags; frag; frag = frag->frags) {
+	NET_PKT_FRAG_FOR_EACH(pkt, frag) {
 		/* Hold the Header fragment until transmit clean done */
 		if (frag == pkt->frags) {
 			net_pkt_frag_ref(frag);

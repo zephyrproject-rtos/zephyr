@@ -10,15 +10,14 @@
  * This can be used to access the APIs implemented for the eic driver.
  */
 
-#ifndef INCLUDE_ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_
-#define INCLUDE_ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_
+#define ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_
 
 #include <soc.h>
 #include <zephyr/types.h>
 #include <zephyr/drivers/gpio.h>
 
 /**
- * @typedef mchp_eic_callback_t
  * @brief EIC ISR callback used to notify the GPIO layer of an interrupt.
  *
  * @param[in] pins Bitmask of GPIO pins that triggered (bit n => pin n).
@@ -172,4 +171,4 @@ uint32_t eic_mchp_interrupt_pending(uint8_t port_id);
  */
 int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config);
 
-#endif /*INCLUDE_ZEPHYR_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_*/
+#endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_MCHP_EIC_G1_H_ */

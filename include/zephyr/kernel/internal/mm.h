@@ -9,6 +9,7 @@
 
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/devicetree.h>
 
 /**
  * @defgroup kernel_mm_internal_apis Kernel Memory Management Internal APIs
@@ -26,7 +27,7 @@
  *     virt_addr = phys_addr + K_MEM_VIRT_OFFSET
  *
  * This only works for virtual addresses within the interval
- * [CONFIG_KERNEL_VM_BASE, CONFIG_KERNEL_VM_BASE + (CONFIG_SRAM_SIZE * 1024)).
+ * [CONFIG_KERNEL_VM_BASE, CONFIG_KERNEL_VM_BASE + DT_CHOSEN_SRAM_ADDR).
  *
  * These macros are intended for assembly, linker code, and static initializers.
  * Use with care.
@@ -39,22 +40,20 @@
  */
 #ifdef CONFIG_MMU
 #define K_MEM_VIRT_OFFSET	((CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_OFFSET) - \
-				 (CONFIG_SRAM_BASE_ADDRESS + CONFIG_SRAM_OFFSET))
+				 (DT_CHOSEN_SRAM_ADDR + CONFIG_SRAM_OFFSET))
 #else
 #define K_MEM_VIRT_OFFSET	0
 #endif /* CONFIG_MMU */
 
-#if CONFIG_SRAM_BASE_ADDRESS != 0
-#define IS_SRAM_ADDRESS_LOWER(ADDR)  ((ADDR) >= CONFIG_SRAM_BASE_ADDRESS)
+#if DT_CHOSEN_SRAM_ADDR != 0
+#define IS_SRAM_ADDRESS_LOWER(ADDR)  ((ADDR) >= DT_CHOSEN_SRAM_ADDR)
 #else
 #define IS_SRAM_ADDRESS_LOWER(ADDR)  true
-#endif /* CONFIG_SRAM_BASE_ADDRESS != 0 */
+#endif /* DT_CHOSEN_SRAM_ADDR != 0 */
 
-
-#if (CONFIG_SRAM_BASE_ADDRESS + (CONFIG_SRAM_SIZE * 1024UL)) != 0
+#if (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE) != 0
 #define IS_SRAM_ADDRESS_UPPER(ADDR)              \
-	((ADDR) < (CONFIG_SRAM_BASE_ADDRESS +    \
-		  (CONFIG_SRAM_SIZE * 1024UL)))
+	((ADDR) < (DT_CHOSEN_SRAM_ADDR + DT_CHOSEN_SRAM_SIZE))
 #else
 #define IS_SRAM_ADDRESS_UPPER(ADDR)  false
 #endif
@@ -121,17 +120,14 @@ static inline uintptr_t k_mem_phys_addr(void *virt)
 	__ASSERT(sys_mm_is_virt_addr_in_range(virt),
 		 "address %p not in permanent mappings", virt);
 #elif defined(CONFIG_MMU)
-	__ASSERT(
 #if CONFIG_KERNEL_VM_BASE != 0
-		 (addr >= CONFIG_KERNEL_VM_BASE) &&
+	/* Skipped when the VM base is 0, where the comparison is always true and
+	 * some compilers warn about it (-Wtype-limits).
+	 */
+	__ASSERT(addr >= (uintptr_t)CONFIG_KERNEL_VM_BASE, "address %p below VM base", virt);
 #endif /* CONFIG_KERNEL_VM_BASE != 0 */
-#if (CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE) != 0
-		 (addr < (CONFIG_KERNEL_VM_BASE +
-			  (CONFIG_KERNEL_VM_SIZE))),
-#else
-		 false,
-#endif /* CONFIG_KERNEL_VM_BASE + CONFIG_KERNEL_VM_SIZE != 0 */
-		 "address %p not in permanent mappings", virt);
+	__ASSERT((addr - (uintptr_t)CONFIG_KERNEL_VM_BASE) < (uintptr_t)CONFIG_KERNEL_VM_SIZE,
+		 "address %p above VM limit", virt);
 #else
 	/* Should be identity-mapped */
 	__ASSERT(IS_SRAM_ADDRESS(addr),
@@ -296,7 +292,7 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size);
  *             anonymous memory. Must be page-aligned.
  * @param size Size of the memory mapping. This must be page-aligned.
  * @param flags K_MEM_PERM_*, K_MEM_MAP_* control flags.
- * @param is_anon True is requesting mapping with anonymous memory.
+ * @param is_anon True if requesting mapping with anonymous memory.
  *
  * @return The mapped memory location, or NULL if insufficient virtual address
  *         space, insufficient physical memory to establish the mapping,

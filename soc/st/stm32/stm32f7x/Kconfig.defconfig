@@ -17,4 +17,7 @@ configdefault SHARED_INTERRUPTS
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers13)
 	default y if $(dt_nodelabel_enabled,timers8) && $(dt_nodelabel_enabled,timers14)
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x53b80f00"
+
 endif # SOC_SERIES_STM32F7X

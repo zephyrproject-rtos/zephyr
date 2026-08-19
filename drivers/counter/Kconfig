@@ -10,9 +10,25 @@ menuconfig COUNTER
 
 if COUNTER
 
+config COUNTER_CAPTURE
+	bool "Counter capture"
+	select EXPERIMENTAL
+	depends on COUNTER_SUPPORTS_CAPTURE
+	help
+	  Enable support for counter capture. This is a feature that allows
+	  hardware timestamping of external events as well as a software
+	  interrupt on the event. This feature is not supported by all
+	  counter drivers.
+
+config COUNTER_SUPPORTS_CAPTURE
+	bool
+	help
+	  Select this option if the counter driver supports the counter capture
+	  API. This is to be set the driver.
+
 config COUNTER_INIT_PRIORITY
 	int "Counter init priority"
-	default 60
+	default KERNEL_INIT_PRIORITY_DEVICE
 	help
 	  Counter driver device initialization priority.
 
@@ -44,6 +60,13 @@ config COUNTER_64BITS_TICKS
 	  64-bit typedef. It is up to the driver to implement the necessary
 	  functions to supports.
 
+config COUNTER_CALIBRATION
+	bool "Counter driver calibration support"
+	help
+	  Enable support for counter clock calibration. Calibration
+	  is specified in parts per billion (ppb). A positive value
+	  speeds up the counter, a negative value slows it down.
+
 module = COUNTER
 module-str = counter
 source "subsys/logging/Kconfig.template.log_config"
@@ -51,12 +74,15 @@ source "subsys/logging/Kconfig.template.log_config"
 # zephyr-keep-sorted-start
 source "drivers/counter/Kconfig.ace"
 source "drivers/counter/Kconfig.ambiq"
+source "drivers/counter/Kconfig.ameba_tmr"
 source "drivers/counter/Kconfig.andes_atcpit100"
+source "drivers/counter/Kconfig.bee_rtc"
 source "drivers/counter/Kconfig.bee_timer"
 source "drivers/counter/Kconfig.bflb"
 source "drivers/counter/Kconfig.cc23x0_lgpt"
 source "drivers/counter/Kconfig.cc23x0_rtc"
 source "drivers/counter/Kconfig.cmos"
+source "drivers/counter/Kconfig.crsas_ma2"
 source "drivers/counter/Kconfig.dtmr_cmsdk_apb"
 source "drivers/counter/Kconfig.dw"
 source "drivers/counter/Kconfig.esp32_rtc"
@@ -67,10 +93,10 @@ source "drivers/counter/Kconfig.infineon"
 source "drivers/counter/Kconfig.infineon_tcpwm"
 source "drivers/counter/Kconfig.ite_it51xxx"
 source "drivers/counter/Kconfig.ite_it8xxx2"
+source "drivers/counter/Kconfig.k3_rtc_counter"
 source "drivers/counter/Kconfig.max32_rtc"
 source "drivers/counter/Kconfig.max32_timer"
 source "drivers/counter/Kconfig.max32_wut"
-source "drivers/counter/Kconfig.maxim_ds3231"
 source "drivers/counter/Kconfig.mchp"
 source "drivers/counter/Kconfig.mchp_sam_pit64b"
 source "drivers/counter/Kconfig.mcp7940n"
@@ -85,12 +111,16 @@ source "drivers/counter/Kconfig.mcux_rtc"
 source "drivers/counter/Kconfig.mcux_rtc_jdp"
 source "drivers/counter/Kconfig.mcux_snvs"
 source "drivers/counter/Kconfig.mcux_stm"
+source "drivers/counter/Kconfig.mcux_sysctr"
 source "drivers/counter/Kconfig.mcux_tpm"
+source "drivers/counter/Kconfig.mcux_tstmr"
+source "drivers/counter/Kconfig.mcux_wake_timer"
 source "drivers/counter/Kconfig.mspm0"
 source "drivers/counter/Kconfig.native_sim"
 source "drivers/counter/Kconfig.neorv32"
 source "drivers/counter/Kconfig.npcx"
 source "drivers/counter/Kconfig.nrfx"
+source "drivers/counter/Kconfig.nxp_irtc"
 source "drivers/counter/Kconfig.nxp_mrt"
 source "drivers/counter/Kconfig.nxp_pit"
 source "drivers/counter/Kconfig.nxp_s32"
@@ -109,6 +139,8 @@ source "drivers/counter/Kconfig.stm32_timer"
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
 source "drivers/counter/Kconfig.xec"
 source "drivers/counter/Kconfig.xlnx"
+source "drivers/counter/Kconfig.xlnx_ttc"
+source "drivers/counter/Kconfig.xlnx_zynqmp_rtc"
 # zephyr-keep-sorted-stop
 
 source "drivers/counter/Kconfig.rv3032_counter"

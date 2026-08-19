@@ -3,7 +3,7 @@
 
 if SOC_SERIES_INTEL_ADSP_ACE
 
-config SMP
+configdefault SMP
 	default y
 
 config POWER_DOMAIN

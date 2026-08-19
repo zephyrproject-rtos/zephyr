@@ -11,7 +11,7 @@ Run PSA test suites tests with Zephyr and TFM.
 The PSA tests are implemented in the psa-arch-tests repo: https://github.com/ARM-software/psa-arch-tests
 
 This sample is supported for platforms that have a port in psa-arch-tests.
-See sample.yaml for a list of supported platforms.
+See tests.yaml for a list of supported platforms.
 
 Building and Running
 ********************

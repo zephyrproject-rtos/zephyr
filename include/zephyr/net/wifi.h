@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ * @ingroup wifi_mgmt
  */
 
 /**
@@ -117,12 +118,28 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP_OPEN,
 	/** WEP security with Shared Key authentication. */
 	WIFI_SECURITY_TYPE_WEP_SHARED,
+	/** Opportunistic Wireless Encryption (OWE) security. */
+	WIFI_SECURITY_TYPE_OWE,
+	/** WPA2-PSK-SHA384 security. */
+	WIFI_SECURITY_TYPE_PSK_SHA384,
+	/** FT-PSK-SHA384 security. */
+	WIFI_SECURITY_TYPE_FT_PSK_SHA384,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
-	WIFI_SECURITY_TYPE_MAX = __WIFI_SECURITY_TYPE_AFTER_LAST - 1,
-	WIFI_SECURITY_TYPE_UNKNOWN
+	WIFI_SECURITY_TYPE_MAX = WIFI_SECURITY_TYPE_FT_PSK_SHA384,
+	WIFI_SECURITY_TYPE_UNKNOWN = __WIFI_SECURITY_TYPE_AFTER_LAST
 	/** @endcond */
+};
+
+/** @brief WEP key type (based on key length). */
+enum wifi_wep_key_type {
+	/** WEP key type unknown or not applicable. */
+	WIFI_WEP_KEY_TYPE_UNKNOWN = 0,
+	/** WEP-64 (40-bit key: 5 ASCII or 10 hex chars). */
+	WIFI_WEP_KEY_TYPE_64,
+	/** WEP-128 (104-bit key: 13 ASCII or 26 hex chars). */
+	WIFI_WEP_KEY_TYPE_128,
 };
 
 /** @brief EPA method Types. */
@@ -163,6 +180,7 @@ enum wifi_wpa3_enterprise_type {
 	/** @endcond */
 };
 
+/** @brief EAP TLS cipher types. */
 enum wifi_eap_tls_cipher_type {
 	/** EAP TLS with NONE */
 	WIFI_EAP_TLS_NONE,
@@ -198,6 +216,7 @@ enum wifi_group_mgmt_cipher_type {
 	WPA_CAPA_ENC_BIP_GMAC_256,
 };
 
+/** @brief Cipher capability and name description. */
 struct wifi_cipher_desc {
 	/** Cipher capability. */
 	unsigned int capa;
@@ -205,6 +224,7 @@ struct wifi_cipher_desc {
 	char *name;
 };
 
+/** @brief EAP cipher configuration. */
 struct wifi_eap_cipher_config {
 	/** Key management type string. */
 	char *key_mgmt;
@@ -216,10 +236,11 @@ struct wifi_eap_cipher_config {
 	char *pairwise_cipher;
 	/** Group management cipher string. */
 	char *group_mgmt_cipher;
-	/** Used to confiure TLS features. */
+	/** Used to configure TLS features. */
 	char *tls_flags;
 };
 
+/** @brief EAP method configuration. */
 struct wifi_eap_config {
 	/**  Security type. */
 	enum wifi_security_type type;
@@ -238,6 +259,9 @@ const char *wifi_security_txt(enum wifi_security_type security);
 
 /** Helper function to get user-friendly wpa3 enterprise security type name. */
 const char *wifi_wpa3_enterprise_txt(enum wifi_wpa3_enterprise_type wpa3_ent);
+
+/** Helper function to get user-friendly WEP key type name. */
+const char *wifi_wep_key_type_txt(enum wifi_wep_key_type wep_key_type);
 
 /** @brief IEEE 802.11w - Management frame protection. */
 enum wifi_mfp_options {
@@ -299,6 +323,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
+/** Helper function to get user-friendly frequency bandwidth name. */
 const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */
@@ -309,6 +334,8 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 #define WIFI_PSK_MAX_LEN 64
 /** Maximum WEP key length (WEP-104: 26 hex chars) */
 #define WIFI_WEP_KEY_MAX_LEN 26
+/** Length of the PBKDF2 key */
+#define WIFI_PSK_PBKDF2_KEY_LEN 32
 /** Max SAW password length */
 #define WIFI_SAE_PSWD_MAX_LEN 128
 /** MAC address length */
@@ -654,9 +681,14 @@ const char *wifi_ps_wakeup_mode_txt(enum wifi_ps_wakeup_mode ps_wakeup_mode);
  * @brief Wi-Fi power save exit strategy
  */
 enum wifi_ps_exit_strategy {
-	/** PS-Poll frame based */
+	/** Custom algorithm: the driver/firmware decides how to exit power save
+	 *  based on traffic, e.g. by sending a PS-Poll, fully exiting power save,
+	 *  or a mix of both.
+	 */
 	WIFI_PS_EXIT_CUSTOM_ALGO = 0,
-	/** QoS NULL frame based */
+	/** Exit power save on every TIM, typically by sending a QoS NULL (or any
+	 *  data) frame to retrieve the buffered traffic.
+	 */
 	WIFI_PS_EXIT_EVERY_TIM,
 
 /** @cond INTERNAL_HIDDEN */

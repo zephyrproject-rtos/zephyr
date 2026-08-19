@@ -80,7 +80,11 @@ SECTION_FUNC(vectors, __start)
 	 */
 	la t0, _irq_vector_table /* Load address of interrupt vector table */
 	addi t0, t0, 0x01 /* Enable vectored mode by setting LSB */
+#ifdef CONFIG_RISCV_S_MODE
+	csrw stvec, t0
+#else
 	csrw mtvec, t0
+#endif
 
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
@@ -101,7 +105,11 @@ SECTION_FUNC(vectors, __start)
 	 * to _isr_wrapper.
 	 */
 	la t0, _isr_wrapper
+#ifdef CONFIG_RISCV_S_MODE
+	csrw stvec, t0
+#else
 	csrw mtvec, t0
+#endif
 
 #endif /* CONFIG_RISCV_HAS_CLIC&& !CONFIG_LEGACY_CLIC */
 

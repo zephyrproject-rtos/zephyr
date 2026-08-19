@@ -88,7 +88,7 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 		return -EINVAL;
 	}
 
-	*sock = zsock_socket(client->remote.sa_family, NET_SOCK_STREAM, proto);
+	*sock = zsock_socket(client->remote_addr.ss_family, NET_SOCK_STREAM, proto);
 	if (*sock < 0) {
 		ret = -errno;
 		LOG_ERR("socket(data) failed: %d", ret);
@@ -109,15 +109,15 @@ static int new_ftp_connection(struct ftp_client *client, enum ftp_channel_type c
 	}
 
 	/* Connect to remote host */
-	if (client->remote.sa_family == NET_AF_INET) {
-		net_sin(&client->remote)->sin_port = net_htons(port);
+	if (client->remote_addr.ss_family == NET_AF_INET) {
+		net_sin(net_sad(&client->remote_addr))->sin_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
-		net_sin6(&client->remote)->sin6_port = net_htons(port);
+		net_sin6(net_sad(&client->remote_addr))->sin6_port = net_htons(port);
 		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
-	ret = zsock_connect(*sock, &client->remote, addrlen);
+	ret = zsock_connect(*sock, net_sad(&client->remote_addr), addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("connect(data) failed: %d", ret);
@@ -597,7 +597,7 @@ int ftp_open(struct ftp_client *client, const char *hostname, uint16_t port, int
 		goto out;
 	}
 
-	memcpy(&client->remote, ai->ai_addr, ai->ai_addrlen);
+	memcpy(&client->remote_addr, ai->ai_addr, ai->ai_addrlen);
 	zsock_freeaddrinfo(ai);
 
 	client->sec_tag = sec_tag;
@@ -1251,7 +1251,7 @@ int ftp_init(struct ftp_client *client, ftp_client_callback_t ctrl_callback,
 	client->ctrl_callback = ctrl_callback;
 	client->data_callback = data_callback;
 
-	memset(&client->remote, 0, sizeof(client->remote));
+	memset(&client->remote_addr, 0, sizeof(client->remote_addr));
 
 	k_mutex_init(&client->lock);
 #if CONFIG_FTP_CLIENT_KEEPALIVE_TIME > 0

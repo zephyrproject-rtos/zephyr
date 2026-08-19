@@ -52,8 +52,7 @@ void mfd_pca9422_set_irqhandler(const struct device *dev, const struct device *c
  * @param reg Register start address
  * @param value Pointer that stores the received data
  * @param len Number of bytes to read
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_burst_read_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_burst_read_dt()).
  */
 int mfd_pca9422_reg_burst_read(const struct device *dev, uint8_t reg, uint8_t *value, size_t len);
 
@@ -63,8 +62,7 @@ int mfd_pca9422_reg_burst_read(const struct device *dev, uint8_t reg, uint8_t *v
  * @param dev pca9422 mfd device
  * @param reg Register address
  * @param value Pointer that stores the received data
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_reg_read_byte_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_reg_read_byte_dt()).
  */
 int mfd_pca9422_reg_read_byte(const struct device *dev, uint8_t reg, uint8_t *value);
 
@@ -75,8 +73,7 @@ int mfd_pca9422_reg_read_byte(const struct device *dev, uint8_t reg, uint8_t *va
  * @param reg Register start address
  * @param value Pointer that stores the write data
  * @param len Number of bytes to write
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_burst_write_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_burst_write_dt()).
  */
 int mfd_pca9422_reg_burst_write(const struct device *dev, uint8_t reg, uint8_t *value, size_t len);
 
@@ -86,8 +83,7 @@ int mfd_pca9422_reg_burst_write(const struct device *dev, uint8_t reg, uint8_t *
  * @param dev pca9422 mfd device
  * @param reg Register address
  * @param value data to write
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_reg_write_byte_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_reg_write_byte_dt()).
  */
 int mfd_pca9422_reg_write_byte(const struct device *dev, uint8_t reg, uint8_t value);
 
@@ -98,8 +94,7 @@ int mfd_pca9422_reg_write_byte(const struct device *dev, uint8_t reg, uint8_t va
  * @param reg Register address
  * @param mask mask of bits to be modified
  * @param value data to write
- * @retval 0 If successful
- * @retval -errno In case of any bus error (see i2c_reg_update_byte_dt())
+ * @return 0 on success, negative errno value on failure (see i2c_reg_update_byte_dt()).
  */
 int mfd_pca9422_reg_update_byte(const struct device *dev, uint8_t reg, uint8_t mask, uint8_t value);
 

@@ -29,6 +29,12 @@ properties:
   reg:
     required: true
 
+  nordic,vpr-ready-event:
+    type: int
+    description:
+      Event to wait for before sending messages. Used to synchronize with the VPR core
+      (cpuppr) which is not ready to receive signals immediately after VPR core is launched.
+
 mbox-cells:
   - channel
 

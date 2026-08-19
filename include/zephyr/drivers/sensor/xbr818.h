@@ -17,7 +17,7 @@
 /**
  * @brief Phosense XBR818 10 GHz Radar
  * @defgroup xbr818_interface XBR818
- * @ingroup sensor_interface_ext
+ * @ingroup sensor_interface_ext_phosense
  * @{
  */
 

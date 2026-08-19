@@ -17,12 +17,12 @@
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
-#include "host/addr_internal.h"
-#include "host/hci_core.h"
+#include <host/addr_internal.h>
+#include <host/hci_core.h>
 #include "br.h"
-#include "host/conn_internal.h"
+#include <host/conn_internal.h>
 #include "sco_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_CONN_LOG_LEVEL
@@ -382,7 +382,21 @@ uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 	sco_conn->sco.link_type = evt->link_type;
 
 	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
+		struct bt_sco_chan *chan = sco_conn->sco.chan;
+
 		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));
+
+		/* If the server accepted the connection request, a channel was
+		 * attached in sco_accept(). Detach it before releasing the
+		 * connection object so that the channel does not keep a
+		 * dangling reference to it. The disconnected callback is not
+		 * called since the connection was never established.
+		 */
+		if (chan != NULL) {
+			bt_sco_chan_set_state(chan, BT_SCO_STATE_DISCONNECTED);
+			chan->sco = NULL;
+		}
+
 		bt_sco_cleanup(sco_conn);
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
@@ -398,10 +412,7 @@ void bt_sco_cleanup_acl(struct bt_conn *sco)
 {
 	LOG_DBG("%p", sco);
 
-	if (sco->sco.acl) {
-		bt_conn_unref(sco->sco.acl);
-		sco->sco.acl = NULL;
-	}
+	bt_conn_drop(&sco->sco.acl);
 }
 
 static int sco_setup_sync_conn(struct bt_conn *sco_conn)

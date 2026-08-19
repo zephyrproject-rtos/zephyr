@@ -7,7 +7,7 @@ arch: openrisc
 toolchain:
   - zephyr
   - cross-compile
-ram: 128
+ram: 131072
 testing:
   default: true
   ignore_tags:

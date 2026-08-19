@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt1160_cm7.dtsi>
+#include <nxp/imxrt/imxrt11xx/nxp_rt1160_cm7.dtsi>
 #include "mimxrt1160_evk.dtsi"
 
 / {
@@ -123,6 +123,14 @@
 
 zephyr_udc0: &usb1 {
 	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <7>;
+	tx-cal-45-dp-ohms = <6>;
+	tx-cal-45-dm-ohms = <6>;
 };
 
 &mailbox_a {

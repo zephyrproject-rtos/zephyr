@@ -79,6 +79,15 @@
 		};
 	};
 
+	ios_i2c0_default: ios_i2c0_default {
+		group1 {
+			pinmux = <SLSCL_P0>, <SLSDAWIR3_P1>;
+			drive-open-drain;
+			drive-strength = "0.5";
+			bias-pull-up;
+		};
+	};
+
 	spid0_default: spid0_default {
 		group1 {
 			pinmux = <SLSCK_P0>, <SLMISO_P2>, <SLMOSI_P1>, <SLNCE_P3>;
@@ -133,16 +142,34 @@
 			pinmux = <MSPI0_0_P22>,
 				 <MSPI0_1_P26>,
 				 <MSPI0_2_P4>,
-				 <MSPI0_3_P23>,
-				 <MSPI0_8_P24>;
+				 <MSPI0_3_P23>;
 		};
 
 		group2 {
+			pinmux = <MSPI0_8_P24>;
+			drive-strength = "1.0";
+			ambiq,iom-mspi = <0>;
+			ambiq,iom-num = <6>;
+		};
+
+		group3 {
 			pinmux = <NCE19_P19>;
 			drive-push-pull;
 			drive-strength = "0.5";
+			ambiq,iom-mspi = <0>;
 			ambiq,nce-src = <0>;
 			ambiq,iom-num = <6>;
+		};
+	};
+
+	mspi0_sleep: mspi0_sleep {
+		group1 {
+			pinmux = <GPIO_P22>,
+				 <GPIO_P26>,
+				 <GPIO_P4>,
+				 <GPIO_P23>,
+				 <GPIO_P24>,
+				 <GPIO_P19>;
 		};
 	};
 

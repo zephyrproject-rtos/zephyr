@@ -25,11 +25,10 @@ LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 static struct net_if *default_iface;
 
-static const uint8_t mac_addr_init[6] = { 0x01, 0x02, 0x03,
-				       0x04,  0x05,  0x06 };
-
-static const uint8_t mac_addr_change[6] = { 0x01, 0x02, 0x03,
-					 0x04,  0x05,  0x07 };
+/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+static const uint8_t mac_addr_init[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x00};
+/* 00-00-5E-00-53-xx Documentation RFC 7042 */
+static const uint8_t mac_addr_change[6] = {0x00, 0x00, 0x5e, 0x00, 0x53, 0x01};
 
 struct eth_fake_context {
 	struct net_if *iface;
@@ -95,7 +94,8 @@ static int eth_fake_send(const struct device *dev,
 	return 0;
 }
 
-static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev __unused,
+						       struct net_if *iface __unused)
 {
 	return  ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE | ETHERNET_QAV |
 		ETHERNET_PROMISC_MODE | ETHERNET_PRIORITY_QUEUES |
@@ -140,6 +140,7 @@ static void eth_fake_recalc_qav_idle_slopes(struct eth_fake_context *ctx)
 }
 
 static int eth_fake_set_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
 {
@@ -297,6 +298,7 @@ static int eth_fake_set_config(const struct device *dev,
 }
 
 static int eth_fake_get_config(const struct device *dev,
+			       struct net_if *iface __unused,
 			       enum ethernet_config_type type,
 			       struct ethernet_config *config)
 {
@@ -514,7 +516,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	    net_if_get_by_iface(iface));
 
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		if (PART_OF_ARRAY(NET_IF_GET_NAME(eth_fake, 0), iface)) {
+		if (iface == NET_IF_GET(eth_fake, 0)) {
 			*my_iface = iface;
 		}
 	}

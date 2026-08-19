@@ -49,6 +49,9 @@ config NRFS_HAS_VBUS_DETECTOR_SERVICE
 config NRFS_TEMP_SERVICE_HAS_SUBSCRIPTION_SERVICE
 	bool
 
+config NRFS_HAS_GSWDT_SERVICE
+	bool
+
 config NRFS
 	bool "nRF Services Support"
 	select NRFS_LOCAL_DOMAIN if SOC_NRF54H20_CPUAPP || \
@@ -148,6 +151,11 @@ config NRFS_AUDIOPLL_SERVICE_ENABLED
 	bool "Audio PLL service"
 	depends on NRFS_HAS_AUDIOPLL_SERVICE
 	default y if SOC_NRF54H20_CPUAPP
+
+config NRFS_GSWDT_SERVICE_ENABLED
+	bool "Global Software Watchdog service"
+	depends on NRFS_HAS_GSWDT_SERVICE
+	default y
 
 endmenu
 

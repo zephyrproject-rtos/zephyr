@@ -35,7 +35,6 @@ K_THREAD_STACK_ARRAY_DEFINE(multiple_wake_stack,
 
 ZTEST_BMEM int woken;
 ZTEST_BMEM int timeout;
-ZTEST_BMEM int index[TOTAL_THREADS_WAITING];
 ZTEST_BMEM struct k_futex simple_futex;
 ZTEST_BMEM struct k_futex multiple_futex[TOTAL_THREADS_WAITING];
 struct k_futex no_access_futex;
@@ -134,7 +133,7 @@ static void futex_multiple_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int woken_num = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(woken_num > 0, "invalid woken number");
 
@@ -148,7 +147,7 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
 {
 	int32_t ret_value;
 	int time_val = *(int *)p1;
-	int idx = *(int *)p2;
+	int idx = POINTER_TO_INT(p2);
 
 	zassert_true(time_val == (int)K_TICKS_FOREVER, "invalid timeout parameter");
 
@@ -166,7 +165,25 @@ static void futex_multiple_wait_wake_task(void *p1, void *p2, void *p3)
  */
 
 /**
- * @brief Test k_futex_wait() forever
+ * @brief Verify that k_futex_wait() with K_FOREVER blocks while the value
+ *        matches.
+ *
+ * @details
+ * A futex wait whose expected value matches the futex must put the caller to
+ * sleep indefinitely: nothing wakes it, so the waiter's post-wait code -- an
+ * atomic decrement of the futex value -- must never run. The value still
+ * being non-zero after the waiter had time to run is what shows it stayed
+ * blocked.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread that waits on it with
+ *   K_FOREVER and decrements the value after waking.
+ * - Yield so the waiter runs, then check the futex value.
+ *
+ * Expected result:
+ * - The value is unchanged: the waiter blocked and never woke.
+ *
+ * @see k_futex_wait()
  */
 ZTEST(futex, test_futex_wait_forever)
 {
@@ -188,6 +205,25 @@ ZTEST(futex, test_futex_wait_forever)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that k_futex_wait() returns control after a finite
+ *        timeout expires.
+ *
+ * @details
+ * With a finite timeout and no waker, the wait must end on its own once the
+ * timeout elapses, returning control to the waiter, which then decrements the
+ * futex value. The decrement having happened is what shows the timeout path
+ * completed.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread waiting with a 50 ms timeout.
+ * - Sleep past the timeout, then check the futex value.
+ *
+ * Expected result:
+ * - The waiter timed out and ran its post-wait code, so the value is zero.
+ *
+ * @see k_futex_wait()
+ */
 ZTEST(futex, test_futex_wait_timeout)
 {
 	timeout = k_ms_to_ticks_ceil32(50);
@@ -208,6 +244,23 @@ ZTEST(futex, test_futex_wait_timeout)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that k_futex_wait() with K_NO_WAIT returns immediately.
+ *
+ * @details
+ * A zero timeout turns the wait into a poll: the call must come back at once
+ * with -ETIMEDOUT instead of blocking. The waiter thread checks that return
+ * and then decrements the futex value, which is what the test observes.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread waiting with K_NO_WAIT.
+ * - Give it time to run, then check the futex value.
+ *
+ * Expected result:
+ * - The waiter returned immediately with -ETIMEDOUT and ran on.
+ *
+ * @see k_futex_wait()
+ */
 ZTEST(futex, test_futex_wait_nowait)
 {
 	timeout = 0;
@@ -228,7 +281,25 @@ ZTEST(futex, test_futex_wait_nowait)
 }
 
 /**
- * @brief Test k_futex_wait() and k_futex_wake()
+ * @brief Verify that k_futex_wake() wakes a waiter blocked with K_FOREVER.
+ *
+ * @details
+ * The basic handshake: one thread blocks on the futex forever, another calls
+ * k_futex_wake(), and the wake must both return the number of threads woken
+ * and actually unblock the waiter, whose post-wait decrement is what the test
+ * observes.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread waiting with K_FOREVER.
+ * - Spawn a second user thread that wakes one waiter and checks the count.
+ * - Yield, then check the futex value.
+ *
+ * Expected result:
+ * - The wake reports one thread woken and the waiter resumed, so the value
+ *   is zero.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
  */
 ZTEST(futex, test_futex_wait_forever_wake)
 {
@@ -262,6 +333,27 @@ ZTEST(futex, test_futex_wait_forever_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that a wake arriving before the timeout ends the wait early.
+ *
+ * @details
+ * When a waiter has a finite timeout and a wake arrives first, the wait must
+ * complete as a wake -- returning success to the waiter -- rather than
+ * waiting out the rest of the timeout.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread waiting with a 100 ms
+ *   timeout.
+ * - Spawn a waker before the timeout can expire and let both run.
+ * - Check the futex value.
+ *
+ * Expected result:
+ * - The waiter was woken (returning 0, not -ETIMEDOUT) and ran its post-wait
+ *   code before the timeout elapsed.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
+ */
 ZTEST(futex, test_futex_wait_timeout_wake)
 {
 	woken = 1;
@@ -295,6 +387,24 @@ ZTEST(futex, test_futex_wait_timeout_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that a wake finds no waiter after a K_NO_WAIT poll.
+ *
+ * @details
+ * A thread that polled with K_NO_WAIT is no longer waiting by the time a
+ * wake is issued, so the wake must report zero threads woken rather than
+ * counting the poller.
+ *
+ * Test steps:
+ * - Spawn a user thread that polls the futex with K_NO_WAIT and returns.
+ * - After it has finished, spawn a waker expecting to wake zero threads.
+ *
+ * Expected result:
+ * - The wake reports no threads woken.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
+ */
 ZTEST(futex, test_futex_wait_nowait_wake)
 {
 	woken = 0;
@@ -322,6 +432,25 @@ ZTEST(futex, test_futex_wait_nowait_wake)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that k_futex_wake() works from interrupt context.
+ *
+ * @details
+ * Waking a futex is legal from an ISR, where the waker cannot block. A
+ * waiter blocked with K_FOREVER must be resumed by a wake issued through
+ * irq_offload() exactly as by one from a thread.
+ *
+ * Test steps:
+ * - Set the futex value and spawn a user thread waiting with K_FOREVER.
+ * - Issue k_futex_wake() from an ISR via irq_offload().
+ * - Yield, then check the futex value.
+ *
+ * Expected result:
+ * - The waiter is woken by the ISR and runs its post-wait code.
+ *
+ * @see k_futex_wake()
+ * @see irq_offload()
+ */
 ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 {
 	timeout = K_TICKS_FOREVER;
@@ -347,6 +476,28 @@ ZTEST(futex, test_futex_wait_forever_wake_from_isr)
 	k_thread_abort(&futex_tid);
 }
 
+/**
+ * @brief Verify that a single wake-all resumes every waiter on one futex.
+ *
+ * @details
+ * k_futex_wake() with wake_all set must resume every thread blocked on the
+ * futex, and its return value must count them all. Each waiter decrements
+ * the futex value once resumed, so a value of zero at the end means none of
+ * them was left behind.
+ *
+ * Test steps:
+ * - Block a batch of user threads on one futex, incrementing the value once
+ *   per waiter.
+ * - Issue a single wake with wake_all from another thread and check it
+ *   reports the full count.
+ * - Yield, then check the futex value reached zero.
+ *
+ * Expected result:
+ * - All waiters resume off one wake and the reported count matches.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
+ */
 ZTEST(futex, test_futex_multiple_threads_wait_wake)
 {
 	timeout = K_TICKS_FOREVER;
@@ -382,28 +533,45 @@ ZTEST(futex, test_futex_multiple_threads_wait_wake)
 	}
 }
 
-ZTEST(futex, test_multiple_futex_wait_wake)
+/**
+ * @brief Verify that independent futexes wake independently.
+ *
+ * @details
+ * Each futex has its own wait queue: a wake issued on one must resume only
+ * the thread waiting on that futex and not disturb waiters on any other.
+ * One waiter and one waker are paired per futex, and every futex's value
+ * must reach zero through its own pair.
+ *
+ * Test steps:
+ * - Block one user thread on each of several futexes.
+ * - Spawn one waker per futex, each waking only its own.
+ * - Yield, then check every futex's value.
+ *
+ * Expected result:
+ * - Every waiter is woken exactly by its own futex's wake.
+ *
+ * @see k_futex_wake()
+ * @see k_futex_wait()
+ */
+ZTEST(futex, test_futex_independent_wait_wake)
 {
 	woken = 1;
 	timeout = K_TICKS_FOREVER;
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		index[i] = i;
 		atomic_set(&multiple_futex[i].val, 1);
-		k_thread_create(&multiple_tid[i], multiple_stack[i],
-				STACK_SIZE, futex_multiple_wait_wake_task,
-				&timeout, &index[i], NULL, PRIO_WAIT,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_tid[i], multiple_stack[i], STACK_SIZE,
+				futex_multiple_wait_wake_task, &timeout, INT_TO_POINTER(i), NULL,
+				PRIO_WAIT, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
 	k_yield();
 
 	for (int i = 0; i < TOTAL_THREADS_WAITING; i++) {
-		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i],
-				STACK_SIZE, futex_multiple_wake_task,
-				&woken, &index[i], NULL, PRIO_WAKE,
-				K_USER | K_INHERIT_PERMS, K_NO_WAIT);
+		k_thread_create(&multiple_wake_tid[i], multiple_wake_stack[i], STACK_SIZE,
+				futex_multiple_wake_task, &woken, INT_TO_POINTER(i), NULL,
+				PRIO_WAKE, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 	}
 
 	/* giving time for the other threads to execute */
@@ -420,7 +588,29 @@ ZTEST(futex, test_multiple_futex_wait_wake)
 	}
 }
 
-ZTEST_USER(futex, test_user_futex_bad)
+/**
+ * @brief Verify that futex calls reject invalid objects, values and states.
+ *
+ * @details
+ * From user mode every futex argument is untrusted, so each way it can be
+ * wrong has its own error: memory the caller cannot access is -EACCES, an
+ * address that is not a futex kernel object is -EINVAL, a mismatched
+ * expected value is -EAGAIN, and a matching value with K_NO_WAIT times out
+ * with -ETIMEDOUT.
+ *
+ * Test steps:
+ * - Wait on and wake a futex the caller has no access to.
+ * - Wait on and wake two objects that are not futexes.
+ * - Wait with an expected value that does not match the futex.
+ * - Wait with the matching value and K_NO_WAIT.
+ *
+ * Expected result:
+ * - Each call fails with exactly the error its input deserves.
+ *
+ * @see k_futex_wait()
+ * @see k_futex_wake()
+ */
+ZTEST_USER(futex, test_futex_bad_inputs)
 {
 	int ret;
 

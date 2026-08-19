@@ -8,7 +8,7 @@
 #include <st/h7rs/stm32h7s7X8.dtsi>
 #include <st/h7/stm32h7s7l8hxh-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
-#include "zephyr/dt-bindings/display/panel.h"
+#include <zephyr/dt-bindings/display/panel.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 /*
@@ -68,7 +68,7 @@
 	};
 
 	dcmi_camera_connector: connector_dcmi_camera {
-		compatible = "st,stm32-dcmi-camera-fpu-330zh";
+		compatible = "st,dvp-cam-zif-30-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -96,7 +96,9 @@
 		die-temp0 = &die_temp;
 		volt-sensor0 = &vref;
 		volt-sensor1 = &vbat;
+		volt-sensor2 = &vddcore;
 		spi-flash0 = &mx66uw1g45;
+		rtc = &rtc;
 	};
 
 	ext_flash_mem: memory@70000000 {
@@ -123,8 +125,8 @@
 
 &pll {
 	div-m = <12>;
-	mul-n = <250>;
-	div-p = <2>;
+	mul-n = <300>;
+	div-p = <1>;
 	div-q = <2>;
 	div-r = <2>;
 	div-s = <2>;
@@ -143,9 +145,9 @@
 
 &rcc {
 	clocks = <&pll>;
-	clock-frequency = <DT_FREQ_M(250)>;
+	clock-frequency = <DT_FREQ_M(600)>;
 	dcpre = <1>;
-	hpre = <1>;
+	hpre = <2>;
 	ppre1 = <2>;
 	ppre2 = <2>;
 	ppre4 = <2>;
@@ -240,6 +242,8 @@
 st_cam_i2c: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	/*
 	 * Make sure FDCAN and i2c1 are not enabled at the same time
 	 * because they share the pb9 pin
@@ -288,6 +292,10 @@ st_cam_i2c: &i2c1 {
 		compatible = "ethernet-phy";
 		reg = <0x00>;
 	};
+};
+
+&xspim {
+	status = "okay";
 };
 
 &xspi1 {
@@ -340,6 +348,7 @@ st_cam_i2c: &i2c1 {
 		four-byte-opcodes;
 		status = "okay";
 
+		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
@@ -349,12 +358,9 @@ st_cam_i2c: &i2c1 {
 			reg = <0x0 DT_SIZE_M(128)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
-
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 };
@@ -368,6 +374,10 @@ st_cam_i2c: &i2c1 {
 };
 
 &vbat {
+	status = "okay";
+};
+
+&vddcore {
 	status = "okay";
 };
 
@@ -385,13 +395,31 @@ st_cam_i2c: &i2c1 {
 	};
 };
 
+/* USB1 port of board = OTG_HS */
+usb1: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usbphyc {
+	/*
+	 * There is no need to change `clocks` because
+	 * we use the default configuration after reset:
+	 *  USBPHYC kernel clock = HSE @ 24 MHz
+	 */
+	status = "okay";
+};
+
+/* USB2 port of board = OTG_FS */
 usb2: &usbotg_fs {
 	pinctrl-0 = <&usb_otg_fs_dm_pm12 &usb_otg_fs_dp_pm11>;
 	pinctrl-names = "default";
 	status = "okay";
 };
 
-zephyr_udc0: &usb2 {};
+/* USB port selection: use USB1 by default */
+zephyr_udc0: &usb1 {};
 
 &ltdc {
 	pinctrl-0 = <&ltdc_r0_pf9 &ltdc_r1_pf10 &ltdc_r2_pf0 &ltdc_r3_pb4
@@ -437,4 +465,12 @@ st_cam_dvp: &dcmipp {
 		     &dcmipp_pixclk_pd5 &dcmipp_hsync_pg3 &dcmipp_vsync_pb7>;
 
 	pinctrl-names = "default";
+};
+
+&crc {
+	status = "okay";
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
 };

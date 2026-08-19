@@ -1,15 +1,21 @@
-# MAX30101 heart rate sensor
+# MAX30101/MAX30102 heart rate and pulse oximeter sensor series
 #
 # Copyright (c) 2017, NXP
 # Copyright (c) 2025, CATIE
+# Copyright (c) 2026, Md Shofiqul Islam
 #
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig MAX30101
 	bool "MAX30101 Pulse Oximeter and Heart Rate Sensor"
 	default y
-	depends on DT_HAS_MAXIM_MAX30101_ENABLED
+	depends on DT_HAS_MAXIM_MAX30101_ENABLED || DT_HAS_MAXIM_MAX30102_ENABLED
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MAXIM_MAX30101),i2c)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_MAXIM_MAX30102),i2c)
+	help
+	  Enable driver for the MAX30101/MAX30102 heart rate and pulse oximeter
+	  sensor series. The MAX30102 is register-compatible with the MAX30101
+	  but has only Red + IR LED channels (no Green LED).
 
 if MAX30101
 
@@ -28,13 +34,15 @@ config MAX30101_TRIGGER_NONE
 config MAX30101_TRIGGER_GLOBAL_THREAD
 	bool "Use global thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30101),irq-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30101),irq-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30102),irq-gpios)
 	select MAX30101_TRIGGER
 
 config MAX30101_TRIGGER_OWN_THREAD
 	bool "Use own thread"
 	depends on GPIO
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30101),irq-gpios)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30101),irq-gpios) || \
+		   $(dt_compat_any_has_prop,$(DT_COMPAT_MAXIM_MAX30102),irq-gpios)
 	select MAX30101_TRIGGER
 
 endchoice

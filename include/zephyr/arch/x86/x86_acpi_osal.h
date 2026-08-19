@@ -6,8 +6,8 @@
 #include <zephyr/arch/x86/efi.h>
 #include <zephyr/arch/x86/legacy_bios.h>
 
-#ifndef ZEPHYR_ARCH_X86_INCLUDE_X86_ACPI_H_
-#define ZEPHYR_ARCH_X86_INCLUDE_X86_ACPI_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_X86_X86_ACPI_OSAL_H_
+#define ZEPHYR_INCLUDE_ARCH_X86_X86_ACPI_OSAL_H_
 
 #if defined(CONFIG_X86_EFI)
 static inline void *acpi_rsdp_get(void)
@@ -31,4 +31,4 @@ static inline uint64_t acpi_timer_get(void)
 {
 	return z_tsc_read();
 }
-#endif /* ZEPHYR_ARCH_X86_INCLUDE_X86_ACPI_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_X86_X86_ACPI_OSAL_H_ */

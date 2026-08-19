@@ -78,7 +78,7 @@ MSPI bus inside the device driver initialization function:
 
    #. Call API for additional setups if supported by hardware
 
-      * :c:func:`mspi_xip_config` for :term:`XIP` feature
+      * :c:func:`mspi_memmap_config` for memory mapped access (e.g. :term:`XIP`)
 
       * :c:func:`mspi_scramble_config` for scrambling feature
 
@@ -119,17 +119,17 @@ The mspi controller's bindings should reference mspi-controller.yaml as one of t
             status = "okay";
             compatible = "zephyr,mspi-emul-controller";
 
-            reg = < 0x400 0x4 >;
-            #address-cells = < 0x1 >;
-            #size-cells = < 0x0 >;
+            reg = <0x400 0x4>;
+            #address-cells = <0x1>;
+            #size-cells = <0x0>;
 
-            clock-frequency = < 0x17d7840 >;
+            clock-frequency = <0x17d7840>;
             op-mode = "MSPI_CONTROLLER";
             duplex = "MSPI_HALF_DUPLEX";
-            ce-gpios = < &gpio0 0x5 0x1 >, < &gpio0 0x12 0x1 >;
+            ce-gpios = <&gpio0 0x5 0x1>, <&gpio0 0x12 0x1>;
             dqs-support;
 
-            pinctrl-0 = < &pinmux-mspi0 >;
+            pinctrl-0 = <&pinmux-mspi0>;
             pinctrl-names = "default";
    };
 
@@ -144,21 +144,21 @@ The mspi device's bindings should reference mspi-device.yaml as one of the base.
                      status = "okay";
                      compatible = "zephyr,mspi-emul-device";
 
-                     reg = < 0x0 >;
-                     size = < 0x10000 >;
+                     reg = <0x0>;
+                     size = <0x10000>;
 
-                     mspi-max-frequency = < 0x2dc6c00 >;
+                     mspi-max-frequency = <0x2dc6c00>;
                      mspi-io-mode = "MSPI_IO_MODE_QUAD";
                      mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
-                     mspi-hardware-ce-num = < 0x0 >;
-                     read-instruction = < 0xb >;
-                     write-instruction = < 0x2 >;
+                     mspi-hardware-ce-num = <0x0>;
+                     read-instruction = <0xb>;
+                     write-instruction = <0x2>;
                      instruction-length = "INSTR_1_BYTE";
                      address-length = "ADDR_4_BYTE";
-                     rx-dummy = < 0x8 >;
-                     tx-dummy = < 0x0 >;
-                     xip-config = < 0x0 0x0 0x0 0x0 >;
-                     ce-break-config = < 0x0 0x0 >;
+                     rx-dummy = <0x8>;
+                     tx-dummy = <0x0>;
+                     memmap-config = <0x0 0x0 0x0 0x0>;
+                     ce-break-config = <0x0 0x0>;
             };
 
    };
@@ -189,7 +189,7 @@ Related configuration options:
 * :kconfig:option:`CONFIG_MSPI`
 * :kconfig:option:`CONFIG_MSPI_ASYNC`
 * :kconfig:option:`CONFIG_MSPI_PERIPHERAL`
-* :kconfig:option:`CONFIG_MSPI_XIP`
+* :kconfig:option:`CONFIG_MSPI_MEMMAP`
 * :kconfig:option:`CONFIG_MSPI_SCRAMBLE`
 * :kconfig:option:`CONFIG_MSPI_TIMING`
 * :kconfig:option:`CONFIG_MSPI_INIT_PRIORITY`

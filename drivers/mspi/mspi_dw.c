@@ -23,7 +23,7 @@
 
 LOG_MODULE_REGISTER(mspi_dw, CONFIG_MSPI_LOG_LEVEL);
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 struct xip_params {
 	uint32_t read_cmd;
 	uint32_t write_cmd;
@@ -51,7 +51,15 @@ struct mspi_dw_data {
 	uint32_t baudr;
 	uint32_t rx_sample_dly;
 
-#if defined(CONFIG_MSPI_XIP)
+	/* Software auto-CE-break. */
+	uint32_t mem_boundary;
+	uint32_t time_to_break;
+	uint32_t max_clocks_per_ce;
+
+	/* Active sub-packet fed to start_next_packet(). */
+	struct mspi_xfer_packet sub_pkt;
+
+#if defined(CONFIG_MSPI_MEMMAP)
 	uint32_t xip_freq;
 	struct xip_params xip_params_stored;
 	struct xip_params xip_params_active;
@@ -151,10 +159,13 @@ DEFINE_MM_REG_WR(dmatdlr,	0x50)
 DEFINE_MM_REG_WR(dmardlr,	0x54)
 #endif
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 DEFINE_MM_REG_WR(xip_incr_inst,		0x100)
 DEFINE_MM_REG_WR(xip_wrap_inst,		0x104)
 DEFINE_MM_REG_WR(xip_ctrl,		0x108)
+#if SUPPORTS_XIP_SER
+DEFINE_MM_REG_WR(xip_ser,		0x10c)
+#endif
 DEFINE_MM_REG_WR(xip_write_incr_inst,	0x140)
 DEFINE_MM_REG_WR(xip_write_wrap_inst,	0x144)
 DEFINE_MM_REG_WR(xip_write_ctrl,	0x148)
@@ -241,6 +252,8 @@ static void async_packet_work_handler(struct k_work *work)
 			LOG_DBG("Starting next packet (%d/%d)",
 				dev_data->packets_done + 1,
 				dev_data->xfer.num_packet);
+
+			dev_data->sub_pkt = dev_data->xfer.packets[dev_data->packets_done];
 
 			rc = start_next_packet(dev);
 			if (rc >= 0) {
@@ -451,8 +464,7 @@ static void handle_end_of_packet(struct mspi_dw_data *dev_data)
 static void handle_fifos(const struct device *dev)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
 	bool finished = false;
 
 	if (packet->dir == MSPI_TX) {
@@ -553,9 +565,9 @@ static void fifo_work_handler(struct k_work *work)
 
 static void mspi_dw_isr(const struct device *dev)
 {
-#if defined(CONFIG_MSPI_DMA)
-	struct mspi_dw_data *dev_data = dev->data;
+	struct mspi_dw_data __maybe_unused *dev_data = dev->data;
 
+#if defined(CONFIG_MSPI_DMA)
 	if (dev_data->xfer.xfer_mode == MSPI_DMA) {
 		if (vendor_specific_read_dma_irq(dev)) {
 			set_imr(dev, 0);
@@ -567,7 +579,6 @@ static void mspi_dw_isr(const struct device *dev)
 #endif
 
 #if defined(CONFIG_MSPI_DW_HANDLE_FIFOS_IN_SYSTEM_WORKQUEUE)
-	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
 
 	dev_data->imr = read_imr(dev);
@@ -701,7 +712,7 @@ static bool apply_addr_length(struct mspi_dw_data *dev_data,
 	return true;
 }
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static bool apply_xip_io_mode(const struct mspi_dw_data *dev_data,
 			      struct xip_ctrl *ctrl)
 {
@@ -828,7 +839,7 @@ static bool apply_xip_addr_length(const struct mspi_dw_data *dev_data,
 
 	return true;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 static int _api_dev_config(const struct device *dev,
 			   const enum mspi_dev_cfg_mask param_mask,
@@ -852,21 +863,19 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_MEM_BOUND) {
-		if (cfg->mem_boundary) {
-			LOG_ERR("Auto CE break is not supported.");
-			return -ENOTSUP;
+		if (cfg->mem_boundary && (cfg->mem_boundary & (cfg->mem_boundary - 1))) {
+			LOG_ERR("mem_boundary must be a power of two");
+			return -EINVAL;
 		}
+		dev_data->mem_boundary = cfg->mem_boundary;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_BREAK_TIME) {
-		if (cfg->time_to_break) {
-			LOG_ERR("Auto CE break is not supported.");
-			return -ENOTSUP;
-		}
+		dev_data->time_to_break = cfg->time_to_break;
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_IO_MODE) {
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		dev_data->xip_params_stored.io_mode = cfg->io_mode;
 #endif
 
@@ -876,7 +885,7 @@ static int _api_dev_config(const struct device *dev,
 	}
 
 	if (param_mask & MSPI_DEVICE_CONFIG_CPP) {
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		/* Make sure the new setting is compatible with the one used
 		 * for XIP if it is enabled.
 		 */
@@ -920,7 +929,7 @@ static int _api_dev_config(const struct device *dev,
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 		/* Make sure the new setting is compatible with the one used
 		 * for XIP if it is enabled.
 		 */
@@ -965,7 +974,7 @@ static int _api_dev_config(const struct device *dev,
 		}
 	}
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 	if (param_mask & MSPI_DEVICE_CONFIG_READ_CMD) {
 		dev_data->xip_params_stored.read_cmd = cfg->read_cmd;
 	}
@@ -990,6 +999,22 @@ static int _api_dev_config(const struct device *dev,
 	dev_data->ctrlr0 |= FIELD_PREP(CTRLR0_FRF_MASK, CTRLR0_FRF_SPI);
 	/* Enable clock stretching. */
 	dev_data->spi_ctrlr0 |= SPI_CTRLR0_CLK_STRETCH_EN_BIT;
+
+	/* Precompute max clock cycles per CE assertion from tCEM budget. */
+	if (dev_data->time_to_break && dev_data->baudr) {
+		uint32_t freq_hz = dev_config->clock_frequency / dev_data->baudr;
+
+		/*
+		 * Convert time_to_break (us) to clock cycles.
+		 */
+		uint32_t max_clocks = (uint32_t)(
+			((uint64_t)dev_data->time_to_break * freq_hz) /
+			USEC_PER_SEC);
+
+		dev_data->max_clocks_per_ce = MAX(max_clocks, 1U);
+	} else {
+		dev_data->max_clocks_per_ce = 0;
+	}
 
 	return 0;
 }
@@ -1090,11 +1115,10 @@ static int start_next_packet(const struct device *dev)
 {
 	const struct mspi_dw_config *dev_config = dev->config;
 	struct mspi_dw_data *dev_data = dev->data;
-	const struct mspi_xfer_packet *packet =
-		&dev_data->xfer.packets[dev_data->packets_done];
+	const struct mspi_xfer_packet *packet = &dev_data->sub_pkt;
 	bool data_only_packet = dev_data->xfer.cmd_length == 0 &&
 				dev_data->xfer.addr_length == 0;
-	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 				       (dev_data->xip_enabled != 0),
 				       (false));
 	unsigned int key;
@@ -1402,16 +1426,24 @@ static int start_next_packet(const struct device *dev)
 	}
 #endif
 
+#if defined(CONFIG_MULTITHREADING)
+	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
+
+	/* For async transfer, start timeout timer BEFORE starting transfer to
+	 * avoid race. On fast buses the ISR can fire and call k_timer_stop()
+	 * before k_timer_start() if SER is written first.
+	 */
+	if (dev_data->xfer.async) {
+		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
+	}
+#endif
+
 	/* Write SER to start transfer */
 	write_ser(dev, BIT(dev_data->dev_id->dev_idx));
 
 #if defined(CONFIG_MULTITHREADING)
-	k_timeout_t timeout = K_MSEC(dev_data->xfer.timeout);
-
-	/* For async transfer, start the timeout timer and exit. */
+	/* For async transfer, exit after starting the timeout timer. */
 	if (dev_data->xfer.async) {
-		k_timer_start(&dev_data->async_timer, timeout, K_NO_WAIT);
-
 		return 0;
 	}
 
@@ -1433,10 +1465,145 @@ static int start_next_packet(const struct device *dev)
 	return finalize_packet(dev, rc);
 }
 
+/**
+ * Run one user-visible packet, splitting at address-aligned mem_boundary
+ * and/or tCEM clock budget limits if configured.
+ *
+ * For async transfers, mem_boundary splitting is not supported and is
+ * rejected before reaching this function.
+ */
+static int run_one_packet(const struct device *dev, const struct mspi_xfer_packet *src)
+{
+	struct mspi_dw_data *dev_data = dev->data;
+	const uint32_t boundary = dev_data->mem_boundary;
+	uint32_t max_data_bytes = 0;
+	size_t done = 0;
+	int rc;
+
+	/*
+	 * Derive max_data_bytes from the tCEM clock budget by subtracting
+	 * the clocks consumed by command, address, and dummy phases, then
+	 * converting the remaining clocks to data bytes.
+	 *
+	 * Command clocks: TT0/TT1 sends the command on 1 line in SDR;
+	 *                 TT2 sends it on io_lines in SDR or DDR (INST_DDR_EN).
+	 * Address clocks: TT0 sends the address on 1 line in SDR;
+	 *                 TT1/TT2 sends it on io_lines in SDR or DDR (SPI_DDR_EN).
+	 * Dummy clocks: direct clock count, direction-specific.
+	 */
+	if (dev_data->max_clocks_per_ce) {
+		bool ddr = dev_data->spi_ctrlr0 & SPI_CTRLR0_SPI_DDR_EN_BIT;
+		bool inst_ddr = dev_data->spi_ctrlr0 & SPI_CTRLR0_INST_DDR_EN_BIT;
+		uint32_t trans_type = FIELD_GET(SPI_CTRLR0_TRANS_TYPE_MASK,
+						dev_data->spi_ctrlr0);
+		uint32_t io_lines;
+
+		switch (FIELD_GET(CTRLR0_SPI_FRF_MASK, dev_data->ctrlr0)) {
+		case CTRLR0_SPI_FRF_DUAL:
+			io_lines = 2U;
+			break;
+		case CTRLR0_SPI_FRF_QUAD:
+			io_lines = 4U;
+			break;
+		case CTRLR0_SPI_FRF_OCTAL:
+			io_lines = 8U;
+			break;
+		default:
+			io_lines = 1U;
+			break;
+		}
+
+		uint32_t cmd_bits = (uint32_t)dev_data->xfer.cmd_length * 8U;
+		uint32_t cmd_clocks =
+			(trans_type == SPI_CTRLR0_TRANS_TYPE_TT2)
+			? DIV_ROUND_UP(cmd_bits, io_lines * (inst_ddr ? 2U : 1U))
+			: cmd_bits;
+
+		uint32_t addr_bits = (uint32_t)dev_data->xfer.addr_length * 8U;
+		uint32_t addr_clocks =
+			(trans_type != SPI_CTRLR0_TRANS_TYPE_TT0)
+			? DIV_ROUND_UP(addr_bits, io_lines * (ddr ? 2U : 1U))
+			: addr_bits;
+
+		uint32_t dummy_clocks = (src->dir == MSPI_TX)
+					? (uint32_t)dev_data->xfer.tx_dummy
+					: (uint32_t)dev_data->xfer.rx_dummy;
+
+		uint32_t overhead_clocks = cmd_clocks + addr_clocks +
+					   dummy_clocks;
+		uint32_t avail_clocks;
+
+		if (dev_data->max_clocks_per_ce > overhead_clocks) {
+			avail_clocks = dev_data->max_clocks_per_ce - overhead_clocks;
+		} else {
+			LOG_WRN("tCEM overhead (%u clocks) exceeds budget "
+				"(%u clocks); time_to_break is too small",
+				overhead_clocks, dev_data->max_clocks_per_ce);
+			avail_clocks = 1U;
+		}
+
+		/* Convert remaining clocks to data bytes.
+		 * Each clock transfers io_lines bits (SDR) or
+		 * io_lines * 2 bits (DDR).
+		 */
+		uint32_t bits_per_clock = io_lines * (ddr ? 2U : 1U);
+
+		max_data_bytes = (avail_clocks * bits_per_clock) / 8U;
+		if (!max_data_bytes) {
+			max_data_bytes = 1U;
+		}
+	}
+
+	/* Determine whether splitting is actually needed. */
+	bool crosses_boundary = boundary &&
+		((src->address & (boundary - 1)) + src->num_bytes) > boundary;
+	bool exceeds_ce_limit = max_data_bytes &&
+		(src->num_bytes > max_data_bytes);
+
+	if (!crosses_boundary && !exceeds_ce_limit) {
+		dev_data->sub_pkt = *src;
+		return start_next_packet(dev);
+	}
+
+	while (done < src->num_bytes) {
+		uint32_t addr = src->address + done;
+		size_t remaining = src->num_bytes - done;
+		size_t chunk = remaining;
+
+		if (boundary) {
+			uint32_t page_off = addr & (boundary - 1);
+
+			chunk = MIN(chunk, (size_t)(boundary - page_off));
+		}
+
+		if (max_data_bytes) {
+			chunk = MIN(chunk, (size_t)max_data_bytes);
+		}
+
+		dev_data->sub_pkt = (struct mspi_xfer_packet){
+			.dir = src->dir,
+			.cmd = src->cmd,
+			.address = addr,
+			.data_buf = &src->data_buf[done],
+			.num_bytes = chunk,
+			.cb_mask = (done + chunk >= src->num_bytes) ? src->cb_mask : 0,
+		};
+
+		rc = start_next_packet(dev);
+		if (rc < 0) {
+			return rc;
+		}
+
+		done += chunk;
+	}
+
+	return 0;
+}
+
 static int finalize_packet(const struct device *dev, int rc)
 {
 	struct mspi_dw_data *dev_data = dev->data;
-	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+	bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 				       (dev_data->xip_enabled != 0),
 				       (false));
 
@@ -1491,17 +1658,6 @@ static int _api_transceive(const struct device *dev,
 	int rc;
 
 	if (dev_data->standard_spi) {
-		/* The SPI_CTRLR0 register is intended for enhanced SPI modes,
-		 * however some implementations continue to process the INST_L
-		 * and ADDR_L fields in standard mode. On those platforms the
-		 * controller sends its own instruction/address phase in
-		 * addition to what the driver sends. This results in a
-		 * malformed SPI transaction with extra bytes on the wire.
-		 * Mask these fields to ensure this does not happen.
-		 */
-		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
-					& ~SPI_CTRLR0_ADDR_L_MASK;
-
 		if (req->tx_dummy) {
 			LOG_ERR("TX dummy cycles unsupported in single line mode");
 			return -EINVAL;
@@ -1515,6 +1671,19 @@ static int _api_transceive(const struct device *dev,
 		LOG_ERR("Unsupported RX (%u) or TX (%u) dummy cycles",
 			req->rx_dummy, req->tx_dummy);
 		return -EINVAL;
+	}
+
+	/* In PIO mode, the SPI_CTRLR0 register is intended for enhanced SPI modes only,
+	 * however some implementations continue to process the INST_L and ADDR_L
+	 * fields in standard mode. On those platforms the controller sends its own
+	 * instruction/address phase in addition to what the driver sends. This results
+	 * in a malformed SPI transaction with extra bytes on the wire. Mask these
+	 * fields to ensure this does not happen.
+	 */
+	if (!(IS_ENABLED(CONFIG_MSPI_DMA) && req->xfer_mode == MSPI_DMA) &&
+	    dev_data->standard_spi) {
+		dev_data->spi_ctrlr0 &= ~SPI_CTRLR0_INST_L_MASK
+				     &  ~SPI_CTRLR0_ADDR_L_MASK;
 	} else {
 		if (!apply_cmd_length(dev_data, req->cmd_length) ||
 		    !apply_addr_length(dev_data, req->addr_length)) {
@@ -1529,13 +1698,14 @@ static int _api_transceive(const struct device *dev,
 	 */
 	if (req->async) {
 		dev_data->packets_done = 0;
+		dev_data->sub_pkt = req->packets[0];
 		return start_next_packet(dev);
 	}
 
 	for (dev_data->packets_done = 0;
 	     dev_data->packets_done < dev_data->xfer.num_packet;
 	     dev_data->packets_done++) {
-		rc = start_next_packet(dev);
+		rc = run_one_packet(dev, &req->packets[dev_data->packets_done]);
 		if (rc < 0) {
 			return rc;
 		}
@@ -1556,14 +1726,22 @@ static int api_transceive(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (req->async && !IS_ENABLED(CONFIG_MULTITHREADING)) {
-		LOG_ERR("Asynchronous transfers require multithreading");
-		return -ENOTSUP;
+	if (req->async) {
+		if (!IS_ENABLED(CONFIG_MULTITHREADING)) {
+			LOG_ERR("Asynchronous transfers require multithreading");
+			return -ENOTSUP;
+		}
+
+		if (dev_data->mem_boundary || dev_data->max_clocks_per_ce) {
+			LOG_ERR("Asynchronous transfers with CE-break splitting "
+				"not yet supported");
+			return -ENOTSUP;
+		}
 	}
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 		return rc;
 	}
 
@@ -1596,7 +1774,7 @@ static int finalize_transceive(const struct device *dev, int rc)
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
@@ -1638,6 +1816,14 @@ static int api_timing_config(const struct device *dev,
 	struct mspi_dw_data *dev_data = dev->data;
 	struct mspi_dw_timing_cfg *config = cfg;
 
+	/* MSPI_TIMING_PARAM_DUMMY indicates that the caller has no
+	 * platform-specific timing parameters to configure. Accept
+	 * it as a no-op.
+	 */
+	if (param_mask == MSPI_TIMING_PARAM_DUMMY) {
+		return 0;
+	}
+
 	if (param_mask & MSPI_DW_RX_TIMING_CFG) {
 		dev_data->rx_sample_dly = config->rx_sample_dly;
 		return 0;
@@ -1646,10 +1832,10 @@ static int api_timing_config(const struct device *dev,
 }
 #endif /* defined(CONFIG_MSPI_TIMING) */
 
-#if defined(CONFIG_MSPI_XIP)
+#if defined(CONFIG_MSPI_MEMMAP)
 static int _api_xip_config(const struct device *dev,
 			   const struct mspi_dev_id *dev_id,
-			   const struct mspi_xip_cfg *cfg)
+			   const struct mspi_memmap_cfg *cfg)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc;
@@ -1659,6 +1845,10 @@ static int _api_xip_config(const struct device *dev,
 		if (rc < 0) {
 			return rc;
 		}
+
+#if SUPPORTS_XIP_SER
+		write_xip_ser(dev, 0);
+#endif
 
 		dev_data->xip_enabled &= ~BIT(dev_id->dev_idx);
 
@@ -1670,7 +1860,7 @@ static int _api_xip_config(const struct device *dev,
 			 */
 			rc = pm_device_runtime_put(dev);
 			if (rc < 0) {
-				LOG_ERR("pm_device_runtime_put() failed: %d", rc);
+				LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc);
 				return rc;
 			}
 		}
@@ -1702,7 +1892,7 @@ static int _api_xip_config(const struct device *dev,
 		 */
 		rc = pm_device_runtime_get(dev);
 		if (rc < 0) {
-			LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+			LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 			return rc;
 		}
 
@@ -1721,9 +1911,21 @@ static int _api_xip_config(const struct device *dev,
 		write_xip_incr_inst(dev, params->read_cmd);
 		write_xip_wrap_inst(dev, params->read_cmd);
 		write_xip_ctrl(dev, ctrl.read);
-		write_xip_write_incr_inst(dev, params->write_cmd);
-		write_xip_write_wrap_inst(dev, params->write_cmd);
-		write_xip_write_ctrl(dev, ctrl.write);
+
+		if (cfg->permission == MSPI_MEMMAP_READ_WRITE) {
+#if MEMMAP_WRITE_SUPPORT_INSTANCES != 0
+			write_xip_write_incr_inst(dev, params->write_cmd);
+			write_xip_write_wrap_inst(dev, params->write_cmd);
+			write_xip_write_ctrl(dev, ctrl.write);
+#else
+			LOG_ERR("XIP write access not supported by this controller");
+			rc = pm_device_runtime_put(dev);
+			if (rc < 0) {
+				LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc);
+			}
+			return -ENOTSUP;
+#endif
+		}
 	} else if (dev_data->xip_params_active.read_cmd !=
 		   dev_data->xip_params_stored.read_cmd ||
 		   dev_data->xip_params_active.write_cmd !=
@@ -1745,6 +1947,10 @@ static int _api_xip_config(const struct device *dev,
 		return rc;
 	}
 
+#if SUPPORTS_XIP_SER
+	write_xip_ser(dev, BIT(dev_id->dev_idx));
+#endif
+
 	write_ssienr(dev, SSIENR_SSIC_EN_BIT);
 
 	dev_data->xip_enabled |= BIT(dev_id->dev_idx);
@@ -1752,9 +1958,9 @@ static int _api_xip_config(const struct device *dev,
 	return 0;
 }
 
-static int api_xip_config(const struct device *dev,
-			  const struct mspi_dev_id *dev_id,
-			  const struct mspi_xip_cfg *cfg)
+static int api_memmap_config(const struct device *dev,
+			     const struct mspi_dev_id *dev_id,
+			     const struct mspi_memmap_cfg *cfg)
 {
 	struct mspi_dw_data *dev_data = dev->data;
 	int rc, rc2;
@@ -1766,7 +1972,7 @@ static int api_xip_config(const struct device *dev,
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get() failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 		return rc;
 	}
 
@@ -1786,13 +1992,13 @@ static int api_xip_config(const struct device *dev,
 
 	rc2 = pm_device_runtime_put(dev);
 	if (rc2 < 0) {
-		LOG_ERR("pm_device_runtime_put() failed: %d", rc2);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc2);
 		rc = (rc < 0 ? rc : rc2);
 	}
 
 	return rc;
 }
-#endif /* defined(CONFIG_MSPI_XIP) */
+#endif /* defined(CONFIG_MSPI_MEMMAP) */
 
 static int dev_pm_action_cb(const struct device *dev,
 			    enum pm_device_action action)
@@ -1819,7 +2025,7 @@ static int dev_pm_action_cb(const struct device *dev,
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE) &&
 	    action == PM_DEVICE_ACTION_SUSPEND) {
-		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_XIP,
+		bool xip_enabled = COND_CODE_1(CONFIG_MSPI_MEMMAP,
 					       (dev_data->xip_enabled != 0),
 					       (false));
 
@@ -1935,8 +2141,8 @@ static DEVICE_API(mspi, drv_api) = {
 #if defined(CONFIG_MSPI_TIMING)
 	.timing_config      = api_timing_config,
 #endif
-#if defined(CONFIG_MSPI_XIP)
-	.xip_config         = api_xip_config,
+#if defined(CONFIG_MSPI_MEMMAP)
+	.memmap_config      = api_memmap_config,
 #endif
 };
 

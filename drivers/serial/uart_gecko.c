@@ -235,9 +235,8 @@ static int uart_gecko_fifo_read(const struct device *dev, uint8_t *rx_data,
 static void uart_gecko_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_gecko_config *config = dev->config;
-	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
-	USART_IntEnable(config->base, mask);
+	USART_IntEnable(config->base, USART_IEN_TXBL);
 }
 
 static void uart_gecko_irq_tx_disable(const struct device *dev)
@@ -246,6 +245,7 @@ static void uart_gecko_irq_tx_disable(const struct device *dev)
 	uint32_t mask = USART_IEN_TXBL | USART_IEN_TXC;
 
 	USART_IntDisable(config->base, mask);
+	USART_IntClear(config->base, USART_IF_TXC);
 }
 
 static int uart_gecko_irq_tx_complete(const struct device *dev)
@@ -320,11 +320,6 @@ static void uart_gecko_irq_err_disable(const struct device *dev)
 static int uart_gecko_irq_is_pending(const struct device *dev)
 {
 	return uart_gecko_irq_tx_ready(dev) || uart_gecko_irq_rx_ready(dev);
-}
-
-static int uart_gecko_irq_update(const struct device *dev)
-{
-	return 1;
 }
 
 static void uart_gecko_irq_callback_set(const struct device *dev,
@@ -715,7 +710,6 @@ static DEVICE_API(uart, uart_gecko_driver_api) = {
 	.irq_err_enable = uart_gecko_irq_err_enable,
 	.irq_err_disable = uart_gecko_irq_err_disable,
 	.irq_is_pending = uart_gecko_irq_is_pending,
-	.irq_update = uart_gecko_irq_update,
 	.irq_callback_set = uart_gecko_irq_callback_set,
 #endif
 };

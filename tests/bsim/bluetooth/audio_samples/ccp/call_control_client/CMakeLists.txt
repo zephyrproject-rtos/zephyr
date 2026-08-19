@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(ccp_call_control_client_self_tets)
+project(ccp_call_control_client_self_tests)
 
-set(ccp_call_control_client_path ${ZEPHYR_BASE}/samples/bluetooth/ccp_call_control_client)
+set(ccp_call_control_client_path ${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_client)
 
 target_sources(app PRIVATE
   ${ccp_call_control_client_path}/src/main.c

@@ -7,11 +7,13 @@ The Alif Ensemble E8 Development Kit is a single-board development
 platform that can be configured to operate with the E4, E6, or E8 series devices
 in the Alif Ensemble family.
 
-The Ensemble family of devices can contain up to two Cortex-M55 cores available
-as two separate CPU clusters.
+The Ensemble family of devices can contain multiple CPU clusters: up to two
+Cortex-M55 based Real Time SubSystems (RTSS), and on some devices a Cortex-A32
+based Application Processor SubSystem (APSS).
 
 * **RTSS-HP** (High Performance): Cortex-M55 running at up to 400 MHz
 * **RTSS-HE** (High Efficiency): Cortex-M55 running at up to 160 MHz
+* **APSS** (Application Processor SubSystem): Cortex-A32 running at up to 800 MHz
 
 Board Identifiers
 =================
@@ -32,6 +34,8 @@ The following board identifiers are supported:
 | ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_he``  | E8          | RTSS-HE  |
 +----------------------------------------------+-------------+----------+
 | ``ensemble_e8_dk/ae822fa0e5597ls0/rtss_hp``  | E8          | RTSS-HP  |
++----------------------------------------------+-------------+----------+
+| ``ensemble_e8_dk/ae822fa0e5597ls0/apss``     | E8          | APSS     |
 +----------------------------------------------+-------------+----------+
 
 More information about the board can be found at the
@@ -88,6 +92,7 @@ The default UART consoles are:
 
 - **RTSS-HP**: UART4
 - **RTSS-HE**: UART2
+- **APSS**: UART2
 
 Flashing
 ========
@@ -127,6 +132,26 @@ On the serial terminal, you should see the following message:
 
    Hello World! ensemble_e8_dk/ae822fa0e5597ls0/rtss_he
 
+Building for the Application Processor (APSS):
+
+.. note::
+
+   On the APSS (Cortex-A32) cluster, Zephyr boots in the Non-Secure state,
+   with Arm Trusted Firmware-A (TF-A) acting as the first-stage bootloader
+   that initializes the system and hands off to the Zephyr image.
+   The TF-A port for the Ensemble APSS cluster is not yet available upstream
+   and is currently maintained in Alif's public repository:
+   `Alif Trusted Firmware-A`_.
+
+   The resulting image is programmed and launched using the Alif Security
+   Toolkit (SETOOLS); the ``west flash`` and ``west debug`` runners are not
+   supported for the APSS target.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: ensemble_e8_dk/ae822fa0e5597ls0/apss
+   :goals: build
+
 Debugging
 =========
 
@@ -147,3 +172,6 @@ References
 
 .. _Ensemble E8 DevKit Product Page:
    https://alifsemi.com/support/kits/ensemble-e8devkit/
+
+.. _Alif Trusted Firmware-A:
+   https://github.com/alifsemi/trusted-firmware-a_alif

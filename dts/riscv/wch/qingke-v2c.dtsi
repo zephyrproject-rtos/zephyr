@@ -43,5 +43,10 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <12>;
 		};
+
+		sdiconsole: sdi-console@e00000f4 {
+			compatible = "wch,sdi-console";
+			reg = <0xe00000f4 0x0c>;
+		};
 	};
 };

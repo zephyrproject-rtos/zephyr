@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 #include <zephyr/autoconf.h>
+#include <zephyr/bluetooth/audio/ascs.h>
 #include <zephyr/bluetooth/audio/audio.h>
 #include <zephyr/bluetooth/audio/bap.h>
 #include <zephyr/bluetooth/audio/cap.h>
@@ -46,8 +47,8 @@ static bool stream_is_central(struct bt_bap_stream *bap_stream)
 }
 
 #if defined(CONFIG_BT_BAP_UNICAST)
-static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
-				     const struct bt_bap_qos_cfg_pref *pref)
+static void cap_stream_codec_configured_cb(struct bt_bap_stream *bap_stream,
+					   const struct bt_bap_qos_cfg_pref *pref)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
 							struct bt_cap_stream,
@@ -56,8 +57,8 @@ static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
 
 	LOG_DBG("%p", cap_stream);
 
-	if (ops != NULL && ops->configured != NULL) {
-		ops->configured(bap_stream, pref);
+	if (ops != NULL && ops->codec_configured != NULL) {
+		ops->codec_configured(bap_stream, pref);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
@@ -66,7 +67,7 @@ static void cap_stream_configured_cb(struct bt_bap_stream *bap_stream,
 	}
 }
 
-static void cap_stream_qos_set_cb(struct bt_bap_stream *bap_stream)
+static void cap_stream_qos_configured_cb(struct bt_bap_stream *bap_stream)
 {
 	struct bt_cap_stream *cap_stream = CONTAINER_OF(bap_stream,
 							struct bt_cap_stream,
@@ -75,8 +76,8 @@ static void cap_stream_qos_set_cb(struct bt_bap_stream *bap_stream)
 
 	LOG_DBG("%p", cap_stream);
 
-	if (ops != NULL && ops->qos_set != NULL) {
-		ops->qos_set(bap_stream);
+	if (ops != NULL && ops->qos_configured != NULL) {
+		ops->qos_configured(bap_stream);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CAP_INITIATOR) && IS_ENABLED(CONFIG_BT_BAP_UNICAST_CLIENT) &&
@@ -261,8 +262,8 @@ static void cap_stream_disconnected_cb(struct bt_bap_stream *bap_stream, uint8_t
 
 static struct bt_bap_stream_ops bap_stream_ops = {
 #if defined(CONFIG_BT_BAP_UNICAST)
-	.configured = cap_stream_configured_cb,
-	.qos_set = cap_stream_qos_set_cb,
+	.codec_configured = cap_stream_codec_configured_cb,
+	.qos_configured = cap_stream_qos_configured_cb,
 	.enabled = cap_stream_enabled_cb,
 	.metadata_updated = cap_stream_metadata_updated_cb,
 	.disabled = cap_stream_disabled_cb,

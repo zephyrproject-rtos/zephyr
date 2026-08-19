@@ -154,7 +154,7 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 	TC_PRINT("Done\n");
 
 	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE);
-	zassert_not_equal(rc, 0, "Write suceeded");
+	zassert_not_equal(rc, 0, "Write succeeded");
 	TC_PRINT("Write failed as expected, error %d\n", rc);
 
 	rc = flash_read(flash_dev, TEST_AREA_OFFSET, buf, EXPECTED_SIZE);
@@ -177,7 +177,7 @@ ZTEST(flash_stm32, test_stm32_write_protection)
 
 	rc = flash_write(flash_dev, TEST_AREA_OFFSET, expected, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Write failed");
-	TC_PRINT("Write suceeded\n");
+	TC_PRINT("Write succeeded\n");
 
 	rc = flash_read(flash_dev, TEST_AREA_OFFSET, buf, EXPECTED_SIZE);
 	zassert_equal(rc, 0, "Cannot read flash");
@@ -279,14 +279,17 @@ ZTEST(flash_stm32, test_stm32_block_registers)
 	__set_FAULTMASK(1);
 	flash_stm32_option_bytes_lock(flash_dev, false);
 
-	/* Ensure the Imprecise Bus Fault caused by the illegal
-	 * access is seen now while BusFault is still masked by
-	 * triggering a Context synchronization event. This is
-	 * notably required on series such as STM32H7 when Icache
-	 * is enabled - the Imprecise Bus Fault is reported after
-	 * we unmask BusFault and triggers a kernel panic.
+
+	/* Ensure the imprecise Bus Fault caused by the illegal access
+	 * is observed immediately while BusFault is still masked by
+	 * forcing completion of all outstanding memory operations.
+	 * This guarantees that any buffered or deferred accesses are
+	 * completed before continuing. It is required on some MCUs
+	 * (e.g. STM32H7 with I-Cache enabled) where imprecise faults
+	 * may otherwise be reported later—after BusFault is unmasked—
+	 * leading to a kernel panic.
 	 */
-	barrier_isync_fence_full();
+	barrier_dsync_fence_full();
 
 	/* Clear Bus Fault pending bit */
 	SCB->SHCSR &= ~SCB_SHCSR_BUSFAULTPENDED_Msk;

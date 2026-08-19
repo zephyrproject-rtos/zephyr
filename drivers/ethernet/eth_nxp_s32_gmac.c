@@ -117,15 +117,14 @@ static void phy_link_state_changed(const struct device *pdev,
 
 		cfg->base->MAC_CONFIGURATION |= GMAC_MAC_CONFIGURATION_DM(gmac_cfg.Duplex);
 
-		LOG_DBG("Link up");
 		net_eth_carrier_on(ctx->iface);
 	} else {
-		LOG_DBG("Link down");
 		net_eth_carrier_off(ctx->iface);
 	}
 }
 
-static const struct device *eth_nxp_s32_get_phy(const struct device *dev)
+static const struct device *eth_nxp_s32_get_phy(const struct device *dev,
+						struct net_if *iface __unused)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
@@ -217,7 +216,8 @@ static int eth_nxp_s32_init(const struct device *dev)
 	return 0;
 }
 
-static int eth_nxp_s32_start(const struct device *dev)
+static int eth_nxp_s32_start(const struct device *dev,
+			     struct net_if *iface __unused)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
 
@@ -231,7 +231,8 @@ static int eth_nxp_s32_start(const struct device *dev)
 	return 0;
 }
 
-static int eth_nxp_s32_stop(const struct device *dev)
+static int eth_nxp_s32_stop(const struct device *dev,
+			    struct net_if *iface __unused)
 {
 	const struct eth_nxp_s32_config *cfg = dev->config;
 	Gmac_Ip_StatusType status;
@@ -269,7 +270,6 @@ static void eth_nxp_s32_iface_init(struct net_if *iface)
 
 	/* No PHY available, link is always up and MAC speed/duplex settings are fixed */
 	if (cfg->phy_dev == NULL) {
-		net_if_carrier_on(iface);
 		return;
 	}
 
@@ -313,30 +313,26 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	status = Gmac_Ip_GetTxBuff(cfg->instance, cfg->tx_ring_idx, &buf, NULL);
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to get tx buffer (%d)", status);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	res = net_pkt_read(pkt, buf.Data, pkt_len);
 	if (res) {
 		LOG_ERR("Failed to copy packet to tx buffer (%d)", res);
-		res = -ENOBUFS;
-		goto error;
+		return -ENOBUFS;
 	}
 
 	buf.Length = (uint16_t)pkt_len;
 	status = Gmac_Ip_SendFrame(cfg->instance, cfg->tx_ring_idx, &buf, &tx_options);
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to tx frame (%d)", status);
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* Wait for the transmission to complete */
 	if (k_sem_take(&ctx->tx_sem, ETH_NXP_S32_DMA_TX_TIMEOUT) != 0) {
 		LOG_ERR("Timeout transmitting frame");
-		res = -EIO;
-		goto error;
+		return -EIO;
 	}
 
 	/* Restore the buffer address pointer and clear the descriptor after the status is read */
@@ -344,16 +340,12 @@ static int eth_nxp_s32_tx(const struct device *dev, struct net_pkt *pkt)
 	if (status != GMAC_STATUS_SUCCESS) {
 		LOG_ERR("Failed to restore tx buffer: %s (%d) ",
 			(status == GMAC_STATUS_BUSY ? "busy" : "buf not found"), status);
-		res = -EIO;
+		return -EIO;
 	} else if (tx_info.ErrMask != 0U) {
 		LOG_ERR("Tx frame has errors (error mask 0x%X)", tx_info.ErrMask);
-		res = -EIO;
+		return -EIO;
 	}
 
-error:
-	if (res != 0) {
-		eth_stats_update_errors_tx(ctx->iface);
-	}
 	return res;
 }
 
@@ -455,6 +447,7 @@ static void eth_nxp_s32_rx_thread(void *arg1, void *unused1, void *unused2)
 }
 
 static int eth_nxp_s32_set_config(const struct device *dev,
+				  struct net_if *iface __unused,
 				  enum ethernet_config_type type,
 				  const struct ethernet_config *config)
 {
@@ -506,10 +499,9 @@ static int eth_nxp_s32_set_config(const struct device *dev,
 	return res;
 }
 
-static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_nxp_s32_get_capabilities(const struct device *dev __unused,
+							  struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
 	return (ETHERNET_LINK_10BASE
 		| ETHERNET_LINK_100BASE
 #if (FEATURE_GMAC_RGMII_EN == 1U)

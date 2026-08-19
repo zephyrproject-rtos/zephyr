@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2025 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,4 +21,9 @@
 
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+};
+
+&peri0_group1_16bit_0 {
+	status = "okay";
+	clock-div = <109>;
 };

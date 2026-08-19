@@ -73,6 +73,8 @@
 /* USDHC */
 #define IMX_CCM_USDHC1_CLK             0x600UL
 #define IMX_CCM_USDHC2_CLK             0x601UL
+/** Clock identifier for uSDHC3 peripheral. */
+#define IMX_CCM_USDHC3_CLK             0x602UL
 
 /* DMA  */
 #define IMX_CCM_EDMA_CLK               0x700UL
@@ -162,6 +164,32 @@
 /* USB */
 #define IMX_CCM_USB_CLK                0x2500UL
 #define IMX_CCM_USB_PHY_CLK            0x2600UL
+
+/** SYS_CTR 24 MHz XTAL base clock */
+#define IMX_CCM_SYSCTR_BASE_CLK        0x2700UL
+/** SYS_CTR 32 kHz LPO slow clock */
+#define IMX_CCM_SYSCTR_SLOW_CLK        0x2701UL
+
+/** PDM/MICFIL clock identifier */
+#define IMX_CCM_PDM_CLK                0x2800UL
+
+/* XBAR */
+/** XBAR1 peripheral clock identifier */
+#define IMX_CCM_XBAR1_CLK             0x2900UL
+/** XBAR2 peripheral clock identifier */
+#define IMX_CCM_XBAR2_CLK             0x2901UL
+/** XBAR3 peripheral clock identifier */
+#define IMX_CCM_XBAR3_CLK             0x2902UL
+
+/* ENC (EQDC) */
+/** ENC1/EQDC1 peripheral clock identifier */
+#define IMX_CCM_ENC1_CLK               0x2A00UL
+/** ENC2/EQDC2 peripheral clock identifier */
+#define IMX_CCM_ENC2_CLK               0x2A01UL
+/** ENC3/EQDC3 peripheral clock identifier */
+#define IMX_CCM_ENC3_CLK               0x2A02UL
+/** ENC4/EQDC4 peripheral clock identifier */
+#define IMX_CCM_ENC4_CLK               0x2A03UL
 
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL

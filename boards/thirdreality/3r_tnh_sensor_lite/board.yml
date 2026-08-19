@@ -3,4 +3,4 @@ board:
   full_name: ThirdReality Temperature and Humidity Sensor Lite
   vendor: thirdreality
   socs:
-    - name: bl704l10q2i
+    - name: bl704l10q2iw

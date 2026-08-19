@@ -31,6 +31,7 @@
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_stats.h>
+#include <zephyr/net/dplpmtud.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,14 +68,11 @@ enum net_context_state {
 /** Remote address set */
 #define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
 
-/** Is the socket accepting connections */
-#define NET_CONTEXT_ACCEPTING_SOCK  BIT(9)
-
-/** Is the socket closing / closed */
-#define NET_CONTEXT_CLOSING_SOCK  BIT(10)
-
 /** Context is bound to a specific interface */
-#define NET_CONTEXT_BOUND_TO_IFACE BIT(11)
+#define NET_CONTEXT_BOUND_TO_IFACE BIT(9)
+
+/** A local address has been bound to this context */
+#define NET_CONTEXT_LOCAL_ADDR_SET BIT(10)
 
 struct net_context;
 
@@ -226,12 +224,22 @@ __net_socket struct net_context {
 	/** Local endpoint address. Note that the values are in network byte
 	 * order.
 	 */
-	struct net_sockaddr_ptr local;
+	union {
+		/** Local endpoint address. */
+		struct net_sockaddr local;
+		/** Storage-typed alias of the local endpoint address. */
+		struct net_sockaddr_storage local_storage;
+	};
 
 	/** Remote endpoint address. Note that the values are in network byte
 	 * order.
 	 */
-	struct net_sockaddr remote;
+	union {
+		/** Remote endpoint address. */
+		struct net_sockaddr remote;
+		/** Storage-typed alias of the remote endpoint address. */
+		struct net_sockaddr_storage remote_storage;
+	};
 
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
@@ -273,9 +281,23 @@ __net_socket struct net_context {
 	struct k_sem recv_data_wait;
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	/**
+	 * Semaphore used to wait for the TCP connection to be closed by the
+	 * stack when SO_LINGER is enabled with a non-zero timeout.
+	 */
+	struct k_sem linger_sem;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
 #if defined(CONFIG_NET_SOCKETS)
 	/** BSD socket private data */
 	void *socket_data;
+
+	/** Pending socket error (positive errno) reported asynchronously by
+	 *  the network stack. Valid only while the SOCK_ERROR flag is set;
+	 *  consumed via SO_ERROR or by the next blocking socket call.
+	 */
+	int sock_error;
 
 	/** Per-socket packet or connection queues */
 	union {
@@ -401,11 +423,70 @@ __net_socket struct net_context {
 			bool ipv6_mcast_loop;  /**< IPv6 multicast loop */
 			bool ipv4_mcast_loop;  /**< IPv4 multicast loop */
 		};
+
+		/** Disable local IP fragmentation for packets sent by this context. */
+		bool dont_fragment;
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_CONTEXT_TIMESTAMPING)
 		/** Enable RX, TX or both timestamps of packets send through sockets. */
 		uint8_t timestamping;
+#endif
+
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+		/** Socket SO_LINGER option. When enabled (l_onoff != 0) with a
+		 * zero timeout (l_linger == 0), close() aborts the connection
+		 * with a RST instead of a graceful FIN close.
+		 */
+		struct net_linger linger;
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+
+#if defined(CONFIG_NET_UDP_OPTIONS)
+		struct {
+			/** Bitmask of enabled UDP option features (NET_UDP_OPT_F_*) */
+			uint32_t enabled;
+			/** Bitmask of required incoming UDP option features (NET_UDP_OPT_F_*) */
+			uint32_t required;
+			/** true = drop all packets with UDP options on this socket */
+			bool drop_all_opts;
+			/** MDS (Maximum Datagram Size) value to advertise, 0 = not set */
+			uint16_t mds;
+			/** MRDS (Maximum Reassembled Datagram Size), 0 = not set */
+			struct net_udp_opt_mrds mrds;
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD)
+			/** DPLPMTUD (RFC 9869) per-socket state. */
+			struct {
+				/** Generic engine path handle (per destination). */
+				struct net_dplpmtud_path path;
+				/** Probe retransmit / raise timer. */
+				struct k_work_delayable timer;
+				/** Token of the outstanding probe, 0 = none. */
+				uint32_t token;
+				/** Size of the outstanding probe. */
+				uint16_t probe_size;
+				/** DPLPMTUD enabled on this socket. */
+				bool enabled;
+				/** Application echoes RES itself (no auto-echo). */
+				bool app_respond;
+				/** BASE_PLPMTU connectivity has been confirmed. */
+				bool base_confirmed;
+				/** Deferred RES-echo work (runs off the RX path). */
+				struct k_work echo_work;
+				/** Peer to send the pending RES to. */
+				struct net_sockaddr_storage echo_peer;
+				/** Length of @ref echo_peer. */
+				net_socklen_t echo_peerlen;
+				/** Token to echo in the pending RES. */
+				uint32_t echo_token;
+				/** A RES echo is queued in @ref echo_work. */
+				bool echo_pending;
+				/** Uptime (ms) of the last auto RES echo; used to
+				 * rate-limit echoes (0 = none sent yet).
+				 */
+				uint32_t echo_last_ms;
+			} dplpmtud;
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
+		} udp_opt;
 #endif
 	} options;
 
@@ -466,67 +547,18 @@ static inline bool net_context_is_bound_to_iface(struct net_context *context)
 }
 
 /**
- * @brief Is this context is accepting data now.
+ * @brief Has a local address been bound to this context.
  *
  * @param context Network context.
  *
- * @return True if the context is accepting connections, False otherwise.
+ * @return True if a local address has been assigned to @ref net_context.local,
+ * False otherwise.
  */
-static inline bool net_context_is_accepting(struct net_context *context)
+static inline bool net_context_is_local_addr_set(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	return context->flags & NET_CONTEXT_ACCEPTING_SOCK;
-}
-
-/**
- * @brief Set this context to accept data now.
- *
- * @param context Network context.
- * @param accepting True if accepting, False if not
- */
-static inline void net_context_set_accepting(struct net_context *context,
-					     bool accepting)
-{
-	NET_ASSERT(context);
-
-	if (accepting) {
-		context->flags |= NET_CONTEXT_ACCEPTING_SOCK;
-	} else {
-		context->flags &= (uint16_t)~NET_CONTEXT_ACCEPTING_SOCK;
-	}
-}
-
-/**
- * @brief Is this context closing.
- *
- * @param context Network context.
- *
- * @return True if the context is closing, False otherwise.
- */
-static inline bool net_context_is_closing(struct net_context *context)
-{
-	NET_ASSERT(context);
-
-	return context->flags & NET_CONTEXT_CLOSING_SOCK;
-}
-
-/**
- * @brief Set this context to closing.
- *
- * @param context Network context.
- * @param closing True if closing, False if not
- */
-static inline void net_context_set_closing(struct net_context *context,
-					   bool closing)
-{
-	NET_ASSERT(context);
-
-	if (closing) {
-		context->flags |= NET_CONTEXT_CLOSING_SOCK;
-	} else {
-		context->flags &= (uint16_t)~NET_CONTEXT_CLOSING_SOCK;
-	}
+	return context->flags & NET_CONTEXT_LOCAL_ADDR_SET;
 }
 
 /** @cond INTERNAL_HIDDEN */
@@ -581,7 +613,7 @@ static inline void net_context_set_state(struct net_context *context,
  *
  * @param context Network context.
  *
- * @return Network state.
+ * @return Network address family.
  */
 static inline net_sa_family_t net_context_get_family(struct net_context *context)
 {
@@ -767,6 +799,7 @@ struct net_if *net_context_get_iface(struct net_context *context)
 static inline void net_context_set_iface(struct net_context *context,
 					 struct net_if *iface)
 {
+	NET_ASSERT(context);
 	NET_ASSERT(iface);
 
 	context->iface = (uint8_t)net_if_get_by_iface(iface);
@@ -783,6 +816,7 @@ static inline void net_context_set_iface(struct net_context *context,
 static inline void net_context_bind_iface(struct net_context *context,
 					  struct net_if *iface)
 {
+	NET_ASSERT(context);
 	NET_ASSERT(iface);
 
 	context->flags |= NET_CONTEXT_BOUND_TO_IFACE;
@@ -1088,6 +1122,23 @@ int net_context_ref(struct net_context *context);
 int net_context_unref(struct net_context *context);
 
 /**
+ * @brief Signal that the connection backing a context has been closed by the
+ * transport, so a close() blocked on SO_LINGER can resume.
+ *
+ * @internal This is called by the TCP stack from tcp_conn_close().
+ *
+ * @param context The context whose connection has been closed
+ */
+static inline void net_context_signal_linger(struct net_context *context)
+{
+#if defined(CONFIG_NET_CONTEXT_LINGER)
+	k_sem_give(&context->linger_sem);
+#else
+	ARG_UNUSED(context);
+#endif /* CONFIG_NET_CONTEXT_LINGER */
+}
+
+/**
  * @brief Create IPv4 packet in provided net_pkt from context
  *
  * @param context Network context for a connection
@@ -1296,6 +1347,8 @@ int net_context_sendto(struct net_context *context,
  * @details This function has similar semantics as Posix sendmsg() call.
  * For unconnected socket, the msg_name field in net_msghdr must be set. For
  * connected socket the msg_name should be set to NULL, and msg_namelen to 0.
+ * For UDP sockets, msg_control may also carry per-datagram ancillary data such
+ * as @ref ZSOCK_IP_DONTFRAG or @ref ZSOCK_IPV6_DONTFRAG.
  * After the network buffer is sent, a caller-supplied callback is called.
  * Note that the callback might be called after this function has returned.
  *
@@ -1405,6 +1458,24 @@ enum net_context_option {
 	NET_OPT_IPV6_MCAST_LOOP	  = 22, /**< IPV6 multicast loop */
 	NET_OPT_IPV4_MCAST_LOOP	  = 23, /**< IPV4 multicast loop */
 	NET_OPT_RECV_HOPLIMIT     = 24, /**< Receive hop limit information */
+	NET_OPT_DONT_FRAGMENT     = 25, /**< Disable local IP fragmentation */
+	NET_OPT_LINGER            = 26, /**< Socket linger (SO_LINGER) */
+	NET_OPT_UDP_OPT           = 27, /**< UDP options master enable (RFC 9868) */
+	NET_OPT_UDP_OPT_OCS       = 28, /**< UDP options: Option Checksum */
+	NET_OPT_UDP_OPT_APC       = 29, /**< UDP options: Additional Payload Checksum */
+	NET_OPT_UDP_OPT_FRAG      = 30, /**< UDP options: Fragmentation */
+	NET_OPT_UDP_OPT_MDS       = 31, /**< UDP options: Maximum Datagram Size */
+	NET_OPT_UDP_OPT_MRDS      = 32, /**< UDP options: Maximum Reassembled Datagram Size */
+	NET_OPT_UDP_OPT_REQ       = 33, /**< UDP options: Echo Request */
+	NET_OPT_UDP_OPT_RES       = 34, /**< UDP options: Echo Response */
+	NET_OPT_UDP_OPT_TIME      = 35, /**< UDP options: Timestamp */
+	NET_OPT_UDP_OPT_AUTH      = 36, /**< UDP options: Authentication */
+	NET_OPT_UDP_OPT_EXP       = 37, /**< UDP options: Experimental */
+	NET_OPT_UDP_OPT_UCMP      = 38, /**< UDP options: UNSAFE Compression */
+	NET_OPT_UDP_OPT_UENC      = 39, /**< UDP options: UNSAFE Encryption */
+	NET_OPT_UDP_OPT_UEXP      = 40, /**< UDP options: UNSAFE Experimental */
+	NET_OPT_UDP_OPT_DPLPMTUD  = 41, /**< UDP options: DPLPMTUD enable (RFC 9869) */
+	NET_OPT_UDP_OPT_DPLPMTUD_APP_RESPOND = 42, /**< UDP options: app echoes RES itself */
 };
 
 /**
@@ -1434,6 +1505,30 @@ int net_context_set_option(struct net_context *context,
 int net_context_get_option(struct net_context *context,
 			   enum net_context_option option,
 			   void *value, uint32_t *len);
+
+/**
+ * @brief Enable or disable DPLPMTUD (RFC 9869) on a UDP context.
+ *
+ * When enabled, the stack probes the path MTU using UDP options and answers
+ * incoming probes. Must be a UDP context.
+ *
+ * @param context Network context (proto must be UDP)
+ * @param enable  true to enable DPLPMTUD, false to disable
+ *
+ * @return 0 on success, negative errno otherwise.
+ */
+#if defined(CONFIG_NET_UDP_OPTIONS_DPLPMTUD) || defined(__DOXYGEN__)
+int net_context_set_udp_dplpmtud(struct net_context *context, bool enable);
+#else
+static inline int net_context_set_udp_dplpmtud(struct net_context *context,
+					       bool enable)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(enable);
+
+	return -ENOTSUP;
+}
+#endif /* CONFIG_NET_UDP_OPTIONS_DPLPMTUD */
 
 /**
  * @typedef net_context_cb_t
@@ -1466,7 +1561,7 @@ void net_context_foreach(net_context_cb_t cb, void *user_data);
  * pools.
  *
  * @param context Context that will use the given net_buf pools.
- * @param tx_pool Pointer to the function that will return TX pool
+ * @param tx_slab Pointer to the function that will return TX pool
  * to the caller. The TX pool is used when sending data to network.
  * There is one TX net_pkt for each network packet that is sent.
  * @param data_pool Pointer to the function that will return DATA pool
@@ -1484,7 +1579,7 @@ static inline void net_context_setup_pools(struct net_context *context,
 	context->data_pool = data_pool;
 }
 #else
-#define net_context_setup_pools(context, tx_pool, data_pool)
+#define net_context_setup_pools(context, tx_slab, data_pool)
 #endif
 
 /**

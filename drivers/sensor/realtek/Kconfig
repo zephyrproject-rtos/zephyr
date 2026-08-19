@@ -1,4 +1,5 @@
 # Copyright (c) 2025, Realtek, SIBG-SD7
 # SPDX-License-Identifier: Apache-2.0
 
+source "drivers/sensor/realtek/qdec_bee/Kconfig"
 source "drivers/sensor/realtek/rts5912/Kconfig"

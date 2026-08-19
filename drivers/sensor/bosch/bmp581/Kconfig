@@ -9,8 +9,12 @@
 config BMP581
 	bool "BMP581 barometric pressure sensor"
 	depends on DT_HAS_BOSCH_BMP581_ENABLED
-	select I2C
-	select I2C_RTIO
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i2c)
+	select I2C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i2c)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),spi)
+	select SPI_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),spi)
+	select I3C if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i3c)
+	select I3C_RTIO if $(dt_compat_on_bus,$(DT_COMPAT_BOSCH_BMP581),i3c)
 	default y
 
 config BMP581_STREAM
@@ -19,3 +23,12 @@ config BMP581_STREAM
 	depends on SENSOR_ASYNC_API
 	depends on GPIO
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_BOSCH_BMP581),int-gpios)
+
+config EMUL_BMP581
+	bool "Emulator for the BMP581 barometric pressure sensor"
+	default y
+	depends on BMP581
+	depends on EMUL
+	help
+	  Enable the hardware emulator for the BMP581. Doing so allows exercising
+	  the driver against an emulated bus without real hardware.

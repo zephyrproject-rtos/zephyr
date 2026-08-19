@@ -9,6 +9,13 @@ config SOC_ENABLE_APPCPU
 	help
 	  This hidden configuration lets PROCPU core to map and start APPCPU whenever IPM is enabled.
 
+config SOC_ESP32_APPCPU_TARGET
+	bool
+	default y if SOC_ESP32_APPCPU || SOC_ESP32S3_APPCPU
+	help
+	  This hidden configuration defines that the build targets the
+	  APPCPU (core 1) image of a dual-core Espressif SoC.
+
 if SOC_ENABLE_APPCPU
 
 menu "Espressif AMP Config"

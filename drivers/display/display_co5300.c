@@ -37,6 +37,7 @@ struct co5300_config {
 	uint16_t panel_height;
 	uint16_t channel;
 	uint16_t num_of_lanes;
+	uint16_t addr_align;
 };
 
 struct co5300_data {
@@ -102,11 +103,12 @@ static void co5300_copy_and_adjust_coordinates(const struct device *dev,
 		uint16_t *local_x, uint16_t *local_y,
 		struct display_buffer_descriptor *local_desc)
 {
+	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
 	const uint8_t *src;
 	uint8_t *dst;
 
-	/* Copy the update area to the framebuffer */
+	/* Copy the update area to the internal framebuffer */
 	src = buf;
 	dst = data->frame_ptr + (y * data->frame_pitch * data->bytes_per_pixel)
 		+ (x * data->bytes_per_pixel);
@@ -118,16 +120,9 @@ static void co5300_copy_and_adjust_coordinates(const struct device *dev,
 
 	/*
 	 * Initialize descriptor for local frame buffer.
-	 * The start coordinates and the width/height of the updated area
-	 * cannot be odd value for the panel. Adjust them to be even.
+	 * The start coordinates cannot be odd value for the panel,
+	 * and the address of the framebuffer must be aligned.
 	 */
-	if (x % 2 != 0) {
-		*local_x = x - 1;
-		local_desc->width = desc->width + 1U;
-	} else {
-		*local_x = x;
-		local_desc->width = desc->width;
-	}
 	if (y % 2 != 0) {
 		*local_y = y - 1;
 		local_desc->height = desc->height + 1U;
@@ -135,6 +130,20 @@ static void co5300_copy_and_adjust_coordinates(const struct device *dev,
 		*local_y = y;
 		local_desc->height = desc->height;
 	}
+
+	*local_x = x;
+	local_desc->width = desc->width;
+	dst = data->frame_ptr
+		+ (*local_y * data->frame_pitch * data->bytes_per_pixel)
+		+ (*local_x * data->bytes_per_pixel);
+
+	while ((*local_x % 2 != 0) || (((uint32_t)dst & (config->addr_align - 1)) != 0U)) {
+		dst -= data->bytes_per_pixel;
+		(*local_x)--;
+		local_desc->width++;
+	}
+
+	/* The width/height of the updated area cannot be odd value either. */
 	local_desc->width = ROUND_UP(local_desc->width, 2U);
 	local_desc->height = ROUND_UP(local_desc->height, 2U);
 	local_desc->pitch = data->frame_pitch;
@@ -541,6 +550,16 @@ static DEVICE_API(display, co5300_api) = {
 #define CO5300_FRAMEBUFFER(node_id) co5300_frame_buffer_##node_id
 
 #define CO5300_DEVICE_INIT(node_id)								\
+	BUILD_ASSERT(DT_INST_PROP(node_id, addr_align) != 0 &&					\
+		     (DT_INST_PROP(node_id, addr_align) % 2) == 0,				\
+		     "CO5300: addr_align must not be 0 or odd");				\
+	BUILD_ASSERT((ROUND_UP(DT_INST_PROP(node_id, width),					\
+			       DT_INST_PROP(node_id, pitch_align)) *				\
+		      (DT_INST_PROP(node_id, pixel_format) == MIPI_DSI_PIXFMT_RGB565		\
+		       ? 2U : 3U)) %								\
+		     DT_INST_PROP(node_id, addr_align) == 0,					\
+		     "CO5300: line stride (frame_pitch * bytes_per_pixel) must be"		\
+		     " a multiple of addr_align");						\
 	static const struct co5300_config co5300_config_##node_id = {				\
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(node_id)),				\
 		.num_of_lanes = DT_INST_PROP_BY_IDX(node_id, data_lanes, 0),			\
@@ -551,6 +570,7 @@ static DEVICE_API(display, co5300_api) = {
 		.tear_effect_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),	\
 		.panel_width = DT_INST_PROP(node_id, width),					\
 		.panel_height = DT_INST_PROP(node_id, height),					\
+		.addr_align = DT_INST_PROP(node_id, addr_align),				\
 	};											\
 	CO5300_FRAMEBUFFER_DECL(node_id);							\
 	static struct co5300_data co5300_data_##node_id = {					\

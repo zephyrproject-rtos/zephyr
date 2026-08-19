@@ -15,14 +15,14 @@
 			flash0: flash@8000000 {
 				erase-block-size = <2048>;
 				reg = <0x08000000 DT_SIZE_K(128)>;
+				ranges = <0 0x8000000 DT_SIZE_K(128)>;
 			};
 		};
 
 		/*
-		 * USARTs 3-4 share the same IRQ on stm32f070Xb devices. This
-		 * configuration is not currently supported, so at most one of
-		 * these may be enabled at a time. Enabling more than one will
-		 * result in a build failure.
+		 * USARTs 3-4 share the same IRQ on STM32F070xB devices.
+		 * CONFIG_SHARED_INTERRUPTS is enabled by default by the
+		 * SoC Kconfig when both of these are active.
 		 */
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
@@ -60,7 +60,7 @@
 			#size-cells = <0>;
 			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <26 3>;
+			interrupts = <26 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};

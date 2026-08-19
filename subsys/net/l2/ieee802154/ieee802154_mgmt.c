@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(net_ieee802154_mgmt, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
 #include <zephyr/net/ieee802154_mgmt.h>
 #include <zephyr/net/ieee802154.h>
 
-#include "ieee802154_frame.h"
+#include <zephyr/net/ieee802154_frame.h>
 #include "ieee802154_mgmt_priv.h"
 #include "ieee802154_priv.h"
 #include "ieee802154_security.h"
@@ -39,6 +39,8 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	int beacon_hdr_len;
+
+	NET_ASSERT(ctx != NULL);
 
 	NET_DBG("Beacon received");
 
@@ -80,6 +82,8 @@ static int ieee802154_cancel_scan(uint64_t mgmt_request, struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
 
@@ -104,6 +108,8 @@ static int ieee802154_scan(uint64_t mgmt_request, struct net_if *iface,
 	struct ieee802154_req_params *scan;
 	struct net_pkt *pkt = NULL;
 	int ret;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (len != sizeof(struct ieee802154_req_params) || !data) {
 		return -EINVAL;
@@ -313,6 +319,8 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	if (mpdu->command->cfi == IEEE802154_CFI_ASSOCIATION_RESPONSE) {
 		if (mpdu->command->assoc_res.status !=
 		    IEEE802154_ASF_SUCCESSFUL) {
@@ -444,6 +452,8 @@ static int ieee802154_associate(uint64_t mgmt_request, struct net_if *iface,
 	struct ieee802154_command *cmd;
 	struct net_pkt *pkt;
 	int ret = 0;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (len != sizeof(struct ieee802154_req_params) || !data) {
 		NET_ERR("Could not associate: invalid request");
@@ -665,6 +675,8 @@ static int ieee802154_disassociate(uint64_t mgmt_request, struct net_if *iface,
 	struct ieee802154_command *cmd;
 	struct net_pkt *pkt;
 
+	NET_ASSERT(ctx != NULL);
+
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
 
@@ -738,6 +750,8 @@ static int ieee802154_set_ack(uint64_t mgmt_request, struct net_if *iface,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	ARG_UNUSED(data);
 	ARG_UNUSED(len);
 
@@ -767,6 +781,8 @@ static int ieee802154_set_parameters(uint64_t mgmt_request,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint16_t value;
 	int ret = 0;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (!data) {
 		return -EINVAL;
@@ -822,14 +838,17 @@ static int ieee802154_set_parameters(uint64_t mgmt_request,
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_COORD_SHORT_ADDR) {
 		ctx->coord_short_addr = value;
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
+		struct net_linkaddr *link_addr = net_if_get_link_addr(iface);
 		uint8_t ext_addr_le[IEEE802154_EXT_ADDR_LENGTH];
+
+		NET_ASSERT(link_addr != NULL);
 
 		sys_memcpy_swap(ext_addr_le, data, IEEE802154_EXT_ADDR_LENGTH);
 
 		if (memcmp(ctx->ext_addr, ext_addr_le, IEEE802154_EXT_ADDR_LENGTH)) {
 			memcpy(ctx->ext_addr, ext_addr_le, IEEE802154_EXT_ADDR_LENGTH);
 
-			if (net_if_get_link_addr(iface)->len == IEEE802154_EXT_ADDR_LENGTH) {
+			if (link_addr->len == IEEE802154_EXT_ADDR_LENGTH) {
 				set_linkaddr_to_ext_addr(iface, ctx);
 			}
 
@@ -896,6 +915,8 @@ static int ieee802154_get_parameters(uint64_t mgmt_request,
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	uint16_t *value;
 	int ret = 0;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (!data) {
 		return -EINVAL;
@@ -971,6 +992,8 @@ static int ieee802154_set_security_settings(uint64_t mgmt_request,
 	struct ieee802154_security_params *params;
 	int ret = 0;
 
+	NET_ASSERT(ctx != NULL);
+
 	if (len != sizeof(struct ieee802154_security_params) || !data) {
 		return -EINVAL;
 	}
@@ -1008,6 +1031,8 @@ static int ieee802154_get_security_settings(uint64_t mgmt_request,
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_security_params *params;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (len != sizeof(struct ieee802154_security_params) || !data) {
 		return -EINVAL;

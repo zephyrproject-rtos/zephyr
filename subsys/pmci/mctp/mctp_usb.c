@@ -16,7 +16,7 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(mctp_usb, CONFIG_MCTP_LOG_LEVEL);
 
-#include "libmctp-alloc.h"
+#include <libmctp-alloc.h>
 
 #define MCTP_USB_DMTF_0 0x1A
 #define MCTP_USB_DMTF_1 0xB4
@@ -311,6 +311,7 @@ static void mctp_usb_class_out_work(struct k_work *work)
 
 				if (usb->rx_data_idx == usb->rx_pkt->end) {
 					mctp_bus_rx(&usb->binding, usb->rx_pkt);
+					mctp_pktbuf_free(usb->rx_pkt);
 					usb->rx_pkt = NULL;
 					mctp_usb_reset_rx_state(usb);
 				}
@@ -508,12 +509,12 @@ static int mctp_usb_class_init(struct usbd_class_data *const c_data)
 	k_work_init(&ctx->out_work, mctp_usb_class_out_work);
 	atomic_set(&ctx->in_pending, 0);
 
-	if (ctx->inst->sublcass == USBD_MCTP_SUBCLASS_MANAGEMENT_CONTROLLER ||
-	    ctx->inst->sublcass == USBD_MCTP_SUBCLASS_MANAGED_DEVICE_ENDPOINT ||
-	    ctx->inst->sublcass == USBD_MCTP_SUBCLASS_HOST_INTERFACE_ENDPOINT) {
-		ctx->desc->if0.bInterfaceSubClass = ctx->inst->sublcass;
+	if (ctx->inst->subclass == USBD_MCTP_SUBCLASS_MANAGEMENT_CONTROLLER ||
+	    ctx->inst->subclass == USBD_MCTP_SUBCLASS_MANAGED_DEVICE_ENDPOINT ||
+	    ctx->inst->subclass == USBD_MCTP_SUBCLASS_HOST_INTERFACE_ENDPOINT) {
+		ctx->desc->if0.bInterfaceSubClass = ctx->inst->subclass;
 	} else {
-		LOG_ERR("Invalid USB MCTP sublcass");
+		LOG_ERR("Invalid USB MCTP subclass");
 		return -EINVAL;
 	}
 

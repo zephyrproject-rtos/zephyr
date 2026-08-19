@@ -33,4 +33,7 @@ supported:
   - spi
   - usb_device
   - watchdog
+  - edac
+  - crc
+  - tsi
 vendor: nxp

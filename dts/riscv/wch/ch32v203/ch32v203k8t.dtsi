@@ -6,6 +6,19 @@
 
 #include <wch/ch32v203/ch32v203.dtsi>
 
+/ {
+	soc {
+		usart2: uart@40004400 {
+			compatible = "wch,usart";
+			reg = <0x40004400 0x20>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
+			interrupt-parent = <&pfic>;
+			interrupts = <54>;
+			status = "disabled";
+		};
+	};
+};
+
 &gpiob {
 	gpio-reserved-ranges = <9 16>;
 };

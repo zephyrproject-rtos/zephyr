@@ -8,7 +8,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <zephyr/pm/device.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
@@ -386,10 +386,10 @@ static int spi_sedi_device_ctrl(const struct device *dev,
 
 #endif /* CONFIG_PM_DEVICE */
 
-#define SPI_SEDI_IRQ_FLAGS_SENSE0(n) 0
-#define SPI_SEDI_IRQ_FLAGS_SENSE1(n) DT_INST_IRQ(n, sense)
+#define SPI_SEDI_IRQ_FLAGS0(n) 0
+#define SPI_SEDI_IRQ_FLAGS1(n) DT_INST_IRQ(n, flags)
 #define SPI_SEDI_IRQ_FLAGS(n) \
-	_CONCAT(SPI_SEDI_IRQ_FLAGS_SENSE, DT_INST_IRQ_HAS_CELL(n, sense))(n)
+	_CONCAT(SPI_SEDI_IRQ_FLAGS, DT_INST_IRQ_HAS_CELL(n, flags))(n)
 
 #define CREATE_SEDI_SPI_INSTANCE(num)					       \
 	static void spi_##num##_irq_init(void)			               \

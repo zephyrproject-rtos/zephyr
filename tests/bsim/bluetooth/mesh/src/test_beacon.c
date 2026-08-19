@@ -11,7 +11,7 @@
 #include "mesh/mesh.h"
 #include "mesh/foundation.h"
 #include "mesh/crypto.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "mesh/proxy_cli.h"
 #include "mesh/proxy.h"
 
@@ -338,7 +338,7 @@ static struct {
 static void beacon_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 			   struct net_buf_simple *buf)
 {
-	const uint8_t *net_id;
+	const uint8_t *net_id = NULL;
 	uint8_t ad_data_type, beacon_type, length;
 
 	ASSERT_EQUAL(BT_GAP_ADV_TYPE_ADV_NONCONN_IND, adv_type);
@@ -1073,6 +1073,8 @@ BT_MESH_BEACON_CB_DEFINE(priv_beacon) = {
 
 static bool private_beacon_check(const uint8_t *net_id, void *ctx)
 {
+	ARG_UNUSED(net_id);
+
 	bool ret;
 	bool same_random = *(bool *)ctx;
 
@@ -2112,7 +2114,7 @@ static void test_rx_priv_multi_net_id(void)
 					net_ctx[old_idx].recv_cnt = 0;
 					old_idx = i;
 
-					/* The test ends when all itterations are completed */
+					/* The test ends when all iterations are completed */
 					itr--;
 
 					net_ctx[i].start = k_uptime_get();

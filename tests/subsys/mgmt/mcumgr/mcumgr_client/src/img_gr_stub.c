@@ -260,7 +260,7 @@ void img_upload_init_verify(struct net_buf *nb)
 	}
 
 	if (offset != test_offset) {
-		printf("Offset not exepected %d vs received %d\r\n", test_offset, offset);
+		printf("Offset not expected %d vs received %d\r\n", test_offset, offset);
 	}
 
 	if (offset == 0) {

@@ -8,12 +8,13 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/pm/device_runtime.h>
 
-#if DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout)
+#if DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_system_timer), st_timeout)
 /* st,timeout is set. Application can be woken up exactly on expected tick */
-#define SLEEP_TIME_MS   (DT_PROP(DT_NODELABEL(stm32_lp_tick_source), st_timeout) * 1000)
+#define SLEEP_TIME_MS   (DT_PROP(DT_CHOSEN(zephyr_system_timer), st_timeout) * 1000)
 #else
 #define SLEEP_TIME_MS   2000
 #endif
@@ -35,7 +36,7 @@ int main(void)
 	 */
 	DT_FOREACH_STATUS_OKAY(st_stm32_gpio, STM32_GPIO_PM_ENABLE)
 
-	printk("Device ready\n");
+	printk("Blinking every %u seconds\n", SLEEP_TIME_MS / MSEC_PER_SEC);
 
 	while (true) {
 		gpio_pin_configure_dt(&led, GPIO_OUTPUT_ACTIVE);

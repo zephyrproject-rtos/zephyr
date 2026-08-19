@@ -1,5 +1,5 @@
-# Copyright (c) 2025 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG.
+# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -49,6 +49,7 @@ zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER    ${pdl_drv_dir}/source/
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_UART     ${pdl_drv_dir}/source/cy_scb_uart.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH    ${pdl_drv_dir}/source/cy_flash.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_WDT      ${pdl_drv_dir}/source/cy_wdt.c)
+zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPCOMP   ${pdl_drv_dir}/source/cy_lpcomp.c)
 
 if(CONFIG_SOC_FAMILY_INFINEON_CAT1B)
   zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_ADC      ${pdl_drv_dir}/source/cy_adcmic.c)
@@ -65,6 +66,21 @@ if(CONFIG_USE_INFINEON_TRNG)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v1.c)
   zephyr_library_sources(${pdl_drv_dir}/source/cy_crypto_core_trng_v2.c)
+endif()
+
+if(CONFIG_USE_INFINEON_MXCRYPTOLITE_TRNG)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_trng.c)
+endif()
+
+if(CONFIG_USE_INFINEON_MXCRYPTOLITE_SHA256)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_utils.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_sha256.c)
+endif()
+
+if(CONFIG_USE_INFINEON_MXCRYPTOLITE_AES)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_aes.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_aes_ccm.c)
+  zephyr_library_sources(${pdl_drv_dir}/source/cy_cryptolite_vu.c)
 endif()
 
 if(CONFIG_USE_INFINEON_UART OR CONFIG_USE_INFINEON_I2C OR CONFIG_USE_INFINEON_SPI)

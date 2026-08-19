@@ -158,7 +158,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 {
 	void *buf0 = NULL;
 	void *buf1 = NULL;
-	uint16_t buf_nbr_pixels;
+	uint32_t buf_nbr_pixels;
 	uint32_t buf_size;
 	struct lvgl_disp_data *data = (struct lvgl_disp_data *)lv_display_get_user_data(display);
 	uint16_t hor_res = lv_display_get_horizontal_resolution(display);
@@ -178,6 +178,7 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 		buf_size = 3 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_RGB_565:
+	case PIXEL_FORMAT_RGB_565X:
 		buf_size = 2 * buf_nbr_pixels;
 		break;
 	case PIXEL_FORMAT_L_8:
@@ -228,15 +229,25 @@ static int lvgl_allocate_rendering_buffers(lv_display_t *display)
 
 static K_THREAD_STACK_DEFINE(lvgl_workqueue_stack, CONFIG_LV_Z_LVGL_WORKQUEUE_STACK_SIZE);
 static struct k_work_q lvgl_workqueue;
+static atomic_t lvgl_paused;
 
 static void lvgl_timer_handler_work(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	uint32_t wait_time;
 
+	if (atomic_get(&lvgl_paused) != 0) {
+		return;
+	}
+
 	lvgl_lock();
 	wait_time = lv_timer_handler();
 	lvgl_unlock();
+
+	/* Re-check in case a callback called lvgl_timer_handler_pause() during the tick. */
+	if (atomic_get(&lvgl_paused) != 0) {
+		return;
+	}
 
 	/* schedule next timer verification */
 	if (wait_time == LV_NO_TIMER_READY) {
@@ -251,6 +262,18 @@ struct k_work_q *lvgl_get_workqueue(void)
 {
 	return &lvgl_workqueue;
 }
+
+void lvgl_timer_handler_pause(void)
+{
+	(void)atomic_set(&lvgl_paused, 1);
+}
+
+void lvgl_timer_handler_resume(void)
+{
+	(void)atomic_set(&lvgl_paused, 0);
+	(void)k_work_schedule_for_queue(&lvgl_workqueue, &lvgl_work, K_NO_WAIT);
+}
+
 #endif /* CONFIG_LV_Z_RUN_LVGL_ON_WORKQUEUE */
 
 #if defined(CONFIG_LV_Z_LVGL_MUTEX) && !defined(CONFIG_LV_Z_USE_OSAL)

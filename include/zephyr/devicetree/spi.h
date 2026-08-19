@@ -48,7 +48,7 @@ extern "C" {
  *     DT_SPI_HAS_CS_GPIOS(DT_NODELABEL(spi2)) // 0
  *
  * @param spi a SPI bus controller node identifier
- * @return 1 if "spi" has a cs-gpios property, 0 otherwise
+ * @return 1 if @p spi has a cs-gpios property, 0 otherwise
  */
 #define DT_SPI_HAS_CS_GPIOS(spi) DT_NODE_HAS_PROP(spi, cs_gpios)
 
@@ -73,7 +73,7 @@ extern "C" {
  *     DT_SPI_NUM_CS_GPIOS(DT_NODELABEL(spi2)) // 0
  *
  * @param spi a SPI bus controller node identifier
- * @return Logical length of spi's cs-gpios property, or 0 if "spi" doesn't
+ * @return Logical length of spi's cs-gpios property, or 0 if @p spi doesn't
  *         have a cs-gpios property
  */
 #define DT_SPI_NUM_CS_GPIOS(spi) \
@@ -112,7 +112,7 @@ extern "C" {
  *     DT_SPI_DEV_HAS_CS_GPIOS(DT_NODELABEL(c)) // 0
  *
  * @param spi_dev a SPI device node identifier
- * @return 1 if spi_dev's bus node DT_BUS(spi_dev) has a chip select
+ * @return 1 if @p spi_dev bus node DT_BUS(spi_dev) has a chip select
  *         pin at index DT_REG_ADDR(spi_dev), 0 otherwise
  */
 #define DT_SPI_DEV_HAS_CS_GPIOS(spi_dev)                                                           \
@@ -147,7 +147,7 @@ extern "C" {
  *     DT_SPI_DEV_CS_GPIOS_CTLR(DT_NODELABEL(b)) // DT_NODELABEL(gpio2)
  *
  * @param spi_dev a SPI device node identifier
- * @return node identifier for spi_dev's chip select GPIO controller
+ * @return node identifier for @p spi_dev chip select GPIO controller
  */
 #define DT_SPI_DEV_CS_GPIOS_CTLR(spi_dev) \
 	DT_GPIO_CTLR_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
@@ -155,7 +155,7 @@ extern "C" {
 /**
  * @brief Get a SPI device's chip select GPIO pin number
  *
- * It's an error if the GPIO specifier for spi_dev's entry in its
+ * It's an error if the GPIO specifier for @p spi_dev entry in its
  * bus node's cs-gpios property has no pin cell.
  *
  * Example devicetree fragment:
@@ -180,7 +180,7 @@ extern "C" {
  *     DT_SPI_DEV_CS_GPIOS_PIN(DT_NODELABEL(b)) // 20
  *
  * @param spi_dev a SPI device node identifier
- * @return pin number of spi_dev's chip select GPIO
+ * @return pin number of @p spi_dev chip select GPIO
  */
 #define DT_SPI_DEV_CS_GPIOS_PIN(spi_dev) \
 	DT_GPIO_PIN_BY_IDX(DT_BUS(spi_dev), cs_gpios, DT_REG_ADDR_RAW(spi_dev))
@@ -203,11 +203,11 @@ extern "C" {
  *
  *     DT_SPI_DEV_CS_GPIOS_FLAGS(DT_NODELABEL(a)) // GPIO_ACTIVE_LOW
  *
- * If the GPIO specifier for spi_dev's entry in its bus node's
+ * If the GPIO specifier for @p spi_dev entry in its bus node's
  * cs-gpios property has no flags cell, this expands to zero.
  *
  * @param spi_dev a SPI device node identifier
- * @return flags value of spi_dev's chip select GPIO specifier, or
+ * @return flags value of @p spi_dev chip select GPIO specifier, or
  *         zero if there is none
  */
 #define DT_SPI_DEV_CS_GPIOS_FLAGS(spi_dev) \
@@ -215,7 +215,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_SPI_DEV_HAS_CS_GPIOS(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return 1 if the instance's bus has a CS pin at index
  *         DT_INST_REG_ADDR(inst), 0 otherwise
  * @see DT_SPI_DEV_HAS_CS_GPIOS()
@@ -226,7 +226,7 @@ extern "C" {
 /**
  * @brief Get GPIO controller node identifier for a SPI device instance
  * This is equivalent to DT_SPI_DEV_CS_GPIOS_CTLR(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return node identifier for instance's chip select GPIO controller
  * @see DT_SPI_DEV_CS_GPIOS_CTLR()
  */
@@ -235,7 +235,7 @@ extern "C" {
 
 /**
  * @brief Equivalent to DT_SPI_DEV_CS_GPIOS_PIN(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return pin number of the instance's chip select GPIO
  * @see DT_SPI_DEV_CS_GPIOS_PIN()
  */
@@ -244,7 +244,7 @@ extern "C" {
 
 /**
  * @brief DT_SPI_DEV_CS_GPIOS_FLAGS(DT_DRV_INST(inst)).
- * @param inst DT_DRV_COMPAT instance number
+ * @param inst @c DT_DRV_COMPAT instance number
  * @return flags value of the instance's chip select GPIO specifier,
  *         or zero if there is none
  * @see DT_SPI_DEV_CS_GPIOS_FLAGS()

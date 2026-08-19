@@ -354,7 +354,7 @@ static int file_data_input(const struct shell *sh)
 
 	file_len = 0;
 
-	PR_INFO("Input mode (max %d characters). End the line with \\ to start a new one:\n",
+	PR_INFO("Input mode (max %zu characters). End the line with \\ to start a new one:\n",
 		sizeof(file_buf) - 1);
 
 	while (nextline) {

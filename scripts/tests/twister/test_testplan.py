@@ -8,6 +8,7 @@ This test file contains testsuites for testsuite.py module of twister
 '''
 import os
 import sys
+import textwrap
 from contextlib import nullcontext
 from pathlib import Path
 from unittest import mock
@@ -20,6 +21,7 @@ from twisterlib.statuses import TwisterStatus
 from twisterlib.testinstance import TestInstance
 from twisterlib.testplan import TestConfiguration, TestPlan, change_skip_to_error_if_integration
 from twisterlib.testsuite import TestSuite
+from twisterlib.testsuitedata import RequiredApplication
 
 
 def mock_twister_env():
@@ -37,8 +39,7 @@ def mock_twister_env():
 def test_testplan_add_testsuites_short(class_testplan):
     """ Testing add_testcase function of Testsuite class in twister """
     # Test 1: Check the list of testsuites after calling add testsuites function is as expected
-    class_testplan.SAMPLE_FILENAME = 'test_sample_app.yaml'
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = ['test_sample_app.yaml', 'test_data.yaml']
     class_testplan.add_testsuites()
 
     tests_rel_dir = 'scripts/tests/twister/test_data/testsuites/tests/'
@@ -58,7 +59,7 @@ def test_testplan_add_testsuites_short(class_testplan):
     assert sorted(testsuite_list) == sorted(expected_testsuites)
 
     # Test 2 : Assert Testcase name is expected & all testsuites values are testcase class objects
-    suite = class_testplan.testsuites.get(tests_rel_dir + 'test_a/test_a.check_1')
+    suite = class_testplan.testsuites.get('test_a.check_1')
     assert suite.name == tests_rel_dir + 'test_a/test_a.check_1'
     assert all(isinstance(n, TestSuite) for n in class_testplan.testsuites.values())
 
@@ -262,6 +263,55 @@ def test_apply_filters_part3(class_testplan, all_testsuites_dict, platforms_list
     assert not filtered_instances
 
 
+# Regression guard for #33247 / #32835: a testsuite with integration_platforms
+# must produce the documented platform scope in both integration (-G) and
+# non-integration modes, including non-default platforms listed in
+# integration_platforms.
+#
+# Fixture testsuite at test_data/testsuites_integration/tests/test_integration/
+# test_data.yaml declares integration_platforms: [demo_board_2, demo_board_3].
+# demo_board_1 and demo_board_3 are default platforms (testing.default: true);
+# demo_board_2 is not. The fixture lives outside the test_data/testsuites/ tree
+# scanned by the shared all_testsuites_dict fixture so that the integration-
+# platforms validation (which needs platforms loaded first) does not break the
+# other tests in this file.
+@pytest.mark.parametrize("integration_flag, expected_platforms", [
+    # -G: scope is exactly the integration_platforms set.
+    (True,  {'demo_board_2', 'demo_board_3'}),
+    # no -G: scope is default platforms ∪ integration_platforms, so the
+    # non-default demo_board_2 must still appear (this is the case that
+    # silently regressed in #32835).
+    (False, {'demo_board_1', 'demo_board_2', 'demo_board_3'}),
+], ids=["with_-G_flag", "without_-G_flag"])
+def test_integration_platforms_scope(class_testplan, test_data,
+                                     integration_flag, expected_platforms):
+    plan = class_testplan
+
+    # Load platforms via the normal add_configurations() path so platform_names
+    # gets both the "<board>/<soc>" form and the bare "<board>" alias that
+    # verify_platforms_existence checks against.
+    plan.env.board_roots = [os.path.abspath(os.path.join(test_data, "board_config"))]
+    plan.add_configurations()
+
+    # Point test_roots at the isolated fixture tree and load it ourselves.
+    plan.env.test_roots = [
+        os.path.join(test_data, "testsuites_integration", "tests"),
+    ]
+    plan.TEST_DEFINITION_FILENAME = ['test_data.yaml']
+    plan.add_testsuites()
+
+    plan.options.integration = integration_flag
+    plan.apply_filters()
+
+    selected = {
+        inst.platform.name.split('/')[0]
+        for key, inst in plan.instances.items()
+        if 'test_integration.check_integration_platforms' in key
+        and inst.status != TwisterStatus.FILTER
+    }
+    assert selected == expected_platforms
+
+
 def get_testsuite_for_given_test(plan: TestPlan, testname: str) -> TestSuite | None:
     """ Helper function to get testsuite object for a given testname"""
     for _, testsuite in plan.testsuites.items():
@@ -292,7 +342,7 @@ def test_apply_changes_for_required_applications(testplan_with_one_instance: Tes
     testinstance_req = next(iter(plan.instances.values()))
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': 'sample_test.app'}]
+    testsuite.required_applications = [RequiredApplication(application='sample_test.app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -307,7 +357,7 @@ def test_apply_changes_for_required_applications_missing_app(testplan_with_one_i
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
     # Set a required application that does not exist
-    testsuite.required_applications = [{'name': 'nonexistent_app'}]
+    testsuite.required_applications = [RequiredApplication(application='nonexistent_app')]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -323,7 +373,7 @@ def test_apply_changes_for_required_applications_wrong_platform(testplan_with_on
     """ Test apply_changes_for_required_applications with not matched platform """
     plan = testplan_with_one_instance
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': 'sample_test.app', 'platform': 'demo_board_2'}]
+    testsuite.required_applications = [RequiredApplication(application='sample_test.app', platform='demo_board_2')]
     platform = plan.get_platform("demo_board_2")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -343,7 +393,7 @@ def test_apply_changes_for_required_applications_in_outdir(testplan_with_one_ins
     req_app_in_outdir = "prebuilt_sample_test.app"
 
     testsuite = get_testsuite_for_given_test(plan, 'test_a.check_1')
-    testsuite.required_applications = [{'name': req_app_in_outdir}]
+    testsuite.required_applications = [RequiredApplication(application=req_app_in_outdir)]
     platform = plan.get_platform("demo_board_1")
     testinstance = TestInstance(testsuite, platform, 'zephyr', plan.env.outdir)
     plan.add_instances([testinstance])
@@ -377,7 +427,7 @@ def test_add_instances_short(tmp_path, class_env, all_testsuites_dict, platforms
         instance_list.append(instance)
     plan.add_instances(instance_list)
     assert list(plan.instances.keys()) == \
-		   [platform.name + '/zephyr/' + s for s in list(all_testsuites_dict.keys())]
+		   [platform.name + '/zephyr/' + s.name for s in all_testsuites_dict.values()]
     assert all(isinstance(n, TestInstance) for n in list(plan.instances.values()))
     assert list(plan.instances.values()) == instance_list
 
@@ -437,7 +487,7 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
     class_testplan.options.all = True
     class_testplan.platforms = platforms_list
     class_testplan.platform_names = [p.name for p in platforms_list]
-    class_testplan.TESTSUITE_FILENAME = 'test_data.yaml'
+    class_testplan.TEST_DEFINITION_FILENAME = 'test_data.yaml'
     class_testplan.add_testsuites()
 
     quarantine_list = [
@@ -462,16 +512,16 @@ def test_quarantine_short(class_testplan, platforms_list, test_data,
 
 
 TESTDATA_PART4 = [
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy'],
+    ('test_d.check_1', ['dummy'],
      None, 'Snippet not supported'),
-    (os.path.join('test_c', 'test_c.check_1'), ['cdc-acm-console'],
+    ('test_c.check_1', ['cdc-acm-console'],
      0, None),
-    (os.path.join('test_d', 'test_d.check_1'), ['dummy', 'cdc-acm-console'],
+    ('test_d.check_1', ['dummy', 'cdc-acm-console'],
      2, 'Snippet not supported'),
 ]
 
 @pytest.mark.parametrize(
-    'testpath, required_snippets, expected_filtered_len, expected_filtered_reason',
+    'testsuite_id, required_snippets, expected_filtered_len, expected_filtered_reason',
     TESTDATA_PART4,
     ids=['app', 'global', 'multiple']
 )
@@ -479,19 +529,17 @@ def test_required_snippets_short(
     class_testplan,
     all_testsuites_dict,
     platforms_list,
-    testpath,
+    testsuite_id,
     required_snippets,
     expected_filtered_len,
     expected_filtered_reason
 ):
     """ Testing required_snippets function of TestPlan class in Twister """
     plan = class_testplan
-    testpath = os.path.join('scripts', 'tests', 'twister', 'test_data',
-                            'testsuites', 'tests', testpath)
-    testsuite = class_testplan.testsuites.get(testpath)
+    testsuite = all_testsuites_dict.get(testsuite_id)
     plan.platforms = platforms_list
     plan.platform_names = [p.name for p in platforms_list]
-    plan.testsuites = {testpath: testsuite}
+    plan.testsuites = {testsuite_id: testsuite}
 
     for _, testcase in plan.testsuites.items():
         testcase.exclude_platform = []
@@ -585,6 +633,66 @@ def test_testplan_parse_configuration(tmp_path, config_yaml, expected_scenarios)
             assert expected_scenarios == {}
         for level in testplan.levels:
             assert sorted(level.scenarios) == sorted(expected_scenarios[level.name])
+
+
+def test_testplan_parse_build_toolchains(tmp_path):
+    tmp_config_file = tmp_path / 'config_file.yaml'
+    tmp_config_file.write_text(
+"""\
+platforms:
+  build_toolchains:
+    plat1:
+      - host/gnu
+      - host/llvm
+"""
+    )
+
+    tc = TestConfiguration(tmp_config_file)
+    assert tc.build_toolchains == {'plat1': ['host/gnu', 'host/llvm']}
+
+
+def test_testplan_parse_build_toolchains_default(tmp_path):
+    tmp_config_file = tmp_path / 'config_file.yaml'
+    tmp_config_file.write_text('platforms:\n  increased_platform_scope: true\n')
+
+    tc = TestConfiguration(tmp_config_file)
+    assert tc.build_toolchains == {}
+
+
+TESTDATA_TOOLCHAINS = [
+    # testsuite integration_toolchains win over everything else
+    (['zephyr', 'llvm'], ['host/gnu'], None, 'arm', ['zephyr', 'llvm']),
+    # platform build_toolchains multiply the builds
+    ([], ['host/gnu', 'host/llvm'], None, 'posix', ['host/gnu', 'host/llvm']),
+    # posix/unit platforms default to a single host toolchain
+    ([], [], None, 'posix', ['host/gnu']),
+    # otherwise the platform's preferred toolchain, then the environment's
+    ([], [], 'gnuarmemb', 'arm', ['gnuarmemb']),
+    ([], [], None, 'arm', ['zephyr/gnu']),
+]
+
+@pytest.mark.parametrize(
+    'integration_toolchains, build_toolchains, preferred_toolchain, arch, expected',
+    TESTDATA_TOOLCHAINS,
+    ids=['integration', 'build_toolchains', 'posix default', 'preferred', 'environment']
+)
+def test_testplan_get_toolchains(
+    integration_toolchains,
+    build_toolchains,
+    preferred_toolchain,
+    arch,
+    expected
+):
+    testplan = TestPlan(env=mock_twister_env())
+    testplan.env.toolchain = 'zephyr/gnu'
+    ts = mock.Mock(integration_toolchains=integration_toolchains)
+    plat = mock.Mock(
+        build_toolchains=build_toolchains,
+        preferred_toolchain=preferred_toolchain,
+        arch=arch
+    )
+
+    assert testplan.get_toolchains(ts, plat) == expected
 
 
 TESTDATA_2 = [
@@ -690,6 +798,7 @@ def test_testplan_discover(
     testplan.run_individual_testsuite = 'ts0'
     testplan.load_errors = load_errors
     testplan.add_testsuites = mock.Mock(return_value=added_testsuite_count)
+    testplan.add_testsuites_for_required_applications = mock.Mock()
     testplan.find_subtests = mock.Mock()
     testplan.report_duplicates = mock.Mock()
     testplan.test_config = mock.Mock()
@@ -698,7 +807,7 @@ def test_testplan_discover(
     with pytest.raises(exception) if exception else nullcontext():
         testplan.discover()
 
-    testplan.add_testsuites.assert_called_once_with(testsuite_filter='ts1', testsuite_pattern=[])
+    testplan.add_testsuites.assert_called_once()
     assert all([log in caplog.text for log in expected_logs])
 
 
@@ -908,13 +1017,13 @@ def test_testplan_load(
 
 TESTDATA_5 = [
     (False, False, None, 1, 2,
-     ['plat1/testA', 'plat1/testB', 'plat1/testC',
+     ['plat1/testA', 'plat2/testA', 'plat1/testB',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
     (False, False, None, 1, 5,
      ['plat1/testA',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
     (False, False, None, 2, 2,
-     ['plat2/testA', 'plat2/testB']),
+     ['plat2/testB', 'plat1/testC']),
     (True, False, None, 1, 2,
      ['plat1/testA', 'plat2/testA', 'plat1/testB',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
@@ -949,15 +1058,20 @@ def test_testplan_generate_subset(
         shuffle_tests=shuffle,
         shuffle_tests_seed=seed
     )
+    def make_inst(ts_name, status):
+        inst = mock.Mock(status=status)
+        inst.testsuite.name = ts_name
+        return inst
+
     testplan.instances = {
-        'plat1/testA': mock.Mock(status=TwisterStatus.NONE),
-        'plat1/testB': mock.Mock(status=TwisterStatus.NONE),
-        'plat1/testC': mock.Mock(status=TwisterStatus.NONE),
-        'plat2/testA': mock.Mock(status=TwisterStatus.NONE),
-        'plat2/testB': mock.Mock(status=TwisterStatus.NONE),
-        'plat3/testA': mock.Mock(status=TwisterStatus.SKIP),
-        'plat3/testB': mock.Mock(status=TwisterStatus.SKIP),
-        'plat3/testC': mock.Mock(status=TwisterStatus.ERROR),
+        'plat1/testA': make_inst('testA', TwisterStatus.NONE),
+        'plat1/testB': make_inst('testB', TwisterStatus.NONE),
+        'plat1/testC': make_inst('testC', TwisterStatus.NONE),
+        'plat2/testA': make_inst('testA', TwisterStatus.NONE),
+        'plat2/testB': make_inst('testB', TwisterStatus.NONE),
+        'plat3/testA': make_inst('testA', TwisterStatus.SKIP),
+        'plat3/testB': make_inst('testB', TwisterStatus.SKIP),
+        'plat3/testC': make_inst('testC', TwisterStatus.ERROR),
     }
 
     testplan.generate_subset(subset, sets)
@@ -1199,9 +1313,15 @@ def test_testplan_info(capfd):
     assert 'dummy text\n' in out
 
 
+# Platforms with twister=False (here 'p1e1') are still listed in platforms so
+# references to them resolve, but they are never added as default platforms.
 TESTDATA_8 = [
-    (False, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p2/unit_testing', 'p3/unit_testing']),
-    (True, ['p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'], ['p3/unit_testing']),
+    (False,
+     ['p1e1/unit_testing', 'p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'],
+     ['p2/unit_testing', 'p3/unit_testing']),
+    (True,
+     ['p1e1/unit_testing', 'p1e2/unit_testing', 'p2/unit_testing', 'p3/unit_testing'],
+     ['p3/unit_testing']),
 ]
 
 @pytest.mark.parametrize(
@@ -1219,10 +1339,12 @@ def test_testplan_add_configurations(
     env.board_roots = [tmp_path / 'boards']
     env.soc_roots = [tmp_path]
     env.arch_roots = [tmp_path]
+    env.hwm = mock.Mock(duts=[])
     testplan = TestPlan(env=env)
     testplan.test_config = mock.Mock()
     testplan.test_config.override_default_platforms = override_default_platforms
     testplan.test_config.default_platforms = ['p3', 'p1e1']
+    testplan.test_config.build_toolchains = {}
 
     def mock_gen_plat(board_roots, soc_roots, arch_roots):
         assert [tmp_path] == board_roots
@@ -1278,14 +1400,14 @@ def test_testplan_get_all_tests():
 
 
 TESTDATA_9 = [
-    ([], False, True, 11, 1),
+    ([], False, True, 7, 2),
     ([], False, False, 7, 2),
     ([], True, False, 9, 1),
     ([], True, True, 9, 1),
     ([], True, False, 9, 1),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], False, True, 3, 1),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2',
-      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 4, 1),
+      'duplicate_test/dummy.common.1', 'duplicate_test/dummy.common.2'], False, True, 2, 2),
     (['dummy.common.1', 'dummy.common.2'], False, False, 2, 2),
     (['good_test/dummy.common.1', 'good_test/dummy.common.2', 'good_test/dummy.common.3'], True, True, 0, 1),
 ]
@@ -1300,7 +1422,7 @@ TESTDATA_9 = [
         'no filter, alt root, detailed id',
         'no filter, alt root, short id',
         'testsuite filter',
-        'testsuite filter and valid duplicate',
+        'testsuite filter and duplicate',
         'testsuite filter, short id and duplicate',
         'testsuite filter, alt root',
     ]
@@ -1314,7 +1436,7 @@ def test_testplan_add_testsuites(tmp_path, testsuite_filter, use_alt_root, detai
     # │ ├ wrong_test
     # │ │ └ testcase.yaml
     # │ ├ good_sample
-    # │ │ └ sample.yaml
+    # │ │ └ tests.yaml
     # │ ├ duplicate_test
     # │ │ └ testcase.yaml
     # │ └ others
@@ -1370,9 +1492,8 @@ tests:
 
     tmp_duplicate_test_dir = tmp_test_root_dir / 'duplicate_test'
     tmp_duplicate_test_dir.mkdir()
-    # The duplicate needs to have the same number of tests as these configurations
-    # can be read either with duplicate_test first, or good_test first, so number
-    # of selected tests needs to be the same in both situations.
+    # duplicated testcases should be detected and reported as an error,
+    # no matter if --detailed-test-id is used or not
     testcase_yaml_4 = """\
 tests:
   dummy.common.1:
@@ -1414,9 +1535,114 @@ tests:
     testplan = TestPlan(env=env)
 
     res = testplan.add_testsuites(testsuite_filter, testsuite_pattern=[])
+    testplan.add_testsuites_for_required_applications()
 
     assert res == expected_suite_count
     assert testplan.load_errors == expected_errors
+
+
+@pytest.mark.parametrize(
+    ('filter_app'),
+    [
+        ('test.app.required_app.same_path'),
+        ('test.app.required_app.relative_path'),
+        ('test.app.required_app.absolute_path'),
+        ('test.app.no_build'),
+        ('test.multidut'),
+        ('test.multidut.no_build'),
+        ('test.multidut.required_relative_path'),
+        ('test.multidut.required_absolute_path'),
+    ]
+)
+def test_testplan_add_testsuites_for_required_applications(tmp_path, monkeypatch, filter_app):
+    # tmp_path
+    # └ tests
+    #   ├ hello_app
+    #   │ └ tests.yaml
+    #   └ test_app
+    #     └ tests.yaml
+    monkeypatch.setenv("TMP_PATH", str(tmp_path))
+    test_root = tmp_path / 'tests'
+    test_root.mkdir()
+
+    test_helloapp_dir = test_root / 'hello_app'
+    test_helloapp_dir.mkdir()
+    test_helloapp_yaml = textwrap.dedent("""
+        tests:
+            hello.app: {}
+    """)
+    test_helloapp = test_helloapp_dir / 'tests.yaml'
+    test_helloapp.write_text(test_helloapp_yaml)
+
+    test_app_dir = test_root / 'test_app'
+    test_app_dir.mkdir()
+    test_app_yaml = textwrap.dedent("""
+        common:
+          harness: pytest
+        tests:
+          test.app: {}
+          test.app.required_app.same_path:
+            required_applications:
+              - application: test.app
+          test.app.required_app.relative_path:
+            required_applications:
+              - application: hello.app
+                path: ../hello_app
+          test.app.required_app.absolute_path:
+            required_applications:
+              - application: hello.app
+                path: $TMP_PATH/tests/hello_app
+          test.app.no_build:
+            build: false
+            required_applications:
+              - application: test.app
+
+          test.multidut:
+            harness_config:
+              required_devices:
+                - application: test.app
+          test.multidut.no_build:
+            build: false
+            harness_config:
+              required_devices:
+                - {}
+            required_applications:
+              - application: test.app
+          test.multidut.required_relative_path:
+            harness_config:
+              required_devices:
+                - application: hello.app
+                  path: ../hello_app
+          test.multidut.required_absolute_path:
+            harness_config:
+              required_devices:
+                - application: hello.app
+                  path: $TMP_PATH/tests/hello_app
+    """)
+    test_app = test_app_dir / 'tests.yaml'
+    test_app.write_text(test_app_yaml)
+
+    env = mock.Mock(modules=[], test_roots=[test_root], alt_config_root=[])
+    env.options = mock.Mock()
+
+    testplan = TestPlan(env=env)
+
+    res = testplan.add_testsuites(testsuite_filter=[filter_app])
+    assert res == 1, (
+        f"Expected 1 testsuite to be added for {filter_app}, got {res}"
+    )
+
+    testplan.add_testsuites_for_required_applications()
+    assert len(testplan.testsuites) == 2, (
+        f"Expected 2 testsuites after adding required applications"
+        f" for {filter_app}, got {len(testplan.testsuites)}"
+    )
+
+    for ts in testplan.testsuites.values():
+        if ts.id != filter_app:
+            assert ts.build_only is True, (
+                f"Expected {ts.id}, required by {filter_app}, has build_only set to True"
+            )
 
 
 def test_testplan_str():
@@ -1704,6 +1930,33 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
         'loading TestSuite 4...',
     ]
     assert all([log in caplog.text for log in expected_logs])
+
+
+def test_testplan_load_from_file_unknown_platform():
+    env = mock_twister_env()
+    env.outdir = os.path.join('out', 'dir')
+    testplan = TestPlan(env=env)
+    testplan.options = mock.Mock(device_testing=False, test_only=True, report_summary=None)
+    testplan.testsuites = {'TestSuite 1': mock.Mock(testcases=[])}
+    testplan.get_platform = mock.Mock(return_value=None)
+
+    testplan_data = """\
+{
+    "testsuites": [
+        {
+            "name": "TestSuite 1",
+            "platform": "Unknown Platform",
+            "toolchain": "zephyr"
+        }
+    ]
+}
+"""
+
+    with mock.patch('builtins.open', mock.mock_open(read_data=testplan_data)), \
+         pytest.raises(TwisterRuntimeError) as exc:
+        testplan.load_from_file('dummy.yaml')
+
+    assert 'unknown platform Unknown Platform' in str(exc.value)
 
 
 def test_testplan_add_instances():

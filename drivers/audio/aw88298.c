@@ -426,7 +426,7 @@ static int aw88298_apply_properties(const struct device *dev)
 	return 0;
 }
 
-static const struct audio_codec_api aw88298_api = {
+static DEVICE_API(audio_codec, aw88298_api) = {
 	.configure = aw88298_configure,
 	.start_output = aw88298_start_output,
 	.stop_output = aw88298_stop_output,

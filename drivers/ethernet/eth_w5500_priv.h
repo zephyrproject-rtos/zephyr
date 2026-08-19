@@ -89,7 +89,9 @@
 #define W5500_PHY_ACCESS_DELAY		26U
 struct w5500_config {
 	struct spi_dt_spec spi;
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	struct gpio_dt_spec interrupt;
+#endif
 	struct gpio_dt_spec reset;
 	struct net_eth_mac_config mac_cfg;
 	const struct device *phy_dev;

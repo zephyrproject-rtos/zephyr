@@ -6,6 +6,7 @@ set_ifndef(C++ g++)
 # GCC-based toolchains
 
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC} PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_GCOV ${CROSS_COMPILE}gcov   PATHS ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 if(${CMAKE_C_COMPILER} STREQUAL CMAKE_C_COMPILER-NOTFOUND)
   message(FATAL_ERROR "C compiler ${CROSS_COMPILE}${CC} not found - Please check your toolchain installation")
@@ -80,6 +81,8 @@ elseif("${ARCH}" STREQUAL "xtensa")
   include(${CMAKE_CURRENT_LIST_DIR}/target_xtensa.cmake)
 elseif("${ARCH}" STREQUAL "rx")
   include(${CMAKE_CURRENT_LIST_DIR}/target_rx.cmake)
+elseif("${ARCH}" STREQUAL "openrisc")
+  include(${CMAKE_CURRENT_LIST_DIR}/target_openrisc.cmake)
 endif()
 
 if(SYSROOT_DIR)

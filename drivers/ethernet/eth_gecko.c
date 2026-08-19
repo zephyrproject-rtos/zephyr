@@ -342,7 +342,6 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 		if (res == 0) {
 			if (dev_data->link_up != true) {
 				dev_data->link_up = true;
-				LOG_INF("Link up");
 				eth_gecko_setup_mac(dev);
 				net_eth_carrier_on(dev_data->iface);
 			}
@@ -353,14 +352,12 @@ static void rx_thread(void *arg1, void *unused1, void *unused2)
 			if (phy_gecko_is_linked(&cfg->phy)) {
 				if (dev_data->link_up != true) {
 					dev_data->link_up = true;
-					LOG_INF("Link up");
 					eth_gecko_setup_mac(dev);
 					net_eth_carrier_on(dev_data->iface);
 				}
 			} else   {
 				if (dev_data->link_up != false) {
 					dev_data->link_up = false;
-					LOG_INF("Link down");
 					net_eth_carrier_off(dev_data->iface);
 				}
 			}
@@ -627,11 +624,10 @@ static void eth_iface_init(struct net_if *iface)
 			0, K_NO_WAIT);
 }
 
-static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps eth_gecko_get_capabilities(const struct device *dev __unused,
+						      struct net_if *iface __unused)
 {
-	ARG_UNUSED(dev);
-
-	return (ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE);
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
 }
 
 static const struct ethernet_api eth_api = {

@@ -14,6 +14,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_core.h>
 #include <zephyr/sys/util_macro.h>
+#include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
@@ -22,9 +23,9 @@ LOG_MODULE_REGISTER(has_test, LOG_LEVEL_DBG);
 
 extern enum bst_result_t bst_result;
 
-const uint8_t test_preset_index_1 = 0x01;
-const uint8_t test_preset_index_3 = 0x03;
-const uint8_t test_preset_index_5 = 0x05;
+const uint8_t test_preset_index_1 = 0x01U;
+const uint8_t test_preset_index_3 = 0x03U;
+const uint8_t test_preset_index_5 = 0x05U;
 const char *test_preset_name_1 = "test_preset_name_1";
 const char *test_preset_name_3 = "test_preset_name_3";
 const char *test_preset_name_5 = "test_preset_name_5";
@@ -32,6 +33,9 @@ const enum bt_has_properties test_preset_properties = BT_HAS_PROP_AVAILABLE;
 
 static int preset_select(uint8_t index, bool sync)
 {
+	ARG_UNUSED(index);
+	ARG_UNUSED(sync);
+
 	return 0;
 }
 
@@ -54,7 +58,7 @@ static void test_common(void)
 	int err;
 
 	err = bt_enable(NULL);
-	if (err) {
+	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
 		return;
 	}
@@ -67,7 +71,7 @@ static void test_common(void)
 	has_param.preset_sync_support = true;
 
 	err = bt_has_register(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("HAS register failed (err %d)\n", err);
 		return;
 	}
@@ -76,7 +80,7 @@ static void test_common(void)
 	has_param.preset_sync_support = false;
 
 	err = bt_has_features_set(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("HAS register failed (err %d)\n", err);
 		return;
 	}
@@ -87,7 +91,7 @@ static void test_common(void)
 	preset_param.ops = &preset_ops,
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -97,7 +101,7 @@ static void test_common(void)
 	preset_param.name = test_preset_name_1;
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -132,7 +136,7 @@ static void test_offline_behavior(void)
 	preset_param.ops = &preset_ops,
 
 	err = bt_has_preset_register(&preset_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset register failed (err %d)\n", err);
 		return;
 	}
@@ -141,13 +145,13 @@ static void test_offline_behavior(void)
 	has_param.preset_sync_support = true;
 
 	err = bt_has_features_set(&has_param);
-	if (err) {
+	if (err != 0) {
 		FAIL("Features set failed (err %d)\n", err);
 		return;
 	}
 
 	err = bt_has_preset_active_set(test_preset_index_3);
-	if (err) {
+	if (err != 0) {
 		FAIL("Preset activation failed (err %d)\n", err);
 		return;
 	}

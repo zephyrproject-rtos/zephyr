@@ -10,16 +10,6 @@
 
 static const struct arm_mmu_region mmu_regions[] = {
 
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 0),
-			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 0),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_FLAT_ENTRY("GIC",
-			      DT_REG_ADDR_BY_IDX(DT_NODELABEL(gic), 1),
-			      DT_REG_SIZE_BY_IDX(DT_NODELABEL(gic), 1),
-			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
 	MMU_REGION_FLAT_ENTRY("CCM",
 			      DT_REG_ADDR(DT_NODELABEL(ccm)),
 			      DT_REG_SIZE(DT_NODELABEL(ccm)),
@@ -39,9 +29,6 @@ static const struct arm_mmu_region mmu_regions[] = {
 			      DT_REG_ADDR(DT_NODELABEL(rdc)),
 			      DT_REG_SIZE(DT_NODELABEL(rdc)),
 			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS),
-
-	MMU_REGION_DT_COMPAT_FOREACH_FLAT_ENTRY(nxp_imx_iuart,
-				  (MT_DEVICE_nGnRnE | MT_P_RW_U_NA | MT_NS))
 };
 
 const struct arm_mmu_config mmu_config = {

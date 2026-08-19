@@ -9,6 +9,7 @@
 #include <zephyr/fs/fs.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/minmax.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "ext2.h"
@@ -25,14 +26,14 @@ static bool initialized;
 #define BLOCK_MEMORY_BUFFER_SIZE (CONFIG_EXT2_MAX_BLOCK_COUNT * CONFIG_EXT2_MAX_BLOCK_SIZE)
 #define BLOCK_STRUCT_BUFFER_SIZE (CONFIG_EXT2_MAX_BLOCK_COUNT * sizeof(struct ext2_block))
 
-/* Structures for blocks slab alocator */
+/* Structures for blocks slab allocator */
 struct k_mem_slab ext2_block_memory_slab, ext2_block_struct_slab;
 char __aligned(sizeof(void *)) __ext2_block_memory_buffer[BLOCK_MEMORY_BUFFER_SIZE];
 char __aligned(sizeof(void *)) __ext2_block_struct_buffer[BLOCK_STRUCT_BUFFER_SIZE];
 
 /* Initialize heap memory allocator */
 K_HEAP_DEFINE(direntry_heap, MAX_DIRENTRY_SIZE);
-K_MEM_SLAB_DEFINE(inode_struct_slab, sizeof(struct ext2_inode), MAX_INODES, sizeof(void *));
+K_MEM_SLAB_DEFINE_TYPE(inode_struct_slab, struct ext2_inode, MAX_INODES);
 
 /* Helper functions --------------------------------------------------------- */
 
@@ -255,6 +256,24 @@ int ext2_verify_disk_superblock(struct ext2_disk_superblock *sb)
 		return -ENOTSUP;
 	}
 
+	/* Reject zero divisors used during block-group and inode lookup. */
+	if (sys_le32_to_cpu(sb->s_blocks_per_group) == 0 ||
+	    sys_le32_to_cpu(sb->s_inodes_per_group) == 0) {
+		LOG_ERR("Invalid superblock: s_blocks_per_group or s_inodes_per_group is zero");
+		return -EINVAL;
+	}
+
+	/* Block size is computed as 1024 << s_log_block_size and is used to size
+	 * the static block slab. A crafted value would overflow the shift and/or
+	 * exceed the statically configured maximum block size, corrupting the
+	 * allocator. The first term guards the shift against undefined behaviour.
+	 */
+	if (sys_le32_to_cpu(sb->s_log_block_size) > 11U ||
+	    (1024U << sys_le32_to_cpu(sb->s_log_block_size)) > CONFIG_EXT2_MAX_BLOCK_SIZE) {
+		LOG_ERR("Filesystem block size is too large");
+		return -ENOTSUP;
+	}
+
 	/* Check if file system may contain errors. */
 	if (sys_le16_to_cpu(sb->s_state) == EXT2_ERROR_FS) {
 		LOG_WRN("File system may contain errors.");
@@ -342,6 +361,11 @@ int ext2_init_fs(struct ext2_data *fs)
 	uint32_t set;
 	struct ext2_superblock *sb = &fs->sblock;
 	uint32_t fs_blocks = sb->s_blocks_count - sb->s_first_data_block;
+
+	if (fs_blocks > (uint32_t)(fs->block_size * 8U)) {
+		error_behavior(fs, "s_blocks_count exceeds single-group bitmap capacity");
+		return -EINVAL;
+	}
 
 	set = ext2_bitmap_count_set(BGROUP_BLOCK_BITMAP(&fs->bgroup), fs_blocks);
 
@@ -550,6 +574,40 @@ static const char *skip_slash(const char *s)
 	return s;
 }
 
+/*
+ * Validate the on-disk directory entry at (block buffer + block_off) before
+ * any field beyond the bytes already known to fit is read.
+ *
+ *  - the fixed entry header must fit in the remaining block,
+ *  - rec_len must be at least the fixed header and 4-byte aligned,
+ *  - name_len must fit between the header and rec_len,
+ *  - name_len must not exceed EXT2_MAX_FILE_NAME,
+ *  - rec_len must not cross the directory block boundary.
+ */
+static int validate_disk_direntry(struct ext2_disk_direntry *de, uint32_t block_off,
+				  uint32_t block_size)
+{
+	uint16_t rec_len;
+	uint8_t name_len;
+
+	if (block_off + sizeof(struct ext2_disk_direntry) > block_size) {
+		return -EINVAL;
+	}
+
+	rec_len = ext2_get_disk_direntry_reclen(de);
+	name_len = ext2_get_disk_direntry_namelen(de);
+
+	if ((rec_len < sizeof(struct ext2_disk_direntry)) ||
+	    ((rec_len % 4U) != 0U) ||
+	    (name_len > rec_len - sizeof(struct ext2_disk_direntry)) ||
+	    (name_len > EXT2_MAX_FILE_NAME) ||
+	    (rec_len > block_size - block_off)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Find inode
  *
@@ -577,8 +635,24 @@ static int64_t find_dir_entry(struct ext2_inode *inode, const char *name, size_t
 			return rc;
 		}
 
+		/* The fixed entry header must fit in the remaining block, or
+		 * even reading rec_len/name_len from the on-disk record would
+		 * read past the block buffer.
+		 */
+		if ((block_off + sizeof(struct ext2_disk_direntry)) > fs->block_size) {
+			return -EINVAL;
+		}
+
 		struct ext2_disk_direntry *disk_de =
 			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), block_off);
+
+		/* The on-disk record must not cross the directory block
+		 * boundary; otherwise advancing by rec_len skips past the end
+		 * of the block buffer or wraps within the directory.
+		 */
+		if (ext2_get_disk_direntry_reclen(disk_de) > (fs->block_size - block_off)) {
+			return -EINVAL;
+		}
 
 		de = ext2_fetch_direntry(disk_de);
 		if (de == NULL) {
@@ -625,7 +699,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 
 		uint32_t left_on_blk = block_size - block_off;
 		uint32_t left_in_file = inode->i_size - offset;
-		size_t to_read = MIN(nbytes_to_read, MIN(left_on_blk, left_in_file));
+		size_t to_read = min3(nbytes_to_read, left_on_blk, left_in_file);
 
 		memcpy((uint8_t *)buf + read, inode_current_block_mem(inode) + block_off, to_read);
 
@@ -670,15 +744,16 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 		}
 
 		written += to_write;
+		offset += to_write;
 	}
 
 	if (rc < 0) {
 		return rc;
 	}
 
-	if (offset + written > inode->i_size) {
-		LOG_DBG("New inode size: %d -> %zd", inode->i_size, offset + written);
-		inode->i_size = offset + written;
+	if (offset > inode->i_size) {
+		LOG_DBG("New inode size: %d -> %u", inode->i_size, offset);
+		inode->i_size = offset;
 		rc = ext2_commit_inode(inode);
 		if (rc < 0) {
 			return rc;
@@ -820,11 +895,24 @@ int ext2_get_direntry(struct ext2_file *dir, struct fs_dirent *ent)
 		return rc;
 	}
 
+	/* The fixed entry header must fit in the remaining block, or even
+	 * reading rec_len/name_len from the on-disk record would read past
+	 * the block buffer.
+	 */
+	if ((block_off + sizeof(struct ext2_disk_direntry)) > fs->block_size) {
+		return -EINVAL;
+	}
+
 	struct ext2_inode *inode = NULL;
 	struct ext2_disk_direntry *disk_de =
 		EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir->f_inode), block_off);
-	struct ext2_direntry *de = ext2_fetch_direntry(disk_de);
 
+	/* The on-disk record must not cross the directory block boundary. */
+	if (ext2_get_disk_direntry_reclen(disk_de) > (fs->block_size - block_off)) {
+		return -EINVAL;
+	}
+
+	struct ext2_direntry *de = ext2_fetch_direntry(disk_de);
 	if (de == NULL) {
 		LOG_ERR("Read directory entry name too long");
 		return -EINVAL;
@@ -961,6 +1049,12 @@ static int ext2_add_direntry(struct ext2_inode *dir, struct ext2_direntry *entry
 	/* loop must be executed at least once, because block_size > 0 */
 	while (offset < block_size) {
 		de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(dir), offset);
+
+		rc = validate_disk_direntry(de, offset, block_size);
+		if (rc < 0) {
+			return rc;
+		}
+
 		reclen = ext2_get_disk_direntry_reclen(de);
 		if (offset + reclen == block_size) {
 			break;
@@ -1153,6 +1247,12 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 	if (blk_off == 0) {
 		struct ext2_disk_direntry *de =
 			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), 0);
+
+		rc = validate_disk_direntry(de, 0, block_size);
+		if (rc < 0) {
+			return rc;
+		}
+
 		uint16_t reclen = ext2_get_disk_direntry_reclen(de);
 
 		if (reclen == block_size) {
@@ -1181,6 +1281,12 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 			/* Move next entry to beginning of block */
 			struct ext2_disk_direntry *next =
 			      EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), reclen);
+
+			rc = validate_disk_direntry(next, reclen, block_size);
+			if (rc < 0) {
+				return rc;
+			}
+
 			uint16_t next_reclen = ext2_get_disk_direntry_reclen(next);
 
 			memmove(de, next, next_reclen);
@@ -1200,16 +1306,33 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 		struct ext2_disk_direntry *de =
 			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), 0);
 
+		rc = validate_disk_direntry(de, 0, block_size);
+		if (rc < 0) {
+			return rc;
+		}
+
 		reclen = ext2_get_disk_direntry_reclen(de);
 		/* find previous entry */
 		while (cur + reclen < blk_off) {
 			cur += reclen;
 			de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), cur);
+
+			rc = validate_disk_direntry(de, cur, block_size);
+			if (rc < 0) {
+				return rc;
+			}
+
 			reclen = ext2_get_disk_direntry_reclen(de);
 		}
 
 		struct ext2_disk_direntry *del_entry =
 			EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(parent), blk_off);
+
+		rc = validate_disk_direntry(del_entry, blk_off, block_size);
+		if (rc < 0) {
+			return rc;
+		}
+
 		uint16_t del_reclen = ext2_get_disk_direntry_reclen(del_entry);
 
 		ext2_set_disk_direntry_reclen(de, reclen + del_reclen);
@@ -1255,17 +1378,24 @@ static int can_unlink(struct ext2_inode *inode)
 	/* If directory check if it is empty */
 
 	uint32_t offset = 0;
+	uint32_t block_size = inode->i_fs->block_size;
 	struct ext2_disk_direntry *de;
 
 	/* Get first entry */
 	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), 0);
+	rc = validate_disk_direntry(de, 0, block_size);
+	if (rc < 0) {
+		return rc;
+	}
 	offset += ext2_get_disk_direntry_reclen(de);
 
 	/* Get second entry */
 	de = EXT2_DISK_DIRENTRY_BY_OFFSET(inode_current_block_mem(inode), offset);
+	rc = validate_disk_direntry(de, offset, block_size);
+	if (rc < 0) {
+		return rc;
+	}
 	offset += ext2_get_disk_direntry_reclen(de);
-
-	uint32_t block_size = inode->i_fs->block_size;
 
 	/* If directory has size of one block and second entry ends with block end
 	 * then directory is empty.

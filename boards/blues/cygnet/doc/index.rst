@@ -192,7 +192,7 @@ References
    https://www.blues.dev/
 
 .. _Blues Cygnet User Manual:
-   https://dev.blues.io/feather-mcus/cygnet/cygnet-introduction/
+   https://dev.blues.io/feather-mcus/cygnet/
 
 .. _STM32L433CC on www.st.com:
    https://www.st.com/en/microcontrollers-microprocessors/stm32l433cc.html

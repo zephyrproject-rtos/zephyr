@@ -12,4 +12,5 @@ toolchain:
   - gnuarmemb
 supported:
   - spi
+  - sdhc
 vendor: ti

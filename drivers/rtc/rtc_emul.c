@@ -6,11 +6,21 @@
 
 #define DT_DRV_COMPAT zephyr_rtc_emul
 
+#ifdef CONFIG_RTC_EMUL_INIT_DATETIME
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
+#include <time.h>
+#include "rtc_emul_native.h"
+#endif /* CONFIG_RTC_EMUL_INIT_DATETIME */
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/rtc.h>
 
 #include "rtc_utils.h"
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(rtc_emul, CONFIG_RTC_LOG_LEVEL);
 
 struct rtc_emul_data;
 
@@ -448,6 +458,31 @@ static DEVICE_API(rtc, rtc_emul_driver_api) = {
 int rtc_emul_init(const struct device *dev)
 {
 	struct rtc_emul_data *data = (struct rtc_emul_data *)dev->data;
+
+#ifdef CONFIG_RTC_EMUL_INIT_DATETIME
+	int64_t host_sec, host_nsec;
+	struct rtc_time *datetime = &data->datetime;
+	struct tm tm_time;
+
+	if (rtc_emul_native_gettime(&host_sec, &host_nsec) == 0) {
+		time_t sec = host_sec;
+
+		localtime_r(&sec, &tm_time);
+		datetime->tm_sec = tm_time.tm_sec;
+		datetime->tm_min = tm_time.tm_min;
+		datetime->tm_hour = tm_time.tm_hour;
+		datetime->tm_mday = tm_time.tm_mday;
+		datetime->tm_mon = tm_time.tm_mon;
+		datetime->tm_year = tm_time.tm_year;
+		datetime->tm_wday = tm_time.tm_wday;
+		datetime->tm_yday = tm_time.tm_yday;
+		datetime->tm_nsec = (int)host_nsec;
+
+		data->datetime_set = true;
+	} else {
+		LOG_WRN("Failed to get host wall-clock time");
+	}
+#endif /* CONFIG_RTC_EMUL_INIT_DATETIME */
 
 	data->dwork.dev = dev;
 	k_work_init_delayable(&data->dwork.dwork, rtc_emul_update);

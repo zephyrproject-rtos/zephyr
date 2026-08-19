@@ -8,6 +8,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import argparse
+import functools
 import json
 import logging
 import os
@@ -28,6 +29,13 @@ from twisterlib.hardwaremap import HardwareMap
 from twisterlib.log_helper import log_command
 
 logger = logging.getLogger('twister')
+
+# Cache the results of the git/cmake queries below so that repeated
+# twister_main() calls inside a single process (as the blackbox tests do) do not
+# re-run the same slow subprocesses. Both are keyed on nothing but ZEPHYR_BASE,
+# which is fixed for the lifetime of the process.
+_VERSION_CACHE: dict = {}
+_TOOLCHAIN_CACHE: dict = {}
 
 
 def _get_installed_packages() -> Generator[str, None, None]:
@@ -54,6 +62,17 @@ PYTEST_PLUGIN_INSTALLED = 'pytest-twister-harness' in installed_packages
 def norm_path(astring):
     newstring = os.path.normpath(astring).replace(os.sep, '/')
     return newstring
+
+
+@functools.cache
+def _parse_modules(zephyr_base: str = ZEPHYR_BASE):
+    """Cached wrapper around zephyr_module.parse_modules.
+
+    parse_modules() walks the workspace for module manifests. Twister needs the
+    result both when building the --board-root default and when TwisterEnv
+    computes its *_roots, so cache the read-only result to avoid scanning twice.
+    """
+    return zephyr_module.parse_modules(zephyr_base)
 
 
 def add_parse_arguments(parser = None) -> argparse.ArgumentParser:
@@ -384,6 +403,13 @@ Artificially long but functional example:
         help="""Only run device tests with current artifacts, do not build
              the code""")
 
+    parser.add_argument(
+        "--post-build-checks", action="store_true",
+        help="""Run post-build checks on each build directory once a build
+             completes, for example detecting git repositories accidentally
+             cloned into a build directory. Disabled by default; intended to
+             be enabled in CI.""")
+
     parser.add_argument("--timeout-multiplier", type=float, default=1,
         help="""Globally adjust tests timeouts by specified multiplier. The resulting test
         timeout would be multiplication of test timeout value, board-level timeout multiplier
@@ -421,7 +447,7 @@ Artificially long but functional example:
 
     board_root_list = [f"{ZEPHYR_BASE}/boards", f"{ZEPHYR_BASE}/subsys/testsuite/boards"]
 
-    modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+    modules = _parse_modules()
     for module in modules:
         board_root = module.meta.get("build", {}).get("settings", {}).get("board_root")
         if board_root:
@@ -447,8 +473,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
 
     parser.add_argument(
         "--shuffle-tests", action="store_true", default=None,
-        help="""Shuffle test execution order to get randomly distributed tests across subsets.
-                Used only when --subset is provided.""")
+        help="Shuffle test execution order to get randomly distributed tests.")
 
     parser.add_argument(
         "--shuffle-tests-seed", action="store", default=None,
@@ -510,6 +535,14 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
                         selected to run with enabled coverage. Requires another reporting mode to be
                         active (`--coverage-per-instance`) to have at least one of these reporting
                         modes. Default: %(default)s""")
+
+    coverage_group.add_argument("--coverage-per-test", action="store_true", default=False,
+                help="""Collect a separate coverage artifact for every individual Ztest
+                        test case, enabling a per-test to source-code coverage matrix.
+                        Requires the 'lcov' coverage tool. Implies --coverage. On platforms
+                        that support semihosting (e.g. mps2/*) the per-test data is written
+                        straight to the host filesystem, avoiding console traffic.
+                        Default: %(default)s""")
 
     parser.add_argument(
         "--test-config",
@@ -658,7 +691,6 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     )
     test_xor_generator.add_argument(
         "-N", "--ninja", action="store_true",
-        default=not any(a in sys.argv for a in ("-k", "--make")),
         help="Use the Ninja generator with CMake. (This is the default)")
 
     test_xor_generator.add_argument(
@@ -701,6 +733,7 @@ structure in the main Zephyr tree: boards/<vendor>/<board_name>/""")
     parser.add_argument(
         "-O", "--outdir",
         default=os.path.join(os.getcwd(), "twister-out"),
+        type=os.path.normpath,
         help="Output directory for logs and binaries. "
              "Default is 'twister-out' in the current directory. "
              "This directory will be cleaned unless '--no-clean' is set. "
@@ -885,6 +918,11 @@ def parse_arguments(
     if options is None:
         options = parser.parse_args(args)
 
+    # Ninja is the default generator; --make is the only way to opt out. Derive
+    # this from the parsed arguments rather than from sys.argv, which is not the
+    # caller's argument list when twister_main() is invoked in-process.
+    options.ninja = not options.make
+
     # Very early error handling
     if options.short_build_path and not options.ninja:
         logger.error("--short-build-path requires Ninja to be enabled")
@@ -916,6 +954,12 @@ def parse_arguments(
 
     if options.aggressive_no_clean:
         options.no_clean = True
+
+    if options.coverage_per_test:
+        options.coverage = True
+        if options.coverage_tool != "lcov":
+            logger.error("--coverage-per-test requires the 'lcov' coverage tool.")
+            sys.exit(1)
 
     if options.coverage:
         options.enable_coverage = True
@@ -973,10 +1017,6 @@ def parse_arguments(
 
     if options.flash_before and options.device_flash_with_test:
         logger.error("--device-flash-with-test does not apply when --flash-before is used")
-        sys.exit(1)
-
-    if options.shuffle_tests and options.subset is None:
-        logger.error("--shuffle-tests requires --subset")
         sys.exit(1)
 
     if options.shuffle_tests_seed and options.shuffle_tests is None:
@@ -1070,22 +1110,21 @@ class TwisterEnv:
         self.dts_roots = [Path(ZEPHYR_BASE)]
         self.arch_roots = [Path(ZEPHYR_BASE)]
 
-        modules = zephyr_module.parse_modules(ZEPHYR_BASE)
+        # module build.settings key -> the *_roots list it extends
+        root_settings = {
+            "snippet_root": self.snippet_roots,
+            "soc_root": self.soc_roots,
+            "dts_root": self.dts_roots,
+            "arch_root": self.arch_roots,
+        }
+        modules = _parse_modules()
         for module in modules:
             settings = module.meta.get("build", {}).get("settings", {})
             project = Path(module.project)
-            snippet_root = settings.get("snippet_root")
-            if snippet_root:
-                self.snippet_roots.append(project / snippet_root)
-            soc_root = settings.get("soc_root")
-            if soc_root:
-                self.soc_roots.append(project / Path(soc_root))
-            dts_root = settings.get("dts_root")
-            if dts_root:
-                self.dts_roots.append(project / Path(dts_root))
-            arch_root = settings.get("arch_root")
-            if arch_root:
-                self.arch_roots.append(project / Path(arch_root))
+            for setting_key, roots in root_settings.items():
+                root = settings.get(setting_key)
+                if root:
+                    roots.append(project / Path(root))
 
         self.modules = [m.meta for m in modules]
         self.hwm: HardwareMap | None = None
@@ -1112,6 +1151,13 @@ class TwisterEnv:
         self.run_date = datetime.now(UTC).isoformat(timespec='seconds')
 
     def check_zephyr_version(self):
+        if _VERSION_CACHE:
+            self.version = _VERSION_CACHE['version']
+            self.commit_date = _VERSION_CACHE['commit_date']
+            if self.version != "Unknown":
+                logger.info(f"Zephyr version: {self.version}")
+            return
+
         try:
             subproc = subprocess.run(["git", "describe", "--abbrev=12", "--always"],
                                      stdout=subprocess.PIPE,
@@ -1137,6 +1183,9 @@ class TwisterEnv:
                 self.commit_date = subproc.stdout.strip()
         except OSError:
             logger.exception("Failure while reading head commit date.")
+
+        # Populate in one step so the cache is never partially filled.
+        _VERSION_CACHE.update(version=self.version, commit_date=self.commit_date)
 
     @staticmethod
     def run_cmake_script(args: list[str]) -> dict[str, Any]:
@@ -1183,6 +1232,12 @@ class TwisterEnv:
         return results
 
     def get_toolchain(self):
+        if _TOOLCHAIN_CACHE:
+            self.toolchain = _TOOLCHAIN_CACHE['toolchain']
+            self.compiler = _TOOLCHAIN_CACHE['compiler']
+            logger.info(f"Using '{self.toolchain}' toolchain variant.")
+            return
+
         toolchain_script = Path(ZEPHYR_BASE) / Path('cmake/verify-toolchain.cmake')
         result = self.run_cmake_script([toolchain_script, "FORMAT=json"])
 
@@ -1196,3 +1251,6 @@ class TwisterEnv:
             # Only add "/..." if TOOLCHAIN_VARIANT_COMPILER is not empty
             self.toolchain += f"/{self.compiler}"
         logger.info(f"Using '{self.toolchain}' toolchain variant.")
+
+        # Populate in one step so the cache is never partially filled.
+        _TOOLCHAIN_CACHE.update(toolchain=self.toolchain, compiler=self.compiler)

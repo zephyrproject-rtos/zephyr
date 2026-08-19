@@ -31,16 +31,16 @@ config IRQ_OFFLOAD_NESTED
 	default n if SOC_SERIES_MT818X
 	default y
 
-config CPU_HAS_DCACHE
+configdefault DCACHE
 	default y
-config DCACHE
+
+configdefault CACHE_MANAGEMENT
 	default y
-config CACHE_MANAGEMENT
-	default y
-config DCACHE_LINE_SIZE
+
+configdefault DCACHE_LINE_SIZE
 	default 128
 
-config NOCACHE_MEMORY
+configdefault NOCACHE_MEMORY
 	default y
 
 config MTK_ADSP_TIMER

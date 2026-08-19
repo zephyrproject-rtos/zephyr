@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT wch_gptm_pwm
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/pwm.h>
@@ -29,7 +30,7 @@
 
 #ifdef TIM2_CTLR1_CEN
 /* ch32fun.h uses a different set of names for the CH32V00x series. Remap. */
-typedef GPTM_TypeDef TIM_TypeDef;
+typedef ADTM_TypeDef TIM_TypeDef;
 #define TIM_CEN  TIM2_CTLR1_CEN
 #define TIM_OC1M TIM2_CHCTLR1_OC1M
 #define TIM_OC2M TIM2_CHCTLR1_OC2M
@@ -38,7 +39,12 @@ typedef GPTM_TypeDef TIM_TypeDef;
 #define TIM_CC1P TIM2_CCER_CC1P
 #define TIM_CC1E TIM2_CCER_CC1E
 #define TIM_ARPE TIM2_CTLR1_ARPE
+#define TIM_MOE  TIM1_BDTR_MOE
 #endif
+
+enum pwm_wch_gptm_features {
+	PWM_WCH_GPTM_FEATURES_MOE = 1,
+};
 
 struct pwm_wch_gptm_config {
 	TIM_TypeDef *regs;
@@ -46,6 +52,7 @@ struct pwm_wch_gptm_config {
 	uint8_t clock_id;
 	uint16_t prescaler;
 	const struct pinctrl_dev_config *pin_cfg;
+	uint8_t features;
 };
 
 static int pwm_wch_gptm_set_cycles(const struct device *dev, uint32_t channel,
@@ -152,12 +159,16 @@ static int pwm_wch_gptm_init(const struct device *dev)
 	/* Disable and configure the counter */
 	regs->CTLR1 = TIM_ARPE;
 	regs->PSC = config->prescaler;
+	if ((config->features & PWM_WCH_GPTM_FEATURES_MOE) != 0) {
+		/* Set the 'Master Output Enable' flag. */
+		regs->BDTR = TIM_MOE;
+	}
 	regs->CTLR1 |= TIM_CEN;
 
 	return 0;
 }
 
-#define PWM_WCH_GPTM_INIT(idx)                                                                     \
+#define PWM_WCH_TIM_INIT(idx, _features)                                                           \
 	PINCTRL_DT_INST_DEFINE(idx);                                                               \
                                                                                                    \
 	static const struct pwm_wch_gptm_config pwm_wch_gptm_##idx##_config = {                    \
@@ -166,9 +177,18 @@ static int pwm_wch_gptm_init(const struct device *dev)
 		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR(DT_INST_PARENT(idx))),                   \
 		.clock_id = DT_CLOCKS_CELL(DT_INST_PARENT(idx), id),                               \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(idx),                                    \
+		.features = _features,                                                             \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, &pwm_wch_gptm_init, NULL, NULL, &pwm_wch_gptm_##idx##_config,   \
 			      POST_KERNEL, CONFIG_PWM_INIT_PRIORITY, &pwm_wch_gptm_driver_api);
 
-DT_INST_FOREACH_STATUS_OKAY(PWM_WCH_GPTM_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PWM_WCH_TIM_INIT, 0)
+
+/*
+ * The ADTM is a superset of the GPTM and has the same core register layout. See section 11.2.2 of
+ * the CH32V003RM for details.
+ */
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT wch_adtm_pwm
+DT_INST_FOREACH_STATUS_OKAY_VARGS(PWM_WCH_TIM_INIT, PWM_WCH_GPTM_FEATURES_MOE)

@@ -89,4 +89,6 @@ rsource "Kconfig.uart"
 
 rsource "Kconfig.udp"
 
+rsource "Kconfig.spi"
+
 rsource "Kconfig.common"

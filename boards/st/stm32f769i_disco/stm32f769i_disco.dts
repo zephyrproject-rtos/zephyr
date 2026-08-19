@@ -26,6 +26,10 @@
 		zephyr,touch = &ft6202;
 	};
 
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		device_type = "memory";
@@ -69,7 +73,7 @@
 	};
 
 	dsi_lcd_qsh_030: connector_dsi_lcd {
-		compatible = "st,dsi-lcd-qsh-030";
+		compatible = "st,dsi-lcd-qsh-030-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0 0x3f>;
@@ -111,6 +115,15 @@
 	status = "okay";
 };
 
+&pllsai {
+	div-m = <25>;
+	mul-n = <429>;
+	div-q = <2>;
+	post-div-q = <19>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(216)>;
@@ -142,6 +155,8 @@ arduino_serial: &usart6 {};
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -149,6 +164,8 @@ arduino_serial: &usart6 {};
 qsh_030_i2c: &i2c4 {
 	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -276,6 +293,21 @@ qsh_030_i2c: &i2c4 {
 	};
 };
 
+&dfsdm {
+	status = "okay";
+};
+
+dmic_dev: &pdm0 {
+	pinctrl-0 = <&dfsdm1_ckout_pd3
+		     &dfsdm1_datin1_pc3>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	channel@1 {
+		reg = <1>;
+	};
+};
+
 zephyr_udc0: &usbotg_hs {
 	pinctrl-0 = <&usb_otg_hs_ulpi_ck_pa5
 		     &usb_otg_hs_ulpi_d0_pa3
@@ -299,3 +331,7 @@ zephyr_udc0: &usbotg_hs {
 zephyr_mipi_dsi: &mipi_dsi {};
 
 zephyr_lcd_controller: &ltdc {};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

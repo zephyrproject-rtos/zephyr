@@ -47,6 +47,16 @@ config UART_NRFX_UARTE_ENHANCED_RX
 	  and hardware assisted required TIMER peripheral instance and PPI channel
 	  for accurate byte counting.
 
+config UART_NRFX_UARTE_HFXO_ON_ACTIVE
+	bool "Request the HFXO oscillator while peripheral is active"
+	depends on UART_NRFX_UARTE
+	depends on !SOC_NRF54H20
+	help
+	  Request the HFXO oscillator to be enabled while the UART peripheral is
+	  active. This improves the accuracy of the bitrate versus the HFINT oscillator,
+	  at the cost of startup latency (~700 us) when enabling the peripheral if the
+	  HFXO is not already active.
+
 config UART_ASYNC_TX_CACHE_SIZE
 	int "TX cache buffer size"
 	depends on UART_ASYNC_API
@@ -56,10 +66,15 @@ config UART_ASYNC_TX_CACHE_SIZE
 	  in RAM, because EasyDMA in UARTE peripherals can only transfer data
 	  from RAM.
 
+config UARTE_NRFX_UARTE_HAS_DMAEND
+	def_bool $(dt_compat_all_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),dmaend-supported,True)
+	depends on UART_ASYNC_API
+
 config UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER
 	bool "Use TIMER to count RX bytes"
 	depends on UART_ASYNC_API
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NORDIC_NRF_UARTE),frame-timeout-supported)
+	depends on !UARTE_NRFX_UARTE_HAS_DMAEND
 	depends on !ARCH_POSIX # Mode not supported on BSIM target
 	select NRFX_GPPI
 

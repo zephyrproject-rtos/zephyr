@@ -12,19 +12,17 @@
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 static struct k_thread tdata[NUM_THREAD];
 
-#define IDLE_THRESH k_ms_to_ticks_floor64(200)
+/* Sleep duration for the tickless / tickful cases, in milliseconds (the
+ * unit kernel sleep APIs accept).
+ */
+#define SLEEP_TICKLESS_MS  k_ticks_to_ms_floor64(k_ms_to_ticks_floor64(200))
+#define SLEEP_TICKFUL_MS   k_ticks_to_ms_floor64(k_ms_to_ticks_floor64(200) - 1)
 
-/*sleep duration tickless*/
-#define SLEEP_TICKLESS	 k_ticks_to_ms_floor64(IDLE_THRESH)
-
-/*sleep duration with tick*/
-#define SLEEP_TICKFUL	 k_ticks_to_ms_floor64(IDLE_THRESH - 1)
-
-/*slice size is set as half of the sleep duration*/
-#define SLICE_SIZE	 k_ticks_to_ms_floor64(IDLE_THRESH >> 1)
-
-/*maximum slice duration accepted by the test*/
-#define SLICE_SIZE_LIMIT k_ticks_to_ms_floor64((IDLE_THRESH >> 1) + 1)
+/* Slice is half of the sleep duration.  Defined in ms (kernel slicing
+ * API takes ms) and ticks (measurements compare in ticks).
+ */
+#define SLICE_SIZE_MS      (SLEEP_TICKLESS_MS / 2)
+#define SLICE_TICKS        k_ms_to_ticks_ceil32(SLICE_SIZE_MS)
 
 /*align to millisecond boundary*/
 #define ALIGN_MS_BOUNDARY()		       \
@@ -35,22 +33,34 @@ static struct k_thread tdata[NUM_THREAD];
 	} while (0)
 
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
-static int64_t elapsed_slice;
+/* Reference timestamp (in ticks) for measuring slice durations */
+static uint64_t elapsed_slice;
+
+static uint32_t ticks_delta(uint64_t *reftime)
+{
+	uint64_t now = k_uptime_ticks();
+	uint32_t delta = now - *reftime;
+
+	*reftime = now;
+	return delta;
+}
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
-	int64_t t = k_uptime_delta(&elapsed_slice);
+	uint32_t tick_delta = ticks_delta(&elapsed_slice);
 
-	TC_PRINT("elapsed slice %" PRId64 ", expected: <%" PRId64 ", %" PRId64 ">\n",
-		t, SLICE_SIZE, SLICE_SIZE_LIMIT);
+	TC_PRINT("elapsed slice %u ticks, expected ~%u\n",
+		 tick_delta, (uint32_t)SLICE_TICKS);
 
-	/**TESTPOINT: verify slicing scheduler behaves as expected*/
-	zassert_true(t >= SLICE_SIZE);
-	/*less than one tick delay*/
-	zassert_true(t <= SLICE_SIZE_LIMIT);
+	/* TESTPOINT: a measured slice falls on either the configured tick
+	 * boundary or the next one (kernel "+1" round-up).
+	 */
+	zassert_between_inclusive(tick_delta, SLICE_TICKS, SLICE_TICKS + 1,
+				  "elapsed %u ticks, expected ~%u",
+				  tick_delta, (uint32_t)SLICE_TICKS);
 
 	/*keep the current thread busy for more than one slice*/
-	k_busy_wait(1000 * SLEEP_TICKLESS);
+	k_busy_wait(1000 * SLEEP_TICKLESS_MS);
 	k_sem_give(&sema);
 }
 /**
@@ -72,19 +82,19 @@ ZTEST(tickless_concept, test_tickless_sysclock)
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
-	k_msleep(SLEEP_TICKLESS);
+	k_msleep(SLEEP_TICKLESS_MS);
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickless idle*/
-	zassert_true((t1 - t0) >= SLEEP_TICKLESS);
+	zassert_true((t1 - t0) >= SLEEP_TICKLESS_MS);
 
 	ALIGN_MS_BOUNDARY();
 	t0 = k_uptime_get_32();
-	k_sem_take(&sema, K_MSEC(SLEEP_TICKFUL));
+	k_sem_take(&sema, K_MSEC(SLEEP_TICKFUL_MS));
 	t1 = k_uptime_get_32();
 	TC_PRINT("time %d, %d\n", t0, t1);
 	/**TESTPOINT: verify system clock recovery after exiting tickful idle*/
-	zassert_true((t1 - t0) >= SLEEP_TICKFUL);
+	zassert_true((t1 - t0) >= SLEEP_TICKFUL_MS);
 }
 
 /**
@@ -99,16 +109,16 @@ ZTEST(tickless_concept, test_tickless_slice)
 
 	k_sem_reset(&sema);
 	/*enable time slice*/
-	k_sched_time_slice_set(SLICE_SIZE, K_PRIO_PREEMPT(0));
+	k_sched_time_slice_set(SLICE_SIZE_MS, K_PRIO_PREEMPT(0));
 
 	/*create delayed threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
 					 thread_tslice, NULL, NULL, NULL,
 					 K_PRIO_PREEMPT(0), 0,
-					 K_MSEC(SLICE_SIZE));
+					 K_MSEC(SLICE_SIZE_MS));
 	}
-	k_uptime_delta(&elapsed_slice);
+	ticks_delta(&elapsed_slice);
 	/*relinquish CPU and wait for each thread to complete*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		k_sem_take(&sema, K_FOREVER);

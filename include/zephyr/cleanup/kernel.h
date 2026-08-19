@@ -34,6 +34,18 @@ SCOPE_GUARD_DEFINE(k_mutex, struct k_mutex *, (void)k_mutex_lock(_T, K_FOREVER),
 SCOPE_GUARD_DEFINE(k_sem, struct k_sem *, (void)k_sem_take(_T, K_FOREVER), k_sem_give(_T));
 
 /**
+ * @brief Conditional guard for k_mutex, acquiring with K_NO_WAIT.
+ * Usage: @code{.c} scoped_cond_guard(k_mutex_try, return -EBUSY, &lock) { ... } @endcode
+ */
+SCOPE_COND_GUARD_DEFINE(k_mutex_try, struct k_mutex *, k_mutex_lock(_T, K_NO_WAIT) == 0,
+			(void)k_mutex_unlock(_T));
+/**
+ * @brief Conditional guard for k_sem, taking with K_NO_WAIT.
+ * Usage: @code{.c} scoped_cond_guard(k_sem_try, return -EBUSY, &sem) { ... } @endcode
+ */
+SCOPE_COND_GUARD_DEFINE(k_sem_try, struct k_sem *, k_sem_take(_T, K_NO_WAIT) == 0, k_sem_give(_T));
+
+/**
  * @brief Defer k_free.
  * Usage: @code{.c} scope_defer(k_free)(ptr); @endcode
  */

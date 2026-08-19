@@ -74,7 +74,7 @@ static void mbox_fn(const struct device *mbox, void *arg)
  * whine about the invalid IPC message in the kernel logs).
  *
  * Note that there's a catch: on older kernels, SOF's "reply" comes
- * after a timeout (it's an invalid command, afterall) which is 165
+ * after a timeout (it's an invalid command, after all) which is 165
  * seconds!  But the test does pass.
  */
 ZTEST(mtk_adsp, mbox)

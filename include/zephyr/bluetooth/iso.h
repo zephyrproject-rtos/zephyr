@@ -321,7 +321,7 @@ struct bt_iso_chan_path {
 	 *
 	 * Shall not be NULL if bt_iso_chan_path.cc_len is non-zero.
 	 */
-	uint8_t *cc;
+	const uint8_t *cc;
 };
 
 /** ISO packet status flag bits */

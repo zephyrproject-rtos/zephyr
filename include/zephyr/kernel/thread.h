@@ -111,7 +111,7 @@ struct _thread_base {
 
 #ifdef CONFIG_SCHED_CPU_MASK
 	/* "May run on" bits for each CPU */
-	uint16_t cpu_mask;
+	uint32_t cpu_mask;
 #endif /* CONFIG_SCHED_CPU_MASK */
 
 	/* data returned by APIs */
@@ -374,6 +374,31 @@ struct k_thread {
 	/** threads waiting in k_thread_suspend() */
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
+
+/*
+ * True when the priority-inheritance fields below and in struct k_mutex
+ * (kernel.h) are compiled in. Defined here rather than in kernel.h because
+ * this header is included first.
+ */
+#define Z_MUTEX_PI_ENABLED (CONFIG_PRIORITY_CEILING < CONFIG_NUM_PREEMPT_PRIORITIES)
+
+#if Z_MUTEX_PI_ENABLED
+	/**
+	 * List of all mutexes currently held by this thread.
+	 * Used to recalculate the thread's priority when a mutex is released,
+	 * and to propagate priority boosts through the ownership chain.
+	 */
+	sys_slist_t held_mutexes;
+
+	/**
+	 * Mutex this thread is currently blocked on, or NULL if not blocked.
+	 * Used for chained priority inheritance (to boost the owner of the
+	 * mutex this thread is waiting for) and for deadlock cycle detection.
+	 */
+	struct k_mutex *mutex_pended_on;
+	/** Thread's priority before any mutex inheritance boost. */
+	int8_t orig_prio;
+#endif /* Z_MUTEX_PI_ENABLED */
 
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;

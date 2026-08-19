@@ -1,0 +1,12 @@
+sample:
+  description: ESP-NOW broadcast heartbeat beacon sample for Espressif ESP32 boards
+  name: ESP-NOW
+tests:
+  sample.boards.espressif.espnow:
+    build_only: true
+    extra_args:
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp32c6_devkitc/esp32c6/hpcore
+    tags: esp32 espnow wifi

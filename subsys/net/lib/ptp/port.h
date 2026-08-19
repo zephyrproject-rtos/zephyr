@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
+ * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +32,7 @@ extern "C" {
 #define PTP_PORT_TIMER_DELAY_TO		(1)
 #define PTP_PORT_TIMER_SYNC_TO		(2)
 #define PTP_PORT_TIMER_QUALIFICATION_TO (3)
+#define PTP_PORT_TIMER_PDELAY_TO	(4)
 
 /**
  * @brief Structure describing PTP Port.
@@ -46,14 +48,13 @@ struct ptp_port {
 	int			       socket[2];
 	/** Status of a link. */
 	uint8_t			       link_status;
-	/** Link event callback. */
-	struct net_mgmt_event_callback link_cb;
 	/** Structure of system timers used by the Port. */
 	struct {
 		struct k_timer	       announce;
 		struct k_timer	       delay;
 		struct k_timer	       sync;
 		struct k_timer	       qualification;
+		struct k_timer	       pdelay;
 	} timers;
 	/** Bitmask of timeouts. */
 	atomic_t		       timeouts;
@@ -63,23 +64,58 @@ struct ptp_port {
 		uint16_t	       delay;
 		uint16_t	       signaling;
 		uint16_t	       sync;
+		uint16_t	       pdelay;
 	} seq_id;
 	/** Pointer to finite state machine. */
 	enum ptp_port_state	       (*state_machine)(enum ptp_port_state state,
 							enum ptp_port_event event,
 							bool tt_diff);
+	/** Sequence ID for the pending Sync/Follow_Up pair. */
+	uint16_t		       sync_fup_sequence_id;
+	/** Sequence ID for the pending Pdelay_Req exchange. */
+	uint16_t		       pdelay_req_sequence_id;
 	/** Pointer to the Port's best Foreign TimeTransmitter. */
 	struct ptp_foreign_tt_clock    *best;
 	/** List of Foreign TimeTransmitters discovered through received Announce messages. */
 	sys_slist_t		       foreign_list;
 	/** List of valid sent Delay_Req messages (in network byte order). */
 	sys_slist_t		       delay_req_list;
+	/** Pointer to the last valid sent Pdelay_Req message. */
+	struct ptp_msg		       *last_pdelay_req_sent;
+	/** Pointer to the last received Pdelay_Req waiting for response TX timestamp. */
+	struct ptp_msg		       *last_pdelay_req_received;
+	/** Pointer to the last received Pdelay_Resp message. */
+	struct ptp_msg		       *last_pdelay_resp;
+	/** Pointer to the last received Pdelay_Resp_Follow_Up message. */
+	struct ptp_msg		       *last_pdelay_resp_fup;
 	/** Pointer to the last received Sync or Follow_Up message. */
 	struct ptp_msg		       *last_sync_fup;
 	/** Timestamping callback for sent Delay_Req messages. */
 	struct net_if_timestamp_cb     delay_req_ts_cb;
+	/** Timestamping callback for sent Pdelay_Req messages. */
+	struct net_if_timestamp_cb     pdelay_req_ts_cb;
+	/** Timestamping callback for sent Pdelay_Resp messages. */
+	struct net_if_timestamp_cb     pdelay_resp_ts_cb;
 	/** Timestamping callback for sent Sync messages. */
 	struct net_if_timestamp_cb     sync_ts_cb;
+	/** True if a Sync was sent and corresponding Follow_Up is still pending. */
+	bool sync_fup_pending;
+	/** Whether to attempt recvmsg for L2 RX timestamping on this port. */
+	bool l2_try_recvmsg;
+	/** Whether the L2 recvmsg fallback warning has been logged for this port. */
+	bool l2_recvmsg_fallback_warned;
+	/** Monotonic uptime in milliseconds after which recvmsg should be retried. */
+	int64_t l2_recvmsg_retry_at;
+	/** Most recent neighbor rate ratio estimated from P2P delay messages. */
+	double neighbor_rate_ratio;
+	/** True if neighbor_rate_ratio was computed from two valid P2P samples. */
+	bool neighbor_rate_ratio_valid;
+	/** Previous peer Pdelay_Resp origin timestamp used for rate ratio. */
+	int64_t pdelay_prev_resp_origin_ns;
+	/** Previous local Pdelay_Resp ingress timestamp used for rate ratio. */
+	int64_t pdelay_prev_resp_ingress_ns;
+	/** True if previous P2P rate-ratio timestamps are valid. */
+	bool pdelay_prev_rate_sample_valid;
 };
 
 /**

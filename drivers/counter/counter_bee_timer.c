@@ -106,7 +106,7 @@ static int counter_bee_timer_set_top_value(const struct device *dev,
 	}
 
 	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
-		LOG_ERR("Unsupport setting top value without resetting counter");
+		LOG_ERR("Unsupported setting top value without resetting counter");
 		return -ENOTSUP;
 	}
 
@@ -157,7 +157,7 @@ static int counter_bee_timer_set_alarm(const struct device *dev, uint8_t chan,
 	}
 
 	if (alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) {
-		LOG_ERR("Unsupport absolute alarm");
+		LOG_ERR("Unsupported absolute alarm");
 		return -ENOTSUP;
 	}
 

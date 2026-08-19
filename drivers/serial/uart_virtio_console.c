@@ -136,8 +136,11 @@ struct virtconsole_data {
 };
 
 /* Return desired size for given virtqueue */
-static uint16_t virtconsole_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *)
+static uint16_t virtconsole_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
 {
+	ARG_UNUSED(q_size_max);
+	ARG_UNUSED(priv);
+
 	switch (q_index) {
 #ifdef CONFIG_UART_VIRTIO_CONSOLE_F_MULTIPORT
 	case VIRTQ_CONTROL_RX:
@@ -162,7 +165,8 @@ static void virtconsole_recv_cb(void *priv, uint32_t len)
 }
 
 static void virtconsole_recv_setup(const struct device *dev, uint16_t q_no, void *addr,
-				   uint32_t len, void (*recv_cb)(void *, uint32_t), void *cb_data)
+				   uint32_t len, void (*recv_cb)(void *priv, uint32_t rcv_len),
+				   void *cb_data)
 {
 	if (q_no % 2) {
 		return; /* This should not be called on tx queues (odd-numbered) */
@@ -487,11 +491,6 @@ static int virtconsole_irq_is_pending(const struct device *dev)
 {
 	return virtconsole_irq_rx_ready(dev);
 }
-static int virtconsole_irq_update(const struct device *dev)
-{
-	/* Nothing to be done */
-	return 1;
-}
 static void virtconsole_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
 					 void *user_data)
 {
@@ -581,7 +580,6 @@ static DEVICE_API(uart, virtconsole_api) = {
 	.irq_rx_enable = virtconsole_irq_rx_enable,
 	.irq_rx_ready = virtconsole_irq_rx_ready,
 	.irq_is_pending = virtconsole_irq_is_pending,
-	.irq_update = virtconsole_irq_update,
 	.irq_callback_set = virtconsole_irq_callback_set,
 #endif
 };

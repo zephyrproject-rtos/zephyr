@@ -10,7 +10,6 @@ supported:
   - i2c
   - i2s
   - spi
-  - can
   - counter
   - watchdog
   - entropy

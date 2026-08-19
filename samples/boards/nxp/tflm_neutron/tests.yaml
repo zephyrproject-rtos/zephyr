@@ -1,0 +1,21 @@
+sample:
+  description: Image classification TFLM inference with NXP Neutron NPU.
+  name: NXP Neutron NPU sample
+tests:
+  sample.boards.nxp.tflm_neutron:
+    tags:
+      - NPU
+    modules:
+      - tflite-micro
+    build_only: true
+    # The Neutron NPU driver and firmware are binary blobs, which CI does
+    # not fetch. Skip the sample rather than fail the build without them.
+    filter: CONFIG_ZEPHYR_HAL_NXP_MODULE_BLOBS
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu0
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+      - mcx_n9xx_evk/mcxn947/cpu0
+      - frdm_mcxn947/mcxn947/cpu0

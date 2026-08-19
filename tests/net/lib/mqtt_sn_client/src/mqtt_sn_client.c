@@ -28,7 +28,7 @@ static struct msg_send_data {
 	int ret;
 	const void *dest_addr;
 	size_t addrlen;
-	struct mqtt_sn_client *client;
+	struct mqtt_sn_transport *transport;
 } msg_send_data;
 
 struct k_sem mqtt_sn_tx_sem;
@@ -40,8 +40,8 @@ int mqtt_sn_data_cmp(struct mqtt_sn_data data1, struct mqtt_sn_data data2)
 	return data1.size == data2.size && strncmp(data1.data, data2.data, data1.size);
 }
 
-static int msg_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const void *dest_addr,
-		      size_t addrlen)
+static int msg_sendto(struct mqtt_sn_transport *transport, void *buf, size_t sz,
+		      const void *dest_addr, size_t addrlen)
 {
 	zassert_not_null(buf);
 	zassert_true(sz <= sizeof(msg_send_data.msg_data),
@@ -49,7 +49,7 @@ static int msg_sendto(struct mqtt_sn_client *client, void *buf, size_t sz, const
 
 	msg_send_data.called++;
 	msg_send_data.msg_sz = sz;
-	msg_send_data.client = client;
+	msg_send_data.transport = transport;
 	msg_send_data.dest_addr = dest_addr;
 	msg_send_data.addrlen = addrlen;
 
@@ -133,12 +133,13 @@ static struct {
 	size_t addrlen;
 } recvfrom_data;
 
-static ssize_t tp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t length,
+static ssize_t tp_recvfrom(struct mqtt_sn_transport *transport, void *buffer, size_t length,
 			   void *src_addr, size_t *addrlen)
 {
 	if (recvfrom_data.data && recvfrom_data.sz > 0 && length >= recvfrom_data.sz) {
 		memcpy(buffer, recvfrom_data.data, recvfrom_data.sz);
-		memcpy(src_addr, recvfrom_data.src_addr, recvfrom_data.addrlen);
+		memcpy(src_addr, recvfrom_data.src_addr,
+		       MIN(*addrlen, recvfrom_data.addrlen));
 		*addrlen = recvfrom_data.addrlen;
 
 		k_sem_give(&mqtt_sn_rx_sem);
@@ -147,12 +148,12 @@ static ssize_t tp_recvfrom(struct mqtt_sn_client *client, void *buffer, size_t l
 	return recvfrom_data.sz;
 }
 
-int tp_poll(struct mqtt_sn_client *client)
+int tp_poll(struct mqtt_sn_transport *transport)
 {
 	return recvfrom_data.sz;
 }
 
-#define NUM_TEST_CLIENTS 16
+#define NUM_TEST_CLIENTS 17
 static ZTEST_BMEM struct mqtt_sn_client mqtt_clients[NUM_TEST_CLIENTS];
 static ZTEST_BMEM struct mqtt_sn_client *mqtt_client;
 
@@ -218,7 +219,7 @@ static void mqtt_sn_connect_no_will(struct mqtt_sn_client *client)
 	err = mqtt_sn_add_gw(client, gw_id, gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
 	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
-	zassert_false(sys_slist_is_empty(&client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&client->gateways), "GW not saved.");
 
 	err = mqtt_sn_connect(client, false, false);
 	zassert_equal(err, 0, "unexpected error %d", err);
@@ -245,14 +246,14 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_handle_advertise)
 
 	err = input(mqtt_client, advertise, sizeof(advertise), &gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_ADVERTISE, "Wrong event");
 
 	err = input(mqtt_client, advertise, sizeof(advertise), &gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
-	zassert_equal(sys_slist_len(&mqtt_client->gateway), 1, "Too many Gateways stored.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
+	zassert_equal(sys_slist_len(&mqtt_client->gateways), 1, "Too many Gateways stored.");
 	zassert_equal(evt_cb_data.called, 2, "Unexpected event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_ADVERTISE, "Wrong event");
 
@@ -272,7 +273,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_handle_advertise)
 	err = k_sem_take(&mqtt_sn_cb_sem, K_SECONDS(10));
 	zassert_equal(err, 0, "Timed out waiting for callback.");
 
-	zassert_true(sys_slist_is_empty(&mqtt_client->gateway), "GW not cleared on timeout");
+	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not cleared on timeout");
 	zassert_equal(evt_cb_data.called, 4, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
 	zassert_equal(mqtt_client->state, 0, "Wrong state");
@@ -288,7 +289,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_add_gw)
 
 	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
 }
 
@@ -319,7 +320,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_gw)
 
 	err = input(mqtt_client, gwinfo, sizeof(gwinfo), &gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
 }
 
@@ -350,7 +351,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_search_peer_direct)
 
 	err = input(mqtt_client, gwinfo, sizeof(gwinfo), &gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 1, "NO event");
 	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_GWINFO, "Wrong event");
 }
@@ -374,7 +375,7 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_connect_will)
 
 	err = mqtt_sn_add_gw(mqtt_client, gw_id, gw_addr);
 	zassert_equal(err, 0, "unexpected error %d", err);
-	zassert_false(sys_slist_is_empty(&mqtt_client->gateway), "GW not saved.");
+	zassert_false(sys_slist_is_empty(&mqtt_client->gateways), "GW not saved.");
 	zassert_equal(evt_cb_data.called, 0, "Unexpected event");
 
 	mqtt_client->will_topic = MQTT_SN_DATA_STRING_LITERAL("topic");
@@ -623,8 +624,8 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_regack)
  *
  * 6.9 Client’s Topic Subscribe/Un-subscribe Procedure
  * ...
- * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one UNSUBCRIBE transaction
- * open at a time.
+ * As for the REGISTER procedure, a client may have only one SUBSCRIBE or one
+ * UNSUBSCRIBE transaction open at a time.
  */
 static ZTEST(mqtt_sn_client, test_mqtt_sn_wait_suback)
 {
@@ -774,6 +775,30 @@ static ZTEST(mqtt_sn_client, test_mqtt_sn_large_address)
 
 	err = input(mqtt_client, ping_request, sizeof(ping_request), &large_addr);
 	zassert_equal(err, -ENOBUFS, "unexpected error %d", err);
+}
+
+static ZTEST(mqtt_sn_client, test_mqtt_sn_ping_timeout)
+{
+	int err;
+	static const uint8_t ping_request[] = {2, 0x16};
+
+	mqtt_sn_connect_no_will(mqtt_client);
+	err = k_sem_take(&mqtt_sn_tx_sem, K_NO_WAIT);
+
+	for (size_t i = 0; i < CONFIG_MQTT_SN_LIB_N_RETRY; i++) {
+		err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+		zassert_equal(err, 0, "Timed out waiting for callback.");
+		assert_msg_send_data(1, ping_request, sizeof(ping_request), &gw_addr);
+		k_sleep(K_SECONDS(CONFIG_MQTT_SN_LIB_T_RETRY));
+	}
+
+	err = k_sem_take(&mqtt_sn_tx_sem, K_SECONDS(CONFIG_MQTT_SN_KEEPALIVE + 1));
+	zassert_equal(err, -EAGAIN, "Unexpected TX");
+
+	zassert_true(sys_slist_is_empty(&mqtt_client->gateways), "GW not deleted.");
+	zassert_equal(mqtt_client->state, 0, "Wrong state");
+	zassert_equal(evt_cb_data.called, 2, "NO event");
+	zassert_equal(evt_cb_data.last_evt.type, MQTT_SN_EVT_DISCONNECTED, "Wrong event");
 }
 
 ZTEST_SUITE(mqtt_sn_client, NULL, NULL, setup, cleanup, NULL);

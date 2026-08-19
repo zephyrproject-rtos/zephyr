@@ -35,7 +35,7 @@
 #include <zephyr/net/net_time.h>
 #include <zephyr/net/ethernet_vlan.h>
 #include <zephyr/net/ptp_time.h>
-#include <zephyr/logging/log.h>
+#include <zephyr/logging/log_core.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,6 +51,30 @@ extern "C" {
  */
 
 struct net_context;
+
+/**
+ * @brief Iterate over all fragments in a network packet.
+ *
+ * @details Traverses the fragment chain of a @ref net_pkt buffer.
+ *
+ * @param _pkt Pointer to the head @ref net_pkt buffer whose fragment
+ *             chain is to be traversed.
+ * @param _var Name of the iterator variable. The macro declares
+ *             this variable internally as <tt>struct net_buf *</tt>
+ *             and updates it on each iteration.
+ *
+ * @note Iteration starts from the first fragment buffer <tt>(_pkt)->frags</tt>;
+ *
+ * Example usage:
+ * @code{.c}
+ * NET_PKT_FRAG_FOR_EACH(pkt, frag) {
+ *     do_something(frag->data, frag->len);
+ * }
+ * @endcode
+ */
+#define NET_PKT_FRAG_FOR_EACH(_pkt, _var) \
+	for (struct net_buf *_var = (_pkt)->frags; _var != NULL; \
+	     _var = _var->frags)
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -119,11 +143,21 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+#if defined(CONFIG_NET_TCP) || defined(CONFIG_NET_UDP_OPTIONS)
+	/* TCP or UDP are mutually exclusive so they can share the same memory */
+	union {
 #if defined(CONFIG_NET_TCP)
-	/** Allow placing the packet into sys_slist_t */
-	sys_snode_t next;
+		/** Allow placing the packet into sys_slist_t */
+		sys_snode_t next;
 #endif
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_UDP_OPTIONS)
+		/** Length of the UDP options surplus area (bytes after UDP user data) */
+		uint16_t udp_opt_surplus_len;
+#endif
+	};
+#endif /* CONFIG_NET_TCP || CONFIG_NET_UDP_OPTIONS */
+
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	struct net_if *orig_iface; /* Original network interface */
 #endif
 
@@ -202,12 +236,8 @@ struct net_pkt {
 
 	uint8_t overwrite : 1;	 /* Is packet content being overwritten? */
 	uint8_t eof : 1;	 /* Last packet before EOF */
-	uint8_t ptp_pkt : 1;	 /* For outgoing packet: is this packet
-				  * a L2 PTP packet.
-				  * Used only if defined (CONFIG_NET_L2_PTP)
-				  */
 	uint8_t forwarding : 1;	 /* Are we forwarding this pkt
-				  * Used only if defined(CONFIG_NET_ROUTE)
+				  * Used only if defined(CONFIG_NET_IPV6_ROUTE)
 				  */
 	uint8_t family : 3;	 /* Address family, see net_ip.h */
 
@@ -219,12 +249,6 @@ struct net_pkt {
 					* Note: family needs to be
 					* NET_AF_INET.
 					*/
-#endif
-#if defined(CONFIG_NET_LLDP)
-	uint8_t lldp_pkt : 1; /* Is this pkt an LLDP message.
-			       * Note: family needs to be
-			       * NET_AF_UNSPEC.
-			       */
 #endif
 	uint8_t ppp_msg : 1; /* This is a PPP message */
 	uint8_t captured : 1;	  /* Set to 1 if this packet is already being
@@ -272,6 +296,14 @@ struct net_pkt {
 		uint16_t ipv6_ext_len; /* length of extension headers */
 #endif
 	};
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	/* IPv4 address that should be resolved at L2 for transmission.
+	 * Routed packets use this to steer link-layer resolution towards the
+	 * next on-link IPv4 address.
+	 */
+	struct net_in_addr ipv4_ll_resolve_addr;
+#endif /* CONFIG_NET_IPV4_ROUTE */
 
 #if defined(CONFIG_NET_IP_FRAGMENT)
 	union {
@@ -364,6 +396,12 @@ struct net_pkt {
 	/* Path MTU needed for this destination address */
 	uint8_t ipv4_pmtu : 1;
 #endif /* CONFIG_NET_IPV4_PMTU */
+#if defined(CONFIG_NET_IPV4_ROUTE)
+	uint8_t ipv4_ll_resolve_addr_set : 1;
+#endif /* CONFIG_NET_IPV4_ROUTE */
+
+	/* Disable local IP fragmentation for this packet. */
+	uint8_t dont_fragment : 1;
 
 	/* @endcond */
 };
@@ -394,23 +432,23 @@ static inline struct net_if *net_pkt_iface(struct net_pkt *pkt)
 
 static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 {
+	struct net_linkaddr *lladdr = net_if_get_link_addr(iface);
+
 	pkt->iface = iface;
 
 	/* If the network interface is set in pkt, then also set the type of
 	 * the network address that is stored in pkt. This is done here so
 	 * that the address type is properly set and is not forgotten.
 	 */
-	if (iface) {
-		uint8_t type = net_if_get_link_addr(iface)->type;
-
-		pkt->lladdr_src.type = type;
-		pkt->lladdr_dst.type = type;
+	if (lladdr != NULL) {
+		pkt->lladdr_src.type = lladdr->type;
+		pkt->lladdr_dst.type = lladdr->type;
 	}
 }
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	return pkt->orig_iface;
 #else
 	return pkt->iface;
@@ -420,7 +458,7 @@ static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
 static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
 					  struct net_if *iface)
 {
-#if defined(CONFIG_NET_ROUTING) || defined(CONFIG_NET_ETHERNET_BRIDGE)
+#if defined(CONFIG_NET_PKT_ORIG_IFACE)
 	pkt->orig_iface = iface;
 #else
 	ARG_UNUSED(pkt);
@@ -474,6 +512,28 @@ static inline void net_pkt_set_vpn_peer_id(struct net_pkt *pkt,
 }
 #endif /* CONFIG_NET_VPN */
 
+#if defined(CONFIG_NET_UDP_OPTIONS)
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	return pkt->udp_opt_surplus_len;
+}
+
+static inline void net_pkt_set_udp_opt_surplus_len(struct net_pkt *pkt,
+						   uint16_t len)
+{
+	pkt->udp_opt_surplus_len = len;
+}
+#else
+static inline uint16_t net_pkt_udp_opt_surplus_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+#define net_pkt_set_udp_opt_surplus_len(...)
+#endif /* CONFIG_NET_UDP_OPTIONS */
+
 static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 {
 	return pkt->family;
@@ -482,16 +542,6 @@ static inline uint8_t net_pkt_family(struct net_pkt *pkt)
 static inline void net_pkt_set_family(struct net_pkt *pkt, uint8_t family)
 {
 	pkt->family = family;
-}
-
-static inline bool net_pkt_is_ptp(struct net_pkt *pkt)
-{
-	return !!(pkt->ptp_pkt);
-}
-
-static inline void net_pkt_set_ptp(struct net_pkt *pkt, bool is_ptp)
-{
-	pkt->ptp_pkt = is_ptp;
 }
 
 static inline bool net_pkt_is_tx_timestamping(struct net_pkt *pkt)
@@ -876,6 +926,48 @@ static inline void net_pkt_set_ipv4_pmtu(struct net_pkt *pkt, bool value)
 	ARG_UNUSED(value);
 }
 #endif /* CONFIG_NET_IPV4_PMTU */
+
+#if defined(CONFIG_NET_IPV4_ROUTE)
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ll_resolve_addr_set ? &pkt->ipv4_ll_resolve_addr : NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	if (addr != NULL) {
+		net_ipaddr_copy(&pkt->ipv4_ll_resolve_addr, addr);
+		pkt->ipv4_ll_resolve_addr_set = 1U;
+	} else {
+		pkt->ipv4_ll_resolve_addr_set = 0U;
+	}
+}
+#else
+static inline const struct net_in_addr *net_pkt_ipv4_ll_resolve_addr(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+
+static inline void net_pkt_set_ipv4_ll_resolve_addr(struct net_pkt *pkt,
+						    const struct net_in_addr *addr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(addr);
+}
+#endif /* CONFIG_NET_IPV4_ROUTE */
+
+static inline bool net_pkt_dont_fragment(struct net_pkt *pkt)
+{
+	return !!pkt->dont_fragment;
+}
+
+static inline void net_pkt_set_dont_fragment(struct net_pkt *pkt, bool value)
+{
+	pkt->dont_fragment = value;
+}
 
 #if defined(CONFIG_NET_IPV4_FRAGMENT)
 static inline uint16_t net_pkt_ipv4_fragment_offset(struct net_pkt *pkt)
@@ -1291,7 +1383,7 @@ static ALWAYS_INLINE void net_pkt_set_stats_tick(struct net_pkt *pkt,
 						 uint32_t tick)
 {
 	if (pkt->detail.count >= NET_PKT_DETAIL_STATS_COUNT) {
-		LOG_ERR("Detail stats count overflow (%d >= %d)",
+		printk("ERROR: Detail stats count overflow (%d >= %d)",
 			pkt->detail.count, NET_PKT_DETAIL_STATS_COUNT);
 		return;
 	}
@@ -1414,31 +1506,6 @@ static inline void net_pkt_set_ipv4_acd(struct net_pkt *pkt,
 	ARG_UNUSED(is_acd_arp_msg);
 }
 #endif /* CONFIG_NET_IPV4_ACD */
-
-#if defined(CONFIG_NET_LLDP)
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	return !!(pkt->lldp_pkt);
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	pkt->lldp_pkt = is_lldp;
-}
-#else
-static inline bool net_pkt_is_lldp(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-
-	return false;
-}
-
-static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(is_lldp);
-}
-#endif /* CONFIG_NET_LLDP */
 
 #if defined(CONFIG_NET_L2_PPP)
 static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
@@ -1585,7 +1652,7 @@ static inline void net_pkt_set_remote_address(struct net_pkt *pkt,
  * @param count Number of net_pkt in this slab.
  */
 #define NET_PKT_SLAB_DEFINE(name, count)				\
-	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4);      \
+	K_MEM_SLAB_DEFINE_TYPE(name, struct net_pkt, count);		\
 	NET_PKT_ALLOC_STATS_DEFINE(pkt_alloc_stats_##name, name)
 
 /** @cond INTERNAL_HIDDEN */
@@ -1863,7 +1930,10 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
 /**
  * @brief Compact the fragment list of a packet.
  *
- * @details After this there is no more any free space in individual fragments.
+ * @details Move data from later fragments into available tailroom in earlier
+ *          fragments and remove empty fragments. This does not reclaim
+ *          headroom or guarantee that the packet becomes a single fragment.
+ *
  * @param pkt Network packet.
  */
 void net_pkt_compact(struct net_pkt *pkt);
@@ -2619,12 +2689,17 @@ static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 int net_pkt_update_length(struct net_pkt *pkt, size_t length);
 
 /**
- * @brief Remove data from the start of the packet.
+ * @brief Remove data from the packet at the current cursor position.
  *
- * @details net_pkt's cursor should be properly initialized.
- *          Note that net_pkt's cursor is reset by this function.
- *          This functions works in similar way as net_buf_pull(),
- *          but it can handle multiple net_buf fragments.
+ * @details The packet cursor should be properly initialized and positioned.
+ *          The cursor is reset by this function. This function works in a
+ *          similar way to net_buf_pull(), but it can handle multiple net_buf
+ *          fragments.
+ *
+ *          The underlying fragment layout is not preserved: remaining data
+ *          may be moved or a fragment's data pointer may be advanced. Callers
+ *          must not rely on fragment data pointers, headroom, or tailroom
+ *          remaining unchanged.
  *
  * @param pkt    Network packet
  * @param length Number of bytes to be removed

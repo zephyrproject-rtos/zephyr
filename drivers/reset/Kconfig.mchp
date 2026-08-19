@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_MCHP_RSTC_G1
-	bool "Microchip Reset Controller g1 peripheral driver"
+	bool "Microchip RSTC G1 reset driver"
 	default y
 	depends on DT_HAS_MICROCHIP_RSTC_G1_RESET_ENABLED
 	help

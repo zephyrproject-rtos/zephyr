@@ -279,9 +279,9 @@ static int dma_stm32_disable_stream(DMA_TypeDef *dma, uint32_t id)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
-					     uint32_t id,
-					     struct dma_config *config)
+static int dma_stm32_configure(const struct device *dev,
+			       uint32_t id,
+			       struct dma_config *config)
 {
 	const struct dma_stm32_config *dev_config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)dev_config->base;
@@ -467,6 +467,18 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 	stream->source_periph = (stream->direction == PERIPHERAL_TO_MEMORY);
 
 #if defined(CONFIG_DMA_STM32_V1)
+	if ((config->source_burst_length % config->source_data_size) != 0) {
+		LOG_ERR("Source burst length %d is not aligned to source data size %d",
+			config->source_burst_length, config->source_data_size);
+		return -EINVAL;
+	}
+
+	if ((config->dest_burst_length % config->dest_data_size) != 0) {
+		LOG_ERR("Destination burst length %d is not aligned to destination data size %d",
+			config->dest_burst_length, config->dest_data_size);
+		return -EINVAL;
+	}
+
 	DMA_InitStruct.MemBurst = stm32_dma_get_mburst(config,
 						       stream->source_periph);
 	DMA_InitStruct.PeriphBurst = stm32_dma_get_pburst(config,
@@ -527,18 +539,21 @@ DMA_STM32_EXPORT_API int dma_stm32_configure(const struct device *dev,
 #if defined(CONFIG_DMA_STM32_V1)
 	if (DMA_InitStruct.FIFOMode == LL_DMA_FIFOMODE_ENABLE) {
 		LL_DMA_EnableFifoMode(dma, dma_stm32_id_to_stream(id));
-		LL_DMA_EnableIT_FE(dma, dma_stm32_id_to_stream(id));
 	} else {
 		LL_DMA_DisableFifoMode(dma, dma_stm32_id_to_stream(id));
-		LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 	}
+	/* FIFO error can be ignored, since it doesn't imply loss of data,
+	 * and errors caused by a wrong configuration are handled by
+	 * stm32_dma_check_fifo_mburst().
+	 */
+	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
 #endif
 	return ret;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
-					  uint32_t src, uint32_t dst,
-					  size_t size)
+static int dma_stm32_reload(const struct device *dev, uint32_t id,
+			    uint32_t src, uint32_t dst,
+			    size_t size)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -587,7 +602,7 @@ DMA_STM32_EXPORT_API int dma_stm32_reload(const struct device *dev, uint32_t id,
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
+static int dma_stm32_start(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -616,7 +631,7 @@ DMA_STM32_EXPORT_API int dma_stm32_start(const struct device *dev, uint32_t id)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_stop(const struct device *dev, uint32_t id)
+static int dma_stm32_stop(const struct device *dev, uint32_t id)
 {
 	const struct dma_stm32_config *config = dev->config;
 	DMA_TypeDef *dma = (DMA_TypeDef *)(config->base);
@@ -687,7 +702,7 @@ static int dma_stm32_init(const struct device *dev)
 	return 0;
 }
 
-DMA_STM32_EXPORT_API int dma_stm32_get_status(const struct device *dev,
+static int dma_stm32_get_status(const struct device *dev,
 				uint32_t id, struct dma_status *stat)
 {
 	const struct dma_stm32_config *config = dev->config;

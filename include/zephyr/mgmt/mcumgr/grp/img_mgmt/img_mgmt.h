@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_IMG_MGMT_
-#define H_IMG_MGMT_
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_H_
 
 #include <inttypes.h>
 #include <bootutil/image.h>
@@ -396,4 +396,4 @@ extern const char *img_mgmt_err_str_data_overrun;
 }
 #endif
 
-#endif /* H_IMG_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_IMG_MGMT_IMG_MGMT_H_ */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2024-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,10 +7,13 @@
 #define DT_DRV_COMPAT espressif_esp32_counter
 
 #include <esp_attr.h>
+#include <esp_rom_sys.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/timer_hal.h>
 #include <hal/timer_ll.h>
 #include <hal/timer_types.h>
+#include <hal/timg_ll.h>
 
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
@@ -18,6 +21,23 @@
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/device.h>
 #include <zephyr/logging/log.h>
+
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+#include <zephyr/drivers/gpio.h>
+#include <hal/gpio_etm_ll.h>
+#include <esp_etm_alloc.h>
+#endif
+
+#if CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#define COUNTER_SLEEP_RETENTION_ENABLED 1
+#else
+#define COUNTER_SLEEP_RETENTION_ENABLED 0
+#endif
+
+#if COUNTER_SLEEP_RETENTION_ENABLED
+#include <gptimer_priv.h>
+#include <esp_private/sleep_retention.h>
+#endif
 
 LOG_MODULE_REGISTER(esp32_counter, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -43,7 +63,27 @@ struct counter_esp32_config {
 	int irq_source;
 	int irq_priority;
 	int irq_flags;
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+	struct gpio_dt_spec capture_gpio;
+#endif
 };
+
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+struct counter_esp32_capture_data {
+	const struct device *dev;
+	counter_capture_cb_t callback;
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	counter_capture_cb_64_t callback_64;
+#endif
+	void *user_data;
+	counter_capture_flags_t flags;
+	gpio_flags_t int_flags;
+	struct gpio_callback gpio_cb;
+	esp_etm_chan_t etm_chan;
+	esp_etm_chan_t gpio_evt_chan;
+	bool configured;
+};
+#endif
 
 struct counter_esp32_data {
 	struct counter_alarm_cfg_64 alarm_cfg;
@@ -52,7 +92,51 @@ struct counter_esp32_data {
 	uint64_t ticks;
 	uint32_t clock_src_hz;
 	timer_hal_context_t hal_ctx;
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+	struct counter_esp32_capture_data capture;
+#endif
 };
+
+#if COUNTER_SLEEP_RETENTION_ENABLED
+static esp_err_t counter_esp32_create_sleep_retention_cb(void *arg)
+{
+	const struct device *dev = arg;
+	const struct counter_esp32_config *cfg = dev->config;
+
+	return sleep_retention_entries_create(
+		gptimer_retention_infos[cfg->group][cfg->index].regdma_entry_array,
+		gptimer_retention_infos[cfg->group][cfg->index].array_size,
+		REGDMA_LINK_PRI_GPTIMER,
+		gptimer_retention_infos[cfg->group][cfg->index].module);
+}
+
+static void counter_esp32_sleep_retention_init(const struct device *dev)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	const gptimer_retention_desc_t *info =
+		&gptimer_retention_infos[cfg->group][cfg->index];
+
+	sleep_retention_module_init_param_t init_param = {
+		.cbs = {.create = {.handle = counter_esp32_create_sleep_retention_cb,
+				   .arg = (void *)dev}},
+		.attribute = SLEEP_RETENTION_MODULE_ATTR_ATTACH,
+		.depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+	};
+
+	esp_err_t err = sleep_retention_module_init(info->module, &init_param);
+
+	if (err == ESP_OK) {
+		err = sleep_retention_module_allocate(info->module);
+	}
+	if (err == ESP_OK) {
+		err = sleep_retention_module_attach(info->module);
+	}
+	if (err != ESP_OK) {
+		LOG_WRN("GPTimer sleep retention init failed (%d) group=%u index=%u", err,
+			(unsigned int)cfg->group, (unsigned int)cfg->index);
+	}
+}
+#endif /* COUNTER_SLEEP_RETENTION_ENABLED */
 
 static int counter_esp32_init(const struct device *dev)
 {
@@ -74,13 +158,17 @@ static int counter_esp32_init(const struct device *dev)
 	data->top_data.auto_reload = false;
 	data->top_data.ticks = cfg->counter_info.max_top_value;
 
-	/* Enable timer clock before any register access */
+	timg_ll_enable_bus_clock(cfg->group, true);
 	timer_ll_enable_clock(cfg->group, cfg->index, true);
+
 	timer_hal_init(&data->hal_ctx, cfg->group, cfg->index);
 	timer_ll_enable_intr(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id),
 			     false);
 	timer_ll_clear_intr_status(data->hal_ctx.dev, TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id));
 	timer_ll_enable_auto_reload(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	esp_clk_tree_enable_src(GPTIMER_CLK_SRC_DEFAULT, true);
+#endif
 	timer_ll_set_clock_source(cfg->group, data->hal_ctx.timer_id, GPTIMER_CLK_SRC_DEFAULT);
 	timer_ll_set_clock_prescale(data->hal_ctx.dev, data->hal_ctx.timer_id, cfg->prescaler);
 	timer_ll_set_count_direction(data->hal_ctx.dev, data->hal_ctx.timer_id, GPTIMER_COUNT_UP);
@@ -98,9 +186,14 @@ static int counter_esp32_init(const struct device *dev)
 
 	if (ret != 0) {
 		LOG_ERR("could not allocate interrupt (err %d)", ret);
+		return ret;
 	}
 
-	return ret;
+#if COUNTER_SLEEP_RETENTION_ENABLED
+	counter_esp32_sleep_retention_init(dev);
+#endif
+
+	return 0;
 }
 
 static int counter_esp32_start(const struct device *dev)
@@ -117,6 +210,7 @@ static int counter_esp32_stop(const struct device *dev)
 	struct counter_esp32_data *data = dev->data;
 
 	timer_ll_enable_counter(data->hal_ctx.dev, data->hal_ctx.timer_id, false);
+	timer_hal_set_counter_value(&data->hal_ctx, 0);
 
 	return 0;
 }
@@ -153,14 +247,14 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 	bool absolute = alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE;
 	uint64_t ticks = alarm_cfg->ticks;
 	uint64_t top = data->top_data.ticks;
-	uint64_t max_rel_val = data->top_data.ticks;
+	uint64_t max_rel_val;
 	uint64_t now;
 	uint64_t target;
 	uint64_t diff;
 	int err = 0;
 	bool irq_on_late = false;
 
-	if (ticks > data->top_data.ticks) {
+	if (ticks > top) {
 		return -EINVAL;
 	}
 
@@ -169,34 +263,37 @@ static int counter_esp32_set_alarm_64(const struct device *dev, uint8_t chan_id,
 
 	counter_esp32_get_value_64(dev, &now);
 
-	if (absolute == 0) {
-		target = now + ticks;
-	} else {
+	if (absolute) {
 		irq_on_late = alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE;
 		max_rel_val = top - data->top_data.guard_period;
-		target = (now & ~0xFFFFFFFFULL) | ticks;
-		if (target < now) {
-			target += (1ULL << 32);
+		if (top == UINT64_MAX) {
+			diff = ticks - now - 1;
+		} else {
+			diff = (ticks - now - 1) % (top + 1);
 		}
+		target = now + diff + 1;
+	} else {
+		max_rel_val = top;
+		diff = ticks;
+		target = now + ticks;
 	}
 
-	timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
-
-	diff = absolute ? (target - now) : ticks;
 	if (diff > max_rel_val) {
 		if (absolute) {
 			err = -ETIME;
 		}
 		if (irq_on_late) {
+			counter_esp32_get_value_64(dev, &now);
+			timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id,
+						 now + 1);
 			timer_ll_enable_intr(data->hal_ctx.dev,
 					     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
 			timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
-			timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, 0);
-
 		} else {
 			data->alarm_cfg.callback = NULL;
 		}
 	} else {
+		timer_ll_set_alarm_value(data->hal_ctx.dev, data->hal_ctx.timer_id, target);
 		timer_ll_enable_intr(data->hal_ctx.dev,
 				     TIMER_LL_EVENT_ALARM(data->hal_ctx.timer_id), true);
 		timer_ll_enable_alarm(data->hal_ctx.dev, data->hal_ctx.timer_id, true);
@@ -342,10 +439,8 @@ static int counter_esp32_set_top_value(const struct device *dev, const struct co
 	return counter_esp32_set_top_value_64(dev, &alarm_cfg_64);
 }
 
-static void counter_esp32_callback_32_trampoline(const struct device *dev,
-						 uint8_t chan_id,
-						 uint64_t ticks,
-						 void *user_data)
+static void counter_esp32_callback_32_trampoline(const struct device *dev, uint8_t chan_id,
+						 uint64_t ticks, void *user_data)
 {
 	struct counter_esp32_data *data = dev->data;
 
@@ -400,6 +495,236 @@ static int counter_esp32_set_guard_period(const struct device *dev, uint32_t tic
 	return 0;
 }
 
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+static void counter_esp32_capture_gpio_cb(const struct device *port, struct gpio_callback *cb,
+					  gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	struct counter_esp32_capture_data *capture =
+		CONTAINER_OF(cb, struct counter_esp32_capture_data, gpio_cb);
+	const struct device *dev = capture->dev;
+	struct counter_esp32_data *data = dev->data;
+	const struct counter_esp32_config *cfg = dev->config;
+	counter_capture_flags_t flags = capture->flags;
+	uint64_t ticks;
+
+	/* ETM already latched the count at the edge; read it without a soft capture. */
+	ticks = timer_ll_get_counter_value(data->hal_ctx.dev, data->hal_ctx.timer_id);
+
+	if (flags & COUNTER_CAPTURE_SINGLE_SHOT) {
+		gpio_pin_interrupt_configure_dt(&cfg->capture_gpio, GPIO_INT_DISABLE);
+		esp_etm_channel_disable(capture->etm_chan);
+	}
+
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	if (capture->callback_64) {
+		capture->callback_64(dev, 0, flags, ticks, capture->user_data);
+		return;
+	}
+#endif
+	if (capture->callback) {
+		capture->callback(dev, 0, flags, (uint32_t)ticks, capture->user_data);
+	}
+}
+
+static void counter_esp32_capture_teardown(const struct device *dev)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	struct counter_esp32_data *data = dev->data;
+	struct counter_esp32_capture_data *capture = &data->capture;
+
+	if (!capture->configured) {
+		return;
+	}
+
+	gpio_pin_interrupt_configure_dt(&cfg->capture_gpio, GPIO_INT_DISABLE);
+	gpio_remove_callback_dt(&cfg->capture_gpio, &capture->gpio_cb);
+
+	timer_ll_enable_etm(data->hal_ctx.dev, false);
+
+	esp_etm_channel_disable(capture->etm_chan);
+	esp_etm_channel_free(capture->etm_chan);
+	esp_etm_gpio_event_free(capture->gpio_evt_chan);
+
+	capture->etm_chan = ESP_ETM_CHAN_NONE;
+	capture->gpio_evt_chan = ESP_ETM_CHAN_NONE;
+	capture->configured = false;
+}
+
+static int counter_esp32_capture_setup(const struct device *dev)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	struct counter_esp32_data *data = dev->data;
+	struct counter_esp32_capture_data *capture = &data->capture;
+	enum esp_etm_gpio_edge edge;
+	gpio_flags_t int_flags;
+	uint32_t event_id;
+	uint32_t task_id;
+	int ret;
+
+	if ((capture->flags & COUNTER_CAPTURE_BOTH_EDGES) == COUNTER_CAPTURE_BOTH_EDGES) {
+		edge = ESP_ETM_GPIO_EDGE_ANY;
+		int_flags = GPIO_INT_EDGE_BOTH;
+	} else if (capture->flags & COUNTER_CAPTURE_FALLING_EDGE) {
+		edge = ESP_ETM_GPIO_EDGE_NEG;
+		int_flags = GPIO_INT_EDGE_FALLING;
+	} else if (capture->flags & COUNTER_CAPTURE_RISING_EDGE) {
+		edge = ESP_ETM_GPIO_EDGE_POS;
+		int_flags = GPIO_INT_EDGE_RISING;
+	} else {
+		return -EINVAL;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->capture_gpio)) {
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&cfg->capture_gpio, GPIO_INPUT);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = esp_etm_gpio_event_alloc(cfg->capture_gpio.pin, edge, &capture->gpio_evt_chan,
+				       &event_id);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = esp_etm_channel_alloc(&capture->etm_chan);
+	if (ret != 0) {
+		esp_etm_gpio_event_free(capture->gpio_evt_chan);
+		capture->gpio_evt_chan = ESP_ETM_CHAN_NONE;
+		return ret;
+	}
+
+	/* The capture task always exists on SoCs gated by ESP32_SOC_ETM_SUPPORTED. */
+	task_id = TIMER_LL_ETM_TASK_TABLE(cfg->group, data->hal_ctx.timer_id,
+					  GPTIMER_ETM_TASK_CAPTURE);
+
+	ret = esp_etm_channel_connect(capture->etm_chan, event_id, task_id);
+	if (ret != 0) {
+		esp_etm_channel_free(capture->etm_chan);
+		esp_etm_gpio_event_free(capture->gpio_evt_chan);
+		capture->etm_chan = ESP_ETM_CHAN_NONE;
+		capture->gpio_evt_chan = ESP_ETM_CHAN_NONE;
+		return ret;
+	}
+
+	timer_ll_enable_etm(data->hal_ctx.dev, true);
+
+	gpio_init_callback(&capture->gpio_cb, counter_esp32_capture_gpio_cb,
+			   BIT(cfg->capture_gpio.pin));
+	ret = gpio_add_callback_dt(&cfg->capture_gpio, &capture->gpio_cb);
+	if (ret != 0) {
+		timer_ll_enable_etm(data->hal_ctx.dev, false);
+		esp_etm_channel_free(capture->etm_chan);
+		esp_etm_gpio_event_free(capture->gpio_evt_chan);
+		capture->etm_chan = ESP_ETM_CHAN_NONE;
+		capture->gpio_evt_chan = ESP_ETM_CHAN_NONE;
+		return ret;
+	}
+
+	capture->dev = dev;
+	capture->int_flags = int_flags;
+	capture->configured = true;
+
+	return 0;
+}
+
+static int counter_esp32_capture_configure(const struct device *dev, uint8_t chan_id,
+					   counter_capture_flags_t flags, counter_capture_cb_t cb,
+					   void *user_data)
+{
+	struct counter_esp32_data *data = dev->data;
+	struct counter_esp32_capture_data *capture = &data->capture;
+
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	counter_esp32_capture_teardown(dev);
+
+	capture->callback = cb;
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	capture->callback_64 = NULL;
+#endif
+	capture->user_data = user_data;
+	capture->flags = flags;
+
+	return counter_esp32_capture_setup(dev);
+}
+
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+static int counter_esp32_capture_configure_64(const struct device *dev, uint8_t chan_id,
+					      counter_capture_flags_t flags,
+					      counter_capture_cb_64_t cb, void *user_data)
+{
+	struct counter_esp32_data *data = dev->data;
+	struct counter_esp32_capture_data *capture = &data->capture;
+
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
+	if (cb == NULL) {
+		return -EINVAL;
+	}
+
+	counter_esp32_capture_teardown(dev);
+
+	capture->callback = NULL;
+	capture->callback_64 = cb;
+	capture->user_data = user_data;
+	capture->flags = flags;
+
+	return counter_esp32_capture_setup(dev);
+}
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+
+static int counter_esp32_enable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	struct counter_esp32_data *data = dev->data;
+
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
+	if (!data->capture.configured) {
+		return -EINVAL;
+	}
+
+	esp_etm_channel_enable(data->capture.etm_chan);
+
+	return gpio_pin_interrupt_configure_dt(&cfg->capture_gpio, data->capture.int_flags);
+}
+
+static int counter_esp32_disable_capture(const struct device *dev, uint8_t chan_id)
+{
+	const struct counter_esp32_config *cfg = dev->config;
+	struct counter_esp32_data *data = dev->data;
+
+	if (chan_id > 0) {
+		return -ENOTSUP;
+	}
+
+	if (!data->capture.configured) {
+		return 0;
+	}
+
+	gpio_pin_interrupt_configure_dt(&cfg->capture_gpio, GPIO_INT_DISABLE);
+	esp_etm_channel_disable(data->capture.etm_chan);
+
+	return 0;
+}
+#endif /* CONFIG_COUNTER_TMR_ESP32_CAPTURE */
+
 static DEVICE_API(counter, counter_api) = {
 	.start = counter_esp32_start,
 	.stop = counter_esp32_stop,
@@ -421,6 +746,14 @@ static DEVICE_API(counter, counter_api) = {
 	.get_guard_period_64 = counter_esp32_get_guard_period_64,
 	.set_guard_period_64 = counter_esp32_set_guard_period_64,
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+	.capture_configure = counter_esp32_capture_configure,
+#ifdef CONFIG_COUNTER_64BITS_TICKS
+	.capture_configure_64 = counter_esp32_capture_configure_64,
+#endif /* CONFIG_COUNTER_64BITS_TICKS */
+	.enable_capture = counter_esp32_enable_capture,
+	.disable_capture = counter_esp32_disable_capture,
+#endif /* CONFIG_COUNTER_TMR_ESP32_CAPTURE */
 };
 
 static void IRAM_ATTR counter_esp32_isr(void *arg)
@@ -460,12 +793,19 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 	}
 }
 
-#define TIMER(idx)              DT_INST_PARENT(idx)
+#define TIMER(idx) DT_INST_PARENT(idx)
 
 #define ESP32_COUNTER_GET_CLK_DIV(idx)                                                             \
 	(((DT_PROP(TIMER(idx), prescaler) & UINT16_MAX) < 2)                                       \
 		 ? 2                                                                               \
 		 : (DT_PROP(TIMER(idx), prescaler) & UINT16_MAX))
+
+#ifdef CONFIG_COUNTER_TMR_ESP32_CAPTURE
+#define ESP32_COUNTER_CAPTURE_INIT(idx)                                                            \
+	.capture_gpio = GPIO_DT_SPEC_INST_GET_OR(idx, capture_gpios, {0}),
+#else
+#define ESP32_COUNTER_CAPTURE_INIT(idx)
+#endif
 
 #define ESP32_COUNTER_INIT(idx)                                                                    \
                                                                                                    \
@@ -484,7 +824,8 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 			.prescaler = ESP32_COUNTER_GET_CLK_DIV(idx),                               \
 			.irq_source = DT_IRQ_BY_IDX(TIMER(idx), 0, irq),                           \
 			.irq_priority = DT_IRQ_BY_IDX(TIMER(idx), 0, priority),                    \
-			.irq_flags = DT_IRQ_BY_IDX(TIMER(idx), 0, flags)};                         \
+			.irq_flags = DT_IRQ_BY_IDX(TIMER(idx), 0, flags),                          \
+			ESP32_COUNTER_CAPTURE_INIT(idx)};                                          \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, counter_esp32_init, NULL, &counter_data_##idx,                  \
 			      &counter_config_##idx, PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,   \

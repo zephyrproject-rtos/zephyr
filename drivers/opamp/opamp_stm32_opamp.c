@@ -652,9 +652,8 @@ static int stm32_opamp_init(const struct device *dev)
 
 /* This assert guarantees a value is always in allowed range at compile time */
 #define STM32_OPAMP_TRIMMING_ASSERT(inst, value)                                                   \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, value),                                            \
-		    (STM32_OPAMP_TRIMMING_ASSERT_IMPL(inst, value)),                               \
-		    (/* empty */))
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, value),                                            \
+		    (STM32_OPAMP_TRIMMING_ASSERT_IMPL(inst, value)))
 
 #define STM32_OPAMP_DT_PMOS_TRIMMING(inst)                                                         \
 	DT_INST_PROP_OR(inst, st_pmos_trimming_value, STM32_OPAMP_TRIM_VAL_UNDEFINED)

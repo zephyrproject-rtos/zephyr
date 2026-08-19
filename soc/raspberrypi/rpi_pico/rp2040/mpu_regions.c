@@ -7,6 +7,7 @@
 #include <hardware/regs/addressmap.h>
 
 #include <zephyr/arch/arm/mpu/arm_mpu_mem_cfg.h>
+#include <zephyr/devicetree.h>
 
 #define RP2040_BOOTROM_REGION_SIZE REGION_16K
 
@@ -19,7 +20,7 @@ static const struct arm_mpu_region mpu_regions[] = {
 	MPU_REGION_ENTRY("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR(REGION_FLASH_SIZE)),
 #endif
 
-	MPU_REGION_ENTRY("SRAM_0", CONFIG_SRAM_BASE_ADDRESS, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
+	MPU_REGION_ENTRY("SRAM_0", DT_CHOSEN_SRAM_ADDR, REGION_RAM_ATTR(REGION_SRAM_SIZE)),
 };
 
 const struct arm_mpu_config mpu_config = {

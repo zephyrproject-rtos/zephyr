@@ -17,10 +17,13 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/iso.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 
 #include "bap_common.h"
+#include "bap_stream_tx.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(bap_common);
 
 #define VS_CODEC_CID 0x05F1 /* Linux foundation*/
 #define VS_CODEC_VID 0x1234 /* any value*/
@@ -32,13 +35,11 @@ struct bt_audio_codec_cfg vs_codec_cfg = {
 	.id = BT_HCI_CODING_FORMAT_VS,
 	.cid = VS_CODEC_CID,
 	.vid = VS_CODEC_VID,
-#if CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0
-	.data_len = 5,
-	.data = {1, 2, 3, 4, 5}, /* any value */
-#endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
+	.data_len = 5U,
+	.data = {1U, 2U, 3U, 4U, 5U}, /* any value */
 #if CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0
-	.meta_len = 5,
-	.meta = {10, 20, 30, 40, 50}, /* any value */
+	.meta_len = 5U,
+	.meta = {10U, 20U, 30U, 40U, 50U}, /* any value */
 #endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 };
 
@@ -50,21 +51,14 @@ struct bt_audio_codec_cap vs_codec_cap = {
 	.cid = VS_CODEC_CID,
 	.vid = VS_CODEC_VID,
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_DATA_SIZE > 0
-	.data_len = 5,
-	.data = {1, 2, 3, 4, 5}, /* any value */
+	.data_len = 5U,
+	.data = {1U, 2U, 3U, 4U, 5U}, /* any value */
 #endif                           /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_DATA_SIZE > 0 */
 #if CONFIG_BT_AUDIO_CODEC_CAP_MAX_METADATA_SIZE > 0
-	.meta_len = 5,
-	.meta = {10, 20, 30, 40, 50}, /* any value */
+	.meta_len = 5U,
+	.meta = {10U, 20U, 30U, 40U, 50U}, /* any value */
 #endif                                /* CONFIG_BT_AUDIO_CODEC_CFG_MAX_METADATA_SIZE > 0 */
 };
-
-void print_hex(const uint8_t *ptr, size_t len)
-{
-	while (len-- != 0) {
-		printk("%02x", *ptr++);
-	}
-}
 
 struct print_ltv_info {
 	const char *str;
@@ -75,10 +69,9 @@ static bool print_ltv_elem(struct bt_data *data, void *user_data)
 {
 	struct print_ltv_info *ltv_info = user_data;
 
-	printk("%s #%zu: type 0x%02x value_len %u", ltv_info->str, ltv_info->cnt, data->type,
-	       data->data_len);
-	print_hex(data->data, data->data_len);
-	printk("\n");
+	LOG_DBG("%s #%zu: type 0x%02x value_len %u", ltv_info->str, ltv_info->cnt, data->type,
+		data->data_len);
+	LOG_HEXDUMP_DBG(data->data, data->data_len, "data");
 
 	ltv_info->cnt++;
 
@@ -97,15 +90,13 @@ static void print_ltv_array(const char *str, const uint8_t *ltv_data, size_t ltv
 
 void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 {
-	printk("codec_cap ID 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cap->id,
-	       codec_cap->cid, codec_cap->vid, codec_cap->data_len);
+	LOG_DBG("codec_cap ID 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cap->id,
+		codec_cap->cid, codec_cap->vid, codec_cap->data_len);
 
 	if (codec_cap->id == BT_HCI_CODING_FORMAT_LC3) {
 		print_ltv_array("data", codec_cap->data, codec_cap->data_len);
 	} else { /* If not LC3, we cannot assume it's LTV */
-		printk("data: ");
-		print_hex(codec_cap->data, codec_cap->data_len);
-		printk("\n");
+		LOG_HEXDUMP_DBG(codec_cap->data, codec_cap->data_len, "data");
 	}
 
 	print_ltv_array("meta", codec_cap->meta, codec_cap->meta_len);
@@ -113,15 +104,13 @@ void print_codec_cap(const struct bt_audio_codec_cap *codec_cap)
 
 void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 {
-	printk("codec_cfg ID 0x%02x cid 0x%04x vid 0x%04x count %u\n", codec_cfg->id,
-	       codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
+	LOG_DBG("codec_cfg ID 0x%02x cid 0x%04x vid 0x%04x count %u", codec_cfg->id,
+		codec_cfg->cid, codec_cfg->vid, codec_cfg->data_len);
 
 	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
 		print_ltv_array("data", codec_cfg->data, codec_cfg->data_len);
 	} else { /* If not LC3, we cannot assume it's LTV */
-		printk("data: ");
-		print_hex(codec_cfg->data, codec_cfg->data_len);
-		printk("\n");
+		LOG_HEXDUMP_DBG(codec_cfg->data, codec_cfg->data_len, "data");
 	}
 
 	print_ltv_array("meta", codec_cfg->meta, codec_cfg->meta_len);
@@ -129,9 +118,9 @@ void print_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 
 void print_qos(const struct bt_bap_qos_cfg *qos)
 {
-	printk("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
-	       "rtn %u latency %u pd %u\n",
-	       qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
+	LOG_DBG("QoS: interval %u framing 0x%02x phy 0x%02x sdu %u "
+		"rtn %u latency %u pd %u",
+		qos->interval, qos->framing, qos->phy, qos->sdu, qos->rtn, qos->latency, qos->pd);
 }
 
 void copy_unicast_stream_preset(struct unicast_stream *stream,
@@ -175,4 +164,38 @@ bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream)
 bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream)
 {
 	return cap_stream_is_streaming(&test_stream->stream);
+}
+
+void bap_unicast_stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	LOG_INF("Disconnected stream %p with reason %u", stream, reason);
+
+	UNSET_FLAG(test_stream->stopping);
+}
+
+void bap_common_stream_started_cb(struct bt_bap_stream *stream)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+	(void)memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->valid_rx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
+	test_stream->last_rx_failed = false;
+
+	LOG_INF("Stream %p started", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
 }

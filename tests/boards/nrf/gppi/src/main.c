@@ -10,17 +10,46 @@
 #include <zephyr/ztest.h>
 #include <hal/nrf_timer.h>
 #include <hal/nrf_egu.h>
-#if defined(CONFIG_SOC_NRF54H20_CPURAD)
+#include <helpers/nrfx_gppi.h>
+#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
+#include <hal/nrf_pdm.h>
+#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
+#include <hal/nrf_lpcomp.h>
+#elif defined(CONFIG_SOC_NRF54H20_CPURAD)
 #include <hal/nrf_ecb.h>
 #endif
-#include <hal/nrf_lpcomp.h>
-#include <helpers/nrfx_gppi.h>
 
 NRF_TIMER_Type *timer0 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer0));
 NRF_TIMER_Type *timer1 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer1));
 NRF_TIMER_Type *timer2 = (NRF_TIMER_Type *)DT_REG_ADDR(DT_NODELABEL(dut_timer2));
 
-#if DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
+#if DT_NODE_EXISTS(DT_NODELABEL(pdm0)) && DT_NODE_HAS_STATUS(DT_NODELABEL(pdm0), reserved)
+NRF_PDM_Type *pdm = (NRF_PDM_Type *)DT_REG_ADDR(DT_NODELABEL(pdm0));
+
+static void sink_setup(void)
+{
+	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
+	nrf_pdm_event_clear(pdm, NRF_PDM_EVENT_STARTED);
+	nrf_pdm_enable(pdm);
+}
+
+static void sink_cleanup(void)
+{
+	nrf_pdm_task_trigger(pdm, NRF_PDM_TASK_STOP);
+	nrf_pdm_disable(pdm);
+}
+
+static bool sink_evt_check(void)
+{
+	return nrf_pdm_event_check(pdm, NRF_PDM_EVENT_STARTED);
+}
+
+static uint32_t sink_tsk_addr(void)
+{
+	return nrf_pdm_task_address_get(pdm, NRF_PDM_TASK_START);
+}
+
+#elif DT_NODE_EXISTS(DT_NODELABEL(comp)) && DT_NODE_HAS_STATUS(DT_NODELABEL(comp), reserved)
 NRF_LPCOMP_Type *lpcomp = (NRF_LPCOMP_Type *)DT_REG_ADDR(DT_NODELABEL(comp));
 
 static void sink_setup(void)
@@ -234,6 +263,7 @@ ZTEST(gppi, test_attach_event)
 
 	/* TIMER1 should be incremented twice by both events. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	zassert_equal(nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0), 2);
 
 	/* Clean up. */
@@ -326,7 +356,7 @@ ZTEST(gppi, test_group)
 
 	/* Allocate PPI 3. TIMER0_CC2->GROUP_DIS */
 	rv = nrfx_gppi_conn_alloc(evt2, gtsk_dis, &handle2);
-	zassert_ok(rv);
+	zassert_ok(rv, "rv:%d", rv);
 
 	/* Enable connection but then disable the channel in the connection source.
 	 * On single domain SoC it is redundant but on multi domain SoC it will enable
@@ -343,6 +373,7 @@ ZTEST(gppi, test_group)
 	/* Start both timers. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_START);
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	zassert_equal(nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0), 0);
 
 	nrf_timer_task_trigger(timer0, NRF_TIMER_TASK_START);
@@ -360,6 +391,7 @@ ZTEST(gppi, test_group)
 
 	/* Validate that TIMER1 counter got incremented exactly once. */
 	nrf_timer_task_trigger(timer1, NRF_TIMER_TASK_CAPTURE0);
+	nrf_barrier_r();
 	cc = nrf_timer_cc_get(timer1, NRF_TIMER_CC_CHANNEL0);
 	zassert_equal(cc, 1, "Unexpected cc:%d (exp:%d)", cc, 1);
 

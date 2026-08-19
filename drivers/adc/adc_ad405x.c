@@ -653,7 +653,8 @@ int ad405x_set_sample_rate(const struct device *dev, enum ad405x_sample_rate rat
 	struct adc_ad405x_data *data = dev->data;
 	int ret;
 
-	ret = ad405x_reg_update_bits(dev, AD405X_REG_TIMER_CONFIG, AD405X_FS_BURST_AUTO_MSK, rate);
+	ret = ad405x_reg_update_bits(dev, AD405X_REG_TIMER_CONFIG, AD405X_FS_BURST_AUTO_MSK,
+				    rate << 4);
 	if (ret != 0) {
 		return ret;
 	}
@@ -958,7 +959,7 @@ static int adc_ad405x_init(const struct device *dev)
 	}
 
 	reg_val_res = (reg_val_hi << 8) | reg_val;
-	if ((reg_val_res != AD4052_REG_PRODUCT_ID_VAL) &
+	if ((reg_val_res != AD4052_REG_PRODUCT_ID_VAL) &&
 	    (reg_val_res != AD4050_REG_PRODUCT_ID_VAL)) {
 		LOG_ERR("Invalid product id");
 		return -ENODEV;
@@ -1317,7 +1318,7 @@ static DEVICE_API(adc, ad405x_api_funcs) = {
 	.read = ad405x_read,
 	.ref_internal = 2500,
 #ifdef CONFIG_ADC_ASYNC
-	.read_async = ad405x_adc_read_async,
+	.read_async = adc_ad405x_read_async,
 #endif /* CONFIG_ADC_ASYNC */
 #ifdef CONFIG_AD405X_STREAM
 	.submit = ad405x_submit_stream,

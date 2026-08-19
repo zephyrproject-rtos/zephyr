@@ -9,9 +9,14 @@ toolchain:
   - zephyr
 ram: 128
 supported:
+  - button
+  - can
   - crypto
   - eeprom
+  - entropy
+  - gpio
   - i2c
+  - led
   - pinctrl
   - rtc
   - uart

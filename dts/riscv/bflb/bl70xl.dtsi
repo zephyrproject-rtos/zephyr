@@ -20,6 +20,17 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	tsen: tsen {
+		compatible = "bflb,tsen";
+		io-channels = <&adc0 0>;
+		status = "disabled";
+	};
+
+	bt_hci_bflb: bt-hci {
+		compatible = "bflb,bt-hci";
+		status = "disabled";
+	};
+
 	clocks {
 		clk_rc32m: clk-rc32m {
 			#clock-cells = <0>;
@@ -80,11 +91,6 @@
 		};
 	};
 
-	chosen {
-		zephyr,sram = &sram0;
-		zephyr,flash-controller = &flashctrl;
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -137,18 +143,54 @@
 		itcm: itcm@22020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22020000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x22020000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "RETRAM";
 		};
 
 		sram0: memory@42024000 {
 			compatible = "mmio-sram";
 			reg = <0x42024000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x42024000 DT_SIZE_K(64)>;
+
+			/*
+			 * When BLE is enabled, the hardware reserves exchange
+			 * memory (EM) at the top of SRAM (GLB_EM_SEL set in
+			 * soc_early_init_hook), reducing usable RAM:
+			 *
+			 *  - 8 KB EM (EM_SEL=0x3): 64 - 8 = 56 KB (default)
+			 *  - 16 KB EM (EM_SEL=0xF): 64 - 16 = 48 KB
+			 *    (BFLB_BL70XL_BLE_EM_16K / m8s1p variant)
+			 *
+			 * Point chosen zephyr,sram to the matching node.
+			 */
+			sram0_btle: sram@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(56)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(56)>;
+			};
+
+			sram0_btle_em16k: sram_16k@0 {
+				compatible = "mmio-sram";
+				reg = <0x0 DT_SIZE_K(48)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges = <0x0 0x0 DT_SIZE_K(48)>;
+			};
 		};
 
 		pinctrl: pin-controller@40000000 {
@@ -295,14 +337,37 @@
 			interrupt-parent = <&clic>;
 		};
 
-		flashctrl: flash-controller@4000b000 {
-			compatible = "bflb,flash-controller";
+		sf_ctrl: sf@4000b000 {
+			compatible = "bflb,sf-controller";
 			reg = <0x4000b000 0x1000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+
+			sf_bank1: flash-controller@23000000 {
+				compatible = "bflb,sf-bank";
+				reg = <0x23000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x23000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			sf_bank2: memory-controller@24000000 {
+				/* Only have the memory-region compatible
+				 * when not using a pre-existing (ROM) memory region
+				 */
+				compatible = "bflb,sf-bank", "zephyr,memory-region";
+				zephyr,memory-region = "PSRAM";
+				reg = <0x24000000 DT_SIZE_M(16)>;
+				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		dma0: dma@4000c000 {

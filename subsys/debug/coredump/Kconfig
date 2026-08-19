@@ -19,6 +19,54 @@ config DEBUG_COREDUMP_BACKEND_LOGGING
 	help
 	  Core dump is done via logging subsystem.
 
+config DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+	bool "Raw UDP coredump backend (IPv4 and IPv6)"
+	depends on NETWORKING
+	depends on NET_SOCKETS
+	depends on NET_UDP
+	depends on NET_IPV4 || NET_IPV6
+	select LOG if DEBUG_COREDUMP_LOGGING_UDP_MIRROR_TO_LOG
+	help
+	  Sends raw coredump frames to a fixed UDP peer parsed by net_ipaddr_parse()
+	  (IPv4 or IPv6 address, optional :port). Use
+	  scripts/coredump/coredump_udp_receiver.py on the host to reassemble the
+	  .bin for scripts/coredump/coredump_gdbserver.py.
+	  Optionally mirrors the same data as ASCII #CD: hex lines via the logging
+	  subsystem (see DEBUG_COREDUMP_LOGGING_UDP_MIRROR_TO_LOG).
+
+config DEBUG_COREDUMP_LOGGING_UDP_HOST
+	string "UDP peer address for raw coredump (IPv4 or IPv6, optional port)"
+	default ""
+	depends on DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+	help
+	  Destination host string passed to net_ipaddr_parse(). Examples:
+	    192.0.2.1
+	    192.0.2.1:17777
+	    [2001:db8::1]
+	    [2001:db8::1]:17777
+	  If the port is omitted, the default UDP port 17777 is used.
+
+config DEBUG_COREDUMP_LOGGING_UDP_MIRROR_TO_LOG
+	bool "Mirror coredump to log as #CD: hex (UART)"
+	default y
+	depends on DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+	help
+	  When disabled, the raw coredump is sent only over UDP to
+	  DEBUG_COREDUMP_LOGGING_UDP_HOST (production-style: no Twister/UART hex log).
+	  Use scripts/coredump/coredump_udp_receiver.py on the collector PC.
+
+config DEBUG_COREDUMP_FATAL_UNLOCK_IRQS
+	bool
+	default y
+	depends on DEBUG_COREDUMP_BACKEND_LOGGING_UDP
+	help
+	  z_fatal_error() masks interrupts before coredump. Socket TX and Ethernet
+	  drivers need IRQ delivery to complete datagrams. Unmask IRQs for the
+	  coredump call only, then restore the previous DAIF/mask state.
+	  On ARM64 the DAIF.I bit is often still set during sync exceptions, so
+	  arch_irq_unlock(arch_irq_lock()) is insufficient; DAIF.I is cleared
+	  explicitly for the dump window.
+
 config DEBUG_COREDUMP_BACKEND_FLASH_PARTITION
 	bool "Use flash partition for coredump"
 	depends on FLASH
@@ -71,7 +119,6 @@ config DEBUG_COREDUMP_MEMORY_DUMP_MIN
 
 config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
 	bool "Threads"
-	depends on !SMP
 	depends on ARCH_SUPPORTS_COREDUMP_THREADS
 	select THREAD_STACK_INFO
 	select DEBUG_THREAD_INFO
@@ -79,6 +126,9 @@ config DEBUG_COREDUMP_MEMORY_DUMP_THREADS
 	help
 	  Dumps the thread struct and stack of all
 	  threads and all data required to debug threads.
+	  On SMP systems all per-CPU ISR stacks are included.
+	  DEBUG_THREAD_INFO provides kernel struct offsets for offline GDB
+	  thread enumeration on both SMP and non-SMP systems.
 
 config DEBUG_COREDUMP_MEMORY_DUMP_LINKER_RAM
 	bool "RAM defined by linker section"
@@ -111,12 +161,25 @@ config DEBUG_COREDUMP_SHELL
 
 config DEBUG_COREDUMP_THREADS_METADATA
 	bool "Threads metadata"
-	depends on !SMP
 	depends on ARCH_SUPPORTS_COREDUMP_THREADS
 	select DEBUG_THREAD_INFO
 	help
 	  Core dump will contain the threads metadata section containing
 	  any necessary data to enable debugging threads
+
+config DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX
+	int "Maximum threads snapshotted per SMP coredump"
+	default 64
+	depends on SMP && DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	help
+	  On SMP, coredump snapshots the thread-list pointers while briefly
+	  holding z_thread_monitor_lock, then releases the lock before the slow
+	  per-thread dump I/O so a concurrent k_thread_abort() on another CPU is
+	  not stalled for the whole dump. This bounds how many threads that
+	  snapshot can hold. If the system has more monitored threads than this
+	  value the dump is truncated to the first N. Increase it to capture
+	  every thread on a system with many threads; it costs N pointers of
+	  stack on the fatal path.
 
 config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 	bool "Dump privilege stack of user threads"

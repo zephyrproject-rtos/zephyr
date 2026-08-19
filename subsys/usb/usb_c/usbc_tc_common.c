@@ -93,7 +93,7 @@ void tc_run(const struct device *dev, const int32_t dpm_request)
 		/* Detect polarity */
 		tc->cc_polarity = (tc->cc1 > tc->cc2) ? TC_POLARITY_CC1 : TC_POLARITY_CC2;
 
-		/* Execute any asyncronous Device Policy Manager Requests */
+		/* Execute any asynchronous Device Policy Manager Requests */
 		if (dpm_request == REQUEST_TC_ERROR_RECOVERY) {
 			/* Transition to Error Recovery State */
 			tc_set_state(dev, TC_ERROR_RECOVERY_STATE);

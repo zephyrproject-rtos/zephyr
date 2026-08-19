@@ -17,6 +17,7 @@
 	chosen {
 		zephyr,console = &flexcomm0;
 		zephyr,shell-uart = &flexcomm0;
+		zephyr,crc = &crc;
 	};
 
 	aliases {
@@ -70,6 +71,10 @@
 	pinctrl-0 = <&pinmux_flexcomm0_usart>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
 

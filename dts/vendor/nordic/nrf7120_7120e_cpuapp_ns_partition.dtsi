@@ -1,0 +1,153 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Default memory partitioning for nRF7120 application CPU.
+ */
+
+&ram00_sram {
+	status = "disabled";
+};
+
+/*
+ * Default SRAM planning when building for nRF7120 with ARM TrustZone-M support
+ * Lowest 96 kB allocated to Secure RAM (sram0_s).
+ *   - 96 kB SRAM in RAM00 allocated to Secure RAM      (sram00_s).
+ * Upper 920 kB allocated to Non-Secure RAM (sram0_ns).
+ *   - 416 kB SRAM in RAM00 allocated to Non-Secure RAM (sram00_ns).
+ *   - 256 kB SRAM in RAM01 allocated to Non-Secure RAM (sram01_ns).
+ *   - 128 kB SRAM in RAM02 allocated to Non-Secure RAM (sram02_ns).
+ *   - 120 kB SRAM in RAM03 allocated to Non-Secure RAM (sram03_ns).
+ *
+ * cpuapp_sram has 1016 kB of volatile memory (SRAM).
+ * This static layout needs to be the same with the upstream TF-M layout in the
+ * header flash_layout.h of the relevant platform. Any updates in the layout
+ * needs to happen both in the flash_layout.h and in this file at the same time.
+ */
+&cpuapp_sram {
+	sram0_s: sram@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Secure RAM */
+		reg = <0x0 DT_SIZE_K(96)>; /* 0x2000_0000 */
+		ranges = <0x0 0x0 DT_SIZE_K(96)>;
+	};
+
+	sram0_ns: sram@18000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		/* Non-Secure RAM */
+		reg = <0x18000 DT_SIZE_K(920)>; /* 0x2001_8000 */
+		ranges = <0x0 0x18000 DT_SIZE_K(920)>;
+
+		sram00_ns: sram0_ns@0 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* Non-Secure RAM */
+			reg = <0x0 DT_SIZE_K(416)>; /* 0x2001_8000 */
+			ranges = <0x0 0x0 DT_SIZE_K(416)>;
+		};
+
+		sram01_ns: sram0_ns@68000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* Non-Secure RAM */
+			reg = <0x68000 DT_SIZE_K(256)>; /* 0x2008_0000 */
+			ranges = <0x0 0x68000 DT_SIZE_K(256)>;
+		};
+
+		sram02_ns: sram0_ns@a8000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* Non-Secure RAM */
+			reg = <0xa8000 DT_SIZE_K(128)>; /* 0x200C_0000 */
+			ranges = <0x0 0xa8000 DT_SIZE_K(128)>;
+		};
+
+		sram03_ns: sram0_ns@c8000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			/* Non-Secure RAM */
+			reg = <0xc8000 DT_SIZE_K(120)>; /* 0x200E_0000 */
+			ranges = <0x0 0xc8000 DT_SIZE_K(120)>;
+		};
+	};
+};
+
+&cpuapp_mram {
+	/*
+	 * Default NVM layout on NRF7120 Application MCU without BL2:
+	 * This layout matches (by necessity) that in the TF-M repository:
+	 *
+	 * 0x0000_0000 Secure image primary (192 KB)
+	 * 0x0003_0000 Protected Storage Area (16 KB)
+	 * 0x0003_4000 Internal Trusted Storage Area (16 KB)
+	 * 0x0003_8000 OTP / NV counters area (8 KB)
+	 * 0x0003_A000 Non-secure image primary (3780 KB)
+	 * 0x003E_B000 Non-secure storage, used when built with NRF_NS_STORAGE=ON,
+	 *             otherwise unused (64 KB)
+	 */
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* This static layout needs to be the same with the upstream TF-M layout in the
+		 * header flash_layout.h of the relevant platform. Any updates in the layout
+		 * needs to happen both in the flash_layout.h and in this file at the same time.
+		 */
+
+		slot0_s_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0000000 DT_SIZE_K(192)>;
+		};
+
+		tfm_ps_partition: partition@30000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-ps";
+			reg = <0x00030000 DT_SIZE_K(16)>;
+		};
+
+		tfm_its_partition: partition@34000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-its";
+			reg = <0x00034000 DT_SIZE_K(16)>;
+		};
+
+		tfm_otp_partition: partition@38000 {
+			compatible = "zephyr,mapped-partition";
+			label = "tfm-otp";
+			reg = <0x00038000 DT_SIZE_K(8)>;
+		};
+
+		slot0_ns_partition: partition@3a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0-nonsecure";
+			reg = <0x0003a000 DT_SIZE_K(3780)>;
+		};
+
+		storage_partition: partition@3eb000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0003eb000 DT_SIZE_K(64)>;
+		};
+	};
+};
+
+/ {
+	nordic-tz-secure {
+		compatible = "nordic,tz-secure";
+		code-partitions = <&slot0_s_partition>;
+		data-partitions = <&tfm_ps_partition>,
+				  <&tfm_its_partition>,
+				  <&tfm_otp_partition>;
+	};
+
+	nordic-tz-nonsecure {
+		compatible = "nordic,tz-nonsecure";
+		code-partitions = <&slot0_ns_partition>;
+		data-partitions = <&storage_partition>;
+	};
+};

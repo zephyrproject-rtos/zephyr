@@ -52,6 +52,18 @@ config NORDIC_QSPI_NOR_XIP
 	  QSPI NOR flash chip is executed until the driver has been setup.
 	  This will also disable power management for the QSPI NOR flash chip.
 
+config NORDIC_QSPI_NOR_XIP_FLASH_SCHED_LOCK
+	bool "Hold scheduler lock during QSPI NOR program/erase when XIP"
+	depends on NORDIC_QSPI_NOR_XIP
+	depends on MULTITHREADING
+	help
+	  When executing code from external QSPI flash (XIP), other threads must
+	  not fetch instructions from the same device while it is programming or
+	  erasing. Taking the scheduler lock for the duration of each flash
+	  operation prevents other threads from running XIP code concurrently.
+	  WIP polling uses busy-wait instead of sleeping so the lock is not
+	  violated. Enable for split XIP + DFU workloads.
+
 config NORDIC_QSPI_NOR_TIMEOUT_MS
 	int "Timeout for QSPI operations (ms)"
 	default 500

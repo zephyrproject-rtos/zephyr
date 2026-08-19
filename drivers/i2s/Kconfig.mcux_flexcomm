@@ -20,4 +20,20 @@ config I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT
 	int "TX queue length"
 	default 4
 
+config I2S_MCUX_FLEXCOMM_DMA_RX_BLOCKS
+	int "Number of DMA blocks for RX"
+	default 2
+	range 1 8
+	help
+	  Number of DMA blocks to use for I2S RX transfers.
+	  Higher values allow more buffering but use more memory.
+
+config I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS
+	int "Number of DMA blocks for TX"
+	default 2
+	range 1 8
+	help
+	  Number of DMA blocks to use for I2S TX transfers.
+	  Higher values allow more buffering but use more memory.
+
 endif # I2S_MCUX_FLEXCOMM

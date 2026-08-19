@@ -13,7 +13,7 @@ and a Time‑of‑Flight sensor. It can be used with any STM32 boards featuring
 a MIPI CSI-2® interface with a 22‑pin FFC connector to enable full-featured
 computer vision on STM32 microcontrollers and microprocessors easily.
 
-.. figure:: st_b_cams_imx.webp
+.. figure:: st_b_cams_imx_mb1854.webp
      :width: 600px
      :align: center
      :alt: B-CAMS-IMX-MB1854
@@ -36,7 +36,7 @@ The shield can be used in any application by setting ``SHIELD`` to
 Set ``--shield "st_b_cams_imx_mb1854"`` when you invoke ``west build``. For example:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/drivers/video/capture
+   :zephyr-app: samples/subsys/video/capture
    :board: stm32n6570_dk
    :shield: st_b_cams_imx_mb1854
    :goals: build

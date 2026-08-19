@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(coap_oscore)
+
+if(COAP_OSCORE_SALT_ONLY)
+  target_sources(app PRIVATE src/salt.c)
+else()
+  target_sources(app PRIVATE src/main.c)
+endif()
+target_include_directories(app PRIVATE
+  ${ZEPHYR_BASE}/subsys/net/ip
+  ${ZEPHYR_BASE}/subsys/net/lib/coap
+)
+
+zephyr_linker_sources(DATA_SECTIONS sections-ram.ld)

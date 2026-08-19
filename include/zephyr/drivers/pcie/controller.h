@@ -32,6 +32,12 @@ extern "C" {
 #endif
 
 /**
+ * @def_driverbackendgroup{PCIe Controller,pcie_controller_interface}
+ * @ingroup pcie_controller_interface
+ * @{
+ */
+
+/**
  * @brief Function called to read a 32-bit word from an endpoint's configuration space.
  *
  * Read a 32-bit word from an endpoint's configuration space with the PCI Express Controller
@@ -169,19 +175,30 @@ void pcie_generic_ctrl_conf_write(mm_reg_t cfg_addr, pcie_bdf_t bdf,
  */
 void pcie_generic_ctrl_enumerate(const struct device *dev, pcie_bdf_t bdf_start);
 
-/** @brief Structure providing callbacks to be implemented for devices
- * that supports the PCI Express Controller API
+/**
+ * @driver_ops{PCIe Controller}
  */
 __subsystem struct pcie_ctrl_driver_api {
+	/** @driver_ops_mandatory @copybrief pcie_ctrl_conf_read */
 	pcie_ctrl_conf_read_t conf_read;
+	/** @driver_ops_mandatory @copybrief pcie_ctrl_conf_write */
 	pcie_ctrl_conf_write_t conf_write;
+	/** @driver_ops_mandatory @copybrief pcie_ctrl_region_allocate */
 	pcie_ctrl_region_allocate_t region_allocate;
+	/** @driver_ops_mandatory @copybrief pcie_ctrl_region_get_allocate_base */
 	pcie_ctrl_region_get_allocate_base_t region_get_allocate_base;
+	/** @driver_ops_optional @copybrief pcie_ctrl_region_translate */
 	pcie_ctrl_region_translate_t region_translate;
-#ifdef CONFIG_PCIE_MSI
+#if defined(CONFIG_PCIE_MSI) || defined(__DOXYGEN__)
+	/**
+	 * @driver_ops_mandatory @copybrief pcie_ctrl_msi_device_setup
+	 * @kconfig_dep{CONFIG_PCIE_MSI}
+	 */
 	pcie_ctrl_msi_device_setup_t msi_device_setup;
 #endif
 };
+
+/** @} */
 
 /**
  * @brief Read a 32-bit word from an endpoint's configuration space.
@@ -197,10 +214,7 @@ __subsystem struct pcie_ctrl_driver_api {
 static inline uint32_t pcie_ctrl_conf_read(const struct device *dev, pcie_bdf_t bdf,
 					   unsigned int reg)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->conf_read(dev, bdf, reg);
+	return DEVICE_API_GET(pcie_ctrl, dev)->conf_read(dev, bdf, reg);
 }
 
 /**
@@ -217,10 +231,7 @@ static inline uint32_t pcie_ctrl_conf_read(const struct device *dev, pcie_bdf_t 
 static inline void pcie_ctrl_conf_write(const struct device *dev, pcie_bdf_t bdf,
 					unsigned int reg, uint32_t data)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	api->conf_write(dev, bdf, reg, data);
+	DEVICE_API_GET(pcie_ctrl, dev)->conf_write(dev, bdf, reg, data);
 }
 
 /**
@@ -244,10 +255,8 @@ static inline bool pcie_ctrl_region_allocate(const struct device *dev, pcie_bdf_
 					     bool mem, bool mem64, size_t bar_size,
 					     uintptr_t *bar_bus_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->region_allocate(dev, bdf, mem, mem64, bar_size, bar_bus_addr);
+	return DEVICE_API_GET(pcie_ctrl, dev)->region_allocate(dev, bdf, mem, mem64, bar_size,
+							       bar_bus_addr);
 }
 
 /**
@@ -269,10 +278,8 @@ static inline bool pcie_ctrl_region_get_allocate_base(const struct device *dev, 
 						      bool mem, bool mem64, size_t align,
 						      uintptr_t *bar_base_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->region_get_allocate_base(dev, bdf, mem, mem64, align, bar_base_addr);
+	return DEVICE_API_GET(pcie_ctrl, dev)->region_get_allocate_base(dev, bdf, mem, mem64, align,
+									bar_base_addr);
 }
 
 /**
@@ -297,8 +304,7 @@ static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf
 					  bool mem, bool mem64, uintptr_t bar_bus_addr,
 					  uintptr_t *bar_addr)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
+	const struct pcie_ctrl_driver_api *api = DEVICE_API_GET(pcie_ctrl, dev);
 
 	if (!api->region_translate) {
 		*bar_addr = bar_bus_addr;
@@ -308,21 +314,33 @@ static inline bool pcie_ctrl_region_translate(const struct device *dev, pcie_bdf
 	}
 }
 
-#ifdef CONFIG_PCIE_MSI
+#if defined(CONFIG_PCIE_MSI) || defined(__DOXYGEN__)
+/**
+ * @brief Configure the given PCI endpoint to generate MSIs.
+ *
+ * @kconfig_dep{CONFIG_PCIE_MSI}
+ *
+ * @param dev PCI Express Controller device pointer
+ * @param priority MSI priority
+ * @param vectors an array of allocated vector(s)
+ * @param n_vector the size of the vector array
+ * @return the number of vectors allocated
+ */
 static inline uint8_t pcie_ctrl_msi_device_setup(const struct device *dev, unsigned int priority,
 						 msi_vector_t *vectors, uint8_t n_vector)
 {
-	const struct pcie_ctrl_driver_api *api =
-		(const struct pcie_ctrl_driver_api *)dev->api;
-
-	return api->msi_device_setup(dev, priority, vectors, n_vector);
+	return DEVICE_API_GET(pcie_ctrl, dev)->msi_device_setup(dev, priority, vectors, n_vector);
 }
 #endif
 
 /** @brief Structure describing a device that supports the PCI Express Controller API
  */
 struct pcie_ctrl_config {
-#ifdef CONFIG_PCIE_MSI
+#if defined(CONFIG_PCIE_MSI) || defined(__DOXYGEN__)
+	/**
+	 * @brief MSI parent device
+	 * @kconfig_dep{CONFIG_PCIE_MSI}
+	 */
 	const struct device *msi_parent;
 #endif
 	/* Configuration space physical address */

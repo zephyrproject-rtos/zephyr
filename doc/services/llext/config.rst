@@ -1,9 +1,21 @@
 Configuration
 #############
 
-The following Kconfig options are available for the LLEXT subsystem:
+The following Kconfig options are available for the LLEXT subsystem.
 
 .. _llext_kconfig_heap:
+
+Harvard architecture
+--------------------
+
+:kconfig:option:`CONFIG_HARVARD`
+
+        Architecture uses separate instruction and data memory.
+
+:kconfig:option:`CONFIG_HARVARD` is not a Kconfig defined by the LLEXT
+subsystem. Instead, it must be defined and selected by the board or SoC
+to signal that LLEXT should be built with Harvard architecture support.
+The board or SoC must also implement :c:func:`arch_is_instr_mem`.
 
 Heap size
 ----------
@@ -98,9 +110,9 @@ Another option controls block size.
 :kconfig:option:`CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE`
 
         Block size in bytes for LLEXT :c:type:`sys_mem_blocks_t` heap(s).
-        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE``. The block size
-        must also be equal to or a multiple of the largest alignment needed
-        for any extension region. If
+        Must be equal to or a multiple of ``LLEXT_PAGE_SIZE`` if MMU or MPU
+        are enabled. The block size must also be equal to or a multiple of the
+        largest alignment needed for any extension region. If
         :kconfig:option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` is
         selected and regions are large, an unreasonably large block size may be
         needed to satisfy alignment requirements.
@@ -136,11 +148,11 @@ Then create a file in the same directory as your :file:`CMakeFiles.txt` named
 
 .. code-block:: none
 
-   #ifdef CONFIG_LLEXT
+   #if defined(CONFIG_LLEXT) && !defined(CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT)
    *(.llext_heap)
    *(.llext_ext_heap)
    *(.llext_metadata_heap)
-   #endif /* CONFIG_LLEXT */
+   #endif /* CONFIG_LLEXT && !CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT */
 
 For ARC, the Harvard instruction and data heap sections (``.llext_instr_heap``
 and ``.llext_data_heap``) are placed in instruction and data memory at the
@@ -154,8 +166,7 @@ architecture, you will need to manually place ``.llext_instr_heap`` and
    ``.llext_instr_heap`` is placed in is not writable at the time the
    extensions are loaded and linked.
 
-Placements can also be specified, or default placements overridden, by
-providing a custom linker script.
+Placements can also be specified by providing a custom linker script.
 
 :kconfig:option:`CONFIG_CUSTOM_LINKER_SCRIPT`
 
@@ -168,6 +179,88 @@ providing a custom linker script.
         This is useful when an application needs to add sections into the
         linker script and avoid having to change the script provided by
         Zephyr.
+
+While using a custom linker script, you may need to override default
+placements. For example, you may wish to include
+:file:`include/zephyr/linker/common-noinit.ld` in your linker script
+but place the heap section(s) elsewhere. To do this, select the following
+option.
+
+:kconfig:option:`CONFIG_LLEXT_CUSTOM_HEAP_PLACEMENT`
+
+        Remove default placements of LLEXT heap sections in the linker script,
+        allowing the user to place the heap(s) themselves.
+
+Word granular access instruction memory heap
+--------------------------------------------
+
+Word granular access instruction memory is a type of
+instruction memory that is byte addressable, but can only be accessed
+with word-sized and aligned loads and stores. The LLEXT subsystem
+currently supports the placement of the instruction heap in
+word granular access instruction memory on the Xtensa architecture
+only. Support for non-Xtensa architectures will be added in the
+future on request.
+
+To use LLEXT with the instruction heap in word granular access
+instruction memory, your Xtensa SoC or board must select the
+following option in addition to :kconfig:option:`CONFIG_HARVARD`.
+
+:kconfig:option:`CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM`
+
+        This option enables support for access to byte addressable and
+        word granular access instruction memory.
+
+If using the default backing data structure for the heap,
+:c:struct:`k_heap`, enable the following option.
+
+:kconfig:option:`CONFIG_SYS_HEAP_BIG_ONLY`
+
+        Select this to optimize the code for big heaps only. This can
+        accommodate any heap size but memory usage won't be as
+        efficient with small sized heaps.
+
+Unaligned and narrow accesses to instruction memory will be performed
+during the instruction heap initialization if this option is not selected.
+
+Next, place the LLEXT instruction heap in that instruction memory
+following the instructions for heap placement above. Make sure your SoC or
+board implements :c:func:`arch_memcpy_to_instr` and
+:c:func:`arch_memcpy_from_instr` in addition to :c:func:`arch_is_instr_mem`.
+The word granular access library :c:func:`memcpy_to_word_granular` and
+:c:func:`memcpy_from_word_granular` functions may be helpful.
+
+You may place your ELF buffer in RAM. At load time, the LLEXT subsystem will
+force the text region onto the instruction heap (even when the ELF buffer
+is writable) so that it is executable, and respect word granular access
+constraints when accessing the text region during loading and linking.
+
+.. warning::
+
+   You may only use the buffer loader (:c:struct:`llext_buf_loader`) to
+   load the ELF when the instruction heap is in word granular access
+   instruction memory.
+
+Note that the extension itself is responsible for ensuring any subsequent
+accesses to instruction memory also respect these constraints.
+
+If you still encounter load / store exceptions, you can enable the
+unsigned load / store exception handler for Xtensa with the following option.
+
+:kconfig:option:`CONFIG_XTENSA_EMULATE_UNSUPPORTED_UNSIGNED_LOAD_STORE`
+
+        When an unsigned load / store instruction triggers an unsupported
+        load / store exception, the exception handler will perform the
+        operation itself with supported word sized and aligned loads /
+        stores. Does not currently support VLIW.
+
+As mentioned in the option description, to use this option you must also disable
+VLIW, as enabling VLIW causes the compiler to generate signed load / store
+instructions.
+
+:kconfig:option:`CONFIG_COMPILER_CODEGEN_VLIW_DISABLED`
+
+        Explicitly instructs the compiler to NEVER generate VLIW instructions.
 
 .. _llext_kconfig_type:
 
@@ -227,12 +320,6 @@ LLEXT subsystem to optimize memory footprint in this case.
            This will directly modify the contents of the buffer during the link
            phase. Once the extension is unloaded, the buffer must be reloaded
            before it can be used again in a call to :c:func:`llext_load`.
-
-        .. note::
-
-           This is currently required by the Xtensa architecture. Further
-           information on this topic is available on GitHub issue `#75341
-           <https://github.com/zephyrproject-rtos/zephyr/issues/75341>`_.
 
 .. _llext_symbol_groups:
 

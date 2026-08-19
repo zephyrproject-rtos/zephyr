@@ -1,0 +1,9 @@
+# Copyright 2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_ARM_V2M_MUSCA_B1
+	bool "Arm Musca-B1 pin controller driver"
+	default y
+	depends on DT_HAS_ARM_V2M_MUSCA_B1_PINCTRL_ENABLED
+	help
+	  Arm Musca-B1 pinctrl driver

@@ -10,12 +10,12 @@
 #include <zephyr/bluetooth/addr.h>
 
 /* ASCS commands */
-#define BTP_ASCS_READ_SUPPORTED_COMMANDS	0x01
+#define BTP_ASCS_READ_SUPPORTED_COMMANDS	0x01U
 struct btp_ascs_read_supported_commands_rp {
 	uint8_t data[0];
 } __packed;
 
-#define BTP_ASCS_CONFIGURE_CODEC	0x02
+#define BTP_ASCS_CONFIGURE_CODEC	0x02U
 struct btp_ascs_configure_codec_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -26,7 +26,7 @@ struct btp_ascs_configure_codec_cmd {
 	uint8_t cc_ltvs[0];
 } __packed;
 
-#define BTP_ASCS_CONFIGURE_QOS	0x03
+#define BTP_ASCS_CONFIGURE_QOS	0x03U
 struct btp_ascs_configure_qos_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -40,43 +40,43 @@ struct btp_ascs_configure_qos_cmd {
 	uint8_t presentation_delay[3];
 } __packed;
 
-#define BTP_ASCS_ENABLE	0x04
+#define BTP_ASCS_ENABLE	0x04U
 struct btp_ascs_enable_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_RECEIVER_START_READY	0x05
+#define BTP_ASCS_RECEIVER_START_READY	0x05U
 struct btp_ascs_receiver_start_ready_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_RECEIVER_STOP_READY	0x06
+#define BTP_ASCS_RECEIVER_STOP_READY	0x06U
 struct btp_ascs_receiver_stop_ready_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_DISABLE	0x07
+#define BTP_ASCS_DISABLE	0x07U
 struct btp_ascs_disable_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_RELEASE	0x08
+#define BTP_ASCS_RELEASE	0x08U
 struct btp_ascs_release_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_UPDATE_METADATA	0x09
+#define BTP_ASCS_UPDATE_METADATA	0x09U
 struct btp_ascs_update_metadata_cmd {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 } __packed;
 
-#define BTP_ASCS_ADD_ASE_TO_CIS		0x0a
+#define BTP_ASCS_ADD_ASE_TO_CIS		0x0AU
 struct btp_ascs_add_ase_to_cis {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -84,7 +84,7 @@ struct btp_ascs_add_ase_to_cis {
 	uint8_t cis_id;
 } __packed;
 
-#define BTP_ASCS_PRECONFIGURE_QOS	0x0b
+#define BTP_ASCS_PRECONFIGURE_QOS	0x0BU
 struct btp_ascs_preconfigure_qos_cmd {
 	uint8_t cig_id;
 	uint8_t cis_id;
@@ -97,7 +97,7 @@ struct btp_ascs_preconfigure_qos_cmd {
 } __packed;
 
 /* ASCS events */
-#define BTP_ASCS_EV_OPERATION_COMPLETED	0x80
+#define BTP_ASCS_EV_OPERATION_COMPLETED	0x80U
 struct btp_ascs_operation_completed_ev {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -108,23 +108,23 @@ struct btp_ascs_operation_completed_ev {
 	uint8_t flags;
 } __packed;
 
-#define BTP_ASCS_EV_CHARACTERISTIC_SUBSCRIBED 0x81
+#define BTP_ASCS_EV_CHARACTERISTIC_SUBSCRIBED 0x81U
 
-#define BTP_ASCS_EV_ASE_STATE_CHANGED	0x82
+#define BTP_ASCS_EV_ASE_STATE_CHANGED	0x82U
 struct btp_ascs_ase_state_changed_ev {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t state;
 } __packed;
 
-#define BTP_ASCS_EV_CIS_CONNECTED 0x83
+#define BTP_ASCS_EV_CIS_CONNECTED 0x83U
 struct btp_ascs_cis_connected_ev {
 	bt_addr_le_t address;
 	uint8_t ase_id;
 	uint8_t cis_id;
 } __packed;
 
-#define BTP_ASCS_EV_CIS_DISCONNECTED 0x84
+#define BTP_ASCS_EV_CIS_DISCONNECTED 0x84U
 struct btp_ascs_cis_disconnected_ev {
 	bt_addr_le_t address;
 	uint8_t ase_id;
@@ -132,5 +132,5 @@ struct btp_ascs_cis_disconnected_ev {
 	uint8_t reason;
 } __packed;
 
-#define BTP_ASCS_STATUS_SUCCESS	0x00
-#define BTP_ASCS_STATUS_FAILED	0x01
+#define BTP_ASCS_STATUS_SUCCESS	0x00U
+#define BTP_ASCS_STATUS_FAILED	0x01U

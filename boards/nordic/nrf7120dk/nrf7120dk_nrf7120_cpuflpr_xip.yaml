@@ -8,7 +8,7 @@ arch: riscv
 toolchain:
   - zephyr
 sysbuild: true
-ram: 124
+ram: 120
 flash: 116
 supported:
   - counter

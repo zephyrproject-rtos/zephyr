@@ -286,7 +286,7 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
 
 
     def recover_target(self):
-        if self.family in ('nrf53', 'nrf54h', 'nrf92'):
+        if self.family in ('nrf53', 'nrf54h'):
             self.logger.info(
                 'Recovering and erasing flash memory for both the network '
                 'and application cores.')
@@ -298,29 +298,22 @@ class NrfBinaryRunner(ZephyrBinaryRunner):
         # recover operation unlocks the core and then flashes a small image that
         # keeps the debug access port open, recovering the network core last
         # would result in that small image being deleted from the app core.
-        if self.family in ('nrf53', 'nrf92'):
+        if self.family == 'nrf53':
             self.exec_op('recover', core='Network')
 
         self.exec_op('recover')
 
     def _get_core(self):
         if self.family in ('nrf54h', 'nrf92'):
-            if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUAPP') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUFLPR') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPUPPR') or
-                self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPUAPP')):
-                return 'Application'
             if (self.build_conf.getboolean('CONFIG_SOC_NRF54H20_CPURAD') or
                 self.build_conf.getboolean('CONFIG_SOC_NRF9280_CPURAD')):
                 return 'Network'
-            raise RuntimeError(f'Core not found for family: {self.family}')
+            return 'Application'
 
         if self.family in ('nrf53'):
-            if self.build_conf.getboolean('CONFIG_SOC_NRF5340_CPUAPP'):
-                return 'Application'
             if self.build_conf.getboolean('CONFIG_SOC_NRF5340_CPUNET'):
                 return 'Network'
-            raise RuntimeError(f'Core not found for family: {self.family}')
+            return 'Application'
 
         return None
 

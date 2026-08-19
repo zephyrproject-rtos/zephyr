@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __STACK_SIZE_ANALYZER_H
-#define __STACK_SIZE_ANALYZER_H
+#ifndef ZEPHYR_INCLUDE_DEBUG_THREAD_ANALYZER_H_
+#define ZEPHYR_INCLUDE_DEBUG_THREAD_ANALYZER_H_
 
 #include <stddef.h>
 #include <zephyr/kernel/thread.h>
@@ -50,6 +50,9 @@ struct thread_analyzer_info {
 
 	/** Privileged stack size in used */
 	size_t priv_stack_used;
+#endif
+#ifdef CONFIG_THREAD_ANALYZER_PRINT_THREAD_PRIORITY
+	int8_t prio;
 #endif
 };
 
@@ -128,4 +131,4 @@ void thread_analyzer_print(unsigned int cpu);
 }
 #endif
 
-#endif /* __STACK_SIZE_ANALYZER_H */
+#endif /* ZEPHYR_INCLUDE_DEBUG_THREAD_ANALYZER_H_ */

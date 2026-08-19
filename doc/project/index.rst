@@ -8,7 +8,7 @@ Project and Governance
    :maxdepth: 1
 
    tsc
-   project_roles.rst
+   project_roles
    working_groups
    release_process
    proposals
@@ -25,8 +25,7 @@ The Zephyr project defines a development process workflow using GitHub
 **Pull Requests** (PRs) for submitting and reviewing changes.  Zephyr
 community members work together to review these Issues and PRs, managing
 feature enhancements and quality improvements of Zephyr through its regular
-releases, as outlined in the
-`program management overview <https://wiki.zephyrproject.org/Program-Management>`_.
+releases, as described in :ref:`release_process`.
 
 We can only manage the volume of Issues and PRs, by requiring timely reviews,
 feedback, and responses from the community and contributors, both for initial

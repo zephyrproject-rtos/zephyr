@@ -104,6 +104,43 @@ application.
    :board: <board>
    :goals: flash
 
+.. note::
+
+   On targets that expose the built-in USB Serial/JTAG controller, the chip can
+   stay in download mode after ``west flash`` and will not boot the new image
+   until it is power cycled. If that happens, flash with a watchdog reset so the
+   chip restarts on its own:
+
+   .. code-block:: shell
+
+      west flash --reset-type watchdog-reset
+
+Faster Flashing
+===============
+
+To speed up the development cycle, ``--esp-skip-flashed`` skips writing the image
+when the binary already in flash matches the one being flashed, verified with an
+MD5 check on the device:
+
+.. code-block:: shell
+
+   west flash --esp-skip-flashed
+
+For an even faster reflash, ``--esp-diff`` writes only the regions that differ
+from the previously flashed image. It compares against a locally cached copy
+rather than reading the device, so use it only when the flash was not modified
+by another tool, board, or manual write since the last ``west flash``:
+
+.. code-block:: shell
+
+   west flash --esp-diff
+
+Progress output can be suppressed for cleaner logs, which is useful in CI:
+
+.. code-block:: shell
+
+   west flash --esp-no-progress
+
 Open the serial monitor using the following command:
 
 .. code-block:: shell

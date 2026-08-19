@@ -363,7 +363,7 @@ static int apds9306_init(const struct device *dev)
 	LOG_DBG("Start to initialize APDS9306...");
 
 	if (!i2c_is_ready_dt(&config->i2c)) {
-		LOG_ERR("Bus device is not ready!");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -EINVAL;
 	}
 

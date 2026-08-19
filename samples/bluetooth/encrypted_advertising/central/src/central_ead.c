@@ -100,13 +100,10 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 {
 	int err;
 	size_t parsed_data_size;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	if (default_conn) {
 		return;
 	}
-
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
 	/* We are only interested in the previously connected device. */
 	if (!bt_addr_le_eq(addr, &peer_addr)) {
@@ -134,7 +131,6 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 				 struct net_buf_simple *ad)
 {
 	int err;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	if (default_conn) {
 		return;
@@ -145,9 +141,7 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-
-	LOG_DBG("Device found: %s (RSSI %d)", addr_str, rssi);
+	LOG_DBG("Device found: %s (RSSI %d)", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -158,7 +152,7 @@ static void connect_device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t 
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		LOG_DBG("Failed to connect to %s (err %d)", addr_str, err);
+		LOG_DBG("Failed to connect to %s (err %d)", bt_addr_le_str(addr), err);
 		return;
 	}
 
@@ -175,7 +169,7 @@ static int start_scan(bool connect)
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, connect ? connect_device_found : device_found);
 	if (err) {
 		LOG_DBG("Scanning failed to start (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	LOG_DBG("Scanning started.");
@@ -228,7 +222,7 @@ static int gatt_read(struct bt_conn *conn, const struct bt_uuid *uuid, size_t re
 	err = bt_gatt_read(conn, &params);
 	if (err) {
 		LOG_DBG("GATT read failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	await_signal(&gatt_read_signal);
@@ -248,7 +242,7 @@ static int gatt_read(struct bt_conn *conn, const struct bt_uuid *uuid, size_t re
 		err = bt_gatt_read(conn, &params);
 		if (err) {
 			LOG_DBG("GATT read failed (err %d)", err);
-			return -1;
+			return err;
 		}
 
 		await_signal(&gatt_read_signal);
@@ -291,7 +285,7 @@ static int gatt_discover_primary_service(struct bt_conn *conn, const struct bt_u
 	err = bt_gatt_discover(conn, &params);
 	if (err) {
 		LOG_DBG("Primary service discover failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	await_signal(&gatt_disc_signal);
@@ -304,52 +298,39 @@ static int gatt_discover_primary_service(struct bt_conn *conn, const struct bt_u
 
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (conn_err) {
-		LOG_DBG("Failed to connect to %s (err %u)", addr, conn_err);
+		LOG_DBG("Failed to connect to %s (err %u)", bt_conn_dst_str(conn), conn_err);
 
-		bt_conn_unref(default_conn);
-		default_conn = NULL;
+		bt_conn_drop(&default_conn);
 
 		(void)start_scan(true);
 
 		return;
 	}
 
-	LOG_DBG("Connected to: %s", addr);
+	LOG_DBG("Connected to: %s", bt_conn_dst_str(conn));
 
 	k_poll_signal_raise(&conn_signal, 0);
 }
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Disconnected: %s, reason 0x%02x %s", addr, reason, bt_hci_err_to_str(reason));
+	LOG_DBG("Disconnected: %s, reason 0x%02x %s", bt_conn_dst_str(conn),
+		reason, bt_hci_err_to_str(reason));
 
 	if (default_conn != conn) {
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d %s", addr, level,
+		LOG_DBG("Security failed: %s level %u err %d %s", bt_conn_dst_str(conn), level,
 			err, bt_security_err_to_str(err));
 	}
 }
@@ -357,13 +338,7 @@ static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_
 static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 			      const bt_addr_le_t *identity)
 {
-	char addr_identity[BT_ADDR_LE_STR_LEN];
-	char addr_rpa[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(identity, addr_identity, sizeof(addr_identity));
-	bt_addr_le_to_str(rpa, addr_rpa, sizeof(addr_rpa));
-
-	LOG_DBG("Identity resolved %s -> %s", addr_rpa, addr_identity);
+	LOG_DBG("Identity resolved %s -> %s", bt_addr_le_str(rpa), bt_addr_le_str(identity));
 
 	bt_addr_le_copy(&peer_addr, identity);
 }
@@ -371,13 +346,10 @@ static void identity_resolved(struct bt_conn *conn, const bt_addr_le_t *rpa,
 static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 {
 	char passkey_str[7];
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, ARRAY_SIZE(passkey_str), "%06u", passkey);
 
-	printk("Passkey for %s: %s\n", addr, passkey_str);
+	printk("Passkey for %s: %s\n", bt_conn_dst_str(conn), passkey_str);
 
 	k_poll_signal_raise(&passkey_enter_signal, 0);
 }
@@ -385,22 +357,15 @@ static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
 static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
 {
 	char passkey_str[7];
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	snprintk(passkey_str, ARRAY_SIZE(passkey_str), "%06u", passkey);
 
-	LOG_DBG("Passkey for %s: %s", addr, passkey_str);
+	LOG_DBG("Passkey for %s: %s", bt_conn_dst_str(conn), passkey_str);
 }
 
 static void auth_cancel(struct bt_conn *conn)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
-
-	LOG_DBG("Pairing cancelled: %s", addr);
+	LOG_DBG("Pairing cancelled: %s", bt_conn_dst_str(conn));
 }
 
 static int init_bt(void)
@@ -418,7 +383,7 @@ static int init_bt(void)
 	err = bt_enable(NULL);
 	if (err) {
 		LOG_ERR("Bluetooth init failed (err %d)", err);
-		return -1;
+		return err;
 	}
 
 	LOG_DBG("Bluetooth initialized");
@@ -444,7 +409,7 @@ static int init_bt(void)
 
 	err = bt_conn_auth_cb_register(&central_auth_cb);
 	if (err) {
-		return -1;
+		return err;
 	}
 
 	return 0;
@@ -467,21 +432,21 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	/* Initialize Bluetooth and callbacks */
 	err = init_bt();
 	if (err) {
-		return -1;
+		return err;
 	}
 
 	/* Start scan and connect to our peripheral */
 	connect = true;
 	err = start_scan(connect);
 	if (err) {
-		return -2;
+		return err;
 	}
 
 	/* Update connection security level */
 	err = bt_conn_set_security(default_conn, BT_SECURITY_L4);
 	if (err) {
 		LOG_ERR("Failed to set security (err %d)", err);
-		return -3;
+		return err;
 	}
 
 	await_signal(&passkey_enter_signal);
@@ -489,7 +454,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = get_passkey_confirmation(default_conn);
 	if (err) {
 		LOG_ERR("Security update failed");
-		return -4;
+		return err;
 	}
 
 	/* Locate the primary service */
@@ -497,7 +462,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 					    &end_handle);
 	if (err) {
 		LOG_ERR("Service not found (err %d)", err);
-		return -5;
+		return err;
 	}
 
 	/* Read the Key Material characteristic */
@@ -505,7 +470,7 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 			(uint8_t *)&keymat);
 	if (err) {
 		LOG_ERR("GATT read failed (err %d)", err);
-		return -6;
+		return err;
 	}
 
 	LOG_HEXDUMP_DBG(keymat.session_key, BT_EAD_KEY_SIZE, "Session Key");
@@ -519,13 +484,13 @@ int run_central_sample(int get_passkey_confirmation(struct bt_conn *conn),
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 	if (err) {
 		LOG_ERR("Failed to disconnect.");
-		return -7;
+		return err;
 	}
 
 	connect = false;
 	err = start_scan(connect);
 	if (err) {
-		return -2;
+		return err;
 	}
 
 	return 0;

@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Analog Devices, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_ADI_LSMSPG
+	def_bool $(shields_list_contains,adi_lsmspg)
+	select MFD
+	select I2C
+	select SPI

@@ -59,6 +59,10 @@ Programming & Debugging
 
 .. zephyr:board-supported-runners::
 
+Flash Using MPLAB IPE
+=====================
+For instructions on flashing using MPLAB IPE see :ref:`microchip-mplab-ipe-flashing`.
+
 Flash Using J-Link
 ==================
 
@@ -93,9 +97,9 @@ To flash the board using the J-Link debugger, follow the steps below:
 
    .. code-block:: console
 
-      west flash
+      west flash -r jlink
 
-   This uses the default ``jlink`` runner to flash the application to the board.
+   This uses the jlink runner to flash the application to the board.
 
 5. Observe the Result
 
@@ -119,3 +123,6 @@ PIC32CX SG41 Curiosity Ultra evaluation kit Page:
 
 .. _J32 Debug Probe:
     https://www.microchip.com/en-us/development-tool/dv164232
+
+.. _MPLAB X IDE:
+    https://www.microchip.com/en-us/tools-resources/develop/mplab-x-ide

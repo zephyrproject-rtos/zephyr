@@ -6,7 +6,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 # Battery service test: a central connects to a peripheral and expects a
 # indication/notification of BAS chars from peripheral
-simulation_id="battery_service_test"
+simulation_id="${BOARD_TS}_battery_service_test"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

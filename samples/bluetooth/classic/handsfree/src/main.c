@@ -111,8 +111,7 @@ static void hf_sco_disconnected(struct bt_conn *sco_conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(active_sco_conn);
-	active_sco_conn = NULL;
+	bt_conn_drop(&active_sco_conn);
 
 	err = pcm_rx_stop();
 	if (err != 0) {

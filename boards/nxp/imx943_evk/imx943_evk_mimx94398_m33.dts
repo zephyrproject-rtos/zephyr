@@ -25,6 +25,7 @@
 	aliases {
 		i2s-codec-tx = &i2s1;
 		i2s-tx = &i2s1;
+		watchdog0 = &wdog5;
 	};
 };
 
@@ -95,6 +96,10 @@
 	status = "okay";
 };
 
+&tstmr2 {
+	status = "okay";
+};
+
 &edma2 {
 	status = "okay";
 };
@@ -109,5 +114,9 @@
 };
 
 &edma1 {
+	status = "okay";
+};
+
+&wdog5 {
 	status = "okay";
 };

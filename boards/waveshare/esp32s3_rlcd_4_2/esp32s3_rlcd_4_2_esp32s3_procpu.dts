@@ -8,6 +8,7 @@
 #include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/battery/battery.h>
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include "esp32s3_rlcd_4_2-pinctrl.dtsi"
 
@@ -16,6 +17,7 @@
 	compatible = "waveshare,esp32-s3-rlcd-4.2";
 
 	aliases {
+		fuel-gauge0 = &fuel_gauge;
 		i2c-0 = &i2c0;
 		uart-0 = &uart0;
 		rtc = &rtc0;
@@ -59,6 +61,20 @@
 		output-ohms = <100000>;
 		full-ohms = <(200000 + 100000)>;
 		skip-calibration; /* ESP32 ADC does not support calibration */
+	};
+
+	/*
+	 * This composite fuel gauge describes the Li-Po battery that this board is often sold with.
+	 * Enable the node to enable battery monitoring state-of-charge monitoring estimation
+	 * based on the battery voltage (adapt the capacity value if using a different battery).
+	 */
+	fuel_gauge: fuel_gauge {
+		status = "disabled";
+		compatible = "zephyr,fuel-gauge-composite";
+		source-primary = <&vbatt>;
+		device-chemistry = "lithium-ion-polymer";
+		ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
+		charge-full-design-microamp-hours = <2600000>;
 	};
 
 	mipi_dbi {

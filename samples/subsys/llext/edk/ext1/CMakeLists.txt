@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 set(CMAKE_TOOLCHAIN_FILE toolchain.cmake)
 set(CMAKE_C_COMPILER_FORCED TRUE)

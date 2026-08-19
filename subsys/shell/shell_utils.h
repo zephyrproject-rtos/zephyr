@@ -15,6 +15,11 @@ extern "C" {
 
 #define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
+struct shell_alias {
+	const char *alias;
+	const char *command;
+};
+
 int32_t z_row_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 					   uint16_t offset1,
 					   uint16_t offset2);
@@ -59,7 +64,7 @@ const struct shell_static_entry *z_shell_find_cmd(
 					struct shell_static_entry *dloc);
 
 /* @internal @brief Function returns pointer to a shell's subcommands array
- * for a level given by argc and matching command patter provided in argv.
+ * for a level given by argc and matching command pattern provided in argv.
  *
  * @param sh		Entry. NULL for root entry.
  * @param argc		Number of arguments.
@@ -92,6 +97,9 @@ static inline bool z_shell_in_select_mode(const struct shell *sh)
 {
 	return sh->ctx->selected_cmd == NULL ? false : true;
 }
+
+int z_shell_find_alias(const char *cmd_str, const char **output);
+int z_shell_expand_alias(char *cmd_buf, size_t cmd_buf_size);
 
 #ifdef __cplusplus
 }

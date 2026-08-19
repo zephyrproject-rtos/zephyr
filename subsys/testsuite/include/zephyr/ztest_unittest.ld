@@ -30,5 +30,11 @@ SECTIONS
 		KEEP(*(SORT_BY_NAME(._ztest_test_rule.static.*)))
 		_ztest_test_rule_list_end = .;
 	}
+	.data.ztest_param_inst_area : ALIGN(4)
+	{
+		_ztest_param_inst_list_start = .;
+		KEEP(*(SORT_BY_NAME(._ztest_param_inst.static.*)))
+		_ztest_param_inst_list_end = .;
+	}
 }
 INSERT AFTER .data;

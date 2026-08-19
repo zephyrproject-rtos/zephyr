@@ -12,4 +12,205 @@
 	uart0_tx_default: uart0_tx_default {
 		pinmux = <K3_PINMUX(0x1cc, PIN_OUTPUT, MUX_MODE_0)>;
 	};
+
+	/* GPIO1_49 -> MMC1_SDWP (C17) */
+	main_gpio1_led: main_gpio1_led_default {
+		pinmux = <K3_PINMUX(0x244, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	/* SPI0_CS0 -> SPI0_CS0 (A13) */
+	spi0_cs0: spi0_cs0_default {
+		pinmux = <K3_PINMUX(0x01b4, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	/* SPI0_CLK -> SPI0_CLK (A14) */
+	spi0_clk: spi0_clk_default {
+		pinmux = <K3_PINMUX(0x01bc, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	/* SPI0_D0 -> SPI0_D0 (B13) */
+	spi0_d0: spi0_d0_default {
+		pinmux = <K3_PINMUX(0x01c0, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	/* SPI0_D1 -> SPI0_D1 (B14) */
+	spi0_d1: spi0_d1_default {
+		pinmux = <K3_PINMUX(0x01c4, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	/* SPI1_CS0 -> MMC0_DAT3 (Y4) */
+	spi1_cs0: spi1_cs0_default {
+		pinmux = <K3_PINMUX(0x0208, PIN_OUTPUT, MUX_MODE_5)>;
+	};
+
+	/* SPI1_CLK -> MMC0_DAT2 (AA3) */
+	spi1_clk: spi1_clk_default {
+		pinmux = <K3_PINMUX(0x020c, PIN_OUTPUT, MUX_MODE_5)>;
+	};
+
+	/* SPI1_D0 -> MMC0_DAT7 (AC2) */
+	spi1_d0: spi1_d0_default {
+		pinmux = <K3_PINMUX(0x01f8, PIN_INPUT, MUX_MODE_5)>;
+	};
+
+	/* SPI1_D1 -> MMC0_DAT6 (AD2) */
+	spi1_d1: spi1_d1_default {
+		pinmux = <K3_PINMUX(0x01fc, PIN_OUTPUT, MUX_MODE_5)>;
+	};
+
+	/* SPI2_CS0 -> MMC0_DAT1 (AA1) */
+	spi2_cs0: spi2_cs0_default {
+		pinmux = <K3_PINMUX(0x0210, PIN_OUTPUT, MUX_MODE_6)>;
+	};
+
+	/* SPI2_CLK -> MMC0_DAT0 (AA2) */
+	spi2_clk: spi2_clk_default {
+		pinmux = <K3_PINMUX(0x0214, PIN_OUTPUT, MUX_MODE_6)>;
+	};
+
+	/* SPI2_D0 -> MMC0_DAT5 (AC1) */
+	spi2_d0: spi2_d0_default {
+		pinmux = <K3_PINMUX(0x0200, PIN_INPUT, MUX_MODE_6)>;
+	};
+
+	/* SPI2_D1 -> MMC0_DAT4 (AB2) */
+	spi2_d1: spi2_d1_default {
+		pinmux = <K3_PINMUX(0x0204, PIN_OUTPUT, MUX_MODE_6)>;
+	};
+
+	/* I2C0_SCL -> I2C0_SCL (B16) */
+	main_i2c0_scl: i2c0_scl_default {
+		pinmux = <K3_PINMUX(0x1e0, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	/* I2C0_SDA -> I2C0_SDA (A16) */
+	main_i2c0_sda: i2c0_sda_default {
+		pinmux = <K3_PINMUX(0x1e4, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	/* I2C1_SCL -> I2C1_SCL (B17) */
+	main_i2c1_scl: i2c1_scl_default {
+		pinmux = <K3_PINMUX(0x1e8, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	/* I2C1_SDA -> I2C1_SDA (A17) */
+	main_i2c1_sda: i2c1_sda_default {
+		pinmux = <K3_PINMUX(0x1ec, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
+	/* I2C2_SCL -> GPMC0_CSn2 (K22) */
+	main_i2c2_scl: i2c2_scl_default {
+		pinmux = <K3_PINMUX(0x00b0, PIN_INPUT_PULLUP, MUX_MODE_1)>;
+	};
+
+	/* I2C2_SDA -> GPMC0_CSn3 (K24) */
+	main_i2c2_sda: i2c2_sda_default {
+		pinmux = <K3_PINMUX(0x00b4, PIN_INPUT_PULLUP, MUX_MODE_1)>;
+	};
+
+	/* I2C3_SCL -> UART0_CTSn (A15) */
+	main_i2c3_scl: i2c3_scl_default {
+		pinmux = <K3_PINMUX(0x01d0, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+
+	/* I2C3_SDA -> UART0_RTSn (B15) */
+	main_i2c3_sda: i2c3_sda_default {
+		pinmux = <K3_PINMUX(0x01d4, PIN_INPUT_PULLUP, MUX_MODE_2)>;
+	};
+
+	mmc0_cmd: mmc0_cmd_default {
+		pinmux = <K3_PINMUX(0x0220, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (Y3) MMC0_CMD */
+	};
+
+	mmc0_clk: mmc0_clk_default {
+		pinmux = <K3_PINMUX(0x0218, PIN_INPUT, MUX_MODE_0)>; /* (AB1) MMC0_CLK */
+	};
+
+	mmc0_dat0: mmc0_dat0_default {
+		pinmux = <K3_PINMUX(0x0214, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AA2) MMC0_DAT0 */
+	};
+
+	mmc0_dat1: mmc0_dat1_default {
+		pinmux = <K3_PINMUX(0x0210, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AA1) MMC0_DAT1 */
+	};
+
+	mmc0_dat2: mmc0_dat2_default {
+		pinmux = <K3_PINMUX(0x020c, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AA3) MMC0_DAT2 */
+	};
+
+	mmc0_dat3: mmc0_dat3_default {
+		pinmux = <K3_PINMUX(0x0208, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (Y4) MMC0_DAT3 */
+	};
+
+	mmc0_dat4: mmc0_dat4_default {
+		pinmux = <K3_PINMUX(0x0204, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AB2) MMC0_DAT4 */
+	};
+
+	mmc0_dat5: mmc0_dat5_default {
+		pinmux = <K3_PINMUX(0x0200, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AC1) MMC0_DAT5 */
+	};
+
+	mmc0_dat6: mmc0_dat6_default {
+		pinmux = <K3_PINMUX(0x01fc, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AD2) MMC0_DAT6 */
+	};
+
+	mmc0_dat7: mmc0_dat7_default {
+		pinmux = <K3_PINMUX(0x01f8, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (AC2) MMC0_DAT7 */
+	};
+
+	mmc1_cmd: mmc1_cmd_default {
+		pinmux = <K3_PINMUX(0x023c, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A21) MMC1_CMD */
+	};
+
+	mmc1_clk: mmc1_clk_default {
+		pinmux = <K3_PINMUX(0x0234, PIN_INPUT, MUX_MODE_0)>; /* (B22) MMC1_CLK */
+	};
+
+	mmc1_sdcd: mmc1_sdcd_default {
+		pinmux = <K3_PINMUX(0x0240, PIN_INPUT, MUX_MODE_0)>; /* (D17) MMC1_SDCD */
+	};
+
+	mmc1_dat0: mmc1_dat0_default {
+		pinmux = <K3_PINMUX(0x0230, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (A22) MMC1_DAT0 */
+	};
+
+	mmc1_dat1: mmc1_dat1_default {
+		pinmux = <K3_PINMUX(0x022c, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (B21) MMC1_DAT1 */
+	};
+
+	mmc1_dat2: mmc1_dat2_default {
+		pinmux = <K3_PINMUX(0x0228, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (C21) MMC1_DAT2 */
+	};
+
+	mmc1_dat3: mmc1_dat3_default {
+		pinmux = <K3_PINMUX(0x0224, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (D22) MMC1_DAT3 */
+	};
+
+	mmc2_cmd: mmc2_cmd_default {
+		pinmux = <K3_PINMUX(0x0120, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (C24) MMC2_CMD */
+	};
+
+	mmc2_clk: mmc2_clk_default {
+		pinmux = <K3_PINMUX(0x0118, PIN_INPUT, MUX_MODE_0)>; /* (D25) MMC2_CLK */
+	};
+
+	mmc2_clklb: mmc2_clklb_default {
+		pinmux = <K3_PINMUX(0x011C, PIN_INPUT, MUX_MODE_0)>; /* () MMC2_CLKLB */
+	};
+
+	mmc2_dat0: mmc2_dat0_default {
+		pinmux = <K3_PINMUX(0x0114, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (B24) MMC2_DAT0 */
+	};
+
+	mmc2_dat1: mmc2_dat1_default {
+		pinmux = <K3_PINMUX(0x0110, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (C25) MMC2_DAT1 */
+	};
+
+	mmc2_dat2: mmc2_dat2_default {
+		pinmux = <K3_PINMUX(0x010c, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (E23) MMC2_DAT2 */
+	};
+
+	mmc2_dat3: mmc2_dat3_default {
+		pinmux = <K3_PINMUX(0x0108, PIN_INPUT_PULLUP, MUX_MODE_0)>; /* (D24) MMC2_DAT3 */
+	};
 };

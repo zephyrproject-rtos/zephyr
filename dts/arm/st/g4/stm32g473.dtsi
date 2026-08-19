@@ -82,7 +82,7 @@
 			#size-cells = <0>;
 			reg = <0x40013c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB2, 15)>;
-			interrupts = <84 5>;
+			interrupts = <84 0>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
@@ -123,6 +123,33 @@
 			interrupt-names = "int0", "int1";
 			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
 			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		comp5: comparator@40010210 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010210 0x4>;
+			interrupts = <65 0>;
+			st,exti-line = <31>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			status = "disabled";
+		};
+
+		comp6: comparator@40010214 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010214 0x4>;
+			interrupts = <65 0>;
+			st,exti-line = <32>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
+			status = "disabled";
+		};
+
+		comp7: comparator@40010218 {
+			compatible = "st,stm32g4-comp", "st,stm32-comp";
+			reg = <0x40010218 0x4>;
+			interrupts = <66 0>;
+			st,exti-line = <33>;
+			clocks = <&rcc STM32_CLOCK(APB2, 0)>;
 			status = "disabled";
 		};
 	};

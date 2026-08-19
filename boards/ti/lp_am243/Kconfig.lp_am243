@@ -1,0 +1,9 @@
+# Texas Instruments AM243x Launchpad
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 Siemens Mobility GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LP_AM243
+	select SOC_AM2434_R5F0_0 if BOARD_LP_AM243_AM2434_R5F0_0
+	select SOC_AM2434_M4 if BOARD_LP_AM243_AM2434_M4

@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Memory barrier operations.
+ * @ingroup barrier_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_SYS_BARRIER_H_
 #define ZEPHYR_INCLUDE_SYS_BARRIER_H_
 
@@ -14,6 +20,8 @@
 # include <zephyr/arch/arm/barrier.h>
 # elif defined(CONFIG_ARM64)
 # include <zephyr/arch/arm64/barrier.h>
+# elif defined(CONFIG_ARC)
+# include <zephyr/arch/arc/barrier.h>
 # endif
 #elif defined(CONFIG_BARRIER_OPERATIONS_BUILTIN)
 #include <zephyr/sys/barrier_builtin.h>

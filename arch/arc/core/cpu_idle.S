@@ -37,7 +37,7 @@ SECTION_VAR(BSS, z_arc_cpu_sleep_mode)
 
 SECTION_FUNC(TEXT, arch_cpu_idle)
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_SYS_IDLE_HOOKS
 	PUSHR blink
 	jl    sys_trace_idle
 	POPR blink
@@ -62,7 +62,7 @@ SECTION_FUNC(TEXT, arch_cpu_idle)
 
 SECTION_FUNC(TEXT, arch_cpu_atomic_idle)
 
-#ifdef CONFIG_TRACING
+#ifdef CONFIG_SYS_IDLE_HOOKS
 	PUSHR blink
 	jl    sys_trace_idle
 	POPR blink

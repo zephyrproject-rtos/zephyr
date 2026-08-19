@@ -78,6 +78,11 @@ int openthread_state_changed_callback_unregister(struct openthread_state_changed
 k_tid_t openthread_thread_id_get(void);
 
 /**
+ * @brief Get OpenThread work queue.
+ */
+struct k_work_q *openthread_work_q_get(void);
+
+/**
  * @brief Get pointer to default OpenThread instance.
  *
  * @retval !NULL On success.

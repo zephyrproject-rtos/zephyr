@@ -25,7 +25,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
     ${UOSCORE_UEDHOC_SRC_DIR}/common/print_util.c
   )
 
-  zephyr_library_link_libraries(mbedTLS)
+  zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 
   if(CONFIG_BUILD_WITH_TFM)
     zephyr_library_include_directories(
@@ -43,6 +43,10 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
 
     if(CONFIG_UOSCORE_DEBUG)
       zephyr_library_compile_definitions(DEBUG_PRINT)
+    endif()
+
+    if(CONFIG_UOSCORE_NVM_SUPPORT)
+      zephyr_library_compile_definitions(OSCORE_NVM_SUPPORT)
     endif()
 
     zephyr_library_sources(
@@ -63,7 +67,11 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/oscore_info.c
     )
 
-    zephyr_library_link_libraries(mbedTLS)
+    zephyr_library_sources_ifdef(CONFIG_UOSCORE_NVM_SUPPORT
+      ${CMAKE_CURRENT_LIST_DIR}/uoscore_nvm.c
+    )
+
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 
   endif() # CONFIG_UOSCORE
 
@@ -123,7 +131,7 @@ if(CONFIG_UOSCORE OR CONFIG_UEDHOC)
       ${UOSCORE_UEDHOC_SRC_DIR}/cbor/edhoc_encode_th2.c
     )
 
-    zephyr_library_link_libraries(mbedTLS)
+    zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS_BUILTIN mbedtls_iface)
 
   endif() # CONFIG_UEDHOC
 

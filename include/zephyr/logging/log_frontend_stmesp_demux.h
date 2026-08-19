@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the STMESP stream demultiplexer.
+ * @ingroup log_frontend_stmesp_demux_apis
+ */
+
 #ifndef ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_DEMUX_H_
 #define ZEPHYR_INCLUDE_LOGGING_LOG_FRONTEND_STMESP_DEMUX_H_
 
@@ -15,12 +21,13 @@ extern "C" {
 #endif
 
 /**
- * @defgroup log_frontend_stmesp_apis Trace and Debug Domain APIs
+ * @defgroup log_frontend_stmesp_apis Trace and debug domain
  * @ingroup logging
  * @{
  * @}
- * @defgroup log_frontend_stpesp_demux_apis Logging frontend STMESP Demultiplexer API
+ * @defgroup log_frontend_stmesp_demux_apis STMESP demultiplexer
  * @ingroup log_frontend_stmesp_apis
+ * @brief Host-side demultiplexer for STPv2 streams carrying logs and trace points.
  * @{
  */
 
@@ -31,10 +38,13 @@ extern "C" {
 #define LOG_FRONTEND_STMESP_DEMUX_LEVEL_BITS 3
 
 /** @brief Bits used to store total length. */
-#define LOG_FRONTEND_STMESP_DEMUX_TLENGTH_BITS 16
+#define LOG_FRONTEND_STMESP_DEMUX_TLENGTH_BITS 15
 
 /** @brief Bits used to store package length. */
 #define LOG_FRONTEND_STMESP_DEMUX_PLENGTH_BITS 10
+
+/** @brief Bits used to indicate if hexdump is present. */
+#define LOG_FRONTEND_STMESP_DEMUX_HAS_DATA_BITS 1
 
 /** @brief Maximum number of supported majors. */
 #define LOG_FRONTEND_STMESP_DEMUX_MAJOR_MAX BIT(LOG_FRONTEND_STMESP_DEMUX_MAJOR_BITS)
@@ -59,8 +69,11 @@ struct log_frontend_stmesp_demux_log_header {
 	/** Total length excluding this header. */
 	uint32_t total_len : LOG_FRONTEND_STMESP_DEMUX_TLENGTH_BITS;
 
-	/** Hexdump data length. */
+	/** Package data length. */
 	uint32_t package_len : LOG_FRONTEND_STMESP_DEMUX_PLENGTH_BITS;
+
+	/** Hexdump data present */
+	uint32_t has_data: LOG_FRONTEND_STMESP_DEMUX_HAS_DATA_BITS;
 };
 
 /** @brief Union for writing raw data to the logging message header. */
@@ -291,6 +304,19 @@ void log_frontend_stmesp_demux_free(union log_frontend_stmesp_demux_packet packe
  *         cannot be retrieved.
  */
 const char *log_frontend_stmesp_demux_sname_get(uint32_t m_id, uint16_t s_id);
+
+/** @brief Get the format string of a turbo log message.
+ *
+ * Turbo log messages reference their format string by index rather than
+ * carrying it inline. This helper resolves that index, using the source data
+ * shared by the originating core, back to the format string.
+ *
+ * @param m_id Major ID.
+ * @param s_id Source ID (index of the string).
+ *
+ * @return Pointer to the format string, or an empty/"unknown" string if it
+ *         cannot be retrieved.
+ */
 const char *log_frontend_stmesp_demux_str_get(uint32_t m_id, uint16_t s_id);
 
 /** @brief Check if there are any started but not completed log messages.

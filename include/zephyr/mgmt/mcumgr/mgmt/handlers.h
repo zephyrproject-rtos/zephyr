@@ -4,8 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_MCUMGR_MGMT_HANDLERS_
-#define H_MCUMGR_MGMT_HANDLERS_
+/**
+ * @file
+ * @brief Header file for the MCUmgr command handler registration API.
+ * @ingroup mcumgr_handler_api
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_HANDLERS_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_HANDLERS_H_
 
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util_macro.h>
@@ -53,4 +59,4 @@ struct mcumgr_handler {
  * @}
  */
 
-#endif /* H_MCUMGR_MGMT_HANDLERS_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_MGMT_HANDLERS_H_ */

@@ -269,7 +269,13 @@ typedef void (*ftp_client_callback_t)(const uint8_t *msg, uint16_t len);
 
 /** FTP client context. */
 struct ftp_client {
-	struct net_sockaddr remote; /**< Server address */
+	/** Remote server address storage */
+	union {
+		struct net_sockaddr_storage remote_addr;  /**< Server address */
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr remote; /**< Server address (use remote_addr instead) */
+/** @endcond */
+	};
 	bool connected; /**< Server connected flag */
 	int ctrl_sock; /**< Control socket */
 	int data_sock; /**< Data socket */
@@ -332,6 +338,8 @@ int ftp_login(struct ftp_client *client, const char *username,
 	      const char *password);
 
 /**@brief Close FTP connection.
+ *
+ * @param client FTP client context
  *
  * @return 0 on success.
  *         A negative errno code in case of a failure.
@@ -458,7 +466,7 @@ int ftp_get(struct ftp_client *client, const char *file);
  * @param file Target file name
  * @param data Data to be stored
  * @param length Length of data to be stored
- * @param type specify FTP put types, see enum ftp_reply_code
+ * @param type specify FTP put types, see enum ftp_put_type
  *
  * @return 0 on success.
  *         A negative errno code in case of a failure.

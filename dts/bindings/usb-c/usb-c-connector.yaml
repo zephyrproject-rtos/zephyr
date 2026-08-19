@@ -93,7 +93,8 @@ properties:
         * PDO_BATT
         * PDO_VAR
         * PDO_PPS_APDO
-      Valid range: 1 - 7
+      The USB PD specification allows for a maximum of 7 source PDOs
+      for a Standard Power Range device.
 
   sink-pdos:
     type: array
@@ -105,7 +106,8 @@ properties:
         * PDO_BATT
         * PDO_VAR
         * PDO_PPS_APDO
-      Valid range: 1 - 7
+      The USB PD specification allows for a maximum of 7 sink PDOs
+      for a Standard Power Range device.
 
   sink-vdos:
     type: array
@@ -121,7 +123,8 @@ properties:
         * VDO_PCABLE
         * VDO_ACABLE
         * VDO_VPD
-      Valid range: 3 - 6
+      The USB-PD specification requires baseline Discovery_Identity
+      response provides at least 3 and up to 6 VDOs.
 
   sink-vdos-v1:
     type: array
@@ -134,7 +137,8 @@ properties:
         * VDO_PRODUCT
         * VDO_CABLE
         * VDO_AMA
-      Valid range: 3 - 6
+      The USB-PD specification requires baseline Discovery_Identity
+      response provides at least 3 and up to 6 VDOs.
 
   op-sink-microwatt:
     type: int

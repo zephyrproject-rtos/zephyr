@@ -12,7 +12,7 @@ In very short, there is 2 applications in this folder:
     interfaces are exposed to the EDTT.
 2.) An application which implements the test GATT services specified by BT SIG
     in GATT_Test_Databases.xlsm, with an EDTT interface which allows the EDTT
-    tests to switch between theses.
+    tests to switch between these.
 
 The first application is used for LL and HCI conformance tests of the
 controller.

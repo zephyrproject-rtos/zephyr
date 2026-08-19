@@ -16,6 +16,8 @@
  *          service registration and attribute declaration. For more
  *          information, see @ref bt_gatt_client and @ref bt_gatt_server.
  * @defgroup bt_gatt Generic Attribute Profile (GATT)
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup bluetooth
  * @{
  */
@@ -81,8 +83,19 @@ enum bt_gatt_perm {
 
 	/** @brief Attribute prepare write permission.
 	 *
-	 *  If set, allows prepare writes with use of ``BT_GATT_WRITE_FLAG_PREPARE``
-	 *  passed to write callback.
+	 *  This permission is a Zephyr extension; it is not defined by the
+	 *  Bluetooth Core Specification.
+	 *
+	 *  If set, prepare writes (used for long writes and reliable writes)
+	 *  invoke the attribute write callback with
+	 *  @ref BT_GATT_WRITE_FLAG_PREPARE before the value is queued. The
+	 *  callback must return ``0`` to accept the prepare write; any other
+	 *  return value is converted to an ATT error. If this permission is
+	 *  not set, prepare writes are accepted by default (subject to normal
+	 *  write permissions).
+	 *
+	 *  Do not confuse this with @ref BT_GATT_CEP_RELIABLE_WRITE, which is
+	 *  a Characteristic Extended Property bit from the specification.
 	 */
 	BT_GATT_PERM_PREPARE_WRITE = BIT(6),
 
@@ -490,7 +503,25 @@ struct bt_gatt_chrc {
 };
 
 /** Characteristic Extended Properties Bit field values */
+
+/**
+ *  @brief Characteristic Extended Property: Reliable Write
+ *
+ *  If set in the Characteristic Extended Properties descriptor, the
+ *  characteristic supports reliable writes as defined by the Bluetooth Core
+ *  Specification.
+ *
+ *  This is unrelated to @ref BT_GATT_PERM_PREPARE_WRITE, which is a
+ *  Zephyr-specific attribute permission that controls whether prepare writes
+ *  solicit an authorization callback.
+ */
 #define BT_GATT_CEP_RELIABLE_WRITE		0x0001
+
+/**
+ *  @brief Characteristic Extended Property: Writable Auxiliaries
+ *
+ *  If set, the Characteristic User Description descriptor is writable.
+ */
 #define BT_GATT_CEP_WRITABLE_AUX		0x0002
 
 /** @brief Characteristic Extended Properties Attribute Value.
@@ -1689,7 +1720,7 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
  *
  *  Used with @ref bt_gatt_exchange_mtu function to initiate an MTU exchange. The
  *  response is handled in the callback @p func, which is called upon
- *  completion from the 'config BT_RECV_CONTEXT' context.
+ *  completion from the Bluetooth RX thread.
  *
  *  @p params must remain valid until the callback executes.
  */
@@ -1707,7 +1738,7 @@ struct bt_gatt_exchange_params {
  *  As the response comes in callback @p params->func, for example
  *  @ref bt_gatt_get_mtu can be invoked in the mtu_exchange-callback to read
  *  out the new negotiated ATT connection MTU. The callback is run from the
- *  context specified by 'config BT_RECV_CONTEXT' and @p params must remain
+ *  context of the Bluetooth RX thread and @p params must remain
  *  valid until start of callback.
  *
  *  @param conn Connection object.
@@ -2019,7 +2050,7 @@ struct bt_gatt_read_params {
  *  callback varies depending on the type of read operation.
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  @p params must remain valid until start of callback.
  *  If the received data length is invalid, the callback @p params->func will
  *  called with the error @ref BT_ATT_ERR_INVALID_PDU.
@@ -2070,7 +2101,7 @@ struct bt_gatt_write_params {
 /** @brief Write Attribute Value by handle
  *
  *  The Response comes in callback @p params->func. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  @p params must remain valid until start of callback.
  *
  *  @param conn Connection object.
@@ -2246,13 +2277,13 @@ struct bt_gatt_subscribe_params {
 #endif /* defined(CONFIG_BT_GATT_AUTO_DISCOVER_CCC) || defined(__DOXYGEN__) */
 	/** Subscribe value */
 	uint16_t value;
-#if defined(CONFIG_BT_SMP)
+#if defined(CONFIG_BT_SMP) || defined(__DOXYGEN__)
 	/** Minimum required security for received notification. Notifications
 	 * and indications received over a connection with a lower security
 	 * level are silently discarded.
 	 */
 	bt_security_t min_security;
-#endif
+#endif /* CONFIG_BT_SMP */
 	/** Subscription flags, see @ref bt_gatt_sub_flag */
 	ATOMIC_DEFINE(flags, BT_GATT_SUBSCRIBE_NUM_FLAGS);
 
@@ -2277,7 +2308,7 @@ struct bt_gatt_subscribe_params {
  *  subscription was removed by this method.
  *
  *  The Response comes in callback @p params->subscribe. The callback is run from
- *  the context specified by 'config BT_RECV_CONTEXT'.
+ *  the context of the Bluetooth RX thread.
  *  The Notification callback @p params->notify is also called from the BT RX
  *  thread.
  *

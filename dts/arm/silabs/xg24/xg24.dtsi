@@ -268,6 +268,7 @@
 		msc: flash-controller@50030000 {
 			compatible = "silabs,series2-flash-controller";
 			reg = <0x50030000 0x4000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			clocks = <&cmu CLOCK_MSC CLOCK_BRANCH_HCLK>;
@@ -276,6 +277,8 @@
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
 				erase-block-size = <8192>;
 				write-block-size = <4>;
 			};
@@ -349,7 +352,9 @@
 			compatible = "silabs,ldma";
 			reg = <0x50040000 0x4000>;
 			#dma-cells = <1>;
-			clocks = <&cmu CLOCK_LDMA0 CLOCK_BRANCH_HCLK>;
+			clock-names = "ldma", "xbar";
+			clocks = <&cmu CLOCK_LDMA0 CLOCK_BRANCH_HCLK>,
+				 <&cmu CLOCK_LDMAXBAR0 CLOCK_BRANCH_PCLK>;
 			dma-channels = <8>;
 			interrupt-names = "ldma";
 			interrupts = <21 2>;

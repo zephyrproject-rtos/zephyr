@@ -130,7 +130,7 @@ static int crypto_cc23x0_dma_enable(const struct device *dev, bool *dma_enabled)
 
 	ret = pm_device_runtime_get(cfg->dma_dev);
 	if (ret) {
-		LOG_ERR("Failed to resume DMA");
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(cfg->dma_dev, ret);
 		*dma_enabled = false;
 	} else {
 		*dma_enabled = true;

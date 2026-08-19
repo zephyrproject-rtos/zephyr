@@ -7,54 +7,27 @@
 /dts-v1/;
 
 #include <adi/max32/max78000-m4.dtsi>
+#include "max78000fthr.dtsi"
+
 #include <adi/max32/max78000-pinctrl.dtsi>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/* Assign the M4 core console to the CMSIS-DAP serial pins */
+m4_serial: &cmsis_serial {};
 
 / {
 	model = "Analog Devices MAX78000FTHR";
 	compatible = "adi,max78000fthr";
 
 	chosen {
-		zephyr,console = &uart0;
-		zephyr,shell-uart = &uart0;
-		zephyr,sram = &sram2;
+		zephyr,console = &m4_serial;
+		zephyr,shell-uart = &m4_serial;
+		zephyr,sram = &m4_sram;
 		zephyr,flash = &flash0;
-	};
-
-	leds {
-		compatible = "gpio-leds";
-
-		led1: led_1 {
-			gpios = <&gpio2 0 GPIO_ACTIVE_HIGH>;
-			label = "Red LED";
-		};
-
-		led2: led_2 {
-			gpios = <&gpio2 1 GPIO_ACTIVE_HIGH>;
-			label = "Green LED";
-		};
-
-		led3: led_3 {
-			gpios = <&gpio2 2 GPIO_ACTIVE_HIGH>;
-			label = "Blue LED";
-		};
-	};
-
-	buttons {
-		compatible = "gpio-keys";
-
-		pb1: pb1 {
-			gpios = <&gpio0 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW1";
-			zephyr,code = <INPUT_KEY_0>;
-		};
-
-		pb2: pb2 {
-			gpios = <&gpio1 7 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
-			label = "SW2";
-			zephyr,code = <INPUT_KEY_1>;
-		};
+		zephyr,code-partition = &m4_partition;
+		zephyr,settings-partition = &m4_storage_partition;
+		zephyr,code-rv32-partition = &rv32_partition;
 	};
 
 	/* These aliases are provided for compatibility with samples */
@@ -65,14 +38,43 @@
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
 	};
+
+	/* Used for accessing other pins */
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <12 0 &gpio0 17 0>,  /* SDA */
+			   <13 0 &gpio0 16 0>,  /* SCL */
+			   <14 0 &gpio3 1 0>,  /* GPIO */
+			   <15 0 &gpio0 19 0>,  /* GPIO */
+			   <16 0 &gpio0 11 0>,   /* GPIO */
+			   <17 0 &gpio0 8 0>,   /* GPIO */
+			   <18 0 &gpio0 9 0>,   /* GPIO */
+			   /* 19 connected to the PMIC */   /* GPIO */
+			   <20 0 &gpio1 6 0>,   /* GPIO */
+			   /* 11 not connected */
+			   <10 0 &gpio2 7 0>,  /* TX */
+			   <9 0 &gpio2 6 0>,   /* RX */
+			   <8 0 &gpio0 6 0>,   /* MISO */
+			   <7 0 &gpio0 5 0>,   /* MOSI */
+			   <6 0 &gpio0 7 0>,   /* SCK */
+			   /* 5 connected to the PMIC */   /* AIN5 */
+			   /* 4 connected to the PMIC */   /* AIN4 */
+			   <3 0 &gpio1 0 0>,   /* AIN3 */
+			   <2 0 &gpio1 1 0>,   /* AIN2 */
+			   <1 0 &gpio2 4 0>,   /* AIN1 */
+			   <0 0 &gpio2 3 0>;   /* AIN0 */
+	};
 };
 
-&uart0 {
-	pinctrl-0 = <&uart0a_tx_p0_1 &uart0a_rx_p0_0>;
+&cpu1 {
+	pinctrl-0 = <&rv_tck_p1_0 &rv_tms_p1_1 &rv_tdi_p1_2 &rv_tdo_p1_3>;
 	pinctrl-names = "default";
-	current-speed = <115200>;
-	data-bits = <8>;
-	parity = "none";
+};
+
+&m4_serial {
 	status = "okay";
 };
 
@@ -84,41 +86,29 @@
 	status = "okay";
 };
 
-&gpio0 {
-	status = "okay";
-};
-
-&gpio1 {
-	status = "okay";
-};
-
-&gpio2 {
-	status = "okay";
-};
-
-&gpio3 {
-	status = "okay";
-};
-
 &trng {
 	status = "okay";
 };
 
-&i2c0 {
-	status = "okay";
-	pinctrl-0 = <&i2c0_scl_p0_10 &i2c0_sda_p0_11>;
-	pinctrl-names = "default";
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
-feather_i2c: &i2c1 {
-	status = "okay";
-	pinctrl-0 = <&i2c1_scl_p0_16 &i2c1_sda_p0_17>;
-	pinctrl-names = "default";
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
 };
 
-&spi0 {
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_ss1_p0_11 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+feather_spi: &spi0 {
 	status = "okay";
-	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss1_p0_11>;
 	pinctrl-names = "default";
 };
 
@@ -128,11 +118,6 @@ feather_i2c: &i2c1 {
 
 &wdt0 {
 	status = "okay";
-};
-
-&w1 {
-	pinctrl-0 = <&owm_io_p0_6 &owm_pe_p0_7>;
-	pinctrl-names = "default";
 };
 
 &rtc_counter {

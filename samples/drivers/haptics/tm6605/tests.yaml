@@ -1,0 +1,17 @@
+sample:
+  name: TM6605 Haptic Driver sample
+tests:
+  sample.drivers.haptics.tm6605:
+    build_only: true
+    tags: haptics
+    platform_allow:
+      - nucleo_f401re
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/nucleo_f401re.overlay"
+  sample.drivers.haptics.tm6605.shield:
+    build_only: true
+    tags: haptics
+    platform_allow:
+      - adafruit_qt_py_rp2040/rp2040
+    extra_args:
+      - platform:adafruit_qt_py_rp2040/rp2040:SHIELD="dfrobot_gravity_tm6605"

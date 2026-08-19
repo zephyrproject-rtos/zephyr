@@ -56,25 +56,6 @@ void xtensa_userspace_enter(k_thread_entry_t user_entry,
 			    uintptr_t stack_start);
 
 /**
- * @brief Check if kernel threads have access to a memory region.
- *
- * Given a memory region, return whether the current memory management
- * hardware configuration would allow kernel threads to read/write
- * that region.
- *
- * This is mainly used to make sure kernel has access to avoid relying
- * on page fault to detect invalid mappings.
- *
- * @param addr Start address of the buffer
- * @param size Size of the buffer
- * @param write If non-zero, additionally check if the area is writable.
- *              Otherwise, just check if the memory can be read.
- *
- * @return False if the permissions don't match.
- */
-bool xtensa_mem_kernel_has_access(const void *addr, size_t size, int write);
-
-/**
  * @brief Handle DTLB multihit exception.
  *
  * Handle DTLB multihit exception by invalidating auto-refilled DTLBs of
@@ -109,6 +90,27 @@ void xtensa_exc_itlb_multihit_handle(void *vaddr);
  * @retval False Access violation is due to incorrectly cached auto-refilled TLB.
  */
 bool xtensa_exc_load_store_ring_error_check(void *bsa_p);
+
+#ifdef CONFIG_USERSPACE
+/**
+ * @brief Check if a memory region is readable in privileged (kernel) mode.
+ *
+ * Given a memory region, return whether the current memory management
+ * hardware configuration would allow the kernel to read that region.
+ * Unlike arch_buffer_validate(), this does not require the region to be
+ * accessible from user mode. It is used by arch_user_string_nlen() to
+ * make sure the string can be examined without causing memory access
+ * faults, as user mode accessibility is verified separately by the
+ * syscall marshalling layer.
+ *
+ * @param addr start address of the buffer
+ * @param size the size of the buffer
+ *
+ * @retval true if the region is readable in kernel mode
+ * @retval false otherwise
+ */
+bool xtensa_buffer_is_kernel_readable(const void *addr, size_t size);
+#endif /* CONFIG_USERSPACE */
 
 /**
  * @}

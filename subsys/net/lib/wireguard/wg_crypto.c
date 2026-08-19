@@ -214,14 +214,19 @@ static void wg_kdf3(uint8_t *tau1, uint8_t *tau2, uint8_t *tau3,
 	crypto_zero(output, sizeof(output));
 }
 
-static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
+/* Pure replay-window check, factored out so it can be unit-tested directly
+ * (see tests/net/lib/wireguard). Marked ZTESTABLE_STATIC so it stays static
+ * in normal builds and only gains external linkage for ztest builds.
+ */
+ZTESTABLE_STATIC bool wg_replay_check(uint32_t *replay_bitmap, uint64_t *replay_counter,
+				      uint64_t seq)
 {
 	/* Implementation of packet replay window - as per RFC2401
 	 * Adapted from code in Appendix C at https://tools.ietf.org/html/rfc2401
 	 */
-	size_t replay_window_size = sizeof(keypair->replay_bitmap) * CHAR_BIT; /* 32 bits */
+	size_t replay_window_size = sizeof(*replay_bitmap) * CHAR_BIT; /* 32 bits */
 	bool ret = false;
-	uint32_t diff;
+	uint64_t diff;
 
 	/* WireGuard data packet counter starts from 0 but algorithm expects
 	 * packet numbers to start from 1.
@@ -233,32 +238,32 @@ static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
 		return ret;
 	}
 
-	if (seq > keypair->replay_counter) {
+	if (seq > *replay_counter) {
 		/* new larger sequence number */
-		diff = seq - keypair->replay_counter;
+		diff = seq - *replay_counter;
 		if (diff < replay_window_size) {
 			/* In window */
-			keypair->replay_bitmap <<= diff;
+			*replay_bitmap <<= diff;
 
 			/* set bit for this packet */
-			keypair->replay_bitmap |= 1;
+			*replay_bitmap |= 1;
 		} else {
 			/* This packet has a "way larger" */
-			keypair->replay_bitmap = 1;
+			*replay_bitmap = 1;
 		}
-		keypair->replay_counter = seq;
+		*replay_counter = seq;
 
 		/* larger is good */
 		ret = true;
 	} else {
-		diff = keypair->replay_counter - seq;
+		diff = *replay_counter - seq;
 		if (diff < replay_window_size) {
-			if (keypair->replay_bitmap & ((uint32_t)1 << diff)) {
+			if (*replay_bitmap & ((uint32_t)1 << diff)) {
 				/* already seen */
 				;
 			} else {
 				/* mark as seen */
-				keypair->replay_bitmap |= ((uint32_t)1 << diff);
+				*replay_bitmap |= ((uint32_t)1 << diff);
 
 				/* out of order but good */
 				ret = true;
@@ -270,6 +275,11 @@ static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
 	}
 
 	return ret;
+}
+
+static bool wg_check_replay(struct wg_keypair *keypair, uint64_t seq)
+{
+	return wg_replay_check(&keypair->replay_bitmap, &keypair->replay_counter, seq);
 }
 
 static void wg_clamp_private_key(uint8_t *key)
@@ -364,7 +374,7 @@ static bool wg_check_mac2(struct wg_iface_context *ctx,
 /**
  * @brief Destroy keypair with PSA key cleanup
  */
-static void keypair_destroy(struct wg_keypair *keypair)
+ZTESTABLE_STATIC void keypair_destroy(struct wg_keypair *keypair)
 {
 	if (!keypair->is_valid) {
 		return;
@@ -1272,12 +1282,12 @@ static void wg_process_response_message(struct wg_iface_context *ctx,
 	(void)wg_send_keepalive(ctx, peer);
 }
 
-static int wg_process_data_message(struct wg_iface_context *ctx,
-				   struct wg_peer *peer,
-				   struct msg_transport_data *data_hdr,
-				   struct net_pkt *pkt,
-				   size_t ip_udp_hdr_len,
-				   struct net_sockaddr *addr)
+ZTESTABLE_STATIC int wg_process_data_message(struct wg_iface_context *ctx,
+					     struct wg_peer *peer,
+					     struct msg_transport_data *data_hdr,
+					     struct net_pkt *pkt,
+					     size_t ip_udp_hdr_len,
+					     struct net_sockaddr *addr)
 {
 	struct net_pkt *pkt_decrypted = NULL;
 	uint32_t idx = data_hdr->receiver;
@@ -1323,20 +1333,20 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	 */
 	data_len = net_pkt_get_len(pkt) - sizeof(struct msg_transport_data) - ip_udp_hdr_len;
 
-	/* If the data_len is 16 bytes (padded length), then it is a keepalive message */
-	if (data_len == 16U) {
-		/* keep-alive message */
-		NET_DBG("Keepalive message received from %s",
-			net_sprint_addr(addr->sa_family,
-					(const void *)&net_sin(addr)->sin_addr));
-		vpn_stats_update_keepalive_rx(ctx);
+	/* A 16-byte payload (empty plaintext + Poly1305 tag) is a keepalive
+	 * message. It must still be authenticated and replay-checked below
+	 * before it is acted upon, so it flows through the normal decrypt path
+	 * just like any other transport-data message.
+	 */
 
-		if (!peer->first_valid) {
-			net_mgmt_event_notify(NET_EVENT_VPN_CONNECTED, peer->iface);
-			peer->first_valid = true;
-		}
-
-		return 0;
+	/* Limit the data_len to the max packet size that can be handled by the
+	 * crypto layer.
+	 */
+	if (data_len > (size_t)CONFIG_WIREGUARD_BUF_LEN) {
+		NET_DBG("Data length %zu exceeds max supported %d", data_len,
+			CONFIG_WIREGUARD_BUF_LEN);
+		vpn_stats_update_invalid_packet_len(ctx);
+		return -EMSGSIZE;
 	}
 
 	/* We don't know the unpadded size until we have decrypted the packet
@@ -1349,7 +1359,7 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		return -ENOMEM;
 	}
 
-	copied = net_buf_linearize(buf->data, data_len, pkt->buffer,
+	copied = net_buf_linearize(buf->data, net_buf_max_len(buf), pkt->buffer,
 				   ip_udp_hdr_len + sizeof(struct msg_transport_data),
 				   data_len);
 	if (copied != data_len) {
@@ -1367,6 +1377,17 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 	if (!status) {
 		ret = -ENOMSG;
 		vpn_stats_update_decrypt_failed(ctx);
+		goto out;
+	}
+
+	/* The packet authenticated correctly. Validate the anti-replay counter
+	 * before committing any peer state. A replayed-but-authentic packet
+	 * (e.g. captured and re-injected from a spoofed source address) must
+	 * not be able to mutate the endpoint, liveness timers or keypair state.
+	 */
+	if (!wg_check_replay(keypair, nonce)) {
+		ret = -EINVAL;
+		vpn_stats_update_replay_error(ctx);
 		goto out;
 	}
 
@@ -1398,10 +1419,17 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		}
 	}
 
-	/* Check for packet replay / dupes */
-	if (!wg_check_replay(keypair, nonce)) {
-		ret = -EINVAL;
-		vpn_stats_update_replay_error(ctx);
+	/* A 16-byte payload decrypts to an empty plaintext, i.e. this is a
+	 * keepalive message. It has now been authenticated and replay-checked,
+	 * so peer liveness/roaming has been updated above; there is nothing to
+	 * deliver to the network stack.
+	 */
+	if (data_len == 16U) {
+		NET_DBG("Keepalive message received from %s",
+			net_sprint_addr(addr->sa_family,
+					(const void *)&net_sin(addr)->sin_addr));
+		vpn_stats_update_keepalive_rx(ctx);
+		ret = 0;
 		goto out;
 	}
 
@@ -1432,20 +1460,8 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		pkt_len = net_ntohs(NET_IPV6_HDR(pkt_decrypted)->len) +
 			sizeof(struct net_ipv6_hdr);
 
-		ARRAY_FOR_EACH(peer->allowed_ip, i) {
-			if (!(peer->allowed_ip[i].is_valid &&
-			      peer->allowed_ip[i].addr.family == NET_AF_INET6)) {
-				continue;
-			}
-
-			if (net_ipv6_is_prefix(
-				    (const uint8_t *)&NET_IPV6_HDR(pkt_decrypted)->src,
-				    (const uint8_t *)&peer->allowed_ip[i].addr.in6_addr,
-				    peer->allowed_ip[i].mask_len)) {
-				addr_found = true;
-				break;
-			}
-		}
+		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET6,
+						   NET_IPV6_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",
@@ -1454,29 +1470,12 @@ static int wg_process_data_message(struct wg_iface_context *ctx,
 		}
 
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && vtc_vhl == 0x40) {
-		struct net_in_addr src;
-		uint32_t subnet;
-
 		net_pkt_set_ip_hdr_len(pkt_decrypted, sizeof(struct net_ipv4_hdr));
 		net_pkt_set_ipv4_opts_len(pkt_decrypted, 0);
 		pkt_len = net_ntohs(NET_IPV4_HDR(pkt_decrypted)->len);
 
-		ARRAY_FOR_EACH(peer->allowed_ip, i) {
-			if (!(peer->allowed_ip[i].is_valid &&
-			      peer->allowed_ip[i].addr.family == NET_AF_INET)) {
-				continue;
-			}
-
-			src.s_addr = sys_get_be32(
-				(const uint8_t *)&NET_IPV4_HDR(pkt_decrypted)->src);
-			subnet = UINT32_MAX << (32 - peer->allowed_ip[i].mask_len);
-
-			if ((src.s_addr & subnet) ==
-			    (net_ntohl(peer->allowed_ip[i].addr.in_addr.s_addr) & subnet)) {
-				addr_found = true;
-				break;
-			}
-		}
+		addr_found = wg_peer_is_allowed_ip(peer, NET_AF_INET,
+						   NET_IPV4_HDR(pkt_decrypted)->src);
 
 		if (!addr_found) {
 			NET_DBG("Address %s not found in allowed list",

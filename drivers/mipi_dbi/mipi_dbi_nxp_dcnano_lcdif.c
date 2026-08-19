@@ -6,10 +6,12 @@
 
 #define DT_DRV_COMPAT nxp_mipi_dbi_dcnano_lcdif
 
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mipi_dbi.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -25,9 +27,12 @@ struct mcux_dcnano_lcdif_dbi_data {
 struct mcux_dcnano_lcdif_dbi_config {
 	LCDIF_Type *base;
 	void (*irq_config_func)(const struct device *dev);
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	lcdif_dbi_config_t dbi_config;
 	lcdif_panel_config_t panel_config;
 	const struct pinctrl_dev_config *pincfg;
+	struct reset_dt_spec reset_ctl;
 	const struct gpio_dt_spec reset;
 };
 
@@ -63,8 +68,22 @@ const struct mcux_dcnano_lcdif_dbi_foramt_map_t format_map[] = {
 static int mcux_dcnano_lcdif_dbi_get_format(uint8_t bus_type, uint8_t color_coding,
 	lcdif_dbi_out_format_t *format)
 {
+	/*
+	 * format_map[] is keyed by the Type A (6800) bus-width constants
+	 * (0x3/0x4/0x5). Normalize Type B (8080) bus-width values
+	 * (0x6/0x7/0x8) down to the matching Type A keys before the lookup
+	 * so both bus types resolve correctly. The subtraction step relies
+	 * on the fact that 8080_BUS_x_BIT == 6800_BUS_x_BIT +
+	 * MIPI_DBI_MODE_6800_BUS_16_BIT for every supported width.
+	 */
+	uint8_t normalized_bus_type = bus_type;
+
+	if (bus_type >= MIPI_DBI_MODE_8080_BUS_16_BIT) {
+		normalized_bus_type -= MIPI_DBI_MODE_6800_BUS_16_BIT;
+	}
+
 	for (uint8_t i = 0; i < ARRAY_SIZE(format_map); i++) {
-		if ((format_map[i].bus_type == (bus_type - MIPI_DBI_MODE_6800_BUS_16_BIT)) &&
+		if ((format_map[i].bus_type == normalized_bus_type) &&
 			(format_map[i].color_coding == color_coding)) {
 			*format = format_map[i].format;
 			return 0;
@@ -133,7 +152,7 @@ static int mcux_dcnano_lcdif_dbi_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Get the color cosing */
+	/* Get the output format. */
 	status = mcux_dcnano_lcdif_dbi_get_format(bus_type, color_coding,
 		&lcdif_dbi_config.format);
 
@@ -157,16 +176,37 @@ static int mcux_dcnano_lcdif_dbi_init(const struct device *dev)
 {
 	const struct mcux_dcnano_lcdif_dbi_config *config = dev->config;
 	struct mcux_dcnano_lcdif_dbi_data *lcdif_data = dev->data;
-
-#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	int ret;
 
+	if (config->clock_dev != NULL) {
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+#ifndef CONFIG_MIPI_DSI_MCUX_NXP_DCNANO_LCDIF
 	/* Pin control is not applied when DCNano is used in MCUX DSI driver. */
 	ret = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (ret) {
 		return ret;
 	}
 #endif
+
+	if (config->reset_ctl.dev != NULL) {
+		if (!device_is_ready(config->reset_ctl.dev)) {
+			return -ENODEV;
+		}
+
+		ret = reset_line_deassert_dt(&config->reset_ctl);
+		if (ret != 0) {
+			return ret;
+		}
+	}
 
 	LCDIF_Init(config->base);
 
@@ -350,7 +390,13 @@ static DEVICE_API(mipi_dbi, mcux_dcnano_lcdif_dbi_api) = {
 	struct mcux_dcnano_lcdif_dbi_config mcux_dcnano_lcdif_dbi_config_##n = {	\
 		.base = (LCDIF_Type *) DT_INST_REG_ADDR(n),				\
 		.irq_config_func = mcux_dcnano_lcdif_dbi_config_func_##n,		\
+		.clock_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL)),		\
+		.clock_subsys = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),		\
+			((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)),		\
+			((clock_control_subsys_t)0U)),					\
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),				\
+		.reset_ctl = RESET_DT_SPEC_INST_GET_OR(n, {0}),				\
 		.reset = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),			\
 		.dbi_config = {								\
 			.type = kLCDIF_DbiTypeA_FixedE,					\

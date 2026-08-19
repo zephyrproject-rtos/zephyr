@@ -30,6 +30,7 @@
 #define LAN865x_MAC_NCFGR        MMS_REG(0x1, 0x001)
 #define LAN865x_MAC_NCFGR_CAF    BIT(4)
 #define LAN865x_MAC_NCFGR_MTIHEN BIT(6)
+#define LAN865x_MAC_NCFGR_MAXFS  BIT(8)
 #define LAN865x_MAC_HRB          MMS_REG(0x1, 0x020)
 #define LAN865x_MAC_HRT          MMS_REG(0x1, 0x021)
 #define LAN865x_MAC_SAB1         MMS_REG(0x1, 0x022)
@@ -74,5 +75,17 @@ struct lan865x_data {
 	struct k_thread thread;
 	k_tid_t tid_int;
 };
+
+int eth_lan865x_mdio_c22_read(const struct device *dev, uint8_t prtad, uint8_t regad,
+			      uint16_t *data);
+
+int eth_lan865x_mdio_c22_write(const struct device *dev, uint8_t prtad, uint8_t regad,
+			       uint16_t data);
+
+int eth_lan865x_mdio_c45_read(const struct device *dev, uint8_t prtad, uint8_t devad,
+			      uint16_t regad, uint16_t *data);
+
+int eth_lan865x_mdio_c45_write(const struct device *dev, uint8_t prtad, uint8_t devad,
+			       uint16_t regad, uint16_t data);
 
 #endif /* ETH_LAN865X_PRIV_H__ */

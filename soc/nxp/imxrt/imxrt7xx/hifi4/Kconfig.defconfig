@@ -25,7 +25,7 @@ config I2S_HAS_PLL_SETTING
 	default n
 
 # Must match XCHAL_DCACHE_LINESIZE from core-isa.h
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 256
 
 endif # SOC_MIMXRT798S_HIFI4

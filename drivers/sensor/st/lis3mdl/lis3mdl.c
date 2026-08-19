@@ -110,7 +110,7 @@ int lis3mdl_init(const struct device *dev)
 	uint8_t id, idx;
 
 	if (!device_is_ready(config->i2c.bus)) {
-		LOG_ERR("I2C bus device not ready");
+		LOG_ERR_DEVICE_NOT_READY(config->i2c.bus);
 		return -ENODEV;
 	}
 

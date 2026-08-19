@@ -19,6 +19,9 @@ config APP_LITTLEFS_STORAGE_FLASH
 
 config APP_LITTLEFS_STORAGE_BLK_SDMMC
 	bool "Use block device (e.g. SD MMC) backend"
+
+config APP_LITTLEFS_STORAGE_BLK_FTL
+	bool "Use FTL (Flash Translation Layer) block device backend"
 endchoice
 
 source "Kconfig.zephyr"

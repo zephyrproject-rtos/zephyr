@@ -65,6 +65,7 @@
 		led0 = &green_led_0;
 		led1 = &blue_led_0;
 		led2 = &red_led_0;
+		rtc = &rtc;
 		sw0 = &user_button;
 		pwm-led0 = &red_pwm_led;
 		die-temp0 = &die_temp;
@@ -134,6 +135,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 };
 
@@ -194,12 +197,13 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/* Reserve last 16KiB for property storage */
 		storage_partition: partition@1fb000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x001fb000 DT_SIZE_K(16)>;
 		};

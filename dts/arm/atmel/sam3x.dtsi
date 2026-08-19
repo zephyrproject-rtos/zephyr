@@ -270,6 +270,15 @@
 			status = "disabled";
 		};
 
+		dacc: dacc@400c8000 {
+			compatible = "atmel,sam-dac";
+			reg = <0x400c8000 0x8000>;
+			interrupts = <38 1>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
 		pwm0: pwm@40094000 {
 			compatible = "atmel,sam-pwm";
 			reg = <0x40094000 0x4000>;

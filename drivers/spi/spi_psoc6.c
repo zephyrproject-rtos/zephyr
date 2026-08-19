@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(spi_psoc6);
 #include <errno.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #include <soc.h>
 
 #include "spi_context.h"

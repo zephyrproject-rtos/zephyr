@@ -41,8 +41,12 @@ compatible: "nxp,kinetis-acmp"
 include:
   - base.yaml
   - pinctrl-device.yaml
+  - reset-device.yaml
 
 properties:
+  clocks:
+    type: phandle-array
+
   interrupts:
     required: true
 

@@ -19,7 +19,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
 #include "babblekit/sync.h"
@@ -115,15 +115,11 @@ static void stop_adv(struct bt_le_ext_adv *adv)
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (err) {
-		TEST_FAIL("Failed to connect to %s (err %d)", addr_str, err);
+		TEST_FAIL("Failed to connect to %s (err %d)", bt_conn_dst_str(conn), err);
 	}
 
-	LOG_DBG("Connected: %s", addr_str);
+	LOG_DBG("Connected: %s", bt_conn_dst_str(conn));
 
 	default_conn = bt_conn_ref(conn);
 
@@ -133,11 +129,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr_str, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	bt_conn_unref(conn);
 	default_conn = NULL;
@@ -148,15 +140,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr_str, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 		SET_FLAG(security_updated_flag);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr_str, level, err);
+		LOG_DBG("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
 	}
 }
 
@@ -194,17 +182,17 @@ static void connect_pair_check_subscribtion(struct bt_le_ext_adv *adv)
 	WAIT_FOR_FLAG(security_updated_flag);
 	UNSET_FLAG(security_updated_flag);
 
-	/* wait for confirmation of subscribtion from good client */
+	/* wait for confirmation of subscription from good client */
 	bk_sync_wait();
 
-	/* check that subscribtion request did not fail */
+	/* check that subscription request did not fail */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Client did not subscribed");
 	}
 
 	stop_adv(adv);
 
-	/* confirm to client that the subscribtion has been well registered */
+	/* confirm to client that the subscription has been well registered */
 	bk_sync_send();
 
 	send_value_notification();
@@ -222,14 +210,14 @@ static void connect_restore_sec_check_subscribtion(struct bt_le_ext_adv *adv)
 	/* wait for client end of security update */
 	bk_sync_wait();
 
-	/* check that subscribtion has been restored */
+	/* check that subscription has been restored */
 	if (!is_peer_subscribed(default_conn)) {
 		TEST_FAIL("Client is not subscribed");
 	} else {
 		LOG_DBG("Client is subscribed");
 	}
 
-	/* confirm to good client that the subscribtion has been well restored */
+	/* confirm to good client that the subscription has been well restored */
 	bk_sync_send();
 
 	send_value_notification();

@@ -1,7 +1,7 @@
 /* main.c - Application main entry point */
 
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/util.h>
 
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -23,7 +24,6 @@
 #include <zephyr/bluetooth/classic/a2dp.h>
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/settings/settings.h>
-#include "sine.h"
 
 static struct bt_br_discovery_param br_discover;
 static struct bt_br_discovery_result scan_result[CONFIG_BT_A2DP_SOURCE_DISCOVER_RESULT_COUNT];
@@ -46,16 +46,18 @@ BT_A2DP_SBC_EP_CFG_DEFAULT(sbc_cfg_default, A2DP_SBC_SAMP_FREQ_44100);
 static int64_t ref_time;
 static uint32_t a2dp_src_missed_count;
 static volatile bool a2dp_src_playback;
-static volatile int media_index;
 static uint32_t a2dp_src_sf;
 static uint8_t a2dp_src_nc;
 static uint32_t send_samples_count;
 static uint16_t send_count;
-/* max pcm data size per interval. The max sample freq is 48K.
- * interval * 48 * 2 (max channels) * 2 (sample width) * 2 (the worst case: send two intervals'
- * data if timer is blocked)
+static uint8_t send_interval;
+/* Maximum number of prepared PCM samples sent at one time.
+ * For A2DP SBC encoder, the maximum supported frequency is 48KHz.
+ * The maximum number of prepared PCM samples can be sent at once is expressed as:
+ * interval * 48 * 2 (max channels) * 2 (Second one is reserved to account for system latency
+ * and other factors).
  */
-static uint8_t a2dp_pcm_buffer[CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL * 48 * 2 * 2 * 2];
+static int16_t a2dp_pcm_buffer[CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL * 48 * 2 * 2];
 NET_BUF_POOL_DEFINE(a2dp_tx_pool, CONFIG_BT_A2DP_SOURCE_DATA_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_A2DP_SOURCE_DATA_BUF_SIZE),
 		    CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
@@ -142,69 +144,129 @@ static struct bt_sdp_record a2dp_source_rec = BT_SDP_RECORD(a2dp_source_attrs);
 
 static bool a2dp_produce_media_check(uint32_t samples_num)
 {
-	uint16_t  medialen;
+	uint32_t total_samples;
 
-	/* Music Audio is Stereo */
-	medialen = (samples_num * a2dp_src_nc * 2);
+	if (samples_num > (UINT32_MAX / a2dp_src_nc)) {
+		return false;
+	}
 
-	/* need to use a2dp_pcm_buffer to do memcpy */
-	if ((a2dp_src_nc == 1) || ((media_index + (samples_num << 2)) > sizeof(media_data))) {
-		if (medialen > sizeof(a2dp_pcm_buffer)) {
-			return false;
-		}
+	total_samples = samples_num * a2dp_src_nc;
+
+	/* Check the buffer size is enough for the samples */
+	if (total_samples > ARRAY_SIZE(a2dp_pcm_buffer)) {
+		return false;
 	}
 
 	return true;
 }
 
-static uint8_t *a2dp_produce_media(uint32_t samples_num)
+/* Maximum supported wave peak */
+#define PCM_AMPLITUDE (INT16_MAX * 8 / 10)
+
+#define SINE_LUT_BITS 8 /* 256 entries */
+#define SINE_LUT_SIZE (1 << SINE_LUT_BITS)
+
+/* Sine LUT for PCM audio generation */
+static const int16_t sine_lut[SINE_LUT_SIZE] = {
+	     0,    804,   1608,   2410,   3212,   4011,   4808,   5602,
+	  6393,   7179,   7962,   8739,   9512,  10278,  11039,  11793,
+	 12539,  13279,  14010,  14732,  15446,  16151,  16846,  17530,
+	 18204,  18868,  19519,  20159,  20787,  21403,  22005,  22594,
+	 23170,  23731,  24279,  24811,  25329,  25832,  26319,  26790,
+	 27245,  27683,  28105,  28510,  28898,  29268,  29621,  29956,
+	 30273,  30571,  30852,  31113,  31356,  31580,  31785,  31971,
+	 32137,  32285,  32412,  32521,  32609,  32678,  32728,  32757,
+	 32767,  32757,  32728,  32678,  32609,  32521,  32412,  32285,
+	 32137,  31971,  31785,  31580,  31356,  31113,  30852,  30571,
+	 30273,  29956,  29621,  29268,  28898,  28510,  28105,  27683,
+	 27245,  26790,  26319,  25832,  25329,  24811,  24279,  23731,
+	 23170,  22594,  22005,  21403,  20787,  20159,  19519,  18868,
+	 18204,  17530,  16846,  16151,  15446,  14732,  14010,  13279,
+	 12539,  11793,  11039,  10278,   9512,   8739,   7962,   7179,
+	  6393,   5602,   4808,   4011,   3212,   2410,   1608,    804,
+	     0,   -804,  -1608,  -2410,  -3212,  -4011,  -4808,  -5602,
+	 -6393,  -7179,  -7962,  -8739,  -9512, -10278, -11039, -11793,
+	-12539, -13279, -14010, -14732, -15446, -16151, -16846, -17530,
+	-18204, -18868, -19519, -20159, -20787, -21403, -22005, -22594,
+	-23170, -23731, -24279, -24811, -25329, -25832, -26319, -26790,
+	-27245, -27683, -28105, -28510, -28898, -29268, -29621, -29956,
+	-30273, -30571, -30852, -31113, -31356, -31580, -31785, -31971,
+	-32137, -32285, -32412, -32521, -32609, -32678, -32728, -32757,
+	-32767, -32757, -32728, -32678, -32609, -32521, -32412, -32285,
+	-32137, -31971, -31785, -31580, -31356, -31113, -30852, -30571,
+	-30273, -29956, -29621, -29268, -28898, -28510, -28105, -27683,
+	-27245, -26790, -26319, -25832, -25329, -24811, -24279, -23731,
+	-23170, -22594, -22005, -21403, -20787, -20159, -19519, -18868,
+	-18204, -17530, -16846, -16151, -15446, -14732, -14010, -13279,
+	-12539, -11793, -11039, -10278,  -9512,  -8739,  -7962,  -7179,
+	 -6393,  -5602,  -4808,  -4011,  -3212,  -2410,  -1608,   -804,
+};
+
+/* Common period frequency for all supported frequencies */
+#define SINE_WAVE_FREQ 440
+
+/* Maximum frequency */
+#define A2DP_FREQ_MAX 48000
+
+/* Maximum samples for all supported frequencies */
+#define SINE_WAVE_SAMPLE_MAX DIV_ROUND_UP(A2DP_FREQ_MAX, SINE_WAVE_FREQ)
+
+static int16_t sine_wave[SINE_WAVE_SAMPLE_MAX];
+static uint32_t sine_wave_count;
+static uint32_t sine_wave_index;
+
+static uint32_t sine_wave_gen(int16_t *wave, size_t max_samples, uint32_t freq)
 {
-	uint8_t *media = NULL;
-	uint16_t  medialen;
+	uint32_t samples = freq / SINE_WAVE_FREQ;
 
-	/* Music Audio is Stereo */
-	medialen = (samples_num * a2dp_src_nc * 2);
+	__ASSERT(max_samples >= samples, "Wave buffer too small");
+	__ASSERT(samples > 0, "Samples calculation resulted in zero");
 
-	/* For mono or dual configuration, skip alternative samples */
-	if (a2dp_src_nc == 1) {
-		uint16_t index;
+	for (size_t i = 0; i < samples; i++) {
+		int32_t lut_index = (i * SINE_LUT_SIZE) / samples;
 
-		media = (uint8_t *)&a2dp_pcm_buffer[0];
-
-		for (index = 0; index < samples_num; index++) {
-			media[(2 * index)] = *((uint8_t *)media_data + media_index);
-			media[(2 * index) + 1] = *((uint8_t *)media_data + media_index + 1);
-			/* Update the tone index */
-			media_index += 4u;
-			if (media_index >= sizeof(media_data)) {
-				media_index = 0U;
-			}
-		}
-	} else {
-		if ((media_index + (samples_num << 2)) > sizeof(media_data)) {
-			media = (uint8_t *)&a2dp_pcm_buffer[0];
-			memcpy(media, ((uint8_t *)media_data + media_index),
-				sizeof(media_data) - media_index);
-			memcpy(&media[sizeof(media_data) - media_index],
-				((uint8_t *)media_data),
-				((samples_num << 2) - (sizeof(media_data) - media_index)));
-			/* Update the tone index */
-			media_index = ((samples_num << 2) -
-				(sizeof(media_data) - media_index));
-		} else {
-			media = ((uint8_t *)media_data + media_index);
-			/* Update the tone index */
-			media_index += (samples_num << 2);
-			if (media_index >= sizeof(media_data)) {
-				media_index = 0U;
-			}
-		}
+		wave[i] = (sine_lut[lut_index] * PCM_AMPLITUDE) / INT16_MAX;
 	}
 
-	return media;
+	return samples;
 }
 
-static void audio_play_check(void)
+static void mono_to_stereo(const int16_t *mono, int16_t *stereo, uint32_t samples)
+{
+	for (uint32_t i = 0; i < samples; i++) {
+		stereo[i * 2] = mono[i];
+		stereo[i * 2 + 1] = mono[i];
+	}
+}
+
+static const uint8_t *a2dp_produce_media(uint32_t samples_num)
+{
+	int16_t *media = a2dp_pcm_buffer;
+
+	while (samples_num > 0) {
+		uint32_t samples = (sine_wave_count - sine_wave_index);
+
+		if (samples > samples_num) {
+			samples = samples_num;
+		}
+
+		if (a2dp_src_nc == 1) {
+			memcpy(media, &sine_wave[sine_wave_index], samples * sizeof(sine_wave[0]));
+		} else {
+			mono_to_stereo(&sine_wave[sine_wave_index], media, samples);
+		}
+		media += samples * a2dp_src_nc;
+		sine_wave_index += samples;
+		if (sine_wave_index >= sine_wave_count) {
+			sine_wave_index = 0;
+		}
+		samples_num -= samples;
+	}
+
+	return (const uint8_t *)&a2dp_pcm_buffer[0];
+}
+
+static bool audio_play_check(void)
 {
 	uint32_t a2dp_src_num_samples;
 	uint32_t pcm_frame_samples;
@@ -212,40 +274,80 @@ static void audio_play_check(void)
 	struct net_buf *buf;
 	uint32_t pdu_len;
 
-	a2dp_src_num_samples = (uint16_t)((CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL * a2dp_src_sf)
-					  / 1000);
-	pcm_frame_samples = sbc_frame_samples(&encoder);
-	frame_num = a2dp_src_num_samples / pcm_frame_samples;
-	if (frame_num * pcm_frame_samples < a2dp_src_num_samples) {
-		frame_num++;
-	}
-	a2dp_src_num_samples = frame_num * pcm_frame_samples;
-
 	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
-	pdu_len = frame_num * sbc_frame_encoded_bytes(&encoder);
-
-	if (pdu_len > net_buf_tailroom(buf)) {
-		printk("need increase buf size %d > %d\n", pdu_len, net_buf_tailroom(buf));
+	if (buf == NULL) {
+		printk("no buf\n");
+		return false;
 	}
 
-	pdu_len += buf->len;
-	if (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) {
-		printk("need decrease CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL %d > %d\n", pdu_len,
-			bt_a2dp_get_mtu(&sbc_stream));
+	(void)net_buf_add(buf, 1u); /* sbc hdr */
+
+	if (buf->len + sbc_frame_encoded_bytes(&encoder) > bt_a2dp_get_mtu(&sbc_stream)) {
+		net_buf_unref(buf);
+		printk("error, the stream mtu is too small\n");
+		return false;
 	}
 
-	if (!a2dp_produce_media_check(a2dp_src_num_samples)) {
-		printk("need increase a2dp_pcm_buffer\n");
+	send_interval = CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL;
+
+	while (true) {
+		if (send_interval == 0) {
+			net_buf_unref(buf);
+			printk("error, the stream mtu is too small\n");
+			return false;
+		}
+
+		a2dp_src_num_samples = (uint16_t)((send_interval * a2dp_src_sf) / 1000);
+		pcm_frame_samples = sbc_frame_samples(&encoder);
+		frame_num = a2dp_src_num_samples / pcm_frame_samples;
+		if (frame_num * pcm_frame_samples < a2dp_src_num_samples) {
+			frame_num++;
+		}
+		a2dp_src_num_samples = frame_num * pcm_frame_samples;
+
+		pdu_len = buf->len + frame_num * sbc_frame_encoded_bytes(&encoder);
+
+		if (pdu_len > net_buf_tailroom(buf) + buf->len) {
+			printk("Better to increase buf size %d > %d\n", pdu_len,
+			       net_buf_tailroom(buf) + buf->len);
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		if (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) {
+			printk("Better to decrease CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL "
+				"%d > %d\n", pdu_len, bt_a2dp_get_mtu(&sbc_stream));
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		if (!a2dp_produce_media_check(a2dp_src_num_samples)) {
+			printk("Better to increase a2dp_pcm_buffer\n");
+			printk("stream interval is changed: %dms -> %dms\n", send_interval,
+			       send_interval / 2);
+			send_interval /= 2;
+			continue;
+		}
+
+		break;
 	}
 
 	net_buf_unref(buf);
+
+	printk("send interval is: %dms\n", send_interval);
+
+	return true;
 }
 
 static void audio_work_handler(struct k_work *work)
 {
 	int64_t period_ms;
 	uint32_t a2dp_src_num_samples;
-	uint8_t *pcm_data;
+	const uint8_t *pcm_data;
 	uint8_t index;
 	uint32_t pcm_frame_size;
 	uint32_t pcm_frame_samples;
@@ -263,20 +365,12 @@ static void audio_work_handler(struct k_work *work)
 		return;
 	}
 
-	buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
-	if (buf == NULL) {
-		/* fail */
-		printk("no buf\n");
-		return;
-	}
-
 	period_ms = k_uptime_delta(&ref_time);
 
 	pcm_frame_size = sbc_frame_bytes(&encoder);
 	pcm_frame_samples = sbc_frame_samples(&encoder);
 	encoded_frame_size = sbc_frame_encoded_bytes(&encoder);
 
-	sbc_hdr = net_buf_add(buf, 1u);
 	/* Get the number of samples */
 	a2dp_src_num_samples = (uint16_t)((period_ms * a2dp_src_sf) / 1000);
 	a2dp_src_missed_count += (uint32_t)((period_ms * a2dp_src_sf) % 1000);
@@ -284,24 +378,32 @@ static void audio_work_handler(struct k_work *work)
 	a2dp_src_num_samples = (a2dp_src_num_samples / pcm_frame_samples) * pcm_frame_samples;
 	remaining_frame_num = a2dp_src_num_samples / pcm_frame_samples;
 
-	pdu_len = buf->len + remaining_frame_num * encoded_frame_size;
-
 	/* Raw adjust for the drift */
 	while (a2dp_src_missed_count >= (1000 * pcm_frame_samples)) {
-		pdu_len += encoded_frame_size;
 		a2dp_src_num_samples += pcm_frame_samples;
 		remaining_frame_num++;
 		a2dp_src_missed_count -= (1000 * pcm_frame_samples);
 	}
 
 	do {
+		buf = bt_a2dp_stream_create_pdu(&a2dp_tx_pool, K_FOREVER);
+		if (buf == NULL) {
+			/* fail */
+			printk("no buf\n");
+			return;
+		}
+
+		sbc_hdr = net_buf_add(buf, 1u);
+
+		a2dp_src_num_samples = remaining_frame_num * pcm_frame_samples;
+		pdu_len = buf->len + remaining_frame_num * encoded_frame_size;
+
 		frame_num = remaining_frame_num;
 		/* adjust the buf size */
 		while ((pdu_len - buf->len > net_buf_tailroom(buf)) ||
 		       (pdu_len > bt_a2dp_get_mtu(&sbc_stream)) ||
 		       (!a2dp_produce_media_check(a2dp_src_num_samples))) {
 			pdu_len -= encoded_frame_size;
-			a2dp_src_missed_count += 1000 * pcm_frame_samples;
 			a2dp_src_num_samples -= pcm_frame_samples;
 			frame_num--;
 		}
@@ -315,7 +417,7 @@ static void audio_work_handler(struct k_work *work)
 
 		for (index = 0; index < frame_num; index++) {
 			out_size = sbc_encode(&encoder,
-					      (uint8_t *)&pcm_data[index * pcm_frame_size],
+					      (const uint8_t *)&pcm_data[index * pcm_frame_size],
 					      net_buf_tail(buf));
 			if (encoded_frame_size != out_size) {
 				printk("sbc encode fail\n");
@@ -367,6 +469,9 @@ static void sbc_stream_configured(struct bt_a2dp_stream *stream)
 	param.min_bitpool = sbc_config->min_bitpool;
 	param.max_bitpool = sbc_config->max_bitpool;
 
+	sine_wave_count = sine_wave_gen(&sine_wave[0], ARRAY_SIZE(sine_wave), a2dp_src_sf);
+	sine_wave_index = 0;
+
 	if (sbc_setup_encoder(&encoder, &param) != 0) {
 		printk("sbc encoder initialization fail\n");
 		return;
@@ -378,8 +483,9 @@ static void sbc_stream_configured(struct bt_a2dp_stream *stream)
 static void sbc_stream_established(struct bt_a2dp_stream *stream)
 {
 	printk("stream established\n");
-	audio_play_check();
-	bt_a2dp_stream_start(&sbc_stream);
+	if (audio_play_check()) {
+		bt_a2dp_stream_start(&sbc_stream);
+	}
 }
 
 static void sbc_stream_released(struct bt_a2dp_stream *stream)
@@ -390,14 +496,12 @@ static void sbc_stream_released(struct bt_a2dp_stream *stream)
 
 static void sbc_stream_started(struct bt_a2dp_stream *stream)
 {
-	uint32_t audio_time_interval = CONFIG_BT_A2DP_SOURCE_DATA_SEND_INTERVAL;
-
 	printk("stream started\n");
 	/* Start Audio Source */
 	a2dp_src_playback = true;
 
 	k_uptime_delta(&ref_time);
-	k_timer_start(&a2dp_player_timer, K_MSEC(audio_time_interval), K_MSEC(audio_time_interval));
+	k_timer_start(&a2dp_player_timer, K_MSEC(send_interval), K_MSEC(send_interval));
 }
 
 static struct bt_a2dp_stream_ops sbc_stream_ops = {
@@ -559,14 +663,11 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	struct bt_conn_info info;
 
 	bt_conn_get_info(conn, &info);
 
-	bt_addr_to_str(info.br.dst, addr, sizeof(addr));
-
-	printk("Security changed: %s level %u, err %s(%d)\n", addr, level,
+	printk("Security changed: %s level %u, err %s(%d)\n", bt_addr_str(info.br.dst), level,
 	       bt_security_err_to_str(err), err);
 }
 
@@ -578,7 +679,6 @@ static struct bt_conn_cb conn_callbacks = {
 
 static void discovery_timeout_cb(const struct bt_br_discovery_result *results, size_t count)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
 	const uint8_t *eir;
 	bool cod_a2dp = false;
 	static uint8_t temp[240];
@@ -588,8 +688,8 @@ static void discovery_timeout_cb(const struct bt_br_discovery_result *results, s
 	size_t i;
 
 	for (i = 0; i < count; i++) {
-		bt_addr_to_str(&results[i].addr, addr, sizeof(addr));
-		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i, addr, results[i].rssi,
+		printk("Device[%d]: %s, rssi %d, cod 0x%02x%02x%02x", i,
+		       bt_addr_str(&results[i].addr), results[i].rssi,
 		       results[i].cod[0], results[i].cod[1], results[i].cod[2]);
 
 		major_device = (uint8_t)BT_COD_MAJOR_DEVICE_CLASS(results[i].cod);
@@ -689,7 +789,7 @@ static void bt_ready(int err)
 	k_work_queue_start(&audio_play_work_q, audio_play_work_q_thread_stack,
 			   CONFIG_BT_A2DP_SOURCE_DATA_SEND_WORKQ_STACK_SIZE,
 			   K_PRIO_COOP(CONFIG_BT_A2DP_SOURCE_DATA_SEND_WORKQ_PRIORITY), NULL);
-	k_thread_name_set(&audio_play_work_q.thread, "audio play");
+	k_thread_name_set(audio_play_work_q.thread_id, "audio play");
 
 	k_work_init(&discover_work, discover_work_handler);
 

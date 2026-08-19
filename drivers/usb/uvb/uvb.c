@@ -39,11 +39,11 @@ struct uvb_msg {
 	};
 };
 
-K_MEM_SLAB_DEFINE_STATIC(uvb_msg_slab, sizeof(struct uvb_msg),
-			 CONFIG_UVB_MAX_MESSAGES, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(uvb_msg_slab, struct uvb_msg,
+			      CONFIG_UVB_MAX_MESSAGES);
 
-K_MEM_SLAB_DEFINE_STATIC(uvb_pkt_slab, sizeof(struct uvb_packet),
-			 CONFIG_UVB_MAX_MESSAGES, sizeof(void *));
+K_MEM_SLAB_DEFINE_STATIC_TYPE(uvb_pkt_slab, struct uvb_packet,
+			      CONFIG_UVB_MAX_MESSAGES);
 
 struct uvb_packet *uvb_alloc_pkt(const enum uvb_request request,
 				 const uint8_t addr, const uint8_t ep,

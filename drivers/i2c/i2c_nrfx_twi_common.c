@@ -55,14 +55,31 @@ int i2c_nrfx_twi_configure(const struct device *dev, uint32_t dev_config)
 
 int i2c_nrfx_twi_recover_bus(const struct device *dev)
 {
+	const struct i2c_nrfx_twi_config *config = dev->config;
 	struct i2c_nrfx_twi_common_data *data = dev->data;
+	enum pm_device_state state;
 	uint32_t scl_pin;
 	uint32_t sda_pin;
+	int err;
 
 	scl_pin = nrf_twi_scl_pin_get(data->twi.p_reg);
 	sda_pin = nrf_twi_sda_pin_get(data->twi.p_reg);
 
-	return nrfx_twi_bus_recover(scl_pin, sda_pin);
+	/* disable peripheral if active (required to release SCL/SDA lines) */
+	(void)pm_device_state_get(dev, &state);
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		nrfx_twi_disable(&data->twi);
+	}
+
+	err = nrfx_twi_bus_recover(scl_pin, sda_pin);
+
+	/* restore peripheral if it was active before */
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		(void)pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		nrfx_twi_enable(&data->twi);
+	}
+
+	return err;
 }
 
 int i2c_nrfx_twi_msg_transfer(const struct device *dev, uint8_t flags,

@@ -5,7 +5,7 @@
  */
 
 #include <mem.h>
-#include <alif/ensemble/common/ensemble_common.dtsi>
+#include <alif/ensemble/common/ensemble_e4_e6_e8.dtsi>
 
 &soc {
 	sram0: sram@2000000 {
@@ -21,12 +21,8 @@
 	};
 
 	mram: flash@80000000 {
-		compatible = "zephyr,memory-region", "soc-nv-flash";
+		compatible = "zephyr,memory-region";
 		reg = <0x80000000 DT_SIZE_K(5632)>;
 		zephyr,memory-region = "MRAM";
-
-		#address-cells = <1>;
-		#size-cells = <1>;
-		ranges = <0x0 0x80000000 DT_SIZE_K(5632)>;
 	};
 };

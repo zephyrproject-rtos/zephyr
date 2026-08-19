@@ -14,7 +14,7 @@
 	compatible = "ti,am64x_sk_r5f1_0", "ti,am6442";
 
 	chosen {
-		zephyr,sram = &atcm;
+		zephyr,sram = &ddr1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
 	};
@@ -47,8 +47,4 @@
 		mboxes = <&main_mbox4 0>, <&main_mbox4 1>;
 		mbox-names = "tx", "rx";
 	};
-};
-
-&main_timer10 {
-	status = "okay";
 };

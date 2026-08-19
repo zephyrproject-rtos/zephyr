@@ -1496,9 +1496,8 @@ static int npcx_i3c_do_daa(const struct device *dev)
 			LOG_DBG("DAA: Rcvd PID 0x%04x%08x", vendor_id, part_no);
 
 			/* Find a usable address during ENTDAA */
-			ret = i3c_dev_list_daa_addr_helper(&data->common.attached_dev.addr_slots,
-							   &config->common.dev_list, pid, false,
-							   false, &target, &dyn_addr);
+			ret = i3c_dev_list_daa_addr_helper(dev, pid, false, false, &target,
+							   &dyn_addr);
 			if (ret != 0) {
 				LOG_ERR("%s: Assign new DA error", __func__);
 				break;
@@ -1513,6 +1512,12 @@ static int npcx_i3c_do_daa(const struct device *dev)
 				target->dynamic_addr = dyn_addr;
 				target->bcr = rx_buf[6];
 				target->dcr = rx_buf[7];
+
+				int aret = i3c_attach_i3c_device(target);
+
+				if (aret != 0 && aret != -EALREADY) {
+					LOG_ERR("Failed to attach target");
+				}
 			}
 
 			/* Mark the address as I3C device */
@@ -1527,7 +1532,7 @@ static int npcx_i3c_do_daa(const struct device *dev)
 			if ((target != NULL) && (target->static_addr != 0U) &&
 			    (dyn_addr != target->static_addr)) {
 				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
-							 dyn_addr);
+							 target->static_addr);
 			}
 
 			/* Emit process DAA again to send the address to the device */
@@ -2284,7 +2289,8 @@ static int npcx_i3c_target_xfer_end_handle(const struct device *dev)
 	const struct npcx_i3c_config *config = dev->config;
 	struct i3c_reg *inst = config->base;
 	struct mdma_reg *mdma_inst = config->mdma_base;
-	const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+	const struct i3c_target_callbacks *target_cb =
+		(data->target_config != NULL) ? data->target_config->callbacks : NULL;
 	bool is_i3c_start = IS_BIT_SET(inst->INTMASKED, NPCX_I3C_INTMASKED_START);
 	bool is_i3c_stop = IS_BIT_SET(inst->INTMASKED, NPCX_I3C_INTMASKED_STOP);
 	enum npcx_i3c_oper_state op_state = get_oper_state(dev);
@@ -2765,7 +2771,8 @@ static void npcx_i3c_target_isr(const struct device *dev)
 	struct i3c_config_target *config_tgt = &data->config_target;
 	struct i3c_target_config *target_config = data->target_config;
 	struct i3c_reg *inst = config->base;
-	const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+	const struct i3c_target_callbacks *target_cb =
+		(target_config != NULL) ? target_config->callbacks : NULL;
 
 #ifdef CONFIG_I3C_NPCX_DMA
 	struct mdma_reg *mdma_inst = config->mdma_base;
@@ -3067,7 +3074,8 @@ static int npcx_i3c_init(const struct device *dev)
 
 	/* Check I3C is controller mode and target device exist in device tree */
 	if ((config->common.dev_list.num_i3c > 0) &&
-	    GET_FIELD(inst->MCONFIG, NPCX_I3C_MCONFIG_CTRENA) == MCONFIG_CTRENA_ON) {
+	    GET_FIELD(inst->MCONFIG, NPCX_I3C_MCONFIG_CTRENA) == MCONFIG_CTRENA_ON &&
+	    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 		/* Perform bus initialization */
 		ret = i3c_bus_init(dev, &config->common.dev_list);
 		if (ret != 0) {
@@ -3136,6 +3144,7 @@ static DEVICE_API(i3c, npcx_i3c_driver_api) = {
 		.common.dev_list.num_i3c = ARRAY_SIZE(npcx_i3c_device_array_##id),                 \
 		.common.dev_list.i2c = npcx_i3c_i2c_device_array_##id,                             \
 		.common.dev_list.num_i2c = ARRAY_SIZE(npcx_i3c_i2c_device_array_##id),             \
+		.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(id),                           \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(id),                                      \
 		.instance_id = DT_INST_PROP(id, instance_id),                                      \
 		.clocks.i3c_pp_scl_hz = DT_INST_PROP_OR(id, i3c_scl_hz, 0),                        \
@@ -3157,6 +3166,7 @@ static DEVICE_API(i3c, npcx_i3c_driver_api) = {
 		.config_target.max_read_len = DT_INST_PROP_OR(id, maximum_read, 0),                \
 		.config_target.max_write_len = DT_INST_PROP_OR(id, maximum_write, 0),              \
 		.config_target.supported_hdr = false,                                              \
+		.target_config = NULL,                                                             \
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(id, npcx_i3c_init, NULL, &npcx_i3c_data_##id, &npcx_i3c_config_##id, \
 			      POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,                    \

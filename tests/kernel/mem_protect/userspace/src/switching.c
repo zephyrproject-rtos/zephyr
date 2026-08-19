@@ -6,7 +6,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
-#include <zephyr/kernel_structs.h>
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/barrier.h>
@@ -159,7 +158,32 @@ static void run_switching(int num_kernel_threads)
 #endif /* CONFIG_USERSPACE_SWITCHING_TESTS */
 }
 
-ZTEST(userspace_domain_switching, test_kernel_only_switching)
+/**
+ * @brief Verify the switching scenario with kernel threads as a baseline.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Threads pinned to one CPU alternate through the scheduler while belonging
+ * to two disjoint memory domains -- even-numbered threads in domain A, odd in
+ * domain B. Every reschedule must swap in the incoming thread's domain: each
+ * thread increments a counter in its own partition every loop, and the
+ * counter in the other domain's partition must stay untouched, so a stale
+ * domain after a switch shows up as a fault or a stray count. Skipped without
+ * CONFIG_USERSPACE_SWITCHING_TESTS.
+ *
+ * This variant runs every thread as a kernel thread, which has access to all
+ * memory regardless of domains, proving the scenario itself is sound before
+ * the user-mode variants rely on it.
+ *
+ * Test steps:
+ * - Run the switching scenario with all threads created as kernel threads.
+ *
+ * Expected result:
+ * - Every thread completes its loops and the cross-partition counters stay
+ *   zero.
+ */
+ZTEST(userspace_domain_switching, test_userspace_kernel_only_switching)
 {
 	/*
 	 * Run with all kernel threads.
@@ -171,13 +195,69 @@ ZTEST(userspace_domain_switching, test_kernel_only_switching)
 	run_switching(NUM_THREADS);
 }
 
-ZTEST(userspace_domain_switching, test_user_only_switching)
+/**
+ * @brief Verify domain isolation while switching among user threads.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Threads pinned to one CPU alternate through the scheduler while belonging
+ * to two disjoint memory domains -- even-numbered threads in domain A, odd in
+ * domain B. Every reschedule must swap in the incoming thread's domain: each
+ * thread increments a counter in its own partition every loop, and the
+ * counter in the other domain's partition must stay untouched, so a stale
+ * domain after a switch shows up as a fault or a stray count. Skipped without
+ * CONFIG_USERSPACE_SWITCHING_TESTS.
+ *
+ * This is the full test: every thread is a user thread confined to its
+ * domain, so each context switch has to reprogram the protection hardware.
+ *
+ * Test steps:
+ * - Run the switching scenario with all threads created as user threads,
+ *   assigned alternately to the two domains.
+ *
+ * Expected result:
+ * - Every thread completes its loops and the cross-partition counters stay
+ *   zero.
+ *
+ * @see k_mem_domain_add_thread()
+ */
+ZTEST(userspace_domain_switching, test_userspace_user_only_switching)
 {
 	/* Run with all user threads. */
 	run_switching(0);
 }
 
-ZTEST(userspace_domain_switching, test_kernel_user_mix_switching)
+/**
+ * @brief Verify domain isolation with kernel and user threads interleaved.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Threads pinned to one CPU alternate through the scheduler while belonging
+ * to two disjoint memory domains -- even-numbered threads in domain A, odd in
+ * domain B. Every reschedule must swap in the incoming thread's domain: each
+ * thread increments a counter in its own partition every loop, and the
+ * counter in the other domain's partition must stay untouched, so a stale
+ * domain after a switch shows up as a fault or a stray count. Skipped without
+ * CONFIG_USERSPACE_SWITCHING_TESTS.
+ *
+ * One thread stays a kernel thread while the rest run in user mode, so the
+ * scheduler alternates between threads that bypass the domains and threads
+ * confined by them -- the transition each direction must restore the right
+ * protection view.
+ *
+ * Test steps:
+ * - Run the switching scenario with one kernel thread and the rest user
+ *   threads.
+ *
+ * Expected result:
+ * - Every thread completes its loops and the cross-partition counters stay
+ *   zero.
+ *
+ * @see k_mem_domain_add_thread()
+ */
+ZTEST(userspace_domain_switching, test_userspace_kernel_user_mix_switching)
 {
 	/* Run with one kernel thread while others are all user threads. */
 	run_switching(1);

@@ -4,7 +4,7 @@
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
-	depends on SOC_FAMILY_STM32 && !SOC_SERIES_STM32WB0X
+	depends on SOC_FAMILY_STM32
 	select HWINFO_HAS_DRIVER
 	help
 	  Enable STM32 hwinfo driver.

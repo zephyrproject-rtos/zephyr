@@ -245,10 +245,6 @@ static int i2c_ambiq_transfer(const struct device *dev, struct i2c_msg *msgs, ui
 	struct i2c_ambiq_data *data = dev->data;
 	int ret = 0;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	i2c_ambiq_pm_policy_state_lock_get(dev);
 
 	/* Send out messages */

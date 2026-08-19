@@ -4,6 +4,7 @@
 menuconfig VIDEO_ST_MIPID02
 	bool "ST Microelectronics MIPID02 CSI to DVP bridge"
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_MIPID02),reset-gpios)
 	depends on DT_HAS_ST_MIPID02_ENABLED
 	default y
 	help

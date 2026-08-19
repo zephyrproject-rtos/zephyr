@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_
+#define ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_
+
 #include <zephyr/devicetree.h>
 #include <soc.h>
+
+/**  @cond INTERNAL_HIDDEN */
 
 #define FLEXRAM_DT_NODE    DT_INST(0, nxp_flexram)
 #define IOMUXC_GPR_DT_NODE DT_NODELABEL(iomuxcgpr)
@@ -65,11 +70,14 @@ static inline void flexram_dt_partition(void)
 }
 #endif /* FLEXRAM_RUNTIME_BANKS_USED */
 
-#ifdef CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API
+/** @endcond */
+
 /** @brief Sets magic address for OCRAM
  *
  * Magic address allows core interrupt from FlexRAM when address
  * is accessed.
+ *
+ * @kconfig_dep{CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API}
  *
  * @param ocram_addr: An address in OCRAM to set magic function on.
  * @retval 0 on success
@@ -83,6 +91,8 @@ int flexram_set_ocram_magic_addr(uint32_t ocram_addr);
  * Magic address allows core interrupt from FlexRAM when address
  * is accessed.
  *
+ * @kconfig_dep{CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API}
+ *
  * @param itcm_addr: An address in ITCM to set magic function on.
  * @retval 0 on success
  * @retval -EINVAL if itcm_addr is not in ITCM
@@ -95,6 +105,8 @@ int flexram_set_itcm_magic_addr(uint32_t itcm_addr);
  * Magic address allows core interrupt from FlexRAM when address
  * is accessed.
  *
+ * @kconfig_dep{CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API}
+ *
  * @param dtcm_addr: An address in DTCM to set magic function on.
  * @retval 0 on success
  * @retval -EINVAL if dtcm_addr is not in DTCM
@@ -102,4 +114,4 @@ int flexram_set_itcm_magic_addr(uint32_t itcm_addr);
  */
 int flexram_set_dtcm_magic_addr(uint32_t dtcm_addr);
 
-#endif /* CONFIG_NXP_FLEXRAM_MAGIC_ADDR_API */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_MISC_FLEXRAM_NXP_FLEXRAM_H_ */

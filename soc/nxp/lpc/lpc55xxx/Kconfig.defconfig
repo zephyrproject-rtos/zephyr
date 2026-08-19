@@ -3,6 +3,9 @@
 
 if SOC_SERIES_LPC55XXX
 
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x2abc77ec"
+
 config NUM_IRQS
 	# must be >= the highest interrupt number used
 	default 119 if SOC_LPC55S36
@@ -49,14 +52,14 @@ endif # SOC_LPC55S06
 if SOC_LPC55S36
 
 # Enable cache management features
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE
 	default EXTERNAL_CACHE
 endchoice
 
-config ICACHE_LINE_SIZE
+configdefault ICACHE_LINE_SIZE
 	default 256
 
 endif # SOC_LPC55S36

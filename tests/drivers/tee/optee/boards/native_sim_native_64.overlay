@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2023 EPAM Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	firmware {
+		optee {
+			compatible = "linaro,optee-tz";
+			method = "smc";
+			status = "okay";
+		};
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <2>;
+
+		sram0: memory@0 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x20ffbe6 0xe4000000>;
+		};
+	};
+};

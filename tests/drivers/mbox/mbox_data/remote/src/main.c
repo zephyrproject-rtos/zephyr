@@ -12,7 +12,7 @@
 
 static K_SEM_DEFINE(g_mbox_data_rx_sem, 0, 1);
 
-static uint32_t g_mbox_received_data;
+static uint64_t g_mbox_received_data;
 static uint32_t g_mbox_received_channel;
 
 #define TX_CHANNEL_INDEX 0
@@ -41,15 +41,15 @@ static void callback(const struct device *dev, uint32_t channel, void *user_data
 int main(void)
 {
 	struct mbox_msg msg = {0};
-	uint32_t message = 0;
+	uint64_t message = 0;
 
 	for (int i = 0; i < ARRAY_SIZE(channels); i++) {
 		const struct mbox_dt_spec *tx_channel = &channels[i][TX_CHANNEL_INDEX];
 		const struct mbox_dt_spec *rx_channel = &channels[i][RX_CHANNEL_INDEX];
 
 		const int max_transfer_size_bytes = mbox_mtu_get_dt(tx_channel);
-		/* Sample currently supports only transfer size up to 4 bytes */
-		if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 4)) {
+		/* Sample currently supports only transfer size up to 8 bytes */
+		if ((max_transfer_size_bytes <= 0) || (max_transfer_size_bytes > 8)) {
 			printk("mbox_mtu_get() error\n");
 			return 0;
 		}

@@ -4,8 +4,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Devicetree pin control helpers for Ambiq Apollo3
+ * @ingroup pinctrl_apollo3
+ */
+
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO3_PINCTRL_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO3_PINCTRL_H_
+
+/**
+ * @addtogroup ambiq_pinctrl Ambiq pin control helpers
+ * @ingroup devicetree-pinctrl
+ */
+
+/**
+ * @defgroup pinctrl_apollo3 Ambiq Apollo3 pin control helpers
+ * @brief Macros for pin control configuration of Ambiq Apollo3
+ * @ingroup ambiq_pinctrl
+ *
+ * The macros follow the following naming convention:
+ * @c \<FUNCTION\>\_P\<PIN\>.
+ *
+ * For example, @c UART0TX_P60 corresponds to selecting the @c UART0TX function
+ * on pin @c 60.
+ *
+ * @code{.dts}
+ * #include <zephyr/dt-bindings/pinctrl/ambiq-apollo3-pinctrl.h>
+ *
+ * &pinctrl {
+ *         uart0_default: uart0_default {
+ *                 group1 {
+ *                         pinmux = <UART0TX_P60>;
+ *                 };
+ *                 group2 {
+ *                         pinmux = <UART0RX_P47>;
+ *                         input-enable;
+ *                 };
+ *         };
+ * };
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 #define APOLLO3_ALT_FUNC_POS  0
 #define APOLLO3_ALT_FUNC_MASK 0xf
@@ -490,5 +533,9 @@
 #define UA0RTS_P73       APOLLO3_PINMUX(73, 5)
 #define UA1CTS_P73       APOLLO3_PINMUX(73, 6)
 #define UA1RTS_P73       APOLLO3_PINMUX(73, 7)
+
+/** @endcond */
+
+/** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO3_PINCTRL_H_ */

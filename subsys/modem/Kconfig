@@ -28,9 +28,29 @@ config MODEM_CHAT
 
 if MODEM_CHAT
 
+config MODEM_CHAT_COMMANDS_CONDITIONAL
+	bool
+	help
+	  Modem chat usage requires conditional command support. This option
+	  should be selected by any modem chat user that defines a conditional
+	  command, for example `MODEM_CHAT_SCRIPT_CMD_RESP_COND`.
+
+config MODEM_CHAT_WORK_BUFFER_SIZE
+	int "Modem chat work buffer size in bytes"
+	default 32
+
 config MODEM_CHAT_LOG_BUFFER_SIZE
 	int "Modem chat log buffer size in bytes"
 	default 128
+
+config MODEM_CHAT_LOG_RAW_RX
+	bool "Log raw received modem lines"
+	depends on LOG
+	depends on MODEM_MODULES_LOG_LEVEL_DBG
+	help
+	  Log the raw received modem line instead of the parsed debug logging.
+	  This preserves separators and empty fields exactly as
+	  received before modem_chat tokenizes the response.
 
 endif
 

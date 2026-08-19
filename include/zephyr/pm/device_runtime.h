@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the Device Runtime Power Management API.
+ * @ingroup subsys_pm_device_runtime
+ */
+
 #ifndef ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_
 #define ZEPHYR_INCLUDE_PM_DEVICE_RUNTIME_H_
 
@@ -18,6 +24,8 @@ extern "C" {
 /**
  * @brief Device Runtime Power Management API
  * @defgroup subsys_pm_device_runtime Device Runtime
+ * @since 3.0
+ * @version 1.0.0
  * @ingroup subsys_pm
  * @{
  */
@@ -31,9 +39,8 @@ extern "C" {
  *
  * @param dev Device instance.
  *
- * @retval 0 If the device runtime PM is enabled successfully or it has not
- * been requested for this device in devicetree.
- * @retval -errno Other negative errno, result of enabled device runtime PM.
+ * @return 0 if the device runtime PM is enabled successfully or it has not
+ * been requested for this device in devicetree, negative errno value on failure.
  */
 int pm_device_runtime_auto_enable(const struct device *dev);
 
@@ -47,10 +54,9 @@ int pm_device_runtime_auto_enable(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If the device runtime PM is enabled successfully.
- * @retval -EBUSY If device is busy.
- * @retval -ENOTSUP If the device does not support PM.
- * @retval -errno Other negative errno, result of suspending the device.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EBUSY Device is busy.
+ * @retval -ENOTSUP Device does not support PM.
  *
  * @see pm_device_init_suspended()
  */
@@ -65,9 +71,8 @@ int pm_device_runtime_enable(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If the device runtime PM is disabled successfully.
- * @retval -ENOTSUP If the device does not support PM.
- * @retval -errno Other negative errno, result of resuming the device.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -ENOTSUP Device does not support PM.
  */
 int pm_device_runtime_disable(const struct device *dev);
 
@@ -89,10 +94,9 @@ int pm_device_runtime_disable(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
- * available this function will be a no-op and will also return 0.
- * @retval -EWOULDBLOCK If call would block but it is not allowed (e.g. in ISR).
- * @retval -errno Other negative errno, result of the PM action callback.
+ * @return 0 on success (including when runtime PM is not enabled or not
+ * available), negative errno value on failure.
+ * @retval -EWOULDBLOCK Call would block but it is not allowed (e.g. in ISR).
  */
 int pm_device_runtime_get(const struct device *dev);
 
@@ -108,11 +112,10 @@ int pm_device_runtime_get(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
- * available this function will be a no-op and will also return 0.
- * @retval -EALREADY If device is already suspended (can only happen if get/put
+ * @return 0 on success (including when runtime PM is not enabled or not
+ * available), negative errno value on failure.
+ * @retval -EALREADY Device is already suspended (can only happen if get/put
  * calls are unbalanced).
- * @retval -errno Other negative errno, result of the action callback.
  *
  * @see pm_device_runtime_put_async()
  */
@@ -134,10 +137,10 @@ int pm_device_runtime_put(const struct device *dev);
  * @param dev Device instance.
  * @param delay Minimum amount of time before triggering the action.
  *
- * @retval 0 If it succeeds. In case device runtime PM is not enabled or not
- * available this function will be a no-op and will also return 0.
- * @retval -EBUSY If the device is busy.
- * @retval -EALREADY If device is already suspended (can only happen if get/put
+ * @return 0 on success (including when runtime PM is not enabled or not
+ * available), negative errno value on failure.
+ * @retval -EBUSY Device is busy.
+ * @retval -EALREADY Device is already suspended (can only happen if get/put
  * calls are unbalanced).
  *
  * @see pm_device_runtime_put()
@@ -151,8 +154,8 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay);
  *
  * @param dev Device instance.
  *
- * @retval true If device has device runtime PM enabled.
- * @retval false If the device has device runtime PM disabled.
+ * @retval true Device has device runtime PM enabled.
+ * @retval false Device has device runtime PM disabled.
  *
  * @see pm_device_runtime_enable()
  */
@@ -163,9 +166,10 @@ bool pm_device_runtime_is_enabled(const struct device *dev);
  *
  * @param dev Device instance.
  *
- * @retval The current usage counter.
- * @retval -ENOTSUP If the device is not using runtime PM.
- * @retval -ENOSYS If the runtime PM is not enabled at all.
+ * @return The current usage counter.
+ * @retval -ENOTSUP Device is not using runtime PM.
+ * @retval -ENOSYS Runtime PM is not enabled in this build
+ *                 (CONFIG_PM_DEVICE_RUNTIME is disabled).
  */
 int pm_device_runtime_usage(const struct device *dev);
 
@@ -222,6 +226,216 @@ static inline int pm_device_runtime_usage(const struct device *dev)
 }
 
 #endif
+
+/**
+ * @brief Writes a "failed to resume" debug message to the log.
+ *
+ * @details Writes a "failed to resume" debug message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_DBG_PM_DEVICE_RUNTIME_GET(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_DBG("Failed to resume %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_DBG("Failed to resume %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to resume" warning message to the log.
+ *
+ * @details Writes a "failed to resume" warning message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_WRN_PM_DEVICE_RUNTIME_GET(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_WRN("Failed to resume %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_WRN("Failed to resume %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to resume" error message to the log.
+ *
+ * @details Writes a "failed to resume" error message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_ERR("Failed to resume %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_ERR("Failed to resume %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" debug message to the log.
+ *
+ * @details Writes a "failed to suspend" debug message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_DBG_PM_DEVICE_RUNTIME_PUT(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_DBG("Failed to suspend %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_DBG("Failed to suspend %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" warning message to the log.
+ *
+ * @details Writes a "failed to suspend" warning message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_WRN_PM_DEVICE_RUNTIME_PUT(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_WRN("Failed to suspend %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_WRN("Failed to suspend %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" error message to the log.
+ *
+ * @details Writes a "failed to suspend" error message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_ERR("Failed to suspend %s", (dev) ? (dev)->name : "(null)")), \
+		    (LOG_ERR("Failed to suspend %s (%d)", (dev) ? (dev)->name : "(null)", \
+			     GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to resume" debug message to the log for the logging instance.
+ *
+ * @details Writes a "failed to resume" debug message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_DBG_PM_DEVICE_RUNTIME_GET(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_DBG(_log_inst, "Failed to resume %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_DBG(_log_inst, "Failed to resume %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to resume" warning message to the log for the logging instance.
+ *
+ * @details Writes a "failed to resume" warning message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_WRN_PM_DEVICE_RUNTIME_GET(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_WRN(_log_inst, "Failed to resume %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_WRN(_log_inst, "Failed to resume %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to resume" error message to the log for the logging instance.
+ *
+ * @details Writes a "failed to resume" error message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_get() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_get().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_ERR(_log_inst, "Failed to resume %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_ERR(_log_inst, "Failed to resume %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" debug message to the log for the logging instance.
+ *
+ * @details Writes a "failed to suspend" debug message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_DBG_PM_DEVICE_RUNTIME_PUT(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_DBG(_log_inst, "Failed to suspend %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_DBG(_log_inst, "Failed to suspend %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" warning message to the log for the logging instance.
+ *
+ * @details Writes a "failed to suspend" warning message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_WRN_PM_DEVICE_RUNTIME_PUT(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_WRN(_log_inst, "Failed to suspend %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_WRN(_log_inst, "Failed to suspend %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
+
+/**
+ * @brief Writes a "failed to suspend" error message to the log for the logging instance.
+ *
+ * @details Writes a "failed to suspend" error message to the log using the
+ * device name as reference, meant to be used in pm_device_runtime_put() checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ * @param ... optional return code for pm_device_runtime_put().
+ *	      Only the first argument is used; all others will be discarded.
+ */
+#define LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(_log_inst, dev, ...) \
+	COND_CODE_1(IS_EQ(NUM_VA_ARGS(__VA_ARGS__), 0), \
+		    (LOG_INST_ERR(_log_inst, "Failed to suspend %s", \
+				  (dev) ? (dev)->name : "(null)")), \
+		    (LOG_INST_ERR(_log_inst, "Failed to suspend %s (%d)", \
+				  (dev) ? (dev)->name : "(null)", \
+				  GET_ARGS_FIRST_N(1, __VA_ARGS__))))
 
 /** @} */
 

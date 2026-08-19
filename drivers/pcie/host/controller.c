@@ -121,7 +121,7 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 		if (found_mem64) {
 			pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, 0xFFFFFFFF);
 			size |= ((uint64_t)pcie_ctrl_conf_read(ctrl_dev, bdf, reg + 1)) << 32;
-			pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, scratch >> 32);
+			pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, (uint64_t)scratch >> 32);
 		}
 
 		if (!PCIE_CONF_BAR_ADDR(size)) {
@@ -148,7 +148,7 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 			pcie_ctrl_region_translate(ctrl_dev, bdf, found_mem,
 						   found_mem64, bar_bus_addr, &bar_phys_addr);
 
-			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%lx "
+			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%zx "
 				"assigned [%s 0x%lx-0x%lx -> 0x%lx-0x%lx]",
 				PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf),
 				bar, bar_size,
@@ -158,10 +158,11 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 
 			pcie_ctrl_conf_write(ctrl_dev, bdf, reg, bar_bus_addr & 0xFFFFFFFF);
 			if (found_mem64) {
-				pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1, bar_bus_addr >> 32);
+				pcie_ctrl_conf_write(ctrl_dev, bdf, reg + 1,
+						     (uint64_t)bar_bus_addr >> 32);
 			}
 		} else {
-			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%lx Failed memory allocation.",
+			LOG_INF("[%02x:%02x.%x] BAR%d size 0x%zx Failed memory allocation.",
 				PCIE_BDF_TO_BUS(bdf), PCIE_BDF_TO_DEV(bdf), PCIE_BDF_TO_FUNC(bdf),
 				bar, bar_size);
 		}

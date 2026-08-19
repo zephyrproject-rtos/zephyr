@@ -1,11 +1,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(cap_acceptor_self_tets)
+project(cap_acceptor_self_tests)
 
-set(cap_acceptor_path ${ZEPHYR_BASE}/samples/bluetooth/cap_acceptor)
+set(cap_acceptor_path ${ZEPHYR_BASE}/samples/bluetooth/audio/cap_acceptor)
 
 target_sources(app PRIVATE
   ${cap_acceptor_path}/src/main.c

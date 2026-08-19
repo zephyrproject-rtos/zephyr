@@ -73,10 +73,7 @@ static struct rfcomm_channel *alloc_channel(const bt_addr_t *dst)
 
 static void free_channel(struct rfcomm_channel *chan)
 {
-	if (chan->conn != NULL) {
-		bt_conn_unref(chan->conn);
-		chan->conn = NULL;
-	}
+	bt_conn_drop(&chan->conn);
 	chan->in_use = false;
 	chan->channel = 0;
 	bt_addr_copy(&chan->dst, &bt_addr_none);

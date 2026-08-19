@@ -13,6 +13,7 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/fff.h>
 #include <zephyr/sys/iterable_sections.h>
+#include <zephyr/toolchain.h>
 
 #include "conn.h"
 
@@ -41,6 +42,15 @@ struct bt_conn *bt_conn_ref(struct bt_conn *conn)
 
 void bt_conn_unref(struct bt_conn *conn)
 {
+	ARG_UNUSED(conn);
+}
+
+void bt_conn_drop(struct bt_conn **orig)
+{
+	struct bt_conn *conn = *orig;
+
+	*orig = NULL;
+	bt_conn_unref(conn);
 }
 
 int bt_conn_auth_info_cb_register(struct bt_conn_auth_info_cb *cb)
@@ -78,5 +88,8 @@ void mock_bt_conn_disconnected(struct bt_conn *conn, uint8_t err)
 
 bool bt_conn_is_type(const struct bt_conn *conn, enum bt_conn_type type)
 {
+	ARG_UNUSED(conn);
+	ARG_UNUSED(type);
+
 	return true;
 }

@@ -15,7 +15,8 @@
 #define DT_DRV_COMPAT vnd_ethernet
 
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
-static struct net_stats_eth *vnd_ethernet_get_stats(const struct device *dev)
+static struct net_stats_eth *vnd_ethernet_get_stats(const struct device *dev,
+						    struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
@@ -23,28 +24,31 @@ static struct net_stats_eth *vnd_ethernet_get_stats(const struct device *dev)
 }
 
 #endif
-static int vnd_ethernet_start(const struct device *dev)
+static int vnd_ethernet_start(const struct device *dev, struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return -ENOTSUP;
 }
 
-static int vnd_ethernet_stop(const struct device *dev)
+static int vnd_ethernet_stop(const struct device *dev, struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return -ENOTSUP;
 }
 
-static enum ethernet_hw_caps vnd_ethernet_get_capabilities(const struct device *dev)
+static enum ethernet_hw_caps vnd_ethernet_get_capabilities(const struct device *dev,
+							   struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
 	return 0;
 }
 
-static int vnd_ethernet_set_config(const struct device *dev, enum ethernet_config_type type,
+static int vnd_ethernet_set_config(const struct device *dev,
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
 				   const struct ethernet_config *config)
 {
 	ARG_UNUSED(dev);
@@ -54,7 +58,9 @@ static int vnd_ethernet_set_config(const struct device *dev, enum ethernet_confi
 	return -ENOTSUP;
 }
 
-static int vnd_ethernet_get_config(const struct device *dev, enum ethernet_config_type type,
+static int vnd_ethernet_get_config(const struct device *dev,
+				   struct net_if *iface __unused,
+				   enum ethernet_config_type type,
 				   struct ethernet_config *config)
 {
 	ARG_UNUSED(dev);
@@ -79,7 +85,8 @@ static int vnd_ethernet_vlan_setup(const struct device *dev, struct net_if *ifac
 #endif /* CONFIG_NET_VLAN */
 
 #if defined(CONFIG_PTP_CLOCK)
-static const struct device *vnd_ethernet_get_ptp_clock(const struct device *dev)
+static const struct device *vnd_ethernet_get_ptp_clock(const struct device *dev,
+						       struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 
@@ -87,7 +94,8 @@ static const struct device *vnd_ethernet_get_ptp_clock(const struct device *dev)
 }
 
 #endif /* CONFIG_PTP_CLOCK */
-static const struct device *vnd_ethernet_get_phy(const struct device *dev)
+static const struct device *vnd_ethernet_get_phy(const struct device *dev,
+						 struct net_if *iface __unused)
 {
 	ARG_UNUSED(dev);
 

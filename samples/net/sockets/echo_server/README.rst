@@ -112,6 +112,12 @@ directory. The default certificates used by Socket Echo Server and
 :zephyr:code-sample:`sockets-echo-client` enable establishing a secure connection
 between the samples.
 
+Wi-Fi
+=====
+
+The IPv4 Wi-Fi support can be enabled in the sample with
+:ref:`Wi-Fi snippet <snippet-wifi-ipv4>`.
+
 Running echo-client in Linux Host
 =================================
 

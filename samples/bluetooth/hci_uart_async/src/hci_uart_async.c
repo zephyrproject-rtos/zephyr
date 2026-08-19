@@ -181,7 +181,7 @@ static void recover_sync_by_reset_pattern(void)
 	LOG_DBG("Pattern found");
 	h2c_cmd_reset = bt_buf_get_tx(BT_BUF_CMD, K_FOREVER,
 				      &h4_cmd_reset[1], sizeof(h4_cmd_reset) - 1);
-	LOG_DBG("Fowarding reset");
+	LOG_DBG("Forwarding reset");
 
 	err = bt_send(h2c_cmd_reset);
 	__ASSERT(!err, "Failed to send reset: %d", err);
@@ -355,11 +355,13 @@ SYS_INIT(hci_uart_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 const struct {
 	uint8_t h4;
-	struct bt_hci_evt_hdr hdr;
+	uint8_t evt;
+	uint8_t len;
 	struct bt_hci_evt_cmd_complete cc;
 } __packed cc_evt = {
 	.h4 = BT_HCI_H4_EVT,
-	.hdr = {.evt = BT_HCI_EVT_CMD_COMPLETE, .len = sizeof(struct bt_hci_evt_cmd_complete)},
+	.evt = BT_HCI_EVT_CMD_COMPLETE,
+	.len = sizeof(struct bt_hci_evt_cmd_complete),
 	.cc = {.ncmd = 1, .opcode = sys_cpu_to_le16(BT_OP_NOP)},
 };
 

@@ -19,6 +19,61 @@ properties:
       PMIC GPIO config for interrupt output <idx flags>. Index is 0 to 2. Use flags to provide
       additional configuration, for example, GPIO_OPEN_DRAIN.
 
+  pwr-cycle-delay-ms:
+    type: int
+    enum:
+      - 350
+      - 250
+      - 150
+      - 50
+    description: Length of the PMIC power cycle in milliseconds.
+
+  longpress-reset-source:
+    type: string
+    default: "none"
+    enum:
+      - "none"
+      - "gpio"
+      - "shphld"
+      - "both"
+    description: |
+      Select long press reset source for the PMIC. Choose one of the following:
+        none - no reset source, hardware's default
+        gpio - reset button connected to GPIO, choose GPIO number using longpress-reset-gpio
+        shphld - reset button connected to SHPHLD pin
+        both - reset button connected to both SHPHLD and GPIO pins, choose GPIO number
+
+  longpress-reset-gpio-config:
+    type: array
+    description: |
+      GPIO pin config <idx flags> to use for long press reset in combination with "gpio" or "both"
+      reset source.
+
+  longpress-reset-debounce-s:
+    type: int
+    default: 3
+    enum:
+      - 3
+      - 5
+      - 10
+      - 20
+    description: |
+      Duration in seconds the reset button(s) need to be pressed to issue a reset. Defaults to the
+      hardware reset value.
+
+  shphld-wakeup-disable:
+    type: boolean
+    description: Disable the wake up from hibernation functionality of the SHPHLD pin.
+
+  shphld-wakeup-debounce-ms:
+    type: int
+    enum:
+      - 50
+      - 100
+      - 500
+      - 1000
+    description: SHPHLD pin wake up debounce in milliseconds.
+
 examples:
   - |
     npm1012: pmic@6a {

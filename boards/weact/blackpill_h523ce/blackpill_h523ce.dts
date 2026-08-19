@@ -68,6 +68,8 @@
 &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
+	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
@@ -90,10 +92,14 @@ zephyr_udc0: &usb {
 };
 
 &adc1 {
-	clocks = <&rcc STM32_CLOCK(AHB2, 10)>, <&rcc STM32_SRC_HCLK ADCDAC_SEL(0)>;
-	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_inp1_pa1>;
 	pinctrl-names = "default";
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <8>;
+	status = "okay";
+};
+
+&adc2 {
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <8>;
 	status = "okay";

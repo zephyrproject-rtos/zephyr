@@ -159,6 +159,14 @@ static int icmpv4_update_record_route(uint8_t *opt_data,
 
 	len++;
 
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
+
 	skip = ptr - ptr_offset;
 	if (skip) {
 		/* Do not alter existed routes */
@@ -301,6 +309,14 @@ static int icmpv4_update_time_stamp(uint8_t *opt_data,
 
 	len++;
 
+	/* The smallest legal pointer value is ptr_offset. A smaller value
+	 * would underflow `skip` (uint8_t) below and over-read the option data
+	 * into the reply.
+	 */
+	if (ptr < ptr_offset) {
+		goto drop;
+	}
+
 	skip = ptr - ptr_offset;
 	if (skip) {
 		/* Do not alter existed routes */
@@ -429,6 +445,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 {
 	struct net_pkt *reply = NULL;
 	struct net_ipv4_hdr *ip_hdr = hdr->ipv4;
+	struct net_if *iface = net_pkt_iface(pkt);
 	struct net_in_addr req_src, req_dst;
 	const struct net_in_addr *src;
 	struct net_pkt_cursor backup;
@@ -459,7 +476,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt),
+	reply = net_pkt_alloc_with_buffer(iface,
 					  net_pkt_ipv4_opts_len(pkt) +
 					  payload_len,
 					  NET_AF_INET, NET_IPPROTO_ICMP,
@@ -470,8 +487,8 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 	}
 
 	if (net_ipv4_is_addr_mcast(&req_dst) ||
-	    net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &req_dst)) {
-		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt), &req_src);
+	    net_ipv4_is_addr_bcast(iface, &req_dst)) {
+		src = net_if_ipv4_select_src_addr(iface, &req_src);
 
 		if (net_ipv4_is_addr_unspecified(src)) {
 			NET_DBG("DROP: No src address match");
@@ -511,7 +528,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent(net_pkt_iface(reply));
+	net_stats_update_icmp_sent(iface);
 
 	net_pkt_cursor_restore(pkt, &backup);
 	return NET_CONTINUE;
@@ -520,7 +537,7 @@ drop:
 		net_pkt_unref(reply);
 	}
 
-	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+	net_stats_update_icmp_drop(iface);
 
 	return NET_DROP;
 }
@@ -529,6 +546,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	int err = -EIO;
+	struct net_if *iface = net_pkt_iface(orig);
 	struct net_ipv4_hdr *ip_hdr;
 	struct net_in_addr orig_src, orig_dst;
 	struct net_pkt *pkt;
@@ -558,7 +576,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 	net_ipv4_addr_copy_raw(orig_src.s4_addr, ip_hdr->src);
 	net_ipv4_addr_copy_raw(orig_dst.s4_addr, ip_hdr->dst);
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(orig), &orig_dst)) {
+	if (net_ipv4_is_addr_bcast(iface, &orig_dst)) {
 		/* We should not send an error to packet that
 		 * were sent to broadcast
 		 */
@@ -578,7 +596,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		copy_len = 0;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(net_pkt_iface(orig),
+	pkt = net_pkt_alloc_with_buffer(iface,
 					copy_len + NET_ICMPV4_UNUSED_LEN,
 					NET_AF_INET, NET_IPPROTO_ICMP,
 					PKT_WAIT_TIME);
@@ -607,7 +625,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, uint8_t type, uint8_t code)
 		net_sprint_ipv4_addr(&orig_src));
 
 	if (net_try_send_data(pkt, K_NO_WAIT) >= 0) {
-		net_stats_update_icmp_sent(net_pkt_iface(orig));
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
@@ -615,7 +633,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop(net_pkt_iface(orig));
+	net_stats_update_icmp_drop(iface);
 
 	return err;
 
@@ -654,7 +672,11 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &icmp_access);
+	ret = net_pkt_acknowledge_data(pkt, &icmp_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
 		icmp_hdr->type, icmp_hdr->code);
@@ -677,7 +699,7 @@ drop:
 	return NET_DROP;
 }
 
-#if defined(CONFIG_NET_IPV4_PMTU)
+#if defined(CONFIG_NET_IPV4_PMTU_PTB)
 /* The RFC 1191 chapter 3 says the minimum MTU size is 68 octets.
  * This is way too small in modern world, so make the minimum 576 octets.
  */
@@ -729,7 +751,11 @@ static enum net_verdict icmpv4_handle_dst_unreach(struct net_icmp_ctx *ctx,
 		goto drop;
 	}
 
-	net_pkt_acknowledge_data(pkt, &dst_unreach_access);
+	ret = net_pkt_acknowledge_data(pkt, &dst_unreach_access);
+	if (ret < 0) {
+		NET_DBG("DROP: cannot acknowledge data");
+		goto drop;
+	}
 
 	mtu = net_ntohs(dest_unreach_hdr->mtu);
 
@@ -782,7 +808,7 @@ silent_drop:
 }
 
 static struct net_icmp_ctx dst_unreach_ctx;
-#endif /* CONFIG_NET_IPV4_PMTU */
+#endif /* CONFIG_NET_IPV4_PMTU_PTB */
 
 void net_icmpv4_init(void)
 {
@@ -796,7 +822,7 @@ void net_icmpv4_init(void)
 			ret);
 	}
 
-#if defined(CONFIG_NET_IPV4_PMTU)
+#if defined(CONFIG_NET_IPV4_PMTU_PTB)
 	ret = net_icmp_init_ctx(&dst_unreach_ctx, NET_AF_INET, NET_ICMPV4_DST_UNREACH, 0,
 				icmpv4_handle_dst_unreach);
 	if (ret < 0) {

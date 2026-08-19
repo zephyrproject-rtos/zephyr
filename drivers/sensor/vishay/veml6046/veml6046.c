@@ -524,7 +524,7 @@ static int veml6046_init(const struct device *dev)
 	uint16_t val;
 
 	if (!i2c_is_ready_dt(&conf->bus)) {
-		LOG_ERR("VEML device not ready");
+		LOG_ERR_DEVICE_NOT_READY(conf->bus.bus);
 		return -ENODEV;
 	}
 

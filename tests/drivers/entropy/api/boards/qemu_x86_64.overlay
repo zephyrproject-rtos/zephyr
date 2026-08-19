@@ -24,4 +24,8 @@
 			compatible = "virtio,device4";
 		};
 	};
+
+	virtio_input_pci: virtio-input-pci {
+		status = "disabled";
+	};
 };

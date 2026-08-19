@@ -21,11 +21,15 @@ Requirements
 Building and Running
 ********************
 
-1. Build and flash the sample to the board.
-2. The device will discover a2dp sink devices nearby.
-3. Connect and stream audio automatically.
+Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
-This sample can be found under :zephyr_file:`samples/bluetooth/classic/a2dp_source` in
-the Zephyr tree.
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/classic/a2dp_source
+   :board: <board>
+   :goals: build flash
+   :compact:
+
+After flashing, the device discovers nearby A2DP sink devices and starts
+streaming audio automatically.
 
 See :zephyr:code-sample-category:`bluetooth` samples for details.

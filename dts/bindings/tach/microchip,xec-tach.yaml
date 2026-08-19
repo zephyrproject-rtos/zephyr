@@ -5,7 +5,10 @@ description: Microchip XEC tachometer controller
 
 compatible: "microchip,xec-tach"
 
-include: [tach.yaml, pinctrl-device.yaml]
+include:
+  - name: tach.yaml
+  - name: pinctrl-device.yaml
+  - name: microchip,dmec-ecia-girq.yaml
 
 properties:
   "#address-cells":
@@ -20,14 +23,8 @@ properties:
   interrupts:
     required: true
 
-  girqs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
     description: |
-      Array of GIRQ and bit position pairs for each interrupt
-      signal the block generates.
-
-  pcrs:
-    type: array
-    required: true
-    description: PCR sleep register index and bit position
+      TACH Power Clock Reset(PCR) peripheral index and bit position

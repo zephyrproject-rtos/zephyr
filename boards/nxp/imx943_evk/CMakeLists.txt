@@ -23,12 +23,18 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
     if(CONFIG_SOC_MIMX94398_M7_0)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_0_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m7_app")
+      set(MSEL "4")
     elseif(CONFIG_SOC_MIMX94398_M7_1)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m7_1_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m7_2_app")
+      set(MSEL "5")
     elseif(CONFIG_SOC_MIMX94398_M33)
       set(AHAB_CONFIG_FILE "imx943_evk_mimx94398_m33_ahab.yaml")
       set(M_IMAGE_NAME "cortex_m33_2_app")
+      set(MSEL "3")
+    endif()
+    if(SPSDK_VERSION VERSION_LESS "3.8.0")
+      message(FATAL_ERROR "meta_data_msel is not supported when SPSDK's version less than 3.8.0!")
     endif()
     file(WRITE ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
       "
@@ -48,6 +54,7 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
                 lpddr_dmem_qb:  ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/${DDR_FW}_dmem_qb_v202409.bin
                 oei_ddr:        ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/oei-m33-ddr-${DDR_FW}.bin
               - system_manager: ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/m33_image-mx94alt.bin
+                meta_data_msel: ${MSEL}
               - ${M_IMAGE_NAME}:  ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
     ")
     set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
@@ -56,6 +63,13 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
       COMMAND nxpimage ahab export -c ${CMAKE_BINARY_DIR}/zephyr/${AHAB_CONFIG_FILE}
     )
   elseif(CONFIG_SOC_MIMX94398_A55)
+    if(CONFIG_SRAM_DEPRECATED_KCONFIG_SET)
+      set(RAM_ADDR ${CONFIG_SRAM_BASE_ADDRESS})
+    else()
+      dt_chosen(chosen_sram_path PROPERTY "zephyr,sram")
+      dt_reg_addr(RAM_ADDR PATH "${chosen_sram_path}")
+    endif()
+
     file(WRITE ${CMAKE_BINARY_DIR}/zephyr/imx943_evk_mimx94398_a55_ahab_primary.yaml
       "
       family: mimx943
@@ -88,8 +102,8 @@ if(CONFIG_BOARD_NXP_SPSDK_IMAGE OR (DEFINED ENV{USE_NXP_SPSDK_IMAGE}
             images:
               - atf:            ${CMAKE_BINARY_DIR}/zephyr/${FIRMWARE_RELEASE}/bl31-imx943-zephyr.bin
               - image_path:     ${CMAKE_BINARY_DIR}/zephyr/${CONFIG_KERNEL_BIN_NAME}.bin
-                load_address:   '${CONFIG_SRAM_BASE_ADDRESS}'
-                entry_point:    '${CONFIG_SRAM_BASE_ADDRESS}'
+                load_address:   '${RAM_ADDR}'
+                entry_point:    '${RAM_ADDR}'
                 image_type:     executable
                 core_id:        cortex-a55
                 is_encrypted:   false

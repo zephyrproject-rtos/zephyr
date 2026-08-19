@@ -170,6 +170,7 @@ enum usb_audio_terminal_types {
 	USB_AUDIO_IO_SPEAKERPHONE_ECHO_SUP	= 0x0404,
 	/** Speakerphone, echo cancellation */
 	USB_AUDIO_IO_SPEAKERPHONE_ECHO_CAN	= 0x0405,
+	/** @} */
 };
 
 /**

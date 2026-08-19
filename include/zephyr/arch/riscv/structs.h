@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_RISCV_STRUCTS_H_
-#define ZEPHYR_INCLUDE_RISCV_STRUCTS_H_
+#ifndef ZEPHYR_INCLUDE_ARCH_RISCV_STRUCTS_H_
+#define ZEPHYR_INCLUDE_ARCH_RISCV_STRUCTS_H_
 
 /* Per CPU architecture specifics */
 struct _cpu_arch {
@@ -33,4 +33,4 @@ struct _cpu_arch {
 BUILD_ASSERT(sizeof(struct _cpu_arch) >= 1);
 #endif
 
-#endif /* ZEPHYR_INCLUDE_RISCV_STRUCTS_H_ */
+#endif /* ZEPHYR_INCLUDE_ARCH_RISCV_STRUCTS_H_ */

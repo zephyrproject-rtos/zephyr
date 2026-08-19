@@ -337,7 +337,8 @@ Here are pointers to some other available APIs.
 - :c:macro:`DT_BUS`: get a node's bus controller, if there is one
 - :c:macro:`DT_ENUM_IDX`: for properties whose values are among a fixed list of
   choices
-- :ref:`devicetree-flash-api`: APIs for managing fixed flash partitions.
+- :ref:`devicetree-flash-api`: APIs for managing fixed flash partitions and
+  mapped flash partitions.
   Also see :ref:`flash_map_api`, which wraps this in a more user-friendly API.
 
 Device driver conveniences

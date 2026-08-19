@@ -286,8 +286,8 @@ static void intel_adsp_gpdma_claim_ownership(const struct device *dev)
 
 	sys_write32(val, reg);
 #else
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
-	sys_write32(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
+	sys_write16(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(0));
+	sys_write16(LPGPDMA_CHOSEL_FLAG | LPGPDMA_CTLOSEL_FLAG, DSP_INIT_LPGPDMA(1));
 	ARG_UNUSED(dev);
 #endif /* CONFIG_SOC_SERIES_INTEL_ADSP_ACE */
 #endif /* CONFIG_DMA_INTEL_ADSP_GPDMA_NEED_CONTROLLER_OWNERSHIP */
@@ -556,7 +556,7 @@ static DEVICE_API(dma, intel_adsp_gpdma_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(inst),			\
 			    DT_INST_IRQ(inst, priority), dw_dma_isr,	\
 			    DEVICE_DT_INST_GET(inst),			\
-			    DT_INST_IRQ(inst, sense));			\
+			    DT_INST_IRQ(inst, flags));			\
 		irq_enable(DT_INST_IRQN(inst));			\
 	}
 

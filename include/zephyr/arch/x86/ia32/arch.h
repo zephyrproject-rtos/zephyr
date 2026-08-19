@@ -172,11 +172,7 @@ typedef struct s_isrList {
  */
 #define _VECTOR_ARG(irq_p)	(-1)
 
-#ifdef CONFIG_LINKER_USE_PINNED_SECTION
-#define IRQSTUBS_TEXT_SECTION	".pinned_text.irqstubs"
-#else
 #define IRQSTUBS_TEXT_SECTION	".text.irqstubs"
-#endif
 
 /* Internally this function does a few things:
  *
@@ -343,6 +339,15 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	__asm__ volatile ("pushfl; cli; popl %0" : "=g" (key) :: "memory");
 
 	return key;
+}
+
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
+static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
+{
+	unsigned int flags;
+
+	__asm__ volatile ("pushfl; popl %0" : "=g" (flags) :: "memory");
+	return (flags & 0x200U) != 0; /* IF bit */
 }
 
 

@@ -130,10 +130,6 @@ static int renesas_ra_sci_b_i2c_transfer(const struct device *dev, struct i2c_ms
 	struct i2c_msg tmp_msg;
 	uint16_t tmp_len;
 
-	if (!num_msgs) {
-		return 0;
-	}
-
 	/* Handle i2c burst write, restructure message to be compatible with HAL*/
 	if (num_msgs == 2) {
 		if (msgs[0].len == 1U && !(msgs[0].flags & I2C_MSG_READ) &&

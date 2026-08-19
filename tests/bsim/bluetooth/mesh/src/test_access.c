@@ -600,7 +600,7 @@ static void pub_delayable_check(int32_t interval, uint8_t count)
 			 */
 			ASSERT_IN_RANGE(pub_delta, 0, 510);
 		} else {
-			/* Time difference between the consequtive update callback calls should be
+			/* Time difference between the consecutive update callback calls should be
 			 * within a small margin like without random delay as the callbacks should
 			 * be called at the regular interval or immediately (if it passed the next
 			 * period time).

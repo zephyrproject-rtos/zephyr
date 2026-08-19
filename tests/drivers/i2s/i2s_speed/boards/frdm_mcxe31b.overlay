@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * SAI0 loops TX back to RX on the PTB2 pad itself (see pinmux_sai_0 in
+ * the board pinctrl), so this test runs without external wiring.
+ */
+/ {
+	aliases {
+		i2s-node0 = &sai_0;
+	};
+};

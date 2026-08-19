@@ -7,7 +7,7 @@
 
 / {
 	#address-cells = <1>;
-	#size-cells = <0>;
+	#size-cells = <1>;
 
 	chosen {
 		zephyr,entropy = &trng;

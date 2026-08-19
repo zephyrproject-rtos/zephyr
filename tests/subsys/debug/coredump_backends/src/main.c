@@ -251,7 +251,7 @@ void test_get_stored_dump_size(int size_expected)
 	}
 }
 
-/* Excecute tests in exact sequence with the stored core dump. */
+/* Execute tests in exact sequence with the stored core dump. */
 
 ZTEST(coredump_backends, test_coredump_0_ready) {
 	check_error();

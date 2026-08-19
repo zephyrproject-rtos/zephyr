@@ -5,8 +5,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef H_SHELL_MGMT_
-#define H_SHELL_MGMT_
+/**
+ * @file
+ * @brief Header file for the MCUmgr shell management group API.
+ * @ingroup mcumgr_shell_mgmt
+ */
+
+#ifndef ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_
+#define ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_
 
 /**
  * @brief MCUmgr Shell Management API
@@ -51,4 +57,4 @@ enum shell_mgmt_err_code_t {
  * @}
  */
 
-#endif /* H_SHELL_MGMT_ */
+#endif /* ZEPHYR_INCLUDE_MGMT_MCUMGR_GRP_SHELL_MGMT_SHELL_MGMT_H_ */

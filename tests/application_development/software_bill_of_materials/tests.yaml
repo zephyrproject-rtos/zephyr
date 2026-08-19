@@ -1,0 +1,11 @@
+common:
+  tags:
+    - spdx
+  integration_platforms:
+    - qemu_cortex_m3
+  platform_allow:
+    - qemu_cortex_m3
+  harness: ctest
+  timeout: 120
+tests:
+  buildsystem.sbom.spdx: {}

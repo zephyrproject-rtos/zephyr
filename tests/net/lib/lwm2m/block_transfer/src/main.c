@@ -53,6 +53,8 @@ static void net_block_transfer_before(void *f)
 	memset(&fixture->ctx, 0, sizeof(struct lwm2m_ctx));
 	memset(&fixture->msg, 0, sizeof(struct lwm2m_message));
 	fixture->msg.ctx = &fixture->ctx;
+
+	k_mutex_init(&fixture->ctx.lock);
 }
 
 static void net_block_transfer_after(void *f)

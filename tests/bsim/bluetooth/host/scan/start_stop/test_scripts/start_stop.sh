@@ -5,7 +5,7 @@
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
 test_exe="bs_${BOARD_TS}_tests_bsim_bluetooth_host_scan_start_stop_prj_conf"
-simulation_id="start_stop"
+simulation_id="${BOARD_TS}_start_stop"
 verbosity_level=2
 
 cd ${BSIM_OUT_PATH}/bin

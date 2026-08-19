@@ -165,8 +165,10 @@ void rts5912_ulpm_enable(void)
 	/* Update Status Bit to ULPM IP */
 	update_vivo_register();
 
+#if defined(CONFIG_SOC_RTS5912_ULPM_POWEROFF_BRAM)
 	/* Disable LDO 2 power. */
 	sys_reg->LDOCTRL &= ~(SYSTEM_LDOCTRL_LDO2EN_Msk);
+#endif
 
 	/* ULPM Start */
 	ulpm_start();

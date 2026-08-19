@@ -21,7 +21,7 @@
 #include "common.h"
 #include "settings.h"
 
-#include "argparse.h"
+#include "bsim_args_runner.h"
 
 #include "babblekit/testcase.h"
 #include "babblekit/flags.h"
@@ -113,11 +113,8 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
 	int err;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-
-	LOG_DBG("Device found: %s (RSSI %d)", addr_str, rssi);
+	LOG_DBG("Device found: %s (RSSI %d)", bt_addr_le_str(addr), rssi);
 
 	err = bt_le_scan_stop();
 	if (err) {
@@ -127,23 +124,21 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 	err = bt_conn_le_create(addr, BT_CONN_LE_CREATE_CONN, BT_LE_CONN_PARAM_DEFAULT,
 				&default_conn);
 	if (err) {
-		TEST_FAIL("Could not connect to peer: %s (err %d)", addr_str, err);
+		TEST_FAIL("Could not connect to peer: %s (err %d)", bt_addr_le_str(addr), err);
 	}
 }
 
 static void connected(struct bt_conn *conn, uint8_t err)
 {
 	const bt_addr_le_t *addr;
-	char addr_str[BT_ADDR_LE_STR_LEN];
 
 	addr = bt_conn_get_dst(conn);
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
 
 	if (err) {
-		TEST_FAIL("Failed to connect to %s (err %d)", addr_str, err);
+		TEST_FAIL("Failed to connect to %s (err %d)", bt_addr_le_str(addr), err);
 	}
 
-	LOG_DBG("Connected: %s", addr_str);
+	LOG_DBG("Connected: %s", bt_addr_le_str(addr));
 
 	if (conn == default_conn) {
 		SET_FLAG(connected_flag);
@@ -152,11 +147,7 @@ static void connected(struct bt_conn *conn, uint8_t err)
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
-	LOG_DBG("Disconnected: %s (reason 0x%02x)", addr_str, reason);
+	LOG_DBG("Disconnected: %s (reason 0x%02x)", bt_conn_dst_str(conn), reason);
 
 	SET_FLAG(disconnected_flag);
 
@@ -164,21 +155,16 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		return;
 	}
 
-	bt_conn_unref(default_conn);
-	default_conn = NULL;
+	bt_conn_drop(&default_conn);
 }
 
 static void security_changed(struct bt_conn *conn, bt_security_t level, enum bt_security_err err)
 {
-	char addr_str[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(bt_conn_get_dst(conn), addr_str, sizeof(addr_str));
-
 	if (!err) {
-		LOG_DBG("Security changed: %s level %u", addr_str, level);
+		LOG_DBG("Security changed: %s level %u", bt_conn_dst_str(conn), level);
 		SET_FLAG(security_updated_flag);
 	} else {
-		LOG_DBG("Security failed: %s level %u err %d", addr_str, level, err);
+		LOG_DBG("Security failed: %s level %u err %d", bt_conn_dst_str(conn), level, err);
 	}
 }
 
@@ -231,7 +217,7 @@ static void connect_pair_subscribe(void)
 
 	/* confirm to server that we subscribed */
 	bk_sync_send();
-	/* wait for server to check that the subscribtion is well registered */
+	/* wait for server to check that the subscription is well registered */
 	bk_sync_wait();
 
 	WAIT_FOR_FLAG(notification_received_flag);
@@ -262,7 +248,7 @@ static void connect_restore_sec(void)
 
 	/* notify the end of security update to server */
 	bk_sync_send();
-	/* wait for server to check that the subscribtion has been restored */
+	/* wait for server to check that the subscription has been restored */
 	bk_sync_wait();
 
 	WAIT_FOR_FLAG(notification_received_flag);

@@ -13,7 +13,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/spi.h>
-#include <zephyr/drivers/spi/rtio.h>
+#include "spi_rtio.h"
 #ifdef CONFIG_SPI_GD32_DMA
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_gd32.h>
@@ -212,7 +212,7 @@ static int spi_gd32_frame_exchange(const struct device *dev)
 		spi_context_update_tx(ctx, 1, 1);
 	} else {
 		if (spi_context_tx_buf_on(ctx)) {
-			tx_frame = UNALIGNED_GET((uint8_t *)(data->ctx.tx_buf));
+			tx_frame = UNALIGNED_GET((uint16_t *)(data->ctx.tx_buf));
 		}
 		SPI_DATA(cfg->reg) = tx_frame;
 

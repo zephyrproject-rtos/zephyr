@@ -1,0 +1,10 @@
+common:
+  filter: CONFIG_RISCV_PMP
+  # Dereferencing a NULL pointer is the point of these tests.
+  ignore_faults: true
+
+tests:
+  arch.riscv.pmp.null_pointer.locked: {}
+  arch.riscv.pmp.null_pointer.unlocked:
+    extra_configs:
+      - CONFIG_PMP_NO_LOCK_GLOBAL=y

@@ -4,12 +4,14 @@
  */
 
 #include <zephyr/kernel.h>
-#include <zephyr/kernel_structs.h>
 #include <kernel_internal.h>
 #include <zephyr/arch/common/exc_handle.h>
 #include <zephyr/logging/log.h>
 #include <x86_mmu.h>
 #include <mmu.h>
+#if defined(CONFIG_DEMAND_PAGING) && defined(CONFIG_EVICTION_LRU)
+#include <zephyr/kernel/mm/demand_paging.h>
+#endif
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 #if defined(CONFIG_BOARD_QEMU_X86) || defined(CONFIG_BOARD_QEMU_X86_64)
@@ -43,7 +45,6 @@ static inline uintptr_t esf_get_sp(const struct arch_esf *esf)
 #endif
 }
 
-__pinned_func
 bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
 {
 	uintptr_t start, end;
@@ -93,7 +94,6 @@ bool z_x86_check_stack_bounds(uintptr_t addr, size_t size, uint16_t cs)
  *
  * @return True Address is in guard pages, false otherwise.
  */
-__pinned_func
 bool z_x86_check_guard_page(uintptr_t addr)
 {
 	struct k_thread *thread = _current;
@@ -125,7 +125,7 @@ struct stack_frame {
 	uintptr_t ret_addr;
 };
 
-__pinned_func static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
+static void walk_stackframe(stack_trace_callback_fn cb, void *cookie,
 					  const struct arch_esf *esf, int max_frames)
 {
 	uintptr_t base_ptr;
@@ -249,7 +249,6 @@ static inline pentry_t *get_ptables(const struct arch_esf *esf)
 }
 
 #ifdef CONFIG_X86_64
-__pinned_func
 static void dump_regs(const struct arch_esf *esf)
 {
 	EXCEPTION_DUMP("RAX: 0x%016lx RBX: 0x%016lx RCX: 0x%016lx RDX: 0x%016lx",
@@ -274,7 +273,6 @@ static void dump_regs(const struct arch_esf *esf)
 #endif /* CONFIG_HW_SHADOW_STACK */
 }
 #else /* 32-bit */
-__pinned_func
 static void dump_regs(const struct arch_esf *esf)
 {
 	EXCEPTION_DUMP("EAX: 0x%08x, EBX: 0x%08x, ECX: 0x%08x, EDX: 0x%08x",
@@ -296,7 +294,6 @@ static void dump_regs(const struct arch_esf *esf)
 }
 #endif /* CONFIG_X86_64 */
 
-__pinned_func
 static void log_exception(uintptr_t vector, uintptr_t code)
 {
 	switch (vector) {
@@ -370,7 +367,6 @@ static void log_exception(uintptr_t vector, uintptr_t code)
 	}
 }
 
-__pinned_func
 static void dump_page_fault(struct arch_esf *esf)
 {
 	uintptr_t err;
@@ -404,7 +400,6 @@ static void dump_page_fault(struct arch_esf *esf)
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-__pinned_func
 FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 				     const struct arch_esf *esf)
 {
@@ -431,7 +426,6 @@ FUNC_NORETURN void z_x86_fatal_error(unsigned int reason,
 	CODE_UNREACHABLE;
 }
 
-__pinned_func
 FUNC_NORETURN void z_x86_unhandled_cpu_exception(uintptr_t vector,
 						 const struct arch_esf *esf)
 {
@@ -451,7 +445,6 @@ static const struct z_exc_handle exceptions[] = {
 };
 #endif
 
-__pinned_func
 void z_x86_page_fault_handler(struct arch_esf *esf)
 {
 #ifdef CONFIG_DEMAND_PAGING
@@ -461,6 +454,24 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 		 */
 		void *virt = z_x86_cr2_get();
 		bool was_valid_access;
+
+#ifdef CONFIG_EVICTION_LRU
+		/*
+		 * Check for an LRU-tracking fault first: a loaded page that
+		 * the eviction algorithm made non-present to trap its next
+		 * access. If so, fix it up and notify the LRU queue in-line.
+		 * This path must not call k_mem_page_fault() — the page is
+		 * not actually paged out.
+		 */
+		{
+			uintptr_t phys;
+
+			if (z_x86_lru_fault_try_handle(virt, &phys)) {
+				k_mem_paging_eviction_accessed(phys);
+				return;
+			}
+		}
+#endif /* CONFIG_EVICTION_LRU */
 
 #ifdef CONFIG_X86_KPTI
 		/* Protection ring is lowest 2 bits in interrupted CS */
@@ -536,7 +547,6 @@ void z_x86_page_fault_handler(struct arch_esf *esf)
 	CODE_UNREACHABLE;
 }
 
-__pinned_func
 void z_x86_do_kernel_oops(const struct arch_esf *esf)
 {
 	uintptr_t reason;

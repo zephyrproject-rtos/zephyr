@@ -31,16 +31,24 @@ __ramfunc static void wait_for_flash_prefetch_and_wfi(void)
 }
 #endif /* CONFIG_XIP */
 
+static void enter_low_power(void)
+{
+#ifdef CONFIG_XIP
+	wait_for_flash_prefetch_and_wfi();
+#else
+	__DSB();
+	__ISB();
+	__WFI();
+#endif
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		/* Normal WAIT: WFI with SLEEPDEEP cleared. */
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
-		__DSB();
-		__ISB();
-		__WFI();
-		irq_unlock(0);
+		enter_low_power();
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		if (substate_id > 2U) {
@@ -58,17 +66,10 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 		/* readback to complete bus writes */
 		(void)SMC->PMCTRL;
-		__DSB();
-		__ISB();
-#ifdef CONFIG_XIP
-		wait_for_flash_prefetch_and_wfi();
-#else
-		__WFI();
-#endif
+		enter_low_power();
 		if (SMC->PMCTRL & SMC_PMCTRL_STOPA_MASK) {
 			LOG_DBG("partial stop aborted");
 		}
-		irq_unlock(0);
 		break;
 	default:
 		LOG_WRN("Unsupported power state %u", state);
@@ -84,6 +85,4 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		/* Disable deep sleep upon exit */
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 	}
-
-	irq_unlock(0);
 }

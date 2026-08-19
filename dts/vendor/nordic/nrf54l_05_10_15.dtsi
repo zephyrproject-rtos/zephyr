@@ -533,7 +533,7 @@
 			};
 
 			nfct: nfct@d6000 {
-				compatible = "nordic,nrf-nfct";
+				compatible = "nordic,nrf-nfct-v2";
 				reg = <0xd6000 0x1000>;
 				interrupts = <214 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
@@ -657,6 +657,18 @@
 				reg = <0x10e000 0x1000>;
 				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+
+				xo: xo {
+					compatible = "nordic,nrf-clock-xo";
+					status = "disabled";
+					clock-frequency = <DT_FREQ_M(32)>;
+					#clock-cells = <0>;
+				};
+
+				lfclk: lfclk {
+					compatible = "nordic,nrf-clock-lfclk";
+					status = "disabled";
+				};
 			};
 
 			power: power@10e000 {

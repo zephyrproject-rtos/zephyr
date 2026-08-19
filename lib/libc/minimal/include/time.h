@@ -14,7 +14,7 @@
 #include <sys/_timespec.h>
 
 /* Minimal time.h to fulfill the requirements of certain libraries
- * like mbedTLS and to support time APIs.
+ * like Mbed TLS and to support time APIs.
  */
 
 #ifdef __cplusplus

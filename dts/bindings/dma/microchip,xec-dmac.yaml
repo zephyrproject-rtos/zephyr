@@ -11,10 +11,10 @@ properties:
   interrupts:
     required: true
 
-  pcrs:
-    type: array
+  pcr-scr:
+    type: int
     required: true
-    description: PCR register index and bit position
+    description: Encoded PCR register index and bit position
 
   girqs:
     type: array
@@ -28,10 +28,6 @@ properties:
       provide the handle to the GIRQ.
 
   "#dma-cells":
-    const: 2
-
-  "pcr-cells":
-    type: int
     const: 2
 
   "girq-cells":
@@ -61,10 +57,6 @@ properties:
 dma-cells:
   - channel
   - trigsrc
-
-pcr-cells:
-  - regidx
-  - bitpos
 
 girq-cells:
   - girqno

@@ -15,11 +15,8 @@ properties:
       LSE driving capability, within the range 0 to 3.
       0 represents the lowests driving capability, 3
       the highest.
-    enum:
-      - 0
-      - 1
-      - 2
-      - 3
+    min: 0
+    max: 3
 
   lse-bypass:
     type: boolean

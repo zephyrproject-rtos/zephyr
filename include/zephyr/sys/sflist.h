@@ -6,6 +6,9 @@
 
  /**
   * @file
+  * @brief Header file for the flagged single-linked list API.
+  * @ingroup flagged-single-linked-list_apis
+  *
   * @defgroup flagged-single-linked-list_apis Flagged Single-linked list
   * @ingroup datastructure_apis
   *
@@ -35,9 +38,14 @@ extern "C" {
 #endif
 
 /** @cond INTERNAL_HIDDEN */
+/*
+ * Flag bits are stored in the low bits of the node address, so a node must be
+ * aligned to at least 4 bytes. Not every ABI gives uintptr_t that alignment
+ * naturally, so require it explicitly. See SYS_SFLIST_FLAGS_MASK below.
+ */
 struct _sfnode {
 	uintptr_t next_and_flags;
-};
+} __aligned(sizeof(void *));
 /** @endcond */
 
 /** Flagged single-linked list node structure. */
