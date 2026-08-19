@@ -111,6 +111,11 @@ Removed APIs and options
     * ``CONFIG_BT_AUTO_PHY_UPDATE``, replaced by the ``BT_AUTO_PHY_CENTRAL`` and
       ``BT_AUTO_PHY_PERIPHERAL`` choices
 
+  * Services
+
+    * ``CONFIG_BT_DIS_MANUF``
+    * ``CONFIG_BT_DIS_MODEL``
+
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``
