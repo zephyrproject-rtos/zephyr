@@ -5,7 +5,6 @@
  */
 
 #include <st/l1/stm32l152.dtsi>
-#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 
 / {
 	sram0: memory@20000000 {
