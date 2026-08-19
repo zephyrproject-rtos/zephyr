@@ -4,12 +4,6 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(kernel_common)
 
-if(CONFIG_PRINTK)
-  target_sources(
-    app PRIVATE
-    src/printk.c
-  )
-endif()
 target_sources(app PRIVATE
   src/atomic.c
   src/bitarray.c

@@ -13,3 +13,47 @@ tests:
       - CONFIG_PRINTK_SYNC=y
     integration_platforms:
       - qemu_x86
+  libraries.printk.minimallibc:
+    platform_key:
+      - arch
+    filter: CONFIG_MINIMAL_LIBC_SUPPORTED
+    tags: libc
+    extra_configs:
+      - CONFIG_MINIMAL_LIBC=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+  libraries.printk.nano32:
+    platform_key:
+      - arch
+    tags:
+      - nano
+    filter: not CONFIG_KERNEL_COHERENCE
+    extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+      - CONFIG_CBPRINTF_REDUCED_INTEGRAL=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+  libraries.printk.nano64:
+    platform_key:
+      - arch
+    tags:
+      - nano
+    filter: not CONFIG_KERNEL_COHERENCE
+    extra_configs:
+      - CONFIG_CBPRINTF_NANO=y
+      - CONFIG_CBPRINTF_FULL_INTEGRAL=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
+  libraries.printk.picolibc:
+    platform_key:
+      - arch
+    filter: CONFIG_PICOLIBC_SUPPORTED
+    tags: picolibc
+    extra_configs:
+      - CONFIG_PICOLIBC=y
+    integration_platforms:
+      - qemu_x86
+      - mps2/an385
