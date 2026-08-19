@@ -1372,6 +1372,20 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 		k_work_cancel_delayable(&le_chan->rtx_work);
 	}
 
+	/* The rx_work item also references the channel and may be pending or
+	 * running on another workqueue, so it needs the same guarded sync
+	 * cancellation as rtx_work above.
+	 */
+	struct k_work_q *rx_work_queue = le_chan->rx_work.queue;
+
+	if (rx_work_queue == NULL || k_current_get() != &rx_work_queue->thread) {
+		struct k_work_sync sync;
+
+		k_work_cancel_sync(&le_chan->rx_work, &sync);
+	} else {
+		k_work_cancel(&le_chan->rx_work);
+	}
+
 	/* Remove buffers on the SDU RX queue */
 	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
 		net_buf_unref(buf);
