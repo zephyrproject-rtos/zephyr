@@ -2224,6 +2224,9 @@ static inline void *z_impl_k_timer_user_data_get(const struct k_timer *timer)
  * function returns 0 the caller assumes responsibility for the
  * storage and there is no other consumer of the timer left.
  *
+ * On success the timer is also released from the kernel object tracking
+ * facilities; it must be initialized again before it can be used.
+ *
  * @param timer Address of the timer.
  * @retval 0 on success.
  * @retval -EAGAIN when threads are still pending on the timer's
@@ -3482,8 +3485,11 @@ __syscall int32_t k_stack_alloc_init(struct k_stack *stack,
  * @brief Release a stack's allocated buffer
  *
  * If a stack object was given a dynamically allocated buffer via
- * k_stack_alloc_init(), this will free it. This function does nothing
- * if the buffer wasn't dynamically allocated.
+ * k_stack_alloc_init(), this will free it. This function does not free
+ * the buffer if it wasn't dynamically allocated.
+ *
+ * On success the stack is also released from the kernel object tracking
+ * facilities; it must be initialized again before it can be used.
  *
  * @param stack Address of the stack.
  * @retval 0 on success
@@ -5527,6 +5533,10 @@ __syscall int k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
  * freed if it was allocated by k_msgq_alloc_init(); the call succeeds
  * but frees nothing for a caller-provided buffer. Any messages still
  * in the queue are discarded with the buffer.
+ *
+ * On success the message queue is also released from the kernel object
+ * tracking facilities; it must be initialized again before it can be
+ * used.
  *
  * @param msgq message queue to cleanup
  *

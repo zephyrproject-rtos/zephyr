@@ -93,6 +93,13 @@ int k_stack_cleanup(struct k_stack *stack)
 		stack->flags &= ~K_STACK_FLAG_ALLOC;
 	}
 
+#ifdef CONFIG_OBJ_CORE_STACK
+	/* The stack has reached the end of its life cycle; the stack object
+	 * type list must not reference it anymore.
+	 */
+	k_obj_core_unlink(K_OBJ_CORE(stack));
+#endif /* CONFIG_OBJ_CORE_STACK */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, 0);
 
 	return 0;
