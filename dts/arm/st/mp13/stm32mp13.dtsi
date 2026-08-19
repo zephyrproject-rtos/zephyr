@@ -690,6 +690,8 @@
 				 <&rcc STM32_SRC_PLL4_Q ETH1_SEL(0)>;
 			interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio0: mdio {
