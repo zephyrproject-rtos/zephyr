@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/cc13x4_cc26x4-pinctrl.h>
+
+&pinctrl {
+	uart0_tx_default: uart0_tx_default {
+		pinmux = <13 IOC_PORT_MCU_UART0_TX>;
+		bias-disable;
+	};
+	uart0_rx_default: uart0_rx_default {
+		pinmux = <12 IOC_PORT_MCU_UART0_RX>;
+		bias-disable;
+		input-enable;
+	};
+};

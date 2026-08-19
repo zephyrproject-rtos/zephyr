@@ -7,11 +7,6 @@
 #include <arm/armv8-m.dtsi>
 
 / {
-	  chosen {
-		  zephyr,flash-controller = &flash_controller;
-		  zephyr,user;
-	  };
-
 	  cpus {
 		  #address-cells = <1>;
 		  #size-cells = <0>;
@@ -68,11 +63,13 @@
 		  flash_controller: flash-controller@58030000 {
 			  compatible = "ti,cc13x4-cc26x4-flash-controller";
 			  reg = <0x58030000 0x4000>;
+			  ranges;
 			  #address-cells = <1>;
 			  #size-cells = <1>;
 
 			  flash0: flash@0 {
 				  compatible = "soc-nv-flash";
+				  ranges = <0x0 0x0 DT_SIZE_K(1024)>;
 				  erase-block-size = <DT_SIZE_K(8)>;
 				  write-block-size = <1>;
 			  };

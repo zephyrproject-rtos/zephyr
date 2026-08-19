@@ -1,0 +1,2 @@
+config BOARD_LP_EM_CC1354P10_1
+	select SOC_CC1354P10
