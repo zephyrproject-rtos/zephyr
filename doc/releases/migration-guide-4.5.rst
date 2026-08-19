@@ -282,6 +282,9 @@ Devicetree
   ``<NRF_OWNER_ID_APPLICATION NRF_PERM_RW>``. The owner is no longer implicit: an omitted
   ``owner-id`` used to mean the domain being compiled, so it must now be named explicitly.
 
+* The deprecated ``facebook``, ``powervr`` and ``toppoly`` devicetree vendor prefixes have been
+  removed. Use ``meta``, ``img`` and ``tpo`` respectively.
+
 Digital Microphone
 ==================
 

@@ -252,7 +252,6 @@ exar	Exar Corporation
 excito	Excito
 ezchip	EZchip Semiconductor
 ezurio	Ezurio
-facebook	Facebook (deprecated, use meta)
 fairphone	Fairphone B.V.
 fanke	FANKE Technology Co., Ltd.
 faraday	Faraday Technology Corporation
@@ -579,7 +578,6 @@ portwell	Portwell Inc.
 poslab	Poslab Technology Co., Ltd.
 pov	Point of View International B.V.
 powertip	Powertip Tech. Corp.
-powervr	PowerVR (deprecated, use img)
 primux	Primux Trading, S.L.
 probox2	PROBOX2 (by W2COMP Co., Ltd.)
 prt	Protonic Holland
@@ -741,7 +739,6 @@ titanmec	Shenzhen Titan Micro Electronics Co., Ltd.
 tlm	Trusted Logic Mobility
 tmt	Tecon Microprocessor Technologies, LLC.
 topeet	Topeet
-toppoly	TPO (deprecated, use tpo)
 topwise	Topwise Communication Co., Ltd.
 toradex	Toradex AG
 torex	Torex Semiconductor Ltd.
