@@ -29,6 +29,11 @@
 		address-length = "ADDR_3_BYTE";
 		rx-dummy = <6>;
 		jedec-id = [9d 60 16];
+		/* QE is bit 6 of the status register and ships cleared, so the
+		 * quad commands do not work until the driver sets it. The
+		 * memory reports QER 010b in its SFDP, which is S1B6.
+		 */
+		quad-enable-requirements = "S1B6";
 
 		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
 		/* The reset line drives the module LDO enable, so a reset is a
