@@ -1044,11 +1044,9 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 	uint32_t rc = 0U;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
-	dw->app_config = config;
-
 	/* Make sure we have a supported speed for the DesignWare model */
 	/* and have setup the clock frequency and speed mode */
-	switch (I2C_SPEED_GET(dw->app_config)) {
+	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
 		lcnt_val = I2C_STD_LCNT + rom->lcnt_offset;
 		hcnt_val = I2C_STD_HCNT + rom->hcnt_offset;
@@ -1074,7 +1072,7 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 		rc = -EINVAL;
 	}
 
-	if (I2C_SPEED_GET(dw->app_config) == I2C_SPEED_HIGH) {
+	if (I2C_SPEED_GET(config) == I2C_SPEED_HIGH) {
 		/* Ensure minimum HCNT and LCNT register values for High Speed */
 		lcnt_val = I2C_ENSURE_MIN_SCL_LCNT(lcnt_val, rom->hs_spk_len);
 		hcnt_val = I2C_ENSURE_MIN_SCL_HCNT(hcnt_val, rom->hs_spk_len);
@@ -1087,6 +1085,10 @@ static int i2c_dw_configure(const struct device *dev, uint32_t config)
 	}
 	dw->lcnt = lcnt_val;
 	dw->hcnt = hcnt_val;
+
+	if (rc == 0) {
+		dw->app_config = config;
+	}
 
 	/*
 	 * Clear any interrupts currently waiting in the controller
