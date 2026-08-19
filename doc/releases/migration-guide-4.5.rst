@@ -261,6 +261,18 @@ Devicetree
   unsigned comparisons or ``BUILD_ASSERT(DT_PROP(node, foo) > 0, ...)`` checks, must be updated
   to use signed types or signed-aware checks (:github:`107271`).
 
+* The ``zephyr,memory-region-mpu`` property has been removed. Use ``zephyr,memory-attr``
+  instead. It takes an integer bitmask, not a string:
+
+  .. code-block:: none
+
+     "RAM"         -> <DT_MEM_ARM_MPU_RAM>
+     "RAM_NOCACHE" -> <DT_MEM_ARM_MPU_RAM_NOCACHE>
+     "FLASH"       -> <DT_MEM_ARM_MPU_FLASH>
+     "PPB"         -> <DT_MEM_ARM_MPU_PPB>
+     "IO"          -> <DT_MEM_ARM_MPU_IO>
+     "EXTMEM"      -> <DT_MEM_ARM_MPU_EXTMEM>
+
 Digital Microphone
 ==================
 

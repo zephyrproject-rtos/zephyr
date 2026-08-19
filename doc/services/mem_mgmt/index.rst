@@ -71,24 +71,6 @@ and act on regions and attributes (see next section for more details).
 A test for the ``mem-attr`` library and its usage is provided in
 ``tests/subsys/mem_mgmt/mem_attr/``.
 
-Migration guide from ``zephyr,memory-region-mpu``
-*************************************************
-
-When the ``zephyr,memory-attr`` property was introduced, the
-``zephyr,memory-region-mpu`` property was removed and deprecated.
-
-The developers that are still using the deprecated property can move to the new
-one by renaming the property and changing its value according to the following list:
-
-.. code-block:: none
-
-   "RAM"         -> <DT_MEM_ARM_MPU_RAM>
-   "RAM_NOCACHE" -> <DT_MEM_ARM_MPU_RAM_NOCACHE>
-   "FLASH"       -> <DT_MEM_ARM_MPU_FLASH>
-   "PPB"         -> <DT_MEM_ARM_MPU_PPB>
-   "IO"          -> <DT_MEM_ARM_MPU_IO>
-   "EXTMEM"      -> <DT_MEM_ARM_MPU_EXTMEM>
-
 Memory Attributes Heap Allocator
 ********************************
 
