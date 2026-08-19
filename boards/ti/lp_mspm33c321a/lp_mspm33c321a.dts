@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
+#include <ti/mspm33/c/mspm33c321a-pinctrl.dtsi>
 
 / {
 	compatible = "ti,lp-mspm33c321a";
