@@ -186,9 +186,16 @@ config INCLUDE_RESET_VECTOR
 	  jumps to `__initialize` directly. Otherwise a SOC needs to provide its
 	  custom `__reset` routine.
 
+config RISCV_HAS_SELF_RELOCATION
+	bool
+	help
+	  Selected when the SoC's reset path applies the .rela.dyn
+	  relocations (soc/common/riscv-privileged/vector.S).
+
 config RISCV_PRIVILEGED
 	bool
 	select ARCH_HAS_RAMFUNC_SUPPORT if XIP
+	select RISCV_HAS_SELF_RELOCATION
 	help
 	  Option selected by SoCs implementing the RISC-V privileged ISA.
 
