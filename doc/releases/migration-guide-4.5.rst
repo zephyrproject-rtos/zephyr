@@ -1663,6 +1663,9 @@ Tools
   ``debug``, ``debugserver``, ``attach``, ``rtt``, ``reset``, ``robot`` and ``simulate``) has
   been removed. Use ``--no-rebuild`` instead.
 
+* The ``PYOCD_DAPARG`` environment variable is no longer read by the ``pyocd`` runner. Pass
+  ``--daparg`` to ``west flash``/``west debug`` instead.
+
 * The ``openocd`` runner now selects a debug adapter by serial number through the
   canonical ``-i``/``--dev-id`` option, like the other runners. The previous
   ``--serial`` option is deprecated and kept as an alias; it maps onto the same
