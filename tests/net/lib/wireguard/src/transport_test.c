@@ -185,4 +185,40 @@ ZTEST(wireguard_transport, test_valid_keepalive_accepted)
 	zassert_equal(stats_after.valid_rx, stats_before.valid_rx);
 }
 
+ZTEST(wireguard_transport, test_unknown_session_does_not_move_endpoint)
+{
+	struct net_sockaddr_storage endpoint_before;
+	struct net_sockaddr_storage endpoint_after;
+	struct net_sockaddr_storage attacker;
+	int ret;
+
+	/* Neither a session nor a handshake in progress, which is the state at
+	 * boot and after the session has expired.
+	 */
+	ret = wireguard_test_clear_session(test_peer_id);
+	zassert_equal(ret, 0, "session clear failed (%d)", ret);
+
+	ret = wireguard_test_peer_endpoint(test_peer_id, &endpoint_before);
+	zassert_equal(ret, 0);
+
+	attacker = make_addr(net_htonl(0xC000022A), 40000); /* 192.0.2.42 */
+
+	ret = wireguard_test_inject_stale_session(test_peer_id,
+						  (struct net_sockaddr *)&attacker,
+						  0xdeadbeef);
+	zexpect_true(ret < 0, "unauthenticated message should be dropped (%d)", ret);
+
+	ret = wireguard_test_peer_endpoint(test_peer_id, &endpoint_after);
+	zassert_equal(ret, 0);
+
+	zexpect_mem_equal(&endpoint_after, &endpoint_before, sizeof(endpoint_after),
+			  "endpoint moved by unauthenticated message");
+
+	/* Recovery from a stale session is still attempted, but only towards
+	 * the endpoint we already trust.
+	 */
+	zexpect_true(wireguard_test_peer_send_handshake(test_peer_id),
+		     "handshake not triggered for stale session");
+}
+
 ZTEST_SUITE(wireguard_transport, NULL, transport_setup, transport_before, NULL, NULL);
