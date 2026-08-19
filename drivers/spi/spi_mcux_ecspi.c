@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #define SPI_MCUX_ECSPI_MAX_BURST 4096
+/* One FIFO word carries a burst of up to 32 bits. */
+#define SPI_MCUX_ECSPI_WORD_BITS 32U
 
 struct spi_mcux_config {
 	ECSPI_Type *base;
@@ -34,6 +36,8 @@ struct spi_mcux_data {
 
 	uint16_t dfs;
 	uint16_t word_size;
+	/* Frames in the burst being transferred. */
+	uint16_t frames;
 
 	uint32_t rx_data;
 	uint32_t tx_data;
@@ -51,19 +55,25 @@ static inline uint16_t bytes_per_word(uint16_t bits_per_word)
 	return 4U;
 }
 
-static inline uint32_t frame_get(const uint8_t *buf, uint16_t dfs)
+static inline void spi_mcux_set_burst_length(ECSPI_Type *base, uint16_t bits)
+{
+	base->CONREG = (base->CONREG & ~ECSPI_CONREG_BURST_LENGTH_MASK) |
+		       ECSPI_CONREG_BURST_LENGTH(bits - 1U);
+}
+
+static inline uint32_t spi_mcux_frame_get(const uint8_t *buf, uint16_t dfs)
 {
 	switch (dfs) {
 	case 1U:
-		return UNALIGNED_GET((uint8_t *)buf);
+		return UNALIGNED_GET((const uint8_t *)buf);
 	case 2U:
-		return UNALIGNED_GET((uint16_t *)buf);
+		return UNALIGNED_GET((const uint16_t *)buf);
 	default:
-		return UNALIGNED_GET((uint32_t *)buf);
+		return UNALIGNED_GET((const uint32_t *)buf);
 	}
 }
 
-static inline void frame_put(uint8_t *buf, uint16_t dfs, uint32_t frame)
+static inline void spi_mcux_frame_put(uint8_t *buf, uint16_t dfs, uint32_t frame)
 {
 	switch (dfs) {
 	case 1U:
@@ -76,6 +86,12 @@ static inline void frame_put(uint8_t *buf, uint16_t dfs, uint32_t frame)
 		UNALIGNED_PUT(frame, (uint32_t *)buf);
 		break;
 	}
+}
+
+/* Bit position of the frame sent first: it takes the top field of the word. */
+static inline int spi_mcux_frame_shift(const struct spi_mcux_data *data)
+{
+	return (data->frames - 1) * data->word_size;
 }
 
 static void spi_mcux_transfer_next_packet(const struct device *dev)
@@ -102,15 +118,29 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		transfer.rxData = NULL;
 	}
 
+	/* As many frames as fit the FIFO word go out under one chip select. The
+	 * length is written here, between bursts, because the MCUX driver takes
+	 * one through ECSPI_MasterInit() only, which resets the peripheral.
+	 */
+	data->frames = MIN(spi_context_max_continuous_chunk(ctx),
+			   SPI_MCUX_ECSPI_WORD_BITS / data->word_size);
+	spi_mcux_set_burst_length(base, data->frames * data->word_size);
+
+	data->tx_data = 0U;
 	if (spi_context_tx_buf_on(ctx)) {
-		data->tx_data = frame_get(ctx->tx_buf, data->dfs);
+		const uint32_t mask = GENMASK(data->word_size - 1U, 0);
+		const uint8_t *buf = ctx->tx_buf;
+
+		for (int shift = spi_mcux_frame_shift(data); shift >= 0; shift -= data->word_size) {
+			data->tx_data |= (spi_mcux_frame_get(buf, data->dfs) & mask) << shift;
+			buf += data->dfs;
+		}
 
 		transfer.txData = &data->tx_data;
 	} else {
 		transfer.txData = NULL;
 	}
 
-	/* Burst length is set in the configure step */
 	transfer.dataSize = 1;
 
 	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
@@ -137,11 +167,17 @@ static void spi_mcux_master_transfer_callback(ECSPI_Type *base, ecspi_master_han
 	struct spi_mcux_data *data = dev->data;
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
-		frame_put(data->ctx.rx_buf, data->dfs, data->rx_data);
+		const uint32_t mask = GENMASK(data->word_size - 1U, 0);
+		uint8_t *buf = data->ctx.rx_buf;
+
+		for (int shift = spi_mcux_frame_shift(data); shift >= 0; shift -= data->word_size) {
+			spi_mcux_frame_put(buf, data->dfs, (data->rx_data >> shift) & mask);
+			buf += data->dfs;
+		}
 	}
 
-	spi_context_update_tx(&data->ctx, data->dfs, 1);
-	spi_context_update_rx(&data->ctx, data->dfs, 1);
+	spi_context_update_tx(&data->ctx, data->dfs, data->frames);
+	spi_context_update_rx(&data->ctx, data->dfs, data->frames);
 
 	spi_mcux_transfer_next_packet(dev);
 }
@@ -204,6 +240,7 @@ static int spi_mcux_configure(const struct device *dev,
 		? kECSPI_ClockPhaseSecondEdge
 		: kECSPI_ClockPhaseFirstEdge;
 	master_config.baudRate_Bps = spi_cfg->frequency;
+	/* Non-zero for the register value init derives; replaced per burst. */
 	master_config.burstLength = word_size;
 
 	master_config.enableLoopback = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP);
