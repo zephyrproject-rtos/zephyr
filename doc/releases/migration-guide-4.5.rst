@@ -445,6 +445,11 @@ Ethernet
   :kconfig:option:`CONFIG_ETH_NXP_ENET_QOS_UNIQUE_MAC_ADDRESS`. Configurations setting the old
   name must be updated to use the new one. (:github:`115952`)
 
+* The Synopsys DesignWare MAC driver now filters multicast by default
+  (:kconfig:option:`CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER`), so only multicast for the addresses
+  the network stack has joined is received. Disable this option to receive all multicast, as
+  before. (:github:`113235`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
