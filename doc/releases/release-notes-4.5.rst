@@ -102,6 +102,11 @@ Removed APIs and options
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
 
+* MCUboot
+
+    * ``CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH``, replaced by
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE`
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
