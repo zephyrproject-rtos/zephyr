@@ -94,6 +94,11 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* CAN
+
+    * ``bus-speed``
+    * ``bus-speed-data``
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
