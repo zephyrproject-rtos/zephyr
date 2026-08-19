@@ -1,0 +1,35 @@
+tests:
+  kernel.semaphore.deinit:
+    tags:
+      - kernel
+      - semaphore
+    integration_platforms:
+      - qemu_x86
+  kernel.semaphore.deinit.obj_core:
+    tags:
+      - kernel
+      - semaphore
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_OBJ_CORE=y
+  kernel.semaphore.deinit.tracking:
+    tags:
+      - kernel
+      - semaphore
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_NONE=y
+      - CONFIG_TRACING_OBJECT_TRACKING=y
+  kernel.semaphore.deinit.user:
+    tags:
+      - kernel
+      - semaphore
+      - userspace
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    integration_platforms:
+      - qemu_x86
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
