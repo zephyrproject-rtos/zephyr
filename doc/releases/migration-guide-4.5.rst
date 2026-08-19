@@ -237,6 +237,9 @@ Audio Codec
 Clock Control
 =============
 
+* The Nordic Kconfig option ``CONFIG_NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT`` has been
+  removed. Use :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL_REQ_LOW_FREQ` instead.
+
 * The :dtcompatible:`nxp,imxrt11xx-arm-pll` binding now uses ``loop-div`` and
   ``post-div`` for ARM PLL configuration. The legacy ``clock-mult`` and
   ``clock-div`` properties remain supported but are deprecated. Existing
