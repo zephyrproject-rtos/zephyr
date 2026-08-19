@@ -2,6 +2,9 @@ common:
   tags:
     - kernel
     - printk
+  # Taking the fault is the point of the test, so the fatal error report
+  # in the output is the expected outcome rather than a crash.
+  ignore_faults: true
   # A fault taken inside printk() must still be reported. Without a lock
   # free reporting path the fault handler blocks on the printk lock the
   # faulting context already holds, and the test times out rather than
