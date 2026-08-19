@@ -60,6 +60,16 @@ enum wifi_conn_status {
 	WIFI_STATUS_CONN_TIMEOUT,
 	/** Connection failed - AP not found */
 	WIFI_STATUS_CONN_AP_NOT_FOUND,
+	/** Connection failed - the AP rejected the authentication.
+	 * The IEEE 802.11 status code from the Authentication frame is reported in
+	 * the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_AUTH_REJECT,
+	/** Connection failed - the AP rejected the association.
+	 * The IEEE 802.11 status code from the (Re)Association Response frame is
+	 * reported in the status_code field of \ref wifi_status.
+	 */
+	WIFI_STATUS_CONN_ASSOC_REJECT,
 	/** Last connection status */
 	WIFI_STATUS_CONN_LAST_STATUS,
 	/** Connection disconnected status */

@@ -367,6 +367,10 @@ const char *wifi_conn_status_txt(enum wifi_conn_status status)
 		return "Connection timeout";
 	case WIFI_STATUS_CONN_AP_NOT_FOUND:
 		return "AP not found";
+	case WIFI_STATUS_CONN_AUTH_REJECT:
+		return "Authentication rejected";
+	case WIFI_STATUS_CONN_ASSOC_REJECT:
+		return "Association rejected";
 	default:
 		return "UNKNOWN";
 	}
