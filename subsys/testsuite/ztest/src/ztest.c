@@ -149,7 +149,7 @@ static struct cpuhold_pool_item cpuhold_pool_items[MAX_NUM_CPUHOLD + 1];
 
 K_KERNEL_STACK_ARRAY_DEFINE(cpuhold_stacks, MAX_NUM_CPUHOLD + 1, CPUHOLD_STACK_SZ);
 
-static struct k_sem cpuhold_sem;
+static K_SEM_DEFINE(cpuhold_sem, 0, 999);
 
 volatile int cpuhold_active;
 volatile bool cpuhold_spawned;
@@ -283,7 +283,12 @@ void z_impl_z_test_1cpu_start(void)
 
 	cpuhold_active = 1;
 
-	k_sem_init(&cpuhold_sem, 0, 999);
+	/* The semaphore is statically defined; only reset the count here.
+	 * Re-initializing it on every test would repeatedly register it with
+	 * the kernel object tracking facilities (CONFIG_OBJ_CORE_SEM, object
+	 * tracking).
+	 */
+	k_sem_reset(&cpuhold_sem);
 
 	/* Spawn N-1 threads to "hold" the other CPUs, waiting for
 	 * each to signal us that it's locked and spinning.
