@@ -126,11 +126,16 @@ static int qdec_stm32_initialize(const struct device *dev)
 	}
 
 	/* Ensure that the counter will always count up to a multiple of counts_per_revolution */
+#ifdef IS_TIM_32B_COUNTER_INSTANCE
 	if (IS_TIM_32B_COUNTER_INSTANCE(dev_cfg->timer_inst)) {
 		max_counter_value = UINT32_MAX - (UINT32_MAX % dev_cfg->counts_per_revolution) - 1;
 	} else {
+#endif /* IS_TIM_32B_COUNTER_INSTANCE */
 		max_counter_value = UINT16_MAX - (UINT16_MAX % dev_cfg->counts_per_revolution) - 1;
+#ifdef IS_TIM_32B_COUNTER_INSTANCE
 	}
+#endif /* IS_TIM_32B_COUNTER_INSTANCE */
+
 	LL_TIM_SetAutoReload(dev_cfg->timer_inst, max_counter_value);
 
 	LL_TIM_SetPrescaler(dev_cfg->timer_inst, dev_cfg->prescaler);
