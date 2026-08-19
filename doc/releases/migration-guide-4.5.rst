@@ -1426,6 +1426,10 @@ Bluetooth Host
   option: the central choice defaults to :kconfig:option:`CONFIG_BT_AUTO_PHY_CENTRAL_2M`, so
   both roles must be set to ``_NONE`` explicitly.
 
+* The deprecated ``CONFIG_BT_CONN_TX_MAX`` Kconfig option has been removed. It has been
+  deprecated since Zephyr 4.2, and the number of pending TX buffers with a callback always
+  follows :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT`.
+
 Bluetooth Services
 ==================
 
