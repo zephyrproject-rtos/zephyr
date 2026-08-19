@@ -682,6 +682,7 @@
 			clocks = <&clock ESP32_EMAC_MODULE>,
 				 <&clock ESP32_EMAC_PTP_MODULE>;
 			clock-names = "mac", "ptp";
+			snps,perfect-filter-entries = <9>;
 			status = "disabled";
 
 			mdio: mdio {
