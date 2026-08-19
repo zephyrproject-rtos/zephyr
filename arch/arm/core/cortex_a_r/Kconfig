@@ -28,6 +28,7 @@ config CPU_CORTEX_A7
 	select ARMV7_A
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  This option signifies the use of a Cortex-A7 CPU.
 
@@ -46,6 +47,7 @@ config CPU_CORTEX_A32
 	select AARCH32_ARMV8_A
 	select CPU_HAS_ICACHE
 	select CPU_HAS_DCACHE
+	select SCHED_IPI_SUPPORTED if SMP
 	help
 	  This option signifies the use of a Cortex-A32 CPU.
 
@@ -100,7 +102,7 @@ config AARCH32_ARMV8_A_MONITOR_INIT
 
 config ARMV7_A_NS
 	bool "ARMv7-A Non-Secure state (Non-secure world of TrustZone)"
-	depends on ARMV7_A
+	depends on ARMV7_A || AARCH32_ARMV8_A
 	help
 	  Zephyr is running in ARM TrustZone Non-Secure state on an ARMv7-A core.
 
@@ -303,6 +305,13 @@ config ICACHE_LINE_SIZE
 	default 32
 
 endif # CPU_AARCH32_CORTEX_R
+
+config WAIT_AT_RESET_VECTOR
+	bool "Wait at reset vector"
+	default n
+	help
+	  Spin at reset vector waiting for debugger to attach and resume
+	  execution
 
 config TEST_EXTRA_STACK_SIZE
 	default 1024 if SMP
