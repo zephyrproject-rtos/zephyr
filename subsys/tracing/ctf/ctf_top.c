@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/toolchain.h>
 #include <kernel_internal.h>
 #include <ctf_top.h>
 #include <zephyr/net/net_core.h>
@@ -19,6 +20,13 @@ struct rtio;
 struct rtio_sqe;
 struct rtio_cqe;
 struct rtio_iodev_sqe;
+
+#ifdef CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP
+__weak uint64_t ctf_top_timestamp_get(void)
+{
+	return timing_ns_get();
+}
+#endif /* CONFIG_TRACING_CTF_CONFIGURABLE_TIMESTAMP */
 
 static void _get_thread_name(struct k_thread *thread, ctf_bounded_string_t *name)
 {
