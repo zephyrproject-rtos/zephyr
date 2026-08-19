@@ -217,6 +217,7 @@ Removed APIs and options
     * ``owner-id``, ``perm-read``, ``perm-write``, ``perm-execute``, ``perm-secure`` and
       ``non-secure-callable`` properties of :dtcompatible:`nordic,owned-memory` and
       :dtcompatible:`nordic,owned-partitions`
+    * ``CONFIG_BOARD_ENABLE_CPUNET``, replaced by :kconfig:option:`CONFIG_SOC_NRF53_CPUNET_ENABLE`
     * ``CONFIG_GPIO_AS_PINRESET``
     * ``CONFIG_SOC_DCDC_NRF52X``
     * ``CONFIG_SOC_DCDC_NRF52X_HV``
