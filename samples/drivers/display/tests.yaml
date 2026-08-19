@@ -116,3 +116,4 @@ tests:
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu
       - platform:nucleo_g071rb/stm32g071xx:SHIELD=x_nucleo_gfx01m2
       - platform:m5stack_atoms3/esp32s3/procpu:SHIELD=m5stack_unit_minioled
+      - platform:rza3m_ek:SHIELD=rtkapplcdms02001be
