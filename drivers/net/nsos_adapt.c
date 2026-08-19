@@ -823,12 +823,19 @@ static int nsos_adapt_setsockopt_int(int fd, int level, int optname,
  * group on every host interface instead, so the offloaded listener receives
  * multicast on the real host links too.
  */
-static int nsos_adapt_join_mcast_all(int fd, int level, int optname, const void *optval,
-				     size_t optlen)
+static int nsos_adapt_join_mcast_all(int fd, int family, const void *optval, size_t optlen)
 {
+	int level = (family == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
+	int optname = (family == AF_INET6) ? IPV6_ADD_MEMBERSHIP : IP_ADD_MEMBERSHIP;
+	size_t mreq_size =
+		(family == AF_INET6) ? sizeof(struct ipv6_mreq) : sizeof(struct ip_mreqn);
 	struct if_nameindex *ifs;
 	unsigned int joined = 0;
 	int last_errno = 0;
+
+	if (optlen < mreq_size) {
+		return -NSI_ERRNO_MID_EINVAL;
+	}
 
 	ifs = if_nameindex();
 	if (ifs == NULL) {
@@ -839,7 +846,7 @@ static int nsos_adapt_join_mcast_all(int fd, int level, int optname, const void 
 	for (struct if_nameindex *ife = ifs; ife->if_index != 0; ife++) {
 		int ret;
 
-		if (level == IPPROTO_IPV6) {
+		if (family == AF_INET6) {
 			struct ipv6_mreq mreq;
 
 			memcpy(&mreq, optval, sizeof(mreq));
@@ -957,8 +964,8 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_MULTICAST_LOOP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IP_ADD_MEMBERSHIP:
-			return nsos_adapt_join_mcast_all(fd, IPPROTO_IP, IP_ADD_MEMBERSHIP,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_join_mcast_all(fd, AF_INET, nsos_mid_optval,
+							 nsos_mid_optlen);
 		}
 		break;
 
@@ -968,8 +975,8 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
 							 nsos_mid_optval, nsos_mid_optlen);
 		case NSOS_MID_IPV6_ADD_MEMBERSHIP:
-			return nsos_adapt_join_mcast_all(fd, IPPROTO_IPV6, IPV6_ADD_MEMBERSHIP,
-							 nsos_mid_optval, nsos_mid_optlen);
+			return nsos_adapt_join_mcast_all(fd, AF_INET6, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_IPV6_V6ONLY:
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 							 nsos_mid_optval, nsos_mid_optlen);

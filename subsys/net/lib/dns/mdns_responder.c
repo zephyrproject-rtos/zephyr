@@ -753,8 +753,9 @@ static void send_sd_response(int sock,
 
 			/* Construct the response */
 			if (service_type_enum) {
-				ret = dns_sd_handle_service_type_enum(record, addr4, addr6,
-						result->data, net_buf_max_len(result));
+				ret = dns_sd_handle_service_type_enum(iface, record, addr4, addr6,
+								      result->data,
+								      net_buf_max_len(result));
 				if (ret < 0) {
 					NET_DBG("dns_sd_handle_service_type_enum() failed (%d)",
 						ret);
@@ -1377,78 +1378,40 @@ NET_MGMT_REGISTER_EVENT_HANDLER(mdns_conn_events, NET_EVENT_L4_DISCONNECTED,
 				mdns_conn_event_handler, NULL);
 #endif /* CONFIG_MDNS_RESPONDER_PROBE */
 
-#if defined(CONFIG_NET_IPV6)
-static void iface_ipv6_cb(struct net_if *iface, void *user_data)
+static int mdns_join_mcast_group(int sock, net_sa_family_t family, int ifindex)
 {
-	struct net_in6_addr *addr = user_data;
 	int ret;
 
-	if (!net_if_flag_is_set(iface, NET_IF_IPV6)) {
-		return;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
+		struct net_sockaddr_in maddr;
+		struct net_ip_mreqn mreqn = {0};
+
+		create_ipv4_addr(&maddr);
+		mreqn.imr_multiaddr = maddr.sin_addr;
+		mreqn.imr_ifindex = ifindex;
+
+		ret = zsock_setsockopt(sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP, &mreqn,
+				       sizeof(mreqn));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
+		struct net_sockaddr_in6 maddr;
+		struct net_ipv6_mreq mreq = {0};
+
+		create_ipv6_addr(&maddr);
+		mreq.ipv6mr_multiaddr = maddr.sin6_addr;
+		mreq.ipv6mr_ifindex = ifindex;
+
+		ret = zsock_setsockopt(sock, NET_IPPROTO_IPV6, ZSOCK_IPV6_ADD_MEMBERSHIP, &mreq,
+				       sizeof(mreq));
+	} else {
+		return -EPFNOSUPPORT;
 	}
 
-	if (!mdns_iface_is_enabled(iface)) {
-		return;
-	}
-
-	ret = net_ipv6_mld_join(iface, addr);
 	if (ret < 0) {
-		NET_DBG("Cannot join %s IPv6 multicast group (%d)",
-			net_sprint_ipv6_addr(addr), ret);
+		return -errno;
 	}
+
+	return 0;
 }
-
-static void setup_ipv6_addr(struct net_sockaddr_in6 *local_addr)
-{
-	create_ipv6_addr(local_addr);
-
-	net_if_foreach(iface_ipv6_cb, &local_addr->sin6_addr);
-}
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-static void iface_ipv4_cb(struct net_if *iface, void *user_data)
-{
-	struct net_in_addr *addr = user_data;
-	int ret;
-
-	if (!net_if_flag_is_set(iface, NET_IF_IPV4)) {
-		return;
-	}
-
-	if (!mdns_iface_is_enabled(iface)) {
-		return;
-	}
-
-	if (!net_if_is_up(iface)) {
-		struct net_if_mcast_addr *maddr;
-
-		NET_DBG("Interface %d is down, not joining mcast group yet",
-			net_if_get_by_iface(iface));
-
-		maddr = net_if_ipv4_maddr_add(iface, addr);
-		if (!maddr) {
-			NET_DBG("Cannot add multicast address %s",
-				net_sprint_ipv4_addr(addr));
-		}
-
-		return;
-	}
-
-	ret = net_ipv4_igmp_join(iface, addr, NULL);
-	if (ret < 0) {
-		NET_DBG("Cannot add IPv4 multicast address to iface %d",
-			net_if_get_by_iface(iface));
-	}
-}
-
-static void setup_ipv4_addr(struct net_sockaddr_in *local_addr)
-{
-	create_ipv4_addr(local_addr);
-
-	net_if_foreach(iface_ipv4_cb, &local_addr->sin_addr);
-}
-#endif /* CONFIG_NET_IPV4 */
 
 static int dispatcher_cb(struct dns_socket_dispatcher *ctx, int sock,
 			 struct net_sockaddr *addr, size_t addrlen,
@@ -1627,7 +1590,7 @@ static int init_listener(void)
 			 MAX_IPV6_IFACE_COUNT, "IPv6", iface_count);
 	}
 
-	setup_ipv6_addr(&local_addr6);
+	create_ipv6_addr(&local_addr6);
 
 	ARRAY_FOR_EACH(ipv6_fds, i) {
 		ipv6_fds[i].fd = -1;
@@ -1689,6 +1652,12 @@ static int init_listener(void)
 			}
 		}
 
+		ret = mdns_join_mcast_group(v6, NET_AF_INET6, ifindex);
+		if (ret < 0 && ret != -ENETDOWN) {
+			NET_DBG("Cannot join %s multicast group on iface %d (%d)", "IPv6", ifindex,
+				ret);
+		}
+
 		v6_ctx[i].sock = v6;
 		ret = -1;
 
@@ -1737,7 +1706,7 @@ static int init_listener(void)
 			 MAX_IPV4_IFACE_COUNT, "IPv4", iface_count);
 	}
 
-	setup_ipv4_addr(&local_addr4);
+	create_ipv4_addr(&local_addr4);
 
 	ARRAY_FOR_EACH(ipv4_fds, i) {
 		ipv4_fds[i].fd = -1;
@@ -1797,6 +1766,12 @@ static int init_listener(void)
 				NET_DBG("Bound %s sock %d to interface %d",
 					"IPv4", v4, ifindex);
 			}
+		}
+
+		ret = mdns_join_mcast_group(v4, NET_AF_INET, ifindex);
+		if (ret < 0 && ret != -ENETDOWN) {
+			NET_DBG("Cannot join %s multicast group on iface %d (%d)", "IPv4", ifindex,
+				ret);
 		}
 
 		v4_ctx[i].sock = v4;
