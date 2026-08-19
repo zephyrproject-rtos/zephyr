@@ -20,6 +20,8 @@
 			interrupts = <77>, <78>;
 			internal-phy-pllmul = "15";
 			internal-phy-prediv = "2";
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
