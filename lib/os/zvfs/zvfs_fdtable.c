@@ -1,7 +1,5 @@
 /*
- * Copyright (c) 2018 Linaro Limited
  * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
- * Copyright (c) 2025 Antmicro
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +11,12 @@
  * This file provides generic file descriptor table implementation, suitable
  * for any I/O object implementing POSIX I/O semantics (i.e. read/write +
  * aux operations).
+ *
+ * A file descriptor is a slot in a descriptor table pairing a number with an
+ * open file description and the descriptor's own FD_CLOEXEC flag. The open
+ * file descriptions live in a system-wide pool; dup() and inheritance make
+ * several descriptors share one description, and with it the file offset,
+ * as POSIX requires.
  */
 
 #include <errno.h>
@@ -32,10 +36,11 @@ static const struct fd_op_vtable stdinout_fd_op_vtable;
 BUILD_ASSERT(ZVFS_OPEN_SIZE >= 3, "ZVFS_OPEN_SIZE >= 3 to reserve stdin/stdout/stderr fds");
 #endif
 
+/* the system-wide pool of open file descriptions */
 static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #ifdef CONFIG_ZVFS_RESERVE_STDIO_FDS
 	/*
-	 * Predefine entries for stdin/stdout/stderr.
+	 * Predefine descriptions for stdin/stdout/stderr.
 	 */
 	{
 		/* STDIN */
@@ -66,14 +71,29 @@ static struct fd_entry fdtable[ZVFS_OPEN_SIZE] = {
 #endif
 };
 
+/* the boot descriptor table, shared by every thread */
+static struct fd_slot fd_boot_slots[ZVFS_OPEN_SIZE] = {
+#ifdef CONFIG_ZVFS_RESERVE_STDIO_FDS
+	{.entry = &fdtable[0]},
+	{.entry = &fdtable[1]},
+	{.entry = &fdtable[2]},
+#endif
+};
+
 static K_MUTEX_DEFINE(fdtable_lock);
 
-static int z_fd_ref(int fd)
+/* the calling thread's descriptor table */
+static struct fd_slot *fd_slots(void)
 {
-	return atomic_inc(&fdtable[fd].refcount) + 1;
+	return fd_boot_slots;
 }
 
-static int z_fd_unref(int fd)
+static int fd_entry_ref(struct fd_entry *entry)
+{
+	return atomic_inc(&entry->refcount) + 1;
+}
+
+static int fd_entry_unref(struct fd_entry *entry)
 {
 	atomic_val_t old_rc;
 
@@ -83,24 +103,24 @@ static int z_fd_unref(int fd)
 	 * refcount is not going to be written.
 	 */
 	do {
-		old_rc = atomic_get(&fdtable[fd].refcount);
+		old_rc = atomic_get(&entry->refcount);
 		if (!old_rc) {
 			return 0;
 		}
-	} while (!atomic_cas(&fdtable[fd].refcount, old_rc, old_rc - 1));
+	} while (!atomic_cas(&entry->refcount, old_rc, old_rc - 1));
 
 	if (old_rc != 1) {
 		return old_rc - 1;
 	}
 
-	fdtable[fd].obj = NULL;
-	fdtable[fd].vtable = NULL;
+	entry->obj = NULL;
+	entry->vtable = NULL;
 
 #ifdef CONFIG_USERSPACE
 	{
-		struct k_object *ko = k_object_find(&fdtable[fd]);
+		struct k_object *ko = k_object_find(entry);
 
-		/* closed => no thread may retain a grant on this slot */
+		/* closed => no thread may retain a grant on this description */
 		if (ko != NULL) {
 			(void)memset(ko->perms, 0, sizeof(ko->perms));
 			ko->flags &= ~(K_OBJ_FLAG_INITIALIZED | K_OBJ_FLAG_PUBLIC);
@@ -111,22 +131,21 @@ static int z_fd_unref(int fd)
 	return 0;
 }
 
-static int _find_fd_entry(void)
+static struct fd_entry *_find_description(void)
 {
-	int fd;
-
-	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (!atomic_get(&fdtable[fd].refcount)) {
-			return fd;
+	for (int i = 0; i < ARRAY_SIZE(fdtable); i++) {
+		if (!atomic_get(&fdtable[i].refcount)) {
+			return &fdtable[i];
 		}
 	}
 
 	errno = ENFILE;
-	return -1;
+	return NULL;
 }
 
-static int _find_fd_entry_at_or_above(int minfd)
+static int _find_fd_slot_at_or_above(int minfd)
 {
+	struct fd_slot *slots = fd_slots();
 	int fd;
 
 	if (minfd < 0) {
@@ -134,8 +153,8 @@ static int _find_fd_entry_at_or_above(int minfd)
 		return -1;
 	}
 
-	for (fd = minfd; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (!atomic_get(&fdtable[fd].refcount)) {
+	for (fd = minfd; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (slots[fd].entry == NULL) {
 			return fd;
 		}
 	}
@@ -152,9 +171,11 @@ int zvfs_fd_obj_refcount(void *obj)
 		return 0;
 	}
 
-	for (int fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (atomic_get(&fdtable[fd].refcount) && fdtable[fd].obj == obj) {
-			count++;
+	for (int i = 0; i < ARRAY_SIZE(fdtable); i++) {
+		atomic_val_t rc = atomic_get(&fdtable[i].refcount);
+
+		if ((rc > 0) && (fdtable[i].obj == obj)) {
+			count += rc;
 		}
 	}
 
@@ -163,33 +184,18 @@ int zvfs_fd_obj_refcount(void *obj)
 
 void zvfs_fd_offset_set(struct fd_entry *entry, size_t offset)
 {
-	void *obj = entry->obj;
-
-	if (obj == NULL) {
-		entry->offset = offset;
-		return;
-	}
-
-	for (int fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (atomic_get(&fdtable[fd].refcount) && fdtable[fd].obj == obj) {
-			fdtable[fd].offset = offset;
-		}
-	}
+	/* descriptors sharing this description share the one offset */
+	entry->offset = offset;
 }
 
 static int zvfs_dup_entry_locked(struct fd_entry *src, int newfd)
 {
-#if defined(CONFIG_USERSPACE)
-	k_object_recycle(&fdtable[newfd]);
-#endif
-	(void)z_fd_ref(newfd);
-	fdtable[newfd].obj = src->obj;
-	fdtable[newfd].vtable = src->vtable;
-	fdtable[newfd].mode = src->mode;
-	fdtable[newfd].offset = src->offset;
-	fdtable[newfd].fd_flags = 0;
-	k_mutex_init(&fdtable[newfd].lock);
-	k_condvar_init(&fdtable[newfd].cond);
+	struct fd_slot *slots = fd_slots();
+
+	/* the new descriptor shares src's description, offset included */
+	(void)fd_entry_ref(src);
+	slots[newfd].entry = src;
+	slots[newfd].flags = 0;
 
 	return newfd;
 }
@@ -205,7 +211,7 @@ int z_impl_zvfs_dup(int oldfd, int minfd)
 
 	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
 
-	fd = _find_fd_entry_at_or_above(minfd);
+	fd = _find_fd_slot_at_or_above(minfd);
 	if (fd >= 0) {
 		fd = zvfs_dup_entry_locked(src, fd);
 	}
@@ -244,7 +250,7 @@ int z_impl_zvfs_dup2(int oldfd, int newfd)
 		return -1;
 	}
 
-	if (newfd < 0 || newfd >= ARRAY_SIZE(fdtable)) {
+	if (newfd < 0 || newfd >= ZVFS_OPEN_SIZE) {
 		errno = EBADF;
 		return -1;
 	}
@@ -257,7 +263,7 @@ int z_impl_zvfs_dup2(int oldfd, int newfd)
 
 	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
 
-	if (atomic_get(&fdtable[newfd].refcount)) {
+	if (fd_slots()[newfd].entry != NULL) {
 		errno = EBADF;
 		k_mutex_unlock(&fdtable_lock);
 		return -1;
@@ -292,21 +298,30 @@ static int z_vrfy_zvfs_dup2(int oldfd, int newfd)
 #include <zephyr/syscalls/zvfs_dup2_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
+struct fd_slot *zvfs_fd_slot_get(int fd)
+{
+	struct fd_slot *slots = fd_slots();
+
+	if ((fd < 0) || (fd >= ZVFS_OPEN_SIZE)) {
+		errno = EBADF;
+		return NULL;
+	}
+
+	fd = k_array_index_sanitize(fd, ZVFS_OPEN_SIZE);
+
+	if (slots[fd].entry == NULL) {
+		errno = EBADF;
+		return NULL;
+	}
+
+	return &slots[fd];
+}
+
 struct fd_entry *zvfs_fd_entry_get(int fd)
 {
-	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
-		errno = EBADF;
-		return NULL;
-	}
+	struct fd_slot *slot = zvfs_fd_slot_get(fd);
 
-	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
-
-	if (!atomic_get(&fdtable[fd].refcount)) {
-		errno = EBADF;
-		return NULL;
-	}
-
-	return &fdtable[fd];
+	return (slot == NULL) ? NULL : slot->entry;
 }
 
 struct fd_entry *zvfs_fd_syscall_verify(int fd)
@@ -334,11 +349,11 @@ static int _check_fd(int fd)
 #if defined(CONFIG_ZTEST) && defined(CONFIG_USERSPACE)
 void *zvfs_test_fd_entry_kobj(int fd)
 {
-	if ((fd < 0) || (fd >= ARRAY_SIZE(fdtable))) {
+	if ((fd < 0) || (fd >= ZVFS_OPEN_SIZE)) {
 		return NULL;
 	}
 
-	return &fdtable[k_array_index_sanitize(fd, ARRAY_SIZE(fdtable))];
+	return fd_slots()[k_array_index_sanitize(fd, ZVFS_OPEN_SIZE)].entry;
 }
 #endif
 
@@ -359,32 +374,23 @@ void *zvfs_get_fd_obj(int fd, const struct fd_op_vtable *vtable, int err)
 	return entry->obj;
 }
 
-static int z_get_fd_by_obj_and_vtable(void *obj, const struct fd_op_vtable *vtable)
-{
-	int fd;
-
-	for (fd = 0; fd < ARRAY_SIZE(fdtable); fd++) {
-		if (fdtable[fd].obj == obj && fdtable[fd].vtable == vtable) {
-			return fd;
-		}
-	}
-
-	errno = ENFILE;
-	return -1;
-}
-
 bool zvfs_get_obj_lock_and_cond(void *obj, const struct fd_op_vtable *vtable, struct k_mutex **lock,
 				struct k_condvar **cond)
 {
-	int fd;
-	struct fd_entry *entry;
+	struct fd_entry *entry = NULL;
 
-	fd = z_get_fd_by_obj_and_vtable(obj, vtable);
-	if (_check_fd(fd) < 0) {
-		return false;
+	for (int i = 0; i < ARRAY_SIZE(fdtable); i++) {
+		if (atomic_get(&fdtable[i].refcount) && fdtable[i].obj == obj &&
+		    fdtable[i].vtable == vtable) {
+			entry = &fdtable[i];
+			break;
+		}
 	}
 
-	entry = &fdtable[fd];
+	if (entry == NULL) {
+		errno = ENFILE;
+		return false;
+	}
 
 	if (lock) {
 		*lock = &entry->lock;
@@ -417,23 +423,31 @@ void *zvfs_get_fd_obj_and_vtable(int fd, const struct fd_op_vtable **vtable, str
 
 int zvfs_reserve_fd(void)
 {
+	struct fd_entry *entry;
 	int fd;
 
 	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
 
-	fd = _find_fd_entry();
+	fd = _find_fd_slot_at_or_above(0);
 	if (fd >= 0) {
+		/* EMFILE from slot exhaustion, ENFILE when the pool is dry */
+		entry = _find_description();
+		if (entry == NULL) {
+			fd = -1;
+		} else {
 #if defined(CONFIG_USERSPACE)
-		k_object_recycle(&fdtable[fd]);
+			k_object_recycle(entry);
 #endif
-		/* Mark entry as used, zvfs_finalize_fd() will fill it in. */
-		(void)z_fd_ref(fd);
-		fdtable[fd].obj = NULL;
-		fdtable[fd].vtable = NULL;
-		fdtable[fd].offset = 0;
-		fdtable[fd].fd_flags = 0;
-		k_mutex_init(&fdtable[fd].lock);
-		k_condvar_init(&fdtable[fd].cond);
+			/* Mark description as used, zvfs_finalize_fd() will fill it in. */
+			(void)fd_entry_ref(entry);
+			entry->obj = NULL;
+			entry->vtable = NULL;
+			entry->offset = 0;
+			k_mutex_init(&entry->lock);
+			k_condvar_init(&entry->cond);
+			fd_slots()[fd].entry = entry;
+			fd_slots()[fd].flags = 0;
+		}
 	}
 
 	k_mutex_unlock(&fdtable_lock);
@@ -443,6 +457,8 @@ int zvfs_reserve_fd(void)
 
 void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable, uint32_t mode)
 {
+	struct fd_entry *entry = fd_slots()[fd].entry;
+
 	/* Assumes fd was already bounds-checked. */
 #ifdef CONFIG_USERSPACE
 	/* descriptor context objects are inserted into the table when they
@@ -454,9 +470,9 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	 */
 	k_object_recycle(obj);
 #endif
-	fdtable[fd].obj = obj;
-	fdtable[fd].vtable = vtable;
-	fdtable[fd].mode = mode;
+	entry->obj = obj;
+	entry->vtable = vtable;
+	entry->mode = mode;
 
 	/* Let the object know about the lock just in case it needs it
 	 * for something. For BSD sockets, the lock is used with condition
@@ -465,7 +481,7 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 	if (vtable && vtable->ioctl) {
 		int prev_errno = errno;
 
-		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK, &fdtable[fd].lock);
+		(void)zvfs_fdtable_call_ioctl(vtable, obj, ZFD_IOCTL_SET_LOCK, &entry->lock);
 		if ((prev_errno != EOPNOTSUPP) && (errno == EOPNOTSUPP)) {
 			/* restore backed-up errno value if the backend does not support locking */
 			errno = prev_errno;
@@ -475,7 +491,20 @@ void zvfs_finalize_typed_fd(int fd, void *obj, const struct fd_op_vtable *vtable
 
 void zvfs_free_fd(int fd)
 {
-	(void)z_fd_unref(fd);
+	struct fd_slot *slot;
+
+	(void)k_mutex_lock(&fdtable_lock, K_FOREVER);
+
+	slot = zvfs_fd_slot_get(fd);
+	if (slot != NULL) {
+		struct fd_entry *entry = slot->entry;
+
+		slot->entry = NULL;
+		slot->flags = 0;
+		(void)fd_entry_unref(entry);
+	}
+
+	k_mutex_unlock(&fdtable_lock);
 }
 
 int zvfs_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
@@ -498,20 +527,28 @@ FILE *zvfs_fdopen(int fd, const char *mode)
 		return NULL;
 	}
 
-	return (FILE *)&fdtable[fd];
+	return (FILE *)fd_slots()[fd].entry;
 }
 
 int zvfs_fileno(FILE *file)
 {
+	struct fd_slot *slots;
+
 	if (!IS_ARRAY_ELEMENT(fdtable, file)) {
 		errno = EBADF;
 		return -1;
 	}
 
-	return (struct fd_entry *)file - fdtable;
+	slots = fd_slots();
+	for (int fd = 0; fd < ZVFS_OPEN_SIZE; fd++) {
+		if (slots[fd].entry == (struct fd_entry *)file) {
+			return fd;
+		}
+	}
+
+	errno = EBADF;
+	return -1;
 }
-
-
 
 #if defined(CONFIG_POSIX_DEVICE_IO) || defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 /*

@@ -16,6 +16,7 @@ extern "C" {
 
 struct fd_op_vtable;
 
+/* an open file description; shared by dup'd and inherited descriptors */
 struct fd_entry {
 	void *obj;
 	const struct fd_op_vtable *vtable;
@@ -24,9 +25,15 @@ struct fd_entry {
 	struct k_condvar cond;
 	size_t offset;
 	uint32_t mode;
-	uint8_t fd_flags;
 };
 
+/* a file descriptor: one slot of a descriptor table */
+struct fd_slot {
+	struct fd_entry *entry;
+	uint8_t flags; /* ZVFS_FD_CLOEXEC */
+};
+
+struct fd_slot *zvfs_fd_slot_get(int fd);
 struct fd_entry *zvfs_fd_entry_get(int fd);
 struct fd_entry *zvfs_fd_syscall_verify(int fd);
 

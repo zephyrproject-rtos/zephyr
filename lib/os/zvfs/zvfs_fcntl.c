@@ -12,25 +12,28 @@
 
 int z_impl_zvfs_fcntl(int fd, int cmd, uintptr_t arg)
 {
-	struct fd_entry *entry = zvfs_fd_entry_get(fd);
+	struct fd_slot *slot = zvfs_fd_slot_get(fd);
+	struct fd_entry *entry;
 
-	if (entry == NULL) {
+	if (slot == NULL) {
 		return -1;
 	}
+	entry = slot->entry;
 
 	switch (cmd) {
 	case ZVFS_F_GETFD:
-		return entry->fd_flags;
+		/* FD_CLOEXEC is the descriptor's, not the description's */
+		return slot->flags;
 
 	case ZVFS_F_SETFD:
-		entry->fd_flags = (int)arg & ZVFS_FD_CLOEXEC;
+		slot->flags = (int)arg & ZVFS_FD_CLOEXEC;
 		return 0;
 
 	case ZVFS_F_DUPFD:
 		return zvfs_dup(fd, (int)arg);
 
 	case ZVFS_F_DUPFD_CLOEXEC: {
-		struct fd_entry *dup_entry;
+		struct fd_slot *dup_slot;
 		int dupfd;
 
 		dupfd = zvfs_dup(fd, (int)arg);
@@ -38,13 +41,13 @@ int z_impl_zvfs_fcntl(int fd, int cmd, uintptr_t arg)
 			return -1;
 		}
 
-		dup_entry = zvfs_fd_entry_get(dupfd);
-		if (dup_entry == NULL) {
+		dup_slot = zvfs_fd_slot_get(dupfd);
+		if (dup_slot == NULL) {
 			(void)zvfs_close(dupfd);
 			return -1;
 		}
 
-		dup_entry->fd_flags = ZVFS_FD_CLOEXEC;
+		dup_slot->flags = ZVFS_FD_CLOEXEC;
 		return dupfd;
 	}
 
