@@ -181,6 +181,10 @@ Removed APIs and options
 
     * ``<zephyr/mgmt/hawkbit.h>``
 
+* Devicetree
+
+    * ``zephyr,memory-region-mpu``
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
