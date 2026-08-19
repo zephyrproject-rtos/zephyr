@@ -229,6 +229,20 @@ class Systems:
             [f for f in self._families if folders.intersection(f.folder)],
         )
 
+    def get_base_symbol(self, name):
+        '''Return the Kconfig symbol of the SoC that the given based SoC is built on.'''
+        based = self._based_socs[name]
+        base = self.get_soc(self.resolve_soc_name(name))
+        symbols = find_soc_symbol(base.folder, based.base)
+        if not symbols:
+            sys.exit(f"ERROR: cannot determine the Kconfig symbol of SoC '{based.base}', which "
+                     f"SoC '{name}' is based on: no 'config SOC' default names it in "
+                     f"{base.folder}.")
+        if len(symbols) > 1:
+            sys.exit(f"ERROR: the Kconfig symbol of SoC '{based.base}', which SoC '{name}' is "
+                     f"based on, is ambiguous: {sorted(symbols)}.")
+        return symbols.pop()
+
     def get_soc(self, name):
         if name in self._based_socs:
             # Keep the name the board target uses, but take everything else from the SoC it is
@@ -280,6 +294,33 @@ class Family:
     folder: list[str]
     series: list[Series]
     socs: list[Soc]
+
+
+def find_soc_symbol(folders, name):
+    '''Return the Kconfig symbols that make CONFIG_SOC resolve to the given SoC name, found by
+    scanning the Kconfig files of the folders holding that SoC for the 'config SOC' default
+    guarded by them. Compliance requires every SoC name to appear in exactly such a default, so
+    the symbol of a SoC is discoverable even where its name does not follow the SOC_<NAME>
+    convention.
+    '''
+    symbols = set()
+    for folder in folders:
+        for f in sorted(Path(folder).rglob('Kconfig*')):
+            if not f.is_file():
+                continue
+            current = None
+            for line in f.read_text(encoding='utf-8', errors='ignore').splitlines():
+                m = re.match(r'^\s*(?:menu)?config\s+([A-Za-z0-9_]+)\s*$', line)
+                if m:
+                    current = m.group(1)
+                    continue
+                if current != 'SOC':
+                    continue
+                m = re.match(rf'^\s*default\s+"{re.escape(name)}"\s+if\s+([A-Za-z0-9_]+)\s*$',
+                             line)
+                if m:
+                    symbols.add(m.group(1))
+    return symbols
 
 
 def unique_paths(paths):
@@ -436,10 +477,13 @@ def dump_v2_systems(args):
 
     if args.socs_lookup:
         socs, series, families = systems.get_loaded_trees(args.socs_lookup)
+        based = [systems.get_based_socs()[n] for n in args.socs_lookup
+                 if n in systems.get_based_socs()]
     else:
         socs = systems.get_socs()
         families = systems.get_families()
         series = systems.get_series()
+        based = list(systems.get_based_socs().values())
 
     for f in families:
         dump_v2_system(args, 'family', f)
@@ -449,6 +493,21 @@ def dump_v2_systems(args):
 
     for s in socs:
         dump_v2_system(args, 'soc', s)
+
+    # A SoC declared with 'base' is not a SoC of its own, but the build system still needs to
+    # know it exists so it can generate the Kconfig symbol named after it, selecting the symbol
+    # of the SoC it is based on.
+    for b in based:
+        if args.cmakeformat is not None:
+            info = args.cmakeformat.format(
+                TYPE='TYPE;based',
+                NAME='NAME;' + b.name + ';SYMBOL;' + systems.get_base_symbol(b.name),
+                DIR='DIR;' + ';'.join(
+                    Path(x).as_posix() for x in systems.get_soc(b.name).folder),
+                HWM='HWM;v2', SERIES='SERIES;', FAMILY='FAMILY;')
+            print(info)
+        else:
+            print(b.name)
 
 
 if __name__ == '__main__':
