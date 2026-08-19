@@ -10,11 +10,16 @@
 #include "mfd_sc18is606.h"
 LOG_MODULE_REGISTER(nxp_sc18is606, CONFIG_MFD_LOG_LEVEL);
 
+/* Avoid making CS outputs by default */
+#define SC18IS606_GPIO_DEFAULT                                                                     \
+	(SC18IS606_GPIO_CS_CONF | (SC18IS606_GPIO_CS_CONF << 2) | (SC18IS606_GPIO_CS_CONF << 4))
+
 int nxp_sc18is606_transfer(const struct device *dev, const uint8_t *tx_data, uint8_t tx_len,
 			   uint8_t *rx_data, uint8_t rx_len, uint8_t *id_buf)
 {
 	struct sc18is606_data *data = dev->data;
 	const struct sc18is606_config *info = dev->config;
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(1000));
 	int ret;
 
 	ret = k_mutex_lock(&data->bridge_lock, K_FOREVER);
@@ -23,30 +28,27 @@ int nxp_sc18is606_transfer(const struct device *dev, const uint8_t *tx_data, uin
 	}
 
 	if (tx_data != NULL) {
-		if (id_buf != NULL) {
-			struct i2c_msg tx_msg[2] = {
-				{
-					.buf = id_buf,
-					.len = 1,
-					.flags = I2C_MSG_WRITE,
-				},
-				{
-					.buf = (uint8_t *)tx_data,
-					.len = tx_len,
-					.flags = I2C_MSG_WRITE,
-				},
-			};
+		do {
+			if (id_buf != NULL) {
+				struct i2c_msg tx_msg[2] = {
+					{
+						.buf = id_buf,
+						.len = 1,
+						.flags = I2C_MSG_WRITE,
+					},
+					{
+						.buf = (uint8_t *)tx_data,
+						.len = tx_len,
+						.flags = I2C_MSG_WRITE,
+					},
+				};
 
-			ret = i2c_transfer_dt(&info->i2c_controller, tx_msg, 2);
-		} else {
-			struct i2c_msg tx_msg[1] = {{
-				.buf = (uint8_t *)tx_data,
-				.len = tx_len,
-				.flags = I2C_MSG_WRITE,
-			}};
+				ret = i2c_transfer_dt(&info->i2c_controller, tx_msg, 2);
+			} else {
 
-			ret = i2c_transfer_dt(&info->i2c_controller, tx_msg, 1);
-		}
+				ret = i2c_write_dt(&info->i2c_controller, tx_data, 1);
+			}
+		} while (ret != 0 && !sys_timepoint_expired(end));
 
 		if (ret != 0) {
 			LOG_ERR("SPI write failed: %d", ret);
@@ -63,12 +65,6 @@ int nxp_sc18is606_transfer(const struct device *dev, const uint8_t *tx_data, uin
 	}
 
 	if (rx_data != NULL) {
-		/*What is the time*/
-		k_timepoint_t end;
-
-		/*Set a deadline in a second*/
-		end = sys_timepoint_calc(K_MSEC(1));
-
 		do {
 			ret = i2c_read(info->i2c_controller.bus, rx_data, rx_len,
 				       info->i2c_controller.addr);
@@ -137,6 +133,32 @@ static int int_gpios_setup(const struct device *dev)
 	return ret;
 }
 
+int nxp_sc18is606_set_pin_mode(const struct device *dev, const uint8_t pin, const bool is_gpio,
+			       const uint8_t mode)
+{
+	struct sc18is606_data *data = dev->data;
+
+	uint8_t enable_buf[] = {
+		SC18IS606_GPIO_ENABLE,
+		0x0,
+	};
+
+	uint8_t conf_buf[] = {
+		SC18IS606_GPIO_CONF,
+		0x00,
+	};
+
+	data->gpio_enable |= FIELD_PREP(SC18IS606_GPIO_ENABLE_MASK, (1 << pin));
+
+	enable_buf[1] = data->gpio_enable;
+
+	data->pin_conf &= ~(SC18IS606_GPIO_CONF_MASK << (pin * 2));
+	data->pin_conf |= (mode & SC18IS606_GPIO_CONF_MASK) << (pin * 2);
+	conf_buf[1] = data->pin_conf;
+
+	return nxp_sc18is606_transfer(dev, conf_buf, sizeof(conf_buf), NULL, 0, NULL);
+}
+
 static int sc18is606_init(const struct device *dev)
 {
 	const struct sc18is606_config *cfg = dev->config;
@@ -186,7 +208,9 @@ static int sc18is606_init(const struct device *dev)
 		.int_gpios = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(inst), int_gpios, {0}),               \
 	};                                                                                         \
                                                                                                    \
-	static struct sc18is606_data data##inst;                                                   \
+	static struct sc18is606_data data##inst = {                                                \
+		.pin_conf = SC18IS606_GPIO_DEFAULT,                                                \
+	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, sc18is606_init, NULL, &data##inst, &sc18is606_config_##inst,   \
 			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);

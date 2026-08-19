@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, tinyvision.ai
+ * Copyright (c) 2026, tinyvision.ai
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,13 +20,6 @@ LOG_MODULE_REGISTER(spi_sc18is606, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 #include <mfd_sc18is606.h>
 
-#define SC18IS606_CONFIG_SPI 0xF0
-#define CLEAR_INTERRUPT      0xF1
-#define IDLE_MODE            0xF2
-#define SC18IS606_LSB_MASK   GENMASK(5, 5)
-#define SC18IS606_MODE_MASK  GENMASK(3, 2)
-#define SC18IS606_FREQ_MASK  GENMASK(1, 0)
-
 struct spi_sc18is606_data {
 	struct spi_context ctx;
 	uint8_t frequency_idx;
@@ -37,12 +30,21 @@ struct spi_sc18is606_config {
 	const struct device *bridge;
 };
 
+#define SC18IS606_SPI_FREQUENCY_CNT  4
+#define SC18IS606_SPI_FREQUENCY_1875 0
+#define SC18IS606_SPI_FREQUENCY_455  1
+#define SC18IS606_SPI_FREQUENCY_115  2
+#define SC18IS606_SPI_FREQUENCY_58   3
+
+
 static int sc18is606_spi_configure(const struct device *dev, const struct spi_config *config)
 {
 	const struct spi_sc18is606_config *cfg = dev->config;
 	struct spi_sc18is606_data *data = dev->data;
 	uint8_t cfg_byte = 0;
 	uint8_t buffer[2];
+	uint8_t freq_idx;
+	int ret;
 
 	if ((config->operation & SPI_OP_MODE_SLAVE) != 0U) {
 		LOG_ERR("SC18IS606 does not support Slave mode");
@@ -61,12 +63,28 @@ static int sc18is606_spi_configure(const struct device *dev, const struct spi_co
 		return -ENOTSUP;
 	}
 
+	ret = nxp_sc18is606_set_pin_mode(cfg->bridge, config->slave, false, SC18IS606_GPIO_CS_CONF);
+
+	if (ret < 0) {
+		LOG_ERR("Failed to set pin mode (%d)", ret);
+	}
+
 	/* Build SC18IS606  configuration byte*/
 	cfg_byte |= FIELD_PREP(SC18IS606_LSB_MASK, (config->operation & SPI_TRANSFER_LSB) >> 4);
 
 	cfg_byte |= FIELD_PREP(SC18IS606_MODE_MASK, (SPI_MODE_GET(config->operation) >> 1));
 
-	cfg_byte |= FIELD_PREP(SC18IS606_FREQ_MASK, config->frequency);
+	if (config->frequency >= KHZ(1875)) {
+		freq_idx = SC18IS606_SPI_FREQUENCY_1875;
+	} else if (config->frequency >= KHZ(455)) {
+		freq_idx = SC18IS606_SPI_FREQUENCY_455;
+	} else if (config->frequency >= KHZ(115)) {
+		freq_idx = SC18IS606_SPI_FREQUENCY_115;
+	} else {
+		freq_idx = SC18IS606_SPI_FREQUENCY_58;
+	}
+
+	cfg_byte |= FIELD_PREP(SC18IS606_FREQ_MASK, freq_idx);
 
 	data->ctx.config = config;
 
@@ -82,6 +100,8 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 				    const struct spi_buf_set *rx_buffer_set)
 {
 	const struct spi_sc18is606_config *cfg = dev->config;
+	struct spi_sc18is606_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
 	int ret;
 
 	ret = sc18is606_spi_configure(dev, spi_cfg);
@@ -104,39 +124,63 @@ static int sc18is606_spi_transceive(const struct device *dev, const struct spi_c
 
 	uint8_t function_id = (1 << ss_idx) & 0x07;
 
-	if (tx_buffer_set && tx_buffer_set->buffers && tx_buffer_set->count > 0) {
+	spi_context_cs_control(ctx, true);
+
+	if (tx_buffer_set && tx_buffer_set->buffers && rx_buffer_set && rx_buffer_set->buffers) {
 		for (size_t i = 0; i < tx_buffer_set->count; i++) {
 			const struct spi_buf *tx_buf = &tx_buffer_set->buffers[i];
+			const struct spi_buf *rx_buf = &rx_buffer_set->buffers[i];
 
 			uint8_t id_buf[1] = {function_id};
 
-			ret = nxp_sc18is606_transfer(cfg->bridge, tx_buf->buf, tx_buf->len, NULL, 0,
-						     id_buf);
+			ret = nxp_sc18is606_transfer(cfg->bridge, tx_buf->buf, tx_buf->len,
+						     rx_buf->buf, rx_buf->len, id_buf);
 			if (ret < 0) {
 				LOG_ERR("SC18IS606: TX of size: %d failed %s", tx_buf->len,
 					dev->name);
 				return ret;
 			}
 		}
-	}
+	} else {
+		if (tx_buffer_set && tx_buffer_set->buffers && tx_buffer_set->count > 0) {
+			for (size_t i = 0; i < tx_buffer_set->count; i++) {
+				const struct spi_buf *tx_buf = &tx_buffer_set->buffers[i];
 
-	if (rx_buffer_set && rx_buffer_set->buffers && rx_buffer_set->count > 0) {
-		for (size_t i = 0; i < rx_buffer_set->count; i++) {
-			/* Function ID first to select the device */
-			uint8_t cmd_buf[1] = {function_id};
+				uint8_t id_buf[1] = {function_id};
 
-			const struct spi_buf *rx_buf = &rx_buffer_set->buffers[i];
+				ret = nxp_sc18is606_transfer(cfg->bridge, tx_buf->buf, tx_buf->len,
+							     NULL, 0, id_buf);
 
-			ret = nxp_sc18is606_transfer(cfg->bridge, cmd_buf, sizeof(cmd_buf),
-						     rx_buf->buf, rx_buf->len, NULL);
+				if (ret < 0) {
+					LOG_ERR("SC18IS606: TX of size: %d failed on  (%s)",
+						tx_buf->len, dev->name);
+					return ret;
+				}
+			}
+		}
 
-			if (ret < 0) {
-				LOG_ERR("SC18IS606: RX of size: %d failed on  (%s)", rx_buf->len,
-					dev->name);
-				return ret;
+		if (rx_buffer_set && rx_buffer_set->buffers && rx_buffer_set->count > 0) {
+			for (size_t i = 0; i < rx_buffer_set->count; i++) {
+				/* Function ID to select the device */
+				uint8_t cmd_buf[1] = {function_id};
+
+				const struct spi_buf *rx_buf = &rx_buffer_set->buffers[i];
+
+				ret = nxp_sc18is606_transfer(cfg->bridge, cmd_buf, sizeof(cmd_buf),
+							     rx_buf->buf, rx_buf->len, NULL);
+
+				if (ret < 0) {
+					LOG_ERR("SC18IS606: Rx of size: %d failed on (%s)",
+						rx_buf->len, dev->name);
+					return ret;
+				}
 			}
 		}
 	}
+
+	spi_context_cs_control(ctx, false);
+
+	spi_context_complete(ctx, dev, 0);
 
 	return ret;
 }
@@ -174,6 +218,12 @@ static int sc18is606_spi_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = spi_context_cs_configure_all(&data->ctx);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure CS pins: %d", ret);
+		return ret;
+	}
+
 	LOG_DBG("SC18IS606 SPI initialized");
 	return 0;
 }
@@ -182,7 +232,7 @@ static int sc18is606_spi_init(const struct device *dev)
 	static struct spi_sc18is606_data spi_sc18is606_data_##inst = {                             \
 		.frequency_idx = DT_INST_ENUM_IDX(inst, frequency),                                \
 		.spi_mode = DT_INST_PROP(inst, spi_mode),                                          \
-	};                                                                                         \
+		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), ctx)};                          \
 	static const struct spi_sc18is606_config spi_sc18is606_config##inst = {                    \
 		.bridge = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 	};                                                                                         \
