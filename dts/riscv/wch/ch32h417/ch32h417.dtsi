@@ -34,6 +34,12 @@
 			compatible = "wch,ch32h41x-pll-clock";
 			status = "disabled";
 		};
+
+		mco: mco {
+			compatible = "wch,ch32h417-clock-mco";
+			clocks = <&rcc CH32_CLOCK_MCO>;
+			status = "disabled";
+		};
 	};
 
 	soc {

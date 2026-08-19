@@ -44,6 +44,12 @@
 			mul = <18>;
 			status = "disabled";
 		};
+
+		mco: mco {
+			compatible = "wch,ch32v20x_30x-clock-mco";
+			clocks = <&rcc CH32_CLOCK_MCO>;
+			status = "disabled";
+		};
 	};
 
 	soc {

@@ -15,6 +15,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util_macro.h>
 
+#include <zephyr/dt-bindings/clock/ch32-common.h>
+
 #include <hal_ch32fun.h>
 
 /*
@@ -37,10 +39,11 @@
 #define WCH_RCC_PCENR_BASE AHBPCENR
 #endif
 
-#define WCH_RCC_CLOCK_ID_OFFSET(id) (((id) >> 5) & 0xFF)
-#define WCH_RCC_CLOCK_ID_BIT(id)    ((id) & 0x1F)
-#define WCH_RCC_PLLMUL_VAL(mul)     (((mul) << 0x12) & RCC_PLLMULL)
-#define WCH_RCC_SYSCLK              DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
+#define WCH_RCC_CLOCK_ID_OFFSET(id)  (((id) >> 5) & 0xFF)
+#define WCH_RCC_CLOCK_ID_BIT(id)     ((id) & 0x1F)
+#define WCH_RCC_CLOCK_SPECIAL_ID(id) ((id) & 0xF000U)
+#define WCH_RCC_PLLMUL_VAL(mul)      (((mul) << 0x12) & RCC_PLLMULL)
+#define WCH_RCC_SYSCLK               DT_PROP(DT_NODELABEL(cpu0), clock_frequency)
 
 #if WCH_RCC_SRC_IS_H41X_PLL
 /*
@@ -85,10 +88,13 @@ struct clock_control_wch_rcc_config {
 static int clock_control_wch_rcc_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	const struct clock_control_wch_rcc_config *config = dev->config;
-	RCC_TypeDef *regs = config->regs;
-	uint8_t id = (uintptr_t)sys;
-	uint32_t reg = (uint32_t)(&regs->WCH_RCC_PCENR_BASE + WCH_RCC_CLOCK_ID_OFFSET(id));
+	uint32_t id = (uintptr_t)sys;
+	uint32_t reg = ((uint32_t)config->regs) + WCH_RCC_CLOCK_ID_OFFSET(id);
 	uint32_t val = sys_read32(reg);
+
+	if (WCH_RCC_CLOCK_SPECIAL_ID(id) != 0) {
+		return -EINVAL;
+	}
 
 	val |= BIT(WCH_RCC_CLOCK_ID_BIT(id));
 	sys_write32(val, reg);
@@ -137,6 +143,23 @@ static int clock_control_wch_rcc_get_rate(const struct device *dev, clock_contro
 	 */
 	*rate = ahbclk;
 	return 0;
+}
+
+static int clock_control_wch_rcc_configure(const struct device *dev, clock_control_subsys_t sys,
+					   void *data)
+{
+	const struct clock_control_wch_rcc_config *const config = dev->config;
+	const uint32_t id = (uint32_t)sys;
+
+	/* MCO config */
+	if (id == CH32_CLOCK_MCO) {
+		config->regs->CFGR0 = (config->regs->CFGR0 & ~RCC_CFGR0_MCO) |
+				      FIELD_PREP(RCC_CFGR0_MCO, (uint32_t)data);
+
+		return 0;
+	}
+
+	return -EINVAL;
 }
 
 static void clock_control_wch_rcc_setup_flash(void)
@@ -236,6 +259,7 @@ static void clock_control_wch_h41x_init_480m(void)
 static DEVICE_API(clock_control, clock_control_wch_rcc_api) = {
 	.on = clock_control_wch_rcc_on,
 	.get_rate = clock_control_wch_rcc_get_rate,
+	.configure = clock_control_wch_rcc_configure,
 };
 
 static int clock_control_wch_rcc_init(const struct device *dev)
