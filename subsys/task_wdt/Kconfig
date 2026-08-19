@@ -41,7 +41,7 @@ config TASK_WDT_MIN_TIMEOUT
 	int "Minimum timeout for task watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
 	default 100
-	range 1 10000
+	range 1 2147483647
 	help
 	  The task watchdog uses a continuously restarted k_timer as its
 	  backend. This value specifies the minimum timeout in milliseconds
@@ -51,11 +51,15 @@ config TASK_WDT_MIN_TIMEOUT
 	  watchdog, its timeout is set to this value plus
 	  TASK_WDT_HW_FALLBACK_DELAY.
 
+	  The Kconfig range only bounds the value by what an int can hold. The
+	  timeout that can actually be installed is limited by the hardware
+	  watchdog, which rejects a window it cannot represent.
+
 config TASK_WDT_HW_FALLBACK_DELAY
 	int "Additional delay for hardware watchdog (ms)"
 	depends on TASK_WDT_HW_FALLBACK
 	default 20
-	range 1 10000
+	range 1 2147483647
 	help
 	  The timeout of the hardware watchdog fallback will be increased by
 	  this value to provide sufficient time for corrective actions in the
