@@ -7,7 +7,7 @@
 /**
  * @file
  * @brief CH32V00x peripheral clock identifiers for devicetree bindings
- * @ingroup clock_contrcol_ch32
+ * @ingroup clock_control_ch32
  */
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_CH32V00X_CLOCKS_H_

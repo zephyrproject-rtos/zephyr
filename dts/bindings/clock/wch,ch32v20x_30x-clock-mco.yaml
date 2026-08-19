@@ -1,0 +1,29 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+
+compatible: "wch,ch32v20x_30x-clock-mco"
+
+description: |
+  CH32 Microcontroller Clock Output (MCO)
+
+  Used to output a clock signal from the MCU to a GPIO pin.
+
+  This driver offers different clock soures for the ch32v20x_30x SoC family: `sysclk`, `hsi`,
+  `hse`, `pll/2`.
+
+include:
+  - name: "wch,ch32-clock-mco.yaml"
+
+properties:
+  source:
+    type: string
+    required: true
+    description: |
+      Clock Source to output onto the mco pin
+    enum:
+      - "sysclk"
+      - "hsi"
+      - "hse"
+      - "pll/2"

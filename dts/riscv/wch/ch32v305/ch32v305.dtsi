@@ -95,6 +95,10 @@
 	mul = <18>;
 };
 
+&mco {
+	compatible = "wch,ch32v305_7_v317-clock-mco";
+};
+
 &sram0 {
 	reg = <0x20000000 DT_SIZE_K(32)>;
 };
