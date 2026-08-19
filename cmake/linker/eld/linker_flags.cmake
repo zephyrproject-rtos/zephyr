@@ -10,6 +10,8 @@ list(APPEND LLEXT_APPEND_FLAGS -fuse-ld=eld)
 
 set_property(TARGET linker PROPERTY no_position_independent "${LINKERFLAGPREFIX},-no-pie")
 
+set_property(TARGET linker PROPERTY position_independent_elf "${LINKERFLAGPREFIX},-pie ${LINKERFLAGPREFIX},--no-dynamic-linker")
+
 # ld sets gcc-specific flags, so clear this out.
 set_property(TARGET linker PROPERTY lto_arguments)
 set_property(TARGET linker PROPERTY lto_arguments_st)
