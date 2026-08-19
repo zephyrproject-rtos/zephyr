@@ -31,6 +31,13 @@
 		jedec-id = [9d 60 16];
 
 		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
+		/* The reset line drives the module LDO enable, so a reset is a
+		 * power cycle. Keep the rail down long enough for the memory to
+		 * lose its volatile configuration, then let it start up before
+		 * the first command.
+		 */
+		t-reset-pulse = <5000000>;
+		t-reset-recovery = <10000000>;
 
 		partitions {
 			compatible = "fixed-partitions";
