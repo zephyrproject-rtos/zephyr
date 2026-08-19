@@ -6,6 +6,7 @@
 /dts-v1/;
 
 #include <ti/mspm33c/mspm33c321a.dtsi>
+#include <zephyr/dt-bindings/pinctrl/mspm0-pinctrl.h>
 
 / {
 	model = "TI LP_MSPM33C321A/MSPM33C321A";
@@ -15,6 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,flash-controller = &flash_controller;
+		zephyr,console = &unicomm12_uart;
 	};
 };
 
@@ -51,4 +53,27 @@
 &lfxt {
 	clock-frequency = <32768>;
 	ti,xtal-startup-delay-us = <640000>;
+};
+
+&pinctrl {
+	pa10_uc12_tx: pa10_uc12_tx {
+		pinmux = <MSP_PINMUX(21, MSPM0_PIN_FUNCTION_7)>;
+	};
+
+	pa11_uc12_rx: pa11_uc12_rx {
+		pinmux = <MSP_PINMUX(22, MSPM0_PIN_FUNCTION_7)>;
+		input-enable;
+	};
+};
+
+&unicomm12 {
+	status = "okay";
+};
+
+&unicomm12_uart {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&pa10_uc12_tx &pa11_uc12_rx>;
+	pinctrl-names = "default";
 };
