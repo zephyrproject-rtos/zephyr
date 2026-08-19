@@ -370,12 +370,11 @@ struct can_driver_config {
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
 		.min_bitrate = DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, _min_bitrate),		\
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
-		.bitrate = DT_PROP_OR(node_id, bitrate,						\
-			DT_PROP_OR(node_id, bus_speed, CONFIG_CAN_DEFAULT_BITRATE)),            \
+		.bitrate = DT_PROP_OR(node_id, bitrate, CONFIG_CAN_DEFAULT_BITRATE),		\
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
 		IF_ENABLED(CONFIG_CAN_FD_MODE,							\
-			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,                      \
-			 DT_PROP_OR(node_id, bus_speed_data, CONFIG_CAN_DEFAULT_BITRATE_DATA)), \
+			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,			\
+						    CONFIG_CAN_DEFAULT_BITRATE_DATA),		\
 			 .sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),))	\
 	}
 
