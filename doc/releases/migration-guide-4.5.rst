@@ -782,6 +782,10 @@ NXP
   use ``enable-pin-out``, ``use-unfiltered-output``, ``enable-high-speed-mode``,
   ``filter-enable-sample``, ``filter-count``, ``filter-period`` and ``enable-window-mode``.
 
+* The ``prescaler`` property of :dtcompatible:`nxp,lptmr` has been removed. Use
+  ``prescale-glitch-filter`` and ``prescale-glitch-filter-bypass`` instead. The new property is
+  an exponent, not a divisor: the prescaler divides by ``2^(prescale-glitch-filter + 1)``.
+
 PWM
 ===
 

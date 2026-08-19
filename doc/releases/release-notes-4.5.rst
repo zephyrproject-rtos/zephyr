@@ -116,6 +116,7 @@ Removed APIs and options
     * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
       ``nxp,enable-sample``, ``nxp,filter-count``, ``nxp,filter-period`` and ``nxp,window-mode``
       properties of :dtcompatible:`nxp,kinetis-acmp`
+    * ``prescaler`` property of :dtcompatible:`nxp,lptmr`
 
 * Networking
 
