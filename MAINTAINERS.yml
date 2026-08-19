@@ -2862,6 +2862,15 @@ Documentation Infrastructure:
     - doc/hardware/peripherals/uart.rst
     - include/zephyr/drivers/serial/
     - include/zephyr/drivers/uart_pipe.h
+  file-groups:
+    - name: Serial/UART driver
+      defer-to-other-areas: true
+      files:
+        - drivers/serial/uart_*.c
+        - drivers/serial/uart_*.h
+        - drivers/serial/Kconfig.*
+        - dts/bindings/serial/
+        - include/zephyr/dt-bindings/uart/
   labels:
     - "area: UART"
   tests:
