@@ -459,9 +459,6 @@ your board::
 
   west flash
 
-Without options, the behavior is the same as ``ninja flash`` (or
-``make flash``, etc.).
-
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
   west flash --build-dir path/to/build/directory
@@ -599,9 +596,6 @@ To attach a debugger to your board and open up a local network port
 you can connect a debugger to (e.g. an IDE debugger)::
 
   west debugserver
-
-Without options, the behavior is the same as ``ninja debug`` and
-``ninja debugserver`` (or ``make debug``, etc.).
 
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 

@@ -1008,7 +1008,7 @@ Running on a Board
 ==================
 
 Most boards supported by Zephyr let you flash a compiled binary using
-the ``flash`` target to copy the binary to the board and run it.
+``west flash`` to copy the binary to the board and run it.
 Follow these instructions to flash and run an application on real
 hardware:
 
@@ -1017,19 +1017,13 @@ hardware:
 #. Make sure your board is attached to your host computer. Usually, you'll do
    this via USB.
 
-#. Run one of these console commands from the build directory,
+#. Run this console command from the build directory,
    :file:`<app>/build`, to flash the compiled Zephyr image and run it on
    your board:
 
    .. code-block:: console
 
       west flash
-
-   or
-
-   .. code-block:: console
-
-      ninja flash
 
 The Zephyr build system integrates with the board support files to
 use hardware-specific tools to flash the Zephyr binary to your

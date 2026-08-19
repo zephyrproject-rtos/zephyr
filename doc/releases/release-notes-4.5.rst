@@ -94,6 +94,12 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* Build system
+
+    * The CMake ``flash``, ``debug``, ``debugserver``, ``attach`` and ``rtt`` targets,
+      replaced by the corresponding ``west`` commands
+    * The ``WEST_DIR`` build system variable
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``
