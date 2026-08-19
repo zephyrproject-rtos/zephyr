@@ -29,14 +29,14 @@ config SOC_FLASH_BEE_NOR_1BIT_MODE
 
 config SOC_FLASH_BEE_NOR_2BIT_MODE
 	bool "Flash 2-bit mode (Dual)"
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-2bit)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-2bit,True)
 	help
 	  Set Realtek Bee Nor Flash to 2-bit (Dual) mode.
 	  Uses DI and DO as IO0 and IO1 respectively.
 
 config SOC_FLASH_BEE_NOR_4BIT_MODE
 	bool "Flash 4-bit mode (Quad)"
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-4bit)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-4bit,True)
 	help
 	  Set Realtek Bee Nor Flash to 4-bit (Quad) mode.
 	  Uses all six pins (DI, DO, WP#, HOLD#) as IO0-IO3.
@@ -45,7 +45,7 @@ config SOC_FLASH_BEE_NOR_4BIT_MODE
 
 config SOC_FLASH_BEE_NOR_DTR_4BIT_MODE
 	bool "Flash 4-bit DTR mode (Quad)"
-	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-dtr-4bit)
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_REALTEK_BEE_NOR_FLASH),supports-dtr-4bit,True)
 	help
 	  Set Realtek Bee Nor Flash to 4-bit DTR (Double Transfer Rate) mode.
 	  This provides higher performance but requires flash hardware support.
