@@ -1671,7 +1671,7 @@ void wifi_mgmt_raise_ap_enable_result_event(struct net_if *iface,
 
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_ENABLE_RESULT,
 					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
+					sizeof(struct wifi_status));
 }
 
 void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
@@ -1683,7 +1683,7 @@ void wifi_mgmt_raise_ap_disable_result_event(struct net_if *iface,
 
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_AP_DISABLE_RESULT,
 					iface, &cnx_status,
-					sizeof(enum wifi_ap_status));
+					sizeof(struct wifi_status));
 }
 
 void wifi_mgmt_raise_ap_sta_connected_event(struct net_if *iface,
