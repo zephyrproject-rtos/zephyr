@@ -73,6 +73,10 @@ foreach(line IN LISTS hw_lines)
     list(APPEND ARCH_V2_NAME_LIST ${ARCH_V2_NAME})
     string(TOUPPER "${ARCH_V2_NAME}" ARCH_V2_NAME_UPPER)
     set(ARCH_V2_${ARCH_V2_NAME_UPPER}_DIR ${ARCH_V2_DIR})
+  elseif(HWM_TYPE STREQUAL "based")
+    cmake_parse_arguments(BASED_SOC "" "NAME;SYMBOL" "DIR" ${line})
+    list(APPEND based_soc_names ${BASED_SOC_NAME})
+    set(based_soc_${BASED_SOC_NAME}_symbol ${BASED_SOC_SYMBOL})
   elseif(HWM_TYPE MATCHES "^soc|^series|^family")
     cmake_parse_arguments(SOC_V2 "" "NAME" "DIR" ${line})
 
@@ -101,6 +105,25 @@ kconfig_gen("soc"  "Kconfig.defconfig"   "${kconfig_soc_source_dir}"  "Zephyr So
 kconfig_gen("soc"  "Kconfig"             "${kconfig_soc_source_dir}"  "Zephyr SoC Kconfig")
 kconfig_gen("soc"  "Kconfig.soc"         "${kconfig_soc_source_dir}"  "SoC Kconfig")
 kconfig_gen("soc"  "Kconfig.sysbuild"    "${kconfig_soc_source_dir}"  "Sysbuild SoC Kconfig")
+
+# A SoC declared with 'base' in soc.yml owns no Kconfig file, since its configuration is the tree
+# of the SoC it is built on. Generate its Kconfig symbol here, selecting the symbol of that SoC,
+# so the board keeps selecting the symbol named after the SoC its board.yml refers to. The SoC's
+# own directory is never sourced, so no configuration can be attached to the symbol.
+if(BOARD_QUALIFIERS)
+  string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
+  list(GET split_board_qualifiers 1 target_soc)
+endif()
+set(soc_based_kconfig "# Generated symbols for SoCs declared with 'base'.\n")
+if(target_soc IN_LIST based_soc_names)
+  string(TOUPPER "SOC_${target_soc}" soc_based_symbol)
+  string(APPEND soc_based_kconfig
+         "\nconfig ${soc_based_symbol}\n\tbool\n\tselect ${based_soc_${target_soc}_symbol}\n")
+endif()
+set(soc_based_file ${KCONFIG_BINARY_DIR}/soc/Kconfig.soc.based)
+file(WRITE ${soc_based_file}.tmp "${soc_based_kconfig}")
+file(COPY_FILE ${soc_based_file}.tmp ${soc_based_file} ONLY_IF_DIFFERENT)
+file(REMOVE ${soc_based_file}.tmp)
 kconfig_gen("boards" "Kconfig.defconfig" "${BOARD_DIRECTORIES}"       "Zephyr board defconfig")
 kconfig_gen("boards" "Kconfig.${BOARD}"  "${BOARD_DIRECTORIES}"       "board Kconfig")
 kconfig_gen("boards" "Kconfig"           "${BOARD_DIRECTORIES}"       "Zephyr board Kconfig")

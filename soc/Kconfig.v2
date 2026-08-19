@@ -37,3 +37,6 @@ config SOC_PART_NUMBER
 
 # Source all Kconfig HWMv2 from SoC roots.
 source "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc"
+
+# Symbols generated for SoCs which soc.yml declares with a base.
+osource "$(KCONFIG_BINARY_DIR)/soc/Kconfig.soc.based"
