@@ -123,6 +123,7 @@ Removed APIs and options
 
 * Nordic
 
+    * ``CONFIG_BOARD_ENABLE_CPUNET``, replaced by :kconfig:option:`CONFIG_SOC_NRF53_CPUNET_ENABLE`
     * ``CONFIG_GPIO_AS_PINRESET``
     * ``CONFIG_SOC_DCDC_NRF52X``
     * ``CONFIG_SOC_DCDC_NRF52X_HV``

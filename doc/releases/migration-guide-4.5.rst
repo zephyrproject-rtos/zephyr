@@ -185,6 +185,9 @@ Boards
   instead: ``regulator-initial-mode = <NRF5X_REG_MODE_DCDC>`` on ``&reg1``/``&vregmain``/
   ``&vregradio``, and ``status = "okay"`` on ``&reg0``/``&vregh``.
 
+* The Nordic nRF53 Kconfig option ``CONFIG_BOARD_ENABLE_CPUNET`` has been removed. Use
+  :kconfig:option:`CONFIG_SOC_NRF53_CPUNET_ENABLE` instead.
+
 Device Drivers and Devicetree
 *****************************
 

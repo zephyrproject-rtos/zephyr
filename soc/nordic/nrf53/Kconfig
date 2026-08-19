@@ -172,13 +172,6 @@ config SOC_NRF53_CPUNET_ENABLE
 	  secure firmware image must already have configured GPIO allocation for the
 	  Network MCU.
 
-config BOARD_ENABLE_CPUNET
-	bool "[DEPRECATED] NRF53 Network MCU is enabled at boot time"
-	select SOC_NRF53_CPUNET_ENABLE
-	select DEPRECATED
-	help
-	  Use SOC_NRF53_CPUNET_ENABLE instead.
-
 if !TRUSTED_EXECUTION_NONSECURE || BUILD_WITH_TFM
 
 choice SOC_HFXO_LOAD_CAPACITANCE
