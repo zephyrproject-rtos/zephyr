@@ -249,15 +249,15 @@ LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 #define WM8960_LINPATH_LMIC2B    0x0008
 #define WM8960_LINPATH_LMICBOOST 0x0030 /* Left Microphone Boost */
 #define WM8960_LINPATH_LMN1      0x0100 /* Left Input Mixer Negative Input 1 */
-#define WM8960_LINPATH_LMP3      0x0080 /* Left Input Mixer Positive Input 2 */
-#define WM8960_LINPATH_LMP2      0x0040 /* Left Input Mixer Positive Input 3 */
+#define WM8960_LINPATH_LMP3      0x0080 /* Left Input Mixer Positive Input 3 */
+#define WM8960_LINPATH_LMP2      0x0040 /* Left Input Mixer Positive Input 2 */
 
 /* Register 0x21 (RINPATH) - Right Input Mixer */
 #define WM8960_RINPATH_RMIC2B    0x0008
 #define WM8960_RINPATH_RMICBOOST 0x0030 /* Right Microphone Boost */
 #define WM8960_RINPATH_RMN1      0x0100 /* Right Input Mixer Negative Input 1 */
-#define WM8960_RINPATH_RMP3      0x0080 /* Right Input Mixer Positive Input 2 */
-#define WM8960_RINPATH_RMP2      0x0040 /* Right Input Mixer Positive Input 3 */
+#define WM8960_RINPATH_RMP3      0x0080 /* Right Input Mixer Positive Input 3 */
+#define WM8960_RINPATH_RMP2      0x0040 /* Right Input Mixer Positive Input 2 */
 
 /* Register 0x22 (LOUTMIX) - Left Output Mixer */
 #define WM8960_LOUTMIX_LD2LO    0x0100 /* Left DAC to Left Output Mixer */
@@ -346,10 +346,13 @@ LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 #define WM8960_PLL4_PLLK_7_0 0x01FF /* PLL K Value [7:0] */
 
 /* Additional defines for driver implementation */
-#define WM8960_DEFAULT_IN_VOLUME  0xC3 /* Default input volume level */
+#define WM8960_DEFAULT_IN_VOLUME  0xC3 /* Default ADC digital volume (0dB) */
 #define WM8960_MAX_IN_VOLUME      0xFF /* Maximum input volume level */
 #define WM8960_DEFAULT_OUT_VOLUME 0x79 /* Default output volume level (0dB) */
 #define WM8960_MAX_OUT_VOLUME     0x7F /* Maximum output volume level */
+
+/* Analog input PGA gain, in 0.75 dB steps */
+#define WM8960_DEFAULT_IN_PGA_GAIN 0x17 /* 0 dB */
 
 /* VMID selection values */
 #define WM8960_VMID_OFF  0x0000
@@ -1466,9 +1469,18 @@ static int wm8960_set_input_volume(const struct device *dev, uint8_t l, uint8_t 
 	l = CLAMP(l, 0U, WM8960_MAX_IN_VOLUME);
 	r = CLAMP(r, 0U, WM8960_MAX_IN_VOLUME);
 
-	/* Configure input path */
+	/*
+	 * The analog PGA and the ADC digital volume use different scales:
+	 * xINVOL[5:0] is the PGA gain (0x17 = 0dB, 0.75dB/step) while
+	 * xADCVOL[7:0] is the ADC digital volume (0xC3 = 0dB). Writing the
+	 * digital level into xINVOL puts its high bits on xINMUTE and xIZC,
+	 * so the default 0xC3 would mute the PGA and leave it at -15dB.
+	 * Hold the PGA at 0dB and let the level drive the ADC, whose 0x00
+	 * setting is a true digital mute.
+	 */
 	if (config->left_input != WM8960_IN_MUTE) {
-		ret = wm8960_reg_write(dev, WM8960_LINVOL, WM8960_LINVOL_IPVU | l);
+		ret = wm8960_reg_write(dev, WM8960_LINVOL,
+				       WM8960_LINVOL_IPVU | WM8960_DEFAULT_IN_PGA_GAIN);
 		if (ret < 0) {
 			return ret;
 		}
@@ -1478,7 +1490,8 @@ static int wm8960_set_input_volume(const struct device *dev, uint8_t l, uint8_t 
 		}
 	}
 	if (config->right_input != WM8960_IN_MUTE) {
-		ret = wm8960_reg_write(dev, WM8960_RINVOL, WM8960_RINVOL_IPVU | r);
+		ret = wm8960_reg_write(dev, WM8960_RINVOL,
+				       WM8960_RINVOL_IPVU | WM8960_DEFAULT_IN_PGA_GAIN);
 		if (ret < 0) {
 			return ret;
 		}

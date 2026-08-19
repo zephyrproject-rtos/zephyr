@@ -422,6 +422,18 @@ ZTEST(wm8960_test, test_wm8960_input_volume_control)
 		right_adc_vol
 	);
 
+	/*
+	 * The requested level belongs to the digital ADC volume. The analog
+	 * input PGA is a different, 6-bit scale, so the level must not reach
+	 * it: LINVOL/RINVOL stay at the 0 dB default.
+	 */
+	zassert_equal(wm8960_emul_get_reg(wm8960_emul, 0) & 0x3F, 0x17,
+		      "left input PGA should stay at 0 dB, got 0x%02x",
+		      wm8960_emul_get_reg(wm8960_emul, 0) & 0x3F);
+	zassert_equal(wm8960_emul_get_reg(wm8960_emul, 1) & 0x3F, 0x17,
+		      "right input PGA should stay at 0 dB, got 0x%02x",
+		      wm8960_emul_get_reg(wm8960_emul, 1) & 0x3F);
+
 	/* Test input mute */
 	val.mute = true;
 	ret = audio_codec_set_property(codec_dev, AUDIO_PROPERTY_INPUT_MUTE, AUDIO_CHANNEL_ALL,
