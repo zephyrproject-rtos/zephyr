@@ -234,6 +234,9 @@ Boards
   * ``scobc_module1`` → ``scobc_a1``
   * ``xiao_esp32c6`` → ``xiao_esp32c6/esp32c6/hpcore``
 
+* The Nordic nRF52 Kconfig option ``CONFIG_GPIO_AS_PINRESET`` has been removed. Set the
+  ``gpio-as-nreset`` property on the ``&uicr`` devicetree node instead.
+
 Device Drivers and Devicetree
 *****************************
 
