@@ -964,7 +964,7 @@
 		status = "disabled";
 
 		enet_ptp_clock: ptp_clock {
-			compatible = "nxp,enet-qos-ptp-clock";
+			compatible = "snps,dwmac-ptp-clock";
 			status = "disabled";
 		};
 

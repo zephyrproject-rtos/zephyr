@@ -18,7 +18,7 @@
  * The fsl_enet_qos SDK HAL is intentionally NOT used here.
  */
 
-#define DT_DRV_COMPAT nxp_enet_qos_ptp_clock
+#define DT_DRV_COMPAT snps_dwmac_ptp_clock
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/kernel.h>
