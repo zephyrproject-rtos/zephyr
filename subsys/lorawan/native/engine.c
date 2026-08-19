@@ -80,13 +80,18 @@ void engine_init(struct lwan_ctx *ctx)
 
 int engine_post_req_wait(struct lwan_req *req)
 {
-	struct k_sem done;
+	struct k_poll_signal done;
+	struct k_poll_event event;
+	unsigned int signaled;
 	int result;
 	int ret;
 
-	k_sem_init(&done, 0, 1);
+	/* A poll signal is used rather than a semaphore as it, unlike kernel
+	 * objects, may live on the stack.
+	 */
+	k_poll_signal_init(&done);
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &done);
 	req->done = &done;
-	req->result = &result;
 
 	ret = k_msgq_put(&engine_msgq, req, K_NO_WAIT);
 	if (ret != 0) {
@@ -94,13 +99,13 @@ int engine_post_req_wait(struct lwan_req *req)
 		return ret;
 	}
 
-	k_sem_take(&done, K_FOREVER);
+	(void)k_poll(&event, 1, K_FOREVER);
+	k_poll_signal_check(&done, &signaled, &result);
 
 	return result;
 }
 
 void engine_signal_result(const struct lwan_req *req, int result)
 {
-	*req->result = result;
-	k_sem_give(req->done);
+	k_poll_signal_raise(req->done, result);
 }

@@ -76,10 +76,10 @@ struct lwan_req {
 	enum lwan_req_type type;
 	/* Pointer to request payload for @p type */
 	void *data;
-	/* Caller-owned completion for synchronous requests */
-	struct k_sem *done;
-	/* Caller-owned result storage */
-	int *result;
+	/* Caller-owned completion signal for synchronous requests, also
+	 * carries the request result.
+	 */
+	struct k_poll_signal *done;
 };
 
 #define LWAN_REQ(_type, _data) \
