@@ -7,13 +7,14 @@
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32h5_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
-#include <zephyr/dt-bindings/reset/stm32h5_reset.h>
-#include <zephyr/dt-bindings/dma/stm32_dma.h>
-#include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/power/stm32h5_iocell.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/reset/stm32h5_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -407,6 +408,12 @@
 				status = "disabled";
 				#counter-capture-cells = <2>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -430,6 +437,12 @@
 				status = "disabled";
 				#counter-capture-cells = <2>;
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers3: timers@40000400 {
@@ -452,6 +465,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 				#counter-capture-cells = <2>;
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
 			};
 		};
 
