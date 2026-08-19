@@ -409,6 +409,15 @@ struct modem_identity {
 struct hl78xx_phone_functionality_work {
 	enum hl78xx_phone_functionality functionality;
 	bool in_progress;
+	/* True only while `functionality` reflects a value the modem itself
+	 * confirmed in this power session (a +CFUN response, or an OK to an
+	 * AT+CFUN command). Cleared at every power boundary: the modem boots
+	 * CFUN=1 unconfigured regardless of what was last commanded, and some
+	 * firmware persists CFUN=4 across CPWROFF, so a cached value from a
+	 * previous session is a guess either way. Consumers that shortcut on
+	 * `functionality` must check this first and re-verify when false.
+	 */
+	bool valid;
 };
 #ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
 
@@ -1288,6 +1297,26 @@ void hl78xx_enter_state(struct hl78xx_data *data, enum hl78xx_state state);
  * @param evt Description of evt.
  */
 void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt);
+
+/**
+ * @brief Discard driver state that describes a modem session that has ended.
+ *
+ * Must be called at every hardware session boundary: cold power-on
+ * (AWAIT_POWER_ON entry), graceful power-down (INIT_POWER_OFF entry) and
+ * detected unexpected restart (+KSUP while already booted). The modem's RAM
+ * state is gone at these points, so any driver-side record of it — the cached
+ * phone functionality and the GNSS engine/search latches — is stale and must
+ * not survive into the next session. (Leaving them set is what made GNSS
+ * permanently unstartable: a gnss_start_status latched true could only be
+ * cleared by a +GNSSEV stop URC that a powered-off modem can never send.)
+ *
+ * Deliberately does NOT touch request/intent flags (gnss_mode_enter_pending):
+ * those record what the caller wants, not what the hardware was doing, and the
+ * boot path consumes them to serve the request in the new session.
+ *
+ * @param data Modem data structure.
+ */
+void hl78xx_reset_modem_session_state(struct hl78xx_data *data);
 
 /**
  * @brief notif_carrier_off - Brief description of the function.

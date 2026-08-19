@@ -710,6 +710,10 @@ void hl78xx_on_ksup(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 		config->variant->on_ksup_lpm(data);
 #else
 		LOG_DBG("Modem unexpected restart detected %d", module_status);
+		hl78xx_reset_modem_session_state(data);
+#ifdef CONFIG_HL78XX_GNSS
+		hl78xx_gnss_reset_session_state(data);
+#endif /* CONFIG_HL78XX_GNSS */
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 	} else {
@@ -1179,6 +1183,7 @@ void hl78xx_on_cfun(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	}
 	data->status.phone_functionality.functionality = ATOI(argv[1], 0, "phone_func");
 	data->status.phone_functionality.in_progress = false;
+	data->status.phone_functionality.valid = true;
 	event.content.value = data->status.phone_functionality.functionality;
 	event_dispatcher_dispatch(&event);
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED);
@@ -2075,6 +2080,10 @@ static int hl78xx_on_await_power_on_state_enter(struct hl78xx_data *data)
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 	data->status.boot.init_sequence_completed = false;
+	hl78xx_reset_modem_session_state(data);
+#ifdef CONFIG_HL78XX_GNSS
+	hl78xx_gnss_reset_session_state(data);
+#endif /* CONFIG_HL78XX_GNSS */
 	hl78xx_start_timer(data, K_MSEC(config->startup_time_ms));
 #ifdef CONFIG_MODEM_HL78XX_POWER_DOWN
 	hl78xx_power_down_allow_feeding(data);
@@ -3477,6 +3486,16 @@ static int hl78xx_on_airplane_mode_state_leave(struct hl78xx_data *data)
 static int hl78xx_on_init_power_off_state_enter(struct hl78xx_data *data)
 {
 	int ret;
+
+	/* This session is ending: whatever the driver believed about the
+	 * modem's functionality or GNSS engine must not survive into the next
+	 * power-up (the pwroff script below also changes CFUN without going
+	 * through the cache).
+	 */
+	hl78xx_reset_modem_session_state(data);
+#ifdef CONFIG_HL78XX_GNSS
+	hl78xx_gnss_reset_session_state(data);
+#endif /* CONFIG_HL78XX_GNSS */
 
 	/**
 	 * Even though you have power switch or etc.., start the power off script first
