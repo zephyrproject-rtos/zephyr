@@ -1797,8 +1797,87 @@ static void nsos_iface_api_init(struct net_if *iface)
 	socket_offload_dns_register(&nsos_dns_ops);
 }
 
+/* The offloaded interface has no Zephyr-side addresses because the host stack
+ * owns them. mDNS and other responders answer from addresses registered on the
+ * Zephyr net_if, so mirror the host interface addresses onto it.
+ */
+static void nsos_iface_add_host_addrs(struct net_if *iface)
+{
+	struct nsos_mid_ifaddr addrs[MAX(NET_IF_MAX_IPV4_ADDR + NET_IF_MAX_IPV6_ADDR, 1)];
+	size_t count = ARRAY_SIZE(addrs);
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_NET_IPV4) && !IS_ENABLED(CONFIG_NET_IPV6)) {
+		return;
+	}
+
+	ret = nsos_adapt_get_ifaddrs(addrs, &count);
+	if (ret < 0) {
+		LOG_DBG("Cannot get host interface addresses (%d)", ret);
+		return;
+	}
+
+	if (count > ARRAY_SIZE(addrs)) {
+		LOG_ERR("Host has %zu addresses but only %zu can be mirrored; increase "
+			"CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT or "
+			"CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT",
+			count, (size_t)ARRAY_SIZE(addrs));
+		count = ARRAY_SIZE(addrs);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		/* The host stack owns ND/DAD. Without this, addresses added below stay
+		 * TENTATIVE forever and responders (e.g. mDNS) skip them.
+		 */
+		net_if_flag_set(iface, NET_IF_IPV6_NO_ND);
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		if (IS_ENABLED(CONFIG_NET_IPV4) && addrs[i].family == NSOS_MID_AF_INET) {
+			struct net_in_addr addr;
+			struct net_in_addr netmask;
+
+			memcpy(&addr, addrs[i].addr, sizeof(addr));
+			if (net_if_ipv4_addr_lookup(&addr, NULL) != NULL) {
+				continue;
+			}
+
+			if (net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0) == NULL) {
+				LOG_DBG("Cannot add host IPv4 address to offloaded iface");
+				continue;
+			}
+
+			netmask.s_addr = (addrs[i].prefix_len == 0)
+						 ? 0
+						 : net_htonl(~0U << (32 - addrs[i].prefix_len));
+			net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
+		} else if (IS_ENABLED(CONFIG_NET_IPV6) && addrs[i].family == NSOS_MID_AF_INET6) {
+			struct net_in6_addr addr;
+
+			memcpy(&addr, addrs[i].addr, sizeof(addr));
+			if (net_if_ipv6_addr_lookup(&addr, NULL) != NULL) {
+				continue;
+			}
+
+			if (net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0) == NULL) {
+				LOG_DBG("Cannot add host IPv6 address to offloaded iface");
+			}
+		}
+	}
+}
+
+static int nsos_iface_enable(const struct net_if *iface, bool enabled)
+{
+	if (enabled) {
+		nsos_iface_add_host_addrs((struct net_if *)iface);
+	}
+
+	return 0;
+}
+
 static struct offloaded_if_api nsos_iface_offload_api = {
 	.iface_api.init = nsos_iface_api_init,
+	.enable = nsos_iface_enable,
 };
 
 #ifdef CONFIG_NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM

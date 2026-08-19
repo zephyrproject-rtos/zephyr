@@ -1247,6 +1247,78 @@ void nsos_adapt_freeaddrinfo(struct nsos_mid_addrinfo *res_mid)
 	free(wrap);
 }
 
+static uint8_t netmask_to_prefix(const uint8_t *mask, size_t len)
+{
+	uint8_t prefix = 0;
+
+	for (size_t i = 0; i < len; i++) {
+		prefix += __builtin_popcount(mask[i]);
+	}
+
+	return prefix;
+}
+
+int nsos_adapt_get_ifaddrs(struct nsos_mid_ifaddr *addrs, size_t *count)
+{
+	struct ifaddrs *ifap;
+	size_t capacity = *count;
+	size_t stored = 0;
+	size_t total = 0;
+
+	if (getifaddrs(&ifap) < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	/* Count every qualifying host address (total) but only store up to capacity,
+	 * so the caller can detect and report truncation.
+	 */
+	for (struct ifaddrs *ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		struct nsos_mid_ifaddr entry;
+
+		if (ifa->ifa_addr == NULL) {
+			continue;
+		}
+
+		if ((ifa->ifa_flags & IFF_LOOPBACK) || !(ifa->ifa_flags & IFF_UP)) {
+			continue;
+		}
+
+		if (ifa->ifa_addr->sa_family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+			struct sockaddr_in *nm = (struct sockaddr_in *)ifa->ifa_netmask;
+
+			entry.family = NSOS_MID_AF_INET;
+			memcpy(entry.addr, &addr->sin_addr, 4);
+			entry.prefix_len = nm ? netmask_to_prefix((uint8_t *)&nm->sin_addr, 4) : 32;
+		} else if (ifa->ifa_addr->sa_family == AF_INET6) {
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)ifa->ifa_addr;
+			struct sockaddr_in6 *nm = (struct sockaddr_in6 *)ifa->ifa_netmask;
+
+			/* Link-local addresses need a scope the Zephyr stack cannot map. */
+			if (IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr)) {
+				continue;
+			}
+
+			entry.family = NSOS_MID_AF_INET6;
+			memcpy(entry.addr, &addr->sin6_addr, 16);
+			entry.prefix_len = nm ? netmask_to_prefix(nm->sin6_addr.s6_addr, 16) : 128;
+		} else {
+			continue;
+		}
+
+		total++;
+
+		if (stored < capacity) {
+			addrs[stored++] = entry;
+		}
+	}
+
+	freeifaddrs(ifap);
+	*count = total;
+
+	return 0;
+}
+
 int nsos_adapt_fcntl_getfl(int fd)
 {
 	int flags;
