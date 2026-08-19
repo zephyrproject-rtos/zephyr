@@ -119,6 +119,11 @@ Removed APIs and options
       ``<board>_<revision>_defconfig``
     * Pattern expansion in ``zephyr_code_relocate(FILES ...)``, replaced by ``file(GLOB ...)``
 
+* CAN
+
+    * ``bus-speed``
+    * ``bus-speed-data``
+
 * Comparator
 
     * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
