@@ -379,5 +379,24 @@ ZTEST(stack_contexts, test_stack_alloc_null)
 }
 
 /**
+ * @brief Reject stack entry counts that overflow the allocation size.
+ */
+ZTEST(stack_contexts, test_stack_alloc_size_overflow)
+{
+	struct k_stack overflow_stack;
+	uint32_t num_entries;
+	int ret;
+
+	if (sizeof(size_t) > sizeof(uint32_t)) {
+		ztest_test_skip();
+	}
+
+	num_entries = (UINT32_MAX / sizeof(stack_data_t)) + 1U;
+	ret = k_stack_alloc_init(&overflow_stack, num_entries);
+	zassert_equal(ret, -ENOMEM,
+		      "overflowing stack allocation must be rejected");
+}
+
+/**
  * @}
  */
