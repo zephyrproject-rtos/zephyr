@@ -512,6 +512,75 @@ void *z_impl_k_object_alloc_size(enum k_objects otype, size_t size)
 	return z_object_alloc(otype, size);
 }
 
+#ifdef CONFIG_OBJ_CORE
+/* Unlink the object core (if any) of a dynamic kernel object that is about
+ * to be freed so that its type's list does not point into freed memory.
+ */
+static void dyn_obj_core_unlink(struct k_object *ko)
+{
+	struct k_obj_type *type;
+	uint32_t type_id;
+
+	/* An object that was never initialized was never linked and has an
+	 * uninitialized object core.
+	 */
+	if ((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0U) {
+		return;
+	}
+
+	switch (ko->type) {
+	case K_OBJ_CONDVAR:
+		type_id = K_OBJ_TYPE_CONDVAR_ID;
+		break;
+#ifdef CONFIG_EVENTS
+	case K_OBJ_EVENT:
+		type_id = K_OBJ_TYPE_EVENT_ID;
+		break;
+#endif /* CONFIG_EVENTS */
+	case K_OBJ_MEM_SLAB:
+		type_id = K_OBJ_TYPE_MEM_SLAB_ID;
+		break;
+	case K_OBJ_MSGQ:
+		type_id = K_OBJ_TYPE_MSGQ_ID;
+		break;
+	case K_OBJ_MUTEX:
+		type_id = K_OBJ_TYPE_MUTEX_ID;
+		break;
+	case K_OBJ_PIPE:
+		type_id = K_OBJ_TYPE_PIPE_ID;
+		break;
+	case K_OBJ_SEM:
+		type_id = K_OBJ_TYPE_SEM_ID;
+		break;
+	case K_OBJ_STACK:
+		type_id = K_OBJ_TYPE_STACK_ID;
+		break;
+	case K_OBJ_THREAD:
+		type_id = K_OBJ_TYPE_THREAD_ID;
+		break;
+	case K_OBJ_TIMER:
+		type_id = K_OBJ_TYPE_TIMER_ID;
+		break;
+	default:
+		return;
+	}
+
+	/* The object type is not registered if its object core integration
+	 * is disabled (CONFIG_OBJ_CORE_*).
+	 */
+	type = k_obj_type_find(type_id);
+	if (type != NULL) {
+		k_obj_core_unlink(
+			(struct k_obj_core *)((uint8_t *)ko->name + type->obj_core_offset));
+	}
+}
+#else
+static void dyn_obj_core_unlink(struct k_object *ko)
+{
+	ARG_UNUSED(ko);
+}
+#endif /* CONFIG_OBJ_CORE */
+
 void k_object_free(void *obj)
 {
 	struct dyn_obj *dyn = NULL;
@@ -550,6 +619,7 @@ void k_object_free(void *obj)
 	}
 
 	if (dyn != NULL) {
+		dyn_obj_core_unlink(&dyn->kobj);
 #ifdef CONFIG_DYNAMIC_OBJECTS_FORCE_STACK_CACHED
 		/* We may have nudged the pointer to point to the cached area
 		 * in dynamic_object_create() when we first created the thread
@@ -706,6 +776,8 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 		/* Nothing to do */
 		break;
 	}
+
+	dyn_obj_core_unlink(ko);
 
 	sys_dlist_remove(&dyn->dobj_list);
 	k_free(dyn->data);
