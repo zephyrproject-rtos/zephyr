@@ -1497,6 +1497,12 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	/* The supplicant only clears these once it associates, so drop the codes of
+	 * the previous request here to keep them from being reported against this one.
+	 */
+	wpa_s->auth_status_code = WLAN_STATUS_SUCCESS;
+	wpa_s->assoc_status_code = WLAN_STATUS_SUCCESS;
+
 	wpas_api_ctrl.iface = iface;
 	wpas_api_ctrl.requested_op = CONNECT;
 	wpas_api_ctrl.connection_timeout = params->timeout;

@@ -89,6 +89,21 @@ static enum wifi_disconn_reason wpas_to_wifi_mgmt_disconn_status(int status)
 	}
 }
 
+/* The supplicant keeps the status code of the last Authentication frame and the last
+ * (Re)Association Response it saw, so a rejection that never produced an event of its
+ * own can still be reported when the connection request finally gives up.
+ */
+static void supplicant_fill_reject(struct wpa_supplicant *wpa_s, struct wifi_status *status)
+{
+	if (wpa_s->assoc_status_code != WLAN_STATUS_SUCCESS) {
+		status->conn_status = WIFI_STATUS_CONN_ASSOC_REJECT;
+		status->status_code = wpa_s->assoc_status_code;
+	} else if (wpa_s->auth_status_code != WLAN_STATUS_SUCCESS) {
+		status->conn_status = WIFI_STATUS_CONN_AUTH_REJECT;
+		status->status_code = wpa_s->auth_status_code;
+	}
+}
+
 static int supplicant_process_status(struct supplicant_int_event_data *event_data,
 				     char *supplicant_status)
 {
@@ -243,7 +258,9 @@ static int supplicant_process_status(struct supplicant_int_event_data *event_dat
 int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
-	int status = wpas_to_wifi_mgmt_conn_status(status_code);
+	struct wifi_status status = {
+		.conn_status = wpas_to_wifi_mgmt_conn_status(status_code),
+	};
 	enum net_event_wifi_cmd event;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
@@ -256,25 +273,42 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 		event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
 	}
 
+	if (event == NET_EVENT_WIFI_CMD_CONNECT_RESULT &&
+	    status.conn_status != WIFI_STATUS_CONN_SUCCESS) {
+		/* Anything positive reaching here is an IEEE 802.11 reason code */
+		if (status_code > 0) {
+			status.reason_code = status_code;
+		}
+
+		if (status.conn_status == WIFI_STATUS_CONN_FAIL ||
+		    status.conn_status == WIFI_STATUS_CONN_TIMEOUT) {
+			supplicant_fill_reject(wpa_s, &status);
+		}
+	}
+
 	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 					       event,
 					       (void *)&status,
-					       sizeof(int));
+					       sizeof(status));
 }
 
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
+	struct wifi_status status = { 0 };
 	enum net_event_wifi_cmd event;
-	int status;
 
 	if (!wpa_s || !wpa_s->current_ssid) {
 		return -EINVAL;
 	}
 
+	if (reason_code > 0) {
+		status.reason_code = reason_code;
+	}
+
 	if (wpa_s->wpa_state >= WPA_COMPLETED) {
 		/* Disconnect event code & status */
-		status = wpas_to_wifi_mgmt_disconn_status(reason_code);
+		status.disconn_reason = wpas_to_wifi_mgmt_disconn_status(reason_code);
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_DISABLE_RESULT;
 		} else {
@@ -282,18 +316,19 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 		}
 	} else {
 		/* Connect event code & status */
-		status = WIFI_STATUS_CONN_FAIL;
+		status.conn_status = WIFI_STATUS_CONN_FAIL;
 		if (wpa_s->current_ssid->mode == WPAS_MODE_AP) {
 			event = NET_EVENT_WIFI_CMD_AP_ENABLE_RESULT;
 		} else {
 			event = NET_EVENT_WIFI_CMD_CONNECT_RESULT;
+			supplicant_fill_reject(wpa_s, &status);
 		}
 	}
 
 	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 					       event,
 					       (void *)&status,
-					       sizeof(int));
+					       sizeof(status));
 }
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
@@ -654,14 +689,29 @@ int supplicant_send_wifi_mgmt_event(const char *ifname, enum net_event_wifi_cmd 
 
 	switch (event) {
 	case NET_EVENT_WIFI_CMD_CONNECT_RESULT:
-		wifi_mgmt_raise_connect_result_event(
-			iface,
-			*(int *)supplicant_status);
+		/* The supplicant sends a bare status value from places that have no
+		 * IEEE 802.11 code to report.
+		 */
+		if (len == sizeof(struct wifi_status)) {
+			wifi_mgmt_raise_connect_result_status_event(
+				iface,
+				(struct wifi_status *)supplicant_status);
+		} else {
+			wifi_mgmt_raise_connect_result_event(
+				iface,
+				*(int *)supplicant_status);
+		}
 		break;
 	case NET_EVENT_WIFI_CMD_DISCONNECT_RESULT:
-		wifi_mgmt_raise_disconnect_result_event(
-			iface,
-			*(int *)supplicant_status);
+		if (len == sizeof(struct wifi_status)) {
+			wifi_mgmt_raise_disconnect_result_status_event(
+				iface,
+				(struct wifi_status *)supplicant_status);
+		} else {
+			wifi_mgmt_raise_disconnect_result_event(
+				iface,
+				*(int *)supplicant_status);
+		}
 		break;
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 	case NET_EVENT_WIFI_CMD_SIGNAL_CHANGE:
