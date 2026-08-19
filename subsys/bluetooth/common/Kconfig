@@ -173,8 +173,9 @@ config BT_BUF_CMD_TX_COUNT
 
 	  HCI Controllers may not support Num_HCI_Command_Packets > 1, hence they default to 1 when
 	  not enabling Controller to Host data flow control (BT_HCI_ACL_FLOW_CONTROL), Read Remote
-	  Version Information (BT_REMOTE_VERSION), Auto-Initiate PHY update (BT_AUTO_PHY_UPDATE), or
-	  Auto-Initiate Data Length Update (BT_AUTO_DATA_LEN_UPDATE).
+	  Version Information (BT_REMOTE_VERSION), Auto-Initiate PHY update
+	  (BT_AUTO_PHY_CENTRAL and BT_AUTO_PHY_PERIPHERAL choices), or Auto-Initiate Data Length
+	  Update (BT_AUTO_DATA_LEN_UPDATE).
 
 	  Normal HCI commands follow the HCI command flow control using Num_HCI_Command_Packets
 	  return in HCI command complete and status.
