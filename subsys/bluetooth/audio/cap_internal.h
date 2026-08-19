@@ -282,8 +282,6 @@ struct bt_cap_common_proc {
 	struct bt_cap_common_proc_param proc_param;
 #if defined(CONFIG_BT_CAP_SUBPROC_SUPPORT)
 	enum bt_cap_common_subproc_type subproc_type;
-	/* Whether any request has been sent to a peer device for the current subprocedure */
-	bool subproc_initiated;
 #endif /* CONFIG_BT_CAP_SUBPROC_SUPPORT */
 };
 
