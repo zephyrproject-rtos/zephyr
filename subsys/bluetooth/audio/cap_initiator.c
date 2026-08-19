@@ -1372,13 +1372,6 @@ cap_initiator_unicast_subproc_complete_and_continue(const struct bt_cap_common_p
 	LOG_DBG("subproc %d for proc %d completed (%sinitiated)", active_proc->subproc_type,
 		active_proc->proc_type, !active_proc->subproc_initiated ? "not " : "");
 
-	if (!active_proc->subproc_initiated) {
-		/* The subprocedure was skipped as all streams were already in the requested state,
-		 * so we do not notify the application
-		 */
-		return true;
-	}
-
 	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) {
 		/* The procedure was not started by the application, so we do not notify the
 		 * application about the subprocedures
