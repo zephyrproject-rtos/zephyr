@@ -653,6 +653,8 @@
 			compatible = "nxp,s32-gmac", "snps,dwmac";
 			interrupts = <105 0>, <106 0>, <107 0>, <108 0>;
 			interrupt-names = "common", "tx", "rx", "safety";
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <3>;
 			status = "disabled";
 		};
 
