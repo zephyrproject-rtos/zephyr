@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Orgatex GmbH
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&i2c0 {
+	bq35100: bq35100@55 {
+		compatible = "ti,bq35100";
+		reg = <0x55>;
+		status = "okay";
+		supply-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};

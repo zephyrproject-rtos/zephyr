@@ -13,6 +13,7 @@ endif()
 
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_BQ27Z746 bq27z746)
+add_subdirectory_ifdef(CONFIG_BQ35100 bq35100)
 add_subdirectory_ifdef(CONFIG_BQ40Z50 bq40z50)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_ADP5360 adp5360)
 add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_AXP2101 axp2101)

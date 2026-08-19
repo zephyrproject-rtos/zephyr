@@ -1,0 +1,26 @@
+# Copyright (c) 2024 Orgatex GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+description: |
+  Texas Instruments, BQ35100, Battery fuel gauge for
+  non-rechargeable batteries (lithium primary) and end-of-service monitor
+
+compatible: "ti,bq35100"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      This pin can be used to reflect an internal warning. The
+      warnings can be configured using I2C communication.
+      Possible Warnings: Battery low, Temperature low,
+      Temperature high, Battery low SOH, Battery EOS OCV
+
+  supply-gpios:
+    type: phandle-array
+    description: |
+      Gauge enable (GE) pin. The gauge only draws its quiescent current while
+      this pin is driven high, so boards that keep it under software control
+      can take the gauge out of the battery budget while it is not needed.

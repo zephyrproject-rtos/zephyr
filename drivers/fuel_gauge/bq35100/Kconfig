@@ -1,0 +1,51 @@
+# Copyright (c) 2025 Orgatex GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BQ35100
+	bool "BQ35100 Fuel Gauge"
+	default y
+	depends on DT_HAS_TI_BQ35100_ENABLED
+	select I2C
+	help
+	  Enable I2C-based driver for BQ35100 Fuel Gauge.
+
+if BQ35100
+
+config EMUL_BQ35100
+	bool "Emulate a BQ35100 gas gauge"
+	default y
+	depends on EMUL
+	help
+	  It answers with a fixed set of readings, thus allowing test code to
+	  check that things are working as expected.
+
+config BQ35100_MAX_RETRIES
+	int "Status change retries"
+	default 20
+	help
+	  Set the maximum number of retries
+	  (read/write) for specific registers
+
+config BQ35100_RAW_DATA_SAMPLING
+	int "Number of raw data samplings for calibration"
+	default 10
+
+config BQ35100_SERIES_CELL_COUNT
+	int "Number of battery cells used"
+	range 1  256
+	default 1
+
+config BQ35100_FLASH_WRITE_DELAY
+	int "Flash write delay"
+	default 100
+
+config BQ35100_NEW_BATTERY_DELAY
+	int "New battery delay"
+	default 200
+
+config BQ35100_CALIBRATION
+	bool "BQ35100 calibration functions"
+	default n
+
+endif # BQ35100
