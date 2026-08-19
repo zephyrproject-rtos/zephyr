@@ -20,6 +20,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/toolchain.h>
+#include <kernel_internal.h>
 #include <wait_q.h>
 #include <zephyr/sys/dlist.h>
 #include <ksched.h>
@@ -42,6 +43,17 @@ static struct k_spinlock sem_lock;
 static struct k_obj_type obj_type_sem;
 #endif /* CONFIG_OBJ_CORE_SEM */
 
+void z_sem_init_untracked(struct k_sem *sem, unsigned int initial_count, unsigned int limit)
+{
+	sem->count = initial_count;
+	sem->limit = limit;
+
+	z_waitq_init(&sem->wait_q);
+#if defined(CONFIG_POLL)
+	sys_dlist_init(&sem->poll_events);
+#endif /* CONFIG_POLL */
+}
+
 int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
@@ -54,15 +66,10 @@ int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		return -EINVAL;
 	}
 
-	sem->count = initial_count;
-	sem->limit = limit;
+	z_sem_init_untracked(sem, initial_count, limit);
 
 	SYS_PORT_TRACING_OBJ_FUNC(k_sem, init, sem, 0);
 
-	z_waitq_init(&sem->wait_q);
-#if defined(CONFIG_POLL)
-	sys_dlist_init(&sem->poll_events);
-#endif /* CONFIG_POLL */
 	k_object_init(sem);
 
 #ifdef CONFIG_OBJ_CORE_SEM

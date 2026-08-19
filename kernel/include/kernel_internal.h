@@ -224,6 +224,23 @@ void z_mem_manage_boot_finish(void);
 
 bool z_handle_obj_poll_events(sys_dlist_t *events, uint32_t state);
 
+/**
+ * @brief Initialize a semaphore without registering it for object tracking
+ *
+ * Transient kernel-internal semaphores that live on a caller's stack (such
+ * as those embedded in k_work_sync) must not be registered with the kernel
+ * object tracking facilities as they go out of scope without notice: the
+ * object core type list and the tracing object tracking list would keep
+ * referencing dead memory. Unlike k_sem_init() this initializer performs no
+ * such registration.
+ *
+ * @param sem Address of the semaphore.
+ * @param initial_count Initial semaphore count.
+ * @param limit Maximum permitted semaphore count, must be non-zero and
+ *              greater than or equal to the initial count.
+ */
+void z_sem_init_untracked(struct k_sem *sem, unsigned int initial_count, unsigned int limit);
+
 #ifdef CONFIG_PM
 
 /* When the kernel is about to go idle, it calls this function to notify the
