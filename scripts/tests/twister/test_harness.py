@@ -966,6 +966,116 @@ def test_test_handle(
 
 
 @pytest.fixture
+def stale_state_ztest(tmp_path):
+    """A configured Ztest harness carrying stale state from a previous image."""
+    mock_platform = mock.Mock()
+    mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
+
+    mock_testsuite = mock.Mock(id="dummy.test_id", testcases=[])
+    mock_testsuite.name = "dummy_suite/dummy.test_id"
+    mock_testsuite.harness_config = {}
+    mock_testsuite.ztest_suite_names = []
+    mock_testsuite.detailed_test_id = True
+    mock_testsuite.source_dir_rel = "dummy_suite"
+    mock_testsuite.compose_case_name.return_value = "dummy.test_id.testcase"
+
+    outdir = tmp_path / "ztest_out"
+    with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):
+        instance = TestInstance(
+            testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr', outdir=outdir
+        )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
+
+    test_obj = Test()
+    test_obj.configure(instance)
+    test_obj.id = "dummy.test_id"
+    test_obj.expect_reboot = False
+
+    phantom = instance.get_case_or_create("dummy.test_id.testcase")
+    phantom.status = TwisterStatus.STARTED
+    test_obj.ztest = True
+    test_obj.started_suites = {'suite_name': {'count': 1, 'repeat': 0}}
+    test_obj.started_cases = {'dummy.test_id.testcase': {'count': 1}}
+    test_obj.detected_suite_names = ['suite_name']
+
+    return test_obj, phantom
+
+
+def test_test_handle_duplicate_suite_marker_resets_stale_state(stale_state_ztest):
+    """A suite that starts again while still running means the image restarted,
+    so the pending state from before it is stale and must be discarded. Ztest
+    always emits this marker, unlike the optional boot banner."""
+    test_obj, phantom = stale_state_ztest
+
+    test_obj.handle("Running TESTSUITE suite_name")
+
+    assert test_obj.started_suites == {'suite_name': {'count': 1, 'repeat': 0}}
+    assert test_obj.started_cases == {}
+    assert phantom.status == TwisterStatus.NONE
+
+
+def test_test_handle_duplicate_case_marker_resets_stale_state(stale_state_ztest):
+    """The same applies to a test case that starts again while still running."""
+    test_obj, phantom = stale_state_ztest
+
+    test_obj.handle("START - test_testcase")
+
+    assert test_obj.started_suites == {}
+    assert test_obj.started_cases == {'dummy.test_id.testcase': {'count': 1}}
+    # handle() re-marks the case as started for the run that is now beginning.
+    assert phantom.status == TwisterStatus.STARTED
+
+
+def test_test_handle_boot_banner_resets_stale_state(stale_state_ztest):
+    """The banner still covers a restart that never re-emits a pending marker,
+    e.g. when the interrupted run had only partially printed one."""
+    test_obj, phantom = stale_state_ztest
+
+    test_obj.handle("*** Booting Zephyr OS build v4.2.0 ***")
+
+    assert test_obj.started_suites == {}
+    assert test_obj.started_cases == {}
+    assert test_obj.detected_suite_names == []
+    assert test_obj.ztest is False
+    assert phantom.status == TwisterStatus.NONE
+
+
+@pytest.mark.parametrize(
+    "line",
+    ["Running TESTSUITE suite_name", "START - test_testcase",
+     "*** Booting Zephyr OS build v4.2.0 ***"],
+    ids=["suite_marker", "case_marker", "boot_banner"],
+)
+def test_test_handle_expect_reboot_keeps_state(stale_state_ztest, line):
+    """A suite that legitimately reboots must keep its pending state."""
+    test_obj, phantom = stale_state_ztest
+    test_obj.expect_reboot = True
+
+    test_obj.handle(line)
+
+    assert test_obj.started_suites['suite_name']['count'] >= 1
+    assert phantom.status == TwisterStatus.STARTED
+
+
+def test_test_handle_repeated_suite_is_not_stale(stale_state_ztest):
+    """A suite that ends before starting again is a legitimate repeat, not a
+    restart, and must not have its state discarded."""
+    test_obj, _ = stale_state_ztest
+    test_obj.started_suites = {}
+    test_obj.started_cases = {}
+    test_obj.detected_suite_names = []
+
+    test_obj.handle("Running TESTSUITE suite_name")
+    test_obj.handle("TESTSUITE suite_name succeeded")
+    test_obj.handle("Running TESTSUITE suite_name")
+
+    assert test_obj.started_suites == {'suite_name': {'count': 1, 'repeat': 1}}
+    assert test_obj.detected_suite_names == ['suite_name']
+    assert test_obj.ztest is True
+
+
+@pytest.fixture
 def gtest(tmp_path):
     mock_platform = mock.Mock()
     mock_platform.name = "mock_platform"
