@@ -356,15 +356,17 @@ static timer_core_ticks_t timer_core_max_span_ticks;
 #define TIMER_CORE_MAX_SPAN_TICKS timer_core_max_span_ticks
 #else
 #define TIMER_CORE_MAX_SPAN_TICKS (TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK)
+#if !defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
 /* A tick that does not fit leaves nothing to arm: the span clamps to zero, the
  * reload floor fires immediately, and the announce that follows is worth no
  * ticks, so time never advances. Catch that here rather than at run time, where
- * it presents as a wedged system. Both terms are build constants in this branch;
- * the runtime-rate branch is checked in timer_core_init().
+ * it presents as a wedged system. This needs the rate to be a build constant,
+ * so the cases where it is not are checked in timer_core_init() instead.
  */
 BUILD_ASSERT(TIMER_CORE_MAX_UNANNOUNCED_CYCLES >= TIMER_CORE_CYC_PER_TICK,
 	     "a tick is longer than the counter and alarm can span: raise "
 	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC, or slow the counter");
+#endif
 #endif
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
