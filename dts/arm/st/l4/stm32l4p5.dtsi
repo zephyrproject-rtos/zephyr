@@ -277,12 +277,6 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
