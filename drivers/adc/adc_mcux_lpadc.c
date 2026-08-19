@@ -15,6 +15,7 @@
 #include <zephyr/drivers/adc.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/drivers/regulator.h>
+#include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/drivers/clock_control.h>
 #include <fsl_clock.h>
 #include <zephyr/pm/device_runtime.h>
@@ -28,6 +29,8 @@
 #include <zephyr/drivers/dma.h>
 #endif
 #include <string.h>
+
+#include "adc_common.h"
 
 #define LOG_LEVEL CONFIG_ADC_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -287,9 +290,7 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	if (channel_cfg->reference == ADC_REF_EXTERNAL1) {
 		LOG_DBG("ref external1");
 		if (regulator != NULL) {
-			regulator_enable(regulator);
 			err = regulator_set_voltage(regulator, vref_uv, vref_uv);
-			regulator_disable(regulator);
 			if (err < 0) {
 				return err;
 			}
@@ -314,6 +315,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
+	int ret;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
 
@@ -367,6 +369,12 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		LOG_ERR("Unsupported oversampling value %d",
 			sequence->oversampling);
 		return -ENOTSUP;
+	}
+
+	ret = adc_sequence_validate_buffer(sequence,
+					   POPCOUNT(sequence->channels), sizeof(uint16_t));
+	if (ret < 0) {
+		return ret;
 	}
 
 	/*
@@ -818,24 +826,32 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 	case PM_DEVICE_ACTION_RESUME:
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0 && err != -ENOENT) return err;
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
 
 		if (regulator != NULL) {
 			err = regulator_enable(regulator);
-			if (err < 0) return err;
+			if (err < 0) {
+				return err;
+			}
 		}
 
-		/*Re-initialize ADC, previous configurations are lost after disabling clock*/
-		CLOCK_EnableClock(kCLOCK_Lpadc0);
 		err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		if (err && err != -ENOSYS) {
 			/* Real error occurred */
 			LOG_ERR("Failed to configure clock: %d", err);
 			return err;
 		}
-		/* Power domain was off during deep sleep — registers are reset.
-		* Must do full re-init, not just LPADC_Enable(true).
-		*/
+
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err && err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to enable clock: %d", err);
+			return err;
+		}
+
+		/* Re-initialize ADC, previous configurations are lost after disabling clock */
 		LPADC_GetDefaultConfig(&adc_config);
 		adc_config.enableAnalogPreliminary = true;
 		adc_config.referenceVoltageSource  = config->voltage_ref;
@@ -874,9 +890,8 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 		return 0;
 
 	case PM_DEVICE_ACTION_SUSPEND:
-		config->base->CFG &= ~ADC_CFG_PWREN_MASK;
+
 		LPADC_Enable(config->base, false);
-		
 
 		/* Disable interrupts before gating clock */
 #if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
@@ -895,9 +910,12 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 				return err;
 			}
 		}
-		
-		/*gate the peripheral clock*/
-		CLOCK_DisableClock(kCLOCK_Lpadc0);
+
+		/* gate the peripheral clock */
+		err = clock_control_off(config->clock_dev, config->clock_subsys);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
 
 		return 0;
 
@@ -918,16 +936,6 @@ static int mcux_lpadc_init(const struct device *dev)
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
-	}
-
-	/* Enable necessary regulators */
-	const struct device *regulator = config->ref_supplies;
-
-	if (regulator != NULL) {
-		err = regulator_enable(regulator);
-		if (err) {
-			return err;
-		}
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
@@ -1027,15 +1035,6 @@ static int mcux_lpadc_init(const struct device *dev)
 	 *   state will set to OFF, disabled LPADC matches the state.
 	 */
 	LPADC_Enable(config->base, false);
-	if (regulator != NULL) {
-		/* Balance the reference acquired for initialization. The runtime
-		 * PM resume callback will acquire it again before the next read.
-		 */
-		err = regulator_disable(regulator);
-		if (err < 0) {
-			return err;
-		}
-	}
 
 	return pm_device_driver_init(dev, mcux_lpadc_pm_callback);
 #else
