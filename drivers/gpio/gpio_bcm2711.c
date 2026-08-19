@@ -27,6 +27,14 @@
 #define GPAFEN(base, n) (base + 0x88 + 0x04 * n)
 #define GPPULL(base, n) (base + 0xE4 + 0x04 * n)
 
+/* BCM2835-family pull control. GPPULL is reserved on these SoCs. */
+#define GPPUD(base)       ((base) + 0x94)
+#define GPPUDCLK(base, n) ((base) + 0x98 + 0x04 * (n))
+
+#define LEGACY_PULL_OFF  0x0
+#define LEGACY_PULL_DOWN 0x1
+#define LEGACY_PULL_UP   0x2
+
 #define FSEL_GROUPS (10)
 #define FSEL_BITS   (3)
 #define FSEL_OUTPUT (0x1)
@@ -55,6 +63,7 @@ struct gpio_bcm2711_config {
 
 	uint8_t offset;
 	uint8_t ngpios;
+	bool legacy_pull;
 };
 
 struct gpio_bcm2711_data {
@@ -107,7 +116,28 @@ static int gpio_bcm2711_pin_configure(const struct device *port, gpio_pin_t pin,
 	}
 
 	/* Set pull */
-	{
+	if (DEV_CFG(port)->legacy_pull) {
+		uint32_t pin_num = RPI_PIN_NUM(port, pin);
+		uint32_t pud;
+
+		if (flags & GPIO_PULL_UP) {
+			pud = LEGACY_PULL_UP;
+		} else if (flags & GPIO_PULL_DOWN) {
+			pud = LEGACY_PULL_DOWN;
+		} else {
+			pud = LEGACY_PULL_OFF;
+		}
+
+		/* Datasheet sequence: write GPPUD, wait 150 cycles, clock the
+		 * pin with GPPUDCLK, wait 150 cycles, then clear both.
+		 */
+		sys_write32(pud, GPPUD(data->base));
+		k_busy_wait(1);
+		sys_write32(BIT(pin_num & 0x1F), GPPUDCLK(data->base, pin_num >> 5));
+		k_busy_wait(1);
+		sys_write32(0, GPPUD(data->base));
+		sys_write32(0, GPPUDCLK(data->base, pin_num >> 5));
+	} else {
 		group = GPIO_REG_GROUP(RPI_PIN_NUM(port, pin), PULL_GROUPS);
 		shift = GPIO_REG_SHIFT(RPI_PIN_NUM(port, pin), PULL_GROUPS, PULL_BITS);
 
@@ -353,6 +383,7 @@ static DEVICE_API(gpio, gpio_bcm2711_api) = {
 		.irq_config_func = gpio_bcm2711_irq_config_func_##n,                               \
 		.offset = DT_INST_REG_ADDR(n),                                                     \
 		.ngpios = DT_INST_PROP(n, ngpios),                                                 \
+		.legacy_pull = DT_INST_PROP(n, legacy_pull_control),                               \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, gpio_bcm2711_init, NULL, &gpio_bcm2711_data_##n,                  \
