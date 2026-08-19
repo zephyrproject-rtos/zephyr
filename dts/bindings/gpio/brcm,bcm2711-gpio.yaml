@@ -17,6 +17,24 @@ properties:
   "#gpio-cells":
     const: 2
 
+  legacy-pull-control:
+    type: boolean
+    description: |
+      The pull-control register layout differs across the BCM283x family:
+
+        - BCM2711 (Pi 4): GPIO_PUP_PDN_CNTRL_REG at offset 0xE4. Modern
+          single-write; this is the binding's default.
+        - BCM2835 / BCM2836 / BCM2837 / BCM2710 (Pi 1..3, Pi Zero, Pi
+          Zero 2 W): legacy GPPUD / GPPUDCLK0 / GPPUDCLK1 sequence at
+          offsets 0x94 / 0x98 / 0x9C; offset 0xE4 is reserved and a
+          write there is silently misrouted (or trapped by QEMU
+          raspi3b as "bcm2835_gpio_read: Bad offset e4").
+
+      Set this property on nodes that target BCM2710 / BCM2835-family
+      silicon. The peripheral compatible (brcm,bcm2711-gpio) is shared
+      because every other register in the controller behaves the same;
+      only the pull-control sequence differs.
+
 gpio-cells:
   - pin
   - flags
