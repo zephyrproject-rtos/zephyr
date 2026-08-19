@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/drivers/lora.h>
+#include <zephyr/kernel.h>
 #include <errno.h>
 #include <inttypes.h>
 #include <zephyr/shell/shell.h>
@@ -316,6 +317,84 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	return 0;
 }
 
+static void lora_shell_discard(const struct device *dev, uint8_t *data, uint16_t size, int16_t rssi,
+			       int8_t snr, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+	ARG_UNUSED(size);
+	ARG_UNUSED(rssi);
+	ARG_UNUSED(snr);
+	ARG_UNUSED(user_data);
+}
+
+static int cmd_lora_rssi(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int16_t rssi;
+	int ret, stop;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	dev = get_configured_modem(sh);
+	if (!dev) {
+		return -ENODEV;
+	}
+
+	ret = lora_recv_async(dev, lora_shell_discard, NULL);
+	if (ret < 0) {
+		shell_error(sh, "Failed to enter receive mode: %i", ret);
+		return ret;
+	}
+
+	k_sleep(K_USEC(CONFIG_LORA_RSSI_SETTLE_US));
+
+	ret = lora_rssi(dev, &rssi);
+
+	stop = lora_recv_async(dev, NULL, NULL);
+	if (stop < 0) {
+		shell_error(sh, "Failed to leave receive mode: %i", stop);
+		return stop;
+	}
+
+	if (ret < 0) {
+		shell_error(sh, "LoRa RSSI read failed: %i", ret);
+		return ret;
+	}
+
+	shell_print(sh, "RSSI: %d dBm", rssi);
+
+	return 0;
+}
+
+static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	long threshold, duration;
+	int ret;
+
+	dev = get_configured_modem(sh);
+	if (!dev) {
+		return -ENODEV;
+	}
+
+	if (parse_long_range(&threshold, sh, argv[1], "threshold", INT16_MIN, INT16_MAX) < 0 ||
+	    parse_long_range(&duration, sh, argv[2], "duration", 1, INT32_MAX) < 0) {
+		return -EINVAL;
+	}
+
+	ret = lora_energy_detect(dev, (int16_t)threshold, K_MSEC((uint32_t)duration));
+	if (ret < 0) {
+		shell_error(sh, "LoRa energy detect failed: %i", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Channel %s", ret == 1 ? "busy" : "clear");
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  SHELL_HELP("Configure the LoRa radio",
@@ -332,6 +411,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 		      SHELL_HELP("Send a continuous wave",
 				 "<freq (Hz)> <power (dBm)> <duration (s)>"),
 		      cmd_lora_test_cw, 4, 0),
+	SHELL_CMD_ARG(rssi, NULL,
+		      SHELL_HELP("Read the instantaneous RSSI", "No arguments"),
+		      cmd_lora_rssi, 1, 0),
+	SHELL_CMD_ARG(energy_detect, NULL,
+		      SHELL_HELP("Energy-detection carrier sense",
+				 "<threshold (dBm)> <duration (ms)>"),
+		      cmd_lora_energy_detect, 3, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
