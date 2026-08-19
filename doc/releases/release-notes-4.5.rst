@@ -153,6 +153,10 @@ Removed APIs and options
       ``non-secure-callable`` properties of :dtcompatible:`nordic,owned-memory` and
       :dtcompatible:`nordic,owned-partitions`
 
+* POSIX
+
+    * ``CONFIG_POSIX_READER_WRITER_LOCKS``
+
 * Random
 
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
