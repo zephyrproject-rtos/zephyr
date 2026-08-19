@@ -248,6 +248,10 @@ Removed APIs and options
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
     * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
+* Shell
+
+    * ``kernel log_level``, replaced by ``log enable``
+
 * SPI
 
     * The optional delay argument of :c:macro:`SPI_CONFIG_DT`, :c:macro:`SPI_CONFIG_DT_INST`,
