@@ -1,23 +1,27 @@
 /*
- * Copyright (c) 2023 Fr. Sauter AG
  * Copyright (c) 2026 Silicon Laboratories Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/dts-v1/;
+#include <silabs/xg24/efr32mg24b220f1536im48.dtsi>
 #include "xg24_rb418xx.dtsi"
 
 / {
+	model = "Silicon Labs EFR32xG24 2.4 GHz +20 dBm Antenna Diversity Radio Board (RB4188A)";
+	compatible = "silabs,xg24_rb4188a", "silabs,efr32mg24";
+
 	leds {
 		compatible = "gpio-leds";
 
 		led0: led_0 {
-			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
 			label = "LED 0";
 		};
 
 		led1: led_1 {
-			gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
 			label = "LED 1";
 		};
 	};
@@ -26,12 +30,12 @@
 		compatible = "pwm-leds";
 
 		pwm_led0: pwm_led_0 {
-			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "PWM LED 0";
 		};
 
 		pwm_led1: pwm_led_1 {
-			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
 			label = "PWM LED 1";
 		};
 	};
@@ -46,19 +50,24 @@
 		};
 
 		button1: button_1 {
-			gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+			gpios = <&gpiob 2 GPIO_ACTIVE_LOW>;
 			label = "User Push Button 1";
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	zephyr,user {
+		/* Antenna diversity RF switch control (SW_CTRL) */
+		rf-switch-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 
 &pinctrl {
 	timer0_default: timer0_default {
 		group0 {
-			pins = <TIMER0_CC0_PB2>, <TIMER0_CC1_PB4>;
+			pins = <TIMER0_CC0_PB1>, <TIMER0_CC1_PB2>;
 			drive-push-pull;
-			output-low;
+			output-high;
 		};
 	};
 };
