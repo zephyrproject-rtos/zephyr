@@ -360,12 +360,6 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
-config EXTRA_EXCEPTION_INFO
-	bool "Collect extra exception info [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated and should be replaced with CONFIG_EXCEPTION_DEBUG.
-
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	depends on !RISCV_S_MODE

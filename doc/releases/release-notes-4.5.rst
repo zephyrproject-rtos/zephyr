@@ -75,6 +75,10 @@ Removed APIs and options
       * ``CONFIG_PLATFORM_SPECIFIC_INIT``
       * ``z_arm_platform_init()``
 
+   * RISC-V
+
+      * ``CONFIG_EXTRA_EXCEPTION_INFO``
+
    * x86
 
       * ``CONFIG_SSE``
