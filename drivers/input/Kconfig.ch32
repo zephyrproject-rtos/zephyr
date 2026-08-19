@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_CH32_TKEY
+	bool "CH32 Touch Key Detection (TKEY) driver"
+	default y
+	depends on DT_HAS_WCH_CH32_TKEY_ENABLED
+	select CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable Touch Key Detection (TKEY) peripheral driver for WCH CH32 microcontrollers.
