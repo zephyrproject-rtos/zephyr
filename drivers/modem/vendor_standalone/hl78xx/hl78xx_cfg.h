@@ -226,4 +226,19 @@ int hl78xx_recover_kbndcfg(struct hl78xx_data *data, const struct hl78xx_script_
 int hl78xx_recover_post_restart_timeout(struct hl78xx_data *data,
 					const struct hl78xx_script_failure *failure);
 
+/**
+ * @brief Recover an init script whose command went unanswered by retrying it.
+ *
+ * Pure retry: performs no repair of its own and always succeeds, so the rule's
+ * resume_state re-runs the init script. Pair with a bounded max_attempts —
+ * exhaustion falls back to the reset pulse.
+ *
+ * @param data HL78xx driver data.
+ * @param failure Original script failure context.
+ *
+ * @retval 0 always.
+ */
+int hl78xx_recover_init_script_retry(struct hl78xx_data *data,
+				     const struct hl78xx_script_failure *failure);
+
 #endif /* ZEPHYR_DRIVERS_MODEM_HL78XX_HL78XX_CFG_H_ */
