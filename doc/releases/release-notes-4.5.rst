@@ -158,6 +158,10 @@ Removed APIs and options
 
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
+* The ``scripts/logging/dictionary/log_parser_uart.py`` dictionary logging script, which was
+  deprecated in Zephyr 4.3, has been removed. Use
+  :zephyr_file:`scripts/logging/dictionary/live_log_parser.py` instead.
+
 Deprecated APIs and options
 ===========================
 
