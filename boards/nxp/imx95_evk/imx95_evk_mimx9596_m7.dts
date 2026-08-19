@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imx/nxp_imx95_m7.dtsi>
+#include <nxp/imx/imx9/nxp_imx95_m7.dtsi>
 #include "imx95_evk-pinctrl.dtsi"
 #include <dt-bindings/mipi_dsi/mipi_dsi.h>
 

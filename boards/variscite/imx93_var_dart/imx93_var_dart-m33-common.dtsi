@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/imx/nxp_imx93_m33.dtsi>
+#include <nxp/imx/imx9/nxp_imx93_m33.dtsi>
 
 / {
 	soc {

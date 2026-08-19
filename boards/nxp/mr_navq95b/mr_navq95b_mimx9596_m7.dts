@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imx/nxp_imx95_m7.dtsi>
+#include <nxp/imx/imx9/nxp_imx95_m7.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include "mr_navq95b-pinctrl.dtsi"
 #include <zephyr/dt-bindings/sensor/icm45686.h>

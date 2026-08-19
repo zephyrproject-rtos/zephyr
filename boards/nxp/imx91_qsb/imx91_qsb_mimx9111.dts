@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_mimx9111.dtsi>
+#include <nxp/imx/imx9/nxp_mimx9111.dtsi>
 #include "imx91_qsb-pinctrl.dtsi"
 
 / {
