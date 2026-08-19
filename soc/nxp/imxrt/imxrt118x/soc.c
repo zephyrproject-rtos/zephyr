@@ -500,7 +500,8 @@ __weak void clock_init(void)
 
 #endif /* CONFIG_COMPARATOR_MCUX_ACMP || CONFIG_SENSOR_MCUX_ACMP */
 
-#if defined(CONFIG_ETH_NXP_IMX_NETC) && (DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
+#if (defined(CONFIG_ETH_NXP_IMX_NETC) || defined(CONFIG_MDIO_NXP_IMX_NETC)) && \
+	(DT_CHILD_NUM_STATUS_OKAY(DT_NODELABEL(netc)) != 0)
 	/* Configure ENET using SYS_PLL1_DIV2_CLK */
 	rootCfg.mux = kCLOCK_ENET_ClockRoot_MuxSysPll1Div2;
 	rootCfg.div = 4;
