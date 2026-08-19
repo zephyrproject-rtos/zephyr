@@ -4235,6 +4235,15 @@ NEORV32 platform:
   tests:
     - boards.neorv32
 
+NUCODE Platforms:
+  status: maintained
+  maintainers:
+    - manjae-cho
+  files:
+    - boards/nucode/
+  labels:
+    - "platform: NUCODE"
+
 NVMEM:
   status: maintained
   maintainers:
