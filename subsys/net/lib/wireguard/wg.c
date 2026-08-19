@@ -709,10 +709,32 @@ static int handle_transport_data(struct wg_peer *peer,
 		/* No valid session for this receiver index. The remote peer
 		 * might have a stale session. Trigger a new handshake if we
 		 * haven't done so recently.
+		 *
+		 * Note that this message is not authenticated in any way. As
+		 * the receiver index is unknown, there is no key to verify it
+		 * with, so anyone able to send an UDP packet to our port can
+		 * craft one. It must therefore never be allowed to change the
+		 * peer endpoint, as that would let an off-path attacker steer
+		 * our handshake initiations, and thus the tunnel, to an
+		 * address of their choosing. Send the handshake only to the
+		 * endpoint that we have learnt from authenticated messages,
+		 * or to the configured one if we have none yet.
 		 */
 		if (!peer->handshake.is_valid && !peer->session.keypair.current.is_valid) {
+			if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+				memcpy(&peer->endpoint, &peer->cfg_endpoint,
+				       sizeof(peer->endpoint));
+			}
+
+			if (peer->endpoint.ss_family == NET_AF_UNSPEC) {
+				/* No known endpoint to initiate to. This peer
+				 * can only be reached after it has contacted
+				 * us with a valid handshake initiation.
+				 */
+				return -ENOENT;
+			}
+
 			peer->send_handshake = true;
-			memcpy(&peer->endpoint, peer_addr, sizeof(peer->endpoint));
 			(void)k_work_schedule(&peer->ctx->wg_ctx->wg_periodic_timer,
 					      K_NO_WAIT);
 		}
