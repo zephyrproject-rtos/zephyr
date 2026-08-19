@@ -66,6 +66,7 @@ int supplicant_generate_state_event(const char *ifname,
 				    enum net_event_supplicant_cmd event,
 				    int status);
 int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code);
+int supplicant_send_wifi_mgmt_conn_status(void *ctx, enum wifi_conn_status conn_status);
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code);
 
 #ifdef CONFIG_AP

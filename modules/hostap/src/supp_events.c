@@ -292,6 +292,25 @@ int supplicant_send_wifi_mgmt_conn_event(void *ctx, int status_code)
 					       sizeof(status));
 }
 
+int supplicant_send_wifi_mgmt_conn_status(void *ctx, enum wifi_conn_status conn_status)
+{
+	struct wpa_supplicant *wpa_s = ctx;
+	struct wifi_status status = {
+		.conn_status = conn_status,
+	};
+
+	if (wpa_s == NULL) {
+		return -EINVAL;
+	}
+
+	supplicant_fill_reject(wpa_s, &status);
+
+	return supplicant_send_wifi_mgmt_event(wpa_s->ifname,
+					       NET_EVENT_WIFI_CMD_CONNECT_RESULT,
+					       (void *)&status,
+					       sizeof(status));
+}
+
 int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code)
 {
 	struct wpa_supplicant *wpa_s = ctx;
