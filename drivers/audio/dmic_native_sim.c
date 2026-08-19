@@ -18,6 +18,7 @@
 #include "dmic_native_sim_bottom.h"
 #include "soc.h"
 
+#include <zephyr/audio/audio_caps.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -552,10 +553,41 @@ static int ns_dmic_read(const struct device *dev, uint8_t stream, void **buffer,
 	return 0;
 }
 
+static int ns_dmic_get_caps(const struct device *dev, struct audio_caps *caps)
+{
+	const struct ns_dmic_config *cfg = dev->config;
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	memset(caps, 0, sizeof(*caps));
+	caps->min_total_channels = 1U;
+	caps->max_total_channels = cfg->max_channels;
+	caps->supported_sample_rates =
+		AUDIO_SAMPLE_RATE_7350 | AUDIO_SAMPLE_RATE_8000 | AUDIO_SAMPLE_RATE_11025 |
+		AUDIO_SAMPLE_RATE_12000 | AUDIO_SAMPLE_RATE_14700 | AUDIO_SAMPLE_RATE_16000 |
+		AUDIO_SAMPLE_RATE_20000 | AUDIO_SAMPLE_RATE_22050 | AUDIO_SAMPLE_RATE_24000 |
+		AUDIO_SAMPLE_RATE_29400 | AUDIO_SAMPLE_RATE_32000 | AUDIO_SAMPLE_RATE_44100 |
+		AUDIO_SAMPLE_RATE_48000 | AUDIO_SAMPLE_RATE_50000 | AUDIO_SAMPLE_RATE_50400 |
+		AUDIO_SAMPLE_RATE_64000 | AUDIO_SAMPLE_RATE_88200 | AUDIO_SAMPLE_RATE_96000 |
+		AUDIO_SAMPLE_RATE_100800 | AUDIO_SAMPLE_RATE_128000 | AUDIO_SAMPLE_RATE_176400 |
+		AUDIO_SAMPLE_RATE_192000 | AUDIO_SAMPLE_RATE_352800 | AUDIO_SAMPLE_RATE_384000;
+	caps->supported_bit_widths =
+		AUDIO_BIT_WIDTH_8 | AUDIO_BIT_WIDTH_16 | AUDIO_BIT_WIDTH_24 | AUDIO_BIT_WIDTH_32;
+	caps->min_num_buffers = 1U;
+	caps->min_frame_interval = 1U;
+	caps->max_frame_interval = UINT32_MAX;
+	caps->interleaved = true;
+
+	return 0;
+}
+
 static DEVICE_API(dmic, ns_dmic_ops) = {
 	.configure = ns_dmic_configure,
 	.trigger = ns_dmic_trigger,
 	.read = ns_dmic_read,
+	.get_caps = ns_dmic_get_caps,
 };
 
 static int ns_dmic_init(const struct device *dev)
