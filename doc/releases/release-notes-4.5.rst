@@ -118,6 +118,11 @@ Removed APIs and options
     * ``BT_GATT_CCC_INITIALIZER``
     * ``CONFIG_BT_CONN_TX_MAX``
 
+  * Mesh
+
+    * ``CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE``
+    * ``CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE``
+
   * Services
 
     * ``CONFIG_BT_DIS_MANUF``
