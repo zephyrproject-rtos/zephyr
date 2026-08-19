@@ -70,6 +70,11 @@ Removed APIs and options
 
 * Architectures
 
+   * x86
+
+      * ``CONFIG_SSE``
+      * ``CONFIG_SSE_FP_MATH``
+
    * Xtensa
 
       * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``

@@ -1740,6 +1740,10 @@ Architectures
   replacing their previous hand-rolled ``UNMAPPED`` MPU region table entry with
   identical runtime behavior.
 
+* ``CONFIG_SSE`` and ``CONFIG_SSE_FP_MATH`` have been removed. Use
+  :kconfig:option:`CONFIG_X86_SSE` and :kconfig:option:`CONFIG_X86_SSE_FP_MATH`
+  instead.
+
 Video
 =====
 
