@@ -51,6 +51,33 @@ static inline uint16_t bytes_per_word(uint16_t bits_per_word)
 	return 4U;
 }
 
+static inline uint32_t frame_get(const uint8_t *buf, uint16_t dfs)
+{
+	switch (dfs) {
+	case 1U:
+		return UNALIGNED_GET((uint8_t *)buf);
+	case 2U:
+		return UNALIGNED_GET((uint16_t *)buf);
+	default:
+		return UNALIGNED_GET((uint32_t *)buf);
+	}
+}
+
+static inline void frame_put(uint8_t *buf, uint16_t dfs, uint32_t frame)
+{
+	switch (dfs) {
+	case 1U:
+		UNALIGNED_PUT(frame, (uint8_t *)buf);
+		break;
+	case 2U:
+		UNALIGNED_PUT(frame, (uint16_t *)buf);
+		break;
+	default:
+		UNALIGNED_PUT(frame, (uint32_t *)buf);
+		break;
+	}
+}
+
 static void spi_mcux_transfer_next_packet(const struct device *dev)
 {
 	const struct spi_mcux_config *config = dev->config;
@@ -76,17 +103,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	}
 
 	if (spi_context_tx_buf_on(ctx)) {
-		switch (data->dfs) {
-		case 1U:
-			data->tx_data = UNALIGNED_GET((uint8_t *)ctx->tx_buf);
-			break;
-		case 2U:
-			data->tx_data = UNALIGNED_GET((uint16_t *)ctx->tx_buf);
-			break;
-		case 4U:
-			data->tx_data = UNALIGNED_GET((uint32_t *)ctx->tx_buf);
-			break;
-		}
+		data->tx_data = frame_get(ctx->tx_buf, data->dfs);
 
 		transfer.txData = &data->tx_data;
 	} else {
@@ -120,17 +137,7 @@ static void spi_mcux_master_transfer_callback(ECSPI_Type *base, ecspi_master_han
 	struct spi_mcux_data *data = dev->data;
 
 	if (spi_context_rx_buf_on(&data->ctx)) {
-		switch (data->dfs) {
-		case 1:
-			UNALIGNED_PUT(data->rx_data, (uint8_t *)data->ctx.rx_buf);
-			break;
-		case 2:
-			UNALIGNED_PUT(data->rx_data, (uint16_t *)data->ctx.rx_buf);
-			break;
-		case 4:
-			UNALIGNED_PUT(data->rx_data, (uint32_t *)data->ctx.rx_buf);
-			break;
-		}
+		frame_put(data->ctx.rx_buf, data->dfs, data->rx_data);
 	}
 
 	spi_context_update_tx(&data->ctx, data->dfs, 1);
