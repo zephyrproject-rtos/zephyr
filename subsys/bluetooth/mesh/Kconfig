@@ -1071,23 +1071,6 @@ config BT_MESH_BLOB_IO_FLASH
 
 if BT_MESH_BLOB_IO_FLASH
 
-config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
-	bool "BLOB flash support for devices without erase [DEPRECATED]"
-	default n
-	depends on FLASH_HAS_NO_EXPLICIT_ERASE
-	select DEPRECATED
-	help
-	  This option is deprecated and is no longer used by the BLOB IO Flash module.
-
-config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
-	bool "BLOB flash support for devices with erase [DEPRECATED]"
-	default n
-	depends on FLASH_HAS_EXPLICIT_ERASE
-	depends on FLASH_PAGE_LAYOUT
-	select DEPRECATED
-	help
-	  This option is deprecated and is no longer used by the BLOB IO Flash module.
-
 config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
 	int "Maximum supported write block size"
 	default 4
