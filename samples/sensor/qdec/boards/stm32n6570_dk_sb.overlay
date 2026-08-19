@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 STMicroelectronics
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -17,7 +17,7 @@
 	status = "okay";
 
 	qdec: qdec {
-		pinctrl-0 = <&tim3_ch1_pa6 &tim3_ch2_pa7>;
+		pinctrl-0 = <&tim3_ch1_pa6 &tim3_ch4_pb1>;
 		pinctrl-names = "default";
 		st,input-polarity-inverted;
 		st,input-filter-level = <FDIV32_N8>;
