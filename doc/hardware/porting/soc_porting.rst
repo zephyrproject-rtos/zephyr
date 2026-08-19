@@ -195,6 +195,13 @@ them, declare that in the board's :file:`board.yml` instead, see :ref:`board_por
 Use ``base`` only when the SoC carries no configuration. A part that needs its own configuration is
 a SoC in its own right and should be described as one, in the tree of whatever it configures.
 
+.. note::
+
+   As a last resort, setting the CMake variable ``HWM_LOAD_ALL_SOCS`` loads every SoC from every
+   SoC root, for example ``west build -b <board> -- -DHWM_LOAD_ALL_SOCS=y``. This restores the
+   legacy behaviour where all SoC trees are visible to each other, at the cost of a slower and
+   more memory hungry configuration step. It exists for out-of-tree users who cannot express their
+   dependencies yet and should not be relied on by in-tree SoCs.
 
 
 Write your SoC devicetree
