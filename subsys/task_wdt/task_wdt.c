@@ -134,8 +134,8 @@ int task_wdt_init(const struct device *hw_wdt)
 
 		wdt_config.flags = WDT_FLAG_RESET_SOC;
 		wdt_config.window.min = 0U;
-		wdt_config.window.max = CONFIG_TASK_WDT_MIN_TIMEOUT +
-			CONFIG_TASK_WDT_HW_FALLBACK_DELAY;
+		wdt_config.window.max = (uint32_t)CONFIG_TASK_WDT_MIN_TIMEOUT +
+					(uint32_t)CONFIG_TASK_WDT_HW_FALLBACK_DELAY;
 		wdt_config.callback = NULL;
 
 		hw_wdt_dev = hw_wdt;
