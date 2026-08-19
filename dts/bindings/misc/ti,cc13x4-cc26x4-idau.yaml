@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC13x4/CC26x4 TrustZone IDAU boundary configuration, written to the CCFG.
+
+  When this node is enabled, its boundaries replace the TI factory defaults.
+  Example:
+
+    &idau {
+            status = "okay";
+            flash-ns-boundary = <0x10>;
+            sram-ns-boundary = <0x8>;
+    };
+
+compatible: "ti,cc13x4-cc26x4-idau"
+
+include: base.yaml
+
+properties:
+  flash-ns-boundary:
+    type: int
+    default: 0
+    description: |
+      Flash non-secure address boundary (CCFG TRUSTZONE_FLASH_CFG NSADDR
+      field, 10 bits). 0 means all flash except the lowest 8 KB is
+      non-secure.
+
+  sram-ns-boundary:
+    type: int
+    default: 0
+    description: |
+      SRAM non-secure address boundary (CCFG TRUSTZONE_SRAM_CFG NSADDR
+      field, 9 bits). 0 means all SRAM is non-secure.

@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI CC13x4/CC26x4 SRAM configuration, written to the CCFG.
+
+  SRAM parity is enabled by default. To disable it:
+
+    &sram_config {
+            parity-disable;
+    };
+
+compatible: "ti,cc13x4-cc26x4-sram-config"
+
+include: base.yaml
+
+properties:
+  parity-disable:
+    type: boolean
+    description: |
+      Disable SRAM parity. TI recommends keeping parity enabled for any
+      application with run-time security requirements.
