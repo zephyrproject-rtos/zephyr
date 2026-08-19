@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "posix_native_task.h"
-#include "nsi_timer_model.h"
+#include <posix_native_task.h>
+#include <nsi_timer_model.h>
 
 #if defined(CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME)
 

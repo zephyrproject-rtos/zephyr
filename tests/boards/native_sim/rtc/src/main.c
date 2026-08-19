@@ -14,7 +14,7 @@
 
 #include <nsi_hw_scheduler.h>
 #include <nsi_timer_model.h>
-#include "native_rtc.h"
+#include <native_rtc.h>
 
 
 static char *us_time_to_str(char *dest, uint64_t time)

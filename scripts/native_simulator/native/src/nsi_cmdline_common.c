@@ -12,10 +12,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include "nsi_tracing.h"
-#include "nsi_cmdline.h"
+#include <nsi_tracing.h>
+#include <nsi_cmdline.h>
 #include "nsi_cmdline_internal.h"
-#include "nsi_cpu_es_if.h"
+#include <nsi_cpu_es_if.h>
 
 /**
  * Check if <arg> is the option <option>

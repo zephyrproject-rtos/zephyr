@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <zephyr/irq.h>
-#include "board_soc.h"
+#include <board_soc.h>
 
 /**
  * @brief Basic test of the POSIX arch k_busy_wait() and cpu_hold()
