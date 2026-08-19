@@ -107,6 +107,7 @@ Removed APIs and options
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``
+    * ``cmake/app/boilerplate.cmake``
 
 * Comparator
 
