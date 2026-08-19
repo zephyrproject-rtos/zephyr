@@ -128,6 +128,23 @@ Removed APIs and options
     * ``CONFIG_BT_DIS_MANUF``
     * ``CONFIG_BT_DIS_MODEL``
 
+* Boards
+
+    * Dropped the following deprecated board aliases:
+
+      * ``arduino_uno_r4_minima``
+      * ``arduino_uno_r4_wifi``
+      * ``esp32c6_devkitc``
+      * ``esp32_devkitc_wroom/esp32/procpu``
+      * ``esp32_devkitc_wroom/esp32/appcpu``
+      * ``esp32_devkitc_wrover/esp32/procpu``
+      * ``esp32_devkitc_wrover/esp32/appcpu``
+      * ``neorv32``
+      * ``panb511evb``
+      * ``raytac_an54l15q_db/nrf54l15/cpuapp``
+      * ``scobc_module1``
+      * ``xiao_esp32c6``
+
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``

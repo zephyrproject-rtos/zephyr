@@ -13,39 +13,6 @@
 # https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated,
 # so these aliases are eventually removed
 
-set(arduino_uno_r4_minima_DEPRECATED
-    arduino_uno_r4@minima
-)
-set(arduino_uno_r4_wifi_DEPRECATED
-    arduino_uno_r4@wifi
-)
-set(esp32c6_devkitc_DEPRECATED
-    esp32c6_devkitc/esp32c6/hpcore
-)
-set(neorv32_DEPRECATED
-    neorv32/neorv32/up5kdemo
-)
-set(panb511evb_DEPRECATED
-    panb611evb
-)
-set(xiao_esp32c6_DEPRECATED
-    xiao_esp32c6/esp32c6/hpcore
-)
-set(esp32_devkitc_wroom/esp32/procpu_DEPRECATED
-    esp32_devkitc/esp32/procpu
-)
-set(esp32_devkitc_wrover/esp32/procpu_DEPRECATED
-    esp32_devkitc/esp32/procpu
-)
-set(esp32_devkitc_wroom/esp32/appcpu_DEPRECATED
-    esp32_devkitc/esp32/appcpu
-)
-set(esp32_devkitc_wrover/esp32/appcpu_DEPRECATED
-    esp32_devkitc/esp32/appcpu
-)
-set(scobc_module1_DEPRECATED
-    scobc_a1
-)
 set(fvp_base_revc_2xaemv8a_DEPRECATED
     fvp_base_revc_2xaem/v8a
 )
