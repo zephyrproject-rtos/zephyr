@@ -717,12 +717,6 @@
 			interrupt-names = "global";
 			status = "disabled";
 
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
@@ -738,12 +732,6 @@
 			interrupts = <50 0>;
 			interrupt-names = "global";
 			status = "disabled";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
 
 			counter {
 				compatible = "st,stm32-counter";
