@@ -269,7 +269,7 @@ struct mdns_monitor_iface_addr {
 };
 
 static struct mdns_monitor_iface_addr mon_if[
-	MAX(MAX_IPV4_IFACE_COUNT, MAX_IPV4_IFACE_COUNT) *
+	MDNS_MAX_IFACE_COUNT *
 	(NET_IF_MAX_IPV4_ADDR + NET_IF_MAX_IPV6_ADDR)];
 #endif
 
