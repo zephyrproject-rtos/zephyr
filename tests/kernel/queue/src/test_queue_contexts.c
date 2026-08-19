@@ -984,3 +984,40 @@ ZTEST(queue_api, test_queue_unique_append)
 	ret = k_queue_unique_append(&queue, (void *)&data[1]);
 	zassert_true(ret, "queue unique append failed");
 }
+
+/**
+ * @brief Verify k_queue_unique_append() detects allocated duplicate entries.
+ *
+ * @details
+ * k_queue_alloc_append() and k_queue_alloc_prepend() store the payload in an
+ * internal wrapper node. k_queue_unique_append() must compare against the
+ * payload pointer rather than the wrapper node address.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
+ * @see k_queue_alloc_prepend()
+ * @see k_queue_unique_append()
+ */
+ZTEST(queue_api, test_queue_unique_append_alloc)
+{
+	static qdata_t append_data = { .data = 0x42, .allocated = false };
+	static qdata_t prepend_data = { .data = 0x43, .allocated = false };
+
+	k_queue_init(&queue);
+	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
+
+	zassert_ok(k_queue_alloc_append(&queue, &append_data),
+		   "alloc_append failed");
+	zassert_false(k_queue_unique_append(&queue, &append_data),
+		      "duplicate alloc_append entry was accepted");
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), &append_data,
+		      "unexpected alloc_append payload");
+
+	zassert_ok(k_queue_alloc_prepend(&queue, &prepend_data),
+		   "alloc_prepend failed");
+	zassert_false(k_queue_unique_append(&queue, &prepend_data),
+		      "duplicate alloc_prepend entry was accepted");
+	zassert_equal(k_queue_get(&queue, K_NO_WAIT), &prepend_data,
+		      "unexpected alloc_prepend payload");
+}

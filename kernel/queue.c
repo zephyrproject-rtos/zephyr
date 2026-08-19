@@ -385,6 +385,7 @@ bool k_queue_remove(struct k_queue *queue, void *data)
 	return ret;
 }
 
+/* Compare queue items by payload, including allocated wrapper nodes. */
 bool k_queue_unique_append(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, unique_append, queue);
@@ -393,7 +394,7 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 	sys_sfnode_t *test;
 
 	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
-		if (test == (sys_sfnode_t *) data) {
+		if (z_queue_node_peek(test, false) == data) {
 			k_spin_unlock(&queue->lock, key);
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
 
