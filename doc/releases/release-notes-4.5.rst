@@ -124,6 +124,11 @@ Removed APIs and options
 * Nordic
 
     * ``CONFIG_GPIO_AS_PINRESET``
+    * ``CONFIG_SOC_DCDC_NRF52X``
+    * ``CONFIG_SOC_DCDC_NRF52X_HV``
+    * ``CONFIG_SOC_DCDC_NRF53X_APP``
+    * ``CONFIG_SOC_DCDC_NRF53X_NET``
+    * ``CONFIG_SOC_DCDC_NRF53X_HV``
 
 * Random
 

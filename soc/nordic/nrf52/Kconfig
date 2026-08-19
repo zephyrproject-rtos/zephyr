@@ -35,33 +35,6 @@ config SOC_NRF52840
 
 if SOC_SERIES_NRF52
 
-config SOC_DCDC_NRF52X
-	bool
-	select DEPRECATED
-	help
-	  This option is deprecated, use devicetree instead. Example
-	  configuration:
-
-	  &reg/reg1 {
-	    regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
-	  };
-
-	  Enable nRF52 series System on Chip DC/DC converter.
-
-config SOC_DCDC_NRF52X_HV
-	bool
-	depends on SOC_NRF52840_QIAA
-	select DEPRECATED
-	help
-	  This option is deprecated, use devicetree instead. Example
-	  configuration:
-
-	  &reg0 {
-	    status = "okay";
-	  };
-
-	  Enable nRF52 series System on Chip High Voltage DC/DC converter.
-
 config NRF_ENABLE_ICACHE
 	bool "The instruction cache (I-Cache)"
 	depends on SOC_NRF52832 || SOC_NRF52833 || SOC_NRF52840
