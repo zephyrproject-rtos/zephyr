@@ -354,7 +354,7 @@ static DEVICE_API(sensor, bma4xx_driver_api) = {
 	RTIO_DEFINE(bma4xx_rtio_##inst, 8, 8);
 
 #define BMA4XX_RTIO_SPI_DEFINE(inst)                                                               \
-	SPI_DT_IODEV_DEFINE(bma4xx_iodev_##inst, DT_DRV_INST(inst));                               \
+	SPI_DT_IODEV_DEFINE(bma4xx_iodev_##inst, DT_DRV_INST(inst), 0);                            \
 	RTIO_DEFINE(bma4xx_rtio_##inst, 8, 8);
 
 #define BMA4XX_DEFINE_RTIO(inst)                                                                   \
