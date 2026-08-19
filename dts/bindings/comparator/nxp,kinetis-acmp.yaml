@@ -53,41 +53,6 @@ properties:
   reg:
     required: true
 
-  nxp,enable-output-pin:
-    type: boolean
-    deprecated: true
-    description: Deprecated. Please use enable-pin-out instead
-
-  nxp,use-unfiltered-output:
-    type: boolean
-    deprecated: true
-    description: Deprecated. Please use use-unfiltered-output instead
-
-  nxp,high-speed-mode:
-    type: boolean
-    deprecated: true
-    description: Deprecated. Please use enable-high-speed-mode instead
-
-  nxp,enable-sample:
-    type: boolean
-    deprecated: true
-    description: Deprecated. Please use filter-enable-sample instead
-
-  nxp,filter-count:
-    type: int
-    deprecated: true
-    description: Deprecated. Please use filter-count instead
-
-  nxp,filter-period:
-    type: int
-    deprecated: true
-    description: Deprecated. Please use filter-period instead
-
-  nxp,window-mode:
-    type: boolean
-    deprecated: true
-    description: Deprecated. Please use enable-window-mode instead
-
   offset-mode:
     type: string
     enum:
