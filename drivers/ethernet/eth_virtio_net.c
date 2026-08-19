@@ -112,6 +112,15 @@ struct _virtio_net_ctrl_mac {
 
 #define VIRTIO_NET_BUFLEN                                                                          \
 	(NET_ETH_MTU + sizeof(struct net_eth_hdr) + sizeof(struct _virtio_net_hdr))
+
+/* The device computes the TCP and UDP checksums and the driver computes the
+ * IPv4 header checksum, which the claim of the TCP and UDP offloads implies.
+ * IPv6 has no header checksum.
+ */
+#define VIRTNET_CHKSUM_SUPPORT                                                                     \
+	((IS_ENABLED(CONFIG_NET_IPV4) ? ETHERNET_CHECKSUM_SUPPORT_IPV4_HEADER : 0) |               \
+	 (IS_ENABLED(CONFIG_NET_IPV6) ? ETHERNET_CHECKSUM_SUPPORT_IPV6_HEADER : 0) |               \
+	 ETHERNET_CHECKSUM_SUPPORT_TCP | ETHERNET_CHECKSUM_SUPPORT_UDP)
 /* virtqueue pairs are numbered from 1 upwards */
 /* convert pair number to virtqueue index */
 #define VIRTQ_RX(n) ((n - 1) * 2)
@@ -153,6 +162,10 @@ struct virtnet_data {
 	bool has_mac_filter;
 	/* VIRTIO_NET_F_CTRL_VQ and VIRTIO_NET_F_CTRL_MAC_ADDR were negotiated */
 	bool has_mac_addr_set;
+	/* VIRTIO_NET_F_CSUM was negotiated */
+	bool has_tx_csum;
+	/* VIRTIO_NET_F_GUEST_CSUM was negotiated */
+	bool has_rx_csum;
 };
 
 static uint16_t virtnet_enum_queues_cb(uint16_t q_index, uint16_t q_size_max, void *priv)
@@ -183,7 +196,40 @@ static enum ethernet_hw_caps virtnet_get_capabilities(const struct device *dev,
 		caps |= ETHERNET_HW_FILTERING;
 	}
 
+	if (data->has_tx_csum) {
+		caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+	}
+
+	if (data->has_rx_csum) {
+		caps |= ETHERNET_HW_RX_CHKSUM_OFFLOAD;
+	}
+
 	return caps;
+}
+
+static int virtnet_get_config(const struct device *dev, struct net_if *iface __unused,
+			      enum ethernet_config_type type, struct ethernet_config *net_config)
+{
+	const struct virtnet_data *data = dev->data;
+
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_TX_CHECKSUM_SUPPORT:
+		if (!data->has_tx_csum) {
+			return -ENOTSUP;
+		}
+
+		net_config->chksum_support = VIRTNET_CHKSUM_SUPPORT;
+		return 0;
+	case ETHERNET_CONFIG_TYPE_RX_CHECKSUM_SUPPORT:
+		if (!data->has_rx_csum) {
+			return -ENOTSUP;
+		}
+
+		net_config->chksum_support = VIRTNET_CHKSUM_SUPPORT;
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static void virtnet_ctrl_cb(void *priv, uint32_t len)
@@ -352,15 +398,140 @@ static int virtnet_set_config(const struct device *dev, struct net_if *iface,
 	}
 }
 
+static uint32_t virtnet_csum_bytes(const uint8_t *buf, size_t len)
+{
+	uint32_t sum = 0;
+
+	for (size_t i = 0; i < len; i++) {
+		sum += i % 2 == 0 ? (uint32_t)buf[i] << 8 : buf[i];
+	}
+
+	return sum;
+}
+
+static uint16_t virtnet_csum_fold(uint32_t sum)
+{
+	while (sum >> 16) {
+		sum = (sum & 0xffff) + (sum >> 16);
+	}
+
+	return sum;
+}
+
+/* The device computes a checksum over csum_start up to the end of the frame
+ * and writes it back at csum_start + csum_offset, nothing more. The driver
+ * therefore seeds the TCP/UDP checksum field with the pseudo header sum and
+ * computes the IPv4 header checksum itself.
+ */
+static void virtnet_tx_csum(uint8_t *frame, size_t len, struct _virtio_net_hdr *hdr)
+{
+	const struct net_eth_hdr *eth = (const struct net_eth_hdr *)frame;
+	uint16_t ptype = eth->type;
+	size_t ip_off = sizeof(struct net_eth_hdr);
+	size_t l4_off;
+	size_t csum_offset;
+	uint32_t sum;
+	uint8_t proto;
+
+	if (IS_ENABLED(CONFIG_NET_VLAN) && ptype == htons(NET_ETH_PTYPE_VLAN)) {
+		ptype = ((const struct net_eth_vlan_hdr *)frame)->type;
+		ip_off = sizeof(struct net_eth_vlan_hdr);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ptype == htons(NET_ETH_PTYPE_IP)) {
+		struct net_ipv4_hdr *ip = (struct net_ipv4_hdr *)(frame + ip_off);
+		size_t ihl;
+
+		if (ip_off + sizeof(struct net_ipv4_hdr) > len) {
+			return;
+		}
+
+		ihl = (ip->vhl & 0x0f) * 4U;
+		if (ihl < sizeof(struct net_ipv4_hdr) || ip_off + ihl > len) {
+			return;
+		}
+
+		ip->chksum = 0;
+		ip->chksum = htons(~virtnet_csum_fold(virtnet_csum_bytes(frame + ip_off, ihl)) &
+				   0xffff);
+
+		/* Fragments do not carry a complete L4 payload to checksum */
+		if (IS_ENABLED(CONFIG_NET_IPV4_FRAGMENT) &&
+		    ((ip->offset[0] & 0x3f) != 0 || ip->offset[1] != 0)) {
+			return;
+		}
+
+		proto = ip->proto;
+		l4_off = ip_off + ihl;
+		sum = virtnet_csum_bytes(ip->src, 2 * NET_IPV4_ADDR_SIZE);
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) && ptype == htons(NET_ETH_PTYPE_IPV6)) {
+		const struct net_ipv6_hdr *ip = (const struct net_ipv6_hdr *)(frame + ip_off);
+
+		if (ip_off + sizeof(struct net_ipv6_hdr) > len) {
+			return;
+		}
+
+		proto = ip->nexthdr;
+		l4_off = ip_off + sizeof(struct net_ipv6_hdr);
+
+		/* Step over the extension headers preceding the payload. A
+		 * fragment header ends the walk, the checksum of a fragmented
+		 * packet is already complete.
+		 */
+		while (proto == NET_IPV6_NEXTHDR_HBHO || proto == NET_IPV6_NEXTHDR_ROUTING ||
+		       proto == NET_IPV6_NEXTHDR_DESTO) {
+			if (l4_off + 2 > len) {
+				return;
+			}
+
+			proto = frame[l4_off];
+			l4_off += ((size_t)frame[l4_off + 1] + 1) * 8;
+		}
+
+		sum = virtnet_csum_bytes(ip->src, 2 * NET_IPV6_ADDR_SIZE);
+	} else {
+		return;
+	}
+
+	if (proto == NET_IPPROTO_TCP) {
+		csum_offset = offsetof(struct net_tcp_hdr, chksum);
+	} else if (proto == NET_IPPROTO_UDP) {
+		csum_offset = offsetof(struct net_udp_hdr, chksum);
+	} else {
+		return;
+	}
+
+	if (l4_off + csum_offset + sizeof(uint16_t) > len) {
+		return;
+	}
+
+	/* The pseudo header also covers the protocol and the L4 length */
+	sum += proto + (len - l4_off);
+	sum = virtnet_csum_fold(sum);
+
+	frame[l4_off + csum_offset] = sum >> 8;
+	frame[l4_off + csum_offset + 1] = sum & 0xff;
+
+	hdr->flags = VIRTIO_NET_HDR_F_NEEDS_CSUM;
+	hdr->csum_start = sys_cpu_to_le16(l4_off);
+	hdr->csum_offset = sys_cpu_to_le16(csum_offset);
+}
+
 static int virtnet_send(const struct device *dev, struct net_pkt *pkt)
 {
 	const struct virtnet_config *config = dev->config;
 	struct virtnet_data *data = dev->data;
+	struct _virtio_net_hdr *hdr = (struct _virtio_net_hdr *)data->txb;
 	size_t len = net_pkt_get_len(pkt);
 
 	if (net_pkt_read(pkt, data->txb + sizeof(struct _virtio_net_hdr), len)) {
 		LOG_ERR("could not read contents of packet to be sent");
 		return -EIO;
+	}
+
+	memset(hdr, 0, sizeof(*hdr));
+	if (data->has_tx_csum) {
+		virtnet_tx_csum(data->txb + sizeof(struct _virtio_net_hdr), len, hdr);
 	}
 
 	struct virtq *vq = virtio_get_virtqueue(config->vdev, VIRTQ_TX(1));
@@ -457,6 +628,32 @@ static int virtnet_dev_init(const struct device *dev)
 		}
 	}
 
+	/* Partial checksums for sent packets, completed by the device. Without
+	 * CONFIG_NET_CHECKSUM_OFFLOAD the stack computes full checksums, so
+	 * the feature would go unused.
+	 */
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD) &&
+	    virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_CSUM)) {
+		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_CSUM, true)) {
+			LOG_WRN("could not enable checksum offload feature bit");
+		} else {
+			data->has_tx_csum = true;
+		}
+	}
+
+	/* The device may deliver received packets with partial checksums, so
+	 * the stack must not verify them, which needs the checksum offload
+	 * support of CONFIG_NET_CHECKSUM_OFFLOAD
+	 */
+	if (IS_ENABLED(CONFIG_NET_CHECKSUM_OFFLOAD) &&
+	    virtio_read_device_feature_bit(config->vdev, VIRTIO_NET_F_GUEST_CSUM)) {
+		if (virtio_write_driver_feature_bit(config->vdev, VIRTIO_NET_F_GUEST_CSUM, true)) {
+			LOG_WRN("could not enable received checksum offload feature bit");
+		} else {
+			data->has_rx_csum = true;
+		}
+	}
+
 	/* The control virtqueue carries both the receive filter commands and
 	 * the MAC address setting command
 	 */
@@ -517,6 +714,7 @@ static int virtnet_dev_init(const struct device *dev)
 static struct ethernet_api virtnet_api = {
 	.iface_api.init = virtnet_if_init,
 	.get_capabilities = virtnet_get_capabilities,
+	.get_config = virtnet_get_config,
 	.set_config = virtnet_set_config,
 	.send = virtnet_send,
 };
