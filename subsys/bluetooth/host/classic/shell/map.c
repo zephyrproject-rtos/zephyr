@@ -635,7 +635,7 @@ static void mce_mas_select(void)
 	}
 
 	/* Find next available MCE MAS instance for this connection */
-	for (size_t j = 0; j < MAP_MAS_MAX_NUM; j++) {
+	ARRAY_FOR_EACH(mce_mas_instances[index], j) {
 		struct mce_mas_instance *inst = &mce_mas_instances[index][j];
 
 		if (inst->conn != NULL) {
@@ -3055,7 +3055,7 @@ static void mse_mas_select(void)
 	}
 
 	/* Find next available MSE MAS instance for this connection */
-	for (size_t j = 0; j < MAP_MAS_MAX_NUM; j++) {
+	ARRAY_FOR_EACH(mse_mas_instances[index], j) {
 		struct mse_mas_instance *inst = &mse_mas_instances[index][j];
 
 		if (inst->conn != NULL) {
@@ -3105,7 +3105,7 @@ static struct mse_mns_instance *mse_mns_find(struct bt_map_mse_mns *mse_mns)
 		return NULL;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(mse_mns_instances); i++) {
+	ARRAY_FOR_EACH(mse_mns_instances, i) {
 		struct mse_mns_instance *inst = &mse_mns_instances[i];
 
 		if (&inst->mse_mns == mse_mns) {
