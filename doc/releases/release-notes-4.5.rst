@@ -78,6 +78,8 @@ Removed APIs and options
       * ``CONFIG_SOC_ANDES_V5_PFT``
       * ``CONFIG_SOC_ANDES_V5_PMA``
       * ``CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE``
+      * ``CONFIG_TELINK_B91_HWDSP``
+      * ``CONFIG_TELINK_B91_PFT_ARCH``
 
    * Xtensa
 

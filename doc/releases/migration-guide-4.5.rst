@@ -1639,6 +1639,10 @@ RISC-V
 * ``CONFIG_SOC_ANDES_V5_L2C`` has been removed. The L2 cache controller is described in devicetree
   with :dtcompatible:`andestech,l2c` instead.
 
+* ``CONFIG_TELINK_B91_HWDSP`` and ``CONFIG_TELINK_B91_PFT_ARCH`` have been removed. Use
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP` and
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_PFT` instead.
+
 Video
 =====
 
