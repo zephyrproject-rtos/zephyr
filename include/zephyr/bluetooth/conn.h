@@ -3168,6 +3168,21 @@ struct bt_conn_auth_info_cb {
 	 */
 	void (*bond_deleted)(uint8_t id, const bt_addr_le_t *peer);
 
+	/** @brief The peer's support for address resolution has been read.
+	 *
+	 *  This callback notifies the application that the automatic read of
+	 *  a bonded peer's Central Address Resolution characteristic, enabled
+	 *  with @kconfig{CONFIG_BT_GATT_AUTO_READ_CENTRAL_ADDR_RES}, has
+	 *  finished. The answer is also available from
+	 *  bt_le_bond_addr_res_support(), and remains unknown when the read
+	 *  failed.
+	 *
+	 *  @param conn    Connection the characteristic was read on.
+	 *  @param support The peer's support for address resolution.
+	 */
+	void (*addr_res_support_read)(struct bt_conn *conn,
+				      enum bt_le_addr_res_support support);
+
 #if defined(CONFIG_BT_CLASSIC) || defined(__DOXYGEN__)
 	/** @brief Notify that bond of classic has been deleted.
 	 *
