@@ -1058,6 +1058,23 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 		.resume_state = MODEM_HL78XX_STATE_SOFT_RESET,
 		.max_attempts = 1U,
 	},
+	{
+		/* AT+CCID intermittently goes unanswered when the init script
+		 * runs right after a GNSS teardown. Retry the script (no reset
+		 * needed: resume directly in RUN_INIT_SCRIPT) before falling
+		 * back to the reset pulse.
+		 */
+		.failed_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.failed_request = "AT+CCID",
+		.failed_script_chat_index = HL78XX_SCRIPT_CHAT_INDEX_ANY,
+		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) |
+			       HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_ABORT),
+		.action = hl78xx_recover_init_script_retry,
+		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.success_event = MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
+		.resume_state = MODEM_HL78XX_STATE_RESET_PULSE,
+		.max_attempts = 2U,
+	},
 };
 
 static const struct hl78xx_script_recovery_rule *
