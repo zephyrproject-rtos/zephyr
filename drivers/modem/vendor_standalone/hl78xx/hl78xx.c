@@ -564,6 +564,25 @@ void hl78xx_delegate_event(struct hl78xx_data *data, enum hl78xx_event evt)
 	k_work_submit_to_queue(&modem_workq, &data->events.event_dispatch_work);
 }
 
+void hl78xx_enter_lte_restore_state(struct hl78xx_data *data)
+{
+	/* LTE service requires the config chain (INIT -> RAT_CFG -> PMC_CFG,
+	 * which ends by setting init_sequence_completed) to have run in THIS
+	 * modem session. A session that detoured straight into airplane/GNSS
+	 * at boot never ran it: entering GPRS enable directly would start
+	 * registration on an unconfigured modem whose CxREG URCs
+	 * hl78xx_on_cxreg() rightly discards while the flag is false — the
+	 * modem can register, but the driver never reports it and the search
+	 * policy times the RAT out as if there were no coverage.
+	 */
+	if (!data->status.boot.init_sequence_completed) {
+		LOG_INF("LTE restore on unconfigured session: running init chain first");
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_INIT_SCRIPT);
+	} else {
+		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
+	}
+}
+
 static void hl78xx_dispatch_rat_mode_update_if_needed(struct hl78xx_data *data,
 						      bool rat_mode_updated,
 						      enum hl78xx_cell_rat_mode rat_mode,
@@ -646,7 +665,14 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 	registration_status = data->status.cxreg.reg_status;
 
 	if (!data->status.boot.init_sequence_completed) {
-		LOG_DBG("Ignoring CxREG while init sequence is incomplete");
+		/* Correct while configuration is genuinely in progress (the modem
+		 * boots CFUN=1 unconfigured, so pre-config registrations must not
+		 * drive policy) — but loud, because a registration discarded here
+		 * is invisible to the search policy: if this repeats while
+		 * registered (stat 1/5), the config chain was bypassed.
+		 */
+		LOG_WRN("Ignoring %s (stat %d) while init sequence is incomplete", argv[0],
+			registration_status);
 		return;
 	}
 
@@ -3276,7 +3302,7 @@ static void hl78xx_carrier_off_event_handler(struct hl78xx_data *data, enum hl78
 			break;
 		}
 #endif /* CONFIG_HL78XX_GNSS */
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_ENABLE_GPRS_SCRIPT);
+		hl78xx_enter_lte_restore_state(data);
 		break;
 
 	case MODEM_HL78XX_EVENT_DEREGISTERED:
