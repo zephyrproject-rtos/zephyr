@@ -978,6 +978,7 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 		err = clock_control_off(config->clock_dev, config->clock_subsys);
 		if (err < 0 && err != -ENOENT) {
 			return err;
+		}
 
 		return 0;
 
