@@ -84,7 +84,10 @@ if(WEST_VERSION)
 
   if(NOT WEST_TOPDIR)
     execute_process(
-      COMMAND ${WEST} topdir
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      -c
+      "import west.util; from pathlib import PurePath; print(PurePath(west.util.west_topdir()).as_posix())"
       OUTPUT_VARIABLE WEST_TOPDIR
       ERROR_QUIET
       RESULT_VARIABLE west_topdir_result
