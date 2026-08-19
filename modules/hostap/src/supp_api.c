@@ -1510,6 +1510,14 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	/* The supplicant only clears these once it associates, so drop the codes of
+	 * the previous request to keep them from being reported against this one.
+	 * Configuring the network ends with select_network, which already starts
+	 * the attempt, so this has to happen before that.
+	 */
+	wpa_s->auth_status_code = WLAN_STATUS_SUCCESS;
+	wpa_s->assoc_status_code = WLAN_STATUS_SUCCESS;
+
 	ret = wpas_add_and_config_network(wpa_s, params, false);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for STA mode: %d", ret);
