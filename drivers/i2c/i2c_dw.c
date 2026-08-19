@@ -1,4 +1,4 @@
-/* dw_i2c.c - I2C file for Design Ware */
+/* i2c_dw.c - I2C file for Design Ware */
 
 /*
  * Copyright (c) 2015 Intel Corporation
