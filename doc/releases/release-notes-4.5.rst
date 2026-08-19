@@ -111,6 +111,12 @@ Removed APIs and options
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
 
+* NXP
+
+    * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
+      ``nxp,enable-sample``, ``nxp,filter-count``, ``nxp,filter-period`` and ``nxp,window-mode``
+      properties of :dtcompatible:`nxp,kinetis-acmp`
+
 * Networking
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
