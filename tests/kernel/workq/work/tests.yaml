@@ -10,3 +10,14 @@ tests:
       - hifive1
       - qemu_rx
     timeout: 80
+  kernel.workqueue.api.obj_core:
+    min_flash: 34
+    tags: kernel
+    integration_platforms:
+      - qemu_x86
+    platform_exclude:
+      - hifive1
+      - qemu_rx
+    timeout: 80
+    extra_configs:
+      - CONFIG_OBJ_CORE=y
