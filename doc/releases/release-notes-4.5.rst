@@ -104,6 +104,10 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* Build system
+
+    * ``CONFIG_BUILD_NO_GAP_FILL``
+
 * Comparator
 
     * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,

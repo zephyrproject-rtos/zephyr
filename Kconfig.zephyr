@@ -786,10 +786,6 @@ config BUILD_GAP_FILL_PATTERN
 	  Note: binary files are always gap filled as they contain no address
 	  information.
 
-config BUILD_NO_GAP_FILL
-	bool "Don't fill gaps in generated hex/s19 files [DEPRECATED]."
-	select DEPRECATED
-
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	help
@@ -798,7 +794,6 @@ config BUILD_OUTPUT_HEX
 
 config BUILD_OUTPUT_HEX_GAP_FILL
 	bool "Fill gaps in hex files"
-	depends on !BUILD_NO_GAP_FILL
 	help
 	  Fill gaps in hex based files.
 
@@ -838,7 +833,6 @@ config BUILD_OUTPUT_S19
 
 config BUILD_OUTPUT_S19_GAP_FILL
 	bool "Fill gaps in s19 files"
-	depends on !BUILD_NO_GAP_FILL
 	help
 	  Fill gaps in s19 based files.
 

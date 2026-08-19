@@ -42,6 +42,10 @@ Build System
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
   :kconfig:option:`CONFIG_SOC_FAMILY` and ``SOC_FULL_DIR``.
 
+* ``CONFIG_BUILD_NO_GAP_FILL`` has been removed. Gap filling is opt-in through
+  :kconfig:option:`CONFIG_BUILD_OUTPUT_HEX_GAP_FILL` and
+  :kconfig:option:`CONFIG_BUILD_OUTPUT_S19_GAP_FILL`, so simply drop the option.
+
 Kernel
 ******
 
