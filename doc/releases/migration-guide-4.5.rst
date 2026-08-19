@@ -1622,6 +1622,23 @@ Architectures
   replacing their previous hand-rolled ``UNMAPPED`` MPU region table entry with
   identical runtime behavior.
 
+RISC-V
+======
+
+* The deprecated Andes V5 SoC options ``CONFIG_SOC_ANDES_V5_EXECIT``,
+  ``CONFIG_SOC_ANDES_V5_HWDSP``, ``CONFIG_SOC_ANDES_V5_PFT`` and ``CONFIG_SOC_ANDES_V5_PMA`` have
+  been removed. Use :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_EXECIT`,
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_HWDSP`,
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_PFT` and
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA` instead.
+
+* ``CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE`` has been removed. Use
+  :kconfig:option:`CONFIG_RISCV_CUSTOM_CSR_ANDES_PMA_NAPOT_GRANULARITY` instead, which is an
+  ``int`` holding the granularity in bytes (default 4096), not a boolean.
+
+* ``CONFIG_SOC_ANDES_V5_L2C`` has been removed. The L2 cache controller is described in devicetree
+  with :dtcompatible:`andestech,l2c` instead.
+
 Video
 =====
 

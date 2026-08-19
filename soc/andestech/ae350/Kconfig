@@ -39,30 +39,6 @@ config SOC_AE350_INTERRUPT_TYPE_CLIC
 
 endchoice
 
-config SOC_ANDES_V5_HWDSP
-	bool
-	select DEPRECATED
-
-config SOC_ANDES_V5_PFT
-	bool
-	select DEPRECATED
-
-config SOC_ANDES_V5_EXECIT
-	bool
-	select DEPRECATED
-
-config SOC_ANDES_V5_PMA
-	bool
-	select DEPRECATED
-
-config SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE
-	bool
-	select DEPRECATED
-
-config SOC_ANDES_V5_L2C
-	bool
-	select DEPRECATED
-
 config SOC_ANDES_V5_IOCP
 	bool "Andes V5 I/O Coherence Port (IOCP)"
 	depends on DCACHE
