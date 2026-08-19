@@ -145,6 +145,10 @@ Removed APIs and options
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
     * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
+* Stream Flash
+
+    * ``stream_flash_erase_page()``
+
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
 Deprecated APIs and options
