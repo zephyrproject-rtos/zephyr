@@ -233,6 +233,7 @@ Removed APIs and options
     * ``owner-id``, ``perm-read``, ``perm-write``, ``perm-execute``, ``perm-secure`` and
       ``non-secure-callable`` properties of :dtcompatible:`nordic,owned-memory` and
       :dtcompatible:`nordic,owned-partitions`
+    * ``CONFIG_GPIO_AS_PINRESET``
 
 * Random
 
