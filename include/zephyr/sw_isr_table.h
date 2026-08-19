@@ -31,6 +31,33 @@ void _isr_wrapper(void);
 /* Spurious interrupt handler. Throws an error if called */
 void z_irq_spurious(const void *unused);
 
+struct _isr_reloc_param_info {
+	int16_t table_index;
+	int16_t shared_index;
+};
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+
+/*
+ * CONFIG_POSITION_INDEPENDENT: link-time addresses of the ISR and IRQ vector
+ * tables in zephyr_pre0.elf, and the list of table entries whose argument
+ * needs relocation. It has one element per IRQ_CONNECT(), in the order of
+ * __isr_param_start..__isr_param_end; table_index is -1 for an entry that needs
+ * no fix-up. Defined by the generated isr_tables.c, with weak fallbacks in
+ * arch/common/isr_tables.c.
+ */
+extern uintptr_t z_sw_isr_table_pre0_addr;
+extern struct _isr_reloc_param_info reloc_param_list[];
+extern const void *__isr_param_start[];
+extern const void *__isr_param_end[];
+extern uintptr_t z_irq_vector_table_pre0_addr;
+
+/**
+ * INTERNAL_HIDDEN @endcond
+ */
+
 /*
  * Note the order: arg first, then ISR. This allows a table entry to be
  * loaded arg -> r0, isr -> r3 in _isr_wrapper with one ldmia instruction,
@@ -46,7 +73,7 @@ struct _isr_table_entry {
  * irq line
  */
 extern
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 	const
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 	struct _isr_table_entry _sw_isr_table[];
@@ -182,7 +209,7 @@ struct z_shared_isr_table_entry {
 void z_shared_isr(const void *data);
 
 extern
-#ifndef CONFIG_DYNAMIC_INTERRUPTS
+#if !defined(CONFIG_DYNAMIC_INTERRUPTS) && !defined(CONFIG_POSITION_INDEPENDENT)
 const
 #endif
 struct z_shared_isr_table_entry z_shared_sw_isr_table[];
@@ -193,6 +220,8 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 
 #define _MK_ISR_NAME(x, y) __MK_ISR_NAME(x, y)
 #define __MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
+#define _MK_ISR_PARAM_NAME(x, y) __MK_ISR_PARAM_NAME(x, y)
+#define __MK_ISR_PARAM_NAME(x, y) __isr_param_ ## x ## _irq_ ## y
 
 
 #if defined(CONFIG_ISR_TABLES_LOCAL_DECLARATION)
@@ -282,11 +311,28 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
 /* Create an instance of struct _isr_list which gets put in the .intList
  * section. This gets consumed by gen_isr_tables.py which creates the vector
  * and/or SW ISR tables.
+ *
+ * With CONFIG_POSITION_INDEPENDENT, the param is also stored alone in the
+ * .intListParam section, which is kept in the final image, see
+ * include/zephyr/linker/intlist.ld.
  */
-#define Z_ISR_DECLARE(irq, flags, func, param) \
-	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList) \
-		__used _MK_ISR_NAME(func, __COUNTER__) = \
-			{irq, flags, (void *)&func, (const void *)param}
+#define _Z_ISR_DECLARE_LIST(irq, flags, func, param, counter)                                      \
+	static Z_DECL_ALIGN(struct _isr_list) Z_GENERIC_SECTION(.intList)                          \
+		__used _MK_ISR_NAME(func, counter) = {irq, flags, (void *)&func,                   \
+						      (const void *)param}
+
+#ifdef CONFIG_POSITION_INDEPENDENT
+#define Z_ISR_DECLARE(irq, flags, func, param)                                                     \
+	_Z_ISR_DECLARE_PARAM(irq, flags, func, param, __COUNTER__)
+
+#define _Z_ISR_DECLARE_PARAM(irq, flags, func, param, counter)                                     \
+	_Z_ISR_DECLARE_LIST(irq, flags, func, param, counter);                                     \
+	static const void *Z_GENERIC_SECTION(.intListParam)                                        \
+		__used _MK_ISR_PARAM_NAME(func, counter) = (const void *)param
+#else
+#define Z_ISR_DECLARE(irq, flags, func, param)                                                     \
+	_Z_ISR_DECLARE_LIST(irq, flags, func, param, __COUNTER__)
+#endif
 
 /* The version of the Z_ISR_DECLARE that should be used for direct ISR declaration.
  * It is here for the API match the version with CONFIG_ISR_TABLES_LOCAL_DECLARATION enabled.
