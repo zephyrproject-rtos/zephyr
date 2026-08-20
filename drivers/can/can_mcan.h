@@ -643,6 +643,23 @@ enum can_mcan_psr_lec {
 	static char __nocache_noinit __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
 
 /**
+ * @brief Define a RAM buffer for Bosch M_CAN Message RAM in a specific section
+ *
+ * For devicetree nodes without dedicated Message RAM area, this macro defines a suitable RAM buffer
+ * to hold the Message RAM elements. The buffer will be placed in the specified section. Since this
+ * buffer cannot be shared between multiple Bosch M_CAN instances, the Message RAM offset must be
+ * set to 0x0.
+ *
+ * @param node_id node identifier
+ * @param _name buffer variable name
+ * @param _section_name Name of the linker section to place the buffer in
+ */
+#define CAN_MCAN_DT_MRAM_DEFINE_SECTION(node_id, _name, _section_name)                             \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
+	static char __aligned(4) _name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)] Z_GENERIC_SECTION( \
+		_section_name);
+
+/**
  * @brief Assert that the Message RAM configuration meets the Bosch M_CAN IP core restrictions
  *
  * @param node_id node identifier
@@ -844,6 +861,15 @@ enum can_mcan_psr_lec {
  * @see CAN_MCAN_DT_MRAM_DEFINE()
  */
 #define CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_MRAM_DEFINE(DT_DRV_INST(inst), _name)
+
+/**
+ * @brief Equivalent to CAN_MCAN_DT_MRAM_DEFINE_SECTION(DT_DRV_INST(inst), _name, _section_name)
+ * @param inst DT_DRV_COMPAT instance number
+ * @param _name buffer variable name
+ * @param _section_name Name of the linker section to place the buffer in
+ */
+#define CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, _section_name)                           \
+	CAN_MCAN_DT_MRAM_DEFINE_SECTION(DT_DRV_INST(inst), _name, _section_name)
 
 /**
  * @brief Bosch M_CAN specific static initializer for a minimum nominal @p can_timing struct

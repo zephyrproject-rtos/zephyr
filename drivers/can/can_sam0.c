@@ -211,9 +211,23 @@ static void config_can_##inst##_irq(void)						\
 #define ASSIGNED_CLOCKS_CELL_BY_NAME							\
 	ATMEL_SAM0_DT_INST_ASSIGNED_CLOCKS_CELL_BY_NAME
 
+/*
+ * On devices with more than 64 KB SRAM, place the MCAN Message RAM buffers
+ * in a dedicated section to ensure they are located in the first 64 KB of
+ * SRAM, as required by section 39.9.1 of the SAM D5x/E5x Family Data Sheet
+ * (DS60001507N).
+ */
+#if CONFIG_SRAM_SIZE > 64
+#define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name)                                       \
+	CAN_MCAN_DT_INST_MRAM_DEFINE_SECTION(inst, _name, ".can_message_ram")
+
+#else
+#define CAN_SAM0_DT_INST_MRAM_DEFINE(inst, _name) CAN_MCAN_DT_INST_MRAM_DEFINE(inst, _name)
+#endif
+
 #define CAN_SAM0_CFG_INST(inst)								\
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam0_cbs_##inst);			\
-	CAN_MCAN_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);			\
+	CAN_SAM0_DT_INST_MRAM_DEFINE(inst, can_sam0_mram_##inst);			\
 											\
 	static const struct can_sam0_config can_sam0_cfg_##inst = {			\
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),				\
