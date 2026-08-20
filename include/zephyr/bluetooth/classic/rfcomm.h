@@ -197,6 +197,21 @@ struct bt_rfcomm_dlc {
 	uint8_t rx_credit;
 
 	/** @endcond */
+
+	/** Initial number of RX credits for current DLC.
+	 *
+	 *  During Parameter Negotiation (PN), this value is sent to the remote peer as the initial
+	 *  receive credit count.
+	 *
+	 *  Valid range: 1 to MIN((BT_BUF_ACL_RX_COUNT - 1), 255). If set to 0, the stack uses the
+	 *  internal default MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *
+	 *  @note If the value exceeds MIN((BT_BUF_ACL_RX_COUNT - 1), 255), it will be limited to
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *
+	 *  Only meaningful when CFC is enabled.
+	 */
+	uint8_t default_rx_credit;
 };
 
 struct bt_rfcomm_server {
