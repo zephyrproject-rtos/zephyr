@@ -1,12 +1,11 @@
-identifier: pico_plus2/rp2350b/m33
-name: Pimoroni Pico Plus 2 (Cortex-M33)
+identifier: pico_plus2/rp2350b/hazard3_0
+name: Pimoroni Pico Plus 2 (Hazard3)
 type: mcu
-arch: arm
+arch: riscv
 flash: 16384
 ram: 8192
 toolchain:
   - zephyr
-  - gnuarmemb
 supported:
   - adc
   - clock

@@ -70,3 +70,9 @@ set(beetle_rp2350/rp2350a/hazard3_DEPRECATED
 set(pico2_spe/rp2350a/m33_DEPRECATED
     pico2_spe/rp2350a/m33_0
 )
+set(pico_plus2/rp2350b/m33_DEPRECATED
+    pico_plus2/rp2350b/m33_0
+)
+set(pico_plus2/rp2350b/hazard3_DEPRECATED
+    pico_plus2/rp2350b/hazard3_0
+)
