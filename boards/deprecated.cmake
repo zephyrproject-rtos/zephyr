@@ -52,3 +52,6 @@ set(bl54l15u_dvk/nrf54l15/cpuflpr_DEPRECATED
 set(elemrv/elemrv_n_DEPRECATED
     elemrv_flask_n
 )
+set(metro_rp2350/rp2350b/m33_DEPRECATED
+    metro_rp2350/rp2350b/m33_0
+)

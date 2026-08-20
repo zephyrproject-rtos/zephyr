@@ -148,6 +148,10 @@ Removed APIs and options
       * ``scobc_module1``
       * ``xiao_esp32c6``
 
+    * The following boards have been deprecated and renamed:
+
+      * ``metro_rp2350/rp2350b/m33`` to ``metro_rp2350/rp2350b/m33_0``
+
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``

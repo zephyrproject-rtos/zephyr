@@ -1,4 +1,4 @@
-identifier: adafruit_metro_rp2350/rp2350b/m33
+identifier: adafruit_metro_rp2350/rp2350b/m33_0
 name: Adafruit Metro RP2350 (Cortex-M33)
 type: mcu
 arch: arm
