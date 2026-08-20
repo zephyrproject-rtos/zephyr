@@ -5,7 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "tp.h"
 #include <zephyr/toolchain/gcc.h>
 
 #define is(_a, _b) (strcmp((_a), (_b)) == 0)
@@ -36,28 +35,14 @@
 	_x;								\
 })
 
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-#define tcp_malloc(_size) \
-	tp_malloc(_size, tp_basename(__FILE__), __LINE__, __func__)
-#define tcp_calloc(_nmemb, _size) \
-	tp_calloc(_nmemb, _size, tp_basename(__FILE__), __LINE__, __func__)
-#define tcp_free(_ptr) tp_free(_ptr, tp_basename(__FILE__), __LINE__, __func__)
-#else
 #define tcp_malloc(_size) k_malloc(_size)
 #define tcp_calloc(_nmemb, _size) k_calloc(_nmemb, _size)
 #define tcp_free(_ptr) k_free(_ptr)
-#endif
 
 #define TCP_PKT_ALLOC_TIMEOUT K_MSEC(CONFIG_NET_TCP_PKT_ALLOC_TIMEOUT)
 
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-#define tcp_pkt_clone(_pkt) tp_pkt_clone(_pkt, tp_basename(__FILE__), __LINE__)
-#define tcp_pkt_unref(_pkt) tp_pkt_unref(_pkt, tp_basename(__FILE__), __LINE__)
-#else
 #define tcp_pkt_clone(_pkt) net_pkt_clone(_pkt, TCP_PKT_ALLOC_TIMEOUT)
 #define tcp_pkt_unref(_pkt) net_pkt_unref(_pkt)
-#define tp_pkt_alloc(args...)
-#endif
 
 #define tcp_pkt_ref(_pkt) net_pkt_ref(_pkt)
 /* The allocation includes a headroom estimate for the IP and TCP headers
@@ -74,8 +59,6 @@
 		net_context_get_family((_conn)->context),		\
 		NET_IPPROTO_TCP,					\
 		TCP_PKT_ALLOC_TIMEOUT);					\
-									\
-	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
 									\
 	_pkt;								\
 })
@@ -95,8 +78,6 @@
 		_pkt = net_pkt_rx_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
 	}								\
 									\
-	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
-									\
 	_pkt;								\
 })
 
@@ -113,22 +94,11 @@
 		_pkt = net_pkt_alloc(TCP_PKT_ALLOC_TIMEOUT);		\
 	}								\
 									\
-	tp_pkt_alloc(_pkt, tp_basename(__FILE__), __LINE__);		\
-									\
 	_pkt;								\
 })
 
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-#define conn_seq(_conn, _req) \
-	tp_seq_track(TP_SEQ, &(_conn)->seq, (_req), tp_basename(__FILE__), \
-			__LINE__, __func__)
-#define conn_ack(_conn, _req) \
-	tp_seq_track(TP_ACK, &(_conn)->ack, (_req), tp_basename(__FILE__), \
-			__LINE__, __func__)
-#else
 #define conn_seq(_conn, _req) (_conn)->seq += (_req)
 #define conn_ack(_conn, _req) (_conn)->ack += (_req)
-#endif
 
 #define NET_TCP_DEFAULT_MSS 536
 
