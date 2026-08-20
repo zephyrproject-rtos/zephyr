@@ -156,6 +156,8 @@ Removed APIs and options
       * ``adafruit_metro_rp2350/rp2350b/m33`` to ``adafruit_metro_rp2350/rp2350b/m33_0``
       * ``motion_2350_pro/rp2350a/m33`` to ``motion_2350_pro/rp2350a/m33_0``
       * ``motion_2350_pro/rp2350a/hazard3`` to ``motion_2350_pro/rp2350a/hazard3_0``
+      * ``beetle_rp2350/rp2350a/m33`` to ``beetle_rp2350/rp2350a/m33_0``
+      * ``beetle_rp2350/rp2350a/hazard3`` to ``beetle_rp2350/rp2350a/hazard3_0``
 
 * Build system
 

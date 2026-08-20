@@ -1,4 +1,4 @@
-identifier: beetle_rp2350/rp2350a/hazard3
+identifier: beetle_rp2350/rp2350a/hazard3_0
 name: DFRobot Beetle RP2350 (Hazard3)
 type: mcu
 arch: riscv
