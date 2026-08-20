@@ -61,12 +61,13 @@ def main():
         return
 
     # Update PC for each core to the extracted entry point.
+    print('')
     for cpu in range(num_cpus):
         qemu_args += ['-device', f'loader,addr={entry},cpu-num={cpu}']
 
-        print(f'\n[qemu_entry_wrapper] Running QEMU with entry point at 0x{entry:x} for CPU {cpu}')
-
+        print(f'[qemu_entry_wrapper] Running QEMU with entry point at 0x{entry:x} for CPU {cpu}')
     print('')
+
     run_qemu(real_qemu, qemu_args)
 
 
