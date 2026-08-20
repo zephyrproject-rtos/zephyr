@@ -1,12 +1,11 @@
-identifier: motion_2350_pro/rp2350a/m33
-name: Cytron Motion 2350 Pro (Cortex M33)
+identifier: motion_2350_pro/rp2350a/hazard3_0
+name: Cytron Motion 2350 Pro (Hazard3)
 type: mcu
-arch: arm
+arch: riscv
 flash: 2048
 ram: 520
 toolchain:
   - zephyr
-  - gnuarmemb
 supported:
   - adc
   - clock

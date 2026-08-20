@@ -196,7 +196,7 @@ To run the :zephyr:code-sample:`blinky` sample:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky/
-   :board: motion_2350_pro/rp2350a/m33
+   :board: motion_2350_pro/rp2350a/m33_0
    :goals: build flash
 
 Try also the :zephyr:code-sample:`led-strip`, :zephyr:code-sample:`hello_world`,
@@ -208,7 +208,7 @@ The use of the Maker/Qwiic/Stemma QT I2C connector (GP16+GP17) is demonstrated u
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/light_polling
-   :board: motion_2350_pro/rp2350a/m33
+   :board: motion_2350_pro/rp2350a/m33_0
    :shield: adafruit_veml7700
    :goals: build flash
 
@@ -216,7 +216,7 @@ Use the shell to control the GPIO pins:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sensor_shell
-   :board: motion_2350_pro/rp2350a/m33
+   :board: motion_2350_pro/rp2350a/m33_0
    :gen-args: -DCONFIG_GPIO=y -DCONFIG_GPIO_SHELL=y
    :goals: build flash
 
@@ -232,14 +232,14 @@ sample sets servo position timing (via an overlay file) for the output GP0:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/servo_motor/
-   :board: motion_2350_pro/rp2350a/m33
+   :board: motion_2350_pro/rp2350a/m33_0
    :goals: build flash
 
 It is also possible to control servos via the pwm shell:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/sensor_shell
-   :board: motion_2350_pro/rp2350a/m33
+   :board: motion_2350_pro/rp2350a/m33_0
    :gen-args: -DCONFIG_PWM=y -DCONFIG_PWM_SHELL=y
    :goals: build flash
 
@@ -281,7 +281,7 @@ Flashing the Hazard3 core
 =========================
 
 The RP2350A microcontroller has two ARM M33 cores and two RISC-V Hazard3 cores.
-To flash one of the Hazard3 cores, use the board argument ``motion_2350_pro/rp2350a/hazard3``.
+To flash one of the Hazard3 cores, use the board argument ``motion_2350_pro/rp2350a/hazard3_0``.
 The samples :zephyr:code-sample:`blinky` and :zephyr:code-sample:`input-dump` have been
 verified for this core. Use the USB mass storage programming method described above.
 
