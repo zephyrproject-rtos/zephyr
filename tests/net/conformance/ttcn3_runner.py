@@ -30,7 +30,13 @@ TESTER_INTERFACE = 'zeth'
 # the same interface, so only one of them can be running at a time. Twister
 # runs each of them in its own pytest process, so the exclusion has to hold
 # between processes rather than within one.
-NETWORK_LOCK = Path(tempfile.gettempdir()) / 'zephyr-net-conformance.lock'
+#
+# The name carries the user id because a suite that has to bind a privileged
+# port is run as root, and on a system that protects regular files in a
+# sticky directory root cannot open a lock file another user left there. A
+# run is either wholly privileged or wholly not, so a lock per user still
+# excludes everything that could collide.
+NETWORK_LOCK = Path(tempfile.gettempdir()) / f'zephyr-net-conformance-{os.geteuid()}.lock'
 
 # The last two lines a Titan run prints. The first counts each verdict, the
 # second gives the verdict for the run as a whole.
@@ -47,7 +53,11 @@ def network_lock():
     Ask for this before the device fixture, so that the device is not even
     started while another conformance test is using the interface.
     """
-    fd = os.open(NETWORK_LOCK, os.O_CREAT | os.O_RDWR, 0o666)
+    # The name is this user's alone, so the file needs no access beyond
+    # the owner, and O_NOFOLLOW refuses a symlink someone else may have
+    # left under that name - a suite that binds a privileged port opens
+    # this as root.
+    fd = os.open(NETWORK_LOCK, os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
     try:
         logger.info('Waiting for the %s interface', TESTER_INTERFACE)
         fcntl.flock(fd, fcntl.LOCK_EX)
@@ -97,16 +107,29 @@ def requirements(suite: str) -> str | None:
     if is_parallel(suite) and not (Path(os.environ['TTCN3_DIR']) / 'bin' / 'ttcn3_start').is_file():
         return 'this suite needs a main controller, and ttcn3_start is not in TTCN3_DIR/bin'
 
+    if needs_privilege(suite) and os.geteuid() != 0:
+        return (
+            f'the {suite} suite has to bind a privileged port, which the protocol fixes '
+            'and which cannot be moved, so it has to be run as root'
+        )
+
     return None
+
+
+def build_conf(suite: str) -> str:
+    conf = ttcn3_dir() / 'suites' / suite / 'build.conf'
+
+    return conf.read_text() if conf.is_file() else ''
 
 
 def is_parallel(suite: str) -> bool:
     """A suite whose test cases create parallel components says so here."""
-    conf = ttcn3_dir() / 'suites' / suite / 'build.conf'
-    if not conf.is_file():
-        return False
+    return 'MODE=parallel' in build_conf(suite)
 
-    return 'MODE=parallel' in conf.read_text()
+
+def needs_privilege(suite: str) -> bool:
+    """A suite that has to bind a port below 1024 says so here."""
+    return 'PRIVILEGED=yes' in build_conf(suite)
 
 
 def build_suite(suite: str) -> Path:

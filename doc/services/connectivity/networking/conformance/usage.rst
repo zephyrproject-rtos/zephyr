@@ -23,6 +23,8 @@ What a run needs
   :file:`west.yml` under the ``tools`` group, which is not filtered out.
 * **make**, because that is how Titan builds a suite.
 * **The** ``zeth`` **interface**. See :ref:`ttcn3_interfaces`.
+* **Root**, for the three suites that cannot avoid a privileged port or a
+  packet socket.
 * **expect**, for the one suite that runs through Titan's main controller.
 
 The harness looks for net-tools in ``NET_TOOLS_BASE`` if that is set, otherwise
@@ -113,6 +115,17 @@ A single suite is selected by its test identifier, which is
 
 They also carry the ``net`` and ``conformance`` tags, so ``--tag conformance``
 picks up all six.
+
+Running as root
+===============
+
+One suite has to be run as root. DHCP is defined on ports 67 and 68 and there
+is no way to move it elsewhere, so the tester cannot avoid binding a privileged
+port; that test skips itself when it is not run with enough privilege.
+
+Use ``sudo -E`` so that ``TTCN3_DIR`` and the rest of the environment survive.
+A run is either wholly privileged or wholly not — see :ref:`ttcn3_runner` for
+why the two cannot be mixed.
 
 Why a run is serial
 ===================
@@ -214,6 +227,8 @@ checked:
      - Create it with :file:`net-setup.sh`; see :ref:`ttcn3_interfaces`
    * - ``ttcn3_start is not in TTCN3_DIR/bin``
      - Install ``expect`` and a Titan that ships the main controller
+   * - ``has to be run as root``
+     - Re-run under ``sudo -E``, or use the script
 
 Troubleshooting
 ***************

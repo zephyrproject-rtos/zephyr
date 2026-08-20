@@ -51,8 +51,9 @@ been set up for them. See :ref:`ttcn3_running` for what a run needs, and
 The suites
 **********
 
-Each suite drives one protocol against an application that enables it, over the
-interface that application appears on.
+Which interface a suite uses, and whether it has to be run as root, follow from
+what it does: a suite that works below the IP layer reads frames from a packet
+socket on a link of its own.
 
 .. list-table::
    :header-rows: 1
@@ -77,6 +78,11 @@ interface that application appears on.
      - ``zeth``
      - any user
      - 8
+   * - ``dhcpv4``
+     - :zephyr_file:`tests/net/conformance/dhcpv4`
+     - ``zeth``
+     - root
+     - 3
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -127,6 +133,19 @@ It is the one suite whose test cases create parallel test components, so it is
 run through Titan's main controller and needs ``expect`` installed.
 
 * ``tc_client_TD_COAP_CORE_01`` through ``tc_client_TD_COAP_CORE_08``
+
+DHCPv4
+======
+
+The application starts the client and is then left alone; the suite is the
+server. The order of the test cases matters, so ``tc_exchange_completes`` is
+last: a client that has been given an address stops asking. The suite waits up
+to 75 seconds for a message, which outlasts the client's four second backoff as
+it doubles.
+
+* ``tc_unanswered_discover_is_repeated``
+* ``tc_discover_is_well_formed``
+* ``tc_exchange_completes``
 
 .. _ttcn3_known_gaps:
 
