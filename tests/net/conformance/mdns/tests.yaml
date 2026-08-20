@@ -1,0 +1,16 @@
+common:
+  harness: pytest
+  slow: true
+  timeout: 900
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - mdns
+    - dns
+    - conformance
+    - pytest
+tests:
+  net.conformance.mdns: {}
