@@ -340,10 +340,28 @@ static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_t
 #endif
 }
 
-static int supplicant_register_iface_type(struct net_if *iface)
+static uint32_t get_iface_caps(struct net_if *iface)
 {
 	const struct device *dev = net_if_get_device(iface);
 	struct net_wifi_mgmt_offload *off_api;
+	uint32_t caps = 0;
+
+	if (dev == NULL || dev->api == NULL) {
+		return 0;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+	if (off_api->wifi_mgmt_api &&
+	    off_api->wifi_mgmt_api->get_iface_caps) {
+		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
+	}
+
+	return caps & BIT_MASK(WIFI_TYPE_MAX);
+}
+
+static int supplicant_register_iface_type(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
 	struct wifi_nm_instance *nm = wifi_nm_get_instance("wifi_supplicant");
 	uint32_t caps = 0;
 	int ret;
@@ -352,18 +370,7 @@ static int supplicant_register_iface_type(struct net_if *iface)
 		return -EINVAL;
 	}
 
-	off_api = (struct net_wifi_mgmt_offload *)dev->api;
-
-	/* Query driver for its static role capabilities.
-	 * If the driver does not implement get_iface_caps, fall back to
-	 * WIFI_TYPE_STA plus WIFI_TYPE_SAP when CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
-	 * is enabled.
-	 */
-	if (off_api != NULL && off_api->wifi_mgmt_api != NULL &&
-	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
-		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
-	}
-	caps &= BIT_MASK(WIFI_TYPE_MAX);
+	caps = get_iface_caps(iface);
 
 	if (caps == 0) {
 		/* No caps declared: default to STA */
@@ -599,17 +606,23 @@ static void interface_handler(struct net_mgmt_event_callback *cb,
 	}
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
+	if (get_iface_caps(iface) & BIT(WIFI_TYPE_SAP)) {
 		if (mgmt_event == NET_EVENT_IF_ADMIN_UP) {
+			int ret = 0;
 			LOG_INF("Network interface %d (%p) up", net_if_get_by_iface(iface), iface);
-			zephyr_hostapd_add_iface(&ctx->hostapd);
+			ret = zephyr_hostapd_add_iface(&ctx->hostapd, iface);
+			if (ret < 0) {
+				LOG_ERR("Add hostapd interface %d (%p) fail",
+					net_if_get_by_iface(iface), iface);
+			}
+
 			return;
 		}
 
 		if (mgmt_event == NET_EVENT_IF_ADMIN_DOWN) {
 			LOG_INF("Network interface %d (%p) down", net_if_get_by_iface(iface),
 				iface);
-			zephyr_hostapd_del_iface(&ctx->hostapd);
+			zephyr_hostapd_del_iface(&ctx->hostapd, iface);
 			return;
 		}
 		LOG_INF("Wrong network interface mgmt event");
@@ -642,8 +655,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 #ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	if (wifi_nm_iface_is_sap(iface)) {
-		ret = zephyr_hostapd_add_iface(&ctx->hostapd);
+	if (get_iface_caps(iface) & BIT(WIFI_TYPE_SAP)) {
+		ret = zephyr_hostapd_add_iface(&ctx->hostapd, iface);
 		if (ret < 0) {
 			LOG_ERR("Add hostapd interface %d (%p) fail", net_if_get_by_iface(iface),
 				iface);
