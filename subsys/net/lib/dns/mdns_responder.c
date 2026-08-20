@@ -56,6 +56,11 @@ extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
 
 #define MDNS_TTL CONFIG_MDNS_RESPONDER_TTL /* In seconds */
 
+/* RFC 6762 6.7: an answer to a legacy unicast query may be cached by something
+ * that knows nothing about multicast DNS, so it is given a short life.
+ */
+#define MDNS_LEGACY_TTL 10 /* In seconds */
+
 #if defined(CONFIG_NET_INTERFACE_NAME_LEN)
 #define INTERFACE_NAME_LEN CONFIG_NET_INTERFACE_NAME_LEN
 #else
@@ -353,6 +358,31 @@ static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 	return zsock_setsockopt(sock, level, option, &new_limit, sizeof(new_limit));
 }
 
+/* A querier that did not ask from port 5353 is not another multicast DNS
+ * responder but something making a one-off lookup, a resolver library or a
+ * command line tool. RFC 6762 6.7 calls that a legacy unicast query and asks
+ * for an answer such a querier can understand: sent back to it alone, with the
+ * question repeated and the identifier it used, without the cache flush bit,
+ * and with a short time to live so that whatever caches it does not hold the
+ * answer long.
+ */
+static bool is_legacy_query(const struct net_sockaddr *src)
+{
+	if (src == NULL) {
+		return false;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && src->sa_family == NET_AF_INET) {
+		return net_sin(src)->sin_port != net_htons(MDNS_LISTEN_PORT);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && src->sa_family == NET_AF_INET6) {
+		return net_sin6(src)->sin6_port != net_htons(MDNS_LISTEN_PORT);
+	}
+
+	return false;
+}
+
 int setup_dst_addr(int sock, net_sa_family_t family,
 		   struct net_sockaddr *src, net_socklen_t src_len,
 		   struct net_sockaddr *dst, net_socklen_t *dst_len)
@@ -360,7 +390,7 @@ int setup_dst_addr(int sock, net_sa_family_t family,
 	int ret;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && family == NET_AF_INET) {
-		if ((src != NULL) && (net_sin(src)->sin_port != net_htons(MDNS_LISTEN_PORT))) {
+		if (is_legacy_query(src)) {
 			memcpy(dst, src, src_len);
 			*dst_len = src_len;
 		} else {
@@ -373,7 +403,7 @@ int setup_dst_addr(int sock, net_sa_family_t family,
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) && family == NET_AF_INET6) {
-		if ((src != NULL) && (net_sin6(src)->sin6_port != net_htons(MDNS_LISTEN_PORT))) {
+		if (is_legacy_query(src)) {
 			memcpy(dst, src, src_len);
 			*dst_len = src_len;
 		} else {
@@ -405,7 +435,12 @@ static int get_socket(net_sa_family_t family)
 	return ret;
 }
 
-static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
+/* dns_id and questions are zero for a multicast answer, which carries neither
+ * an identifier nor the question, RFC 6762 18.1. An answer to a legacy unicast
+ * query carries both, RFC 6762 6.7.
+ */
+static void setup_dns_hdr(uint8_t *buf, uint16_t answers, uint16_t dns_id,
+			  uint16_t questions)
 {
 	struct dns_header *hdr = (struct dns_header *)buf;
 	uint16_t flags;
@@ -415,9 +450,9 @@ static void setup_dns_hdr(uint8_t *buf, uint16_t answers)
 	flags = BIT(15);  /* This is response */
 	flags |= BIT(10); /* Authoritative Answer */
 
-	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, id)); /* Identifier, RFC 6762 ch 18.1 */
+	UNALIGNED_PUT(net_htons(dns_id), UNALIGNED_MEMBER_ADDR(hdr, id));
 	UNALIGNED_PUT(net_htons(flags), UNALIGNED_MEMBER_ADDR(hdr, flags));
-	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, qdcount));
+	UNALIGNED_PUT(net_htons(questions), UNALIGNED_MEMBER_ADDR(hdr, qdcount));
 	UNALIGNED_PUT(net_htons(answers), UNALIGNED_MEMBER_ADDR(hdr, ancount));
 	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, nscount));
 	UNALIGNED_PUT(0, UNALIGNED_MEMBER_ADDR(hdr, arcount));
@@ -429,9 +464,12 @@ static int init_name_labels(struct net_buf *query)
 	char *prev = query->data + DNS_MSG_HEADER_SIZE;
 
 	/* Verify the buffer has enough space to store header and query name
-	 * + 2 for the length of the first label and the terminator byte
+	 * + 2 for the length of the first label and the terminator byte,
+	 * + the type and class of an echoed question, which an answer to a
+	 * legacy unicast query appends straight after the name.
 	 */
-	if ((net_buf_max_len(query) - query->len) < (DNS_MSG_HEADER_SIZE + 2)) {
+	if ((net_buf_max_len(query) - query->len) <
+	    (DNS_MSG_HEADER_SIZE + 2 + DNS_QTYPE_LEN + DNS_QCLASS_LEN)) {
 		return -ENOBUFS;
 	}
 
@@ -462,6 +500,7 @@ struct answer_ctx {
 	enum dns_rr_type qtype;
 	int answer_count;
 	uint16_t name_offset;
+	bool legacy;
 };
 
 static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
@@ -486,8 +525,16 @@ static void add_a_aaaa_answer(struct answer_ctx *ctx, uint32_t ttl,
 	}
 
 	net_buf_add_be16(ctx->query, ctx->qtype);
-	/* Bit 15 tells to flush the cache */
-	net_buf_add_be16(ctx->query, DNS_CLASS_IN | BIT(15));
+
+	/* The cache flush bit tells a multicast DNS cache to drop what it
+	 * held for this name. It must not be set in an answer to a legacy
+	 * unicast query, RFC 6762 10.2, because whatever cached that answer
+	 * is not a multicast DNS cache and would read bit 15 as part of the
+	 * class.
+	 */
+	net_buf_add_be16(ctx->query,
+			 ctx->legacy ? DNS_CLASS_IN
+				     : (DNS_CLASS_IN | DNS_CLASS_FLUSH));
 	net_buf_add_be32(ctx->query, ttl);
 	net_buf_add_be16(ctx->query, addr_len);
 	net_buf_add_mem(ctx->query, addr, addr_len);
@@ -518,27 +565,44 @@ static void answer_addr_cb(struct net_if *iface, struct net_if_addr *ifaddr,
 
 	/* First answer contains full DNS name (already encoded). Consecutive
 	 * answers use label compression and encode label pointers.
+	 *
+	 * When the question is echoed, the name at that offset belongs to the
+	 * question rather than to the first answer, so every answer points at
+	 * it, the first one included.
 	 */
-	if (ctx->answer_count == 0) {
+	if (ctx->answer_count == 0 && !ctx->legacy) {
 		include_name_ptr = false;
 	}
 
-	add_a_aaaa_answer(ctx, MDNS_TTL, addr_len, addr, include_name_ptr);
+	add_a_aaaa_answer(ctx, ctx->legacy ? MDNS_LEGACY_TTL : MDNS_TTL,
+			  addr_len, addr, include_name_ptr);
 }
 
 static int create_answer(struct net_buf *query, enum dns_rr_type qtype,
-			 struct net_if *iface)
+			 struct net_if *iface, bool legacy, uint16_t dns_id)
 {
 	struct answer_ctx ctx = {
 		.query = query,
 		.qtype = qtype,
 		.name_offset = DNS_MSG_HEADER_SIZE,
+		.legacy = legacy,
 	};
 	int ret;
 
 	ret = init_name_labels(query);
 	if (ret < 0) {
 		return ret;
+	}
+
+	if (legacy) {
+		/* Repeat the question, RFC 6762 6.7. The name is already
+		 * there, written by init_name_labels() at the offset the
+		 * answers point back to, so only its type and class are
+		 * missing. The class is written plain: the unicast response
+		 * bit a querier may have set in it has no meaning coming back.
+		 */
+		net_buf_add_be16(query, qtype);
+		net_buf_add_be16(query, DNS_CLASS_IN);
 	}
 
 	if ((qtype == DNS_RR_TYPE_A) && IS_ENABLED(CONFIG_NET_IPV4)) {
@@ -554,7 +618,12 @@ static int create_answer(struct net_buf *query, enum dns_rr_type qtype,
 		return -ENOMEM;
 	}
 
-	setup_dns_hdr(query->data, ctx.answer_count);
+	/* A multicast answer carries neither an identifier nor the question:
+	 * RFC 6762 18.1 has the identifier zero on transmission and ignored on
+	 * reception, because there is no one querier it belongs to.
+	 */
+	setup_dns_hdr(query->data, ctx.answer_count, legacy ? dns_id : 0U,
+		      legacy ? 1U : 0U);
 
 	return 0;
 }
@@ -565,7 +634,8 @@ static int send_response(int sock,
 			 size_t addrlen,
 			 struct net_buf *query,
 			 enum dns_rr_type qtype,
-			 struct net_if *recv_if)
+			 struct net_if *recv_if,
+			 uint16_t dns_id)
 {
 	struct net_if *iface;
 	net_socklen_t dst_len;
@@ -596,7 +666,7 @@ static int send_response(int sock,
 		return -EINVAL;
 	}
 
-	ret = create_answer(query, qtype, iface);
+	ret = create_answer(query, qtype, iface, is_legacy_query(src_addr), dns_id);
 	if (ret != 0) {
 		return -ENOMEM;
 	}
@@ -797,6 +867,7 @@ static int dns_read(int sock,
 	int family = src_addr->sa_family;
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
+	uint16_t dns_id = 0U;
 	int data_len;
 	int queries;
 	int ret;
@@ -815,7 +886,7 @@ static int dns_read(int sock,
 	dns_msg.msg = dns_data->data;
 	dns_msg.msg_size = data_len;
 
-	ret = mdns_unpack_query_header(&dns_msg, NULL);
+	ret = mdns_unpack_query_header(&dns_msg, &dns_id);
 	if (ret < 0) {
 		goto quit;
 	}
@@ -866,7 +937,7 @@ static int dns_read(int sock,
 				family == NET_AF_INET ? "IPv4" : "IPv6", "query",
 				hostname, ".local");
 			send_response(sock, family, src_addr, addrlen,
-				      result, qtype, recv_if);
+				      result, qtype, recv_if, dns_id);
 		} else if (IS_ENABLED(CONFIG_MDNS_RESPONDER_DNS_SD)
 			&& qtype == DNS_RR_TYPE_PTR) {
 			send_sd_response(sock, family, src_addr, addrlen, result, recv_if);
@@ -2112,7 +2183,7 @@ static struct net_buf *create_unsolicited_mdns_answer(struct net_if *iface,
 		return NULL;
 	}
 
-	setup_dns_hdr(answer->data, 1);
+	setup_dns_hdr(answer->data, 1, 0, 0);
 	net_buf_add(answer, DNS_MSG_HEADER_SIZE);
 
 	answer_count = 0U;
