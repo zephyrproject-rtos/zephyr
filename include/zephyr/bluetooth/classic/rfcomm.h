@@ -90,10 +90,21 @@ struct bt_rfcomm_dlc_ops {
 
 	/** DLC recv callback
 	 *
+	 *  The DLC recv callback is called whenever data is received on the DLC.
+	 *
+	 *  When the error code @c -EINPROGRESS is returned, the application takes ownership of
+	 *  @p buf reference. And, @p buf can simply be given to @ref bt_rfcomm_dlc_recv_complete
+	 *  without any calls to @ref net_buf_ref or @ref net_buf_unref.
+	 *
 	 *  @param dlc The dlc receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *  @return -EINPROGRESS in case where user has to confirm once the data has been processed
+	 *                       by calling @ref bt_rfcomm_dlc_recv_complete passing back the
+	 *                       buffer received with its original user_data.
 	 */
-	void (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
+	int (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 	/** DLC sent callback
 	 *
@@ -188,14 +199,6 @@ struct bt_rfcomm_dlc {
 	 */
 	uint8_t state;
 
-	/** Number of receive credits remaining for this DLC.
-	 *
-	 *  Tracks how many additional UIH frames the local side may accept
-	 *  from the remote peer before flow control must be applied.
-	 *  Only meaningful when CFC is enabled.
-	 */
-	uint8_t rx_credit;
-
 	/** @endcond */
 
 	/** Initial number of RX credits for current DLC.
@@ -212,6 +215,33 @@ struct bt_rfcomm_dlc {
 	 *  Only meaningful when CFC is enabled.
 	 */
 	uint8_t default_rx_credit;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Number of receive credits remaining for this DLC.
+	 *
+	 *  Tracks how many additional UIH frames the local side may accept
+	 *  from the remote peer before flow control must be applied.
+	 *  Only meaningful when CFC is enabled.
+	 */
+	atomic_t rx_credit;
+
+	/** Number of in-progress receive operations for this DLC.
+	 *
+	 *  Counts how many @ref bt_rfcomm_dlc_ops::recv callbacks have returned @c -EINPROGRESS
+	 *  but have not yet been completed by calling @ref bt_rfcomm_dlc_recv_complete.
+	 *
+	 *  For CFC-supported sessions, this counter is used to delay RX credit refill:
+	 *  RX credits are not refilled until the in-progress bufs are completed, ensuring
+	 *  the remote peer cannot send more frames than the application can handle concurrently.
+	 *
+	 *  For non-CFC sessions, this counter gates the MSC flow-control commands:
+	 *  - MSC with FC=1 (pause) is sent only when the count is changing from 0 to 1
+	 *  - MSC with FC=0 (resume) is sent only when the count is changing from 1 to 0
+	 */
+	atomic_t rx_credit_inprogress;
+
+	/** @endcond */
 };
 
 struct bt_rfcomm_server {
@@ -371,6 +401,34 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
+
+/**
+ * @brief Complete receiving RFCOMM channel data
+ *
+ * Must be called exactly once for each invocation of @ref bt_rfcomm_dlc_ops::recv that returned
+ * @c -EINPROGRESS. Pass back the same @p buf pointer that was received in that callback; no
+ * additional @ref net_buf_ref or @ref net_buf_unref calls are needed.
+ *
+ * When this function returns, the stack releases its reference to @p buf regardless of the return
+ * value, unless @p dlc or @p buf is @c NULL (in which case @c -EINVAL is returned immediately and
+ * @p buf is not touched).
+ *
+ * Flow-control behavior after the call:
+ * - CFC sessions: the stack may now send additional RX credits to the remote peer, allowing it
+ *   to send more frames.
+ * - Non-CFC sessions: an MSC command with FC=0 (resume) is sent to the remote peer only when
+ *   all inprogress buffers are completed.
+ *
+ * @param dlc Pointer to the RFCOMM DLC whose receive operation is being completed.
+ * @param buf The buffer that was passed to @ref bt_rfcomm_dlc_ops::recv when it returned
+ *            @c -EINPROGRESS.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ * @retval -EINVAL @p dlc or @p buf is @c NULL, the DLC's CFC state is unknown, or the
+ *                 in-progress counter would underflow (more completions than in-progress calls).
+ * @retval -ENOTCONN The DLC has no associated session or is not in the connected state.
+ */
+int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 /** @brief Allocate the buffer from pool after reserving head room for RFCOMM,
  *  L2CAP and ACL headers.

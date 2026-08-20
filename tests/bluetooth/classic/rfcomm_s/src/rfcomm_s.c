@@ -94,9 +94,10 @@ static struct bt_sdp_attribute spp_attrs[] = {
 static struct bt_sdp_record spp_rec = BT_SDP_RECORD(spp_attrs);
 
 /* DLC entity */
-static void rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
+static int rfcomm_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
 	bt_shell_print("Incoming data dlc %p len %u", dlci, buf->len);
+	return 0;
 }
 
 static void rfcomm_connected(struct bt_rfcomm_dlc *dlci)
