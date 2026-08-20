@@ -237,7 +237,6 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	long int port = 0;
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 	struct net_sockaddr *ai_addr;
-	struct getaddrinfo_state ai_state;
 
 	if (hints) {
 		family = hints->ai_family;
@@ -273,12 +272,12 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		return getaddrinfo_null_host(port, hints, res);
 	}
 
-	ai_state.hints = hints;
-	ai_state.idx = 0U;
-	ai_state.port = net_htons(port);
-	ai_state.ai_arr = res;
-	ai_state.dns_id = 0;
-	k_sem_init(&ai_state.sem, 0, K_SEM_MAX_LIMIT);
+	struct getaddrinfo_state ai_state = {
+		.hints = hints,
+		.sem = K_SEM_INITIALIZER(ai_state.sem, 0, K_SEM_MAX_LIMIT),
+		.port = net_htons(port),
+		.ai_arr = res,
+	};
 
 	/* If family is NET_AF_UNSPEC, then we query IPv4 address first
 	 * if IPv4 is enabled in the config.
