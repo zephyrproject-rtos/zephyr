@@ -212,6 +212,14 @@ static struct bt_le_ext_adv *adv_new(void)
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
 
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+	net_buf_simple_init_with_data(&adv->pawr_rsp_reassembly.buf,
+				      adv->pawr_rsp_reassembly.reassembly_data,
+				      CONFIG_BT_PER_ADV_RSP_BUF_SIZE);
+
+	net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
+
 	return adv;
 }
 
@@ -2063,15 +2071,84 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 		}
 
 		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+			if (adv->pawr_rsp_reassembly.buf.len != 0 &&
+			    (adv->pawr_rsp_reassembly.subevent != info.subevent ||
+			     adv->pawr_rsp_reassembly.response_slot != info.response_slot)) {
+				/* A partial chain is buffered for a different response.
+				 * Discard it and start reassembling the new one.
+				 */
+				LOG_WRN("Response reassembly interrupted, discarding");
+				net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+			}
+
+			if (net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+			    response->data_length) {
+				/* The fragment does not fit, drop the chain. */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else {
+				/* Record the response identity on the first fragment and
+				 * buffer the data. The reassembled data is only reported
+				 * once the matching COMPLETE report arrives.
+				 */
+				adv->pawr_rsp_reassembly.subevent = info.subevent;
+				adv->pawr_rsp_reassembly.response_slot = info.response_slot;
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+			}
+#else
 			LOG_WRN("Incomplete response report received, discarding");
 			(void)net_buf_pull_mem(buf, response->data_length);
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+			/* Reception failed, drop any partial chain in progress. */
+			net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
 			(void)net_buf_pull_mem(buf, response->data_length);
 
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, NULL);
 			}
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+			bool chain_match = adv->pawr_rsp_reassembly.buf.len != 0 &&
+					   adv->pawr_rsp_reassembly.subevent == info.subevent &&
+					   adv->pawr_rsp_reassembly.response_slot ==
+						   info.response_slot;
+
+			if (!chain_match) {
+				/* No matching partial data, report the fragment directly. */
+				uint8_t *frag = net_buf_pull_mem(buf, response->data_length);
+
+				net_buf_simple_init_with_data(&data, frag,
+							      response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info, &data);
+				}
+			} else if (net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+				   response->data_length) {
+				/* The final fragment does not fit, drop the chain. */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else {
+				/* Final fragment, complete the reassembly and report. */
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info,
+							       &adv->pawr_rsp_reassembly.buf);
+				}
+			}
+
+			net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+#else
 			net_buf_simple_init_with_data(&data,
 						      net_buf_pull_mem(buf, response->data_length),
 						      response->data_length);
@@ -2079,8 +2156,10 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, &data);
 			}
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
 		} else {
 			LOG_ERR("Invalid data status %d", response->data_status);
+
 			(void)net_buf_pull_mem(buf, response->data_length);
 		}
 	}
