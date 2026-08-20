@@ -22,6 +22,7 @@
 		reg = <0x40004000 0x2000>;
 		interrupts = <4 0>;
 		status = "disabled";
+		ti,num-channels = <32>;
 		#io-channel-cells = <1>;
 	};
 };
