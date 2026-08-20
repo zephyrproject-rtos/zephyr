@@ -313,10 +313,10 @@ static void usb_transfer_sync_cb(uint8_t ep, int size, void *priv)
 
 int usb_transfer_sync(uint8_t ep, uint8_t *data, size_t dlen, unsigned int flags)
 {
-	struct usb_transfer_sync_priv pdata;
+	struct usb_transfer_sync_priv pdata = {
+		.sem = K_SEM_INITIALIZER(pdata.sem, 0, 1),
+	};
 	int ret;
-
-	k_sem_init(&pdata.sem, 0, 1);
 
 	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &pdata);
 	if (ret) {
