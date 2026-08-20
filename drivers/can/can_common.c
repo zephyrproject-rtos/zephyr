@@ -56,10 +56,10 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 	}
 
 	if (callback == NULL) {
-		struct can_tx_default_cb_ctx ctx;
+		struct can_tx_default_cb_ctx ctx = {
+			.done = K_SEM_INITIALIZER(ctx.done, 0, 1),
+		};
 		int err;
-
-		k_sem_init(&ctx.done, 0, 1);
 
 		err = api->send(dev, frame, timeout, can_tx_default_cb, &ctx);
 		if (err != 0) {
