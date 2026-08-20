@@ -336,6 +336,12 @@ struct dhcp_client_msg {
 
 static uint32_t offer_xid;
 static uint32_t request_xid;
+/* How many discovers to swallow before answering, so that the client is made
+ * to retransmit, and what identifiers those retransmissions carried.
+ */
+static int discovers_to_drop;
+static int discovers_seen;
+static uint32_t discover_xids[4];
 static bool strict_dhcp_server;
 static bool discover_req_included_dns;
 static bool init_reboot_req_included_dns;
@@ -373,6 +379,9 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	k_event_set(&events, 0U);
 	offer_xid = 0U;
 	request_xid = 0U;
+	discovers_to_drop = 0;
+	discovers_seen = 0;
+	memset(discover_xids, 0, sizeof(discover_xids));
 	strict_dhcp_server = false;
 	discover_req_included_dns = false;
 	init_reboot_req_included_dns = false;
@@ -685,6 +694,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		if (strict_dhcp_server) {
 			discover_req_included_dns =
 				dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
+		}
+
+		if (discovers_seen < ARRAY_SIZE(discover_xids)) {
+			discover_xids[discovers_seen] = msg.xid;
+		}
+		discovers_seen++;
+
+		if (discovers_to_drop > 0) {
+			/* Say nothing, so that the client retransmits. */
+			discovers_to_drop--;
+			net_pkt_unref(pkt);
+			return 0;
 		}
 
 		/* Reply with DHCPv4 offer message */
@@ -1259,4 +1280,44 @@ ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
 #endif
 
 /**test case main entry */
+/* RFC 2131 4.1: one transaction identifier for every message of a
+ * transaction. A retransmitted discover is the same transaction, so a server
+ * that has already seen the first one has to be able to recognise the second
+ * as a repeat rather than as another client asking.
+ *
+ * Every discover is dropped, so the exchange never completes and this leaves
+ * neither a lease nor a set of DNS servers behind for whatever runs next.
+ */
+ZTEST(dhcpv4_tests, test_discover_retransmission_keeps_xid)
+{
+	/* Long enough for two retransmissions: the backoff is four seconds,
+	 * then eight, plus a second of randomisation each. native_sim
+	 * fast-forwards idle time, so this costs no wall clock.
+	 */
+	const k_timeout_t settle = K_SECONDS(4 + 8 + 4);
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	discovers_to_drop = ARRAY_SIZE(discover_xids);
+
+	net_dhcpv4_start(iface);
+	k_sleep(settle);
+	net_dhcpv4_stop(iface);
+
+	zassert_true(discovers_seen >= 3,
+		     "Expected the client to retransmit, saw %d discover(s)",
+		     discovers_seen);
+
+	zassert_not_equal(discover_xids[0], 0U, "Transaction identifier is zero");
+
+	for (int i = 1; i < MIN(discovers_seen, ARRAY_SIZE(discover_xids)); i++) {
+		zassert_equal(discover_xids[i], discover_xids[0],
+			      "Discover %d carries xid 0x%08x, the first carried "
+			      "0x%08x; a retransmission is the same transaction",
+			      i, discover_xids[i], discover_xids[0]);
+	}
+}
+
 ZTEST_SUITE(dhcpv4_tests, NULL, NULL, dhcpv4_tests_before, NULL, NULL);

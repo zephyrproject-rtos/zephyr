@@ -461,6 +461,19 @@ static uint32_t dhcpv4_lease_timeleft(struct net_if *iface, int64_t now)
 				   now);
 }
 
+/* RFC 2131 4.1 asks a client to use one transaction identifier for every
+ * message of a transaction, and to choose it so that two clients are unlikely
+ * to pick the same one. So it is drawn afresh whenever a transaction begins,
+ * and left alone for as long as that transaction lasts, retransmissions
+ * included.
+ *
+ * Must be invoked with lock held.
+ */
+static void dhcpv4_generate_xid(struct net_if *iface)
+{
+	iface->config.dhcpv4.xid = sys_rand32_get();
+}
+
 /* Must be invoked with lock held */
 static uint32_t dhcpv4_update_message_timeout(struct net_if_dhcpv4 *dhcpv4)
 {
@@ -634,8 +647,6 @@ static uint32_t dhcpv4_send_discover(struct net_if *iface)
 	struct net_pkt *pkt;
 	uint32_t timeout;
 
-	iface->config.dhcpv4.xid++;
-
 	pkt = dhcpv4_create_message(iface, NET_DHCPV4_MSG_TYPE_DISCOVER,
 				    NULL, NULL, net_ipv4_broadcast_address(),
 				    false, false);
@@ -661,7 +672,8 @@ fail:
 		net_pkt_unref(pkt);
 	}
 
-	return iface->config.dhcpv4.xid %
+	/* Nothing was sent, so try again after a short random delay. */
+	return sys_rand32_get() %
 			(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
 			 DHCPV4_INITIAL_DELAY_MIN) +
 			DHCPV4_INITIAL_DELAY_MIN;
@@ -671,8 +683,9 @@ static void dhcpv4_send_decline(struct net_if *iface)
 {
 	struct net_pkt *pkt;
 
-	iface->config.dhcpv4.xid++;
-
+	/* RFC 2131 table 5: a decline carries the identifier of the exchange
+	 * that offered the address being declined, so it is not a new one.
+	 */
 	pkt = dhcpv4_create_message(iface, NET_DHCPV4_MSG_TYPE_DECLINE,
 				    NULL, NULL, net_ipv4_broadcast_address(),
 				    false, true);
@@ -697,6 +710,11 @@ fail:
 static void dhcpv4_enter_selecting(struct net_if *iface)
 {
 	iface->config.dhcpv4.attempts = 0U;
+
+	/* A discover starts a new exchange, so it gets a new identifier.
+	 * Retransmissions of it do not: they are the same exchange.
+	 */
+	dhcpv4_generate_xid(iface);
 
 	iface->config.dhcpv4.lease_time = 0U;
 	iface->config.dhcpv4.renewal_time = 0U;
@@ -768,6 +786,9 @@ static void dhcpv4_enter_renewing(struct net_if *iface)
 {
 	iface->config.dhcpv4.state = NET_DHCPV4_RENEWING;
 	iface->config.dhcpv4.attempts = 0U;
+
+	/* Renewing is a new exchange with the server, RFC 2131 4.4.5. */
+	dhcpv4_generate_xid(iface);
 	NET_DBG("enter state=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
@@ -776,6 +797,11 @@ static void dhcpv4_enter_rebinding(struct net_if *iface)
 {
 	iface->config.dhcpv4.state = NET_DHCPV4_REBINDING;
 	iface->config.dhcpv4.attempts = 0U;
+
+	/* Rebinding asks any server rather than the one that granted the
+	 * lease, which makes it a new exchange too.
+	 */
+	dhcpv4_generate_xid(iface);
 	NET_DBG("enter state=%s",
 		net_dhcpv4_state_name(iface->config.dhcpv4.state));
 }
@@ -1721,6 +1747,13 @@ static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 			iface->config.dhcpv4.state = IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT)
 						   ? NET_DHCPV4_INIT_REBOOT
 						   : NET_DHCPV4_INIT;
+
+			/* Whichever of the two, what follows is a new exchange
+			 * rather than a continuation of the one that granted
+			 * the lease being left behind.
+			 */
+			dhcpv4_generate_xid(iface);
+
 			NET_DBG("enter state=%s", net_dhcpv4_state_name(
 					iface->config.dhcpv4.state));
 			/* Remove any bound address as interface is gone */
@@ -1870,17 +1903,17 @@ static void dhcpv4_start_internal(struct net_if *iface, bool first_start)
 		 */
 		iface->config.dhcpv4.attempts = 0U;
 
-		/* We need entropy for both an XID and a random delay
-		 * before sending the initial discover message.
+		/* Random delay before sending the initial discover message,
+		 * drawn separately from the transaction identifier so that
+		 * one cannot be guessed from the other.
 		 */
 		entropy = sys_rand32_get();
 
-		/* A DHCP client MUST choose xid's in such a way as to
-		 * minimize the change of using and xid identical to
-		 * one used by another client.  Choose a random xid st
-		 * startup and increment it on each new request.
+		/* RFC 2131 4.1: choose the identifier so that two clients are
+		 * unlikely to pick the same one. It stays put for the whole of
+		 * the exchange that follows; the next exchange draws another.
 		 */
-		iface->config.dhcpv4.xid = entropy;
+		dhcpv4_generate_xid(iface);
 
 		/* RFC2131 4.4.1 requires we wait a random period between 1 and
 		 * 10 seconds before sending the initial discover. This desync
