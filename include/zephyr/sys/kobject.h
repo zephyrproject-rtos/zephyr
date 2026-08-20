@@ -28,7 +28,8 @@ struct z_futex_data;
  * function in kernel/userspace.c
  */
 enum k_objects {
-	K_OBJ_ANY,
+	K_OBJ_ANY,         /**< Used for matching any object type */
+	K_OBJ_DRIVER_ANY,  /**< Used for matching any driver object type */
 
 	/** @cond
 	 *  Doxygen should ignore this build-time generated include file
