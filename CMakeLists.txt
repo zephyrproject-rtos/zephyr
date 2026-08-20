@@ -812,7 +812,11 @@ set(syscalls_subdirs_txt ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_sub
 # trigger file will update when syscalls change.
 set(syscalls_subdirs_trigger ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_subdirs.trigger)
 
-if(NOT (${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows))
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
+  # On Windows there is no build rule updating the trigger file (see below), so the trigger
+  # file must be updated here instead.
+  set(syscalls_trigger_arg --trigger-file ${syscalls_subdirs_trigger})
+else()
   set(syscalls_links --create-links ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls_links)
 endif()
 
@@ -823,13 +827,26 @@ execute_process(
   ${ZEPHYR_BASE}/scripts/build/subfolder_list.py
   --directory        ${ZEPHYR_BASE}/include      # Walk this directory
   --out-file         ${syscalls_subdirs_txt}     # Write file with discovered folder
-  --trigger-file     ${syscalls_subdirs_trigger} # Trigger file that is used for json generation
+  ${syscalls_trigger_arg}                        # If defined, touch the json generation trigger
   ${syscalls_links}                              # If defined, create symlinks for dependencies
 )
 file(STRINGS ${syscalls_subdirs_txt} PARSE_SYSCALLS_PATHS_DEPENDS ENCODING UTF-8)
 
-# Each header file must be monitored as file modifications are not reflected on directory level.
-file(GLOB_RECURSE PARSE_SYSCALLS_HEADER_DEPENDS ${ZEPHYR_BASE}/include/*.h)
+# The directories parse_syscalls.py scans. Kept in one variable so that the dependency
+# globs here and the --scan arguments passed to the script cannot drift apart.
+set(SYSCALL_SCAN_DIRS
+  ${ZEPHYR_BASE}/include
+  ${ZEPHYR_BASE}/drivers        # For net sockets
+  ${ZEPHYR_BASE}/subsys/net     # More net sockets
+)
+
+# Each file must be monitored as file modifications are not reflected on directory level.
+# The script reads both headers and C files, so both extensions are monitored. The
+# --include directories are added to this list further down, once they are known.
+foreach(d ${SYSCALL_SCAN_DIRS})
+  list(APPEND syscall_scan_patterns ${d}/*.h ${d}/*.c)
+endforeach()
+file(GLOB_RECURSE PARSE_SYSCALLS_SOURCE_DEPENDS ${syscall_scan_patterns})
 
 if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL Windows)
   # On windows only adding/removing files or folders will be reflected in depends.
@@ -860,9 +877,15 @@ else()
     DEPENDS ${PARSE_SYSCALLS_PATHS_DEPENDS}
   )
 
-  # Ensure subdir file always exists when specifying CMake dependency.
+  # Ensure subdir and trigger files always exist when specifying CMake dependency.
+  # The trigger file is only created, never touched, as touching it on every CMake re-run
+  # would needlessly invalidate the syscalls json generation.
   if(NOT EXISTS ${syscalls_subdirs_txt})
     file(WRITE ${syscalls_subdirs_txt} "")
+  endif()
+
+  if(NOT EXISTS ${syscalls_subdirs_trigger})
+    file(WRITE ${syscalls_subdirs_trigger} "")
   endif()
 
   # On other OS'es, using git checkout (or switch, restore, etc.) is reflected on the folder
@@ -897,10 +920,28 @@ get_property(
 )
 list(APPEND SYSCALL_INCLUDE_DIRS ${syscalls_include_list})
 
+foreach(d ${SYSCALL_SCAN_DIRS})
+  list(APPEND parse_syscalls_scan_args
+    --scan ${d}
+    )
+endforeach()
+
 foreach(d ${SYSCALL_INCLUDE_DIRS})
   list(APPEND parse_syscalls_include_args
     --include ${d}
     )
+  file(GLOB_RECURSE include_dir_sources ${d}/*.h ${d}/*.c)
+  list(APPEND syscall_include_sources ${include_dir_sources})
+endforeach()
+
+# Monitor the --include directories as well. Files generated into a build directory
+# nested inside one of them - the default layout for 'west build' - are outputs of this
+# very command, so depending on them would form a cycle.
+foreach(f ${syscall_include_sources})
+  cmake_path(IS_PREFIX PROJECT_BINARY_DIR "${f}" NORMALIZE in_build_dir)
+  if(NOT in_build_dir)
+    list(APPEND PARSE_SYSCALLS_SOURCE_DEPENDS "${f}")
+  endif()
 endforeach()
 
 add_custom_command(
@@ -910,16 +951,18 @@ add_custom_command(
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/build/parse_syscalls.py
-  --scan             ${ZEPHYR_BASE}/include         # Read files from this dir
-  --scan             ${ZEPHYR_BASE}/drivers         # For net sockets
-  --scan             ${ZEPHYR_BASE}/subsys/net      # More net sockets
+  ${parse_syscalls_scan_args}                       # Read files from these dirs
   ${parse_syscalls_include_args}                    # Read files from these dirs also
   --json-file        ${syscalls_json}               # Write this file
   --tag-struct-file  ${struct_tags_json}            # Write subsystem list to this file
   --file-list        ${syscalls_file_list_output}
   $<$<BOOL:${CONFIG_EMIT_ALL_SYSCALLS}>:--emit-all-syscalls>
-  DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_HEADER_DEPENDS}
+  DEPENDS ${syscalls_subdirs_trigger} ${PARSE_SYSCALLS_SOURCE_DEPENDS}
           ${syscalls_file_list_output} syscalls_interface
+          # Headers registered with zephyr_syscall_header() may live outside the scanned roots,
+          # in a module or in the application. A generator expression is used because the
+          # application registers its headers only after this file has been processed.
+          $<TARGET_PROPERTY:syscalls_interface,INTERFACE_SOURCES>
   )
 
 # Make sure Picolibc is built before the rest of the system; there's no explicit
