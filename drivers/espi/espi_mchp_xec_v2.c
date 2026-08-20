@@ -629,10 +629,10 @@ static int espi_xec_manage_callback(const struct device *dev, struct espi_callba
 static void send_slave_bootdone(const struct device *dev)
 {
 	int ret = 0;
-	uint8_t boot_done = false;
+	uint8_t boot_done = 0;
 
 	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
-	if ((ret == 0) && (boot_done == true)) {
+	if ((ret == 0) && (boot_done == 0U)) {
 		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
