@@ -123,6 +123,11 @@ struct adc_mspm0_regs {
 #define ADC12_CLKCFG_KEY            GENMASK(31, 24)
 #define ADC12_CLKCFG_KEY_VAL_UNLOCK 0xA9U
 
+/* CLKCFG.SAMPCLK source select values (0 = ULPCLK, 1 = SYSOSC, 2 = HFCLK) */
+#define ADC12_CLKCFG_SAMPCLK_VAL_ULPCLK FIELD_PREP(ADC12_CLKCFG_SAMPCLK, 0)
+#define ADC12_CLKCFG_SAMPCLK_VAL_SYSOSC FIELD_PREP(ADC12_CLKCFG_SAMPCLK, 1)
+#define ADC12_CLKCFG_SAMPCLK_VAL_HFCLK  FIELD_PREP(ADC12_CLKCFG_SAMPCLK, 2)
+
 /* ctl0 bits */
 #define ADC12_CTL0_ENC              BIT(0)
 #define ADC12_CTL0_PWRDN            BIT(16)
@@ -252,6 +257,7 @@ struct adc_mspm0_cfg {
 	void (*irq_cfg_func)(void);
 	const struct device *vref_config;
 	const struct mspm0_sys_clock *clock_subsys;
+	const uint32_t clkcfg_sampclk;
 	uint32_t clock_div_reg;
 	uint32_t clock_range;
 	const uint8_t divider;
@@ -700,8 +706,9 @@ static int adc_mspm0_init(const struct device *dev)
 		FIELD_PREP(ADC12_PWREN_KEY, ADC12_PWREN_KEY_VAL_UNLOCK) | ADC12_PWREN_ENABLE;
 	k_busy_wait(k_cyc_to_us_ceil32(CONFIG_MSPM0_PERIPH_STARTUP_DELAY));
 
-	regs->gprcm.clkcfg = (regs->gprcm.clkcfg & ~ADC12_CLKCFG_KEY) |
-			     FIELD_PREP(ADC12_CLKCFG_KEY, ADC12_CLKCFG_KEY_VAL_UNLOCK);
+	regs->gprcm.clkcfg = (regs->gprcm.clkcfg & ~(ADC12_CLKCFG_KEY | ADC12_CLKCFG_SAMPCLK)) |
+			     FIELD_PREP(ADC12_CLKCFG_KEY, ADC12_CLKCFG_KEY_VAL_UNLOCK) |
+			     config->clkcfg_sampclk;
 	regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_SCLKDIV) | config->clock_div_reg;
 	regs->clkfreq = config->clock_range;
 
@@ -742,9 +749,23 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 
 #define ADC_DT_CLOCK_RANGE(x) DT_INST_PROP(x, ti_clk_range)
 
+/*
+ * CLKCFG.SAMPCLK only accepts ULPCLK/SYSOSC/HFCLK; resolve the DT clock cell
+ * (already captured in mspm0_sys_clock.clk) to its 2-bit register value at
+ * build time instead of a runtime lookup.
+ */
+#define ADC_DT_SAMPCLK(x)                                                                          \
+	((DT_INST_CLOCKS_CELL(x, clk) == MSPM0_CLOCK_ULPCLK)   ? ADC12_CLKCFG_SAMPCLK_VAL_ULPCLK   \
+	 : (DT_INST_CLOCKS_CELL(x, clk) == MSPM0_CLOCK_SYSOSC) ? ADC12_CLKCFG_SAMPCLK_VAL_SYSOSC   \
+	 : (DT_INST_CLOCKS_CELL(x, clk) == MSPM0_CLOCK_HFCLK)  ? ADC12_CLKCFG_SAMPCLK_VAL_HFCLK    \
+							       : -1)
+
 #define MSPM0_ADC_INIT(index)                                                                      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
+                                                                                                   \
+	BUILD_ASSERT(ADC_DT_SAMPCLK(index) != -1,                                                  \
+		     "unsupported ADC sample clock source: must be ULPCLK, SYSOSC or HFCLK");      \
                                                                                                    \
 	static void adc_mspm0_cfg_func_##index(void)                                               \
 	{                                                                                          \
@@ -761,6 +782,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
 		.clock_subsys = &mspm0_adc_sys_clock##index,                                       \
 		.divider = ADC_CLOCK_DIV(index),                                                   \
+		.clkcfg_sampclk = ADC_DT_SAMPCLK(index),                                           \
 		.clock_range = ADC_DT_CLOCK_RANGE(index),                                          \
 		.clock_div_reg = ADC_DT_CLOCK_DIV(index),                                          \
 		.max_result = DT_INST_PROP(index, max_result_reg),                                 \
