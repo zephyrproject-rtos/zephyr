@@ -1,0 +1,29 @@
+sample:
+  description: Hello World sample built as a relocatable (PIE) image
+  name: hello world relocatable elf
+common:
+  tags: introduction
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Relocation OK: load offset (.*)"
+      - "ISR table OK: (.*) entries checked"
+      - "Interrupt OK: IRQ 9 \\(.rodata\\) handled"
+      - "Interrupt OK: IRQ 11 \\(.data\\) handled"
+      - "Interrupt OK: IRQ 12 \\(.bss\\) handled"
+tests:
+  sample.basic.helloworld_relocatable_elf:
+    toolchain_allow:
+      - zephyr/llvm
+      - llvm
+    integration_toolchains:
+      - zephyr/llvm
+    platform_allow:
+      - qemu_riscv32
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32
