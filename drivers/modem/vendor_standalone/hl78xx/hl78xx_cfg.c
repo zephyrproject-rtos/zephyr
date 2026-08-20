@@ -843,6 +843,13 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 		(void)k_work_reschedule(&data->work.power_down_shutdown_work, K_SECONDS(timeout_s));
 		return 0;
 
+	case HL78XX_POWER_DOWN_RESPONSE_ABORT:
+		LOG_INF("Power down aborted by application");
+		(void)k_work_cancel_delayable(&data->work.power_down_shutdown_work);
+		data->status.lpm.power_down.shutdown_pending = false;
+		hl78xx_power_down_allow_feeding(data);
+		return 0;
+
 	default:
 		return -EINVAL;
 	}
@@ -927,7 +934,20 @@ int hl78xx_power_down_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_
 	}
 
 	if (hl78xx_is_registered(data) == false) {
-		LOG_DBG("Not feeding timer because modem is not registered");
+		/* The backstop exists to power down a registered-but-idle modem,
+		 * and only a registration ever arms it. If registration is gone,
+		 * its arming condition is gone with it: cancel rather than let a
+		 * timer fed by a now-dead registration (e.g. a stale +CREG
+		 * flushed during a SIM switch) fire mid-search 55 s later. An
+		 * application-triggered shutdown never reaches this branch — it
+		 * sets ignore_power_down_feeding first and returns above.
+		 */
+		if (k_work_delayable_is_pending(&data->work.hl78xx_pwr_dwn_work)) {
+			(void)k_work_cancel_delayable(&data->work.hl78xx_pwr_dwn_work);
+			LOG_INF("Cancelled power-down backstop: registration gone");
+		} else {
+			LOG_DBG("Not feeding timer because modem is not registered");
+		}
 		return 0;
 	}
 	/* If the modem was sleeping, pull WAKE HIGH first to wake it */

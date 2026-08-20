@@ -59,7 +59,7 @@
 /** Init script timeout - contains CFUN, NVM commands */
 #define HL78XX_SCRIPT_TIMEOUT_INIT         100
 /** Post-restart script timeout - waiting for +KSUP after restart/power-cycle */
-#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART HL78XX_CMD_TIMEOUT_LONG
+#define HL78XX_SCRIPT_TIMEOUT_POST_RESTART HL78XX_CMD_TIMEOUT_VERY_LONG
 /** Periodic script timeout - basic queries */
 #define HL78XX_SCRIPT_TIMEOUT_PERIODIC     4
 /** Network registration script timeout */

@@ -1211,16 +1211,27 @@ int hl78xx_api_func_set_phone_functionality(const struct device *dev,
 #endif /* CONFIG_HL78XX_GNSS */
 	LOG_DBG("Setting phone functionality to %d with reset %d", functionality, reset);
 
+	/* Mark the transition in flight BEFORE the command goes out, not on its
+	 * OK: a CFUN=0/4 can take many seconds to detach, and URCs flushed from
+	 * the old state (a late +CREG in particular) arrive in the same instant
+	 * as the OK — hl78xx_on_cxreg() must be able to see the transition for
+	 * the whole window. Reverted if the send fails.
+	 */
+	struct hl78xx_phone_functionality_work prev = data->status.phone_functionality;
+
+	data->status.phone_functionality.in_progress = true;
+	data->status.phone_functionality.functionality = functionality;
+
 	/* configure modem functionality with/without restart  */
 	snprintf(cmd_string, sizeof(cmd_string), "AT+CFUN=%d,%d", functionality, reset);
 	ret = hl78xx_send_cmd(data, cmd_string, NULL, hl78xx_get_ok_match(),
 			      hl78xx_get_ok_match_size());
 	if (ret == 0) {
-		data->status.phone_functionality.in_progress = true;
-		data->status.phone_functionality.functionality = functionality;
 		data->status.phone_functionality.valid = true;
 		event.content.value = functionality;
 		event_dispatcher_dispatch(&event);
+	} else {
+		data->status.phone_functionality = prev;
 	}
 
 	return ret;

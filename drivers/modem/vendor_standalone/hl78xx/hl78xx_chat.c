@@ -449,6 +449,7 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
 /* Post-restart script (moved from hl78xx.c) */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_at_ready_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
 #ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match)
