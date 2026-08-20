@@ -143,6 +143,11 @@ extern void z_early_rand_get(uint8_t *buf, size_t length);
 extern int z_stack_adjust_initialized;
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
+#if CONFIG_POSITION_INDEPENDENT
+/* Offset between the link-time and run-time address, set by early self-relocation */
+extern uintptr_t z_load_offset;
+#endif /* CONFIG_POSITION_INDEPENDENT */
+
 #ifdef CONFIG_MULTITHREADING
 extern struct k_thread z_main_thread;
 #endif /* CONFIG_MULTITHREADING */
