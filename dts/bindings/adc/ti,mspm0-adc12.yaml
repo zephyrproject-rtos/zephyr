@@ -86,5 +86,15 @@ properties:
       devices typically have 12 registers (MEMRES0:11). This determines the
       maximum number of channels that can be converted in a single sequence.
 
+  ti,num-channels:
+    type: int
+    required: true
+    description: |
+      Number of analog input channels wired to this ADC instance on the
+      silicon (i.e. valid CHANSEL values for MEMCTLx), as opposed to
+      max-result-reg which bounds how many of them can be converted in a
+      single sequence. Devices are typically 16 or 32 channels depending on
+      variant.
+
 io-channel-cells:
   - input
