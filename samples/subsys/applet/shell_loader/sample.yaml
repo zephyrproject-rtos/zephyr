@@ -1,0 +1,52 @@
+sample:
+  name: Applet loader shell
+  description: >
+    Load LLEXT-backed applets from the shell and run them. Each extension is
+    wrapped in an applet, so the applet subsystem handles the thread, the
+    memory domain and (with CONFIG_USERSPACE) the privilege level.
+
+common:
+  tags:
+    - shell
+    - applet
+    - llext
+  arch_allow:
+    - arm
+    - xtensa
+  platform_exclude:
+    # platforms with active issues
+    - apollo4p_evb            # See #73443
+    - apollo4p_blue_kxr_evb   # See #73443
+    - numaker_pfm_m487        # See #63167
+    - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
+    - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
+    # platforms that are always skipped by the runtime filter
+    - qemu_arc/qemu_arc_em
+    - qemu_arc/qemu_arc_hs
+    - qemu_arc/qemu_arc_hs/xip
+    - qemu_arc/qemu_arc_hs5x
+    - qemu_arc/qemu_arc_hs6x
+    - qemu_cortex_m0
+    - qemu_xtensa/dc233c/mmu
+    - rza2m_evk
+
+tests:
+  sample.applet.shell:
+    harness: keyboard
+    filter: not CONFIG_MPU and not CONFIG_MMU and not CONFIG_SOC_SERIES_S32ZE
+      and not CONFIG_SOC_SERIES_RZA2M
+    extra_configs:
+      - arch:arm:CONFIG_ARM_MPU=n
+      - arch:arm:CONFIG_ARM_AARCH32_MMU=n
+  sample.applet.shell.userspace:
+    harness: keyboard
+    tags:
+      - userspace
+    # Every applet needs one memory domain partition per extension section,
+    # plus the ones the sample and the subsystem hand out. Keep this list to
+    # platforms known to have enough of them.
+    platform_allow:
+      - mps2/an385
+      - mps2/an521/cpu0
+    extra_configs:
+      - CONFIG_USERSPACE=y

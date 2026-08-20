@@ -1,0 +1,94 @@
+common:
+  tags: applet
+  platform_exclude:
+      # platforms with active LLEXT issues
+      - numaker_pfm_m487        # See #63167
+      - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
+      - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
+  integration_platforms:
+    - qemu_cortex_a9          # ARM Cortex-A9 (ARMv7-A ISA)
+    - qemu_cortex_r5          # ARM Cortex-R5 (ARMv7-R ISA)
+    - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    - mps2/an383              # ARM Cortex-M0+ (ARMv6-M ISA)
+    - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
+    - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+  extra_conf_files:
+    - prj.conf
+
+tests:
+  applet.loader_build:
+    build_only: true
+
+  applet.native:
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+  applet.native.mpu:
+    filter: CONFIG_MPU and not CONFIG_ARCH_HAS_USERSPACE
+  applet.native.mpu.userspace:
+    filter: CONFIG_MPU and CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  applet.native.mmu:
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP and not CONFIG_ARCH_HAS_USERSPACE
+  applet.native.mmu.userspace:
+    filter: (CONFIG_MMU or CONFIG_RISCV_PMP) and CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+  applet.llext.readonly:
+    arch_allow:               # Xtensa needs writable storage
+      - arm
+      - riscv
+      - arc
+      - x86
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_VENEERS=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  applet.llext.readonly.mpu:
+    arch_allow:
+      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arc
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_USERSPACE=y
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_VENEERS=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+  applet.llext.readonly.mmu:
+    arch_allow:
+      - arm64
+      - arm
+      - riscv
+      - x86
+    platform_exclude:
+      - qemu_x86_tiny/atom       # See #105603
+    filter: CONFIG_MMU or CONFIG_RISCV_PMP
+    integration_platforms:
+      - qemu_cortex_a53         # ARM Cortex-A53 (ARMv8-A ISA)
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_HEAP_SIZE=128 # qemu_cortex_a9 requires larger heap
+      - CONFIG_LLEXT_STORAGE_WRITABLE=n
+      # On RISC-V (no MMU, no userspace) LLEXT copies code into RAM and runs it
+      # in machine mode, so the loaded text region must stay executable. DEP
+      # installs a locked catch-all PMP entry that makes all RAM non-executable
+      # with no way to mark the region executable. Setting an unknown symbol to
+      # 'n' is a no-op, so this is safe on the MMU arches.
+      - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
+  applet.llext.writable:
+    arch_allow:
+      - arm
+      - xtensa
+      - riscv
+      - arc
+      - x86
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+      - esp32_devkitc/esp32/procpu # Xtensa ISA
+    filter: not CONFIG_MPU and not CONFIG_MMU
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT=y
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
