@@ -23,7 +23,7 @@ properties:
   prescaler:
     type: int
     required: true
-    description: Timer frequency equals clock-frequency divided by the prescaler value
+    description: Timer frequency equals clock-frequency divided by (prescaler + 1)
 
   max-value:
     type: int

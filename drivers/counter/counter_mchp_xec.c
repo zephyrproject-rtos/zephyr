@@ -313,7 +313,7 @@ static int counter_xec_init(const struct device *dev)
 			{                                                                          \
 				.max_top_value = DT_INST_PROP(inst, max_value),                    \
 				.freq = DT_INST_PROP(inst, clock_frequency) /                      \
-					DT_INST_PROP(inst, prescaler),                             \
+					(DT_INST_PROP(inst, prescaler) + 1),                       \
 				.flags = 0,                                                        \
 				.channels = 1,                                                     \
 			},                                                                         \
