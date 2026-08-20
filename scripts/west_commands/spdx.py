@@ -43,8 +43,8 @@ class ZephyrSpdx(WestCommand):
             '-i',
             '--init',
             action="store_true",
-            help="initialize CMake file-based API; no longer required, as a build with "
-            "CONFIG_BUILD_OUTPUT_META requests it itself",
+            help="[DEPRECATED] initialize CMake file-based API; a build with "
+            "CONFIG_BUILD_OUTPUT_META now requests it itself",
         )
         parser.add_argument('-d', '--build-dir', help="build directory")
         parser.add_argument('-n', '--namespace-prefix', help="namespace prefix")
@@ -86,6 +86,11 @@ class ZephyrSpdx(WestCommand):
             self.do_run_spdx(args)
 
     def do_run_init(self, args):
+        self.wrn(
+            "west spdx --init is deprecated and will be removed in Zephyr 5.0: "
+            "a build with CONFIG_BUILD_OUTPUT_META requests the CMake file-based API "
+            "itself, so the build directory no longer needs to be prepared."
+        )
         self.inf("initializing CMake file-based API prior to build")
 
         if not args.build_dir:

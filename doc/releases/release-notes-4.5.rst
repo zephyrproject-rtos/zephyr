@@ -274,6 +274,13 @@ Deprecated APIs and options
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
     subsystem (``<zephyr/video/video.h>``). Application only need to rename the ``#include``.
 
+* West
+
+  * ``west spdx --init`` is deprecated. A build with
+    :kconfig:option:`CONFIG_BUILD_OUTPUT_META` now asks CMake for the file-based API that
+    ``west spdx`` reads, so the build directory no longer has to be prepared before it is
+    configured. See :ref:`west-spdx`.
+
 * Work queue
 
   * :c:member:`k_work_q.thread` has been deprecated. Use :c:member:`k_work_q.thread_id` instead.
