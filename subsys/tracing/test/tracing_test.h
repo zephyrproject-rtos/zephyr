@@ -137,6 +137,8 @@
 	sys_trace_k_queue_unique_append_exit(queue, data, ret)
 #define sys_port_trace_k_queue_peek_head(queue, ret) sys_trace_k_queue_peek_head(queue, ret)
 #define sys_port_trace_k_queue_peek_tail(queue, ret) sys_trace_k_queue_peek_tail(queue, ret)
+#define sys_port_trace_k_queue_peek_next(queue, data, ret)                                         \
+	sys_trace_k_queue_peek_next(queue, data, ret)
 
 /* FIFO */
 
@@ -484,6 +486,7 @@ void sys_trace_k_queue_unique_append_enter(struct k_queue *queue, void *data);
 void sys_trace_k_queue_unique_append_exit(struct k_queue *queue, void *data, bool ret);
 void sys_trace_k_queue_peek_head(struct k_queue *queue, void *ret);
 void sys_trace_k_queue_peek_tail(struct k_queue *queue, void *ret);
+void sys_trace_k_queue_peek_next(struct k_queue *queue, void *data, void *ret);
 
 void sys_trace_k_fifo_init_enter(struct k_fifo *fifo);
 void sys_trace_k_fifo_init_exit(struct k_fifo *fifo);
@@ -503,6 +506,8 @@ void sys_trace_k_fifo_peek_head_enter(struct k_fifo *fifo);
 void sys_trace_k_fifo_peek_head_exit(struct k_fifo *fifo, void *ret);
 void sys_trace_k_fifo_peek_tail_enter(struct k_fifo *fifo);
 void sys_trace_k_fifo_peek_tail_exit(struct k_fifo *fifo, void *ret);
+void sys_trace_k_fifo_peek_next_enter(struct k_fifo *fifo, void *data);
+void sys_trace_k_fifo_peek_next_exit(struct k_fifo *fifo, void *data, void *ret);
 
 void sys_trace_k_lifo_init_enter(struct k_lifo *lifo);
 void sys_trace_k_lifo_init_exit(struct k_lifo *lifo);
