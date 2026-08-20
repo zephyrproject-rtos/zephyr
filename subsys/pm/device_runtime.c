@@ -9,6 +9,7 @@
 
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/device_runtime_internal.h>
 #include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
@@ -39,6 +40,14 @@ static struct k_work_q pm_device_runtime_wq;
 #define EVENT_STATE_SUSPENDED	BIT(PM_DEVICE_STATE_SUSPENDED)
 
 #define EVENT_MASK		(EVENT_STATE_ACTIVE | EVENT_STATE_SUSPENDED)
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_TESTING
+#define RUNTIME_TEST_HOOK(dev, hook) z_pm_device_runtime_test_hook(dev, hook)
+#else
+#define RUNTIME_TEST_HOOK(dev, hook)                                                               \
+	do {                                                                                       \
+	} while (false)
+#endif /* CONFIG_PM_DEVICE_RUNTIME_TESTING */
 
 /* Increment the usage counter of a device under the global lock. */
 static void runtime_usecount_inc(struct pm_device *pm)
@@ -298,6 +307,8 @@ int pm_device_runtime_get(const struct device *dev)
 		return 0;
 	}
 
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_GET);
+
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
@@ -407,6 +418,7 @@ unlock:
 	}
 
 end:
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_GET);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_get, dev, ret);
 
 	return ret;
@@ -463,6 +475,7 @@ int pm_device_runtime_put(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
 
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_PUT);
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
@@ -473,6 +486,7 @@ int pm_device_runtime_put(const struct device *dev)
 	} else {
 		ret = runtime_suspend(dev, false, K_NO_WAIT);
 	}
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_PUT);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put, dev, ret);
 
 	return ret;
@@ -488,6 +502,7 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev, delay);
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_BEFORE_PUT);
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
@@ -498,6 +513,7 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	} else {
 		ret = runtime_suspend(dev, true, delay);
 	}
+	RUNTIME_TEST_HOOK(dev, Z_PM_DEVICE_RUNTIME_HOOK_AFTER_PUT);
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
 
 	return ret;
