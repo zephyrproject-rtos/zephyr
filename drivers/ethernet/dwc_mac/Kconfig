@@ -141,6 +141,7 @@ rsource "Kconfig.mcast"
 config ETH_DWC_ETHER_TX_HW_CHECKSUM
 	bool "Use TX hardware checksum"
 	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	depends on !SOC_SERIES_ESP32
 	depends on !SOC_SERIES_ESP32P4
 	default y
 	help
