@@ -65,6 +65,10 @@ interface that application appears on.
      - :zephyr_file:`tests/net/conformance/mdns`
      - ``zeth``
      - any user
+   * - :zephyr_file:`dns <tests/net/conformance/dns/README.rst>`
+     - :zephyr_file:`tests/net/conformance/dns`
+     - ``zeth``
+     - any user
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -87,6 +91,15 @@ its own messages, still sets the cache flush bit, uses its own long time to
 live, and echoes neither the identifier nor the question. Fixing it means
 reworking name compression offsets that are all computed from a fixed header
 size. No suite covers it.
+
+Overlapping DNS queries
+=======================
+
+The resolver renews its source port before sending to a server that has nothing
+outstanding, which with the default of one query at a time means every query.
+Queries that overlap on one server still share a port, so the check in the
+``dns`` suite would not catch a regression in that case. See :rfc:`5452`
+section 9.2.
 
 Other TTCN-3 suites
 *******************
