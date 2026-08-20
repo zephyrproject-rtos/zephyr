@@ -5,9 +5,10 @@
  */
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_
-/** @cond INTERNAL_HIDDEN */
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Domain clocks */
 
@@ -40,7 +41,6 @@
 #define STM32_SRC_PLL3_R	(STM32_SRC_PLL3_Q + 1)
 /** Clock muxes */
 #define STM32_SRC_CKPER		(STM32_SRC_PLL3_R + 1)
-
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB1    0x088
@@ -154,4 +154,5 @@
 #define MCO_PRE_DIV_15 15
 
 /** @endcond */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H5_CLOCK_H_ */

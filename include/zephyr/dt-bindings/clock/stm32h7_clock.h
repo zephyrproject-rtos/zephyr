@@ -6,7 +6,7 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32H7_CLOCK_H_
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
 
 /** @cond INTERNAL_HIDDEN */
 
@@ -41,7 +41,6 @@
 /** Others: Not yet supported */
 /* #define STM32_SRC_I2SCKIN	TBD */
 /* #define STM32_SRC_SPDIFRX	TBD */
-
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_AHB3    0x0D4
