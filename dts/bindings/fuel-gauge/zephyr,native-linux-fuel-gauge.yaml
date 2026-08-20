@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native Linux fuel gauge
+
+  Fuel gauge that reads the sysfs attributes of a Linux power_supply device
+  of the host (e.g. /sys/class/power_supply/BAT0). The device must be of the
+  Battery type.
+
+compatible: "zephyr,native-linux-fuel-gauge"
+
+include: fuel-gauge.yaml
+
+properties:
+  path:
+    type: string
+    required: true
+    description: |
+      Directory of the host power supply, e.g. "/sys/class/power_supply/BAT0".
+      The name of the battery depends on the host, set it as needed before
+      enabling the node. A directory holding the attribute files of a fake
+      power supply serves on a host without a battery. The --fuel-gauge-path
+      command line option overrides this property.
+
+examples:
+  - |
+      / {
+          fuel_gauge: fuel_gauge {
+            compatible = "zephyr,native-linux-fuel-gauge";
+
+            path = "/sys/class/power_supply/BAT0";
+          };
+      };
