@@ -76,3 +76,18 @@ set(pico_plus2/rp2350b/m33_DEPRECATED
 set(pico_plus2/rp2350b/hazard3_DEPRECATED
     pico_plus2/rp2350b/hazard3_0
 )
+set(rpi_pico2/rp2350a/m33_DEPRECATED
+    rpi_pico2/rp2350a/m33_0
+)
+set(rpi_pico2/rp2350a/m33/w_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/w
+)
+set(rpi_pico2/rp2350a/m33/mcuboot_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/mcuboot
+)
+set(rpi_pico2/rp2350a/m33/w/mcuboot_DEPRECATED
+    rpi_pico2/rp2350a/m33_0/w/mcuboot
+)
+set(rpi_pico2/rp2350a/hazard3_DEPRECATED
+    rpi_pico2/rp2350a/hazard3_0
+)

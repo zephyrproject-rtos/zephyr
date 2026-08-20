@@ -9,6 +9,6 @@ tests:
       - wifi
       - gpio
     platform_allow:
-      - rpi_pico2/rp2350a/m33/w
+      - rpi_pico2/rp2350a/m33_0/w
       - rpi_pico/rp2040/w
     skip: true
