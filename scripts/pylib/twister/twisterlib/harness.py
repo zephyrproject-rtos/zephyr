@@ -22,7 +22,7 @@ from string import Template
 import junitparser.junitparser as junit
 import yaml
 from pytest import ExitCode
-from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
+from twisterlib.constants import FAULT_REASON, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import DeviceHandler, Handler, terminate_process
@@ -195,12 +195,12 @@ class Harness:
             # that was recorded earlier in the output.
             if self.status == TwisterStatus.PASS:
                 self.status = TwisterStatus.FAIL
-                self.reason = "Fault detected while running test"
+                self.reason = FAULT_REASON
 
         if self.RUN_PASSED in line:
             if self.fault:
                 self.status = TwisterStatus.FAIL
-                self.reason = "Fault detected while running test"
+                self.reason = FAULT_REASON
             else:
                 self.status = TwisterStatus.PASS
 
