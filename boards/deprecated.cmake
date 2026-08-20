@@ -61,3 +61,9 @@ set(motion_2350_pro/rp2350a/m33_DEPRECATED
 set(motion_2350_pro/rp2350a/hazard3_DEPRECATED
     motion_2350_pro/rp2350a/hazard3_0
 )
+set(beetle_rp2350/rp2350a/m33_DEPRECATED
+    beetle_rp2350/rp2350a/m33_0
+)
+set(beetle_rp2350/rp2350a/hazard3_DEPRECATED
+    beetle_rp2350/rp2350a/hazard3_0
+)
