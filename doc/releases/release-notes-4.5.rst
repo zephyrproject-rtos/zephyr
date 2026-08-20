@@ -155,6 +155,7 @@ Removed APIs and options
       * ``motion_2350_pro/rp2350a/hazard3`` to ``motion_2350_pro/rp2350a/hazard3_0``
       * ``beetle_rp2350/rp2350a/m33`` to ``beetle_rp2350/rp2350a/m33_0``
       * ``beetle_rp2350/rp2350a/hazard3`` to ``beetle_rp2350/rp2350a/hazard3_0``
+      * ``pico2_spe/rp2350a/m33`` to ``pico2_spe/rp2350a/m33_0``
 
 * Build system
 
