@@ -82,6 +82,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/arp`
      - ``zethL2``
      - root
+   * - :zephyr_file:`tcp <tests/net/conformance/tcp/README.rst>`
+     - :zephyr_file:`tests/net/conformance/tcp`
+     - ``zethL2``
+     - root
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
