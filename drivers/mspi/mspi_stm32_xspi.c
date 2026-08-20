@@ -961,11 +961,23 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 {
 	int ret = 0;
 	struct mspi_stm32_data *dev_data = controller->data;
+	uint32_t memmap_base_size = DT_INST_REG_SIZE_BY_IDX(index, 1);
 
 	if (dev_id != dev_data->dev_id) {
 		LOG_ERR("dev_id don't match");
 		return -ESTALE;
 	}
+
+	/* Control the memmap parameters : size and address_offset */
+	if ((memmap_cfg->size > memmap_base_size) || (memmap_cfg->address_offset > memmap_base_size)) {
+		LOG_ERR("Memory Mapped out of area");
+		return -EIO;
+	}
+	if ((memmap_cfg->address_offset + memmap_cfg.size > memmap_base_size) || (memmap_cfg->address_offset > memmap_base_size)) {
+		LOG_ERR("Memory Mapped out of area");
+		return -EIO;
+	}
+
 	(void)pm_device_runtime_get(controller);
 	/* Prevent the clocks to be stopped during the request */
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
