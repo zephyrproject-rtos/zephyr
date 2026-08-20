@@ -1,5 +1,5 @@
-identifier: rpi_pico2/rp2350a/m33/mcuboot
-name: Raspberry Pi Pico 2 (Cortex-M33) - MCUboot
+identifier: rpi_pico2/rp2350a/m33_0/w
+name: Raspberry Pi Pico 2 (Cortex-M33) WiFi
 type: mcu
 arch: arm
 flash: 4096
@@ -22,5 +22,5 @@ supported:
   - pwm
   - spi
   - uart
-  - usbd
   - watchdog
+  - wifi

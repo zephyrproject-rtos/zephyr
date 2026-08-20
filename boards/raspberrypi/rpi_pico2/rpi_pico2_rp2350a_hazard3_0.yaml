@@ -1,4 +1,4 @@
-identifier: rpi_pico2/rp2350a/hazard3
+identifier: rpi_pico2/rp2350a/hazard3_0
 name: Raspberry Pi Pico 2 (Hazard3)
 type: mcu
 arch: riscv
