@@ -190,13 +190,35 @@ struct bt_rfcomm_dlc {
 
 	/** Number of receive credits remaining for this DLC.
 	 *
-	 *  Tracks how many additional UIH frames the local side may accept
-	 *  from the remote peer before flow control must be applied.
+	 *  Tracks how many additional UIH frames the local side may accept from the remote
+	 *  before flow control must be applied.
+	 *  Initialized from @p rx_credit_limit at connection setup and decremented as frames are
+	 *  received; refilled by sending credit grants to the remote.
+	 *
 	 *  Only meaningful when CFC is enabled.
 	 */
 	uint8_t rx_credit;
 
 	/** @endcond */
+
+	/** Requested initial number of receive credits for this DLC.
+	 *
+	 *  Sets how many UIH frames the local side is willing to accept from the remote after the
+	 *  DLC is established. The stack limits this value to MIN((BT_BUF_ACL_RX_COUNT - 1), 255)
+	 *  before use. If the field is 0, the stack uses the internal default
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255). The result is written back to the field. Also
+	 *  the value of field will be limited to 7 when sending in Parameter Negotiation (PN)
+	 *  command/response.
+	 *
+	 *  @note If the value exceeds MIN((BT_BUF_ACL_RX_COUNT - 1), 255), it will be limited to
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *  @note This field can only be modified when the DLC is in an unconnected state. This
+	 *  means that from the time @ref bt_rfcomm_server::accept returns until @ref
+	 *  bt_rfcomm_dlc_ops::disconnected is called, it cannot be modified any more.
+	 *
+	 *  Only meaningful when CFC is enabled.
+	 */
+	uint8_t rx_credit_limit;
 };
 
 struct bt_rfcomm_server {
