@@ -28,6 +28,7 @@
 			interrupts = <4 0>;
 			#io-channel-cells = <1>;
 			status = "disabled";
+			ti,num-channels = <16>;
 		};
 
 		adc1: adc@40002000 {
@@ -36,6 +37,7 @@
 			interrupts = <5 0>;
 			#io-channel-cells = <1>;
 			status = "disabled";
+			ti,num-channels = <16>;
 		};
 
 		wdt1: wdt1@40082000 {
