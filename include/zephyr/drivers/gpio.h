@@ -930,6 +930,11 @@ static inline int z_impl_gpio_pin_interrupt_configure(const struct device *port,
 
 	__ASSERT(gpio_port_pin_is_supported(cfg->port_pin_mask, pin), "Unsupported pin");
 
+	/* See the note in z_impl_gpio_pin_configure(). */
+	if (pin >= GPIO_MAX_PINS_PER_PORT) {
+		return -EINVAL;
+	}
+
 	if (((flags & GPIO_INT_LEVELS_LOGICAL) != 0) &&
 	    ((data->invert & (gpio_port_pins_t)BIT(pin)) != 0)) {
 		/* Invert signal bits */
@@ -1026,6 +1031,15 @@ static inline int z_impl_gpio_pin_configure(const struct device *port,
 	flags &= ~GPIO_OUTPUT_INIT_LOGICAL;
 
 	__ASSERT(gpio_port_pin_is_supported(cfg->port_pin_mask, pin), "Unsupported pin");
+
+	/*
+	 * pin is passed on to the driver as-is, where it is commonly used as an
+	 * array index, so it must be range checked even when assertions are
+	 * compiled out.
+	 */
+	if (pin >= GPIO_MAX_PINS_PER_PORT) {
+		return -EINVAL;
+	}
 
 	if ((flags & GPIO_ACTIVE_LOW) != 0) {
 		data->invert |= (gpio_port_pins_t)BIT(pin);
@@ -1209,6 +1223,11 @@ static inline int z_impl_gpio_pin_get_config(const struct device *port,
 
 	if (api->pin_get_config == NULL)
 		return -ENOSYS;
+
+	/* See the note in z_impl_gpio_pin_configure(). */
+	if (pin >= GPIO_MAX_PINS_PER_PORT) {
+		return -EINVAL;
+	}
 
 	return api->pin_get_config(port, pin, flags);
 }
