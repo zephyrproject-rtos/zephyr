@@ -330,10 +330,7 @@
 		};
 
 		/*
-		 * NOTE 1: timers 2 and 3 not implemented in MEC152x.
-		 * NOTE 2: When RTOS timer used as kernel timer, timer4 used
-		 * to provide high speed busy wait counter. Keep disabled to
-		 * prevent counter driver from claiming it.
+		 * NOTE: timers 2 and 3 not implemented in MEC152x.
 		 */
 		timer4: timer@40000c80 {
 			compatible = "microchip,xec-timer";
@@ -347,6 +344,11 @@
 			status = "disabled";
 		};
 
+		/*
+		 * NOTE: When RTOS timer used as kernel timer, timer5 used
+		 * to provide high speed busy wait counter. Keep disabled to
+		 * prevent counter driver from claiming it.
+		 */
 		timer5: timer@40000ca0 {
 			compatible = "microchip,xec-timer";
 			clock-frequency = <48000000>;
@@ -356,6 +358,7 @@
 			prescaler = <0>;
 			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(23, 5)>;
 			pcr-src = <MCHP_XEC_SCR_ENCODE(3, 24)>;
+			status = "disabled";
 		};
 
 		hibtimer0: timer@40009800 {
