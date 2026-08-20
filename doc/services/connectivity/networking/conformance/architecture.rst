@@ -186,6 +186,12 @@ The ordering matters as much as the lock. The fixture is requested *before* the
 conformance test holds the interface — two applications answering to
 ``192.0.2.1`` at once would confuse both suites.
 
+The lock file name carries the effective user id. A privileged suite runs as
+root, and root cannot open a lock file another user left behind in a sticky
+temporary directory. Since a run is wholly privileged or wholly not, a lock per
+user still excludes everything that could collide — which is also why a
+privileged and an unprivileged run must not be started at the same time.
+
 Suite traits
 ============
 
@@ -195,6 +201,10 @@ Three facts about a suite are read from :file:`suites/<name>/build.conf`:
    The test cases create parallel test components, so the suite is run through
    Titan's main controller rather than as a single executable, and ``expect``
    has to be installed.
+
+``PRIVILEGED=yes``
+   The suite binds a privileged port or opens a packet socket, so the run has
+   to be root.
 
 The same file is sourced as a shell fragment by :file:`build.sh`, which is why
 it is written as shell assignments; the harness only matches substrings in it.
