@@ -91,3 +91,9 @@ set(rpi_pico2/rp2350a/m33/w/mcuboot_DEPRECATED
 set(rpi_pico2/rp2350a/hazard3_DEPRECATED
     rpi_pico2/rp2350a/hazard3_0
 )
+set(xiao_rp2350/rp2350a/m33_DEPRECATED
+    xiao_rp2350/rp2350a/m33_0
+)
+set(xiao_rp2350/rp2350a/hazard3_DEPRECATED
+    xiao_rp2350/rp2350a/hazard3_0
+)
