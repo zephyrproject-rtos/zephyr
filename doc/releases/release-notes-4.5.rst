@@ -170,6 +170,7 @@ Removed APIs and options
       * ``rp2350b_core/rp2350b/m33`` to ``rp2350b_core/rp2350b/m33_0``
       * ``rp2350b_core/rp2350b/hazard3`` to ``rp2350b_core/rp2350b/hazard3_0``
       * ``w5500_evb_pico2/rp2350a/m33`` to ``w5500_evb_pico2/rp2350a/m33_0``
+      * ``w6100_evb_pico2/rp2350a/m33`` to ``w6100_evb_pico2/rp2350a/m33_0``
 
 * Build system
 
