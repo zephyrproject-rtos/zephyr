@@ -428,14 +428,49 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 			tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
 		}
 	} else {
+		uint32_t remaining;
+
 		ticks = tcc_counter_ticks_add(count_value, ticks, top_value);
 
 		/* Update compare value*/
 		data->channel_data[chan_id].compare_value = ticks;
 		tcc_counter_set_compare(cfg->regs, chan_id, ticks);
 
-		/* Enable interrupt at compare match */
-		tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		/* The count this target was computed from was read before the
+		 * compare register was written, and writing it means a read
+		 * synchronization, a write and a wait on TCC_SYNCBUSY. On a
+		 * counter clocked fast enough that is more than one tick, so a
+		 * short relative alarm can be armed for a count the counter has
+		 * already gone past - and a compare that has been missed does
+		 * not match again until the counter has wrapped a whole period.
+		 *
+		 * Re-read and find out before the interrupt is enabled, so that
+		 * a match cannot be taken and reported late at the same time.
+		 * The distance still to run can only have shrunk since the
+		 * alarm was requested, so a value larger than the requested one
+		 * means the target went by while it was being armed; zero means
+		 * the counter is sitting on the target and the match will not
+		 * come again this period either. Report both the way an
+		 * absolute alarm in the past is reported, rather than a period
+		 * late.
+		 */
+		(void)tcc_counter_get_count(cfg->regs, &count_value);
+		remaining = tcc_counter_ticks_sub(ticks, count_value, top_value);
+
+		if ((remaining == 0U) || (remaining > alarm_cfg->ticks)) {
+			tcc_counter_alarm_irq_clear(cfg->regs, max_channels, chan_id);
+
+			data->late_alarm_flag = true;
+			data->late_alarm_channel = chan_id;
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+			NVIC_SetPendingIRQ(cfg->irq_line);
+#else
+			NVIC_SetPendingIRQ(cfg->channel_irq_map->comp_irq_line[chan_id]);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+		} else {
+			/* Enable interrupt at compare match */
+			tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		}
 	}
 
 	return ret_val;
