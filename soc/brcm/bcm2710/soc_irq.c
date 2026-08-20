@@ -43,8 +43,33 @@
  *
  * A bitmap rather than a single slot because the arm64 wrapper unmasks
  * IRQs globally around the ISR, so brackets nest.
+ *
+ * Two records, matching the two routing domains:
+ *
+ * The L1 sources live in per-core register banks but share Zephyr IRQ
+ * numbers, so two cores can hold a bracket on the same IRQ number at
+ * the same time. With a shared record both set the one bit, the first
+ * EOI clears it, and the second core's source is left masked for good.
+ * Per-core records keep them apart; set and clear always run on the
+ * same core. Indexed by arch_curr_cpu()->id, which is bounded by
+ * CONFIG_MP_MAX_NUM_CPUS by construction, unlike MPIDR Aff0.
+ *
+ * The ARMC peripheral and GPU sources are globally routed, so their
+ * record stays shared: a thread on another core calling irq_disable()
+ * must clear the same record the dispatching core's EOI consults, or
+ * the EOI re-enables the source underneath the disable.
  */
-static ATOMIC_DEFINE(bracketed_irqs, CONFIG_NUM_IRQS);
+static atomic_t bracketed_l1_irqs[CONFIG_MP_MAX_NUM_CPUS]
+				 [ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+static atomic_t bracketed_armc_irqs[ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+
+static atomic_t *bracket_record(unsigned int irq)
+{
+	if (BCM283X_IRQ_IS_L1(irq)) {
+		return bracketed_l1_irqs[arch_curr_cpu()->id];
+	}
+	return bracketed_armc_irqs;
+}
 
 void z_soc_irq_init(void)
 {
@@ -65,7 +90,7 @@ void z_soc_irq_disable(unsigned int irq)
 {
 	if (irq < CONFIG_NUM_IRQS) {
 		/* Whoever disables the source now owns its masked state. */
-		atomic_clear_bit(bracketed_irqs, irq);
+		atomic_clear_bit(bracket_record(irq), irq);
 	}
 
 	if (BCM283X_IRQ_IS_L1(irq)) {
@@ -122,7 +147,7 @@ unsigned int z_soc_irq_get_active(void)
 	 */
 	if (irq < CONFIG_NUM_IRQS) {
 		z_soc_irq_disable(irq);
-		atomic_set_bit(bracketed_irqs, irq);
+		atomic_set_bit(bracket_record(irq), irq);
 	}
 	return irq;
 }
@@ -138,7 +163,7 @@ void z_soc_irq_eoi(unsigned int irq)
 	 * gone and the source is left masked, as the ISR intended.
 	 */
 	if (irq < CONFIG_NUM_IRQS &&
-	    atomic_test_and_clear_bit(bracketed_irqs, irq)) {
+	    atomic_test_and_clear_bit(bracket_record(irq), irq)) {
 		z_soc_irq_enable(irq);
 	}
 }
