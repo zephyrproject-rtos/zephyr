@@ -67,6 +67,7 @@ int z_impl_can_send(const struct device *dev, const struct can_frame *frame,
 		}
 
 		k_sem_take(&ctx.done, K_FOREVER);
+		k_sem_deinit(&ctx.done);
 
 		return ctx.status;
 	}
