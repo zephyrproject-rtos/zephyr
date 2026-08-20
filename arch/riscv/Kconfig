@@ -808,6 +808,18 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  the format of MTVEC register which is RISC-V platform-specific.
 	  The minimum alignment is 4 bytes according to the Spec.
 
+config RISCV_ROM_START_ALIGNMENT
+	hex "Alignment of the ROM start section in bytes"
+	default 0x1000 if POSITION_INDEPENDENT
+	default 0
+	help
+	  Alignment applied to the start of the ROM region by the linker
+	  script. A value of 0 means no explicit alignment is applied.
+
+	  For POSITION_INDEPENDENT images rom_start is the first section of the
+	  image. The default of 0x1000 aligns it, and with it the entry point
+	  and vectors, to a 4 KiB page boundary.
+
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
