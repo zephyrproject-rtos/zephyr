@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Chaogui Deng
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&i2c0 {
+	bmi323_i2c: bmi323@68 {
+		compatible = "bosch,bmi323";
+		reg = <0x68>;
+		int-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&spi0 {
+	bmi323_spi: bmi323@0 {
+		compatible = "bosch,bmi323";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		int-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+	};
+};
