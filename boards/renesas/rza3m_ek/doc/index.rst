@@ -73,40 +73,31 @@ Supported Features
 Programming and Debugging
 *************************
 
-EK-RZ/A3M uses Initial Program Loader (IPL) to perform initial settings and copy the Zephyr image from flash to DDR SRAM for execution.
-It only needs to be written to flash at lease once before running Zephyr.
+.. zephyr:board-supported-runners::
+
+Applications for the ``rza3m_ek`` board can be built, flashed, and debugged in the usual way.
+See :ref:`build_an_application` and :ref:`application_run` for more details on building and running.
+
+The ``rza3m_ek`` board uses Initial Program Loader (IPL) to perform initial settings and
+copy the Zephyr image from flash to DDR DRAM for execution.
+The board is shipped with the Renesas IPL already programmed, so the IPL build and flash step
+below, enabled with ``-DCONFIG_BUILD_WITH_TFA=y``, is optional.
+It only needs to be written to flash once, so perform it only if the IPL is corrupted or has to be rewritten.
 
 1. For the board setup and connections, follow "3.2 Board Setup" of `Getting Started with RZ/A Flexible Software Package`_.
 
 2. Enable the IPL build with ``-DCONFIG_BUILD_WITH_TFA=y``.
-   The IPL image ``rza3m_ek_nor_ipl.bin`` is generated under zephyr/build/tfa/rza3m_ek_nor/release
+   The IPL image ``rza3m_ek_nor_ipl.srec`` is generated under zephyr/build/tfa/rza3m_ek_nor/release
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: rza3m_ek
-   :goals: build
+   :goals: build flash
    :gen-args: -DCONFIG_BUILD_WITH_TFA=y
 
 .. note::
    Currently, the IPL source code can built on Linux environment only.
    For Windows, please follow `Initial Program Loader Application Note`_
-
-3. Flash it onto the board at address 0x20000000 by Jlink command `Segger JLink Renesas R9A07G066`_
-
-.. code-block:: console
-
-   $ JLinkExe
-   J-Link> connect
-   Device> R9A07G066M04
-   TIF> s
-   Speed> [Enter]
-   J-Link> h
-   J-Link> loadfile <ipl_bin_path> 0x20000000
-
-Where ``<ipl_bin_path>`` is the path to the ``rza3m_ek_nor_ipl.bin`` in the output directory.
-
-Applications for the ``rza3m_ek`` board can be built in the usual way as
-documented in :ref:`build_an_application`.
 
 Console
 =======
