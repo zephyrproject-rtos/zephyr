@@ -34,6 +34,7 @@
 		codec0 = &audio_codec;
 		dmic0 = &dmic0;
 		eeprom-0 = &eeprom0;
+		fuel-gauge0 = &fuel_gauge0;
 		i2c-0 = &i2c0;
 		i2s-node0 = &i2s_rxtx;
 		spi-0 = &spi0;
@@ -122,6 +123,13 @@
 		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		size = <DT_SIZE_K(32)>;
+	};
+
+	fuel_gauge0: fuel_gauge {
+		compatible = "zephyr,native-linux-fuel-gauge";
+		/* Set path to the host battery name in /sys/class/power_supply before enabling */
+		path = "BAT0";
+		status = "disabled";
 	};
 
 	otp0: otp {
