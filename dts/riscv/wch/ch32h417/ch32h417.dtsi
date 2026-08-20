@@ -9,7 +9,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
-#include <zephyr/dt-bindings/reset/ch32_20x_30x-reset.h>
+#include <zephyr/dt-bindings/reset/ch32v20x_30x-reset.h>
 
 / {
 	#address-cells = <1>;
