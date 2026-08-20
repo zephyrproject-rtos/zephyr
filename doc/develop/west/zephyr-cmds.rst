@@ -203,6 +203,10 @@ Command-line options
 
 ``west spdx`` accepts these additional options:
 
+- ``-i``, ``--init``: create the CMake file-based API query in a build directory before it is
+  configured. Deprecated, and to be removed in Zephyr 5.0: a build with
+  :kconfig:option:`CONFIG_BUILD_OUTPUT_META` now requests the query itself.
+
 - ``-n PREFIX``: a prefix for the Document Namespaces that will be included in
   the generated SPDX documents. See `SPDX specification clause 6`_ for
   details. If ``-n`` is omitted, a default namespace will be generated
