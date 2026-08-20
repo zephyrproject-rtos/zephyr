@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2010-2014 Wind River Systems, Inc.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +44,14 @@
 #include <scheduler.h>
 
 LOG_MODULE_REGISTER(os, CONFIG_KERNEL_LOG_LEVEL);
+
+#if CONFIG_PIC_OPTIONS
+/* The offset between the linker time address and run time address.
+ * Not set as 0 to avoid being put into bss region, which will be reset to 0 in
+ * init code and overwrite the value assigned earlier in initialization
+ */
+unsigned int g_load_offset = 0xFFFFFFF;
+#endif
 
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
