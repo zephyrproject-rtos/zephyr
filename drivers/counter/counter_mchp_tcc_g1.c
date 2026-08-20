@@ -628,7 +628,13 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	tcc_counter_init(cfg->regs, cfg->prescaler, cfg->max_channels, cfg->max_bit_width);
 	cfg->irq_config_func(dev);
 
-	return ret_val;
+	/*
+	 * -EALREADY from either call above is not a failure: on a part where
+	 * two TCC instances share one GCLK channel, whichever of the PWM and
+	 * counter drivers inits second sees it. pwm_mchp_tcc_g1.c normalizes
+	 * the same value.
+	 */
+	return (ret_val == -EALREADY) ? 0 : ret_val;
 }
 
 static inline void counter_mchp_channel_irq_handle(const struct device *const dev, uint8_t channel)
