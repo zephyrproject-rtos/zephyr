@@ -444,6 +444,11 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
+    * HCI packet helpers (:c:macro:`BT_HCI_PKT_CMD_DEFINE`, :c:func:`bt_hci_pkt_push_cmd_hdr`,
+      :c:func:`bt_hci_pkt_parse_cmd_rsp` and friends) for framing HCI command packets and
+      parsing command responses independently of the Host, and the HCI lockstep helper
+      (:c:func:`bt_hci_lockstep_cmd_send_sync`) for HCI drivers that exchange commands with
+      the controller over their own transport.
 
   * Mesh
 
