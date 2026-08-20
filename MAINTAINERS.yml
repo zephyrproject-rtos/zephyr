@@ -5412,6 +5412,8 @@ Raspberry Pi Pico Platforms:
     - drivers/*/*rpi_pico*/
     - drivers/*/*rpi_pico*.c
     - soc/raspberrypi/
+  files-regex:
+    - ^include/.*rpi[-_]pico.*
   labels:
     - "platform: Raspberry Pi Pico"
 
