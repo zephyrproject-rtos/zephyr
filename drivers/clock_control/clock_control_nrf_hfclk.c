@@ -4,7 +4,6 @@
  */
 
 #include <soc.h>
-#include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"

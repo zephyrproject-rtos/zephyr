@@ -122,6 +122,12 @@ config CLOCK_CONTROL_NRF_COMMON
 
 if !CLOCK_CONTROL_NRF
 
+config CLOCK_CONTROL_NRF_DISABLE_ONOFF
+	bool "Disables onoff manager related functionality to save space"
+	depends on !($(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,synth)) && \
+		   !CLOCK_CONTROL_NRF_HFINT_CALIBRATION
+	default n
+
 config CLOCK_CONTROL_NRF_HFCLK
 	bool "NRF HFCLK driver support"
 	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK_ENABLED
