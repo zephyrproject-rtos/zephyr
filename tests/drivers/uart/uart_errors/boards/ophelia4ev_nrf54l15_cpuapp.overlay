@@ -52,3 +52,17 @@ dut_aux: &uart22 {
 	pinctrl-names = "default", "sleep";
 	disable-rx;
 };
+
+/ {
+	fake_uart {
+		compatible = "gpio-keys";
+
+		fake_tx: fake_tx {
+			gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		};
+
+		fake_cts: fake_cts {
+			gpios = <&gpio1 11 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
