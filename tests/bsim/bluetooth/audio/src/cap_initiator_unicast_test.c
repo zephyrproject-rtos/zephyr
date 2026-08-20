@@ -95,7 +95,7 @@ CREATE_FLAG(flag_codec_found);
 CREATE_FLAG(flag_endpoint_found);
 CREATE_FLAG(flag_started);
 CREATE_FLAG(flag_start_failed);
-CREATE_FLAG(flag_start_timeout);
+CREATE_FLAG(flag_start_cancelled);
 CREATE_FLAG(flag_start_codec_configured_subproc);
 CREATE_FLAG(flag_start_qos_configured_subproc);
 CREATE_FLAG(flag_start_enabled_subproc);
@@ -109,6 +109,7 @@ CREATE_FLAG(flag_stop_released_subproc);
 CREATE_FLAG(flag_mtu_exchanged);
 CREATE_FLAG(flag_sink_discovered);
 CREATE_FLAG(flag_source_discovered);
+CREATE_FLAG(flag_cancel_in_enabled);
 
 static const struct named_lc3_preset lc3_unicast_presets[] = {
 	{"8_1_1", BT_BAP_LC3_UNICAST_PRESET_8_1_1(LOCATION, CONTEXT)},
@@ -266,8 +267,10 @@ static void cap_discovery_complete_cb(struct bt_conn *conn, int err,
 
 static void unicast_start_complete_cb(int err, struct bt_conn *conn)
 {
+	LOG_INF("Unicast start completed with err: %d (%p)", err, conn);
+
 	if (err == -ECANCELED) {
-		SET_FLAG(flag_start_timeout);
+		SET_FLAG(flag_start_cancelled);
 	} else if (err != 0) {
 		LOG_ERR("Failed to start (failing conn %p): %d", conn, err);
 		SET_FLAG(flag_start_failed);
@@ -295,6 +298,16 @@ static void unicast_start_enabled_cb(void)
 	LOG_INF("All streams enabled");
 
 	SET_FLAG(flag_start_enabled_subproc);
+
+	if (TEST_FLAG(flag_cancel_in_enabled)) {
+		int err;
+
+		err = bt_cap_initiator_unicast_audio_cancel();
+		if (err != 0) {
+			FAIL("Failed to cancel unicast audio: %d\n", err);
+			return;
+		}
+	}
 }
 
 static void unicast_start_connected_cb(void)
@@ -1122,6 +1135,19 @@ static void wait_for_data(void)
 	LOG_INF("Data received");
 }
 
+static void disconnect_default_conn(void)
+{
+	int err;
+
+	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+
+	if (err != 0) {
+		FAIL("Failed to disconnect: %d\n", err);
+	}
+
+	bt_conn_drop(&default_conn);
+}
+
 static void test_main_cap_initiator_unicast(void)
 {
 	struct bt_cap_unicast_group *unicast_group;
@@ -1249,7 +1275,7 @@ static void test_cap_initiator_unicast_timeout(void)
 			unicast_audio_cancel();
 		}
 
-		WAIT_FOR_FLAG(flag_start_timeout);
+		WAIT_FOR_FLAG(flag_start_cancelled);
 
 		cap_initiator_unicast_audio_stop(unicast_group);
 	}
@@ -1258,6 +1284,60 @@ static void test_cap_initiator_unicast_timeout(void)
 	unicast_group = NULL;
 
 	PASS("CAP initiator unicast timeout passed\n");
+}
+
+static void test_cap_initiator_unicast_cancel_in_subproc(void)
+{
+	struct bt_cap_unicast_group *unicast_group;
+
+	SET_FLAG(flag_cancel_in_enabled);
+
+	init();
+
+	scan_and_connect();
+
+	WAIT_FOR_FLAG(flag_mtu_exchanged);
+
+	update_security(default_conn);
+
+	discover_cas(default_conn);
+
+	discover_sink(default_conn);
+	discover_source(default_conn);
+
+	unicast_group_create(&unicast_group);
+
+	unicast_audio_start(unicast_group, false);
+
+	WAIT_FOR_FLAG(flag_start_codec_configured_subproc);
+	WAIT_FOR_FLAG(flag_start_qos_configured_subproc);
+	WAIT_FOR_FLAG(flag_start_enabled_subproc);
+
+	WAIT_FOR_FLAG(flag_start_cancelled);
+
+	if (TEST_FLAG(flag_start_connected_subproc)) {
+		FAIL("Cancel in enabled did not prevent connected from being completed");
+	}
+
+	if (TEST_FLAG(flag_start_started_subproc)) {
+		FAIL("Cancel in enabled did not prevent started from being completed");
+	}
+
+	/* Resume the procedure */
+	UNSET_FLAG(flag_cancel_in_enabled);
+	unicast_audio_start(unicast_group, true);
+
+	/* Wait until acceptors have received expected data */
+	backchannel_sync_wait_all();
+
+	cap_initiator_unicast_audio_stop(unicast_group);
+
+	unicast_group_delete(unicast_group);
+	unicast_group = NULL;
+
+	disconnect_default_conn();
+
+	PASS("CAP initiator unicast cancel in subproc passed\n");
 }
 
 static void set_invalid_metadata_type(uint8_t type)
@@ -2082,6 +2162,12 @@ static const struct bst_test_instance test_cap_initiator_unicast[] = {
 		.test_pre_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_initiator_unicast_inval,
+	},
+	{
+		.test_id = "cap_initiator_unicast_cancel_in_subproc",
+		.test_pre_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_cap_initiator_unicast_cancel_in_subproc,
 	},
 	{
 		.test_id = "cap_initiator_ac_1",
