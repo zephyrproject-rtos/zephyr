@@ -488,14 +488,13 @@ static int syslog_print(const struct log_output *output,
 	 */
 	if (*thread_on) {
 		if (IS_ENABLED(CONFIG_THREAD_NAME)) {
-			if (strstr(k_thread_name_get(tid), " ") != NULL) {
+			const char *tname = (tid == NULL) ? "irq" : k_thread_name_get(tid);
+
+			if (strstr(tname, " ") != NULL) {
 				goto do_not_print_name;
 			}
 
-			len += print_formatted(output, "%s ",
-					       tid == NULL ?
-					       "irq" :
-					       k_thread_name_get(tid));
+			len += print_formatted(output, "%s ", tname);
 		} else {
 do_not_print_name:
 			len += print_formatted(output, "%p ", tid);
