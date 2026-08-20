@@ -48,6 +48,180 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #define INT_VREF                         BIT(0)
 #define EXT_VREF                         BIT(1)
 
+/*
+ * CPU_INT, GEN_EVENT and DMA_TRIG share this interrupt-controller register
+ * layout; offsets below are relative to each block's own base address.
+ */
+struct adc_mspm0_int_regs {
+	volatile const uint32_t iidx; /**< IIDX Interrupt index, offset: +0x00 */
+	uint32_t reserved0;           /**< Reserved, offset: +0x04 - +0x08 */
+	volatile uint32_t imask;      /**< IMASK Interrupt mask, offset: +0x08 */
+	uint32_t reserved1;           /**< Reserved, offset: +0x0C - +0x10 */
+	volatile const uint32_t ris;  /**< RIS Raw interrupt status, offset: +0x10 */
+	uint32_t reserved2;           /**< Reserved, offset: +0x14 - +0x18 */
+	volatile const uint32_t mis;  /**< MIS Masked interrupt status, offset: +0x18 */
+	uint32_t reserved3;           /**< Reserved, offset: +0x1C - +0x20 */
+	volatile uint32_t iset;       /**< ISET Interrupt set, offset: +0x20 */
+	uint32_t reserved4;           /**< Reserved, offset: +0x24 - +0x28 */
+	volatile uint32_t iclr;       /**< ICLR Interrupt clear, offset: +0x28 */
+};
+
+struct adc_mspm0_gprcm {
+	volatile uint32_t pwren;      /**< PWREN Power enable, offset: 0x800 */
+	volatile uint32_t rstctl;     /**< RSTCTL Reset Control, offset: 0x804 */
+	volatile uint32_t clkcfg;     /**< CLKCFG ADC clock configuration Register, offset: 0x808 */
+	uint32_t reserved[2];         /**< Reserved, offset: 0x80C - 0x814 */
+	volatile const uint32_t stat; /**< STAT Status Register, offset: 0x814 */
+};
+
+/* ADC12 register map */
+struct adc_mspm0_regs {
+	uint32_t reserved0[256];  /**< Reserved, offset: 0x000 - 0x400 */
+	volatile uint32_t fsub_0; /**< FSUB_0 Subscriber Configuration Register, offset: 0x400 */
+	uint32_t reserved1[16];   /**< Reserved, offset: 0x404 - 0x444 */
+	volatile uint32_t fpub_1; /**< FPUB_1 Publisher Configuration Register, offset: 0x444 */
+	uint32_t reserved2[238];  /**< Reserved, offset: 0x448 - 0x800 */
+	struct adc_mspm0_gprcm gprcm;        /**< Power/reset/clock control block, offset: 0x800 */
+	uint32_t reserved3[514];             /**< Reserved, offset: 0x818 - 0x1020 */
+	struct adc_mspm0_int_regs cpu_int;   /**< CPU interrupt block, offset: 0x1020 */
+	uint32_t reserved4;                  /**< Reserved, offset: 0x104C - 0x1050 */
+	struct adc_mspm0_int_regs gen_event; /**< General event interrupt block, offset: 0x1050 */
+	uint32_t reserved5;                  /**< Reserved, offset: 0x107C - 0x1080 */
+	struct adc_mspm0_int_regs dma_trig;  /**< DMA trigger interrupt block, offset: 0x1080 */
+	uint32_t reserved6[13];              /**< Reserved, offset: 0x10AC - 0x10E0 */
+	volatile const uint32_t evt_mode;    /**< EVT_MODE Event Mode, offset: 0x10E0 */
+	uint32_t reserved7[6];               /**< Reserved, offset: 0x10E4 - 0x10FC */
+	volatile const uint32_t desc;        /**< DESC Module Description, offset: 0x10FC */
+	volatile uint32_t ctl0;              /**< CTL0 Control Register 0, offset: 0x1100 */
+	volatile uint32_t ctl1;              /**< CTL1 Control Register 1, offset: 0x1104 */
+	volatile uint32_t ctl2;              /**< CTL2 Control Register 2, offset: 0x1108 */
+	uint32_t reserved8;                  /**< Reserved, offset: 0x110C - 0x1110 */
+	volatile uint32_t clkfreq; /**< CLKFREQ Sample Clock Frequency Range, offset: 0x1110 */
+	volatile uint32_t scomp0;  /**< SCOMP0 Sample Time Compare 0 Register, offset: 0x1114 */
+	volatile uint32_t scomp1;  /**< SCOMP1 Sample Time Compare 1 Register, offset: 0x1118 */
+	uint32_t reserved9[11];    /**< Reserved, offset: 0x111C - 0x1148 */
+	volatile uint32_t wclow;   /**< WCLOW Window Comparator Low Threshold, offset: 0x1148 */
+	uint32_t reserved10;       /**< Reserved, offset: 0x114C - 0x1150 */
+	volatile uint32_t wchigh;  /**< WCHIGH Window Comparator High Threshold, offset: 0x1150 */
+	uint32_t reserved11[3];    /**< Reserved, offset: 0x1154 - 0x1160 */
+	volatile const uint32_t fifodata;   /**< FIFODATA FIFO Data Register, offset: 0x1160 */
+	uint32_t reserved12[7];             /**< Reserved, offset: 0x1164 - 0x1180 */
+	volatile uint32_t memctl[24];       /**< MEMCTL_y Memory Control, offset: 0x1180+0x04y */
+	uint32_t reserved13[40];            /**< Reserved, offset: 0x11E0 - 0x1280 */
+	volatile const uint32_t memres[24]; /**< MEMRES_y Memory Result, offset: 0x1280+0x04y */
+	uint32_t reserved14[24];            /**< Reserved, offset: 0x12E0 - 0x1340 */
+	volatile const uint32_t status;     /**< STATUS Status Register, offset: 0x1340 */
+};
+
+/* pwren bits */
+#define ADC12_PWREN_ENABLE         BIT(0)
+#define ADC12_PWREN_KEY            GENMASK(31, 24)
+#define ADC12_PWREN_KEY_VAL_UNLOCK 0x26U
+
+/* clkcfg bits */
+#define ADC12_CLKCFG_SAMPCLK        GENMASK(1, 0)
+#define ADC12_CLKCFG_KEY            GENMASK(31, 24)
+#define ADC12_CLKCFG_KEY_VAL_UNLOCK 0xA9U
+
+/* ctl0 bits */
+#define ADC12_CTL0_ENC              BIT(0)
+#define ADC12_CTL0_PWRDN            BIT(16)
+#define ADC12_CTL0_PWRDN_VAL_AUTO   0U
+#define ADC12_CTL0_PWRDN_VAL_MANUAL ADC12_CTL0_PWRDN
+#define ADC12_CTL0_SCLKDIV          GENMASK(26, 24)
+
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_1  0U
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_2  FIELD_PREP(ADC12_CTL0_SCLKDIV, 1)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_4  FIELD_PREP(ADC12_CTL0_SCLKDIV, 2)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_8  FIELD_PREP(ADC12_CTL0_SCLKDIV, 3)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_16 FIELD_PREP(ADC12_CTL0_SCLKDIV, 4)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_24 FIELD_PREP(ADC12_CTL0_SCLKDIV, 5)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_32 FIELD_PREP(ADC12_CTL0_SCLKDIV, 6)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_48 FIELD_PREP(ADC12_CTL0_SCLKDIV, 7)
+
+/* ctl1 bits */
+#define ADC12_CTL1_TRIGSRC              BIT(0)
+#define ADC12_CTL1_TRIGSRC_VAL_SOFTWARE 0U
+#define ADC12_CTL1_SC                   BIT(8)
+#define ADC12_CTL1_CONSEQ               GENMASK(17, 16)
+#define ADC12_CTL1_CONSEQ_VAL_SEQUENCE  FIELD_PREP(ADC12_CTL1_CONSEQ, 1)
+#define ADC12_CTL1_SAMPMODE             BIT(20)
+#define ADC12_CTL1_SAMPMODE_VAL_AUTO    0U
+#define ADC12_CTL1_AVGN                 GENMASK(26, 24)
+#define ADC12_CTL1_AVGD                 GENMASK(30, 28)
+
+#define ADC12_CTL1_AVGN_VAL_DISABLED 0U
+#define ADC12_CTL1_AVGN_VAL_ACC_2    FIELD_PREP(ADC12_CTL1_AVGN, 1)
+#define ADC12_CTL1_AVGN_VAL_ACC_4    FIELD_PREP(ADC12_CTL1_AVGN, 2)
+#define ADC12_CTL1_AVGN_VAL_ACC_8    FIELD_PREP(ADC12_CTL1_AVGN, 3)
+#define ADC12_CTL1_AVGN_VAL_ACC_16   FIELD_PREP(ADC12_CTL1_AVGN, 4)
+#define ADC12_CTL1_AVGN_VAL_ACC_32   FIELD_PREP(ADC12_CTL1_AVGN, 5)
+#define ADC12_CTL1_AVGN_VAL_ACC_64   FIELD_PREP(ADC12_CTL1_AVGN, 6)
+#define ADC12_CTL1_AVGN_VAL_ACC_128  FIELD_PREP(ADC12_CTL1_AVGN, 7)
+
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_1   0U
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_2   FIELD_PREP(ADC12_CTL1_AVGD, 1)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_4   FIELD_PREP(ADC12_CTL1_AVGD, 2)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_8   FIELD_PREP(ADC12_CTL1_AVGD, 3)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_16  FIELD_PREP(ADC12_CTL1_AVGD, 4)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_32  FIELD_PREP(ADC12_CTL1_AVGD, 5)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_64  FIELD_PREP(ADC12_CTL1_AVGD, 6)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_128 FIELD_PREP(ADC12_CTL1_AVGD, 7)
+
+/* ctl2 bits */
+#define ADC12_CTL2_DF                   BIT(0)
+#define ADC12_CTL2_DF_VAL_UNSIGNED      0U
+#define ADC12_CTL2_RES                  GENMASK(2, 1)
+#define ADC12_CTL2_RES_VAL_12_BIT       0U
+#define ADC12_CTL2_RES_VAL_10_BIT       FIELD_PREP(ADC12_CTL2_RES, 1)
+#define ADC12_CTL2_RES_VAL_8_BIT        FIELD_PREP(ADC12_CTL2_RES, 2)
+#define ADC12_CTL2_STARTADD             GENMASK(20, 16)
+#define ADC12_CTL2_STARTADD_VAL_ADDR_00 0U
+#define ADC12_CTL2_ENDADD               GENMASK(28, 24)
+
+/* scomp0/scomp1 bits */
+#define ADC12_SCOMP_VAL GENMASK(9, 0)
+
+/* memctl bits */
+#define ADC12_MEMCTL_CHANSEL             GENMASK(4, 0)
+#define ADC12_MEMCTL_VRSEL               GENMASK(10, 8)
+#define ADC12_MEMCTL_VRSEL_VAL_VDDA      0U
+#define ADC12_MEMCTL_VRSEL_VAL_EXTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 1)
+#define ADC12_MEMCTL_VRSEL_VAL_INTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 2)
+#define ADC12_MEMCTL_STIME               BIT(12)
+#define ADC12_MEMCTL_STIME_VAL_SCOMP0    0U
+#define ADC12_MEMCTL_STIME_VAL_SCOMP1    ADC12_MEMCTL_STIME
+#define ADC12_MEMCTL_AVGEN               BIT(16)
+#define ADC12_MEMCTL_AVGEN_VAL_DISABLE   0U
+#define ADC12_MEMCTL_AVGEN_VAL_ENABLE    ADC12_MEMCTL_AVGEN
+#define ADC12_MEMCTL_BCSEN_VAL_DISABLE   0U
+#define ADC12_MEMCTL_TRIG_VAL_AUTO_NEXT  0U
+#define ADC12_MEMCTL_WINCOMP_VAL_DISABLE 0U
+
+/*
+ * ADC12 registers have an alias at 0x556000 offset, these registers can be read at MCLK rate
+ * instead of ULPCLK which is used with unaliased registers. Subtract 0x1000 since there are no
+ * power/clock registers in the aliased region.
+ */
+#define ADC12_ALIAS_OFFSET 0x555000U
+
+/* cpu_int bits: only the last MEMCTL of a sequence raises MEMRESIFG(n) */
+#define ADC12_CPU_INT_MEMRESIFG0_OFS 8U
+
+/* cpu_int.iidx values for a MEMRES result-loaded interrupt */
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG0  9U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG1  10U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG2  11U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG3  12U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG4  13U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG5  14U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG6  15U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG7  16U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG8  17U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG9  18U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG10 19U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG11 20U
+
 enum mspm0_oversampling {
 	ADC_MSPM0_AVG_DISABLED,
 	ADC_MSPM0_AVG_2X,
@@ -73,43 +247,51 @@ struct adc_mspm0_data {
 };
 
 struct adc_mspm0_cfg {
-	DL_ADC12_ClockConfig clock_config;
-	ADC12_Regs *base;
+	struct adc_mspm0_regs *regs;
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_cfg_func)(void);
 	const struct device *vref_config;
 	const struct mspm0_sys_clock *clock_subsys;
+	uint32_t clock_div_reg;
+	uint32_t clock_range;
 	const uint8_t divider;
 	const uint8_t max_result;
 	bool auto_pwdn;
 };
 
+static inline uint16_t adc_mspm0_get_mem_result(struct adc_mspm0_regs *regs, uint8_t idx)
+{
+	volatile struct adc_mspm0_regs *alias_regs =
+		(struct adc_mspm0_regs *)((uintptr_t)regs + ADC12_ALIAS_OFFSET);
+
+	return alias_regs->memres[idx];
+}
+
 static void adc_mspm0_isr(const struct device *dev)
 {
 	struct adc_mspm0_data *data = dev->data;
 	const struct adc_mspm0_cfg *config = dev->config;
+	struct adc_mspm0_regs *regs = config->regs;
 	uint8_t mem_ix;
 
-	switch (DL_ADC12_getPendingInterrupt(config->base)) {
-	case DL_ADC12_IIDX_MEM0_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM1_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM2_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM3_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM4_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM5_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM6_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM7_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM8_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM9_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM10_RESULT_LOADED:
-	case DL_ADC12_IIDX_MEM11_RESULT_LOADED:
-		for (mem_ix = 0; mem_ix < data->channel_eoc; mem_ix++) {
-			*data->buffer++ = DL_ADC12_getMemResult(config->base, mem_ix);
+	switch (regs->cpu_int.iidx) {
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG0:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG1:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG2:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG3:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG4:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG5:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG6:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG7:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG8:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG9:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG10:
+	case ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG11:
+		for (mem_ix = 0; mem_ix <= data->channel_eoc; mem_ix++) {
+			data->buffer[mem_ix] = adc_mspm0_get_mem_result(regs, mem_ix);
 		}
-		*data->buffer = DL_ADC12_getMemResult(config->base, mem_ix);
-		DL_ADC12_disableInterrupt((ADC12_Regs *)config->base,
-					  ((1 << (data->channel_eoc)) <<
-					   ADC12_CPU_INT_IMASK_MEMRESIFG0_OFS));
+		regs->cpu_int.imask &=
+			~((1 << (data->channel_eoc)) << ADC12_CPU_INT_MEMRESIFG0_OFS);
 		break;
 	default:
 		LOG_ERR("unexpected interrupt");
@@ -123,13 +305,13 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_mspm0_data *data = CONTAINER_OF(ctx, struct adc_mspm0_data, ctx);
 	const struct device *dev = data->dev;
 	const struct adc_mspm0_cfg *config = dev->config;
+	struct adc_mspm0_regs *regs = config->regs;
+	uint32_t memresifg = (1 << data->channel_eoc) << ADC12_CPU_INT_MEMRESIFG0_OFS;
 
-	DL_ADC12_clearInterruptStatus(config->base, ((1 << data->channel_eoc) <<
-				      ADC12_CPU_INT_IMASK_MEMRESIFG0_OFS));
-	DL_ADC12_enableInterrupt(config->base, ((1 << data->channel_eoc) <<
-				 ADC12_CPU_INT_IMASK_MEMRESIFG0_OFS));
-	DL_ADC12_enableConversions(config->base);
-	DL_ADC12_startConversion(config->base);
+	regs->cpu_int.iclr |= memresifg;
+	regs->cpu_int.imask |= memresifg;
+	regs->ctl0 |= ADC12_CTL0_ENC;
+	regs->ctl1 |= ADC12_CTL1_SC;
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repeat)
@@ -162,7 +344,7 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 		}
 
 		if ((ADC_ACQ_TIME_UNIT(acq_time) == ADC_ACQ_TIME_TICKS) &&
-		    (ADC_ACQ_TIME_VALUE(acq_time) <= ADC12_SCOMP0_VAL_MASK)) {
+		    (ADC_ACQ_TIME_VALUE(acq_time) <= ADC12_SCOMP_VAL)) {
 			return ADC_ACQ_TIME_VALUE(acq_time);
 		} else {
 			return -EINVAL;
@@ -181,7 +363,7 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 		}
 
 		acq_time = ADC_ACQ_TIME_VALUE(acq_time) + wakeup_cycles;
-		if (acq_time > ADC12_SCOMP0_VAL_MASK) {
+		if (acq_time > ADC12_SCOMP_VAL) {
 			return -EINVAL;
 		}
 		return acq_time;
@@ -193,6 +375,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 {
 	struct adc_mspm0_data *data = dev->data;
 	const struct adc_mspm0_cfg *config = dev->config;
+	struct adc_mspm0_regs *regs = config->regs;
 	const uint8_t ch = channel_cfg->channel_id;
 	int sampling_time;
 	int ret = 0;
@@ -212,13 +395,13 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	adc_context_lock(&data->ctx, false, NULL);
 
 	if (data->sample_time[ADC_MSPM0_SCOMP0] == UINT16_MAX) {
-		DL_ADC12_setSampleTime0(config->base, sampling_time);
+		regs->scomp0 = sampling_time;
 		data->sample_time[ADC_MSPM0_SCOMP0] = sampling_time;
 		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP0;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP0] == sampling_time) {
 		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP0;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP1] == UINT16_MAX) {
-		DL_ADC12_setSampleTime1(config->base, sampling_time);
+		regs->scomp1 = sampling_time;
 		data->sample_time[ADC_MSPM0_SCOMP1] = sampling_time;
 		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP1;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP1] == sampling_time) {
@@ -284,6 +467,7 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 {
 	struct adc_mspm0_data *data = dev->data;
 	const struct adc_mspm0_cfg *config = dev->config;
+	struct adc_mspm0_regs *regs = config->regs;
 	uint32_t channels = seq->channels;
 	uint32_t resolution;
 	uint32_t avg_enabled = 0;
@@ -298,13 +482,13 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 	switch (seq->resolution) {
 	case ADC_MSPM0_RESOLUTION_14:
 	case ADC_MSPM0_RESOLUTION_12:
-		resolution = DL_ADC12_SAMP_CONV_RES_12_BIT;
+		resolution = ADC12_CTL2_RES_VAL_12_BIT;
 		break;
 	case ADC_MSPM0_RESOLUTION_10:
-		resolution = DL_ADC12_SAMP_CONV_RES_10_BIT;
+		resolution = ADC12_CTL2_RES_VAL_10_BIT;
 		break;
 	case ADC_MSPM0_RESOLUTION_8:
-		resolution = DL_ADC12_SAMP_CONV_RES_8_BIT;
+		resolution = ADC12_CTL2_RES_VAL_8_BIT;
 		break;
 	default:
 		return -EINVAL;
@@ -312,45 +496,45 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 
 	switch (seq->oversampling) {
 	case ADC_MSPM0_AVG_DISABLED:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_DISABLED;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_DISABLE;
 		break;
 	case ADC_MSPM0_AVG_2X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_2;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_2;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_2;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_2;
 		break;
 	case ADC_MSPM0_AVG_4X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_4;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_4;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_4;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_4;
 		break;
 	case ADC_MSPM0_AVG_8X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_8;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_8;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_8;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_8;
 		break;
 	case ADC_MSPM0_AVG_16X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_16;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_16;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_16;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_16;
 		break;
 	case ADC_MSPM0_AVG_32X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_32;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_32;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_32;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_32;
 		break;
 	case ADC_MSPM0_AVG_64X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_64;
-		avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_64;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_64;
+		avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_64;
 		break;
 	case ADC_MSPM0_AVG_128X:
-		avg_enabled = DL_ADC12_AVERAGING_MODE_ENABLED;
-		avg_acc = DL_ADC12_HW_AVG_NUM_ACC_128;
+		avg_enabled = ADC12_MEMCTL_AVGEN_VAL_ENABLE;
+		avg_acc = ADC12_CTL1_AVGN_VAL_ACC_128;
 		if (seq->resolution == 14) {
-			avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_32;
+			avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_32;
 		} else {
-			avg_div = DL_ADC12_HW_AVG_DEN_DIV_BY_128;
+			avg_div = ADC12_CTL1_AVGD_VAL_DIV_BY_128;
 		}
 		break;
 	default:
@@ -368,14 +552,14 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 
 		switch (ref_index) {
 		case ADC_MSPM0_REF_VDD:
-			vrsel = DL_ADC12_REFERENCE_VOLTAGE_VDDA;
+			vrsel = ADC12_MEMCTL_VRSEL_VAL_VDDA;
 			break;
 #ifdef CONFIG_REGULATOR_MSPM0_VREF
 		case ADC_MSPM0_REF_INTERNAL:
-			vrsel = DL_ADC12_REFERENCE_VOLTAGE_INTREF;
+			vrsel = ADC12_MEMCTL_VRSEL_VAL_INTREF;
 			break;
 		case ADC_MSPM0_REF_EXTERNAL:
-			vrsel = DL_ADC12_REFERENCE_VOLTAGE_EXTREF;
+			vrsel = ADC12_MEMCTL_VRSEL_VAL_EXTREF;
 			break;
 #endif
 		default:
@@ -384,15 +568,14 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 		}
 
 		stime = FIELD_GET(ADC_MSPM0_MEM_CTL_STIME, data->channel_mem_ctl[ch])
-			? DL_ADC12_SAMPLE_TIMER_SOURCE_SCOMP1
-			: DL_ADC12_SAMPLE_TIMER_SOURCE_SCOMP0;
+				? ADC12_MEMCTL_STIME_VAL_SCOMP1
+				: ADC12_MEMCTL_STIME_VAL_SCOMP0;
 
 		if (mem_ctl_count < config->max_result) {
-			DL_ADC12_configConversionMem(config->base, mem_ctl_count,
-						     ch, vrsel, stime,
-						     avg_enabled, DL_ADC12_BURN_OUT_SOURCE_DISABLED,
-						     DL_ADC12_TRIGGER_MODE_AUTO_NEXT,
-						     DL_ADC12_WINDOWS_COMP_MODE_DISABLED);
+			regs->memctl[mem_ctl_count] =
+				FIELD_PREP(ADC12_MEMCTL_CHANSEL, ch) | vrsel | stime | avg_enabled |
+				ADC12_MEMCTL_BCSEN_VAL_DISABLE | ADC12_MEMCTL_TRIG_VAL_AUTO_NEXT |
+				ADC12_MEMCTL_WINCOMP_VAL_DISABLE;
 		} else {
 			return -EINVAL;
 		}
@@ -401,22 +584,22 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 		channels &= ~BIT(ch);
 	}
 
-	if (avg_enabled == DL_ADC12_AVERAGING_MODE_ENABLED) {
-		DL_ADC12_configHwAverage(config->base, avg_acc, avg_div);
-	} else {
-		DL_ADC12_configHwAverage(config->base, DL_ADC12_HW_AVG_NUM_ACC_DISABLED,
-					 DL_ADC12_HW_AVG_DEN_DIV_BY_1);
-	}
+	regs->ctl1 = (regs->ctl1 & ~(ADC12_CTL1_AVGN | ADC12_CTL1_AVGD)) | avg_acc | avg_div;
 
 	if (mem_ctl_count - 1 != data->channel_eoc) {
 		return -EINVAL;
 	}
 
-	DL_ADC12_initSeqSample(config->base, DL_ADC12_REPEAT_MODE_DISABLED,
-			       DL_ADC12_SAMPLING_SOURCE_AUTO, DL_ADC12_TRIG_SRC_SOFTWARE,
-			       DL_ADC12_SEQ_START_ADDR_00,
-			       (data->channel_eoc) << ADC12_CTL2_ENDADD_OFS, resolution,
-			       DL_ADC12_SAMP_CONV_DATA_FORMAT_UNSIGNED);
+	regs->ctl1 =
+		(regs->ctl1 & ~(ADC12_CTL1_SAMPMODE | ADC12_CTL1_CONSEQ | ADC12_CTL1_TRIGSRC)) |
+		ADC12_CTL1_CONSEQ_VAL_SEQUENCE | ADC12_CTL1_SAMPMODE_VAL_AUTO |
+		ADC12_CTL1_TRIGSRC_VAL_SOFTWARE;
+
+	regs->ctl2 = (regs->ctl2 &
+		      ~(ADC12_CTL2_ENDADD | ADC12_CTL2_STARTADD | ADC12_CTL2_RES | ADC12_CTL2_DF)) |
+		     ADC12_CTL2_STARTADD_VAL_ADDR_00 |
+		     FIELD_PREP(ADC12_CTL2_ENDADD, data->channel_eoc) | resolution |
+		     ADC12_CTL2_DF_VAL_UNSIGNED;
 
 	return 0;
 }
@@ -503,6 +686,7 @@ static int adc_mspm0_init(const struct device *dev)
 {
 	struct adc_mspm0_data *data = dev->data;
 	const struct adc_mspm0_cfg *config = dev->config;
+	struct adc_mspm0_regs *regs = config->regs;
 	int ret;
 
 	data->dev = dev;
@@ -512,14 +696,19 @@ static int adc_mspm0_init(const struct device *dev)
 		return ret;
 	}
 
-	DL_ADC12_enablePower(config->base);
-	delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
-	DL_ADC12_setClockConfig(config->base, &config->clock_config);
+	regs->gprcm.pwren =
+		FIELD_PREP(ADC12_PWREN_KEY, ADC12_PWREN_KEY_VAL_UNLOCK) | ADC12_PWREN_ENABLE;
+	k_busy_wait(k_cyc_to_us_ceil32(CONFIG_MSPM0_PERIPH_STARTUP_DELAY));
+
+	regs->gprcm.clkcfg = (regs->gprcm.clkcfg & ~ADC12_CLKCFG_KEY) |
+			     FIELD_PREP(ADC12_CLKCFG_KEY, ADC12_CLKCFG_KEY_VAL_UNLOCK);
+	regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_SCLKDIV) | config->clock_div_reg;
+	regs->clkfreq = config->clock_range;
 
 	if (config->auto_pwdn) {
-		DL_ADC12_setPowerDownMode(config->base, DL_ADC12_POWER_DOWN_MODE_AUTO);
+		regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_AUTO;
 	} else {
-		DL_ADC12_setPowerDownMode(config->base, DL_ADC12_POWER_DOWN_MODE_MANUAL);
+		regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_MANUAL;
 	}
 
 	data->sample_time[ADC_MSPM0_SCOMP0] = UINT16_MAX;
@@ -549,7 +738,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 };
 
 #define ADC_CLOCK_DIV(x)    DT_INST_PROP(x, ti_clk_divider)
-#define ADC_DT_CLOCK_DIV(x) _CONCAT(DL_ADC12_CLOCK_DIVIDE_, ADC_CLOCK_DIV(x))
+#define ADC_DT_CLOCK_DIV(x) _CONCAT(ADC12_CTL0_SCLKDIV_VAL_DIV_BY_, ADC_CLOCK_DIV(x))
 
 #define ADC_DT_CLOCK_RANGE(x) DT_INST_PROP(x, ti_clk_range)
 
@@ -567,15 +756,13 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 						MSPM0_CLOCK_SUBSYS_FN(index);			   \
                                                                                                    \
 	static const struct adc_mspm0_cfg adc_mspm0_cfg_##index = {                                \
-		.base = (ADC12_Regs *)DT_INST_REG_ADDR(index),                                     \
+		.regs = (struct adc_mspm0_regs *)DT_INST_REG_ADDR(index),                          \
 		.irq_cfg_func = adc_mspm0_cfg_func_##index,                                        \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                  \
-		.clock_subsys = &mspm0_adc_sys_clock##index,					   \
-		.divider = ADC_CLOCK_DIV(index),						   \
-		.clock_config = {.clockSel =							   \
-				     MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)), \
-				 .freqRange = ADC_DT_CLOCK_RANGE(index),                           \
-				 .divideRatio = ADC_DT_CLOCK_DIV(index)},                          \
+		.clock_subsys = &mspm0_adc_sys_clock##index,                                       \
+		.divider = ADC_CLOCK_DIV(index),                                                   \
+		.clock_range = ADC_DT_CLOCK_RANGE(index),                                          \
+		.clock_div_reg = ADC_DT_CLOCK_DIV(index),                                          \
 		.max_result = DT_INST_PROP(index, max_result_reg),                                 \
 		.auto_pwdn = DT_INST_PROP_OR(index, auto_powerdown, false),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(index, vref),					   \
