@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "esp_threadbr_procpu.dts"
+
+/ {
+	model = "Espressif ESP Thread Border Router / ZigBee Gateway PROCPU Ethernet";
+};
+
+&spi2 {
+	cs-gpios = <&gpio1 9 GPIO_ACTIVE_LOW>;
+
+	esp_sub_eth: esp-sub-eth@0 {
+		compatible = "wiznet,w5500";
+		reg = <0x0>;
+		spi-max-frequency = <8000000>;
+		int-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&gpio1 8 GPIO_ACTIVE_LOW>;
+	};
+};

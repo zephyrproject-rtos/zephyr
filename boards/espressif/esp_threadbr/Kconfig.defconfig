@@ -1,9 +1,9 @@
 # Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-if SHIELD_ESP_THREADBR_ETHERNET
+if BOARD_ESP_THREADBR_ESP32S3_PROCPU_ETHERNET
 
 configdefault ETH_DRIVER
 	default y
 
-endif # SHIELD_ESP_THREADBR_ETHERNET
+endif # BOARD_ESP_THREADBR_ESP32S3_PROCPU_ETHERNET
