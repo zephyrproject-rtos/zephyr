@@ -2365,7 +2365,7 @@ static int spi_stm32_init(const struct device *dev)
 #define STM32_SPI_IRQ_HANDLER(id)
 #endif /* CONFIG_SPI_STM32_INTERRUPT */
 
-#define SPI_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
+#define SPI_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)			\
 	.dma_dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),		\
 	.dma_cfg = {								\
@@ -2395,16 +2395,16 @@ static int spi_stm32_init(const struct device *dev)
 
 
 #ifdef CONFIG_SPI_STM32_DMA
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)				\
+#define SPI_DMA_CHANNEL(id, dir, src, dest)					\
 	.dma_##dir = {								\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(id, dir),			\
-			    (SPI_DMA_CHANNEL_INIT(id, dir, DIR, src, dest)),	\
+			    (SPI_DMA_CHANNEL_INIT(id, dir, src, dest)),		\
 			    (NULL))						\
 		},
 #define SPI_DMA_STATUS_SEM(id)							\
 	.status_sem = Z_SEM_INITIALIZER(spi_stm32_dev_data_##id.status_sem, 0, 1),
 #else
-#define SPI_DMA_CHANNEL(id, dir, DIR, src, dest)
+#define SPI_DMA_CHANNEL(id, dir, src, dest)
 #define SPI_DMA_STATUS_SEM(id)
 #endif /* CONFIG_SPI_STM32_DMA */
 
@@ -2454,8 +2454,8 @@ static int spi_stm32_init(const struct device *dev)
 	static struct spi_stm32_data spi_stm32_dev_data_##id = {		\
 		SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_##id, ctx),		\
 		SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_##id, ctx),		\
-		SPI_DMA_CHANNEL(id, rx, RX, PERIPHERAL, MEMORY)			\
-		SPI_DMA_CHANNEL(id, tx, TX, MEMORY, PERIPHERAL)			\
+		SPI_DMA_CHANNEL(id, rx, PERIPHERAL, MEMORY)			\
+		SPI_DMA_CHANNEL(id, tx, MEMORY, PERIPHERAL)			\
 		SPI_DMA_STATUS_SEM(id)						\
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(id), ctx)		\
 		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &spi_stm32_rtio_##id,))\
