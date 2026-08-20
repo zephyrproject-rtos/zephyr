@@ -22,12 +22,10 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 
-#include <ti/driverlib/dl_adc12.h>
-
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define ADC_MSPM0_CHANNEL_MAX            (ADC_SYS_NUM_ANALOG_CHAN)
+#define ADC_MSPM0_CHANNEL_MAX            (32)
 #define ADC_MSPM0_CHANNEL_NO_INIT        (0xFF)
 #define ADC_MSPM0_NUM_SAMPLE_TIMERS      2
 #define ADC_MSPM0_MEM_CTL_STIME		 GENMASK(0, 0)
@@ -262,6 +260,7 @@ struct adc_mspm0_cfg {
 	uint32_t clock_range;
 	const uint8_t divider;
 	const uint8_t max_result;
+	const uint8_t num_channels;
 	bool auto_pwdn;
 };
 
@@ -386,7 +385,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	int sampling_time;
 	int ret = 0;
 
-	if ((ch >= ADC_MSPM0_CHANNEL_MAX) ||
+	if ((ch >= config->num_channels) ||
 	    (channel_cfg->differential) ||
 	    (channel_cfg->gain != ADC_GAIN_1)) {
 		return -EINVAL;
@@ -549,7 +548,7 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 
 	while (channels) {
 		ch = find_lsb_set(channels) - 1;
-		if ((ch >= ADC_MSPM0_CHANNEL_MAX) ||
+		if ((ch >= config->num_channels) ||
 		    (data->channel_mem_ctl[ch] == ADC_MSPM0_CHANNEL_NO_INIT)) {
 			return -EINVAL;
 		}
@@ -767,6 +766,9 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 	BUILD_ASSERT(ADC_DT_SAMPCLK(index) != -1,                                                  \
 		     "unsupported ADC sample clock source: must be ULPCLK, SYSOSC or HFCLK");      \
                                                                                                    \
+	BUILD_ASSERT(DT_INST_PROP(index, ti_num_channels) <= ADC_MSPM0_CHANNEL_MAX,                \
+		     "unsupported number of channels, ADC can only support max 32 channels");      \
+                                                                                                   \
 	static void adc_mspm0_cfg_func_##index(void)                                               \
 	{                                                                                          \
 		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), adc_mspm0_isr,      \
@@ -786,6 +788,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		.clock_range = ADC_DT_CLOCK_RANGE(index),                                          \
 		.clock_div_reg = ADC_DT_CLOCK_DIV(index),                                          \
 		.max_result = DT_INST_PROP(index, max_result_reg),                                 \
+		.num_channels = DT_INST_PROP(index, ti_num_channels),                              \
 		.auto_pwdn = DT_INST_PROP_OR(index, auto_powerdown, false),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(index, vref),					   \
 		(.vref_config = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(index), vref)),),		   \
