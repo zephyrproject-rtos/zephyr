@@ -79,9 +79,8 @@
 #define ALS31300_REG29_RESERVED_SHIFT 21
 
 /* ALS31300 sensitivity and conversion constants */
-#define ALS31300_FULL_SCALE_RANGE_GAUSS 500  /* 500 gauss full scale */
-#define ALS31300_12BIT_RESOLUTION       4096 /* 2^12 for 12-bit resolution */
-#define ALS31300_12BIT_SIGN_BIT_INDEX   11   /* Sign bit position for 12-bit values (0-based) */
+#define ALS31300_SENSITIVITY_LSB_PER_GAUSS 4  /* ALS31300-500; -1000/-2000/-JOY differ */
+#define ALS31300_12BIT_SIGN_BIT_INDEX      11 /* Sign bit position for 12-bit values (0-based) */
 
 /* ALS31300 EEPROM Register 0x02 bit field definitions */
 #define ALS31300_EEPROM_CUSTOMER_EE_MASK  GENMASK(4, 0) /* Bits 4:0 */
