@@ -69,6 +69,10 @@ interface that application appears on.
      - :zephyr_file:`tests/net/conformance/dns`
      - ``zeth``
      - any user
+   * - :zephyr_file:`coap <tests/net/conformance/coap/README.rst>`
+     - :zephyr_file:`tests/net/conformance/coap`
+     - ``zeth``
+     - any user
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -91,6 +95,14 @@ its own messages, still sets the cache flush bit, uses its own long time to
 live, and echoes neither the identifier nor the question. Fixing it means
 reworking name compression offsets that are all computed from a fixed header
 size. No suite covers it.
+
+CoAP block transfer and observe
+===============================
+
+``TD_COAP_BLOCK_01`` and ``TD_COAP_OBS_01`` are not run. They address
+``/large`` and ``/obs``, and the application provides only ``/test``; against
+it the observe case waits for notifications that never arrive and the run does
+not finish. Adding those two resources is the obvious next step.
 
 Overlapping DNS queries
 =======================

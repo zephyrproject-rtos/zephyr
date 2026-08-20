@@ -186,6 +186,19 @@ The ordering matters as much as the lock. The fixture is requested *before* the
 conformance test holds the interface — two applications answering to
 ``192.0.2.1`` at once would confuse both suites.
 
+Suite traits
+============
+
+Three facts about a suite are read from :file:`suites/<name>/build.conf`:
+
+``MODE=parallel``
+   The test cases create parallel test components, so the suite is run through
+   Titan's main controller rather than as a single executable, and ``expect``
+   has to be installed.
+
+The same file is sourced as a shell fragment by :file:`build.sh`, which is why
+it is written as shell assignments; the harness only matches substrings in it.
+
 Building and running the suite
 ==============================
 
@@ -196,7 +209,8 @@ Running has to cope with Titan being installed two different ways. A
 distribution package puts its libraries in :file:`{TTCN3_DIR}/lib/titan`, a
 source build in :file:`{TTCN3_DIR}/lib`; the harness picks whichever exists and
 prepends it to ``LD_LIBRARY_PATH``, and prepends :file:`{TTCN3_DIR}/bin` to
-``PATH``.
+``PATH``. A parallel suite is started with ``ttcn3_start``, any other suite
+directly.
 
 The suite is started in a new session, so that a suite which overruns can be
 killed along with everything it started — a main controller left running would
@@ -309,7 +323,15 @@ part of a Zephyr image; see :ref:`external-contributions`.
 Adding a suite
 **************
 
-A suite has two halves, one in each repository.
+A suite has two halves, one in each repository, and one decision to make before
+either.
+
+Choosing the shape
+==================
+
+**Single or parallel.** Single mode unless the test cases create parallel test
+components. Parallel costs Titan's main controller and a dependency on
+``expect``, and it makes the suite harder to run by hand.
 
 The host side
 =============
