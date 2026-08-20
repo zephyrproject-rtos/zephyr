@@ -449,6 +449,9 @@ New APIs and options
       parsing command responses independently of the Host, and the HCI lockstep helper
       (:c:func:`bt_hci_lockstep_cmd_send_sync`) for HCI drivers that exchange commands with
       the controller over their own transport.
+    * :c:func:`bt_hci_set_public_addr` and :c:func:`bt_hci_get_public_addr`: the public
+      identity address is available to HCI drivers from the time the HCI transport is
+      opened, independently of the ``setup()`` driver API op.
 
   * Mesh
 

@@ -4915,6 +4915,12 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
 
+#if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR)
+	if (bt_dev.id_count > 0 && bt_dev.id_addr[BT_ID_DEFAULT].type == BT_ADDR_LE_PUBLIC) {
+		bt_hci_set_public_addr(bt_dev.hci, &bt_dev.id_addr[BT_ID_DEFAULT].a);
+	}
+#endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
+
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
