@@ -1,4 +1,4 @@
-identifier: beetle_rp2350/rp2350a/m33
+identifier: beetle_rp2350/rp2350a/m33_0
 name: DFRobot Beetle RP2350 (Cortex M33)
 type: mcu
 arch: arm
