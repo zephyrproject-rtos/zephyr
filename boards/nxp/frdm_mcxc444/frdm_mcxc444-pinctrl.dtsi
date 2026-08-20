@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXC444VLH-pinctrl.h>
+#include <nxp/mcx/mcxc/pinctrl/MCXC444VLH-pinctrl.h>
 
 &pinctrl {
 	pinmux_adc0: pinmux_adc0 {

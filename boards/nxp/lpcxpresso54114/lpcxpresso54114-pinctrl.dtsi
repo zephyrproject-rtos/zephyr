@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/lpc/LPC54114J256BD64-pinctrl.h>
+#include <nxp/lpc/lpc54xxx/pinctrl/LPC54114J256BD64-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_usart: pinmux_flexcomm0_usart {
