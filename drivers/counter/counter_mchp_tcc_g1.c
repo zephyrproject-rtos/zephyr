@@ -356,6 +356,7 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 	int32_t count_diff = 0u;
 	uint32_t top_value = 0u;
 	uint32_t ticks = alarm_cfg->ticks;
+	uint32_t remaining;
 
 	struct counter_mchp_dev_data *const data = dev->data;
 	const struct counter_mchp_dev_config *const cfg = dev->config;
@@ -434,8 +435,22 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 		data->channel_data[chan_id].compare_value = ticks;
 		tcc_counter_set_compare(cfg->regs, chan_id, ticks);
 
-		/* Enable interrupt at compare match */
-		tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		(void)tcc_counter_get_count(cfg->regs, &count_value);
+		remaining = tcc_counter_ticks_sub(ticks, count_value, top_value);
+
+		if ((remaining == 0U) || (remaining > alarm_cfg->ticks)) {
+			tcc_counter_alarm_irq_clear(cfg->regs, max_channels, chan_id);
+
+			data->late_alarm_flag = true;
+			data->late_alarm_channel = chan_id;
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+			k_irq_set_pending(cfg->irq_line);
+#else
+			k_irq_set_pending(cfg->channel_irq_map->comp_irq_line[chan_id]);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+		} else {
+			tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		}
 	}
 
 	return ret_val;
