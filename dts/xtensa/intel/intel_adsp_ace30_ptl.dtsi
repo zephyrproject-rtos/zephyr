@@ -13,6 +13,7 @@
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <3>;
 			cpu-power-states = <&d0i3 &d3>;
+			zephyr,deferred-start;
 		};
 
 		cpu4: cpu@4 {
@@ -20,6 +21,7 @@
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <4>;
 			cpu-power-states = <&d0i3 &d3>;
+			zephyr,deferred-start;
 		};
 	};
 
