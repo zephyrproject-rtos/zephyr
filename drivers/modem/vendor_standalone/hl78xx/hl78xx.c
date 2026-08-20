@@ -676,6 +676,22 @@ void hl78xx_on_cxreg(struct modem_chat *chat, char **argv, uint16_t argc, void *
 		return;
 	}
 
+	if (data->status.phone_functionality.in_progress &&
+	    data->status.phone_functionality.functionality != HL78XX_FULLY_FUNCTIONAL) {
+		/* A transition to CFUN=0/4 is in flight (SIM switch, GNSS entry,
+		 * shutdown). The detach can take many seconds, and the modem
+		 * flushes queued URCs from the old state around the OK — a late
+		 * registration here is stale by definition. Parsed and stored
+		 * above, but it must not drive events: dispatching it arms
+		 * post-registration work (AT+KCELL, the power-down feed) against
+		 * a SIM that is about to be gone.
+		 */
+		LOG_WRN("Recording %s (stat %d) without dispatch: CFUN transition to %d in flight",
+			argv[0], registration_status,
+			data->status.phone_functionality.functionality);
+		return;
+	}
+
 	HL78XX_LOG_DBG("%s: %d", argv[0], registration_status);
 	if (registration_status == data->status.registration.network_state_current) {
 		/* Check if RAT mode changed even if registration status didn't */
