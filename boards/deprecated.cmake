@@ -112,3 +112,6 @@ set(rp2350b_core/rp2350b/hazard3_DEPRECATED
 set(w5500_evb_pico2/rp2350a/m33_DEPRECATED
     w5500_evb_pico2/rp2350a/m33_0
 )
+set(w6100_evb_pico2/rp2350a/m33_DEPRECATED
+    w6100_evb_pico2/rp2350a/m33_0
+)
