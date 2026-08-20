@@ -98,7 +98,9 @@ static uint32_t virtiofs_send_receive(
 	uint16_t bufs_size, uint16_t device_readable)
 {
 	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
-	struct recv_cb_param cb_arg;
+	struct recv_cb_param cb_arg = {
+		.sem = K_SEM_INITIALIZER(cb_arg.sem, 0, 1),
+	};
 	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
 	size_t total_len = 0;
 	uint32_t used_len;
@@ -135,8 +137,6 @@ static uint32_t virtiofs_send_receive(
 		}
 		offset += bufs[i].len;
 	}
-
-	k_sem_init(&cb_arg.sem, 0, 1);
 
 	virtq_add_buffer_chain(
 		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
