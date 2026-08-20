@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Replace the xspi1 by a "st,stm32-mspi-controller" compatible */
+/delete-node/ &xspi1;
+
+/ {
+	soc {
+		xspi1: spi@47001400 {
+			compatible = "st,stm32-xspi-controller";
+			reg = <0x47001400 0x400>, <0x90000000 DT_SIZE_M(256)>;
+			interrupts = <78 0>;
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB4, 20)>,
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI1_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(50)>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			pinctrl-0 = <&octospim_p1_io0_pc9 &octospim_p1_io1_pf9
+				     &octospim_p1_io2_pe2 &octospim_p1_io3_pa6
+				     &octospim_p1_io4_ph2 &octospim_p1_io5_ph3
+				     &octospim_p1_io6_pe9 &octospim_p1_io7_pe10
+				     &octospim_p1_clk_pf10 &octospim_p1_ncs1_pg6
+				     &octospim_p1_dqs_pc5>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			ext_flash_ctrl: xspi-flash-controller@0 {
+				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
+				reg = <0>;
+				size = <DT_SIZE_M(512)>; /* 512 Mbits */
+				read-command = <0xee11>;
+				write-command = <0x12ed>;
+				rx-dummy = <20>;
+				memmap-config = <1 0x00000000 0 1>;
+				mspi-max-frequency = <DT_FREQ_M(50)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_DUAL";
+				mspi-hardware-ce-num = <0>;
+				command-length = "INSTR_2_BYTE";
+				status = "okay";
+				st,mem-type = "macronix";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ext_flash: mx25lm51245: ext-flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_M(64)>;
+					write-block-size = <1>;
+					erase-block-size = <DT_SIZE_K(4)>;
+				};
+			};
+		};
+	};
+};
