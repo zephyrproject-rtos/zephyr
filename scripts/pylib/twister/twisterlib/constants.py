@@ -43,6 +43,11 @@ SIM_PROGRAM_CMAKE_VARS = {
     'armfvp': 'ARMFVP',
 }
 
+# Failure reason reported when the console output contains an unexpected
+# fatal error (a crash), shared between the harness and the handlers so
+# every execution path reports such a crash the same way.
+FAULT_REASON = "Fault detected while running test"
+
 PYTEST_HARNESSES = ['pytest', 'shell', 'power', 'display_capture']
 
 SUPPORTED_HARNESSES = [
