@@ -338,8 +338,6 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 		return data;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, get, queue, timeout);
-
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&queue->lock, key);
 
@@ -347,6 +345,8 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 
 		return NULL;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, get, queue, timeout);
 
 	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
