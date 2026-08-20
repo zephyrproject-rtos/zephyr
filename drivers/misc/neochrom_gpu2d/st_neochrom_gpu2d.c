@@ -45,7 +45,7 @@ static int stm32_gpu2d_init(const struct device *dev)
 		return ret;
 	}
 
-	LOG_INF("GPU2D hardware enabled");
+	LOG_DBG("GPU2D hardware enabled");
 
 	return 0;
 }
