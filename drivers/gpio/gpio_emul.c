@@ -400,7 +400,7 @@ int gpio_emul_flags_get(const struct device *port, gpio_pin_t pin, gpio_flags_t 
 		return -EINVAL;
 	}
 
-	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
+	if (!gpio_port_pin_is_supported(config->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
 
@@ -435,7 +435,7 @@ static int gpio_emul_pin_configure(const struct device *port, gpio_pin_t pin,
 		return -ENOTSUP;
 	}
 
-	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
+	if (!gpio_port_pin_is_supported(config->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
 
@@ -486,7 +486,7 @@ static int gpio_emul_pin_get_config(const struct device *port, gpio_pin_t pin,
 		(struct gpio_emul_data *)port->data;
 	const struct gpio_emul_config *config = (const struct gpio_emul_config *)port->config;
 
-	if ((config->common.port_pin_mask & BIT(pin)) == 0) {
+	if (!gpio_port_pin_is_supported(config->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
 
@@ -702,7 +702,7 @@ static int gpio_emul_pin_interrupt_configure(const struct device *port, gpio_pin
 		(const struct gpio_emul_config *)port->config;
 	k_spinlock_key_t key;
 
-	if ((BIT(pin) & config->common.port_pin_mask) == 0) {
+	if (!gpio_port_pin_is_supported(config->common.port_pin_mask, pin)) {
 		return -EINVAL;
 	}
 
