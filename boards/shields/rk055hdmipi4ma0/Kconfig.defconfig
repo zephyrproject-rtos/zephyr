@@ -12,6 +12,8 @@ config MIPI_DSI
 
 endif # DISPLAY
 
+orsource "boards/*.defconfig"
+
 if LVGL
 
 # Configure LVGL to use touchscreen

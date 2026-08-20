@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_MIMXRT1170_EVK
+if LVGL
+
+choice LV_Z_RENDERING_MODE
+	default LV_Z_PARTIAL_REFRESH
+endchoice
+
+endif # LVGL
+endif # BOARD_MIMXRT1170_EVK
