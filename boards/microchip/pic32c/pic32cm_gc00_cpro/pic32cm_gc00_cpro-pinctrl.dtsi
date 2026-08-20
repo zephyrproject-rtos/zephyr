@@ -13,4 +13,11 @@
 				 <PD19D_SERCOM4_PAD0>;
 		};
 	};
+
+	sercom1_i2c_default: sercom1_i2c_default {
+		group1 {
+			pinmux = <PD1D_SERCOM1_PAD0>,  /* SDA */
+				 <PD0D_SERCOM1_PAD1>;  /* SCL */
+		};
+	};
 };
