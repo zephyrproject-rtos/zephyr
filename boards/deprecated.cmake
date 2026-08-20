@@ -55,3 +55,9 @@ set(elemrv/elemrv_n_DEPRECATED
 set(metro_rp2350/rp2350b/m33_DEPRECATED
     metro_rp2350/rp2350b/m33_0
 )
+set(motion_2350_pro/rp2350a/m33_DEPRECATED
+    motion_2350_pro/rp2350a/m33_0
+)
+set(motion_2350_pro/rp2350a/hazard3_DEPRECATED
+    motion_2350_pro/rp2350a/hazard3_0
+)

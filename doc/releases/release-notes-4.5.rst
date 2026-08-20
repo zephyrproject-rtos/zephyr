@@ -151,6 +151,8 @@ Removed APIs and options
     * The following boards have been deprecated and renamed:
 
       * ``metro_rp2350/rp2350b/m33`` to ``metro_rp2350/rp2350b/m33_0``
+      * ``motion_2350_pro/rp2350a/m33`` to ``motion_2350_pro/rp2350a/m33_0``
+      * ``motion_2350_pro/rp2350a/hazard3`` to ``motion_2350_pro/rp2350a/hazard3_0``
 
 * Build system
 
