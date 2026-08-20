@@ -567,6 +567,7 @@ New APIs and options
       parsing command responses independently of the Host.
     * :c:func:`bt_hci_lockstep_cmd_send_sync`
     * :c:func:`bt_hci_lockstep_reset`
+    * :c:func:`bt_hci_set_public_addr` and :c:func:`bt_hci_get_public_addr`
     * :c:func:`bt_le_bond_addr_res_support`, :c:enum:`bt_le_addr_res_support` and
       :c:member:`bt_conn_auth_info_cb.addr_res_support_read`
     * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`

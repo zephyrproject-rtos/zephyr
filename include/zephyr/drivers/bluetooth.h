@@ -20,7 +20,7 @@
  * @defgroup bt_hci_api Bluetooth HCI
  *
  * @since 3.7
- * @version 0.2.0
+ * @version 0.3.0
  *
  * @ingroup bluetooth
  * @{
@@ -41,7 +41,8 @@ extern "C" {
 struct bt_hci_setup_params {
 	/** The public identity address to give to the controller. This field is used when the
 	 *  driver selects @kconfig{CONFIG_BT_HCI_SET_PUBLIC_ADDR} to indicate that it supports
-	 *  setting the controller's public address.
+	 *  setting the controller's public address. It is @ref BT_ADDR_ANY when the application
+	 *  has not created a public identity.
 	 */
 	bt_addr_t public_addr;
 };
@@ -143,6 +144,20 @@ typedef int (*bt_hci_recv_t)(const struct device *dev, struct net_buf *buf);
 struct bt_hci_driver_data {
 	/** Callback for the driver to deliver data received from the controller to the host. */
 	bt_hci_recv_t recv;
+#if defined(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || defined(__DOXYGEN__)
+	/**
+	 * @brief Public identity address to configure in the controller.
+	 *
+	 * @ref BT_ADDR_ANY when there is none, which is what zero-initialized
+	 * driver data starts out with, and not @ref BT_ADDR_NONE (see
+	 * bt_hci_get_public_addr()).
+	 *
+	 * Set with bt_hci_set_public_addr(), read with bt_hci_get_public_addr().
+	 *
+	 * @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+	 */
+	bt_addr_t public_addr;
+#endif /* CONFIG_BT_HCI_SET_PUBLIC_ADDR */
 };
 
 /**
@@ -357,6 +372,55 @@ static inline int bt_hci_setup(const struct device *dev, struct bt_hci_setup_par
 	return api->setup(dev, params);
 }
 #endif
+
+/**
+ * @brief Set the public identity address for the controller.
+ *
+ * Stores the public address the driver should configure in the controller.
+ *
+ * The Bluetooth Host calls this before bt_hci_open() when the application has
+ * created a public identity with bt_id_create(). A controller-only application
+ * can likewise call it before opening the transport.
+ *
+ * The driver reads the address with bt_hci_get_public_addr() and applies it
+ * while opening the transport, or in its setup() implementation.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+ *
+ * @param dev  HCI device
+ * @param addr Public address, or @ref BT_ADDR_ANY to clear a previously set one.
+ *             @ref BT_ADDR_NONE does not clear it, see bt_hci_get_public_addr().
+ */
+void bt_hci_set_public_addr(const struct device *dev, const bt_addr_t *addr);
+
+/**
+ * @brief Get the public identity address the driver is to configure.
+ *
+ * Returns the address stored with bt_hci_set_public_addr(), for the driver to
+ * write into the controller while opening the transport. It does not query
+ * the controller.
+ *
+ * "No address" is @ref BT_ADDR_ANY and not @ref BT_ADDR_NONE, even though the
+ * name of the latter suggests it. @ref BT_ADDR_ANY is the address part of
+ * @ref BT_ADDR_LE_ANY, with which the Host marks an identity that has no
+ * address, and it is what the setup() op receives in
+ * @ref bt_hci_setup_params.public_addr when there is no public identity, so a
+ * driver has one check whichever way it gets the address. It is also the
+ * all-zero address, so driver data that has never been written already reads
+ * as "no address". This function cannot fail, so the driver compares the
+ * address it returns with @ref BT_ADDR_ANY, using bt_addr_eq(), before it
+ * uses it.
+ *
+ * @kconfig_dep{CONFIG_BT_HCI_SET_PUBLIC_ADDR}
+ *
+ * @param dev HCI device
+ *
+ * @return The address to configure, never NULL, valid until the next
+ *         bt_hci_set_public_addr() call for the device. It compares equal to
+ *         @ref BT_ADDR_ANY when no public address has been set, or it has been
+ *         cleared.
+ */
+const bt_addr_t *bt_hci_get_public_addr(const struct device *dev);
 
 /**
  * @}
