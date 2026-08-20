@@ -212,6 +212,14 @@ static struct bt_le_ext_adv *adv_new(void)
 	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
 	adv->handle = i;
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+	net_buf_simple_init_with_data(&adv->pawr_rsp_reassembly.buf,
+				      adv->pawr_rsp_reassembly.reassembly_data,
+				      BT_PER_ADV_RSP_REASSEMBLY_BUF_SIZE);
+
+	net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
+
 	return adv;
 }
 
@@ -2023,6 +2031,19 @@ void bt_hci_le_per_adv_subevent_data_request(struct net_buf *buf)
 	}
 }
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+static void pawr_rsp_reassembly_reset(struct pawr_rsp_reassembly *reassembly)
+{
+	net_buf_simple_reset(&reassembly->buf);
+	reassembly->report_truncated = false;
+}
+
+static bool pawr_rsp_reassembly_active(const struct pawr_rsp_reassembly *reassembly)
+{
+	return reassembly->buf.len != 0 || reassembly->report_truncated;
+}
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
+
 void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_per_adv_response_report *evt;
@@ -2067,16 +2088,92 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			return;
 		}
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+		if (pawr_rsp_reassembly_active(&adv->pawr_rsp_reassembly) &&
+		    (adv->pawr_rsp_reassembly.subevent != info.subevent ||
+		     adv->pawr_rsp_reassembly.response_slot != info.response_slot)) {
+			/* A partial chain is buffered (or was truncated) for a
+			 * different response. Discard its state and start
+			 * reassembling the new one.
+			 */
+			LOG_WRN("Response reassembly interrupted, discarding");
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+		}
+#endif
+
 		if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			if (net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+			    response->data_length) {
+				/* The fragment does not fit. Mark the chain truncated so
+				 * the remaining fragments, including the terminating
+				 * COMPLETE fragment, are dropped instead of reported.
+				 */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				net_buf_simple_reset(&adv->pawr_rsp_reassembly.buf);
+				adv->pawr_rsp_reassembly.subevent = info.subevent;
+				adv->pawr_rsp_reassembly.response_slot = info.response_slot;
+				adv->pawr_rsp_reassembly.report_truncated = true;
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else {
+				/* Record the response identity on the first fragment and
+				 * buffer the data. The reassembled data is only reported
+				 * once the matching COMPLETE report arrives.
+				 */
+				adv->pawr_rsp_reassembly.subevent = info.subevent;
+				adv->pawr_rsp_reassembly.response_slot = info.response_slot;
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+			}
+#else
 			LOG_WRN("Incomplete response report received, discarding");
 			(void)net_buf_pull_mem(buf, response->data_length);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_RX_FAILED) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			/* Reception failed, drop any partial chain in progress. */
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 			(void)net_buf_pull_mem(buf, response->data_length);
 
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, NULL);
 			}
 		} else if (response->data_status == BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE) {
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+			if (adv->pawr_rsp_reassembly.report_truncated ||
+			    net_buf_simple_tailroom(&adv->pawr_rsp_reassembly.buf) <
+				    response->data_length) {
+				/* The chain was already truncated, or the final fragment
+				 * does not fit. Drop the chain instead of reporting a
+				 * partial response as if it were complete.
+				 */
+				LOG_WRN("Response reassembly buffer overflow, discarding");
+				(void)net_buf_pull_mem(buf, response->data_length);
+			} else if (adv->pawr_rsp_reassembly.buf.len != 0) {
+				/* Final fragment of a buffered chain. */
+				net_buf_simple_add_mem(&adv->pawr_rsp_reassembly.buf,
+						       net_buf_pull_mem(buf, response->data_length),
+						       response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info,
+							       &adv->pawr_rsp_reassembly.buf);
+				}
+			} else {
+				/* Self-contained COMPLETE, no buffered chain. */
+				net_buf_simple_init_with_data(
+					&data, net_buf_pull_mem(buf, response->data_length),
+					response->data_length);
+
+				if (adv->cb && adv->cb->pawr_response) {
+					adv->cb->pawr_response(adv, &info, &data);
+				}
+			}
+
+			pawr_rsp_reassembly_reset(&adv->pawr_rsp_reassembly);
+#else
 			net_buf_simple_init_with_data(&data,
 						      net_buf_pull_mem(buf, response->data_length),
 						      response->data_length);
@@ -2084,6 +2181,7 @@ void bt_hci_le_per_adv_response_report(struct net_buf *buf)
 			if (adv->cb && adv->cb->pawr_response) {
 				adv->cb->pawr_response(adv, &info, &data);
 			}
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 		} else {
 			LOG_ERR("Invalid data status %d", response->data_status);
 			(void)net_buf_pull_mem(buf, response->data_length);

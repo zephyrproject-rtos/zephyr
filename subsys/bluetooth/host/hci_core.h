@@ -157,6 +157,37 @@ enum {
 	BT_ADV_NUM_FLAGS,
 };
 
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+/* Maximum size of a reassembled PAwR response for a single response slot.
+ * An AUX_SYNC_SUBEVENT_RSP PDU cannot carry an AuxPtr (Core 6.3 Vol 6 Part B,
+ * Table 2.9), so a response is at most 254 octets, which matches the 0-254
+ * range of Response_Data_Length in LE Set Periodic Advertising Response Data
+ * (Core 6.3 Vol 4 Part E, 7.8.126).
+ */
+#define BT_PER_ADV_RSP_REASSEMBLY_BUF_SIZE 254
+
+/* Reassembly state for fragmented periodic advertising response reports */
+struct pawr_rsp_reassembly {
+	/* Buffer used to reassemble the fragmented response data */
+	struct net_buf_simple buf;
+
+	/* Backing storage for the reassembly buffer */
+	uint8_t reassembly_data[BT_PER_ADV_RSP_REASSEMBLY_BUF_SIZE];
+
+	/* Subevent of the response being reassembled */
+	uint8_t subevent;
+
+	/* Response slot of the response being reassembled */
+	uint8_t response_slot;
+
+	/* True if the current response chain overflowed the reassembly buffer.
+	 * The remaining fragments, up to and including the terminating COMPLETE
+	 * fragment, are dropped instead of being reported to the application.
+	 */
+	bool report_truncated;
+};
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
+
 struct bt_le_ext_adv {
 	/* ID Address used for advertising */
 	uint8_t                 id;
@@ -174,6 +205,11 @@ struct bt_le_ext_adv {
 	/* Callbacks for the advertising set */
 	const struct bt_le_ext_adv_cb *cb;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+#if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
+	/* Reassembly state for fragmented periodic advertising response reports */
+	struct pawr_rsp_reassembly pawr_rsp_reassembly;
+#endif /* CONFIG_BT_PER_ADV_RSP_REASSEMBLY */
 
 	/* Address this set advertises with. Updated by
 	 * bt_id_set_adv_random_addr() when a per-set random address is
