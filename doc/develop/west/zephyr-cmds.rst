@@ -100,18 +100,10 @@ richer, machine-readable build provenance described in :ref:`west-spdx-build-pro
 Generating SPDX documents
 -------------------------
 
-#. Pre-populate a build directory :file:`BUILD_DIR` like this:
+#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project, so that the build
+   records what ``west spdx`` needs.
 
-   .. code-block:: bash
-
-      west spdx --init -d BUILD_DIR
-
-   This step ensures the build directory contains the CMake metadata (a CMake file-API query)
-   required for SPDX document generation.
-
-#. Enable :kconfig:option:`CONFIG_BUILD_OUTPUT_META` in your project.
-
-#. Build your application using this pre-created build directory, like so:
+#. Build your application:
 
    .. code-block:: bash
 
@@ -138,8 +130,7 @@ Generating SPDX documents
 
    .. code-block:: bash
 
-     west spdx --init  -d BUILD_DIR/hello_world
-     west build -d BUILD_DIR/hello_world
+     west build --sysbuild -d BUILD_DIR
      west spdx -d BUILD_DIR/hello_world
 
 Output documents
