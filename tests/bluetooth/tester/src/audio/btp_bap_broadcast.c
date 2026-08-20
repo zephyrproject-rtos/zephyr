@@ -1313,7 +1313,7 @@ btp_send_broadcast_receive_state_ev(struct bt_conn *conn,
 	for (uint8_t i = 0U; i < ev->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-		sys_put_le32(subgroup->bis_sync >> 1, ptr);
+		sys_put_le32(subgroup->bis_sync, ptr);
 		ptr += sizeof(subgroup->bis_sync);
 		*ptr = subgroup->metadata_len;
 		ptr += sizeof(subgroup->metadata_len);
