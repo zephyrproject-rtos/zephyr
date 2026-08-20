@@ -184,7 +184,7 @@ static const uint8_t out_preamble[4] = {
 static void dma_callback(const struct device *dev, void *arg, uint32_t channel, int status);
 static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
 
-#define SPI_DMA_CHANNEL_INIT(id, dir, dir_cap, src_dev, dest_dev)                                  \
+#define SPI_DMA_CHANNEL_INIT(id, dir, src_dev, dest_dev)                                           \
 	.dma_dev = DEVICE_DT_GET(DT_DMAS_CTLR_BY_NAME(id, dir)),                                   \
 	.channel = DT_DMAS_CELL_BY_NAME(id, dir, channel),                                         \
 	.dma_cfg =                                                                                 \
@@ -219,8 +219,8 @@ static int prepare_rx(struct ec_host_cmd_spi_ctx *hc_spi);
 		.pclk_len = DT_NUM_CLOCKS(id),                                                     \
 	};                                                                                         \
                                                                                                    \
-	static struct dma_stream dma_rx = {SPI_DMA_CHANNEL_INIT(id, rx, RX, PERIPHERAL, MEMORY)};  \
-	static struct dma_stream dma_tx = {SPI_DMA_CHANNEL_INIT(id, tx, TX, MEMORY, PERIPHERAL)}
+	static struct dma_stream dma_rx = {SPI_DMA_CHANNEL_INIT(id, rx, PERIPHERAL, MEMORY)};      \
+	static struct dma_stream dma_tx = {SPI_DMA_CHANNEL_INIT(id, tx, MEMORY, PERIPHERAL)}
 
 STM32_SPI_INIT(DT_CHOSEN(zephyr_host_cmd_spi_backend));
 

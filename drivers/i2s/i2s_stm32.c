@@ -930,7 +930,7 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 }
 
 /* src_dev and dest_dev should be 'MEMORY' or 'PERIPHERAL'. */
-#define I2S_DMA_CHANNEL_INIT(index, dir, dir_cap, src_dev, dest_dev)		\
+#define I2S_DMA_CHANNEL_INIT(index, dir, src_dev, dest_dev)			\
 	.dir = {								\
 		.dev_dma = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir)),	\
 		.dma_channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),	\
@@ -983,9 +983,9 @@ static void tx_stream_disable(struct stream *stream, const struct device *dev)
 										\
 	static struct i2s_stm32_data i2s_stm32_data_##index = {			\
 		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, rx),			\
-			   (I2S_DMA_CHANNEL_INIT(index, rx, RX, PERIPHERAL, MEMORY))),\
+			   (I2S_DMA_CHANNEL_INIT(index, rx, PERIPHERAL, MEMORY))),\
 		IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, tx),			\
-			   (I2S_DMA_CHANNEL_INIT(index, tx, TX, MEMORY, PERIPHERAL))),\
+			   (I2S_DMA_CHANNEL_INIT(index, tx, MEMORY, PERIPHERAL))),\
 	};									\
 	DEVICE_DT_INST_DEFINE(index,						\
 			      &i2s_stm32_initialize, NULL,			\
