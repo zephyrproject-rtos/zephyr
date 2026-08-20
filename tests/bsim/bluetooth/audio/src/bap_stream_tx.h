@@ -46,8 +46,7 @@ int bap_stream_tx_register(struct bt_bap_stream *bap_stream);
  *
  * @retval 0 on success
  * @retval -EINVAL @p bap_stream is NULL
- * @retval -EINVAL @p bap_stream is not configured for TX
- * @retval -EALREADY @p bap_stream is currently not registered
+ * @retval -ENODATA @p bap_stream is currently not registered
  */
 int bap_stream_tx_unregister(struct bt_bap_stream *bap_stream);
 

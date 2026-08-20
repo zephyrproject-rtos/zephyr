@@ -1219,19 +1219,6 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 		return;
 	}
 
-	/* Call the `stopped` callback if we leave the BT_BAP_EP_STATE_STREAMING state for any
-	 * reason, except if the new state is BT_BAP_EP_STATE_IDLE as that indicates a disconnect
-	 * that is handled by unicast_client_ep_set_status
-	 */
-	if (state_changed && new_state != BT_BAP_EP_STATE_IDLE &&
-	    old_state == BT_BAP_EP_STATE_STREAMING) {
-		if (ops->stopped != NULL) {
-			ops->stopped(stream, reason);
-		} else {
-			LOG_WRN("No callback for stopped set");
-		}
-	}
-
 	switch (new_state) {
 	case BT_BAP_EP_STATE_IDLE:
 		if (ops->released != NULL) {
@@ -1251,16 +1238,20 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 		break;
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		if (dir == BT_AUDIO_DIR_SINK) {
-			if (ops->disabled != NULL) {
-				/* If the old state was enabling or streaming, then the sink
-				 * ASE has been disabled. Since the sink ASE does not have a
-				 * disabling state, we can check if by comparing the old_state
-				 */
-				const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
-						      old_state == BT_BAP_EP_STATE_STREAMING;
+			/* If the old state was enabling or streaming, then the sink
+			 * ASE has been disabled. Since the sink ASE does not have a
+			 * disabling state, we can check if by comparing the old_state
+			 */
+			const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
+					      old_state == BT_BAP_EP_STATE_STREAMING;
 
-				if (disabled) {
+			if (disabled) {
+				if (ops->disabled != NULL) {
 					ops->disabled(stream);
+				}
+
+				if (ops->stopped != NULL) {
+					ops->stopped(stream, reason);
 				}
 			}
 		} else if (dir == BT_AUDIO_DIR_SOURCE) {
@@ -1321,7 +1312,18 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 		}
 		break;
 	case BT_BAP_EP_STATE_RELEASING:
-		/* no callback for releasing state */
+		/* Call the `disable` `stopped` callback if we leave the BT_BAP_EP_STATE_STREAMING
+		 * state for any reason
+		 */
+		if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
+			if (ops->disabled != NULL) {
+				ops->disabled(stream);
+			}
+
+			if (ops->stopped != NULL) {
+				ops->stopped(stream, reason);
+			}
+		}
 		break;
 	default:
 		LOG_WRN("Unexpected new_state: %d", new_state);
