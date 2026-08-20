@@ -971,7 +971,7 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 
 #if STM32_SDMMC_USE_DMA
 
-#define SDMMC_DMA_CHANNEL_INIT(dir, dir_cap)				\
+#define SDMMC_DMA_CHANNEL_INIT(dir)					\
 	.dev = DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(0, dir)),		\
 	.channel = DT_INST_DMAS_CELL_BY_NAME(0, dir, channel),		\
 	.channel_nb = DT_DMAS_CELL_BY_NAME(				\
@@ -986,15 +986,15 @@ void stm32_sdmmc_get_card_csd(const struct device *dev, uint32_t csd[4])
 		.linked_channel = STM32_DMA_HAL_OVERRIDE,		\
 	},
 
-#define SDMMC_DMA_CHANNEL(dir, DIR)					\
+#define SDMMC_DMA_CHANNEL(dir)						\
 	.dma_##dir = {							\
 		COND_CODE_1(DT_INST_DMAS_HAS_NAME(0, dir),		\
-			    (SDMMC_DMA_CHANNEL_INIT(dir, DIR)),		\
+			    (SDMMC_DMA_CHANNEL_INIT(dir)),		\
 			    (NULL))					\
 	},
 
 #else /* STM32_SDMMC_USE_DMA */
-#define SDMMC_DMA_CHANNEL(dir, DIR)
+#define SDMMC_DMA_CHANNEL(dir)
 #endif /* STM32_SDMMC_USE_DMA */
 
 PINCTRL_DT_INST_DEFINE(0);
@@ -1039,10 +1039,10 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
 #if STM32_SDMMC_USE_DMA_SHARED
-	SDMMC_DMA_CHANNEL(txrx, TXRX)
+	SDMMC_DMA_CHANNEL(txrx)
 #else
-	SDMMC_DMA_CHANNEL(rx, RX)
-	SDMMC_DMA_CHANNEL(tx, TX)
+	SDMMC_DMA_CHANNEL(rx)
+	SDMMC_DMA_CHANNEL(tx)
 #endif
 };
 
