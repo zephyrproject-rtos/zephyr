@@ -25,6 +25,12 @@ LOG_MODULE_DECLARE(llext, CONFIG_LLEXT_LOG_LEVEL);
 bool llext_heap_inited;
 #endif
 
+#ifdef CONFIG_RISCV_PMP
+#define LLEXT_PMP_GRANULARITY CONFIG_PMP_GRANULARITY
+#else
+#define LLEXT_PMP_GRANULARITY 1
+#endif
+
 /*
  * Initialize the memory partition associated with the specified memory region
  */
@@ -99,6 +105,14 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 				/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
 				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
 				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
+			} else if (IS_ENABLED(CONFIG_RISCV_PMP)) {
+				/* RISC-V PMP entries can only describe address ranges that
+				 * are aligned to the PMP granularity. A region that is not
+				 * a multiple of it gets truncated when programmed, leaving
+				 * its tail unmapped.
+				 */
+				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
+				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
 			}
 		}
 	}

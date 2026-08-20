@@ -12,6 +12,12 @@ common:
     - mps2/an383              # ARM Cortex-M0+ (ARMv6-M ISA)
     - mps2/an385              # ARM Cortex-M3 (ARMv7-M ISA)
     - mps2/an521/cpu0         # ARM Cortex-M33 (ARMv8-M ISA)
+    - qemu_xtensa/dc233c
+    - qemu_arc/qemu_arc_em
+    - qemu_x86/atom/virt
+    - qemu_riscv32/qemu_virt_riscv32
+  min_ram: 172
+  min_flash: 172
   extra_conf_files:
     - prj.conf
 
@@ -48,8 +54,9 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   applet.llext.readonly.mpu:
     arch_allow:
-      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arm # Xtensa needs writable storage
       - arc
+      - riscv
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
       - CONFIG_USERSPACE=y
