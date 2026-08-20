@@ -115,3 +115,6 @@ set(w5500_evb_pico2/rp2350a/m33_DEPRECATED
 set(w6100_evb_pico2/rp2350a/m33_DEPRECATED
     w6100_evb_pico2/rp2350a/m33_0
 )
+set(w6300_evb_pico2/rp2350a/m33_DEPRECATED
+    w6300_evb_pico2/rp2350a/m33_0
+)
