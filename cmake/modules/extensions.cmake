@@ -1374,24 +1374,36 @@ function(zephyr_linker_sources location)
   set(itcm_path          "${snippet_base}/snippets-itcm-section.ld")
   set(dtcm_path          "${snippet_base}/snippets-dtcm-section.ld")
 
-  # Clear destination files if this is the first time the function is called.
-  get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
-  if(NOT DEFINED cleared)
-    file(WRITE ${sections_path} "")
-    file(WRITE ${rom_sections_path} "")
-    file(WRITE ${ram_sections_path} "")
-    file(WRITE ${data_sections_path} "")
-    file(WRITE ${text_sections_path} "")
-    file(WRITE ${rom_start_path} "")
-    file(WRITE ${bss_path} "")
-    file(WRITE ${noinit_path} "")
-    file(WRITE ${rwdata_path} "")
-    file(WRITE ${rodata_path} "")
-    file(WRITE ${ramfunc_path} "")
-    file(WRITE ${nocache_path} "")
-    file(WRITE ${itcm_path} "")
-    file(WRITE ${dtcm_path} "")
-    set_property(GLOBAL PROPERTY snippet_files_cleared true)
+  # The destination files are only written by zephyr_linker_sources_flush(), so
+  # calling this function after the flush would silently drop the snippet.
+  get_property(flushed GLOBAL PROPERTY snippet_files_flushed)
+  if(flushed)
+    message(FATAL_ERROR "zephyr_linker_sources() called after the linker "
+                        "snippet files have been written.")
+  endif()
+
+  # Register the destination files if this is the first time the function is
+  # called, and schedule the flush for the end of the configure stage.
+  get_property(registered GLOBAL PROPERTY snippet_files)
+  if(NOT DEFINED registered)
+    set_property(GLOBAL PROPERTY snippet_files
+      ${sections_path}
+      ${rom_sections_path}
+      ${ram_sections_path}
+      ${data_sections_path}
+      ${text_sections_path}
+      ${rom_start_path}
+      ${bss_path}
+      ${noinit_path}
+      ${rwdata_path}
+      ${rodata_path}
+      ${ramfunc_path}
+      ${nocache_path}
+      ${itcm_path}
+      ${dtcm_path}
+      )
+    cmake_language(DEFER DIRECTORY ${CMAKE_SOURCE_DIR}
+                   CALL zephyr_linker_sources_flush)
   endif()
 
   # Choose destination file, based on the <location> argument.
@@ -1466,21 +1478,32 @@ function(zephyr_linker_sources location)
     # Remove line from other snippet file, if already used
     get_property(old_path GLOBAL PROPERTY "snippet_files_used_${relpath}")
     if(DEFINED old_path)
-      file(STRINGS ${old_path} lines)
+      get_property(lines GLOBAL PROPERTY "snippet_lines_${old_path}")
       list(FILTER lines EXCLUDE REGEX ${relpath})
-      string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
-      file(WRITE ${old_path} ${lines} "\n")
+      set_property(GLOBAL PROPERTY "snippet_lines_${old_path}" ${lines})
     endif()
     set_property(GLOBAL PROPERTY "snippet_files_used_${relpath}" ${snippet_path})
 
-    # Add new line to existing lines, sort them, and write them back.
-    file(STRINGS ${snippet_path} lines) # Get current lines (without newlines).
-    list(APPEND lines ${include_str})
-    list(SORT lines)
-    string(REPLACE ";" "\n;" lines "${lines}") # Add newline to each line.
-    file(WRITE ${snippet_path} ${lines} "\n")
+    set_property(GLOBAL APPEND PROPERTY "snippet_lines_${snippet_path}" "${include_str}")
   endforeach()
 endfunction(zephyr_linker_sources)
+
+# Write the linker snippet files gathered by zephyr_linker_sources().
+#
+# This is deferred to the end of the configure stage so that each file is
+# written exactly once. file(GENERATE) then leaves an unchanged file untouched,
+# which keeps a re-configuration from dirtying everything that #includes it.
+function(zephyr_linker_sources_flush)
+  get_property(snippet_files GLOBAL PROPERTY snippet_files)
+  foreach(snippet_path IN LISTS snippet_files)
+    get_property(lines GLOBAL PROPERTY "snippet_lines_${snippet_path}")
+    list(SORT lines)
+    list(TRANSFORM lines APPEND "\n")
+    list(JOIN lines "" content)
+    file(GENERATE OUTPUT ${snippet_path} CONTENT "${content}")
+  endforeach()
+  set_property(GLOBAL PROPERTY snippet_files_flushed true)
+endfunction(zephyr_linker_sources_flush)
 
 # Helper macro for conditionally calling zephyr_code_relocate() when a
 # specific Kconfig symbol is enabled. See zephyr_code_relocate() description
