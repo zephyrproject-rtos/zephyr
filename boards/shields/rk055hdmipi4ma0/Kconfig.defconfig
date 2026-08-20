@@ -45,4 +45,6 @@ endchoice
 
 endif # LVGL
 
+orsource "boards/*.defconfig"
+
 endif # SHIELD_RK055HDMIPI4MA0
