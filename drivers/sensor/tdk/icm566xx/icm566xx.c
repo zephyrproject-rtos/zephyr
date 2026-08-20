@@ -30,20 +30,18 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ICM566XX, CONFIG_SENSOR_LOG_LEVEL);
 
-static const struct device *g_icm566xx_dev;
-
-static inline int inv_io_hal_read_reg(uint8_t reg, uint8_t *rbuffer, uint32_t rlen)
+static inline int inv_io_hal_read_reg(void *context, uint8_t reg, uint8_t *rbuffer, uint32_t rlen)
 {
-	const struct device *dev = g_icm566xx_dev;
+	const struct device *dev = context;
 	struct icm566xx_data *data = dev->data;
 
 	return icm566xx_reg_read_rtio(&data->bus, reg | REG_READ_BIT, rbuffer, rlen);
 }
 
-static inline int inv_io_hal_write_reg(uint8_t reg, const uint8_t *wbuffer,
-					uint32_t wlen)
+static inline int inv_io_hal_write_reg(void *context, uint8_t reg, const uint8_t *wbuffer,
+				       uint32_t wlen)
 {
-	const struct device *dev = g_icm566xx_dev;
+	const struct device *dev = context;
 	struct icm566xx_data *data = dev->data;
 
 	return icm566xx_reg_write_rtio(&data->bus, reg, wbuffer, wlen);
@@ -153,6 +151,12 @@ static int icm566xx_sample_fetch(const struct device *dev, enum sensor_channel c
 	struct icm566xx_encoded_data *edata = &data->edata;
 	inv_imu_sensor_data_t imu_data;
 
+#ifdef CONFIG_TDK_APEX
+	if ((enum sensor_channel_tdk_apex)chan == SENSOR_CHAN_APEX_MOTION) {
+		err = icm566xx_apex_fetch_from_dmp(dev);
+		return err;
+	}
+#endif
 	if (chan != SENSOR_CHAN_ALL) {
 		return -ENOTSUP;
 	}
@@ -268,8 +272,36 @@ static int icm566xx_attr_set(const struct device *dev, enum sensor_channel chan,
 	__ASSERT_NO_MSG(val != NULL);
 
 	if ((enum sensor_channel_tdk_apex)chan == SENSOR_CHAN_APEX_MOTION) {
-		LOG_ERR("Unsupported channel");
-		return -EINVAL;
+		if (attr == SENSOR_ATTR_CONFIGURATION) {
+#if defined(CONFIG_TDK_APEX) && defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
+			if (val->val1 == TDK_APEX_PEDOMETER) {
+				icm566xx_apex_enable(&drv_data->driver);
+				icm566xx_apex_enable_pedometer(dev, &drv_data->driver);
+			} else if (val->val1 == TDK_APEX_TILT) {
+				icm566xx_apex_enable(&drv_data->driver);
+				icm566xx_apex_enable_tilt(&drv_data->driver);
+			} else if (val->val1 == TDK_APEX_SMD) {
+				icm566xx_apex_enable(&drv_data->driver);
+				icm566xx_apex_enable_smd(&drv_data->driver);
+			} else if (val->val1 == TDK_APEX_WOM) {
+				LOG_ERR("Not supported ATTR");
+			} else if (val->val1 == TDK_APEX_TAP) {
+				icm566xx_apex_enable(&drv_data->driver);
+				icm566xx_apex_enable_tap(&drv_data->driver);
+			} else if (val->val1 == TDK_APEX_DISABLE) {
+				icm566xx_edmp_disable_pedometer(&drv_data->driver);
+				icm566xx_edmp_disable_tilt(&drv_data->driver);
+				icm566xx_edmp_disable_tap(&drv_data->driver);
+				icm566xx_edmp_disable(&drv_data->driver);
+				icm566xx_adv_disable_wom(&drv_data->driver);
+			} else {
+				LOG_ERR("Not supported ATTR value");
+			}
+#endif
+		} else {
+			LOG_ERR("Not supported ATTR");
+			return -EINVAL;
+		}
 	} else if (SENSOR_CHANNEL_IS_ACCEL(chan)) {
 		icm566xx_accel_config(drv_data, attr, val);
 	} else if (SENSOR_CHANNEL_IS_GYRO(chan)) {
@@ -309,9 +341,12 @@ static int icm566xx_channel_get(const struct device *dev, enum sensor_channel ch
 				struct sensor_value *val)
 {
 	struct icm566xx_data *data = dev->data;
+#if defined(CONFIG_TDK_APEX) && defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
+	const struct icm566xx_config *cfg = dev->config;
+#endif
 	bool is_high_res = false;
 
-	if (chan > SENSOR_CHAN_DIE_TEMP ||
+	if ((chan >= SENSOR_CHAN_AMBIENT_TEMP && chan <= SENSOR_CHAN_ALL) ||
 		(chan >= SENSOR_CHAN_MAGN_X && chan <= SENSOR_CHAN_MAGN_XYZ)) {
 		return -ENOTSUP;
 	}
@@ -364,6 +399,29 @@ static int icm566xx_channel_get(const struct device *dev, enum sensor_channel ch
 		icm566xx_gyro_rads(data->edata.header.gyro_fs, data->edata.payload.gyro.z,
 				   is_high_res, &val[2].val1, &val[2].val2);
 		break;
+#ifdef CONFIG_TDK_APEX
+	case SENSOR_CHAN_APEX_MOTION:
+#if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
+		if (cfg->apex == TDK_APEX_PEDOMETER) {
+			val[0].val1 = data->pedometer_cnt;
+			val[1].val1 = data->pedometer_activity;
+			icm566xx_apex_pedometer_cadence_convert(&val[2], data->pedometer_cadence,
+								data->dmp_odr_hz);
+		} else if (cfg->apex == TDK_APEX_WOM) {
+			val[0].val1 = (data->apex_status & ICM566XX_APEX_STATUS_MASK_WOM_X) ? 1 : 0;
+			val[1].val1 = (data->apex_status & ICM566XX_APEX_STATUS_MASK_WOM_Y) ? 1 : 0;
+			val[2].val1 = (data->apex_status & ICM566XX_APEX_STATUS_MASK_WOM_Z) ? 1 : 0;
+		} else if ((cfg->apex == TDK_APEX_TILT) ||
+					(cfg->apex == TDK_APEX_SMD) ||
+					(cfg->apex == TDK_APEX_TAP)) {
+			val[0].val1 = data->apex_status;
+		} else {
+			LOG_ERR("Unsupported apex feature");
+		}
+#endif
+		break;
+#endif
+
 	default:
 		return -ENOTSUP;
 	}
@@ -504,7 +562,7 @@ static int icm566xx_init(const struct device *dev)
 	int err;
 
 	/* Initialize serial interface and device */
-	g_icm566xx_dev = dev;
+	data->driver.transport.context = (struct device *)dev;
 	data->driver.transport.read_reg = inv_io_hal_read_reg;
 	data->driver.transport.write_reg = inv_io_hal_write_reg;
 	data->driver.transport.sleep_us = icm566xx_inv_sleep_us;
@@ -638,6 +696,33 @@ static int icm566xx_init(const struct device *dev)
 		 * intentional fall-through
 		 */
 	}
+
+#ifdef CONFIG_TDK_APEX
+	/* Initialize APEX */
+#if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
+	err = icm566xx_edmp_disable(&data->driver);
+	if (err < 0) {
+		LOG_ERR("APEX Disable failed");
+		return err;
+	}
+
+	k_sleep(K_MSEC(10));
+#endif
+
+	inv_imu_int_state_t int_config;
+
+	memset(&int_config, INV_IMU_DISABLE, sizeof(int_config));
+	int_config.INV_EDMP_EVENT = INV_IMU_ENABLE;
+	err = icm566xx_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
+
+#if defined(CONFIG_DT_HAS_INVENSENSE_ICM56686_ENABLED)
+	err = icm566xx_edmp_init_apex(&data->driver);
+#endif
+	if (err < 0) {
+		LOG_ERR("APEX Initialization failed");
+		return err;
+	}
+#endif
 
 	LOG_DBG("Init OK");
 
