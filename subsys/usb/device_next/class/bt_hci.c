@@ -235,6 +235,7 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 			break;
 		default:
 			LOG_ERR("Unsupported type %u", type);
+			net_buf_unref(bt_buf);
 			continue;
 		}
 
