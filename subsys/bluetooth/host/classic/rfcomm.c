@@ -38,9 +38,14 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define RFCOMM_MIN_MTU		BT_RFCOMM_SIG_MIN_MTU
 #define RFCOMM_DEFAULT_MTU	127
 
-#define RFCOMM_MAX_CREDITS		(BT_BUF_ACL_RX_COUNT - 1)
-#define RFCOMM_CREDITS_THRESHOLD	(RFCOMM_MAX_CREDITS / 2)
-#define RFCOMM_DEFAULT_CREDIT		RFCOMM_MAX_CREDITS
+#define RFCOMM_MAX_RX_CREDITS 255
+
+#define RFCOMM_MAX_CREDITS (MIN((BT_BUF_ACL_RX_COUNT - 1), RFCOMM_MAX_RX_CREDITS))
+
+#define RFCOMM_DLC_CREDITS_MAX(_dlc) ((_dlc)->rx_credit_limit)
+
+#define _RFCOMM_DLC_CREDITS_THRESHOLD(_dlc) (RFCOMM_DLC_CREDITS_MAX(_dlc) / 2)
+#define RFCOMM_DLC_CREDITS_THRESHOLD(_dlc) MAX(_RFCOMM_DLC_CREDITS_THRESHOLD(_dlc), 1)
 
 #define RFCOMM_CONN_TIMEOUT     K_SECONDS(60)
 #define RFCOMM_DISC_TIMEOUT     K_SECONDS(20)
@@ -487,7 +492,12 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 
 	dlc->dlci = dlci;
 	dlc->session = session;
-	dlc->rx_credit = RFCOMM_DEFAULT_CREDIT;
+	if (dlc->rx_credit_limit == 0) {
+		dlc->rx_credit_limit = RFCOMM_MAX_CREDITS;
+	} else {
+		dlc->rx_credit_limit = MIN(dlc->rx_credit_limit, RFCOMM_MAX_CREDITS);
+	}
+	dlc->rx_credit = dlc->rx_credit_limit;
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
 	k_work_init_delayable(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
@@ -1043,6 +1053,8 @@ static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
 	}
 }
 
+#define RFCOMM_PN_MAX_RX_CREDITS 7
+
 static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 {
 	struct bt_rfcomm_pn *pn;
@@ -1059,7 +1071,7 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, uint8_t cr)
 	if (dlc->state == BT_RFCOMM_STATE_CONFIG &&
 	    (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN ||
 	     dlc->session->cfc == BT_RFCOMM_CFC_SUPPORTED)) {
-		pn->credits = dlc->rx_credit;
+		pn->credits = MIN(dlc->rx_credit_limit, RFCOMM_PN_MAX_RX_CREDITS);
 		if (cr) {
 			pn->flow_ctrl = BT_RFCOMM_PN_CFC_CMD;
 		} else {
@@ -1539,15 +1551,16 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
 
 	/* Only give more credits if it went below the defined threshold */
-	if (dlc->rx_credit > RFCOMM_CREDITS_THRESHOLD) {
+	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
 		return;
 	}
 
 	/* Restore credits */
-	credits = RFCOMM_MAX_CREDITS - dlc->rx_credit;
-	dlc->rx_credit += credits;
-
-	rfcomm_send_credit(dlc, credits);
+	if (RFCOMM_DLC_CREDITS_MAX(dlc) > dlc->rx_credit) {
+		credits = RFCOMM_DLC_CREDITS_MAX(dlc) - dlc->rx_credit;
+		dlc->rx_credit += credits;
+		rfcomm_send_credit(dlc, credits);
+	}
 }
 
 static void rfcomm_handle_data(struct bt_rfcomm_session *session, struct net_buf *buf, uint8_t dlci,
