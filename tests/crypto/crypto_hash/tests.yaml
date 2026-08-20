@@ -3,7 +3,7 @@ tests:
     platform_allow:
       - native_sim
       - nucleo_u575zi_q
-      - rpi_pico2/rp2350a/m33
+      - rpi_pico2/rp2350a/m33_0
     integration_platforms:
       - native_sim
       - nucleo_u575zi_q
