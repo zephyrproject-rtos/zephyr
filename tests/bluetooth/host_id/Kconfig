@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Adds a prompt so that the scenario exercising the public-address channel can
+# enable the capability a driver would otherwise select for itself.
+
+config BT_HCI_SET_PUBLIC_ADDR
+	prompt "Public address support in the test driver"
+
+source "Kconfig.zephyr"

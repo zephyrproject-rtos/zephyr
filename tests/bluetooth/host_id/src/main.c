@@ -255,7 +255,25 @@ static void cmd_handle(const struct device *dev, struct net_buf *cmd)
 	bt_hci_recv(dev, evt);
 }
 
+/* What bt_hci_get_public_addr() returned the last time the transport was
+ * opened, for the public-address channel test below.
+ */
+static bt_addr_t opened_with_addr;
+static bool opened_with_public_addr;
+
 static int driver_open(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		const bt_addr_t *addr = bt_hci_get_public_addr(dev);
+
+		opened_with_public_addr = !bt_addr_eq(addr, BT_ADDR_ANY);
+		bt_addr_copy(&opened_with_addr, addr);
+	}
+
+	return 0;
+}
+
+static int driver_close(const struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -275,6 +293,7 @@ static int driver_send(const struct device *dev, struct net_buf *buf)
 
 static DEVICE_API(bt_hci, driver_api) = {
 	.open = driver_open,
+	.close = driver_close,
 	.send = driver_send,
 };
 
@@ -411,14 +430,27 @@ ZTEST(bt_id_public_api, test_create_errors_and_capacity)
 	bt_addr_le_t addr4 = test_addr(5U);
 	bt_addr_le_t public_addr = test_addr(6U);
 	uint8_t irk[BT_IRK_SIZE] = {1U};
+	int err;
 	int id;
 
 	invalid_addr.a.val[5] = 0x40U;
 	public_addr.type = BT_ADDR_LE_PUBLIC;
 	zassert_equal(bt_id_create(&invalid_addr, NULL), -EINVAL,
 		      "Non-static random identity address was accepted");
-	zassert_equal(bt_id_create(&public_addr, NULL), -EINVAL,
-		      "Public identity address was accepted without controller support");
+	err = bt_id_create(&public_addr, NULL);
+	/* The same condition the Host applies: a public identity is taken when
+	 * the controller can be given one.
+	 */
+	if (IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR) || IS_ENABLED(CONFIG_BT_HCI_VS)) {
+		zassert_equal(err, -EALREADY,
+			      "Public identity address after the default identity gave %d (!= %d)",
+			      err, -EALREADY);
+	} else {
+		zassert_equal(err, -EINVAL,
+			      "Public identity address without controller support gave %d (!= %d)",
+			      err, -EINVAL);
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		zassert_equal(bt_id_create(&addr1, irk), 1, "IRK was not accepted");
 	} else {
@@ -710,3 +742,49 @@ static ZTEST(bt_id_public_api, test_reset_irk_rejects_active_roles)
 	zassert_ok(err, "IRK reset failed after active roles stopped");
 }
 #endif /* defined(CONFIG_BT_PRIVACY) */
+
+/* The public identity address reaches the driver through the common driver
+ * data, so that a driver can apply it while opening the transport rather than
+ * from the setup() op. The Host sets it before every open, which includes
+ * clearing it when the application has not created a public identity.
+ */
+ZTEST_SUITE(bt_hci_public_addr, NULL, NULL, NULL, NULL, NULL);
+
+static ZTEST(bt_hci_public_addr, test_public_addr_reaches_the_driver)
+{
+	bt_addr_le_t public_addr = {
+		.type = BT_ADDR_LE_PUBLIC,
+		.a.val = {0x01U, 0x02U, 0x03U, 0x04U, 0x05U, 0x06U},
+	};
+	int err;
+
+	if (!IS_ENABLED(CONFIG_BT_HCI_SET_PUBLIC_ADDR)) {
+		ztest_test_skip();
+	}
+
+	/* A public identity can only be the first one, so start from a closed
+	 * transport whether or not another suite has opened it.
+	 */
+	err = bt_disable();
+	zassert_true(err == 0 || err == -EALREADY, "Bluetooth disable gave %d", err);
+
+	zassert_equal(bt_id_create(&public_addr, NULL), BT_ID_DEFAULT,
+		      "Public identity address was not accepted");
+
+	zassert_ok(bt_enable(NULL), "Bluetooth init with a public identity failed");
+	zassert_true(opened_with_public_addr, "The driver was opened without a public address");
+	zassert_mem_equal(&opened_with_addr, &public_addr.a, sizeof(opened_with_addr),
+			  "The driver was opened with the wrong public address");
+
+	/* bt_disable() drops the identities, so the next open must not be given
+	 * the address this one left behind.
+	 */
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+	zassert_ok(bt_enable(NULL), "Bluetooth re-init failed");
+	zassert_false(opened_with_public_addr, "The driver was opened with a stale public address");
+	/* The documented value for "no address", which is not BT_ADDR_NONE */
+	zassert_true(bt_addr_eq(&opened_with_addr, BT_ADDR_ANY),
+		     "No public address did not read as BT_ADDR_ANY");
+
+	zassert_ok(bt_disable(), "Bluetooth disable failed");
+}
