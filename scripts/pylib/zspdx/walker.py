@@ -350,7 +350,10 @@ class Walker:
         cmake_reply_dir_path = os.path.join(self.cfg.build_dir, ".cmake", "api", "v1", "reply")
         if not os.path.exists(cmake_reply_dir_path):
             _logger.error(f'cmake api reply directory {cmake_reply_dir_path} does not exist')
-            _logger.error('was query directory created before cmake build ran?')
+            _logger.error(
+                're-run CMake with CONFIG_BUILD_OUTPUT_META enabled so the build '
+                'requests the file-based API reply'
+            )
             return None
         if not os.path.isdir(cmake_reply_dir_path):
             _logger.error(
