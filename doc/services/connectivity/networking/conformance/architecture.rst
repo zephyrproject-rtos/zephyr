@@ -43,7 +43,7 @@ The pieces
            suite [label="TTCN-3 suite\nexecutable"];
        }
 
-       tap [label="zeth\ntap interface", shape=ellipse, fillcolor="#ffe0b2"];
+       tap [label="zeth / zethL2\ntap interface", shape=ellipse, fillcolor="#ffe0b2"];
 
        twister -> harness [label="harness: pytest"];
        harness -> sut [label="start, read ready line"];
@@ -206,6 +206,10 @@ Three facts about a suite are read from :file:`suites/<name>/build.conf`:
    The suite binds a privileged port or opens a packet socket, so the run has
    to be root.
 
+``L2=yes``
+   The suite works below the IP layer, so it wants ``zethL2`` rather than
+   ``zeth``.
+
 The same file is sourced as a shell fragment by :file:`build.sh`, which is why
 it is written as shell assignments; the harness only matches substrings in it.
 
@@ -314,6 +318,25 @@ run can be moved to a different link by editing one configuration file.
 and assert that nothing arrives. A socket based suite extends that component
 rather than opening sockets itself.
 
+``ARP_Types`` is hand written, and lives in :file:`common` rather than in the
+``arp`` suite, because any suite working below IP has to answer address
+resolution itself on a link where nothing else will. The Titan project
+publishes no ARP module.
+
+The ethernet test port
+======================
+
+Titan publishes a raw link layer test port, ``LANL2asp``, which this does not
+use. It captures with libpcap and opens the handle with a zero read timeout,
+which on Linux means "wait until a capture block fills". On a link as quiet as
+a test link the frames never reach the test, and there is no parameter to
+change it.
+
+:file:`common/Ethernet_PT.cc` reads a packet socket instead, which hands up
+every frame as it arrives. It takes three test port parameters: ``interface``,
+which is required; ``source_address``, defaulting to the interface's own; and
+``ethertype``, which when set passes only that type up.
+
 Third party modules
 ===================
 
@@ -328,6 +351,31 @@ The upstream modules are EPL-2.0 while everything written here is Apache-2.0.
 Both are OSI approved, which is what Zephyr asks of tooling that never becomes
 part of a Zephyr image; see :ref:`external-contributions`.
 
+.. _ttcn3_test_network:
+
+The test network
+****************
+
+``zeth`` is an ordinary tap with addresses on both sides, and a suite using it
+is just another host on the link. ``zethL2`` has no address at all, and the host
+is configured not to answer on it, so that the only thing replying to address
+resolution is Zephyr. :ref:`ttcn3_interfaces` covers creating them.
+
+.. warning::
+
+   The name ``zethL2`` is written into three places that have to agree, and
+   nothing checks that they do:
+
+   * ``L2_INTERFACE`` in :zephyr_file:`tests/net/conformance/ttcn3_runner.py`,
+     which decides which interface has to exist before the test runs
+   * ``host-interface`` in the :file:`boards/native_sim.overlay` of the ``arp``
+     and ``tcp`` tests, which decides where the system under test appears
+   * ``system.pt.interface`` in the ``arp`` and ``tcp`` configuration files,
+     which decides where the suite listens
+
+   A mismatch shows up as a suite that sees no frames and times out, not as an
+   error.
+
 .. _ttcn3_adding_a_suite:
 
 Adding a suite
@@ -338,6 +386,13 @@ either.
 
 Choosing the shape
 ==================
+
+**Sockets or raw frames.** A suite that can say what it means over UDP or TCP
+extends ``Zephyr_Tester``, uses the ``IPL4asp`` port, runs on ``zeth`` and needs
+no privilege. A suite that has to see or send the frame itself uses
+``Ethernet_Port``, runs on ``zethL2``, has to be root, and has to answer address
+resolution itself because nothing else on that link will. Prefer sockets; the
+raw path costs a second interface and a password prompt.
 
 **Single or parallel.** Single mode unless the test cases create parallel test
 components. Parallel costs Titan's main controller and a dependency on

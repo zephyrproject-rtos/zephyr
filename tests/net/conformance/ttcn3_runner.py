@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 TESTER_INTERFACE = 'zeth'
 
+# A suite that works below the IP layer uses an interface of its own, with no
+# address on the Linux side, so that nothing but the tester answers on the
+# link. See net-tools/zeth-l2.conf.
+L2_INTERFACE = 'zethL2'
+
 # Every conformance test drives a device that answers to the same address on
 # the same interface, so only one of them can be running at a time. Twister
 # runs each of them in its own pytest process, so the exclusion has to hold
@@ -101,8 +106,9 @@ def requirements(suite: str) -> str | None:
     if not (suites / 'modules').is_dir():
         return f'third party modules are missing, run {suites}/fetch-modules.sh'
 
-    if not Path('/sys/class/net').joinpath(TESTER_INTERFACE).exists():
-        return f'the {TESTER_INTERFACE} interface does not exist, run net-setup.sh to create it'
+    interface = L2_INTERFACE if needs_l2(suite) else TESTER_INTERFACE
+    if not Path('/sys/class/net').joinpath(interface).exists():
+        return f'the {interface} interface does not exist, run net-setup.sh to create it'
 
     if is_parallel(suite) and not (Path(os.environ['TTCN3_DIR']) / 'bin' / 'ttcn3_start').is_file():
         return 'this suite needs a main controller, and ttcn3_start is not in TTCN3_DIR/bin'
@@ -128,8 +134,14 @@ def is_parallel(suite: str) -> bool:
 
 
 def needs_privilege(suite: str) -> bool:
-    """A suite that has to bind a port below 1024 says so here."""
+    """A suite that has to bind a port below 1024, or read frames off the
+    link, says so here."""
     return 'PRIVILEGED=yes' in build_conf(suite)
+
+
+def needs_l2(suite: str) -> bool:
+    """A suite that works below the IP layer says so here."""
+    return 'L2=yes' in build_conf(suite)
 
 
 def build_suite(suite: str) -> Path:

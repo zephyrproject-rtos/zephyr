@@ -83,6 +83,11 @@ socket on a link of its own.
      - ``zeth``
      - root
      - 3
+   * - ``arp``
+     - :zephyr_file:`tests/net/conformance/arp`
+     - ``zethL2``
+     - root
+     - 5
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -147,6 +152,20 @@ it doubles.
 * ``tc_discover_is_well_formed``
 * ``tc_exchange_completes``
 
+ARP
+===
+
+The first suite to work below the IP layer, so it reads and writes frames on
+``zethL2`` and has to be run as root. The application sends a datagram to a peer
+every two seconds, which means an uncached destination keeps producing address
+resolution requests for the suite to look at.
+
+* ``tc_it_asks_before_it_sends``
+* ``tc_request_is_answered``
+* ``tc_unicast_request_is_answered``
+* ``tc_request_for_another_address_is_ignored``
+* ``tc_reply_is_not_answered``
+
 .. _ttcn3_known_gaps:
 
 Known gaps
@@ -195,8 +214,9 @@ run at the same time as each other.
 They run nightly instead, from
 :zephyr_file:`.github/workflows/net_conformance.yml`, which can also be started
 by hand from the Actions tab. The job installs the packaged Titan and sets
-``TTCN3_DIR=/usr``, and brings the interface up in a container holding
-``NET_ADMIN``. The Twister report and the harness logs are kept as artifacts.
+``TTCN3_DIR=/usr``, brings up both interfaces in a container holding
+``NET_ADMIN``, and runs the whole directory as root so that no suite is
+skipped. The Twister report and the harness logs are kept as artifacts.
 
 Other TTCN-3 suites
 *******************

@@ -22,8 +22,9 @@ What a run needs
 * **A checkout of net-tools**, which a west workspace already has: it is in
   :file:`west.yml` under the ``tools`` group, which is not filtered out.
 * **make**, because that is how Titan builds a suite.
-* **The** ``zeth`` **interface**. See :ref:`ttcn3_interfaces`.
-* **Root**, for the three suites that cannot avoid a privileged port or a
+* **The** ``zeth`` **interface**, or ``zethL2`` for the one suite that works
+  below the IP layer. See :ref:`ttcn3_interfaces`.
+* **Root**, for the two suites that cannot avoid a privileged port or a
   packet socket.
 * **expect**, for the one suite that runs through Titan's main controller.
 
@@ -66,8 +67,8 @@ parallel make loses that race.
 Setting up the network interfaces
 *********************************
 
-The suites talk to Zephyr over a tap interface, which the system under test
-appears on as an ordinary host.
+The suites use two tap interfaces, because a suite working below the IP layer
+cannot share a link with a host that answers for itself.
 
 ``zeth``, the shared interface
 ==============================
@@ -83,6 +84,29 @@ is just another host on the link:
 The host holds ``192.0.2.2/24`` and ``2001:db8::2``; Zephyr answers on
 ``192.0.2.1`` and ``2001:db8::1``. Tear it down with ``stop`` in place of
 ``start``.
+
+``zethL2``, the address-less interface
+======================================
+
+Used by the ``arp`` and ``tcp`` suites:
+
+.. code-block:: console
+
+   sudo ./net-setup.sh --config zeth-l2.conf --iface zethL2 start
+
+This interface is deliberately given no IP address. Linux answers address
+resolution and neighbour discovery for any address it holds on any interface
+unless it is told otherwise, and an answer from the host would be
+indistinguishable from an answer from Zephyr. The tester speaks raw frames, so
+it needs no address of its own.
+
+The configuration sets three sysctls to stop the host joining in:
+``arp_ignore=8`` so it answers address resolution for no local address at all,
+``arp_announce=2`` so it never answers with an address this interface does not
+hold, and ``disable_ipv6=1`` so there are no neighbour advertisements or router
+solicitations.
+
+The name ``zethL2`` is not freely choosable; see :ref:`ttcn3_test_network`.
 
 Running the suites with Twister
 *******************************
@@ -119,9 +143,10 @@ picks up all six.
 Running as root
 ===============
 
-One suite has to be run as root. DHCP is defined on ports 67 and 68 and there
-is no way to move it elsewhere, so the tester cannot avoid binding a privileged
-port; that test skips itself when it is not run with enough privilege.
+Two suites have to be run as root. DHCP is defined on ports 67 and 68 and
+there is no way to move it elsewhere, so the tester cannot avoid binding a
+privileged port; and reading frames off a link needs a packet socket. Those
+tests skip themselves when they are not run with enough privilege.
 
 Use ``sudo -E`` so that ``TTCN3_DIR`` and the rest of the environment survive.
 A run is either wholly privileged or wholly not — see :ref:`ttcn3_runner` for
@@ -242,9 +267,12 @@ builds against. Build Titan from source.
 The suite sees nothing and times out
 ====================================
 
-Check that the application and the suite are on the same interface, and that
-the addresses in the suite's configuration file match the ones the application
-was built with.
+Check that the application and the suite are on the same interface: a suite
+working below IP wants ``zethL2``, and the application has to be built with a
+``host-interface`` property naming the same interface, which the test sets in
+:file:`boards/native_sim.overlay`. If the host is answering on the link instead
+of Zephyr, the ``zethL2`` sysctls did not take; confirm with
+``sysctl net.ipv4.conf.zethL2.arp_ignore``.
 
 A run hangs or is cut off
 =========================

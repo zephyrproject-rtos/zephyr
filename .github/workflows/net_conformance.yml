@@ -29,9 +29,10 @@ jobs:
     timeout-minutes: 90
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
-      # Creating the interface the suites talk to the device over needs to
-      # configure networking in the container.
-      options: '--entrypoint /bin/bash --cap-add=NET_ADMIN'
+      # Creating the interfaces the suites talk to the device over needs to
+      # configure networking in the container, and two of the suites need a
+      # privileged port or a packet socket, so the job runs as root.
+      options: '--entrypoint /bin/bash --cap-add=NET_ADMIN --user root'
     env:
       ZEPHYR_TOOLCHAIN_VARIANT: zephyr
     steps:
@@ -61,11 +62,16 @@ jobs:
         run: |
           ${GITHUB_WORKSPACE}/../tools/net-tools/ttcn3/fetch-modules.sh
 
-      - name: Create the network interface
+      - name: Create the network interfaces
         run: |
-          ${GITHUB_WORKSPACE}/../tools/net-tools/net-setup.sh \
-            --config ${GITHUB_WORKSPACE}/../tools/net-tools/zeth.conf start
-          ip -br addr show zeth
+          net_tools=${GITHUB_WORKSPACE}/../tools/net-tools
+          # The interface the suites that use sockets share.
+          $net_tools/net-setup.sh --config $net_tools/zeth.conf start
+          # A second one with no address, for the suites that read frames off
+          # the link and so need to be the only thing on it that answers.
+          $net_tools/net-setup.sh --config $net_tools/zeth-l2.conf \
+            --iface zethL2 start
+          ip -br addr show
 
       - name: Run the conformance suites
         run: |
