@@ -30,6 +30,34 @@ enum icm45686_stream_state {
 	ICM45686_STREAM_BUSY = 2,
 };
 
+/*
+ * Both ignore paths in icm45686_event_handler can recur on every interrupt
+ * while a stream is stalled. Logging each occurrence floods the backend and
+ * can starve the very threads that would clear the stall, so count the
+ * occurrences and emit at most one summary per second.
+ */
+static void icm45686_report_ignored_events(struct icm45686_data *data)
+{
+	int64_t now = k_uptime_get();
+	uint32_t busy;
+	uint32_t no_sub;
+
+	if (now < data->stream.ignore_stats.report_deadline) {
+		return;
+	}
+	data->stream.ignore_stats.report_deadline = now + 1000;
+
+	busy = (uint32_t)atomic_set(&data->stream.ignore_stats.busy_ignored, 0);
+	no_sub = (uint32_t)atomic_set(&data->stream.ignore_stats.no_submission_ignored, 0);
+
+	if (busy != 0U) {
+		LOG_WRN("Ignored %u interrupt(s): event while a stream was in progress", busy);
+	}
+	if (no_sub != 0U) {
+		LOG_WRN("Ignored %u interrupt(s): callback before a streaming submission", no_sub);
+	}
+}
+
 static struct sensor_stream_trigger *get_read_config_trigger(const struct sensor_read_config *cfg,
 							     enum sensor_trigger_type trig)
 {
@@ -193,7 +221,8 @@ static void icm45686_event_handler(const struct device *dev)
 	int err;
 
 	if (!data->stream.iodev_sqe) {
-		LOG_WRN("Callback triggered before a streaming submission - Ignoring");
+		(void)atomic_inc(&data->stream.ignore_stats.no_submission_ignored);
+		icm45686_report_ignored_events(data);
 		return;
 	}
 
@@ -218,7 +247,13 @@ static void icm45686_event_handler(const struct device *dev)
 	read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 
 	if (atomic_cas(&data->stream.state, ICM45686_STREAM_ON, ICM45686_STREAM_BUSY) == false) {
-		LOG_WRN("Event handler triggered while a stream is in progress! Ignoring");
+		/*
+		 * A data-ready edge arrived while the previous readout was still
+		 * in flight. Drop the event but intentionally leave the DRDY
+		 * interrupt armed so the next edge after completion is serviced.
+		 */
+		(void)atomic_inc(&data->stream.ignore_stats.busy_ignored);
+		icm45686_report_ignored_events(data);
 		return;
 	}
 
