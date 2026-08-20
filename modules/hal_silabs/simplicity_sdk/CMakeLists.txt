@@ -182,7 +182,7 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
   endif()
 
   if(CONFIG_IEEE802154_SILABS_EFR32 AND NOT CONFIG_BUILD_ONLY_NO_BLOBS)
-    set(SL_OPENTHREAD_PAL_PREBUILT protocol/openthread/build/gcc/cortex-m33/cmake/sl-openthread-library/Release/libsl_openthread.a)
+    set(SL_OPENTHREAD_PAL_PREBUILT protocol/openthread/build/gcc/cortex-m33/sl-openthread-library/Release/libsl_openthread.a)
     if(NOT EXISTS "${BLOBS_DIR}/${SL_OPENTHREAD_PAL_PREBUILT}")
       message(FATAL_ERROR
         "IEEE802154_SILABS_EFR32 requires the OpenThread PAL prebuilt library at:\n"
