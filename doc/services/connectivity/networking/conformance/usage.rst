@@ -40,7 +40,8 @@ missing piece skips the test with a reason rather than failing it.
 Installing Titan
 ****************
 
-Most distributions package a Titan:
+Most distributions package a Titan, and that is what continuous integration
+installs:
 
 .. code-block:: console
 
@@ -55,7 +56,7 @@ Building Titan from source
 
 :file:`net-tools/docker/Dockerfile.ttcn3` builds Titan into :file:`/opt/titan`
 and is the reference for doing it by hand, either as a container or as a recipe
-to follow.
+to follow. It is a local option, not what continuous integration uses.
 
 Two things a hand built Titan has to get right. Titan is configured through a
 :file:`Makefile.personal` in its source tree rather than a ``configure`` script,
