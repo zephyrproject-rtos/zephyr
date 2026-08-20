@@ -290,6 +290,13 @@ struct bt_le_ext_adv_cb {
 	 * @brief The Controller indicates that one or more synced devices have
 	 * responded to a periodic advertising subevent indication.
 	 *
+	 * A response may be fragmented across several controller reports. When
+	 * @kconfig{CONFIG_BT_PER_ADV_RSP_REASSEMBLY} is enabled, the host
+	 * reassembles the fragments and delivers the complete response in a
+	 * single callback. If it is disabled, partial reports are discarded
+	 * and only reports already marked as "complete" by the controller are
+	 * forwarded to the application.
+	 *
 	 * @param adv  The advertising set object.
 	 * @param info Information about the responses received.
 	 * @param buf  The received data. NULL if the controller reported
