@@ -34,3 +34,6 @@ tests:
       - CONFIG_BT_EXT_ADV=y
       - CONFIG_BT_RPA_SHARING=y
       - CONFIG_BT_HOST_CRYPTO_PRNG=n
+  bluetooth.host_id.public_addr:
+    extra_configs:
+      - CONFIG_BT_HCI_SET_PUBLIC_ADDR=y
