@@ -48,6 +48,180 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #define INT_VREF                         BIT(0)
 #define EXT_VREF                         BIT(1)
 
+/*
+ * CPU_INT, GEN_EVENT and DMA_TRIG share this interrupt-controller register
+ * layout; offsets below are relative to each block's own base address.
+ */
+struct adc_mspm0_int_regs {
+	volatile const uint32_t iidx; /**< IIDX Interrupt index, offset: +0x00 */
+	uint32_t reserved0;           /**< Reserved, offset: +0x04 - +0x08 */
+	volatile uint32_t imask;      /**< IMASK Interrupt mask, offset: +0x08 */
+	uint32_t reserved1;           /**< Reserved, offset: +0x0C - +0x10 */
+	volatile const uint32_t ris;  /**< RIS Raw interrupt status, offset: +0x10 */
+	uint32_t reserved2;           /**< Reserved, offset: +0x14 - +0x18 */
+	volatile const uint32_t mis;  /**< MIS Masked interrupt status, offset: +0x18 */
+	uint32_t reserved3;           /**< Reserved, offset: +0x1C - +0x20 */
+	volatile uint32_t iset;       /**< ISET Interrupt set, offset: +0x20 */
+	uint32_t reserved4;           /**< Reserved, offset: +0x24 - +0x28 */
+	volatile uint32_t iclr;       /**< ICLR Interrupt clear, offset: +0x28 */
+};
+
+struct adc_mspm0_gprcm {
+	volatile uint32_t pwren;      /**< PWREN Power enable, offset: 0x800 */
+	volatile uint32_t rstctl;     /**< RSTCTL Reset Control, offset: 0x804 */
+	volatile uint32_t clkcfg;     /**< CLKCFG ADC clock configuration Register, offset: 0x808 */
+	uint32_t reserved[2];         /**< Reserved, offset: 0x80C - 0x814 */
+	volatile const uint32_t stat; /**< STAT Status Register, offset: 0x814 */
+};
+
+/* ADC12 register map */
+struct adc_mspm0_regs {
+	uint32_t reserved0[256];  /**< Reserved, offset: 0x000 - 0x400 */
+	volatile uint32_t fsub_0; /**< FSUB_0 Subscriber Configuration Register, offset: 0x400 */
+	uint32_t reserved1[16];   /**< Reserved, offset: 0x404 - 0x444 */
+	volatile uint32_t fpub_1; /**< FPUB_1 Publisher Configuration Register, offset: 0x444 */
+	uint32_t reserved2[238];  /**< Reserved, offset: 0x448 - 0x800 */
+	struct adc_mspm0_gprcm gprcm;        /**< Power/reset/clock control block, offset: 0x800 */
+	uint32_t reserved3[514];             /**< Reserved, offset: 0x818 - 0x1020 */
+	struct adc_mspm0_int_regs cpu_int;   /**< CPU interrupt block, offset: 0x1020 */
+	uint32_t reserved4;                  /**< Reserved, offset: 0x104C - 0x1050 */
+	struct adc_mspm0_int_regs gen_event; /**< General event interrupt block, offset: 0x1050 */
+	uint32_t reserved5;                  /**< Reserved, offset: 0x107C - 0x1080 */
+	struct adc_mspm0_int_regs dma_trig;  /**< DMA trigger interrupt block, offset: 0x1080 */
+	uint32_t reserved6[13];              /**< Reserved, offset: 0x10AC - 0x10E0 */
+	volatile const uint32_t evt_mode;    /**< EVT_MODE Event Mode, offset: 0x10E0 */
+	uint32_t reserved7[6];               /**< Reserved, offset: 0x10E4 - 0x10FC */
+	volatile const uint32_t desc;        /**< DESC Module Description, offset: 0x10FC */
+	volatile uint32_t ctl0;              /**< CTL0 Control Register 0, offset: 0x1100 */
+	volatile uint32_t ctl1;              /**< CTL1 Control Register 1, offset: 0x1104 */
+	volatile uint32_t ctl2;              /**< CTL2 Control Register 2, offset: 0x1108 */
+	uint32_t reserved8;                  /**< Reserved, offset: 0x110C - 0x1110 */
+	volatile uint32_t clkfreq; /**< CLKFREQ Sample Clock Frequency Range, offset: 0x1110 */
+	volatile uint32_t scomp0;  /**< SCOMP0 Sample Time Compare 0 Register, offset: 0x1114 */
+	volatile uint32_t scomp1;  /**< SCOMP1 Sample Time Compare 1 Register, offset: 0x1118 */
+	uint32_t reserved9[11];    /**< Reserved, offset: 0x111C - 0x1148 */
+	volatile uint32_t wclow;   /**< WCLOW Window Comparator Low Threshold, offset: 0x1148 */
+	uint32_t reserved10;       /**< Reserved, offset: 0x114C - 0x1150 */
+	volatile uint32_t wchigh;  /**< WCHIGH Window Comparator High Threshold, offset: 0x1150 */
+	uint32_t reserved11[3];    /**< Reserved, offset: 0x1154 - 0x1160 */
+	volatile const uint32_t fifodata;   /**< FIFODATA FIFO Data Register, offset: 0x1160 */
+	uint32_t reserved12[7];             /**< Reserved, offset: 0x1164 - 0x1180 */
+	volatile uint32_t memctl[24];       /**< MEMCTL_y Memory Control, offset: 0x1180+0x04y */
+	uint32_t reserved13[40];            /**< Reserved, offset: 0x11E0 - 0x1280 */
+	volatile const uint32_t memres[24]; /**< MEMRES_y Memory Result, offset: 0x1280+0x04y */
+	uint32_t reserved14[24];            /**< Reserved, offset: 0x12E0 - 0x1340 */
+	volatile const uint32_t status;     /**< STATUS Status Register, offset: 0x1340 */
+};
+
+/* pwren bits */
+#define ADC12_PWREN_ENABLE         BIT(0)
+#define ADC12_PWREN_KEY            GENMASK(31, 24)
+#define ADC12_PWREN_KEY_VAL_UNLOCK 0x26U
+
+/* clkcfg bits */
+#define ADC12_CLKCFG_SAMPCLK        GENMASK(1, 0)
+#define ADC12_CLKCFG_KEY            GENMASK(31, 24)
+#define ADC12_CLKCFG_KEY_VAL_UNLOCK 0xA9U
+
+/* ctl0 bits */
+#define ADC12_CTL0_ENC              BIT(0)
+#define ADC12_CTL0_PWRDN            BIT(16)
+#define ADC12_CTL0_PWRDN_VAL_AUTO   0U
+#define ADC12_CTL0_PWRDN_VAL_MANUAL ADC12_CTL0_PWRDN
+#define ADC12_CTL0_SCLKDIV          GENMASK(26, 24)
+
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_1  0U
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_2  FIELD_PREP(ADC12_CTL0_SCLKDIV, 1)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_4  FIELD_PREP(ADC12_CTL0_SCLKDIV, 2)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_8  FIELD_PREP(ADC12_CTL0_SCLKDIV, 3)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_16 FIELD_PREP(ADC12_CTL0_SCLKDIV, 4)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_24 FIELD_PREP(ADC12_CTL0_SCLKDIV, 5)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_32 FIELD_PREP(ADC12_CTL0_SCLKDIV, 6)
+#define ADC12_CTL0_SCLKDIV_VAL_DIV_BY_48 FIELD_PREP(ADC12_CTL0_SCLKDIV, 7)
+
+/* ctl1 bits */
+#define ADC12_CTL1_TRIGSRC              BIT(0)
+#define ADC12_CTL1_TRIGSRC_VAL_SOFTWARE 0U
+#define ADC12_CTL1_SC                   BIT(8)
+#define ADC12_CTL1_CONSEQ               GENMASK(17, 16)
+#define ADC12_CTL1_CONSEQ_VAL_SEQUENCE  FIELD_PREP(ADC12_CTL1_CONSEQ, 1)
+#define ADC12_CTL1_SAMPMODE             BIT(20)
+#define ADC12_CTL1_SAMPMODE_VAL_AUTO    0U
+#define ADC12_CTL1_AVGN                 GENMASK(26, 24)
+#define ADC12_CTL1_AVGD                 GENMASK(30, 28)
+
+#define ADC12_CTL1_AVGN_VAL_DISABLED 0U
+#define ADC12_CTL1_AVGN_VAL_ACC_2    FIELD_PREP(ADC12_CTL1_AVGN, 1)
+#define ADC12_CTL1_AVGN_VAL_ACC_4    FIELD_PREP(ADC12_CTL1_AVGN, 2)
+#define ADC12_CTL1_AVGN_VAL_ACC_8    FIELD_PREP(ADC12_CTL1_AVGN, 3)
+#define ADC12_CTL1_AVGN_VAL_ACC_16   FIELD_PREP(ADC12_CTL1_AVGN, 4)
+#define ADC12_CTL1_AVGN_VAL_ACC_32   FIELD_PREP(ADC12_CTL1_AVGN, 5)
+#define ADC12_CTL1_AVGN_VAL_ACC_64   FIELD_PREP(ADC12_CTL1_AVGN, 6)
+#define ADC12_CTL1_AVGN_VAL_ACC_128  FIELD_PREP(ADC12_CTL1_AVGN, 7)
+
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_1   0U
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_2   FIELD_PREP(ADC12_CTL1_AVGD, 1)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_4   FIELD_PREP(ADC12_CTL1_AVGD, 2)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_8   FIELD_PREP(ADC12_CTL1_AVGD, 3)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_16  FIELD_PREP(ADC12_CTL1_AVGD, 4)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_32  FIELD_PREP(ADC12_CTL1_AVGD, 5)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_64  FIELD_PREP(ADC12_CTL1_AVGD, 6)
+#define ADC12_CTL1_AVGD_VAL_DIV_BY_128 FIELD_PREP(ADC12_CTL1_AVGD, 7)
+
+/* ctl2 bits */
+#define ADC12_CTL2_DF                   BIT(0)
+#define ADC12_CTL2_DF_VAL_UNSIGNED      0U
+#define ADC12_CTL2_RES                  GENMASK(2, 1)
+#define ADC12_CTL2_RES_VAL_12_BIT       0U
+#define ADC12_CTL2_RES_VAL_10_BIT       FIELD_PREP(ADC12_CTL2_RES, 1)
+#define ADC12_CTL2_RES_VAL_8_BIT        FIELD_PREP(ADC12_CTL2_RES, 2)
+#define ADC12_CTL2_STARTADD             GENMASK(20, 16)
+#define ADC12_CTL2_STARTADD_VAL_ADDR_00 0U
+#define ADC12_CTL2_ENDADD               GENMASK(28, 24)
+
+/* scomp0/scomp1 bits */
+#define ADC12_SCOMP_VAL GENMASK(9, 0)
+
+/* memctl bits */
+#define ADC12_MEMCTL_CHANSEL             GENMASK(4, 0)
+#define ADC12_MEMCTL_VRSEL               GENMASK(10, 8)
+#define ADC12_MEMCTL_VRSEL_VAL_VDDA      0U
+#define ADC12_MEMCTL_VRSEL_VAL_EXTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 1)
+#define ADC12_MEMCTL_VRSEL_VAL_INTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 2)
+#define ADC12_MEMCTL_STIME               BIT(12)
+#define ADC12_MEMCTL_STIME_VAL_SCOMP0    0U
+#define ADC12_MEMCTL_STIME_VAL_SCOMP1    ADC12_MEMCTL_STIME
+#define ADC12_MEMCTL_AVGEN               BIT(16)
+#define ADC12_MEMCTL_AVGEN_VAL_DISABLE   0U
+#define ADC12_MEMCTL_AVGEN_VAL_ENABLE    ADC12_MEMCTL_AVGEN
+#define ADC12_MEMCTL_BCSEN_VAL_DISABLE   0U
+#define ADC12_MEMCTL_TRIG_VAL_AUTO_NEXT  0U
+#define ADC12_MEMCTL_WINCOMP_VAL_DISABLE 0U
+
+/*
+ * ADC12 registers have an alias at 0x556000 offset, these registers can be read at MCLK rate
+ * instead of ULPCLK which is used with unaliased registers. Subtract 0x1000 since there are no
+ * power/clock registers in the aliased region.
+ */
+#define ADC12_ALIAS_OFFSET 0x555000U
+
+/* cpu_int bits: only the last MEMCTL of a sequence raises MEMRESIFG(n) */
+#define ADC12_CPU_INT_MEMRESIFG0_OFS 8U
+
+/* cpu_int.iidx values for a MEMRES result-loaded interrupt */
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG0  9U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG1  10U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG2  11U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG3  12U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG4  13U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG5  14U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG6  15U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG7  16U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG8  17U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG9  18U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG10 19U
+#define ADC12_CPU_INT_IIDX_STAT_VAL_MEMRESIFG11 20U
+
 enum mspm0_oversampling {
 	ADC_MSPM0_AVG_DISABLED,
 	ADC_MSPM0_AVG_2X,
