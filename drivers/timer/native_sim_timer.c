@@ -17,32 +17,23 @@
 #include "nsi_timer_model.h"
 #include "soc.h"
 
+static uint64_t tick_period; /* System tick period in microseconds */
+/* Time (microseconds since boot) of the last timer tick interrupt */
+static uint64_t last_tick_time;
+
 /**
- * Return the current HW cycle counter. This corresponds to the number of
- * microseconds since boot, in 64 bits.
+ * Return the current HW cycle counter
+ * (number of microseconds since boot in 32bits)
  */
-static uint64_t timer_driver_cycle_get(void)
+uint32_t sys_clock_cycle_get_32(void)
 {
 	return nsi_hws_get_time();
 }
 
-/**
- * Program the next tick interrupt <cycles> microseconds from now.
- * hwtimer_enable() re-anchors the tick period at the current time.
- */
-static void timer_driver_set_reload(uint64_t cycles)
+uint64_t sys_clock_cycle_get_64(void)
 {
-	hwtimer_enable(cycles);
+	return nsi_hws_get_time();
 }
-
-/*
- * Knobs for system_timer_generic.h
- */
-#define TIMER_CORE_BACKEND_RELOAD
-#define TIMER_CORE_COUNTER_WIDTH 64
-#define TIMER_CORE_ALARM_MAX_CYCLES NSI_NEVER
-
-#include "system_timer_generic.h"
 
 /**
  * Interrupt handler for the timer interrupt
@@ -52,7 +43,11 @@ static void np_timer_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	timer_core_announce();
+	uint64_t now = nsi_hws_get_time();
+	int32_t elapsed_ticks = (now - last_tick_time)/tick_period;
+
+	last_tick_time += elapsed_ticks*tick_period;
+	sys_clock_announce(elapsed_ticks);
 }
 
 /**
@@ -61,6 +56,44 @@ static void np_timer_isr(const void *arg)
 void np_timer_isr_test_hook(const void *arg)
 {
 	np_timer_isr(NULL);
+}
+
+/**
+ * @brief Set system clock timeout
+ *
+ * Informs the system clock driver that the next needed call to
+ * sys_clock_announce() will not be until the specified number of ticks
+ * from the current time have elapsed.
+ *
+ * See system_timer.h for more information
+ *
+ * @param ticks Timeout in tick units
+ * @param idle Hint to the driver that the system is about to enter
+ *        the idle state immediately after setting the timeout
+ */
+void sys_clock_set_timeout(uint32_t ticks, bool idle)
+{
+	ARG_UNUSED(idle);
+
+#if defined(CONFIG_TICKLESS_KERNEL)
+	uint64_t silent_ticks;
+
+	silent_ticks = (ticks > 0) ? ticks - 1 : 0;
+	hwtimer_set_silent_ticks(silent_ticks);
+#endif
+}
+
+/**
+ * @brief Ticks elapsed since last sys_clock_announce() call
+ *
+ * Queries the clock driver for the current time elapsed since the
+ * last call to sys_clock_announce() was made.  The kernel will call
+ * this with appropriate locking, the driver needs only provide an
+ * instantaneous answer.
+ */
+uint32_t sys_clock_elapsed(void)
+{
+	return (nsi_hws_get_time() - last_tick_time)/tick_period;
 }
 
 /**
@@ -81,12 +114,14 @@ void sys_clock_disable(void)
  */
 static int sys_clock_driver_init(void)
 {
-	hwtimer_enable(TIMER_CORE_CYC_PER_TICK);
+
+	tick_period = 1000000UL / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	last_tick_time = nsi_hws_get_time();
+	hwtimer_enable(tick_period);
 
 	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
 	irq_enable(TIMER_TICK_IRQ);
-
-	timer_core_init();
 
 	return 0;
 }
