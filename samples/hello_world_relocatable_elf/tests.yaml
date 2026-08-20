@@ -1,0 +1,21 @@
+sample:
+  description: Hello World sample built as a relocatable (PIE) image
+  name: hello world relocatable elf
+common:
+  tags: introduction
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Relocation OK: load offset (.*)"
+tests:
+  sample.basic.helloworld_relocatable_elf:
+    toolchain_allow:
+      - zephyr/llvm
+      - llvm
+    integration_toolchains:
+      - zephyr/llvm
+    platform_allow:
+      - qemu_riscv32
+    integration_platforms:
+      - qemu_riscv32
