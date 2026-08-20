@@ -2,8 +2,8 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 #
-# Run the TTCN-3 protocol conformance suites from a developer's own checkout.
-# See the documentation under
+# Run the TTCN-3 protocol conformance suites the way the nightly workflow does,
+# but from a developer's own checkout. See the documentation under
 # doc/services/connectivity/networking/conformance for what the suites are.
 
 all_suites="mdns dnssd dns sntp mqtt coap dhcpv4 dhcpv4_server arp ndp tcp"
