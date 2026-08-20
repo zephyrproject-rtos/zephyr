@@ -51,8 +51,9 @@ been set up for them. See :ref:`ttcn3_running` for what a run needs, and
 The suites
 **********
 
-Each suite drives one protocol against an application that enables it, over the
-interface that application appears on.
+Which interface a suite uses, and whether it has to be run as root, follow from
+what it does: a suite that works below the IP layer reads frames from a packet
+socket on a link of its own.
 
 .. list-table::
    :header-rows: 1
@@ -73,6 +74,10 @@ interface that application appears on.
      - :zephyr_file:`tests/net/conformance/coap`
      - ``zeth``
      - any user
+   * - :zephyr_file:`dhcpv4 <tests/net/conformance/dhcpv4/README.rst>`
+     - :zephyr_file:`tests/net/conformance/dhcpv4`
+     - ``zeth``
+     - root
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
