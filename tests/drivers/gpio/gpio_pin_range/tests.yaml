@@ -1,0 +1,35 @@
+common:
+  tags:
+    - drivers
+    - gpio
+
+tests:
+  drivers.gpio.pin_range:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim/native/64
+
+  drivers.gpio.pin_range.no_assert:
+    extra_configs:
+      - CONFIG_ASSERT=n
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim/native/64
+
+  drivers.gpio.pin_range.userspace:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y
+    platform_allow:
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - qemu_x86_64
