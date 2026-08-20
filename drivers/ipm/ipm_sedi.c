@@ -51,15 +51,22 @@ static void ipm_event_dispose(IN sedi_ipc_t device, IN uint32_t event, INOUT voi
 	switch (event) {
 	case SEDI_IPC_EVENT_MSG_IN:
 		if (ipm->rx_msg_notify_cb != NULL) {
-			set_ipm_dev_busy(dev, false);
 			sedi_ipc_read_dbl(device, &drbl_in);
 			len = IPC_HEADER_GET_LENGTH(drbl_in);
-			sedi_ipc_read_msg(device, ipm->incoming_data_buf, len);
-			ipm->rx_msg_notify_cb(dev,
+			if (len <= IPC_DATA_LEN_MAX) {
+				set_ipm_dev_busy(dev, false);
+				sedi_ipc_read_msg(device, ipm->incoming_data_buf, len);
+				ipm->rx_msg_notify_cb(dev,
 					      ipm->rx_msg_notify_cb_data,
 					      drbl_in, ipm->incoming_data_buf);
+			} else {
+				LOG_ERR("Invalid DRBL 0x%08x: payload length %u exceeds max %u;"
+						" discarding", drbl_in, len, IPC_DATA_LEN_MAX);
+				(void)sedi_ipc_send_ack_drbl(device, 0);
+			}
 		} else {
 			LOG_WRN("no handler for ipm new msg");
+			(void)sedi_ipc_send_ack_drbl(device, 0);
 		}
 		break;
 	case SEDI_IPC_EVENT_MSG_PEER_ACKED:
