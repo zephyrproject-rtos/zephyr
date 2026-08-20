@@ -34,7 +34,7 @@
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
 
 #define MSPI_STM32_IS_SUPPORTED_CHILD(child) \
-DT_NODE_HAS_COMPAT(child, st_nor) || \
+DT_NODE_HAS_COMPAT(child, st_nor_mspi) || \
 DT_NODE_HAS_COMPAT(child, st_psram_device)
 
 #define MSPI_STM32_HAS_SUPPORTED_CHILD(index) \

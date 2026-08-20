@@ -38,7 +38,7 @@
 			dma-names = "tx", "rx";
 
 			mx25lm51245: ospi-nor-flash@0 {
-				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
+				compatible = "st,nor-mspi", "mxicy,mx25u", "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Mbits */
 				status = "okay";

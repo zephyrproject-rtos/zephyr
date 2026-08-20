@@ -3,7 +3,7 @@
 
 description: STM32 memory device on mspi bus
 
-compatible: "st,nor"
+compatible: "st,nor-mspi"
 
 include: jedec,nor-mspi.yaml
 

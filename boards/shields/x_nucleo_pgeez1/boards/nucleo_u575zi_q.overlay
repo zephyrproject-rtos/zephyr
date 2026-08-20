@@ -19,7 +19,7 @@
 };
 
 &m95p32_x_nucleo_pgeez1 {
-	compatible = "st,nor", "jedec,nor";
+	compatible = "st,nor-mspi", "jedec,nor";
 	st,mem-type = "macronix";
 
 	partitions {
