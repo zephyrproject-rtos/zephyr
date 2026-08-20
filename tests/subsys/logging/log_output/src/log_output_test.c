@@ -156,6 +156,45 @@ ZTEST(test_log_output, test_format_ts)
 	zassert_str_equal(exp_str, mock_buffer);
 }
 
+ZTEST(test_log_output, test_format_ts_64)
+{
+	if (!IS_ENABLED(CONFIG_LOG_TIMESTAMP_64BIT) ||
+	    IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP) ||
+	    IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP) ||
+	    IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+		/* Large timestamps are only checked against the default
+		 * HH:MM:SS format. The date/iso8601 formats convert through
+		 * time_t, which is 32-bit with some C libraries and cannot
+		 * represent the value used here.
+		 */
+		return;
+	}
+
+#ifdef CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP
+#define TIMESTAMP64_STR "[4294967297.000000] "
+#else
+#define TIMESTAMP64_STR "[1193046:28:17.000,000] "
+#endif
+	char __aligned(sizeof(void *)) package[256];
+	static const char *exp_str = TIMESTAMP64_STR DNAME "/" SNAME ": " TEST_STR "\r\n";
+	uint32_t flags = LOG_OUTPUT_FLAG_TIMESTAMP | LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
+	int err;
+
+	log_output_timestamp_freq_set(1000000);
+
+	err = cbprintf_package(package, sizeof(package), 0, TEST_STR);
+	zassert_true(err > 0);
+
+	/* 2^32 + 1 seconds, i.e. one second past the point where a uint32_t
+	 * seconds counter wraps (~136 years). Must not be truncated to 32 bits.
+	 */
+	log_output_process(&log_output, (log_timestamp_t)((UINT64_C(0x100000000) + 1) * 1000000),
+			   DNAME, SNAME, NULL, 0, LOG_LEVEL_INF, package, NULL, 0, flags);
+
+	mock_buffer[mock_len] = '\0';
+	zassert_str_equal(exp_str, mock_buffer);
+}
+
 ZTEST(test_log_output, test_ts_to_us)
 {
 	log_output_timestamp_freq_set(1000000);
