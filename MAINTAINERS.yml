@@ -526,7 +526,7 @@ Base OS:
     - include/zephyr/sys/
     - include/zephyr/zvfs/eventfd.h
     - lib/os/
-    - tests/misc/print_format/
+    - tests/lib/printk/
     - tests/lib/p4workq/
     - tests/lib/fdtable/
   files-exclude:
@@ -542,9 +542,7 @@ Base OS:
   labels:
     - "area: Base OS"
   tests:
-    - printk
-    - libraries.fdtable.fdtable
-    - libraries.p4wq
+    - libraries
     - utilities
 
 BeagleBoard Platforms:
