@@ -11,6 +11,15 @@ LOG_MODULE_REGISTER(npf_ethernet, CONFIG_NET_PKT_FILTER_LOG_LEVEL);
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/net_pkt_filter.h>
 
+/* The tests below parse the link layer header of a packet that has not been
+ * validated by the L2 layer yet, so make sure the header they read is actually
+ * there. A packet too short to hold the header cannot match the test.
+ */
+static bool eth_hdr_present(struct net_pkt *pkt, size_t hdr_len)
+{
+	return !net_pkt_is_empty(pkt) && pkt->buffer->len >= hdr_len;
+}
+
 static bool addr_mask_compare(struct net_eth_addr *addr1,
 			      struct net_eth_addr *addr2,
 			      struct net_eth_addr *mask)
@@ -44,7 +53,13 @@ static bool addr_match(struct npf_test *test, struct net_eth_addr *pkt_addr)
 
 bool npf_eth_src_addr_match(struct npf_test *test, struct net_pkt *pkt)
 {
-	struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+	struct net_eth_hdr *eth_hdr;
+
+	if (!eth_hdr_present(pkt, sizeof(struct net_eth_hdr))) {
+		return false;
+	}
+
+	eth_hdr = NET_ETH_HDR(pkt);
 
 	return addr_match(test, &eth_hdr->src);
 }
@@ -56,7 +71,13 @@ bool npf_eth_src_addr_unmatch(struct npf_test *test, struct net_pkt *pkt)
 
 bool npf_eth_dst_addr_match(struct npf_test *test, struct net_pkt *pkt)
 {
-	struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+	struct net_eth_hdr *eth_hdr;
+
+	if (!eth_hdr_present(pkt, sizeof(struct net_eth_hdr))) {
+		return false;
+	}
+
+	eth_hdr = NET_ETH_HDR(pkt);
 
 	return addr_match(test, &eth_hdr->dst);
 }
@@ -70,7 +91,13 @@ bool npf_eth_type_match(struct npf_test *test, struct net_pkt *pkt)
 {
 	struct npf_test_eth_type *test_eth_type =
 			CONTAINER_OF(test, struct npf_test_eth_type, test);
-	struct net_eth_hdr *eth_hdr = NET_ETH_HDR(pkt);
+	struct net_eth_hdr *eth_hdr;
+
+	if (!eth_hdr_present(pkt, sizeof(struct net_eth_hdr))) {
+		return false;
+	}
+
+	eth_hdr = NET_ETH_HDR(pkt);
 
 	/* note: type_match->type is assumed to be in network order already */
 	NET_DBG("proto type 0x%04x pkt 0x%04x",
@@ -89,8 +116,13 @@ bool npf_eth_vlan_type_match(struct npf_test *test, struct net_pkt *pkt)
 {
 	struct npf_test_eth_type *test_eth_type =
 			CONTAINER_OF(test, struct npf_test_eth_type, test);
-	struct net_eth_vlan_hdr *eth_hdr =
-		(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+	struct net_eth_vlan_hdr *eth_hdr;
+
+	if (!eth_hdr_present(pkt, sizeof(struct net_eth_vlan_hdr))) {
+		return false;
+	}
+
+	eth_hdr = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 
 	/* note: type_match->type is assumed to be in network order already */
 	NET_DBG("proto type 0x%04x pkt 0x%04x",
