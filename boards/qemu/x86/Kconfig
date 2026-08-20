@@ -4,16 +4,6 @@
 
 config BOARD_QEMU_X86
 	bool
-	select CPU_HAS_FPU
-
-config BOARD_QEMU_X86_64
-	bool
-	select X86_64
-
-config BOARD_QEMU_X86_LAKEMONT
-	bool
-	select CPU_HAS_FPU
-
-config BOARD_QEMU_X86_TINY
-	bool
-	select CPU_HAS_FPU
+	default y
+	select CPU_HAS_FPU if BOARD_QEMU_X86 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
+	select X86_64 if BOARD_QEMU_X86_64
