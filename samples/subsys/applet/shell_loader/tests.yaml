@@ -11,24 +11,19 @@ common:
     - applet
     - llext
   arch_allow:
+    - riscv
     - arm
+    - arm64
+    - arc
+    - x86
     - xtensa
   platform_exclude:
-    # platforms with active issues
+    # platforms with active LLEXT issues
     - apollo4p_evb            # See #73443
     - apollo4p_blue_kxr_evb   # See #73443
     - numaker_pfm_m487        # See #63167
     - s32z2xxdc2/s32z270/rtu0 # See commit 18a0660
     - s32z2xxdc2/s32z270/rtu1 # See commit 18a0660
-    # platforms that are always skipped by the runtime filter
-    - qemu_arc/qemu_arc_em
-    - qemu_arc/qemu_arc_hs
-    - qemu_arc/qemu_arc_hs/xip
-    - qemu_arc/qemu_arc_hs5x
-    - qemu_arc/qemu_arc_hs6x
-    - qemu_cortex_m0
-    - qemu_xtensa/dc233c/mmu
-    - rza2m_evk
 
 tests:
   sample.applet.shell:
@@ -40,6 +35,7 @@ tests:
       - arch:arm:CONFIG_ARM_AARCH32_MMU=n
   sample.applet.shell.userspace:
     harness: keyboard
+    filter: not CONFIG_SOC_SERIES_S32ZE and not CONFIG_RISCV_PMP
     tags:
       - userspace
     # Every applet needs one memory domain partition per extension section,

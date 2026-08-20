@@ -54,4 +54,12 @@ tests:
       - CONFIG_LLEXT=y
       - CONFIG_APPLET_LLEXT=y
       - CONFIG_LLEXT_HEAP_SIZE=64
+      # RISC-V runs the loaded code from RAM in machine mode. DEP installs a
+      # locked catch-all PMP entry that makes all RAM non-executable, with no
+      # way to mark the region executable. Setting an unknown symbol to 'n' is
+      # a no-op, so this is safe on the other arches.
       - CONFIG_PMP_DATA_EXECUTION_PREVENTION=n
+      # LLEXT does not round region sizes to CONFIG_PMP_GRANULARITY, so the
+      # PMP entry for .text is truncated and the tail of the extension is not
+      # executable from user mode. Run applet in supervisor mode instead.
+      - arch:riscv:CONFIG_USERSPACE=n
