@@ -11,4 +11,4 @@ tests:
       - i2c
     build_only: true
     integration_platforms:
-      - motion_2350_pro/rp2350a/m33
+      - motion_2350_pro/rp2350a/m33_0
