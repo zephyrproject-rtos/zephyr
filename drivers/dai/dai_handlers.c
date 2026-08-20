@@ -6,8 +6,17 @@
 
 #include <zephyr/drivers/dai.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/kernel.h>
 
+/* Overall upper bound for bespoke config blobs copied from user-space. */
 #define DAI_MAX_BESPOKE_CFG_SIZE CONFIG_DAI_MAX_BESPOKE_CFG_SIZE
+
+/*
+ * Bespoke config objects up to this size are validated on the stack;
+ * larger objects (up to DAI_MAX_BESPOKE_CFG_SIZE) are copied into a
+ * temporary heap allocation instead.
+ */
+#define DAI_BESPOKE_CFG_STACK_SIZE 1024
 
 static inline int z_vrfy_dai_probe(const struct device *dev)
 {
@@ -30,8 +39,10 @@ static inline int z_vrfy_dai_config_set(const struct device *dev,
 					const void *bespoke_cfg,
 					size_t size)
 {
-	uint8_t bespoke_cfg_kernel[DAI_MAX_BESPOKE_CFG_SIZE];
+	uint8_t bespoke_cfg_stack[DAI_BESPOKE_CFG_STACK_SIZE];
+	uint8_t *bespoke_cfg_kernel = NULL;
 	struct dai_config cfg_kernel;
+	int ret;
 
 	if (size > DAI_MAX_BESPOKE_CFG_SIZE) {
 		return -EINVAL;
@@ -41,11 +52,32 @@ static inline int z_vrfy_dai_config_set(const struct device *dev,
 	K_OOPS(k_usermode_from_copy(&cfg_kernel, cfg, sizeof(cfg_kernel)));
 
 	if (bespoke_cfg) {
-		K_OOPS(k_usermode_from_copy(bespoke_cfg_kernel, bespoke_cfg, size));
+		/* Small blobs use the stack, larger ones the kernel heap. */
+		if (size > DAI_BESPOKE_CFG_STACK_SIZE) {
+			bespoke_cfg_kernel = k_malloc(size);
+			if (!bespoke_cfg_kernel) {
+				return -ENOMEM;
+			}
+		} else {
+			bespoke_cfg_kernel = bespoke_cfg_stack;
+		}
+
+		ret = k_usermode_from_copy(bespoke_cfg_kernel, bespoke_cfg, size);
+		if (ret) {
+			if (bespoke_cfg_kernel != bespoke_cfg_stack) {
+				k_free(bespoke_cfg_kernel);
+			}
+			K_OOPS(ret);
+		}
 	}
 
-	return z_impl_dai_config_set(dev, &cfg_kernel,
-				     bespoke_cfg ? bespoke_cfg_kernel : NULL, size);
+	ret = z_impl_dai_config_set(dev, &cfg_kernel, bespoke_cfg_kernel, size);
+
+	if (bespoke_cfg_kernel && bespoke_cfg_kernel != bespoke_cfg_stack) {
+		k_free(bespoke_cfg_kernel);
+	}
+
+	return ret;
 }
 #include <zephyr/syscalls/dai_config_set_mrsh.c>
 
@@ -132,15 +164,40 @@ static inline int z_vrfy_dai_config_update(const struct device *dev,
 					   const void *bespoke_cfg,
 					   size_t size)
 {
-	uint8_t bespoke_cfg_kernel[DAI_MAX_BESPOKE_CFG_SIZE];
+	uint8_t bespoke_cfg_stack[DAI_BESPOKE_CFG_STACK_SIZE];
+	uint8_t *bespoke_cfg_kernel;
+	int ret;
 
 	if (!bespoke_cfg || size > DAI_MAX_BESPOKE_CFG_SIZE) {
 		return -EINVAL;
 	}
 
 	K_OOPS(K_SYSCALL_DRIVER_DAI(dev, config_update));
-	K_OOPS(k_usermode_from_copy(bespoke_cfg_kernel, bespoke_cfg, size));
 
-	return z_impl_dai_config_update(dev, bespoke_cfg_kernel, size);
+	/* Small blobs use the stack, larger ones the kernel heap. */
+	if (size > DAI_BESPOKE_CFG_STACK_SIZE) {
+		bespoke_cfg_kernel = k_malloc(size);
+		if (!bespoke_cfg_kernel) {
+			return -ENOMEM;
+		}
+	} else {
+		bespoke_cfg_kernel = bespoke_cfg_stack;
+	}
+
+	ret = k_usermode_from_copy(bespoke_cfg_kernel, bespoke_cfg, size);
+	if (ret) {
+		if (bespoke_cfg_kernel != bespoke_cfg_stack) {
+			k_free(bespoke_cfg_kernel);
+		}
+		K_OOPS(ret);
+	}
+
+	ret = z_impl_dai_config_update(dev, bespoke_cfg_kernel, size);
+
+	if (bespoke_cfg_kernel != bespoke_cfg_stack) {
+		k_free(bespoke_cfg_kernel);
+	}
+
+	return ret;
 }
 #include <zephyr/syscalls/dai_config_update_mrsh.c>
