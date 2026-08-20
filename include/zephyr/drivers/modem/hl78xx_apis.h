@@ -591,6 +591,12 @@ enum hl78xx_power_down_response {
 	HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE = 0,
 	/** Extend the shutdown grace period from now by a caller-supplied timeout */
 	HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE,
+	/** Abort the pending shutdown entirely: the application still owns the
+	 * modem (an active search, reconnect, SIM switch or FOTA). Cancels the
+	 * scheduled shutdown work and re-enables inactivity-timer feeding.
+	 * Only valid while the shutdown grace period is still pending.
+	 */
+	HL78XX_POWER_DOWN_RESPONSE_ABORT,
 };
 
 /**

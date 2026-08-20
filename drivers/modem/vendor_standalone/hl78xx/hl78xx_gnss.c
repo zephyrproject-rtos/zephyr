@@ -1027,8 +1027,14 @@ static int hl78xx_gnss_start(const struct device *dev, int gnss_start_mode)
 	int ret;
 
 	if (data->gnss_start_status) {
-		LOG_WRN("GNSS already running");
-		return 0;
+		/* The latch says a search is already running while the state
+		 * machine is trying to start one — the two disagree, and only
+		 * the modem knows the truth. Send the start anyway: an OK or
+		 * +GNSSEV re-syncs the latch, an error surfaces to the caller.
+		 * Returning success without sending is what once left every
+		 * layer waiting forever on a search nothing had started.
+		 */
+		LOG_WRN("gnss_start_status already set; sending AT+GNSSSTART anyway");
 	}
 	hl78xx_gnss_lock(dev);
 
@@ -1420,6 +1426,23 @@ int hl78xx_on_run_gnss_init_script_state_enter(struct hl78xx_data *data)
 	struct gnss_nmea0183_match_data *match_data = data->devices.gnss->data;
 	struct hl78xx_gnss_data *gnss_data = match_data->gnss->data;
 
+	/* The AT channel is proven by the commands that brought us here, but
+	 * the airplane-state handler that normally announces it is skipped
+	 * whenever the application's GNSS request wins the event-queue race
+	 * against the CFUN=4 script's SCRIPT_SUCCESS (that success is then
+	 * consumed by THIS state's handler). Without the announcement the
+	 * application waits forever for a power-up that already happened.
+	 * The per-power-cycle flag makes this a no-op when the airplane or
+	 * await-registered handler already dispatched it.
+	 */
+	if (!data->status.at_cmd_ready_sent) {
+		struct hl78xx_evt at_ready_evt = {.type = HL78XX_LTE_AT_CMD_READY};
+
+		data->status.at_cmd_ready_sent = true;
+		LOG_DBG("AT_CMD_READY dispatched from GNSS init entry");
+		event_dispatcher_dispatch(&at_ready_evt);
+	}
+
 	gnss_data->gnss_init_status = false;
 
 #ifdef CONFIG_MODEM_HL78XX_LOW_POWER_MODE
@@ -1564,6 +1587,16 @@ static void hl78xx_gnss_handle_timeout_event(struct hl78xx_data *data,
 				hl78xx_start_timer(data_gnss->parent_data,
 						   K_MSEC(data_gnss->search_timeout_ms));
 			}
+		} else if (data_gnss->search_state == HL78XX_GNSS_SEARCH_STATE_STARTING) {
+			/* A start was issued but its confirmation (+GNSSEV: 1,1)
+			 * never arrived before this timer fired. Report the
+			 * failure — its handler routes to GNSS_SEARCH_STARTED
+			 * and delegates GNSS_STOPPED, which completes the
+			 * application's request — instead of returning silently
+			 * with no timer re-armed, which parks every layer.
+			 */
+			LOG_WRN("GNSS start unconfirmed at timeout; reporting start failure");
+			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_SEARCH_STARTED_FAILED);
 		} else {
 			LOG_DBG("GNSS search already started or not queued");
 		}
