@@ -156,6 +156,8 @@ Removed APIs and options
       * ``beetle_rp2350/rp2350a/m33`` to ``beetle_rp2350/rp2350a/m33_0``
       * ``beetle_rp2350/rp2350a/hazard3`` to ``beetle_rp2350/rp2350a/hazard3_0``
       * ``pico2_spe/rp2350a/m33`` to ``pico2_spe/rp2350a/m33_0``
+      * ``pico_plus2/rp2350b/m33`` to ``pico_plus2/rp2350b/m33_0``
+      * ``pico_plus2/rp2350b/hazard3`` to ``pico_plus2/rp2350b/hazard3_0``
 
 * Build system
 
