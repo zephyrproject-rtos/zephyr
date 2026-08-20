@@ -476,9 +476,11 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 	/* Ensure that the stream and group QoS are different at this point*/
 	ARRAY_FOR_EACH(fixture->cap_streams, i) {
 		const struct bt_bap_stream *bap_stream = &fixture->cap_streams[i].bap_stream;
+		struct bt_bap_qos_cfg qos;
 
-		/* Verify that the QoS config was updated */
-		zassert_false(bt_bap_qos_cfg_eq(&preset.qos, bap_stream->qos));
+		err = bt_bap_unicast_client_qos_from_group(bap_stream, &qos);
+
+		zassert_false(bt_bap_qos_cfg_eq(&qos, bap_stream->qos));
 	}
 
 	err = bt_cap_initiator_unicast_audio_start(&fixture->audio_start_param);
@@ -499,7 +501,7 @@ static ZTEST_F(cap_initiator_test_unicast_start, test_initiator_unicast_start_st
 			      "[%zu]: Stream %p unexpected state: %d", i, bap_stream, state);
 
 		/* Verify that the QoS config was updated */
-		zassert_true(bt_bap_qos_cfg_eq(&fixture->preset.qos, bap_stream->qos));
+		zassert_true(bt_bap_qos_cfg_eq(&preset.qos, bap_stream->qos));
 	}
 }
 

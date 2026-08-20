@@ -425,6 +425,7 @@ class Script(Harness):
         self.running_dir = None
         self.log_prefix = None
         self._output = []
+        self._script_names = {}
 
     def configure(self, instance: TestInstance):
         super().configure(instance)
@@ -436,7 +437,12 @@ class Script(Harness):
 
     def run(self, timeout: float) -> bool:
         self.instance.testcases = []
-        for script in self._get_test_scripts():
+
+        all_scripts = self._get_test_scripts()
+        if not all_scripts:
+            self._log_error("No scripts found!")
+
+        for script in all_scripts:
             if not os.path.exists(script):
                 self._handle_missing_script(script)
                 continue
@@ -455,12 +461,15 @@ class Script(Harness):
         self._update_test_status()
         return True
 
-    def _handle_missing_script(self, script: str) -> None:
-        reason = f"{script} not found!"
+    def _log_error(self, reason: str) -> None:
         logger.error(reason)
-        self._add_testcase_from_script(script, rc=-1, reason=reason)
         with open(self.log_file_path, 'a') as log_file:
             log_file.write(reason + '\n\n')
+
+    def _handle_missing_script(self, script: str) -> None:
+        reason = f"{script} not found!"
+        self._add_testcase_from_script(script, rc=-1, reason=reason)
+        self._log_error(reason)
 
     def _get_env(self) -> dict[str, str]:
         """Return environment variables with BOARD set to the platform name."""
@@ -468,20 +477,47 @@ class Script(Harness):
         env['BOARD'] = self.instance.platform.name
         return env
 
+    @staticmethod
+    def _path_is_glob(path: str) -> bool:
+        """Return True if there are glob wildcard characters."""
+        return bool(re.search(r'[*?\[]', path))
+
     def _get_test_scripts(self) -> list[str]:
         """Return list of test scripts resolved from harness config."""
         input_sources = self.instance.testsuite.harness_config.tests_scripts or ['tests_scripts']
         tests_scripts = []
+        # In _script_names we save the relative path of the script inside the directory, in cases
+        # where we may have scripts with the same names in different sub-directories, so they don't
+        # end with the same testname.
+        self._script_names = {}
         for src in input_sources:
             source = os.path.normpath(
                 os.path.join(self.source_dir, os.path.expanduser(os.path.expandvars(src)))
             )
             if os.path.isdir(source):
-                # Get all .sh files in the directory, excluding those starting with '_'
-                scripts = glob(os.path.join(source, "*.sh"))
-                tests_scripts.extend(
-                    s for s in scripts if not os.path.basename(s).startswith('_')
-                )
+                # Get all .sh files in the directory and sub-directories,
+                # excluding those starting with '_'
+                scripts = sorted(glob(os.path.join(source, "**", "*.sh"), recursive=True))
+                for s in scripts:
+                    if os.path.basename(s).startswith('_'):
+                        continue
+                    tests_scripts.append(s)
+                    self._script_names[s] = os.path.relpath(s, source).replace(os.sep, '.')
+            elif self._path_is_glob(source):
+                # When the user provides a glob pattern, we use it as is
+                scripts = sorted(glob(source, recursive=True))
+                # Drop plain directories (which the glob may have matched)
+                scripts = [s for s in scripts if os.path.isfile(s)]
+                if not scripts:
+                    logger.warning(f"No scripts found matching pattern: {src}")
+                for s in scripts:
+                    tests_scripts.append(s)
+                    rel = os.path.relpath(s, self.source_dir)
+                    if rel.startswith('..'):
+                        # For relative paths above source_dir, let's just take the basename
+                        self._script_names[s] = os.path.basename(s)
+                    else:
+                        self._script_names[s] = rel.replace(os.sep, '.')
             else:
                 # A directly specified file or non-existent path are included as-is
                 tests_scripts.append(source)
@@ -543,7 +579,7 @@ class Script(Harness):
     def _add_testcase_from_script(
         self, script: str, rc: int, duration: float = 0.0, reason: str = ''
     ) -> None:
-        script_name = os.path.basename(script)
+        script_name = self._script_names.get(script, os.path.basename(script))
         tc_name = f"{self.id}.{script_name}"
         tc = self.instance.add_testcase(tc_name)
         tc.duration = duration

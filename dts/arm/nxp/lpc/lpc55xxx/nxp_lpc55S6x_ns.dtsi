@@ -11,7 +11,12 @@
 		};
 
 		peripheral: peripheral@40000000 {
-			ranges = <0x0 0x40000000 0x10000000>;
+			/*
+			 * Map the IAP flash window to the non-secure flash alias at 0x0.
+			 * This only translates addresses; TrustZone attribution is unchanged.
+			 */
+			ranges = <0x0 0x40000000 0x10000000>,
+				 <0x10000000 0x0 0x3020000>;
 		};
 	};
 };

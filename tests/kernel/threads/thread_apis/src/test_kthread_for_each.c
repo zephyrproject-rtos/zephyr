@@ -76,17 +76,30 @@ void thread_callback_unlocked(const struct k_thread *thread, void *user_data)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Test k_thread_foreach API
+ * @brief Verify that k_thread_foreach() visits every thread, including new
+ *        ones.
  *
- * @details Call k_thread_foreach() at the beginning of the test and
- * call it again after creating a thread, See k_thread_foreach()
- * iterates over the newly created thread and calls the user passed
- * callback function.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The iterator has to walk the kernel's whole thread list and invoke the
+ * caller's callback once per thread, picking up threads created since a
+ * previous walk. Counting the callbacks before and after creating a thread
+ * makes that growth observable. The iteration runs with the scheduler locked,
+ * so the callback must not create or abort threads.
+ *
+ * Test steps:
+ * - Call k_thread_foreach() and record how many threads were visited.
+ * - Create an additional thread.
+ * - Call k_thread_foreach() again and compare the new count.
+ *
+ * Expected result:
+ * - The first walk visits at least one thread, and the second visits exactly
+ *   one more than the first.
  *
  * @see k_thread_foreach()
  */
-ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
+ZTEST(threads_lifecycle_1cpu, test_thread_foreach)
 {
 	int count;
 
@@ -120,19 +133,31 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach)
 }
 
 /**
- * @brief Test k_thread_foreach_unlock API
+ * @brief Verify that k_thread_foreach_unlocked() iterates without holding the
+ *        scheduler lock.
  *
- * @details Call k_thread_foreach_unlocked() at the beginning of the test and
- * call it again after creating a thread, See k_thread_foreach_unlocked()
- * iterates over the newly created thread and calls the user passed
- * callback function.
- * In contrast to k_thread_foreach(), k_thread_foreach_unlocked() allow
- * callback function created or abort threads
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The unlocked iterator visits the same threads as the locked one but leaves
+ * the scheduler unlocked between callbacks, which is what makes it legal for
+ * the callback to create or abort threads. The callback used here aborts a
+ * thread while the walk is in progress, so a pass shows the iteration
+ * tolerates the list changing underneath it.
+ *
+ * Test steps:
+ * - Call k_thread_foreach_unlocked() and record how many threads were visited.
+ * - Create an additional thread.
+ * - Call it again with a callback that aborts a thread mid-iteration.
+ * - Compare the counts.
+ *
+ * Expected result:
+ * - The first walk visits at least one thread, the second visits exactly one
+ *   more, and aborting from the callback does not disturb the walk.
  *
  * @see k_thread_foreach_unlocked()
- * @ingroup kernel_thread_tests
  */
-ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
+ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked)
 {
 	int count;
 
@@ -182,45 +207,75 @@ ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked)
 }
 
 /**
- * @brief Test k_thread_foreach API with null callback
+ * @brief Verify that k_thread_foreach() rejects a NULL callback.
  *
- * @details Call k_thread_foreach() with null callback will trigger __ASSERT()
- * and this test thread will be aborted by z_fatal_error()
- * @see k_thread_foreach()
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * There is nothing sensible to do with a NULL callback, so the iterator
+ * asserts on it rather than walking the thread list and dereferencing it. The
+ * assertion aborts this thread through the fatal error path, which the test
+ * harness expects.
+ *
+ * Test steps:
+ * - Call k_thread_foreach() with a NULL callback.
+ *
+ * Expected result:
+ * - The call raises the expected fatal error and does not return.
+ *
+ * @see k_thread_foreach()
  */
-ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_null_cb)
+ZTEST(threads_lifecycle_1cpu, test_thread_foreach_null_cb)
 {
 	k_thread_foreach(NULL, TEST_STRING);
 }
 
 /**
- * @brief Test k_thread_foreach_unlocked API with null callback
+ * @brief Verify that k_thread_foreach_unlocked() rejects a NULL callback.
  *
- * @details Call k_thread_foreach_unlocked() with null callback will trigger
- * __ASSERT() and this test thread will be aborted by z_fatal_error()
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The unlocked iterator has to reject a NULL callback exactly as the locked
+ * one does, asserting instead of walking the thread list and dereferencing it.
+ *
+ * Test steps:
+ * - Call k_thread_foreach_unlocked() with a NULL callback.
+ *
+ * Expected result:
+ * - The call raises the expected fatal error and does not return.
  *
  * @see k_thread_foreach_unlocked()
- * @ingroup kernel_thread_tests
  */
-
-ZTEST(threads_lifecycle_1cpu, test_k_thread_foreach_unlocked_null_cb)
+ZTEST(threads_lifecycle_1cpu, test_thread_foreach_unlocked_null_cb)
 {
 	k_thread_foreach_unlocked(NULL, TEST_STRING_UNLOCKED);
 }
 
 /**
- * @brief Test k_thread_state_str API with null callback
+ * @brief Verify that k_thread_state_str() names every thread state.
  *
- * @details It's impossible to sched a thread step by step manually to
- * experience each state from initialization to _THREAD_DEAD. To cover each
- * line of function k_thread_state_str(), set thread_state of tdata1 and check
- * the string this function returns
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_state_str() renders a thread's state bits as text for logs and
+ * shell output, so every state and combination it knows about has to produce
+ * the right string. Driving a real thread through each state in turn is not
+ * possible, so the state field of a spare thread object is set directly and
+ * the rendered string is compared against the expected name.
+ *
+ * Test steps:
+ * - For each thread state, write it into a spare thread object's state field.
+ * - Call k_thread_state_str() with a caller-provided buffer.
+ * - Compare the returned string with the expected text.
+ *
+ * Expected result:
+ * - Every state, including combinations and the empty state, renders as its
+ *   documented name.
  *
  * @see k_thread_state_str()
- * @ingroup kernel_thread_tests
  */
-ZTEST(threads_lifecycle_1cpu, test_k_thread_state_str)
+ZTEST(threads_lifecycle_1cpu, test_thread_state_str)
 {
 	char state_str[32];
 	const char *str;

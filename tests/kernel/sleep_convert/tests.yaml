@@ -1,0 +1,34 @@
+common:
+  tags:
+    - kernel
+    - sleep
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_cortex_m3
+    - qemu_riscv32
+    - qemu_riscv64
+  integration_platforms:
+    - native_sim
+tests:
+  # One entry per shape the compile time case selection can take, for both
+  # the millisecond and the microsecond converter.  See the comment in
+  # src/main.c for what each tick rate exercises.
+  kernel.sleep.convert.ticks_100:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+  kernel.sleep.convert.ticks_1000:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+  kernel.sleep.convert.ticks_10000:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=10000
+  kernel.sleep.convert.ticks_32768:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=32768
+  kernel.sleep.convert.ticks_12345:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=12345
+  kernel.sleep.convert.ticks_1000000:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000000

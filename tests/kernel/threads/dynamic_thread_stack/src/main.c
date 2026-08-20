@@ -35,7 +35,33 @@ static void func(void *arg1, void *arg2, void *arg3)
 	*flag = true;
 }
 
-/** @brief Check we can create a thread from userspace, using dynamic objects */
+/**
+ * @brief Verify that a user thread can create a thread from dynamic objects.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A user thread has no statically defined thread object or stack to hand to
+ * k_thread_create(), so both have to come from the dynamic allocators: the
+ * thread object from k_object_alloc() and the stack from
+ * k_thread_stack_alloc() with K_USER. The spawned thread raises a flag, so a
+ * pass proves the pair of dynamic objects really produced a runnable user
+ * thread. Skipped when userspace is not enabled.
+ *
+ * Test steps:
+ * - Allocate a thread object and a user-mode thread stack.
+ * - Create and start a user thread on them.
+ * - Join the thread with a timeout and check its flag.
+ * - Free the stack.
+ *
+ * Expected result:
+ * - Both allocations succeed, the thread runs and sets its flag, and the
+ *   stack is freed without error.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_object_alloc()
+ * @see k_thread_create()
+ */
 ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 {
 	k_tid_t tid;
@@ -71,7 +97,32 @@ ZTEST_USER(dynamic_thread_stack, test_dynamic_thread_stack_userspace_dyn_obj)
 	zassert_ok(k_thread_stack_free(stack));
 }
 
-/** @brief Exercise the pool-based thread stack allocator */
+/**
+ * @brief Verify that the thread stack pool serves and reclaims every slot.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * With CONFIG_DYNAMIC_THREAD_PREFER_POOL the allocator hands out stacks from a
+ * fixed pool of CONFIG_DYNAMIC_THREAD_POOL_SIZE entries. Allocating exactly
+ * that many stacks must succeed, and each one has to be usable as a real
+ * thread stack rather than merely being a non-NULL pointer, which is why a
+ * thread is run on every one of them. Skipped when the pool is not the
+ * preferred allocator.
+ *
+ * Test steps:
+ * - Allocate one stack per pool entry.
+ * - Create and start a thread on each stack.
+ * - Join every thread and check the flag it raised.
+ * - Free all stacks back to the pool.
+ *
+ * Expected result:
+ * - The pool satisfies every allocation, all threads run, and all stacks are
+ *   freed without error.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_thread_stack_free()
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 {
 	static k_tid_t tid[CONFIG_DYNAMIC_THREAD_POOL_SIZE];
@@ -122,7 +173,32 @@ ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_pool)
 	}
 }
 
-/** @brief Exercise the heap-based thread stack allocator */
+/**
+ * @brief Verify that thread stacks can be allocated from the heap.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * With CONFIG_DYNAMIC_THREAD_PREFER_ALLOC the stacks come from the heap
+ * instead of the fixed pool, so the number available is bounded by memory
+ * rather than by a compile-time count. Each allocated stack has to carry a
+ * running thread, and freeing them has to return the memory so the sequence
+ * can be repeated. Skipped when heap allocation is not the preferred
+ * allocator.
+ *
+ * Test steps:
+ * - Allocate stacks from the heap up to the test's limit.
+ * - Create and start a thread on each stack.
+ * - Join every thread and check the flag it raised.
+ * - Free all stacks.
+ *
+ * Expected result:
+ * - Every allocation succeeds, all threads run, and all stacks are freed
+ *   without error.
+ *
+ * @see k_thread_stack_alloc()
+ * @see k_thread_stack_free()
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_alloc)
 {
 	size_t N;
@@ -210,7 +286,32 @@ static void perm_func_violator(void *arg1, void *arg2, void *arg3)
 	zassert_unreachable("should not reach here");
 }
 
-/** @brief Exercise stack permissions */
+/**
+ * @brief Verify that a thread cannot free a stack it does not own.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A dynamically allocated stack is owned by the thread it was granted to, so
+ * k_thread_stack_free() must refuse a caller that was never given access to
+ * it. Two threads are started on two separately allocated stacks and one of
+ * them attempts to free the other's, which must fault rather than release
+ * memory still in use. Skipped when heap allocation is not the preferred
+ * allocator.
+ *
+ * Test steps:
+ * - Allocate two thread stacks and start a thread on each.
+ * - Have the second thread call k_thread_stack_free() on the first thread's
+ *   stack, which it was not granted.
+ * - Observe that the violating thread does not run past that call.
+ *
+ * Expected result:
+ * - The attempt faults instead of freeing the stack, and the code after it is
+ *   never reached.
+ *
+ * @see k_thread_stack_free()
+ * @see k_thread_stack_alloc()
+ */
 ZTEST(dynamic_thread_stack, test_dynamic_thread_stack_permission)
 {
 	static k_tid_t tid[2];

@@ -171,9 +171,19 @@ def debug_die(die, text):
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
 
-    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
+    dwarf_v5 = lp_header.version >= 5
+
+    file_index = die.attributes["DW_AT_decl_file"].value
+    fileinfo = files[file_index if dwarf_v5 else file_index - 1]
     filename = fileinfo.name.decode("utf-8")
-    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+
+    dir_index = fileinfo.dir_index
+    if dwarf_v5:
+        filedir = includes[dir_index].decode("utf-8")
+    elif dir_index == 0:
+        filedir = ""
+    else:
+        filedir = includes[dir_index - 1].decode("utf-8")
 
     path = os.path.join(filedir, filename)
     lineno = die.attributes["DW_AT_decl_line"].value
@@ -188,6 +198,7 @@ def debug_die(die, text):
 DW_OP_addr = 0x3
 DW_OP_plus_uconst = 0x23
 DW_OP_fbreg = 0x91
+DW_OP_addrx = 0xA1
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
@@ -449,6 +460,19 @@ def analyze_die_const(die):
     type_env[die.offset] = ConstType(type_offset)
 
 
+def _is_constant_form(form):
+    # A subrange bound is a plain integer count only for constant-class forms.
+    # DWARF <=4 GCC uses DW_FORM_dataN; DWARF 5 GCC uses DW_FORM_implicit_const,
+    # and other producers use the signed/unsigned LEB forms. Anything else
+    # (an exprloc/block computing a dynamic bound, or a reference) is not a
+    # constant we can turn into an element count, so it is skipped.
+    return form.startswith("DW_FORM_data") or form in (
+        "DW_FORM_implicit_const",
+        "DW_FORM_sdata",
+        "DW_FORM_udata",
+    )
+
+
 def analyze_die_array(die):
     type_offset = die_get_type_offset(die)
     elements = []
@@ -460,7 +484,7 @@ def analyze_die_array(die):
         if "DW_AT_upper_bound" in child.attributes:
             ub = child.attributes["DW_AT_upper_bound"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value + 1)
@@ -469,7 +493,7 @@ def analyze_die_array(die):
         elif "DW_AT_count" in child.attributes:
             ub = child.attributes["DW_AT_count"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value)
@@ -622,7 +646,7 @@ def find_kobjects(elf, syms):
             continue
 
         opcode = loc.value[0]
-        if opcode != DW_OP_addr:
+        if opcode not in (DW_OP_addr, DW_OP_addrx):
             # Check if frame pointer offset DW_OP_fbreg
             if opcode == DW_OP_fbreg:
                 debug_die(die, f"kernel object '{name}' found on stack")
@@ -631,7 +655,16 @@ def find_kobjects(elf, syms):
             continue
 
         endian_code = "<" if elf.little_endian else ">"
-        if "CONFIG_64BIT" in syms:
+        if opcode == DW_OP_addrx:
+            # DWARF v5: the operand is a ULEB128 index into .debug_addr rather
+            # than an inline address.
+            addr_index, uconst_idx = decode_uleb128(loc.value, 1)
+            try:
+                addr = die.dwarfinfo.get_addr(die.cu, addr_index)
+            except Exception:
+                debug_die(die, f"kernel object '{name}' unresolvable DW_OP_addrx index")
+                continue
+        elif "CONFIG_64BIT" in syms:
             addr = struct.unpack(endian_code + "Q", bytes(loc.value[1:9]))[0]
             uconst_idx = 9
         else:

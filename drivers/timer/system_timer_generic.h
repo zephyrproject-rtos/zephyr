@@ -356,15 +356,18 @@ static timer_core_ticks_t timer_core_max_span_ticks;
 #define TIMER_CORE_MAX_SPAN_TICKS timer_core_max_span_ticks
 #else
 #define TIMER_CORE_MAX_SPAN_TICKS (TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK)
-/* A tick that does not fit leaves nothing to arm: the span clamps to zero, the
- * reload floor fires immediately, and the announce that follows is worth no
- * ticks, so time never advances. Catch that here rather than at run time, where
- * it presents as a wedged system. Both terms are build constants in this branch;
- * the runtime-rate branch is checked in timer_core_init().
+#if !defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
+/* A tick wider than the counter can resolve leaves the masked delta ambiguous,
+ * which no amount of re-arming recovers, so catch it here rather than at run
+ * time. The alarm's reach is deliberately not part of this: a tick that only
+ * outruns the arming register still resolves, it just takes more than one arm
+ * to reach. This needs the rate to be a build constant, so the cases where it
+ * is not are checked in timer_core_init() instead.
  */
-BUILD_ASSERT(TIMER_CORE_MAX_UNANNOUNCED_CYCLES >= TIMER_CORE_CYC_PER_TICK,
-	     "a tick is longer than the counter and alarm can span: raise "
+BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
+	     "a tick is longer than the counter can span: raise "
 	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC, or slow the counter");
+#endif
 #endif
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
@@ -843,8 +846,8 @@ static inline void timer_core_init(void)
 	 * non-zero check the constant case gets at build time happens here instead.
 	 */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
-	__ASSERT(TIMER_CORE_MAX_UNANNOUNCED_CYCLES >= TIMER_CORE_CYC_PER_TICK,
-		 "a tick is longer than the counter and alarm can span");
+	__ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
+		 "a tick is longer than the counter can span");
 #endif
 	/* The counter read is inside the counter's width, so the tick count it
 	 * divides down to and the cycle count that multiplies back up both are too.

@@ -93,22 +93,12 @@ void sys_trace_k_thread_sched_suspend(struct k_thread *thread)
 	TRACING_STRING("%s: %p\n", __func__, thread);
 }
 
-void sys_trace_k_thread_sleep_enter(k_timeout_t timeout)
+void sys_trace_k_thread_sleep_ticks_enter(k_timeout_t timeout)
 {
 	TRACING_STRING("%s\n", __func__);
 }
 
-void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int ret)
-{
-	TRACING_STRING("%s\n", __func__);
-}
-
-void sys_trace_k_thread_usleep_enter(int32_t us)
-{
-	TRACING_STRING("%s\n", __func__);
-}
-
-void sys_trace_k_thread_usleep_exit(int32_t us, int ret)
+void sys_trace_k_thread_sleep_ticks_exit(k_timeout_t timeout, int ret)
 {
 	TRACING_STRING("%s\n", __func__);
 }

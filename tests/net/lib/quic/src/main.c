@@ -177,6 +177,8 @@ static struct quic_endpoint *reset_test_ep(struct quic_endpoint *ep)
 	memset(ep, 0, sizeof(*ep));
 	ep->sock = -1;
 	quic_recovery_init(ep);
+	k_mutex_init(&ep->pending.lock);
+	k_mutex_init(&ep->send_lock);
 
 	return ep;
 }

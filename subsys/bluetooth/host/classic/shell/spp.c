@@ -680,6 +680,40 @@ static int cmd_spp_disconnect(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_spp_rls(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_spp_endpoint *ep;
+	uint8_t line_status = BT_RFCOMM_RLS_NO_ERR;
+
+	ep = bt_spp_get_active_ep();
+	if (ep == NULL) {
+		shell_error(sh, "SPP: no active connection");
+		return -ENOEXEC;
+	}
+
+	if (argc == 2) {
+		if (strcmp(argv[1], "overrun") == 0) {
+			line_status = BT_RFCOMM_RLS_ERR(BT_RFCOMM_RLS_ERR_OVERRUN_ERROR);
+		} else if (strcmp(argv[1], "parity") == 0) {
+			line_status = BT_RFCOMM_RLS_ERR(BT_RFCOMM_RLS_ERR_PARITY_ERROR);
+		} else if (strcmp(argv[1], "framing") == 0) {
+			line_status = BT_RFCOMM_RLS_ERR(BT_RFCOMM_RLS_ERR_FRAMING_ERROR);
+		} else {
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		}
+	}
+
+	err = bt_rfcomm_send_rls_cmd(&ep->rfcomm_dlc, line_status);
+	if (err != 0) {
+		shell_error(sh, "SPP: send RLS failed (err=%d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	spp_cmds,
 	SHELL_CMD_ARG(register_with_channel, NULL, "<channel>",
@@ -693,6 +727,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      "<bt-uuid16|bt-uuid32|bt-uuid128> e.g. 1101 or 00001101-0000-1000-8000-00805F9B34FB",
 		      cmd_spp_connect_by_uuid, 2, 0),
 	SHELL_CMD_ARG(send, NULL, "send [length of packet(s)]", cmd_spp_send, 1, 1),
+	SHELL_CMD_ARG(rls, NULL, "[overrun|parity|framing]", cmd_spp_rls, 1, 1),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_spp_disconnect, 1, 0),
 	SHELL_SUBCMD_SET_END
 );

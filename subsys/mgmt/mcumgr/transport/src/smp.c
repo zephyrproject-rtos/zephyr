@@ -31,7 +31,7 @@ K_THREAD_STACK_DEFINE(smp_work_queue_stack, CONFIG_MCUMGR_TRANSPORT_WORKQUEUE_ST
 
 static struct k_work_q smp_work_queue;
 
-#ifdef CONFIG_SMP_CLIENT
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 static sys_slist_t smp_transport_clients = SYS_SLIST_STATIC_INIT(&smp_transport_clients);
 #endif
 
@@ -52,6 +52,13 @@ void smp_packet_free(struct net_buf *nb)
 {
 	net_buf_unref(nb);
 }
+
+#if defined(CONFIG_MCUMGR_TRANSPORT_NETBUF_AVAILABLE)
+size_t smp_packet_buffers_available(void)
+{
+	return net_buf_get_available(&pkt_pool);
+}
+#endif
 
 /**
  * @brief Allocates a request buffer.
@@ -186,7 +193,7 @@ int smp_transport_init(struct smp_transport *smpt)
 	return 0;
 }
 
-#ifdef CONFIG_SMP_CLIENT
+#if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 struct smp_transport *smp_client_transport_get(int smpt_type)
 {
 	struct smp_client_transport_entry *entry;
@@ -200,6 +207,22 @@ struct smp_transport *smp_client_transport_get(int smpt_type)
 	return NULL;
 }
 
+bool smp_client_transport_foreach(mgmt_client_transport_cb_t user_cb, void *user_data)
+{
+	sys_snode_t *snp, *sns;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&smp_transport_clients, snp, sns) {
+		struct smp_client_transport_entry *entry =
+			CONTAINER_OF(snp, struct smp_client_transport_entry, node);
+
+		if (!user_cb(entry, user_data)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void smp_client_transport_register(struct smp_client_transport_entry *entry)
 {
 	if (smp_client_transport_get(entry->smpt_type)) {
@@ -210,8 +233,7 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry)
 	sys_slist_append(&smp_transport_clients, &entry->node);
 
 }
-
-#endif /* CONFIG_SMP_CLIENT */
+#endif /* CONFIG_SMP_CLIENT || CONFIG_MCUMGR_GRP_TRANSPORT */
 
 /**
  * @brief Enqueues an incoming SMP request packet for processing.
@@ -220,7 +242,7 @@ void smp_client_transport_register(struct smp_client_transport_entry *entry)
  *
  * @param smpt                  The transport to use to send the corresponding
  *                                  response(s).
- * @param nb                    The request packet to process.
+ * @param nb                    The request packet
  */
 WEAK void
 smp_rx_req(struct smp_transport *smpt, struct net_buf *nb)

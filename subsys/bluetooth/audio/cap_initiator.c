@@ -643,6 +643,11 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 			enum bt_bap_ep_state state;
 
 			proc_param = &active_proc->proc_param.initiator[i];
+
+			if (proc_param->in_progress) {
+				continue;
+			}
+
 			cap_stream = proc_param->stream;
 			bap_stream = &cap_stream->bap_stream;
 
@@ -1006,8 +1011,7 @@ bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_grou
 
 struct cap_to_bap_unicast_params {
 	struct bt_bap_unicast_group_stream_param
-		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
-			      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT * 2U];
 	struct bt_bap_unicast_group_stream_pair_param
 		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group_param group_param;

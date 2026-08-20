@@ -89,18 +89,21 @@ static int max30009_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 				int32_t sample = sign_extend(fifo_data & MAX30009_FIFO_DATA_FIELD,
 							     MAX30009_FIFO_DATA_SIGN_BIT);
 
-				/*
-				 * timestamp marks the newest sample (FIFO interrupt time), so
-				 * back-date each sample by its distance from the newest one.
-				 */
-				out[count].header.base_timestamp_ns =
-					data->timestamp -
-					(uint64_t)(total_samples - 1 - samples_seen) *
-						data->sample_period_ns;
-				out[count].header.reading_count = 1;
-				out[count].shift = 0;
-				out[count].readings[0].timestamp_delta = 0;
-				out[count].readings[0].value = sample;
+				if (count == 0) {
+					/*
+					 * timestamp marks the newest sample (FIFO interrupt
+					 * time), so back-date to the first decoded sample by
+					 * its distance from the newest one.
+					 */
+					out->header.base_timestamp_ns =
+						data->timestamp -
+						(uint64_t)(total_samples - 1 - samples_seen) *
+							data->sample_period_ns;
+					out->shift = 0;
+				}
+				out->readings[count].timestamp_delta =
+					(samples_seen - start_offset) * data->sample_period_ns;
+				out->readings[count].value = sample;
 				count++;
 			}
 			samples_seen++;
@@ -108,6 +111,7 @@ static int max30009_decoder_decode(const uint8_t *buffer, struct sensor_chan_spe
 		buffer += MAX30009_FIFO_BYTES_PER_SAMPLE;
 	}
 
+	out->header.reading_count = count;
 	*fit += count;
 	return count;
 }

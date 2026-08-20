@@ -107,6 +107,41 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	iap: flash-controller@34000 {
+		compatible = "nxp,iap-fmc55";
+		reg = <0x34000 0x1000>;
+		ranges = <0x0 0x10000000 0x3020000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(630)>;
+			ranges = <0x0 0x0 DT_SIZE_K(630)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			erase-block-size = <512>;
+			write-block-size = <512>;
+		};
+
+		flash_reserved: flash@9d800 {
+			compatible = "soc-nv-flash";
+			reg = <0x9d800 DT_SIZE_K(9)>;
+			status = "disabled";
+		};
+
+		uuid: flash@9fc70 {
+			compatible = "nxp,lpc-uid";
+			reg = <0x9fc70 0x10>;
+		};
+
+		boot_rom: flash@3000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x3000000 DT_SIZE_K(128)>;
+		};
+	};
+
 	pmc: pmc@20000 {
 		compatible = "nxp,lpc-pmc-hwinfo";
 		reg = <0x20000 0x1000>;
@@ -127,37 +162,6 @@
 		reset: reset {
 			compatible = "nxp,lpc-syscon-reset";
 			#reset-cells = <1>;
-		};
-	};
-
-	iap: flash-controller@34000 {
-		compatible = "nxp,iap-fmc55";
-		reg = <0x34000 0x1000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "disabled";
-
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(630)>;
-			erase-block-size = <512>;
-			write-block-size = <512>;
-		};
-
-		flash_reserved: flash@9d800 {
-			compatible = "soc-nv-flash";
-			reg = <0x9d800 DT_SIZE_K(9)>;
-			status = "disabled";
-		};
-
-		uuid: flash@9fc70 {
-			compatible = "nxp,lpc-uid";
-			reg = <0x9fc70 0x10>;
-		};
-
-		boot_rom: flash@3000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x3000000 DT_SIZE_K(128)>;
 		};
 	};
 

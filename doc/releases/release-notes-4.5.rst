@@ -312,6 +312,7 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_STATIC`
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
+  * :c:func:`k_sleep_ticks`
 
 * LoRa
 
@@ -324,6 +325,16 @@ New APIs and options
 
     * Added support for SPI MCUmgr SMP transport, which can be enabled with
       :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_SPI`.
+
+    * Added experimental :ref:`transport management group<mcumgr_smp_group_11>`:
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_LOCKING`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_MAX_BRIDGES`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_DEFAULT`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_VALUE_GROUP_ID`,
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
+      :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
 
 * Network
 

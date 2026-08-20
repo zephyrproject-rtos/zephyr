@@ -168,6 +168,7 @@
 		spi-cpha;
 		spi-hold-cs;
 		spi-max-frequency = <DT_FREQ_M(8)>;
+		reset-event;
 		controller-data-delay-us = <0>;
 		reset-assert-duration-ms = <6>;
 	};
