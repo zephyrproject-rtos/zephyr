@@ -4,6 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* This file is intentionally empty.
- * Board-specific configuration is handled by the connector dtsi.
- */
+#include "esp_threadbr_procpu.overlay"
