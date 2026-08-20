@@ -11,6 +11,13 @@
 #include <zephyr/drivers/sensor/tdk_apex.h>
 #include <stdio.h>
 
+/** @brief Tap number definition */
+typedef enum {
+	TAP_TRIPLE = 0x03,
+	TAP_DOUBLE = 0x02,
+	TAP_SINGLE = 0x01,
+} tap_num_t;
+
 static struct sensor_trigger data_trigger;
 
 /* Flag set from IMU device irq handler */
@@ -89,6 +96,8 @@ int main(void)
 		printf("WOM data sample.\n");
 	} else if (apex_mode.val1 == TDK_APEX_SMD) {
 		printf("SMD data sample.\n");
+	} else if (apex_mode.val1 == TDK_APEX_TAP) {
+		printf("TAP data sample.\n");
 	}
 	apex_mode.val2 = 0;
 	sensor_attr_set(dev, SENSOR_CHAN_APEX_MOTION, SENSOR_ATTR_CONFIGURATION, &apex_mode);
@@ -142,6 +151,20 @@ int main(void)
 
 				printf("[%s]: %s\n", now_str(),
 				       apex_smd.val1 ? "SMD" : "Unknown trig");
+			} else if (apex_mode.val1 == TDK_APEX_TAP) {
+				struct sensor_value apex_tap;
+
+				sensor_channel_get(dev, SENSOR_CHAN_APEX_MOTION, &apex_tap);
+
+				if (apex_tap.val1 == TAP_SINGLE) {
+					printf("[%s]: Single TAP\n", now_str());
+				} else if (apex_tap.val1 == TAP_DOUBLE) {
+					printf("[%s]: Double TAP\n", now_str());
+				} else if (apex_tap.val1 == TAP_TRIPLE) {
+					printf("[%s]: Triple TAP\n", now_str());
+				} else {
+					printf("[%s]: Unknown trig\n", now_str());
+				}
 			}
 			irq_from_device = 0;
 		}
