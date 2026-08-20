@@ -38,6 +38,13 @@ properties:
       - 7 # ICM566XX_DT_GYRO_FS_31_25
       - 8 # ICM566XX_DT_GYRO_FS_15_625
 
+  apex:
+    type: string
+    default: none
+    enum:
+      - none
+    description: APEX features.
+
 include: ["i2c-device.yaml", "invensense,icm566xx-common.yaml"]
 
 examples:
