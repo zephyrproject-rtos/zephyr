@@ -1524,6 +1524,19 @@ Bluetooth Services
 Networking
 **********
 
+* ``CONFIG_NET_TEST_PROTOCOL``, a JSON control channel that let an out of tree
+  TTCN-3 suite drive the TCP stack and read its internal state, has been
+  removed, along with the ``samples/net/sockets/tcp`` sample that was its only
+  system under test. Nothing in the tree enabled the option, and the code
+  behind it had not compiled for several years. The suites that used it were
+  archived by their author.
+
+  Enabling it also turned off initial sequence number randomisation and made
+  ``net_tcp_connect()`` return without waiting for the connection, so a build
+  that had it did not behave like one that did not. There is no replacement
+  option: a protocol test belongs on the network, against a build that has not
+  been altered to be testable.
+
 * The ``struct dns_server`` type nested in :c:struct:`dns_resolve_context` has been
   renamed to ``struct dns_server_info``. A C++ class member cannot share the name of
   its enclosing class, so the old tag made ``<zephyr/net/dns_resolve.h>`` impossible to

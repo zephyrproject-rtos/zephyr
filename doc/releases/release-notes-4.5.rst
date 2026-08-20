@@ -209,6 +209,8 @@ Removed APIs and options
 
     * ``CONFIG_NET_TC_SKIP_FOR_HIGH_PRIO``
     * ``CONFIG_NET_SOCKETS_POLL_MAX``
+    * ``CONFIG_NET_TEST_PROTOCOL``, together with the
+      ``samples/net/sockets/tcp`` sample that was its only system under test.
     * ``CONFIG_NET_GPTP_CLOCK_ACCURACY_*``
     * ``net_ipv6_set_hop_limit()``
     * ``net_if_ipv4_get_netmask()``
