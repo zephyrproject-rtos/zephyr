@@ -80,11 +80,10 @@ void engine_init(struct lwan_ctx *ctx)
 
 int engine_post_req_wait(struct lwan_req *req)
 {
-	struct k_sem done;
+	struct k_sem done = K_SEM_INITIALIZER(done, 0, 1);
 	int result;
 	int ret;
 
-	k_sem_init(&done, 0, 1);
 	req->done = &done;
 	req->result = &result;
 
