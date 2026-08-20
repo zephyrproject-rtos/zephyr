@@ -15,6 +15,7 @@ import logging
 import os
 import re
 import shutil
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -93,7 +94,19 @@ def requirements(suite: str) -> str | None:
     if not Path('/sys/class/net').joinpath(TESTER_INTERFACE).exists():
         return f'the {TESTER_INTERFACE} interface does not exist, run net-setup.sh to create it'
 
+    if is_parallel(suite) and not (Path(os.environ['TTCN3_DIR']) / 'bin' / 'ttcn3_start').is_file():
+        return 'this suite needs a main controller, and ttcn3_start is not in TTCN3_DIR/bin'
+
     return None
+
+
+def is_parallel(suite: str) -> bool:
+    """A suite whose test cases create parallel components says so here."""
+    conf = ttcn3_dir() / 'suites' / suite / 'build.conf'
+    if not conf.is_file():
+        return False
+
+    return 'MODE=parallel' in conf.read_text()
 
 
 def build_suite(suite: str) -> Path:
@@ -131,17 +144,34 @@ def run_suite(binary: Path, suite: str, timeout: float = 600.0) -> None:
     env['LD_LIBRARY_PATH'] = os.pathsep.join([str(lib), env.get('LD_LIBRARY_PATH', '')]).strip(
         os.pathsep
     )
+    env['PATH'] = os.pathsep.join([str(titan / 'bin'), env.get('PATH', '')]).strip(os.pathsep)
 
-    result = subprocess.run(
-        [str(binary), f'../{suite}.cfg'],
+    if is_parallel(suite):
+        # A parallel suite is a main controller and a host controller rather
+        # than one process. ttcn3_start starts both and drives the controller.
+        command = [str(titan / 'bin' / 'ttcn3_start'), f'./{suite}', f'../{suite}.cfg']
+    else:
+        command = [str(binary), f'../{suite}.cfg']
+
+    # Its own session, so that a suite which hangs can be killed along with
+    # whatever it started rather than leaving a controller behind.
+    process = subprocess.Popen(
+        command,
         cwd=binary.parent,
-        capture_output=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
         text=True,
-        timeout=timeout,
         env=env,
-        check=False,
+        start_new_session=True,
     )
-    output = result.stdout + result.stderr
+    try:
+        output = process.communicate(timeout=timeout)[0]
+    except subprocess.TimeoutExpired:
+        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        output = process.communicate()[0] or ''
+        logger.error('Suite output before the timeout:\n%s', output)
+        raise AssertionError(f'the {suite} suite did not finish within {timeout}s') from None
+
     logger.info('Suite output:\n%s', output)
 
     statistics = STATISTICS.search(output)

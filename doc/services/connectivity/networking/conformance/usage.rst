@@ -23,6 +23,7 @@ What a run needs
   :file:`west.yml` under the ``tools`` group, which is not filtered out.
 * **make**, because that is how Titan builds a suite.
 * **The** ``zeth`` **interface**. See :ref:`ttcn3_interfaces`.
+* **expect**, for the one suite that runs through Titan's main controller.
 
 The harness looks for net-tools in ``NET_TOOLS_BASE`` if that is set, otherwise
 at :file:`../tools/net-tools/ttcn3` relative to ``ZEPHYR_BASE`` and then one
@@ -39,7 +40,7 @@ installs:
 
 .. code-block:: console
 
-   sudo apt install --no-install-recommends eclipse-titan
+   sudo apt install --no-install-recommends eclipse-titan expect
    export TTCN3_DIR=/usr
 
 The packaged version trails the protocol modules the suites build against, so
@@ -146,6 +147,13 @@ Build and run the suite against it:
    cd suites/mdns/build
    ./mdns ../mdns.cfg
 
+For a suite whose test cases create parallel test components, ``coap`` today,
+start it through the main controller instead:
+
+.. code-block:: console
+
+   ttcn3_start ./coap ../coap.cfg
+
 A single test case is run by naming it:
 
 .. code-block:: console
@@ -204,6 +212,8 @@ checked:
      - Run :file:`ttcn3/fetch-modules.sh`
    * - ``the <iface> interface does not exist``
      - Create it with :file:`net-setup.sh`; see :ref:`ttcn3_interfaces`
+   * - ``ttcn3_start is not in TTCN3_DIR/bin``
+     - Install ``expect`` and a Titan that ships the main controller
 
 Troubleshooting
 ***************

@@ -72,6 +72,11 @@ interface that application appears on.
      - ``zeth``
      - any user
      - 7
+   * - ``coap``
+     - :zephyr_file:`tests/net/conformance/coap`
+     - ``zeth``
+     - any user
+     - 8
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -110,6 +115,19 @@ start at any point and still finish quickly.
 * ``tc_malformed_answers_are_survived``
 * ``tc_answer_with_wrong_id_is_ignored``
 
+CoAP
+====
+
+This suite contributes no TTCN-3 source of its own. It runs the ETSI derived
+test cases that the Titan project publishes in ``titan.misc``, pointed at
+Zephyr by a configuration file. The application exposes a single ``/test``
+resource answering GET, POST, PUT and DELETE.
+
+It is the one suite whose test cases create parallel test components, so it is
+run through Titan's main controller and needs ``expect`` installed.
+
+* ``tc_client_TD_COAP_CORE_01`` through ``tc_client_TD_COAP_CORE_08``
+
 .. _ttcn3_known_gaps:
 
 Known gaps
@@ -129,6 +147,14 @@ its own messages, still sets the cache flush bit, uses its own long time to
 live, and echoes neither the identifier nor the question. Fixing it means
 reworking name compression offsets that are all computed from a fixed header
 size. No suite covers it.
+
+CoAP block transfer and observe
+===============================
+
+``TD_COAP_BLOCK_01`` and ``TD_COAP_OBS_01`` are not run. They address
+``/large`` and ``/obs``, and the application provides only ``/test``; against
+it the observe case waits for notifications that never arrive and the run does
+not finish. Adding those two resources is the obvious next step.
 
 Overlapping DNS queries
 =======================
