@@ -6,7 +6,7 @@
  * from mimxrt1020_evk.mex
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1021dag5a-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt10xx/pinctrl/mimxrt1021dag5a-pinctrl.dtsi>
 
 &pinctrl {
 	/* ADC1 inputs 10 and 11 */

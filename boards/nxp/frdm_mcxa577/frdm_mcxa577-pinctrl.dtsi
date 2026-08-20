@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXA577VPN-pinctrl.h>
+#include <nxp/mcx/mcxa/pinctrl/MCXA577VPN-pinctrl.h>
 
 /* P2_30 and P2_31 exist on the MCXA577VPN 169-ball BGA (balls L7 and L8)
  * but are not yet present in the upstream hal/nxp pinctrl header.

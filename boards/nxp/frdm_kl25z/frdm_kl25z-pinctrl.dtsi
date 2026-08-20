@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKL25Z128VLK4-pinctrl.h>
+#include <nxp/kinetis/kl2x/pinctrl/MKL25Z128VLK4-pinctrl.h>
 
 &pinctrl {
 	adc0_default: adc0_default {

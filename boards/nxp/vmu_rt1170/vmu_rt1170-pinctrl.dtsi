@@ -6,7 +6,7 @@
  * from vmu_rt1170.mex, then updated manually
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1176dvmaa-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt11xx/pinctrl/mimxrt1176dvmaa-pinctrl.dtsi>
 
 &pinctrl {
 	pinmux_enet1g: pinmux_enet1g {

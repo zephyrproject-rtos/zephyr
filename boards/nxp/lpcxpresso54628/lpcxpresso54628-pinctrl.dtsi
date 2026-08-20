@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/lpc/LPC54628J512ET180-pinctrl.h>
+#include <nxp/lpc/lpc54xxx/pinctrl/LPC54628J512ET180-pinctrl.h>
 
 /*
  * LPC546xx erratum SDIO.1 requires the four unused upper SD data functions
