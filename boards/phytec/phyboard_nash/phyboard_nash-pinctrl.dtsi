@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/mimx9352cvuxk-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx9352cvuxk-pinctrl.dtsi>
 
 &pinctrl {
 	uart2_default: uart2_default {

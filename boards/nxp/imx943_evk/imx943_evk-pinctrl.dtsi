@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/mimx94398avkm-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx94398avkm-pinctrl.dtsi>
 
 &pinctrl {
 	emdio_default: emdio_default {
