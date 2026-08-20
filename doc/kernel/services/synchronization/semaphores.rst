@@ -75,6 +75,37 @@ The following code has the same effect as the code segment above.
 
     K_SEM_DEFINE(my_sem, 0, 1);
 
+Transient Semaphores
+====================
+
+A semaphore initialized by :c:func:`k_sem_init` must live for the lifetime of
+the program. The kernel object tracking facilities
+(:kconfig:option:`CONFIG_OBJ_CORE_SEM` and
+:kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`) keep every such semaphore on
+a list, and that list would end up referencing dead memory once a shorter-lived
+semaphore goes away.
+
+A semaphore that does not live that long, such as one used to wait for an
+asynchronous operation from a thread's stack, is instead brought up with
+:c:macro:`K_SEM_INITIALIZER`. It stays out of the tracking lists and is
+otherwise a normal semaphore.
+
+.. code-block:: c
+
+    void wait_for_completion(void)
+    {
+            struct k_sem done = K_SEM_INITIALIZER(done, 0, 1);
+
+            start_async_op(&done);
+            k_sem_take(&done, K_FOREVER);
+    }
+
+The same applies to a semaphore embedded in a larger transient object.
+
+.. code-block:: c
+
+    struct my_ctx ctx = { .done = K_SEM_INITIALIZER(ctx.done, 0, 1) };
+
 Giving a Semaphore
 ==================
 

@@ -313,6 +313,7 @@ New APIs and options
   * :c:macro:`K_MSGQ_DEFINE_TYPE`
   * :c:macro:`K_MSGQ_DEFINE_STATIC_TYPE`
   * :c:func:`k_sleep_ticks`
+  * :c:macro:`K_SEM_INITIALIZER`
 
 * LoRa
 
@@ -593,6 +594,14 @@ Other notable changes
     :c:func:`k_thread_cpu_mask_disable` in PIN_ONLY mode triggers an assertion
     failure.  Use :c:func:`k_thread_cpu_pin` to reassign a thread to a
     different CPU.
+
+  * A semaphore initialized by :c:func:`k_sem_init` must live for the lifetime
+    of the program, as the kernel object tracking facilities
+    (:kconfig:option:`CONFIG_OBJ_CORE_SEM`,
+    :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`) keep a reference to it.
+    Shorter-lived semaphores, such as those living on a thread's stack, are now
+    brought up with the new :c:macro:`K_SEM_INITIALIZER` instead, which leaves
+    them out of the tracking lists.
 
 * Timer
 
