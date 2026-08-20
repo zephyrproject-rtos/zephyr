@@ -336,6 +336,10 @@ New APIs and options
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
 
+* Multimedia Pipeline
+
+  * :kconfig:option:`CONFIG_MPIPE` (see :ref:`mpipe`)
+
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
@@ -547,6 +551,13 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Multimedia Pipeline
+
+  * Introducing :ref:`mpipe`, a new subsystem for building multimedia
+    applications out of reusable elements - sources, transforms and sinks -
+    linked together into a pipeline. It lets an application describe the media
+    flow it wants instead of driving each audio, video or display device itself.
 
 * Video
 
