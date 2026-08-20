@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_LINUX_FUEL_GAUGE
+	bool "Native Linux fuel gauge"
+	default y
+	depends on DT_HAS_ZEPHYR_NATIVE_LINUX_FUEL_GAUGE_ENABLED
+	depends on ARCH_POSIX
+	select NATIVE_USE_NSI_ERRNO
+	help
+	  Enable a native_sim fuel gauge backed by a Linux sysfs
+	  power_supply class.

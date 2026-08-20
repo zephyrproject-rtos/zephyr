@@ -555,6 +555,22 @@ Here are more details on the peripherals that are currently provided with this b
 
   SocketCAN support can be enabled by using the :ref:`snippet-socketcan-native-sim`.
 
+**Fuel gauge**
+
+  A fuel gauge driver is available for reading battery properties from a Linux
+  power_supply sysfs node on the host through the Zephyr fuel gauge API. It can
+  be enabled with :kconfig:option:`CONFIG_NATIVE_LINUX_FUEL_GAUGE` and
+  configured with the devicetree binding :dtcompatible:`zephyr,native-linux-fuel-gauge`.
+
+  Linux power_supply class typically expose files, for example ``/sys/class/power_supply/BAT0``.
+
+  .. code-block:: dts
+
+      fuel_gauge: fuel_gauge {
+        compatible = "zephyr,native-linux-fuel-gauge";
+        path = "BAT0";
+      };
+
 **LED device**
   Implements a Zephyr LED device backed by a Linux LED. You configure which
   Linux LED to use by setting the DT ``path`` property to the name of the LED

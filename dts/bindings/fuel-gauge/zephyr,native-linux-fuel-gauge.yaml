@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Native Linux fuel gauge
+
+  Fuel gauge that reads a Linux power_supply sysfs node
+  (e.g. BAT0) via the host.
+
+compatible: "zephyr,native-linux-fuel-gauge"
+
+include: fuel-gauge.yaml
+
+properties:
+  path:
+    type: string
+    required: true
+
+examples:
+  - |
+      / {
+          fuel_gauge: fuel_gauge {
+            compatible = "zephyr,native-linux-fuel-gauge";
+
+            /* /sys/class/power_supply/BAT0 */
+            path = "BAT0";
+          };
+      };

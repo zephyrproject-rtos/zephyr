@@ -21,6 +21,7 @@ add_subdirectory_ifdef(CONFIG_FUEL_GAUGE_LTC2959 ltc2959)
 add_subdirectory_ifdef(CONFIG_HY4245 hy4245)
 add_subdirectory_ifdef(CONFIG_LC709203F lc709203f)
 add_subdirectory_ifdef(CONFIG_MAX17048 max17048)
+add_subdirectory_ifdef(CONFIG_NATIVE_LINUX_FUEL_GAUGE linux_fuel_gauge)
 add_subdirectory_ifdef(CONFIG_SBS_GAUGE_NEW_API sbs_gauge)
 add_subdirectory_ifdef(CONFIG_SY24561 sy24561)
 # zephyr-keep-sorted-stop
