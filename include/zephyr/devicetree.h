@@ -4345,6 +4345,59 @@
 	IS_ENABLED(DT_CAT3(node_id, _COMPAT_MATCHES_, compat))
 
 /**
+ * @brief Get a node's binding compatible as a token.
+ *
+ * Expands to the compatible string (in token form, with special
+ * characters replaced by underscores) that matched this node's
+ * binding. Useful for token-pasting to dispatch to
+ * compat-namespaced symbols at compile time.
+ *
+ * Example, assuming the GPIO controller node matched "atmel,sam0-gpio":
+ *
+ * @code{.c}
+ *     DT_BINDING_COMPAT_TOKEN(DT_NODELABEL(gpio0))  // expands to: atmel_sam0_gpio
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return The binding compatible as a C token.
+ */
+#define DT_BINDING_COMPAT_TOKEN(node_id) DT_CAT(node_id, _BINDING_COMPAT_TOKEN)
+
+/**
+ * @brief Get a node's binding compatible as an uppercased token.
+ *
+ * Like DT_BINDING_COMPAT_TOKEN(), but uppercased.
+ *
+ * Example, assuming the GPIO controller node matched "atmel,sam0-gpio":
+ *
+ * @code{.c}
+ *     DT_BINDING_COMPAT_UPPER_TOKEN(DT_NODELABEL(gpio0))  // expands to: ATMEL_SAM0_GPIO
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return The binding compatible as an uppercased C token.
+ */
+#define DT_BINDING_COMPAT_UPPER_TOKEN(node_id) DT_CAT(node_id, _BINDING_COMPAT_UPPER_TOKEN)
+
+/**
+ * @brief Get a node's binding compatible as an unquoted sequence of tokens.
+ *
+ * Expands to the compatible string that matched this node's binding,
+ * as a sequence of tokens with no quotes. This can be used in macros
+ * that stringify their argument to produce a string literal.
+ *
+ * Example, assuming the GPIO controller node matched "atmel,sam0-gpio":
+ *
+ * @code{.c}
+ *     DT_BINDING_COMPAT_UNQUOTED(DT_NODELABEL(gpio0))  // expands to: atmel,sam0-gpio
+ * @endcode
+ *
+ * @param node_id node identifier
+ * @return The binding compatible as an unquoted token sequence.
+ */
+#define DT_BINDING_COMPAT_UNQUOTED(node_id) DT_CAT(node_id, _BINDING_COMPAT_UNQUOTED)
+
+/**
  * @brief Does a devicetree node have a compatible and status?
  *
  * This is equivalent to:
