@@ -617,7 +617,7 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	tcc_counter_init(cfg->regs, cfg->prescaler, cfg->max_channels, cfg->max_bit_width);
 	cfg->irq_config_func(dev);
 
-	return ret_val;
+	return (ret_val == -EALREADY) ? 0 : ret_val;
 }
 
 static inline void counter_mchp_channel_irq_handle(const struct device *const dev, uint8_t channel)
