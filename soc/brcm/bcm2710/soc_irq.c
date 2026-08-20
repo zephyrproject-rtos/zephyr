@@ -43,8 +43,26 @@
  *
  * A bitmap rather than a single slot because the arm64 wrapper unmasks
  * IRQs globally around the ISR, so brackets nest.
+ *
+ * Per core, because the mailbox IRQs live in per-core registers
+ * (L1_MBOX_INT_CTRL is indexed by MPIDR) but share one Zephyr IRQ
+ * number. With a single shared record two cores taking the IPI at once
+ * both set the same bit, the first to reach the EOI clears it, and the
+ * second leaves its own mailbox masked for good, which costs that core
+ * every later scheduler IPI. Set and clear always run on the same core,
+ * so a core only ever touches its own slot.
  */
-static ATOMIC_DEFINE(bracketed_irqs, CONFIG_NUM_IRQS);
+static atomic_t bracketed_irqs[CONFIG_MP_MAX_NUM_CPUS]
+			      [ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+
+/* Physical core id from MPIDR (flat single-cluster A53). */
+static ALWAYS_INLINE unsigned int this_core(void)
+{
+	uint64_t mpidr;
+
+	__asm__ volatile("mrs %0, mpidr_el1" : "=r"(mpidr));
+	return (unsigned int)(mpidr & 0xffU);
+}
 
 void z_soc_irq_init(void)
 {
@@ -65,7 +83,7 @@ void z_soc_irq_disable(unsigned int irq)
 {
 	if (irq < CONFIG_NUM_IRQS) {
 		/* Whoever disables the source now owns its masked state. */
-		atomic_clear_bit(bracketed_irqs, irq);
+		atomic_clear_bit(bracketed_irqs[this_core()], irq);
 	}
 
 	if (BCM283X_IRQ_IS_L1(irq)) {
@@ -122,7 +140,7 @@ unsigned int z_soc_irq_get_active(void)
 	 */
 	if (irq < CONFIG_NUM_IRQS) {
 		z_soc_irq_disable(irq);
-		atomic_set_bit(bracketed_irqs, irq);
+		atomic_set_bit(bracketed_irqs[this_core()], irq);
 	}
 	return irq;
 }
@@ -138,7 +156,7 @@ void z_soc_irq_eoi(unsigned int irq)
 	 * gone and the source is left masked, as the ISR intended.
 	 */
 	if (irq < CONFIG_NUM_IRQS &&
-	    atomic_test_and_clear_bit(bracketed_irqs, irq)) {
+	    atomic_test_and_clear_bit(bracketed_irqs[this_core()], irq)) {
 		z_soc_irq_enable(irq);
 	}
 }
