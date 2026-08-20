@@ -1,0 +1,15 @@
+common:
+  harness: pytest
+  slow: true
+  timeout: 900
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+  tags:
+    - net
+    - dhcpv4
+    - conformance
+    - pytest
+tests:
+  net.conformance.dhcpv4: {}
