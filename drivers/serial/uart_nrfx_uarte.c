@@ -1846,9 +1846,13 @@ static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 {
-	uint64_t bauds = (uint64_t)baudrate * timeout / 1000000;
+	/* Divide baudrate by 1000 to avoid 64 bit division. This approach is not 100% accurate
+	 * but error is insignificant (within few bauds). Precise timeout my be more important
+	 * for higher baudrates but inaccuracy diminishes with higher baudrate.
+	 */
+	uint32_t bauds = ((baudrate / 1000) * timeout) / 1000;
 
-	return MIN((uint32_t)bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
+	return MIN(bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
 }
 #endif
 
