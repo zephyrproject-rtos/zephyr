@@ -113,6 +113,13 @@ jobs:
 
     - name: Install Python packages required for documentation build
       run: |
+        # FIXME: The requirements files pin an unreleased reuse-tool change
+        #        (custom_properties) needed by the zephyr-licensing-exceptions::
+        #        directive. The snapshot reports the same version as the
+        #        release the CI image ships, so pip skips it unless reuse is
+        #        uninstalled first. Drop this and the pin once the API is in a
+        #        reuse release.
+        pip uninstall -y reuse
         pip install -r scripts/requirements-actions.txt --require-hashes
         pip install -r doc/requirements.txt --require-hashes
 
