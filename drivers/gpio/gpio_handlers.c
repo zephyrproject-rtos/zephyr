@@ -7,11 +7,24 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/internal/syscall_handler.h>
 
+static inline bool gpio_syscall_pin_is_supported(const struct device *port, gpio_pin_t pin)
+{
+	const struct gpio_driver_config *const cfg =
+		(const struct gpio_driver_config *)port->config;
+
+	return gpio_port_pin_is_supported(cfg->port_pin_mask, pin);
+}
+
 static inline int z_vrfy_gpio_pin_configure(const struct device *port,
 					    gpio_pin_t pin,
 					    gpio_flags_t flags)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_configure));
+
+	if (!gpio_syscall_pin_is_supported(port, pin)) {
+		return -EINVAL;
+	}
+
 	return z_impl_gpio_pin_configure((const struct device *)port,
 					  pin,
 					  flags);
@@ -25,6 +38,10 @@ static inline int z_vrfy_gpio_pin_get_config(const struct device *port,
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_get_config));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(flags, sizeof(gpio_flags_t)));
+
+	if (!gpio_syscall_pin_is_supported(port, pin)) {
+		return -EINVAL;
+	}
 
 	return z_impl_gpio_pin_get_config(port, pin, flags);
 }
@@ -83,6 +100,11 @@ static inline int z_vrfy_gpio_pin_interrupt_configure(const struct device *port,
 						      gpio_flags_t flags)
 {
 	K_OOPS(K_SYSCALL_DRIVER_GPIO(port, pin_interrupt_configure));
+
+	if (!gpio_syscall_pin_is_supported(port, pin)) {
+		return -EINVAL;
+	}
+
 	return z_impl_gpio_pin_interrupt_configure((const struct device *)port,
 						   pin,
 						   flags);
