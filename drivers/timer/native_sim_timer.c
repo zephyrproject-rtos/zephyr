@@ -13,6 +13,7 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
+#include <zephyr/sys/util.h>
 #include "nsi_hw_scheduler.h"
 #include "nsi_timer_model.h"
 #include "soc.h"
@@ -26,13 +27,27 @@ static uint64_t timer_driver_cycle_get(void)
 	return nsi_hws_get_time();
 }
 
+/* Microseconds per kernel tick, the core's TIMER_CORE_CYC_PER_TICK, needed here
+ * before the core is included.
+ */
+#define NP_TICK_PERIOD_US (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+
 /**
- * Program the next tick interrupt <cycles> microseconds from now.
- * hwtimer_enable() re-anchors the tick period at the current time.
+ * Program the next tick interrupt <cycles> microseconds from now, by passing over
+ * the tick expiries in between.
+ *
+ * Stretching the model's tick period with hwtimer_enable() instead would let it
+ * reach the deadline in a single step, which leaves CONFIG_NATIVE_SIM_SLOWDOWN_TO_REAL_TIME
+ * with nothing to pace simulated time against: that runs once per tick expiry.
+ *
+ * Skipping lands on the model's tick grid, so this can fire up to a tick early.
+ * The core announces what actually elapsed and the kernel re-arms.
  */
 static void timer_driver_set_reload(uint64_t cycles)
 {
-	hwtimer_enable(cycles);
+	int64_t silent_ticks = (int64_t)(cycles / NP_TICK_PERIOD_US) - 1;
+
+	hwtimer_set_silent_ticks(MAX(silent_ticks, 0));
 }
 
 /*
@@ -43,6 +58,9 @@ static void timer_driver_set_reload(uint64_t cycles)
 #define TIMER_CORE_ALARM_MAX_CYCLES NSI_NEVER
 
 #include "system_timer_generic.h"
+
+BUILD_ASSERT(NP_TICK_PERIOD_US == TIMER_CORE_CYC_PER_TICK,
+	     "the tick period used to arm the model must match the core's");
 
 /**
  * Interrupt handler for the timer interrupt
@@ -81,7 +99,7 @@ void sys_clock_disable(void)
  */
 static int sys_clock_driver_init(void)
 {
-	hwtimer_enable(TIMER_CORE_CYC_PER_TICK);
+	hwtimer_enable(NP_TICK_PERIOD_US);
 
 	IRQ_CONNECT(TIMER_TICK_IRQ, 1, np_timer_isr, 0, 0);
 	irq_enable(TIMER_TICK_IRQ);
