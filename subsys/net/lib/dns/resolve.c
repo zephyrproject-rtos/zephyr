@@ -1575,6 +1575,149 @@ static int set_ttl_hop_limit(int sock, int level, int option, int new_limit)
 	return zsock_setsockopt(sock, level, option, &new_limit, sizeof(new_limit));
 }
 
+#if defined(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)
+/* True when no query is still waiting for an answer, so a socket can be
+ * replaced without losing an answer that is on its way. A pending query does
+ * not record which server it was sent to, so any one of them holds every
+ * socket.
+ */
+static bool dns_resolver_is_idle(struct dns_resolve_context *ctx,
+				 int except_query_idx)
+{
+	for (int i = 0; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		/* The query about to be sent already holds its slot by the
+		 * time it gets here, so it does not count.
+		 */
+		if (i == except_query_idx) {
+			continue;
+		}
+
+		if (ctx->queries[i].cb != NULL && ctx->queries[i].query != NULL) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
+/* Give the server's socket a new local port.
+ *
+ * RFC 5452 9.2: an attacker who cannot see a query has to guess the identifier
+ * and the source port together to forge an answer to it. The identifier is
+ * already drawn afresh for every query; the port was chosen once, when the
+ * socket was opened, and then reused for the life of the resolver, so a single
+ * observed query gave it away for good.
+ *
+ * The socket is closed and opened again rather than rebound, because a bound
+ * UDP socket cannot be rebound. The port itself is left to the system: binding
+ * to zero is what the resolver already does at startup, and the dispatcher
+ * that shares the port keeps working the same way.
+ *
+ * A server whose socket cannot be replaced is left without one, which the
+ * resolver already treats as unavailable: the query goes to the next server
+ * instead. Getting here means the system is out of sockets, in which case the
+ * old one could not have been kept either.
+ */
+static void dns_randomize_source_port(struct dns_resolve_context *ctx,
+				      int server_idx, int query_idx)
+{
+	struct dns_server *server = &ctx->servers[server_idx];
+	struct sockaddr local;
+	int old_sock = server->sock;
+	int sock;
+	int ret;
+
+	/* Multicast DNS and LLMNR are spoken on a fixed port, and the
+	 * dispatcher pairs a resolver with a responder by that port.
+	 */
+	if (server->is_mdns || server->is_llmnr) {
+		return;
+	}
+
+	if (old_sock < 0 || !dns_resolver_is_idle(ctx, query_idx)) {
+		return;
+	}
+
+	/* Keep the address the dispatcher was bound to, drop the port. */
+	memcpy(&local, &server->dispatcher.local_addr, sizeof(local));
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && local.sa_family == AF_INET6) {
+		net_sin6(&local)->sin6_port = 0;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && local.sa_family == AF_INET) {
+		net_sin(&local)->sin_port = 0;
+	} else {
+		return;
+	}
+
+	/* Give the old socket up first. Its descriptor is then free for the
+	 * replacement, which matters where the descriptor budget is sized for
+	 * exactly the sockets the resolver holds.
+	 */
+	(void)dns_dispatcher_unregister(&server->dispatcher);
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		if (ctx->fds[j].fd == old_sock) {
+			ctx->fds[j].fd = -1;
+			break;
+		}
+	}
+
+	zsock_close(old_sock);
+	server->sock = -1;
+
+	sock = zsock_socket(server->dns_server.sa_family, SOCK_DGRAM,
+			    IPPROTO_UDP);
+	if (sock < 0) {
+		NET_ERR("Cannot get a socket to renew the source port (%d)", -errno);
+		return;
+	}
+
+	if (server->if_index > 0) {
+		ret = bind_to_iface(sock, &server->dns_server, server->if_index);
+		if (ret < 0) {
+			zsock_close(sock);
+			return;
+		}
+	}
+
+	ARRAY_FOR_EACH(ctx->fds, j) {
+		if (ctx->fds[j].fd < 0) {
+			ctx->fds[j].fd = sock;
+			ctx->fds[j].events = ZSOCK_POLLIN;
+			break;
+		}
+	}
+
+	server->sock = sock;
+
+	/* -EALREADY means another server already dispatches this family and
+	 * port, which is how the resolver registers its later servers at
+	 * startup too, so the socket is in hand either way.
+	 */
+	ret = register_dispatcher(ctx, server->dispatcher.svc, server, &local,
+				  NULL, NULL);
+	if (ret < 0 && ret != -EALREADY) {
+		/* The old socket is gone and the new one is not dispatched, so
+		 * an answer arriving on it would not be seen. Give the socket
+		 * up: the resolver treats a server without one as unavailable
+		 * and moves on to the next.
+		 */
+		NET_ERR("Cannot dispatch the renewed socket for server %d (%d)",
+			server_idx, ret);
+
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			if (ctx->fds[j].fd == sock) {
+				ctx->fds[j].fd = -1;
+				break;
+			}
+		}
+
+		zsock_close(sock);
+		server->sock = -1;
+	}
+}
+#endif /* CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT */
+
 /* Must be invoked with context lock held */
 static int dns_write(struct dns_resolve_context *ctx,
 		     int server_idx,
@@ -1590,7 +1733,15 @@ static int dns_write(struct dns_resolve_context *ctx,
 	int ret, sock, family;
 	char *query_name;
 
+	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
+		dns_randomize_source_port(ctx, server_idx, query_idx);
+	}
+
 	sock = ctx->servers[server_idx].sock;
+	if (sock < 0) {
+		return -ENOTCONN;
+	}
+
 	family = ctx->servers[server_idx].dns_server.sa_family;
 	server = &ctx->servers[server_idx].dns_server;
 	dns_id = ctx->queries[query_idx].id;
