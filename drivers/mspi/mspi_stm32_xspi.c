@@ -420,11 +420,13 @@ static int mspi_stm32_xspi_access(const struct device *dev, const struct mspi_xf
 {
 	HAL_StatusTypeDef hal_ret;
 	struct mspi_stm32_data *dev_data = dev->data;
+	bool is_psram = ((dev_data->hmspi.xspi.Init.MemoryType == HAL_XSPI_MEMTYPE_APMEM) ||
+			 (dev_data->hmspi.xspi.Init.MemoryType == HAL_XSPI_MEMTYPE_APMEM_16BITS));
 
 	if (dev_data->memmap_cfg.enable) {
 		if ((packet->cmd == MSPI_NOR_CMD_WREN) || (packet->cmd == MSPI_NOR_OCMD_WREN) ||
 		    (packet->cmd == MSPI_NOR_CMD_SE_4B) || (packet->cmd == MSPI_NOR_OCMD_SE) ||
-		    (packet->cmd == MSPI_NOR_CMD_SE) ||
+		    ((!is_psram) && (packet->cmd == MSPI_NOR_CMD_SE)) ||
 		    ((mspi_stm32_xspi_hal_address_size(dev_data->dev_cfg.addr_length) ==
 		      HAL_XSPI_ADDRESS_24_BITS) &&
 		     (dev_data->dev_cfg.io_mode == MSPI_IO_MODE_SINGLE))) {
@@ -915,7 +917,7 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 	int ret = 0;
 	struct mspi_stm32_data *dev_data = controller->data;
 
-	if (dev_id != dev_data->dev_id) {
+	if ((MSPI_MAX_DEVICE > 1) && (dev_id != dev_data->dev_id)) {
 		LOG_ERR("dev_id don't match");
 		return -ESTALE;
 	}
@@ -1038,7 +1040,7 @@ static int mspi_stm32_xspi_transceive(const struct device *controller,
 	int ret = 0;
 	struct mspi_stm32_data *dev_data = controller->data;
 
-	if (dev_id != dev_data->dev_id) {
+	if ((MSPI_MAX_DEVICE > 1) && (dev_id != dev_data->dev_id)) {
 		LOG_ERR("transceive : dev_id don't match");
 		return -ESTALE;
 	}
@@ -1103,6 +1105,30 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 	hdma->Init.Mode = DMA_NORMAL;
 	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
 	hdma->Init.Request = dma_stream->cfg.dma_slot;
+
+#if defined(CONFIG_SOC_SERIES_STM32H7RSX)
+	/*
+	 * Assume the DMA is HPDMA because GPDMA does not have request line from XSPI.
+	 * Allocate source/destination port based on transfer direction:
+	 *  - XSPI is only accessible by HPDMA port 1
+	 *  - SRAM is only accessible by HPDMA port 0
+	 */
+	if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction] == DMA_PERIPH_TO_MEMORY) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT1 |
+			DMA_DEST_ALLOCATED_PORT0;
+	} else if (mspi_stm32_table_direction[dma_stream->cfg.channel_direction] ==
+			DMA_MEMORY_TO_PERIPH) {
+		hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+			DMA_DEST_ALLOCATED_PORT1;
+	} else {
+		LOG_ERR("DMA direction %d is not valid",
+			mspi_stm32_table_direction[dma_stream->cfg.channel_direction]);
+		return -EINVAL;
+	}
+#else /* CONFIG_SOC_SERIES_STM32H7RSX */
+	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 |
+		DMA_DEST_ALLOCATED_PORT0;
+#endif /* CONFIG_SOC_SERIES_STM32H7RSX */
 
 	/*
 	 * HAL expects a valid DMA channel.
@@ -1471,6 +1497,8 @@ static int mspi_stm32_xspi_pm_action(const struct device *dev, enum pm_device_ac
 
 #define MSPI_STM32_INIT(index)                                                                    \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);          \
+												  \
+	MSPI_STM32_VALIDATE_MEMTYPE(MSPI_STM32_MEMTYPE_TOKEN(index));                             \
 	                                                                                          \
 	PINCTRL_DT_INST_DEFINE(index);                                                            \
 	                                                                                          \
