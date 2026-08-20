@@ -55,12 +55,12 @@ static void als31300_convert_raw_to_q31_magn(int16_t raw_value, q31_t *q31_out)
 	/* Convert to microgauss using integer arithmetic */
 	int32_t microgauss = als31300_convert_to_gauss(raw_value);
 
-	/* Convert to Q31 format: Q31 = (value * 2^shift) / 1000000
-	 * For magnetic field, we use shift=16, so the full scale is ±2^(31-16) = ±32768 gauss
+	/* Convert to Q31 format: Q31 = (value * 2^(31 - shift)) / 1000000
+	 * For magnetic field, we use shift=16, so the full scale is ±2^16 = ±65536 gauss
 	 * This gives us good resolution for the ±500G range of the ALS31300
-	 * microgauss * 2^16 / 1000000 = microgauss * 65536 / 1000000
+	 * microgauss * 2^15 / 1000000 = microgauss * 32768 / 1000000
 	 */
-	*q31_out = (q31_t)(((int64_t)microgauss << ALS31300_MAGN_SHIFT) / 1000000);
+	*q31_out = (q31_t)(((int64_t)microgauss << (31 - ALS31300_MAGN_SHIFT)) / 1000000);
 }
 
 /**
@@ -73,12 +73,12 @@ static void als31300_convert_temp_to_q31(uint16_t raw_temp, q31_t *q31_out)
 	/* Convert to microcelsius using integer arithmetic */
 	int32_t microcelsius = als31300_convert_temperature(raw_temp);
 
-	/* Convert to Q31 format: Q31 = (value * 2^shift) / 1000000
-	 * For temperature, we use shift=16, so the full scale is ±2^(31-16) = ±32768°C
+	/* Convert to Q31 format: Q31 = (value * 2^(31 - shift)) / 1000000
+	 * For temperature, we use shift=16, so the full scale is ±2^16 = ±65536°C
 	 * This gives us good resolution for typical temperature ranges (-40°C to +125°C)
-	 * microcelsius * 2^16 / 1000000 = microcelsius * 65536 / 1000000
+	 * microcelsius * 2^15 / 1000000 = microcelsius * 32768 / 1000000
 	 */
-	*q31_out = (q31_t)(((int64_t)microcelsius << ALS31300_TEMP_SHIFT) / 1000000);
+	*q31_out = (q31_t)(((int64_t)microcelsius << (31 - ALS31300_TEMP_SHIFT)) / 1000000);
 }
 
 /**
