@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
 # SPDX-License-Identifier: Apache-2.0
 
-identifier: xiao_rp2350/rp2350a/m33
+identifier: xiao_rp2350/rp2350a/m33_0
 name: XIAO RP2350 (Cortex-M33)
 type: mcu
 arch: arm
