@@ -454,7 +454,11 @@ static bool process_pending_cmd(k_timeout_t timeout);
 int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 struct net_buf **rsp)
 {
-	struct k_sem sync_sem;
+	/* This local sem is just for suspending the current thread until the
+	 * command is processed by the LL. It is given (and we are awaken) by
+	 * the cmd_complete/status handlers.
+	 */
+	struct k_sem sync_sem = K_SEM_INITIALIZER(sync_sem, 0, 1);
 	uint8_t status;
 	int err;
 
@@ -473,11 +477,6 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 
 	LOG_DBG("buf %p opcode 0x%04x len %u", buf, opcode, buf->len);
 
-	/* This local sem is just for suspending the current thread until the
-	 * command is processed by the LL. It is given (and we are awaken) by
-	 * the cmd_complete/status handlers.
-	 */
-	k_sem_init(&sync_sem, 0, 1);
 	cmd(buf)->sync = &sync_sem;
 
 	err = bt_hci_cmd_send(opcode, net_buf_ref(buf));
