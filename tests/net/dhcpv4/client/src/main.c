@@ -236,6 +236,12 @@ struct dhcp_msg {
 
 static uint32_t offer_xid;
 static uint32_t request_xid;
+/* How many discovers to swallow before answering, so that the client is made
+ * to retransmit, and what identifiers those retransmissions carried.
+ */
+static int discovers_to_drop;
+static int discovers_seen;
+static uint32_t discover_xids[4];
 
 #define EVT_ADDR_ADD        BIT(0)
 #define EVT_ADDR_DEL        BIT(1)
@@ -453,6 +459,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	parse_dhcp_message(pkt, &msg);
 
 	if (msg.type == DISCOVER) {
+		if (discovers_seen < ARRAY_SIZE(discover_xids)) {
+			discover_xids[discovers_seen] = msg.xid;
+		}
+		discovers_seen++;
+
+		if (discovers_to_drop > 0) {
+			/* Say nothing, so that the client retransmits. */
+			discovers_to_drop--;
+			net_pkt_unref(pkt);
+			return 0;
+		}
+
 		/* Reply with DHCPv4 offer message */
 		rpkt = prepare_dhcp_offer(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
@@ -810,4 +828,56 @@ ZTEST(dhcpv4_tests, test_dhcp)
 }
 
 /**test case main entry */
+/* RFC 2131 4.1: one transaction identifier for every message of a
+ * transaction. A retransmitted discover is the same transaction, so a server
+ * that has already seen the first one has to be able to recognise the second
+ * as a repeat rather than as another client asking.
+ *
+ * Every discover is dropped, so the exchange never completes and this leaves
+ * neither a lease nor a set of DNS servers behind for whatever runs next.
+ */
+ZTEST(dhcpv4_tests, test_discover_retransmission_keeps_xid)
+{
+	/* Long enough for two retransmissions: the backoff is four seconds,
+	 * then eight, plus a second of randomisation each. native_sim
+	 * fast-forwards idle time, so this costs no wall clock.
+	 */
+	const k_timeout_t settle = K_SECONDS(4 + 8 + 4);
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	/* The suite has no per-test setup, so put the interface and the
+	 * counters back to a known state here. An address left behind by an
+	 * earlier test would start this one in INIT-REBOOT, which sends a
+	 * request rather than the discover being exercised.
+	 */
+	iface->config.dhcpv4.requested_ip.s_addr = 0;
+	discovers_seen = 0;
+	memset(discover_xids, 0, sizeof(discover_xids));
+
+	discovers_to_drop = ARRAY_SIZE(discover_xids);
+
+	net_dhcpv4_start(iface);
+	k_sleep(settle);
+	net_dhcpv4_stop(iface);
+
+	/* Nothing tears this down for whatever runs next, either. */
+	discovers_to_drop = 0;
+
+	zassert_true(discovers_seen >= 3,
+		     "Expected the client to retransmit, saw %d discover(s)",
+		     discovers_seen);
+
+	zassert_not_equal(discover_xids[0], 0U, "Transaction identifier is zero");
+
+	for (int i = 1; i < MIN(discovers_seen, ARRAY_SIZE(discover_xids)); i++) {
+		zassert_equal(discover_xids[i], discover_xids[0],
+			      "Discover %d carries xid 0x%08x, the first carried "
+			      "0x%08x; a retransmission is the same transaction",
+			      i, discover_xids[i], discover_xids[0]);
+	}
+}
+
 ZTEST_SUITE(dhcpv4_tests, NULL, NULL, NULL, NULL, NULL);
