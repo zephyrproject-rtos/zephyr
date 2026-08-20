@@ -88,6 +88,11 @@ socket on a link of its own.
      - ``zethL2``
      - root
      - 5
+   * - ``tcp``
+     - :zephyr_file:`tests/net/conformance/tcp`
+     - ``zethL2``
+     - root
+     - 8
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -165,6 +170,24 @@ resolution requests for the suite to look at.
 * ``tc_unicast_request_is_answered``
 * ``tc_request_for_another_address_is_ignored``
 * ``tc_reply_is_not_answered``
+
+TCP
+===
+
+The application is an echo server on port 4242 plus a loop that connects out to
+the peer on port 4243 every three seconds, so the suite can both drive a
+connection and watch Zephyr open one. Nothing test specific is compiled in and
+no Kconfig option is changed for the test, so the TCP being exercised is the
+one that ships.
+
+* ``tc_outbound_connect_is_well_formed``
+* ``tc_handshake``
+* ``tc_initial_sequence_number_varies``
+* ``tc_data_is_acknowledged_and_echoed``
+* ``tc_closed_port_is_reset``
+* ``tc_close_is_completed``
+* ``tc_undersized_data_offset_is_dropped``
+* ``tc_sequence_number_wraps``
 
 .. _ttcn3_known_gaps:
 

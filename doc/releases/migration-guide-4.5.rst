@@ -1533,9 +1533,12 @@ Networking
 
   Enabling it also turned off initial sequence number randomisation and made
   ``net_tcp_connect()`` return without waiting for the connection, so a build
-  that had it did not behave like one that did not. There is no replacement
-  option: a protocol test belongs on the network, against a build that has not
-  been altered to be testable.
+  that had it did not behave like one that did not.
+
+  There is no replacement option, because the replacement is not an option: the
+  conformance tests under :zephyr_file:`tests/net/conformance` drive an
+  unaltered build over the network instead, including a TCP suite covering the
+  same ground. See :ref:`ttcn3_testing`.
 
 * The ``struct dns_server`` type nested in :c:struct:`dns_resolve_context` has been
   renamed to ``struct dns_server_info``. A C++ class member cannot share the name of
