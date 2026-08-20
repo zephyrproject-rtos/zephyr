@@ -75,6 +75,8 @@ def test_ctf_trace(dut):
     missing = [e for e in EXPECTED_EVENTS if e not in seen]
     assert not missing, f"missing expected CTF events {missing}; decoded types: {sorted(seen)}"
 
+    assert "queue_get_blocking" not in names, "K_NO_WAIT queue get emitted a blocking event"
+
     # Field sanity: queue_get_exit must carry the object id, timeout and return value.
     get_exit = next(e for e in tr.events if e.name == "queue_get_exit")
     for field in ("id", "timeout", "ret"):
