@@ -637,7 +637,17 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	tcc_counter_init(cfg->regs, cfg->prescaler, cfg->max_channels, cfg->max_bit_width);
 	cfg->irq_config_func(dev);
 
-	return ret_val;
+	/*
+	 * A clock that some other driver has already turned on is not a
+	 * failure. Both calls above accept -EALREADY, but the value is still
+	 * sitting in ret_val, and returning it aborts the device's
+	 * initialization. On a part where two TCC instances share one GCLK
+	 * peripheral channel, whichever of the PWM and counter drivers runs
+	 * second sees it, so the counter device is simply absent from the
+	 * system. pwm_mchp_tcc_g1.c normalizes the same value on its last
+	 * line.
+	 */
+	return (ret_val == -EALREADY) ? 0 : ret_val;
 }
 
 static inline void counter_mchp_channel_irq_handle(const struct device *const dev, uint8_t channel)
