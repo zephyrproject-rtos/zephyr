@@ -220,6 +220,8 @@
 			clocks = <&rcc CH32V00X_CLOCK_ADC1>;
 			interrupt-parent = <&pfic>;
 			interrupts = <29>;
+			channels = <10>;
+			resolution = <10>;
 			#io-channel-cells = <1>;
 			status = "disabled";
 		};
