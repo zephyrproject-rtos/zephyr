@@ -113,6 +113,14 @@ A single suite is selected by its test identifier, which is
 They also carry the ``net`` and ``conformance`` tags, so ``--tag conformance``
 picks up all six.
 
+Why a run is serial
+===================
+
+Every system under test answers to the same address on the same interface, so
+only one conformance test can be running at a time. They take an exclusive lock
+on the interface and wait for each other, which means a run of the whole
+directory is serial however many jobs Twister is given.
+
 .. _ttcn3_running_by_hand:
 
 Running a suite by hand

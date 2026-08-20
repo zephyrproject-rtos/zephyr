@@ -67,6 +67,11 @@ interface that application appears on.
      - ``zeth``
      - any user
      - 8
+   * - ``dns``
+     - :zephyr_file:`tests/net/conformance/dns`
+     - ``zeth``
+     - any user
+     - 7
 
 Adding a suite is described in :ref:`ttcn3_adding_a_suite`.
 
@@ -87,6 +92,24 @@ query for a name the responder does not own.
 * ``tc_legacy_query_is_answered_conventionally``
 * ``tc_answer_count_matches``
 
+DNS
+===
+
+The application resolves ``conformance.test`` over and over, one lookup at a
+time, against the tester acting as its only configured server. That server is
+at port 15353 rather than 53 so the suite needs no privilege and cannot collide
+with a resolver running on the host. The resolver does not retransmit, so an
+unanswered query simply fails and the next one follows, which lets a test case
+start at any point and still finish quickly.
+
+* ``tc_query_is_well_formed``
+* ``tc_query_id_varies``
+* ``tc_query_source_port_varies``
+* ``tc_unanswered_query_does_not_wedge``
+* ``tc_answer_is_followed_by_more_queries``
+* ``tc_malformed_answers_are_survived``
+* ``tc_answer_with_wrong_id_is_ignored``
+
 .. _ttcn3_known_gaps:
 
 Known gaps
@@ -106,6 +129,15 @@ its own messages, still sets the cache flush bit, uses its own long time to
 live, and echoes neither the identifier nor the question. Fixing it means
 reworking name compression offsets that are all computed from a fixed header
 size. No suite covers it.
+
+Overlapping DNS queries
+=======================
+
+The resolver renews its source port before sending to a server that has nothing
+outstanding, which with the default of one query at a time means every query.
+Queries that overlap on one server still share a port, so the check in the
+``dns`` suite would not catch a regression in that case. See :rfc:`5452`
+section 9.2.
 
 Other TTCN-3 suites
 *******************

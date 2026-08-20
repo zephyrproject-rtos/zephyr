@@ -28,8 +28,15 @@ int main(void)
 		return -ENODEV;
 	}
 
-	(void)net_mgmt_event_wait_on_iface(iface, NET_EVENT_L4_CONNECTED, NULL,
-					   NULL, NULL, K_SECONDS(10));
+	/* The addresses are configured during initialisation, so the interface
+	 * is usually up before main() runs. Only wait when it is not: waiting
+	 * unconditionally would block until the timeout, because the event has
+	 * already been and gone.
+	 */
+	if (!net_if_is_up(iface)) {
+		(void)net_mgmt_event_wait_on_iface(iface, NET_EVENT_IF_UP, NULL,
+						   NULL, NULL, K_SECONDS(10));
+	}
 
 	LOG_INF("mDNS responder ready");
 
