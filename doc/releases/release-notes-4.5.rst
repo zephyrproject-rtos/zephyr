@@ -158,6 +158,11 @@ Removed APIs and options
       * ``pico2_spe/rp2350a/m33`` to ``pico2_spe/rp2350a/m33_0``
       * ``pico_plus2/rp2350b/m33`` to ``pico_plus2/rp2350b/m33_0``
       * ``pico_plus2/rp2350b/hazard3`` to ``pico_plus2/rp2350b/hazard3_0``
+      * ``rpi_pico2/rp2350a/m33`` to ``rpi_pico2/rp2350a/m33_0``
+      * ``rpi_pico2/rp2350a/m33/w`` to ``rpi_pico2/rp2350a/m33_0/w``
+      * ``rpi_pico2/rp2350a/m33/mcuboot`` to ``rpi_pico2/rp2350a/m33_0/mcuboot``
+      * ``rpi_pico2/rp2350a/m33/w/mcuboot`` to ``rpi_pico2/rp2350a/m33_0/w/mcuboot``
+      * ``rpi_pico2/rp2350a/hazard3`` to ``rpi_pico2/rp2350a/hazard3_0``
 
 * Build system
 
