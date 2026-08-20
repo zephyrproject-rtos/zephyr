@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config PICOLIBC_SUPPORTED
+	default n
+
+config XTENSA_LIBC_SUPPORTED
+	default y
