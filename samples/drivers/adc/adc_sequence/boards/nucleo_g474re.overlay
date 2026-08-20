@@ -1,7 +1,7 @@
 /*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Caglayan Dokme <caglayandokme@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
- *
- * Copyright (c) 2026 Caglayan Dokme <caglayandokme@gmail.com>
  */
 
 / {
