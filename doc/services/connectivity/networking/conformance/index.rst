@@ -165,6 +165,20 @@ Queries that overlap on one server still share a port, so the check in the
 ``dns`` suite would not catch a regression in that case. See :rfc:`5452`
 section 9.2.
 
+Continuous integration
+**********************
+
+These suites are not part of the ordinary Twister run: they need a Titan
+installation, a network interface facing the device, and a checkout of the
+suites, none of which a normal build has. They are also slow, and they cannot
+run at the same time as each other.
+
+They run nightly instead, from
+:zephyr_file:`.github/workflows/net_conformance.yml`, which can also be started
+by hand from the Actions tab. The job installs the packaged Titan and sets
+``TTCN3_DIR=/usr``, and brings the interface up in a container holding
+``NET_ADMIN``. The Twister report and the harness logs are kept as artifacts.
+
 Other TTCN-3 suites
 *******************
 
