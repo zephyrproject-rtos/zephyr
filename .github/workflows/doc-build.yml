@@ -72,7 +72,7 @@ jobs:
     container:
       image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
       options: '--entrypoint /bin/bash'
-    timeout-minutes: 60
+    timeout-minutes: 75
     concurrency:
       group: doc-build-html-${{ github.ref }}
       cancel-in-progress: true
@@ -151,15 +151,19 @@ jobs:
           mv doc/_build/doxygen "${DOXYGEN_OUT_DIR}"
         else
           if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            # LLM-friendly output is only generated for the published builds
+            # as it noticeably increases the overall build time.
             DOC_TARGET="html-fast"
+            LLMS_TXT=0
           else
             DOC_TARGET="html"
+            LLMS_TXT=1
           fi
 
           DOC_TAG=${DOC_TAG} \
           SPHINXOPTS="-j ${JOB_COUNT} -W --keep-going -T" \
           SPHINXOPTS_EXTRA="-q -t publish" \
-          make -C doc ${DOC_TARGET} NO_EXTERNAL_DEPS=1
+          make -C doc ${DOC_TARGET} NO_EXTERNAL_DEPS=1 LLMS_TXT=${LLMS_TXT}
         fi
 
         # API documentation coverage
