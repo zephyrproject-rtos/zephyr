@@ -1,0 +1,54 @@
+# Copyright 2026 Meta Platforms, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MJPEG encode (round-trip) pipeline"
+
+menu "Pipeline configuration"
+
+config FILE_INPUT_PATH
+	string "Input MJPEG file path"
+	default "/SD:/test.mjpeg"
+	help
+	  Absolute path to the MJPEG input file.
+
+config FILE_OUTPUT_PATH
+	string "Output MJPEG file path"
+	default "/SD:/test_out.mjpeg"
+	help
+	  Absolute path to the re-encoded MJPEG output file.
+
+config JPEG_IMAGE_WIDTH
+	int "Width of the JPEG image"
+	default 320
+
+config JPEG_IMAGE_HEIGHT
+	int "Height of the JPEG image"
+	default 240
+
+config MJPEG_NUM_FRAMES
+	int "Number of frames in the generated test MJPEG file"
+	default 150
+	help
+	  Number of video frames to generate in the test MJPEG file.
+	  The file is produced at build time using GStreamer CLI.
+
+config JPEG_ENC_QUALITY
+	int "JPEG encoder quality (JPEGE_Q_*: 0=BEST, 1=HIGH, 2=MED, 3=LOW)"
+	range 0 3
+	default 0
+	help
+	  Compression quality passed to the encoder via PROP_ZJPEG_ENC_QUALITY.
+	  Maps to the bitbank JPEGENC 4-level enum: 0=JPEGE_Q_BEST, 1=JPEGE_Q_HIGH,
+	  2=JPEGE_Q_MED, 3=JPEGE_Q_LOW.
+
+config JPEG_ENC_SUBSAMPLE
+	int "JPEG encoder chroma subsampling (JPEGE_SUBSAMPLE_*: 0=444, 1=420)"
+	range 0 1
+	default 1
+	help
+	  Chroma subsampling passed to the encoder via PROP_ZJPEG_ENC_SUBSAMPLE.
+	  0=JPEGE_SUBSAMPLE_444, 1=JPEGE_SUBSAMPLE_420.
+
+endmenu
+
+source "Kconfig.zephyr"
