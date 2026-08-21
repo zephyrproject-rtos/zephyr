@@ -56,6 +56,9 @@ size_t gmap_ad_data_add(struct bt_data data[], size_t data_size);
 size_t pbp_ad_data_add(struct bt_data data[], size_t data_size);
 size_t cap_initiator_pa_data_add(struct bt_data *data_array, const size_t data_array_size);
 
+bool gmap_supported_lc3_config_data(enum bt_audio_dir dir,
+				    const struct bt_audio_codec_cfg *codec_cfg);
+
 #if defined(CONFIG_BT_AUDIO)
 /* Must guard before including audio.h as audio.h uses Kconfigs guarded by
  * CONFIG_BT_AUDIO
