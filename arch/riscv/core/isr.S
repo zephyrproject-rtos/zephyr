@@ -109,6 +109,7 @@
 
 /* imports */
 GDATA(_sw_isr_table)
+GDATA(_kernel)
 GTEXT(__soc_handle_irq)
 GTEXT(z_riscv_fault)
 GTEXT(z_irq_spurious)
@@ -796,6 +797,20 @@ check_reschedule:
 
 	/* Get pointer to current thread on this CPU */
 	lr a1, ___cpu_t_current_OFFSET(s0)
+
+#if !defined(CONFIG_SMP) && !defined(CONFIG_SCHED_THREAD_USAGE)
+	/*
+	 * Fast path: when the scheduler's ready queue cache still designates
+	 * the current thread, no reschedule is needed.  In that case all of
+	 * the bookkeeping in z_get_next_switch_handle() reduces to no-ops on
+	 * uniprocessor builds (and the stack sentinel, when enabled, was
+	 * already checked above), so the call can be skipped altogether.
+	 * This is the common case when returning from an interrupt.
+	 */
+	la t0, _kernel
+	lr t0, _kernel_offset_to_ready_q_cache(t0)
+	beq t0, a1, no_reschedule
+#endif /* !CONFIG_SMP && !CONFIG_SCHED_THREAD_USAGE */
 
 	/*
 	 * Get next thread to schedule with z_get_next_switch_handle().
