@@ -63,6 +63,22 @@
 			current-speed = <921600>;
 			status = "disabled";
 		};
+
+		mfis: mailbox@e6260000 {
+			compatible = "renesas,rcar-mfis-mbox";
+			reg = <0xe6260000 0xb600>;
+			#mbox-cells = <1>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 124 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A0>R0 */
+				     <GIC_SPI 132 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A0>R2 */
+				     <GIC_SPI 126 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A1>R0 */
+				     <GIC_SPI 134 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A1>R2 */
+				     <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A2>R0 */
+				     <GIC_SPI 136 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A2>R2 */
+				     <GIC_SPI 130 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>, /* A3>R0 */
+				     <GIC_SPI 138 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>; /* A3>R2 */
+			status = "disabled";
+		};
 	};
 
 	clocks {
