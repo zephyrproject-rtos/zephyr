@@ -13,13 +13,15 @@
 #include <zephyr/irq_offload.h>
 #include <cmsis_core.h>
 
-volatile irq_offload_routine_t offload_routine;
-static const void *offload_param;
+static volatile irq_offload_routine_t offload_routine[CONFIG_MP_MAX_NUM_CPUS];
+static const void *offload_param[CONFIG_MP_MAX_NUM_CPUS];
 
 /* Called by z_arm_svc */
 void z_irq_do_offload(void)
 {
-	offload_routine(offload_param);
+	unsigned int id = arch_curr_cpu()->id;
+
+	offload_routine[id](offload_param[id]);
 }
 
 void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
@@ -31,9 +33,11 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 	__ASSERT(__get_PRIMASK() == 0U, "irq_offload called with interrupts locked\n");
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE && CONFIG_ASSERT */
 
+	unsigned int id = arch_curr_cpu()->id;
+
 	k_sched_lock();
-	offload_routine = routine;
-	offload_param = parameter;
+	offload_routine[id] = routine;
+	offload_param[id] = parameter;
 
 	__asm__ volatile ("svc %[id]\n"
 			  IF_ENABLED(CONFIG_ARM_BTI, ("bti"))
@@ -41,7 +45,7 @@ void arch_irq_offload(irq_offload_routine_t routine, const void *parameter)
 			  : [id] "i" (_SVC_CALL_IRQ_OFFLOAD)
 			  : "memory");
 
-	offload_routine = NULL;
+	offload_routine[id] = NULL;
 	k_sched_unlock();
 }
 
