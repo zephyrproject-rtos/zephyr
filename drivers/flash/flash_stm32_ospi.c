@@ -2698,7 +2698,7 @@ static struct flash_stm32_ospi_data flash_stm32_ospi_dev_data = {
 
 DEVICE_DT_INST_DEFINE(0, &flash_stm32_ospi_init, NULL,
 		      &flash_stm32_ospi_dev_data, &flash_stm32_ospi_cfg,
-		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		      PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		      &flash_stm32_ospi_driver_api);
 
 static void flash_stm32_ospi_irq_config_func(const struct device *dev)
