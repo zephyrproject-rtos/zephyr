@@ -299,6 +299,8 @@ New APIs and options
     * :c:member:`bt_conn_cb.le_param_update_rejected`
     * ``BT_HCI_QUIRK_NO_FLOW_CONTROL`` HCI device quirk for controllers that
       advertise but reject the controller to host flow control commands.
+    * :c:func:`bt_iso_get_chan_by_conn`
+    * :c:func:`bt_iso_chan_state_str`
 
   * Mesh
 
