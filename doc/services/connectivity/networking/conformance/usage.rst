@@ -27,7 +27,8 @@ What a run needs
 * **Root**, for a suite that cannot avoid a privileged port or a packet socket.
 * **expect**, for a suite that runs through Titan's main controller.
 
-:ref:`ttcn3_suites` lists which suites need which of these.
+:ref:`ttcn3_suites` lists which suites need which of these, and
+:zephyr_file:`scripts/net/run-conformance-tests.sh` ``--list`` prints the same.
 
 The harness looks for net-tools in ``NET_TOOLS_BASE`` if that is set, otherwise
 at :file:`../tools/net-tools/ttcn3` relative to ``ZEPHYR_BASE`` and then one
@@ -61,6 +62,36 @@ Two things a hand built Titan has to get right. Titan is configured through a
 and ``TTCN3_DIR`` there is the install prefix. And ``make install`` has to be
 serial: parts of the runtime include headers that another part generates, and a
 parallel make loses that race.
+
+Running the suites with the script
+**********************************
+
+:zephyr_file:`scripts/net/run-conformance-tests.sh` does what the next two
+sections describe in one command, and is the easiest way to run the suites: it
+finds net-tools, fetches the modules if they are missing, creates whichever
+interfaces the selected suites need, re-runs itself under ``sudo`` if a
+selected suite needs root, runs Twister once, and tears the interfaces down
+again.
+
+.. code-block:: console
+
+   export TTCN3_DIR=/usr
+   ./scripts/net/run-conformance-tests.sh
+
+Naming suites runs only those, which is the quick way to stay unprivileged
+while working on one:
+
+.. code-block:: console
+
+   ./scripts/net/run-conformance-tests.sh mdns dns
+
+``--list`` shows the suites and what each one needs, ``--keep`` leaves the
+interfaces up for the next run, and ``--start`` and ``--stop`` do only that
+half. ``--help`` lists the rest, along with the directories it detected.
+
+Because a privileged run creates files as root, the script hands the Twister
+output directory and the suite build directories back to the invoking user
+before it exits.
 
 .. _ttcn3_interfaces:
 
