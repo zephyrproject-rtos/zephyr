@@ -323,6 +323,9 @@ static int dma_stm32_configure(const struct device *dev,
 		stream->dma_callback = config->dma_callback;
 		stream->user_data = config->user_data;
 		stream->cyclic = false;
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+		stream->double_buffer = false;
+#endif
 		return 0;
 	}
 
@@ -373,6 +376,25 @@ static int dma_stm32_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	/* A second block requests hardware double buffer (ping-pong) mode. */
+	if (config->head_block->next_block != NULL) {
+		if (!config->head_block->source_reload_en) {
+			LOG_ERR("double buffer mode requires cyclic mode.");
+			return -EINVAL;
+		}
+		if (config->head_block->next_block->block_size !=
+			config->head_block->block_size) {
+			LOG_ERR("double buffer blocks must be of equal size.");
+			return -EINVAL;
+		}
+		if (config->head_block->next_block->next_block != NULL) {
+			LOG_ERR("double buffer mode takes exactly two blocks.");
+			return -EINVAL;
+		}
+	}
+#endif /* CONFIG_DMA_STM32_DOUBLE_BUFFER */
+
 	stream->busy		= true;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
@@ -380,6 +402,9 @@ static int dma_stm32_configure(const struct device *dev,
 	stream->src_size	= config->source_data_size;
 	stream->dst_size	= config->dest_data_size;
 	stream->cyclic		= config->head_block->source_reload_en;
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	stream->double_buffer	= (config->head_block->next_block != NULL);
+#endif
 
 	/* Check dest or source memory address, warn if 0 */
 	if (config->head_block->source_address == 0) {
@@ -522,6 +547,24 @@ static int dma_stm32_configure(const struct device *dev,
 	DMA_InitStruct.PeriphRequest = config->dma_slot;
 #endif
 	LL_DMA_Init(dma, dma_stm32_id_to_stream(id), &DMA_InitStruct);
+
+#if defined(CONFIG_DMA_STM32_DOUBLE_BUFFER)
+	/* DBM must be armed after LL_DMA_Init(), which resets the stream config. */
+	if (stream->double_buffer) {
+		struct dma_block_config *next_block = config->head_block->next_block;
+		uint32_t mem1_addr = (stream->direction == MEMORY_TO_PERIPHERAL)
+					? next_block->source_address
+					: next_block->dest_address;
+
+		if (mem1_addr == 0) {
+			LOG_ERR("second buffer address is null.");
+			return -EINVAL;
+		}
+
+		LL_DMA_SetMemory1Address(dma, dma_stm32_id_to_stream(id), mem1_addr);
+		LL_DMA_EnableDoubleBufferMode(dma, dma_stm32_id_to_stream(id));
+	}
+#endif /* CONFIG_DMA_STM32_DOUBLE_BUFFER */
 
 	/* Always enable the transfer error interrupt */
 	LL_DMA_EnableIT_TE(dma, dma_stm32_id_to_stream(id));
