@@ -536,4 +536,6 @@ SECTIONS
   } >fw_metadata_seg :metadata_entries_phdr
 
   /DISCARD/ : { *(.note.GNU-stack) }
+
+#include <zephyr/linker/debug-sections.ld>
 }

@@ -311,6 +311,5 @@ static void IRAM_ATTR counter_esp32_isr(void *arg)
 
 PM_DEVICE_DT_INST_DEFINE(0, counter_esp32_pm_action);
 
-DEVICE_DT_INST_DEFINE(0, &counter_esp32_init, PM_DEVICE_DT_INST_GET(0), &counter_data,
-		      &counter_config, PRE_KERNEL_2, CONFIG_COUNTER_INIT_PRIORITY,
-		      &rtc_timer_esp32_api);
+DEVICE_DT_INST_DEFINE_AUTO(0, &counter_esp32_init, PM_DEVICE_DT_INST_GET(0), &counter_data,
+			   &counter_config, PRE_KERNEL, &rtc_timer_esp32_api);

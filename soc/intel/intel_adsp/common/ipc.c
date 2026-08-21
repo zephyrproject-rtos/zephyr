@@ -134,5 +134,7 @@ static int intel_adsp_ipc_old_init(void)
 	return ret;
 }
 
-/* Backend is at PRE_KERNEL_2:0, so we need to init after that. */
-SYS_INIT(intel_adsp_ipc_old_init, PRE_KERNEL_2, 1);
+/* Registering the endpoint needs the host IPC backend device: order the init
+ * right after it.
+ */
+SYS_INIT_DEPENDS(intel_adsp_ipc_old_init, PRE_KERNEL, INTEL_ADSP_IPC_HOST_DTNODE);

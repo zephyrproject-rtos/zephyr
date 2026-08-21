@@ -8,6 +8,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/em32_clock.h>
+#include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/logging/log.h>
@@ -708,15 +709,16 @@ static int delay_switch_to_late_post_init(void)
 	return 0;
 }
 
-/* Enforce ordering: switch must run after system clock is initialized. */
-BUILD_ASSERT(CONFIG_EM32_DELAY_SWITCH_PRIORITY > CONFIG_SYSTEM_CLOCK_INIT_PRIORITY,
-	     "delay switch priority must be greater than system clock priority");
-
 /*
- * Switch the delay backend at PRE_KERNEL_2 so that k_busy_wait() and other
- * kernel primitives are available and calibrated.
+ * The late backend calls k_busy_wait(), so the switch has to happen once the
+ * system timer is running. An anchored entry is placed at the end of its
+ * level, after every numeric priority and after every entry keyed by a
+ * devicetree ordinal, which is how the system timer driver is ordered. That
+ * relationship no longer depends on a hand-picked priority being kept in step
+ * with CONFIG_SYSTEM_CLOCK_INIT_PRIORITY.
  */
-SYS_INIT(delay_switch_to_late_post_init, PRE_KERNEL_2, CONFIG_EM32_DELAY_SWITCH_PRIORITY);
+#define SYS_ANCHOR_em32_delay_switch SYS_ANCHOR(em32_delay_switch)
+SYS_INIT_ANCHORED(em32_delay_switch, delay_switch_to_late_post_init, PRE_KERNEL);
 
 static int elan_em32_ahb_clock_control_init(const struct device *dev)
 {

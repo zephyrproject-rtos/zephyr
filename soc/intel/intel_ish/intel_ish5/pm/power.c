@@ -90,4 +90,11 @@ static int ish_soc_pm_init(void)
 	return 0;
 }
 
-SYS_INIT(ish_soc_pm_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Connects and enables the SoC power-management interrupts, so it has to run
+ * once the interrupt controller is up. An anchored entry runs at the end of
+ * PRE_KERNEL, after every device ordered by priority or by devicetree, which
+ * is the position PRE_KERNEL_2 was standing in for.
+ */
+#define SYS_ANCHOR_ish_soc_pm SYS_ANCHOR(ish_soc_pm)
+SYS_INIT_ANCHORED(ish_soc_pm, ish_soc_pm_init, PRE_KERNEL);

@@ -570,6 +570,13 @@ int _second_core_init(void)
 	return 0;
 }
 
-SYS_INIT(_second_core_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Releases the second core, which expects the devices of this core to be up
+ * first. An anchored entry runs at the end of PRE_KERNEL, after every device
+ * ordered by priority or by devicetree, which is the position PRE_KERNEL_2 was
+ * standing in for.
+ */
+#define SYS_ANCHOR_lpc55xxx_second_core SYS_ANCHOR(lpc55xxx_second_core)
+SYS_INIT_ANCHORED(lpc55xxx_second_core, _second_core_init, PRE_KERNEL);
 
 #endif /*defined(CONFIG_SECOND_CORE_MCUX) && defined(CONFIG_SOC_LPC55S69_CPU0)*/

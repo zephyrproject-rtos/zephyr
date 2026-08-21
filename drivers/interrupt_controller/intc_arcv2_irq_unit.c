@@ -58,6 +58,7 @@ static void arc_shared_intc_init(void)
 
 }
 
+#ifdef CONFIG_SMP
 /* Allow to schedule IRQ to all cores after we bring up all secondary cores */
 static int arc_shared_intc_update_post_smp(void)
 {
@@ -76,7 +77,14 @@ static int arc_shared_intc_update_post_smp(void)
 	return 0;
 }
 
-SYS_INIT(arc_shared_intc_update_post_smp, SMP, 0);
+/* Redistributing the IDU interrupts is only meaningful once the secondary
+ * cores are up; without SMP the primary core is the only destination, which
+ * arc_shared_intc_init() has already set up. CONFIG_ARC_CONNECT without
+ * CONFIG_SMP is a supported combination, so the redistribution is compiled
+ * out entirely rather than left as an unreferenced function.
+ */
+SYS_INIT(arc_shared_intc_update_post_smp, PRE_MAIN, 0);
+#endif /* CONFIG_SMP */
 #endif /* CONFIG_ARC_CONNECT */
 
 

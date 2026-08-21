@@ -37,9 +37,11 @@
 
 #include "monitor.h"
 
-/* This is the same default priority as for other console handlers,
- * except that we're not exporting it as a Kconfig variable until a
- * clear need arises.
+/* Init priority for the variants without a device dependency (the UART
+ * variant is instead ordered directly after its UART, see the
+ * SYS_INIT_DEPENDS() registration). This is the same default priority as for
+ * other console handlers, except that we're not exporting it as a Kconfig
+ * variable until a clear need arises.
  */
 #define MONITOR_INIT_PRIORITY 60
 
@@ -433,4 +435,16 @@ static int bt_monitor_init(void)
 	return 0;
 }
 
-SYS_INIT(bt_monitor_init, PRE_KERNEL_1, MONITOR_INIT_PRIORITY);
+#if defined(CONFIG_BT_DEBUG_MONITOR_UART)
+/* The monitor polls out on a specific UART: order the init right after that
+ * device (mirroring the monitor_dev selection above) instead of relying on a
+ * priority picked to exceed the serial driver default.
+ */
+#if DT_HAS_CHOSEN(zephyr_bt_mon_uart)
+SYS_INIT_DEPENDS(bt_monitor_init, PRE_KERNEL, DT_CHOSEN(zephyr_bt_mon_uart));
+#else
+SYS_INIT_DEPENDS(bt_monitor_init, PRE_KERNEL, DT_CHOSEN(zephyr_console));
+#endif
+#else
+SYS_INIT(bt_monitor_init, PRE_KERNEL, MONITOR_INIT_PRIORITY);
+#endif /* CONFIG_BT_DEBUG_MONITOR_UART */
