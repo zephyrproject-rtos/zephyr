@@ -81,6 +81,18 @@ config BT_GATT_AUTO_RESUBSCRIBE
 	  This also means that upon a reconnection, the application will get an
 	  unprompted call to its `subscribe` callback.
 
+config BT_GATT_AUTO_READ_CENTRAL_ADDR_RES
+	bool "Automatic read of the peer's Central Address Resolution support"
+	default y
+	depends on BT_GATT_CLIENT && BT_PERIPHERAL && BT_SMP
+	help
+	  Read the Central Address Resolution characteristic of a bonded peer
+	  once, as recommended by the GAP section of the Core specification,
+	  and remember the result for as long as the bond exists. Directed
+	  advertising towards the peer with BT_LE_ADV_OPT_DIR_ADDR_RPA then
+	  fails if the peer is known not to support address resolution, since
+	  such advertising can never be received by that peer.
+
 config BT_GATT_AUTO_SEC_REQ
 	bool "Automatic security re-establishment request as a peripheral"
 	default y
