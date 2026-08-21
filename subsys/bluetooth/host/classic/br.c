@@ -985,14 +985,24 @@ int bt_br_init(void)
 		return err;
 	}
 
-	/* Enable Inquiry results with RSSI or extended Inquiry */
+	/* Select the most informative Inquiry Result format the controller
+	 * supports. Extended Inquiry Response and RSSI with inquiry results are
+	 * both optional features, and a controller that does not implement them
+	 * rejects the corresponding Inquiry_Mode value.
+	 */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
 	inq_cp = net_buf_add(buf, sizeof(*inq_cp));
-	inq_cp->mode = 0x02;
+	if (BT_FEAT_EIR(bt_dev.features)) {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_EXTENDED;
+	} else if (BT_FEAT_RSSI_INQUIRY_RESULT(bt_dev.features)) {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_RSSI;
+	} else {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_STANDARD;
+	}
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_MODE, buf, NULL);
 	if (err) {
 		return err;

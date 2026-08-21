@@ -148,6 +148,11 @@ struct bt_hci_cmd_hdr {
 #define BT_FEAT_HOST_SSP(feat)                  BT_FEAT_TEST(feat, 1, 0, 0)
 #define BT_FEAT_SC(feat)                        BT_FEAT_TEST(feat, 2, 1, 0)
 
+/** Check if the RSSI with inquiry results feature is supported. */
+#define BT_FEAT_RSSI_INQUIRY_RESULT(feat)       BT_FEAT_TEST(feat, 0, 3, 6)
+/** Check if the Extended Inquiry Response feature is supported. */
+#define BT_FEAT_EIR(feat)                       BT_FEAT_TEST(feat, 0, 6, 0)
+
 #define BT_FEAT_LMP_SCO_CAPABLE(feat)           BT_FEAT_TEST(feat, 0, 1, 3)
 #define BT_FEAT_LMP_ESCO_CAPABLE(feat)          BT_FEAT_TEST(feat, 0, 3, 7)
 #define BT_FEAT_HV2_PKT(feat)                   BT_FEAT_TEST(feat, 0, 1, 4)
@@ -978,6 +983,12 @@ struct bt_hci_cp_write_inquiry_scan_type {
 } __packed;
 
 #define BT_HCI_OP_WRITE_INQUIRY_MODE            BT_OP(BT_OGF_BASEBAND, 0x0045) /* 0x0c45 */
+/** Standard Inquiry Result event format. */
+#define BT_HCI_INQUIRY_MODE_STANDARD            0x00
+/** Inquiry Result event format with RSSI. */
+#define BT_HCI_INQUIRY_MODE_RSSI                0x01
+/** Extended Inquiry Result event format, or with RSSI. */
+#define BT_HCI_INQUIRY_MODE_EXTENDED            0x02
 struct bt_hci_cp_write_inquiry_mode {
 	uint8_t  mode;
 } __packed;
