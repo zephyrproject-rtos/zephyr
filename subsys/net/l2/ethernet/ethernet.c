@@ -274,51 +274,89 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
  */
 static K_MUTEX_DEFINE(mcast_lock);
 
-/* A VLAN interface has no receive filter of its own, the groups belong to
- * the Ethernet interface it is attached to.
+/* Return the L2 multicast addresses of the interface, NULL if the interface
+ * cannot track them. Both storages hold NET_ETH_MCAST_FILTER_COUNT entries.
+ *
+ * A VLAN interface has no receive filter of its own, but it tracks its own
+ * groups in its VLAN context so that they can be joined and left also while
+ * the interface is detached. The groups are pushed to the Ethernet
+ * interface the VLAN interface is attached to, and the VLAN L2 moves them
+ * when the attachment changes.
  */
-static struct net_if *ethernet_mcast_iface(struct net_if *iface)
+static struct net_eth_mcast_addr *ethernet_mcast_addrs(struct net_if *iface)
 {
-	if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_interface(iface)) {
-		return net_eth_get_vlan_main(iface);
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		struct ethernet_context *ctx = net_if_l2_data(iface);
+
+		return ctx->mcast_addrs;
 	}
 
-	return iface;
-}
-
-/* Return the interface context if the L2 multicast addresses of the
- * interface are tracked, NULL otherwise.
- */
-static struct ethernet_context *ethernet_mcast_ctx(struct net_if *iface)
-{
-	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
-		return NULL;
+#if defined(CONFIG_NET_VLAN) && NET_VLAN_MAX_COUNT > 0
+	if (net_eth_is_vlan_interface(iface)) {
+		return net_eth_vlan_mcast_addrs(iface);
 	}
+#endif
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
-		return NULL;
-	}
-
-	return net_if_l2_data(iface);
+	return NULL;
 }
 
 static struct net_eth_mcast_addr *ethernet_mcast_addr_find(
-	struct ethernet_context *ctx, const struct net_eth_addr *addr)
+	struct net_eth_mcast_addr *addrs, const struct net_eth_addr *addr)
 {
-	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, maddr) {
-		if (maddr->is_used &&
-		    memcmp(&maddr->addr, addr, sizeof(*addr)) == 0) {
-			return maddr;
+	for (int i = 0; i < NET_ETH_MCAST_FILTER_COUNT; i++) {
+		if (addrs[i].is_used &&
+		    memcmp(&addrs[i].addr, addr, sizeof(*addr)) == 0) {
+			return &addrs[i];
 		}
 	}
 
 	return NULL;
 }
 
+/* Tell the device to start or stop listening to the group. The receive
+ * filter of a VLAN interface belongs to the Ethernet interface it is
+ * attached to, so the group is pushed there as one reference no matter how
+ * many users joined it on the VLAN interface. A detached VLAN interface has
+ * nothing to program - its groups are pushed on attach.
+ */
+static int ethernet_mcast_program(struct net_if *iface,
+				  const struct net_eth_addr *addr,
+				  bool is_joined)
+{
+	int ret;
+
+	if (IS_ENABLED(CONFIG_NET_VLAN) && net_eth_is_vlan_interface(iface)) {
+		struct net_if *main_iface = net_eth_get_vlan_main(iface);
+
+		if (main_iface == NULL) {
+			return 0;
+		}
+
+		if (is_joined) {
+			return net_eth_mcast_addr_add(main_iface, addr);
+		}
+
+		ret = net_eth_mcast_addr_rm(main_iface, addr);
+
+		/* The group is missing from the Ethernet interface if pushing
+		 * it there failed when it was joined, which was reported back
+		 * then, so there is nothing to leave now.
+		 */
+		return ret == -ENOENT ? 0 : ret;
+	}
+
+	ret = ethernet_mcast_filter_set(iface, addr, is_joined);
+
+	/* A controller that has no receive filter passes the group up anyway,
+	 * so there was nothing to program and the group is still joined or
+	 * left.
+	 */
+	return ret == -ENOTSUP ? 0 : ret;
+}
+
 int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr)
 {
-	struct net_eth_mcast_addr *maddr, *free_slot = NULL;
-	struct ethernet_context *ctx;
+	struct net_eth_mcast_addr *addrs, *maddr, *free_slot = NULL;
 	bool program = false;
 	int ret = 0;
 
@@ -326,19 +364,15 @@ int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr
 		return -EINVAL;
 	}
 
-	iface = ethernet_mcast_iface(iface);
-	if (iface == NULL) {
-		return -ENOTSUP;
-	}
-
-	ctx = ethernet_mcast_ctx(iface);
-	if (ctx == NULL) {
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&mcast_lock, K_FOREVER);
 
-	maddr = ethernet_mcast_addr_find(ctx, addr);
+	addrs = ethernet_mcast_addrs(iface);
+	if (addrs == NULL) {
+		k_mutex_unlock(&mcast_lock);
+		return -ENOTSUP;
+	}
+
+	maddr = ethernet_mcast_addr_find(addrs, addr);
 	if (maddr != NULL) {
 		atomic_inc(&maddr->atomic_ref);
 
@@ -349,9 +383,9 @@ int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr
 		goto out;
 	}
 
-	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, entry) {
-		if (!entry->is_used) {
-			free_slot = entry;
+	for (int i = 0; i < NET_ETH_MCAST_FILTER_COUNT; i++) {
+		if (!addrs[i].is_used) {
+			free_slot = &addrs[i];
 			break;
 		}
 	}
@@ -389,17 +423,13 @@ out:
 	 * first user, and the filter is programmed with the lock released as
 	 * the driver may block and may want to read the addresses back.
 	 *
-	 * A controller that has no receive filter passes the group up anyway,
-	 * so -ENOTSUP means that there was nothing to program and not that
-	 * the group was not joined. The address is tracked in either case,
-	 * which keeps net_eth_mcast_addr_foreach() telling the truth if the
-	 * device later reprograms its filter from it.
+	 * The address stays tracked even when programming it failed, which
+	 * keeps net_eth_mcast_addr_foreach() telling the truth if the device
+	 * later reprograms its filter from it, and lets the caller give the
+	 * address back.
 	 */
 	if (program) {
-		ret = ethernet_mcast_filter_set(iface, addr, true);
-		if (ret == -ENOTSUP) {
-			ret = 0;
-		}
+		ret = ethernet_mcast_program(iface, addr, true);
 	}
 
 	return ret;
@@ -407,8 +437,7 @@ out:
 
 int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
 {
-	struct net_eth_mcast_addr *maddr;
-	struct ethernet_context *ctx;
+	struct net_eth_mcast_addr *addrs, *maddr;
 	bool program = false;
 	int ret = 0;
 
@@ -416,19 +445,15 @@ int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
 		return -EINVAL;
 	}
 
-	iface = ethernet_mcast_iface(iface);
-	if (iface == NULL) {
-		return -ENOTSUP;
-	}
-
-	ctx = ethernet_mcast_ctx(iface);
-	if (ctx == NULL) {
-		return -ENOTSUP;
-	}
-
 	k_mutex_lock(&mcast_lock, K_FOREVER);
 
-	maddr = ethernet_mcast_addr_find(ctx, addr);
+	addrs = ethernet_mcast_addrs(iface);
+	if (addrs == NULL) {
+		k_mutex_unlock(&mcast_lock);
+		return -ENOTSUP;
+	}
+
+	maddr = ethernet_mcast_addr_find(addrs, addr);
 	if (maddr == NULL) {
 		/* The group was never joined, so the device was never told
 		 * about it either and there is nothing to unset.
@@ -458,10 +483,7 @@ out:
 	 * and that is not a failure to leave the group.
 	 */
 	if (program) {
-		ret = ethernet_mcast_filter_set(iface, addr, false);
-		if (ret == -ENOTSUP) {
-			ret = 0;
-		}
+		ret = ethernet_mcast_program(iface, addr, false);
 	}
 
 	return ret;
@@ -470,27 +492,23 @@ out:
 void net_eth_mcast_addr_foreach(struct net_if *iface,
 				net_eth_mcast_addr_cb_t cb, void *user_data)
 {
-	struct ethernet_context *ctx;
+	struct net_eth_mcast_addr *addrs;
 
 	if (iface == NULL || cb == NULL) {
 		return;
 	}
 
-	iface = ethernet_mcast_iface(iface);
-	if (iface == NULL) {
-		return;
-	}
-
-	ctx = ethernet_mcast_ctx(iface);
-	if (ctx == NULL) {
-		return;
-	}
-
 	k_mutex_lock(&mcast_lock, K_FOREVER);
 
-	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, maddr) {
-		if (maddr->is_used) {
-			cb(iface, maddr, user_data);
+	addrs = ethernet_mcast_addrs(iface);
+	if (addrs == NULL) {
+		k_mutex_unlock(&mcast_lock);
+		return;
+	}
+
+	for (int i = 0; i < NET_ETH_MCAST_FILTER_COUNT; i++) {
+		if (addrs[i].is_used) {
+			cb(iface, &addrs[i], user_data);
 		}
 	}
 
