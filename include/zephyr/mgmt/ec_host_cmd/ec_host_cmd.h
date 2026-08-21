@@ -138,9 +138,8 @@ struct ec_host_cmd {
 	ec_host_cmd_user_cb_t user_cb;
 	void *user_data;
 	enum ec_host_cmd_state state;
-#ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
-	struct k_thread thread;
-#endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
+	/** Thread running the host command handler loop. */
+	k_tid_t thread;
 };
 
 /**
