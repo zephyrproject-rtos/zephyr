@@ -2,6 +2,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Helper macros for printing Q values.
+ * @ingroup math_printing
+ */
+
 #ifndef ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
 #define ZEPHYR_INCLUDE_DSP_PRINT_FORMAT_H_
 
