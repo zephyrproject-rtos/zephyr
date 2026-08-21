@@ -401,19 +401,19 @@ static int virtio_pci_write_driver_feature_bit_range_check(
 static bool virtio_pci_read_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = BIT(bit);
 
 	barrier_dmem_fence_full();
-	return sys_le32_to_cpu(data->common_cfg->device_status) & mask;
+	return data->common_cfg->device_status & mask;
 }
 
 static void virtio_pci_write_status_bit(const struct device *dev, int bit)
 {
 	struct virtio_pci_data *data = dev->data;
-	uint32_t mask = BIT(bit);
+	uint8_t mask = BIT(bit);
 
 	barrier_dmem_fence_full();
-	data->common_cfg->device_status |= sys_cpu_to_le32(mask);
+	data->common_cfg->device_status |= mask;
 }
 
 static int virtio_pci_init_common(const struct device *dev)
