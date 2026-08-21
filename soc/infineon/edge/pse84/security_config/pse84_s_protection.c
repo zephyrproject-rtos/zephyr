@@ -257,8 +257,13 @@ cy_rslt_t cy_ppc_unsecure_init(PPC_Type *base, cy_en_prot_region_t start, cy_en_
 	cy_rslt_t ret = Cy_Ppc_InitPpc(base, CY_PPC_BUS_ERR);
 
 	for (cy_en_prot_region_t region = start; ret == CY_PPC_SUCCESS && region <= end; region++) {
-		/* Not sure why yet, but writing to these two cause a fault. Skip for now... */
-		if (region == PROT_PERI1_PPC1_PPC_PPC_SECURE ||
+		/* Writing to a PPC's own secure/non-secure attribute registers causes a fault
+		 * because the PPC protects itself. Skip both PERI0 and PERI1 self-referential
+		 * PPC regions to avoid faulting before SRSS_MAIN (0x98) is un-secured.
+		 */
+		if (region == PROT_PERI0_PPC0_PPC_PPC_SECURE ||
+		    region == PROT_PERI0_PPC0_PPC_PPC_NONSECURE ||
+		    region == PROT_PERI1_PPC1_PPC_PPC_SECURE ||
 		    region == PROT_PERI1_PPC1_PPC_PPC_NONSECURE) {
 			continue;
 		}
