@@ -65,3 +65,13 @@
 &systick_timer {
 	status = "okay";
 };
+
+/* GPIO0_33..42 on the 40-pin header */
+&main_gpio0_1 {
+	status = "okay";
+};
+
+/* GPIO1_7..18 on the 40-pin header */
+&main_gpio1_0 {
+	status = "okay";
+};

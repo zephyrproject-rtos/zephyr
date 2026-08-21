@@ -12,5 +12,6 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - gpio
   - uart
 vendor: t3gemstone
