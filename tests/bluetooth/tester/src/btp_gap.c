@@ -3122,6 +3122,56 @@ static uint8_t send_subrate_request(const void *cmd, uint16_t cmd_len, void *rsp
 }
 #endif /* defined(CONFIG_BT_SUBRATING) */
 
+#if defined(CONFIG_BT_CLASSIC)
+
+#define BTP_EIR_DATA_MAX 2
+
+static uint8_t set_extended_inquiry_response(const void *cmd, uint16_t cmd_len, void *rsp,
+					     uint16_t *rsp_len)
+{
+	const struct btp_gap_set_extended_inquiry_response_cmd *cp = cmd;
+	struct net_buf_simple data;
+	int err;
+	size_t eir_count = 0;
+	struct bt_data eir[BTP_EIR_DATA_MAX];
+
+	if ((cmd_len < sizeof(*cp)) || (cmd_len != sizeof(*cp) + cp->eir_data_len)) {
+		return BTP_STATUS_FAILED;
+	}
+
+	net_buf_simple_init_with_data(&data, (void *)cp->eir_data, cp->eir_data_len);
+	while (data.len >= (sizeof(uint8_t) + sizeof(uint8_t))) {
+		if (eir_count >= ARRAY_SIZE(eir)) {
+			LOG_ERR("Too many EIR elements (%zu > %zu)", eir_count, ARRAY_SIZE(eir));
+			return BTP_STATUS_FAILED;
+		}
+
+		eir[eir_count].type = net_buf_simple_pull_u8(&data);
+		eir[eir_count].data_len = net_buf_simple_pull_u8(&data);
+		if (data.len < eir[eir_count].data_len) {
+			LOG_ERR("Short EIR data (%u < %u)", data.len, eir[eir_count].data_len);
+			return BTP_STATUS_FAILED;
+		}
+
+		eir[eir_count].data = net_buf_simple_pull_mem(&data, eir[eir_count].data_len);
+		eir_count++;
+	}
+
+	if (data.len > 0) {
+		LOG_ERR("Malformed EIR data, %u bytes left in buffer", data.len);
+		return BTP_STATUS_FAILED;
+	}
+
+	err = bt_br_write_eir(eir, eir_count, cp->fec_required > 0 ? true : false);
+	if (err < 0) {
+		LOG_ERR("Failed to set eir data: %d", err);
+		return BTP_STATUS_FAILED;
+	}
+
+	return BTP_STATUS_SUCCESS;
+}
+#endif /* defined(CONFIG_BT_CLASSIC) */
+
 static const struct btp_handler handlers[] = {
 	{
 		.opcode = BTP_GAP_READ_SUPPORTED_COMMANDS,
@@ -3372,6 +3422,13 @@ static const struct btp_handler handlers[] = {
 		.func = ead_decrypt_data,
 	},
 #endif /* defined(CONFIG_BT_EAD) */
+#if defined(CONFIG_BT_CLASSIC)
+	{
+		.opcode = BTP_GAP_SET_EXTENDED_INQUIRY_RESPONSE,
+		.expect_len = BTP_HANDLER_LENGTH_VARIABLE,
+		.func = set_extended_inquiry_response,
+	},
+#endif /* defined(CONFIG_BT_CLASSIC) */
 };
 
 uint8_t tester_init_gap(void)
