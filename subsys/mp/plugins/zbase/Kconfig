@@ -1,0 +1,51 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MP_PLUGIN_ZBASE
+	bool "Base elements (capsfilter, queue, tee)"
+	default y
+	help
+	  Enable the base elements plugin.
+
+if MP_PLUGIN_ZBASE
+
+config MP_CAPSFILTER
+	bool "Capsfilter element"
+	help
+	  Enable the capsfilter element. Capsfilter restricts the media
+	  format flowing between two elements by filtering on capabilities
+	  such as sample rate, pixel format, etc. This allows forcing a
+	  specific format at a given point in the pipeline.
+
+config MP_QUEUE
+	bool "Queue element (for pipeline-level threading)"
+	help
+	  Enable the queue element which decouples pipeline segments
+	  into separate threads for parallel processing. The queue
+	  deposits buffers into a FIFO and spawns a dedicated thread
+	  to drive the downstream segment.
+
+config MP_QUEUE_MAX_SIZE
+	int "Max size of a queue element"
+	range 1 255
+	default 2
+	depends on MP_QUEUE
+	help
+	  Maximum number of buffers that can be queued into a queue element
+
+config MP_TEE
+	bool "Tee element"
+	help
+	  Enable the tee element which splits a single input branch
+	  into multiple output branches.
+
+config MP_TEE_MAX_SRCPADS_NUM
+	int "Maximum number of source pads of a tee element"
+	range 2 8
+	default 2
+	depends on MP_TEE
+
+endif # MP_PLUGIN_ZBASE
