@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Yeray Lois Sanchez
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tft_en {
+	/delete-property/ gpios;
+	compatible = "regulator-fixed";
+	regulator-name = "tft_power_enable";
+	enable-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+	regulator-boot-on;
+};
+
+&tft_led_en {
+	/delete-property/ gpios;
+	compatible = "regulator-fixed";
+	regulator-name = "tft_backlight_enable";
+	enable-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+	regulator-boot-on;
+};
+
+/ {
+	aliases {
+		/delete-property/ tft-en;
+		/delete-property/ tft-led-en;
+	};
+};
