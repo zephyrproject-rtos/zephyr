@@ -584,6 +584,7 @@
 			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_EMAC_MODULE>;
+			snps,perfect-filter-entries = <9>;
 			status = "disabled";
 
 			mdio: mdio {

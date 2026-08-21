@@ -295,6 +295,8 @@
 		compatible = "nxp,emac", "snps,dwmac";
 		reg = <0x480000 0x120c>;
 		interrupts = <105 0>;
+		snps,multicast-filter-bins = <64>;
+		snps,perfect-filter-entries = <3>;
 		status = "disabled";
 	};
 

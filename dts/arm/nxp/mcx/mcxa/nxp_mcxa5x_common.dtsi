@@ -858,6 +858,7 @@
 		clocks = <&syscon MCUX_ENET_QOS_CLK>;
 		interrupts = <90 0>, <91 0>;
 		interrupt-names = "mac", "power";
+		snps,perfect-filter-entries = <1>;
 		status = "disabled";
 
 		enet_mdio: mdio {

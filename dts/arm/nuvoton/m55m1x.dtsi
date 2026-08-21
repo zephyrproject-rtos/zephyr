@@ -374,6 +374,8 @@
 			resets = <&rst NUMAKER_SYS_EMAC0RST>;
 			phy-addr = <0>;
 			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <16>;
 			status = "disabled";
 		};
 
