@@ -61,6 +61,16 @@ BUILD_ASSERT(CONFIG_ZVFS_POLL_MAX > 0, "CONFIG_ZVFS_POLL_MAX can't be 0");
 static K_MUTEX_DEFINE(lock);
 static int control_sock;
 
+/* Signalled by the server thread once it has honoured a deferred close request
+ * (see coap_service_stop() and the deferred-close pass in coap_server_thread()).
+ */
+static K_CONDVAR_DEFINE(close_done);
+/* Identity of the server (poll) thread, captured when it starts. Lets
+ * coap_service_stop() detect a same-thread call and close directly instead of
+ * deadlocking on itself.
+ */
+extern const k_tid_t coap_server_id;
+
 #if defined(CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC)
 K_MEM_SLAB_DEFINE_STATIC(pending_data, COAP_SERVER_WIRE_MESSAGE_SIZE,
 			 CONFIG_COAP_SERVER_PENDING_ALLOCATOR_STATIC_BLOCKS, 4);
@@ -900,20 +910,44 @@ int coap_service_stop(const struct coap_service *service)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (service->data->sock_fd < 0) {
+	if ((service->data->sock_fd < 0) || (service->data->close_requested)) {
 		k_mutex_unlock(&lock);
 		return -EALREADY;
 	}
 
-	/* Closing a socket will trigger a poll event */
-	ret = zsock_close(service->data->sock_fd);
-	service->data->sock_fd = -1;
+	if (k_current_get() == coap_server_id) {
+		/* Called from the server thread itself (e.g. a resource handler).
+		 * zsock_poll() has already returned,
+		 */
+		ret = zsock_close(service->data->sock_fd);
+		service->data->sock_fd = -1;
+		k_mutex_unlock(&lock);
+
+		coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
+
+		return ret;
+	}
+
+	/* Defer the close to the server thread: it must remove the fd from its
+	 * poll set before the socket is closed. Closing here would close a socket
+	 * the server thread may hold inside an active zsock_poll(), which can lead
+	 * to socket fd reuse issues. Wake the poll, then block until the
+	 * server thread has performed the close, preserving the synchronous
+	 * "socket released on return" contract callers (e.g. stop-then-rebind)
+	 * rely on.
+	 */
+	service->data->close_requested = true;
+	coap_server_update_services();
+
+	while (service->data->close_requested) {
+		k_condvar_wait(&close_done, &lock, K_FOREVER);
+	}
 
 	k_mutex_unlock(&lock);
 
 	coap_service_raise_event(service, NET_EVENT_COAP_SERVICE_STOPPED);
 
-	return ret;
+	return 0;
 }
 
 int coap_service_is_running(const struct coap_service *service)
@@ -1360,10 +1394,36 @@ static void coap_server_thread(void *p1, void *p2, void *p3)
 			k_msleep(10);
 		}
 
+		/* Honour deferred close requests from coap_service_stop(). zsock_poll()
+		 * has returned, so every fd has already been removed from the poll set;
+		 * closing here cannot race an active poll.
+		 */
+		k_mutex_lock(&lock, K_FOREVER);
+		COAP_SERVICE_FOREACH(svc) {
+			if (svc->data->close_requested && svc->data->sock_fd >= 0) {
+				/* invalidate the fd in the poll set */
+				for (int i = 0; i < sock_nfds; ++i) {
+					if (sock_fds[i].fd == svc->data->sock_fd) {
+						sock_fds[i].fd = -1;
+						break;
+					}
+				}
+
+				(void)zsock_close(svc->data->sock_fd);
+				svc->data->sock_fd = -1;
+				svc->data->close_requested = false;
+			}
+		}
+		k_mutex_unlock(&lock);
+		k_condvar_broadcast(&close_done);
+
 		for (int i = 0; i < sock_nfds; ++i) {
+			if (sock_fds[i].fd == -1) {
+				/* closing this fd was requested */
+				continue;
+			}
 			/* Check the wake up event */
-			if (sock_fds[i].fd == control_sock &&
-			    sock_fds[i].revents & ZSOCK_POLLIN) {
+			if (sock_fds[i].fd == control_sock && sock_fds[i].revents & ZSOCK_POLLIN) {
 				zvfs_eventfd_t tmp;
 
 				zvfs_eventfd_read(sock_fds[i].fd, &tmp);
