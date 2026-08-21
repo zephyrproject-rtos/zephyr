@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon PSC3M6 series MCUs
+config SOC_SERIES_PSC3M6
+	bool
+
+config SOC_SERIES
+	default "psc3m6" if SOC_SERIES_PSC3M6
+
+config SOC_DIE_PSC3M6
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+config SOC_DIE_PSC3P6
+	bool
+	select SOC_FAMILY_INFINEON_CAT1B
+
+# SOC Packages for Infineon PSC3M6 series MCUs
+config SOC_PACKAGE_PSC3M6_E_LQFP_100
+	bool
+
+config SOC_PACKAGE_PSC3M6_E_LQFP_80
+	bool
+
+config SOC_PACKAGE_PSC3M6_E_LQFP_64
+	bool
+
+# Infineon PSC3M6 series MPNs
+config SOC_PSC3M6GES3AHQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_100
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6GES3AHQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_100
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC_PSC3M6FDS2AHQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_100
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6FDS2AHQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_100
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC_PSC3M6GES3AFQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_80
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6GES3AFQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_80
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC_PSC3M6FDS2AFQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_80
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6FDS2AFQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_80
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC_PSC3M6GES3ACQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_64
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6GES3ACQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_64
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC_PSC3M6FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_64
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3M6
+
+config SOC_PSC3P6FDS2ACQ1
+	bool
+	select SOC_PACKAGE_PSC3M6_E_LQFP_64
+	select SOC_SERIES_PSC3M6
+	select SOC_DIE_PSC3P6
+
+config SOC
+	default "psc3m6ges3ahq1" if SOC_PSC3M6GES3AHQ1
+	default "psc3p6ges3ahq1" if SOC_PSC3P6GES3AHQ1
+	default "psc3m6fds2ahq1" if SOC_PSC3M6FDS2AHQ1
+	default "psc3p6fds2ahq1" if SOC_PSC3P6FDS2AHQ1
+	default "psc3m6ges3afq1" if SOC_PSC3M6GES3AFQ1
+	default "psc3p6ges3afq1" if SOC_PSC3P6GES3AFQ1
+	default "psc3m6fds2afq1" if SOC_PSC3M6FDS2AFQ1
+	default "psc3p6fds2afq1" if SOC_PSC3P6FDS2AFQ1
+	default "psc3m6ges3acq1" if SOC_PSC3M6GES3ACQ1
+	default "psc3p6ges3acq1" if SOC_PSC3P6GES3ACQ1
+	default "psc3m6fds2acq1" if SOC_PSC3M6FDS2ACQ1
+	default "psc3p6fds2acq1" if SOC_PSC3P6FDS2ACQ1

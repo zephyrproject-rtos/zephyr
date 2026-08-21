@@ -55,3 +55,17 @@ family:
     - name: psc3p2fds2abq1
     - name: psc3m3edabq1
     - name: psc3m3fds2abq1
+  - name: psc3m6
+    socs:
+    - name: psc3m6ges3ahq1
+    - name: psc3p6ges3ahq1
+    - name: psc3m6fds2ahq1
+    - name: psc3p6fds2ahq1
+    - name: psc3m6ges3afq1
+    - name: psc3p6ges3afq1
+    - name: psc3m6fds2afq1
+    - name: psc3p6fds2afq1
+    - name: psc3m6ges3acq1
+    - name: psc3p6ges3acq1
+    - name: psc3m6fds2acq1
+    - name: psc3p6fds2acq1

@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: kit_psc3m6_evk/psc3m6ges3ahq1/ns
+name: PSOC™ Control C3M6 Evaluation Kit (Non-Secure)
+type: mcu
+arch: arm
+ram: 96
+flash: 256
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - can
+  - gpio
+  - i2c
+  - spi
+  - timer
+  - uart
+  - dma
+  - watchdog
+vendor: infineon

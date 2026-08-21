@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -712,7 +712,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #endif
 
 /* Account for spelling error in older version of the PDL */
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE) || defined(CONFIG_SOC_SERIES_PSC3M6)
 #define EN_XFER_SEPARATION enableTransferSeparation
 #else
 #define EN_XFER_SEPARATION enableTransferSeperation

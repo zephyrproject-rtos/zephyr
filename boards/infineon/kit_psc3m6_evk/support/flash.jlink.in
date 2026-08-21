@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+Connect
+exec EnableEraseAllFlashBanks
+LoadFile @PROJECT_BINARY_DIR@/zephyr.bin 0x32000000
+Reset
+Go
+Exit

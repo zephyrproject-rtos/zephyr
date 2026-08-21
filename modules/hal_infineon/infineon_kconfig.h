@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,32 @@
 
 #endif /* CONFIG_CPU_CORTEXT_M33* */
 #endif /* CONFIG_SOC_PSE846GPS2DBZC4A* */
+
+#if defined(CONFIG_SOC_SERIES_PSC3M6)
+
+#if defined(CONFIG_CPU_CORTEX_M33)
+
+#if defined(CONFIG_TRUSTED_EXECUTION_SECURE)
+#ifndef COMPONENT_SECURE_DEVICE
+#define COMPONENT_SECURE_DEVICE
+#endif
+#endif
+
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+#ifndef COMPONENT_NON_SECURE_DEVICE
+#define COMPONENT_NON_SECURE_DEVICE
+#endif
+#endif
+
+#ifndef COMPONENT_CM33
+#define COMPONENT_CM33
+#endif
+#ifndef CORE_NAME_CM33_0
+#define CORE_NAME_CM33_0
+#endif
+
+#endif /* CONFIG_CPU_CORTEX_M33 */
+#endif /* CONFIG_SOC_SERIES_PSC3M6 */
 
 #if defined(CONFIG_SOC_SERIES_PSOC4100TP)
 
