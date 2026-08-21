@@ -7,11 +7,14 @@ toolchain:
   - zephyr
 supported:
   - counter
+  - display
   - dma
   - entropy
   - gpio
   - hwinfo
+  - i2c
   - i2s
+  - input
   - netif:eth
   - netif:wifi
   - pulse_io
