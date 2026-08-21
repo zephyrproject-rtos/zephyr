@@ -4,6 +4,8 @@ tests:
   application_development.vector_table_relocation.arm:
     arch_allow: arm
     filter: CONFIG_CPU_CORTEX_M_HAS_VTOR
+            and not CONFIG_SOC_SERIES_RTL87X2G
+            and not CONFIG_SOC_SERIES_RTL8752H
     # Exclude mps3/corstone310 because it uses another mechanism to support relocation
     # of the vector table (CONFIG_ROMSTART_RELOCATION_ROM).
     platform_exclude:
@@ -30,6 +32,7 @@ tests:
   application_development.vector_table_relocation.itcm:
     arch_allow: arm
     filter: CONFIG_CPU_CORTEX_M_HAS_VTOR and dt_chosen_enabled("zephyr,itcm")
+            and not CONFIG_SOC_SERIES_RTL87X2G
     # Exclude RAM-target boards where ITCM aliases flash: .sram_vt and
     # .rom_start then overlap due to independent linker counters.
     platform_exclude:
