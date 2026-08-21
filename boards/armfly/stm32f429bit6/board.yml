@@ -1,0 +1,6 @@
+board:
+  name: armfly_stm32f429bit6
+  full_name: Armfly STM32F429BIT6
+  vendor: armfly
+  socs:
+    - name: stm32f429xx
