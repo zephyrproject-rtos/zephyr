@@ -1,0 +1,9 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "$(ZEPHYR_BASE)/share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+	string "The board used for remote target"
+	default "mps2/an521/cpu1" if BOARD_MPS2_AN521_CPU0
+	default "nrf5340dk/nrf5340/cpunet" if BOARD_NRF5340DK_NRF5340_CPUAPP

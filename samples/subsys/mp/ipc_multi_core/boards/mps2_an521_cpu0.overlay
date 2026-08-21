@@ -1,0 +1,32 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,ipc_shm = &sramx;
+		zephyr,ipc = &mhu0;
+	};
+
+	sramx: memory@281f8000 {
+		compatible = "mmio-sram";
+		reg = <0x281f8000 0x8000>;
+	};
+
+	mbox_mock: mbox_mock {
+		compatible = "zephyr,mbox-mock";
+		#mbox-cells = <0>;
+		status = "okay";
+	};
+
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-openamp-static-vrings";
+		memory-region = <&sramx>;
+		mboxes = <&mbox_mock>, <&mbox_mock>;
+		mbox-names = "tx", "rx";
+		role = "host";
+		status = "okay";
+	};
+};
