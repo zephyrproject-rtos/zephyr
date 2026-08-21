@@ -3207,6 +3207,22 @@ struct bt_hci_evt_inquiry_complete {
 	uint8_t status;
 } __packed;
 
+/** HCI Inquiry Result event. */
+#define BT_HCI_EVT_INQUIRY_RESULT                0x02
+/** HCI Inquiry Result event parameters, repeated per response. */
+struct bt_hci_evt_inquiry_result {
+	/** Address of the device that responded. */
+	bt_addr_t addr;
+	/** Page scan repetition mode of the device. */
+	uint8_t   pscan_rep_mode;
+	/** Reserved for future use. */
+	uint8_t   reserved[2];
+	/** Class of Device of the device. */
+	uint8_t   cod[3];
+	/** Clock offset of the device. */
+	uint16_t  clock_offset;
+} __packed;
+
 #define BT_HCI_EVT_CONN_COMPLETE                0x03
 struct bt_hci_evt_conn_complete {
 	uint8_t   status;
@@ -4532,6 +4548,8 @@ struct bt_hci_evt_le_conn_rate_change {
 #define BT_EVT_BIT(n) (1ULL << (n))
 
 #define BT_EVT_MASK_INQUIRY_COMPLETE             BT_EVT_BIT(0)
+/** Event mask bit for the Inquiry Result event. */
+#define BT_EVT_MASK_INQUIRY_RESULT               BT_EVT_BIT(1)
 #define BT_EVT_MASK_CONN_COMPLETE                BT_EVT_BIT(2)
 #define BT_EVT_MASK_CONN_REQUEST                 BT_EVT_BIT(3)
 #define BT_EVT_MASK_DISCONN_COMPLETE             BT_EVT_BIT(4)
