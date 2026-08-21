@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/swdp.h>
+#include <zephyr/kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,8 @@ struct dap_link_context {
 	/** @cond INTERNAL_HIDDEN */
 	/* Pointer to SWD or JTAG device. Only SWD is supported yet. */
 	const struct device *dev;
+	/* Serializes debug port access, see dap_link_lock() */
+	struct k_mutex lock;
 	atomic_t state;
 	/* Runtime debug port type */
 	uint8_t debug_port;
@@ -73,6 +76,7 @@ struct dap_link_context {
 #define DAP_LINK_CONTEXT_DEFINE(ctx_name, ctx_dev)				\
 	static struct dap_link_context ctx_name = {				\
 		.dev = ctx_dev,							\
+		.lock = Z_MUTEX_INITIALIZER(ctx_name.lock),			\
 	}
 
 /**
@@ -94,6 +98,37 @@ int dap_link_init(struct dap_link_context *const dap_link_ctx);
  */
 void dap_link_set_pkt_size(struct dap_link_context *const dap_link_ctx,
 			   const uint16_t pkt_size);
+
+/**
+ * @brief Lock the debug port used by a DAP Link context.
+ *
+ * A backend holds this lock while it executes DAP commands via
+ * dap_link_execute_cmd(). An application that accesses the same SWD/JTAG
+ * interface directly (for example to poll a SEGGER RTT control block or to
+ * program target memory) can hold the lock across its own transfer sequence
+ * to prevent interleaving with DAP commands issued by the debug host.
+ *
+ * The lock may be acquired recursively by the same thread.
+ *
+ * @warning Keep hold times short. The USB backend calls
+ * dap_link_execute_cmd() from its transfer completion handler, which runs
+ * in the USB device stack context and blocks on this lock without a
+ * timeout. While an application holds the lock (or a DAP command batch
+ * executes), that context cannot service other transfers — every USB
+ * function on the device stalls, not just DAP. Do not hold the lock
+ * across waits for external events; split long transfer sequences into
+ * short locked sections.
+ *
+ * @param[in] dap_link_ctx Context whose debug port is to be locked.
+ */
+void dap_link_lock(struct dap_link_context *const dap_link_ctx);
+
+/**
+ * @brief Unlock the debug port used by a DAP Link context.
+ *
+ * @param[in] dap_link_ctx Context whose debug port is to be unlocked.
+ */
+void dap_link_unlock(struct dap_link_context *const dap_link_ctx);
 
 /**
  * @brief Initialize the DAP Link USB backend.
