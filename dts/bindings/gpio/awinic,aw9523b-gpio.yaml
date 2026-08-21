@@ -18,9 +18,11 @@ properties:
 
   reset-gpios:
     type: phandle-array
+    deprecated: true
     description: |
       Set GPIO connected to the controller RSTN pin.
-      This is used for controlling resets via GPIO.
+      This is used for controlling resets via GPIO. This is now deprecated, the
+      reset-gpios property should be added to the parent MFD node.
 
   port0-push-pull:
     type: boolean
