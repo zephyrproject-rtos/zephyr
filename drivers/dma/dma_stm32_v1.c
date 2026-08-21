@@ -337,11 +337,6 @@ int stm32_dma_disable_stream(DMA_TypeDef *dma, uint32_t id)
 	return 0;
 }
 
-void stm32_dma_disable_fifo_irq(DMA_TypeDef *dma, uint32_t id)
-{
-	LL_DMA_DisableIT_FE(dma, dma_stm32_id_to_stream(id));
-}
-
 uint32_t stm32_dma_get_mburst(struct dma_config *config, bool source_periph)
 {
 	uint32_t mem_data_size, mem_burst_size;
