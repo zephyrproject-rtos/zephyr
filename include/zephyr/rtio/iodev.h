@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief RTIO I/O Device and Related Functions
+ * @ingroup rtio
  */
 
 #ifndef ZEPHYR_INCLUDE_RTIO_IODEV_H_
@@ -46,10 +47,10 @@ struct rtio_iodev_api {
  * @brief An IO device with a function table for submitting requests
  */
 struct rtio_iodev {
-	/* Function pointer table */
+	/** Function pointer table */
 	const struct rtio_iodev_api *api;
 
-	/* Data associated with this iodev */
+	/** Data associated with this iodev */
 	void *data;
 };
 
