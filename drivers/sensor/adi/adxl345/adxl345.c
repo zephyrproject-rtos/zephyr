@@ -370,6 +370,9 @@ int adxl345_read_sample(const struct device *dev,
 
 	sample->selected_range = data->selected_range;
 	sample->is_full_res = data->is_full_res;
+#ifdef CONFIG_ADXL345_STREAM
+	sample->is_fifo = 0;
+#endif /* CONFIG_ADXL345_STREAM */
 
 	return 0;
 }
