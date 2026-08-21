@@ -198,7 +198,7 @@ static const struct bt_data sd[] = {
 	BT_DATA(BT_DATA_NAME_COMPLETE, CONFIG_BT_DEVICE_NAME, sizeof(CONFIG_BT_DEVICE_NAME) - 1),
 };
 
-void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
+static void mtu_updated(struct bt_conn *conn, uint16_t tx, uint16_t rx)
 {
 	printk("Updated MTU: TX: %d RX: %d bytes\n", tx, rx);
 }
@@ -367,7 +367,7 @@ static int cts_fill_local_time_cb(struct bt_cts_local_time *cts_local_time)
 	return 0;
 }
 
-const struct bt_cts_cb cts_cb = {
+static const struct bt_cts_cb cts_cb = {
 	.notification_changed = cts_notification_changed_cb,
 	.cts_time_write = cts_time_write_cb,
 	.fill_current_cts_time = cts_fill_current_cts_time_cb,
@@ -414,9 +414,7 @@ int main(void)
 	bt_uuid_to_str(&vnd_enc_uuid.uuid, str, sizeof(str));
 	printk("Indicate VND attr %p (UUID %s)\n", vnd_ind_attr, str);
 
-	/* Implement notification. At the moment there is no suitable way
-	 * of starting delayed work so we do it here
-	 */
+	/* Periodically update simulated values, forever. */
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
