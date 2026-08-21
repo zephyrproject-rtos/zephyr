@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DAC output on PA15
+ * ADC input read from PB25 (channel 4)
+ * Add a jumper between those two pins to run this test.
+ */
+
+#include <dt-bindings/adc/adc.h>
+
+/ {
+	zephyr,user {
+		io-channels = <&dac0 0>, <&adc0 4>;
+		io-channel-names = "dac1", "adc1";
+	};
+};
+
+&dac0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@0 {
+		reg = <0>;
+		zephyr,resolution = <12>;
+		zephyr,buffered;
+	};
+};
+
+&adc0 {
+	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+	ti,clk-divider = <1>;
+	ti,clk-range = <6>;
+	max-result-reg = <12>;
+	pinctrl-0 = <&analog_pb25>;
+	pinctrl-names = "default";
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

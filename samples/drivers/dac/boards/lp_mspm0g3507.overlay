@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * dac0 is already enabled in the board DTS (status = "okay").
+ * The MSPM0 DAC output pin (PA15) is driven by the DAC hardware
+ * directly; no GPIO pinmux is required.
+ *
+ * Default reference: VDDA/VSSA (internal supply). To use an
+ * external reference, add a vref phandle to the dac0 node
+ * pointing to vref0 and connect VREF+ to the board header.
+ */
+
+/ {
+	zephyr,user {
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};

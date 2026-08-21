@@ -13,6 +13,8 @@ tests:
     filter: CONFIG_DAC_SAMPLE_RUN
     integration_platforms:
       - nucleo_l152re
+      - lp_mspm0g3507
+      - lp_mspm0g3519
   sample.drivers.dac.shields:
     platform_allow:
       - adafruit_feather_rp2040/rp2040
