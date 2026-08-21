@@ -105,6 +105,13 @@ struct net_if_addr {
 
 			/** How many times we have done DAD */
 			uint8_t dad_count;
+
+			/** How many times the solicitation for the current
+			 *  round has failed to go out. Non-zero means nothing
+			 *  has been asked yet, so the address has not been
+			 *  checked and must not be used.
+			 */
+			uint8_t dad_tx_failures;
 		};
 #endif /* CONFIG_NET_IPV6_DAD */
 #if defined(CONFIG_NET_IPV4_ACD)
