@@ -29,6 +29,7 @@ LOG_MODULE_REGISTER(wifi_esp_at, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
 
 #include "esp.h"
@@ -407,6 +408,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwlap)
 	}
 
 	res.channel = strtol(channel, NULL, 10);
+	res.band = wifi_utils_chan_to_band(res.channel);
 
 	if (dev->scan_cb) {
 		dev->scan_cb(dev->net_iface, 0, &res);
@@ -437,7 +439,6 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap_status)
 	char *str = &cwjap_buf[sizeof("+CWJAP:") - 1];
 	char *str_end = cwjap_buf + len;
 
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
 	status->iface_mode = WIFI_MODE_INFRA;
 
 	if (flags & EDF_STA_CONNECTED) {
@@ -478,6 +479,7 @@ MODEM_CMD_DIRECT_DEFINE(on_cmd_cwjap_status)
 	}
 
 	status->channel = strtol(channel, NULL, 10);
+	status->band = wifi_utils_chan_to_band(status->channel);
 	status->rssi = strtol(rssi, NULL, 10);
 
 	return str - cwjap_buf;
