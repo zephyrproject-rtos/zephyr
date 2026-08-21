@@ -168,6 +168,12 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -1;
 }
 
+/* The source port the last two queries left from, so that a test can see
+ * whether it moves. RFC 5452 9.2 asks that it does.
+ */
+static uint16_t query_src_port;
+static uint16_t last_query_src_port;
+
 static bool is_dns_query_packet(struct net_pkt *pkt)
 {
 	struct net_udp_hdr *udp;
@@ -208,6 +214,18 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	send_count++;
+
+	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
+		struct net_udp_hdr *udp = net_udp_get_hdr(pkt, NULL);
+
+		/* Only ordinary queries. Multicast DNS and LLMNR are spoken
+		 * from a fixed port on purpose, so theirs does not move.
+		 */
+		if (udp != NULL && net_ntohs(udp->dst_port) == 53U) {
+			last_query_src_port = query_src_port;
+			query_src_port = net_ntohs(udp->src_port);
+		}
+	}
 
 	if (!timeout_query) {
 		struct net_if_test *data = dev->data;
@@ -992,6 +1010,50 @@ ZTEST(dns_resolve, test_dns_query_ipv4)
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
 		zassert_true(false, "Timeout while waiting data");
 	}
+}
+
+/* RFC 5452 9.2: an off path attacker forging an answer has to guess the
+ * identifier and the source port together. A port that never moves is learned
+ * from any single query, leaving only the identifier to guess.
+ */
+ZTEST(dns_resolve, test_dns_query_source_port_varies)
+{
+	struct observed_status observed;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT);
+
+	timeout_query = false;
+	query_src_port = 0U;
+	last_query_src_port = 0U;
+
+	/* The port is only renewed for a server with nothing outstanding, so
+	 * each lookup has to be seen through to the end before the next.
+	 */
+	for (int i = 0; i < 2; i++) {
+		observed = (struct observed_status){ 0 };
+
+		ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, &current_dns_id,
+					dns_result_record_cb, &observed, DNS_TIMEOUT);
+		zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+		k_msleep(THREAD_SLEEP);
+
+		while (observed.status != DNS_EAI_ALLDONE) {
+			if (k_sem_take(&wait_data2, WAIT_TIME)) {
+				zassert_true(false, "Timeout while waiting data");
+			}
+		}
+
+		if (i == 0) {
+			zassert_not_equal(query_src_port, 0U, "No query was seen");
+		}
+	}
+
+	zassert_not_equal(query_src_port, last_query_src_port,
+			  "Both queries left from port %u; an observer learns it "
+			  "from the first and need only guess the identifier",
+			  query_src_port);
 }
 
 ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback)

@@ -475,6 +475,26 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 endif # DNS_SD
 
+config DNS_RESOLVER_RANDOMIZE_SOURCE_PORT
+	bool "Use a fresh source port for each query"
+	depends on DNS_RESOLVER
+	default y
+	help
+	  Ask the system for a new local port before sending a query to a
+	  server that has nothing outstanding, so that consecutive queries do
+	  not leave from the same one.
+
+	  RFC 5452 section 9.2 asks for this. An attacker who cannot see a
+	  query has to guess both the 16 bit identifier and the source port to
+	  forge an answer to it; a port that never changes is one of the two
+	  given away, and it is learned from any single query.
+
+	  This costs a socket being closed and reopened, and its dispatcher
+	  re-registered, before a query that follows an idle period. Turn it
+	  off where that matters more than the hardening does. Queries to
+	  multicast DNS and LLMNR are unaffected either way: those protocols
+	  fix the port.
+
 config DNS_RESOLVER_MAX_SERVERS_LIMIT
 	int
 	depends on (DNS_RESOLVER || MDNS_RESPONDER)
