@@ -59,6 +59,13 @@ properties:
       Enable Vbackup on boot. This is normally used to charge a button battery
       that is used by some RTC IC.
 
+  ts-disable:
+    type: boolean
+    description:
+      Temperature Sensor is enabled by default. Some boards skip this and use a 100Ohm
+      resistor from the TS pin to ground. In these situations the TS disable bit needs
+      to be set otherwise the charger will fault.
+
 examples:
   - |
     axp2101@34 {
