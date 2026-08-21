@@ -80,3 +80,12 @@ tests:
     extra_args: DTC_OVERLAY_FILE="boards/realtek_bee_core_wdt.overlay"
     extra_configs:
       - CONFIG_TEST_WDT_SETUP_FLAGS=0
+  drivers.watchdog.reset_none.ti_mspm0:
+    platform_allow:
+      - lp_mspm0g3507/mspm0g3507
+      - lp_mspm0g3519/mspm0g3519
+      - lp_mspm0l2228/mspm0l2228
+    integration_platforms:
+      - lp_mspm0g3507/mspm0g3507
+    extra_configs:
+      - CONFIG_TEST_WDT_SETUP_FLAGS=2
