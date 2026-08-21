@@ -72,4 +72,8 @@
 	cdc_acm_uart0 {
 		compatible = "zephyr,cdc-acm-uart";
 	};
+
+	usbtmc0 {
+		compatible = "zephyr,usbtmc-device";
+	};
 };
