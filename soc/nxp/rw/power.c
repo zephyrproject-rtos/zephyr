@@ -218,7 +218,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 		{
 			k_spinlock_key_t key = sys_clock_lock();
 
-			sys_clock_set_timeout(0, true);
+			/* Hand the wakeup over to the deep-sleep counter: OSTIMER
+			 * is unavailable in PM3.
+			 */
+			sys_clock_idle_enter(0);
 			sys_clock_unlock(key);
 		}
 
@@ -239,7 +242,10 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				{
 					k_spinlock_key_t key = sys_clock_lock();
 
-					sys_clock_set_timeout(0, true);
+					/* Re-arm the deep-sleep counter for the
+					 * next PM3 entry.
+					 */
+					sys_clock_idle_enter(0);
 					sys_clock_unlock(key);
 				}
 				/* GDET got enabled when exiting PM3, disable it
