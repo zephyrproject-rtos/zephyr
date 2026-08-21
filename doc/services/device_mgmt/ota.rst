@@ -98,6 +98,18 @@ install the binary.
 See :ref:`external_module_memfault_firmware_sdk` for overall integration details and
 examples.
 
+Spotflow
+========
+
+`Spotflow`_ is an observability platform for embedded devices that provides OTA updates.
+Devices are notified about new firmware versions via MQTT and download them using HTTPS.
+MCUboot ensures image signature checks and automatic rollback on failure. An application
+can observe the update progress and delay or abort it when needed.
+
+See the `fundamentals of Spotflow OTA updates`_ and the `integration guide`_ in Spotflow
+documentation for more information. See the `guide for OTA updates of external MCUs`_ if
+you want to update another MCU than the one where Zephyr is running, such as a modem.
+
 .. _MCUboot bootloader: https://mcuboot.com/
 .. _Golioth: https://golioth.io/
 .. _Golioth Firmware SDK repository: https://github.com/golioth/golioth-firmware-sdk/tree/main/examples/zephyr/fw_update
@@ -106,3 +118,7 @@ examples.
 .. _UpdateHub: https://updatehub.io/
 .. _mender-mcu: https://github.com/mendersoftware/mender-mcu
 .. _Memfault: https://memfault.com/
+.. _Spotflow: https://spotflow.io/
+.. _fundamentals of Spotflow OTA updates: https://docs.spotflow.io/fundamentals/ota
+.. _integration guide : https://docs.spotflow.io/guides/zephyr/ota-zephyr
+.. _guide for OTA updates of external MCUs: https://docs.spotflow.io/guides/zephyr/ota-external-mcu-zephyr
