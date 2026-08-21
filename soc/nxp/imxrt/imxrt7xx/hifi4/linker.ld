@@ -13,8 +13,20 @@ OUTPUT_ARCH(xtensa)
 #include <zephyr/linker/linker-tool.h>
 #include <zephyr/linker/sections.h>
 
-#define RAMABLE_REGION adsp_data :adsp_data_phdr
-#define ROMABLE_REGION adsp_data :adsp_data_phdr
+/*
+ * The use of different VMAs from LMAs is dependent on variables that have
+ * side effects not applicable for this platform (XIP use), so we need to
+ * redefine those manually.
+ */
+
+#define RAMABLE_REGION adsp_data
+#define ROMABLE_REGION adsp_flash
+
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > vregion AT > lregion
+
+#undef GROUP_DATA_LINK_IN
+#define GROUP_DATA_LINK_IN(vregion, lregion) > vregion AT > lregion
 
 MEMORY
 {
@@ -75,6 +87,9 @@ MEMORY
   adsp_data :
     org = DATA_BASE,
     len = DATA_SIZE
+  adsp_flash :
+    org = FLASH_BASE,
+    len = FLASH_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
     org = IDT_BASE,
@@ -82,31 +97,8 @@ MEMORY
 #endif
 }
 
-PHDRS
-{
-  vector_reset_text_phdr PT_LOAD;
-  vector_reset_lit_phdr PT_LOAD;
-  vector_base_text_phdr PT_LOAD;
-  vector_base_lit_phdr PT_LOAD;
-  vector_int2_text_phdr PT_LOAD;
-  vector_int2_lit_phdr PT_LOAD;
-  vector_int3_text_phdr PT_LOAD;
-  vector_int3_lit_phdr PT_LOAD;
-  vector_int4_text_phdr PT_LOAD;
-  vector_int4_lit_phdr PT_LOAD;
-  vector_int5_text_phdr PT_LOAD;
-  vector_int5_lit_phdr PT_LOAD;
-  vector_kernel_text_phdr PT_LOAD;
-  vector_kernel_lit_phdr PT_LOAD;
-  vector_user_text_phdr PT_LOAD;
-  vector_user_lit_phdr PT_LOAD;
-  vector_double_text_phdr PT_LOAD;
-  vector_double_lit_phdr PT_LOAD;
-  adsp_text_phdr PT_LOAD;
-  adsp_data_phdr PT_LOAD;
-}
-
 PROVIDE(_memmap_reset_vector = XCHAL_RESET_VECTOR0_PADDR_IRAM);
+
 PROVIDE(_memmap_vecbase_reset = XCHAL_VECBASE_RESET_PADDR_IRAM);
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -139,119 +131,119 @@ SECTIONS
     _ResetVector_text_start = ABSOLUTE(.);
     KEEP (*(.ResetVector.text))
     _ResetVector_text_end = ABSOLUTE(.);
-  } >vector_reset_text :vector_reset_text_phdr
+  } >vector_reset_text AT>adsp_flash
 
   .ResetVector.literal : ALIGN(4)
   {
     _ResetVector_literal_start = ABSOLUTE(.);
     *(.ResetVector.literal)
     _ResetVector_literal_end = ABSOLUTE(.);
-  } >vector_reset_lit :vector_reset_lit_phdr
+  } >vector_reset_lit AT>adsp_flash
 
   .WindowVectors.text : ALIGN(4)
   {
     _WindowVectors_text_start = ABSOLUTE(.);
     KEEP (*(.WindowVectors.text))
     _WindowVectors_text_end = ABSOLUTE(.);
-  } >vector_base_text :vector_base_text_phdr
+  } >vector_base_text AT>adsp_flash
 
   .Level2InterruptVector.literal : ALIGN(4)
   {
     _Level2InterruptVector_literal_start = ABSOLUTE(.);
     *(.Level2InterruptVector.literal)
     _Level2InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int2_lit :vector_int2_lit_phdr
+  } >vector_int2_lit AT>adsp_flash
 
   .Level2InterruptVector.text : ALIGN(4)
   {
     _Level2InterruptVector_text_start = ABSOLUTE(.);
     KEEP (*(.Level2InterruptVector.text))
     _Level2InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int2_text :vector_int2_text_phdr
+  } >vector_int2_text AT>adsp_flash
 
   .Level3InterruptVector.literal : ALIGN(4)
   {
     _Level3InterruptVector_literal_start = ABSOLUTE(.);
     *(.Level3InterruptVector.literal)
     _Level3InterruptVector_literal_end = ABSOLUTE(.);
-  } >vector_int3_lit :vector_int3_lit_phdr
+  } >vector_int3_lit AT>adsp_flash
 
   .Level3InterruptVector.text : ALIGN(4)
   {
     _Level3InterruptVector_text_start = ABSOLUTE(.);
     KEEP (*(.Level3InterruptVector.text))
     _Level3InterruptVector_text_end = ABSOLUTE(.);
-  } >vector_int3_text :vector_int3_text_phdr
+  } >vector_int3_text AT>adsp_flash
 
   .DebugExceptionVector.literal : ALIGN(4)
   {
     _DebugExceptionVector_literal_start = ABSOLUTE(.);
     *(.DebugExceptionVector.literal)
     _DebugExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_int4_lit :vector_int4_lit_phdr
+  } >vector_int4_lit AT>adsp_flash
 
   .DebugExceptionVector.text : ALIGN(4)
   {
     _DebugExceptionVector_text_start = ABSOLUTE(.);
     KEEP (*(.DebugExceptionVector.text))
     _DebugExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_int4_text :vector_int4_text_phdr
+  } >vector_int4_text AT>adsp_flash
 
   .NMIExceptionVector.literal : ALIGN(4)
   {
     _NMIExceptionVector_literal_start = ABSOLUTE(.);
     *(.NMIExceptionVector.literal)
     _NMIExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_int5_lit :vector_int5_lit_phdr
+  } >vector_int5_lit AT>adsp_flash
 
   .NMIExceptionVector.text : ALIGN(4)
   {
     _NMIExceptionVector_text_start = ABSOLUTE(.);
     KEEP (*(.NMIExceptionVector.text))
     _NMIExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_int5_text :vector_int5_text_phdr
+  } >vector_int5_text AT>adsp_flash
 
   .KernelExceptionVector.literal : ALIGN(4)
   {
     _KernelExceptionVector_literal_start = ABSOLUTE(.);
     *(.KernelExceptionVector.literal)
     _KernelExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_kernel_lit :vector_kernel_lit_phdr
+  } >vector_kernel_lit AT>adsp_flash
 
   .KernelExceptionVector.text : ALIGN(4)
   {
     _KernelExceptionVector_text_start = ABSOLUTE(.);
     KEEP (*(.KernelExceptionVector.text))
     _KernelExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_kernel_text :vector_kernel_text_phdr
+  } >vector_kernel_text AT>adsp_flash
 
   .UserExceptionVector.literal : ALIGN(4)
   {
     _UserExceptionVector_literal_start = ABSOLUTE(.);
     *(.UserExceptionVector.literal)
     _UserExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_user_lit :vector_user_lit_phdr
+  } >vector_user_lit AT>adsp_flash
 
   .UserExceptionVector.text : ALIGN(4)
   {
     _UserExceptionVector_text_start = ABSOLUTE(.);
     KEEP (*(.UserExceptionVector.text))
     _UserExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_user_text :vector_user_text_phdr
+  } >vector_user_text AT>adsp_flash
 
   .DoubleExceptionVector.literal : ALIGN(4)
   {
     _DoubleExceptionVector_literal_start = ABSOLUTE(.);
     *(.DoubleExceptionVector.literal)
     _DoubleExceptionVector_literal_end = ABSOLUTE(.);
-  } >vector_double_lit :vector_double_lit_phdr
+  } >vector_double_lit AT>adsp_flash
 
   .DoubleExceptionVector.text : ALIGN(4)
   {
     _DoubleExceptionVector_text_start = ABSOLUTE(.);
     KEEP (*(.DoubleExceptionVector.text))
     _DoubleExceptionVector_text_end = ABSOLUTE(.);
-  } >vector_double_text :vector_double_text_phdr
+  } >vector_double_text AT>adsp_flash
 
   .iram.text : ALIGN(4)
   {
@@ -259,7 +251,7 @@ SECTIONS
     _iram_text_start = ABSOLUTE(.);
     *(.iram0.literal .iram.literal .iram.text.literal .iram0.text .iram.text)
     _iram_text_end = ABSOLUTE(.);
-  } >adsp_text :adsp_text_phdr
+  } >adsp_text AT>adsp_flash
 
   .rodata : ALIGN(4)
   {
@@ -295,14 +287,14 @@ SECTIONS
     LONG(_bss_end)
     _bss_table_end = ABSOLUTE(.);
     __rodata_region_end = ABSOLUTE(.);
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
   .module_init : ALIGN(4)
   {
    _module_init_start = ABSOLUTE(.);
     *(*.initcall)
     _module_init_end = ABSOLUTE(.);
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
   .text : ALIGN(4)
   {
@@ -319,7 +311,7 @@ SECTIONS
     *(.gnu.version)
     _text_end = ABSOLUTE(.);
     _etext = .;
-  } >adsp_text :adsp_text_phdr
+  } >adsp_text AT>adsp_flash
 
 #include <zephyr/linker/common-rom.ld>
 
@@ -327,13 +319,13 @@ SECTIONS
   {
     KEEP(*(".fw_ready"));
     KEEP (*(.fw_ready_metadata))
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
   .noinit : ALIGN(4)
   {
     *(.noinit)
     *(.noinit.*)
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
   .data : ALIGN(4)
   {
@@ -358,7 +350,7 @@ SECTIONS
     *(NonCacheable)
     __data_end = ABSOLUTE(.);
     . = ALIGN(4096);
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
   .lit4 : ALIGN(4)
   {
@@ -367,7 +359,7 @@ SECTIONS
     *(.lit4.*)
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data AT>adsp_flash
 
 #include <zephyr/linker/common-ram.ld>
 
@@ -390,7 +382,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data
 
   .heap_mem (NOLOAD) : ALIGN(8)
   {
@@ -399,7 +391,7 @@ SECTIONS
     *(*.heap_mem)
     _heap_mem_end = ABSOLUTE(.);
 
-  } >adsp_data :adsp_data_phdr
+  } >adsp_data
 
   /* stack */
   _end = ALIGN (8);
@@ -461,6 +453,15 @@ SECTIONS
     KEEP (*(.gnu.linkonce.xt.profile_files.*))
   }
 #ifdef CONFIG_GEN_ISR_TABLES
+/*
+ * intlist.ld routes .intList through GROUP_ROM_LINK_IN(IDT_LIST, IDT_LIST)
+ * into the bogus IDT_LIST region, which is stripped from the final image and
+ * lies outside every load segment. Restore the stock (non-XIP) macro here so
+ * the section is not split VMA/LMA into the flash load region, which would
+ * otherwise fail with "section .intList can't be allocated in segment".
+ */
+#undef GROUP_ROM_LINK_IN
+#define GROUP_ROM_LINK_IN(vregion, lregion) > lregion
 #include <zephyr/linker/intlist.ld>
 #endif
 }

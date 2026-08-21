@@ -38,6 +38,12 @@
 		zephyr,shell-uart = &flexcomm0_lpuart0;
 		zephyr,display = &lcdif;
 		zephyr,crc = &crc;
+
+		/*
+		 * A flash partition carved out for the DSP (mimxrt798s/hifi4).
+		 * Keep in sync with the associated DT node for said domain.
+		 */
+		zephyr,code-dsp-partition = &dsp_partition;
 	};
 
 	leds {
@@ -434,6 +440,25 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 					compatible = "zephyr,mapped-partition";
 					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+				};
+
+				/*
+				 * Holds the HiFi4 DSP remote image (see
+				 * zephyr,code-dsp-partition above). Base and
+				 * size MUST match the adsp_flash region in the
+				 * DSP remote devicetree
+				 * (dts/xtensa/nxp/nxp_imxrt700_hifi4.dtsi):
+				 * FlexSPI XIP 0x38000000 + 0x1000000. Appended
+				 * in the free flash tail after the stock
+				 * partitions, so it disturbs nothing on a
+				 * CM33-only build. Deliberately NOT an MCUboot
+				 * slot: an A/B upgrade would corrupt the DSP
+				 * payload parked there.
+				 */
+				dsp_partition: partition@1000000 {
+					compatible = "zephyr,mapped-partition";
+					label = "dsp-image";
+					reg = <0x01000000 DT_SIZE_K(512)>;
 				};
 			};
 		};

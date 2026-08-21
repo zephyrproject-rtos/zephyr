@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,6 +64,29 @@
 
 			device_type = "memory";
 			compatible = "mmio-sram";
+		};
+
+		/*
+		 * Carved out section of the system flash designated for the
+		 * DSP image. This serves to provide LMA addresses for loading
+		 * loading the image's sections at their VMAs and isn't
+		 * intended for application use.
+		 *
+		 * This must be in sync with the carved out flash partition in
+		 * the primary domain designated for the DSP.
+		 * (in this case, cm33_cpu0)
+		 */
+		xspi0_flash: memory@39000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x39000000 DT_SIZE_K(512)>;
+
+			adsp_flash: memory@39000000 {
+				reg = <0x39000000 DT_SIZE_K(512)>;
+			};
 		};
 
 		sram0: memory@20200000 {

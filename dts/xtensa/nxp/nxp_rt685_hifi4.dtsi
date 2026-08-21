@@ -53,6 +53,29 @@
 			};
 		};
 
+		/*
+		 * Carved out section of the system flash designated for the
+		 * DSP image. This serves to provide LMA addresses for loading
+		 * loading the image's sections at their VMAs and isn't
+		 * intended for application use.
+		 *
+		 * This must be in sync with the carved out flash partition in
+		 * the primary domain designated for the DSP.
+		 * (in this case, cm33_cpu0)
+		 */
+		flexspi_flash: memory@18620000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			device_type = "memory";
+			compatible = "mmio-sram";
+
+			reg = <0x18620000 DT_SIZE_K(512)>;
+
+			adsp_flash: memory@18620000 {
+				reg = <0x18620000 DT_SIZE_K(512)>;
+			};
+		};
+
 		dtcm: memory@24000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
