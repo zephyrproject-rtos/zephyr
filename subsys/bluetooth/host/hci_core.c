@@ -1258,7 +1258,8 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PHY, buf, NULL);
 }
 
-static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_addr)
+static struct bt_conn *find_pending_connect(uint8_t role, const bt_addr_le_t *peer_addr,
+					    const struct bt_le_ext_adv *ext_adv)
 {
 	struct bt_conn *conn;
 
@@ -1279,6 +1280,33 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Do not fall back between directed and undirected pending connections
+		 * when the terminating advertising set is known. Such a fallback can
+		 * consume a reservation belonging to another active set.
+		 */
+		if (ext_adv != NULL) {
+			if (bt_addr_le_eq(&ext_adv->target_addr, BT_ADDR_LE_ANY)) {
+				/* Having multiple same-identity undirected reservations and
+				 * finding the first one that might not have been the one that
+				 * was used to initiate the connection is not a problem.
+				 * Undirected reservations have no advertising-set association
+				 * or per-set state, so any matching reservation can
+				 * be consumed; one remains for each other enabled set.
+				 */
+				return bt_conn_lookup_state_le(ext_adv->id, BT_ADDR_LE_NONE,
+							       BT_CONN_ADV_CONNECTABLE);
+			}
+
+			return bt_conn_lookup_state_le(ext_adv->id, &ext_adv->target_addr,
+						       BT_CONN_ADV_DIR_CONNECTABLE);
+		}
+
+		/* In case there is no advertising handle, there can be at most one
+		 * relevant peripheral advertiser. This is the case for legacy
+		 * advertising, or when the controller does not support extended
+		 * advertising. In this case, we can fall back to the legacy lookup
+		 * behaviour.
+		 */
 		conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id, peer_addr,
 					       BT_CONN_ADV_DIR_CONNECTABLE);
 		if (!conn) {
@@ -1303,7 +1331,7 @@ static void le_conn_complete_cancel(uint8_t err)
 	 * There is no need to check ID address as only one
 	 * connection in central role can be in pending state.
 	 */
-	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL);
+	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL, NULL);
 	if (!conn) {
 		LOG_ERR("No pending central connection");
 		return;
@@ -1363,7 +1391,7 @@ static void le_conn_complete_adv_timeout(void)
 		/* There is no need to check ID address as only one
 		 * connection in peripheral role can be in pending state.
 		 */
-		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL);
+		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL, NULL);
 		if (!conn) {
 			LOG_ERR("No pending peripheral connection");
 			return;
@@ -1404,7 +1432,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 #endif
-	bt_hci_le_enh_conn_complete(evt);
+	bt_hci_le_enh_conn_complete(evt, NULL);
 }
 
 static void translate_addrs(bt_addr_le_t *peer_addr, bt_addr_le_t *id_addr,
@@ -1442,7 +1470,8 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 #endif
 }
 
-void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
+				 const struct bt_le_ext_adv *ext_adv)
 {
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
@@ -1461,10 +1490,13 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	bt_id_pending_keys_update();
 #endif
 
-	id = evt->role == BT_HCI_ROLE_PERIPHERAL ? bt_dev.adv_conn_id : BT_ID_DEFAULT;
+	id = BT_ID_DEFAULT;
+	if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
+		id = ext_adv != NULL ? ext_adv->id : bt_dev.adv_conn_id;
+	}
 	translate_addrs(&peer_addr, &id_addr, evt, id);
 
-	conn = find_pending_connect(evt->role, &id_addr);
+	conn = find_pending_connect(evt->role, &id_addr, ext_adv);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    evt->role == BT_HCI_ROLE_CENTRAL) {
