@@ -73,6 +73,11 @@ socket on a link of its own.
      - ``zeth``
      - any user
      - 7
+   * - ``sntp``
+     - :zephyr_file:`tests/net/conformance/sntp`
+     - ``zeth``
+     - any user
+     - 9
    * - ``coap``
      - :zephyr_file:`tests/net/conformance/coap`
      - ``zeth``
@@ -130,6 +135,28 @@ start at any point and still finish quickly.
 * ``tc_answer_is_followed_by_more_queries``
 * ``tc_malformed_answers_are_survived``
 * ``tc_answer_with_wrong_id_is_ignored``
+
+SNTP
+====
+
+The application is an ordinary client: it asks the tester for the time, sets
+the system clock from the answer, and asks again half a second later. That
+last part is what makes the client testable from outside, because a request
+carries the time the clock holds when it is sent. Whether a reply was believed
+is visible in the request that follows it.
+
+The suite listens on port 12123 rather than 123, so it needs no privileges and
+cannot collide with a time daemon on the host.
+
+* ``tc_request_is_well_formed``
+* ``tc_transmit_timestamp_varies``
+* ``tc_unanswered_request_is_repeated``
+* ``tc_reply_sets_the_clock``
+* ``tc_originate_timestamp_must_be_echoed``
+* ``tc_reply_must_be_mode_server``
+* ``tc_kiss_of_death_is_not_a_time_source``
+* ``tc_zero_transmit_timestamp_is_rejected``
+* ``tc_truncated_reply_is_rejected``
 
 CoAP
 ====
