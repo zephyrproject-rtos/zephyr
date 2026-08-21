@@ -128,3 +128,6 @@ ZephyrModuleFile.txt
 
 # Node dependecies
 node_modules
+
+# Log file from mplab_ipe runner
+MPLABXLog.xml
