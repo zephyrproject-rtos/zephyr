@@ -26,7 +26,7 @@ static void mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void region_init(const uint32_t index,
+static ALWAYS_INLINE void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	/* Select the region you want to access */
@@ -85,7 +85,7 @@ static int mpu_partition_is_valid(const struct z_arm_mpu_partition *part)
  * power-of-two value, and the returned SIZE field value corresponds
  * to that power-of-two value.
  */
-static inline uint32_t size_to_mpu_rasr_size(uint32_t size)
+static ALWAYS_INLINE uint32_t size_to_mpu_rasr_size(uint32_t size)
 {
 	/* The minimal supported region size is 32 bytes */
 	if (size <= 32U) {
@@ -110,7 +110,7 @@ static inline uint32_t size_to_mpu_rasr_size(uint32_t size)
  * region attribute configuration and size and fill-in a driver-specific
  * structure with the correct MPU region configuration.
  */
-static inline void get_region_attr_from_mpu_partition_info(
+static ALWAYS_INLINE void get_region_attr_from_mpu_partition_info(
 	arm_mpu_region_attr_t *p_attr,
 	const k_mem_partition_attr_t *attr, uint32_t base, uint32_t size)
 {

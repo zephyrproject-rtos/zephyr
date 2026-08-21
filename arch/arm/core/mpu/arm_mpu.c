@@ -85,11 +85,18 @@ static const struct arm_mpu_region unmapped_region =
 #include "arm_mpu_v7_internal.h"
 #endif
 
-static int region_allocate_and_init(const uint8_t index,
+/* Cached number of MPU regions, a fixed hardware property.  Reading it
+ * out of the MPU type register costs an MMIO/system register access, and
+ * region_allocate_and_init() runs several times per context switch when
+ * MPU_STACK_GUARD or USERSPACE is enabled, so cache it once at init.
+ */
+static uint8_t num_mpu_regions;
+
+static ALWAYS_INLINE int region_allocate_and_init(const uint8_t index,
 	const struct arm_mpu_region *region_conf)
 {
 	/* Attempt to allocate new region index. */
-	if (index > (get_num_regions() - 1U)) {
+	if (index >= num_mpu_regions) {
 
 		/* No available MPU region index. */
 		LOG_ERR("Failed to allocate new MPU region %u\n", index);
@@ -468,6 +475,8 @@ void z_arm_restore_mpu_context(const struct z_mpu_context_retained *ctx)
 int z_arm_mpu_init(void)
 {
 	uint32_t r_index;
+
+	num_mpu_regions = get_num_regions();
 
 	if (mpu_config.num_regions + MPU_UNMAPPED_REGIONS_NUM > get_num_regions()) {
 		/* Attempt to configure more MPU regions than
