@@ -326,20 +326,22 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 {
 	const struct bt_bap_stream_ops *stream_ops;
-	struct bt_bap_stream *stream;
+	struct bt_bap_stream *stream = ep->stream;
 
-	if (ep->unicast_group != NULL) {
-		ep->unicast_group->has_been_connected = true;
-	}
-
-	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED && ep->state != BT_BAP_EP_STATE_ENABLING) {
-		LOG_DBG("endpoint in invalid state: %s", bt_bap_ep_state_str(ep->state));
+	if (stream == NULL) {
+		LOG_ERR("No stream for ep %p", ep);
 		return;
 	}
 
-	stream = ep->stream;
-	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
+	if (stream->group == NULL) {
+		LOG_ERR("No group for stream %p for ep %p", stream, ep);
+		return;
+	}
+
+	((struct bt_bap_unicast_group *)stream->group)->has_been_connected = true;
+
+	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED && ep->state != BT_BAP_EP_STATE_ENABLING) {
+		LOG_DBG("endpoint in invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return;
 	}
 
@@ -3077,6 +3079,13 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
 
+		unicast_group->cig_param.packing = param->packing;
+		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
+			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
+			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
+			unicast_group->cig_param.iso_interval = param->iso_interval;
+		}));
+
 		if (rx_param != NULL) {
 			struct bt_bap_iso *bap_iso =
 				CONTAINER_OF(rx_param->stream->iso, struct bt_bap_iso, chan);
@@ -3290,6 +3299,23 @@ int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_gro
 
 	info->sink_pd = unicast_group->sink_pd;
 	info->source_pd = unicast_group->source_pd;
+	info->c_to_p_interval = unicast_group->cig_param.c_to_p_interval;
+	info->p_to_c_interval = unicast_group->cig_param.p_to_c_interval;
+	info->c_to_p_latency = unicast_group->cig_param.c_to_p_latency;
+	info->p_to_c_latency = unicast_group->cig_param.p_to_c_latency;
+	/* The framing is stored as the ISO value, so it is converted back to the BAP value */
+	if (unicast_group->cig_param.framing == BT_ISO_FRAMING_FRAMED) {
+		info->framing = BT_BAP_QOS_CFG_FRAMING_FRAMED;
+	} else {
+		info->framing = BT_BAP_QOS_CFG_FRAMING_UNFRAMED;
+	}
+	info->packing = unicast_group->cig_param.packing;
+	info->has_been_connected = unicast_group->has_been_connected;
+	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
+		info->c_to_p_ft = unicast_group->cig_param.c_to_p_ft;
+		info->p_to_c_ft = unicast_group->cig_param.p_to_c_ft;
+		info->iso_interval = unicast_group->cig_param.iso_interval;
+	}));
 
 	return 0;
 }
