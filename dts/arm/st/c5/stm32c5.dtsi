@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/reset/stm32c5_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
@@ -482,6 +483,55 @@
 			       <&lpdma1 1 6 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>;
 			dma-names = "tx", "rx";
 			status = "disabled";
+		};
+
+		pwr: power@44020800 {
+			compatible = "st,stm32-pwr";
+			reg = <0x44020800 0x400>;
+
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				st,max-wkup-line-idx = <7>;
+
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@3 {
+					reg = <0x3>;
+					/* Available only on STM32C551 and higher */
+				};
+
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@5 {
+					reg = <0x5>;
+					wkup-gpios = <&gpiob 7 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+
+				wkup@6 {
+					reg = <0x6>;
+					/* Available only on STM32C551 and higher */
+				};
+
+				wkup@7 {
+					reg = <0x7>;
+					/* Available only on STM32C551 and higher */
+				};
+			};
 		};
 
 		spi1: spi@40013000 {
