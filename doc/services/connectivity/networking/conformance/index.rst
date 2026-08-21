@@ -70,6 +70,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/dns`
      - ``zeth``
      - any user
+   * - :zephyr_file:`sntp <tests/net/conformance/sntp/README.rst>`
+     - :zephyr_file:`tests/net/conformance/sntp`
+     - ``zeth``
+     - any user
    * - :zephyr_file:`coap <tests/net/conformance/coap/README.rst>`
      - :zephyr_file:`tests/net/conformance/coap`
      - ``zeth``
