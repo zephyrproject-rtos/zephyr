@@ -215,3 +215,61 @@ def test_virtiofs_teardown_terminates_daemon(tmp_path):
     proc.wait.assert_called_once()
     assert sidecar._virtiofsd_proc is None
     assert not os.path.exists(sidecar.socket_path)
+
+
+def test_bumble_configure_reads_namespaced_config(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _make_instance(
+        tmp_path,
+        {
+            "bumble": {
+                "addresses": ["00:00:01:00:00:0A", "00:00:01:00:00:0B"],
+                "devices": ["-test=a::b", "-test=c::d"],
+                "controllers_script": "custom/controllers.py",
+            }
+        },
+    )
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.addresses == ["00:00:01:00:00:0A", "00:00:01:00:00:0B"]
+    assert sidecar.devices == ["-test=a::b", "-test=c::d"]
+    assert sidecar.script.endswith(os.path.join("custom", "controllers.py"))
+
+
+def test_bumble_configure_defaults_without_config(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _make_instance(tmp_path)
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.addresses == list(BumbleSidecar.DEFAULT_ADDRESSES)
+    assert sidecar.devices == ['']
+    assert sidecar.script.endswith(
+        os.path.join('tests', 'bluetooth', 'classic', 'bumble', 'common', 'controllers.py')
+    )
+
+
+def test_bumble_resolves_address_and_controller_placeholders(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _make_instance(tmp_path)
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+    sidecar.ports = [1234, 5678]
+
+    resolved = sidecar._resolve('--peer_bd_address={addr1} --ctrl={ctrl0}')
+    assert resolved == f'--peer_bd_address={sidecar.addresses[1]} --ctrl=127.0.0.1:1234'
+
+
+def test_bumble_setup_skips_without_controllers_script(tmp_path):
+    from twisterlib.sidecars.bumble import BumbleSidecar
+
+    instance = _make_instance(tmp_path, {"bumble": {"controllers_script": "does/not/exist.py"}})
+    sidecar = BumbleSidecar()
+    sidecar.configure(instance)
+
+    assert sidecar.setup() is False
+    assert instance.status == TwisterStatus.SKIP
