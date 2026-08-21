@@ -76,15 +76,12 @@
 	};
 };
 
-&dtcm {
-	/*
-	 * Remove zephyr,memory-region binding so the linker does not
-	 * place a dedicated DTCM section. Change compatible to plain
-	 * mmio-sram so the required 'zephyr,memory-region' property
-	 * from the zephyr,memory-region binding is no longer enforced.
-	 */
-	compatible = "mmio-sram";
-};
+/*
+ * dtcm is already defined in nxp_rt118x_cm33.dtsi with the correct
+ * compatible, reg, and zephyr,memory-region properties.
+ * No modification needed — zephyr,sram = &dtcm in chosen is
+ * sufficient to redirect CM33 SRAM to DTCM.
+ */
 
 &mbox1_a {
 	status = "okay";
