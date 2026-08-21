@@ -23,4 +23,6 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_CAVS_ICTL irq.c)
 
+zephyr_library_sources_ifdef(CONFIG_XTENSA_ADSP_TRIPLE_FAULT_BREADCRUMB asm_breadcrumb.S)
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/include/xtensa-cavs-linker.ld CACHE INTERNAL "")
