@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common fields for a simple firmware-provided framebuffer.
+
+  Describes a framebuffer that has already been allocated and configured
+  by firmware or the bootloader, under the assumption that the display
+  hardware is already scanning out from the given memory region.
+
+include: display-controller.yaml
+
+properties:
+  firmware:
+    type: phandle
+    description: |
+      Phandle to the firmware/mailbox device used to query or reconfigure
+      the framebuffer at runtime.
