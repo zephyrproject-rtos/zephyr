@@ -21,3 +21,4 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cm_pl10_cnano
+      - pic32cm_gc00_cpro
