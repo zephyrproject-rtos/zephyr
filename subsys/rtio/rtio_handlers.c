@@ -64,8 +64,8 @@ static inline int z_vrfy_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 {
 	K_OOPS(K_SYSCALL_OBJ(r, K_OBJ_RTIO));
 	K_OOPS(K_SYSCALL_MEMORY_READ(cqe, sizeof(struct rtio_cqe)));
-	K_OOPS(K_SYSCALL_MEMORY_READ(buff, sizeof(void *)));
-	K_OOPS(K_SYSCALL_MEMORY_READ(buff_len, sizeof(uint32_t)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buff, sizeof(void *)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buff_len, sizeof(uint32_t)));
 	return z_impl_rtio_cqe_get_mempool_buffer(r, cqe, buff, buff_len);
 }
 #include <zephyr/syscalls/rtio_cqe_get_mempool_buffer_mrsh.c>
