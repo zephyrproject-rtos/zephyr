@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026 Seeed Technology Co., Ltd.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * XIAO 16-pin connector GPIO mapping for STM32C5.
+ *
+ * Pin map (extracted from schematic 04 XIAO Header&STM32C5.kicad_sch,
+ * verified against STM32C5A3 datasheet DS15137-Rev1 Table 14):
+ *
+ *   D0  -> PA0   (ADC1_IN0 / GPIO)
+ *   D1  -> PA1   (ADC1_IN1 / GPIO)
+ *   D2  -> PA2   (ADC1_IN2 / GPIO)
+ *   D3  -> PA3   (ADC1_IN3 / GPIO)
+ *   D4  -> PB7   (I2C1_SDA, AF4)
+ *   D5  -> PB6   (I2C1_SCL, AF4)
+ *   D6  -> PA9   (USART1_TX, AF7)
+ *   D7  -> PA10  (USART1_RX, AF7)
+ *   D8  -> PA15  (GPIO only — hardware erratum: PA15 has no SPI SCK AF,
+ *                 see DS15137 Table 14 p.59; usable as GPIO/TIM2_CH1/etc.)
+ *   D9  -> PB0   (GPIO; SPI3_MISO available but SCK (D8) unusable, so no HW SPI)
+ *   D10 -> PB15  (GPIO only; SPI MOSI AFs exist but no usable SCK on this header)
+ *   D11 -> PB8   (FDCAN1_RX, AF9)
+ *   D12 -> PB9   (FDCAN1_TX, AF9)
+ *   D13 -> PB5   (FDCAN2_RX, AF9)
+ *   D14 -> PB13  (FDCAN2_TX, AF9)
+ *   D15 -> PB14  (CAN_STB — standby control GPIO, active-high = standby)
+ *
+ * Hardware erratum: the schematic labels D8/D9/D10 as SPI_SCK/MISO/MOSI,
+ * but PA15 lacks any SPI SCK alternate function in the STM32C5A3 datasheet.
+ * Hardware SPI is therefore disabled; these pins remain usable as GPIO.
+ *
+ * FDCAN: D11/D12 expose FDCAN1, D13/D14 expose FDCAN2.
+ * D15 (PB14) is the CAN transceiver standby pin (CAN_STB).
+ */
+
+/ {
+	xiao_d: connector {
+		compatible = "seeed,xiao-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 0 0>,    /* D0  -> PA0  (ADC1_IN0) */
+			   <1 0 &gpioa 1 0>,    /* D1  -> PA1  (ADC1_IN1) */
+			   <2 0 &gpioa 2 0>,    /* D2  -> PA2  (ADC1_IN2) */
+			   <3 0 &gpioa 3 0>,    /* D3  -> PA3  (ADC1_IN3) */
+			   <4 0 &gpiob 7 0>,    /* D4  -> PB7  (I2C1_SDA) */
+			   <5 0 &gpiob 6 0>,    /* D5  -> PB6  (I2C1_SCL) */
+			   <6 0 &gpioa 9 0>,    /* D6  -> PA9  (USART1_TX) */
+			   <7 0 &gpioa 10 0>,   /* D7  -> PA10 (USART1_RX) */
+			   <8 0 &gpioa 15 0>,   /* D8  -> PA15 (GPIO, no SPI SCK AF) */
+			   <9 0 &gpiob 0 0>,    /* D9  -> PB0  (GPIO, SPI3_MISO only) */
+			   <10 0 &gpiob 15 0>,  /* D10 -> PB15 (GPIO only, no HW SPI) */
+			   <11 0 &gpiob 8 0>,   /* D11 -> PB8  (FDCAN1_RX) */
+			   <12 0 &gpiob 9 0>,   /* D12 -> PB9  (FDCAN1_TX) */
+			   <13 0 &gpiob 5 0>,   /* D13 -> PB5  (FDCAN2_RX) */
+			   <14 0 &gpiob 13 0>,  /* D14 -> PB13 (FDCAN2_TX) */
+			   <15 0 &gpiob 14 0>;  /* D15 -> PB14 (CAN_STB GPIO) */
+	};
+};
+
+xiao_serial: &usart1 {};
+
+xiao_i2c: &i2c1 {};
