@@ -574,6 +574,110 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	return ret;
 }
 
+/* Token of the observe registration, captured from the first block-0 notification and reused
+ * when the server pushes the next notification.
+ */
+static uint8_t observe_reg_token[COAP_TOKEN_MAX_LEN];
+static int observe_block_step;
+
+static size_t build_block2_response(uint8_t *buf, size_t buf_len, uint8_t type,
+				    const uint8_t *token, uint16_t id, int observe_seq,
+				    int block_num, bool more)
+{
+	static uint8_t block_payload[CONFIG_COAP_CLIENT_BLOCK_SIZE];
+	struct coap_packet pkt;
+	uint16_t plen = more ? CONFIG_COAP_CLIENT_BLOCK_SIZE : 100;
+	int block2 = (block_num << 4) | (more ? 0x08 : 0) | COAP_BLOCK_256;
+
+	zassert_ok(coap_packet_init(&pkt, buf, buf_len, 1, type, COAP_TOKEN_MAX_LEN, token,
+				    COAP_RESPONSE_CODE_CONTENT, id));
+	if (observe_seq >= 0) {
+		zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_OBSERVE, observe_seq));
+	}
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, block2));
+	zassert_ok(coap_packet_append_payload_marker(&pkt));
+	zassert_true(coap_packet_append_payload(&pkt, block_payload, plen) >= 0);
+
+	return pkt.offset;
+}
+
+/* Deliver a resource that is transferred blockwise (two blocks) both for the initial
+ * notification and for a subsequent server-pushed notification.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_observe_block(int sock, void *buf, size_t max_len,
+							       int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	uint8_t tokbuf[TOKEN_OFFSET + COAP_TOKEN_MAX_LEN] = {0};
+	size_t resp_len;
+	uint16_t id;
+
+	switch (observe_block_step) {
+	case 0: /* notification #1, block 0: carries Observe and the registration token */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		memcpy(observe_reg_token, tokbuf + TOKEN_OFFSET, COAP_TOKEN_MAX_LEN);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK, observe_reg_token,
+						 id, 1, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 1: /* notification #1, block 1: answers the continuation GET (token T1) */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK,
+						 tokbuf + TOKEN_OFFSET, id, -1, 1, false);
+		set_socket_events(sock, ZSOCK_POLLIN); /* push the next notification */
+		break;
+	case 2: /* notification #2, block 0: server push reusing the registration token */
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_NON_CON,
+						 observe_reg_token, 0xA000, 2, 0, true);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	case 3: /* notification #2, block 1: answers the continuation GET (token T2) */
+		id = get_next_pending_message_id();
+		restore_token(tokbuf);
+		resp_len = build_block2_response(buf, max_len, COAP_TYPE_ACK,
+						 tokbuf + TOKEN_OFFSET, id, -1, 1, false);
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		break;
+	default:
+		clear_socket_events(sock, ZSOCK_POLLIN);
+		return 0;
+	}
+
+	observe_block_step++;
+	return resp_len;
+}
+
+static ssize_t z_impl_zsock_sendto_custom_fake_observe_block(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+	struct coap_option opt = {0};
+	uint16_t id = (((uint8_t *)buf)[2] << 8) | ((uint8_t *)buf)[3];
+	uint8_t type = (((uint8_t *)buf)[0] & 0x30) >> 4;
+
+	store_token(buf);
+	set_next_pending_message_id(id);
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+
+	/* RFC 7959 Section 3.4: Block2 continuation GETs must not carry the Observe option. */
+	if (coap_get_option_int(&req, COAP_OPTION_BLOCK2) > 0) {
+		zassert_equal(coap_find_options(&req, COAP_OPTION_OBSERVE, &opt, 1), 0,
+			      "Observe must be absent on block retrievals");
+	}
+
+	if (type == 0) {
+		set_socket_events(sock, ZSOCK_POLLIN);
+	}
+
+	return 1;
+}
+
 void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
 	LOG_INF("CoAP response callback, %d", data->result_code);
@@ -1119,6 +1223,50 @@ ZTEST(coap_client, test_observe_deregister_non)
 	zassert_equal(last_response_code, -ECANCELED);
 
 	zassert_not_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+}
+
+ZTEST(coap_client, test_observe_blockwise)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN,
+		.cb = coap_callback,
+		.payload = short_payload,
+		.len = strlen(short_payload),
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	observe_block_step = 0;
+	memset(observe_reg_token, 0, sizeof(observe_reg_token));
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe_block;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_observe_block;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* Notification #1, transferred as two blocks. */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	/* Notification #2 must still be delivered: the registration token has to be
+	 * restored after the blockwise transfer so the pushed notification matches.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "");
+
+	coap_client_cancel_requests(&client);
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -ECANCELED, "");
 }
 
 ZTEST(coap_client, test_request_rst)
