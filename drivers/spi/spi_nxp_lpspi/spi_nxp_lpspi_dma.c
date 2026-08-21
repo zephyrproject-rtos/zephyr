@@ -276,6 +276,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	case LPSPI_TRANSFER_STATE_TX_DONE:
 	case LPSPI_TRANSFER_STATE_RX_DONE:
 		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+		base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
 		/* TX and RX both done here. */
 		spi_context_complete(ctx, spi_dev, 0);
 		spi_context_cs_control(ctx, false);
@@ -291,6 +292,7 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	return;
 error:
 	LOG_ERR("DMA callback error with channel %d.", channel);
+	base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
 	spi_context_complete(ctx, spi_dev, ret);
 	spi_context_cs_control(ctx, false);
 }
@@ -332,6 +334,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	/* Set next dma size is invalid. */
 	dma_data->synchronize_dma_size = 0;
 	dma_data->state = LPSPI_TRANSFER_STATE_NULL;
+	base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
 
 	/* Load dma block */
 	ret = lpspi_dma_rxtx_load(dev);
@@ -347,6 +350,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 
 	ret = spi_context_wait_for_completion(ctx);
 	if (ret) {
+		base->DER &= ~(LPSPI_DER_TDDE_MASK | LPSPI_DER_RDDE_MASK);
 		spi_context_cs_control(ctx, false);
 	}
 out:
