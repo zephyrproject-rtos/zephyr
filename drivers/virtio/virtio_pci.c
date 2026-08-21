@@ -327,7 +327,10 @@ static bool virtio_pci_map_cap(pcie_bdf_t bdf, struct virtio_pci_cap *cap, void 
 		LOG_ERR("no mbar for capability type %d found", cap->cfg_type);
 		return false;
 	}
-	assert(mbar.phys_addr + cap->offset + cap->length <= mbar.phys_addr + mbar.size);
+	if (cap->offset > mbar.size || cap->length > mbar.size - cap->offset) {
+		LOG_ERR("capability type %d exceeds mbar", cap->cfg_type);
+		return false;
+	}
 
 #ifdef CONFIG_MMU
 	k_mem_map_phys_bare(
