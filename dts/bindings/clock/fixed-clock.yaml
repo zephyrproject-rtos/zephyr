@@ -13,5 +13,13 @@ properties:
     description: output clock frequency (Hz)
     required: true
 
+  startup-time-us:
+    type: int
+    description: |
+      Oscillator or clock source startup time in microseconds.
+
+      Useful for physical oscillators (crystal or RC) where consumers must
+      wait after enabling before the clock is stable.
+
   "#clock-cells":
     const: 0
