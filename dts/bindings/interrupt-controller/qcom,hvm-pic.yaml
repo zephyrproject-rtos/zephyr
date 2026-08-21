@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+
+description: |
+  Qualcomm Hexagon HVM virtual interrupt controller.
+
+  This interrupt controller is managed by the H2 hypervisor.  Interrupt
+  enable/disable and acknowledgment are performed via vmintop hypercalls.
+
+compatible: "qcom,hvm-pic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 2
+    description: |
+      Two cells: the virtual IRQ number and flags.
+
+interrupt-cells:
+  - irq
+  - flags
