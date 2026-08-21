@@ -11,9 +11,9 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
 
-#include "rsi_ble.h"
-#include "rsi_ble_common_config.h"
-#include "siwx91x_nwp.h"
+#include <rsi_ble.h>
+#include <rsi_ble_common_config.h>
+#include <siwx91x_nwp.h>
 
 #define BLE_RF_POWER_INDEX     0x0006
 #define BT_OP_VS_RF_POWER_MODE BT_OP(BT_OGF_VS, BLE_RF_POWER_INDEX)

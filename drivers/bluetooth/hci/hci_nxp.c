@@ -23,9 +23,9 @@
 #include <fwk_platform.h>
 
 #if defined(CONFIG_NXP_SNPS_BLE_CTRL)
-#include "ble_controller.h"
+#include <ble_controller.h>
 #elif defined(CONFIG_NXP_MCXW7X_BLE_CTRL)
-#include "controller_api.h"
+#include <controller_api.h>
 #endif
 
 /* -------------------------------------------------------------------------- */
