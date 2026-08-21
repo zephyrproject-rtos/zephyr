@@ -22,13 +22,16 @@ properties:
       application code brings it up at run time with k_smp_cpu_start() (or
       k_smp_cpu_resume()). The flag has no effect on the boot CPU.
   clock-frequency:
-    type: int
-    description: Clock frequency in Hz
+    type: uint32-or-uint64
+    description: Clock frequency in Hz. May be a single 32-bit cell or a
+      64-bit value encoded as two 32-bit cells (high word first), per the
+      Devicetree Specification.
   timebase-frequency:
-    type: int
+    type: uint32-or-uint64
     description: |
-      Specifies the current frequency in Hertz at which the
-      timebase and decrementer registers are updated
+      Specifies the current frequency in Hertz at which the timebase and decrementer registers
+      are updated. May be a single 32-bit cell or a 64-bit value encoded as two 32-bit cells
+      (high word first), per the Devicetree Specification.
   cpu-power-states:
     type: phandles
     description: List of power management states supported by this cpu
