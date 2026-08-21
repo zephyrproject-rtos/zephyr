@@ -18,6 +18,9 @@
 #include <zephyr/modem/ppp.h>
 #include <zephyr/modem/backend/uart.h>
 #include <zephyr/net/ppp.h>
+#include <zephyr/net/net_event.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/net_mgmt.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
@@ -104,6 +107,8 @@ static const char *modem_cellular_state_str(enum modem_cellular_state state)
 		return "power off pulse";
 	case MODEM_CELLULAR_STATE_AWAIT_POWER_OFF:
 		return "await power off";
+	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
+		return "await dial";
 	}
 
 	return "";
@@ -148,6 +153,10 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "RING";
 	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
 		return "periodic kick";
+	case MODEM_CELLULAR_EVENT_DIAL:
+		return "dial";
+	case MODEM_CELLULAR_EVENT_HANGUP:
+		return "hangup";
 	}
 
 	return "";
@@ -308,6 +317,8 @@ static void modem_cellular_enter_state_network_or_dial(struct modem_cellular_dat
 
 	if (modem_cellular_has_network_script(config)) {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
+	} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
 	} else {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 	}
@@ -1631,6 +1642,94 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 	}
 }
 
+static int modem_cellular_on_await_dial_state_enter(struct modem_cellular_data *data)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	modem_chat_attach(&data->chat, data->dlci1_pipe);
+
+	if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DIAL);
+		return 0;
+	}
+
+	/* Parked waiting for a consumer to admit the PPP interface. Keep the
+	 * periodic script running (as in the registered states) so signal and the
+	 * serving/neighbour caches stay fresh for an app deciding whether to dial.
+	 */
+	modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+	return 0;
+}
+
+static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *data,
+						    enum modem_cellular_event evt)
+{
+	const struct modem_cellular_config *config = data->dev->config;
+
+	switch (evt) {
+	case MODEM_CELLULAR_EVENT_DIAL:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		modem_cellular_script_success(data);
+		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
+
+	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		modem_cellular_script_failed(data);
+		if (modem_cellular_is_script_retry_exceeded(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
+		} else {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_TIMEOUT:
+		if (config->vendor->scripts.periodic == NULL) {
+			break;
+		}
+		if (atomic_get(&data->periodic_paused)) {
+			data->periodic_timeout_skipped = true;
+			break;
+		}
+		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		break;
+
+	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
+		if (atomic_get(&data->periodic_paused)) {
+			break;
+		}
+		if (!data->periodic_timeout_skipped) {
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+			break;
+		}
+		data->periodic_timeout_skipped = false;
+		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
+		    0) {
+			LOG_WRN("periodic kick busy, rearming timer");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
+		break;
+
+	case MODEM_CELLULAR_EVENT_SUSPEND:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
+		break;
+	case MODEM_CELLULAR_EVENT_RING:
+		modem_pipe_open_async(data->uart_pipe);
+		break;
+	default:
+		break;
+	}
+}
+
+static int modem_cellular_on_await_dial_state_leave(struct modem_cellular_data *data)
+{
+	modem_cellular_stop_timer(data);
+	return 0;
+}
+
 static int modem_cellular_on_run_dial_script_state_enter(struct modem_cellular_data *data)
 {
 	modem_chat_attach(&data->chat, data->dlci2_pipe);
@@ -1689,6 +1788,10 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 			modem_cellular_stop_timer(data);
 			modem_chat_run_script_async(&data->chat, config->vendor->scripts.dial);
 		}
+		break;
+	case MODEM_CELLULAR_EVENT_HANGUP:
+		modem_chat_release(&data->chat);
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
 		break;
 	default:
 		break;
@@ -1765,7 +1868,10 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
 		}
 		break;
-
+	case MODEM_CELLULAR_EVENT_HANGUP:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
+		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_INIT_POWER_OFF);
@@ -1858,7 +1964,10 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		}
 		break;
-
+	case MODEM_CELLULAR_EVENT_HANGUP:
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
+		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		break;
 	case MODEM_CELLULAR_EVENT_SUSPEND:
 		net_if_carrier_off(modem_ppp_get_iface(config->ppp));
 		modem_chat_release(&data->chat);
@@ -1908,6 +2017,9 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		if (modem_cellular_has_network_script(config) &&
 		    !modem_cellular_is_registered(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
+		} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
+			   !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		}
@@ -2148,6 +2260,10 @@ static int modem_cellular_on_state_enter(struct modem_cellular_data *data)
 		ret = modem_cellular_on_run_network_script_state_enter(data);
 		break;
 
+	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
+		ret = modem_cellular_on_await_dial_state_enter(data);
+		break;
+
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
 		ret = modem_cellular_on_run_dial_script_state_enter(data);
 		break;
@@ -2219,6 +2335,10 @@ static int modem_cellular_on_state_leave(struct modem_cellular_data *data)
 
 	case MODEM_CELLULAR_STATE_OPEN_DLCI2:
 		ret = modem_cellular_on_open_dlci2_state_leave(data);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
+		ret = modem_cellular_on_await_dial_state_leave(data);
 		break;
 
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
@@ -2342,6 +2462,10 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 
 	case MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT:
 		modem_cellular_run_network_script_event_handler(data, evt);
+		break;
+
+	case MODEM_CELLULAR_STATE_AWAIT_DIAL:
+		modem_cellular_await_dial_event_handler(data, evt);
 		break;
 
 	case MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT:
@@ -2753,6 +2877,44 @@ static void net_mgmt_event_handler(struct net_mgmt_event_callback *cb, uint64_t 
 	}
 }
 
+#if defined(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)
+/* On-demand connect requires a dedicated modem workqueue (the Kconfig option
+ * selects MODEM_DEDICATED_WORKQUEUE). net_if_down() holds the interface lock
+ * while the PPP L2 waits for the peer to acknowledge its LCP Terminate-Request.
+ * The driver's own state machine work reacts to that same teardown by taking
+ * the interface lock, so with all modem work on the system workqueue the reply
+ * that would release net_if_down() queues up behind the blocked state machine
+ * and never arrives: net_if_down() fails with -EAGAIN, the interface stays
+ * admin-up, no NET_EVENT_IF_ADMIN_DOWN is emitted and the call is never hung
+ * up. A dedicated modem workqueue keeps the reply path clear.
+ */
+static void modem_cellular_if_event_handler(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
+					    struct net_if *iface)
+{
+	struct modem_cellular_data *data =
+		CONTAINER_OF(cb, struct modem_cellular_data, if_event_callback);
+	const struct modem_cellular_config *config = data->dev->config;
+
+	/* net_mgmt does not filter by interface, so ignore events for any iface
+	 * other than our PPP one.
+	 */
+	if (iface != modem_ppp_get_iface(config->ppp)) {
+		return;
+	}
+
+	switch (mgmt_event) {
+	case NET_EVENT_IF_ADMIN_UP:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DIAL);
+		break;
+	case NET_EVENT_IF_ADMIN_DOWN:
+		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_HANGUP);
+		break;
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT */
+
 static void modem_cellular_ring_gpio_callback(const struct device *dev, struct gpio_callback *cb,
 					      uint32_t pins)
 {
@@ -2791,6 +2953,18 @@ int modem_cellular_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(config->vendor->scripts.init != NULL);
 	__ASSERT_NO_MSG(config->vendor->scripts.dial != NULL);
+
+	/* On-demand connect drives the dial off the PPP interface admin state. A
+	 * modem whose vendor configuration provides a network chat script instead
+	 * waits for registration and dials as soon as it registers, ignoring that
+	 * state, so the data call would come up unprompted regardless of the
+	 * option. Reject the combination here rather than dial unexpectedly.
+	 */
+	if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
+	    modem_cellular_has_network_script(config)) {
+		LOG_ERR("on-demand connect is unsupported by modems with a network chat script");
+		return -ENOTSUP;
+	}
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);
@@ -2950,6 +3124,15 @@ int modem_cellular_init(const struct device *dev)
 					     NET_EVENT_PPP_PHASE_DEAD);
 		net_mgmt_add_event_callback(&data->net_mgmt_event_callback);
 	}
+
+#if defined(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)
+	{
+		net_mgmt_init_event_callback(&data->if_event_callback,
+					     modem_cellular_if_event_handler,
+					     NET_EVENT_IF_ADMIN_UP | NET_EVENT_IF_ADMIN_DOWN);
+		net_mgmt_add_event_callback(&data->if_event_callback);
+	}
+#endif
 
 	modem_cellular_init_apn(data);
 

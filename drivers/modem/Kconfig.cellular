@@ -46,6 +46,24 @@ config MODEM_CELLULAR_STATS
 	  cellular_get_stats(). Adds a small amount of RAM per instance and a
 	  few increments on existing code paths.
 
+config MODEM_CELLULAR_ON_DEMAND_CONNECT
+	bool "Dial the data call on demand (net_if admin up/down)"
+	select MODEM_DEDICATED_WORKQUEUE
+	help
+	  Dial the PPP data call on demand instead of during power-up. Once the
+	  modem is up it parks in a resting state and dials only when a consumer
+	  admits the PPP interface (net_if_up()), hanging the call up again on
+	  net_if_down(), so a connectivity layer can map connect/disconnect onto a
+	  real dial / hang-up and re-dial after a disconnect.
+
+	  Selects MODEM_DEDICATED_WORKQUEUE, which the hang-up path requires (see
+	  modem_cellular.c for why).
+
+	  Only for modems whose vendor configuration provides no network chat
+	  script; enabling it for one that does makes the driver fail to
+	  initialize (-ENOTSUP), as such a modem dials on registration regardless
+	  of the PPP interface admin state.
+
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"
 	default 91
