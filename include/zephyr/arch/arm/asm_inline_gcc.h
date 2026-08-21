@@ -55,7 +55,16 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	key = __get_BASEPRI();
 	__set_BASEPRI_MAX(_EXC_IRQ_DEFAULT_PRIO);
+#if defined(CONFIG_CORTEX_M_ERRATUM_837070_WORKAROUND)
+	/* On Cortex-M7 r0p0/r0p1 the priority raise may not take effect
+	 * for one more instruction (Arm erratum 837070); serialize it.
+	 */
 	__ISB();
+#endif
+	/* Priority-raising writes to PRIMASK/FAULTMASK/BASEPRI are
+	 * serialized to the instruction stream, so (other than the above
+	 * erratum) no ISB is needed here; see Arm DAI0321A, section 4.8.
+	 */
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	__asm__ volatile(
@@ -79,15 +88,20 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
+	/* No barrier is used when unmasking: on Cortex-M an interrupt
+	 * that is (or becomes) pended is taken after at most a couple of
+	 * instructions; unlocking makes no promise that it is taken
+	 * *before* the next instruction (see Arm DAI0321A, section 4.7).
+	 * The one spot that does need synchronous recognition of a pended
+	 * exception, the Cortex-M arch_swap(), inserts its own ISB.
+	 */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key != 0U) {
 		return;
 	}
 	__enable_irq();
-	__ISB();
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__set_BASEPRI(key);
-	__ISB();
 #elif defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R) \
 	|| defined(CONFIG_ARMV7_A) || defined(CONFIG_AARCH32_ARMV8_A)
 	if (key != 0U) {
