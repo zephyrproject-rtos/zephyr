@@ -387,13 +387,13 @@ manifest:
       groups:
         - debug
     - name: tf-m-tests
-      revision: 2f9d323198329cc3df0d6145ec924222cf4ae440
+      revision: 420c95daa7a25143bb88f807a1e2c432dd4372e8
       path: modules/tee/tf-m/tf-m-tests
       groups:
         - testing
         - tee
     - name: tf-psa-crypto
-      revision: 000d24cb5e411a1d68f05b5a98ffd9a5cfdc17c2
+      revision: 765af96a20a2b408474dcd950372ba9af4d26b62
       path: modules/crypto/tf-psa-crypto
       groups:
         - crypto
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: 5202b76233e148d8a60bc059156ed11a16e0d88c
+      revision: pull/222/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
