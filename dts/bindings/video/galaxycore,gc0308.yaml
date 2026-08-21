@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2024 Felipe Neves
+# SPDX-FileCopyrightText: Copyright (c) 2026 Victor Hogeweij
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Galaxy Core GC0308 CMOS video sensor
+
+description: |
+  640x480 CMOS image sensor with a parallel DVP output, controlled over
+  I2C (SCCB).
+
+compatible: "galaxycore,gc0308"
+
+include: i2c-device.yaml
+
+properties:
+  clocks:
+    required: true
+    description: |
+      Clock driving the sensor XCLK pin. The sensor derives all of its timing
+      from it, so the driver reads its clock-frequency to report and select
+      frame intervals.
+  pclk-drive-strength:
+    type: int
+    enum: [2, 4, 8, 10]
+    default: 2
+    description: |
+      Drive strength in mA of the PCLK output pad.
+  data-drive-strength:
+    type: int
+    enum: [4, 6, 10, 12]
+    default: 4
+    description: |
+      Drive strength in mA of the pixel data output pads.
+  sync-drive-strength:
+    type: int
+    enum: [4, 8, 12, 16]
+    default: 4
+    description: |
+      Drive strength in mA of the HSYNC and VSYNC output pads.
+  reset-gpios:
+    type: phandle-array
+    description: |
+      The RESETn pin is asserted to disable the sensor causing a hard
+      reset.  The sensor receives this as an active-low signal.
+  pwdn-gpios:
+    type: phandle-array
+    description: |
+      The PWDN pin is asserted to power down the sensor. The sensor
+      receives this as an active high signal
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml
