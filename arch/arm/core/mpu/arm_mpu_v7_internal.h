@@ -29,11 +29,11 @@ static void mpu_init(void)
 static void region_init(const uint32_t index,
 	const struct arm_mpu_region *region_conf)
 {
+	/* Configure the region */
+#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	/* Select the region you want to access */
 	set_region_number(index);
 
-	/* Configure the region */
-#if defined(CONFIG_CPU_AARCH32_CORTEX_R)
 	/*
 	 * Clear size register, which disables the entry.  It cannot be
 	 * enabled as we reconfigure it.
@@ -44,6 +44,10 @@ static void region_init(const uint32_t index,
 	set_region_attributes(region_conf->attr.rasr);
 	set_region_size(region_conf->size | MPU_RASR_ENABLE_Msk);
 #else
+	/* Writing the region number in RBAR.REGION with RBAR.VALID set
+	 * also updates RNR, so the region does not need to be selected
+	 * with a separate RNR write first.
+	 */
 	MPU->RBAR = (region_conf->base & MPU_RBAR_ADDR_Msk)
 				| MPU_RBAR_VALID_Msk | index;
 	MPU->RASR = region_conf->attr.rasr | MPU_RASR_ENABLE_Msk;
