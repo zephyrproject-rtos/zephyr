@@ -74,12 +74,20 @@ static int lis2dh_sample_fetch_temp(const struct device *dev)
 		if (cfg->temperature.fractional_bits == 0) {
 			lis2dh->temperature.val2 = 0;
 		} else {
-			lis2dh->temperature.val2 =
-				(raw[0] >> (8 - cfg->temperature.fractional_bits));
-			lis2dh->temperature.val2 = (lis2dh->temperature.val2 * 1000000);
-			lis2dh->temperature.val2 >>= cfg->temperature.fractional_bits;
-			if (lis2dh->temperature.val1 < 0) {
-				lis2dh->temperature.val2 *= -1;
+			int32_t frac = raw[0] >> (8 - cfg->temperature.fractional_bits);
+
+			frac = (frac * 1000000) >> cfg->temperature.fractional_bits;
+
+			if (lis2dh->temperature.val1 < 0 && frac != 0) {
+				/*
+				 * The raw value is two's complement, so the fractional
+				 * part is always a positive addend.  Renormalize it so
+				 * that val1 and val2 have the same sign.
+				 */
+				lis2dh->temperature.val1 += 1;
+				lis2dh->temperature.val2 = frac - 1000000;
+			} else {
+				lis2dh->temperature.val2 = frac;
 			}
 		}
 	}
@@ -206,6 +214,7 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 	int odr;
 	int status;
 	uint8_t value;
+	bool lp;
 	struct lis2dh_data *data = dev->data;
 
 	odr = lis2dh_freq_to_odr_val(freq);
@@ -218,14 +227,21 @@ static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
 		return status;
 	}
 
+	lp = (value & LIS2DH_LP_EN_BIT_MASK) != 0U;
+
 	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0U && odr == LIS2DH_ODR_8) {
+	if (!lp && (odr == LIS2DH_ODR_8 || odr == LIS2DH_ODR_9 + 1)) {
+		/* 1620 Hz and 5376 Hz are low power mode only */
+		return -ENOTSUP;
+	}
+
+	if (lp && odr == LIS2DH_ODR_9) {
+		/* 1344 Hz is normal/high resolution mode only */
 		return -ENOTSUP;
 	}
 
 	/* adjust odr index for LP enabled mode, see table above */
-	if (((value & LIS2DH_LP_EN_BIT_MASK) == LIS2DH_LP_EN_BIT_MASK) &&
-		(odr == LIS2DH_ODR_9 + 1)) {
+	if (lp && odr == LIS2DH_ODR_9 + 1) {
 		odr--;
 	}
 
