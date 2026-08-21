@@ -6,5 +6,6 @@ zephyr_sources_ifdef(CONFIG_SILABS_SIWX91X_NWP siwx91x_nwp.c)
 zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE_SHELL siwx91x_fota_shell.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_VERSION_SHELL siwx91x_version_shell.c)
+zephyr_sources_ifdef(CONFIG_SIWX91X_CLOCK_SHELL siwx91x_clock_shell.c)
 
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
