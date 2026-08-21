@@ -1,0 +1,20 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig TPI1S1385
+	bool "Excelitas TPiS 1S 1385 infrared thermopile sensor"
+	default y
+	depends on DT_HAS_EXCELITAS_TPI1S1385_ENABLED
+	select I2C
+	help
+	  Enable driver for the Excelitas CaliPile TPiS 1S 1385 infrared
+	  thermopile sensor.
+
+if TPI1S1385
+
+module = TPI1S1385
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # TPI1S1385
