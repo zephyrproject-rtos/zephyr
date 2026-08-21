@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - power_domain
+  platform_allow:
+    - native_sim
+    - qemu_cortex_m3
+
+tests:
+  drivers.power_domain.gpio_monitor: {}
+  drivers.power_domain.gpio_monitor.initial_read:
+    extra_configs:
+      - CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ=y
+  drivers.power_domain.gpio_monitor.no_runtime:
+    extra_configs:
+      - CONFIG_PM_DEVICE_RUNTIME=n

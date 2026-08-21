@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015 Intel Corporation.
  * Copyright (c) 2021 Nordic Semiconductor ASA
+ * Copyright (c) 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +98,7 @@ int pm_device_runtime_disable(const struct device *dev);
  * @return 0 on success (including when runtime PM is not enabled or not
  * available), negative errno value on failure.
  * @retval -EWOULDBLOCK Call would block but it is not allowed (e.g. in ISR).
+ * @retval -EAGAIN Device remains powered off.
  */
 int pm_device_runtime_get(const struct device *dev);
 
