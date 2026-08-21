@@ -36,4 +36,7 @@ config UART_USE_RUNTIME_CONFIGURE
 config PINCTRL_KEEP_SLEEP_STATE
 	default y
 
+config LOG_PRINTK_STATIC
+	default y
+
 endif # SOC_FAMILY_NORDIC_NRF
