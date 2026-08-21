@@ -69,6 +69,16 @@
 	};
 };
 
+&hfxt {
+	clock-frequency = <DT_FREQ_M(32)>;
+	ti,xtal-startup-delay-us = <500>;
+};
+
+&lfxt {
+	clock-frequency = <32768>;
+	ti,xtal-startup-delay-us = <640000>;
+};
+
 &pinctrl {
 	status = "okay";
 };
