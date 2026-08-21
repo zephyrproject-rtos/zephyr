@@ -49,6 +49,46 @@ adi_tmc51xx_uart: adi-tmc51xx {
 	};
 };
 
+adi_tmc524x_uart: adi-tmc524x-uart {
+	compatible = "adi,tmc524x";
+	status = "okay";
+
+	label = "tmc5240_uart_1";
+
+	en-pwm-mode;
+	test-mode; /* ADI TMC Global configuration flags */
+	clock-frequency = <16000000>; /* Internal/External Clock frequency */
+
+	tmc524x_uart_stepper_driver: stepper-driver {
+		compatible = "adi,tmc524x-stepper-driver";
+		micro-step-res = <256>;
+		/* ADI TMC stallguard settings specific to TMC524X */
+		stallguard2-threshold = <9>;
+	};
+
+	/* common stepper controller settings */
+	tmc524x_uart_motion_controller: motion-controller {
+		compatible = "adi,tmc524x-stepper-ctrl";
+
+		/* ADI TMC ramp generator as well as current settings */
+		vstart = <10>;
+		a1 = <20>;
+		v1 = <30>;
+		d1 = <40>;
+		vmax = <50>;
+		amax = <60>;
+		dmax = <70>;
+		tzerowait = <80>;
+		thigh = <90>;
+		tcoolthrs = <100>;
+		tpwmthrs = <110>;
+		tpowerdown = <120>;
+		ihold = <1>;
+		irun = <2>;
+		iholddelay = <3>;
+	};
+};
+
 adi_tmcm3216 {
 	#address-cells = <1>;
 	#size-cells = <0>;
