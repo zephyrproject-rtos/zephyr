@@ -243,6 +243,11 @@ static int malloc_prepare(void)
 	return 0;
 }
 
+uintptr_t z_libc_heap_end(void)
+{
+	return POINTER_TO_UINT(z_malloc_heap.init_mem) + z_malloc_heap.init_bytes;
+}
+
 void *realloc(void *ptr, size_t requested_size)
 {
 	malloc_lock();
