@@ -3444,10 +3444,13 @@ class BoilerplateFilter(SelectionStrategy):
     # Applied to the line content after stripping the leading ``+`` / ``-``.
     _BOILERPLATE_LINE_RE = re.compile(
         r"^\s*(?:"
+        r"(?:[/*#]+\s*)?"
+        r"(?:"
         r"SPDX-License-Identifier:"
         r"|SPDX-FileCopyrightText:"
         r"|Copyright\b"
-        r"|[/*#]+\s*"  # comment delimiters only (e.g. bare ``*`` or ``//``)
+        r").*"
+        r"|[/*#]+"  # comment delimiters only (e.g. bare ``*`` or ``//``)
         r")\s*",
         re.IGNORECASE,
     )
@@ -3565,7 +3568,7 @@ class BoilerplateFilter(SelectionStrategy):
             content = raw_line[1:]  # strip leading + or -
             if not content.strip():
                 continue  # blank / whitespace-only line
-            if self._BOILERPLATE_LINE_RE.search(content):
+            if self._BOILERPLATE_LINE_RE.fullmatch(content):
                 continue  # boilerplate content
             return False  # substantive change found
         return True

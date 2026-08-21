@@ -478,6 +478,25 @@ class TestBoilerplateFilter:
         s = tp.BoilerplateFilter()
         assert s._all_changes_boilerplate(diff) is False
 
+    def test_delimiter_prefixed_substantive_changes_detected(self):
+        changes = [
+            ("#define FOO_TIMEOUT 100", "#define FOO_TIMEOUT 200"),
+            ("#include <zephyr/foo.h>", "#include <zephyr/bar.h>"),
+            ("*ptr = 1;", "*ptr = 0;"),
+        ]
+
+        s = tp.BoilerplateFilter()
+
+        for old, new in changes:
+            diff = textwrap.dedent(f"""\
+                --- a/drivers/foo/foo.c
+                +++ b/drivers/foo/foo.c
+                @@ -20 +20 @@
+                -{old}
+                +{new}
+            """)
+            assert s._all_changes_boilerplate(diff) is False
+
     def test_mixed_boilerplate_and_code_not_boilerplate(self):
         diff = textwrap.dedent("""\
             --- a/drivers/foo/foo.c
@@ -535,6 +554,18 @@ class TestBoilerplateFilter:
             @@ -20 +20 @@
             -\treturn 0;
             +\treturn -EIO;
+        """)
+        s = self._strategy({"drivers/foo/foo.c": (code_diff, code_diff)})
+        _, handled = s.analyze(["drivers/foo/foo.c"])
+        assert "drivers/foo/foo.c" not in handled
+
+    def test_preprocessor_change_not_consumed(self):
+        code_diff = textwrap.dedent("""\
+            --- a/drivers/foo/foo.c
+            +++ b/drivers/foo/foo.c
+            @@ -20 +20 @@
+            -#define FOO_TIMEOUT 100
+            +#define FOO_TIMEOUT 200
         """)
         s = self._strategy({"drivers/foo/foo.c": (code_diff, code_diff)})
         _, handled = s.analyze(["drivers/foo/foo.c"])
