@@ -147,4 +147,17 @@
 				 <I2C1_SCL_GPIO45>;
 		};
 	};
+
+	/* SPI0 full bus on GPIO 9/10/11 (ALT0). Chip select is left to
+	 * cs-gpios on the controller node, so GPIO 7/8 are not muxed
+	 * here. Write-only peripherals that need GPIO 9 for a D/C line
+	 * should define a MOSI+SCLK-only group in the board overlay.
+	 */
+	spi0_gpio7: spi0-gpio7 {
+		group1 {
+			pinmux = <SPI0_MISO_GPIO9>,
+				 <SPI0_MOSI_GPIO10>,
+				 <SPI0_SCLK_GPIO11>;
+		};
+	};
 };
