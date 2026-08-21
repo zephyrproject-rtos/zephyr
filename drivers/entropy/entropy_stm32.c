@@ -105,7 +105,8 @@ struct entropy_stm32_rng_dev_data {
 	/* work item that polls TRNG to refill pools */
 	struct k_work_delayable trng_poll_work;
 #endif /* IRQLESS_TRNG */
-	bool filling_pools;
+	bool filling_pools;	/* True when pools filling is in progress */
+	bool filling_pools_pm;	/* True when PM is locked for the pool filling sequence */
 
 	RNG_POOL_DEFINE(isr, CONFIG_ENTROPY_STM32_ISR_POOL_SIZE);
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
@@ -547,15 +548,6 @@ static int start_pool_filling(bool wait)
 		return 0;
 	}
 
-	/* Prevent the clocks to be stopped during the duration the rng pool is
-	 * being populated. The ISR will release the constraint again when the
-	 * rng pool is filled.
-	 */
-	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
-	if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
-	}
-
 	acquire_rng();
 #if IRQLESS_TRNG
 	k_work_schedule(&entropy_stm32_rng_data.trng_poll_work, TRNG_GENERATION_DELAY);
@@ -624,6 +616,21 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 	len = dst - buf;
 	available = available - len;
 	if (available <= rngp->threshold) {
+		key = irq_lock();
+		if (!entropy_stm32_rng_data.filling_pools_pm) {
+			/* Prevent the clocks to be stopped during the duration the rng pool is
+			 * being populated. The ISR will release the constraint again when the
+			 * rng pool is filled. This also ensures the pools are filled enough
+			 * at wakeup where an ISR may request some.
+			 */
+			pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+			if (IS_ENABLED(CONFIG_PM_S2RAM)) {
+				pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+			}
+			entropy_stm32_rng_data.filling_pools_pm = true;
+		}
+		irq_unlock(key);
+
 		/*
 		 * Avoid starting pool filling from ISR as it might require
 		 * blocking if RNG is not available and a race condition could
@@ -695,6 +702,9 @@ static int perform_pool_refill(void)
 				irq_disable(IRQN);
 #endif /* !IRQLESS_TRNG */
 				release_rng();
+
+				unsigned int key = irq_lock();
+
 				pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE,
 					PM_ALL_SUBSTATES);
 				if (IS_ENABLED(CONFIG_PM_S2RAM)) {
@@ -702,6 +712,9 @@ static int perform_pool_refill(void)
 						PM_ALL_SUBSTATES);
 				}
 				entropy_stm32_rng_data.filling_pools = false;
+				entropy_stm32_rng_data.filling_pools_pm = false;
+
+				irq_unlock(key);
 				break;
 			}
 		}
@@ -854,21 +867,10 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 	return cnt;
 }
 
-static int entropy_stm32_rng_init(const struct device *dev)
+static int entropy_stm32_rng_init_hw(const struct entropy_stm32_rng_dev_cfg *dev_cfg,
+				     struct entropy_stm32_rng_dev_data *dev_data)
 {
-	struct entropy_stm32_rng_dev_data *dev_data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
 	int res;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-	dev_cfg = dev->config;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-	__ASSERT_NO_MSG(dev_cfg != NULL);
-
-	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t)&dev_cfg->pclken[0]);
@@ -889,6 +891,32 @@ static int entropy_stm32_rng_init(const struct device *dev)
 			return res;
 		}
 	}
+
+#if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_STM32H7_DUAL_CORE)
+	/* For multi-core MCUs, RNG configuration is automatically performed
+	 * after acquiring the RNG in start_pool_filling()
+	 */
+	configure_rng();
+#endif /* !CONFIG_SOC_SERIES_STM32WBX && !CONFIG_STM32H7_DUAL_CORE */
+
+	return 0;
+}
+
+static int entropy_stm32_rng_init(const struct device *dev)
+{
+	struct entropy_stm32_rng_dev_data *dev_data;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
+	int res;
+
+	__ASSERT_NO_MSG(dev != NULL);
+
+	dev_data = dev->data;
+	dev_cfg = dev->config;
+
+	__ASSERT_NO_MSG(dev_data != NULL);
+	__ASSERT_NO_MSG(dev_cfg != NULL);
+
+	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&dev_data->sem_lock, 1, 1);
@@ -913,12 +941,10 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	IRQ_CONNECT(IRQN, IRQ_PRIO, stm32_rng_isr, &entropy_stm32_rng_data, 0);
 #endif /* !IRQLESS_TRNG */
 
-#if !defined(CONFIG_SOC_SERIES_STM32WBX) && !defined(CONFIG_STM32H7_DUAL_CORE)
-	/* For multi-core MCUs, RNG configuration is automatically performed
-	 * after acquiring the RNG in start_pool_filling()
-	 */
-	configure_rng();
-#endif /* !CONFIG_SOC_SERIES_STM32WBX && !CONFIG_STM32H7_DUAL_CORE */
+	res = entropy_stm32_rng_init_hw(dev_cfg, dev_data);
+	if (res < 0) {
+		return res;
+	}
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		uint32_t rng_clock_rate;
@@ -945,57 +971,22 @@ static int entropy_stm32_rng_init(const struct device *dev)
 static int entropy_stm32_rng_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {
-	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
-
-	int res = 0;
-
-	/* Remove warning on some platforms */
-	ARG_UNUSED(dev_data);
-
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-		/* Lock to Prevent concurrent access with PM */
-		z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-	/* Call release_rng instead of entropy_stm32_suspend to avoid double hsem_unlock */
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-		release_rng();
 		break;
 	case PM_DEVICE_ACTION_RESUME:
 		if (IS_ENABLED(CONFIG_PM_S2RAM)) {
-#if DT_INST_NODE_HAS_PROP(0, health_test_config)
-			entropy_stm32_resume();
-#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
-#endif /* health_test_magic */
-			if (LL_RNG_GetHealthConfig(dev_data->rng) !=
-				DT_INST_PROP_OR(0, health_test_config, 0U)) {
-				entropy_stm32_rng_init(dev);
-			} else if (!entropy_stm32_rng_data.filling_pools) {
-				/* Resume RNG only if it was suspended during filling pool */
-#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
-				/* Lock to Prevent concurrent access with PM */
-				z_stm32_hsem_lock(CFG_HW_RNG_SEMID, HSEM_LOCK_WAIT_FOREVER);
-				/*
-				 * Call release_rng instead of entropy_stm32_suspend
-				 * to avoid double hsem_unlock
-				 */
-#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
-				release_rng();
-			}
-#endif /* health_test_config */
-		} else {
-			/* Resume RNG only if it was suspended during filling pool */
-			if (entropy_stm32_rng_data.filling_pools) {
-				res = entropy_stm32_resume();
-			}
+			const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+			struct entropy_stm32_rng_dev_data *dev_data = dev->data;
+
+			entropy_stm32_rng_init_hw(dev_cfg, dev_data);
 		}
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return res;
+	return 0;
 }
 #endif /* CONFIG_PM_DEVICE */
 
