@@ -9,6 +9,7 @@
  * Common devicetree content for the kit_psc3m5_evk secure board variants.
  */
 
+#include <zephyr/dt-bindings/gpio/mikro-bus.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -66,6 +67,29 @@
 		standby-gpios = <&gpio_prt7 6 GPIO_ACTIVE_HIGH>;
 		max-bitrate = <5000000>;
 		#phy-cells = <0>;
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* AN = PASS[0].SAR[0].CH[4], ADC only, no GPIO */
+			   /* RST is XRES_L_MCU, not usable as GPIO */
+			   <MIKROBUS_CS 0 &gpio_prt9 5 0>,
+			   <MIKROBUS_SCK 0 &gpio_prt7 0 0>,
+			   <MIKROBUS_MISO 0 &gpio_prt7 2 0>,
+			   <MIKROBUS_MOSI 0 &gpio_prt7 1 0>,
+			   <MIKROBUS_PWM 0 &gpio_prt5 1 0>,
+			   <MIKROBUS_INT 0 &gpio_prt7 7 0>,
+			   <MIKROBUS_RX 0 &gpio_prt3 2 0>,
+			   <MIKROBUS_TX 0 &gpio_prt3 3 0>,
+			   <MIKROBUS_SCL 0 &gpio_prt9 0 0>,
+			   <MIKROBUS_SDA 0 &gpio_prt9 2 0>;
+	};
+
+	mikrobus_adc: zephyr,user {
+		io-channels = <&adc0 4>;
 	};
 };
 
@@ -144,6 +168,13 @@ i2c0: &scb0 {
 &peri0_group4_16_5bit_1 {
 	clock-div = <10>;
 	status = "okay";
+};
+
+mikrobus_i2c: &i2c0 {};
+
+/* Shared with arduino_spi and enabled by the shield; max 20 MHz (CLK_HF2 / 4) */
+mikrobus_spi: &scb2 {
+	cs-gpios = <&mikrobus_header MIKROBUS_CS GPIO_ACTIVE_LOW>;
 };
 
 &peri0_group4_16_5bit_0 {
