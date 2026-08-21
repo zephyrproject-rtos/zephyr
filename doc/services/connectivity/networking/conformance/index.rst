@@ -66,6 +66,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/mdns`
      - ``zeth``
      - any user
+   * - :zephyr_file:`dnssd <tests/net/conformance/dnssd/README.rst>`
+     - :zephyr_file:`tests/net/conformance/dnssd`
+     - ``zeth``
+     - any user
    * - :zephyr_file:`dns <tests/net/conformance/dns/README.rst>`
      - :zephyr_file:`tests/net/conformance/dns`
      - ``zeth``
@@ -116,10 +120,14 @@ DNS-SD legacy unicast queries
 
 The hostname side of the mDNS responder answers a legacy unicast query the way
 :rfc:`6762` section 6.7 asks. The service discovery side does not: it builds
-its own messages, still sets the cache flush bit, uses its own long time to
-live, and echoes neither the identifier nor the question. Fixing it means
-reworking name compression offsets that are all computed from a fixed header
-size. No suite covers it.
+its own messages, sets the cache flush bit on the records that belong to one
+instance, uses the lifetimes it would have used for a multicast answer, and
+echoes neither the identifier nor the question. Fixing it means reworking name
+compression offsets that are all computed from a fixed header size.
+
+The ``dnssd`` suite records this rather than asserting the standard, in
+``f_check_legacy_shape``, so that a test does not sit failing until somebody
+gets to it. Each check there says what would have to change with it.
 
 CoAP block transfer and observe
 ===============================
