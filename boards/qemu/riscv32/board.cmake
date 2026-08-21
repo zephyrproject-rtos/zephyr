@@ -25,4 +25,13 @@ set(QEMU_BOARD_FLAGS
   -cpu ${qemu_riscv_cpu}
   )
 
+if(CONFIG_QEMU_ENTRY_WRAPPER)
+  find_program(QEMU_BINARY qemu-system-${QEMU_BINARY_SUFFIX} REQUIRED)
+  set(QEMU
+    ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/utils/qemu_entry_wrapper.py
+    ${QEMU_BINARY}
+    ${CONFIG_MP_MAX_NUM_CPUS}
+    )
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

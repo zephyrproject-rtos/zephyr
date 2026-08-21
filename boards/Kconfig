@@ -134,6 +134,15 @@ config QEMU_EXTRA_FLAGS
 	  to setup devices, for example to allocate interface for Zephyr
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
+config QEMU_ENTRY_WRAPPER
+	bool "Run QEMU through qemu_entry_wrapper.py"
+	depends on QEMU_TARGET
+	help
+	  Run QEMU through scripts/utils/qemu_entry_wrapper.py, which reads
+	  e_entry from the Zephyr ELF and injects a -device loader,addr=...
+	  argument for each CPU so QEMU starts execution at the correct entry
+	  point. When disabled, QEMU runs unmodified.
+
 config QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
 	int "QEMU virtio-blk logical block size"
 	depends on QEMU_TARGET && DISK_DRIVER_VIRTIO_BLK
