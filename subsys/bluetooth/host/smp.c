@@ -1284,6 +1284,10 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 
 	conn = smp->chan.chan.conn;
 
+	if (!bt_smp_ctkd_br_to_le_enabled()) {
+		return false;
+	}
+
 	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
 	le_keys = bt_keys_find_addr(BT_ID_DEFAULT, &addr);
 
@@ -2917,6 +2921,34 @@ void bt_le_oob_set_legacy_flag(bool enable)
 	legacy_oobd_present = enable;
 }
 
+#if defined(CONFIG_BT_CLASSIC)
+static uint8_t ctkd_mode = BT_SMP_CTKD_LE_TO_BR | BT_SMP_CTKD_BR_TO_LE;
+
+bool bt_smp_ctkd_le_to_br_enabled(void)
+{
+	return (ctkd_mode & BT_SMP_CTKD_LE_TO_BR) != 0;
+}
+
+bool bt_smp_ctkd_br_to_le_enabled(void)
+{
+	return (ctkd_mode & BT_SMP_CTKD_BR_TO_LE) != 0;
+}
+
+void bt_smp_set_ctkd_mode(uint8_t mode)
+{
+	ctkd_mode = mode & (BT_SMP_CTKD_LE_TO_BR | BT_SMP_CTKD_BR_TO_LE);
+
+	LOG_DBG("CTKD LE->BR %s, BR->LE %s",
+		bt_smp_ctkd_le_to_br_enabled() ? "enabled" : "disabled",
+		bt_smp_ctkd_br_to_le_enabled() ? "enabled" : "disabled");
+}
+
+uint8_t bt_smp_get_ctkd_mode(void)
+{
+	return ctkd_mode;
+}
+#endif /* CONFIG_BT_CLASSIC */
+
 static uint8_t get_auth(struct bt_smp *smp, uint8_t auth)
 {
 	struct bt_conn *conn = smp->chan.chan.conn;
@@ -3233,6 +3265,12 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
+
+		if (IS_ENABLED(CONFIG_BT_CLASSIC) &&
+		    !bt_smp_ctkd_le_to_br_enabled()) {
+			rsp->init_key_dist &= ~LINK_DIST;
+			rsp->resp_key_dist &= ~LINK_DIST;
+		}
 	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
@@ -3533,6 +3571,11 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 
 	smp->local_dist &= SEND_KEYS_SC;
 	smp->remote_dist &= RECV_KEYS_SC;
+
+	if (IS_ENABLED(CONFIG_BT_CLASSIC) && !bt_smp_ctkd_le_to_br_enabled()) {
+		smp->local_dist &= ~LINK_DIST;
+		smp->remote_dist &= ~LINK_DIST;
+	}
 
 	if (IS_ENABLED(CONFIG_BT_SMP_APP_PAIRING_ACCEPT)) {
 		err = smp_pairing_accept_query(smp, rsp);

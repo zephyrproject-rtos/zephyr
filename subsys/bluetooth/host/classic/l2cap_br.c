@@ -25,6 +25,7 @@
 #include <host/hci_core.h>
 #include <host/conn_internal.h>
 #include <host/keys.h>
+#include <host/smp.h>
 #include "l2cap_br_internal.h"
 #include "avdtp_internal.h"
 #include "a2dp_internal.h"
@@ -1965,6 +1966,14 @@ static uint8_t get_fixed_channels_mask(void)
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
 	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
+		/* Do not advertise the BR/EDR SMP channel while derivation of
+		 * the LE LTK from the BR/EDR link key is disabled.
+		 */
+		if (fchan->cid == BT_L2CAP_CID_BR_SMP &&
+		    !bt_smp_ctkd_br_to_le_enabled()) {
+			continue;
+		}
+
 		mask |= BIT(fchan->cid);
 	}
 
