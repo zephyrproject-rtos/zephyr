@@ -96,6 +96,35 @@ config POWER_DOMAIN_NXP_SCU_INIT_PRIORITY
 
 endif #POWER_DOMAIN_NXP_SCU
 
+config POWER_DOMAIN_NXP_IMX8MP_MEDIA_BLK_CTRL
+	bool "NXP i.MX8MP Media Block Control power domain driver"
+	default y
+	depends on DT_HAS_NXP_IMX8MP_MEDIA_BLK_CTRL_ENABLED
+	select DEVICE_DEPS
+	help
+	  Enable the NXP i.MX8MP MEDIA_BLK_CTRL power domain driver.
+	  This driver gates clocks and controls active-low soft resets for
+	  the display and media sub-domains of the i.MX8MP media subsystem.
+
+if POWER_DOMAIN_NXP_IMX8MP_MEDIA_BLK_CTRL
+
+config POWER_DOMAIN_NXP_IMX8MP_MEDIA_BLK_CTRL_INIT_PRIORITY
+	int "NXP i.MX8MP Media Block Control child sub-domain init priority"
+	default 75
+	help
+	  Initialization priority for the NXP i.MX8MP MEDIA_BLK_CTRL child
+	  sub-domain devices. Must be higher than the parent bus init priority.
+
+config POWER_DOMAIN_NXP_IMX8MP_MEDIA_BLK_CTRL_PARENT_INIT_PRIORITY
+	int "NXP i.MX8MP Media Block Control parent bus init priority"
+	default 74
+	help
+	  Initialization priority for the NXP i.MX8MP MEDIA_BLK_CTRL parent
+	  device (bus bring-up + QoS). Must run before the child sub-domains
+	  (CONFIG_POWER_DOMAIN_NXP_IMX8MP_MEDIA_BLK_CTRL_INIT_PRIORITY).
+
+endif
+
 config POWER_DOMAIN_SOC_PM_STATE
 	bool "SoC PM state power domain"
 	default y
