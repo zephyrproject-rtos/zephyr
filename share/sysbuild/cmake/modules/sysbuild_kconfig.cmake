@@ -127,6 +127,7 @@ if(scope_defined)
 endif()
 
 include(${ZEPHYR_BASE}/cmake/modules/kconfig.cmake)
+kconfig_init()
 set(CONF_FILE)
 set(EXTRA_CONF_FILE)
 set(SB_EXTRA_CONF_FILE)
