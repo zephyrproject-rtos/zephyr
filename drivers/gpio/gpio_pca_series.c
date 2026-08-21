@@ -24,6 +24,8 @@
 #define LOG_LEVEL CONFIG_GPIO_LOG_LEVEL
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(gpio_pca_series);
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 /** Private debug macro, enable more error checking and print more log. */
 /* #define GPIO_NXP_PCA_SERIES_DEBUG */
@@ -386,7 +388,6 @@ static inline int gpio_pca_series_reg_write(const struct device *dev,
 #endif /* GPIO_NXP_PCA_SERIES_DEBUG */
 
 	LOG_DBG("device write type %d addr 0x%x len %d", reg_type, addr, size);
-
 	msg[0].buf = (uint8_t *)&addr;
 	msg[0].len = 1;
 	msg[0].flags = I2C_MSG_WRITE;
@@ -674,7 +675,7 @@ static inline int gpio_pca_series_reset_pin_toggle(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	/** Reset pin connected, do hardware reset */
 	if (!device_is_ready(cfg->gpio_rst.port)) {
 		return -ENODEV;
@@ -693,7 +694,7 @@ static inline int gpio_pca_series_reset_pin_toggle(const struct device *dev)
 		return ret;
 	}
 	k_busy_wait(1);
-
+	pm_policy_device_power_lock_put(dev);
 	return ret;
 }
 
@@ -764,7 +765,6 @@ int gpio_pca_series_reset(const struct device *dev)
 {
 	const struct gpio_pca_series_config *cfg = dev->config;
 	int ret = 0;
-
 	if (cfg->gpio_rst.port != NULL) {
 		ret = gpio_pca_series_reset_pin_toggle(dev);
 		if (ret) {
@@ -1014,7 +1014,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 	struct gpio_pca_series_data *data = dev->data;
 	uint32_t reg_value = 0;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
 		return -ENOTSUP;
 	}
@@ -1182,6 +1182,7 @@ static int gpio_pca_series_pin_configure(const struct device *dev,
 
 out:
 	k_sem_give(&data->lock);
+	pm_policy_device_power_lock_put(dev);
 	LOG_DBG("dev %s configure return %d", dev->name, ret);
 	return ret;
 }
@@ -1204,7 +1205,7 @@ static int gpio_pca_series_port_read_standard(
 	struct gpio_pca_series_data *data = dev->data;
 	uint32_t input_data;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -1229,7 +1230,7 @@ static int gpio_pca_series_port_read_standard(
 	}
 	k_sem_give(&data->lock);
 #endif /* CONFIG_GPIO_PCA_SERIES_INTERRUPT */
-
+	pm_policy_device_power_lock_put(dev);
 	LOG_DBG("dev %s standard_read return %d result 0x%8.8x",
 		dev->name, ret, (uint32_t) *value);
 	return ret;
@@ -1251,7 +1252,7 @@ static int gpio_pca_series_port_read_extended(
 	struct gpio_pca_series_data *data = dev->data;
 	uint32_t input_data;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	/**
 	 * Check the flags during runtime.
@@ -1287,6 +1288,7 @@ static int gpio_pca_series_port_read_extended(
 	}
 
 	k_sem_give(&data->lock);
+	pm_policy_device_power_lock_put(dev);
 	LOG_DBG("dev %s extended_read return %d result 0x%8.8x",
 		dev->name, ret, (uint32_t) *value);
 	return ret;
@@ -1299,7 +1301,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 	uint32_t out_old;
 	uint32_t out;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	/* Can't do I2C bus operations from an ISR */
 	if (k_is_in_isr()) {
 		return -EWOULDBLOCK;
@@ -1334,7 +1336,7 @@ static int gpio_pca_series_port_write(const struct device *dev,
 	}
 
 	k_sem_give(&data->lock);
-
+	pm_policy_device_power_lock_put(dev);
 	LOG_DBG("dev %s write return %d result 0x%8.8x", dev->name, ret, out);
 	return ret;
 }
@@ -1384,7 +1386,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 	uint32_t int_rise, int_fall;
 	uint32_t int_mask, input_latch;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	if (cfg->gpio_int.port == NULL) {
 		return -ENOTSUP;
 	}
@@ -1488,7 +1490,7 @@ static int gpio_pca_series_pin_interrupt_configure_standard(
 
 out:
 	k_sem_give(&data->lock);
-
+	pm_policy_device_power_lock_put(dev);
 	if (ret) {
 		LOG_ERR("int config(s) error %d", ret);
 	}
@@ -1517,7 +1519,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 	int ret = 0;
 	uint32_t edge_cfg_shift = pin << 1U;
 	uint64_t edge_cfg_mask = 3ULL << edge_cfg_shift;
-
+	pm_policy_device_power_lock_get(dev);
 	if (cfg->gpio_int.port == NULL) {
 		return -ENOTSUP;
 	}
@@ -1615,6 +1617,7 @@ static int gpio_pca_series_pin_interrupt_configure_extended(
 
 out:
 	k_sem_give(&data->lock);
+	pm_policy_device_power_lock_put(dev);
 	return ret;
 }
 
@@ -1635,7 +1638,7 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 	uint32_t input = 0;
 	uint32_t transitioned_pins = 0;
 	uint32_t int_status = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	k_sem_take(&data->lock, K_FOREVER);
 
 #ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
@@ -1697,7 +1700,7 @@ static void gpio_pca_series_interrupt_handler_standard(const struct device *dev,
 
 out:
 	k_sem_give(&data->lock);
-
+	pm_policy_device_power_lock_put(dev);
 	if (input_value) {
 		*input_value = input;
 	}
@@ -1713,7 +1716,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 
 	int ret = 0;
 	uint32_t int_status = 0;
-
+	pm_policy_device_power_lock_get(dev);
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 	/**
 	 * Check the flags during runtime.
@@ -1751,7 +1754,7 @@ static void gpio_pca_series_interrupt_handler_extended(const struct device *dev)
 
 out:
 	k_sem_give(&data->lock);
-
+	pm_policy_device_power_lock_put(dev);
 	if ((ret == 0) && (int_status)) {
 		int_status = sys_le32_to_cpu(int_status);
 		gpio_fire_callbacks(&data->callbacks, dev, int_status);
@@ -1841,7 +1844,7 @@ static int gpio_pca_series_init(const struct device *dev)
 	const struct gpio_pca_series_config *cfg = dev->config;
 	struct gpio_pca_series_data *data = dev->data;
 	int ret = 0;
-
+	pm_policy_device_power_lock_get(dev);
 	/** With deferred initialization, context checking is also required here */
 	if (k_is_in_isr()) {
 		LOG_ERR("Cannot initialize from ISR context");
@@ -1863,7 +1866,6 @@ static int gpio_pca_series_init(const struct device *dev)
 			LOG_DBG("device reset done");
 		}
 	}
-
 #ifdef GPIO_NXP_PCA_SERIES_DEBUG
 # ifdef CONFIG_GPIO_PCA_SERIES_CACHE_ALL
 	gpio_pca_series_cache_test(dev);
@@ -1946,6 +1948,7 @@ out_bus:
 	} else {
 		LOG_INF("%s init ok", dev->name);
 	}
+	pm_policy_device_power_lock_put(dev);
 	return ret;
 }
 
