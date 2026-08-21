@@ -13,18 +13,6 @@ K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 /* Not in header file intentionally, see #16760 */
 K_THREAD_STACK_DECLARE(ustack, STACK_SIZE);
 
-void spin_for_ms(int ms)
-{
-	uint32_t t32 = k_uptime_get_32();
-
-	while (k_uptime_get_32() - t32 < ms) {
-		/* In the posix arch, a busy loop takes no time, so
-		 * let's make it take some
-		 */
-		Z_SPIN_DELAY(50);
-	}
-}
-
 static void *threads_scheduling_tests_setup(void)
 {
 #ifdef CONFIG_USERSPACE
