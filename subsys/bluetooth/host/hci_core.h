@@ -157,6 +157,23 @@ enum {
 	BT_ADV_NUM_FLAGS,
 };
 
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+/* Reassembly state for fragmented periodic advertising response reports */
+struct pawr_rsp_reassembly {
+	/* Buffer used to reassemble the fragmented response data */
+	struct net_buf_simple buf;
+
+	/* Backing storage for the reassembly buffer */
+	uint8_t reassembly_data[CONFIG_BT_PER_ADV_RSP_BUF_SIZE];
+
+	/* Subevent of the response being reassembled */
+	uint8_t subevent;
+
+	/* Response slot of the response being reassembled */
+	uint8_t response_slot;
+};
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
+
 struct bt_le_ext_adv {
 	/* ID Address used for advertising */
 	uint8_t                 id;
@@ -174,6 +191,11 @@ struct bt_le_ext_adv {
 	/* Callbacks for the advertising set */
 	const struct bt_le_ext_adv_cb *cb;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
+
+#if defined(CONFIG_BT_PER_ADV_RSP) && (CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0)
+	/* Reassembly state for fragmented periodic advertising response reports */
+	struct pawr_rsp_reassembly pawr_rsp_reassembly;
+#endif /* CONFIG_BT_PER_ADV_RSP && CONFIG_BT_PER_ADV_RSP_BUF_SIZE > 0 */
 
 	/* Current local Random Address */
 	bt_addr_le_t            random_addr;
