@@ -1,0 +1,27 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "MediaPipe network streaming sample"
+
+config SAMPLE_NET_STREAM_PORT
+	int "TCP port the sink listens on"
+	range 1 65535
+	default 5000
+	help
+	  Port passed to the tcpsink element through MP_PROP_NET_SINK_PORT.
+
+config SAMPLE_NET_STREAM_SELFTEST
+	bool "Build the self-test client"
+	help
+	  Generate the input file at startup and run a client thread that
+	  connects to the sink, counts the JPEG frames it receives, and logs
+	  PASS or FAIL. Lets the sample run without an external player.
+
+config SAMPLE_NET_STREAM_SELFTEST_ADDR
+	string "Address the self-test client connects to"
+	default "127.0.0.1"
+	depends on SAMPLE_NET_STREAM_SELFTEST
+	help
+	  IPv4 address of the sink, as seen by the self-test client.
+
+source "Kconfig.zephyr"
