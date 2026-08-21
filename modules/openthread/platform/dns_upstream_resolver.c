@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "openthread_border_router.h"
+#include <openthread_border_router.h>
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/sys/slist.h>
-#include "dns_pack.h"
+#include <dns_pack.h>
 #include <common/code_utils.hpp>
 #include <openthread.h>
 #include <openthread/platform/dns.h>
