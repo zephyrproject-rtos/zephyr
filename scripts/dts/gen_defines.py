@@ -120,6 +120,7 @@ def main():
 
         write_chosen(edt)
         write_global_macros(edt)
+        write_cpu_macros(edt)
 
     # Output text file with all binding files, if argument is provided
     if args.deps_out is not None:
@@ -1301,6 +1302,53 @@ def write_global_macros(edt: edtlib.EDT):
             out_comment("Includes descendants on this bus, excludes devices behind child buses")
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}", count)
             out_dt_define(f"{bus_id}_DESCENDANT_NUM_ON_BUS_{bus_ident}_STATUS_OKAY", count_ok)
+
+
+def write_cpu_macros(edt: edtlib.EDT):
+    # Emits helpers for iterating over CPU nodes (edt.cpus) and a count.
+    # cpu.h's public DT_FOREACH_CPU* macros delegate directly to these
+    # helpers, replacing the old C-preprocessor device_type filter.
+
+    okay_cpus = [n for n in edt.cpus if n.status == "okay"]
+
+    out_comment("Macros for iterating over CPU nodes and querying CPU count")
+    out_dt_define(
+        "FOREACH_CPU_HELPER(fn)",
+        " ".join(f"fn(DT_{node.z_path_id})" for node in edt.cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_SEP_HELPER(fn, sep)",
+        " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{node.z_path_id})" for node in edt.cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_VARGS_HELPER(fn, ...)",
+        " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in edt.cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_SEP_VARGS_HELPER(fn, sep, ...)",
+        " DT_DEBRACKET_INTERNAL sep ".join(
+            f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in edt.cpus
+        ),
+    )
+    out_dt_define(
+        "FOREACH_CPU_OKAY_HELPER(fn)",
+        " ".join(f"fn(DT_{node.z_path_id})" for node in okay_cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_OKAY_SEP_HELPER(fn, sep)",
+        " DT_DEBRACKET_INTERNAL sep ".join(f"fn(DT_{node.z_path_id})" for node in okay_cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_OKAY_VARGS_HELPER(fn, ...)",
+        " ".join(f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in okay_cpus),
+    )
+    out_dt_define(
+        "FOREACH_CPU_OKAY_SEP_VARGS_HELPER(fn, sep, ...)",
+        " DT_DEBRACKET_INTERNAL sep ".join(
+            f"fn(DT_{node.z_path_id}, __VA_ARGS__)" for node in okay_cpus
+        ),
+    )
+    out_dt_define("CPU_NUM", len(edt.cpus))
 
 
 def str2ident(s: str) -> str:
