@@ -120,6 +120,17 @@ struct adc_mspm0_regs {
 #define ADC12_CLKCFG_SAMPCLK_VAL_SYSOSC FIELD_PREP(ADC12_CLKCFG_SAMPCLK, 1)
 #define ADC12_CLKCFG_SAMPCLK_VAL_HFCLK  FIELD_PREP(ADC12_CLKCFG_SAMPCLK, 2)
 
+/* clkfreq bits */
+#define ADC12_CLKFREQ_FRANGE                 GENMASK(2, 0)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE1TO4   FIELD_PREP(ADC12_CLKFREQ_FRANGE, 0)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE4TO8   FIELD_PREP(ADC12_CLKFREQ_FRANGE, 1)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE8TO16  FIELD_PREP(ADC12_CLKFREQ_FRANGE, 2)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE16TO20 FIELD_PREP(ADC12_CLKFREQ_FRANGE, 3)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE20TO24 FIELD_PREP(ADC12_CLKFREQ_FRANGE, 4)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE24TO32 FIELD_PREP(ADC12_CLKFREQ_FRANGE, 5)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE32TO40 FIELD_PREP(ADC12_CLKFREQ_FRANGE, 6)
+#define ADC12_CLKFREQ_FRANGE_VAL_RANGE40TO48 FIELD_PREP(ADC12_CLKFREQ_FRANGE, 7)
+
 /* ctl0 bits */
 #define ADC12_CTL0_ENC              BIT(0)
 #define ADC12_CTL0_PWRDN            BIT(16)
@@ -255,7 +266,6 @@ struct adc_mspm0_cfg {
 	const struct mspm0_sys_clock *clock_subsys;
 	const uint32_t clkcfg_sampclk;
 	uint32_t clock_div_reg;
-	uint32_t clock_range;
 	const uint8_t divider;
 	const uint8_t max_result;
 	const uint8_t num_channels;
@@ -268,6 +278,33 @@ static inline uint16_t adc_mspm0_get_mem_result(struct adc_mspm0_regs *regs, uin
 		(struct adc_mspm0_regs *)((uintptr_t)regs + ADC12_ALIAS_OFFSET);
 
 	return alias_regs->memres[idx];
+}
+
+static int adc_mspm0_clkfreq_range(uint32_t sample_clk_hz, uint32_t *frange)
+{
+	if (sample_clk_hz > 48000000U) {
+		return -EINVAL;
+	}
+
+	if (sample_clk_hz <= 4000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE1TO4;
+	} else if (sample_clk_hz <= 8000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE4TO8;
+	} else if (sample_clk_hz <= 16000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE8TO16;
+	} else if (sample_clk_hz <= 20000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE16TO20;
+	} else if (sample_clk_hz <= 24000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE20TO24;
+	} else if (sample_clk_hz <= 32000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE24TO32;
+	} else if (sample_clk_hz <= 40000000U) {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE32TO40;
+	} else {
+		*frange = ADC12_CLKFREQ_FRANGE_VAL_RANGE40TO48;
+	}
+
+	return 0;
 }
 
 static void adc_mspm0_isr(const struct device *dev)
@@ -668,11 +705,19 @@ static int adc_mspm0_init(const struct device *dev)
 	struct adc_mspm0_data *data = dev->data;
 	const struct adc_mspm0_cfg *config = dev->config;
 	struct adc_mspm0_regs *regs = config->regs;
+	uint32_t clock_rate;
+	uint32_t frange;
 	int ret;
 
 	data->dev = dev;
 
 	ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = clock_control_get_rate(DEVICE_DT_GET(DT_NODELABEL(ckm)),
+				     (struct mspm0_sys_clock *)config->clock_subsys, &clock_rate);
 	if (ret < 0) {
 		return ret;
 	}
@@ -685,7 +730,12 @@ static int adc_mspm0_init(const struct device *dev)
 			     FIELD_PREP(ADC12_CLKCFG_KEY, ADC12_CLKCFG_KEY_VAL_UNLOCK) |
 			     config->clkcfg_sampclk;
 	regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_SCLKDIV) | config->clock_div_reg;
-	regs->clkfreq = config->clock_range;
+
+	ret = adc_mspm0_clkfreq_range(clock_rate / config->divider, &frange);
+	if (ret < 0) {
+		return ret;
+	}
+	regs->clkfreq = frange;
 
 	if (config->auto_pwdn) {
 		regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_AUTO;
@@ -721,8 +771,6 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 
 #define ADC_CLOCK_DIV(x)    DT_INST_PROP(x, ti_clk_divider)
 #define ADC_DT_CLOCK_DIV(x) _CONCAT(ADC12_CTL0_SCLKDIV_VAL_DIV_BY_, ADC_CLOCK_DIV(x))
-
-#define ADC_DT_CLOCK_RANGE(x) DT_INST_PROP(x, ti_clk_range)
 
 /*
  * CLKCFG.SAMPCLK only accepts ULPCLK/SYSOSC/HFCLK; resolve the DT clock cell
@@ -761,7 +809,6 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		.clock_subsys = &mspm0_adc_sys_clock##index,                                       \
 		.divider = ADC_CLOCK_DIV(index),                                                   \
 		.clkcfg_sampclk = ADC_DT_SAMPCLK(index),                                           \
-		.clock_range = ADC_DT_CLOCK_RANGE(index),                                          \
 		.clock_div_reg = ADC_DT_CLOCK_DIV(index),                                          \
 		.max_result = DT_INST_PROP(index, max_result_reg),                                 \
 		.num_channels = DT_INST_PROP(index, ti_num_channels),                              \
