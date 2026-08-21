@@ -8,7 +8,7 @@
 #include <zephyr/irq.h>
 #include "reg_protection.h"
 #if CONFIG_HAS_RENESAS_RX_RDP
-#include "r_bsp_cpu.h"
+#include <r_bsp_cpu.h>
 #endif
 
 #define PRCR_KEY    (0xA500)
