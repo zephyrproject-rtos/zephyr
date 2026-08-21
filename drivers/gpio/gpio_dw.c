@@ -20,6 +20,10 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>
 
+#if defined(CONFIG_PINCTRL)
+#include <zephyr/drivers/pinctrl.h>
+#endif
+
 #include "gpio_dw.h"
 
 #include <zephyr/logging/log.h>
@@ -476,12 +480,14 @@ static int gpio_dw_initialize(const struct device *port)
 	const struct gpio_dw_config *config = DEV_CFG(port);
 	mem_addr_t base_addr;
 
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets) || GPIO_DW_PINCTRL_ENABLED
+	int ret;
+#endif
+
 	DEVICE_MMIO_NAMED_MAP(port, gpio_mmio, K_MEM_CACHE_NONE);
 
 	/* Reset GPIO only if reset controller driver is supported */
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets)
-	int ret;
-
 	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
 			LOG_ERR("Reset controller device not ready");
@@ -495,6 +501,16 @@ static int gpio_dw_initialize(const struct device *port)
 		}
 	}
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(resets) */
+
+#if GPIO_DW_PINCTRL_ENABLED
+	if (config->pcfg != NULL) {
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("Failed to apply pinctrl state: %d", ret);
+			return ret;
+		}
+	}
+#endif /* GPIO_DW_PINCTRL_ENABLED */
 
 	if (dw_interrupt_support(config)) {
 
@@ -527,6 +543,18 @@ static int gpio_dw_initialize(const struct device *port)
 #define GPIO_DW_RESET_SPEC_INIT(n)								\
 	.reset = RESET_DT_SPEC_INST_GET(n),							\
 
+#if GPIO_DW_PINCTRL_ENABLED
+#define GPIO_DW_PINCTRL_DEFINE(n)								\
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),					\
+		   (PINCTRL_DT_INST_DEFINE(n);))
+#define GPIO_DW_PINCTRL_CONFIG(n)								\
+	IF_ENABLED(DT_INST_PINCTRL_HAS_NAME(n, default),					\
+		   (.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))
+#else
+#define GPIO_DW_PINCTRL_DEFINE(n)
+#define GPIO_DW_PINCTRL_CONFIG(n)
+#endif
+
 #define GPIO_DW_INIT(n)										\
 	static void gpio_config_##n##_irq(const struct device *port)				\
 	{											\
@@ -534,12 +562,15 @@ static int gpio_dw_initialize(const struct device *port)
 		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), GPIO_DW_CFG_IRQ, (), n)			\
 	}											\
 												\
+	GPIO_DW_PINCTRL_DEFINE(n)								\
+												\
 	static const struct gpio_dw_config gpio_dw_config_##n = {				\
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),					\
 		DEVICE_MMIO_NAMED_ROM_INIT(gpio_mmio, DT_DRV_INST(n)),				\
 		.irq_num = COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0), (DT_INST_IRQN(n)), (0)),	\
 		.ngpios = DT_INST_PROP(n, ngpios),						\
 		.config_func = gpio_config_##n##_irq,						\
+		GPIO_DW_PINCTRL_CONFIG(n)							\
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),					\
 			(GPIO_DW_RESET_SPEC_INIT(n)))						\
 	};											\
