@@ -67,6 +67,7 @@ struct udc_mcux_config {
  */
 #define UDC_MCUX_EVT_XFER	BIT(0)
 #define UDC_MCUX_EVT_RESET	BIT(1)
+#define UDC_MCUX_EVT_DEQUEUE	BIT(2)
 
 struct udc_mcux_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
@@ -76,10 +77,26 @@ struct udc_mcux_data {
 	struct k_event events;
 	struct k_spinlock lock;
 	sys_slist_t complete_bufs;
+	uint32_t ep_dequeue;
+	struct k_condvar dequeue_cond;
 	bool setup_received;
 	uint8_t setup[8];
 	uint8_t controller_id; /* 0xFF is invalid value */
 };
+
+/* Convert an endpoint address to a bit position in the ep_dequeue mask and
+ * back. OUT endpoints occupy bits 0..15, IN endpoints occupy bits 16..31.
+ */
+static inline uint8_t udc_mcux_ep2bit(uint8_t ep)
+{
+	return USB_EP_GET_IDX(ep) | (USB_EP_DIR_IS_IN(ep) ? 0x10U : 0U);
+}
+
+static inline uint8_t udc_mcux_bit2ep(uint8_t bitpos)
+{
+	return (bitpos & 0x0FU) | ((bitpos & 0x10U) ? USB_EP_DIR_IN : USB_EP_DIR_OUT);
+}
+
 
 static void udc_mcux_lock(const struct device *dev)
 {
@@ -399,6 +416,35 @@ static void udc_mcux_thread_handler(void *arg1, void *arg2, void *arg3)
 			k_event_clear(&priv->events, UDC_MCUX_EVT_RESET);
 			udc_mcux_handle_reset(dev);
 		}
+
+		if (evt & UDC_MCUX_EVT_DEQUEUE) {
+			k_event_clear(&priv->events, UDC_MCUX_EVT_DEQUEUE);
+
+			/*
+			 * Cancel the transfers still queued in the endpoint
+			 * FIFO here, in the driver thread. The HAL controller
+			 * cancellation was already requested from the dequeue
+			 * caller; its cancelled transfers are reported through
+			 * the complete_bufs path above (UDC_MCUX_EVT_XFER),
+			 * so handling the FIFO cancellation in the same thread
+			 * preserves the callback order.
+			 */
+			udc_mcux_lock(dev);
+			while (priv->ep_dequeue) {
+				uint8_t bitpos = find_lsb_set(priv->ep_dequeue) - 1;
+				struct udc_ep_config *ep_cfg =
+					udc_get_ep_cfg(dev, udc_mcux_bit2ep(bitpos));
+
+				udc_ep_cancel_queued(dev, ep_cfg);
+				priv->ep_dequeue &= ~BIT(bitpos);
+			}
+
+			/* Avoid context switch immediately after broadcast */
+			k_sched_lock();
+			k_condvar_broadcast(&priv->dequeue_cond);
+			udc_mcux_unlock(dev);
+			k_sched_unlock();
+		}
 	}
 }
 
@@ -519,12 +565,47 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
-	cfg->stat.halted = false;
-	udc_ep_cancel_queued(dev, cfg);
+	const struct udc_mcux_config *config = dev->config;
+	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	struct udc_data *data = dev->data;
+	usb_status_t status;
 
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
+	cfg->stat.halted = false;
+
+	/*
+	 * Ask the HAL controller to cancel the transfer it currently owns.
+	 * Those transfers are reported back (with -ECONNABORTED) through the
+	 * driver thread via the complete_bufs path.
+	 */
+	status = mcux_if->deviceCancel(priv->mcux_device.controllerHandle, cfg->addr);
+	if (status != kStatus_USB_Success) {
+		LOG_WRN("Failed to cancel endpoint 0x%02x", cfg->addr);
+	}
+
+	/*
+	 * The transfers still queued in the endpoint FIFO must also be
+	 * cancelled from the driver thread so that their -ECONNABORTED
+	 * callbacks are delivered in the same order as (and after) the
+	 * transfers cancelled by the HAL controller above. Signal the thread
+	 * and wait for it to finish. The UDC mutex is held here (acquired by
+	 * api->lock() in udc_ep_dequeue()) and is used with the condvar.
+	 */
+	priv->ep_dequeue |= BIT(udc_mcux_ep2bit(cfg->addr));
+
+	/*
+	 * Lock the scheduler around the post + wait to avoid a meaningless
+	 * context switch: k_event_post() may wake the driver thread right
+	 * away, but data->mutex is still held by this thread until
+	 * k_condvar_wait() releases it below, so the driver thread would
+	 * just block on the mutex and get switched out again. Keeping the
+	 * scheduler locked defers that switch until the mutex is actually
+	 * available.
+	 */
+	k_sched_lock();
+	k_event_post(&priv->events, UDC_MCUX_EVT_DEQUEUE);
+	k_condvar_wait(&priv->dequeue_cond, &data->mutex, K_FOREVER);
+	k_sched_unlock();
 
 	return 0;
 }
@@ -772,6 +853,7 @@ static int udc_mcux_driver_preinit(const struct device *dev)
 
 	k_mutex_init(&data->mutex);
 	k_event_init(&priv->events);
+	k_condvar_init(&priv->dequeue_cond);
 	sys_slist_init(&priv->complete_bufs);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
