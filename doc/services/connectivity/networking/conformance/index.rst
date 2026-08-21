@@ -82,6 +82,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/dhcpv4`
      - ``zeth``
      - root
+   * - :zephyr_file:`dhcpv4_server <tests/net/conformance/dhcpv4_server/README.rst>`
+     - :zephyr_file:`tests/net/conformance/dhcpv4_server`
+     - ``zeth``
+     - root
    * - :zephyr_file:`arp <tests/net/conformance/arp/README.rst>`
      - :zephyr_file:`tests/net/conformance/arp`
      - ``zethL2``
