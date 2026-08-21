@@ -12,6 +12,7 @@ ram: 128
 supported:
   - clock_control
   - gpio
+  - hwinfo
   - pinctrl
   - uart
 vendor: microchip

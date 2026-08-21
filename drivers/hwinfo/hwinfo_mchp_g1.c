@@ -51,13 +51,16 @@ int z_impl_hwinfo_get_supported_reset_cause(uint32_t *supported)
 	*supported = RESET_POR | RESET_BROWNOUT | RESET_PIN | RESET_WATCHDOG | RESET_SOFTWARE |
 		     RESET_USER | RESET_LOW_POWER_WAKE;
 
+#ifdef RSTC_G1_RCAUSE_HAS_LOCKUP
+	*supported |= RESET_CPU_LOCKUP;
+#endif
+
 	return 0;
 }
 
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
-	volatile uint8_t *rcause_reg = (uint8_t *)(DT_REG_ADDR(RSTC_INST));
-	uint8_t rcause = *rcause_reg;
+	uint32_t rcause = RSTC_G1_RCAUSE_READ(DT_REG_ADDR(RSTC_INST));
 	uint32_t result = 0;
 
 	if (cause == NULL) {
@@ -68,10 +71,7 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if ((rcause & BIT(RSTC_G1_RCAUSE_POR)) != 0) {
 		result |= RESET_POR;
 	}
-	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD12)) != 0) {
-		result |= RESET_BROWNOUT;
-	}
-	if ((rcause & BIT(RSTC_G1_RCAUSE_BOD33)) != 0) {
+	if ((rcause & RSTC_G1_RCAUSE_BROWNOUT_MASK) != 0) {
 		result |= RESET_BROWNOUT;
 	}
 	if ((rcause & BIT(RSTC_G1_RCAUSE_EXT)) != 0) {
@@ -86,6 +86,11 @@ int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 	if ((rcause & BIT(RSTC_G1_RCAUSE_BACKUP)) != 0) {
 		result |= RESET_LOW_POWER_WAKE;
 	}
+#ifdef RSTC_G1_RCAUSE_HAS_LOCKUP
+	if ((rcause & BIT(RSTC_G1_RCAUSE_LOCKUP)) != 0) {
+		result |= RESET_CPU_LOCKUP;
+	}
+#endif
 
 	*cause = result;
 
