@@ -44,8 +44,10 @@ LOG_MODULE_REGISTER(intc_mchp_eic_g1, CONFIG_INTC_LOG_LEVEL);
 /* Port B */
 #define PORTB_UNSUPPORTED_PINS    DT_INST_PROP(0, portb_unsupported_pins)
 /* The special pins need an offset when calculating the eic line */
-#define PORTB_SPECIAL_PINS        DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
-#define PORTB_SPECIAL_PINS_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS          DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 0)
+#define PORTB_SPECIAL_PINS_OFFSET   DT_INST_PROP_BY_IDX(0, portb_special_pins_1, 1)
+#define PORTB_SPECIAL_PINS_2        DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 0)
+#define PORTB_SPECIAL_PINS_2_OFFSET DT_INST_PROP_BY_IDX(0, portb_special_pins_2, 1)
 
 /* Port C */
 #define PORTC_SUPPORTED_PINS        DT_INST_PROP(0, portc_supported_pins)
@@ -135,7 +137,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTA_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTA_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTA_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTA_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else {
 			/* Nothing to be done */
 		}
@@ -149,7 +151,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTC_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTC_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else if ((PORTC_SPECIAL_PINS_2 & pin_mask) != 0) {
 			eic_line -= PORTC_SPECIAL_PINS_2_OFFSET;
 		} else {
@@ -178,15 +180,21 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		}
 		break;
 	case MCHP_PORT_ID1:
-		if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
-			eic_line += PORTB_SPECIAL_PINS_OFFSET;
+		if ((PORTB_UNSUPPORTED_PINS & pin_mask) != 0) {
+			eic_line = INTC_LINE_FREE;
+		} else if ((PORTB_SPECIAL_PINS & pin_mask) != 0) {
+			eic_line = (eic_line + PORTB_SPECIAL_PINS_OFFSET) % EIC_LINES_PER_PORT;
+		} else if ((PORTB_SPECIAL_PINS_2 & pin_mask) != 0) {
+			eic_line = (eic_line + PORTB_SPECIAL_PINS_2_OFFSET) % EIC_LINES_PER_PORT;
+		} else {
+			/* Nothing to be done */
 		}
 		break;
 	case MCHP_PORT_ID2:
 		if ((PORTC_UNSUPPORTED_PINS & pin_mask) != 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTC_SPECIAL_PINS_1 & pin_mask) != 0) {
-			eic_line += PORTC_SPECIAL_PINS_1_OFFSET;
+			eic_line = (eic_line + PORTC_SPECIAL_PINS_1_OFFSET) % EIC_LINES_PER_PORT;
 		} else {
 			/* Nothing to be done */
 		}
@@ -195,7 +203,7 @@ uint8_t find_eic_line_from_pin(int port, int pin)
 		if ((PORTD_SUPPORTED_PINS & pin_mask) == 0) {
 			eic_line = INTC_LINE_FREE;
 		} else if ((PORTD_SPECIAL_PINS_2 & pin_mask) != 0) {
-			eic_line += PORTD_SPECIAL_PINS_2_OFFSET;
+			eic_line = (eic_line + PORTD_SPECIAL_PINS_2_OFFSET) % EIC_LINES_PER_PORT;
 		} else if ((PORTD_SPECIAL_PINS_1 & pin_mask) != 0) {
 			eic_line -= PORTD_SPECIAL_PINS_1_OFFSET;
 		} else {
@@ -254,7 +262,12 @@ int eic_mchp_disable_interrupt(struct eic_config_params *eic_pin_config)
 	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
 		disable_interrupt_line(eic_cfg->regs, eic_line);
 	} else {
-		LOG_ERR("EIC Line is already free");
+		/* Disabling an interrupt that is not configured is what
+		 * gpio_pin_interrupt_configure(GPIO_INT_DISABLE) does on a pin nobody
+		 * armed, and the API calls that success. Nothing is wrong here.
+		 */
+		LOG_DBG("EIC line for port %d : %d is already free", eic_pin_config->port_id,
+			eic_pin_config->pin_num);
 		return 0;
 	}
 
@@ -347,7 +360,14 @@ int eic_mchp_config_interrupt(struct eic_config_params *eic_pin_config)
 	}
 
 	eic_data->lock = irq_lock();
-	if ((eic_data->line_busy & BIT(eic_line)) != 0) {
+	/* A line already held by another port's pin cannot be taken, but the pin that
+	 * holds it may reconfigure it: gpio_pin_interrupt_configure() is specified to be
+	 * callable again to change the trigger of a pin whose interrupt is already
+	 * configured.
+	 */
+	if (((eic_data->line_busy & BIT(eic_line)) != 0) &&
+	    ((eic_data->lines[eic_line].port != eic_pin_config->port_id) ||
+	     (eic_data->lines[eic_line].pin != pin))) {
 		irq_unlock(eic_data->lock);
 		LOG_ERR("EIC Line for port %d : %d is busy", eic_pin_config->port_id, pin);
 		return -EBUSY;
