@@ -416,12 +416,12 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	uint32_t inv_mask = 0;
 
 	/*
-	 * On P4, switching UART clock source (e.g. XTAL to PLL_F80M)
+	 * On P4 and C61, switching UART clock source (e.g. XTAL to PLL_F80M)
 	 * breaks the reg_update sync mechanism, causing uart_ll_update()
 	 * to spin forever. Keep the ROM-configured clock source (XTAL).
 	 * IDF also does not change UART clock source during driver init.
 	 */
-#if !CONFIG_SOC_SERIES_ESP32P4
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 #endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
