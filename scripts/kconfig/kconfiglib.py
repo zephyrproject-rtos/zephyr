@@ -540,6 +540,7 @@ Feedback
 Send bug reports, suggestions, and questions to the GitHub page.
 """
 import errno
+import gc
 import importlib
 import os
 import re
@@ -932,8 +933,19 @@ class Kconfig(object):
           Other exceptions besides EnvironmentError and KconfigError are still
           propagated when suppress_traceback is True.
         """
+        # Parsing builds a big graph of long-lived objects, and the cyclic
+        # garbage collector responds by running ever more expensive full
+        # collections over it, hunting for cycles that are hardly ever there.
+        # Reference counting handles the temporary objects by itself, so keep
+        # the collector away until the tree is built, then let it look at
+        # everything once. That single pass keeps the next collection cheap.
+        gc_was_enabled = gc.isenabled()
+        gc.disable()
+
         try:
             self._init(filename, warn, warn_to_stderr, encoding)
+            if gc_was_enabled:
+                gc.collect()
         except (EnvironmentError, KconfigError) as e:
             if suppress_traceback:
                 cmd = sys.argv[0]  # Empty string if missing
@@ -944,6 +956,9 @@ class Kconfig(object):
                 # them here.
                 sys.exit(cmd + str(e).strip())
             raise
+        finally:
+            if gc_was_enabled:
+                gc.enable()
 
     def _init(self, filename, warn, warn_to_stderr, encoding):
         # See __init__()
