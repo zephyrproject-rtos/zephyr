@@ -1,0 +1,14 @@
+/*
+ * Copyright 2025 - 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mailboxes: mbox-consumer {
+		mboxes = <&mbox4_a 0>, <&mbox4_a 1>;
+		mbox-names = "rx", "tx";
+
+		compatible = "vnd,mbox-consumer";
+	};
+};
