@@ -40,6 +40,8 @@ static int dynamic_areas_init(uintptr_t start, size_t size);
 static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 					uint8_t region_num);
 
+#define NO_EXCLUDED_PARTITION -1
+
 #if defined(CONFIG_USERSPACE)
 #define MPU_DYNAMIC_REGIONS_AREA_START ((uintptr_t)&_app_smem_start)
 #else
@@ -633,7 +635,7 @@ static int flush_dynamic_regions_to_mpu(struct dynamic_region_info *dyn_regions,
 	return 0;
 }
 
-static int configure_dynamic_mpu_regions(struct k_thread *thread)
+static int configure_dynamic_mpu_regions(struct k_thread *thread, int excluded_partition)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
@@ -666,11 +668,18 @@ static int configure_dynamic_mpu_regions(struct k_thread *thread)
 		uint32_t max_parts = CONFIG_MAX_DOMAIN_PARTITIONS;
 		struct k_mem_partition *partition;
 
-		for (size_t i = 0; i < max_parts && num_parts > 0; i++, num_parts--) {
+		for (size_t i = 0; i < max_parts && num_parts > 0; i++) {
 			partition = &mem_domain->partitions[i];
+			if ((int)i == excluded_partition) {
+				num_parts--;
+				continue;
+			}
+
 			if (partition->size == 0) {
 				continue;
 			}
+
+			num_parts--;
 			LOG_DBG("set region 0x%lx 0x%lx\n",
 				partition->start, partition->size);
 			ret = insert_region(dyn_regions,
@@ -755,14 +764,14 @@ int arch_mem_domain_max_partitions_get(void)
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }
 
-static int configure_domain_partitions(struct k_mem_domain *domain)
+static int configure_domain_partitions(struct k_mem_domain *domain, int excluded_partition)
 {
 	struct k_thread *thread;
 	int ret;
 
 	SYS_DLIST_FOR_EACH_CONTAINER(&domain->thread_mem_domain_list, thread,
 				     mem_domain_info.thread_mem_domain_node) {
-		ret = configure_dynamic_mpu_regions(thread);
+		ret = configure_dynamic_mpu_regions(thread, excluded_partition);
 		if (ret != 0) {
 			return ret;
 		}
@@ -777,23 +786,19 @@ static int configure_domain_partitions(struct k_mem_domain *domain)
 
 int arch_mem_domain_partition_add(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(partition_id);
-
-	return configure_domain_partitions(domain);
+	return configure_domain_partitions(domain, NO_EXCLUDED_PARTITION);
 }
 
 int arch_mem_domain_partition_remove(struct k_mem_domain *domain, uint32_t partition_id)
 {
-	ARG_UNUSED(partition_id);
-
-	return configure_domain_partitions(domain);
+	return configure_domain_partitions(domain, partition_id);
 }
 
 int arch_mem_domain_thread_add(struct k_thread *thread)
 {
 	int ret = 0;
 
-	ret = configure_dynamic_mpu_regions(thread);
+	ret = configure_dynamic_mpu_regions(thread, NO_EXCLUDED_PARTITION);
 #ifdef CONFIG_SMP
 	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
@@ -808,7 +813,7 @@ int arch_mem_domain_thread_remove(struct k_thread *thread)
 {
 	int ret = 0;
 
-	ret = configure_dynamic_mpu_regions(thread);
+	ret = configure_dynamic_mpu_regions(thread, NO_EXCLUDED_PARTITION);
 #ifdef CONFIG_SMP
 	if (ret == 0 && thread != _current) {
 		/* the thread could be running on another CPU right now */
@@ -825,7 +830,7 @@ void z_arm64_thread_mem_domains_init(struct k_thread *thread)
 {
 	unsigned int key = arch_irq_lock();
 
-	configure_dynamic_mpu_regions(thread);
+	configure_dynamic_mpu_regions(thread, NO_EXCLUDED_PARTITION);
 	arch_irq_unlock(key);
 }
 
