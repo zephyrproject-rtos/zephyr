@@ -466,6 +466,21 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	);
 
 /**
+ * @brief Define a multiple match object that expects a single response followed by an "OK"
+ *
+ * Replaces a MODEM_CHAT_MATCH_DEFINE followed by MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match)
+ *
+ * @param _sym Name of the matches array object
+ * @param _match Match string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _separators Separators string per @ref MODEM_CHAT_MATCH_DEFINE
+ * @param _callback Callback on match per @ref MODEM_CHAT_MATCH_DEFINE
+ */
+#define MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(_sym, _match, _separators, _callback)                  \
+	MODEM_CHAT_MATCHES_DEFINE(_sym,                                                            \
+		MODEM_CHAT_MATCH_INITIALIZER(_match, _separators, _callback, false, true),         \
+		MODEM_CHAT_MATCH("OK", "", NULL))
+
+/**
  * @brief Define common chat matches used by cellular modem scripts.
  *
  * Invoke this macro once at file scope. It defines matches for successful commands, common command
@@ -477,25 +492,25 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 	MODEM_CHAT_MATCHES_DEFINE(__maybe_unused allow_match,					   \
 				  MODEM_CHAT_MATCH("OK", "", NULL),				   \
 				  MODEM_CHAT_MATCH("ERROR", "", NULL));				   \
-	MODEM_CHAT_MATCH_DEFINE(imei_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused imei_match,				   \
 				"", "", modem_cellular_chat_on_imei);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmm_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmm_match,				   \
 				"", "", modem_cellular_chat_on_cgmm);				   \
-	MODEM_CHAT_MATCH_DEFINE(csq_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused csq_match,				   \
 				"+CSQ: ", ",", modem_cellular_chat_on_csq);			   \
-	MODEM_CHAT_MATCH_DEFINE(cesq_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cesq_match,				   \
 				"+CESQ: ", ",", modem_cellular_chat_on_cesq);			   \
-	MODEM_CHAT_MATCH_DEFINE(qccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused qccid_match,				   \
 				"+QCCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(iccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused iccid_match,				   \
 				"+ICCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(ccid_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused ccid_match,				   \
 				"+CCID: ", "", modem_cellular_chat_on_iccid);			   \
-	MODEM_CHAT_MATCH_DEFINE(cimi_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cimi_match,				   \
 				"", "", modem_cellular_chat_on_imsi);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmi_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmi_match,				   \
 				"", "", modem_cellular_chat_on_cgmi);				   \
-	MODEM_CHAT_MATCH_DEFINE(cgmr_match __maybe_unused,					   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmr_match,				   \
 				"", "", modem_cellular_chat_on_cgmr);				   \
 	MODEM_CHAT_MATCH_DEFINE(connect_match __maybe_unused,					   \
 				"CONNECT", "", NULL);						   \
