@@ -28,22 +28,22 @@ struct ifx_peri_clock_data {
 	uint8_t div_type;
 };
 
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_PACK_DST)
 static inline en_clk_dst_t peri_pclk_build_en_clk_dst(uint8_t output, uint8_t group,
 						      uint8_t instance)
 {
 	en_clk_dst_t clk_dst;
 
 	clk_dst = output;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	/* These devices pack instance, group, and output together in the en_clk_dst_t.  Group and
 	 * Instance are used by the enable_divider and set_divider functions to determine which
 	 * clock is being referenced.
 	 */
 	clk_dst |= ((uint32_t)group << PERI_PCLK_GR_NUM_Pos);
 	clk_dst |= ((uint32_t)instance << PERI_PCLK_INST_NUM_Pos);
-#endif
 	return clk_dst;
 }
+#endif
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
@@ -57,10 +57,10 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	 * specific peripheral connection is not needed in the underlying pdl enable and
 	 * clock configuration calls.
 	 */
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_PACK_DST)
 	clk_dst = peri_pclk_build_en_clk_dst(0, data->clock.group, data->clock.instance);
 #else
-	/* For PSOC4, clk_dst is simply 0 since we don't have instance/group fields */
+	/* No instance/group packing on this part; the destination is just the output. */
 	clk_dst = 0;
 #endif
 
@@ -87,7 +87,7 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 	return 0;
 }
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#if defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_INSTANCE_BLOCK)
 #define PERI_CLOCK_INIT(n)                                                                         \
 	.clock = {                                                                                 \
 		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(DT_INST_PROP_BY_IDX(n, peri_group, 0),   \
@@ -97,8 +97,8 @@ static int ifx_cat1_peri_clock_init(const struct device *dev)
 		.instance = DT_INST_PROP_BY_IDX(n, peri_group, 0),                                 \
 		.group = DT_INST_PROP_BY_IDX(n, peri_group, 1),                                    \
 	},
-#elif defined(CY_IP_MXPERI) || defined(CY_IP_M0S8PERI)
-/* PSOC4 devices - struct ifx_cat1_clock only has block and channel fields */
+#elif !defined(CONFIG_CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_PERI_GROUP)
+/* No peripheral group: the block id is the divider type and there is no instance/group. */
 #define PERI_CLOCK_INIT(n)                                                                         \
 	.clock = {                                                                                 \
 		.block = DT_INST_PROP(n, div_type),                                                \

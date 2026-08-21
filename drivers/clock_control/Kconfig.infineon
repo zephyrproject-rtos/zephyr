@@ -34,6 +34,32 @@ config CLOCK_CONTROL_IFX_PERI_CLOCK
 	help
 	  This option enables the Peripheral clock driver for Infineon CAT1 family.
 
+config CLOCK_CONTROL_IFX_PERI_CLOCK_HAS_PERI_GROUP
+	bool
+	depends on CLOCK_CONTROL_IFX_PERI_CLOCK
+	default y if SOC_FAMILY_INFINEON_CAT1 || SOC_FAMILY_INFINEON_EDGE
+	help
+	  The divider block identifier is built from a peripheral group (the
+	  devicetree "peri-group" cells) in addition to the divider type. Left
+	  unset on parts whose block identifier is the divider type alone.
+
+config CLOCK_CONTROL_IFX_PERI_CLOCK_PACK_DST
+	bool
+	depends on CLOCK_CONTROL_IFX_PERI_CLOCK
+	default y if SOC_FAMILY_INFINEON_CAT1B || SOC_FAMILY_INFINEON_CAT1C || \
+		SOC_FAMILY_INFINEON_EDGE
+	help
+	  The peripheral-clock hardware packs the clock instance and group into
+	  the en_clk_dst_t destination passed to the divider set and enable calls.
+
+config CLOCK_CONTROL_IFX_PERI_CLOCK_INSTANCE_BLOCK
+	bool
+	depends on CLOCK_CONTROL_IFX_PERI_CLOCK
+	default y if SOC_FAMILY_INFINEON_EDGE
+	help
+	  The divider block identifier encodes a peripheral instance as well as
+	  the group, so it is built from the (instance, group, divider) triple.
+
 
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
