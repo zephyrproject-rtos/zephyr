@@ -80,12 +80,13 @@ struct adma2_desc {
 
 /* ADMA2 data alignment */
 #define ADMA2_ALIGN		4
-#define ADMA2_MASK		(ADMA2_ALIGN - 1)
-#define ADMA2_ALIGNED(addr)	(!(((uint32_t)(addr)) & ADMA2_MASK))
+#define ADMA2_ALIGNED(addr)	IS_ALIGNED((uintptr_t)(addr), ADMA2_ALIGN)
 
 #define ADMA2_NUM_DESC		64
 #define ADMA2_MAX_LEN		65536
 #define ADMA2_MAX_SIZE		(ADMA2_NUM_DESC * ADMA2_MAX_LEN)
+
+#define DCACHE_ALIGNED(addr)	IS_ALIGNED((uintptr_t)(addr), sys_cache_data_line_size_get())
 
 #define MAX_DATA_TIMEOUT	0xE
 
@@ -122,6 +123,7 @@ struct sam_sdmmc_config {
 	uint32_t bus_width: 4;
 	uint32_t no_18v: 1;
 	uint32_t rstn_power_en: 1;
+	uint32_t cal_always_on: 1;
 	uint32_t auto_cmd12: 1;
 	uint32_t auto_cmd23: 1;
 	uint32_t mmc_hs200_18v: 1;
@@ -215,6 +217,27 @@ static int sdmmc_reset(sdmmc_registers_t *sdmmc, uint8_t mask)
 	}
 
 	if (sdmmc->SDMMC_SRR & mask) {
+		LOG_ERR("%s: timeout!", __func__);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+static int sdmmc_calibration(sdmmc_registers_t *sdmmc, uint8_t always_on)
+{
+	uint32_t timeout = 20000;
+
+	if (always_on) {
+		sdmmc->SDMMC_CALCR |= SDMMC_CALCR_ALWYSON_Msk;
+	}
+	sdmmc->SDMMC_CALCR |= SDMMC_CALCR_EN_Msk;
+
+	while ((sdmmc->SDMMC_CALCR & SDMMC_CALCR_EN_Msk) && timeout--) {
+		k_usleep(1);
+	}
+
+	if (sdmmc->SDMMC_CALCR & SDMMC_CALCR_EN_Msk) {
 		LOG_ERR("%s: timeout!", __func__);
 		return -ETIMEDOUT;
 	}
@@ -662,7 +685,9 @@ static int sdmmc_send_command(const struct device *dev, struct sdhc_command *cmd
 
 		/* DMA transfer */
 		if (props->host_caps.adma_2_support &&
-		    IS_DATA_CMD(cmd->opcode) && ADMA2_ALIGNED(sd_data->data)) {
+		    IS_DATA_CMD(cmd->opcode) &&
+		    ADMA2_ALIGNED(sd_data->data) &&
+		    DCACHE_ALIGNED(sd_data->data)) {
 			struct adma2_desc *desc = data->desc;
 			int32_t len = sd_data->blocks * sd_data->block_size;
 			uint32_t buf = (uint32_t)sd_data->data;
@@ -791,6 +816,10 @@ static int sam_sdmmc_reset(const struct device *dev)
 	if (config->non_removable) {
 		sdmmc_set_force_card_detect(sdmmc);
 	}
+	if (config->cal_always_on) {
+		sdmmc_calibration(sdmmc, 1);
+	}
+
 	/* Set max data timeout */
 	sdmmc->SDMMC_TCR = SDMMC_TCR_DTCVAL(MAX_DATA_TIMEOUT);
 
@@ -1077,6 +1106,7 @@ static DEVICE_API(sdhc, sdmmc_api) = {
 		.bus_width       = DT_INST_PROP(N, bus_width),					\
 		.no_18v          = DT_INST_PROP(N, no_1_8_v),					\
 		.rstn_power_en   = DT_INST_PROP(N, rstn_power_en),				\
+		.cal_always_on   = DT_INST_PROP(N, cal_always_on),				\
 		.auto_cmd12      = DT_INST_PROP(N, auto_cmd12),					\
 		.auto_cmd23      = DT_INST_PROP(N, auto_cmd23),					\
 		.mmc_hs200_18v   = DT_INST_PROP(N, mmc_hs200_1_8v),				\
