@@ -11,4 +11,6 @@ if PROFILING
 
 source "subsys/profiling/perf/Kconfig"
 
+source "subsys/profiling/irq_stats/Kconfig"
+
 endif
