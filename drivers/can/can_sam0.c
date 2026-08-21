@@ -15,6 +15,13 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
+#include <zephyr/linker/section_tags.h>
+
+#undef CAN_MCAN_DT_MRAM_DEFINE
+#define CAN_MCAN_DT_MRAM_DEFINE(node_id, _name)                                                    \
+	BUILD_ASSERT(CAN_MCAN_DT_MRAM_OFFSET(node_id) == 0, "offset must be 0");                   \
+	static char __aligned(4) Z_GENERIC_SECTION(.mram_noinit)                                   \
+		_name[CAN_MCAN_DT_MRAM_ELEMENTS_SIZE(node_id)];
 
 LOG_MODULE_REGISTER(can_sam0, CONFIG_CAN_LOG_LEVEL);
 
