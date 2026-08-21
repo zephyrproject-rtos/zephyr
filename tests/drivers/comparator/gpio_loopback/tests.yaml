@@ -102,3 +102,8 @@ tests:
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - esp32c5_devkitc/esp32c5/hpcore
       - esp32h2_devkitm/esp32h2
+  drivers.comparator.gpio_loopback.infineon_csg:
+    extra_args:
+      - FILE_SUFFIX="csg"
+    platform_allow:
+      - kit_psc3m5_evk/psc3m5fds2afq1
