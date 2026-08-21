@@ -18,7 +18,6 @@ extern "C" {
 
 struct k_thread;
 struct k_mutex;
-struct z_futex_data;
 
 /**
  * @brief Kernel Object Types
