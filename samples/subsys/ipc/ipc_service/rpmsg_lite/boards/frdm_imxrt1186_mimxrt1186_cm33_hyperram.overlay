@@ -77,7 +77,13 @@
 };
 
 &dtcm {
-	/delete-property/ zephyr,memory-region;
+	/*
+	 * Remove zephyr,memory-region binding so the linker does not
+	 * place a dedicated DTCM section. Change compatible to plain
+	 * mmio-sram so the required 'zephyr,memory-region' property
+	 * from the zephyr,memory-region binding is no longer enforced.
+	 */
+	compatible = "mmio-sram";
 };
 
 &mbox1_a {
