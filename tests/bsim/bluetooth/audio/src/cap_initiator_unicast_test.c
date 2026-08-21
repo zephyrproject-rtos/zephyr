@@ -190,7 +190,7 @@ static void unicast_stream_stopped(struct bt_bap_stream *stream, uint8_t reason)
 		int err;
 
 		err = bap_stream_tx_unregister(stream);
-		if (err != 0) {
+		if (err != 0 && err != -ENODATA) {
 			FAIL("Failed to unregister stream %p for TX: %d\n", stream, err);
 			return;
 		}
