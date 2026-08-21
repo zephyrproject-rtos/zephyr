@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		dmic0 = &dmic_dev;
+	};
+};
+
+/*
+ * MICFIL (PDM) shares pins with FLEXCAN1 on the i.MX95 EVK. Disable
+ * FLEXCAN1 so the PDM_CLK/PDM_BIT_STREAM0 pins can be used for MICFIL.
+ */
+&flexcan1 {
+	status = "disabled";
+};
+
+dmic_dev: &pdm {
+	channel0: pdm-channel@0 {
+		status = "okay";
+	};
+
+	channel1: pdm-channel@1 {
+		status = "okay";
+	};
+};

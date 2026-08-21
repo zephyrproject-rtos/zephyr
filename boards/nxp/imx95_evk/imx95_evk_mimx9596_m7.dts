@@ -245,6 +245,19 @@
 	status = "okay";
 };
 
+/*
+ * NOTE: PDM shares the PDM_CLK/PDM_BIT_STREAM0 pins with FLEXCAN1.
+ * The PDM_CAN_SEL line (gpio_can bit 10) selects between them:
+ *   0 = PDM
+ *   1 = FLEXCAN1
+ * To use PDM, FLEXCAN1 must be disabled and PDM_CAN_SEL set to 0 (PDM).
+ */
+&pdm {
+	status = "okay";
+	pinctrl-0 = <&pinmux_pdm>;
+	pinctrl-names = "default";
+};
+
 &tpm2 {
 	pinctrl-0 = <&tpm2_default>;
 	pinctrl-names = "default";
