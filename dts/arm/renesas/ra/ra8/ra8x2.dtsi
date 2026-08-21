@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/clock/ra_clock.h>
 #include <zephyr/dt-bindings/pwm/ra_pwm.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/adc/renesas-adc-b.h>
 
 / {
 	cpus {
@@ -240,6 +241,93 @@
 			#gpio-cells = <2>;
 			ngpios = <8>;
 			status = "disabled";
+		};
+
+		adc: adc@40338000 {
+			compatible = "renesas,ra-adc-b-controller";
+			reg = <0x40338000 0x2224>;
+			clocks = <&pclka MSTPD 21>;
+			clock-div = <3>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			scan_group0: scan-group@0 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <0>;
+				status = "disabled";
+			};
+
+			scan_group1: scan-group@1 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <1>;
+				status = "disabled";
+			};
+
+			scan_group2: scan-group@2 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <2>;
+				status = "disabled";
+			};
+
+			scan_group3: scan-group@3 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <3>;
+				status = "disabled";
+			};
+
+			scan_group4: scan-group@4 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <4>;
+				status = "disabled";
+			};
+
+			scan_group5: scan-group@5 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <5>;
+				status = "disabled";
+			};
+
+			scan_group6: scan-group@6 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <6>;
+				status = "disabled";
+			};
+
+			scan_group7: scan-group@7 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <7>;
+				status = "disabled";
+			};
+
+			scan_group8: scan-group@8 {
+				compatible = "renesas,ra-adc-b-scan-group";
+				reg = <8>;
+				status = "disabled";
+			};
+
+			adc0: adc-unit0 {
+				compatible = "renesas,ra-adc-b";
+				unit-id = <0>;
+				channel-available-mask = <0x7f503f>; /* 0-5, 12, 14, 16-22 */
+				vref-mv = <3300>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			adc1: adc-unit1 {
+				compatible = "renesas,ra-adc-b";
+				unit-id = <1>;
+				channel-available-mask = <0x7fafc0>; /* 6-11, 13, 15, 16-22 */
+				vref-mv = <3300>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		iic0: iic0@4025e000 {
