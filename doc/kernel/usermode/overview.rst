@@ -3,7 +3,7 @@
 Overview
 ########
 
-Threat Model
+Thread Model
 ************
 
 User mode threads are considered to be untrusted by Zephyr and are therefore
