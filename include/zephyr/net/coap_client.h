@@ -196,6 +196,8 @@ struct coap_client_internal_request {
 	/* For GETs with observe option set */
 	bool is_observe;
 	int last_response_id;
+	uint8_t observe_token[COAP_TOKEN_MAX_LEN]; /* registration token snapshot */
+	uint8_t observe_tkl;
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	bool is_mcast;
 	k_timepoint_t mcast_timeout;
