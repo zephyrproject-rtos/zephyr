@@ -1,0 +1,12 @@
+board:
+  name: nrf54l15_discovery
+  full_name: nRF54L15 Discovery
+  vendor: ie
+  socs:
+    - name: nrf52820
+    - name: nrf54l15
+      variants:
+        - name: xip
+          cpucluster: cpuflpr
+        - name: ns
+          cpucluster: cpuapp
