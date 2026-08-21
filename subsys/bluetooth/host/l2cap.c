@@ -122,11 +122,21 @@ static uint8_t get_ident(void)
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+#define L2CAP_LE_CID_DYN_COUNT (L2CAP_LE_CID_DYN_END - L2CAP_LE_CID_DYN_START + 1U)
+
+static inline uint16_t bt_l2cap_le_cid_increase(uint16_t cid_index)
+{
+	return (uint16_t)(((uint32_t)cid_index + 1) % L2CAP_LE_CID_DYN_COUNT);
+}
+
 static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 						     struct bt_l2cap_chan *chan)
 {
 	struct bt_l2cap_le_chan *le_chan = BT_L2CAP_LE_CHAN(chan);
 	uint16_t cid;
+	uint16_t sentinel;
+	size_t index;
+	static uint16_t le_cid_index_next[CONFIG_BT_MAX_CONN];
 
 	/*
 	 * No action needed if there's already a CID allocated, e.g. in
@@ -136,12 +146,19 @@ static struct bt_l2cap_le_chan *l2cap_chan_alloc_cid(struct bt_conn *conn,
 		return le_chan;
 	}
 
-	for (cid = L2CAP_LE_CID_DYN_START; cid <= L2CAP_LE_CID_DYN_END; cid++) {
-		if (!bt_l2cap_le_lookup_rx_cid(conn, cid)) {
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(le_cid_index_next), "Index is out of bounds");
+
+	sentinel = le_cid_index_next[index];
+
+	do {
+		cid = le_cid_index_next[index] + L2CAP_LE_CID_DYN_START;
+		le_cid_index_next[index] = bt_l2cap_le_cid_increase(le_cid_index_next[index]);
+		if (bt_l2cap_le_lookup_rx_cid(conn, cid) == NULL) {
 			le_chan->rx.cid = cid;
 			return le_chan;
 		}
-	}
+	} while (le_cid_index_next[index] != sentinel);
 
 	return NULL;
 }
