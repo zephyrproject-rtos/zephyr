@@ -192,6 +192,7 @@
 		reg = <0x4d000 0x1000>;
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
 		status = "disabled";
+		zephyr,pm-device-runtime-auto;
 	};
 
 	wdt0: watchdog@3000 {
