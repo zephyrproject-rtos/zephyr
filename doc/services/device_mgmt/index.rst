@@ -14,3 +14,4 @@ Device Management
     dfu.rst
     ota.rst
     ec_host_cmd.rst
+    bmc.rst
