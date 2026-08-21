@@ -53,6 +53,13 @@ LOG_MODULE_REGISTER(bt_smp);
 
 #define SMP_TIMEOUT K_SECONDS(30)
 
+/* Number of confirm/random rounds in the LE Secure Connections Passkey Entry
+ * protocol. The passkey is a 6-digit decimal number, which is carried one bit
+ * per round, least significant bit first.
+ * Core Spec 6.3, Vol 3, Part H, 2.3.5.6.3.
+ */
+#define SMP_PASSKEY_ROUNDS 20U
+
 #if defined(CONFIG_BT_SIGNING)
 #define SIGN_DIST BT_SMP_DIST_SIGN
 #else
@@ -2190,6 +2197,11 @@ static uint8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
+		if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+			LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		/*
 		 * In the Passkey Entry protocol, the most significant
 		 * bit of Z is set equal to one and the least
@@ -3855,6 +3867,11 @@ static uint8_t sc_smp_check_confirm(struct bt_smp *smp)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
+		if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+			LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		/*
 		 * In the Passkey Entry protocol, the most significant
 		 * bit of Z is set equal to one and the least
@@ -3972,8 +3989,13 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
+			if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+				LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
 			smp->passkey_round++;
-			if (smp->passkey_round == 20U) {
+			if (smp->passkey_round == SMP_PASSKEY_ROUNDS) {
 				break;
 			}
 
@@ -4013,24 +4035,33 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
+		if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+			LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		err = sc_smp_check_confirm(smp);
 		if (err) {
 			return err;
 		}
 
-		atomic_set_bit(smp->allowed_cmds,
-			       BT_SMP_CMD_PAIRING_CONFIRM);
 		err = smp_send_pairing_random(smp);
 		if (err) {
 			return err;
 		}
 
 		smp->passkey_round++;
-		if (smp->passkey_round == 20U) {
+		if (smp->passkey_round == SMP_PASSKEY_ROUNDS) {
 			atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;
 		}
+
+		/* Only accept another confirm if a round is actually left,
+		 * otherwise a peer can keep the protocol going past the last
+		 * passkey bit.
+		 */
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
 		if (bt_rand(smp->prnd, 16)) {
 			return BT_SMP_ERR_UNSPECIFIED;
