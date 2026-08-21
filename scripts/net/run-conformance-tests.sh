@@ -6,7 +6,7 @@
 # but from a developer's own checkout. See the documentation under
 # doc/services/connectivity/networking/conformance for what the suites are.
 
-all_suites="mdns dns sntp coap dhcpv4 arp tcp"
+all_suites="mdns dns sntp coap dhcpv4 dhcpv4_server arp tcp"
 suites=""
 outdir=""
 keep=0

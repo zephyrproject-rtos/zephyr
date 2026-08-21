@@ -24,7 +24,7 @@ What a run needs
 * **make**, because that is how Titan builds a suite.
 * **The** ``zeth`` **interface**, or ``zethL2`` for the two suites that work
   below the IP layer. See :ref:`ttcn3_interfaces`.
-* **Root**, for the three suites that cannot avoid a privileged port or a
+* **Root**, for the four suites that cannot avoid a privileged port or a
   packet socket.
 * **expect**, for the one suite that runs through Titan's main controller.
 
@@ -143,7 +143,7 @@ picks up all six.
 Running as root
 ===============
 
-Three suites have to be run as root. DHCP is defined on ports 67 and 68 and
+Four suites have to be run as root. DHCP is defined on ports 67 and 68 and
 there is no way to move it elsewhere, so the tester cannot avoid binding a
 privileged port; and reading frames off a link needs a packet socket. Those
 tests skip themselves when they are not run with enough privilege.

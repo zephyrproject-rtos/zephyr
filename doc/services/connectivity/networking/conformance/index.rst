@@ -88,6 +88,11 @@ socket on a link of its own.
      - ``zeth``
      - root
      - 3
+   * - ``dhcpv4_server``
+     - :zephyr_file:`tests/net/conformance/dhcpv4_server`
+     - ``zeth``
+     - root
+     - 9
    * - ``arp``
      - :zephyr_file:`tests/net/conformance/arp`
      - ``zethL2``
@@ -183,6 +188,29 @@ it doubles.
 * ``tc_unanswered_discover_is_repeated``
 * ``tc_discover_is_well_formed``
 * ``tc_exchange_completes``
+
+DHCPv4 server
+=============
+
+The mirror image of the suite above: the application starts the server and the
+tester is the client. Every test case appears as a client of its own, with its
+own hardware address, so that none depends on what an earlier one left behind.
+The pool is larger than the default because the server keeps its bindings for
+the life of the run.
+
+Each message the tester sends asks for a broadcast reply, which is what a
+client with no address of its own does, and what lets the tester see an answer
+addressed to an address no host on the link holds.
+
+* ``tc_discover_is_offered_an_address``
+* ``tc_request_completes_the_exchange``
+* ``tc_the_same_client_is_offered_the_same_address``
+* ``tc_another_client_is_offered_another_address``
+* ``tc_init_reboot_request_is_acknowledged``
+* ``tc_request_from_another_subnet_is_refused``
+* ``tc_release_gives_the_address_back``
+* ``tc_decline_takes_the_address_out_of_the_pool``
+* ``tc_inform_is_answered_without_a_lease``
 
 ARP
 ===
