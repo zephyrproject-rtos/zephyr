@@ -281,8 +281,8 @@ docutils==0.22.4 \
     #   sphinx-togglebutton
     #   sphinxcontrib-programoutput
     #   strictdoc
-doxmlparser==1.17.0 \
-    --hash=sha256:376b12f43ee037fb98f471512e257ba022245829940532019241f17be5a93b24
+doxmlparser==1.18.0 \
+    --hash=sha256:ade561ed7153a53b6f4f7c20d4d66d774e40a3a14170b4d3b700b191e5248865
     # via -r requirements.in
 elementpath==5.1.3 \
     --hash=sha256:35e98cc2e26332305a49b32eaaebfb7289d1963c88d3989ff5ccb02c46809820 \
@@ -1103,9 +1103,9 @@ rdflib==7.6.0 \
     --hash=sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd \
     --hash=sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df
     # via spdx-tools
-reqif==0.0.53 \
-    --hash=sha256:25cb49353c92e5a21a28857771025a45d77c737303f486f956894e172a5f3bd9 \
-    --hash=sha256:7ec324b267bdafdaacb64e3fafe4f5c00586f678329d40b1939f71b413371834
+reqif==0.1.0 \
+    --hash=sha256:419e8fb838fdb1c0cd6b79ae8c0fb06c9c01dca78690e7e6bae80bf8878d3ca5 \
+    --hash=sha256:c3af000d745e107c3d409535acc54274f469522385e6bb3923f5d3918219a189
     # via strictdoc
 requests==2.34.2 \
     --hash=sha256:2a0d60c172f83ac6ab31e4554906c0f3b3588d37b5cb939b1c061f4907e278e0 \
@@ -1264,9 +1264,9 @@ starlette==1.4.1 \
     # via
     #   fastapi
     #   sphinx-autobuild
-strictdoc==0.27.1 \
-    --hash=sha256:1e7d6ffe2d70bff177613bb70e979b85f72ed61c46338771ed10bef43e73636f \
-    --hash=sha256:cfbce1d7ec37287e4039dafcfff14683dcb63e14c7bd32ce70fe081a4a5b52ec
+strictdoc==0.28.0 \
+    --hash=sha256:29d0622dc75bd965f20fb7a9a041a98d04dbe05bfa653e023209600e13431654 \
+    --hash=sha256:afe28487dc14c7da4cb8e35a0f475f478477565f64505316a812d4699a345855
     # via -r requirements.in
 textx==4.4.0 \
     --hash=sha256:a7b15a4698b503edde631d5227c0d0f6024898a86a7924b5fc741973305f9286 \
