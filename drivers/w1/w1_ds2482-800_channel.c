@@ -17,7 +17,7 @@
 LOG_MODULE_DECLARE(ds2482, CONFIG_W1_LOG_LEVEL);
 
 struct ds2482_config {
-	struct w1_master_config w1_config;
+	struct w1_controller_config w1_config;
 	const struct device *parent;
 	const struct i2c_dt_spec i2c_spec;
 	uint8_t reg_channel;
@@ -26,7 +26,7 @@ struct ds2482_config {
 };
 
 struct ds2482_data {
-	struct w1_master_data w1_data;
+	struct w1_controller_data w1_data;
 };
 
 static int ds2482_reset_bus(const struct device *dev)
@@ -161,7 +161,7 @@ static DEVICE_API(w1, ds2482_driver_api) = {
 
 #define DS2482_CHANNEL_INIT(inst)                                                                  \
 	static const struct ds2482_config inst_##inst##_config = {                                 \
-		.w1_config.slave_count = W1_INST_SLAVE_COUNT(inst),                                \
+		.w1_config.peripheral_count = W1_INST_PERIPHERAL_COUNT(inst),                      \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 		.i2c_spec = I2C_DT_SPEC_GET(DT_INST_PARENT(inst)),                                 \
 		.reg_channel = UTIL_CAT(CHSL_IO, DT_INST_REG_ADDR_RAW(inst)),                      \
