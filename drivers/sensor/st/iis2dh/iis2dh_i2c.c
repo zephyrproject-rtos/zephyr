@@ -35,12 +35,6 @@ static int iis2dh_i2c_write(const struct device *dev, uint8_t reg_addr, uint8_t 
 	return i2c_burst_write_dt(&config->i2c, reg_addr | 0x80, value, len);
 }
 
-stmdev_ctx_t iis2dh_i2c_ctx = {
-	.read_reg = (stmdev_read_ptr) iis2dh_i2c_read,
-	.write_reg = (stmdev_write_ptr) iis2dh_i2c_write,
-	.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay,
-};
-
 int iis2dh_i2c_init(const struct device *dev)
 {
 	struct iis2dh_data *data = dev->data;
@@ -51,7 +45,11 @@ int iis2dh_i2c_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	data->ctx = &iis2dh_i2c_ctx;
+	data->ctx_i2c.read_reg = (stmdev_read_ptr) iis2dh_i2c_read;
+	data->ctx_i2c.write_reg = (stmdev_write_ptr) iis2dh_i2c_write;
+	data->ctx_i2c.mdelay = (stmdev_mdelay_ptr) stmemsc_mdelay;
+
+	data->ctx = &data->ctx_i2c;
 	data->ctx->handle = (void *)dev;
 
 	return 0;

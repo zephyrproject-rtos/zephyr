@@ -62,6 +62,14 @@ struct iis2dh_data {
 	uint32_t gain;
 
 	stmdev_ctx_t *ctx;
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	stmdev_ctx_t ctx_i2c;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	stmdev_ctx_t ctx_spi;
+#endif
+
 #ifdef CONFIG_IIS2DH_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;
