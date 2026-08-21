@@ -462,6 +462,11 @@ static void rfcomm_dlc_rtx_timeout(struct k_work *work)
 	struct bt_rfcomm_dlc *dlc = DLC_RTX(work);
 	struct bt_rfcomm_session *session = dlc->session;
 
+	if (!session) {
+		LOG_WRN("dlc %p timeout but session already gone", dlc);
+		return;
+	}
+
 	LOG_WRN("dlc %p state %d timeout", dlc, dlc->state);
 
 	rfcomm_dlcs_remove_dlci(session, dlc->dlci);
