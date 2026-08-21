@@ -17,6 +17,7 @@
  * @file
  *
  * @brief Public APIs for the SPI emulation drivers.
+ * @ingroup spi_emul_interface
  */
 
 /**
@@ -36,12 +37,13 @@ struct spi_emul_api;
 
 /** Node in a linked list of emulators for SPI devices */
 struct spi_emul {
+	/** Node in the controller's linked list of emulators */
 	sys_snode_t node;
 
 	/** Target emulator - REQUIRED for all bus emulators */
 	const struct emul *target;
 
-	/* API provided for this device */
+	/** API provided for this device */
 	const struct spi_emul_api *api;
 
 	/**
@@ -50,7 +52,7 @@ struct spi_emul {
 	 */
 	struct spi_emul_api *mock_api;
 
-	/* SPI chip-select of the emulated device */
+	/** SPI chip-select of the emulated device */
 	uint16_t chipsel;
 };
 
@@ -84,6 +86,7 @@ int spi_emul_register(const struct device *dev, struct spi_emul *emul);
 
 /** Definition of the emulator API */
 struct spi_emul_api {
+	/** Passes SPI messages to the emulator */
 	spi_emul_io_t io;
 };
 
