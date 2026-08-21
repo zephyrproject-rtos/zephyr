@@ -151,6 +151,10 @@ Removed APIs and options
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
     * ``CONFIG_CS_CTR_DRBG_PERSONALIZATION``
 
+* Shell
+
+    * ``kernel log_level``, replaced by ``log enable``
+
 * Stream Flash
 
     * ``stream_flash_erase_page()``
