@@ -44,6 +44,9 @@ tests:
       - stm32l562e_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
+      - lp_mspm0g3519
+      - lp_mspm0g3507
+      - lp_mspm0l2228
     integration_platforms:
       - nucleo_h753zi
     extra_configs:
