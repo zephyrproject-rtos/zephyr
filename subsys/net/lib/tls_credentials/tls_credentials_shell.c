@@ -77,6 +77,8 @@ BUILD_ASSERT(
  */
 static char cred_out_buf[CONFIG_TLS_CREDENTIALS_SHELL_CRED_OUTPUT_WIDTH + 1];
 static char cred_digest_buf[CONFIG_TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE + 1];
+BUILD_ASSERT(CONFIG_TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE >= 3,
+	     "CONFIG_TLS_CREDENTIALS_SHELL_DIGEST_BUF_SIZE must be >= 3 to hold \"N/A\"");
 
 /* Internal buffer used for storing and retrieving credentials.
  * +1 byte for potential NULL termination.
