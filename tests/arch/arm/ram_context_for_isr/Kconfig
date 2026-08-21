@@ -1,0 +1,31 @@
+# Copyright (c) 2025 Muhmmad Waleed Badar
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_IRQ_NUM
+	int "Test IRQ number"
+	depends on !TEST_FIND_FREE_IRQ
+	help
+	  IRQ number to use for testing purposes. This should be an
+	  available/unused IRQ on the target platform.
+
+config TEST_IRQ_PRIO
+	int "Test IRQ priority"
+	default 1
+	help
+	  Platform-specific defaults:
+	  - GIC platforms: IRQ_DEFAULT_PRIORITY (system default)
+	  - Other platforms: 1 (high priority for testing)
+
+config TEST_FIND_FREE_IRQ
+	bool "Find a free IRQ during test initialization"
+	default y
+	depends on CPU_CORTEX_M
+	help
+	  Test environment can find a free IRQ to run the tests. Platforms willing to
+	  use a specific IRQ for this test should have this configuration disabled
+	  and set the target IRQ number in TEST_IRQ_NUM.
+
+	  This option is available only on Cortex-M based platforms.
