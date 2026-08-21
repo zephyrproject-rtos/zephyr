@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Linumiz
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+# Infineon CAT1C CYT4DN based MCU default configuration
+
+if SOC_SERIES_CYT4DN
+
+# Multi-level interrupt bit allocation:
+# L1: 5 bits (covers 16 L1 lines on M7 and M0+)
+# L2: 10 bits (covers 794 system interrupts)
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 5
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 10
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 794
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 8
+
+# Offset in _sw_isr_table for 2nd level system interrupts:
+# M7 and M0P: 16 (NvicMux 0-7 + Internal 0-7)
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 16
+
+# Aggregator N maps to NvicMux line N
+config 2ND_LVL_INTR_00_OFFSET
+	default 0
+
+config 2ND_LVL_INTR_01_OFFSET
+	default 1
+
+config 2ND_LVL_INTR_02_OFFSET
+	default 2
+
+config 2ND_LVL_INTR_03_OFFSET
+	default 3
+
+config 2ND_LVL_INTR_04_OFFSET
+	default 4
+
+config 2ND_LVL_INTR_05_OFFSET
+	default 5
+
+config 2ND_LVL_INTR_06_OFFSET
+	default 6
+
+config 2ND_LVL_INTR_07_OFFSET
+	default 7
+
+config NUM_IRQS
+	default 6368
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if SOC_CYT4DN_CORE_M0PLUS
+	default $(dt_node_int_prop_int,/cpus/cpu@1,clock-frequency) if SOC_CYT4DN_CORE_M7_0
+	default $(dt_node_int_prop_int,/cpus/cpu@2,clock-frequency) if SOC_CYT4DN_CORE_M7_1
+
+config INFINEON_INTC_CAT1
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config BUILD_OUTPUT_HEX
+	default y
+
+config CLOCK_CONTROL
+	default y
+
+config ARM_MPU
+	default y
+
+endif # SOC_SERIES_CYT4DN
