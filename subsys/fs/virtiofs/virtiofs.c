@@ -77,17 +77,11 @@ static int virtiofs_validate_response(
 	return 0;
 }
 
-struct recv_cb_param {
-	struct k_sem sem;
-	uint32_t used_len;
-};
-
 void virtiofs_recv_cb(void *opaque, uint32_t used_len)
 {
-	struct recv_cb_param *arg = opaque;
+	struct k_poll_signal *sig = opaque;
 
-	arg->used_len = used_len;
-	k_sem_give(&arg->sem);
+	k_poll_signal_raise(sig, used_len);
 }
 
 /* Largest buffer chain built by any of the FUSE requests below. */
@@ -98,10 +92,12 @@ static uint32_t virtiofs_send_receive(
 	uint16_t bufs_size, uint16_t device_readable)
 {
 	struct virtq *virtqueue = virtio_get_virtqueue(dev, virtq);
-	struct recv_cb_param cb_arg;
+	struct k_poll_signal sig;
+	struct k_poll_event event;
 	struct virtq_buf bounce_bufs[VIRTIOFS_MAX_CHAIN_BUFS];
 	size_t total_len = 0;
-	uint32_t used_len;
+	unsigned int signaled;
+	int used_len;
 
 	__ASSERT(bufs_size <= ARRAY_SIZE(bounce_bufs),
 		 "buffer chain longer than VIRTIOFS_MAX_CHAIN_BUFS");
@@ -136,16 +132,20 @@ static uint32_t virtiofs_send_receive(
 		offset += bufs[i].len;
 	}
 
-	k_sem_init(&cb_arg.sem, 0, 1);
+	/* A poll signal is used rather than a semaphore as it, unlike kernel
+	 * objects, may live on the stack.
+	 */
+	k_poll_signal_init(&sig);
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &sig);
 
 	virtq_add_buffer_chain(
-		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &cb_arg,
+		virtqueue, bounce_bufs, bufs_size, device_readable, virtiofs_recv_cb, &sig,
 		K_FOREVER
 	);
 	virtio_notify_virtqueue(dev, virtq);
 
-	k_sem_take(&cb_arg.sem, K_FOREVER);
-	used_len = cb_arg.used_len;
+	(void)k_poll(&event, 1, K_FOREVER);
+	k_poll_signal_check(&sig, &signaled, &used_len);
 
 	/* Propagate whatever the device wrote back to the caller's buffers. */
 	offset = 0;
