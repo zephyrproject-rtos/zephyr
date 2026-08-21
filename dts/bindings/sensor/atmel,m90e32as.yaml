@@ -1,0 +1,32 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ATM90E32AS Energy Metering IC
+  Enhanced Poly-Phase High-Performance Wide-Span
+  3-Phase Smart Energy Meter
+
+compatible: "atmel,m90e32as"
+
+include: ["sensor-device.yaml", "spi-device.yaml", "atmel,m90exx-common.yaml"]
+
+properties:
+  cf3-gpios:
+    type: phandle-array
+    description: "Active Fundamental Energy Pulse Output"
+
+  cf4-gpios:
+    type: phandle-array
+    description: "Active Harmonic Energy Pulse Output"
+
+  irq1-gpios:
+    type: phandle-array
+    description: "Interrupt Output 1"
+
+  pm0-gpios:
+    type: phandle-array
+    description: "Power Mode Configuration 0"
+
+  pm1-gpios:
+    type: phandle-array
+    description: "Power Mode Configuration 1"
