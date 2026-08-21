@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: Copyright 2025 - 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_CDC_ECM_CLASS
+	bool "USB Communication Device Class (ECM) support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select NET_L2_ETHERNET
+	help
+	  USB Host Communication Device Class - Ethernet Control Mode (CDC-ECM)
+	  implementation.
+
+	  Enables support for USB CDC-ECM devices (for example, USB Ethernet
+	  adapters) and exposes them as Ethernet network interfaces.
+
+if USBH_CDC_ECM_CLASS
+
+config USBH_CDC_ECM_ETH_DRV_NAME
+	string "Ethernet interface name"
+	default "usbh_cdc_ecm_eth"
+	help
+	  This option sets the driver name and name of the network interface
+	  in your host system. If there are multiple network interfaces
+	  defined, then this value is used as a prefix and the interface names
+	  will be usbh_cdc_ecm_eth0, usbh_cdc_ecm_eth1, etc.
+
+config USBH_CDC_ECM_MAX_SEGMENT_SIZE
+	int "Maximum supported Ethernet frame size"
+	default 1514
+	range 60 1522
+	help
+	  Maximum Ethernet frame size (excluding FCS) supported by the host.
+
+	  Typical values (excluding FCS):
+
+	  - 60: Minimum Ethernet frame size
+	  - 1514: Standard Ethernet frame (1500 MTU + 14-byte header)
+	  - 1522: Ethernet frame with VLAN tag (802.1Q)
+
+	  Used as an upper bound for wMaxSegmentSize in the Ethernet Networking
+	  Functional Descriptor.
+
+	  The effective frame size is limited by both the device-reported value
+	  and this host setting.
+
+config USBH_CDC_ECM_DEFAULT_MAC_ADDR_UNICODE_LANGID
+	hex "Default LANGID for MAC address string descriptor"
+	default 0x0409
+	help
+	  This option specifies the default USB language ID (LANGID) used to
+	  retrieve the MAC address string descriptor from the CDC-ECM device.
+
+	  If the device does not support the configured LANGID, the driver will
+	  automatically fall back to one of the supported LANGIDs reported by
+	  the device.
+
+	  Common values:
+
+	  - 0x0409: English (United States) [default]
+	  - 0x0804: Chinese (Simplified)
+
+config USBH_CDC_ECM_MAX_MULTICAST_FILTERS
+	int "Maximum number of multicast filters"
+	default 32
+	range 4 256
+	help
+	  Maximum number of multicast MAC addresses tracked per CDC-ECM
+	  instance. These addresses are programmed into the device via the
+	  SET_ETHERNET_MULTICAST_FILTERS class request.
+
+	  The effective number of filters applied to the device is limited by
+	  wNumberMCFilters reported in the Ethernet Networking Functional
+	  Descriptor.
+
+config USBH_CDC_ECM_TX_PIPELINE_DEPTH
+	int "TX pipeline depth"
+	default 1
+	range 1 16
+	help
+	  Number of concurrent USB bulk OUT transfers used for packet
+	  transmission.
+
+	  Increasing this value improves throughput by allowing multiple
+	  packets to be in flight simultaneously, reducing USB bus idle time.
+
+	  Higher values increase memory usage and latency per packet.
+
+	  Typical values:
+
+	  - 1: TX pipeline disabled
+	  - >1: TX pipeline enabled
+
+config USBH_CDC_ECM_RX_PIPELINE_DEPTH
+	int "RX pipeline depth"
+	default 1
+	range 1 16
+	help
+	  Number of concurrent USB bulk IN transfers used for packet reception.
+
+	  Higher values reduce the likelihood of packet drops by ensuring
+	  buffers are available for incoming data and minimizing USB receive
+	  stalls.
+
+	  Increasing this value improves throughput and robustness under high
+	  traffic load, at the cost of additional memory usage.
+
+	  Typical values:
+
+	  - 1: RX pipeline disabled
+	  - >1: RX pipeline enabled
+
+module = USBH_CDC_ECM
+module-str = "usbh cdc_ecm"
+default-count = 1
+source "subsys/logging/Kconfig.template.log_config"
+source "subsys/usb/common/Kconfig.template.instances_count"
+
+endif # USBH_CDC_ECM_CLASS
