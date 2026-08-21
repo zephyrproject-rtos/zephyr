@@ -21,6 +21,7 @@ void __stdout_hook_install(int (*hook)(int))
 	_stdout_hook = hook;
 }
 
+__attribute__((weak))
 volatile int *__aeabi_errno_addr(void)
 {
 	return &_current->errno_var;
