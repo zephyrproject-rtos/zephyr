@@ -135,6 +135,14 @@
 	status = "okay";
 };
 
+&pll2 {
+	div-m = <5>;
+	mul-n = <294>;
+	div-q = <25>;  /* Tuned for 44.1kHz 16b stereo w/ MCK on I2S6 */
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &pll3 {
 	div-m = <12>;
 	mul-n = <25>;
@@ -257,6 +265,21 @@ st_cam_i2c: &i2c1 {
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
+
+	audio_codec: wm8904g@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		status = "okay";
+	};
+};
+
+&i2s6 {
+	clocks = <&rcc STM32_CLOCK(APB4, 5)>,
+		 <&rcc STM32_SRC_PLL2_Q SPI6_SEL(1)>;
+	pinctrl-0 = <&i2s6_mck_pa3 &i2s6_ws_pa4 &i2s6_ck_pa5 &i2s6_sdo_pb5 &i2s6_sdi_pg12>;
+	pinctrl-names = "default";
+	mck-enabled;
+	status = "okay";
 };
 
 &fdcan1 {
