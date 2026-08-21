@@ -5,6 +5,7 @@ menuconfig ETH_NXP_ENET_QOS
 	bool "NXP ENET QOS Ethernet Driver"
 	default y
 	depends on DT_HAS_NXP_ENET_QOS_ENABLED
+	depends on SOC_FAMILY_MCXA || SOC_FAMILY_MCXN
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select PINCTRL
 	help

@@ -292,10 +292,27 @@
 	};
 
 	emac: emac@480000 {
-		compatible = "nxp,emac", "snps,dwmac";
+		compatible = "nxp,enet-qos", "snps,dwmac";
 		reg = <0x480000 0x120c>;
-		interrupts = <105 0>;
+		clocks = <&mc_cgm MCUX_EMAC_CLK>,
+			 <&mc_cgm MCUX_EMACTX_CLK>,
+			 <&mc_cgm MCUX_EMACRX_CLK>,
+			 <&mc_cgm MCUX_EMACTS_CLK>;
+		clock-names = "mac-clk", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
+		interrupts = <105 0>, <106 0>, <107 0>;
+		interrupt-names = "common", "tx", "rx";
 		status = "disabled";
+
+		mdio: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		ptp_clock: ptp-clock {
+			compatible = "snps,dwmac-ptp-clock";
+		};
 	};
 
 	emios_0: emios@88000 {

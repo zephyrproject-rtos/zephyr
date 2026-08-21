@@ -186,6 +186,29 @@
 	status = "okay";
 };
 
+&emac {
+	pinctrl-0 = <&pinmux_emac>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&pinmux_emac_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* Microchip LAN8741 */
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		reset-gpios = <&gpioc_l 3 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <25000>;
+		reset-deassertion-timeout-ms = <25>;
+	};
+};
+
 /*
  * SAI0 on header J1: D0 = PTB2, BCLK = PTC12, SYNC = PTC13. The
  * transmitter drives all three pads and each pad's input buffer feeds
