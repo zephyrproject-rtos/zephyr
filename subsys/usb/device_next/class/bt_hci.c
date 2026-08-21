@@ -74,8 +74,9 @@ UDC_BUF_POOL_DEFINE(bt_hci_out_ep_pool,
  * The TX queue carries Controller-to-Host ACL data and events. Size the
  * pool for the largest complete HCI packet.
  */
-UDC_BUF_POOL_DEFINE(bt_hci_tx_pool,
-		    2, MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE),
+UDC_BUF_POOL_DEFINE(bt_hci_in_pool,
+		    CONFIG_USBD_BT_HCI_IN_BUF_COUNT,
+		    MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE),
 		    sizeof(struct udc_buf_info), NULL);
 
 /* HCI RX/TX threads */
@@ -115,7 +116,6 @@ struct bt_hci_data {
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
 	uint16_t out_rem;
-	struct k_sem sync_sem;
 	atomic_t state;
 };
 
@@ -174,14 +174,13 @@ static size_t bt_hci_get_bulk_mps(struct usbd_class_data *const c_data)
 	return BT_HCI_EP_FS_MPS_ACL_DATA;
 }
 
-static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
-			      struct net_buf *const bt_buf, const uint8_t ep)
+static void bt_hci_tx_in(struct usbd_class_data *const c_data,
+			 struct net_buf *const bt_buf, const uint8_t ep)
 {
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
 	struct net_buf *buf;
 
-	buf = net_buf_alloc(&bt_hci_tx_pool, K_NO_WAIT);
+	buf = net_buf_alloc(&bt_hci_in_pool, K_FOREVER);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return;
@@ -193,11 +192,8 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
 	if (usbd_ep_enqueue(c_data, buf)) {
 		LOG_ERR("Failed to enqueue transfer");
-	} else {
-		k_sem_take(&hci_data->sync_sem, K_FOREVER);
+		net_buf_unref(buf);
 	}
-
-	net_buf_unref(buf);
 }
 
 static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
@@ -218,17 +214,17 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 		switch (type) {
 		case BT_HCI_H4_EVT:
 			ep = bt_hci_get_int_in(c_data);
+			bt_hci_tx_in(c_data, bt_buf, ep);
 			break;
 		case BT_HCI_H4_ACL:
 			ep = bt_hci_get_bulk_in(c_data);
+			bt_hci_tx_in(c_data, bt_buf, ep);
 			break;
 		default:
 			LOG_ERR("Unsupported type %u", type);
-			net_buf_unref(bt_buf);
-			continue;
+			break;
 		}
 
-		bt_hci_tx_sync_in(c_data, bt_buf, ep);
 		net_buf_unref(bt_buf);
 	}
 }
@@ -396,20 +392,20 @@ static int bt_hci_request(struct usbd_class_data *const c_data,
 			  struct net_buf *buf, int err)
 {
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
-	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 	struct udc_buf_info *bi;
 
 	bi = udc_get_buf_info(buf);
 
-	if (USB_EP_DIR_IS_OUT(bi->ep)) {
-		return bt_hci_acl_out_cb(c_data, buf, err);
+	if (err) {
+		if (err == -ECONNABORTED) {
+			LOG_DBG("ep 0x%02x transfer cancelled", bi->ep);
+		} else {
+			LOG_ERR("ep 0x%02x transfer failed", bi->ep);
+		}
 	}
 
-	if (bi->ep == bt_hci_get_bulk_in(c_data) ||
-	    bi->ep == bt_hci_get_int_in(c_data)) {
-		k_sem_give(&hci_data->sync_sem);
-
-		return 0;
+	if (USB_EP_DIR_IS_OUT(bi->ep)) {
+		return bt_hci_acl_out_cb(c_data, buf, err);
 	}
 
 	return usbd_ep_buf_free(uds_ctx, buf);
@@ -669,7 +665,6 @@ const static __maybe_unused struct usb_desc_header *bt_hci_hs_desc_##n[] = {	\
 
 #define BT_HCI_CLASS_DATA_DEFINE(n)						\
 	static struct bt_hci_data bt_hci_data_##n = {				\
-		.sync_sem = Z_SEM_INITIALIZER(bt_hci_data_##n.sync_sem, 0, 1),	\
 		.desc = &bt_hci_desc_##n,					\
 		.fs_desc = bt_hci_fs_desc_##n,					\
 		.hs_desc = COND_CODE_1(USBD_SUPPORTS_HIGH_SPEED,		\

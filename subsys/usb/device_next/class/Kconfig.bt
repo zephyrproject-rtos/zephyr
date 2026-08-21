@@ -41,6 +41,13 @@ config USBD_BT_HCI_OUT_BUF_COUNT
 	help
 	  Number of UDC request buffers in the OUT pool.
 
+config USBD_BT_HCI_IN_BUF_COUNT
+	int "Number of buffers in the IN pool"
+	range 1 $(UINT8_MAX)
+	default 3
+	help
+	  Number of UDC request buffers in the IN pool.
+
 module = USBD_BT_HCI
 module-str = usbd bt hci
 source "subsys/logging/Kconfig.template.log_config"
