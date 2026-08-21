@@ -3162,15 +3162,30 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req = net_buf_add(req_buf, sizeof(*req));
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
+	/* Mark the procedure state BEFORE sending the PDU.
+	 *
+	 * bt_l2cap_send_pdu() does not transmit synchronously: it queues the
+	 * PDU and calls k_work_submit() to run the TX work on the system work
+	 * queue, which also runs bt_smp_recv(). That work queue has a higher
+	 * priority than this initiator thread, so the submit can preempt us
+	 * before the trailing set_bit() runs. If the work queue then stays busy,
+	 * the peer Pairing Request answering our Security Request is handled by
+	 * bt_smp_recv() while PAIRING_REQ is still cleared, and gets silently
+	 * dropped. Setting it before bt_l2cap_send_pdu() makes the allowed
+	 * command visible before the request can be on air; roll back on a send
+	 * failure so that PAIRING_REQ stays allowed only while SEC_REQ is set.
+	 */
+	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
+		atomic_clear_bit(smp->flags, SMP_FLAG_SEC_REQ);
+		atomic_clear_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 		return err;
 	}
-
-	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
-	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 
 	return 0;
 }
