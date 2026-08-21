@@ -151,11 +151,18 @@ int hl78xx_rat_cfg(struct hl78xx_data *data, bool *modem_require_restart,
 	const struct hl78xx_config *config = data->devices.hl78xx->config;
 
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT)
-	/* Check autorat status/configs */
-	if (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL) ||
-	    (data->kselacq_data.rat1 == HL78XX_KSELACQ_RAT_CLEAR &&
-	     data->kselacq_data.rat2 == HL78XX_KSELACQ_RAT_CLEAR &&
-	     data->kselacq_data.rat3 == HL78XX_KSELACQ_RAT_CLEAR)) {
+	/* Check autorat status/configs.
+	 *
+	 * autorat_inhibit is set while the application is deliberately running
+	 * the modem with a cleared PRL (NB-NTN). Without this guard the restart
+	 * that latches the RAT change would immediately re-apply the terrestrial
+	 * PRL here and undo it, plus request another restart.
+	 */
+	if (!data->autorat_inhibit &&
+	    (IS_ENABLED(CONFIG_MODEM_HL78XX_AUTORAT_OVER_WRITE_PRL) ||
+	     (data->kselacq_data.rat1 == HL78XX_KSELACQ_RAT_CLEAR &&
+	      data->kselacq_data.rat2 == HL78XX_KSELACQ_RAT_CLEAR &&
+	      data->kselacq_data.rat3 == HL78XX_KSELACQ_RAT_CLEAR))) {
 		char cmd_kselq[] = "AT+KSELACQ=0," CONFIG_MODEM_HL78XX_AUTORAT_PRL_PROFILES;
 
 		ret = modem_dynamic_cmd_send(data, NULL, cmd_kselq, strlen(cmd_kselq),
@@ -429,10 +436,12 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 		safe_strncpy(data->identity.apn, apn, sizeof(data->identity.apn));
 	}
 	k_mutex_unlock(&data->api_lock);
-
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"", MODEM_HL78XX_ADDRESS_FAMILY);
+#else
 	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"", MODEM_HL78XX_ADDRESS_FAMILY,
 		 apn);
-
+#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
@@ -466,6 +475,27 @@ error:
 	return ret;
 }
 
+/* Response window for AT+CGACT=1,1.
+ *
+ * On GSM the HL7812 runs the whole PDP activation inside this one command and
+ * goes completely silent while it does - no responses, not even URCs. A cell
+ * that cannot complete the activation is abandoned by the modem after its own
+ * 180 s timeout (3GPP T3380, 30 s x 5, plus margin), measured to the
+ * millisecond on two separate failures, and only then does it answer ERROR.
+ *
+ * Anything shorter makes the driver give up while the modem is still working
+ * and start sending commands into an interface that cannot receive them. Those
+ * commands are answered minutes later, against whichever script happens to be
+ * running by then, which desynchronises the whole command stream. Waiting the
+ * modem out is what keeps that from happening: the sync path holds tx_lock for
+ * the duration, so every other command fails cleanly with -EBUSY instead of
+ * being queued behind an activation that is still in flight.
+ *
+ * A healthy activation answers in 0.5-3 s, so this window only costs anything
+ * when the attach is genuinely failing.
+ */
+#define HL78XX_PDP_ACTIVATE_TIMEOUT 190
+
 int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 {
 	int ret = 0;
@@ -478,15 +508,31 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 		return 0;
 	}
 
+	/* Match on the full terminal set, not just OK. A refused activation comes
+	 * back as "ERROR" or "+CME ERROR: <n>", and with only OK matched the
+	 * script would sit out its whole window on a verdict the modem has
+	 * already given. Matching them as responses also keeps the outcome
+	 * classified: the script completes, the terminal result is recorded, and
+	 * the caller gets -EIO for a refusal - distinct from -EAGAIN, which then
+	 * means the modem never answered at all.
+	 */
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_activate_pdp, strlen(cmd_activate_pdp),
-				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
-				     MDM_CMD_TIMEOUT, false);
+				     hl78xx_get_allow_match(), hl78xx_get_allow_match_size(),
+				     HL78XX_PDP_ACTIVATE_TIMEOUT, false);
 	if (ret < 0) {
-		LOG_ERR("GSM PDP activation failed: %d", ret);
+		LOG_ERR("GSM PDP activation failed: %d (%s)", ret,
+			ret == -EIO ? "refused by the network" : "no verdict from the modem");
 		return ret;
 	}
+
+	/* status.gprs[] is left to AT+CGACT?, which runs on every wake. Latching
+	 * it here would suppress a needed re-activation after a +CGEV PDN
+	 * deactivation, and a redundant AT+CGACT=1,1 on a live context is
+	 * answered immediately.
+	 */
 	return 0;
 }
+
 
 #if defined(CONFIG_MODEM_HL78XX_APN_SOURCE_ICCID) || defined(CONFIG_MODEM_HL78XX_APN_SOURCE_IMSI)
 /* Find APN from profile string based on associated number prefix */
@@ -699,6 +745,16 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 	pd_evt.content.power_down_event = POWER_DOWN_EVENT_ENTER;
 	event_dispatcher_dispatch(&pd_evt);
 
+	/* From here the shutdown owns the modem. A command still in flight would
+	 * otherwise keep the chat when the shutdown work runs and the power off
+	 * script would be refused with -EBUSY - GSM PDP activation in particular
+	 * holds the interface for up to 190 s, far longer than the confirm window
+	 * below. The decision to power down has already been taken, so stop
+	 * waiting on it and let the interface go.
+	 */
+	data->status.lpm.power_down.shutdown_pending = true;
+	hl78xx_chat_abort_active_script(data);
+
 	/* Give the application time to perform graceful teardown (e.g. cloud
 	 * disconnect).
 	 */
@@ -787,6 +843,13 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 		(void)k_work_reschedule(&data->work.power_down_shutdown_work, K_SECONDS(timeout_s));
 		return 0;
 
+	case HL78XX_POWER_DOWN_RESPONSE_ABORT:
+		LOG_INF("Power down aborted by application");
+		(void)k_work_cancel_delayable(&data->work.power_down_shutdown_work);
+		data->status.lpm.power_down.shutdown_pending = false;
+		hl78xx_power_down_allow_feeding(data);
+		return 0;
+
 	default:
 		return -EINVAL;
 	}
@@ -827,6 +890,7 @@ int hl78xx_init_power_down(struct hl78xx_data *data)
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_NONE;
 	data->status.lpm.power_down.previous = POWER_DOWN_EVENT_NONE;
 	data->status.lpm.power_down.is_power_down_requested = false;
+	data->status.lpm.power_down.shutdown_pending = false;
 	return 0;
 }
 
@@ -870,7 +934,20 @@ int hl78xx_power_down_feed_timer(struct hl78xx_data *data, uint32_t cmd_timeout_
 	}
 
 	if (hl78xx_is_registered(data) == false) {
-		LOG_DBG("Not feeding timer because modem is not registered");
+		/* The backstop exists to power down a registered-but-idle modem,
+		 * and only a registration ever arms it. If registration is gone,
+		 * its arming condition is gone with it: cancel rather than let a
+		 * timer fed by a now-dead registration (e.g. a stale +CREG
+		 * flushed during a SIM switch) fire mid-search 55 s later. An
+		 * application-triggered shutdown never reaches this branch — it
+		 * sets ignore_power_down_feeding first and returns above.
+		 */
+		if (k_work_delayable_is_pending(&data->work.hl78xx_pwr_dwn_work)) {
+			(void)k_work_cancel_delayable(&data->work.hl78xx_pwr_dwn_work);
+			LOG_INF("Cancelled power-down backstop: registration gone");
+		} else {
+			LOG_DBG("Not feeding timer because modem is not registered");
+		}
 		return 0;
 	}
 	/* If the modem was sleeping, pull WAKE HIGH first to wake it */
@@ -1028,6 +1105,19 @@ void hl78xx_psmev_init(struct hl78xx_data *data)
 
 #endif /* CONFIG_MODEM_HL78XX_PSM */
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
+
+void hl78xx_reset_modem_session_state(struct hl78xx_data *data)
+{
+	/* See hl78xx.h: cached functionality is unverifiable across a power
+	 * boundary, so mark it invalid rather than guessing a boot value.
+	 * The field itself is parked on FULLY_FUNCTIONAL — the modem's boot
+	 * default, and the conservative value for readers that don't check
+	 * `valid` (it can never falsely report the RF path as free for GNSS).
+	 */
+	data->status.phone_functionality.valid = false;
+	data->status.phone_functionality.in_progress = false;
+	data->status.phone_functionality.functionality = HL78XX_FULLY_FUNCTIONAL;
+}
 
 bool hl78xx_is_rsrp_value_valid(int16_t rsrp)
 {
@@ -2087,6 +2177,25 @@ int hl78xx_recover_kbndcfg(struct hl78xx_data *data, const struct hl78xx_script_
 		LOG_WRN("No band configuration was written during recovery");
 		return -ENOTSUP;
 	}
+	return 0;
+}
+
+int hl78xx_recover_init_script_retry(struct hl78xx_data *data,
+				     const struct hl78xx_script_failure *failure)
+{
+	ARG_UNUSED(data);
+	ARG_UNUSED(failure);
+
+	/* Nothing to repair — the observed failure is the modem intermittently
+	 * never answering a single init-script command (AT+CCID right after a
+	 * GNSS teardown in particular). A plain re-run of the init script is
+	 * the recovery; resume_state performs it. If the AT channel is
+	 * genuinely wedged the retry times out as well, the attempt budget
+	 * runs out and hl78xx_handle_recovery_unavailable() falls back to the
+	 * reset pulse — exactly the pre-rule behaviour, just no longer the
+	 * first resort.
+	 */
+	LOG_WRN("Init script command unanswered; retrying init script");
 	return 0;
 }
 

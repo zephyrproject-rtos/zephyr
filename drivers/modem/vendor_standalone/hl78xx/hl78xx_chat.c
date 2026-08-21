@@ -343,7 +343,10 @@ MODEM_CHAT_MATCH_DEFINE(hl78xx_cimi_match, "", "", hl78xx_on_imsi);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmi_match, "", "", hl78xx_on_cgmi);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_cgmr_match, "", "", hl78xx_on_cgmr);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_serial_number_match, "+KGSN: ", "", hl78xx_on_serial_number);
-MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", "", hl78xx_on_iccid);
+/* An eUICC answers AT+CCID with "<iccid>,<eid>". Split on the comma so argv[1] is
+ * always the bare ICCID; a single-SIM response simply yields argc 2 instead of 3.
+ */
+MODEM_CHAT_MATCH_DEFINE(hl78xx_iccid_match, "+CCID: ", ",", hl78xx_on_iccid);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrep_match, "+KSREP: ", ",", hl78xx_on_ksrep);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ksrat_match, "+KSRAT: ", "", hl78xx_on_ksrat);
 MODEM_CHAT_MATCH_DEFINE(hl78xx_kselacq_match, "+KSELACQ: ", ",", hl78xx_on_kselacq);
@@ -446,6 +449,7 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
 /* Post-restart script (moved from hl78xx.c) */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_at_ready_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", hl78xx_ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSRAT?", hl78xx_ksrat_match),
 #ifdef CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+KSTATEV=1", hl78xx_ok_match)
@@ -879,6 +883,19 @@ int hl78xx_run_pwroff_script_async(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script_async(&data->chat, &hl78xx_pwroff_script);
 }
+
+void hl78xx_chat_abort_active_script(struct hl78xx_data *data)
+{
+	if (!data) {
+		return;
+	}
+
+	/* Safe with no script running: the abort handler checks for that. A
+	 * synchronous caller blocked on the script returns as soon as this is
+	 * processed, releasing tx_lock and the chat.
+	 */
+	modem_chat_script_abort(&data->chat);
+}
 /* Run the LTE disable GSM enable registration status script */
 int hl78xx_run_lte_dis_gsm_en_reg_status_script(struct hl78xx_data *data)
 {
@@ -1040,6 +1057,23 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 		.success_event = MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
 		.resume_state = MODEM_HL78XX_STATE_SOFT_RESET,
 		.max_attempts = 1U,
+	},
+	{
+		/* AT+CCID intermittently goes unanswered when the init script
+		 * runs right after a GNSS teardown. Retry the script (no reset
+		 * needed: resume directly in RUN_INIT_SCRIPT) before falling
+		 * back to the reset pulse.
+		 */
+		.failed_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.failed_request = "AT+CCID",
+		.failed_script_chat_index = HL78XX_SCRIPT_CHAT_INDEX_ANY,
+		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) |
+			       HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_ABORT),
+		.action = hl78xx_recover_init_script_retry,
+		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
+		.success_event = MODEM_HL78XX_EVENT_SCRIPT_SUCCESS,
+		.resume_state = MODEM_HL78XX_STATE_RESET_PULSE,
+		.max_attempts = 2U,
 	},
 };
 
