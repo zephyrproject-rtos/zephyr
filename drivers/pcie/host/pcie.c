@@ -378,9 +378,12 @@ static bool scan_bus(uint8_t bus, const struct pcie_scan_opt *opt);
 
 static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 {
+	uint8_t deferred_buses[PCIE_MAX_FUNC + 1];
+	uint8_t deferred_count = 0;
+	uint8_t secondary = 0;
+
 	for (uint8_t func = 0; func <= PCIE_MAX_FUNC; func++) {
 		pcie_bdf_t bdf = PCIE_BDF(bus, dev, func);
-		uint32_t secondary = 0;
 		uint32_t id, type;
 		bool do_cb;
 
@@ -395,12 +398,8 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 			do_cb = true;
 			break;
 		case PCIE_CONF_TYPE_PCI_BRIDGE:
-			if (scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
-				uint32_t num = pcie_conf_read(bdf,
-							      PCIE_BUS_NUMBER);
-				secondary = PCIE_BUS_SECONDARY_NUMBER(num);
-			}
-			__fallthrough;
+			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
+			break;
 		default:
 			do_cb = scan_flag(opt, PCIE_SCAN_CB_ALL);
 			break;
@@ -410,15 +409,26 @@ static bool scan_dev(uint8_t bus, uint8_t dev, const struct pcie_scan_opt *opt)
 			return false;
 		}
 
-		if (scan_flag(opt, PCIE_SCAN_RECURSIVE) && secondary != 0) {
-			if (!scan_bus(secondary, opt)) {
-				return false;
+		if (PCIE_CONF_TYPE_GET(type) == PCIE_CONF_TYPE_PCI_BRIDGE &&
+		    scan_flag(opt, PCIE_SCAN_RECURSIVE)) {
+			uint32_t num = pcie_conf_read(bdf, PCIE_BUS_NUMBER);
+
+			secondary = PCIE_BUS_SECONDARY_NUMBER(num);
+
+			if (secondary != 0) {
+				deferred_buses[deferred_count++] = secondary;
 			}
 		}
 
 		/* Only function 0 is valid for non-multifunction devices */
 		if (func == 0 && !PCIE_CONF_MULTIFUNCTION(type)) {
 			break;
+		}
+	}
+
+	for (uint8_t idx = 0; idx < deferred_count; idx++) {
+		if (!scan_bus(deferred_buses[idx], opt)) {
+			return false;
 		}
 	}
 
