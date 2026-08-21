@@ -104,6 +104,14 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* Build system
+
+    * ``CONFIG_BUILD_NO_GAP_FILL``
+    * ``cmake/app/boilerplate.cmake``
+    * Board revision Kconfig fragments named ``<board>_<revision>.conf``, replaced by
+      ``<board>_<revision>_defconfig``
+    * Pattern expansion in ``zephyr_code_relocate(FILES ...)``, replaced by ``file(GLOB ...)``
+
 * Comparator
 
     * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
