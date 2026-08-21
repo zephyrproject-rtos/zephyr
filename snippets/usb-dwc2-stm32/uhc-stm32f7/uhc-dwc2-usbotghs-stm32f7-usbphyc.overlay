@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Configure the STM32 OTG_HS controller (usbotg_hs) to use the native DWC2
+ * host driver (uhc_dwc2).
+ *
+ * This is the generic, SoC-level part. It wires the controller to the embedded
+ * USB high-speed PHY (USBPHYC), so it applies to STM32F7 SoCs that integrate
+ * this PHY: STM32F723, F730, and F733. VBUS power switching is board specific
+ * and is added by the per-board overlay.
+ */
+
+&usbphyc {
+	status = "okay";
+};
+
+zephyr_uhc0: &usbotg_hs {
+	compatible = "st,stm32f7-hsotg", "snps,dwc2";
+	/delete-property/ num-bidir-endpoints;
+	/delete-property/ ram-size;
+	/delete-property/ maximum-speed;
+	phys = <&usbphyc>;
+	num-in-eps = <9>;
+	num-out-eps = <9>;
+	ghwcfg1 = <0x00000000>;
+	ghwcfg2 = <0x229fe1d0>;
+	ghwcfg4 = <0x23f00030>;
+	dr-mode = "host";
+	status = "okay";
+};
