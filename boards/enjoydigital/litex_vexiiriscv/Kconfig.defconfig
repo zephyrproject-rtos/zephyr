@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LITEX_VEXIIRISCV
+
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # BOARD_LITEX_VEXIIRISCV
