@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(spi_mcux_ecspi, CONFIG_SPI_LOG_LEVEL);
 #include "spi_context.h"
 
 #define SPI_MCUX_ECSPI_MAX_BURST 4096
+#define SPI_MCUX_ECSPI_MAX_RX_THRESHOLD                                                            \
+	(ECSPI_DMAREG_RX_THRESHOLD_MASK >> ECSPI_DMAREG_RX_THRESHOLD_SHIFT)
 
 struct spi_mcux_config {
 	ECSPI_Type *base;
@@ -29,15 +31,129 @@ struct spi_mcux_config {
 };
 
 struct spi_mcux_data {
-	ecspi_master_handle_t handle;
 	struct spi_context ctx;
 
 	uint16_t dfs;
 	uint16_t word_size;
+	uint16_t max_frames;
 
-	uint32_t rx_data;
-	uint32_t tx_data;
+	/* Bytes of the burst in flight still to be read from the Rx FIFO. */
+	uint16_t rx_bytes;
 };
+
+/*
+ * The MCUX driver sets the burst length and the Rx threshold from
+ * ECSPI_MasterInit() only, which resets the peripheral, and it never uses the
+ * exchange bit. Sizing a burst per transfer reaches those fields itself.
+ */
+static inline void spi_mcux_use_xch_start(ECSPI_Type *base)
+{
+	base->CONREG &= ~ECSPI_CONREG_SMC_MASK;
+}
+
+static inline void spi_mcux_set_burst_length(ECSPI_Type *base, uint16_t bits)
+{
+	base->CONREG = (base->CONREG & ~ECSPI_CONREG_BURST_LENGTH_MASK) |
+		       ECSPI_CONREG_BURST_LENGTH(bits - 1U);
+}
+
+static inline void spi_mcux_set_rx_threshold(ECSPI_Type *base, uint8_t words)
+{
+	base->DMAREG = (base->DMAREG & ~ECSPI_DMAREG_RX_THRESHOLD_MASK) |
+		       ECSPI_DMAREG_RX_THRESHOLD(words);
+}
+
+static inline void spi_mcux_start_burst(ECSPI_Type *base)
+{
+	base->CONREG |= ECSPI_CONREG_XCH_MASK;
+}
+
+static inline uint32_t frame_get(const uint8_t *buf, uint16_t dfs)
+{
+	switch (dfs) {
+	case 1U:
+		return UNALIGNED_GET((uint8_t *)buf);
+	case 2U:
+		return UNALIGNED_GET((uint16_t *)buf);
+	default:
+		return UNALIGNED_GET((uint32_t *)buf);
+	}
+}
+
+static inline void frame_put(uint8_t *buf, uint16_t dfs, uint32_t frame)
+{
+	switch (dfs) {
+	case 1U:
+		UNALIGNED_PUT(frame, (uint8_t *)buf);
+		break;
+	case 2U:
+		UNALIGNED_PUT(frame, (uint16_t *)buf);
+		break;
+	default:
+		UNALIGNED_PUT(frame, (uint32_t *)buf);
+		break;
+	}
+}
+
+/*
+ * A burst goes out most significant frame first, and one that is not a multiple
+ * of 32 bits long carries its leading frames right-aligned in its first FIFO
+ * word. Both FIFOs follow that layout, so the bytes a FIFO word holds follow
+ * from what is left of the burst.
+ */
+static inline uint8_t fifo_word_bytes(uint16_t bytes_left)
+{
+	uint8_t bytes = bytes_left % sizeof(uint32_t);
+
+	return (bytes == 0U) ? (uint8_t)sizeof(uint32_t) : bytes;
+}
+
+static void spi_mcux_fill_burst(const struct device *dev, uint16_t bytes)
+{
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	const uint16_t dfs = data->dfs;
+
+	while (bytes != 0U) {
+		uint8_t word_bytes = fifo_word_bytes(bytes);
+		uint32_t word = 0U;
+
+		for (int shift = (int)word_bytes - (int)dfs; shift >= 0; shift -= (int)dfs) {
+			if (spi_context_tx_buf_on(ctx)) {
+				word |= frame_get(ctx->tx_buf, dfs) << (8 * shift);
+			}
+
+			spi_context_update_tx(ctx, dfs, 1);
+		}
+
+		ECSPI_WriteData(config->base, word);
+		bytes -= word_bytes;
+	}
+}
+
+static void spi_mcux_drain_burst(const struct device *dev)
+{
+	const struct spi_mcux_config *config = dev->config;
+	struct spi_mcux_data *data = dev->data;
+	struct spi_context *ctx = &data->ctx;
+	const uint16_t dfs = data->dfs;
+
+	while ((data->rx_bytes != 0U) && (ECSPI_GetRxFifoCount(config->base) != 0U)) {
+		uint8_t word_bytes = fifo_word_bytes(data->rx_bytes);
+		uint32_t word = ECSPI_ReadData(config->base);
+
+		for (int shift = (int)word_bytes - (int)dfs; shift >= 0; shift -= (int)dfs) {
+			if (spi_context_rx_buf_on(ctx)) {
+				frame_put(ctx->rx_buf, dfs, word >> (8 * shift));
+			}
+
+			spi_context_update_rx(ctx, dfs, 1);
+		}
+
+		data->rx_bytes -= word_bytes;
+	}
+}
 
 static inline uint16_t bytes_per_word(uint16_t bits_per_word)
 {
@@ -57,86 +173,44 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	struct spi_mcux_data *data = dev->data;
 	ECSPI_Type *base = config->base;
 	struct spi_context *ctx = &data->ctx;
-	ecspi_transfer_t transfer;
-	status_t status;
+	uint16_t frames;
 
 	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
 		/* nothing left to rx or tx, we're done! */
+		ECSPI_DisableInterrupts(base, kECSPI_RxFifoDataRequstInterruptEnable);
 		spi_context_cs_control(&data->ctx, false);
 		spi_context_complete(&data->ctx, dev, 0);
 		return;
 	}
 
-	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->slave;
+	ECSPI_SetChannelSelect(base, spi_cs_is_gpio(ctx->config)
+					     ? kECSPI_Channel0
+					     : (ecspi_channel_source_t)ctx->config->slave);
 
-	if (spi_context_rx_buf_on(ctx)) {
-		transfer.rxData = &data->rx_data;
-	} else {
-		transfer.rxData = NULL;
-	}
+	/* One burst per chunk: a burst is one chip-select window and, preloaded
+	 * into the Tx FIFO, one interrupt.
+	 */
+	frames = MIN(spi_context_max_continuous_chunk(ctx), data->max_frames);
+	data->rx_bytes = frames * data->dfs;
 
-	if (spi_context_tx_buf_on(ctx)) {
-		switch (data->dfs) {
-		case 1U:
-			data->tx_data = UNALIGNED_GET((uint8_t *)ctx->tx_buf);
-			break;
-		case 2U:
-			data->tx_data = UNALIGNED_GET((uint16_t *)ctx->tx_buf);
-			break;
-		case 4U:
-			data->tx_data = UNALIGNED_GET((uint32_t *)ctx->tx_buf);
-			break;
-		}
+	spi_mcux_set_burst_length(base, frames * data->word_size);
+	spi_mcux_set_rx_threshold(base, DIV_ROUND_UP(data->rx_bytes, sizeof(uint32_t)) - 1U);
 
-		transfer.txData = &data->tx_data;
-	} else {
-		transfer.txData = NULL;
-	}
+	spi_mcux_fill_burst(dev, data->rx_bytes);
 
-	/* Burst length is set in the configure step */
-	transfer.dataSize = 1;
-
-	status = ECSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
-	if (status != kStatus_Success) {
-		LOG_ERR("Transfer could not start");
-		spi_context_cs_control(&data->ctx, false);
-		spi_context_complete(&data->ctx, dev, -EIO);
-	}
+	/* The Tx FIFO holds all of the burst now, so start it. */
+	spi_mcux_start_burst(base);
 }
 
 static void spi_mcux_isr(const struct device *dev)
 {
-	const struct spi_mcux_config *config = dev->config;
-	struct spi_mcux_data *data = dev->data;
-	ECSPI_Type *base = config->base;
-
-	ECSPI_MasterTransferHandleIRQ(base, &data->handle);
-}
-
-static void spi_mcux_master_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *handle,
-					      status_t status, void *user_data)
-{
-	const struct device *dev = (const struct device *)user_data;
 	struct spi_mcux_data *data = dev->data;
 
-	if (spi_context_rx_buf_on(&data->ctx)) {
-		switch (data->dfs) {
-		case 1:
-			UNALIGNED_PUT(data->rx_data, (uint8_t *)data->ctx.rx_buf);
-			break;
-		case 2:
-			UNALIGNED_PUT(data->rx_data, (uint16_t *)data->ctx.rx_buf);
-			break;
-		case 4:
-			UNALIGNED_PUT(data->rx_data, (uint32_t *)data->ctx.rx_buf);
-			break;
-		}
+	spi_mcux_drain_burst(dev);
+
+	if (data->rx_bytes == 0U) {
+		spi_mcux_transfer_next_packet(dev);
 	}
-
-	spi_context_update_tx(&data->ctx, data->dfs, 1);
-	spi_context_update_rx(&data->ctx, data->dfs, 1);
-
-	spi_mcux_transfer_next_packet(dev);
 }
 
 static int spi_mcux_configure(const struct device *dev,
@@ -213,12 +287,31 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	ECSPI_MasterInit(base, &master_config, clock_freq);
-	ECSPI_MasterTransferCreateHandle(base, &data->handle,
-					 spi_mcux_master_transfer_callback,
-					 (void *)dev);
+
+	/* Start a burst from the exchange bit instead of from the first Tx FIFO
+	 * write, so that it starts only once all of it is in the FIFO. A burst
+	 * under way then never waits for software to refill it, whatever preempts
+	 * the driver, and cannot stall with the chip select asserted.
+	 */
+	spi_mcux_use_xch_start(base);
 
 	data->word_size = word_size;
 	data->dfs = bytes_per_word(word_size);
+
+	/* Only frames that fill their bytes pack into FIFO words; the rest keep
+	 * a burst each. A preloaded burst is bounded by the FIFO depth, by the
+	 * Rx threshold field and by the burst length field.
+	 */
+	if (word_size == data->dfs * BITS_PER_BYTE) {
+		uint32_t words = MIN(FSL_FEATURE_ECSPI_TX_FIFO_SIZEn(base),
+				     SPI_MCUX_ECSPI_MAX_RX_THRESHOLD + 1U);
+
+		data->max_frames = MIN(SPI_MCUX_ECSPI_MAX_BURST / word_size,
+				       words * sizeof(uint32_t) / data->dfs);
+	} else {
+		data->max_frames = 1U;
+	}
+
 	data->ctx.config = spi_cfg;
 
 	return 0;
@@ -232,6 +325,7 @@ static int transceive(const struct device *dev,
 		      spi_callback_t cb,
 		      void *userdata)
 {
+	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	int ret;
 
@@ -244,6 +338,9 @@ static int transceive(const struct device *dev,
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, data->dfs);
 	spi_context_cs_control(&data->ctx, true);
+
+	/* The Rx threshold is set per burst, so this fires once a burst is in. */
+	ECSPI_EnableInterrupts(config->base, kECSPI_RxFifoDataRequstInterruptEnable);
 
 	spi_mcux_transfer_next_packet(dev);
 	ret = spi_context_wait_for_completion(&data->ctx);
