@@ -29,21 +29,6 @@ properties:
   clocks:
     required: true
 
-  ti,clk-range:
-    type: int
-    required: true
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
-    description: |
-      0 - MSP_ADC_CLOCK_RANGE_1TO4
-      1 - MSP_ADC_CLOCK_RANGE_4TO8
-      2 - MSP_ADC_CLOCK_RANGE_8TO16
-      3 - MSP_ADC_CLOCK_RANGE_16TO20
-      4 - MSP_ADC_CLOCK_RANGE_20TO24
-      5 - MSP_ADC_CLOCK_RANGE_24TO32
-      6 - MSP_ADC_CLOCK_RANGE_32TO40
-      7 - MSP_ADC_CLOCK_RANGE_40TO48
-      ADC clock range.
-
   ti,clk-divider:
     type: int
     default: 1
@@ -57,10 +42,9 @@ properties:
       - 32
       - 48
     description: |
-      Divider applied to the ADC sample clock source. Together with
-      ti,clk-range it sets the ADC sample clock: the effective sampling
-      period scales with this divider. A value of 1 leaves the clock
-      undivided.
+      Divider applied to the ADC sample clock source; the effective
+      sampling period scales with this divider. A value of 1 leaves the
+      clock undivided.
 
   auto-powerdown:
     type: boolean
