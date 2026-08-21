@@ -201,7 +201,7 @@ static inline void tcc_enable(void *pwm_reg, bool enable)
 static inline void tcc_sync_wait(void *pwm_reg)
 {
 
-	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) != 0), TIMEOUT_VALUE_US,
+	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) == 0), TIMEOUT_VALUE_US,
 		      k_busy_wait(DELAY_US))) {
 		LOG_ERR("TCC_SYNCBUSY wait timed out");
 	}
@@ -211,16 +211,20 @@ static inline void tcc_sync_wait(void *pwm_reg)
 /**
  *Set the output inversion for a specific PWM channel.
  */
-static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel)
+static int32_t tcc_set_invert(void *pwm_reg, uint32_t channel, bool invert)
 {
 	uint32_t invert_mask = 1 << (channel + TCC_DRVCTRL_INVEN0_Pos);
 
 	tcc_enable(pwm_reg, false);
 	tcc_sync_wait(pwm_reg);
-	PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	if (invert) {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL |= invert_mask;
+	} else {
+		PWM_REG(pwm_reg)->TCC_DRVCTRL &= ~invert_mask;
+	}
 	tcc_enable(pwm_reg, true);
 	tcc_sync_wait(pwm_reg);
-	LOG_DBG("tcc set invert 0x%x invoked", invert_mask);
+	LOG_DBG("tcc set invert 0x%x to %d invoked", invert_mask, (int)invert);
 
 	return MCHP_PWM_SUCCESS;
 }
@@ -287,13 +291,31 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 	} else {
 
 		bool invert_flag_set = ((flags & PWM_POLARITY_INVERTED) != 0);
-		bool not_inverted = tcc_get_invert_status(mchp_pwm_cfg->regs, channel);
+		bool is_inverted = !tcc_get_invert_status(mchp_pwm_cfg->regs, channel);
 
-		if ((invert_flag_set == true) && (not_inverted == true)) {
-			tcc_set_invert(mchp_pwm_cfg->regs, channel);
+		if (invert_flag_set != is_inverted) {
+			tcc_set_invert(mchp_pwm_cfg->regs, channel, invert_flag_set);
 		}
 
-		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
+		/*
+		 * In NPWM (single-slope) mode the output is active while COUNT < CC, so
+		 * CC == period leaves exactly one counter tick per period at the inactive
+		 * level - a glitch measured on hardware as one comparator edge per PWM
+		 * period. The Zephyr PWM API requires pulse == period to mean a constant
+		 * active level, so write period + 1 whenever pulse >= period, which keeps
+		 * COUNT < CC true for the whole period. When period is already the
+		 * counter maximum, CC and PER share the same bit width on this part, so
+		 * period + 1 does not fit and would wrap to 0 (constant inactive, worse
+		 * than the glitch); keep CC == period in that one corner case and accept
+		 * the pre-existing single-tick glitch there.
+		 */
+		uint32_t ccbuf_val = pulse;
+
+		if (pulse >= period) {
+			ccbuf_val = (period < top) ? (period + 1) : period;
+		}
+
+		PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(ccbuf_val);
 		PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
 		ret_val = MCHP_PWM_SUCCESS;
 	}
