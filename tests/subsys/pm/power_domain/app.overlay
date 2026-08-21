@@ -34,4 +34,16 @@
 		status = "okay";
 		power-domains = <&test_domain_balanced>;
 	};
+
+	test_domain_async: test_domain_async {
+		compatible = "power-domain";
+		status = "okay";
+		#power-domain-cells = <0>;
+	};
+
+	test_dev_async: test_dev_async {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_domain_async>;
+	};
 };
