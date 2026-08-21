@@ -70,6 +70,23 @@ static inline int z_vrfy_haptics_set_level(const struct device *dev, const enum 
 
 #include <zephyr/syscalls/haptics_set_level_mrsh.c>
 
+static inline int z_vrfy_haptics_set_trigger(const struct device *dev, const uint32_t trigger,
+					     const enum haptics_trigger_type type,
+					     const enum haptics_source src,
+					     const union haptics_config *const cfg,
+					     const uint32_t level)
+{
+	K_OOPS(K_SYSCALL_DRIVER_HAPTICS(dev, set_trigger));
+
+	if (cfg != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(cfg, sizeof(*cfg)));
+	}
+
+	return z_impl_haptics_set_trigger(dev, trigger, type, src, cfg, level);
+}
+
+#include <zephyr/syscalls/haptics_set_trigger_mrsh.c>
+
 static inline int z_vrfy_haptics_start_output(const struct device *dev)
 {
 	K_OOPS(K_SYSCALL_DRIVER_HAPTICS(dev, start_output));
@@ -99,3 +116,13 @@ static inline int z_vrfy_haptics_stream_samples(const struct device *dev,
 }
 
 #include <zephyr/syscalls/haptics_stream_samples_mrsh.c>
+
+static inline int z_vrfy_haptics_trigger(const struct device *dev, const uint32_t trigger,
+					 const enum haptics_trigger_type type)
+{
+	K_OOPS(K_SYSCALL_DRIVER_HAPTICS(dev, trigger));
+
+	return z_impl_haptics_trigger(dev, trigger, type);
+}
+
+#include <zephyr/syscalls/haptics_trigger_mrsh.c>
