@@ -1877,18 +1877,31 @@ static int modem_cellular_on_await_registered_state_enter(struct modem_cellular_
 }
 
 static void modem_cellular_await_registered_event_handler(struct modem_cellular_data *data,
-						  enum modem_cellular_event evt)
+							  enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	const struct modem_chat_script *script;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		script = data->event_ptr;
 		modem_cellular_script_success(data);
+		if (script != config->vendor->scripts.periodic) {
+			/* Non-periodic script result (e.g. from modem_cellular_get_signal) */
+			LOG_DBG("Ignoring non-periodic result (%s)", script->name);
+			return;
+		}
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		script = data->event_ptr;
 		modem_cellular_script_failed(data);
+		if (script != config->vendor->scripts.periodic) {
+			/* Non-periodic script result (e.g. from modem_cellular_get_signal) */
+			LOG_DBG("Ignoring non-periodic result (%s)", script->name);
+			return;
+		}
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_IDLE);
 			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_RESUME);
@@ -1967,10 +1980,17 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 {
 	const struct modem_cellular_config *config = data->dev->config;
 	struct cellular_evt_modem_comms_check_result result;
+	const struct modem_chat_script *script;
 	int ret;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
+		script = data->event_ptr;
+		if (script != config->vendor->scripts.periodic) {
+			/* Non-periodic script result (e.g. from modem_cellular_get_signal) */
+			LOG_DBG("Ignoring non-periodic result (%s)", script->name);
+			return;
+		}
 		modem_cellular_script_success(data);
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
 		result.success = true;
@@ -1978,6 +1998,12 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
+		script = data->event_ptr;
+		if (script != config->vendor->scripts.periodic) {
+			/* Non-periodic script result (e.g. from modem_cellular_get_signal) */
+			LOG_DBG("Ignoring non-periodic result (%s)", script->name);
+			return;
+		}
 		modem_cellular_script_failed(data);
 		if (modem_cellular_is_script_retry_exceeded(data)) {
 			net_if_carrier_off(modem_ppp_get_iface(config->ppp));
