@@ -3,8 +3,6 @@
 
 if SOC_FAMILY_ESPRESSIF_ESP32
 
-DT_CHOSEN_Z_CONSOLE := zephyr,console
-
 if !$(dt_chosen_enabled,$(DT_CHOSEN_Z_CONSOLE))
 
 config ESP_CONSOLE_UART_NUM

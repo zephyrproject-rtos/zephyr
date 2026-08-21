@@ -3,13 +3,11 @@
 
 if SOC_SERIES_MCXE24X
 
-DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
-DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
 DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_IS_NXP_LPTMR := \
-	$(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_LPTMR))
+	$(dt_node_has_compat,$(DT_CHOSEN_Z_SYSTEM_TIMER_PATH),$(DT_COMPAT_NXP_LPTMR))
 
 configdefault MCUX_LPTMR_TIMER
-	default y if PM && $(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER)) && \
+	default y if PM && $(dt_chosen_enabled,$(DT_CHOSEN_Z_SYSTEM_TIMER)) && \
 		$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_IS_NXP_LPTMR)
 
 configdefault CORTEX_M_SYSTICK
@@ -17,7 +15,7 @@ configdefault CORTEX_M_SYSTICK
 
 configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
-	default $(dt_node_int_prop_int,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
+	default $(dt_node_int_prop_int,$(DT_CHOSEN_Z_SYSTEM_TIMER_PATH),clock-frequency) if MCUX_LPTMR_TIMER
 
 configdefault SYS_CLOCK_TICKS_PER_SEC
 	default 1000 if MCUX_LPTMR_TIMER

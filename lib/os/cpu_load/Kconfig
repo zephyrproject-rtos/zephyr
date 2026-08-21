@@ -49,9 +49,6 @@ config CPU_LOAD_BACKEND_IDLE_HOOK
 
 endchoice
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CPU_LOAD_COUNTER := zephyr,cpu-load-counter
-
 config CPU_LOAD_USE_COUNTER
 	bool "Use counter"
 	depends on CPU_LOAD_BACKEND_IDLE_HOOK

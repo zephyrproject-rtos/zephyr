@@ -11,8 +11,6 @@ config KERNEL_VM_SUPPORT
 
 if KERNEL_VM_SUPPORT
 
-DT_CHOSEN_Z_SRAM := zephyr,sram
-
 config KERNEL_VM_BASE
 	hex "Virtual address space base address"
 	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_SRAM))

@@ -266,11 +266,9 @@ config SOC_IT8XXX2_SHA256_BLOCK_SIZE
 	default 0x500 if SOC_IT8XXX2_REG_SET_V2
 	default 0x200
 
-DT_CHOSEN_ZEPHYR_FLASH := zephyr,flash
-
 config SOC_IT8XXX2_FLASH_SIZE_BYTES
 	hex
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_ZEPHYR_FLASH))
+	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_FLASH))
 	help
 	  Total size of writable flash.
 
