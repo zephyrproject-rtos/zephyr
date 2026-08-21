@@ -395,6 +395,7 @@ static int oacp_command_decode(const uint8_t *buf, uint16_t len,
 
 		return 0;
 #endif
+#if defined(CONFIG_BT_OTS_OACP_CHECKSUM_SUPPORT)
 	case BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC:
 		if (net_buf.len != BT_GATT_OTS_OACP_CS_CALC_PARAMS_SIZE) {
 			return -EBADMSG;
@@ -405,6 +406,7 @@ static int oacp_command_decode(const uint8_t *buf, uint16_t len,
 			net_buf_simple_pull_le32(&net_buf);
 
 		return 0;
+#endif
 	case BT_GATT_OTS_OACP_PROC_EXECUTE:
 		if (net_buf.len != 0) {
 			return -EBADMSG;
