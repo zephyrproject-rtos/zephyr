@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2022, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,15 +8,16 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/sdhc.h>
-#include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "sdhc_helpers.h"
+
+#include "sdhc_common.h"
+#include "sdhc_standard.h"
+
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST   (PINCTRL_STATE_PRIV_START + 2U)
@@ -62,6 +63,7 @@ struct usdhc_host_transfer {
 struct usdhc_config {
 	DEVICE_MMIO_NAMED_ROM(usdhc_mmio);
 
+	const struct sdhc_common_config sdhc;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint8_t nusdhc;
@@ -75,14 +77,6 @@ struct usdhc_config {
 	uint32_t data_timeout;
 	uint32_t read_watermark;
 	uint32_t write_watermark;
-	uint32_t max_current_330;
-	uint32_t max_current_300;
-	uint32_t max_current_180;
-	uint32_t power_delay_ms;
-	uint32_t min_bus_freq;
-	uint32_t max_bus_freq;
-	bool mmc_hs200_1_8v;
-	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
@@ -110,6 +104,7 @@ struct usdhc_data {
 	usdhc_scatter_gather_data_list_t sg_buf[CONFIG_IMX_USDHC_DMA_SCATTER_GATHER_BUF_COUNT];
 #endif
 #endif
+	struct sdhc_standard_host host;
 };
 
 static USDHC_Type *get_base(const struct device *dev)
@@ -259,47 +254,25 @@ static void imx_usdhc_init_host_props(const struct device *dev)
 {
 	const struct usdhc_config *cfg = dev->config;
 	struct usdhc_data *data = dev->data;
-	usdhc_capability_t caps;
 	struct sdhc_host_props *props = &data->props;
-	USDHC_Type *base = get_base(dev);
 
-	memset(props, 0, sizeof(struct sdhc_host_props));
-	props->f_max = cfg->max_bus_freq;
-	props->f_min = cfg->min_bus_freq;
-	props->max_current_330 = cfg->max_current_330;
-	props->max_current_180 = cfg->max_current_180;
-	props->power_delay = cfg->power_delay_ms;
-	/* Read host capabilities */
-	USDHC_GetCapability(base, &caps);
-#if !(defined(FSL_FEATURE_USDHC_HAS_NO_VS18) && FSL_FEATURE_USDHC_HAS_NO_VS18)
+	/* Device tree properties init */
+	sdhc_common_dt_props_init(props, &cfg->sdhc);
+
+	props->bus_4_bit_support = true;
+
+	/* Host capabilities init */
+	sdhc_standard_capabilities_init(&data->host, &props->host_caps);
+
 	if (cfg->no_180_vol) {
 		props->host_caps.vol_180_support = false;
-	} else {
-		props->host_caps.vol_180_support = (bool)(caps.flags & kUSDHC_SupportV180Flag);
 	}
-#endif
 	if (cfg->no_300_vol) {
 		props->host_caps.vol_300_support = false;
-	} else {
-		props->host_caps.vol_300_support = (bool)(caps.flags & kUSDHC_SupportV300Flag);
 	}
 	if (cfg->no_330_vol) {
 		props->host_caps.vol_330_support = false;
-	} else {
-		props->host_caps.vol_330_support = (bool)(caps.flags & kUSDHC_SupportV330Flag);
 	}
-	props->host_caps.suspend_res_support = (bool)(caps.flags & kUSDHC_SupportSuspendResumeFlag);
-	props->host_caps.sdma_support = (bool)(caps.flags & kUSDHC_SupportDmaFlag);
-	props->host_caps.high_spd_support = (bool)(caps.flags & kUSDHC_SupportHighSpeedFlag);
-	props->host_caps.adma_2_support = (bool)(caps.flags & kUSDHC_SupportAdmaFlag);
-	props->host_caps.max_blk_len = (bool)(caps.maxBlockLength);
-	props->host_caps.ddr50_support = (bool)(caps.flags & kUSDHC_SupportDDR50Flag);
-	props->host_caps.sdr104_support = (bool)(caps.flags & kUSDHC_SupportSDR104Flag);
-	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
-	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
-	props->bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
-	props->hs200_support = (bool)(cfg->mmc_hs200_1_8v);
-	props->hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
@@ -1110,6 +1083,132 @@ static int imx_usdhc_isr(const struct device *dev)
 }
 
 /*
+ * USDHC is 32-bit register based. Accessing any standard 8/16/32/64-bit
+ * register address must be via 32-bit register address. Provided the
+ * two function to support any standard 8/16/32/64-bit register address
+ * access.
+ *
+ * - imx_usdhc_reg32_read
+ * - imx_usdhc_reg32_write
+ */
+static uint64_t imx_usdhc_reg32_read(const struct device *dev, uint32_t reg, uint8_t reg_bytes)
+{
+	uint32_t base = (uint32_t)(void *)get_base(dev);
+	uint32_t reg_addr;
+	uint32_t reg_byte_offset;
+	uint32_t value;
+	uint32_t mask;
+
+	if (reg_bytes == 8) {
+		value = sys_read32(base + reg + 4);
+		return ((uint64_t)value << 32) | sys_read32(base + reg);
+	}
+
+	mask = reg_bytes == 4 ? 0xffffffff :
+		(reg_bytes == 2 ? 0x0000ffff : 0x000000ff);
+	reg_byte_offset = reg % 4;
+	reg_addr = reg - reg_byte_offset;
+	value = sys_read32(base + reg_addr);
+
+	return (value >> (8 * reg_byte_offset)) & mask;
+}
+
+static void imx_usdhc_reg32_write(const struct device *dev, uint32_t reg, uint8_t reg_bytes,
+				  uint64_t value)
+{
+	uint32_t base = (uint32_t)(void *)get_base(dev);
+	uint32_t reg_addr;
+	uint32_t reg_byte_offset;
+	uint32_t reg_value;
+	uint32_t mask;
+
+	if (reg_bytes == 8) {
+		sys_write32(base + reg, value & 0xffffffff);
+		sys_write32(base + reg + 4, (value >> 32)  & 0xffffffff);
+		return;
+	}
+
+	mask = reg_bytes == 4 ? 0xffffffff :
+		(reg_bytes == 2 ? 0x0000ffff : 0x000000ff);
+	reg_byte_offset = reg % 4;
+	reg_addr = reg - reg_byte_offset;
+
+	reg_value = sys_read32(base + reg_addr);
+	reg_value &= ~(mask << reg_byte_offset);
+	reg_value |= ((value & mask) << reg_byte_offset);
+
+	sys_write32(base + reg_addr, reg_value);
+}
+
+/* Standard register access APIs */
+
+static uint8_t imx_usdhc_read8(const struct device *dev, uint32_t reg)
+{
+	return imx_usdhc_reg32_read(dev, reg, 1);
+}
+
+static void imx_usdhc_write8(const struct device *dev, uint32_t reg, uint8_t value)
+{
+	imx_usdhc_reg32_write(dev, reg, 1, value);
+}
+
+static uint16_t imx_usdhc_read16(const struct device *dev, uint32_t reg)
+{
+	return imx_usdhc_reg32_read(dev, reg, 2);
+}
+
+static void imx_usdhc_write16(const struct device *dev, uint32_t reg, uint16_t value)
+{
+	imx_usdhc_reg32_write(dev, reg, 2, value);
+}
+
+static uint32_t imx_usdhc_read32(const struct device *dev, uint32_t reg)
+{
+	return imx_usdhc_reg32_read(dev, reg, 4);
+}
+
+static void imx_usdhc_write32(const struct device *dev, uint32_t reg, uint32_t value)
+{
+	imx_usdhc_reg32_write(dev, reg, 4, value);
+}
+
+static uint64_t imx_usdhc_read64(const struct device *dev, uint32_t reg)
+{
+	if (reg == SDHC_REG_CAPABILITIES) {
+		uint64_t usdhc_caps;
+		uint64_t std_caps;
+
+		/* There is only lower 32-bit capabilities register on usdhc */
+		usdhc_caps = imx_usdhc_reg32_read(dev, reg, 4);
+		/* Keep compatible fields */
+		std_caps = usdhc_caps &
+			(SDHC_REG_CAPABILITIES_MBL_MASK | SDHC_REG_CAPABILITIES_HSS_MASK |
+			 SDHC_REG_CAPABILITIES_SDMA_MASK | SDHC_REG_CAPABILITIES_SRS_MASK |
+			 SDHC_REG_CAPABILITIES_VS33_MASK | SDHC_REG_CAPABILITIES_VS30_MASK |
+			 SDHC_REG_CAPABILITIES_VS18_MASK);
+		/*
+		 * Fill other fields if knows
+		 * - SDR50/SDR104/DDR50_SUPPORT
+		 * - USE_TUNING_SDR50
+		 * - ADMA2_SUPPORT
+		 * - 8_BIT_SUPPORT
+		 */
+		std_caps = std_caps | ((usdhc_caps & 0x00000007) << 32) |
+				      ((usdhc_caps & 0x00002000) << 32) |
+				      ((usdhc_caps & 0x00100000) >> 1) |
+				      0x00040000;
+		return std_caps;
+	}
+
+	return imx_usdhc_reg32_read(dev, reg, 8);
+}
+
+static void imx_usdhc_write64(const struct device *dev, uint32_t reg, uint64_t value)
+{
+	imx_usdhc_reg32_write(dev, reg, 8, value);
+}
+
+/*
  * Perform early system init for SDHC
  */
 static int imx_usdhc_init(const struct device *dev)
@@ -1159,6 +1258,18 @@ static int imx_usdhc_init(const struct device *dev)
 	host_config.readWatermarkLevel = cfg->read_watermark;
 	host_config.writeWatermarkLevel = cfg->write_watermark;
 	USDHC_Init(base, &host_config);
+
+	/* Setup standard host */
+	data->host.dev = dev;
+	data->host.read8   = imx_usdhc_read8;
+	data->host.write8  = imx_usdhc_write8;
+	data->host.read16  = imx_usdhc_read16;
+	data->host.write16 = imx_usdhc_write16;
+	data->host.read32  = imx_usdhc_read32;
+	data->host.write32 = imx_usdhc_write32;
+	data->host.read64  = imx_usdhc_read64;
+	data->host.write64 = imx_usdhc_write64;
+
 	/* Read host controller properties */
 	imx_usdhc_init_host_props(dev);
 	/* Set power GPIO low, so card starts powered off */
@@ -1246,6 +1357,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
                                                                                                    \
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
 		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
+		.sdhc = SDHC_COMMON_CONFIG_DT_INST_INIT(n),                                        \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.nusdhc = n,                                                                       \
@@ -1259,13 +1371,6 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.no_300_vol = DT_INST_PROP(n, no_3_0_v),                                           \
 		.read_watermark = DT_INST_PROP(n, read_watermark),                                 \
 		.write_watermark = DT_INST_PROP(n, write_watermark),                               \
-		.max_current_330 = DT_INST_PROP(n, max_current_330),                               \
-		.max_current_180 = DT_INST_PROP(n, max_current_180),                               \
-		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                     \
-		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                     \
-		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
-		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
-		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
