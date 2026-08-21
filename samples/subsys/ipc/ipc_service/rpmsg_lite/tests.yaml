@@ -25,7 +25,7 @@ tests:
     sysbuild: true
     harness: remote
     extra_args:
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nxp/frdm_imxrt1186/cm7_flash_boot.overlay"
+      - remote_EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm7_flash.overlay"
       - CONFIG_CM7_BOOT_FROM_FLASH=y
       - remote_CONFIG_CM7_BOOT_FROM_FLASH=y
 
@@ -38,5 +38,5 @@ tests:
     sysbuild: true
     harness: remote
     extra_args:
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nxp/frdm_imxrt1186/cm7_code_hyperram.overlay"
-      - EXTRA_DTC_OVERLAY_FILE="boards/nxp/frdm_imxrt1186/cm33_sram_dtcm.overlay"
+      - remote_EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm7_hyperram.overlay"
+      - EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm33_hyperram.overlay"
