@@ -1,3 +1,4 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
 /* SPDX-License-Identifier: Apache-2.0 */
 
 #include <zephyr/linker/iterable_sections.h>
@@ -12,11 +13,15 @@
 		 */
 		PLACE_SYMBOL_HERE(__init_start);
 		CREATE_OBJ_LEVEL(init, EARLY)
-		CREATE_OBJ_LEVEL(init, PRE_KERNEL_1)
+		CREATE_OBJ_LEVEL(init, PRE_KERNEL)
+		/* Deprecated compatibility band: runs right after all
+		 * PRE_KERNEL entries (PRE_KERNEL_1 aliases into the
+		 * PRE_KERNEL band).
+		 */
 		CREATE_OBJ_LEVEL(init, PRE_KERNEL_2)
 		CREATE_OBJ_LEVEL(init, POST_KERNEL)
 		CREATE_OBJ_LEVEL(init, APPLICATION)
-		CREATE_OBJ_LEVEL(init, SMP)
+		CREATE_OBJ_LEVEL(init, PRE_MAIN)
 		PLACE_SYMBOL_HERE(__init_end);
 	} GROUP_ROM_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 

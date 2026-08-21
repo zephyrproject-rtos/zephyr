@@ -167,8 +167,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -234,8 +234,8 @@ typedef int16_t device_handle_t;
  * stored in @ref device.data.
  * @param config Pointer to the device's private constant data, which will be
  * stored in @ref device.config field.
- * @param level The device's initialization level (PRE_KERNEL_1, PRE_KERNEL_2 or
- * POST_KERNEL).
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL;
+ * the deprecated PRE_KERNEL_1 and PRE_KERNEL_2 levels are still accepted).
  * @param prio The device's priority within its initialization level. See
  * SYS_INIT() for details.
  * @param api Pointer to the device's API structure. Can be `NULL`.
@@ -282,6 +282,238 @@ typedef int16_t device_handle_t;
  */
 #define DEVICE_DT_INST_DEFINE(inst, ...)                                       \
 	DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE(), but with automatic initialization ordering
+ * instead of a manual priority.
+ *
+ * The device's position within its initialization level is derived from the
+ * devicetree dependency ordinal of @p node_id : the device is initialized
+ * after every devicetree dependency it has (parent bus, clocks, pinctrl, any
+ * phandle reference) that is registered in the same way, without a manually
+ * assigned priority. All such devices are placed in a dedicated slot that
+ * runs after the whole manual 0-999 priority range of @p level, so they may
+ * also depend on any manually-prioritized device of the same (or an earlier)
+ * level. The reverse — a manually-prioritized device of the same level
+ * depending on this one — is not supported; this ordering violation is
+ * reported at build time when @kconfig{CONFIG_CHECK_INIT_PRIORITIES} is
+ * enabled.
+ *
+ * @note While the deprecated `PRE_KERNEL_2` level still exists, an
+ * automatically ordered device at `PRE_KERNEL` is placed ahead of the whole
+ * `PRE_KERNEL_2` band. A driver whose clock-control, pinctrl or other
+ * provider is still registered at `PRE_KERNEL_2` therefore cannot be
+ * converted until that provider has moved to `PRE_KERNEL`. Such a conversion
+ * is reported at build time, but only when
+ * @kconfig{CONFIG_CHECK_INIT_PRIORITIES} is enabled.
+ *
+ * Only use this macro when every initialization-order dependency of the
+ * device is visible in the devicetree. Dependencies that the devicetree
+ * cannot express (e.g. an init function relying on the system timer for
+ * busy-waiting) require a manual priority via DEVICE_DT_DEFINE().
+ *
+ * @param node_id The devicetree node identifier. Must exist in the
+ * devicetree; software devices without a node cannot use automatic ordering.
+ * @param init_fn Pointer to the device's initialization function. See
+ * DEVICE_DT_DEFINE().
+ * @param pm Pointer to the device's power management resources. See
+ * DEVICE_DT_DEFINE().
+ * @param data Pointer to the device's private mutable data. See
+ * DEVICE_DT_DEFINE().
+ * @param config Pointer to the device's private constant data. See
+ * DEVICE_DT_DEFINE().
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ */
+#define DEVICE_DT_DEFINE_AUTO(node_id, init_fn, pm, data, config, level, api,  \
+			      ...)                                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "DEVICE_DT_DEFINE_AUTO requires a devicetree node");      \
+	DEVICE_DT_DEFINE(node_id, init_fn, pm, data, config, level, AUTO, api, \
+			 __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE_AUTO(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * DEVICE_DT_DEFINE_AUTO() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_DT_DEFINE_AUTO().
+ */
+#define DEVICE_DT_INST_DEFINE_AUTO(inst, ...)                                  \
+	DEVICE_DT_DEFINE_AUTO(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEINIT_DEFINE(), but ordered by an anchor key instead
+ * of a manual priority.
+ *
+ * Devicetree dependencies are the only ordering DEVICE_DT_DEFINE_AUTO() can
+ * express. A device that must also be initialized after something the
+ * devicetree does not describe — typically a service registered with
+ * SYS_INIT_ANCHORED(), such as an interconnect or firmware transport brought up
+ * by the SoC — carries an anchor key of its own instead, built exactly like a
+ * service's:
+ *
+ * @code{.c}
+ * #define SYS_ANCHOR_my_uart SYS_ANCHOR_AFTER(SYS_ANCHOR_gppi, my_uart)
+ *
+ * DEVICE_DT_INST_DEFINE_ANCHORED(inst, my_init, NULL, &data, &config,
+ *				  POST_KERNEL, SYS_ANCHOR_my_uart, &my_api);
+ * @endcode
+ *
+ * The device is placed in the automatic-ordering band of @p level, which runs
+ * after the whole manual 0-999 priority range, keyed by @p anchor extended with
+ * the device's devicetree dependency ordinal. Consequently:
+ *
+ * - the device is initialized after the service its key is derived from, after
+ *   every manually-prioritized entry of @p level, and after every device
+ *   ordered by DEVICE_DT_DEFINE_AUTO() at @p level, so all of its devicetree
+ *   dependencies are met as well;
+ * - every instance of the driver publishes @p anchor and lives under it, so
+ *   instances keep their devicetree order relative to each other and an entry
+ *   ordered after @p anchor runs after *all* of them;
+ * - a device may equally publish a dependency-free key with SYS_ANCHOR(), to
+ *   be initialized after the manual priority range and nothing more.
+ *
+ * As with DEVICE_DT_DEFINE_AUTO(), the reverse relation is not supported: no
+ * manually-prioritized entry of @p level, and no SYS_INIT_DEPENDS() entry, may
+ * depend on a device ordered this way. Such violations are reported at build
+ * time when @kconfig{CONFIG_CHECK_INIT_PRIORITIES} is enabled.
+ *
+ * @param node_id The devicetree node identifier. Must exist in the devicetree.
+ * @param init_fn Pointer to the device's initialization function. See
+ * DEVICE_DT_DEFINE().
+ * @param deinit_fn Pointer to the device's de-initialization function. See
+ * DEVICE_DT_DEINIT_DEFINE().
+ * @param pm Pointer to the device's power management resources. See
+ * DEVICE_DT_DEFINE().
+ * @param data Pointer to the device's private mutable data. See
+ * DEVICE_DT_DEFINE().
+ * @param config Pointer to the device's private constant data. See
+ * DEVICE_DT_DEFINE().
+ * @param level The device's initialization level (PRE_KERNEL or POST_KERNEL).
+ * @param anchor The device's own anchor key, built with SYS_ANCHOR(),
+ * SYS_ANCHOR_AFTER() or SYS_ANCHOR_AFTER_IF() as for SYS_INIT_ANCHORED().
+ * Shared by every instance of the driver.
+ * @param api Pointer to the device's API structure. Can be `NULL`.
+ */
+#define DEVICE_DT_DEINIT_DEFINE_ANCHORED(node_id, init_fn, deinit_fn, pm, data, \
+					 config, level, anchor, api, ...)      \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "DEVICE_DT_DEFINE_ANCHORED requires a devicetree node");  \
+	Z_DEVICE_ANCHOR_RECORD(level, anchor, node_id);                        \
+	Z_DEVICE_STATE_DEFINE(Z_DEVICE_DT_DEV_ID(node_id));                    \
+	Z_DEVICE_DEFINE_ANCHORED(node_id, Z_DEVICE_DT_DEV_ID(node_id),         \
+				 DEVICE_DT_NAME(node_id), init_fn, deinit_fn,  \
+				 Z_DEVICE_DT_FLAGS(node_id), pm, data, config, \
+				 level, anchor, api,                           \
+				 &Z_DEVICE_STATE_NAME(                         \
+					 Z_DEVICE_DT_DEV_ID(node_id)),         \
+				 __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE(), but ordered by an anchor key instead of a
+ * manual priority.
+ *
+ * @param ... Parameters as expected by DEVICE_DT_DEINIT_DEFINE_ANCHORED(),
+ * without @p deinit_fn.
+ *
+ * @see DEVICE_DT_DEINIT_DEFINE_ANCHORED()
+ */
+#define DEVICE_DT_DEFINE_ANCHORED(node_id, init_fn, pm, data, config, level,   \
+				  anchor, api, ...)                            \
+	DEVICE_DT_DEINIT_DEFINE_ANCHORED(node_id, init_fn, NULL, pm, data,     \
+					 config, level, anchor, api,           \
+					 __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEFINE_ANCHORED(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * DEVICE_DT_DEFINE_ANCHORED() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by DEVICE_DT_DEFINE_ANCHORED().
+ */
+#define DEVICE_DT_INST_DEFINE_ANCHORED(inst, ...)                              \
+	DEVICE_DT_DEFINE_ANCHORED(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Like DEVICE_DT_DEINIT_DEFINE_ANCHORED(), but uses an instance of a
+ * `DT_DRV_COMPAT` compatible instead of a node identifier.
+ *
+ * @param inst Instance number. The `node_id` argument to
+ * DEVICE_DT_DEINIT_DEFINE_ANCHORED() is set to `DT_DRV_INST(inst)`.
+ * @param ... Other parameters as expected by
+ * DEVICE_DT_DEINIT_DEFINE_ANCHORED().
+ */
+#define DEVICE_DT_INST_DEINIT_DEFINE_ANCHORED(inst, ...)                       \
+	DEVICE_DT_DEINIT_DEFINE_ANCHORED(DT_DRV_INST(inst), __VA_ARGS__)
+
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Emit a validation record for an init entry ordered after a device.
+ *
+ * Records the entry's level, the devicetree dependency ordinal of the device
+ * it is ordered after, and its name, as a string in a non-allocated section
+ * (like debug info: present in the ELF for build-time tooling, never loaded,
+ * absent from binary outputs). The records are consumed by
+ * scripts/build/check_init_priorities.py, which verifies that the device is
+ * part of the build and does not initialize at a later level than the entry
+ * ordered after it.
+ */
+#define Z_SYS_INIT_DEPENDS_RECORD(init_fn_, level, node_id)                    \
+	__asm__(PUSHSECTION_DIRECTIVE " .zinit_depends_info,\"\"\n\t"          \
+		".asciz \"" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level))   \
+		":" STRINGIFY(DT_DEP_ORD(node_id))                             \
+		":" STRINGIFY(init_fn_) "\"\n\t"                               \
+		POPSECTION_DIRECTIVE)
+
+/** @endcond */
+
+/**
+ * @brief Register an initialization function ordered after a device's
+ * initialization.
+ *
+ * Like SYS_INIT(), but instead of a manual priority the function is anchored
+ * to the device defined for @p node_id : it runs at @p level, after that
+ * device has been initialized. The entry is placed in the same
+ * automatic-ordering slot used by DEVICE_DT_DEFINE_AUTO(), using the
+ * devicetree dependency ordinal of @p node_id as its sort key, so it works
+ * whether the device it depends on is registered with a manual priority or
+ * with automatic ordering.
+ *
+ * This is the tool for initialization functions that consume a device but
+ * have no devicetree node of their own (e.g. a console attached to the
+ * ``zephyr,console`` chosen UART): a plain SYS_INIT() priority cannot be
+ * checked against the device's position, and build-time dependency
+ * validation cannot see the relationship.
+ *
+ * @note The entry runs after the device, but not necessarily immediately
+ * after it: automatically ordered entries run after every manual priority of
+ * the level, so when the device itself carries a manual priority, unrelated
+ * entries of that level may run in between.
+ *
+ * @note The anchor expresses a single devicetree dependency. If the function
+ * depends on several devices, anchor it to the one initialized last, or keep
+ * a manual priority.
+ *
+ * @param init_fn_ Initialization function.
+ * @param level Initialization level, see SYS_INIT().
+ * @param node_id Devicetree node identifier of the device this function
+ * must run after.
+ */
+#define SYS_INIT_DEPENDS(init_fn_, level, node_id)                             \
+	BUILD_ASSERT(DT_NODE_EXISTS(node_id),                                  \
+		     "SYS_INIT_DEPENDS requires a devicetree node");           \
+	Z_SYS_INIT_DEPENDS_RECORD(init_fn_, level, node_id);                   \
+	static const Z_DECL_ALIGN(struct init_entry)                           \
+		Z_INIT_ENTRY_SECTION(level, AUTO,                              \
+			_CONCAT(DT_DEP_ORD_STR_SORTABLE(node_id), _0))         \
+		__used __noasan Z_INIT_ENTRY_NAME(init_fn_) = {                \
+			.init_fn = (init_fn_),                                 \
+			.dev = NULL,                                           \
+		}
 
 /**
  * @brief The name of the global device object for @p node_id
@@ -1292,7 +1524,8 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param level Init level
  */
 #define Z_DEVICE_CHECK_INIT_LEVEL(level)                                       \
-	COND_CASE_1(Z_INIT_PRE_KERNEL_1_##level, (),                           \
+	COND_CASE_1(Z_INIT_PRE_KERNEL_##level, (),                             \
+		    Z_INIT_PRE_KERNEL_1_##level, (),                           \
 		    Z_INIT_PRE_KERNEL_2_##level, (),                           \
 		    Z_INIT_POST_KERNEL_##level, (),                            \
 		    (ZERO_OR_COMPILE_ERROR(0)))
@@ -1311,6 +1544,60 @@ device_get_dt_nodelabels(const struct device *dev)
                                                                                                    \
 	static const Z_DECL_ALIGN(struct init_entry) __used __noasan Z_INIT_ENTRY_SECTION(         \
 		level, prio, Z_DEVICE_INIT_SUB_PRIO(node_id))                                      \
+		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
+			.init_fn = NULL,                                                           \
+			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id),                    \
+		}
+
+/**
+ * @brief Sort key of a device ordered by an anchor.
+ *
+ * The device is placed under @p anchor, keyed by its own devicetree dependency
+ * ordinal: every instance of a multi-instance driver sharing one anchor gets a
+ * distinct key, and the instances keep their devicetree order. Because the
+ * ordinal is a digit string and the anchor separator sorts after digits, an
+ * entry anchored after @p anchor (key `<anchor>~<name>`) still runs after
+ * *every* instance placed under it.
+ *
+ * @param node_id Devicetree node id for the device.
+ * @param anchor Anchor key of the device, see SYS_ANCHOR().
+ */
+#define Z_DEVICE_ANCHOR_KEY(node_id, anchor)                                   \
+	anchor "~" STRINGIFY(DT_DEP_ORD_STR_SORTABLE(node_id))
+
+/**
+ * @brief Emit a validation record for a device ordered by an anchor.
+ *
+ * Records the device's level, anchor key and devicetree dependency ordinal in
+ * the same non-allocated section used by SYS_INIT_ANCHORED(). The trailing
+ * ordinal tells scripts/build/check_init_priorities.py that the record belongs
+ * to a device: several instances may share (and thus publish) one anchor key,
+ * and an init entry ordered after such a device with SYS_INIT_DEPENDS() would
+ * be misplaced, as ordinal-keyed entries sort ahead of anchored ones.
+ *
+ * @param level Initialization level.
+ * @param anchor Anchor key of the device, see SYS_ANCHOR().
+ * @param node_id Devicetree node id for the device.
+ */
+#define Z_DEVICE_ANCHOR_RECORD(level, anchor, node_id)                         \
+	__asm__(PUSHSECTION_DIRECTIVE " .zinit_anchor_info,\"\"\n\t"           \
+		".asciz \"" STRINGIFY(_CONCAT(Z_INIT_SECTION_LEVEL_, level))   \
+		":" anchor ":" STRINGIFY(DT_DEP_ORD(node_id)) "\"\n\t"         \
+		POPSECTION_DIRECTIVE)
+
+/**
+ * @brief Define the init entry for a device ordered by an anchor key.
+ *
+ * @param node_id Devicetree node id for the device.
+ * @param dev_id Device identifier.
+ * @param level Initialization level.
+ * @param key Full sort key, see Z_DEVICE_ANCHOR_KEY().
+ */
+#define Z_DEVICE_INIT_ENTRY_DEFINE_KEYED(node_id, dev_id, level, key)                              \
+	Z_DEVICE_CHECK_INIT_LEVEL(level)                                                           \
+                                                                                                   \
+	static const Z_DECL_ALIGN(struct init_entry) __used __noasan                               \
+		Z_INIT_ENTRY_SECTION_KEYED(level, key)                                             \
 		Z_INIT_ENTRY_NAME(DEVICE_NAME_GET(dev_id)) = {                                     \
 			.init_fn = NULL,                                                           \
 			.dev = (const struct device *)&DEVICE_NAME_GET(dev_id),                    \
@@ -1338,8 +1625,8 @@ device_get_dt_nodelabels(const struct device *dev)
  * @param state Reference to device state.
  * @param ... Optional dependencies, manually specified.
  */
-#define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm,   \
-			data, config, level, prio, api, state, ...)             \
+#define Z_DEVICE_DEFINE_BASE(node_id, dev_id, name, init_fn, deinit_fn, flags,  \
+			     pm, data, config, level, prio, api, state, ...)     \
 	Z_DEVICE_NAME_CHECK(name);                                              \
                                                                                 \
 	IF_ENABLED(CONFIG_DEVICE_DEPS,                                          \
@@ -1353,11 +1640,36 @@ device_get_dt_nodelabels(const struct device *dev)
 			     pm, data, config, level, prio, api, state,         \
 			     Z_DEVICE_DEPS_NAME(dev_id));                       \
                                                                                 \
-	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio);               \
-                                                                                \
 	IF_ENABLED(CONFIG_LLEXT,                                                \
 		   (IF_ENABLED(DT_NODE_EXISTS(node_id),                         \
 				(Z_DEVICE_EXPORT(node_id);))))
+
+#define Z_DEVICE_DEFINE(node_id, dev_id, name, init_fn, deinit_fn, flags, pm,   \
+			data, config, level, prio, api, state, ...)             \
+	Z_DEVICE_DEFINE_BASE(node_id, dev_id, name, init_fn, deinit_fn, flags,  \
+			     pm, data, config, level, prio, api, state,         \
+			     __VA_ARGS__);                                      \
+                                                                                \
+	Z_DEVICE_INIT_ENTRY_DEFINE(node_id, dev_id, level, prio);
+
+/**
+ * @brief Define a @ref device whose init entry is ordered by an anchor key.
+ *
+ * Like Z_DEVICE_DEFINE(), but the init entry is placed in the level's
+ * automatic-ordering band with @p anchor (extended with the device's
+ * devicetree dependency ordinal) as its sort key.
+ *
+ * @param anchor Anchor key of the device, see SYS_ANCHOR().
+ */
+#define Z_DEVICE_DEFINE_ANCHORED(node_id, dev_id, name, init_fn, deinit_fn,    \
+				 flags, pm, data, config, level, anchor, api,  \
+				 state, ...)                                   \
+	Z_DEVICE_DEFINE_BASE(node_id, dev_id, name, init_fn, deinit_fn, flags,  \
+			     pm, data, config, level, AUTO, api, state,         \
+			     __VA_ARGS__);                                      \
+                                                                                \
+	Z_DEVICE_INIT_ENTRY_DEFINE_KEYED(node_id, dev_id, level,               \
+					 Z_DEVICE_ANCHOR_KEY(node_id, anchor));
 
 /**
  * @brief Declare a device for each status "okay" devicetree node.

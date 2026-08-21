@@ -113,26 +113,28 @@ static void z_init_static_threads(void)
 
 extern const struct init_entry __init_start[];
 extern const struct init_entry __init_EARLY_start[];
-extern const struct init_entry __init_PRE_KERNEL_1_start[];
+extern const struct init_entry __init_PRE_KERNEL_start[];
 extern const struct init_entry __init_PRE_KERNEL_2_start[];
 extern const struct init_entry __init_POST_KERNEL_start[];
 extern const struct init_entry __init_APPLICATION_start[];
+extern const struct init_entry __init_PRE_MAIN_start[];
 extern const struct init_entry __init_end[];
 
 enum init_level {
 	INIT_LEVEL_EARLY = 0,
-	INIT_LEVEL_PRE_KERNEL_1,
+	INIT_LEVEL_PRE_KERNEL,
+	/* Deprecated compatibility band, run right after all PRE_KERNEL
+	 * entries (the deprecated PRE_KERNEL_1 level aliases into the
+	 * PRE_KERNEL band).
+	 */
 	INIT_LEVEL_PRE_KERNEL_2,
 	INIT_LEVEL_POST_KERNEL,
 	INIT_LEVEL_APPLICATION,
-#ifdef CONFIG_SMP
-	INIT_LEVEL_SMP,
-#endif /* CONFIG_SMP */
+	/* Last level, run on the boot thread just before main(): the static
+	 * threads exist and, under CONFIG_SMP, the CPUs started at boot are up.
+	 */
+	INIT_LEVEL_PRE_MAIN,
 };
-
-#ifdef CONFIG_SMP
-extern const struct init_entry __init_SMP_start[];
-#endif /* CONFIG_SMP */
 
 /*
  * storage space for the interrupt stack
@@ -213,13 +215,11 @@ static void z_sys_init_run_level(enum init_level level)
 {
 	static const struct init_entry *levels[] = {
 		__init_EARLY_start,
-		__init_PRE_KERNEL_1_start,
+		__init_PRE_KERNEL_start,
 		__init_PRE_KERNEL_2_start,
 		__init_POST_KERNEL_start,
 		__init_APPLICATION_start,
-#ifdef CONFIG_SMP
-		__init_SMP_start,
-#endif /* CONFIG_SMP */
+		__init_PRE_MAIN_start,
 		/* End marker */
 		__init_end,
 	};
@@ -326,8 +326,13 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	 * k_smp_cpu_start()/k_smp_cpu_resume().
 	 */
 	z_smp_init();
-	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
+
+	/* Last init level before the application starts: everything is up,
+	 * including the static threads and, under CONFIG_SMP, the secondary
+	 * CPUs.
+	 */
+	z_sys_init_run_level(INIT_LEVEL_PRE_MAIN);
 
 #ifdef CONFIG_MMU
 	z_mem_manage_boot_finish();
@@ -570,10 +575,14 @@ FUNC_NORETURN void z_cstart(void)
 	}
 
 	/* perform basic hardware initialization */
-	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_1);
+	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL);
 #if defined(CONFIG_SMP)
 	arch_smp_init();
 #endif
+	/* Deprecated PRE_KERNEL_2 compatibility band, kept while the level is
+	 * phased out. Migrate entries to PRE_KERNEL with a priority ordering
+	 * them after their dependencies.
+	 */
 	z_sys_init_run_level(INIT_LEVEL_PRE_KERNEL_2);
 
 #ifdef CONFIG_REQUIRES_STACK_CANARIES
