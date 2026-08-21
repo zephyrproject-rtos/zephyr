@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc. (AMD)
+# SPDX-License-Identifier: Apache-2.0
+
+config VERSAL_SYSMON
+	bool "AMD/Xilinx Versal SysMon driver"
+	default y
+	depends on DT_HAS_XLNX_VERSAL_SYSMON_ENABLED
+	help
+	  Enable AMD/Xilinx Versal System Monitor (SysMon) driver.
+	  This driver provides access to on-chip voltage and
+	  temperature monitoring using the Zephyr sensor subsystem.
