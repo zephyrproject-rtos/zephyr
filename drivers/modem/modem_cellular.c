@@ -24,6 +24,7 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/__assert.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
@@ -44,16 +45,26 @@ LOG_MODULE_REGISTER(modem_cellular, CONFIG_MODEM_LOG_LEVEL);
 #define CESQ_RSRP_TO_DB(v) (-140 + (v))
 #define CESQ_RSRQ_TO_DB(v) (-20 + ((v) / 2))
 
+BUILD_ASSERT(sizeof(enum modem_cellular_event) == 1, "Event enum expanded");
+
 #ifdef CONFIG_MODEM_CELLULAR_APN
 BUILD_ASSERT(sizeof(CONFIG_MODEM_CELLULAR_APN) - 1 < MODEM_CELLULAR_DATA_APN_LEN,
 			"CONFIG_MODEM_CELLULAR_APN too long for data->apn");
 #endif
+
+struct cellular_event_ptr_package {
+	uint8_t event;
+	const void *ptr;
+} __packed;
 
 static void modem_cellular_enter_state(struct modem_cellular_data *data,
 				       enum modem_cellular_state state);
 
 static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 					  enum modem_cellular_event evt);
+
+static void modem_cellular_delegate_event_ptr(struct modem_cellular_data *data,
+					      enum modem_cellular_event evt, const void *ptr);
 
 static void modem_cellular_event_handler(struct modem_cellular_data *data,
 					 enum modem_cellular_event evt);
@@ -157,6 +168,9 @@ static const char *modem_cellular_event_str(enum modem_cellular_event event)
 		return "dial";
 	case MODEM_CELLULAR_EVENT_HANGUP:
 		return "hangup";
+	case _MODEM_CELLULAR_EVENT_HAS_PTR:
+		__ASSERT_NO_MSG(false);
+		break;
 	}
 
 	return "";
@@ -403,15 +417,16 @@ static void modem_cellular_dlci2_pipe_handler(struct modem_pipe *pipe,
 }
 
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
-					  enum modem_chat_script_result result,
-					  void *user_data)
+					  enum modem_chat_script_result result, void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	const struct modem_chat_script *script = chat->script;
 
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
-		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS);
+		modem_cellular_delegate_event_ptr(data, MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS,
+						  script);
 	} else {
-		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SCRIPT_FAILED);
+		modem_cellular_delegate_event_ptr(data, MODEM_CELLULAR_EVENT_SCRIPT_FAILED, script);
 	}
 }
 
@@ -814,9 +829,24 @@ static void modem_cellular_event_dispatch_handler(struct k_work *item)
 
 	enum modem_cellular_event event;
 	const size_t len = sizeof(event);
+	const size_t ptr_len = sizeof(data->event_ptr);
+	int read;
 
 	while (k_pipe_read(&data->event_pipe, (uint8_t *)&event, len, K_NO_WAIT) == len) {
-		modem_cellular_event_handler(data, (enum modem_cellular_event)event);
+		if (event & _MODEM_CELLULAR_EVENT_HAS_PTR) {
+			/* Read out the pointer and clear the internal mask */
+			event ^= _MODEM_CELLULAR_EVENT_HAS_PTR;
+			read = k_pipe_read(&data->event_pipe, (uint8_t *)&data->event_ptr, ptr_len,
+					   K_NO_WAIT);
+			if (read != ptr_len) {
+				/* Only expected if `modem_cellular_delegate_event_ptr` resulted in
+				 * a partial write. If enough events have backed up to trigger this,
+				 * the driver is in the process of falling over anyway.
+				 */
+				LOG_WRN("Failed to read event pointer %d %zd", read, ptr_len);
+			}
+		}
+		modem_cellular_event_handler(data, event);
 	}
 }
 
@@ -829,6 +859,30 @@ static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 	if (ret <= 0) {
 		LOG_WRN("Event %d dropped", evt);
 		return;
+	}
+	k_work_submit(&data->event_dispatch_work);
+}
+
+static void modem_cellular_delegate_event_ptr(struct modem_cellular_data *data,
+					      enum modem_cellular_event evt, const void *ptr)
+{
+	struct cellular_event_ptr_package package = {
+		.event = _MODEM_CELLULAR_EVENT_HAS_PTR | evt,
+		.ptr = ptr,
+	};
+	int ret;
+
+	ret = k_pipe_write(&data->event_pipe, (const uint8_t *)&package, sizeof(package),
+			   K_NO_WAIT);
+	if (ret <= 0) {
+		LOG_WRN("Event %d dropped", evt);
+		return;
+	} else if (ret < sizeof(package)) {
+		/* This is quite bad as the dispatcher will end up with bad state.
+		 * Assume this won't happen due to the non-zero time each script takes to
+		 * execute and the generour pipe buffer size.
+		 */
+		LOG_ERR("Event %d partial write", evt);
 	}
 	k_work_submit(&data->event_dispatch_work);
 }
