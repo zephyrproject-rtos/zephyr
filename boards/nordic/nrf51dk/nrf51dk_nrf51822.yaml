@@ -9,7 +9,7 @@ ram: 32
 flash: 256
 supported:
   - adc
-  - ble
+  - bluetooth
   - counter
   - gpio
   - i2c

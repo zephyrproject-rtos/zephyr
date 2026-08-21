@@ -8,7 +8,7 @@ toolchain:
 supported:
   - adc
   - usbd
-  - ble
+  - bluetooth
   - watchdog
   - counter
   - feather_serial

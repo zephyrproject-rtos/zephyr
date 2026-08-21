@@ -8,7 +8,7 @@ toolchain:
 ram: 64
 flash: 512
 supported:
-  - ble
+  - bluetooth
   - adc
   - gpio
   - spi
