@@ -2145,12 +2145,15 @@ int bt_avdtp_connect(struct bt_conn *conn, struct bt_avdtp *session)
 		return -ENOMEM;
 	}
 
+	/* Locking semaphore initialized to 1 (unlocked). It has to be
+	 * initialized before the session is published, since the session
+	 * memory is owned and cleared by the upper layer.
+	 */
+	k_sem_init(&session->sem_lock, 1, 1);
 	session->br_chan.chan.conn = conn;
 	bt_avdtp_clear_tx(session);
 	k_sem_give(&avdtp_sem_lock);
 
-	/* Locking semaphore initialized to 1 (unlocked) */
-	k_sem_init(&session->sem_lock, 1, 1);
 	k_work_init(&session->_release_work, avdtp_release_work);
 	k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 	session->br_chan.rx.mtu = BT_L2CAP_RX_MTU;
@@ -2209,11 +2212,15 @@ int bt_avdtp_l2cap_accept(struct bt_conn *conn, struct bt_l2cap_server *server,
 	k_sem_take(&avdtp_sem_lock, K_FOREVER);
 
 	if (session->br_chan.chan.conn == NULL) {
+		/* Locking semaphore initialized to 1 (unlocked). It has to be
+		 * initialized before the session is published, since the
+		 * session memory is owned and cleared by the upper layer.
+		 */
+		k_sem_init(&session->sem_lock, 1, 1);
 		session->br_chan.chan.conn = conn;
 		bt_avdtp_clear_tx(session);
 		k_sem_give(&avdtp_sem_lock);
-		/* Locking semaphore initialized to 1 (unlocked) */
-		k_sem_init(&session->sem_lock, 1, 1);
+
 		k_work_init(&session->_release_work, avdtp_release_work);
 		k_work_init_delayable(&session->timeout_work, avdtp_timeout);
 		session->br_chan.chan.ops = &signal_chan_ops;
@@ -2285,7 +2292,11 @@ int bt_avdtp_register_sep(uint8_t media_type, uint8_t sep_type, struct bt_avdtp_
 	/* Locking semaphore initialized to 1 (unlocked) */
 	k_sem_init(&sep->sem_lock, 1, 1);
 	k_work_init_delayable(&sep->_delay_work, avdtp_media_disconnect_work);
-	bt_avdtp_set_state_lock(sep, AVDTP_IDLE);
+	/* The endpoint is not in the `seps` list yet, so it cannot be accessed
+	 * by any other context. Set the state without taking `sep->sem_lock`,
+	 * which would invert the lock order used by the command handlers.
+	 */
+	bt_avdtp_set_state(sep, AVDTP_IDLE);
 
 	sys_slist_append(&seps, &sep->_node);
 	k_sem_give(&avdtp_sem_lock);
