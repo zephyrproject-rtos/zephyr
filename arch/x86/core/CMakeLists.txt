@@ -11,7 +11,7 @@ zephyr_library_sources(spec_ctrl.c)
 
 zephyr_library_sources_ifdef(CONFIG_X86_MEMMAP memmap.c)
 
-zephyr_library_sources_ifdef(CONFIG_PCIE pcie.c)
+zephyr_library_sources_ifdef(CONFIG_PCIE_HOST pcie.c)
 zephyr_library_sources_ifdef(CONFIG_REBOOT_RST_CNT reboot_rst_cnt.c)
 zephyr_library_sources_ifdef(CONFIG_MULTIBOOT_INFO multiboot.c)
 zephyr_library_sources_ifdef(CONFIG_X86_EFI efi.c)

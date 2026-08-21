@@ -5,7 +5,7 @@
 
 menuconfig ETH_IVSHMEM
 	bool "Inter-VM shared memory Ethernet driver"
-	select PCIE
+	select PCIE_HOST
 	select VIRTUALIZATION
 	select IVSHMEM_V2
 	select IVSHMEM_DOORBELL

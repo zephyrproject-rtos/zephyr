@@ -134,7 +134,7 @@ if(CONFIG_LOG)
   zephyr_iterable_section(NAME log_msg_ptr GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
-if(CONFIG_PCIE)
+if(CONFIG_PCIE_HOST)
   zephyr_iterable_section(NAME pcie_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
