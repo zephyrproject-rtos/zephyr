@@ -34,11 +34,25 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include "le_audio_playback.h"
 #include "tmap_peripheral.h"
 
+/* Advertised and registered TMAP role mask derived from Kconfig. */
+#define TMAP_PERIPHERAL_ROLE_MASK ( \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_CT)  ? BT_TMAP_ROLE_CT  : 0) | \
+	(IS_ENABLED(CONFIG_TMAP_PERIPHERAL_ROLE_UMR) ? BT_TMAP_ROLE_UMR : 0))
+
+BUILD_ASSERT(TMAP_PERIPHERAL_ROLE_MASK != 0,
+	     "At least one of CONFIG_TMAP_PERIPHERAL_ROLE_CT / _ROLE_UMR must be set");
+
 static struct bt_conn *default_conn;
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 static struct k_work_delayable call_terminate_set_work;
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 static struct k_work_delayable media_pause_set_work;
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
+static struct bt_le_ext_adv *g_adv;
 
 static uint8_t unicast_server_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_ASCS_VAL),    /* ASCS UUID */
@@ -55,7 +69,7 @@ static const uint8_t cap_addata[] = {
 
 static uint8_t tmap_addata[] = {
 	BT_UUID_16_ENCODE(BT_UUID_TMAS_VAL),                    /* TMAS UUID */
-	BT_BYTES_LIST_LE16(BT_TMAP_ROLE_UMR | BT_TMAP_ROLE_CT), /* TMAP Role */
+	BT_BYTES_LIST_LE16(TMAP_PERIPHERAL_ROLE_MASK),          /* TMAP Role */
 };
 
 static uint8_t csis_rsi_addata[BT_CSIP_RSI_SIZE];
@@ -132,6 +146,27 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	k_sem_give(&sem_disconnected);
 }
 
+/* Restart advertising once the connection object is freed. Using the recycled
+ * callback avoids the -ENOMEM race seen when restarting from disconnected(),
+ * where the host is still tearing down conn_tx / ISO contexts.
+ */
+static void recycled_cb(void)
+{
+	int err;
+
+	if (g_adv == NULL) {
+		return;
+	}
+
+	err = bt_le_ext_adv_start(g_adv, BT_LE_EXT_ADV_START_DEFAULT);
+	if (err != 0 && err != -EALREADY) {
+		printk("Failed to restart advertising (err %d)\n", err);
+		return;
+	}
+
+	printk("Advertising restarted\n");
+}
+
 static void security_changed(struct bt_conn *conn, bt_security_t level,
 			     enum bt_security_err err)
 {
@@ -149,7 +184,58 @@ static void security_changed(struct bt_conn *conn, bt_security_t level,
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
 	.disconnected = disconnected,
+	.recycled = recycled_cb,
 	.security_changed = security_changed,
+};
+
+/* Peers such as Pixel phones require MITM for LE Audio unicast. Expose
+ * DisplayYesNo IO caps (passkey_display + passkey_confirm) and auto-accept
+ * numeric comparison so bonding completes without a UI on the device.
+ *
+ * WARNING: auto-confirming the passkey provides no real MITM protection.
+ * A production build with a UI must show the passkey to the user and only
+ * call bt_conn_auth_passkey_confirm() on explicit user acceptance.
+ */
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	printk("Passkey for %s: %06u\n", bt_conn_dst_str(conn), passkey);
+}
+
+static void auth_passkey_confirm(struct bt_conn *conn, unsigned int passkey)
+{
+	int err;
+
+	printk("Confirming passkey for %s: %06u\n", bt_conn_dst_str(conn), passkey);
+	err = bt_conn_auth_passkey_confirm(conn);
+	if (err != 0) {
+		printk("Failed to confirm passkey (err %d)\n", err);
+	}
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	printk("Pairing cancelled: %s\n", bt_conn_dst_str(conn));
+}
+
+static struct bt_conn_auth_cb auth_cb = {
+	.passkey_display = auth_passkey_display,
+	.passkey_confirm = auth_passkey_confirm,
+	.cancel = auth_cancel,
+};
+
+static void auth_pairing_failed(struct bt_conn *conn, enum bt_security_err reason)
+{
+	printk("Pairing failed with %s: reason %u\n", bt_conn_dst_str(conn), reason);
+}
+
+static void auth_pairing_complete(struct bt_conn *conn, bool bonded)
+{
+	printk("Pairing complete with %s (bonded=%d)\n", bt_conn_dst_str(conn), bonded);
+}
+
+static struct bt_conn_auth_info_cb auth_info_cb = {
+	.pairing_failed = auth_pairing_failed,
+	.pairing_complete = auth_pairing_complete,
 };
 
 #if defined(CONFIG_BT_PRIVACY) && defined(CONFIG_BT_CSIP_SET_MEMBER)
@@ -186,6 +272,7 @@ static const struct bt_le_ext_adv_cb adv_cb = {
 #endif /* CONFIG_BT_PRIVACY && CONFIG_BT_CSIP_SET_MEMBER */
 };
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 static void audio_timer_timeout(struct k_work *work)
 {
 	int err = ccp_terminate_call();
@@ -196,7 +283,9 @@ static void audio_timer_timeout(struct k_work *work)
 		printk("Error sending call terminate command!\n");
 	}
 }
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 static void media_play_timeout(struct k_work *work)
 {
 	int err = mcp_send_cmd(BT_MCS_OPC_PAUSE);
@@ -207,6 +296,7 @@ static void media_play_timeout(struct k_work *work)
 		printk("Error sending pause command!\n");
 	}
 }
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 int main(void)
 {
@@ -221,11 +311,27 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
+	err = bt_conn_auth_cb_register(&auth_cb);
+	if (err != 0) {
+		printk("Failed to register auth callbacks (err %d)\n", err);
+		return err;
+	}
+
+	err = bt_conn_auth_info_cb_register(&auth_info_cb);
+	if (err != 0) {
+		printk("Failed to register auth info callbacks (err %d)\n", err);
+		return err;
+	}
+
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 	k_work_init_delayable(&call_terminate_set_work, audio_timer_timeout);
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 	k_work_init_delayable(&media_pause_set_work, media_play_timeout);
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 	printk("Initializing TMAP and setting role\n");
-	err = bt_tmap_register(BT_TMAP_ROLE_CT | BT_TMAP_ROLE_UMR);
+	err = bt_tmap_register(TMAP_PERIPHERAL_ROLE_MASK);
 	if (err != 0) {
 		return err;
 	}
@@ -256,11 +362,20 @@ int main(void)
 	}
 	printk("BAP initialized\n");
 
+	err = le_audio_playback_init();
+	if (err != 0) {
+		printk("LE Audio playback init failed (err %d)\n", err);
+		/* Not fatal - continue without playback. */
+	} else {
+		printk("LE Audio playback initialized\n");
+	}
+
 	err = bt_le_ext_adv_create(BT_BAP_ADV_PARAM_CONN_QUICK, &adv_cb, &adv);
 	if (err != 0) {
 		printk("Failed to create advertising set (err %d)\n", err);
 		return err;
 	}
+	g_adv = adv;
 
 	err = bt_le_ext_adv_set_data(adv, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err != 0) {
@@ -289,19 +404,24 @@ int main(void)
 	err = k_sem_take(&sem_discovery_done, K_FOREVER);
 	__ASSERT_NO_MSG(err == 0);
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
 	err = ccp_call_ctrl_init(default_conn);
 	if (err != 0) {
 		return err;
 	}
 	printk("CCP initialized\n");
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
 	err = mcp_ctlr_init(default_conn);
 	if (err != 0) {
 		return err;
 	}
 	printk("MCP initialized\n");
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
-	if (peer_is_cg) {
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_CT)
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_cg) {
 		/* Initiate a call with CCP */
 		err = ccp_originate_call();
 		if (err != 0) {
@@ -310,8 +430,10 @@ int main(void)
 		/* Start timer to send terminate call command */
 		k_work_schedule(&call_terminate_set_work, K_MSEC(2000));
 	}
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_CT */
 
-	if (peer_is_ums) {
+#if defined(CONFIG_TMAP_PERIPHERAL_ROLE_UMR)
+	if (IS_ENABLED(CONFIG_TMAP_PERIPHERAL_AUTO_CTRL) && peer_is_ums) {
 		/* Play media with MCP */
 		err = mcp_send_cmd(BT_MCS_OPC_PLAY);
 		if (err != 0) {
@@ -326,6 +448,7 @@ int main(void)
 			printk("failed to take sem_disconnected (err %d)\n", err);
 		}
 	}
+#endif /* CONFIG_TMAP_PERIPHERAL_ROLE_UMR */
 
 	return 0;
 }

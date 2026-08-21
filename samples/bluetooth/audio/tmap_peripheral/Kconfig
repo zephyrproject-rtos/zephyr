@@ -5,6 +5,19 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# LC3 decode plus audio_codec bring-up push main and sysworkq past their
+# defaults. Declared before Kconfig.zephyr so our defaults are searched
+# ahead of kernel/Kconfig's defaults.
+if LIBLC3
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+endif # LIBLC3
+
 mainmenu "Bluetooth: Earbuds"
 
 menu "Zephyr"
@@ -45,6 +58,81 @@ config TMAP_PERIPHERAL_LEFT
 config TMAP_PERIPHERAL_RIGHT
 	bool "Right Ear"
 
+config TMAP_PERIPHERAL_STEREO
+	bool "Stereo speaker (front left + front right)"
+	help
+	  Advertise the sink and source PAC locations as a stereo speaker.
+	  Required by some phones (e.g. Pixel running Android) before they
+	  will route stereo media to a solo LE Audio device.
+
 endchoice # TMAP_PERIPHERAL_LOCATION
+
+config TMAP_PERIPHERAL_ROLE_CT
+	bool "TMAP Call Terminal (CT) role"
+	default y
+	help
+	  Advertise the TMAP Call Terminal role. Compiles in and
+	  initializes the CCP client used to interact with a peer Call
+	  Gateway (typically a phone). Disable to build a media-only
+	  peripheral that does not participate in call control.
+
+config TMAP_PERIPHERAL_ROLE_UMR
+	bool "TMAP Unicast Media Receiver (UMR) role"
+	default y
+	help
+	  Advertise the TMAP Unicast Media Receiver role. Compiles in and
+	  initializes the MCP client on top of the BAP unicast sink to
+	  interact with a peer Unicast Media Sender. Disable to build a
+	  call-only peripheral that does not receive media playback.
+
+config TMAP_PERIPHERAL_AUTO_CTRL
+	bool "Run the CT/MCC control demo after TMAP discovery"
+	depends on TMAP_PERIPHERAL_ROLE_CT || TMAP_PERIPHERAL_ROLE_UMR
+	default y
+	help
+	  When enabled the sample originates a call via CCP and issues a
+	  play/pause via MCP after discovering the peer. Disable this to
+	  keep the sample as a passive media sink (UMR) that waits for the
+	  peer to open a CIS to it.
+
+menu "Audio playback"
+	depends on LIBLC3 && I2S && AUDIO_CODEC
+
+config TMAP_PERIPHERAL_I2S_WORKER_STACK_SIZE
+	int "I2S worker thread stack size"
+	default 4096
+	help
+	  Stack size of the thread that copies decoded PCM blocks into the
+	  I2S TX mem_slab. Must accommodate the codec driver's write path;
+	  4096 B is safe for the NXP SAI + WM8962 combination.
+
+config TMAP_PERIPHERAL_I2S_WORKER_PRIORITY
+	int "I2S worker thread priority (cooperative)"
+	default 5
+	help
+	  Cooperative priority of the I2S worker thread. Lower values run
+	  ahead of BAP RX and may starve the host stack; higher values
+	  increase the risk of underruns on marginal DMA timing.
+
+config TMAP_PERIPHERAL_I2S_DMA_BLOCK_COUNT
+	int "I2S TX DMA block count"
+	default 4
+	range 2 16
+	help
+	  Number of decoded PCM blocks the SAI/DMA can hold. Each block is
+	  one SDU worth of audio (up to ~1920 B for 48 kHz / 10 ms stereo).
+	  Increase for looser DMA timing, decrease to shorten pause/resume
+	  latency.
+
+config TMAP_PERIPHERAL_PCM_QUEUE_DEPTH
+	int "Decode to I2S handoff queue depth"
+	default 8
+	range 2 32
+	help
+	  Number of decoded PCM blocks buffered between the BAP RX context
+	  and the I2S worker. Larger values absorb SDU jitter; smaller
+	  values reduce audio latency.
+
+endmenu
 
 endmenu

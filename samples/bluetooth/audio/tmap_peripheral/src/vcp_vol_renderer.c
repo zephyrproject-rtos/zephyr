@@ -18,6 +18,8 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/toolchain.h>
 
+#include "le_audio_playback.h"
+
 static struct bt_vcp_included vcp_included;
 
 static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t mute)
@@ -26,9 +28,12 @@ static void vcs_state_cb(struct bt_conn *conn, int err, uint8_t volume, uint8_t 
 
 	if (err != 0) {
 		printk("VCS state get failed (%d)\n", err);
-	} else {
-		printk("VCS volume %u, mute %u\n", volume, mute);
+		return;
 	}
+
+	printk("VCS volume %u, mute %u\n", volume, mute);
+	le_audio_playback_set_volume(volume);
+	le_audio_playback_set_mute(mute != BT_VCP_STATE_UNMUTED);
 }
 
 static void vcs_flags_cb(struct bt_conn *conn, int err, uint8_t flags)
