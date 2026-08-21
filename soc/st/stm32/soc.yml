@@ -41,6 +41,7 @@ family:
     - name: stm32f103x8
     - name: stm32f103xb
     - name: stm32f103xe
+    - name: stm32f103x6
     - name: stm32f105xb
     - name: stm32f105xc
     - name: stm32f107xc
