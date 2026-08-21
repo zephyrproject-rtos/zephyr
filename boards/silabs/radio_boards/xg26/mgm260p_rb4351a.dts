@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/mgm260pd32vna.dtsi>
+#include "mgm260p_rb435xa.dtsi"
+
+/ {
+	model = "Silicon Labs MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)";
+	compatible = "silabs,mgm260p_rb4351a", "silabs,mgm26";
+};

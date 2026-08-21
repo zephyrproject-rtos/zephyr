@@ -1,0 +1,23 @@
+identifier: mgm260p_rb4351a
+name: MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)
+type: mcu
+arch: arm
+ram: 512
+flash: 3200
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - comparator
+  - counter
+  - dac
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - pwm
+  - spi
+  - uart
+  - watchdog
+vendor: silabs

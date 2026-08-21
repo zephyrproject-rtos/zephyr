@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * HFRCODPLL configuration for MGM26 and BGM26 modules.
+ *
+ * These modules integrate a 40 MHz HFXO, so HFRCODPLL locks to 80 MHz (2x HFXO) instead of the
+ * 78 MHz used by standalone xG26 parts with a 39 MHz crystal. Include this file from MGM26/BGM26
+ * board DTS instead of silabs/xg26/clock-hfrcodpll.dtsi.
+ *
+ * TODO: replace this override file with a cleaner mechanism.
+ */
+
+#include <silabs/xg26/clock-hfrcodpll.dtsi>
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&hfrcodpll {
+	clock-frequency = <DT_FREQ_M(80)>;
+};
+
+&itm {
+	swo-ref-frequency = <DT_FREQ_M(80)>;
+};
