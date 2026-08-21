@@ -58,7 +58,7 @@ void nrf_802154_clock_hfclk_start(void)
 	__ASSERT_NO_MSG(mgr != NULL);
 #endif
 
-	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
+	sys_notify_init_callback(&hfclk_cli.notify, (sys_notify_generic_callback)hfclk_on_callback);
 
 	/*
 	 * todo: replace constlat request with PM policy API when
@@ -112,7 +112,7 @@ void nrf_802154_clock_hfclk_stop(void)
 
 void nrf_802154_clock_hfclk_start(void)
 {
-	sys_notify_init_callback(&hfclk_cli.notify, hfclk_on_callback);
+	sys_notify_init_callback(&hfclk_cli.notify, (sys_notify_generic_callback)hfclk_on_callback);
 	int ret = nrf_clock_control_request(DEVICE_DT_GET(DT_NODELABEL(hfxo)), NULL, &hfclk_cli);
 
 	__ASSERT_NO_MSG(ret >= 0);

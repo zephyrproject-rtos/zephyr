@@ -457,7 +457,7 @@ static int trigger_start(const struct device *dev)
 	 */
 	if (drv_data->request_clock) {
 		sys_notify_init_callback(&drv_data->clk_cli.notify,
-					 clock_started_callback);
+					 (sys_notify_generic_callback)clock_started_callback);
 		ret = request_clock(drv_data);
 		if (ret < 0) {
 			drv_data->active = false;

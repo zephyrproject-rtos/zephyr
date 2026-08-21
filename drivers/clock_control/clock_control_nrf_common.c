@@ -372,7 +372,7 @@ int nrf_clock_control_request_sync(const struct device *dev, const struct nrf_cl
 		return -EWOULDBLOCK;
 	}
 
-	sys_notify_init_callback(&req.cli.notify, sync_cb);
+	sys_notify_init_callback(&req.cli.notify, (sys_notify_generic_callback)sync_cb);
 
 	err = nrf_clock_control_request(dev, spec, &req.cli);
 	if (err < 0) {
