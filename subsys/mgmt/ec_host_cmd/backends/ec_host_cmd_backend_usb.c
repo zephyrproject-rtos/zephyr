@@ -377,6 +377,16 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	bi = udc_get_buf_info(ctx->usb_tx_buf);
 	bi->ep = ec_host_cmd_get_in_bulk_ep(c_data);
 
+	/* Prevent re-arming RX DMA while a command is being processed or sent. */
+	if (ctx->state == USB_EC_HOST_CMD_STATE_PROCESSING ||
+	    ctx->state == USB_EC_HOST_CMD_STATE_SENDING) {
+		LOG_WRN("Skip re-arming OUT EP in state: %s", state_name[ctx->state]);
+		if (ctx->pending_event) {
+			ec_host_cmd_signal_event(c_data);
+		}
+		return;
+	}
+
 	buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), EP_BULK_SIZE, ctx->rx_ctx->buf);
 	if (buf == NULL) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
