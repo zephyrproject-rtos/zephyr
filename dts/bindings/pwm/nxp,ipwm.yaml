@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Toradex
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP i.MX PWM controller.
+
+  This is the simple PWM timer block found across the i.MX application
+  processor family (i.MX27 onwards, including the i.MX8M series), referred to as
+  PWMv2 in the reference manuals and exposed as the "ipwm" driver by the MCUX
+  SDK. Each instance drives a single output from a 16-bit counter: the period is
+  taken from PWMPR and the duty cycle is fed to PWMSAR through a four-entry
+  sample FIFO.
+
+  It is unrelated to the FlexPWM block described by "nxp,imx-pwm", which is
+  organised into submodules with paired complementary outputs, deadtime
+  insertion and fault inputs, and which appears on the i.MX RT, MCX and LPC
+  families instead.
+
+  Linux describes the same hardware as "fsl,imx27-pwm". A distinct compatible is
+  used here because Zephyr's existing "fsl,imx27-pwm" driver is built on the
+  legacy device_imx HAL, which covers only i.MX6SX and i.MX7D, and because that
+  binding predates the three-cell PWM specifier that pwm_dt_spec requires.
+
+compatible: "nxp,ipwm"
+
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml, "nxp,rdc-policy.yaml"]
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true
+  clocks:
+    required: true
+  nxp,prescaler:
+    type: int
+    default: 1
+    description: |
+      Divider applied to the PWM root clock before it reaches the counter,
+      expressed as the actual division factor: 1 passes the clock through
+      unchanged. Valid range is 1 to 4096; the driver programs PWMCR.PRESCALER
+      with this value minus one.
+
+      The divider is static, so it fixes the counter rate reported by
+      pwm_get_cycles_per_sec() and therefore the longest period a consumer can
+      request. Leave it at the default unless a low PWM frequency needs a
+      counter slower than the root clock.
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

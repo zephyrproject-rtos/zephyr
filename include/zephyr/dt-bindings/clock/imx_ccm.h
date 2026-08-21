@@ -95,4 +95,11 @@
 /** XBAR3 peripheral clock identifier */
 #define IMX_CCM_XBAR3_CLK		0x1802UL
 
+/*
+ * i.MX PWM ("ipwm") instances, as found on the i.MX8M family */
+#define IMX_CCM_PWM1_CLK		0x1900UL
+#define IMX_CCM_PWM2_CLK		0x1901UL
+#define IMX_CCM_PWM3_CLK		0x1902UL
+#define IMX_CCM_PWM4_CLK		0x1903UL
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_IMX_CCM_H_ */
