@@ -7,7 +7,7 @@ toolchain:
   - gnuarmemb
 supported:
   - adc
-  - ble
+  - bluetooth
   - i2c
   - pwm
   - serial

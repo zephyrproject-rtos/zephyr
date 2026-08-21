@@ -8,5 +8,5 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - ble
+  - bluetooth
 vendor: seeed
