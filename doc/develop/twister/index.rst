@@ -1655,6 +1655,20 @@ When running ``twister`` with ``--device-testing``, the configured fixture
 in the hardware map file will be matched to test scenarios requesting the same fixtures
 and these tests will be executed on the boards that provide this fixture.
 
+To reserve a board for fixture-dependent tests, set ``run_with_fixture_only`` to
+``true``. Twister will select that board only for test scenarios that request
+matching fixtures; it will not select the board for scenarios without fixture
+requirements.
+
+.. code-block:: yaml
+
+      - connected: true
+        fixtures:
+          - gpio_loopback
+        run_with_fixture_only: true
+        id: 0240000026334e450015400f5e0e000b4eb1000097969900
+        platform: frdm_k64f
+
 .. figure:: figures/fixtures.svg
    :figclass: align-center
 
