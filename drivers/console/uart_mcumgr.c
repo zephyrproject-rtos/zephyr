@@ -180,7 +180,7 @@ static void uart_mcumgr_async(const struct device *dev, struct uart_event *evt, 
 				sizeof(async_buffer[async_current]));
 		break;
 	case UART_RX_BUF_RELEASED:
-	case UART_RX_STOPPED:
+	case UART_RX_ERROR:
 		break;
 	}
 }

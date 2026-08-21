@@ -1070,16 +1070,9 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 					 struct mcux_lpuart_data *data,
 					 const struct mcux_lpuart_config *config,
 					 const uint32_t status) {
-	/*
-	 * Handle RX errors first — they stop reception, making idle-line
-	 * processing pointless.  Per the async UART API contract,
-	 * UART_RX_STOPPED must be followed by UART_RX_BUF_RELEASED (for
-	 * each buffer) and UART_RX_DISABLED.  mcux_lpuart_rx_disable()
-	 * provides that full teardown sequence.
-	 */
 	if (status & (kLPUART_RxOverrunFlag | kLPUART_ParityErrorFlag |
 		      kLPUART_FramingErrorFlag | kLPUART_NoiseErrorFlag)) {
-		enum uart_rx_stop_reason reason = 0;
+		enum uart_rx_error_reason reason = 0;
 
 		if (status & kLPUART_RxOverrunFlag) {
 			reason |= UART_ERROR_OVERRUN;
@@ -1100,11 +1093,10 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 						      kLPUART_NoiseErrorFlag);
 
 		struct uart_event event = {
-			.type = UART_RX_STOPPED,
-			.data.rx_stop.reason = reason,
+			.type = UART_RX_ERROR,
+			.data.rx_error.reason = reason,
 		};
 		async_user_callback(dev, &event);
-		mcux_lpuart_rx_disable(dev);
 		return;
 	}
 

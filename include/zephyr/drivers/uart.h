@@ -42,18 +42,17 @@ enum uart_line_ctrl {
 };
 
 /**
- * @brief Reception stop reasons.
+ * @brief Reception error reasons.
  *
- * Values that correspond to events or errors responsible for stopping
- * receiving.
+ * Values that correspond to receiver errors.
  */
-enum uart_rx_stop_reason {
+enum uart_rx_error_reason {
 	/** @brief Overrun error */
-	UART_ERROR_OVERRUN = (1 << 0),
+	UART_ERROR_OVERRUN = BIT(0),
 	/** @brief Parity error */
-	UART_ERROR_PARITY  = (1 << 1),
+	UART_ERROR_PARITY  = BIT(1),
 	/** @brief Framing error */
-	UART_ERROR_FRAMING = (1 << 2),
+	UART_ERROR_FRAMING = BIT(2),
 	/**
 	 * @brief Break interrupt
 	 *
@@ -61,7 +60,7 @@ enum uart_rx_stop_reason {
 	 * is held at a logic '0' state for longer than the sum of
 	 * start time + data bits + parity + stop bits.
 	 */
-	UART_BREAK = (1 << 3),
+	UART_BREAK = BIT(3),
 	/**
 	 * @brief Collision error
 	 *
@@ -71,10 +70,32 @@ enum uart_rx_stop_reason {
 	 * RS-485 half-duplex. This error is only valid on UARTs that
 	 * support collision checking.
 	 */
-	UART_ERROR_COLLISION = (1 << 4),
+	UART_ERROR_COLLISION = BIT(4),
 	/** @brief Noise error */
-	UART_ERROR_NOISE = (1 << 5),
+	UART_ERROR_NOISE = BIT(5),
 };
+
+/**
+ * @brief Reception stop reasons (deprecated).
+ *
+ * Use uart_rx_error_reason instead.
+ * Values that correspond to events or errors responsible for stopping
+ * receiving.
+ */
+enum uart_rx_stop_reason {
+	/** @brief Overrun error */
+	UART_RX_STOP_REASON_OVERRUN = UART_ERROR_OVERRUN,
+	/** @brief Parity error */
+	UART_RX_STOP_REASON_PARITY = UART_ERROR_PARITY,
+	/** @brief Framing error */
+	UART_RX_STOP_REASON_FRAMING = UART_ERROR_FRAMING,
+	/** @brief Break interrupt */
+	UART_RX_STOP_REASON_BREAK = UART_BREAK,
+	/** @brief Collision error */
+	UART_RX_STOP_REASON_COLLISION = UART_ERROR_COLLISION,
+	/** @brief Noise error */
+	UART_RX_STOP_REASON_NOISE = UART_ERROR_NOISE,
+} __deprecated;
 
 /** @brief Parity modes */
 enum uart_config_parity {
@@ -245,11 +266,19 @@ enum uart_event_type {
 	 */
 	UART_RX_DISABLED,
 	/**
-	 * @brief RX has stopped due to external event.
+	 * @brief RX error occurred.
 	 *
-	 * Reason is one of uart_rx_stop_reason.
+	 * This event is generated when an error occurs during reception.
+	 * The reason is one of uart_rx_error_reason.
+	 * Receiver continues the reception after the error.
 	 */
-	UART_RX_STOPPED,
+	UART_RX_ERROR,
+	/**
+	 * @brief RX has stopped due to external event (deprecated).
+	 *
+	 * Reason is one of uart_rx_error_reason.
+	 */
+	UART_RX_STOPPED = UART_RX_ERROR,
 };
 
 /** @brief UART TX event data. */
@@ -281,13 +310,25 @@ struct uart_event_rx_buf {
 	uint8_t *buf;
 };
 
-/** @brief UART RX stopped data. */
-struct uart_event_rx_stop {
-	/** @brief Reason why receiving stopped */
-	enum uart_rx_stop_reason reason;
-	/** @brief Last received data. */
+/** @brief UART RX error data. */
+struct uart_event_rx_error {
+	/** @brief Reason why receiving error occurred */
+	enum uart_rx_error_reason reason;
+
+	/** @brief Data that was received before error occurred.
+	 *
+	 * It might be empty if fetching that information is not supported.
+	 */
 	struct uart_event_rx data;
 };
+
+/** @brief UART RX stopped data (deprecated). */
+struct uart_event_rx_stop {
+	/** @brief Reason why receiving stopped */
+	enum uart_rx_error_reason reason;
+	/** @brief Last received data. */
+	struct uart_event_rx data;
+} __deprecated;
 
 /** @brief Structure containing information about current event. */
 struct uart_event {
@@ -301,8 +342,10 @@ struct uart_event {
 		struct uart_event_rx rx;
 		/** @brief #UART_RX_BUF_RELEASED event data. */
 		struct uart_event_rx_buf rx_buf;
-		/** @brief #UART_RX_STOPPED event data. */
-		struct uart_event_rx_stop rx_stop;
+		/** @brief #UART_RX_ERROR event data. */
+		struct uart_event_rx_error rx_error;
+		/** @brief #UART_RX_STOPPED event data (deprecated). */
+		struct uart_event_rx_error_rx_stop;
 	} data; /**< Event data; the valid field depends on @ref type. */
 };
 
@@ -327,7 +370,7 @@ typedef void (*uart_callback_t)(const struct device *dev,
  * @param dev UART device instance.
  *
  * @retval 0 No error was detected.
- * @retval err Error flags as defined in @ref uart_rx_stop_reason.
+ * @retval err Error flags as defined in @ref uart_rx_error_reason
  * @retval -ENOSYS Not implemented.
  */
 __syscall int uart_err_check(const struct device *dev);
