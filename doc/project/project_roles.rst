@@ -294,10 +294,37 @@ role who are no longer actively fulfilling the rights and responsibilities
 associated with their role may be requested by the TSC to retire from that role.
 
 Retirements of inactive maintainers or collaborators are reflected by removing the
-individual's GitHub user name from the relevant sections of the
-:ref:`maintainers_file` in the Zephyr repository and may be initiated by the
-TSC, representatives of the TSC or by the individuals themselves. Maintainers
-may also initiate the removal of inactive collaborators in their area.
+individual's GitHub user name from the relevant sections of the :ref:`maintainers_file`
+in the Zephyr repository, and may be initiated by the TSC, representatives of the
+TSC, or by the individuals themselves. Maintainers may also initiate the removal of
+inactive collaborators in their area.
+
+A maintainer or collaborator is considered inactive if, for a continuous period of
+30 days, they have not performed any of the activities within their area of
+responsibility. See the `Maintainer <https://docs.zephyrproject.org/latest/project/project_roles.html#maintainer>`_
+and `Collaborator <https://docs.zephyrproject.org/latest/project/project_roles.html#collaborator>`_
+roles.
+
+Activity outside a maintainer's or collaborator's area of responsibility does not,
+by itself, satisfy this requirement.
+
+Inactivity is tracked by the TSC or its designated representatives. Once the 30-day
+threshold is reached, a notice is sent by email and posted to a public tracking issue,
+with the other maintainers of the affected area copied where applicable. The notice
+asks whether the individual is able to remain involved in the project, recognizing
+that an absence may be due to temporary circumstances such as workload, illness,
+or personal leave.
+
+If no response is received within two weeks, the individual is removed from the
+:ref:`maintainers_file`. If the individual responds and wishes to remain in their
+role, the TSC will agree with them on a timeframe for returning to active involvement.
+If they are still inactive at the end of that timeframe, the inactivity process starts
+again from the beginning.
+
+Removal for inactivity is not punitive. Retired maintainers and collaborators are moved
+to an emeritus list and may be reinstated to their previous role on request when they
+are able to return to active involvement, subject to confirmation by the TSC or the
+relevant area maintainer.
 
 A maintainer may object to being retired, and request a decision by the TSC.
 
