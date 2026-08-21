@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The Bee I2C controller cannot act as controller and target at the same
+ * time, so this test runs in single-role mode: i2c0 and i2c1 are two
+ * independent buses that must be wired together on the board
+ * (SCL0-SCL1 and SDA0-SDA1 shorted, the "i2c_bus_short" fixture).
+ *
+ * i2c0: SCL = P0_2, SDA = P0_4
+ * i2c1: SCL = P0_6, SDA = P0_7
+ */
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&pinctrl {
+	i2c0_default: i2c0_default {
+		group1 {
+			psels = <BEE_PSEL(I2C0_CLK, P0_2)>,
+				<BEE_PSEL(I2C0_DAT, P0_4)>;
+			output-enable;
+			output-high;
+			bias-pull-up;
+		};
+	};
+
+	i2c1_default: i2c1_default {
+		group1 {
+			psels = <BEE_PSEL(I2C1_CLK, P0_0)>,
+				<BEE_PSEL(I2C1_DAT, P0_1)>;
+			output-enable;
+			output-high;
+			bias-pull-up;
+		};
+	};
+};
