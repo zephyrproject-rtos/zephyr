@@ -126,7 +126,7 @@ static int mmc56x3_chip_set_continuous_mode(const struct device *dev, uint16_t o
 	return ret;
 }
 
-static bool mmc56x3_is_continuous_mode(const struct device *dev)
+bool mmc56x3_is_continuous_mode(const struct device *dev)
 {
 	struct mmc56x3_data *data = dev->data;
 
@@ -138,13 +138,31 @@ int mmc56x3_chip_set_decimation_filter(const struct device *dev, bool bw0, bool 
 	struct mmc56x3_data *data = dev->data;
 	struct mmc56x3_config *config = &data->config;
 
-	data->ctrl1_cache |= (bw0 ? BIT(0) : 0);
-	data->ctrl1_cache |= (bw1 ? BIT(1) : 0);
+	uint8_t ctrl1 = data->ctrl1_cache;
 
-	config->bw0 = bw0;
-	config->bw1 = bw1;
+	if (bw0) {
+		ctrl1 |= BIT(0);
+	} else {
+		ctrl1 &= ~BIT(0);
+	}
 
-	return mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_1, data->ctrl1_cache);
+	if (bw1) {
+		ctrl1 |= BIT(1);
+	} else {
+		ctrl1 &= ~BIT(1);
+	}
+
+	int ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_1, ctrl1);
+
+	if (ret < 0) {
+		LOG_DBG("Setting bandwidth bits failed: %d", ret);
+	} else {
+		data->ctrl1_cache = ctrl1;
+		config->bw0 = bw0;
+		config->bw1 = bw1;
+	}
+
+	return ret;
 }
 
 static int mmc56x3_chip_init(const struct device *dev)
@@ -233,6 +251,7 @@ static int mmc56x3_wait_until_ready(const struct device *dev)
 int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
 				struct mmc56x3_data *data)
 {
+	struct mmc56x3_data *drv_data = dev->data;
 	int32_t raw_magn_x, raw_magn_y, raw_magn_z;
 	int ret;
 
@@ -240,7 +259,12 @@ int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel ch
 		/* Temperature cannot be read in continuous mode */
 		uint8_t raw_temp;
 
-		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0, MMC56X3_CMD_TAKE_MEAS_T);
+		/*
+		 * The take measurement bits are self-clearing, but Auto_SR_en in the same
+		 * register is not, so the cached configuration must be written along them.
+		 */
+		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0,
+					drv_data->ctrl0_cache | MMC56X3_CMD_TAKE_MEAS_T);
 		if (ret < 0) {
 			return ret;
 		}
@@ -248,7 +272,8 @@ int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel ch
 		k_timer_start(&meas_req_timer, K_MSEC(10), K_NO_WAIT);
 		k_timer_status_sync(&meas_req_timer);
 
-		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0, MMC56X3_CMD_TAKE_MEAS_M);
+		ret = mmc56x3_reg_write(dev, MMC56X3_REG_INTERNAL_CTRL_0,
+					drv_data->ctrl0_cache | MMC56X3_CMD_TAKE_MEAS_M);
 		if (ret < 0) {
 			return ret;
 		}
@@ -366,7 +391,8 @@ static int mmc56x3_chip_configure(const struct device *dev, struct mmc56x3_confi
 static int mmc56x3_attr_set(const struct device *dev, enum sensor_channel chan,
 			    enum sensor_attribute attr, const struct sensor_value *val)
 {
-	struct mmc56x3_config new_config = {};
+	struct mmc56x3_data *data = dev->data;
+	struct mmc56x3_config new_config = data->config;
 	int ret = 0;
 
 	__ASSERT_NO_MSG(val != NULL);
