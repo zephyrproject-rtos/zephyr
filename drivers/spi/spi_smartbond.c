@@ -261,8 +261,8 @@ static int spi_smartbond_configure(const struct spi_smartbond_cfg *cfg,
 		return 0;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not yet supported");
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not yet supported");
 		return -ENOTSUP;
 	}
 

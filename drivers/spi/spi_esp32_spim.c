@@ -236,7 +236,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 		} else if (!ctx->tx_buf && ctx->rx_buf) {
 			/* RX-only transfer: allocate zero-filled TX buffer.
 			 * In loopback configurations (GPIO matrix or external wire),
-			 * MOSI must actively output zeros so MISO receives zeros.
+			 * SDO must actively output zeros so SDI receives zeros.
 			 */
 			tx_temp = k_calloc(dma_len_rx, sizeof(uint8_t));
 			if (!tx_temp) {
@@ -339,7 +339,7 @@ static int IRAM_ATTR spi_esp32_transfer(const struct device *dev)
 	}
 
 	if (cfg->dma_enabled) {
-		/* Enable MOSI/MISO data lines AFTER DMA is configured.
+		/* Enable SDO/SDI data lines AFTER DMA is configured.
 		 * Note: For RX-only DMA, we allocate a zero-filled TX buffer above,
 		 * so send_buffer is always set when rcv_buffer is set.
 		 */
@@ -770,7 +770,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
 #ifdef CONFIG_ESP32_SPI_TARGET
 		spi_slave_hal_context_t *shal = &data->target_hal;
 
@@ -786,7 +786,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 #ifdef SOC_GDMA_SUPPORTED
 		shal->use_dma = false;
 #else
-		/* CPU/FIFO slave mode drops the final received byte on these
+		/* CPU/FIFO peripheral mode drops the final received byte on these
 		 * socs, so the target is driven via the integrated SPI-DMA.
 		 */
 		if (!cfg->dma_enabled) {
@@ -829,13 +829,13 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 	 *   chip select via GPIO. Hardware CS must be disabled by setting
 	 *   cs_pin_id outside valid range (0-2). Any value > 2 disables all
 	 *   hardware CS lines per documentation.
-	 * - When using hardware CS (directly via pinctrl), the slave
+	 * - When using hardware CS (directly via pinctrl), the peripheral
 	 *   number maps to the hardware CS pin (CS0, CS1, CS2).
 	 */
 	if (spi_cs_is_gpio(spi_cfg)) {
 		hal_dev->cs_pin_id = -1;
 	} else {
-		hal_dev->cs_pin_id = ctx->config->slave;
+		hal_dev->cs_pin_id = ctx->config->peripheral;
 	}
 
 	/* input parameters to calculate timing configuration */
@@ -880,7 +880,7 @@ static int IRAM_ATTR spi_esp32_configure(const struct device *dev,
 
 	spi_hal_setup_device(hal, hal_dev);
 
-	/* Workaround to handle default state of MISO and MOSI lines */
+	/* Workaround to handle default state of SDI and SDO lines */
 #ifndef CONFIG_SOC_SERIES_ESP32
 	spi_dev_t *hw = hal->hw;
 

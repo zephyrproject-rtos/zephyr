@@ -281,7 +281,7 @@ static int tmc50xx_init(const struct device *dev)
 	static const struct device *tmc50xx_stepper_drivers_##inst[] =                             \
 		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_driver);                     \
 	static const struct device *tmc50xx_motion_controllers_##inst[] =                          \
-		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_ctrl);                      \
+		TMC50XX_CHILD_DEVICES_ARRAY(inst, adi_tmc50xx_stepper_ctrl);                       \
 	BUILD_ASSERT(ARRAY_SIZE(tmc50xx_motion_controllers_##inst) <= 2,                           \
 		     "tmc50xx can drive two steppers at max");                                     \
 	BUILD_ASSERT(ARRAY_SIZE(tmc50xx_stepper_drivers_##inst) <= 2,                              \
@@ -298,7 +298,7 @@ static int tmc50xx_init(const struct device *dev)
 			  DT_INST_PROP(inst, shaft2) << TMC50XX_GCONF_SHAFT_SHIFT(1) |             \
 			  (DT_INST_PROP(inst, lock_gconf) << TMC50XX_LOCK_GCONF_SHIFT)),           \
 		.spi = SPI_DT_SPEC_INST_GET(inst,                                                  \
-					    (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |               \
+					    (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |           \
 					     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8))),    \
 		.clock_frequency =                                                                 \
 			DT_INST_PROP(inst, clock_frequency), /* Child device references */         \

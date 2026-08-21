@@ -100,13 +100,14 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 #endif
 
 
-	int master_mode = !(SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_SLAVE);
+	int controller_mode = !(SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_PERIPHERAL);
 	int quad_mode = 0;
-	int num_slaves = 1;
+	int num_peripherals = 1;
 	int ss_polarity = (config->operation & SPI_CS_ACTIVE_HIGH) ? 1 : 0;
 	unsigned int spi_speed = (unsigned int)config->frequency;
 
-	ret = Wrap_MXC_SPI_Init(regs, master_mode, quad_mode, num_slaves, ss_polarity, spi_speed);
+	ret = Wrap_MXC_SPI_Init(regs, controller_mode, quad_mode, num_peripherals, ss_polarity,
+				spi_speed);
 	if (ret) {
 		return -EINVAL;
 	}
@@ -228,7 +229,7 @@ static void spi_cs_assert(const struct device *dev)
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		return;
 	}
 
@@ -248,7 +249,7 @@ static void spi_cs_deassert(const struct device *dev)
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		return;
 	}
 
@@ -383,7 +384,7 @@ static int spi_max32_transceive(const struct device *dev)
 	}
 #else
 	if ((ctx->config->operation & SPI_HALF_DUPLEX)
-	    || (SPI_OP_MODE_GET(data->ctx.config->operation) & SPI_OP_MODE_SLAVE)
+	    || (SPI_OP_MODE_GET(data->ctx.config->operation) & SPI_OP_MODE_PERIPHERAL)
 #if defined(CONFIG_SPI_EXTENDED_MODES)
 	    || (ctx->config->operation & SPI_LINES_DUAL)
 	    || (ctx->config->operation & SPI_LINES_QUAD)
@@ -420,7 +421,7 @@ static int spi_max32_transceive(const struct device *dev)
 	}
 #endif
 	data->req.spi = cfg->regs;
-	data->req.ssIdx = ctx->config->slave;
+	data->req.ssIdx = ctx->config->peripheral;
 	data->req.ssDeassert = 0;
 	data->req.txCnt = 0;
 	data->req.rxCnt = 0;
@@ -456,7 +457,7 @@ static int spi_max32_transceive(const struct device *dev)
 			return -ENOTSUP;
 		}
 
-		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+		MXC_SPI_SetSlave(cfg->regs, ctx->config->peripheral);
 
 		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
 					     data->req.rxLen >> dfs_shift, dfs_shift);
@@ -536,8 +537,8 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	}
 #endif
 
-#ifdef CONFIG_SPI_SLAVE
-	if ((SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_SLAVE) &&
+#ifdef CONFIG_SPI_PERIPHERAL
+	if ((SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_PERIPHERAL) &&
 	    ((tx_bufs && tx_bufs->count > 1) || (rx_bufs && rx_bufs->count > 1))) {
 		return -ENOTSUP;
 	}
@@ -929,7 +930,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	/* Assert the CS line */
 	spi_cs_assert(dev);
 
-	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+	MXC_SPI_SetSlave(cfg->regs, ctx->config->peripheral);
 
 	do {
 		ret = spi_max32_transceive_dma(dev);
@@ -1073,7 +1074,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 	uint8_t dfs;
 
 	dfs = spi_max32_get_dfs_shift(ctx) ? 2 : 1;
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		if (spi_context_tx_on(ctx)) {
 			spi_context_update_tx(ctx, dfs, data->req.txCnt);
 		}
@@ -1082,7 +1083,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 			spi_context_update_rx(ctx, dfs, data->req.rxCnt);
 		}
 	} else {
-		/* Master connections always assume matching TX/RX */
+		/* Controller connections always assume matching TX/RX */
 		len = spi_context_max_continuous_chunk(ctx);
 		spi_context_update_tx(ctx, dfs, len);
 		spi_context_update_rx(ctx, dfs, len);
@@ -1182,7 +1183,8 @@ static void spi_max32_isr(const struct device *dev)
 
 	if ((req->txLen == req->txCnt) && (req->rxLen == req->rxCnt)) {
 		MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_TX_THD | ADI_MAX32_SPI_INT_EN_RX_THD);
-		if (spi_context_is_slave(&data->ctx) || (flags & ADI_MAX32_SPI_INT_FL_MST_DONE)) {
+		if (spi_context_is_peripheral(&data->ctx) ||
+		    (flags & ADI_MAX32_SPI_INT_FL_MST_DONE)) {
 			MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_MST_DONE
 						| ADI_MAX32_SPI_INT_EN_TX_EMPTY);
 			spi_max32_callback(req, 0);

@@ -85,8 +85,8 @@ static int configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		LOG_ERR("Master mode is not supported on %s", dev->name);
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Controller mode is not supported on %s", dev->name);
 		return -EINVAL;
 	}
 
@@ -188,7 +188,7 @@ static void wait_for_wake(struct spi_nrfx_data *dev_data,
 			  const struct spi_nrfx_config *dev_config)
 {
 	/* If the WAKE line is low, wait until it goes high - this is a signal
-	 * from the master that it wants to perform a transfer.
+	 * from the controller that it wants to perform a transfer.
 	 */
 	if (gpio_pin_get_raw(dev_config->wake_gpio.port,
 			     dev_config->wake_gpio.pin) == 0) {
@@ -416,7 +416,7 @@ static int spi_nrfx_init(const struct device *dev)
 	}
 
 	/* When the WAKE line is used, the SPIS peripheral is enabled
-	 * only after the master signals that it wants to perform a
+	 * only after the controller signals that it wants to perform a
 	 * transfer and it is disabled right after the transfer is done.
 	 * Waiting for the WAKE line to go high, what can be done using
 	 * the GPIO PORT event, instead of just waiting for the transfer

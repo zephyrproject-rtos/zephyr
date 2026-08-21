@@ -2245,7 +2245,7 @@ __maybe_unused static int cs40l5x_deinit(const struct device *dev)
 #define HAPTICS_CS40L5X_BUS(inst)                                                                  \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		(.io_bus.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .io_bus.io = &cs40lxx_io_i2c,),	   \
-		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
+		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER),		   \
 			.io_bus.io = &cs40lxx_io_spi,))
 
 #define HAPTICS_CS40L5X_CONFIG(inst, name, id)                                                     \

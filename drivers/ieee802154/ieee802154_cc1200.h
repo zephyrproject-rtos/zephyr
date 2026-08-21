@@ -24,7 +24,7 @@
  * SPI pins are easy, RESET as well, but when it comes to GPIO:
  * CHIP -> EM adapter
  * GPIO0 -> GPIOA
- * GPIO1 -> reserved (it's SPI MISO)
+ * GPIO1 -> reserved (it's SPI SDO)
  * GPIO2 -> GPIOB
  * GPIO3 -> GPIO3
  */

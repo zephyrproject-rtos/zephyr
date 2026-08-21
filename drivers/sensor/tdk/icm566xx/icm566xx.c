@@ -668,7 +668,7 @@ static int icm566xx_init(const struct device *dev)
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi), \
 			(SPI_DT_IODEV_DEFINE(icm566xx_bus_##inst, \
 				DT_DRV_INST(inst), \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)), \
+				SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)), \
 		    ());                                              \
                                                                                                    \
 	static const struct icm566xx_config icm566xx_cfg_##inst = {                                \

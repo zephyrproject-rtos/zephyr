@@ -61,7 +61,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 	}
 
 	transfer.configFlags = kLPSPI_MasterPcsContinuous |
-			       (ctx->config->slave << LPSPI_MASTER_PCS_SHIFT);
+			       (ctx->config->peripheral << LPSPI_MASTER_PCS_SHIFT);
 
 	if (ctx->tx_len == 0) {
 		/* rx only, nothing to tx */
@@ -119,9 +119,9 @@ static void spi_mcux_isr(const struct device *dev)
 	LPSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static void spi_mcux_master_transfer_callback(LPSPI_Type *base,
-					      lpspi_master_handle_t *handle,
-					      status_t status, void *userData)
+static void spi_mcux_transfer_callback(LPSPI_Type *base,
+				       lpspi_master_handle_t *handle,
+				       status_t status, void *userData)
 {
 	struct spi_mcux_data *data = userData;
 
@@ -137,7 +137,7 @@ static int spi_mcux_configure(const struct device *dev,
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	LPSPI_Type *base = config->base;
-	lpspi_master_config_t master_config;
+	lpspi_master_config_t controller_config;
 	uint32_t clock_freq;
 	uint32_t word_size;
 
@@ -151,11 +151,11 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	LPSPI_MasterGetDefaultConfig(&master_config);
+	LPSPI_MasterGetDefaultConfig(&controller_config);
 
-	if (spi_cfg->slave > CHIP_SELECT_COUNT) {
-		LOG_ERR("Slave %d is greater than %d",
-			    spi_cfg->slave,
+	if (spi_cfg->peripheral > CHIP_SELECT_COUNT) {
+		LOG_ERR("Peripheral %d is greater than %d",
+			    spi_cfg->peripheral,
 			    CHIP_SELECT_COUNT);
 		return -EINVAL;
 	}
@@ -167,24 +167,24 @@ static int spi_mcux_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	master_config.bitsPerFrame = word_size;
+	controller_config.bitsPerFrame = word_size;
 
-	master_config.cpol =
+	controller_config.cpol =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kLPSPI_ClockPolarityActiveLow
 		: kLPSPI_ClockPolarityActiveHigh;
 
-	master_config.cpha =
+	controller_config.cpha =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 		? kLPSPI_ClockPhaseSecondEdge
 		: kLPSPI_ClockPhaseFirstEdge;
 
-	master_config.direction =
+	controller_config.direction =
 		(spi_cfg->operation & SPI_TRANSFER_LSB)
 		? kLPSPI_LsbFirst
 		: kLPSPI_MsbFirst;
 
-	master_config.baudRate = spi_cfg->frequency;
+	controller_config.baudRate = spi_cfg->frequency;
 
 	if (!device_is_ready(config->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -196,10 +196,10 @@ static int spi_mcux_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	LPSPI_MasterInit(base, &master_config, clock_freq);
+	LPSPI_MasterInit(base, &controller_config, clock_freq);
 
 	LPSPI_MasterTransferCreateHandle(base, &data->handle,
-					 spi_mcux_master_transfer_callback,
+					 spi_mcux_transfer_callback,
 					 data);
 
 	LPSPI_SetDummyData(base, 0);

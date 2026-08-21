@@ -270,7 +270,7 @@ static int ads1220_read_register(const struct device *dev, uint8_t reg, uint8_t 
 	int result = spi_transceive_dt(&config->bus, &tx, &rx);
 
 	if (result != 0) {
-		LOG_ERR("%s: spi_transceive failed with error %i (MISO issue?)", dev->name, result);
+		LOG_ERR("%s: spi_transceive failed with error %i (SDI issue?)", dev->name, result);
 		return result;
 	}
 
@@ -783,7 +783,8 @@ static DEVICE_API(adc, ads1220_driver_api) = {
 #define ADS1220_INIT(n)                                                                            \
 	static const struct ads1220_config ads1220_config_##n = {                                  \
 		.bus = SPI_DT_SPEC_INST_GET(n,                                                     \
-					    SPI_OP_MODE_MASTER | SPI_MODE_CPHA | SPI_WORD_SET(8)), \
+					    SPI_OP_MODE_CONTROLLER | SPI_MODE_CPHA |               \
+					    SPI_WORD_SET(8)),                                      \
 		.gpio_data_ready = GPIO_DT_SPEC_INST_GET(n, drdy_gpios),                           \
 		.config3 = IDAC1_ROUTING(n) | IDAC2_ROUTING(n),                                    \
 		.idac_magnitude_ua = MAGNITUDE_UA(n),                                              \
@@ -791,7 +792,7 @@ static DEVICE_API(adc, ads1220_driver_api) = {
 		.operating_mode = OPERATING_MODE(n),                                               \
 		.pga_bypass = DT_INST_PROP(n, pga_bypass),                                         \
 		.dts_channel_cfg = ADC_CHANNEL_CFG_DT(DT_CHILD(DT_DRV_INST(n), channel_0)),        \
-		.oscillator_frequency_hz = DT_INST_PROP(n, oscillator_frequency),              \
+		.oscillator_frequency_hz = DT_INST_PROP(n, oscillator_frequency),                  \
 	};                                                                                         \
                                                                                                    \
 	BUILD_ASSERT(CHECK_1220_CONFIGURATION(n), "ADS1220 configuration invalid");                \

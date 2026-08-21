@@ -654,7 +654,7 @@ static DEVICE_API(display, ssd1327_5_driver_api) = {
 		.variant = n_variant,                                                              \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, SSD1327_5_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),            \
+			node_id, SSD1327_5_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),        \
 		.height = DT_PROP(node_id, height),                                                \
 		.width = DT_PROP(node_id, width),                                                  \
 		.oscillator_freq = DT_PROP(node_id, oscillator_freq),                              \

@@ -43,23 +43,35 @@ extern "C" {
  */
 
 /**
- * @brief Master (controller) mode.
+ * @brief Controller mode.
  *
  * In this case the device used with the API will function as a controller,
  * meaning it will control the CLK line on the SPI bus and the chip select,
  * and therefore have full control over the timing of the transaction.
  */
-#define SPI_OP_MODE_MASTER	0U
+#define SPI_OP_MODE_CONTROLLER	0U
 
 /**
- * @brief Slave (peripheral) mode.
+ * @brief Peripheral mode.
  *
  * With this mode, the device will function as a peripheral,
  * meaning it will need to wait for it's select line to be asserted,
  * and will be need to be subject to pacing by a controller's clock in order to
  * send and receive data during a transaction.
  */
-#define SPI_OP_MODE_SLAVE	BIT(0)  /**< Slave mode. */
+#define SPI_OP_MODE_PERIPHERAL	BIT(0)  /**< Peripheral mode. */
+
+/**
+ * @brief Controller mode.
+ * @deprecated Use @ref SPI_OP_MODE_CONTROLLER instead.
+ */
+#define SPI_OP_MODE_MASTER	SPI_OP_MODE_CONTROLLER __DEPRECATED_MACRO
+
+/**
+ * @brief Peripheral mode.
+ * @deprecated Use @ref SPI_OP_MODE_PERIPHERAL instead.
+ */
+#define SPI_OP_MODE_SLAVE	SPI_OP_MODE_PERIPHERAL __DEPRECATED_MACRO
 
 /** @cond INTERNAL_HIDDEN */
 #define SPI_OP_MODE_MASK	0x1U
@@ -215,10 +227,11 @@ extern "C" {
 
 
 /**
- * @name SPI MISO lines
+ * @name SPI SDI lines
  * @{
  *
- * Some controllers support dual, quad or octal MISO lines connected to slaves.
+ * Some controllers support dual, quad or octal SDI lines connected to
+ * peripherals.
  * Default is single, which is the case most of the time.
  * Without @kconfig{CONFIG_SPI_EXTENDED_MODES} being enabled, single is the
  * only supported one.
@@ -228,7 +241,7 @@ extern "C" {
 #define SPI_LINES_QUAD		(2U << 16)     /**< Quad lines */
 #define SPI_LINES_OCTAL		(3U << 16)     /**< Octal lines */
 
-#define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for MISO lines in spi_operation_t */
+#define SPI_LINES_MASK		(0x3U << 16)   /**< Mask for SDI lines in spi_operation_t */
 
 /** @} */
 
@@ -445,7 +458,7 @@ struct spi_config {
 	 *
 	 * It is a bit field with the following parts:
 	 *
-	 * - 0:      Master or slave.
+	 * - 0:      Controller or peripheral.
 	 * - 1..3:   Clock polarity, phase and loop mode.
 	 * - 4:      LSB or MSB first.
 	 * - 5..10:  Size of a data frame (word) in bits.
@@ -457,12 +470,20 @@ struct spi_config {
 	 *
 	 * If @kconfig{CONFIG_SPI_EXTENDED_MODES} is enabled:
 	 *
-	 * - 16..17: MISO lines (Single/Dual/Quad/Octal).
+	 * - 16..17: Data lines (Single/Dual/Quad/Octal).
 	 * - 18..31: Reserved for future use.
 	 */
 	spi_operation_t operation;
-	/** @brief Slave number from 0 to host controller slave limit. */
-	uint16_t slave;
+	/** @brief Peripheral number from 0 to host controller peripheral limit. */
+	union {
+		/** Peripheral number. */
+		uint16_t peripheral;
+		/**
+		 * @brief Peripheral number.
+		 * @deprecated Use spi_config.peripheral instead.
+		 */
+		__deprecated uint16_t slave;
+	};
 	/**
 	 * @brief GPIO chip-select line (optional, must be initialized to zero
 	 * if not used).
@@ -502,7 +523,7 @@ static inline uint16_t spi_get_word_delay(const struct spi_config *cfg)
  * @brief Structure initializer for spi_config from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
- * spi_config</tt> by reading the relevant @p frequency, @p slave, and
+ * spi_config</tt> by reading the relevant @p frequency, @p peripheral, and
  * @p cs data from the devicetree.
  *
  * @param node_id Devicetree node identifier for the SPI device whose
@@ -520,7 +541,7 @@ static inline uint16_t spi_get_word_delay(const struct spi_config *cfg)
 			COND_CODE_1(DT_PROP(node_id, spi_hold_cs), SPI_HOLD_ON_CS, (0))	| \
 			COND_CODE_1(DT_PROP(node_id, spi_lsb_first), SPI_TRANSFER_LSB, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, spi_cs_high), SPI_CS_ACTIVE_HIGH, (0)),	\
-		.slave = DT_REG_ADDR(node_id),				\
+		.peripheral = DT_REG_ADDR(node_id),			\
 		.cs = SPI_CS_CONTROL_INIT(node_id, __VA_ARGS__),	\
 		.word_delay = DT_PROP(node_id, spi_interframe_delay_ns),\
 	}
@@ -543,7 +564,7 @@ static inline uint16_t spi_get_word_delay(const struct spi_config *cfg)
 struct spi_dt_spec {
 	/** SPI bus */
 	const struct device *bus;
-	/** Slave specific configuration */
+	/** Peripheral specific configuration */
 	struct spi_config config;
 };
 
@@ -551,7 +572,7 @@ struct spi_dt_spec {
  * @brief Structure initializer for spi_dt_spec from devicetree
  *
  * This helper macro expands to a static initializer for a <tt>struct
- * spi_dt_spec</tt> by reading the relevant bus, frequency, slave, and cs
+ * spi_dt_spec</tt> by reading the relevant bus, frequency, peripheral, and cs
  * data from the devicetree.
  *
  * @note Multiple fields are automatically constructed by this macro
@@ -583,36 +604,54 @@ struct spi_dt_spec {
 /**
  * @brief Value that will never compare true with any valid overrun character
  */
-#define SPI_MOSI_OVERRUN_UNKNOWN 0x100
+#define SPI_SDO_OVERRUN_UNKNOWN 0x100
 
 /**
- * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ * @brief Value that will never compare true with any valid overrun character
+ * @deprecated Use @ref SPI_SDO_OVERRUN_UNKNOWN instead.
+ */
+#define SPI_MOSI_OVERRUN_UNKNOWN SPI_SDO_OVERRUN_UNKNOWN __DEPRECATED_MACRO
+
+/**
+ * @brief The value sent on SDO when all TX bytes are sent, but RX continues
  *
- * For drivers where the MOSI line state when receiving is important, this value
+ * For drivers where the SDO line state when receiving is important, this value
  * can be queried at compile-time to determine whether allocating a constant
  * array is necessary.
  *
  * @param node_id Devicetree node identifier for the SPI device to query
  *
- * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
- * @retval byte default MOSI value otherwise
+ * @retval SPI_SDO_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default SDO value otherwise
  */
-#define SPI_MOSI_OVERRUN_DT(node_id) \
-	DT_PROP_OR(node_id, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+#define SPI_SDO_OVERRUN_DT(node_id) \
+	DT_PROP_OR(node_id, overrun_character, SPI_SDO_OVERRUN_UNKNOWN)
 
 /**
- * @brief The value sent on MOSI when all TX bytes are sent, but RX continues
+ * @brief The value sent on SDO when all TX bytes are sent, but RX continues
+ * @deprecated Use @ref SPI_SDO_OVERRUN_DT instead.
+ */
+#define SPI_MOSI_OVERRUN_DT(node_id) SPI_SDO_OVERRUN_DT(node_id) __DEPRECATED_MACRO
+
+/**
+ * @brief The value sent on SDO when all TX bytes are sent, but RX continues
  *
  * This is equivalent to
- * <tt>SPI_MOSI_OVERRUN_DT(DT_DRV_INST(inst))</tt>.
+ * <tt>SPI_SDO_OVERRUN_DT(DT_DRV_INST(inst))</tt>.
  *
  * @param inst Devicetree instance number
  *
- * @retval SPI_MOSI_OVERRUN_UNKNOWN if controller does not export the value
- * @retval byte default MOSI value otherwise
+ * @retval SPI_SDO_OVERRUN_UNKNOWN if controller does not export the value
+ * @retval byte default SDO value otherwise
  */
-#define SPI_MOSI_OVERRUN_DT_INST(inst) \
-	DT_INST_PROP_OR(inst, overrun_character, SPI_MOSI_OVERRUN_UNKNOWN)
+#define SPI_SDO_OVERRUN_DT_INST(inst) \
+	DT_INST_PROP_OR(inst, overrun_character, SPI_SDO_OVERRUN_UNKNOWN)
+
+/**
+ * @brief The value sent on SDO when all TX bytes are sent, but RX continues
+ * @deprecated Use @ref SPI_SDO_OVERRUN_DT_INST instead.
+ */
+#define SPI_MOSI_OVERRUN_DT_INST(inst) SPI_SDO_OVERRUN_DT_INST(inst) __DEPRECATED_MACRO
 
 /**
  * @brief SPI buffer structure

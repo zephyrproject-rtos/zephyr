@@ -579,7 +579,7 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 		goto lpspi_rtio_iodev_start_on_error;
 	}
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
 		LOG_WRN("Target mode not supported for LPSPI RTIO");
 		ret = -ENOTSUP;
 		goto lpspi_rtio_iodev_start_on_error;
@@ -612,7 +612,7 @@ static void lpspi_rtio_iodev_start(const struct device *dev)
 	lpspi_data->rx_curr.words_clocked = 0;
 
 	base->TCR = (base->TCR & ~(LPSPI_TCR_PCS_MASK | LPSPI_TCR_RXMSK_MASK)) |
-		    LPSPI_TCR_PCS(spi_cfg->slave) | LPSPI_TCR_CONT_MASK;
+		    LPSPI_TCR_PCS(spi_cfg->peripheral) | LPSPI_TCR_CONT_MASK;
 	spi_context_cs_control(&data->ctx, true);
 
 	/* tcr is written to tx fifo */

@@ -163,6 +163,19 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* SPI
+
+  * The SPI API now uses inclusive terminology (controller/peripheral, SDO/SDI). The former
+    names are deprecated: ``SPI_OP_MODE_MASTER``/``SPI_OP_MODE_SLAVE`` (use
+    :c:macro:`SPI_OP_MODE_CONTROLLER`/:c:macro:`SPI_OP_MODE_PERIPHERAL`), the ``slave`` member
+    of :c:struct:`spi_config` (use ``peripheral``), the ``SPI_MOSI_OVERRUN_*`` macros (use
+    :c:macro:`SPI_SDO_OVERRUN_UNKNOWN`, :c:macro:`SPI_SDO_OVERRUN_DT`,
+    :c:macro:`SPI_SDO_OVERRUN_DT_INST`), ``CONFIG_SPI_SLAVE`` (use
+    :kconfig:option:`CONFIG_SPI_PERIPHERAL`), the ``zephyr,bt-hci-spi-slave`` devicetree
+    compatible (use :dtcompatible:`zephyr,bt-hci-spi-peripheral`) and the
+    ``mosi-gpios``/``miso-gpios``-style devicetree properties of the bindings listed in the
+    migration guide.
+
 * Nordic
 
   * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and

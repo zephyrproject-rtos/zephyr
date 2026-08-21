@@ -165,8 +165,8 @@ static int spi_config(const struct device *dev,
 		sys_set_bit(ctrl_reg, _USART_CTRL_MSBF_SHIFT);
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
