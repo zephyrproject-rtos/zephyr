@@ -1,0 +1,13 @@
+common:
+  min_ram: 16
+  tags:
+    - net
+    - socket
+  # AddressSanitizer is only available on the POSIX architecture.
+  arch_allow:
+    - posix
+tests:
+  net.socket.nsos_close_race:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
