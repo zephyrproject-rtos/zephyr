@@ -347,21 +347,19 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 	struct spi_buf rx_buf[2];
 	struct spi_buf_set tx;
 	struct spi_buf_set rx;
-	static uint8_t dummy_tx[64];
-	static uint8_t dummy_rx[64];
 	int ret;
 
 	hdr = sys_cpu_to_be32(hdr);
 	tx_buf[0].buf = &hdr;
 	tx_buf[0].len = sizeof(hdr);
 
-	tx_buf[1].buf = buf_tx ? buf_tx : dummy_tx;
+	tx_buf[1].buf = buf_tx;
 	tx_buf[1].len = tc6->cps;
 
 	tx.buffers = tx_buf;
 	tx.count = ARRAY_SIZE(tx_buf);
 
-	rx_buf[0].buf = buf_rx ? buf_rx : dummy_rx;
+	rx_buf[0].buf = buf_rx;
 	rx_buf[0].len = tc6->cps;
 
 	rx_buf[1].buf = ftr;
@@ -381,13 +379,14 @@ int oa_tc6_chunk_spi_transfer(struct oa_tc6 *tc6, uint8_t *buf_rx, uint8_t *buf_
 
 int oa_tc6_read_status(struct oa_tc6 *tc6, uint32_t *ftr)
 {
+	uint8_t oa_tx[64U] = {0};
 	uint32_t hdr;
 
 	hdr = FIELD_PREP(OA_DATA_HDR_DNC, 1) | FIELD_PREP(OA_DATA_HDR_DV, 0) |
 	      FIELD_PREP(OA_DATA_HDR_NORX, 1);
 	hdr |= FIELD_PREP(OA_DATA_HDR_P, oa_tc6_get_parity(hdr));
 
-	return oa_tc6_chunk_spi_transfer(tc6, NULL, NULL, hdr, ftr);
+	return oa_tc6_chunk_spi_transfer(tc6, NULL, oa_tx, hdr, ftr);
 }
 
 int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
@@ -480,7 +479,8 @@ int oa_tc6_read_chunks(struct oa_tc6 *tc6, struct net_pkt *pkt)
 			if (FIELD_GET(OA_DATA_FTR_SV, ftr) && (ebo <= sbo)) {
 				tc6->concat_buf = net_buf_clone(buf_rx, OA_TC6_BUF_ALLOC_TIMEOUT);
 				if (!tc6->concat_buf) {
-					LOG_ERR("OA RX: Can't allocate RX buffer for data!");
+					LOG_ERR("OA RX: Can't allocate RX buffer for "
+						"data!");
 					ret = -ENOMEM;
 					goto unref_buf;
 				}

@@ -1619,9 +1619,8 @@ static const struct ethernet_api adin2111_port_api = {
 				     &adin2111_port_api, NET_ETH_MTU);
 
 #define ADIN2111_SPI_OPERATION ((uint16_t)(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8)))
-#define ADIN2111_MAC_INITIALIZE                                                                    \
-	(inst, dev_id, ifaces, name)                                                               \
-		ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);           \
+#define ADIN2111_MAC_INITIALIZE(inst, dev_id, ifaces, name)                                        \
+	ADIN2111_DEF_BUF(name##_buffer_##inst, CONFIG_ETH_ADIN2111_BUFFER_SIZE);                   \
 	COND_CODE_1(DT_INST_PROP(inst, spi_oa),							\
 	(											\
 		ADIN2111_DEF_BUF(name##_oa_rx_buf_##inst, ADIN2111_OA_RX_BURST_SZ);					\
