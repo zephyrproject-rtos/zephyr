@@ -7,4 +7,5 @@ zephyr_library()
 zephyr_library_sources_ifdef(CONFIG_WUC_MCUX_LLWU wuc_nxp_llwu.c)
 zephyr_library_sources_ifdef(CONFIG_WUC_MCUX_SLEEPCON wuc_nxp_sleepcon.c)
 zephyr_library_sources_ifdef(CONFIG_WUC_MCUX_WUU wuc_nxp_wuu.c)
+zephyr_library_sources_ifdef(CONFIG_WUC_RTS5817 wuc_rts5817.c)
 # zephyr-keep-sorted-stop
