@@ -3,7 +3,7 @@ sample:
   name: audio codec sample
 tests:
   sample.drivers.audio.codec:
-    filter: dt_nodelabel_enabled("audcodec")
+    filter: dt_alias_exists("codec0")
     tags: codec
     integration_platforms:
       - sf32lb52_devkit_lcd

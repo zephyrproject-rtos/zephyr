@@ -1,0 +1,54 @@
+# Copyright (c) 2026 Draeger
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PCM audio playback on an STM32 DAC channel, streamed by DMA and clocked by a
+  basic timer's TRGO trigger.
+
+  Example (STM32L1, DAC channel 1, TIM6, DMA1 ch2):
+    audio_dac0: audio-dac {
+      compatible = "st,stm32-dac-audio";
+      dmas = <&dma1 2 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>;
+      io-channels = <&dac1 1>;
+      st,dac-trigger-timer = <&timers6>;
+      st,dac-trigger-source = "TIM6_TRGO";
+    };
+
+compatible: "st,stm32-dac-audio"
+
+include: base.yaml
+
+properties:
+  dmas:
+    required: true
+
+  io-channels:
+    type: phandle-array
+    required: true
+
+  st,dac-trigger-timer:
+    type: phandle
+    required: true
+
+  st,dac-trigger-source:
+    type: string
+    default: TIM6_TRGO
+    enum:
+      - TIM1_TRGO
+      - TIM2_TRGO
+      - TIM3_TRGO
+      - TIM4_TRGO
+      - TIM5_TRGO
+      - TIM6_TRGO
+      - TIM7_TRGO
+      - TIM8_TRGO
+      - TIM9_TRGO
+      - TIM15_TRGO
+      - TIM18_TRGO
+      - TIM21_TRGO
+      - TIM23_TRGO
+      - TIM24_TRGO
+
+    description: |
+      Selects the trigger output source for DMA operation, must match the
+      selected timer. Not all options are available on all series.

@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Draeger
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DAC_STM32
+	bool "STM32 DAC audio playback driver (timer-triggered DMA)"
+	default y
+	depends on DT_HAS_ST_STM32_DAC_AUDIO_ENABLED
+	select DAC
+	select COUNTER
+	select DMA
+	help
+	  Enable audio playback through an STM32 on-chip DAC channel.
+
+config AUDIO_DAC_STM32_MAX_BLOCK_SIZE
+	int "STM32 DAC audio maximum block size in bytes"
+	default 512
+	range 2 32766
+	help
+	  The driver is using double buffering: the buffer holds two blocks,
+	  so the RAM cost per instance is twice this value.
