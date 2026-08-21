@@ -621,6 +621,53 @@ void HAL_PCD_DataOutStageCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 	}
 }
 
+void HAL_PCD_ISOOUTIncompleteCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
+{
+	struct udc_stm32_data *priv = hpcd2data(hpcd);
+	uint8_t ep = epnum | USB_EP_DIR_OUT;
+	struct udc_ep_config *ep_cfg;
+	struct net_buf *buf;
+	stm32_status_t status;
+
+	ep_cfg = udc_get_ep_cfg(priv->dev, ep);
+	if (ep_cfg == NULL) {
+		return;
+	}
+
+	buf = udc_buf_peek(ep_cfg);
+	if (buf == NULL) {
+		return;
+	}
+
+	/* When an incomplete ISO OUT transfer occurs, the endpoint is disabled.
+	 * Re-enable the endpoint to allow reception in the remaining free space
+	 * of the buffer. HAL_PCD_DataOutStageCallback() will be called as usual
+	 * when the buffer is eventually filled.
+	 */
+	status = hal_udc_set_endpoint_receive(&priv->pcd, ep, net_buf_tail(buf),
+					      net_buf_tailroom(buf));
+	if (status != HAL_OK) {
+		LOG_ERR("ISO OUT re-enable failed(0x%02x), %d", ep, (int)status);
+	}
+}
+
+void HAL_PCD_ISOINIncompleteCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
+{
+	ARG_UNUSED(hpcd);
+	ARG_UNUSED(epnum);
+
+	/* Recovering isochronous IN after an incomplete transfer is a TODO. It
+	 * keeps working today because iso IN is completion-driven: every
+	 * transmitted frame yields a DataInStageCallback that arms the next queued
+	 * buffer, so a missed frame only drops that one packet. Iso OUT gets no
+	 * such completion on a miss (the core disables the endpoint and nothing
+	 * re-arms it), which is why only OUT wedges. A proper IN fix cannot re-arm
+	 * here either: udc_stm32_tx() has already advanced the pending buffer's
+	 * data/len, so it must go through the normal data-in completion path (drop
+	 * the missed frame and arm the next one).
+	 */
+}
+
 static void handle_msg_data_out(struct udc_stm32_data *priv, uint8_t epnum, uint16_t rx_count)
 {
 	const struct device *dev = priv->dev;
