@@ -31,4 +31,14 @@ config RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION
 	  Example: to place display frame buffer in external SDRAM (.sdram section)
 	    CONFIG_RENESAS_RA_GLCDC_FRAME_BUFFER_SECTION=".sdram"
 
+config RENESAS_RA_DISPLAY_EVENT_CB_MAX
+        int "Maximum number of registered display event callbacks"
+        default 2
+        range 1 16
+        help
+          Maximum number of event callbacks that can be simultaneously
+          registered with a Renesas RA display driver instance.
+          Each entry consumes a small amount of static memory per
+          display device instance.
+
 endif # RENESAS_RA_GLCDC
