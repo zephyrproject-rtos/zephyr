@@ -1,0 +1,49 @@
+/*
+ * Copyright (C) 2026 DH electronics GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	raspberrypi_header: raspberrypi_header {
+		compatible = "raspberrypi-40pins-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpiob 4 0>,	/*  I2C0_SDA_I2C2_SDA_PB4 */
+			   <1 0 &gpiob 5 0>,	/* I2C0_SCL_I2C2_SCL_PB5 */
+			   <2 0 &gpioi 8 0>,	/* #INT_HIGH_PRIO_PI8 */
+			   <3 0 &gpiob 7 0>,	/* UART1_TX_UART4_TX_PB7  */
+			   <4 0 &gpiob 6 0>,	/* UART1_RX_UART4_RX_PB6 */
+			   <5 0 &gpiod 9 0>,	/* UART1_RTS_UART4_RTS_PD9 */
+			   <6 0 &gpioa 9 0>,	/* I2S_TXC_SAI2_SCKB_PA9 */
+			   <7 0 &gpioz 3 0>,	/* GPIO_B_BL_EN_PZ3 */
+			   <8 0 &gpiog 8 0>,	/* UART2_TX_UART9_TX_PG8 */
+			   <9 0 &gpiob 9 0>,	/* CAN0_TX_FDCAN1_TX_PB9 */
+			   <10 0 &gpiob 11 0>,	/* CAN0_RX_FDCAN1_RX_PB11 */
+			   <11 0 &gpioz 7 0>,	/* SPI8_MOSI_PZ7 */
+			   <12 0 &gpioz 8 0>,	/* SPI8_MISO_PZ8 */
+			   <13 0 &gpiod 2 0>,	/* CAN1_TX_FDCAN3_TX_PD2 */
+			   <14 0 &gpioz 5 0>,	/* SPI8_SCK_PZ5 */
+			   <15 0 &gpioz 6 0>,	/* SPI8_NSS_PZ6  */
+			   <16 0 &gpiod 1 0>,	/* CAN1_RX_FDCAN3_RX_PD1 */
+			   <17 0 &gpiob 2 0>,	/* QSPI_D2_OCTOSPIM_P2_IO2_PB2 */
+			   <18 0 &gpioi 5 0>,	/* UART2_RX_UART9_RX_PI5 */
+			   <19 0 &gpiob 3 0>,	/* QSPI_D3_OCTOSPIM_P2_IO3_PB3 */
+			   <20 0 &gpiof 12 0>,	/* UART2_RTS_UART9_RTS_PF12 */
+			   <21 0 &gpioh 4 0>,	/* PWM0_BL_PWM_TIM5_CH2_PH4 */
+			   <22 0 &gpioz 1 0>,	/* PWM1_TIM8_CH2_PZ1 */
+			   <23 0 &gpioa 6 0>,	/* I2S_TXFS_SAI2_FSB_PA6 */
+			   <24 0 &gpiod 8 0>,	/* UART1_CTS_UART4_CTS_PD8 */
+			   <25 0 &gpiog 7 0>,	/* UART2_CTS_UART9_CTS_PG7 */
+			   <26 0 &gpiog 1 0>,	/* I2S_RXD_SAI2_SDA_PG1 */
+			   <27 0 &gpioa 10 0>;	/* I2S_TXD_SAI2_SDB_PA10 */
+	};
+};
+
+raspberrypi_serial: &uart4 {};
+
+raspberrypi_i2c1: &i2c2 {};
+
+raspberrypi_spi: &spi8 {};
+
+dh_raspberrypi_can: &fdcan1 {};

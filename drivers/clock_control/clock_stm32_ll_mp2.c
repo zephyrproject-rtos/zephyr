@@ -153,6 +153,11 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI67_CLKSOURCE);
 		break;
 #endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(spi8))
+	case STM32_CLOCK_PERIPH_SPI8:
+		*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI8_CLKSOURCE);
+		break;
+#endif
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fdcan1)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fdcan2)) || \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(fdcan3))
