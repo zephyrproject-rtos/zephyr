@@ -91,6 +91,7 @@ void mock_log_backend_generic_record(const struct log_backend *backend,
 	exp->data_len = data_len;
 
 	mock->msg_rec_idx++;
+	zassert_true(mock->msg_rec_idx <= ARRAY_SIZE(mock->exp_msgs));
 }
 
 void mock_log_backend_validate(const struct log_backend *backend, bool panic)
