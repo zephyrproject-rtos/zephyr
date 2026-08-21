@@ -163,6 +163,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 			icm45686_stream_result(dev, -ENOMEM);
 			return;
 		}
+		rtio_submit(data->bus.rtio.ctx, 0);
+
 		icm45686_stream_result(dev, 0);
 		return;
 	}
@@ -187,7 +189,7 @@ static void icm45686_event_handler(const struct device *dev)
 {
 	struct icm45686_data *data = dev->data;
 	const struct icm45686_config *cfg = dev->config;
-	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+	const struct sensor_read_config *read_cfg;
 	uint8_t val = 0;
 	uint64_t cycles;
 	int err;
@@ -211,6 +213,8 @@ static void icm45686_event_handler(const struct device *dev)
 		data->stream.settings.enabled.fifo_full = false;
 		return;
 	}
+
+	read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 
 	if (atomic_cas(&data->stream.state, ICM45686_STREAM_ON, ICM45686_STREAM_BUSY) == false) {
 		LOG_WRN("Event handler triggered while a stream is in progress! Ignoring");
@@ -570,6 +574,7 @@ int icm45686_stream_init(const struct device *dev)
 			LOG_ERR("Failed to configure interrupt");
 		}
 
+		memset(&int_config, INV_IMU_DISABLE, sizeof(int_config));
 		err = icm456xx_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");
