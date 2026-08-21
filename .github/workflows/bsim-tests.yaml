@@ -27,6 +27,7 @@ on:
       - "include/zephyr/net/ieee802154*"
       - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
+      - "drivers/gpio/*nrfx*"
       - '!**.rst'
 
 permissions:
@@ -141,11 +142,20 @@ jobs:
             drivers/serial/*nrfx*
             tests/drivers/uart/
 
+      - name: Check if GPIO files changed
+        uses: tj-actions/changed-files@9426d40962ed5378910ee2e21d5f8c6fcbf2dd96 # v47.0.6
+        id: check-gpio-files
+        with:
+          files: |
+            tests/bsim/drivers/gpio/
+            drivers/gpio/*nrfx*
+
       - name: Update BabbleSim to manifest revision
         if: >
           steps.check-bluetooth-files.outputs.any_modified == 'true'
           || steps.check-networking-files.outputs.any_modified == 'true'
           || steps.check-uart-files.outputs.any_modified == 'true'
+          || steps.check-gpio-files.outputs.any_modified == 'true'
           || steps.check-common-files.outputs.any_modified == 'true'
         run: |
           export BSIM_VERSION=$( west list bsim -f {revision} )
@@ -171,9 +181,14 @@ jobs:
         run: |
           tests/bsim/ci.uart.sh
 
+      - name: Run GPIO Tests with BSIM
+        if: steps.check-gpio-files.outputs.any_modified == 'true' || steps.check-common-files.outputs.any_modified == 'true'
+        run: |
+          tests/bsim/ci.gpio.sh
+
       - name: Merge Test Results
         run: |
-          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" junit.xml
+          junitparser merge --glob "./bsim_*/*bsim_results.*.xml" "./twister-out/twister.xml" "./twister-out-gpio/twister.xml" junit.xml
           junit2html junit.xml junit.html
 
       - name: Upload Unit Test Results in HTML
