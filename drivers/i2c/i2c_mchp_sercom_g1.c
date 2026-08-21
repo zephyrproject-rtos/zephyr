@@ -122,6 +122,14 @@ struct i2c_mchp_dev_data {
 #if defined(CONFIG_I2C_TARGET)
 	bool first_read;
 	uint8_t tgt_xfer_data;
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	uint8_t rx_buf_internal[CONFIG_I2C_MCHP_TARGET_BUFF_SIZE];
+	uint32_t rx_len;
+	uint8_t *tx_buf_ptr;
+	uint32_t tx_pos;
+	uint32_t tx_len;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 #endif /*CONFIG_I2C_TARGET*/
 };
 
@@ -1024,7 +1032,18 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
-		/* Controller is reading - get first byte */
+		/* Controller is reading from target */
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Flush accumulated write data before read (repeated START pattern) */
+		if ((data->rx_len > 0U) && (cb->buf_write_received != NULL)) {
+			cb->buf_write_received(data->tgt_cfg, data->rx_buf_internal, data->rx_len);
+			data->rx_len = 0;
+		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
+
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Get first byte to send */
 		if (cb->read_requested != NULL) {
 			if (cb->read_requested(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
 				/* Error - wait for next START */
@@ -1032,9 +1051,11 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 		data->first_read = true;
 	} else {
 		/* Controller is writing */
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
 		if (cb->write_requested != NULL) {
 			if (cb->write_requested(data->tgt_cfg) < 0) {
 				/* Error - NACK the address */
@@ -1042,6 +1063,7 @@ static void i2c_target_on_addr_match(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	}
 }
 
@@ -1052,6 +1074,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
 
 	if ((status & SERCOM_I2CS_STATUS_DIR_Msk) != 0) {
+		/* Controller is reading from target */
 
 		if (data->first_read) {
 			/* First DRDY: load first byte prepared in AMATCH */
@@ -1066,6 +1089,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 				return;
 			}
 
+#ifndef CONFIG_I2C_TARGET_BUFFER_MODE
 			/* Get next byte */
 			if (cb->read_processed != NULL) {
 				if (cb->read_processed(data->tgt_cfg, &data->tgt_xfer_data) < 0) {
@@ -1073,11 +1097,55 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 					return;
 				}
 			}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 		}
 
 		/* Load data to send - writing DATA clears DRDY */
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		if (data->tx_len == 0U) {
+			/* Request a new buffer of data to send */
+			if (cb->buf_read_requested == NULL) {
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+
+			int ret = cb->buf_read_requested(data->tgt_cfg, &data->tx_buf_ptr,
+							 &data->tx_len);
+			if (ret != 0) {
+				LOG_ERR("Target callback failed to provide data (error code=%d), "
+					"sending NACK",
+					ret);
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+			data->tx_pos = 0;
+			if ((data->tx_len == 0U) || (data->tx_buf_ptr == NULL)) {
+				i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+				return;
+			}
+		}
+
+		/* Send next byte from the buffer */
+		I2CS(dev).SERCOM_DATA = data->tx_buf_ptr[data->tx_pos];
+		data->tx_len--;
+		data->tx_pos++;
+#else
 		I2CS(dev).SERCOM_DATA = data->tgt_xfer_data;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	} else {
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+		/* Store to the internal buffer */
+		if (data->rx_len < CONFIG_I2C_MCHP_TARGET_BUFF_SIZE) {
+			data->rx_buf_internal[data->rx_len] = I2CS(dev).SERCOM_DATA;
+			data->rx_len++;
+		} else {
+			LOG_WRN("Buffer overflow: rx_len=%u >= MAX=%u", data->rx_len,
+				CONFIG_I2C_MCHP_TARGET_BUFF_SIZE);
+			data->rx_len = 0;
+			i2c_target_send_cmd(dev, I2C_TARGET_CMD_NACK);
+		}
+#else
 		data->tgt_xfer_data = I2CS(dev).SERCOM_DATA;
 
 		if (cb->write_received != NULL) {
@@ -1087,6 +1155,7 @@ static void i2c_target_on_data_ready(const struct device *dev, uint16_t status)
 				return;
 			}
 		}
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 	}
 }
 
@@ -1095,6 +1164,15 @@ static void i2c_target_on_stop(const struct device *dev)
 {
 	struct i2c_mchp_dev_data *data = DEV_DATA(dev);
 	const struct i2c_target_callbacks *cb = data->tgt_cfg->callbacks;
+
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	if ((data->rx_len > 0U) && (cb->buf_write_received != NULL)) {
+		cb->buf_write_received(data->tgt_cfg, data->rx_buf_internal, data->rx_len);
+	}
+	data->rx_len = 0;
+	data->tx_len = 0;
+	data->tx_pos = 0;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 
 	if (cb->stop != NULL) {
 		cb->stop(data->tgt_cfg);
@@ -1316,6 +1394,13 @@ static int i2c_mchp_target_register(const struct device *dev, struct i2c_target_
 
 	/* Store pointer to original config - callbacks use CONTAINER_OF on this */
 	data->tgt_cfg = cfg;
+	data->first_read = false;
+#ifdef CONFIG_I2C_TARGET_BUFFER_MODE
+	data->rx_len = 0;
+	data->tx_len = 0;
+	data->tx_pos = 0;
+	data->tx_buf_ptr = NULL;
+#endif /*CONFIG_I2C_TARGET_BUFFER_MODE*/
 
 	i2c_enable(dev, false);
 	i2c_setup_target_mode(dev);
