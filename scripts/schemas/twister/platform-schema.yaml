@@ -77,6 +77,8 @@ $defs:
         type: array
         items:
           type: string
+      toolchain_exclusive:
+        type: boolean
       sysbuild:
         type: boolean
       env:
