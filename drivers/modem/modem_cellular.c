@@ -848,6 +848,7 @@ static int modem_cellular_on_idle_state_enter(struct modem_cellular_data *data)
 	modem_cmux_release(&data->cmux);
 	modem_pipe_close_async(data->uart_pipe);
 	k_sem_give(&data->suspended_sem);
+	modem_cellular_emit_event(data, CELLULAR_EVENT_MODEM_SUSPENDED, NULL);
 	return 0;
 }
 
