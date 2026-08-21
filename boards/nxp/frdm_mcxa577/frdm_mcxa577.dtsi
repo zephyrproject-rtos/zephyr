@@ -388,12 +388,21 @@
 	scan-period-ms = <50>;
 };
 
+&smartdma {
+	status = "okay";
+};
+
 nxp_8080_touch_panel_i2c: &lpi2c3 {};
 
 zephyr_mipi_dbi_parallel: &flexio0_lcd {
-	/* DMA channel 0, muxed to FlexIO TX */
-	dmas = <&edma0 0 71>;
-	dma-names = "tx";
+	dmas = <&smartdma>;
+	dma-names = "smartdma";
+	/* Route the FlexIO IRQ to the SmartDMA trigger input through
+	 * INPUTMUX0. Connection value is the inputmux_connection_t
+	 * enum from fsl_inputmux_connections.h:
+	 *   kINPUTMUX_Flexio0irqToSmartdmatrig = 0xa000034
+	 */
+	mux-states = <&inputmux0 0 0xa000034>;
 	shifters-count = <4>;
 	timers-count = <1>;
 	enwr-pin = <27>;
