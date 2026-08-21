@@ -130,6 +130,24 @@ GPIO
 
 All the GPIO banks available are enabled in the :zephyr_file:`dts/arm/nxp/imx/nxp_imx8ml_m7.dtsi`.
 
+PWM
+---
+
+PWM_1 and PWM_2 are enabled and routed to the Verdin connector.
+
++---------------+-----------------+---------------------------+
+| Board Name    | SoC Name        | Verdin connector          |
++===============+=================+===========================+
+| PWM_1         | PWM1            | SODIMM 15                 |
++---------------+-----------------+---------------------------+
+| PWM_2         | PWM2            | SODIMM 16                 |
++---------------+-----------------+---------------------------+
+
+PWM3 and PWM4 are described in :zephyr_file:`dts/arm/nxp/imx/nxp_imx8ml_m7.dtsi` but left
+disabled on this module: the pads that carry them are used for USB_2_EN and CSI_1_MCLK, so
+muxing them to PWM would break the USB and CSI functions. A carrier board that does not need
+those signals can enable the instances with its own pin selection.
+
 System Clock
 ============
 
