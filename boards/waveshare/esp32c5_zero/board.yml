@@ -1,0 +1,6 @@
+board:
+  name: esp32c5_zero
+  full_name: ESP32-C5-Zero
+  vendor: waveshare
+  socs:
+  - name: esp32c5

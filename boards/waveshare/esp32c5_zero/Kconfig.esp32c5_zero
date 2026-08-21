@@ -1,0 +1,9 @@
+# ESP32-C5-Zero board configuration
+
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32C5_ZERO
+	select SOC_ESP32C5
+	select SOC_ESP32C5_HPCORE if BOARD_ESP32C5_ZERO_ESP32C5_HPCORE
+	select SOC_ESP32C5_LPCORE if BOARD_ESP32C5_ZERO_ESP32C5_LPCORE
