@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 The Zephyr Project Contributors
+# Copyright (c) 2026 Dev It Wise
+
+menuconfig BOARD_ID
+	bool "Board identity drivers"
+	help
+	  Enable board identity / revision detection drivers. These drivers
+	  read a raw identity value encoded on the board itself (strap pins,
+	  an EEPROM word, ...) so one firmware image can recognize which
+	  hardware revision it is running on at runtime.
+
+if BOARD_ID
+
+module = BOARD_ID
+module-str = board_id
+source "subsys/logging/Kconfig.template.log_config"
+
+config BOARD_ID_INIT_PRIORITY
+	int "Board-id driver init priority"
+	default 90
+	help
+	  Board-id driver initialization priority. Defaults after
+	  GPIO_INIT_PRIORITY so a GPIO-backed board-id device can initialize
+	  after its GPIO controller, and before APPLICATION so an application
+	  init hook can gate on the board identity.
+
+config BOARD_ID_GPIO
+	bool "GPIO strap board-id driver"
+	default y
+	depends on DT_HAS_ZEPHYR_BOARD_ID_GPIO_ENABLED
+	select GPIO
+	help
+	  Board-id backend that reads the identity value from a set of GPIO
+	  strap pins.
+
+endif # BOARD_ID

@@ -1,0 +1,80 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ * Copyright (c) 2026 Dev It Wise
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio_id: gpio-id-emul {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "okay";
+	};
+
+	gpio_id_wide: gpio-id-wide-emul {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "okay";
+	};
+
+	board_id0: board-id0 {
+		compatible = "zephyr,board-id-gpio";
+		gpios = <&gpio_id 0 GPIO_ACTIVE_HIGH>,
+			<&gpio_id 1 GPIO_ACTIVE_HIGH>,
+			<&gpio_id 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	board_id_pullup: board-id-pullup {
+		compatible = "zephyr,board-id-gpio";
+		gpios = <&gpio_id 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	board_id_min: board-id-min {
+		compatible = "zephyr,board-id-gpio";
+		gpios = <&gpio_id 6 GPIO_ACTIVE_HIGH>;
+	};
+
+	board_id_max: board-id-max {
+		compatible = "zephyr,board-id-gpio";
+		gpios = <&gpio_id_wide 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 2 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 7 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 8 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 9 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 10 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 11 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 12 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 13 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 19 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 22 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 23 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 24 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 25 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 26 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 27 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 28 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 29 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 30 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&gpio_id_wide 31 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+};
