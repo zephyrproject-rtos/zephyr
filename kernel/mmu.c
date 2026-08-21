@@ -991,7 +991,7 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 					 POINTER_TO_UINT(virt), size,
 					 CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
-	__ASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
+	__ASSERT(aligned_size <= (UINTPTR_MAX - aligned_virt),
 		 "wraparound for virtual address 0x%lx (size %zu)",
 		 aligned_virt, aligned_size);
 
