@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SF32LB_JDI_PARALLEL
+	bool "JDI parallel interface display driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_JDI_PARALLEL_ENABLED
+	help
+	  Enable driver for JDI parallel interface display.
