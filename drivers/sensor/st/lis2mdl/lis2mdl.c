@@ -120,8 +120,8 @@ static void lis2mdl_channel_get_temp(const struct device *dev,
 	struct lis2mdl_data *drv_data = dev->data;
 
 	/* formula is temp = 25 + (temp / 8) C */
-	val->val1 = 25  + drv_data->temp_sample / 8;
-	val->val2 = (drv_data->temp_sample % 8) * 1000000 / 8;
+	sensor_value_from_micro(val,
+				25000000LL + ((int64_t)drv_data->temp_sample * 1000000LL) / 8);
 }
 
 static int lis2mdl_channel_get(const struct device *dev,
@@ -192,6 +192,9 @@ static int get_single_mode_raw_data(const struct device *dev,
 	const struct lis2mdl_config *cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	int rc = 0;
+
+	/* drop any count left over from a conversion nobody consumed */
+	k_sem_reset(&lis2mdl->fetch_sem);
 
 	rc = lis2mdl_operating_mode_set(ctx, LIS2MDL_SINGLE_TRIGGER);
 	if (rc) {
