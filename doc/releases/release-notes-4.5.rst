@@ -94,6 +94,10 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+    * ``CONFIG_BT_FIXED_PASSKEY``
+    * ``bt_passkey_set()``
+    * ``BT_PASSKEY_INVALID``
+
 * Counter
 
     * ``CONFIG_COUNTER_MAXIM_DS3231``

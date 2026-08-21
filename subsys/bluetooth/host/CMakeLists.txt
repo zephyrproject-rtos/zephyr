@@ -90,12 +90,6 @@ if(CONFIG_BT_SMP_LOG_LEVEL_DBG OR CONFIG_BT_KEYS_LOG_LEVEL_DBG OR CONFIG_BT_LOG_
   production."
     )
 endif()
-if(CONFIG_BT_FIXED_PASSKEY)
-  message(WARNING "CONFIG_BT_FIXED_PASSKEY is enabled
-  A fixed passkey is easy to deduce during the pairing procedure, do not use in
-  production."
-    )
-endif()
 if(CONFIG_BT_OOB_DATA_FIXED)
   message(WARNING "CONFIG_BT_OOB_DATA_FIXED is enabled.
   A hardcoded OOB data set will be stored in the image, do not use in
