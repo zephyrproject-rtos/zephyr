@@ -354,10 +354,12 @@ int sdmmc_switch_voltage(struct sd_card *card)
 	 * cycle. Some cards will only drive these
 	 * lines low briefly, so we should check as soon as possible
 	 */
-	if (!(sdhc_card_busy(card->sdhc))) {
+	/* Need to retry only if CMD and DAT[3:0] signals are still high */
+	if (sdhc_card_busy(card->sdhc)) {
 		/* Delay 1ms to allow card to drive lines low */
 		sd_delay(1);
-		if (!sdhc_card_busy(card->sdhc)) {
+		/* return -EAGAIN only if CMD and DAT[3:0] signals are still high */
+		if (sdhc_card_busy(card->sdhc)) {
 			/* Card did not drive CMD and DAT lines low */
 			LOG_DBG("Card did not drive DAT lines low");
 			return -EAGAIN;
