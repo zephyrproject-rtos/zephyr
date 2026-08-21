@@ -1,0 +1,23 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config XTENSA_ESP32_SYS_TIMER
+	bool "ESP32 Xtensa per-core system timer support"
+	depends on SOC_SERIES_ESP32
+	default y if SMP
+	select TICKLESS_CAPABLE
+	help
+	  Per-core-safe system timer driver for original ESP32 (Xtensa), needed
+	  because CCOUNT/CCOMPARE are genuine per-core special registers there,
+	  unlike Xtensa SoCs with a shared external timer. See
+	  drivers/timer/xtensa_esp32_sys_timer.c for details.
+	  Only needed under CONFIG_SMP, where two cores each have their own
+	  independent CCOUNT/CCOMPARE base -- with a single core, the generic
+	  XTENSA_TIMER driver's single shared last_count is already correct,
+	  so non-SMP builds keep using it unchanged rather than switching to
+	  an unnecessary, less-tested driver.
+	  The mutual-exclusion override for the generic XTENSA_TIMER driver
+	  lives in soc/espressif/esp32/Kconfig.defconfig -- a plain sourced
+	  Kconfig fragment like this one cannot reopen a symbol declared
+	  elsewhere to add defaults/dependencies; only files named
+	  Kconfig.defconfig get that special, Zephyr-specific treatment.
