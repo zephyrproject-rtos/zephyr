@@ -337,6 +337,11 @@ Zephyr supports so-called 'direct' interrupts, which are installed via
 implementation requirements and a reduced feature set; see the definitions
 of :c:macro:`IRQ_DIRECT_CONNECT` and :c:macro:`ISR_DIRECT_DECLARE` for details.
 
+Direct interrupts are only available on architectures selecting
+:kconfig:option:`CONFIG_ARCH_HAS_DIRECT_INTERRUPTS`. Using
+:c:macro:`IRQ_DIRECT_CONNECT` or :c:macro:`ISR_DIRECT_DECLARE` on any other
+architecture fails the build.
+
 The following code demonstrates a direct ISR:
 
 .. code-block:: c
