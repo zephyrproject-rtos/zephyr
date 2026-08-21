@@ -29,5 +29,38 @@ atomic_val_t ipi_mask_create(struct k_thread *thread);
 #define signal_pending_ipi() do { } while (false)
 #endif /* CONFIG_SMP */
 
+#ifdef CONFIG_IPI_OPTIMIZE_IDLE
+/*
+ * Consume and return the thread covered by the current CPU's reservation.
+ * Returns NULL if no reservation exists. Caller must hold _sched_spinlock.
+ */
+struct k_thread *ipi_idle_reserved_take(void);
+
+/*
+ * Remove a thread's reservation before it leaves the run queue or changes
+ * CPU eligibility. Not needed for a temporary dequeue/requeue with unchanged
+ * eligibility.
+ *
+ * Caller must hold _sched_spinlock. Safe if no reservation exists; does not
+ * cancel a pending IPI.
+ */
+void ipi_idle_thread_unreserve(struct k_thread *thread);
+
+/*
+ * Transfer coverage from old_thread to new_thread using an outstanding idle
+ * CPU reservation. Returns true if new_thread is covered without another IPI.
+ * Otherwise the reservation is canceled and the caller must request a new IPI.
+ *
+ * Caller must hold _sched_spinlock.
+ */
+bool ipi_idle_thread_rebind(struct k_thread *old_thread,
+			    struct k_thread *new_thread);
+#else
+#define ipi_idle_reserved_take() NULL
+#define ipi_idle_thread_unreserve(thread) do { \
+	ARG_UNUSED(thread); \
+} while (false)
+#define ipi_idle_thread_rebind(old_thread, new_thread) false
+#endif /* CONFIG_IPI_OPTIMIZE_IDLE */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_IPI_H_ */
