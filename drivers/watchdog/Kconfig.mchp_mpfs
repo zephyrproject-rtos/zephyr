@@ -1,0 +1,12 @@
+# Microchip PolarFire SoC Icicle Kit WDT configuration options
+
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_MCHP_MSS
+	bool "Microchip PolarFire SoC WDT driver"
+	default n
+	depends on DT_HAS_MICROCHIP_MPFS_WATCHDOG_ENABLED
+	select HAS_WDT_DISABLE_AT_BOOT
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  Enable PolarFire SoC Icicle Kit WDT driver.
