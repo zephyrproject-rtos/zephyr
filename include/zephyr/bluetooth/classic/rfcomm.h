@@ -90,10 +90,21 @@ struct bt_rfcomm_dlc_ops {
 
 	/** DLC recv callback
 	 *
+	 *  The DLC recv callback is called whenever data is received on the DLC.
+	 *
+	 *  When the error code @c -EINPROGRESS is returned, the application takes ownership of
+	 *  @p buf reference. And, @p buf can simply be given to @ref bt_rfcomm_dlc_recv_complete
+	 *  without any calls to @ref net_buf_ref or @ref net_buf_unref.
+	 *
 	 *  @param dlc The dlc receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @return 0 in case of success or negative value in case of error.
+	 *  @return -EINPROGRESS in case where user has to confirm once the data has been processed
+	 *                       by calling @ref bt_rfcomm_dlc_recv_complete passing back the
+	 *                       buffer received with its original user_data.
 	 */
-	void (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
+	int (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 	/** DLC sent callback
 	 *
@@ -112,31 +123,125 @@ typedef enum bt_rfcomm_role {
 
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
-	/* Response Timeout eXpired (RTX) timer */
-	struct k_work_delayable    rtx_work;
+	/** @cond INTERNAL_HIDDEN */
 
-	/* Queue for outgoing data */
-	struct k_fifo              tx_queue;
+	/** Response Timeout eXpired (RTX) timer.
+	 *
+	 *  Used to detect when a peer fails to respond to an RFCOMM command
+	 *  (e.g. SABM, DISC) within the allowed time window.
+	 */
+	struct k_work_delayable rtx_work;
 
-	/* TX credits, Reuse as a binary sem for MSC FC if CFC is not enabled */
-	struct k_sem               tx_credits;
+	/** Queue for outgoing data.
+	 *
+	 *  Holds net_buf fragments waiting to be transmitted over this DLC.
+	 *  Frames are dequeued and sent by @p tx_work.
+	 */
+	struct k_fifo tx_queue;
 
-	/* Worker for RFCOMM TX */
-	struct k_work              tx_work;
+	/** TX credits semaphore.
+	 *
+	 *  When Credit-Based Flow Control (CFC) is active this semaphore counts
+	 *  the number of frames the remote peer is willing to receive. When CFC
+	 *  is not negotiated it is used as a binary semaphore to serialize
+	 *  transmissions under aggregate (MSC) flow control.
+	 */
+	struct k_sem tx_credits;
 
-	struct bt_rfcomm_session  *session;
-	struct bt_rfcomm_dlc_ops  *ops;
+	/** Worker for RFCOMM TX.
+	 *
+	 *  Submitted to the system work queue whenever there are frames in
+	 *  @p tx_queue and credits are available, to drain the queue and push
+	 *  data to L2CAP.
+	 */
+	struct k_work tx_work;
 
-	/** @internal Internally used field for list handling */
-	sys_snode_t                _node;
+	/** Pointer to the RFCOMM session this DLC belongs to. */
+	struct bt_rfcomm_session *session;
 
-	bt_security_t              required_sec_level;
-	bt_rfcomm_role_t           role;
+	/** @endcond */
 
-	uint16_t                   mtu;
-	uint8_t                    dlci;
-	uint8_t                    state;
-	uint8_t                    rx_credit;
+	/** Pointer to the application callback operations for this DLC. */
+	struct bt_rfcomm_dlc_ops *ops;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Internally used field for list handling. */
+	sys_snode_t _node;
+
+	/** @endcond */
+
+	/** Minimum security level required before this DLC may be established. */
+	bt_security_t required_sec_level;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Role of this DLC: initiator or acceptor. */
+	bt_rfcomm_role_t role;
+
+	/** @endcond */
+
+	/** Maximum Transmission Unit for this DLC in bytes.
+	 *
+	 *  Negotiated during the Parameter Negotiation (PN) procedure.
+	 *  Outgoing @ref bt_rfcomm_dlc_send buffers must not exceed this value.
+	 */
+	uint16_t mtu;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Data Link Connection Identifier assigned to this DLC. */
+	uint8_t dlci;
+
+	/** Current connection state of this DLC.
+	 *
+	 *  One of the BT_RFCOMM_STATE_* values defined in rfcomm_internal.h.
+	 */
+	uint8_t state;
+
+	/** @endcond */
+
+	/** Initial number of RX credits for current DLC.
+	 *
+	 *  During Parameter Negotiation (PN), this value is sent to the remote peer as the initial
+	 *  receive credit count.
+	 *
+	 *  Valid range: 1 to MIN((BT_BUF_ACL_RX_COUNT - 1), 255). If set to 0, the stack uses the
+	 *  internal default MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *
+	 *  @note If the value exceeds MIN((BT_BUF_ACL_RX_COUNT - 1), 255), it will be limited to
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *
+	 *  Only meaningful when CFC is enabled.
+	 */
+	uint8_t default_rx_credit;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Number of receive credits remaining for this DLC.
+	 *
+	 *  Tracks how many additional UIH frames the local side may accept
+	 *  from the remote peer before flow control must be applied.
+	 *  Only meaningful when CFC is enabled.
+	 */
+	atomic_t rx_credit;
+
+	/** Number of in-progress receive operations for this DLC.
+	 *
+	 *  Counts how many @ref bt_rfcomm_dlc_ops::recv callbacks have returned @c -EINPROGRESS
+	 *  but have not yet been completed by calling @ref bt_rfcomm_dlc_recv_complete.
+	 *
+	 *  For CFC-supported sessions, this counter is used to delay RX credit refill:
+	 *  RX credits are not refilled until the in-progress bufs are completed, ensuring
+	 *  the remote peer cannot send more frames than the application can handle concurrently.
+	 *
+	 *  For non-CFC sessions, this counter gates the MSC flow-control commands:
+	 *  - MSC with FC=1 (pause) is sent only when the count is changing from 0 to 1
+	 *  - MSC with FC=0 (resume) is sent only when the count is changing from 1 to 0
+	 */
+	atomic_t rx_credit_inprogress;
+
+	/** @endcond */
 };
 
 struct bt_rfcomm_server {
@@ -296,6 +401,34 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  *  @return 0 in case of success or negative value in case of error.
  */
 int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
+
+/**
+ * @brief Complete receiving RFCOMM channel data
+ *
+ * Must be called exactly once for each invocation of @ref bt_rfcomm_dlc_ops::recv that returned
+ * @c -EINPROGRESS. Pass back the same @p buf pointer that was received in that callback; no
+ * additional @ref net_buf_ref or @ref net_buf_unref calls are needed.
+ *
+ * When this function returns, the stack releases its reference to @p buf regardless of the return
+ * value, unless @p dlc or @p buf is @c NULL (in which case @c -EINVAL is returned immediately and
+ * @p buf is not touched).
+ *
+ * Flow-control behavior after the call:
+ * - CFC sessions: the stack may now send additional RX credits to the remote peer, allowing it
+ *   to send more frames.
+ * - Non-CFC sessions: an MSC command with FC=0 (resume) is sent to the remote peer only when
+ *   all inprogress buffers are completed.
+ *
+ * @param dlc Pointer to the RFCOMM DLC whose receive operation is being completed.
+ * @param buf The buffer that was passed to @ref bt_rfcomm_dlc_ops::recv when it returned
+ *            @c -EINPROGRESS.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ * @retval -EINVAL @p dlc or @p buf is @c NULL, the DLC's CFC state is unknown, or the
+ *                 in-progress counter would underflow (more completions than in-progress calls).
+ * @retval -ENOTCONN The DLC has no associated session or is not in the connected state.
+ */
+int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 /** @brief Allocate the buffer from pool after reserving head room for RFCOMM,
  *  L2CAP and ACL headers.
