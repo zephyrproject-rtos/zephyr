@@ -77,6 +77,8 @@ DT_ADSP_RESET_MEM := $(dt_nodelabel_path,adsp_reset)
 DT_ADSP_DATA_MEM := $(dt_nodelabel_path,adsp_data)
 DT_ADSP_DATA_NOCACHE_MEM := $(dt_nodelabel_path,adsp_data_nocache)
 DT_ADSP_TEXT_MEM := $(dt_nodelabel_path,adsp_text)
+DT_ADSP_FLASH_MEM := $(dt_nodelabel_path,adsp_flash)
+
 
 config RT685_ADSP_STACK_SIZE
 	hex "Boot time stack size"
@@ -116,6 +118,22 @@ config RT685_ADSP_TEXT_MEM_ADDR
 config RT685_ADSP_TEXT_MEM_SIZE
 	hex
 	default $(dt_node_reg_size_hex,$(DT_ADSP_TEXT_MEM))
+
+config RT685_ADSP_FLASH_MEM_ADDR
+	hex
+	default $(dt_node_reg_addr_hex,$(DT_ADSP_FLASH_MEM))
+	help
+	  Flash (XIP) load address of the DSP remote image. Every loadable
+	  section is linked with its LMA in this region so the primary core
+	  can copy each segment from flash to its SRAM VMA at boot. Derived
+	  from the adsp_flash DT node.
+
+config RT685_ADSP_FLASH_MEM_SIZE
+	hex
+	default $(dt_node_reg_size_hex,$(DT_ADSP_FLASH_MEM))
+	help
+	  Size of the DSP remote image flash (XIP) load region. Derived from
+	  the adsp_flash DT node.
 
 endif # SOC_MIMXRT685S_HIFI4
 

@@ -1,4 +1,4 @@
-# Copyright 2024 NXP
+# Copyright 2024, 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 add_subdirectory(${CONFIG_SOC_SERIES})
@@ -78,4 +78,15 @@ endif()
 
 if(CONFIG_SOC_SERIES_IMXRT118X)
   zephyr_linker_sources_ifdef(CONFIG_SOC_SERIES_IMXRT118X SECTIONS container.ld)
+endif()
+
+if(CONFIG_SOC_SERIES_IMXRT_AMP_DSP AND NOT CONFIG_XTENSA)
+  # Primary (ARM) image: add the dsp_start() loader, which copies every segment
+  # of the decoupled DSP remote image from the DSP flash partition to its run
+  # address in the DSP SRAM view and boots the DSP. The remote (DSP/Xtensa)
+  # image needs nothing extra here: it is a self-contained image whose stock
+  # zephyr_image_info.h (enabled via CONFIG_BUILD_OUTPUT_INFO_HEADER by sysbuild)
+  # is the only thing the primary consumes.
+  include(${CMAKE_CURRENT_SOURCE_DIR}/common/amp_dsp/dsp_load.cmake)
+  nxp_imxrt_amp_dsp_load()
 endif()
