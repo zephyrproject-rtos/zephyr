@@ -99,7 +99,8 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_APN_SET,
 	MODEM_CELLULAR_EVENT_RING,
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
-};
+	_MODEM_CELLULAR_EVENT_HAS_PTR = 0x80
+} __packed;
 
 struct modem_cellular_event_cb {
 	cellular_event_mask_t mask;
@@ -183,8 +184,9 @@ struct modem_cellular_data {
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
+	uint8_t event_buf[16];
 	struct k_pipe event_pipe;
+	const void *event_ptr;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;
