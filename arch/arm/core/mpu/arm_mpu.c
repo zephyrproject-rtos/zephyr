@@ -110,8 +110,141 @@ static int region_allocate_and_init(const uint8_t index,
 						    (reg).dt_size,	\
 						    _ATTR)
 #ifdef CONFIG_MEM_ATTR
-/* This internal function programs the MPU regions defined in the DT when using
- * the `zephyr,memory-attr = <( DT_MEM_ARM(...) )>` property.
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+static int mpu_region_from_generic_policy(const struct mem_attr_region_t *region,
+					  struct arm_mpu_region *region_conf)
+{
+	uint32_t policy = DT_MEM_ATTR_GET(region->dt_attr);
+	bool readable = (policy & DT_MEM_READABLE) != 0U;
+	bool writable = (policy & DT_MEM_WRITABLE) != 0U;
+	bool executable = (policy & DT_MEM_EXECUTABLE) != 0U;
+	bool cacheable = (policy & DT_MEM_CACHEABLE) != 0U;
+	bool non_cacheable = (policy & DT_MEM_NON_CACHEABLE) != 0U;
+	bool shareable = (policy & DT_MEM_SHAREABLE) != 0U;
+	bool userspace = (policy & DT_MEM_USERSPACE) != 0U;
+	uint32_t access;
+
+	if (!readable || (cacheable == non_cacheable)) {
+		LOG_ERR("Invalid MPU attributes 0x%x for %s", policy, region->dt_name);
+		return -EINVAL;
+	}
+
+	if (writable) {
+		access = userspace ? P_RW_U_RW_Msk : P_RW_U_NA_Msk;
+	} else {
+		access = userspace ? P_RO_U_RO_Msk : P_RO_U_NA_Msk;
+	}
+
+	region_conf->name = region->dt_name;
+	region_conf->base = region->dt_addr;
+
+#if defined(CONFIG_ARMV7_R)
+	uint32_t memory_attr;
+
+	if (cacheable) {
+		memory_attr = shareable ?
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_SHAREABLE :
+			NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE;
+	} else {
+		memory_attr = shareable ? NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE :
+			NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE;
+	}
+	region_conf->attr.rasr = memory_attr | access | (executable ? 0U : NOT_EXEC);
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+	region_conf->attr.rbar = access | (shareable ? OUTER_SHAREABLE_Msk : NON_SHAREABLE_Msk) |
+		(executable ? 0U : NOT_EXEC);
+	region_conf->attr.mair_idx = cacheable ? MPU_MAIR_INDEX_SRAM :
+		MPU_MAIR_INDEX_SRAM_NOCACHE;
+	region_conf->attr.r_limit = region->dt_addr + region->dt_size - 1U;
+#endif
+
+	return 0;
+}
+#endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
+
+static int mpu_validate_dt_region(uint8_t reg_index,
+				  const struct mem_attr_region_t *region,
+				  struct arm_mpu_region *region_conf)
+{
+#if defined(CONFIG_ARMV7_R)
+	if (!is_power_of_two(region->dt_size) ||
+	    region->dt_size < CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE ||
+	    !IS_ALIGNED(region->dt_addr, region->dt_size)) {
+		LOG_ERR("MPU region %s has invalid size or alignment", region->dt_name);
+		return -EINVAL;
+	}
+	region_conf->size = size_to_mpu_rasr_size(region->dt_size);
+#elif defined(CONFIG_AARCH32_ARMV8_R)
+	if (region->dt_size < CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE ||
+	    !IS_ALIGNED(region->dt_addr, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE) ||
+	    !IS_ALIGNED(region->dt_size, CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)) {
+		LOG_ERR("MPU region %s has invalid size or alignment", region->dt_name);
+		return -EINVAL;
+	}
+
+	/* ARMv8-R PMSA regions must not overlap, including static regions. */
+	for (uint8_t index = 0U; index < reg_index; index++) {
+		uint32_t existing_base;
+		uint32_t existing_limit;
+
+		mpu_set_rnr(index);
+		if (!(mpu_get_rlar() & MPU_RLAR_EN_Msk)) {
+			continue;
+		}
+
+		existing_base = mpu_get_rbar() & MPU_RBAR_BASE_Msk;
+		existing_limit = (mpu_get_rlar() & MPU_RLAR_LIMIT_Msk) |
+			(~MPU_RLAR_LIMIT_Msk);
+		if (region_conf->base <= existing_limit &&
+		    existing_base <= region_conf->attr.r_limit) {
+			LOG_ERR("MPU region %s overlaps region %u", region->dt_name, index);
+			return -EINVAL;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+static int mpu_configure_dt_region(uint8_t *reg_index,
+				   const struct mem_attr_region_t *region,
+				   struct arm_mpu_region *region_conf)
+{
+	if (mpu_validate_dt_region(*reg_index, region, region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	if (region_allocate_and_init(*reg_index, region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	(*reg_index)++;
+	return 0;
+}
+
+#if defined(CONFIG_ZTEST) && \
+	(defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R))
+int z_arm_mpu_validate_dt_region(uint32_t addr, uint32_t size, uint32_t attr)
+{
+	struct mem_attr_region_t region = {
+		.dt_name = "test-region",
+		.dt_addr = addr,
+		.dt_size = size,
+		.dt_attr = attr,
+	};
+	struct arm_mpu_region region_conf;
+
+	if (mpu_region_from_generic_policy(&region, &region_conf) < 0) {
+		return -EINVAL;
+	}
+
+	return mpu_validate_dt_region(static_regions_num, &region, &region_conf);
+}
+#endif
+
+/* This internal function programs MPU regions defined by the DT
+ * `zephyr,memory-attr` property. R-profile CPUs accept generic permission
+ * policies in addition to the legacy ARM-specific memory types.
  */
 static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 {
@@ -122,6 +255,21 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 
 	for (size_t idx = 0; idx < num_regions; idx++) {
 		struct arm_mpu_region region_conf;
+
+#if defined(CONFIG_ARMV7_R) || defined(CONFIG_AARCH32_ARMV8_R)
+		uint32_t policy = DT_MEM_ATTR_GET(region[idx].dt_attr);
+
+		if (policy & DT_MEM_PERM_MASK) {
+			if (mpu_region_from_generic_policy(&region[idx], &region_conf) < 0) {
+				return -EINVAL;
+			}
+
+			if (mpu_configure_dt_region(reg_index, &region[idx], &region_conf) < 0) {
+				return -EINVAL;
+			}
+			continue;
+		}
+#endif /* CONFIG_ARMV7_R || CONFIG_AARCH32_ARMV8_R */
 
 		switch (DT_MEM_ARM_GET(region[idx].dt_attr)) {
 		case DT_MEM_ARM_MPU_RAM:
@@ -175,16 +323,10 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 */
 			continue;
 		}
-#if defined(CONFIG_ARMV7_R)
-		region_conf.size = size_to_mpu_rasr_size(region[idx].dt_size);
-#endif
 
-		if (region_allocate_and_init((*reg_index),
-					     (const struct arm_mpu_region *) &region_conf) < 0) {
+		if (mpu_configure_dt_region(reg_index, &region[idx], &region_conf) < 0) {
 			return -EINVAL;
 		}
-
-		(*reg_index)++;
 	}
 
 	return 0;
