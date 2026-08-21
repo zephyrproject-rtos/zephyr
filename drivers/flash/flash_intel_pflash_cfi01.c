@@ -15,9 +15,7 @@ LOG_MODULE_REGISTER(flash_intel_pflash_cfi01);
 
 #define DT_DRV_COMPAT intel_pflash_cfi01
 
-#define SOC_NV_FLASH_COMPAT(node_id)                                                               \
-	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, soc_nv_flash), (node_id), ())
-#define SOC_NV_FLASH_NODE(inst) DT_INST_FOREACH_CHILD_STATUS_OKAY(inst, SOC_NV_FLASH_COMPAT)
+#include "flash_priv.h"
 
 /* CFI01 command codes */
 #define PFLASH_CMD_READ_ARRAY     0x00FF
@@ -297,7 +295,7 @@ static int pflash_init(const struct device *dev)
 	static const struct pflash_config pflash_config_##inst = {                                 \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(inst)),                                           \
 		.size = DT_REG_SIZE(DT_DRV_INST(inst)),                                            \
-		.erase_block_size = DT_PROP(SOC_NV_FLASH_NODE(inst), erase_block_size),       \
+		.erase_block_size = DT_PROP(SOC_NV_FLASH_CHILD_NODE(inst), erase_block_size),      \
 		.bank_width = DT_INST_PROP_OR(inst, bank_width, 1),                                \
 		.device_width = DT_INST_PROP_OR(inst, device_width, 1),                            \
 		.params =                                                                          \
