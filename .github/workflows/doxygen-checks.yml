@@ -114,4 +114,4 @@ jobs:
       - name: Check for new top-level Doxygen groups
         if: ${{ !cancelled() }}
         run: |
-          python3 scripts/ci/doxygen_toplevel_groups.py --xml-dir doc/_build/doxygen/xml
+          python3 scripts/ci/doxygen_toplevel_groups.py --xml-dir doc/_build/doxygen-xml/xml
