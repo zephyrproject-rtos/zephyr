@@ -98,6 +98,15 @@ config CPU_FREQ_POLICY_PRESSURE_LOWEST_PRIO
 
 endif
 
+config CPU_FREQ_POLICY_TIMING_NOISE
+	bool "Timing noise policy"
+	select ENTROPY_GENERATOR if ENTROPY_NODE_ENABLED
+	help
+	  Timing noise policy. Periodically selects a random performance state
+	  via sys_rand32_get() to inject timing variability. This may disrupt
+	  naive timing analysis that assumes a stable CPU frequency. It is not
+	  a general side-channel countermeasure.
+
 endchoice # CPU_FREQ_POLICY
 
 choice CPU_FREQ_PSTATE_SET
