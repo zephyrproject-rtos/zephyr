@@ -78,6 +78,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/sntp`
      - ``zeth``
      - any user
+   * - :zephyr_file:`mqtt <tests/net/conformance/mqtt/README.rst>`
+     - :zephyr_file:`tests/net/conformance/mqtt`
+     - ``zeth``
+     - any user
    * - :zephyr_file:`coap <tests/net/conformance/coap/README.rst>`
      - :zephyr_file:`tests/net/conformance/coap`
      - ``zeth``
@@ -128,6 +132,19 @@ compression offsets that are all computed from a fixed header size.
 The ``dnssd`` suite records this rather than asserting the standard, in
 ``f_check_legacy_shape``, so that a test does not sit failing until somebody
 gets to it. Each check there says what would have to change with it.
+
+MQTT 5.0, packet identifiers and re-sending
+===========================================
+
+The ``mqtt`` suite covers MQTT 3.1.1. Zephyr also implements MQTT 5.0
+(:kconfig:option:`CONFIG_MQTT_VERSION_5_0`), and the Titan project publishes no
+protocol module for it, so covering it would mean writing the message types
+before writing any test.
+
+Packet identifiers and re-sending are not covered either. Zephyr's client
+leaves both to the application: :c:func:`mqtt_publish` sends the identifier and
+the duplicate flag it is given, so a test of either would test the system under
+test's own counter rather than the client.
 
 CoAP block transfer and observe
 ===============================
