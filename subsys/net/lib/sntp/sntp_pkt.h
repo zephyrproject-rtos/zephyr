@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2017 Linaro Limited
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2017 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -8,6 +8,17 @@
 #define __SNTP_PKT_H
 
 #include <zephyr/types.h>
+
+#define SNTP_PORT                         123UL
+
+#define SNTP_LI_MAX                       3U
+#define SNTP_VERSION_NUMBER               3U
+#define SNTP_MODE_CLIENT                  3U
+#define SNTP_MODE_SERVER                  4U
+#define SNTP_LEAP_INDICATOR_NONE          0U
+#define SNTP_LEAP_INDICATOR_CLOCK_INVALID 3U
+#define SNTP_STRATUM_KOD                  0U /* kiss-o'-death */
+#define OFFSET_1970_JAN_1                 2208988800ULL
 
 struct sntp_pkt {
 #if defined(CONFIG_LITTLE_ENDIAN)
@@ -27,12 +38,14 @@ struct sntp_pkt {
 	uint32_t ref_id;
 	uint32_t ref_tm_s;
 	uint32_t ref_tm_f;
-	uint32_t orig_tm_s;	/* Originate timestamp seconds */
-	uint32_t orig_tm_f;	/* Originate timestamp seconds fraction */
-	uint32_t rx_tm_s;		/* Receive timestamp seconds */
-	uint32_t rx_tm_f;		/* Receive timestamp seconds fraction */
-	uint32_t tx_tm_s;		/* Transmit timestamp seconds */
-	uint32_t tx_tm_f;		/* Transmit timestamp seconds fraction */
+	uint32_t orig_tm_s; /* Originate timestamp seconds */
+	uint32_t orig_tm_f; /* Originate timestamp seconds fraction */
+	uint32_t rx_tm_s;   /* Receive timestamp seconds */
+	uint32_t rx_tm_f;   /* Receive timestamp seconds fraction */
+	uint32_t tx_tm_s;   /* Transmit timestamp seconds */
+	uint32_t tx_tm_f;   /* Transmit timestamp seconds fraction */
 } __packed;
+
+void sntp_pkt_dump(struct sntp_pkt *pkt);
 
 #endif

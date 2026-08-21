@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config NET_SAMPLE_SNTP_CLIENT_SERVER_ADDRESS
+	string "SNTP server address"
+	default "2.pool.ntp.org"
+
+config NET_SAMPLE_SNTP_CLIENT_SERVER_TIMEOUT_MS
+	int "Duration to wait for response"
+	default 2000
+
+source "Kconfig.zephyr"
