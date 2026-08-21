@@ -422,6 +422,13 @@ static void bt_hci_enable(struct usbd_class_data *const c_data)
 {
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
+	/*
+	 * Drop the Bluetooth buffer from the OUT reassembly path if there is
+	 * one after the previous enable/disable cycle.
+	 */
+	net_buf_drop(&hci_data->out_buf);
+	hci_data->out_rem = 0;
+
 	atomic_set_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration enabled");
 
