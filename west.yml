@@ -23,6 +23,8 @@ manifest:
       url-base: https://github.com/zephyrproject-rtos
     - name: babblesim
       url-base: https://github.com/BabbleSim
+    - name: mcuboot-upstream
+      url-base: https://github.com/mcu-tools
 
   group-filter: [-babblesim, -optional, -testing]
 
@@ -330,7 +332,8 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7ad67106c3253d03ae4bd8ab48e6bdf7bc46f43e
+      remote: mcuboot-upstream
+      revision: pull/2790/head
       path: bootloader/mcuboot
       groups:
         - bootloader
