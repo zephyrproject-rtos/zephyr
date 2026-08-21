@@ -271,6 +271,8 @@ struct z_shared_isr_table_entry z_shared_sw_isr_table[];
  * the linker script chunks.
  */
 #define Z_ISR_DECLARE_DIRECT(irq, flags, func)                                                     \
+	BUILD_ASSERT(IS_ENABLED(CONFIG_GEN_IRQ_VECTOR_TABLE),                                     \
+		"CONFIG_GEN_IRQ_VECTOR_TABLE is required for direct interrupts");                  \
 	BUILD_ASSERT(IS_ENABLED(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_ADDRESS) ||                        \
 		IS_ENABLED(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE),                                  \
 		"CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_{ADDRESS,CODE} not set");                         \
