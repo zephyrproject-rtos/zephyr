@@ -133,7 +133,7 @@ static void bmi08x_gyro_gpio_callback(const struct device *port, struct gpio_cal
 {
 	struct bmi08x_gyro_data *data = CONTAINER_OF(cb, struct bmi08x_gyro_data, gpio_cb);
 	const struct device *dev = data->dev;
-	const struct bmi08x_accel_config *cfg = dev->config;
+	const struct bmi08x_gyro_config *cfg = dev->config;
 
 	(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
 	(void)gpio_remove_callback(cfg->int_gpio.port, &data->gpio_cb);
