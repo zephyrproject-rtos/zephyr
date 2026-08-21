@@ -2153,6 +2153,15 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 
 	atomic_clear_bit(adv->flags, BT_ADV_ENABLED);
 
+	if (adv->cb && adv->cb->terminated) {
+		struct bt_le_ext_adv_terminated_info info = {
+			.reason = evt->status,
+			.num_completed_ext_adv_evts = evt->num_completed_ext_adv_evts,
+		};
+
+		adv->cb->terminated(adv, &info);
+	}
+
 #if defined(CONFIG_BT_CONN) && (CONFIG_BT_EXT_ADV_MAX_ADV_SET > 1)
 	bt_dev.adv_conn_id = adv->id;
 	for (int i = 0; i < ARRAY_SIZE(bt_dev.cached_conn_complete); i++) {
