@@ -83,6 +83,11 @@ socket on a link of its own.
      - ``zeth``
      - any user
      - 9
+   * - ``mqtt``
+     - :zephyr_file:`tests/net/conformance/mqtt`
+     - ``zeth``
+     - any user
+     - 7
    * - ``coap``
      - :zephyr_file:`tests/net/conformance/coap`
      - ``zeth``
@@ -196,6 +201,27 @@ cannot collide with a time daemon on the host.
 * ``tc_kiss_of_death_is_not_a_time_source``
 * ``tc_zero_transmit_timestamp_is_rejected``
 * ``tc_truncated_reply_is_rejected``
+
+MQTT
+====
+
+The first suite to work over a connection rather than over datagrams. The
+tester listens where a broker listens and takes the connection the client makes
+to it; the shared layer grew the listening and accepting for this, and the port
+is told how to find the length of an MQTT message so that it hands up whole
+messages rather than whatever arrived together.
+
+Each test case takes a connection of its own and closes it at the end. The
+system under test notices, waits a moment and connects again, so no test
+inherits what another left.
+
+* ``tc_connect_is_well_formed``
+* ``tc_nothing_is_sent_before_the_connack``
+* ``tc_publish_is_well_formed``
+* ``tc_acknowledged_publish_is_not_repeated``
+* ``tc_packet_identifier_is_not_reused``
+* ``tc_keep_alive_is_sent_when_idle``
+* ``tc_refused_connection_is_not_used``
 
 CoAP
 ====
@@ -328,6 +354,19 @@ gets it right: :rfc:`6763` section 12 keeps it clear on the pointer record,
 because several instances of a service share that name and an answer about one
 must not evict the others, and sets it on the records that belong to a single
 instance. The suite checks that as correct.
+
+MQTT 5.0, and re-sending after a reconnect
+==========================================
+
+The ``mqtt`` suite covers MQTT 3.1.1. Zephyr also implements MQTT 5.0
+(:kconfig:option:`CONFIG_MQTT_VERSION_5_0`), and the Titan project publishes no
+protocol module for it, so covering it would mean writing the message types
+before writing any test.
+
+Re-sending a message that was never acknowledged is not covered either. MQTT
+3.1.1 asks for that only when a client reconnects to a session it left behind,
+and the system under test connects cleanly every time; while a connection is
+up, whether to re-send is left to whatever is doing the publishing.
 
 CoAP block transfer and observe
 ===============================
