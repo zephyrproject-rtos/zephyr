@@ -543,7 +543,17 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
+	const struct udc_mcux_config *config = dev->config;
+	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+
 	cfg->stat.halted = false;
+
+	/* Cancel the primed transfer, it would otherwise still reach the host
+	 * although the buffer is reported to the class as aborted.
+	 */
+	(void)mcux_if->deviceCancel(priv->mcux_device.controllerHandle, cfg->addr);
+
 	udc_ep_cancel_queued(dev, cfg);
 
 	udc_mcux_lock(dev);
