@@ -251,6 +251,7 @@ struct lt7680_data {
 	enum display_pixel_format current_pixel_format;
 	bool display_on;
 	bool blanking;
+	enum display_orientation normal_orientation;
 	enum display_orientation orientation;
 };
 
@@ -755,9 +756,20 @@ static int lt7680_set_orientation(const struct device *dev,
 	uint8_t dpcr;
 	uint8_t memory_direction = 0;
 	uint8_t vscan_direction = 0;
+	enum display_orientation orientation_params_set = orientation;
 	int ret;
 
-	switch (orientation) {
+	if (data->normal_orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+		if (orientation == DISPLAY_ORIENTATION_NORMAL) {
+			orientation_params_set = DISPLAY_ORIENTATION_ROTATED_180;
+		} else if (orientation == DISPLAY_ORIENTATION_ROTATED_180) {
+			orientation_params_set = DISPLAY_ORIENTATION_NORMAL;
+		} else {
+			return -ENOTSUP;
+		}
+	}
+
+	switch (orientation_params_set) {
 	case DISPLAY_ORIENTATION_NORMAL:
 		memory_direction = LT7680_MCR_MWRITE_LR_TB;
 		vscan_direction = LT7680_DPCR_VSCAN_T_TO_B;
@@ -1184,13 +1196,12 @@ static int lt7680_init(const struct device *dev)
 {
 	const struct lt7680_config *cfg = dev->config;
 	struct lt7680_data *data = dev->data;
-	enum display_orientation orientation;
 	int ret;
 
 	if (cfg->rotation == 0) {
-		orientation = DISPLAY_ORIENTATION_NORMAL;
+		data->normal_orientation = DISPLAY_ORIENTATION_NORMAL;
 	} else if (cfg->rotation == 180) {
-		orientation = DISPLAY_ORIENTATION_ROTATED_180;
+		data->normal_orientation = DISPLAY_ORIENTATION_ROTATED_180;
 	} else {
 		return -ENOTSUP;
 	}
@@ -1251,7 +1262,7 @@ static int lt7680_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = lt7680_set_orientation(dev, orientation);
+	ret = lt7680_set_orientation(dev, DISPLAY_ORIENTATION_NORMAL);
 	if (ret < 0) {
 		return ret;
 	}
