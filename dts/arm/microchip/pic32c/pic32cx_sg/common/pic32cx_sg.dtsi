@@ -355,6 +355,25 @@
 			status = "disabled";
 		};
 
+		gmac: ethernet@42000800 {
+			compatible = "microchip,gmac-g1-eth";
+			reg = <0x42000800 0x400>;
+			interrupts = <84 0>;
+			interrupt-names = "gmac";
+			num-queues = <1>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_AHB_GMAC>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_GMAC>;
+			clock-names = "mclk-ahb", "mclk-apb";
+			status = "disabled";
+
+			mdio: mdio {
+				compatible = "microchip,gmac-g1-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		tcc2: tcc@42000c00 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42000c00 0x2000>;

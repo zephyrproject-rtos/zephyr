@@ -279,6 +279,26 @@
 	dmas = <&dmac 10 0x10>, <&dmac 11 0x11>;
 	dma-names = "rx", "tx";
 	status = "okay";
+
+	eeprom: eeprom@5e {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x5e>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+
+		nvmem-layout {
+			compatible = "fixed-layout";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mac_address: mac-address@9a {
+				reg = <0x9a 6>;
+				#nvmem-cell-cells = <0>;
+			};
+		};
+	};
 };
 
 &tc5 {
@@ -332,5 +352,30 @@
 	cs-gpios = <&portc 24 GPIO_ACTIVE_LOW>;
 	dmas = <&dmac 3 0x4>, <&dmac 4 0x5>;
 	dma-names = "rx", "tx";
+};
+
+&gmac {
+	pinctrl-0 = <&gmac_rmii>;
+	pinctrl-names = "default";
+
+	nvmem-cells = <&mac_address>;
+	nvmem-cell-names = "mac-address";
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		status = "okay";
+		reg = <0>;
+	};
+};
+
+&trng {
 	status = "okay";
 };
