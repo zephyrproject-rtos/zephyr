@@ -76,6 +76,17 @@ endchoice # CPU_RA_DCACHE_WRITE_POLICY
 
 endif # CPU_HAS_DCACHE
 
+config SOC_RA_PM
+	bool "Renesas RA Power Management"
+	default y
+	depends on PM && DT_HAS_RENESAS_RA_LPM_ENABLED
+	select COUNTER
+	help
+	  Enable support for Renesas RA Low Power Mode (LPM) controller.
+	  This allows the system to enter low-power states such as Sleep,
+	  Deep Sleep, Software Standby and Deep Software Standby by using
+	  the LPM hardware block.
+
 # Promptless (non-user) config options
 
 config SOC_RA_DYNAMIC_INTERRUPT_NUMBER

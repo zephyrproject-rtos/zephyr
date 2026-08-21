@@ -22,6 +22,7 @@
 		zephyr,canbus = &canfd1;
 		zephyr,crc = &crc;
 		zephyr,entropy = &trng;
+		zephyr,system-timer-companion = &idle_counter;
 	};
 
 	aliases {
@@ -108,18 +109,10 @@
 
 &ulpt0 {
 	interrupts = <27 1>;
-	interrupt-names = "ulpti";
+	interrupt-names = "ulptcmai";
 	status = "okay";
 
-	timer {
-		status = "okay";
-	};
-};
-
-&ulpt1 {
-	status = "okay";
-
-	timer {
+	idle_counter: counter {
 		status = "okay";
 	};
 };
