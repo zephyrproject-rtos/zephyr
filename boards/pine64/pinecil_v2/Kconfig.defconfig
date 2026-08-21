@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Canonical Limited
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_PINECIL_V2
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_PINECIL_V2

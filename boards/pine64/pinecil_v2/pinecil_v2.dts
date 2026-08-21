@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2026 Canonical Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl706.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "pinecil_v2-pinctrl.dtsi"
+
+/ {
+	model = "Pine64 Pinecil v2";
+	compatible = "pine64,pinecil-v2";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,dtcm = &dtcm;
+		zephyr,sram = &sram0_bt;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+		zephyr,display = &ssd1306_128x64;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		polling-mode;
+
+		button0: button_0 {
+			gpios = <&gpio0 28 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "Push button switch 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio0 25 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+			label = "Push button switch 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		sw0 = &button0;
+		sw1 = &button1;
+		watchdog0 = &wdt0;
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	ssd1306_128x64: ssd1306@3c {
+		compatible = "solomon,ssd1306";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
+		reset-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(144)>;
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};
+
+&flashctrl {
+	flash0: flash@23000000 {
+		compatible = "soc-nv-flash";
+		reg = <0x23000000 DT_SIZE_M(1)>;
+		write-block-size = <256>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_K(992)>;
+				read-only;
+			};
+
+			storage_partition: partition@f8000 {
+				label = "storage";
+				reg = <0x003f8000 DT_SIZE_K(32)>;
+			};
+		};
+	};
+};
+
+zephyr_udc0: &usb0 {
+	status = "okay";
+
+	pinctrl-0 = <&usb_default>;
+	pinctrl-names = "default";
+};
+
+#include <../boards/common/usb/cdc_acm_serial.dtsi>
