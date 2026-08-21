@@ -354,22 +354,9 @@ config BT_USER_PHY_UPDATE
 	  changes on the connection. The current PHY info is available in the
 	  connection info.
 
-config BT_AUTO_PHY_UPDATE
-	bool "Auto-initiate PHY Update Procedure [DEPRECATED]"
-	select DEPRECATED
-	help
-	  Initiate PHY Update Procedure on connection establishment. This will attempt
-	  to update the connection to use 2M PHY, however it doesn't actually guarantee
-	  that this is what will be used in the end.
-
-	  This option has been deprecated in favor of role specific options. The equivalent
-	  behavior can be accomplished by enabling BT_AUTO_PHY_PERIPHERAL_2M and
-	  BT_AUTO_PHY_CENTRAL_2M.
-
 choice BT_AUTO_PHY_PERIPHERAL
 	prompt "Auto PHY update for peripheral role"
 	depends on BT_PERIPHERAL
-	default BT_AUTO_PHY_PERIPHERAL_2M if BT_AUTO_PHY_UPDATE
 	default BT_AUTO_PHY_PERIPHERAL_NONE
 
 config BT_AUTO_PHY_PERIPHERAL_NONE
