@@ -117,11 +117,11 @@ struct usbd_bt_hci_desc {
 };
 
 struct bt_hci_data {
-	struct net_buf *acl_buf;
+	struct net_buf *out_buf;
 	struct usbd_bt_hci_desc *const desc;
 	const struct usb_desc_header **const fs_desc;
 	const struct usb_desc_header **const hs_desc;
-	uint16_t acl_len;
+	uint16_t out_rem;
 	struct k_sem sync_sem;
 	atomic_t state;
 };
@@ -347,50 +347,51 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
 	if (err) {
-		net_buf_drop(&hci_data->acl_buf);
-		hci_data->acl_len = 0;
+		net_buf_drop(&hci_data->out_buf);
+		hci_data->out_rem = 0;
 		goto restart_out_transfer;
 	}
 
-	if (hci_data->acl_buf == NULL) {
-		hci_data->acl_len = hci_pkt_get_len(BT_HCI_H4_ACL,
-						    buf->data,
-						    buf->len);
-		if (hci_data->acl_len == 0) {
+	if (hci_data->out_buf == NULL) {
+		uint16_t len;
+
+		if (hci_data->out_rem != 0) {
+			/* Resync to the next HCI packet */
+			hci_data->out_rem -= MIN(hci_data->out_rem, buf->len);
 			goto restart_out_transfer;
 		}
 
-		hci_data->acl_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
+		len = hci_pkt_get_len(BT_HCI_H4_ACL, buf->data, buf->len);
+		if (len == 0 || len < buf->len) {
+			goto restart_out_transfer;
+		}
+
+		hci_data->out_rem = len - buf->len;
+		hci_data->out_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
 						  buf->data, buf->len);
-		if (hci_data->acl_buf == NULL) {
+		if (hci_data->out_buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
 			goto restart_out_transfer;
 		}
 
-		LOG_DBG("acl_len %u, chunk %u", hci_data->acl_len, buf->len);
+		LOG_DBG("out_rem %u, chunk %u", hci_data->out_rem, buf->len);
 	} else {
-		if (net_buf_tailroom(hci_data->acl_buf) < buf->len) {
+		uint16_t len = MIN(buf->len, hci_data->out_rem);
+
+		if (net_buf_tailroom(hci_data->out_buf) < len) {
 			LOG_ERR("Buffer tailroom too small");
-			net_buf_drop(&hci_data->acl_buf);
+			net_buf_drop(&hci_data->out_buf);
 			goto restart_out_transfer;
 		}
 
-		/*
-		 * Take over the next chunk if HCI packet is
-		 * larger than USB_MAX_FS_BULK_MPS.
-		 */
-		net_buf_add_mem(hci_data->acl_buf, buf->data, buf->len);
-		LOG_INF("len %u, chunk %u", hci_data->acl_buf->len, buf->len);
+		net_buf_add_mem(hci_data->out_buf, buf->data, len);
+		hci_data->out_rem -= len;
+		LOG_DBG("len %u, chunk %u", hci_data->out_buf->len, len);
 	}
 
-	/*
-	 * The buffer obtained from bt_buf_get_tx() stores the type at the top.
-	 * Take this into account when comparing received data length.
-	 */
-	if (hci_data->acl_buf != NULL && hci_data->acl_len == hci_data->acl_buf->len - 1) {
-		k_fifo_put(&bt_hci_rx_queue, hci_data->acl_buf);
-		hci_data->acl_buf = NULL;
-		hci_data->acl_len = 0;
+	if (hci_data->out_buf != NULL && hci_data->out_rem == 0) {
+		k_fifo_put(&bt_hci_rx_queue, hci_data->out_buf);
+		hci_data->out_buf = NULL;
 	}
 
 restart_out_transfer:
