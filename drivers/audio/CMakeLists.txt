@@ -4,6 +4,10 @@ zephyr_library()
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_AW88298 aw88298.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS35L56 cs35l56.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS35LXX cs35lxx.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS35LXX_I2C cs35lxx-i2c.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS35LXX_SPI cs35lxx-spi.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_CS43L22 cs43l22.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_DA7212 da7212.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_CODEC_DUMMY codec_dummy.c)
