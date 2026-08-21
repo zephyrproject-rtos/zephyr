@@ -35,14 +35,14 @@ brings up two network interfaces. On native_sim board these are two TAP interfac
 
 The number of downstream links is bounded by
 :kconfig:option:`CONFIG_NET_DHCPV6_MAX_DOWNSTREAM`; raise it (together with
-:kconfig:option:`CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT` and
-:kconfig:option:`CONFIG_NET_IF_MAX_IPV6_COUNT`) to delegate to more links.
+:kconfig:option:`CONFIG_NET_IF_MAX_IPV6_COUNT` and the number of
+``zephyr,native-tap`` interfaces in :file:`boards/native_sim.overlay`) to
+delegate to more links.
 
-The server build (``overlay-server.conf``) drops
-:kconfig:option:`CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT` back to 1, and with a
-single interface the native TAP driver names the host device after
-:kconfig:option:`CONFIG_ETH_NATIVE_TAP_DRV_NAME` verbatim, so that build
-attaches to ``zeth`` rather than ``zeth0``.
+The server build (``overlay-server.conf``) uses a single interface named
+``zeth``: :file:`overlay-server.overlay`, disables the downstream interface and
+renames the remaining one, so that build attaches to ``zeth`` rather than
+``zeth0``.
 
 To give the TAP interfaces host-side connectivity, set them up with the
 ``net-setup.sh`` script from the
@@ -65,7 +65,8 @@ Delegating router (server):
 .. code-block:: console
 
    west build -b native_sim samples/net/dhcpv6_pd -- \
-       -DEXTRA_CONF_FILE=overlay-server.conf
+       -DEXTRA_CONF_FILE=overlay-server.conf \
+       -DEXTRA_DTC_OVERLAY_FILE=overlay-server.overlay
    west build -t run
 
 Requirements
