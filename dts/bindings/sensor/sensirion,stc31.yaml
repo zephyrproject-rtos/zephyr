@@ -1,0 +1,40 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Sensirion STC31 thermal conductivity CO2 sensor IC.
+
+  Measures high-range CO2 concentration (vol%) and temperature over I2C.
+  A binary gas model must be selected before measurements.
+
+compatible: "sensirion,stc31"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  binary-gas:
+    type: int
+    default: 0x0001
+    description: |
+      Measurement mode and binary gas argument for command 0x3615.
+      See include/zephyr/dt-bindings/sensor/stc31.h. Default is CO2 in air,
+      0...100 vol%, low-noise mode (0x0001), compatible with STC31 and STC31-C.
+    enum:
+      - 0x0000 # STC31_DT_BINARY_GAS_CO2_IN_N2_100_LN
+      - 0x0001 # STC31_DT_BINARY_GAS_CO2_IN_AIR_100_LN
+      - 0x0002 # STC31_DT_BINARY_GAS_CO2_IN_N2_25_LN
+      - 0x0003 # STC31_DT_BINARY_GAS_CO2_IN_AIR_25_LN
+      - 0x0010 # STC31_DT_BINARY_GAS_CO2_IN_N2_100
+      - 0x0011 # STC31_DT_BINARY_GAS_CO2_IN_AIR_100
+      - 0x0012 # STC31_DT_BINARY_GAS_CO2_IN_N2_40
+      - 0x0013 # STC31_DT_BINARY_GAS_CO2_IN_AIR_40
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/stc31.h>
+
+    stc31@29 {
+      compatible = "sensirion,stc31";
+      reg = <0x29>;
+      binary-gas = <STC31_DT_BINARY_GAS_CO2_IN_AIR_100_LN>;
+    };
