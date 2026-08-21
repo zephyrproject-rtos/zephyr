@@ -90,6 +90,10 @@ socket on a link of its own.
      - :zephyr_file:`tests/net/conformance/arp`
      - ``zethL2``
      - root
+   * - :zephyr_file:`ndp <tests/net/conformance/ndp/README.rst>`
+     - :zephyr_file:`tests/net/conformance/ndp`
+     - ``zethL2``
+     - root
    * - :zephyr_file:`tcp <tests/net/conformance/tcp/README.rst>`
      - :zephyr_file:`tests/net/conformance/tcp`
      - ``zethL2``
