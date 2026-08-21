@@ -781,6 +781,123 @@ def test_cpu_props_fallback_from_cpus_node():
     # CPU-local value takes precedence.
     assert cpu1.props["clock-frequency"].val == 2000
 
+
+def test_edt_cpus_list():
+    """edt.cpus contains exactly the /cpus/cpu@N nodes in source order.
+
+    Non-cpu children of /cpus (e.g. power-states) must not appear in the
+    list.
+    """
+    with from_here():
+        edt = edtlib.EDT("test.dts", ["test-bindings"])
+
+    cpu_paths = [n.path for n in edt.cpus]
+    assert cpu_paths == ["/cpus/cpu@0", "/cpus/cpu@1", "/cpus/cpu@2"]
+
+
+def test_cpu_fallback_binding():
+    """A /cpus/cpu@N node with no compatible receives the cpu.yaml binding.
+
+    Verifies binding_path, property types, and property values including
+    a disabled status.
+    """
+    with from_here():
+        edt = edtlib.EDT(
+            "test.dts",
+            ["test-bindings", "../../../../dts/bindings"],
+        )
+
+    cpu2 = edt.get_node("/cpus/cpu@2")
+
+    assert cpu2.binding_path is not None
+    assert cpu2.binding_path.endswith("cpu.yaml")
+    assert cpu2.props["device_type"].val == "cpu"
+    assert cpu2.props["clock-frequency"].val == 3000
+    assert cpu2.props["enable-method"].val == "spin-table"
+    assert cpu2.props["status"].val == "disabled"
+
+
+def test_cpu_binding_type_conflict(tmp_path):
+    """A vendor CPU binding that conflicts with cpu.yaml raises EDTError (werror=True).
+
+    The error message must name the property, the declared type, and the
+    expected type from cpu.yaml.
+    """
+    dts = tmp_path / "conflict.dts"
+    dts.write_text(textwrap.dedent("""\
+        /dts-v1/;
+        / {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            cpus {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                cpu@0 {
+                    compatible = "test,cpu-conflict";
+                    device_type = "cpu";
+                    reg = <0>;
+                };
+            };
+        };
+    """))
+
+    with from_here():
+        with pytest.raises(edtlib.EDTError) as exc_info:
+            edtlib.EDT(
+                str(dts),
+                ["test-bindings", "../../../../dts/bindings"],
+                werror=True,
+            )
+
+    msg = str(exc_info.value)
+    assert "clock-frequency" in msg
+    assert "string" in msg
+    assert "uint64" in msg
+
+
+def test_cpu_binding_type_mismatch_warning(caplog, tmp_path):
+    """A vendor CPU binding that conflicts with cpu.yaml emits a warning (werror=False).
+
+    No EDTError must be raised; the warning message must contain the same
+    information as the hard-error path.
+    """
+    dts = tmp_path / "conflict.dts"
+    dts.write_text(textwrap.dedent("""\
+        /dts-v1/;
+        / {
+            #address-cells = <1>;
+            #size-cells = <1>;
+            cpus {
+                #address-cells = <1>;
+                #size-cells = <0>;
+                cpu@0 {
+                    compatible = "test,cpu-conflict";
+                    device_type = "cpu";
+                    reg = <0>;
+                };
+            };
+        };
+    """))
+
+    with caplog.at_level(WARNING):
+        with from_here():
+            # Must not raise even though there is a type conflict.
+            edtlib.EDT(
+                str(dts),
+                ["test-bindings", "../../../../dts/bindings"],
+                werror=False,
+            )
+
+    conflict_warnings = [
+        r.message for r in caplog.records
+        if "clock-frequency" in str(r.message)
+    ]
+    assert conflict_warnings, "expected a warning about clock-frequency type conflict"
+    msg = str(conflict_warnings[0])
+    assert "string" in msg
+    assert "uint64" in msg
+
+
 def test_nexus():
     '''Test <prefix>-map via gpio-map (the most common case).'''
     with from_here():

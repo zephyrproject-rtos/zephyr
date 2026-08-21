@@ -1710,8 +1710,15 @@ class Node:
                 self._binding = binding_from_parent
                 return
 
-        # No binding found
-        self._binding = None
+        # No binding found. For /cpus/cpu@N nodes without a compatible,
+        # fall back to the binding loaded from cpu.yaml (if available).
+        # This gives binding-less CPU nodes typed properties and a
+        # device_type default without requiring a compatible string.
+        # Nodes with a YAML binding return early above and never reach here.
+        if _is_cpu_node(self):
+            self._binding = self.edt._cpu_fallback_binding()
+        else:
+            self._binding = None
 
     def _binding_from_properties(self) -> None:
         # Sets up a Binding object synthesized from the properties in the node.
@@ -2378,6 +2385,13 @@ class EDT:
     nodes:
       A list of Node objects for the nodes that appear in the devicetree
 
+    cpus:
+      A list of Node objects for the /cpus/cpu@N nodes, in DTS source order
+      (depth-first pre-order, matching logical CPU numbering). Children of
+      /cpus whose name-without-unit-address is not "cpu" (e.g. "power-states")
+      are excluded. Nodes appear regardless of whether they have a compatible
+      property.
+
     compat2nodes:
       A collections.defaultdict that maps each 'compatible' string that appears
       on some Node to a list of Nodes with that compatible.
@@ -2502,6 +2516,7 @@ class EDT:
 
         # Public attributes (the rest are properties)
         self.nodes: list[Node] = []
+        self.cpus: list[Node] = []
         self.compat2nodes: dict[str, list[Node]] = defaultdict(list)
         self.compat2okay: dict[str, list[Node]] = defaultdict(list)
         self.compat2notokay: dict[str, list[Node]] = defaultdict(list)
@@ -2530,6 +2545,10 @@ class EDT:
             for path in self._binding_paths
         }
         self._node2enode: dict[dtlib_Node, Node] = {}
+        # Lazily populated by _cpu_fallback_binding(). None until the first
+        # binding-less /cpus/cpu@N node is initialized, or None for the
+        # lifetime of this EDT if cpu.yaml is not in bindings_dirs.
+        self._cpu_binding: Optional[Binding] = None
 
         if dts is not None:
             try:
@@ -2537,6 +2556,39 @@ class EDT:
             except DTError as e:
                 raise EDTError(e) from e
             self._finish_init()
+
+    def _cpu_fallback_binding(self) -> Optional["Binding"]:
+        # Returns the Binding loaded from cpu.yaml, for use as a fallback on
+        # /cpus/cpu@N nodes that have no 'compatible' property.
+        #
+        # The result is cached in self._cpu_binding so cpu.yaml is parsed at
+        # most once per EDT instance, regardless of how many binding-less CPU
+        # nodes exist. Each EDT instance has its own cache, so two EDT objects
+        # with different bindings_dirs are fully independent.
+        #
+        # Returns None if cpu.yaml is not present in bindings_dirs (e.g. a
+        # minimal test-bindings directory), in which case binding-less CPU
+        # nodes receive no fallback binding.
+        if self._cpu_binding is not None:
+            return self._cpu_binding
+
+        cpu_yaml_path = self._binding_fname2path.get("cpu.yaml")
+        if cpu_yaml_path is None:
+            return None
+
+        self._cpu_binding = Binding(
+            cpu_yaml_path,
+            self._binding_fname2path,
+            require_compatible=False,
+            require_description=False,
+        )
+        return self._cpu_binding
+
+    def _werror_msg(self, msg: str) -> None:
+        if self._werror:
+            _err(msg)
+        else:
+            _LOG.warning(msg)
 
     def _finish_init(self) -> None:
         # This helper exists to make the __deepcopy__() implementation
@@ -2834,6 +2886,9 @@ class EDT:
             self.nodes.append(node)
             self._node2enode[dt_node] = node
 
+            if _is_cpu_node(node):
+                self.cpus.append(node)
+
         for node in self.nodes:
             # Initialize properties that may depend on other Node objects having
             # been created, because they (either always or sometimes) reference
@@ -2886,11 +2941,7 @@ class EDT:
                     # As an exception, the root node can have whatever
                     # compatibles it wants. Other nodes get checked.
                     elif node.path != '/':
-                        if self._werror:
-                            handler_fn: Any = _err
-                        else:
-                            handler_fn = _LOG.warning
-                        handler_fn(
+                        self._werror_msg(
                             f"node '{node.path}' compatible '{compat}' "
                             f"has unknown vendor prefix '{vendor}'")
 
@@ -2942,6 +2993,46 @@ class EDT:
             for compat in compatibles:
                 # This is also just for future-proofing.
                 assert isinstance(compat, str)
+
+        # CPU binding type-consistency check.
+        # Warn (or error with werror=True) when a vendor binding declares a
+        # cpu.yaml property with an incompatible type.  Nodes without a
+        # compatible used the cpu.yaml fallback directly; there is no vendor
+        # binding to blame, so they are skipped.
+        #
+        # Call _cpu_fallback_binding() explicitly here: if every CPU node has
+        # a compatible, the lazy accessor was never triggered during node init,
+        # so self._cpu_binding would still be None without this call.
+        cpu_binding = self._cpu_fallback_binding()
+        if cpu_binding is None:
+            return
+
+        for node in self.cpus:
+            if not node.compats:
+                # No compatible: node used the fallback binding. Nothing to
+                # compare against cpu.yaml.
+                continue
+
+            binding = node.binding
+            if binding is None:
+                continue
+
+            for prop_name, cpu_spec in cpu_binding.prop2specs.items():
+                if prop_name not in binding.prop2specs:
+                    continue
+
+                node_type = binding.prop2specs[prop_name].type
+                cpu_type = cpu_spec.type
+
+                if node_type == cpu_type:
+                    continue
+
+                msg = (
+                    f"CPU binding '{binding.path}' declares property "
+                    f"'{prop_name}' with type '{node_type}', but "
+                    f"cpu.yaml expects type '{cpu_type}'"
+                )
+                self._werror_msg(msg)
 
 
 def bindings_from_paths(yaml_paths: list[str],
@@ -4010,8 +4101,7 @@ _BindingLoader.add_constructor("!include", _binding_include)
 # "Default" binding for properties which are defined by the spec.
 #
 # Zephyr: do not change the _DEFAULT_PROP_TYPES keys without
-# updating the documentation for the DT_PROP() macro in
-# include/devicetree.h.
+# updating the documentation for the DT_PROP() macro.
 #
 
 _DEFAULT_PROP_TYPES: dict[str, str] = {
@@ -4056,3 +4146,14 @@ _DEFAULT_PROP_SPECS: dict[str, PropertySpec] = {
     name: PropertySpec(name, _DEFAULT_PROP_BINDING)
     for name in _DEFAULT_PROP_TYPES
 }
+
+def _is_cpu_node(node: "Node") -> bool:
+    # Returns True if 'node' is a /cpus/cpu@N node per DT spec SS3.8:
+    # a direct child of /cpus whose name-without-unit-address is "cpu".
+    # This structural check is used both to populate edt.cpus and to
+    # decide whether to apply the cpu.yaml fallback in _init_binding().
+    return bool(
+        node.parent
+        and node.parent.path == "/cpus"
+        and node.name.split("@", 1)[0] == "cpu"
+    )
