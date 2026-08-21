@@ -567,3 +567,7 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 	pinctrl-0 = <&pinmux_micfil>;
 	pinctrl-names = "default";
 };
+
+&pngdec {
+	status = "okay";
+};
