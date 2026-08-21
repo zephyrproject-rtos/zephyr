@@ -120,3 +120,81 @@
 &wdog5 {
 	status = "okay";
 };
+
+&xspi1 {
+	pinctrl-0 = <&xspi1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/*
+	 * Secure Flash Protection (SFP) MDAD/FRAD configuration.
+	 * Mirrors the MCUXpresso SDK cm33_core1 xspi example.
+	 * i.MX943 CM33 core1: SOC_CPU_DOMAIN_ID = 3.
+	 * Property names / enums per dts/bindings/xspi/nxp,xspi.yaml.
+	 */
+
+	/*
+	 * FRAD - Region 0 (second-level: address-range access control).
+	 * Per-target-group configuration: each target-group@N child maps to
+	 * tgConfig[N], using its unit-address (reg) as the target-group index.
+	 * The master-access array carries one access-permission entry per master
+	 * (tgMasterAccess[]). Only target group 0, master 0 (domain 3) is granted
+	 * access here.
+	 */
+
+	frad_region0 {
+		start-address = <0x00000000>;
+		end-address = <0xffffffff>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Target group 0: master0 = domain 3, master1 = 0 */
+		target-group@0 {
+			reg = <0>;
+			master-access = <3 0>;
+			assign-valid;
+			descriptor-lock = <0>;
+			exclusive-access-lock = <0>;
+		};
+
+		/* Target group 1 (unused) */
+		target-group@1 {
+			reg = <1>;
+			master-access = <0 0>;
+			descriptor-lock = <0>;
+			exclusive-access-lock = <0>;
+		};
+	};
+
+	nor_flash: flash@0 {
+		compatible = "nxp,xspi-nor";
+		reg = <0>;
+		/* Micron MT35XU512ABA: 512 Mbit = 64 MByte */
+		size = <DT_SIZE_M(64)>;
+
+		device-name = "mt35xu512aba";
+		sample-clk-source = <3>;
+		write-block-size = <2>;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			slot0_partition: partition@0 {
+				label = "image-0";
+				reg = <0x00000000 DT_SIZE_M(7)>;
+			};
+
+			slot1_partition: partition@700000 {
+				label = "image-1";
+				reg = <0x00700000 DT_SIZE_M(7)>;
+			};
+
+			storage_partition: partition@e00000 {
+				label = "storage";
+				reg = <0x00e00000 DT_SIZE_M(2)>;
+			};
+		};
+	};
+};

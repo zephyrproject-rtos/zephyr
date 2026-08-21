@@ -196,3 +196,31 @@
 	interrupts = <292 0>;
 	status = "okay";
 };
+
+&xspi1 {
+	/*
+	 * Secure Flash Protection (SFP) MDAD configuration.
+	 * i.MX943 CM33 core1: SOC_CPU_DOMAIN_ID = 3.
+	 * Property names / enums per dts/bindings/xspi/nxp,xspi.yaml.
+	 *
+	 * MDAD - first-level: secure attribute + master ID check.
+	 * The sfp-mdad container holds one mdad@N child per target group; each
+	 * child's unit-address (reg) is the tgMdad[] array subscript, matching
+	 * the target-group@N style used by the FRAD regions.
+	 */
+	sfp-mdad {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		/* Target group 0 */
+		mdad@0 {
+			reg = <0>;
+			enable-descriptor-lock = <0>;    /* descriptor lock disabled */
+			mask-type = <0>;                 /* 0 = AND (kXSPI_MdadMaskTypeAnd) */
+			mask = <3>;                      /* SOC_CPU_DOMAIN_ID */
+			master-id-reference = <3>;       /* SOC_CPU_DOMAIN_ID */
+			secure-attribute = <3>;          /* 3 = NonsecureSecureBoth */
+			assign-valid;                    /* assignIsValid = true (TG0MDAD.VLD) */
+		};
+	};
+};
