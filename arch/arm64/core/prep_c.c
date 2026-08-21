@@ -40,6 +40,9 @@ FUNC_NORETURN void z_prep_c(void)
 
 	arch_bss_zero();
 	arch_data_copy();
+#ifdef CONFIG_ARM64_SAVE_BOOT_FDT
+	z_arm64_copy_boot_fdt();
+#endif /* CONFIG_ARM64_SAVE_BOOT_FDT */
 #ifdef CONFIG_ARM64_SAFE_EXCEPTION_STACK
 	/* After bss clean, _kernel.cpus is in bss section */
 	z_arm64_safe_exception_stack_init();
@@ -50,7 +53,6 @@ FUNC_NORETURN void z_prep_c(void)
 	z_cstart();
 	CODE_UNREACHABLE;
 }
-
 
 #if CONFIG_MP_MAX_NUM_CPUS > 1
 void z_arm64_secondary_prep_c(void)
