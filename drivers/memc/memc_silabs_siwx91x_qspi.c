@@ -6,6 +6,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 
+
 #include <zephyr/sys/util.h>
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
@@ -39,13 +40,13 @@ static int siwx91x_memc_init(const struct device *dev)
 	if (ret) {
 		return -EIO;
 	}
-	if (config->clock_dev) {
+	if (config->clock_dev != NULL) {
 		ret = device_is_ready(config->clock_dev);
 		if (!ret) {
 			return -EINVAL;
 		}
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
-		if (ret && ret != -EALREADY && ret != -ENOSYS) {
+		if (ret != 0 && ret != -EALREADY) {
 			return ret;
 		}
 	}
@@ -62,8 +63,8 @@ static int siwx91x_memc_init(const struct device *dev)
 PINCTRL_DT_INST_DEFINE(0);
 static const struct siwx91x_memc_config siwx91x_memc_config = {
 	.reg = (void *)DT_INST_REG_ADDR(0),
-	.clock_dev = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(0)),
-	.clock_subsys = (void *)DT_INST_PHA_OR(0, clocks, clkid, NULL),
+	.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0)),
+	.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(0, clkid),
 	.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 /* Required to properly initialize ,deviceID */
