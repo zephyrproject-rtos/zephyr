@@ -55,6 +55,12 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_es8311: es8311@5 {
+				compatible = "everest,es8311";
+				status = "okay";
+				reg = <0x5>;
+			};
 		};
 	};
 };
