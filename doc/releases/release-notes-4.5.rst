@@ -115,6 +115,10 @@ Removed APIs and options
     * ``CONFIG_COUNTER_MAXIM_DS3231``
     * ``prescaler`` property of :dtcompatible:`nxp,lptmr`
 
+* Devicetree
+
+    * ``zephyr,memory-region-mpu``
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
