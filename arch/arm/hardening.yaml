@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the Arm architecture.
+
+rules:
+  BUILTIN_STACK_GUARD:
+    value: y
+    rationale: |
+      Uses the ARM stack pointer limit registers to fault immediately on thread or interrupt stack
+      overflow instead of letting it corrupt adjacent memory.
+    references: [CWE-121, CWE-787]
+
+  CORTEX_M_DEBUG_MONITOR_HOOK:
+    value: n
+    rationale: |
+      Configures the debug monitor exception for debugging use; a production image should not route
+      debug events to a low-priority handler that debugging tools can attach to.
+    references: [CWE-1244]
+
+  FAULT_DUMP:
+    value: 0
+    profiles: [strict]
+    rationale: |
+      Fault dumps print registers and fault state to the console on crashes; level 0 keeps that
+      exploit-development feedback out of production builds.
+    references: [CWE-209]

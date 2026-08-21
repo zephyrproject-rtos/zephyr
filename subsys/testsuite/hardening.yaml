@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for test infrastructure.
+
+rules:
+  TEST:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Marks the build as a testing image and relaxes defaults accordingly; test scaffolding must not
+      ship in production firmware.
+    references: [CWE-489]
+
+  TEST_USERSPACE:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Adds test-only userspace hooks so test cases can exercise kernel internals, weakening the
+      user/kernel boundary in the process.
+    references: [CWE-489]
+
+  ZTEST:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Links the ztest unit-testing framework into the image; test runners and their hooks do not
+      belong in production firmware.
+    references: [CWE-489]

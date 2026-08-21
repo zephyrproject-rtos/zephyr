@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for the kernel.
+
+rules:
+  BOUNDS_CHECK_BYPASS_MITIGATION:
+    value: y
+    rationale: |
+      Inserts speculation barriers after bounds checks on array indexes passed in from user mode,
+      mitigating Spectre V1 style bounds check bypass attacks.
+    references: [CWE-1037]
+
+  EXECUTE_XOR_WRITE:
+    value: y
+    rationale: |
+      Enforces W^X: no memory page is both writable and executable, preventing injected data from
+      being executed as code.
+    references: [CWE-119]
+
+  INIT_STACKS:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Initializing stacks with a known fill pattern exists to support stack usage analysis; it aids
+      introspection of runtime behavior and is unnecessary in production.
+
+  STACK_CANARIES:
+    value: y
+    rationale: |
+      Compiler-inserted stack canaries detect stack buffer overflows before a corrupted return
+      address is used, turning an exploitable overflow into a controlled error.
+    references: [CWE-121]
+
+  STACK_POINTER_RANDOM:
+    min: 100
+    rationale: |
+      Randomizing each thread's initial stack pointer makes stack addresses unpredictable, raising
+      the cost of stack-smashing and return-oriented-programming attacks. 0 disables randomization
+      entirely; at least 100 bytes of random offset is recommended.
+    references: [CWE-121]
+
+  THREAD_MONITOR:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Maintains a walkable list of all threads and their properties for debug tools, simplifying
+      enumeration of the system's tasks.
+    references: [CWE-200]
+
+  THREAD_NAME:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Stores human-readable thread names in RAM, labeling kernel structures for anyone able to read
+      memory or logs.
+    references: [CWE-200]
