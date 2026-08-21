@@ -519,12 +519,22 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
-	cfg->stat.halted = false;
-	udc_ep_cancel_queued(dev, cfg);
+	const struct udc_mcux_config *config = dev->config;
+	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+	k_spinlock_key_t key;
+	usb_status_t status;
 
-	udc_mcux_lock(dev);
-	udc_ep_set_busy(cfg, false);
-	udc_mcux_unlock(dev);
+	cfg->stat.halted = false;
+
+	key = k_spin_lock(&priv->lock);	
+	status = mcux_if->deviceCancel(priv->mcux_device.controllerHandle, cfg->addr);
+	if (status != kStatus_USB_Success) {
+		LOG_WRN("Failed to cancel endpoint 0x%02x", cfg->addr);
+	}
+
+	udc_ep_cancel_queued(dev, cfg);
+	k_spin_unlock(&priv->lock, key);
 
 	return 0;
 }
