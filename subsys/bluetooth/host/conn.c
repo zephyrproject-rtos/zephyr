@@ -139,19 +139,20 @@ static struct bt_conn sco_conns[CONFIG_BT_MAX_SCO_CONN];
 #if defined(CONFIG_BT_CONN_TX)
 static void frag_destroy(struct net_buf *buf);
 
-/* Storage for fragments (views) into the upper layers' PDUs. */
-/* TODO: remove user-data requirements */
-NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, frag_destroy);
-
 struct frag_md {
 	struct bt_buf_view_meta view_meta;
 };
-static struct frag_md frag_md_pool[CONFIG_BT_CONN_FRAG_COUNT];
+
+/* Storage for fragments (views) into the upper layers' PDUs. The view
+ * metadata is kept in the user data of the fragment it belongs to, which the
+ * view API leaves untouched.
+ */
+NET_BUF_POOL_FIXED_DEFINE(fragments, CONFIG_BT_CONN_FRAG_COUNT, 0,
+			  sizeof(struct frag_md), frag_destroy);
 
 static struct frag_md *get_frag_md(struct net_buf *fragment)
 {
-	return &frag_md_pool[net_buf_id(fragment)];
+	return (struct frag_md *)net_buf_user_data(fragment);
 }
 
 static void frag_destroy(struct net_buf *frag)
