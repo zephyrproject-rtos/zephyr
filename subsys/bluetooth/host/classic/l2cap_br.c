@@ -2871,6 +2871,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	}
 
 	BR_CHAN(chan)->tx.cid = scid;
+	BR_CHAN(chan)->psm = psm;
 	br_chan->ident = ident;
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
 	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_ACCEPTOR);
