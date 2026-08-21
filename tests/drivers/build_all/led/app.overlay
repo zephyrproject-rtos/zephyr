@@ -244,6 +244,23 @@
 			};
 		};
 
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+
+			cs-gpios = <&test_gpio 0 0>;
+
+			is31fl3743b@0 {
+				compatible = "issi,is31fl3743b";
+				reg = <0x0>;
+				spi-max-frequency = <1000000>;
+			};
+		};
+
 		test_pwm: pwm@12341234 {
 			compatible = "vnd,pwm";
 			reg = <0x12341234 0x1000>;
