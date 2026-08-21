@@ -238,8 +238,8 @@
 
 &sdhc1 {
 	pinctrl-names = "default";
-	interrupt-names = "accs", "card", "dma-req";
-	interrupts = <60 12>, <61 12>, <62 12>;
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <60 12>, <61 12>, <62 12>, <63 12>;
 	pinctrl-0 = <&sdhc1_default>;
 	status = "okay";
 

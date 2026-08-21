@@ -74,8 +74,8 @@
 };
 
 &sdhc0 {
-	interrupt-names = "accs", "card", "dma-req";
-	interrupts = <13 1>, <14 1>, <15 1>;
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <13 1>, <14 1>, <15 1>, <19 1>;
 	status = "okay";
 
 	sdmmc {
