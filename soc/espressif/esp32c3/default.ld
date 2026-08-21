@@ -374,6 +374,10 @@ SECTIONS
 #endif
     *libzephyr.a:flash_mmap.*(.literal .literal.* .text .text.*)
     *libzephyr.a:esp_flash_api.*(.literal .literal.* .text .text.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.literal .text .literal.* .text.*)
+    *libzephyr.a:esp_efuse_utility.*(.literal .text .literal.* .text.*)
+#endif
 
     /* [mapping:esp_system] */
     *libzephyr.a:esp_err.*(.literal .literal.* .text .text.*)
@@ -622,6 +626,10 @@ SECTIONS
 #endif
     *libzephyr.a:flash_mmap.*(.rodata .rodata.* .srodata .srodata.*)
     *libzephyr.a:esp_flash_api.*(.rodata .rodata.* .srodata .srodata.*)
+#if defined(CONFIG_BOOTLOADER_MCUBOOT)
+    *libzephyr.a:bootloader_flash.*(.rodata .rodata.* .srodata .srodata.*)
+    *libzephyr.a:esp_efuse_utility.*(.rodata .rodata.* .srodata .srodata.*)
+#endif
 
     /* [mapping:esp_mm] */
     *libzephyr.a:esp_cache_utils.*(.rodata .rodata.* .srodata .srodata.*)
@@ -921,6 +929,19 @@ SECTIONS
   } GROUP_DATA_LINK_IN(RODATA_REGION, ROMABLE_REGION)
 
   /* --- END OF .rodata --- */
+
+#if defined(CONFIG_BOOTLOADER_MCUBOOT) && defined(CONFIG_ESP_FLASH_ENCRYPTION)
+  /* Pad the image to the next CACHE_ALIGN boundary so MCUboot TLVs
+   * start outside any IROM/DROM mapping window. Required for reliable
+   * TLV reads with flash encryption.
+   */
+  .flash.pad_cache_alignment :
+  {
+    LONG(0xFFFFFFFF);
+    FILL(0xFFFFFFFF);
+    . = ALIGN(CACHE_ALIGN);
+  } GROUP_LINK_IN(ROMABLE_REGION)
+#endif
 
 #ifdef CONFIG_GEN_ISR_TABLES
   #include <zephyr/linker/intlist.ld>

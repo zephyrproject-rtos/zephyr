@@ -28,3 +28,21 @@ config ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
 config ESP32_SOC_ETM_SUPPORTED
 	bool
 	default y
+
+config ESP32_SOC_FLASH_ENCRYPTION_XTS_AES_128
+	bool
+	default y
+
+# Security / flash encryption SoC capabilities (mirrored from HAL soc_caps)
+
+config ESP32_SOC_FLASH_ENCRYPTION_XTS_AES
+	bool
+	default y
+
+config ESP32_SOC_FLASH_ENCRYPTION_XTS_AES_128
+	bool
+	default y
+
+config ESP32_SOC_EFUSE_XTS_AES_KEY_128
+	bool
+	default y
