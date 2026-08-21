@@ -607,6 +607,42 @@ Interrupt Controllers
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
 
+MFD
+===
+
+* The nPM13xx (nPM1300/nPM1304) MFD event callback API no longer reuses ``struct gpio_callback``,
+  which was misused to dispatch non-GPIO PMIC events. Applications registering for PMIC events via
+  :c:func:`mfd_npm13xx_add_callback` / :c:func:`mfd_npm13xx_remove_callback` must now use the
+  dedicated :c:struct:`mfd_npm13xx_event_callback` instead of :c:struct:`gpio_callback`. Set its
+  ``event_mask`` field (a bitwise-OR of ``BIT(NPM13XX_EVENT_*)`` values) and ``handler`` field
+  directly instead of calling ``gpio_init_callback()``. The handler signature changed from
+  ``void handler(const struct device *dev, struct gpio_callback *cb, uint32_t events)`` to
+  ``void handler(const struct device *dev, struct mfd_npm13xx_event_callback *cb,
+  npm13xx_event_t events)``. Event callbacks are now invoked once per dispatch with a
+  combined event mask (the handler receives ``cb->event_mask & fired_events``), rather than
+  once per individual event bit as in the previous ``gpio_fire_callbacks`` based
+  implementation. Handlers also run after the event has been acknowledged in the PMIC rather
+  than before it, so a clear that fails ambiguously may deliver an event a second time
+  instead of dropping it. (:github:`110454`)
+
+* :c:func:`mfd_npm13xx_add_callback` now rejects a callback that is ``NULL``, has a ``NULL``
+  handler, has an empty ``event_mask``, or sets mask bits at or above ``NPM13XX_EVENT_MAX``,
+  returning ``-EINVAL``. The previous ``gpio_callback`` based implementation asserted on the
+  first two and silently accepted the rest. Registering a callback that is already registered
+  also returns ``-EINVAL``, where ``gpio_manage_callback()`` removed the node, re-inserted it
+  and returned success. (:github:`110454`)
+
+* :c:func:`mfd_npm13xx_add_callback` and :c:func:`mfd_npm13xx_remove_callback` now change the
+  hardware subscription transactionally, which alters three observable behaviours. Registration
+  on a device whose devicetree node has no ``host-int-gpios`` returns ``-ENOTSUP``, because
+  nothing would dispatch the events; it previously returned success and enabled interrupts that
+  could never be delivered. Registration clears and enables only the event bits that no other
+  registered callback already covers, so adding a second subscriber for an event no longer
+  discards a pending occurrence the first one has not received. And removal disables the
+  interrupts left with no remaining subscriber before unlinking the callback, keeping it
+  registered if that write fails, rather than leaving an enabled event source with no handler.
+  (:github:`110454`)
+
 MSPI
 ====
 
