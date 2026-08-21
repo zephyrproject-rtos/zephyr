@@ -1,0 +1,38 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		rtc = &bh1750;
+		enable-sensors = &sensors;
+	}
+
+	sensors: sensors {
+		compatible = "seeed,xiao-logger-hat";
+		gpios = <&xiao_d 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+
+	sht40: sht40@44 {
+		compatible = "sensirion,sht4x";
+		repeatability = <1>;
+		reg = <0x44>;
+	};
+
+	pcf8563: pcf8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+	};
+
+	bh1750: bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+	};
+};
