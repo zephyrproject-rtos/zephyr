@@ -189,6 +189,13 @@ static int mcux_lpuart_poll_in(const struct device *dev, unsigned char *c)
 
 static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 {
+	const struct mcux_lpuart_config *config = dev->config;
+
+	/* Switch TXD pin to output */
+	if (config->single_wire) {
+		get_base(dev)->CTRL |= LPUART_CTRL_TXDIR(true);
+	}
+
 	unsigned int key;
 #ifdef CONFIG_PM
 	struct mcux_lpuart_data *data = dev->data;
@@ -218,6 +225,15 @@ static void mcux_lpuart_poll_out(const struct device *dev, unsigned char c)
 
 	LPUART_WriteByte(get_base(dev), c);
 	irq_unlock(key);
+
+	/* Switch Pin back to RX direction */
+	if (config->single_wire) {
+		while (!(get_base(dev)->STAT & LPUART_STAT_TC(1))) {
+			/* Wait for shift register to finish with TC bit */
+		}
+		/* Switch to input/RX mode */
+		get_base(dev)->CTRL &= ~(LPUART_CTRL_TXDIR(true));
+	}
 }
 
 static int mcux_lpuart_err_check(const struct device *dev)
