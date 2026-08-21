@@ -562,6 +562,47 @@ ZTEST(device_runtime_api, test_log_macros)
 	zassert_str_equal(test_log.msg, "Failed to suspend test_dev (-5)", "unexpected log output");
 }
 
+ZTEST(device_runtime_api, test_helper_macros)
+{
+	enum pm_device_state state;
+	int ret;
+
+	ret = pm_device_runtime_get(test_dev);
+	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 1);
+
+	(void)pm_device_state_get(test_dev, &state);
+	zassert_equal(state, PM_DEVICE_STATE_ACTIVE);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	if (!IS_ENABLED(CONFIG_TEST_PM_DEVICE_ISR_SAFE)) {
+		test_driver_pm_async(test_dev);
+	}
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+
+	ret = PM_DEVICE_RUNTIME_PUT_ASYNC_IF_ENABLED(test_dev, K_NO_WAIT);
+	zassert_equal(ret, 0);
+	zassert_equal(pm_device_runtime_usage(test_dev), 0);
+
+	(void)pm_device_state_get(test_dev, &state);
+
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
+	if (IS_ENABLED(CONFIG_TEST_PM_DEVICE_ISR_SAFE)) {
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+	} else {
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDING);
+
+		test_driver_pm_done(test_dev);
+		k_yield();
+
+		(void)pm_device_state_get(test_dev, &state);
+		zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+	}
+#else /* !CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+	zassert_equal(state, PM_DEVICE_STATE_SUSPENDED);
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
+}
+
 void *device_runtime_api_setup(void)
 {
 	test_dev = device_get_binding("test_driver");
