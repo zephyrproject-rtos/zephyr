@@ -197,6 +197,18 @@ Boards
   or :c:func:`spi_transceive_cb` without DMA) on an affected board must now explicitly enable
   :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` in their own configuration. (:github:`116218`)
 
+* The Nordic nRF52 Kconfig option ``CONFIG_GPIO_AS_PINRESET`` has been removed. Set the
+  ``gpio-as-nreset`` property on the ``&uicr`` devicetree node instead.
+
+* The Nordic Kconfig options ``CONFIG_SOC_DCDC_NRF52X``, ``CONFIG_SOC_DCDC_NRF52X_HV``,
+  ``CONFIG_SOC_DCDC_NRF53X_APP``, ``CONFIG_SOC_DCDC_NRF53X_NET`` and
+  ``CONFIG_SOC_DCDC_NRF53X_HV`` have been removed. Configure the regulators in devicetree
+  instead: ``regulator-initial-mode = <NRF5X_REG_MODE_DCDC>`` on ``&reg1``/``&vregmain``/
+  ``&vregradio``, and ``status = "okay"`` on ``&reg0``/``&vregh``.
+
+* The Nordic nRF53 Kconfig option ``CONFIG_BOARD_ENABLE_CPUNET`` has been removed. Use
+  :kconfig:option:`CONFIG_SOC_NRF53_CPUNET_ENABLE` instead.
+
 Device Drivers and Devicetree
 *****************************
 
@@ -245,6 +257,9 @@ Audio Codec
 
 Clock Control
 =============
+
+* The Nordic Kconfig option ``CONFIG_NRFS_LOCAL_DOMAIN_DVFS_SCALE_DOWN_AFTER_INIT`` has been
+  removed. Use :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF_HSFLL_LOCAL_REQ_LOW_FREQ` instead.
 
 * The :dtcompatible:`nxp,imxrt11xx-arm-pll` binding now uses ``loop-div`` and
   ``post-div`` for ARM PLL configuration. The legacy ``clock-mult`` and
