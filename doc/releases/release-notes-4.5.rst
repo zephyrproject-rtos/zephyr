@@ -300,6 +300,10 @@ New APIs and options
     * ``BT_HCI_QUIRK_NO_FLOW_CONTROL`` HCI device quirk for controllers that
       advertise but reject the controller to host flow control commands.
 
+  * Host
+
+    * :c:func:`bt_le_generate_and_get_rpa`
+
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`
