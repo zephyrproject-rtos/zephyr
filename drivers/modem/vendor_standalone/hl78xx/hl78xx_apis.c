@@ -1594,6 +1594,14 @@ int hl78xx_exit_gnss_mode(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/* An explicit exit always revokes a queued-but-unserved entry request:
+	 * the caller no longer wants GNSS, so a latched request must not fire
+	 * autonomously later (e.g. when the modem reaches CARRIER_ON).
+	 */
+	if (hl78xx_gnss_check_and_clear_pending(data_modem)) {
+		LOG_INF("Revoked queued GNSS mode entry request");
+	}
+
 	/* Check if not in GNSS mode */
 	if (!hl78xx_is_in_gnss_mode(data_modem)) {
 		LOG_DBG("Not in GNSS mode, nothing to exit");
