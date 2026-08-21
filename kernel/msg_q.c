@@ -122,6 +122,13 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
+#ifdef CONFIG_OBJ_CORE_MSGQ
+	/* The message queue has reached the end of its life cycle; the
+	 * message queue object type list must not reference it anymore.
+	 */
+	k_obj_core_unlink(K_OBJ_CORE(msgq));
+#endif /* CONFIG_OBJ_CORE_MSGQ */
+
 out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
