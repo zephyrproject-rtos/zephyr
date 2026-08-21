@@ -70,6 +70,17 @@ Removed APIs and options
 
 * Architectures
 
+   * RISC-V
+
+      * ``CONFIG_SOC_ANDES_V5_EXECIT``
+      * ``CONFIG_SOC_ANDES_V5_HWDSP``
+      * ``CONFIG_SOC_ANDES_V5_L2C``
+      * ``CONFIG_SOC_ANDES_V5_PFT``
+      * ``CONFIG_SOC_ANDES_V5_PMA``
+      * ``CONFIG_SOC_ANDES_V5_PMA_REGION_MIN_ALIGN_AND_SIZE``
+      * ``CONFIG_TELINK_B91_HWDSP``
+      * ``CONFIG_TELINK_B91_PFT_ARCH``
+
    * Xtensa
 
       * ``CONFIG_XTENSA_BACKTRACE_EXCEPTION_DUMP_HOOK``
