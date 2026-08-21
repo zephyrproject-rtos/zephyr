@@ -1269,6 +1269,21 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	return 0;
 }
 
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	if (server == NULL) {
+		return -EINVAL;
+	}
+
+	if (!sys_slist_find_and_remove(&servers, &server->node)) {
+		return -ENOENT;
+	}
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
 {
