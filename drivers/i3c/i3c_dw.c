@@ -2418,6 +2418,8 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 	const struct dw_i3c_config *dev_config = dev->config;
 #endif /* CONFIG_I3C_TARGET */
 
+	__ASSERT((config != NULL), "Configuration should not be NULL");
+
 	if (type == I3C_CONFIG_CONTROLLER) {
 #ifdef CONFIG_I3C_CONTROLLER
 		ret = dw_i3c_init_scl_timing(dev, config);
