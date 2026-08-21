@@ -175,9 +175,7 @@ static void tg_bip_transport_disconnected(struct bt_bip *bip)
 
 	LOG_DBG("BIP %p transport disconnected", bip);
 
-	if (tg->conn != NULL) {
-		bt_conn_unref(tg->conn);
-	}
+	bt_conn_drop(&tg->conn);
 
 	err = bt_bip_server_unregister(&tg->server);
 	if (err != 0) {
@@ -563,9 +561,7 @@ static void ct_bip_transport_disconnected(struct bt_bip *bip)
 
 	LOG_DBG("Cover Art CT %p  transport disconnected", ct);
 
-	if (ct->conn != NULL) {
-		bt_conn_unref(ct->conn);
-	}
+	bt_conn_drop(&ct->conn);
 
 	if ((cover_art_ct_cb != NULL) && (cover_art_ct_cb->l2cap_disconnected != NULL)) {
 		cover_art_ct_cb->l2cap_disconnected(ct);
