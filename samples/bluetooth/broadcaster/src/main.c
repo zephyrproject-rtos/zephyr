@@ -20,6 +20,60 @@ static const struct bt_data ad[] = {
 	BT_DATA(BT_DATA_MANUFACTURER_DATA, mfg_data, 3),
 };
 
+#if defined(CONFIG_SAMPLE_BT_USE_DISABLE)
+int main(void)
+{
+	int err;
+
+	printk("Starting Broadcaster\n");
+
+	do {
+		/* Initialize the Bluetooth Subsystem */
+		err = bt_enable(NULL);
+		if (err) {
+			printk("Bluetooth init failed (err %d)\n", err);
+			return 0;
+		}
+
+		printk("Bluetooth initialized\n");
+
+		printk("Sending advertising data: 0x%02X\n", mfg_data[2]);
+
+		/* Start advertising */
+		err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad),
+				      NULL, 0);
+		if (err) {
+			printk("Advertising failed to start (err %d)\n", err);
+			return 0;
+		}
+
+		/* Broadcast for the configured duration */
+		k_msleep(CONFIG_SAMPLE_BT_BROADCAST_DURATION_MS);
+
+		err = bt_le_adv_stop();
+		if (err) {
+			printk("Advertising failed to stop (err %d)\n", err);
+			return 0;
+		}
+
+		/* Disable the Bluetooth Subsystem */
+		err = bt_disable();
+		if (err) {
+			printk("Bluetooth disable failed (err %d)\n", err);
+			return 0;
+		}
+
+		printk("Bluetooth disabled\n");
+
+		mfg_data[2]++;
+
+		/* Keep Bluetooth disabled for the configured duration */
+		k_msleep(CONFIG_SAMPLE_BT_DISABLE_DURATION_MS);
+
+	} while (1);
+	return 0;
+}
+#else /* !CONFIG_SAMPLE_BT_USE_DISABLE */
 int main(void)
 {
 	int err;
@@ -61,3 +115,4 @@ int main(void)
 	} while (1);
 	return 0;
 }
+#endif /* CONFIG_SAMPLE_BT_USE_DISABLE */
