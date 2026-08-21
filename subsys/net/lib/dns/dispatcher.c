@@ -64,17 +64,21 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 
 	/* Make sure that we can read DNS id, flags and rcode */
 	if (dns_msg.msg_size < (sizeof(uint16_t) + sizeof(uint16_t))) {
+		NET_WARN("Invalid message size: %d < %zd", dns_msg.msg_size,
+			 (sizeof(uint16_t) + sizeof(uint16_t)));
 		ret = -EINVAL;
 		goto done;
 	}
 
 	if (dns_header_rcode(dns_msg.msg) == DNS_HEADER_REFUSED) {
+		NET_WARN("DNS_HEADER_REFUSED");
 		ret = -EINVAL;
 		goto done;
 	}
 
 	is_query = (dns_header_qr(dns_msg.msg) == DNS_QUERY);
 	if (is_query) {
+		NET_DBG("Received %d byte DNS query message", dns_msg.msg_size);
 		if (dispatcher->type == DNS_SOCKET_RESPONDER) {
 			/* Call the responder callback */
 			ret = dispatcher->cb(dispatcher, sock,
@@ -93,6 +97,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 	} else {
 		/* So this was an answer to a query that was made by resolver.
 		 */
+		NET_DBG("Received %d byte DNS answer message", dns_msg.msg_size);
 		if (dispatcher->type == DNS_SOCKET_RESOLVER) {
 			/* Call the resolver callback */
 			ret = dispatcher->cb(dispatcher, sock,
