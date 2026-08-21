@@ -1,0 +1,315 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PTC Scroller
+
+description: |
+  Microchip PTC Scroller driver.
+
+  Base binding for Microchip Peripheral Touch Controller.
+  This defines common properties shared across all PTC versions.
+    - module name="PTC"
+
+compatible: "microchip,ptc-scroller"
+
+properties:
+  scroller-type:
+    type: string
+    enum:
+      - SCROLLER_TYPE_SLIDER
+      - SCROLLER_TYPE_WHEEL
+      - SCROLLER_TYPE_WRAPAROUND
+    description: |
+      Scroller Type
+
+      Scroller physical / layout types.
+
+  start-key:
+    type: int
+    description: |
+      Start Key
+
+      Scroller node offset as defined in the node params.
+      Note: Please provide only the node number, not the full node name.
+      example: The scroller node starts from node 2 (defined in node_2_params);
+      therefore, please provide the value as 2.
+
+  number-of-keys:
+    type: int
+    description: number of scroller keys
+
+  position-hysteresis:
+    type: int
+    description: scroller hysteresis
+
+  contact-min-threshold:
+    type: int
+    description: |
+      Contact Minimum Threshold
+
+      threshold for scroller buttons
+
+  scroller-resolution:
+    type: string
+    enum:
+      - SCR_RESOL_BIT_NONE_0
+      - SCR_RESOL_BIT_NONE_1
+      - SCR_RESOL_2_BIT
+      - SCR_RESOL_3_BIT
+      - SCR_RESOL_4_BIT
+      - SCR_RESOL_5_BIT
+      - SCR_RESOL_6_BIT
+      - SCR_RESOL_7_BIT
+      - SCR_RESOL_8_BIT
+      - SCR_RESOL_9_BIT
+      - SCR_RESOL_10_BIT
+      - SCR_RESOL_11_BIT
+      - SCR_RESOL_12_BIT
+    description: Scroller resolution
+
+  scr-db-percent:
+    type: string
+    enum:
+      - SCR_DB_NONE
+      - SCR_DB_1_PERCENT
+      - SCR_DB_2_PERCENT
+      - SCR_DB_3_PERCENT
+      - SCR_DB_4_PERCENT
+      - SCR_DB_5_PERCENT
+      - SCR_DB_6_PERCENT
+      - SCR_DB_7_PERCENT
+      - SCR_DB_8_PERCENT
+      - SCR_DB_9_PERCENT
+      - SCR_DB_10_PERCENT
+      - SCR_DB_11_PERCENT
+      - SCR_DB_12_PERCENT
+      - SCR_DB_13_PERCENT
+      - SCR_DB_14_PERCENT
+      - SCR_DB_15_PERCENT
+    description: scroller deadband percentage setting
+
+examples:
+  - |
+    /* Example-1 contains only the scroller node properties. */
+
+    scroller-0-params {
+        compatible = "microchip,ptc-scroller";
+        scroller-type ="SCROLLER_TYPE_SLIDER";
+        start-key = <2>;
+        number-of-keys = <3>;
+        position-hysteresis = <8>;
+        contact-min-threshold = <50>;
+
+        /* resol_deadband */
+        scroller-resolution = "SCR_RESOL_8_BIT";
+        scr-db-percent = "SCR_DB_10_PERCENT";
+    };
+
+    /* Example-2 contains the complete PTC node parameters
+    *         along with the scroller node properties.
+    *
+    * Please note the compatible property prior to implementation.
+    *
+    * In this example, the "microchip,ptc-controller-g1" compatible
+    * property is included for reference purposes only.
+    * This property must match the corresponding DTS node property.
+    */
+
+    &ptc {
+          compatible = "microchip,ptc-controller-g1",
+                       "microchip,ptc-controller";
+
+          reg = <0x42005400 0x400>;
+          interrupts = <0x1e 0x3>;
+          interrupt-names = "ptc-eoc";
+
+          clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_PTC>,
+                    <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_PTC>;
+          clock-names = "mclk_ptc", "gclk_ptc";
+
+          def-ptc-cal-option = "CAL_AUTO_TUNE_NONE";
+          def-ptc-tau-target = "CAL_CHRG_5TAU";
+          def-touch-measurement-period-ms = <0x14>;
+          def-sensor-type = <0x81>;
+          def-ptc-interrupt-priority = <0x3>;
+          def-sel-freq-init = "FREQ_SEL_0";
+          def-touch-det-int = <0x4>;
+          def-anti-tch-det-int = <0x5>;
+          def-anti-tch-recal-thrshld = "RECAL_100";
+          def-tch-drift-rate = <0x14>;
+          def-anti-tch-drift-rate = <0x5>;
+          def-drift-hold-time = <0x14>;
+          def-reburst-mode = "REBURST_UNRESOLVED";
+          def-max-on-duration = <0x0>;
+          def-num-channels = <0x1>;
+          pinctrl-0 = <&ptc_btn1_default>;
+          pinctrl-names = "default";
+          def-num-sensors = <0x1>;
+          num-freq-steps = <0x3>;
+          def-median-filter-frequencies = "FREQ_SEL_0",
+                                          "FREQ_SEL_1",
+                                          "FREQ_SEL_2";
+          def-freq-autotune-enable = <0x1>;
+          freq-autotune-max-variance = <0xa>;
+          freq-autotune-count-in = <0x6>;
+          data-streamer-port = <&sercom4>;
+          run-in-standby-en = <0x0>;
+
+          node_0_params:touch_node0 {
+              x-mask = <19>, <13>, <28>, <29>, <25>;
+              x-name = "DRIVEN_SHIELD",
+                      "BUTTON_1",
+                      "SLIDER_0",
+                      "SLIDER_1",
+                      "SLIDER_2";
+              y-mask = <14>;
+              y-name = "BUTTON_0";
+              csd = <0>;
+              rselect = "RSEL_VAL_0";
+              prescaler = "PRSC_DIV_SEL_16";
+              digital-gain = "GAIN_1";
+              analog-gain = "GAIN_1";
+              filter-level = "FILTER_LEVEL_16";
+          };
+
+          key_0_params:touch_key0 {
+              threshold = <50>;
+              hysteresis = "HYST_25";
+              aks-group = "NO_AKS_GROUP";
+          };
+
+          node_1_params:touch_node1 {
+              x-mask = <19>, <14>, <28>, <29>, <25>;
+              x-name = "DRIVEN_SHIELD",
+                      "BUTTON_0",
+                      "SLIDER_0",
+                      "SLIDER_1",
+                      "SLIDER_2";
+              y-mask = <13>;
+              y-name = "BUTTON_1";
+              csd = <0>;
+              rselect = "RSEL_VAL_0";
+              prescaler = "PRSC_DIV_SEL_16";
+              digital-gain = "GAIN_1";
+              analog-gain = "GAIN_1";
+              filter-level = "FILTER_LEVEL_16";
+          };
+
+          key_1_params:touch_key1 {
+              threshold = <50>;
+              hysteresis = "HYST_25";
+              aks-group = "NO_AKS_GROUP";
+          };
+
+          node_2_params:touch_node2 {
+              x-mask = <19>, <14>, <13>, <28>, <29>;
+              x-name = "DRIVEN_SHIELD",
+                      "BUTTON_0",
+                      "BUTTON_1",
+                      "SLIDER_1",
+                      "SLIDER_2";
+              y-mask = <25>;
+              y-name = "SLIDER_0";
+              csd = <0>;
+              rselect = "RSEL_VAL_0";
+              prescaler = "PRSC_DIV_SEL_16";
+              digital-gain = "GAIN_1";
+              analog-gain = "GAIN_1";
+              filter-level = "FILTER_LEVEL_16";
+          };
+
+          key_2_params:touch_key2 {
+              threshold = <50>;
+              hysteresis = "HYST_25";
+              aks-group = "NO_AKS_GROUP";
+          };
+
+          node_3_params:touch_node3 {
+            x-mask = <19>, <14>, <13>, <28>, <25>;
+            x-name = "DRIVEN_SHIELD",
+                    "BUTTON_0",
+                    "BUTTON_1",
+                    "SLIDER_0",
+                    "SLIDER_2";
+            y-mask = <29>;
+            y-name = "SLIDER_1";
+            csd = <0>;
+            rselect = "RSEL_VAL_0";
+            prescaler = "PRSC_DIV_SEL_16";
+            digital-gain = "GAIN_1";
+            analog-gain = "GAIN_1";
+            filter-level = "FILTER_LEVEL_16";
+          };
+
+          key_3_params:touch_key3 {
+            threshold = <50>;
+            hysteresis = "HYST_25";
+            aks-group = "NO_AKS_GROUP";
+          };
+
+          node_4_params:touch_node4 {
+            x-mask = <19>, <14>, <13>, <29>, <25>;
+            x-name = "DRIVEN_SHIELD",
+                    "BUTTON_0",
+                    "BUTTON_1",
+                    "SLIDER_0",
+                    "SLIDER_1";
+            y-mask = <28>;
+            y-name = "SLIDER_2";
+            csd = <0>;
+            rselect = "RSEL_VAL_0";
+            prescaler = "PRSC_DIV_SEL_16";
+            digital-gain = "GAIN_1";
+            analog-gain = "GAIN_1";
+            filter-level = "FILTER_LEVEL_16";
+          };
+
+          key_4_params:touch_key4 {
+            threshold = <50>;
+            hysteresis = "HYST_25";
+            aks-group = "NO_AKS_GROUP";
+          };
+
+          def-num-scrollers = <1>;
+
+          /* Slider / wheel Parameters */
+          scroller-0-params {
+            compatible = "microchip,ptc-scroller";
+            scroller-type ="SCROLLER_TYPE_SLIDER";
+            start-key = <2>;
+            number-of-keys = <3>;
+            position-hysteresis = <8>;
+            contact-min-threshold = <50>;
+
+            /* resol_deadband */
+            scroller-resolution = "SCR_RESOL_8_BIT";
+            scr-db-percent = "SCR_DB_10_PERCENT";
+          };
+
+          status = "okay";
+    };
+
+    /* The following pincontrol node
+     * is located under the pinctrl node
+     */
+
+    ptc_qt7_default:ptc_qt7_default {
+        group1 {
+            pinmux = <PB7B_PTC_Y13>,
+                      <PB8B_PTC_Y14>,
+                      <PA11B_PTC_Y19>,
+                      <PB12B_PTC_Y28>,
+                      <PB13B_PTC_Y29>,
+                      <PA21B_PTC_Y25>;
+        };
+    };
+
+    /* The following clock node
+    * is located under the gclkperiph node.
+    */
+
+    ptc {
+        subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_PTC>;
+        gclkperiph-src = "gclk0";
+        gclkperiph-en = <1>;
+    };

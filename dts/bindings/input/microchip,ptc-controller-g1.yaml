@@ -1,0 +1,221 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip Peripheral Touch Controller - G1
+
+description: |
+  Microchip Peripheral Touch Driver
+
+  Group g1 PTC Driver supports following hardware peripherals:
+    - module name="PTC" id="03795" version="7a0"
+
+include: microchip,ptc-controller.yaml
+
+compatible: "microchip,ptc-controller-g1"
+
+properties:
+  def-sensor-type:
+    type: int
+    enum:
+      - 0x80
+      - 0x81
+      - 0x40
+    description: |
+      Define Sensor Type
+
+      List of sensor types:
+      +===========+===========================+
+      | value     |       Type                |
+      +===========+===========================+
+      | 0x80      |     NODE_SELFCAP          |
+      +-----------+---------------------------+
+      | 0x81      |     NODE_SELFCAP_SHIELD   |
+      +-----------+---------------------------+
+      | 0x40      |     NODE_MUTUAL           |
+      +-----------+---------------------------+
+
+child-binding:
+  properties:
+    prescaler:
+      type: string
+      enum:
+        - "PRSC_DIV_SEL_4"
+        - "PRSC_DIV_SEL_8"
+        - "PRSC_DIV_SEL_16"
+        - "PRSC_DIV_SEL_32"
+      default: "PRSC_DIV_SEL_16"
+      description: |
+        PTC Prescaler
+
+        PTC clock prescaler selection.
+        The device performs touch measurement
+        using the clock defined by prescaler.
+
+    rselect:
+      type: string
+      enum:
+        - "RSEL_VAL_0"
+        - "RSEL_VAL_20"
+        - "RSEL_VAL_50"
+        - "RSEL_VAL_100"
+      default: "RSEL_VAL_0"
+      description: |
+        PTC Series Resistor Setting
+
+        Self Cap mode - Supported only for
+        "RSEL_VAL_0"
+
+        Mutual cap mode - the following list of values
+        are applicable
+
+        +===============+===============================+
+        | value         | Description                   |
+        +===============+===============================+
+        | "RSEL_VAL_0"  | sets internal series resistor |
+        |               | to 0 ohms                     |
+        +---------------+-------------------------------+
+        | "RSEL_VAL_20" | sets internal series resistor |
+        |               | to 20K ohms                   |
+        +---------------+-------------------------------+
+        | "RSEL_VAL_50" | sets internal series resistor |
+        |               | to 50K ohms                   |
+        +---------------+-------------------------------+
+        |"RSEL_VAL_100" | sets internal series resistor |
+        |               | to 100K ohms                  |
+        +---------------+-------------------------------+
+
+    digital-gain:
+      type: string
+      enum:
+        - "GAIN_1"
+        - "GAIN_2"
+        - "GAIN_4"
+        - "GAIN_8"
+        - "GAIN_16"
+      default: "GAIN_1"
+      description: |
+        Digital Gain
+
+        Accumulated sum is scaled to Digital Gain.
+
+    analog-gain:
+      type: string
+      enum:
+        - "GAIN_1"
+        - "GAIN_2"
+        - "GAIN_4"
+        - "GAIN_8"
+        - "GAIN_16"
+      default: "GAIN_1"
+      description: |
+        Analog Gain
+
+        Integration capacitor adjusted to control integrator gain.
+
+    filter-level:
+      type: string
+      enum:
+        - "FILTER_LEVEL_1"
+        - "FILTER_LEVEL_2"
+        - "FILTER_LEVEL_4"
+        - "FILTER_LEVEL_8"
+        - "FILTER_LEVEL_16"
+        - "FILTER_LEVEL_32"
+        - "FILTER_LEVEL_64"
+      default: "FILTER_LEVEL_16"
+      description: |
+        Filter Level (or) Oversampling
+
+        Number of samples to accumulate for each measurement.
+
+examples:
+  - |
+    /* Please note the compatible property prior to implementation.
+    *
+    * In this example, the "microchip,ptc-controller-g1" compatible property
+    * is included for reference purposes only.
+    * This property must match the corresponding DTS node property.
+    */
+
+    &ptc {
+              compatible = "microchip,ptc-controller-g1",
+                          "microchip,ptc-controller";
+
+              reg = <0x42005400 0x400>;
+              interrupts = <0x1e 0x3>;
+              interrupt-names = "ptc-eoc";
+
+              clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_PTC>,
+                      <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_PTC>;
+              clock-names = "mclk_ptc", "gclk_ptc";
+
+              def-ptc-cal-option = "CAL_AUTO_TUNE_NONE";
+              def-ptc-tau-target = "CAL_CHRG_5TAU";
+              def-touch-measurement-period-ms = <0x14>;
+              def-sensor-type = <0x81>;
+              def-ptc-interrupt-priority = <0x3>;
+              def-sel-freq-init = "FREQ_SEL_0";
+              def-touch-det-int = <0x4>;
+              def-anti-tch-det-int = <0x5>;
+              def-anti-tch-recal-thrshld = "RECAL_100";
+              def-tch-drift-rate = <0x14>;
+              def-anti-tch-drift-rate = <0x5>;
+              def-drift-hold-time = <0x14>;
+              def-reburst-mode = "REBURST_UNRESOLVED";
+              def-max-on-duration = <0x0>;
+              def-num-channels = <0x1>;
+              pinctrl-0 = <&ptc_btn1_default>;
+              pinctrl-names = "default";
+              def-num-sensors = <0x1>;
+              num-freq-steps = <0x3>;
+              def-median-filter-frequencies = "FREQ_SEL_0",
+                                              "FREQ_SEL_1",
+                                              "FREQ_SEL_2";
+              def-freq-autotune-enable = <0x1>;
+              freq-autotune-max-variance = <0xa>;
+              freq-autotune-count-in = <0x6>;
+              data-streamer-port = <&sercom4>;
+              run-in-standby-en = <0x0>;
+
+              node_0_params:touch_node0 {
+                  x-mask = <0x3>;
+                  x-names = "DRIVEN_SHIELD";
+                  y-mask = <0xa>;
+                  y-names = "BUTTON_0";
+                  csd = <0x0>;
+                  rselect = "RSEL_VAL_0";
+                  prescaler = "PRSC_DIV_SEL_16";
+                  digital-gain = "GAIN_1";
+                  analog-gain = "GAIN_1";
+                  filter-level = "FILTER_LEVEL_16";
+              };
+
+              key_0_params:touch_key0 {
+                  threshold = <0x19>;
+                  hysteresis = "HYST_25";
+                  aks-group = "NO_AKS_GROUP";
+              };
+
+              status = "okay";
+    };
+
+    /* The following pincontrol node
+    * is located under the pinctrl node
+    */
+
+    ptc_btn1_default:ptc_btn1_default {
+        group1 {
+          pinmux = <PB4B_PTC_Y10>,
+                  <PB5K_PTC_DS11>;
+        };
+    };
+
+    /* The following clock node
+    * is located under the gclkperiph node.
+    */
+
+    ptc {
+        subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_PTC>;
+        gclkperiph-src = "gclk0";
+        gclkperiph-en = <1>;
+    };

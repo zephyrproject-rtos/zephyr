@@ -1,0 +1,201 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * QT7 Xplained Pro Extension Board overlay for PIC32CM JH CPRO
+ *
+ * This overlay configures the QT7 shield when connected to the PIC32CM JH CPRO
+ *
+ * Sensor Type: NODE_SELFCAP_SHIELD (Self-capacitance with Driven Shield)
+ *
+ * Connection details:
+ *    Connect the QT7 add-on board to the PIC32CM JH CPRO EXT-1 header.
+ *
+ * QT7 to PIC32CM JH CPRO Y-line mapping:
+ *
+ *   Node Configuration (x-mask=shield, y-mask=sensor):
+ *   Node 0 (Button 0/Y1): Shield = 13, 25, 29, 28, 19  sensor = 14
+ *   Node 1 (Button 1/Y0): Shield = 14, 25, 29, 28, 19  sensor = 13
+ *   Node 2 (Slider 0/Y4): Shield = 14, 13, 29, 28, 19  sensor = 25
+ *   Node 3 (Slider 1/Y3): Shield = 14, 13, 25, 28, 19  sensor = 29
+ *   Node 4 (Slider 2/Y2): Shield = 14, 13, 25, 29, 19  sensor = 28
+ */
+
+/ {
+	qt7_leds {
+		compatible = "gpio-leds";
+
+		qt7_led_b0: b0_led {
+			gpios = <&portb 16 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_led_b1: b1_led {
+			gpios = <&porta 22 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led0: scroller_led0 {
+			gpios = <&porta 19 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led1: scroller_led1 {
+			gpios = <&portc 27 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led2: scroller_led2 {
+			gpios = <&porta 18 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led3: scroller_led3 {
+			gpios = <&portc 28 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led4: scroller_led4 {
+			gpios = <&porta 23 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+
+		qt7_scroller_led5: slider_led5 {
+			gpios = <&portb 17 GPIO_ACTIVE_LOW>;
+			label = "White LED";
+		};
+	};
+};
+
+&pinctrl {
+	ptc_qt7_default: ptc_qt7_default {
+		group1 {
+			pinmux = <PB7B_PTC_Y13>,
+				 <PB8B_PTC_Y14>,
+				 <PA11B_PTC_Y19>,
+				 <PB12B_PTC_Y28>,
+				 <PB13B_PTC_Y29>,
+				 <PA21B_PTC_Y25>;
+		};
+	};
+};
+
+&ptc {
+	def-num-channels = <5>;
+	def-num-sensors = <5>;
+
+	pinctrl-0 = <&ptc_qt7_default>;
+	pinctrl-names = "default";
+
+	/* node parameters */
+	node_0_params: touch_node0 {
+		x-mask = <19>, <13>, <28>, <29>, <25>;
+		x-names = "DRIVEN_SHIELD", "BUTTON_1", "SLIDER_0", "SLIDER_1", "SLIDER_2";
+		y-mask = <14>;
+		y-names = "BUTTON_0";
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_0_params: touch_key0 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	/* node parameters */
+	node_1_params: touch_node1 {
+		x-mask = <19>, <14>, <28>, <29>, <25>;
+		x-names = "DRIVEN_SHIELD", "BUTTON_0", "SLIDER_0", "SLIDER_1", "SLIDER_2";
+		y-mask = <13>;
+		y-names = "BUTTON_1";
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_1_params: touch_key1 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	/* scroller - node parameters */
+	node_2_params: touch_node2 {
+		x-mask = <19>, <14>, <13>, <28>, <29>;
+		x-names = "DRIVEN_SHIELD", "BUTTON_0", "BUTTON_1", "SLIDER_1", "SLIDER_2";
+		y-mask = <25>;
+		y-names = "SLIDER_0";
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_2_params: touch_key2 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	node_3_params: touch_node3 {
+		x-mask = <19>, <14>, <13>, <28>, <25>;
+		x-names = "DRIVEN_SHIELD", "BUTTON_0", "BUTTON_1", "SLIDER_0", "SLIDER_2";
+		y-mask = <29>;
+		y-names = "SLIDER_1";
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_3_params: touch_key3 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	node_4_params: touch_node4 {
+		x-mask = <19>, <14>, <13>, <29>, <25>;
+		x-names = "DRIVEN_SHIELD", "BUTTON_0", "BUTTON_1", "SLIDER_0", "SLIDER_1";
+		y-mask = <28>;
+		y-names = "SLIDER_2";
+		csd = <0>;
+		prescaler = "PRSC_DIV_SEL_16";
+		digital-gain = "GAIN_1";
+		analog-gain = "GAIN_1";
+		filter-level = "FILTER_LEVEL_16";
+	};
+
+	key_4_params: touch_key4 {
+		threshold = <50>;
+		hysteresis = "HYST_25";
+		aks-group = "NO_AKS_GROUP";
+	};
+
+	def-num-scrollers = <1>;
+
+	/* Slider / wheel Parameters */
+	scroller-0-params {
+		compatible = "microchip,ptc-scroller";
+		scroller-type = "SCROLLER_TYPE_SLIDER";
+		start-key = <2>;
+		number-of-keys = <3>;
+		position-hysteresis = <8>;
+		contact-min-threshold = <50>;
+
+		/* resol_deadband */
+		scroller-resolution = "SCR_RESOL_8_BIT";
+		scr-db-percent = "SCR_DB_10_PERCENT";
+	};
+};

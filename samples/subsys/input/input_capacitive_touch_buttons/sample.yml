@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: input_capacitive_touch_buttons
+  description: Demonstrates the on-board touch sensor using the PTC peripheral.
+
+common:
+  tags: input
+  build_only: true
+tests:
+  sample.input.input_capacitive_touch_buttons:
+    extra_configs:
+      - CONFIG_GPIO=y
+      - CONFIG_LED=y
+      - CONFIG_INPUT=y
+      - CONFIG_INPUT_MCHP_TOUCH=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_BTTN_MODULE=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_FREQ_HOP=y
+      - CONFIG_INPUT_MCHP_TOUCH_EN_FREQ_AUTO_TUNE=y
+      - CONFIG_INPUT_MCHP_TOUCH_DATASTREAMER_UNI_DIR=y
+      - CONFIG_INPUT_MODE_SYNCHRONOUS=y
+      - CONFIG_INPUT_GPIO_KEYS=n
