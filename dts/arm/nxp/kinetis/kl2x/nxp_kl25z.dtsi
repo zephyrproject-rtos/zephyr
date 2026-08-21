@@ -128,6 +128,26 @@
 			#io-channel-cells = <1>;
 		};
 
+		spi0: spi@40076000 {
+			compatible = "nxp,kinetis-l-spi";
+			reg = <0x40076000 0x1000>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 22)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		spi1: spi@40077000 {
+			compatible = "nxp,kinetis-l-spi";
+			reg = <0x40077000 0x1000>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 23)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
 		porta: pinmux@40049000 {
 			compatible = "nxp,port-pinmux";
 			reg = <0x40049000 0xd0>;

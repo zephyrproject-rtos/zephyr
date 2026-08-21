@@ -1,5 +1,6 @@
 common:
   depends_on: spi
+  min_ram: 32
   tags:
     - drivers
     - spi
