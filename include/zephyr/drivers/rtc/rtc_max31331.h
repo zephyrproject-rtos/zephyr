@@ -3,6 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief MAX31331 RTC driver specific API.
+ * @ingroup rtc_interface_ext
+ */
+
 #ifndef ZEPHYR_INCLUDE_RTC_RTC_MAX31331_H
 #define ZEPHYR_INCLUDE_RTC_RTC_MAX31331_H
 
