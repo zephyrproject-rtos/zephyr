@@ -93,3 +93,8 @@ zephyr_library_sources_ifdef(CONFIG_COUNTER_XLNX_ZYNQMP_RTC counter_xlnx_zynqmp_
 zephyr_library_sources_ifdef(CONFIG_TIMER_DTMR_CMSDK_APB timer_dtmr_cmsdk_apb.c)
 zephyr_library_sources_ifdef(CONFIG_TIMER_TMR_CMSDK_APB timer_tmr_cmsdk_apb.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_COUNTER_RV3028)
+  zephyr_library_sources(counter_rv3028.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
+endif()
