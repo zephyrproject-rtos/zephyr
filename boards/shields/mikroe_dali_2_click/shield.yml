@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+
+shield:
+  name: mikroe_dali_2_click
+  full_name: DALI 2 Click
+  vendor: mikroe
+  supported_features:
+    - dali

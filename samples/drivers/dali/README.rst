@@ -32,6 +32,7 @@ The sample can be build and executed for the
    :zephyr-app: samples/drivers/dali
    :board: nucleo_f091rc
    :goals: build flash
+   :shield: arduino_uno_click,mikroe_dali_2_click
    :compact:
 
 Building and Running for Nordic nRF52840
@@ -49,6 +50,7 @@ The sample can be build and executed for the
    :zephyr-app: samples/drivers/dali
    :board: nrf52840dk
    :goals: build flash
+   :shield: arduino_uno_click,mikroe_dali_2_click
    :compact:
 
 Sample output
