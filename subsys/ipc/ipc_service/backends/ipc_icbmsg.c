@@ -482,7 +482,7 @@ static int heap_alloc_tx_buffer(const struct device *instance, struct ept_data *
 	}
 
 	while (true) {
-		int off;
+		int off = 0;
 
 		K_SPINLOCK(&data->lock) {
 			off = bitmask_find_gap(data->tx_usage_mask, num_blocks,
