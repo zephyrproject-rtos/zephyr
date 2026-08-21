@@ -54,6 +54,15 @@ config USBD_CDC_ACM_TX_DELAY_MS
 	  Time in milliseconds to wait before sending actual payload to host.
 	  This is needed to prevent tty ECHO on Linux.
 
+config USBD_CDC_ACM_NO_NOTIF_EP
+	bool "Omit the notification endpoint (non-compliant)"
+	help
+	  Build CDC ACM implementation without the communication interface
+	  notification (interrupt IN) endpoint. The communication interface is
+	  required to provide it to be specification compliant. The resulting
+	  function does not provide the SerialState notification. Intended for
+	  testing host support for such non-compliant devices.
+
 module = USBD_CDC_ACM
 module-str = usbd cdc_acm
 default-count = 1
