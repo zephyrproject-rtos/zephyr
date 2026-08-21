@@ -42,6 +42,17 @@ Build System
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
   :kconfig:option:`CONFIG_SOC_FAMILY` and ``SOC_FULL_DIR``.
 
+* A build now only loads the Kconfig and CMake trees of the SoC it targets, instead of the trees of
+  every SoC in every SoC root. A SoC that carries no configuration of its own because it is built
+  on another SoC, such as a System-in-Package built on another vendor's die, now names that SoC
+  with the ``base`` property instead of selecting it, see :ref:`soc_porting_base`. ``osd32mp15x``
+  and ``myra`` have been converted; their ``SOC_OSD32MP15X`` and ``SOC_MYRA`` Kconfig symbols are
+  gone and boards select the underlying STM32 SoC directly. Board targets are unchanged, as is
+  ``CONFIG_SOC``, which already resolved to the underlying SoC. A board that pairs two otherwise
+  independent SoC trees declares that with the ``requires`` property in its :file:`board.yml`, see
+  :ref:`board_porting_requires`. As a temporary escape hatch, setting the CMake variable
+  ``HWM_LOAD_ALL_SOCS`` restores the previous behaviour of loading all SoC trees.
+
 Kernel
 ******
 

@@ -1001,6 +1001,17 @@ class KconfigCheck(ComplianceTest):
             for folder in soc_folders:
                 fp.write('source "' + (Path(folder) / 'Kconfig.soc').as_posix() + '"\n')
 
+        # A SoC declared with 'base' owns no Kconfig file; the build system generates its symbol
+        # for the SoC being targeted. This model holds every SoC at once, so provide the symbols
+        # of all of them, selecting their base as the generated ones do.
+        kconfig_based_file = os.path.join(kconfig_dir, 'soc', 'Kconfig.soc.based')
+        with open(kconfig_based_file, 'w') as fp:
+            for name in v2_systems.get_based_socs():
+                fp.write(
+                    f'\nconfig SOC_{name.upper()}\n\tbool\n'
+                    f'\tselect {v2_systems.get_base_symbol(name)}\n'
+                )
+
         with open(kconfig_file, 'w') as fp:
             for folder in soc_folders:
                 fp.write('source "' + (Path(folder) / 'Kconfig').as_posix() + '"\n')
