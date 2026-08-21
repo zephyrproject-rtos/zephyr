@@ -78,3 +78,11 @@ config KERNEL_THREAD_SHELL_KILL
 	select KERNEL_THREAD_SHELL
 	help
 	  Internal helper macro to compile the 'kill' subcommad
+
+config KERNEL_THREAD_SHELL_SET_PRIORITY
+	bool
+	default y
+	depends on THREAD_MONITOR
+	select KERNEL_THREAD_SHELL
+	help
+	  Internal helper macro to compile the 'set_priority' subcommand
