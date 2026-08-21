@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXW727CMFTA-pinctrl.h>
+#include <nxp/mcx/mcxw/pinctrl/MCXW727CMFTA-pinctrl.h>
 
 &pinctrl {
 	pinmux_lpuart0: pinmux_lpuart0 {

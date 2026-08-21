@@ -3,7 +3,7 @@
  * from LPCXpresso51U68.mex
  */
 
-#include <nxp/lpc/LPC51U68JBD64-pinctrl.h>
+#include <nxp/lpc/lpc51u68/pinctrl/LPC51U68JBD64-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_uart: pinmux_flexcomm0_uart {
