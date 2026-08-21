@@ -91,136 +91,240 @@ int media_proxy_sctrl_register(struct media_proxy_sctrl_cbs *sctrl_cbs)
 const char *media_proxy_sctrl_get_player_name(void)
 {
 	/* TODO: Add check for whether function pointer is non-NULL everywhere */
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_player_name == NULL) {
+		return NULL;
+	}
+
 	return mprx.local_player.calls->get_player_name();
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 uint64_t media_proxy_sctrl_get_icon_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_icon_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_icon_id();
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 const char *media_proxy_sctrl_get_icon_url(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_icon_url == NULL) {
+		return NULL;
+	}
+
 	return mprx.local_player.calls->get_icon_url();
 }
 
 const char *media_proxy_sctrl_get_track_title(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_track_title == NULL) {
+		return NULL;
+	}
+
 	return mprx.local_player.calls->get_track_title();
 }
 
 int32_t media_proxy_sctrl_get_track_duration(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_track_duration == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_track_duration();
 }
 
 int32_t media_proxy_sctrl_get_track_position(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_track_position == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_track_position();
 }
 
 void media_proxy_sctrl_set_track_position(int32_t position)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_track_position == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_track_position(position);
 }
 
 int8_t media_proxy_sctrl_get_playback_speed(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_playback_speed == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_playback_speed();
 }
 
 void media_proxy_sctrl_set_playback_speed(int8_t speed)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_playback_speed == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_playback_speed(speed);
 }
 
 int8_t media_proxy_sctrl_get_seeking_speed(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_seeking_speed == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_seeking_speed();
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 uint64_t media_proxy_sctrl_get_track_segments_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_track_segments_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_track_segments_id();
 }
 
 uint64_t media_proxy_sctrl_get_current_track_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_current_track_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_current_track_id();
 }
 
 void media_proxy_sctrl_set_current_track_id(uint64_t id)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_current_track_id == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_current_track_id(id);
 }
 
 uint64_t media_proxy_sctrl_get_next_track_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_next_track_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_next_track_id();
 }
 
 void media_proxy_sctrl_set_next_track_id(uint64_t id)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_next_track_id == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_next_track_id(id);
 }
 
 uint64_t media_proxy_sctrl_get_parent_group_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_parent_group_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_parent_group_id();
 }
 
 uint64_t media_proxy_sctrl_get_current_group_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_current_group_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_current_group_id();
 }
 
 void media_proxy_sctrl_set_current_group_id(uint64_t id)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_current_group_id == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_current_group_id(id);
 }
 #endif /* CONFIG_BT_MPL_OBJECTS */
 
 uint8_t media_proxy_sctrl_get_playing_order(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_playing_order == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_playing_order();
 }
 
 void media_proxy_sctrl_set_playing_order(uint8_t order)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->set_playing_order == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->set_playing_order(order);
 }
 
 uint16_t media_proxy_sctrl_get_playing_orders_supported(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_playing_orders_supported == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_playing_orders_supported();
 }
 
 uint8_t media_proxy_sctrl_get_media_state(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_media_state == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_media_state();
 }
 
 void media_proxy_sctrl_send_command(const struct mpl_cmd *cmd)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->send_command == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->send_command(cmd);
 }
 
 uint32_t media_proxy_sctrl_get_commands_supported(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_commands_supported == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_commands_supported();
 }
 
 #ifdef CONFIG_BT_MPL_OBJECTS
 void media_proxy_sctrl_send_search(const struct mpl_search *search)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->send_search == NULL) {
+		return;
+	}
+
 	mprx.local_player.calls->send_search(search);
 }
 
 uint64_t media_proxy_sctrl_get_search_results_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_search_results_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_search_results_id();
 }
 void media_proxy_sctrl_search_results_id_cb(uint64_t id);
@@ -228,6 +332,10 @@ void media_proxy_sctrl_search_results_id_cb(uint64_t id);
 
 uint8_t media_proxy_sctrl_get_content_ctrl_id(void)
 {
+	if (mprx.local_player.calls == NULL || mprx.local_player.calls->get_content_ctrl_id == NULL) {
+		return 0;
+	}
+
 	return mprx.local_player.calls->get_content_ctrl_id();
 }
 #endif /* CONFIG_MCTL_LOCAL_PLAYER_REMOTE_CONTROL */
