@@ -1487,6 +1487,28 @@ out:
 #if defined(CONFIG_NET_IPV6_DAD)
 #define DAD_TIMEOUT 100U /* ms */
 
+/* How many times sending the solicitation may fail before the address is given
+ * up on. The failure is a local one, a buffer or a neighbour cache entry that
+ * could not be had, so it is worth waiting out; but not forever, and never by
+ * using an address whose uniqueness was never asked about.
+ */
+#define DAD_MAX_TX_FAILURES 3U
+
+static void dad_queue(struct net_if_addr *ifaddr)
+{
+	ifaddr->dad_start = k_uptime_get_32();
+
+	k_mutex_lock(&lock, K_FOREVER);
+	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad_node);
+	sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
+	k_mutex_unlock(&lock);
+
+	/* FUTURE: use schedule, not reschedule. */
+	if (!k_work_delayable_remaining_get(&dad_timer)) {
+		k_work_reschedule(&dad_timer, K_MSEC(DAD_TIMEOUT));
+	}
+}
+
 static void dad_timeout(struct k_work *work)
 {
 	uint32_t current_time = k_uptime_get_32();
@@ -1524,15 +1546,67 @@ static void dad_timeout(struct k_work *work)
 
 	k_mutex_unlock(&lock);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&expired_list, ifaddr, dad_node) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&expired_list, ifaddr, next, dad_node) {
 		struct net_if *iface;
+
+		/* The address can be removed while its entry waits here, as
+		 * this runs without the lock and the entry has already left
+		 * active_dad_timers, which is where net_if_ipv6_addr_rm()
+		 * looks for it. Leave a freed slot alone rather than working
+		 * on it or putting it back on the timer list.
+		 */
+		if (!ifaddr->is_used) {
+			continue;
+		}
+
+		iface = net_if_get_by_index(ifaddr->ifindex);
+
+		if (ifaddr->dad_tx_failures > 0U) {
+			/* Nothing was ever asked, so nothing has answered and
+			 * the address is no more known to be unique than it was
+			 * to start with. Ask again.
+			 */
+			if (iface != NULL &&
+			    net_ipv6_start_dad(iface, ifaddr) == 0) {
+				ifaddr->dad_tx_failures = 0U;
+				dad_queue(ifaddr);
+				continue;
+			}
+
+			/* A solicitation that was built but could not be sent
+			 * leaves an entry for our own address in the
+			 * neighbour cache, and nothing reclaims an incomplete
+			 * one: only stale entries are evicted, and the reply
+			 * timer is armed only for a solicitation that has a
+			 * packet pending behind it. A failure would cost a
+			 * cache slot for good, and a cache with no slot left
+			 * is one of the two ways the send fails to begin
+			 * with.
+			 */
+			if (iface != NULL) {
+				net_ipv6_nbr_rm(iface,
+						&ifaddr->address.in6_addr);
+			}
+
+			ifaddr->dad_tx_failures++;
+
+			if (ifaddr->dad_tx_failures < DAD_MAX_TX_FAILURES) {
+				dad_queue(ifaddr);
+				continue;
+			}
+
+			NET_ERR("Cannot send DAD query for %s at interface %d, "
+				"leaving it tentative",
+				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+				ifaddr->ifindex);
+			continue;
+		}
 
 		NET_DBG("DAD succeeded for %s at interface %d",
 			net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
 			ifaddr->ifindex);
 
 		ifaddr->addr_state = NET_ADDR_PREFERRED;
-		iface = net_if_get_by_index(ifaddr->ifindex);
 
 		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
 						iface,
@@ -1560,27 +1634,27 @@ void net_if_ipv6_start_dad(struct net_if *iface,
 			net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
 		ifaddr->dad_count = 1U;
-
-		if (net_ipv6_start_dad(iface, ifaddr) != 0) {
-			NET_ERR("Interface %p failed to send DAD query for %s",
-				iface,
-				net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
-		}
-
-		ifaddr->dad_start = k_uptime_get_32();
 		ifaddr->ifindex = net_if_get_by_iface(iface);
 
-		k_mutex_lock(&lock, K_FOREVER);
-		sys_slist_find_and_remove(&active_dad_timers,
-					  &ifaddr->dad_node);
-		sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
-		k_mutex_unlock(&lock);
-
-		/* FUTURE: use schedule, not reschedule. */
-		if (!k_work_delayable_remaining_get(&dad_timer)) {
-			k_work_reschedule(&dad_timer,
-					  K_MSEC(DAD_TIMEOUT));
+		if (net_ipv6_start_dad(iface, ifaddr) != 0) {
+			/* Remembered rather than only logged: the timer that
+			 * fires next has to know that nothing was asked, or it
+			 * would take the silence that follows for an answer.
+			 */
+			NET_WARN("Interface %p cannot send DAD query for %s yet",
+				 iface,
+				 net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
+			/* Drop the neighbour cache entry the attempt may have
+			 * left behind, as dad_timeout() does for the ones
+			 * that follow.
+			 */
+			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+			ifaddr->dad_tx_failures = 1U;
+		} else {
+			ifaddr->dad_tx_failures = 0U;
 		}
+
+		dad_queue(ifaddr);
 	} else {
 		NET_DBG("Interface %p is down, starting DAD for %s later.",
 			iface,
