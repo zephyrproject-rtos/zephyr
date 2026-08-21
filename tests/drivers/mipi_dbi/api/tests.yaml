@@ -5,7 +5,11 @@ common:
 
 tests:
   drivers.mipi_dbi.api:
-    filter: dt_nodelabel_enabled("mipi-dbi")
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - DTC_OVERLAY_FILE=overlays/mipi_dbi_bitbang.overlay
   drivers.mipi_dbi.rpi_pico.pio0.single_split:
     platform_allow:
       - rpi_pico/rp2040
