@@ -695,16 +695,17 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	const struct device *dev = priv->dev;
 	struct udc_ep_config *ep_cfg;
 	uint8_t ep = epnum | USB_EP_DIR_IN;
+	unsigned int lock_key;
 	struct net_buf *buf;
 	stm32_status_t status;
 
 	LOG_DBG("DataIn ep 0x%02x",  ep);
 
 	ep_cfg = udc_get_ep_cfg(dev, ep);
-	udc_ep_set_busy(ep_cfg, false);
 
 	buf = udc_buf_peek(ep_cfg);
 	if (unlikely(buf == NULL)) {
+		udc_ep_set_busy(ep_cfg, false);
 		return;
 	}
 
@@ -739,11 +740,21 @@ static void handle_msg_data_in(struct udc_stm32_data *priv, uint8_t epnum)
 	buf = udc_buf_get(ep_cfg);
 	udc_submit_ep_event(dev, buf, 0);
 
-	/* enqueue */
+	/*
+	 * Keep the busy-flag clear and the restart of the queue head atomic
+	 * against udc_stm32_ep_enqueue(), which runs under irq_lock in
+	 * another context.
+	 */
+	lock_key = irq_lock();
+
+	udc_ep_set_busy(ep_cfg, false);
+
 	buf = udc_buf_peek(ep_cfg);
 	if (buf != NULL) {
 		udc_stm32_tx(dev, ep_cfg, buf);
 	}
+
+	irq_unlock(lock_key);
 }
 
 void HAL_PCD_SetupStageCallback(stm32_pcd_handle_t *hpcd)
