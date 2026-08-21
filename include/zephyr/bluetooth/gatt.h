@@ -1086,9 +1086,6 @@ struct bt_gatt_ccc_cfg {
 	uint16_t value;
 };
 
-/** Macro to keep old name for deprecation period. */
-#define _bt_gatt_ccc bt_gatt_ccc_managed_user_data __DEPRECATED_MACRO
-
 /** @brief Internal representation of CCC value.
  *
  * @note Only use this as an argument for @ref BT_GATT_CCC_MANAGED
@@ -1184,9 +1181,6 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags);
-
-/** Macro to keep old name for deprecation period. */
-#define BT_GATT_CCC_INITIALIZER BT_GATT_CCC_MANAGED_USER_DATA_INIT __DEPRECATED_MACRO
 
 /**
  *  @brief Initialize Client Characteristic Configuration Declaration Macro.

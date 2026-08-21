@@ -76,6 +76,10 @@ Removed APIs and options
 
 * Bluetooth
 
+  * Controller
+
+    * ``CONFIG_BT_CTRL_ADV_ADI_IN_SCAN_RSP``
+
   * Host
 
     * The ``CONFIG_BT_RECV_CONTEXT`` choice and its options ``CONFIG_BT_RECV_WORKQ_SYS``
@@ -93,6 +97,20 @@ Removed APIs and options
       where the HCI raw layer switched to using H:4 packet encoding for all
       buffers unconditionally. Applications still setting these options can
       simply drop them.
+
+    * ``_bt_gatt_ccc``
+    * ``BT_GATT_CCC_INITIALIZER``
+    * ``CONFIG_BT_CONN_TX_MAX``
+
+  * Mesh
+
+    * ``CONFIG_BT_MESH_BLOB_IO_FLASH_WITH_ERASE``
+    * ``CONFIG_BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE``
+
+  * Services
+
+    * ``CONFIG_BT_DIS_MANUF``
+    * ``CONFIG_BT_DIS_MODEL``
 
 * Counter
 
