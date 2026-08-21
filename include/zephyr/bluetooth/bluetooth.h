@@ -527,6 +527,34 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk);
 int bt_id_delete(uint8_t id);
 
 /**
+ * @brief Reset the local Identity Resolving Key (IRK) for an identity.
+ *
+ * Generates a new random IRK for the given identity and persists it to flash
+ * (when @kconfig{CONFIG_BT_SETTINGS} is enabled). The identity address and
+ * all existing bond/pairing data are left untouched.
+ *
+ * @note Unlike @ref bt_id_reset, this function also accepts
+ *       @ref BT_ID_DEFAULT because it does not modify the identity address.
+ *
+ * @kconfig_dep{CONFIG_BT_PRIVACY}.
+ *
+ * @note The Bluetooth stack must be enabled via @ref bt_enable before calling
+ *       this function.
+ *
+ * @note Any existing bonds must be removed via @ref bt_unpair before calling
+ *       this function, otherwise -ENOTEMPTY is returned.
+ *
+ * @param id  Identity index, as returned by @ref bt_id_get or @ref BT_ID_DEFAULT.
+ *            Must be less than the number of currently configured identities.
+ *
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EAGAIN    Bluetooth stack is not ready.
+ * @retval -EINVAL    @p id is out of range.
+ * @retval -ENOTEMPTY Bonds exist for this identity; call @ref bt_unpair first.
+ */
+int bt_id_reset_irk(uint8_t id);
+
+/**
  * @brief Local Bluetooth LE controller features and capabilities.
  *
  * @details This struct provides details about the Bluetooth LE controller's supported features,
