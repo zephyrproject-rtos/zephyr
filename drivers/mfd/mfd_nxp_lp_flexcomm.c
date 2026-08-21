@@ -12,6 +12,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/mfd/nxp_lp_flexcomm.h>
 
 LOG_MODULE_REGISTER(mfd_nxp_lp_flexcomm, CONFIG_MFD_LOG_LEVEL);
@@ -88,19 +89,21 @@ void nxp_lp_flexcomm_setirqhandler(const struct device *dev, const struct device
 	child->dev = child_dev;
 }
 
-static int nxp_lp_flexcomm_init(const struct device *dev)
+/* Select the peripheral communications function in the LP_FLEXCOMM wrapper
+ * (writes PSELID[PERSEL]) based on the enabled child nodes.
+ */
+static int nxp_lp_flexcomm_select_periph(const struct device *dev)
 {
-	const struct nxp_lp_flexcomm_config *config = dev->config;
 	struct nxp_lp_flexcomm_data *data = dev->data;
-	LP_FLEXCOMM_Type *base;
-	uint32_t instance;
-	struct nxp_lp_flexcomm_child *child = NULL;
+	LP_FLEXCOMM_Type *base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	uint32_t instance = LP_FLEXCOMM_GetInstance(base);
 	bool spi_found = false;
 	bool uart_found = false;
 	bool i2c_found = false;
 
 	for (int i = 1; i < data->num_children; i++) {
-		child = &data->children[i];
+		struct nxp_lp_flexcomm_child *child = &data->children[i];
+
 		if (child->periph == LP_FLEXCOMM_PERIPH_LPSPI) {
 			spi_found = true;
 		}
@@ -117,9 +120,53 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (config->reset.dev != NULL) {
-		int ret;
+	if (uart_found && i2c_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2CAndLPUART);
+	} else if (uart_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPUART);
+	} else if (i2c_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2C);
+	} else if (spi_found) {
+		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPSPI);
+	}
 
+	return 0;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int nxp_lp_flexcomm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct nxp_lp_flexcomm_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/*
+		 * A low-power state may collapse the wrapper's power domain (e.g.
+		 * i.MX RT700 deep-sleep-retention), resetting it: PSELID clears so
+		 * no function is selected and the child module's register clock is
+		 * gated. Re-deassert reset and re-select the peripheral before any
+		 * child (e.g. LPUART) resume touches its registers.
+		 */
+		if (config->reset.dev != NULL) {
+			(void)reset_line_deassert_dt(&config->reset);
+		}
+		return nxp_lp_flexcomm_select_periph(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+static int nxp_lp_flexcomm_init(const struct device *dev)
+{
+	const struct nxp_lp_flexcomm_config *config = dev->config;
+	int ret;
+
+	if (config->reset.dev != NULL) {
 		if (!device_is_ready(config->reset.dev)) {
 			return -ENODEV;
 		}
@@ -131,22 +178,19 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 	}
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
-	base = (LP_FLEXCOMM_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
-	instance = LP_FLEXCOMM_GetInstance(base);
 
-	if (uart_found && i2c_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2CAndLPUART);
-	} else if (uart_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPUART);
-	} else if (i2c_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPI2C);
-	} else if (spi_found) {
-		LP_FLEXCOMM_Init(instance, LP_FLEXCOMM_PERIPH_LPSPI);
+	ret = nxp_lp_flexcomm_select_periph(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	config->irq_config_func(dev);
 
+#ifdef CONFIG_PM_DEVICE
+	return pm_device_driver_init(dev, nxp_lp_flexcomm_pm_action);
+#else
 	return 0;
+#endif
 }
 
 #define MCUX_FLEXCOMM_CHILD_INIT(child_node_id)					\
@@ -174,9 +218,11 @@ static int nxp_lp_flexcomm_init(const struct device *dev)
 		.num_children = ARRAY_SIZE(nxp_lp_flexcomm_children_##n),	\
 	};									\
 										\
+	PM_DEVICE_DT_INST_DEFINE(n, nxp_lp_flexcomm_pm_action);			\
+										\
 	DEVICE_DT_INST_DEFINE(n,						\
 			    &nxp_lp_flexcomm_init,				\
-			    NULL,						\
+			    PM_DEVICE_DT_INST_GET(n),				\
 			    &nxp_lp_flexcomm_data_##n,				\
 			    &nxp_lp_flexcomm_config_##n,			\
 			    PRE_KERNEL_1,					\

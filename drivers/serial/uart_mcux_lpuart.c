@@ -17,6 +17,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/policy.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/drivers/pinctrl.h>
 #if LPUART_ASYNC_ENABLE
 #include <zephyr/drivers/dma.h>
@@ -136,6 +137,16 @@ struct mcux_lpuart_data {
 	bool tx_poll_stream_on;
 	bool tx_int_stream_on;
 #endif /* CONFIG_PM */
+#ifdef CONFIG_PM_DEVICE
+	/* Interrupts enabled before suspend, restored on resume (the peripheral
+	 * may lose all state if its power domain is collapsed in low power).
+	 */
+	uint32_t pm_saved_int;
+	/* Set while the device is PM-suspended: a pending interrupt that fires
+	 * before resume must not touch the (possibly powered-down) registers.
+	 */
+	bool suspended;
+#endif /* CONFIG_PM_DEVICE */
 #if LPUART_ASYNC_ENABLE
 	struct mcux_lpuart_async_data async;
 #endif
@@ -1123,6 +1134,18 @@ static inline void mcux_lpuart_async_isr(const struct device *dev,
 static void mcux_lpuart_isr(const struct device *dev)
 {
 	struct mcux_lpuart_data *data = dev->data;
+
+#ifdef CONFIG_PM_DEVICE
+	/* A pending interrupt may fire after the peripheral's power domain was
+	 * collapsed in a low-power state (e.g. i.MX RT700 deep-sleep-retention)
+	 * but before the device is resumed. Its registers bus-fault until
+	 * re-initialized, so bail out while suspended rather than touch them.
+	 */
+	if (data->suspended) {
+		return;
+	}
+#endif
+
 	const uint32_t status = LPUART_GetStatusFlags(get_base(dev));
 
 #if LPUART_ASYNC_ENABLE || defined(CONFIG_UART_INTERRUPT_DRIVEN)
@@ -1540,6 +1563,40 @@ static int mcux_lpuart_line_ctrl_get(const struct device *dev,
 #endif /* LPUART_HAS_MCR */
 #endif /* CONFIG_UART_LINE_CTRL */
 
+#ifdef CONFIG_PM_DEVICE
+static int mcux_lpuart_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct mcux_lpuart_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Some low-power states collapse the LPUART power domain (e.g. the
+		 * i.MX RT700 deep-sleep-retention state), losing all peripheral
+		 * state. Save the enabled interrupts, then quiesce the peripheral:
+		 * disabling its interrupts prevents a pending (e.g. TX) interrupt
+		 * from firing its ISR against the dead register bank after wakeup.
+		 */
+		data->pm_saved_int = LPUART_GetEnabledInterrupts(get_base(dev));
+		LPUART_DisableInterrupts(get_base(dev), data->pm_saved_int);
+		data->suspended = true;
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-initialize the peripheral (clock + LPUART) in case its power
+		 * domain was collapsed, then restore the previously enabled
+		 * interrupts (e.g. the interrupt-driven RX the console relies on).
+		 */
+		mcux_lpuart_configure_init(dev, &data->uart_config);
+		data->suspended = false;
+		LPUART_EnableInterrupts(get_base(dev), data->pm_saved_int);
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static int mcux_lpuart_init(const struct device *dev)
 {
 	const struct mcux_lpuart_config *config = dev->config;
@@ -1576,7 +1633,11 @@ static int mcux_lpuart_init(const struct device *dev)
 	data->tx_int_stream_on = false;
 #endif
 
+#ifdef CONFIG_PM_DEVICE
+	return pm_device_driver_init(dev, mcux_lpuart_pm_action);
+#else
 	return 0;
+#endif
 }
 
 static DEVICE_API(uart, mcux_lpuart_driver_api) = {
@@ -1767,9 +1828,11 @@ static const struct mcux_lpuart_config mcux_lpuart_##n##_config = {     \
 									\
 	LPUART_MCUX_DECLARE_CFG(n)					\
 									\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpuart_pm_action);		\
+									\
 	DEVICE_DT_INST_DEFINE(n,					\
 			    mcux_lpuart_init,				\
-			    NULL,					\
+			    PM_DEVICE_DT_INST_GET(n),			\
 			    &mcux_lpuart_##n##_data,			\
 			    &mcux_lpuart_##n##_config,			\
 			    PRE_KERNEL_1,				\
