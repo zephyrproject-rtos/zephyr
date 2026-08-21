@@ -79,6 +79,21 @@ struct k_spinlock _track_list_k_event_lock;
 		k_spin_unlock(&list##_lock, key);                                                  \
 	} while (false)
 
+/* Removes a single object from one tracking list, if it is present. */
+#define SYS_TRACK_LIST_REMOVE(list, obj)                                                           \
+	do {                                                                                       \
+		k_spinlock_key_t key = k_spin_lock(&list##_lock);                                  \
+		__typeof__(list) *_link = &(list);                                                 \
+		while (*_link != NULL) {                                                           \
+			if (*_link == (obj)) {                                                     \
+				*_link = (*_link)->_obj_track_next;                                \
+				break;                                                             \
+			}                                                                          \
+			_link = &(*_link)->_obj_track_next;                                        \
+		}                                                                                  \
+		k_spin_unlock(&list##_lock, key);                                                  \
+	} while (false)
+
 /* Iterates in the tracking list and prepends an object only when it doesn't exist */
 #define SYS_TRACK_LIST_PREPEND(list, obj)                                                          \
 	do {                                                                                       \
@@ -172,6 +187,26 @@ void sys_track_k_event_init(struct k_event *event)
 			SYS_TRACK_LIST_PREPEND(_track_list_k_event, event));
 }
 #endif
+
+void sys_track_k_timer_deinit(struct k_timer *timer)
+{
+	SYS_PORT_TRACING_TYPE_MASK(k_timer, SYS_TRACK_LIST_REMOVE(_track_list_k_timer, timer));
+}
+
+void sys_track_k_stack_deinit(struct k_stack *stack)
+{
+	SYS_PORT_TRACING_TYPE_MASK(k_stack, SYS_TRACK_LIST_REMOVE(_track_list_k_stack, stack));
+}
+
+void sys_track_k_msgq_deinit(struct k_msgq *msgq)
+{
+	SYS_PORT_TRACING_TYPE_MASK(k_msgq, SYS_TRACK_LIST_REMOVE(_track_list_k_msgq, msgq));
+}
+
+void sys_track_k_pipe_deinit(struct k_pipe *pipe)
+{
+	SYS_PORT_TRACING_TYPE_MASK(k_pipe, SYS_TRACK_LIST_REMOVE(_track_list_k_pipe, pipe));
+}
 
 /* sys_heap release hook: a block of memory is about to go back to the heap,
  * so every tracked object living in it has to leave the lists first.

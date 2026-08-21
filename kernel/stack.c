@@ -10,6 +10,7 @@
 
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracking.h>
 
 #include <zephyr/toolchain.h>
 #include <ksched.h>
@@ -103,6 +104,11 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 
 out:
 	k_spin_unlock(&stack->lock, key);
+
+	if (ret == 0) {
+		sys_track_k_stack_deinit(stack);
+	}
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, ret);
 
 	return ret;

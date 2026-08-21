@@ -706,9 +706,11 @@ all initialized mutexes, one can write::
 
 Objects leave their list when their memory is released back to a
 ``sys_heap`` based allocator, such as through :c:func:`k_free` or the
-common libc ``free()``. A traversal that can run concurrently with such
-a release must hold the matching ``_track_list_<type>_lock`` spinlock,
-or it may follow a link that is being removed. Memory handed out by
+common libc ``free()``, or when an explicit teardown call such as
+:c:func:`k_msgq_cleanup` or :c:func:`k_pipe_close` retires them. A
+traversal that can run concurrently with a release or teardown must
+hold the matching ``_track_list_<type>_lock`` spinlock, or it may
+follow a link that is being removed. Memory handed out by
 other allocators, for example slab blocks, is not covered: freeing a
 tracked object there still leaves a stale node behind.
 

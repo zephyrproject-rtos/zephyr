@@ -11,6 +11,7 @@
 
 
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracking.h>
 
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
@@ -131,6 +132,11 @@ int z_msgq_cleanup(struct k_msgq *msgq, __maybe_unused bool locked)
 
 out:
 	k_spin_unlock(&msgq->lock, key);
+
+	if (ret == 0) {
+		sys_track_k_msgq_deinit(msgq);
+	}
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
 }

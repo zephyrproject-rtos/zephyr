@@ -12,7 +12,9 @@
 /* The tracked object is identified by address only and is never dereferenced,
  * so the caller can look for a block it has already released. Addresses are
  * passed as uintptr_t rather than as a pointer so that comparing against freed
- * memory does not trip -Wuse-after-free.
+ * memory does not trip -Wuse-after-free. The counters for objects that are
+ * only ever static take a typed pointer instead, since they never probe
+ * released memory.
  */
 static int count_sem(uintptr_t target)
 {
@@ -24,6 +26,66 @@ static int count_sem(uintptr_t target)
 			count++;
 		}
 		list = SYS_PORT_TRACK_NEXT((struct k_sem *)list);
+	}
+
+	return count;
+}
+
+static int count_msgq(struct k_msgq *target)
+{
+	void *list = _track_list_k_msgq;
+	int count = 0;
+
+	while (list != NULL) {
+		if (list == target) {
+			count++;
+		}
+		list = SYS_PORT_TRACK_NEXT((struct k_msgq *)list);
+	}
+
+	return count;
+}
+
+static int count_timer(struct k_timer *target)
+{
+	void *list = _track_list_k_timer;
+	int count = 0;
+
+	while (list != NULL) {
+		if (list == target) {
+			count++;
+		}
+		list = SYS_PORT_TRACK_NEXT((struct k_timer *)list);
+	}
+
+	return count;
+}
+
+static int count_pipe(struct k_pipe *target)
+{
+	void *list = _track_list_k_pipe;
+	int count = 0;
+
+	while (list != NULL) {
+		if (list == target) {
+			count++;
+		}
+		list = SYS_PORT_TRACK_NEXT((struct k_pipe *)list);
+	}
+
+	return count;
+}
+
+static int count_stack(uintptr_t target)
+{
+	void *list = _track_list_k_stack;
+	int count = 0;
+
+	while (list != NULL) {
+		if ((uintptr_t)list == target) {
+			count++;
+		}
+		list = SYS_PORT_TRACK_NEXT((struct k_stack *)list);
 	}
 
 	return count;
@@ -68,6 +130,48 @@ ZTEST(obj_tracking_free, test_tracked_object_removed_on_free)
 	k_sem_init(&after_free_sem, 0, 1);
 	zassert_equal(count_sem((uintptr_t)&after_free_sem), 1,
 		      "Semaphore tracking broken after a free");
+}
+
+/* k_msgq_cleanup() ends the life of a message queue, so the queue has to leave
+ * the tracking list even though its own storage is not freed here.
+ */
+ZTEST(obj_tracking_free, test_tracked_object_removed_on_cleanup)
+{
+	static struct k_msgq msgq;
+	static char __aligned(4) buffer[sizeof(int) * 4];
+
+	k_msgq_init(&msgq, buffer, sizeof(int), 4);
+	zassert_equal(count_msgq(&msgq), 1, "Message queue was not tracked");
+
+	zassert_ok(k_msgq_cleanup(&msgq), "Failed to clean up message queue");
+	zassert_equal(count_msgq(&msgq), 0, "Cleaned up queue is still tracked");
+}
+
+/* k_timer_cleanup() hands the timer storage back to the caller, so the timer
+ * must not stay in the tracking list.
+ */
+ZTEST(obj_tracking_free, test_tracked_timer_removed_on_cleanup)
+{
+	static struct k_timer timer;
+
+	k_timer_init(&timer, NULL, NULL);
+	zassert_equal(count_timer(&timer), 1, "Timer was not tracked");
+
+	zassert_ok(k_timer_cleanup(&timer), "Failed to clean up timer");
+	zassert_equal(count_timer(&timer), 0, "Cleaned up timer is still tracked");
+}
+
+/* k_pipe_close() ends the usable life of a pipe. */
+ZTEST(obj_tracking_free, test_tracked_pipe_removed_on_close)
+{
+	static struct k_pipe pipe;
+	static uint8_t __aligned(4) buffer[16];
+
+	k_pipe_init(&pipe, buffer, sizeof(buffer));
+	zassert_equal(count_pipe(&pipe), 1, "Pipe was not tracked");
+
+	k_pipe_close(&pipe);
+	zassert_equal(count_pipe(&pipe), 0, "Closed pipe is still tracked");
 }
 
 /* k_realloc() bypasses k_heap_free() and goes straight to the heap. When the
@@ -283,6 +387,202 @@ ZTEST(obj_tracking_free, test_tracked_object_straddling_shrink_cut_removed)
 		      "Semaphore straddling the shrink cut is still tracked");
 
 	k_free(shrunk);
+}
+
+/* k_stack_cleanup() ends the life of a stack. */
+ZTEST(obj_tracking_free, test_tracked_stack_removed_on_cleanup)
+{
+	static struct k_stack stack;
+	static stack_data_t buffer[4];
+
+	k_stack_init(&stack, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(count_stack((uintptr_t)&stack), 1, "Stack was not tracked");
+
+	zassert_ok(k_stack_cleanup(&stack), "Failed to clean up stack");
+	zassert_equal(count_stack((uintptr_t)&stack), 0, "Cleaned up stack is still tracked");
+}
+
+/* A cleanup that refuses to run must leave the object tracked: the object is
+ * still alive and still reachable through the list. A thread parked on the
+ * queue is what makes k_msgq_cleanup() return -EBUSY.
+ */
+static K_THREAD_STACK_DEFINE(waiter_stack, 1024);
+static struct k_thread waiter_thread;
+static struct k_msgq busy_msgq;
+static char __aligned(4) busy_buffer[sizeof(int) * 2];
+static bool waiter_pending;
+
+static void waiter_entry(void *a, void *b, void *c)
+{
+	int item;
+
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	/* Blocks: the queue is empty, so this thread pends on its wait queue */
+	(void)k_msgq_get(&busy_msgq, &item, K_FOREVER);
+}
+
+ZTEST(obj_tracking_free, test_failed_cleanup_keeps_object_tracked)
+{
+	k_tid_t tid;
+	int item = 1;
+
+	k_msgq_init(&busy_msgq, busy_buffer, sizeof(int), 2);
+	zassert_equal(count_msgq(&busy_msgq), 1, "Message queue was not tracked");
+
+	/* Set before the thread starts: it runs immediately, so a failure from
+	 * here on has to find the flag already set for the teardown to release
+	 * the waiter.
+	 */
+	waiter_pending = true;
+	tid = k_thread_create(&waiter_thread, waiter_stack, K_THREAD_STACK_SIZEOF(waiter_stack),
+			      waiter_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_msleep(50);
+
+	zassert_equal(k_msgq_cleanup(&busy_msgq), -EBUSY,
+		      "Cleanup should refuse while a thread is waiting");
+	zassert_equal(count_msgq(&busy_msgq), 1, "A refused cleanup must leave the queue tracked");
+
+	/* Release the waiter and tidy up */
+	zassert_ok(k_msgq_put(&busy_msgq, &item, K_NO_WAIT), "put failed");
+	zassert_ok(k_thread_join(tid, K_FOREVER), "join failed");
+	waiter_pending = false;
+
+	zassert_ok(k_msgq_cleanup(&busy_msgq), "Cleanup should now succeed");
+	zassert_equal(count_msgq(&busy_msgq), 0, "Cleaned up queue is still tracked");
+}
+
+/* Timer and stack cleanup take the same refuse-and-return path as the message
+ * queue, but through their own helpers. A thread parked on the object's wait
+ * queue is what makes each of them return -EAGAIN, and the object has to stay
+ * tracked because it is still alive.
+ */
+static K_THREAD_STACK_DEFINE(timer_waiter_stack, 1024);
+static struct k_thread timer_waiter_thread;
+static struct k_timer busy_timer;
+static bool timer_waiter_pending;
+
+static void timer_waiter_entry(void *a, void *b, void *c)
+{
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	/* Blocks on the timer's wait queue until the timer expires */
+	(void)k_timer_status_sync(&busy_timer);
+}
+
+ZTEST(obj_tracking_free, test_failed_timer_cleanup_keeps_object_tracked)
+{
+	k_tid_t tid;
+
+	k_timer_init(&busy_timer, NULL, NULL);
+	zassert_equal(count_timer(&busy_timer), 1, "Timer was not tracked");
+
+	timer_waiter_pending = true;
+	tid = k_thread_create(&timer_waiter_thread, timer_waiter_stack,
+			      K_THREAD_STACK_SIZEOF(timer_waiter_stack), timer_waiter_entry, NULL,
+			      NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_timer_start(&busy_timer, K_MSEC(200), K_NO_WAIT);
+	k_msleep(50);
+
+	zassert_equal(k_timer_cleanup(&busy_timer), -EAGAIN,
+		      "Cleanup should refuse while a thread is waiting");
+	zassert_equal(count_timer(&busy_timer), 1,
+		      "A refused cleanup must leave the timer tracked");
+
+	zassert_ok(k_thread_join(tid, K_FOREVER), "join failed");
+	timer_waiter_pending = false;
+
+	zassert_ok(k_timer_cleanup(&busy_timer), "Cleanup should now succeed");
+	zassert_equal(count_timer(&busy_timer), 0, "Cleaned up timer is still tracked");
+}
+
+static K_THREAD_STACK_DEFINE(stack_waiter_stack, 1024);
+static struct k_thread stack_waiter_thread;
+static struct k_stack busy_stack;
+static stack_data_t busy_stack_buffer[2];
+static bool stack_waiter_pending;
+
+static void stack_waiter_entry(void *a, void *b, void *c)
+{
+	stack_data_t data;
+
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+
+	/* Blocks: the stack is empty, so this thread pends on its wait queue */
+	(void)k_stack_pop(&busy_stack, &data, K_FOREVER);
+}
+
+ZTEST(obj_tracking_free, test_failed_stack_cleanup_keeps_object_tracked)
+{
+	k_tid_t tid;
+
+	k_stack_init(&busy_stack, busy_stack_buffer, ARRAY_SIZE(busy_stack_buffer));
+	zassert_equal(count_stack((uintptr_t)&busy_stack), 1, "Stack was not tracked");
+
+	stack_waiter_pending = true;
+	tid = k_thread_create(&stack_waiter_thread, stack_waiter_stack,
+			      K_THREAD_STACK_SIZEOF(stack_waiter_stack), stack_waiter_entry, NULL,
+			      NULL, NULL, K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
+	k_msleep(50);
+
+	zassert_equal(k_stack_cleanup(&busy_stack), -EAGAIN,
+		      "Cleanup should refuse while a thread is waiting");
+	zassert_equal(count_stack((uintptr_t)&busy_stack), 1,
+		      "A refused cleanup must leave the stack tracked");
+
+	zassert_ok(k_stack_push(&busy_stack, 1), "push failed");
+	zassert_ok(k_thread_join(tid, K_FOREVER), "join failed");
+	stack_waiter_pending = false;
+
+	zassert_ok(k_stack_cleanup(&busy_stack), "Cleanup should now succeed");
+	zassert_equal(count_stack((uintptr_t)&busy_stack), 0, "Cleaned up stack is still tracked");
+}
+
+/* Runs even when an assertion aborted the test, so a failure cannot leave the
+ * waiter parked on the queue for the rest of the suite.
+ */
+static void release_waiter(void *fixture)
+{
+	int item = 1;
+
+	ARG_UNUSED(fixture);
+
+	if (!waiter_pending) {
+		return;
+	}
+
+	(void)k_msgq_put(&busy_msgq, &item, K_NO_WAIT);
+	(void)k_thread_join(&waiter_thread, K_MSEC(100));
+	waiter_pending = false;
+}
+
+/* Same for the timer and stack waiters, which park on their own objects. */
+static void release_typed_waiters(void *fixture)
+{
+	ARG_UNUSED(fixture);
+
+	if (timer_waiter_pending) {
+		(void)k_thread_join(&timer_waiter_thread, K_MSEC(500));
+		timer_waiter_pending = false;
+	}
+
+	if (stack_waiter_pending) {
+		(void)k_stack_push(&busy_stack, 1);
+		(void)k_thread_join(&stack_waiter_thread, K_MSEC(100));
+		stack_waiter_pending = false;
+	}
+}
+
+static void release_all_waiters(void *fixture)
+{
+	release_waiter(fixture);
+	release_typed_waiters(fixture);
 }
 
 /* Counters for the remaining tracked types. Each list is walked with its own
@@ -591,6 +891,71 @@ ZTEST(obj_tracking_free, test_reinit_after_free_tracks_once)
 	zassert_equal(count_sem(addr), 0, "Semaphore is still tracked");
 }
 
+/* A cleanup helper must not disturb an object of the same type that was never
+ * cleaned up, and calling it twice must stay harmless.
+ */
+ZTEST(obj_tracking_free, test_cleanup_is_idempotent_and_scoped)
+{
+	static struct k_timer first;
+	static struct k_timer second;
+
+	k_timer_init(&first, NULL, NULL);
+	k_timer_init(&second, NULL, NULL);
+	zassert_equal(count_timer(&first), 1, "First timer was not tracked");
+	zassert_equal(count_timer(&second), 1, "Second timer was not tracked");
+
+	zassert_ok(k_timer_cleanup(&first), "Failed to clean up the first timer");
+	zassert_equal(count_timer(&first), 0, "Cleaned up timer is still tracked");
+	zassert_equal(count_timer(&second), 1, "Cleanup dropped an unrelated timer");
+
+	/* A second cleanup finds nothing to unlink and must be a no-op */
+	zassert_ok(k_timer_cleanup(&first), "Second cleanup failed");
+	zassert_equal(count_timer(&first), 0, "Timer reappeared after a second cleanup");
+	zassert_equal(count_timer(&second), 1, "Second cleanup dropped an unrelated timer");
+
+	zassert_ok(k_timer_cleanup(&second), "Failed to clean up the second timer");
+	zassert_equal(count_timer(&second), 0, "Second timer is still tracked");
+}
+
+/* An object that is cleaned up and then initialized again is live once more,
+ * so it has to be back in the list exactly once.
+ */
+ZTEST(obj_tracking_free, test_reinit_after_cleanup_tracks_once)
+{
+	static struct k_msgq msgq;
+	static char __aligned(4) buffer[sizeof(int) * 4];
+
+	k_msgq_init(&msgq, buffer, sizeof(int), 4);
+	zassert_equal(count_msgq(&msgq), 1, "Message queue was not tracked");
+
+	zassert_ok(k_msgq_cleanup(&msgq), "Failed to clean up message queue");
+	zassert_equal(count_msgq(&msgq), 0, "Cleaned up queue is still tracked");
+
+	k_msgq_init(&msgq, buffer, sizeof(int), 4);
+	zassert_equal(count_msgq(&msgq), 1, "Re-initialized queue is not tracked once");
+
+	zassert_ok(k_msgq_cleanup(&msgq), "Failed to clean up message queue again");
+	zassert_equal(count_msgq(&msgq), 0, "Queue is still tracked");
+}
+
+/* k_pipe_reset() keeps the pipe alive, so unlike close it must leave the
+ * object in the list. The commit deliberately leaves reset paths alone.
+ */
+ZTEST(obj_tracking_free, test_reset_keeps_object_tracked)
+{
+	static struct k_pipe pipe;
+	static uint8_t __aligned(4) buffer[16];
+
+	k_pipe_init(&pipe, buffer, sizeof(buffer));
+	zassert_equal(count_pipe(&pipe), 1, "Pipe was not tracked");
+
+	k_pipe_reset(&pipe);
+	zassert_equal(count_pipe(&pipe), 1, "Reset must keep the pipe tracked");
+
+	k_pipe_close(&pipe);
+	zassert_equal(count_pipe(&pipe), 0, "Closed pipe is still tracked");
+}
+
 /* Freeing a block that holds no tracked object at all must leave every list
  * untouched, and a zero-sized or NULL free must be harmless.
  */
@@ -613,4 +978,4 @@ ZTEST(obj_tracking_free, test_untracked_free_leaves_lists_intact)
 		      "An untracked free disturbed the semaphore list");
 }
 
-ZTEST_SUITE(obj_tracking_free, NULL, NULL, NULL, NULL, NULL);
+ZTEST_SUITE(obj_tracking_free, NULL, NULL, NULL, release_all_waiters, NULL);
