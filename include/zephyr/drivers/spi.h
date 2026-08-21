@@ -1399,6 +1399,42 @@ static inline bool spi_is_ready_iodev(const struct rtio_iodev *spi_iodev)
 #endif /* CONFIG_SPI_RTIO */
 
 /**
+ * @brief Take ownership of the SPI bus without clocking a transfer.
+ *
+ * Acquires the bus for the caller and returns with it still held, so that
+ * work which must not overlap another client of the same bus can be carried
+ * out before the first transfer. A pin that is shared between the bus and
+ * another function is the typical case: it can only be re-muxed safely while
+ * the bus is owned.
+ *
+ * @p config must have the @ref SPI_LOCK_ON bit set, otherwise the bus is
+ * released again as soon as this call returns and nothing is gained. The
+ * same @p config pointer has to be passed to the transfers that follow and
+ * to the matching spi_release(), which drops the ownership taken here.
+ *
+ * @note Ownership is reentrant for the same @p config pointer, so calling
+ *       this when the caller already owns the bus is harmless.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ *
+ * @retval 0 the bus is owned by the caller.
+ * @retval -EINVAL @ref SPI_LOCK_ON is not set in @p config.
+ * @retval -errno negative errno code on failure.
+ */
+static inline int spi_acquire(const struct device *dev, const struct spi_config *config)
+{
+	if (!(config->operation & SPI_LOCK_ON)) {
+		return -EINVAL;
+	}
+
+	/* An empty transfer takes the bus lock and, because SPI_LOCK_ON is
+	 * set, returns without giving it back and without driving the bus.
+	 */
+	return spi_transceive(dev, config, NULL, NULL);
+}
+
+/**
  * @brief Release the SPI device locked on and/or the CS by the current config
  *
  * Note: This synchronous function is used to release either the lock on the
