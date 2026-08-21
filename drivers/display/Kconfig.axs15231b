@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+
+config AXS15231B
+	bool "AXS15231B display driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_AXS15231B_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for AXS15231B display controller.
