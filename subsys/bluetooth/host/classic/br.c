@@ -1121,7 +1121,11 @@ int bt_br_discovery_stop(void)
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
 	if (err) {
-		return err;
+		/* The controller rejects the command once the inquiry has
+		 * already completed on its side. Keep releasing the local
+		 * state so that a new discovery can be started.
+		 */
+		LOG_WRN("Failed to cancel inquiry (err %d)", err);
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
@@ -1152,7 +1156,7 @@ int bt_br_discovery_stop(void)
 	discovery_results_size = 0;
 	discovery_results_count = 0;
 
-	return 0;
+	return err;
 }
 
 void bt_br_discovery_cb_register(struct bt_br_discovery_cb *cb)
