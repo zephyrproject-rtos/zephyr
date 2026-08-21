@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+
+/ {
+	aliases {
+		pwm-gen = &pwm8;
+		capture = &pwm1;
+	};
+};
+
+/* Enable LPDMA for batch capture */
+&lpdma1 {
+	status = "okay";
+};
+
+&timers1 {
+	st,prescaler = <9>;
+	status = "okay";
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim1_ch1_pa8>;
+		pinctrl-names = "default";
+		dmas = <&lpdma1 0 24 0>,
+		       <&lpdma1 1 25 0>;
+		dma-names = "cc1", "cc2";
+	};
+};
+
+&timers8 {
+	st,prescaler = <9>;
+	status = "okay";
+
+	pwm8: pwm {
+		status = "okay";
+		pinctrl-0 = <&tim8_ch1_pc6>;
+		pinctrl-names = "default";
+	};
+};
