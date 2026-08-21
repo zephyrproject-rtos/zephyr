@@ -746,7 +746,7 @@ static int lsm6dsv16x_accel_get_config(const struct device *dev,
 
 		mode = (odr >> 4) & 0xf;
 
-		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq];
+		val->val1 = lsm6dsv16x_odr_map[mode][data->accel_freq & 0x0f];
 		val->val2 = 0;
 		break;
 	}
@@ -824,7 +824,7 @@ static int lsm6dsv16x_gyro_get_config(const struct device *dev,
 
 		mode = (odr >> 4) & 0xf;
 
-		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq];
+		val->val1 = lsm6dsv16x_odr_map[mode][data->gyro_freq & 0x0f];
 		val->val2 = 0;
 		break;
 	}
@@ -981,7 +981,7 @@ static int lsm6dsv16x_sample_fetch(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static inline void lsm6dsv16x_accel_convert(struct sensor_value *val, int raw_val,
@@ -1170,8 +1170,8 @@ static inline void lsm6dsv16x_hum_convert(struct sensor_value *val,
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	val->val1 = (int32_t)rh;
+	val->val2 = (rh - (int32_t)rh) * 1000000;
 }
 
 static inline void lsm6dsv16x_press_convert(struct sensor_value *val,
@@ -1653,8 +1653,8 @@ static int lsm6dsv16x_pm_action(const struct device *dev, enum pm_device_action 
 			    CONFIG_I3C_RTIO),				\
 		   (LSM6DSV16X_I3C_RTIO_DEFINE(inst, prefix)));		\
 	static struct lsm6dsv16x_data prefix##_data_##inst = {		\
-		IF_ENABLED(UNTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
-				     CONFIG_I3C_RTIO),			\
+		IF_ENABLED(UTIL_AND(CONFIG_LSM6DSV16X_STREAM,		\
+				    CONFIG_I3C_RTIO),			\
 			(.rtio_ctx = &prefix##_rtio_ctx_##inst,		\
 			 .iodev = &prefix##_i3c_iodev_##inst,		\
 			 .bus_type = RTIO_BUS_I3C,))			\
