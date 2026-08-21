@@ -38,3 +38,13 @@
 	interrupt-parent = <&nvic>;
 	interrupts = <129 0>;
 };
+
+&i2c0 {
+	interrupt-parent = <&nvic>;
+	interrupts = <132 0>;
+};
+
+&i2c1 {
+	interrupt-parent = <&nvic>;
+	interrupts = <133 0>;
+};

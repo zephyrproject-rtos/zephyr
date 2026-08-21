@@ -94,4 +94,40 @@
 			pinmux = <PIN_P9_4__UART7_TX_B>;
 		};
 	};
+
+	pinctrl_i2c0: pinctrl_i2c0 {
+		group0 {
+			pinmux = <PIN_P3_5__I2C0_SDA_B>,
+				 <PIN_P3_4__I2C0_SCL_B>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_i2c1: pinctrl_i2c1 {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_i2c2: pinctrl_i2c2 {
+		group0 {
+			pinmux = <PIN_P0_7__I2C2_SDA_A>,
+				 <PIN_P0_6__I2C2_SCL_A>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_i2c3: pinctrl_i2c3 {
+		group0 {
+			pinmux = <PIN_P1_0__I2C3_SDA_A>,
+				 <PIN_P1_1__I2C3_SCL_A>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
 };
