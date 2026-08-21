@@ -27,3 +27,8 @@ zephyr_library_sources_ifdef(CONFIG_EEPROM_STM32 eeprom_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_TMP11X eeprom_tmp11x.c)
 zephyr_library_sources_ifdef(CONFIG_EEPROM_XEC eeprom_mchp_xec.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_EEPROM_RV3028)
+  zephyr_library_sources(eeprom_rv3028.c)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
+endif()
