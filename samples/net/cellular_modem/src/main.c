@@ -36,7 +36,7 @@ const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
 
 static uint8_t sample_test_packet[SAMPLE_TEST_PACKET_SIZE];
 static uint8_t sample_recv_buffer[SAMPLE_TEST_PACKET_SIZE];
-static bool sample_test_dns_in_progress;
+static bool sample_test_dns_success;
 static struct dns_addrinfo sample_test_dns_addrinfo;
 struct net_if *ppp_iface;
 K_EVENT_DEFINE(l4_event);
@@ -231,17 +231,23 @@ static void modem_event_cb(const struct device *dev, enum cellular_event evt, co
 static void sample_dns_request_result(enum dns_resolve_status status, struct dns_addrinfo *info,
 				      void *user_data)
 {
-	if (sample_test_dns_in_progress == false) {
-		return;
+	switch (status) {
+	case DNS_EAI_INPROGRESS:
+		sample_test_dns_success = true;
+		sample_test_dns_addrinfo = *info;
+		break;
+	case DNS_EAI_ALLDONE:
+		k_sem_give(&dns_query_sem);
+		break;
+	case DNS_EAI_AGAIN:
+	case DNS_EAI_FAIL:
+	case DNS_EAI_NONAME:
+		printk("DNS query failed: %d\n", status);
+		k_sem_give(&dns_query_sem);
+		break;
+	default:
+		printk("Unhandled DNS status: %d\n", status);
 	}
-
-	if (status != DNS_EAI_INPROGRESS) {
-		return;
-	}
-
-	sample_test_dns_in_progress = false;
-	sample_test_dns_addrinfo = *info;
-	k_sem_give(&dns_query_sem);
 }
 
 static int sample_dns_request(void)
@@ -249,7 +255,6 @@ static int sample_dns_request(void)
 	static uint16_t dns_id;
 	int ret;
 
-	sample_test_dns_in_progress = true;
 	ret = dns_get_addr_info(SAMPLE_TEST_ENDPOINT_HOSTNAME,
 				DNS_QUERY_TYPE_A,
 				&dns_id,
@@ -260,7 +265,14 @@ static int sample_dns_request(void)
 		return -EAGAIN;
 	}
 
+	/* Wait for DNS query to complete */
 	if (k_sem_take(&dns_query_sem, K_SECONDS(20)) < 0) {
+		printk("DNS query timed out\n");
+		return -EAGAIN;
+	}
+
+	/* Validate whether the query succeeded */
+	if (!sample_test_dns_success) {
 		return -EAGAIN;
 	}
 
@@ -487,7 +499,6 @@ int main(void)
 	printk("Performing DNS lookup of %s\n", SAMPLE_TEST_ENDPOINT_HOSTNAME);
 	ret = sample_dns_request();
 	if (ret < 0) {
-		printk("DNS query failed\n");
 		goto power_cycle;
 	} else {
 		valid_dns = true;
