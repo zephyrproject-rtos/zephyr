@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,11 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+
+#if defined(CY_IP_S8SRSSLT) && defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+#include "power.h"
+#endif
+
 LOG_MODULE_REGISTER(wdt_infineon, CONFIG_WDT_LOG_LEVEL);
 
 #define IFX_WDT_IS_IRQ_EN DT_NODE_HAS_PROP(DT_DRV_INST(0), interrupts)
@@ -224,10 +229,74 @@ struct ifx_cat1_wdt_data {
 	bool timeout_installed;
 #if defined(CY_IP_S8SRSSLT)
 	uint32_t ilo_compensated_counts;
+	uint64_t pm_budget_cycles;
+	bool pm_ds_locked;
 #endif
 };
 
 static struct ifx_cat1_wdt_data wdt_data;
+
+#if defined(CY_IP_S8SRSSLT)
+#define WDT_PM_BUDGET_FLOOR_CYCLES 32U
+
+static void ifx_wdt_pm_refresh(struct ifx_cat1_wdt_data *data)
+{
+	/*
+	 * This run from wdt_feed() in thread context, while lpm exit hook may touch this
+	 * same budget state form the idle, so handle it here with a lock.
+	 */
+	unsigned int key = irq_lock();
+
+	data->pm_budget_cycles = data->ilo_compensated_counts;
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+	ifx_wdt_pm_unlock_ds(&data->pm_ds_locked);
+#endif
+	irq_unlock(key);
+}
+
+bool ifx_wdt_pm_active(void)
+{
+	return wdt_data.wdt_initialized;
+}
+
+uint64_t ifx_wdt_pm_budget_cycles(void)
+{
+	return wdt_data.pm_budget_cycles;
+}
+
+void ifx_wdt_pm_resume(uint64_t slept_cycles)
+{
+	struct ifx_cat1_wdt_data *data = &wdt_data;
+
+	if (slept_cycles >= data->pm_budget_cycles) {
+		data->pm_budget_cycles = 0U;
+	} else {
+		data->pm_budget_cycles -= slept_cycles;
+	}
+
+	Cy_WDT_SetIgnoreBits(data->wdt_ignore_bits);
+	Cy_WDT_SetMatch((Cy_WDT_GetCount() + data->pm_budget_cycles) & UINT16_MAX);
+	Cy_WDT_ClearInterrupt();
+
+#ifdef IFX_WDT_IS_IRQ_EN
+	if (data->callback) {
+		Cy_WDT_UnmaskInterrupt();
+		irq_enable(DT_INST_IRQN(0));
+	} else {
+		Cy_WDT_MaskInterrupt();
+		irq_disable(DT_INST_IRQN(0));
+	}
+#else
+	Cy_WDT_MaskInterrupt();
+#endif
+
+	if (data->pm_budget_cycles < WDT_PM_BUDGET_FLOOR_CYCLES) {
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+		ifx_wdt_pm_lock_ds(&data->pm_ds_locked);
+#endif
+	}
+}
+#endif /* CY_IP_S8SRSSLT */
 
 #if !defined(CY_IP_S8SRSSLT)
 #define IFX_DETERMINE_MATCH_BITS(bits)      ((IFX_WDT_MAX_IGNORE_BITS) - (bits))
@@ -243,12 +312,7 @@ __STATIC_INLINE uint32_t ifx_wdt_timeout_to_match(uint32_t timeout_ms, uint32_t 
 
 	uint32_t match_count;
 
-	match_count = (Cy_WDT_GetMatch() + dev_data->ilo_compensated_counts);
-
-	/* Ensure match count is within valid range for 16-bit WDT */
-	if (match_count > UINT16_MAX) {
-		match_count = UINT16_MAX;
-	}
+	match_count = (Cy_WDT_GetMatch() + dev_data->ilo_compensated_counts) & UINT16_MAX;
 
 	return match_count;
 #else
@@ -348,6 +412,9 @@ static int ifx_cat1_wdt_setup(const struct device *dev, uint8_t options)
 
 	Cy_WDT_SetIgnoreBits(dev_data->wdt_ignore_bits);
 	Cy_WDT_SetMatch(dev_data->ilo_compensated_counts);
+
+	dev_data->pm_budget_cycles = dev_data->ilo_compensated_counts;
+	dev_data->pm_ds_locked = false;
 #elif defined(CY_IP_MXS40SRSS) && (CY_IP_MXS40SRSS_VERSION >= 2)
 	Cy_WDT_SetUpperLimit(ifx_wdt_timeout_to_match(dev_data->wdt_initial_timeout_ms,
 						      dev_data->wdt_ignore_bits, dev_data));
@@ -409,6 +476,10 @@ static int ifx_cat1_wdt_disable(const struct device *dev)
 #if defined(CY_IP_S8SRSSLT)
 	Cy_SysClk_IloStopMeasurement();
 	dev_data->ilo_compensated_counts = 0;
+#if defined(CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS)
+	ifx_wdt_pm_unlock_ds(&dev_data->pm_ds_locked);
+#endif
+	dev_data->pm_budget_cycles = 0U;
 #endif
 
 	ifx_wdt_unlock();
@@ -468,6 +539,10 @@ static int ifx_cat1_wdt_feed(const struct device *dev, int channel_id)
 
 	ifx_wdt_lock();
 
+#if defined(CY_IP_S8SRSSLT)
+	ifx_wdt_pm_refresh(data);
+#endif
+
 	return 0;
 }
 
@@ -486,6 +561,8 @@ static int ifx_cat1_wdt_init(const struct device *dev)
 
 #if defined(CY_IP_S8SRSSLT)
 	data->ilo_compensated_counts = 0;
+	data->pm_budget_cycles = 0U;
+	data->pm_ds_locked = false;
 #endif
 
 	return 0;
