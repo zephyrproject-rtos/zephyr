@@ -1692,3 +1692,10 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_xgzp68xxd: xgzp68xxd@db {
+	compatible = "cfsensor,xgzp68xxd";
+	reg = <0xd5>;
+	k-value = <8>;
+	status = "okay";
+};
