@@ -3195,6 +3195,8 @@ static const struct event_handler normal_events[] = {
 		      sizeof(struct bt_hci_evt_user_passkey_req)),
 	EVENT_HANDLER(BT_HCI_EVT_INQUIRY_COMPLETE, bt_hci_inquiry_complete,
 		      sizeof(struct bt_hci_evt_inquiry_complete)),
+	EVENT_HANDLER(BT_HCI_EVT_INQUIRY_RESULT, bt_hci_inquiry_result,
+		      sizeof(struct bt_hci_evt_inquiry_result)),
 	EVENT_HANDLER(BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI,
 		      bt_hci_inquiry_result_with_rssi,
 		      sizeof(struct bt_hci_evt_inquiry_result_with_rssi)),
@@ -4080,6 +4082,7 @@ static int set_event_mask(void)
 		 * Bluetooth 4.0 feature set
 		 */
 		mask |= BT_EVT_MASK_INQUIRY_COMPLETE;
+		mask |= BT_EVT_MASK_INQUIRY_RESULT;
 		mask |= BT_EVT_MASK_CONN_COMPLETE;
 		mask |= BT_EVT_MASK_CONN_REQUEST;
 		mask |= BT_EVT_MASK_AUTH_COMPLETE;

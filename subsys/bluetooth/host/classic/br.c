@@ -497,6 +497,53 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	return result;
 }
 
+void bt_hci_inquiry_result(struct net_buf *buf)
+{
+	uint8_t num_reports = net_buf_pull_u8(buf);
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
+	LOG_DBG("number of results: %u", num_reports);
+
+	while (num_reports--) {
+		struct bt_hci_evt_inquiry_result *evt;
+		struct bt_br_discovery_result *result;
+		struct bt_br_discovery_priv *priv;
+		struct bt_br_discovery_cb *listener, *next;
+
+		if (buf->len < sizeof(*evt)) {
+			LOG_ERR("Unexpected end to buffer");
+			return;
+		}
+
+		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		LOG_DBG("%s", bt_addr_str(&evt->addr));
+
+		result = get_result_slot(&evt->addr, RSSI_INVALID);
+		if (!result) {
+			return;
+		}
+
+		priv = &result->_priv;
+		priv->pscan_rep_mode = evt->pscan_rep_mode;
+		priv->clock_offset = evt->clock_offset;
+
+		memcpy(result->cod, evt->cod, 3);
+		result->rssi = RSSI_INVALID;
+
+		/* we could reuse slot so make sure EIR is cleared */
+		(void)memset(result->eir, 0, sizeof(result->eir));
+
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+			if (listener->recv) {
+				listener->recv(result);
+			}
+		}
+	}
+}
+
 void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
@@ -938,14 +985,24 @@ int bt_br_init(void)
 		return err;
 	}
 
-	/* Enable Inquiry results with RSSI or extended Inquiry */
+	/* Select the most informative Inquiry Result format the controller
+	 * supports. Extended Inquiry Response and RSSI with inquiry results are
+	 * both optional features, and a controller that does not implement them
+	 * rejects the corresponding Inquiry_Mode value.
+	 */
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
 		return -ENOBUFS;
 	}
 
 	inq_cp = net_buf_add(buf, sizeof(*inq_cp));
-	inq_cp->mode = 0x02;
+	if (BT_FEAT_EIR(bt_dev.features)) {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_EXTENDED;
+	} else if (BT_FEAT_RSSI_INQUIRY_RESULT(bt_dev.features)) {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_RSSI;
+	} else {
+		inq_cp->mode = BT_HCI_INQUIRY_MODE_STANDARD;
+	}
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_INQUIRY_MODE, buf, NULL);
 	if (err) {
 		return err;
