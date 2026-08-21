@@ -88,6 +88,7 @@ extensions = [
     "zephyr.doxybridge",
     "zephyr.doxytooltip",
     "zephyr.gh_utils",
+    "zephyr.llms_txt",
     "zephyr.manifest_projects_table",
     "notfound.extension",
     "sphinx_copybutton",
