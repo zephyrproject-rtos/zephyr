@@ -6,6 +6,7 @@
 menuconfig LORAWAN
 	bool "LoRaWAN support [EXPERIMENTAL]"
 	depends on LORA
+	select POLL
 	select REQUIRES_FULL_LIBC
 	select EXPERIMENTAL
 	help

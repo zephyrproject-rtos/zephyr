@@ -255,7 +255,6 @@ static void mac_do_link_check(struct lwan_ctx *ctx,
 		.type = LWAN_REQ_SEND,
 		.data = &send_req,
 		.done = req->done,
-		.result = req->result,
 	};
 
 	mac_do_send(ctx, &send_msg);
