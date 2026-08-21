@@ -74,6 +74,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* USB
+
+  * Added support for the USB Test and Measurement Class (USBTMC) to the USB
+    device stack (see :ref:`usbd_usbtmc`).
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
