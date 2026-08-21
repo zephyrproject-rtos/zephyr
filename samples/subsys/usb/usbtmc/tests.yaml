@@ -1,0 +1,13 @@
+sample:
+  name: USBTMC device class sample
+tests:
+  sample.usb.usb_device_next.usbtmc:
+    depends_on: usbd
+    tags: usb
+    integration_platforms:
+      - frdm_rw612
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "usbtmc_sample: USB device support enabled"

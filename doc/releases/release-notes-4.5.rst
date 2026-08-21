@@ -512,6 +512,8 @@ New Samples
   out-of-window frequency checking on the new :ref:`clock_monitor_api`.
 * ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
   one-shot frequency measurement on the new :ref:`clock_monitor_api`.
+* :zephyr:code-sample:`usbtmc` — implements a tiny laboratory instrument
+  using the new USBTMC device class.
 
 Libraries / Subsystems
 **********************

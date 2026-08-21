@@ -41,6 +41,8 @@ Samples
 
 * :zephyr:code-sample:`usb-hid-mouse`
 
+* :zephyr:code-sample:`usbtmc`
+
 * :zephyr:code-sample:`zperf` To build the sample for the device support,
   set the configuration overlay file
   ``-DDEXTRA_CONF_FILE=overlay-usbd_next_ecm.conf`` and devicetree overlay file
