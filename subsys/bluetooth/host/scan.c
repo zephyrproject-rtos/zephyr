@@ -1862,6 +1862,17 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 int bt_le_scan_stop(void)
 {
+	__maybe_unused int unlock_err;
+	int err;
+
+	/* Take the same lock as bt_le_scan_start(), so that the state it sets
+	 * up is not cleared while it is still being set up.
+	 */
+	err = k_mutex_lock(&scan_state.scan_explicit_params_mutex, K_NO_WAIT);
+	if (err != 0) {
+		return err;
+	}
+
 	bt_scan_softreset();
 	scan_dev_found_cb = NULL;
 
@@ -1874,7 +1885,12 @@ int bt_le_scan_stop(void)
 #endif
 	}
 
-	return bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	err = bt_le_scan_user_remove(BT_LE_SCAN_USER_EXPLICIT_SCAN);
+
+	unlock_err = k_mutex_unlock(&scan_state.scan_explicit_params_mutex);
+	__ASSERT_NO_MSG(unlock_err == 0);
+
+	return err;
 }
 
 int bt_le_scan_cb_register(struct bt_le_scan_cb *cb)
