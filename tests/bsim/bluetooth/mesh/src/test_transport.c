@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
  *   Tests are divided into senders and receivers.
  */
 
-void assert_post_action(const char *file, unsigned int line)
+void zassert_post_action(const char *file, unsigned int line)
 {
 	FAIL("Asserted at %s:%u", file, line);
 }
