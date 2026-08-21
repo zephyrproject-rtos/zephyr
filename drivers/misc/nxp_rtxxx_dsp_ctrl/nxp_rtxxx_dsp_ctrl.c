@@ -119,8 +119,8 @@ DT_INST_FOREACH_STATUS_OKAY(NXP_RTXXX_DSP_CTRL_RT600_HIFI4);
 #define NXP_RTXXX_DSP_CTRL_RT700_HIFI4(n)                                                          \
 	static int nxp_rtxxx_dsp_ctrl_##n##_init(const struct device *dev)                         \
 	{                                                                                          \
-		PMC0->PDRUNCFG2 &= ~0x0003C000U; /* power up dsp used SRAM. */                     \
-		PMC0->PDRUNCFG3 &= ~0x0003C000U;                                                   \
+		PMC0->PDRUNCFG2 &= ~0x00003000U; /* power up dsp used SRAM. */                     \
+		PMC0->PDRUNCFG3 &= ~0x00003000U;                                                   \
 		POWER_DisablePD(kPDRUNCFG_PD_VDD2_DSP);                                            \
 		POWER_ApplyPD();                                                                   \
                                                                                                    \
