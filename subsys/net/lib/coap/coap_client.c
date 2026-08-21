@@ -279,10 +279,13 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 
 	/* Add extra options if any */
 	for (i = 0; i < req->num_options; i++) {
-		if (COAP_OPTION_BLOCK2 == req->options[i].code && block2) {
-			/* After the first request, ignore any block2 option added by the
-			 * application, since NUM (and possibly SZX) must be updated based on the
-			 * server response.
+		if (block2 && (req->options[i].code == COAP_OPTION_BLOCK2 ||
+			       req->options[i].code == COAP_OPTION_OBSERVE)) {
+			/* On Block2 continuation retrievals, drop the application's block2
+			 * option, since NUM (and possibly SZX) must be updated based on the
+			 * server response, and the Observe option, since RFC 7959 Section 3.4
+			 * requires that block retrievals of a notification body do not carry
+			 * Observe (only the block-0 notification does).
 			 */
 			continue;
 		}
@@ -430,6 +433,16 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 		if (internal_req->send_blk_ctx.total_size > 0) {
 			coap_next_block(&internal_req->request, &internal_req->send_blk_ctx);
 		}
+	}
+
+	/* Snapshot the token of an observe registration (the initial request or an Echo
+	 * retry, both of which mint a new token) so it can be restored after a blockwise
+	 * notification, whose block retrievals overwrite request_token with fresh tokens.
+	 */
+	if (coap_request_is_observe(&internal_req->request)) {
+		memcpy(internal_req->observe_token, internal_req->request_token,
+		       internal_req->request_tkl);
+		internal_req->observe_tkl = internal_req->request_tkl;
 	}
 out:
 	return ret;
@@ -1392,6 +1405,14 @@ fail:
 #endif
 
 	if (was_observe) {
+		/* After a blockwise notification, restore the observe token so the next
+		 * notification (using the original registration token) can be matched.
+		 */
+		if (blockwise_transfer && last_block && internal_req->observe_tkl > 0) {
+			memcpy(internal_req->request_token, internal_req->observe_token,
+			       internal_req->observe_tkl);
+			internal_req->request_tkl = internal_req->observe_tkl;
+		}
 		/* Observer: keep request active until unobserve */
 		return ret;
 	}
