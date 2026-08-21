@@ -1,0 +1,86 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  build_only: true
+  tags:
+    - net
+    - coex
+sample:
+  description: Wireless protocol coexistence shell for testing BLE, Wi-Fi, and Thread concurrently
+  name: Wireless coexistence shell
+tests:
+  # Wi-Fi + BLE + Thread (full coex)
+  sample.net.wireless.coex.shell.wifi_ble_ot:
+    tags:
+      - bluetooth
+      - wifi
+      - openthread
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - SNIPPET="nxp-wifi;nxp-wifi-hostap;nxp-ot"
+      - EXTRA_CONF_FILE="prj-ble.conf prj-wifi.conf prj-ot.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+
+  # Wi-Fi + BLE (no Thread)
+  sample.net.wireless.coex.shell.wifi_ble:
+    tags:
+      - bluetooth
+      - wifi
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+      - mimxrt1060_evk@C/mimxrt1062/qspi
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - SNIPPET="nxp-wifi;nxp-wifi-hostap"
+      - EXTRA_CONF_FILE="prj-ble.conf prj-wifi.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+
+  # BLE + Thread (no Wi-Fi)
+  sample.net.wireless.coex.shell.ble_ot:
+    tags:
+      - bluetooth
+      - openthread
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - SNIPPET="nxp-ot"
+      - EXTRA_CONF_FILE="prj-ble.conf prj-ot.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
+
+  # BLE + Thread on MCXW72
+  sample.net.wireless.coex.shell.ble_ot.mcxw72:
+    tags:
+      - bluetooth
+      - openthread
+    platform_allow:
+      - frdm_mcxw72
+    integration_platforms:
+      - frdm_mcxw72
+    extra_args:
+      - SNIPPET="nxp-ot"
+      - EXTRA_CONF_FILE="prj-ble.conf prj-ot.conf"
+
+  # Auto-PTS certification
+  sample.net.wireless.coex.shell.auto_pts:
+    harness: bluetooth
+    tags:
+      - bluetooth
+    platform_allow:
+      - frdm_rw612
+      - rd_rw612_bga
+    integration_platforms:
+      - rd_rw612_bga
+    extra_args:
+      - SNIPPET="nxp-bt-auto-pts"
+      - EXTRA_CONF_FILE="prj-ble.conf"
+      - CONFIG_BUILD_ONLY_NO_BLOBS=y
