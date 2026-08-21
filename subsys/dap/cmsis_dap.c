@@ -123,7 +123,13 @@ static uint16_t dap_info(struct dap_link_context *const ctx,
 		LOG_DBG("ID_UART_TX_BUFFER_SIZE unsupported");
 		break;
 	case DAP_ID_SWO_BUFFER_SIZE:
+#ifdef CONFIG_DAP_SWO
+		LOG_DBG("ID_SWO_BUFFER_SIZE");
+		sys_put_le32(CONFIG_DAP_SWO_BUFFER_SIZE, &info[0]);
+		length = 4U;
+#else
 		LOG_DBG("ID_SWO_BUFFER_SIZE unsupported");
+#endif
 		break;
 	case DAP_ID_PACKET_SIZE:
 		LOG_DBG("ID_PACKET_SIZE");
@@ -224,6 +230,17 @@ static uint16_t dap_disconnect(struct dap_link_context *const ctx,
 	} else {
 		LOG_WRN("DAP device is not connected");
 	}
+
+#ifdef CONFIG_DAP_SWO
+	/* The debug session ends here, and the trace session it
+	 * configured ends with it. This is also half of the ungraceful
+	 * exit recovery (the other half is the DAP backend's transport
+	 * loss hook): a capture left running by a host that never sent
+	 * DAP_SWO_Control(0) is reaped by the next session's or the
+	 * cleanup tool's disconnect instead of leaking until reboot.
+	 */
+	dap_swo_capture_stop(ctx);
+#endif
 
 	response[0] = DAP_OK;
 	atomic_clear_bit(&ctx->state, DAP_STATE_CONNECTED);
@@ -913,6 +930,26 @@ static uint16_t dap_process_cmd(struct dap_link_context *const ctx,
 	case ID_DAP_WRITE_ABORT:
 		retval = dap_writeabort(ctx, request, response);
 		break;
+#ifdef CONFIG_DAP_SWO
+	case ID_DAP_SWO_TRANSPORT:
+		retval = dap_swo_transport_cmd(ctx, request, response);
+		break;
+	case ID_DAP_SWO_MODE:
+		retval = dap_swo_mode_cmd(ctx, request, response);
+		break;
+	case ID_DAP_SWO_BAUDRATE:
+		retval = dap_swo_baudrate_cmd(ctx, request, response);
+		break;
+	case ID_DAP_SWO_CONTROL:
+		retval = dap_swo_control_cmd(ctx, request, response);
+		break;
+	case ID_DAP_SWO_STATUS:
+		retval = dap_swo_status_cmd(ctx, response);
+		break;
+	case ID_DAP_SWO_DATA:
+		retval = dap_swo_data_cmd(ctx, request, response);
+		break;
+#else
 	case ID_DAP_SWO_TRANSPORT:
 		LOG_ERR("SWO Transport unsupported");
 		retval = 1;
@@ -943,6 +980,7 @@ static uint16_t dap_process_cmd(struct dap_link_context *const ctx,
 		retval = 1;
 		*response = DAP_ERROR;
 		break;
+#endif /* CONFIG_DAP_SWO */
 	case ID_DAP_UART_TRANSPORT:
 		LOG_ERR("UART Transport unsupported");
 		retval = 1;
@@ -1034,6 +1072,10 @@ int dap_link_init(struct dap_link_context *const dap_link_ctx)
 	dap_link_ctx->transfer.match_mask = 0U;
 	dap_link_ctx->capabilities = DAP_SUPPORTS_ATOMIC_COMMANDS |
 				     DAP_DP_SUPPORTS_SWD;
+
+#ifdef CONFIG_DAP_SWO
+	dap_swo_init(dap_link_ctx);
+#endif
 
 	return 0;
 }
