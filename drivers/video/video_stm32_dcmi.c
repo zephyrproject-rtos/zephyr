@@ -164,10 +164,16 @@ static int stm32_dma_init(const struct device *dev)
 	 * how to route callbacks.
 	 */
 	struct dma_config *dma_cfg = &dma->cfg;
+	struct dma_block_config dma_block = {
+		.source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	};
 	static DMA_HandleTypeDef hdma;
 
 	/* Proceed to the minimum Zephyr DMA driver init */
 	dma_cfg->user_data = &hdma;
+	dma_cfg->cyclic = 1;
+	dma_cfg->head_block = &dma_block;
 	/* HACK: This field is used to inform driver that it is overridden */
 	dma_cfg->linked_channel = STM32_DMA_HAL_OVERRIDE;
 	ret = dma_config(dma->dma_dev, dma->channel, dma_cfg);
@@ -176,20 +182,13 @@ static int stm32_dma_init(const struct device *dev)
 		return ret;
 	}
 
-	/*** Configure the DMA ***/
-	/* Set the parameters to be configured */
+	ret = dma_stm32_zcfg_to_halcfg(dma_cfg, &hdma.Init);
+	if (ret < 0) {
+		return ret;
+	}
+
 	hdma.Init.Request		= DMA_REQUEST_DCMI;
-	hdma.Init.Direction		= DMA_PERIPH_TO_MEMORY;
-	hdma.Init.PeriphInc		= DMA_PINC_DISABLE;
-	hdma.Init.MemInc		= DMA_MINC_ENABLE;
-	hdma.Init.PeriphDataAlignment	= DMA_PDATAALIGN_WORD;
-	hdma.Init.MemDataAlignment	= DMA_MDATAALIGN_WORD;
-	hdma.Init.Mode			= DMA_CIRCULAR;
-	hdma.Init.Priority		= DMA_PRIORITY_HIGH;
 	hdma.Instance			= STM32_DMA_GET_INSTANCE(dma->reg, dma->channel);
-#if defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32H7X)
-	hdma.Init.FIFOMode		= DMA_FIFOMODE_DISABLE;
-#endif
 
 	/* Initialize DMA HAL */
 	__HAL_LINKDMA(&data->hdcmi, DMA_Handle, hdma);
