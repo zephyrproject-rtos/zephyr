@@ -295,31 +295,37 @@ static uint16_t hci_pkt_get_len(const uint8_t h4_type,
 				const uint8_t *data, const size_t size)
 {
 	size_t hdr_len = 0;
-	uint16_t len = 0;
+	size_t len = 0;
 
 	switch (h4_type) {
 	case BT_HCI_H4_CMD: {
 		struct bt_hci_cmd_hdr *cmd_hdr;
 
 		hdr_len = sizeof(*cmd_hdr);
-		cmd_hdr = (struct bt_hci_cmd_hdr *)data;
-		len = cmd_hdr->param_len + hdr_len;
+		if (size >= hdr_len) {
+			cmd_hdr = (struct bt_hci_cmd_hdr *)data;
+			len = cmd_hdr->param_len + hdr_len;
+		}
 		break;
 	}
 	case BT_HCI_H4_ACL: {
 		struct bt_hci_acl_hdr *acl_hdr;
 
 		hdr_len = sizeof(*acl_hdr);
-		acl_hdr = (struct bt_hci_acl_hdr *)data;
-		len = sys_le16_to_cpu(acl_hdr->len) + hdr_len;
+		if (size >= hdr_len) {
+			acl_hdr = (struct bt_hci_acl_hdr *)data;
+			len = sys_le16_to_cpu(acl_hdr->len) + hdr_len;
+		}
 		break;
 	}
 	case BT_HCI_H4_ISO: {
 		struct bt_hci_iso_hdr *iso_hdr;
 
 		hdr_len = sizeof(*iso_hdr);
-		iso_hdr = (struct bt_hci_iso_hdr *)data;
-		len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
+		if (size >= hdr_len) {
+			iso_hdr = (struct bt_hci_iso_hdr *)data;
+			len = bt_iso_hdr_len(sys_le16_to_cpu(iso_hdr->len)) + hdr_len;
+		}
 		break;
 	}
 	default:
@@ -327,7 +333,12 @@ static uint16_t hci_pkt_get_len(const uint8_t h4_type,
 		return 0;
 	}
 
-	return (size < hdr_len) ? 0 : len;
+	if (len > UINT16_MAX) {
+		LOG_ERR("Packet length %zu out of range", len);
+		return 0;
+	}
+
+	return len;
 }
 
 static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
@@ -336,10 +347,19 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
 	if (err) {
+		net_buf_drop(&hci_data->acl_buf);
+		hci_data->acl_len = 0;
 		goto restart_out_transfer;
 	}
 
 	if (hci_data->acl_buf == NULL) {
+		hci_data->acl_len = hci_pkt_get_len(BT_HCI_H4_ACL,
+						    buf->data,
+						    buf->len);
+		if (hci_data->acl_len == 0) {
+			goto restart_out_transfer;
+		}
+
 		hci_data->acl_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
 						  buf->data, buf->len);
 		if (hci_data->acl_buf == NULL) {
@@ -347,16 +367,7 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 			goto restart_out_transfer;
 		}
 
-		hci_data->acl_len = hci_pkt_get_len(BT_HCI_H4_ACL,
-						    buf->data,
-						    buf->len);
-
 		LOG_DBG("acl_len %u, chunk %u", hci_data->acl_len, buf->len);
-
-		if (hci_data->acl_len == 0) {
-			LOG_ERR("Failed to get packet length");
-			net_buf_drop(&hci_data->acl_buf);
-		}
 	} else {
 		if (net_buf_tailroom(hci_data->acl_buf) < buf->len) {
 			LOG_ERR("Buffer tailroom too small");
