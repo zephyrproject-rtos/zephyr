@@ -870,6 +870,12 @@ enum updatehub_response z_impl_updatehub_probe(void)
 			goto cleanup;
 		}
 
+		if (metadata_any_boards.objects[1].objects[0].objects.sha256sum == NULL) {
+			LOG_ERR("SHA256 is missing from the metadata");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
+			goto cleanup;
+		}
+
 		sha256size = strlen(
 			metadata_any_boards.objects[1].objects[0].objects.sha256sum) + 1;
 
@@ -908,6 +914,12 @@ enum updatehub_response z_impl_updatehub_probe(void)
 			LOG_ERR("Incompatible hardware");
 			ctx.code_status =
 				UPDATEHUB_INCOMPATIBLE_HARDWARE;
+			goto cleanup;
+		}
+
+		if (metadata_some_boards.objects[1].objects[0].objects.sha256sum == NULL) {
+			LOG_ERR("SHA256 is missing from the metadata");
+			ctx.code_status = UPDATEHUB_METADATA_ERROR;
 			goto cleanup;
 		}
 
