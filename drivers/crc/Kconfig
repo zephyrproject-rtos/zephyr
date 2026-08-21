@@ -29,6 +29,11 @@ source "drivers/crc/Kconfig.silabs"
 source "drivers/crc/Kconfig.stm32"
 # zephyr-keep-sorted-stop
 
+config CRC_DRIVER_HAS_EVEN_POLY
+	bool
+	help
+	  CRC driver has even polynomial computation
+
 config CRC_DRIVER_HAS_CRC4
 	bool
 	help

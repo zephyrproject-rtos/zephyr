@@ -5,6 +5,7 @@ config CRC_DRIVER_NXP
 	bool
 	depends on DT_HAS_NXP_CRC_ENABLED
 	default y
+	select CRC_DRIVER_HAS_EVEN_POLY
 	select CRC_DRIVER_HAS_CRC16
 	select CRC_DRIVER_HAS_CRC16_CCITT
 	select CRC_DRIVER_HAS_CRC16_ANSI
