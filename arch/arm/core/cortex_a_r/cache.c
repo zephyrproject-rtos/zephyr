@@ -17,6 +17,10 @@
 #include <cmsis_core.h>
 #include <zephyr/sys/barrier.h>
 
+#ifdef CONFIG_OUTER_CACHE
+#include <cortex_a_r/outer_cache.h>
+#endif
+
 /* Cache Type Register */
 #define	CTR_DMINLINE_SHIFT	16
 #define	CTR_DMINLINE_MASK	BIT_MASK(4)
@@ -55,7 +59,7 @@ void arch_dcache_enable(void)
 	/* Check if cache is already enabled */
 	if (val & SCTLR_C_Msk) {
 		/* Cache already enabled - clean and invalidate to ensure coherency */
-		L1C_CleanInvalidateDCacheAll();
+		arch_dcache_flush_and_invd_all();
 		return;
 	}
 
@@ -72,7 +76,7 @@ void arch_dcache_disable(void)
 {
 	uint32_t val;
 
-	L1C_CleanInvalidateDCacheAll();
+	arch_dcache_flush_and_invd_all();
 
 	val = __get_SCTLR();
 	val &= ~SCTLR_C_Msk;
@@ -85,6 +89,10 @@ int arch_dcache_flush_all(void)
 {
 	L1C_CleanDCacheAll();
 
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_all();
+#endif
+
 	return 0;
 }
 
@@ -92,12 +100,20 @@ int arch_dcache_invd_all(void)
 {
 	L1C_InvalidateDCacheAll();
 
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_invd_all();
+#endif
+
 	return 0;
 }
 
 int arch_dcache_flush_and_invd_all(void)
 {
 	L1C_CleanInvalidateDCacheAll();
+
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_and_invd_all();
+#endif
 
 	return 0;
 }
@@ -117,6 +133,10 @@ int arch_dcache_flush_range(void *start_addr, size_t size)
 		addr += line_size;
 	}
 
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_range(start_addr, size);
+#endif
+
 	return 0;
 }
 
@@ -127,6 +147,10 @@ int arch_dcache_invd_range(void *start_addr, size_t size)
 	uintptr_t end_addr = addr + size;
 
 	line_size = arch_dcache_line_size_get();
+
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_invd_range(start_addr, size);
+#endif
 
 	/*
 	 * Clean and invalidate the partial cache lines at both ends of the
@@ -172,6 +196,10 @@ int arch_dcache_flush_and_invd_range(void *start_addr, size_t size)
 		L1C_CleanInvalidateDCacheMVA((void *)addr);
 		addr += line_size;
 	}
+
+#ifdef CONFIG_OUTER_CACHE
+	z_arm_outer_cache_flush_and_invd_range(start_addr, size);
+#endif
 
 	return 0;
 }
