@@ -7,6 +7,8 @@ config GNSS_NMEA_GENERIC
 	depends on GNSS
 	depends on DT_HAS_GNSS_NMEA_GENERIC_ENABLED
 	depends on GNSS_REFERENCE_FRAME_WGS84
+	imply GNSS_TIMEPULSE_GPIO if \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_GNSS_NMEA_GENERIC),timepulse-gpios)
 	select MODEM_MODULES
 	select MODEM_BACKEND_UART
 	select MODEM_CHAT
