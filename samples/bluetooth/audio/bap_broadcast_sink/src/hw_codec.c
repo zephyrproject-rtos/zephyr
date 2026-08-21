@@ -23,7 +23,11 @@
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/toolchain.h>
 
+#include "hw_codec.h"
+
 LOG_MODULE_REGISTER(codec, CONFIG_LOG_DEFAULT_LEVEL);
+
+#if DT_HAS_ALIAS(codec0)
 
 /*
  * Size of one audio block transferred to the codec, in bytes.
@@ -176,3 +180,40 @@ int hw_codec_close(void)
 		return -EIO;
 	}
 }
+
+#else /* !DT_HAS_ALIAS(codec0) */
+
+/* Board does not define a `codec0` alias. Provide stubs so that other
+ * playback backends (I2S based) can still be compiled in.
+ *
+ * These stubs return -ENODEV rather than success so that enabling
+ * CONFIG_USE_CODEC_AUDIO_OUTPUT without a `codec0` alias fails loudly instead
+ * of silently producing no audio. The I2S playback backend compiles out all
+ * hw_codec_* usage, so returning an error here does not affect that path.
+ */
+
+int hw_codec_open(void)
+{
+	LOG_ERR("No codec0 alias defined; codec audio output is not available");
+	return -ENODEV;
+}
+
+int hw_codec_cfg(uint32_t samplerate)
+{
+	ARG_UNUSED(samplerate);
+	return -ENODEV;
+}
+
+uint32_t hw_codec_write_data(const uint8_t *data, uint32_t len)
+{
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+	return 0;
+}
+
+int hw_codec_close(void)
+{
+	return -ENODEV;
+}
+
+#endif /* DT_HAS_ALIAS(codec0) */
