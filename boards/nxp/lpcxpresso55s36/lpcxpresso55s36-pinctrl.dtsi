@@ -143,4 +143,30 @@
 			nxp,analog-mode;
 		};
 	};
+
+	pinmux_i3c0_alt0: pinmux_i3c0_alt0 {
+		group0 {
+			pinmux = <I3C0_SDA_PIO0_24>,
+				 <I3C0_SCL_PIO0_9>;
+			slew-rate = "standard";
+		};
+
+		group1 {
+			pinmux = <I3C0_PUR_PIO0_28>;
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_i3c0_alt1: pinmux_i3c0_alt1 {
+		group0 {
+			pinmux = <I3C0_SDA_PIO2_1>,
+				 <I3C0_SCL_PIO0_9>;
+			slew-rate = "standard";
+		};
+
+		group1 {
+			pinmux = <I3C0_PUR_PIO2_0>;
+			slew-rate = "fast";
+		};
+	};
 };
