@@ -7,6 +7,7 @@
 
 /dts-v1/;
 #include <common/freq.h>
+#include "mchp_sodimm_connector.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <zephyr/dt-bindings/mfd/mfd_mchp_sam_flexcom.h>
@@ -153,6 +154,11 @@
 	};
 };
 
+&gmac1_mdio {
+	pinctrl-0 = <&pinctrl_gmac1_mdio_default>;
+	pinctrl-names = "default";
+};
+
 &mcan1 {
 	status = "okay";
 	pinctrl-0 = <&pinctrl_can1_default>;
@@ -225,6 +231,13 @@
 		};
 	};
 
+	pinctrl_gmac1_mdio_default: gmac1_mdio_default {
+		group1 {
+			pinmux = <PIN_PD25__G1_MDC>,
+				 <PIN_PD26__G1_MDIO>;
+		};
+	};
+
 	pinctrl_i2c10_default: i2c10-default {
 		group1 {
 			pinmux = <PIN_PB19__FLEXCOM10_IO1>,
@@ -237,6 +250,41 @@
 		group1 {
 			pinmux = <PIN_PD18__FLEXCOM6_IO0>,
 				 <PIN_PD19__FLEXCOM6_IO1>;
+			bias-disable;
+		};
+	};
+
+	mchp_sodimm_pinctrl_rgmii_default: mchp_sodimm_pinctrl_rgmii_default {
+		group1 {
+			pinmux = <PIN_PD22__G1_TX0>,
+				 <PIN_PD23__G1_TX1>,
+				 <PIN_PE0__G1_TX2>,
+				 <PIN_PE1__G1_TX3>,
+				 <PIN_PD27__G1_RX0>,
+				 <PIN_PD28__G1_RX1>,
+				 <PIN_PD30__G1_RX2>,
+				 <PIN_PD31__G1_RX3>,
+				 <PIN_PD21__G1_TXCTL>,
+				 <PIN_PE2__G1_RXCK>,
+				 <PIN_PD24__G1_RXCTL>;
+			bias-disable;
+		};
+
+		gmac_txck_default {
+			pinmux = <PIN_PD29__G1_REFCK>;
+			bias-pull-up;
+		};
+	};
+
+	mchp_sodimm_pinctrl_rmii_default: mchp_sodimm_pinctrl_rmii_default {
+		group1 {
+			pinmux = <PIN_PD22__G1_TX0>,
+				 <PIN_PD23__G1_TX1>,
+				 <PIN_PD27__G1_RX0>,
+				 <PIN_PD28__G1_RX1>,
+				 <PIN_PD21__G1_TXCTL>,
+				 <PIN_PE2__G1_RXCK>,
+				 <PIN_PD24__G1_RXCTL>;
 			bias-disable;
 		};
 	};
@@ -253,3 +301,9 @@
 &trng {
 	status = "okay";
 };
+
+mchp_sodimm_gmac: &gmac1 {};
+
+mchp_sodimm_gmac_mdio: &gmac1_mdio {};
+
+mchp_sodimm_i2c: &i2c10 {};
