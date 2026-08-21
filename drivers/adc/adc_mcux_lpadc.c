@@ -371,8 +371,8 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = adc_sequence_validate_buffer(sequence,
-					   POPCOUNT(sequence->channels), sizeof(uint16_t));
+	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels), 
+					   sizeof(uint16_t));
 	if (ret < 0) {
 		return ret;
 	}
@@ -470,12 +470,43 @@ static int mcux_lpadc_read_async(const struct device *dev,
 			struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
+	const struct mcux_lpadc_config *config = dev->config;
 	int error;
 
 	pm_device_runtime_get(dev);
 	adc_context_lock(&data->ctx, async ? true : false, async);
 	mcux_lpadc_pm_policy_device_power_lock_get(dev);
+
+/* 
+ * Re-calibrate on read is only needed on low-power modes
+ * since the peripheral configurations are lost after
+ * entering low-power and ensures proper function after
+ * a power domain turn-off.
+ */
+#if CONFIG_PM_DEVICE
+	/* Do ADC calibration needed before using ADC */
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
+#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
+	/* Request offset calibration. */
+#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
+ 	LPADC_DoOffsetCalibration(config->base);
+#else
+#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
+	LPADC_SetOffsetValue(config->base, config->offset_a);
+#else
+	LPADC_SetOffsetValue(config->base, config->offset_a, config->offset_b);
+#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
+#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
+	k_busy_wait(1U);
+ 	LPADC_PrepareAutoCalibration(config->base);
+ 	LPADC_FinishAutoCalibration(config->base);
+ 	LPADC_DoAutoCalibration(config->base);
+#endif
+#endif
+	/* Perform ADC reading after calibration */
 	error = mcux_lpadc_start_read(dev, sequence);
+
 	mcux_lpadc_pm_policy_device_power_lock_put(dev);
 	adc_context_release(&data->ctx, error);
 	pm_device_runtime_put(dev);
@@ -855,37 +886,19 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 		LPADC_GetDefaultConfig(&adc_config);
 		adc_config.enableAnalogPreliminary = true;
 		adc_config.referenceVoltageSource  = config->voltage_ref;
-	#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 		adc_config.conversionAverageMode   = config->calibration_average;
-	#endif
-	#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
+#endif
+#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
 		adc_config.powerLevelMode          = config->power_level;
-	#endif
+#endif
 		LPADC_Init(config->base, &adc_config);
-		/* Do ADC calibration. */
-	#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
-	#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
-		/* Request offset calibration. */
-	#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
-		LPADC_DoOffsetCalibration(config->base);
-	#else
-	#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
-		LPADC_SetOffsetValue(config->base, config->offset_a);
-	#else
-		LPADC_SetOffsetValue(config->base, config->offset_a, config->offset_b);
-	#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
-	#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
-	#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
-		k_busy_wait(1U);
-		LPADC_PrepareAutoCalibration(config->base);
-		LPADC_FinishAutoCalibration(config->base);
-		LPADC_DoAutoCalibration(config->base);
-	#endif
-	#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
 		LPADC_EnableInterrupts(config->base, kLPADC_FIFO0WatermarkInterruptEnable);
-	#else
+#else
 		LPADC_EnableInterrupts(config->base, kLPADC_FIFOWatermarkInterruptEnable);
-	#endif
+#endif
 
 		return 0;
 
