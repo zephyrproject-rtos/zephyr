@@ -4,18 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&sercom4 {
+spi_loopback: &sercom4 {
 	cs-gpios = <&porta 3 GPIO_ACTIVE_LOW>;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
 };
+
+#include "../spi-loopback.dtsi"

@@ -1,24 +1,10 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2024 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&spi0 {
-	rx-dtc;
-	tx-dtc;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <2000000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <3000000>;
-	};
-};
+#define SPI_LOOPBACK_SLOW_HZ 2000000
+#define SPI_LOOPBACK_FAST_HZ 3000000
 
 &pinctrl {
 	spi0_default: spi0_default {
@@ -31,7 +17,9 @@
 	};
 };
 
-&spi0 {
+spi_loopback: &spi0 {
+	rx-dtc;
+	tx-dtc;
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&ioport1 3 GPIO_ACTIVE_LOW>;
@@ -43,3 +31,5 @@
 &ioport1 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

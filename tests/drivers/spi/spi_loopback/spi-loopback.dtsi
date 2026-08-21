@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Shared SPI loopback test fixture. The board selects the loopback SPI
+ * controller with the `spi_loopback` node label:
+ *
+ *     spi_loopback: &<controller> { ... board-specific props ... };
+ *
+ * Defaults: 500 kHz (slow) / 16 MHz (fast), on chip-select 0. A board whose
+ * silicon differs overrides them by defining any of the following before
+ * selecting the controller (overlay files are preprocessed together, so the
+ * values reach this fragment):
+ *
+ *     #define SPI_LOOPBACK_SLOW_HZ  <hz>   (e.g. DT_FREQ_M(2))
+ *     #define SPI_LOOPBACK_FAST_HZ  <hz>
+ *     #define SPI_LOOPBACK_REG      <cs>   (chip-select index, default 0)
+ */
+
+#include <zephyr/dt-bindings/dt-util.h>
+
+#ifndef SPI_LOOPBACK_SLOW_HZ
+#define SPI_LOOPBACK_SLOW_HZ 500000
+#endif
+#ifndef SPI_LOOPBACK_FAST_HZ
+#define SPI_LOOPBACK_FAST_HZ 16000000
+#endif
+#ifndef SPI_LOOPBACK_REG
+#define SPI_LOOPBACK_REG 0
+#endif
+
+&spi_loopback {
+	dut_slow: slow@SPI_LOOPBACK_REG {
+		compatible = "test-spi-loopback-slow";
+		reg = <SPI_LOOPBACK_REG>;
+		spi-max-frequency = <SPI_LOOPBACK_SLOW_HZ>;
+	};
+
+	dut_fast: fast@SPI_LOOPBACK_REG {
+		compatible = "test-spi-loopback-fast";
+		reg = <SPI_LOOPBACK_REG>;
+		spi-max-frequency = <SPI_LOOPBACK_FAST_HZ>;
+	};
+};
