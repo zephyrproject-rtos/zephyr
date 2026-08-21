@@ -1,6 +1,5 @@
-# RAKWIRELESS RAK4631 selection
-
 # Copyright (c) 2021 Guillaume Paquet <guillaume.paquet@smile.fr>
+# Copyright (c) 2026 RAKwireless Technology Limited
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_RAK4631
