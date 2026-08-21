@@ -1,0 +1,30 @@
+sample:
+  name: Nordic flash write during Bluetooth LE activity
+  description: Write to flash while the Bluetooth LE radio is active
+common:
+  tags:
+    - bluetooth
+    - flash
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Successfully completed flash write while radio was active"
+  platform_allow:
+    - nrf51dk/nrf51822
+    - nrf52dk/nrf52832
+    - nrf52840dk/nrf52840
+    - nrf54l15dk/nrf54l15/cpuapp
+  integration_platforms:
+    - nrf51dk/nrf51822
+    - nrf52840dk/nrf52840
+    - nrf54l15dk/nrf54l15/cpuapp
+tests:
+  sample.boards.nrf.flash:
+    tags: flash
+  sample.boards.nrf.flash.scan.unreserved:
+    extra_args:
+      - EXTRA_CONF_FILE="extra-scan-unreserved-bt_ll_sw_split.conf"
+  sample.boards.nrf.flash.no_scan:
+    extra_configs:
+      - CONFIG_BT_OBSERVER=n
