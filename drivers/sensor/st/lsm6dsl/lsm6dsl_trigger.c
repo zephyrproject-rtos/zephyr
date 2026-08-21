@@ -86,6 +86,7 @@ static void lsm6dsl_gpio_callback(const struct device *dev,
 
 static void lsm6dsl_thread_cb(const struct device *dev)
 {
+	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
 
 	if (drv_data->data_ready_handler != NULL) {
@@ -94,6 +95,23 @@ static void lsm6dsl_thread_cb(const struct device *dev)
 	}
 
 	setup_irq(dev, true);
+
+	/*
+	 * The interrupt was disabled while the handler ran, so a sample that
+	 * completed inside that window asserted INT1 with the edge detector
+	 * off. That edge is gone for good: the line stays active, no further
+	 * edge is ever produced, and the trigger never fires again. Re-read
+	 * the level and synthesise the missed edge, exactly as
+	 * lsm6dsl_trigger_set() already does after it arms the interrupt.
+	 *
+	 * Only with a handler installed. Without one nothing reads the sample
+	 * that is holding INT1 active, so the re-check would find the line
+	 * still asserted every time and spin this cooperative thread forever.
+	 */
+	if (drv_data->data_ready_handler != NULL &&
+	    gpio_pin_get_dt(&config->int_gpio) > 0) {
+		handle_irq(dev);
+	}
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
