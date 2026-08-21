@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Multi-endpoint extension of the icmsg IPC library.
+ * @ingroup ipc_icmsg_me_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_ICMSG_ME_H_
 #define ZEPHYR_INCLUDE_IPC_ICMSG_ME_H_
 
@@ -27,17 +33,26 @@ extern "C" {
 /* If more bytes than 1 was used for endpoint id, endianness should be
  * considered.
  */
+
+/** Identifier of an endpoint within an icmsg_me instance */
 typedef uint8_t icmsg_me_ept_id_t;
 
+/** Run-time data of an icmsg_me instance */
 struct icmsg_me_data_t {
+	/** Run-time data of the underlying icmsg instance */
 	struct icmsg_data_t icmsg_data;
+	/** Callbacks and context used by the underlying icmsg instance */
 	struct ipc_ept_cfg ept_cfg;
 
+	/** Event used to signal that the underlying icmsg instance was bound */
 	struct k_event event;
 
+	/** Mutex protecting access to the send buffer */
 	struct k_mutex send_mutex;
+	/** Configurations of the registered endpoints */
 	const struct ipc_ept_cfg *epts[CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_NUM_EP];
 
+	/** Buffer used to compose messages sent to the remote side */
 	uint8_t send_buffer[CONFIG_IPC_SERVICE_BACKEND_ICMSG_ME_SEND_BUF_SIZE] __aligned(4);
 };
 

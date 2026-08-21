@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public API for the IPC service to send messages between domains or CPUs.
+ * @ingroup ipc
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_IPC_SERVICE_H_
 #define ZEPHYR_INCLUDE_IPC_IPC_SERVICE_H_
 

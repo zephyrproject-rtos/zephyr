@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Packed buffer API for data exchange over shared memory.
+ * @ingroup pbuf
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_PBUF_H_
 #define ZEPHYR_INCLUDE_IPC_PBUF_H_
 
@@ -35,6 +41,12 @@ extern "C" {
  */
 #define _PBUF_MIN_DATA_LEN ROUND_UP(PBUF_PACKET_LEN_SZ + 1 + _PBUF_IDX_SIZE, _PBUF_IDX_SIZE)
 
+/**
+ * @brief Const qualifier of a pbuf configuration.
+ *
+ * Expands to nothing on the native simulated boards, where some pointers of
+ * the configuration are modified at initialization, and to `const` otherwise.
+ */
 #if defined(CONFIG_ARCH_POSIX)
 /* For the native simulated boards we need to modify some pointers at init */
 #define PBUF_MAYBE_CONST
@@ -47,23 +59,23 @@ extern "C" {
  * The structure contains configuration data.
  */
 struct pbuf_cfg {
-	volatile uint32_t *rd_idx_loc;	 /* Address of the variable holding
+	volatile uint32_t *rd_idx_loc;	 /**< Address of the variable holding
 					  * index value of the first valid byte
 					  * in data[].
 					  */
-	volatile uint32_t *handshake_loc;/* Address of the variable holding
+	volatile uint32_t *handshake_loc;/**< Address of the variable holding
 					  * handshake information.
 					  */
-	volatile uint32_t *wr_idx_loc;	 /* Address of the variable holding
+	volatile uint32_t *wr_idx_loc;	 /**< Address of the variable holding
 					  * index value of the first free byte
 					  * in data[].
 					  */
-	uint32_t dcache_alignment;	 /* CPU data cache line size in bytes.
+	uint32_t dcache_alignment;	 /**< CPU data cache line size in bytes.
 					  * Used for validation - TODO: To be
 					  * replaced by flags.
 					  */
-	uint32_t len;			 /* Length of data[] in bytes. */
-	uint8_t *data_loc;		 /* Location of the data[]. */
+	uint32_t len;			 /**< Length of data[] in bytes. */
+	uint8_t *data_loc;		 /**< Location of the data[]. */
 };
 
 /**
@@ -73,13 +85,11 @@ struct pbuf_cfg {
  * reader respectively.
  */
 struct pbuf_data {
-	volatile uint32_t wr_idx;	/* Index of the first holding first
-					 * free byte in data[]. Used for
-					 * writing.
+	volatile uint32_t wr_idx;	/**< Index of the first free byte
+					 * in data[]. Used for writing.
 					 */
-	volatile uint32_t rd_idx;	/* Index of the first holding first
-					 * valid byte in data[]. Used for
-					 * reading.
+	volatile uint32_t rd_idx;	/**< Index of the first valid byte
+					 * in data[]. Used for reading.
 					 */
 };
 
@@ -97,10 +107,10 @@ struct pbuf_data {
  * written in a way to protect the data from being corrupted.
  */
 struct pbuf {
-	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg; /* Configuration of the
+	PBUF_MAYBE_CONST struct pbuf_cfg *const cfg; /**< Configuration of the
 						      * buffer.
 						      */
-	struct pbuf_data data;			/* Data used to read and write
+	struct pbuf_data data;			/**< Data used to read and write
 						 * to the buffer
 						 */
 };
