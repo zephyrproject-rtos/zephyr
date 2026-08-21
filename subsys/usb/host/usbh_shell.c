@@ -19,8 +19,8 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(usbh_shell, CONFIG_USBH_LOG_LEVEL);
 
-#define FOOBAZ_VREQ_OUT		0x5b
-#define FOOBAZ_VREQ_IN		0x5c
+#define FOOBAZ_VREQ_OUT 0x5b
+#define FOOBAZ_VREQ_IN  0x5c
 
 STRUCT_SECTION_START_EXTERN(usbh_context);
 static struct usbh_context *my_uhs_ctx = TYPE_SECTION_START(usbh_context);
@@ -37,21 +37,17 @@ static struct usbh_context *get_uhs_ctx_or_error(const struct shell *sh)
 	return NULL;
 }
 
-static void print_desc_field(const struct shell *sh, int indent,
-			     const char *name, const char *value,
-			     const char *comment)
+static void print_desc_field(const struct shell *sh, int indent, const char *name,
+			     const char *value, const char *comment)
 {
 	if (comment != NULL && comment[0] != '\0') {
-		shell_print(sh, "%*s%-20s %12s %s",
-			    indent, "", name, value, comment);
+		shell_print(sh, "%*s%-20s %12s %s", indent, "", name, value, comment);
 	} else {
-		shell_print(sh, "%*s%-20s %12s",
-			    indent, "", name, value);
+		shell_print(sh, "%*s%-20s %12s", indent, "", name, value);
 	}
 }
 
-static void print_desc_u(const struct shell *sh, int indent,
-			 const char *name, unsigned int value,
+static void print_desc_u(const struct shell *sh, int indent, const char *name, unsigned int value,
 			 const char *comment)
 {
 	char buf[16];
@@ -60,8 +56,7 @@ static void print_desc_u(const struct shell *sh, int indent,
 	print_desc_field(sh, indent, name, buf, comment);
 }
 
-static void print_desc_x8(const struct shell *sh, int indent,
-			  const char *name, uint8_t value,
+static void print_desc_x8(const struct shell *sh, int indent, const char *name, uint8_t value,
 			  const char *comment)
 {
 	char buf[16];
@@ -70,8 +65,7 @@ static void print_desc_x8(const struct shell *sh, int indent,
 	print_desc_field(sh, indent, name, buf, comment);
 }
 
-static void print_desc_x16(const struct shell *sh, int indent,
-			   const char *name, uint16_t value,
+static void print_desc_x16(const struct shell *sh, int indent, const char *name, uint16_t value,
 			   const char *comment)
 {
 	char buf[16];
@@ -80,8 +74,7 @@ static void print_desc_x16(const struct shell *sh, int indent,
 	print_desc_field(sh, indent, name, buf, comment);
 }
 
-static void print_desc_bcd(const struct shell *sh, int indent,
-			   const char *name, uint16_t value,
+static void print_desc_bcd(const struct shell *sh, int indent, const char *name, uint16_t value,
 			   const char *comment)
 {
 	char buf[16];
@@ -294,11 +287,10 @@ static int cmd_bulk(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-static int cmd_vendor_in(const struct shell *sh,
-			 size_t argc, char **argv)
+static int cmd_vendor_in(const struct shell *sh, size_t argc, char **argv)
 {
-	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_HOST << 7) |
-				      (USB_REQTYPE_TYPE_VENDOR << 5);
+	const uint8_t bmRequestType =
+		(USB_REQTYPE_DIR_TO_HOST << 7) | (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_IN;
 	static struct usb_device *udev;
 	const uint16_t wValue = 0x0000;
@@ -337,11 +329,10 @@ static int cmd_vendor_in(const struct shell *sh,
 	return ret;
 }
 
-static int cmd_vendor_out(const struct shell *sh,
-			  size_t argc, char **argv)
+static int cmd_vendor_out(const struct shell *sh, size_t argc, char **argv)
 {
-	const uint8_t bmRequestType = (USB_REQTYPE_DIR_TO_DEVICE << 7) |
-				      (USB_REQTYPE_TYPE_VENDOR << 5);
+	const uint8_t bmRequestType =
+		(USB_REQTYPE_DIR_TO_DEVICE << 7) | (USB_REQTYPE_TYPE_VENDOR << 5);
 	const uint8_t bRequest = FOOBAZ_VREQ_OUT;
 	static struct usb_device *udev;
 	const uint16_t wValue = 0x0000;
@@ -377,8 +368,7 @@ static int cmd_vendor_out(const struct shell *sh,
 	return ret;
 }
 
-static int cmd_desc_device(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_desc_device(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usb_device_descriptor desc;
 	static struct usb_device *udev;
@@ -408,8 +398,7 @@ static int cmd_desc_device(const struct shell *sh,
 	return err;
 }
 
-static int cmd_desc_config(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_desc_config(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usb_cfg_descriptor desc;
 	static struct usb_device *udev;
@@ -442,8 +431,7 @@ static int cmd_desc_config(const struct shell *sh,
 	return err;
 }
 
-static int cmd_desc_string(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_desc_string(const struct shell *sh, size_t argc, char **argv)
 {
 	const uint8_t type = USB_DESC_STRING;
 	static struct usb_device *udev;
@@ -486,8 +474,7 @@ static int cmd_desc_string(const struct shell *sh,
 	return err;
 }
 
-static int cmd_feature_clear_halt(const struct shell *sh,
-				  size_t argc, char **argv)
+static int cmd_feature_clear_halt(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -513,15 +500,14 @@ static int cmd_feature_clear_halt(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to clear halt feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature cleared",
-			    udev->addr, ep);
+		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature cleared", udev->addr,
+			    ep);
 	}
 
 	return err;
 }
 
-static int cmd_feature_set_halt(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_feature_set_halt(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -547,15 +533,13 @@ static int cmd_feature_set_halt(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set halt feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature set",
-			    udev->addr, ep);
+		shell_print(sh, "host: Device 0x%02x, ep 0x%02x halt feature set", udev->addr, ep);
 	}
 
 	return err;
 }
 
-static int cmd_feature_clear_rwup(const struct shell *sh,
-				  size_t argc, char **argv)
+static int cmd_feature_clear_rwup(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -584,8 +568,7 @@ static int cmd_feature_clear_rwup(const struct shell *sh,
 	return err;
 }
 
-static int cmd_feature_set_rwup(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_feature_set_rwup(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -614,8 +597,7 @@ static int cmd_feature_set_rwup(const struct shell *sh,
 	return err;
 }
 
-static int cmd_feature_set_ppwr(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_feature_set_ppwr(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -641,15 +623,13 @@ static int cmd_feature_set_ppwr(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set ppwr feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, port %d, ppwr feature set",
-			    udev->addr, port);
+		shell_print(sh, "host: Device 0x%02x, port %d, ppwr feature set", udev->addr, port);
 	}
 
 	return err;
 }
 
-static int cmd_feature_set_prst(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_feature_set_prst(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -675,15 +655,13 @@ static int cmd_feature_set_prst(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set prst feature");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, port %d, prst feature set",
-			    udev->addr, port);
+		shell_print(sh, "host: Device 0x%02x, port %d, prst feature set", udev->addr, port);
 	}
 
 	return err;
 }
 
-static int cmd_config_set(const struct shell *sh,
-			  size_t argc, char **argv)
+static int cmd_config_set(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -709,15 +687,13 @@ static int cmd_config_set(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set configuration");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, new configuration %u",
-			    udev->addr, cfg);
+		shell_print(sh, "host: Device 0x%02x, new configuration %u", udev->addr, cfg);
 	}
 
 	return err;
 }
 
-static int cmd_config_get(const struct shell *sh,
-			  size_t argc, char **argv)
+static int cmd_config_get(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -741,15 +717,13 @@ static int cmd_config_get(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to get configuration");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, current configuration %u",
-			    udev->addr, cfg);
+		shell_print(sh, "host: Device 0x%02x, current configuration %u", udev->addr, cfg);
 	}
 
 	return err;
 }
 
-static int cmd_device_interface(const struct shell *sh,
-				size_t argc, char **argv)
+static int cmd_device_interface(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -777,15 +751,13 @@ static int cmd_device_interface(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set interface alternate");
 	} else {
-		shell_print(sh, "host: Device 0x%02x, new %u alternate %u",
-			    udev->addr, iface, alt);
+		shell_print(sh, "host: Device 0x%02x, new %u alternate %u", udev->addr, iface, alt);
 	}
 
 	return err;
 }
 
-static int cmd_device_address(const struct shell *sh,
-			      size_t argc, char **argv)
+static int cmd_device_address(const struct shell *sh, size_t argc, char **argv)
 {
 	static struct usb_device *udev;
 	struct usbh_context *uhs_ctx;
@@ -811,14 +783,13 @@ static int cmd_device_address(const struct shell *sh,
 	if (err) {
 		shell_error(sh, "host: Failed to set address");
 	} else {
-		shell_print(sh, "host: New device address is %u", new_addr);
+		shell_print(sh, "host: New device address is %u", udev->addr);
 	}
 
 	return err;
 }
 
-static int cmd_device_list(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_device_list(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	struct usb_device *udev;
@@ -834,8 +805,7 @@ static int cmd_device_list(const struct shell *sh,
 	return 0;
 }
 
-static int cmd_device_info(const struct shell *sh,
-			      size_t argc, char **argv)
+static int cmd_device_info(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usb_device *udev;
 	const struct usb_desc_header *dhp;
@@ -867,8 +837,7 @@ static int cmd_device_info(const struct shell *sh,
 	return 0;
 }
 
-static int cmd_bus_suspend(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_bus_suspend(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -888,8 +857,7 @@ static int cmd_bus_suspend(const struct shell *sh,
 	return err;
 }
 
-static int cmd_bus_resume(const struct shell *sh,
-			  size_t argc, char **argv)
+static int cmd_bus_resume(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -914,8 +882,7 @@ static int cmd_bus_resume(const struct shell *sh,
 	return err;
 }
 
-static int cmd_bus_reset(const struct shell *sh,
-			 size_t argc, char **argv)
+static int cmd_bus_reset(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -940,8 +907,7 @@ static int cmd_bus_reset(const struct shell *sh,
 	return err;
 }
 
-static int cmd_usbh_init(const struct shell *sh,
-			 size_t argc, char **argv)
+static int cmd_usbh_init(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -963,8 +929,7 @@ static int cmd_usbh_init(const struct shell *sh,
 	return err;
 }
 
-static int cmd_usbh_enable(const struct shell *sh,
-			   size_t argc, char **argv)
+static int cmd_usbh_enable(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -984,8 +949,7 @@ static int cmd_usbh_enable(const struct shell *sh,
 	return err;
 }
 
-static int cmd_usbh_disable(const struct shell *sh,
-			    size_t argc, char **argv)
+static int cmd_usbh_disable(const struct shell *sh, size_t argc, char **argv)
 {
 	struct usbh_context *uhs_ctx;
 	int err;
@@ -1010,9 +974,7 @@ static int cmd_select(const struct shell *sh, size_t argc, char **argv)
 	STRUCT_SECTION_FOREACH(usbh_context, ctx) {
 		if (strcmp(argv[1], ctx->name) == 0) {
 			my_uhs_ctx = ctx;
-			shell_print(sh,
-				    "host: select %s as my USB host context",
-				    argv[1]);
+			shell_print(sh, "host: select %s as my USB host context", argv[1]);
 
 			return 0;
 		}
@@ -1046,200 +1008,134 @@ static void host_context_lookup(size_t idx, struct shell_static_entry *entry)
 
 SHELL_DYNAMIC_CMD_CREATE(hsub_context_name, host_context_lookup);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(desc_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	desc_cmds,
 	SHELL_CMD_ARG(device, NULL,
-		SHELL_HELP(
-			"Print device descriptor",
-			"<addr>\n"
-			"addr: Device bus address [dec]"
-		),
-		cmd_desc_device, 2, 0),
+		      SHELL_HELP("Print device descriptor", "<addr>\n"
+							    "addr: Device bus address [dec]"),
+		      cmd_desc_device, 2, 0),
 	SHELL_CMD_ARG(configuration, NULL,
-		SHELL_HELP(
-			"Print configuration descriptor",
-			"<addr> <index>\n"
-			"addr:  Device bus address [dec]\n"
-			"index: Configuration index [dec]"
-		),
-		cmd_desc_config, 3, 0),
+		      SHELL_HELP("Print configuration descriptor",
+				 "<addr> <index>\n"
+				 "addr:  Device bus address [dec]\n"
+				 "index: Configuration index [dec]"),
+		      cmd_desc_config, 3, 0),
 	SHELL_CMD_ARG(string, NULL,
-		SHELL_HELP(
-			"Print string descriptor",
-			"<addr> <id> <index>\n"
-			"addr:  Device bus address [dec]\n"
-			"id:    Language ID [dec]\n"
-			"index: Index of string [dec]"
-		),
-		cmd_desc_string, 4, 0),
-	SHELL_SUBCMD_SET_END
-);
+		      SHELL_HELP("Print string descriptor", "<addr> <id> <index>\n"
+							    "addr:  Device bus address [dec]\n"
+							    "id:    Language ID [dec]\n"
+							    "index: Index of string [dec]"),
+		      cmd_desc_string, 4, 0),
+	SHELL_SUBCMD_SET_END);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(feature_set_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	feature_set_cmds,
 	SHELL_CMD_ARG(rwup, NULL,
-		SHELL_HELP(
-			"Set feature - Remote Wakeup",
-			"<addr>\n"
-			"addr: Device bus address [dec]"
-		),
-		cmd_feature_set_rwup, 2, 0),
+		      SHELL_HELP("Set feature - Remote Wakeup", "<addr>\n"
+								"addr: Device bus address [dec]"),
+		      cmd_feature_set_rwup, 2, 0),
 	SHELL_CMD_ARG(ppwr, NULL,
-		SHELL_HELP(
-			"Set feature - Port Power [Hub Class request]",
-			"<addr> <port>\n"
-			"addr: Device bus address [dec]\n"
-			"port: Port number [dec]"
-		),
-		cmd_feature_set_ppwr, 3, 0),
+		      SHELL_HELP("Set feature - Port Power [Hub Class request]",
+				 "<addr> <port>\n"
+				 "addr: Device bus address [dec]\n"
+				 "port: Port number [dec]"),
+		      cmd_feature_set_ppwr, 3, 0),
 	SHELL_CMD_ARG(prst, NULL,
-		SHELL_HELP(
-			"Set feature - Reset Port [Hub Class request]",
-			"<addr> <port>\n"
-			"addr: Device bus address [dec]\n"
-			"port: Port number [dec]"
-		),
-		cmd_feature_set_prst, 3, 0),
+		      SHELL_HELP("Set feature - Reset Port [Hub Class request]",
+				 "<addr> <port>\n"
+				 "addr: Device bus address [dec]\n"
+				 "port: Port number [dec]"),
+		      cmd_feature_set_prst, 3, 0),
 	SHELL_CMD_ARG(halt, NULL,
-		SHELL_HELP(
-			"Set feature - Halt Endpoint",
-			"<addr> <ep_num>\n"
-			"addr:   Device bus address [dec]\n"
-			"ep_num: Endpoint number [hex]"
-		),
-		cmd_feature_set_halt, 3, 0),
-	SHELL_SUBCMD_SET_END
-);
+		      SHELL_HELP("Set feature - Halt Endpoint", "<addr> <ep_num>\n"
+								"addr:   Device bus address [dec]\n"
+								"ep_num: Endpoint number [hex]"),
+		      cmd_feature_set_halt, 3, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(feature_clear_cmds,
-	SHELL_CMD_ARG(rwup, NULL,
-		SHELL_HELP(
-			"Clear feature - Remote Wakeup",
-			"<addr>\n"
-			"addr: Device bus address [dec]"
-		),
-		cmd_feature_clear_rwup, 2, 0),
-	SHELL_CMD_ARG(halt, NULL,
-		SHELL_HELP(
-			"Clear feature - Halt Endpoint",
-			"<addr> <ep_num>\n"
-			"addr:   Device bus address [dec]\n"
-			"ep_num: Endpoint number [hex]"
-		),
-		cmd_feature_clear_halt, 3, 0),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(rwup, NULL,
+					     SHELL_HELP("Clear feature - Remote Wakeup",
+							"<addr>\n"
+							"addr: Device bus address [dec]"),
+					     cmd_feature_clear_rwup, 2, 0),
+			       SHELL_CMD_ARG(halt, NULL,
+					     SHELL_HELP("Clear feature - Halt Endpoint",
+							"<addr> <ep_num>\n"
+							"addr:   Device bus address [dec]\n"
+							"ep_num: Endpoint number [hex]"),
+					     cmd_feature_clear_halt, 3, 0),
+			       SHELL_SUBCMD_SET_END);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(config_cmds,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	config_cmds,
 	SHELL_CMD_ARG(get, NULL,
-		SHELL_HELP(
-			"Get configuration",
-			"<addr>\n"
-			"addr: Device bus address [dec]"
-		),
-		cmd_config_get, 2, 0),
+		      SHELL_HELP("Get configuration", "<addr>\n"
+						      "addr: Device bus address [dec]"),
+		      cmd_config_get, 2, 0),
 	SHELL_CMD_ARG(set, NULL,
-		SHELL_HELP(
-			"Set configuration",
-			"<addr> <value>\n"
-			"addr:  Device bus address [dec]\n"
-			"value: Value to set [dec]"
-		),
-		cmd_config_set, 3, 0),
-	SHELL_SUBCMD_SET_END
-);
+		      SHELL_HELP("Set configuration", "<addr> <value>\n"
+						      "addr:  Device bus address [dec]\n"
+						      "value: Value to set [dec]"),
+		      cmd_config_set, 3, 0),
+	SHELL_SUBCMD_SET_END);
 
-SHELL_STATIC_SUBCMD_SET_CREATE(device_cmds,
-	SHELL_CMD_ARG(list, NULL,
-		SHELL_HELP(
-			"List of active devices",
-			""
-		),
-		cmd_device_list, 1, 0),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	device_cmds,
+	SHELL_CMD_ARG(list, NULL, SHELL_HELP("List of active devices", ""), cmd_device_list, 1, 0),
 	SHELL_CMD_ARG(info, NULL,
-		SHELL_HELP(
-			"Print device information",
-			"<addr>\n"
-			"addr: Device bus address [dec]\n"
-		),
-		cmd_device_info, 2, 0),
+		      SHELL_HELP("Print device information", "<addr>\n"
+							     "addr: Device bus address [dec]\n"),
+		      cmd_device_info, 2, 0),
 	SHELL_CMD_ARG(address, NULL,
-		SHELL_HELP(
-			"Set device address",
-			"<addr> <new addr>\n"
-			"addr: Device bus address [dec]\n"
-			"new:  New device address [dec]"
-		),
-		cmd_device_address, 3, 0),
-	SHELL_CMD_ARG(config, &config_cmds, "Get/Set configuration",
-		      NULL, 2, 0),
+		      SHELL_HELP("Set device address", "<addr> <new addr>\n"
+						       "addr: Device bus address [dec]\n"
+						       "new:  New device address [dec]"),
+		      cmd_device_address, 3, 0),
+	SHELL_CMD_ARG(config, &config_cmds, "Get/Set configuration", NULL, 2, 0),
 	SHELL_CMD_ARG(interface, NULL,
-		SHELL_HELP(
-			"Set alternate interface",
-			"<addr> <iface> <alt>\n"
-			"addr:  Device bus address [dec]\n"
-			"iface: Interface number [dec]\n"
-			"alt:   Alternate setting [dec]"
-		),
-		cmd_device_interface, 4, 0),
-	SHELL_CMD_ARG(descriptor, &desc_cmds, "Descriptor commands",
-		      NULL, 2, 0),
-	SHELL_CMD_ARG(feature-set, &feature_set_cmds, "Set Feature commands",
-		      NULL, 2, 0),
-	SHELL_CMD_ARG(feature-clear, &feature_clear_cmds, "Clear Feature commands",
-		      NULL, 2, 0),
+		      SHELL_HELP("Set alternate interface", "<addr> <iface> <alt>\n"
+							    "addr:  Device bus address [dec]\n"
+							    "iface: Interface number [dec]\n"
+							    "alt:   Alternate setting [dec]"),
+		      cmd_device_interface, 4, 0),
+	SHELL_CMD_ARG(descriptor, &desc_cmds, "Descriptor commands", NULL, 2, 0),
+	SHELL_CMD_ARG(feature - set, &feature_set_cmds, "Set Feature commands", NULL, 2, 0),
+	SHELL_CMD_ARG(feature - clear, &feature_clear_cmds, "Clear Feature commands", NULL, 2, 0),
 	SHELL_CMD_ARG(vendor_in, NULL,
-		SHELL_HELP(
-			"Vendor IN transfer",
-			"<addr> <len>\n"
-			"addr: Device bus address [dec]\n"
-			"len:  Buffer length [dec]"
-		),
-		cmd_vendor_in, 3, 0),
+		      SHELL_HELP("Vendor IN transfer", "<addr> <len>\n"
+						       "addr: Device bus address [dec]\n"
+						       "len:  Buffer length [dec]"),
+		      cmd_vendor_in, 3, 0),
 	SHELL_CMD_ARG(vendor_out, NULL,
-		SHELL_HELP(
-			"Vendor OUT transfer",
-			"<addr> <len>\n"
-			"addr: Device bus address [dec]\n"
-			"len:  Buffer length [dec]"
-		),
-		cmd_vendor_out, 3, 0),
+		      SHELL_HELP("Vendor OUT transfer", "<addr> <len>\n"
+							"addr: Device bus address [dec]\n"
+							"len:  Buffer length [dec]"),
+		      cmd_vendor_out, 3, 0),
 	SHELL_CMD_ARG(bulk, NULL,
-		SHELL_HELP(
-			"Bulk IN/OUT transfer",
-			"<addr> <ep_num> <len>\n"
-			"addr:   Device bus address [dec]\n"
-			"ep_num: Endpoint number [hex]\n"
-			"len:    Buffer length [dec]"
-		),
-		cmd_bulk, 4, 0),
-	SHELL_SUBCMD_SET_END
-);
+		      SHELL_HELP("Bulk IN/OUT transfer", "<addr> <ep_num> <len>\n"
+							 "addr:   Device bus address [dec]\n"
+							 "ep_num: Endpoint number [hex]\n"
+							 "len:    Buffer length [dec]"),
+		      cmd_bulk, 4, 0),
+	SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(bus_cmds,
-	SHELL_CMD_ARG(suspend, NULL, "[none]",
-		      cmd_bus_suspend, 1, 0),
-	SHELL_CMD_ARG(resume, NULL, "[none]",
-		      cmd_bus_resume, 1, 0),
-	SHELL_CMD_ARG(reset, NULL, "[none]",
-		      cmd_bus_reset, 1, 0),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(suspend, NULL, "[none]", cmd_bus_suspend, 1, 0),
+			       SHELL_CMD_ARG(resume, NULL, "[none]", cmd_bus_resume, 1, 0),
+			       SHELL_CMD_ARG(reset, NULL, "[none]", cmd_bus_reset, 1, 0),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_usbh_cmds,
-	SHELL_CMD_ARG(init, NULL, "[none]",
-		      cmd_usbh_init, 1, 0),
-	SHELL_CMD_ARG(enable, NULL, "[none]",
-		      cmd_usbh_enable, 1, 0),
-	SHELL_CMD_ARG(disable, NULL, "[none]",
-		      cmd_usbh_disable, 1, 0),
-	SHELL_CMD_ARG(bus, &bus_cmds, "Bus commands",
-		      NULL, 1, 0),
-	SHELL_CMD_ARG(device, &device_cmds, "Device commands",
-		      NULL, 1, 0),
-	SHELL_CMD_ARG(select, &hsub_context_name,
-		      SHELL_HELP("Selects context used by the shell",
-				"<USB host context name>"),
-		      cmd_select, 2, 0),
-	SHELL_SUBCMD_SET_END
-);
+			       SHELL_CMD_ARG(init, NULL, "[none]", cmd_usbh_init, 1, 0),
+			       SHELL_CMD_ARG(enable, NULL, "[none]", cmd_usbh_enable, 1, 0),
+			       SHELL_CMD_ARG(disable, NULL, "[none]", cmd_usbh_disable, 1, 0),
+			       SHELL_CMD_ARG(bus, &bus_cmds, "Bus commands", NULL, 1, 0),
+			       SHELL_CMD_ARG(device, &device_cmds, "Device commands", NULL, 1, 0),
+			       SHELL_CMD_ARG(select, &hsub_context_name,
+					     SHELL_HELP("Selects context used by the shell",
+							"<USB host context name>"),
+					     cmd_select, 2, 0),
+			       SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(usbh, &sub_usbh_cmds, "USBH commands", NULL);

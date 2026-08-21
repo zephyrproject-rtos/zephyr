@@ -1,0 +1,6 @@
+tests:
+  subsys.scsi.common:
+    platform_allow:
+      - native_sim
+    tags:
+      - scsi

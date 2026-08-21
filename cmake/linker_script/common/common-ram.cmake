@@ -146,7 +146,7 @@ endif()
 
 if(CONFIG_USB_HOST_STACK)
   zephyr_iterable_section(NAME usbh_contex GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
-  zephyr_iterable_section(NAME usbh_class_data GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+  zephyr_iterable_section(NAME usbh_class_node GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
 if(CONFIG_DEVICE_MUTABLE)
