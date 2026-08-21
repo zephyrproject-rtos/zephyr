@@ -1,0 +1,36 @@
+# Copyright (c) 2024-2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x Always-On (AON) / UULP (Ultra Ultra Low-Power) clock manager.
+
+  Controls clocks for the always-on domain: RTC, watchdog timer, and the
+  reference clock selection for the HP and ULP domains during sleep
+  and wake transitions.
+
+  SIWX91X_CLK_RTC and SIWX91X_CLK_WATCHDOG use a fixed UULP LF
+  reference; do not add clock-route children for them.
+  SIWX91X_CLK_SYSRTC is owned by the sleeptimer stack, not by
+  clock-route children here.
+
+compatible: "silabs,siwx91x-cmu-aon"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    type: string-array
+    required: true
+    description: |
+      Register blocks for the AON/NPSS clock manager:
+        - mcu_aon: MCU AON/NPSS power and low-frequency clock control
+        - mcu_fsm: MCU clock source and sleep-state machine control
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
