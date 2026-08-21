@@ -1,0 +1,58 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# Author: Siddharth Vadapalli <s-vadapalli@ti.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI AM62L PKTDMA (Packet DMA)
+
+compatible: "ti,am62l-pktdma"
+
+include: [dma-controller.yaml, interrupt-nexus.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Global Configuration Registers region
+      Realtime Channel Configuration Registers region
+      Realtime Ring Configuration Registers region
+
+  reg-names:
+    required: true
+    description: |
+      Register names "gcfg", "chanrt" and "ringrt" corresponding to
+      the Global Configuration Registers region, the Realtime Channel
+      Configuration Registers region and the Realtime Ring Configuration
+      Registers region respectively.
+
+  power-domains:
+    required: true
+
+  "#address-cells":
+    required: true
+    const: 0
+
+  "#dma-cells":
+    required: true
+    const: 2
+
+  "#interrupt-cells":
+    required: true
+    const: 1
+
+  interrupt-map:
+    required: true
+    description: |
+      Mapping of PKTDMA Channel IDs to GIC interrupt numbers.
+      Each entry has 7 cells:
+        1. channel_id
+        2. gic_phandle
+        3. gic_addr
+        4. gic_irq_type (SPI/PPI)
+        5. gic_irq_number
+        6. gic_irq_flags
+        7. gic_irq_priority
+
+# Parameter syntax
+dma-cells:
+  - channel_id
+  - asel
