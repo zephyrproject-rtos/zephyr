@@ -3817,6 +3817,28 @@ __syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			  unsigned int limit);
 
 /**
+ * @brief Deinitialize a semaphore.
+ *
+ * This routine invalidates @a sem. It is the developer's responsibility to
+ * deinitialize transient semaphores (such as those defined on a thread's
+ * stack or in dynamically allocated memory) prior to that semaphore's memory
+ * being reclaimed. Failure to deinitialize such semaphores may result in
+ * corruption if the semaphore continues to be used after reclamation; this
+ * may happen if there were threads waiting on the semaphore or if it was
+ * involved in any kernel object tracking (see
+ * @kconfig{CONFIG_OBJ_CORE_SEM} and @kconfig{CONFIG_TRACING_OBJECT_TRACKING}).
+ *
+ * Any threads waiting on @a sem are released as if the semaphore was reset,
+ * with their k_sem_take() calls returning -EAGAIN.
+ *
+ * A deinitialized semaphore must be initialized again with k_sem_init()
+ * before it can be used.
+ *
+ * @param sem Address of the semaphore.
+ */
+__syscall void k_sem_deinit(struct k_sem *sem);
+
+/**
  * @brief Take a semaphore.
  *
  * This routine takes @a sem.
