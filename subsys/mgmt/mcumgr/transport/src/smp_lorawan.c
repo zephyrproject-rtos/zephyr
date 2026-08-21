@@ -48,7 +48,7 @@ K_FIFO_DEFINE(smp_lorawan_fifo);
 struct smp_lorawan_uplink_message_t {
 	void *fifo_reserved;
 	struct net_buf *nb;
-	struct k_sem my_sem;
+	struct k_poll_signal sig;
 };
 
 static struct smp_lorawan_uplink_message_t empty_message = {
@@ -114,9 +114,9 @@ static void smp_lorawan_uplink_thread(void *p1, void *p2, void *p3)
 			pos += data_size;
 		}
 
-		/* For empty packets, do not trigger semaphore */
+		/* For empty packets, do not trigger the signal */
 		if (size != 0) {
-			k_sem_give(&msg->my_sem);
+			k_poll_signal_raise(&msg->sig, 0);
 		}
 	}
 }
@@ -183,13 +183,19 @@ static int smp_lorawan_uplink(struct net_buf *nb)
 	int rc = 0;
 
 #ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_FRAGMENTED_UPLINKS
+	struct k_poll_event event;
 	struct smp_lorawan_uplink_message_t tx_data = {
 		.nb = nb,
 	};
 
-	k_sem_init(&tx_data.my_sem, 0, 1);
+	/* A poll signal is used rather than a semaphore as it, unlike kernel
+	 * objects, may live on the stack.
+	 */
+	k_poll_signal_init(&tx_data.sig);
+	k_poll_event_init(&event, K_POLL_TYPE_SIGNAL, K_POLL_MODE_NOTIFY_ONLY, &tx_data.sig);
+
 	k_fifo_put(&smp_lorawan_fifo, &tx_data);
-	k_sem_take(&tx_data.my_sem, K_FOREVER);
+	k_poll(&event, 1, K_FOREVER);
 #else
 	uint8_t data_size;
 	uint8_t temp;
