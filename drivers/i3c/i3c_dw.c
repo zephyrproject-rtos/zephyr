@@ -1192,6 +1192,50 @@ static int dw_i3c_i2c_api_transfer(const struct device *dev, struct i2c_msg *msg
 
 	return dw_i3c_i2c_transfer(dev, i2c_dev, msgs, num_msgs);
 }
+
+static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg);
+
+/**
+ * @brief Configure I2C operation of a host controller.
+ *
+ * @see i2c_configure
+ *
+ * @param dev        Pointer to device driver instance.
+ * @param dev_config @see i2c_configure
+ *
+ * @return @see i2c_configure
+ */
+static int dw_i3c_i2c_api_configure(const struct device *dev, uint32_t dev_config)
+{
+	struct dw_i3c_data *data = dev->data;
+	struct i3c_config_controller *ctrl_config = &data->common.ctrl_config;
+	uint32_t i2c_scl_hz;
+	int ret;
+
+	/* Note: this only affects devices configured for FM in the device tree. */
+	switch (I2C_SPEED_GET(dev_config)) {
+	case I2C_SPEED_STANDARD:
+		i2c_scl_hz = 100000;
+		break;
+	case I2C_SPEED_FAST:
+		i2c_scl_hz = 400000;
+		break;
+	case I2C_SPEED_FAST_PLUS:
+		i2c_scl_hz = 1000000;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&data->mt, K_FOREVER);
+
+	ctrl_config->scl.i2c = i2c_scl_hz;
+	ret = dw_i3c_init_scl_timing(dev, ctrl_config);
+
+	k_mutex_unlock(&data->mt);
+
+	return ret;
+}
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_USE_IBI
 #ifdef CONFIG_I3C_CONTROLLER
@@ -2918,6 +2962,7 @@ static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action
 
 static DEVICE_API(i3c, dw_i3c_api) = {
 #ifdef CONFIG_I3C_CONTROLLER
+	.i2c_api.configure = dw_i3c_i2c_api_configure,
 	.i2c_api.transfer = dw_i3c_i2c_api_transfer,
 	.i2c_api.recover_bus = dw_i3c_recover_bus,
 #ifdef CONFIG_I2C_RTIO
